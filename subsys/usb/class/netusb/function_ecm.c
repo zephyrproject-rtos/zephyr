@@ -407,9 +407,12 @@ USBD_STRING_DESCR_DEFINE(primary) struct usb_cdc_ecm_mac_descr utf16le_mac = {
 	.bString = CONFIG_USB_DEVICE_NETWORK_ECM_MAC
 };
 
-static void ecm_interface_config(u8_t bInterfaceNumber)
+static void ecm_interface_config(struct usb_desc_header *head,
+				 u8_t bInterfaceNumber)
 {
 	int idx = usb_get_str_descriptor_idx(&utf16le_mac);
+
+	ARG_UNUSED(head);
 
 	if (idx) {
 		LOG_DBG("fixup string %d", idx);

@@ -504,14 +504,19 @@ static void cdc_acm_dev_status_cb(enum usb_dc_status_code status,
 	}
 }
 
-static void cdc_interface_config(u8_t bInterfaceNumber)
+static void cdc_interface_config(struct usb_desc_header *head,
+				 u8_t bInterfaceNumber)
 {
-	cdc_acm_cfg.if0.bInterfaceNumber = bInterfaceNumber;
-	cdc_acm_cfg.if0_union.bControlInterface = bInterfaceNumber;
-	cdc_acm_cfg.if1.bInterfaceNumber = bInterfaceNumber + 1;
-	cdc_acm_cfg.if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
+	struct usb_if_descriptor *if_desc = (struct usb_if_descriptor *) head;
+	struct usb_cdc_acm_config *desc =
+		CONTAINER_OF(if_desc, struct usb_cdc_acm_config, if0);
+
+	desc->if0.bInterfaceNumber = bInterfaceNumber;
+	desc->if0_union.bControlInterface = bInterfaceNumber;
+	desc->if1.bInterfaceNumber = bInterfaceNumber + 1;
+	desc->if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
-	cdc_acm_cfg.iad_cdc.bFirstInterface = bInterfaceNumber;
+	desc->iad_cdc.bFirstInterface = bInterfaceNumber;
 #endif
 }
 

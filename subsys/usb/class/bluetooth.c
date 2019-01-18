@@ -269,8 +269,11 @@ static int bluetooth_class_handler(struct usb_setup_packet *setup,
 	return 0;
 }
 
-static void bluetooth_interface_config(u8_t bInterfaceNumber)
+static void bluetooth_interface_config(struct usb_desc_header *head,
+				       u8_t bInterfaceNumber)
 {
+	ARG_UNUSED(head);
+
 	bluetooth_cfg.if0.bInterfaceNumber = bInterfaceNumber;
 }
 

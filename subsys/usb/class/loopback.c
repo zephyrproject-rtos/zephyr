@@ -158,8 +158,11 @@ static int loopback_vendor_handler(struct usb_setup_packet *setup,
 }
 /* usb.rst vendor handler end */
 
-static void loopback_interface_config(u8_t bInterfaceNumber)
+static void loopback_interface_config(struct usb_desc_header *head,
+				      u8_t bInterfaceNumber)
 {
+	ARG_UNUSED(head);
+
 	loopback_cfg.if0.bInterfaceNumber = bInterfaceNumber;
 }
 

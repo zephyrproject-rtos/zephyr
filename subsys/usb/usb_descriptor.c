@@ -367,7 +367,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 				}
 
 				if (cfg_data->interface_config) {
-					cfg_data->interface_config(
+					cfg_data->interface_config(head,
 							numof_ifaces);
 				}
 			}
