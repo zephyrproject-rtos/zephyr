@@ -17,6 +17,7 @@
 #include <init.h>
 #include <nrfx.h>
 #include <soc/nrfx_coredep.h>
+#include <logging/log.h>
 
 #ifdef CONFIG_RUNTIME_NMI
 extern void _NmiInit(void);
@@ -27,7 +28,6 @@ extern void _NmiInit(void);
 
 #include <system_nrf51.h>
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
-#include <logging/log.h>
 LOG_MODULE_REGISTER(soc);
 
 static int nordicsemi_nrf51_init(struct device *arg)

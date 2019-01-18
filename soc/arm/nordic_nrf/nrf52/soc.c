@@ -17,6 +17,7 @@
 #include <cortex_m/exc.h>
 #include <nrfx.h>
 #include <soc/nrfx_coredep.h>
+#include <logging/log.h>
 
 #ifdef CONFIG_RUNTIME_NMI
 extern void _NmiInit(void);
@@ -35,11 +36,9 @@ extern void _NmiInit(void);
 #error "Unknown SoC."
 #endif
 
-#include <nrf.h>
 #include <hal/nrf_power.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
-#include <logging/log.h>
 LOG_MODULE_REGISTER(soc);
 
 static int nordicsemi_nrf52_init(struct device *arg)
