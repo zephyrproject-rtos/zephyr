@@ -162,6 +162,77 @@ This would be rendered as:
 Note the optional ``:columns:`` parameter (default is two columns), and
 all the list items are indented by three spaces.
 
+Tables
+******
+
+There are a few ways to create tables, each with their limitations or
+quirks.  `Grid tables
+<http://docutils.sourceforge.net/docs/ref/rst/restructuredtext.html#grid-tables>`_
+offer the most capability for defining merged rows and columns, but are
+hard to maintain::
+
+   +------------------------+------------+----------+----------+
+   | Header row, column 1   | Header 2   | Header 3 | Header 4 |
+   | (header rows optional) |            |          |          |
+   +========================+============+==========+==========+
+   | body row 1, column 1   | column 2   | column 3 | column 4 |
+   +------------------------+------------+----------+----------+
+   | body row 2             | ...        | ...      | you can  |
+   +------------------------+------------+----------+ easily   +
+   | body row 3 with a two column span   | ...      | span     |
+   +------------------------+------------+----------+ rows     +
+   | body row 4             | ...        | ...      | too      |
+   +------------------------+------------+----------+----------+
+
+This example would render as:
+
++------------------------+------------+----------+----------+
+| Header row, column 1   | Header 2   | Header 3 | Header 4 |
+| (header rows optional) |            |          |          |
++========================+============+==========+==========+
+| body row 1, column 1   | column 2   | column 3 | column 4 |
++------------------------+------------+----------+----------+
+| body row 2             | ...        | ...      | you can  |
++------------------------+------------+----------+ easily   +
+| body row 3 with a two column span   | ...      | span     |
++------------------------+------------+----------+ rows     +
+| body row 4             | ...        | ...      | too      |
++------------------------+------------+----------+----------+
+
+`List tables
+<http://docutils.sourceforge.net/docs/ref/rst/directives.html#list-table>`_
+are much easier to maintain, but don't support row or column spans::
+
+   .. list-table:: Table title
+      :widths: 15 20 40
+      :header-rows: 1
+
+      * - Heading 1
+        - Heading 2
+        - Heading 3
+      * - body row 1, column 1
+        - body row 1, column 2
+        - body row 1, column 3
+      * - body row 2, column 1
+        - body row 2, column 2
+        - body row 2, column 3
+
+This example would render as:
+
+.. list-table:: Table title
+   :widths: 15 20 40
+   :header-rows: 1
+
+   * - Heading 1
+     - Heading 2
+     - Heading 3
+   * - body row 1, column 1
+     - body row 1, column 2
+     - body row 1, column 3
+   * - body row 2, column 1
+     - body row 2, column 2
+     - body row 2, column 3
+
 File names and Commands
 ***********************
 
@@ -313,6 +384,30 @@ paragraph with a double colon (``::``) and indent the code block content
 by three spaces.  On output, only one colon will be shown.  The
 highlighting package makes a best guess at the type of content in the
 block and highlighting purposes.
+
+Images
+******
+
+Images are included in documentation by using an image directive::
+
+   .. image:: images/mypicture.jpg
+      :align: center
+      :alt: alt text for the image
+
+or if you'd like to add an image caption, use::
+
+    .. figure:: images/mypicture.jpg
+       :alt: image description
+
+       Caption for the figure
+
+The file name specified is relative to the document source file,
+and we recommend putting images into an ``images`` folder where the document
+source is found.  The usual image formats handled by a web browser are
+supported: JPEG, PNG, GIF, and SVG.  Keep the image size only as large
+as needed, generally at least 500 px wide but no more than 1000 px, and
+no more than 250 KB unless a particularly large image is needed for
+clarity.
 
 Tabs, spaces, and indenting
 ***************************

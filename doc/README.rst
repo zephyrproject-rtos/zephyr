@@ -37,6 +37,9 @@ The project's documentation contains the following items:
 * Script-generated material for kernel configuration options based on Kconfig
   files found in the source code tree
 
+.. image:: images/doc-gen-flow.png
+   :align: center
+
 The reStructuredText files are processed by the Sphinx documentation system,
 and make use of the breathe extension for including the doxygen-generated API
 material.  Additional tools are required to generate the
@@ -163,7 +166,7 @@ folder, here are the commands to generate the html content locally:
 Depending on your development system, it will take up to 15 minutes to
 collect and generate the HTML content.  When done, you can view the HTML
 output with your browser started at ``doc/_build/html/index.html`` and
-the PDF file is available at ``doc/_build/pdf/zephyr.pdf``.
+if generated, the PDF file is available at ``doc/_build/pdf/zephyr.pdf``.
 
 If you want to build the documentation from scratch just delete the contents
 of the build folder and run ``cmake`` and then ``ninja`` again.
