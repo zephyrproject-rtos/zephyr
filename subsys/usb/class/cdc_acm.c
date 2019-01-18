@@ -309,7 +309,7 @@ int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
 	case SET_LINE_CODING:
 		memcpy(&dev_data->line_coding,
 		       *data, sizeof(dev_data->line_coding));
-		LOG_DBG("\nCDC_SET_LINE_CODING %d %d %d %d",
+		LOG_DBG("CDC_SET_LINE_CODING %d %d %d %d",
 			sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
 			dev_data->line_coding.bCharFormat,
 			dev_data->line_coding.bParityType,
@@ -325,7 +325,7 @@ int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
 	case GET_LINE_CODING:
 		*data = (u8_t *)(&dev_data->line_coding);
 		*len = sizeof(dev_data->line_coding);
-		LOG_DBG("\nCDC_GET_LINE_CODING %d %d %d %d",
+		LOG_DBG("CDC_GET_LINE_CODING %d %d %d %d",
 			sys_le32_to_cpu(dev_data->line_coding.dwDTERate),
 			dev_data->line_coding.bCharFormat,
 			dev_data->line_coding.bParityType,
