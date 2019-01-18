@@ -405,6 +405,8 @@ def report_to_github(repo, pull_request, sha, suite, docs):
     if 'GH_TOKEN' not in os.environ:
         return
 
+    username = os.environ.get('GH_USERNAME', 'zephyrbot')
+
     github_token = os.environ['GH_TOKEN']
     github_conn = Github(github_token)
 
@@ -463,7 +465,7 @@ def report_to_github(repo, pull_request, sha, suite, docs):
         commented = False
         for cmnt in comments:
             if ('Found the following issues, please fix and resubmit' in cmnt.body or
-                '**All checks are passing now.**' in cmnt.body) and cmnt.user.login == 'zephyrbot':
+                '**All checks are passing now.**' in cmnt.body) and cmnt.user.login == username:
                 if cmnt.body != comment:
                     cmnt.edit(comment)
                 commented = True
@@ -474,7 +476,7 @@ def report_to_github(repo, pull_request, sha, suite, docs):
     else:
         comments = gh_pr.get_issue_comments()
         for cmnt in comments:
-            if 'Found the following issues, please fix and resubmit' in cmnt.body and cmnt.user.login == 'zephyrbot':
+            if 'Found the following issues, please fix and resubmit' in cmnt.body and cmnt.user.login == username:
                 cmnt.edit("**All checks are passing now.**\n\nReview history of this comment for details about previous failed status.\n"
                           "Note that some checks might have not completed yet.")
                 break
