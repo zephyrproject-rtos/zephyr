@@ -114,6 +114,9 @@ static int test_file_read(void)
 		return TC_FAIL;
 	}
 
+	/* Check for array overrun */
+	brw = (brw < 80) ? brw : brw - 1;
+
 	read_buff[brw] = 0;
 
 	TC_PRINT("Data read:\"%s\"\n", read_buff);
