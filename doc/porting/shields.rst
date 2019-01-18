@@ -68,7 +68,7 @@ command
 
   .. zephyr-app-commands::
      :zephyr-app: your_app
-     :gen-args: -DSHIELD=x_nucleo_iks01a1
+     :shield: x_nucleo_iks01a1
      :goals: build
 
 
