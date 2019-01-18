@@ -1,3 +1,5 @@
+file(MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/include/generated)
+
 # Zephyr code can configure itself based on a KConfig'uration with the
 # header file autoconf.h. There exists an analogous file
 # generated_dts_board_unfixed.h that allows configuration based on information
@@ -21,8 +23,15 @@ set(dts_files
   ${shield_dts_files}
   )
 
-if(CONFIG_HAS_DTS)
+# TODO: What to do about non-posix platforms where NOT CONFIG_HAS_DTS (xtensa)?
+# Drop support for NOT CONFIG_HAS_DTS perhaps?
+if(EXISTS ${DTS_SOURCE})
+  set(SUPPORTS_DTS 1)
+else()
+  set(SUPPORTS_DTS 0)
+endif()
 
+if(SUPPORTS_DTS)
   if(DTC_OVERLAY_FILE)
     # Convert from space-separated files into file list
     string(REPLACE " " ";" DTC_OVERLAY_FILE_AS_LIST ${DTC_OVERLAY_FILE})
@@ -70,7 +79,6 @@ if(CONFIG_HAS_DTS)
     -isystem ${ZEPHYR_BASE}/include
     -isystem ${ZEPHYR_BASE}/dts/${ARCH}
     -isystem ${ZEPHYR_BASE}/dts
-    -include ${AUTOCONF_H}
     ${DTC_INCLUDE_FLAG_FOR_DTS}  # include the DTS source and overlays
     -I${ZEPHYR_BASE}/dts/common
     ${NOSYSDEF_CFLAG}
@@ -142,4 +150,4 @@ if(CONFIG_HAS_DTS)
 
 else()
   file(WRITE ${GENERATED_DTS_BOARD_UNFIXED_H} "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")
-endif()
+endif(SUPPORTS_DTS)
