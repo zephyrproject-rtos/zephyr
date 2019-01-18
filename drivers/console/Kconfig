@@ -261,9 +261,9 @@ config NATIVE_POSIX_CONSOLE
 config NATIVE_POSIX_STDIN_CONSOLE
 	bool "Use the host terminal stdin"
 	depends on NATIVE_POSIX_CONSOLE
-	default y if !NATIVE_UART_0_ON_STDINOUT
 	help
-	  Feed the host terminal stdin to the Zephyr console/shell.
+	  No current use. Kept only as there is plans to start using these
+	  drivers with the shell
 
 config NATIVE_STDIN_POLL_PERIOD
 	int "Polling period for stdin"
