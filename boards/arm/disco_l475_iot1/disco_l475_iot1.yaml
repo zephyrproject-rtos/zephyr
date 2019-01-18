@@ -14,5 +14,6 @@ supported:
   - gpio
   - ble
   - spi
+  - vl53l0x
 ram: 96
 flash: 1024

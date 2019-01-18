@@ -1,8 +1,7 @@
 sample:
-  description: TBD
-  name: TBD
+  name: Sample for MEMS sensors VL53L0X
 tests:
   test:
     build_only: true
-    platform_whitelist: disco_l475_iot1
+    depends_on: i2c vl53l0x
     tags: sensors
