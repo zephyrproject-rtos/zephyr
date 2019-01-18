@@ -9,5 +9,12 @@ sample:
 tests:
   test:
     build_only: true
-    platform_whitelist: nrf51_ble400
+    platform_whitelist: efr32mg_sltb004a frdm_k64f nrf51_ble400
+      nrf52840_pca10056 nucleo_l476rg
+    tags: sensors
+  test_trigger:
+    build_only: true
+    extra_args: CONF_FILE="trigger.conf"
+    platform_whitelist: efr32mg_sltb004a frdm_k64f nrf51_ble400
+      nrf52840_pca10056 nucleo_l476rg
     tags: sensors

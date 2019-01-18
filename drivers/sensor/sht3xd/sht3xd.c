@@ -90,20 +90,8 @@ static int sht3xd_sample_fetch(struct device *dev, enum sensor_channel chan)
 		SHT3XD_CMD_FETCH & 0xFF
 	};
 
-	struct i2c_msg msgs[2] = {
-		{
-			.buf = tx_buf,
-			.len = sizeof(tx_buf),
-			.flags = I2C_MSG_WRITE | I2C_MSG_RESTART,
-		},
-		{
-			.buf = rx_buf,
-			.len = sizeof(rx_buf),
-			.flags = I2C_MSG_READ | I2C_MSG_STOP,
-		},
-	};
-
-	if (i2c_transfer(i2c, msgs, 2, address) < 0) {
+	if (i2c_write_read(i2c, address, tx_buf, sizeof(tx_buf),
+			   rx_buf, sizeof(rx_buf)) < 0) {
 		LOG_DBG("Failed to read data sample!");
 		return -EIO;
 	}

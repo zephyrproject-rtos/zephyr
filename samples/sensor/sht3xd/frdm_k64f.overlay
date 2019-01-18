@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2019 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 { /* SDA PTE25, SCL PTE24, ALERT PTE26 */
+	sht3xd@44 {
+		compatible = "sensirion,sht3xd";
+		reg = <0x44>;
+		label = "SHT3XD";
+		alert-gpios = <&gpioe 26 GPIO_INT_ACTIVE_HIGH>;
+	};
+};
