@@ -38,5 +38,5 @@ enum net_verdict net_packet_socket_input(struct net_pkt *pkt)
 
 	net_pkt_set_family(pkt, AF_PACKET);
 
-	return net_conn_input(ETH_P_ALL, pkt);
+	return net_conn_input(pkt, NULL, ETH_P_ALL, NULL);
 }
