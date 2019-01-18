@@ -17,7 +17,6 @@ extern "C" {
 
 extern unsigned char sys_pm_idle_exit_notify;
 
-
 /**
  * @defgroup power_management_api Power Management
  * @{
@@ -25,7 +24,7 @@ extern unsigned char sys_pm_idle_exit_notify;
  */
 
 /**
- * @brief Power Management states.
+ * @brief System power states.
  */
 enum power_states {
 	SYS_POWER_STATE_AUTO	= (-2),
@@ -55,6 +54,14 @@ enum power_states {
 #endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
 	SYS_POWER_STATE_MAX
 };
+
+/**
+ * @brief System Power Management API
+ *
+ * @defgroup system_power_management_api System Power Management API
+ * @ingroup power_management_api
+ * @{
+ */
 
 /**
  * @brief Check if particular power state is a low power state.
@@ -115,17 +122,9 @@ static inline bool sys_pm_is_deep_sleep_state(enum power_states state)
 }
 
 /**
- * @brief Power Management Hooks
- *
- * @defgroup power_management_hook_interface Power Management Hooks
- * @ingroup power_management_api
- * @{
- */
-
-/**
  * @brief Function to disable power management idle exit notification
  *
- * sys_resume() would be called from the ISR of the event that caused
+ * The sys_resume() would be called from the ISR of the event that caused
  * exit from kernel idling after PM operations. For some power operations,
  * this notification may not be necessary. This function can be called in
  * sys_suspend to disable the corresponding sys_resume notification.
@@ -135,6 +134,79 @@ static inline void sys_pm_idle_exit_notification_disable(void)
 {
 	sys_pm_idle_exit_notify = 0;
 }
+
+/**
+ * @brief Force usage of given power state.
+ *
+ * This function overrides decision made by PM policy
+ * forcing usage of given power state in all subseqent
+ * suspend operations. Forcing the SYS_POWER_STATE_AUTO
+ * state restores normal operation.
+ *
+ * @param state Power state which should be used in all
+ *		subsequent suspend operations or
+ *		SYS_POWER_STATE_AUTO.
+ */
+extern void sys_pm_force_power_state(enum power_states state);
+
+#ifdef CONFIG_PM_CONTROL_OS_DEBUG
+/**
+ * @brief Dump Low Power states related debug info
+ *
+ * Dump Low Power states debug info like LPS entry count and residencies.
+ */
+extern void sys_pm_dump_debug_info(void);
+
+#endif /* CONFIG_PM_CONTROL_OS_DEBUG */
+
+#ifdef CONFIG_PM_CONTROL_STATE_LOCK
+/**
+ * @brief Disable particular power state
+ *
+ * @details Disabled state cannot be selected by the Zephyr power
+ *	    management policies. Application defined policy should
+ *	    use the @ref sys_pm_ctrl_is_state_enabled function to
+ *	    check if given state could is enabled and could be used.
+ *
+ * @param [in] state Power state to be disabled.
+ */
+extern void sys_pm_ctrl_disable_state(enum power_states state);
+
+/**
+ * @brief Enable particular power state
+ *
+ * @details Enabled state can be selected by the Zephyr power
+ *	    management policies. Application defined policy should
+ *	    use the @ref sys_pm_ctrl_is_state_enabled function to
+ *	    check if given state could is enabled and could be used.
+ *	    By default all power states are enabled.
+ *
+ * @param [in] state Power state to be enabled.
+ */
+extern void sys_pm_ctrl_enable_state(enum power_states state);
+
+/**
+ * @brief Check if particular power state is enabled
+ *
+ * This function returns true if given power state is enabled.
+ *
+ * @param [in] state Power state.
+ */
+extern bool sys_pm_ctrl_is_state_enabled(enum power_states state);
+
+#endif /* CONFIG_PM_CONTROL_STATE_LOCK */
+
+/**
+ * @}
+ */
+
+/**
+ * @brief Power Management Hooks
+ *
+ * @defgroup power_management_hook_interface Power Management Hooks
+ * @ingroup power_management_api
+ * @{
+ */
 
 /**
  * @brief Hook function to notify exit from deep sleep
@@ -200,69 +272,6 @@ void sys_resume(void);
  * @return Power state which was selected and entered.
  */
 extern enum power_states sys_suspend(s32_t ticks);
-
-/**
- * @brief Force usage of given power state.
- *
- * This function overrides decision made by PM policy
- * forcing usage of given power state in all subseqent
- * suspend operations.
- *
- * Forcing the SYS_POWER_STATE_AUTO power state restores
- * normal operation.
- *
- * @param state Power state which should be used in all
- *		subsequent suspend operations or
- *		SYS_POWER_STATE_AUTO.
- */
-extern void sys_pm_force_power_state(enum power_states state);
-
-#ifdef CONFIG_PM_CONTROL_OS_DEBUG
-/**
- * @brief Dump Low Power states related debug info
- *
- * Dump Low Power states debug info like LPS entry count and residencies.
- */
-extern void sys_pm_dump_debug_info(void);
-
-#endif /* CONFIG_PM_CONTROL_OS_DEBUG */
-
-#ifdef CONFIG_PM_CONTROL_STATE_LOCK
-/**
- * @brief Disable particular power state
- *
- * @details Disabled state cannot be selected by the Zephyr power
- *	    management policies. Application defined policy should
- *	    use the @ref sys_pm_ctrl_is_state_enabled function to
- *	    check if given state could is enabled and could be used.
- *
- * @param [in] state Power state to be disabled.
- */
-extern void sys_pm_ctrl_disable_state(enum power_states state);
-
-/**
- * @brief Enable particular power state
- *
- * @details Enabled state can be selected by the Zephyr power
- *	    management policies. Application defined policy should
- *	    use the @ref sys_pm_ctrl_is_state_enabled function to
- *	    check if given state could is enabled and could be used.
- *	    By default all power states are enabled.
- *
- * @param [in] state Power state to be enabled.
- */
-extern void sys_pm_ctrl_enable_state(enum power_states state);
-
-/**
- * @brief Check if particular power state is enabled
- *
- * This function returns true if given power state is enabled.
- *
- * @param [in] state Power state.
- */
-extern bool sys_pm_ctrl_is_state_enabled(enum power_states state);
-
-#endif /* CONFIG_PM_CONTROL_STATE_LOCK */
 
 /**
  * @}
