@@ -1289,6 +1289,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	struct gmac_queue *queue;
 	struct gmac_desc_list *tx_desc_list;
 	struct gmac_desc *tx_desc;
+	struct gmac_desc *tx_first_desc;
 	struct net_buf *frag;
 	u8_t *frag_data;
 	u16_t frag_len;
@@ -1316,6 +1317,10 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	err_tx_flushed_count_at_entry = queue->err_tx_flushed_count;
 
 	frag = pkt->frags;
+
+	/* Keep reference to the descriptor */
+	tx_first_desc = &tx_desc_list->buf[tx_desc_list->head];
+
 	while (frag) {
 		frag_data = frag->data;
 		frag_len = frag->len;
@@ -1343,16 +1348,15 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 		/* Update buffer descriptor address word */
 		gmac_desc_set_w0(tx_desc, (u32_t)frag_data);
 
-		/* Guarantee that address word is written before the status
-		 * word to avoid race condition.
+		/* Update buffer descriptor status word (clear used bit except
+		 * for the first frag).
 		 */
-		__DMB();  /* data memory barrier */
-		/* Update buffer descriptor status word (clear used bit) */
 		gmac_desc_set_w1(tx_desc,
 			  (frag_len & GMAC_TXW1_LEN)
 			| (!frag->frags ? GMAC_TXW1_LASTBUFFER : 0)
 			| (tx_desc_list->head == tx_desc_list->len - 1
-			   ? GMAC_TXW1_WRAP : 0));
+			   ? GMAC_TXW1_WRAP : 0)
+			| (tx_desc == tx_first_desc ? GMAC_TXW1_USED : 0));
 
 		/* Update descriptor position */
 		MODULO_INC(tx_desc_list->head, tx_desc_list->len);
@@ -1376,7 +1380,18 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 
 	/* Ensure the descriptor following the last one is marked as used */
 	tx_desc = &tx_desc_list->buf[tx_desc_list->head];
-	gmac_desc_append_w1(tx_desc, GMAC_TXW1_USED);
+	gmac_desc_set_w1(tx_desc, GMAC_TXW1_USED);
+
+	/* Guarantee that all the fragments have been written before removing
+	 * the used bit to avoid race condition.
+	 */
+	__DMB();  /* data memory barrier */
+
+	/* Remove the used bit of the first fragment to allow the controller
+	 * to process it and the following fragments.
+	 */
+	gmac_desc_set_w1(tx_first_desc,
+			 gmac_desc_get_w1(tx_first_desc) & ~GMAC_TXW1_USED);
 
 	/* Account for a sent frame */
 	ring_buf_put(&queue->tx_frames, POINTER_TO_UINT(pkt));
@@ -1385,6 +1400,11 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 
 	/* pkt is internally queued, so it requires to hold a reference */
 	net_pkt_ref(pkt);
+
+	/* Guarantee that the first fragment got its bit removed before starting
+	 * sending packets to avoid packets getting stuck.
+	 */
+	__DMB();  /* data memory barrier */
 
 	/* Start transmission */
 	gmac->GMAC_NCR |= GMAC_NCR_TSTART;
