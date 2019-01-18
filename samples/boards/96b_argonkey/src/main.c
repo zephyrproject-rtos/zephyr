@@ -235,11 +235,11 @@ void main(void)
 #endif
 
 #ifdef CONFIG_VL53L0X
-	struct device *tof_dev = device_get_binding(DT_VL53L0X_NAME);
+	struct device *tof_dev = device_get_binding(DT_ST_VL53L0X_0_LABEL);
 
 	if (!tof_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_VL53L0X_NAME);
+			DT_ST_VL53L0X_0_LABEL);
 		return;
 	}
 #endif
