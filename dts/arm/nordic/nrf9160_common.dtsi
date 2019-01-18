@@ -145,6 +145,38 @@ spi3: spi@b000 {
 	label = "SPI_3";
 };
 
+pwm0: pwm@21000 {
+	compatible = "nordic,nrf-pwm";
+	reg = <0x21000 0x1000>;
+	interrupts = <33 1>;
+	status = "disabled";
+	label = "PWM_0";
+};
+
+pwm1: pwm@22000 {
+	compatible = "nordic,nrf-pwm";
+	reg = <0x22000 0x1000>;
+	interrupts = <34 1>;
+	status = "disabled";
+	label = "PWM_1";
+};
+
+pwm2: pwm@23000 {
+	compatible = "nordic,nrf-pwm";
+	reg = <0x23000 0x1000>;
+	interrupts = <35 1>;
+	status = "disabled";
+	label = "PWM_2";
+};
+
+pwm3: pwm@24000 {
+	compatible = "nordic,nrf-pwm";
+	reg = <0x24000 0x1000>;
+	interrupts = <36 1>;
+	status = "disabled";
+	label = "PWM_3";
+};
+
 gpio0: gpio@842500 {
 	compatible = "nordic,nrf-gpio";
 	gpio-controller;
