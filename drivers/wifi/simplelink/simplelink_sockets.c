@@ -283,6 +283,19 @@ static int simplelink_connect(int sd, const struct sockaddr *addr,
 		retval = 0;
 	}
 
+	/* Warn users when root CA is not in the certificate catalog.
+	 * For enhanced security, users should update the catalog with the
+	 * certificates for sites the device is expected to connect to. Note
+	 * the connection is established successfully even when the root CA
+	 * is not part of the catalog.
+	 */
+	if (retval == SL_ERROR_BSD_ESECUNKNOWNROOTCA) {
+		LOG_WRN("Unknown root CA used. For proper security, please "
+			"use a root CA that is part of the certificate "
+			"catalog in production systems.");
+		retval = 0;
+	}
+
 exit:
 	return _SlDrvSetErrno(retval);
 }
