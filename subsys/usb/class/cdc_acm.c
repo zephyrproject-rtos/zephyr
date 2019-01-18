@@ -239,7 +239,50 @@ struct cdc_acm_dev_data_t {
 	u8_t serial_state;
 	/* CDC ACM notification sent status */
 	u8_t notification_sent;
+	struct device *dev;
+	sys_snode_t node;
 };
+
+static sys_slist_t cdc_acm_data_devlist;
+
+static struct cdc_acm_dev_data_t *get_dev_data_by_iface(u16_t iface_num)
+{
+	struct cdc_acm_dev_data_t *dev_data;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&cdc_acm_data_devlist, dev_data, node) {
+		struct device *dev = dev_data->dev;
+		const struct usb_cfg_data *cfg = dev->config->config_info;
+		const struct usb_if_descriptor *if_desc =
+						cfg->interface_descriptor;
+
+		if (if_desc->bInterfaceNumber == iface_num) {
+			return dev_data;
+		}
+	}
+
+	LOG_DBG("Device data not found for iface number %u", iface_num);
+	return NULL;
+}
+
+static struct cdc_acm_dev_data_t *get_dev_data_by_ep(u8_t ep)
+{
+	struct cdc_acm_dev_data_t *dev_data;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&cdc_acm_data_devlist, dev_data, node) {
+		struct device *dev = dev_data->dev;
+		const struct usb_cfg_data *cfg = dev->config->config_info;
+		const struct usb_ep_cfg_data *ep_data = cfg->endpoint;
+
+		for (u8_t i = 0; i < cfg->num_endpoints; i++) {
+			if (ep_data[i].ep_addr == ep) {
+				return dev_data;
+			}
+		}
+	}
+
+	LOG_DBG("Device data not found for ep %u", ep);
+	return NULL;
+}
 
 /**
  * @brief Handler called for Class requests not handled by the USB stack.
@@ -253,7 +296,14 @@ struct cdc_acm_dev_data_t {
 int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
 			     s32_t *len, u8_t **data)
 {
-	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
+	struct cdc_acm_dev_data_t *dev_data;
+
+	dev_data = get_dev_data_by_iface(sys_le16_to_cpu(pSetup->wIndex));
+	if (!dev_data) {
+		LOG_WRN("Device data not found for interface %u",
+			sys_le16_to_cpu(pSetup->wIndex));
+		return -ENODEV;
+	}
 
 	switch (pSetup->bRequest) {
 	case SET_LINE_CODING:
@@ -301,10 +351,15 @@ int cdc_acm_class_handle_req(struct usb_setup_packet *pSetup,
  */
 static void cdc_acm_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
-	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
+	struct cdc_acm_dev_data_t *dev_data;
 
 	ARG_UNUSED(ep_status);
-	ARG_UNUSED(ep);
+
+	dev_data = get_dev_data_by_ep(ep);
+	if (dev_data == NULL) {
+		LOG_WRN("Device data not found for endpoint %u", ep);
+		return;
+	}
 
 	dev_data->tx_ready = 1U;
 	k_sem_give(&poll_wait_sem);
@@ -322,14 +377,19 @@ static void cdc_acm_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
  *
  * @return  N/A.
  */
-static void cdc_acm_bulk_out(u8_t ep,
-			     enum usb_dc_ep_cb_status_code ep_status)
+static void cdc_acm_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
-	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
+	struct cdc_acm_dev_data_t *dev_data;
 	u32_t bytes_to_read, i, j, buf_head;
 	u8_t tmp_buf[4];
 
 	ARG_UNUSED(ep_status);
+
+	dev_data = get_dev_data_by_ep(ep);
+	if (dev_data == NULL) {
+		LOG_WRN("Device data not found for endpoint %u", ep);
+		return;
+	}
 
 	/* Check how many bytes were received */
 	usb_read(ep, NULL, 0, &bytes_to_read);
@@ -378,9 +438,15 @@ static void cdc_acm_bulk_out(u8_t ep,
  */
 static void cdc_acm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
-	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
+	struct cdc_acm_dev_data_t *dev_data;
 
 	ARG_UNUSED(ep_status);
+
+	dev_data = get_dev_data_by_ep(ep);
+	if (dev_data == NULL) {
+		LOG_WRN("Device data not found for endpoint %u", ep);
+		return;
+	}
 
 	dev_data->notification_sent = 1U;
 	LOG_DBG("CDC_IntIN EP[%x]\r", ep);
@@ -529,11 +595,15 @@ static void cdc_acm_irq_callback_work_handler(struct k_work *work)
 static int cdc_acm_init(struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
-	cdc_acm_dev = dev;
+	int ret = 0;
+
+	dev_data->dev = dev;
+	sys_slist_append(&cdc_acm_data_devlist, &dev_data->node);
+
+	LOG_DBG("Device dev %p dev_data %p added to devlist %p", dev, dev_data,
+		&cdc_acm_data_devlist);
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
-	int ret;
-
 	cdc_acm_config.interface.payload_data = dev_data->interface_data;
 	cdc_acm_config.usb_device_description = usb_get_device_descriptor();
 	/* Initialize the USB driver with the right configuration */
@@ -553,7 +623,7 @@ static int cdc_acm_init(struct device *dev)
 	k_sem_init(&poll_wait_sem, 0, UINT_MAX);
 	k_work_init(&dev_data->cb_work, cdc_acm_irq_callback_work_handler);
 
-	return 0;
+	return ret;
 }
 
 /**
@@ -569,6 +639,7 @@ static int cdc_acm_fifo_fill(struct device *dev,
 			     const u8_t *tx_data, int len)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
+	struct usb_cfg_data *cfg = (void *)dev->config->config_info;
 	u32_t wrote = 0U;
 	int err;
 
@@ -589,7 +660,7 @@ static int cdc_acm_fifo_fill(struct device *dev,
 	len = len > sizeof(u32_t) ? sizeof(u32_t) : len;
 #endif
 
-	err = usb_write(cdc_acm_ep_data[ACM_IN_EP_IDX].ep_addr,
+	err = usb_write(cfg->endpoint[ACM_IN_EP_IDX].ep_addr,
 			tx_data, len, &wrote);
 	if (err != 0) {
 		return err;
@@ -802,6 +873,7 @@ static void cdc_acm_irq_callback_set(struct device *dev,
 static int cdc_acm_send_notification(struct device *dev, u16_t serial_state)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
+	struct usb_cfg_data * const cfg = (void *)dev->config->config_info;
 	struct cdc_acm_notification notification;
 	u32_t cnt = 0U;
 
@@ -813,7 +885,8 @@ static int cdc_acm_send_notification(struct device *dev, u16_t serial_state)
 	notification.data = sys_cpu_to_le16(serial_state);
 
 	dev_data->notification_sent = 0U;
-	usb_write(cdc_acm_ep_data[ACM_INT_EP_IDX].ep_addr,
+
+	usb_write(cfg->endpoint[ACM_INT_EP_IDX].ep_addr,
 		  (const u8_t *)&notification, sizeof(notification), NULL);
 
 	/* Wait for notification to be sent */
