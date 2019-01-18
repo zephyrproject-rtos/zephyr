@@ -1313,8 +1313,11 @@ static void rndis_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	}
 }
 
-static void netusb_interface_config(u8_t bInterfaceNumber)
+static void netusb_interface_config(struct usb_desc_header *head,
+				    u8_t bInterfaceNumber)
 {
+	ARG_UNUSED(head);
+
 	rndis_cfg.if0.bInterfaceNumber = bInterfaceNumber;
 	rndis_cfg.if0_union.bControlInterface = bInterfaceNumber;
 	rndis_cfg.if0_union.bSubordinateInterface0 = bInterfaceNumber + 1;

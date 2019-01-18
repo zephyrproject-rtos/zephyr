@@ -116,7 +116,8 @@ typedef int (*usb_request_handler)(struct usb_setup_packet *setup,
 /**
  * @brief Function for interface runtime configuration
  */
-typedef void (*usb_interface_config)(u8_t bInterfaceNumber);
+typedef void (*usb_interface_config)(struct usb_desc_header *head,
+				     u8_t bInterfaceNumber);
 
 /**
  * @brief USB Endpoint Configuration
