@@ -9,10 +9,6 @@
 
 #include "mpu_mem_cfg.h"
 
-#define XICR_BASE	0x10000000
-#define PERIPH_BASE	0x40000000
-#define M4_PPB_BASE	0xE0000000
-
 static const struct arm_mpu_region mpu_regions[] = {
 	/* Region 0 */
 	MPU_REGION_ENTRY("FLASH_0",
