@@ -190,11 +190,9 @@ static int eth_tx_offloading_disabled(struct device *dev, struct net_pkt *pkt)
 		memcpy(((struct net_eth_hdr *)net_pkt_data(pkt))->dst.addr,
 		       lladdr, sizeof(lladdr));
 
-		net_pkt_ref(pkt);
-
-		if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
+		if (net_recv_data(net_pkt_iface(pkt),
+				  net_pkt_clone(pkt, K_NO_WAIT)) < 0) {
 			test_failed = true;
-			net_pkt_unref(pkt);
 			zassert_true(false, "Packet %p receive failed\n", pkt);
 		}
 

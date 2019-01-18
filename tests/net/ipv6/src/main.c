@@ -247,15 +247,11 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 	}
 
 	/* Feed this data back to us */
-	if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
+	if (net_recv_data(net_pkt_iface(pkt),
+			  net_pkt_clone(pkt, K_NO_WAIT)) < 0) {
 		TC_ERROR("Data receive failed.");
 		goto out;
 	}
-
-	/* L2 will unref pkt, so since it got to rx path we need to ref it again
-	 * or it will be freed.
-	 */
-	net_pkt_ref(pkt);
 
 	return 0;
 

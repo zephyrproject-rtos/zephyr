@@ -183,11 +183,9 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 		udp_hdr->src_port = udp_hdr->dst_port;
 		udp_hdr->dst_port = port;
 
-		net_pkt_ref(pkt);
-
-		if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
+		if (net_recv_data(net_pkt_iface(pkt),
+				  net_pkt_clone(pkt, K_NO_WAIT)) < 0) {
 			test_failed = true;
-			net_pkt_unref(pkt);
 			zassert_true(false, "Packet %p receive failed\n", pkt);
 		}
 

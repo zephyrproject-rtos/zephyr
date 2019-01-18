@@ -1026,15 +1026,11 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 		udp_hdr->dst_port = port;
 		net_udp_set_hdr(pkt, udp_hdr);
 
-		if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
+		if (net_recv_data(net_pkt_iface(pkt),
+				  net_pkt_clone(pkt, K_NO_WAIT)) < 0) {
 			TC_ERROR("Data receive failed.");
 			goto out;
 		}
-
-		/* L2 or net_if will unref the pkt, but we are pushing it
-		 * to rx path, so let's reference it or it will be freed.
-		 */
-		net_pkt_ref(pkt);
 
 		timeout_token = 0;
 
