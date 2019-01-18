@@ -123,7 +123,7 @@ config HW_STACK_PROTECTION
 	  made.
 
 config USERSPACE
-	bool "User mode threads (EXPERIMENTAL)"
+	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
 	help
 	  When enabled, threads may be created or dropped down to user mode,
@@ -136,9 +136,6 @@ config USERSPACE
 	  may or may not catch stack overflows when the system is in
 	  privileged mode or handling a system call; to ensure these are always
 	  caught, enable CONFIG_HW_STACK_PROTECTION.
-
-	  This feature is under heavy development and APIs related to it are
-	  subject to change, even if declared non-private.
 
 config PRIVILEGED_STACK_SIZE
 	int "Size of privileged stack"
