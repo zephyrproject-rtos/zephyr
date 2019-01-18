@@ -48,6 +48,9 @@ class ZephyrAppCommandsDirective(Directive):
     \:board:
       if set, the application build will target the given board.
 
+    \:shield:
+      if set, the application build will target the given shield.
+
     \:conf:
       if set, the application build will use the given configuration
       file.  If multiple conf files are provided, enclose the
@@ -90,6 +93,7 @@ class ZephyrAppCommandsDirective(Directive):
         'generator': directives.unchanged,
         'host-os': directives.unchanged,
         'board': directives.unchanged,
+        'shield': directives.unchanged,
         'conf': directives.unchanged,
         'gen-args': directives.unchanged,
         'build-args': directives.unchanged,
@@ -113,6 +117,7 @@ class ZephyrAppCommandsDirective(Directive):
         generator = self.options.get('generator', 'ninja').lower()
         host_os = self.options.get('host-os', 'all').lower()
         board = self.options.get('board', None)
+        shield = self.options.get('shield', None)
         conf = self.options.get('conf', None)
         gen_args = self.options.get('gen-args', None)
         build_args = self.options.get('build-args', None)
@@ -146,6 +151,7 @@ class ZephyrAppCommandsDirective(Directive):
 
         run_config = {
             'board': board,
+            'shield': shield,
             'conf': conf,
             'gen_args': gen_args,
             'build_args': build_args,
@@ -207,6 +213,7 @@ class ZephyrAppCommandsDirective(Directive):
 
     def _generate_make(self, **kwargs):
         board = kwargs['board']
+        shield = kwargs['shield']
         conf = kwargs['conf']
         gen_args = kwargs['gen_args']
         build_args = kwargs['build_args']
@@ -215,13 +222,14 @@ class ZephyrAppCommandsDirective(Directive):
         compact = kwargs['compact']
 
         board_arg = ' -DBOARD={}'.format(board) if board else ''
+        shield_arg = ' -DSHIELD={}'.format(shield) if shield else ''
         conf_arg = ' -DCONF_FILE={}'.format(conf) if conf else ''
         gen_args = ' {}'.format(gen_args) if gen_args else ''
         build_args = ' {}'.format(build_args) if build_args else ''
 
         content = []
         content.extend([
-            'cmake{}{}{} {}'.format(board_arg, conf_arg, gen_args,
+            'cmake{}{}{}{} {}'.format(board_arg, shield_arg, conf_arg, gen_args,
                                        source_dir)])
         if not compact:
             content.extend(['',
@@ -236,6 +244,7 @@ class ZephyrAppCommandsDirective(Directive):
 
     def _generate_ninja(self, **kwargs):
         board = kwargs['board']
+        shield = kwargs['shield']
         conf = kwargs['conf']
         gen_args = kwargs['gen_args']
         build_args = kwargs['build_args']
@@ -244,13 +253,14 @@ class ZephyrAppCommandsDirective(Directive):
         compact = kwargs['compact']
 
         board_arg = ' -DBOARD={}'.format(board) if board else ''
+        shield_arg = ' -DSHIELD={}'.format(shield) if shield else ''
         conf_arg = ' -DCONF_FILE={}'.format(conf) if conf else ''
         gen_args = ' {}'.format(gen_args) if gen_args else ''
         build_args = ' {}'.format(build_args) if build_args else ''
 
         content = []
         content.extend([
-            'cmake -GNinja{}{}{} {}'.format(board_arg, conf_arg, gen_args,
+            'cmake -GNinja{}{}{}{} {}'.format(board_arg, shield_arg, conf_arg, gen_args,
                                             source_dir)])
         if not compact:
             content.extend(['',
