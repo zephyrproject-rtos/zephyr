@@ -1342,10 +1342,6 @@ static int context_sendto_new(struct net_context *context,
 		return -EBADF;
 	}
 
-	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		return -ENOTSUP;
-	}
-
 	if (!dst_addr) {
 		return -EDESTADDRREQ;
 	}
@@ -1405,8 +1401,20 @@ static int context_sendto_new(struct net_context *context,
 		ret = net_send_data(pkt);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 		   net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		/* TCP is not supported yet to work on new net_pkt API */
-		ret = -ENOTSUP;
+		ret = net_pkt_write_new(pkt, buf, len);
+		if (ret < 0) {
+			goto fail;
+		}
+
+		sent = len;
+
+		net_pkt_cursor_init(pkt);
+		ret = net_tcp_queue_data(context, pkt);
+		if (ret < 0) {
+			goto fail;
+		}
+
+		ret = net_tcp_send_data(context, cb, token, user_data);
 	} else {
 		NET_DBG("Unknown protocol while sending packet: %d",
 		net_context_get_ip_proto(context));
