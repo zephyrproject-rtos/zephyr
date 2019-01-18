@@ -122,6 +122,7 @@
 /drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/ieee802154/                      @jukkar @tbursztyka
 /drivers/interrupt_controller/            @andrewboie
+/drivers/ipm/ipm_mhu*                     @karl-zh
 /drivers/*/vexriscv_litex.c               @mateusz-holenko @kgugala @pgielda
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar
