@@ -4,5 +4,11 @@ sample:
 tests:
   test:
     harness: bluetooth
-    platform_whitelist: qemu_cortex_m3 qemu_x86 mimxrt1020_evk mimxrt1050_evk mimxrt1060_evk frdm_k64f
+    platform_whitelist: qemu_cortex_m3 qemu_x86
     tags: bluetooth
+  test_frdm_kw41z_shield:
+    harness: bluetooth
+    platform_whitelist: mimxrt1020_evk mimxrt1050_evk mimxrt1060_evk frdm_k64f
+    tags: bluetooth
+    extra_args: SHIELD=frdm_kw41z
+
