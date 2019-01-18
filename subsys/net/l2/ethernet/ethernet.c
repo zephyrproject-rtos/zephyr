@@ -499,6 +499,7 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	u16_t ptype;
 	int ret;
+	struct net_buf *frag;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
 	    net_pkt_family(pkt) == AF_INET) {
@@ -554,7 +555,8 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 
 	/* Then set the ethernet header.
 	 */
-	if (!ethernet_fill_header(ctx, pkt, ptype)) {
+	frag = ethernet_fill_header(ctx, pkt, ptype);
+	if (!frag) {
 		ret = -ENOMEM;
 		goto error;
 	}
@@ -568,6 +570,9 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	ethernet_update_tx_stats(iface, pkt);
 #endif
 	ret = net_pkt_get_len(pkt);
+
+	/* remove the L2 header from the packet before returning */
+	net_buf_pull(frag, frag->len);
 
 	net_pkt_unref(pkt);
 error:
