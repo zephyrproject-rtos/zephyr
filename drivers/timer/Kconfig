@@ -22,13 +22,6 @@ menuconfig HPET_TIMER
 	  system timer.
 
 if HPET_TIMER
-config HPET_TIMER_LEGACY_EMULATION
-	bool "HPET timer legacy emulation mode"
-	help
-	  This option switches HPET to legacy emulation mode.
-	  In this mode 8254 PIT is disabled, HPET timer0 is connected
-	  to IOAPIC IRQ2, timer1 -- to IOAPIC IRQ8.
-
 config HPET_TIMER_BASE_ADDRESS
 	hex "HPET Base Address"
 	default 0xFED00000
