@@ -200,7 +200,7 @@ int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 	int hal_ret;
 	u32_t bs1;
 	u32_t bs2;
-	u32_t swj;
+	u32_t sjw;
 
 	clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	__ASSERT_NO_MSG(clock);
@@ -230,13 +230,13 @@ int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 			    bitrate);
 	}
 
-	__ASSERT(cfg->swj <= 0x03,      "SWJ maximum is 3");
+	__ASSERT(cfg->sjw <= 0x03,      "SJW maximum is 3");
 	__ASSERT(cfg->prop_bs1 <= 0x0F, "PROP_BS1 maximum is 15");
 	__ASSERT(cfg->bs2 <= 0x07,      "BS2 maximum is 7");
 
 	bs1 = ((cfg->prop_bs1 & 0x0F) - 1) << CAN_BTR_TS1_Pos;
 	bs2 = ((cfg->bs2      & 0x07) - 1) << CAN_BTR_TS2_Pos;
-	swj = ((cfg->swj      & 0x07) - 1) << CAN_BTR_SJW_Pos;
+	sjw = ((cfg->sjw      & 0x07) - 1) << CAN_BTR_SJW_Pos;
 
 	hal_mode =  mode == CAN_NORMAL_MODE   ? CAN_MODE_NORMAL   :
 		    mode == CAN_LOOPBACK_MODE ? CAN_MODE_LOOPBACK :
@@ -250,7 +250,7 @@ int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 	hcan.Init.RFLM = DISABLE;
 	hcan.Init.TXFP = DISABLE;
 	hcan.Init.Mode = hal_mode;
-	hcan.Init.SJW  = swj;
+	hcan.Init.SJW  = sjw;
 	hcan.Init.BS1  = bs1;
 	hcan.Init.BS2  = bs2;
 	hcan.Init.Prescaler = prescaler;
@@ -285,7 +285,7 @@ static int can_stm32_init(struct device *dev)
 	data->mb1.tx_callback = NULL;
 	data->mb2.tx_callback = NULL;
 
-	data->filter_usage = (1ULL << CAN_MAX_NUMBER_OF_FILTES) - 1ULL;
+	data->filter_usage = (1ULL << CAN_MAX_NUMBER_OF_FILTERS) - 1ULL;
 	(void)memset(data->rx_response, 0,
 		     sizeof(void *) * CONFIG_CAN_MAX_FILTER);
 	data->response_type = 0U;
@@ -677,7 +677,7 @@ static inline int can_stm32_set_filter(const struct can_filter *filter,
 			LOG_INF("No free filter bank found");
 			return CAN_NO_FREE_FILTER;
 		}
-	} while (filter_nr < CAN_MAX_NUMBER_OF_FILTES);
+	} while (filter_nr < CAN_MAX_NUMBER_OF_FILTERS);
 
 	/* set the filter init mode */
 	can->FMR |= CAN_FMR_FINIT;
@@ -702,7 +702,7 @@ static inline int can_stm32_set_filter(const struct can_filter *filter,
 		res = can_stm32_shift_arr(device_data->rx_response,
 					  filter_index_tmp + 1, shift_width);
 
-		if (filter_index_tmp >= CAN_MAX_NUMBER_OF_FILTES || res) {
+		if (filter_index_tmp >= CAN_MAX_NUMBER_OF_FILTERS || res) {
 			LOG_INF("No space for a new filter!");
 			filter_nr = CAN_NO_FREE_FILTER;
 			goto done;
@@ -715,7 +715,7 @@ static inline int can_stm32_set_filter(const struct can_filter *filter,
 	} else {
 		filter_index_tmp = can_calc_filter_index(filter_nr, can->FM1R,
 							 can->FS1R);
-		if (filter_index_tmp >= CAN_MAX_NUMBER_OF_FILTES) {
+		if (filter_index_tmp >= CAN_MAX_NUMBER_OF_FILTERS) {
 			filter_nr = CAN_NO_FREE_FILTER;
 			goto done;
 		}
@@ -793,7 +793,7 @@ void can_stm32_detach(struct device *dev, int filter_nr)
 	enum can_filter_type type;
 	u32_t reset_mask;
 
-	__ASSERT_NO_MSG(filter_nr >= 0 && filter_nr < CAN_MAX_NUMBER_OF_FILTES);
+	__ASSERT_NO_MSG(filter_nr >= 0 && filter_nr < CAN_MAX_NUMBER_OF_FILTERS);
 
 	k_mutex_lock(&data->set_filter_mutex, K_FOREVER);
 
@@ -848,7 +848,7 @@ static void config_can_1_irq(CAN_TypeDef *can);
 static const struct can_stm32_config can_stm32_cfg_1 = {
 	.can = (CAN_TypeDef *)DT_CAN_1_BASE_ADDRESS,
 	.bus_speed = DT_CAN_1_BUS_SPEED,
-	.swj = DT_CAN_1_SJW,
+	.sjw = DT_CAN_1_SJW,
 	.prop_bs1 = DT_CAN_1_PROP_SEG_PHASE_SEG1,
 	.bs2 = DT_CAN_1_PHASE_SEG2,
 	.pclken = {

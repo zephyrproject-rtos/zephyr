@@ -17,7 +17,7 @@
 #define BIT_SEG_LENGTH(cfg) ((cfg)->prop_bs1 + (cfg)->bs2 + 1)
 
 #define CAN_NUMBER_OF_FILTER_BANKS (14)
-#define CAN_MAX_NUMBER_OF_FILTES (CAN_NUMBER_OF_FILTER_BANKS * 4)
+#define CAN_MAX_NUMBER_OF_FILTERS (CAN_NUMBER_OF_FILTER_BANKS * 4)
 
 #define CAN_FIRX_STD_IDE_POS   (3U)
 #define CAN_FIRX_STD_RTR_POS   (4U)
