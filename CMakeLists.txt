@@ -489,7 +489,6 @@ endfunction()
 # e.g. subsys/.
 add_subdirectory(arch)
 add_subdirectory(lib)
-add_subdirectory(misc)
 # We use include instead of add_subdirectory to avoid creating a new directory scope.
 # This is because source file properties are directory scoped, including the GENERATED
 # property which is set implicitly for custom command outputs
