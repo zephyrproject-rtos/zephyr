@@ -7,6 +7,20 @@
 #ifndef __TEST_CERTS_H__
 #define __TEST_CERTS_H__
 
+#if defined(CONFIG_NET_SOCKETS_OFFLOAD)
+/* By default only certificates in DER format are supported. If you want to use
+ * certificate in PEM format, you can enable support for it in Kconfig.
+ */
+
+#if defined(CONFIG_TLS_CREDENTIAL_FILENAMES)
+static const unsigned char ca_certificate[] = "ca_cert.der";
+#else
+static const unsigned char ca_certificate[] = {
+#include "ca_cert.der.inc"
+};
+#endif
+
+#else
 #include <mbedtls/ssl_ciphersuites.h>
 
 #if defined(MBEDTLS_X509_CRT_PARSE_C)
@@ -108,5 +122,7 @@ const unsigned char client_psk[] = {
 
 const char client_psk_id[] = "Client_identity";
 #endif
+
+#endif /* CONFIG_NET_SOCKETS_OFFLOAD */
 
 #endif
