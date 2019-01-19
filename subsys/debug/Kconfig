@@ -256,3 +256,7 @@ config TRACING_CPU_STATS_INTERVAL
 	  Time period of displaying information about CPU usage.
 
 endmenu
+
+
+
+source "subsys/debug/Kconfig.segger"

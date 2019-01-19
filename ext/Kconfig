@@ -20,6 +20,4 @@ source "ext/lib/ipc/open-amp/Kconfig"
 
 source "ext/lib/mgmt/Kconfig"
 
-source "ext/debug/Kconfig"
-
 endmenu
