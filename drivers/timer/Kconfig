@@ -40,32 +40,6 @@ config HPET_TIMER_IRQ_PRIORITY
 	help
 	  This option specifies the IRQ priority used by the HPET timer.
 
-choice
-prompt "HPET Interrupt Trigger Condition"
-default HPET_TIMER_FALLING_EDGE
-
-config HPET_TIMER_FALLING_EDGE
-	bool "Falling Edge"
-	help
-	  This option signifies that the HPET timer uses falling edge interrupts.
-
-config HPET_TIMER_RISING_EDGE
-	bool "Rising Edge"
-	help
-	  This option signifies that the HPET timer uses rising edge interrupts.
-
-config HPET_TIMER_LEVEL_HIGH
-	bool "Level High"
-	help
-	  This option signifies that the HPET timer uses level high interrupts.
-
-config HPET_TIMER_LEVEL_LOW
-	bool "Level Low"
-	help
-	  This option signifies that the HPET timer uses level low interrupts.
-
-endchoice
-
 endif #HPET_TIMER
 
 menuconfig LOAPIC_TIMER
