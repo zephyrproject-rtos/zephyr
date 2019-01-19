@@ -41,7 +41,7 @@ static bool connected;
 #define APP_PSK_TAG 2
 
 static sec_tag_t m_sec_tags[] = {
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(MBEDTLS_X509_CRT_PARSE_C) || defined(CONFIG_NET_SOCKETS_OFFLOAD)
 		APP_CA_CERT_TAG,
 #endif
 #if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
@@ -53,7 +53,7 @@ static int tls_init(void)
 {
 	int err = -EINVAL;
 
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(MBEDTLS_X509_CRT_PARSE_C) || defined(CONFIG_NET_SOCKETS_OFFLOAD)
 	err = tls_credential_add(APP_CA_CERT_TAG, TLS_CREDENTIAL_CA_CERTIFICATE,
 				 ca_certificate, sizeof(ca_certificate));
 	if (err < 0) {
@@ -282,7 +282,7 @@ static void client_init(struct mqtt_client *client)
 	tls_config->cipher_list = NULL;
 	tls_config->sec_tag_list = m_sec_tags;
 	tls_config->sec_tag_count = ARRAY_SIZE(m_sec_tags);
-#if defined(MBEDTLS_X509_CRT_PARSE_C)
+#if defined(MBEDTLS_X509_CRT_PARSE_C) || defined(CONFIG_NET_SOCKETS_OFFLOAD)
 	tls_config->hostname = TLS_SNI_HOSTNAME;
 #else
 	tls_config->hostname = NULL;
