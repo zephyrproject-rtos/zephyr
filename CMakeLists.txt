@@ -102,7 +102,7 @@ elseif(CONFIG_SPEED_OPTIMIZATIONS)
 elseif(CONFIG_SIZE_OPTIMIZATIONS)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default
 else()
-  assert(0 "Unreachable code. Expected optimization level to have been chosen. See misc/Kconfig.")
+  assert(0 "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
 endif()
 
 # Dialects of C++, corresponding to the multiple published ISO standards.
@@ -124,7 +124,7 @@ elseif(CONFIG_STD_CPP17)
 elseif(CONFIG_STD_CPP2A)
   set(STD_CPP_DIALECT ${DIALECT_STD_CPP2A})
 else()
-  assert(0 "Unreachable code. Expected C++ standard to have been chosen. See misc/Kconfig.")
+  assert(0 "Unreachable code. Expected C++ standard to have been chosen. See Kconfig.zephyr.")
 endif()
 
 zephyr_compile_options(
