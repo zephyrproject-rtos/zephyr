@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2016 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "OS Support Library"
+
+config JSON_LIBRARY
+	bool "Build JSON library"
+	help
+	  Build a minimal JSON parsing/encoding library. Used by sample
+	  applications such as the NATS client.
+
+config RING_BUFFER
+	bool "Enable ring buffers"
+	help
+	  Enable usage of ring buffers. This is similar to kernel FIFOs but ring
+	  buffers manage their own buffer memory and can store arbitrary data.
+	  For optimal performance, use buffer sizes that are a power of 2.
+
+config BASE64
+	bool "Enable base64 encoding and decoding"
+	help
+	  Enable base64 encoding and decoding functionality
+
+endmenu

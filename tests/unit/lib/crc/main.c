@@ -6,10 +6,10 @@
 
 #include <ztest.h>
 
-#include <lib/crc/crc32_sw.c>
-#include <lib/crc/crc16_sw.c>
-#include <lib/crc/crc8_sw.c>
-#include <lib/crc/crc7_sw.c>
+#include <lib/os/crc32_sw.c>
+#include <lib/os/crc16_sw.c>
+#include <lib/os/crc8_sw.c>
+#include <lib/os/crc7_sw.c>
 
 void test_crc32_ieee(void)
 {
