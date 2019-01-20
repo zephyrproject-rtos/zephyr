@@ -45,6 +45,7 @@ extensions = [
     'sphinx.ext.extlinks',
     'sphinx.ext.autodoc',
     'zephyr.application',
+    'zephyr.html_redirects',
     'only.eager_only'
 ]
 
@@ -260,6 +261,13 @@ sourcelink_suffix = '.txt'
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'zephyrdoc'
 
+
+# Custom added feature to allow redirecting old URLs
+#
+# list of tuples (old_url, new_url) for pages to redirect
+# (URLs should be relative to document root, only)
+html_redirect_pages = [('contribute/contribute_guidelines', 'contribute/index'),]
+
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
@@ -369,6 +377,7 @@ html_context = {
                  ("1.9.2", "/1.9.0/"),
                 )
 }
+
 
 extlinks = {'jira': ('https://jira.zephyrproject.org/browse/%s', ''),
             'github': ('https://github.com/zephyrproject-rtos/zephyr/issues/%s', '')
