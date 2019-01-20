@@ -18,6 +18,8 @@
 		gpio-3= &gpio3;
 		gpio-4= &gpio4;
 		gpio-5= &gpio5;
+		i2c-1 = &i2c1;
+		i2c-4 = &i2c4;
 		uart-1 = &uart1;
 		led0 = &green_led;
 		sw0 = &user_button;
@@ -67,6 +69,14 @@ arduino_serial: &uart2 {};
 		reg = <0>;
 		status = "ok";
 	};
+};
+
+&i2c1 {
+	status = "ok";
+};
+
+&i2c4 {
+	status = "ok";
 };
 
 &uart1 {
