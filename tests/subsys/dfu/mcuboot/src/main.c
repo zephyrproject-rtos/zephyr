@@ -110,6 +110,9 @@ void test_write_confirm(void)
 
 	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
+	zassert(boot_erase_img_bank(FLASH_AREA_IMAGE_0_OFFSET) == 0,
+		"pass", "fail");
+
 	ret = flash_read(flash_dev, FLASH_AREA_IMAGE_0_OFFSET +
 			 FLASH_AREA_IMAGE_0_SIZE - sizeof(img_magic), &readout,
 			 sizeof(img_magic));
