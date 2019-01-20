@@ -18,6 +18,8 @@ config NUM_IRQS
 config TEXT_SECTION_OFFSET
 	default 0x2000 if BOOT_FLEXSPI_NOR || BOOT_SEMC_NOR
 
+config INIT_ENET_PLL
+
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 
 endif # SOC_SERIES_IMX_RT
