@@ -26,7 +26,7 @@ void test_bank_erase(void)
 	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	for (offs = FLASH_AREA_IMAGE_1_OFFSET;
-	     offs <= FLASH_AREA_IMAGE_1_OFFSET + FLASH_AREA_IMAGE_1_SIZE;
+	     offs < FLASH_AREA_IMAGE_1_OFFSET + FLASH_AREA_IMAGE_1_SIZE;
 	     offs += sizeof(temp)) {
 		ret = flash_read(flash_dev, offs, &temp, sizeof(temp));
 		zassert_true(ret == 0, "Reading from flash");
@@ -52,7 +52,7 @@ void test_bank_erase(void)
 	}
 
 	for (offs = FLASH_AREA_IMAGE_1_OFFSET;
-	     offs <= FLASH_AREA_IMAGE_1_OFFSET + FLASH_AREA_IMAGE_1_SIZE;
+	     offs < FLASH_AREA_IMAGE_1_OFFSET + FLASH_AREA_IMAGE_1_SIZE;
 	     offs += sizeof(temp)) {
 		ret = flash_read(flash_dev, offs, &temp, sizeof(temp));
 		zassert_true(ret == 0, "Reading from flash");
