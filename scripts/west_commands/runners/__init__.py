@@ -14,6 +14,7 @@ from runners import arc
 from runners import bossac
 from runners import dfu
 from runners import esp32
+from runners import hifive1
 from runners import jlink
 from runners import nios2
 from runners import nrfjprog
