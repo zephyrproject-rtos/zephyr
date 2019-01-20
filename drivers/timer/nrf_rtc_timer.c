@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016-2017 Nordic Semiconductor ASA
  * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2019 Peter Bigot Consulting, LLC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,12 +16,26 @@
 
 #define RTC NRF_RTC1
 
-#define COUNTER_MAX 0x00ffffff
+/*
+ * Compare values must be set to at least 2 greater than the current
+ * counter value to ensure that the compare fires.  Compare values are
+ * generally determined by reading the counter, then performing some
+ * calculations to convert a relative delay to an absolute delay.
+ * Assume that the counter will not increment more than twice during
+ * these calculations, allowing for a final check that can replace a
+ * too-low compare with a value that will guarantee fire.
+ */
+#define MIN_DELAY 4
+
 #define CYC_PER_TICK (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC	\
 		      / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MAX_TICKS ((COUNTER_MAX - CYC_PER_TICK) / CYC_PER_TICK)
+#if CYC_PER_TICK < MIN_DELAY
+#error Cycles per tick is too small
+#endif
 
-#define MIN_DELAY 32
+#define COUNTER_MAX 0x00ffffffU
+#define MAX_TICKS ((COUNTER_MAX - MIN_DELAY) / CYC_PER_TICK)
+#define MAX_DELAY (MAX_TICKS * CYC_PER_TICK)
 
 static u32_t last_count;
 
@@ -115,20 +130,52 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	ticks = (ticks == K_FOREVER) ? MAX_TICKS : ticks;
 	ticks = max(min(ticks - 1, (s32_t)MAX_TICKS), 0);
 
+	/*
+	 * Get the requested delay in tick-aligned cycles.  Increase
+	 * by one tick to round up so we don't timeout early due to
+	 * cycles elapsed since the last tick.  Cap at the maximum
+	 * tick-aligned delta.
+	 */
+	u32_t cyc = min((1 + ticks) * CYC_PER_TICK, MAX_DELAY);
+
 	u32_t key = irq_lock();
-	u32_t cyc, t = counter();
+	u32_t d = counter_sub(counter(), last_count);
 
-	/* Round up to next tick boundary */
-	cyc = ticks * CYC_PER_TICK + counter_sub(t, last_count);
-	cyc += (CYC_PER_TICK - 1);
-	cyc = (cyc / CYC_PER_TICK) * CYC_PER_TICK;
-	cyc += last_count;
-
-	if (counter_sub(cyc, t) < MIN_DELAY) {
-		cyc += CYC_PER_TICK;
+	/*
+	 * We've already accounted for anything less than a full tick,
+	 * and assumed we meet the minimum delay for the tick.  If
+	 * that's not true, we have to adjust, which may involve a
+	 * rare and expensive integer division.
+	 */
+	if (d > (CYC_PER_TICK - MIN_DELAY)) {
+		if (d >= CYC_PER_TICK) {
+			/*
+			 * We're late by at least one tick.  Adjust
+			 * the compare offset for the missed ones, and
+			 * reduce d to be the portion since the last
+			 * (unseen) tick.
+			 */
+			u32_t missed_ticks = d / CYC_PER_TICK;
+			u32_t missed_cycles = missed_ticks * CYC_PER_TICK;
+			cyc += missed_cycles;
+			d -= missed_cycles;
+		}
+		if (d > (CYC_PER_TICK - MIN_DELAY)) {
+			/*
+			 * We're (now) within the tick, but too close
+			 * to meet the minimum delay required to
+			 * guarantee compare firing.  Step up to the
+			 * next tick.
+			 */
+			cyc += CYC_PER_TICK;
+		}
+		if (cyc > MAX_DELAY) {
+			/* Don't adjust beyond the counter range. */
+			cyc = MAX_DELAY;
+		}
 	}
+	set_comparator(last_count + cyc);
 
-	set_comparator(cyc);
 	irq_unlock(key);
 #endif
 }
