@@ -46,7 +46,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'zephyr.application',
     'zephyr.html_redirects',
-    'only.eager_only'
+    'only.eager_only',
+    'zephyr.link-roles'
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
