@@ -106,6 +106,10 @@ else()
     list(APPEND TOOLCHAIN_C_FLAGS
       -mcpu=${GCC_M_CPU}
       )
+  elseif("${ARCH}" STREQUAL "riscv32")
+    list(APPEND TOOLCHAIN_C_FLAGS
+      -march=rv32imac -mabi=ilp32 -mcmodel=medlow
+      )
   endif()
 
   if(NOT no_libgcc)
