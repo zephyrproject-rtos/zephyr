@@ -40,7 +40,8 @@ const clock_usb_pll_config_t usb1PllConfig = {
 const clock_enet_pll_config_t ethPllConfig = {
 #ifdef CONFIG_SOC_MIMXRT1021
 	.enableClkOutput500M = true,
-#else
+#endif
+#ifdef CONFIG_ETH_MCUX
 	.enableClkOutput = true,
 #endif
 	.enableClkOutput25M = false,
