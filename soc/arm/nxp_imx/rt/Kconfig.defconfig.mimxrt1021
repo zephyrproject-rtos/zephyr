@@ -58,4 +58,11 @@ config ENTROPY_MCUX_TRNG
 
 endif # ENTROPY_GENERATOR
 
+if NET_L2_ETHERNET
+
+config ETH_MCUX
+	def_bool y
+
+endif # NET_L2_ETHERNET
+
 endif # SOC_MIMXRT1021
