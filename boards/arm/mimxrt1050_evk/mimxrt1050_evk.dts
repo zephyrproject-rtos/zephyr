@@ -101,6 +101,13 @@ arduino_serial: &uart3 {};
 		int1-gpios = <&gpio1 10 0>;
 		int2-gpios = <&gpio1 11 0>;
 	};
+
+	ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		label = "FT5336";
+		int-gpios = <&gpio1 11 0>;
+	};
 };
 
 &uart1 {
