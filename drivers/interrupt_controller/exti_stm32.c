@@ -39,6 +39,8 @@
 #define EXTI_LINES 23
 #elif defined(CONFIG_SOC_SERIES_STM32F7X)
 #define EXTI_LINES 24
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+#define EXTI_LINES 34
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
 #define EXTI_LINES 30
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
@@ -72,15 +74,20 @@ int stm32_exti_enable(int line)
 	}
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-    defined(CONFIG_SOC_SERIES_STM32L0X)
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X)
 	if (line >= 4 && line <= 15) {
 		irqnum = EXTI4_15_IRQn;
-	}	else if (line >= 2  && line <= 3) {
+	} else if (line >= 2  && line <= 3) {
 		irqnum = EXTI2_3_IRQn;
-	}	else if (line >= 0  && line <= 1) {
+	} else if (line >= 0  && line <= 1) {
 		irqnum = EXTI0_1_IRQn;
+#if defined(CONFIG_SOC_SERIES_STM32G0X)
+	} else if (line == 16) {
+		irqnum = PVD_IRQn;
+#endif
 	} else {
-		/* > 15 are not mapped on an IRQ */
+		/* > 15/16 are not mapped on an IRQ */
 		/*
 		 * On STM32F0X, this function also support enabling EXTI
 		 * lines that are not connected to an IRQ. This might be used
@@ -171,9 +178,14 @@ void stm32_exti_disable(int line)
 static inline int stm32_exti_is_pending(int line)
 {
 	if (line < 32) {
+#ifdef CONFIG_SOC_SERIES_STM32G0X
+		return LL_EXTI_ReadRisingFlag_0_31(1 << line)
+				|| LL_EXTI_ReadFallingFlag_0_31(1 << line);
+#else
 		return LL_EXTI_IsActiveFlag_0_31(1 << line);
+#endif
 	} else {
-#if EXTI_LINES > 32
+#if EXTI_LINES > 32 && !defined(CONFIG_SOC_SERIES_STM32G0X)
 		return LL_EXTI_IsActiveFlag_32_63(1 << (line - 32));
 #else
 		__ASSERT_NO_MSG(line);
@@ -190,9 +202,14 @@ static inline int stm32_exti_is_pending(int line)
 static inline void stm32_exti_clear_pending(int line)
 {
 	if (line < 32) {
+#ifdef CONFIG_SOC_SERIES_STM32G0X
+		LL_EXTI_ClearRisingFlag_0_31(1 << line);
+		LL_EXTI_ClearFallingFlag_0_31(1 << line);
+#else
 		LL_EXTI_ClearFlag_0_31(1 << line);
+#endif
 	} else {
-#if EXTI_LINES > 32
+#if EXTI_LINES > 32 && !defined(CONFIG_SOC_SERIES_STM32G0X)
 		LL_EXTI_ClearFlag_32_63(1 << (line - 32));
 #else
 		__ASSERT_NO_MSG(line);
@@ -206,7 +223,7 @@ void stm32_exti_trigger(int line, int trigger)
 		if (line < 32) {
 			LL_EXTI_EnableRisingTrig_0_31(1 << line);
 		} else {
-#if EXTI_LINES > 32
+#if EXTI_LINES > 32 && !defined(CONFIG_SOC_SERIES_STM32G0X)
 			LL_EXTI_EnableRisingTrig_32_63(1 << (line - 32));
 #else
 			__ASSERT_NO_MSG(line);
@@ -218,7 +235,7 @@ void stm32_exti_trigger(int line, int trigger)
 		if (line < 32) {
 			LL_EXTI_EnableFallingTrig_0_31(1 << line);
 		} else {
-#if EXTI_LINES > 32
+#if EXTI_LINES > 32  && !defined(CONFIG_SOC_SERIES_STM32G0X)
 			LL_EXTI_EnableFallingTrig_32_63(1 << (line - 32));
 #else
 			__ASSERT_NO_MSG(line);
@@ -259,7 +276,9 @@ static void __stm32_exti_isr(int min, int max, void *arg)
 	}
 }
 
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32L0X)
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X)
 static inline void __stm32_exti_isr_0_1(void *arg)
 {
 	__stm32_exti_isr(0, 2, arg);
@@ -310,19 +329,25 @@ static inline void __stm32_exti_isr_15_10(void *arg)
 {
 	__stm32_exti_isr(10, 16, arg);
 }
-
+#endif /* CONFIG_SOC_SERIES_STM32{F0X,L0X,G0X} */
 #if defined(CONFIG_SOC_SERIES_STM32F4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F7X) || \
-	defined(CONFIG_SOC_SERIES_STM32F2X)
+	defined(CONFIG_SOC_SERIES_STM32F2X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X)
 static inline void __stm32_exti_isr_16(void *arg)
 {
 	__stm32_exti_isr(16, 17, arg);
 }
 
+#if defined(CONFIG_SOC_SERIES_STM32F4X) || \
+	defined(CONFIG_SOC_SERIES_STM32F7X) || \
+	defined(CONFIG_SOC_SERIES_STM32F2X)
+
 static inline void __stm32_exti_isr_18(void *arg)
 {
 	__stm32_exti_isr(18, 19, arg);
 }
+
 
 static inline void __stm32_exti_isr_21(void *arg)
 {
@@ -334,13 +359,14 @@ static inline void __stm32_exti_isr_22(void *arg)
 	__stm32_exti_isr(22, 23, arg);
 }
 #endif
+#endif
+
 #ifdef CONFIG_SOC_SERIES_STM32F7X
 static inline void __stm32_exti_isr_23(void *arg)
 {
 	__stm32_exti_isr(23, 24, arg);
 }
 #endif /* CONFIG_SOC_SERIES_STM32F7X */
-#endif /* CONFIG_SOC_SERIES_STM32F0X */
 
 static void __stm32_exti_connect_irqs(struct device *dev);
 
@@ -395,7 +421,8 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 	ARG_UNUSED(dev);
 
 #if defined(CONFIG_SOC_SERIES_STM32F0X) || \
-    defined(CONFIG_SOC_SERIES_STM32L0X)
+	defined(CONFIG_SOC_SERIES_STM32L0X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X)
 	IRQ_CONNECT(EXTI0_1_IRQn,
 		CONFIG_EXTI_STM32_EXTI1_0_IRQ_PRI,
 		__stm32_exti_isr_0_1, DEVICE_GET(exti_stm32),
@@ -408,6 +435,12 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 		CONFIG_EXTI_STM32_EXTI15_4_IRQ_PRI,
 		__stm32_exti_isr_4_15, DEVICE_GET(exti_stm32),
 		0);
+#if defined(CONFIG_SOC_SERIES_STM32G0X)
+	IRQ_CONNECT(PVD_IRQn,
+		CONFIG_EXTI_STM32_PVD_IRQ_PRI,
+		__stm32_exti_isr_16, DEVICE_GET(exti_stm32),
+		0);
+#endif
 #elif defined(CONFIG_SOC_SERIES_STM32F1X) || \
       defined(CONFIG_SOC_SERIES_STM32F2X) || \
       defined(CONFIG_SOC_SERIES_STM32F3X) || \
