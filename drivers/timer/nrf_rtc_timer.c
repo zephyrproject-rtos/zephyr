@@ -39,17 +39,17 @@
 
 static u32_t last_count;
 
-static u32_t counter_sub(u32_t a, u32_t b)
+static inline u32_t counter_sub(u32_t a, u32_t b)
 {
 	return (a - b) & COUNTER_MAX;
 }
 
-static void set_comparator(u32_t cyc)
+static inline void set_comparator(u32_t cyc)
 {
 	nrf_rtc_cc_set(RTC, 0, cyc);
 }
 
-static u32_t counter(void)
+static inline u32_t counter(void)
 {
 	return nrf_rtc_counter_get(RTC);
 }
