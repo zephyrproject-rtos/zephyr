@@ -18,28 +18,6 @@ as described in the :ref:`kernel`.
    not documenting
    .. doxygengroup:: kernel_apis
 
-Threads
-*******
-
-A thread is an independently scheduled series of instructions that implements
-a portion of an application's processing. Threads are used to perform processing
-that is too lengthy or too complex to be performed by an ISR.
-(See :ref:`threads_v2`.)
-
-.. doxygengroup:: thread_apis
-   :project: Zephyr
-
-Workqueues
-**********
-
-A workqueue processes a series of work items by executing the associated
-functions in a dedicated thread. Workqueues are typically used by an ISR
-or high-priority thread to offload non-urgent processing.
-(See :ref:`workqueues_v2`.)
-
-.. doxygengroup:: workqueue_apis
-   :project: Zephyr
-
 Clocks
 ******
 
