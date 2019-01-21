@@ -15,7 +15,7 @@ inherits:
 
 properties:
     compatible:
-        constraint: "st,lis2dh-i2c"
+        constraint: "st,lis2dh"
 
     irq-gpios:
       type: compound
