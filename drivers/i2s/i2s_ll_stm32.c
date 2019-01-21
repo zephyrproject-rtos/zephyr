@@ -109,6 +109,9 @@ static int i2s_stm32_enable_clock(struct device *dev)
 #ifdef CONFIG_I2S_STM32_USE_PLLI2S_ENABLE
 #define PLLI2S_MAX_MS_TIME	1 /* PLLI2S lock time is 300us max */
 static u16_t plli2s_ms_count;
+
+#define _pllr(v) LL_RCC_PLLI2SR_DIV_ ## v
+#define pllr(v) _pllr(v)
 #endif
 
 static int i2s_stm32_set_clock(struct device *dev, u32_t bit_clk_freq)
@@ -127,7 +130,7 @@ static int i2s_stm32_set_clock(struct device *dev, u32_t bit_clk_freq)
 	LL_RCC_PLLI2S_ConfigDomain_I2S(pll_src,
 				       CONFIG_I2S_STM32_PLLI2S_PLLM,
 				       CONFIG_I2S_STM32_PLLI2S_PLLN,
-				       CONFIG_I2S_STM32_PLLI2S_PLLR);
+				       pllr(CONFIG_I2S_STM32_PLLI2S_PLLR));
 	LL_RCC_PLLI2S_Enable();
 
 	/* wait until PLLI2S gets locked */
