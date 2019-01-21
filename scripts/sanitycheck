@@ -159,11 +159,17 @@ Most everyday users will run with no arguments.
 
 """
 
+import os
+
+if os.name == 'nt':
+    print("Running sanitycheck on Windows is not supported yet.")
+    print("https://github.com/zephyrproject-rtos/zephyr/issues/2664")
+    exit(1)
+
 import contextlib
 import string
 import mmap
 import argparse
-import os
 import sys
 import re
 import subprocess
