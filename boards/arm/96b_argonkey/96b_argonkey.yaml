@@ -12,6 +12,8 @@ supported:
   - gpio
   - i2c
   - hts221
+  - lps22hb
+  - lsm6dsl
   - rtc
   - spi
   - vl53l0x
