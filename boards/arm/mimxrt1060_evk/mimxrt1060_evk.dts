@@ -81,6 +81,10 @@ arduino_serial: &uart3 {};
 	};
 };
 
+&i2c1 {
+	status = "ok";
+};
+
 &uart1 {
 	status = "ok";
 	current-speed = <115200>;
