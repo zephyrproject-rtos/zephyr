@@ -62,6 +62,7 @@ boards/arm/nrf52_pca20020/               @tkln
 boards/arm/nrf52810_pca10040/            @carlescufi
 boards/arm/nrf52840_pca10056/            @carlescufi
 boards/arm/nrf52840_pca10059/            @lemrey
+boards/arm/nrf9160_pca10090/             @ioannisg
 boards/arm/nucleo_f401re/                @rsalveti @idlethread
 boards/arm/sam4s_xplained/               @fallrisk
 boards/arm/v2m_beetle/                   @fvincenzo
