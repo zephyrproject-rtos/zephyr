@@ -266,6 +266,14 @@ config MBEDTLS_PEM_CERTIFICATE_FORMAT
 	  By default only DER (binary) format of certificates is supported. Enable
 	  this option to enable support for PEM format.
 
+config MBEDTLS_HAVE_ASM
+	bool "Enable use of assembly code"
+	default y if !ARM
+	help
+	  Enable use of assembly code in mbedTLS. This improves the performances
+	  of asymetric cryptography, however this might have an impact on the
+	  code size.
+
 config MBEDTLS_USER_CONFIG_ENABLE
 	bool "Enable user mbedTLS config file"
 	help
