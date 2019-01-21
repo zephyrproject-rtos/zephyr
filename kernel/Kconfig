@@ -608,7 +608,7 @@ config RETPOLINE
 config STACK_CANARIES
 	bool "Compiler stack canaries"
 	help
-	  This option enables compiler stack canaries support kernel functions.
+	  This option enables compiler stack canaries.
 
 	  If stack canaries are supported by the compiler, it will emit
 	  extra code that inserts a canary value into the stack frame when
@@ -618,8 +618,8 @@ config STACK_CANARIES
 	  Enabling this option can result in a significant increase
 	  in footprint and an associated decrease in performance.
 
-	  If stack canaries are not supported by the compiler, enabling this
-	  option has no effect.
+	  If stack canaries are not supported by the compiler an error
+	  will occur at build time.
 
 config EXECUTE_XOR_WRITE
 	bool "Enable W^X for memory partitions"
