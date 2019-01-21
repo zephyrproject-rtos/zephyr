@@ -25,7 +25,7 @@ include: fitness wearables, smart watches, and IoT wireless gateways.
 .. toctree::
    :maxdepth: 2
 
-   threads/threads.rst
+   threads/index.rst
    timing/timing.rst
    memory/memory.rst
    synchronization/synchronization.rst

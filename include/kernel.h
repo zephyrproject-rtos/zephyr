@@ -2433,8 +2433,7 @@ __syscall int k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout);
 struct k_work;
 
 /**
- * @defgroup workqueue_apis Workqueue Thread APIs
- * @ingroup kernel_apis
+ * @addtogroup thread_apis
  * @{
  */
 
