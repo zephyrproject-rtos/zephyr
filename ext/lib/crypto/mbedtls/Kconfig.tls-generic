@@ -175,6 +175,11 @@ config MBEDTLS_CIPHER_AES_ENABLED
 	bool "Enable the AES block cipher"
 	default y
 
+config MBEDTLS_AES_ROM_TABLES
+	depends on MBEDTLS_CIPHER_AES_ENABLED
+	bool "Use precomputed AES tables stored in ROM."
+	default y
+
 config MBEDTLS_CIPHER_CAMELLIA_ENABLED
 	bool "Enable the Camellia block cipher"
 
