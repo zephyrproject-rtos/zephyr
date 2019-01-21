@@ -14,7 +14,7 @@
 LOG_MODULE_REGISTER(lis2dh);
 #include "lis2dh.h"
 
-#if defined(CONFIG_LIS2DH_BUS_SPI)
+#if defined(DT_ST_LIS2DH_0_BUS_SPI)
 int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
 		      void *data, size_t length)
 {
@@ -366,6 +366,6 @@ int lis2dh_init(struct device *dev)
 
 static struct lis2dh_data lis2dh_driver;
 
-DEVICE_AND_API_INIT(lis2dh, DT_LIS2DH_DEV_NAME, lis2dh_init, &lis2dh_driver,
+DEVICE_AND_API_INIT(lis2dh, DT_ST_LIS2DH_0_LABEL, lis2dh_init, &lis2dh_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &lis2dh_driver_api);

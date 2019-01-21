@@ -16,7 +16,7 @@ inherits:
 
 properties:
     compatible:
-        constraint: "st,lis2dh-spi"
+        constraint: "st,lis2dh"
 
     irq-gpios:
       type: compound
