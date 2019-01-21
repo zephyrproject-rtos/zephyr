@@ -84,12 +84,15 @@ static void bound_states_transition_type_reassignment(u8_t type)
 	}
 }
 
-static void tt_values_calculator(struct transition *transition)
+static bool tt_values_calculator(struct transition *transition)
 {
 	u8_t steps_multiplier, resolution;
 
 	resolution = (transition->tt >> 6);
 	steps_multiplier = (transition->tt & 0x3F);
+	if (steps_multiplier == 0) {
+		return false;
+	}
 
 	switch (resolution) {
 	case 0:	/* 100ms */
@@ -113,6 +116,7 @@ static void tt_values_calculator(struct transition *transition)
 	}
 
 	ptr_counter = &transition->counter;
+	return true;
 }
 
 void onoff_tt_values(struct generic_onoff_state *state, u8_t tt, u8_t delay)
@@ -122,9 +126,7 @@ void onoff_tt_values(struct generic_onoff_state *state, u8_t tt, u8_t delay)
 	state->transition->tt = tt;
 	state->transition->delay = delay;
 
-	if (tt != 0) {
-		tt_values_calculator(state->transition);
-	} else {
+	if (!tt_values_calculator(state->transition)) {
 		return;
 	}
 
@@ -147,9 +149,7 @@ void level_tt_values(struct generic_level_state *state, u8_t tt, u8_t delay)
 	state->transition->tt = tt;
 	state->transition->delay = delay;
 
-	if (tt != 0) {
-		tt_values_calculator(state->transition);
-	} else {
+	if (!tt_values_calculator(state->transition)) {
 		return;
 	}
 
@@ -168,9 +168,7 @@ void light_lightness_actual_tt_values(struct light_lightness_state *state,
 	state->transition->tt = tt;
 	state->transition->delay = delay;
 
-	if (tt != 0) {
-		tt_values_calculator(state->transition);
-	} else {
+	if (!tt_values_calculator(state->transition)) {
 		return;
 	}
 
@@ -190,9 +188,7 @@ void light_lightness_linear_tt_values(struct light_lightness_state *state,
 	state->transition->tt = tt;
 	state->transition->delay = delay;
 
-	if (tt != 0) {
-		tt_values_calculator(state->transition);
-	} else {
+	if (!tt_values_calculator(state->transition)) {
 		return;
 	}
 
@@ -211,9 +207,7 @@ void light_ctl_tt_values(struct light_ctl_state *state, u8_t tt, u8_t delay)
 	state->transition->tt = tt;
 	state->transition->delay = delay;
 
-	if (tt != 0) {
-		tt_values_calculator(state->transition);
-	} else {
+	if (!tt_values_calculator(state->transition)) {
 		return;
 	}
 
@@ -241,9 +235,7 @@ void light_ctl_temp_tt_values(struct light_ctl_state *state,
 	state->transition->tt = tt;
 	state->transition->delay = delay;
 
-	if (tt != 0) {
-		tt_values_calculator(state->transition);
-	} else {
+	if (!tt_values_calculator(state->transition)) {
 		return;
 	}
 
