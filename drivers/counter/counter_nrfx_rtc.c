@@ -5,7 +5,7 @@
  */
 #include <counter.h>
 #include <clock_control.h>
-#include <drivers/clock_control/nrf5_clock_control.h>
+#include <drivers/clock_control/nrf_clock_control.h>
 #include <nrfx_rtc.h>
 
 #define LOG_LEVEL CONFIG_COUNTER_LOG_LEVEL
@@ -184,12 +184,12 @@ static int init_rtc(struct device *dev,
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
 	const nrfx_rtc_t *rtc = &nrfx_config->rtc;
 
-	clock = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_K32SRC_DRV_NAME);
+	clock = device_get_binding(CONFIG_CLOCK_CONTROL_NRF_K32SRC_DRV_NAME);
 	if (!clock) {
 		return -ENODEV;
 	}
 
-	clock_control_on(clock, (void *)CLOCK_CONTROL_NRF5_K32SRC);
+	clock_control_on(clock, (void *)CLOCK_CONTROL_NRF_K32SRC);
 
 	nrfx_err_t result = nrfx_rtc_init(rtc, config, handler);
 
@@ -277,4 +277,3 @@ COUNTER_NRFX_RTC_DEVICE(1);
 #ifdef CONFIG_COUNTER_RTC2
 COUNTER_NRFX_RTC_DEVICE(2);
 #endif
-
