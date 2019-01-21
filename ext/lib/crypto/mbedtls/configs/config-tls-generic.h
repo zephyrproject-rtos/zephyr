@@ -118,6 +118,10 @@
 #define MBEDTLS_AES_C
 #endif
 
+#if defined(CONFIG_MBEDTLS_AES_ROM_TABLES)
+#define MBEDTLS_AES_ROM_TABLES
+#endif
+
 #if defined(CONFIG_MBEDTLS_CIPHER_CAMELLIA_ENABLED)
 #define MBEDTLS_CAMELLIA_C
 #endif
