@@ -3,6 +3,7 @@ zephyr_include_directories_ifdef(CONFIG_USE_SEGGER_RTT rtt)
 zephyr_sources_ifdef(CONFIG_USE_SEGGER_RTT
 	rtt/SEGGER_RTT.c
 	rtt/SEGGER_RTT_zephyr.c
+	rtt/SEGGER_RTT_printf.c
 	)
 zephyr_include_directories_ifdef(CONFIG_SEGGER_SYSTEMVIEW systemview)
 zephyr_sources_ifdef(CONFIG_SEGGER_SYSTEMVIEW systemview/SEGGER_SYSVIEW.c)
