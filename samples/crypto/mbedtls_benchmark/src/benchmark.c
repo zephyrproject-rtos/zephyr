@@ -159,7 +159,7 @@ void mbedtls_set_alarm(int seconds)
 do {                                                                  \
 	unsigned long ii, jj;                                         \
 	u32_t tsc;                                                    \
-	u32_t delta;                                                  \
+	u64_t delta;                                                  \
 	int ret = 0;                                                  \
 								      \
 	mbedtls_printf(HEADER_FORMAT, TITLE);                         \
@@ -179,7 +179,7 @@ do {                                                                  \
 	}                                                             \
 								      \
 	delta = k_cycle_get_32() - tsc;                               \
-	delta = SYS_CLOCK_HW_CYCLES_TO_NS(delta);                     \
+	delta = SYS_CLOCK_HW_CYCLES_TO_NS64(delta);                   \
 								      \
 	mbedtls_printf("%9lu KiB/s,  %9lu ns/byte\n",                 \
 		       ii * BUFSIZE / 1024,                           \
