@@ -202,6 +202,8 @@ const int gpio_stm32_enable_int(int port, int pin)
 #if defined(CONFIG_SOC_SERIES_STM32L0X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X)
 	line = ((pin % 4 * 4) << 16) | (pin / 4);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	line = ((pin & 0x3) << (16 + 3)) | (pin >> 2);
 #else
 	line = (0xF << ((pin % 4 * 4) + 16)) | (pin / 4);
 #endif
@@ -219,6 +221,8 @@ const int gpio_stm32_enable_int(int port, int pin)
 
 #ifdef CONFIG_SOC_SERIES_STM32F1X
 	LL_GPIO_AF_SetEXTISource(port, line);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	LL_EXTI_SetEXTISource(port, line);
 #else
 	LL_SYSCFG_SetEXTISource(port, line);
 #endif
