@@ -146,59 +146,29 @@ int gpio_stm32_configure(u32_t *base_addr, int pin, int conf, int altf)
 		}
 	}
 #else
-	u32_t temp = conf & (STM32_MODER_MASK << STM32_MODER_SHIFT);
+	unsigned int mode, otype, ospeed, pupd;
 
-	if (temp == STM32_MODER_OUTPUT_MODE) {
-		LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_OUTPUT);
+	mode = conf & (STM32_MODER_MASK << STM32_MODER_SHIFT);
+	otype = conf & (STM32_OTYPER_MASK << STM32_OTYPER_SHIFT);
+	ospeed = conf & (STM32_OSPEEDR_MASK << STM32_OSPEEDR_SHIFT);
+	pupd = conf & (STM32_PUPDR_MASK << STM32_PUPDR_SHIFT);
 
-		temp = conf & (STM32_OTYPER_MASK << STM32_OTYPER_SHIFT);
+	LL_GPIO_SetPinMode(gpio, pin_ll, mode >> STM32_MODER_SHIFT);
 
-		if (temp == STM32_OTYPER_PUSH_PULL) {
-			LL_GPIO_SetPinOutputType(gpio, pin_ll, LL_GPIO_OUTPUT_PUSHPULL);
-		} else {
-			LL_GPIO_SetPinOutputType(gpio, pin_ll, LL_GPIO_OUTPUT_OPENDRAIN);
-		}
-
-		temp = conf & (STM32_OSPEEDR_MASK << STM32_OSPEEDR_SHIFT);
-
-		if (temp == STM32_OSPEEDR_LOW_SPEED) {
-			LL_GPIO_SetPinSpeed(gpio, pin_ll, LL_GPIO_SPEED_FREQ_LOW);
-		} else if (temp == STM32_OSPEEDR_MEDIUM_SPEED) {
-			LL_GPIO_SetPinSpeed(gpio, pin_ll, LL_GPIO_SPEED_FREQ_MEDIUM);
-		} else if (temp == STM32_OSPEEDR_HIGH_SPEED) {
-			LL_GPIO_SetPinSpeed(gpio, pin_ll, LL_GPIO_SPEED_FREQ_HIGH);
-#if defined(CONFIG_SOC_SERIES_STM32F2X) || defined(CONFIG_SOC_SERIES_STM32F4X) || \
-	defined(CONFIG_SOC_SERIES_STM32F7X) || defined(CONFIG_SOC_SERIES_STM32L0X) || \
-	defined(CONFIG_SOC_SERIES_STM32L4X)
-		} else if (temp == STM32_OSPEEDR_VERY_HIGH_SPEED) {
-			LL_GPIO_SetPinSpeed(gpio, pin_ll, LL_GPIO_SPEED_FREQ_VERY_HIGH);
-#endif
-		} else {
-			return -EINVAL;
-		}
-	} else if (temp == STM32_MODER_INPUT_MODE) {
-		LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_INPUT);
-
-		temp = conf & (STM32_PUPDR_MASK << STM32_PUPDR_SHIFT);
-
-		if (temp == STM32_PUPDR_PULL_UP) {
-			LL_GPIO_SetPinPull(gpio, pin_ll, LL_GPIO_PULL_UP);
-		} else if (temp == STM32_PUPDR_PULL_DOWN) {
-			LL_GPIO_SetPinPull(gpio, pin_ll, LL_GPIO_PULL_DOWN);
-		} else {
-			LL_GPIO_SetPinPull(gpio, pin_ll, LL_GPIO_PULL_NO);
-		}
-	} else if (temp == STM32_MODER_ANALOG_MODE) {
-		LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_ANALOG);
-	} else {
-		LL_GPIO_SetPinMode(gpio, pin_ll, LL_GPIO_MODE_ALTERNATE);
-
+	if (STM32_MODER_ALT_MODE == mode) {
 		if (pin < 8) {
 			LL_GPIO_SetAFPin_0_7(gpio, pin_ll, altf);
 		} else {
 			LL_GPIO_SetAFPin_8_15(gpio, pin_ll, altf);
 		}
 	}
+
+	LL_GPIO_SetPinOutputType(gpio, pin_ll, otype >> STM32_OTYPER_SHIFT);
+
+	LL_GPIO_SetPinSpeed(gpio, pin_ll, ospeed >> STM32_OSPEEDR_SHIFT);
+
+	LL_GPIO_SetPinPull(gpio, pin_ll, pupd >> STM32_PUPDR_SHIFT);
+
 #endif /* CONFIG_SOC_SERIES_STM32F1X */
 
 	return 0;
