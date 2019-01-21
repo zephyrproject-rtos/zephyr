@@ -75,6 +75,13 @@ arduino_i2c: &i2c1 {};
 
 &i2c1 {
 	status = "okay";
+
+	ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		label = "FT5336";
+		int-gpios = <&gpio1 11 0>;
+	};
 };
 
 &uart1 {
