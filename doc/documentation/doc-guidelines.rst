@@ -390,13 +390,13 @@ Images
 
 Images are included in documentation by using an image directive::
 
-   .. image:: images/mypicture.jpg
+   .. image:: ../images/doc-gen-flow.png
       :align: center
       :alt: alt text for the image
 
 or if you'd like to add an image caption, use::
 
-    .. figure:: images/mypicture.jpg
+    .. figure:: ../images/doc-gen-flow.png
        :alt: image description
 
        Caption for the figure
