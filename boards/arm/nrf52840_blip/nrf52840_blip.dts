@@ -96,16 +96,16 @@
 
 &spi0 {
 	status = "ok";
-	sck-pin = <25>;
-	mosi-pin = <34>;
-	miso-pin = <24>;
+	sck-pin = <19>;
+	mosi-pin = <20>;
+	miso-pin = <21>;
 };
 
 &spi1 {
 	status = "ok";
-	sck-pin = <19>;
-	mosi-pin = <20>;
-	miso-pin = <21>;
+	sck-pin = <25>;
+	mosi-pin = <34>;
+	miso-pin = <24>;
 };
 
 &spi2 {
