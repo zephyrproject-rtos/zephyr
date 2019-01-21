@@ -512,6 +512,22 @@ config BT_TINYCRYPT_ECC
 	  to enabled for a combined build with Zephyr's own controller, since it
 	  does not have any special ECC support itself (at least not currently).
 
+if BT_TINYCRYPT_ECC
+config BT_ECC_THREAD_STACK_SIZE
+	int "Size of the ecc thread stack"
+	default 1100
+	range 512 65536
+	help
+	  Size of the ecc thread stack.
+
+config BT_ECC_THREAD_PRIO
+	int "Priority of ecc thread"
+	default 10
+	help
+	  Priority at which the ecc thread runs.
+
+endif #BT_TINYCRYPT_ECC
+
 if BT_DEBUG
 config BT_DEBUG_SETTINGS
 	bool "Bluetooth storage debug"

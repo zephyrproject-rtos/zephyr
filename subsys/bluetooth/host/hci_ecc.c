@@ -36,7 +36,7 @@
 #endif
 
 static struct k_thread ecc_thread_data;
-static K_THREAD_STACK_DEFINE(ecc_thread_stack, 1100);
+static K_THREAD_STACK_DEFINE(ecc_thread_stack, CONFIG_BT_ECC_THREAD_STACK_SIZE);
 
 /* based on Core Specification 4.2 Vol 3. Part H 2.3.5.6.1 */
 static const u32_t debug_private_key[8] = {
@@ -321,6 +321,7 @@ void bt_hci_ecc_init(void)
 {
 	k_thread_create(&ecc_thread_data, ecc_thread_stack,
 			K_THREAD_STACK_SIZEOF(ecc_thread_stack), ecc_thread,
-			NULL, NULL, NULL, K_PRIO_PREEMPT(10), 0, K_NO_WAIT);
+			NULL, NULL, NULL, CONFIG_BT_ECC_THREAD_PRIO, 0,
+			K_NO_WAIT);
 	k_thread_name_set(&ecc_thread_data, "BT ECC");
 }
