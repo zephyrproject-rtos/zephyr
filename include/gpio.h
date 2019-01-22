@@ -202,6 +202,12 @@ static inline int gpio_pin_configure(struct device *port, u32_t pin,
 
 /**
  * @brief Write the data value to a single pin.
+ *
+ * Write logical data value to a pin, taking into account GPIO_ACTIVE_LOW flag.
+ * If an output was configured as Active Low, writing value 1 to a pin will set
+ * it to low output state. Otherwise writing value 1 to a pin will set it to
+ * high output state.
+ *
  * @param port Pointer to the device structure for the driver instance.
  * @param pin Pin number where the data is written.
  * @param value Value set on the pin.
@@ -216,7 +222,8 @@ static inline int gpio_pin_write(struct device *port, u32_t pin,
 /**
  * @brief Read the data value of a single pin.
  *
- * Read the input state of a pin, returning the value 0 or 1.
+ * Read the logical value of a pin, returning 0 or 1. The function takes into
+ * account GPIO_ACTIVE_LOW flag.
  *
  * @param port Pointer to the device structure for the driver instance.
  * @param pin Pin number where data is read.
