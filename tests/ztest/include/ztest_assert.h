@@ -17,6 +17,7 @@
 #include <ztest.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 void ztest_test_fail(void);
 #if CONFIG_ZTEST_ASSERT_VERBOSE == 0
@@ -171,6 +172,20 @@ static inline void _zassert(int cond,
 #define zassert_equal_ptr(a, b, msg, ...)			     \
 	zassert((void *)(a) == (void *)(b), #a " not equal to  " #b, \
 		msg, ##__VA_ARGS__)
+
+/**
+ * @brief Assert that 2 memory buffers have the same contents
+ *
+ * @param buf Buffer to compare
+ * @param exp Buffer with expected contents
+ * @param size Size of buffers
+ * @param msg Optional message to print if the assertion fails
+ */
+static inline void zassert_mem_equal(void *buf, void *exp, size_t size,
+				     const char *msg)
+{
+	zassert_equal(memcmp(buf, exp, size), 0, msg);
+}
 
 /**
  * @}
