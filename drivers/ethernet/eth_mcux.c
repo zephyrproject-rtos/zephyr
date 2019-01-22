@@ -383,6 +383,25 @@ static void eth_mcux_delayed_phy_work(struct k_work *item)
 	eth_mcux_phy_event(context);
 }
 
+static void eth_mcux_phy_setup(void)
+{
+#ifdef CONFIG_SOC_SERIES_IMX_RT
+	const u32_t phy_addr = 0U;
+	u32_t status;
+
+	/* Prevent PHY entering NAND Tree mode override*/
+	ENET_StartSMIRead(ENET, phy_addr, PHY_OMS_STATUS_REG,
+		kENET_MiiReadValidFrame);
+	status = ENET_ReadSMIData(ENET);
+
+	if (status & PHY_OMS_NANDTREE_MASK) {
+		status &= ~PHY_OMS_NANDTREE_MASK;
+		ENET_StartSMIWrite(ENET, phy_addr, PHY_OMS_OVERRIDE_REG,
+			kENET_MiiWriteValidFrame, status);
+	}
+#endif
+}
+
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 static enet_ptp_time_data_t ptp_rx_buffer[CONFIG_ETH_MCUX_PTP_RX_BUFFERS];
 static enet_ptp_time_data_t ptp_tx_buffer[CONFIG_ETH_MCUX_PTP_TX_BUFFERS];
@@ -814,6 +833,8 @@ static int eth_0_init(struct device *dev)
 	k_work_init(&context->phy_work, eth_mcux_phy_work);
 	k_delayed_work_init(&context->delayed_phy_work,
 			    eth_mcux_delayed_phy_work);
+
+	eth_mcux_phy_setup();
 
 	sys_clock = CLOCK_GetFreq(kCLOCK_CoreSysClk);
 
