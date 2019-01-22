@@ -1,7 +1,7 @@
 .. _settings:
 
-Settings subsystem with non-volatile storage
-############################################
+Settings
+########
 
 The settings subsystem gives modules a way to store persistent
 per-device configuration and runtime state.
@@ -152,8 +152,8 @@ up from where it was before restart.
         sys_reboot(SYS_REBOOT_COLD);
     }
 
-API
-***
+API Reference
+*************
 
 The Settings subsystem APIs are provided by ``settings.h``:
 
