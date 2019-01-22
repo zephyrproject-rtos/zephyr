@@ -21,7 +21,3 @@ devices (like WiFi and Bluetooth Low Energy), and complex multi-threading,
 can also be developed using the Zephyr kernel. Examples of such systems
 include: fitness wearables, smart watches, and IoT wireless gateways.
 
-.. toctree::
-   :maxdepth: 1
-
-   source_tree.rst
