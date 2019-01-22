@@ -50,6 +50,8 @@
 #define PHY_ID1_REG 0x02U               /*!< The PHY ID one register. */
 #define PHY_ID2_REG 0x03U               /*!< The PHY ID two register. */
 #define PHY_AUTONEG_ADVERTISE_REG 0x04U /*!< The PHY auto-negotiate advertise register. */
+#define PHY_OMS_OVERRIDE_REG 0x16U      /*!< The PHY Operation Mode Strap Override register. */
+#define PHY_OMS_STATUS_REG 0x17U        /*!< The PHY Operation Mode Strap Status register. */
 #define PHY_CONTROL1_REG 0x1EU          /*!< The PHY control one register. */
 #define PHY_CONTROL2_REG 0x1FU          /*!< The PHY control two register. */
 
@@ -83,6 +85,9 @@
 #define PHY_100BASETX_HALFDUPLEX_MASK 0x080U /*!< The PHY has the 100M full duplex ability.*/
 #define PHY_10BASETX_FULLDUPLEX_MASK 0x040U  /*!< The PHY has the 10M full duplex ability.*/
 #define PHY_10BASETX_HALFDUPLEX_MASK 0x020U  /*!< The PHY has the 10M full duplex ability.*/
+
+/*! @brief Defines the mask flag in PHY Operation Mode Strap Override/Status register. */
+#define PHY_OMS_NANDTREE_MASK 0x0020U /*!< The PHY NAND Tree Strap-In Override/Status mask. */
 
 /*! @brief Defines the PHY status. */
 enum _phy_status
