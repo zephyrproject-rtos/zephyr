@@ -437,25 +437,8 @@ Related configuration options:
 Additional architecture-specific and device-specific configuration options
 also exist.
 
-APIs
-****
+API Reference
+*************
 
-The following interrupt-related APIs are provided by :file:`irq.h`:
-
-* :c:macro:`IRQ_CONNECT`
-* :c:macro:`IRQ_DIRECT_CONNECT`
-* :c:macro:`ISR_DIRECT_HEADER`
-* :c:macro:`ISR_DIRECT_FOOTER`
-* :c:macro:`ISR_DIRECT_PM`
-* :c:macro:`ISR_DIRECT_DECLARE`
-* :cpp:func:`irq_lock()`
-* :cpp:func:`irq_unlock()`
-* :cpp:func:`irq_enable()`
-* :cpp:func:`irq_disable()`
-* :cpp:func:`irq_is_enabled()`
-* :cpp:func:`irq_connect_dynamic()`
-
-The following interrupt-related APIs are provided by :file:`kernel.h`:
-
-* :cpp:func:`k_is_in_isr()`
-* :cpp:func:`k_is_preempt_thread`
+.. doxygengroup:: isr_apis
+   :project: Zephyr

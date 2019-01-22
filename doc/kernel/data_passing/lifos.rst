@@ -144,12 +144,8 @@ Related configuration options:
 
 * None.
 
-APIs
-****
+API Reference
+*************
 
-The following lifo APIs are provided by :file:`kernel.h`:
-
-* :c:macro:`K_LIFO_DEFINE`
-* :cpp:func:`k_lifo_init()`
-* :cpp:func:`k_lifo_put()`
-* :cpp:func:`k_lifo_get()`
+.. doxygengroup:: lifo_apis
+   :project: Zephyr

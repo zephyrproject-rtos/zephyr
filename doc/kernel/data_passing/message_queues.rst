@@ -199,16 +199,8 @@ Related configuration options:
 
 * None.
 
-APIs
-****
+API Reference
+*************
 
-The following message queue APIs are provided by :file:`kernel.h`:
-
-* :c:macro:`K_MSGQ_DEFINE`
-* :cpp:func:`k_msgq_init()`
-* :cpp:func:`k_msgq_put()`
-* :cpp:func:`k_msgq_get()`
-* :cpp:func:`k_msgq_peek()`
-* :cpp:func:`k_msgq_purge()`
-* :cpp:func:`k_msgq_num_used_get()`
-* :cpp:func:`k_msgq_num_free_get()`
+.. doxygengroup:: msgq_apis
+   :project: Zephyr

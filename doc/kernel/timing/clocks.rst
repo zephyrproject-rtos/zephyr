@@ -154,20 +154,8 @@ Related configuration options:
 
 * :option:`CONFIG_SYS_CLOCK_TICKS_PER_SEC`
 
-APIs
-****
+API Reference
+*************
 
-The following kernel clock APIs are provided by :file:`kernel.h`:
-
-* :cpp:func:`k_uptime_get()`
-* :cpp:func:`k_uptime_get_32()`
-* :cpp:func:`k_uptime_delta()`
-* :cpp:func:`k_uptime_delta_32()`
-* :cpp:func:`k_cycle_get_32()`
-* :c:macro:`SYS_CLOCK_HW_CYCLES_TO_NS`
-* :c:macro:`K_NO_WAIT`
-* :c:macro:`K_MSEC`
-* :c:macro:`K_SECONDS`
-* :c:macro:`K_MINUTES`
-* :c:macro:`K_HOURS`
-* :c:macro:`K_FOREVER`
+.. doxygengroup:: clock_apis
+   :project: Zephyr

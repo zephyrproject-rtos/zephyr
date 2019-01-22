@@ -129,10 +129,8 @@ Related configuration options:
 
 * :option:`CONFIG_HEAP_MEM_POOL_SIZE`
 
-APIs
-****
+API Reference
+*************
 
-The following heap memory pool APIs are provided by :file:`kernel.h`:
-
-* :cpp:func:`k_malloc()`
-* :cpp:func:`k_free()`
+.. doxygengroup:: heap_apis
+   :project: Zephyr
