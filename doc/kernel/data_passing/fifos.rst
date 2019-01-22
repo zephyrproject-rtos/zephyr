@@ -154,17 +154,10 @@ Configuration Options
 
 Related configuration options:
 
-* None.
+* None
 
-APIs
-****
+API Reference
+*************
 
-The following fifo APIs are provided by :file:`kernel.h`:
-
-* :c:macro:`K_FIFO_DEFINE`
-* :cpp:func:`k_fifo_init()`
-* :cpp:func:`k_fifo_alloc_put()`
-* :cpp:func:`k_fifo_put()`
-* :cpp:func:`k_fifo_put_list()`
-* :cpp:func:`k_fifo_put_slist()`
-* :cpp:func:`k_fifo_get()`
+.. doxygengroup:: fifo_apis
+   :project: Zephyr

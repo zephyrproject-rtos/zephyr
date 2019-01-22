@@ -174,13 +174,8 @@ Related configuration options:
 
 * :option:`CONFIG_NUM_PIPE_ASYNC_MSGS`
 
-APIs
-****
+API Reference
+*************
 
-The following message queue APIs are provided by :file:`kernel.h`:
-
-* :c:macro:`K_PIPE_DEFINE`
-* :cpp:func:`k_pipe_init()`
-* :cpp:func:`k_pipe_put()`
-* :cpp:func:`k_pipe_get()`
-* :cpp:func:`k_pipe_block_put()`
+.. doxygengroup:: pipe_apis
+   :project: Zephyr

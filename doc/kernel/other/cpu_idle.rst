@@ -134,10 +134,8 @@ i.e. not doing any real work, like in this example below.
      **Do not use these APIs unless absolutely necessary.** In a normal system,
      the idle thread takes care of power management, including CPU idling.
 
-APIs
-****
+API Reference
+*************
 
-The following CPU idling APIs are provided by :file:`kernel.h`:
-
-* :cpp:func:`k_cpu_idle()`
-* :cpp:func:`k_cpu_atomic_idle()`
+.. doxygengroup:: cpu_idle_apis
+   :project: Zephyr

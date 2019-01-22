@@ -110,27 +110,12 @@ Related configuration options:
 * :option:`CONFIG_ATOMIC_OPERATIONS_CUSTOM`
 * :option:`CONFIG_ATOMIC_OPERATIONS_C`
 
-APIs
-****
+API Reference
+*************
 
-The following atomic operation APIs are provided by :file:`atomic.h`:
+.. important::
+    All atomic services APIs can be used by both threads and ISRs.
 
-* :c:macro:`ATOMIC_INIT`
-* :c:macro:`ATOMIC_DEFINE`
-* :cpp:func:`atomic_get()`
-* :cpp:func:`atomic_set()`
-* :cpp:func:`atomic_clear()`
-* :cpp:func:`atomic_add()`
-* :cpp:func:`atomic_sub()`
-* :cpp:func:`atomic_inc()`
-* :cpp:func:`atomic_dec()`
-* :cpp:func:`atomic_and()`
-* :cpp:func:`atomic_or()`
-* :cpp:func:`atomic_xor()`
-* :cpp:func:`atomic_nand()`
-* :cpp:func:`atomic_cas()`
-* :cpp:func:`atomic_set_bit()`
-* :cpp:func:`atomic_clear_bit()`
-* :cpp:func:`atomic_test_bit()`
-* :cpp:func:`atomic_test_and_set_bit()`
-* :cpp:func:`atomic_test_and_clear_bit()`
+.. doxygengroup:: atomic_apis
+   :project: Zephyr
+

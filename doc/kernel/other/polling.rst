@@ -280,14 +280,8 @@ Related configuration options:
 
 * :option:`CONFIG_POLL`
 
-APIs
-****
+API Reference
+*************
 
-The following polling APIs are provided by :file:`kernel.h`:
-
-* :c:macro:`K_POLL_EVENT_INITIALIZER`
-* :c:macro:`K_POLL_EVENT_STATIC_INITIALIZER`
-* :cpp:func:`k_poll_event_init()`
-* :cpp:func:`k_poll()`
-* :cpp:func:`k_poll_signal_init()`
-* :cpp:func:`k_poll_signal_raise()`
+.. doxygengroup:: poll_apis
+   :project: Zephyr

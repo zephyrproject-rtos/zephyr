@@ -200,15 +200,9 @@ Use a memory pool to allocate memory in variable-size blocks.
 Use memory pool blocks when sending large amounts of data from one thread
 to another, to avoid unnecessary copying of the data.
 
-APIs
-****
+API Reference
+*************
 
-The following memory pool APIs are provided by :file:`kernel.h`:
+.. doxygengroup:: mem_pool_apis
+   :project: Zephyr
 
-* :c:macro:`K_MEM_POOL_DEFINE`
-* :cpp:func:`k_mem_pool_alloc()`
-* :cpp:func:`k_mem_pool_free()`
-* :cpp:func:`k_mem_pool_malloc()`
-* :cpp:func:`k_free()`
-* :cpp:func:`k_thread_resource_pool_assign()`
-* :cpp:func:`k_thread_system_pool_assign()`

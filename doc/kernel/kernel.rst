@@ -26,9 +26,24 @@ include: fitness wearables, smart watches, and IoT wireless gateways.
    :maxdepth: 2
 
    threads/index.rst
-   timing/timing.rst
-   memory/memory.rst
-   synchronization/synchronization.rst
-   data_passing/data_passing.rst
+   other/interrupts.rst
    usermode/usermode.rst
-   other/other.rst
+   synchronization/semaphores.rst
+   synchronization/mutexes.rst
+   data_passing/fifos.rst
+   data_passing/lifos.rst
+   data_passing/stacks.rst
+   data_passing/message_queues.rst
+   data_passing/mailboxes.rst
+   data_passing/pipes.rst
+   timing/clocks.rst
+   other/cpu_idle.rst
+   timing/timers.rst
+   memory/slabs.rst
+   memory/pools.rst
+   memory/heap.rst
+   other/atomic.rst
+   other/polling.rst
+   other/float.rst
+   other/ring_buffers.rst
+   other/cxx_support.rst
