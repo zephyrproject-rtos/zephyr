@@ -10,6 +10,8 @@ supported:
   - arduino_i2c
   - i2c
   - hts221
+  - lps22hb
+  - lsm6dsl
   - pwm
   - gpio
   - ble
