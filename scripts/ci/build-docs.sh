@@ -43,13 +43,13 @@ make DOC_TAG=${TYPE} htmldocs
 if [ "$?" == "0" ]; then
 	echo "- Uploading to AWS S3..."
 	if [ "$RELEASE" == "latest" ]; then
-		aws s3 sync --delete --quiet doc/_build/html s3://docs.zephyrproject.org/latest
+		aws s3 sync --quiet doc/_build/html s3://docs.zephyrproject.org/latest --delete
 	else
 		DOC_RELEASE=${RELEASE}.0
 		aws s3 sync --quiet doc/_build/html s3://docs.zephyrproject.org/${DOC_RELEASE}
 	fi
 	if [ -d doc/_build/doxygen/html ]; then
-		aws s3 sync --delete  --quiet doc/_build/doxygen/html s3://docs.zephyrproject.org/apidoc/${RELEASE}
+		aws s3 sync --quiet doc/_build/doxygen/html s3://docs.zephyrproject.org/apidoc/${RELEASE} --delete
 	fi
 else
 	echo "- Failed"
