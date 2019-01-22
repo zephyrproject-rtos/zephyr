@@ -35,12 +35,6 @@ pwd
 source ./zephyr-env.sh
 unset BUILDDIR
 
-if [ -d /build/IN/docs_theme_repo/gitRepo -a ! -e doc/themes/zephyr-docs-theme ]; then
-	cp -a /build/IN/docs_theme_repo/gitRepo doc/themes/zephyr-docs-theme
-elif [ ! -e doc/themes/zephyr-docs-theme ]; then
-	git clone https://github.com/zephyrproject-rtos/docs-theme.git doc/themes/zephyr-docs-theme
-fi
-
 echo "- Building docs for ${RELEASE:-development tree} ..."
 
 export ENV_VAR_BOARD_DIR=boards/*/*/
