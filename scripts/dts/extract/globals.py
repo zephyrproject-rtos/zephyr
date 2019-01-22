@@ -340,3 +340,152 @@ def get_binding(node_address):
 
 def get_binding_compats():
     return bindings_compat
+
+def extract_controller(node_address, prop, prop_values, index, def_label, generic):
+
+    prop_def = {}
+    prop_alias = {}
+
+    # get controller node (referenced via phandle)
+    cell_parent = phandles[prop_values[0]]
+
+    for k in reduced[cell_parent]['props'].keys():
+        if k[0] == '#' and '-cells' in k:
+            num_cells = reduced[cell_parent]['props'].get(k)
+
+    # get controller node (referenced via phandle)
+    cell_parent = phandles[prop_values[0]]
+
+    try:
+       l_cell = reduced[cell_parent]['props'].get('label')
+    except KeyError:
+        l_cell = None
+
+    if l_cell is not None:
+
+        l_base = def_label.split('/')
+
+        # Check is defined should be indexed (_0, _1)
+        if index == 0 and len(prop_values) < (num_cells + 2):
+            # 0 or 1 element in prop_values
+            # ( ie len < num_cells + phandle + 1 )
+            l_idx = []
+        else:
+            l_idx = [str(index)]
+
+        # Check node generation requirements
+        try:
+            generation = get_binding(node_address)['properties'
+                    ][prop]['generation']
+        except:
+            generation = ''
+
+        if 'use-prop-name' in generation:
+            l_cellname = convert_string_to_label(prop + '_' + 'controller')
+        else:
+            l_cellname = convert_string_to_label(generic + '_' + 'controller')
+
+        label = l_base + [l_cellname] + l_idx
+
+        add_compat_alias(node_address, '_'.join(label[1:]), '_'.join(label), prop_alias)
+        prop_def['_'.join(label)] = "\"" + l_cell + "\""
+
+        #generate defs also if node is referenced as an alias in dts
+        if node_address in aliases:
+            add_prop_aliases(
+                node_address,
+                lambda alias:
+                    '_'.join([convert_string_to_label(alias)] + label[1:]),
+                '_'.join(label),
+                prop_alias)
+
+        insert_defs(node_address, prop_def, prop_alias)
+
+    # prop off phandle + num_cells to get to next list item
+    prop_values = prop_values[num_cells+1:]
+
+    # recurse if we have anything left
+    if len(prop_values):
+        extract_controller(node_address, prop, prop_values, index + 1,
+                           def_label, generic)
+
+
+def extract_cells(node_address, prop, prop_values, names, index,
+                  def_label, generic):
+
+    cell_parent = phandles[prop_values.pop(0)]
+
+    try:
+        cell_yaml = get_binding(cell_parent)
+    except:
+        raise Exception(
+            "Could not find yaml description for " +
+                reduced[cell_parent]['name'])
+
+    try:
+        name = names.pop(0).upper()
+    except:
+        name = ''
+
+    # Get number of cells per element of current property
+    for k in reduced[cell_parent]['props'].keys():
+        if k[0] == '#' and '-cells' in k:
+            num_cells = reduced[cell_parent]['props'].get(k)
+            if k in cell_yaml.keys():
+                cell_yaml_names = k
+            else:
+                cell_yaml_names = '#cells'
+    try:
+        generation = get_binding(node_address)['properties'][prop
+                ]['generation']
+    except:
+        generation = ''
+
+    if 'use-prop-name' in generation:
+        l_cell = [convert_string_to_label(str(prop))]
+    else:
+        l_cell = [convert_string_to_label(str(generic))]
+
+    l_base = def_label.split('/')
+    # Check if #define should be indexed (_0, _1, ...)
+    if index == 0 and len(prop_values) < (num_cells + 2):
+        # Less than 2 elements in prop_values (ie len < num_cells + phandle + 1)
+        # Indexing is not needed
+        l_idx = []
+    else:
+        l_idx = [str(index)]
+
+    prop_def = {}
+    prop_alias = {}
+
+    # Generate label for each field of the property element
+    for i in range(num_cells):
+        l_cellname = [str(cell_yaml[cell_yaml_names][i]).upper()]
+        if l_cell == l_cellname:
+            label = l_base + l_cell + l_idx
+        else:
+            label = l_base + l_cell + l_cellname + l_idx
+        label_name = l_base + [name] + l_cellname
+        add_compat_alias(node_address, '_'.join(label[1:]), '_'.join(label), prop_alias)
+        prop_def['_'.join(label)] = prop_values.pop(0)
+        if len(name):
+            prop_alias['_'.join(label_name)] = '_'.join(label)
+
+        # generate defs for node aliases
+        if node_address in aliases:
+            add_prop_aliases(
+                node_address,
+                lambda alias:
+                    '_'.join([convert_string_to_label(alias)] + label[1:]),
+                '_'.join(label),
+                prop_alias)
+
+        insert_defs(node_address, prop_def, prop_alias)
+
+    # recurse if we have anything left
+    if len(prop_values):
+        extract_cells(node_address, prop, prop_values, names,
+                      index + 1, def_label, generic)
+
+
+
