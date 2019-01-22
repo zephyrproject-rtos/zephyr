@@ -195,7 +195,7 @@ DHCPv4
 MQTT 3.1.1
 ==========
 
-.. doxygengroup:: mqtt
+.. doxygengroup:: mqtt_socket
    :project: Zephyr
 
 CoAP over Sockets
