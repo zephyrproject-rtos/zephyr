@@ -4363,6 +4363,12 @@ extern void _handle_obj_poll_events(sys_dlist_t *events, u32_t state);
 /** @} */
 
 /**
+ * @defgroup cpu_idle_apis CPU Idling APIs
+ * @ingroup kernel_apis
+ * @{
+ */
+
+/**
  * @brief Make the CPU idle.
  *
  * This function makes the CPU idle until an event wakes it up.
@@ -4373,7 +4379,7 @@ extern void _handle_obj_poll_events(sys_dlist_t *events, u32_t state);
  * the only thread would be responsible for this if needed.
  *
  * @return N/A
- * @req K-MISC-001
+ * @req K-CPU-IDLE-001
  */
 extern void k_cpu_idle(void);
 
@@ -4386,10 +4392,13 @@ extern void k_cpu_idle(void);
  * @param key Interrupt locking key obtained from irq_lock().
  *
  * @return N/A
- * @req K-MISC-002
+ * @req K-CPU-IDLE-002
  */
 extern void k_cpu_atomic_idle(unsigned int key);
 
+/**
+ * @}
+ */
 
 /**
  * @internal
