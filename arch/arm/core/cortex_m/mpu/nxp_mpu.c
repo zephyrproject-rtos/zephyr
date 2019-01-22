@@ -17,9 +17,6 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(mpu);
 
-/* NXP MPU Enabled state */
-static u8_t nxp_mpu_enabled;
-
 /**
  * This internal function is utilized by the MPU driver to parse the intent
  * type (i.e. THREAD_STACK_REGION) and return the correct parameter set.
@@ -196,12 +193,9 @@ static void nxp_mpu_setup_sram_region(u32_t base, u32_t size)
  */
 void arm_core_mpu_enable(void)
 {
-	if (nxp_mpu_enabled == 0) {
-		/* Enable MPU */
-		SYSMPU->CESR |= SYSMPU_CESR_VLD_MASK;
+	/* Enable MPU */
+	SYSMPU->CESR |= SYSMPU_CESR_VLD_MASK;
 
-		nxp_mpu_enabled = 1U;
-	}
 }
 
 /**
@@ -209,14 +203,10 @@ void arm_core_mpu_enable(void)
  */
 void arm_core_mpu_disable(void)
 {
-	if (nxp_mpu_enabled == 1) {
-		/* Disable MPU */
-		SYSMPU->CESR &= ~SYSMPU_CESR_VLD_MASK;
-		/* Clear Interrupts */
-		SYSMPU->CESR |=  SYSMPU_CESR_SPERR_MASK;
-
-		nxp_mpu_enabled = 0U;
-	}
+	/* Disable MPU */
+	SYSMPU->CESR &= ~SYSMPU_CESR_VLD_MASK;
+	/* Clear MPU error status */
+	SYSMPU->CESR |=  SYSMPU_CESR_SPERR_MASK;
 }
 
 /**
@@ -431,7 +421,7 @@ static void _nxp_mpu_config(void)
 
 	/* Disable MPU */
 	SYSMPU->CESR &= ~SYSMPU_CESR_VLD_MASK;
-	/* Clear Interrupts */
+	/* Clear MPU error status */
 	SYSMPU->CESR |=  SYSMPU_CESR_SPERR_MASK;
 
 	/* MPU Configuration */
@@ -446,8 +436,6 @@ static void _nxp_mpu_config(void)
 
 	/* Enable MPU */
 	SYSMPU->CESR |= SYSMPU_CESR_VLD_MASK;
-
-	nxp_mpu_enabled = 1U;
 
 #if defined(CONFIG_APPLICATION_MEMORY)
 	u32_t index, region_attr, base, size;
