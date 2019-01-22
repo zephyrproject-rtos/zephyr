@@ -55,7 +55,7 @@ class ComplianceTest:
 
     _name = ""
     _title = ""
-    _doc = "https://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html"
+    _doc = "https://docs.zephyrproject.org/latest/contribute/"
 
     def __init__(self, suite, commit_range):
         self.case = None
@@ -86,7 +86,7 @@ class CheckPatch(ComplianceTest):
 
     """
     _name = "checkpatch"
-    _doc = "https://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html#coding-style"
+    _doc = "https://docs.zephyrproject.org/latest/contribute/#coding-style"
 
 
     def run(self):
@@ -189,7 +189,7 @@ class GitLint(ComplianceTest):
 
     """
     _name = "Gitlint"
-    _doc = "https://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html#commit-guidelines"
+    _doc = "https://docs.zephyrproject.org/latest/contribute/#commit-guidelines"
 
     def run(self):
         self.prepare()
@@ -214,7 +214,7 @@ class License(ComplianceTest):
 
     """
     _name = "License"
-    _doc = "https://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html#licensing"
+    _doc = "https://docs.zephyrproject.org/latest/contribute/#licensing"
 
     def run(self):
         self.prepare()
@@ -296,7 +296,7 @@ class Identity(ComplianceTest):
     Checks if Emails of author and signed-off messages are consistent.
     """
     _name = "Identity/Emails"
-    _doc = "https://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html#commit-guidelines"
+    _doc = "https://docs.zephyrproject.org/latest/contribute/#commit-guidelines"
 
     def run(self):
         self.prepare()
