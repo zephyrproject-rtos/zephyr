@@ -507,7 +507,7 @@ static void usbd_enable_endpoints(struct nrf_usbd_ctx *ctx)
 	struct nrf_usbd_ep_ctx *ep_ctx;
 	int i;
 
-	for (i = 0; i < NRF_USBD_EPIN_CNT; i++) {
+	for (i = 0; i < CFG_EPIN_CNT; i++) {
 		ep_ctx = in_endpoint_ctx(i);
 		__ASSERT_NO_MSG(ep_ctx);
 
@@ -516,8 +516,26 @@ static void usbd_enable_endpoints(struct nrf_usbd_ctx *ctx)
 		}
 	}
 
-	for (i = 0; i < NRF_USBD_EPOUT_CNT; i++) {
+	if (CFG_EP_ISOIN_CNT) {
+		ep_ctx = in_endpoint_ctx(NRF_USBD_EPIN(8));
+		__ASSERT_NO_MSG(ep_ctx);
+
+		if (ep_ctx->cfg.en) {
+			nrfx_usbd_ep_enable(ep_addr_to_nrfx(ep_ctx->cfg.addr));
+		}
+	}
+
+	for (i = 0; i < CFG_EPOUT_CNT; i++) {
 		ep_ctx = out_endpoint_ctx(i);
+		__ASSERT_NO_MSG(ep_ctx);
+
+		if (ep_ctx->cfg.en) {
+			nrfx_usbd_ep_enable(ep_addr_to_nrfx(ep_ctx->cfg.addr));
+		}
+	}
+
+	if (CFG_EP_ISOOUT_CNT) {
+		ep_ctx = out_endpoint_ctx(NRF_USBD_EPOUT(8));
 		__ASSERT_NO_MSG(ep_ctx);
 
 		if (ep_ctx->cfg.en) {
