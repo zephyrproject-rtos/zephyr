@@ -150,11 +150,11 @@ void test_single_shot_alarm_instance(const char *dev_name)
 	err = counter_set_wrap(dev, ticks, wrap_handler, exp_user_data);
 	zassert_equal(0, err, "Counter failed to set wrap\n");
 
-	err = counter_set_alarm(dev, &alarm_cfg);
+	err = counter_set_ch_alarm(dev, &alarm_cfg);
 	zassert_equal(-EINVAL, err, "Counter should return error because ticks exceeded the limit set alarm\n");
 
 	alarm_cfg.ticks = ticks - 100;
-	err = counter_set_alarm(dev, &alarm_cfg);
+	err = counter_set_ch_alarm(dev, &alarm_cfg);
 	zassert_equal(0, err, "Counter set alarm failed\n");
 
 	k_busy_wait(1.2*counter_ticks_to_us(dev, ticks));
@@ -164,7 +164,7 @@ void test_single_shot_alarm_instance(const char *dev_name)
 	k_busy_wait(counter_ticks_to_us(dev, 2*ticks));
 	zassert_equal(1, alarm_cnt, "Expecting alarm callback\n");
 
-	err = counter_disable_alarm(dev, &alarm_cfg);
+	err = counter_disable_ch_alarm(dev, &alarm_cfg);
 	zassert_equal(0, err, "Counter disabling alarm failed\n");
 
 	err = counter_set_wrap(dev, counter_get_max_wrap(dev), NULL, NULL);
@@ -224,10 +224,10 @@ void test_multiple_alarms_instance(const char *dev_name)
 
 	k_busy_wait(1.2*counter_ticks_to_us(dev, alarm_cfg.ticks));
 
-	err = counter_set_alarm(dev, &alarm_cfg);
+	err = counter_set_ch_alarm(dev, &alarm_cfg);
 	zassert_equal(0, err, "Counter set alarm failed\n");
 
-	err = counter_set_alarm(dev, &alarm_cfg2);
+	err = counter_set_ch_alarm(dev, &alarm_cfg2);
 	zassert_equal(0, err, "Counter set alarm failed\n");
 
 	k_busy_wait(1.2*counter_ticks_to_us(dev, 2*ticks));
@@ -236,10 +236,10 @@ void test_multiple_alarms_instance(const char *dev_name)
 	zassert_equal(&alarm_cfg, clbks[1], "Expected different order or callbacks\n");
 
 	/* tear down */
-	err = counter_disable_alarm(dev, &alarm_cfg);
+	err = counter_disable_ch_alarm(dev, &alarm_cfg);
 	zassert_equal(0, err, "Counter disabling alarm failed\n");
 
-	err = counter_disable_alarm(dev, &alarm_cfg2);
+	err = counter_disable_ch_alarm(dev, &alarm_cfg2);
 	zassert_equal(0, err, "Counter disabling alarm failed\n");
 }
 
@@ -272,7 +272,7 @@ void test_all_channels_instance(const char *str)
 	zassert_equal(0, err, "Counter failed to start");
 
 	for (int i = 0; i < n; i++) {
-		err = counter_set_alarm(dev, &alarm_cfgs[i]);
+		err = counter_set_ch_alarm(dev, &alarm_cfgs[i]);
 		if ((err == 0) && !limit_reached) {
 			nchan++;
 		} else if (err == -ENOTSUP) {
@@ -283,12 +283,12 @@ void test_all_channels_instance(const char *str)
 	}
 
 	for (int i = 0; i < nchan; i++) {
-		err = counter_disable_alarm(dev, &alarm_cfgs[i]);
+		err = counter_disable_ch_alarm(dev, &alarm_cfgs[i]);
 		zassert_equal(0, err, "Unexpected error on disabling alarm");
 	}
 
 	for (int i = nchan; i < n; i++) {
-		err = counter_disable_alarm(dev, &alarm_cfgs[i]);
+		err = counter_disable_ch_alarm(dev, &alarm_cfgs[i]);
 		zassert_equal(-ENOTSUP, err, "Unexpected error on disabling alarm\n");
 	}
 }
