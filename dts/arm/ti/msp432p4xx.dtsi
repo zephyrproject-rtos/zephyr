@@ -12,7 +12,7 @@
 	};
 
 	sram0: memory@20000000 {
-		compatible = "sram";
+		compatible = "mmio-sram";
 	};
 
 	flash0: serial-flash@0 {
