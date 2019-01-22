@@ -22,4 +22,8 @@ properties:
       type: compound
       category: required
       generation: define, use-prop-name
+    cs-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
 ...
