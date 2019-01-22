@@ -78,7 +78,7 @@ static inline u32_t stm32_pinval_get(int pin)
 	if (pin < 8) {
 		pinval |= 1 << pin;
 	} else {
-		pinval |= (1 << pin) | 0x04000000;
+		pinval |= (1 << (pin % 8)) | 0x04000000;
 	}
 #else
 	pinval = 1 << pin;
