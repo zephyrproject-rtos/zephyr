@@ -65,7 +65,7 @@ Clone the Zephyr source code repositories from GitHub using the ``west`` tool:
 
    west init zephyrproject
    cd zephyrproject
-   west clone
+   west update
 
 .. note::
    You can replace :file:`zephyrproject` with the folder name of your choice.
@@ -77,8 +77,13 @@ Clone the Zephyr source code repositories from GitHub using the ``west`` tool:
    If you had previously cloned the zephyr repository manually using Git,
    move the cloned :file:`zephyr/` repository to an empty enclosing folder
    (for example :file:`zephyrproject/zephyr/`), and
-   from this empty enclosing folder :file:`zephyrproject/`
-   run ``west init`` and then ``west clone``.
+   from this enclosing folder :file:`zephyrproject/` run::
+
+      west init -l zephyr/
+      west update
+
+   The ``-l <path to zephyr>`` parameter instructs ``west`` to use an existing
+   local copy instead of cloning a remote repository.
 
 This will create a full Zephyr local copy, cloning west itself along with any
 projects (i.e. remote repositories) required by Zephyr. See
