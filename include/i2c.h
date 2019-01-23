@@ -82,16 +82,33 @@ extern "C" {
 /** Send STOP after this message. */
 #define I2C_MSG_STOP			(1 << 1)
 
-/** RESTART I2C transaction for this message. */
+/** RESTART I2C transaction for this message.
+ *
+ * @note Not all I2C drivers have or require explicit support for this
+ * feature. Some drivers require this be present on a read message
+ * that follows a write, or vice-versa.  Some drivers will merge
+ * adjacent fragments into a single transaction using this flag; some
+ * will not. */
 #define I2C_MSG_RESTART			(1 << 2)
 
-/** Use 10-bit addressing for this message. */
+/** Use 10-bit addressing for this message.
+ *
+ * @note Not all SoC I2C implementations support this feature. */
 #define I2C_MSG_ADDR_10_BITS		(1 << 3)
 
 /**
  * @brief One I2C Message.
  *
  * This defines one I2C message to transact on the I2C bus.
+ *
+ * @note Some of the configurations supported by this API may not be
+ * supported by specific SoC I2C hardware implementations, in
+ * particular features related to bus transactions intended to read or
+ * write data from different buffers within a single transaction.
+ * Invocations of i2c_transfer() may not indicate an error when an
+ * unsupported configuration is encountered.  In some cases drivers
+ * will generate separate transactions for each message fragment, with
+ * or without presence of @ref I2C_MSG_RESTART in #flags.
  */
 struct i2c_msg {
 	/** Data buffer in bytes */
@@ -204,6 +221,14 @@ static inline int _impl_i2c_configure(struct device *dev, u32_t dev_config)
  *
  * The array of message @a msgs must not be NULL.  The number of
  * message @a num_msgs may be zero,in which case no transfer occurs.
+ *
+ * @note Not all scatter/gather transactions can be supported by all
+ * drivers.  As an example, a gather write (multiple consecutive
+ * `i2c_msg` buffers all configured for `I2C_MSG_WRITE`) may be packed
+ * into a single transaction by some drivers, but others may emit each
+ * fragment as a distinct write transaction, which will not produce
+ * the same behavior.  See the documentation of `struct i2c_msg` for
+ * limitations on support for multi-message bus transactions.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param msgs Array of messages to transfer.
@@ -435,6 +460,8 @@ static inline int i2c_write_read(struct device *dev, u16_t addr,
  * This routine reads multiple bytes from an internal address of an
  * I2C device synchronously.
  *
+ * Instances of this may be replaced by i2c_write_read().
+
  * @param dev Pointer to the device structure for the driver instance.
  * @param dev_addr Address of the I2C device for reading.
  * @param start_addr Internal address from which the data is being read.
@@ -444,21 +471,15 @@ static inline int i2c_write_read(struct device *dev, u16_t addr,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_burst_read(struct device *dev, u16_t dev_addr,
-				 u8_t start_addr, u8_t *buf,
+static inline int i2c_burst_read(struct device *dev,
+				 u16_t dev_addr,
+				 u8_t start_addr,
+				 u8_t *buf,
 				 u32_t num_bytes)
 {
-	struct i2c_msg msg[2];
-
-	msg[0].buf = &start_addr;
-	msg[0].len = 1;
-	msg[0].flags = I2C_MSG_WRITE;
-
-	msg[1].buf = buf;
-	msg[1].len = num_bytes;
-	msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
-
-	return i2c_transfer(dev, msg, 2, dev_addr);
+	return i2c_write_read(dev, dev_addr,
+			      &start_addr, sizeof(start_addr),
+			      buf, num_bytes);
 }
 
 /**
@@ -466,6 +487,11 @@ static inline int i2c_burst_read(struct device *dev, u16_t dev_addr,
  *
  * This routine writes multiple bytes to an internal address of an
  * I2C device synchronously.
+ *
+ * @warning The combined write synthesized by this API may not be
+ * supported on all I2C devices.  Uses of this API may be made more
+ * portable by replacing them with calls to i2c_write() passing a
+ * buffer containing the combined address and data.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param dev_addr Address of the I2C device for writing.
@@ -476,8 +502,10 @@ static inline int i2c_burst_read(struct device *dev, u16_t dev_addr,
  * @retval 0 If successful.
  * @retval -EIO General input / output error.
  */
-static inline int i2c_burst_write(struct device *dev, u16_t dev_addr,
-				  u8_t start_addr, const u8_t *buf,
+static inline int i2c_burst_write(struct device *dev,
+				  u16_t dev_addr,
+				  u8_t start_addr,
+				  const u8_t *buf,
 				  u32_t num_bytes)
 {
 	struct i2c_msg msg[2];
@@ -510,7 +538,9 @@ static inline int i2c_burst_write(struct device *dev, u16_t dev_addr,
 static inline int i2c_reg_read_byte(struct device *dev, u16_t dev_addr,
 				    u8_t reg_addr, u8_t *value)
 {
-	return i2c_burst_read(dev, dev_addr, reg_addr, value, 1);
+	return i2c_write_read(dev, dev_addr,
+			      &reg_addr, sizeof(reg_addr),
+			      value, sizeof(*value));
 }
 
 /**
@@ -518,6 +548,9 @@ static inline int i2c_reg_read_byte(struct device *dev, u16_t dev_addr,
  *
  * This routine writes a value to an 8-bit internal register of an I2C
  * device synchronously.
+ *
+ * @note This function internally combines the register and value into
+ * a single bus transaction.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param dev_addr Address of the I2C device for writing.
@@ -540,6 +573,9 @@ static inline int i2c_reg_write_byte(struct device *dev, u16_t dev_addr,
  *
  * This routine updates the value of a set of bits from an 8-bit internal
  * register of an I2C device synchronously.
+ *
+ * @note If the calculated new register value matches the value that
+ * was read this function will not generate a write operation.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param dev_addr Address of the I2C device for updating.
@@ -576,33 +612,32 @@ static inline int i2c_reg_update_byte(struct device *dev, u8_t dev_addr,
  * This routine reads multiple bytes from a 16 bit internal address of an
  * I2C device synchronously.
  *
+ * @deprecated Replace with i2c_write_read().
+ *
  * @param dev Pointer to the device structure for the driver instance.
- * @param dev_addr Address of the I2C device for reading.
- * @param start_addr Internal 16 bit address from which the data is being read.
+ * @param dev_addr Address of the I2C device for reading
+ * @param start_addr Internal 16 bit address from which the data is
+ * being read.  Target device will receive this in big-endian byte
+ * order.
  * @param buf Memory pool that stores the retrieved data.
  * @param num_bytes Number of bytes being read.
  *
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_burst_read16(struct device *dev, u16_t dev_addr,
-				   u16_t start_addr, u8_t *buf,
-				   u32_t num_bytes)
+__deprecated static inline int i2c_burst_read16(struct device *dev,
+						u16_t dev_addr,
+						u16_t start_addr,
+						u8_t *buf,
+						u32_t num_bytes)
 {
 	u8_t addr_buffer[2];
-	struct i2c_msg msg[2];
 
 	addr_buffer[1] = start_addr & 0xFF;
 	addr_buffer[0] = start_addr >> 8;
-	msg[0].buf = addr_buffer;
-	msg[0].len = 2;
-	msg[0].flags = I2C_MSG_WRITE;
-
-	msg[1].buf = buf;
-	msg[1].len = num_bytes;
-	msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
-
-	return i2c_transfer(dev, msg, 2, dev_addr);
+	return i2c_write_read(dev, dev_addr,
+			      addr_buffer, sizeof(addr_buffer),
+			      buf, num_bytes);
 }
 
 /**
@@ -611,18 +646,26 @@ static inline int i2c_burst_read16(struct device *dev, u16_t dev_addr,
  * This routine writes multiple bytes to a 16 bit internal address of an
  * I2C device synchronously.
  *
+ * @deprecated The combined write synthesized by this API may not be
+ * supported on all I2C devices.  Replace this with a single call to
+ * i2c_write() with a buffer containing the combined address and data.
+ *
  * @param dev Pointer to the device structure for the driver instance.
  * @param dev_addr Address of the I2C device for writing.
- * @param start_addr Internal 16 bit address to which the data is being written.
+ * @param start_addr Internal 16 bit address from which the data is
+ * being written.  Target device will receive this in big-endian byte
+ * order.
  * @param buf Memory pool from which the data is transferred.
  * @param num_bytes Number of bytes being written.
  *
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_burst_write16(struct device *dev, u16_t dev_addr,
-				    u16_t start_addr, const u8_t *buf,
-				    u32_t num_bytes)
+__deprecated static inline int i2c_burst_write16(struct device *dev,
+						 u16_t dev_addr,
+						 u16_t start_addr,
+						 const u8_t *buf,
+						 u32_t num_bytes)
 {
 	u8_t addr_buffer[2];
 	struct i2c_msg msg[2];
@@ -643,8 +686,10 @@ static inline int i2c_burst_write16(struct device *dev, u16_t dev_addr,
 /**
  * @brief Read internal 16 bit address register of an I2C device.
  *
- * This routine reads the value of an 16-bit internal register of an I2C
- * device synchronously.
+ * This routine reads the 8-bit value of internal register identified
+ * by a 16-bit register address synchronously.
+ *
+ * @deprecated Replace with i2c_write_read().
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param dev_addr Address of the I2C device for reading.
@@ -654,10 +699,18 @@ static inline int i2c_burst_write16(struct device *dev, u16_t dev_addr,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_reg_read16(struct device *dev, u16_t dev_addr,
-				 u16_t reg_addr, u8_t *value)
+__deprecated static inline int i2c_reg_read16(struct device *dev,
+					      u16_t dev_addr,
+					      u16_t reg_addr,
+					      u8_t *value)
 {
-	return i2c_burst_read16(dev, dev_addr, reg_addr, value, 1);
+	u8_t addr_buffer[2];
+
+	addr_buffer[1] = reg_addr & 0xFF;
+	addr_buffer[0] = reg_addr >> 8;
+	return i2c_write_read(dev, dev_addr,
+			      addr_buffer, sizeof(addr_buffer),
+			      value, sizeof(*value));
 }
 
 /**
@@ -665,6 +718,10 @@ static inline int i2c_reg_read16(struct device *dev, u16_t dev_addr,
  *
  * This routine writes a value to an 16-bit internal register of an I2C
  * device synchronously.
+ *
+ * @deprecated The combined write synthesized by this API may not be
+ * supported on all I2C devices.  Replace this with a single call to
+ * i2c_write() with a buffer containing the combined address and data.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param dev_addr Address of the I2C device for writing.
@@ -674,10 +731,25 @@ static inline int i2c_reg_read16(struct device *dev, u16_t dev_addr,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_reg_write16(struct device *dev, u16_t dev_addr,
-				  u16_t reg_addr, u8_t value)
+__deprecated static inline int i2c_reg_write16(struct device *dev,
+					       u16_t dev_addr,
+					       u16_t reg_addr,
+					       u8_t value)
 {
-	return i2c_burst_write16(dev, dev_addr, reg_addr, &value, 1);
+	u8_t addr_buffer[2];
+	struct i2c_msg msg[2];
+
+	addr_buffer[1] = reg_addr & 0xFF;
+	addr_buffer[0] = reg_addr >> 8;
+	msg[0].buf = addr_buffer;
+	msg[0].len = 2;
+	msg[0].flags = I2C_MSG_WRITE;
+
+	msg[1].buf = (u8_t *)&value;
+	msg[1].len = sizeof(value);
+	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+	return i2c_transfer(dev, msg, 2, dev_addr);
 }
 
 /**
@@ -685,6 +757,14 @@ static inline int i2c_reg_write16(struct device *dev, u16_t dev_addr,
  *
  * This routine updates the value of a set of bits from a 16-bit internal
  * register of an I2C device synchronously.
+ *
+ * @note If the calculated new register value matches the value that
+ * was read this function will not generate a write operation.
+ *
+ * @deprecated The combined write synthesized by this API may not be
+ * supported on all I2C devices.  Replace this with a call to
+ * i2c_write_read() followed by value manipulation, then a call to
+ * i2c_write() with a buffer containing the combined address and data.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param dev_addr Address of the I2C device for updating.
@@ -695,14 +775,22 @@ static inline int i2c_reg_write16(struct device *dev, u16_t dev_addr,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_reg_update16(struct device *dev, u16_t dev_addr,
-				   u16_t reg_addr, u8_t mask,
-				   u8_t value)
+__deprecated static inline int i2c_reg_update16(struct device *dev,
+						u16_t dev_addr,
+						u16_t reg_addr,
+						u8_t mask,
+						u8_t value)
 {
+	u8_t addr_buffer[2];
+	struct i2c_msg msg[2];
 	u8_t old_value, new_value;
 	int rc;
 
-	rc = i2c_reg_read16(dev, dev_addr, reg_addr, &old_value);
+	addr_buffer[1] = reg_addr & 0xFF;
+	addr_buffer[0] = reg_addr >> 8;
+	rc = i2c_write_read(dev, dev_addr,
+			    addr_buffer, sizeof(addr_buffer),
+			    &old_value, sizeof(old_value));
 	if (rc != 0) {
 		return rc;
 	}
@@ -712,7 +800,15 @@ static inline int i2c_reg_update16(struct device *dev, u16_t dev_addr,
 		return 0;
 	}
 
-	return i2c_reg_write16(dev, dev_addr, reg_addr, new_value);
+	msg[0].buf = addr_buffer;
+	msg[0].len = 2;
+	msg[0].flags = I2C_MSG_WRITE;
+
+	msg[1].buf = &new_value;
+	msg[1].len = sizeof(new_value);
+	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+	return i2c_transfer(dev, msg, 2, dev_addr);
 }
 
 /**
@@ -721,6 +817,8 @@ static inline int i2c_reg_update16(struct device *dev, u16_t dev_addr,
  *
  * This routine reads multiple bytes from an addr_size byte internal
  * address of an I2C device synchronously.
+ *
+ * @deprecated Replace with i2c_write_read().
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param dev_addr Address of the I2C device for reading.
@@ -733,22 +831,15 @@ static inline int i2c_reg_update16(struct device *dev, u16_t dev_addr,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_burst_read_addr(struct device *dev, u16_t dev_addr,
-				      const u8_t *start_addr,
-				      const u8_t addr_size,
-				      u8_t *buf, u32_t num_bytes)
+__deprecated static inline int i2c_burst_read_addr(struct device *dev,
+						   u16_t dev_addr,
+						   const u8_t *start_addr,
+						   const u8_t addr_size,
+						   u8_t *buf,
+						   u32_t num_bytes)
 {
-	struct i2c_msg msg[2];
-
-	msg[0].buf = (u8_t *)start_addr;
-	msg[0].len = addr_size;
-	msg[0].flags = I2C_MSG_WRITE;
-
-	msg[1].buf = buf;
-	msg[1].len = num_bytes;
-	msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
-
-	return i2c_transfer(dev, msg, 2, dev_addr);
+	return i2c_write_read(dev, dev_addr, start_addr, addr_size,
+			      buf, num_bytes);
 }
 
 /**
@@ -756,6 +847,10 @@ static inline int i2c_burst_read_addr(struct device *dev, u16_t dev_addr,
  * address of an I2C device.
  * This routine writes multiple bytes to an addr_size byte internal
  * address of an I2C device synchronously.
+ *
+ * @deprecated The combined write synthesized by this API may not be
+ * supported on all I2C devices.  Replace this with a single call to
+ * i2c_write() with a buffer containing the combined address and data.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param dev_addr Address of the I2C device for writing.
@@ -768,10 +863,12 @@ static inline int i2c_burst_read_addr(struct device *dev, u16_t dev_addr,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_burst_write_addr(struct device *dev, u16_t dev_addr,
-				       const u8_t *start_addr,
-				       const u8_t addr_size,
-				       const u8_t *buf, u32_t num_bytes)
+__deprecated static inline int i2c_burst_write_addr(struct device *dev,
+						    u16_t dev_addr,
+						    const u8_t *start_addr,
+						    const u8_t addr_size,
+						    const u8_t *buf,
+						    u32_t num_bytes)
 {
 	struct i2c_msg msg[2];
 
@@ -793,6 +890,8 @@ static inline int i2c_burst_write_addr(struct device *dev, u16_t dev_addr,
  * This routine reads the value of an addr_size byte internal register
  * of an I2C device synchronously.
  *
+ * @deprecated Replace with i2c_write_read().
+ *
  * @param dev Pointer to the device structure for the driver instance.
  * @param dev_addr Address of the I2C device for reading.
  * @param reg_addr Array to an internal register address from which
@@ -803,14 +902,14 @@ static inline int i2c_burst_write_addr(struct device *dev, u16_t dev_addr,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_reg_read_addr(struct device *dev,
-				    u16_t dev_addr,
-				    const u8_t *reg_addr,
-				    u8_t addr_size,
-				    u8_t *value)
+__deprecated static inline int i2c_reg_read_addr(struct device *dev,
+						 u16_t dev_addr,
+						 const u8_t *reg_addr,
+						 u8_t addr_size,
+						 u8_t *value)
 {
-	return i2c_burst_read_addr(dev, dev_addr, reg_addr,
-				   addr_size, value, 1);
+	return i2c_write_read(dev, dev_addr, reg_addr, addr_size,
+			      value, sizeof(*value));
 }
 
 /**
@@ -819,6 +918,10 @@ static inline int i2c_reg_read_addr(struct device *dev,
  *
  * This routine writes a value to an addr_size byte internal register
  * of an I2C device synchronously.
+ *
+ * @deprecated The combined write synthesized by this API may not be
+ * supported on all I2C devices.  Replace this with a single call to
+ * i2c_write() with a buffer containing the combined address and data.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param dev_addr Address of the I2C device for writing.
@@ -830,14 +933,23 @@ static inline int i2c_reg_read_addr(struct device *dev,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_reg_write_addr(struct device *dev,
-				     u16_t dev_addr,
-				     const u8_t *reg_addr,
-				     const u8_t addr_size,
-				     u8_t value)
+__deprecated static inline int i2c_reg_write_addr(struct device *dev,
+						  u16_t dev_addr,
+						  const u8_t *reg_addr,
+						  const u8_t addr_size,
+						  u8_t value)
 {
-	return i2c_burst_write_addr(dev, dev_addr, reg_addr,
-				    addr_size, &value, 1);
+	struct i2c_msg msg[2];
+
+	msg[0].buf = (u8_t *)reg_addr;
+	msg[0].len = addr_size;
+	msg[0].flags = I2C_MSG_WRITE;
+
+	msg[1].buf = &value;
+	msg[1].len = sizeof(value);
+	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+	return i2c_transfer(dev, msg, 2, dev_addr);
 }
 
 /**
@@ -846,6 +958,14 @@ static inline int i2c_reg_write_addr(struct device *dev,
  *
  * This routine updates the value of a set of bits from a addr_size byte
  * internal register of an I2C device synchronously.
+ *
+ * @note If the calculated new register value matches the value that
+ * was read this function will not generate a write operation.
+ *
+ * @deprecated The combined write synthesized by this API may not be
+ * supported on all I2C devices.  Replace this with a call to
+ * i2c_read() followed by a call to i2c_write() with a buffer
+ * containing the combined address and data.
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param dev_addr Address of the I2C device for updating.
@@ -858,18 +978,19 @@ static inline int i2c_reg_write_addr(struct device *dev,
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
  */
-static inline int i2c_reg_update_addr(struct device *dev,
-				      u16_t dev_addr,
-				      const u8_t *reg_addr,
-				      u8_t addr_size,
-				      u8_t mask,
-				      u8_t value)
+__deprecated static inline int i2c_reg_update_addr(struct device *dev,
+						   u16_t dev_addr,
+						   const u8_t *reg_addr,
+						   u8_t addr_size,
+						   u8_t mask,
+						   u8_t value)
 {
+	struct i2c_msg msg[2];
 	u8_t old_value, new_value;
 	int rc;
 
-	rc = i2c_reg_read_addr(dev, dev_addr, reg_addr,
-			       addr_size, &old_value);
+	rc = i2c_write_read(dev, dev_addr, reg_addr, addr_size,
+			    &old_value, sizeof(old_value));
 	if (rc != 0) {
 		return rc;
 	}
@@ -879,8 +1000,15 @@ static inline int i2c_reg_update_addr(struct device *dev,
 		return 0;
 	}
 
-	return i2c_reg_write_addr(dev, dev_addr, reg_addr,
-				  addr_size, new_value);
+	msg[0].buf = (u8_t *)reg_addr;
+	msg[0].len = addr_size;
+	msg[0].flags = I2C_MSG_WRITE;
+
+	msg[1].buf = &new_value;
+	msg[1].len = sizeof(new_value);
+	msg[1].flags = I2C_MSG_WRITE | I2C_MSG_STOP;
+
+	return i2c_transfer(dev, msg, 2, dev_addr);
 }
 
 struct i2c_client_config {
