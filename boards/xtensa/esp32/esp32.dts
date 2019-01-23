@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2019 Intel Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include "esp32.dtsi"
+
+/ {
+	model = "esp32";
+	compatible = "xtensa,esp32";
+
+	aliases {
+		uart-0 = &uart0;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+	};
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+};

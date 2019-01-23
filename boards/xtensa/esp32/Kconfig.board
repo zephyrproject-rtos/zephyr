@@ -6,3 +6,4 @@
 config BOARD_ESP32
 	bool "ESP32 Development Board"
 	depends on SOC_ESP32
+	select HAS_DTS

@@ -1,0 +1,35 @@
+---
+title: ESP32 Uart
+version: 0.1
+
+description: >
+    This binding gives a base representation of the ESP32 UART
+
+inherits:
+    !include uart.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "xtensa,esp32-uart"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    clocks:
+      type: array
+      category: required
+      description: Clock gate control information
+      generation: structures
+...
