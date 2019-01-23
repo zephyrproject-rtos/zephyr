@@ -308,7 +308,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			cs = <&gpiob 10 0>, <&gpiob 9 0>;
 			pinctrl-0 = <&spi0_default>;
 			pinctrl-names = "default";
 		};
