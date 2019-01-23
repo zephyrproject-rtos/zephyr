@@ -392,13 +392,26 @@ workflow here:
 
      cd zephyrproject/zephyr
 
-   and let Git know about the fork you just created::
+   Rename the default remote pointing to the `upstream repository
+   <https://github.com/zephyrproject-rtos/zephyr>`_ from ``origin`` to
+   ``upstream``::
+
+     git remote rename origin upstream
+
+   Let Git know about the fork you just created, naming it ``origin``::
 
      git remote add origin https://github.com/<your github id>/zephyr
 
    and verify the remote repos::
 
      git remote -v
+
+   The output should look similar to::
+
+     origin   https://github.com/<your github id>/zephyr (fetch)
+     origin   https://github.com/<your github id>/zephyr (push)
+     upstream https://github.com/zephyrproject-rtos/zephyr (fetch)
+     upstream https://github.com/zephyrproject-rtos/zephyr (push)
 
 #. Create a topic branch (off of master) for your work (if you're addressing
    an issue, we suggest including the issue number in the branch name)::

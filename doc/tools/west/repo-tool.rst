@@ -1,19 +1,19 @@
 .. _west-multi-repo:
 
-Multi-repository management
-###########################
+West and Multi-repository
+#########################
 
-.. note::
-
-   Zephyr is currently not managed as a multi-repo. This page describes an
-   upcoming tool and potential workflow.
+Introduction
+************
 
 West includes a set of commands for working with projects composed of multiple
-Git repositories (a *multi-repo*), similar to Google's `repo
+Git repositories (a *multi-repo*), similar to `Git Submodules
+<https://git-scm.com/book/en/v2/Git-Tools-Submodules>` and Google's `repo
 <https://gerrit.googlesource.com/git-repo/>`_ tool.
 
 The rest of this page introduces multi-repo concepts and gives an overview of
-the multi-repo commands, along with an example workflow.
+the multi-repo commands, along with an example workflow. See
+`Zephyr issue #6770`_ for additional background and discussion.
 
 .. note::
 
@@ -21,25 +21,184 @@ the multi-repo commands, along with an example workflow.
    multi-repo work, not replace it. For tasks that aren't multi-repo-related,
    use plain Git commands.
 
-   This page explains what the West multi-repo commands do behind the scenes.
+   This page explains what the west multi-repo commands do behind the scenes.
 
-Manifests
-=========
+Requirements
+************
 
-A *manifest* is a `YAML <http://yaml.org/>`_ file that gives the URL and
-revision for each repository in the multi-repo (each *project*), possibly along
-with other information. Manifests are normally stored in a separate Git
-repository.
+Although the motivation behind splitting the Zephyr codebase into multiple
+repositories is outside of the scope of this page, the fundamental requirements
+along with a clear justification of the choice not to use existing tools and
+instead develop a new one, do belong here.
+At the most fundamental level, the requirements for a transition to multiple
+repositories in the Zephyr Project are:
 
-Running ``west init`` to initialize a West installation will clone the selected
-manifest repository. Running ``west init`` without specifying a manifest
-repository will use `a default manifest repository
-<https://github.com/zephyrproject-rtos/manifest>`_ for Zephyr. A different
-manifest repository can be selected with ``west init -m URL``.
+* *R1*: Keep externally maintained code outside of the main repository
+* *R2*: Provide a tool that both Zephyr users and distributors can make use of
+        to benefit from and extend the functionality above
+* *R3*: Allow overriding or removing repositories without having to make changes
+        to the zephyr repository
+* *R4*: Support both continuous tracking and commit-based (bisectable) project
+        updating
 
-The format of the West manifest is described by a `pykwalify
+Topologies supported
+********************
+
+The requirements above lead us to the three main source code organization
+topologies that we intend to address with west:
+
+#. *T1* Star topology with zephyr as the manifest repository:
+
+   - The zephyr repository acts as the central repository and includes a
+     complete list of projects in itself
+   - Default (upstream) configuration
+   - Analogy with existing mechanisms: Git submodules with zephyr as the
+     superproject
+
+#. *T2* Star topology with an application repository as the manifest repository
+
+   - The application repository acts as the central repository and includes a
+     complete list of projects in itself
+   - Useful for downstream distributions focused in a single application
+     repository
+   - Analogy with existing mechanisms: Git submodules with the application as
+     the superproject, zephyr as a submodule
+
+#. *T3* Forest topology with a set of trees all at the same level
+
+   - A dedicated manifest repository contains only a list of repositories
+   - Useful for downstream distributions that track the latest ``HEAD`` on all
+     repositories
+   - Analogy with existing mechanisms: Google repo-based distribution
+
+Rationale for a custom tool
+***************************
+
+During the different stages of design and development for west, using already
+established and proven multi-repo technologies was considered multiple times.
+After careful analysis, no existing tool or mechanism was found suitable for
+Zephyr’s use case set and requirements. The following two tools were examined
+in detail:
+
+* Google repo
+
+  - The tool is Python 2 only
+  - Does not play well with Windows
+  - It is poorly documented and maintained
+  - It does not fully support a set of bisectable repositories without
+    additional intervention (*R4*)
+
+* Git submodules
+
+  - Does not fully support *R1*, since the externally maintained repositories
+    would still need to be inside the main zephyr Git tree
+  - Does not support *R3*. Downstream copies would need to either delete or
+    replace submodule definitions
+  - Does not support continuous tracking of the latest ``HEAD`` in external
+    repositories (*R4*)
+  - Requires hardcoding of the paths/locations of the external repositories 
+
+Finally, please see :ref:`west-history` for the motivations behind using a
+single tool for both multi-repository management as well as building, debugging
+and flashing.
+
+.. _west-mr-model:
+
+Model
+*****
+
+Manifest
+========
+
+A *manifest* is a `YAML <http://yaml.org/>`_ file that, at a minimum, gives the
+URL and revision for each project repository in the multi-repo (each *project*).
+The manifest is stored in the *manifest repository* and is named :file:`west.yml`.
+
+The format of the west manifest is described by a `pykwalify
 <https://pypi.org/project/pykwalify/>`_ schema, found `here
 <https://github.com/zephyrproject-rtos/west/blob/master/src/west/manifest-schema.yml>`_.
+
+A west-based Zephyr installation has a special manifest repository. This
+repository contains the west manifest file named :file:`west.yml`. The west
+manifest contains:
+
+* A list of the projects (Git repositories) in the installation and
+  metadata about them (where to clone them from, what revision to check out,
+  etc.). Externally maintained projects (vendor HALs, crypto libraries, etc)
+  will be moved into their own repositories as part of the transition to
+  multi-repository, and will be managed using this list.
+
+* Metadata about the manifest repository, such as what path to clone it into in
+  the Zephyr installation.
+
+* Optionally, a description of how to clone west itself (this allows users to
+  fork west itself, should that be necessary).
+
+* Additionally both the projects and the metadata about the manifest repository
+  can optionally include information about additional west commands (extensions)
+  that are contained inside the Git repositories.
+
+Repositories
+============
+
+There are therefore three types of repositories that exist in a west-based Zephyr
+installation:
+
+* West repository: This is cloned by ``west init`` and placed in
+  :file:`.west/west`
+
+* Manifest repository: This is the repository that contains the :file:`west.yml`
+  manifest file described above which lists all the projects. The manifest
+  repository can either contain only the manifest itself or also have actual
+  code in it. In the case of the upstream Zephyr Project, the manifest
+  repository is the `zephyr repository <https://github.com/zephyrproject-rtos/zephyr>`_,
+  which contains all zephyr source code except for externally maintained
+  projects, which are listed in the :file:`west.yml` manifest file.
+  It is the user's responsibility to update this repository using Git.
+
+* Project repositories: In the context of west, projects are source code
+  repositories that are listed in the manifest file, :file:`west.yml` contained
+  inside the manifest repository. West manages projects, updating them according
+  to the revisions present in the manifest file.
+
+West's view of multirepo history looks like this example (though some parts of
+the example are specific to upstream Zephyr’s use of west):
+
+.. figure:: west-mr-model.png
+    :align: center
+    :alt: West multi-repo history
+    :figclass: align-center
+
+    West multi-repo history
+
+The history of the manifest repository is the line of Git commits which is
+"floating" on top of a plane (parent commits point to child commits using
+solid arrows.) The plane contains the Git commit history of the projects, with
+each project's history boxed in by a rectangle.
+
+The commits in the manifest repository (again, for upstream Zephyr this is the
+zephyr repository itself) each have a manifest file. The manifest file in each
+zephyr commit gives the corresponding commits which it expects in the other
+projects. These are shown using dotted line arrows in the diagram.
+
+Notice a few important details about the above picture:
+
+- Other projects can stay at the same versions between two zephyr commits
+  (like ``P2`` does between zephyr commits ``A → B``, and both ``P1`` and
+  ``P3`` do in ``F → G``).
+- Other projects can move forward in history between two zephyr commits (``P3``
+  from ``A → B``).
+- A project can also move backwards in its history as zephyr moves forward
+  (like ``P3`` from zephyr commits ``C → D``). One use for this is to "revert"
+  a regression by moving the other project to a version before it was
+  introduced.
+- Not all zephyr manifests have the same other projects (``P2`` is not a part
+  of the installation at zephyr commits ``F`` and ``G``).
+- Two zephyr commits can have the same external commits (like ``F`` and ``G``).
+- Not all commits in some projects are associated with a zephyr commit (``P3``
+  "jumps" multiple commits in its history between zephyr commits ``B → C``).
+- Every zephyr commit’s manifest refers to exactly one version in each of the
+  other projects it cares about.
 
 The ``manifest-rev`` branch
 ***************************
@@ -50,7 +209,7 @@ resolves to). The ``manifest-rev`` branch is updated whenever project data is
 fetched (the `command overview`_ below explains which commands fetch project
 data).
 
-All work branches created using West track the ``manifest-rev`` branch. Several
+All work branches created using west track the ``manifest-rev`` branch. Several
 multi-repo commands also use ``manifest-rev`` as a reference for the upstream
 revision (as of the most recent fetch).
 
@@ -68,13 +227,16 @@ revision (as of the most recent fetch).
    give a consistent reference for the upstream revision regardless of how the
    manifest changes over time.
 
+.. note::
+   West does not create a ``manifest-rev`` branch in the manifest repository,
+   since west does not manage the manifest repository's branches or revisions.
+
 Command overview
 ================
 
 This section gives a quick overview of the multi-repo commands, split up by
-functionality. All commands loosely mimic the corresponding Git command, but in
-a multi-repo context (``west fetch`` fetches upstream data without updating
-local work branches, etc.)
+functionality. Some commands loosely mimic the corresponding Git command, but in
+a multi-repo context (``west diff`` shows local changes on all repositories).
 
 Passing no projects to commands that accept a list of projects usually means to
 run the command for all projects listed in the manifest.
@@ -82,92 +244,57 @@ run the command for all projects listed in the manifest.
 .. note::
 
    For the most up-to-date documentation, see the command help texts (e.g.
-   ``west fetch --help``). Only the most important flags are mentioned here.
+   ``west diff --help``). Only the most important flags are mentioned here.
 
 Cloning and updating projects
 *****************************
 
-After running ``west init`` to initialize West (e.g., with the default Zephyr
+After running ``west init`` to initialize west (e.g., with the default Zephyr
 manifest), the following commands will clone/update projects.
-
-Except for ``west rebase``, all commands in this section implicitly update the
-manifest repository, fetch upstream data, and update the ``manifest-rev``
-branch.
 
 .. note::
 
    To implement self-updates, ``west init`` also clones a repository with the
-   West source code, which is updated whenever the manifest is. The ``west``
+   west source code, which is updated whenever the projects are. The ``west``
    command is implemented as a thin wrapper that calls through to the code in
    the cloned repository. The wrapper itself only implements the ``west init``
    command.
 
    This is the same model used by Google's ``repo`` tool.
 
-- ``west clone [-b BRANCH_NAME] [PROJECT ...]``: Clones the specified
+- ``west init [-l] [-m URL] [--mr REVISION] [PATH]``: Initializes a west
+  installation.
+
+  This command can be invoked in two distinct ways.
+  If you already have a local copy or clone of the manifest repository, you can
+  use the ``-l`` switch to instruct west to initialize an installation around
+  the existing clone, without modifying it. For example,
+  ``west init -l path/to/zephyr`` is useful if you already have cloned the
+  zephyr repository in the past using Git and now want to initialize a west
+  installation around it. 
+  If you however want to initialize an installation directly from the remote
+  repository, you have the option to specify its URL using the ``-m`` switch
+  and/or its revision with the ``--mr`` one. For example, invoking west with:
+  ``west init -m https://github.com/zephyrproject-rtos/zephyr --mr v1.15.0``
+  would clone the upstream official zephyr repository at the tagged release
+  v1.15.0.
+
+- ``west update [PROJECT ...]``: Clones or updates the specified
   projects (default: all projects).
 
+  This command will parse the manifest file (:file:`west.yml`) in the manifest
+  repository, clone all project repositories that are not already present
+  locally and finally update all projects to the revision specified in the
+  manifest file.
   An initial branch named after the project's manifest revision is created in
-  each cloned repository. The names of branch and tag revisions are used as-is.
-  For qualified refs like ``refs/heads/foo``, the last component (``foo``) is
-  used. For SHA revisions, the generic name ``work`` is used.
+  each cloned project repository. The names of branch and tag revisions are
+  used as-is.  For qualified refs like ``refs/heads/foo``, the last component
+  (``foo``) is used. For SHA revisions, a detached ``HEAD`` is checked out.
 
-  A different branch name can be specified with ``-b``.
-
-  Like all branches created using West, the initial branch tracks
-  ``manifest-rev``.
-
-- ``west fetch [PROJECT ...]``: Fetches new upstream changes in each of the
-  specified projects (default: all projects), cloning them first if necessary.
-  Local branches are not updated (except for the special ``manifest-rev``
-  branch).
-
-  If a repository is cloned using ``west fetch``, the initial state is a
-  detached HEAD at ``manifest-rev``.
-
-  .. note::
-
-     ``west clone`` is an alias for ``west fetch`` + ``west branch <name>``
-     (see below).
-
-- ``west pull [PROJECT ...]``: Fetches new upstream changes in each of the
-  specified projects (default: all projects) and rebases them on top of
-  ``manifest-rev``.
-
-  This corresponds to ``git pull --rebase``, with the tracked branch taken as
-  ``manifest-rev``.
-
-- ``west rebase [PROJECT ...]``: Rebases each of the specified projects
-  (default: all cloned projects) on top of ``manifest-rev``.
-
-  .. note::
-
-     ``west pull`` is an alias for ``west fetch`` + ``west rebase``.
-
-Working with branches
-*********************
-
-The following commands are used to create, check out, and list branches that
-span multiple projects (in reality, Git branches with identical names in
-multiple repositories).
-
-- ``west branch [BRANCH_NAME [PROJECT ...]]``: Creates a branch
-  ``BRANCH_NAME`` in each of the specified projects (default: all cloned
-  projects).
-
-  Like all branches created using West, the newly created branches track
-  ``manifest-rev``.
-
-  If no arguments are passed to ``west branch``, local branches from all
-  projects are listed, along with the projects they appear in.
-
-- ``west checkout [-b] BRANCH_NAME [PROJECT ...]]``: Checks out the branch
-  ``BRANCH_NAME`` in each of the specified projects (default: all cloned
-  projects). This command is a no-op for projects that do not have the
-  specified branch.
-
-  With ``-b``, creates and checks out the branch if it does not exist in a
-  project (like ``git checkout -b``), instead of ignoring the project.
+.. note::
+  West uses ``git checkout`` to switch each project to the revision specified
+  in the manifest repository. This is typically a safe operation that will not
+  modify any branches or staged work you might have.
 
 Miscellaneous commands
 **********************
@@ -195,109 +322,11 @@ These commands perform miscellaneous functions.
   Note that ``west forall`` can be used to run any command, not just Git
   commands. To run a Git command, do ``west forall -c 'git ...'``.
 
-- ``west update [--update-manifest] [--update-west]``: Updates the manifest
-  and/or west repositories. With no arguments, both are updated.
+- ``west selfupdate``: Updates the west repository.
 
-  Normally, the manifest and west repositories are updated automatically
-  whenever a command that fetches upstream data is run (this behavior can be
+  Normally, the west repository is updated automatically whenever a command
+  that fetches upstream data is run (this behavior can be
   suppressed for the duration of a single command by passing ``--no-update``).
-  If the manifest or west repository has local modifications and cannot be
-  fast-forwarded to the new version, the update of the repository is skipped
-  (with a warning).
 
-Example workflow
-================
-
-This section gives an example workflow that clones the Zephyr repositories,
-creates and switches between two work branches, updates (rebases) a work branch
-to the latest manifest revision, and inspects upstream changes.
-
-1. First, we initialize West with the default Zephyr manifest, and clone all
-   projects:
-
-   .. code-block:: console
-
-      west init zephyrproject
-      cd zephyrproject
-      west clone
-
-   .. note::
-
-      Repositories can also be cloned with ``west fetch``. The only difference
-      between ``west fetch`` and ``west clone`` is that no initial work branch
-      is created by ``west fetch``. Instead, the initial state with ``west
-      fetch`` is a detached ``HEAD`` at ``manifest-rev``.
-
-      The initial work branch created by ``west clone`` is named after the
-      project's manifest revision. We don't do any work on the initial work
-      branch in this example, and create our own work branches instead.
-
-2. Next, we create and check out a branch ``xy-feature`` for implementing a
-   feature that spans the ``proj-x`` and ``proj-y`` projects:
-
-   .. code-block:: console
-
-      west checkout -b xy-feature proj-x proj-y
-
-   This creates a Git branch named ``xy-feature`` in ``proj-x`` and ``proj-y``.
-   The new branches are automatically set up to track the ``manifest-rev``
-   branch in their respective repositories.
-
-   We work on the repositories as usual.
-
-3. While working on the feature, an urgent bug comes up that spans all
-   projects. We use ordinary Git commands to commit/stash the partially
-   implemented feature, and then check out a new branch for fixing the bug:
-
-   .. code-block:: console
-
-      west checkout -b global-fix
-
-4. After fixing the bug, we want to switch back to working on the feature, but
-   we forgot its branch name. We list branches with ``west branch`` to remind
-   ourselves, and then switch back:
-
-   .. code-block:: console
-
-      west checkout xy-feature
-
-   This command only affects the ``proj-x`` and ``proj-y`` repositories, since
-   only those have the ``xy-feature`` branch.
-
-5. We now update (rebase) the ``proj-x`` and ``proj-y`` repositories, to get
-   get any new upstream changes into the ``xy-feature`` branch:
-
-   .. code-block:: console
-
-      west pull proj-x proj-y
-
-6. After doing more work, we want to see if more changes have been added
-   upstream, but we don't want to rebase yet. Instead, we just fetch changes in
-   all projects:
-
-   .. code-block:: console
-
-      west fetch
-
-   This command fetches the upstream revision specified in the manifest and
-   updates the ``manifest-rev`` branch to point to it, for all projects. Local
-   work branches are not touched.
-
-7. Running ``west status`` or ``git status`` now shows that ``manifest-rev``
-   is ahead of the ``xy-feature`` branch in ``proj-x``, meaning there are new
-   upstream changes.
-
-   We want to update ``proj-x``. This could be done with ``west pull proj-x``,
-   but since the ``xy-feature`` branch tracks the ``manifest-rev`` branch, we
-   decide to mix it up a bit with a plain Git command inside the ``proj-x``
-   repository:
-
-   .. code-block:: console
-
-      git pull --rebase
-
-   .. note::
-
-      In general, do not assume that multi-repo commands are "better" where a
-      plain Git command will do. In particular, the multi-repo commands are not
-      meant to replicate every feature of the corresponding Git commands.
+.. _Zephyr issue #6770:
+   https://github.com/zephyrproject-rtos/zephyr/issues/6770
