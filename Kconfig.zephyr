@@ -109,7 +109,8 @@ config FLASH_LOAD_SIZE
 endif
 
 config TEXT_SECTION_OFFSET
-	hex "TEXT section offset"
+	hex
+	prompt "TEXT section offset" if !BOOTLOADER_MCUBOOT
 	default 0x200 if BOOTLOADER_MCUBOOT
 	default 0
 	help
