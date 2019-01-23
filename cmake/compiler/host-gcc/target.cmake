@@ -27,3 +27,17 @@ else()
   endif()
 endif()
 find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FORCE)
+
+# This libgcc code is partially duplicated in compiler/*/target.cmake
+execute_process(
+  COMMAND ${CMAKE_C_COMPILER} ${CMAKE_C_FLAGS} --print-libgcc-file-name
+  OUTPUT_VARIABLE LIBGCC_FILE_NAME
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+assert_exists(LIBGCC_FILE_NAME)
+
+# While most x86_64 Linux distributions implement "multilib" and have
+# 32 bits libraries off the shelf, things like
+# "/usr/lib/gcc/x86_64-linux-gnu/7/IAMCU/libgcc.a" are unheard of.
+# So this does not support CONFIG_X86_IAMCU=y
+LIST(APPEND TOOLCHAIN_LIBS gcc)
