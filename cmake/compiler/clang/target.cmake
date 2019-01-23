@@ -33,6 +33,7 @@ foreach(isystem_include_dir ${NOSTDINC})
   list(APPEND isystem_include_flags -isystem ${isystem_include_dir})
 endforeach()
 
+# This libgcc code is partially duplicated in compiler/*/target.cmake
 execute_process(
   COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
   OUTPUT_VARIABLE LIBGCC_FILE_NAME

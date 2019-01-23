@@ -109,6 +109,7 @@ else()
   endif()
 
   if(NOT no_libgcc)
+    # This libgcc code is partially duplicated in compiler/*/target.cmake
     execute_process(
       COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
       OUTPUT_VARIABLE LIBGCC_FILE_NAME
