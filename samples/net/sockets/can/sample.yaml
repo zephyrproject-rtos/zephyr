@@ -1,0 +1,9 @@
+common:
+  tags: socket can CAN
+  depends_on: can
+sample:
+  description: Test BSD sockets CAN support
+  name: Socket CAN example
+tests:
+  test:
+    platform_whitelist: stm32f072b_disco nucleo_l432kc
