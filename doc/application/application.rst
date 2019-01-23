@@ -82,9 +82,23 @@ Source Tree Structure
 Understanding the Zephyr source tree can be helpful in locating the code
 associated with a particular Zephyr feature.
 
-The Zephyr source tree provides the following top-level directories,
-each of which may have one or more additional levels of subdirectories
-which are not described here.
+At the top of the tree there are several files that are of importance:
+
+:file:`CMakeLists.txt`
+    The top-level file for the CMake build system, containing a lot of the
+    logic required to build Zephyr.
+
+:file:`Kconfig`
+    The top-level Kconfig file, which refers to the file :file:`Kconfig.zephyr`
+    also found at the top-level directory.
+
+:file:`west.yml`
+    The :ref:`west` manifest, listing the external repositories required to
+    build Zephyr.
+
+The Zephyr source tree also contains the following top-level
+directories, each of which may have one or more additional levels of
+subdirectories which are not described here.
 
 :file:`arch`
     Architecture-specific kernel and system-on-chip (SoC) code.
