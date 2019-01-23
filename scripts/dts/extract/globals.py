@@ -341,7 +341,8 @@ def get_binding(node_address):
 def get_binding_compats():
     return bindings_compat
 
-def extract_controller(node_address, prop, prop_values, index, def_label, generic):
+def extract_controller(node_address, prop, prop_values, index,
+                       def_label, generic, handle_single=False):
 
     prop_def = {}
     prop_alias = {}
@@ -366,7 +367,7 @@ def extract_controller(node_address, prop, prop_values, index, def_label, generi
         l_base = def_label.split('/')
 
         # Check is defined should be indexed (_0, _1)
-        if index == 0 and len(prop_values) < (num_cells + 2):
+        if handle_single or index == 0 and len(prop_values) < (num_cells + 2):
             # 0 or 1 element in prop_values
             # ( ie len < num_cells + phandle + 1 )
             l_idx = []
@@ -405,13 +406,13 @@ def extract_controller(node_address, prop, prop_values, index, def_label, generi
     prop_values = prop_values[num_cells+1:]
 
     # recurse if we have anything left
-    if len(prop_values):
+    if not handle_single and len(prop_values):
         extract_controller(node_address, prop, prop_values, index + 1,
                            def_label, generic)
 
 
 def extract_cells(node_address, prop, prop_values, names, index,
-                  def_label, generic):
+                  def_label, generic, handle_single=False):
 
     cell_parent = phandles[prop_values.pop(0)]
 
@@ -448,7 +449,7 @@ def extract_cells(node_address, prop, prop_values, names, index,
 
     l_base = def_label.split('/')
     # Check if #define should be indexed (_0, _1, ...)
-    if index == 0 and len(prop_values) < (num_cells + 2):
+    if handle_single or index == 0 and len(prop_values) < (num_cells + 2):
         # Less than 2 elements in prop_values (ie len < num_cells + phandle + 1)
         # Indexing is not needed
         l_idx = []
@@ -483,7 +484,7 @@ def extract_cells(node_address, prop, prop_values, names, index,
         insert_defs(node_address, prop_def, prop_alias)
 
     # recurse if we have anything left
-    if len(prop_values):
+    if not handle_single and len(prop_values):
         extract_cells(node_address, prop, prop_values, names,
                       index + 1, def_label, generic)
 
