@@ -251,7 +251,7 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 	wbs = flash_area_align(cf->cf_fcb.fap);
 	len = settings_line_len_calc(name, val_len);
 
-	for (i = 0; i < CONFIG_SETTINGS_FCB_NUM_AREAS; i++) {
+	for (i = 0; i < cf->cf_fcb.f_sector_cnt - 1; i++) {
 		rc = fcb_append(&cf->cf_fcb, len, &loc.loc);
 		if (rc != FCB_ERR_NOSPACE) {
 			break;
