@@ -108,6 +108,12 @@ config NET_SOCKETS_PACKET
 	  while sending. While receiving, packets (including all the headers)
 	  will be feed to sockets as it as from the driver.
 
+config NET_SOCKETS_CAN
+	bool "Enable socket CAN support [EXPERIMENTAL]"
+	default n
+	help
+	  The value depends on your network needs.
+
 module = NET_SOCKETS
 module-dep = NET_LOG
 module-str = Log level for BSD sockets compatible API calls
