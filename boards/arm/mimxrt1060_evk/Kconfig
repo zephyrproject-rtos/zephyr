@@ -15,10 +15,12 @@ config CODE_ITCM
 
 config CODE_HYPERFLASH
 	depends on BOARD_MIMXRT1060_EVK_HYPERFLASH
+	select NXP_IMX_RT_BOOT_HEADER
 	bool "Link code into external HyperFlash memory"
 
 config CODE_QSPI
 	depends on BOARD_MIMXRT1060_EVK
+	select NXP_IMX_RT_BOOT_HEADER
 	bool "Link code into external QSPI memory"
 
 endchoice
