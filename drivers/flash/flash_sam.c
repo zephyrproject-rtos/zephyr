@@ -126,7 +126,7 @@ static int flash_sam_write_page(struct device *dev, off_t offset,
 	const u32_t *src = data;
 	u32_t *dst = (u32_t *)((u8_t *)CONFIG_FLASH_BASE_ADDRESS + offset);
 
-	LOG_DBG("offset = %x, len = %zu", offset, len);
+	LOG_DBG("offset = %lx, len = %zu", (long)offset, len);
 
 	/* We need to copy the data using 32-bit accesses */
 	for (; len > 0; len -= sizeof(*src)) {
@@ -151,7 +151,7 @@ static int flash_sam_write(struct device *dev, off_t offset,
 	int rc;
 	const u8_t *data8 = data;
 
-	LOG_DBG("offset = %x, len = %zu", offset, len);
+	LOG_DBG("offset = %lx, len = %zu", (long)offset, len);
 
 	/* Check that the offset is within the flash */
 	if (!flash_sam_valid_range(dev, offset, len)) {
@@ -207,7 +207,7 @@ done:
 static int flash_sam_read(struct device *dev, off_t offset, void *data,
 			  size_t len)
 {
-	LOG_DBG("offset = %x, len = %zu", offset, len);
+	LOG_DBG("offset = %lx, len = %zu", (long)offset, len);
 
 	if (!flash_sam_valid_range(dev, offset, len)) {
 		return -EINVAL;
@@ -223,7 +223,7 @@ static int flash_sam_erase_block(struct device *dev, off_t offset)
 {
 	Efc *const efc = DEV_CFG(dev)->regs;
 
-	LOG_DBG("offset = %x", offset);
+	LOG_DBG("offset = %lx", (long)offset);
 
 	efc->EEFC_FCR = EEFC_FCR_FKEY_PASSWD |
 			EEFC_FCR_FARG(flash_sam_get_page(offset) | 2) |
@@ -239,7 +239,7 @@ static int flash_sam_erase(struct device *dev, off_t offset, size_t len)
 	int rc = 0;
 	off_t i;
 
-	LOG_DBG("offset = %x, len = %zu", offset, len);
+	LOG_DBG("offset = %lx, len = %zu", (long)offset, len);
 
 	if (!flash_sam_valid_range(dev, offset, len)) {
 		return -EINVAL;
