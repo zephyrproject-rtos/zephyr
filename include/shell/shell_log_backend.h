@@ -27,7 +27,7 @@ enum shell_log_backend_state {
 
 /** @brief Shell log backend control block (RW data). */
 struct shell_log_backend_control_block {
-	atomic_t cnt;
+	atomic_t dropped_cnt;
 	enum shell_log_backend_state state;
 };
 
