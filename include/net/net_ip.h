@@ -43,12 +43,14 @@ extern "C" {
 #define PF_INET		1	/* IP protocol family version 4. */
 #define PF_INET6	2	/* IP protocol family version 6. */
 #define PF_PACKET	3	/* Packet family. */
+#define PF_CAN		4	/* Controller Area Network.  */
 
 /** Address families.  */
 #define AF_UNSPEC	PF_UNSPEC
 #define AF_INET		PF_INET
 #define AF_INET6	PF_INET6
 #define AF_PACKET	PF_PACKET
+#define AF_CAN		PF_CAN
 
 /** Protocol numbers from IANA */
 enum net_ip_protocol {
