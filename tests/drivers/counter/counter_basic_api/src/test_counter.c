@@ -8,14 +8,14 @@
 #include <ztest.h>
 #include <kernel.h>
 
-static volatile u32_t wrap_cnt;
+static volatile u32_t top_cnt;
 static volatile u32_t alarm_cnt;
 
-static void wrap_handler(struct device *dev, void *user_data);
+static void top_handler(struct device *dev, void *user_data);
 
 void *exp_user_data = (void *)199;
 
-#define WRAP_PERIOD_US 20000
+#define COUNTER_PERIOD_US 20000
 
 struct counter_alarm_cfg alarm_cfg;
 struct counter_alarm_cfg alarm_cfg2;
@@ -57,8 +57,9 @@ static void counter_tear_down_instance(const char *dev_name)
 
 	dev = device_get_binding(dev_name);
 
-	err = counter_set_wrap(dev, counter_get_max_wrap(dev), NULL, NULL);
-	zassert_equal(0, err, "Counter wrap to default failed\n");
+	err = counter_set_top_value(dev, counter_get_max_top_value(dev),
+				    NULL, NULL);
+	zassert_equal(0, err, "Setting top value to default failed\n");
 
 	err = counter_stop(dev);
 	zassert_equal(0, err, "Counter failed to stop\n");
@@ -77,23 +78,23 @@ void counter_tear_down(void)
 
 }
 
-static void wrap_handler(struct device *dev, void *user_data)
+static void top_handler(struct device *dev, void *user_data)
 {
 	zassert_true(user_data == exp_user_data, "Unexpected callback\n");
-	wrap_cnt++;
+	top_cnt++;
 }
 
-void test_wrap_alarm_instance(const char *dev_name)
+void test_set_top_value_with_alarm_instance(const char *dev_name)
 {
 	struct device *dev;
 	int err;
 	u32_t cnt;
 	u32_t ticks;
 
-	wrap_cnt = 0;
+	top_cnt = 0;
 
 	dev = device_get_binding(dev_name);
-	ticks = counter_us_to_ticks(dev, WRAP_PERIOD_US);
+	ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
 
 	err = counter_start(dev);
 	zassert_equal(0, err, "Counter failed to start\n");
@@ -103,20 +104,20 @@ void test_wrap_alarm_instance(const char *dev_name)
 	cnt = counter_read(dev);
 	zassert_true(cnt > 0, "Counter should progress (dev:%s)\n", dev_name);
 
-	err = counter_set_wrap(dev, ticks, wrap_handler, exp_user_data);
-	zassert_equal(0, err, "Counter failed to set wrap (dev:%s)\n",
+	err = counter_set_top_value(dev, ticks, top_handler, exp_user_data);
+	zassert_equal(0, err, "Counter failed to set top value (dev:%s)\n",
 			dev_name);
 
-	k_busy_wait(5.2*WRAP_PERIOD_US);
+	k_busy_wait(5.2*COUNTER_PERIOD_US);
 
-	zassert_true(wrap_cnt == 5,
-			"Unexpected number of wraps (%d) (dev: %s).\n",
-			wrap_cnt, dev_name);
+	zassert_true(top_cnt == 5,
+			"Unexpected number of turnarounds (%d) (dev: %s).\n",
+			top_cnt, dev_name);
 }
 
-void test_wrap_alarm(void)
+void test_set_top_value_with_alarm(void)
 {
-	test_all_instances(test_wrap_alarm_instance);
+	test_all_instances(test_set_top_value_with_alarm_instance);
 }
 
 static void alarm_handler(struct device *dev, u8_t chan_id, u32_t counter,
@@ -133,7 +134,7 @@ void test_single_shot_alarm_instance(const char *dev_name)
 	u32_t ticks;
 
 	dev = device_get_binding(dev_name);
-	ticks = counter_us_to_ticks(dev, WRAP_PERIOD_US);
+	ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
 
 	alarm_cfg.absolute = true;
 	alarm_cfg.ticks = ticks + 1;
@@ -145,11 +146,12 @@ void test_single_shot_alarm_instance(const char *dev_name)
 	err = counter_start(dev);
 	zassert_equal(0, err, "Counter failed to start\n");
 
-	err = counter_set_wrap(dev, ticks, wrap_handler, exp_user_data);
-	zassert_equal(0, err, "Counter failed to set wrap\n");
+	err = counter_set_top_value(dev, ticks, top_handler, exp_user_data);
+	zassert_equal(0, err, "Counter failed to set top value\n");
 
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
-	zassert_equal(-EINVAL, err, "Counter should return error because ticks exceeded the limit set alarm\n");
+	zassert_equal(-EINVAL, err, "Counter should return error because ticks"
+					" exceeded the limit set alarm\n");
 	alarm_cfg.ticks = ticks - 100;
 
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
@@ -165,8 +167,9 @@ void test_single_shot_alarm_instance(const char *dev_name)
 	err = counter_disable_channel_alarm(dev, 0);
 	zassert_equal(0, err, "Counter disabling alarm failed\n");
 
-	err = counter_set_wrap(dev, counter_get_max_wrap(dev), NULL, NULL);
-	zassert_equal(0, err, "Counter wrap to default failed\n");
+	err = counter_set_top_value(dev, counter_get_max_top_value(dev),
+				    NULL, NULL);
+	zassert_equal(0, err, "Setting top value to default failed\n");
 
 	err = counter_stop(dev);
 	zassert_equal(0, err, "Counter failed to stop\n");
@@ -190,7 +193,7 @@ static void alarm_handler2(struct device *dev, u8_t chan_id, u32_t counter,
  * Two alarms set. First alarm is absolute, second relative. Because
  * setting of both alarms is delayed it is expected that second alarm
  * will expire first (relative to the time called) while first alarm
- * will expire after next wrap.
+ * will expire after next wrap around.
  */
 void test_multiple_alarms_instance(const char *dev_name)
 {
@@ -199,7 +202,7 @@ void test_multiple_alarms_instance(const char *dev_name)
 	u32_t ticks;
 
 	dev = device_get_binding(dev_name);
-	ticks = counter_us_to_ticks(dev, WRAP_PERIOD_US);
+	ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
 
 	alarm_cfg.absolute = true;
 	alarm_cfg.ticks = counter_us_to_ticks(dev, 2000);
@@ -216,8 +219,8 @@ void test_multiple_alarms_instance(const char *dev_name)
 	err = counter_start(dev);
 	zassert_equal(0, err, "Counter failed to start\n");
 
-	err = counter_set_wrap(dev, ticks, wrap_handler, exp_user_data);
-	zassert_equal(0, err, "Counter failed to set wrap\n");
+	err = counter_set_top_value(dev, ticks, top_handler, exp_user_data);
+	zassert_equal(0, err, "Counter failed to set top value\n");
 
 	k_busy_wait(1.4*counter_ticks_to_us(dev, alarm_cfg.ticks));
 
@@ -258,7 +261,7 @@ void test_all_channels_instance(const char *str)
 	u32_t ticks;
 
 	dev = device_get_binding(str);
-	ticks = counter_us_to_ticks(dev, WRAP_PERIOD_US);
+	ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
 
 	for (int i = 0; i < n; i++) {
 		alarm_cfgs[i].absolute = false;
@@ -276,7 +279,8 @@ void test_all_channels_instance(const char *str)
 		} else if (err == -ENOTSUP) {
 			limit_reached = true;
 		} else {
-			zassert_equal(0, 1, "Unexpected error on setting alarm");
+			zassert_equal(0, 1,
+					"Unexpected error on setting alarm");
 		}
 	}
 
@@ -287,7 +291,8 @@ void test_all_channels_instance(const char *str)
 
 	for (int i = nchan; i < n; i++) {
 		err = counter_disable_channel_alarm(dev, i);
-		zassert_equal(-ENOTSUP, err, "Unexpected error on disabling alarm\n");
+		zassert_equal(-ENOTSUP, err,
+				"Unexpected error on disabling alarm\n");
 	}
 }
 
@@ -299,7 +304,7 @@ void test_all_channels(void)
 void test_main(void)
 {
 	ztest_test_suite(test_counter,
-		ztest_unit_test_setup_teardown(test_wrap_alarm,
+		ztest_unit_test_setup_teardown(test_set_top_value_with_alarm,
 					unit_test_noop,
 					counter_tear_down),
 		ztest_unit_test_setup_teardown(test_single_shot_alarm,

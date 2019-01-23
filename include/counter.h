@@ -44,12 +44,13 @@ typedef void (*counter_alarm_callback_t)(struct device *dev,
  *
  * @param callback Callback called on alarm (cannot be NULL).
  * @param ticks Ticks that triggers the alarm. In case of absolute flag is set,
- *		maximal value that can be set equals wrap value
- *		(counter_get_wrap). Otherwise counter_get_max_relative_alarm()
- *		returns maximal value that can be set. If counter is clock
- *		driven then ticks can be converted to microseconds (see @ref
- *		counter_ticks_to_us). Alternatively, counter implementation may
- *		count asynchronous events.
+ *		maximal value that can be set equals top value
+ *		(@ref counter_get_top_value). Otherwise
+ *		@ref counter_get_max_relative_alarm() returns maximal value that
+ *		can be set. If counter is clock driven then ticks can be
+ *		converted to microseconds (see @ref counter_ticks_to_us).
+ *		Alternatively, counter implementation may count asynchronous
+ *		events.
  * @param user_data User data returned in callback.
  * @param absolute Ticks relation to counter value. If true ticks are treated as
  *		absolute value, else it is relative to the counter reading
@@ -62,25 +63,26 @@ struct counter_alarm_cfg {
 	bool absolute;
 };
 
-/** @brief Wrap callback
+/** @brief Callback called when counter turns around.
  *
  * @param dev       Pointer to the device structure for the driver instance.
- * @param user_data User data provided in counter_set_wrap_alarm.
+ * @param user_data User data provided in @ref counter_set_top_value.
  */
-typedef void (*counter_wrap_callback_t)(struct device *dev, void *user_data);
+typedef void (*counter_top_callback_t)(struct device *dev, void *user_data);
 
 /** @brief Structure with generic counter features.
  *
- * @param max_wrap Maximal (default) wrap value on which counter is reset
- *		   (cleared or reloaded).
- * @param freq Frequency of the source clock if synchronous events are counted.
- * @param count_up Flag indicating direction of the counter. If true counter is
- *		   counting up else counting down.
- * @param channels Number of channels that can be used for setting alarm,
- *		   see @ref counter_set_alarm.
+ * @param max_top_value Maximal (default) top value on which counter is reset
+ *			(cleared or reloaded).
+ * @param freq		Frequency of the source clock if synchronous events are
+ *			counted.
+ * @param count_up	Flag indicating direction of the counter. If true
+ *			counter is counting up else counting down.
+ * @param channels	Number of channels that can be used for setting alarm,
+ *			see @ref counter_set_alarm.
  */
 struct counter_config_info {
-	u32_t max_wrap;
+	u32_t max_top_value;
 	u32_t freq;
 	bool count_up;
 	u8_t channels;
@@ -92,11 +94,11 @@ typedef u32_t (*counter_api_read)(struct device *dev);
 typedef int (*counter_api_set_alarm)(struct device *dev, u8_t chan_id,
 				const struct counter_alarm_cfg *alarm_cfg);
 typedef int (*counter_api_disable_alarm)(struct device *dev, u8_t chan_id);
-typedef int (*counter_api_set_wrap)(struct device *dev, u32_t ticks,
-				    counter_wrap_callback_t callback,
+typedef int (*counter_api_set_top_value)(struct device *dev, u32_t ticks,
+				    counter_top_callback_t callback,
 				    void *user_data);
 typedef u32_t (*counter_api_get_pending_int)(struct device *dev);
-typedef u32_t (*counter_api_get_wrap)(struct device *dev);
+typedef u32_t (*counter_api_get_top_value)(struct device *dev);
 typedef u32_t (*counter_api_get_max_relative_alarm)(struct device *dev);
 typedef void *(*counter_api_get_user_data)(struct device *dev);
 
@@ -106,9 +108,9 @@ struct counter_driver_api {
 	counter_api_read read;
 	counter_api_set_alarm set_alarm;
 	counter_api_disable_alarm disable_alarm;
-	counter_api_set_wrap set_wrap;
+	counter_api_set_top_value set_top_value;
 	counter_api_get_pending_int get_pending_int;
-	counter_api_get_wrap get_wrap;
+	counter_api_get_top_value get_top_value;
 	counter_api_get_max_relative_alarm get_max_relative_alarm;
 	counter_api_get_user_data get_user_data;
 };
@@ -190,17 +192,17 @@ static inline u64_t counter_ticks_to_us(const struct device *dev, u32_t ticks)
 }
 
 /**
- * @brief Function to retrieve maximum wrap value that can be set.
+ * @brief Function to retrieve maximum top value that can be set.
  *
  * @param[in]  dev    Pointer to the device structure for the driver instance.
  *
- * @return Max wrap value.
+ * @return Max top value.
  */
-static inline u32_t counter_get_max_wrap(const struct device *dev)
+static inline u32_t counter_get_max_top_value(const struct device *dev)
 {
 	const struct counter_config_info *config = dev->config->config_info;
 
-	return config->max_wrap;
+	return config->max_top_value;
 }
 
 /**
@@ -257,9 +259,9 @@ static inline u32_t _impl_counter_read(struct device *dev)
  * @brief Set an alarm on a channel.
  *
  * In case of absolute request, maximal value that can be set is equal to
- * wrap value set by counter_set_wrap call or default, maximal one. in case of
- * relative request, Maximal value can be retrieved using
- * counter_get_max_relative_alarm.
+ * top value set by @ref counter_set_top_value call or default, maximal one. In
+ * case of relative request, maximal value can be retrieved using
+ * @ref counter_get_max_relative_alarm.
  *
  * @param dev		Pointer to the device structure for the driver instance.
  * @param chan_id	Channel ID.
@@ -305,35 +307,35 @@ static inline int counter_disable_channel_alarm(struct device *dev,
 }
 
 /**
- * @brief Set counter wrap.
+ * @brief Set counter top value.
  *
- * Function sets wrap value and resets the counter to 0 or wrap value
- * depending on counter direction. On wrap, counter is reset and optinal
- * callback is periodically called. Wrap value can only be changed when there
- * is no active alarm.
+ * Function sets top value and resets the counter to 0 or top value
+ * depending on counter direction. On turnaround, counter is reset and optional
+ * callback is periodically called. Top value can only be changed when there
+ * is no active channel alarm.
  *
  * @param dev		Pointer to the device structure for the driver instance.
- * @param ticks		Wrap value.
+ * @param ticks		Top value.
  * @param callback	Callback function. Can be NULL.
  * @param user_data	User data passed to callback function. Not valid if
  *			callback is NULL.
  *
  * @retval 0 If successful.
- * @retval -ENOTSUP if request is not supported (e.g. wrap value cannot be
+ * @retval -ENOTSUP if request is not supported (e.g. top value cannot be
  *		    changed).
  * @retval -EBUSY if any alarm is active.
  */
-static inline int counter_set_wrap(struct device *dev, u32_t ticks,
-				   counter_wrap_callback_t callback,
-				   void *user_data)
+static inline int counter_set_top_value(struct device *dev, u32_t ticks,
+					counter_top_callback_t callback,
+					void *user_data)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
-	if (ticks > counter_get_max_wrap(dev)) {
+	if (ticks > counter_get_max_top_value(dev)) {
 		return -EINVAL;
 	}
 
-	return api->set_wrap(dev, ticks, callback, user_data);
+	return api->set_top_value(dev, ticks, callback, user_data);
 }
 
 /**
@@ -359,19 +361,19 @@ static inline int _impl_counter_get_pending_int(struct device *dev)
 }
 
 /**
- * @brief Function to retrieve current wrap value.
+ * @brief Function to retrieve current top value.
  *
  * @param[in]  dev    Pointer to the device structure for the driver instance.
  *
- * @return Wrap value.
+ * @return Top value.
  */
-__syscall u32_t counter_get_wrap(struct device *dev);
+__syscall u32_t counter_get_top_value(struct device *dev);
 
-static inline u32_t _impl_counter_get_wrap(struct device *dev)
+static inline u32_t _impl_counter_get_top_value(struct device *dev)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
-	return api->get_wrap(dev);
+	return api->get_top_value(dev);
 }
 
 /**
@@ -401,11 +403,11 @@ __deprecated static inline int counter_set_alarm(struct device *dev,
 						 counter_callback_t callback,
 						 u32_t count, void *user_data)
 {
-	return counter_set_wrap(dev, count, callback, user_data);
+	return counter_set_top_value(dev, count, callback, user_data);
 }
 
 /**
- * @brief Get user data set for wrap alarm.
+ * @brief Get user data set for top alarm.
  *
  * @note Function intended to be used only by deprecated RTC driver API to
  * provide backward compatibility.
