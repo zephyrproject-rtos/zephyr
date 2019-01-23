@@ -201,6 +201,91 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 #define _IS_ENABLED3(ignore_this, val, ...) val
 
 /**
+ * @brief Insert code depending on result of flag evaluation.
+ *
+ * This is based on same idea as @ref IS_ENABLED macro but as the result of
+ * flag evaluation provided code is injected. Because preprocessor interprets
+ * each comma as argument boundary, code must be provided in the brackets.
+ * Brackets are stripped away during macro processing.
+ *
+ * Usage example:
+ *
+ * #define MACRO(x) COND_CODE_1(CONFIG_FLAG, (u32_t x;), ())
+ *
+ * It can be considered as alternative to:
+ *
+ * #if defined(CONFIG_FLAG) && (CONFIG_FLAG == 1)
+ * #define MACRO(x) u32_t x;
+ * #else
+ * #define MACRO(x)
+ * #endif
+ *
+ * However, the advantage of that approach is that code is resolved in place
+ * where it is used while \#if method resolves given macro when header is
+ * included and product is fixed in the given scope.
+ *
+ * @note Flag can also be a result of preprocessor output e.g.
+ *	 product of NUM_VA_ARGS_LESS_1(...).
+ *
+ * @param _flag		Evaluated flag
+ * @param _if_1_code	Code used if flag exists and equal 1. Argument must be
+ *			in brackets.
+ * @param _else_code	Code used if flag doesn't exists or isn't equal 1.
+ *
+ */
+#define COND_CODE_1(_flag, _if_1_code, _else_code) \
+	_COND_CODE_1(_flag, _if_1_code, _else_code)
+
+#define _COND_CODE_1(_flag, _if_1_code, _else_code) \
+	__COND_CODE(_XXXX##_flag, _if_1_code, _else_code)
+
+/**
+ * @brief Insert code depending on result of flag evaluation.
+ *
+ * See @ref COND_CODE_1 for details.
+ *
+ * @param _flag		Evaluated flag
+ * @param _if_0_code	Code used if flag exists and equal 0. Argument must be
+ *			in brackets.
+ * @param _else_code	Code used if flag doesn't exists or isn't equal 0.
+ *
+ */
+#define COND_CODE_0(_flag, _if_0_code, _else_code) \
+	_COND_CODE_0(_flag, _if_0_code, _else_code)
+
+#define _COND_CODE_0(_flag, _if_0_code, _else_code) \
+	__COND_CODE(_ZZZZ##_flag, _if_0_code, _else_code)
+
+#define _ZZZZ0 _YYYY,
+
+/* Macro used internally by @ref COND_CODE_1 and @ref COND_CODE_0. */
+#define __COND_CODE(one_or_two_args, _if_code, _else_code) \
+	__GET_ARG2_DEBRACKET(one_or_two_args _if_code, _else_code)
+
+/* Macro used internally to remove brackets from argument. */
+#define __DEBRACKET(...) __VA_ARGS__
+
+/* Macro used internally for getting second argument and removing brackets
+ * around that argument. It is expected that parameter is provided in brackets
+ */
+#define __GET_ARG2_DEBRACKET(ignore_this, val, ...) __DEBRACKET val
+
+/**
+ * @brief Get first argument from variable list of arguments
+ */
+#define GET_ARG1(arg1, ...) arg1
+
+/**
+ * @brief Get second argument from variable list of arguments
+ */
+#define GET_ARG2(arg1, arg2, ...) arg2
+
+/**
+ * @brief Get all arguments except the first one.
+ */
+#define GET_ARGS_LESS_1(val, ...) __VA_ARGS__
+
+/**
  * Macros for doing code-generation with the preprocessor.
  *
  * Generally it is better to generate code with the preprocessor than
