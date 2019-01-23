@@ -12,6 +12,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 #include <net/socket.h>
 
+#include "../../socket_helpers.h"
+
 #define BUF_AND_SIZE(buf) buf, sizeof(buf) - 1
 #define STRLEN(buf) (sizeof(buf) - 1)
 
@@ -27,45 +29,6 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define ANY_PORT 0
 #define SERVER_PORT 4242
 #define CLIENT_PORT 9898
-
-#define clear_buf(buf) memset(buf, 0, sizeof(buf))
-
-static void prepare_sock_udp_v4(const char *addr, u16_t port,
-				int *sock, struct sockaddr_in *sockaddr)
-{
-	int rv;
-
-	zassert_not_null(addr, "null addr");
-	zassert_not_null(sock, "null sock");
-	zassert_not_null(sockaddr, "null sockaddr");
-
-	*sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
-	zassert_true(*sock >= 0, "socket open failed");
-
-	sockaddr->sin_family = AF_INET;
-	sockaddr->sin_port = htons(port);
-	rv = inet_pton(AF_INET, addr, &sockaddr->sin_addr);
-	zassert_equal(rv, 1, "inet_pton failed");
-}
-
-static void prepare_sock_udp_v6(const char *addr, u16_t port,
-				int *sock, struct sockaddr_in6 *sockaddr)
-{
-	int rv;
-
-	zassert_not_null(addr, "null addr");
-	zassert_not_null(sock, "null sock");
-	zassert_not_null(sockaddr, "null sockaddr");
-
-	*sock = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
-	zassert_true(*sock >= 0, "socket open failed");
-
-	(void)memset(sockaddr, 0, sizeof(*sockaddr));
-	sockaddr->sin6_family = AF_INET6;
-	sockaddr->sin6_port = htons(port);
-	rv = inet_pton(AF_INET6, addr, &sockaddr->sin6_addr);
-	zassert_equal(rv, 1, "inet_pton failed");
-}
 
 /* Common routine to communicate packets over pair of sockets. */
 static void comm_sendto_recvfrom(int client_sock,
