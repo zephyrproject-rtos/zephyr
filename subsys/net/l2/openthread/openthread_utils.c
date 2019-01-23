@@ -15,6 +15,16 @@ LOG_MODULE_DECLARE(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 
 #include "openthread_utils.h"
 
+#define ALOC16_MASK 0xfc
+
+static bool is_anycast_locator(const otNetifAddress *address)
+{
+	return address->mAddress.mFields.m16[4] == htons(0x0000) &&
+	       address->mAddress.mFields.m16[5] == htons(0x00ff) &&
+	       address->mAddress.mFields.m16[6] == htons(0xfe00) &&
+	       address->mAddress.mFields.m8[14] == ALOC16_MASK;
+}
+
 int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt)
 {
 	u16_t i_idx = context->pkt_list_in_idx;
@@ -70,6 +80,11 @@ void add_ipv6_addr_to_zephyr(struct openthread_context *context)
 
 	for (address = otIp6GetUnicastAddresses(context->instance);
 	     address; address = address->mNext) {
+
+		if (address->mRloc || is_anycast_locator(address)) {
+			continue;
+		}
+
 		if (CONFIG_OPENTHREAD_L2_LOG_LEVEL == LOG_LEVEL_DBG) {
 			char buf[NET_IPV6_ADDR_LEN];
 
