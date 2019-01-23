@@ -1755,7 +1755,7 @@ bool bt_le_conn_params_valid(const struct bt_le_conn_param *param)
 	/* All limits according to BT Core spec 5.0 [Vol 2, Part E, 7.8.12] */
 
 	if (param->interval_min > param->interval_max ||
-	    param->interval_min < 6 || param->interval_max > 3200) {
+	    param->interval_min < 1 || param->interval_max > 3200) {
 		return false;
 	}
 

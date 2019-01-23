@@ -89,7 +89,8 @@ void lll_periph_prepare(void *param)
 	}
 
 	/* Invoke common pipeline handling of prepare */
-	err = lll_prepare(lll_is_abort_cb, lll_conn_abort_cb, prepare_cb, 0, p);
+	err = lll_prepare(lll_conn_peripheral_is_abort_cb, lll_conn_abort_cb,
+			  prepare_cb, 0, param);
 	LL_ASSERT(!err || err == -EINPROGRESS);
 }
 
@@ -209,7 +210,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 
 	radio_isr_set(lll_conn_isr_rx, lll);
 
-	radio_tmr_tifs_set(EVENT_IFS_US);
+	radio_tmr_tifs_set(lll->tifs_us);
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)

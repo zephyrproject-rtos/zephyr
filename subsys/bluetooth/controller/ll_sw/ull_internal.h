@@ -9,7 +9,7 @@
  */
 #if !defined(CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN)
 /* Bluetooth defined CPR Interval Minimum (7.5ms) */
-#define CONN_INTERVAL_MIN(x) (6)
+#define CONN_INTERVAL_MIN(x) (0)
 #else /* CONFIG_BT_CTLR_USER_CPR_INTERVAL_MIN */
 /* Proprietary user defined CPR Interval Minimum */
 #define CONN_INTERVAL_MIN(x) (MAX(ull_conn_interval_min_get(x), 1))

@@ -185,6 +185,7 @@
 #define EVENT_CLOCK_JITTER_US   2
 /* Event interframe timings */
 #define EVENT_IFS_US            150
+#define EVENT_IFS_LOW_LAT_US    53
 /* Standard allows 2 us timing uncertainty inside the event */
 #define EVENT_IFS_MAX_US        (EVENT_IFS_US + EVENT_CLOCK_JITTER_US)
 /* Controller will layout extended adv with minimum separation */

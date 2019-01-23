@@ -393,6 +393,8 @@ void ull_periph_setup(struct node_rx_pdu *rx, struct node_rx_ftr *ftr,
 		slot_us += EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
 	}
 
+	lll->tifs_us = EVENT_IFS_US;
+
 	/* TODO: active_to_start feature port */
 	conn->ull.ticks_active_to_start = 0U;
 	conn->ull.ticks_prepare_to_start =

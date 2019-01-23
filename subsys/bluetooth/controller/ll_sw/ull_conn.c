@@ -30,6 +30,7 @@
 
 #include "lll.h"
 #include "lll_clock.h"
+#include "lll/lll_vendor.h"
 #include "lll/lll_df_types.h"
 #include "lll_conn.h"
 #include "lll_conn_iso.h"
@@ -1709,10 +1710,19 @@ void ull_conn_done(struct node_rx_event_done *done)
 		if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)
 		} else if (lll->role) {
-			ull_drift_ticks_get(done, &ticks_drift_plus,
-					    &ticks_drift_minus);
-
 #if defined(CONFIG_BT_LL_SW_LLCP_LEGACY)
+			if (!conn->periph.drift_skip) {
+				ull_drift_ticks_get(done, &ticks_drift_plus,
+						    &ticks_drift_minus);
+
+				if (ticks_drift_plus || ticks_drift_minus) {
+					conn->periph.drift_skip =
+						ull_ref_get(&conn->ull);
+				}
+			} else {
+				conn->periph.drift_skip--;
+			}
+
 			if (!conn->tx_head) {
 				ull_conn_tx_demux(UINT8_MAX);
 			}
@@ -1725,6 +1735,9 @@ void ull_conn_done(struct node_rx_event_done *done)
 				lll->latency_event = lll->latency;
 			}
 #else /* CONFIG_BT_LL_SW_LLCP_LEGACY */
+			ull_drift_ticks_get(done, &ticks_drift_plus,
+					    &ticks_drift_minus);
+
 			if (!ull_tx_q_peek(&conn->tx_q)) {
 				ull_conn_tx_demux(UINT8_MAX);
 			}
@@ -3455,11 +3468,16 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		ctrl_tx_enqueue(conn, tx);
 #endif /* !CONFIG_BT_CTLR_SCHED_ADVANCED */
 	} else if (instant_latency <= 0x7FFF) {
+		uint16_t conn_interval_unit_old;
+		uint16_t conn_interval_unit_new;
 		uint32_t ticks_win_offset = 0U;
+		uint32_t conn_interval_old_us;
+		uint32_t conn_interval_new_us;
 		uint32_t ticks_slot_overhead;
 		uint16_t conn_interval_old;
-		uint16_t conn_interval_new;
+		uint16_t conn_interval_upd;
 		uint32_t conn_interval_us;
+		uint32_t ready_delay_us;
 		struct node_rx_pdu *rx;
 		uint8_t ticker_id_conn;
 		uint32_t ticker_status;
@@ -3549,18 +3567,81 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
+#if defined(CONFIG_BT_CTLR_PHY)
+		ready_delay_us = lll_radio_tx_ready_delay_get(lll->phy_tx,
+							      lll->phy_flags);
+#else
+		ready_delay_us = lll_radio_tx_ready_delay_get(0, 0);
+#endif
+
 		/* compensate for instant_latency due to laziness */
-		conn_interval_old = instant_latency * lll->interval;
-		latency = conn_interval_old / conn->llcp_cu.interval;
-		conn_interval_new = latency * conn->llcp_cu.interval;
-		if (conn_interval_new > conn_interval_old) {
+		if (lll->interval > 5) {
+			conn_interval_old = instant_latency * lll->interval;
+			conn_interval_unit_old = 1250;
+		} else {
+			conn_interval_old = instant_latency * (lll->interval +
+							       1);
+			conn_interval_unit_old = 500;
+		}
+
+		if (conn->llcp_cu.interval > 5) {
+			uint16_t max_tx_time;
+			uint16_t max_rx_time;
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+#if defined(CONFIG_BT_CTLR_PHY)
+			max_tx_time = lll->max_tx_time;
+			max_rx_time = lll->max_rx_time;
+#else /* !CONFIG_BT_CTLR_PHY */
+			max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						    PHY_1M);
+			max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						    PHY_1M);
+#endif /* !CONFIG_BT_CTLR_PHY */
+#else /* !CONFIG_BT_CTLR_DATA_LENGTH */
+			max_tx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						    PHY_1M);
+			max_rx_time = PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						    PHY_1M);
+#if defined(CONFIG_BT_CTLR_PHY)
+			max_tx_time = MAX(max_tx_time,
+					  PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						 lll->phy_tx));
+			max_rx_time = MAX(max_rx_time,
+					  PDU_DC_MAX_US(PDU_DC_PAYLOAD_SIZE_MIN,
+						 lll->phy_rx));
+#endif /* !CONFIG_BT_CTLR_PHY */
+#endif /* !CONFIG_BT_CTLR_DATA_LENGTH */
+
+			conn_interval_upd = conn->llcp_cu.interval;
+			conn_interval_unit_new = 1250U;
+			lll->tifs_us = EVENT_IFS_US;
+			conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
+				EVENT_OVERHEAD_START_US + ready_delay_us +
+				max_tx_time + lll->tifs_us + max_rx_time);
+		} else {
+			conn_interval_upd = conn->llcp_cu.interval + 1;
+			conn_interval_unit_new = 500U;
+			lll->tifs_us = EVENT_IFS_LOW_LAT_US;
+			/* reserve for 9 bytes, that HR services seems to use */
+			conn->ull.ticks_slot = HAL_TICKER_US_TO_TICKS_CEIL(
+				EVENT_OVERHEAD_START_US + ready_delay_us +
+				PDU_DC_MAX_US(9U, PHY_2M) +
+				lll->tifs_us + PDU_DC_MAX_US(9U, PHY_2M));
+		}
+
+		conn_interval_old_us = conn_interval_old *
+				       conn_interval_unit_old;
+		latency = conn_interval_old_us / (conn_interval_upd *
+						  conn_interval_unit_new);
+		conn_interval_new_us = latency * conn_interval_upd *
+				    conn_interval_unit_new;
+		if (conn_interval_new_us > conn_interval_old_us) {
 			ticks_at_expire += HAL_TICKER_US_TO_TICKS(
-				(conn_interval_new - conn_interval_old) *
-				CONN_INT_UNIT_US);
+				conn_interval_new_us - conn_interval_old_us);
 		} else {
 			ticks_at_expire -= HAL_TICKER_US_TO_TICKS(
-				(conn_interval_old - conn_interval_new) *
-				CONN_INT_UNIT_US);
+				conn_interval_old_us - conn_interval_new_us);
 		}
 		lll->latency_prepare += lazy;
 		lll->latency_prepare -= (instant_latency - latency);
@@ -3576,8 +3657,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn, uint16_t lazy,
 		}
 
 		/* calculate the window widening and interval */
-		conn_interval_us = conn->llcp_cu.interval *
-			CONN_INT_UNIT_US;
+		conn_interval_us = conn_interval_upd * conn_interval_unit_new;
 		periodic_us = conn_interval_us;
 
 		if (0) {

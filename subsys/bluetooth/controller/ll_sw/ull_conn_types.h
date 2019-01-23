@@ -83,6 +83,7 @@ struct ll_conn {
 #endif /* CONFIG_BT_CTLR_CONN_META */
 			uint8_t  latency_cancel:1;
 			uint8_t  sca:3;
+			uint8_t  drift_skip;
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 			uint8_t  llcp_type;
 #endif /* CONFIG_BT_CTLR_LE_ENC */

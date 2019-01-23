@@ -148,6 +148,36 @@ void lll_conn_prepare_reset(void)
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 }
 
+#if defined(CONFIG_BT_CENTRAL)
+int lll_conn_central_is_abort_cb(void *next, void *curr,
+				 lll_prepare_cb_t *resume_cb)
+{
+	/* Do not be aborted by same event if a single central trx has not been
+	 * exchanged.
+	 */
+	if ((next == curr) && (trx_cnt < 1U)) {
+		return -EBUSY;
+	}
+
+	return -ECANCELED;
+}
+#endif /* CONFIG_BT_CENTRAL */
+
+#if defined(CONFIG_BT_PERIPHERAL)
+int lll_conn_peripheral_is_abort_cb(void *next, void *curr,
+				 lll_prepare_cb_t *resume_cb)
+{
+	/* Do not be aborted by same event if a single peripheral trx has not
+	 * been exchanged.
+	 */
+	if ((next == curr) && (trx_cnt <= 1U)) {
+		return -EBUSY;
+	}
+
+	return -ECANCELED;
+}
+#endif /* CONFIG_BT_PERIPHERAL */
+
 void lll_conn_abort_cb(struct lll_prepare_param *prepare_param, void *param)
 {
 	struct event_done_extra *e;
@@ -353,7 +383,7 @@ void lll_conn_isr_rx(void *param)
 #endif /* CONFIG_BT_PERIPHERAL */
 		}
 	} else {
-		radio_tmr_tifs_set(EVENT_IFS_US);
+		radio_tmr_tifs_set(lll->tifs_us);
 
 #if defined(CONFIG_BT_CTLR_PHY)
 		radio_switch_complete_and_rx(lll->phy_rx);
@@ -386,7 +416,7 @@ void lll_conn_isr_rx(void *param)
 	radio_gpio_pa_setup();
 
 	pa_lna_enable_us =
-		radio_tmr_tifs_base_get() + EVENT_IFS_US + cte_len - HAL_RADIO_GPIO_PA_OFFSET;
+		radio_tmr_tifs_base_get() + lll->tifs_us + cte_len - HAL_RADIO_GPIO_PA_OFFSET;
 #if defined(CONFIG_BT_CTLR_PHY)
 	pa_lna_enable_us -= radio_rx_chain_delay_get(lll->phy_rx, PHY_FLAGS_S8);
 #else /* !CONFIG_BT_CTLR_PHY */
@@ -507,10 +537,10 @@ void lll_conn_isr_tx(void *param)
 	/* Clear radio tx status and events */
 	lll_isr_tx_status_reset();
 
-	/* setup tIFS switching */
-	radio_tmr_tifs_set(EVENT_IFS_US);
-
 	lll = param;
+
+	/* setup tIFS switching */
+	radio_tmr_tifs_set(lll->tifs_us);
 
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_RX)
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
@@ -548,6 +578,7 @@ void lll_conn_isr_tx(void *param)
 
 #if defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 	/* Use special API for SOC that requires compensation for PHYEND event delay. */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 	radio_switch_complete_with_delay_compensation_and_tx(lll->phy_rx, 0, lll->phy_tx,
 							     lll->phy_flags, end_evt_delay);
@@ -587,7 +618,7 @@ void lll_conn_isr_tx(void *param)
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 
 	/* +/- 2us active clock jitter, +1 us PPI to timer start compensation */
-	hcto = radio_tmr_tifs_base_get() + EVENT_IFS_US +
+	hcto = radio_tmr_tifs_base_get() + lll->tifs_us +
 	       (EVENT_CLOCK_JITTER_US << 1) + RANGE_DELAY_US +
 	       HAL_RADIO_TMR_START_DELAY_US;
 #if defined(CONFIG_BT_CTLR_DF_CONN_CTE_TX)
@@ -624,12 +655,12 @@ void lll_conn_isr_tx(void *param)
 #if defined(HAL_RADIO_GPIO_HAVE_LNA_PIN)
 	radio_gpio_lna_setup();
 #if defined(CONFIG_BT_CTLR_PHY)
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + lll->tifs_us - 4 -
 				 radio_tx_chain_delay_get(lll->phy_tx,
 							  lll->phy_flags) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #else /* !CONFIG_BT_CTLR_PHY */
-	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + EVENT_IFS_US - 4 -
+	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() + lll->tifs_us - 4 -
 				 radio_tx_chain_delay_get(0, 0) -
 				 HAL_RADIO_GPIO_LNA_OFFSET);
 #endif /* !CONFIG_BT_CTLR_PHY */

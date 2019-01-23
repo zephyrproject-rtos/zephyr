@@ -1147,6 +1147,7 @@ uint8_t ll_adv_enable(uint8_t enable)
 		conn->common.fex_valid = 0;
 		conn->common.txn_lock = 0;
 		conn->periph.latency_cancel = 0;
+		conn->periph.drift_skip = 0;
 
 		conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0;
 		conn->llcp_rx = NULL;

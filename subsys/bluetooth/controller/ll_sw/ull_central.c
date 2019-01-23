@@ -399,6 +399,8 @@ uint8_t ll_create_connection(uint16_t scan_interval, uint16_t scan_window,
 	ull_tx_q_init(&conn->tx_q);
 #endif /* CONFIG_BT_LL_SW_LLCP_LEGACY */
 
+	conn_lll->tifs_us = EVENT_IFS_US;
+
 	/* TODO: active_to_start feature port */
 	conn->ull.ticks_active_to_start = 0U;
 	conn->ull.ticks_prepare_to_start =
