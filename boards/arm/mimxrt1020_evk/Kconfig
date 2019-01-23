@@ -15,6 +15,7 @@ config CODE_ITCM
 
 config CODE_QSPI
 	depends on BOARD_MIMXRT1020_EVK
+	select NXP_IMX_RT_BOOT_HEADER
 	bool "Link code into external QSPI memory"
 
 endchoice
