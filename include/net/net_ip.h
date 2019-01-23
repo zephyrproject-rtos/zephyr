@@ -155,6 +155,11 @@ struct sockaddr_ll_ptr {
 	u8_t        *sll_addr;    /* Physical-layer address  */
 };
 
+struct sockaddr_can_ptr {
+	sa_family_t can_family;
+	int         can_ifindex;
+};
+
 /* Packet types.  */
 #define PACKET_HOST         0     /* To us            */
 #define PACKET_BROADCAST    1     /* To all           */
@@ -1062,6 +1067,20 @@ static inline
 struct sockaddr_ll_ptr *net_sll_ptr(const struct sockaddr_ptr *addr)
 {
 	return (struct sockaddr_ll_ptr *)addr;
+}
+
+/**
+ * @brief Get sockaddr_can_ptr from sockaddr_ptr. This is a helper so that
+ * the code needing this functionality can be made shorter.
+ *
+ * @param addr Socket address
+ *
+ * @return Pointer to CAN socket address
+ */
+static inline
+struct sockaddr_can_ptr *net_can_ptr(const struct sockaddr_ptr *addr)
+{
+	return (struct sockaddr_can_ptr *)addr;
 }
 
 /**

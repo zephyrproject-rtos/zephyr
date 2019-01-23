@@ -129,6 +129,12 @@ int _impl_zsock_socket(int family, int type, int proto)
 	}
 #endif
 
+#if defined(CONFIG_NET_SOCKETS_CAN)
+	if (family == AF_CAN && type == SOCK_RAW) {
+		return zcan_socket(family, type, proto);
+	}
+#endif
+
 	return zsock_socket_internal(family, type, proto);
 }
 

@@ -18,6 +18,8 @@ extern "C" {
 #endif
 
 #include <zephyr/types.h>
+#include <net/net_ip.h>
+#include <can.h>
 
 /**
  * @brief Socket CAN library
@@ -28,6 +30,22 @@ extern "C" {
 
 /* Protocols of the protocol family PF_CAN */
 #define CAN_RAW 1
+
+/* Socket CAN options */
+#define SOL_CAN_BASE 100
+#define SOL_CAN_RAW (SOL_CAN_BASE + CAN_RAW)
+
+/* Socket CAN MTU size */
+#define CAN_MTU		(sizeof(struct can_msg))
+
+/**
+ * struct sockaddr_can - The sockaddr structure for CAN sockets
+ *
+ */
+struct sockaddr_can {
+	sa_family_t can_family;
+	int         can_ifindex;
+};
 
 /**
  * @}
