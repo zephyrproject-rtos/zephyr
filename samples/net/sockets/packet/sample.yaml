@@ -1,0 +1,8 @@
+sample:
+  description: Packet socket sample
+  name: packet-socket
+tests:
+  test:
+    harness: net
+    platform_whitelist: native_posix
+    tags: net sockets packet-socket
