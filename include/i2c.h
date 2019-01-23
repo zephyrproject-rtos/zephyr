@@ -395,6 +395,39 @@ static inline int i2c_read(struct device *dev, u8_t *buf,
 	return i2c_transfer(dev, &msg, 1, addr);
 }
 
+/**
+ * @brief Write then read data from an I2C device.
+ *
+ * This supports the common operation "this is what I want", "now give
+ * it to me" transaction pair through a combined write-then-read bus
+ * transaction.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param addr Address of the I2C device
+ * @param write_buf Pointer to the data to be written
+ * @param num_write Number of bytes to write
+ * @param read_buf Pointer to storage for read data
+ * @param num_read Number of bytes to read
+ *
+ * @retval 0 if successful
+ * @retval negative on error.
+ */
+static inline int i2c_write_read(struct device *dev, u16_t addr,
+				 const void *write_buf, size_t num_write,
+				 void *read_buf, size_t num_read)
+{
+	struct i2c_msg msg[2];
+
+	msg[0].buf = (u8_t *)write_buf;
+	msg[0].len = num_write;
+	msg[0].flags = I2C_MSG_WRITE;
+
+	msg[1].buf = (u8_t *)read_buf;
+	msg[1].len = num_read;
+	msg[1].flags = I2C_MSG_RESTART | I2C_MSG_READ | I2C_MSG_STOP;
+
+	return i2c_transfer(dev, msg, 2, addr);
+}
 
 /**
  * @brief Read multiple bytes from an internal address of an I2C device.
