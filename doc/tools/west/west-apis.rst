@@ -5,6 +5,4 @@
 West APIs
 #########
 
-.. automodule:: west.runners.core
-   :members:
 

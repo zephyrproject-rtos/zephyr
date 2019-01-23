@@ -1,0 +1,17 @@
+west-commands:
+  - file: scripts/west_commands/build.py
+    commands:
+      - name: build
+        class: Build
+  - file: scripts/west_commands/flash.py
+    commands:
+      - name: flash
+        class: Flash
+  - file: scripts/west_commands/debug.py
+    commands:
+      - name: debug
+        class: Debug
+      - name: debugserver
+        class: DebugServer
+      - name: attach
+        class: Attach
