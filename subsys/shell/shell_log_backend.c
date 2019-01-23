@@ -20,7 +20,7 @@ void shell_log_backend_enable(const struct shell_log_backend *backend,
 {
 	log_backend_enable(backend->backend, ctx, init_log_level);
 	log_output_ctx_set(backend->log_output, ctx);
-	backend->control_block->cnt = 0;
+	backend->control_block->dropped_cnt = 0;
 	backend->control_block->state = SHELL_LOG_BACKEND_ENABLED;
 }
 
@@ -112,13 +112,13 @@ void shell_log_backend_disable(const struct shell_log_backend *backend)
 }
 
 static void msg_process(const struct log_output *log_output,
-			struct log_msg *msg)
+			struct log_msg *msg, bool colors)
 {
 	u32_t flags = LOG_OUTPUT_FLAG_LEVEL |
 		      LOG_OUTPUT_FLAG_TIMESTAMP |
 		      LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP;
 
-	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS)) {
+	if (colors) {
 		flags |= LOG_OUTPUT_FLAG_COLORS;
 	}
 
@@ -128,15 +128,34 @@ static void msg_process(const struct log_output *log_output,
 
 bool shell_log_backend_process(const struct shell_log_backend *backend)
 {
+	u32_t dropped;
 	const struct shell *shell =
 			(const struct shell *)backend->backend->cb->ctx;
+	bool colors = IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
+			shell->ctx->internal.flags.use_colors;
 	struct log_msg *msg = msg_from_fifo(backend);
 
 	if (!msg) {
 		return false;
 	}
 
-	msg_process(shell->log_backend->log_output, msg);
+	dropped = atomic_set(&backend->control_block->dropped_cnt, 0);
+	if (dropped) {
+		struct shell_vt100_colors col;
+
+		if (colors) {
+			shell_vt100_colors_store(shell, &col);
+			shell_vt100_color_set(shell, SHELL_VT100_COLOR_RED);
+		}
+
+		log_output_dropped_process(backend->log_output, dropped);
+
+		if (colors) {
+			shell_vt100_colors_restore(shell, &col);
+		}
+	}
+
+	msg_process(shell->log_backend->log_output, msg, colors);
 
 	return true;
 }
@@ -144,6 +163,8 @@ bool shell_log_backend_process(const struct shell_log_backend *backend)
 static void put(const struct log_backend *const backend, struct log_msg *msg)
 {
 	const struct shell *shell = (const struct shell *)backend->cb->ctx;
+	bool colors = IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
+			shell->ctx->internal.flags.use_colors;
 	struct k_poll_signal *signal;
 
 	log_msg_get(msg);
@@ -160,7 +181,7 @@ static void put(const struct log_backend *const backend, struct log_msg *msg)
 		break;
 
 	case SHELL_LOG_BACKEND_PANIC:
-		msg_process(shell->log_backend->log_output, msg);
+		msg_process(shell->log_backend->log_output, msg, colors);
 		break;
 
 	case SHELL_LOG_BACKEND_DISABLED:
@@ -199,7 +220,17 @@ static void panic(const struct log_backend *const backend)
 	}
 }
 
+static void dropped(const struct log_backend *const backend, u32_t cnt)
+{
+	const struct shell *shell = (const struct shell *)backend->cb->ctx;
+	const struct shell_log_backend *log_backend = shell->log_backend;
+
+	atomic_add(&shell->stats->log_lost_cnt, cnt);
+	atomic_add(&log_backend->control_block->dropped_cnt, cnt);
+}
+
 const struct log_backend_api log_backend_shell_api = {
 	.put = put,
-	.panic = panic
+	.panic = panic,
+	.dropped = dropped
 };
