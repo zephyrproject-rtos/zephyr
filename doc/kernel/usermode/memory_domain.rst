@@ -179,7 +179,7 @@ Related configuration options:
 APIs
 ****
 
-The following memory domain APIs are provided by :file:`kernel.h`:
+The following memory domain APIs are provided by :zephyr_file:`include/kernel.h`:
 
 * :c:macro:`K_MEM_PARTITION_DEFINE`
 * :cpp:func:`k_mem_domain_init()`

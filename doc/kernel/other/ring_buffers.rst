@@ -306,7 +306,7 @@ operations on the ring buffer's memory.  For example:
 API Reference
 *************
 
-The following ring buffer APIs are provided by :file:`include/ring_buffer.h`:
+The following ring buffer APIs are provided by :zephyr_file:`include/ring_buffer.h`:
 
 .. doxygengroup:: ring_buffer_apis
    :project: Zephyr

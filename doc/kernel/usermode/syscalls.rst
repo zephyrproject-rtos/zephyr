@@ -477,7 +477,7 @@ APIs
 ****
 
 Helper macros for creating system call handlers are provided in
-:file:`kernel/include/syscall_handler.h`:
+:zephyr_file:`kernel/include/syscall_handler.h`:
 
 * :c:macro:`Z_SYSCALL_HANDLER()`
 * :c:macro:`Z_SYSCALL_HANDLER1_SIMPLE()`
@@ -496,7 +496,7 @@ Helper macros for creating system call handlers are provided in
 * :c:macro:`Z_SYSCALL_VERIFY`
 
 Functions for invoking system calls are defined in
-:file:`include/syscall.h`:
+:zephyr_file:`include/syscall.h`:
 
 * :c:func:`_arch_syscall_invoke0`
 * :c:func:`_arch_syscall_invoke1`
