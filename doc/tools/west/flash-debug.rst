@@ -11,6 +11,14 @@ These use information stored in the CMake cache [#cmakecache]_ to
 flash or attach a debugger to a board supported by Zephyr. The CMake
 build system commands with the same names directly delegate to West.
 
+.. Add a per-page contents at the top of the page. This page is nested
+   deeply enough that it doesn't have any subheadings in the main nav.
+
+.. only:: html
+
+   .. contents::
+      :local:
+
 .. _west-flashing:
 
 Flashing: ``west flash``
@@ -191,37 +199,57 @@ For example, to print usage information about the ``jlink`` runner::
 
 .. _west-runner:
 
-Library Backend: ``west.runners``
-*********************************
+Implementation Details
+**********************
 
-In keeping with West's :ref:`west-design-constraints`, the flash and
-debug commands are wrappers around a separate library that is part of
-West, and can be used by other code.
+The flash and debug commands are implemented as west *extension
+commands*: that is, they are west commands whose source code lives
+outside the west repository. Some reasons this choice was made are:
 
-This library is the ``west.runners`` subpackage of West itself.  The
-central abstraction within this library is ``ZephyrBinaryRunner``, an
-abstract class which represents *runner* objects, which can flash
+- Their implementations are tightly coupled to the Zephyr build
+  system, e.g. due to their reliance on CMake cache variables.
+
+- Pull requests adding features to them are almost always motivated by
+  a corresponding change to an upstream board, so it makes sense to
+  put them in Zephyr to avoid needing pull requests in multiple
+  repositories.
+
+- Many users find it natural to search for their implementations in
+  the Zephyr source tree.
+
+The extension commands are a thin wrapper around a package called
+``runners`` (this package is also in the Zephyr tree, in
+:file:`scripts/west_commands/runners`).
+
+The central abstraction within this library is ``ZephyrBinaryRunner``,
+an abstract class which represents *runner* objects, which can flash
 and/or debug Zephyr programs. The set of available runners is
 determined by the imported subclasses of ``ZephyrBinaryRunner``.
-``ZephyrBinaryRunner`` is available in the ``west.runners.core``
-module; individual runner implementations are in other submodules,
-such as ``west.runners.nrfjprog``, ``west.runners.openocd``, etc.
+``ZephyrBinaryRunner`` is available in the ``runners.core`` module;
+individual runner implementations are in other submodules, such as
+``runners.nrfjprog``, ``runners.openocd``, etc.
+
+Hacking and APIs
+****************
 
 Developers can add support for new ways to flash and debug Zephyr
 programs by implementing additional runners. To get this support into
 upstream Zephyr, the runner should be added into a new or existing
-``west.runners`` module, and imported from
-:file:`west/runner/__init__.py`.
+``runners`` module, and imported from :file:`runner/__init__.py`.
 
-.. important::
+.. note::
 
-   Submit any changes to West to its own separate Git repository
-   (https://github.com/zephyrproject-rtos/west), not to the copy of
-   West currently present in the Zephyr tree. This copy is a temporary
-   measure; when West learns how to manage multiple repositories, the
-   copy will be removed.
+   The test cases in :file:`scripts/west_commands/tests` add unit test
+   coverage for the runners package and individual runner classes.
 
-API documentation for the core module can be found in :ref:`west-apis`.
+   Please try to add tests when adding new runners. Note that if your
+   changes break existing test cases, CI testing on upstream pull
+   requests will fail.
+
+API Documentation for the ``runners.core`` module follows.
+
+.. automodule:: runners.core
+   :members:
 
 Doing it By Hand
 ****************
@@ -236,8 +264,8 @@ e.g. as a source of symbol tables.
 
 By default, these West commands rebuild binaries before flashing and
 debugging. This can of course also be accomplished using the usual
-targets provided by Zephyr's build system (in fact, that's how West
-does it).
+targets provided by Zephyr's build system (in fact, that's how these
+commands do it).
 
 .. rubric:: Footnotes
 
@@ -249,3 +277,6 @@ does it).
 
 .. _cmake(1):
    https://cmake.org/cmake/help/latest/manual/cmake.1.html
+
+.. _namespace package:
+   https://www.python.org/dev/peps/pep-0420/
