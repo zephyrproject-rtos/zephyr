@@ -14,18 +14,18 @@
 LOG_MODULE_REGISTER();
 
 #define RTC_CLOCK 32768
-#define COUNTER_MAX_WRAP RTC_COUNTER_COUNTER_Msk
+#define COUNTER_MAX_TOP_VALUE RTC_COUNTER_COUNTER_Msk
 
 #define CC_TO_ID(cc) ((cc) - 1)
 #define ID_TO_CC(id) ((id) + 1)
 
-#define WRAP_CH 0
-#define COUNTER_WRAP_INT NRFX_RTC_INT_COMPARE0
+#define TOP_CH 0
+#define COUNTER_TOP_INT NRFX_RTC_INT_COMPARE0
 
 struct counter_nrfx_data {
-	counter_wrap_callback_t wrap_cb;
-	void *wrap_user_data;
-	u32_t wrap;
+	counter_top_callback_t top_cb;
+	void *top_user_data;
+	u32_t top;
 };
 
 struct counter_nrfx_ch_data {
@@ -79,7 +79,7 @@ static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 	const nrfx_rtc_t *rtc = &nrfx_config->rtc;
 	u32_t cc_val;
 
-	if (alarm_cfg->ticks > get_dev_data(dev)->wrap) {
+	if (alarm_cfg->ticks > get_dev_data(dev)->top) {
 		return -EINVAL;
 	}
 
@@ -89,8 +89,8 @@ static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 
 	cc_val = alarm_cfg->ticks + (alarm_cfg->absolute ?
 					0 : nrfx_rtc_counter_get(rtc));
-	cc_val = (cc_val > get_dev_data(dev)->wrap) ?
-			(cc_val - get_dev_data(dev)->wrap) : cc_val;
+	cc_val = (cc_val > get_dev_data(dev)->top) ?
+			(cc_val - get_dev_data(dev)->top) : cc_val;
 	nrfx_config->ch_data[chan_id].callback = alarm_cfg->callback;
 	nrfx_config->ch_data[chan_id].user_data = alarm_cfg->user_data;
 
@@ -114,9 +114,9 @@ static int counter_nrfx_disable_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-static int counter_nrfx_set_wrap(struct device *dev, u32_t ticks,
-				 counter_wrap_callback_t callback,
-				 void *user_data)
+static int counter_nrfx_set_top_value(struct device *dev, u32_t ticks,
+				      counter_top_callback_t callback,
+				      void *user_data)
 {
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
 	const nrfx_rtc_t *rtc = &nrfx_config->rtc;
@@ -131,13 +131,13 @@ static int counter_nrfx_set_wrap(struct device *dev, u32_t ticks,
 		}
 	}
 
-	nrfx_rtc_cc_disable(rtc, WRAP_CH);
+	nrfx_rtc_cc_disable(rtc, TOP_CH);
 	nrfx_rtc_counter_clear(rtc);
 
-	dev_data->wrap_cb = callback;
-	dev_data->wrap_user_data = user_data;
-	dev_data->wrap = ticks;
-	nrfx_rtc_cc_set(rtc, WRAP_CH, ticks, callback ? true : false);
+	dev_data->top_cb = callback;
+	dev_data->top_user_data = user_data;
+	dev_data->top = ticks;
+	nrfx_rtc_cc_set(rtc, TOP_CH, ticks, callback ? true : false);
 
 	return 0;
 }
@@ -168,18 +168,18 @@ static void event_handler(nrfx_rtc_int_type_t int_type, void *p_context)
 	struct device *dev = p_context;
 	struct counter_nrfx_data *data = get_dev_data(dev);
 
-	if (int_type == COUNTER_WRAP_INT) {
-		/* Manually reset counter when wrap is different than max wrap*/
-		if (data->wrap != COUNTER_MAX_WRAP) {
+	if (int_type == COUNTER_TOP_INT) {
+		/* Manually reset counter if top value is different than max. */
+		if (data->top != COUNTER_MAX_TOP_VALUE) {
 			nrfx_rtc_counter_clear(&get_nrfx_config(dev)->rtc);
 			nrfx_rtc_cc_set(&get_nrfx_config(dev)->rtc,
-					WRAP_CH, data->wrap, true);
+					TOP_CH, data->top, true);
 		}
 
-		if (data->wrap_cb) {
-			data->wrap_cb(dev, data->wrap_user_data);
+		if (data->top_cb) {
+			data->top_cb(dev, data->top_user_data);
 		}
-	} else if (int_type > COUNTER_WRAP_INT) {
+	} else if (int_type > COUNTER_TOP_INT) {
 		alarm_event_handler(dev, CC_TO_ID(int_type));
 
 	}
@@ -207,21 +207,21 @@ static int init_rtc(struct device *dev,
 		return -EBUSY;
 	}
 
-	get_dev_data(dev)->wrap = COUNTER_MAX_WRAP;
+	get_dev_data(dev)->top = COUNTER_MAX_TOP_VALUE;
 
 	LOG_INST_DBG(nrfx_config->log, "Initialized");
 	return 0;
 }
 
-static u32_t counter_nrfx_get_wrap(struct device *dev)
+static u32_t counter_nrfx_get_top_value(struct device *dev)
 {
-	return get_dev_data(dev)->wrap;
+	return get_dev_data(dev)->top;
 }
 
 static u32_t counter_nrfx_get_max_relative_alarm(struct device *dev)
 {
 	/* Maybe decreased. */
-	return get_dev_data(dev)->wrap;
+	return get_dev_data(dev)->top;
 }
 
 static const struct counter_driver_api counter_nrfx_driver_api = {
@@ -230,9 +230,9 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	.read = counter_nrfx_read,
 	.set_alarm = counter_nrfx_set_alarm,
 	.disable_alarm = counter_nrfx_disable_alarm,
-	.set_wrap = counter_nrfx_set_wrap,
+	.set_top_value = counter_nrfx_set_top_value,
 	.get_pending_int = counter_nrfx_get_pending_int,
-	.get_wrap = counter_nrfx_get_wrap,
+	.get_top_value = counter_nrfx_get_top_value,
 	.get_max_relative_alarm = counter_nrfx_get_max_relative_alarm,
 };
 
@@ -258,7 +258,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, idx, CONFIG_COUNTER_LOG_LEVEL); \
 	static const struct counter_nrfx_config nrfx_counter_##idx##_config = {\
 		.info = {						       \
-			.max_wrap = COUNTER_MAX_WRAP,			       \
+			.max_top_value = COUNTER_MAX_TOP_VALUE,		       \
 			.freq = RTC_CLOCK /				       \
 				(CONFIG_COUNTER_RTC##idx##_PRESCALER + 1),     \
 			.count_up = true,				       \
