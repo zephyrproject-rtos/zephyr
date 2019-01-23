@@ -1090,6 +1090,19 @@ config BT_CTLR_ALLOW_SAME_PEER_CONN
 	  WARNING: This option enables behavior that violates the Bluetooth
 	  specification.
 
+config BT_CTLR_CONN_INTERVAL_LOW_LATENCY
+	bool "Allow low latency connection intervals"
+	help
+	  Allow low latency connection intervals.
+
+config BT_CTLR_EVENT_IFS_LOW_LAT_US
+	prompt "Low latency tIFS value in microseconds" if BT_CTLR_CONN_INTERVAL_LOW_LATENCY
+	int
+	default 52 if BT_CTLR_CONN_INTERVAL_LOW_LATENCY
+	default 150
+	help
+	  Set low latency tIFS value.
+
 endif # BT_CONN
 
 config BT_CTLR_ADV_INDICATION

@@ -1311,10 +1311,15 @@ preempt_find_preemptor:
 
 	/* Check if current event want to continue */
 	err = event.curr.is_abort_cb(ready->prepare_param.param, event.curr.param, &resume_cb);
-	if (!err) {
-		/* Let preemptor LLL know about the cancelled prepare */
-		ready->is_aborted = 1;
-		ready->abort_cb(&ready->prepare_param, ready->prepare_param.param);
+	if (!err || (err == -EBUSY)) {
+		/* Returns -EBUSY when same curr and next state/role, do not
+		 * abort same curr and next event.
+		 */
+		if (err != -EBUSY) {
+			/* Let preemptor LLL know about the cancelled prepare */
+			ready->is_aborted = 1;
+			ready->abort_cb(&ready->prepare_param, ready->prepare_param.param);
+		}
 
 		return;
 	}
