@@ -205,20 +205,20 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
  *
  * This is based on same idea as @ref IS_ENABLED macro but as the result of
  * flag evaluation provided code is injected. Because preprocessor interprets
- * each comma as argument boundary, code must be provided in the brackets.
+ * each comma as an argument boundary, code must be provided in the brackets.
  * Brackets are stripped away during macro processing.
  *
  * Usage example:
  *
- * #define MACRO(x) COND_CODE_1(CONFIG_FLAG, (u32_t x;), ())
+ * \#define MACRO(x) COND_CODE_1(CONFIG_FLAG, (u32_t x;), ())
  *
  * It can be considered as alternative to:
  *
- * #if defined(CONFIG_FLAG) && (CONFIG_FLAG == 1)
- * #define MACRO(x) u32_t x;
- * #else
- * #define MACRO(x)
- * #endif
+ * \#if defined(CONFIG_FLAG) && (CONFIG_FLAG == 1)
+ * \#define MACRO(x) u32_t x;
+ * \#else
+ * \#define MACRO(x)
+ * \#endif
  *
  * However, the advantage of that approach is that code is resolved in place
  * where it is used while \#if method resolves given macro when header is
