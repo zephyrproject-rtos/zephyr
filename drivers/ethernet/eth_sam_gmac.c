@@ -1490,10 +1490,9 @@ static void get_mac_addr_from_i2c_eeprom(u8_t mac_addr[6])
 		return;
 	}
 
-	i2c_burst_read_addr(dev, CONFIG_ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS,
-			    (u8_t *)&iaddr,
-			    CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE,
-			    mac_addr, 6);
+	i2c_write_read(dev, CONFIG_ETH_SAM_GMAC_MAC_I2C_SLAVE_ADDRESS,
+		       &iaddr, CONFIG_ETH_SAM_GMAC_MAC_I2C_INT_ADDRESS_SIZE,
+		       mac_addr, 6);
 }
 #endif
 
