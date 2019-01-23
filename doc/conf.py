@@ -28,6 +28,10 @@ ZEPHYR_BUILD = os.path.abspath(os.environ["ZEPHYR_BUILD"])
 # extensions within.
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'doc', 'extensions'))
 
+# Add the directory which contains the runners package as well,
+# for autodoc directives on runners.xyz.
+sys.path.insert(0, os.path.join(ZEPHYR_BASE, 'scripts', 'west_commands'))
+
 west_found = False
 
 try:
