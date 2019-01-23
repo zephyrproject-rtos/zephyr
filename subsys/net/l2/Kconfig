@@ -98,4 +98,9 @@ config NET_L2_WIFI_SHELL
 	  This can be used for controlling WiFi through the console via
 	  exposing a shell module named "wifi".
 
+config NET_L2_CANBUS
+	bool "Enable CANBUS l2 layer"
+	help
+	  Add a CANBUS L2 layer driver.
+
 endmenu

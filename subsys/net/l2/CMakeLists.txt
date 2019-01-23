@@ -21,3 +21,7 @@ endif()
 if(CONFIG_NET_L2_WIFI_MGMT OR CONFIG_NET_L2_WIFI_SHELL)
   add_subdirectory(wifi)
 endif()
+
+if(CONFIG_NET_L2_CANBUS)
+  add_subdirectory(canbus)
+endif()

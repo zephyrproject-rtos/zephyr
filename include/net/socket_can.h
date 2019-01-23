@@ -19,6 +19,7 @@ extern "C" {
 
 #include <zephyr/types.h>
 #include <net/net_ip.h>
+#include <net/net_if.h>
 #include <can.h>
 
 /**
@@ -45,6 +46,20 @@ extern "C" {
 struct sockaddr_can {
 	sa_family_t can_family;
 	int         can_ifindex;
+};
+
+/**
+ * CAN L2 driver API. Used by socket CAN.
+ */
+struct canbus_api {
+	/**
+	 * The net_if_api must be placed in first position in this
+	 * struct so that we are compatible with network interface API.
+	 */
+	struct net_if_api iface_api;
+
+	/** Send a CAN packet by socket */
+	int (*send)(struct device *dev, struct net_pkt *pkt);
 };
 
 /**
