@@ -13,6 +13,8 @@ West is developed in its own `repository on GitHub`_.
 West is used to obtain the source code for the Zephyr project and can also be
 used to build, debug, and flash applications.
 
+.. _west-history:
+
 History and motivation
 **********************
 
@@ -43,6 +45,9 @@ repositories in a standardized manner within the project:
 * Enforcement of modularization of the components
 * Out-of-tree development based on subsets of the supported boards and SoCs
 
+See :ref:`west-multi-repo` for a detailed explanation of west's handling of
+multiple repository management.
+
 Command-line interface
 ======================
 
@@ -57,17 +62,38 @@ West was introduced to unify and streamline the developer's experience when
 working with Zephyr. It is very important to note that west does not
 replace the CMake-based build system, but directly uses it and augments it.
 
+See :ref:`west-flash-debug` for a detailed explanation of the flash and debug
+command-line interface exposed by west.
+
 .. _west-struct:
 
 Structure
 *********
+
+West structure
+==============
 
 West is downloaded and installed on a system in two stages:
 
 * Bootstrapper: Installed using ``pip``, implements ``west init``
 * Installation: Installed using ``west init``, implements all other commands
 
-Additional information about the two parts can be found below.
+Additional information about the two distinct parts of west can be found in
+the corresponding sections below.
+
+Repository structure
+====================
+
+Beyond west itself, the actual code repositories that west works with
+are the following:
+
+* Manifest repository: Cloned by ``west init``, and managed afterward with Git
+  by the user. Contains the list of projects in the manifest :file:`west.yml`
+  file. In the case of upstream Zephyr, the zephyr repository is the manifest
+  repository.
+* Projects: Cloned and managed by ``west update``. Listed in the manifest file.
+
+See :ref:`west-mr-model` for more information on the multi-repository layout.
 
 Bootstrapper
 ============
@@ -78,8 +104,9 @@ It implements a single command: ``west init``. This command needs to be run
 first to use the rest of functionality included in ``west``. The command
 ``west init`` will do the following:
 
-* Clone west itself in a :file:`west/west` folder
-* Clone the manifest in a :file:`west/manifest` folder (additional information
+* Clone west itself in a :file:`.west/west` folder
+* Clone the manifest repository in the folder specified by the manifest file's
+  (:file:`west.yml`) ``self.path`` section. Additional information
   on the manifest can be found in the :ref:`west-multi-repo` section)
 
 Once ``west init`` has been run, the bootstrapper will delegate the handling of
@@ -97,29 +124,30 @@ Installation
 A west installation is the result of running ``west init``  in an existing
 folder, or ``west init <foldername>`` to create and initialize a folder. As
 described on the previous section, an installation always includes a special
-:file:`west/` folder that contains a clone of both west itself and the manifest.
-Additionally, and once ``west clone`` has been run, the installation will also
+:file:`.west/` folder that contains a clone of west itself, as well as a local
+clone of the manifest repository (``zephyr`` in the default upstream case).
+Additionally, and once ``west update`` has been run, the installation will also
 contain a clone of any repositories listed in the manifest. The directory tree
 layout of an installation using the default Zephyr manifest therefore looks
 like this:
 
 .. code-block:: console
 
-   └── zephyrproject
-       ├── west
+   └── zephyrproject/
+       ├── .west/
        │   ├── config
-       │   ├── manifest
-       │   └── west
-       └── zephyr
+       │   └── west/
+       └── zephyr/
+           └── west.yml
 
-Additionally, ``west init`` creates a configuration file :file:`west/config`
+``west init`` also creates a configuration file :file:`.west/config`
 that stores configuration metadata about the west installation.
 
 To learn more about west's handling of multiple repositories refer to
 :ref:`west-multi-repo`.
 
 The west bootstrapper delegates handling for all commands except ``init`` to
-the installation in :file:`west/west`.
+the installation in :file:`.west/west`.
 
 Usage
 *****
@@ -190,7 +218,7 @@ West is:
   interoperability with third party tools, and means Zephyr developers
   can always find out what is happening "under the hood" when using west.
 
-See `Zephyr issue #6205`_ and `Zephyr issue #6770`_ for more details and
+See `Zephyr issue #6205`_ and for more details and
 discussion.
 
 .. _no-west:
@@ -226,7 +254,8 @@ to do so by manually creating an installation:
 
    # cd into zephyrproject if not already there
    git clone https://github.com/zephyrproject-rtos/west.git
-   echo > west/.west_topdir
+   echo [manifest] > .west/config
+   echo path = zephyr >> .west/config
 
 After that, and in order for ``ninja`` to be able to invoke ``west`` you must
 specify the west directory. This can be done as:
@@ -251,8 +280,5 @@ specify the west directory. This can be done as:
 .. _Zephyr issue #6205:
    https://github.com/zephyrproject-rtos/zephyr/issues/6205
 
-.. _Zephyr issue #6770:
-   https://github.com/zephyrproject-rtos/zephyr/issues/6770
-
 .. _manifest file:
-   https://github.com/zephyrproject-rtos/manifest/blob/master/default.yml
+   https://github.com/zephyrproject-rtos/zephyr/blob/master/west.yml
