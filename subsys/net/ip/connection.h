@@ -140,7 +140,7 @@ int net_conn_change_callback(struct net_conn_handle *handle,
  * disabled, the function will always return NET_DROP.
  */
 #if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP) || \
-	defined(CONFIG_NET_SOCKETS_PACKET)
+	defined(CONFIG_NET_SOCKETS_PACKET) || defined(CONFIG_NET_SOCKETS_CAN)
 enum net_verdict net_conn_input(struct net_pkt *pkt,
 				union net_ip_header *ip_hdr,
 				u8_t proto,

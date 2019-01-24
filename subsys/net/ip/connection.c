@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 #include <net/udp.h>
 #include <net/tcp.h>
 #include <net/ethernet.h>
+#include <net/socket_can.h>
 
 #include "net_private.h"
 #include "icmpv6.h"
@@ -789,6 +790,11 @@ static bool is_invalid_packet(struct net_pkt *pkt,
 		return false;
 	}
 
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+	    net_pkt_family(pkt) == AF_CAN) {
+		return false;
+	}
+
 	return true;
 }
 
@@ -816,6 +822,13 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		dst_port = proto_hdr->tcp->dst_port;
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
 		if (net_pkt_family(pkt) != AF_PACKET || proto != ETH_P_ALL) {
+			return NET_DROP;
+		}
+
+		src_port = dst_port = 0;
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+		   net_pkt_family(pkt) == AF_CAN) {
+		if (proto != CAN_RAW) {
 			return NET_DROP;
 		}
 
