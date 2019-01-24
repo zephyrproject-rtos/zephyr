@@ -44,6 +44,12 @@ if(CONFIG_HAS_DTS)
       message(STATUS "Overlaying ${dts_file}")
     endif()
 
+    # Ensure that changes to 'dts_file's cause CMake to be re-run
+    set_property(DIRECTORY APPEND PROPERTY
+      CMAKE_CONFIGURE_DEPENDS
+      ${dts_file}
+      )
+
     math(EXPR i "${i}+1")
   endforeach()
 
