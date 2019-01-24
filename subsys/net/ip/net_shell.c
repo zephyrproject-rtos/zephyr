@@ -348,11 +348,12 @@ static void iface_cb(struct net_if *iface, void *user_data)
 			continue;
 		}
 
-		PR("\t%s %s %s%s\n",
+		PR("\t%s %s %s%s%s\n",
 		   net_sprint_ipv6_addr(&unicast->address.in6_addr),
 		   addrtype2str(unicast->addr_type),
 		   addrstate2str(unicast->addr_state),
-		   unicast->is_infinite ? " infinite" : "");
+		   unicast->is_infinite ? " infinite" : "",
+		   unicast->is_mesh_local ? " meshlocal" : "");
 		count++;
 	}
 

@@ -75,7 +75,10 @@ struct net_if_addr {
 	/** Is this IP address used or not */
 	u8_t is_used : 1;
 
-	u8_t _unused : 6;
+	/** Is this IP address usage limited to the subnet (mesh) or not */
+	u8_t is_mesh_local : 1;
+
+	u8_t _unused : 5;
 };
 
 /**
