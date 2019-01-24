@@ -111,27 +111,27 @@ static int i2c_sbcon_init(struct device *dev)
 static struct i2c_sbcon_context i2c_sbcon_dev_data_##_num;		\
 									\
 static const struct i2c_sbcon_config i2c_sbcon_dev_cfg_##_num = {	\
-	.sbcon		= (void *)DT_I2C_SBCON_##_num##_BASE_ADDR,		\
+	.sbcon		= (void *)DT_ARM_VERSATILE_I2C_##_num##_BASE_ADDRESS, \
 };									\
 									\
-DEVICE_AND_API_INIT(i2c_sbcon_##_num, CONFIG_I2C_SBCON_##_num##_NAME,	\
+DEVICE_AND_API_INIT(i2c_sbcon_##_num, DT_ARM_VERSATILE_I2C_##_num##_LABEL, \
 	    i2c_sbcon_init,						\
 	    &i2c_sbcon_dev_data_##_num,					\
 	    &i2c_sbcon_dev_cfg_##_num,					\
 	    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY, &api)
 
-#ifdef CONFIG_I2C_SBCON_0
+#ifdef DT_ARM_VERSATILE_I2C_0
 DEFINE_I2C_SBCON(0);
 #endif
 
-#ifdef CONFIG_I2C_SBCON_1
+#ifdef DT_ARM_VERSATILE_I2C_1
 DEFINE_I2C_SBCON(1);
 #endif
 
-#ifdef CONFIG_I2C_SBCON_2
+#ifdef DT_ARM_VERSATILE_I2C_2
 DEFINE_I2C_SBCON(2);
 #endif
 
-#ifdef CONFIG_I2C_SBCON_3
+#ifdef DT_ARM_VERSATILE_I2C_3
 DEFINE_I2C_SBCON(3);
 #endif
