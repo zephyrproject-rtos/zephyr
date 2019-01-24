@@ -26,7 +26,12 @@ if(NOT (EXISTS ${sdk_version_path}))
 Is ZEPHYR_SDK_INSTALL_DIR=${ZEPHYR_SDK_INSTALL_DIR} misconfigured?")
 endif()
 
-file(READ ${sdk_version_path} SDK_VERSION)
+# Read version as published by the SDK
+file(READ ${sdk_version_path} SDK_VERSION_PRE1)
+# Remove any pre-release data, for example 0.10.0-beta4 -> 0.10.0
+string(REGEX REPLACE "-.*" "" SDK_VERSION_PRE2 ${SDK_VERSION_PRE1})
+# Strip any trailing spaces/newlines from the version string
+string(STRIP ${SDK_VERSION_PRE2} SDK_VERSION)
 if(${REQUIRED_SDK_VER} VERSION_GREATER ${SDK_VERSION})
   message(FATAL_ERROR "The SDK version you are using is old, please update your SDK.
 You need at least SDK version ${REQUIRED_SDK_VER}.
@@ -35,17 +40,4 @@ https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/${REQUIR
 ")
 endif()
 
-if(MINGW)
-  set(TOOLCHAIN_HOME ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-mingw32)
-else()
-  set(TOOLCHAIN_HOME ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/${TOOLCHAIN_ARCH}-pokysdk-linux)
-endif()
-
-# Path used for searching by the find_*() functions, with appropriate
-# suffixes added. Ensures that the SDK's host tools will be found when
-# we call, e.g. find_program(QEMU qemu-system-x86)
-list(APPEND CMAKE_PREFIX_PATH ${TOOLCHAIN_HOME}/usr)
-
-# TODO: Use find_* somehow for these as well?
-set_ifndef(QEMU_BIOS            ${TOOLCHAIN_HOME}/usr/share/qemu)
-set_ifndef(OPENOCD_DEFAULT_PATH ${TOOLCHAIN_HOME}/usr/share/openocd/scripts)
+include(${ZEPHYR_BASE}/cmake/toolchain/zephyr/${SDK_VERSION}/host-tools.cmake)
