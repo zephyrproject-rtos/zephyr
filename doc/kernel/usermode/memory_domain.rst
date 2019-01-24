@@ -176,15 +176,10 @@ Related configuration options:
 
 * :option:`CONFIG_MAX_DOMAIN_PARTITIONS`
 
-APIs
-****
+API Reference
+*************
 
 The following memory domain APIs are provided by :zephyr_file:`include/kernel.h`:
 
-* :c:macro:`K_MEM_PARTITION_DEFINE`
-* :cpp:func:`k_mem_domain_init()`
-* :cpp:func:`k_mem_domain_destroy()`
-* :cpp:func:`k_mem_domain_add_partition()`
-* :cpp:func:`k_mem_domain_remove_partition()`
-* :cpp:func:`k_mem_domain_add_thread()`
-* :cpp:func:`k_mem_domain_remove_thread()`
+.. doxygengroup:: mem_domain_apis
+   :project: Zephyr
