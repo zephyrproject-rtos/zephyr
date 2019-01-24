@@ -541,7 +541,7 @@ output to the executable's ``stdin`` and ``stdout``.
 This is chosen by selecting either
 :option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` or
 :option:`CONFIG_NATIVE_UART_0_ON_STDINOUT`
-For interactive use with the :ref:`Shell`, choose the first (OWN_PTY) option.
+For interactive use with the :ref:`shell_label`, choose the first (OWN_PTY) option.
 The second (STDINOUT) option can be used with the shell for automated
 testing, such as when piping other processes' output to control it.
 This is because the shell subsystem expects access to a raw terminal,
