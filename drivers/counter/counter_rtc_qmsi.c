@@ -83,22 +83,21 @@ static int rtc_qmsi_disable(struct device *dev)
 	return 0;
 }
 
-static int rtc_qmsi_disable_alarm(struct device *dev,
-			const struct counter_alarm_cfg *alarm_cfg)
+static int rtc_qmsi_disable_alarm(struct device *dev, u8_t chan_id)
 {
 	clk_periph_disable(CLK_PERIPH_RTC_REGISTER);
 
 	return 0;
 }
 
-static int rtc_qmsi_set_wrap(struct device *dev, u32_t ticks,
-			     counter_wrap_callback_t callback,
+static int rtc_qmsi_set_top(struct device *dev, u32_t ticks,
+			     counter_top_callback_t callback,
 			     void *user_data)
 {
 	return -ENODEV;
 }
 
-static int rtc_qmsi_set_alarm(struct device *dev,
+static int rtc_qmsi_set_alarm(struct device *dev, u8_t chan_id,
 				const struct counter_alarm_cfg *alarm_cfg)
 {
 	qm_rtc_config_t qm_cfg;
@@ -108,7 +107,7 @@ static int rtc_qmsi_set_alarm(struct device *dev,
 	qm_cfg.alarm_en = 1;
 	qm_cfg.alarm_val = alarm_cfg->ticks;
 
-	user_cb = alarm_cfg->handler;
+	user_cb = alarm_cfg->callback;
 	/* Casting callback type due different input parameter from QMSI
 	 * compared aganst the Zephyr callback from void cb(struct device *dev)
 	 * to void cb(void *)
@@ -156,7 +155,7 @@ static const struct counter_driver_api api = {
 	.start = rtc_qmsi_enable,
 	.stop = rtc_qmsi_disable,
 	.read = rtc_qmsi_read,
-	.set_wrap = rtc_qmsi_set_wrap,
+	.set_top_value = rtc_qmsi_set_top,
 	.set_alarm = rtc_qmsi_set_alarm,
 	.disable_alarm = rtc_qmsi_disable_alarm,
 	.get_pending_int = rtc_qmsi_get_pending_int,
@@ -227,7 +226,7 @@ static int rtc_qmsi_device_ctrl(struct device *dev, u32_t ctrl_command,
 
 static const struct rtc_config  rtc_conf_info = {
 	.info = {
-		.max_wrap = UINT32_MAX,
+		.max_top_value = UINT32_MAX,
 		.freq = 32768,
 		.count_up = true,
 		.channels = 1,
@@ -243,6 +242,6 @@ static void rtc_callback(void *user_data)
 	const struct counter_alarm_cfg *cfg = user_data;
 
 	if (user_cb) {
-		(*user_cb)(DEVICE_GET(rtc), cfg, cfg->ticks);
+		(*user_cb)(DEVICE_GET(rtc), 0, cfg->ticks, user_data);
 	}
 }
