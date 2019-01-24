@@ -277,16 +277,8 @@ Related configuration options:
 * :option:`CONFIG_APPLICATION_MEMORY`
 * :option:`CONFIG_MAX_THREAD_BYTES`
 
-APIs
-****
+API Reference
+*************
 
-* :c:func:`k_object_access_grant()`
-* :c:func:`k_object_access_revoke()`
-* :c:func:`k_object_access_all_grant()`
-* :c:func:`k_object_alloc()`
-* :c:func:`k_object_free()`
-* :c:func:`k_object_release()`
-* :c:func:`k_thread_access_grant()`
-* :c:func:`k_thread_user_mode_enter()`
-* :c:macro:`K_THREAD_ACCESS_GRANT()`
-
+.. doxygengroup:: usermode_apis
+   :project: Zephyr

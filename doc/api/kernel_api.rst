@@ -19,12 +19,6 @@ as described in the :ref:`kernel`.
    .. doxygengroup:: kernel_apis
 
 
-Profiling
-*********
-
-.. doxygengroup:: profiling_apis
-   :project: Zephyr
-
 
 Kernel Version
 **************
@@ -34,15 +28,3 @@ Kernel version handling and APIs related to kernel version being used.
    :project: Zephyr
    :content-only:
 
-Memory Domain
-*************
-
-A memory domain contains some number of memory partitions. Threads can
-specify the range and attribute (access permission) for memory partitions
-in a memory domain. Threads in the same memory domain have the
-same access permissions to the memory partitions belong to the
-memory domain.
-(See :ref:`memory_domain`.)
-
-.. doxygengroup:: mem_domain_apis
-   :project: Zephyr
