@@ -210,12 +210,6 @@ DNS Resolve
 .. doxygengroup:: dns_resolve
    :project: Zephyr
 
-HTTP
-====
-
-.. doxygengroup:: http
-   :project: Zephyr
-
 TLS credentials
 ***************
 
