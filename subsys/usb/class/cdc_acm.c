@@ -631,21 +631,24 @@ static int cdc_acm_init(struct device *dev)
 	dev_data->dev = dev;
 	sys_slist_append(&cdc_acm_data_devlist, &dev_data->node);
 
-	LOG_DBG("Device dev %p dev_data %p added to devlist %p", dev, dev_data,
-		&cdc_acm_data_devlist);
+	LOG_DBG("Device dev %p dev_data %p cfg %p added to devlist %p",
+		dev, dev_data, dev->config->config_info, &cdc_acm_data_devlist);
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
-	cdc_acm_config.interface.payload_data = dev_data->interface_data;
-	cdc_acm_config.usb_device_description = usb_get_device_descriptor();
+	struct usb_cfg_data *cfg = (void *)dev->config->config_info;
+
+	cfg->interface.payload_data = dev_data->interface_data;
+	cfg->usb_device_description = usb_get_device_descriptor();
+
 	/* Initialize the USB driver with the right configuration */
-	ret = usb_set_config(&cdc_acm_config);
+	ret = usb_set_config(cfg);
 	if (ret < 0) {
 		LOG_ERR("Failed to config USB");
 		return ret;
 	}
 
 	/* Enable USB driver */
-	ret = usb_enable(&cdc_acm_config);
+	ret = usb_enable(cfg);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable USB");
 		return ret;
