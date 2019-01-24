@@ -1,7 +1,11 @@
-.. _shell:
+.. _shell_label:
 
 Shell
 ######
+
+.. contents::
+    :local:
+    :depth: 2
 
 Overview
 ********
@@ -33,8 +37,6 @@ At this point, the following transport layers are implemented:
 * UART
 * Segger RTT
 * DUMMY - not a physical transport layer
-
-See the :ref:`shell_api` documentation for more information.
 
 Connecting to Segger RTT via TCP (on macOS, for example)
 ========================================================
@@ -495,3 +497,9 @@ are :c:macro:`SHELL_DEFINE` arguments.
 	block, for example, by a UART with hardware flow control. If timeout is
 	set too high, the logger thread could be blocked and impact other logger
 	backends.
+
+API Reference
+*************
+
+.. doxygengroup:: shell_api
+   :project: Zephyr
