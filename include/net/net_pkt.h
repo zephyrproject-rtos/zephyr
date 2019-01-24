@@ -83,6 +83,9 @@ struct net_pkt {
 	u8_t *appdata;	/* application data starts here */
 	u8_t *next_hdr;	/* where is the next header */
 
+	/** Reference counter */
+	atomic_t atomic_ref;
+
 	/* Filled by layer 2 when network packet is received. */
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
@@ -108,9 +111,6 @@ struct net_pkt {
 #if defined(CONFIG_NET_TCP)
 	sys_snode_t sent_list;
 #endif
-
-	/** Reference counter */
-	u8_t ref;
 
 	u8_t sent_or_eof: 1;	/* For outgoing packet: is this sent or not
 				 * For incoming packet of a socket: last

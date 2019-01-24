@@ -344,7 +344,7 @@ struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
 
 	(void)memset(pkt, 0, sizeof(struct net_pkt));
 
-	pkt->ref = 1;
+	pkt->atomic_ref = ATOMIC_INIT(1);
 	pkt->slab = slab;
 
 	net_pkt_set_priority(pkt, CONFIG_NET_TX_DEFAULT_PRIORITY);
@@ -721,6 +721,8 @@ void net_pkt_unref_debug(struct net_pkt *pkt, const char *caller, int line)
 void net_pkt_unref(struct net_pkt *pkt)
 {
 #endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
+	atomic_val_t ref;
+
 	if (!pkt) {
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 		NET_ERR("*** ERROR *** pkt %p (%s():%d)", pkt, caller, line);
@@ -728,30 +730,34 @@ void net_pkt_unref(struct net_pkt *pkt)
 		return;
 	}
 
-	if (!pkt->ref) {
+	do {
+		ref = atomic_get(&pkt->atomic_ref);
+		if (!ref) {
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-		const char *func_freed;
-		int line_freed;
+			const char *func_freed;
+			int line_freed;
 
-		if (net_pkt_alloc_find(pkt, &func_freed, &line_freed)) {
-			NET_ERR("*** ERROR *** pkt %p is freed already by "
-				"%s():%d (%s():%d)",
-				pkt, func_freed, line_freed, caller, line);
-		} else {
-			NET_ERR("*** ERROR *** pkt %p is freed already "
-				"(%s():%d)", pkt, caller, line);
-		}
+			if (net_pkt_alloc_find(pkt, &func_freed, &line_freed)) {
+				NET_ERR("*** ERROR *** pkt %p is freed already "
+					"by %s():%d (%s():%d)",
+					pkt, func_freed, line_freed, caller,
+					line);
+			} else {
+				NET_ERR("*** ERROR *** pkt %p is freed already "
+					"(%s():%d)", pkt, caller, line);
+			}
 #endif
-		return;
-	}
+			return;
+		}
+	} while (!atomic_cas(&pkt->atomic_ref, ref, ref - 1));
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 	NET_DBG("%s [%d] pkt %p ref %d frags %p (%s():%d)",
 		slab2str(pkt->slab), k_mem_slab_num_free_get(pkt->slab),
-		pkt, pkt->ref - 1, pkt->frags, caller, line);
+		pkt, ref - 1, pkt->frags, caller, line);
 #endif
-	if (pkt->ref > 1) {
+	if (ref > 1) {
 		goto done;
 	}
 
@@ -791,7 +797,7 @@ void net_pkt_unref(struct net_pkt *pkt)
 done:
 #endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 
-	if (--pkt->ref > 0) {
+	if (ref > 1) {
 		return;
 	}
 
@@ -809,20 +815,25 @@ struct net_pkt *net_pkt_ref_debug(struct net_pkt *pkt, const char *caller,
 struct net_pkt *net_pkt_ref(struct net_pkt *pkt)
 #endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 {
-	if (!pkt) {
+	atomic_val_t ref;
+
+	do {
+		ref = pkt ? atomic_get(&pkt->atomic_ref) : 0;
+		if (!ref) {
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-		NET_ERR("*** ERROR *** pkt %p (%s():%d)", pkt, caller, line);
+			NET_ERR("*** ERROR *** pkt %p (%s():%d)",
+				pkt, caller, line);
 #endif
-		return NULL;
-	}
+			return NULL;
+		}
+	} while (!atomic_cas(&pkt->atomic_ref, ref, ref + 1));
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 	NET_DBG("%s [%d] pkt %p ref %d (%s():%d)",
 		slab2str(pkt->slab), k_mem_slab_num_free_get(pkt->slab),
-		pkt, pkt->ref + 1, caller, line);
+		pkt, ref + 1, caller, line);
 #endif
 
-	pkt->ref++;
 
 	return pkt;
 }

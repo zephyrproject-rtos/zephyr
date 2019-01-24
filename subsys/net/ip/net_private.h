@@ -219,7 +219,7 @@ static inline void net_print_frags(const char *str, struct net_pkt *pkt)
 		printk("%s", str);
 	}
 
-	printk("%p[%d]", pkt, pkt->ref);
+	printk("%p[%d]", pkt, atomic_get(&pkt->atomic_ref));
 
 	if (frag) {
 		printk("->");
