@@ -91,8 +91,8 @@ LED
 ---
 
 * LED1 (green) = P0.13
-* LED2 (green) = P0.14
-* LED3 (green) = P0.15
+* LED2 (red)   = P0.14
+* LED3 (blue)  = P0.15
 
 Push buttons
 ------------
