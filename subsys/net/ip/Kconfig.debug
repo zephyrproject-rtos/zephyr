@@ -36,6 +36,17 @@ config NET_DEBUG_NET_PKT_EXTERNALS
 	  This value is used when allocating space for tracking the
 	  memory allocations.
 
+config NET_DEBUG_NET_PKT_NON_FRAGILE_ACCESS
+	bool "Reduce r/w fragility by resetting the packet cursor when freed"
+	default n
+	select NET_DEBUG_NET_PKT_ALLOC
+	help
+	  This MUST not be used unless you have an hard to catch bug. This will
+	  reset the pkt cursor when it's freed, so any subsequent r/w operations
+	  will not segfault, but just bail out and hopefuly it will enable you
+	  to know who/where the packet was freed already. Do not set this, by
+	  any means, unless you are actively debugging.
+
 if !NET_RAW_MODE
 
 module = NET_CORE

@@ -817,6 +817,11 @@ done:
 		net_pkt_frag_unref(pkt->frags);
 	}
 
+	if (IS_ENABLED(CONFIG_NET_DEBUG_NET_PKT_NON_FRAGILE_ACCESS)) {
+		pkt->buffer = NULL;
+		net_pkt_cursor_init(pkt);
+	}
+
 	k_mem_slab_free(pkt->slab, (void **)&pkt);
 }
 
