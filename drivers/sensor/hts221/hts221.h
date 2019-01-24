@@ -28,10 +28,6 @@
 #define HTS221_REG_DATA_START		0x28
 #define HTS221_REG_CONVERSION_START	0x30
 
-static const char * const hts221_odr_strings[] = {
-	"1", "7", "12.5"
-};
-
 struct hts221_data {
 	struct device *i2c;
 	s16_t rh_sample;
