@@ -468,17 +468,15 @@ def generate_keyvalue_file(kv_file):
 
 
 def output_include_lines(fd):
-    compatible = reduced['/']['props']['compatible'][0]
-
-    fd.write("/**************************************************\n")
-    fd.write(" * Generated include file for " + compatible)
-    fd.write("\n")
-    fd.write(" *               DO NOT MODIFY\n")
-    fd.write(" */\n")
-    fd.write("\n")
-    fd.write("#ifndef GENERATED_DTS_BOARD_UNFIXED_H" + "\n")
-    fd.write("#define GENERATED_DTS_BOARD_UNFIXED_H" + "\n")
-    fd.write("\n")
+    fd.write('''\
+/**********************************************
+*                 Generated include file
+*                      DO NOT MODIFY
+*/
+#ifndef GENERATED_DTS_BOARD_UNFIXED_H
+#define GENERATED_DTS_BOARD_UNFIXED_H
+    '''
+    )
 
     node_keys = sorted(defs.keys())
     for node in node_keys:
