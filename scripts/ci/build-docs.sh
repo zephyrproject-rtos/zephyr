@@ -1,4 +1,7 @@
 #!/bin/bash
+
+# Script for building the daily docs and uploading them to the website.
+
 set -xe
 
 TYPE=daily
@@ -43,13 +46,13 @@ make DOC_TAG=${TYPE} htmldocs
 if [ "$?" == "0" ]; then
 	echo "- Uploading to AWS S3..."
 	if [ "$RELEASE" == "latest" ]; then
-		aws s3 sync --quiet doc/_build/html s3://docs.zephyrproject.org/latest --delete
+		aws s3 sync doc/_build/html s3://docs.zephyrproject.org/latest --delete
 	else
 		DOC_RELEASE=${RELEASE}.0
 		aws s3 sync --quiet doc/_build/html s3://docs.zephyrproject.org/${DOC_RELEASE}
 	fi
 	if [ -d doc/_build/doxygen/html ]; then
-		aws s3 sync --quiet doc/_build/doxygen/html s3://docs.zephyrproject.org/apidoc/${RELEASE} --delete
+		aws s3 sync doc/_build/doxygen/html s3://docs.zephyrproject.org/apidoc/${RELEASE} --delete
 	fi
 else
 	echo "- Failed"
