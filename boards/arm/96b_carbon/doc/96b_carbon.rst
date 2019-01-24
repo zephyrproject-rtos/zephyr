@@ -336,9 +336,9 @@ in general, see :ref:`build_an_application`.
 1. Flash the nRF51 with the hci_spi sample application as described in
    :ref:`96b_carbon_nrf51_bluetooth`.
 
-2. Install the dfu-util flashing app, as described above.
+#. Install the dfu-util flashing app, as described above.
 
-3. Build and flash the ``samples/bluetooth/ipsp`` application for
+#. Build and flash the ``samples/bluetooth/ipsp`` application for
    96b_carbon. See the instructions above for how to put your board
    into DFU mode if you haven't done this before:
 
@@ -347,7 +347,7 @@ in general, see :ref:`build_an_application`.
       :board: 96b_carbon
       :goals: build flash
 
-5. Refer to the instructions in :ref:`bluetooth-ipsp-sample` for how
+#. Refer to the instructions in :ref:`bluetooth-ipsp-sample` for how
    to verify functionality.
 
 Congratulations! Your 96Boards Carbon now has Bluetooth
