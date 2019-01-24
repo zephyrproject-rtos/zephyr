@@ -710,6 +710,9 @@ typedef void (*bt_gatt_complete_func_t) (struct bt_conn *conn);
  *  @param data Pointer to Attribute data.
  *  @param len Attribute value length.
  *  @param func Notification value callback.
+ *
+ *  @return Number of bytes sent in case of success or negative value in case of
+ *  error.
  */
 int bt_gatt_notify_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		      const void *data, u16_t len,
@@ -731,6 +734,9 @@ int bt_gatt_notify_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
  *  @param attr Characteristic or Characteristic Value attribute.
  *  @param data Pointer to Attribute data.
  *  @param len Attribute value length.
+ *
+ *  @return Number of bytes sent in case of success or negative value in case of
+ *  error.
  */
 static inline int bt_gatt_notify(struct bt_conn *conn,
 				 const struct bt_gatt_attr *attr,
@@ -777,7 +783,8 @@ struct bt_gatt_indicate_params {
  *  @param conn Connection object.
  *  @param params Indicate parameters.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @return Number of bytes sent in case of success or negative value in case of
+ *  error.
  */
 int bt_gatt_indicate(struct bt_conn *conn,
 		     struct bt_gatt_indicate_params *params);
@@ -1017,7 +1024,8 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  * @param sign Whether to sign data
  * @param func Transmission complete callback.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return Number of bytes sent in case of success or negative value in case of
+ * error.
  */
 int bt_gatt_write_without_response_cb(struct bt_conn *conn, u16_t handle,
 				      const void *data, u16_t length,
@@ -1034,7 +1042,8 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, u16_t handle,
  * @param length Data length.
  * @param sign Whether to sign data
  *
- * @return 0 in case of success or negative value in case of error.
+ * @return Number of bytes sent in case of success or negative value in case of
+ * error.
  */
 static inline int bt_gatt_write_without_response(struct bt_conn *conn,
 						 u16_t handle, const void *data,

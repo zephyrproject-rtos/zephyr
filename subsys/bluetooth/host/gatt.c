@@ -785,6 +785,10 @@ static int gatt_notify(struct bt_conn *conn, u16_t handle, const void *data,
 {
 	struct net_buf *buf;
 	struct bt_att_notify *nfy;
+	int err;
+
+	/* Only send what fits on the MTU */
+	len = min(len, bt_att_get_payload_len(conn, BT_ATT_OP_NOTIFY));
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY, sizeof(*nfy) + len);
 	if (!buf) {
@@ -792,7 +796,7 @@ static int gatt_notify(struct bt_conn *conn, u16_t handle, const void *data,
 		return -ENOMEM;
 	}
 
-	BT_DBG("conn %p handle 0x%04x", conn, handle);
+	BT_DBG("conn %p handle 0x%04x len %zu", conn, handle, len);
 
 	nfy = net_buf_add(buf, sizeof(*nfy));
 	nfy->handle = sys_cpu_to_le16(handle);
@@ -800,7 +804,12 @@ static int gatt_notify(struct bt_conn *conn, u16_t handle, const void *data,
 	net_buf_add(buf, len);
 	memcpy(nfy->value, data, len);
 
-	return bt_att_send(conn, buf, cb);
+	err = bt_att_send(conn, buf, cb);
+	if (err) {
+		return err;
+	}
+
+	return len;
 }
 
 static void gatt_indicate_rsp(struct bt_conn *conn, u8_t err,
@@ -842,6 +851,7 @@ static int gatt_indicate(struct bt_conn *conn,
 {
 	struct net_buf *buf;
 	struct bt_att_indicate *ind;
+	int len, err;
 	u16_t value_handle = params->attr->handle;
 
 	/* Check if attribute is a characteristic then adjust the handle */
@@ -855,8 +865,11 @@ static int gatt_indicate(struct bt_conn *conn,
 		value_handle += 1;
 	}
 
-	buf = bt_att_create_pdu(conn, BT_ATT_OP_INDICATE,
-				sizeof(*ind) + params->len);
+	/* Only send what fits on the MTU */
+	len = min(params->len,
+		  bt_att_get_payload_len(conn, BT_ATT_OP_INDICATE));
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_INDICATE, sizeof(*ind) + len);
 	if (!buf) {
 		BT_WARN("No buffer available to send indication");
 		return -ENOMEM;
@@ -867,10 +880,15 @@ static int gatt_indicate(struct bt_conn *conn,
 	ind = net_buf_add(buf, sizeof(*ind));
 	ind->handle = sys_cpu_to_le16(value_handle);
 
-	net_buf_add(buf, params->len);
-	memcpy(ind->value, params->data, params->len);
+	net_buf_add(buf, len);
+	memcpy(ind->value, params->data, len);
 
-	return gatt_send(conn, buf, gatt_indicate_rsp, params, NULL);
+	err = gatt_send(conn, buf, gatt_indicate_rsp, params, NULL);
+	if (err) {
+		return err;
+	}
+
+	return len;
 }
 
 struct sc_data {
@@ -931,7 +949,6 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 	for (i = 0; i < ccc->cfg_len; i++) {
 		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
 		struct bt_conn *conn;
-		int err;
 
 		/* Check if config value matches data type since consolidated
 		 * value may be for a different peer.
@@ -954,16 +971,17 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 		}
 
 		if (data->type == BT_GATT_CCC_INDICATE) {
-			err = gatt_indicate(conn, data->params);
+			data->len = gatt_indicate(conn, data->params);
 		} else {
-			err = gatt_notify(conn, data->attr->handle,
-					  data->data, data->len,
-					  data->func);
+			data->len = gatt_notify(conn, data->attr->handle,
+						data->data, data->len,
+						data->func);
 		}
 
 		bt_conn_unref(conn);
 
-		if (err < 0) {
+		if (data->len < 0) {
+			data->err = data->len;
 			return BT_GATT_ITER_STOP;
 		}
 
@@ -1007,7 +1025,7 @@ int bt_gatt_notify_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	bt_gatt_foreach_attr(attr->handle, 0xffff, notify_cb, &nfy);
 
-	return nfy.err;
+	return nfy.err ? nfy.err : nfy.len;
 }
 
 int bt_gatt_indicate(struct bt_conn *conn,
@@ -1028,7 +1046,7 @@ int bt_gatt_indicate(struct bt_conn *conn,
 
 	bt_gatt_foreach_attr(params->attr->handle, 0xffff, notify_cb, &nfy);
 
-	return nfy.err;
+	return nfy.err ? nfy.err : nfy.len;
 }
 
 u16_t bt_gatt_get_mtu(struct bt_conn *conn)
@@ -2093,6 +2111,8 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, u16_t handle,
 {
 	struct net_buf *buf;
 	struct bt_att_write_cmd *cmd;
+	int err;
+	u8_t op;
 
 	__ASSERT(conn, "invalid parameters\n");
 	__ASSERT(handle, "invalid parameters\n");
@@ -2108,13 +2128,11 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, u16_t handle,
 	}
 #endif
 
-	if (sign) {
-		buf = bt_att_create_pdu(conn, BT_ATT_OP_SIGNED_WRITE_CMD,
-					sizeof(*cmd) + length + 12);
-	} else {
-		buf = bt_att_create_pdu(conn, BT_ATT_OP_WRITE_CMD,
-					sizeof(*cmd) + length);
-	}
+	op = sign ? BT_ATT_OP_SIGNED_WRITE_CMD : BT_ATT_OP_WRITE_CMD;
+
+	length = min(length, bt_att_get_payload_len(conn, op));
+
+	buf = bt_att_create_pdu(conn, op, sizeof(*cmd) + length);
 	if (!buf) {
 		return -ENOMEM;
 	}
@@ -2126,7 +2144,12 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, u16_t handle,
 
 	BT_DBG("handle 0x%04x length %u", handle, length);
 
-	return bt_att_send(conn, buf, func);
+	err = bt_att_send(conn, buf, func);
+	if (err) {
+		return err;
+	}
+
+	return length;
 }
 
 static int gatt_exec_write(struct bt_conn *conn,
