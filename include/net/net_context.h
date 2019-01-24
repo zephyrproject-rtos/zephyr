@@ -50,7 +50,7 @@ enum net_context_state {
  * stored into a bit field to save space.
  */
 /** Protocol family of this connection */
-#define NET_CONTEXT_FAMILY (BIT(4) | BIT(5))
+#define NET_CONTEXT_FAMILY (BIT(3) | BIT(4) | BIT(5))
 
 /** Type of the connection (datagram / stream / raw) */
 #define NET_CONTEXT_TYPE   (BIT(6) | BIT(7))
@@ -361,7 +361,7 @@ static inline sa_family_t net_context_get_family(struct net_context *context)
 {
 	NET_ASSERT(context);
 
-	return ((context->flags & NET_CONTEXT_FAMILY) >> 4);
+	return ((context->flags & NET_CONTEXT_FAMILY) >> 3);
 }
 
 /**
@@ -371,7 +371,7 @@ static inline sa_family_t net_context_get_family(struct net_context *context)
  * of the context.
  *
  * @param context Network context.
- * @param family Address family (AF_INET, AF_INET6 or AF_PACKET)
+ * @param family Address family (AF_INET, AF_INET6, AF_PACKET, AF_CAN)
  */
 static inline void net_context_set_family(struct net_context *context,
 					  sa_family_t family)
@@ -380,10 +380,10 @@ static inline void net_context_set_family(struct net_context *context,
 
 	NET_ASSERT(context);
 
-	if (family == AF_UNSPEC || family == AF_INET ||
-	    family == AF_INET6 || family == AF_PACKET) {
-		/* Family is in BIT(4) and BIT(5)*/
-		flag = family << 4;
+	if (family == AF_UNSPEC || family == AF_INET || family == AF_INET6 ||
+	    family == AF_PACKET || family == AF_CAN) {
+		/* Family is in BIT(4), BIT(5) and BIT(6) */
+		flag = family << 3;
 	}
 
 	context->flags |= flag;

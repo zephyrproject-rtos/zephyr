@@ -24,6 +24,7 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include <net/net_offload.h>
 #include <net/tcp.h>
 #include <net/ethernet.h>
+#include <net/socket_can.h>
 
 #include "connection.h"
 #include "net_private.h"
@@ -133,23 +134,31 @@ int net_context_get(sa_family_t family,
 	}
 #endif
 
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
-		if (type == SOCK_RAW) {
+	if (!IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
+		NET_ASSERT_INFO((family != AF_CAN), "AF_CAN disabled");
+		return -EPFNOSUPPORT;
+	}
+
+	if (type == SOCK_RAW) {
+		if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
+		    IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
+			if (family != AF_PACKET && family != AF_CAN) {
+				return -EINVAL;
+			}
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_RAW) &&
+			   !IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
 			if (family != AF_PACKET) {
 				return -EINVAL;
 			}
-		} else {
-			if (family == AF_PACKET) {
+		} else if (!IS_ENABLED(CONFIG_NET_SOCKETS_RAW) &&
+			   IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
+			if (family != AF_CAN) {
 				return -EINVAL;
 			}
 		}
 	} else {
-		if (type == SOCK_RAW) {
+		if (family == AF_PACKET || family == AF_CAN) {
 			return -EPROTOTYPE;
-		}
-
-		if (family == AF_PACKET) {
-			return -EPFNOSUPPORT;
 		}
 	}
 
@@ -179,9 +188,10 @@ int net_context_get(sa_family_t family,
 	}
 #endif
 
-	if (family != AF_INET && family != AF_INET6 && family != AF_PACKET) {
+	if (family != AF_INET && family != AF_INET6 && family != AF_PACKET &&
+	    family != AF_CAN) {
 		NET_ASSERT_INFO(family == AF_INET || family == AF_INET6 ||
-				family == AF_PACKET,
+				family == AF_PACKET || family == AF_CAN,
 				"Unknown address family %d", family);
 		return -EAFNOSUPPORT;
 	}
@@ -438,6 +448,34 @@ static int bind_default(struct net_context *context)
 					sizeof(ll_addr));
 	}
 
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
+		struct sockaddr_can can_addr;
+
+		if (context->iface) {
+			return 0;
+		} else {
+#if defined(CONFIG_NET_L2_CANBUS)
+			struct net_if *iface;
+
+			iface = net_if_get_first_by_type(
+						&NET_L2_GET_NAME(CANBUS));
+			if (!iface) {
+				return -ENOENT;
+			}
+
+			can_addr.can_ifindex = net_if_get_by_iface(iface);
+			context->iface = can_addr.can_ifindex;
+#else
+			return -ENOENT;
+#endif
+		}
+
+		can_addr.can_family = AF_CAN;
+
+		return net_context_bind(context, (struct sockaddr *)&can_addr,
+					sizeof(can_addr));
+	}
+
 	return -EINVAL;
 }
 
@@ -687,6 +725,50 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			ll_addr->sll_ifindex, iface,
 			net_sprint_ll_addr(net_if_get_link_addr(iface)->addr,
 					   net_if_get_link_addr(iface)->len));
+
+		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && addr->sa_family == AF_CAN) {
+		struct sockaddr_can *can_addr = (struct sockaddr_can *)addr;
+		struct net_if *iface = NULL;
+
+		if (addrlen < sizeof(struct sockaddr_can)) {
+			return -EINVAL;
+		}
+
+		if (can_addr->can_ifindex < 0) {
+			return -EINVAL;
+		}
+
+		iface = net_if_get_by_index(can_addr->can_ifindex);
+		if (!iface) {
+			NET_ERR("Cannot bind to interface index %d",
+				can_addr->can_ifindex);
+			return -EADDRNOTAVAIL;
+		}
+
+#if defined(CONFIG_NET_OFFLOAD)
+		if (net_if_is_ip_offloaded(iface)) {
+			net_context_set_iface(context, iface);
+
+			return net_offload_bind(iface,
+						context,
+						addr,
+						addrlen);
+		}
+#endif /* CONFIG_NET_OFFLOAD */
+
+		net_context_set_iface(context, iface);
+		net_context_set_family(context, AF_CAN);
+
+		net_can_ptr(&context->local)->can_family = AF_CAN;
+		net_can_ptr(&context->local)->can_ifindex =
+			can_addr->can_ifindex;
+
+		NET_DBG("Context %p binding to %d iface[%d] %p",
+			context, net_context_get_ip_proto(context),
+			can_addr->can_ifindex, iface);
 
 		return 0;
 	}
@@ -1163,7 +1245,9 @@ static int sendto(struct net_pkt *pkt,
 		return -EBADF;
 	}
 
-	if (!dst_addr) {
+	if (!dst_addr &&
+	    !(IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+	      net_context_get_ip_proto(context) == CAN_RAW)) {
 		return -EDESTADDRREQ;
 	}
 
@@ -1194,7 +1278,11 @@ static int sendto(struct net_pkt *pkt,
 		}
 	} else
 #endif /* CONFIG_NET_IPV4 */
-	{
+
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+	    net_pkt_family(pkt) == AF_CAN) {
+		;
+	} else {
 		NET_DBG("Invalid protocol family %d", net_pkt_family(pkt));
 		return -EINVAL;
 	}
@@ -1226,6 +1314,12 @@ static int sendto(struct net_pkt *pkt,
 		break;
 
 	default:
+		if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+		    net_context_get_family(context) == AF_CAN &&
+		    net_context_get_ip_proto(context) == CAN_RAW) {
+			break;
+		}
+
 		ret = -EPROTONOSUPPORT;
 	}
 
@@ -1251,6 +1345,11 @@ static int sendto(struct net_pkt *pkt,
 
 	case IPPROTO_TCP:
 		return net_tcp_send_data(context, cb, token, user_data);
+
+#if defined(CONFIG_NET_SOCKETS_CAN)
+	case CAN_RAW:
+		return net_send_data(pkt);
+#endif
 
 	default:
 		return -EPROTONOSUPPORT;
@@ -1290,8 +1389,12 @@ int net_context_send(struct net_pkt *pkt,
 
 	if (!(context->flags & NET_CONTEXT_REMOTE_ADDR_SET) ||
 	    !net_sin(&context->remote)->sin_port) {
-		ret = -EDESTADDRREQ;
-		goto unlock;
+		if (!(IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+		      net_context_get_ip_proto(context) == CAN_RAW &&
+		      net_context_get_family(context) == AF_CAN)) {
+			ret = -EDESTADDRREQ;
+			goto unlock;
+		}
 	}
 
 #if defined(CONFIG_NET_IPV6)
@@ -1445,7 +1548,9 @@ static int context_sendto_new(struct net_context *context,
 		return -EBADF;
 	}
 
-	if (!dst_addr) {
+	if (!dst_addr &&
+	    !(IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+	      net_context_get_ip_proto(context) == CAN_RAW)) {
 		return -EDESTADDRREQ;
 	}
 
@@ -1488,6 +1593,31 @@ static int context_sendto_new(struct net_context *context,
 		if (!iface) {
 			NET_ERR("Cannot bind to interface index %d",
 				ll_addr->sll_ifindex);
+			return -EDESTADDRREQ;
+		}
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+		   net_context_get_family(context) == AF_CAN) {
+		struct sockaddr_can *can_addr = (struct sockaddr_can *)dst_addr;
+		struct net_if *iface;
+
+		if (addrlen < sizeof(struct sockaddr_can)) {
+			return -EINVAL;
+		}
+
+		if (can_addr->can_ifindex < 0) {
+			/* The index should have been set in bind */
+			can_addr->can_ifindex =
+				net_can_ptr(&context->local)->can_ifindex;
+		}
+
+		if (can_addr->can_ifindex < 0) {
+			return -EDESTADDRREQ;
+		}
+
+		iface = net_if_get_by_index(can_addr->can_ifindex);
+		if (!iface) {
+			NET_ERR("Cannot bind to interface index %d",
+				can_addr->can_ifindex);
 			return -EDESTADDRREQ;
 		}
 	} else {
@@ -1550,6 +1680,21 @@ static int context_sendto_new(struct net_context *context,
 
 		net_if_queue_tx(net_pkt_iface(pkt), pkt);
 		sent = len;
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+		   net_context_get_family(context) == AF_CAN &&
+		   net_context_get_ip_proto(context) == CAN_RAW) {
+
+		net_pkt_set_family(pkt, AF_CAN);
+
+		ret = net_pkt_write_new(pkt, buf, len);
+		if (ret < 0) {
+			goto fail;
+		}
+
+		net_pkt_cursor_init(pkt);
+
+		ret = net_send_data(pkt);
+		sent = len;
 	} else {
 		NET_DBG("Unknown protocol while sending packet: %d",
 		net_context_get_ip_proto(context));
@@ -1596,6 +1741,9 @@ int net_context_send_new(struct net_context *context,
 		   net_context_get_family(context) == AF_PACKET) {
 		ret = -EOPNOTSUPP;
 		goto unlock;
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+		   net_context_get_family(context) == AF_CAN) {
+		addrlen = sizeof(struct sockaddr_can);
 	} else {
 		addrlen = 0;
 	}
@@ -1655,12 +1803,12 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 		goto unlock;
 	}
 
-	if (net_context_get_ip_proto(context) != IPPROTO_TCP) {
-		/* TCP packets get appdata earlier in tcp_established(). */
-		net_pkt_set_appdata_values(pkt, IPPROTO_UDP);
-	} else {
+	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
 		net_stats_update_tcp_recv(net_pkt_iface(pkt),
 					  net_pkt_appdatalen(pkt));
+	} else if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
+		/* TCP packets get appdata earlier in tcp_established(). */
+		net_pkt_set_appdata_values(pkt, IPPROTO_UDP);
 	}
 
 	NET_DBG("Set appdata %p to len %u (total %zu)",
@@ -1851,6 +1999,12 @@ int net_context_recv(struct net_context *context,
 	default:
 		if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		    net_context_get_family(context) == AF_PACKET) {
+			ret = recv_raw(context, cb, timeout, user_data);
+			break;
+		}
+
+		if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
+		    net_context_get_family(context) == AF_CAN) {
 			ret = recv_raw(context, cb, timeout, user_data);
 			break;
 		}
