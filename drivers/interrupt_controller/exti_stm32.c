@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2017 RnDity Sp. z o.o.
+ * Copyright (c) 2019 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,14 +9,11 @@
 /**
  * @brief Driver for External interrupt/event controller in STM32 MCUs
  *
- * Based on reference manuals:
- *   RM0008 Reference Manual: STM32F101xx, STM32F102xx, STM32F103xx, STM32F105xx
- *   and STM32F107xx advanced ARM-based 32-bit MCUs
- * and
- *   RM0368 Reference manual STM32F401xB/C and STM32F401xD/E
- *   advanced ARM-based 32-bit MCUs
- *
- * Chapter 10.2: External interrupt/event controller (EXTI)
+ * Driver is currently implemented to support following EXTI lines
+ * STM32F1/STM32F3: Lines 0 to 15. Lines > 15 not supported
+ * STM32F0/STM32L0/STM32L4: Lines 0 to 15. Lines > 15 are not mapped on an IRQ
+ * STM32F2/STM32F4: Lines 0 to 15, 16, 17 18, 21 and 22. Others not supported
+ * STM32F7: Lines 0 to 15, 16, 17 18, 21, 22 and 23. Others not supported
  *
  */
 #include <device.h>
@@ -93,7 +91,7 @@ static inline struct stm32_exti *get_exti_addr_adjust_line(int *line)
 	return base;
 }
 
-void stm32_exti_enable(int line)
+int stm32_exti_enable(int line)
 {
 	volatile struct stm32_exti *exti = get_exti_addr_adjust_line(&line);
 	int irqnum = 0;
@@ -116,7 +114,7 @@ void stm32_exti_enable(int line)
 		 * by other drivers or boards, to allow the device wakeup on
 		 * some non-GPIO signals.
 		 */
-		return;
+		return 0;
 	}
 #elif defined(CONFIG_SOC_SERIES_STM32F1X) || \
       defined(CONFIG_SOC_SERIES_STM32F2X) || \
@@ -158,7 +156,19 @@ void stm32_exti_enable(int line)
 			break;
 #endif
 		default:
-			return;
+			/* No IRQ associated to this line */
+#if defined(CONFIG_SOC_SERIES_STM32L4X)
+			/* > 15 are not mapped on an IRQ */
+			/*
+			 * On STM32L4X, this function also support enabling EXTI
+			 * lines that are not connected to an IRQ. This might be used
+			 * by other drivers or boards, to allow the device wakeup on
+			 * some non-GPIO signals.
+			 */
+			return 0;
+#else
+			return -ENOTSUP;
+#endif /* CONFIG_SOC_SERIES_STM32L4X */
 		}
 	}
 #else
@@ -166,6 +176,8 @@ void stm32_exti_enable(int line)
 #endif
 
 	irq_enable(irqnum);
+
+	return 0;
 }
 
 void stm32_exti_disable(int line)

@@ -276,7 +276,10 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 			stm32_exti_trigger(pin, edge);
 		}
 
-		stm32_exti_enable(pin);
+		if (stm32_exti_enable(pin) != 0) {
+			return -ENOSYS;
+		}
+
 	}
 
 	return 0;
