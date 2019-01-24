@@ -528,11 +528,11 @@ static void cdc_acm_irq_callback_work_handler(struct k_work *work)
  */
 static int cdc_acm_init(struct device *dev)
 {
+	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 	cdc_acm_dev = dev;
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
 	int ret;
-	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	cdc_acm_config.interface.payload_data = dev_data->interface_data;
 	cdc_acm_config.usb_device_description = usb_get_device_descriptor();
