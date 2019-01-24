@@ -25,6 +25,27 @@ This document provides a quick reference for commonly used reST and
 Sphinx-defined directives and roles used to create the documentation
 you're reading.
 
+Checking reST syntax
+********************
+
+The restructuredText syntax has some quirks that can be unexpected, such
+as needing a blank line before the first item of a list, getting the
+indentation right on list items, and making the heading underline at
+least as long as the heading.
+
+While not perfect, there is a tool that is Sphinx-aware and can do a
+quick syntax check:  `rstcheck <https://pypi.org/project/rstcheck>`_.
+Install this tool using::
+
+   pip3 install --user rstcheck
+
+An ``.rstcheck.cfg`` configuration file is included in the Zephyr
+repo with options that eliminate most false-positive messages.  Run
+rstcheck on a file before submitting your PR, or recursively on
+all your local files with::
+
+   rstcheck -r .
+
 Headings
 ********
 
