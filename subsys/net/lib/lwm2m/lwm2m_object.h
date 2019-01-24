@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2018 Foundries.io
+ * Copyright (c) 2018-2019 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -47,12 +47,14 @@
 /* stdint conversions */
 #include <zephyr/types.h>
 #include <stddef.h>
+#include <kernel.h>
+
 #include <net/net_ip.h>
-#include <net/coap.h>
-#include <net/lwm2m.h>
 #include <misc/printk.h>
 #include <misc/util.h>
-#include <kernel.h>
+
+#include <net/coap.h>
+#include <net/lwm2m.h>
 
 /* #####/###/#####/### + NULL */
 #define MAX_RESOURCE_LEN	20
@@ -126,7 +128,7 @@
 #define WRITER_RESOURCE_INSTANCE 2
 
 struct lwm2m_engine_obj;
-struct lwm2m_engine_context;
+struct lwm2m_message;
 
 /* path representing object instances */
 struct lwm2m_obj_path {
@@ -283,6 +285,44 @@ struct lwm2m_input_context {
 	u16_t opaque_len;
 };
 
+/* Establish a message timeout callback */
+typedef void (*lwm2m_message_timeout_cb_t)(struct lwm2m_message *msg);
+
+/* Internal LwM2M message structure to track in-flight messages. */
+struct lwm2m_message {
+	/** LwM2M context related to this message */
+	struct lwm2m_ctx *ctx;
+
+	/** Incoming / outgoing contexts */
+	struct lwm2m_input_context in;
+	struct lwm2m_output_context out;
+
+	/** Incoming path */
+	struct lwm2m_obj_path path;
+
+	/** CoAP packet data related to the outgoing message */
+	struct coap_packet cpkt;
+
+	/** Message transmission handling for TYPE_CON */
+	struct coap_pending *pending;
+	struct coap_reply *reply;
+
+	/** Message configuration */
+	u8_t *token;
+	coap_reply_t reply_cb;
+	lwm2m_message_timeout_cb_t message_timeout_cb;
+	u16_t mid;
+	u8_t type;
+	u8_t code;
+	u8_t tkl;
+
+	/** Incoming message action */
+	u8_t operation;
+
+	/** Counter for message re-send / abort handling */
+	u8_t send_attempts;
+};
+
 /* LWM2M format writer for the various formats supported */
 struct lwm2m_writer {
 	size_t (*put_begin)(struct lwm2m_output_context *out,
@@ -345,14 +385,6 @@ struct lwm2m_reader {
 			   bool *value);
 	size_t (*get_opaque)(struct lwm2m_input_context *in,
 			     u8_t *buf, size_t buflen, bool *last_block);
-};
-
-/* LWM2M engine context */
-struct lwm2m_engine_context {
-	struct lwm2m_input_context *in;
-	struct lwm2m_output_context *out;
-	struct lwm2m_obj_path *path;
-	u8_t operation;
 };
 
 /* output user_data management functions */
