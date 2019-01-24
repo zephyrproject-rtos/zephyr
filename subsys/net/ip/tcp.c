@@ -185,8 +185,8 @@ static inline u32_t retry_timeout(const struct net_tcp *tcp)
 	do {								\
 		if (!is_6lo_technology(pkt)) {				\
 			NET_DBG("[%p] ref pkt %p new ref %d (%s:%d)",	\
-				tcp, pkt, pkt->ref + 1, __func__,	\
-				__LINE__);				\
+				tcp, pkt, atomic_get(&pkt->atomic_ref) + 1, \
+				__func__, __LINE__);			\
 			pkt = net_pkt_ref(pkt);				\
 		}							\
 	} while (0)
