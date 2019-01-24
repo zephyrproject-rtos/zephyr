@@ -38,9 +38,9 @@ static u32_t aon_counter_qmsi_read(struct device *dev)
 	return value;
 }
 
-static int aon_counter_qmsi_set_alarm(struct device *dev,
+static int aon_counter_qmsi_set_top(struct device *dev,
 				      u32_t ticks,
-				      counter_wrap_callback_t callback,
+				      counter_top_callback_t callback,
 				      void *user_data)
 
 {
@@ -51,7 +51,7 @@ static const struct counter_driver_api aon_counter_qmsi_api = {
 	.start = aon_counter_qmsi_start,
 	.stop = aon_counter_qmsi_stop,
 	.read = aon_counter_qmsi_read,
-	.set_wrap = aon_counter_qmsi_set_alarm,
+	.set_top_value = aon_counter_qmsi_set_top,
 };
 
 static int aon_counter_init(struct device *dev)
