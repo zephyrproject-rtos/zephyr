@@ -99,115 +99,80 @@ struct usb_cdc_acm_config {
 	struct usb_ep_descriptor if1_out_ep;
 } __packed;
 
-USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_acm_config cdc_acm_cfg = {
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-	.iad_cdc = {
-		.bLength = sizeof(struct usb_association_descriptor),
-		.bDescriptorType = USB_ASSOCIATION_DESC,
-		.bFirstInterface = 0,
-		.bInterfaceCount = 0x02,
-		.bFunctionClass = COMMUNICATION_DEVICE_CLASS,
-		.bFunctionSubClass = ACM_SUBCLASS,
-		.bFunctionProtocol = 0,
-		.iFunction = 0,
-	},
-#endif
-	/* Interface descriptor */
-	.if0 = {
-		.bLength = sizeof(struct usb_if_descriptor),
-		.bDescriptorType = USB_INTERFACE_DESC,
-		.bInterfaceNumber = 0,
-		.bAlternateSetting = 0,
-		.bNumEndpoints = 1,
-		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS,
-		.bInterfaceSubClass = ACM_SUBCLASS,
-		.bInterfaceProtocol = 0,
-		.iInterface = 0,
-	},
-	/* Header Functional Descriptor */
-	.if0_header = {
-		.bFunctionLength = sizeof(struct cdc_header_descriptor),
-		.bDescriptorType = CS_INTERFACE,
-		.bDescriptorSubtype = HEADER_FUNC_DESC,
-		.bcdCDC = sys_cpu_to_le16(USB_1_1),
-	},
-	/* Call Management Functional Descriptor */
-	.if0_cm = {
-		.bFunctionLength = sizeof(struct cdc_cm_descriptor),
-		.bDescriptorType = CS_INTERFACE,
-		.bDescriptorSubtype = CALL_MANAGEMENT_FUNC_DESC,
-		.bmCapabilities = 0x02,
-		.bDataInterface = 1,
-	},
-	/* ACM Functional Descriptor */
-	.if0_acm = {
-		.bFunctionLength = sizeof(struct cdc_acm_descriptor),
-		.bDescriptorType = CS_INTERFACE,
-		.bDescriptorSubtype = ACM_FUNC_DESC,
-		/* Device supports the request combination of:
-		 *	Set_Line_Coding,
-		 *	Set_Control_Line_State,
-		 *	Get_Line_Coding
-		 *	and the notification Serial_State
-		 */
-		.bmCapabilities = 0x02,
-	},
-	/* Union Functional Descriptor */
-	.if0_union = {
-		.bFunctionLength = sizeof(struct cdc_union_descriptor),
-		.bDescriptorType = CS_INTERFACE,
-		.bDescriptorSubtype = UNION_FUNC_DESC,
-		.bControlInterface = 0,
-		.bSubordinateInterface0 = 1,
-	},
-	/* Endpoint INT */
-	.if0_int_ep = {
-		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CDC_ACM_INT_EP_ADDR,
-		.bmAttributes = USB_DC_EP_INTERRUPT,
-		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_CDC_ACM_INTERRUPT_EP_MPS),
-		.bInterval = 0x0A,
-	},
-	/* Interface descriptor */
-	.if1 = {
-		.bLength = sizeof(struct usb_if_descriptor),
-		.bDescriptorType = USB_INTERFACE_DESC,
-		.bInterfaceNumber = 1,
-		.bAlternateSetting = 0,
-		.bNumEndpoints = 2,
-		.bInterfaceClass = COMMUNICATION_DEVICE_CLASS_DATA,
-		.bInterfaceSubClass = 0,
-		.bInterfaceProtocol = 0,
-		.iInterface = 0,
-	},
-	/* First Endpoint IN */
-	.if1_in_ep = {
-		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CDC_ACM_IN_EP_ADDR,
-		.bmAttributes = USB_DC_EP_BULK,
-		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_CDC_ACM_BULK_EP_MPS),
-		.bInterval = 0x00,
-	},
-	/* Second Endpoint OUT */
-	.if1_out_ep = {
-		.bLength = sizeof(struct usb_ep_descriptor),
-		.bDescriptorType = USB_ENDPOINT_DESC,
-		.bEndpointAddress = CDC_ACM_OUT_EP_ADDR,
-		.bmAttributes = USB_DC_EP_BULK,
-		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_CDC_ACM_BULK_EP_MPS),
-		.bInterval = 0x00,
-	},
-};
+#define INITIALIZER_IAD							\
+	{								\
+		.bLength = sizeof(struct usb_association_descriptor),	\
+		.bDescriptorType = USB_ASSOCIATION_DESC,		\
+		.bFirstInterface = 0,					\
+		.bInterfaceCount = 0x02,				\
+		.bFunctionClass = COMMUNICATION_DEVICE_CLASS,		\
+		.bFunctionSubClass = ACM_SUBCLASS,			\
+		.bFunctionProtocol = 0,					\
+		.iFunction = 0,						\
+	}
 
-struct device *cdc_acm_dev;
+#define INITIALIZER_IF(iface_num, num_ep, class, subclass)		\
+	{								\
+		.bLength = sizeof(struct usb_if_descriptor),		\
+		.bDescriptorType = USB_INTERFACE_DESC,			\
+		.bInterfaceNumber = iface_num,				\
+		.bAlternateSetting = 0,					\
+		.bNumEndpoints = num_ep,				\
+		.bInterfaceClass = class,				\
+		.bInterfaceSubClass = subclass,				\
+		.bInterfaceProtocol = 0,				\
+		.iInterface = 0,					\
+	}
+
+#define INITIALIZER_IF_HDR						\
+	{								\
+		.bFunctionLength = sizeof(struct cdc_header_descriptor),\
+		.bDescriptorType = CS_INTERFACE,			\
+		.bDescriptorSubtype = HEADER_FUNC_DESC,			\
+		.bcdCDC = sys_cpu_to_le16(USB_1_1),			\
+	}
+
+#define INITIALIZER_IF_CM						\
+	{								\
+		.bFunctionLength = sizeof(struct cdc_cm_descriptor),	\
+		.bDescriptorType = CS_INTERFACE,			\
+		.bDescriptorSubtype = CALL_MANAGEMENT_FUNC_DESC,	\
+		.bmCapabilities = 0x02,					\
+		.bDataInterface = 1,					\
+	}
+
+/* Device supports the request combination of:
+ *	Set_Line_Coding,
+ *	Set_Control_Line_State,
+ *	Get_Line_Coding
+ *	and the notification Serial_State
+ */
+#define INITIALIZER_IF_ACM						\
+	{								\
+		.bFunctionLength = sizeof(struct cdc_acm_descriptor),	\
+		.bDescriptorType = CS_INTERFACE,			\
+		.bDescriptorSubtype = ACM_FUNC_DESC,			\
+		.bmCapabilities = 0x02,					\
+	}
+
+#define INITIALIZER_IF_UNION						\
+	{								\
+		.bFunctionLength = sizeof(struct cdc_union_descriptor),	\
+		.bDescriptorType = CS_INTERFACE,			\
+		.bDescriptorSubtype = UNION_FUNC_DESC,			\
+		.bControlInterface = 0,					\
+		.bSubordinateInterface0 = 1,				\
+	}
+
+#define INITIALIZER_IF_EP(addr, attr, mps, interval)			\
+	{								\
+		.bLength = sizeof(struct usb_ep_descriptor),		\
+		.bDescriptorType = USB_ENDPOINT_DESC,			\
+		.bEndpointAddress = addr,				\
+		.bmAttributes = attr,					\
+		.wMaxPacketSize = sys_cpu_to_le16(mps),			\
+		.bInterval = interval,					\
+	}
 
 static struct k_sem poll_wait_sem;
 
@@ -545,37 +510,6 @@ static void cdc_interface_config(struct usb_desc_header *head,
 	desc->iad_cdc.bFirstInterface = bInterfaceNumber;
 #endif
 }
-
-/* Describe EndPoints configuration */
-static struct usb_ep_cfg_data cdc_acm_ep_data[] = {
-	{
-		.ep_cb	= cdc_acm_int_in,
-		.ep_addr = CDC_ACM_INT_EP_ADDR
-	},
-	{
-		.ep_cb	= cdc_acm_bulk_out,
-		.ep_addr = CDC_ACM_OUT_EP_ADDR
-	},
-	{
-		.ep_cb = cdc_acm_bulk_in,
-		.ep_addr = CDC_ACM_IN_EP_ADDR
-	}
-};
-
-/* Configuration of the CDC-ACM Device send to the USB Driver */
-USBD_CFG_DATA_DEFINE(cdc_acm) struct usb_cfg_data cdc_acm_config = {
-	.usb_device_description = NULL,
-	.interface_config = cdc_interface_config,
-	.interface_descriptor = &cdc_acm_cfg.if0,
-	.cb_usb_status = cdc_acm_dev_status_cb,
-	.interface = {
-		.class_handler = cdc_acm_class_handle_req,
-		.custom_handler = NULL,
-		.payload_data = NULL,
-	},
-	.num_endpoints = ARRAY_SIZE(cdc_acm_ep_data),
-	.endpoint = cdc_acm_ep_data
-};
 
 /**
  * @brief Set the baud rate
@@ -1061,12 +995,129 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 #endif /* CONFIG_UART_LINE_CTRL */
 };
 
-static struct cdc_acm_dev_data_t cdc_acm_dev_data = {
-	.usb_status = USB_DC_UNKNOWN,
-	.line_coding = CDC_ACM_DEFAUL_BAUDRATE,
-};
+#define INITIALIZER_EP_DATA(cb, addr)					\
+	{								\
+		.ep_cb = cb,						\
+		.ep_addr = addr,					\
+	}
 
-DEVICE_AND_API_INIT(cdc_acm, CONFIG_CDC_ACM_PORT_NAME, &cdc_acm_init,
-		    &cdc_acm_dev_data, NULL,
-		    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &cdc_acm_driver_api);
+#define DEFINE_CDC_ACM_EP(x, int_ep_addr, out_ep_addr, in_ep_addr)	\
+	static struct usb_ep_cfg_data cdc_acm_ep_data_##x[] = {		\
+		INITIALIZER_EP_DATA(cdc_acm_int_in, int_ep_addr),	\
+		INITIALIZER_EP_DATA(cdc_acm_bulk_out, out_ep_addr),	\
+		INITIALIZER_EP_DATA(cdc_acm_bulk_in, in_ep_addr),	\
+	}
+
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+#define DEFINE_CDC_ACM_CFG_DATA(x)					\
+	USBD_CFG_DATA_DEFINE(cdc_acm)					\
+	struct usb_cfg_data cdc_acm_config_##x = {			\
+		.usb_device_description = NULL,				\
+		.interface_config = cdc_interface_config,		\
+		.interface_descriptor = &cdc_acm_cfg_##x.if0,		\
+		.cb_usb_status_composite =				\
+				cdc_acm_dev_status_composite_cb,	\
+		.interface = {						\
+			.class_handler = cdc_acm_class_handle_req,	\
+			.custom_handler = NULL,				\
+			.payload_data = NULL,				\
+		},							\
+		.num_endpoints = ARRAY_SIZE(cdc_acm_ep_data_##x),	\
+		.endpoint = cdc_acm_ep_data_##x,			\
+	}
+#else /* CONFIG_USB_COMPOSITE_DEVICE */
+#define DEFINE_CDC_ACM_CFG_DATA(x)					\
+	USBD_CFG_DATA_DEFINE(cdc_acm)					\
+	struct usb_cfg_data cdc_acm_config_##x = {			\
+		.usb_device_description = NULL,				\
+		.interface_config = cdc_interface_config,		\
+		.interface_descriptor = &cdc_acm_cfg_##x.if0,		\
+		.cb_usb_status = cdc_acm_dev_status_cb,			\
+		.interface = {						\
+			.class_handler = cdc_acm_class_handle_req,	\
+			.custom_handler = NULL,				\
+			.payload_data = NULL,				\
+		},							\
+		.num_endpoints = ARRAY_SIZE(cdc_acm_ep_data_##x),	\
+		.endpoint = cdc_acm_ep_data_##x,			\
+	}
+#endif /* CONFIG_USB_COMPOSITE_DEVICE */
+
+#if CONFIG_USB_COMPOSITE_DEVICE
+#define DEFINE_CDC_ACM_DESCR(x, int_ep_addr, out_ep_addr, in_ep_addr)	\
+	USBD_CLASS_DESCR_DEFINE(primary, x)				\
+	struct usb_cdc_acm_config cdc_acm_cfg_##x = {			\
+	.iad_cdc = INITIALIZER_IAD,					\
+	.if0 = INITIALIZER_IF(0, 1, COMMUNICATION_DEVICE_CLASS,		\
+			      ACM_SUBCLASS),				\
+	.if0_header = INITIALIZER_IF_HDR,				\
+	.if0_cm = INITIALIZER_IF_CM,					\
+	.if0_acm = INITIALIZER_IF_ACM,					\
+	.if0_union = INITIALIZER_IF_UNION,				\
+	.if0_int_ep = INITIALIZER_IF_EP(int_ep_addr,			\
+					USB_DC_EP_INTERRUPT,		\
+					CONFIG_CDC_ACM_INTERRUPT_EP_MPS,\
+					0x0A),				\
+	.if1 = INITIALIZER_IF(1, 2, COMMUNICATION_DEVICE_CLASS_DATA, 0),\
+	.if1_in_ep = INITIALIZER_IF_EP(in_ep_addr,			\
+				       USB_DC_EP_BULK,			\
+				       CONFIG_CDC_ACM_BULK_EP_MPS,	\
+				       0x00),				\
+	.if1_out_ep = INITIALIZER_IF_EP(out_ep_addr,			\
+					USB_DC_EP_BULK,			\
+					CONFIG_CDC_ACM_BULK_EP_MPS,	\
+					0x00),				\
+}
+#else /* CONFIG_USB_COMPOSITE_DEVICE */
+#define DEFINE_CDC_ACM_DESCR(x, int_ep_addr, out_ep_addr, in_ep_addr)	\
+	USBD_CLASS_DESCR_DEFINE(primary, x)				\
+	struct usb_cdc_acm_config cdc_acm_cfg_##x = {			\
+	.if0 = INITIALIZER_IF(0, 1, COMMUNICATION_DEVICE_CLASS,		\
+			      ACM_SUBCLASS),				\
+	.if0_header = INITIALIZER_IF_HDR,				\
+	.if0_cm = INITIALIZER_IF_CM,					\
+	.if0_acm = INITIALIZER_IF_ACM,					\
+	.if0_union = INITIALIZER_IF_UNION,				\
+	.if0_int_ep = INITIALIZER_IF_EP(int_ep_addr,			\
+					USB_DC_EP_INTERRUPT,		\
+					CONFIG_CDC_ACM_INTERRUPT_EP_MPS,\
+					0x0A),				\
+	.if1 = INITIALIZER_IF(1, 2, COMMUNICATION_DEVICE_CLASS_DATA, 0),\
+	.if1_in_ep = INITIALIZER_IF_EP(in_ep_addr,			\
+				       USB_DC_EP_BULK,			\
+				       CONFIG_CDC_ACM_BULK_EP_MPS,	\
+				       0x00),				\
+	.if1_out_ep = INITIALIZER_IF_EP(out_ep_addr,			\
+					USB_DC_EP_BULK,			\
+					CONFIG_CDC_ACM_BULK_EP_MPS,	\
+					0x00),				\
+}
+#endif /* CONFIG_USB_COMPOSITE_DEVICE */
+
+#define DEFINE_CDC_ACM_DEV_DATA(x)					\
+	static struct cdc_acm_dev_data_t cdc_acm_dev_data_##x = {	\
+		.usb_status = USB_DC_UNKNOWN,				\
+		.line_coding = CDC_ACM_DEFAUL_BAUDRATE,			\
+}
+
+#define DEFINE_CDC_ACM_DEVICE(x)					\
+	DEVICE_AND_API_INIT(cdc_acm_##x, CONFIG_CDC_ACM_PORT_NAME_##x,	\
+			    &cdc_acm_init, &cdc_acm_dev_data_##x,	\
+			    &cdc_acm_config_##x,			\
+			    APPLICATION,				\
+			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
+			    &cdc_acm_driver_api)
+
+DEFINE_CDC_ACM_DESCR(0, 0x80, 0x00, 0x80);
+DEFINE_CDC_ACM_EP(0, 0x80, 0x00, 0x80);
+DEFINE_CDC_ACM_CFG_DATA(0);
+DEFINE_CDC_ACM_DEV_DATA(0);
+DEFINE_CDC_ACM_DEVICE(0);
+
+#if defined(CONFIG_CDC_ACM_PORT_NAME_1)
+DEFINE_CDC_ACM_DESCR(1, 0x80, 0x00, 0x80);
+DEFINE_CDC_ACM_EP(1, 0x80, 0x00, 0x80);
+DEFINE_CDC_ACM_CFG_DATA(1);
+DEFINE_CDC_ACM_DEV_DATA(1);
+DEFINE_CDC_ACM_DEVICE(1);
+#endif
