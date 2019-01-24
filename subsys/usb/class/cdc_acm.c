@@ -452,19 +452,10 @@ static void cdc_acm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	LOG_DBG("CDC_IntIN EP[%x]\r", ep);
 }
 
-/**
- * @brief Callback used to know the USB connection status
- *
- * @param status USB device status code.
- *
- * @return  N/A.
- */
-static void cdc_acm_dev_status_cb(enum usb_dc_status_code status,
-				  const u8_t *param)
+static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
+			  enum usb_dc_status_code status,
+			  const u8_t *param)
 {
-	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(cdc_acm_dev);
-
-	ARG_UNUSED(param);
 
 	/* Store the new status */
 	if (status != USB_DC_SOF) {
@@ -503,6 +494,41 @@ static void cdc_acm_dev_status_cb(enum usb_dc_status_code status,
 		break;
 	}
 }
+
+#if defined(CONFIG_USB_COMPOSITE_DEVICE)
+static void cdc_acm_dev_status_composite_cb(struct usb_cfg_data *cfg,
+					    enum usb_dc_status_code status,
+					    const u8_t *param)
+{
+	struct usb_if_descriptor *if_desc = (void *)cfg->interface_descriptor;
+	struct cdc_acm_dev_data_t *dev_data;
+
+	dev_data = get_dev_data_by_iface(if_desc->bInterfaceNumber);
+	if (!dev_data) {
+		LOG_WRN("Device data not found for interface %u",
+			if_desc->bInterfaceNumber);
+		return;
+	}
+
+	cdc_acm_do_cb(dev_data, status, param);
+}
+#else
+static void cdc_acm_dev_status_cb(enum usb_dc_status_code status,
+				  const u8_t *param)
+{
+	struct cdc_acm_dev_data_t *dev_data;
+
+	/* Should be the only one element in the list */
+	dev_data = CONTAINER_OF(sys_slist_peek_head(&cdc_acm_data_devlist),
+				struct cdc_acm_dev_data_t, node);
+	if (dev_data == NULL) {
+		LOG_WRN("Device data not found");
+		return;
+	}
+
+	cdc_acm_do_cb(dev_data, status, param);
+}
+#endif
 
 static void cdc_interface_config(struct usb_desc_header *head,
 				 u8_t bInterfaceNumber)

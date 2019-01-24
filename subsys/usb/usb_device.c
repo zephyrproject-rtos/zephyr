@@ -1377,8 +1377,10 @@ static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	size_t size = (__usb_data_end - __usb_data_start);
 
 	for (size_t i = 0; i < size; i++) {
-		if (__usb_data_start[i].cb_usb_status) {
-			__usb_data_start[i].cb_usb_status(status, param);
+		struct usb_cfg_data *cfg = &__usb_data_start[i];
+
+		if (cfg->cb_usb_status_composite) {
+			cfg->cb_usb_status_composite(cfg, status, param);
 		}
 	}
 }
