@@ -1,7 +1,0 @@
-sample:
-    name: Websocket echo-server
-tests:
-   test:
-        build_only: true
-        platform_whitelist: qemu_x86 qemu_cortex_m3 native_posix
-        tags: net websocket

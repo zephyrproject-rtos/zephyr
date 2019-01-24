@@ -111,12 +111,6 @@ can be disabled if not needed.
   be prioritized depending on application needs.
   See :ref:`traffic-class-support` for more details.
 
-* **Websocket** Websocket (RFC 6455) server side functionality is supported.
-  The HTTP server API will enable websocket support if
-  :option:`CONFIG_WEBSOCKET` is enabled. Client side websocket functionality is
-  currently not supported by the websocket API.
-  See :ref:`websocket-server-sample` for information how to use the API.
-
 * **Time Sensitive Networking.** The gPTP (generalized Precision Time Protocol)
   is supported. See :ref:`gptp-support` for more details.
 

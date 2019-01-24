@@ -216,18 +216,6 @@ HTTP
 .. doxygengroup:: http
    :project: Zephyr
 
-Websocket
-=========
-
-.. doxygengroup:: websocket
-   :project: Zephyr
-
-Websocket console
-=================
-
-.. doxygengroup:: websocket_console
-   :project: Zephyr
-
 TLS credentials
 ***************
 
