@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2018 Foundries.io
+ * Copyright (c) 2018-2019 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -53,9 +53,8 @@ size_t plain_text_put_format(struct lwm2m_output_context *out,
 			     const char *format, ...);
 
 int do_read_op_plain_text(struct lwm2m_engine_obj *obj,
-			  struct lwm2m_engine_context *context,
-			  int content_format);
+			  struct lwm2m_message *msg, int content_format);
 int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
-			   struct lwm2m_engine_context *context);
+			   struct lwm2m_message *msg);
 
 #endif /* LWM2M_RW_PLAIN_TEXT_H_ */

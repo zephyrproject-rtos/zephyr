@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2018 Foundries.io
+ * Copyright (c) 2018-2019 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -334,33 +334,31 @@ const struct lwm2m_reader plain_text_reader = {
 };
 
 int do_read_op_plain_text(struct lwm2m_engine_obj *obj,
-			  struct lwm2m_engine_context *context,
-			  int content_format)
+			  struct lwm2m_message *msg, int content_format)
 {
 	/* Plain text can only return single resource */
-	if (context->path->level != 3) {
+	if (msg->path.level != 3) {
 		return -EPERM; /* NOT_ALLOWED */
 	}
 
-	return lwm2m_perform_read_op(obj, context, content_format);
+	return lwm2m_perform_read_op(obj, msg, content_format);
 }
 
 int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
-			   struct lwm2m_engine_context *context)
+			   struct lwm2m_message *msg)
 {
-	struct lwm2m_obj_path *path = context->path;
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct lwm2m_engine_obj_field *obj_field;
 	struct lwm2m_engine_res_inst *res = NULL;
 	int ret, i;
 	u8_t created = 0U;
 
-	ret = lwm2m_get_or_create_engine_obj(context, &obj_inst, &created);
+	ret = lwm2m_get_or_create_engine_obj(msg, &obj_inst, &created);
 	if (ret < 0) {
 		return ret;
 	}
 
-	obj_field = lwm2m_get_engine_obj_field(obj, path->res_id);
+	obj_field = lwm2m_get_engine_obj_field(obj, msg->path.res_id);
 	if (!obj_field) {
 		return -ENOENT;
 	}
@@ -374,7 +372,7 @@ int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 	}
 
 	for (i = 0; i < obj_inst->resource_count; i++) {
-		if (obj_inst->resources[i].res_id == path->res_id) {
+		if (obj_inst->resources[i].res_id == msg->path.res_id) {
 			res = &obj_inst->resources[i];
 			break;
 		}
@@ -384,6 +382,6 @@ int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 		return -ENOENT;
 	}
 
-	context->path->level = 3U;
-	return lwm2m_write_handler(obj_inst, res, obj_field, context);
+	msg->path.level = 3;
+	return lwm2m_write_handler(obj_inst, res, obj_field, msg);
 }

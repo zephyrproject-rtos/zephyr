@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2018 Foundries.io
+ * Copyright (c) 2018-2019 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -522,19 +522,18 @@ const struct lwm2m_writer json_writer = {
 	.put_bool = put_bool,
 };
 
-int do_read_op_json(struct lwm2m_engine_obj *obj,
-		    struct lwm2m_engine_context *context,
+int do_read_op_json(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg,
 		    int content_format)
 {
 	struct json_out_formatter_data fd;
 	int ret;
 
 	(void)memset(&fd, 0, sizeof(fd));
-	engine_set_out_user_data(context->out, &fd);
+	engine_set_out_user_data(&msg->out, &fd);
 	/* save the level for output processing */
-	fd.path_level = context->path->level;
-	ret = lwm2m_perform_read_op(obj, context, content_format);
-	engine_clear_out_user_data(context->out);
+	fd.path_level = msg->path.level;
+	ret = lwm2m_perform_read_op(obj, msg, content_format);
+	engine_clear_out_user_data(&msg->out);
 
 	return ret;
 }
@@ -582,11 +581,8 @@ static int parse_path(const u8_t *buf, u16_t buflen,
 	return ret;
 }
 
-int do_write_op_json(struct lwm2m_engine_obj *obj,
-		     struct lwm2m_engine_context *context)
+int do_write_op_json(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
 {
-	struct lwm2m_input_context *in = context->in;
-	struct lwm2m_obj_path *path = context->path;
 	struct lwm2m_engine_obj_field *obj_field;
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct lwm2m_engine_res_inst *res = NULL;
@@ -596,16 +592,17 @@ int do_write_op_json(struct lwm2m_engine_obj *obj,
 	int i, r;
 	u8_t mode = MODE_NONE;
 
-	olv    = path->level;
+	olv = msg->path.level;
 
-	while (json_next_token(in, &json)) {
+	while (json_next_token(&msg->in, &json)) {
 		i = 0;
 		created = 0U;
 		if (json.name[0] == 'n') {
-			path->level = parse_path(json.value, json.value_len,
-						 path);
+			msg->path.level = parse_path(json.value,
+						     json.value_len,
+						     &msg->path);
 			if (i > 0) {
-				r = lwm2m_get_or_create_engine_obj(context,
+				r = lwm2m_get_or_create_engine_obj(msg,
 								   &obj_inst,
 								   &created);
 				if (r < 0) {
@@ -616,7 +613,7 @@ int do_write_op_json(struct lwm2m_engine_obj *obj,
 		} else {
 			/* HACK: assume value node: can it be anything else? */
 			mode |= MODE_VALUE;
-			/* FIXME swap in->cpkt.pkt->frag w/ value buffer */
+			/* FIXME swap msg->in.cpkt.pkt->frag w/ value buffer */
 		}
 
 		if (mode == MODE_READY) {
@@ -625,7 +622,7 @@ int do_write_op_json(struct lwm2m_engine_obj *obj,
 			}
 
 			obj_field = lwm2m_get_engine_obj_field(obj,
-							       path->res_id);
+							msg->path.res_id);
 			/*
 			 * if obj_field is not found,
 			 * treat as an optional resource
@@ -635,7 +632,7 @@ int do_write_op_json(struct lwm2m_engine_obj *obj,
 				 * TODO: support BOOTSTRAP WRITE where optional
 				 * resources are ignored
 				 */
-				if (context->operation != LWM2M_OP_CREATE) {
+				if (msg->operation != LWM2M_OP_CREATE) {
 					return -ENOENT;
 				}
 
@@ -653,7 +650,7 @@ int do_write_op_json(struct lwm2m_engine_obj *obj,
 
 			for (i = 0; i < obj_inst->resource_count; i++) {
 				if (obj_inst->resources[i].res_id ==
-						path->res_id) {
+						msg->path.res_id) {
 					res = &obj_inst->resources[i];
 					break;
 				}
@@ -663,12 +660,12 @@ int do_write_op_json(struct lwm2m_engine_obj *obj,
 				return -ENOENT;
 			}
 
-			lwm2m_write_handler(obj_inst, res, obj_field, context);
+			lwm2m_write_handler(obj_inst, res, obj_field, msg);
 
 skip_optional:
 			mode = MODE_NONE;
-			/* FIXME: swap back original in->cpkt.pkt->frag */
-			path->level = olv;
+			/* FIXME: swap back original msg->in.cpkt.pkt->frag */
+			msg->path.level = olv;
 		}
 	}
 
