@@ -98,6 +98,7 @@
 		compatible = "st,hts221";
 		reg = <0x5f>;
 		label = "HTS221";
+		drdy-gpios = <&gpio0 24 GPIO_INT_ACTIVE_HIGH>;
 	};
 
 	ccs811: ccs811@5a {
