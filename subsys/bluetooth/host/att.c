@@ -1860,6 +1860,19 @@ static const struct att_handler {
 		sizeof(struct bt_att_indicate),
 		ATT_INDICATION,
 		att_indicate },
+#else
+	/* These must be defined for server as well since notify and indicate do
+	 * depend on bt_att_payload_len which uses the handlers to calculate
+	 * the available payload space.
+	 */
+	{ BT_ATT_OP_NOTIFY,
+		sizeof(struct bt_att_notify),
+		ATT_NOTIFICATION,
+		NULL },
+	{ BT_ATT_OP_INDICATE,
+		sizeof(struct bt_att_indicate),
+		ATT_INDICATION,
+		NULL },
 #endif /* CONFIG_BT_GATT_CLIENT */
 };
 
@@ -1905,7 +1918,7 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		}
 	}
 
-	if (!handler) {
+	if (!handler || !handler->func) {
 		BT_WARN("Unknown ATT code 0x%02x", hdr->code);
 		if (att_op_get_type(hdr->code) != ATT_COMMAND) {
 			send_err_rsp(chan->conn, hdr->code, 0,
@@ -2284,4 +2297,26 @@ void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req)
 	}
 
 	att_req_destroy(req);
+}
+
+u16_t bt_att_get_payload_len(struct bt_conn *conn, uint8_t op)
+{
+	u16_t len;
+	int i;
+
+	len = bt_att_get_mtu(conn);
+	if (!len) {
+		return len;
+	}
+
+	for (i = 0; i < ARRAY_SIZE(handlers); i++) {
+		if (op == handlers[i].op) {
+			return len - (handlers[i].expect_len +
+					sizeof(struct bt_att_hdr));
+		}
+	}
+
+	BT_DBG("Unknown opcode %u", op);
+
+	return 0;
 }

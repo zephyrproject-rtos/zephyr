@@ -249,3 +249,6 @@ int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req);
 
 /* Cancel ATT request */
 void bt_att_req_cancel(struct bt_conn *conn, struct bt_att_req *req);
+
+/* Read the available space for the payload */
+u16_t bt_att_get_payload_len(struct bt_conn *conn, uint8_t op);
