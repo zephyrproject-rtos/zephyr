@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2017 Foundries.io
+ * Copyright (c) 2017-2019 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,24 +95,6 @@ static struct k_sem quit_lock;
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 static u8_t firmware_buf[64];
 #endif
-
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-NET_PKT_TX_SLAB_DEFINE(lwm2m_tx_udp, 5);
-NET_PKT_DATA_POOL_DEFINE(lwm2m_data_udp, 20);
-
-static struct k_mem_slab *tx_udp_slab(void)
-{
-	return &lwm2m_tx_udp;
-}
-
-static struct net_buf_pool *data_udp_pool(void)
-{
-	return &lwm2m_data_udp;
-}
-#else
-#define tx_udp_slab NULL
-#define data_udp_pool NULL
-#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 /* TODO: Move to a pre write hook that can handle ret codes once available */
 static int led_on_off_cb(u16_t obj_inst_id, u8_t *data, u16_t data_len,
@@ -362,10 +344,6 @@ void main(void)
 	(void)memset(&client, 0x0, sizeof(client));
 	client.net_init_timeout = WAIT_TIME;
 	client.net_timeout = CONNECT_TIME;
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-	client.tx_slab = tx_udp_slab;
-	client.data_pool = data_udp_pool;
-#endif
 
 #if defined(CONFIG_NET_APP_DTLS)
 	client.client_psk = client_psk;

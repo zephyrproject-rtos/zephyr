@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2017 Foundries.io
+ * Copyright (c) 2017-2019 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -37,21 +37,12 @@
  *    consuming operation, like resolving DNS address.
  * @param net_timeout How long to wait for the network connection before
  *    giving up.
- * @param tx_slab Network packet (net_pkt) memory pool for network contexts
- *    attached to this LwM2M context.
- * @param data_pool Network data net_buf pool for network contexts attached
- *    to this LwM2M context.
  */
 struct lwm2m_ctx {
 	/** Net app context structure */
 	struct net_app_ctx net_app_ctx;
 	s32_t net_init_timeout;
 	s32_t net_timeout;
-
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-	net_pkt_get_slab_func_t tx_slab;
-	net_pkt_get_pool_func_t data_pool;
-#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
 	/** Private CoAP and networking structures */
 	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
@@ -225,11 +216,6 @@ int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, u16_t data_len,
 int lwm2m_engine_get_res_data(char *pathstr, void **data_ptr, u16_t *data_len,
 			      u8_t *data_flags);
 
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-int lwm2m_engine_set_net_pkt_pool(struct lwm2m_ctx *ctx,
-				  net_pkt_get_slab_func_t tx_slab,
-				  net_pkt_get_pool_func_t data_pool);
-#endif
 int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 		       char *peer_str, u16_t peer_port);
 
