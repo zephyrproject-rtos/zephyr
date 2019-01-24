@@ -6,4 +6,4 @@ tests:
   test:
     harness: net
     platform_whitelist: qemu_x86
-    tags: net
+    tags: net socket

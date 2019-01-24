@@ -8,5 +8,5 @@ sample:
   name: Socket Echo Client
 tests:
   test:
-    tags: net
+    tags: net socket
     min_flash: 140
