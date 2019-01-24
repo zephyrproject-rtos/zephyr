@@ -5,4 +5,4 @@ tests:
   test:
     harness: net
     depends_on: netif
-    tags: net
+    tags: net socket
