@@ -1,0 +1,10 @@
+common:
+  depends_on: netif
+  platform_whitelist: native_posix qemu_x86 qemu_cortex_m3
+tests:
+  net.socket.udp:
+    extra_configs:
+      - CONFIG_NET_TEST=y
+      - CONFIG_NET_LOOPBACK=y
+    min_ram: 21
+    tags: net socket
