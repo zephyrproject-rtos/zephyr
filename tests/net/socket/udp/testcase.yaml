@@ -7,4 +7,4 @@ tests:
       - CONFIG_NET_TEST=y
       - CONFIG_NET_LOOPBACK=y
     min_ram: 21
-    tags: net
+    tags: net socket

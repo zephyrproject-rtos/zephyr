@@ -4,4 +4,4 @@ common:
 tests:
   net.socket.tcp:
     min_ram: 32
-    tags: net
+    tags: net socket
