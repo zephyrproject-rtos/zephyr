@@ -101,19 +101,7 @@ endif # COUNTER
 if I2C
 
 config I2C_SBCON
-	default y
-
-config I2C_SBCON_0
-	default y
-
-config I2C_SBCON_1
-	default y
-
-config I2C_SBCON_2
-	default y
-
-config I2C_SBCON_3
-	default y
+	def_bool y
 
 endif # I2C
 
