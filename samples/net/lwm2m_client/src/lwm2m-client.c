@@ -61,6 +61,7 @@ static u32_t led_state;
 
 static struct lwm2m_ctx client;
 
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 #if defined(CONFIG_NET_APP_DTLS)
 #if !defined(CONFIG_NET_APP_TLS_STACK_SIZE)
 #define CONFIG_NET_APP_TLS_STACK_SIZE		30000
@@ -89,6 +90,7 @@ static u8_t dtls_result[RESULT_BUF_SIZE];
 NET_STACK_DEFINE(NET_APP_DTLS, net_app_dtls_stack,
 		 CONFIG_NET_APP_TLS_STACK_SIZE, CONFIG_NET_APP_TLS_STACK_SIZE);
 #endif /* CONFIG_NET_APP_DTLS */
+#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
 static struct k_sem quit_lock;
 
@@ -345,6 +347,7 @@ void main(void)
 	client.net_init_timeout = WAIT_TIME;
 	client.net_timeout = CONNECT_TIME;
 
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 #if defined(CONFIG_NET_APP_DTLS)
 	client.client_psk = client_psk;
 	client.client_psk_len = 16;
@@ -357,6 +360,7 @@ void main(void)
 	client.dtls_stack = net_app_dtls_stack;
 	client.dtls_stack_len = K_THREAD_STACK_SIZEOF(net_app_dtls_stack);
 #endif /* CONFIG_NET_APP_DTLS */
+#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
 #if defined(CONFIG_NET_IPV6)
 	ret = lwm2m_rd_client_start(&client, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
