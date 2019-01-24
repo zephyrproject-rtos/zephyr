@@ -15,12 +15,28 @@ config USB_CDC_ACM
 	help
 	  USB CDC ACM device class driver
 
-config CDC_ACM_PORT_NAME
+config CDC_ACM_PORT_NAME_0
 	string "CDC ACM class device driver port name"
 	depends on USB_CDC_ACM
-	default "CDC_ACM"
+	default "CDC_ACM_0"
 	help
 	  Port name through which CDC ACM class device driver is accessed
+
+if USB_COMPOSITE_DEVICE
+
+config CDC_ACM_PORT_1
+	bool "Enable virtual port 1"
+	help
+	  Enable CDC ACM Virtual port 1
+
+config CDC_ACM_PORT_NAME_1
+	string "CDC ACM class device driver port name"
+	depends on USB_CDC_ACM && CDC_ACM_PORT_1
+	default "CDC_ACM_1"
+	help
+	  Port name through which CDC ACM class device driver is accessed
+
+endif
 
 config CDC_ACM_INTERRUPT_EP_MPS
 	int
