@@ -1,0 +1,195 @@
+# Kconfig - nRF52840 PCA10090 board configuration
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52840_PCA10090
+
+config BOARD_ENABLE_DCDC
+        bool "Enable DCDC mode"
+        select SOC_DCDC_NRF52X
+        default y
+
+choice
+	prompt "nRF9160 UART0 routing"
+	default BOARD_PCA10090_UART0_VCOM
+
+config BOARD_PCA10090_UART0_VCOM
+	bool "Route to VCOM0"
+
+config BOARD_PCA10090_UART0_ARDUINO
+	bool "Route to Arduino pins"
+
+endchoice
+
+choice
+	prompt "nRF9160 UART1 routing"
+	default BOARD_PCA10090_UART1_VCOM
+
+config BOARD_PCA10090_UART1_VCOM
+	bool "Route to VCOM2"
+
+config BOARD_PCA10090_UART1_ARDUINO
+	bool "Route to Arduino pins"
+
+endchoice
+
+choice
+	prompt "LED 1 routing"
+	default BOARD_PCA10090_LED0_PHY
+
+config BOARD_PCA10090_LED0_PHY
+	bool "Route to LED on the kit"
+
+config BOARD_PCA10090_LED0_ARDUINO
+	bool "Route to Arduino pins"
+
+endchoice
+
+choice
+	prompt "LED 2 routing"
+	default BOARD_PCA10090_LED1_PHY
+
+config BOARD_PCA10090_LED1_PHY
+	bool "Route to LED on the kit"
+
+config BOARD_PCA10090_LED1_ARDUINO
+	bool "Route to Arduino pins"
+
+endchoice
+
+choice
+	prompt "LED 3 routing"
+	default BOARD_PCA10090_LED2_PHY
+
+config BOARD_PCA10090_LED2_PHY
+	bool "Route to LED on the kit"
+
+config BOARD_PCA10090_LED2_ARDUINO
+	bool "Route to Arduino pins"
+
+endchoice
+
+choice
+	prompt "LED 4 routing"
+	default BOARD_PCA10090_LED3_PHY
+
+config BOARD_PCA10090_LED3_PHY
+	bool "Route to LED on the kit"
+
+config BOARD_PCA10090_LED3_ARDUINO
+	bool "Route to Arduino pins"
+
+endchoice
+
+choice
+	prompt "Button 1 routing"
+	default BOARD_PCA10090_BUTTON0_PHY
+
+config BOARD_PCA10090_BUTTON0_PHY
+	bool "Route to buttons on the kit"
+
+config BOARD_PCA10090_BUTTON0_ARDUINO
+	bool "Route to Arduino pins"
+
+endchoice
+
+choice
+	prompt "Button 2 routing"
+	default BOARD_PCA10090_BUTTON1_PHY
+
+config BOARD_PCA10090_BUTTON1_PHY
+	bool "Route to buttons on the kit"
+
+config BOARD_PCA10090_BUTTON1_ARDUINO
+	bool "Route to Arduino pins"
+
+endchoice
+
+choice
+	prompt "Switch 1 routing"
+	default BOARD_PCA10090_SWITCH0_PHY
+
+config BOARD_PCA10090_SWITCH0_PHY
+	bool "Route to switches on the kit"
+
+config BOARD_PCA10090_SWITCH0_ARDUINO
+	bool "Route to Arduino pins"
+
+endchoice
+
+choice
+	prompt "Switch 2 routing"
+	default BOARD_PCA10090_SWITCH1_PHY
+
+config BOARD_PCA10090_SWITCH1_PHY
+	bool "Route to switches on the kit"
+
+config BOARD_PCA10090_SWITCH1_ARDUINO
+	bool "Route to Arduino pins"
+
+endchoice
+
+choice
+	prompt "Interface pins 0-2"
+	default BOARD_PCA10090_INTERFACE0_ARDUINO
+
+config BOARD_PCA10090_INTERFACE0_ARDUINO
+	bool "Route to Arduino pins"
+	help
+	 Pin 0: nRF9160 P0.17 connects to A3
+	 Pin 1: nRF9160 P0.18 connects to A4
+	 Pin 2: nRF9160 P0.19 connects to A5
+
+config BOARD_PCA10090_INTERFACE0_MCU
+	bool "Route to nRF52840"
+	help
+	 This connects the following pins on the nRF9160 to pins on the nRF52840:
+	 Pin 0: nRF9160 P0.17 connects to nRF52840 P0.17
+	 Pin 1: nRF9160 P0.18 connects to nRF52840 P0.20
+	 Pin 2: nRF9160 P0.19 connects to nRF52840 P0.15
+
+endchoice
+
+choice
+	prompt "Interface pins 3-5"
+	default BOARD_PCA10090_INTERFACE1_TRACE
+
+config BOARD_PCA10090_INTERFACE1_TRACE
+	bool "Route to TRACE interface"
+	help
+	 Pin 3: nRF9160 P0.21 connects to TRACECLK
+	 Pin 4: nRF9160 P0.22 connects to TRACEDATA0
+	 Pin 5: nRF9160 P0.23 connects to TRACEDATA1
+
+config BOARD_PCA10090_INTERFACE1_MCU
+	bool "Route to nRF52840"
+	help
+	 Pin 3: nRF9160 P0.21 connects to nRF52840 P0.22
+	 Pin 4: nRF9160 P0.22 connects to nRF52840 P1.04
+	 Pin 5: nRF9160 P0.23 connects to nRF52840 P1.02
+
+endchoice
+
+choice
+	prompt "Interface pins 6-8"
+	default BOARD_PCA10090_INTERFACE2_COEX
+
+config BOARD_PCA10090_INTERFACE2_COEX
+	bool "Route to COEX interface"
+	help
+	 Pin 6: nRF9160 COEX0 connects to COEX0_PH
+	 Pin 7: nRF9160 COEX1 connects to COEX1_PH
+	 Pin 8: nRF9160 COEX2 connects to COEX2_PH
+
+config BOARD_PCA10090_INTERFACE_2_MCU
+	bool "Route to nRF52840"
+	help
+	 Pin 6: nRF9160 COEX0 connects to nRF52840 P1.13
+	 Pin 7: nRF9160 COEX1 connects to nRF52840 P1.11
+	 Pin 8: nRF9160 COEX2 connects to nRF52840 P1.15
+
+endchoice
+
+endif # BOARD_NRF52840_PCA10090
