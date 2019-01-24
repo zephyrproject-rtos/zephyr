@@ -1040,12 +1040,16 @@ class MakeGenerator:
         elif type == "native":
             handler = BinaryHandler(instance)
             handler.binary = os.path.join(outdir, "zephyr", "zephyr.exe")
+            if options.enable_coverage:
+                args += ["EXTRA_LDFLAGS=--coverage"]
         elif type == "nsim":
             handler = BinaryHandler(instance)
             handler.call_make_run = True
         elif type == "unit":
             handler = BinaryHandler(instance)
             handler.binary = os.path.join(outdir, "testbinary")
+            if options.enable_coverage:
+                args += ["EXTRA_LDFLAGS=--coverage"]
         elif type == "device":
             handler = DeviceHandler(instance)
         elif type == "renode":
@@ -1053,8 +1057,6 @@ class MakeGenerator:
             handler.pid_fn = os.path.join(instance.outdir, "renode.pid")
             handler.call_make_run = True
 
-        if options.enable_coverage:
-            args += ["EXTRA_LDFLAGS=--coverage"]
 
         if type == 'qemu':
             args.append("QEMU_PIPE=%s" % handler.get_fifo())
