@@ -26,6 +26,7 @@
 	};
 
 	aliases {
+		flash-controller = &flash_controller;
 		rtc-0 = &rtc0;
 		rtc-1 = &rtc1;
 		clock = &clock;
