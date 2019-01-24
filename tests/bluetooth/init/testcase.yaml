@@ -85,6 +85,10 @@ tests:
     extra_args: CONF_FILE=prj_controller_dbg.conf
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
       nrf51_pca10028 96b_nitrogen
+  test_controller_ll_sw_split:
+    extra_args: CONF_FILE=prj_controller_ll_sw_split.conf
+    platform_whitelist: nrf52840_pca10056 nrf52_pca10040
+      nrf51_pca10028
   test_h5:
     extra_args: CONF_FILE=prj_h5.conf
     platform_whitelist: qemu_cortex_m3
