@@ -36,21 +36,6 @@ config UART_CMSDK_APB
 config UART_INTERRUPT_DRIVEN
 	default y
 
-config UART_CMSDK_APB_PORT0
-	default y
-
-config UART_CMSDK_APB_PORT1
-	default y
-
-config UART_CMSDK_APB_PORT2
-	default y
-
-config UART_CMSDK_APB_PORT3
-	default y
-
-config UART_CMSDK_APB_PORT4
-	default y
-
 endif # SERIAL
 
 if WATCHDOG

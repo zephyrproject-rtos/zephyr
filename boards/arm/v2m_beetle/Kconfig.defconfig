@@ -49,12 +49,6 @@ if SERIAL
 config UART_CMSDK_APB
 	default y
 
-config UART_CMSDK_APB_PORT0
-	default y
-
-config UART_CMSDK_APB_PORT1
-	default y
-
 config UART_INTERRUPT_DRIVEN
 	default y
 
