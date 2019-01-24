@@ -86,13 +86,18 @@ if(CONFIG_HAS_DTS)
   if (check)
     set(DTC_WARN_UNIT_ADDR_IF_ENABLED "-Wunique_unit_address_if_enabled")
   endif()
+  set(DTC_NO_WARN_UNIT_ADDR "")
+  check_dtc_flag("-Wno-unique_unit_address" check)
+  if (check)
+    set(DTC_NO_WARN_UNIT_ADDR "-Wno-unique_unit_address")
+  endif()
   execute_process(
     COMMAND ${DTC}
     -O dts
     -o ${BOARD}.dts_compiled
     -b 0
     -E unit_address_vs_reg
-    -W no-unique_unit_address
+    ${DTC_NO_WARN_UNIT_ADDR}
     ${DTC_WARN_UNIT_ADDR_IF_ENABLED}
     ${EXTRA_DTC_FLAGS} # User settable
     ${BOARD}.dts.pre.tmp
