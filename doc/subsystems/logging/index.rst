@@ -3,6 +3,10 @@
 Logging
 #######
 
+.. contents::
+    :local:
+    :depth: 2
+
 The logger API provides a common interface to process messages issued by
 developers. These messages are processed by active backends. Currently only the
 UART backend is available. However, a generic backend interface exists and more
@@ -312,7 +316,7 @@ possible to enable internal logger thread (see
 :option:`CONFIG_LOG_PROCESS_THREAD`). In that case logger thread is initialized
 and log messages are processed implicitly.
 
-.. _log_panic:
+.. _logger_panic:
 
 Logger panic
 ************
@@ -491,4 +495,37 @@ The Logger architecture has the following limitations:
   32 bit values.
 - Number of arguments in the string is limited to 9.
 
+
+API Reference
+*************
+
+Logger API
+==========
+
+.. doxygengroup:: log_api
+   :project: Zephyr
+
+Logger control
+==============
+
+.. doxygengroup:: log_ctrl
+   :project: Zephyr
+
+Log message
+===========
+
+.. doxygengroup:: log_msg
+   :project: Zephyr
+
+Logger backend interface
+========================
+
+.. doxygengroup:: log_backend
+   :project: Zephyr
+
+Logger output formatting
+========================
+
+.. doxygengroup:: log_output
+   :project: Zephyr
 
