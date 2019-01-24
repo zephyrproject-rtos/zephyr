@@ -55,14 +55,6 @@ can be disabled if not needed.
   configuration options for sockets API. Secure functions for the implementation
   are provided by mbedTLS library.
 
-* **HTTP** Hypertext Transfer Protocol (RFC 2116) is supported. A simple
-  library is provided that applications can use. Sample applications are
-  implemented for :ref:`http-client-sample` and :ref:`http-server-sample`.
-  Both :ref:`http-client-sample` and :ref:`http-server-sample` can use
-  TLS (Transport Layer Security) v1.2 (RFC 5246) or SSL (Secure Sockets
-  Layer) v3.0 (RFC 6101) functionality to encrypt the network traffic.
-  The secured connections are provided by mbed library.
-
 * **MQTT** Message Queue Telemetry Transport (ISO/IEC PRF 20922) is supported.
   A sample :ref:`mqtt-publisher-sample` client application for MQTT v3.1.1 is
   implemented.
