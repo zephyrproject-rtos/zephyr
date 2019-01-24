@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2018 Foundries.io
+ * Copyright (c) 2018-2019 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -3909,26 +3909,9 @@ static void lwm2m_engine_service(void)
 	}
 }
 
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-int lwm2m_engine_set_net_pkt_pool(struct lwm2m_ctx *ctx,
-				  net_pkt_get_slab_func_t tx_slab,
-				  net_pkt_get_pool_func_t data_pool)
-{
-	ctx->tx_slab = tx_slab;
-	ctx->data_pool = data_pool;
-
-	return 0;
-}
-#endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
-
 void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 {
 	k_delayed_work_init(&client_ctx->retransmit_work, retransmit_request);
-
-#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
-	net_app_set_net_pkt_pool(&client_ctx->net_app_ctx,
-				 client_ctx->tx_slab, client_ctx->data_pool);
-#endif
 }
 
 #if defined(CONFIG_NET_APP_DTLS)
