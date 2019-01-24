@@ -49,7 +49,7 @@ included in this model:
    for updates to this image are:
 
    a. The image shall only be replaced with an authorized image
-   [th-authrepl]_.
+      [th-authrepl]_.
 
    b. When an authorized replacement image is available, the update
       shall be done in a timely manner [th-timely-update]_.
