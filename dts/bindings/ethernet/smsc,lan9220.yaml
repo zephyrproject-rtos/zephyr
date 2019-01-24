@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 title: SMSC/Microchip LAN9220 Ethernet controller
-id: smsc,lan9220
 version: 0.1
 
 description: >
