@@ -129,7 +129,7 @@
 			interrupts = <17 3>;
 		};
 
-		eth0: eth@0 {
+		eth0: eth@40200000 {
 			/* Linux has "smsc,lan9115" */
 			compatible = "smsc,lan9220";
 			/* Such a big size from memory map in AN385 */
