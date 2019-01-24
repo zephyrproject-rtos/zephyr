@@ -20,7 +20,7 @@
 
 static void aonpt_int_callback(void *user_data);
 
-static counter_wrap_callback_t user_cb;
+static counter_top_callback_t user_cb;
 
 struct aonpt_config {
 	struct counter_config_info info;
@@ -112,15 +112,9 @@ static u32_t aon_timer_qmsi_read(struct device *dev)
 	return value;
 }
 
-static int aon_timer_qmsi_set_alarm(struct device *dev,
-		const struct counter_alarm_cfg *alarm_cfg)
-{
-	return -ENODEV;
-}
-
-static int aon_timer_qmsi_set_wrap(struct device *dev,
+static int aon_timer_qmsi_set_top(struct device *dev,
 				    u32_t ticks,
-				    counter_wrap_callback_t callback,
+				    counter_top_callback_t callback,
 				    void *user_data)
 {
 	qm_aonpt_config_t qmsi_cfg;
@@ -158,8 +152,7 @@ static const struct counter_driver_api aon_timer_qmsi_api = {
 	.start = aon_timer_qmsi_start,
 	.stop = aon_timer_qmsi_stop,
 	.read = aon_timer_qmsi_read,
-	.set_alarm = aon_timer_qmsi_set_alarm,
-	.set_wrap = aon_timer_qmsi_set_wrap,
+	.set_top_value = aon_timer_qmsi_set_top,
 	.get_pending_int = aon_timer_qmsi_get_pending_int,
 };
 
@@ -247,10 +240,10 @@ static int aon_timer_init(struct device *dev)
 
 static const struct aonpt_config aonpt_conf_info = {
 	.info = {
-		.max_wrap = UINT32_MAX,
+		.max_top_value = UINT32_MAX,
 		.freq = 32768,
 		.count_up = false,
-		.channels = 1,
+		.channels = 0,
 	}
 };
 
