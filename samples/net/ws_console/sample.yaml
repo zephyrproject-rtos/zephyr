@@ -1,7 +1,0 @@
-sample:
-    name: Websocket console
-tests:
-   test:
-        build_only: true
-        platform_whitelist: qemu_x86 native_posix
-        tags: net websocket
