@@ -6,7 +6,7 @@
 
 menuconfig LWM2M
 	bool "OMA LWM2M protocol stack"
-	depends on COAP_NET_PKT
+	select COAP
 	select NET_APP_CLIENT
 	select HTTP_PARSER_URL
 	help
@@ -38,6 +38,21 @@ config LWM2M_ENGINE_MAX_MESSAGES
 	default 10
 	help
 	  Set the maximum message objects for the LWM2M library client
+
+config LWM2M_COAP_BLOCK_SIZE
+	int "LWM2M CoAP block-wise transfer size"
+	default 256
+	range 64 1024
+	help
+	  CoAP block size used by LWM2M when performing block-wise
+	  transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024.
+
+config LWM2M_ENGINE_MESSAGE_HEADER_SIZE
+	int "Room for CoAP header data"
+	default 48
+	range 24 128
+	help
+	  Extra room allocated to handle CoAP header data
 
 config LWM2M_ENGINE_MAX_PENDING
 	int "LWM2M engine max. pending objects"
@@ -128,16 +143,6 @@ config LWM2M_FIRMWARE_UPDATE_PULL_LOCAL_PORT
 	  This is the client port for LWM2M firmware download.  The default
 	  setting of 0 sets a random port for the client to be used for
 	  outgoing communication.
-
-config LWM2M_COAP_BLOCK_SIZE
-	int "LWM2M CoAP block-wise transfer size"
-	default 64 if NET_L2_BT
-	default 64 if NET_L2_IEEE802154
-	default 256
-	range 16 1024
-	help
-	  CoAP block size used by LWM2M when performing block-wise
-	  transfers. Possible values: 16, 32, 64, 128, 256, 512 and 1024.
 
 config LWM2M_NUM_BLOCK1_CONTEXT
 	int "Maximum # of LWM2M block1 contexts"

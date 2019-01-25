@@ -99,7 +99,7 @@ struct json_data {
 };
 
 struct json_out_formatter_data {
-	struct net_buf *mark_frag_ri;
+	/* offset position storage */
 	u16_t mark_pos_ri;
 	u8_t writer_flags;
 	u8_t path_level;
@@ -130,10 +130,9 @@ static int json_next_token(struct lwm2m_input_context *in,
 	cont = 1U;
 
 	/* We will be either at start, or at a specific position */
-	while (in->frag && in->offset != 0xffff && cont) {
-		in->frag = net_frag_read_u8(in->frag, in->offset, &in->offset,
-			   &c);
-		if (!in->frag && in->offset == 0xffff) {
+	while (in->offset < in->in_cpkt->offset && cont) {
+		if (buf_read_u8(&c, CPKT_BUF_READ(in->in_cpkt),
+				&in->offset) < 0) {
 			break;
 		}
 
@@ -234,10 +233,8 @@ static size_t put_begin(struct lwm2m_output_context *out,
 		return 0;
 	}
 
-	out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
-				  out->offset, &out->offset, len, json_buffer,
-				  BUF_ALLOC_TIMEOUT);
-	if (!out->frag && out->offset == 0xffff) {
+
+	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), json_buffer, len) < 0) {
 		/* TODO: Generate error? */
 		return 0;
 	}
@@ -248,10 +245,7 @@ static size_t put_begin(struct lwm2m_output_context *out,
 static size_t put_end(struct lwm2m_output_context *out,
 		      struct lwm2m_obj_path *path)
 {
-	out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
-				  out->offset, &out->offset, 2, "]}",
-				  BUF_ALLOC_TIMEOUT);
-	if (!out->frag && out->offset == 0xffff) {
+	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), "]}", 2) < 0) {
 		/* TODO: Generate error? */
 		return 0;
 	}
@@ -285,6 +279,17 @@ static size_t put_end_ri(struct lwm2m_output_context *out,
 
 	fd->writer_flags &= ~WRITER_RESOURCE_INSTANCE;
 	return 0;
+}
+
+static size_t put_char(struct lwm2m_output_context *out,
+		       char c)
+{
+	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), &c, sizeof(c)) < 0) {
+		/* TODO: Generate error? */
+		return 0;
+	}
+
+	return 1;
 }
 
 static size_t put_json_prefix(struct lwm2m_output_context *out,
@@ -331,10 +336,7 @@ static size_t put_json_prefix(struct lwm2m_output_context *out,
 		return 0;
 	}
 
-	out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
-				  out->offset, &out->offset, len, json_buffer,
-				  BUF_ALLOC_TIMEOUT);
-	if (!out->frag && out->offset == 0xffff) {
+	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), json_buffer, len) < 0) {
 		/* TODO: Generate error? */
 		return 0;
 	}
@@ -351,10 +353,7 @@ static size_t put_json_postfix(struct lwm2m_output_context *out)
 		return 0;
 	}
 
-	out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
-				  out->offset, &out->offset, 1, "}",
-				  BUF_ALLOC_TIMEOUT);
-	if (!out->frag && out->offset == 0xffff) {
+	if (put_char(out, '}') < 0) {
 		/* TODO: Generate error? */
 		return 0;
 	}
@@ -398,20 +397,6 @@ static size_t put_s64(struct lwm2m_output_context *out,
 	return (size_t)len;
 }
 
-static size_t put_char(struct lwm2m_output_context *out,
-		       char c)
-{
-	out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
-				  out->offset, &out->offset, 1, &c,
-				  BUF_ALLOC_TIMEOUT);
-	if (!out->frag && out->offset == 0xffff) {
-		/* TODO: Generate error? */
-		return 0;
-	}
-
-	return 1;
-}
-
 static size_t put_string(struct lwm2m_output_context *out,
 			 struct lwm2m_obj_path *path,
 			 char *buf, size_t buflen)
@@ -441,11 +426,8 @@ static size_t put_string(struct lwm2m_output_context *out,
 				return 0;
 			}
 
-			out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
-						  out->offset, &out->offset,
-						  res, json_buffer,
-						  BUF_ALLOC_TIMEOUT);
-			if (!out->frag && out->offset == 0xffff) {
+			if (buf_append(CPKT_BUF_WRITE(out->out_cpkt),
+				       json_buffer, res) < 0) {
 				/* TODO: Generate error? */
 				return 0;
 			}
