@@ -214,6 +214,11 @@ struct net_buf *bt_mesh_adv_create_from_pool(struct net_buf_pool *pool,
 	struct bt_mesh_adv *adv;
 	struct net_buf *buf;
 
+	if (atomic_test_bit(bt_mesh.flags, BT_MESH_SUSPENDED)) {
+		BT_WARN("Refusing to allocate buffer while suspended");
+		return NULL;
+	}
+
 	buf = net_buf_alloc(pool, timeout);
 	if (!buf) {
 		return NULL;

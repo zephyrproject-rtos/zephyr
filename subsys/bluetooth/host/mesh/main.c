@@ -191,6 +191,85 @@ int bt_mesh_prov_disable(bt_mesh_prov_bearer_t bearers)
 	return 0;
 }
 
+static void model_suspend(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
+			  bool vnd, bool primary, void *user_data)
+{
+	if (mod->pub && mod->pub->update) {
+		mod->pub->count = 0;
+		k_delayed_work_cancel(&mod->pub->timer);
+	}
+}
+
+int bt_mesh_suspend(void)
+{
+	int err;
+
+	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
+		return -EINVAL;
+	}
+
+	if (atomic_test_and_set_bit(bt_mesh.flags, BT_MESH_SUSPENDED)) {
+		return -EALREADY;
+	}
+
+	err = bt_mesh_scan_disable();
+	if (err) {
+		atomic_clear_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
+		BT_WARN("Disabling scanning failed (err %d)", err);
+		return err;
+	}
+
+	bt_mesh_hb_pub_disable();
+
+	if (bt_mesh_beacon_get() == BT_MESH_BEACON_ENABLED) {
+		bt_mesh_beacon_disable();
+	}
+
+	bt_mesh_model_foreach(model_suspend, NULL);
+
+	return 0;
+}
+
+static void model_resume(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
+			  bool vnd, bool primary, void *user_data)
+{
+	if (mod->pub && mod->pub->update) {
+		s32_t period_ms = bt_mesh_model_pub_period_get(mod);
+
+		if (period_ms) {
+			k_delayed_work_submit(&mod->pub->timer, period_ms);
+		}
+	}
+}
+
+int bt_mesh_resume(void)
+{
+	int err;
+
+	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
+		return -EINVAL;
+	}
+
+	if (!atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_SUSPENDED)) {
+		return -EALREADY;
+	}
+
+	err = bt_mesh_scan_enable();
+	if (err) {
+		BT_WARN("Re-enabling scanning failed (err %d)", err);
+		atomic_set_bit(bt_mesh.flags, BT_MESH_SUSPENDED);
+		return err;
+	}
+
+	if (bt_mesh_beacon_get() == BT_MESH_BEACON_ENABLED) {
+		bt_mesh_beacon_enable();
+	}
+
+	bt_mesh_model_foreach(model_resume, NULL);
+
+	return err;
+}
+
 int bt_mesh_init(const struct bt_mesh_prov *prov,
 		 const struct bt_mesh_comp *comp)
 {
