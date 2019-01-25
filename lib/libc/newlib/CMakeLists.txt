@@ -33,3 +33,13 @@ zephyr_link_libraries(
   $<$<BOOL:${CONFIG_NEWLIB_LIBC_FLOAT_SCANF}>:-u_scanf_float>
   gcc # Lib C depends on libgcc. e.g. libc.a(lib_a-fvwrite.o) references __aeabi_idiv
   )
+
+if(CONFIG_NEWLIB_LIBC_NANO)
+  zephyr_link_libraries(
+    -specs=nano.specs
+    )
+  zephyr_compile_options(
+    -specs=nano.specs
+    )
+endif()
+
