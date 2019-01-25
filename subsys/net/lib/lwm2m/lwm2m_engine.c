@@ -1201,6 +1201,13 @@ static int select_reader(struct lwm2m_input_context *in, u16_t format)
 		in->reader = &oma_tlv_reader;
 		break;
 
+#ifdef CONFIG_LWM2M_RW_JSON_SUPPORT
+	case LWM2M_FORMAT_OMA_JSON:
+	case LWM2M_FORMAT_OMA_OLD_JSON:
+		in->reader = &json_reader;
+		break;
+#endif
+
 	default:
 		LOG_WRN("Unknown content type %u", format);
 		return -ENOMSG;
