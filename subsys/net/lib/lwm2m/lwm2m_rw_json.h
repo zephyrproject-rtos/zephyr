@@ -46,6 +46,7 @@
 #include "lwm2m_object.h"
 
 extern const struct lwm2m_writer json_writer;
+extern const struct lwm2m_reader json_reader;
 
 int do_read_op_json(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg,
 		    int content_format);
