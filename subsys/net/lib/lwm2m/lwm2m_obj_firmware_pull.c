@@ -14,11 +14,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <net/net_app.h>
-#include <net/net_core.h>
+
 #include <net/http_parser.h>
-#include <net/net_pkt.h>
-#include <net/udp.h>
+#include <net/net_app.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
@@ -520,6 +518,19 @@ static void firmware_transfer(struct k_work *work)
 		goto cleanup;
 	}
 
+	/* save remote addr */
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+	if (firmware_ctx.net_app_ctx.dtls.ctx) {
+		memcpy(&firmware_ctx.remote_addr,
+		       &firmware_ctx.net_app_ctx.dtls.ctx->remote,
+		       sizeof(firmware_ctx.remote_addr));
+	} else
+#endif
+	{
+		memcpy(&firmware_ctx.remote_addr,
+		       &firmware_ctx.net_app_ctx.default_ctx->remote,
+		       sizeof(firmware_ctx.remote_addr));
+	}
 	/* reset block transfer context */
 	coap_block_transfer_init(&firmware_block_ctx,
 				 lwm2m_default_block_size(), 0);
