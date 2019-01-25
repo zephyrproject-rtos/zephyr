@@ -1,0 +1,28 @@
+---
+title: Nordic SPU (System Protection Unit)
+version: 0.1
+
+description: >
+    Binding for the Nordic SPU (System Protection Unit)
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nordic,nrf-spu"
+      generation: define
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+...
