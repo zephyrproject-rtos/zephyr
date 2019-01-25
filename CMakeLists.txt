@@ -1424,13 +1424,23 @@ list_append_ifdef(
   COMMAND ${CMAKE_COMMAND} -E copy ${KERNEL_ELF_NAME}    ${KERNEL_EXE_NAME}
   )
 
+get_property(extra_post_build_commands
+  GLOBAL PROPERTY
+  extra_post_build_commands
+  )
+
+list(APPEND
+  post_build_commands
+  ${extra_post_build_commands}
+  )
+
 add_custom_command(
   TARGET ${logical_target_for_zephyr_elf}
   POST_BUILD
   ${post_build_commands}
   COMMENT "Generating files from zephyr.elf for board: ${BOARD}"
   # NB: COMMENT only works for some CMake-Generators
-)
+  )
 
 # To populate with hex files to merge, do the following:
 #  set_property(GLOBAL APPEND PROPERTY HEX_FILES_TO_MERGE ${my_local_list})
