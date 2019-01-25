@@ -19,13 +19,13 @@
  * @{
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <zephyr/types.h>
 #include <device.h>
 #include <errno.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /**
  * @brief Representation of a sensor readout value.

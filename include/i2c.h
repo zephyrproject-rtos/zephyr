@@ -19,12 +19,12 @@
  * @{
  */
 
+#include <zephyr/types.h>
+#include <device.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <zephyr/types.h>
-#include <device.h>
 
 /*
  * The following #defines are used to configure the I2C controller.

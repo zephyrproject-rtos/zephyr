@@ -20,13 +20,13 @@
  * @{
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <zephyr/types.h>
 #include <device.h>
 #include <string.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 #define CAN_EX_ID      (1 << 31)
 #define CAN_MAX_STD_ID (0x7FF)
