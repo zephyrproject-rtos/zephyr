@@ -745,10 +745,10 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 	}
 
 	LOG_INF("%d Sectors of %d bytes", fs->sector_count, fs->sector_size);
-	LOG_INF("alloc wra: %d, %" PRIx32 "",
+	LOG_INF("alloc wra: %d, %d",
 		(fs->ate_wra >> ADDR_SECT_SHIFT),
 		(fs->ate_wra & ADDR_OFFS_MASK));
-	LOG_INF("data wra: %d, %" PRIx32 "",
+	LOG_INF("data wra: %d, %d",
 		(fs->data_wra >> ADDR_SECT_SHIFT),
 		(fs->data_wra & ADDR_OFFS_MASK));
 	LOG_INF("Free space: %d", fs->free_space);
