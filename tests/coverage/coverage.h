@@ -30,7 +30,11 @@
 #ifndef _COVERAGE_H_
 #define _COVERAGE_H_
 
+#if (__GNUC__ >= 8)
+#define GCOV_COUNTERS 9U
+#else
 #define GCOV_COUNTERS 10U
+#endif
 
 typedef u64_t gcov_type;
 
