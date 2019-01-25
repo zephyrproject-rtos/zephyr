@@ -247,6 +247,12 @@ if(W MATCHES "3")
     )
 endif()
 
+if(NOT CONFIG_STD_CPP98) # "register" keyword was deprecated since C++11.
+  zephyr_compile_options(
+    $<$<COMPILE_LANGUAGE:CXX>:-Wno-register>
+    )
+endif()
+
 # Allow the user to inject options when calling cmake, e.g.
 # 'cmake -DEXTRA_CFLAGS="-Werror -Wno-deprecated-declarations" ..'
 include(cmake/extra_flags.cmake)
