@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2019 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -18,7 +19,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <stdint.h>
 #include <init.h>
-#include <net/lwm2m.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
