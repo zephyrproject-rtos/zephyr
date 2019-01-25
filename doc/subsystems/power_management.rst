@@ -95,9 +95,6 @@ when the kernel enters and exits the idle state, in other words, when the kernel
 has nothing to schedule. Enabling system power management compels Zephyr kernel
 scheduler to work in tickless idle mode (see :option:`CONFIG_TICKLESS_IDLE`).
 
-This section provides a general overview of the hook functions. Refer to
-:ref:`power_management_api` for the detailed description of the APIs.
-
 Suspend Hook function
 =====================
 
@@ -214,7 +211,6 @@ Device Power Management Infrastructure
 The device power management infrastructure consists of interfaces to the
 Zephyr RTOS device model. These APIs send control commands to the device driver
 to update its power state or to get its current power state.
-Refer to  :ref:`power_management_api` for detailed descriptions of the APIs.
 
 Zephyr RTOS supports two methods of doing device power management.
 
@@ -445,24 +441,39 @@ Power Management Configuration Flags
 The Power Management features can be individually enabled and disabled using
 the following configuration flags.
 
-:code:`CONFIG_SYS_POWER_MANAGEMENT`
+:option:`CONFIG_SYS_POWER_MANAGEMENT`
 
    This flag enables the power management subsystem.
 
-:code:`CONFIG_TICKLESS_IDLE`
+:option:`CONFIG_TICKLESS_IDLE`
 
    This flag enables the tickless idle power saving feature.
 
-:code:`CONFIG_SYS_POWER_LOW_POWER_STATE`
+:option:`CONFIG_SYS_POWER_LOW_POWER_STATE`
 
    The SOC interface enables this flag to use the :code:`SYS_PM_LOW_POWER_STATE` policy.
 
-:code:`CONFIG_SYS_POWER_DEEP_SLEEP`
+:option:`CONFIG_SYS_POWER_DEEP_SLEEP`
 
    This flag enables support for the :code:`SYS_PM_DEEP_SLEEP` policy.
 
-:code:`CONFIG_DEVICE_POWER_MANAGEMENT`
+:option:`CONFIG_DEVICE_POWER_MANAGEMENT`
 
    This flag is enabled if the SOC interface and the devices support device power
    management.
+
+API Reference
+*************
+
+Power Management Hook Interface
+===============================
+
+.. doxygengroup:: power_management_hook_interface
+   :project: Zephyr
+
+Device Power Management APIs
+============================
+
+.. doxygengroup:: device_power_management_api
+   :project: Zephyr
 
