@@ -81,16 +81,7 @@
 
 #if __ASSERT_ON
 #include <misc/printk.h>
-
-#if defined(CONFIG_ARCH_POSIX)
-extern void posix_exit(int exit_code);
-#define __ASSERT_POST posix_exit(1)
-#else
-#define __ASSERT_POST             \
-	for (;;) {                \
-		/* spin thread */ \
-	}
-#endif
+void assert_post_action(void);
 
 #define __ASSERT_LOC(test)                               \
 	printk("ASSERTION FAIL [%s] @ %s:%d\n",    \
@@ -102,7 +93,7 @@ extern void posix_exit(int exit_code);
 	do {                                                             \
 		if (!(test)) {                                           \
 			__ASSERT_LOC(test);                              \
-			__ASSERT_POST;                                   \
+			assert_post_action();                            \
 		}                                                        \
 	} while (false)
 
@@ -110,8 +101,8 @@ extern void posix_exit(int exit_code);
 	do {                                                             \
 		if (!(test)) {                                           \
 			__ASSERT_LOC(test);                              \
-			printk("\t" fmt "\n", ##__VA_ARGS__);      \
-			__ASSERT_POST;                                   \
+			printk("\t" fmt "\n", ##__VA_ARGS__);            \
+			assert_post_action();                            \
 		}                                                        \
 	} while (false)
 
