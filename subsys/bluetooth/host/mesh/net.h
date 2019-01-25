@@ -191,8 +191,15 @@ struct bt_mesh_lpn {
 	ATOMIC_DEFINE(to_remove, LPN_GROUPS);
 };
 
-/* bt_mesh_net.flags, mainly used for pending storage actions */
+/* bt_mesh_net.flags */
 enum {
+	BT_MESH_VALID,           /* We have been provisioned */
+	BT_MESH_IVU_IN_PROGRESS, /* IV Update in Progress */
+	BT_MESH_IVU_INITIATOR,   /* IV Update initiated by us */
+	BT_MESH_IVU_TEST,        /* IV Update test mode */
+	BT_MESH_IVU_PENDING,     /* Update blocked by SDU in progress */
+
+	/* pending storage actions */
 	BT_MESH_RPL_PENDING,
 	BT_MESH_KEYS_PENDING,
 	BT_MESH_NET_PENDING,
@@ -207,13 +214,8 @@ enum {
 };
 
 struct bt_mesh_net {
-	u32_t iv_index;          /* Current IV Index */
-	u32_t seq:24,            /* Next outgoing sequence number */
-	      iv_update:1,       /* 1 if IV Update in Progress */
-	      ivu_initiator:1,   /* IV Update initiated by us */
-	      ivu_test:1,        /* IV Update test mode */
-	      pending_update:1,  /* Update blocked by SDU in progress */
-	      valid:1;           /* 0 if unused */
+	u32_t iv_index; /* Current IV Index */
+	u32_t seq;      /* Next outgoing sequence number (24 bits) */
 
 	ATOMIC_DEFINE(flags, BT_MESH_FLAG_COUNT);
 
@@ -281,7 +283,9 @@ struct bt_mesh_net_tx {
 
 extern struct bt_mesh_net bt_mesh;
 
-#define BT_MESH_NET_IVI_TX (bt_mesh.iv_index - bt_mesh.iv_update)
+#define BT_MESH_NET_IVI_TX (bt_mesh.iv_index - \
+			    atomic_test_bit(bt_mesh.flags, \
+					    BT_MESH_IVU_IN_PROGRESS))
 #define BT_MESH_NET_IVI_RX(rx) (bt_mesh.iv_index - (rx)->old_iv)
 
 #define BT_MESH_NET_HDR_LEN 9

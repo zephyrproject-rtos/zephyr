@@ -77,17 +77,14 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 
 void bt_mesh_reset(void)
 {
-	if (!bt_mesh.valid) {
+	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
 		return;
 	}
 
 	bt_mesh.iv_index = 0U;
 	bt_mesh.seq = 0U;
-	bt_mesh.iv_update = 0U;
-	bt_mesh.pending_update = 0U;
-	bt_mesh.valid = 0U;
-	bt_mesh.ivu_duration = 0U;
-	bt_mesh.ivu_initiator = 0U;
+
+	memset(bt_mesh.flags, 0, sizeof(bt_mesh.flags));
 
 	k_delayed_work_cancel(&bt_mesh.ivu_timer);
 
@@ -126,7 +123,7 @@ void bt_mesh_reset(void)
 
 bool bt_mesh_is_provisioned(void)
 {
-	return bt_mesh.valid;
+	return atomic_test_bit(bt_mesh.flags, BT_MESH_VALID);
 }
 
 int bt_mesh_prov_enable(bt_mesh_prov_bearer_t bearers)

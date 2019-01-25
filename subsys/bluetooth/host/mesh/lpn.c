@@ -936,8 +936,9 @@ int bt_mesh_lpn_friend_update(struct bt_mesh_net_rx *rx,
 		return 0;
 	}
 
-	if (bt_mesh.ivu_initiator &&
-	    bt_mesh.iv_update == BT_MESH_IV_UPDATE(msg->flags)) {
+	if (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_INITIATOR) &&
+	    (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) ==
+	     BT_MESH_IV_UPDATE(msg->flags))) {
 		bt_mesh_beacon_ivu_initiator(false);
 	}
 

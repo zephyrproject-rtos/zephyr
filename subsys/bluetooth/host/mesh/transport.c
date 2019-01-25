@@ -194,9 +194,8 @@ static void seg_tx_reset(struct seg_tx *tx)
 
 	tx->nack_count = 0U;
 
-	if (bt_mesh.pending_update) {
+	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_IVU_PENDING)) {
 		BT_DBG("Proceding with pending IV Update");
-		bt_mesh.pending_update = 0U;
 		/* bt_mesh_net_iv_update() will re-enable the flag if this
 		 * wasn't the only transfer.
 		 */

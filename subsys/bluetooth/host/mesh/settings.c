@@ -183,7 +183,7 @@ static int iv_set(int argc, char **argv, void *val_ctx)
 		BT_DBG("IV deleted");
 
 		bt_mesh.iv_index = 0U;
-		bt_mesh.iv_update = 0U;
+		atomic_clear_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS);
 		return 0;
 	}
 
@@ -194,11 +194,11 @@ static int iv_set(int argc, char **argv, void *val_ctx)
 	}
 
 	bt_mesh.iv_index = iv.iv_index;
-	bt_mesh.iv_update = iv.iv_update;
+	atomic_set_bit_to(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS, iv.iv_update);
 	bt_mesh.ivu_duration = iv.iv_duration;
 
 	BT_DBG("IV Index 0x%04x (IV Update Flag %u) duration %u hours",
-	       bt_mesh.iv_index, bt_mesh.iv_update, bt_mesh.ivu_duration);
+	       iv.iv_index, iv.iv_update, iv.iv_duration);
 
 	return 0;
 }
@@ -785,7 +785,7 @@ static int mesh_commit(void)
 		cfg->default_ttl = stored_cfg.cfg.default_ttl;
 	}
 
-	bt_mesh.valid = 1U;
+	atomic_set_bit(bt_mesh.flags, BT_MESH_VALID);
 
 	bt_mesh_net_start();
 
@@ -871,7 +871,7 @@ static void store_pending_iv(void)
 	int err;
 
 	iv.iv_index = bt_mesh.iv_index;
-	iv.iv_update = bt_mesh.iv_update;
+	iv.iv_update = atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS);
 	iv.iv_duration = bt_mesh.ivu_duration;
 
 	err = settings_save_one("bt/mesh/IV", &iv, sizeof(iv));
@@ -1293,7 +1293,7 @@ static void store_pending(struct k_work *work)
 	BT_DBG("");
 
 	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_RPL_PENDING)) {
-		if (bt_mesh.valid) {
+		if (atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
 			store_pending_rpl();
 		} else {
 			clear_rpl();
@@ -1305,7 +1305,7 @@ static void store_pending(struct k_work *work)
 	}
 
 	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_NET_PENDING)) {
-		if (bt_mesh.valid) {
+		if (atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
 			store_pending_net();
 		} else {
 			clear_net();
@@ -1313,7 +1313,7 @@ static void store_pending(struct k_work *work)
 	}
 
 	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_IV_PENDING)) {
-		if (bt_mesh.valid) {
+		if (atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
 			store_pending_iv();
 		} else {
 			clear_iv();
@@ -1329,7 +1329,7 @@ static void store_pending(struct k_work *work)
 	}
 
 	if (atomic_test_and_clear_bit(bt_mesh.flags, BT_MESH_CFG_PENDING)) {
-		if (bt_mesh.valid) {
+		if (atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
 			store_pending_cfg();
 		} else {
 			clear_cfg();
