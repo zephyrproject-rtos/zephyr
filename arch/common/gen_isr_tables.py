@@ -214,7 +214,7 @@ def main():
             if "CONFIG_3RD_LEVEL_INTERRUPTS" in syms:
                 num_aggregators = syms["CONFIG_NUM_3RD_LEVEL_AGGREGATORS"]
                 irq3_baseoffset = syms["CONFIG_3RD_LVL_ISR_TBL_OFFSET"]
-                list_3rd_lvl_offsets = [syms['CONFIG_3RD_LEVEL_INTR_{}_OFFSET'.
+                list_3rd_lvl_offsets = [syms['CONFIG_3RD_LVL_INTR_{}_OFFSET'.
                                              format(str(i).zfill(2))] for i in
                                         range(num_aggregators)]
 
