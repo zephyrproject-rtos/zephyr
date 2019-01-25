@@ -10500,15 +10500,14 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
-		link = mem_acquire(&_radio.link_rx_free);
-		if (!link) {
-			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
-		}
-
 		conn = mem_acquire(&_radio.conn_free);
 		if (!conn) {
-			mem_release(link, &_radio.link_rx_free);
+			return BT_HCI_ERR_CONN_LIMIT_EXCEEDED;
+		}
 
+		link = mem_acquire(&_radio.link_rx_free);
+		if (!link) {
+			mem_release(conn, &_radio.conn_free);
 			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
 
