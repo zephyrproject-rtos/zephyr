@@ -601,12 +601,11 @@ class QEMUHandler(Handler):
                 # if we get some state, that means test is doing well, we reset
                 # the timeout and wait for 2 more seconds just in case we have
                 # crashed after test has completed
-
-                if harness.type:
-                    break
-                else:
-                    if not timeout_extended:
-                        timeout_extended= True
+                if not timeout_extended or harness.capture_coverage:
+                    timeout_extended= True
+                    if harness.capture_coverage:
+                        timeout_time = time.time() + 10
+                    else:
                         timeout_time = time.time() + 2
 
             # TODO: Add support for getting numerical performance data
@@ -2787,18 +2786,19 @@ def size_report(sc):
          (sc.rom_size, sc.ram_size))
     info("")
 
-def retrieve_data(intput_file):
+def retrieve_gcov_data(intput_file):
     if VERBOSE:
         print("Working on %s" %intput_file)
     extracted_coverage_info = {}
     capture_data = False
+    capture_complete = False
     with open(intput_file, 'r') as fp:
         for line in fp.readlines():
             if re.search("GCOV_COVERAGE_DUMP_START", line):
                 capture_data = True
                 continue
             if re.search("GCOV_COVERAGE_DUMP_END", line):
-                capture_data = True
+                capture_complete = True
                 break
             # Loop until the coverage data is found.
             if not capture_data:
@@ -2815,7 +2815,9 @@ def retrieve_data(intput_file):
             else:
                 continue
             extracted_coverage_info.update({file_name:hex_dump})
-    return extracted_coverage_info
+    if not capture_data:
+        capture_complete = True
+    return {'complete': capture_complete, 'data': extracted_coverage_info}
 
 def create_gcda_files(extracted_coverage_info):
     if VERBOSE:
@@ -2837,8 +2839,14 @@ def create_gcda_files(extracted_coverage_info):
 def generate_coverage(outdir, ignores):
 
     for filename in glob.glob("%s/**/handler.log" %outdir, recursive=True):
-        extracted_coverage_info = retrieve_data(filename)
-        create_gcda_files(extracted_coverage_info)
+        gcov_data = retrieve_gcov_data(filename)
+        capture_complete = gcov_data['complete']
+        extracted_coverage_info = gcov_data['data']
+        if capture_complete:
+            create_gcda_files(extracted_coverage_info)
+            verbose("Gcov data captured: {}".format(filename))
+        else:
+            error("Gcov data capture incomplete: {}".format(filename))
 
     gcov_tool = options.gcov_tool
 
