@@ -152,9 +152,9 @@
 struct arm_mpu_region_attr {
 	/* Attributes belonging to RBAR */
 	u8_t rbar: 5;
-	 /* MAIR index for attribute indirection */
+	/* MAIR index for attribute indirection */
 	u8_t mair_idx: 3;
-	 /* Region Limit Address value to be written to the RLAR register. */
+	/* Region Limit Address value to be written to the RLAR register. */
 	u32_t r_limit;
 };
 
