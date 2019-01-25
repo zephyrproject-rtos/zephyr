@@ -2,6 +2,17 @@ import re
 from collections import OrderedDict
 
 class Harness:
+    GCOV_START = "GCOV_COVERAGE_DUMP_START"
+    GCOV_END = "GCOV_COVERAGE_DUMP_END"
+    FAULTS = [
+            "Unknown Fatal Error",
+            "MPU FAULT",
+            "Kernel Panic",
+            "Kernel OOPS",
+            "BUS FAULT",
+            "CPU Page Fault"
+            ]
+
     def __init__(self):
         self.state = None
         self.type = None
@@ -13,6 +24,7 @@ class Harness:
         self.id = None
         self.fail_on_fault = True
         self.fault = False
+        self.capture_coverage = False
 
     def configure(self, instance):
         config = instance.test.harness_config
@@ -41,33 +53,35 @@ class Console(Harness):
 
             if len(self.matches) == len(self.regex):
                 # check ordering
-                if not self.ordered:
-                    self.state = "passed"
-                    return
-                ordered = True
-                pos = 0
-                for k,v in self.matches.items():
-                    if k != self.regex[pos]:
-                        ordered = False
-                    pos += 1
+                if self.ordered:
+                    ordered = True
+                    pos = 0
+                    for k,v in self.matches.items():
+                        if k != self.regex[pos]:
+                            ordered = False
+                        pos += 1
 
-                if ordered:
-                    self.state = "passed"
+                    if ordered:
+                        self.state = "passed"
+                    else:
+                        self.state = "failed"
                 else:
-                    self.state = "failed"
+                    self.state = "passed"
+
+        if self.fail_on_fault:
+            for fault in self.FAULTS:
+                if fault in line:
+                    self.fault = True
+
+        if self.GCOV_START in line:
+            self.capture_coverage = True
+        elif self.GCOV_END in line:
+            self.capture_coverage = False
 
 class Test(Harness):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
 
-    faults = [
-            "Unknown Fatal Error",
-            "MPU FAULT",
-            "Kernel Panic",
-            "Kernel OOPS",
-            "BUS FAULT",
-            "CPU Page Fault"
-            ]
 
     def handle(self, line):
         result = re.compile("(PASS|FAIL|SKIP) - (test_)?(.*)")
@@ -86,7 +100,11 @@ class Test(Harness):
             self.state = "failed"
 
         if self.fail_on_fault:
-            for fault in self.faults:
+            for fault in self.FAULTS:
                 if fault in line:
                     self.fault = True
 
+        if self.GCOV_START in line:
+            self.capture_coverage = True
+        elif self.GCOV_END in line:
+            self.capture_coverage = False
