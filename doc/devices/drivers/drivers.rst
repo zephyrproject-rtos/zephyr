@@ -330,3 +330,8 @@ returned on failure.  See
 https://github.com/zephyrproject-rtos/zephyr/wiki/Naming-Conventions#return-codes
 for details about this.
 
+API Reference
+**************
+
+.. doxygengroup:: device_model
+   :project: Zephyr
