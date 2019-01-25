@@ -328,11 +328,7 @@ static int set_advertise_enable(bool enable)
 		return err;
 	}
 
-	if (enable) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_ADVERTISING);
-	} else {
-		atomic_clear_bit(bt_dev.flags, BT_DEV_ADVERTISING);
-	}
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_ADVERTISING, enable);
 
 	return 0;
 }
@@ -460,11 +456,8 @@ static int set_le_scan_enable(u8_t enable)
 		return err;
 	}
 
-	if (enable == BT_HCI_LE_SCAN_ENABLE) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_SCANNING);
-	} else {
-		atomic_clear_bit(bt_dev.flags, BT_DEV_SCANNING);
-	}
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_SCANNING,
+			  enable == BT_HCI_LE_SCAN_ENABLE);
 
 	return 0;
 }
@@ -3143,12 +3136,8 @@ static int start_le_scan(u8_t scan_type, u16_t interval, u16_t window)
 		return err;
 	}
 
-	if (scan_type == BT_HCI_LE_SCAN_ACTIVE) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN);
-	} else {
-		atomic_clear_bit(bt_dev.flags, BT_DEV_ACTIVE_SCAN);
-	}
-
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_ACTIVE_SCAN,
+			  scan_type == BT_HCI_LE_SCAN_ACTIVE);
 
 	return 0;
 }
@@ -5435,11 +5424,8 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 		}
 	}
 
-	if (param->filter_dup) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
-	} else {
-		atomic_clear_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
-	}
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP,
+			  param->filter_dup);
 
 	err = start_le_scan(param->type, param->interval, param->window);
 	if (err) {
@@ -5682,17 +5668,10 @@ static int write_scan_enable(u8_t scan)
 		return err;
 	}
 
-	if (scan & BT_BREDR_SCAN_INQUIRY) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_ISCAN);
-	} else {
-		atomic_clear_bit(bt_dev.flags, BT_DEV_ISCAN);
-	}
-
-	if (scan & BT_BREDR_SCAN_PAGE) {
-		atomic_set_bit(bt_dev.flags, BT_DEV_PSCAN);
-	} else {
-		atomic_clear_bit(bt_dev.flags, BT_DEV_PSCAN);
-	}
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_ISCAN,
+			  (scan & BT_BREDR_SCAN_INQUIRY));
+	atomic_set_bit_to(bt_dev.flags, BT_DEV_PSCAN,
+			  (scan & BT_BREDR_SCAN_PAGE));
 
 	return 0;
 }
