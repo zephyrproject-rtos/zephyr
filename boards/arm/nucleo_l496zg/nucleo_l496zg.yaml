@@ -13,7 +13,6 @@ supported:
   - spi
   - pwm
 testing:
-  default: true
   ignore_tags:
     - net
     - bluetooth
