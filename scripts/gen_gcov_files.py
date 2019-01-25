@@ -16,13 +16,14 @@ import re
 def retrieve_data(input_file):
     extracted_coverage_info = {}
     capture_data = False
+    reached_end = False
     with open(input_file, 'r') as fp:
         for line in fp.readlines():
             if re.search("GCOV_COVERAGE_DUMP_START", line):
                 capture_data = True
                 continue
             if re.search("GCOV_COVERAGE_DUMP_END", line):
-                capture_data = True
+                reached_end = True
                 break
             # Loop until the coverage data is found.
             if not capture_data:
@@ -33,6 +34,9 @@ def retrieve_data(input_file):
             # Remove the trailing new line char
             hex_dump = line.split("<")[1][:-1]
             extracted_coverage_info.update({file_name:hex_dump})
+
+    if not reached_end:
+        print("incomplete data captured from %s" %input_file)
     return extracted_coverage_info
 
 def create_gcda_files(extracted_coverage_info):
