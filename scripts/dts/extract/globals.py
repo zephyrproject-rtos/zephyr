@@ -197,6 +197,16 @@ def get_reduced(nodes, path):
                     get_reduced.last_used_id[k] += 1
                 reduced[path]['instance_id'][k] = get_reduced.last_used_id[k]
 
+        # Newer versions of dtc might have the properties that look like
+        # reg = <1 2>, <3 4>;
+        # So we need to flatten the list in that case to be:
+        # reg = <1 2 3 4>
+        for p in nodes['props']:
+            prop_val = nodes['props'][p]
+            if isinstance(prop_val, list):
+                if isinstance(prop_val[0], list):
+                    nodes['props'][p] = [item for sublist in prop_val for item in sublist]
+
         reduced[path].pop('children', None)
         if path != '/':
             path += '/'

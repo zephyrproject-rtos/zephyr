@@ -46,12 +46,6 @@ class DTReg(DTDirective):
                     pass
 
                 if cs_gpios:
-                    # Newer versions of dtc might have the property look like
-                    # cs-gpios = <0x05 0x0d 0x00>, < 0x06 0x00 0x00>;
-                    # So we need to flatten the list in that case
-                    if isinstance(cs_gpios[0], list):
-                        cs_gpios = [item for sublist in cs_gpios for item in sublist]
-
                     extract_controller(node_address, "cs-gpios", cs_gpios, reg[0], def_label, "cs-gpio", True)
                     extract_cells(node_address, "cs-gpios", cs_gpios, None, reg[0], def_label, "cs-gpio", True)
 
@@ -62,12 +56,6 @@ class DTReg(DTDirective):
 
         index = 0
         props = list(reg)
-
-        # Newer versions of dtc might have the reg propertly look like
-        # reg = <1 2>, <3 4>;
-        # So we need to flatten the list in that case
-        if isinstance(props[0], list):
-            props = [item for sublist in props for item in sublist]
 
         while props:
             prop_def = {}
