@@ -13,6 +13,7 @@
 
 	chosen {
 		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -20,7 +21,7 @@
 	leds {
 		compatible = "gpio-leds";
 		led: led {
-			gpios = <&gpiob 12 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioc 13 GPIO_INT_ACTIVE_HIGH>;
 			label = "LD";
 		};
 	};
@@ -52,6 +53,14 @@
 &i2c1 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	status = "ok";
+};
+
+&spi2 {
+	status = "ok";
 };
 
 &timers1 {

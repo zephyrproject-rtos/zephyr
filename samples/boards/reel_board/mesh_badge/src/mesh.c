@@ -44,16 +44,16 @@ enum {
 };
 
 struct sensor_hdr_a {
-	u16_t format:1;
-	u16_t length:4;
 	u16_t prop_id:11;
-};
+	u16_t length:4;
+	u16_t format:1;
+} __packed;
 
 struct sensor_hdr_b {
-	u8_t format:1;
 	u8_t length:7;
+	u8_t format:1;
 	u16_t prop_id;
-};
+} __packed;
 
 static struct k_work hello_work;
 static struct k_work mesh_start_work;
@@ -228,7 +228,7 @@ static void sens_unknown_fill(u16_t id, struct net_buf_simple *msg)
 	 * that property shall be omitted. (Mesh model spec 1.0, 4.2.14)
 	 */
 	hdr.format = SENSOR_HDR_A;
-	hdr.length = 0;
+	hdr.length = 0U;
 	hdr.prop_id = id;
 
 	net_buf_simple_add_mem(msg, &hdr, sizeof(hdr));
@@ -313,6 +313,7 @@ static void vnd_hello(struct bt_mesh_model *model,
 		      struct net_buf_simple *buf)
 {
 	char str[32];
+	size_t len;
 
 	printk("Hello message from 0x%04x\n", ctx->addr);
 
@@ -321,8 +322,9 @@ static void vnd_hello(struct bt_mesh_model *model,
 		return;
 	}
 
-	strncpy(str, buf->data, HELLO_MAX);
-	str[HELLO_MAX] = '\0';
+	len = min(buf->len, HELLO_MAX);
+	memcpy(str, buf->data, len);
+	str[len] = '\0';
 
 	board_add_hello(ctx->addr, str);
 
@@ -414,7 +416,8 @@ static void send_hello(struct k_work *work)
 	const char *name = bt_get_name();
 
 	bt_mesh_model_msg_init(&msg, OP_VND_HELLO);
-	net_buf_simple_add_mem(&msg, name, first_name_len(name));
+	net_buf_simple_add_mem(&msg, name,
+			       min(HELLO_MAX, first_name_len(name)));
 
 	if (bt_mesh_model_send(&vnd_models[0], &ctx, &msg, NULL, NULL) == 0) {
 		board_show_text("Saying \"hi!\" to everyone", false,

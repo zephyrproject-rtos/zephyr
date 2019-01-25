@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include "simplelink_sockets.h"
 
 #define SCAN_RETRY_DELAY 2000  /* ms */
+#define FC_TIMEOUT K_SECONDS(CONFIG_WIFI_SIMPLELINK_FAST_CONNECT_TIMEOUT)
 
 struct simplelink_data {
 	struct net_if *iface;
@@ -32,9 +33,11 @@ struct simplelink_data {
 	scan_result_cb_t cb;
 	int num_results_or_err;
 	int scan_retries;
+	bool initialized;
 };
 
 static struct simplelink_data simplelink_data;
+static K_SEM_DEFINE(ip_acquired, 0, 1);
 
 /* Handle connection events from the SimpleLink Event Handlers: */
 static void simplelink_wifi_cb(u32_t event, struct sl_connect_state *conn)
@@ -68,6 +71,11 @@ static void simplelink_wifi_cb(u32_t event, struct sl_connect_state *conn)
 		net_if_ipv4_set_gw(simplelink_data.iface, &gwaddr);
 		net_if_ipv4_addr_add(simplelink_data.iface, &addr,
 				     NET_ADDR_DHCP, 0);
+
+		if (!simplelink_data.initialized) {
+			simplelink_data.initialized = true;
+			k_sem_give(&ip_acquired);
+		}
 		break;
 
 	default:
@@ -203,11 +211,21 @@ static void simplelink_iface_init(struct net_if *iface)
 
 	simplelink_data.iface = iface;
 
+	/* Direct socket offload used instead of net offload: */
+	iface->if_dev->offload = &simplelink_offload;
+
 	/* Initialize and configure NWP to defaults: */
 	ret = _simplelink_init(simplelink_wifi_cb);
 	if (ret) {
 		LOG_ERR("_simplelink_init failed!");
 		return;
+	}
+
+	ret = k_sem_take(&ip_acquired, FC_TIMEOUT);
+	if (ret < 0) {
+		simplelink_data.initialized = false;
+		LOG_ERR("FastConnect timed out connecting to previous AP.");
+		LOG_ERR("Please re-establish WiFi connection.");
 	}
 
 	/* Grab our MAC address: */
@@ -222,9 +240,6 @@ static void simplelink_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, simplelink_data.mac,
 			     sizeof(simplelink_data.mac),
 			     NET_LINK_ETHERNET);
-
-	/* Direct socket offload used instead of net offload: */
-	iface->if_dev->offload = &simplelink_offload;
 
 #ifdef CONFIG_NET_SOCKETS_OFFLOAD
 	/* Direct socket offload: */

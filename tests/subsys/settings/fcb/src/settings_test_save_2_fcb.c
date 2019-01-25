@@ -37,11 +37,11 @@ void test_config_save_2_fcb(void)
 	test_config_fill_area(test_ref_value, 0);
 	memcpy(val_string, test_ref_value, sizeof(val_string));
 
-	val8 = 42;
+	val8 = 42U;
 	rc = settings_save();
 	zassert_true(rc == 0, "fcb write error");
 
-	val8 = 0;
+	val8 = 0U;
 	(void)memset(val_string[0], 0, sizeof(val_string[0]));
 	rc = settings_load();
 	zassert_true(rc == 0, "fcb read error");
@@ -65,7 +65,7 @@ void test_config_save_2_fcb(void)
 
 		(void)memset(val_string, 0, sizeof(val_string));
 
-		val8 = 0;
+		val8 = 0U;
 		rc = settings_load();
 		zassert_true(rc == 0, "fcb read error");
 		zassert_true(!memcmp(val_string, test_ref_value,

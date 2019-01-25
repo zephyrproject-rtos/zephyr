@@ -757,6 +757,7 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 			K_THREAD_STACK_SIZEOF(dlc->stack),
 			rfcomm_dlc_tx_thread, dlc, NULL, NULL, K_PRIO_COOP(7),
 			0, K_NO_WAIT);
+	k_thread_name_set(&dlc->tx_thread, "BT DLC");
 
 	if (dlc->ops && dlc->ops->connected) {
 		dlc->ops->connected(dlc);
@@ -917,12 +918,12 @@ static int rfcomm_send_pn(struct bt_rfcomm_dlc *dlc, u8_t cr)
 		/* If PN comes in already opened dlc or cfc not supported
 		 * these should be 0
 		 */
-		pn->credits = 0;
-		pn->flow_ctrl = 0;
+		pn->credits = 0U;
+		pn->flow_ctrl = 0U;
 	}
-	pn->max_retrans = 0;
-	pn->ack_timer = 0;
-	pn->priority = 0;
+	pn->max_retrans = 0U;
+	pn->ack_timer = 0U;
+	pn->priority = 0U;
 
 	fcs = rfcomm_calc_fcs(BT_RFCOMM_FCS_LEN_UIH, buf->data);
 	net_buf_add_u8(buf, fcs);

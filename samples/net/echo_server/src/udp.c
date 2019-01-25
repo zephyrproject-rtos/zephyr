@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_echo_server_udp
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <errno.h>
@@ -82,14 +82,14 @@ static int setup_cert(struct net_app_ctx *ctx,
 	ret = mbedtls_x509_crt_parse(cert, rsa_example_cert_der,
 				     rsa_example_cert_der_len);
 	if (ret != 0) {
-		NET_ERR("mbedtls_x509_crt_parse returned %d", ret);
+		LOG_ERR("mbedtls_x509_crt_parse returned %d", ret);
 		return ret;
 	}
 
 	ret = mbedtls_pk_parse_key(pkey, rsa_example_keypair_der,
 				   rsa_example_keypair_der_len, NULL, 0);
 	if (ret != 0) {
-		NET_ERR("mbedtls_pk_parse_key returned %d", ret);
+		LOG_ERR("mbedtls_pk_parse_key returned %d", ret);
 		return ret;
 	}
 
@@ -168,7 +168,7 @@ static void udp_received(struct net_app_ctx *ctx,
 	ret = net_app_send_pkt(ctx, reply_pkt, &dst_addr, dst_len, K_NO_WAIT,
 			       UINT_TO_POINTER(pkt_len));
 	if (ret < 0) {
-		NET_ERR("Cannot send data to peer (%d)", ret);
+		LOG_ERR("Cannot send data to peer (%d)", ret);
 		net_pkt_unref(reply_pkt);
 	}
 }
@@ -179,7 +179,7 @@ void start_udp(void)
 
 	ret = net_app_init_udp_server(&udp, NULL, MY_PORT, NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot init UDP service at port %d", MY_PORT);
+		LOG_ERR("Cannot init UDP service at port %d", MY_PORT);
 		return;
 	}
 
@@ -189,7 +189,7 @@ void start_udp(void)
 
 	ret = net_app_set_cb(&udp, NULL, udp_received, pkt_sent, NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot set callbacks (%d)", ret);
+		LOG_ERR("Cannot set callbacks (%d)", ret);
 		net_app_release(&udp);
 		return;
 	}
@@ -207,7 +207,7 @@ void start_udp(void)
 				 net_app_dtls_stack,
 				 K_THREAD_STACK_SIZEOF(net_app_dtls_stack));
 	if (ret < 0) {
-		NET_ERR("Cannot init DTLS");
+		LOG_ERR("Cannot init DTLS");
 	}
 #endif
 
@@ -215,7 +215,7 @@ void start_udp(void)
 
 	ret = net_app_listen(&udp);
 	if (ret < 0) {
-		NET_ERR("Cannot wait connection (%d)", ret);
+		LOG_ERR("Cannot wait connection (%d)", ret);
 		net_app_release(&udp);
 		return;
 	}

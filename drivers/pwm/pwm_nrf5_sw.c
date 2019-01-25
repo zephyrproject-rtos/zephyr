@@ -42,7 +42,7 @@ static u32_t pwm_period_check(struct pwm_data *data, u8_t map_size,
 	}
 
 	/* fail if requested period does not match already running period */
-	for (i = 0; i < map_size; i++) {
+	for (i = 0U; i < map_size; i++) {
 		if ((data->map[i].pwm != pwm) &&
 		    (data->map[i].pulse_cycles != 0) &&
 		    (period_cycles != data->period_cycles)) {
@@ -59,7 +59,7 @@ static u8_t pwm_channel_map(struct pwm_data *data, u8_t map_size,
 	u8_t i;
 
 	/* find pin, if already present */
-	for (i = 0; i < map_size; i++) {
+	for (i = 0U; i < map_size; i++) {
 		if (pwm == data->map[i].pwm) {
 			return i;
 		}
@@ -176,11 +176,11 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	return 0;
 
 pin_set_pwm_off:
-	data->map[channel].pulse_cycles = 0;
+	data->map[channel].pulse_cycles = 0U;
 	bool pwm_active = false;
 
 	/* stop timer if all channels are inactive */
-	for (channel = 0; channel < config->map_size; channel++) {
+	for (channel = 0U; channel < config->map_size; channel++) {
 		if (data->map[channel].pulse_cycles) {
 			pwm_active = true;
 			break;

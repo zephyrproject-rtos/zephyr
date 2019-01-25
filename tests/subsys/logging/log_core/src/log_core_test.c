@@ -25,6 +25,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 typedef void (*custom_put_callback_t)(struct log_backend const *const backend,
 				      struct log_msg *msg, size_t counter);
+
+static bool in_panic;
+
 struct backend_cb {
 	size_t counter;
 	bool panic;
@@ -38,6 +41,7 @@ struct backend_cb {
 	bool check_strdup;
 	bool exp_strdup[100];
 	custom_put_callback_t callback;
+	u32_t total_drops;
 };
 
 static void put(struct log_backend const *const backend,
@@ -54,6 +58,7 @@ static void put(struct log_backend const *const backend,
 			      exp_id,
 			      "Unexpected source_id");
 	}
+
 	if (cb->check_timestamp) {
 		u32_t exp_timestamp = cb->exp_timestamps[cb->counter];
 
@@ -96,15 +101,23 @@ static void panic(struct log_backend const *const backend)
 	cb->panic = true;
 }
 
+static void dropped(struct log_backend const *const backend, u32_t cnt)
+{
+	struct backend_cb *cb = (struct backend_cb *)backend->cb->ctx;
+
+	cb->total_drops += cnt;
+}
+
 const struct log_backend_api log_backend_test_api = {
 	.put = put,
 	.panic = panic,
+	.dropped = dropped,
 };
 
-LOG_BACKEND_DEFINE(backend1, log_backend_test_api, true);
+LOG_BACKEND_DEFINE(backend1, log_backend_test_api, false);
 struct backend_cb backend1_cb;
 
-LOG_BACKEND_DEFINE(backend2, log_backend_test_api, true);
+LOG_BACKEND_DEFINE(backend2, log_backend_test_api, false);
 struct backend_cb backend2_cb;
 
 static u32_t stamp;
@@ -137,7 +150,8 @@ static int log_source_id_get(const char *name)
 
 static void log_setup(bool backend2_enable)
 {
-	stamp = 0;
+	stamp = 0U;
+	zassert_false(in_panic, "Logger in panic state.");
 
 	log_init();
 
@@ -167,16 +181,17 @@ static void log_setup(bool backend2_enable)
 static void test_log_backend_runtime_filtering(void)
 {
 	log_setup(true);
+
 	backend1_cb.check_timestamp = true;
 	backend2_cb.check_timestamp = true;
 
-	backend1_cb.exp_timestamps[0] = 0;
-	backend1_cb.exp_timestamps[1] = 1;
-	backend1_cb.exp_timestamps[2] = 2;
+	backend1_cb.exp_timestamps[0] = 0U;
+	backend1_cb.exp_timestamps[1] = 1U;
+	backend1_cb.exp_timestamps[2] = 2U;
 
 	/* Expect one less log message */
-	backend2_cb.exp_timestamps[0] = 0;
-	backend2_cb.exp_timestamps[1] = 2;
+	backend2_cb.exp_timestamps[0] = 0U;
+	backend2_cb.exp_timestamps[1] = 2U;
 
 	LOG_INF("test");
 	while (log_process(false)) {
@@ -224,8 +239,8 @@ static void test_log_overflow(void)
 	backend2_cb.check_timestamp = true;
 
 	/* expect first message to be dropped */
-	backend1_cb.exp_timestamps[0] = 1;
-	backend1_cb.exp_timestamps[1] = 2;
+	backend1_cb.exp_timestamps[0] = 1U;
+	backend1_cb.exp_timestamps[1] = 2U;
 
 	LOG_INF("test");
 	LOG_INF("test");
@@ -237,7 +252,7 @@ static void test_log_overflow(void)
 	/* Expect big message to be dropped because it does not fit in.
 	 * First message is also dropped in the process of finding free space.
 	 */
-	backend1_cb.exp_timestamps[2] = 3;
+	backend1_cb.exp_timestamps[2] = 3U;
 
 	LOG_INF("test");
 	LOG_HEXDUMP_INF(data, max_hexdump_len+1, "test");
@@ -261,14 +276,14 @@ static void test_log_arguments(void)
 	log_setup(false);
 	backend1_cb.check_args = true;
 
-	backend1_cb.exp_nargs[0] = 10;
-	backend1_cb.exp_nargs[1] = 1;
-	backend1_cb.exp_nargs[2] = 2;
-	backend1_cb.exp_nargs[3] = 3;
-	backend1_cb.exp_nargs[4] = 4;
-	backend1_cb.exp_nargs[5] = 5;
-	backend1_cb.exp_nargs[6] = 6;
-	backend1_cb.exp_nargs[7] = 10;
+	backend1_cb.exp_nargs[0] = 10U;
+	backend1_cb.exp_nargs[1] = 1U;
+	backend1_cb.exp_nargs[2] = 2U;
+	backend1_cb.exp_nargs[3] = 3U;
+	backend1_cb.exp_nargs[4] = 4U;
+	backend1_cb.exp_nargs[5] = 5U;
+	backend1_cb.exp_nargs[6] = 6U;
+	backend1_cb.exp_nargs[7] = 10U;
 
 	LOG_INF("test");
 	LOG_INF("test %d", 1);
@@ -284,34 +299,6 @@ static void test_log_arguments(void)
 	}
 
 	zassert_equal(8,
-		      backend1_cb.counter,
-		      "Unexpected amount of messages received by the backend.");
-}
-
-/*
- * Test checks if panic is correctly executed. On panic logger should flush all
- * messages and process logs in place (not in deferred way).
- */
-static void test_log_panic(void)
-{
-	log_setup(false);
-
-	LOG_INF("test");
-	LOG_INF("test");
-
-	/* logs should be flushed in panic */
-	log_panic();
-	zassert_true(backend1_cb.panic,
-		     "Expecting backend to receive panic notification.");
-
-	zassert_equal(2,
-		      backend1_cb.counter,
-		      "Unexpected amount of messages received by the backend.");
-
-	/* messages processed where called */
-	LOG_INF("test");
-
-	zassert_equal(3,
 		      backend1_cb.counter,
 		      "Unexpected amount of messages received by the backend.");
 }
@@ -402,6 +389,81 @@ static void test_strdup_trimming(void)
 		      "Unexpected amount of messages received by the backend.");
 }
 
+static void log_n_messages(u32_t n_msg, u32_t exp_dropped)
+{
+	int i;
+
+	for (i = 0; i < n_msg; i++) {
+		LOG_INF("dummy");
+	}
+
+	while (log_process(false)) {
+	}
+
+	zassert_equal(backend1_cb.total_drops, exp_dropped,
+			"Unexpected log msg dropped");
+
+}
+
+/*
+ * Test checks if backend receives notification about dropped messages. It
+ * first blocks threads to ensure full control of log processing time and
+ * then logs certain log messages, expecting dropped notification.
+ */
+static void test_log_msg_dropped_notification(void)
+{
+	__ASSERT_NO_MSG(CONFIG_LOG_MODE_OVERFLOW);
+
+	u32_t capacity = CONFIG_LOG_BUFFER_SIZE/sizeof(struct log_msg);
+
+	log_setup(false);
+
+	/* Ensure that log messages aren't processed */
+	k_sched_lock();
+
+	log_n_messages(capacity, 0);
+
+	/* Expect messages dropped when logger more than buffer capacity. */
+	log_n_messages(capacity + 1, 1);
+	log_n_messages(capacity + 2, 3);
+
+	k_sched_unlock();
+}
+
+/*
+ * Test checks if panic is correctly executed. On panic logger should flush all
+ * messages and process logs in place (not in deferred way).
+ *
+ * NOTE: this test must be the last in the suite because after this test log
+ * is in panic mode.
+ */
+static void test_log_panic(void)
+{
+	log_setup(false);
+
+	LOG_INF("test");
+	LOG_INF("test");
+
+	/* logs should be flushed in panic */
+	log_panic();
+	in_panic = true;
+
+	zassert_true(backend1_cb.panic,
+		     "Expecting backend to receive panic notification.");
+
+	zassert_equal(2,
+		      backend1_cb.counter,
+		      "Unexpected amount of messages received by the backend.");
+
+	/* messages processed where called */
+	LOG_INF("test");
+
+	zassert_equal(3,
+		      backend1_cb.counter,
+		      "Unexpected amount of messages received by the backend.");
+}
+
+
 /*test case main entry*/
 void test_main(void)
 {
@@ -409,9 +471,10 @@ void test_main(void)
 			 ztest_unit_test(test_log_backend_runtime_filtering),
 			 ztest_unit_test(test_log_overflow),
 			 ztest_unit_test(test_log_arguments),
-			 ztest_unit_test(test_log_panic),
 			 ztest_unit_test(test_log_from_declared_module),
 			 ztest_unit_test(test_log_strdup_gc),
-			 ztest_unit_test(test_strdup_trimming));
+			 ztest_unit_test(test_strdup_trimming),
+			 ztest_unit_test(test_log_msg_dropped_notification),
+			 ztest_unit_test(test_log_panic));
 	ztest_run_test_suite(test_log_list);
 }

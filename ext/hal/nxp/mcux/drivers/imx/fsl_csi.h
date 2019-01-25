@@ -1,8 +1,8 @@
 /*
- * Copyright (c) 2017, NXP Semiconductors, Inc.
+ * Copyright (c) 2017-2018, NXP Semiconductors, Inc.
  * All rights reserved.
  *
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -22,12 +22,17 @@
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_CSI_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
+#define FSL_CSI_DRIVER_VERSION (MAKE_VERSION(2, 0, 2))
 /*@}*/
 
 /*! @brief Size of the frame buffer queue used in CSI transactional function. */
 #ifndef CSI_DRIVER_QUEUE_SIZE
 #define CSI_DRIVER_QUEUE_SIZE 4U
+#endif
+
+/*! @brief Enable fragment capture function or not. */
+#ifndef CSI_DRIVER_FRAG_MODE
+#define CSI_DRIVER_FRAG_MODE 0U
 #endif
 
 /*
@@ -100,8 +105,8 @@ enum _csi_polarity_flags
     kCSI_HsyncActiveHigh = CSI_CSICR1_HSYNC_POL_MASK,   /*!< HSYNC is active high. */
     kCSI_DataLatchOnRisingEdge = CSI_CSICR1_REDGE_MASK, /*!< Pixel data latched at rising edge of pixel clock. */
     kCSI_DataLatchOnFallingEdge = 0U,                   /*!< Pixel data latched at falling edge of pixel clock. */
-    kCSI_VsyncActiveHigh = 0U,                       /*!< VSYNC is active high. */
-    kCSI_VsyncActiveLow = CSI_CSICR1_SOF_POL_MASK,   /*!< VSYNC is active low. */
+    kCSI_VsyncActiveHigh = 0U,                          /*!< VSYNC is active high. */
+    kCSI_VsyncActiveLow = CSI_CSICR1_SOF_POL_MASK,      /*!< VSYNC is active low. */
 };
 
 /*! @brief Configuration to initialize the CSI module. */
@@ -231,6 +236,99 @@ struct _csi_handle
     csi_transfer_callback_t callback; /*!< Callback function. */
     void *userData;                   /*!< CSI callback function parameter.*/
 };
+
+#if CSI_DRIVER_FRAG_MODE
+
+/*! @brief Input pixel format when CSI works in fragment mode. */
+typedef enum _csi_frag_input_pixel_format
+{
+    kCSI_FragInputRGB565 = 0, /*!< Input pixel format is RGB565. */
+    kCSI_FragInputYUYV,       /*!< Input pixel format is YUV422 (Y-U-Y-V). */
+    kCSI_FragInputUYVY,       /*!< Input pixel format is YUV422 (U-Y-V-Y). */
+} csi_frag_input_pixel_format_t;
+
+/*! @brief Configuration for CSI module to work in fragment mode. */
+typedef struct _csi_frag_config
+{
+    uint16_t width;           /*!< Pixels of the input frame. */
+    uint16_t height;          /*!< Lines of the input frame.  */
+    uint32_t polarityFlags;   /*!< Timing signal polarity flags, OR'ed value of @ref _csi_polarity_flags. */
+    csi_work_mode_t workMode; /*!< CSI work mode. */
+    csi_data_bus_t dataBus;   /*!< Data bus width. */
+    bool useExtVsync;         /*!< In CCIR656 progressive mode, set true to use external VSYNC signal, set false
+                                to use internal VSYNC signal decoded from SOF. */
+    csi_frag_input_pixel_format_t inputFormat; /*!< Input pixel format. */
+
+    uint32_t dmaBufferAddr0;  /*!< Buffer 0 used for CSI DMA, must be double word aligned. */
+    uint32_t dmaBufferAddr1;  /*!< Buffer 1 used for CSI DMA, must be double word aligned. */
+    uint16_t dmaBufferLine;   /*!< Lines of each DMA buffer. The size of DMA buffer 0 and
+                                   buffer 1 must be the same. Camera frame height must be
+                                   dividable by this value. */
+    bool isDmaBufferCachable; /*!< Is DMA buffer cachable or not. */
+} csi_frag_config_t;
+
+/* Forward declaration of the handle typedef. */
+typedef struct _csi_frag_handle csi_frag_handle_t;
+
+/*!
+ * @brief CSI fragment transfer callback function.
+ *
+ * When a new frame is received and saved to the frame buffer queue, the callback
+ * is called and the pass the status @ref kStatus_CSI_FrameDone to upper layer.
+ */
+typedef void (*csi_frag_transfer_callback_t)(CSI_Type *base,
+                                             csi_frag_handle_t *handle,
+                                             status_t status,
+                                             void *userData);
+
+/*!
+ * @brief Function to copy data from CSI DMA buffer to user buffer.
+ */
+typedef void (*csi_frag_copy_func_t)(void *pDest, const void *pSrc, size_t cnt);
+
+/*! @brief Handle for CSI module to work in fragment mode. */
+struct _csi_frag_handle
+{
+    uint16_t width;                            /*!< Pixels of the input frame. */
+    uint16_t height;                           /*!< Lines of the input frame.  */
+    uint16_t maxLinePerFrag;                   /*!< Max line saved per fragment. */
+    uint16_t linePerFrag;                      /*!< Actual line saved per fragment. */
+    uint16_t dmaBytePerLine;                   /*!< How many bytes DMA transfered each line. */
+    uint16_t datBytePerLine;                   /*!< How many bytes copied to user buffer each line. */
+    uint16_t dmaCurLine;                       /*!< Current line index in whole frame. */
+    uint16_t windowULX;                        /*!< X of windows upper left corner. */
+    uint16_t windowULY;                        /*!< Y of windows upper left corner. */
+    uint16_t windowLRX;                        /*!< X of windows lower right corner. */
+    uint16_t windowLRY;                        /*!< Y of windows lower right corner. */
+    uint32_t outputBuffer;                     /*!< Address of buffer to save the captured image. */
+    uint32_t datCurWriteAddr;                  /*!< Current write address to the user buffer. */
+    csi_frag_input_pixel_format_t inputFormat; /*!< Input pixel format. */
+
+    csi_frag_transfer_callback_t callback; /*!< Callback function. */
+    void *userData;                        /*!< CSI callback function parameter.*/
+    csi_frag_copy_func_t copyFunc;         /*!< Function to copy data from CSI DMA buffer to user buffer. */
+    bool isDmaBufferCachable;              /*!< Is DMA buffer cachable or not. */
+};
+
+/*! @brief Handle for CSI module to work in fragment mode. */
+typedef struct _csi_frag_window
+{
+    uint16_t windowULX; /*!< X of windows upper left corner. */
+    uint16_t windowULY; /*!< Y of windows upper left corner. */
+    uint16_t windowLRX; /*!< X of windows lower right corner. */
+    uint16_t windowLRY; /*!< Y of windows lower right corner. */
+} csi_frag_window_t;
+
+/*! @brief Handle for CSI module to work in fragment mode. */
+typedef struct _csi_frag_capture_config
+{
+    bool outputGrayScale;      /*!< Output gray scale image or not, could only enable when input format is YUV. */
+    uint32_t buffer;           /*!< Buffer to save the captured image. */
+    csi_frag_window_t *window; /*!< Capture window. Capture full frame if set this to NULL. When output format is gray,
+                                    the window width must be multiple value of 8. */
+} csi_frag_capture_config_t;
+
+#endif /* CSI_DRIVER_FRAG_MODE */
 
 /*******************************************************************************
  * API
@@ -429,6 +527,7 @@ static inline void CSI_ClearStatusFlags(CSI_Type *base, uint32_t statusMask)
 }
 /* @} */
 
+#if !CSI_DRIVER_FRAG_MODE
 /*!
  * @name Transactional
  * @{
@@ -526,6 +625,88 @@ status_t CSI_TransferGetFullBuffer(CSI_Type *base, csi_handle_t *handle, uint32_
  */
 void CSI_TransferHandleIRQ(CSI_Type *base, csi_handle_t *handle);
 /* @} */
+
+#else
+
+/*!
+ * @name Fragment mode
+ * @{
+ */
+
+/*!
+ * @brief Initialize the CSI to work in fragment mode.
+ *
+ * This function enables the CSI peripheral clock, and resets the CSI registers.
+ *
+ * @param base CSI peripheral base address.
+ */
+void CSI_FragModeInit(CSI_Type *base);
+
+/*!
+ * @brief De-initialize the CSI.
+ *
+ * This function disables the CSI peripheral clock.
+ *
+ * @param base CSI peripheral base address.
+ */
+void CSI_FragModeDeinit(CSI_Type *base);
+
+/*!
+ * @brief Create handle for CSI work in fragment mode.
+ *
+ * @param base CSI peripheral base address.
+ * @param handle Pointer to the transactional handle.
+ * @param config Pointer to the configuration structure.
+ * @param callback Callback function for CSI transfer.
+ * @param userData Callback function parameter.
+ *
+ * @retval kStatus_Success Initialize successfully.
+ * @retval kStatus_InvalidArgument Initialize failed because of invalid argument.
+ */
+status_t CSI_FragModeCreateHandle(CSI_Type *base,
+                                  csi_frag_handle_t *handle,
+                                  const csi_frag_config_t *config,
+                                  csi_frag_transfer_callback_t callback,
+                                  void *userData);
+
+/*!
+ * @brief Start to capture a image.
+ *
+ * @param base CSI peripheral base address.
+ * @param handle Pointer to the transactional handle.
+ * @param config Pointer to the capture configuration.
+ *
+ * @retval kStatus_Success Initialize successfully.
+ * @retval kStatus_InvalidArgument Initialize failed because of invalid argument.
+ */
+status_t CSI_FragModeTransferCaptureImage(CSI_Type *base,
+                                          csi_frag_handle_t *handle,
+                                          const csi_frag_capture_config_t *config);
+
+/*!
+ * @brief Abort image capture.
+ *
+ * Abort image capture initialized by @ref CSI_FragModeTransferCaptureImage.
+ *
+ * @param base CSI peripheral base address.
+ * @param handle Pointer to the transactional handle.
+ */
+void CSI_FragModeTransferAbortCaptureImage(CSI_Type *base, csi_frag_handle_t *handle);
+
+/*!
+ * @brief CSI IRQ handle function.
+ *
+ * This function handles the CSI IRQ request to work with CSI driver fragment mode
+ * APIs.
+ *
+ * @param base CSI peripheral base address.
+ * @param handle CSI handle pointer.
+ */
+void CSI_FragModeTransferHandleIRQ(CSI_Type *base, csi_frag_handle_t *handle);
+
+/* @} */
+
+#endif /* CSI_DRIVER_FRAG_MODE */
 
 #if defined(__cplusplus)
 }

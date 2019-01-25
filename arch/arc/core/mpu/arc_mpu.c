@@ -104,7 +104,7 @@ static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
 		region_attr |= AUX_MPU_RDP_REGION_SIZE(bits);
 		region_addr |= AUX_MPU_RDB_VALID_MASK;
 	} else {
-		region_addr = 0;
+		region_addr = 0U;
 	}
 
 	_arc_v2_aux_reg_write(_ARC_V2_MPU_RDP0 + index, region_attr);
@@ -495,7 +495,7 @@ void arc_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 		pparts = mem_domain->partitions;
 	} else {
 		LOG_DBG("disable domain partition regions");
-		num_partitions = 0;
+		num_partitions = 0U;
 		pparts = NULL;
 	}
 #if CONFIG_ARC_MPU_VER == 2
@@ -668,12 +668,12 @@ static void _arc_mpu_config(void)
 	r_index = num_regions - mpu_config.num_regions;
 
 	/* clear all the regions first */
-	for (i = 0; i < r_index; i++) {
+	for (i = 0U; i < r_index; i++) {
 		_region_init(i, 0, 0, 0);
 	}
 
 	/* configure the static regions */
-	for (i = 0; i < mpu_config.num_regions; i++) {
+	for (i = 0U; i < mpu_config.num_regions; i++) {
 		_region_init(r_index,
 			mpu_config.mpu_regions[i].base,
 			mpu_config.mpu_regions[i].size,
@@ -685,7 +685,7 @@ static void _arc_mpu_config(void)
 	arc_core_mpu_default(0);
 
 #elif CONFIG_ARC_MPU_VER == 3
-	for (i = 0; i < mpu_config.num_regions; i++) {
+	for (i = 0U; i < mpu_config.num_regions; i++) {
 		_region_init(i,
 			mpu_config.mpu_regions[i].base,
 			mpu_config.mpu_regions[i].size,

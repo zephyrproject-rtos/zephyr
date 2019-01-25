@@ -5,7 +5,9 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
+  - xtools
 supported:
+  - arduino_i2c
   - gpio
   - i2c
   - spi

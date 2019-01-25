@@ -15,10 +15,11 @@
 #include <sensor.h>
 #include <string.h>
 
-#if defined(CONFIG_LIS2DH_BUS_SPI)
-#include <spi.h>
+#define LIS2DH_BUS_ADDRESS		DT_ST_LIS2DH_0_BASE_ADDRESS
+#define LIS2DH_BUS_DEV_NAME		DT_ST_LIS2DH_0_BUS_NAME
 
-#define LIS2DH_BUS_ADDRESS		CONFIG_LIS2DH_SPI_SS_1
+#if defined(DT_ST_LIS2DH_0_BUS_SPI)
+#include <spi.h>
 
 #define LIS2DH_SPI_READ_BIT		BIT(7)
 #define LIS2DH_SPI_AUTOINC_ADDR		BIT(6)
@@ -27,15 +28,10 @@
 /* LIS2DH supports only SPI mode 0, word size 8 bits, MSB first */
 #define LIS2DH_SPI_CFG			SPI_WORD_SET(8)
 
-#define LIS2DH_BUS_DEV_NAME		CONFIG_LIS2DH_SPI_MASTER_DEV_NAME
-
-#elif defined(CONFIG_LIS2DH_BUS_I2C)
+#elif defined(DT_ST_LIS2DH_0_BUS_I2C)
 #include <i2c.h>
-
-#define LIS2DH_BUS_ADDRESS		CONFIG_LIS2DH_I2C_ADDR
-
-#define LIS2DH_BUS_DEV_NAME		CONFIG_LIS2DH_I2C_MASTER_DEV_NAME
-
+#else
+#error "define bus type (I2C/SPI)"
 #endif
 
 #define LIS2DH_AUTOINCREMENT_ADDR	BIT(7)
@@ -50,6 +46,7 @@
 					LIS2DH_ACCEL_Z_EN_BIT)
 #define LIS2DH_ACCEL_XYZ_MASK		BIT_MASK(3)
 
+#define LIS2DH_LP_EN_BIT_MASK		BIT(3)
 #if defined(CONFIG_LIS2DH_POWER_MODE_LOW)
 	#define LIS2DH_LP_EN_BIT	BIT(3)
 #elif defined(CONFIG_LIS2DH_POWER_MODE_NORMAL)
@@ -164,7 +161,7 @@
 #define LIS2DH_REG_INT2_DUR		0x37
 
 /* sample buffer size includes status register */
-#if defined(CONFIG_LIS2DH_BUS_SPI)
+#if defined(DT_ST_LIS2DH_0_BUS_SPI)
 #define LIS2DH_BUF_SZ			8
 #define LIS2DH_DATA_OFS			1
 #else
@@ -172,10 +169,22 @@
 #define LIS2DH_DATA_OFS			0
 #endif
 
+#if defined(DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_1)
+/* INT1 and INT2 are configured */
+#define DT_LIS2DH_INT1_GPIO_PIN		DT_ST_LIS2DH_0_IRQ_GPIOS_PIN_0
+#define DT_LIS2DH_INT1_GPIO_DEV_NAME	DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_0
+#define DT_LIS2DH_INT2_GPIO_PIN		DT_ST_LIS2DH_0_IRQ_GPIOS_PIN_1
+#define DT_LIS2DH_INT2_GPIO_DEV_NAME	DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER_1
+#else
+/* INT1 only */
+#define DT_LIS2DH_INT1_GPIO_PIN		DT_ST_LIS2DH_0_IRQ_GPIOS_PIN
+#define DT_LIS2DH_INT1_GPIO_DEV_NAME	DT_ST_LIS2DH_0_IRQ_GPIOS_CONTROLLER
+#endif
+
 union lis2dh_sample {
 	u8_t raw[LIS2DH_BUF_SZ];
 	struct {
-#if defined(CONFIG_LIS2DH_BUS_SPI)
+#if defined(DT_ST_LIS2DH_0_BUS_SPI)
 		u8_t dummy;
 #endif
 		u8_t status;
@@ -184,7 +193,7 @@ union lis2dh_sample {
 };
 
 struct lis2dh_data {
-#if defined(CONFIG_LIS2DH_BUS_SPI)
+#if defined(DT_ST_LIS2DH_0_BUS_SPI)
 	struct device *spi;
 	struct spi_config spi_cfg;
 #else
@@ -195,7 +204,8 @@ struct lis2dh_data {
 	u16_t scale;
 
 #ifdef CONFIG_LIS2DH_TRIGGER
-	struct device *gpio;
+	struct device *gpio_int1;
+	struct device *gpio_int2;
 	struct gpio_callback gpio_int1_cb;
 	struct gpio_callback gpio_int2_cb;
 
@@ -216,7 +226,7 @@ struct lis2dh_data {
 #endif /* CONFIG_LIS2DH_TRIGGER */
 };
 
-#if defined(CONFIG_LIS2DH_BUS_SPI)
+#if defined(DT_ST_LIS2DH_0_BUS_SPI)
 int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
 		      void *data, size_t length);
 #endif
@@ -225,7 +235,7 @@ static inline int lis2dh_bus_configure(struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 
-#if defined(CONFIG_LIS2DH_BUS_SPI)
+#if defined(DT_ST_LIS2DH_0_BUS_SPI)
 	lis2dh->spi = device_get_binding(LIS2DH_BUS_DEV_NAME);
 	if (lis2dh->spi == NULL) {
 		LOG_ERR("Could not get pointer to %s device",
@@ -234,11 +244,11 @@ static inline int lis2dh_bus_configure(struct device *dev)
 	}
 
 	lis2dh->spi_cfg.operation = LIS2DH_SPI_CFG;
-	lis2dh->spi_cfg.frequency = CONFIG_LIS2DH_SPI_FREQUENCY;
+	lis2dh->spi_cfg.frequency = DT_ST_LIS2DH_0_SPI_MAX_FREQUENCY;
 	lis2dh->spi_cfg.slave = LIS2DH_BUS_ADDRESS;
 
 	return 0;
-#elif defined(CONFIG_LIS2DH_BUS_I2C)
+#elif defined(DT_ST_LIS2DH_0_BUS_I2C)
 	lis2dh->bus = device_get_binding(LIS2DH_BUS_DEV_NAME);
 	if (lis2dh->bus == NULL) {
 		LOG_ERR("Could not get pointer to %s device",
@@ -257,11 +267,11 @@ static inline int lis2dh_burst_read(struct device *dev, u8_t start_addr,
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 
-#if defined(CONFIG_LIS2DH_BUS_SPI)
+#if defined(DT_ST_LIS2DH_0_BUS_SPI)
 	start_addr |= LIS2DH_SPI_READ_BIT | LIS2DH_SPI_AUTOINC_ADDR;
 
 	return lis2dh_spi_access(lis2dh, start_addr, buf, num_bytes);
-#elif defined(CONFIG_LIS2DH_BUS_I2C)
+#elif defined(DT_ST_LIS2DH_0_BUS_I2C)
 	return i2c_burst_read(lis2dh->bus, LIS2DH_BUS_ADDRESS,
 			      start_addr | LIS2DH_AUTOINCREMENT_ADDR,
 			      buf, num_bytes);
@@ -275,11 +285,11 @@ static inline int lis2dh_reg_read_byte(struct device *dev, u8_t reg_addr,
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 
-#if defined(CONFIG_LIS2DH_BUS_SPI)
+#if defined(DT_ST_LIS2DH_0_BUS_SPI)
 	reg_addr |= LIS2DH_SPI_READ_BIT;
 
 	return lis2dh_spi_access(lis2dh, reg_addr, value, 1);
-#elif defined(CONFIG_LIS2DH_BUS_I2C)
+#elif defined(DT_ST_LIS2DH_0_BUS_I2C)
 	return i2c_reg_read_byte(lis2dh->bus, LIS2DH_BUS_ADDRESS,
 				 reg_addr, value);
 #else
@@ -292,11 +302,11 @@ static inline int lis2dh_burst_write(struct device *dev, u8_t start_addr,
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 
-#if defined(CONFIG_LIS2DH_BUS_SPI)
+#if defined(DT_ST_LIS2DH_0_BUS_SPI)
 	start_addr |= LIS2DH_SPI_AUTOINC_ADDR;
 
 	return lis2dh_spi_access(lis2dh, start_addr, buf, num_bytes);
-#elif defined(CONFIG_LIS2DH_BUS_I2C)
+#elif defined(DT_ST_LIS2DH_0_BUS_I2C)
 	return i2c_burst_write(lis2dh->bus, LIS2DH_BUS_ADDRESS,
 			       start_addr | LIS2DH_AUTOINCREMENT_ADDR,
 			       buf, num_bytes);
@@ -310,11 +320,11 @@ static inline int lis2dh_reg_write_byte(struct device *dev, u8_t reg_addr,
 {
 	struct lis2dh_data *lis2dh = dev->driver_data;
 
-#if defined(CONFIG_LIS2DH_BUS_SPI)
+#if defined(DT_ST_LIS2DH_0_BUS_SPI)
 	reg_addr &= LIS2DH_SPI_ADDR_MASK;
 
 	return lis2dh_spi_access(lis2dh, reg_addr, &value, 1);
-#elif defined(CONFIG_LIS2DH_BUS_I2C)
+#elif defined(DT_ST_LIS2DH_0_BUS_I2C)
 	u8_t tx_buf[2] = {reg_addr, value};
 
 	return i2c_write(lis2dh->bus, tx_buf, sizeof(tx_buf),

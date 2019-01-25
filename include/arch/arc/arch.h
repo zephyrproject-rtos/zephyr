@@ -155,7 +155,6 @@ extern "C" {
 #endif /* CONFIG_USERSPACE */
 
 
-#ifdef CONFIG_USERSPACE
 #ifdef CONFIG_ARC_MPU
 #ifndef _ASMLANGUAGE
 #include <arch/arc/v2/mpu/arc_mpu.h>
@@ -217,11 +216,19 @@ extern "C" {
 		"start address of the partition must align with 32.")
 #endif
 #endif /* CONFIG_ARC_MPU*/
-#endif /* CONFIG_USERSPACE */
 
 #ifndef _ASMLANGUAGE
 /* Typedef for the k_mem_partition attribute*/
 typedef u32_t k_mem_partition_attr_t;
+
+/**
+ * @brief Explicitly nop operation.
+ */
+static ALWAYS_INLINE void arch_nop(void)
+{
+	__asm__ volatile("nop");
+}
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

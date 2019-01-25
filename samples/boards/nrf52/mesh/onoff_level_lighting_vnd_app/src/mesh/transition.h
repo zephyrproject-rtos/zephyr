@@ -8,9 +8,10 @@
 #ifndef _TRANSITION_H
 #define _TRANSITION_H
 
+#define UNKNOWN_VALUE 0x3F
 #define DEVICE_SPECIFIC_RESOLUTION 10
 
-enum transition_types {
+enum level_transition_types {
 	LEVEL_TT,
 	LEVEL_TT_DELTA,
 	LEVEL_TT_MOVE,
@@ -29,6 +30,8 @@ struct transition {
 	u32_t counter;
 	u32_t total_duration;
 	s64_t start_timestamp;
+
+	struct k_timer timer;
 };
 
 extern u8_t transition_type, default_tt;
@@ -37,23 +40,20 @@ extern struct k_timer *ptr_timer;
 
 extern struct transition lightness_transition, temp_transition;
 
-struct k_timer dummy_timer;
-struct k_timer onoff_transition_timer;
-extern struct k_timer level_lightness_transition_timer;
-extern struct k_timer level_temp_transition_timer;
-struct k_timer light_lightness_actual_transition_timer;
-struct k_timer light_lightness_linear_transition_timer;
-struct k_timer light_ctl_transition_timer;
-struct k_timer light_ctl_temp_transition_timer;
+extern struct k_timer dummy_timer;
 
 void calculate_rt(struct transition *transition);
 
-void onoff_tt_values(struct generic_onoff_state *state);
-void level_tt_values(struct generic_level_state *state);
-void light_lightness_actual_tt_values(struct light_lightness_state *state);
-void light_lightness_linear_tt_values(struct light_lightness_state *state);
-void light_ctl_tt_values(struct light_ctl_state *state);
-void light_ctl_temp_tt_values(struct light_ctl_state *state);
+
+void onoff_tt_values(struct generic_onoff_state *state, u8_t tt, u8_t delay);
+void level_tt_values(struct generic_level_state *state, u8_t tt, u8_t delay);
+void light_lightness_actual_tt_values(struct light_lightness_state *state,
+				      u8_t tt, u8_t delay);
+void light_lightness_linear_tt_values(struct light_lightness_state *state,
+				      u8_t tt, u8_t delay);
+void light_ctl_tt_values(struct light_ctl_state *state, u8_t tt, u8_t delay);
+void light_ctl_temp_tt_values(struct light_ctl_state *state,
+			      u8_t tt, u8_t delay);
 
 void onoff_handler(struct generic_onoff_state *state);
 void level_lightness_handler(struct generic_level_state *state);

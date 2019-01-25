@@ -77,10 +77,8 @@ struct uart_sifive_data {
  *
  * @param dev UART device struct
  * @param c Character to send
- *
- * @return Sent character
  */
-static unsigned char uart_sifive_poll_out(struct device *dev,
+static void uart_sifive_poll_out(struct device *dev,
 					 unsigned char c)
 {
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
@@ -90,8 +88,6 @@ static unsigned char uart_sifive_poll_out(struct device *dev,
 		;
 
 	uart->tx = (int)c;
-
-	return c;
 }
 
 /**
@@ -344,7 +340,7 @@ static int uart_sifive_init(struct device *dev)
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Ensure that uart IRQ is disabled initially */
-	uart->ie = 0;
+	uart->ie = 0U;
 
 	/* Setup IRQ handler */
 	cfg->cfg_func();
@@ -384,9 +380,9 @@ static void uart_sifive_irq_cfg_func_0(void);
 #endif
 
 static const struct uart_sifive_device_config uart_sifive_dev_cfg_0 = {
-	.port         = CONFIG_SIFIVE_UART_0_BASE_ADDR,
-	.sys_clk_freq = CONFIG_SIFIVE_UART_0_CLK_FREQ,
-	.baud_rate    = CONFIG_SIFIVE_UART_0_CURRENT_SPEED,
+	.port         = DT_SIFIVE_UART_0_BASE_ADDR,
+	.sys_clk_freq = DT_SIFIVE_UART_0_CLK_FREQ,
+	.baud_rate    = DT_SIFIVE_UART_0_CURRENT_SPEED,
 	.rxcnt_irq    = CONFIG_UART_SIFIVE_PORT_0_RXCNT_IRQ,
 	.txcnt_irq    = CONFIG_UART_SIFIVE_PORT_0_TXCNT_IRQ,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -394,7 +390,7 @@ static const struct uart_sifive_device_config uart_sifive_dev_cfg_0 = {
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_sifive_0, CONFIG_SIFIVE_UART_0_LABEL,
+DEVICE_AND_API_INIT(uart_sifive_0, DT_SIFIVE_UART_0_LABEL,
 		    uart_sifive_init,
 		    &uart_sifive_data_0, &uart_sifive_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -403,12 +399,12 @@ DEVICE_AND_API_INIT(uart_sifive_0, CONFIG_SIFIVE_UART_0_LABEL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_sifive_irq_cfg_func_0(void)
 {
-	IRQ_CONNECT(CONFIG_SIFIVE_UART_0_IRQ_0,
+	IRQ_CONNECT(DT_SIFIVE_UART_0_IRQ_0,
 		    CONFIG_UART_SIFIVE_PORT_0_IRQ_PRIORITY,
 		    uart_sifive_irq_handler, DEVICE_GET(uart_sifive_0),
 		    0);
 
-	irq_enable(CONFIG_SIFIVE_UART_0_IRQ_0);
+	irq_enable(DT_SIFIVE_UART_0_IRQ_0);
 }
 #endif
 
@@ -423,9 +419,9 @@ static void uart_sifive_irq_cfg_func_1(void);
 #endif
 
 static const struct uart_sifive_device_config uart_sifive_dev_cfg_1 = {
-	.port         = CONFIG_SIFIVE_UART_1_BASE_ADDR,
-	.sys_clk_freq = CONFIG_SIFIVE_UART_1_CLK_FREQ,
-	.baud_rate    = CONFIG_SIFIVE_UART_1_CURRENT_SPEED,
+	.port         = DT_SIFIVE_UART_1_BASE_ADDR,
+	.sys_clk_freq = DT_SIFIVE_UART_1_CLK_FREQ,
+	.baud_rate    = DT_SIFIVE_UART_1_CURRENT_SPEED,
 	.rxcnt_irq    = CONFIG_UART_SIFIVE_PORT_1_RXCNT_IRQ,
 	.txcnt_irq    = CONFIG_UART_SIFIVE_PORT_1_TXCNT_IRQ,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -442,12 +438,12 @@ DEVICE_AND_API_INIT(uart_sifive_1, CONFIG_SIFIVE_UART_1_LABEL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_sifive_irq_cfg_func_1(void)
 {
-	IRQ_CONNECT(CONFIG_SIFIVE_UART_1_IRQ_0,
+	IRQ_CONNECT(DT_SIFIVE_UART_1_IRQ_0,
 		    CONFIG_UART_SIFIVE_PORT_1_IRQ_PRIORITY,
 		    uart_sifive_irq_handler, DEVICE_GET(uart_sifive_1),
 		    0);
 
-	irq_enable(CONFIG_SIFIVE_UART_1_IRQ_0);
+	irq_enable(DT_SIFIVE_UART_1_IRQ_0);
 }
 #endif
 

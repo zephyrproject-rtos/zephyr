@@ -12,6 +12,8 @@
 #include "lsm6dsl.h"
 #include <logging/log.h>
 
+#ifdef DT_ST_LSM6DSL_BUS_SPI
+
 #define LSM6DSL_SPI_READ		(1 << 7)
 
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
@@ -24,10 +26,10 @@ static struct spi_cs_control lsm6dsl_cs_ctrl;
 #define SPI_CS NULL
 
 static struct spi_config lsm6dsl_spi_conf = {
-	.frequency = CONFIG_LSM6DSL_SPI_BUS_FREQ,
+	.frequency = DT_LSM6DSL_SPI_BUS_FREQ,
 	.operation = (SPI_OP_MODE_MASTER | SPI_MODE_CPOL |
 		      SPI_MODE_CPHA | SPI_WORD_SET(8) | SPI_LINES_SINGLE),
-	.slave     = CONFIG_LSM6DSL_SPI_SELECT_SLAVE,
+	.slave     = DT_LSM6DSL_SPI_SELECT_SLAVE,
 	.cs        = SPI_CS,
 };
 
@@ -168,3 +170,4 @@ int lsm6dsl_spi_init(struct device *dev)
 
 	return 0;
 }
+#endif /* DT_ST_LSM6DSL_BUS_SPI */

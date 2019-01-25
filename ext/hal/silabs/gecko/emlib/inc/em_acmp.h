@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_acmp.h
  * @brief Analog Comparator (ACMP) peripheral API
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -34,6 +34,8 @@
 #define EM_ACMP_H
 
 #include "em_device.h"
+#include "em_gpio.h"
+
 #if defined(ACMP_COUNT) && (ACMP_COUNT > 0)
 
 #include <stdint.h>
@@ -53,18 +55,18 @@ extern "C" {
  * @brief Analog comparator (ACMP) Peripheral API
  *
  * @details
- *  The Analog Comparator is used to compare the voltage of two analog inputs,
+ *  The Analog Comparator is used to compare voltage of two analog inputs
  *  with a digital output indicating which input voltage is higher. Inputs can
  *  either be one of the selectable internal references or from external pins.
- *  Response time and thereby also the current consumption can be configured by
+ *  Response time and current consumption can be configured by
  *  altering the current supply to the comparator.
  *
- *  The ACMP is available down to EM3 and is able to wakeup the system when
+ *  ACMP is available to EM3 and is able to wake up the system when
  *  input signals pass a certain threshold. Use @ref ACMP_IntEnable to enable
  *  an edge interrupt to use this functionality.
  *
- *  Here is an example of how to use the em_acmp.h API for comparing an input
- *  pin to an internal 2.5V reference voltage.
+ *  This example shows how to use the em_acmp.h API for comparing an input
+ *  pin to an internal 2.5 V reference voltage.
  *
  *  @if DOXYDOC_P1_DEVICE
  *  @include em_acmp_compare_p1.c
@@ -75,16 +77,16 @@ extern "C" {
  *  @endif
  *
  * @note
- *  The ACMP can also be used to compare two separate input pins.
+ *  ACMP can also be used to compare two separate input pins.
  *
  * @details
- *  The ACMP also contains specialized hardware for capacitive sensing. This
- *  module contains the function @ref ACMP_CapsenseInit for initializing the
- *  ACMP for capacitive sensing and the function @ref ACMP_CapsenseChannelSet
- *  for selecting the current capsense channel.
+ *  ACMP also contains specialized hardware for capacitive sensing. This
+ *  module contains the @ref ACMP_CapsenseInit function to initialize
+ *  ACMP for capacitive sensing and the @ref ACMP_CapsenseChannelSet function
+ *  to select the current capsense channel.
  *
  *  For applications that require capacitive sensing it is recommended to use a
- *  library like cslib which is provided by Silicon Labs.
+ *  library, such as cslib, which is provided by Silicon Labs.
  *
  * @{
  ******************************************************************************/
@@ -93,10 +95,18 @@ extern "C" {
  ********************************   ENUMS   ************************************
  ******************************************************************************/
 
-/** Resistor values used for the internal capacative sense resistor. See the
- *  datasheet for your device for details on each resistor value. */
-typedef enum
-{
+/** Resistor values used for the internal capacative sense resistor. See
+ *  data sheet for your device for details on each resistor value. */
+typedef enum {
+#if defined(_ACMP_INPUTCTRL_CSRESSEL_MASK)
+  acmpResistor0 = _ACMP_INPUTCTRL_CSRESSEL_RES0,   /**< Resistor value 0 */
+  acmpResistor1 = _ACMP_INPUTCTRL_CSRESSEL_RES1,   /**< Resistor value 1 */
+  acmpResistor2 = _ACMP_INPUTCTRL_CSRESSEL_RES2,   /**< Resistor value 2 */
+  acmpResistor3 = _ACMP_INPUTCTRL_CSRESSEL_RES3,   /**< Resistor value 3 */
+  acmpResistor4 = _ACMP_INPUTCTRL_CSRESSEL_RES4,   /**< Resistor value 4 */
+  acmpResistor5 = _ACMP_INPUTCTRL_CSRESSEL_RES5,   /**< Resistor value 5 */
+  acmpResistor6 = _ACMP_INPUTCTRL_CSRESSEL_RES6,   /**< Resistor value 6 */
+#else
   acmpResistor0 = _ACMP_INPUTSEL_CSRESSEL_RES0,   /**< Resistor value 0 */
   acmpResistor1 = _ACMP_INPUTSEL_CSRESSEL_RES1,   /**< Resistor value 1 */
   acmpResistor2 = _ACMP_INPUTSEL_CSRESSEL_RES2,   /**< Resistor value 2 */
@@ -107,12 +117,12 @@ typedef enum
   acmpResistor6 = _ACMP_INPUTSEL_CSRESSEL_RES6,   /**< Resistor value 6 */
   acmpResistor7 = _ACMP_INPUTSEL_CSRESSEL_RES7,   /**< Resistor value 7 */
 #endif
+#endif
 } ACMP_CapsenseResistor_TypeDef;
 
-/** Hysteresis level. See datasheet for your device for details on each
+/** Hysteresis level. See data sheet for your device for details on each
  *  level. */
-typedef enum
-{
+typedef enum {
 #if defined(_ACMP_CTRL_HYSTSEL_MASK)
   acmpHysteresisLevel0 = _ACMP_CTRL_HYSTSEL_HYST0,       /**< Hysteresis level 0 */
   acmpHysteresisLevel1 = _ACMP_CTRL_HYSTSEL_HYST1,       /**< Hysteresis level 1 */
@@ -141,13 +151,24 @@ typedef enum
   acmpHysteresisLevel14 = _ACMP_HYSTERESIS0_HYST_HYST14, /**< Hysteresis level 14 */
   acmpHysteresisLevel15 = _ACMP_HYSTERESIS0_HYST_HYST15, /**< Hysteresis level 15 */
 #endif
+#if defined(_ACMP_CFG_HYST_MASK)
+  acmpHysteresisDisabled = _ACMP_CFG_HYST_DISABLED,   /**< Mode DISABLED for ACMP_CFG */
+  acmpHysteresis10Sym = _ACMP_CFG_HYST_HYST10SYM,     /**< Mode HYST10SYM for ACMP_CFG */
+  acmpHysteresis20Sym = _ACMP_CFG_HYST_HYST20SYM,     /**< Mode HYST20SYM for ACMP_CFG */
+  acmpHysteresis30Sym = _ACMP_CFG_HYST_HYST30SYM,     /**< Mode HYST30SYM for ACMP_CFG */
+  acmpHysteresis10Pos = _ACMP_CFG_HYST_HYST10POS,     /**< Mode HYST10POS for ACMP_CFG */
+  acmpHysteresis20Pos = _ACMP_CFG_HYST_HYST20POS,     /**< Mode HYST20POS for ACMP_CFG */
+  acmpHysteresis30Pos = _ACMP_CFG_HYST_HYST30POS,     /**< Mode HYST30POS for ACMP_CFG */
+  acmpHysteresis10Neg = _ACMP_CFG_HYST_HYST10NEG,     /**< Mode HYST10NEG for ACMP_CFG */
+  acmpHysteresis20Neg = _ACMP_CFG_HYST_HYST20NEG,     /**< Mode HYST20NEG for ACMP_CFG */
+  acmpHysteresis30Neg = _ACMP_CFG_HYST_HYST30NEG,     /**< Mode HYST30NEG for ACMP_CFG */
+#endif
 } ACMP_HysteresisLevel_TypeDef;
 
 #if defined(_ACMP_CTRL_WARMTIME_MASK)
 /** ACMP warmup time. The delay is measured in HFPERCLK cycles and should
  *  be at least 10 us. */
-typedef enum
-{
+typedef enum {
   /** 4 HFPERCLK cycles warmup */
   acmpWarmTime4   = _ACMP_CTRL_WARMTIME_4CYCLES,
   /** 8 HFPERCLK cycles warmup */
@@ -167,15 +188,20 @@ typedef enum
 } ACMP_WarmTime_TypeDef;
 #endif
 
-#if defined(_ACMP_CTRL_INPUTRANGE_MASK)
+#if defined(_ACMP_CTRL_INPUTRANGE_MASK) \
+  || defined(_ACMP_CFG_INPUTRANGE_MASK)
 /**
- * Adjust performance of the ACMP for a given input voltage range
+ * Adjust ACMP performance for a given input voltage range.
  */
-typedef enum
-{
-  acmpInputRangeFull = _ACMP_CTRL_INPUTRANGE_FULL,      /**< Input can be from 0 to Vdd */
-  acmpInputRangeHigh = _ACMP_CTRL_INPUTRANGE_GTVDDDIV2, /**< Input will always be greater than Vdd/2 */
-  acmpInputRangeLow  = _ACMP_CTRL_INPUTRANGE_LTVDDDIV2  /**< Input will always be less than Vdd/2 */
+typedef enum {
+#if defined(_ACMP_CTRL_INPUTRANGE_MASK)
+  acmpInputRangeFull = _ACMP_CTRL_INPUTRANGE_FULL,      /**< Input can be from 0 to VDD. */
+  acmpInputRangeHigh = _ACMP_CTRL_INPUTRANGE_GTVDDDIV2, /**< Input will always be greater than VDD/2. */
+  acmpInputRangeLow  = _ACMP_CTRL_INPUTRANGE_LTVDDDIV2  /**< Input will always be less than VDD/2. */
+#elif defined(_ACMP_CFG_INPUTRANGE_MASK)
+  acmpInputRangeFull    = _ACMP_CFG_INPUTRANGE_FULL,    /**< Input can be from 0 to VDD. */
+  acmpInputRangeReduced = _ACMP_CFG_INPUTRANGE_REDUCED, /**< Input can be from 0 to VDD-0.7 V. */
+#endif
 } ACMP_InputRange_TypeDef;
 #endif
 
@@ -183,31 +209,36 @@ typedef enum
 /**
  * ACMP Power source.
  */
-typedef enum
-{
-  acmpPowerSourceAvdd    = _ACMP_CTRL_PWRSEL_AVDD,    /**< Power the ACMP using the AVDD supply */
-  acmpPowerSourceVddVreg = _ACMP_CTRL_PWRSEL_VREGVDD, /**< Power the ACMP using the VREGVDD supply */
-  acmpPowerSourceIOVdd0  = _ACMP_CTRL_PWRSEL_IOVDD0,  /**< Power the ACMP using the IOVDD/IOVDD0 supply */
-  acmpPowerSourceIOVdd1  = _ACMP_CTRL_PWRSEL_IOVDD1,  /**< Power the ACMP using the IOVDD1 supply (if part has two I/O voltages) */
+typedef enum {
+  acmpPowerSourceAvdd      = _ACMP_CTRL_PWRSEL_AVDD,    /**< Power ACMP using the AVDD supply. */
+#if defined(_ACMP_CTRL_PWRSEL_DVDD)
+  acmpPowerSourceDvdd      = _ACMP_CTRL_PWRSEL_DVDD,    /**< Power ACMP using the DVDD supply. */
+#endif
+  acmpPowerSourceIOVdd0    = _ACMP_CTRL_PWRSEL_IOVDD0,  /**< Power ACMP using the IOVDD/IOVDD0 supply. */
+  acmpPowerSourceIOVdd1    = _ACMP_CTRL_PWRSEL_IOVDD1,  /**< Power ACMP using the IOVDD1 supply (if the part has two I/O voltages). */
 } ACMP_PowerSource_TypeDef;
 #endif
 
-#if defined(_ACMP_CTRL_ACCURACY_MASK)
+#if defined(_ACMP_CTRL_ACCURACY_MASK) \
+  || defined(_ACMP_CFG_ACCURACY_MASK)
 /**
  * ACMP accuracy mode.
  */
-typedef enum
-{
-  acmpAccuracyLow = _ACMP_CTRL_ACCURACY_LOW,   /**< Low-accuracy mode but consume less current */
-  acmpAccuracyHigh = _ACMP_CTRL_ACCURACY_HIGH  /**< High-accuracy mode but consume more current */
+typedef enum {
+#if defined(_ACMP_CTRL_ACCURACY_MASK)
+  acmpAccuracyLow = _ACMP_CTRL_ACCURACY_LOW,   /**< Low-accuracy mode which consumes less current. */
+  acmpAccuracyHigh = _ACMP_CTRL_ACCURACY_HIGH  /**< High-accuracy mode which consumes more current. */
+#elif defined(_ACMP_CFG_ACCURACY_MASK)
+  acmpAccuracyLow = _ACMP_CFG_ACCURACY_LOW,   /**< Low-accuracy mode which consumes less current. */
+  acmpAccuracyHigh = _ACMP_CFG_ACCURACY_HIGH  /**< High-accuracy mode which consumes more current. */
+#endif
 } ACMP_Accuracy_TypeDef;
 #endif
 
 #if defined(_ACMP_INPUTSEL_VASEL_MASK)
-/** ACMP Input to the VA divider. This enum is used to select the input for
- *  the VA Divider */
-typedef enum
-{
+/** ACMP input to the VA divider. This enumeration is used to select the input for
+ *  the VA Divider. */
+typedef enum {
   acmpVAInputVDD       = _ACMP_INPUTSEL_VASEL_VDD,
   acmpVAInputAPORT2YCH0  = _ACMP_INPUTSEL_VASEL_APORT2YCH0,
   acmpVAInputAPORT2YCH2  = _ACMP_INPUTSEL_VASEL_APORT2YCH2,
@@ -262,11 +293,10 @@ typedef enum
 
 #if defined(_ACMP_INPUTSEL_VBSEL_MASK)
 /**
- * ACMP Input to the VB divider. This enum is used to select the input for
+ * ACMP input to the VB divider. This enumeration is used to select the input for
  * the VB divider.
  */
-typedef enum
-{
+typedef enum {
   acmpVBInput1V25 = _ACMP_INPUTSEL_VBSEL_1V25,
   acmpVBInput2V5  = _ACMP_INPUTSEL_VBSEL_2V5
 } ACMP_VBInput_TypeDef;
@@ -276,17 +306,95 @@ typedef enum
 /**
  * ACMP Low-Power Input Selection.
  */
-typedef enum
-{
+typedef enum {
   acmpVLPInputVADIV = _ACMP_INPUTSEL_VLPSEL_VADIV,
   acmpVLPInputVBDIV = _ACMP_INPUTSEL_VLPSEL_VBDIV
 } ACMP_VLPInput_Typedef;
 #endif
 
-#if defined(_ACMP_INPUTSEL_POSSEL_APORT0XCH0)
-/** ACMP Input Selection */
-typedef enum
-{
+#if defined(_ACMP_INPUTCTRL_MASK)
+/** ACMP Input Selection. */
+typedef enum {
+  acmpInputVSS            = _ACMP_INPUTCTRL_POSSEL_VSS,
+  acmpInputVREFDIVAVDD    = _ACMP_INPUTCTRL_POSSEL_VREFDIVAVDD,
+  acmpInputVREFDIVAVDDLP  = _ACMP_INPUTCTRL_POSSEL_VREFDIVAVDDLP,
+  acmpInputVREFDIV1V25    = _ACMP_INPUTCTRL_POSSEL_VREFDIV1V25,
+  acmpInputVREFDIV1V25LP  = _ACMP_INPUTCTRL_POSSEL_VREFDIV1V25LP,
+  acmpInputVREFDIV2V5     = _ACMP_INPUTCTRL_POSSEL_VREFDIV2V5,
+  acmpInputVREFDIV2V5LP   = _ACMP_INPUTCTRL_POSSEL_VREFDIV2V5LP,
+  acmpInputVSENSE01DIV4   = _ACMP_INPUTCTRL_POSSEL_VSENSE01DIV4,
+  acmpInputVSENSE01DIV4LP = _ACMP_INPUTCTRL_POSSEL_VSENSE01DIV4LP,
+  acmpInputVSENSE11DIV4   = _ACMP_INPUTCTRL_POSSEL_VSENSE11DIV4,
+  acmpInputVSENSE11DIV4LP = _ACMP_INPUTCTRL_POSSEL_VSENSE11DIV4LP,
+  acmpInputCAPSENSE       = _ACMP_INPUTCTRL_NEGSEL_CAPSENSE,
+  acmpInputPA0            = _ACMP_INPUTCTRL_POSSEL_PA0,
+  acmpInputPA1            = _ACMP_INPUTCTRL_POSSEL_PA1,
+  acmpInputPA2            = _ACMP_INPUTCTRL_POSSEL_PA2,
+  acmpInputPA3            = _ACMP_INPUTCTRL_POSSEL_PA3,
+  acmpInputPA4            = _ACMP_INPUTCTRL_POSSEL_PA4,
+  acmpInputPA5            = _ACMP_INPUTCTRL_POSSEL_PA5,
+  acmpInputPA6            = _ACMP_INPUTCTRL_POSSEL_PA6,
+  acmpInputPA7            = _ACMP_INPUTCTRL_POSSEL_PA7,
+  acmpInputPA8            = _ACMP_INPUTCTRL_POSSEL_PA8,
+  acmpInputPA9            = _ACMP_INPUTCTRL_POSSEL_PA9,
+  acmpInputPA10           = _ACMP_INPUTCTRL_POSSEL_PA10,
+  acmpInputPA11           = _ACMP_INPUTCTRL_POSSEL_PA11,
+  acmpInputPA12           = _ACMP_INPUTCTRL_POSSEL_PA12,
+  acmpInputPA13           = _ACMP_INPUTCTRL_POSSEL_PA13,
+  acmpInputPA14           = _ACMP_INPUTCTRL_POSSEL_PA14,
+  acmpInputPA15           = _ACMP_INPUTCTRL_POSSEL_PA15,
+  acmpInputPB0            = _ACMP_INPUTCTRL_POSSEL_PB0,
+  acmpInputPB1            = _ACMP_INPUTCTRL_POSSEL_PB1,
+  acmpInputPB2            = _ACMP_INPUTCTRL_POSSEL_PB2,
+  acmpInputPB3            = _ACMP_INPUTCTRL_POSSEL_PB3,
+  acmpInputPB4            = _ACMP_INPUTCTRL_POSSEL_PB4,
+  acmpInputPB5            = _ACMP_INPUTCTRL_POSSEL_PB5,
+  acmpInputPB6            = _ACMP_INPUTCTRL_POSSEL_PB6,
+  acmpInputPB7            = _ACMP_INPUTCTRL_POSSEL_PB7,
+  acmpInputPB8            = _ACMP_INPUTCTRL_POSSEL_PB8,
+  acmpInputPB9            = _ACMP_INPUTCTRL_POSSEL_PB9,
+  acmpInputPB10           = _ACMP_INPUTCTRL_POSSEL_PB10,
+  acmpInputPB11           = _ACMP_INPUTCTRL_POSSEL_PB11,
+  acmpInputPB12           = _ACMP_INPUTCTRL_POSSEL_PB12,
+  acmpInputPB13           = _ACMP_INPUTCTRL_POSSEL_PB13,
+  acmpInputPB14           = _ACMP_INPUTCTRL_POSSEL_PB14,
+  acmpInputPB15           = _ACMP_INPUTCTRL_POSSEL_PB15,
+  acmpInputPC0            = _ACMP_INPUTCTRL_POSSEL_PC0,
+  acmpInputPC1            = _ACMP_INPUTCTRL_POSSEL_PC1,
+  acmpInputPC2            = _ACMP_INPUTCTRL_POSSEL_PC2,
+  acmpInputPC3            = _ACMP_INPUTCTRL_POSSEL_PC3,
+  acmpInputPC4            = _ACMP_INPUTCTRL_POSSEL_PC4,
+  acmpInputPC5            = _ACMP_INPUTCTRL_POSSEL_PC5,
+  acmpInputPC6            = _ACMP_INPUTCTRL_POSSEL_PC6,
+  acmpInputPC7            = _ACMP_INPUTCTRL_POSSEL_PC7,
+  acmpInputPC8            = _ACMP_INPUTCTRL_POSSEL_PC8,
+  acmpInputPC9            = _ACMP_INPUTCTRL_POSSEL_PC9,
+  acmpInputPC10           = _ACMP_INPUTCTRL_POSSEL_PC10,
+  acmpInputPC11           = _ACMP_INPUTCTRL_POSSEL_PC11,
+  acmpInputPC12           = _ACMP_INPUTCTRL_POSSEL_PC12,
+  acmpInputPC13           = _ACMP_INPUTCTRL_POSSEL_PC13,
+  acmpInputPC14           = _ACMP_INPUTCTRL_POSSEL_PC14,
+  acmpInputPC15           = _ACMP_INPUTCTRL_POSSEL_PC15,
+  acmpInputPD0            = _ACMP_INPUTCTRL_POSSEL_PD0,
+  acmpInputPD1            = _ACMP_INPUTCTRL_POSSEL_PD1,
+  acmpInputPD2            = _ACMP_INPUTCTRL_POSSEL_PD2,
+  acmpInputPD3            = _ACMP_INPUTCTRL_POSSEL_PD3,
+  acmpInputPD4            = _ACMP_INPUTCTRL_POSSEL_PD4,
+  acmpInputPD5            = _ACMP_INPUTCTRL_POSSEL_PD5,
+  acmpInputPD6            = _ACMP_INPUTCTRL_POSSEL_PD6,
+  acmpInputPD7            = _ACMP_INPUTCTRL_POSSEL_PD7,
+  acmpInputPD8            = _ACMP_INPUTCTRL_POSSEL_PD8,
+  acmpInputPD9            = _ACMP_INPUTCTRL_POSSEL_PD9,
+  acmpInputPD10           = _ACMP_INPUTCTRL_POSSEL_PD10,
+  acmpInputPD11           = _ACMP_INPUTCTRL_POSSEL_PD11,
+  acmpInputPD12           = _ACMP_INPUTCTRL_POSSEL_PD12,
+  acmpInputPD13           = _ACMP_INPUTCTRL_POSSEL_PD13,
+  acmpInputPD14           = _ACMP_INPUTCTRL_POSSEL_PD14,
+  acmpInputPD15           = _ACMP_INPUTCTRL_POSSEL_PD15,
+} ACMP_Channel_TypeDef;
+#elif defined(_ACMP_INPUTSEL_POSSEL_APORT0XCH0)
+/** ACMP Input Selection. */
+typedef enum {
   acmpInputAPORT0XCH0  = _ACMP_INPUTSEL_POSSEL_APORT0XCH0,
   acmpInputAPORT0XCH1  = _ACMP_INPUTSEL_POSSEL_APORT0XCH1,
   acmpInputAPORT0XCH2  = _ACMP_INPUTSEL_POSSEL_APORT0XCH2,
@@ -462,8 +570,7 @@ typedef enum
 #else
 /** ACMP inputs. Note that scaled VDD and bandgap references can only be used
  *  as negative inputs. */
-typedef enum
-{
+typedef enum {
   /** Channel 0 */
   acmpChannel0    = _ACMP_INPUTSEL_NEGSEL_CH0,
   /** Channel 1 */
@@ -480,9 +587,9 @@ typedef enum
   acmpChannel6    = _ACMP_INPUTSEL_NEGSEL_CH6,
   /** Channel 7 */
   acmpChannel7    = _ACMP_INPUTSEL_NEGSEL_CH7,
-  /** 1.25V internal reference */
+  /** 1.25 V internal reference */
   acmpChannel1V25 = _ACMP_INPUTSEL_NEGSEL_1V25,
-  /** 2.5V internal reference */
+  /** 2.5 V internal reference */
   acmpChannel2V5  = _ACMP_INPUTSEL_NEGSEL_2V5,
   /** Scaled VDD reference */
   acmpChannelVDD  = _ACMP_INPUTSEL_NEGSEL_VDD,
@@ -506,12 +613,11 @@ typedef enum
 
 #if defined(_ACMP_EXTIFCTRL_MASK)
 /**
- * ACMP External input select. This type is used to select which APORT that is
- * used by an external module like LESENSE when it's taking control over
+ * ACMP external input select. This type is used to select which APORT is
+ * used by an external module, such as LESENSE, when it's taking control over
  * the ACMP input.
  */
-typedef enum
-{
+typedef enum {
   acmpExternalInputAPORT0X  = _ACMP_EXTIFCTRL_APORTSEL_APORT0X,
   acmpExternalInputAPORT0Y  = _ACMP_EXTIFCTRL_APORTSEL_APORT0Y,
   acmpExternalInputAPORT1X  = _ACMP_EXTIFCTRL_APORTSEL_APORT1X,
@@ -534,14 +640,15 @@ typedef enum
  ******************************************************************************/
 
 /** Capsense initialization structure. */
-typedef struct
-{
-  /** Full bias current. See the ACMP chapter about bias and response time in
+typedef struct {
+#if defined(_ACMP_CTRL_FULLBIAS_MASK)
+  /** Full-bias current. See the ACMP chapter about bias and response time in
    *  the reference manual for details. */
   bool                          fullBias;
+#endif
 
 #if defined(_ACMP_CTRL_HALFBIAS_MASK)
-  /** Half bias current. See the ACMP chapter about bias and response time in
+  /** Half-bias current. See the ACMP chapter about bias and response time in
    *  the reference manual for details. */
   bool                          halfBias;
 #endif
@@ -551,43 +658,48 @@ typedef struct
   uint32_t                      biasProg;
 
 #if defined(_ACMP_CTRL_WARMTIME_MASK)
-  /** Warmup time. This is measured in HFPERCLK cycles and should be
-   *  about 10us in wall clock time. */
+  /** Warmup time, which is measured in HFPERCLK cycles and should be
+   *  about 10 us in wall clock time. */
   ACMP_WarmTime_TypeDef         warmTime;
 #endif
 
-#if defined(_ACMP_CTRL_HYSTSEL_MASK)
-  /** Hysteresis level */
+#if defined(_ACMP_CTRL_HYSTSEL_MASK) \
+  ||  defined(_ACMP_CFG_HYST_MASK)
+  /** Hysteresis level. */
   ACMP_HysteresisLevel_TypeDef  hysteresisLevel;
 #else
-  /** Hysteresis level when ACMP output is 0 */
+  /** Hysteresis level when ACMP output is 0. */
   ACMP_HysteresisLevel_TypeDef  hysteresisLevel_0;
 
-  /** Hysteresis level when ACMP output is 1 */
+  /** Hysteresis level when ACMP output is 1. */
   ACMP_HysteresisLevel_TypeDef  hysteresisLevel_1;
 #endif
 
-  /** Resistor used in the capacative sensing circuit. For values see
-   *  your device datasheet. */
+  /** A resistor used in the capacative sensing circuit. For values see
+   *  the device data sheet. */
   ACMP_CapsenseResistor_TypeDef resistor;
 
 #if defined(_ACMP_INPUTSEL_LPREF_MASK)
-  /** Low power reference enabled. This setting, if enabled, reduces the
-   *  power used by the VDD and bandgap references. */
+  /** Low-power reference enabled. This setting, if enabled, reduces the
+   *  power used by VDD and bandgap references. */
   bool                          lowPowerReferenceEnabled;
 #endif
 
-#if defined(_ACMP_INPUTSEL_VDDLEVEL_MASK)
-  /** Vdd reference value. VDD_SCALED = (Vdd * VDDLEVEL) / 63.
-   *  Valid values are in the range 0-63. */
+#if defined(_ACMP_INPUTCTRL_VREFDIV_MASK)
+  /** VDD division factor. VREFOUT = VREFIN * (VREFDIV / 63).
+   *  Valid values are in the 0-63 range. */
+  uint32_t                      vrefDiv;
+#elif defined(_ACMP_INPUTSEL_VDDLEVEL_MASK)
+  /** VDD reference value. VDD_SCALED = (VDD * VDDLEVEL) / 63.
+   *  Valid values are in the 0-63 range. */
   uint32_t                      vddLevel;
 #else
   /**
    * This value configures the upper voltage threshold of the capsense
    * oscillation rail.
    *
-   * The voltage threshold is calculated as
-   *   Vdd * (vddLevelHigh + 1) / 64
+   * The voltage threshold is calculated as follows:
+   *   VDD * (vddLevelHigh + 1) / 64
    */
   uint32_t                      vddLevelHigh;
 
@@ -595,65 +707,75 @@ typedef struct
    * This value configures the lower voltage threshold of the capsense
    * oscillation rail.
    *
-   * The voltage threshold is calculated as
-   *   Vdd * (vddLevelLow + 1) / 64
+   * The voltage threshold is calculated as follows:
+   *   VDD * (vddLevelLow + 1) / 64
    */
   uint32_t                      vddLevelLow;
 #endif
 
-  /** If true, ACMP is being enabled after configuration. */
+  /** If true, ACMP is enabled after configuration. */
   bool                          enable;
 } ACMP_CapsenseInit_TypeDef;
 
-/** Default config for capacitive sense mode initialization. */
-#if defined(_ACMP_HYSTERESIS0_HYST_MASK)
+/** A default configuration for capacitive sense mode initialization. */
+#if defined(_ACMP_CFG_MASK)
 #define ACMP_CAPSENSE_INIT_DEFAULT                                          \
-{                                                                           \
-  false,                /* Don't use fullBias to lower power consumption */ \
-  0x20,                 /* Using biasProg value of 0x20 (32) */             \
-  acmpHysteresisLevel8, /* Use hysteresis level 8 when ACMP output is 0 */  \
-  acmpHysteresisLevel8, /* Use hysteresis level 8 when ACMP output is 1 */  \
-  acmpResistor5,        /* Use internal resistor value 5 */                 \
-  0x30,                 /* VDD level high */                                \
-  0x10,                 /* VDD level low */                                 \
-  true                  /* Enable after init. */                            \
-}
+  {                                                                         \
+    0x2,                    /* Using biasProg value of 0x2. */              \
+    acmpHysteresisDisabled, /* Disable hysteresis. */                       \
+    acmpResistor5,          /* Use internal resistor value 5. */            \
+    0x3F,                   /* Set VREFDIV to maximum to disable divide. */ \
+    true                    /* Enable after init. */                        \
+  }
+#elif defined(_ACMP_HYSTERESIS0_HYST_MASK)
+#define ACMP_CAPSENSE_INIT_DEFAULT                                            \
+  {                                                                           \
+    false,              /* Don't use fullBias to lower power consumption. */  \
+    0x20,               /* Using biasProg value of 0x20 (32). */              \
+    acmpHysteresisLevel8, /* Use hysteresis level 8 when ACMP output is 0. */ \
+    acmpHysteresisLevel8, /* Use hysteresis level 8 when ACMP output is 1. */ \
+    acmpResistor5,      /* Use internal resistor value 5. */                  \
+    0x30,               /* VDD level high. */                                 \
+    0x10,               /* VDD level low. */                                  \
+    true                /* Enable after initialization. */                    \
+  }
 #elif defined(_ACMP_CTRL_WARMTIME_MASK)
 #define ACMP_CAPSENSE_INIT_DEFAULT                      \
-{                                                       \
-  false,              /* fullBias */                    \
-  false,              /* halfBias */                    \
-  0x7,                /* biasProg */                    \
-  acmpWarmTime512,    /* 512 cycle warmup to be safe */ \
-  acmpHysteresisLevel5,                                 \
-  acmpResistor3,                                        \
-  false,              /* low power reference */         \
-  0x3D,               /* VDD level */                   \
-  true                /* Enable after init. */          \
-}
+  {                                                     \
+    false,            /* fullBias */                    \
+    false,            /* halfBias */                    \
+    0x7,              /* biasProg */                    \
+    acmpWarmTime512,  /* 512 cycle warmup to be safe */ \
+    acmpHysteresisLevel5,                               \
+    acmpResistor3,                                      \
+    false,            /* low power reference */         \
+    0x3D,             /* VDD level */                   \
+    true              /* Enable after init. */          \
+  }
 #else
-#define ACMP_CAPSENSE_INIT_DEFAULT                      \
-{                                                       \
-  false,              /* fullBias */                    \
-  false,              /* halfBias */                    \
-  0x7,                /* biasProg */                    \
-  acmpHysteresisLevel5,                                 \
-  acmpResistor3,                                        \
-  false,              /* low power reference */         \
-  0x3D,               /* VDD level */                   \
-  true                /* Enable after init. */          \
-}
+#define ACMP_CAPSENSE_INIT_DEFAULT              \
+  {                                             \
+    false,            /* fullBias */            \
+    false,            /* halfBias */            \
+    0x7,              /* biasProg */            \
+    acmpHysteresisLevel5,                       \
+    acmpResistor3,                              \
+    false,            /* low power reference */ \
+    0x3D,             /* VDD level */           \
+    true              /* Enable after init. */  \
+  }
 #endif
 
 /** ACMP initialization structure. */
-typedef struct
-{
-  /** Full bias current. See the ACMP chapter about bias and response time in
+typedef struct {
+#if defined(_ACMP_CTRL_FULLBIAS_MASK)
+  /** Full-bias current. See the ACMP chapter about bias and response time in
    *  the reference manual for details. */
   bool                         fullBias;
+#endif
 
 #if defined(_ACMP_CTRL_HALFBIAS_MASK)
-  /** Half bias current. See the ACMP chapter about bias and response time in
+  /** Half-bias current. See the ACMP chapter about bias and response time in
    *  the reference manual for details. */
   bool                         halfBias;
 #endif
@@ -662,19 +784,24 @@ typedef struct
    *  reference manual for details. Valid values are in the range 0-7. */
   uint32_t                     biasProg;
 
-  /** Enable setting the interrupt flag on falling edge */
+#if defined(_ACMP_CTRL_IFALL_SHIFT)
+  /** Enable setting the interrupt flag on the falling edge. */
   bool                         interruptOnFallingEdge;
-
-  /** Enable setting the interrupt flag on rising edge */
+#endif
+#if defined(_ACMP_CTRL_IRISE_SHIFT)
+  /** Enable setting the interrupt flag on the rising edge. */
   bool                         interruptOnRisingEdge;
+#endif
 
-#if defined(_ACMP_CTRL_INPUTRANGE_MASK)
+#if defined(_ACMP_CTRL_INPUTRANGE_MASK) \
+  || defined(_ACMP_CFG_INPUTRANGE_MASK)
   /** Input range. Adjust this setting to optimize the performance for a
    *  given input voltage range.  */
   ACMP_InputRange_TypeDef      inputRange;
 #endif
 
-#if defined(_ACMP_CTRL_ACCURACY_MASK)
+#if defined(_ACMP_CTRL_ACCURACY_MASK) \
+  || defined(_ACMP_CFG_ACCURACY_MASK)
   /** ACMP accuracy mode. Select the accuracy mode that matches the
    *  required current usage and accuracy requirement. Low accuracy
    *  consumes less current while high accuracy consumes more current. */
@@ -687,20 +814,21 @@ typedef struct
 #endif
 
 #if defined(_ACMP_CTRL_WARMTIME_MASK)
-  /** Warmup time. This is measured in HFPERCLK cycles and should be
-   *  about 10us in wall clock time. */
+  /** Warmup time, which is measured in HFPERCLK cycles and should be
+   *  about 10 us in wall clock time. */
   ACMP_WarmTime_TypeDef        warmTime;
 #endif
 
-#if defined(_ACMP_CTRL_HYSTSEL_MASK)
-  /** Hysteresis level */
+#if defined(_ACMP_CTRL_HYSTSEL_MASK) \
+  ||  defined(_ACMP_CFG_HYST_MASK)
+  /** Hysteresis level. */
   ACMP_HysteresisLevel_TypeDef hysteresisLevel;
 #else
-  /** Hysteresis when ACMP output is 0 */
-  ACMP_HysteresisLevel_TypeDef  hysteresisLevel_0;
+  /** Hysteresis when ACMP output is 0. */
+  ACMP_HysteresisLevel_TypeDef hysteresisLevel_0;
 
-  /** Hysteresis when ACMP output is 1 */
-  ACMP_HysteresisLevel_TypeDef  hysteresisLevel_1;
+  /** Hysteresis when ACMP output is 1. */
+  ACMP_HysteresisLevel_TypeDef hysteresisLevel_1;
 #endif
 
 #if defined(_ACMP_INPUTSEL_VLPSEL_MASK)
@@ -709,7 +837,7 @@ typedef struct
   ACMP_VLPInput_Typedef        vlpInput;
 #endif
 
-  /** Inactive value emitted by the ACMP during warmup */
+  /** Inactive value emitted by ACMP during warmup. */
   bool                         inactiveValue;
 
 #if defined(_ACMP_INPUTSEL_LPREF_MASK)
@@ -718,73 +846,73 @@ typedef struct
   bool                         lowPowerReferenceEnabled;
 #endif
 
-#if defined(_ACMP_INPUTSEL_VDDLEVEL_MASK)
-  /** Vdd reference value. VDD_SCALED = VDD * VDDLEVEL * 50mV/3.8V.
-   *  Valid values are in the range 0-63. */
+#if defined(_ACMP_INPUTCTRL_VREFDIV_MASK)
+  /** VDD division factor. VREFOUT = VREFIN * (VREFDIV / 63).
+   *  Valid values are in the 0-63 range. */
+  uint32_t                     vrefDiv;
+#elif defined(_ACMP_INPUTSEL_VDDLEVEL_MASK)
+  /** VDD reference value. VDD_SCALED = VDD * VDDLEVEL * 50 mV/3.8 V.
+   *  Valid values are in the 0-63 range. */
   uint32_t                     vddLevel;
 #endif
 
-  /** If true, ACMP is being enabled after configuration. */
+  /** If true, ACMP is enabled after configuration. */
   bool                         enable;
 } ACMP_Init_TypeDef;
 
-/** Default config for ACMP regular initialization. */
-#if defined(_ACMP_HYSTERESIS0_HYST_MASK)
+/** Default configuration for ACMP regular initialization. */
+#if defined(_ACMP_CFG_MASK)
+#define ACMP_INIT_DEFAULT                                                     \
+  {                                                                           \
+    0x2,                      /* Using biasProg value of 0x2. */              \
+    acmpInputRangeFull,       /* Input range from 0 to Vdd. */                \
+    acmpAccuracyLow,          /* Low accuracy, less current usage. */         \
+    acmpHysteresisDisabled,   /* Disable hysteresis. */                       \
+    false,                    /* Output 0 when ACMP is inactive. */           \
+    0x3F,                     /* Set VREFDIV to maximum to disable divide. */ \
+    true                      /* Enable after init. */                        \
+  }
+#elif defined(_ACMP_HYSTERESIS0_HYST_MASK)
 #define ACMP_INIT_DEFAULT                                                   \
-{                                                                           \
-  false,                      /* fullBias */                                \
-  0x7,                        /* biasProg */                                \
-  false,                      /* No interrupt on falling edge. */           \
-  false,                      /* No interrupt on rising edge. */            \
-  acmpInputRangeFull,         /* Input range from 0 to Vdd. */              \
-  acmpAccuracyLow,            /* Low accuracy, less current usage. */       \
-  acmpPowerSourceAvdd,        /* Use the AVDD supply. */                    \
-  acmpHysteresisLevel5,       /* Use hysteresis level 5 when output is 0 */ \
-  acmpHysteresisLevel5,       /* Use hysteresis level 5 when output is 1 */ \
-  acmpVLPInputVADIV,          /* Use VADIV as the VLP input source. */      \
-  false,                      /* Output 0 when ACMP is inactive. */         \
-  true                        /* Enable after init. */                      \
-}
-#elif defined(_ACMP_CTRL_WARMTIME_MASK)
-#define ACMP_INIT_DEFAULT                                                   \
-{                                                                           \
-  false,              /* fullBias */                                        \
-  false,              /* halfBias */                                        \
-  0x7,                /* biasProg */                                        \
-  false,              /* No interrupt on falling edge. */                   \
-  false,              /* No interrupt on rising edge. */                    \
-  acmpWarmTime512,    /* 512 cycle warmup to be safe */                     \
-  acmpHysteresisLevel5,                                                     \
-  false,              /* Disabled emitting inactive value during warmup. */ \
-  false,              /* low power reference */                             \
-  0x3D,               /* VDD level */                                       \
-  true                /* Enable after init. */                              \
-}
+  {                                                                         \
+    false,                    /* fullBias */                                \
+    0x7,                      /* biasProg */                                \
+    false,                    /* No interrupt on falling edge. */           \
+    false,                    /* No interrupt on rising edge. */            \
+    acmpInputRangeFull,       /* Input range from 0 to VDD. */              \
+    acmpAccuracyLow,          /* Low accuracy, less current usage. */       \
+    acmpPowerSourceAvdd,      /* Use the AVDD supply. */                    \
+    acmpHysteresisLevel5,     /* Use hysteresis level 5 when output is 0 */ \
+    acmpHysteresisLevel5,     /* Use hysteresis level 5 when output is 1 */ \
+    acmpVLPInputVADIV,        /* Use VADIV as the VLP input source. */      \
+    false,                    /* Output 0 when ACMP is inactive. */         \
+    true                      /* Enable after init. */                      \
+  }
 #else
 #define ACMP_INIT_DEFAULT                                                   \
-{                                                                           \
-  false,              /* fullBias */                                        \
-  false,              /* halfBias */                                        \
-  0x7,                /* biasProg */                                        \
-  false,              /* No interrupt on falling edge. */                   \
-  false,              /* No interrupt on rising edge. */                    \
-  acmpHysteresisLevel5,                                                     \
-  false,              /* Disabled emitting inactive value during warmup. */ \
-  false,              /* low power reference */                             \
-  0x3D,               /* VDD level */                                       \
-  true                /* Enable after init. */                              \
-}
+  {                                                                         \
+    false,            /* fullBias */                                        \
+    false,            /* halfBias */                                        \
+    0x7,              /* biasProg */                                        \
+    false,            /* No interrupt on falling edge. */                   \
+    false,            /* No interrupt on rising edge. */                    \
+    acmpWarmTime512,  /* 512 cycle warmup to be safe */                     \
+    acmpHysteresisLevel5,                                                   \
+    false,            /* Disabled emitting inactive value during warmup. */ \
+    false,            /* low power reference */                             \
+    0x3D,             /* VDD level */                                       \
+    true              /* Enable after init. */                              \
+  }
 #endif
 
 #if defined(_ACMP_INPUTSEL_VASEL_MASK)
-/** VA Configuration structure. This struct is used to configure the
- *  VA voltage input source and it's dividers. */
-typedef struct
-{
+/** VA Configuration structure. This structure is used to configure the
+ *  VA voltage input source and its dividers. */
+typedef struct {
   ACMP_VAInput_TypeDef input; /**< VA voltage input source */
 
   /**
-   * Divider for VA voltage input source when ACMP output is 0. This value is
+   * A divider for VA voltage input source when ACMP output is 0. This value is
    * used to divide the VA voltage input source by a specific value. The valid
    * range is between 0 and 63.
    *
@@ -793,7 +921,7 @@ typedef struct
   uint32_t             div0;
 
   /**
-   * Divider for VA voltage input source when ACMP output is 1. This value is
+   * A divider for VA voltage input source when ACMP output is 1. This value is
    * used to divide the VA voltage input source by a specific value. The valid
    * range is between 0 and 63.
    *
@@ -803,22 +931,21 @@ typedef struct
 } ACMP_VAConfig_TypeDef;
 
 #define ACMP_VACONFIG_DEFAULT                                               \
-{                                                                           \
-  acmpVAInputVDD, /* Use Vdd as VA voltage input source */                  \
-  63,             /* No division of the VA source when ACMP output is 0 */  \
-  63,             /* No division of the VA source when ACMP output is 1 */  \
-}
+  {                                                                         \
+    acmpVAInputVDD, /* Use VDD as VA voltage input source. */               \
+    63,           /* No division of the VA source when ACMP output is 0. */ \
+    63,           /* No division of the VA source when ACMP output is 1. */ \
+  }
 #endif
 
 #if defined(_ACMP_INPUTSEL_VBSEL_MASK)
-/** VB Configuration structure. This struct is used to configure the
- *  VB voltage input source and it's dividers. */
-typedef struct
-{
+/** VB Configuration structure. This structure is used to configure the
+ *  VB voltage input source and its dividers. */
+typedef struct {
   ACMP_VBInput_TypeDef input; /**< VB Voltage input source */
 
   /**
-   * Divider for VB voltage input source when ACMP output is 0. This value is
+   * A divider for VB voltage input source when ACMP output is 0. This value is
    * used to divide the VB voltage input source by a specific value. The valid
    * range is between 0 and 63.
    *
@@ -827,7 +954,7 @@ typedef struct
   uint32_t             div0;
 
   /**
-   * Divider for VB voltage input source when ACMP output is 1. This value is
+   * A divider for VB voltage input source when ACMP output is 1. This value is
    * used to divide the VB voltage input source by a specific value. The valid
    * range is between 0 and 63.
    *
@@ -836,12 +963,12 @@ typedef struct
   uint32_t             div1;
 } ACMP_VBConfig_TypeDef;
 
-#define ACMP_VBCONFIG_DEFAULT                                               \
-{                                                                           \
-  acmpVBInput1V25, /* Use 1.25 V as VB voltage input source */              \
-  63,              /* No division of the VB source when ACMP output is 0 */ \
-  63,              /* No division of the VB source when ACMP output is 1 */ \
-}
+#define ACMP_VBCONFIG_DEFAULT                                                \
+  {                                                                          \
+    acmpVBInput1V25, /* Use 1.25 V as VB voltage input source. */            \
+    63,            /* No division of the VB source when ACMP output is 0. */ \
+    63,            /* No division of the VB source when ACMP output is 1. */ \
+  }
 #endif
 
 /*******************************************************************************
@@ -856,7 +983,11 @@ void ACMP_Enable(ACMP_TypeDef *acmp);
 #if defined(_ACMP_EXTIFCTRL_MASK)
 void ACMP_ExternalInputSelect(ACMP_TypeDef *acmp, ACMP_ExternalInput_Typedef aport);
 #endif
+#if defined(_GPIO_ACMP_ROUTEEN_MASK)
+void ACMP_GPIOSetup(ACMP_TypeDef *acmp, GPIO_Port_TypeDef port, unsigned int pin, bool enable, bool invert);
+#else
 void ACMP_GPIOSetup(ACMP_TypeDef *acmp, uint32_t location, bool enable, bool invert);
+#endif
 void ACMP_Init(ACMP_TypeDef *acmp, const ACMP_Init_TypeDef *init);
 void ACMP_Reset(ACMP_TypeDef *acmp);
 #if defined(_ACMP_INPUTSEL_VASEL_MASK)
@@ -871,36 +1002,38 @@ void ACMP_VBSetup(ACMP_TypeDef *acmp, const ACMP_VBConfig_TypeDef *vbconfig);
  *   Clear one or more pending ACMP interrupts.
  *
  * @param[in] acmp
- *   Pointer to ACMP peripheral register block.
+ *   A pointer to the ACMP peripheral register block.
  *
  * @param[in] flags
  *   Pending ACMP interrupt source to clear. Use a bitwise logic OR combination
- *   of valid interrupt flags for the ACMP module. The flags can be for instance
+ *   of valid interrupt flags for the ACMP module. The flags can be, for instance,
  *   @ref ACMP_IFC_EDGE or @ref ACMP_IFC_WARMUP.
  ******************************************************************************/
 __STATIC_INLINE void ACMP_IntClear(ACMP_TypeDef *acmp, uint32_t flags)
 {
+#if defined(ACMP_HAS_SET_CLEAR)
+  acmp->IF_CLR = flags;
+#else
   acmp->IFC = flags;
+#endif
 }
-
 
 /***************************************************************************//**
  * @brief
  *   Disable one or more ACMP interrupts.
  *
  * @param[in] acmp
- *   Pointer to ACMP peripheral register block.
+ *   A pointer to the ACMP peripheral register block.
  *
  * @param[in] flags
  *   ACMP interrupt sources to disable. Use a bitwise logic OR combination of
- *   valid interrupt flags for the ACMP module. The flags can be for instance
+ *   valid interrupt flags for the ACMP module. The flags can be, for instance,
  *   @ref ACMP_IEN_EDGE or @ref ACMP_IEN_WARMUP.
  ******************************************************************************/
 __STATIC_INLINE void ACMP_IntDisable(ACMP_TypeDef *acmp, uint32_t flags)
 {
-  acmp->IEN &= ~(flags);
+  BUS_RegMaskedClear(&(acmp->IEN), flags);
 }
-
 
 /***************************************************************************//**
  * @brief
@@ -909,42 +1042,44 @@ __STATIC_INLINE void ACMP_IntDisable(ACMP_TypeDef *acmp, uint32_t flags)
  * @note
  *   Depending on the use, a pending interrupt may already be set prior to
  *   enabling the interrupt. Consider using ACMP_IntClear() prior to enabling
- *   if such a pending interrupt should be ignored.
+ *   if a pending interrupt should be ignored.
  *
  * @param[in] acmp
- *   Pointer to ACMP peripheral register block.
+ *   A pointer to the ACMP peripheral register block.
  *
  * @param[in] flags
  *   ACMP interrupt sources to enable. Use a bitwise logic OR combination of
- *   valid interrupt flags for the ACMP module. The flags can be for instance
+ *   valid interrupt flags for the ACMP module. The flags can be, for instance,
  *   @ref ACMP_IEN_EDGE or @ref ACMP_IEN_WARMUP.
  ******************************************************************************/
 __STATIC_INLINE void ACMP_IntEnable(ACMP_TypeDef *acmp, uint32_t flags)
 {
+#if defined(ACMP_HAS_SET_CLEAR)
+  acmp->IEN_SET = flags;
+#else
   acmp->IEN |= flags;
+#endif
 }
-
 
 /***************************************************************************//**
  * @brief
  *   Get pending ACMP interrupt flags.
  *
  * @note
- *   The event bits are not cleared by the use of this function.
+ *   This function does not clear event bits.
  *
  * @param[in] acmp
- *   Pointer to ACMP peripheral register block.
+ *   A pointer to the ACMP peripheral register block.
  *
  * @return
- *   ACMP interrupt sources pending. A bitwise logic OR combination of valid
- *   interrupt flags for the ACMP module. The pending interrupt sources can be
- *   for instance @ref ACMP_IF_EDGE or @ref ACMP_IF_WARMUP.
+ *   Pending ACMP interrupt sources. A bitwise logic OR combination of valid
+ *   interrupt flags for the ACMP module. The pending interrupt sources can be,
+ *   for instance, @ref ACMP_IF_EDGE or @ref ACMP_IF_WARMUP.
  ******************************************************************************/
 __STATIC_INLINE uint32_t ACMP_IntGet(ACMP_TypeDef *acmp)
 {
   return acmp->IF;
 }
-
 
 /***************************************************************************//**
  * @brief
@@ -952,10 +1087,10 @@ __STATIC_INLINE uint32_t ACMP_IntGet(ACMP_TypeDef *acmp)
  *   Useful for handling more interrupt sources in the same interrupt handler.
  *
  * @param[in] acmp
- *   Pointer to ACMP peripheral register block.
+ *   A pointer to the ACMP peripheral register block.
  *
  * @note
- *   Interrupt flags are not cleared by the use of this function.
+ *   This function does not clear interrupt flags.
  *
  * @return
  *   Pending and enabled ACMP interrupt sources.
@@ -969,31 +1104,56 @@ __STATIC_INLINE uint32_t ACMP_IntGetEnabled(ACMP_TypeDef *acmp)
 {
   uint32_t tmp;
 
-  /* Store ACMPx->IEN in temporary variable in order to define explicit order
+  /* Store ACMPx->IEN in a temporary variable to define the explicit order
    * of volatile accesses. */
   tmp = acmp->IEN;
 
-  /* Bitwise AND of pending and enabled interrupts */
+  /* Bitwise AND of pending and enabled interrupts. */
   return acmp->IF & tmp;
 }
 
-
 /***************************************************************************//**
  * @brief
- *   Set one or more pending ACMP interrupts from SW.
+ *   Set one or more pending ACMP interrupts from software.
  *
  * @param[in] acmp
- *   Pointer to ACMP peripheral register block.
+ *   A pointer to the ACMP peripheral register block.
  *
  * @param[in] flags
- *   ACMP interrupt sources to set to pending. Use a bitwise logic OR
- *   combination of valid interrupt flags for the ACMP module. The flags can be
- *   for instance @ref ACMP_IFS_EDGE or @ref ACMP_IFS_WARMUP.
+ *   ACMP interrupt sources to set as pending. Use a bitwise logic OR
+ *   combination of valid interrupt flags for the ACMP module. The flags can be,
+ *   for instance, @ref ACMP_IFS_EDGE or @ref ACMP_IFS_WARMUP.
  ******************************************************************************/
 __STATIC_INLINE void ACMP_IntSet(ACMP_TypeDef *acmp, uint32_t flags)
 {
+#if defined(ACMP_HAS_SET_CLEAR)
+  acmp->IF_SET = flags;
+#else
   acmp->IFS = flags;
+#endif
 }
+
+#if defined(_ACMP_INPUTCTRL_MASK)
+/***************************************************************************//**
+ * @brief
+ *   Convert GPIO port/pin to ACMP input selection.
+ *
+ * @param[in] port
+ *   GPIO port
+ *
+ * @param[in] pin
+ *   GPIO pin
+ *
+ * @return
+ *   ACMP input selection
+ ******************************************************************************/
+__STATIC_INLINE ACMP_Channel_TypeDef ACMP_PortPinToInput(GPIO_Port_TypeDef port, uint8_t pin)
+{
+  uint32_t input = (((uint32_t) port + (_ACMP_INPUTCTRL_POSSEL_PA0 >> 4)) << 4) | pin;
+
+  return (ACMP_Channel_TypeDef) input;
+}
+#endif
 
 /** @} (end addtogroup ACMP) */
 /** @} (end addtogroup emlib) */

@@ -34,7 +34,7 @@
 
 static int np_uart_stdin_poll_in(struct device *dev, unsigned char *p_char);
 static int np_uart_tty_poll_in(struct device *dev, unsigned char *p_char);
-static unsigned char np_uart_poll_out(struct device *dev,
+static void np_uart_poll_out(struct device *dev,
 				      unsigned char out_char);
 
 static bool auto_attach;
@@ -179,7 +179,7 @@ static int np_uart_init(struct device *dev)
 		np_uart_driver_api.poll_in = np_uart_stdin_poll_in;
 
 		if (isatty(STDIN_FILENO)) {
-			WARN("The UART dirver has been configured to map to the"
+			WARN("The UART driver has been configured to map to the"
 			     " process stdin&out (NATIVE_UART_0_ON_STDINOUT), "
 			     "but stdin seems to be left attached to the shell."
 			     " This will most likely NOT behave as you want it "
@@ -188,8 +188,6 @@ static int np_uart_init(struct device *dev)
 			     );
 		}
 	}
-
-	dev->driver_api = &np_uart_driver_api;
 
 	return 0;
 }
@@ -200,7 +198,7 @@ static int np_uart_init(struct device *dev)
  * @param dev UART device struct
  * @param out_char Character to send.
  */
-static unsigned char np_uart_poll_out(struct device *dev,
+static void np_uart_poll_out(struct device *dev,
 				      unsigned char out_char)
 {
 	int ret;
@@ -212,8 +210,6 @@ static unsigned char np_uart_poll_out(struct device *dev,
 	if (ret != 1) {
 		WARN("%s: a character could not be output\n", __func__);
 	}
-
-	return out_char;
 }
 
 /**
@@ -287,10 +283,11 @@ static int np_uart_tty_poll_in(struct device *dev, unsigned char *p_char)
 
 static struct native_uart_status native_uart_status_0;
 
-DEVICE_INIT(uart_native_posix0,
+DEVICE_AND_API_INIT(uart_native_posix0,
 	    CONFIG_UART_NATIVE_POSIX_PORT_0_NAME, &np_uart_init,
 	    (void *)&native_uart_status_0, NULL,
-	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+	    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+	    &np_uart_driver_api);
 
 static void np_add_uart_options(void)
 {

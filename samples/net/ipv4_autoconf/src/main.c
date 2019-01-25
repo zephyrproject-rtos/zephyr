@@ -7,8 +7,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_ipv4_autoconf_sample
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_ipv4_autoconf_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <linker/sections.h>
@@ -45,8 +45,8 @@ static void handler(struct net_mgmt_event_callback *cb,
 			continue;
 		}
 
-		NET_INFO("Your address: %s",
-			 log_strdup(net_addr_ntop(AF_INET,
+		LOG_INF("Your address: %s",
+			log_strdup(net_addr_ntop(AF_INET,
 				    &cfg->ip.ipv4->unicast[i].address.in_addr,
 				    buf, sizeof(buf))));
 	}
@@ -54,7 +54,7 @@ static void handler(struct net_mgmt_event_callback *cb,
 
 void main(void)
 {
-	NET_INFO("Run ipv4 autoconf client");
+	LOG_INF("Run ipv4 autoconf client");
 
 	net_mgmt_init_event_callback(&mgmt_cb, handler,
 				     NET_EVENT_IPV4_ADDR_ADD);

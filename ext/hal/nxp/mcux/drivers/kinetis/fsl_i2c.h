@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_I2C_H_
 #define _FSL_I2C_H_
@@ -43,9 +21,14 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief I2C driver version 2.0.3. */
-#define FSL_I2C_DRIVER_VERSION (MAKE_VERSION(2, 0, 3))
+/*! @brief I2C driver version 2.0.6. */
+#define FSL_I2C_DRIVER_VERSION (MAKE_VERSION(2, 0, 6))
 /*@}*/
+
+/*! @brief Timeout times for waiting flag. */
+#ifndef I2C_WAIT_TIMEOUT
+#define I2C_WAIT_TIMEOUT 0U /* Define to zero means keep waiting until the flag is assert/deassert. */
+#endif
 
 #if (defined(FSL_FEATURE_I2C_HAS_START_STOP_DETECT) && FSL_FEATURE_I2C_HAS_START_STOP_DETECT || \
      defined(FSL_FEATURE_I2C_HAS_STOP_DETECT) && FSL_FEATURE_I2C_HAS_STOP_DETECT)
@@ -59,7 +42,7 @@ enum _i2c_status
     kStatus_I2C_Idle = MAKE_STATUS(kStatusGroup_I2C, 1),            /*!< Bus is Idle. */
     kStatus_I2C_Nak = MAKE_STATUS(kStatusGroup_I2C, 2),             /*!< NAK received during transfer. */
     kStatus_I2C_ArbitrationLost = MAKE_STATUS(kStatusGroup_I2C, 3), /*!< Arbitration lost during transfer. */
-    kStatus_I2C_Timeout = MAKE_STATUS(kStatusGroup_I2C, 4),         /*!< Wait event timeout. */
+    kStatus_I2C_Timeout = MAKE_STATUS(kStatusGroup_I2C, 4),         /*!< Timeout poling status flags. */
     kStatus_I2C_Addr_Nak = MAKE_STATUS(kStatusGroup_I2C, 5),        /*!< NAK received during the address probe. */
 };
 
@@ -126,7 +109,8 @@ typedef enum _i2c_slave_address_mode
 enum _i2c_master_transfer_flags
 {
     kI2C_TransferDefaultFlag = 0x0U,       /*!< A transfer starts with a start signal, stops with a stop signal. */
-    kI2C_TransferNoStartFlag = 0x1U,       /*!< A transfer starts without a start signal. */
+    kI2C_TransferNoStartFlag = 0x1U,       /*!< A transfer starts without a start signal, only support write only or
+                                        write+read with no start flag, do not support read only with no start flag. */
     kI2C_TransferRepeatedStartFlag = 0x2U, /*!< A transfer starts with a repeated start signal. */
     kI2C_TransferNoStopFlag = 0x4U,        /*!< A transfer ends without a stop signal. */
 };
@@ -258,6 +242,12 @@ struct _i2c_slave_handle
 };
 
 /*******************************************************************************
+ * Variables
+ ******************************************************************************/
+/*! @brief Pointers to i2c bases for each instance. */
+extern I2C_Type *const s_i2cBases[];
+
+/*******************************************************************************
  * API
  ******************************************************************************/
 
@@ -339,6 +329,13 @@ void I2C_MasterDeinit(I2C_Type *base);
  * @param base I2C base pointer
  */
 void I2C_SlaveDeinit(I2C_Type *base);
+
+/*!
+ * @brief Get instance number for I2C module.
+ *
+ * @param base I2C peripheral base address.
+ */
+uint32_t I2C_GetInstance(I2C_Type *base);
 
 /*!
  * @brief  Sets the I2C master configuration structure to default values.
@@ -631,8 +628,10 @@ status_t I2C_SlaveWriteBlocking(I2C_Type *base, const uint8_t *txBuff, size_t tx
  * @param base I2C peripheral base pointer.
  * @param rxBuff The pointer to the data to store the received data.
  * @param rxSize The length in bytes of the data to be received.
+ * @retval kStatus_Success Successfully complete data receive.
+ * @retval kStatus_I2C_Timeout Wait status flag timeout.
  */
-void I2C_SlaveReadBlocking(I2C_Type *base, uint8_t *rxBuff, size_t rxSize);
+status_t I2C_SlaveReadBlocking(I2C_Type *base, uint8_t *rxBuff, size_t rxSize);
 
 /*!
  * @brief Performs a master polling transfer on the I2C bus.
@@ -706,8 +705,10 @@ status_t I2C_MasterTransferGetCount(I2C_Type *base, i2c_master_handle_t *handle,
  *
  * @param base I2C base pointer.
  * @param handle pointer to i2c_master_handle_t structure which stores the transfer state
+ * @retval kStatus_I2C_Timeout Timeout during polling flag.
+ * @retval kStatus_Success Successfully abort the transfer.
  */
-void I2C_MasterTransferAbort(I2C_Type *base, i2c_master_handle_t *handle);
+status_t I2C_MasterTransferAbort(I2C_Type *base, i2c_master_handle_t *handle);
 
 /*!
  * @brief Master interrupt handler.

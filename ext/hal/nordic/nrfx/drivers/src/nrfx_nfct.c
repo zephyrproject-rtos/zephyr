@@ -202,13 +202,6 @@ static void nrfx_nfct_hw_init_setup(void)
     }
 #endif // NRF52840_XXAA
 
-    //Enable necessary interrupts.
-    nrf_nfct_int_enable(NRF_NFCT_INT_FIELDDETECTED_MASK | NRF_NFCT_INT_ERROR_MASK |
-                        NRF_NFCT_INT_SELECTED_MASK);
-#if !defined(NRF52832_XXAA) && !defined(NRF52832_XXAB)
-    nrf_nfct_int_enable(NRF_NFCT_INT_FIELDLOST_MASK);
-#endif //!defined(NRF52832_XXAA) && !defined(NRF52832_XXAB)
-
     // Use Window Grid frame delay mode.
     nrf_nfct_frame_delay_mode_set(NRF_NFCT_FRAME_DELAY_MODE_WINDOWGRID);
 
@@ -326,6 +319,7 @@ static void nrfx_nfct_activate_check(void)
 static inline void nrfx_nfct_reset(void)
 {
     uint32_t                       fdm;
+    uint32_t                       int_enabled;
     uint8_t                        nfcid1[NRF_NFCT_SENSRES_NFCID1_SIZE_TRIPLE];
     nrf_nfct_sensres_nfcid1_size_t nfcid1_size;
     nrf_nfct_selres_protocol_t     protocol;
@@ -334,6 +328,7 @@ static inline void nrfx_nfct_reset(void)
     fdm         = nrf_nfct_frame_delay_max_get();
     nfcid1_size = nrf_nfct_nfcid1_get(nfcid1);
     protocol    = nrf_nfct_selsres_protocol_get();
+    int_enabled = nrf_nfct_int_enable_get();
 
     // Reset the NFCT peripheral.
     *(volatile uint32_t *)0x40005FFC = 0;
@@ -347,6 +342,10 @@ static inline void nrfx_nfct_reset(void)
 
     // Restore general HW configuration.
     nrfx_nfct_hw_init_setup();
+
+    // Restore interrupts.
+    nrf_nfct_int_enable(int_enabled);
+
     NRFX_LOG_INFO("Reinitialize");
 }
 
@@ -466,6 +465,10 @@ nrfx_err_t nrfx_nfct_init(nrfx_nfct_config_t const * p_config)
     m_nfct_cb.config = *p_config;
     nrfx_nfct_hw_init_setup();
 
+    NRFX_IRQ_PENDING_CLEAR(NFCT_IRQn);
+    NRFX_IRQ_PRIORITY_SET(NFCT_IRQn, NRFX_NFCT_CONFIG_IRQ_PRIORITY);
+    NRFX_IRQ_ENABLE(NFCT_IRQn);
+
 #ifdef USE_TIMER_WORKAROUND
     /* Initialize Timer module as the workaround for NFCT HW issues. */
     #ifdef NRF52840_XXAA
@@ -498,6 +501,9 @@ void nrfx_nfct_uninit(void)
 {
     nrfx_nfct_disable();
 
+    NRFX_IRQ_DISABLE(NFCT_IRQn);
+    NRFX_IRQ_PENDING_CLEAR(NFCT_IRQn);
+
 #ifdef USE_TIMER_WORKAROUND
     /* Initialize Timer module as the workaround for NFCT HW issues. */
     #ifdef NRF52840_XXAA
@@ -516,15 +522,18 @@ void nrfx_nfct_enable(void)
     nrf_nfct_error_status_clear(NRFX_NFCT_ERROR_STATUS_ALL_MASK);
     nrf_nfct_task_trigger(NRF_NFCT_TASK_SENSE);
 
-    NRFX_IRQ_PENDING_CLEAR(NFCT_IRQn);
-    NRFX_IRQ_PRIORITY_SET(NFCT_IRQn, NRFX_NFCT_CONFIG_IRQ_PRIORITY);
-    NRFX_IRQ_ENABLE(NFCT_IRQn);
+    nrf_nfct_int_enable(NRF_NFCT_INT_FIELDDETECTED_MASK | NRF_NFCT_INT_ERROR_MASK |
+                        NRF_NFCT_INT_SELECTED_MASK);
+#if !defined(NRF52832_XXAA) && !defined(NRF52832_XXAB)
+    nrf_nfct_int_enable(NRF_NFCT_INT_FIELDLOST_MASK);
+#endif //!defined(NRF52832_XXAA) && !defined(NRF52832_XXAB)
 
     NRFX_LOG_INFO("Start");
 }
 
 void nrfx_nfct_disable(void)
 {
+    nrf_nfct_int_disable(NRF_NFCT_DISABLE_ALL_INT);
     nrf_nfct_task_trigger(NRF_NFCT_TASK_DISABLE);
 
     NRFX_LOG_INFO("Stop");

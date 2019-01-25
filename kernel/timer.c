@@ -9,6 +9,7 @@
 #include <init.h>
 #include <wait_q.h>
 #include <syscall_handler.h>
+#include <stdbool.h>
 
 extern struct k_timer _k_timer_list_start[];
 extern struct k_timer _k_timer_list_end[];
@@ -64,7 +65,7 @@ void _timer_expiration_handler(struct _timeout *t)
 	timer->status += 1;
 
 	/* invoke timer expiry function */
-	if (timer->expiry_fn) {
+	if (timer->expiry_fn != NULL) {
 		timer->expiry_fn(timer);
 	}
 
@@ -93,8 +94,8 @@ void _timer_expiration_handler(struct _timeout *t)
 
 
 void k_timer_init(struct k_timer *timer,
-		  void (*expiry_fn)(struct k_timer *),
-		  void (*stop_fn)(struct k_timer *))
+			 k_timer_expiry_t expiry_fn,
+			 k_timer_stop_t stop_fn)
 {
 	timer->expiry_fn = expiry_fn;
 	timer->stop_fn = stop_fn;
@@ -149,7 +150,7 @@ Z_SYSCALL_HANDLER(k_timer_start, timer, duration_p, period_p)
 void _impl_k_timer_stop(struct k_timer *timer)
 {
 	unsigned int key = irq_lock();
-	int inactive = (_abort_timeout(&timer->timeout) == _INACTIVE);
+	int inactive = _abort_timeout(&timer->timeout) != 0;
 
 	irq_unlock(key);
 
@@ -157,7 +158,7 @@ void _impl_k_timer_stop(struct k_timer *timer)
 		return;
 	}
 
-	if (timer->stop_fn) {
+	if (timer->stop_fn != NULL) {
 		timer->stop_fn(timer);
 	}
 
@@ -202,7 +203,7 @@ u32_t _impl_k_timer_status_sync(struct k_timer *timer)
 	u32_t result = timer->status;
 
 	if (result == 0) {
-		if (timer->timeout.dticks != _INACTIVE) {
+		if (!_is_inactive_timeout(&timer->timeout)) {
 			/* wait for timer to expire or stop */
 			(void)_pend_current_thread(key, &timer->wait_q, K_FOREVER);
 

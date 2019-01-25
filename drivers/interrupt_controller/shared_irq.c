@@ -29,7 +29,7 @@ static int isr_register(struct device *dev, isr_t isr_func,
 	const struct shared_irq_config *config = dev->config->config_info;
 	u32_t i;
 
-	for (i = 0; i < config->client_count; i++) {
+	for (i = 0U; i < config->client_count; i++) {
 		if (!clients->client[i].isr_dev) {
 			clients->client[i].isr_dev = isr_dev;
 			clients->client[i].isr_func = isr_func;
@@ -50,7 +50,7 @@ static inline int enable(struct device *dev, struct device *isr_dev)
 	const struct shared_irq_config *config = dev->config->config_info;
 	u32_t i;
 
-	for (i = 0; i < config->client_count; i++) {
+	for (i = 0U; i < config->client_count; i++) {
 		if (clients->client[i].isr_dev == isr_dev) {
 			clients->client[i].enabled = 1;
 			irq_enable(config->irq_num);
@@ -64,7 +64,7 @@ static int last_enabled_isr(struct shared_irq_runtime *clients, int count)
 {
 	u32_t i;
 
-	for (i = 0; i < count; i++) {
+	for (i = 0U; i < count; i++) {
 		if (clients->client[i].enabled) {
 			return 0;
 		}
@@ -82,7 +82,7 @@ static inline int disable(struct device *dev, struct device *isr_dev)
 	const struct shared_irq_config *config = dev->config->config_info;
 	u32_t i;
 
-	for (i = 0; i < config->client_count; i++) {
+	for (i = 0U; i < config->client_count; i++) {
 		if (clients->client[i].isr_dev == isr_dev) {
 			clients->client[i].enabled = 0;
 			if (last_enabled_isr(clients, config->client_count)) {
@@ -100,7 +100,7 @@ void shared_irq_isr(struct device *dev)
 	const struct shared_irq_config *config = dev->config->config_info;
 	u32_t i;
 
-	for (i = 0; i < config->client_count; i++) {
+	for (i = 0U; i < config->client_count; i++) {
 		if (clients->client[i].isr_dev) {
 			clients->client[i].isr_func(clients->client[i].isr_dev);
 		}
@@ -117,10 +117,7 @@ static const struct shared_irq_driver_api api_funcs = {
 int shared_irq_initialize(struct device *dev)
 {
 	const struct shared_irq_config *config = dev->config->config_info;
-
-	dev->driver_api = &api_funcs;
 	config->config();
-
 	return 0;
 }
 
@@ -135,9 +132,10 @@ const struct shared_irq_config shared_irq_config_0 = {
 
 struct shared_irq_runtime shared_irq_0_runtime;
 
-DEVICE_INIT(shared_irq_0, CONFIG_SHARED_IRQ_0_NAME, shared_irq_initialize,
-				&shared_irq_0_runtime, &shared_irq_config_0,
-				POST_KERNEL, CONFIG_SHARED_IRQ_INIT_PRIORITY);
+DEVICE_AND_API_INIT(shared_irq_0, CONFIG_SHARED_IRQ_0_NAME,
+		shared_irq_initialize, &shared_irq_0_runtime,
+		&shared_irq_config_0, POST_KERNEL,
+		CONFIG_SHARED_IRQ_INIT_PRIORITY, &api_funcs);
 
 #if defined(CONFIG_IOAPIC)
 #if defined(CONFIG_SHARED_IRQ_0_FALLING_EDGE)
@@ -173,9 +171,10 @@ const struct shared_irq_config shared_irq_config_1 = {
 
 struct shared_irq_runtime shared_irq_1_runtime;
 
-DEVICE_INIT(shared_irq_1, CONFIG_SHARED_IRQ_1_NAME, shared_irq_initialize,
-				&shared_irq_1_runtime, &shared_irq_config_1,
-				POST_KERNEL, CONFIG_SHARED_IRQ_INIT_PRIORITY);
+DEVICE_AND_API_INIT(shared_irq_1, CONFIG_SHARED_IRQ_1_NAME,
+		shared_irq_initialize, &shared_irq_1_runtime,
+		&shared_irq_config_1, POST_KERNEL,
+		CONFIG_SHARED_IRQ_INIT_PRIORITY, &api_funcs);
 
 #if defined(CONFIG_IOAPIC)
 #if defined(CONFIG_SHARED_IRQ_1_FALLING_EDGE)

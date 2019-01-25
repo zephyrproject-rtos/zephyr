@@ -630,15 +630,8 @@ Related configuration options:
 
 * :option:`CONFIG_NUM_MBOX_ASYNC_MSGS`
 
-APIs
-****
+API Reference
+*************
 
-The following APIs for a mailbox are provided by :file:`kernel.h`:
-
-* :c:macro:`K_MBOX_DEFINE`
-* :cpp:func:`k_mbox_init()`
-* :cpp:func:`k_mbox_put()`
-* :cpp:func:`k_mbox_async_put()`
-* :cpp:func:`k_mbox_get()`
-* :cpp:func:`k_mbox_data_get()`
-* :cpp:func:`k_mbox_data_block_get()`
+.. doxygengroup:: mailbox_apis
+   :project: Zephyr

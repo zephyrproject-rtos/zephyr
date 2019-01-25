@@ -16,6 +16,7 @@
 #include <ztest.h>
 #include <kernel_structs.h>
 #include <kernel.h>
+#include <kernel_internal.h>
 #include <string.h>
 
 extern void test_threads_spawn_params(void);
@@ -73,7 +74,7 @@ static void thread_name_entry(void)
 
 static void customdata_entry(void *p1, void *p2, void *p3)
 {
-	u32_t data = 1;
+	u32_t data = 1U;
 
 	zassert_is_null(k_thread_custom_data_get(), NULL);
 	while (1) {
@@ -200,8 +201,8 @@ void test_user_mode(void)
 
 void test_main(void)
 {
-	k_thread_access_grant(k_current_get(), &tdata, tstack, NULL);
-	k_thread_access_grant(k_current_get(), &tdata_custom, tstack_custom, NULL);
+	k_thread_access_grant(k_current_get(), &tdata, tstack);
+	k_thread_access_grant(k_current_get(), &tdata_custom, tstack_custom);
 	main_prio = k_thread_priority_get(k_current_get());
 
 	ztest_test_suite(threads_lifecycle,

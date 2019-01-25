@@ -14,7 +14,7 @@ config SOC
 if SERIAL
 
 config UART_PSOC6
-	def_bool y
+	default y
 
 endif # SERIAL
 

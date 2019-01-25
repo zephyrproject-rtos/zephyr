@@ -56,7 +56,7 @@ static u32_t counter_dtmr_cmsdk_apb_read(struct device *dev)
 						dev->config->config_info;
 
 	/* Return Counter Value */
-	u32_t value = 0;
+	u32_t value = 0U;
 
 	value = DUALTIMER_MAX_RELOAD - cfg->dtimer->timer1value;
 
@@ -102,13 +102,13 @@ static int counter_dtmr_cmsdk_apb_init(struct device *dev)
 /* COUNTER 0 */
 #ifdef CONFIG_COUNTER_DTMR_CMSDK_APB_0
 static const struct counter_dtmr_cmsdk_apb_cfg counter_dtmr_cmsdk_apb_cfg_0 = {
-	.dtimer = ((volatile struct dualtimer_cmsdk_apb *)CMSDK_APB_DTIMER),
+	.dtimer = ((volatile struct dualtimer_cmsdk_apb *)DT_CMSDK_APB_DTIMER),
 	.dtimer_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
-			 .device = CMSDK_APB_DTIMER,},
+			 .device = DT_CMSDK_APB_DTIMER,},
 	.dtimer_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
-			 .device = CMSDK_APB_DTIMER,},
+			 .device = DT_CMSDK_APB_DTIMER,},
 	.dtimer_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
-			  .device = CMSDK_APB_DTIMER,},
+			  .device = DT_CMSDK_APB_DTIMER,},
 };
 
 DEVICE_AND_API_INIT(counter_dtmr_cmsdk_apb_0,

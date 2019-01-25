@@ -5,5 +5,12 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
+  - xtools
 supported:
+  - arduino_i2c
   - rtc
+  - gpio
+  - spi
+  - i2c
+ram: 96
+flash: 512

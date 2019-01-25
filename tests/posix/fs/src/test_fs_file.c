@@ -90,7 +90,7 @@ static int test_file_read(void)
 
 	read_buff[brw] = 0;
 
-	TC_PRINT("Data read:\"%s\"\n\n", read_buff);
+	TC_PRINT("Data read:\"%s\"\n", read_buff);
 
 	if (strcmp(test_str, read_buff)) {
 		TC_PRINT("Error - Data read does not match data written\n");
@@ -98,7 +98,33 @@ static int test_file_read(void)
 		return TC_FAIL;
 	}
 
-	TC_PRINT("Data read matches data written\n");
+	/* Now test after non-zero lseek. */
+
+	res = lseek(file, 2, SEEK_SET);
+	if (res != 0) {
+		TC_PRINT("lseek failed [%d]\n", (int)res);
+		close(file);
+		return TC_FAIL;
+	}
+
+	brw = read(file, read_buff, sizeof(read_buff));
+	if (brw < 0) {
+		TC_PRINT("Failed reading file [%d]\n", (int)brw);
+		close(file);
+		return TC_FAIL;
+	}
+
+	read_buff[brw] = 0;
+
+	TC_PRINT("Data read:\"%s\"\n", read_buff);
+
+	if (strcmp(test_str + 2, read_buff)) {
+		TC_PRINT("Error - Data read does not match data written\n");
+		TC_PRINT("Data read:\"%s\"\n\n", read_buff);
+		return TC_FAIL;
+	}
+
+	TC_PRINT("\nData read matches data written\n");
 
 	return res;
 }

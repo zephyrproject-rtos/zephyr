@@ -1,7 +1,7 @@
 /***************************************************************************//**
  * @file system_efr32mg12p.c
  * @brief CMSIS Cortex-M3/M4 System Layer for EFR32 devices.
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -70,7 +70,7 @@
 #endif
 
 /* Do not define variable if HF crystal oscillator not present */
-#if (EFR32_HFXO_FREQ > 0UL)
+#if (EFR32_HFXO_FREQ > 0U)
 /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
 /** System HFXO clock. */
 static uint32_t SystemHFXOClock = EFR32_HFXO_FREQ;
@@ -82,7 +82,7 @@ static uint32_t SystemHFXOClock = EFR32_HFXO_FREQ;
 #define EFR32_LFXO_FREQ (EFR32_LFRCO_FREQ)
 #endif
 /* Do not define variable if LF crystal oscillator not present */
-#if (EFR32_LFXO_FREQ > 0UL)
+#if (EFR32_LFXO_FREQ > 0U)
 /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
 /** System LFXO clock. */
 static uint32_t SystemLFXOClock = EFR32_LFXO_FREQ;
@@ -117,6 +117,13 @@ uint32_t SystemHfrcoFreq = EFR32_HFRCO_STARTUP_FREQ;
 /*******************************************************************************
  **************************   GLOBAL FUNCTIONS   *******************************
  ******************************************************************************/
+
+#if defined(__VTOR_PRESENT) && (__VTOR_PRESENT == 1U)
+#if defined(__ICCARM__)    /* IAR requires the __vector_table symbol */
+#define __Vectors    __vector_table
+#endif
+extern uint32_t __Vectors;
+#endif
 
 /***************************************************************************//**
  * @brief
@@ -186,12 +193,12 @@ uint32_t SystemHFClockGet(void)
 
   switch (CMU->HFCLKSTATUS & _CMU_HFCLKSTATUS_SELECTED_MASK) {
     case CMU_HFCLKSTATUS_SELECTED_LFXO:
-#if (EFR32_LFXO_FREQ > 0)
+#if (EFR32_LFXO_FREQ > 0U)
       ret = SystemLFXOClock;
 #else
       /* We should not get here, since core should not be clocked. May */
       /* be caused by a misconfiguration though. */
-      ret = 0;
+      ret = 0U;
 #endif
       break;
 
@@ -200,12 +207,12 @@ uint32_t SystemHFClockGet(void)
       break;
 
     case CMU_HFCLKSTATUS_SELECTED_HFXO:
-#if (EFR32_HFXO_FREQ > 0)
+#if (EFR32_HFXO_FREQ > 0U)
       ret = SystemHFXOClock;
 #else
       /* We should not get here, since core should not be clocked. May */
       /* be caused by a misconfiguration though. */
-      ret = 0;
+      ret = 0U;
 #endif
       break;
 
@@ -231,10 +238,10 @@ uint32_t SystemHFClockGet(void)
 uint32_t SystemHFXOClockGet(void)
 {
   /* External crystal oscillator present? */
-#if (EFR32_HFXO_FREQ > 0)
+#if (EFR32_HFXO_FREQ > 0U)
   return SystemHFXOClock;
 #else
-  return 0;
+  return 0U;
 #endif
 }
 
@@ -256,7 +263,7 @@ uint32_t SystemHFXOClockGet(void)
 void SystemHFXOClockSet(uint32_t freq)
 {
   /* External crystal oscillator present? */
-#if (EFR32_HFXO_FREQ > 0)
+#if (EFR32_HFXO_FREQ > 0U)
   SystemHFXOClock = freq;
 
   /* Update core clock frequency if HFXO is used to clock core */
@@ -284,10 +291,18 @@ void SystemHFXOClockSet(uint32_t freq)
  *****************************************************************************/
 void SystemInit(void)
 {
-#if (__FPU_PRESENT == 1) && (__FPU_USED == 1)
+#if defined(__VTOR_PRESENT) && (__VTOR_PRESENT == 1U)
+  SCB->VTOR = (uint32_t)&__Vectors;
+#endif
+
+#if (__FPU_PRESENT == 1U) && (__FPU_USED == 1U)
   /* Set floating point coprosessor access mode. */
-  SCB->CPACR |= ((3UL << 10 * 2)                      /* set CP10 Full Access */
-                 | (3UL << 11 * 2));                  /* set CP11 Full Access */
+  SCB->CPACR |= ((3UL << 10 * 2)                    /* set CP10 Full Access */
+                 | (3UL << 11 * 2));                /* set CP11 Full Access */
+#endif
+
+#if defined(UNALIGNED_SUPPORT_DISABLE)
+  SCB->CCR |= SCB_CCR_UNALIGN_TRP_Msk;
 #endif
 }
 
@@ -338,10 +353,10 @@ uint32_t SystemULFRCOClockGet(void)
 uint32_t SystemLFXOClockGet(void)
 {
   /* External crystal oscillator present? */
-#if (EFR32_LFXO_FREQ > 0)
+#if (EFR32_LFXO_FREQ > 0U)
   return SystemLFXOClock;
 #else
-  return 0;
+  return 0U;
 #endif
 }
 
@@ -363,7 +378,7 @@ uint32_t SystemLFXOClockGet(void)
 void SystemLFXOClockSet(uint32_t freq)
 {
   /* External crystal oscillator present? */
-#if (EFR32_LFXO_FREQ > 0)
+#if (EFR32_LFXO_FREQ > 0U)
   SystemLFXOClock = freq;
 
   /* Update core clock frequency if LFXO is used to clock core */

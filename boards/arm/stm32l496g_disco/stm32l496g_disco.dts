@@ -13,6 +13,7 @@
 
 	chosen {
 		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -75,7 +76,7 @@ arduino_serial: &lpuart1 {};
 
 &lpuart1 {
 	current-speed = <115200>;
-	pinctrl-0 = <&usart1_pins_c>;
+	pinctrl-0 = <&lpuart1_pins_a>;
 	pinctrl-names = "default";
 	status = "ok";
 };

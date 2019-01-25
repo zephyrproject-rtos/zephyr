@@ -11,7 +11,7 @@ GDATA(_pm_save_gdtr)
 GDATA(_pm_save_idtr)
 GDATA(_pm_save_esp)
 
-GTEXT(_sys_soc_resume_from_deep_sleep)
+GTEXT(sys_resume_from_deep_sleep)
 GTEXT(_power_restore_cpu_context)
 GTEXT(_power_soc_sleep)
 GTEXT(_power_soc_deep_sleep)
@@ -102,7 +102,7 @@ SECTION_FUNC(TEXT, _power_soc_deep_sleep)
  * Disclaimer: This can be used for debug or development purposes. This is not
  * a supported feature in Quark SE boards and to be used at one's own risk.
  */
-SECTION_FUNC(TEXT, _sys_soc_resume_from_deep_sleep)
+SECTION_FUNC(TEXT, sys_resume_from_deep_sleep)
 	movl $CONFIG_BSP_SHARED_RESTORE_INFO_RAM_ADDR, %eax
 	cmpl $_power_restore_cpu_context, (%eax)
 	je _power_restore_cpu_context

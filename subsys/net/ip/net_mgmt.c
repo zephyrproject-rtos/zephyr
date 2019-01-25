@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_mgmt
-#define NET_LOG_LEVEL CONFIG_NET_MGMT_EVENT_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_mgmt, CONFIG_NET_MGMT_EVENT_LOG_LEVEL);
 
 #include <kernel.h>
 #include <toolchain.h>
@@ -85,7 +85,7 @@ static inline void mgmt_push_event(u32_t mgmt_event, struct net_if *iface,
 		u16_t o_idx = out_event + 1;
 
 		if (o_idx == CONFIG_NET_MGMT_EVENT_QUEUE_SIZE) {
-			o_idx = 0;
+			o_idx = 0U;
 		}
 
 		if (events[o_idx].event) {
@@ -123,7 +123,7 @@ static inline struct mgmt_event_entry *mgmt_pop_event(void)
 
 static inline void mgmt_clean_event(struct mgmt_event_entry *mgmt_event)
 {
-	mgmt_event->event = 0;
+	mgmt_event->event = 0U;
 	mgmt_event->iface = NULL;
 }
 
@@ -136,7 +136,7 @@ static inline void mgmt_rebuild_global_event_mask(void)
 {
 	struct net_mgmt_event_callback *cb, *tmp;
 
-	global_event_mask = 0;
+	global_event_mask = 0U;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&event_callbacks, cb, tmp, node) {
 		mgmt_add_event_mask(cb->event_mask);
@@ -369,7 +369,7 @@ int net_mgmt_event_wait_on_iface(struct net_if *iface,
 void net_mgmt_event_init(void)
 {
 	sys_slist_init(&event_callbacks);
-	global_event_mask = 0;
+	global_event_mask = 0U;
 
 	in_event = -1;
 	out_event = -1;

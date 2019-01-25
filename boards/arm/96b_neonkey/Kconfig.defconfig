@@ -12,34 +12,34 @@ config BOARD
 
 if UART_CONSOLE
 
-config UART_STM32_PORT_1
-	def_bool y
+config UART_1
+	default y
 
 endif # UART_CONSOLE
 
 if I2C
 
 config I2C_1
-	def_bool y
+	default y
 
 config I2C_2
-	def_bool y
+	default y
 
 config I2C_3
-	def_bool y
+	default y
 
 config I2C_STM32_INTERRUPT
-	def_bool y
+	default y
 
 endif # I2C
 
 if SPI
 
 config SPI_1
-	def_bool y
+	default y
 
 config SPI_STM32_INTERRUPT
-	def_bool y
+	default y
 
 endif # SPI
 

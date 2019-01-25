@@ -20,7 +20,6 @@ extern struct k_mem_slab *_trace_list_k_mem_slab;
 extern struct k_mem_pool *_trace_list_k_mem_pool;
 extern struct k_sem      *_trace_list_k_sem;
 extern struct k_mutex    *_trace_list_k_mutex;
-extern struct k_alert    *_trace_list_k_alert;
 extern struct k_fifo     *_trace_list_k_fifo;
 extern struct k_lifo     *_trace_list_k_lifo;
 extern struct k_stack    *_trace_list_k_stack;

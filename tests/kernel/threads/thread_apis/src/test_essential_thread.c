@@ -6,6 +6,7 @@
 #include <ztest.h>
 #include <kernel.h>
 #include <kernel_structs.h>
+#include <kernel_internal.h>
 
 __kernel struct k_thread kthread_thread;
 

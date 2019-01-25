@@ -15,7 +15,7 @@ void test_collecting(void)
 	u32_t i, j;
 	u8_t data[5], temp, k;
 
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	flash_write_protection_set(flash_dev, false);
 	flash_erase(flash_dev, FLASH_AREA_IMAGE_1_OFFSET,
@@ -25,9 +25,9 @@ void test_collecting(void)
 	flash_img_init(&ctx, flash_dev);
 	zassert(flash_img_bytes_written(&ctx) == 0, "pass", "fail");
 
-	k = 0;
-	for (i = 0; i < 300; i++) {
-		for (j = 0; j < ARRAY_SIZE(data); j++) {
+	k = 0U;
+	for (i = 0U; i < 300; i++) {
+		for (j = 0U; j < ARRAY_SIZE(data); j++) {
 			data[j] = k++;
 		}
 		zassert(flash_img_buffered_write(&ctx, data, sizeof(data),
@@ -37,8 +37,8 @@ void test_collecting(void)
 	zassert(flash_img_buffered_write(&ctx, data, 0, true) == 0, "pass",
 					 "fail");
 
-	k = 0;
-	for (i = 0; i < 300 * sizeof(data); i++) {
+	k = 0U;
+	for (i = 0U; i < 300 * sizeof(data); i++) {
 		zassert(flash_read(flash_dev, FLASH_AREA_IMAGE_1_OFFSET + i,
 				   &temp, 1) == 0, "pass", "fail");
 		zassert(temp == k, "pass", "fail");

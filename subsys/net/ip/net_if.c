@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_if
-#define NET_LOG_LEVEL CONFIG_NET_IF_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 
 #include <init.h>
 #include <kernel.h>
@@ -20,7 +20,6 @@
 
 #include "net_private.h"
 #include "ipv6.h"
-#include "rpl.h"
 #include "ipv4_autoconf_internal.h"
 
 #include "net_stats.h"
@@ -97,7 +96,7 @@ static struct k_thread tx_thread_ts;
 static sys_slist_t timestamp_callbacks;
 #endif /* CONFIG_NET_PKT_TIMESTAMP */
 
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+#if CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG
 #if defined(CONFIG_NET_STATISTICS)
 #define debug_check_packet(pkt)						\
 	do {								\
@@ -119,7 +118,7 @@ static sys_slist_t timestamp_callbacks;
 #endif /* CONFIG_NET_STATISTICS */
 #else
 #define debug_check_packet(...)
-#endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
+#endif /* CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 static inline void net_context_send_cb(struct net_context *context,
 				       void *token, int status)
@@ -148,7 +147,6 @@ static inline void net_context_send_cb(struct net_context *context,
 
 static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 {
-	const struct net_if_api *api = net_if_get_device(iface)->driver_api;
 	struct net_linkaddr *dst;
 	struct net_context *context;
 	void *context_token;
@@ -165,12 +163,13 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	context_token = net_pkt_token(pkt);
 
 	if (atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
-		if (IS_ENABLED(CONFIG_NET_TCP)) {
+		if (IS_ENABLED(CONFIG_NET_TCP) &&
+		    net_pkt_family(pkt) != AF_UNSPEC) {
 			net_pkt_set_sent(pkt, true);
 			net_pkt_set_queued(pkt, false);
 		}
 
-		status = api->send(iface, pkt);
+		status = net_if_l2(iface)->send(iface, pkt);
 	} else {
 		/* Drop packet if interface is not up */
 		NET_WARN("iface %p is down", iface);
@@ -178,13 +177,14 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (status < 0) {
-		if (IS_ENABLED(CONFIG_NET_TCP)) {
+		if (IS_ENABLED(CONFIG_NET_TCP)
+		    && net_pkt_family(pkt) != AF_UNSPEC) {
 			net_pkt_set_sent(pkt, false);
 		}
 
 		net_pkt_unref(pkt);
 	} else {
-		net_stats_update_bytes_sent(iface, pkt->total_pkt_len);
+		net_stats_update_bytes_sent(iface, status);
 	}
 
 	if (context) {
@@ -241,19 +241,14 @@ static inline void init_iface(struct net_if *iface)
 	NET_DBG("On iface %p", iface);
 
 	api->init(iface);
-
-	/* Test for api->send only when ip is *not* offloaded: */
-	if (!net_if_is_ip_offloaded(iface)) {
-		NET_ASSERT(api->send);
-	}
 }
 
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_context *context = net_pkt_context(pkt);
 	struct net_linkaddr *dst = net_pkt_lladdr_dst(pkt);
+	enum net_verdict verdict = NET_OK;
 	void *token = net_pkt_token(pkt);
-	enum net_verdict verdict;
 	int status = -EIO;
 
 	if (!atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
@@ -280,7 +275,7 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	 * additional checks, so let the packet through.
 	 */
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
-		goto send;
+		goto done;
 	}
 #endif
 
@@ -297,14 +292,8 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	}
 #endif
 
-#if defined(CONFIG_NET_LOOPBACK)
-send:
-#endif
-	verdict = net_if_l2(iface)->send(iface, pkt);
-
 done:
-	/* The L2 send() function can return
-	 *   NET_OK in which case packet was sent successfully. In this case
+	/*   NET_OK in which case packet has checked successfully. In this case
 	 *   the net_context callback is called after successful delivery in
 	 *   net_if_tx_thread().
 	 *
@@ -315,15 +304,19 @@ done:
 	 *   This can happen for example if we need to do IPv6 ND to figure
 	 *   out link layer address.
 	 */
-	if (context && verdict == NET_DROP) {
-		NET_DBG("Calling context send cb %p token %p verdict %d",
-			context, token, verdict);
+	if (verdict == NET_DROP) {
+		if (context) {
+			NET_DBG("Calling ctx send cb %p token %p verdict %d",
+				context, token, verdict);
+			net_context_send_cb(context, token, status);
+		}
 
-		net_context_send_cb(context, token, status);
-	}
-
-	if (verdict == NET_DROP && dst->addr) {
-		net_if_call_link_cb(iface, dst, status);
+		if (dst->addr) {
+			net_if_call_link_cb(iface, dst, status);
+		}
+	} else if (verdict == NET_OK) {
+		/* Packet is ready to be sent by L2, let's queue */
+		net_if_queue_tx(iface, pkt);
 	}
 
 	return verdict;
@@ -406,14 +399,14 @@ struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
 static u8_t get_ipaddr_diff(const u8_t *src, const u8_t *dst, int addr_len)
 {
 	u8_t j, k, xor;
-	u8_t len = 0;
+	u8_t len = 0U;
 
-	for (j = 0; j < addr_len; j++) {
+	for (j = 0U; j < addr_len; j++) {
 		if (src[j] == dst[j]) {
 			len += 8;
 		} else {
 			xor = src[j] ^ dst[j];
-			for (k = 0; k < 8; k++) {
+			for (k = 0U; k < 8; k++) {
 				if (!(xor & 0x80)) {
 					len++;
 					xor <<= 1;
@@ -1049,9 +1042,6 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 	}
 
 	for (i = 0; i < NET_IF_MAX_IPV6_ADDR; i++) {
-#if defined(CONFIG_NET_RPL)
-		struct in6_addr *global;
-#endif
 		if (ipv6->unicast[i].is_used) {
 			continue;
 		}
@@ -1073,15 +1063,7 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 		 */
 		join_mcast_nodes(iface, &ipv6->unicast[i].address.in6_addr);
 
-#if defined(CONFIG_NET_RPL)
-		/* Do not send DAD for global addresses */
-		global = check_global_addr(iface);
-		if (!net_ipv6_addr_cmp(global, addr)) {
-			net_if_ipv6_start_dad(iface, &ipv6->unicast[i]);
-		}
-#else
 		net_if_ipv6_start_dad(iface, &ipv6->unicast[i]);
-#endif
 
 		net_mgmt_event_notify(NET_EVENT_IPV6_ADDR_ADD, iface);
 
@@ -1968,9 +1950,9 @@ static inline bool is_proper_ipv6_address(struct net_if_addr *addr)
 	return false;
 }
 
-static inline struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
-							  struct in6_addr *dst,
-							  u8_t *best_so_far)
+static struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
+						   const struct in6_addr *dst,
+						   u8_t *best_so_far)
 {
 	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
 	struct in6_addr *src = NULL;
@@ -1998,11 +1980,11 @@ static inline struct in6_addr *net_if_ipv6_get_best_match(struct net_if *iface,
 #endif /* CONFIG_NET_IPV6 */
 
 const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
-						   struct in6_addr *dst)
+						   const struct in6_addr *dst)
 {
 #if defined(CONFIG_NET_IPV6)
 	struct in6_addr *src = NULL;
-	u8_t best_match = 0;
+	u8_t best_match = 0U;
 	struct net_if *iface;
 
 	if (!net_ipv6_is_ll_addr(dst) && !net_ipv6_is_addr_mcast(dst)) {
@@ -2053,7 +2035,7 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *dst_iface,
 #endif
 }
 
-struct net_if *net_if_ipv6_select_src_iface(struct in6_addr *dst)
+struct net_if *net_if_ipv6_select_src_iface(const struct in6_addr *dst)
 {
 #if defined(CONFIG_NET_IPV6)
 	const struct in6_addr *src;
@@ -2291,7 +2273,7 @@ bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
 	return false;
 }
 
-struct net_if *net_if_ipv4_select_src_iface(struct in_addr *dst)
+struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst)
 {
 #if defined(CONFIG_NET_IPV4)
 	struct net_if *iface;
@@ -2328,7 +2310,7 @@ static inline bool is_proper_ipv4_address(struct net_if_addr *addr)
 }
 
 static struct in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
-						  struct in_addr *dst,
+						  const struct in_addr *dst,
 						  u8_t *best_so_far)
 {
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
@@ -2385,11 +2367,11 @@ struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
 }
 
 const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
-						  struct in_addr *dst)
+						  const struct in_addr *dst)
 {
 #if defined(CONFIG_NET_IPV4)
 	struct in_addr *src = NULL;
-	u8_t best_match = 0;
+	u8_t best_match = 0U;
 	struct net_if *iface;
 
 	if (!net_ipv4_is_ll_addr(dst) && !net_ipv4_is_addr_mcast(dst)) {
@@ -3173,9 +3155,4 @@ void net_if_post_init(void)
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
 		net_if_up(iface);
 	}
-
-	/* RPL init must be done after the network interface is up
-	 * as the RPL code wants to add multicast address to interface.
-	 */
-	net_rpl_init();
 }

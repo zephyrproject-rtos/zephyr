@@ -259,11 +259,11 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 	u32_t sstsa;
 	u32_t ssrsa;
 	u32_t ssto;
-	u32_t ssioc = 0;
+	u32_t ssioc = 0U;
 	u32_t mdiv;
-	u32_t i2s_m = 0;
-	u32_t i2s_n = 0;
-	u32_t frame_len = 0;
+	u32_t i2s_m = 0U;
+	u32_t i2s_n = 0U;
+	u32_t frame_len = 0U;
 	bool inverted_frame = false;
 
 	if ((dev_data->tx.state != I2S_STATE_NOT_READY) &&
@@ -308,14 +308,14 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 	ssc1 = SSCR1_TTE | SSCR1_TTELP | SSCR1_TRAIL | SSCR1_TSRE | SSCR1_RSRE;
 
 	/* sscr2 dynamic setting is LJDFD */
-	ssc2 = 0;
+	ssc2 = 0U;
 
 	/* sscr3 dynamic settings are TFT, RFT */
 	ssc3 = SSCR3_TX(CAVS_I2S_DMA_BURST_SIZE) |
 		SSCR3_RX(CAVS_I2S_DMA_BURST_SIZE);
 
 	/* sspsp dynamic settings are SCMODE, SFRMP, DMYSTRT, SFRMWDTH */
-	sspsp = 0;
+	sspsp = 0U;
 
 	/* sspsp2 no dynamic setting */
 	sspsp2 = 0x0;
@@ -384,7 +384,7 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 		i2s_n = mclk / 100;
 
 		/* set divider value of 1 which divides the clock by 2 */
-		mdiv = 1;
+		mdiv = 1U;
 
 		/* Select M/N divider as the clock source */
 		ssc0 |= SSCR0_ECS;

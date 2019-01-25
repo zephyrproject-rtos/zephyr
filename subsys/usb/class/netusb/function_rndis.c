@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_DEBUG_LEVEL
+#define LOG_LEVEL CONFIG_USB_DEVICE_NETWORK_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_rndis);
 
@@ -223,7 +223,7 @@ static struct __rndis {
 };
 
 static u8_t manufacturer[] = CONFIG_USB_DEVICE_MANUFACTURER;
-static u32_t drv_version = 1;
+static u32_t drv_version = 1U;
 
 static u32_t object_id_supported[] = {
 	RNDIS_OBJECT_ID_GEN_SUPP_LIST,
@@ -336,7 +336,7 @@ void rndis_clean(void)
 static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	u8_t buffer[CONFIG_RNDIS_BULK_EP_MPS];
-	u32_t hdr_offset = 0;
+	u32_t hdr_offset = 0U;
 	u32_t len, read;
 	int ret;
 
@@ -395,7 +395,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 			return;
 		}
 
-		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+		pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 		if (!pkt) {
 			/* In a case of low memory skip the whole packet
 			 * hoping to get buffers for later ones
@@ -619,7 +619,7 @@ static int rndis_query_handle(u8_t *data, u32_t len)
 	struct rndis_query_cmd *cmd = (void *)data;
 	struct rndis_query_cmd_complete *rsp;
 	struct net_buf *buf;
-	u32_t object_id, buf_len = 0;
+	u32_t object_id, buf_len = 0U;
 
 	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
 	if (!buf) {
@@ -963,8 +963,8 @@ static int rndis_send_media_status(u32_t media_status)
 		ind->status = sys_cpu_to_le32(RNDIS_STATUS_DISCONNECT_MEDIA);
 	}
 
-	ind->buf_len = 0;
-	ind->buf_offset = 0;
+	ind->buf_len = 0U;
+	ind->buf_offset = 0U;
 
 	rndis_queue_rsp(buf);
 
@@ -984,7 +984,7 @@ static int handle_encapsulated_rsp(u8_t **data, u32_t *len)
 	buf = net_buf_get(&rndis_tx_queue, K_NO_WAIT);
 	if (!buf) {
 		LOG_ERR("Error getting response buffer");
-		*len = 0;
+		*len = 0U;
 		return -ENODATA;
 	}
 
@@ -1139,16 +1139,9 @@ static int rndis_send(struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	rndis_hdr_add(buf, net_pkt_get_len(pkt) + net_pkt_ll_reserve(pkt));
+	rndis_hdr_add(buf, net_pkt_get_len(pkt));
 
 	remaining -= sizeof(struct rndis_payload_packet);
-
-	remaining = append_bytes(buf, sizeof(buf), net_pkt_ll(pkt),
-				 net_pkt_ll_reserve(pkt) + pkt->frags->len,
-				 remaining);
-	if (remaining < 0) {
-		return remaining;
-	}
 
 	for (frag = pkt->frags->frags; frag; frag = frag->frags) {
 		LOG_DBG("Fragment %p len %u remaining %u",
@@ -1308,6 +1301,9 @@ static void rndis_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	case USB_DC_RESUME:
 	case USB_DC_INTERFACE:
 		LOG_DBG("USB unhandlded state: %d", status);
+		break;
+
+	case USB_DC_SOF:
 		break;
 
 	case USB_DC_UNKNOWN:

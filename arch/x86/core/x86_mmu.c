@@ -29,6 +29,12 @@ MMU_BOOT_REGION((u32_t)&__app_ram_start, (u32_t)&__app_ram_size,
 MMU_BOOT_REGION((u32_t)&_app_smem_start, (u32_t)&_app_smem_size,
 		MMU_ENTRY_WRITE | MMU_ENTRY_USER | MMU_ENTRY_EXECUTE_DISABLE);
 #endif
+
+#ifdef CONFIG_COVERAGE_GCOV
+MMU_BOOT_REGION((u32_t)&__gcov_bss_start, (u32_t)&__gcov_bss_size,
+		MMU_ENTRY_WRITE | MMU_ENTRY_USER | MMU_ENTRY_EXECUTE_DISABLE);
+#endif
+
 /* __kernel_ram_size includes all unused memory, which is used for heaps.
  * User threads cannot access this unless granted at runtime. This is done
  * automatically for stacks.
@@ -46,7 +52,7 @@ void _x86_mmu_get_flags(void *addr,
 	*pde_flags = (x86_page_entry_data_t)(X86_MMU_GET_PDE(addr)->value &
 				~(x86_page_entry_data_t)MMU_PDE_PAGE_TABLE_MASK);
 
-	if (*pde_flags & MMU_ENTRY_PRESENT) {
+	if ((*pde_flags & MMU_ENTRY_PRESENT) != 0) {
 		*pte_flags = (x86_page_entry_data_t)
 			(X86_MMU_GET_PTE(addr)->value &
 			 ~(x86_page_entry_data_t)MMU_PTE_PAGE_MASK);
@@ -82,11 +88,11 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 #ifdef CONFIG_X86_PAE_MODE
 	for (pdpte = start_pdpte_num; pdpte <= end_pdpte_num; pdpte++) {
 		if (pdpte != start_pdpte_num) {
-			start_pde_num = 0;
+			start_pde_num = 0U;
 		}
 
 		if (pdpte != end_pdpte_num) {
-			end_pde_num = 0;
+			end_pde_num = 0U;
 		} else {
 			end_pde_num = MMU_PDE_NUM((char *)addr + size - 1);
 		}
@@ -125,7 +131,7 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 			 * of the buffer.
 			 */
 			if (pde != end_pde_num) {
-				ending_pte_num = 1023;
+				ending_pte_num = 1023U;
 			} else {
 				ending_pte_num =
 					MMU_PAGE_NUM((char *)addr + size - 1);
@@ -135,7 +141,7 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 			 * will have the start pte number as zero.
 			 */
 			if (pde != start_pde_num) {
-				starting_pte_num = 0;
+				starting_pte_num = 0U;
 			}
 
 			pte_value.value = 0xFFFFFFFF;
@@ -191,7 +197,7 @@ void _x86_mmu_set_flags(void *ptr,
 	__ASSERT(!(addr & MMU_PAGE_MASK), "unaligned address provided");
 	__ASSERT(!(size & MMU_PAGE_MASK), "unaligned size provided");
 
-	while (size) {
+	while (size != 0) {
 
 #ifdef CONFIG_X86_PAE_MODE
 		/* TODO we're not generating 2MB entries at the moment */
@@ -236,8 +242,8 @@ static inline void _x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
 	 * For x86: interate over all the partitions and set the
 	 * required flags in the correct MMU page tables.
 	 */
-	partitions_count = 0;
-	for (partition_index = 0;
+	partitions_count = 0U;
+	for (partition_index = 0U;
 	     partitions_count < total_partitions;
 	     partition_index++) {
 
@@ -284,15 +290,13 @@ void _arch_mem_domain_destroy(struct k_mem_domain *domain)
 void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 				       u32_t  partition_id)
 {
-	u32_t total_partitions;
 	struct k_mem_partition partition;
 
 	if (domain == NULL) {
 		goto out;
 	}
 
-	total_partitions = domain->num_partitions;
-	__ASSERT(partition_id <= total_partitions,
+	__ASSERT(partition_id <= domain->num_partitions,
 		 "invalid partitions");
 
 	partition = domain->partitions[partition_id];

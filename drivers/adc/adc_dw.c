@@ -294,7 +294,7 @@ static int adc_dw_read_request(struct device *dev,
 	if (seq_tbl->options) {
 		info->seq_size = seq_tbl->options->extra_samplings + 1;
 	} else {
-		info->seq_size = 1;
+		info->seq_size = 1U;
 	}
 
 	info->state = ADC_STATE_SAMPLING;
@@ -302,14 +302,13 @@ static int adc_dw_read_request(struct device *dev,
 
 	adc_context_start_read(&info->ctx, seq_tbl);
 	error = adc_context_wait_for_completion(&info->ctx);
-	adc_context_release(&info->ctx, error);
 
 	if (info->state == ADC_STATE_ERROR) {
 		info->state = ADC_STATE_IDLE;
 		return -EIO;
 	}
 
-	return 0;
+	return error;
 }
 
 static int adc_dw_read(struct device *dev, const struct adc_sequence *seq_tbl)
@@ -318,8 +317,9 @@ static int adc_dw_read(struct device *dev, const struct adc_sequence *seq_tbl)
 	int ret;
 
 	adc_context_lock(&info->ctx, false, NULL);
-
 	ret = adc_dw_read_request(dev, seq_tbl);
+	adc_context_release(&info->ctx, ret);
+
 	return ret;
 }
 
@@ -330,9 +330,13 @@ static int adc_dw_read_async(struct device *dev,
 			       struct k_poll_signal *async)
 {
 	struct adc_info *info = dev->driver_data;
+	int ret;
 
 	adc_context_lock(&info->ctx, true, async);
-	return adc_dw_read_request(dev, sequence);
+	ret = adc_dw_read_request(dev, sequence);
+	adc_context_release(&info->ctx, ret);
+
+	return ret;
 }
 #endif
 
@@ -342,7 +346,7 @@ static void adc_dw_start_conversion(struct device *dev)
 	const struct adc_config *config = info->dev->config->config_info;
 	const struct adc_sequence *entry = info->ctx.sequence;
 	u32_t adc_base = config->reg_base;
-	u32_t ctrl, tmp_val, interval_us = 0;
+	u32_t ctrl, tmp_val, interval_us = 0U;
 
 	info->channel_id = find_lsb_set(info->channels) - 1;
 
@@ -480,7 +484,7 @@ static const struct adc_driver_api api_funcs = {
 };
 
 const static struct adc_config adc_config_dev = {
-	.reg_base = CONFIG_ADC_0_BASE_ADDRESS,
+	.reg_base = DT_ADC_0_BASE_ADDRESS,
 	.reg_irq_mask = SCSS_REGISTER_BASE + INT_SS_ADC_IRQ_MASK,
 	.reg_err_mask = SCSS_REGISTER_BASE + INT_SS_ADC_ERR_MASK,
 #ifdef CONFIG_ADC_DW_SERIAL
@@ -500,18 +504,18 @@ const static struct adc_config adc_config_dev = {
 	.config_func  = adc_config_irq,
 };
 
-DEVICE_AND_API_INIT(adc_dw, CONFIG_ADC_0_NAME, &adc_dw_init,
+DEVICE_AND_API_INIT(adc_dw, DT_ADC_0_NAME, &adc_dw_init,
 		    &adc_info_dev, &adc_config_dev,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &api_funcs);
 
 static void adc_config_irq(void)
 {
-	IRQ_CONNECT(CONFIG_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI, adc_dw_rx_isr,
+	IRQ_CONNECT(DT_ADC_0_IRQ, DT_ADC_0_IRQ_PRI, adc_dw_rx_isr,
 		    DEVICE_GET(adc_dw), 0);
-	irq_enable(CONFIG_ADC_0_IRQ);
+	irq_enable(DT_ADC_0_IRQ);
 
-	IRQ_CONNECT(CONFIG_ADC_IRQ_ERR, CONFIG_ADC_0_IRQ_PRI,
+	IRQ_CONNECT(DT_ADC_IRQ_ERR, DT_ADC_0_IRQ_PRI,
 		    adc_dw_err_isr, DEVICE_GET(adc_dw), 0);
-	irq_enable(CONFIG_ADC_IRQ_ERR);
+	irq_enable(DT_ADC_IRQ_ERR);
 }

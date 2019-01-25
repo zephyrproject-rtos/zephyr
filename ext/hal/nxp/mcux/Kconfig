@@ -32,6 +32,11 @@ config HAS_MCUX_IGPIO
 	help
 	  Set if the iMX GPIO (IGPIO) module is present in the SoC.
 
+config HAS_MCUX_LPI2C
+	bool
+	help
+	  Set if the low power I2C (LPI2C) module is present in the SoC.
+
 config HAS_MCUX_LPSCI
 	bool
 	help

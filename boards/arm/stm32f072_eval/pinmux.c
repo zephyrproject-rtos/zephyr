@@ -14,10 +14,10 @@
 
 /* pin assignments for STM32F072-EVAL board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_STM32_PORT_2
+#ifdef CONFIG_UART_2
 	{STM32_PIN_PD5, STM32F0_PINMUX_FUNC_PD5_USART2_TX},
 	{STM32_PIN_PD6, STM32F0_PINMUX_FUNC_PD6_USART2_RX},
-#endif	/* CONFIG_UART_STM32_PORT_2 */
+#endif	/* CONFIG_UART_2 */
 };
 
 static int pinmux_stm32_init(struct device *port)

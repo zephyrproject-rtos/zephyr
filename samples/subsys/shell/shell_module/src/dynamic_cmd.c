@@ -19,24 +19,6 @@ static u8_t dynamic_cmd_cnt;
 typedef int cmp_t(const void *, const void *);
 extern void qsort(void *a, size_t n, size_t es, cmp_t *cmp);
 
-static int cmd_dynamic(const struct shell *shell, size_t argc, char **argv)
-{
-	if ((argc == 1) || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
-		return 0;
-	}
-
-	if (argc > 2) {
-		shell_fprintf(shell, SHELL_ERROR,
-			      "%s: bad parameter count\r\n", argv[0]);
-	} else {
-		shell_fprintf(shell, SHELL_ERROR,
-			      "%s: please specify subcommand\r\n", argv[0]);
-	}
-
-	return -ENOEXEC;
-}
-
 /* function required by qsort */
 static int string_cmp(const void *p_a, const void *p_b)
 {
@@ -46,45 +28,35 @@ static int string_cmp(const void *p_a, const void *p_b)
 static int cmd_dynamic_add(const struct shell *shell,
 			   size_t argc, char **argv)
 {
-	u8_t idx;
 	u16_t cmd_len;
+	u8_t idx;
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
-		return 0;
-	}
-
-	if (argc != 2) {
-		shell_fprintf(shell, SHELL_ERROR,
-			      "%s: bad parameter count\r\n", argv[0]);
-		return -ENOEXEC;
-	}
+	ARG_UNUSED(argc);
 
 	if (dynamic_cmd_cnt >= MAX_CMD_CNT) {
-		shell_fprintf(shell, SHELL_ERROR, "command limit reached\r\n");
+		shell_error(shell, "command limit reached");
 		return -ENOEXEC;
 	}
 
 	cmd_len = strlen(argv[1]);
 
 	if (cmd_len >= MAX_CMD_LEN) {
-		shell_fprintf(shell, SHELL_ERROR, "too long command\r\n");
+		shell_error(shell, "too long command");
 		return -ENOEXEC;
 	}
 
-	for (idx = 0; idx < cmd_len; idx++) {
+	for (idx = 0U; idx < cmd_len; idx++) {
 		if (!isalnum((int)(argv[1][idx]))) {
-			shell_fprintf(shell, SHELL_ERROR,
-				     "bad command name - please use only"
-				     " alphanumerical characters\r\n");
+			shell_error(shell,
+				    "bad command name - please use only"
+				    " alphanumerical characters");
 			return -ENOEXEC;
 		}
 	}
 
-	for (idx = 0; idx < MAX_CMD_CNT; idx++) {
+	for (idx = 0U; idx < MAX_CMD_CNT; idx++) {
 		if (!strcmp(dynamic_cmd_buffer[idx], argv[1])) {
-			shell_fprintf(shell, SHELL_ERROR,
-				      "duplicated command\r\n");
+			shell_error(shell, "duplicated command");
 			return -ENOEXEC;
 		}
 	}
@@ -94,37 +66,7 @@ static int cmd_dynamic_add(const struct shell *shell,
 	qsort(dynamic_cmd_buffer, dynamic_cmd_cnt,
 	      sizeof(dynamic_cmd_buffer[0]), string_cmp);
 
-	shell_fprintf(shell, SHELL_NORMAL, "command added successfully\r\n");
-
-	return 0;
-}
-
-static int cmd_dynamic_show(const struct shell *shell,
-			    size_t argc, char **argv)
-{
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
-		return 0;
-	}
-
-	if (argc != 1) {
-		shell_fprintf(shell, SHELL_ERROR,
-			      "%s: bad parameter count\r\n", argv[0]);
-		return -ENOEXEC;
-	}
-
-	if (dynamic_cmd_cnt == 0) {
-		shell_fprintf(shell, SHELL_WARNING,
-			      "Please add some commands first.\r\n");
-		return -ENOEXEC;
-	}
-
-	shell_fprintf(shell, SHELL_NORMAL, "Dynamic command list:\r\n");
-
-	for (u8_t i = 0; i < dynamic_cmd_cnt; i++) {
-		shell_fprintf(shell, SHELL_NORMAL,
-			      "[%3d] %s\r\n", i, dynamic_cmd_buffer[i]);
-	}
+	shell_print(shell, "command added successfully");
 
 	return 0;
 }
@@ -132,27 +74,17 @@ static int cmd_dynamic_show(const struct shell *shell,
 static int cmd_dynamic_execute(const struct shell *shell,
 			       size_t argc, char **argv)
 {
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
-		return 0;
-	}
-
-	if (argc != 2) {
-		shell_fprintf(shell, SHELL_ERROR,
-			      "%s: bad parameter count\r\n", argv[0]);
-		return -ENOEXEC;
-	}
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	for (u8_t idx = 0; idx <  dynamic_cmd_cnt; idx++) {
 		if (!strcmp(dynamic_cmd_buffer[idx], argv[1])) {
-			shell_fprintf(shell, SHELL_NORMAL,
-				      "dynamic command: %s\r\n", argv[1]);
+			shell_print(shell, "dynamic command: %s", argv[1]);
 			return 0;
 		}
 	}
 
-	shell_fprintf(shell, SHELL_ERROR,
-		      "%s: uknown parameter: %s\r\n", argv[0], argv[1]);
+	shell_error(shell, "%s: uknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }
@@ -160,16 +92,8 @@ static int cmd_dynamic_execute(const struct shell *shell,
 static int cmd_dynamic_remove(const struct shell *shell, size_t argc,
 			      char **argv)
 {
-	if ((argc == 1) || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
-		return 0;
-	}
-
-	if (argc != 2) {
-		shell_fprintf(shell, SHELL_ERROR,
-			      "%s: bad parameter count\r\n", argv[0]);
-		return -ENOEXEC;
-	}
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
 
 	for (u8_t idx = 0; idx <  dynamic_cmd_cnt; idx++) {
 		if (!strcmp(dynamic_cmd_buffer[idx], argv[1])) {
@@ -183,15 +107,33 @@ static int cmd_dynamic_remove(const struct shell *shell, size_t argc,
 			}
 
 			--dynamic_cmd_cnt;
-			shell_fprintf(shell, SHELL_NORMAL,
-				      "command removed successfully\r\n");
+			shell_print(shell, "command removed successfully");
 			return 0;
 		}
 	}
-	shell_fprintf(shell, SHELL_ERROR,
-		      "did not find command: %s\r\n", argv[1]);
+	shell_error(shell, "did not find command: %s", argv[1]);
 
 	return -ENOEXEC;
+}
+
+static int cmd_dynamic_show(const struct shell *shell,
+			    size_t argc, char **argv)
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	if (dynamic_cmd_cnt == 0) {
+		shell_warn(shell, "Please add some commands first.");
+		return -ENOEXEC;
+	}
+
+	shell_print(shell, "Dynamic command list:");
+
+	for (u8_t i = 0; i < dynamic_cmd_cnt; i++) {
+		shell_print(shell, "[%3d] %s", i, dynamic_cmd_buffer[i]);
+	}
+
+	return 0;
 }
 
 /* dynamic command creation */
@@ -216,21 +158,21 @@ static void dynamic_cmd_get(size_t idx, struct shell_static_entry *entry)
 SHELL_CREATE_DYNAMIC_CMD(m_sub_dynamic_set, dynamic_cmd_get);
 SHELL_CREATE_STATIC_SUBCMD_SET(m_sub_dynamic)
 {
-	SHELL_CMD(add, NULL,
+	SHELL_CMD_ARG(add, NULL,
 		"Add a new dynamic command.\nExample usage: [ dynamic add test "
 		"] will add a dynamic command 'test'.\nIn this example, command"
 		" name length is limited to 32 chars. You can add up to 20"
 		" commands. Commands are automatically sorted to ensure correct"
 		" shell completion.",
-		cmd_dynamic_add),
-	SHELL_CMD(execute, &m_sub_dynamic_set,
-		"Execute a command.", cmd_dynamic_execute),
-	SHELL_CMD(remove, &m_sub_dynamic_set,
-		"Remove a command.", cmd_dynamic_remove),
-	SHELL_CMD(show, NULL,
-		"Show all added dynamic commands.", cmd_dynamic_show),
+		cmd_dynamic_add, 2, 0),
+	SHELL_CMD_ARG(execute, &m_sub_dynamic_set,
+		"Execute a command.", cmd_dynamic_execute, 2, 0),
+	SHELL_CMD_ARG(remove, &m_sub_dynamic_set,
+		"Remove a command.", cmd_dynamic_remove, 2, 0),
+	SHELL_CMD_ARG(show, NULL,
+		"Show all added dynamic commands.", cmd_dynamic_show, 1, 0),
 	SHELL_SUBCMD_SET_END
 };
 
 SHELL_CMD_REGISTER(dynamic, &m_sub_dynamic,
-		   "Demonstrate dynamic command usage.", cmd_dynamic);
+		   "Demonstrate dynamic command usage.", NULL);

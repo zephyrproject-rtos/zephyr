@@ -55,7 +55,7 @@ K_THREAD_STACK_EXTERN(tstack);
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &kmsgq, &msgq, &end_sema,
-			      &tdata, &tstack, NULL);
+			      &tdata, &tstack);
 
 	k_thread_resource_pool_assign(k_current_get(), &test_pool);
 

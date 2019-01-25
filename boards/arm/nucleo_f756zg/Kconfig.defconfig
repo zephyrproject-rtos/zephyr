@@ -1,0 +1,61 @@
+# Kconfig - STM32F756ZG Nucleo board configuration
+#
+# Copyright (c) 2018 AJ Palmer
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_NUCLEO_F756ZG
+
+config BOARD
+	default "nucleo_f756zg"
+
+if UART_CONSOLE
+
+config UART_3
+	default y
+
+endif # UART_CONSOLE
+
+if SERIAL
+
+config UART_2
+	default y
+
+config UART_6
+	default y
+
+endif # SERIAL
+
+if NETWORKING
+
+config NET_L2_ETHERNET
+	default y
+
+config ETH_STM32_HAL
+	default y
+
+endif # NETWORKING
+
+if I2C
+
+config I2C_1
+	default y
+
+endif # I2C
+
+if PWM
+
+config PWM_STM32_1
+	default y
+
+endif # PWM
+
+if SPI
+
+config SPI_1
+	default y
+
+endif # SPI
+
+endif # BOARD_NUCLEO_F756ZG

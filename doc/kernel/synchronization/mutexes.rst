@@ -161,12 +161,9 @@ Related configuration options:
 
 * :option:`CONFIG_PRIORITY_CEILING`
 
-APIs
-****
+API Reference
+*************
 
-The following mutex APIs are provided by :file:`kernel.h`:
+.. doxygengroup:: mutex_apis
+   :project: Zephyr
 
-* :c:macro:`K_MUTEX_DEFINE`
-* :cpp:func:`k_mutex_init()`
-* :cpp:func:`k_mutex_lock()`
-* :cpp:func:`k_mutex_unlock()`

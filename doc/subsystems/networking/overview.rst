@@ -51,6 +51,10 @@ can be disabled if not needed.
   compatible API is implemented. Both blocking and non-blocking DGRAM (UDP)
   and STREAM (TCP) sockets are supported.
 
+* **Secure Sockets API** Experimental support for TLS/DTLS secure protocols and
+  configuration options for sockets API. Secure functions for the implementation
+  are provided by mbedTLS library.
+
 * **HTTP** Hypertext Transfer Protocol (RFC 2116) is supported. A simple
   library is provided that applications can use. Sample applications are
   implemented for :ref:`http-client-sample` and :ref:`http-server-sample`.
@@ -77,9 +81,6 @@ can be disabled if not needed.
   and has template implementations for Security, Server, Device Management and
   Firmware objects.   DTLS and Bootstrap support are currently not supported.
   :ref:`lwm2m-client-sample` implements the library as an example.
-
-* **RPL** IPv6 Routing Protocol for Low-Power and Lossy Networks (RFC 6550)
-  is supported. RPL is an IPv6 based mesh routing protocol.
 
 * **DNS** Domain Name Service (RFC 1035) client functionality is supported.
   Applications can use an API to query domain name information or IP addresses

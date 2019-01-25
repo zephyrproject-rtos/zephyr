@@ -9,3 +9,4 @@ sample:
 tests:
   test:
     tags: net
+    min_flash: 140

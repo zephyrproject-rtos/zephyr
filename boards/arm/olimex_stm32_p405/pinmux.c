@@ -14,10 +14,10 @@
 
 /* pin assignments for OLIMEX-STM32-P405 board */
 static const struct pin_config pinconf[] = {
-#ifdef CONFIG_UART_STM32_PORT_2
+#ifdef CONFIG_UART_2
 	{STM32_PIN_PA2, STM32F4_PINMUX_FUNC_PA2_USART2_TX},
 	{STM32_PIN_PA3, STM32F4_PINMUX_FUNC_PA3_USART2_RX},
-#endif	/* CONFIG_UART_STM32_PORT_2 */
+#endif	/* CONFIG_UART_2 */
 };
 
 static int pinmux_stm32_init(struct device *port)

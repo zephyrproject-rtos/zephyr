@@ -6,8 +6,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_test
 #define NET_LOG_LEVEL CONFIG_NET_L2_ETHERNET_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <zephyr/types.h>
 #include <stdbool.h>
@@ -106,9 +108,9 @@ static void eth_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static int eth_tx_offloading_disabled(struct net_if *iface, struct net_pkt *pkt)
+static int eth_tx_offloading_disabled(struct device *dev, struct net_pkt *pkt)
 {
-	struct eth_context *context = net_if_get_device(iface)->driver_data;
+	struct eth_context *context = dev->driver_data;
 
 	zassert_equal_ptr(&eth_context_offloading_disabled, context,
 			  "Context pointers do not match (%p vs %p)",
@@ -153,20 +155,19 @@ static int eth_tx_offloading_disabled(struct net_if *iface, struct net_pkt *pkt)
 		udp_hdr->dst_port = port;
 
 		memcpy(lladdr,
-		       ((struct net_eth_hdr *)net_pkt_ll(pkt))->src.addr,
+		       ((struct net_eth_hdr *)net_pkt_data(pkt))->src.addr,
 		       sizeof(lladdr));
-		memcpy(((struct net_eth_hdr *)net_pkt_ll(pkt))->src.addr,
-		       ((struct net_eth_hdr *)net_pkt_ll(pkt))->dst.addr,
+		memcpy(((struct net_eth_hdr *)net_pkt_data(pkt))->src.addr,
+		       ((struct net_eth_hdr *)net_pkt_data(pkt))->dst.addr,
 		       sizeof(lladdr));
-		memcpy(((struct net_eth_hdr *)net_pkt_ll(pkt))->dst.addr,
+		memcpy(((struct net_eth_hdr *)net_pkt_data(pkt))->dst.addr,
 		       lladdr, sizeof(lladdr));
 
-		pkt->frags->data -= net_pkt_ll_reserve(pkt);
-		pkt->frags->len += net_pkt_ll_reserve(pkt);
-		net_pkt_set_ll_reserve(pkt, 0);
+		net_pkt_ref(pkt);
 
 		if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
 			test_failed = true;
+			net_pkt_unref(pkt);
 			zassert_true(false, "Packet %p receive failed\n", pkt);
 		}
 
@@ -176,7 +177,8 @@ static int eth_tx_offloading_disabled(struct net_if *iface, struct net_pkt *pkt)
 	if (test_started) {
 		u16_t chksum;
 
-		chksum = net_udp_get_chksum(pkt, pkt->frags);
+		/* First frag is always ethernet header, let's skip it */
+		chksum = net_udp_get_chksum(pkt, pkt->frags->frags);
 
 		DBG("Chksum 0x%x offloading disabled\n", chksum);
 
@@ -185,14 +187,12 @@ static int eth_tx_offloading_disabled(struct net_if *iface, struct net_pkt *pkt)
 		k_sem_give(&wait_data);
 	}
 
-	net_pkt_unref(pkt);
-
 	return 0;
 }
 
-static int eth_tx_offloading_enabled(struct net_if *iface, struct net_pkt *pkt)
+static int eth_tx_offloading_enabled(struct device *dev, struct net_pkt *pkt)
 {
-	struct eth_context *context = net_if_get_device(iface)->driver_data;
+	struct eth_context *context = dev->driver_data;
 
 	zassert_equal_ptr(&eth_context_offloading_enabled, context,
 			  "Context pointers do not match (%p vs %p)",
@@ -206,7 +206,8 @@ static int eth_tx_offloading_enabled(struct net_if *iface, struct net_pkt *pkt)
 	if (test_started) {
 		u16_t chksum;
 
-		chksum = net_udp_get_chksum(pkt, pkt->frags);
+		/* First frag is always ethernet header, let's skip it */
+		chksum = net_udp_get_chksum(pkt, pkt->frags->frags);
 
 		DBG("Chksum 0x%x offloading enabled\n", chksum);
 
@@ -214,8 +215,6 @@ static int eth_tx_offloading_enabled(struct net_if *iface, struct net_pkt *pkt)
 
 		k_sem_give(&wait_data);
 	}
-
-	net_pkt_unref(pkt);
 
 	return 0;
 }
@@ -233,16 +232,16 @@ static enum ethernet_hw_caps eth_offloading_disabled(struct device *dev)
 
 static struct ethernet_api api_funcs_offloading_disabled = {
 	.iface_api.init = eth_iface_init,
-	.iface_api.send = eth_tx_offloading_disabled,
 
 	.get_capabilities = eth_offloading_disabled,
+	.send = eth_tx_offloading_disabled,
 };
 
 static struct ethernet_api api_funcs_offloading_enabled = {
 	.iface_api.init = eth_iface_init,
-	.iface_api.send = eth_tx_offloading_enabled,
 
 	.get_capabilities = eth_offloading_enabled,
+	.send = eth_tx_offloading_enabled,
 };
 
 static void generate_mac(u8_t *mac_addr)
@@ -768,6 +767,8 @@ static void rx_chksum_offload_disabled_test_v6(void)
 			       NULL);
 	zassert_equal(ret, 0, "Recv UDP failed (%d)\n", ret);
 
+	start_receiving = false;
+
 	ret = net_context_sendto(pkt, (struct sockaddr *)&dst_addr6,
 				 sizeof(struct sockaddr_in6),
 				 NULL, 0, NULL, NULL);
@@ -830,6 +831,8 @@ static void rx_chksum_offload_disabled_test_v4(void)
 	ret = net_context_recv(udp_v4_ctx_1, recv_cb_offload_disabled, 0,
 			       NULL);
 	zassert_equal(ret, 0, "Recv UDP failed (%d)\n", ret);
+
+	start_receiving = false;
 
 	ret = net_context_sendto(pkt, (struct sockaddr *)&dst_addr4,
 				 sizeof(struct sockaddr_in),

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_nats_app_main
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_nats_sample, LOG_LEVEL_DBG);
 
 #include <gpio.h>
 #include <net/net_context.h>
@@ -78,7 +78,7 @@ static bool fake_led;
 
 static void panic(const char *msg)
 {
-	NET_ERR("Panic: %s", msg);
+	LOG_ERR("Panic: %s", msg);
 	for (;;) {
 		k_sleep(K_FOREVER);
 	}
@@ -105,7 +105,7 @@ static int in_addr_set(sa_family_t family,
 		}
 
 		if (rc < 0) {
-			NET_ERR("Invalid IP address: %s", log_strdup(ip_addr));
+			LOG_ERR("Invalid IP address: %s", log_strdup(ip_addr));
 			return -EINVAL;
 		}
 	}
@@ -125,7 +125,7 @@ static void initialize_network(void)
 {
 	struct net_if *iface;
 
-	NET_INFO("Initializing network");
+	LOG_INF("Initializing network");
 
 	iface = net_if_get_default();
 	if (!iface) {
@@ -139,26 +139,26 @@ static void initialize_network(void)
 
 	/* delay so DHCPv4 can assign IP */
 	/* TODO: add a timeout/retry */
-	NET_INFO("Waiting for DHCP ...");
+	LOG_INF("Waiting for DHCP ...");
 	do {
 		k_sleep(K_SECONDS(1));
 	} while (net_ipv4_is_addr_unspecified(&iface->dhcpv4.requested_ip));
 
-	NET_INFO("Done!");
+	LOG_INF("Done!");
 
 	/* TODO: add a timeout */
-	NET_INFO("Waiting for IP assginment ...");
+	LOG_INF("Waiting for IP assginment ...");
 	do {
 		k_sleep(K_SECONDS(1));
 	} while (!net_ipv4_is_my_addr(&iface->dhcpv4.requested_ip));
 
-	NET_INFO("Done!");
+	LOG_INF("Done!");
 #else
 	struct sockaddr addr;
 
 	if (in_addr_set(NATS_AF_INET, NATS_LOCAL_IP_ADDR, 0,
 			  &addr) < 0) {
-		NET_ERR("Invalid IP address: %s",
+		LOG_ERR("Invalid IP address: %s",
 			NATS_LOCAL_IP_ADDR);
 	}
 
@@ -176,7 +176,7 @@ static void initialize_network(void)
 
 static bool read_led(void)
 {
-	u32_t led = 0;
+	u32_t led = 0U;
 	int r;
 
 	if (!led0) {
@@ -241,7 +241,7 @@ static int on_msg_received(const struct nats *nats,
 
 static void initialize_hardware(void)
 {
-	NET_INFO("Initializing hardware");
+	LOG_INF("Initializing hardware");
 
 	led0 = device_get_binding(LED_GPIO_NAME);
 	if (led0) {
@@ -257,12 +257,12 @@ static int connect(struct nats *nats, u16_t port)
 	struct sockaddr dst_addr, src_addr;
 	int ret;
 
-	NET_INFO("Connecting...");
+	LOG_INF("Connecting...");
 
 	ret = net_context_get(NATS_AF_INET, SOCK_STREAM, IPPROTO_TCP,
 			      &nats->conn);
 	if (ret < 0) {
-		NET_DBG("Could not get new context: %d", ret);
+		LOG_DBG("Could not get new context: %d", ret);
 		return ret;
 	}
 
@@ -291,7 +291,7 @@ static int connect(struct nats *nats, u16_t port)
 	ret = net_context_bind(nats->conn, &src_addr,
 			       sizeof(struct NATS_SOCKADDR_IN));
 	if (ret < 0) {
-		NET_DBG("Could not bind to local address: %d", -ret);
+		LOG_DBG("Could not bind to local address: %d", -ret);
 		goto connect_exit;
 	}
 
@@ -311,7 +311,7 @@ static void nats_client(void)
 		.on_message = on_msg_received
 	};
 
-	NET_INFO("NATS Client Sample");
+	LOG_INF("NATS Client Sample");
 
 	initialize_network();
 	initialize_hardware();

@@ -415,6 +415,10 @@ class ElfHelper:
             if not name:
                 continue
 
+            if name.startswith("__device_sys_init"):
+                # Boot-time initialization function; not an actual device
+                continue
+
             type_offset = die_get_type_offset(die)
 
             # Is this a kernel object, or a structure containing kernel
@@ -500,6 +504,12 @@ class ElfHelper:
             # if it has one.
             apiaddr = device_get_api_addr(self.elf, addr)
             if apiaddr not in all_objs:
+                if apiaddr == 0:
+                    self.debug("device instance at 0x%x has no associated subsystem"
+                            % addr);
+                else:
+                    self.debug("device instance at 0x%x has unknown API 0x%x"
+                            % (addr, apiaddr));
                 # API struct does not correspond to a known subsystem, skip it
                 continue
 

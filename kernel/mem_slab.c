@@ -37,7 +37,7 @@ static void create_free_list(struct k_mem_slab *slab)
 	slab->free_list = NULL;
 	p = slab->buffer;
 
-	for (j = 0; j < slab->num_blocks; j++) {
+	for (j = 0U; j < slab->num_blocks; j++) {
 		*(char **)p = slab->free_list;
 		slab->free_list = p;
 		p += slab->block_size;
@@ -62,6 +62,7 @@ static int init_mem_slab_module(struct device *dev)
 	     slab++) {
 		create_free_list(slab);
 		SYS_TRACING_OBJ_INIT(k_mem_slab, slab);
+		_k_object_init(slab);
 	}
 	return 0;
 }

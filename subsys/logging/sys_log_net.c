@@ -70,12 +70,12 @@ static void syslog_hook_net(const char *fmt, ...)
 	int ret;
 
 	pkt = net_pkt_get_tx(ctx, K_NO_WAIT);
-	if (!pkt) {
+	if (pkt == NULL) {
 		return;
 	}
 
 	frag = net_pkt_get_data(ctx, K_NO_WAIT);
-	if (!frag) {
+	if (frag == NULL) {
 		net_pkt_unref(pkt);
 		return;
 	}
@@ -140,7 +140,7 @@ void syslog_net_hook_install(void)
 	ret = net_ipaddr_parse(CONFIG_SYS_LOG_BACKEND_NET_SERVER,
 			       sizeof(CONFIG_SYS_LOG_BACKEND_NET_SERVER) - 1,
 			       &server_addr);
-	if (!ret) {
+	if (ret == 0) {
 		SYS_LOG_ERR("Cannot configure syslog server address");
 		return;
 	}
@@ -169,7 +169,7 @@ void syslog_net_hook_install(void)
 	}
 
 #if CONFIG_NET_HOSTNAME_ENABLE
-	memcpy(hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
+	(void)memcpy(hostname, net_hostname_get(), MAX_HOSTNAME_LEN);
 #else /* CONFIG_NET_HOSTNAME_ENABLE */
 	if (server_addr.sa_family == AF_INET6) {
 #if defined(CONFIG_NET_IPV6)

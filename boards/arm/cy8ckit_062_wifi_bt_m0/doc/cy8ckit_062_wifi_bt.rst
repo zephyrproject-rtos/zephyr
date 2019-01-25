@@ -124,6 +124,45 @@ and J12 that can be used with Segger J-Link.
 A watchdog timer is enabled by default. To disable it call Cy_WDT_Unlock() and
 Cy_WDT_Disable().
 
+Build the project for CM0+
+
+.. code-block:: console
+
+   $ cd samples/hello_world
+   $ mkdir build
+   $ cd build
+   $ cmake -G"Eclipse CDT4 - Ninja" -DBOARD=cy8ckit_062_wifi_bt_m0 ..
+   $ ninja
+
+Switch the DevKit into CMSIS-DAP mode using SW3 (LED2 should blink) and flash
+the board:
+
+.. code-block:: console
+
+   $<openocd_path>\bin\openocd -c "source [find interface/cmsis-dap.cfg]" \
+      -c "transport select swd" -c "source [find target/psoc6.cfg]" \
+      -c "if [catch {program {<zephyr_path>\samples\hello_world\build\zephyr\zephyr.elf}} ] \
+         { echo {** Program operation failed **} } \
+         else { echo {** Program operation completed successfully **} }" \
+      -c "reset_config srst_only;reset run;psoc6.dap dpreg 0x04 0x00;shutdown"
+
+Switch the DevKit back using SW3. Open a serial terminal (minicom, putty,
+etc.) and connect to the board with the following settings:
+
+- Speed: 115200
+- Data: 8 bits
+- Parity: None
+- Stop bits: 1
+
+Reset the board and the following message will appear on the corresponding
+serial port:
+
+.. code-block:: console
+
+   ***** Booting Zephyr OS zephyr-v1.13.0-1877-g9d14874db1 *****
+   Hello World! cy8ckit_062_wifi_bt_m0
+
+
 References
 **********
 

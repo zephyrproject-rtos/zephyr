@@ -71,7 +71,7 @@ static ALWAYS_INLINE void clock_init(void)
 	 * by a previous program i.e. bootloader
 	 */
 
-	if (PMC->PMC_SR & PMC_SR_MOSCRCS) {
+	if (!(PMC->CKGR_MOR & CKGR_MOR_MOSCSEL_Msk)) {
 		/* Start the external crystal oscillator */
 		PMC->CKGR_MOR =   CKGR_MOR_KEY_PASSWD
 				/* We select maximum setup time.
@@ -100,17 +100,17 @@ static ALWAYS_INLINE void clock_init(void)
 		while (!(PMC->PMC_SR & PMC_SR_MOSCSELS)) {
 			;
 		}
+	}
 
-		/* Turn off RC OSC, not used any longer, to save power */
-		PMC->CKGR_MOR =   CKGR_MOR_KEY_PASSWD
-				| CKGR_MOR_MOSCSEL
-				| CKGR_MOR_MOSCXTST(0xFFu)
-				| CKGR_MOR_MOSCXTEN;
+	/* Turn off RC OSC, not used any longer, to save power */
+	PMC->CKGR_MOR =   CKGR_MOR_KEY_PASSWD
+			| CKGR_MOR_MOSCSEL
+			| CKGR_MOR_MOSCXTST(0xFFu)
+			| CKGR_MOR_MOSCXTEN;
 
-		/* Wait for RC OSC to be turned off */
-		while (PMC->PMC_SR & PMC_SR_MOSCRCS) {
-			;
-		}
+	/* Wait for RC OSC to be turned off */
+	while (PMC->PMC_SR & PMC_SR_MOSCRCS) {
+		;
 	}
 
 #ifdef CONFIG_SOC_ATMEL_SAME70_WAIT_MODE
@@ -226,6 +226,20 @@ static int atmel_same70_init(struct device *arg)
 	ARG_UNUSED(arg);
 
 	key = irq_lock();
+
+	SCB_EnableICache();
+
+/*
+ * The Atmel SAM GMAC Ethernet driver is using a scatter-gather technique
+ * to exchange data with the Ethernet driver. This requires the use use of
+ * a non-cached memory area. This is currently not supported on Zephyr, so
+ * do not enable the cache in that case.
+ */
+#ifndef CONFIG_ETH_SAM_GMAC
+	if (!(SCB->CCR & SCB_CCR_DC_Msk)) {
+		SCB_EnableDCache();
+	}
+#endif
 
 	/* Clear all faults */
 	_ClearFaults();

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if BOARD_MIMXRT1050_EVK
+if BOARD_MIMXRT1050_EVK || BOARD_MIMXRT1050_EVK_QSPI
 
 choice
 	prompt "Code location selection"
@@ -14,11 +14,15 @@ config CODE_ITCM
 	bool "Link code into internal instruction tightly coupled memory (ITCM)"
 
 config CODE_HYPERFLASH
+	depends on BOARD_MIMXRT1050_EVK
+	select NXP_IMX_RT_BOOT_HEADER
 	bool "Link code into external HyperFlash memory"
 
 config CODE_QSPI
+	depends on BOARD_MIMXRT1050_EVK_QSPI
+	select NXP_IMX_RT_BOOT_HEADER
 	bool "Link code into external QSPI memory"
 
 endchoice
 
-endif # BOARD_MIMXRT1050_EVK
+endif # BOARD_MIMXRT1050_EVK || BOARD_MIMXRT1050_EVK_QSPI

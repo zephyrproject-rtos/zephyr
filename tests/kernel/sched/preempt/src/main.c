@@ -48,7 +48,11 @@ const enum { METAIRQ, COOP, PREEMPTIBLE } worker_priorities[] = {
 
 #define NUM_THREADS ARRAY_SIZE(worker_priorities)
 
+#ifdef CONFIG_COVERAGE
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#else
 #define STACK_SIZE (384 + CONFIG_TEST_EXTRA_STACKSIZE)
+#endif
 
 k_tid_t last_thread;
 
@@ -123,7 +127,7 @@ void wakeup_src_thread(int id)
 		 * executes in 0 time: it always waits for the code to finish
 		 * and it letting the cpu sleep before letting time pass)
 		 */
-		posix_halt_cpu();
+		k_busy_wait(50);
 #endif
 	}
 

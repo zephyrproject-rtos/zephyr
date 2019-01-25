@@ -24,7 +24,7 @@ extern int altera_avalon_jtag_uart_read(altera_avalon_jtag_uart_state *sp,
 extern int altera_avalon_jtag_uart_write(altera_avalon_jtag_uart_state *sp,
 		const char *ptr, int count, int flags);
 
-static unsigned char uart_altera_jtag_poll_out(struct device *dev,
+static void uart_altera_jtag_poll_out(struct device *dev,
 					       unsigned char c)
 {
 	const struct uart_device_config *config;
@@ -34,8 +34,6 @@ static unsigned char uart_altera_jtag_poll_out(struct device *dev,
 
 	ustate.base = JTAG_UART_0_BASE;
 	altera_avalon_jtag_uart_write(&ustate, &c, 1, 0);
-
-	return c;
 }
 
 static int uart_altera_jtag_init(struct device *dev)

@@ -49,16 +49,6 @@ _set_thread_return_value(struct k_thread *thread, unsigned int value)
 	thread->callee_saved.retval = value;
 }
 
-
-/*
- * _IntLibInit() is called from the non-arch specific function,
- * prepare_multithreading().
- */
-static inline void _IntLibInit(void)
-{
-	posix_init_multithreading();
-}
-
 #ifdef __cplusplus
 }
 #endif

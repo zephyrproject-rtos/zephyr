@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_stats_sample
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_stats_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <errno.h>
@@ -104,40 +104,6 @@ static void print_stats(struct net_if *iface, struct net_stats *data)
 	printk("TCP conn drop  %d\tconnrst\t%d\n",
 	       GET_STAT(iface, tcp.conndrop),
 	       GET_STAT(iface, tcp.connrst));
-#endif
-
-#if defined(CONFIG_NET_STATISTICS_RPL)
-	printk("RPL DIS recv   %d\tsent\t%d\tdrop\t%d\n",
-	       GET_STAT(iface, rpl.dis.recv),
-	       GET_STAT(iface, rpl.dis.sent),
-	       GET_STAT(iface, rpl.dis.drop));
-	printk("RPL DIO recv   %d\tsent\t%d\tdrop\t%d\n",
-	       GET_STAT(iface, rpl.dio.recv),
-	       GET_STAT(iface, rpl.dio.sent),
-	       GET_STAT(iface, rpl.dio.drop));
-	printk("RPL DAO recv   %d\tsent\t%d\tdrop\t%d\tforwarded\t%d\n",
-	       GET_STAT(iface, rpl.dao.recv),
-	       GET_STAT(iface, rpl.dao.sent),
-	       GET_STAT(iface, rpl.dao.drop),
-	      GET_STAT(iface, rpl.dao.forwarded));
-	printk("RPL DAOACK rcv %d\tsent\t%d\tdrop\t%d\n",
-	       GET_STAT(iface, rpl.dao_ack.recv),
-	       GET_STAT(iface, rpl.dao_ack.sent),
-	       GET_STAT(iface, rpl.dao_ack.drop));
-	printk("RPL overflows  %d\tl-repairs\t%d\tg-repairs\t%d\n",
-	       GET_STAT(iface, rpl.mem_overflows),
-	       GET_STAT(iface, rpl.local_repairs),
-	       GET_STAT(iface, rpl.global_repairs));
-	printk("RPL malformed  %d\tresets   \t%d\tp-switch\t%d\n",
-	       GET_STAT(iface, rpl.malformed_msgs),
-	       GET_STAT(iface, rpl.resets),
-	       GET_STAT(iface, rpl.parent_switch));
-	printk("RPL f-errors   %d\tl-errors\t%d\tl-warnings\t%d\n",
-	       GET_STAT(iface, rpl.forward_errors),
-	       GET_STAT(iface, rpl.loop_errors),
-	       GET_STAT(iface, rpl.loop_warnings));
-	printk("RPL r-repairs  %d\n",
-	       GET_STAT(iface, rpl.root_repairs));
 #endif
 
 	printk("Bytes received %u\n", GET_STAT(iface, bytes.received));

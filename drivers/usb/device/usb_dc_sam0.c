@@ -21,8 +21,8 @@ LOG_MODULE_REGISTER(usb_dc_sam0);
 
 #define USB_SAM0_IN_EP 0x80
 
-#define REGS ((Usb *)CONFIG_USB_DC_SAM0_BASE_ADDRESS)
-#define USB_NUM_ENDPOINTS CONFIG_USB_DC_SAM0_NUM_BIDIR_ENDPOINTS
+#define REGS ((Usb *)DT_USB_DC_SAM0_BASE_ADDRESS)
+#define USB_NUM_ENDPOINTS DT_USB_DC_SAM0_NUM_BIDIR_ENDPOINTS
 
 struct usb_sam0_data {
 	UsbDeviceDescriptor descriptors[USB_NUM_ENDPOINTS];
@@ -75,7 +75,7 @@ static void usb_sam0_ep_isr(u8_t ep)
 			 * completes else the ack will get dropped.
 			 */
 			regs->DADD.reg = data->addr;
-			data->addr = 0;
+			data->addr = 0U;
 		}
 	}
 }
@@ -106,7 +106,7 @@ static void usb_sam0_isr(void)
 	}
 
 	/* Dispatch the endpoint interrupts */
-	for (ep = 0; epint != 0; epint >>= 1) {
+	for (ep = 0U; epint != 0; epint >>= 1) {
 		/* Scan bit-by-bit as the Cortex-M0 doesn't have ffs */
 		if ((epint & 1) != 0) {
 			usb_sam0_ep_isr(ep);
@@ -138,7 +138,7 @@ static void usb_sam0_load_padcal(void)
 		     ((1 << NVM_USB_PAD_TRANSN_SIZE) - 1);
 
 	if (pad_transn == 0x1F) {
-		pad_transn = 5;
+		pad_transn = 5U;
 	}
 
 	regs->PADCAL.bit.TRANSN = pad_transn;
@@ -149,7 +149,7 @@ static void usb_sam0_load_padcal(void)
 		     ((1 << NVM_USB_PAD_TRANSP_SIZE) - 1);
 
 	if (pad_transp == 0x1F) {
-		pad_transp = 29;
+		pad_transp = 29U;
 	}
 
 	regs->PADCAL.bit.TRANSP = pad_transp;
@@ -160,7 +160,7 @@ static void usb_sam0_load_padcal(void)
 		   ((1 << NVM_USB_PAD_TRIM_SIZE) - 1);
 
 	if (pad_trim == 0x7) {
-		pad_trim = 3;
+		pad_trim = 3U;
 	}
 
 	regs->PADCAL.bit.TRIM = pad_trim;
@@ -203,9 +203,9 @@ int usb_dc_attach(void)
 	regs->INTENSET.reg = USB_DEVICE_INTENSET_EORST;
 
 	/* Connect and enable the interrupt */
-	IRQ_CONNECT(CONFIG_USB_DC_SAM0_IRQ, CONFIG_USB_DC_SAM0_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_USB_DC_SAM0_IRQ, DT_USB_DC_SAM0_IRQ_PRIORITY,
 		    usb_sam0_isr, 0, 0);
-	irq_enable(CONFIG_USB_DC_SAM0_IRQ);
+	irq_enable(DT_USB_DC_SAM0_IRQ);
 
 	/* Enable and attach */
 	regs->CTRLA.bit.ENABLE = 1;
@@ -231,7 +231,7 @@ int usb_dc_reset(void)
 {
 	UsbDevice *regs = &REGS->DEVICE;
 
-	irq_disable(CONFIG_USB_DC_SAM0_IRQ);
+	irq_disable(DT_USB_DC_SAM0_IRQ);
 
 	regs->CTRLA.bit.SWRST = 1;
 	usb_sam0_wait_syncbusy();
@@ -269,7 +269,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		return -1;
 	}
 
-	if (ep_idx > CONFIG_USB_DC_SAM0_NUM_BIDIR_ENDPOINTS) {
+	if (ep_idx > DT_USB_DC_SAM0_NUM_BIDIR_ENDPOINTS) {
 		LOG_ERR("endpoint index/address too high");
 		return -1;
 	}
@@ -480,7 +480,7 @@ int usb_dc_ep_read_ex(u8_t ep, u8_t *buf, u32_t max_data_len,
 	 * also marks the OUT buffer as freed.
 	 */
 	if (buf == NULL) {
-		data->out_at = 0;
+		data->out_at = 0U;
 
 		if (read_bytes != NULL) {
 			*read_bytes = bytes;
@@ -500,7 +500,7 @@ int usb_dc_ep_read_ex(u8_t ep, u8_t *buf, u32_t max_data_len,
 	if (take == remain) {
 		if (!wait) {
 			endpoint->EPSTATUSCLR.bit.BK0RDY = 1;
-			data->out_at = 0;
+			data->out_at = 0U;
 		}
 	} else {
 		data->out_at += take;
@@ -528,7 +528,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_num];
 
 	endpoint->EPSTATUSCLR.bit.BK0RDY = 1;
-	data->out_at = 0;
+	data->out_at = 0U;
 
 	return 0;
 }

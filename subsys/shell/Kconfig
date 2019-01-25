@@ -3,36 +3,12 @@
 #
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 # Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2018 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
 menu "Shell Options"
-
-menuconfig CONSOLE_SHELL
-	bool "Enable legacy shell [ Experimental ]"
-	select CONSOLE_HANDLER
-	select CONSOLE_SUBSYS
-	help
-	  Shell implementation based on CONSOLE_HANDLER.
-
-
-if CONSOLE_SHELL
-
-config CONSOLE_SHELL_STACKSIZE
-	int "Console handler shell stack size"
-	default 2000
-	help
-	  Stack size for the console handler shell.
-
-config CONSOLE_SHELL_MAX_CMD_QUEUED
-	int "Shell's command queue size"
-	default 3
-	help
-	  Maximum size of the queue for input commands.
-
-
-endif
 
 menuconfig SHELL
 	bool "Enable shell"
@@ -52,13 +28,6 @@ config SHELL_STACK_SIZE
 	default 0 if !MULTITHREADING
 	help
 	  Stack size for thread created for each instance.
-
-config SHELL_THREAD_PRIO
-	int "Shell thread priority"
-	depends on MULTITHREADING
-	default -2
-	help
-	  Shell thread priority.
 
 config SHELL_BACKSPACE_MODE_DELETE
 	bool "Default escape code for backspace is DELETE (0x7F)"

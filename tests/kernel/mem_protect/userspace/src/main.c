@@ -19,9 +19,14 @@
 #include <arch/arc/v2/mpu/arc_core_mpu.h>
 #endif
 
+#if defined(CONFIG_ARM)
+#include <arch/arm/cortex_m/mpu/arm_core_mpu_dev.h>
+#endif
+
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #define PIPE_LEN 1
 #define BYTES_TO_READ_WRITE 1
+#define STACKSIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 K_SEM_DEFINE(uthread_start_sem, 0, 1);
 K_SEM_DEFINE(uthread_end_sem, 0, 1);
@@ -408,7 +413,6 @@ static void pass_noperms_object(void)
 
 __kernel struct k_thread kthread_thread;
 
-#define STACKSIZE 1024
 K_THREAD_STACK_DEFINE(kthread_stack, STACKSIZE);
 
 void thread_body(void)
@@ -502,7 +506,7 @@ static void write_other_stack(void)
 	expect_fault = true;
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
-	*ptr = 0;
+	*ptr = 0U;
 
 	/* Shouldn't be reached, but if so, let the other thread exit */
 	if (give_uthread_end_sem) {
@@ -717,8 +721,7 @@ void test_main(void)
 			      &kthread_thread, &kthread_stack,
 			      &uthread_thread, &uthread_stack,
 			      &uthread_start_sem, &uthread_end_sem,
-			      &test_revoke_sem, &kpipe, &expect_fault_sem,
-			      NULL);
+			      &test_revoke_sem, &kpipe, &expect_fault_sem);
 	ztest_test_suite(userspace,
 			 ztest_user_unit_test(is_usermode),
 			 ztest_user_unit_test(write_control),

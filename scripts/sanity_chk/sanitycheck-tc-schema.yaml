@@ -106,9 +106,6 @@ mapping:
       "description":
         type: str
         required: no
-      "platforms":
-        type: str
-        required: no
   # The list of testcases -- IDK why this is a sequence of
   # maps maps, shall just be a sequence of maps
   # maybe it is just an artifact?

@@ -10,6 +10,8 @@
 
 	chosen {
 		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-pipe = &uart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -49,7 +51,7 @@
 
 		dtimer0: dtimer@40002000 {
 			compatible = "arm,cmsdk-dtimer";
-			reg = <0x40000000 0x1000>;
+			reg = <0x40002000 0x1000>;
 			interrupts = <10 3>;
 		};
 
@@ -125,6 +127,16 @@
 			compatible = "arm,cmsdk-gpio";
 			reg = <0x40013000 0x1000>;
 			interrupts = <17 3>;
+		};
+
+		eth0: eth@0 {
+			/* Linux has "smsc,lan9115" */
+			compatible = "smsc,lan9220";
+			/* Such a big size from memory map in AN385 */
+			/* Actual reg range is ~0x200 */
+			reg = <0x40200000 0x100000>;
+			label = "eth0";
+			interrupts = <13 3>;
 		};
 
 		i2c_touch: i2c@40022000 {

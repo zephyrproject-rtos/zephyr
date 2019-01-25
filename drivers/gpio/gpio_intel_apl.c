@@ -430,22 +430,22 @@ static const struct gpio_intel_apl_config gpio_intel_apl_cfg = {
 	.islands = {
 		{
 			/* North island */
-			.reg_base = CONFIG_APL_GPIO_BASE_ADDRESS_0,
+			.reg_base = DT_APL_GPIO_BASE_ADDRESS_0,
 			.num_pins = 78,
 		},
 		{
 			/* Northwest island */
-			.reg_base = CONFIG_APL_GPIO_BASE_ADDRESS_1,
+			.reg_base = DT_APL_GPIO_BASE_ADDRESS_1,
 			.num_pins = 77,
 		},
 		{
 			/* West island */
-			.reg_base = CONFIG_APL_GPIO_BASE_ADDRESS_2,
+			.reg_base = DT_APL_GPIO_BASE_ADDRESS_2,
 			.num_pins = 47,
 		},
 		{
 			/* Southwest island */
-			.reg_base = CONFIG_APL_GPIO_BASE_ADDRESS_3,
+			.reg_base = DT_APL_GPIO_BASE_ADDRESS_3,
 			.num_pins = 43,
 		},
 	},
@@ -453,7 +453,7 @@ static const struct gpio_intel_apl_config gpio_intel_apl_cfg = {
 
 static struct gpio_intel_apl_data gpio_intel_apl_data;
 
-DEVICE_AND_API_INIT(gpio_intel_apl, CONFIG_APL_GPIO_LABEL,
+DEVICE_AND_API_INIT(gpio_intel_apl, DT_APL_GPIO_LABEL,
 		    gpio_intel_apl_init,
 		    &gpio_intel_apl_data, &gpio_intel_apl_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -461,9 +461,9 @@ DEVICE_AND_API_INIT(gpio_intel_apl, CONFIG_APL_GPIO_LABEL,
 
 static void gpio_intel_apl_irq_config(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_APL_GPIO_IRQ, CONFIG_APL_GPIO_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_APL_GPIO_IRQ, DT_APL_GPIO_IRQ_PRIORITY,
 		    gpio_intel_apl_isr, DEVICE_GET(gpio_intel_apl),
-		    CONFIG_APL_GPIO_IRQ_SENSE);
+		    DT_APL_GPIO_IRQ_SENSE);
 
-	irq_enable(CONFIG_APL_GPIO_IRQ);
+	irq_enable(DT_APL_GPIO_IRQ);
 }

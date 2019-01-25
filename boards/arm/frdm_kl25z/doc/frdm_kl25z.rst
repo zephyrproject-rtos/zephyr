@@ -176,22 +176,22 @@ You can debug an application in the usual way.  Here is an example for the
    :goals: debug
 
 .. _FRDM-KL25Z Website:
-   http://www.nxp.com/products/software-and-tools/hardware-development-tools/freedom-development-boards/freedom-development-platform-for-kinetis-kl14-kl15-kl24-kl25-mcus:FRDM-KL25Z?tid=vanFRDM-KL25Z
+   https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/l-seriesultra-low-powerm0-plus/freedom-development-platform-for-kinetis-kl14-kl15-kl24-kl25-mcus:FRDM-KL25Z
 
 .. _FRDM-KL25Z User Guide:
-   http://www.nxp.com/assets/documents/data/en/user-guides/FRDMKL25ZUM.zip
+   https://www.nxp.com/docs/en/user-guide/FRDMKL25ZUM.zip
 
 .. _FRDM-KL25Z Schematics:
-   http://www.nxp.com/assets/downloads/data/en/schematics/FRDM-KL25Z_SCH_REV_E.pdf
+   https://www.nxp.com/downloads/en/schematics/FRDM-KL25Z_SCH_REV_E.pdf
 
 .. _KL25Z Website:
-   http://www.nxp.com/products/microcontrollers-and-processors/arm-processors/kinetis-cortex-m-mcus/l-series-ultra-low-power-m0-plus/kinetis-kl2x-48-mhz-usb-ultra-low-power-microcontrollers-mcus-based-on-arm-cortex-m0-plus-core:KL2x?lang_cd=en
+   https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/l-seriesultra-low-powerm0-plus/kinetis-kl2x-72-96mhz-usb-ultra-low-power-microcontrollers-mcus-based-on-arm-cortex-m0-plus-core:KL2x?&l
 
 .. _KL25Z Datasheet:
-   http://www.nxp.com/assets/documents/data/en/data-sheets/KL25P80M48SF0.pdf
+   https://www.nxp.com/docs/en/data-sheet/KL25P80M48SF0.pdf
 
 .. _KL25Z Reference Manual:
-   http://www.nxp.com/assets/documents/data/en/reference-manuals/KL25P80M48SF0RM.pdf
+   https://www.nxp.com/docs/en/reference-manual/KL25P80M48SF0RM.pdf
 
 .. _DAPLink FRDM-KL25Z Firmware:
    http://www.nxp.com/assets/downloads/data/en/ide-debug-compile-build-tools/OpenSDAv2.2_DAPLink_frdmkl25z_rev0242.zip

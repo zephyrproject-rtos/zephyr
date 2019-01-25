@@ -35,14 +35,14 @@ static bool flash_verify(struct device *dev, off_t offset,
 		rc = flash_read(dev, offset, &temp, size);
 		if (rc) {
 			LOG_ERR("flash_read error %d offset=0x%08"PRIx32,
-				rc, offset);
+				rc, (u32_t)offset);
 			break;
 		}
 
 		if (memcmp(data, &temp, size)) {
 			LOG_ERR("offset=0x%08"PRIx32" VERIFY FAIL. "
 				"expected: 0x%08x, actual: 0x%08x",
-				offset, temp, *(__packed u32_t*)data);
+				(u32_t)offset, temp, *(__packed u32_t*)data);
 			break;
 		}
 		len -= size;
@@ -71,7 +71,7 @@ static int flash_block_write(struct flash_img_context *ctx, off_t offset,
 		flash_write_protection_set(ctx->dev, true);
 		if (rc) {
 			LOG_ERR("flash_write error %d offset=0x%08"PRIx32,
-				rc, offset + ctx->bytes_written);
+				rc, (u32_t)(offset + ctx->bytes_written));
 			return rc;
 		}
 
@@ -103,7 +103,7 @@ static int flash_block_write(struct flash_img_context *ctx, off_t offset,
 		flash_write_protection_set(ctx->dev, true);
 		if (rc) {
 			LOG_ERR("flash_write error %d offset=0x%08"PRIx32,
-				rc, offset + ctx->bytes_written);
+				rc, (u32_t)(offset + ctx->bytes_written));
 			return rc;
 		}
 

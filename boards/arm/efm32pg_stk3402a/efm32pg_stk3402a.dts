@@ -1,0 +1,76 @@
+/*
+ * Copyright (c) 2017 Christian Taedcke
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/efm32pg12b500f1024gl125.dtsi>
+
+/ {
+	model = "Silicon Labs EFM32PG STK3402A board";
+	compatible = "silabs,efm32pg_stk3402a", "silabs,efm32pg12b";
+
+	chosen {
+		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		sw0 = &button0;
+		sw1 = &button1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led0: led_0 {
+			gpios = <&gpiof 4 0>;
+			label = "LED 0";
+		};
+		led1: led_1 {
+			gpios = <&gpiof 5 0>;
+			label = "LED 1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button0: button_0 {
+			/* gpio flags need validation */
+			gpios = <&gpiof 6 GPIO_INT_ACTIVE_LOW>;
+			label = "User Push Button 0";
+		};
+		button1: button_1 {
+			/* gpio flags need validation */
+			gpios = <&gpiof 7 GPIO_INT_ACTIVE_LOW>;
+			label = "User Push Button 1";
+		};
+	};
+};
+
+&usart0 {
+	current-speed = <115200>;
+	location = <0>;
+	status = "ok";
+};
+
+&leuart0 {
+	current-speed = <9600>;
+	location = <18>;
+	status = "ok";
+};
+
+&i2c0 {
+	location = <15>;
+	status = "ok";
+};
+
+&gpio {
+	location-swo = <0>;
+	status = "ok";
+};

@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_lldp
-#define NET_LOG_LEVEL CONFIG_NET_LLDP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_lldp, CONFIG_NET_LLDP_LOG_LEVEL);
 
 #include <errno.h>
 #include <stdlib.h>
@@ -100,9 +100,7 @@ static int lldp_send(struct ethernet_lldp *lldp)
 		goto out;
 	}
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(lldp->iface,
-							   NULL),
-				     BUF_ALLOC_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(BUF_ALLOC_TIMEOUT);
 	if (!pkt) {
 		ret = -ENOMEM;
 		goto out;

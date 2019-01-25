@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_core.h
  * @brief Core interrupt handling API
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -92,14 +92,14 @@ extern "C" {
 
 /** Convenience macro for implementing a CRITICAL section. */
 #define CORE_CRITICAL_SECTION(yourcode) \
-{                                       \
-  CORE_DECLARE_IRQ_STATE;               \
-  CORE_ENTER_CRITICAL();                \
   {                                     \
-    yourcode                            \
-  }                                     \
-  CORE_EXIT_CRITICAL();                 \
-}
+    CORE_DECLARE_IRQ_STATE;             \
+    CORE_ENTER_CRITICAL();              \
+    {                                   \
+      yourcode                          \
+    }                                   \
+    CORE_EXIT_CRITICAL();               \
+  }
 
 /** Enter CRITICAL section. Assumes that a @ref CORE_DECLARE_IRQ_STATE exist in
  *  scope. */
@@ -110,7 +110,7 @@ extern "C" {
 #define CORE_EXIT_CRITICAL()    CORE_ExitCritical(irqState)
 
 /** CRITICAL style yield. */
-#define CORE_YIELD_CRITICAL()   CORE_YieldCritical(void)
+#define CORE_YIELD_CRITICAL()   CORE_YieldCritical()
 
 //
 //  ATOMIC section macro API.
@@ -124,14 +124,14 @@ extern "C" {
 
 /** Convenience macro for implementing an ATOMIC section. */
 #define CORE_ATOMIC_SECTION(yourcode) \
-{                                     \
-  CORE_DECLARE_IRQ_STATE;             \
-  CORE_ENTER_ATOMIC();                \
   {                                   \
-    yourcode                          \
-  }                                   \
-  CORE_EXIT_ATOMIC();                 \
-}
+    CORE_DECLARE_IRQ_STATE;           \
+    CORE_ENTER_ATOMIC();              \
+    {                                 \
+      yourcode                        \
+    }                                 \
+    CORE_EXIT_ATOMIC();               \
+  }
 
 /** Enter ATOMIC section. Assumes that a @ref CORE_DECLARE_IRQ_STATE exist in
  *  scope. */
@@ -142,7 +142,7 @@ extern "C" {
 #define CORE_EXIT_ATOMIC()    CORE_ExitAtomic(irqState)
 
 /** ATOMIC style yield. */
-#define CORE_YIELD_ATOMIC()   CORE_YieldAtomic(void)
+#define CORE_YIELD_ATOMIC()   CORE_YieldAtomic()
 
 //
 //  NVIC mask section macro API.
@@ -160,7 +160,7 @@ extern "C" {
 /** Allocate storage for and zero initialize NVIC interrupt mask.
  *  @param[in] x
  *    The storage variable name to use.*/
-#define CORE_DECLARE_NVIC_ZEROMASK(x) CORE_nvicMask_t x = {{0}}
+#define CORE_DECLARE_NVIC_ZEROMASK(x) CORE_nvicMask_t x = { { 0 } }
 
 /** NVIC mask style interrupt disable.
  *  @param[in] mask
@@ -177,21 +177,21 @@ extern "C" {
  *    Mask specifying which NVIC interrupts to disable within the section.
  *  @param[in] yourcode
  *    The code for the section. */
-#define CORE_NVIC_SECTION(mask, yourcode)   \
-{                                           \
-  CORE_DECLARE_NVIC_STATE;                  \
-  CORE_ENTER_NVIC(mask);                    \
-  {                                         \
-    yourcode                                \
-  }                                         \
-  CORE_EXIT_NVIC();                         \
-}
+#define CORE_NVIC_SECTION(mask, yourcode) \
+  {                                       \
+    CORE_DECLARE_NVIC_STATE;              \
+    CORE_ENTER_NVIC(mask);                \
+    {                                     \
+      yourcode                            \
+    }                                     \
+    CORE_EXIT_NVIC();                     \
+  }
 
 /** Enter NVIC mask section. Assumes that a @ref CORE_DECLARE_NVIC_STATE exist
  *  in scope.
  *  @param[in] disable
  *    Mask specifying which NVIC interrupts to disable within the section. */
-#define CORE_ENTER_NVIC(disable)  CORE_EnterNvicMask(&nvicState,disable)
+#define CORE_ENTER_NVIC(disable)  CORE_EnterNvicMask(&nvicState, disable)
 
 /** Exit NVIC mask section. Assumes that a @ref CORE_DECLARE_NVIC_STATE exist
  *  in scope. */

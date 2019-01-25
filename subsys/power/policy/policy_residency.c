@@ -24,14 +24,14 @@ LOG_MODULE_DECLARE(power);
 #error "Enable Low Power States at SoC Level"
 #endif
 
-struct sys_soc_pm_policy {
+struct sys_pm_policy {
 	enum power_states pm_state;
 	int sys_state;
 	int min_residency;
 };
 
 /* PM Policy based on SoC/Platform residency requirements */
-static struct sys_soc_pm_policy pm_policy[] = {
+static struct sys_pm_policy pm_policy[] = {
 #ifdef CONFIG_SYS_POWER_STATE_CPU_LPS_SUPPORTED
 	{SYS_POWER_STATE_CPU_LPS, SYS_PM_LOW_POWER_STATE,
 			CONFIG_PM_LPS_MIN_RES * SECS_TO_TICKS},
@@ -79,7 +79,7 @@ int sys_pm_policy_next_state(s32_t ticks, enum power_states *pm_state)
 		}
 	}
 
-	if (!_sys_soc_is_valid_power_state(pm_policy[i].pm_state)) {
+	if (!sys_is_valid_power_state(pm_policy[i].pm_state)) {
 		LOG_ERR("pm_state(%d) not supported by SoC\n",
 						pm_policy[i].pm_state);
 		return SYS_PM_NOT_HANDLED;

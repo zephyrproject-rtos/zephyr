@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_test
-#define NET_LOG_LEVEL CONFIG_NET_ROUTE_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_test, CONFIG_NET_ROUTE_LOG_LEVEL);
 
 #include <zephyr/types.h>
 #include <ztest.h>
@@ -21,6 +21,7 @@
 #include <tc_util.h>
 
 #include <net/ethernet.h>
+#include <net/dummy.h>
 #include <net/buf.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
@@ -124,7 +125,7 @@ static void net_route_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
-static int tester_send(struct net_if *iface, struct net_pkt *pkt)
+static int tester_send(struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
@@ -136,7 +137,9 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 
 	if (feed_data) {
 		DBG("Received at iface %p and feeding it into iface %p\n",
-		    iface, recipient);
+		    net_pkt_iface(pkt), recipient);
+
+		net_pkt_ref(pkt);
 
 		if (net_recv_data(recipient, pkt) < 0) {
 			TC_ERROR("Data receive failed.");
@@ -144,27 +147,23 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 			test_failed = true;
 		}
 
-		k_sem_give(&wait_data);
-
-		return 0;
+		goto out;
 	}
 
 	DBG("pkt %p to be sent len %lu\n", pkt, net_pkt_get_len(pkt));
-
-	net_pkt_unref(pkt);
 
 	if (data_failure) {
 		test_failed = true;
 	}
 
 	msg_sending = 0;
-
+out:
 	k_sem_give(&wait_data);
 
 	return 0;
 }
 
-static int tester_send_peer(struct net_if *iface, struct net_pkt *pkt)
+static int tester_send_peer(struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		TC_ERROR("No data to send!\n");
@@ -176,29 +175,26 @@ static int tester_send_peer(struct net_if *iface, struct net_pkt *pkt)
 
 	if (feed_data) {
 		DBG("Received at iface %p and feeding it into iface %p\n",
-		    iface, recipient);
+		    net_pkt_iface(pkt), recipient);
 
+		net_pkt_ref(pkt);
 		if (net_recv_data(recipient, pkt) < 0) {
 			TC_ERROR("Data receive failed.");
 			net_pkt_unref(pkt);
 			test_failed = true;
 		}
 
-		k_sem_give(&wait_data);
-
-		return 0;
+		goto out;
 	}
 
 	DBG("pkt %p to be sent len %lu\n", pkt, net_pkt_get_len(pkt));
-
-	net_pkt_unref(pkt);
 
 	if (data_failure) {
 		test_failed = true;
 	}
 
 	msg_sending = 0;
-
+out:
 	k_sem_give(&wait_data);
 
 	return 0;
@@ -207,13 +203,13 @@ static int tester_send_peer(struct net_if *iface, struct net_pkt *pkt)
 struct net_route_test net_route_data;
 struct net_route_test net_route_data_peer;
 
-static struct net_if_api net_route_if_api = {
-	.init = net_route_iface_init,
+static struct dummy_api net_route_if_api = {
+	.iface_api.init = net_route_iface_init,
 	.send = tester_send,
 };
 
-static struct net_if_api net_route_if_api_peer = {
-	.init = net_route_iface_init,
+static struct dummy_api net_route_if_api_peer = {
+	.iface_api.init = net_route_iface_init,
 	.send = tester_send_peer,
 };
 

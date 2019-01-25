@@ -83,13 +83,6 @@
 		_k_mutex_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
-	SECTION_DATA_PROLOGUE(_k_alert_area, (OPTIONAL), SUBALIGN(4))
-	{
-		_k_alert_list_start = .;
-		KEEP(*(SORT_BY_NAME("._k_alert.static.*")))
-		_k_alert_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
 	SECTION_DATA_PROLOGUE(_k_queue_area, (OPTIONAL), SUBALIGN(4))
 	{
 		_k_queue_list_start = .;
@@ -123,13 +116,6 @@
 		_k_pipe_list_start = .;
 		KEEP(*(SORT_BY_NAME("._k_pipe.static.*")))
 		_k_pipe_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(_k_work_area, (OPTIONAL), SUBALIGN(4))
-	{
-		_k_work_list_start = .;
-		KEEP(*(SORT_BY_NAME("._k_work.static.*")))
-		_k_work_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(_k_task_list, (OPTIONAL), SUBALIGN(4))

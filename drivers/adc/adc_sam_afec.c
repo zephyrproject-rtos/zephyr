@@ -187,7 +187,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	int error = 0;
 	u32_t channels = sequence->channels;
 
-	data->channels = 0;
+	data->channels = 0U;
 
 	/* Signal an error if the channel selection is invalid (no channels or
 	 * a non-existing one is selected).
@@ -212,8 +212,8 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 		return -EINVAL;
 	}
 
-	u8_t num_active_channels = 0;
-	u8_t channel = 0;
+	u8_t num_active_channels = 0U;
+	u8_t channel = 0U;
 
 	while (channels > 0) {
 		if (channels & 1) {
@@ -242,8 +242,6 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	adc_context_start_read(&data->ctx, sequence);
 
 	error = adc_context_wait_for_completion(&data->ctx);
-	adc_context_release(&data->ctx, error);
-
 	return error;
 }
 
@@ -251,9 +249,13 @@ static int adc_sam_read(struct device *dev,
 			const struct adc_sequence *sequence)
 {
 	struct adc_sam_data *data = DEV_DATA(dev);
+	int error;
 
 	adc_context_lock(&data->ctx, false, NULL);
-	return start_read(dev, sequence);
+	error = start_read(dev, sequence);
+	adc_context_release(&data->ctx, error);
+
+	return error;
 }
 
 static int adc_sam_init(struct device *dev)
@@ -302,9 +304,13 @@ static int adc_sam_read_async(struct device *dev,
 			      struct k_poll_signal *async)
 {
 	struct adc_sam_data *data = DEV_DATA(dev);
+	int error;
 
 	adc_context_lock(&data->ctx, true, async);
-	return start_read(dev, sequence);
+	error = start_read(dev, sequence);
+	adc_context_release(&data->ctx, error);
+
+	return error;
 }
 #endif
 
@@ -345,9 +351,9 @@ static void adc_sam_isr(void *arg)
 static void adc0_sam_cfg_func(struct device *dev);
 
 static const struct adc_sam_cfg adc0_sam_cfg = {
-	.regs = (Afec *)CONFIG_ADC_0_BASE_ADDRESS,
+	.regs = (Afec *)DT_ADC_0_BASE_ADDRESS,
 	.cfg_func = adc0_sam_cfg_func,
-	.periph_id = CONFIG_ADC_0_PERIPHERAL_ID,
+	.periph_id = DT_ADC_0_PERIPHERAL_ID,
 	.afec_trg_pin = PIN_AFE0_ADTRG,
 };
 
@@ -357,15 +363,15 @@ static struct adc_sam_data adc0_sam_data = {
 	ADC_CONTEXT_INIT_SYNC(adc0_sam_data, ctx),
 };
 
-DEVICE_AND_API_INIT(adc0_sam, CONFIG_ADC_0_NAME, adc_sam_init,
+DEVICE_AND_API_INIT(adc0_sam, DT_ADC_0_NAME, adc_sam_init,
 		    &adc0_sam_data, &adc0_sam_cfg, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &adc_sam_api);
 
 static void adc0_sam_cfg_func(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI, adc_sam_isr,
+	IRQ_CONNECT(DT_ADC_0_IRQ, DT_ADC_0_IRQ_PRI, adc_sam_isr,
 		    DEVICE_GET(adc0_sam), 0);
-	irq_enable(CONFIG_ADC_0_IRQ);
+	irq_enable(DT_ADC_0_IRQ);
 }
 
 #endif /* CONFIG_ADC_0 */
@@ -374,9 +380,9 @@ static void adc0_sam_cfg_func(struct device *dev)
 static void adc1_sam_cfg_func(struct device *dev);
 
 static const struct adc_sam_cfg adc1_sam_cfg = {
-	.regs = (Afec *)CONFIG_ADC_1_BASE_ADDRESS,
+	.regs = (Afec *)DT_ADC_1_BASE_ADDRESS,
 	.cfg_func = adc1_sam_cfg_func,
-	.periph_id = CONFIG_ADC_1_PERIPHERAL_ID,
+	.periph_id = DT_ADC_1_PERIPHERAL_ID,
 	.afec_trg_pin = PIN_AFE1_ADTRG,
 };
 
@@ -386,15 +392,15 @@ static struct adc_sam_data adc1_sam_data = {
 	ADC_CONTEXT_INIT_SYNC(adc1_sam_data, ctx),
 };
 
-DEVICE_AND_API_INIT(adc1_sam, CONFIG_ADC_1_NAME, adc_sam_init,
+DEVICE_AND_API_INIT(adc1_sam, DT_ADC_1_NAME, adc_sam_init,
 		    &adc1_sam_data, &adc1_sam_cfg, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &adc_sam_api);
 
 static void adc1_sam_cfg_func(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_ADC_1_IRQ, CONFIG_ADC_1_IRQ_PRI, adc_sam_isr,
+	IRQ_CONNECT(DT_ADC_1_IRQ, DT_ADC_1_IRQ_PRI, adc_sam_isr,
 		    DEVICE_GET(adc1_sam), 0);
-	irq_enable(CONFIG_ADC_1_IRQ);
+	irq_enable(DT_ADC_1_IRQ);
 }
 
 #endif /* CONFIG_ADC_1 */

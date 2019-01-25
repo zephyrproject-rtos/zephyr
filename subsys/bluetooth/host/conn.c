@@ -153,6 +153,17 @@ void notify_le_param_updated(struct bt_conn *conn)
 {
 	struct bt_conn_cb *cb;
 
+	/* If new connection parameters meet requirement of pending
+	 * parameters don't send slave conn param request anymore on timeout
+	 */
+	if (atomic_test_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET) &&
+	    conn->le.interval >= conn->le.interval_min &&
+	    conn->le.interval <= conn->le.interval_max &&
+	    conn->le.latency == conn->le.pending_latency &&
+	    conn->le.timeout == conn->le.pending_timeout) {
+		atomic_clear_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET);
+	}
+
 	for (cb = callback_list; cb; cb = cb->_next) {
 		if (cb->le_param_updated) {
 			cb->le_param_updated(conn, conn->le.interval,
@@ -1046,7 +1057,7 @@ static void bt_conn_reset_rx_state(struct bt_conn *conn)
 
 	net_buf_unref(conn->rx);
 	conn->rx = NULL;
-	conn->rx_len = 0;
+	conn->rx_len = 0U;
 }
 
 void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags)
@@ -1111,7 +1122,7 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags)
 
 		buf = conn->rx;
 		conn->rx = NULL;
-		conn->rx_len = 0;
+		conn->rx_len = 0U;
 
 		break;
 	default:
@@ -1811,6 +1822,7 @@ int bt_conn_le_param_update(struct bt_conn *conn,
 	    conn->le.interval <= param->interval_max &&
 	    conn->le.latency == param->latency &&
 	    conn->le.timeout == param->timeout) {
+		atomic_clear_bit(conn->flags, BT_CONN_SLAVE_PARAM_SET);
 		return -EALREADY;
 	}
 
@@ -2237,9 +2249,12 @@ int bt_conn_auth_pairing_confirm(struct bt_conn *conn)
 }
 #endif /* CONFIG_BT_SMP || CONFIG_BT_BREDR */
 
-u8_t bt_conn_get_id(struct bt_conn *conn)
+u8_t bt_conn_index(struct bt_conn *conn)
 {
-	return conn - conns;
+	u8_t index = conn - conns;
+
+	__ASSERT(index < CONFIG_BT_MAX_CONN, "Invalid bt_conn pointer");
+	return index;
 }
 
 struct bt_conn *bt_conn_lookup_id(u8_t id)

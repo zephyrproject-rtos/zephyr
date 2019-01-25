@@ -14,8 +14,8 @@ config SOC
 config NUM_IRQS
 	int
 	# must be >= the highest interrupt number used
-	# - include the UART interrupts
-	default 34
+	# - include the UART interrupts and ethernet interrupts
+	default 43
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
@@ -24,13 +24,13 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 if UART_STELLARIS
 
 config UART_STELLARIS_PORT_0
-	def_bool y
+	default y
 
 config UART_STELLARIS_PORT_1
-	def_bool y
+	default y
 
 config UART_STELLARIS_PORT_2
-	def_bool y
+	default y
 
 endif # UART_STELLARIS
 

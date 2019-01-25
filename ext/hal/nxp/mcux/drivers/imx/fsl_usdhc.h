@@ -21,8 +21,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief Driver version 2.2.4. */
-#define FSL_USDHC_DRIVER_VERSION (MAKE_VERSION(2U, 2U, 4U))
+/*! @brief Driver version 2.2.5. */
+#define FSL_USDHC_DRIVER_VERSION (MAKE_VERSION(2U, 2U, 5U))
 /*@}*/
 
 /*! @brief Maximum block count can be set one time */
@@ -144,14 +144,14 @@ enum _usdhc_present_status_flag
     kUSDHC_CardInsertedFlag = USDHC_PRES_STATE_CINST_MASK,    /*!< Card inserted */
     kUSDHC_CommandLineLevelFlag = USDHC_PRES_STATE_CLSL_MASK, /*!< Command line signal level */
 
-    kUSDHC_Data0LineLevelFlag = (1U << USDHC_PRES_STATE_DLSL_SHIFT),        /*!< Data0 line signal level */
-    kUSDHC_Data1LineLevelFlag = (1U << (USDHC_PRES_STATE_DLSL_SHIFT + 1U)), /*!< Data1 line signal level */
-    kUSDHC_Data2LineLevelFlag = (1U << (USDHC_PRES_STATE_DLSL_SHIFT + 2U)), /*!< Data2 line signal level */
-    kUSDHC_Data3LineLevelFlag = (1U << (USDHC_PRES_STATE_DLSL_SHIFT + 3U)), /*!< Data3 line signal level */
-    kUSDHC_Data4LineLevelFlag = (1U << (USDHC_PRES_STATE_DLSL_SHIFT + 4U)), /*!< Data4 line signal level */
-    kUSDHC_Data5LineLevelFlag = (1U << (USDHC_PRES_STATE_DLSL_SHIFT + 5U)), /*!< Data5 line signal level */
-    kUSDHC_Data6LineLevelFlag = (1U << (USDHC_PRES_STATE_DLSL_SHIFT + 6U)), /*!< Data6 line signal level */
-    kUSDHC_Data7LineLevelFlag = (1U << (USDHC_PRES_STATE_DLSL_SHIFT + 7U)), /*!< Data7 line signal level */
+    kUSDHC_Data0LineLevelFlag = 1U << USDHC_PRES_STATE_DLSL_SHIFT,               /*!< Data0 line signal level */
+    kUSDHC_Data1LineLevelFlag = 1U << (USDHC_PRES_STATE_DLSL_SHIFT + 1U),        /*!< Data1 line signal level */
+    kUSDHC_Data2LineLevelFlag = 1U << (USDHC_PRES_STATE_DLSL_SHIFT + 2U),        /*!< Data2 line signal level */
+    kUSDHC_Data3LineLevelFlag = 1U << (USDHC_PRES_STATE_DLSL_SHIFT + 3U),        /*!< Data3 line signal level */
+    kUSDHC_Data4LineLevelFlag = 1U << (USDHC_PRES_STATE_DLSL_SHIFT + 4U),        /*!< Data4 line signal level */
+    kUSDHC_Data5LineLevelFlag = 1U << (USDHC_PRES_STATE_DLSL_SHIFT + 5U),        /*!< Data5 line signal level */
+    kUSDHC_Data6LineLevelFlag = 1U << (USDHC_PRES_STATE_DLSL_SHIFT + 6U),        /*!< Data6 line signal level */
+    kUSDHC_Data7LineLevelFlag = (int)(1U << (USDHC_PRES_STATE_DLSL_SHIFT + 7U)), /*!< Data7 line signal level */
 };
 
 /*! @brief Interrupt status flag mask */
@@ -255,7 +255,7 @@ enum _usdhc_adma_error_state
                             kUSDHC_AdmaErrorStateFetchDescriptor, /*!< ADMA error state */
 };
 
-/*! @brief Force event mask */
+/*! @brief Force event bit position */
 enum _usdhc_force_event
 {
     kUSDHC_ForceEventAutoCommand12NotExecuted = USDHC_FORCE_EVENT_FEVTAC12NE_MASK, /*!< Auto CMD12 not executed error */
@@ -272,21 +272,22 @@ enum _usdhc_force_event
     kUSDHC_ForceEventDataCrcError = USDHC_FORCE_EVENT_FEVTDCE_MASK,                 /*!< Data CRC error */
     kUSDHC_ForceEventDataEndBitError = USDHC_FORCE_EVENT_FEVTDEBE_MASK,             /*!< Data end bit error */
     kUSDHC_ForceEventAutoCommand12Error = USDHC_FORCE_EVENT_FEVTAC12E_MASK,         /*!< Auto CMD12 error */
-    kUSDHC_ForceEventCardInt = USDHC_FORCE_EVENT_FEVTCINT_MASK,                     /*!< Card interrupt */
+    kUSDHC_ForceEventCardInt = (int)USDHC_FORCE_EVENT_FEVTCINT_MASK,                /*!< Card interrupt */
     kUSDHC_ForceEventDmaError = USDHC_FORCE_EVENT_FEVTDMAE_MASK,                    /*!< Dma error */
 #if defined(FSL_FEATURE_USDHC_HAS_SDR50_MODE) && (!FSL_FEATURE_USDHC_HAS_SDR50_MODE)
     kUSDHC_ForceEventTuningError = 0U, /*!< not support */
 #else
     kUSDHC_ForceEventTuningError = USDHC_FORCE_EVENT_FEVTTNE_MASK, /*!< Tuning error */
 #endif
+
     kUSDHC_ForceEventsAll =
-        (kUSDHC_ForceEventAutoCommand12NotExecuted | kUSDHC_ForceEventAutoCommand12Timeout |
-         kUSDHC_ForceEventAutoCommand12CrcError | kUSDHC_ForceEventEndBitError |
-         kUSDHC_ForceEventAutoCommand12IndexError | kUSDHC_ForceEventAutoCommand12NotIssued |
-         kUSDHC_ForceEventCommandTimeout | kUSDHC_ForceEventCommandCrcError | kUSDHC_ForceEventCommandEndBitError |
-         kUSDHC_ForceEventCommandIndexError | kUSDHC_ForceEventDataTimeout | kUSDHC_ForceEventDataCrcError |
-         kUSDHC_ForceEventDataEndBitError | kUSDHC_ForceEventAutoCommand12Error | kUSDHC_ForceEventCardInt |
-         kUSDHC_ForceEventDmaError | kUSDHC_ForceEventTuningError), /*!< All force event flags mask */
+        (int)(USDHC_FORCE_EVENT_FEVTAC12NE_MASK | USDHC_FORCE_EVENT_FEVTAC12TOE_MASK |
+              USDHC_FORCE_EVENT_FEVTAC12CE_MASK | USDHC_FORCE_EVENT_FEVTAC12EBE_MASK |
+              USDHC_FORCE_EVENT_FEVTAC12IE_MASK | USDHC_FORCE_EVENT_FEVTCNIBAC12E_MASK |
+              USDHC_FORCE_EVENT_FEVTCTOE_MASK | USDHC_FORCE_EVENT_FEVTCCE_MASK | USDHC_FORCE_EVENT_FEVTCEBE_MASK |
+              USDHC_FORCE_EVENT_FEVTCIE_MASK | USDHC_FORCE_EVENT_FEVTDTOE_MASK | USDHC_FORCE_EVENT_FEVTDCE_MASK |
+              USDHC_FORCE_EVENT_FEVTDEBE_MASK | USDHC_FORCE_EVENT_FEVTAC12E_MASK | USDHC_FORCE_EVENT_FEVTCINT_MASK |
+              USDHC_FORCE_EVENT_FEVTDMAE_MASK | kUSDHC_ForceEventTuningError), /*!< All force event flags mask */
 };
 
 /*! @brief Data transfer width */
@@ -1161,7 +1162,7 @@ static inline void USDHC_EnableMmcBoot(USDHC_Type *base, bool enable)
  * @brief Forces generating events according to the given mask.
  *
  * @param base USDHC peripheral base address.
- * @param mask The force events mask(_usdhc_force_event).
+ * @param mask The force events bit posistion (_usdhc_force_event).
  */
 static inline void USDHC_SetForceEvent(USDHC_Type *base, uint32_t mask)
 {

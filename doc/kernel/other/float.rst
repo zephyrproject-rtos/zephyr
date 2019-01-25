@@ -172,10 +172,9 @@ during context switches, as described above.
 Use the :option:`CONFIG_SSE` configuration option to enable support for
 SSEx instructions (x86 only).
 
-APIs
-****
+API Reference
+*************
 
-The following floating point APIs (x86 only) are provided by :file:`kernel.h`:
+.. doxygengroup:: float_apis
+   :project: Zephyr
 
-* :cpp:func:`k_float_enable()`
-* :cpp:func:`k_float_disable()`

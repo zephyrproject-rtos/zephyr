@@ -65,7 +65,7 @@ int sys_bitfield_find_first_clear(const unsigned long *bitmap,
 	 * By bitwise negating the bitmap, we are actually implemeting
 	 * ffc (find first clear) using ffs (find first set).
 	 */
-	for (cnt = 0; cnt < words; cnt++) {
+	for (cnt = 0U; cnt < words; cnt++) {
 		neg_bitmap = ~bitmap[cnt];
 		if (neg_bitmap == 0)	/* all full */
 			continue;

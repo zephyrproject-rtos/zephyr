@@ -13,6 +13,7 @@
 
 	chosen {
 		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -36,7 +37,7 @@
 			label = "User LD6";
 		};
 		green_led_7: led_7 {
-			gpios = <&gpiod 11 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpioe 11 GPIO_INT_ACTIVE_HIGH>;
 			label = "User LD7";
 		};
 		orange_led_8: led_8 {
@@ -63,6 +64,7 @@
 
 	aliases {
 		led0 = &green_led_6;
+		led1 = &green_led_7;
 		sw0 = &user_button;
 	};
 };
@@ -92,8 +94,9 @@
 	};
 
 	lsm303dlhc-accel@19 {
-		compatible = "st,lsm303dlhc-accel";
+		compatible = "st,lis2dh", "st,lsm303dlhc-accel";
 		reg = <0x19>;
+		irq-gpios = <&gpioe 4 0>, <&gpioe 5 0>;
 		label = "LSM303DLHC-ACCEL";
 	};
 };

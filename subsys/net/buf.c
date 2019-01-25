@@ -113,7 +113,7 @@ static u8_t *mem_pool_data_alloc(struct net_buf *buf, size_t *size,
 	memcpy(block.data, &block.id, sizeof(block.id));
 
 	ref_count = (u8_t *)block.data + sizeof(block.id);
-	*ref_count = 1;
+	*ref_count = 1U;
 
 	/* Return pointer to the byte following the ref count */
 	return ref_count + 1;
@@ -171,7 +171,7 @@ static u8_t *heap_data_alloc(struct net_buf *buf, size_t *size, s32_t timeout)
 		return NULL;
 	}
 
-	*ref_count = 1;
+	*ref_count = 1U;
 
 	return ref_count + 1;
 }
@@ -674,21 +674,16 @@ struct net_buf *net_buf_frag_del(struct net_buf *parent, struct net_buf *frag)
 	return next_frag;
 }
 
-int net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
-		      size_t offset, size_t len)
+size_t net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
+			 size_t offset, size_t len)
 {
 	struct net_buf *frag;
 	size_t to_copy;
 	size_t copied;
 
-	if (dst_len < (size_t)len) {
-		return -ENOMEM;
-	}
+	len = min(len, dst_len);
 
 	frag = src;
-
-	/* clear dst */
-	(void)memset(dst, 0, dst_len);
 
 	/* find the right fragment to start copying from */
 	while (frag && offset >= frag->len) {
@@ -710,10 +705,6 @@ int net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
 
 		/* after the first iteration, this value will be 0 */
 		offset = 0;
-	}
-
-	if (len > 0) {
-		return -ENOMEM;
 	}
 
 	return copied;

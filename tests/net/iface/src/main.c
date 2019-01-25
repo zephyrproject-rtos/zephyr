@@ -6,8 +6,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_test
 #define NET_LOG_LEVEL CONFIG_NET_IF_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <zephyr/types.h>
 #include <stdbool.h>
@@ -20,6 +22,7 @@
 #include <ztest.h>
 
 #include <net/ethernet.h>
+#include <net/dummy.h>
 #include <net/buf.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
@@ -104,7 +107,7 @@ static void net_iface_init(struct net_if *iface)
 			     NET_LINK_ETHERNET);
 }
 
-static int sender_iface(struct net_if *iface, struct net_pkt *pkt)
+static int sender_iface(struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		DBG("No data to send!\n");
@@ -112,26 +115,18 @@ static int sender_iface(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (test_started) {
-		struct net_if_test *data =
-			net_if_get_device(iface)->driver_data;
+		struct net_if_test *data = dev->driver_data;
 
-		DBG("Sending at iface %d %p\n", net_if_get_by_iface(iface),
-		    iface);
+		DBG("Sending at iface %d %p\n",
+		    net_if_get_by_iface(net_pkt_iface(pkt)),
+		    net_pkt_iface(pkt));
 
-		if (net_pkt_iface(pkt) != iface) {
-			DBG("Invalid interface %p, expecting %p\n",
-				 net_pkt_iface(pkt), iface);
-			test_failed = true;
-		}
-
-		if (net_if_get_by_iface(iface) != data->idx) {
+		if (net_if_get_by_iface(net_pkt_iface(pkt)) != data->idx) {
 			DBG("Invalid interface %d index, expecting %d\n",
-				 data->idx, net_if_get_by_iface(iface));
+			    data->idx, net_if_get_by_iface(net_pkt_iface(pkt)));
 			test_failed = true;
 		}
 	}
-
-	net_pkt_unref(pkt);
 
 	k_sem_give(&wait_data);
 
@@ -142,8 +137,8 @@ struct net_if_test net_iface1_data;
 struct net_if_test net_iface2_data;
 struct net_if_test net_iface3_data;
 
-static struct net_if_api net_iface_api = {
-	.init = net_iface_init,
+static struct dummy_api net_iface_api = {
+	.iface_api.init = net_iface_init,
 	.send = sender_iface,
 };
 
@@ -208,12 +203,11 @@ static void eth_fake_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static int eth_fake_send(struct net_if *iface,
+static int eth_fake_send(struct device *dev,
 			 struct net_pkt *pkt)
 {
-	ARG_UNUSED(iface);
-
-	net_pkt_unref(pkt);
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pkt);
 
 	return 0;
 }
@@ -248,10 +242,10 @@ static int eth_fake_set_config(struct device *dev,
 
 static struct ethernet_api eth_fake_api_funcs = {
 	.iface_api.init = eth_fake_iface_init,
-	.iface_api.send = eth_fake_send,
 
 	.get_capabilities = eth_fake_get_capabilities,
 	.set_config = eth_fake_set_config,
+	.send = eth_fake_send,
 };
 
 static int eth_fake_init(struct device *dev)
@@ -426,7 +420,7 @@ static bool send_iface(struct net_if *iface, int val, bool expect_fail)
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 	net_pkt_set_iface(pkt, iface);
 
 	net_pkt_append_all(pkt, sizeof(data), data, K_FOREVER);

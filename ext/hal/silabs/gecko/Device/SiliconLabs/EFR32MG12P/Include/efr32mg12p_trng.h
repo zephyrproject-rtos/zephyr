@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_trng.h
  * @brief EFR32MG12P_TRNG register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -47,22 +47,22 @@
  *****************************************************************************/
 /** TRNG Register Declaration */
 typedef struct {
-  __IOM uint32_t CONTROL;       /**< Main Control Register  */
-  __IM uint32_t  FIFOLEVEL;     /**< FIFO Level Register  */
-  uint32_t       RESERVED0[1];  /**< Reserved for future use **/
-  __IM uint32_t  FIFODEPTH;     /**< FIFO Depth Register  */
-  __IOM uint32_t KEY0;          /**< Key Register 0  */
-  __IOM uint32_t KEY1;          /**< Key Register 1  */
-  __IOM uint32_t KEY2;          /**< Key Register 2  */
-  __IOM uint32_t KEY3;          /**< Key Register 3  */
-  __IOM uint32_t TESTDATA;      /**< Test Data Register  */
+  __IOM uint32_t CONTROL;        /**< Main Control Register  */
+  __IM uint32_t  FIFOLEVEL;      /**< FIFO Level Register  */
+  uint32_t       RESERVED0[1U];  /**< Reserved for future use **/
+  __IM uint32_t  FIFODEPTH;      /**< FIFO Depth Register  */
+  __IOM uint32_t KEY0;           /**< Key Register 0  */
+  __IOM uint32_t KEY1;           /**< Key Register 1  */
+  __IOM uint32_t KEY2;           /**< Key Register 2  */
+  __IOM uint32_t KEY3;           /**< Key Register 3  */
+  __IOM uint32_t TESTDATA;       /**< Test Data Register  */
 
-  uint32_t       RESERVED1[3];  /**< Reserved for future use **/
-  __IOM uint32_t STATUS;        /**< Status Register  */
-  __IOM uint32_t INITWAITVAL;   /**< Initial Wait Counter  */
-  uint32_t       RESERVED2[50]; /**< Reserved for future use **/
-  __IM uint32_t  FIFO;          /**< FIFO Data  */
-} TRNG_TypeDef;                 /** @} */
+  uint32_t       RESERVED1[3U];  /**< Reserved for future use **/
+  __IOM uint32_t STATUS;         /**< Status Register  */
+  __IOM uint32_t INITWAITVAL;    /**< Initial Wait Counter  */
+  uint32_t       RESERVED2[50U]; /**< Reserved for future use **/
+  __IM uint32_t  FIFO;           /**< FIFO Data  */
+} TRNG_TypeDef;                  /** @} */
 
 /**************************************************************************//**
  * @addtogroup EFR32MG12P_TRNG

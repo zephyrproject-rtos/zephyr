@@ -44,7 +44,7 @@ static void aon_timer_callback(struct device *dev, void *user_data)
 
 static int test_timer(void)
 {
-	u32_t dummy_data = 30;
+	u32_t dummy_data = 30U;
 	int expected_alarm_cnt = 0;
 	struct device *aon_timer = device_get_binding(AON_TIMER);
 

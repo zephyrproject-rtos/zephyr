@@ -18,7 +18,7 @@
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 #include <misc/__assert.h>
 #include <bluetooth/hci.h>
-#include "controller/hal/nrf5/ticker.h"
+#include "controller/hal/ticker.h"
 #include "controller/ticker/ticker.h"
 #include "controller/include/ll.h"
 
@@ -85,14 +85,39 @@ static inline bool is_aligned_32(u32_t data)
 	return (data & 0x3) ? false : true;
 }
 
-static inline bool is_addr_valid(off_t addr, size_t len)
+static inline bool is_regular_addr_valid(off_t addr, size_t len)
 {
-	if (addr + len > NRF_FICR->CODEPAGESIZE * NRF_FICR->CODESIZE ||
-			addr < 0) {
+	if (addr >= NRF_FICR->CODEPAGESIZE * NRF_FICR->CODESIZE ||
+	    addr < 0 ||
+	    len > NRF_FICR->CODEPAGESIZE * NRF_FICR->CODESIZE ||
+	    addr + len > NRF_FICR->CODEPAGESIZE * NRF_FICR->CODESIZE) {
 		return false;
 	}
 
 	return true;
+}
+
+
+static inline bool is_uicr_addr_valid(off_t addr, size_t len)
+{
+#ifdef CONFIG_SOC_FLASH_NRF_UICR
+	if (addr >= (off_t)NRF_UICR + sizeof(*NRF_UICR) ||
+	    addr < (off_t)NRF_UICR ||
+	    len > sizeof(*NRF_UICR) ||
+	    addr + len > (off_t)NRF_UICR + sizeof(*NRF_UICR)) {
+		return false;
+	}
+
+	return true;
+#else
+	return false;
+#endif /* CONFIG_SOC_FLASH_NRF_UICR */
+}
+
+static inline bool is_addr_valid(off_t addr, size_t len)
+{
+	return is_regular_addr_valid(addr, len) ||
+	       is_uicr_addr_valid(addr, len);
 }
 
 static void nvmc_wait_ready(void)
@@ -153,18 +178,24 @@ static int flash_nrf_erase(struct device *dev, off_t addr, size_t size)
 	u32_t n_pages = size / pg_size;
 	int ret;
 
-	/* Erase can only be done per page */
-	if (((addr % pg_size) != 0) || ((size % pg_size) != 0)) {
+	if (is_regular_addr_valid(addr, size)) {
+		/* Erase can only be done per page */
+		if (((addr % pg_size) != 0) || ((size % pg_size) != 0)) {
+			return -EINVAL;
+		}
+
+		if (!n_pages) {
+			return 0;
+		}
+#ifdef CONFIG_SOC_FLASH_NRF_UICR
+	} else if (addr != (off_t)NRF_UICR || size != sizeof(*NRF_UICR)) {
 		return -EINVAL;
 	}
-
-	if (!is_addr_valid(addr, size)) {
+#else
+	} else {
 		return -EINVAL;
 	}
-
-	if (!n_pages) {
-		return 0;
-	}
+#endif /* CONFIG_SOC_FLASH_NRF_UICR */
 
 	SYNC_LOCK();
 
@@ -223,8 +254,6 @@ static const struct flash_driver_api flash_nrf_api = {
 
 static int nrf_flash_init(struct device *dev)
 {
-	dev->driver_api = &flash_nrf_api;
-
 	SYNC_INIT();
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
@@ -239,8 +268,9 @@ static int nrf_flash_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_INIT(nrf_flash, FLASH_DEV_NAME, nrf_flash_init,
-	     NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+DEVICE_AND_API_INIT(nrf_flash, DT_FLASH_DEV_NAME, nrf_flash_init,
+		NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		&flash_nrf_api);
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 
@@ -407,9 +437,9 @@ static int erase_op(void *context)
 	struct flash_context *e_ctx = context;
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
-	u32_t ticks_begin = 0;
+	u32_t ticks_begin = 0U;
 	u32_t ticks_diff;
-	u32_t i = 0;
+	u32_t i = 0U;
 
 	if (e_ctx->enable_time_limit) {
 		ticks_begin = ticker_ticks_now_get();
@@ -419,6 +449,16 @@ static int erase_op(void *context)
 	/* Erase uses a specific configuration register */
 	NRF_NVMC->CONFIG = NVMC_CONFIG_WEN_Een << NVMC_CONFIG_WEN_Pos;
 	nvmc_wait_ready();
+
+#ifdef CONFIG_SOC_FLASH_NRF_UICR
+	if (e_ctx->flash_addr == (off_t)NRF_UICR) {
+		NRF_NVMC->ERASEUICR = 1;
+		nvmc_wait_ready();
+		NRF_NVMC->CONFIG = prev_nvmc_cfg;
+		nvmc_wait_ready();
+		return FLASH_OP_DONE;
+	}
+#endif
 
 	do {
 		NRF_NVMC->ERASEPAGE = e_ctx->flash_addr;
@@ -464,9 +504,9 @@ static int write_op(void *context)
 	u32_t count;
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
-	u32_t ticks_begin = 0;
+	u32_t ticks_begin = 0U;
 	u32_t ticks_diff;
-	u32_t i = 1;
+	u32_t i = 1U;
 
 	if (w_ctx->enable_time_limit) {
 		ticks_begin = ticker_ticks_now_get();

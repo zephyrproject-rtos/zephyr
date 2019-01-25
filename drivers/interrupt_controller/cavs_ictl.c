@@ -89,13 +89,13 @@ static int cavs_ictl_0_initialize(struct device *port)
 static void cavs_config_0_irq(struct device *port);
 
 static const struct cavs_ictl_config cavs_config_0 = {
-	.irq_num = CAVS_ICTL_0_IRQ,
+	.irq_num = DT_CAVS_ICTL_0_IRQ,
 	.isr_table_offset = CONFIG_CAVS_ISR_TBL_OFFSET,
 	.config_func = cavs_config_0_irq,
 };
 
 static struct cavs_ictl_runtime cavs_0_runtime = {
-	.base_addr = CAVS_ICTL_BASE_ADDR,
+	.base_addr = DT_CAVS_ICTL_BASE_ADDR,
 };
 
 DEVICE_AND_API_INIT(cavs_ictl_0, CONFIG_CAVS_ICTL_0_NAME,
@@ -104,8 +104,8 @@ DEVICE_AND_API_INIT(cavs_ictl_0, CONFIG_CAVS_ICTL_0_NAME,
 
 static void cavs_config_0_irq(struct device *port)
 {
-	IRQ_CONNECT(CAVS_ICTL_0_IRQ, CONFIG_CAVS_ICTL_0_IRQ_PRI, cavs_ictl_isr,
-		    DEVICE_GET(cavs_ictl_0), CAVS_ICTL_0_IRQ_FLAGS);
+	IRQ_CONNECT(DT_CAVS_ICTL_0_IRQ, DT_CAVS_ICTL_0_IRQ_PRI, cavs_ictl_isr,
+		    DEVICE_GET(cavs_ictl_0), DT_CAVS_ICTL_0_IRQ_FLAGS);
 }
 
 static int cavs_ictl_1_initialize(struct device *port)
@@ -116,14 +116,14 @@ static int cavs_ictl_1_initialize(struct device *port)
 static void cavs_config_1_irq(struct device *port);
 
 static const struct cavs_ictl_config cavs_config_1 = {
-	.irq_num = CAVS_ICTL_1_IRQ,
+	.irq_num = DT_CAVS_ICTL_1_IRQ,
 	.isr_table_offset = CONFIG_CAVS_ISR_TBL_OFFSET +
 			    CONFIG_MAX_IRQ_PER_AGGREGATOR,
 	.config_func = cavs_config_1_irq,
 };
 
 static struct cavs_ictl_runtime cavs_1_runtime = {
-	.base_addr = CAVS_ICTL_BASE_ADDR + sizeof(struct cavs_registers),
+	.base_addr = DT_CAVS_ICTL_BASE_ADDR + sizeof(struct cavs_registers),
 };
 
 DEVICE_AND_API_INIT(cavs_ictl_1, CONFIG_CAVS_ICTL_1_NAME,
@@ -132,8 +132,8 @@ DEVICE_AND_API_INIT(cavs_ictl_1, CONFIG_CAVS_ICTL_1_NAME,
 
 static void cavs_config_1_irq(struct device *port)
 {
-	IRQ_CONNECT(CAVS_ICTL_1_IRQ, CONFIG_CAVS_ICTL_1_IRQ_PRI, cavs_ictl_isr,
-		    DEVICE_GET(cavs_ictl_1), CAVS_ICTL_1_IRQ_FLAGS);
+	IRQ_CONNECT(DT_CAVS_ICTL_1_IRQ, DT_CAVS_ICTL_1_IRQ_PRI, cavs_ictl_isr,
+		    DEVICE_GET(cavs_ictl_1), DT_CAVS_ICTL_1_IRQ_FLAGS);
 }
 
 static int cavs_ictl_2_initialize(struct device *port)
@@ -144,14 +144,14 @@ static int cavs_ictl_2_initialize(struct device *port)
 static void cavs_config_2_irq(struct device *port);
 
 static const struct cavs_ictl_config cavs_config_2 = {
-	.irq_num = CAVS_ICTL_2_IRQ,
+	.irq_num = DT_CAVS_ICTL_2_IRQ,
 	.isr_table_offset = CONFIG_CAVS_ISR_TBL_OFFSET +
 			    CONFIG_MAX_IRQ_PER_AGGREGATOR * 2,
 	.config_func = cavs_config_2_irq,
 };
 
 static struct cavs_ictl_runtime cavs_2_runtime = {
-	.base_addr = CAVS_ICTL_BASE_ADDR + sizeof(struct cavs_registers) * 2,
+	.base_addr = DT_CAVS_ICTL_BASE_ADDR + sizeof(struct cavs_registers) * 2,
 };
 
 DEVICE_AND_API_INIT(cavs_ictl_2, CONFIG_CAVS_ICTL_2_NAME,
@@ -160,8 +160,8 @@ DEVICE_AND_API_INIT(cavs_ictl_2, CONFIG_CAVS_ICTL_2_NAME,
 
 static void cavs_config_2_irq(struct device *port)
 {
-	IRQ_CONNECT(CAVS_ICTL_2_IRQ, CONFIG_CAVS_ICTL_2_IRQ_PRI, cavs_ictl_isr,
-		    DEVICE_GET(cavs_ictl_2), CAVS_ICTL_2_IRQ_FLAGS);
+	IRQ_CONNECT(DT_CAVS_ICTL_2_IRQ, DT_CAVS_ICTL_2_IRQ_PRI, cavs_ictl_isr,
+		    DEVICE_GET(cavs_ictl_2), DT_CAVS_ICTL_2_IRQ_FLAGS);
 }
 
 static int cavs_ictl_3_initialize(struct device *port)
@@ -172,14 +172,14 @@ static int cavs_ictl_3_initialize(struct device *port)
 static void cavs_config_3_irq(struct device *port);
 
 static const struct cavs_ictl_config cavs_config_3 = {
-	.irq_num = CAVS_ICTL_3_IRQ,
+	.irq_num = DT_CAVS_ICTL_3_IRQ,
 	.isr_table_offset = CONFIG_CAVS_ISR_TBL_OFFSET +
 			    CONFIG_MAX_IRQ_PER_AGGREGATOR*3,
 	.config_func = cavs_config_3_irq,
 };
 
 static struct cavs_ictl_runtime cavs_3_runtime = {
-	.base_addr = CAVS_ICTL_BASE_ADDR + sizeof(struct cavs_registers) * 3,
+	.base_addr = DT_CAVS_ICTL_BASE_ADDR + sizeof(struct cavs_registers) * 3,
 };
 
 DEVICE_AND_API_INIT(cavs_ictl_3, CONFIG_CAVS_ICTL_3_NAME,
@@ -188,6 +188,6 @@ DEVICE_AND_API_INIT(cavs_ictl_3, CONFIG_CAVS_ICTL_3_NAME,
 
 static void cavs_config_3_irq(struct device *port)
 {
-	IRQ_CONNECT(CAVS_ICTL_3_IRQ, CONFIG_CAVS_ICTL_3_IRQ_PRI, cavs_ictl_isr,
-		    DEVICE_GET(cavs_ictl_3), CAVS_ICTL_3_IRQ_FLAGS);
+	IRQ_CONNECT(DT_CAVS_ICTL_3_IRQ, DT_CAVS_ICTL_3_IRQ_PRI, cavs_ictl_isr,
+		    DEVICE_GET(cavs_ictl_3), DT_CAVS_ICTL_3_IRQ_FLAGS);
 }

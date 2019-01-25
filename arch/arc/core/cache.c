@@ -23,6 +23,7 @@
 #include <kernel_internal.h>
 #include <misc/__assert.h>
 #include <init.h>
+#include <stdbool.h>
 
 #if defined(CONFIG_CACHE_FLUSHING)
 
@@ -48,19 +49,19 @@
 #define DC_CTRL_OP_SUCCEEDED         0x4  /* d-cache operation succeeded */
 
 
-static int dcache_available(void)
+static bool dcache_available(void)
 {
 	unsigned long val = _arc_v2_aux_reg_read(_ARC_V2_D_CACHE_BUILD);
 
 	val &= 0xff; /* extract version */
-	return (val == 0)?0:1;
+	return (val == 0) ? false : true;
 }
 
 static void dcache_dc_ctrl(u32_t dcache_en_mask)
 {
-	if (!dcache_available())
-		return;
-	_arc_v2_aux_reg_write(_ARC_V2_DC_CTRL, dcache_en_mask);
+	if (dcache_available()) {
+		_arc_v2_aux_reg_write(_ARC_V2_DC_CTRL, dcache_en_mask);
+	}
 }
 
 static void dcache_enable(void)
@@ -107,8 +108,9 @@ static void dcache_flush_mlines(u32_t start_addr, u32_t size)
 		/* wait for flush completion */
 		do {
 			if ((_arc_v2_aux_reg_read(_ARC_V2_DC_CTRL) &
-				DC_CTRL_FLUSH_STATUS) == 0)
+			     DC_CTRL_FLUSH_STATUS) == 0) {
 				break;
+			}
 		} while (1);
 		start_addr += DCACHE_LINE_SIZE;
 	} while (start_addr <= end_addr);

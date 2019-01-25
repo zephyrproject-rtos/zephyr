@@ -18,8 +18,8 @@
 #include <kernel.h>
 #include <net/buf.h>
 #include <misc/byteorder.h>
-#include <crc8.h>
-#include <crc16.h>
+#include <crc.h>
+#include <crc.h>
 
 #include <gpio.h>
 #include <led_strip.h>

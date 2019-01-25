@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2018 Henrik Brix Andersen <henrik@brixandersen.dk>
  * Copyright (c) 2017 Google LLC.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -7,18 +8,42 @@
 #include <soc.h>
 #include <watchdog.h>
 
-#define WDT_REGS ((Wdt *)CONFIG_WDT_SAM0_BASE_ADDRESS)
+#define LOG_LEVEL CONFIG_WDT_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(wdt_sam0);
+
+#define WDT_REGS ((Wdt *)DT_WDT_SAM0_BASE_ADDRESS)
 
 struct wdt_sam0_dev_data {
-	void (*cb)(struct device *dev);
+	wdt_callback_t cb;
+	bool timeout_valid;
 };
 
 static struct device DEVICE_NAME_GET(wdt_sam0);
+
+static struct wdt_sam0_dev_data wdt_sam0_data = { 0 };
 
 static void wdt_sam0_wait_synchronization(void)
 {
 	while (WDT_REGS->STATUS.bit.SYNCBUSY) {
 	}
+}
+
+static u32_t wdt_sam0_timeout_to_wdt_period(u32_t timeout_ms)
+{
+	u32_t next_pow2;
+	u32_t cycles;
+
+	/* Calculate number of clock cycles @ 1.024 kHz input clock */
+	cycles = (timeout_ms * 1024) / 1000;
+
+	/* Minimum wdt period is 8 clock cycles (register value 0) */
+	if (cycles <= 8)
+		return 0;
+
+	/* Round up to next pow2 and calculate the register value */
+	next_pow2 = (1ULL << 32) >> __builtin_clz(cycles - 1);
+	return find_msb_set(next_pow2 >> 4);
 }
 
 static void wdt_sam0_isr(struct device *dev)
@@ -27,132 +52,172 @@ static void wdt_sam0_isr(struct device *dev)
 
 	WDT_REGS->INTFLAG.reg = WDT_INTFLAG_EW;
 	if (data->cb != NULL) {
-		data->cb(dev);
+		data->cb(dev, 0);
 	}
 }
 
-static void wdt_sam0_enable(struct device *dev)
+static int wdt_sam0_setup(struct device *dev, u8_t options)
 {
-	WDT_REGS->CTRL.reg = WDT_CTRL_ENABLE;
+	struct wdt_sam0_dev_data *data = dev->driver_data;
+
+	if (WDT_REGS->CTRL.reg == WDT_CTRL_ENABLE) {
+		LOG_ERR("Watchdog already setup");
+		return -EBUSY;
+	}
+
+	if (!data->timeout_valid) {
+		LOG_ERR("No valid timeout installed");
+		return -EINVAL;
+	}
+
+	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
+		LOG_ERR("Pause in sleep not supported");
+		return -ENOTSUP;
+	}
+
+	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
+		LOG_ERR("Pause when halted by debugger not supported");
+		return -ENOTSUP;
+	}
+
+	/* Enable watchdog */
+	WDT_REGS->CTRL.bit.ENABLE = 1;
 	wdt_sam0_wait_synchronization();
+
+	return 0;
 }
 
 static int wdt_sam0_disable(struct device *dev)
 {
-	WDT_REGS->CTRL.reg = 0;
+	if (!WDT_REGS->CTRL.bit.ENABLE) {
+		LOG_ERR("Watchdog not enabled");
+		return -EFAULT;
+	}
+
+	WDT_REGS->CTRL.bit.ENABLE = 0;
 	wdt_sam0_wait_synchronization();
 
 	return 0;
 }
 
-static int wdt_sam0_set_config(struct device *dev, struct wdt_config *config)
+static int wdt_sam0_install_timeout(struct device *dev,
+				const struct wdt_timeout_cfg *cfg)
 {
 	struct wdt_sam0_dev_data *data = dev->driver_data;
-	WDT_CTRL_Type ctrl = WDT_REGS->CTRL;
-	int divisor;
+	u32_t window, per;
 
-	/* As per wdt_esp32.c, the Zephyr watchdog API is modeled
-	 * after the Quark MCU where:
-	 *
-	 *  timeout_ms = 2**(config->timeout + 11) / 1000
-	 *
-	 * The SAM0 is also power-of-two based with a 1 kHz clock, so
-	 *  2**14 / 1kHz ~= 2**29 / 32 MHz.
-	 */
-	divisor = config->timeout + WDT_CONFIG_PER_16K_Val - WDT_2_29_CYCLES;
-
-	/* Limit to 16x so that 8x is available for early warning. */
-	if (divisor < WDT_CONFIG_PER_16_Val) {
-		return -EINVAL;
-	} else if (divisor > WDT_CONFIG_PER_16K_Val) {
-		return -EINVAL;
+	/* CONFIG is enable protected, error out if already enabled */
+	if (WDT_REGS->CTRL.bit.ENABLE) {
+		LOG_ERR("Watchdog already setup");
+		return -EBUSY;
 	}
 
-	/* Disable the WDT to change the config. */
-	wdt_sam0_disable(dev);
-
-	switch (config->mode) {
-	case WDT_MODE_RESET:
-		WDT_REGS->INTENCLR.reg = WDT_INTENCLR_EW;
-		wdt_sam0_wait_synchronization();
-		break;
-
-	case WDT_MODE_INTERRUPT_RESET:
-		/* Fire the early warning earlier. */
-		WDT_REGS->EWCTRL.bit.EWOFFSET = divisor - 1;
-		wdt_sam0_wait_synchronization();
-
-		/* Clear the pending interrupt, if any. */
-		WDT_REGS->INTFLAG.reg = WDT_INTFLAG_EW;
-		wdt_sam0_wait_synchronization();
-
-		WDT_REGS->INTENSET.reg = WDT_INTENSET_EW;
-		wdt_sam0_wait_synchronization();
-		break;
-
-	default:
-		return -EINVAL;
+	if (cfg->flags != WDT_FLAG_RESET_SOC) {
+		LOG_ERR("Only SoC reset supported");
+		return -ENOTSUP;
 	}
 
-	WDT_REGS->CONFIG.bit.PER = divisor;
-	wdt_sam0_wait_synchronization();
+	per = wdt_sam0_timeout_to_wdt_period(cfg->window.max);
+	if (per > WDT_CONFIG_PER_16K_Val) {
+		LOG_ERR("Upper limit timeout out of range");
+		goto timeout_invalid;
+	}
 
-	data->cb = config->interrupt_fn;
-
-	WDT_REGS->CTRL = ctrl;
-	wdt_sam0_wait_synchronization();
-
-	return 0;
-}
-
-static void wdt_sam0_get_config(struct device *dev, struct wdt_config *config)
-{
-	struct wdt_sam0_dev_data *data = dev->driver_data;
-
-	if (WDT_REGS->INTENSET.bit.EW) {
-		config->mode = WDT_MODE_INTERRUPT_RESET;
+	if (cfg->window.min) {
+		/* Window mode */
+		window = wdt_sam0_timeout_to_wdt_period(cfg->window.min);
+		if (window > WDT_CONFIG_PER_8K_Val) {
+			LOG_ERR("Lower limit timeout out of range");
+			goto timeout_invalid;
+		}
+		if (per <= window) {
+			/* Ensure we have a window */
+			per = window + 1;
+		}
+		WDT_REGS->CTRL.bit.WEN = 1;
+		wdt_sam0_wait_synchronization();
 	} else {
-		config->mode = WDT_MODE_RESET;
+		/* Normal mode */
+		if (cfg->callback) {
+			if (per == WDT_CONFIG_PER_8_Val) {
+				/* Ensure we have time for the early warning */
+				per += 1;
+			}
+			WDT_REGS->EWCTRL.bit.EWOFFSET = per - 1;
+		}
+		window = WDT_CONFIG_PER_8_Val;
+		WDT_REGS->CTRL.bit.WEN = 0;
+		wdt_sam0_wait_synchronization();
 	}
 
-	config->timeout = WDT_REGS->CONFIG.bit.PER
-		+ WDT_2_29_CYCLES - WDT_CONFIG_PER_16K_Val;
-	config->interrupt_fn = data->cb;
+	WDT_REGS->CONFIG.reg = WDT_CONFIG_WINDOW(window) | WDT_CONFIG_PER(per);
+	wdt_sam0_wait_synchronization();
+
+	/* Only enable IRQ if a callback was provided */
+	data->cb = cfg->callback;
+	if (data->cb) {
+		WDT_REGS->INTENSET.reg = WDT_INTENSET_EW;
+	} else {
+		WDT_REGS->INTENCLR.reg = WDT_INTENCLR_EW;
+		WDT_REGS->INTFLAG.reg = WDT_INTFLAG_EW;
+	}
+
+	data->timeout_valid = true;
+
+	return 0;
+
+timeout_invalid:
+	data->timeout_valid = false;
+	data->cb = NULL;
+
+	return -EINVAL;
 }
 
-static void wdt_sam0_reload(struct device *dev)
+static int wdt_sam0_feed(struct device *dev, int channel_id)
 {
-	WDT_REGS->CLEAR.bit.CLEAR = WDT_CLEAR_CLEAR_KEY_Val;
+	struct wdt_sam0_dev_data *data = dev->driver_data;
+
+	if (!data->timeout_valid) {
+		LOG_ERR("No valid timeout installed");
+		return -EINVAL;
+	}
+
+	WDT_REGS->CLEAR.reg = WDT_CLEAR_CLEAR_KEY_Val;
+
+	return 0;
 }
 
 static const struct wdt_driver_api wdt_sam0_api = {
-	.enable = wdt_sam0_enable,
+	.setup = wdt_sam0_setup,
 	.disable = wdt_sam0_disable,
-	.get_config = wdt_sam0_get_config,
-	.set_config = wdt_sam0_set_config,
-	.reload = wdt_sam0_reload,
+	.install_timeout = wdt_sam0_install_timeout,
+	.feed = wdt_sam0_feed,
 };
 
 static int wdt_sam0_init(struct device *dev)
 {
+#ifdef CONFIG_WDT_DISABLE_AT_BOOT
+	/* Ignore any errors */
+	wdt_sam0_disable(dev);
+#endif
 	/* Enable APB clock */
 	PM->APBAMASK.bit.WDT_ = 1;
 
-	/* Connect to GCLK2 (~1 kHz) */
+	/* Connect to GCLK2 (~1.024 kHz) */
 	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_WDT
 		| GCLK_CLKCTRL_GEN_GCLK2
 		| GCLK_CLKCTRL_CLKEN;
 
-	IRQ_CONNECT(CONFIG_WDT_SAM0_IRQ,
-		    CONFIG_WDT_SAM0_IRQ_PRIORITY, wdt_sam0_isr,
+	IRQ_CONNECT(DT_WDT_SAM0_IRQ,
+		    DT_WDT_SAM0_IRQ_PRIORITY, wdt_sam0_isr,
 		    DEVICE_GET(wdt_sam0), 0);
-	irq_enable(CONFIG_WDT_SAM0_IRQ);
+	irq_enable(DT_WDT_SAM0_IRQ);
 
 	return 0;
 }
 
 static struct wdt_sam0_dev_data wdt_sam0_data;
 
-DEVICE_AND_API_INIT(wdt_sam0, CONFIG_WDT_0_NAME, wdt_sam0_init,
+DEVICE_AND_API_INIT(wdt_sam0, DT_WDT_SAM0_LABEL, wdt_sam0_init,
 		    &wdt_sam0_data, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_sam0_api);

@@ -58,7 +58,7 @@ static void i2c_gpio_set_sda(void *io_context, int state)
 static int i2c_gpio_get_sda(void *io_context)
 {
 	struct i2c_gpio_context *context = io_context;
-	u32_t state = 1; /* Default high as that would be a NACK */
+	u32_t state = 1U; /* Default high as that would be a NACK */
 
 	gpio_pin_read(context->gpio, context->sda_pin, &state);
 	return state;
@@ -105,14 +105,6 @@ static int i2c_gpio_init(struct device *dev)
 
 	i2c_bitbang_init(&context->bitbang, &io_fns, context);
 
-	/*
-	 * Set driver_api at very end of init so if we return early with error
-	 * then the device can't be found later by device_get_binding. This is
-	 * important because driver framework ignores errors from init
-	 * functions.
-	 */
-	dev->driver_api = &api;
-
 	return 0;
 }
 
@@ -126,11 +118,11 @@ static const struct i2c_gpio_config i2c_gpio_dev_cfg_##_num = {		\
 	.sda_pin	= CONFIG_I2C_GPIO_##_num##_SDA_PIN,		\
 };									\
 									\
-DEVICE_INIT(i2c_gpio_##_num, CONFIG_I2C_GPIO_##_num##_NAME,		\
+DEVICE_AND_API_INIT(i2c_gpio_##_num, CONFIG_I2C_GPIO_##_num##_NAME,	\
 	    i2c_gpio_init,						\
 	    &i2c_gpio_dev_data_##_num,					\
 	    &i2c_gpio_dev_cfg_##_num,					\
-	    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY)
+	    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY, &api)
 
 #ifdef CONFIG_I2C_GPIO_0
 DEFINE_I2C_GPIO(0);

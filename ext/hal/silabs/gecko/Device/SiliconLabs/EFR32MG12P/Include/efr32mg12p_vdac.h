@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_vdac.h
  * @brief EFR32MG12P_VDAC register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -47,23 +47,23 @@
  *****************************************************************************/
 /** VDAC Register Declaration */
 typedef struct {
-  __IOM uint32_t   CTRL;          /**< Control Register  */
-  __IM uint32_t    STATUS;        /**< Status Register  */
-  __IOM uint32_t   CH0CTRL;       /**< Channel 0 Control Register  */
-  __IOM uint32_t   CH1CTRL;       /**< Channel 1 Control Register  */
-  __IOM uint32_t   CMD;           /**< Command Register  */
-  __IM uint32_t    IF;            /**< Interrupt Flag Register  */
-  __IOM uint32_t   IFS;           /**< Interrupt Flag Set Register  */
-  __IOM uint32_t   IFC;           /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t   IEN;           /**< Interrupt Enable Register  */
-  __IOM uint32_t   CH0DATA;       /**< Channel 0 Data Register  */
-  __IOM uint32_t   CH1DATA;       /**< Channel 1 Data Register  */
-  __IOM uint32_t   COMBDATA;      /**< Combined Data Register  */
-  __IOM uint32_t   CAL;           /**< Calibration Register  */
+  __IOM uint32_t   CTRL;           /**< Control Register  */
+  __IM uint32_t    STATUS;         /**< Status Register  */
+  __IOM uint32_t   CH0CTRL;        /**< Channel 0 Control Register  */
+  __IOM uint32_t   CH1CTRL;        /**< Channel 1 Control Register  */
+  __IOM uint32_t   CMD;            /**< Command Register  */
+  __IM uint32_t    IF;             /**< Interrupt Flag Register  */
+  __IOM uint32_t   IFS;            /**< Interrupt Flag Set Register  */
+  __IOM uint32_t   IFC;            /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t   IEN;            /**< Interrupt Enable Register  */
+  __IOM uint32_t   CH0DATA;        /**< Channel 0 Data Register  */
+  __IOM uint32_t   CH1DATA;        /**< Channel 1 Data Register  */
+  __IOM uint32_t   COMBDATA;       /**< Combined Data Register  */
+  __IOM uint32_t   CAL;            /**< Calibration Register  */
 
-  uint32_t         RESERVED0[27]; /**< Reserved registers */
-  VDAC_OPA_TypeDef OPA[3];        /**< OPA Registers */
-} VDAC_TypeDef;                   /** @} */
+  uint32_t         RESERVED0[27U]; /**< Reserved registers */
+  VDAC_OPA_TypeDef OPA[3U];        /**< OPA Registers */
+} VDAC_TypeDef;                    /** @} */
 
 /**************************************************************************//**
  * @addtogroup EFR32MG12P_VDAC

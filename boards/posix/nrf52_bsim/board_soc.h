@@ -33,6 +33,11 @@
 
 #define OFFLOAD_SW_IRQ SWI0_EGU0_IRQn
 
+/* HACK due to the nrf52_bsim not yet supporting DTS */
+#if !defined(DT_NORDIC_NRF_CLOCK_0_IRQ_0)
+#define DT_NORDIC_NRF_CLOCK_0_IRQ_0 POWER_CLOCK_IRQn
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif

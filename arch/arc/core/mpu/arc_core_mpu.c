@@ -47,7 +47,7 @@ void configure_mpu_thread(struct k_thread *thread)
 void configure_mpu_stack_guard(struct k_thread *thread)
 {
 #if defined(CONFIG_USERSPACE)
-	if (thread->thread_base.user_options & K_USER) {
+	if ((thread->thread_base.user_options & K_USER) != 0) {
 		/* the areas before and after the user stack of thread is
 		 * kernel only. These area can be used as stack guard.
 		 * -----------------------

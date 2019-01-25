@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2016 Open-RnD Sp. z o.o.
  * Copyright (c) 2017 RnDity Sp. z o.o.
+ * Copyright (c) 2019 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,14 +9,11 @@
 /**
  * @brief Driver for External interrupt/event controller in STM32 MCUs
  *
- * Based on reference manuals:
- *   RM0008 Reference Manual: STM32F101xx, STM32F102xx, STM32F103xx, STM32F105xx
- *   and STM32F107xx advanced ARM-based 32-bit MCUs
- * and
- *   RM0368 Reference manual STM32F401xB/C and STM32F401xD/E
- *   advanced ARM-based 32-bit MCUs
- *
- * Chapter 10.2: External interrupt/event controller (EXTI)
+ * Driver is currently implemented to support following EXTI lines
+ * STM32F1/STM32F3: Lines 0 to 15. Lines > 15 not supported
+ * STM32F0/STM32L0/STM32L4: Lines 0 to 15. Lines > 15 are not mapped on an IRQ
+ * STM32F2/STM32F4: Lines 0 to 15, 16, 17 18, 21 and 22. Others not supported
+ * STM32F7: Lines 0 to 15, 16, 17 18, 21, 22 and 23. Others not supported
  *
  */
 #include <device.h>
@@ -23,23 +21,23 @@
 #include <misc/__assert.h>
 #include "exti_stm32.h"
 
-#ifdef CONFIG_SOC_SERIES_STM32F0X
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
 #define EXTI_LINES 32
-#elif CONFIG_SOC_SERIES_STM32F1X
+#elif defined(CONFIG_SOC_SERIES_STM32F1X)
 #define EXTI_LINES 19
-#elif CONFIG_SOC_SERIES_STM32F2X
+#elif defined(CONFIG_SOC_SERIES_STM32F2X)
 #define EXTI_LINES 23
-#elif CONFIG_SOC_STM32F302X8
+#elif defined(CONFIG_SOC_STM32F302X8)
 #define EXTI_LINES 36
-#elif CONFIG_SOC_STM32F303XC
+#elif defined(CONFIG_SOC_STM32F303XC)
 #define EXTI_LINES 36
-#elif CONFIG_SOC_STM32F334X8
+#elif defined(CONFIG_SOC_STM32F334X8)
 #define EXTI_LINES 36
-#elif CONFIG_SOC_STM32F373XC
+#elif defined(CONFIG_SOC_STM32F373XC)
 #define EXTI_LINES 29
-#elif CONFIG_SOC_SERIES_STM32F4X
+#elif defined(CONFIG_SOC_SERIES_STM32F4X)
 #define EXTI_LINES 23
-#elif CONFIG_SOC_SERIES_STM32F7X
+#elif defined(CONFIG_SOC_SERIES_STM32F7X)
 #define EXTI_LINES 24
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
 #define EXTI_LINES 30
@@ -93,14 +91,15 @@ static inline struct stm32_exti *get_exti_addr_adjust_line(int *line)
 	return base;
 }
 
-void stm32_exti_enable(int line)
+int stm32_exti_enable(int line)
 {
 	volatile struct stm32_exti *exti = get_exti_addr_adjust_line(&line);
 	int irqnum = 0;
 
 	exti->imr |= 1 << line;
 
-#ifdef CONFIG_SOC_SERIES_STM32F0X
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+    defined(CONFIG_SOC_SERIES_STM32L0X)
 	if (line >= 4 && line <= 15) {
 		irqnum = EXTI4_15_IRQn;
 	}	else if (line >= 2  && line <= 3) {
@@ -115,18 +114,14 @@ void stm32_exti_enable(int line)
 		 * by other drivers or boards, to allow the device wakeup on
 		 * some non-GPIO signals.
 		 */
-		return;
+		return 0;
 	}
-#elif CONFIG_SOC_SERIES_STM32F1X
-	if (line >= 5 && line <= 9) {
-		irqnum = EXTI9_5_IRQn;
-	} else if (line >= 10 && line <= 15) {
-		irqnum = EXTI15_10_IRQn;
-	} else {
-		/* pins 0..4 are mapped to EXTI0.. EXTI4 */
-		irqnum = EXTI0_IRQn + line;
-	}
-#elif CONFIG_SOC_SERIES_STM32F2X
+#elif defined(CONFIG_SOC_SERIES_STM32F1X) || \
+      defined(CONFIG_SOC_SERIES_STM32F2X) || \
+      defined(CONFIG_SOC_SERIES_STM32F3X) || \
+      defined(CONFIG_SOC_SERIES_STM32F4X) || \
+      defined(CONFIG_SOC_SERIES_STM32F7X) || \
+      defined(CONFIG_SOC_SERIES_STM32L4X)
 	if (line >= 5 && line <= 9) {
 		irqnum = EXTI9_5_IRQn;
 	} else if (line >= 10 && line <= 15) {
@@ -136,6 +131,9 @@ void stm32_exti_enable(int line)
 		irqnum = EXTI0_IRQn + line;
 	} else {
 		switch (line) {
+#if defined(CONFIG_SOC_SERIES_STM32F2X) || \
+    defined(CONFIG_SOC_SERIES_STM32F4X) || \
+    defined(CONFIG_SOC_SERIES_STM32F7X)
 		case 16:
 			irqnum = PVD_IRQn;
 			break;
@@ -151,113 +149,35 @@ void stm32_exti_enable(int line)
 		case 22:
 			irqnum = RTC_WKUP_IRQn;
 			break;
-		}
-	}
-#elif CONFIG_SOC_SERIES_STM32F3X
-	if (line >= 5 && line <= 9) {
-		irqnum = EXTI9_5_IRQn;
-	} else if (line >= 10 && line <= 15) {
-		irqnum = EXTI15_10_IRQn;
-	} else {
-		/* pins 0..4 are mapped to EXTI0.. EXTI4 */
-		irqnum = EXTI0_IRQn + line;
-	}
-#elif CONFIG_SOC_SERIES_STM32F4X
-	if (line >= 5 && line <= 9) {
-		irqnum = EXTI9_5_IRQn;
-	} else if (line >= 10 && line <= 15) {
-		irqnum = EXTI15_10_IRQn;
-	} else if (line >= 0 && line <= 4) {
-		/* pins 0..4 are mapped to EXTI0.. EXTI4 */
-		irqnum = EXTI0_IRQn + line;
-	} else {
-		switch (line) {
-		case 16:
-			irqnum = PVD_IRQn;
-			break;
-		case 17:
-			irqnum = RTC_Alarm_IRQn;
-			break;
-		case 18:
-			irqnum = OTG_FS_WKUP_IRQn;
-			break;
-		case 21:
-			irqnum = TAMP_STAMP_IRQn;
-			break;
-		case 22:
-			irqnum = RTC_WKUP_IRQn;
-			break;
-		}
-	}
-#elif CONFIG_SOC_SERIES_STM32F7X
-	if (line >= 5 && line <= 9) {
-		irqnum = EXTI9_5_IRQn;
-	} else if (line >= 10 && line <= 15) {
-		irqnum = EXTI15_10_IRQn;
-	} else if (line >= 0 && line <= 4) {
-		/* pins 0..4 are mapped to EXTI0.. EXTI4 */
-		irqnum = EXTI0_IRQn + line;
-	} else {
-		switch (line) {
-		case 16:
-			irqnum = PVD_IRQn;
-			break;
-		case 17:
-			irqnum = RTC_Alarm_IRQn;
-			break;
-		case 18:
-			irqnum = OTG_FS_WKUP_IRQn;
-			break;
-		case 21:
-			irqnum = TAMP_STAMP_IRQn;
-			break;
-		case 22:
-			irqnum = RTC_WKUP_IRQn;
-			break;
+#endif
+#if defined(CONFIG_SOC_SERIES_STM32F7X)
 		case 23:
 			irqnum = LPTIM1_IRQn;
 			break;
+#endif
+		default:
+			/* No IRQ associated to this line */
+#if defined(CONFIG_SOC_SERIES_STM32L4X)
+			/* > 15 are not mapped on an IRQ */
+			/*
+			 * On STM32L4X, this function also support enabling EXTI
+			 * lines that are not connected to an IRQ. This might be used
+			 * by other drivers or boards, to allow the device wakeup on
+			 * some non-GPIO signals.
+			 */
+			return 0;
+#else
+			return -ENOTSUP;
+#endif /* CONFIG_SOC_SERIES_STM32L4X */
 		}
-	}
-#elif defined(CONFIG_SOC_SERIES_STM32L0X)
-	if (line >= 4 && line <= 15) {
-		irqnum = EXTI4_15_IRQn;
-	}	else if (line >= 2  && line <= 3) {
-		irqnum = EXTI2_3_IRQn;
-	}	else if (line >= 0  && line <= 1) {
-		irqnum = EXTI0_1_IRQn;
-	} else {
-		/* > 15 are not mapped on an IRQ */
-		/*
-		 * On STM32L0X, this function also support enabling EXTI
-		 * lines that are not connected to an IRQ. This might be used
-		 * by other drivers or boards, to allow the device wakeup on
-		 * some non-GPIO signals.
-		 */
-		return;
-	}
-#elif defined(CONFIG_SOC_SERIES_STM32L4X)
-	if (line >= 5 && line <= 9) {
-		irqnum = EXTI9_5_IRQn;
-	} else if (line >= 10 && line <= 15) {
-		irqnum = EXTI15_10_IRQn;
-	} else if (line < 5) {
-		/* pins 0..4 are mapped to EXTI0.. EXTI4 */
-		irqnum = EXTI0_IRQn + line;
-	} else {/* > 15 are not mapped on an IRQ */
-		/*
-		 * On STM32L4X, this function also support enabling EXTI
-		 * lines that are not connected to an IRQ. This might be used
-		 * by other drivers or boards, to allow the device wakeup on
-		 * some non-GPIO signals.
-		 */
-		return;
 	}
 #else
 	#error "Unknown STM32 SoC"
 #endif
 
 	irq_enable(irqnum);
+
+	return 0;
 }
 
 void stm32_exti_disable(int line)
@@ -444,16 +364,20 @@ DEVICE_INIT(exti_stm32, STM32_EXTI_NAME, stm32_exti_init,
 /**
  * @brief set & unset for the interrupt callbacks
  */
-void stm32_exti_set_callback(int line, stm32_exti_callback_t cb, void *arg)
+int stm32_exti_set_callback(int line, int port, stm32_exti_callback_t cb,
+				void *arg)
 {
 	struct device *dev = DEVICE_GET(exti_stm32);
 	struct stm32_exti_data *data = dev->driver_data;
 
-	__ASSERT(data->cb[line].cb == NULL,
-		"EXTI %d callback already registered", line);
+	if (data->cb[line].cb) {
+		return -EBUSY;
+	}
 
 	data->cb[line].cb = cb;
 	data->cb[line].data = arg;
+
+	return 0;
 }
 
 void stm32_exti_unset_callback(int line)
@@ -472,7 +396,8 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-#ifdef CONFIG_SOC_SERIES_STM32F0X
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || \
+    defined(CONFIG_SOC_SERIES_STM32L0X)
 	IRQ_CONNECT(EXTI0_1_IRQn,
 		CONFIG_EXTI_STM32_EXTI1_0_IRQ_PRI,
 		__stm32_exti_isr_0_1, DEVICE_GET(exti_stm32),
@@ -485,7 +410,12 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 		CONFIG_EXTI_STM32_EXTI15_4_IRQ_PRI,
 		__stm32_exti_isr_4_15, DEVICE_GET(exti_stm32),
 		0);
-#elif CONFIG_SOC_SERIES_STM32F1X
+#elif defined(CONFIG_SOC_SERIES_STM32F1X) || \
+      defined(CONFIG_SOC_SERIES_STM32F2X) || \
+      defined(CONFIG_SOC_SERIES_STM32F3X) || \
+      defined(CONFIG_SOC_SERIES_STM32F4X) || \
+      defined(CONFIG_SOC_SERIES_STM32F7X) || \
+      defined(CONFIG_SOC_SERIES_STM32L4X)
 	IRQ_CONNECT(EXTI0_IRQn,
 		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
 		__stm32_exti_isr_0, DEVICE_GET(exti_stm32),
@@ -494,117 +424,17 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 		CONFIG_EXTI_STM32_EXTI1_IRQ_PRI,
 		__stm32_exti_isr_1, DEVICE_GET(exti_stm32),
 		0);
-	IRQ_CONNECT(EXTI2_IRQn,
-		CONFIG_EXTI_STM32_EXTI2_IRQ_PRI,
-		__stm32_exti_isr_2, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI3_IRQn,
-		CONFIG_EXTI_STM32_EXTI3_IRQ_PRI,
-		__stm32_exti_isr_3, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI4_IRQn,
-		CONFIG_EXTI_STM32_EXTI4_IRQ_PRI,
-		__stm32_exti_isr_4, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI9_5_IRQn,
-		CONFIG_EXTI_STM32_EXTI9_5_IRQ_PRI,
-		__stm32_exti_isr_9_5, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI15_10_IRQn,
-		CONFIG_EXTI_STM32_EXTI15_10_IRQ_PRI,
-		__stm32_exti_isr_15_10, DEVICE_GET(exti_stm32),
-		0);
-#elif CONFIG_SOC_SERIES_STM32F2X
-	IRQ_CONNECT(EXTI0_IRQn,
-		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
-		__stm32_exti_isr_0, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI1_IRQn,
-		CONFIG_EXTI_STM32_EXTI1_IRQ_PRI,
-		__stm32_exti_isr_1, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI2_IRQn,
-		CONFIG_EXTI_STM32_EXTI2_IRQ_PRI,
-		__stm32_exti_isr_2, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI3_IRQn,
-		CONFIG_EXTI_STM32_EXTI3_IRQ_PRI,
-		__stm32_exti_isr_3, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI4_IRQn,
-		CONFIG_EXTI_STM32_EXTI4_IRQ_PRI,
-		__stm32_exti_isr_4, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI9_5_IRQn,
-		CONFIG_EXTI_STM32_EXTI9_5_IRQ_PRI,
-		__stm32_exti_isr_9_5, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI15_10_IRQn,
-		CONFIG_EXTI_STM32_EXTI15_10_IRQ_PRI,
-		__stm32_exti_isr_15_10, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(PVD_IRQn,
-		CONFIG_EXTI_STM32_PVD_IRQ_PRI,
-		__stm32_exti_isr_16, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(RTC_Alarm_IRQn,
-		CONFIG_EXTI_STM32_RTC_ALARM_IRQ_PRI,
-		__stm32_exti_isr_17, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(OTG_FS_WKUP_IRQn,
-		CONFIG_EXTI_STM32_OTG_FS_WKUP_IRQ_PRI,
-		__stm32_exti_isr_18, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(TAMP_STAMP_IRQn,
-		CONFIG_EXTI_STM32_TAMP_STAMP_IRQ_PRI,
-		__stm32_exti_isr_21, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(RTC_WKUP_IRQn,
-		CONFIG_EXTI_STM32_RTC_WKUP_IRQ_PRI,
-		__stm32_exti_isr_22, DEVICE_GET(exti_stm32),
-		0);
-#elif CONFIG_SOC_SERIES_STM32F3X
-	IRQ_CONNECT(EXTI0_IRQn,
-		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
-		__stm32_exti_isr_0, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI1_IRQn,
-		CONFIG_EXTI_STM32_EXTI1_IRQ_PRI,
-		__stm32_exti_isr_1, DEVICE_GET(exti_stm32),
-		0);
+#ifdef CONFIG_SOC_SERIES_STM32F3X
 	IRQ_CONNECT(EXTI2_TSC_IRQn,
 		CONFIG_EXTI_STM32_EXTI2_IRQ_PRI,
 		__stm32_exti_isr_2, DEVICE_GET(exti_stm32),
 		0);
-	IRQ_CONNECT(EXTI3_IRQn,
-		CONFIG_EXTI_STM32_EXTI3_IRQ_PRI,
-		__stm32_exti_isr_3, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI4_IRQn,
-		CONFIG_EXTI_STM32_EXTI4_IRQ_PRI,
-		__stm32_exti_isr_4, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI9_5_IRQn,
-		CONFIG_EXTI_STM32_EXTI9_5_IRQ_PRI,
-		__stm32_exti_isr_9_5, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI15_10_IRQn,
-		CONFIG_EXTI_STM32_EXTI15_10_IRQ_PRI,
-		__stm32_exti_isr_15_10, DEVICE_GET(exti_stm32),
-		0);
-#elif CONFIG_SOC_SERIES_STM32F4X
-	IRQ_CONNECT(EXTI0_IRQn,
-		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
-		__stm32_exti_isr_0, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI1_IRQn,
-		CONFIG_EXTI_STM32_EXTI1_IRQ_PRI,
-		__stm32_exti_isr_1, DEVICE_GET(exti_stm32),
-		0);
+#else
 	IRQ_CONNECT(EXTI2_IRQn,
 		CONFIG_EXTI_STM32_EXTI2_IRQ_PRI,
 		__stm32_exti_isr_2, DEVICE_GET(exti_stm32),
 		0);
+#endif /* CONFIG_SOC_SERIES_STM32F3X */
 	IRQ_CONNECT(EXTI3_IRQn,
 		CONFIG_EXTI_STM32_EXTI3_IRQ_PRI,
 		__stm32_exti_isr_3, DEVICE_GET(exti_stm32),
@@ -621,6 +451,9 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 		CONFIG_EXTI_STM32_EXTI15_10_IRQ_PRI,
 		__stm32_exti_isr_15_10, DEVICE_GET(exti_stm32),
 		0);
+#elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
+      defined(CONFIG_SOC_SERIES_STM32F4X) || \
+      defined(CONFIG_SOC_SERIES_STM32F7X)
 	IRQ_CONNECT(PVD_IRQn,
 		CONFIG_EXTI_STM32_PVD_IRQ_PRI,
 		__stm32_exti_isr_16, DEVICE_GET(exti_stm32),
@@ -642,99 +475,9 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 		__stm32_exti_isr_22, DEVICE_GET(exti_stm32),
 		0);
 #elif CONFIG_SOC_SERIES_STM32F7X
-	IRQ_CONNECT(EXTI0_IRQn,
-		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
-		__stm32_exti_isr_0, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI1_IRQn,
-		CONFIG_EXTI_STM32_EXTI1_IRQ_PRI,
-		__stm32_exti_isr_1, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI2_IRQn,
-		CONFIG_EXTI_STM32_EXTI2_IRQ_PRI,
-		__stm32_exti_isr_2, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI3_IRQn,
-		CONFIG_EXTI_STM32_EXTI3_IRQ_PRI,
-		__stm32_exti_isr_3, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI4_IRQn,
-		CONFIG_EXTI_STM32_EXTI4_IRQ_PRI,
-		__stm32_exti_isr_4, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI9_5_IRQn,
-		CONFIG_EXTI_STM32_EXTI9_5_IRQ_PRI,
-		__stm32_exti_isr_9_5, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI15_10_IRQn,
-		CONFIG_EXTI_STM32_EXTI15_10_IRQ_PRI,
-		__stm32_exti_isr_15_10, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(PVD_IRQn,
-		CONFIG_EXTI_STM32_PVD_IRQ_PRI,
-		__stm32_exti_isr_16, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(RTC_Alarm_IRQn,
-		CONFIG_EXTI_STM32_RTC_ALARM_IRQ_PRI,
-		__stm32_exti_isr_17, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(OTG_FS_WKUP_IRQn,
-		CONFIG_EXTI_STM32_OTG_FS_WKUP_IRQ_PRI,
-		__stm32_exti_isr_18, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(TAMP_STAMP_IRQn,
-		CONFIG_EXTI_STM32_TAMP_STAMP_IRQ_PRI,
-		__stm32_exti_isr_21, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(RTC_WKUP_IRQn,
-		CONFIG_EXTI_STM32_RTC_WKUP_IRQ_PRI,
-		__stm32_exti_isr_22, DEVICE_GET(exti_stm32),
-		0);
 	IRQ_CONNECT(LPTIM1_IRQn,
 		CONFIG_EXTI_STM32_LPTIM1_IRQ_PRI,
 		__stm32_exti_isr_23, DEVICE_GET(exti_stm32),
-		0);
-#elif defined(CONFIG_SOC_SERIES_STM32L0X)
-	IRQ_CONNECT(EXTI0_1_IRQn,
-		CONFIG_EXTI_STM32_EXTI1_0_IRQ_PRI,
-		__stm32_exti_isr_0_1, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI2_3_IRQn,
-		CONFIG_EXTI_STM32_EXTI3_2_IRQ_PRI,
-		__stm32_exti_isr_2_3, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI4_15_IRQn,
-		CONFIG_EXTI_STM32_EXTI15_4_IRQ_PRI,
-		__stm32_exti_isr_4_15, DEVICE_GET(exti_stm32),
-		0);
-#elif defined(CONFIG_SOC_SERIES_STM32L4X)
-	IRQ_CONNECT(EXTI0_IRQn,
-		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
-		__stm32_exti_isr_0, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI1_IRQn,
-		CONFIG_EXTI_STM32_EXTI1_IRQ_PRI,
-		__stm32_exti_isr_1, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI2_IRQn,
-		CONFIG_EXTI_STM32_EXTI2_IRQ_PRI,
-		__stm32_exti_isr_2, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI3_IRQn,
-		CONFIG_EXTI_STM32_EXTI3_IRQ_PRI,
-		__stm32_exti_isr_3, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI4_IRQn,
-		CONFIG_EXTI_STM32_EXTI4_IRQ_PRI,
-		__stm32_exti_isr_4, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI9_5_IRQn,
-		CONFIG_EXTI_STM32_EXTI9_5_IRQ_PRI,
-		__stm32_exti_isr_9_5, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(EXTI15_10_IRQn,
-		CONFIG_EXTI_STM32_EXTI15_10_IRQ_PRI,
-		__stm32_exti_isr_15_10, DEVICE_GET(exti_stm32),
 		0);
 #endif
 }

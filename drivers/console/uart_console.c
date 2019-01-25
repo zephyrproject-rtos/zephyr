@@ -258,13 +258,13 @@ static void handle_ansi(u8_t byte, char *line)
 {
 	if (atomic_test_and_clear_bit(&esc_state, ESC_ANSI_FIRST)) {
 		if (!isdigit(byte)) {
-			ansi_val = 1;
+			ansi_val = 1U;
 			goto ansi_cmd;
 		}
 
 		atomic_set_bit(&esc_state, ESC_ANSI_VAL);
 		ansi_val = byte - '0';
-		ansi_val_2 = 0;
+		ansi_val_2 = 0U;
 		return;
 	}
 
@@ -317,7 +317,7 @@ ansi_cmd:
 
 		cursor_backward(cur);
 		end += cur;
-		cur = 0;
+		cur = 0U;
 		break;
 	case ANSI_END:
 		if (!end) {
@@ -326,7 +326,7 @@ ansi_cmd:
 
 		cursor_forward(end);
 		cur += end;
-		end = 0;
+		end = 0U;
 		break;
 	case ANSI_DEL:
 		if (!end) {
@@ -441,8 +441,8 @@ static bool handle_mcumgr(struct console_input *cmd, uint8_t byte)
 
 		clear_mcumgr();
 		cmd = NULL;
-		cur = 0;
-		end = 0;
+		cur = 0U;
+		end = 0U;
 	}
 
 	return true;
@@ -529,8 +529,8 @@ void uart_console_isr(struct device *unused)
 				cmd->line[cur + end] = '\0';
 				uart_poll_out(uart_console_dev, '\r');
 				uart_poll_out(uart_console_dev, '\n');
-				cur = 0;
-				end = 0;
+				cur = 0U;
+				end = 0U;
 				k_fifo_put(lines_queue, cmd);
 				cmd = NULL;
 				break;
@@ -617,7 +617,7 @@ static int uart_console_init(struct device *arg)
 
 #if defined(CONFIG_USB_UART_CONSOLE) && defined(CONFIG_USB_UART_DTR_WAIT)
 	while (1) {
-		u32_t dtr = 0;
+		u32_t dtr = 0U;
 
 		uart_line_ctrl_get(uart_console_dev, LINE_CTRL_DTR, &dtr);
 		if (dtr) {

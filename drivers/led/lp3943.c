@@ -241,10 +241,10 @@ static int lp3943_led_init(struct device *dev)
 	}
 
 	/* Hardware specific limits */
-	dev_data->min_period = 0;
-	dev_data->max_period = 1600;
-	dev_data->min_brightness = 0;
-	dev_data->max_brightness = 100;
+	dev_data->min_period = 0U;
+	dev_data->max_period = 1600U;
+	dev_data->min_brightness = 0U;
+	dev_data->max_brightness = 100U;
 
 	return 0;
 }

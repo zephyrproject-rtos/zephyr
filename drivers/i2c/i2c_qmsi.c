@@ -117,7 +117,7 @@ static struct i2c_qmsi_driver_data driver_data_0;
 
 static const struct i2c_qmsi_config_info config_info_0 = {
 	.instance = QM_I2C_0,
-	.bitrate = CONFIG_I2C_0_BITRATE,
+	.bitrate = DT_I2C_0_BITRATE,
 	.clock_gate = CLK_PERIPH_I2C_M0_REGISTER | CLK_PERIPH_CLK,
 };
 
@@ -133,7 +133,7 @@ static struct i2c_qmsi_driver_data driver_data_1;
 
 static const struct i2c_qmsi_config_info config_info_1 = {
 	.instance = QM_I2C_1,
-	.bitrate = CONFIG_I2C_1_BITRATE,
+	.bitrate = DT_I2C_1_BITRATE,
 	.clock_gate = CLK_PERIPH_I2C_M1_REGISTER | CLK_PERIPH_CLK,
 };
 
@@ -257,6 +257,16 @@ static const struct i2c_driver_api api = {
 	.transfer = i2c_qmsi_transfer,
 };
 
+/* Some SoCs have interrupt controllers w/o priority, in that case set
+ * it to 0 */
+#ifndef DT_I2C_0_IRQ_PRI
+#define DT_I2C_0_IRQ_PRI 0
+#endif
+
+#ifndef DT_I2C_1_IRQ_PRI
+#define DT_I2C_1_IRQ_PRI 0
+#endif
+
 static int i2c_qmsi_init(struct device *dev)
 {
 	struct i2c_qmsi_driver_data *driver_data = GET_DRIVER_DATA(dev);
@@ -273,20 +283,20 @@ static int i2c_qmsi_init(struct device *dev)
 		/* Register interrupt handler, unmask IRQ and route it
 		 * to Lakemont core.
 		 */
-		IRQ_CONNECT(CONFIG_I2C_0_IRQ,
-			    CONFIG_I2C_0_IRQ_PRI, qm_i2c_0_irq_isr, NULL,
-			    CONFIG_I2C_0_IRQ_FLAGS);
-		irq_enable(CONFIG_I2C_0_IRQ);
+		IRQ_CONNECT(DT_I2C_0_IRQ,
+			    DT_I2C_0_IRQ_PRI, qm_i2c_0_irq_isr, NULL,
+			    DT_I2C_0_IRQ_FLAGS);
+		irq_enable(DT_I2C_0_IRQ);
 		QM_IR_UNMASK_INTERRUPTS(
 				QM_INTERRUPT_ROUTER->i2c_master_0_int_mask);
 		break;
 
 #ifdef CONFIG_I2C_1
 	case QM_I2C_1:
-		IRQ_CONNECT(CONFIG_I2C_1_IRQ,
-			    CONFIG_I2C_1_IRQ_PRI, qm_i2c_1_irq_isr, NULL,
-			    CONFIG_I2C_1_IRQ_FLAGS);
-		irq_enable(CONFIG_I2C_1_IRQ);
+		IRQ_CONNECT(DT_I2C_1_IRQ,
+			    DT_I2C_1_IRQ_PRI, qm_i2c_1_irq_isr, NULL,
+			    DT_I2C_1_IRQ_FLAGS);
+		irq_enable(DT_I2C_1_IRQ);
 		QM_IR_UNMASK_INTERRUPTS(
 				QM_INTERRUPT_ROUTER->i2c_master_1_int_mask);
 		break;

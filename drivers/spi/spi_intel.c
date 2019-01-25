@@ -85,7 +85,7 @@ static void push_data(struct device *dev)
 	u32_t status;
 
 	while ((status = read_sssr(spi->regs)) & INTEL_SPI_SSSR_TNF) {
-		u32_t data = 0;
+		u32_t data = 0U;
 
 		if (status & INTEL_SPI_SSSR_RFS) {
 			break;
@@ -255,7 +255,7 @@ static int spi_intel_release(struct device *dev,
 void spi_intel_isr(struct device *dev)
 {
 	struct spi_intel_data *spi = dev->driver_data;
-	u32_t error = 0;
+	u32_t error = 0U;
 	u32_t status;
 
 	LOG_DBG("%p", dev);
@@ -264,7 +264,7 @@ void spi_intel_isr(struct device *dev)
 	if (status & INTEL_SPI_SSSR_ROR) {
 		/* Unrecoverable error, ack it */
 		clear_bit_sssr_ror(spi->regs);
-		error = 1;
+		error = 1U;
 		goto out;
 	}
 
@@ -416,7 +416,7 @@ void spi_config_0_irq(void);
 struct spi_intel_data spi_intel_data_port_0 = {
 	SPI_CONTEXT_INIT_LOCK(spi_intel_data_port_0, ctx),
 	SPI_CONTEXT_INIT_SYNC(spi_intel_data_port_0, ctx),
-	.regs = CONFIG_SPI_0_BASE_ADDRESS,
+	.regs = DT_SPI_0_BASE_ADDRESS,
 #if CONFIG_PCI
 	.pci_dev.class_type = SPI_INTEL_CLASS,
 	.pci_dev.bus = SPI_INTEL_PORT_0_BUS,
@@ -428,20 +428,20 @@ struct spi_intel_data spi_intel_data_port_0 = {
 };
 
 const struct spi_intel_config spi_intel_config_0 = {
-	.irq = CONFIG_SPI_0_IRQ,
+	.irq = DT_SPI_0_IRQ,
 	.config_func = spi_config_0_irq
 };
 
-DEVICE_DEFINE(spi_intel_port_0, CONFIG_SPI_0_NAME, spi_intel_init,
+DEVICE_DEFINE(spi_intel_port_0, DT_SPI_0_NAME, spi_intel_init,
 	      spi_intel_device_ctrl, &spi_intel_data_port_0,
 	      &spi_intel_config_0, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 	      &intel_spi_api);
 
 void spi_config_0_irq(void)
 {
-	IRQ_CONNECT(CONFIG_SPI_0_IRQ, CONFIG_SPI_0_IRQ_PRI,
+	IRQ_CONNECT(DT_SPI_0_IRQ, DT_SPI_0_IRQ_PRI,
 		    spi_intel_isr, DEVICE_GET(spi_intel_port_0),
-		    CONFIG_SPI_0_IRQ_FLAGS);
+		    DT_SPI_0_IRQ_FLAGS);
 }
 
 #endif /* CONFIG_SPI_0 */
@@ -452,7 +452,7 @@ void spi_config_1_irq(void);
 struct spi_intel_data spi_intel_data_port_1 = {
 	SPI_CONTEXT_INIT_LOCK(spi_intel_data_port_1, ctx),
 	SPI_CONTEXT_INIT_SYNC(spi_intel_data_port_1, ctx),
-	.regs = CONFIG_SPI_1_BASE_ADDRESS,
+	.regs = DT_SPI_1_BASE_ADDRESS,
 #if CONFIG_PCI
 	.pci_dev.class_type = SPI_INTEL_CLASS,
 	.pci_dev.bus = SPI_INTEL_PORT_1_BUS,
@@ -464,20 +464,20 @@ struct spi_intel_data spi_intel_data_port_1 = {
 };
 
 const struct spi_intel_config spi_intel_config_1 = {
-	.irq = CONFIG_SPI_1_IRQ,
+	.irq = DT_SPI_1_IRQ,
 	.config_func = spi_config_1_irq
 };
 
-DEVICE_DEFINE(spi_intel_port_1, CONFIG_SPI_1_NAME, spi_intel_init,
+DEVICE_DEFINE(spi_intel_port_1, DT_SPI_1_NAME, spi_intel_init,
 	      spi_intel_device_ctrl, &spi_intel_data_port_1,
 	      &spi_intel_config_1, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,
 	      &intel_spi_api);
 
 void spi_config_1_irq(void)
 {
-	IRQ_CONNECT(CONFIG_SPI_1_IRQ, CONFIG_SPI_1_IRQ_PRI,
+	IRQ_CONNECT(DT_SPI_1_IRQ, DT_SPI_1_IRQ_PRI,
 		    spi_intel_isr, DEVICE_GET(spi_intel_port_1),
-		    CONFIG_SPI_1_IRQ_FLAGS);
+		    DT_SPI_1_IRQ_FLAGS);
 }
 
 #endif /* CONFIG_SPI_1 */

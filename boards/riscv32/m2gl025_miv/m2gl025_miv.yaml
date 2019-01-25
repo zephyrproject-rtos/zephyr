@@ -5,6 +5,7 @@ arch: riscv32
 toolchain:
   - zephyr
 ram: 64
+simulation: renode
 testing:
   ignore_tags:
     - net

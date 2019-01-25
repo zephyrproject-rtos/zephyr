@@ -48,7 +48,7 @@ int32_t osSignalClear(osThreadId thread_id, int32_t signals)
 {
 	int sig, key;
 
-	if (_is_in_isr() || (thread_id == NULL) || (!signals) ||
+	if (k_is_in_isr() || (thread_id == NULL) || (!signals) ||
 		(signals & 0x80000000) || (signals > MAX_VALID_SIGNAL_VAL)) {
 		return 0x80000000;
 	}
@@ -76,7 +76,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 	u32_t time_delta_ms, timeout = millisec;
 	u64_t time_stamp_start, hwclk_cycles_delta, time_delta_ns;
 
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		evt.status = osErrorISR;
 		return evt;
 	}
@@ -148,7 +148,7 @@ osEvent osSignalWait(int32_t signals, uint32_t millisec)
 		if (timeout > time_delta_ms) {
 			timeout -= time_delta_ms;
 		} else {
-			timeout = 0;
+			timeout = 0U;
 		}
 	}
 

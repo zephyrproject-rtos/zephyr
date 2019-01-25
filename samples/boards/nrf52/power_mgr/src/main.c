@@ -24,7 +24,7 @@ void create_device_list(void);
 void main(void)
 {
 	struct device *gpio_in;
-	u32_t level = 0;
+	u32_t level = 0U;
 
 	printk("\n\n***Power Management Demo on %s****\n", CONFIG_ARCH);
 	printk(DEMO_DESCRIPTION);

@@ -101,7 +101,7 @@ def process_line(line, fp):
 
     # Replace length lookups with constant len of 4 since we're always
     # looking at pointers
-    line = re.sub(r'lengthtable[[]key[]]', r'4', line)
+    line = re.sub(r'lengthtable\[key\]', r'4', line)
 
     # Empty wordlist entries to have NULLs instead of ""
     line = re.sub(r'[{]["]["][}]', r'{}', line)

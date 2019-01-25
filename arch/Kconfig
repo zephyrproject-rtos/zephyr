@@ -32,6 +32,10 @@ config X86
 	select ATOMIC_OPERATIONS_BUILTIN
 	select HAS_DTS
 
+config X86_64
+	bool "x86_64 architecture"
+	select ATOMIC_OPERATIONS_BUILTIN
+
 config NIOS2
 	bool "Nios II Gen 2 architecture"
 	select ATOMIC_OPERATIONS_C
@@ -119,7 +123,7 @@ config HW_STACK_PROTECTION
 	  made.
 
 config USERSPACE
-	bool "User mode threads (EXPERIMENTAL)"
+	bool "User mode threads"
 	depends on ARCH_HAS_USERSPACE
 	help
 	  When enabled, threads may be created or dropped down to user mode,
@@ -133,12 +137,10 @@ config USERSPACE
 	  privileged mode or handling a system call; to ensure these are always
 	  caught, enable CONFIG_HW_STACK_PROTECTION.
 
-	  This feature is under heavy development and APIs related to it are
-	  subject to change, even if declared non-private.
-
 config PRIVILEGED_STACK_SIZE
 	int "Size of privileged stack"
 	default 512 if MPU_STACK_GUARD || BUILTIN_STACK_GUARD
+	default 512 if COVERAGE_GCOV
 	default 384 if ARC
 	default 256
 	depends on ARCH_HAS_USERSPACE
@@ -150,7 +152,8 @@ config PRIVILEGED_STACK_SIZE
 
 config PRIVILEGED_STACK_TEXT_AREA
 	int "Privileged stacks text area"
-	default 256 if (DEBUG || STACK_CANARIES)
+	default 256 if (DEBUG || STACK_CANARIES || CODE_DATA_RELOCATION)
+	default 512 if COVERAGE_GCOV
 	default 128
 	depends on ARCH_HAS_USERSPACE
 	help
@@ -158,7 +161,9 @@ config PRIVILEGED_STACK_TEXT_AREA
 
 config KOBJECT_TEXT_AREA
 	int "Size if kobject text area"
+	default 512 if COVERAGE_GCOV
 	default 256 if (!SIZE_OPTIMIZATIONS || STACK_CANARIES || ARC)
+	default 256 if CODE_DATA_RELOCATION
 	default 128
 	depends on ARCH_HAS_USERSPACE
 	help
@@ -201,6 +206,18 @@ config SIMPLE_FATAL_ERROR_HANDLER
 	  instead of aborting the faulting thread, and does not print anything,
 	  for footprint-concerned systems. Only enable this option if you do not
 	  want debug capabilities in case of system fatal error.
+
+if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+
+config NOCACHE_MEMORY
+	bool "Support for uncached memory"
+	help
+	  Add a "nocache" read-write memory section that is configured to
+	  not be cached. This memory section can be used to perform DMA
+	  transfers when cache coherence issues are not optimal or can not
+	  be solved using cache maintenance operations.
+
+endif # ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 
 menu "Interrupt Configuration"
 #
@@ -279,6 +296,9 @@ config ARCH_HAS_USERSPACE
 	bool
 
 config ARCH_HAS_EXECUTABLE_PAGE_BIT
+	bool
+
+config ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	bool
 
 #
@@ -378,6 +398,14 @@ config CPU_HAS_MPU
 	help
 	  This option is enabled when the CPU has a Memory Protection Unit (MPU).
 
+config MEMORY_PROTECTION
+	bool
+	# Omit prompt to signify "hidden" option
+	help
+	  This option is enabled when Memory Protection features are supported.
+	  Memory protection support is currently available on ARC, ARM, and x86
+	  architectures.
+
 config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	bool
 	# Omit prompt to signify "hidden" option
@@ -386,11 +414,9 @@ config MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	  and size for MPU regions.
 
 
-menu "Floating Point Options"
-depends on CPU_HAS_FPU
-
-config FLOAT
-	bool "Floating point registers"
+menuconfig FLOAT
+	bool "Floating point"
+	depends on CPU_HAS_FPU
 	help
 	  This option allows threads to use the floating point registers.
 	  By default, only a single thread may use the registers.
@@ -398,14 +424,15 @@ config FLOAT
 	  Disabling this option means that any thread that uses a
 	  floating point register will get a fatal exception.
 
+if FLOAT
+
 config FP_SHARING
 	bool "Floating point register sharing"
-	depends on FLOAT
 	help
 	  This option allows multiple threads to use the floating point
 	  registers.
 
-endmenu
+endif # FLOAT
 
 #
 # End hidden PM feature configs
@@ -421,8 +448,7 @@ config SOC
 	help
 	  SoC name which can be found under soc/<arch>/<soc name>.
 	  This option holds the directory name used by the build system to locate
-	  the correct linker and header files for the SoC. This option will go away
-	  once all SoCs are using family/series structure.
+	  the correct linker and header files for the SoC.
 
 config SOC_SERIES
 	string

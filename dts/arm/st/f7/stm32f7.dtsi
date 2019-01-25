@@ -27,13 +27,23 @@
 		compatible = "mmio-sram";
 	};
 
-	flash0: flash@8000000 {
-		compatible = "soc-nv-flash";
-		label = "FLASH_STM32";
-		write-block-size = <1>;
-	};
-
 	soc {
+		flash-controller@40023c00 {
+			compatible = "st,stm32f7-flash-controller";
+			label = "FLASH_CTRL";
+			reg = <0x40023c00 0x400>;
+			interrupts = <4 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@8000000 {
+				compatible = "soc-nv-flash";
+				label = "FLASH_STM32";
+
+				write-block-size = <1>;
+			};
+		};
 		rcc: rcc@40023800 {
 			compatible = "st,stm32-rcc";
 			clocks-controller;
@@ -133,7 +143,7 @@
 		usart1: serial@40011000 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40011000 0x400>;
-			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000010>;
 			interrupts = <37 0>;
 			status = "disabled";
 			label = "UART_1";
@@ -539,6 +549,7 @@
 			num-bidir-endpoints = <6>;
 			ram-size = <1280>;
 			maximum-speed = "full-speed";
+			phys = <&otgfs_phy>;
 			status = "disabled";
 			label = "OTGFS";
 		};
@@ -551,6 +562,7 @@
 			num-bidir-endpoints = <9>;
 			ram-size = <4096>;
 			maximum-speed = "full-speed";
+			phys = <&otghs_fs_phy>;
 			status = "disabled";
 			label= "OTGHS";
 		};
@@ -563,6 +575,18 @@
 			status = "disabled";
 			label = "RTC_0";
 		};
+	};
+
+	otghs_fs_phy: otghs_fs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "OTGHS_FS_PHY";
+	};
+
+	otgfs_phy: otgfs_phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "OTGFS_PHY";
 	};
 };
 

@@ -96,7 +96,7 @@ static int transfer_request(struct coap_block_context *ctx,
 
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_METHOD_GET;
-	msg->mid = 0;
+	msg->mid = 0U;
 	msg->token = token;
 	msg->tkl = tkl;
 	msg->reply_cb = reply_cb;
@@ -391,16 +391,14 @@ error:
 
 static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 {
-	u8_t token[8];
-	u8_t tkl;
 	int ret;
 
 	if (firmware_retry < PACKET_TRANSFER_RETRY_MAX) {
 		/* retry block */
 		LOG_WRN("TIMEOUT - Sending a retry packet!");
-		tkl = coap_header_get_token(&msg->cpkt, token);
 
-		ret = transfer_request(&firmware_block_ctx, token, tkl,
+		ret = transfer_request(&firmware_block_ctx,
+				       msg->token, msg->tkl,
 				       do_firmware_transfer_reply_cb);
 		if (ret < 0) {
 			/* abort retries / transfer */

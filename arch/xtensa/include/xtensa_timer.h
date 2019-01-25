@@ -31,7 +31,10 @@
 
 #include    "xtensa_rtos.h"     /* in case this wasn't included directly */
 
-#if CONFIG_XTENSA_INTERNAL_TIMER || (CONFIG_XTENSA_TIMER_IRQ < 0)
+#define USE_INTERNAL_TIMER 1
+#define EXTERNAL_TIMER_IRQ -1
+
+#if USE_INTERNAL_TIMER || (EXTERNAL_TIMER_IRQ < 0)
 /*
  * Select timer to use for periodic tick, and determine its interrupt number
  * and priority. User may specify a timer by defining XT_TIMER_INDEX with -D,
@@ -79,14 +82,14 @@
 #error "The timer selected by XT_TIMER_INDEX does not exist in this core."
 #endif
 #else /* Case of an external timer which is not emulated by internal timer */
-#define XT_TIMER_INTNUM         CONFIG_XTENSA_TIMER_IRQ
-#endif /* CONFIG_XTENSA_INTERNAL_TIMER || (CONFIG_XTENSA_TIMER_IRQ < 0) */
+#define XT_TIMER_INTNUM         EXTERNAL_TIMER_IRQ
+#endif /* USE_INTERNAL_TIMER || (EXTERNAL_TIMER_IRQ < 0) */
 
-#if CONFIG_XTENSA_INTERNAL_TIMER
+#if USE_INTERNAL_TIMER
 #define XT_TIMER_INTPRI         XCHAL_INT_LEVEL(XT_TIMER_INTNUM)
 #else
-#define XT_TIMER_INTPRI         CONFIG_XTENSA_TIMER_IRQ_PRIORITY
-#endif /* CONFIG_XTENSA_INTERNAL_TIMER */
+#define XT_TIMER_INTPRI         EXTERNAL_TIMER_IRQ_PRIORITY
+#endif /* USE_INTERNAL_TIMER */
 
 #if XT_TIMER_INTPRI > XCHAL_EXCM_LEVEL
 #error "The timer interrupt cannot be high priority (use medium or low)."
@@ -141,7 +144,7 @@
 #define XT_TICK_DIVISOR     (XT_CLOCK_FREQ / XT_TICK_PER_SEC)
 #endif
 
-#if CONFIG_XTENSA_INTERNAL_TIMER || (CONFIG_XTENSA_TIMER_IRQ < 0)
+#if USE_INTERNAL_TIMER || (EXTERNAL_TIMER_IRQ < 0)
 #ifndef __ASSEMBLER__
 extern unsigned int _xt_tick_divisor;
 extern void _xt_tick_divisor_init(void);

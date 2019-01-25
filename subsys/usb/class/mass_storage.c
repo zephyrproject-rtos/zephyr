@@ -182,8 +182,8 @@ static void msd_init(void)
 	(void)memset((void *)&cbw, 0, sizeof(struct CBW));
 	(void)memset((void *)&csw, 0, sizeof(struct CSW));
 	(void)memset(page, 0, sizeof(page));
-	addr = 0;
-	length = 0;
+	addr = 0U;
+	length = 0U;
 }
 
 static void sendCSW(void)
@@ -227,18 +227,35 @@ static bool write(u8_t *buf, u16_t size)
  * @return  0 on success, negative errno code on fail.
  */
 static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
-		s32_t *len, u8_t **data)
+					 s32_t *len, u8_t **data)
 {
+	if (sys_le16_to_cpu(pSetup->wIndex) != mass_cfg.if0.bInterfaceNumber ||
+	    sys_le16_to_cpu(pSetup->wValue) != 0) {
+		LOG_WRN("Invalid setup parameters");
+		return -EINVAL;
+	}
 
 	switch (pSetup->bRequest) {
 	case MSC_REQUEST_RESET:
 		LOG_DBG("MSC_REQUEST_RESET");
+
+		if (sys_le16_to_cpu(pSetup->wLength)) {
+			LOG_WRN("Invalid length");
+			return -EINVAL;
+		}
+
 		msd_state_machine_reset();
 		break;
 
 	case MSC_REQUEST_GET_MAX_LUN:
 		LOG_DBG("MSC_REQUEST_GET_MAX_LUN");
-		max_lun_count = 0;
+
+		if (sys_le16_to_cpu(pSetup->wLength) != 1) {
+			LOG_WRN("Invalid length");
+			return -EINVAL;
+		}
+
+		max_lun_count = 0U;
 		*data = (u8_t *)(&max_lun_count);
 		*len = 1;
 		break;
@@ -594,7 +611,7 @@ static void memoryVerify(u8_t *buf, u16_t size)
 	}
 
 	/* info are in RAM -> no need to re-read memory */
-	for (n = 0; n < size; n++) {
+	for (n = 0U; n < size; n++) {
 		if (page[addr%BLOCK_SIZE + n] != buf[n]) {
 			LOG_DBG("Mismatch sector %d offset %d",
 				addr/BLOCK_SIZE, n);
@@ -654,7 +671,7 @@ static void memoryWrite(u8_t *buf, u16_t size)
 static void mass_storage_bulk_out(u8_t ep,
 		enum usb_dc_ep_cb_status_code ep_status)
 {
-	u32_t bytes_read = 0;
+	u32_t bytes_read = 0U;
 	u8_t bo_buf[CONFIG_MASS_STORAGE_BULK_EP_MPS];
 
 	ARG_UNUSED(ep_status);
@@ -812,6 +829,11 @@ static void mass_storage_status_cb(enum usb_dc_status_code status,
 	case USB_DC_RESUME:
 		LOG_DBG("USB device resumed");
 		break;
+	case USB_DC_INTERFACE:
+		LOG_DBG("USB interface selected");
+		break;
+	case USB_DC_SOF:
+		break;
 	case USB_DC_UNKNOWN:
 	default:
 		LOG_DBG("USB unknown state");
@@ -889,7 +911,7 @@ static u8_t interface_data[64];
  */
 static int mass_storage_init(struct device *dev)
 {
-	u32_t block_size = 0;
+	u32_t block_size = 0U;
 
 	ARG_UNUSED(dev);
 

@@ -239,16 +239,12 @@ config I2C_7_IRQ_PRI
 	help
 	  IRQ priority.
 
-config I2C_ATMEL_SAM3
-	bool "[deprecated] Atmel SAM3X I2C Driver"
-	depends on SOC_SERIES_SAM3X
+config I2C_GECKO
+	bool "Gecko I2C driver"
+	depends on HAS_SILABS_GECKO
+	select SOC_GECKO_I2C
 	help
-	  This driver is deprecated and will be removed. Use
-	  "Atmel SAM (TWI) I2C driver" instead.
-
-	  Enable I2C support on the Atmel SAM3 family processor.
-	  Says y to enable additional options to enable support
-	  for individual controllers.
+	  Enable the SiLabs Gecko I2C bus driver.
 
 config I2C_SAM_TWIHS
 	bool "Atmel SAM (TWIHS) I2C driver"
@@ -270,6 +266,13 @@ config I2C_MCUX
 	select HAS_DTS_I2C
 	help
 	  Enable the mcux I2C driver.
+
+config I2C_MCUX_LPI2C
+	bool "MCUX LPI2C driver"
+	depends on HAS_MCUX_LPI2C && CLOCK_CONTROL
+	select HAS_DTS_I2C
+	help
+	  Enable the mcux LPI2C driver.
 
 config I2C_IMX
 	bool "i.MX I2C driver"

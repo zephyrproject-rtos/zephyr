@@ -6,43 +6,25 @@ config BOARD
 
 
 config UART_QMSI_0_HW_FC
-	def_bool y
+	default y
 
 if IEEE802154_CC2520
 
 config SPI
-	def_bool y
+	default y
 
 config GPIO
-	def_bool y
-
-config IEEE802154_CC2520_SPI_DRV_NAME
-	default SPI_1_NAME
-config IEEE802154_CC2520_SPI_FREQ
-	default 8000000
-config IEEE802154_CC2520_SPI_SLAVE
-	default 1
+	default y
 
 config IEEE802154_CC2520_GPIO_SPI_CS
-	def_bool y
-config IEEE802154_CC2520_GPIO_SPI_CS_DRV_NAME
-	default "GPIO_0"
-config IEEE802154_CC2520_GPIO_SPI_CS_PIN
-	default 11
-
-config IEEE802154_CC2520_GPIO_0_NAME
-	string
-	default "GPIO_0"
-config IEEE802154_CC2520_GPIO_1_NAME
-	string
-	default "GPIO_1"
+	default y
 
 endif # IEEE802154_CC2520
 
 if USB_DEVICE_STACK
 
 config USB_VBUS_GPIO
-	def_bool y
+	default y
 
 config USB_VBUS_GPIO_DEV_NAME
 	default "GPIO_0"

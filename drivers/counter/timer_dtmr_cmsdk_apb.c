@@ -80,7 +80,7 @@ static u32_t timer_dtmr_cmsdk_apb_read(struct device *dev)
 	struct timer_dtmr_cmsdk_apb_dev_data *data = dev->driver_data;
 
 	/* Return Timer Value */
-	u32_t value = 0;
+	u32_t value = 0U;
 
 	value = data->load - cfg->dtimer->timer1value;
 
@@ -172,14 +172,14 @@ static int timer_dtmr_cmsdk_apb_init(struct device *dev)
 static void dtimer_cmsdk_apb_config_0(struct device *dev);
 
 static const struct timer_dtmr_cmsdk_apb_cfg timer_dtmr_cmsdk_apb_cfg_0 = {
-	.dtimer = ((volatile struct dualtimer_cmsdk_apb *)CMSDK_APB_DTIMER),
+	.dtimer = ((volatile struct dualtimer_cmsdk_apb *)DT_CMSDK_APB_DTIMER),
 	.dtimer_config_func = dtimer_cmsdk_apb_config_0,
 	.dtimer_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
-			 .device = CMSDK_APB_DTIMER,},
+			 .device = DT_CMSDK_APB_DTIMER,},
 	.dtimer_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
-			 .device = CMSDK_APB_DTIMER,},
+			 .device = DT_CMSDK_APB_DTIMER,},
 	.dtimer_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
-			  .device = CMSDK_APB_DTIMER,},
+			  .device = DT_CMSDK_APB_DTIMER,},
 };
 
 static struct timer_dtmr_cmsdk_apb_dev_data timer_dtmr_cmsdk_apb_dev_data_0 = {
@@ -197,10 +197,10 @@ DEVICE_AND_API_INIT(timer_dtmr_cmsdk_apb_0,
 
 static void dtimer_cmsdk_apb_config_0(struct device *dev)
 {
-	IRQ_CONNECT(CMSDK_APB_DUALTIMER_IRQ,
+	IRQ_CONNECT(DT_CMSDK_APB_DUALTIMER_IRQ,
 		    CONFIG_TIMER_DTMR_CMSDK_APB_0_IRQ_PRI,
 		    timer_dtmr_cmsdk_apb_isr,
 		    DEVICE_GET(timer_dtmr_cmsdk_apb_0), 0);
-	irq_enable(CMSDK_APB_DUALTIMER_IRQ);
+	irq_enable(DT_CMSDK_APB_DUALTIMER_IRQ);
 }
 #endif /* CONFIG_TIMER_DTMR_CMSDK_APB_0 */

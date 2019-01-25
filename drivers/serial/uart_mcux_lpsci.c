@@ -42,7 +42,7 @@ static int mcux_lpsci_poll_in(struct device *dev, unsigned char *c)
 	return ret;
 }
 
-static unsigned char mcux_lpsci_poll_out(struct device *dev, unsigned char c)
+static void mcux_lpsci_poll_out(struct device *dev, unsigned char c)
 {
 	const struct mcux_lpsci_config *config = dev->config->config_info;
 
@@ -51,8 +51,6 @@ static unsigned char mcux_lpsci_poll_out(struct device *dev, unsigned char c)
 		;
 
 	LPSCI_WriteByte(config->base, c);
-
-	return c;
 }
 
 static int mcux_lpsci_err_check(struct device *dev)
@@ -85,7 +83,7 @@ static int mcux_lpsci_fifo_fill(struct device *dev, const u8_t *tx_data,
 				int len)
 {
 	const struct mcux_lpsci_config *config = dev->config->config_info;
-	u8_t num_tx = 0;
+	u8_t num_tx = 0U;
 
 	while ((len - num_tx > 0) &&
 	       (LPSCI_GetStatusFlags(config->base)
@@ -101,7 +99,7 @@ static int mcux_lpsci_fifo_read(struct device *dev, u8_t *rx_data,
 				const int len)
 {
 	const struct mcux_lpsci_config *config = dev->config->config_info;
-	u8_t num_rx = 0;
+	u8_t num_rx = 0U;
 
 	while ((len - num_rx > 0) &&
 	       (LPSCI_GetStatusFlags(config->base)
@@ -292,10 +290,10 @@ static void mcux_lpsci_config_func_0(struct device *dev);
 
 static const struct mcux_lpsci_config mcux_lpsci_0_config = {
 	.base = UART0,
-	.clock_name = CONFIG_UART_MCUX_LPSCI_0_CLOCK_NAME,
+	.clock_name = DT_UART_MCUX_LPSCI_0_CLOCK_NAME,
 	.clock_subsys =
-		(clock_control_subsys_t)CONFIG_UART_MCUX_LPSCI_0_CLOCK_SUBSYS,
-	.baud_rate = NXP_KINETIS_LPSCI_4006A000_CURRENT_SPEED,
+		(clock_control_subsys_t)DT_UART_MCUX_LPSCI_0_CLOCK_SUBSYS,
+	.baud_rate = DT_NXP_KINETIS_LPSCI_4006A000_CURRENT_SPEED,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = mcux_lpsci_config_func_0,
 #endif
@@ -303,7 +301,7 @@ static const struct mcux_lpsci_config mcux_lpsci_0_config = {
 
 static struct mcux_lpsci_data mcux_lpsci_0_data;
 
-DEVICE_AND_API_INIT(uart_0, CONFIG_UART_MCUX_LPSCI_0_NAME,
+DEVICE_AND_API_INIT(uart_0, DT_UART_MCUX_LPSCI_0_NAME,
 		    &mcux_lpsci_init,
 		    &mcux_lpsci_0_data, &mcux_lpsci_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -312,11 +310,11 @@ DEVICE_AND_API_INIT(uart_0, CONFIG_UART_MCUX_LPSCI_0_NAME,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void mcux_lpsci_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(NXP_KINETIS_LPSCI_4006A000_IRQ_0,
-		    NXP_KINETIS_LPSCI_4006A000_IRQ_0_PRIORITY,
+	IRQ_CONNECT(DT_NXP_KINETIS_LPSCI_4006A000_IRQ_0,
+		    DT_NXP_KINETIS_LPSCI_4006A000_IRQ_0_PRIORITY,
 		    mcux_lpsci_isr, DEVICE_GET(uart_0), 0);
 
-	irq_enable(NXP_KINETIS_LPSCI_4006A000_IRQ_0);
+	irq_enable(DT_NXP_KINETIS_LPSCI_4006A000_IRQ_0);
 }
 #endif
 

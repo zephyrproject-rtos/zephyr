@@ -15,7 +15,7 @@
 	};
 
 	flash-controller@4001E000 {
-			compatible = "nrf,nrf52-flash-controller";
+			compatible = "nordic,nrf52-flash-controller";
 			reg = <0x4001E000 0x550>;
 
 			#address-cells = <1>;
@@ -36,6 +36,23 @@
 		compatible = "mmio-sram";
 	};
 
+	aliases {
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+		spi-0 = &spi0;
+		spi-1 = &spi1;
+		spi-2 = &spi2;
+		uart-0 = &uart0;
+		adc-0 = &adc;
+		gpio-0 = &gpio0;
+		gpiote-0 = &gpiote;
+		wdt-0 = &wdt;
+		pwm-0 = &pwm0;
+		pwm-1 = &pwm1;
+		pwm-2 = &pwm2;
+		qdec-0 = &qdec;
+	};
+
 	soc {
 		adc: adc@40007000 {
 			compatible = "nordic,nrf-saadc";
@@ -43,6 +60,13 @@
 			interrupts = <7 1>;
 			status = "disabled";
 			label = "ADC_0";
+		};
+
+		clock: clock@40000000 {
+			compatible = "nordic,nrf-clock";
+			reg = <0x40000000 0x1000>;
+			interrupts = <0 1>;
+			status = "ok";
 		};
 
 		uart0: uart@40002000 {
@@ -58,7 +82,6 @@
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x40006000 0x1000>;
 			interrupts = <6 5>;
-			interrupt-names = "gpiote";
 			status = "disabled";
 			label = "GPIOTE_0";
 		};
@@ -93,6 +116,30 @@
 			interrupts = <4 1>;
 			status = "disabled";
 			label = "I2C_1";
+		};
+
+		pwm0: pwm@4001c000 {
+			compatible = "nordic,nrf-pwm";
+			reg = <0x4001c000 0x1000>;
+			interrupts = <28 1>;
+			status = "disabled";
+			label = "PWM_0";
+		};
+
+		pwm1: pwm@40021000 {
+			compatible = "nordic,nrf-pwm";
+			reg = <0x40021000 0x1000>;
+			interrupts = <33 1>;
+			status = "disabled";
+			label = "PWM_1";
+		};
+
+		pwm2: pwm@40022000 {
+			compatible = "nordic,nrf-pwm";
+			reg = <0x40022000 0x1000>;
+			interrupts = <34 1>;
+			status = "disabled";
+			label = "PWM_2";
 		};
 
 		qdec: qdec@40012000 {
@@ -137,7 +184,6 @@
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x40010000 0x1000>;
 			interrupts = <16 1>;
-			interrupt-names = "wdt";
 			label = "WDT";
 		};
 	};

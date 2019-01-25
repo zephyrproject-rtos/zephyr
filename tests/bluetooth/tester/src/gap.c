@@ -115,7 +115,7 @@ static void controller_index_list(u8_t *data,  u16_t len)
 
 	rp = (void *) buf;
 
-	rp->num = 1;
+	rp->num = 1U;
 	rp->index[0] = CONTROLLER_INDEX;
 
 	tester_send(BTP_SERVICE_ID_GAP, GAP_READ_CONTROLLER_INDEX_LIST,
@@ -220,7 +220,7 @@ static void start_advertising(const u8_t *data, u16_t len)
 	bool adv_conn;
 	int i;
 
-	for (i = 0, adv_len = 1; i < cmd->adv_data_len; adv_len++) {
+	for (i = 0, adv_len = 1U; i < cmd->adv_data_len; adv_len++) {
 		if (adv_len >= ARRAY_SIZE(ad)) {
 			LOG_ERR("ad[] Out of memory");
 			goto fail;
@@ -232,7 +232,7 @@ static void start_advertising(const u8_t *data, u16_t len)
 		i += ad[adv_len].data_len;
 	}
 
-	for (i = 0, sd_len = 0; i < cmd->scan_rsp_len; sd_len++) {
+	for (i = 0, sd_len = 0U; i < cmd->scan_rsp_len; sd_len++) {
 		if (sd_len >= ARRAY_SIZE(sd)) {
 			LOG_ERR("sd[] Out of memory");
 			goto fail;
@@ -286,7 +286,7 @@ static u8_t get_ad_flags(struct net_buf_simple *ad)
 	u8_t len, i;
 
 	/* Parse advertisement to get flags */
-	for (i = 0; i < ad->len; i += len - 1) {
+	for (i = 0U; i < ad->len; i += len - 1) {
 		len = ad->data[i++];
 		if (!len) {
 			break;

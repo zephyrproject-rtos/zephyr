@@ -1,4 +1,141 @@
 ================ Revision history ============================================
+5.6.0:
+ - em_pcnt: Fixed PCNTn_CNT_SIZE for multiple families.
+ - em_cmu: Added handling of CLKIN and HFRCODIV2 in CMU.
+ - em_prs: Added support for all 23 PRS channels for EFM32GG11.
+ - em_msc: Disable WREN in the MSC_MassErase() function before returning.
+ - em_msc: write and erase functions return an error code when the
+   MSC register interface is locked.
+ - em_acmp: Fixed initialization of HYSTERESIS0 and HYSTERESIS1 in
+   ACMP_Init() for series-1 devices.
+ - em_prs: Added function to route PRS output to GPIO pins for Series 0 and 1
+ - em_wdog: WDOGn_Init() will only wait for synchronization if the peripheral
+   is already enabled.
+ - em_crypto: Added missing argument to CRYPTO_InstructionSequenceExecute()
+   inside the CRYPTO_EXECUTE_20 macro.
+ - em_letimer: Added support for setting and getting the LETIMER top value
+   using the new LETIMER_TopGet() and LETIMER_TopSet() functions.
+ - em_letimer: Added new member to the LETIMER_Init_TypeDef struct called
+   topValue. This value can be used to initialize the top value when using the
+   LETIMER.
+ - em_cmu: Added const to CMU_DPLLLock() argument.
+ - em_cmu: Added missing call to CMU_OscillatorEnable() when HFXO AutoStart is used.
+ - em_mpu: This module is deprecated and marked for removal in a later release. 
+   New applications should use the CMSIS ARM_MPU_xxx API instead. 
+   See file platform/CMSIS/Include/mpu_armvX.h for more details.
+ - EMLIB now targets CMSIS version 5.3.0.
+
+5.5.0:
+ - em_cmu: Added support for HFPERCLK branch A, B and C on EFM32GG11. This
+   also fixed issues with CMU_ClockFreqGet() on peripherals connected
+   to HFPERCLK B and C.
+ - em_usart: Added autoCsEnable parameter to USART_InitSync_TypeDef and
+   USART_InitAsync_TypeDef for series 0 parts.
+ - em_leuart: Fixed issue where TX data could be lost when calling
+   LEUART_TxDmaInEM2Enable() when transmitter is enabled and sending data.
+ - em_emu: Add EMU_RamPowerUp() function for series 1 devices to power up all
+   SRAM blocks.
+ - em_crypto: Bugfix: Add support for unaligned data in CRYPTO AES functions.
+ - em_adc: In ADC asynchronous clock mode, assert on ADC clock frequency 
+   less or equal to 2/3 of the HFPER clock frequency.
+ - em_adc: Bugfix: In ADC_Init() set ADC clock mode for correct ADC instance.
+ - em_gpio: Change behavior of GPIO_EM4SetPinRetention() so it does not
+   overwrite GPIO retention config when SWUNLATCH is already set.
+ - em_burtc: Check RSTEN before waiting for register synchronization.
+ - em_cmu: Removed support for PLFRCO.
+ - em_emu: Fixed bug with wait-state handling when low-voltage mode is used 
+   in EM2/EM3. This was fixed by enabling automatic hardware handling of wait-states.
+ - em_emu: Adding restoring of HFRCO frequency when calling EMU_EnterEM2(true)
+   and voltage scaling is enable in EM2/EM3.
+ - Changed minimum 'N' requirement in CMU_DPLLLock() from
+   32 to greater than 300.
+ - Added support for USBLE clock in CMU_ClockFreqGet().
+ - Added support for opamp OPA3.
+
+5.4.0:
+ - em_lcd: Added support for dynamic charge distribution to save power when
+   using the LCD peripheral on Series 1 devices.
+ - em_msc: Added support for ECC memory initialization using the function
+   MSC_EccConfigSet().
+ - em_core: Fixed bug in assert statement in CORE_InitNvicVectorTable().
+ - em_emu: Remove switch to bypass mode when entering EM4S on devices that do
+   this automatically in hardware.
+ - em_emu: Fixed hardware bug when switching to EM4S when powering analog
+   peripherals from DVDD. This bugfix is active for EFM32GG11 and EFM32TG11.
+ - em_leuart: Ensure that RX/TX is disabled when configuring RX/TX DMA wakeup.
+ - em_cmu: Fixed bug with wait state handling when MSC is locked.
+ - em_acmp: Renamed ACMP_CTRL_PWRSEL_VREGVDD to ACMP_CTRL_PWRSEL_DVDD.
+
+5.3.5:
+ - em_vdac: Fixed bug when fetching GAINERRTRIM calibration value.
+ - em_cmu: Fixed bug when tuning HFXO for external clock usage.
+
+5.3.4:
+ - Changes to move code towards MISRAC 2012 compliance.
+
+5.3.3
+ - em_cmu: 48 MHz HFRCO band selectable for devices that support it.
+ - em_emu: Added macro guards for BU mode functionality for series 0 devices.
+
+5.3.2
+ - No changes.
+
+5.3.1:
+ - em_opamp: Corrected reload of default calibration trims in OPAMP_Enable()
+   for Series 0.
+ - em_core: Fixed invalid parameter in CORE_YIELD_CRITICAL and
+   CORE_YIELD_ATOMIC macros.
+
+5.3.0:
+ - em_chip: Updated PLFRCO tuning values.
+ - em_can: Fixed ID filter mask bug.
+ - em_gpio: Doc updates.
+ - em_gpio: Fixed bug in GPIO pin validation to enable PD9 on BGM121 modules.
+ - em_ldma: Added missing signals for EFM32GG11.
+
+5.2.2:
+ - em_emu: Fixed bug in EMU_EM4Init(), The BUBODRSTDIS field was not initialized
+   as specified in function input parameters.
+
+5.2.1:
+ - em_emu: Fixed a problem with handling of DCDC bypass current limiter
+   that may cause brownout reset.
+ - em_chip: Added workaround for errata DCDC-E206 for EFR32xG1x devices.
+ - em_cmu: Fixed handling of HFCLKLE prescaling at frequencies above 64 MHz.
+
+5.2.0:
+ - em_cmu: Added flash wait state handling for all devices that can scale down
+   the voltage.
+ - em_adc: Fixed bug where ADC SINGLECTRLX register fields VREFSEL, PRSSEL and
+   FIFOOFACT was not cleared when calling ADC_InitSingle().
+ - em_msc: Removed call to SystemCoreClockGet() in MSC_Init.
+ - em_msc: MSC_WriteWordFast() can now only be used when executing code from
+   RAM on parts that include a flash write buffer.
+ - em_emu: Using VMON calibration values to set voltage thresholds when
+   calling EMU_VmonInit() and EMU_VmonHystInit(). The DI page contains
+   calibration values for 1.86 V and 2.98 V for each VMON channel. Updated
+   VMON supported voltage range to 1.62V-3.4V.
+ - em_emu: Added EMU_Save() and changed EMU_EnterEM2() and EMU_EnterEM3()
+   to only save the state if the restore parameter is true.
+ - em_usart: Fixed USART async baudrate calculation for EFM32HG devices.
+   The extra fractional bits in the CLKDIV register was not used.
+ - Added support for EFM32GG11B devices. This includes new modules for
+   Quad SPI (em_qspi) and CAN (em_can). This also includes
+   changes to other emlib modules in order to support the changes in the
+   register interface of the new device.
+ - em_cmu: Added DPLL support. Added support for asynchronous clocks for
+   ADC, reference clocks for QSPI and SDIO and USB rate clock. Added
+   functions to support the USHFRCO and clock select for HFXOX2.
+ - em_gpio: Using single cycle set and clear of DOUT on platforms
+   where this is supported.
+ - em_lesense: Added configuration of DACCHnEN and DACSTARTUP bits in
+   LESENSE->PERCTRL in LESENSE_Init() and init struct. Also changed
+   default values for LESENSE_AltExDesc_TypeDef and
+   LESENSE_ChDesc_TypeDef to be disabled by default.
+
+5.1.3:
+ - No changes.
+
 5.1.2:
  Misc. bugfixes and improvements.
 

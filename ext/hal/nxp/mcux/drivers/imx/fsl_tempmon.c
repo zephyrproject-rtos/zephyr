@@ -44,6 +44,12 @@ static uint32_t s_roomC_hotC; /*!< The value of s_roomCount minus s_hotCount.*/
 /*******************************************************************************
  * Code
  ******************************************************************************/
+/*!
+ * brief Initializes the TEMPMON module.
+ *
+ * param base TEMPMON base pointer
+ * param config Pointer to configuration structure.
+ */
 void TEMPMON_Init(TEMPMON_Type *base, const tempmon_config_t *config)
 {
     assert(NULL != config);
@@ -72,14 +78,34 @@ void TEMPMON_Init(TEMPMON_Type *base, const tempmon_config_t *config)
     TEMPMON_SetTempAlarm(base, config->lowAlarmTemp, kTEMPMON_LowAlarmMode);
 }
 
+/*!
+ * brief Deinitializes the TEMPMON module.
+ *
+ * param base TEMPMON base pointer
+ */
 void TEMPMON_Deinit(TEMPMON_Type *base)
 {
     base->TEMPSENSE0 |= TEMPMON_TEMPSENSE0_POWER_DOWN_MASK;
 }
 
+/*!
+ * brief Gets the default configuration structure.
+ *
+ * This function initializes the TEMPMON configuration structure to a default value. The default
+ * values are:
+ *   tempmonConfig->frequency = 0x02U;
+ *   tempmonConfig->highAlarmTemp = 44U;
+ *   tempmonConfig->panicAlarmTemp = 90U;
+ *   tempmonConfig->lowAlarmTemp = 39U;
+ *
+ * param config Pointer to a configuration structure.
+ */
 void TEMPMON_GetDefaultConfig(tempmon_config_t *config)
 {
     assert(config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     /* Default measure frequency */
     config->frequency = 0x03U;
@@ -91,6 +117,12 @@ void TEMPMON_GetDefaultConfig(tempmon_config_t *config)
     config->lowAlarmTemp = 20U;
 }
 
+/*!
+ * brief Get current temperature with the fused temperature calibration data.
+ *
+ * param base TEMPMON base pointer
+ * return current temperature with degrees Celsius.
+ */
 float TEMPMON_GetCurrentTemperature(TEMPMON_Type *base)
 {
     /* Check arguments */
@@ -112,6 +144,13 @@ float TEMPMON_GetCurrentTemperature(TEMPMON_Type *base)
     return tmeas;
 }
 
+/*!
+ * brief Set the temperature count (raw sensor output) that will generate an alarm interrupt.
+ *
+ * param base TEMPMON base pointer
+ * param tempVal The alarm temperature with degrees Celsius
+ * param alarmMode The alarm mode.
+ */
 void TEMPMON_SetTempAlarm(TEMPMON_Type *base, uint32_t tempVal, tempmon_alarm_mode alarmMode)
 {
     /* Check arguments */

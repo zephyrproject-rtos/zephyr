@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2018 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -11,8 +11,10 @@
 #include <bluetooth/hci.h>
 
 #include "util/util.h"
+#include "util/memq.h"
 
 #include "pdu.h"
+#include "lll.h"
 #include "ctrl.h"
 #include "ll.h"
 
@@ -29,11 +31,11 @@ struct ll_adv_set *ll_adv_set_get(void)
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-u32_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
-			u8_t adv_type, u8_t own_addr_type,
-			u8_t direct_addr_type, u8_t const *const direct_addr,
-			u8_t chan_map, u8_t filter_policy, u8_t *tx_pwr,
-			u8_t phy_p, u8_t skip, u8_t phy_s, u8_t sid, u8_t sreq)
+u8_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
+		       u8_t adv_type, u8_t own_addr_type,
+		       u8_t direct_addr_type, u8_t const *const direct_addr,
+		       u8_t chan_map, u8_t filter_policy, u8_t *tx_pwr,
+		       u8_t phy_p, u8_t skip, u8_t phy_s, u8_t sid, u8_t sreq)
 {
 	u8_t const pdu_adv_type[] = {PDU_ADV_TYPE_ADV_IND,
 				     PDU_ADV_TYPE_DIRECT_IND,
@@ -42,10 +44,10 @@ u32_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
 				     PDU_ADV_TYPE_DIRECT_IND,
 				     PDU_ADV_TYPE_EXT_IND};
 #else /* !CONFIG_BT_CTLR_ADV_EXT */
-u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
-			u8_t own_addr_type, u8_t direct_addr_type,
-			u8_t const *const direct_addr, u8_t chan_map,
-			u8_t filter_policy)
+u8_t ll_adv_params_set(u16_t interval, u8_t adv_type,
+		       u8_t own_addr_type, u8_t direct_addr_type,
+		       u8_t const *const direct_addr, u8_t chan_map,
+		       u8_t filter_policy)
 {
 	u8_t const pdu_adv_type[] = {PDU_ADV_TYPE_ADV_IND,
 				     PDU_ADV_TYPE_DIRECT_IND,
@@ -57,7 +59,7 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 	struct radio_adv_data *radio_adv_data;
 	struct pdu_adv *pdu;
 
-	if (ll_adv_is_enabled()) {
+	if (ll_adv_is_enabled(0)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -141,24 +143,31 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	} else if (pdu->type == PDU_ADV_TYPE_EXT_IND) {
 		struct pdu_adv_com_ext_adv *p;
-		struct ext_adv_hdr *h;
-		u8_t *ptr;
+		struct ext_adv_hdr _h, *h;
+		u8_t *_ptr, *ptr;
 		u8_t len;
 
 		p = (void *)&pdu->adv_ext_ind;
 		h = (void *)p->ext_hdr_adi_adv_data;
 		ptr = (u8_t *)h + sizeof(*h);
+		_ptr = ptr;
 
 		/* No ACAD and no AdvData */
 		p->ext_hdr_len = 0;
 		p->adv_mode = evt_prop & 0x03;
 
 		/* Zero-init header flags */
+		*(u8_t *)&_h = *(u8_t *)h;
 		*(u8_t *)h = 0;
 
 		/* AdvA flag */
-		if (!(evt_prop & BIT(5)) && !p->adv_mode && (phy_p != BIT(2))) {
-			/* TODO: optional on 1M */
+		if (_h.adv_addr) {
+			_ptr += BDADDR_SIZE;
+		}
+		if (!p->adv_mode &&
+		    (!_h.aux_ptr ||
+		     (!(evt_prop & BIT(5)) && (phy_p != BIT(2))))) {
+			/* TODO: optional on 1M with Aux Ptr */
 			h->adv_addr = 1;
 
 			/* NOTE: AdvA is filled at enable */
@@ -167,14 +176,23 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 
 		/* TODO: TargetA flag */
 
-		/* TODO: ADI flag */
+		/* ADI flag */
+		if (_h.adi) {
+			h->adi = 1;
+			ptr += sizeof(struct ext_adv_adi);
+		}
 
-		/* TODO: AuxPtr flag */
+		/* AuxPtr flag */
+		if (_h.aux_ptr) {
+			h->aux_ptr = 1;
+			ptr += sizeof(struct ext_adv_aux_ptr);
+		}
 
-		/* TODO: SyncInfo flag */
+		/* No SyncInfo flag in primary channel PDU */
 
 		/* Tx Power flag */
-		if (evt_prop & BIT(6)) {
+		if (evt_prop & BIT(6) &&
+		    (!_h.aux_ptr || (phy_p != BIT(2)))) {
 			h->tx_pwr = 1;
 			ptr++;
 		}
@@ -194,9 +212,9 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 
 		/* Start filling primary PDU payload based on flags */
 
-		/* TODO: AdvData */
+		/* No AdvData in primary channel PDU */
 
-		/* TODO: ACAD */
+		/* No ACAD in primary channel PDU */
 
 		/* Tx Power */
 		if (h->tx_pwr) {
@@ -215,11 +233,32 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 			*ptr = _tx_pwr;
 		}
 
-		/* TODO: SyncInfo */
+		/* No SyncInfo in primary channel PDU */
 
-		/* TODO: AuxPtr */
+		/* AuxPtr */
+		if (h->aux_ptr) {
+			struct ext_adv_aux_ptr *aux;
 
-		/* TODO: ADI */
+			ptr -= sizeof(struct ext_adv_aux_ptr);
+
+			/* NOTE: Channel Index, CA, Offset Units and AUX Offset
+			 * will be set in Advertiser Event.
+			 */
+			aux = (void *)ptr;
+			aux->phy = find_lsb_set(phy_s);
+		}
+
+		/* ADI */
+		if (h->adi) {
+			struct ext_adv_adi *adi;
+
+			ptr -= sizeof(struct ext_adv_adi);
+			/* NOTE: memcpy shall handle overlapping buffers */
+			memcpy(ptr, _ptr, sizeof(struct ext_adv_adi));
+
+			adi = (void *)ptr;
+			adi->sid = sid;
+		}
 
 		/* NOTE: TargetA, filled at enable and RPA timeout */
 
@@ -245,7 +284,11 @@ u32_t ll_adv_params_set(u16_t interval, u8_t adv_type,
 	return 0;
 }
 
-void ll_adv_data_set(u8_t len, u8_t const *const data)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+u8_t ll_adv_data_set(u16_t handle, u8_t len, u8_t const *const data)
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+u8_t ll_adv_data_set(u8_t len, u8_t const *const data)
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 {
 	struct radio_adv_data *radio_adv_data;
 	struct pdu_adv *prev;
@@ -261,14 +304,14 @@ void ll_adv_data_set(u8_t len, u8_t const *const data)
 		/* TODO: remember data, to be used if type is changed using
 		 * parameter set function ll_adv_params_set afterwards.
 		 */
-		return;
+		return 0;
 	}
 
 	/* use the last index in double buffer, */
 	if (radio_adv_data->first == radio_adv_data->last) {
 		last = radio_adv_data->last + 1;
 		if (last == DOUBLE_BUFFER_SIZE) {
-			last = 0;
+			last = 0U;
 		}
 	} else {
 		last = radio_adv_data->last;
@@ -277,12 +320,12 @@ void ll_adv_data_set(u8_t len, u8_t const *const data)
 	/* update adv pdu fields. */
 	pdu = (struct pdu_adv *)&radio_adv_data->data[last][0];
 	pdu->type = prev->type;
-	pdu->rfu = 0;
+	pdu->rfu = 0U;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 		pdu->chan_sel = prev->chan_sel;
 	} else {
-		pdu->chan_sel = 0;
+		pdu->chan_sel = 0U;
 	}
 
 	pdu->tx_addr = prev->tx_addr;
@@ -293,9 +336,15 @@ void ll_adv_data_set(u8_t len, u8_t const *const data)
 
 	/* commit the update so controller picks it. */
 	radio_adv_data->last = last;
+
+	return 0;
 }
 
-void ll_scan_data_set(u8_t len, u8_t const *const data)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+u8_t ll_adv_scan_rsp_set(u16_t handle, u8_t len, u8_t const *const data)
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+u8_t ll_adv_scan_rsp_set(u8_t len, u8_t const *const data)
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
 {
 	struct radio_adv_data *radio_scan_data;
 	struct pdu_adv *prev;
@@ -328,9 +377,21 @@ void ll_scan_data_set(u8_t len, u8_t const *const data)
 
 	/* commit the update so controller picks it. */
 	radio_scan_data->last = last;
+
+	return 0;
 }
 
-u32_t ll_adv_enable(u8_t enable)
+#if defined(CONFIG_BT_CTLR_ADV_EXT) || defined(CONFIG_BT_HCI_MESH_EXT)
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+u8_t ll_adv_enable(u16_t handle, u8_t enable,
+		   u8_t at_anchor, u32_t ticks_anchor, u8_t retry,
+		   u8_t scan_window, u8_t scan_delay)
+#else /* !CONFIG_BT_HCI_MESH_EXT */
+u8_t ll_adv_enable(u16_t handle, u8_t enable)
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
+#else /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
+u8_t ll_adv_enable(u8_t enable)
+#endif /* !CONFIG_BT_CTLR_ADV_EXT || !CONFIG_BT_HCI_MESH_EXT */
 {
 	struct radio_adv_data *radio_scan_data;
 	struct radio_adv_data *radio_adv_data;
@@ -341,7 +402,7 @@ u32_t ll_adv_enable(u8_t enable)
 
 	if (!enable) {
 		return radio_adv_disable();
-	} else if (ll_adv_is_enabled()) {
+	} else if (ll_adv_is_enabled(0)) {
 		return 0;
 	}
 
@@ -411,6 +472,19 @@ u32_t ll_adv_enable(u8_t enable)
 			       BDADDR_SIZE);
 		}
 	}
+
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	status = radio_adv_enable(ll_adv.phy_p, ll_adv.interval,
+				  ll_adv.chan_map, ll_adv.filter_policy,
+				   rl_idx,
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+	status = radio_adv_enable(ll_adv.interval, ll_adv.chan_map,
+				  ll_adv.filter_policy, rl_idx,
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+				  at_anchor, ticks_anchor, retry,
+				  scan_window, scan_delay);
+#else /* !CONFIG_BT_HCI_MESH_EXT */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	status = radio_adv_enable(ll_adv.phy_p, ll_adv.interval,
 				  ll_adv.chan_map, ll_adv.filter_policy,
@@ -419,6 +493,6 @@ u32_t ll_adv_enable(u8_t enable)
 	status = radio_adv_enable(ll_adv.interval, ll_adv.chan_map,
 				  ll_adv.filter_policy, rl_idx);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
-
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
 	return status;
 }

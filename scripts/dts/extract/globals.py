@@ -15,15 +15,19 @@ chosen = {}
 reduced = {}
 defs = {}
 structs = {}
+bindings = {}
+bus_bindings = {}
+bindings_compat = []
+old_alias_names = False
 
 regs_config = {
-    'zephyr,flash' : 'CONFIG_FLASH',
     'zephyr,sram'  : 'CONFIG_SRAM',
     'zephyr,ccm'   : 'CONFIG_CCM'
 }
 
 name_config = {
     'zephyr,console'     : 'CONFIG_UART_CONSOLE_ON_DEV_NAME',
+    'zephyr,shell-uart'  : 'CONFIG_UART_SHELL_ON_DEV_NAME',
     'zephyr,bt-uart'     : 'CONFIG_BT_UART_ON_DEV_NAME',
     'zephyr,uart-pipe'   : 'CONFIG_UART_PIPE_ON_DEV_NAME',
     'zephyr,bt-mon-uart' : 'CONFIG_BT_MONITOR_ON_DEV_NAME',
@@ -142,7 +146,12 @@ def insert_defs(node_address, new_defs, new_aliases):
         if key.startswith('DT_COMPAT_'):
             node_address = 'compatibles'
 
+    remove = [k for k in new_aliases if k in new_defs.keys()]
+    for k in remove: del new_aliases[k]
+
     if node_address in defs:
+        remove = [k for k in new_aliases if k in defs[node_address].keys()]
+        for k in remove: del new_aliases[k]
         if 'aliases' in defs[node_address]:
             defs[node_address]['aliases'].update(new_aliases)
         else:
@@ -164,6 +173,9 @@ def find_node_by_path(nodes, path):
 
 def get_reduced(nodes, path):
     # compress nodes list to nodes w/ paths, add interrupt parent
+    if 'last_used_id' not in get_reduced.__dict__:
+        get_reduced.last_used_id = {}
+
     if 'props' in nodes:
         status = nodes['props'].get('status')
 
@@ -172,11 +184,24 @@ def get_reduced(nodes, path):
 
     if isinstance(nodes, dict):
         reduced[path] = dict(nodes)
+
+        # assign an instance ID for each compat
+        compat = nodes['props'].get('compatible')
+        if (compat is not None):
+            if type(compat) is not list: compat = [ compat, ]
+            reduced[path]['instance_id'] = {}
+            for k in compat:
+                if k not in get_reduced.last_used_id.keys():
+                    get_reduced.last_used_id[k] = 0
+                else:
+                    get_reduced.last_used_id[k] += 1
+                reduced[path]['instance_id'][k] = get_reduced.last_used_id[k]
+
         reduced[path].pop('children', None)
         if path != '/':
             path += '/'
         if nodes['children']:
-            for k, v in nodes['children'].items():
+            for k, v in sorted(nodes['children'].items()):
                 get_reduced(v, path + k)
 
 
@@ -267,3 +292,201 @@ def translate_addr(addr, node_address, nr_addr_cells, nr_size_cells):
     range_offset += parent_range_offset
 
     return range_offset
+
+def enable_old_alias_names(enable):
+    global old_alias_names
+    old_alias_names = enable
+
+def add_compat_alias(node_address, label_postfix, label, prop_aliases):
+    if ('instance_id' in reduced[node_address]):
+        instance = reduced[node_address]['instance_id']
+        for k in instance:
+            i = instance[k]
+            b = 'DT_' + convert_string_to_label(k) + '_' + str(i) + '_' + label_postfix
+            prop_aliases[b] = label
+
+def add_prop_aliases(node_address,
+                     alias_label_function, prop_label, prop_aliases):
+    node_compat = get_compat(node_address)
+    new_alias_prefix = 'DT_' + convert_string_to_label(node_compat)
+
+    for alias in aliases[node_address]:
+        old_alias_label = alias_label_function(alias)
+        new_alias_label = new_alias_prefix + '_' + old_alias_label
+
+        if (new_alias_label != prop_label):
+            prop_aliases[new_alias_label] = prop_label
+        if (old_alias_names and old_alias_label != prop_label):
+            prop_aliases[old_alias_label] = prop_label
+
+def get_binding(node_address):
+    compat = get_compat(node_address)
+
+    # For just look for the binding in the main dict
+    # if we find it here, return it, otherwise it best
+    # be in the bus specific dict
+    if compat in bindings:
+        return bindings[compat]
+
+    parent_addr = get_parent_address(node_address)
+    parent_compat = get_compat(parent_addr)
+
+    parent_binding = bindings[parent_compat]
+
+    bus = parent_binding['child']['bus']
+    binding = bus_bindings[bus][compat]
+
+    return binding
+
+def get_binding_compats():
+    return bindings_compat
+
+def extract_controller(node_address, prop, prop_values, index,
+                       def_label, generic, handle_single=False):
+
+    prop_def = {}
+    prop_alias = {}
+
+    # get controller node (referenced via phandle)
+    cell_parent = phandles[prop_values[0]]
+
+    for k in reduced[cell_parent]['props'].keys():
+        if k[0] == '#' and '-cells' in k:
+            num_cells = reduced[cell_parent]['props'].get(k)
+
+    # get controller node (referenced via phandle)
+    cell_parent = phandles[prop_values[0]]
+
+    try:
+       l_cell = reduced[cell_parent]['props'].get('label')
+    except KeyError:
+        l_cell = None
+
+    if l_cell is not None:
+
+        l_base = def_label.split('/')
+
+        # Check is defined should be indexed (_0, _1)
+        if handle_single or index == 0 and len(prop_values) < (num_cells + 2):
+            # 0 or 1 element in prop_values
+            # ( ie len < num_cells + phandle + 1 )
+            l_idx = []
+        else:
+            l_idx = [str(index)]
+
+        # Check node generation requirements
+        try:
+            generation = get_binding(node_address)['properties'
+                    ][prop]['generation']
+        except:
+            generation = ''
+
+        if 'use-prop-name' in generation:
+            l_cellname = convert_string_to_label(prop + '_' + 'controller')
+        else:
+            l_cellname = convert_string_to_label(generic + '_' + 'controller')
+
+        label = l_base + [l_cellname] + l_idx
+
+        add_compat_alias(node_address, '_'.join(label[1:]), '_'.join(label), prop_alias)
+        prop_def['_'.join(label)] = "\"" + l_cell + "\""
+
+        #generate defs also if node is referenced as an alias in dts
+        if node_address in aliases:
+            add_prop_aliases(
+                node_address,
+                lambda alias:
+                    '_'.join([convert_string_to_label(alias)] + label[1:]),
+                '_'.join(label),
+                prop_alias)
+
+        insert_defs(node_address, prop_def, prop_alias)
+
+    # prop off phandle + num_cells to get to next list item
+    prop_values = prop_values[num_cells+1:]
+
+    # recurse if we have anything left
+    if not handle_single and len(prop_values):
+        extract_controller(node_address, prop, prop_values, index + 1,
+                           def_label, generic)
+
+
+def extract_cells(node_address, prop, prop_values, names, index,
+                  def_label, generic, handle_single=False):
+
+    cell_parent = phandles[prop_values.pop(0)]
+
+    try:
+        cell_yaml = get_binding(cell_parent)
+    except:
+        raise Exception(
+            "Could not find yaml description for " +
+                reduced[cell_parent]['name'])
+
+    try:
+        name = names.pop(0).upper()
+    except:
+        name = ''
+
+    # Get number of cells per element of current property
+    for k in reduced[cell_parent]['props'].keys():
+        if k[0] == '#' and '-cells' in k:
+            num_cells = reduced[cell_parent]['props'].get(k)
+            if k in cell_yaml.keys():
+                cell_yaml_names = k
+            else:
+                cell_yaml_names = '#cells'
+    try:
+        generation = get_binding(node_address)['properties'][prop
+                ]['generation']
+    except:
+        generation = ''
+
+    if 'use-prop-name' in generation:
+        l_cell = [convert_string_to_label(str(prop))]
+    else:
+        l_cell = [convert_string_to_label(str(generic))]
+
+    l_base = def_label.split('/')
+    # Check if #define should be indexed (_0, _1, ...)
+    if handle_single or index == 0 and len(prop_values) < (num_cells + 2):
+        # Less than 2 elements in prop_values (ie len < num_cells + phandle + 1)
+        # Indexing is not needed
+        l_idx = []
+    else:
+        l_idx = [str(index)]
+
+    prop_def = {}
+    prop_alias = {}
+
+    # Generate label for each field of the property element
+    for i in range(num_cells):
+        l_cellname = [str(cell_yaml[cell_yaml_names][i]).upper()]
+        if l_cell == l_cellname:
+            label = l_base + l_cell + l_idx
+        else:
+            label = l_base + l_cell + l_cellname + l_idx
+        label_name = l_base + [name] + l_cellname
+        add_compat_alias(node_address, '_'.join(label[1:]), '_'.join(label), prop_alias)
+        prop_def['_'.join(label)] = prop_values.pop(0)
+        if len(name):
+            prop_alias['_'.join(label_name)] = '_'.join(label)
+
+        # generate defs for node aliases
+        if node_address in aliases:
+            add_prop_aliases(
+                node_address,
+                lambda alias:
+                    '_'.join([convert_string_to_label(alias)] + label[1:]),
+                '_'.join(label),
+                prop_alias)
+
+        insert_defs(node_address, prop_def, prop_alias)
+
+    # recurse if we have anything left
+    if not handle_single and len(prop_values):
+        extract_cells(node_address, prop, prop_values, names,
+                      index + 1, def_label, generic)
+
+
+

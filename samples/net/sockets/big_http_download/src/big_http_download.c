@@ -20,8 +20,9 @@
 #include <netdb.h>
 
 #else
-#define LOG_MODULE_NAME net_big_http_download
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_big_http_download_sample, LOG_LEVEL_DBG);
 
 #include <net/socket.h>
 #include <kernel.h>
@@ -135,7 +136,7 @@ void download(struct addrinfo *ai, bool is_tls)
 {
 	int sock;
 
-	cur_bytes = 0;
+	cur_bytes = 0U;
 
 	if (is_tls) {
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
@@ -223,7 +224,7 @@ int main(void)
 	struct addrinfo *res;
 	int st;
 	char *p;
-	unsigned int total_bytes = 0;
+	unsigned int total_bytes = 0U;
 	int resolve_attempts = 10;
 	bool is_tls = false;
 

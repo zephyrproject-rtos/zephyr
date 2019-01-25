@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_rtcc.h
  * @brief EFR32MG12P_RTCC register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -47,28 +47,28 @@
  *****************************************************************************/
 /** RTCC Register Declaration */
 typedef struct {
-  __IOM uint32_t   CTRL;          /**< Control Register  */
-  __IOM uint32_t   PRECNT;        /**< Pre-Counter Value Register  */
-  __IOM uint32_t   CNT;           /**< Counter Value Register  */
-  __IM uint32_t    COMBCNT;       /**< Combined Pre-Counter and Counter Value Register  */
-  __IOM uint32_t   TIME;          /**< Time of Day Register  */
-  __IOM uint32_t   DATE;          /**< Date Register  */
-  __IM uint32_t    IF;            /**< RTCC Interrupt Flags  */
-  __IOM uint32_t   IFS;           /**< Interrupt Flag Set Register  */
-  __IOM uint32_t   IFC;           /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t   IEN;           /**< Interrupt Enable Register  */
-  __IM uint32_t    STATUS;        /**< Status Register  */
-  __IOM uint32_t   CMD;           /**< Command Register  */
-  __IM uint32_t    SYNCBUSY;      /**< Synchronization Busy Register  */
-  __IOM uint32_t   POWERDOWN;     /**< Retention RAM Power-down Register  */
-  __IOM uint32_t   LOCK;          /**< Configuration Lock Register  */
-  __IOM uint32_t   EM4WUEN;       /**< Wake Up Enable  */
+  __IOM uint32_t   CTRL;           /**< Control Register  */
+  __IOM uint32_t   PRECNT;         /**< Pre-Counter Value Register  */
+  __IOM uint32_t   CNT;            /**< Counter Value Register  */
+  __IM uint32_t    COMBCNT;        /**< Combined Pre-Counter and Counter Value Register  */
+  __IOM uint32_t   TIME;           /**< Time of Day Register  */
+  __IOM uint32_t   DATE;           /**< Date Register  */
+  __IM uint32_t    IF;             /**< RTCC Interrupt Flags  */
+  __IOM uint32_t   IFS;            /**< Interrupt Flag Set Register  */
+  __IOM uint32_t   IFC;            /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t   IEN;            /**< Interrupt Enable Register  */
+  __IM uint32_t    STATUS;         /**< Status Register  */
+  __IOM uint32_t   CMD;            /**< Command Register  */
+  __IM uint32_t    SYNCBUSY;       /**< Synchronization Busy Register  */
+  __IOM uint32_t   POWERDOWN;      /**< Retention RAM Power-down Register  */
+  __IOM uint32_t   LOCK;           /**< Configuration Lock Register  */
+  __IOM uint32_t   EM4WUEN;        /**< Wake Up Enable  */
 
-  RTCC_CC_TypeDef  CC[3];         /**< Capture/Compare Channel */
+  RTCC_CC_TypeDef  CC[3U];         /**< Capture/Compare Channel */
 
-  uint32_t         RESERVED0[37]; /**< Reserved registers */
-  RTCC_RET_TypeDef RET[32];       /**< RetentionReg */
-} RTCC_TypeDef;                   /** @} */
+  uint32_t         RESERVED0[37U]; /**< Reserved registers */
+  RTCC_RET_TypeDef RET[32U];       /**< RetentionReg */
+} RTCC_TypeDef;                    /** @} */
 
 /**************************************************************************//**
  * @addtogroup EFR32MG12P_RTCC

@@ -474,27 +474,6 @@ static inline const struct net_l2 * const net_if_l2(struct net_if *iface)
 enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt);
 
 /**
- * @brief Get link layer header size for this network interface
- *
- * @param iface Pointer to a network interface structure
- * @param dst_ip6 Pointer to the destination IPv6 address or NULL if not
- * relevant
- *
- * @return Return the link layer header size
- */
-static inline u16_t net_if_get_ll_reserve(struct net_if *iface,
-					  const struct in6_addr *dst_ip6)
-{
-#if defined(CONFIG_NET_OFFLOAD)
-	if (iface->if_dev->offload) {
-		return 0;
-	}
-#endif
-
-	return net_if_l2(iface)->reserve(iface, (void *)dst_ip6);
-}
-
-/**
  * @brief Get a pointer to the interface L2 private data
  *
  * @param iface a valid pointer to a network interface structure
@@ -1246,7 +1225,7 @@ static inline u32_t net_if_ipv6_get_retrans_timer(struct net_if *iface)
  * could be found.
  */
 const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
-						   struct in6_addr *dst);
+						   const struct in6_addr *dst);
 
 /**
  * @brief Get a network interface that should be used when sending
@@ -1257,7 +1236,7 @@ const struct in6_addr *net_if_ipv6_select_src_addr(struct net_if *iface,
  * @return Pointer to network interface to use, NULL if no suitable interface
  * could be found.
  */
-struct net_if *net_if_ipv6_select_src_iface(struct in6_addr *dst);
+struct net_if *net_if_ipv6_select_src_iface(const struct in6_addr *dst);
 
 /**
  * @brief Get a IPv6 link local address in a given state.
@@ -1474,7 +1453,7 @@ bool net_if_ipv4_is_addr_bcast(struct net_if *iface,
  * @return Pointer to network interface to use, NULL if no suitable interface
  * could be found.
  */
-struct net_if *net_if_ipv4_select_src_iface(struct in_addr *dst);
+struct net_if *net_if_ipv4_select_src_iface(const struct in_addr *dst);
 
 /**
  * @brief Get a IPv4 source address that should be used when sending
@@ -1488,7 +1467,7 @@ struct net_if *net_if_ipv4_select_src_iface(struct in_addr *dst);
  * could be found.
  */
 const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *iface,
-						  struct in_addr *dst);
+						  const struct in_addr *dst);
 
 /**
  * @brief Get a IPv4 link local address in a given state.
@@ -1808,7 +1787,6 @@ bool net_if_is_promisc(struct net_if *iface);
 
 struct net_if_api {
 	void (*init)(struct net_if *iface);
-	int (*send)(struct net_if *iface, struct net_pkt *pkt);
 };
 
 #if defined(CONFIG_NET_DHCPV4)

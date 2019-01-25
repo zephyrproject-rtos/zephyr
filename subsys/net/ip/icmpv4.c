@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_icmpv4
-#define NET_LOG_LEVEL CONFIG_NET_ICMPV4_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_icmpv4, CONFIG_NET_ICMPV4_LOG_LEVEL);
 
 #include <errno.h>
 #include <misc/slist.h>
@@ -57,7 +57,7 @@ int net_icmpv4_get_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr)
 
 int net_icmpv4_set_chksum(struct net_pkt *pkt)
 {
-	u16_t chksum = 0;
+	u16_t chksum = 0U;
 	struct net_buf *frag;
 	struct net_buf *temp_frag;
 	u16_t temp_pos;
@@ -83,7 +83,7 @@ int net_icmpv4_set_chksum(struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	chksum = ~net_calc_chksum_icmpv4(pkt);
+	chksum = net_calc_chksum_icmpv4(pkt);
 
 	temp_frag = net_pkt_write(pkt, temp_frag, temp_pos, &temp_pos,
 				  sizeof(chksum), (u8_t *)&chksum,
@@ -112,6 +112,14 @@ static inline enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt)
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
 			net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
 						    &addr));
+	/* If interface can not select src address based on dst addr
+	 * and src address is unspecified, drop the echo request.
+	 */
+	if (net_ipv4_is_addr_unspecified(&NET_IPV4_HDR(pkt)->src)) {
+		NET_DBG("DROP: src addr is unspecified");
+		return NET_DROP;
+	}
+
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, &addr);
 
 	icmp_hdr.type = NET_ICMPV4_ECHO_REPLY;
@@ -170,13 +178,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	/* Take the first address of the network interface */
 	src = &ipv4->unicast[0].address.in_addr;
 
-	/* We cast to IPv6 address but that should be ok in this case
-	 * as IPv4 cannot be used in 802.15.4 where it is the reserve
-	 * size can change depending on address.
-	 */
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface,
-					      (const struct in6_addr *)dst),
-				     PKT_WAIT_TIME);
+	pkt = net_pkt_get_reserve_tx(PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -253,9 +255,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 	dst = &NET_IPV4_HDR(orig)->src;
 	src = &NET_IPV4_HDR(orig)->dst;
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface,
-					      (const struct in6_addr *)dst),
-				     PKT_WAIT_TIME);
+	pkt = net_pkt_get_reserve_tx(PKT_WAIT_TIME);
 	if (!pkt) {
 		err = -ENOMEM;
 		goto drop_no_pkt;
@@ -328,30 +328,25 @@ void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler)
 	sys_slist_find_and_remove(&handlers, &handler->node);
 }
 
-enum net_verdict net_icmpv4_input(struct net_pkt *pkt)
+enum net_verdict net_icmpv4_input(struct net_pkt *pkt, bool bcast)
 {
 	struct net_icmpv4_handler *cb;
 	struct net_icmp_hdr icmp_hdr;
-	int ret;
 
-	ret = net_icmpv4_get_hdr(pkt, &icmp_hdr);
-	if (ret < 0) {
-		NET_DBG("NULL ICMPv4 header - dropping");
+	if (net_icmpv4_get_hdr(pkt, &icmp_hdr) < 0) {
+		NET_DBG("DROP: NULL ICMPv4 header");
 		return NET_DROP;
 	}
 
-	if (!icmp_hdr.chksum) {
-		NET_DBG("Invalid zero ICMPv4 checksum - dropping");
+	if (net_calc_chksum_icmpv4(pkt) != 0) {
+		NET_DBG("DROP: Invalid checksum");
 		goto drop;
 	}
 
-	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
-				   &NET_IPV4_HDR(pkt)->dst)) {
-		if (!IS_ENABLED(CONFIG_NET_ICMPV4_ACCEPT_BROADCAST) ||
-		    icmp_hdr.type != NET_ICMPV4_ECHO_REQUEST) {
-			NET_DBG("Dropping broadcast pkt");
-			goto drop;
-		}
+	if (bcast && (!IS_ENABLED(CONFIG_NET_ICMPV4_ACCEPT_BROADCAST) ||
+		      icmp_hdr.type != NET_ICMPV4_ECHO_REQUEST)) {
+		NET_DBG("DROP: broadcast pkt");
+		goto drop;
 	}
 
 	NET_DBG("ICMPv4 packet received type %d code %d",

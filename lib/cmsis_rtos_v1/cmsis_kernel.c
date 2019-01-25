@@ -31,10 +31,10 @@ osStatus osKernelInitialize(void)
  */
 osStatus osKernelStart(void)
 {
-	 if (_is_in_isr()) {
-		 return osErrorISR;
-	 }
-	 return osOK;
+	if (k_is_in_isr()) {
+		return osErrorISR;
+	}
+	return osOK;
 }
 
 /**

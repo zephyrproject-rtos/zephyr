@@ -10,7 +10,7 @@
 #include <ztest.h>
 
 
-#define STACKSIZE       2048
+#define STACKSIZE       (2048 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define PRIORITY        5
 
 static int count;

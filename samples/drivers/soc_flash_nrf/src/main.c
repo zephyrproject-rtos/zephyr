@@ -32,13 +32,13 @@ void main(void)
 				    TEST_DATA_WORD_2, TEST_DATA_WORD_3,
 				    TEST_DATA_WORD_0, TEST_DATA_WORD_1,
 				    TEST_DATA_WORD_2, TEST_DATA_WORD_3 };
-	u32_t buf_word = 0;
+	u32_t buf_word = 0U;
 	u32_t i, offset;
 
 	printf("\nNordic nRF5 Flash Testing\n");
 	printf("=========================\n");
 
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	if (!flash_dev) {
 		printf("Nordic nRF5 flash driver was not found!\n");
@@ -54,7 +54,7 @@ void main(void)
 
 	printf("\nTest 2: Flash write (word array 1)\n");
 	flash_write_protection_set(flash_dev, false);
-	for (i = 0; i < ARRAY_SIZE(buf_array_1); i++) {
+	for (i = 0U; i < ARRAY_SIZE(buf_array_1); i++) {
 		offset = FLASH_TEST_OFFSET + (i << 2);
 		printf("   Attempted to write %x at 0x%x\n", buf_array_1[i],
 				offset);
@@ -88,7 +88,7 @@ void main(void)
 
 	printf("\nTest 4: Flash write (word array 2)\n");
 	flash_write_protection_set(flash_dev, false);
-	for (i = 0; i < ARRAY_SIZE(buf_array_2); i++) {
+	for (i = 0U; i < ARRAY_SIZE(buf_array_2); i++) {
 		offset = FLASH_TEST_OFFSET + (i << 2);
 		printf("   Attempted to write %x at 0x%x\n", buf_array_2[i],
 				offset);
@@ -121,7 +121,7 @@ void main(void)
 
 	printf("\nTest 6: Non-word aligned write (word array 3)\n");
 	flash_write_protection_set(flash_dev, false);
-	for (i = 0; i < ARRAY_SIZE(buf_array_3); i++) {
+	for (i = 0U; i < ARRAY_SIZE(buf_array_3); i++) {
 		offset = FLASH_TEST_OFFSET + (i << 2) + 1;
 		printf("   Attempted to write %x at 0x%x\n", buf_array_3[i],
 				offset);

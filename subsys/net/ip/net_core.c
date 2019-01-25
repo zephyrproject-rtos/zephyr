@@ -11,8 +11,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_core
-#define NET_LOG_LEVEL CONFIG_NET_CORE_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 
 #include <init.h>
 #include <kernel.h>
@@ -43,7 +43,6 @@
 #endif
 
 #include "route.h"
-#include "rpl.h"
 
 #include "connection.h"
 #include "udp_internal.h"
@@ -51,6 +50,20 @@
 #include "ipv4_autoconf_internal.h"
 
 #include "net_stats.h"
+
+#if defined(CONFIG_INIT_STACKS)
+void net_analyze_stack(const char *name, const char *stack, size_t size)
+{
+	unsigned int pcnt, unused;
+
+	net_analyze_stack_get_values(stack, size, &pcnt, &unused);
+
+	NET_INFO("net (%p): %s stack real size %zu "
+		 "unused %u usage %zu/%zu (%u %%)",
+		 k_current_get(), name,
+		 size, unused, size - unused, size, pcnt);
+}
+#endif /* CONFIG_INIT_STACKS */
 
 static inline enum net_verdict process_data(struct net_pkt *pkt,
 					    bool is_loopback)

@@ -65,7 +65,7 @@ void pci_legacy_bridge_configure(struct pci_dev_info *dev_info,
 				 int pci_interrupt_pin,
 				 int irq_number);
 
-#ifdef CONFIG_PCI_DEBUG
+#ifdef CONFIG_PCI_LOG_LEVEL_DBG
 extern void pci_show(struct pci_dev_info *dev_info);
 #else
 #define pci_show(__unused__) { ; }

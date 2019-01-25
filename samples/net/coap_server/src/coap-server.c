@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_coap_server
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_coap_server_sample, LOG_LEVEL_DBG);
 
 #include <errno.h>
 #include <misc/printk.h>
@@ -88,7 +88,7 @@ static int well_known_core_get(struct coap_resource *resource,
 	struct net_buf *frag;
 	int r;
 
-	NET_DBG("");
+	LOG_DBG("");
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
@@ -120,7 +120,7 @@ static void payload_dump(const char *s, struct net_buf *frag,
 	while (frag) {
 		net_hexdump("", frag->data + offset, frag->len - offset);
 		frag = frag->frags;
-		offset = 0;
+		offset = 0U;
 	}
 }
 
@@ -142,9 +142,9 @@ static int test_del(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	LOG_INF("*******\n");
+	LOG_INF("type: %u code %u id %u\n", type, code, id);
+	LOG_INF("*******\n");
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
@@ -195,18 +195,18 @@ static int test_put(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("\n ****** test put method  *******\n");
+	LOG_INF("\n ****** test put method  *******\n");
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	LOG_INF("*******\n");
+	LOG_INF("type: %u code %u id %u\n", type, code, id);
+	LOG_INF("*******\n");
 
 	payloadfrag = coap_packet_get_payload(request, &offset, &len);
 	if (!payloadfrag && len == 0xffff) {
-		NET_ERR("Invalid payload");
+		LOG_ERR("Invalid payload");
 		return -EINVAL;
 	} else if (!payloadfrag && !len) {
-		NET_INFO("Packet without payload\n");
+		LOG_INF("Packet without payload\n");
 		goto next;
 	}
 
@@ -267,17 +267,17 @@ static int test_post(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("\n ****** test post method  *******\n");
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	LOG_INF("\n ****** test post method  *******\n");
+	LOG_INF("*******\n");
+	LOG_INF("type: %u code %u id %u\n", type, code, id);
+	LOG_INF("*******\n");
 
 	payloadfrag = coap_packet_get_payload(request, &offset, &len);
 	if (!payloadfrag && len == 0xffff) {
-		NET_ERR("Invalid payload");
+		LOG_ERR("Invalid payload");
 		return -EINVAL;
 	} else if (!payloadfrag && !len) {
-		NET_INFO("Packet without payload\n");
+		LOG_INF("Packet without payload\n");
 		goto next;
 	}
 
@@ -341,9 +341,9 @@ static int location_query_post(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	LOG_INF("*******\n");
+	LOG_INF("type: %u code %u id %u\n", type, code, id);
+	LOG_INF("*******\n");
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
@@ -396,9 +396,9 @@ static int piggyback_get(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	LOG_INF("*******\n");
+	LOG_INF("type: %u code %u id %u\n", type, code, id);
+	LOG_INF("*******\n");
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
@@ -477,15 +477,15 @@ static int query_get(struct coap_resource *resource,
 		return -EINVAL;
 	}
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("num queries: %d\n", r);
+	LOG_INF("*******\n");
+	LOG_INF("type: %u code %u id %u\n", type, code, id);
+	LOG_INF("num queries: %d\n", r);
 
 	for (i = 0; i < r; i++) {
 		char str[16];
 
 		if (options[i].len + 1 > sizeof(str)) {
-			NET_INFO("Unexpected length of query: "
+			LOG_INF("Unexpected length of query: "
 				 "%d (expected %zu)\n",
 				 options[i].len, sizeof(str));
 			break;
@@ -494,10 +494,10 @@ static int query_get(struct coap_resource *resource,
 		memcpy(str, options[i].value, options[i].len);
 		str[options[i].len] = '\0';
 
-		NET_INFO("query[%d]: %s\n", i + 1, log_strdup(str));
+		LOG_INF("query[%d]: %s\n", i + 1, log_strdup(str));
 	}
 
-	NET_INFO("*******\n");
+	LOG_INF("*******\n");
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
@@ -564,9 +564,9 @@ static int separate_get(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	LOG_INF("*******\n");
+	LOG_INF("type: %u code %u id %u\n", type, code, id);
+	LOG_INF("*******\n");
 
 	if (type == COAP_TYPE_NON_CON) {
 		goto done;
@@ -697,9 +697,9 @@ static int large_get(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	LOG_INF("*******\n");
+	LOG_INF("type: %u code %u id %u\n", type, code, id);
+	LOG_INF("*******\n");
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
@@ -796,21 +796,21 @@ static int large_update_put(struct coap_resource *resource,
 
 	r = coap_update_from_block(request, &ctx);
 	if (r < 0) {
-		NET_ERR("Invalid block size option from request");
+		LOG_ERR("Invalid block size option from request");
 		return -EINVAL;
 	}
 
 	frag = coap_packet_get_payload(request, &offset, &len);
 	if (!last_block && frag == NULL && len == 0) {
-		NET_ERR("Packet without payload\n");
+		LOG_ERR("Packet without payload\n");
 		return -EINVAL;
 	}
 
-	NET_INFO("**************\n");
-	NET_INFO("[ctx] current %zu block_size %u total_size %zu\n",
+	LOG_INF("**************\n");
+	LOG_INF("[ctx] current %zu block_size %u total_size %zu\n",
 		 ctx.current, coap_block_size_to_bytes(ctx.block_size),
 		 ctx.total_size);
-	NET_INFO("**************\n");
+	LOG_INF("**************\n");
 
 	get_from_ip_addr(request, &from);
 	code = coap_header_get_code(request);
@@ -818,9 +818,9 @@ static int large_update_put(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	LOG_INF("*******\n");
+	LOG_INF("type: %u code %u id %u\n", type, code, id);
+	LOG_INF("*******\n");
 
 	/* Do something with the payload */
 
@@ -843,7 +843,7 @@ static int large_update_put(struct coap_resource *resource,
 
 	r = coap_append_block1_option(&response, &ctx);
 	if (r < 0) {
-		NET_ERR("Could not add Block1 option to response");
+		LOG_ERR("Could not add Block1 option to response");
 		return -EINVAL;
 	}
 
@@ -881,13 +881,13 @@ static int large_create_post(struct coap_resource *resource,
 
 	r = coap_update_from_block(request, &ctx);
 	if (r < 0) {
-		NET_ERR("Invalid block size option from request");
+		LOG_ERR("Invalid block size option from request");
 		return -EINVAL;
 	}
 
 	frag = coap_packet_get_payload(request, &offset, &len);
 	if (!last_block && frag == NULL && len == 0) {
-		NET_ERR("Packet without payload\n");
+		LOG_ERR("Packet without payload\n");
 		return -EINVAL;
 	}
 
@@ -897,9 +897,9 @@ static int large_create_post(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	LOG_INF("*******\n");
+	LOG_INF("type: %u code %u id %u\n", type, code, id);
+	LOG_INF("*******\n");
 
 	pkt = net_pkt_get_tx(context, K_FOREVER);
 	frag = net_pkt_get_data(context, K_FOREVER);
@@ -919,7 +919,7 @@ static int large_create_post(struct coap_resource *resource,
 
 	r = coap_append_block1_option(&response, &ctx);
 	if (r < 0) {
-		NET_ERR("Could not add Block1 option to response");
+		LOG_ERR("Could not add Block1 option to response");
 		return -EINVAL;
 	}
 
@@ -1061,9 +1061,9 @@ done:
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******\n");
-	NET_INFO("type: %u code %u id %u\n", type, code, id);
-	NET_INFO("*******\n");
+	LOG_INF("*******\n");
+	LOG_INF("type: %u code %u id %u\n", type, code, id);
+	LOG_INF("*******\n");
 
 	return send_notification_packet((const struct sockaddr *)&from,
 					observe ? resource->age : 0,
@@ -1236,12 +1236,12 @@ static void udp_receive(struct net_context *context,
 	struct coap_pending *pending;
 	struct sockaddr_in6 from;
 	struct coap_option options[16] = { 0 };
-	u8_t opt_num = 16;
+	u8_t opt_num = 16U;
 	int r;
 
 	r = coap_packet_parse(&request, pkt, options, opt_num);
 	if (r < 0) {
-		NET_ERR("Invalid data received (%d)\n", r);
+		LOG_ERR("Invalid data received (%d)\n", r);
 		net_pkt_unref(pkt);
 		return;
 	}
@@ -1260,13 +1260,13 @@ static void udp_receive(struct net_context *context,
 		o = coap_find_observer_by_addr(observers, NUM_OBSERVERS,
 					       (struct sockaddr *)&from);
 		if (!o) {
-			NET_ERR("Observer not found\n");
+			LOG_ERR("Observer not found\n");
 			goto not_found;
 		}
 
 		r = find_resouce_by_observer(resources, o);
 		if (!r) {
-			NET_ERR("Observer found but Resource not found\n");
+			LOG_ERR("Observer found but Resource not found\n");
 			goto not_found;
 		}
 
@@ -1279,7 +1279,7 @@ static void udp_receive(struct net_context *context,
 not_found:
 	r = coap_handle_request(&request, resources, options, opt_num);
 	if (r < 0) {
-		NET_ERR("No handler for such request (%d)\n", r);
+		LOG_ERR("No handler for such request (%d)\n", r);
 	}
 
 	net_pkt_unref(pkt);
@@ -1298,7 +1298,7 @@ static bool join_coap_multicast_group(void)
 
 	iface = net_if_get_default();
 	if (!iface) {
-		NET_ERR("Could not get te default interface\n");
+		LOG_ERR("Could not get te default interface\n");
 		return false;
 	}
 
@@ -1306,14 +1306,14 @@ static bool join_coap_multicast_group(void)
 	if (net_addr_pton(AF_INET6,
 			  CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			  &my_addr) < 0) {
-		NET_ERR("Invalid IPv6 address %s",
+		LOG_ERR("Invalid IPv6 address %s",
 			CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 	}
 #endif
 
 	ifaddr = net_if_ipv6_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		NET_ERR("Could not add unicast address to interface");
+		LOG_ERR("Could not add unicast address to interface");
 		return false;
 	}
 
@@ -1321,7 +1321,7 @@ static bool join_coap_multicast_group(void)
 
 	mcast = net_if_ipv6_maddr_add(iface, &mcast_addr.sin6_addr);
 	if (!mcast) {
-		NET_ERR("Could not add multicast address to interface\n");
+		LOG_ERR("Could not add multicast address to interface\n");
 		return false;
 	}
 
@@ -1369,20 +1369,20 @@ void main(void)
 	int r;
 
 	if (!join_coap_multicast_group()) {
-		NET_ERR("Could not join CoAP multicast group\n");
+		LOG_ERR("Could not join CoAP multicast group\n");
 		return;
 	}
 
 	r = net_context_get(PF_INET6, SOCK_DGRAM, IPPROTO_UDP, &context);
 	if (r) {
-		NET_ERR("Could not get an UDP context\n");
+		LOG_ERR("Could not get an UDP context\n");
 		return;
 	}
 
 	r = net_context_bind(context, (struct sockaddr *) &any_addr,
 			     sizeof(any_addr));
 	if (r) {
-		NET_ERR("Could not bind the context\n");
+		LOG_ERR("Could not bind the context\n");
 		return;
 	}
 
@@ -1393,7 +1393,7 @@ void main(void)
 
 	r = net_context_recv(context, udp_receive, 0, NULL);
 	if (r) {
-		NET_ERR("Could not receive in the context\n");
+		LOG_ERR("Could not receive in the context\n");
 		return;
 	}
 }

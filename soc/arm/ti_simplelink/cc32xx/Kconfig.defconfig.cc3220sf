@@ -28,7 +28,7 @@ config BOOTLOADER_SRAM_SIZE
 if GPIO
 
 config GPIO_CC32XX
-	def_bool y
+	default y
 
 config GPIO_CC32XX_A0
 	default n

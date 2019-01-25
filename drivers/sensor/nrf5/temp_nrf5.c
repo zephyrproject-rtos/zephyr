@@ -51,7 +51,7 @@ static int temp_nrf5_sample_fetch(struct device *dev, enum sensor_channel chan)
 	k_sem_take(&data->device_sync_sem, K_FOREVER);
 
 	r = clock_control_off(data->clk_m16_dev, (void *)1);
-	__ASSERT_NO_MSG(!r);
+	__ASSERT_NO_MSG(!r || r == -EBUSY);
 
 	data->sample = temp->TEMP;
 
@@ -112,7 +112,7 @@ static int temp_nrf5_init(struct device *dev)
 	LOG_DBG("");
 
 	data->clk_m16_dev =
-		device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
+		device_get_binding(CONFIG_CLOCK_CONTROL_NRF_M16SRC_DRV_NAME);
 	__ASSERT_NO_MSG(data->clk_m16_dev);
 
 	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);

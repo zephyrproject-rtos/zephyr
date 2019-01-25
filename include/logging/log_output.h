@@ -39,6 +39,10 @@ extern "C" {
 /** @brief Flag forcing a single LF character for line breaks. */
 #define LOG_OUTPUT_FLAG_CRLF_LFONLY		BIT(5)
 
+/** @brief Flag forcing syslog format specified in RFC 5424
+ */
+#define LOG_OUTPUT_FLAG_FORMAT_SYSLOG		BIT(6)
+
 /**
  * @brief Prototype of the function processing output data.
  *
@@ -54,6 +58,7 @@ typedef int (*log_output_func_t)(u8_t *buf, size_t size, void *ctx);
 struct log_output_control_block {
 	size_t offset;
 	void *ctx;
+	const char *hostname;
 };
 
 /** @brief Log_output instance structure. */
@@ -93,6 +98,15 @@ void log_output_msg_process(const struct log_output *log_output,
 			    struct log_msg *msg,
 			    u32_t flags);
 
+/** @brief Process dropped messages indication.
+ *
+ * Function prints error message indicating lost log messages.
+ *
+ * @param log_output Pointer to the log output instance.
+ * @param cnt        Number of dropped messages.
+ */
+void log_output_dropped_process(const struct log_output *log_output, u32_t cnt);
+
 /** @brief Flush output buffer.
  *
  * @param log_output Pointer to the log output instance.
@@ -110,6 +124,16 @@ static inline void log_output_ctx_set(const struct log_output *log_output,
 	log_output->control_block->ctx = ctx;
 }
 
+/** @brief Function for setting hostname of this device
+ *
+ * @param log_output	Pointer to the log output instance.
+ * @param hostname	Hostname of this device
+ */
+static inline void log_output_hostname_set(const struct log_output *log_output,
+					   const char *hostname)
+{
+	log_output->control_block->hostname = hostname;
+}
 
 /** @brief Set timestamp frequency.
  *

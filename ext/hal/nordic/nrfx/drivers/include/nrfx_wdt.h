@@ -46,12 +46,23 @@ extern "C" {
  * @brief   Watchdog Timer (WDT) peripheral driver.
  */
 
+#if !NRFX_CHECK(NRFX_WDT_CONFIG_NO_IRQ) || defined(__NRFX_DOXYGEN__)
+/**
+ * @brief WDT instance interrupt priority configuration.
+ */
+    #define NRFX_WDT_IRQ_CONFIG .interrupt_priority = NRFX_WDT_CONFIG_IRQ_PRIORITY
+#else
+    #define NRFX_WDT_IRQ_CONFIG
+#endif
+
 /**@brief Struct for WDT initialization. */
 typedef struct
 {
     nrf_wdt_behaviour_t    behaviour;          /**< WDT behaviour when CPU in sleep/halt mode. */
     uint32_t               reload_value;       /**< WDT reload value in ms. */
+#if !NRFX_CHECK(NRFX_WDT_CONFIG_NO_IRQ) || defined(__NRFX_DOXYGEN__)
     uint8_t                interrupt_priority; /**< WDT interrupt priority */
+#endif
 } nrfx_wdt_config_t;
 
 /**@brief WDT event handler function type. */
@@ -64,14 +75,14 @@ typedef nrf_wdt_rr_register_t nrfx_wdt_channel_id;
     {                                                                         \
         .behaviour          = (nrf_wdt_behaviour_t)NRFX_WDT_CONFIG_BEHAVIOUR, \
         .reload_value       = NRFX_WDT_CONFIG_RELOAD_VALUE,                   \
-        .interrupt_priority = NRFX_WDT_CONFIG_IRQ_PRIORITY,                   \
+        NRFX_WDT_IRQ_CONFIG                                                   \
     }
 /**
  * @brief This function initializes watchdog.
  *
  * @param[in] p_config          Pointer to the structure with initial configuration.
- * @param[in] wdt_event_handler Event handler provided by the user.
- *                              Must not be NULL.
+ * @param[in] wdt_event_handler Event handler provided by the user. Ignored when
+ *                              @ref NRFX_WDT_CONFIG_NO_IRQ option is enabled.
  *
  * @return    NRFX_SUCCESS on success, otherwise an error code.
  */
@@ -134,7 +145,9 @@ __STATIC_INLINE uint32_t nrfx_wdt_ppi_event_addr(nrf_wdt_event_t event)
 }
 
 
+#if !NRFX_CHECK(NRFX_WDT_CONFIG_NO_IRQ)
 void nrfx_wdt_irq_handler(void);
+#endif
 
 
 /** @} */

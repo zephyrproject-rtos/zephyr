@@ -76,8 +76,6 @@ static int uart_nsim_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	dev->driver_api = &uart_nsim_driver_api;
-
 	return 0;
 }
 
@@ -87,7 +85,7 @@ static int uart_nsim_init(struct device *dev)
  * @param dev UART device struct
  * @param c character to output
  */
-unsigned char uart_nsim_poll_out(struct device *dev, unsigned char c)
+static void uart_nsim_poll_out(struct device *dev, unsigned char c)
 {
 	u32_t regs = DEV_CFG(dev)->regs;
 	/* wait for transmitter to ready to accept a character */
@@ -96,8 +94,6 @@ unsigned char uart_nsim_poll_out(struct device *dev, unsigned char c)
 		;
 
 	UART_SET_DATA(regs, c);
-
-	return c;
 }
 
 static int uart_nsim_poll_in(struct device *dev, unsigned char *c)
@@ -115,6 +111,7 @@ static struct uart_device_config uart_nsim_dev_cfg_0 = {
 	.regs = CONFIG_UART_NSIM_PORT_0_BASE_ADDR,
 };
 
-DEVICE_INIT(uart_nsim0, CONFIG_UART_NSIM_PORT_0_NAME, &uart_nsim_init,
+DEVICE_AND_API_INIT(uart_nsim0, CONFIG_UART_NSIM_PORT_0_NAME, &uart_nsim_init,
 			NULL, &uart_nsim_dev_cfg_0,
-			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+			&uart_nsim_driver_api);

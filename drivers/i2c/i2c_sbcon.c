@@ -103,8 +103,6 @@ static int i2c_sbcon_init(struct device *dev)
 
 	i2c_bitbang_init(&context->bitbang, &io_fns, config->sbcon);
 
-	dev->driver_api = &api;
-
 	return 0;
 }
 
@@ -113,14 +111,14 @@ static int i2c_sbcon_init(struct device *dev)
 static struct i2c_sbcon_context i2c_sbcon_dev_data_##_num;		\
 									\
 static const struct i2c_sbcon_config i2c_sbcon_dev_cfg_##_num = {	\
-	.sbcon		= (void *)I2C_SBCON_##_num##_BASE_ADDR,		\
+	.sbcon		= (void *)DT_I2C_SBCON_##_num##_BASE_ADDR,		\
 };									\
 									\
-DEVICE_INIT(i2c_sbcon_##_num, CONFIG_I2C_SBCON_##_num##_NAME,		\
+DEVICE_AND_API_INIT(i2c_sbcon_##_num, CONFIG_I2C_SBCON_##_num##_NAME,	\
 	    i2c_sbcon_init,						\
 	    &i2c_sbcon_dev_data_##_num,					\
 	    &i2c_sbcon_dev_cfg_##_num,					\
-	    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY)
+	    PRE_KERNEL_2, CONFIG_I2C_INIT_PRIORITY, &api)
 
 #ifdef CONFIG_I2C_SBCON_0
 DEFINE_I2C_SBCON(0);

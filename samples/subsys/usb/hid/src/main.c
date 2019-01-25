@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016-2018 Intel Corporation.
+ * Copyright (c) 2018 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,34 +57,6 @@ static const u8_t hid_report_desc[] = {
 	HID_MI_COLLECTION_END,
 };
 
-static int debug_cb(struct usb_setup_packet *setup, s32_t *len,
-		    u8_t **data)
-{
-	LOG_DBG("Debug callback");
-
-	return -ENOTSUP;
-}
-
-static int set_idle_cb(struct usb_setup_packet *setup, s32_t *len,
-		       u8_t **data)
-{
-	LOG_DBG("Set Idle callback");
-
-	/* TODO: Do something */
-
-	return 0;
-}
-
-static int get_report_cb(struct usb_setup_packet *setup, s32_t *len,
-			 u8_t **data)
-{
-	LOG_DBG("Get report callback");
-
-	/* TODO: Do something */
-
-	return 0;
-}
-
 static void send_report(struct k_work *work)
 {
 	static u8_t report_1[2] = { REPORT_ID_1, 0x00 };
@@ -108,21 +81,35 @@ static void status_cb(enum usb_dc_status_code status, const u8_t *param)
 	case USB_DC_CONFIGURED:
 		in_ready_cb();
 		break;
+	case USB_DC_SOF:
+		break;
 	default:
 		LOG_DBG("status %u unhandled", status);
 		break;
 	}
 }
 
+static void idle_cb(u16_t report_id)
+{
+	static u8_t report_1[2] = { 0x00, 0xEB };
+	int ret, wrote;
+
+	ret = hid_int_ep_write(report_1, sizeof(report_1), &wrote);
+
+	LOG_DBG("Idle callback: wrote %d bytes with ret %d", wrote, ret);
+}
+
+static void protocol_cb(u8_t protocol)
+{
+	LOG_DBG("New protocol: %s", protocol == HID_PROTOCOL_BOOT ?
+		"boot" : "report");
+}
+
 static const struct hid_ops ops = {
-	.get_report = get_report_cb,
-	.get_idle = debug_cb,
-	.get_protocol = debug_cb,
-	.set_report = debug_cb,
-	.set_idle = set_idle_cb,
-	.set_protocol = debug_cb,
 	.int_in_ready = in_ready_cb,
 	.status_cb = status_cb,
+	.on_idle = idle_cb,
+	.protocol_change = protocol_cb,
 };
 
 void main(void)

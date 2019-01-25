@@ -38,6 +38,10 @@
 #include <hal/nrf_egu.h>
 #endif
 
+#ifndef SWI_COUNT
+#define SWI_COUNT EGU_COUNT
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -78,6 +82,9 @@ typedef void (*nrfx_swi_handler_t)(nrfx_swi_t swi, nrfx_swi_flags_t flags);
 /**
  * @brief Function for allocating the first unused SWI instance and setting a handler.
  *
+ * If provided handler is not NULL, an allocated SWI has its interrupt enabled by default.
+ * The interrupt can be disabled by @ref nrfx_swi_int_disable.
+ *
  * @param[out] p_swi          Points to a place where the allocated SWI instance
  *                            number is to be stored.
  * @param[in]  event_handler  Event handler function.
@@ -92,6 +99,22 @@ typedef void (*nrfx_swi_handler_t)(nrfx_swi_t swi, nrfx_swi_flags_t flags);
 nrfx_err_t nrfx_swi_alloc(nrfx_swi_t *       p_swi,
                           nrfx_swi_handler_t event_handler,
                           uint32_t           irq_priority);
+
+/**
+ * @brief Function for disabling an allocated SWI interrupt.
+ *
+ * Use @ref nrfx_swi_int_enable to re-enable the interrupt.
+ *
+ * @param[in] swi  SWI instance.
+ */
+void nrfx_swi_int_disable(nrfx_swi_t swi);
+
+/**
+ * @brief Function for enabling an allocated SWI interrupt.
+ *
+ * @param[in] swi  SWI instance.
+ */
+void nrfx_swi_int_enable(nrfx_swi_t swi);
 
 /**
  * @brief Function for freeing a previously allocated SWI.
@@ -142,8 +165,8 @@ __STATIC_INLINE NRF_EGU_Type * nrfx_swi_egu_instance_get(nrfx_swi_t swi)
         return NULL;
     }
 #endif
-    uint32_t offset = ((uint32_t)swi) * (NRF_EGU1_BASE - NRF_EGU0_BASE);
-    return (NRF_EGU_Type *)(NRF_EGU0_BASE + offset);
+    uint32_t offset = ((uint32_t)swi) * ((uint32_t)NRF_EGU1 - (uint32_t)NRF_EGU0);
+    return (NRF_EGU_Type *)((uint32_t)NRF_EGU0 + offset);
 }
 
 /**

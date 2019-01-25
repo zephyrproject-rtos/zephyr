@@ -108,10 +108,10 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 	 * affecting performance (can still be useful on systems with a
 	 * reduced set of priorities, like Cortex-M0/M0+).
 	 */
-	__ASSERT(prio <= ((1 << CONFIG_NUM_IRQ_PRIO_BITS) - 1),
+	__ASSERT(prio <= ((1 << DT_NUM_IRQ_PRIO_BITS) - 1),
 		 "invalid priority %d! values must be less than %d\n",
 		 prio - _IRQ_PRIO_OFFSET,
-		 (1 << CONFIG_NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
+		 (1 << DT_NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
 	NVIC_SetPriority((IRQn_Type)irq, prio);
 }
 

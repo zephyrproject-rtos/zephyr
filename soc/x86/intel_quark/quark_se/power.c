@@ -37,7 +37,7 @@ static void _deep_sleep(enum power_states state)
 	 * is restored. If necessary, it is possible to set the
 	 * resume vector to a location where additional processing
 	 * can be done before cpu context is restored and control
-	 * transferred to _sys_soc_suspend.
+	 * transferred to sys_suspend.
 	 */
 	qm_x86_set_resume_vector(_power_restore_cpu_context,
 				 *__x86_restore_info);
@@ -57,7 +57,7 @@ static void _deep_sleep(enum power_states state)
 }
 #endif
 
-void _sys_soc_set_power_state(enum power_states state)
+void sys_set_power_state(enum power_states state)
 {
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS:
@@ -80,11 +80,11 @@ void _sys_soc_set_power_state(enum power_states state)
 	}
 }
 
-void _sys_soc_power_state_post_ops(enum power_states state)
+void sys_power_state_post_ops(enum power_states state)
 {
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS_2:
-		*_REG_TIMER_ICR = 1;
+		*_REG_TIMER_ICR = 1U;
 	case SYS_POWER_STATE_CPU_LPS_1:
 	case SYS_POWER_STATE_CPU_LPS:
 		__asm__ volatile("sti");
@@ -104,7 +104,7 @@ void _sys_soc_power_state_post_ops(enum power_states state)
 	}
 }
 
-bool _sys_soc_power_state_is_arc_ready(void)
+bool sys_power_state_is_arc_ready(void)
 {
 	return QM_SCSS_GP->gp0 & GP0_BIT_SLEEP_READY ? true : false;
 }

@@ -101,11 +101,11 @@ static void ws_rb_init(void)
 {
 	int i;
 
-	ws_rb.line_in = 0;
-	ws_rb.line_out = 0;
+	ws_rb.line_in = 0U;
+	ws_rb.line_out = 0U;
 
 	for (i = 0; i < WS_CONSOLE_LINES; i++) {
-		ws_rb.l_bufs[i].len = 0;
+		ws_rb.l_bufs[i].len = 0U;
 	}
 }
 
@@ -127,10 +127,10 @@ static void ws_rb_switch(void)
 	ws_rb.line_in++;
 
 	if (ws_rb.line_in == WS_CONSOLE_LINES) {
-		ws_rb.line_in = 0;
+		ws_rb.line_in = 0U;
 	}
 
-	ws_rb.l_bufs[ws_rb.line_in].len = 0;
+	ws_rb.l_bufs[ws_rb.line_in].len = 0U;
 
 	/* Unfortunately, we don't have enough line buffer,
 	 * so we eat the next to be sent.
@@ -138,7 +138,7 @@ static void ws_rb_switch(void)
 	if (ws_rb.line_in == ws_rb.line_out) {
 		ws_rb.line_out++;
 		if (ws_rb.line_out == WS_CONSOLE_LINES) {
-			ws_rb.line_out = 0;
+			ws_rb.line_out = 0U;
 		}
 	}
 
@@ -152,7 +152,7 @@ static inline struct line_buf *ws_rb_get_line_out(void)
 
 	ws_rb.line_out++;
 	if (ws_rb.line_out == WS_CONSOLE_LINES) {
-		ws_rb.line_out = 0;
+		ws_rb.line_out = 0U;
 	}
 
 	if (!ws_rb.l_bufs[out].len) {
@@ -274,7 +274,7 @@ static bool ws_console_send(struct http_ctx *console)
 				  NULL, NULL);
 
 		/* We reinitialize the line buffer */
-		lb->len = 0;
+		lb->len = 0U;
 	}
 
 	return true;

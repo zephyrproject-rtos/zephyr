@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_ipv6_frag
-#define NET_LOG_LEVEL CONFIG_NET_IPV6_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include <errno.h>
 #include <net/net_core.h>
@@ -27,7 +27,6 @@
 #include "nbr.h"
 #include "6lo.h"
 #include "route.h"
-#include "rpl.h"
 #include "net_stats.h"
 
 /* Timeout for various buffer allocations in this file. */
@@ -66,7 +65,7 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_idx,
 	next = NET_IPV6_HDR(pkt)->nexthdr;
 
 	/* Initial value if no extension fragments are found */
-	*next_hdr_idx = 6;
+	*next_hdr_idx = 6U;
 	*last_hdr_idx = sizeof(struct net_ipv6_hdr);
 
 	/* First check the simplest case where there is no extension headers
@@ -100,7 +99,7 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_idx,
 
 		case NET_IPV6_NEXTHDR_HBHO:
 		case NET_IPV6_NEXTHDR_DESTO:
-			length = 0;
+			length = 0U;
 			frag = net_frag_read_u8(frag, offset, &offset,
 						(u8_t *)&length);
 			if (!frag) {
@@ -143,7 +142,7 @@ out:
 	/* Current next_hdr_idx offset is based on respective fragment, but we
 	 * need to calculate next_hdr_idx offset based on whole packet.
 	 */
-	pkt_offset = 0;
+	pkt_offset = 0U;
 	frag = pkt->frags;
 	while (frag) {
 		if (next_hdr_frag == frag) {
@@ -158,7 +157,7 @@ out:
 	/* Current last_hdr_idx offset is based on respective fragment, but we
 	 * need to calculate last_hdr_idx offset based on whole packet.
 	 */
-	pkt_offset = 0;
+	pkt_offset = 0U;
 	frag = pkt->frags;
 	while (frag) {
 		if (last_hdr_frag == frag) {
@@ -238,7 +237,7 @@ static bool reassembly_cancel(u32_t id,
 		NET_DBG("IPv6 reassembly id 0x%x remaining %d ms",
 			reassembly[i].id, remaining);
 
-		reassembly[i].id = 0;
+		reassembly[i].id = 0U;
 
 		for (j = 0; j < NET_IPV6_FRAGMENTS_MAX_PKT; j++) {
 			if (!reassembly[i].pkt[j]) {
@@ -808,8 +807,8 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 		goto fail;
 	}
 
-	frag_count = 0;
-	frag_offset = 0;
+	frag_count = 0U;
+	frag_offset = 0U;
 
 	/* The Maximum payload can fit into each packet after IPv6 header,
 	 * Extenstion headers and Fragmentation header.

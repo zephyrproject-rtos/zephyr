@@ -26,13 +26,12 @@
 	chosen {
 #if defined(CONFIG_CODE_ITCM)
 		zephyr,flash = &itcm0;
-#elif defined(CONFIG_CODE_HYPERFLASH)
-		zephyr,flash = &hyperflash0;
 #elif defined(CONFIG_CODE_QSPI)
-		zephyr,flash = &qspi0;
+		zephyr,flash = &is25wp064;
 #endif
 		zephyr,sram = &dtcm0;
 		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
 	};
 
 	sdram0: memory@80000000 {
@@ -58,25 +57,14 @@
 	};
 };
 
-&flexspi0 {
-	hyperflash0: hyperflash@60000000 {
-		/* Cypress S26KS512SDPBHI02 */
-		reg = <0x60000000 0x4000000>;
-#if defined(CONFIG_CODE_HYPERFLASH)
-		status = "ok";
-#else
-		status = "disabled";
-#endif
-	};
+arduino_serial: &uart3 {};
 
-	qspi0: qspi@60000000 {
-		/* ISSI IS25WP064AJBLE */
-		reg = <0x60000000 0x800000>;
-#if defined(CONFIG_CODE_QSPI)
+&flexspi0 {
+	reg = <0x402a8000 0x4000>, <0x60000000 0x800000>;
+	is25wp064: is25wp064@0 {
+		compatible = "issi,is25wp064", "jedec,spi-nor";
+		reg = <0>;
 		status = "ok";
-#else
-		status = "disabled";
-#endif
 	};
 };
 

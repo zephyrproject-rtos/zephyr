@@ -14,7 +14,7 @@
 LOG_MODULE_REGISTER(lis2dh);
 #include "lis2dh.h"
 
-#if defined(CONFIG_LIS2DH_BUS_SPI)
+#if defined(DT_ST_LIS2DH_0_BUS_SPI)
 int lis2dh_spi_access(struct lis2dh_data *ctx, u8_t cmd,
 		      void *data, size_t length)
 {
@@ -54,7 +54,7 @@ int lis2dh_reg_field_update(struct device *dev, u8_t reg_addr,
 	u8_t old_val;
 
 	/* just to remove gcc warning */
-	old_val = 0;
+	old_val = 0U;
 
 	status = lis2dh_reg_read_byte(dev, reg_addr, &old_val);
 	if (status < 0) {
@@ -202,12 +202,12 @@ static int lis2dh_acc_odr_set(struct device *dev, u16_t freq)
 	}
 
 	/* some odr values cannot be set in certain power modes */
-	if ((value & LIS2DH_LP_EN_BIT) == 0 && odr == LIS2DH_ODR_8) {
+	if ((value & LIS2DH_LP_EN_BIT_MASK) == 0 && odr == LIS2DH_ODR_8) {
 		return -ENOTSUP;
 	}
 
 	/* adjust odr index for LP enabled mode, see table above */
-	if ((value & LIS2DH_LP_EN_BIT) == 1 && (odr == LIS2DH_ODR_9 + 1)) {
+	if ((value & LIS2DH_LP_EN_BIT_MASK) == 1 && (odr == LIS2DH_ODR_9 + 1)) {
 		odr--;
 	}
 
@@ -366,6 +366,6 @@ int lis2dh_init(struct device *dev)
 
 static struct lis2dh_data lis2dh_driver;
 
-DEVICE_AND_API_INIT(lis2dh, CONFIG_LIS2DH_NAME, lis2dh_init, &lis2dh_driver,
+DEVICE_AND_API_INIT(lis2dh, DT_ST_LIS2DH_0_LABEL, lis2dh_init, &lis2dh_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &lis2dh_driver_api);

@@ -1,34 +1,17 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_dmic.h"
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.dmic"
+#endif
 
 /*******************************************************************************
  * Variables
@@ -37,8 +20,10 @@
 /* Array of DMIC peripheral base address. */
 static DMIC_Type *const s_dmicBases[FSL_FEATURE_SOC_DMIC_COUNT] = DMIC_BASE_PTRS;
 
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
 /* Array of DMIC clock name. */
 static const clock_ip_name_t s_dmicClock[FSL_FEATURE_SOC_DMIC_COUNT] = DMIC_CLOCKS;
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /* Array of DMIC IRQ number. */
 static const IRQn_Type s_dmicIRQ[FSL_FEATURE_SOC_DMIC_COUNT] = DMIC_IRQS;
@@ -61,6 +46,12 @@ static dmic_hwvad_callback_t s_dmicHwvadCallback[FSL_FEATURE_SOC_DMIC_COUNT];
  * @param base DMIC peripheral base address.
  * @return DMIC instance.
  */
+/*!
+ * brief Get the DMIC instance from peripheral base address.
+ *
+ * param base DMIC peripheral base address.
+ * return DMIC instance.
+ */
 uint32_t DMIC_GetInstance(DMIC_Type *base)
 {
     uint32_t instance;
@@ -79,15 +70,24 @@ uint32_t DMIC_GetInstance(DMIC_Type *base)
     return instance;
 }
 
+/*!
+ * brief	Turns DMIC Clock on
+ * param	base	: DMIC base
+ * return	Nothing
+ */
 void DMIC_Init(DMIC_Type *base)
 {
     assert(base);
 
-    /* Enable the clock to the register interface */
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    /* Enable the clock. */
     CLOCK_EnableClock(s_dmicClock[DMIC_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
-    /* Reset the peripheral */
+#if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
+    /* Reset the module. */
     RESET_PeripheralReset(kDMIC_RST_SHIFT_RSTn);
+#endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
 
     /* Disable DMA request*/
     base->CHANNEL[0].FIFO_CTRL &= ~DMIC_CHANNEL_FIFO_CTRL_DMAEN(1);
@@ -98,18 +98,38 @@ void DMIC_Init(DMIC_Type *base)
     base->CHANNEL[1].FIFO_CTRL &= ~DMIC_CHANNEL_FIFO_CTRL_INTEN(1);
 }
 
+/*!
+ * brief	Turns DMIC Clock off
+ * param	base	: DMIC base
+ * return	Nothing
+ */
 void DMIC_DeInit(DMIC_Type *base)
 {
     assert(base);
-    /* Disable the clock to the register interface */
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    /* Disable the clock. */
     CLOCK_DisableClock(s_dmicClock[DMIC_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief	Configure DMIC io
+ * param	base	: The base address of DMIC interface
+ * param	config		: DMIC io configuration
+ * return	Nothing
+ */
 void DMIC_ConfigIO(DMIC_Type *base, dmic_io_t config)
 {
     base->IOCFG = config;
 }
 
+/*!
+ * brief	Set DMIC operating mode
+ * param	base	: The base address of DMIC interface
+ * param	mode	: DMIC mode
+ * return	Nothing
+ */
 void DMIC_SetOperationMode(DMIC_Type *base, operation_mode_t mode)
 {
     if (mode == kDMIC_OperationModeInterrupt)
@@ -126,6 +146,14 @@ void DMIC_SetOperationMode(DMIC_Type *base, operation_mode_t mode)
     }
 }
 
+/*!
+ * brief	Configure DMIC channel
+ * param	base		: The base address of DMIC interface
+ * param	channel		: DMIC channel
+ * param side     : stereo_side_t, choice of left or right
+ * param	channel_config	: Channel configuration
+ * return	Nothing
+ */
 void DMIC_ConfigChannel(DMIC_Type *base,
                         dmic_channel_t channel,
                         stereo_side_t side,
@@ -143,6 +171,14 @@ void DMIC_ConfigChannel(DMIC_Type *base,
                                      DMIC_CHANNEL_DC_CTRL_SATURATEAT16BIT(channel_config->saturate16bit);
 }
 
+/*!
+ * brief	Configure DMIC channel
+ * param	base		: The base address of DMIC interface
+ * param	channel		: DMIC channel
+ * param   dc_cut_level  : dc_removal_t, Cut off Frequency
+ * param	post_dc_gain_reduce	: Fine gain adjustment in the form of a number of bits to downshift.
+ * param   saturate16bit : If selects 16-bit saturation.
+ */
 void DMIC_CfgChannelDc(DMIC_Type *base,
                        dmic_channel_t channel,
                        dc_removal_t dc_cut_level,
@@ -154,16 +190,37 @@ void DMIC_CfgChannelDc(DMIC_Type *base,
                                      DMIC_CHANNEL_DC_CTRL_SATURATEAT16BIT(saturate16bit);
 }
 
+/*!
+ * brief	Configure Clock scaling
+ * param	base		: The base address of DMIC interface
+ * param	use2fs		: clock scaling
+ * return	Nothing
+ */
 void DMIC_Use2fs(DMIC_Type *base, bool use2fs)
 {
     base->USE2FS = (use2fs) ? 0x1 : 0x0;
 }
 
+/*!
+ * brief	Enable a particualr channel
+ * param	base		: The base address of DMIC interface
+ * param	channelmask	: Channel selection
+ * return	Nothing
+ */
 void DMIC_EnableChannnel(DMIC_Type *base, uint32_t channelmask)
 {
     base->CHANEN = channelmask;
 }
 
+/*!
+ * brief	Configure fifo settings for DMIC channel
+ * param	base		: The base address of DMIC interface
+ * param	channel		: DMIC channel
+ * param	trig_level	: FIFO trigger level
+ * param	enable		: FIFO level
+ * param	resetn		: FIFO reset
+ * return	Nothing
+ */
 void DMIC_FifoChannel(DMIC_Type *base, uint32_t channel, uint32_t trig_level, uint32_t enable, uint32_t resetn)
 {
     base->CHANNEL[channel].FIFO_CTRL |=
@@ -172,6 +229,16 @@ void DMIC_FifoChannel(DMIC_Type *base, uint32_t channel, uint32_t trig_level, ui
         DMIC_CHANNEL_FIFO_CTRL_RESETN(resetn);
 }
 
+/*!
+ * brief	Enable callback.
+
+ * This function enables the interrupt for the selected DMIC peripheral.
+ * The callback function is not enabled until this function is called.
+ *
+ * param base Base address of the DMIC peripheral.
+ * param cb callback Pointer to store callback function.
+ * retval None.
+ */
 void DMIC_EnableIntCallback(DMIC_Type *base, dmic_callback_t cb)
 {
     uint32_t instance;
@@ -183,6 +250,15 @@ void DMIC_EnableIntCallback(DMIC_Type *base, dmic_callback_t cb)
     EnableIRQ(s_dmicIRQ[instance]);
 }
 
+/*!
+ * brief	Disable callback.
+
+ * This function disables the interrupt for the selected DMIC peripheral.
+ *
+ * param base Base address of the DMIC peripheral.
+ * param cb callback Pointer to store callback function..
+ * retval None.
+ */
 void DMIC_DisableIntCallback(DMIC_Type *base, dmic_callback_t cb)
 {
     uint32_t instance;
@@ -193,6 +269,16 @@ void DMIC_DisableIntCallback(DMIC_Type *base, dmic_callback_t cb)
     NVIC_ClearPendingIRQ(s_dmicIRQ[instance]);
 }
 
+/*!
+ * brief	Enable hwvad callback.
+
+ * This function enables the hwvad interrupt for the selected DMIC  peripheral.
+ * The callback function is not enabled until this function is called.
+ *
+ * param base Base address of the DMIC peripheral.
+ * param vadcb callback Pointer to store callback function.
+ * retval None.
+ */
 void DMIC_HwvadEnableIntCallback(DMIC_Type *base, dmic_hwvad_callback_t vadcb)
 {
     uint32_t instance;
@@ -204,6 +290,15 @@ void DMIC_HwvadEnableIntCallback(DMIC_Type *base, dmic_hwvad_callback_t vadcb)
     EnableIRQ(s_dmicHwvadIRQ[instance]);
 }
 
+/*!
+ * brief	Disable callback.
+
+ * This function disables the hwvad interrupt for the selected DMIC peripheral.
+ *
+ * param base Base address of the DMIC peripheral.
+ * param vadcb callback Pointer to store callback function..
+ * retval None.
+ */
 void DMIC_HwvadDisableIntCallback(DMIC_Type *base, dmic_hwvad_callback_t vadcb)
 {
     uint32_t instance;
@@ -223,13 +318,23 @@ void DMIC0_DriverIRQHandler(void)
     {
         s_dmicCallback[0]();
     }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 /*DMIC0 HWVAD IRQ handler */
-void HWVAD0_IRQHandler(void)
+void HWVAD0_DriverIRQHandler(void)
 {
     if (s_dmicHwvadCallback[0] != NULL)
     {
         s_dmicHwvadCallback[0]();
     }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
 }
 #endif

@@ -24,7 +24,7 @@ static int ms5837_get_measurement(struct device *i2c_master,
 	u8_t adc_read_cmd = MS5837_CMD_CONV_READ_ADC;
 	int err;
 
-	*val = 0;
+	*val = 0U;
 
 	err = i2c_write(i2c_master, &cmd, 1, i2c_address);
 	if (err < 0) {
@@ -163,32 +163,32 @@ static int ms5837_attr_set(struct device *dev, enum sensor_channel chan,
 		case 8192:
 			p_conv_cmd = MS5837_CMD_CONV_P_8192;
 			t_conv_cmd = MS5837_CMD_CONV_T_8192;
-			conv_delay = 19;
+			conv_delay = 19U;
 			break;
 		case 4096:
 			p_conv_cmd = MS5837_CMD_CONV_P_4096;
 			t_conv_cmd = MS5837_CMD_CONV_T_4096;
-			conv_delay = 10;
+			conv_delay = 10U;
 			break;
 		case 2048:
 			p_conv_cmd = MS5837_CMD_CONV_P_2048;
 			t_conv_cmd = MS5837_CMD_CONV_T_2048;
-			conv_delay = 5;
+			conv_delay = 5U;
 			break;
 		case 1024:
 			p_conv_cmd = MS5837_CMD_CONV_P_1024;
 			t_conv_cmd = MS5837_CMD_CONV_T_1024;
-			conv_delay = 3;
+			conv_delay = 3U;
 			break;
 		case 512:
 			p_conv_cmd = MS5837_CMD_CONV_P_512;
 			t_conv_cmd = MS5837_CMD_CONV_T_512;
-			conv_delay = 2;
+			conv_delay = 2U;
 			break;
 		case 256:
 			p_conv_cmd = MS5837_CMD_CONV_P_256;
 			t_conv_cmd = MS5837_CMD_CONV_T_256;
-			conv_delay = 1;
+			conv_delay = 1U;
 			break;
 		default:
 			LOG_ERR("invalid oversampling rate %d", val->val1);
@@ -253,14 +253,14 @@ static int ms5837_init(struct device *dev)
 	data->temperature = 0;
 
 	data->presure_conv_cmd = MS5837_CMD_CONV_P_256;
-	data->presure_conv_delay = 1;
+	data->presure_conv_delay = 1U;
 	data->temperature_conv_cmd = MS5837_CMD_CONV_T_256;
-	data->temperature_conv_delay = 1;
+	data->temperature_conv_delay = 1U;
 
 	data->i2c_master = device_get_binding(cfg->i2c_name);
 	if (data->i2c_master == NULL) {
 		LOG_ERR("i2c master %s not found",
-			    CONFIG_MS5837_I2C_MASTER_DEV_NAME);
+			    DT_MS5837_I2C_MASTER_DEV_NAME);
 		return -EINVAL;
 	}
 
@@ -318,10 +318,10 @@ static int ms5837_init(struct device *dev)
 static struct ms5837_data ms5837_data;
 
 static const struct ms5837_config ms5837_config = {
-	.i2c_name = CONFIG_MS5837_I2C_MASTER_DEV_NAME,
+	.i2c_name = DT_MS5837_I2C_MASTER_DEV_NAME,
 	.i2c_address = MS5837_ADDR
 };
 
-DEVICE_AND_API_INIT(ms5837, CONFIG_MS5837_DEV_NAME, ms5837_init, &ms5837_data,
+DEVICE_AND_API_INIT(ms5837, DT_MS5837_DEV_NAME, ms5837_init, &ms5837_data,
 		    &ms5837_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &ms5837_api_funcs);

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_coap_client
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_coap_client_sample, LOG_LEVEL_DBG);
 
 #include <errno.h>
 #include <misc/printk.h>
@@ -43,14 +43,14 @@ static int dump_payload(const struct coap_packet *response)
 
 	frag = coap_packet_get_payload(response, &offset, &len);
 	if (!frag && len == 0xffff) {
-		NET_ERR("Invalid payload");
+		LOG_ERR("Invalid payload");
 		return -EINVAL;
 	}
 
 	while (frag) {
 		net_hexdump("", frag->data + offset, frag->len - offset);
 		frag = frag->frags;
-		offset = 0;
+		offset = 0U;
 	}
 
 	printk("\n");
@@ -70,7 +70,7 @@ static void udp_receive(struct net_context *context,
 
 	r = coap_packet_parse(&response, pkt, NULL, 0);
 	if (r < 0) {
-		NET_ERR("Invalid data received (%d)\n", r);
+		LOG_ERR("Invalid data received (%d)\n", r);
 		return;
 	}
 
@@ -101,7 +101,7 @@ static void send_coap_request(u8_t method)
 		r = coap_packet_append_option(&request, COAP_OPTION_URI_PATH,
 					      *p, strlen(*p));
 		if (r < 0) {
-			NET_ERR("Unable add option to request");
+			LOG_ERR("Unable add option to request");
 			goto end;
 		}
 	}
@@ -114,14 +114,14 @@ static void send_coap_request(u8_t method)
 	case COAP_METHOD_POST:
 		r = coap_packet_append_payload_marker(&request);
 		if (r < 0) {
-			NET_ERR("Unable to append payload marker");
+			LOG_ERR("Unable to append payload marker");
 			goto end;
 		}
 
 		r = coap_packet_append_payload(&request, (u8_t *)payload,
 					       sizeof(payload) - 1);
 		if (r < 0) {
-			NET_ERR("Not able to append payload");
+			LOG_ERR("Not able to append payload");
 			goto end;
 		}
 	}
@@ -132,7 +132,7 @@ static void send_coap_request(u8_t method)
 		return;
 	}
 
-	NET_ERR("Error sending the packet (%d)", r);
+	LOG_ERR("Error sending the packet (%d)", r);
 
 end:
 	net_pkt_unref(pkt);
@@ -145,21 +145,21 @@ static int init_app(void)
 
 	if (net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			  &my_addr.sin6_addr)) {
-		NET_ERR("Invalid my IPv6 address: %s",
+		LOG_ERR("Invalid my IPv6 address: %s",
 			CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 		return -1;
 	}
 
 	if (net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
 			  &peer_addr.sin6_addr)) {
-		NET_ERR("Invalid peer IPv6 address: %s",
+		LOG_ERR("Invalid peer IPv6 address: %s",
 			CONFIG_NET_CONFIG_PEER_IPV6_ADDR);
 		return -1;
 	}
 
 	r = net_context_get(PF_INET6, SOCK_DGRAM, IPPROTO_UDP, &context);
 	if (r) {
-		NET_ERR("Could not get an UDP context");
+		LOG_ERR("Could not get an UDP context");
 		return r;
 	}
 
@@ -168,13 +168,13 @@ static int init_app(void)
 	r = net_context_bind(context, (struct sockaddr *) &my_addr,
 			     sizeof(my_addr));
 	if (r) {
-		NET_ERR("Could not bind the context");
+		LOG_ERR("Could not bind the context");
 		return r;
 	}
 
 	r = net_context_recv(context, udp_receive, 0, NULL);
 	if (r) {
-		NET_ERR("Could not set receive callback");
+		LOG_ERR("Could not set receive callback");
 		return r;
 	}
 
@@ -191,22 +191,22 @@ void main(void)
 	}
 
 	/* Test CoAP GET method */
-	NET_DBG("CoAP client GET test");
+	LOG_DBG("CoAP client GET test");
 	send_coap_request(COAP_METHOD_GET);
 
 	/* Take semaphore */
 	k_sem_take(&coap_sem, K_FOREVER);
 
 	/* Test CoAP PUT method */
-	NET_DBG("CoAP client PUT test");
+	LOG_DBG("CoAP client PUT test");
 	send_coap_request(COAP_METHOD_PUT);
 
 	/* Take semaphore */
 	k_sem_take(&coap_sem, K_FOREVER);
 
 	/* Test CoAP POST method*/
-	NET_DBG("CoAP client POST test");
+	LOG_DBG("CoAP client POST test");
 	send_coap_request(COAP_METHOD_POST);
 
-	NET_DBG("Done");
+	LOG_DBG("Done");
 }

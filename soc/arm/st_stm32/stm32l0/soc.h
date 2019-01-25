@@ -17,10 +17,6 @@
 #ifndef _STM32L0_SOC_H_
 #define _STM32L0_SOC_H_
 
-#define GPIO_REG_SIZE         0x400
-/* base address for where GPIO registers start */
-#define GPIO_PORTS_BASE       (GPIOA_BASE)
-
 #ifndef _ASMLANGUAGE
 
 #include <stm32l0xx.h>
@@ -50,6 +46,10 @@
 
 #ifdef CONFIG_SPI_STM32
 #include <stm32l0xx_ll_spi.h>
+#endif
+
+#ifdef CONFIG_GPIO_STM32
+#include <stm32l0xx_ll_gpio.h>
 #endif
 
 #endif /* !_ASMLANGUAGE */

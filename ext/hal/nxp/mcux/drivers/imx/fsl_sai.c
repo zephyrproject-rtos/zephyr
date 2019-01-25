@@ -58,23 +58,39 @@ static uint32_t SAI_GetInstance(I2S_Type *base);
  * @brief sends a piece of data in non-blocking way.
  *
  * @param base SAI base pointer
- * @param channel Data channel used.
+ * @param channel start channel number.
+ * @param channelMask enabled channels mask.
+ * @param endChannel end channel numbers.
  * @param bitWidth How many bits in a audio word, usually 8/16/24/32 bits.
  * @param buffer Pointer to the data to be written.
  * @param size Bytes to be written.
  */
-static void SAI_WriteNonBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8_t *buffer, uint32_t size);
+static void SAI_WriteNonBlocking(I2S_Type *base,
+                                 uint32_t channel,
+                                 uint32_t channelMask,
+                                 uint32_t endChannel,
+                                 uint32_t bitWidth,
+                                 uint8_t *buffer,
+                                 uint32_t size);
 
 /*!
  * @brief Receive a piece of data in non-blocking way.
  *
  * @param base SAI base pointer
- * @param channel Data channel used.
+ * @param channel start channel number.
+ * @param channelMask enabled channels mask.
+ * @param endChannel end channel numbers.
  * @param bitWidth How many bits in a audio word, usually 8/16/24/32 bits.
  * @param buffer Pointer to the data to be read.
  * @param size Bytes to be read.
  */
-static void SAI_ReadNonBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8_t *buffer, uint32_t size);
+static void SAI_ReadNonBlocking(I2S_Type *base,
+                                uint32_t channel,
+                                uint32_t channelMask,
+                                uint32_t endChannel,
+                                uint32_t bitWidth,
+                                uint8_t *buffer,
+                                uint32_t size);
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -179,45 +195,83 @@ static uint32_t SAI_GetInstance(I2S_Type *base)
     return instance;
 }
 
-static void SAI_WriteNonBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8_t *buffer, uint32_t size)
+static void SAI_WriteNonBlocking(I2S_Type *base,
+                                 uint32_t channel,
+                                 uint32_t channelMask,
+                                 uint32_t endChannel,
+                                 uint32_t bitWidth,
+                                 uint8_t *buffer,
+                                 uint32_t size)
 {
     uint32_t i = 0;
-    uint8_t j = 0;
+    uint8_t j = 0, m = 0;
     uint8_t bytesPerWord = bitWidth / 8U;
     uint32_t data = 0;
     uint32_t temp = 0;
 
     for (i = 0; i < size / bytesPerWord; i++)
     {
-        for (j = 0; j < bytesPerWord; j++)
+        for (j = channel; j <= endChannel; j++)
         {
-            temp = (uint32_t)(*buffer);
-            data |= (temp << (8U * j));
-            buffer++;
+            if ((1U << j) & channelMask)
+            {
+                for (m = 0; m < bytesPerWord; m++)
+                {
+                    temp = (uint32_t)(*buffer);
+                    data |= (temp << (8U * m));
+                    buffer++;
+                }
+                base->TDR[j] = data;
+                data = 0;
+            }
         }
-        base->TDR[channel] = data;
-        data = 0;
     }
 }
 
-static void SAI_ReadNonBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8_t *buffer, uint32_t size)
+static void SAI_ReadNonBlocking(I2S_Type *base,
+                                uint32_t channel,
+                                uint32_t channelMask,
+                                uint32_t endChannel,
+                                uint32_t bitWidth,
+                                uint8_t *buffer,
+                                uint32_t size)
 {
     uint32_t i = 0;
-    uint8_t j = 0;
+    uint8_t j = 0, m = 0;
     uint8_t bytesPerWord = bitWidth / 8U;
     uint32_t data = 0;
 
     for (i = 0; i < size / bytesPerWord; i++)
     {
-        data = base->RDR[channel];
-        for (j = 0; j < bytesPerWord; j++)
+        for (j = channel; j <= endChannel; j++)
         {
-            *buffer = (data >> (8U * j)) & 0xFF;
-            buffer++;
+            if ((1U << j) & channelMask)
+            {
+                data = base->RDR[j];
+                for (m = 0; m < bytesPerWord; m++)
+                {
+                    *buffer = (data >> (8U * m)) & 0xFF;
+                    buffer++;
+                }
+            }
         }
     }
 }
 
+/*!
+ * brief Initializes the SAI Tx peripheral.
+ *
+ * Ungates the SAI clock, resets the module, and configures SAI Tx with a configuration structure.
+ * The configuration structure can be custom filled or set with default values by
+ * SAI_TxGetDefaultConfig().
+ *
+ * note  This API should be called at the beginning of the application to use
+ * the SAI driver. Otherwise, accessing the SAIM module can cause a hard fault
+ * because the clock is not enabled.
+ *
+ * param base SAI base pointer
+ * param config SAI configuration structure.
+*/
 void SAI_TxInit(I2S_Type *base, const sai_config_t *config)
 {
     uint32_t val = 0;
@@ -228,8 +282,7 @@ void SAI_TxInit(I2S_Type *base, const sai_config_t *config)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 #if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
-
-#if defined(FSL_FEATURE_SAI_HAS_MCR_MICS) && (FSL_FEATURE_SAI_HAS_MCR_MICS)
+#if !(defined(FSL_FEATURE_SAI_HAS_NO_MCR_MICS) && (FSL_FEATURE_SAI_HAS_NO_MCR_MICS))
     /* Master clock source setting */
     val = (base->MCR & ~I2S_MCR_MICS_MASK);
     base->MCR = (val | I2S_MCR_MICS(config->mclkSource));
@@ -331,6 +384,20 @@ void SAI_TxInit(I2S_Type *base, const sai_config_t *config)
 #endif /* FSL_FEATURE_SAI_HAS_FIFO_FUNCTION_AFTER_ERROR */
 }
 
+/*!
+ * brief Initializes the SAI Rx peripheral.
+ *
+ * Ungates the SAI clock, resets the module, and configures the SAI Rx with a configuration structure.
+ * The configuration structure can be custom filled or set with default values by
+ * SAI_RxGetDefaultConfig().
+ *
+ * note  This API should be called at the beginning of the application to use
+ * the SAI driver. Otherwise, accessing the SAI module can cause a hard fault
+ * because the clock is not enabled.
+ *
+ * param base SAI base pointer
+ * param config SAI configuration structure.
+ */
 void SAI_RxInit(I2S_Type *base, const sai_config_t *config)
 {
     uint32_t val = 0;
@@ -341,8 +408,7 @@ void SAI_RxInit(I2S_Type *base, const sai_config_t *config)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 #if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
-
-#if defined(FSL_FEATURE_SAI_HAS_MCR_MICS) && (FSL_FEATURE_SAI_HAS_MCR_MICS)
+#if !(defined(FSL_FEATURE_SAI_HAS_NO_MCR_MICS) && (FSL_FEATURE_SAI_HAS_NO_MCR_MICS))
     /* Master clock source setting */
     val = (base->MCR & ~I2S_MCR_MICS_MASK);
     base->MCR = (val | I2S_MCR_MICS(config->mclkSource));
@@ -444,6 +510,14 @@ void SAI_RxInit(I2S_Type *base, const sai_config_t *config)
 #endif /* FSL_FEATURE_SAI_HAS_FIFO_FUNCTION_AFTER_ERROR */
 }
 
+/*!
+ * brief De-initializes the SAI peripheral.
+ *
+ * This API gates the SAI clock. The SAI module can't operate unless SAI_TxInit
+ * or SAI_RxInit is called to enable the clock.
+ *
+ * param base SAI base pointer
+*/
 void SAI_Deinit(I2S_Type *base)
 {
     SAI_TxEnable(base, false);
@@ -453,30 +527,75 @@ void SAI_Deinit(I2S_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief  Sets the SAI Tx configuration structure to default values.
+ *
+ * This API initializes the configuration structure for use in SAI_TxConfig().
+ * The initialized structure can remain unchanged in SAI_TxConfig(), or it can be modified
+ *  before calling SAI_TxConfig().
+ * This is an example.
+   code
+   sai_config_t config;
+   SAI_TxGetDefaultConfig(&config);
+   endcode
+ *
+ * param config pointer to master configuration structure
+ */
 void SAI_TxGetDefaultConfig(sai_config_t *config)
 {
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
+
     config->bclkSource = kSAI_BclkSourceMclkDiv;
     config->masterSlave = kSAI_Master;
+#if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
+    config->mclkOutputEnable = true;
+#if !(defined(FSL_FEATURE_SAI_HAS_NO_MCR_MICS) && (FSL_FEATURE_SAI_HAS_NO_MCR_MICS))
     config->mclkSource = kSAI_MclkSourceSysclk;
+#endif
+#endif /* FSL_FEATURE_SAI_HAS_MCR */
     config->protocol = kSAI_BusI2S;
     config->syncMode = kSAI_ModeAsync;
-#if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
-    config->mclkOutputEnable = true;
-#endif /* FSL_FEATURE_SAI_HAS_MCR */
 }
 
+/*!
+ * brief  Sets the SAI Rx configuration structure to default values.
+ *
+ * This API initializes the configuration structure for use in SAI_RxConfig().
+ * The initialized structure can remain unchanged in SAI_RxConfig() or it can be modified
+ *  before calling SAI_RxConfig().
+ * This is an example.
+   code
+   sai_config_t config;
+   SAI_RxGetDefaultConfig(&config);
+   endcode
+ *
+ * param config pointer to master configuration structure
+ */
 void SAI_RxGetDefaultConfig(sai_config_t *config)
 {
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
+
     config->bclkSource = kSAI_BclkSourceMclkDiv;
     config->masterSlave = kSAI_Master;
-    config->mclkSource = kSAI_MclkSourceSysclk;
-    config->protocol = kSAI_BusI2S;
-    config->syncMode = kSAI_ModeSync;
 #if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
     config->mclkOutputEnable = true;
+#if !(defined(FSL_FEATURE_SAI_HAS_NO_MCR_MICS) && (FSL_FEATURE_SAI_HAS_NO_MCR_MICS))
+    config->mclkSource = kSAI_MclkSourceSysclk;
+#endif
 #endif /* FSL_FEATURE_SAI_HAS_MCR */
+    config->protocol = kSAI_BusI2S;
+    config->syncMode = kSAI_ModeSync;
 }
 
+/*!
+ * brief Resets the SAI Tx.
+ *
+ * This function enables the software reset and FIFO reset of SAI Tx. After reset, clear the reset bit.
+ *
+ * param base SAI base pointer
+ */
 void SAI_TxReset(I2S_Type *base)
 {
     /* Set the software reset and FIFO reset to clear internal state */
@@ -493,6 +612,13 @@ void SAI_TxReset(I2S_Type *base)
     base->TMR = 0;
 }
 
+/*!
+ * brief Resets the SAI Rx.
+ *
+ * This function enables the software reset and FIFO reset of SAI Rx. After reset, clear the reset bit.
+ *
+ * param base SAI base pointer
+ */
 void SAI_RxReset(I2S_Type *base)
 {
     /* Set the software reset and FIFO reset to clear internal state */
@@ -509,6 +635,12 @@ void SAI_RxReset(I2S_Type *base)
     base->RMR = 0;
 }
 
+/*!
+ * brief Enables/disables the SAI Tx.
+ *
+ * param base SAI base pointer
+ * param enable True means enable SAI Tx, false means disable.
+ */
 void SAI_TxEnable(I2S_Type *base, bool enable)
 {
     if (enable)
@@ -533,6 +665,12 @@ void SAI_TxEnable(I2S_Type *base, bool enable)
     }
 }
 
+/*!
+ * brief Enables/disables the SAI Rx.
+ *
+ * param base SAI base pointer
+ * param enable True means enable SAI Rx, false means disable.
+ */
 void SAI_RxEnable(I2S_Type *base, bool enable)
 {
     if (enable)
@@ -556,6 +694,17 @@ void SAI_RxEnable(I2S_Type *base, bool enable)
     }
 }
 
+/*!
+ * brief Do software reset or FIFO reset .
+ *
+ * FIFO reset means clear all the data in the FIFO, and make the FIFO pointer both to 0.
+ * Software reset means claer the Tx internal logic, including the bit clock, frame count etc. But software
+ * reset will not clear any configuration registers like TCR1~TCR5.
+ * This function will also clear all the error flags such as FIFO error, sync error etc.
+ *
+ * param base SAI base pointer
+ * param type Reset type, FIFO reset or software reset
+ */
 void SAI_TxSoftwareReset(I2S_Type *base, sai_reset_type_t type)
 {
     base->TCSR |= (uint32_t)type;
@@ -564,6 +713,17 @@ void SAI_TxSoftwareReset(I2S_Type *base, sai_reset_type_t type)
     base->TCSR &= ~I2S_TCSR_SR_MASK;
 }
 
+/*!
+ * brief Do software reset or FIFO reset .
+ *
+ * FIFO reset means clear all the data in the FIFO, and make the FIFO pointer both to 0.
+ * Software reset means claer the Rx internal logic, including the bit clock, frame count etc. But software
+ * reset will not clear any configuration registers like RCR1~RCR5.
+ * This function will also clear all the error flags such as FIFO error, sync error etc.
+ *
+ * param base SAI base pointer
+ * param type Reset type, FIFO reset or software reset
+ */
 void SAI_RxSoftwareReset(I2S_Type *base, sai_reset_type_t type)
 {
     base->RCSR |= (uint32_t)type;
@@ -572,18 +732,38 @@ void SAI_RxSoftwareReset(I2S_Type *base, sai_reset_type_t type)
     base->RCSR &= ~I2S_RCSR_SR_MASK;
 }
 
+/*!
+ * brief Set the Tx channel FIFO enable mask.
+ *
+ * param base SAI base pointer
+ * param mask Channel enable mask, 0 means all channel FIFO disabled, 1 means channel 0 enabled,
+ * 3 means both channel 0 and channel 1 enabled.
+ */
 void SAI_TxSetChannelFIFOMask(I2S_Type *base, uint8_t mask)
 {
     base->TCR3 &= ~I2S_TCR3_TCE_MASK;
     base->TCR3 |= I2S_TCR3_TCE(mask);
 }
 
+/*!
+ * brief Set the Rx channel FIFO enable mask.
+ *
+ * param base SAI base pointer
+ * param mask Channel enable mask, 0 means all channel FIFO disabled, 1 means channel 0 enabled,
+ * 3 means both channel 0 and channel 1 enabled.
+ */
 void SAI_RxSetChannelFIFOMask(I2S_Type *base, uint8_t mask)
 {
     base->RCR3 &= ~I2S_RCR3_RCE_MASK;
     base->RCR3 |= I2S_RCR3_RCE(mask);
 }
 
+/*!
+ * brief Set the Tx data order.
+ *
+ * param base SAI base pointer
+ * param order Data order MSB or LSB
+ */
 void SAI_TxSetDataOrder(I2S_Type *base, sai_data_order_t order)
 {
     uint32_t val = (base->TCR4) & (~I2S_TCR4_MF_MASK);
@@ -592,6 +772,12 @@ void SAI_TxSetDataOrder(I2S_Type *base, sai_data_order_t order)
     base->TCR4 = val;
 }
 
+/*!
+ * brief Set the Rx data order.
+ *
+ * param base SAI base pointer
+ * param order Data order MSB or LSB
+ */
 void SAI_RxSetDataOrder(I2S_Type *base, sai_data_order_t order)
 {
     uint32_t val = (base->RCR4) & (~I2S_RCR4_MF_MASK);
@@ -600,6 +786,12 @@ void SAI_RxSetDataOrder(I2S_Type *base, sai_data_order_t order)
     base->RCR4 = val;
 }
 
+/*!
+ * brief Set the Tx data order.
+ *
+ * param base SAI base pointer
+ * param order Data order MSB or LSB
+ */
 void SAI_TxSetBitClockPolarity(I2S_Type *base, sai_clock_polarity_t polarity)
 {
     uint32_t val = (base->TCR2) & (~I2S_TCR2_BCP_MASK);
@@ -608,6 +800,12 @@ void SAI_TxSetBitClockPolarity(I2S_Type *base, sai_clock_polarity_t polarity)
     base->TCR2 = val;
 }
 
+/*!
+ * brief Set the Rx data order.
+ *
+ * param base SAI base pointer
+ * param order Data order MSB or LSB
+ */
 void SAI_RxSetBitClockPolarity(I2S_Type *base, sai_clock_polarity_t polarity)
 {
     uint32_t val = (base->RCR2) & (~I2S_RCR2_BCP_MASK);
@@ -616,6 +814,12 @@ void SAI_RxSetBitClockPolarity(I2S_Type *base, sai_clock_polarity_t polarity)
     base->RCR2 = val;
 }
 
+/*!
+ * brief Set the Tx data order.
+ *
+ * param base SAI base pointer
+ * param order Data order MSB or LSB
+ */
 void SAI_TxSetFrameSyncPolarity(I2S_Type *base, sai_clock_polarity_t polarity)
 {
     uint32_t val = (base->TCR4) & (~I2S_TCR4_FSP_MASK);
@@ -624,6 +828,12 @@ void SAI_TxSetFrameSyncPolarity(I2S_Type *base, sai_clock_polarity_t polarity)
     base->TCR4 = val;
 }
 
+/*!
+ * brief Set the Rx data order.
+ *
+ * param base SAI base pointer
+ * param order Data order MSB or LSB
+ */
 void SAI_RxSetFrameSyncPolarity(I2S_Type *base, sai_clock_polarity_t polarity)
 {
     uint32_t val = (base->RCR4) & (~I2S_RCR4_FSP_MASK);
@@ -633,6 +843,12 @@ void SAI_RxSetFrameSyncPolarity(I2S_Type *base, sai_clock_polarity_t polarity)
 }
 
 #if defined(FSL_FEATURE_SAI_HAS_FIFO_PACKING) && FSL_FEATURE_SAI_HAS_FIFO_PACKING
+/*!
+ * brief Set Tx FIFO packing feature.
+ *
+ * param base SAI base pointer.
+ * param pack FIFO pack type. It is element of sai_fifo_packing_t.
+ */
 void SAI_TxSetFIFOPacking(I2S_Type *base, sai_fifo_packing_t pack)
 {
     uint32_t val = base->TCR4;
@@ -642,6 +858,12 @@ void SAI_TxSetFIFOPacking(I2S_Type *base, sai_fifo_packing_t pack)
     base->TCR4 = val;
 }
 
+/*!
+* brief Set Rx FIFO packing feature.
+*
+* param base SAI base pointer.
+* param pack FIFO pack type. It is element of sai_fifo_packing_t.
+*/
 void SAI_RxSetFIFOPacking(I2S_Type *base, sai_fifo_packing_t pack)
 {
     uint32_t val = base->RCR4;
@@ -652,6 +874,18 @@ void SAI_RxSetFIFOPacking(I2S_Type *base, sai_fifo_packing_t pack)
 }
 #endif /* FSL_FEATURE_SAI_HAS_FIFO_PACKING */
 
+/*!
+ * brief Configures the SAI Tx audio format.
+ *
+ * The audio format can be changed at run-time. This function configures the sample rate and audio data
+ * format to be transferred.
+ *
+ * param base SAI base pointer.
+ * param format Pointer to the SAI audio data format structure.
+ * param mclkSourceClockHz SAI master clock source frequency in Hz.
+ * param bclkSourceClockHz SAI bit clock source frequency in Hz. If the bit clock source is a master
+ * clock, this value should equal the masterClockHz.
+*/
 void SAI_TxSetFormat(I2S_Type *base,
                      sai_transfer_format_t *format,
                      uint32_t mclkSourceClockHz,
@@ -659,16 +893,12 @@ void SAI_TxSetFormat(I2S_Type *base,
 {
     uint32_t bclk = 0;
     uint32_t val = 0;
-    uint32_t channels = 2U;
-
-    if (format->stereo != kSAI_Stereo)
-    {
-        channels = 1U;
-    }
+    uint32_t i = 0U;
+    uint32_t divider = 0U, channelNums = 0U;
 
     if (format->isFrameSyncCompact)
     {
-        bclk = format->sampleRate_Hz * format->bitWidth * channels;
+        bclk = format->sampleRate_Hz * format->bitWidth * (format->stereo == kSAI_Stereo ? 2U : 1U);
         val = (base->TCR4 & (~I2S_TCR4_SYWD_MASK));
         val |= I2S_TCR4_SYWD(format->bitWidth - 1U);
         base->TCR4 = val;
@@ -691,7 +921,30 @@ void SAI_TxSetFormat(I2S_Type *base,
     if (base->TCR2 & I2S_TCR2_BCD_MASK)
     {
         base->TCR2 &= ~I2S_TCR2_DIV_MASK;
-        base->TCR2 |= I2S_TCR2_DIV((bclkSourceClockHz / bclk) / 2U - 1U);
+        /* need to check the divided bclk, if bigger than target, then divider need to re-calculate. */
+        divider = bclkSourceClockHz / bclk;
+        /* for the condition where the source clock is smaller than target bclk */
+        if (divider == 0U)
+        {
+            divider++;
+        }
+        /* recheck the divider if properly or not, to make sure output blck not bigger than target*/
+        if ((bclkSourceClockHz / divider) > bclk)
+        {
+            divider++;
+        }
+
+#if defined(FSL_FEATURE_SAI_HAS_BCLK_BYPASS) && (FSL_FEATURE_SAI_HAS_BCLK_BYPASS)
+        /* if bclk same with MCLK, bypass the divider */
+        if (divider == 1U)
+        {
+            base->TCR2 |= I2S_TCR2_BYP_MASK;
+        }
+        else
+#endif
+        {
+            base->TCR2 |= I2S_TCR2_DIV(divider / 2U - 1U);
+        }
     }
 
     /* Set bitWidth */
@@ -715,9 +968,41 @@ void SAI_TxSetFormat(I2S_Type *base,
     /* Set mono or stereo */
     base->TMR = (uint32_t)format->stereo;
 
+    /* if channel mask is not set, then format->channel must be set,
+     use it to get channel mask value */
+    if (format->channelMask == 0U)
+    {
+        format->channelMask = 1U << format->channel;
+    }
+
+    /* if channel nums is not set, calculate it here according to channelMask*/
+    for (i = 0U; i < FSL_FEATURE_SAI_CHANNEL_COUNT; i++)
+    {
+        if (((uint32_t)1 << i) & format->channelMask)
+        {
+            /* geet start channel number when channelNums = 0 only */
+            if (channelNums == 0U)
+            {
+                format->channel = i;
+            }
+            channelNums++;
+            format->endChannel = i;
+        }
+    }
+    format->channelNums = channelNums;
+    assert(format->channelNums <= FSL_FEATURE_SAI_CHANNEL_COUNT);
+
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE) && (FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE)
+    /* make sure combine mode disabled while multipe channel is used */
+    if (format->channelNums > 1U)
+    {
+        base->TCR4 &= ~I2S_TCR4_FCOMB_MASK;
+    }
+#endif
+
     /* Set data channel */
     base->TCR3 &= ~I2S_TCR3_TCE_MASK;
-    base->TCR3 |= I2S_TCR3_TCE(1U << format->channel);
+    base->TCR3 |= I2S_TCR3_TCE(format->channelMask);
 
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
     /* Set watermark */
@@ -725,6 +1010,18 @@ void SAI_TxSetFormat(I2S_Type *base,
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT  */
 }
 
+/*!
+ * brief Configures the SAI Rx audio format.
+ *
+ * The audio format can be changed at run-time. This function configures the sample rate and audio data
+ * format to be transferred.
+ *
+ * param base SAI base pointer.
+ * param format Pointer to the SAI audio data format structure.
+ * param mclkSourceClockHz SAI master clock source frequency in Hz.
+ * param bclkSourceClockHz SAI bit clock source frequency in Hz. If the bit clock source is a master
+ * clock, this value should equal the masterClockHz.
+*/
 void SAI_RxSetFormat(I2S_Type *base,
                      sai_transfer_format_t *format,
                      uint32_t mclkSourceClockHz,
@@ -732,16 +1029,12 @@ void SAI_RxSetFormat(I2S_Type *base,
 {
     uint32_t bclk = 0;
     uint32_t val = 0;
-    uint32_t channels = 2U;
-
-    if (format->stereo != kSAI_Stereo)
-    {
-        channels = 1U;
-    }
+    uint32_t i = 0U;
+    uint32_t divider = 0U, channelNums = 0U;
 
     if (format->isFrameSyncCompact)
     {
-        bclk = format->sampleRate_Hz * format->bitWidth * channels;
+        bclk = format->sampleRate_Hz * format->bitWidth * (format->stereo == kSAI_Stereo ? 2U : 1U);
         val = (base->RCR4 & (~I2S_RCR4_SYWD_MASK));
         val |= I2S_RCR4_SYWD(format->bitWidth - 1U);
         base->RCR4 = val;
@@ -764,7 +1057,29 @@ void SAI_RxSetFormat(I2S_Type *base,
     if (base->RCR2 & I2S_RCR2_BCD_MASK)
     {
         base->RCR2 &= ~I2S_RCR2_DIV_MASK;
-        base->RCR2 |= I2S_RCR2_DIV((bclkSourceClockHz / bclk) / 2U - 1U);
+        /* need to check the divided bclk, if bigger than target, then divider need to re-calculate. */
+        divider = bclkSourceClockHz / bclk;
+        /* for the condition where the source clock is smaller than target bclk */
+        if (divider == 0U)
+        {
+            divider++;
+        }
+        /* recheck the divider if properly or not, to make sure output blck not bigger than target*/
+        if ((bclkSourceClockHz / divider) > bclk)
+        {
+            divider++;
+        }
+#if defined(FSL_FEATURE_SAI_HAS_BCLK_BYPASS) && (FSL_FEATURE_SAI_HAS_BCLK_BYPASS)
+        /* if bclk same with MCLK, bypass the divider */
+        if (divider == 1U)
+        {
+            base->RCR2 |= I2S_RCR2_BYP_MASK;
+        }
+        else
+#endif
+        {
+            base->RCR2 |= I2S_RCR2_DIV(divider / 2U - 1U);
+        }
     }
 
     /* Set bitWidth */
@@ -788,9 +1103,42 @@ void SAI_RxSetFormat(I2S_Type *base,
     /* Set mono or stereo */
     base->RMR = (uint32_t)format->stereo;
 
+    /* if channel mask is not set, then format->channel must be set,
+     use it to get channel mask value */
+    if (format->channelMask == 0U)
+    {
+        format->channelMask = 1U << format->channel;
+    }
+
+    /* if channel nums is not set, calculate it here according to channelMask*/
+    for (i = 0U; i < FSL_FEATURE_SAI_CHANNEL_COUNT; i++)
+    {
+        if (((uint32_t)1 << i) & format->channelMask)
+        {
+            /* geet start channel number when channelNums = 0 only */
+            if (channelNums == 0U)
+            {
+                format->channel = i;
+            }
+            channelNums++;
+            format->endChannel = i;
+        }
+    }
+    format->channelNums = channelNums;
+    assert(format->channelNums <= FSL_FEATURE_SAI_CHANNEL_COUNT);
+
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE) && (FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE)
+    /* make sure combine mode disabled while multipe channel is used */
+    if (format->channelNums > 1U)
+    {
+        base->RCR4 &= ~I2S_RCR4_FCOMB_MASK;
+    }
+#endif
+
     /* Set data channel */
     base->RCR3 &= ~I2S_RCR3_RCE_MASK;
-    base->RCR3 |= I2S_RCR3_RCE(1U << format->channel);
+    /* enable all the channel */
+    base->RCR3 |= I2S_RCR3_RCE(format->channelMask);
 
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
     /* Set watermark */
@@ -798,10 +1146,24 @@ void SAI_RxSetFormat(I2S_Type *base,
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT  */
 }
 
+/*!
+ * brief Sends data using a blocking method.
+ *
+ * note This function blocks by polling until data is ready to be sent.
+ *
+ * param base SAI base pointer.
+ * param channel Data channel used.
+ * param bitWidth How many bits in an audio word; usually 8/16/24/32 bits.
+ * param buffer Pointer to the data to be written.
+ * param size Bytes to be written.
+ */
 void SAI_WriteBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8_t *buffer, uint32_t size)
 {
     uint32_t i = 0;
     uint8_t bytesPerWord = bitWidth / 8U;
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    bytesPerWord = (size_t)((FSL_FEATURE_SAI_FIFO_COUNT - base->TCR1) * bytesPerWord);
+#endif
 
     while (i < size)
     {
@@ -810,7 +1172,7 @@ void SAI_WriteBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint
         {
         }
 
-        SAI_WriteNonBlocking(base, channel, bitWidth, buffer, bytesPerWord);
+        SAI_WriteNonBlocking(base, channel, 1U << channel, channel, bitWidth, buffer, bytesPerWord);
         buffer += bytesPerWord;
         i += bytesPerWord;
     }
@@ -821,10 +1183,123 @@ void SAI_WriteBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint
     }
 }
 
+/*!
+ * brief Sends data to multi channel using a blocking method.
+ *
+ * note This function blocks by polling until data is ready to be sent.
+ *
+ * param base SAI base pointer.
+ * param channel Data channel used.
+ * param channelMask channel mask.
+ * param bitWidth How many bits in an audio word; usually 8/16/24/32 bits.
+ * param buffer Pointer to the data to be written.
+ * param size Bytes to be written.
+ */
+void SAI_WriteMultiChannelBlocking(
+    I2S_Type *base, uint32_t channel, uint32_t channelMask, uint32_t bitWidth, uint8_t *buffer, uint32_t size)
+{
+    uint32_t i = 0, j = 0;
+    uint8_t bytesPerWord = bitWidth / 8U;
+    uint32_t channelNums = 0U, endChannel = 0U;
+
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    bytesPerWord = (size_t)((FSL_FEATURE_SAI_FIFO_COUNT - base->TCR1) * bytesPerWord);
+#endif
+
+    for (i = 0U; (i < FSL_FEATURE_SAI_CHANNEL_COUNT); i++)
+    {
+        if ((1U << i) & (channelMask))
+        {
+            channelNums++;
+            endChannel = i;
+        }
+    }
+
+    assert(channelNums <= FSL_FEATURE_SAI_CHANNEL_COUNT);
+    bytesPerWord *= channelNums;
+
+    while (j < size)
+    {
+        /* Wait until it can write data */
+        while (!(base->TCSR & I2S_TCSR_FWF_MASK))
+        {
+        }
+
+        SAI_WriteNonBlocking(base, channel, channelMask, endChannel, bitWidth, buffer, bytesPerWord);
+        buffer += bytesPerWord;
+        j += bytesPerWord;
+    }
+
+    /* Wait until the last data is sent */
+    while (!(base->TCSR & I2S_TCSR_FWF_MASK))
+    {
+    }
+}
+
+/*!
+ * brief Receives multi channel data using a blocking method.
+ *
+ * note This function blocks by polling until data is ready to be sent.
+ *
+ * param base SAI base pointer.
+ * param channel Data channel used.
+ * param channelMask channel mask.
+ * param bitWidth How many bits in an audio word; usually 8/16/24/32 bits.
+ * param buffer Pointer to the data to be read.
+ * param size Bytes to be read.
+ */
+void SAI_ReadMultiChannelBlocking(
+    I2S_Type *base, uint32_t channel, uint32_t channelMask, uint32_t bitWidth, uint8_t *buffer, uint32_t size)
+{
+    uint32_t i = 0, j = 0;
+    uint8_t bytesPerWord = bitWidth / 8U;
+    uint32_t channelNums = 0U, endChannel = 0U;
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    bytesPerWord = (size_t)(base->RCR1 * bytesPerWord);
+#endif
+    for (i = 0U; (i < FSL_FEATURE_SAI_CHANNEL_COUNT); i++)
+    {
+        if ((1U << i) & (channelMask))
+        {
+            channelNums++;
+            endChannel = i;
+        }
+    }
+
+    assert(channelNums <= FSL_FEATURE_SAI_CHANNEL_COUNT);
+    bytesPerWord *= channelNums;
+
+    while (j < size)
+    {
+        /* Wait until data is received */
+        while (!(base->RCSR & I2S_RCSR_FWF_MASK))
+        {
+        }
+
+        SAI_ReadNonBlocking(base, channel, channelMask, endChannel, bitWidth, buffer, bytesPerWord);
+        buffer += bytesPerWord;
+        j += bytesPerWord;
+    }
+}
+
+/*!
+ * brief Receives data using a blocking method.
+ *
+ * note This function blocks by polling until data is ready to be sent.
+ *
+ * param base SAI base pointer.
+ * param channel Data channel used.
+ * param bitWidth How many bits in an audio word; usually 8/16/24/32 bits.
+ * param buffer Pointer to the data to be read.
+ * param size Bytes to be read.
+ */
 void SAI_ReadBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8_t *buffer, uint32_t size)
 {
     uint32_t i = 0;
     uint8_t bytesPerWord = bitWidth / 8U;
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    bytesPerWord = (size_t)(base->RCR1 * bytesPerWord);
+#endif
 
     while (i < size)
     {
@@ -833,12 +1308,23 @@ void SAI_ReadBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8
         {
         }
 
-        SAI_ReadNonBlocking(base, channel, bitWidth, buffer, bytesPerWord);
+        SAI_ReadNonBlocking(base, channel, 1U << channel, channel, bitWidth, buffer, bytesPerWord);
         buffer += bytesPerWord;
         i += bytesPerWord;
     }
 }
 
+/*!
+ * brief Initializes the SAI Tx handle.
+ *
+ * This function initializes the Tx handle for the SAI Tx transactional APIs. Call
+ * this function once to get the handle initialized.
+ *
+ * param base SAI base pointer
+ * param handle SAI handle pointer.
+ * param callback Pointer to the user callback function.
+ * param userData User parameter passed to the callback function
+ */
 void SAI_TransferTxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transfer_callback_t callback, void *userData)
 {
     assert(handle);
@@ -859,6 +1345,17 @@ void SAI_TransferTxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transf
     EnableIRQ(s_saiTxIRQ[SAI_GetInstance(base)]);
 }
 
+/*!
+ * brief Initializes the SAI Rx handle.
+ *
+ * This function initializes the Rx handle for the SAI Rx transactional APIs. Call
+ * this function once to get the handle initialized.
+ *
+ * param base SAI base pointer.
+ * param handle SAI handle pointer.
+ * param callback Pointer to the user callback function.
+ * param userData User parameter passed to the callback function.
+ */
 void SAI_TransferRxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transfer_callback_t callback, void *userData)
 {
     assert(handle);
@@ -879,6 +1376,20 @@ void SAI_TransferRxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transf
     EnableIRQ(s_saiRxIRQ[SAI_GetInstance(base)]);
 }
 
+/*!
+ * brief Configures the SAI Tx audio format.
+ *
+ * The audio format can be changed at run-time. This function configures the sample rate and audio data
+ * format to be transferred.
+ *
+ * param base SAI base pointer.
+ * param handle SAI handle pointer.
+ * param format Pointer to the SAI audio data format structure.
+ * param mclkSourceClockHz SAI master clock source frequency in Hz.
+ * param bclkSourceClockHz SAI bit clock source frequency in Hz. If a bit clock source is a master
+ * clock, this value should equal the masterClockHz in format.
+ * return Status of this function. Return value is the status_t.
+*/
 status_t SAI_TransferTxSetFormat(I2S_Type *base,
                                  sai_handle_t *handle,
                                  sai_transfer_format_t *format,
@@ -887,7 +1398,11 @@ status_t SAI_TransferTxSetFormat(I2S_Type *base,
 {
     assert(handle);
 
-    if ((mclkSourceClockHz < format->sampleRate_Hz) || (bclkSourceClockHz < format->sampleRate_Hz))
+    if ((bclkSourceClockHz < format->sampleRate_Hz)
+#if defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER)
+        || (mclkSourceClockHz < format->sampleRate_Hz)
+#endif
+            )
     {
         return kStatus_InvalidArgument;
     }
@@ -897,13 +1412,32 @@ status_t SAI_TransferTxSetFormat(I2S_Type *base,
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
     handle->watermark = format->watermark;
 #endif
-    handle->channel = format->channel;
 
     SAI_TxSetFormat(base, format, mclkSourceClockHz, bclkSourceClockHz);
+
+    handle->channel = format->channel;
+    /* used for multi channel */
+    handle->channelMask = format->channelMask;
+    handle->channelNums = format->channelNums;
+    handle->endChannel = format->endChannel;
 
     return kStatus_Success;
 }
 
+/*!
+ * brief Configures the SAI Rx audio format.
+ *
+ * The audio format can be changed at run-time. This function configures the sample rate and audio data
+ * format to be transferred.
+ *
+ * param base SAI base pointer.
+ * param handle SAI handle pointer.
+ * param format Pointer to the SAI audio data format structure.
+ * param mclkSourceClockHz SAI master clock source frequency in Hz.
+ * param bclkSourceClockHz SAI bit clock source frequency in Hz. If a bit clock source is a master
+ * clock, this value should equal the masterClockHz in format.
+ * return Status of this function. Return value is one of status_t.
+*/
 status_t SAI_TransferRxSetFormat(I2S_Type *base,
                                  sai_handle_t *handle,
                                  sai_transfer_format_t *format,
@@ -912,7 +1446,11 @@ status_t SAI_TransferRxSetFormat(I2S_Type *base,
 {
     assert(handle);
 
-    if ((mclkSourceClockHz < format->sampleRate_Hz) || (bclkSourceClockHz < format->sampleRate_Hz))
+    if ((bclkSourceClockHz < format->sampleRate_Hz)
+#if defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER)
+        || (mclkSourceClockHz < format->sampleRate_Hz)
+#endif
+            )
     {
         return kStatus_InvalidArgument;
     }
@@ -922,13 +1460,33 @@ status_t SAI_TransferRxSetFormat(I2S_Type *base,
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
     handle->watermark = format->watermark;
 #endif
-    handle->channel = format->channel;
 
     SAI_RxSetFormat(base, format, mclkSourceClockHz, bclkSourceClockHz);
+
+    handle->channel = format->channel;
+    /* used for multi channel */
+    handle->channelMask = format->channelMask;
+    handle->channelNums = format->channelNums;
+    handle->endChannel = format->endChannel;
 
     return kStatus_Success;
 }
 
+/*!
+ * brief Performs an interrupt non-blocking send transfer on SAI.
+ *
+ * note This API returns immediately after the transfer initiates.
+ * Call the SAI_TxGetTransferStatusIRQ to poll the transfer status and check whether
+ * the transfer is finished. If the return status is not kStatus_SAI_Busy, the transfer
+ * is finished.
+ *
+ * param base SAI base pointer.
+ * param handle Pointer to the sai_handle_t structure which stores the transfer state.
+ * param xfer Pointer to the sai_transfer_t structure.
+ * retval kStatus_Success Successfully started the data receive.
+ * retval kStatus_SAI_TxBusy Previous receive still not finished.
+ * retval kStatus_InvalidArgument The input parameter is invalid.
+ */
 status_t SAI_TransferSendNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_transfer_t *xfer)
 {
     assert(handle);
@@ -962,6 +1520,21 @@ status_t SAI_TransferSendNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_t
     return kStatus_Success;
 }
 
+/*!
+ * brief Performs an interrupt non-blocking receive transfer on SAI.
+ *
+ * note This API returns immediately after the transfer initiates.
+ * Call the SAI_RxGetTransferStatusIRQ to poll the transfer status and check whether
+ * the transfer is finished. If the return status is not kStatus_SAI_Busy, the transfer
+ * is finished.
+ *
+ * param base SAI base pointer
+ * param handle Pointer to the sai_handle_t structure which stores the transfer state.
+ * param xfer Pointer to the sai_transfer_t structure.
+ * retval kStatus_Success Successfully started the data receive.
+ * retval kStatus_SAI_RxBusy Previous receive still not finished.
+ * retval kStatus_InvalidArgument The input parameter is invalid.
+ */
 status_t SAI_TransferReceiveNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_transfer_t *xfer)
 {
     assert(handle);
@@ -995,6 +1568,15 @@ status_t SAI_TransferReceiveNonBlocking(I2S_Type *base, sai_handle_t *handle, sa
     return kStatus_Success;
 }
 
+/*!
+ * brief Gets a set byte count.
+ *
+ * param base SAI base pointer.
+ * param handle Pointer to the sai_handle_t structure which stores the transfer state.
+ * param count Bytes count sent.
+ * retval kStatus_Success Succeed get the transfer count.
+ * retval kStatus_NoTransferInProgress There is not a non-blocking transaction currently in progress.
+ */
 status_t SAI_TransferGetSendCount(I2S_Type *base, sai_handle_t *handle, size_t *count)
 {
     assert(handle);
@@ -1013,6 +1595,15 @@ status_t SAI_TransferGetSendCount(I2S_Type *base, sai_handle_t *handle, size_t *
     return status;
 }
 
+/*!
+ * brief Gets a received byte count.
+ *
+ * param base SAI base pointer.
+ * param handle Pointer to the sai_handle_t structure which stores the transfer state.
+ * param count Bytes count received.
+ * retval kStatus_Success Succeed get the transfer count.
+ * retval kStatus_NoTransferInProgress There is not a non-blocking transaction currently in progress.
+ */
 status_t SAI_TransferGetReceiveCount(I2S_Type *base, sai_handle_t *handle, size_t *count)
 {
     assert(handle);
@@ -1031,6 +1622,15 @@ status_t SAI_TransferGetReceiveCount(I2S_Type *base, sai_handle_t *handle, size_
     return status;
 }
 
+/*!
+ * brief Aborts the current send.
+ *
+ * note This API can be called any time when an interrupt non-blocking transfer initiates
+ * to abort the transfer early.
+ *
+ * param base SAI base pointer.
+ * param handle Pointer to the sai_handle_t structure which stores the transfer state.
+ */
 void SAI_TransferAbortSend(I2S_Type *base, sai_handle_t *handle)
 {
     assert(handle);
@@ -1052,6 +1652,15 @@ void SAI_TransferAbortSend(I2S_Type *base, sai_handle_t *handle)
     handle->queueUser = 0;
 }
 
+/*!
+ * brief Aborts the current IRQ receive.
+ *
+ * note This API can be called when an interrupt non-blocking transfer initiates
+ * to abort the transfer early.
+ *
+ * param base SAI base pointer
+ * param handle Pointer to the sai_handle_t structure which stores the transfer state.
+ */
 void SAI_TransferAbortReceive(I2S_Type *base, sai_handle_t *handle)
 {
     assert(handle);
@@ -1073,6 +1682,15 @@ void SAI_TransferAbortReceive(I2S_Type *base, sai_handle_t *handle)
     handle->queueUser = 0;
 }
 
+/*!
+ * brief Terminate all SAI send.
+ *
+ * This function will clear all transfer slots buffered in the sai queue. If users only want to abort the
+ * current transfer slot, please call SAI_TransferAbortSend.
+ *
+ * param base SAI base pointer.
+ * param handle SAI eDMA handle pointer.
+ */
 void SAI_TransferTerminateSend(I2S_Type *base, sai_handle_t *handle)
 {
     assert(handle);
@@ -1087,6 +1705,15 @@ void SAI_TransferTerminateSend(I2S_Type *base, sai_handle_t *handle)
     handle->queueDriver = 0U;
 }
 
+/*!
+ * brief Terminate all SAI receive.
+ *
+ * This function will clear all transfer slots buffered in the sai queue. If users only want to abort the
+ * current transfer slot, please call SAI_TransferAbortReceive.
+ *
+ * param base SAI base pointer.
+ * param handle SAI eDMA handle pointer.
+ */
 void SAI_TransferTerminateReceive(I2S_Type *base, sai_handle_t *handle)
 {
     assert(handle);
@@ -1101,12 +1728,18 @@ void SAI_TransferTerminateReceive(I2S_Type *base, sai_handle_t *handle)
     handle->queueDriver = 0U;
 }
 
+/*!
+ * brief Tx interrupt handler.
+ *
+ * param base SAI base pointer.
+ * param handle Pointer to the sai_handle_t structure.
+ */
 void SAI_TransferTxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
 {
     assert(handle);
 
     uint8_t *buffer = handle->saiQueue[handle->queueDriver].data;
-    uint8_t dataSize = handle->bitWidth / 8U;
+    uint8_t dataSize = (handle->bitWidth / 8U) * handle->channelNums;
 
     /* Handle Error */
     if (base->TCSR & I2S_TCSR_FEF_MASK)
@@ -1133,7 +1766,8 @@ void SAI_TransferTxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
                            (size_t)((FSL_FEATURE_SAI_FIFO_COUNT - handle->watermark) * dataSize));
 
         /* Copy the data from sai buffer to FIFO */
-        SAI_WriteNonBlocking(base, handle->channel, handle->bitWidth, buffer, size);
+        SAI_WriteNonBlocking(base, handle->channel, handle->channelMask, handle->endChannel, handle->bitWidth, buffer,
+                             size);
 
         /* Update the internal counter */
         handle->saiQueue[handle->queueDriver].dataSize -= size;
@@ -1144,7 +1778,8 @@ void SAI_TransferTxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
     {
         uint8_t size = MIN((handle->saiQueue[handle->queueDriver].dataSize), dataSize);
 
-        SAI_WriteNonBlocking(base, handle->channel, handle->bitWidth, buffer, size);
+        SAI_WriteNonBlocking(base, handle->channel, handle->channelMask, handle->endChannel, handle->bitWidth, buffer,
+                             size);
 
         /* Update internal counter */
         handle->saiQueue[handle->queueDriver].dataSize -= size;
@@ -1170,12 +1805,18 @@ void SAI_TransferTxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
     }
 }
 
+/*!
+ * brief Tx interrupt handler.
+ *
+ * param base SAI base pointer.
+ * param handle Pointer to the sai_handle_t structure.
+ */
 void SAI_TransferRxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
 {
     assert(handle);
 
     uint8_t *buffer = handle->saiQueue[handle->queueDriver].data;
-    uint8_t dataSize = handle->bitWidth / 8U;
+    uint8_t dataSize = (handle->bitWidth / 8U) * handle->channelNums;
 
     /* Handle Error */
     if (base->RCSR & I2S_RCSR_FEF_MASK)
@@ -1201,7 +1842,8 @@ void SAI_TransferRxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
         uint8_t size = MIN((handle->saiQueue[handle->queueDriver].dataSize), (handle->watermark * dataSize));
 
         /* Copy the data from sai buffer to FIFO */
-        SAI_ReadNonBlocking(base, handle->channel, handle->bitWidth, buffer, size);
+        SAI_ReadNonBlocking(base, handle->channel, handle->channelMask, handle->endChannel, handle->bitWidth, buffer,
+                            size);
 
         /* Update the internal counter */
         handle->saiQueue[handle->queueDriver].dataSize -= size;
@@ -1212,7 +1854,8 @@ void SAI_TransferRxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
     {
         uint8_t size = MIN((handle->saiQueue[handle->queueDriver].dataSize), dataSize);
 
-        SAI_ReadNonBlocking(base, handle->channel, handle->bitWidth, buffer, size);
+        SAI_ReadNonBlocking(base, handle->channel, handle->channelMask, handle->endChannel, handle->bitWidth, buffer,
+                            size);
 
         /* Update internal state */
         handle->saiQueue[handle->queueDriver].dataSize -= size;

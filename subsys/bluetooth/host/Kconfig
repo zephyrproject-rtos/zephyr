@@ -49,14 +49,14 @@ config BT_RX_BUF_LEN
 
 config BT_HCI_TX_STACK_SIZE
 	int
-	default 256 if BT_H4
-	default 256 if BT_H5
+	default 512 if BT_H4
+	default 512 if BT_H5
 	default 416 if BT_SPI
 	default 640 if BT_CTLR
-	default 256 if BT_USERCHAN
+	default 512 if BT_USERCHAN
 	# Even if no driver is selected the following default is still
 	# needed e.g. for unit tests.
-	default 256
+	default 512
 	help
 	  Stack size needed for executing bt_send with specified driver
 
@@ -101,7 +101,7 @@ config BT_RX_STACK_SIZE
 	depends on BT_HCI_HOST || BT_RECV_IS_RX_THREAD
 	default 512 if BT_HCI_RAW
 	default 2048 if BT_MESH
-	default 2048 if BT_SETTINGS
+	default 2200 if BT_SETTINGS
 	default 1024
 	range 512 65536 if BT_HCI_RAW
 	range 1100 65536 if BT_MESH
@@ -152,6 +152,20 @@ config BT_SETTINGS
 	  that there may be other subsystems using the settings API, in
 	  which case it's more efficient to load all settings in one go,
 	  instead of each subsystem doing it independently.
+
+if BT_SETTINGS
+config BT_SETTINGS_CCC_STORE_ON_WRITE
+	bool "Store CCC value immediately after it has been written"
+	default n
+	help
+	  Store Client Configuration Characteristic value right after it has
+	  been updated.
+
+	  By default, CCC is only stored on disconnection.
+	  Choosing this option is safer for battery-powered devices or devices
+	  that expect to be reset suddenly. However, it requires additional
+	  workqueue stack space.
+endif # BT_SETTINGS
 
 if BT_CONN
 
@@ -244,6 +258,7 @@ config BT_ATT_TX_MAX
 
 config BT_AUTO_PHY_UPDATE
 	bool "Auto-initiate PHY Update Procedure"
+	depends on BT_PHY_UPDATE
 	default y
 	help
 	  Initiate PHY Update Procedure on connection establishment.
@@ -258,6 +273,7 @@ config BT_SMP
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
 	select BT_RPA
+	select BT_ECC
 	help
 	  This option enables support for the Security Manager Protocol
 	  (SMP), making it possible to pair devices over LE.
@@ -473,12 +489,17 @@ config BT_ID_MAX
 
 endif # BT_HCI_HOST
 
+config BT_ECC
+	bool "Enable ECDH key generation support"
+	help
+	  This option adds support for ECDH HCI commands.
+
 config BT_TINYCRYPT_ECC
 	bool "Use TinyCrypt library for ECDH"
 	select TINYCRYPT
 	select TINYCRYPT_ECC_DH
-	depends on BT_HCI_RAW || BT_HCI_HOST
-	default y if BT_CTLR && (BT_SMP || BT_MESH_PROV)
+	depends on BT_ECC && (BT_HCI_RAW || BT_HCI_HOST)
+	default y if BT_CTLR
 	help
 	  If this option is set TinyCrypt library is used for emulating the
 	  ECDH HCI commands and events needed by e.g. LE Secure Connections.

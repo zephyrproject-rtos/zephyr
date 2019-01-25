@@ -30,87 +30,87 @@ config NUM_IRQS
 if ADC
 
 config ADC_MCUX_ADC16
-	def_bool y
+	default y
 
 endif # ADC
 
 if CLOCK_CONTROL
 
 config CLOCK_CONTROL_MCUX_SIM
-	def_bool y
+	default y
 
 endif # CLOCK_CONTROL
 
 if PINMUX
 
 config PINMUX_MCUX
-	def_bool y
+	default y
 
 endif # PINMUX
 
 if GPIO
 
 config GPIO_MCUX
-	def_bool y
+	default y
 
 endif # GPIO
 
 if I2C
 
 config I2C_MCUX
-	def_bool y
+	default y
 
 endif # I2C
 
 config SPI
-	def_bool y
+	default y
 
 if PWM
 
 config PWM_MCUX_FTM
-	def_bool y
+	default y
 
 endif # PWM
 
 if SPI
 
 config SPI_MCUX_DSPI
-	def_bool y
+	default y
 
 endif # SPI
 
 if ENTROPY_GENERATOR
 
 config ENTROPY_MCUX_RNGA
-	def_bool y
+	default y
 
 endif # ENTROPY_GENERATOR
 
 if FLASH
 
 config SOC_FLASH_MCUX
-	def_bool y
+	default y
 
 endif # FLASH
 
 if SERIAL
 
 config UART_MCUX
-	def_bool y
+	default y
 
 endif # SERIAL
 
 if USB
 
 config USB_KINETIS
-	def_bool y
+	default y
 
 endif # USB
 
 if WATCHDOG
 
 config WDT_MCUX_WDOG
-	def_bool y
+	default y
 
 endif # WATCHDOG
 

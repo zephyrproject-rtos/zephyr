@@ -21,13 +21,17 @@ static void _mpu_init(void)
 
 	/* Flash region(s): Attribute-0
 	 * SRAM region(s): Attribute-1
+	 * SRAM no cache-able regions(s): Attribute-2
 	 */
 	MPU->MAIR0 =
 		((MPU_MAIR_ATTR_FLASH << MPU_MAIR0_Attr0_Pos) &
 			MPU_MAIR0_Attr0_Msk)
 		|
 		((MPU_MAIR_ATTR_SRAM << MPU_MAIR0_Attr1_Pos) &
-			MPU_MAIR0_Attr1_Msk);
+			MPU_MAIR0_Attr1_Msk)
+		|
+		((MPU_MAIR_ATTR_SRAM_NOCACHE << MPU_MAIR0_Attr2_Pos) &
+			MPU_MAIR0_Attr2_Msk);
 }
 
 /* This internal function performs MPU region initialization.
@@ -35,7 +39,7 @@ static void _mpu_init(void)
  * Note:
  *   The caller must provide a valid region index.
  */
-static void _region_init(u32_t index, struct arm_mpu_region *region_conf)
+static void _region_init(u32_t index, const struct arm_mpu_region *region_conf)
 {
 	ARM_MPU_SetRegion(
 		/* RNR */
@@ -79,10 +83,10 @@ static inline void _get_mpu_ram_region_attr(arm_mpu_region_attr_t *p_attr,
  * the correct parameter set.
  */
 static inline void _get_ram_region_attr_by_conf(arm_mpu_region_attr_t *p_attr,
-	u32_t ap_attr, u32_t base, u32_t size)
+	k_mem_partition_attr_t *attr, u32_t base, u32_t size)
 {
-	p_attr->rbar = ap_attr  & (MPU_RBAR_XN_Msk | MPU_RBAR_AP_Msk);
-	p_attr->mair_idx = MPU_MAIR_INDEX_SRAM;
+	p_attr->rbar = attr->rbar & (MPU_RBAR_XN_Msk | MPU_RBAR_AP_Msk);
+	p_attr->mair_idx = attr->mair_idx;
 	p_attr->r_limit = REGION_LIMIT_ADDR(base, size);
 }
 

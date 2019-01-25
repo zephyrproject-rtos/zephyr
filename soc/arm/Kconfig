@@ -20,3 +20,19 @@ config CPU_HAS_ARM_SAU
 	select CPU_HAS_TEE
 	help
 	  MCU implements the ARM Security Attribution Unit (SAU).
+
+config CPU_HAS_NRF_IDAU
+	bool
+	# Omit prompt to signify "hidden" option
+	depends on SOC_SERIES_NRF91X
+	select CPU_HAS_TEE
+	help
+	  MCU implements the nRF (vendor-specific) Security Attribution Unit.
+	  (IDAU: "Implementation-Defined Attribution Unit", in accordance with
+	  ARM terminology).
+
+config HAS_SWO
+	bool
+	# Omit prompt to signify "hidden" option
+	help
+	  When enabled, indicates that SoC has an SWO output

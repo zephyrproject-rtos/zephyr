@@ -32,14 +32,14 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 30000000 if BOARD_EM_STARTERKIT_R22
 
 config HARVARD
-	def_bool y
+	default y
 
 config ARC_FIRQ
-	def_bool n if BOARD_EM_STARTERKIT_R23
-	def_bool y if BOARD_EM_STARTERKIT_R22
+	default n if BOARD_EM_STARTERKIT_R23
+	default y if BOARD_EM_STARTERKIT_R22
 
 config CACHE_FLUSHING
-	def_bool y
+	default y
 
 if (ARC_MPU_VER = 2)
 

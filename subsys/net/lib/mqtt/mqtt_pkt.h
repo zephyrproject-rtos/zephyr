@@ -20,7 +20,7 @@
 #include <zephyr/types.h>
 #include <stddef.h>
 
-#include <net/mqtt_types.h>
+#include <net/mqtt_legacy_types.h>
 
 #define MQTT_PACKET_TYPE(first_byte)	(((first_byte) & 0xF0) >> 4)
 

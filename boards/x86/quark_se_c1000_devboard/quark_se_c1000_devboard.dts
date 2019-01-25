@@ -23,6 +23,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash1;
 		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
 		zephyr,bt-uart = &uart0;
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart1;
@@ -78,4 +79,19 @@
 
 &spi1 {
 	status = "ok";
+	cs-gpios = <&gpio0 11 0>;
+
+	cc2520@0 {
+		compatible = "ti,cc2520";
+		reg = <0x0>;
+		label = "cc2520";
+		spi-max-frequency = <8000000>;
+		status = "ok";
+		vreg-en-gpios = <&gpio0 0 0>;
+		reset-gpios = <&gpio0 1 0>;
+		fifo-gpios = <&gpio1 4 0>;
+		cca-gpios = <&gpio1 6 0>;
+		sfd-gpios = <&gpio1 29 0>;
+		fifop-gpios = <&gpio1 5 0>;
+	};
 };

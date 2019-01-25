@@ -337,8 +337,6 @@ __STATIC_INLINE void __set_FAULTMASK(uint32_t faultMask)
            (defined (__ARM_ARCH_7EM__) && (__ARM_ARCH_7EM__ == 1))     ) */
 
 
-#if ((defined (__ARM_ARCH_7EM__) && (__ARM_ARCH_7EM__ == 1))     )
-
 /**
   \brief   Get FPSCR
   \details Returns the current value of the Floating Point Status/Control register.
@@ -371,9 +369,6 @@ __STATIC_INLINE void __set_FPSCR(uint32_t fpscr)
   (void)fpscr;
 #endif
 }
-
-#endif /* ((defined (__ARM_ARCH_7EM__) && (__ARM_ARCH_7EM__ == 1))     ) */
-
 
 
 /*@} end of CMSIS_Core_RegAccFunctions */

@@ -14,6 +14,7 @@
 
 	chosen {
 		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -82,12 +83,9 @@
 			label = "image-scratch";
 			reg = <0x00070000 0xD000>;
 		};
-
-#if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
 		storage_partition: partition@7D000 {
 			label = "storage";
 			reg = <0x0007D000 0x00004000>;
 		};
-#endif
 	};
 };

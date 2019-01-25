@@ -17,7 +17,7 @@
 #include <ztest.h>
 
 #ifdef CONFIG_ARC
-#define I2C_DEV_NAME CONFIG_I2C_SS_0_NAME
+#define I2C_DEV_NAME DT_I2C_SS_0_NAME
 #else
 #define I2C_DEV_NAME CONFIG_I2C_0_NAME
 #endif

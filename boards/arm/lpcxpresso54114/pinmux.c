@@ -61,6 +61,35 @@ static int lpcxpresso_54114_pinmux_init(struct device *dev)
 			);
 
 	pinmux_pin_set(port0, 29, port0_pin29_config);
+
+	const u32_t port0_pin24_config = (
+			IOCON_PIO_FUNC0 |
+			IOCON_PIO_INV_DI |
+			IOCON_PIO_DIGITAL_EN |
+			IOCON_PIO_INPFILT_OFF |
+			IOCON_PIO_OPENDRAIN_DI
+			);
+	pinmux_pin_set(port0,  24, port0_pin24_config);
+
+	const u32_t port0_pin31_config = (
+			IOCON_PIO_FUNC0 |
+			IOCON_PIO_MODE_PULLUP |
+			IOCON_PIO_INV_DI |
+			IOCON_PIO_DIGITAL_EN |
+			IOCON_PIO_INPFILT_OFF |
+			IOCON_PIO_OPENDRAIN_DI
+			);
+	pinmux_pin_set(port0,  31, port0_pin31_config);
+
+	const u32_t port0_pin4_config = (
+			IOCON_PIO_FUNC0 |
+			IOCON_PIO_MODE_PULLUP |
+			IOCON_PIO_INV_DI |
+			IOCON_PIO_DIGITAL_EN |
+			IOCON_PIO_INPFILT_OFF |
+			IOCON_PIO_OPENDRAIN_DI
+			);
+	pinmux_pin_set(port0,  4, port0_pin4_config);
 #endif
 
 #ifdef CONFIG_GPIO_MCUX_LPC_PORT1

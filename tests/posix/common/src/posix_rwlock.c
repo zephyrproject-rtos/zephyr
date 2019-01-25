@@ -8,7 +8,7 @@
 #include <pthread.h>
 
 #define N_THR 3
-#define STACKSZ 1024
+#define STACKSZ (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 K_THREAD_STACK_ARRAY_DEFINE(stack, N_THR, STACKSZ);
 pthread_rwlock_t rwlock;
@@ -16,7 +16,7 @@ pthread_rwlock_t rwlock;
 static void *thread_top(void *p1)
 {
 	pthread_t pthread;
-	u32_t policy, ret = 0;
+	u32_t policy, ret = 0U;
 	struct sched_param param;
 
 	pthread = (pthread_t) pthread_self();

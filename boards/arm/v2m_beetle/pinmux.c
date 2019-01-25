@@ -33,9 +33,9 @@
  */
 
 #define CMSDK_AHB_GPIO0_DEV \
-	((volatile struct gpio_cmsdk_ahb *)CMSDK_AHB_GPIO0)
+	((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO0)
 #define CMSDK_AHB_GPIO1_DEV \
-	((volatile struct gpio_cmsdk_ahb *)CMSDK_AHB_GPIO1)
+	((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO1)
 
 /*
  * This is the mapping from the ARM V2M Beetle Board pins to GPIO
@@ -94,8 +94,8 @@
  */
 static void arm_v2m_beetle_pinmux_defaults(void)
 {
-	u32_t gpio_0 = 0;
-	u32_t gpio_1 = 0;
+	u32_t gpio_0 = 0U;
+	u32_t gpio_1 = 0U;
 
 	/* Set GPIO Alternate Functions */
 

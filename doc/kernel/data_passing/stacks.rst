@@ -134,12 +134,9 @@ Related configuration options:
 
 * None.
 
-APIs
-****
+API Reference
+*************
 
-The following stack APIs are provided by :file:`kernel.h`:
+.. doxygengroup:: stack_apis
+   :project: Zephyr
 
-* :c:macro:`K_STACK_DEFINE`
-* :cpp:func:`k_stack_init()`
-* :cpp:func:`k_stack_push()`
-* :cpp:func:`k_stack_pop()`

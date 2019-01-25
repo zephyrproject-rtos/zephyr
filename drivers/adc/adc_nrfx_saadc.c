@@ -247,7 +247,7 @@ static int check_buffer_size(const struct adc_sequence *sequence,
 
 static int start_read(struct device *dev, const struct adc_sequence *sequence)
 {
-	int error = 0;
+	int error;
 	u32_t selected_channels = sequence->channels;
 	u8_t active_channels;
 	u8_t channel_id;
@@ -261,12 +261,12 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 		return -EINVAL;
 	}
 
-	active_channels = 0;
+	active_channels = 0U;
 
 	/* Enable only the channels selected for the pointed sequence.
 	 * Disable all the rest.
 	 */
-	channel_id = 0;
+	channel_id = 0U;
 	do {
 		if (selected_channels & BIT(channel_id)) {
 			/* Signal an error if a selected channel has not been
@@ -322,8 +322,6 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	adc_context_start_read(&m_data.ctx, sequence);
 
 	error = adc_context_wait_for_completion(&m_data.ctx);
-	adc_context_release(&m_data.ctx, error);
-
 	return error;
 }
 
@@ -331,8 +329,13 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 static int adc_nrfx_read(struct device *dev,
 			 const struct adc_sequence *sequence)
 {
+	int error;
+
 	adc_context_lock(&m_data.ctx, false, NULL);
-	return start_read(dev, sequence);
+	error = start_read(dev, sequence);
+	adc_context_release(&m_data.ctx, error);
+
+	return error;
 }
 
 #ifdef CONFIG_ADC_ASYNC
@@ -341,10 +344,15 @@ static int adc_nrfx_read_async(struct device *dev,
 			       const struct adc_sequence *sequence,
 			       struct k_poll_signal *async)
 {
+	int error;
+
 	adc_context_lock(&m_data.ctx, true, async);
-	return start_read(dev, sequence);
+	error = start_read(dev, sequence);
+	adc_context_release(&m_data.ctx, error);
+
+	return error;
 }
-#endif
+#endif /* CONFIG_ADC_ASYNC */
 
 static void saadc_irq_handler(void *param)
 {
@@ -366,9 +374,10 @@ static int init_saadc(struct device *dev)
 {
 	nrf_saadc_event_clear(NRF_SAADC_EVENT_END);
 	nrf_saadc_int_enable(NRF_SAADC_INT_END);
-	NRFX_IRQ_ENABLE(CONFIG_ADC_0_IRQ);
+	NRFX_IRQ_ENABLE(DT_NORDIC_NRF_SAADC_ADC_0_IRQ);
 
-	IRQ_CONNECT(CONFIG_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI,
+	IRQ_CONNECT(DT_NORDIC_NRF_SAADC_ADC_0_IRQ,
+		    DT_NORDIC_NRF_SAADC_ADC_0_IRQ_PRIORITY,
 		    saadc_irq_handler, DEVICE_GET(adc_0), 0);
 
 	adc_context_unlock_unconditionally(&m_data.ctx);
@@ -385,7 +394,7 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 };
 
 #ifdef CONFIG_ADC_0
-DEVICE_AND_API_INIT(adc_0, CONFIG_ADC_0_NAME,
+DEVICE_AND_API_INIT(adc_0, DT_NORDIC_NRF_SAADC_ADC_0_LABEL,
 		    init_saadc, NULL, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &adc_nrfx_driver_api);

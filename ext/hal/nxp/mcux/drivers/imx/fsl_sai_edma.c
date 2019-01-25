@@ -132,6 +132,19 @@ static void SAI_RxEDMACallback(edma_handle_t *handle, void *userData, bool done,
     }
 }
 
+/*!
+ * brief Initializes the SAI eDMA handle.
+ *
+ * This function initializes the SAI master DMA handle, which can be used for other SAI master transactional APIs.
+ * Usually, for a specified SAI instance, call this API once to get the initialized handle.
+ *
+ * param base SAI base pointer.
+ * param handle SAI eDMA handle pointer.
+ * param base SAI peripheral base address.
+ * param callback Pointer to user callback function.
+ * param userData User parameter passed to the callback function.
+ * param dmaHandle eDMA handle pointer, this handle shall be static allocated by users.
+ */
 void SAI_TransferTxCreateHandleEDMA(
     I2S_Type *base, sai_edma_handle_t *handle, sai_edma_callback_t callback, void *userData, edma_handle_t *dmaHandle)
 {
@@ -160,6 +173,19 @@ void SAI_TransferTxCreateHandleEDMA(
     EDMA_SetCallback(dmaHandle, SAI_TxEDMACallback, &s_edmaPrivateHandle[instance][0]);
 }
 
+/*!
+ * brief Initializes the SAI Rx eDMA handle.
+ *
+ * This function initializes the SAI slave DMA handle, which can be used for other SAI master transactional APIs.
+ * Usually, for a specified SAI instance, call this API once to get the initialized handle.
+ *
+ * param base SAI base pointer.
+ * param handle SAI eDMA handle pointer.
+ * param base SAI peripheral base address.
+ * param callback Pointer to user callback function.
+ * param userData User parameter passed to the callback function.
+ * param dmaHandle eDMA handle pointer, this handle shall be static allocated by users.
+ */
 void SAI_TransferRxCreateHandleEDMA(
     I2S_Type *base, sai_edma_handle_t *handle, sai_edma_callback_t callback, void *userData, edma_handle_t *dmaHandle)
 {
@@ -188,6 +214,21 @@ void SAI_TransferRxCreateHandleEDMA(
     EDMA_SetCallback(dmaHandle, SAI_RxEDMACallback, &s_edmaPrivateHandle[instance][1]);
 }
 
+/*!
+ * brief Configures the SAI Tx audio format.
+ *
+ * The audio format can be changed at run-time. This function configures the sample rate and audio data
+ * format to be transferred. This function also sets the eDMA parameter according to formatting requirements.
+ *
+ * param base SAI base pointer.
+ * param handle SAI eDMA handle pointer.
+ * param format Pointer to SAI audio data format structure.
+ * param mclkSourceClockHz SAI master clock source frequency in Hz.
+ * param bclkSourceClockHz SAI bit clock source frequency in Hz. If bit clock source is master
+ * clock, this value should equals to masterClockHz in format.
+ * retval kStatus_Success Audio format set successfully.
+ * retval kStatus_InvalidArgument The input argument is invalid.
+*/
 void SAI_TransferTxSetFormatEDMA(I2S_Type *base,
                                  sai_edma_handle_t *handle,
                                  sai_transfer_format_t *format,
@@ -221,6 +262,21 @@ void SAI_TransferTxSetFormatEDMA(I2S_Type *base,
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT */
 }
 
+/*!
+ * brief Configures the SAI Rx audio format.
+ *
+ * The audio format can be changed at run-time. This function configures the sample rate and audio data
+ * format to be transferred. This function also sets the eDMA parameter according to formatting requirements.
+ *
+ * param base SAI base pointer.
+ * param handle SAI eDMA handle pointer.
+ * param format Pointer to SAI audio data format structure.
+ * param mclkSourceClockHz SAI master clock source frequency in Hz.
+ * param bclkSourceClockHz SAI bit clock source frequency in Hz. If a bit clock source is the master
+ * clock, this value should equal to masterClockHz in format.
+ * retval kStatus_Success Audio format set successfully.
+ * retval kStatus_InvalidArgument The input argument is invalid.
+*/
 void SAI_TransferRxSetFormatEDMA(I2S_Type *base,
                                  sai_edma_handle_t *handle,
                                  sai_transfer_format_t *format,
@@ -254,6 +310,19 @@ void SAI_TransferRxSetFormatEDMA(I2S_Type *base,
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT */
 }
 
+/*!
+ * brief Performs a non-blocking SAI transfer using DMA.
+ *
+ * note This interface returns immediately after the transfer initiates. Call
+ * SAI_GetTransferStatus to poll the transfer status and check whether the SAI transfer is finished.
+ *
+ * param base SAI base pointer.
+ * param handle SAI eDMA handle pointer.
+ * param xfer Pointer to the DMA transfer structure.
+ * retval kStatus_Success Start a SAI eDMA send successfully.
+ * retval kStatus_InvalidArgument The input argument is invalid.
+ * retval kStatus_TxBusy SAI is busy sending data.
+ */
 status_t SAI_TransferSendEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer_t *xfer)
 {
     assert(handle && xfer);
@@ -305,6 +374,19 @@ status_t SAI_TransferSendEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_tra
     return kStatus_Success;
 }
 
+/*!
+ * brief Performs a non-blocking SAI receive using eDMA.
+ *
+ * note This interface returns immediately after the transfer initiates. Call
+ * the SAI_GetReceiveRemainingBytes to poll the transfer status and check whether the SAI transfer is finished.
+ *
+ * param base SAI base pointer
+ * param handle SAI eDMA handle pointer.
+ * param xfer Pointer to DMA transfer structure.
+ * retval kStatus_Success Start a SAI eDMA receive successfully.
+ * retval kStatus_InvalidArgument The input argument is invalid.
+ * retval kStatus_RxBusy SAI is busy receiving data.
+ */
 status_t SAI_TransferReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transfer_t *xfer)
 {
     assert(handle && xfer);
@@ -356,6 +438,15 @@ status_t SAI_TransferReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_
     return kStatus_Success;
 }
 
+/*!
+ * brief Aborts a SAI transfer using eDMA.
+ *
+ * This function only aborts the current transfer slots, the other transfer slots' information still kept
+ * in the handler. If users want to terminate all transfer slots, just call SAI_TransferTerminateSendEDMA.
+ *
+ * param base SAI base pointer.
+ * param handle SAI eDMA handle pointer.
+ */
 void SAI_TransferAbortSendEDMA(I2S_Type *base, sai_edma_handle_t *handle)
 {
     assert(handle);
@@ -384,6 +475,15 @@ void SAI_TransferAbortSendEDMA(I2S_Type *base, sai_edma_handle_t *handle)
     handle->state = kSAI_Idle;
 }
 
+/*!
+ * brief Aborts a SAI receive using eDMA.
+ *
+ * This function only aborts the current transfer slots, the other transfer slots' information still kept
+ * in the handler. If users want to terminate all transfer slots, just call SAI_TransferTerminateReceiveEDMA.
+ *
+ * param base SAI base pointer
+ * param handle SAI eDMA handle pointer.
+ */
 void SAI_TransferAbortReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle)
 {
     assert(handle);
@@ -412,6 +512,15 @@ void SAI_TransferAbortReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle)
     handle->state = kSAI_Idle;
 }
 
+/*!
+ * brief Terminate all SAI send.
+ *
+ * This function will clear all transfer slots buffered in the sai queue. If users only want to abort the
+ * current transfer slot, please call SAI_TransferAbortSendEDMA.
+ *
+ * param base SAI base pointer.
+ * param handle SAI eDMA handle pointer.
+ */
 void SAI_TransferTerminateSendEDMA(I2S_Type *base, sai_edma_handle_t *handle)
 {
     assert(handle);
@@ -427,6 +536,15 @@ void SAI_TransferTerminateSendEDMA(I2S_Type *base, sai_edma_handle_t *handle)
     handle->queueDriver = 0U;
 }
 
+/*!
+ * brief Terminate all SAI receive.
+ *
+ * This function will clear all transfer slots buffered in the sai queue. If users only want to abort the
+ * current transfer slot, please call SAI_TransferAbortReceiveEDMA.
+ *
+ * param base SAI base pointer.
+ * param handle SAI eDMA handle pointer.
+ */
 void SAI_TransferTerminateReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle)
 {
     assert(handle);
@@ -442,6 +560,15 @@ void SAI_TransferTerminateReceiveEDMA(I2S_Type *base, sai_edma_handle_t *handle)
     handle->queueDriver = 0U;
 }
 
+/*!
+ * brief Gets byte count sent by SAI.
+ *
+ * param base SAI base pointer.
+ * param handle SAI eDMA handle pointer.
+ * param count Bytes count sent by SAI.
+ * retval kStatus_Success Succeed get the transfer count.
+ * retval kStatus_NoTransferInProgress There is no non-blocking transaction in progress.
+ */
 status_t SAI_TransferGetSendCountEDMA(I2S_Type *base, sai_edma_handle_t *handle, size_t *count)
 {
     assert(handle);
@@ -462,6 +589,15 @@ status_t SAI_TransferGetSendCountEDMA(I2S_Type *base, sai_edma_handle_t *handle,
     return status;
 }
 
+/*!
+ * brief Gets byte count received by SAI.
+ *
+ * param base SAI base pointer
+ * param handle SAI eDMA handle pointer.
+ * param count Bytes count received by SAI.
+ * retval kStatus_Success Succeed get the transfer count.
+ * retval kStatus_NoTransferInProgress There is no non-blocking transaction in progress.
+ */
 status_t SAI_TransferGetReceiveCountEDMA(I2S_Type *base, sai_edma_handle_t *handle, size_t *count)
 {
     assert(handle);

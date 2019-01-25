@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <inttypes.h>
 
 #include <openthread/platform/alarm-milli.h>
-#include <platform.h>
+#include <openthread-system.h>
 
 #include <stdio.h>
 
@@ -28,7 +28,7 @@ static void ot_timer_fired(struct k_timer *timer)
 	ARG_UNUSED(timer);
 
 	timer_fired = true;
-	PlatformEventSignalPending();
+	otSysEventSignalPending();
 }
 
 K_TIMER_DEFINE(ot_timer, ot_timer_fired, NULL);

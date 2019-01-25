@@ -8,6 +8,7 @@
 #define ZEPHYR_INCLUDE_TOOLCHAIN_XCC_H_
 
 #include <toolchain/gcc.h>
+#include <stdbool.h>
 
 /* XCC doesn't support __COUNTER__ but this should be good enough */
 #define __COUNTER__ __LINE__
@@ -36,15 +37,19 @@
 
 #endif /* __GCC_LINKER_CMD__ */
 
-#define __builtin_unreachable() do { __ASSERT(0, "Unreachable code"); } \
+#define __builtin_unreachable() do { __ASSERT(false, "Unreachable code"); } \
 	while (true)
 
 /* TODO: XCC doesn't define the below macros which are useful for checking
  * overflows. This needs to be fixed.
  */
-#define __builtin_add_overflow(a, b, output)	({ *output = (a) + (b); 0; })
-#define __builtin_mul_overflow(a, b, output)	({ *output = (a) * (b); 0; })
-#define __builtin_umul_overflow(a, b, output)	({ *output = (a) * (b); 0; })
-#define __builtin_umulll_overflow(a, b, output)	({ *output = (a) * (b); 0; })
+#define __builtin_add_overflow(a, b, output) \
+	({ *output = (a) + (b); false; })
+#define __builtin_mul_overflow(a, b, output) \
+	({ *output = (a) * (b); false; })
+#define __builtin_umul_overflow(a, b, output) \
+	({ *output = (a) * (b); false; })
+#define __builtin_umulll_overflow(a, b, output) \
+	({ *output = (a) * (b); false; })
 
 #endif

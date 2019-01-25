@@ -143,9 +143,20 @@ coccinelle () {
 	    echo "Consider adding vitrual rules to the script."
 	    exit 1
     elif [[ $VIRTUAL != *"$MODE"* ]]; then
-	    echo "Invalid mode \"$MODE\" supplied."
-	    echo "Available modes for \"$COCCI\" are: `echo $VIRTUAL`"
-	    exit 1
+	    echo "Invalid mode \"$MODE\" supplied!"
+	    echo "Available modes for \"`basename $COCCI`\" are: "$VIRTUAL""
+
+	    if [[ $VIRTUAL == *report* ]]; then
+		    MODE=report
+	    elif [[ $VIRTUAL == *context* ]]; then
+		    MODE=context
+	    elif [[ $VIRTUAL == *patch* ]]; then
+		    MODE=patch
+	    else
+		    MODE=org
+	    fi
+	    echo "Using random availble mode: \"$MODE\""
+	    echo ''
     fi
 
     if [ $VERBOSE -ne 0 ] ; then
@@ -201,6 +212,7 @@ coccinelle () {
 	run_cmd_parmap $SPATCH -D $MODE   $FLAGS --cocci-file $COCCI $OPT $OPTIONS || exit 1
     fi
 
+    MODE=report
 }
 
 if [ "$DEBUG_FILE" != "/dev/null" -a "$DEBUG_FILE" != "" ]; then
@@ -215,6 +227,8 @@ fi
 if [ "$COCCI" = "" ] ; then
     for f in `find $ZEPHYR_BASE/scripts/coccinelle/ -name '*.cocci' -type f | sort`; do
 	coccinelle $f
+	echo '-------------------------------------------------------------------------'
+	echo ''
     done
 else
     coccinelle $COCCI

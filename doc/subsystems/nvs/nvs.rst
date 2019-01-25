@@ -1,7 +1,7 @@
 .. _nvs:
 
-Non-volatile storage (NVS) for Zephyr
-#####################################
+Non-Volatile Storage (NVS)
+##########################
 
 Elements, represented as id-data pairs, are stored in flash using a
 FIFO-managed circular buffer. The flash area is divided into sectors. Elements
@@ -100,8 +100,8 @@ Sample
 
 A sample of how NVS can be used is supplied in ``samples/subsys/nvs``.
 
-API
-**************
+API Reference
+*************
 
 The NVS subsystem APIs are provided by ``nvs.h``:
 
@@ -110,3 +110,7 @@ The NVS subsystem APIs are provided by ``nvs.h``:
 
 .. doxygengroup:: nvs_high_level_api
    :project: Zephyr
+
+.. comment
+   not documenting
+   .. doxygengroup:: nvs

@@ -28,15 +28,13 @@
 	};
 
 	tcml:memory@1fff8000 {
-		device_type = "memory";
-		compatible = "nxp,imx-code-bus";
+		compatible = "nxp,imx-itcm";
 		reg = <0x1fff8000 0x00008000>;
 		label = "TCML";
 	};
 
 	tcmu:memory@20000000 {
-		device_type = "memory";
-		compatible = "nxp,imx-sys-bus";
+		compatible = "nxp,imx-dtcm";
 		reg = <0x20000000 0x00008000>;
 		label = "TCMU";
 	};
@@ -239,6 +237,18 @@
 			label = "GPIO_7";
 			gpio-controller;
 			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		mub:mu@4229c000 {
+			compatible = "nxp,imx-mu";
+			reg = <0x4229c000 0x4000>;
+			interrupts = <99 0>;
+			rdc = <(RDC_DOMAIN_PERM(A9_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW)|\
+			       RDC_DOMAIN_PERM(M4_DOMAIN_ID,\
+					       RDC_DOMAIN_PERM_RW))>;
+			label = "MU_B";
 			status = "disabled";
 		};
 	};

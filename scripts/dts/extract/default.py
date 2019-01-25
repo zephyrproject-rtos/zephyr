@@ -19,12 +19,11 @@ class DTDefault(DTDirective):
     # @brief Extract directives in a default way
     #
     # @param node_address Address of node owning the clockxxx definition.
-    # @param yaml YAML definition for the owning node.
     # @param prop property name
     # @param prop type (string, boolean, etc)
     # @param def_label Define label string of node owning the directive.
     #
-    def extract(self, node_address, yaml, prop, prop_type, def_label):
+    def extract(self, node_address, prop, prop_type, def_label):
         prop_def = {}
         prop_alias = {}
 
@@ -43,6 +42,10 @@ class DTDefault(DTDirective):
                 if isinstance(prop_value, str):
                     prop_value = "\"" + prop_value + "\""
                 prop_def[label + '_' + str(i)] = prop_value
+                add_compat_alias(node_address,
+                        prop_name + '_' + str(i),
+                        label + '_' + str(i),
+                        prop_alias)
         else:
             prop_name = convert_string_to_label(prop)
             label = def_label + '_' + prop_name
@@ -53,13 +56,16 @@ class DTDefault(DTDirective):
             if isinstance(prop_values, str):
                 prop_values = "\"" + prop_values + "\""
             prop_def[label] = prop_values
+            add_compat_alias(node_address, prop_name, label, prop_alias)
 
             # generate defs for node aliases
             if node_address in aliases:
-                for i in aliases[node_address]:
-                    alias_label = convert_string_to_label(i)
-                    alias = alias_label + '_' + prop_name
-                    prop_alias[alias] = label
+                add_prop_aliases(
+                    node_address,
+                    lambda alias:
+                        convert_string_to_label(alias) + '_' + prop_name,
+                    label,
+                    prop_alias)
 
         insert_defs(node_address, prop_def, prop_alias)
 

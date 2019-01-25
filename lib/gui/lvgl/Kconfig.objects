@@ -1,0 +1,296 @@
+#
+# Copyright (c) 2018 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "Objects"
+
+config LVGL_OBJ_LABEL
+	bool "Label Object"
+	default y
+	help
+	  Enable label support
+
+if LVGL_OBJ_LABEL
+
+config LVGL_OBJ_LABEL_SCROLL_SPEED
+	int "Label scroll speed"
+	default 25
+	help
+	  Scroll speed in pixels per second if scroll mode is enabled for a label
+
+endif
+
+config LVGL_OBJ_IMAGE
+	bool "Image Object"
+	default y
+	depends on LVGL_OBJ_LABEL
+	help
+	  Enable image object support
+
+if LVGL_OBJ_IMAGE
+
+config LVGL_IMG_CF_INDEXED
+	bool "Enable indexed image support"
+	default y
+	help
+	  Enable support for indexed images
+
+config LVGL_IMG_CF_ALPHA
+	bool "Enable alpha indexed image support"
+	default y
+	help
+	  Enable support for alpha indexed images
+
+endif
+
+config LVGL_OBJ_LINE
+	bool "Line Object"
+	default y
+	help
+	  Enable line object support
+
+config LVGL_OBJ_ARC
+	bool "Arc Object"
+	default y
+	help
+	  Enable arc object support
+
+config LVGL_OBJ_CONTAINER
+	bool "Container Object"
+	default y
+	help
+	  Enable container object support
+
+config LVGL_OBJ_PAGE
+	bool "Page object"
+	default y
+	depends on LVGL_OBJ_CONTAINER
+	help
+	  Enable page object support
+
+config LVGL_OBJ_WINDOW
+	bool "Window object"
+	default y
+	depends on LVGL_OBJ_CONTAINER && LVGL_OBJ_BUTTON && LVGL_OBJ_LABEL && LVGL_OBJ_IMAGE && LVGL_OBJ_PAGE
+	help
+	  Enable window object support
+
+config LVGL_OBJ_TAB_VIEW
+	bool "Tab view object"
+	default y
+	depends on LVGL_OBJ_PAGE && LVGL_OBJ_BUTTON_MATRIX
+	help
+	  Enable tab view object support
+
+if LVGL_OBJ_TAB_VIEW
+
+config LVGL_OBJ_TAB_VIEW_ANIMATION_TIME
+	int "Tab view animation time"
+	default 300
+	help
+	  Tab view animation time in milliseconds
+
+endif
+
+config LVGL_OBJ_CALENDAR
+	bool "Calendar object"
+	default y
+	help
+	  Enable calendar object support
+
+config LVGL_OBJ_PRELOAD
+	bool "Pre-load object"
+	default y
+	depends on LVGL_OBJ_ARC
+	help
+	  Enabled pre-load object support
+
+if	LVGL_OBJ_PRELOAD
+
+config LVGL_OBJ_PRELOAD_DEF_ARC_LENGTH
+	int "Default arc length"
+	range 1 360
+	default 60
+	help
+	  Default arc length for pre-load in degrees
+
+config LVGL_OBJ_PRELOAD_DEF_SPIN_TIME
+	int "Default spin time"
+	default 1000
+	help
+	  Default spin time for pre-load in ms
+
+endif
+
+config LVGL_OBJ_BAR
+	bool "Bar object"
+	default y
+	help
+	  Enable bar object support
+
+config LVGL_OBJ_LINE_METER
+	bool "Line meter object"
+	default y
+	help
+	  Enable line meter object support
+
+config LVGL_OBJ_GAUGE
+	bool "Gauge object"
+	default y
+	depends on LVGL_OBJ_BAR && LVGL_OBJ_LINE_METER
+	help
+	  Enable gauge object support
+
+config LVGL_OBJ_CHART
+	bool "Chart object"
+	default y
+	help
+	  Enable chart object support
+
+config LVGL_OBJ_LED
+	bool "LED object"
+	default y
+	help
+	  Enable LED object support
+
+config LVGL_OBJ_MSG_BOX
+	bool "Message box object"
+	default y
+	depends on LVGL_OBJ_BUTTON_MATRIX && LVGL_OBJ_LABEL
+	help
+	  Enable message box object support
+
+config LVGL_OBJ_TEXT_AREA
+	bool "Text area object"
+	default y
+	depends on LVGL_OBJ_LABEL && LVGL_OBJ_PAGE
+	help
+	  Enable text area object support
+
+if LVGL_OBJ_TEXT_AREA
+
+config LVGL_OBJ_TEXT_AREA_CURSOR_BLINK_TIME
+	int "Cursor Blink Time"
+	default 400
+	help
+	  Text area cursor blink time in milliseconds
+
+config LVGL_OBJ_TEXT_AREA_PWD_SHOW_TIME
+	int "Label scroll speed"
+	default 1500
+	help
+	  Password character show time in milliseconds
+
+endif
+
+config LVGL_OBJ_BUTTON
+	bool "Button object"
+	default y
+	depends on LVGL_OBJ_CONTAINER
+	help
+	  Enable button object support
+
+if LVGL_OBJ_BUTTON
+
+config LVGL_OBJ_BUTTON_INK_EFFECT
+	bool "Enable ink effect"
+	default y
+	help
+	  Enable ink, press, effect for buttons
+
+config LVGL_OBJ_IMG_BUTTON
+	bool "Image Button"
+	default y
+	help
+	  Enable image button object support
+
+endif
+
+config LVGL_OBJ_BUTTON_MATRIX
+	bool "Button Matrix object"
+	default y
+	help
+	  Enable button matrix object support
+
+config LVGL_OBJ_KEYBOARD
+	bool "Keyboard object"
+	default y
+	depends on LVGL_OBJ_BUTTON_MATRIX
+	help
+	  Enable keyboard object support
+
+config LVGL_OBJ_CHECK_BOX
+	bool "Check box object"
+	default y
+	depends on LVGL_OBJ_BUTTON && LVGL_OBJ_LABEL
+	help
+	  Enable check box object support
+
+config LVGL_OBJ_LIST
+	bool "List object"
+	default y
+	depends on LVGL_OBJ_BUTTON && LVGL_OBJ_LABEL && LVGL_OBJ_PAGE
+	help
+	  Enable list object support
+
+if LVGL_OBJ_LIST
+
+config LVGL_OBJ_LIST_FOCUS_TIME
+	int "List focus time"
+	default 100
+	help
+		List focus animation time in milliseconds
+
+endif
+
+config LVGL_OBJ_DROP_DOWN_LIST
+	bool "Drop Down List object"
+	default y
+	depends on LVGL_OBJ_LABEL && LVGL_OBJ_PAGE
+	help
+	  Enable drop down list object support
+
+if LVGL_OBJ_DROP_DOWN_LIST
+
+config LVGL_OBJ_DROP_DOWN_LIST_ANIM_TIME
+	int "Drop Down list animation time"
+	default 200
+	help
+	  Drop down list animation time in milliseconds
+
+endif
+
+config LVGL_OBJ_ROLLER
+	bool "Roller object"
+	default y
+	depends on LVGL_OBJ_DROP_DOWN_LIST
+	help
+	  Enable roller object support
+
+if LVGL_OBJ_ROLLER
+
+config LVGL_OBJ_ROLLER_ANIM_TIME
+	int "Roller animation time"
+	default 200
+	help
+	  Roller animation time in milliseconds
+
+endif
+
+config LVGL_OBJ_SLIDER
+	bool "Slider object"
+	default y
+	depends on LVGL_OBJ_BAR
+	help
+	  Enable slider object support
+
+config LVGL_OBJ_SWITCH
+	bool "Switch object"
+	default y
+	depends on LVGL_OBJ_SLIDER
+	help
+	  Enable switch object support
+
+endmenu

@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2018, Endre Karlson
+#
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: particle_xenon
+name: particle-xenon
+type: mcu
+arch: arm
+ram: 512
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - i2c
+  - spi
+  - gpio
+  - usb_device
+  - ble
+  - ieee802154

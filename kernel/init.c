@@ -33,6 +33,7 @@
 #include <logging/log_ctrl.h>
 #include <tracing.h>
 #include <stdbool.h>
+#include <misc/gcov.h>
 
 #define IDLE_THREAD_NAME	"idle"
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
@@ -147,9 +148,18 @@ void _bss_zero(void)
 	(void)memset(&__ccm_bss_start, 0,
 		     ((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
 #endif
+#ifdef CONFIG_CODE_DATA_RELOCATION
+	extern void bss_zeroing_relocation(void);
+
+	bss_zeroing_relocation();
+#endif	/* CONFIG_CODE_DATA_RELOCATION */
 #ifdef CONFIG_APPLICATION_MEMORY
 	(void)memset(&__app_bss_start, 0,
 		     ((u32_t) &__app_bss_end - (u32_t) &__app_bss_start));
+#endif
+#ifdef CONFIG_COVERAGE_GCOV
+	(void)memset(&__gcov_bss_start, 0,
+		 ((u32_t) &__gcov_bss_end - (u32_t) &__gcov_bss_start));
 #endif
 }
 
@@ -171,6 +181,11 @@ void _data_copy(void)
 	(void)memcpy(&__ccm_data_start, &__ccm_data_rom_start,
 		 ((u32_t) &__ccm_data_end - (u32_t) &__ccm_data_start));
 #endif
+#ifdef CONFIG_CODE_DATA_RELOCATION
+	extern void data_copy_xip_relocation(void);
+
+	data_copy_xip_relocation();
+#endif	/* CONFIG_CODE_DATA_RELOCATION */
 #ifdef CONFIG_APP_SHARED_MEM
 	(void)memcpy(&_app_smem_start, &_app_smem_rom_start,
 		 ((u32_t) &_app_smem_end - (u32_t) &_app_smem_start));
@@ -242,6 +257,9 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 
 	main();
 
+	/* Dump coverage data once the main() has exited. */
+	gcov_coverage_dump();
+
 	/* Terminate thread normally since it has no more work to do */
 	_main_thread->base.user_options &= ~K_ESSENTIAL;
 }
@@ -249,6 +267,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 void __weak main(void)
 {
 	/* NOP default main() if the application does not provide one. */
+	arch_nop();
 }
 
 #if defined(CONFIG_MULTITHREADING)
@@ -442,6 +461,9 @@ extern uintptr_t __stack_chk_guard;
  */
 FUNC_NORETURN void _Cstart(void)
 {
+	/* gcov hook needed to get the coverage report.*/
+	gcov_static_init();
+
 #ifdef CONFIG_MULTITHREADING
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	struct k_thread *dummy_thread = NULL;
@@ -455,15 +477,6 @@ FUNC_NORETURN void _Cstart(void)
 	(void)memset(dummy_thread_memory, 0, sizeof(dummy_thread_memory));
 #endif
 #endif
-	/*
-	 * The interrupt library needs to be initialized early since a series
-	 * of handlers are installed into the interrupt table to catch
-	 * spurious interrupts. This must be performed before other kernel
-	 * subsystems install bonafide handlers, or before hardware device
-	 * drivers are initialized.
-	 */
-
-	_IntLibInit();
 
 	if (IS_ENABLED(CONFIG_LOG)) {
 		log_core_init();

@@ -56,8 +56,12 @@ static void USDHC_SetTransferInterrupt(USDHC_Type *base, bool usingInterruptSign
  * @param base USDHC peripheral base address.
  * @param data Data to be transferred.
  * @param flag data present flag
+ * @param enDMA DMA enable flag
  */
-static status_t USDHC_SetDataTransferConfig(USDHC_Type *base, usdhc_data_t *data, uint32_t *dataPresentFlag);
+static status_t USDHC_SetDataTransferConfig(USDHC_Type *base,
+                                            usdhc_data_t *data,
+                                            uint32_t *dataPresentFlag,
+                                            bool enDMA);
 
 /*!
  * @brief Receive command response
@@ -237,7 +241,7 @@ static void USDHC_SetTransferInterrupt(USDHC_Type *base, bool usingInterruptSign
     }
 }
 
-static status_t USDHC_SetDataTransferConfig(USDHC_Type *base, usdhc_data_t *data, uint32_t *dataPresentFlag)
+static status_t USDHC_SetDataTransferConfig(USDHC_Type *base, usdhc_data_t *data, uint32_t *dataPresentFlag, bool enDMA)
 {
     uint32_t mixCtrl = base->MIX_CTRL;
 
@@ -311,12 +315,23 @@ static status_t USDHC_SetDataTransferConfig(USDHC_Type *base, usdhc_data_t *data
 
         /* data present flag */
         *dataPresentFlag |= kUSDHC_DataPresentFlag;
+        /* Disable useless interrupt */
+        if (enDMA)
+        {
+            base->INT_SIGNAL_EN &= ~(kUSDHC_BufferWriteReadyFlag | kUSDHC_BufferReadReadyFlag | kUSDHC_DmaCompleteFlag);
+            base->INT_STATUS_EN &= ~(kUSDHC_BufferWriteReadyFlag | kUSDHC_BufferReadReadyFlag | kUSDHC_DmaCompleteFlag);
+        }
+        else
+        {
+            base->INT_SIGNAL_EN |= kUSDHC_BufferWriteReadyFlag | kUSDHC_BufferReadReadyFlag;
+            base->INT_STATUS_EN |= kUSDHC_BufferWriteReadyFlag | kUSDHC_BufferReadReadyFlag;
+        }
     }
     else
     {
         /* clear data flags */
         mixCtrl &= ~(USDHC_MIX_CTRL_MSBSEL_MASK | USDHC_MIX_CTRL_BCEN_MASK | USDHC_MIX_CTRL_DTDSEL_MASK |
-                     USDHC_MIX_CTRL_AC12EN_MASK);
+                     USDHC_MIX_CTRL_AC12EN_MASK | USDHC_MIX_CTRL_AC23EN_MASK);
 
         if (base->PRES_STATE & kUSDHC_CommandInhibitFlag)
         {
@@ -615,6 +630,12 @@ static status_t USDHC_WriteByDataPortBlocking(USDHC_Type *base, usdhc_data_t *da
     return error;
 }
 
+/*!
+* brief send command function
+*
+* param base USDHC peripheral base address.
+* param command configuration
+*/
 void USDHC_SendCommand(USDHC_Type *base, usdhc_command_t *command)
 {
     assert(NULL != command);
@@ -770,6 +791,26 @@ static status_t USDHC_TransferDataBlocking(USDHC_Type *base, usdhc_data_t *data,
     return error;
 }
 
+/*!
+ * brief USDHC module initialization function.
+ *
+ * Configures the USDHC according to the user configuration.
+ *
+ * Example:
+   code
+   usdhc_config_t config;
+   config.cardDetectDat3 = false;
+   config.endianMode = kUSDHC_EndianModeLittle;
+   config.dmaMode = kUSDHC_DmaModeAdma2;
+   config.readWatermarkLevel = 128U;
+   config.writeWatermarkLevel = 128U;
+   USDHC_Init(USDHC, &config);
+   endcode
+ *
+ * param base USDHC peripheral base address.
+ * param config USDHC configuration information.
+ * retval kStatus_Success Operate successfully.
+ */
 void USDHC_Init(USDHC_Type *base, const usdhc_config_t *config)
 {
     assert(config);
@@ -819,6 +860,11 @@ void USDHC_Init(USDHC_Type *base, const usdhc_config_t *config)
     USDHC_SetTransferInterrupt(base, false);
 }
 
+/*!
+ * brief Deinitializes the USDHC.
+ *
+ * param base USDHC peripheral base address.
+ */
 void USDHC_Deinit(USDHC_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -827,6 +873,15 @@ void USDHC_Deinit(USDHC_Type *base)
 #endif
 }
 
+/*!
+ * brief Resets the USDHC.
+ *
+ * param base USDHC peripheral base address.
+ * param mask The reset type mask(_usdhc_reset).
+ * param timeout Timeout for reset.
+ * retval true Reset successfully.
+ * retval false Reset failed.
+ */
 bool USDHC_Reset(USDHC_Type *base, uint32_t mask, uint32_t timeout)
 {
     base->SYS_CTRL |= (mask & (USDHC_SYS_CTRL_RSTA_MASK | USDHC_SYS_CTRL_RSTC_MASK | USDHC_SYS_CTRL_RSTD_MASK));
@@ -843,6 +898,12 @@ bool USDHC_Reset(USDHC_Type *base, uint32_t mask, uint32_t timeout)
     return ((!timeout) ? false : true);
 }
 
+/*!
+ * brief Gets the capability information.
+ *
+ * param base USDHC peripheral base address.
+ * param capability Structure to save capability information.
+ */
 void USDHC_GetCapability(USDHC_Type *base, usdhc_capability_t *capability)
 {
     assert(capability);
@@ -867,6 +928,15 @@ void USDHC_GetCapability(USDHC_Type *base, usdhc_capability_t *capability)
     capability->flags |= (kUSDHC_Support4BitFlag | kUSDHC_Support8BitFlag);
 }
 
+/*!
+ * brief Sets the SD bus clock frequency.
+ *
+ * param base USDHC peripheral base address.
+ * param srcClock_Hz USDHC source clock frequency united in Hz.
+ * param busClock_Hz SD bus clock frequency united in Hz.
+ *
+ * return The nearest frequency of busClock_Hz configured to SD bus.
+ */
 uint32_t USDHC_SetSdClock(USDHC_Type *base, uint32_t srcClock_Hz, uint32_t busClock_Hz)
 {
     assert(srcClock_Hz != 0U);
@@ -969,6 +1039,17 @@ uint32_t USDHC_SetSdClock(USDHC_Type *base, uint32_t srcClock_Hz, uint32_t busCl
     return nearestFrequency;
 }
 
+/*!
+ * brief Sends 80 clocks to the card to set it to the active state.
+ *
+ * This function must be called each time the card is inserted to ensure that the card can receive the command
+ * correctly.
+ *
+ * param base USDHC peripheral base address.
+ * param timeout Timeout to initialize card.
+ * retval true Set card active successfully.
+ * retval false Set card active failed.
+ */
 bool USDHC_SetCardActive(USDHC_Type *base, uint32_t timeout)
 {
     base->SYS_CTRL |= USDHC_SYS_CTRL_INITA_MASK;
@@ -985,6 +1066,13 @@ bool USDHC_SetCardActive(USDHC_Type *base, uint32_t timeout)
     return ((!timeout) ? false : true);
 }
 
+/*!
+ * brief the enable/disable DDR mode
+ *
+ * param base USDHC peripheral base address.
+ * param enable/disable flag
+ * param nibble position
+ */
 void USDHC_EnableDDRMode(USDHC_Type *base, bool enable, uint32_t nibblePos)
 {
     uint32_t prescaler = (base->SYS_CTRL & USDHC_SYS_CTRL_SDCLKFS_MASK) >> USDHC_SYS_CTRL_SDCLKFS_SHIFT;
@@ -1012,6 +1100,24 @@ void USDHC_EnableDDRMode(USDHC_Type *base, bool enable, uint32_t nibblePos)
     base->SYS_CTRL = (base->SYS_CTRL & (~USDHC_SYS_CTRL_SDCLKFS_MASK)) | USDHC_SYS_CTRL_SDCLKFS(prescaler);
 }
 
+/*!
+ * brief Configures the MMC boot feature.
+ *
+ * Example:
+   code
+   usdhc_boot_config_t config;
+   config.ackTimeoutCount = 4;
+   config.bootMode = kUSDHC_BootModeNormal;
+   config.blockCount = 5;
+   config.enableBootAck = true;
+   config.enableBoot = true;
+   config.enableAutoStopAtBlockGap = true;
+   USDHC_SetMmcBootConfig(USDHC, &config);
+   endcode
+ *
+ * param base USDHC peripheral base address.
+ * param config The MMC boot configuration information.
+ */
 void USDHC_SetMmcBootConfig(USDHC_Type *base, const usdhc_boot_config_t *config)
 {
     assert(config);
@@ -1044,6 +1150,18 @@ void USDHC_SetMmcBootConfig(USDHC_Type *base, const usdhc_boot_config_t *config)
     base->MMC_BOOT = mmcboot;
 }
 
+/*!
+ * brief Sets the ADMA1 descriptor table configuration.
+ *
+ * param admaTable Adma table address.
+ * param admaTableWords Adma table length.
+ * param dataBufferAddr Data buffer address.
+ * param dataBytes Data length.
+ * param flags ADAM descriptor flag, used to indicate to create multiple or single descriptor, please
+ *  reference _usdhc_adma_flag.
+ * retval kStatus_OutOfRange ADMA descriptor table length isn't enough to describe data.
+ * retval kStatus_Success Operate successfully.
+ */
 status_t USDHC_SetADMA1Descriptor(
     uint32_t *admaTable, uint32_t admaTableWords, const uint32_t *dataBufferAddr, uint32_t dataBytes, uint32_t flags)
 {
@@ -1118,6 +1236,18 @@ status_t USDHC_SetADMA1Descriptor(
     return kStatus_Success;
 }
 
+/*!
+ * brief Sets the ADMA2 descriptor table configuration.
+ *
+ * param admaTable Adma table address.
+ * param admaTableWords Adma table length.
+ * param dataBufferAddr Data buffer address.
+ * param dataBytes Data Data length.
+ * param flags ADAM descriptor flag, used to indicate to create multiple or single descriptor, please
+ *  reference _usdhc_adma_flag.
+ * retval kStatus_OutOfRange ADMA descriptor table length isn't enough to describe data.
+ * retval kStatus_Success Operate successfully.
+ */
 status_t USDHC_SetADMA2Descriptor(
     uint32_t *admaTable, uint32_t admaTableWords, const uint32_t *dataBufferAddr, uint32_t dataBytes, uint32_t flags)
 {
@@ -1216,6 +1346,17 @@ status_t USDHC_SetADMA2Descriptor(
     return kStatus_Success;
 }
 
+/*!
+ * brief Internal DMA configuration.
+ * This function is used to config the USDHC DMA related registers.
+ * param base USDHC peripheral base address.
+ * param adma configuration
+ * param dataAddr tranfer data address, a simple DMA parameter, if ADMA is used, leave it to NULL.
+ * param enAutoCmd23 flag to indicate Auto CMD23 is enable or not, a simple DMA parameter,if ADMA is used, leave it to
+ * false.
+ * retval kStatus_OutOfRange ADMA descriptor table length isn't enough to describe data.
+ * retval kStatus_Success Operate successfully.
+ */
 status_t USDHC_SetInternalDmaConfig(USDHC_Type *base,
                                     usdhc_adma_config_t *dmaConfig,
                                     const uint32_t *dataAddr,
@@ -1263,6 +1404,17 @@ status_t USDHC_SetInternalDmaConfig(USDHC_Type *base,
     return kStatus_Success;
 }
 
+/*!
+ * brief Sets the DMA descriptor table configuration.
+ * A high level DMA descriptor configuration function.
+ * param base USDHC peripheral base address.
+ * param adma configuration
+ * param data Data descriptor
+ * param flags ADAM descriptor flag, used to indicate to create multiple or single descriptor, please
+ *  reference _usdhc_adma_flag
+ * retval kStatus_OutOfRange ADMA descriptor table length isn't enough to describe data.
+ * retval kStatus_Success Operate successfully.
+ */
 status_t USDHC_SetAdmaTableConfig(USDHC_Type *base,
                                   usdhc_adma_config_t *dmaConfig,
                                   usdhc_data_t *dataConfig,
@@ -1313,6 +1465,26 @@ status_t USDHC_SetAdmaTableConfig(USDHC_Type *base,
     return error;
 }
 
+/*!
+ * brief Transfers the command/data using a blocking method.
+ *
+ * This function waits until the command response/data is received or the USDHC encounters an error by polling the
+ * status
+ * flag.
+ * The application must not call this API in multiple threads at the same time. Because of that this API doesn't support
+ * the re-entry mechanism.
+ *
+ * note There is no need to call the API 'USDHC_TransferCreateHandle' when calling this API.
+ *
+ * param base USDHC peripheral base address.
+ * param adma configuration
+ * param transfer Transfer content.
+ * retval kStatus_InvalidArgument Argument is invalid.
+ * retval kStatus_USDHC_PrepareAdmaDescriptorFailed Prepare ADMA descriptor failed.
+ * retval kStatus_USDHC_SendCommandFailed Send command failed.
+ * retval kStatus_USDHC_TransferDataFailed Transfer data failed.
+ * retval kStatus_Success Operate successfully.
+ */
 status_t USDHC_TransferBlocking(USDHC_Type *base, usdhc_adma_config_t *dmaConfig, usdhc_transfer_t *transfer)
 {
     assert(transfer);
@@ -1362,7 +1534,7 @@ status_t USDHC_TransferBlocking(USDHC_Type *base, usdhc_adma_config_t *dmaConfig
 #endif
 
     /* config the data transfer parameter */
-    error = USDHC_SetDataTransferConfig(base, data, &(command->flags));
+    error = USDHC_SetDataTransferConfig(base, data, &(command->flags), enDMA);
     if (kStatus_Success != error)
     {
         return error;
@@ -1381,6 +1553,25 @@ status_t USDHC_TransferBlocking(USDHC_Type *base, usdhc_adma_config_t *dmaConfig
     return error;
 }
 
+/*!
+ * brief Transfers the command/data using an interrupt and an asynchronous method.
+ *
+ * This function sends a command and data and returns immediately. It doesn't wait the transfer complete or encounter an
+ * error.
+ * The application must not call this API in multiple threads at the same time. Because of that this API doesn't support
+ * the re-entry mechanism.
+ *
+ * note Call the API 'USDHC_TransferCreateHandle' when calling this API.
+ *
+ * param base USDHC peripheral base address.
+ * param handle USDHC handle.
+ * param adma configuration.
+ * param transfer Transfer content.
+ * retval kStatus_InvalidArgument Argument is invalid.
+ * retval kStatus_USDHC_BusyTransferring Busy transferring.
+ * retval kStatus_USDHC_PrepareAdmaDescriptorFailed Prepare ADMA descriptor failed.
+ * retval kStatus_Success Operate successfully.
+ */
 status_t USDHC_TransferNonBlocking(USDHC_Type *base,
                                    usdhc_handle_t *handle,
                                    usdhc_adma_config_t *dmaConfig,
@@ -1393,6 +1584,7 @@ status_t USDHC_TransferNonBlocking(USDHC_Type *base,
     usdhc_command_t *command = transfer->command;
     usdhc_data_t *data = transfer->data;
     bool executeTuning = ((data == NULL) ? false : data->dataType == kUSDHC_TransferDataTuning);
+    bool enDMA = true;
 
     /*check re-tuning request*/
     if ((USDHC_GetInterruptStatusFlags(base) & (kUSDHC_ReTuningEventFlag)) != 0U)
@@ -1421,6 +1613,7 @@ status_t USDHC_TransferNonBlocking(USDHC_Type *base,
     {
         /* disable DMA, using polling mode in this situation */
         USDHC_EnableInternalDMA(base, false);
+        enDMA = false;
     }
 #if defined(FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL) && FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL
     else
@@ -1438,7 +1631,7 @@ status_t USDHC_TransferNonBlocking(USDHC_Type *base,
     }
 #endif
 
-    error = USDHC_SetDataTransferConfig(base, data, &(command->flags));
+    error = USDHC_SetDataTransferConfig(base, data, &(command->flags), enDMA);
     if (kStatus_Success != error)
     {
         return error;
@@ -1451,6 +1644,14 @@ status_t USDHC_TransferNonBlocking(USDHC_Type *base,
 }
 
 #if defined(FSL_FEATURE_USDHC_HAS_SDR50_MODE) && (FSL_FEATURE_USDHC_HAS_SDR50_MODE)
+/*!
+ * brief manual tuning trigger or abort
+ * User should handle the tuning cmd and find the boundary of the delay
+ * then calucate a average value which will be config to the CLK_TUNE_CTRL_STATUS
+ * This function should called before USDHC_AdjustDelayforSDR104 function
+ * param base USDHC peripheral base address.
+ * param tuning enable flag
+ */
 void USDHC_EnableManualTuning(USDHC_Type *base, bool enable)
 {
     if (enable)
@@ -1469,6 +1670,14 @@ void USDHC_EnableManualTuning(USDHC_Type *base, bool enable)
     }
 }
 
+/*!
+ * brief the SDR104 mode delay setting adjust
+ * This function should called after USDHC_ManualTuningForSDR104
+ * param base USDHC peripheral base address.
+ * param delay setting configuration
+ * retval kStatus_Fail config the delay setting fail
+ * retval kStatus_Success config the delay setting success
+ */
 status_t USDHC_AdjustDelayForManualTuning(USDHC_Type *base, uint32_t delay)
 {
     uint32_t clkTuneCtrl = 0U;
@@ -1491,6 +1700,16 @@ status_t USDHC_AdjustDelayForManualTuning(USDHC_Type *base, uint32_t delay)
     return kStatus_Success;
 }
 
+/*!
+ * brief the enable standard tuning function
+ * The standard tuning window and tuning counter use the default config
+ * tuning cmd is send by the software, user need to check the tuning result
+ * can be used for SDR50,SDR104,HS200 mode tuning
+ * param base USDHC peripheral base address.
+ * param tuning start tap
+ * param tuning step
+ * param enable/disable flag
+ */
 void USDHC_EnableStandardTuning(USDHC_Type *base, uint32_t tuningStartTap, uint32_t step, bool enable)
 {
     uint32_t tuningCtrl = 0U;
@@ -1520,6 +1739,11 @@ void USDHC_EnableStandardTuning(USDHC_Type *base, uint32_t tuningStartTap, uint3
     }
 }
 
+/*!
+ * brief the auto tuning enbale for CMD/DATA line
+ *
+ * param base USDHC peripheral base address.
+ */
 void USDHC_EnableAutoTuningForCmdAndData(USDHC_Type *base)
 {
     uint32_t busWidth = 0U;
@@ -1569,7 +1793,7 @@ static void USDHC_TransferHandleCommand(USDHC_Type *base, usdhc_handle_t *handle
 {
     assert(handle->command);
 
-    if ((interruptFlags & kUSDHC_CommandErrorFlag) && (!(handle->data)))
+    if (interruptFlags & kUSDHC_CommandErrorFlag)
     {
         if (handle->callback.TransferComplete)
         {
@@ -1673,6 +1897,14 @@ static void USDHC_TransferHandleBlockGap(USDHC_Type *base, usdhc_handle_t *handl
     }
 }
 
+/*!
+ * brief Creates the USDHC handle.
+ *
+ * param base USDHC peripheral base address.
+ * param handle USDHC handle pointer.
+ * param callback Structure pointer to contain all callback functions.
+ * param userData Callback function parameter.
+ */
 void USDHC_TransferCreateHandle(USDHC_Type *base,
                                 usdhc_handle_t *handle,
                                 const usdhc_transfer_callback_t *callback,
@@ -1698,14 +1930,20 @@ void USDHC_TransferCreateHandle(USDHC_Type *base,
 
     /* Enable interrupt in NVIC. */
     USDHC_SetTransferInterrupt(base, true);
-    /* disable the tuning pass interrupt */
-    USDHC_DisableInterruptSignal(base, kUSDHC_TuningPassFlag | kUSDHC_ReTuningEventFlag);
     /* save IRQ handler */
     s_usdhcIsr = USDHC_TransferHandleIRQ;
 
     EnableIRQ(s_usdhcIRQ[USDHC_GetInstance(base)]);
 }
 
+/*!
+ * brief IRQ handler for the USDHC.
+ *
+ * This function deals with the IRQs on the given host controller.
+ *
+ * param base USDHC peripheral base address.
+ * param handle USDHC handle.
+ */
 void USDHC_TransferHandleIRQ(USDHC_Type *base, usdhc_handle_t *handle)
 {
     assert(handle);

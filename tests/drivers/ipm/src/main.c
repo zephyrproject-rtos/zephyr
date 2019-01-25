@@ -26,11 +26,13 @@
 
 #define INIT_PRIO_IPM_SEND 50
 
+extern struct ipm_driver_api ipm_dummy_api;
+
 /* Set up the dummy IPM driver */
 struct ipm_dummy_driver_data ipm_dummy0_driver_data;
-DEVICE_INIT(ipm_dummy0, "ipm_dummy0", ipm_dummy_init,
+DEVICE_AND_API_INIT(ipm_dummy0, "ipm_dummy0", ipm_dummy_init,
 	    &ipm_dummy0_driver_data, NULL,
-	    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+	    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &ipm_dummy_api);
 
 /* Sending side of the console IPM driver, will forward anything sent
  * to printf() since we selected IPM_CONSOLE_STDOUT

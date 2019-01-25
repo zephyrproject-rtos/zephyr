@@ -100,11 +100,11 @@ static void telnet_rb_init(void)
 {
 	int i;
 
-	telnet_rb.line_in = 0;
-	telnet_rb.line_out = 0;
+	telnet_rb.line_in = 0U;
+	telnet_rb.line_out = 0U;
 
 	for (i = 0; i < TELNET_LINES; i++) {
-		telnet_rb.l_bufs[i].len = 0;
+		telnet_rb.l_bufs[i].len = 0U;
 	}
 }
 
@@ -141,10 +141,10 @@ static void telnet_rb_switch(void)
 	telnet_rb.line_in++;
 
 	if (telnet_rb.line_in == TELNET_LINES) {
-		telnet_rb.line_in = 0;
+		telnet_rb.line_in = 0U;
 	}
 
-	telnet_rb.l_bufs[telnet_rb.line_in].len = 0;
+	telnet_rb.l_bufs[telnet_rb.line_in].len = 0U;
 
 	/* Unfortunately, we don't have enough line buffer,
 	 * so we eat the next to be sent.
@@ -152,7 +152,7 @@ static void telnet_rb_switch(void)
 	if (telnet_rb.line_in == telnet_rb.line_out) {
 		telnet_rb.line_out++;
 		if (telnet_rb.line_out == TELNET_LINES) {
-			telnet_rb.line_out = 0;
+			telnet_rb.line_out = 0U;
 		}
 	}
 
@@ -166,7 +166,7 @@ static inline struct line_buf *telnet_rb_get_line_out(void)
 
 	telnet_rb.line_out++;
 	if (telnet_rb.line_out == TELNET_LINES) {
-		telnet_rb.line_out = 0;
+		telnet_rb.line_out = 0U;
 	}
 
 	if (!telnet_rb.l_bufs[out].len) {
@@ -240,7 +240,7 @@ static inline bool telnet_send(void)
 				   K_FOREVER);
 
 		/* We reinitialize the line buffer */
-		lb->len = 0;
+		lb->len = 0U;
 
 		if (net_context_send(out_pkt, telnet_sent_cb,
 				     K_NO_WAIT, NULL, NULL) ||

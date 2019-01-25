@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2018 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Add hardware flow control to UART1 on Feather-based mesh boards
+ *
+ * NOTE: This file is replicated in particle_{argon,boron,xenon}.
+ * Changes should be made in all instances. */
+&uart0 {
+	rts-pin = <33>;
+	cts-pin = <34>;
+};

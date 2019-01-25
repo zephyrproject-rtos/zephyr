@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32hg_dma.h
  * @brief EFM32HG_DMA register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,6 +29,13 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
@@ -38,41 +45,40 @@
  * @{
  * @brief EFM32HG_DMA Register Declaration
  *****************************************************************************/
-typedef struct
-{
-  __IM uint32_t  STATUS;         /**< DMA Status Registers  */
-  __OM uint32_t  CONFIG;         /**< DMA Configuration Register  */
-  __IOM uint32_t CTRLBASE;       /**< Channel Control Data Base Pointer Register  */
-  __IM uint32_t  ALTCTRLBASE;    /**< Channel Alternate Control Data Base Pointer Register  */
-  __IM uint32_t  CHWAITSTATUS;   /**< Channel Wait on Request Status Register  */
-  __OM uint32_t  CHSWREQ;        /**< Channel Software Request Register  */
-  __IOM uint32_t CHUSEBURSTS;    /**< Channel Useburst Set Register  */
-  __OM uint32_t  CHUSEBURSTC;    /**< Channel Useburst Clear Register  */
-  __IOM uint32_t CHREQMASKS;     /**< Channel Request Mask Set Register  */
-  __OM uint32_t  CHREQMASKC;     /**< Channel Request Mask Clear Register  */
-  __IOM uint32_t CHENS;          /**< Channel Enable Set Register  */
-  __OM uint32_t  CHENC;          /**< Channel Enable Clear Register  */
-  __IOM uint32_t CHALTS;         /**< Channel Alternate Set Register  */
-  __OM uint32_t  CHALTC;         /**< Channel Alternate Clear Register  */
-  __IOM uint32_t CHPRIS;         /**< Channel Priority Set Register  */
-  __OM uint32_t  CHPRIC;         /**< Channel Priority Clear Register  */
-  uint32_t       RESERVED0[3];   /**< Reserved for future use **/
-  __IOM uint32_t ERRORC;         /**< Bus Error Clear Register  */
+typedef struct {
+  __IM uint32_t  STATUS;          /**< DMA Status Registers  */
+  __OM uint32_t  CONFIG;          /**< DMA Configuration Register  */
+  __IOM uint32_t CTRLBASE;        /**< Channel Control Data Base Pointer Register  */
+  __IM uint32_t  ALTCTRLBASE;     /**< Channel Alternate Control Data Base Pointer Register  */
+  __IM uint32_t  CHWAITSTATUS;    /**< Channel Wait on Request Status Register  */
+  __OM uint32_t  CHSWREQ;         /**< Channel Software Request Register  */
+  __IOM uint32_t CHUSEBURSTS;     /**< Channel Useburst Set Register  */
+  __OM uint32_t  CHUSEBURSTC;     /**< Channel Useburst Clear Register  */
+  __IOM uint32_t CHREQMASKS;      /**< Channel Request Mask Set Register  */
+  __OM uint32_t  CHREQMASKC;      /**< Channel Request Mask Clear Register  */
+  __IOM uint32_t CHENS;           /**< Channel Enable Set Register  */
+  __OM uint32_t  CHENC;           /**< Channel Enable Clear Register  */
+  __IOM uint32_t CHALTS;          /**< Channel Alternate Set Register  */
+  __OM uint32_t  CHALTC;          /**< Channel Alternate Clear Register  */
+  __IOM uint32_t CHPRIS;          /**< Channel Priority Set Register  */
+  __OM uint32_t  CHPRIC;          /**< Channel Priority Clear Register  */
+  uint32_t       RESERVED0[3U];   /**< Reserved for future use **/
+  __IOM uint32_t ERRORC;          /**< Bus Error Clear Register  */
 
-  uint32_t       RESERVED1[880]; /**< Reserved for future use **/
-  __IM uint32_t  CHREQSTATUS;    /**< Channel Request Status  */
-  uint32_t       RESERVED2[1];   /**< Reserved for future use **/
-  __IM uint32_t  CHSREQSTATUS;   /**< Channel Single Request Status  */
+  uint32_t       RESERVED1[880U]; /**< Reserved for future use **/
+  __IM uint32_t  CHREQSTATUS;     /**< Channel Request Status  */
+  uint32_t       RESERVED2[1U];   /**< Reserved for future use **/
+  __IM uint32_t  CHSREQSTATUS;    /**< Channel Single Request Status  */
 
-  uint32_t       RESERVED3[121]; /**< Reserved for future use **/
-  __IM uint32_t  IF;             /**< Interrupt Flag Register  */
-  __IOM uint32_t IFS;            /**< Interrupt Flag Set Register  */
-  __IOM uint32_t IFC;            /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t IEN;            /**< Interrupt Enable register  */
+  uint32_t       RESERVED3[121U]; /**< Reserved for future use **/
+  __IM uint32_t  IF;              /**< Interrupt Flag Register  */
+  __IOM uint32_t IFS;             /**< Interrupt Flag Set Register  */
+  __IOM uint32_t IFC;             /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t IEN;             /**< Interrupt Enable register  */
 
-  uint32_t       RESERVED4[60];  /**< Reserved registers */
-  DMA_CH_TypeDef CH[6];          /**< Channel registers */
-} DMA_TypeDef;                   /** @} */
+  uint32_t       RESERVED4[60U];  /**< Reserved registers */
+  DMA_CH_TypeDef CH[6U];          /**< Channel registers */
+} DMA_TypeDef;                    /**< DMA Register Declaration *//** @} */
 
 /**************************************************************************//**
  * @defgroup EFM32HG_DMA_BitFields
@@ -889,4 +895,3 @@ typedef struct
 
 /** @} End of group EFM32HG_DMA */
 /** @} End of group Parts */
-

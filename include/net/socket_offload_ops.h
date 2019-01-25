@@ -49,6 +49,7 @@ struct socket_offload {
 			   const struct addrinfo *hints,
 			   struct addrinfo **res);
 	void (*freeaddrinfo)(struct addrinfo *res);
+	int (*fcntl)(int fd, int cmd, va_list args);
 };
 
 extern void socket_offload_register(const struct socket_offload *ops);

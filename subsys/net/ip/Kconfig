@@ -49,8 +49,6 @@ config NET_INIT_PRIO
 	  Network initialization priority level. This number tells how
 	  early in the boot the network stack is initialized.
 
-source "subsys/net/ip/Kconfig.debug"
-
 source "subsys/net/ip/Kconfig.ipv6"
 
 source "subsys/net/ip/Kconfig.ipv4"
@@ -520,8 +518,6 @@ source "subsys/net/ip/Kconfig.stack"
 
 source "subsys/net/ip/Kconfig.mgmt"
 
-source "subsys/net/ip/Kconfig.rpl"
-
 source "subsys/net/ip/Kconfig.stats"
 
 config NET_OFFLOAD
@@ -536,5 +532,7 @@ module-str = Log level for offload layer
 module-help = Enables offload layer to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 endif # NET_OFFLOAD
+
+source "subsys/net/ip/Kconfig.debug"
 
 endmenu

@@ -62,7 +62,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48000000 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00020000>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00020000>;
 				label = "GPIOA";
 			};
 
@@ -71,7 +71,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48000400 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00040000>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00040000>;
 				label = "GPIOB";
 			};
 
@@ -80,7 +80,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48000800 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00080000>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00080000>;
 				label = "GPIOC";
 			};
 
@@ -89,7 +89,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48000c00 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00100000>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00100000>;
 				label = "GPIOD";
 			};
 
@@ -98,7 +98,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48001400 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00400000>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00400000>;
 				label = "GPIOF";
 			};
 		};
@@ -161,6 +161,7 @@
 			interrupt-names = "usb";
 			num-bidir-endpoints = <8>;
 			ram-size = <512>;
+			phys = <&usb_fs_phy>;
 			status = "disabled";
 			label= "USB";
 		};
@@ -285,6 +286,12 @@
 			status = "disabled";
 			label = "RTC_0";
 		};
+	};
+
+	usb_fs_phy: usbphy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "USB_FS_PHY";
 	};
 };
 

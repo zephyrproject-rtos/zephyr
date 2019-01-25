@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_ldma.c
  * @brief Direct memory access (LDMA) module peripheral API
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -32,7 +32,7 @@
 
 #include "em_ldma.h"
 
-#if defined( LDMA_PRESENT ) && ( LDMA_COUNT == 1 )
+#if defined(LDMA_PRESENT) && (LDMA_COUNT == 1)
 
 #include <stddef.h>
 #include "em_assert.h"
@@ -50,10 +50,10 @@
  * @{
  ******************************************************************************/
 
-#if defined( LDMA_IRQ_HANDLER_TEMPLATE )
+#if defined(LDMA_IRQ_HANDLER_TEMPLATE)
 /***************************************************************************//**
  * @brief
- *   Template for an LDMA IRQ handler.
+ *   A template for an LDMA IRQ handler.
  ******************************************************************************/
 void LDMA_IRQHandler(void)
 {
@@ -61,21 +61,18 @@ void LDMA_IRQHandler(void)
   /* Get all pending and enabled interrupts. */
   uint32_t pending = LDMA_IntGetEnabled();
 
-  /* Loop here on an LDMA error to enable debugging. */
-  while (pending & LDMA_IF_ERROR)
-  {
+  /* Loop on an LDMA error to enable debugging. */
+  while (pending & LDMA_IF_ERROR) {
   }
 
   /* Iterate over all LDMA channels. */
-  for (ch = 0; ch < DMA_CHAN_COUNT; ch++)
-  {
+  for (ch = 0; ch < DMA_CHAN_COUNT; ch++) {
     uint32_t mask = 0x1 << ch;
-    if (pending & mask)
-    {
-      /* Clear interrupt flag. */
+    if (pending & mask) {
+      /* Clear the interrupt flag. */
       LDMA->IFC = mask;
 
-      /* Do more stuff here, execute callbacks etc. */
+      /* Perform more actions here, execute callbacks, and so on. */
     }
   }
 }
@@ -91,27 +88,37 @@ void LDMA_DeInit(void)
 {
   NVIC_DisableIRQ(LDMA_IRQn);
   LDMA->IEN  = 0;
+#if defined(_LDMA_CHDIS_MASK)
+  LDMA->CHDIS = _LDMA_CHEN_MASK;
+#else
   LDMA->CHEN = 0;
+#endif
+#if defined(LDMA_EN_EN)
+  LDMA->EN = 0;
+#endif
+
+#if !defined(_SILICON_LABS_32B_SERIES_2)
   CMU_ClockEnable(cmuClock_LDMA, false);
+#endif
 }
 
 /***************************************************************************//**
  * @brief
- *   Enable or disable a LDMA channel request.
+ *   Enable or disable an LDMA channel request.
  *
  * @details
- *   Use this function to enable or disable a LDMA channel request. This will
+ *   Use this function to enable or disable an LDMA channel request. This will
  *   prevent the LDMA from proceeding after its current transaction if disabled.
  *
  * @param[in] channel
- *   LDMA channel to enable or disable requests on.
+ *   LDMA channel to enable or disable requests.
  *
  * @param[in] enable
- *   If 'true' request will be enabled. If 'false' request will be disabled.
+ *   If 'true', the request will be enabled. If 'false', the request will be disabled.
  ******************************************************************************/
 void LDMA_EnableChannelRequest(int ch, bool enable)
 {
-  EFM_ASSERT(ch < DMA_CHAN_COUNT);
+  EFM_ASSERT(ch < (int)DMA_CHAN_COUNT);
 
   BUS_RegBitWrite(&LDMA->REQDIS, ch, !enable);
 }
@@ -123,45 +130,87 @@ void LDMA_EnableChannelRequest(int ch, bool enable)
  * @details
  *   This function will disable all the LDMA channels and enable the LDMA bus
  *   clock in the CMU. This function will also enable the LDMA IRQ in the NVIC
- *   and set the LDMA IRQ priority to a user configurable priority. The LDMA
+ *   and set the LDMA IRQ priority to a user-configurable priority. The LDMA
  *   interrupt priority is configured using the @ref LDMA_Init_t structure.
  *
  * @note
- *   Since this function enables the LDMA IRQ you should always add a custom
- *   LDMA_IRQHandler to the application in order to handle any interrupts
+ *   Since this function enables the LDMA IRQ, always add a custom
+ *   LDMA_IRQHandler to the application to handle any interrupts
  *   from LDMA.
  *
  * @param[in] init
- *   Pointer to initialization structure used to configure the LDMA.
+ *   A pointer to the initialization structure used to configure the LDMA.
  ******************************************************************************/
 void LDMA_Init(const LDMA_Init_t *init)
 {
+  uint32_t ldmaCtrlVal = 0;
   EFM_ASSERT(init != NULL);
   EFM_ASSERT(!((init->ldmaInitCtrlNumFixed << _LDMA_CTRL_NUMFIXED_SHIFT)
                & ~_LDMA_CTRL_NUMFIXED_MASK));
+
+#if defined(_LDMA_CTRL_SYNCPRSCLREN_SHIFT) && defined (_LDMA_CTRL_SYNCPRSSETEN_SHIFT)
   EFM_ASSERT(!((init->ldmaInitCtrlSyncPrsClrEn << _LDMA_CTRL_SYNCPRSCLREN_SHIFT)
                & ~_LDMA_CTRL_SYNCPRSCLREN_MASK));
   EFM_ASSERT(!((init->ldmaInitCtrlSyncPrsSetEn << _LDMA_CTRL_SYNCPRSSETEN_SHIFT)
                & ~_LDMA_CTRL_SYNCPRSSETEN_MASK));
+#endif
+
+#if defined(_LDMA_SYNCHWEN_SYNCCLREN_SHIFT) && defined (_LDMA_SYNCHWEN_SYNCSETEN_SHIFT)
+  EFM_ASSERT(!((init->ldmaInitCtrlSyncPrsClrEn << _LDMA_SYNCHWEN_SYNCCLREN_SHIFT)
+               & ~_LDMA_SYNCHWEN_SYNCCLREN_MASK));
+  EFM_ASSERT(!((init->ldmaInitCtrlSyncPrsSetEn << _LDMA_SYNCHWEN_SYNCSETEN_SHIFT)
+               & ~_LDMA_SYNCHWEN_SYNCSETEN_MASK));
+#endif
+
   EFM_ASSERT(init->ldmaInitIrqPriority < (1 << __NVIC_PRIO_BITS));
 
+#if defined(LDMA_EN_EN)
+  LDMA->EN = LDMA_EN_EN;
+#endif
+
+#if !defined(_SILICON_LABS_32B_SERIES_2)
   CMU_ClockEnable(cmuClock_LDMA, true);
+#endif
 
-  LDMA->CTRL = (init->ldmaInitCtrlNumFixed << _LDMA_CTRL_NUMFIXED_SHIFT)
-               | (init->ldmaInitCtrlSyncPrsClrEn << _LDMA_CTRL_SYNCPRSCLREN_SHIFT)
-               | (init->ldmaInitCtrlSyncPrsSetEn << _LDMA_CTRL_SYNCPRSSETEN_SHIFT);
+  ldmaCtrlVal = (init->ldmaInitCtrlNumFixed << _LDMA_CTRL_NUMFIXED_SHIFT);
 
+#if defined(_LDMA_CTRL_SYNCPRSCLREN_SHIFT) && defined (_LDMA_CTRL_SYNCPRSSETEN_SHIFT)
+  ldmaCtrlVal |=  (init->ldmaInitCtrlSyncPrsClrEn << _LDMA_CTRL_SYNCPRSCLREN_SHIFT)
+                 | (init->ldmaInitCtrlSyncPrsSetEn << _LDMA_CTRL_SYNCPRSSETEN_SHIFT);
+#endif
+
+  LDMA->CTRL = ldmaCtrlVal;
+
+#if defined(_LDMA_SYNCHWEN_SYNCCLREN_SHIFT) && defined (_LDMA_SYNCHWEN_SYNCSETEN_SHIFT)
+  LDMA->SYNCHWEN = (init->ldmaInitCtrlSyncPrsClrEn << _LDMA_SYNCHWEN_SYNCCLREN_SHIFT)
+                   | (init->ldmaInitCtrlSyncPrsSetEn << _LDMA_SYNCHWEN_SYNCSETEN_SHIFT);
+#endif
+
+#if defined(_LDMA_CHDIS_MASK)
+  LDMA->CHDIS = _LDMA_CHEN_MASK;
+#else
   LDMA->CHEN    = 0;
+#endif
   LDMA->DBGHALT = 0;
   LDMA->REQDIS  = 0;
 
-  /* Enable LDMA error interrupt. */
+  /* Enable the LDMA error interrupt. */
+#if defined (LDMA_IEN_ERRORIEN)
+  LDMA->IEN = LDMA_IEN_ERRORIEN;
+#elif defined (LDMA_IEN_ERROR)
   LDMA->IEN = LDMA_IEN_ERROR;
-  LDMA->IFC = 0xFFFFFFFF;
+#else
+  #error "IEN register not defined!!!"
+#endif
 
+#if defined (LDMA_HAS_SET_CLEAR)
+  LDMA->IF_CLR = 0xFFFFFFFFU;
+#else
+  LDMA->IFC = 0xFFFFFFFFU;
+#endif
   NVIC_ClearPendingIRQ(LDMA_IRQn);
 
-  /* Range is 0..7, 0 is highest priority. */
+  /* Range is 0-7, where 0 is the highest priority. */
   NVIC_SetPriority(LDMA_IRQn, init->ldmaInitIrqPriority);
 
   NVIC_EnableIRQ(LDMA_IRQn);
@@ -172,26 +221,43 @@ void LDMA_Init(const LDMA_Init_t *init)
  *   Start a DMA transfer.
  *
  * @param[in] ch
- *   DMA channel.
+ *   A DMA channel.
  *
  * @param[in] transfer
- *   Initialization structure used to configure the transfer.
+ *   The initialization structure used to configure the transfer.
  *
  * @param[in] descriptor
- *   Transfer descriptor, can be an array of descriptors linked together.
+ *   The transfer descriptor, which can be an array of descriptors linked together.
  ******************************************************************************/
 void LDMA_StartTransfer(int ch,
                         const LDMA_TransferCfg_t *transfer,
                         const LDMA_Descriptor_t  *descriptor)
 {
+#if !(defined (_LDMA_SYNCHWEN_SYNCCLREN_SHIFT) && defined (_LDMA_SYNCHWEN_SYNCSETEN_SHIFT))
   uint32_t tmp;
+#endif
   CORE_DECLARE_IRQ_STATE;
-  uint32_t chMask = 1 << ch;
+  uint32_t chMask = 1UL << (uint8_t)ch;
 
-  EFM_ASSERT(ch < DMA_CHAN_COUNT);
+  EFM_ASSERT(ch < (int)DMA_CHAN_COUNT);
   EFM_ASSERT(transfer != NULL);
-  EFM_ASSERT(!(transfer->ldmaReqSel & ~_LDMA_CH_REQSEL_MASK));
 
+#if defined (_LDMAXBAR_CH_REQSEL_MASK)
+  EFM_ASSERT(!(transfer->ldmaReqSel & ~_LDMAXBAR_CH_REQSEL_MASK));
+#elif defined (_LDMA_CH_REQSEL_MASK)
+  EFM_ASSERT(!(transfer->ldmaReqSel & ~_LDMA_CH_REQSEL_MASK));
+#endif
+
+#if defined (_LDMA_SYNCHWEN_SYNCCLREN_SHIFT) && defined (_LDMA_SYNCHWEN_SYNCSETEN_SHIFT)
+  EFM_ASSERT(!((transfer->ldmaCtrlSyncPrsClrOff << _LDMA_SYNCHWEN_SYNCCLREN_SHIFT)
+               & ~_LDMA_SYNCHWEN_SYNCCLREN_MASK));
+  EFM_ASSERT(!((transfer->ldmaCtrlSyncPrsClrOn << _LDMA_SYNCHWEN_SYNCCLREN_SHIFT)
+               & ~_LDMA_SYNCHWEN_SYNCCLREN_MASK));
+  EFM_ASSERT(!((transfer->ldmaCtrlSyncPrsSetOff << _LDMA_SYNCHWEN_SYNCSETEN_SHIFT)
+               & ~_LDMA_SYNCHWEN_SYNCSETEN_MASK));
+  EFM_ASSERT(!((transfer->ldmaCtrlSyncPrsSetOn << _LDMA_SYNCHWEN_SYNCSETEN_SHIFT)
+               & ~_LDMA_SYNCHWEN_SYNCSETEN_MASK));
+#elif defined (_LDMA_CTRL_SYNCPRSCLREN_SHIFT) && defined (_LDMA_CTRL_SYNCPRSSETEN_SHIFT)
   EFM_ASSERT(!((transfer->ldmaCtrlSyncPrsClrOff << _LDMA_CTRL_SYNCPRSCLREN_SHIFT)
                & ~_LDMA_CTRL_SYNCPRSCLREN_MASK));
   EFM_ASSERT(!((transfer->ldmaCtrlSyncPrsClrOn << _LDMA_CTRL_SYNCPRSCLREN_SHIFT)
@@ -200,74 +266,97 @@ void LDMA_StartTransfer(int ch,
                & ~_LDMA_CTRL_SYNCPRSSETEN_MASK));
   EFM_ASSERT(!((transfer->ldmaCtrlSyncPrsSetOn << _LDMA_CTRL_SYNCPRSSETEN_SHIFT)
                & ~_LDMA_CTRL_SYNCPRSSETEN_MASK));
+#endif
 
   EFM_ASSERT(!((transfer->ldmaCfgArbSlots << _LDMA_CH_CFG_ARBSLOTS_SHIFT)
                & ~_LDMA_CH_CFG_ARBSLOTS_MASK));
   EFM_ASSERT(!((transfer->ldmaCfgSrcIncSign << _LDMA_CH_CFG_SRCINCSIGN_SHIFT)
-               & ~_LDMA_CH_CFG_SRCINCSIGN_MASK ) );
+               & ~_LDMA_CH_CFG_SRCINCSIGN_MASK));
   EFM_ASSERT(!((transfer->ldmaCfgDstIncSign << _LDMA_CH_CFG_DSTINCSIGN_SHIFT)
                & ~_LDMA_CH_CFG_DSTINCSIGN_MASK));
   EFM_ASSERT(!((transfer->ldmaLoopCnt << _LDMA_CH_LOOP_LOOPCNT_SHIFT)
                & ~_LDMA_CH_LOOP_LOOPCNT_MASK));
 
+#if defined(LDMAXBAR)
+  LDMAXBAR->CH[ch].REQSEL = transfer->ldmaReqSel;
+#else
   LDMA->CH[ch].REQSEL = transfer->ldmaReqSel;
+#endif
   LDMA->CH[ch].LOOP = (transfer->ldmaLoopCnt << _LDMA_CH_LOOP_LOOPCNT_SHIFT);
   LDMA->CH[ch].CFG = (transfer->ldmaCfgArbSlots << _LDMA_CH_CFG_ARBSLOTS_SHIFT)
                      | (transfer->ldmaCfgSrcIncSign << _LDMA_CH_CFG_SRCINCSIGN_SHIFT)
                      | (transfer->ldmaCfgDstIncSign << _LDMA_CH_CFG_DSTINCSIGN_SHIFT);
 
-  /* Set descriptor address. */
+  /* Set the descriptor address. */
   LDMA->CH[ch].LINK = (uint32_t)descriptor & _LDMA_CH_LINK_LINKADDR_MASK;
 
-  /* Clear pending channel interrupt. */
+  /* Clear the pending channel interrupt. */
+#if defined (LDMA_HAS_SET_CLEAR)
+  LDMA->IF_CLR = chMask;
+#else
   LDMA->IFC = chMask;
+#endif
 
-  /* Critical region. */
+  /* A critical region. */
   CORE_ENTER_ATOMIC();
 
-  /* Enable channel interrupt. */
+  /* Enable the channel interrupt. */
   LDMA->IEN |= chMask;
 
-  if (transfer->ldmaReqDis)
-  {
+  if (transfer->ldmaReqDis) {
     LDMA->REQDIS |= chMask;
   }
 
-  if (transfer->ldmaDbgHalt)
-  {
+  if (transfer->ldmaDbgHalt) {
     LDMA->DBGHALT |= chMask;
   }
 
+#if defined (_LDMA_SYNCHWEN_SYNCCLREN_SHIFT) && defined (_LDMA_SYNCHWEN_SYNCSETEN_SHIFT)
+
+  LDMA->SYNCHWEN_CLR =
+    ((transfer->ldmaCtrlSyncPrsClrOff << _LDMA_SYNCHWEN_SYNCCLREN_SHIFT)
+     | (transfer->ldmaCtrlSyncPrsSetOff << _LDMA_SYNCHWEN_SYNCSETEN_SHIFT))
+    & _LDMA_SYNCHWEN_MASK;
+
+  LDMA->SYNCHWEN_SET =
+    ((transfer->ldmaCtrlSyncPrsClrOn << _LDMA_SYNCHWEN_SYNCCLREN_SHIFT)
+     | (transfer->ldmaCtrlSyncPrsSetOn << _LDMA_SYNCHWEN_SYNCSETEN_SHIFT))
+    & _LDMA_SYNCHWEN_MASK;
+
+#elif defined (_LDMA_CTRL_SYNCPRSCLREN_SHIFT) && defined (_LDMA_CTRL_SYNCPRSSETEN_SHIFT)
+
   tmp = LDMA->CTRL;
 
-  if (transfer->ldmaCtrlSyncPrsClrOff)
-  {
+  if (transfer->ldmaCtrlSyncPrsClrOff) {
     tmp &= ~_LDMA_CTRL_SYNCPRSCLREN_MASK
            | (~transfer->ldmaCtrlSyncPrsClrOff << _LDMA_CTRL_SYNCPRSCLREN_SHIFT);
   }
 
-  if (transfer->ldmaCtrlSyncPrsClrOn)
-  {
+  if (transfer->ldmaCtrlSyncPrsClrOn) {
     tmp |= transfer->ldmaCtrlSyncPrsClrOn << _LDMA_CTRL_SYNCPRSCLREN_SHIFT;
   }
 
-  if (transfer->ldmaCtrlSyncPrsSetOff)
-  {
+  if (transfer->ldmaCtrlSyncPrsSetOff) {
     tmp &= ~_LDMA_CTRL_SYNCPRSSETEN_MASK
            | (~transfer->ldmaCtrlSyncPrsSetOff << _LDMA_CTRL_SYNCPRSSETEN_SHIFT);
   }
 
-  if (transfer->ldmaCtrlSyncPrsSetOn)
-  {
+  if (transfer->ldmaCtrlSyncPrsSetOn) {
     tmp |= transfer->ldmaCtrlSyncPrsSetOn << _LDMA_CTRL_SYNCPRSSETEN_SHIFT;
   }
 
   LDMA->CTRL = tmp;
 
-  BUS_RegMaskedClear(&LDMA->CHDONE, chMask);  /* Clear the done flag.     */
-  LDMA->LINKLOAD = chMask;      /* Start transfer by loading descriptor.  */
+#else
 
-  /* Critical region end. */
+  #error  "SYNC Set and SYNC Clear not defined"
+
+#endif
+
+  BUS_RegMaskedClear(&LDMA->CHDONE, chMask);  /* Clear the done flag.     */
+  LDMA->LINKLOAD = chMask;      /* Start a transfer by loading the descriptor.  */
+
+  /* A critical region end. */
   CORE_EXIT_ATOMIC();
 }
 
@@ -279,18 +368,22 @@ void LDMA_StartTransfer(int ch,
  *   The DMA will complete the current AHB burst transfer before stopping.
  *
  * @param[in] ch
- *   DMA channel to stop.
+ *   A DMA channel to stop.
  ******************************************************************************/
 void LDMA_StopTransfer(int ch)
 {
-  uint32_t chMask = 1 << ch;
+  uint32_t chMask = 1UL << (uint8_t)ch;
 
-  EFM_ASSERT(ch < DMA_CHAN_COUNT);
+  EFM_ASSERT(ch < (int)DMA_CHAN_COUNT);
 
   CORE_ATOMIC_SECTION(
     LDMA->IEN &= ~chMask;
+#if defined(_LDMA_CHDIS_MASK)
+    LDMA->CHDIS = chMask;
+#else
     BUS_RegMaskedClear(&LDMA->CHEN, chMask);
-  )
+#endif
+    )
 }
 
 /***************************************************************************//**
@@ -298,7 +391,7 @@ void LDMA_StopTransfer(int ch)
  *   Check if a DMA transfer has completed.
  *
  * @param[in] ch
- *   DMA channel to check.
+ *   A DMA channel to check.
  *
  * @return
  *   True if transfer has completed, false if not.
@@ -306,26 +399,31 @@ void LDMA_StopTransfer(int ch)
 bool LDMA_TransferDone(int ch)
 {
   bool     retVal = false;
-  uint32_t chMask = 1 << ch;
+  uint32_t chMask = 1UL << (uint8_t)ch;
 
-  EFM_ASSERT(ch < DMA_CHAN_COUNT);
+  EFM_ASSERT(ch < (int)DMA_CHAN_COUNT);
 
   CORE_ATOMIC_SECTION(
-    if (((LDMA->CHEN & chMask) == 0)
-        && ((LDMA->CHDONE & chMask) == chMask))
-    {
-      retVal = true;
-    }
-  )
+    if (
+#if defined(_LDMA_CHSTATUS_MASK)
+      ((LDMA->CHSTATUS & chMask) == 0)
+#else
+      ((LDMA->CHEN & chMask) == 0)
+#endif
+      && ((LDMA->CHDONE & chMask) == chMask)) {
+    retVal = true;
+  }
+    )
+
   return retVal;
 }
 
 /***************************************************************************//**
  * @brief
- *  Get number of items remaining in a transfer.
+ *  Get the number of items remaining in a transfer.
  *
  * @note
- *  This function is does not take into account that a DMA transfers with
+ *  This function does not take into account that a DMA transfer with
  *  a chain of linked transfers might be ongoing. It will only check the
  *  count for the current transfer.
  *
@@ -333,28 +431,27 @@ bool LDMA_TransferDone(int ch)
  *  The channel number of the transfer to check.
  *
  * @return
- *  Number of items remaining in the transfer.
+ *  A number of items remaining in the transfer.
  ******************************************************************************/
 uint32_t LDMA_TransferRemainingCount(int ch)
 {
   uint32_t remaining, done, iflag;
-  uint32_t chMask = 1 << ch;
+  uint32_t chMask = 1UL << (uint8_t)ch;
 
-  EFM_ASSERT(ch < DMA_CHAN_COUNT);
+  EFM_ASSERT(ch < (int)DMA_CHAN_COUNT);
 
   CORE_ATOMIC_SECTION(
     iflag  = LDMA->IF;
     done   = LDMA->CHDONE;
     remaining = LDMA->CH[ch].CTRL;
-  )
+    )
 
   iflag    &= chMask;
   done     &= chMask;
   remaining = (remaining & _LDMA_CH_CTRL_XFERCNT_MASK)
               >> _LDMA_CH_CTRL_XFERCNT_SHIFT;
 
-  if (done || ((remaining == 0) && iflag))
-  {
+  if (done || ((remaining == 0) && iflag)) {
     return 0;
   }
 

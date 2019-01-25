@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_app_client
-#define NET_LOG_LEVEL CONFIG_NET_APP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_app, CONFIG_NET_APP_LOG_LEVEL);
 
 #include <zephyr.h>
 #include <string.h>
@@ -196,7 +196,7 @@ static int get_port_number(const char *peer_addr_str,
 			   char *buf,
 			   size_t buf_len)
 {
-	u16_t port = 0;
+	u16_t port = 0U;
 	char *ptr;
 	int count, i;
 
@@ -378,7 +378,7 @@ int net_app_init_client(struct net_app_ctx *ctx,
 	}
 
 	if (client_addr) {
-		u16_t local_port = 0;
+		u16_t local_port = 0U;
 		bool empty_addr = false;
 
 		addr.sa_family = remote_addr.sa_family;

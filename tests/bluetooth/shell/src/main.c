@@ -22,14 +22,8 @@
 #include <zephyr.h>
 
 #include <shell/shell.h>
-#include <shell/shell_uart.h>
 
 #include <gatt/hrs.h>
-
-#define print(_sh, _ft, ...) \
-	shell_fprintf(_sh, SHELL_NORMAL, _ft "\r\n", ##__VA_ARGS__)
-#define error(_sh, _ft, ...) \
-	shell_fprintf(_sh, SHELL_ERROR, _ft "\r\n", ##__VA_ARGS__)
 
 #define DEVICE_NAME CONFIG_BT_DEVICE_NAME
 
@@ -39,29 +33,23 @@ static bool hrs_simulate;
 static int cmd_hrs_simulate(const struct shell *shell,
 			    size_t argc, char *argv[])
 {
-	int err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-
-	if (err) {
-		return err;
-	}
-
 	if (!strcmp(argv[1], "on")) {
 		static bool hrs_registered;
 
 		if (!hrs_registered) {
-			print(shell, "Registering HRS Service");
+			shell_print(shell, "Registering HRS Service");
 			hrs_init(0x01);
 			hrs_registered = true;
 		}
 
-		print(shell, "Start HRS simulation");
+		shell_print(shell, "Start HRS simulation");
 		hrs_simulate = true;
 	} else if (!strcmp(argv[1], "off")) {
-		print(shell, "Stop HRS simulation");
+		shell_print(shell, "Stop HRS simulation");
 		hrs_simulate = false;
 	} else {
-		print(shell, "Incorrect value: %s", argv[1]);
-		shell_help_print(shell, NULL, 0);
+		shell_print(shell, "Incorrect value: %s", argv[1]);
+		shell_help(shell);
 		return -ENOEXEC;
 	}
 
@@ -74,34 +62,22 @@ static int cmd_hrs_simulate(const struct shell *shell,
 
 SHELL_CREATE_STATIC_SUBCMD_SET(hrs_cmds) {
 #if defined(CONFIG_BT_CONN)
-	SHELL_CMD(hrs-simulate, NULL,
-		  "register and simulate Heart Rate Service <value: on, off>",
-		  cmd_hrs_simulate),
+	SHELL_CMD_ARG(hrs-simulate, NULL,
+		"register and simulate Heart Rate Service <value: on, off>",
+		cmd_hrs_simulate, 2, 0),
 #endif /* CONFIG_BT_CONN */
 	SHELL_SUBCMD_SET_END
 };
 
 static int cmd_hrs(const struct shell *shell, size_t argc, char **argv)
 {
-	int err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-
-	if (argc == 1) {
-		shell_help_print(shell, NULL, 0);
-		/* shell_cmd_precheck returns 1 when help is printed */
-		return 1;
-	}
-
-	if (err) {
-		return err;
-	}
-
-	error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
+	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
 
 	return -ENOEXEC;
 }
 
-SHELL_CMD_REGISTER(hrs, &hrs_cmds, "Heart Rate Service shell commands",
-		   cmd_hrs);
+SHELL_CMD_ARG_REGISTER(hrs, &hrs_cmds, "Heart Rate Service shell commands",
+		       cmd_hrs, 2, 0);
 
 void main(void)
 {

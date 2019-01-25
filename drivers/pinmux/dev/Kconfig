@@ -21,13 +21,6 @@ config PINMUX_DEV_NAME
 	help
 	  The name of the pinmux dev driver.
 
-config PINMUX_DEV_ATMEL_SAM3X
-	bool "Enable pinmux dev driver for Atmel SAM3X boards"
-	depends on PINMUX_DEV && SOC_SERIES_SAM3X
-	help
-	  Enables the pinmux dev driver for boards based on the
-	  Atmel SAM3X family of microcontrollers.
-
 config PINMUX_DEV_STM32
 	bool "Enable pinmux dev driver for the ST STM32 family."
 	depends on PINMUX_DEV && SOC_FAMILY_STM32

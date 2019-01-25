@@ -5,12 +5,13 @@
 /*
  * Copyright (c) 2017 ARM Ltd.
  * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2018 Vincent van der Locht
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_dhcpv4
-#define NET_LOG_LEVEL CONFIG_NET_DHCPV4_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_dhcpv4, CONFIG_NET_DHCPV4_LOG_LEVEL);
 
 #include <errno.h>
 #include <inttypes.h>
@@ -183,8 +184,7 @@ static struct net_pkt *dhcpv4_prepare_message(struct net_if *iface, u8_t type,
 	struct net_buf *frag;
 	struct dhcp_msg *msg;
 
-	pkt = net_pkt_get_reserve_tx(net_if_get_ll_reserve(iface, NULL),
-				     K_FOREVER);
+	pkt = net_pkt_get_reserve_tx(K_FOREVER);
 	net_pkt_set_iface(pkt, iface);
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 
@@ -991,6 +991,18 @@ drop:
 static void dhcpv4_iface_event_handler(struct net_mgmt_event_callback *cb,
 				       u32_t mgmt_event, struct net_if *iface)
 {
+	sys_snode_t *node = NULL;
+
+	SYS_SLIST_FOR_EACH_NODE(&dhcpv4_ifaces, node) {
+		if (node == &iface->config.dhcpv4.node) {
+			break;
+		}
+	}
+
+	if (node == NULL) {
+		return;
+	}
+
 	if (mgmt_event == NET_EVENT_IF_DOWN) {
 		NET_DBG("Interface %p going down", iface);
 
@@ -1073,6 +1085,10 @@ void net_dhcpv4_start(struct net_if *iface)
 
 		NET_DBG("wait timeout=%us", timeout);
 
+		if (sys_slist_is_empty(&dhcpv4_ifaces)) {
+			net_mgmt_add_event_callback(&mgmt4_cb);
+		}
+
 		sys_slist_append(&dhcpv4_ifaces,
 				 &iface->config.dhcpv4.node);
 
@@ -1090,23 +1106,15 @@ void net_dhcpv4_start(struct net_if *iface)
 	case NET_DHCPV4_BOUND:
 		break;
 	}
-
-	/* Catch network interface UP or DOWN events and renew the address
-	 * if interface is coming back up again.
-	 */
-	net_mgmt_init_event_callback(&mgmt4_cb, dhcpv4_iface_event_handler,
-				     NET_EVENT_IF_DOWN | NET_EVENT_IF_UP);
-	net_mgmt_add_event_callback(&mgmt4_cb);
 }
 
 void net_dhcpv4_stop(struct net_if *iface)
 {
-	net_mgmt_del_event_callback(&mgmt4_cb);
-
 	switch (iface->config.dhcpv4.state) {
 	case NET_DHCPV4_DISABLED:
 		break;
 
+	case NET_DHCPV4_RENEWING:
 	case NET_DHCPV4_BOUND:
 		if (!net_if_ipv4_addr_rm(iface,
 					 &iface->config.dhcpv4.requested_ip)) {
@@ -1117,7 +1125,6 @@ void net_dhcpv4_stop(struct net_if *iface)
 	case NET_DHCPV4_INIT:
 	case NET_DHCPV4_SELECTING:
 	case NET_DHCPV4_REQUESTING:
-	case NET_DHCPV4_RENEWING:
 	case NET_DHCPV4_REBINDING:
 		iface->config.dhcpv4.state = NET_DHCPV4_DISABLED;
 		NET_DBG("state=%s",
@@ -1128,6 +1135,7 @@ void net_dhcpv4_stop(struct net_if *iface)
 
 		if (sys_slist_is_empty(&dhcpv4_ifaces)) {
 			k_delayed_work_cancel(&timeout_work);
+			net_mgmt_del_event_callback(&mgmt4_cb);
 		}
 
 		break;
@@ -1159,6 +1167,12 @@ int net_dhcpv4_init(void)
 	}
 
 	k_delayed_work_init(&timeout_work, dhcpv4_timeout);
+
+	/* Catch network interface UP or DOWN events and renew the address
+	 * if interface is coming back up again.
+	 */
+	net_mgmt_init_event_callback(&mgmt4_cb, dhcpv4_iface_event_handler,
+					 NET_EVENT_IF_DOWN | NET_EVENT_IF_UP);
 
 	return 0;
 }

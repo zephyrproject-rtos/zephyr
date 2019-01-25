@@ -2,7 +2,7 @@
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -12,7 +12,6 @@
 #ifndef FSL_COMPONENT_ID
 #define FSL_COMPONENT_ID "platform.drivers.src"
 #endif
-
 
 /*******************************************************************************
  * Prototypes
@@ -26,6 +25,12 @@
  * Code
  ******************************************************************************/
 
+/*!
+ * brief Clear the status flags of SRC.
+ *
+ * param base SRC peripheral base address.
+ * param Mask value of status flags to be cleared, see to #_src_reset_status_flags.
+ */
 void SRC_ClearResetStatusFlags(SRC_Type *base, uint32_t flags)
 {
     uint32_t tmp32 = base->SRSR;

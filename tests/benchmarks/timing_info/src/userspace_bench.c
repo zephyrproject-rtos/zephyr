@@ -63,7 +63,7 @@ void userspace_bench(void)
 
 void test_drop_to_user_mode_1(void *p1, void *p2, void *p3)
 {
-	volatile u32_t dummy = 100;
+	volatile u32_t dummy = 100U;
 
 	dummy++;
 }
@@ -236,7 +236,7 @@ void validation_overhead_user_thread(void *p1, void *p2, void *p3)
 void validation_overhead(void)
 {
 
-	k_thread_access_grant(k_current_get(), &test_sema, NULL);
+	k_thread_access_grant(k_current_get(), &test_sema);
 
 
 	k_thread_create(&my_thread_user, my_stack_area, STACK_SIZE,

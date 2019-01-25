@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_nbr
-#define NET_LOG_LEVEL CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_nbr, CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL);
 
 #include <errno.h>
 
@@ -206,7 +206,7 @@ void net_nbr_clear_table(struct net_nbr_table *table)
 
 void net_nbr_print(struct net_nbr_table *table)
 {
-	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+	if (CONFIG_NET_IPV6_NBR_CACHE_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		int i;
 
 		for (i = 0; i < table->nbr_count; i++) {

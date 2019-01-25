@@ -11,7 +11,7 @@
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP
 GDATA(_pm_arc_context)
 
-GTEXT(_sys_soc_resume_from_deep_sleep)
+GTEXT(sys_resume_from_deep_sleep)
 GTEXT(_power_restore_cpu_context)
 GTEXT(_power_soc_sleep)
 GTEXT(_power_soc_deep_sleep)
@@ -24,7 +24,7 @@ GTEXT(_power_soc_lpss_mode)
 #define SLEEP_INTR_ENABLED_BIT 4
 #define SLEEP_MODE_RTC_ENABLED_BIT 5
 
-SECTION_FUNC(TEXT, _sys_soc_resume_from_deep_sleep)
+SECTION_FUNC(TEXT, sys_resume_from_deep_sleep)
         /* Check is this wakeup after sleep event. */
         ld r0,[GPS0_REGISTER]
         bbit1 r0,RESTORE_SS_BIT,restore
@@ -37,7 +37,7 @@ restore:
 	/* Enable I-Cache */
         sr 1, [_ARC_V2_IC_CTRL]
 
-	j @_sys_soc_restore_cpu_context
+	j @sys_restore_cpu_context
 
 SECTION_FUNC(TEXT, save_cpu_context)
 	mov_s r1, _kernel
@@ -114,7 +114,7 @@ SECTION_FUNC(TEXT, _power_soc_lpss_mode)
 	pop_s blink
 	j_s [blink]
 
-SECTION_FUNC(TEXT, _sys_soc_restore_cpu_context)
+SECTION_FUNC(TEXT, sys_restore_cpu_context)
 	mov_s r1, _kernel
 	ld_s r2, [r1, _kernel_offset_to_current]
 

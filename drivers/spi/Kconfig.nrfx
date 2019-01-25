@@ -5,8 +5,8 @@
 
 menuconfig SPI_NRFX
 	bool "nRF SPI nrfx drivers"
+	default y
 	depends on SOC_FAMILY_NRF
-	select HAS_DTS_SPI
 	help
 	  Enable support for nrfx SPI drivers for nRF MCU series.
 	  Peripherals with the same instance ID cannot be used together,
@@ -217,7 +217,7 @@ config SPI_3_NRF_ORC
 config SPI_3_NRF_RX_DELAY
 	int "MISO sampling delay"
 	range 0 7
-	default 0
+	default 2
 	help
 	  Number of 64 MHz clock cycles (15.625 ns) delay from the sampling
 	  edge of SCK (leading or trailing, depending on the CPHA setting used)

@@ -6,7 +6,7 @@
 
 menuconfig LWM2M
 	bool "OMA LWM2M protocol stack"
-	select COAP
+	depends on COAP_NET_PKT
 	select NET_APP_CLIENT
 	select HTTP_PARSER_URL
 	help

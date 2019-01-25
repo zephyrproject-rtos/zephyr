@@ -203,44 +203,44 @@ static int i2c_eeprom_slave_init(struct device *dev)
 	return 0;
 }
 
-#ifdef CONFIG_I2C_EEPROM_SLAVE_0
+#ifdef DT_ATMEL_AT24_0
 
 static struct i2c_eeprom_slave_data i2c_eeprom_slave_0_dev_data;
 
-static u8_t i2c_eeprom_slave_0_buffer[(EEPROM_SLAVE_0_SIZE * 1024)];
+static u8_t i2c_eeprom_slave_0_buffer[(DT_ATMEL_AT24_0_SIZE * 1024)];
 
 static const struct i2c_eeprom_slave_config i2c_eeprom_slave_0_cfg = {
-	.controller_dev_name = EEPROM_SLAVE_0_BUS_NAME,
-	.address = EEPROM_SLAVE_0_BASE_ADDRESS,
-	.buffer_size = (EEPROM_SLAVE_0_SIZE * 1024),
+	.controller_dev_name = DT_ATMEL_AT24_0_BUS_NAME,
+	.address = DT_ATMEL_AT24_0_BASE_ADDRESS,
+	.buffer_size = (DT_ATMEL_AT24_0_SIZE * 1024),
 	.buffer = i2c_eeprom_slave_0_buffer
 };
 
-DEVICE_AND_API_INIT(i2c_eeprom_slave_0, EEPROM_SLAVE_0_LABEL,
+DEVICE_AND_API_INIT(i2c_eeprom_slave_0, DT_ATMEL_AT24_0_LABEL,
 		    &i2c_eeprom_slave_init,
 		    &i2c_eeprom_slave_0_dev_data, &i2c_eeprom_slave_0_cfg,
 		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,
 		    &api_funcs);
 
-#endif /* CONFIG_I2C_EEPROM_SLAVE_0 */
+#endif /* DT_ATMEL_AT24_0 */
 
-#ifdef CONFIG_I2C_EEPROM_SLAVE_1
+#ifdef DT_ATMEL_AT24_1
 
 static struct i2c_eeprom_slave_data i2c_eeprom_slave_1_dev_data;
 
-static u8_t i2c_eeprom_slave_1_buffer[(EEPROM_SLAVE_1_SIZE * 1024)];
+static u8_t i2c_eeprom_slave_1_buffer[(DT_ATMEL_AT24_1_SIZE * 1024)];
 
 static const struct i2c_eeprom_slave_config i2c_eeprom_slave_1_cfg = {
-	.controller_dev_name = EEPROM_SLAVE_1_BUS_NAME,
-	.address = EEPROM_SLAVE_1_BASE_ADDRESS,
-	.buffer_size = (EEPROM_SLAVE_1_SIZE * 1024),
+	.controller_dev_name = DT_ATMEL_AT24_1_BUS_NAME,
+	.address = DT_ATMEL_AT24_1_BASE_ADDRESS,
+	.buffer_size = (DT_ATMEL_AT24_1_SIZE * 1024),
 	.buffer = i2c_eeprom_slave_1_buffer
 };
 
-DEVICE_AND_API_INIT(i2c_eeprom_slave_1, EEPROM_SLAVE_1_LABEL,
+DEVICE_AND_API_INIT(i2c_eeprom_slave_1, DT_ATMEL_AT24_1_LABEL,
 		    &i2c_eeprom_slave_init,
 		    &i2c_eeprom_slave_1_dev_data, &i2c_eeprom_slave_1_cfg,
 		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,
 		    &api_funcs);
 
-#endif /* CONFIG_I2C_EEPROM_SLAVE_1 */
+#endif /* DT_ATMEL_AT24_1 */

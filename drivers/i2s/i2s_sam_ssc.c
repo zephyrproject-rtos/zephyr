@@ -32,11 +32,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
-/* FIXME change to
- * #if __DCACHE_PRESENT == 1
- * when cache support is added
- */
-#if 0
+#if __DCACHE_PRESENT == 1
 #define DCACHE_INVALIDATE(addr, size) \
 	SCB_InvalidateDCache_by_Addr((u32_t *)addr, size)
 #define DCACHE_CLEAN(addr, size) \
@@ -106,8 +102,8 @@ struct i2s_sam_dev_data {
 #define MODULO_INC(val, max) { val = (++val < max) ? val : 0; }
 
 static struct device *get_dev_from_dma_channel(u32_t dma_channel);
-static void dma_rx_callback(struct device *, u32_t, int);
-static void dma_tx_callback(struct device *, u32_t, int);
+static void dma_rx_callback(void *, u32_t, int);
+static void dma_tx_callback(void *, u32_t, int);
 static void rx_stream_disable(struct stream *, Ssc *const, struct device *);
 static void tx_stream_disable(struct stream *, Ssc *const, struct device *);
 
@@ -188,7 +184,7 @@ static int start_dma(struct device *dev_dma, u32_t channel,
 }
 
 /* This function is executed in the interrupt context */
-static void dma_rx_callback(struct device *dev_dma, u32_t channel, int status)
+static void dma_rx_callback(void *callback_arg, u32_t channel, int status)
 {
 	struct device *dev = get_dev_from_dma_channel(channel);
 	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
@@ -197,6 +193,7 @@ static void dma_rx_callback(struct device *dev_dma, u32_t channel, int status)
 	struct stream *stream = &dev_data->rx;
 	int ret;
 
+	ARG_UNUSED(callback_arg);
 	__ASSERT_NO_MSG(stream->mem_block != NULL);
 
 	/* Stop reception if there was an error */
@@ -246,7 +243,7 @@ rx_disable:
 }
 
 /* This function is executed in the interrupt context */
-static void dma_tx_callback(struct device *dev_dma, u32_t channel, int status)
+static void dma_tx_callback(void *callback_arg, u32_t channel, int status)
 {
 	struct device *dev = get_dev_from_dma_channel(channel);
 	const struct i2s_sam_dev_cfg *const dev_cfg = DEV_CFG(dev);
@@ -256,6 +253,7 @@ static void dma_tx_callback(struct device *dev_dma, u32_t channel, int status)
 	size_t mem_block_size;
 	int ret;
 
+	ARG_UNUSED(callback_arg);
 	__ASSERT_NO_MSG(stream->mem_block != NULL);
 
 	/* All block data sent */
@@ -312,15 +310,15 @@ static int set_rx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	const bool pin_rf_en = IS_ENABLED(CONFIG_I2S_SAM_SSC_0_PIN_RF_EN);
 	u8_t word_size_bits = i2s_cfg->word_size;
 	u8_t num_words = i2s_cfg->channels;
-	u8_t fslen = 0;
-	u32_t ssc_rcmr = 0;
-	u32_t ssc_rfmr = 0;
+	u8_t fslen = 0U;
+	u32_t ssc_rcmr = 0U;
+	u32_t ssc_rfmr = 0U;
 	bool frame_clk_master = !(i2s_cfg->options & I2S_OPT_FRAME_CLK_SLAVE);
 
 	switch (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) {
 
 	case I2S_FMT_DATA_FORMAT_I2S:
-		num_words = 2;
+		num_words = 2U;
 		fslen = word_size_bits - 1;
 
 		ssc_rcmr = SSC_RCMR_CKI
@@ -403,14 +401,14 @@ static int set_tx_data_format(const struct i2s_sam_dev_cfg *const dev_cfg,
 	Ssc *const ssc = dev_cfg->regs;
 	u8_t word_size_bits = i2s_cfg->word_size;
 	u8_t num_words = i2s_cfg->channels;
-	u8_t fslen = 0;
-	u32_t ssc_tcmr = 0;
-	u32_t ssc_tfmr = 0;
+	u8_t fslen = 0U;
+	u32_t ssc_tcmr = 0U;
+	u32_t ssc_tfmr = 0U;
 
 	switch (i2s_cfg->format & I2S_FMT_DATA_FORMAT_MASK) {
 
 	case I2S_FMT_DATA_FORMAT_I2S:
-		num_words = 2;
+		num_words = 2U;
 		fslen = word_size_bits - 1;
 
 		ssc_tcmr = SSC_TCMR_START_TF_FALLING
@@ -731,7 +729,7 @@ static void tx_queue_drop(struct stream *stream)
 {
 	size_t size;
 	void *mem_block;
-	unsigned int n = 0;
+	unsigned int n = 0U;
 
 	while (queue_get(&stream->mem_block_queue, &mem_block, &size) == 0) {
 		k_mem_slab_free(stream->cfg.mem_slab, &mem_block);

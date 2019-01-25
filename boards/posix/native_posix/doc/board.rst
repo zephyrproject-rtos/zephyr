@@ -448,14 +448,9 @@ The following peripherals are currently provided with this board:
   For more information refer to the section `UART`_.
 
 **Console driver**:
-  A console driver is provided which by default is configured to:
-
-  - Redirect any :c:func:`printk` write to the native host application's
-    ``stdout``.
-
-  - If the legacy shell is compiled with your application, redirect the
-    native application's ``stdin`` to the legacy shell for any input.
-    For more information refer to the section `Legacy shell support`_.
+  A console driver is provided which by default is configured to
+  redirect any :c:func:`printk` write to the native host application's
+  ``stdout``.
 
 **Real time clock**
   The real time clock model provides a model of a constantly powered clock.
@@ -519,6 +514,23 @@ The following peripherals are currently provided with this board:
   must be powered down and support Bluetooth Low Energy (i.e. support the
   Bluetooth specification version 4.0 or greater).
 
+**Display driver**:
+  A display driver is provided that creates a window on the host machine to
+  render display content.
+
+  This driver requires a 32-bit version of the `SDL2`_ library on the host
+  machine and ``pkg-config`` settings to correctly pickup the SDL2 install path
+  and compiler flags.
+
+  On a Ubuntu 18.04 host system, for example, install the ``pkg-config`` and
+  ``libsdl2-dev:i386`` packages, and configure the pkg-config search path with
+  these commands::
+
+    $ sudo apt-get install pkg-config libsdl2-dev:i386
+    $ export PKG_CONFIG_PATH=/usr/lib/i386-linux-gnu/pkgconfig
+
+.. _SDL2:
+   https://www.libsdl.org/download-2.0.php
 
 UART
 *****
@@ -529,7 +541,7 @@ output to the executable's ``stdin`` and ``stdout``.
 This is chosen by selecting either
 :option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` or
 :option:`CONFIG_NATIVE_UART_0_ON_STDINOUT`
-For interactive use with the :ref:`Shell`, choose the first (OWN_PTY) option.
+For interactive use with the :ref:`shell_label`, choose the first (OWN_PTY) option.
 The second (STDINOUT) option can be used with the shell for automated
 testing, such as when piping other processes' output to control it.
 This is because the shell subsystem expects access to a raw terminal,
@@ -551,55 +563,3 @@ option ``-attach_uart_cmd=<"cmd">``. Where the default command is given by
 :option:`CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD`.
 Note that the default command assumes both ``xterm`` and ``screen`` are
 installed in the system.
-
-
-Legacy shell support
-********************
-
-When the legacy shell subsystem is compiled with your application,
-the native standard input (``stdin``) will be redirected to the shell.
-You may use this shell interactively through the console,
-by piping another process output to it, or by feeding it a file.
-
-When using it interactively you may want to select the option
-:option:`CONFIG_NATIVE_POSIX_SLOWDOWN_TO_REAL_TIME`.
-
-When feeding ``stdin`` from a pipe or file, the console driver will ensure
-reproducibility between runs of the process:
-
-- The execution of the process will be stalled while waiting for new ``stdin``
-  data to be ready.
-
-- Commands will be fed to the shell as fast as the shell can process them.
-  To allow controlling the flow of commands to the shell, you may use the
-  driver directive ``!wait <ms>``.
-
-- When the file ends, or the pipe is closed the driver will stop attempting to
-  read it.
-
-Driver directives
-=================
-
-The console driver understands a set of special commands: driver directives.
-These directives are captured by the console driver itself and are not
-forwarded to the shell.
-These directives are:
-
-- ``!wait <ms>``: When received, the driver will pause feeding commands to the
-  shell for ``<ms>`` milliseconds.
-
-- ``!quit``: When received the driver will cause the application to gracefully
-  exit by calling :c:func:`posix_exit`.
-
-
-Use example
-===========
-
-For example, after you have built an application with the legacy shell, you
-can feed it the following set of commands through a pipe:
-
-.. code-block:: console
-
-   echo -e \
-   'select kernel\nuptime\n!wait 500\nuptime\n!wait 1000\nuptime\n!quit' \
-   | zephyr/zephyr.exe

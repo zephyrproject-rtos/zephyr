@@ -12,35 +12,124 @@
 #include <zephyr.h>
 #include <init.h>
 #include "net/buf.h"
-#include "shell/legacy_shell.h"
 #include "mgmt/mgmt.h"
 #include "mgmt/serial.h"
 #include "mgmt/buf.h"
 #include "mgmt/smp.h"
-
-struct device;
+#include "mgmt/smp_shell.h"
 
 static struct zephyr_smp_transport smp_shell_transport;
 
 static struct mcumgr_serial_rx_ctxt smp_shell_rx_ctxt;
 
-/**
- * Processes a single line (i.e., a single SMP frame)
- */
-static int smp_shell_rx_line(const char *line, void *arg)
+/** SMP mcumgr frame fragments. */
+enum smp_shell_esc_mcumgr {
+	ESC_MCUMGR_PKT_1,
+	ESC_MCUMGR_PKT_2,
+	ESC_MCUMGR_FRAG_1,
+	ESC_MCUMGR_FRAG_2,
+};
+
+/** These states indicate whether an mcumgr frame is being received. */
+enum smp_shell_mcumgr_state {
+	SMP_SHELL_MCUMGR_STATE_NONE,
+	SMP_SHELL_MCUMGR_STATE_HEADER,
+	SMP_SHELL_MCUMGR_STATE_PAYLOAD
+};
+
+static int read_mcumgr_byte(struct smp_shell_data *data, u8_t byte)
 {
-	struct net_buf *nb;
-	int line_len;
+	bool frag_1;
+	bool frag_2;
+	bool pkt_1;
+	bool pkt_2;
 
-	/* Strip the trailing newline. */
-	line_len = strlen(line) - 1;
+	pkt_1 = atomic_test_bit(&data->esc_state, ESC_MCUMGR_PKT_1);
+	pkt_2 = atomic_test_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
+	frag_1 = atomic_test_bit(&data->esc_state, ESC_MCUMGR_FRAG_1);
+	frag_2 = atomic_test_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
 
-	nb = mcumgr_serial_process_frag(&smp_shell_rx_ctxt, line, line_len);
-	if (nb != NULL) {
-		zephyr_smp_rx_req(&smp_shell_transport, nb);
+	if (pkt_2 || frag_2) {
+		/* Already fully framed. */
+		return SMP_SHELL_MCUMGR_STATE_PAYLOAD;
 	}
 
-	return 0;
+	if (pkt_1) {
+		if (byte == MCUMGR_SERIAL_HDR_PKT_2) {
+			/* Final framing byte received. */
+			atomic_set_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
+			return SMP_SHELL_MCUMGR_STATE_PAYLOAD;
+		}
+	} else if (frag_1) {
+		if (byte == MCUMGR_SERIAL_HDR_FRAG_2) {
+			/* Final framing byte received. */
+			atomic_set_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
+			return SMP_SHELL_MCUMGR_STATE_PAYLOAD;
+		}
+	} else {
+		if (byte == MCUMGR_SERIAL_HDR_PKT_1) {
+			/* First framing byte received. */
+			atomic_set_bit(&data->esc_state, ESC_MCUMGR_PKT_1);
+			return SMP_SHELL_MCUMGR_STATE_HEADER;
+		} else if (byte == MCUMGR_SERIAL_HDR_FRAG_1) {
+			/* First framing byte received. */
+			atomic_set_bit(&data->esc_state, ESC_MCUMGR_FRAG_1);
+			return SMP_SHELL_MCUMGR_STATE_HEADER;
+		}
+	}
+
+	/* Non-mcumgr byte received. */
+	return SMP_SHELL_MCUMGR_STATE_NONE;
+}
+
+bool smp_shell_rx_byte(struct smp_shell_data *data, uint8_t byte)
+{
+	int mcumgr_state;
+
+	mcumgr_state = read_mcumgr_byte(data, byte);
+	if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_NONE) {
+		/* Not an mcumgr command; let the shell process the byte. */
+		return false;
+	}
+
+	/*
+	 * The received byte is part of an mcumgr command.  Process the byte
+	 * and return true to indicate that shell should ignore it.
+	 */
+	if (data->cur + data->end < sizeof(data->mcumgr_buff) - 1) {
+		data->mcumgr_buff[data->cur++] = byte;
+	}
+	if (mcumgr_state == SMP_SHELL_MCUMGR_STATE_PAYLOAD && byte == '\n') {
+		data->mcumgr_buff[data->cur + data->end] = '\0';
+		data->cmd_rdy = true;
+		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_1);
+		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_PKT_2);
+		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_1);
+		atomic_clear_bit(&data->esc_state, ESC_MCUMGR_FRAG_2);
+		data->cur = 0U;
+		data->end = 0U;
+	}
+
+	return true;
+}
+
+void smp_shell_process(struct smp_shell_data *data)
+{
+	if (data->cmd_rdy) {
+		data->cmd_rdy = false;
+		struct net_buf *nb;
+		int line_len;
+
+		/* Strip the trailing newline. */
+		line_len = strlen(data->mcumgr_buff) - 1;
+
+		nb = mcumgr_serial_process_frag(&smp_shell_rx_ctxt,
+						data->mcumgr_buff,
+						line_len);
+		if (nb != NULL) {
+			zephyr_smp_rx_req(&smp_shell_transport, nb);
+		}
+	}
 }
 
 static u16_t smp_shell_get_mtu(const struct net_buf *nb)
@@ -72,7 +161,6 @@ static int smp_shell_init(struct device *dev)
 
 	zephyr_smp_transport_init(&smp_shell_transport, smp_shell_tx_pkt,
 				  smp_shell_get_mtu, NULL, NULL);
-	shell_register_mcumgr_handler(smp_shell_rx_line, NULL);
 
 	return 0;
 }

@@ -6,6 +6,14 @@
 #include "shell_utils.h"
 #include <ctype.h>
 
+extern const struct shell_cmd_entry __shell_root_cmds_start[0];
+extern const struct shell_cmd_entry __shell_root_cmds_end[0];
+
+static inline const struct shell_cmd_entry *shell_root_cmd_get(u32_t id)
+{
+	return &__shell_root_cmds_start[id];
+}
+
 /* Calculates relative line number of given position in buffer */
 static u32_t line_num_with_buffer_offset_get(struct shell_multiline_cons *cons,
 					     u16_t buffer_pos)
@@ -51,9 +59,10 @@ void shell_multiline_data_calc(struct shell_multiline_cons *cons,
 	cons->cur_x_end = (buff_len + cons->name_len) % cons->terminal_wid + 1;
 }
 
-static void make_argv(char **ppcmd, u8_t c, u8_t quote)
+static char make_argv(char **ppcmd, u8_t c)
 {
 	char *cmd = *ppcmd;
+	char quote = 0;
 
 	while (1) {
 		c = *cmd;
@@ -99,9 +108,9 @@ static void make_argv(char **ppcmd, u8_t c, u8_t quote)
 
 			if (t == '0') {
 				u8_t i;
-				u8_t v = 0;
+				u8_t v = 0U;
 
-				for (i = 2; i < (2 + 3); i++) {
+				for (i = 2U; i < (2 + 3); i++) {
 					t = *(cmd + i);
 
 					if (t >= '0' && t <= '7') {
@@ -121,9 +130,9 @@ static void make_argv(char **ppcmd, u8_t c, u8_t quote)
 
 			if (t == 'x') {
 				u8_t i;
-				u8_t v = 0;
+				u8_t v = 0U;
 
-				for (i = 2; i < (2 + 2); i++) {
+				for (i = 2U; i < (2 + 2); i++) {
 					t = *(cmd + i);
 
 					if (t >= '0' && t <= '9') {
@@ -154,6 +163,8 @@ static void make_argv(char **ppcmd, u8_t c, u8_t quote)
 		cmd += 1;
 	}
 	*ppcmd = cmd;
+
+	return quote;
 }
 
 
@@ -175,9 +186,7 @@ char shell_make_argv(size_t *argc, char **argv, char *cmd, u8_t max_argc)
 		}
 
 		argv[(*argc)++] = cmd;
-		quote = 0;
-
-		make_argv(&cmd, c, quote);
+		quote = make_argv(&cmd, c);
 	} while (*argc < max_argc);
 
 	argv[*argc] = 0;
@@ -188,8 +197,8 @@ char shell_make_argv(size_t *argc, char **argv, char *cmd, u8_t max_argc)
 void shell_pattern_remove(char *buff, u16_t *buff_len, const char *pattern)
 {
 	char *pattern_addr = strstr(buff, pattern);
+	u16_t shift;
 	u16_t pattern_len = shell_strlen(pattern);
-	size_t shift;
 
 	if (!pattern_addr) {
 		return;
@@ -206,6 +215,62 @@ void shell_pattern_remove(char *buff, u16_t *buff_len, const char *pattern)
 	*buff_len -= pattern_len;
 
 	memmove(pattern_addr, pattern_addr + pattern_len, shift);
+}
+
+static inline u32_t shell_root_cmd_count(void)
+{
+	return ((u8_t *)__shell_root_cmds_end -
+			(u8_t *)__shell_root_cmds_start)/
+				sizeof(struct shell_cmd_entry);
+}
+
+/* Function returning pointer to root command matching requested syntax. */
+const struct shell_cmd_entry *shell_root_cmd_find(const char *syntax)
+{
+	const size_t cmd_count = shell_root_cmd_count();
+	const struct shell_cmd_entry *cmd;
+
+	for (size_t cmd_idx = 0; cmd_idx < cmd_count; ++cmd_idx) {
+		cmd = shell_root_cmd_get(cmd_idx);
+		if (strcmp(syntax, cmd->u.entry->syntax) == 0) {
+			return cmd;
+		}
+	}
+
+	return NULL;
+}
+
+void shell_cmd_get(const struct shell_cmd_entry *command, size_t lvl,
+		   size_t idx, const struct shell_static_entry **entry,
+		   struct shell_static_entry *d_entry)
+{
+	__ASSERT_NO_MSG(entry != NULL);
+	__ASSERT_NO_MSG(d_entry != NULL);
+
+	if (lvl == SHELL_CMD_ROOT_LVL) {
+		if (idx < shell_root_cmd_count()) {
+			const struct shell_cmd_entry *cmd;
+
+			cmd = shell_root_cmd_get(idx);
+			*entry = cmd->u.entry;
+		} else {
+			*entry = NULL;
+		}
+		return;
+	}
+
+	if (command == NULL) {
+		*entry = NULL;
+		return;
+	}
+
+	if (command->is_dynamic) {
+		command->u.dynamic_get(idx, d_entry);
+		*entry = (d_entry->syntax != NULL) ? d_entry : NULL;
+	} else {
+		*entry = (command->u.entry[idx].syntax != NULL) ?
+				&command->u.entry[idx] : NULL;
+	}
 }
 
 int shell_command_add(char *buff, u16_t *buff_len,
@@ -241,7 +306,7 @@ int shell_command_add(char *buff, u16_t *buff_len,
 void shell_spaces_trim(char *str)
 {
 	u16_t len = shell_strlen(str);
-	u16_t shift = 0;
+	u16_t shift = 0U;
 
 	if (!str) {
 		return;
@@ -261,7 +326,7 @@ void shell_spaces_trim(char *str)
 						&str[j],
 						len - shift + 1);
 					len -= shift;
-					shift = 0;
+					shift = 0U;
 				}
 
 				break;
@@ -270,9 +335,12 @@ void shell_spaces_trim(char *str)
 	}
 }
 
-void shell_buffer_trim(char *buff, u16_t *buff_len)
+/** @brief Remove white chars from beginning and end of command buffer.
+ *
+ */
+static void buffer_trim(char *buff, u16_t *buff_len)
 {
-	u16_t i = 0;
+	u16_t i = 0U;
 
 	/* no command in the buffer */
 	if (buff[0] == '\0') {
@@ -305,19 +373,8 @@ void shell_buffer_trim(char *buff, u16_t *buff_len)
 	}
 }
 
-u16_t shell_str_similarity_check(const char *str_a, const char *str_b)
+void shell_cmd_trim(const struct shell *shell)
 {
-	u16_t cnt = 0;
-
-	while (str_a[cnt] != '\0') {
-		if (str_a[cnt] != str_b[cnt]) {
-			return cnt;
-		}
-
-		if (++cnt == 0) {
-			return --cnt; /* too long strings */
-		}
-	}
-
-	return cnt;
+	buffer_trim(shell->ctx->cmd_buff, &shell->ctx->cmd_buff_len);
+	shell->ctx->cmd_buff_pos = shell->ctx->cmd_buff_len;
 }

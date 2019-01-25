@@ -126,7 +126,7 @@ int lis3mdl_init_interrupt(struct device *dev)
 	}
 
 	/* enable interrupt */
-	if (i2c_reg_write_byte(drv_data->i2c, CONFIG_LIS3MDL_I2C_ADDR,
+	if (i2c_reg_write_byte(drv_data->i2c, DT_LIS3MDL_I2C_ADDR,
 			       LIS3MDL_REG_INT_CFG, LIS3MDL_INT_XYZ_EN) < 0) {
 		LOG_DBG("Could not enable interrupt.");
 		return -EIO;

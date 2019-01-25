@@ -1,6 +1,3 @@
-include(CheckCCompilerFlag)
-include(CheckCXXCompilerFlag)
-
 ########################################################
 # Table of contents
 ########################################################
@@ -27,7 +24,7 @@ include(CheckCXXCompilerFlag)
 # 1.1. zephyr_*
 #
 # The following methods are for modifying the CMake library[0] called
-# "zephyr". zephyr is a catchall CMake library for source files that
+# "zephyr". zephyr is a catch-all CMake library for source files that
 # can be built purely with the include paths, defines, and other
 # compiler flags that all zephyr source files use.
 # [0] https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html
@@ -36,13 +33,13 @@ include(CheckCXXCompilerFlag)
 # zephyr_sources(
 #   random_esp32.c
 #   utils.c
-#   )
+# )
 #
 # Is short for:
 # target_sources(zephyr PRIVATE
 #   ${CMAKE_CURRENT_SOURCE_DIR}/random_esp32.c
 #   ${CMAKE_CURRENT_SOURCE_DIR}/utils.c
-#  )
+# )
 
 # https://cmake.org/cmake/help/latest/command/target_sources.html
 function(zephyr_sources)
@@ -692,6 +689,35 @@ function(zephyr_check_compiler_flag lang option check)
   endif()
 endfunction()
 
+# Helper function for CONFIG_CODE_DATA_RELOCATION
+# Call this function with 2 arguments file and then memory location
+function(zephyr_code_relocate file location)
+  set_property(TARGET code_data_relocation_target
+    APPEND PROPERTY COMPILE_DEFINITIONS
+    "${location}:${CMAKE_CURRENT_SOURCE_DIR}/${file}")
+endfunction()
+
+# Usage:
+#   check_dtc_flag("-Wtest" DTC_WARN_TEST)
+#
+# Writes 1 to the output variable 'ok' if
+# the flag is supported, otherwise writes 0.
+#
+# using
+function(check_dtc_flag flag ok)
+  execute_process(
+    COMMAND
+    ${DTC} ${flag} -v
+    ERROR_QUIET
+    RESULT_VARIABLE dtc_check_ret
+  )
+  if (dtc_check_ret EQUAL 0)
+    set(${ok} 1 PARENT_SCOPE)
+  else()
+    set(${ok} 0 PARENT_SCOPE)
+  endif()
+endfunction()
+
 ########################################################
 # 2. Kconfig-aware extensions
 ########################################################
@@ -736,20 +762,21 @@ endfunction()
 
 # 2.2 Misc
 #
-# Parse a KConfig formatted file (typically named *.config) and
-# introduce all the CONF_ variables into the CMake namespace
-function(import_kconfig config_file)
-  # Parse the lines prefixed with CONFIG_ in ${config_file}
+# Parse a KConfig fragment (typically with extension .config) and
+# introduce all the symbols that are prefixed with 'prefix' into the
+# CMake namespace
+function(import_kconfig prefix kconfig_fragment)
+  # Parse the lines prefixed with 'prefix' in ${kconfig_fragment}
   file(
     STRINGS
-    ${config_file}
+    ${kconfig_fragment}
     DOT_CONFIG_LIST
-    REGEX "^CONFIG_"
+    REGEX "^${prefix}"
     ENCODING "UTF-8"
   )
 
   foreach (CONFIG ${DOT_CONFIG_LIST})
-    # CONFIG looks like: CONFIG_NET_BUF=y
+    # CONFIG could look like: CONFIG_NET_BUF=y
 
     # Match the first part, the variable name
     string(REGEX MATCH "[^=]+" CONF_VARIABLE_NAME ${CONFIG})
@@ -1099,25 +1126,18 @@ macro(assert_exists var)
   endif()
 endmacro()
 
-# Usage:
-#   assert_with_usage(BOARD_DIR "No board named '${BOARD}' found")
-#
-# will print an error message, show usage, and then end executioon
-# with a FATAL_ERROR if the test fails.
-macro(assert_with_usage test comment)
-  if(NOT ${test})
-    message(${comment})
-    message("see usage:")
-	string(REPLACE ";" " " BOARD_ROOT_SPACE_SEPARATED "${BOARD_ROOT}")
-    execute_process(
-      COMMAND
-      ${CMAKE_COMMAND}
-      -DBOARD_ROOT_SPACE_SEPARATED=${BOARD_ROOT_SPACE_SEPARATED}
-      -P ${ZEPHYR_BASE}/cmake/usage/usage.cmake
-      )
-    message(FATAL_ERROR "Invalid usage")
-  endif()
-endmacro()
+function(print_usage)
+  message("see usage:")
+  string(REPLACE ";" " " BOARD_ROOT_SPACE_SEPARATED "${BOARD_ROOT}")
+  string(REPLACE ";" " " SHIELD_LIST_SPACE_SEPARATED "${SHIELD_LIST}")
+  execute_process(
+    COMMAND
+    ${CMAKE_COMMAND}
+    -DBOARD_ROOT_SPACE_SEPARATED=${BOARD_ROOT_SPACE_SEPARATED}
+    -DSHIELD_LIST_SPACE_SEPARATED=${SHIELD_LIST_SPACE_SEPARATED}
+    -P ${ZEPHYR_BASE}/cmake/usage/usage.cmake
+    )
+endfunction()
 
 # 3.5. File system management
 function(check_if_directory_is_writeable dir ok)
@@ -1193,10 +1213,7 @@ function(find_appropriate_cache_directory dir)
   set(${dir} ${local_dir} PARENT_SCOPE)
 endfunction()
 
-function(generate_unique_target_name_from_filename
-	filename
-	target_name
-	)
+function(generate_unique_target_name_from_filename filename target_name)
   get_filename_component(basename ${filename} NAME)
   string(REPLACE "." "_" x ${basename})
   string(REPLACE "@" "_" x ${x})

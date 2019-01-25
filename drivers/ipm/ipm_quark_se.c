@@ -25,6 +25,7 @@
  */
 static struct device *device_by_channel[QUARK_SE_IPM_CHANNELS];
 static u32_t inbound_channels;
+const struct ipm_driver_api ipm_quark_se_api_funcs;
 
 static u32_t quark_se_ipm_sts_get(void)
 {
@@ -203,7 +204,7 @@ int quark_se_ipm_controller_initialize(struct device *d)
 	for (i = 0; i < QUARK_SE_IPM_CHANNELS; ++i) {
 		volatile struct quark_se_ipm *ipm = QUARK_SE_IPM(i);
 
-		ipm->sts = 0;
+		ipm->sts = 0U;
 	}
 #endif
 

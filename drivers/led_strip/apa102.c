@@ -40,7 +40,7 @@ static int apa102_update(struct device *dev, void *buf, size_t size)
 	};
 	const struct spi_buf_set tx = {
 		.buffers = tx_bufs,
-		.count = ARRAY_SIZE(tx)
+		.count = ARRAY_SIZE(tx_bufs)
 	};
 
 	return spi_write(data->spi, &data->cfg, &tx);

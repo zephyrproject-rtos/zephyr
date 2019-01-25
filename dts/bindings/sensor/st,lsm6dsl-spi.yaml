@@ -16,7 +16,7 @@ inherits:
 
 properties:
     compatible:
-        constraint: "st,lsm6dsl-spi"
+        constraint: "st,lsm6dsl"
 
     irq-gpios:
       type: compound

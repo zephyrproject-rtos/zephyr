@@ -23,10 +23,10 @@ void test_bank_erase(void)
 	off_t offs;
 	int ret;
 
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	for (offs = FLASH_AREA_IMAGE_1_OFFSET;
-	     offs <= FLASH_AREA_IMAGE_1_OFFSET + FLASH_AREA_IMAGE_1_SIZE;
+	     offs < FLASH_AREA_IMAGE_1_OFFSET + FLASH_AREA_IMAGE_1_SIZE;
 	     offs += sizeof(temp)) {
 		ret = flash_read(flash_dev, offs, &temp, sizeof(temp));
 		zassert_true(ret == 0, "Reading from flash");
@@ -52,7 +52,7 @@ void test_bank_erase(void)
 	}
 
 	for (offs = FLASH_AREA_IMAGE_1_OFFSET;
-	     offs <= FLASH_AREA_IMAGE_1_OFFSET + FLASH_AREA_IMAGE_1_SIZE;
+	     offs < FLASH_AREA_IMAGE_1_OFFSET + FLASH_AREA_IMAGE_1_SIZE;
 	     offs += sizeof(temp)) {
 		ret = flash_read(flash_dev, offs, &temp, sizeof(temp));
 		zassert_true(ret == 0, "Reading from flash");
@@ -74,7 +74,7 @@ void test_request_upgrade(void)
 	u32_t readout[ARRAY_SIZE(expectation)];
 	int ret;
 
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	zassert(boot_request_upgrade(false) == 0, "pass", "fail");
 
@@ -108,7 +108,10 @@ void test_write_confirm(void)
 	struct device *flash_dev;
 	int ret;
 
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+
+	zassert(boot_erase_img_bank(FLASH_AREA_IMAGE_0_OFFSET) == 0,
+		"pass", "fail");
 
 	ret = flash_read(flash_dev, FLASH_AREA_IMAGE_0_OFFSET +
 			 FLASH_AREA_IMAGE_0_SIZE - sizeof(img_magic), &readout,

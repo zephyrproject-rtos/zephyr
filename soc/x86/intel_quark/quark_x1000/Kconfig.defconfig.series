@@ -16,12 +16,12 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 25000000  if HPET_TIMER
 
 config CLFLUSH_DETECT
-	def_bool y if CACHE_FLUSHING
+	default y if CACHE_FLUSHING
 
 if SHARED_IRQ
 
 config SHARED_IRQ_0
-	def_bool y
+	default y
 
 if SHARED_IRQ_0
 
@@ -52,7 +52,7 @@ endif # PCI_LEGACY_BRIDGE
 if I2C
 
 config I2C_DW
-	def_bool y
+	default y
 
 if I2C_DW
 
@@ -60,7 +60,7 @@ config I2C_DW_CLOCK_SPEED
 	default 25
 
 config I2C_0
-	def_bool y
+	default y
 
 if I2C_0
 
@@ -80,15 +80,15 @@ endif # I2C
 if GPIO
 
 config GPIO_SCH
-	def_bool y
+	default y
 
 if GPIO_SCH
 
 config GPIO_SCH_0
-	def_bool y
+	default y
 
 config GPIO_SCH_1
-	def_bool y
+	default y
 
 if GPIO_SCH_0
 
@@ -107,12 +107,12 @@ endif # GPIO_SCH_1
 endif # GPIO_SCH
 
 config GPIO_DW
-	def_bool y
+	default y
 
 if GPIO_DW
 
 config GPIO_DW_0
-	def_bool y
+	default y
 
 if GPIO_DW_0
 
@@ -133,15 +133,15 @@ endif # GPIO
 if SPI
 
 config SPI_INTEL
-	def_bool y
+	default y
 
 if SPI_INTEL
 
 config SPI_0
-	def_bool y
+	default y
 
 config SPI_1
-	def_bool n
+	default n
 
 endif # SPI_INTEL
 
@@ -150,10 +150,10 @@ endif # SPI
 if UART_NS16550
 
 config UART_NS16550_PCI
-	def_bool y if PCI
+	default y if PCI
 
 config UART_NS16550_PORT_0
-	def_bool y
+	default y
 
 if UART_NS16550_PORT_0
 
@@ -161,12 +161,12 @@ config UART_NS16550_PORT_0_OPTIONS
 	default 0
 
 config UART_NS16550_PORT_0_PCI
-	def_bool y if UART_NS16550_PCI
+	default y if UART_NS16550_PCI
 
 endif # UART_NS16550_PORT_0
 
 config UART_NS16550_PORT_1
-	def_bool y if PCI
+	default y if PCI
 
 if UART_NS16550_PORT_1
 
@@ -174,7 +174,7 @@ config UART_NS16550_PORT_1_OPTIONS
 	default 0
 
 config UART_NS16550_PORT_1_PCI
-	def_bool y if UART_NS16550_PCI
+	default y if UART_NS16550_PCI
 
 endif # UART_NS16550_PORT_1
 
@@ -183,12 +183,12 @@ endif # UART_NS16550
 
 if NET_L2_ETHERNET
 config ETH_DW
-	def_bool y
+	default y
 
 if ETH_DW
 
 config ETH_DW_0
-	def_bool y
+	default y
 
 if ETH_DW_0
 

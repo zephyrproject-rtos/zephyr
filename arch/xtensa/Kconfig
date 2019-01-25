@@ -34,6 +34,7 @@ config XTENSA_OMIT_HIGH_INTERRUPTS
 config XTENSA_ASM2
 	bool "New-style Xtensa context switch & interrupt layer"
 	select USE_SWITCH
+	select USE_SWITCH_SUPPORTED
 	help
 	  This selects a new implementation of context switching and
 	  interrupt handling.  Advantages are a much lower interrupt

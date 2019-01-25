@@ -5,8 +5,9 @@
  */
 
 #include <ztest.h>
+#include "test_sched.h"
 
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define NUM_THREAD 3
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
 /* slice size in millisecond*/
@@ -46,22 +47,10 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 	zassert_true(t <= expected_slice_max, NULL);
 	thread_idx = (thread_idx + 1) % NUM_THREAD;
 
-	u32_t t32 = k_uptime_get_32();
-
 	/* Keep the current thread busy for more than one slice, even though,
 	 * when timeslice used up the next thread should be scheduled in.
 	 */
-	while (k_uptime_get_32() - t32 < BUSY_MS) {
-#if defined(CONFIG_ARCH_POSIX)
-		/*
-		 * In the posix arch, a busy loop takes no time, so let's make
-		 * it take some
-		 */
-		k_busy_wait(50);
-#else
-		;
-#endif
-	}
+	k_busy_wait(1000 * BUSY_MS);
 	k_sem_give(&sema);
 }
 
@@ -108,7 +97,7 @@ void test_slice_reset(void)
 		t32 = k_uptime_get_32();
 		while (k_uptime_get_32() - t32 < HALF_SLICE_SIZE) {
 #if defined(CONFIG_ARCH_POSIX)
-			posix_halt_cpu(); /*sleep until next irq*/
+			k_busy_wait(50);
 #else
 			;
 #endif

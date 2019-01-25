@@ -21,9 +21,14 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief FlexCAN driver version 2.2.3. */
-#define FSL_FLEXCAN_DRIVER_VERSION (MAKE_VERSION(2, 2, 3))
+/*! @brief FlexCAN driver version 2.3.0. */
+#define FSL_FLEXCAN_DRIVER_VERSION (MAKE_VERSION(2, 3, 2))
 /*@}*/
+
+#ifndef FLEXCAN_WAIT_TIMEOUT
+/* Define to 1000 means keep waiting 1000 times until the flag is assert/deassert.  */
+#define FLEXCAN_WAIT_TIMEOUT (1000U)
+#endif
 
 /*! @brief FlexCAN Frame ID helper macro. */
 #define FLEXCAN_ID_STD(id) \
@@ -99,10 +104,9 @@
 #define FLEXCAN_RX_FIFO_STD_FILTER_TYPE_C_MID_LOW(id) \
     FLEXCAN_RX_FIFO_STD_MASK_TYPE_C_MID_LOW(          \
         id) /*!< Standard Rx FIFO Filter helper macro Type C mid-lower part helper macro. */
-#define FLEXCAN_RX_FIFO_STD_FILTER_TYPE_C_LOW(id)                                               \
-    FLEXCAN_RX_FIFO_STD_MASK_TYPE_C_LOW(                                                        \
-        id) /*!< Standard Rx FIFO Filter helper macro Type C lower part helper macro. \ \ \ \ \ \
-               */
+#define FLEXCAN_RX_FIFO_STD_FILTER_TYPE_C_LOW(id) \
+    FLEXCAN_RX_FIFO_STD_MASK_TYPE_C_LOW(          \
+        id) /*!< Standard Rx FIFO Filter helper macro Type C lower part helper macro.  */
 #define FLEXCAN_RX_FIFO_EXT_FILTER_TYPE_A(id, rtr, ide) \
     FLEXCAN_RX_FIFO_EXT_MASK_TYPE_A(id, rtr, ide) /*!< Extend Rx FIFO Filter helper macro Type A helper macro. */
 #define FLEXCAN_RX_FIFO_EXT_FILTER_TYPE_B_HIGH(id, rtr, ide) \
@@ -111,10 +115,9 @@
 #define FLEXCAN_RX_FIFO_EXT_FILTER_TYPE_B_LOW(id, rtr, ide) \
     FLEXCAN_RX_FIFO_EXT_MASK_TYPE_B_LOW(                    \
         id, rtr, ide) /*!< Extend Rx FIFO Filter helper macro Type B lower part helper macro. */
-#define FLEXCAN_RX_FIFO_EXT_FILTER_TYPE_C_HIGH(id)                                            \
-    FLEXCAN_RX_FIFO_EXT_MASK_TYPE_C_HIGH(                                                     \
-        id) /*!< Extend Rx FIFO Filter helper macro Type C upper part helper macro. \ \ \ \ \ \
-               */
+#define FLEXCAN_RX_FIFO_EXT_FILTER_TYPE_C_HIGH(id) \
+    FLEXCAN_RX_FIFO_EXT_MASK_TYPE_C_HIGH(          \
+        id) /*!< Extend Rx FIFO Filter helper macro Type C upper part helper macro.           */
 #define FLEXCAN_RX_FIFO_EXT_FILTER_TYPE_C_MID_HIGH(id) \
     FLEXCAN_RX_FIFO_EXT_MASK_TYPE_C_MID_HIGH(          \
         id) /*!< Extend Rx FIFO Filter helper macro Type C mid-upper part helper macro. */
@@ -139,7 +142,8 @@ enum _flexcan_status
     kStatus_FLEXCAN_RxFifoOverflow = MAKE_STATUS(kStatusGroup_FLEXCAN, 8), /*!< Rx Message FIFO is overflowed. */
     kStatus_FLEXCAN_RxFifoWarning = MAKE_STATUS(kStatusGroup_FLEXCAN, 9),  /*!< Rx Message FIFO is almost overflowed. */
     kStatus_FLEXCAN_ErrorStatus = MAKE_STATUS(kStatusGroup_FLEXCAN, 10),   /*!< FlexCAN Module Error and Status. */
-    kStatus_FLEXCAN_UnHandled = MAKE_STATUS(kStatusGroup_FLEXCAN, 11),     /*!< UnHadled Interrupt asserted. */
+    kStatus_FLEXCAN_WakeUp = MAKE_STATUS(kStatusGroup_FLEXCAN, 11),        /*!< FlexCAN is waken up from STOP mode. */
+    kStatus_FLEXCAN_UnHandled = MAKE_STATUS(kStatusGroup_FLEXCAN, 12),     /*!< UnHadled Interrupt asserted. */
 };
 
 /*! @brief FlexCAN frame format. */
@@ -162,6 +166,13 @@ typedef enum _flexcan_clock_source
     kFLEXCAN_ClkSrcOsc = 0x0U,  /*!< FlexCAN Protocol Engine clock from Oscillator. */
     kFLEXCAN_ClkSrcPeri = 0x1U, /*!< FlexCAN Protocol Engine clock from Peripheral Clock. */
 } flexcan_clock_source_t;
+
+/*! @brief FlexCAN wake up source. */
+typedef enum _flexcan_wake_up_source
+{
+    kFLEXCAN_WakeupSrcUnfiltered = 0x0U, /*!< FlexCAN uses unfiltered Rx input to detect edge. */
+    kFLEXCAN_WakeupSrcFiltered = 0x1U,   /*!< FlexCAN uses filtered Rx input to detect edge. */
+} flexcan_wake_up_source_t;
 
 /*! @brief FlexCAN Rx Fifo Filter type. */
 typedef enum _flexcan_rx_fifo_filter_type
@@ -241,13 +252,13 @@ enum _flexcan_flags
     kFLEXCAN_BusOffIntFlag = CAN_ESR1_BOFFINT_MASK,        /*!< Bus Off Interrupt Flag. */
     kFLEXCAN_ErrorIntFlag = CAN_ESR1_ERRINT_MASK,          /*!< Error Interrupt Flag. */
     kFLEXCAN_WakeUpIntFlag = CAN_ESR1_WAKINT_MASK,         /*!< Wake-Up Interrupt Flag. */
-    kFLEXCAN_ErrorFlag =                                   /*!< All FlexCAN Error Status. */
+    kFLEXCAN_ErrorFlag = (int)(                            /*!< All FlexCAN Error Status. */
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE) && FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE)
-    CAN_ESR1_STFERR_FAST_MASK | CAN_ESR1_FRMERR_FAST_MASK | CAN_ESR1_CRCERR_FAST_MASK | CAN_ESR1_BIT0ERR_FAST_MASK |
-    CAN_ESR1_BIT1ERR_FAST_MASK | CAN_ESR1_ERROVR_MASK |
+                               CAN_ESR1_STFERR_FAST_MASK | CAN_ESR1_FRMERR_FAST_MASK | CAN_ESR1_CRCERR_FAST_MASK |
+                               CAN_ESR1_BIT0ERR_FAST_MASK | CAN_ESR1_BIT1ERR_FAST_MASK | CAN_ESR1_ERROVR_MASK |
 #endif
-    CAN_ESR1_BIT1ERR_MASK | CAN_ESR1_BIT0ERR_MASK | CAN_ESR1_ACKERR_MASK | CAN_ESR1_CRCERR_MASK | CAN_ESR1_FRMERR_MASK |
-    CAN_ESR1_STFERR_MASK,
+                               CAN_ESR1_BIT1ERR_MASK | CAN_ESR1_BIT0ERR_MASK | CAN_ESR1_ACKERR_MASK |
+                               CAN_ESR1_CRCERR_MASK | CAN_ESR1_FRMERR_MASK | CAN_ESR1_STFERR_MASK),
 };
 
 /*!
@@ -260,12 +271,12 @@ enum _flexcan_flags
 enum _flexcan_error_flags
 {
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE) && FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE)
-    kFLEXCAN_FDStuffingError = CAN_ESR1_STFERR_FAST_MASK, /*!< Stuffing Error. */
-    kFLEXCAN_FDFormError = CAN_ESR1_FRMERR_FAST_MASK,     /*!< Form Error. */
-    kFLEXCAN_FDCrcError = CAN_ESR1_CRCERR_FAST_MASK,      /*!< Cyclic Redundancy Check Error. */
-    kFLEXCAN_FDBit0Error = CAN_ESR1_BIT0ERR_FAST_MASK,    /*!< Unable to send dominant bit. */
-    kFLEXCAN_FDBit1Error = CAN_ESR1_BIT1ERR_FAST_MASK,    /*!< Unable to send recessive bit. */
-    kFLEXCAN_OverrunError = CAN_ESR1_ERROVR_MASK,         /*!< Error Overrun Status. */
+    kFLEXCAN_FDStuffingError = CAN_ESR1_STFERR_FAST_MASK,   /*!< Stuffing Error. */
+    kFLEXCAN_FDFormError = CAN_ESR1_FRMERR_FAST_MASK,       /*!< Form Error. */
+    kFLEXCAN_FDCrcError = CAN_ESR1_CRCERR_FAST_MASK,        /*!< Cyclic Redundancy Check Error. */
+    kFLEXCAN_FDBit0Error = CAN_ESR1_BIT0ERR_FAST_MASK,      /*!< Unable to send dominant bit. */
+    kFLEXCAN_FDBit1Error = (int)CAN_ESR1_BIT1ERR_FAST_MASK, /*!< Unable to send recessive bit. */
+    kFLEXCAN_OverrunError = CAN_ESR1_ERROVR_MASK,           /*!< Error Overrun Status. */
 #endif
     kFLEXCAN_StuffingError = CAN_ESR1_STFERR_MASK, /*!< Stuffing Error. */
     kFLEXCAN_FormError = CAN_ESR1_FRMERR_MASK,     /*!< Form Error. */
@@ -343,11 +354,11 @@ typedef struct _flexcan_fd_frame
         uint32_t format : 1;     /*!< CAN Frame Identifier(STD or EXT format). */
         uint32_t srr : 1;        /*!< Substitute Remote request. */
         uint32_t : 1;
-        uint32_t code : 4;       /*!< Message Buffer Code. */
+        uint32_t code : 4; /*!< Message Buffer Code. */
         uint32_t : 1;
-        uint32_t esi : 1;        /*!< Error State Indicator. */
-        uint32_t brs : 1;        /*!< Bit Rate Switch. */
-        uint32_t edl : 1;        /*!< Extended Data Length. */
+        uint32_t esi : 1; /*!< Error State Indicator. */
+        uint32_t brs : 1; /*!< Bit Rate Switch. */
+        uint32_t edl : 1; /*!< Extended Data Length. */
     };
     struct
     {
@@ -401,12 +412,13 @@ typedef struct _flexcan_config
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE) && FSL_FEATURE_FLEXCAN_HAS_FLEXIBLE_DATA_RATE)
     uint32_t baudRateFD; /*!< FlexCAN FD baud rate in bps. */
 #endif
-    flexcan_clock_source_t clkSrc; /*!< Clock source for FlexCAN Protocol Engine. */
-    uint8_t maxMbNum;              /*!< The maximum number of Message Buffers used by user. */
-    bool enableLoopBack;           /*!< Enable or Disable Loop Back Self Test Mode. */
-    bool enableTimerSync;          /*!< Enable or Disable Timer Synchronization. */
-    bool enableSelfWakeup;         /*!< Enable or Disable Self Wakeup Mode. */
-    bool enableIndividMask;        /*!< Enable or Disable Rx Individual Mask. */
+    flexcan_clock_source_t clkSrc;      /*!< Clock source for FlexCAN Protocol Engine. */
+    flexcan_wake_up_source_t wakeupSrc; /*!< Wake up source selection. */
+    uint8_t maxMbNum;                   /*!< The maximum number of Message Buffers used by user. */
+    bool enableLoopBack;                /*!< Enable or Disable Loop Back Self Test Mode. */
+    bool enableTimerSync;               /*!< Enable or Disable Timer Synchronization. */
+    bool enableSelfWakeup;              /*!< Enable or Disable Self Wakeup Mode. */
+    bool enableIndividMask;             /*!< Enable or Disable Rx Individual Mask. */
 #if (defined(FSL_FEATURE_FLEXCAN_HAS_DOZE_MODE_SUPPORT) && FSL_FEATURE_FLEXCAN_HAS_DOZE_MODE_SUPPORT)
     bool enableDoze; /*!< Enable or Disable Doze Mode. */
 #endif
@@ -559,7 +571,8 @@ void FLEXCAN_Init(CAN_Type *base, const flexcan_config_t *config, uint32_t sourc
  * @param dataSize FlexCAN FD frame payload size.
  * @param brs If bitrate switch is enabled in FD mode.
  */
-void FLEXCAN_FDInit(CAN_Type *base, const flexcan_config_t *config, uint32_t sourceClock_Hz, flexcan_mb_size_t dataSize, bool brs);
+void FLEXCAN_FDInit(
+    CAN_Type *base, const flexcan_config_t *config, uint32_t sourceClock_Hz, flexcan_mb_size_t dataSize, bool brs);
 #endif
 
 /*!

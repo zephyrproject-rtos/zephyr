@@ -76,6 +76,15 @@ static void gpiote_channel_free(u32_t abs_pin)
 	}
 }
 
+static inline u32_t sense_for_pin(const struct gpio_nrfx_data *data,
+				  u32_t pin)
+{
+	if ((BIT(pin) & (data->active_level ^ data->inverted)) != 0) {
+		return NRF_GPIO_PIN_SENSE_HIGH;
+	}
+	return NRF_GPIO_PIN_SENSE_LOW;
+}
+
 static int gpiote_pin_int_cfg(struct device *port, u32_t pin)
 {
 	struct gpio_nrfx_data *data = get_port_data(port);
@@ -106,14 +115,7 @@ static int gpiote_pin_int_cfg(struct device *port, u32_t pin)
 			res = gpiote_channel_alloc(abs_pin, pol);
 		} else {
 		/* For level triggering we use sense mechanism. */
-			nrf_gpio_pin_sense_t sense;
-
-			if (((data->active_level & BIT(pin)) != 0)
-			    ^ ((BIT(pin) & data->inverted) != 0)) {
-				sense = NRF_GPIO_PIN_SENSE_HIGH;
-			} else {
-				sense = NRF_GPIO_PIN_SENSE_LOW;
-			}
+			u32_t sense = sense_for_pin(data, pin);
 
 			nrf_gpio_cfg_sense_set(abs_pin, sense);
 		}
@@ -181,8 +183,8 @@ static int gpio_nrfx_config(struct device *port, int access_op,
 		: NRF_GPIO_PIN_INPUT_DISCONNECT;
 
 	if (access_op == GPIO_ACCESS_BY_PORT) {
-		from_pin = 0;
-		to_pin   = 31;
+		from_pin = 0U;
+		to_pin   = 31U;
 	} else {
 		from_pin = pin;
 		to_pin   = pin;
@@ -237,12 +239,15 @@ static int gpio_nrfx_read(struct device *port, int access_op,
 	NRF_GPIO_Type *reg = get_port_cfg(port)->port;
 	struct gpio_nrfx_data *data = get_port_data(port);
 
-	u32_t port_in = nrf_gpio_port_in_read(reg) ^ data->inverted;
+	u32_t dir = nrf_gpio_port_dir_read(reg);
+	u32_t port_in = nrf_gpio_port_in_read(reg) & ~dir;
+	u32_t port_out = nrf_gpio_port_out_read(reg) & dir;
+	u32_t port_val = (port_in | port_out) ^ data->inverted;
 
 	if (access_op == GPIO_ACCESS_BY_PORT) {
-		*value = port_in;
+		*value = port_val;
 	} else {
-		*value = (port_in & BIT(pin)) ? 1 : 0;
+		*value = (port_val & BIT(pin)) ? 1 : 0;
 	}
 
 	return 0;
@@ -267,8 +272,8 @@ static int gpio_nrfx_pin_manage_callback(struct device *port,
 	u8_t to_pin;
 
 	if (access_op == GPIO_ACCESS_BY_PORT) {
-		from_pin = 0;
-		to_pin   = 31;
+		from_pin = 0U;
+		to_pin   = 31U;
 	} else {
 		from_pin = pin;
 		to_pin   = pin;
@@ -309,6 +314,47 @@ static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
 	.disable_callback = gpio_nrfx_pin_disable_callback
 };
 
+static inline u32_t get_level_pins(struct device *port)
+{
+	struct gpio_nrfx_data *data = get_port_data(port);
+
+	/* Take into consideration only pins that were configured to
+	 * trigger interrupts and have callback enabled.
+	 */
+	u32_t out = data->int_en & data->pin_int_en;
+
+	/* Exclude pins that trigger interrupts by edge. */
+	out &= ~data->trig_edge & ~data->double_edge;
+
+	/* The sequence above assumes that the sense field will be
+	 * configured only for these pins.  If anybody's modifying
+	 * PIN_CNF directly it won't work.
+	 */
+	return out;
+}
+
+static void cfg_level_pins(struct device *port)
+{
+	const struct gpio_nrfx_data *data = get_port_data(port);
+	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
+	u32_t pin = 0;
+	u32_t bit = 1U << pin;
+	u32_t level_pins = get_level_pins(port);
+
+	/* Configure sense detection on all pins that use it. */
+	while (level_pins) {
+		if (level_pins & bit) {
+			u32_t abs_pin = NRF_GPIO_PIN_MAP(cfg->port_num, pin);
+			u32_t sense = sense_for_pin(data, pin);
+
+			nrf_gpio_cfg_sense_set(abs_pin, sense);
+			level_pins &= ~bit;
+		}
+		++pin;
+		bit <<= 1;
+	}
+}
+
 /**
  * @brief Function for getting pins that triggered level interrupt.
  *
@@ -319,21 +365,35 @@ static const struct gpio_driver_api gpio_nrfx_drv_api_funcs = {
 static u32_t check_level_trigger_pins(struct device *port)
 {
 	struct gpio_nrfx_data *data = get_port_data(port);
-
-	u32_t port_in = nrf_gpio_port_in_read(get_port_cfg(port)->port);
+	const struct gpio_nrfx_cfg *cfg = get_port_cfg(port);
+	u32_t level_pins = get_level_pins(port);
+	u32_t port_in = nrf_gpio_port_in_read(cfg->port);
 
 	/* Extract which pins after inversion, have logic level same as
 	 * interrupt trigger level.
 	 */
 	u32_t pin_states = ~(port_in ^ data->inverted ^ data->active_level);
 
-	/* Take into consideration only pins that were configured to
-	 * trigger interrupts and have callback enabled.
-	 */
-	u32_t out = pin_states & data->int_en & data->pin_int_en;
+	/* Discard pins that aren't configured for level. */
+	u32_t out = pin_states & level_pins;
 
-	/* Exclude pins that trigger interrupts by edge. */
-	out &= ~data->trig_edge & ~data->double_edge;
+	/* Disable sense detection on all pins that use it, whether
+	 * they appear to have triggered or not.  This ensures
+	 * nobody's requesting DETECT.
+	 */
+	u32_t pin = 0;
+	u32_t bit = 1U << pin;
+
+	while (level_pins) {
+		if (level_pins & bit) {
+			u32_t abs_pin = NRF_GPIO_PIN_MAP(cfg->port_num, pin);
+
+			nrf_gpio_cfg_sense_set(abs_pin, NRF_GPIO_PIN_NOSENSE);
+			level_pins &= ~bit;
+		}
+		++pin;
+		bit <<= 1;
+	}
 
 	return out;
 }
@@ -353,8 +413,9 @@ DEVICE_DECLARE(gpio_nrfx_p1);
 static void gpiote_event_handler(void)
 {
 	u32_t fired_triggers[GPIO_COUNT] = {0};
+	bool port_event = nrf_gpiote_event_is_set(NRF_GPIOTE_EVENTS_PORT);
 
-	if (nrf_gpiote_event_is_set(NRF_GPIOTE_EVENTS_PORT)) {
+	if (port_event) {
 #ifdef CONFIG_GPIO_NRF_P0
 		fired_triggers[0] =
 			check_level_trigger_pins(DEVICE_GET(gpio_nrfx_p0));
@@ -363,6 +424,11 @@ static void gpiote_event_handler(void)
 		fired_triggers[1] =
 			check_level_trigger_pins(DEVICE_GET(gpio_nrfx_p1));
 #endif
+
+		/* Sense detect was disabled while checking pins so
+		 * DETECT should be deasserted.
+		 */
+		nrf_gpiote_event_clear(NRF_GPIOTE_EVENTS_PORT);
 	}
 
 	/* Handle interrupt from GPIOTE channels. */
@@ -390,26 +456,16 @@ static void gpiote_event_handler(void)
 	}
 #endif
 
-	if (nrf_gpiote_event_is_set(NRF_GPIOTE_EVENTS_PORT)) {
-		u32_t active_level_triggers =
+	if (port_event) {
+		/* Reprogram sense to match current configuration.
+		 * This may cause DETECT to be re-asserted.
+		 */
 #ifdef CONFIG_GPIO_NRF_P0
-			check_level_trigger_pins(DEVICE_GET(gpio_nrfx_p0)) |
+		cfg_level_pins(DEVICE_GET(gpio_nrfx_p0));
 #endif
 #ifdef CONFIG_GPIO_NRF_P1
-			check_level_trigger_pins(DEVICE_GET(gpio_nrfx_p1)) |
+		cfg_level_pins(DEVICE_GET(gpio_nrfx_p1));
 #endif
-			0;
-
-		/* The PORT event is generated on the rising edge of the DETECT
-		 * signal, i.e. when a pin state changes to the level
-		 * configured to be sensed. If any level triggering pins are
-		 * still in their active state, don't clear the PORT event so
-		 * that the interrupt is fired again * and the proper callbacks
-		 * are executed.
-		 */
-		if (active_level_triggers == 0) {
-			nrf_gpiote_event_clear(NRF_GPIOTE_EVENTS_PORT);
-		}
 	}
 }
 
@@ -419,19 +475,16 @@ static int gpio_nrfx_init(struct device *port)
 
 	if (!gpio_initialized) {
 		gpio_initialized = true;
-		IRQ_CONNECT(CONFIG_GPIOTE_IRQ, CONFIG_GPIOTE_IRQ_PRI,
+		IRQ_CONNECT(DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ,
+			    DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ_PRIORITY,
 			    gpiote_event_handler, NULL, 0);
 
-		irq_enable(CONFIG_GPIOTE_IRQ);
+		irq_enable(DT_NORDIC_NRF_GPIOTE_GPIOTE_0_IRQ);
 		nrf_gpiote_int_enable(NRF_GPIOTE_INT_PORT_MASK);
 	}
 
 	return 0;
 }
-
-#ifdef CONFIG_SOC_SERIES_NRF51X
-#define NRF_P0 NRF_GPIO
-#endif
 
 #define GPIO_NRF_DEVICE(id)						\
 	static const struct gpio_nrfx_cfg gpio_nrfx_p##id##_cfg = {	\
@@ -442,7 +495,7 @@ static int gpio_nrfx_init(struct device *port)
 	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;		\
 									\
 	DEVICE_AND_API_INIT(gpio_nrfx_p##id,				\
-			    CONFIG_GPIO_P##id##_DEV_NAME,		\
+			    DT_NORDIC_NRF_GPIO_GPIO_##id##_LABEL,	\
 			    gpio_nrfx_init,				\
 			    &gpio_nrfx_p##id##_data,			\
 			    &gpio_nrfx_p##id##_cfg,			\

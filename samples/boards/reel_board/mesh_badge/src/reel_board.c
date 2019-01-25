@@ -196,7 +196,7 @@ static int add_hello(u16_t addr, const char *name)
 		if (!stat->addr) {
 			stat->addr = addr;
 			strncpy(stat->name, name, sizeof(stat->name) - 1);
-			stat->hello_count = 1;
+			stat->hello_count = 1U;
 			stat_count++;
 			return i;
 		}
@@ -226,7 +226,7 @@ static int add_heartbeat(u16_t addr, u8_t hops)
 
 		if (!stat->addr) {
 			stat->addr = addr;
-			stat->heartbeat_count = 1;
+			stat->heartbeat_count = 1U;
 			stat->min_hops = hops;
 			stat->max_hops = hops;
 			stat_count++;
@@ -322,7 +322,7 @@ static void show_statistics(void)
 		}
 	}
 
-	if (stat_count >= 0) {
+	if (stat_count > 0) {
 		len = snprintk(str, sizeof(str), "Most messages from:");
 		print_line(FONT_SMALL, line++, str, len, false);
 
@@ -345,9 +345,9 @@ static void show_statistics(void)
 
 static void show_sensors_data(s32_t interval)
 {
-	struct sensor_value val[2];
-	u8_t line = 0;
-	u16_t len = 0;
+	struct sensor_value val[3];
+	u8_t line = 0U;
+	u16_t len = 0U;
 
 	cfb_framebuffer_clear(epd_dev, false);
 
@@ -357,7 +357,7 @@ static void show_sensors_data(s32_t interval)
 	}
 
 	len = snprintf(str_buf, sizeof(str_buf), "Temperature:%d.%d C\n",
-		       val[0].val1, val[0].val2/100000);
+		       val[0].val1, val[0].val2 / 100000);
 	print_line(FONT_SMALL, line++, str_buf, len, false);
 
 	len = snprintf(str_buf, sizeof(str_buf), "Humidity:%d%%\n",
@@ -370,15 +370,15 @@ static void show_sensors_data(s32_t interval)
 	}
 
 	len = snprintf(str_buf, sizeof(str_buf), "AX :%10.3f\n",
-		 sensor_value_to_double(&val[0]));
+		       sensor_value_to_double(&val[0]));
 	print_line(FONT_SMALL, line++, str_buf, len, false);
 
 	len = snprintf(str_buf, sizeof(str_buf), "AY :%10.3f\n",
-		 sensor_value_to_double(&val[1]));
+		       sensor_value_to_double(&val[1]));
 	print_line(FONT_SMALL, line++, str_buf, len, false);
 
 	len = snprintf(str_buf, sizeof(str_buf), "AZ :%10.3f\n",
-		 sensor_value_to_double(&val[2]));
+		       sensor_value_to_double(&val[2]));
 	print_line(FONT_SMALL, line++, str_buf, len, false);
 
 	/* apds9960 */
@@ -519,7 +519,7 @@ static void led_timeout(struct k_work *work)
 	}
 
 	/* Stop after 5 iterations */
-	if (led_cntr > (ARRAY_SIZE(leds) * 5)) {
+	if (led_cntr >= (ARRAY_SIZE(leds) * 5)) {
 		led_cntr = 0;
 		return;
 	}
@@ -555,7 +555,7 @@ static int erase_storage(void)
 {
 	struct device *dev;
 
-	dev = device_get_binding(FLASH_DEV_NAME);
+	dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	return flash_erase(dev, FLASH_AREA_STORAGE_OFFSET,
 			   FLASH_AREA_STORAGE_SIZE);
@@ -568,7 +568,7 @@ void board_refresh_display(void)
 
 int board_init(void)
 {
-	epd_dev = device_get_binding(CONFIG_SSD1673_DEV_NAME);
+	epd_dev = device_get_binding(DT_SSD1673_DEV_NAME);
 	if (epd_dev == NULL) {
 		printk("SSD1673 device not found\n");
 		return -ENODEV;

@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_config
-#define NET_LOG_LEVEL CONFIG_NET_CONFIG_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_config, CONFIG_NET_CONFIG_LOG_LEVEL);
 
 #include <zephyr.h>
 #include <init.h>
@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#include <logging/log_backend.h>
 #include <net/net_core.h>
 #include <net/net_ip.h>
 #include <net/net_if.h>
@@ -27,6 +28,8 @@
 #include "ieee802154_settings.h"
 #include "bt_settings.h"
 
+extern const struct log_backend *log_backend_net_get(void);
+
 static K_SEM_DEFINE(waiter, 0, 1);
 static struct k_sem counter;
 
@@ -37,7 +40,7 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 				  u32_t mgmt_event,
 				  struct net_if *iface)
 {
-#if NET_LOG_LEVEL > 2
+#if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 	char hr_addr[NET_IPV4_ADDR_LEN];
 #endif
 	int i;
@@ -54,7 +57,7 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 			continue;
 		}
 
-#if NET_LOG_LEVEL > 2
+#if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 		NET_INFO("IPv4 address: %s",
 			 log_strdup(net_addr_ntop(AF_INET,
 						  &if_addr->address.in_addr,
@@ -101,7 +104,7 @@ static void setup_dhcpv4(struct net_if *iface)
 
 static void setup_ipv4(struct net_if *iface)
 {
-#if NET_LOG_LEVEL > 2
+#if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 	char hr_addr[NET_IPV4_ADDR_LEN];
 #endif
 	struct in_addr addr;
@@ -132,7 +135,7 @@ static void setup_ipv4(struct net_if *iface)
 	net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
 #endif
 
-#if NET_LOG_LEVEL > 2
+#if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 	NET_INFO("IPv4 address: %s",
 		 log_strdup(net_addr_ntop(AF_INET, &addr, hr_addr,
 					  sizeof(hr_addr))));
@@ -198,7 +201,7 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 	}
 
 	if (mgmt_event == NET_EVENT_IPV6_DAD_SUCCEED) {
-#if NET_LOG_LEVEL > 2
+#if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 		char hr_addr[NET_IPV6_ADDR_LEN];
 #endif
 		struct net_if_addr *ifaddr;
@@ -211,7 +214,7 @@ static void ipv6_event_handler(struct net_mgmt_event_callback *cb,
 			return;
 		}
 
-#if NET_LOG_LEVEL > 2
+#if CONFIG_NET_CONFIG_LOG_LEVEL >= LOG_LEVEL_INF
 		NET_INFO("IPv6 address: %s",
 			 log_strdup(net_addr_ntop(AF_INET6, &laddr, hr_addr,
 						  NET_IPV6_ADDR_LEN)));
@@ -340,7 +343,7 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 #if defined(CONFIG_NET_CONFIG_AUTO_INIT)
 static int init_net_app(struct device *device)
 {
-	u32_t flags = 0;
+	u32_t flags = 0U;
 	int ret;
 
 	ARG_UNUSED(device);
@@ -375,6 +378,17 @@ static int init_net_app(struct device *device)
 			      K_SECONDS(CONFIG_NET_CONFIG_INIT_TIMEOUT));
 	if (ret < 0) {
 		NET_ERR("Network initialization failed (%d)", ret);
+	}
+
+	/* This is activated late as it requires the network stack to be up
+	 * and running before syslog messages can be sent to network.
+	 */
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET)) {
+		const struct log_backend *backend = log_backend_net_get();
+
+		if (!log_backend_is_active(backend)) {
+			log_backend_activate(backend, NULL);
+		}
 	}
 
 	return ret;

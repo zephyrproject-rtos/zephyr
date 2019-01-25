@@ -154,7 +154,7 @@ static int _setup_pin_dir(struct device *dev, int access_op,
 		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
 	union gpio_pcal9535a_port_data *port = &drv_data->reg_cache.dir;
 	u16_t bit_mask;
-	u16_t new_value = 0;
+	u16_t new_value = 0U;
 	int ret;
 
 	switch (access_op) {
@@ -206,7 +206,7 @@ static int _setup_pin_pullupdown(struct device *dev, int access_op,
 		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
 	union gpio_pcal9535a_port_data *port;
 	u16_t bit_mask;
-	u16_t new_value = 0;
+	u16_t new_value = 0U;
 	int ret;
 
 	/* If disabling pull up/down, there is no need to set the selection
@@ -299,7 +299,7 @@ static int _setup_pin_polarity(struct device *dev, int access_op,
 		(struct gpio_pcal9535a_drv_data * const)dev->driver_data;
 	union gpio_pcal9535a_port_data *port = &drv_data->reg_cache.pol_inv;
 	u16_t bit_mask;
-	u16_t new_value = 0;
+	u16_t new_value = 0U;
 	int ret;
 
 	switch (access_op) {
@@ -549,8 +549,6 @@ static int gpio_pcal9535a_init(struct device *dev)
 	}
 	drv_data->i2c_master = i2c_master;
 
-	dev->driver_api = &gpio_pcal9535a_drv_api_funcs;
-
 	return 0;
 }
 
@@ -571,10 +569,11 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_0_drvdata = {
 };
 
 /* This has to init after I2C master */
-DEVICE_INIT(gpio_pcal9535a_0, CONFIG_GPIO_PCAL9535A_0_DEV_NAME,
+DEVICE_AND_API_INIT(gpio_pcal9535a_0, CONFIG_GPIO_PCAL9535A_0_DEV_NAME,
 	    gpio_pcal9535a_init,
 	    &gpio_pcal9535a_0_drvdata, &gpio_pcal9535a_0_cfg,
-	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
+	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY,
+	    &gpio_pcal9535a_drv_api_funcs);
 
 #endif /* CONFIG_GPIO_PCAL9535A_0 */
 
@@ -595,10 +594,11 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_1_drvdata = {
 };
 
 /* This has to init after I2C master */
-DEVICE_INIT(gpio_pcal9535a_1, CONFIG_GPIO_PCAL9535A_1_DEV_NAME,
+DEVICE_AND_API_INIT(gpio_pcal9535a_1, CONFIG_GPIO_PCAL9535A_1_DEV_NAME,
 	    gpio_pcal9535a_init,
 	    &gpio_pcal9535a_1_drvdata, &gpio_pcal9535a_1_cfg,
-	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
+	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY,
+	    &gpio_pcal9535a_drv_api_funcs);
 
 #endif /* CONFIG_GPIO_PCAL9535A_1 */
 
@@ -619,10 +619,11 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_2_drvdata = {
 };
 
 /* This has to init after I2C master */
-DEVICE_INIT(gpio_pcal9535a_2, CONFIG_GPIO_PCAL9535A_2_DEV_NAME,
+DEVICE_AND_API_INIT(gpio_pcal9535a_2, CONFIG_GPIO_PCAL9535A_2_DEV_NAME,
 	    gpio_pcal9535a_init,
 	    &gpio_pcal9535a_2_drvdata, &gpio_pcal9535a_2_cfg,
-	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
+	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY,
+	    &gpio_pcal9535a_drv_api_funcs);
 
 #endif /* CONFIG_GPIO_PCAL9535A_2 */
 
@@ -643,9 +644,10 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_3_drvdata = {
 };
 
 /* This has to init after I2C master */
-DEVICE_INIT(gpio_pcal9535a_3, CONFIG_GPIO_PCAL9535A_3_DEV_NAME,
+DEVICE_AND_API_INIT(gpio_pcal9535a_3, CONFIG_GPIO_PCAL9535A_3_DEV_NAME,
 	    gpio_pcal9535a_init,
 	    &gpio_pcal9535a_3_drvdata, &gpio_pcal9535a_3_cfg,
-	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY);
+	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY,
+	    &gpio_pcal9535a_drv_api_funcs);
 
 #endif /* CONFIG_GPIO_PCAL9535A_3 */

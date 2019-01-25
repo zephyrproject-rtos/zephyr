@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_tc
-#define NET_LOG_LEVEL CONFIG_NET_TC_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_tc, CONFIG_NET_TC_LOG_LEVEL);
 
 #include <zephyr.h>
 #include <string.h>
@@ -27,7 +27,7 @@ NET_STACK_ARRAY_DEFINE(TX, tx_stack,
 /* Stacks for RX work queue */
 NET_STACK_ARRAY_DEFINE(RX, rx_stack,
 		       CONFIG_NET_RX_STACK_SIZE,
-		       CONFIG_NET_RX_STACK_SIZE + CONFIG_NET_RX_STACK_RPL,
+		       CONFIG_NET_RX_STACK_SIZE,
 		       NET_TC_RX_COUNT);
 
 static struct net_traffic_class tx_classes[NET_TC_TX_COUNT];

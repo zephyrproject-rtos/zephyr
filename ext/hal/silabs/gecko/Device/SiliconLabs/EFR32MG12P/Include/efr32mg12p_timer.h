@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_timer.h
  * @brief EFR32MG12P_TIMER register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -47,34 +47,34 @@
  *****************************************************************************/
 /** TIMER Register Declaration */
 typedef struct {
-  __IOM uint32_t   CTRL;         /**< Control Register  */
-  __IOM uint32_t   CMD;          /**< Command Register  */
-  __IM uint32_t    STATUS;       /**< Status Register  */
-  __IM uint32_t    IF;           /**< Interrupt Flag Register  */
-  __IOM uint32_t   IFS;          /**< Interrupt Flag Set Register  */
-  __IOM uint32_t   IFC;          /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t   IEN;          /**< Interrupt Enable Register  */
-  __IOM uint32_t   TOP;          /**< Counter Top Value Register  */
-  __IOM uint32_t   TOPB;         /**< Counter Top Value Buffer Register  */
-  __IOM uint32_t   CNT;          /**< Counter Value Register  */
-  uint32_t         RESERVED0[1]; /**< Reserved for future use **/
-  __IOM uint32_t   LOCK;         /**< TIMER Configuration Lock Register  */
-  __IOM uint32_t   ROUTEPEN;     /**< I/O Routing Pin Enable Register  */
-  __IOM uint32_t   ROUTELOC0;    /**< I/O Routing Location Register  */
-  uint32_t         RESERVED1[1]; /**< Reserved for future use **/
-  __IOM uint32_t   ROUTELOC2;    /**< I/O Routing Location Register  */
+  __IOM uint32_t   CTRL;          /**< Control Register  */
+  __IOM uint32_t   CMD;           /**< Command Register  */
+  __IM uint32_t    STATUS;        /**< Status Register  */
+  __IM uint32_t    IF;            /**< Interrupt Flag Register  */
+  __IOM uint32_t   IFS;           /**< Interrupt Flag Set Register  */
+  __IOM uint32_t   IFC;           /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t   IEN;           /**< Interrupt Enable Register  */
+  __IOM uint32_t   TOP;           /**< Counter Top Value Register  */
+  __IOM uint32_t   TOPB;          /**< Counter Top Value Buffer Register  */
+  __IOM uint32_t   CNT;           /**< Counter Value Register  */
+  uint32_t         RESERVED0[1U]; /**< Reserved for future use **/
+  __IOM uint32_t   LOCK;          /**< TIMER Configuration Lock Register  */
+  __IOM uint32_t   ROUTEPEN;      /**< I/O Routing Pin Enable Register  */
+  __IOM uint32_t   ROUTELOC0;     /**< I/O Routing Location Register  */
+  uint32_t         RESERVED1[1U]; /**< Reserved for future use **/
+  __IOM uint32_t   ROUTELOC2;     /**< I/O Routing Location Register  */
 
-  uint32_t         RESERVED2[8]; /**< Reserved registers */
-  TIMER_CC_TypeDef CC[4];        /**< Compare/Capture Channel */
+  uint32_t         RESERVED2[8U]; /**< Reserved registers */
+  TIMER_CC_TypeDef CC[4U];        /**< Compare/Capture Channel */
 
-  __IOM uint32_t   DTCTRL;       /**< DTI Control Register  */
-  __IOM uint32_t   DTTIME;       /**< DTI Time Control Register  */
-  __IOM uint32_t   DTFC;         /**< DTI Fault Configuration Register  */
-  __IOM uint32_t   DTOGEN;       /**< DTI Output Generation Enable Register  */
-  __IM uint32_t    DTFAULT;      /**< DTI Fault Register  */
-  __IOM uint32_t   DTFAULTC;     /**< DTI Fault Clear Register  */
-  __IOM uint32_t   DTLOCK;       /**< DTI Configuration Lock Register  */
-} TIMER_TypeDef;                 /** @} */
+  __IOM uint32_t   DTCTRL;        /**< DTI Control Register  */
+  __IOM uint32_t   DTTIME;        /**< DTI Time Control Register  */
+  __IOM uint32_t   DTFC;          /**< DTI Fault Configuration Register  */
+  __IOM uint32_t   DTOGEN;        /**< DTI Output Generation Enable Register  */
+  __IM uint32_t    DTFAULT;       /**< DTI Fault Register  */
+  __IOM uint32_t   DTFAULTC;      /**< DTI Fault Clear Register  */
+  __IOM uint32_t   DTLOCK;        /**< DTI Configuration Lock Register  */
+} TIMER_TypeDef;                  /** @} */
 
 /**************************************************************************//**
  * @addtogroup EFR32MG12P_TIMER

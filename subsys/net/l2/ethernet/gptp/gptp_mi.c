@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_gptp_mi
-#define NET_LOG_LEVEL CONFIG_NET_GPTP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
 #include <ptp_clock.h>
 
@@ -14,6 +14,7 @@
 #include "gptp_state.h"
 #include "gptp_private.h"
 
+#if CONFIG_NET_GPTP_LOG_LEVEL >= LOG_LEVEL_DBG
 static const char * const state2str(enum gptp_port_state state)
 {
 	switch (state) {
@@ -39,8 +40,15 @@ static const char * const state2str(enum gptp_port_state state)
 
 	return "<unknown>";
 }
+#endif
 
+#if CONFIG_NET_GPTP_LOG_LEVEL >= LOG_LEVEL_DBG
+void gptp_change_port_state_debug(int port, enum gptp_port_state state,
+				  const char *caller,
+				  int line)
+#else
 void gptp_change_port_state(int port, enum gptp_port_state state)
+#endif
 {
 	struct gptp_global_ds *global_ds = GPTP_GLOBAL_DS();
 
@@ -48,9 +56,11 @@ void gptp_change_port_state(int port, enum gptp_port_state state)
 		return;
 	}
 
-	NET_DBG("[%d] state %s -> %s", port,
+#if CONFIG_NET_GPTP_LOG_LEVEL >= LOG_LEVEL_DBG
+	NET_DBG("[%d] state %s -> %s (%s():%d)", port,
 		state2str(global_ds->selected_role[port]),
-		state2str(state));
+		state2str(state), caller, line);
+#endif
 
 	global_ds->selected_role[port] = state;
 };
@@ -647,10 +657,10 @@ static void gptp_mi_clk_slave_sync_compute(void)
 
 	global_ds->sync_receipt_time.second = sync_receipt_time / NSEC_PER_SEC;
 	global_ds->sync_receipt_time.fract_nsecond =
-		(sync_receipt_time % NSEC_PER_SEC) * GPTP_POW2(16);
+		(sync_receipt_time % NSEC_PER_SEC) * GPTP_POW2_16;
 	global_ds->sync_receipt_time.second += pss->precise_orig_ts.second;
 	global_ds->sync_receipt_time.fract_nsecond +=
-		pss->precise_orig_ts.nanosecond * GPTP_POW2(16);
+		pss->precise_orig_ts.nanosecond * GPTP_POW2_16;
 
 	global_ds->sync_receipt_local_time = port_ds->delay_asymmetry;
 	global_ds->sync_receipt_local_time /= pss->rate_ratio;
@@ -696,7 +706,7 @@ static void gptp_update_local_port_clock(void)
 	second_diff = global_ds->sync_receipt_time.second -
 		(global_ds->sync_receipt_local_time / NSEC_PER_SEC);
 	nanosecond_diff =
-		(global_ds->sync_receipt_time.fract_nsecond / GPTP_POW2(16)) -
+		(global_ds->sync_receipt_time.fract_nsecond / GPTP_POW2_16) -
 		(global_ds->sync_receipt_local_time % NSEC_PER_SEC);
 
 	clk = net_eth_get_ptp_clock(GPTP_PORT_IFACE(port));
@@ -1021,7 +1031,7 @@ static void gptp_compute_gm_rate_ratio(void)
 		src_time_n.fract_nsecond -= src_time_0.fract_nsecond;
 	} else {
 		src_time_n.second -= 1;
-		src_time_n.fract_nsecond = (NSEC_PER_SEC * GPTP_POW2(16))
+		src_time_n.fract_nsecond = (NSEC_PER_SEC * GPTP_POW2_16)
 			- src_time_0.fract_nsecond;
 	}
 
@@ -1037,7 +1047,7 @@ static void gptp_compute_gm_rate_ratio(void)
 
 	/* Calculate it in nanoseconds, new_gm_rate is either 1 or -1 here */
 	new_gm_rate *= ((src_time_n.second * NSEC_PER_SEC)
-		+ (src_time_n.fract_nsecond / GPTP_POW2(16)));
+		+ (src_time_n.fract_nsecond / GPTP_POW2_16));
 
 	new_gm_rate /= local_time_n.low;
 
@@ -1056,7 +1066,7 @@ static void gptp_mi_clk_master_sync_rcv_state_machine(void)
 	invoke_args.src_time.second = cur / NSEC_PER_SEC;
 	cur -= (invoke_args.src_time.second * NSEC_PER_SEC);
 
-	invoke_args.src_time.fract_nsecond = cur * GPTP_POW2(16);
+	invoke_args.src_time.fract_nsecond = cur * GPTP_POW2_16;
 
 	memset(&invoke_args.last_gm_phase_change, 0x0,
 	       sizeof(struct gptp_scaled_ns));
@@ -1738,7 +1748,7 @@ static void gptp_updt_roles_tree(void)
 		global_ds->current_utc_offset =
 			global_ds->sys_current_utc_offset;
 		global_ds->time_source = global_ds->sys_time_source;
-		global_ds->master_steps_removed = 0;
+		global_ds->master_steps_removed = 0U;
 	} else {
 		bmca_data = GPTP_PORT_BMCA_DATA(best_port);
 

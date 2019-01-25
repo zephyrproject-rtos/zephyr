@@ -83,6 +83,8 @@ The Zephyr nucleo_f411re board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
+| SPI       | on-chip    | spi                                 |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -114,19 +116,15 @@ For mode details please refer to `STM32 Nucleo-64 board User Manual`_.
 Default Zephyr Peripheral Mapping:
 ----------------------------------
 
-- UART_1_TX : PB6
-- UART_1_RX : PB7
-- UART_2_TX : PA2
-- UART_2_RX : PA3
-- PWM_2_CH1 : PA0
-- USER_PB : PC13
-- LD2 : PA5
-- I2C1_SDA : PB9
-- I2C1_SCL : PB8
-- I2C2_SDA : PB3
-- I2C2_SCL : PB10
-- I2C3_SDA : PB4
-- I2C3_SCL : PA8
+- UART_1 TX/RX : PB6/PB7
+- UART_2 TX/RX : PA2/PA3 (ST-Link Virtual Port Com)
+- I2C1 SCL/SDA : PB8/PB9 (Arduino I2C)
+- I2C2 SCL/SDA : PB10/PB3
+- I2C1 SCL/SDA : PA8/B4
+- SPI1 CS/SCK/MISO/MOSI : PA4/PA5/PA6/PA7 (Arduino SPI)
+- USER_PB   : PC13
+- LD2       : PA5
+
 
 System Clock
 ------------

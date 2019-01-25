@@ -15,4 +15,4 @@ void bt_ctlr_assert_handle(char *file, u32_t line);
 #define LL_ASSERT(cond) BT_ASSERT(cond)
 #endif
 
-#include "nrf5/debug.h"
+#include "hal/debug_vendor_hal.h"

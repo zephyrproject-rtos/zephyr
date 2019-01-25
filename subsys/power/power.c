@@ -63,7 +63,7 @@ static void sys_pm_log_debug_info(enum power_states state) { }
 void sys_pm_dump_debug_info(void) { }
 #endif
 
-int _sys_soc_suspend(s32_t ticks)
+int sys_suspend(s32_t ticks)
 {
 	int sys_state;
 
@@ -71,18 +71,27 @@ int _sys_soc_suspend(s32_t ticks)
 
 	sys_state = sys_pm_policy_next_state(ticks, &pm_state);
 
+#ifdef CONFIG_PM_CONTROL_STATE_LOCK
+	/* Check if PM state is locked */
+	if ((sys_state != SYS_PM_NOT_HANDLED) &&
+			!sys_pm_ctrl_is_state_enabled(sys_state)) {
+		LOG_DBG("PM state locked %d\n", sys_state);
+		return SYS_PM_NOT_HANDLED;
+	}
+#endif
+
 	switch (sys_state) {
 	case SYS_PM_LOW_POWER_STATE:
 		sys_pm_notify_lps_entry(pm_state);
 
 		/* Do CPU LPS operations */
 		sys_pm_debug_start_timer();
-		_sys_soc_set_power_state(pm_state);
+		sys_set_power_state(pm_state);
 		sys_pm_debug_stop_timer();
 		break;
 	case SYS_PM_DEEP_SLEEP:
 		/* Don't need pm idle exit event notification */
-		_sys_soc_pm_idle_exit_notification_disable();
+		sys_pm_idle_exit_notification_disable();
 
 		sys_pm_notify_lps_entry(pm_state);
 
@@ -94,7 +103,7 @@ int _sys_soc_suspend(s32_t ticks)
 
 		/* Enter CPU deep sleep state */
 		sys_pm_debug_start_timer();
-		_sys_soc_set_power_state(pm_state);
+		sys_set_power_state(pm_state);
 		sys_pm_debug_stop_timer();
 
 		/* Turn on peripherals and restore device states as necessary */
@@ -116,14 +125,14 @@ int _sys_soc_suspend(s32_t ticks)
 		if (!post_ops_done) {
 			post_ops_done = 1;
 			sys_pm_notify_lps_exit(pm_state);
-			_sys_soc_power_state_post_ops(pm_state);
+			sys_power_state_post_ops(pm_state);
 		}
 	}
 
 	return sys_state;
 }
 
-void _sys_soc_resume(void)
+void sys_resume(void)
 {
 	/*
 	 * This notification is called from the ISR of the event
@@ -137,13 +146,13 @@ void _sys_soc_resume(void)
 	 * The kernel scheduler will get control after the ISR finishes
 	 * and it may schedule another thread.
 	 *
-	 * Call _sys_soc_pm_idle_exit_notification_disable() if this
+	 * Call sys_pm_idle_exit_notification_disable() if this
 	 * notification is not required.
 	 */
 	if (!post_ops_done) {
 		post_ops_done = 1;
 		sys_pm_notify_lps_exit(pm_state);
-		_sys_soc_power_state_post_ops(pm_state);
+		sys_power_state_post_ops(pm_state);
 	}
 }
 

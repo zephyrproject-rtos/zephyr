@@ -19,8 +19,7 @@
 #include <net/net_pkt.h>
 #include "icmpv6.h"
 
-typedef bool (*fragment_handler_t)(struct net_pkt *, int);
-
+#if defined(CONFIG_NET_6LO)
 /**
  *  @brief Compress IPv6 packet as per RFC 6282
  *
@@ -30,12 +29,10 @@ typedef bool (*fragment_handler_t)(struct net_pkt *, int);
  *
  *  @param Pointer to network packet
  *  @param iphc true for IPHC compression, false for IPv6 dispatch header
- *  @param Pointer to fragment function
  *
- *  @return True on success, false otherwise
+ *  @return header size difference on success (>= 0), negative errno otherwise
  */
-bool net_6lo_compress(struct net_pkt *pkt, bool iphc,
-		      fragment_handler_t fragment);
+int net_6lo_compress(struct net_pkt *pkt, bool iphc);
 
 /**
  *  @brief Uncompress IPv6 packet as per RFC 6282
@@ -62,4 +59,23 @@ bool net_6lo_uncompress(struct net_pkt *pkt);
 void net_6lo_set_context(struct net_if *iface,
 			 struct net_icmpv6_nd_opt_6co *context);
 #endif
+
+#else
+
+static inline int net_6lo_compress(struct net_pkt *pkt, bool iphc)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(iphc);
+
+	return 0;
+}
+
+static inline bool net_6lo_uncompress(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return true;
+}
+
+#endif /* CONFIG_NET_6LO */
 #endif /* __NET_6LO_H */

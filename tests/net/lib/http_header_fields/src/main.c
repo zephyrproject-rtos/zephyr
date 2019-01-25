@@ -593,7 +593,7 @@ void test_parse_url(void)
 	int rv;
 
 	elements = ARRAY_SIZE(url_tests);
-	for (i = 0; i < elements; i++) {
+	for (i = 0U; i < elements; i++) {
 		test = &url_tests[i];
 		(void)memset(&u, 0, sizeof(u));
 

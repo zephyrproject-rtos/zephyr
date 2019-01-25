@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efr32fg1p_pcnt.h
  * @brief EFR32FG1P_PCNT register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,42 +29,51 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFR32FG1P_PCNT
+ * @defgroup EFR32FG1P_PCNT PCNT
  * @{
  * @brief EFR32FG1P_PCNT Register Declaration
  *****************************************************************************/
-typedef struct
-{
-  __IOM uint32_t CTRL;         /**< Control Register  */
-  __IOM uint32_t CMD;          /**< Command Register  */
-  __IM uint32_t  STATUS;       /**< Status Register  */
-  __IM uint32_t  CNT;          /**< Counter Value Register  */
-  __IM uint32_t  TOP;          /**< Top Value Register  */
-  __IOM uint32_t TOPB;         /**< Top Value Buffer Register  */
-  __IM uint32_t  IF;           /**< Interrupt Flag Register  */
-  __IOM uint32_t IFS;          /**< Interrupt Flag Set Register  */
-  __IOM uint32_t IFC;          /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t IEN;          /**< Interrupt Enable Register  */
-  uint32_t       RESERVED0[1]; /**< Reserved for future use **/
-  __IOM uint32_t ROUTELOC0;    /**< I/O Routing Location Register  */
+/** PCNT Register Declaration */
+typedef struct {
+  __IOM uint32_t CTRL;          /**< Control Register  */
+  __IOM uint32_t CMD;           /**< Command Register  */
+  __IM uint32_t  STATUS;        /**< Status Register  */
+  __IM uint32_t  CNT;           /**< Counter Value Register  */
+  __IM uint32_t  TOP;           /**< Top Value Register  */
+  __IOM uint32_t TOPB;          /**< Top Value Buffer Register  */
+  __IM uint32_t  IF;            /**< Interrupt Flag Register  */
+  __IOM uint32_t IFS;           /**< Interrupt Flag Set Register  */
+  __IOM uint32_t IFC;           /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t IEN;           /**< Interrupt Enable Register  */
+  uint32_t       RESERVED0[1U]; /**< Reserved for future use **/
+  __IOM uint32_t ROUTELOC0;     /**< I/O Routing Location Register  */
 
-  uint32_t       RESERVED1[4]; /**< Reserved for future use **/
-  __IOM uint32_t FREEZE;       /**< Freeze Register  */
-  __IM uint32_t  SYNCBUSY;     /**< Synchronization Busy Register  */
+  uint32_t       RESERVED1[4U]; /**< Reserved for future use **/
+  __IOM uint32_t FREEZE;        /**< Freeze Register  */
+  __IM uint32_t  SYNCBUSY;      /**< Synchronization Busy Register  */
 
-  uint32_t       RESERVED2[7]; /**< Reserved for future use **/
-  __IM uint32_t  AUXCNT;       /**< Auxiliary Counter Value Register  */
-  __IOM uint32_t INPUT;        /**< PCNT Input Register  */
-  __IOM uint32_t OVSCFG;       /**< Oversampling Config Register  */
-} PCNT_TypeDef;                /** @} */
+  uint32_t       RESERVED2[7U]; /**< Reserved for future use **/
+  __IM uint32_t  AUXCNT;        /**< Auxiliary Counter Value Register  */
+  __IOM uint32_t INPUT;         /**< PCNT Input Register  */
+  __IOM uint32_t OVSCFG;        /**< Oversampling Config Register  */
+} PCNT_TypeDef;                 /** @} */
 
 /**************************************************************************//**
- * @defgroup EFR32FG1P_PCNT_BitFields
+ * @addtogroup EFR32FG1P_PCNT
+ * @{
+ * @defgroup EFR32FG1P_PCNT_BitFields  PCNT Bit Fields
  * @{
  *****************************************************************************/
 
@@ -119,7 +128,7 @@ typedef struct
 #define _PCNT_CTRL_HYST_MASK               0x100UL                               /**< Bit mask for PCNT_HYST */
 #define _PCNT_CTRL_HYST_DEFAULT            0x00000000UL                          /**< Mode DEFAULT for PCNT_CTRL */
 #define PCNT_CTRL_HYST_DEFAULT             (_PCNT_CTRL_HYST_DEFAULT << 8)        /**< Shifted mode DEFAULT for PCNT_CTRL */
-#define PCNT_CTRL_S1CDIR                   (0x1UL << 9)                          /**< Count direction determined by S1 */
+#define PCNT_CTRL_S1CDIR                   (0x1UL << 9)                          /**< Count Direction Determined By S1 */
 #define _PCNT_CTRL_S1CDIR_SHIFT            9                                     /**< Shift value for PCNT_S1CDIR */
 #define _PCNT_CTRL_S1CDIR_MASK             0x200UL                               /**< Bit mask for PCNT_S1CDIR */
 #define _PCNT_CTRL_S1CDIR_DEFAULT          0x00000000UL                          /**< Mode DEFAULT for PCNT_CTRL */
@@ -198,12 +207,12 @@ typedef struct
 #define PCNT_CTRL_TCCCOMP_LTOE             (_PCNT_CTRL_TCCCOMP_LTOE << 22)       /**< Shifted mode LTOE for PCNT_CTRL */
 #define PCNT_CTRL_TCCCOMP_GTOE             (_PCNT_CTRL_TCCCOMP_GTOE << 22)       /**< Shifted mode GTOE for PCNT_CTRL */
 #define PCNT_CTRL_TCCCOMP_RANGE            (_PCNT_CTRL_TCCCOMP_RANGE << 22)      /**< Shifted mode RANGE for PCNT_CTRL */
-#define PCNT_CTRL_PRSGATEEN                (0x1UL << 24)                         /**< PRS gate enable */
+#define PCNT_CTRL_PRSGATEEN                (0x1UL << 24)                         /**< PRS Gate Enable */
 #define _PCNT_CTRL_PRSGATEEN_SHIFT         24                                    /**< Shift value for PCNT_PRSGATEEN */
 #define _PCNT_CTRL_PRSGATEEN_MASK          0x1000000UL                           /**< Bit mask for PCNT_PRSGATEEN */
 #define _PCNT_CTRL_PRSGATEEN_DEFAULT       0x00000000UL                          /**< Mode DEFAULT for PCNT_CTRL */
 #define PCNT_CTRL_PRSGATEEN_DEFAULT        (_PCNT_CTRL_PRSGATEEN_DEFAULT << 24)  /**< Shifted mode DEFAULT for PCNT_CTRL */
-#define PCNT_CTRL_TCCPRSPOL                (0x1UL << 25)                         /**< TCC PRS polarity select */
+#define PCNT_CTRL_TCCPRSPOL                (0x1UL << 25)                         /**< TCC PRS Polarity Select */
 #define _PCNT_CTRL_TCCPRSPOL_SHIFT         25                                    /**< Shift value for PCNT_TCCPRSPOL */
 #define _PCNT_CTRL_TCCPRSPOL_MASK          0x2000000UL                           /**< Bit mask for PCNT_TCCPRSPOL */
 #define _PCNT_CTRL_TCCPRSPOL_DEFAULT       0x00000000UL                          /**< Mode DEFAULT for PCNT_CTRL */
@@ -240,7 +249,7 @@ typedef struct
 #define PCNT_CTRL_TCCPRSSEL_PRSCH9         (_PCNT_CTRL_TCCPRSSEL_PRSCH9 << 26)   /**< Shifted mode PRSCH9 for PCNT_CTRL */
 #define PCNT_CTRL_TCCPRSSEL_PRSCH10        (_PCNT_CTRL_TCCPRSSEL_PRSCH10 << 26)  /**< Shifted mode PRSCH10 for PCNT_CTRL */
 #define PCNT_CTRL_TCCPRSSEL_PRSCH11        (_PCNT_CTRL_TCCPRSSEL_PRSCH11 << 26)  /**< Shifted mode PRSCH11 for PCNT_CTRL */
-#define PCNT_CTRL_TOPBHFSEL                (0x1UL << 31)                         /**< TOPB High frequency value select */
+#define PCNT_CTRL_TOPBHFSEL                (0x1UL << 31)                         /**< TOPB High Frequency Value Select */
 #define _PCNT_CTRL_TOPBHFSEL_SHIFT         31                                    /**< Shift value for PCNT_TOPBHFSEL */
 #define _PCNT_CTRL_TOPBHFSEL_MASK          0x80000000UL                          /**< Bit mask for PCNT_TOPBHFSEL */
 #define _PCNT_CTRL_TOPBHFSEL_DEFAULT       0x00000000UL                          /**< Mode DEFAULT for PCNT_CTRL */
@@ -320,7 +329,7 @@ typedef struct
 #define _PCNT_IF_AUXOF_MASK                0x8UL                           /**< Bit mask for PCNT_AUXOF */
 #define _PCNT_IF_AUXOF_DEFAULT             0x00000000UL                    /**< Mode DEFAULT for PCNT_IF */
 #define PCNT_IF_AUXOF_DEFAULT              (_PCNT_IF_AUXOF_DEFAULT << 3)   /**< Shifted mode DEFAULT for PCNT_IF */
-#define PCNT_IF_TCC                        (0x1UL << 4)                    /**< Triggered compare Interrupt Read Flag */
+#define PCNT_IF_TCC                        (0x1UL << 4)                    /**< Triggered Compare Interrupt Read Flag */
 #define _PCNT_IF_TCC_SHIFT                 4                               /**< Shift value for PCNT_TCC */
 #define _PCNT_IF_TCC_MASK                  0x10UL                          /**< Bit mask for PCNT_TCC */
 #define _PCNT_IF_TCC_DEFAULT               0x00000000UL                    /**< Mode DEFAULT for PCNT_IF */
@@ -701,6 +710,6 @@ typedef struct
 #define _PCNT_OVSCFG_FLUTTERRM_DEFAULT     0x00000000UL                           /**< Mode DEFAULT for PCNT_OVSCFG */
 #define PCNT_OVSCFG_FLUTTERRM_DEFAULT      (_PCNT_OVSCFG_FLUTTERRM_DEFAULT << 12) /**< Shifted mode DEFAULT for PCNT_OVSCFG */
 
+/** @} */
 /** @} End of group EFR32FG1P_PCNT */
 /** @} End of group Parts */
-

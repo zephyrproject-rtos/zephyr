@@ -40,8 +40,15 @@
 			interrupt-names = "usb";
 			num-bidir-endpoints = <8>;
 			ram-size = <512>;
+			phys = <&usb_fs_phy>;
 			status = "disabled";
 			label= "USB";
 		};
+	};
+
+	usb_fs_phy: usbphy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "USB_FS_PHY";
 	};
 };

@@ -142,7 +142,7 @@ static int aio_qmsi_cmp_init(struct device *dev)
 	config.cmp_en = QM_SCSS_CMP->cmp_en;
 
 	/* Clear callback pointers */
-	for (i = 0; i < dev_data->num_cmp; i++) {
+	for (i = 0U; i < dev_data->num_cmp; i++) {
 		dev_data->cb[i].cb = NULL;
 		dev_data->cb[i].param = NULL;
 	}
@@ -161,7 +161,7 @@ static void aio_qmsi_cmp_isr(void *data)
 
 	u32_t int_status = QM_SCSS_CMP->cmp_stat_clr;
 
-	for (i = 0; i < dev_data->num_cmp; i++) {
+	for (i = 0U; i < dev_data->num_cmp; i++) {
 		if (int_status & (1 << i)) {
 			if (dev_data->cb[i].cb != NULL) {
 				dev_data->cb[i].cb(dev_data->cb[i].param);

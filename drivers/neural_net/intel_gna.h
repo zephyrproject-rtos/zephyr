@@ -63,7 +63,7 @@ extern "C" {
 
 #define GNA_LAYER_DESC_ALIGN		(128)
 
-#define GNA_ADDRESSABLE_MEM_SIZE	L2_SRAM_SIZE
+#define GNA_ADDRESSABLE_MEM_SIZE	DT_L2_SRAM_SIZE
 #define GNA_NUM_PG_TABLE_INDEX_BITS	10
 #define GNA_NUM_PG_TABLE_ENTRIES	BIT(GNA_NUM_PG_TABLE_INDEX_BITS)
 #define GNA_PG_SIZE_IN_BITSHIFT		12
@@ -182,10 +182,10 @@ enum gna_state {
 
 struct intel_gna_data {
 	/*
-	 * gna_cb_alert must be the first element in the structure
-	 * since it will be typecast as intel_gna_data in the alert handler
+	 * gna_cb_work must be the first element in the structure
+	 * since it will be typecast as intel_gna_data in the work handler
 	 */
-	struct k_alert			gna_cb_alert;
+	struct k_work			gna_work;
 	volatile struct intel_gna_regs	*regs;
 	struct k_mem_slab		model_slab;
 	struct intel_gna_model		models[GNA_MAX_NUM_MODELS];

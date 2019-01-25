@@ -155,9 +155,9 @@ static inline void copy_hdr(struct net_buf *buf)
 static void reset_rx(void)
 {
 	rx.type = H4_NONE;
-	rx.remaining = 0;
+	rx.remaining = 0U;
 	rx.have_hdr = false;
-	rx.hdr_len = 0;
+	rx.hdr_len = 0U;
 	rx.discardable = false;
 }
 

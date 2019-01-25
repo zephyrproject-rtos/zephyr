@@ -12,14 +12,14 @@ config BOARD
 
 if UART_CONSOLE
 
-config UART_STM32_PORT_3
+config UART_3
 	default y
 
 endif # UART_CONSOLE
 
 if SERIAL
 
-config UART_STM32_PORT_6
+config UART_6
 	default y
 
 endif # SERIAL
@@ -27,14 +27,14 @@ endif # SERIAL
 if I2C
 
 config I2C_1
-	def_bool y
+	default y
 
 endif # I2C
 
 if SPI
 
 config SPI_1
-	def_bool y
+	default y
 
 endif # SPI
 
@@ -54,7 +54,7 @@ endif # NETWORKING
 if PWM
 
 config PWM_STM32_2
-	def_bool y
+	default y
 
 endif # PWM
 

@@ -135,9 +135,9 @@ static int i2c_imx_configure(struct device *dev, u32_t dev_config_raw)
 	/* Initialize I2C state structure content. */
 	transfer->txBuff = 0;
 	transfer->rxBuff = 0;
-	transfer->cmdSize = 0;
-	transfer->txSize = 0;
-	transfer->rxSize = 0;
+	transfer->cmdSize = 0U;
+	transfer->txSize = 0U;
+	transfer->rxSize = 0U;
 	transfer->isBusy = false;
 	transfer->currentDir = i2cDirectionReceive;
 	transfer->currentMode = i2cModeSlave;

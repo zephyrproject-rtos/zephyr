@@ -15,6 +15,6 @@
 
 void main(void)
 {
-	printk("Type \"help\" for supported commands.\n");
+	printk("Press the <Tab> button for supported commands.\n");
 	printk("Before any Mesh commands you must run \"mesh init\"\n");
 }

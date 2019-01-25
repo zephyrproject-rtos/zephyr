@@ -85,7 +85,7 @@ The STM32F769I Discovery kit provides the following hardware components:
 - 8- to 14-bit camera interface up to 54 Mbyte/s
 - True random number generator
 - CRC calculation unit
-- RTC: subsecond accuracy, hardware calendar
+- RTC: sub-second accuracy, hardware calendar
 - 96-bit unique ID
 
 More information about STM32F769NIH6 can be found here:

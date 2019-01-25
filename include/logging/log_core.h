@@ -25,6 +25,12 @@ extern "C" {
 #define CONFIG_LOG_MAX_LEVEL 0
 #endif
 
+#define LOG_FUNCTION_PREFIX_MASK \
+	((IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_ERR) << LOG_LEVEL_ERR) | \
+	 (IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_WRN) << LOG_LEVEL_WRN) | \
+	 (IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_INF) << LOG_LEVEL_INF) | \
+	 (IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG) << LOG_LEVEL_DBG))
+
 /** @brief Macro for returning local level value if defined or default.
  *
  * Check @ref IS_ENABLED macro for detailed explanation of the trick.
@@ -33,7 +39,7 @@ extern "C" {
 	_LOG_RESOLVED_LEVEL1(_level, _default)
 
 #define _LOG_RESOLVED_LEVEL1(_level, _default) \
-	__LOG_RESOLVED_LEVEL2(_LOG_XXXX##_level, _level, _default)
+	__COND_CODE(_LOG_XXXX##_level, (_level), (_default))
 
 #define _LOG_XXXX0 _LOG_YYYY,
 #define _LOG_XXXX1 _LOG_YYYY,
@@ -41,22 +47,12 @@ extern "C" {
 #define _LOG_XXXX3 _LOG_YYYY,
 #define _LOG_XXXX4 _LOG_YYYY,
 
-#define __LOG_RESOLVED_LEVEL2(one_or_two_args, _level, _default) \
-	__LOG_ARG_2(one_or_two_args _level, _default)
-
-#define LOG_DEBRACKET(...) __VA_ARGS__
-
-#define __LOG_ARG_1(val, ...) val
-#define __LOG_ARG_2(ignore_this, val, ...) val
-#define __LOG_ARGS_LESS1(val, ...) __VA_ARGS__
-
-#define __LOG_ARG_2_DEBRACKET(ignore_this, val, ...) LOG_DEBRACKET val
-
 /**
  * @brief Macro for conditional code generation if provided log level allows.
  *
- * Macro behaves similarly to standard #if #else #endif clause. The difference
- * is that it is evaluated when used and not when header file is included.
+ * Macro behaves similarly to standard \#if \#else \#endif clause. The
+ * difference is that it is evaluated when used and not when header file is
+ * included.
  *
  * @param _eval_level Evaluated level. If level evaluates to one of existing log
  *		      log level (1-4) then macro evaluates to _iftrue.
@@ -69,35 +65,12 @@ extern "C" {
 	_LOG_EVAL1(_eval_level, _iftrue, _iffalse)
 
 #define _LOG_EVAL1(_eval_level, _iftrue, _iffalse) \
-	_LOG_EVAL2(_LOG_ZZZZ##_eval_level, _iftrue, _iffalse)
+	__COND_CODE(_LOG_ZZZZ##_eval_level, _iftrue, _iffalse)
 
 #define _LOG_ZZZZ1 _LOG_YYYY,
 #define _LOG_ZZZZ2 _LOG_YYYY,
 #define _LOG_ZZZZ3 _LOG_YYYY,
 #define _LOG_ZZZZ4 _LOG_YYYY,
-
-#define _LOG_EVAL2(one_or_two_args, _iftrue, _iffalse) \
-	__LOG_ARG_2_DEBRACKET(one_or_two_args _iftrue, _iffalse)
-
-/**
- * @brief Macro for condition code generation.
- *
- * @param _eval Parameter evaluated against 0
- * @param _ifzero Code included if _eval is 0. Must be wrapped in brackets.
- * @param _ifnzero Code included if _eval is not  0.
- *		   Must be wrapped in brackets.
- */
-
-#define _LOG_Z_EVAL(_eval, _ifzero, _ifnzero) \
-	_LOG_Z_EVAL1(_eval, _ifzero, _ifnzero)
-
-#define _LOG_Z_EVAL1(_eval, _ifzero, _ifnzero) \
-	_LOG_Z_EVAL2(_LOG_Z_ZZZZ##_eval, _ifzero, _ifnzero)
-
-#define _LOG_Z_ZZZZ0 _LOG_Z_YYYY,
-
-#define _LOG_Z_EVAL2(one_or_two_args, _ifzero, _ifnzero) \
-	__LOG_ARG_2_DEBRACKET(one_or_two_args _ifzero, _ifnzero)
 
 /** @brief Macro for getting log level for given module.
  *
@@ -149,7 +122,7 @@ extern "C" {
 
 /**
  * @brief Macro for optional injection of function name as first argument of
- *	  formatted string. _LOG_Z_EVAL() macro is used to handle no arguments
+ *	  formatted string. COND_CODE_0() macro is used to handle no arguments
  *	  case.
  *
  *	  The purpose of this macro is to prefix string literal with format
@@ -157,15 +130,13 @@ extern "C" {
  *	  argument. In order to handle string with no arguments _LOG_Z_EVAL is
  *	  used.
  */
-#if CONFIG_LOG_FUNCTION_NAME
-#define _LOG_STR(...) "%s: " __LOG_ARG_1(__VA_ARGS__), __func__\
-		_LOG_Z_EVAL(NUM_VA_ARGS_LESS_1(__VA_ARGS__),\
+
+#define _LOG_STR(...) "%s: " GET_ARG1(__VA_ARGS__), __func__\
+		COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__),\
 			    (),\
-			    (, __LOG_ARGS_LESS1(__VA_ARGS__))\
+			    (, GET_ARGS_LESS_1(__VA_ARGS__))\
 			   )
-#else
-#define _LOG_STR(...) __VA_ARGS__
-#endif
+
 
 /******************************************************************************/
 /****************** Internal macros for log frontend **************************/
@@ -239,10 +210,16 @@ extern "C" {
 		    (_level <= LOG_RUNTIME_FILTER(_filter))) {		    \
 			struct log_msg_ids src_level = {		    \
 				.level = _level,			    \
-				.source_id = _id,			    \
-				.domain_id = CONFIG_LOG_DOMAIN_ID	    \
+				.domain_id = CONFIG_LOG_DOMAIN_ID,	    \
+				.source_id = _id			    \
 			};						    \
-			__LOG_INTERNAL(src_level, _LOG_STR(__VA_ARGS__));   \
+									    \
+			if ((1 << _level) & LOG_FUNCTION_PREFIX_MASK) {	    \
+				__LOG_INTERNAL(src_level,		    \
+						_LOG_STR(__VA_ARGS__));	    \
+			} else {					    \
+				__LOG_INTERNAL(src_level, __VA_ARGS__);	    \
+			}						    \
 		} else if (0) {						    \
 			/* Arguments checker present but never evaluated.*/ \
 			/* Placed here to ensure that __VA_ARGS__ are*/     \
@@ -253,7 +230,7 @@ extern "C" {
 
 #define _LOG(_level, ...)			       \
 	__LOG(_level,				       \
-	      LOG_CURRENT_MODULE_ID(),		       \
+	      (u16_t)LOG_CURRENT_MODULE_ID(),	       \
 	      LOG_CURRENT_DYNAMIC_DATA_ADDR(),	       \
 	      __VA_ARGS__)
 

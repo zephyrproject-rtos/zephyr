@@ -80,7 +80,7 @@ static int __set_one_port(struct device *dev, qm_pwm_t id, u32_t pwm,
 	 * turned off. Let's use the minimum value which is 1 for this case.
 	 */
 	if (off == 0) {
-		off = 1;
+		off = 1U;
 	}
 
 	/* PWM mode, user-defined count mode, timer disabled */
@@ -149,7 +149,7 @@ static int pwm_qmsi_pin_set(struct device *dev, u32_t pwm,
 	 */
 	if (low == 0) {
 		high--;
-		low = 1;
+		low = 1U;
 	}
 
 	return __set_one_port(dev, QM_PWM_0, pwm, high, low);

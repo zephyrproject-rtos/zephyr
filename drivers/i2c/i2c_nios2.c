@@ -157,14 +157,14 @@ static struct i2c_driver_api i2c_nios2_driver_api = {
 
 static struct i2c_nios2_config i2c_nios2_cfg = {
 	.i2c_dev = {
-		.i2c_base = (alt_u32 *)I2C_0_BASE,
+		.i2c_base = (alt_u32 *)DT_I2C_0_BASE_ADDRESS,
 		.irq_controller_ID = I2C_0_IRQ_INTERRUPT_CONTROLLER_ID,
 		.irq_ID = I2C_0_IRQ,
-		.ip_freq_in_hz = I2C_0_FREQ,
+		.ip_freq_in_hz = DT_I2C_0_BITRATE,
 	},
 };
 
-DEVICE_AND_API_INIT(i2c_nios2_0, CONFIG_I2C_0_NAME, &i2c_nios2_init,
+DEVICE_AND_API_INIT(i2c_nios2_0, DT_I2C_0_NAME, &i2c_nios2_init,
 		    NULL, &i2c_nios2_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_nios2_driver_api);

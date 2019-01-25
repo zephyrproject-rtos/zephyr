@@ -14,19 +14,29 @@ menuconfig NET_LOG
 	  Specific debugging options to other sub-menus will be unlocked
 	  as well (IPv6, IPv4, ...).
 
-module = NET_DEFAULT
+module = NET_PKT
 module-dep = NET_LOG
-module-def = LOG_LEVEL_ERR
-module-str = Default network stack logging level
-module-help = Default log level if the user has not specified one.
-source "subsys/net/Kconfig.template.log_config.default.net"
+module-str = Log level for network packet and buffer allocation
+module-help = Enables debug of network packet and buffer allocations and frees.
+source "subsys/net/Kconfig.template.log_config.net"
 
-module = NET_MAX
-module-dep = NET_LOG
-module-def = LOG_LEVEL_DBG
-module-str = Max network stack logging level
-module-help = Max log level. This overrides individual networking log levels.
-source "subsys/net/Kconfig.template.log_config.default.net"
+config NET_DEBUG_NET_PKT_ALLOC
+	bool "Debug network packet and buffer individual allocation"
+	default y if NET_PKT_LOG_LEVEL_DBG
+	help
+	  Enables printing of network packet and buffer allocations and frees for
+	  each allocation. This can produce lot of output so it is disabled by
+	  default.
+
+config NET_DEBUG_NET_PKT_EXTERNALS
+	int "How many external network packet allocations"
+	default 0
+	help
+	  How many external net_pkt objects are there in user specific pools.
+	  This value is used when allocating space for tracking the
+	  memory allocations.
+
+if !NET_RAW_MODE
 
 module = NET_CORE
 module-dep = NET_LOG
@@ -58,29 +68,6 @@ module-str = Log level for network context allocation
 module-help = Enables printing of network context allocations and frees.
 source "subsys/net/Kconfig.template.log_config.net"
 
-module = NET_PKT
-module-dep = NET_LOG
-module-str = Log level for network packet and buffer allocation
-module-help = Enables debug of network packet and buffer allocations and frees.
-source "subsys/net/Kconfig.template.log_config.net"
-
-if NET_PKT_LOG_LEVEL >= 4
-config NET_DEBUG_NET_PKT_ALL
-	bool "Debug network packet and buffer individual allocation"
-	help
-	  Enables printing of network packet and buffer allocations and frees for
-	  each allocation. This can produce lot of output so it is disabled by
-	  default.
-
-config NET_DEBUG_NET_PKT_EXTERNALS
-	int "How many external network packet allocations"
-	default 0
-	help
-	  How many external net_pkt objects are there in user specific pools.
-	  This value is used when allocating space for tracking the
-	  memory allocations.
-endif
-
 module = NET_CONN
 module-dep = NET_LOG
 module-str = Log level for UDP/TCP connection handling
@@ -92,3 +79,5 @@ module-dep = NET_LOG
 module-str = Log level for route management
 module-help = Enables routing engine debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_RAW_MODE

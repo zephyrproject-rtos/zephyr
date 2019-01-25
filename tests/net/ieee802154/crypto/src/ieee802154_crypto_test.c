@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_test
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_test, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
+#include <ztest.h>
 #include <errno.h>
 
 #include <net/net_core.h>
@@ -29,7 +30,7 @@ static void print_caps(struct device *dev)
 {
 	int caps = cipher_query_hwcaps(dev);
 
-	printk("Crpyto hardware capabilities:\n");
+	printk("Crypto hardware capabilities:\n");
 
 	if (caps & CAP_RAW_KEY) {
 		printk("\tCAPS_RAW_KEY\n");
@@ -86,7 +87,7 @@ static bool verify_result(u8_t *result, int result_len,
 	return true;
 }
 
-static void ds_test(struct device *dev)
+static bool ds_test(struct device *dev)
 {
 	u8_t key[] = { 0xc0, 0xc1, 0xc2, 0xc3, 0xc4, 0xc5, 0xc6, 0xc7,
 			  0xc8, 0xc9, 0xca, 0xcb, 0xcc, 0xcd, 0xce, 0xcf };
@@ -151,7 +152,7 @@ static void ds_test(struct device *dev)
 				   CRYPTO_CIPHER_OP_ENCRYPT);
 	if (ret) {
 		NET_ERR("Cannot start encryption session");
-		return;
+		return false;
 	}
 
 	ret = cipher_begin_session(dev, &dec,
@@ -286,22 +287,33 @@ both:
 	}
 
 	NET_INFO("Authentication and encryption test: PASSED");
+
+	return true;
 out:
 	cipher_free_session(dev, &enc);
 	cipher_free_session(dev, &dec);
+
+	return false;
 }
 
-void main(void)
+static void test_cc2520_crypto(void)
 {
 	struct device *dev;
 
 	dev = device_get_binding(IEEE802154_CRYPTO_DRV_NAME);
-	if (!dev) {
-		NET_ERR("Cannot get crypto device binding\n");
-		return;
-	}
+	zassert_not_null(dev, NULL);
 
 	print_caps(dev);
 
-	ds_test(dev);
+	zassert_true(ds_test(dev), NULL);
+}
+
+
+void test_main(void)
+{
+	ztest_test_suite(ieee802154_crypto,
+			 ztest_unit_test(test_cc2520_crypto)
+		);
+
+	ztest_run_test_suite(ieee802154_crypto);
 }

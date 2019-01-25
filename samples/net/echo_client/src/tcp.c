@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_echo_client_tcp
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_echo_client_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <errno.h>
@@ -105,7 +105,7 @@ static int setup_cert(struct net_app_ctx *ctx, void *cert)
 						 ca_certificate,
 						 sizeof(ca_certificate));
 		if (ret != 0) {
-			NET_ERR("mbedtls_x509_crt_parse_der failed "
+			LOG_ERR("mbedtls_x509_crt_parse_der failed "
 				"(-0x%x)", -ret);
 			return ret;
 		}
@@ -146,7 +146,7 @@ static void send_tcp_data(struct net_app_ctx *ctx,
 		data->expecting_tcp = sys_rand32_get() % ipsum_len;
 	} while (data->expecting_tcp == 0);
 
-	data->received_tcp = 0;
+	data->received_tcp = 0U;
 
 	pkt = prepare_send_pkt(ctx, data->proto, &data->expecting_tcp);
 	if (!pkt) {
@@ -162,7 +162,7 @@ static void send_tcp_data(struct net_app_ctx *ctx,
 	ret = net_app_send_pkt(ctx, pkt, NULL, 0, K_FOREVER,
 			       UINT_TO_POINTER(len));
 	if (ret < 0) {
-		NET_ERR("Cannot send %s data to peer (%d)", data->proto, ret);
+		LOG_ERR("Cannot send %s data to peer (%d)", data->proto, ret);
 		net_pkt_unref(pkt);
 	}
 }
@@ -190,7 +190,7 @@ static bool compare_tcp_data(struct net_pkt *pkt, int expecting_len,
 
 	while (frag) {
 		if (memcmp(ptr, start + pos, len)) {
-			NET_DBG("Invalid data received");
+			LOG_DBG("Invalid data received");
 			return false;
 		}
 
@@ -205,7 +205,7 @@ static bool compare_tcp_data(struct net_pkt *pkt, int expecting_len,
 		len = frag->len;
 	}
 
-	NET_DBG("Compared %d bytes, all ok", net_pkt_appdatalen(pkt));
+	LOG_DBG("Compared %d bytes, all ok", net_pkt_appdatalen(pkt));
 
 	return true;
 }
@@ -228,11 +228,11 @@ static void tcp_received(struct net_app_ctx *ctx,
 		return;
 	}
 
-	NET_DBG("%s: Sent %d bytes, received %u bytes",
+	LOG_DBG("%s: Sent %d bytes, received %u bytes",
 		data->proto, data->expecting_tcp, net_pkt_appdatalen(pkt));
 
 	if (!compare_tcp_data(pkt, data->expecting_tcp, data->received_tcp)) {
-		NET_DBG("Data mismatch");
+		LOG_DBG("Data mismatch");
 	} else {
 		data->received_tcp += net_pkt_appdatalen(pkt);
 	}
@@ -278,7 +278,7 @@ static int connect_tcp(struct net_app_ctx *ctx, const char *peer,
 	ret = net_app_init_tcp_client(ctx, NULL, NULL, peer, PEER_PORT,
 				      WAIT_TIME, user_data);
 	if (ret < 0) {
-		NET_ERR("Cannot init %s TCP client (%d)", data->proto, ret);
+		LOG_ERR("Cannot init %s TCP client (%d)", data->proto, ret);
 		goto fail;
 	}
 
@@ -288,7 +288,7 @@ static int connect_tcp(struct net_app_ctx *ctx, const char *peer,
 
 	ret = net_app_set_cb(ctx, tcp_connected, tcp_received, NULL, NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot set callbacks (%d)", ret);
+		LOG_ERR("Cannot set callbacks (%d)", ret);
 		goto fail;
 	}
 
@@ -305,14 +305,14 @@ static int connect_tcp(struct net_app_ctx *ctx, const char *peer,
 				 stack,
 				 stack_size);
 	if (ret < 0) {
-		NET_ERR("Cannot init TLS");
+		LOG_ERR("Cannot init TLS");
 		goto fail;
 	}
 #endif
 
 	ret = net_app_connect(ctx, CONNECT_TIME);
 	if (ret < 0) {
-		NET_ERR("Cannot connect TCP (%d)", ret);
+		LOG_ERR("Cannot connect TCP (%d)", ret);
 		goto fail;
 	}
 
@@ -332,7 +332,7 @@ int start_tcp(void)
 				  K_THREAD_STACK_SIZEOF(
 					  net_app_tls_stack_ipv6));
 		if (ret < 0) {
-			NET_ERR("Cannot init IPv6 TCP client (%d)", ret);
+			LOG_ERR("Cannot init IPv6 TCP client (%d)", ret);
 		}
 	}
 
@@ -344,7 +344,7 @@ int start_tcp(void)
 				  K_THREAD_STACK_SIZEOF(
 					  net_app_tls_stack_ipv4));
 		if (ret < 0) {
-			NET_ERR("Cannot init IPv4 TCP client (%d)", ret);
+			LOG_ERR("Cannot init IPv4 TCP client (%d)", ret);
 		}
 	}
 

@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_trickle
-#define NET_LOG_LEVEL CONFIG_NET_TRICKLE_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_trickle, CONFIG_NET_TRICKLE_LOG_LEVEL);
 
 #include <errno.h>
 #include <misc/util.h>
@@ -93,7 +93,7 @@ static inline void reschedule(struct net_trickle *trickle)
 
 	/* Did the clock wrap */
 	if ((s32_t)diff < 0) {
-		diff = 0;
+		diff = 0U;
 		NET_DBG("Clock wrap");
 	}
 

@@ -303,22 +303,10 @@ operations on the ring buffer's memory.  For example:
 	...
     }
 
-APIs
-****
+API Reference
+*************
 
-The following ring buffer APIs are provided by :file:`include/ring_buffer.h`:
+The following ring buffer APIs are provided by :zephyr_file:`include/ring_buffer.h`:
 
-* :cpp:func:`RING_BUF_ITEM_DECLARE_POW2()`
-* :cpp:func:`RING_BUF_ITEM_DECLARE_SIZE()`
-* :cpp:func:`RING_BUF_DECLARE_SIZE()`
-* :cpp:func:`ring_buf_init()`
-* :cpp:func:`ring_buf_is_empty()`
-* :cpp:func:`ring_buf_space_get()`
-* :cpp:func:`ring_buf_item_put()`
-* :cpp:func:`ring_buf_item_get()`
-* :cpp:func:`ring_buf_put()`
-* :cpp:func:`ring_buf_put_claim()`
-* :cpp:func:`ring_buf_put_finish()`
-* :cpp:func:`ring_buf_get()`
-* :cpp:func:`ring_buf_get_claim()`
-* :cpp:func:`ring_buf_get_finish()`
+.. doxygengroup:: ring_buffer_apis
+   :project: Zephyr

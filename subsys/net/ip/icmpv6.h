@@ -170,8 +170,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 
 void net_icmpv6_register_handler(struct net_icmpv6_handler *handler);
 void net_icmpv6_unregister_handler(struct net_icmpv6_handler *handler);
-enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
-				  u8_t type, u8_t code);
+enum net_verdict net_icmpv6_input(struct net_pkt *pkt);
 
 int net_icmpv6_get_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr);
 int net_icmpv6_set_hdr(struct net_pkt *pkt, struct net_icmp_hdr *hdr);

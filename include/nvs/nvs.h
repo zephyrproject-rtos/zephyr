@@ -15,6 +15,7 @@ extern "C" {
 /**
  * @brief Non-volatile Storage
  * @defgroup nvs Non-volatile Storage
+ * @ingroup file_system_storage
  * @{
  * @}
  */

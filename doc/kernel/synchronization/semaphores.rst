@@ -125,14 +125,9 @@ Related configuration options:
 
 * None.
 
-APIs
-****
+API Reference
+**************
 
-The following semaphore APIs are provided by :file:`kernel.h`:
+.. doxygengroup:: semaphore_apis
+   :project: Zephyr
 
-* :c:macro:`K_SEM_DEFINE`
-* :cpp:func:`k_sem_init()`
-* :cpp:func:`k_sem_give()`
-* :cpp:func:`k_sem_take()`
-* :cpp:func:`k_sem_reset()`
-* :cpp:func:`k_sem_count_get()`

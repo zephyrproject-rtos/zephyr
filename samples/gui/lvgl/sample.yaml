@@ -1,0 +1,8 @@
+sample:
+  description: LVGL sample application
+  name: lvgl
+tests:
+  test:
+    harness: display
+    platform_whitelist: nrf52840_pca10056 reel_board
+    tags: samples display gui

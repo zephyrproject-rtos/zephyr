@@ -139,16 +139,10 @@ Configuration Options
 
 Related configuration options:
 
-* None.
+* None
 
-APIs
-****
+API Reference
+*************
 
-The following memory slab APIs are provided by :file:`kernel.h`:
-
-* :c:macro:`K_MEM_SLAB_DEFINE`
-* :cpp:func:`k_mem_slab_init()`
-* :cpp:func:`k_mem_slab_alloc()`
-* :cpp:func:`k_mem_slab_free()`
-* :cpp:func:`k_mem_slab_num_used_get()`
-* :cpp:func:`k_mem_slab_num_free_get()`
+.. doxygengroup:: mem_slab_apis
+   :project: Zephyr

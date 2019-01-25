@@ -46,13 +46,13 @@ static int currently_running_prio = 256; /* 255 is the lowest prio interrupt */
 
 void hw_irq_ctrl_init(void)
 {
-	irq_mask = 0; /* Let's assume all interrupts are disable at boot */
-	irq_premask = 0;
+	irq_mask = 0U; /* Let's assume all interrupts are disable at boot */
+	irq_premask = 0U;
 	irqs_locked = false;
 	lock_ignore = false;
 
 	for (int i = 0 ; i < N_IRQS; i++) {
-		irq_prio[i] = 255;
+		irq_prio[i] = 255U;
 	}
 }
 
@@ -137,14 +137,14 @@ u64_t hw_irq_ctrl_get_irq_status(void)
 
 void hw_irq_ctrl_clear_all_enabled_irqs(void)
 {
-	irq_status  = 0;
+	irq_status  = 0U;
 	irq_premask &= ~irq_mask;
 }
 
 void hw_irq_ctrl_clear_all_irqs(void)
 {
-	irq_status  = 0;
-	irq_premask = 0;
+	irq_status  = 0U;
+	irq_premask = 0U;
 }
 
 void hw_irq_ctrl_disable_irq(unsigned int irq)

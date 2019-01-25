@@ -248,7 +248,7 @@ Then when the particular instance is declared:
   static struct my_driver_data_0;
 
   DEVICE_AND_API_INIT(my_driver_0, MY_DRIVER_0_NAME, my_driver_init,
-                      &my_driver_data_0, &my_driver_config_0, SECONDARY,
+                      &my_driver_data_0, &my_driver_config_0, POST_KERNEL,
                       MY_DRIVER_0_PRIORITY, &my_driver_api_funcs);
 
   #endif /* CONFIG_MY_DRIVER_0 */
@@ -274,7 +274,7 @@ executed. Any driver will specify one of five initialization levels:
 
 ``PRE_KERNEL_2``
         Used for devices that rely on the initialization of devices initialized
-        as part of the PRIMARY level. These devices cannot use any kernel
+        as part of the ``PRE_KERNEL_1`` level. These devices cannot use any kernel
         services during configuration, since the kernel services are not yet
         available. Init functions at this level run on the interrupt stack.
 

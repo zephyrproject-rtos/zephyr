@@ -185,7 +185,7 @@ static inline void adc_context_start_read(struct adc_context *ctx,
 	ctx->status = 0;
 
 	if (ctx->sequence->options) {
-		ctx->sampling_index = 0;
+		ctx->sampling_index = 0U;
 
 		if (ctx->sequence->options->interval_us != 0) {
 			atomic_set(&ctx->sampling_requested, 0);

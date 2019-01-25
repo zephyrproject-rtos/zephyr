@@ -34,46 +34,18 @@ extern "C" {
  */
 
 /* Network subsystem logging helpers */
-
-#if !defined(LOG_LEVEL)
-#if !defined(NET_LOG_LEVEL)
-#define NET_LOG_LEVEL CONFIG_NET_DEFAULT_LOG_LEVEL
-#endif /* !NET_LOG_LEVEL */
-
-#if NET_LOG_LEVEL > CONFIG_NET_MAX_LOG_LEVEL
-#undef NET_LOG_LEVEL
-#define NET_LOG_LEVEL CONFIG_NET_MAX_LOG_LEVEL
-#endif /* NET_LOG_LEVEL > CONFIG_NET_MAX_LOG_LEVEL */
-
-#define LOG_LEVEL NET_LOG_LEVEL
-#endif /* !LOG_LEVEL */
-
-#if defined(NET_LOG_LEVEL)
 #include <logging/log.h>
 
-LOG_MODULE_REGISTER(LOG_MODULE_NAME);
-#endif /* NET_LOG_LEVEL */
-
-#if defined(CONFIG_LOG_FUNCTION_NAME)
 #define NET_DBG(fmt, ...) LOG_DBG("(%p): " fmt, k_current_get(), \
 				  ##__VA_ARGS__)
-#else
-#define NET_DBG(fmt, ...) LOG_DBG("%s(): (%p): " fmt, __func__, \
-				  k_current_get(), ##__VA_ARGS__)
-#endif /* CONFIG_LOG_FUNCTION_NAME */
 #define NET_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
 #define NET_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
 #define NET_INFO(fmt, ...) LOG_INF(fmt,  ##__VA_ARGS__)
 
-#define NET_ASSERT(cond) do {				     \
-		if (!(cond)) {					     \
-			NET_ERR("{assert: '" #cond "' failed}");     \
-		} } while (false)
-#define NET_ASSERT_INFO(cond, fmt, ...) do {			     \
-		if (!(cond)) {					     \
-			NET_ERR("{assert: '" #cond "' failed} " fmt, \
-				##__VA_ARGS__);			     \
-		} } while (false)
+#include <misc/__assert.h>
+
+#define NET_ASSERT(cond) __ASSERT_NO_MSG(cond)
+#define NET_ASSERT_INFO(cond, fmt, ...) __ASSERT(cond, fmt, ##__VA_ARGS__)
 
 #include <kernel.h>
 
@@ -211,19 +183,8 @@ static inline void net_analyze_stack_get_values(const char *stack,
 	*pcnt = ((size - *unused) * 100) / size;
 }
 
-static inline void net_analyze_stack(const char *name,
-				     const char *stack,
-				     size_t size)
-{
-	unsigned int pcnt, unused;
+void net_analyze_stack(const char *name, const char *stack, size_t size);
 
-	net_analyze_stack_get_values(stack, size, &pcnt, &unused);
-
-	NET_INFO("net (%p): %s stack real size %zu "
-		 "unused %u usage %zu/%zu (%u %%)",
-		 k_current_get(), name,
-		 size, unused, size - unused, size, pcnt);
-}
 #else
 #define net_analyze_stack(...)
 #define net_analyze_stack_get_values(...)

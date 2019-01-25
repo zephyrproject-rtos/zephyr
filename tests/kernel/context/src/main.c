@@ -57,8 +57,9 @@
 #define TICK_IRQ CONFIG_MVIC_TIMER_IRQ
 #endif
 #elif defined(CONFIG_XTENSA)
-#include <xtensa_timer.h>
-#define TICK_IRQ XT_TIMER_INTNUM
+#define TICK_IRQ UTIL_CAT(XCHAL_TIMER,		\
+			  UTIL_CAT(CONFIG_XTENSA_TIMER_ID, _INTERRUPT))
+
 #elif defined(CONFIG_ALTERA_AVALON_TIMER)
 #define TICK_IRQ TIMER_0_IRQ
 #elif defined(CONFIG_ARCV2_TIMER)
@@ -244,7 +245,7 @@ static void _test_kernel_cpu_idle(int atomic)
 	tms = k_uptime_get_32();
 	while (tms == k_uptime_get_32()) {
 #if defined(CONFIG_ARCH_POSIX)
-		posix_halt_cpu(); /*Sleep until next IRQ*/
+		k_busy_wait(50);
 #endif
 	}
 
@@ -358,8 +359,13 @@ static void _test_kernel_interrupts(disable_int_func disable_int,
 	 */
 	enable_int(imask);
 
-	zassert_equal(tick2, tick,
-		      "tick advanced with interrupts locked");
+	/* In TICKLESS, current time is retrieved from a hardware
+	 * counter and ticks DO advance with interrupts locked!
+	 */
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		zassert_equal(tick2, tick,
+			      "tick advanced with interrupts locked");
+	}
 
 	/* Now repeat with interrupts unlocked. */
 	for (i = 0; i < count; i++) {

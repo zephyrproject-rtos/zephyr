@@ -3,7 +3,7 @@
  * Copyright 2016 NXP
  * All rights reserved.
  *
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -14,7 +14,12 @@
 #define FSL_COMPONENT_ID "platform.drivers.gpc_1"
 #endif
 
-
+/*!
+ * brief Enable the IRQ.
+ *
+ * param base GPC peripheral base address.
+ * param irqId ID number of IRQ to be enabled, available range is 32-159.
+ */
 void GPC_EnableIRQ(GPC_Type *base, uint32_t irqId)
 {
     uint32_t irqRegNum = irqId / 32U;
@@ -37,6 +42,12 @@ void GPC_EnableIRQ(GPC_Type *base, uint32_t irqId)
 #endif /* FSL_FEATURE_GPC_HAS_IRQ_0_31 */
 }
 
+/*!
+ * brief Disable the IRQ.
+ *
+ * param base GPC peripheral base address.
+ * param irqId ID number of IRQ to be disabled, available range is 32-159.
+ */
 void GPC_DisableIRQ(GPC_Type *base, uint32_t irqId)
 {
     uint32_t irqRegNum = irqId / 32U;
@@ -59,6 +70,13 @@ void GPC_DisableIRQ(GPC_Type *base, uint32_t irqId)
 #endif /* FSL_FEATURE_GPC_HAS_IRQ_0_31 */
 }
 
+/*!
+ * brief Get the IRQ/Event flag.
+ *
+ * param base GPC peripheral base address.
+ * param irqId ID number of IRQ to be enabled, available range is 32-159.
+ * return Indicated IRQ/Event is asserted or not.
+ */
 bool GPC_GetIRQStatusFlag(GPC_Type *base, uint32_t irqId)
 {
     uint32_t irqRegNum = irqId / 32U;

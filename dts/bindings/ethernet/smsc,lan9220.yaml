@@ -1,0 +1,30 @@
+#
+# Copyright (c) 2018 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+title: SMSC/Microchip LAN9220 Ethernet controller
+version: 0.1
+
+description: >
+     This is a representation of the formerly SMSC, now Microchip, LAN9220
+     Ethernet controller.
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "smsc,lan9220"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define

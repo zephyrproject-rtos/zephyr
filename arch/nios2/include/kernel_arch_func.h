@@ -41,11 +41,6 @@ _set_thread_return_value(struct k_thread *thread, unsigned int value)
 	thread->callee_saved.retval = value;
 }
 
-static inline void _IntLibInit(void)
-{
-	/* No special initialization of the interrupt subsystem required */
-}
-
 #define _is_in_isr() (_kernel.nested != 0U)
 
 #ifdef CONFIG_IRQ_OFFLOAD

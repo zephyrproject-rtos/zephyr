@@ -69,7 +69,7 @@ static inline void lps22hb_temp_convert(struct sensor_value *val,
 {
 	/* Temperature sensitivity is 100 LSB/deg C */
 	val->val1 = raw_val / 100;
-	val->val2 = (s32_t)raw_val % 100;
+	val->val2 = ((s32_t)raw_val % 100) * 10000;
 }
 
 static int lps22hb_channel_get(struct device *dev,
@@ -152,12 +152,12 @@ static int lps22hb_init(struct device *dev)
 }
 
 static const struct lps22hb_config lps22hb_config = {
-	.i2c_master_dev_name = CONFIG_LPS22HB_I2C_MASTER_DEV_NAME,
-	.i2c_slave_addr = CONFIG_LPS22HB_I2C_ADDR,
+	.i2c_master_dev_name = DT_ST_LPS22HB_PRESS_0_BUS_NAME,
+	.i2c_slave_addr = DT_ST_LPS22HB_PRESS_0_BASE_ADDRESS,
 };
 
 static struct lps22hb_data lps22hb_data;
 
-DEVICE_AND_API_INIT(lps22hb, CONFIG_LPS22HB_DEV_NAME, lps22hb_init,
+DEVICE_AND_API_INIT(lps22hb, DT_ST_LPS22HB_PRESS_0_LABEL, lps22hb_init,
 		    &lps22hb_data, &lps22hb_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lps22hb_api_funcs);

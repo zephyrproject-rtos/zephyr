@@ -6,8 +6,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_test
 #define NET_LOG_LEVEL CONFIG_NET_IF_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <zephyr/types.h>
 #include <stdbool.h>
@@ -86,12 +88,11 @@ static void eth_fake_iface_init(struct net_if *iface)
 	ethernet_init(iface);
 }
 
-static int eth_fake_send(struct net_if *iface,
+static int eth_fake_send(struct device *dev,
 			 struct net_pkt *pkt)
 {
-	ARG_UNUSED(iface);
-
-	net_pkt_unref(pkt);
+	ARG_UNUSED(dev);
+	ARG_UNUSED(pkt);
 
 	return 0;
 }
@@ -126,10 +127,10 @@ static int eth_fake_set_config(struct device *dev,
 
 static struct ethernet_api eth_fake_api_funcs = {
 	.iface_api.init = eth_fake_iface_init,
-	.iface_api.send = eth_fake_send,
 
 	.get_capabilities = eth_fake_get_capabilities,
 	.set_config = eth_fake_set_config,
+	.send = eth_fake_send,
 };
 
 static int eth_fake_init(struct device *dev)
@@ -344,7 +345,7 @@ static void _recv_data(struct net_if *iface, struct net_pkt **pkt)
 	static u8_t data[] = { 't', 'e', 's', 't', '\0' };
 	int ret;
 
-	*pkt = net_pkt_get_reserve_tx(0, K_FOREVER);
+	*pkt = net_pkt_get_reserve_tx(K_FOREVER);
 	net_pkt_set_iface(*pkt, iface);
 
 	net_pkt_append_all(*pkt, sizeof(data), data, K_FOREVER);

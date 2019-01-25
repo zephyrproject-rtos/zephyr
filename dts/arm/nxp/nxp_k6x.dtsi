@@ -15,6 +15,21 @@
 		};
 	};
 
+	/* The on-chip SRAM is split into SRAM_L and SRAM_U regions that form a
+	 * contiguous block in the memory map, however misaligned accesses
+	 * across the 0x2000_0000 boundary are not supported in the Arm
+	 * Cortex-M4 architecture. For clarity and to avoid the temptation for
+	 * someone to extend sram0 without solving this issue, we define two
+	 * separate memory nodes here and only use the upper one for now. A
+	 * potential solution has been proposed in binutils:
+	 * https://sourceware.org/ml/binutils/2017-02/msg00250.html
+	 */
+	sram_l: memory@1fff0000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x1fff0000 0x10000>;
+	};
+
 	sram0: memory@20000000 {
 		device_type = "memory";
 		compatible = "mmio-sram";
@@ -293,7 +308,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 
-			cs = <&gpiob 10 0>, <&gpiob 9 0>;
 			pinctrl-0 = <&spi0_default>;
 			pinctrl-names = "default";
 		};

@@ -1,0 +1,10 @@
+
+if BOARD_IOTDK
+
+config BOARD
+	default "iotdk"
+
+config CPU_ARCEM4
+	def_bool y
+
+endif # BOARD_IOTDK

@@ -5,8 +5,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <assert.h>
-
 #include <string.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -40,6 +38,8 @@ static void settings_init_fs(void)
 	if (rc) {
 		k_panic();
 	}
+
+	settings_mount_fs_backend(&config_init_settings_file);
 }
 
 #elif defined(CONFIG_SETTINGS_FCB)
@@ -93,6 +93,8 @@ static void settings_init_fcb(void)
 	if (rc != 0) {
 		k_panic();
 	}
+
+	settings_mount_fcb_backend(&config_init_settings_fcb);
 }
 
 #endif

@@ -13,6 +13,7 @@
 
 	chosen {
 		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -60,7 +61,7 @@
 
 	/* ST Microelectronics LSM6DSL accel/gyro sensor */
 	lsm6dsl@1 {
-		compatible = "st,lsm6dsl-spi";
+		compatible = "st,lsm6dsl";
 		reg = <1>;
 		spi-max-frequency = <1000000>;
 		irq-gpios = <&gpiob 1 0>;
@@ -85,6 +86,7 @@
 		compatible = "st,hts221";
 		reg = <0x5f>;
 		label = "HTS221";
+		drdy-gpios = <&gpioa 2 GPIO_INT_ACTIVE_LOW>;
 	};
 
 	lps22hb-press@5d {
@@ -102,7 +104,7 @@
 
 &i2c3 {
 	status = "ok";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
+	clock-frequency = <I2C_BITRATE_FAST>;
 
 	lp3943@60 {
 		compatible = "ti,lp3943";

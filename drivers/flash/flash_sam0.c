@@ -145,7 +145,7 @@ static int flash_sam0_write_page(struct device *dev, off_t offset,
 
 static int flash_sam0_erase_row(struct device *dev, off_t offset)
 {
-	*FLASH_MEM(offset) = 0;
+	*FLASH_MEM(offset) = 0U;
 	NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_ER | NVMCTRL_CTRLA_CMDEX_KEY;
 
 	return flash_sam0_check_status(offset);
@@ -318,7 +318,7 @@ static int flash_sam0_write_protection(struct device *dev, bool enable)
 
 	for (offset = 0; offset < CONFIG_FLASH_SIZE * 1024;
 	     offset += LOCK_REGION_SIZE) {
-		*FLASH_MEM(offset) = 0;
+		*FLASH_MEM(offset) = 0U;
 
 		if (enable) {
 			NVMCTRL->CTRLA.reg = NVMCTRL_CTRLA_CMD_LR |
@@ -376,6 +376,6 @@ static const struct flash_driver_api flash_sam0_api = {
 
 static struct flash_sam0_data flash_sam0_data_0;
 
-DEVICE_AND_API_INIT(flash_sam0, FLASH_DEV_NAME,
+DEVICE_AND_API_INIT(flash_sam0, DT_FLASH_DEV_NAME,
 		    flash_sam0_init, &flash_sam0_data_0, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_sam0_api);

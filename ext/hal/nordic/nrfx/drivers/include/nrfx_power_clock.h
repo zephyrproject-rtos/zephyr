@@ -56,10 +56,10 @@ __STATIC_INLINE void nrfx_power_clock_irq_init(void)
     priority = NRFX_CLOCK_CONFIG_IRQ_PRIORITY;
 #endif
 
-    if (!NRFX_IRQ_IS_ENABLED(POWER_CLOCK_IRQn))
+    if (!NRFX_IRQ_IS_ENABLED(nrfx_get_irq_number(NRF_CLOCK)))
     {
-        NRFX_IRQ_PRIORITY_SET(POWER_CLOCK_IRQn, priority);
-        NRFX_IRQ_ENABLE(POWER_CLOCK_IRQn);
+        NRFX_IRQ_PRIORITY_SET(nrfx_get_irq_number(NRF_CLOCK), priority);
+        NRFX_IRQ_ENABLE(nrfx_get_irq_number(NRF_CLOCK));
     }
 }
 #endif // SUPPRESS_INLINE_IMPLEMENTATION

@@ -87,7 +87,7 @@ static __attribute__((noinline)) u32_t next_pow2(u32_t x)
 static u32_t get_timeout(u32_t  timeout)
 {
 	u32_t val = timeout / 2;
-	u32_t count = 0;
+	u32_t count = 0U;
 
 	if (val & (val - 1))
 		val = next_pow2(val);
@@ -218,8 +218,8 @@ static int init(struct device *dev)
 		k_sem_init(RP_GET(dev), 1, UINT_MAX);
 	}
 
-	IRQ_CONNECT(CONFIG_WDT_0_IRQ, CONFIG_WDT_0_IRQ_PRI,
-		    qm_wdt_0_isr, 0, CONFIG_WDT_0_IRQ_FLAGS);
+	IRQ_CONNECT(DT_WDT_0_IRQ, DT_WDT_0_IRQ_PRI,
+		    qm_wdt_0_isr, 0, DT_WDT_0_IRQ_FLAGS);
 
 	/* Unmask watchdog interrupt */
 	irq_enable(IRQ_GET_NUMBER(QM_IRQ_WDT_0_INT));

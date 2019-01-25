@@ -20,6 +20,7 @@
 		sw0    = &user_switch_1;
 		i2c-4  = &i2c4;
 		pwm-1  = &pwm1;
+		mu-b   = &mub;
 	};
 
 	chosen {
@@ -28,6 +29,7 @@
 #endif
 		zephyr,sram = &tcmu_sys;
 		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
 	};
 
 	leds {
@@ -66,5 +68,9 @@
 };
 
 &pwm1 {
+	status = "ok";
+};
+
+&mub {
 	status = "ok";
 };

@@ -18,6 +18,7 @@
 
 	chosen {
 		zephyr,console = &sercom3;
+		zephyr,shell-uart = &sercom3;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -51,7 +52,7 @@
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 	rxpo = <3>;
-	txpo = <2>;
+	txpo = <1>;
 };
 
 &sercom4 {
@@ -72,12 +73,9 @@
 		 * The final 16 KiB is reserved for the application
 		 * and is used by NFFS if enabled.
 		 */
-
-#if defined(CONFIG_FS_FLASH_MAP_STORAGE)
 		storage_partition: partition@3c000 {
 			label = "storage";
 			reg = <0x0003c000 0x00004000>;
 		};
-#endif
 	};
 };

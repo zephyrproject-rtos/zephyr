@@ -14,15 +14,6 @@
 #include "flash.h"
 #include <soc.h>
 
-extern const struct shell *ctx_shell;
-
-#define print(_sh, _ft, ...) \
-	shell_fprintf(_sh ? _sh : ctx_shell, SHELL_NORMAL, _ft "\r\n", \
-		      ##__VA_ARGS__)
-#define error(_sh, _ft, ...) \
-	shell_fprintf(_sh ? _sh : ctx_shell, SHELL_ERROR, _ft "\r\n", \
-		      ##__VA_ARGS__)
-
 #define FLASH_SHELL_MODULE "flash"
 #define BUF_ARRAY_CNT 16
 #define TEST_ARR_SIZE 0x1000
@@ -36,14 +27,14 @@ static int cmd_erase(const struct shell *shell, size_t argc, char *argv[])
 	int result;
 	u32_t size;
 
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 	if (!flash_dev) {
-		error(shell, "Flash driver was not found!");
+		shell_error(shell, "Flash driver was not found!");
 		return -ENODEV;
 	}
 
 	if (argc < 2) {
-		error(shell, "Missing page address.");
+		shell_error(shell, "Missing page address.");
 		return -EINVAL;
 	}
 
@@ -52,7 +43,18 @@ static int cmd_erase(const struct shell *shell, size_t argc, char *argv[])
 	if (argc > 2) {
 		size = strtoul(argv[2], NULL, 16);
 	} else {
-		size = NRF_FICR->CODEPAGESIZE;
+		struct flash_pages_info info;
+
+		result = flash_get_page_info_by_offs(flash_dev, page_addr,
+						     &info);
+
+		if (result != 0) {
+			shell_error(shell, "Could not determine page size, "
+				    "code %d.", result);
+			return -EINVAL;
+		}
+
+		size = info.size;
 	}
 
 	flash_write_protection_set(flash_dev, 0);
@@ -60,9 +62,9 @@ static int cmd_erase(const struct shell *shell, size_t argc, char *argv[])
 	result = flash_erase(flash_dev, page_addr, size);
 
 	if (result) {
-		error(shell, "Erase Failed, code %d.", result);
+		shell_error(shell, "Erase Failed, code %d.", result);
 	} else {
-		print(shell, "Erase success.");
+		shell_print(shell, "Erase success.");
 	}
 
 	return result;
@@ -76,19 +78,19 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	u32_t w_addr;
 	int j = 0;
 
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 	if (!flash_dev) {
-		error(shell, "Flash driver was not found!");
+		shell_error(shell, "Flash driver was not found!");
 		return -ENODEV;
 	}
 
 	if (argc < 2) {
-		error(shell, "Missing address.");
+		shell_error(shell, "Missing address.");
 		return -EINVAL;
 	}
 
 	if (argc <= 2) {
-		error(shell, "Type data to be written.");
+		shell_error(shell, "Type data to be written.");
 		return -EINVAL;
 	}
 
@@ -104,18 +106,18 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 
 	if (flash_write(flash_dev, w_addr, buf_array,
 			sizeof(buf_array[0]) * j) != 0) {
-		error(shell, "Write internal ERROR!");
+		shell_error(shell, "Write internal ERROR!");
 		return -EIO;
 	}
 
-	print(shell, "Write OK.");
+	shell_print(shell, "Write OK.");
 
 	flash_read(flash_dev, w_addr, check_array, sizeof(buf_array[0]) * j);
 
 	if (memcmp(buf_array, check_array, sizeof(buf_array[0]) * j) == 0) {
-		print(shell, "Verified.");
+		shell_print(shell, "Verified.");
 	} else {
-		error(shell, "Verification ERROR!");
+		shell_error(shell, "Verification ERROR!");
 		return -EIO;
 	}
 
@@ -128,14 +130,14 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 	u32_t addr;
 	int cnt;
 
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 	if (!flash_dev) {
-		error(shell, "Flash driver was not found!");
+		shell_error(shell, "Flash driver was not found!");
 		return -ENODEV;
 	}
 
 	if (argc < 2) {
-		error(shell, "Missing address.");
+		shell_error(shell, "Missing address.");
 		return -EINVAL;
 	}
 
@@ -151,11 +153,11 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 		u32_t data;
 
 		flash_read(flash_dev, addr, &data, sizeof(data));
-		print(shell, "0x%08x ", data);
+		shell_print(shell, "0x%08x ", data);
 		addr += sizeof(data);
 	}
 
-	print(shell, "");
+	shell_print(shell, "");
 
 	return 0;
 }
@@ -168,14 +170,14 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 	u32_t addr;
 	u32_t size;
 
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 	if (!flash_dev) {
-		error(shell, "Flash driver was not found!");
+		shell_error(shell, "Flash driver was not found!");
 		return -ENODEV;
 	}
 
 	if (argc != 4) {
-		error(shell, "3 parameters reqired.");
+		shell_error(shell, "3 parameters reqired.");
 		return -EINVAL;
 	}
 
@@ -184,7 +186,8 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 	repeat = strtoul(argv[3], NULL, 16);
 
 	if (size > TEST_ARR_SIZE) {
-		error(shell, "<size> must be at most 0x%x.", TEST_ARR_SIZE);
+		shell_error(shell, "<size> must be at most 0x%x.",
+			    TEST_ARR_SIZE);
 		return -EINVAL;
 	}
 
@@ -197,26 +200,24 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 	while (repeat--) {
 		result = flash_erase(flash_dev, addr, size);
 		if (result) {
-			error(shell, "Erase Failed, code %d.", result);
+			shell_error(shell, "Erase Failed, code %d.", result);
 			return -EIO;
 		}
 
-		print(shell, "Erase OK.");
+		shell_print(shell, "Erase OK.");
 
 		if (flash_write(flash_dev, addr, test_arr, size) != 0) {
-			error(shell, "Write internal ERROR!");
+			shell_error(shell, "Write internal ERROR!");
 			return -EIO;
 		}
 
-		print(shell, "Write OK.");
+		shell_print(shell, "Write OK.");
 	}
 
-	print(shell, "Erase-Write test done.");
+	shell_print(shell, "Erase-Write test done.");
 
 	return 0;
 }
-
-#define HELP_NONE "[none]"
 
 SHELL_CREATE_STATIC_SUBCMD_SET(flash_cmds) {
 	SHELL_CMD(erase, NULL, "<page address> <size>", cmd_erase),
@@ -228,22 +229,9 @@ SHELL_CREATE_STATIC_SUBCMD_SET(flash_cmds) {
 
 static int cmd_flash(const struct shell *shell, size_t argc, char **argv)
 {
-	int err;
-
-	if (argc == 1) {
-		shell_help_print(shell, NULL, 0);
-		/* shell_cmd_precheck returns 1 when help is printed */
-		return 1;
-	}
-
-	err = shell_cmd_precheck(shell, (argc == 2), NULL, 0);
-	if (err) {
-		return err;
-	}
-
-	error(shell, "%s:%s%s", argv[0], "unknown parameter: ", argv[1]);
+	shell_error(shell, "%s:unknown parameter: %s", argv[0], argv[1]);
 	return -EINVAL;
 }
 
-SHELL_CMD_REGISTER(flash, &flash_cmds, "Flash shell commands",
-		   cmd_flash);
+SHELL_CMD_ARG_REGISTER(flash, &flash_cmds, "Flash shell commands",
+		       cmd_flash, 2, 0);

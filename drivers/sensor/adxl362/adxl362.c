@@ -571,20 +571,20 @@ static int adxl362_chip_init(struct device *dev)
  */
 static int adxl362_init(struct device *dev)
 {
+	const struct adxl362_config *config = dev->config->config_info;
 	struct adxl362_data *data = dev->driver_data;
 	u8_t value;
 
-	data->spi = device_get_binding(CONFIG_ADXL362_SPI_DEV_NAME);
+	data->spi = device_get_binding(config->spi_name);
 	if (!data->spi) {
-		LOG_DBG("spi device not found: %s",
-			    CONFIG_ADXL362_SPI_DEV_NAME);
+		LOG_DBG("spi device not found: %s", config->spi_name);
 		return -EINVAL;
 	}
 
 	data->spi_cfg.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB |
 		SPI_MODE_CPOL | SPI_MODE_CPHA;
-	data->spi_cfg.frequency = 8000000;
-	data->spi_cfg.slave = CONFIG_ADXL362_SPI_DEV_SLAVE;
+	data->spi_cfg.frequency = config->spi_max_frequency;
+	data->spi_cfg.slave = config->spi_slave;
 
 	adxl362_software_reset(dev);
 
@@ -600,6 +600,12 @@ static int adxl362_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(adxl362, CONFIG_ADXL362_DEV_NAME, adxl362_init,
-		    &adxl362_data, NULL, POST_KERNEL,
+static const struct adxl362_config adxl362_config = {
+	.spi_name = DT_ADXL362_SPI_DEV_NAME,
+	.spi_slave = DT_ADXL362_SPI_DEV_SLAVE,
+	.spi_max_frequency = DT_ADXL362_SPI_MAX_FREQUENCY,
+};
+
+DEVICE_AND_API_INIT(adxl362, DT_ADXL362_DEV_NAME, adxl362_init,
+		    &adxl362_data, &adxl362_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &adxl362_api_funcs);

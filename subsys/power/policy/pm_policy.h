@@ -55,13 +55,6 @@ extern void sys_pm_notify_lps_entry(enum power_states state);
  */
 extern void sys_pm_notify_lps_exit(enum power_states state);
 
-/**
- * @brief Dump Low Power states related debug info
- *
- * Dump Low Power states debug info like LPS entry count and residencies.
- */
-extern void sys_pm_dump_debug_info(void);
-
 #ifdef __cplusplus
 }
 #endif

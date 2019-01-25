@@ -24,8 +24,8 @@
 #include <bluetooth/hci.h>
 #include <drivers/bluetooth/hci_driver.h>
 
-#ifdef CONFIG_CLOCK_CONTROL_NRF5
-#include <drivers/clock_control/nrf5_clock_control.h>
+#ifdef CONFIG_CLOCK_CONTROL_NRF
+#include <drivers/clock_control/nrf_clock_control.h>
 #endif
 
 #define BT_DBG_ENABLED IS_ENABLED(CONFIG_BT_DEBUG_HCI_DRIVER)
@@ -33,17 +33,21 @@
 #include "common/log.h"
 
 #include "util/util.h"
+#include "util/memq.h"
+
 #include "hal/ccm.h"
+
+#if defined(CONFIG_SOC_FAMILY_NRF)
 #include "hal/radio.h"
+#endif /* CONFIG_SOC_FAMILY_NRF */
+
 #include "ll_sw/pdu.h"
-#include "ll_sw/ctrl.h"
+#include "ll_sw/lll.h"
 #include "ll.h"
+
 #include "hci_internal.h"
 
 #include "hal/debug.h"
-
-#define NODE_RX(_node) CONTAINER_OF(_node, struct radio_pdu_node_rx, \
-				    hdr.onion.node)
 
 static K_SEM_DEFINE(sem_prio_recv, 0, UINT_MAX);
 static K_FIFO_DEFINE(recv_fifo);
@@ -109,7 +113,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 	}
 }
 
-static inline struct net_buf *encode_node(struct radio_pdu_node_rx *node_rx,
+static inline struct net_buf *encode_node(struct node_rx_pdu *node_rx,
 					  s8_t class)
 {
 	struct net_buf *buf = NULL;
@@ -141,16 +145,20 @@ static inline struct net_buf *encode_node(struct radio_pdu_node_rx *node_rx,
 	}
 
 #if defined(CONFIG_BT_LL_SW)
-	radio_rx_fc_set(node_rx->hdr.handle, 0);
+	{
+		extern u8_t radio_rx_fc_set(u16_t handle, u8_t fc);
+
+		radio_rx_fc_set(node_rx->hdr.handle, 0);
+	}
 #endif /* CONFIG_BT_LL_SW */
 
-	node_rx->hdr.onion.next = 0;
+	node_rx->hdr.next = NULL;
 	ll_rx_mem_release((void **)&node_rx);
 
 	return buf;
 }
 
-static inline struct net_buf *process_node(struct radio_pdu_node_rx *node_rx)
+static inline struct net_buf *process_node(struct node_rx_pdu *node_rx)
 {
 	s8_t class = hci_get_class(node_rx);
 	struct net_buf *buf = NULL;
@@ -170,8 +178,7 @@ static inline struct net_buf *process_node(struct radio_pdu_node_rx *node_rx)
 			/* fallthrough */
 		case HCI_CLASS_ACL_DATA:
 			if (pend || !hbuf_count) {
-				sys_slist_append(&hbuf_pend,
-						 &node_rx->hdr.onion.node);
+				sys_slist_append(&hbuf_pend, (void *)node_rx);
 				BT_DBG("FC: Queuing item: %d", class);
 				return NULL;
 			}
@@ -190,13 +197,12 @@ static inline struct net_buf *process_node(struct radio_pdu_node_rx *node_rx)
 }
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
-static inline struct net_buf *process_hbuf(struct radio_pdu_node_rx *n)
+static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 {
 	/* shadow total count in case of preemption */
-	struct radio_pdu_node_rx *node_rx = NULL;
+	struct node_rx_pdu *node_rx = NULL;
 	s32_t hbuf_total = hci_hbuf_total;
 	struct net_buf *buf = NULL;
-	sys_snode_t *node = NULL;
 	s8_t class;
 	int reset;
 
@@ -215,13 +221,12 @@ static inline struct net_buf *process_hbuf(struct radio_pdu_node_rx *n)
 	hbuf_count = hbuf_total - (hci_hbuf_sent - hci_hbuf_acked);
 
 	/* host acked ACL packets, try to dequeue from hbuf */
-	node = sys_slist_peek_head(&hbuf_pend);
-	if (!node) {
+	node_rx = (void *)sys_slist_peek_head(&hbuf_pend);
+	if (!node_rx) {
 		return NULL;
 	}
 
 	/* Return early if this iteration already has a node to process */
-	node_rx = NODE_RX(node);
 	class = hci_get_class(node_rx);
 	if (n) {
 		if (class == HCI_CLASS_EVT_CONNECTION ||
@@ -244,7 +249,7 @@ static inline struct net_buf *process_hbuf(struct radio_pdu_node_rx *n)
 			(void) sys_slist_get(&hbuf_pend);
 		} else {
 			/* no buffers, HCI will signal */
-			node = NULL;
+			node_rx = NULL;
 		}
 		break;
 	case HCI_CLASS_EVT_DISCARDABLE:
@@ -254,14 +259,13 @@ static inline struct net_buf *process_hbuf(struct radio_pdu_node_rx *n)
 		break;
 	}
 
-	if (node) {
+	if (node_rx) {
 		buf = encode_node(node_rx, class);
 		/* Update host buffers after encoding */
 		hbuf_count = hbuf_total - (hci_hbuf_sent - hci_hbuf_acked);
 		/* next node */
-		node = sys_slist_peek_head(&hbuf_pend);
-		if (node) {
-			node_rx = NODE_RX(node);
+		node_rx = (void *)sys_slist_peek_head(&hbuf_pend);
+		if (node_rx) {
 			class = hci_get_class(node_rx);
 
 			if (class == HCI_CLASS_EVT_CONNECTION ||
@@ -294,7 +298,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 #endif
 
 	while (1) {
-		struct radio_pdu_node_rx *node_rx = NULL;
+		struct node_rx_pdu *node_rx = NULL;
 		struct net_buf *buf = NULL;
 
 		BT_DBG("blocking");
@@ -440,11 +444,13 @@ static int hci_driver_open(void)
 			K_THREAD_STACK_SIZEOF(prio_recv_thread_stack),
 			prio_recv_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_CTLR_RX_PRIO), 0, K_NO_WAIT);
+	k_thread_name_set(&prio_recv_thread_data, "BT RX pri");
 
 	k_thread_create(&recv_thread_data, recv_thread_stack,
 			K_THREAD_STACK_SIZEOF(recv_thread_stack),
 			recv_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(CONFIG_BT_RX_PRIO), 0, K_NO_WAIT);
+	k_thread_name_set(&recv_thread_data, "BT RX");
 
 	BT_DBG("Success.");
 

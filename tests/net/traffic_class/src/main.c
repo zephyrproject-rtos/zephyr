@@ -6,8 +6,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_test
 #define NET_LOG_LEVEL CONFIG_NET_TC_LOG_LEVEL
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_test, NET_LOG_LEVEL);
 
 #include <zephyr/types.h>
 #include <stdbool.h>
@@ -20,6 +22,7 @@
 #include <ztest.h>
 
 #include <net/ethernet.h>
+#include <net/dummy.h>
 #include <net/buf.h>
 #include <net/net_ip.h>
 #include <net/net_l2.h>
@@ -151,7 +154,7 @@ static bool check_higher_priority_pkt_recv(int tc, struct net_pkt *pkt)
 /* The eth_tx() will handle both sent packets or and it will also
  * simulate the receiving of the packets.
  */
-static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
+static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->frags) {
 		DBG("No data to send!\n");
@@ -180,8 +183,11 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 		udp_hdr->src_port = udp_hdr->dst_port;
 		udp_hdr->dst_port = port;
 
+		net_pkt_ref(pkt);
+
 		if (net_recv_data(net_pkt_iface(pkt), pkt) < 0) {
 			test_failed = true;
+			net_pkt_unref(pkt);
 			zassert_true(false, "Packet %p receive failed\n", pkt);
 		}
 
@@ -229,13 +235,11 @@ static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 fail:
-	net_pkt_unref(pkt);
-
 	return 0;
 }
 
-static struct net_if_api api_funcs = {
-	.init	= eth_iface_init,
+static struct dummy_api api_funcs = {
+	.iface_api.init	= eth_iface_init,
 	.send	= eth_tx,
 };
 

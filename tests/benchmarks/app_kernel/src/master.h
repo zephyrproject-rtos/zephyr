@@ -28,10 +28,6 @@
 /* printf format defines. */
 #define FORMAT "| %-65s|%10u|\n"
 
-/* global defines */
-/* number of nsec per usec */
-#define NSEC_PER_USEC 1000
-
 /* length of the output line */
 #define SLINE_LEN 256
 
@@ -126,12 +122,6 @@ extern void pipe_test(void);
 #define pipe_test dummy_test
 #endif
 
-#ifdef EVENT_BENCH
-extern void event_test(void);
-#else
-#define event_test dummy_test
-#endif
-
 /* kernel objects needed for benchmarking */
 extern struct k_mutex DEMO_MUTEX;
 
@@ -156,8 +146,6 @@ extern struct k_pipe PIPE_BIGBUFF;
 
 
 extern struct k_mem_slab MAP1;
-
-extern struct k_alert TEST_EVENT;
 
 extern struct k_mem_pool DEMOPOOL;
 

@@ -159,6 +159,43 @@ static inline void eth_stats_update_multicast_tx(struct net_if *iface)
 	stats->multicast.tx++;
 }
 
+
+static inline void eth_stats_update_errors_rx(struct net_if *iface)
+{
+	struct net_stats_eth *stats;
+	const struct ethernet_api *api = ((const struct ethernet_api *)
+		net_if_get_device(iface)->driver_api);
+
+	if (!api->get_stats) {
+		return;
+	}
+
+	stats = api->get_stats(net_if_get_device(iface));
+	if (!stats) {
+		return;
+	}
+
+	stats->errors.rx++;
+}
+
+static inline void eth_stats_update_errors_tx(struct net_if *iface)
+{
+	struct net_stats_eth *stats;
+	const struct ethernet_api *api = ((const struct ethernet_api *)
+		net_if_get_device(iface)->driver_api);
+
+	if (!api->get_stats) {
+		return;
+	}
+
+	stats = api->get_stats(net_if_get_device(iface));
+	if (!stats) {
+		return;
+	}
+
+	stats->errors.tx++;
+}
+
 #else /* CONFIG_NET_STATISTICS_ETHERNET */
 
 #define eth_stats_update_bytes_rx(iface, bytes)
@@ -169,6 +206,8 @@ static inline void eth_stats_update_multicast_tx(struct net_if *iface)
 #define eth_stats_update_broadcast_tx(iface)
 #define eth_stats_update_multicast_rx(iface)
 #define eth_stats_update_multicast_tx(iface)
+#define eth_stats_update_errors_rx(iface)
+#define eth_stats_update_errors_tx(iface)
 
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 

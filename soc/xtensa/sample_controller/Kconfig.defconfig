@@ -14,6 +14,6 @@ config IRQ_OFFLOAD_INTNUM
 	default 7
 
 config XTENSA_ASM2
-	def_bool y
+	default y
 
 endif

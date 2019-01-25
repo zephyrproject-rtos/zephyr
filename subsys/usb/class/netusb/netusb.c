@@ -36,9 +36,11 @@ static struct __netusb {
 static u8_t interface_data[300];
 #endif
 
-static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
+static int netusb_send(struct device *dev, struct net_pkt *pkt)
 {
 	int ret;
+
+	ARG_UNUSED(dev);
 
 	LOG_DBG("Send pkt, len %u", net_pkt_get_len(pkt));
 
@@ -52,7 +54,6 @@ static int netusb_send(struct net_if *iface, struct net_pkt *pkt)
 		return ret;
 	}
 
-	net_pkt_unref(pkt);
 	return 0;
 }
 
@@ -129,7 +130,7 @@ bool netusb_enabled(void)
 
 int try_write(u8_t ep, u8_t *data, u16_t len)
 {
-	u8_t tries = 10;
+	u8_t tries = 10U;
 	int ret = 0;
 
 	net_hexdump("USB <", data, len);
@@ -222,11 +223,10 @@ static void netusb_init(struct net_if *iface)
 }
 
 static const struct ethernet_api netusb_api_funcs = {
-	.iface_api = {
-		.init = netusb_init,
-		.send = netusb_send,
-	},
+	.iface_api.init = netusb_init,
+
 	.get_capabilities = NULL,
+	.send = netusb_send,
 };
 
 static int netusb_init_dev(struct device *dev)

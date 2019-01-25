@@ -1,0 +1,17 @@
+#
+# Copyright (c) 2018 Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "ARM Musca SoCs"
+depends on SOC_SERIES_MUSCA
+
+config SOC_V2M_MUSCA_A
+	bool "ARM Cortex-M33 SMM-SSE-200 on V2M-MUSCA"
+	select CPU_CORTEX_M33
+	select CPU_HAS_ARM_SAU
+	select CPU_HAS_ARM_MPU
+
+endchoice

@@ -21,15 +21,22 @@ endif # CLOCK_CONTROL
 if GPIO
 
 config GPIO_IMX
-	def_bool y
+	default y
 
 endif # GPIO
 
 if SERIAL
 
 config UART_IMX
-	def_bool y
+	default y
 
 endif # SERIAL
+
+if IPM
+
+config IPM_IMX
+	def_bool y
+
+endif # IPM
 
 endif # SOC_MCIMX6X_M4

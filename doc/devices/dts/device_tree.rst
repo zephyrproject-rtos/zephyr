@@ -1,10 +1,10 @@
 .. _device-tree:
 
-Device Tree in Zephyr
-########################
+Device Tree
+###########
 
-Introduction to Device Tree
-***************************
+Introduction
+************
 
 Device tree is a way of describing hardware and configuration information
 for boards.  Device tree was adopted for use in the Linux kernel for the
@@ -247,6 +247,72 @@ The following is a more precise list of required files:
     without having to change the SoC and Board files. See
     :ref:`application_dt` for more information on overlay files and the Zephyr
     build system.
+
+.. _dt-alias-chosen:
+
+``aliases`` and ``chosen`` nodes
+================================
+
+Using an alias with a common name for a particular node makes it easier for you
+to write board-independent source code. Device Tree ``aliases`` nodes  are used
+for this purpose, by mapping certain generic, commonly used names to specific
+hardware resources:
+
+.. code-block:: yaml
+
+   aliases {
+      led0 = &led0;
+      sw0 = &button0;
+      sw1 = &button1;
+      uart-0 = &uart0;
+      uart-1 = &uart1;
+   };
+
+Certain software subsystems require a specific hardware resource to bind to in
+order to function properly. Some of those subsystems are used with many
+different boards, which makes using the Device Tree ``chosen`` nodes very
+convenient. By doing, so the software subsystem can rely on having the specific
+hardware peripheral assigned to it. In the following example we bind the shell
+to ``uart1`` in this board:
+
+.. code-block:: yaml
+
+   chosen {
+      zephyr,shell-uart = &uart1;
+   };
+
+The full set of Zephyr-specific ``chosen`` nodes follows:
+
+.. list-table::
+   :header-rows: 1
+
+   * - ``chosen`` node name
+     - Generated symbol
+
+   * - ``zephyr,flash``
+     - ``CONFIG_FLASH``
+   * - ``zephyr,sram``
+     - ``CONFIG_SRAM``
+   * - ``zephyr,ccm``
+     - ``CONFIG_CCM``
+   * - ``zephyr,console``
+     - :option:`CONFIG_UART_CONSOLE_ON_DEV_NAME`
+   * - ``zephyr,shell-uart``
+     - :option:`CONFIG_UART_SHELL_ON_DEV_NAME`
+   * - ``zephyr,bt-uart``
+     - :option:`CONFIG_BT_UART_ON_DEV_NAME`
+   * - ``zephyr,uart-pipe``
+     - :option:`CONFIG_UART_PIPE_ON_DEV_NAME`
+   * - ``zephyr,bt-mon-uart``
+     - :option:`CONFIG_BT_MONITOR_ON_DEV_NAME`
+   * - ``zephyr,uart-mcumgr``
+     - :option:`CONFIG_UART_MCUMGR_ON_DEV_NAME`
+
+As chosen properties tend to be related to software configuration, it can be
+useful for the build system to know if a chosen property was defined. We
+generate a define for each chosen property, for example:
+
+``zephyr,flash`` will generate: ``#define DT_CHOSEN_ZEPHYR_FLASH 1``
 
 Adding support for device tree in drivers
 *****************************************

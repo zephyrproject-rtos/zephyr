@@ -22,19 +22,28 @@ config SHELL_BACKEND_SERIAL
 	help
 	  Enable serial backends.
 
+if SHELL_BACKEND_SERIAL
+
+if !HAS_DTS
+config UART_SHELL_ON_DEV_NAME
+	string "Device Name of UART Device for SHELL_BACKEND_SERIAL"
+	default "UART_0"
+	help
+	  This option specifies the name of UART device to be used for the
+	  SHELL UART backend.
+endif
+
 # Internal config to enable UART interrupts if supported.
-config SHELL_BACKEND_SERIAL_FORCE_INTERRUPTS
-	bool
+config SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
+	bool "Interrupt driven"
 	default y
 	depends on SERIAL_SUPPORT_INTERRUPT
-	imply UART_INTERRUPT_DRIVEN
-
-if SHELL_BACKEND_SERIAL
+	select UART_INTERRUPT_DRIVEN
 
 config SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE
 	int "Set TX ring buffer size"
 	default 8
-	depends on UART_INTERRUPT_DRIVEN
+	depends on SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	help
 	  If UART is utilizing DMA transfers then increasing ring buffer size
 	  increases transfers length and reduces number of interrupts.
@@ -52,17 +61,112 @@ config SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE
 config SHELL_BACKEND_SERIAL_RX_POLL_PERIOD
 	int "RX polling period (in milliseconds)"
 	default 10
-	depends on !UART_INTERRUPT_DRIVEN
+	depends on !SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	help
 	  Determines how often UART is polled for RX byte.
+
+module = SHELL_BACKEND_SERIAL
+default-timeout = 100
+source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
+
+default-size = 10
+source "subsys/shell/Kconfig.template.shell_log_queue_size"
+
+choice
+	prompt "Initial log level limit"
+	default SHELL_BACKEND_SERIAL_LOG_LEVEL_DEFAULT
+
+config SHELL_BACKEND_SERIAL_LOG_LEVEL_DEFAULT
+	bool "System limit (LOG_MAX_LEVEL)"
+
+config SHELL_BACKEND_SERIAL_LOG_LEVEL_DBG
+	bool "Debug"
+
+config SHELL_BACKEND_SERIAL_LOG_LEVEL_INF
+	bool "Info"
+
+config SHELL_BACKEND_SERIAL_LOG_LEVEL_WRN
+	bool "Warning"
+
+config SHELL_BACKEND_SERIAL_LOG_LEVEL_ERR
+	bool "Error"
+
+config SHELL_BACKEND_SERIAL_LOG_LEVEL_NONE
+	bool "None"
+
+endchoice
+
+config SHELL_BACKEND_SERIAL_LOG_LEVEL
+	int
+	default 0 if SHELL_BACKEND_SERIAL_LOG_LEVEL_NONE
+	default 1 if SHELL_BACKEND_SERIAL_LOG_LEVEL_ERR
+	default 2 if SHELL_BACKEND_SERIAL_LOG_LEVEL_WRN
+	default 3 if SHELL_BACKEND_SERIAL_LOG_LEVEL_INF
+	default 4 if SHELL_BACKEND_SERIAL_LOG_LEVEL_DBG
+	default 5 if SHELL_BACKEND_SERIAL_LOG_LEVEL_DEFAULT
 
 endif #SHELL_BACKEND_SERIAL
 
 config SHELL_BACKEND_RTT
 	bool "Enable RTT backend."
+	select USE_SEGGER_RTT
 	select RTT_CONSOLE
 	help
 	  Enable RTT backend.
+
+if SHELL_BACKEND_RTT
+
+config SHELL_RTT_RX_POLL_PERIOD
+	int "RX polling period (in milliseconds)"
+	default 10
+	help
+	  Determines how often RTT is polled for RX byte.
+
+module = SHELL_BACKEND_RTT
+default-timeout = 100
+source "subsys/shell/Kconfig.template.shell_log_queue_timeout"
+
+default-size = 10
+source "subsys/shell/Kconfig.template.shell_log_queue_size"
+
+choice
+	prompt "Initial log level limit"
+	default SHELL_RTT_INIT_LOG_LEVEL_DEFAULT
+
+config SHELL_RTT_INIT_LOG_LEVEL_DEFAULT
+	bool "System limit (LOG_MAX_LEVEL)"
+
+config SHELL_RTT_INIT_LOG_LEVEL_DBG
+	bool "Debug"
+
+config SHELL_RTT_INIT_LOG_LEVEL_INF
+	bool "Info"
+
+config SHELL_RTT_INIT_LOG_LEVEL_WRN
+	bool "Warning"
+
+config SHELL_RTT_INIT_LOG_LEVEL_ERR
+	bool "Error"
+
+config SHELL_RTT_INIT_LOG_LEVEL_NONE
+	bool "None"
+
+endchoice
+
+config SHELL_RTT_INIT_LOG_LEVEL
+	int
+	default 0 if SHELL_RTT_INIT_LOG_LEVEL_NONE
+	default 1 if SHELL_RTT_INIT_LOG_LEVEL_ERR
+	default 2 if SHELL_RTT_INIT_LOG_LEVEL_WRN
+	default 3 if SHELL_RTT_INIT_LOG_LEVEL_INF
+	default 4 if SHELL_RTT_INIT_LOG_LEVEL_DBG
+	default 5 if SHELL_RTT_INIT_LOG_LEVEL_DEFAULT
+
+module = SHELL_RTT
+module-str = RTT shell backend
+source "subsys/logging/Kconfig.template.log_config"
+
+endif #SHELL_BACKEND_RTT
 
 config SHELL_BACKEND_DUMMY
 	bool "Enable dummy backend."

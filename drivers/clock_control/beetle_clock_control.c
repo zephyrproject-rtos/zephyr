@@ -84,7 +84,7 @@ static inline int beetle_clock_control_on(struct device *dev,
 	struct arm_clock_control_t *beetle_cc =
 				(struct arm_clock_control_t *)(sub_system);
 
-	u8_t bit = 0;
+	u8_t bit = 0U;
 
 	switch (beetle_cc->bus) {
 	case CMSDK_AHB:
@@ -108,7 +108,7 @@ static inline int beetle_clock_control_off(struct device *dev,
 	struct arm_clock_control_t *beetle_cc =
 				(struct arm_clock_control_t *)(sub_system);
 
-	u8_t bit = 0;
+	u8_t bit = 0U;
 
 	switch (beetle_cc->bus) {
 	case CMSDK_AHB:
@@ -154,7 +154,7 @@ static const struct clock_control_driver_api beetle_clock_control_api = {
 #ifdef CONFIG_CLOCK_CONTROL_BEETLE_ENABLE_PLL
 static u32_t beetle_round_freq(u32_t mainclk)
 {
-	u32_t nc_mainclk = 0;
+	u32_t nc_mainclk = 0U;
 
 	/*
 	 * Verify that the frequency is in the supported range otherwise
@@ -175,7 +175,7 @@ static u32_t beetle_round_freq(u32_t mainclk)
 
 static u32_t beetle_get_prescaler(u32_t mainclk)
 {
-	u32_t pre_mainclk = 0;
+	u32_t pre_mainclk = 0U;
 
 	/*
 	 * Verify that the frequency is in the supported range otherwise

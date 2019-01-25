@@ -13,13 +13,13 @@ config SS_RESET_VECTOR
 if USB
 
 config USB_DW
-	def_bool y
+	default y
 
 config USB_DEVICE_STACK
-	def_bool y
+	default y
 
 config USB_VBUS_GPIO
-	def_bool y
+	default y
 
 config USB_VBUS_GPIO_DEV_NAME
 	default "GPIO_0"
@@ -30,10 +30,10 @@ config USB_VBUS_GPIO_PIN_NUM
 if USB_UART_CONSOLE
 
 config UART_INTERRUPT_DRIVEN
-	def_bool y
+	default y
 
 config UART_LINE_CTRL
-	def_bool y
+	default y
 
 endif
 endif

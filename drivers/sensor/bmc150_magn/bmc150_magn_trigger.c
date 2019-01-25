@@ -30,9 +30,9 @@ int bmc150_magn_trigger_set(struct device *dev,
 		gpio_pin_disable_callback(data->gpio_drdy,
 					  config->gpio_drdy_int_pin);
 
-		state = 0;
+		state = 0U;
 		if (handler) {
-			state = 1;
+			state = 1U;
 		}
 
 		data->handler_drdy = handler;

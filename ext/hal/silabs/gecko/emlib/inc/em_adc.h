@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_adc.h
  * @brief Analog to Digital Converter (ADC) peripheral API
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -34,7 +34,7 @@
 #define EM_ADC_H
 
 #include "em_device.h"
-#if defined( ADC_COUNT ) && ( ADC_COUNT > 0 )
+#if defined(ADC_COUNT) && (ADC_COUNT > 0)
 
 #include <stdbool.h>
 
@@ -57,8 +57,7 @@ extern "C" {
  ******************************************************************************/
 
 /** Acquisition time (in ADC clock cycles). */
-typedef enum
-{
+typedef enum {
   adcAcqTime1   = _ADC_SINGLECTRL_AT_1CYCLE,    /**< 1 clock cycle. */
   adcAcqTime2   = _ADC_SINGLECTRL_AT_2CYCLES,   /**< 2 clock cycles. */
   adcAcqTime4   = _ADC_SINGLECTRL_AT_4CYCLES,   /**< 4 clock cycles. */
@@ -70,10 +69,9 @@ typedef enum
   adcAcqTime256 = _ADC_SINGLECTRL_AT_256CYCLES  /**< 256 clock cycles. */
 } ADC_AcqTime_TypeDef;
 
-#if defined( _ADC_CTRL_LPFMODE_MASK )
+#if defined(_ADC_CTRL_LPFMODE_MASK)
 /** Lowpass filter mode. */
-typedef enum
-{
+typedef enum {
   /** No filter or decoupling capacitor. */
   adcLPFilterBypass = _ADC_CTRL_LPFMODE_BYPASS,
 
@@ -86,8 +84,7 @@ typedef enum
 #endif
 
 /** Oversample rate select. */
-typedef enum
-{
+typedef enum {
   /** 2 samples per conversion result. */
   adcOvsRateSel2    = _ADC_CTRL_OVSRSEL_X2,
 
@@ -125,37 +122,35 @@ typedef enum
   adcOvsRateSel4096 = _ADC_CTRL_OVSRSEL_X4096
 } ADC_OvsRateSel_TypeDef;
 
-
-/** Peripheral Reflex System signal used to trigger single sample. */
-typedef enum
-{
-#if defined( _ADC_SINGLECTRL_PRSSEL_MASK )
+/** Peripheral Reflex System signal used to trigger a single sample. */
+typedef enum {
+#if defined(_ADC_SINGLECTRL_PRSSEL_MASK)
   adcPRSSELCh0 = _ADC_SINGLECTRL_PRSSEL_PRSCH0, /**< PRS channel 0. */
   adcPRSSELCh1 = _ADC_SINGLECTRL_PRSSEL_PRSCH1, /**< PRS channel 1. */
   adcPRSSELCh2 = _ADC_SINGLECTRL_PRSSEL_PRSCH2, /**< PRS channel 2. */
   adcPRSSELCh3 = _ADC_SINGLECTRL_PRSSEL_PRSCH3, /**< PRS channel 3. */
-#if defined( _ADC_SINGLECTRL_PRSSEL_PRSCH4 )
+#if defined(_ADC_SINGLECTRL_PRSSEL_PRSCH4)
   adcPRSSELCh4 = _ADC_SINGLECTRL_PRSSEL_PRSCH4, /**< PRS channel 4. */
 #endif
-#if defined( _ADC_SINGLECTRL_PRSSEL_PRSCH5 )
+#if defined(_ADC_SINGLECTRL_PRSSEL_PRSCH5)
   adcPRSSELCh5 = _ADC_SINGLECTRL_PRSSEL_PRSCH5, /**< PRS channel 5. */
 #endif
-#if defined( _ADC_SINGLECTRL_PRSSEL_PRSCH6 )
+#if defined(_ADC_SINGLECTRL_PRSSEL_PRSCH6)
   adcPRSSELCh6 = _ADC_SINGLECTRL_PRSSEL_PRSCH6, /**< PRS channel 6. */
 #endif
-#if defined( _ADC_SINGLECTRL_PRSSEL_PRSCH7 )
+#if defined(_ADC_SINGLECTRL_PRSSEL_PRSCH7)
   adcPRSSELCh7 = _ADC_SINGLECTRL_PRSSEL_PRSCH7, /**< PRS channel 7. */
 #endif
-#if defined( _ADC_SINGLECTRL_PRSSEL_PRSCH8 )
+#if defined(_ADC_SINGLECTRL_PRSSEL_PRSCH8)
   adcPRSSELCh8 = _ADC_SINGLECTRL_PRSSEL_PRSCH8, /**< PRS channel 8. */
 #endif
-#if defined( _ADC_SINGLECTRL_PRSSEL_PRSCH9 )
+#if defined(_ADC_SINGLECTRL_PRSSEL_PRSCH9)
   adcPRSSELCh9 = _ADC_SINGLECTRL_PRSSEL_PRSCH9, /**< PRS channel 9. */
 #endif
-#if defined( _ADC_SINGLECTRL_PRSSEL_PRSCH10 )
+#if defined(_ADC_SINGLECTRL_PRSSEL_PRSCH10)
   adcPRSSELCh10 = _ADC_SINGLECTRL_PRSSEL_PRSCH10, /**< PRS channel 10. */
 #endif
-#if defined( _ADC_SINGLECTRL_PRSSEL_PRSCH11 )
+#if defined(_ADC_SINGLECTRL_PRSSEL_PRSCH11)
   adcPRSSELCh11 = _ADC_SINGLECTRL_PRSSEL_PRSCH11, /**< PRS channel 11. */
 #endif
 #elif defined(_ADC_SINGLECTRLX_PRSSEL_MASK)
@@ -167,11 +162,19 @@ typedef enum
   adcPRSSELCh5 = _ADC_SINGLECTRLX_PRSSEL_PRSCH5, /**< PRS channel 5. */
   adcPRSSELCh6 = _ADC_SINGLECTRLX_PRSSEL_PRSCH6, /**< PRS channel 6. */
   adcPRSSELCh7 = _ADC_SINGLECTRLX_PRSSEL_PRSCH7,  /**< PRS channel 7. */
+#if defined(_ADC_SINGLECTRLX_PRSSEL_PRSCH8)
   adcPRSSELCh8 = _ADC_SINGLECTRLX_PRSSEL_PRSCH8,  /**< PRS channel 8. */
+#endif
+#if defined(_ADC_SINGLECTRLX_PRSSEL_PRSCH9)
   adcPRSSELCh9 = _ADC_SINGLECTRLX_PRSSEL_PRSCH9,  /**< PRS channel 9. */
+#endif
+#if defined(_ADC_SINGLECTRLX_PRSSEL_PRSCH10)
   adcPRSSELCh10 = _ADC_SINGLECTRLX_PRSSEL_PRSCH10,  /**< PRS channel 10. */
+#endif
+#if defined(_ADC_SINGLECTRLX_PRSSEL_PRSCH11)
   adcPRSSELCh11 = _ADC_SINGLECTRLX_PRSSEL_PRSCH11,  /**< PRS channel 11. */
-#if defined( _ADC_SINGLECTRLX_PRSSEL_PRSCH12 )
+#endif
+#if defined(_ADC_SINGLECTRLX_PRSSEL_PRSCH12)
   adcPRSSELCh12 = _ADC_SINGLECTRLX_PRSSEL_PRSCH12,  /**< PRS channel 12. */
   adcPRSSELCh13 = _ADC_SINGLECTRLX_PRSSEL_PRSCH13,  /**< PRS channel 13. */
   adcPRSSELCh14 = _ADC_SINGLECTRLX_PRSSEL_PRSCH14,  /**< PRS channel 14. */
@@ -180,34 +183,32 @@ typedef enum
 #endif
 } ADC_PRSSEL_TypeDef;
 
-
-/** Single and scan mode voltage references. Using unshifted enums and or
+/** Single and scan mode voltage references. Using unshifted enumerations and or
     in ADC_CTRLX_VREFSEL_REG to select the extension register CTRLX_VREFSEL. */
-#if defined( _ADC_SCANCTRLX_VREFSEL_MASK )
-#define ADC_CTRLX_VREFSEL_REG     0x80
+#if defined(_ADC_SCANCTRLX_VREFSEL_MASK)
+#define ADC_CTRLX_VREFSEL_REG     0x80UL
 #endif
-typedef enum
-{
-  /** Internal 1.25V reference. */
+typedef enum {
+  /** Internal 1.25 V reference. */
   adcRef1V25      = _ADC_SINGLECTRL_REF_1V25,
 
-  /** Internal 2.5V reference. */
+  /** Internal 2.5 V reference. */
   adcRef2V5       = _ADC_SINGLECTRL_REF_2V5,
 
   /** Buffered VDD. */
   adcRefVDD       = _ADC_SINGLECTRL_REF_VDD,
 
-#if defined( _ADC_SINGLECTRL_REF_5VDIFF )
-  /** Internal differential 5V reference. */
+#if defined(_ADC_SINGLECTRL_REF_5VDIFF)
+  /** Internal differential 5 V reference. */
   adcRef5VDIFF    = _ADC_SINGLECTRL_REF_5VDIFF,
 #endif
 
-#if defined( _ADC_SINGLECTRL_REF_5V )
-  /** Internal 5V reference. */
+#if defined(_ADC_SINGLECTRL_REF_5V)
+  /** Internal 5 V reference. */
   adcRef5V        = _ADC_SINGLECTRL_REF_5V,
 #endif
 
-  /** Single ended external reference from pin 6. */
+  /** Single-ended external reference from pin 6. */
   adcRefExtSingle = _ADC_SINGLECTRL_REF_EXTSINGLE,
 
   /** Differential external reference from pin 6 and 7. */
@@ -216,67 +217,63 @@ typedef enum
   /** Unbuffered 2xVDD. */
   adcRef2xVDD     = _ADC_SINGLECTRL_REF_2XVDD,
 
-#if defined( _ADC_SINGLECTRLX_VREFSEL_VBGR )
-  /** Custom VFS: Internal Bandgap reference */
+#if defined(_ADC_SINGLECTRLX_VREFSEL_VBGR)
+  /** Custom VFS: Internal Bandgap reference. */
   adcRefVBGR      = _ADC_SINGLECTRLX_VREFSEL_VBGR | ADC_CTRLX_VREFSEL_REG,
 #endif
 
-#if defined( _ADC_SINGLECTRLX_VREFSEL_VDDXWATT )
-  /** Custom VFS: Scaled AVDD: AVDD * VREFATT */
+#if defined(_ADC_SINGLECTRLX_VREFSEL_VDDXWATT)
+  /** Custom VFS: Scaled AVDD: AVDD * VREFATT. */
   adcRefVddxAtt   = _ADC_SINGLECTRLX_VREFSEL_VDDXWATT | ADC_CTRLX_VREFSEL_REG,
 #endif
 
-#if defined( _ADC_SINGLECTRLX_VREFSEL_VREFPWATT )
+#if defined(_ADC_SINGLECTRLX_VREFSEL_VREFPWATT)
   /** Custom VFS: Scaled singled ended external reference from pin 6:
-      VREFP * VREFATT */
+      VREFP * VREFATT. */
   adcRefVPxAtt    = _ADC_SINGLECTRLX_VREFSEL_VREFPWATT | ADC_CTRLX_VREFSEL_REG,
 #endif
 
-#if defined( _ADC_SINGLECTRLX_VREFSEL_VREFP )
-  /** Custom VFS: Raw single ended external reference from pin 6. */
+#if defined(_ADC_SINGLECTRLX_VREFSEL_VREFP)
+  /** Custom VFS: Raw single-ended external reference from pin 6. */
   adcRefP         = _ADC_SINGLECTRLX_VREFSEL_VREFP | ADC_CTRLX_VREFSEL_REG,
 #endif
 
-#if defined( _ADC_SINGLECTRLX_VREFSEL_VENTROPY )
+#if defined(_ADC_SINGLECTRLX_VREFSEL_VENTROPY)
   /** Custom VFS: Special mode for entropy generation */
   adcRefVEntropy = _ADC_SINGLECTRLX_VREFSEL_VENTROPY | ADC_CTRLX_VREFSEL_REG,
 #endif
 
-#if defined( _ADC_SINGLECTRLX_VREFSEL_VREFPNWATT )
+#if defined(_ADC_SINGLECTRLX_VREFSEL_VREFPNWATT)
   /** Custom VFS: Scaled differential external Vref from pin 6 and 7:
-      (VREFP - VREFN) * VREFATT */
+      (VREFP - VREFN) * VREFATT. */
   adcRefVPNxAtt  = _ADC_SINGLECTRLX_VREFSEL_VREFPNWATT | ADC_CTRLX_VREFSEL_REG,
 #endif
 
-#if defined( _ADC_SINGLECTRLX_VREFSEL_VREFPN )
+#if defined(_ADC_SINGLECTRLX_VREFSEL_VREFPN)
   /** Custom VFS: Raw differential external Vref from pin 6 and 7:
-      VREFP - VREFN */
+      VREFP - VREFN. */
   adcRefPN       = _ADC_SINGLECTRLX_VREFSEL_VREFPN | ADC_CTRLX_VREFSEL_REG,
 #endif
 } ADC_Ref_TypeDef;
 
 /** @cond DO_NOT_INCLUDE_WITH_DOXYGEN */
 /* Deprecated enum names */
-#if !defined( _ADC_SINGLECTRL_REF_5VDIFF )
+#if !defined(_ADC_SINGLECTRL_REF_5VDIFF)
 #define adcRef5VDIFF adcRef5V
 #endif
 /** @endcond */
 
-
 /** Sample resolution. */
-typedef enum
-{
+typedef enum {
   adcRes12Bit = _ADC_SINGLECTRL_RES_12BIT, /**< 12 bit sampling. */
   adcRes8Bit  = _ADC_SINGLECTRL_RES_8BIT,  /**< 8 bit sampling. */
   adcRes6Bit  = _ADC_SINGLECTRL_RES_6BIT,  /**< 6 bit sampling. */
   adcResOVS   = _ADC_SINGLECTRL_RES_OVS    /**< Oversampling. */
 } ADC_Res_TypeDef;
 
-
-#if defined( _ADC_SINGLECTRL_INPUTSEL_MASK )
+#if defined(_ADC_SINGLECTRL_INPUTSEL_MASK)
 /** Single sample input selection. */
-typedef enum
-{
+typedef enum {
   /* Differential mode disabled */
   adcSingleInputCh0      = _ADC_SINGLECTRL_INPUTSEL_CH0,      /**< Channel 0. */
   adcSingleInputCh1      = _ADC_SINGLECTRL_INPUTSEL_CH1,      /**< Channel 1. */
@@ -329,10 +326,9 @@ typedef enum
 /** @endcond */
 #endif
 
-#if defined( _ADC_SINGLECTRL_POSSEL_MASK )
+#if defined(_ADC_SINGLECTRL_POSSEL_MASK)
 /** Positive input selection for single and scan coversion. */
-typedef enum
-{
+typedef enum {
   adcPosSelAPORT0XCH0  = _ADC_SINGLECTRL_POSSEL_APORT0XCH0,
   adcPosSelAPORT0XCH1  = _ADC_SINGLECTRL_POSSEL_APORT0XCH1,
   adcPosSelAPORT0XCH2  = _ADC_SINGLECTRL_POSSEL_APORT0XCH2,
@@ -494,6 +490,9 @@ typedef enum
   adcPosSelAPORT4YCH30 = _ADC_SINGLECTRL_POSSEL_APORT4YCH30,
   adcPosSelAPORT4XCH31 = _ADC_SINGLECTRL_POSSEL_APORT4XCH31,
   adcPosSelAVDD        = _ADC_SINGLECTRL_POSSEL_AVDD,
+#if defined(_ADC_SINGLECTRL_POSSEL_BU)
+  adcPosSelBUVDD       = _ADC_SINGLECTRL_POSSEL_BU,
+#endif
   adcPosSelDVDD        = _ADC_SINGLECTRL_POSSEL_AREG,
   adcPosSelPAVDD       = _ADC_SINGLECTRL_POSSEL_VREGOUTPA,
   adcPosSelDECOUPLE    = _ADC_SINGLECTRL_POSSEL_PDBU,
@@ -513,14 +512,11 @@ typedef enum
 #define adcPosSelVREGOUTPA      adcPosSelPAVDD
 #define adcPosSelAREG           adcPosSelDVDD
 #define adcPosSelPDBU           adcPosSelDECOUPLE
-
 #endif
 
-
-#if defined( _ADC_SINGLECTRL_NEGSEL_MASK )
-/** Negative input selection for single and scan coversion. */
-typedef enum
-{
+#if defined(_ADC_SINGLECTRL_NEGSEL_MASK)
+/** Negative input selection for single and scan conversion. */
+typedef enum {
   adcNegSelAPORT0XCH0  = _ADC_SINGLECTRL_NEGSEL_APORT0XCH0,
   adcNegSelAPORT0XCH1  = _ADC_SINGLECTRL_NEGSEL_APORT0XCH1,
   adcNegSelAPORT0XCH2  = _ADC_SINGLECTRL_NEGSEL_APORT0XCH2,
@@ -687,31 +683,28 @@ typedef enum
 } ADC_NegSel_TypeDef;
 #endif
 
-
-#if defined( _ADC_SCANINPUTSEL_MASK )
-  /* ADC scan input groups */
-typedef enum
-{
+#if defined(_ADC_SCANINPUTSEL_MASK)
+/* ADC scan input groups. */
+typedef enum {
   adcScanInputGroup0 = 0,
   adcScanInputGroup1 = 1,
   adcScanInputGroup2 = 2,
   adcScanInputGroup3 = 3,
 } ADC_ScanInputGroup_TypeDef;
 
-/* Define none selected for ADC_SCANINPUTSEL */
+/* Define none selected for ADC_SCANINPUTSEL. */
 #define ADC_SCANINPUTSEL_GROUP_NONE     0xFFU
-#define ADC_SCANINPUTSEL_NONE           ((ADC_SCANINPUTSEL_GROUP_NONE                   \
-                                          << _ADC_SCANINPUTSEL_INPUT0TO7SEL_SHIFT)      \
-                                         | (ADC_SCANINPUTSEL_GROUP_NONE                 \
-                                            << _ADC_SCANINPUTSEL_INPUT8TO15SEL_SHIFT)   \
-                                         | (ADC_SCANINPUTSEL_GROUP_NONE                 \
-                                            << _ADC_SCANINPUTSEL_INPUT16TO23SEL_SHIFT)  \
-                                         | (ADC_SCANINPUTSEL_GROUP_NONE                 \
+#define ADC_SCANINPUTSEL_NONE           ((ADC_SCANINPUTSEL_GROUP_NONE                  \
+                                          << _ADC_SCANINPUTSEL_INPUT0TO7SEL_SHIFT)     \
+                                         | (ADC_SCANINPUTSEL_GROUP_NONE                \
+                                            << _ADC_SCANINPUTSEL_INPUT8TO15SEL_SHIFT)  \
+                                         | (ADC_SCANINPUTSEL_GROUP_NONE                \
+                                            << _ADC_SCANINPUTSEL_INPUT16TO23SEL_SHIFT) \
+                                         | (ADC_SCANINPUTSEL_GROUP_NONE                \
                                             << _ADC_SCANINPUTSEL_INPUT24TO31SEL_SHIFT))
 
-  /* ADC scan alternative negative inputs */
-typedef enum
-{
+/* ADC scan alternative negative inputs. */
+typedef enum {
   adcScanNegInput1  = 1,
   adcScanNegInput3  = 3,
   adcScanNegInput5  = 5,
@@ -724,97 +717,88 @@ typedef enum
 } ADC_ScanNegInput_TypeDef;
 #endif
 
-
-/** ADC Start command. */
-typedef enum
-{
-  /** Start single conversion. */
+/** ADC start command. */
+typedef enum {
+  /** Start a single conversion. */
   adcStartSingle        = ADC_CMD_SINGLESTART,
 
-  /** Start scan sequence. */
+  /** Start a scan sequence. */
   adcStartScan          = ADC_CMD_SCANSTART,
 
   /**
-   * Start scan sequence and single conversion, typically used when tailgating
-   * single conversion after scan sequence.
+   * Start a scan sequence and single conversion, typically used when tailgating
+   * a single conversion after a scan sequence.
    */
   adcStartScanAndSingle = ADC_CMD_SCANSTART | ADC_CMD_SINGLESTART
 } ADC_Start_TypeDef;
 
-
 /** Warm-up mode. */
-typedef enum
-{
+typedef enum {
   /** ADC shutdown after each conversion. */
   adcWarmupNormal          = _ADC_CTRL_WARMUPMODE_NORMAL,
 
-#if defined( _ADC_CTRL_WARMUPMODE_FASTBG )
-  /** Do not warm-up bandgap references. */
+#if defined(_ADC_CTRL_WARMUPMODE_FASTBG)
+  /** Do not warm up bandgap references. */
   adcWarmupFastBG          = _ADC_CTRL_WARMUPMODE_FASTBG,
 #endif
 
-#if defined( _ADC_CTRL_WARMUPMODE_KEEPSCANREFWARM )
+#if defined(_ADC_CTRL_WARMUPMODE_KEEPSCANREFWARM)
   /** Reference selected for scan mode kept warm.*/
   adcWarmupKeepScanRefWarm = _ADC_CTRL_WARMUPMODE_KEEPSCANREFWARM,
 #endif
 
-#if defined( _ADC_CTRL_WARMUPMODE_KEEPINSTANDBY )
-  /** ADC is kept in standby mode between conversion. 1us warmup time needed
-      before next conversion. */
+#if defined(_ADC_CTRL_WARMUPMODE_KEEPINSTANDBY)
+  /** ADC is kept in standby mode between conversions. 1 us warmup time needed
+      before the next conversion. */
   adcWarmupKeepInStandby   = _ADC_CTRL_WARMUPMODE_KEEPINSTANDBY,
 #endif
 
-#if defined( _ADC_CTRL_WARMUPMODE_KEEPINSLOWACC )
-  /** ADC is kept in slow acquisition mode between conversions. 1us warmup
-      time needed before next conversion. */
+#if defined(_ADC_CTRL_WARMUPMODE_KEEPINSLOWACC)
+  /** ADC is kept in slow acquisition mode between conversions. 1 us warmup
+      time needed before the next conversion. */
   adcWarmupKeepInSlowAcq   = _ADC_CTRL_WARMUPMODE_KEEPINSLOWACC,
 #endif
 
-  /** ADC and reference selected for scan mode kept warmup, allowing
+  /** ADC and reference selected for scan mode kept at warmup allowing
       continuous conversion. */
   adcWarmupKeepADCWarm     = _ADC_CTRL_WARMUPMODE_KEEPADCWARM,
-
 } ADC_Warmup_TypeDef;
 
-
-#if defined( _ADC_CTRL_ADCCLKMODE_MASK )
-  /** ADC EM2 clock configuration */
-typedef enum
-{
+#if defined(_ADC_CTRL_ADCCLKMODE_MASK)
+/** ADC EM2 clock configuration. */
+typedef enum {
   adcEm2Disabled           = 0,
   adcEm2ClockOnDemand      = ADC_CTRL_ADCCLKMODE_ASYNC | ADC_CTRL_ASYNCCLKEN_ASNEEDED,
   adcEm2ClockAlwaysOn      = ADC_CTRL_ADCCLKMODE_ASYNC | ADC_CTRL_ASYNCCLKEN_ALWAYSON,
 } ADC_EM2ClockConfig_TypeDef;
 #endif
 
-
 /*******************************************************************************
  *******************************   STRUCTS   ***********************************
  ******************************************************************************/
 
-/** ADC init structure, common for single conversion and scan sequence. */
-typedef struct
-{
+/** ADC initialization structure, common for single conversion and scan sequence. */
+typedef struct {
   /**
-   * Oversampling rate select. In order to have any effect, oversampling must
+   * Oversampling rate select. To have any effect, oversampling must
    * be enabled for single/scan mode.
    */
   ADC_OvsRateSel_TypeDef        ovsRateSel;
 
-#if defined( _ADC_CTRL_LPFMODE_MASK )
-  /** Lowpass or decoupling capacitor filter to use. */
+#if defined(_ADC_CTRL_LPFMODE_MASK)
+  /** Lowpass or decoupling capacitor filter. */
   ADC_LPFilter_TypeDef          lpfMode;
 #endif
 
-  /** Warm-up mode to use for ADC. */
+  /** ADC Warm-up mode. */
   ADC_Warmup_TypeDef            warmUpMode;
 
   /**
-   * Timebase used for ADC warm up. Select N to give (N+1)HFPERCLK cycles.
-   * (Additional delay is added for bandgap references, please refer to the
-   * reference manual.) Normally, N should be selected so that the timebase
-   * is at least 1 us. See ADC_TimebaseCalc() for a way to obtain
-   * a suggested timebase of at least 1 us.
+   * Timebase for ADC warm up. Select N to give (N+1)HFPERCLK cycles.
+   * (Additional delay is added for bandgap references. See the
+   * reference manual for more information.) Normally, N should be selected so that the timebase
+   * is at least 1 us. See ADC_TimebaseCalc() to obtain
+   * a suggested timebase of, at least, 1 us.
    */
   uint8_t                       timebase;
 
@@ -825,62 +809,57 @@ typedef struct
   bool                          tailgate;
 
   /** ADC EM2 clock configuration */
-#if defined( _ADC_CTRL_ADCCLKMODE_MASK )
+#if defined(_ADC_CTRL_ADCCLKMODE_MASK)
   ADC_EM2ClockConfig_TypeDef    em2ClockConfig;
 #endif
 } ADC_Init_TypeDef;
 
-
-/** Default config for ADC init structure. */
-#if defined( _ADC_CTRL_LPFMODE_MASK ) && (!defined( _ADC_CTRL_ADCCLKMODE_MASK ))
-#define ADC_INIT_DEFAULT                                                      \
-{                                                                             \
-  adcOvsRateSel2,                /* 2x oversampling (if enabled). */          \
-  adcLPFilterBypass,             /* No input filter selected. */              \
-  adcWarmupNormal,               /* ADC shutdown after each conversion. */    \
-  _ADC_CTRL_TIMEBASE_DEFAULT,    /* Use HW default value. */                  \
-  _ADC_CTRL_PRESC_DEFAULT,       /* Use HW default value. */                  \
-  false                          /* Do not use tailgate. */                   \
-}
-#elif (!defined( _ADC_CTRL_LPFMODE_MASK )) && (!defined( _ADC_CTRL_ADCCLKMODE_MASK ))
-#define ADC_INIT_DEFAULT                                                      \
-{                                                                             \
-  adcOvsRateSel2,                /* 2x oversampling (if enabled). */          \
-  adcWarmupNormal,               /* ADC shutdown after each conversion. */    \
-  _ADC_CTRL_TIMEBASE_DEFAULT,    /* Use HW default value. */                  \
-  _ADC_CTRL_PRESC_DEFAULT,       /* Use HW default value. */                  \
-  false                          /* Do not use tailgate. */                   \
-}
-#elif (!defined( _ADC_CTRL_LPFMODE_MASK )) && defined( _ADC_CTRL_ADCCLKMODE_MASK )
-#define ADC_INIT_DEFAULT                                                      \
-{                                                                             \
-  adcOvsRateSel2,                /* 2x oversampling (if enabled). */          \
-  adcWarmupNormal,               /* ADC shutdown after each conversion. */    \
-  _ADC_CTRL_TIMEBASE_DEFAULT,    /* Use HW default value. */                  \
-  _ADC_CTRL_PRESC_DEFAULT,       /* Use HW default value. */                  \
-  false,                         /* Do not use tailgate. */                   \
-  adcEm2Disabled                 /* ADC disabled in EM2 */                    \
-}
+/** Default configuration for ADC initialization structure. */
+#if defined(_ADC_CTRL_LPFMODE_MASK) && (!defined(_ADC_CTRL_ADCCLKMODE_MASK))
+#define ADC_INIT_DEFAULT                                                   \
+  {                                                                        \
+    adcOvsRateSel2,              /* 2x oversampling (if enabled). */       \
+    adcLPFilterBypass,           /* No input filter selected. */           \
+    adcWarmupNormal,             /* ADC shutdown after each conversion. */ \
+    _ADC_CTRL_TIMEBASE_DEFAULT,  /* Use hardware default value. */         \
+    _ADC_CTRL_PRESC_DEFAULT,     /* Use hardware default value. */         \
+    false                        /* Do not use tailgate. */                \
+  }
+#elif (!defined(_ADC_CTRL_LPFMODE_MASK)) && (!defined(_ADC_CTRL_ADCCLKMODE_MASK))
+#define ADC_INIT_DEFAULT                                                   \
+  {                                                                        \
+    adcOvsRateSel2,              /* 2x oversampling (if enabled). */       \
+    adcWarmupNormal,             /* ADC shutdown after each conversion. */ \
+    _ADC_CTRL_TIMEBASE_DEFAULT,  /* Use hardware default value. */         \
+    _ADC_CTRL_PRESC_DEFAULT,     /* Use hardware default value. */         \
+    false                        /* Do not use tailgate. */                \
+  }
+#elif (!defined(_ADC_CTRL_LPFMODE_MASK)) && defined(_ADC_CTRL_ADCCLKMODE_MASK)
+#define ADC_INIT_DEFAULT                                                   \
+  {                                                                        \
+    adcOvsRateSel2,              /* 2x oversampling (if enabled). */       \
+    adcWarmupNormal,             /* ADC shutdown after each conversion. */ \
+    _ADC_CTRL_TIMEBASE_DEFAULT,  /* Use hardware default value. */         \
+    _ADC_CTRL_PRESC_DEFAULT,     /* Use hardware default value. */         \
+    false,                       /* Do not use tailgate. */                \
+    adcEm2Disabled               /* ADC disabled in EM2. */                \
+  }
 #endif
 
-
-/** Scan input configuration */
-typedef struct
-{
+/** Scan input configuration. */
+typedef struct {
   /** Input range select to be applied to ADC_SCANINPUTSEL. */
   uint32_t            scanInputSel;
 
-  /** Input enable mask */
+  /** Input enable mask. */
   uint32_t            scanInputEn;
 
-  /** Alternative negative input */
+  /** Alternative negative input. */
   uint32_t            scanNegSel;
 } ADC_InitScanInput_TypeDef;
 
-
-/** Scan sequence init structure. */
-typedef struct
-{
+/** Scan sequence initialization structure. */
+typedef struct {
   /**
    * Peripheral reflex system trigger selection. Only applicable if @p prsEnable
    * is enabled.
@@ -891,7 +870,7 @@ typedef struct
   ADC_AcqTime_TypeDef acqTime;
 
   /**
-   * Sample reference selection. Notice that for external references, the
+   * Sample reference selection. Note that, for external references, the
    * ADC calibration register must be set explicitly.
    */
   ADC_Ref_TypeDef     reference;
@@ -899,7 +878,7 @@ typedef struct
   /** Sample resolution. */
   ADC_Res_TypeDef     resolution;
 
-#if defined( _ADC_SCANCTRL_INPUTMASK_MASK )
+#if defined(_ADC_SCANCTRL_INPUTMASK_MASK)
   /**
    * Scan input selection. If single ended (@p diff is false), use logical
    * combination of ADC_SCANCTRL_INPUTMASK_CHx defines. If differential input
@@ -909,15 +888,15 @@ typedef struct
   uint32_t            input;
 #endif
 
-#if defined( _ADC_SCANINPUTSEL_MASK )
+#if defined(_ADC_SCANINPUTSEL_MASK)
   /**
    * Scan input configuration. @ref Use ADC_ScanInputClear(), @ref ADC_ScanSingleEndedInputAdd()
-   * or @ref ADC_ScanDifferentialInputAdd() to update this struct.
+   * or @ref ADC_ScanDifferentialInputAdd() to update this structure.
    */
   ADC_InitScanInput_TypeDef scanInputConfig;
 #endif
 
-  /** Select if single ended or differential input. */
+  /** Select if single-ended or differential input. */
   bool                diff;
 
   /** Peripheral reflex system trigger enable. */
@@ -930,59 +909,57 @@ typedef struct
   bool                rep;
 
   /** When true, DMA is available in EM2 for scan conversion */
-#if defined( _ADC_CTRL_SCANDMAWU_MASK )
+#if defined(_ADC_CTRL_SCANDMAWU_MASK)
   bool                scanDmaEm2Wu;
 #endif
 
-#if defined( _ADC_SCANCTRLX_FIFOOFACT_MASK )
-  /** When true, the FIFO overwrites old data when full. If false, then the FIFO discards new data.
+#if defined(_ADC_SCANCTRLX_FIFOOFACT_MASK)
+  /** When true, FIFO overwrites old data when full. If false, FIFO discards new data.
       The SINGLEOF IRQ is triggered in both cases. */
   bool                fifoOverwrite;
 #endif
 } ADC_InitScan_TypeDef;
 
-/** Default config for ADC scan init structure. */
-#if defined( _ADC_SCANCTRL_INPUTMASK_MASK )
+/** Default configuration for ADC scan initialization structure. */
+#if defined(_ADC_SCANCTRL_INPUTMASK_MASK)
 #define ADC_INITSCAN_DEFAULT                                                      \
-{                                                                                 \
-  adcPRSSELCh0,              /* PRS ch0 (if enabled). */                          \
-  adcAcqTime1,               /* 1 ADC_CLK cycle acquisition time. */              \
-  adcRef1V25,                /* 1.25V internal reference. */                      \
-  adcRes12Bit,               /* 12 bit resolution. */                             \
-  0,                         /* No input selected. */                             \
-  false,                     /* Single-ended input. */                            \
-  false,                     /* PRS disabled. */                                  \
-  false,                     /* Right adjust. */                                  \
-  false,                     /* Deactivate conversion after one scan sequence. */ \
-}
-#endif
-
-#if defined( _ADC_SCANINPUTSEL_MASK )
-#define ADC_INITSCAN_DEFAULT                                                      \
-{                                                                                 \
-  adcPRSSELCh0,              /* PRS ch0 (if enabled). */                          \
-  adcAcqTime1,               /* 1 ADC_CLK cycle acquisition time. */              \
-  adcRef1V25,                /* 1.25V internal reference. */                      \
-  adcRes12Bit,               /* 12 bit resolution. */                             \
   {                                                                               \
-    /* Initialization should match values set by @ref ADC_ScanInputClear() */     \
-    ADC_SCANINPUTSEL_NONE,   /* Default ADC inputs */                             \
-    0,                       /* Default input mask (all off) */                   \
-    _ADC_SCANNEGSEL_RESETVALUE,/* Default negative select for positive ternimal */\
-  },                                                                              \
-  false,                     /* Single-ended input. */                            \
-  false,                     /* PRS disabled. */                                  \
-  false,                     /* Right adjust. */                                  \
-  false,                     /* Deactivate conversion after one scan sequence. */ \
-  false,                     /* No EM2 DMA wakeup from scan FIFO DVL */           \
-  false                      /* Discard new data on full FIFO. */                 \
-}
+    adcPRSSELCh0,            /* PRS ch0 (if enabled). */                          \
+    adcAcqTime1,             /* 1 ADC_CLK cycle acquisition time. */              \
+    adcRef1V25,              /* 1.25 V internal reference. */                     \
+    adcRes12Bit,             /* 12 bit resolution. */                             \
+    0,                       /* No input selected. */                             \
+    false,                   /* Single-ended input. */                            \
+    false,                   /* PRS disabled. */                                  \
+    false,                   /* Right adjust. */                                  \
+    false,                   /* Deactivate conversion after one scan sequence. */ \
+  }
 #endif
 
+#if defined(_ADC_SCANINPUTSEL_MASK)
+#define ADC_INITSCAN_DEFAULT                                                          \
+  {                                                                                   \
+    adcPRSSELCh0,            /* PRS ch0 (if enabled). */                              \
+    adcAcqTime1,             /* 1 ADC_CLK cycle acquisition time. */                  \
+    adcRef1V25,              /* 1.25 V internal reference. */                         \
+    adcRes12Bit,             /* 12 bit resolution. */                                 \
+    {                                                                                 \
+      /* Initialization should match values set by @ref ADC_ScanInputClear(). */      \
+      ADC_SCANINPUTSEL_NONE, /* Default ADC inputs. */                                \
+      0,                     /* Default input mask (all off). */                      \
+      _ADC_SCANNEGSEL_RESETVALUE,/* Default negative select for positive terminal. */ \
+    },                                                                                \
+    false,                   /* Single-ended input. */                                \
+    false,                   /* PRS disabled. */                                      \
+    false,                   /* Right adjust. */                                      \
+    false,                   /* Deactivate conversion after one scan sequence. */     \
+    false,                   /* No EM2 DMA wakeup from scan FIFO DVL. */              \
+    false                    /* Discard new data on full FIFO. */                     \
+  }
+#endif
 
-/** Single conversion init structure. */
-typedef struct
-{
+/** Single conversion initialization structure. */
+typedef struct {
   /**
    * Peripheral reflex system trigger selection. Only applicable if @p prsEnable
    * is enabled.
@@ -993,7 +970,7 @@ typedef struct
   ADC_AcqTime_TypeDef           acqTime;
 
   /**
-   * Sample reference selection. Notice that for external references, the
+   * Sample reference selection. Note that, for external references, the
    * ADC calibration register must be set explicitly.
    */
   ADC_Ref_TypeDef               reference;
@@ -1001,26 +978,26 @@ typedef struct
   /** Sample resolution. */
   ADC_Res_TypeDef               resolution;
 
-#if defined( _ADC_SINGLECTRL_INPUTSEL_MASK )
+#if defined(_ADC_SINGLECTRL_INPUTSEL_MASK)
   /**
-   * Sample input selection, use single ended or differential input according
+   * Sample input selection, use single-ended or differential input according
    * to setting of @p diff.
    */
   ADC_SingleInput_TypeDef       input;
 #endif
 
-#if defined( _ADC_SINGLECTRL_POSSEL_MASK )
-  /** Select positive input for for single channel conversion mode. */
+#if defined(_ADC_SINGLECTRL_POSSEL_MASK)
+  /** Select positive input for single channel conversion mode. */
   ADC_PosSel_TypeDef            posSel;
 #endif
 
-#if defined( _ADC_SINGLECTRL_NEGSEL_MASK )
+#if defined(_ADC_SINGLECTRL_NEGSEL_MASK)
   /** Select negative input for single channel conversion mode. Negative input is grounded
-      for single ended (non-differential) converison.  */
+      for single-ended (non-differential) converison.  */
   ADC_NegSel_TypeDef            negSel;
 #endif
 
-  /** Select if single ended or differential input. */
+  /** Select if single-ended or differential input. */
   bool                          diff;
 
   /** Peripheral reflex system trigger enable. */
@@ -1032,48 +1009,48 @@ typedef struct
   /** Select if continuous conversion until explicit stop. */
   bool                          rep;
 
-#if defined( _ADC_CTRL_SINGLEDMAWU_MASK )
+#if defined(_ADC_CTRL_SINGLEDMAWU_MASK)
   /** When true, DMA is available in EM2 for single conversion */
   bool                          singleDmaEm2Wu;
 #endif
 
-#if defined( _ADC_SINGLECTRLX_FIFOOFACT_MASK )
-  /** When true, the FIFO overwrites old data when full. If false, then the FIFO discards new data.
+#if defined(_ADC_SINGLECTRLX_FIFOOFACT_MASK)
+  /** When true, FIFO overwrites old data when full. If false, FIFO discards new data.
       The SCANOF IRQ is triggered in both cases. */
   bool                          fifoOverwrite;
 #endif
 } ADC_InitSingle_TypeDef;
 
-/** Default config for ADC single conversion init structure. */
-#if defined( _ADC_SINGLECTRL_INPUTSEL_MASK )
+/** Default configuration for ADC single conversion initialization structure. */
+#if defined(_ADC_SINGLECTRL_INPUTSEL_MASK)
 #define ADC_INITSINGLE_DEFAULT                                                    \
-{                                                                                 \
-  adcPRSSELCh0,              /* PRS ch0 (if enabled). */                          \
-  adcAcqTime1,               /* 1 ADC_CLK cycle acquisition time. */              \
-  adcRef1V25,                /* 1.25V internal reference. */                      \
-  adcRes12Bit,               /* 12 bit resolution. */                             \
-  adcSingleInpCh0,           /* CH0 input selected. */                            \
-  false,                     /* Single ended input. */                            \
-  false,                     /* PRS disabled. */                                  \
-  false,                     /* Right adjust. */                                  \
-  false                      /* Deactivate conversion after one scan sequence. */ \
-}
+  {                                                                               \
+    adcPRSSELCh0,            /* PRS ch0 (if enabled). */                          \
+    adcAcqTime1,             /* 1 ADC_CLK cycle acquisition time. */              \
+    adcRef1V25,              /* 1.25 V internal reference. */                     \
+    adcRes12Bit,             /* 12 bit resolution. */                             \
+    adcSingleInpCh0,         /* CH0 input selected. */                            \
+    false,                   /* Single-ended input. */                            \
+    false,                   /* PRS disabled. */                                  \
+    false,                   /* Right adjust. */                                  \
+    false                    /* Deactivate conversion after one scan sequence. */ \
+  }
 #else
 #define ADC_INITSINGLE_DEFAULT                                                    \
-{                                                                                 \
-  adcPRSSELCh0,              /* PRS ch0 (if enabled). */                          \
-  adcAcqTime1,               /* 1 ADC_CLK cycle acquisition time. */              \
-  adcRef1V25,                /* 1.25V internal reference. */                      \
-  adcRes12Bit,               /* 12 bit resolution. */                             \
-  adcPosSelAPORT0XCH0,       /* Select node BUS0XCH0 as posSel */                 \
-  adcNegSelVSS,              /* Select VSS as negSel */                           \
-  false,                     /* Single ended input. */                            \
-  false,                     /* PRS disabled. */                                  \
-  false,                     /* Right adjust. */                                  \
-  false,                     /* Deactivate conversion after one scan sequence. */ \
-  false,                     /* No EM2 DMA wakeup from single FIFO DVL */         \
-  false                      /* Discard new data on full FIFO. */                 \
-}
+  {                                                                               \
+    adcPRSSELCh0,            /* PRS ch0 (if enabled). */                          \
+    adcAcqTime1,             /* 1 ADC_CLK cycle acquisition time. */              \
+    adcRef1V25,              /* 1.25 V internal reference. */                     \
+    adcRes12Bit,             /* 12 bit resolution. */                             \
+    adcPosSelAPORT0XCH0,     /* Select node BUS0XCH0 as posSel */                 \
+    adcNegSelVSS,            /* Select VSS as negSel */                           \
+    false,                   /* Single-ended input. */                            \
+    false,                   /* PRS disabled. */                                  \
+    false,                   /* Right adjust. */                                  \
+    false,                   /* Deactivate conversion after one scan sequence. */ \
+    false,                   /* No EM2 DMA wakeup from single FIFO DVL */         \
+    false                    /* Discard new data on full FIFO. */                 \
+  }
 #endif
 
 /*******************************************************************************
@@ -1082,13 +1059,13 @@ typedef struct
 
 /***************************************************************************//**
  * @brief
- *   Get single conversion result.
+ *   Get a single conversion result.
  *
  * @note
  *   Check data valid flag before calling this function.
  *
  * @param[in] adc
- *   Pointer to ADC peripheral register block.
+ *   A pointer to the ADC peripheral register block.
  *
  * @return
  *   Single conversion data.
@@ -1098,7 +1075,6 @@ __STATIC_INLINE uint32_t ADC_DataSingleGet(ADC_TypeDef *adc)
   return adc->SINGLEDATA;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Peek single conversion result.
@@ -1107,7 +1083,7 @@ __STATIC_INLINE uint32_t ADC_DataSingleGet(ADC_TypeDef *adc)
  *   Check data valid flag before calling this function.
  *
  * @param[in] adc
- *   Pointer to ADC peripheral register block.
+ *   A pointer to the ADC peripheral register block.
  *
  * @return
  *   Single conversion data.
@@ -1117,16 +1093,15 @@ __STATIC_INLINE uint32_t ADC_DataSinglePeek(ADC_TypeDef *adc)
   return adc->SINGLEDATAP;
 }
 
-
 /***************************************************************************//**
  * @brief
- *   Get scan result.
+ *   Get a scan result.
  *
  * @note
  *   Check data valid flag before calling this function.
  *
  * @param[in] adc
- *   Pointer to ADC peripheral register block.
+ *   A pointer to the ADC peripheral register block.
  *
  * @return
  *   Scan conversion data.
@@ -1136,7 +1111,6 @@ __STATIC_INLINE uint32_t ADC_DataScanGet(ADC_TypeDef *adc)
   return adc->SCANDATA;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Peek scan result.
@@ -1145,7 +1119,7 @@ __STATIC_INLINE uint32_t ADC_DataScanGet(ADC_TypeDef *adc)
  *   Check data valid flag before calling this function.
  *
  * @param[in] adc
- *   Pointer to ADC peripheral register block.
+ *   A pointer to the ADC peripheral register block.
  *
  * @return
  *   Scan conversion data.
@@ -1155,8 +1129,7 @@ __STATIC_INLINE uint32_t ADC_DataScanPeek(ADC_TypeDef *adc)
   return adc->SCANDATAP;
 }
 
-
-#if defined( _ADC_SCANDATAX_MASK )
+#if defined(_ADC_SCANDATAX_MASK)
 uint32_t ADC_DataIdScanGet(ADC_TypeDef *adc, uint32_t *scanId);
 #endif
 
@@ -1164,7 +1137,7 @@ void ADC_Init(ADC_TypeDef *adc, const ADC_Init_TypeDef *init);
 void ADC_Reset(ADC_TypeDef *adc);
 void ADC_InitScan(ADC_TypeDef *adc, const ADC_InitScan_TypeDef *init);
 
-#if defined( _ADC_SCANINPUTSEL_MASK )
+#if defined(_ADC_SCANINPUTSEL_MASK)
 void ADC_ScanInputClear(ADC_InitScan_TypeDef *scanInit);
 uint32_t ADC_ScanSingleEndedInputAdd(ADC_InitScan_TypeDef *scanInit,
                                      ADC_ScanInputGroup_TypeDef inputGroup,
@@ -1172,20 +1145,19 @@ uint32_t ADC_ScanSingleEndedInputAdd(ADC_InitScan_TypeDef *scanInit,
 uint32_t ADC_ScanDifferentialInputAdd(ADC_InitScan_TypeDef *scanInit,
                                       ADC_ScanInputGroup_TypeDef inputGroup,
                                       ADC_PosSel_TypeDef posSel,
-                                      ADC_ScanNegInput_TypeDef adcScanNegInput);
+                                      ADC_ScanNegInput_TypeDef negInput);
 #endif
 
 void ADC_InitSingle(ADC_TypeDef *adc, const ADC_InitSingle_TypeDef *init);
 uint8_t ADC_TimebaseCalc(uint32_t hfperFreq);
 uint8_t ADC_PrescaleCalc(uint32_t adcFreq, uint32_t hfperFreq);
 
-
 /***************************************************************************//**
  * @brief
  *   Clear one or more pending ADC interrupts.
  *
  * @param[in] adc
- *   Pointer to ADC peripheral register block.
+ *   A pointer to the ADC peripheral register block.
  *
  * @param[in] flags
  *   Pending ADC interrupt source to clear. Use a bitwise logic OR combination
@@ -1196,13 +1168,12 @@ __STATIC_INLINE void ADC_IntClear(ADC_TypeDef *adc, uint32_t flags)
   adc->IFC = flags;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Disable one or more ADC interrupts.
  *
  * @param[in] adc
- *   Pointer to ADC peripheral register block.
+ *   A pointer to the ADC peripheral register block.
  *
  * @param[in] flags
  *   ADC interrupt sources to disable. Use a bitwise logic OR combination of
@@ -1213,18 +1184,17 @@ __STATIC_INLINE void ADC_IntDisable(ADC_TypeDef *adc, uint32_t flags)
   adc->IEN &= ~flags;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Enable one or more ADC interrupts.
  *
  * @note
- *   Depending on the use, a pending interrupt may already be set prior to
+ *   Depending on use, a pending interrupt may already be set prior to
  *   enabling the interrupt. Consider using ADC_IntClear() prior to enabling
- *   if such a pending interrupt should be ignored.
+ *   if the pending interrupt should be ignored.
  *
  * @param[in] adc
- *   Pointer to ADC peripheral register block.
+ *   A pointer to the ADC peripheral register block.
  *
  * @param[in] flags
  *   ADC interrupt sources to enable. Use a bitwise logic OR combination of
@@ -1235,16 +1205,15 @@ __STATIC_INLINE void ADC_IntEnable(ADC_TypeDef *adc, uint32_t flags)
   adc->IEN |= flags;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Get pending ADC interrupt flags.
  *
  * @note
- *   The event bits are not cleared by the use of this function.
+ *   This function does not clear event bits.
  *
  * @param[in] adc
- *   Pointer to ADC peripheral register block.
+ *   A pointer to the ADC peripheral register block.
  *
  * @return
  *   ADC interrupt sources pending. A bitwise logic OR combination of valid
@@ -1255,17 +1224,16 @@ __STATIC_INLINE uint32_t ADC_IntGet(ADC_TypeDef *adc)
   return adc->IF;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Get enabled and pending ADC interrupt flags.
  *   Useful for handling more interrupt sources in the same interrupt handler.
  *
  * @param[in] adc
- *   Pointer to ADC peripheral register block.
+ *   A pointer to the ADC peripheral register block.
  *
  * @note
- *   Interrupt flags are not cleared by the use of this function.
+ *   This function does not clear interrupt flags.
  *
  * @return
  *   Pending and enabled ADC interrupt sources.
@@ -1279,7 +1247,7 @@ __STATIC_INLINE uint32_t ADC_IntGetEnabled(ADC_TypeDef *adc)
 {
   uint32_t ien;
 
-  /* Store ADCx->IEN in temporary variable in order to define explicit order
+  /* Store ADCx->IEN in a temporary variable to define the explicit order
    * of volatile accesses. */
   ien = adc->IEN;
 
@@ -1287,13 +1255,12 @@ __STATIC_INLINE uint32_t ADC_IntGetEnabled(ADC_TypeDef *adc)
   return adc->IF & ien;
 }
 
-
 /***************************************************************************//**
  * @brief
- *   Set one or more pending ADC interrupts from SW.
+ *   Set one or more pending ADC interrupts from software.
  *
  * @param[in] adc
- *   Pointer to ADC peripheral register block.
+ *   A pointer to the ADC peripheral register block.
  *
  * @param[in] flags
  *   ADC interrupt sources to set to pending. Use a bitwise logic OR combination
@@ -1304,22 +1271,20 @@ __STATIC_INLINE void ADC_IntSet(ADC_TypeDef *adc, uint32_t flags)
   adc->IFS = flags;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Start scan sequence and/or single conversion.
  *
  * @param[in] adc
- *   Pointer to ADC peripheral register block.
+ *   A pointer to the ADC peripheral register block.
  *
  * @param[in] cmd
- *   Command indicating which type of sampling to start.
+ *   A command indicating which type of sampling to start.
  ******************************************************************************/
 __STATIC_INLINE void ADC_Start(ADC_TypeDef *adc, ADC_Start_TypeDef cmd)
 {
   adc->CMD = (uint32_t)cmd;
 }
-
 
 /** @} (end addtogroup ADC) */
 /** @} (end addtogroup emlib) */

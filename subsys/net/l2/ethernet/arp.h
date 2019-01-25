@@ -23,7 +23,7 @@ extern "C" {
  * @{
  */
 
-#define NET_ARP_HDR(pkt) ((struct net_arp_hdr *)net_pkt_ip_data(pkt))
+#define NET_ARP_HDR(pkt) ((struct net_arp_hdr *)net_pkt_data(pkt))
 
 struct net_arp_hdr {
 	u16_t hwtype;		/* HTYPE */
@@ -46,7 +46,8 @@ struct net_arp_hdr {
 struct net_pkt *net_arp_prepare(struct net_pkt *pkt,
 				struct in_addr *request_ip,
 				struct in_addr *current_ip);
-enum net_verdict net_arp_input(struct net_pkt *pkt);
+enum net_verdict net_arp_input(struct net_pkt *pkt,
+			       struct net_eth_hdr *eth_hdr);
 
 struct arp_entry {
 	sys_snode_t node;
@@ -71,7 +72,8 @@ void net_arp_init(void);
  */
 
 #else /* CONFIG_NET_ARP */
-
+#define net_arp_prepare(_kt, _u1, _u2) _kt
+#define net_arp_input(...) NET_OK
 #define net_arp_clear_cache(...)
 #define net_arp_init(...)
 

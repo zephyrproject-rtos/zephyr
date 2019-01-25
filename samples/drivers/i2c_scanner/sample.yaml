@@ -1,0 +1,13 @@
+sample:
+  name: I2C scanner
+tests:
+  test:
+    platform_whitelist: nrf52840_blip nrf51_ble400
+    tags: drivers
+    depends_on: i2c
+    harness: console
+    harness_config:
+        type: one_line
+        regex:
+            - "0x50 FOUND"
+        fixture: fixture_i2c_FRAM

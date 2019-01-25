@@ -65,7 +65,7 @@ static int imx_gpio_configure(struct device *dev,
 		GPIO_Init(config->base, &pin_config);
 		GPIO_SetIntEdgeSelect(config->base, pin, double_edge);
 	} else {	/* GPIO_ACCESS_BY_PORT */
-		for (i = 0; i < 32; i++) {
+		for (i = 0U; i < 32; i++) {
 			pin_config.pin = i;
 			GPIO_Init(config->base, &pin_config);
 			GPIO_SetIntEdgeSelect(config->base, i, double_edge);
@@ -126,7 +126,7 @@ static int imx_gpio_enable_callback(struct device *dev,
 		GPIO_SetPinIntMode(config->base, pin, true);
 	} else {
 		data->pin_callback_enables = 0xFFFFFFFF;
-		for (i = 0; i < 32; i++) {
+		for (i = 0U; i < 32; i++) {
 			GPIO_SetPinIntMode(config->base, i, true);
 		}
 	}
@@ -145,10 +145,10 @@ static int imx_gpio_disable_callback(struct device *dev,
 		GPIO_SetPinIntMode(config->base, pin, false);
 		data->pin_callback_enables &= ~BIT(pin);
 	} else {
-		for (i = 0; i < 32; i++) {
+		for (i = 0U; i < 32; i++) {
 			GPIO_SetPinIntMode(config->base, i, false);
 		}
-		data->pin_callback_enables = 0;
+		data->pin_callback_enables = 0U;
 	}
 
 	return 0;
@@ -183,12 +183,12 @@ static const struct gpio_driver_api imx_gpio_driver_api = {
 static int imx_gpio_1_init(struct device *dev);
 
 static const struct imx_gpio_config imx_gpio_1_config = {
-	.base = (GPIO_Type *)CONFIG_GPIO_IMX_PORT_1_BASE_ADDRESS,
+	.base = (GPIO_Type *)DT_GPIO_IMX_PORT_1_BASE_ADDRESS,
 };
 
 static struct imx_gpio_data imx_gpio_1_data;
 
-DEVICE_AND_API_INIT(imx_gpio_1, CONFIG_GPIO_IMX_PORT_1_NAME,
+DEVICE_AND_API_INIT(imx_gpio_1, DT_GPIO_IMX_PORT_1_NAME,
 		    imx_gpio_1_init,
 		    &imx_gpio_1_data, &imx_gpio_1_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -196,17 +196,17 @@ DEVICE_AND_API_INIT(imx_gpio_1, CONFIG_GPIO_IMX_PORT_1_NAME,
 
 static int imx_gpio_1_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_IMX_PORT_1_IRQ_0,
-		    CONFIG_GPIO_IMX_PORT_1_IRQ_0_PRI,
+	IRQ_CONNECT(DT_GPIO_IMX_PORT_1_IRQ_0,
+		    DT_GPIO_IMX_PORT_1_IRQ_0_PRI,
 		    imx_gpio_port_isr, DEVICE_GET(imx_gpio_1), 0);
 
-	irq_enable(CONFIG_GPIO_IMX_PORT_1_IRQ_0);
+	irq_enable(DT_GPIO_IMX_PORT_1_IRQ_0);
 
-	IRQ_CONNECT(CONFIG_GPIO_IMX_PORT_1_IRQ_1,
-		    CONFIG_GPIO_IMX_PORT_1_IRQ_1_PRI,
+	IRQ_CONNECT(DT_GPIO_IMX_PORT_1_IRQ_1,
+		    DT_GPIO_IMX_PORT_1_IRQ_1_PRI,
 		    imx_gpio_port_isr, DEVICE_GET(imx_gpio_1), 0);
 
-	irq_enable(CONFIG_GPIO_IMX_PORT_1_IRQ_1);
+	irq_enable(DT_GPIO_IMX_PORT_1_IRQ_1);
 
 	return 0;
 }
@@ -216,12 +216,12 @@ static int imx_gpio_1_init(struct device *dev)
 static int imx_gpio_2_init(struct device *dev);
 
 static const struct imx_gpio_config imx_gpio_2_config = {
-	.base = (GPIO_Type *)CONFIG_GPIO_IMX_PORT_2_BASE_ADDRESS,
+	.base = (GPIO_Type *)DT_GPIO_IMX_PORT_2_BASE_ADDRESS,
 };
 
 static struct imx_gpio_data imx_gpio_2_data;
 
-DEVICE_AND_API_INIT(imx_gpio_2, CONFIG_GPIO_IMX_PORT_2_NAME,
+DEVICE_AND_API_INIT(imx_gpio_2, DT_GPIO_IMX_PORT_2_NAME,
 		    imx_gpio_2_init,
 		    &imx_gpio_2_data, &imx_gpio_2_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -229,17 +229,17 @@ DEVICE_AND_API_INIT(imx_gpio_2, CONFIG_GPIO_IMX_PORT_2_NAME,
 
 static int imx_gpio_2_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_IMX_PORT_2_IRQ_0,
-		    CONFIG_GPIO_IMX_PORT_2_IRQ_0_PRI,
+	IRQ_CONNECT(DT_GPIO_IMX_PORT_2_IRQ_0,
+		    DT_GPIO_IMX_PORT_2_IRQ_0_PRI,
 		    imx_gpio_port_isr, DEVICE_GET(imx_gpio_2), 0);
 
-	irq_enable(CONFIG_GPIO_IMX_PORT_2_IRQ_0);
+	irq_enable(DT_GPIO_IMX_PORT_2_IRQ_0);
 
-	IRQ_CONNECT(CONFIG_GPIO_IMX_PORT_2_IRQ_1,
-		    CONFIG_GPIO_IMX_PORT_2_IRQ_1_PRI,
+	IRQ_CONNECT(DT_GPIO_IMX_PORT_2_IRQ_1,
+		    DT_GPIO_IMX_PORT_2_IRQ_1_PRI,
 		    imx_gpio_port_isr, DEVICE_GET(imx_gpio_2), 0);
 
-	irq_enable(CONFIG_GPIO_IMX_PORT_2_IRQ_1);
+	irq_enable(DT_GPIO_IMX_PORT_2_IRQ_1);
 
 	return 0;
 }
@@ -249,12 +249,12 @@ static int imx_gpio_2_init(struct device *dev)
 static int imx_gpio_3_init(struct device *dev);
 
 static const struct imx_gpio_config imx_gpio_3_config = {
-	.base = (GPIO_Type *)CONFIG_GPIO_IMX_PORT_3_BASE_ADDRESS,
+	.base = (GPIO_Type *)DT_GPIO_IMX_PORT_3_BASE_ADDRESS,
 };
 
 static struct imx_gpio_data imx_gpio_3_data;
 
-DEVICE_AND_API_INIT(imx_gpio_3, CONFIG_GPIO_IMX_PORT_3_NAME,
+DEVICE_AND_API_INIT(imx_gpio_3, DT_GPIO_IMX_PORT_3_NAME,
 		    imx_gpio_3_init,
 		    &imx_gpio_3_data, &imx_gpio_3_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -262,17 +262,17 @@ DEVICE_AND_API_INIT(imx_gpio_3, CONFIG_GPIO_IMX_PORT_3_NAME,
 
 static int imx_gpio_3_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_IMX_PORT_3_IRQ_0,
-		    CONFIG_GPIO_IMX_PORT_3_IRQ_0_PRI,
+	IRQ_CONNECT(DT_GPIO_IMX_PORT_3_IRQ_0,
+		    DT_GPIO_IMX_PORT_3_IRQ_0_PRI,
 		    imx_gpio_port_isr, DEVICE_GET(imx_gpio_3), 0);
 
-	irq_enable(CONFIG_GPIO_IMX_PORT_3_IRQ_0);
+	irq_enable(DT_GPIO_IMX_PORT_3_IRQ_0);
 
-	IRQ_CONNECT(CONFIG_GPIO_IMX_PORT_3_IRQ_1,
-		    CONFIG_GPIO_IMX_PORT_3_IRQ_1_PRI,
+	IRQ_CONNECT(DT_GPIO_IMX_PORT_3_IRQ_1,
+		    DT_GPIO_IMX_PORT_3_IRQ_1_PRI,
 		    imx_gpio_port_isr, DEVICE_GET(imx_gpio_3), 0);
 
-	irq_enable(CONFIG_GPIO_IMX_PORT_3_IRQ_1);
+	irq_enable(DT_GPIO_IMX_PORT_3_IRQ_1);
 
 	return 0;
 }
@@ -282,12 +282,12 @@ static int imx_gpio_3_init(struct device *dev)
 static int imx_gpio_4_init(struct device *dev);
 
 static const struct imx_gpio_config imx_gpio_4_config = {
-	.base = (GPIO_Type *)CONFIG_GPIO_IMX_PORT_4_BASE_ADDRESS,
+	.base = (GPIO_Type *)DT_GPIO_IMX_PORT_4_BASE_ADDRESS,
 };
 
 static struct imx_gpio_data imx_gpio_4_data;
 
-DEVICE_AND_API_INIT(imx_gpio_4, CONFIG_GPIO_IMX_PORT_4_NAME,
+DEVICE_AND_API_INIT(imx_gpio_4, DT_GPIO_IMX_PORT_4_NAME,
 		    imx_gpio_4_init,
 		    &imx_gpio_4_data, &imx_gpio_4_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -295,17 +295,17 @@ DEVICE_AND_API_INIT(imx_gpio_4, CONFIG_GPIO_IMX_PORT_4_NAME,
 
 static int imx_gpio_4_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_IMX_PORT_4_IRQ_0,
-		    CONFIG_GPIO_IMX_PORT_4_IRQ_0_PRI,
+	IRQ_CONNECT(DT_GPIO_IMX_PORT_4_IRQ_0,
+		    DT_GPIO_IMX_PORT_4_IRQ_0_PRI,
 		    imx_gpio_port_isr, DEVICE_GET(imx_gpio_4), 0);
 
-	irq_enable(CONFIG_GPIO_IMX_PORT_4_IRQ_0);
+	irq_enable(DT_GPIO_IMX_PORT_4_IRQ_0);
 
-	IRQ_CONNECT(CONFIG_GPIO_IMX_PORT_4_IRQ_1,
-		    CONFIG_GPIO_IMX_PORT_4_IRQ_1_PRI,
+	IRQ_CONNECT(DT_GPIO_IMX_PORT_4_IRQ_1,
+		    DT_GPIO_IMX_PORT_4_IRQ_1_PRI,
 		    imx_gpio_port_isr, DEVICE_GET(imx_gpio_4), 0);
 
-	irq_enable(CONFIG_GPIO_IMX_PORT_4_IRQ_1);
+	irq_enable(DT_GPIO_IMX_PORT_4_IRQ_1);
 
 	return 0;
 }
@@ -315,12 +315,12 @@ static int imx_gpio_4_init(struct device *dev)
 static int imx_gpio_5_init(struct device *dev);
 
 static const struct imx_gpio_config imx_gpio_5_config = {
-	.base = (GPIO_Type *)CONFIG_GPIO_IMX_PORT_5_BASE_ADDRESS,
+	.base = (GPIO_Type *)DT_GPIO_IMX_PORT_5_BASE_ADDRESS,
 };
 
 static struct imx_gpio_data imx_gpio_5_data;
 
-DEVICE_AND_API_INIT(imx_gpio_5, CONFIG_GPIO_IMX_PORT_5_NAME,
+DEVICE_AND_API_INIT(imx_gpio_5, DT_GPIO_IMX_PORT_5_NAME,
 		    imx_gpio_5_init,
 		    &imx_gpio_5_data, &imx_gpio_5_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -328,17 +328,17 @@ DEVICE_AND_API_INIT(imx_gpio_5, CONFIG_GPIO_IMX_PORT_5_NAME,
 
 static int imx_gpio_5_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_IMX_PORT_5_IRQ_0,
-		    CONFIG_GPIO_IMX_PORT_5_IRQ_0_PRI,
+	IRQ_CONNECT(DT_GPIO_IMX_PORT_5_IRQ_0,
+		    DT_GPIO_IMX_PORT_5_IRQ_0_PRI,
 		    imx_gpio_port_isr, DEVICE_GET(imx_gpio_5), 0);
 
-	irq_enable(CONFIG_GPIO_IMX_PORT_5_IRQ_0);
+	irq_enable(DT_GPIO_IMX_PORT_5_IRQ_0);
 
-	IRQ_CONNECT(CONFIG_GPIO_IMX_PORT_5_IRQ_1,
-		    CONFIG_GPIO_IMX_PORT_5_IRQ_1_PRI,
+	IRQ_CONNECT(DT_GPIO_IMX_PORT_5_IRQ_1,
+		    DT_GPIO_IMX_PORT_5_IRQ_1_PRI,
 		    imx_gpio_port_isr, DEVICE_GET(imx_gpio_5), 0);
 
-	irq_enable(CONFIG_GPIO_IMX_PORT_5_IRQ_1);
+	irq_enable(DT_GPIO_IMX_PORT_5_IRQ_1);
 
 	return 0;
 }
@@ -348,12 +348,12 @@ static int imx_gpio_5_init(struct device *dev)
 static int imx_gpio_6_init(struct device *dev);
 
 static const struct imx_gpio_config imx_gpio_6_config = {
-	.base = (GPIO_Type *)CONFIG_GPIO_IMX_PORT_6_BASE_ADDRESS,
+	.base = (GPIO_Type *)DT_GPIO_IMX_PORT_6_BASE_ADDRESS,
 };
 
 static struct imx_gpio_data imx_gpio_6_data;
 
-DEVICE_AND_API_INIT(imx_gpio_6, CONFIG_GPIO_IMX_PORT_6_NAME,
+DEVICE_AND_API_INIT(imx_gpio_6, DT_GPIO_IMX_PORT_6_NAME,
 		    imx_gpio_6_init,
 		    &imx_gpio_6_data, &imx_gpio_6_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -361,17 +361,17 @@ DEVICE_AND_API_INIT(imx_gpio_6, CONFIG_GPIO_IMX_PORT_6_NAME,
 
 static int imx_gpio_6_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_IMX_PORT_6_IRQ_0,
-		    CONFIG_GPIO_IMX_PORT_6_IRQ_0_PRI,
+	IRQ_CONNECT(DT_GPIO_IMX_PORT_6_IRQ_0,
+		    DT_GPIO_IMX_PORT_6_IRQ_0_PRI,
 		    imx_gpio_port_isr, DEVICE_GET(imx_gpio_6), 0);
 
-	irq_enable(CONFIG_GPIO_IMX_PORT_6_IRQ_0);
+	irq_enable(DT_GPIO_IMX_PORT_6_IRQ_0);
 
-	IRQ_CONNECT(CONFIG_GPIO_IMX_PORT_6_IRQ_1,
-		    CONFIG_GPIO_IMX_PORT_6_IRQ_1_PRI,
+	IRQ_CONNECT(DT_GPIO_IMX_PORT_6_IRQ_1,
+		    DT_GPIO_IMX_PORT_6_IRQ_1_PRI,
 		    imx_gpio_port_isr, DEVICE_GET(imx_gpio_6), 0);
 
-	irq_enable(CONFIG_GPIO_IMX_PORT_6_IRQ_1);
+	irq_enable(DT_GPIO_IMX_PORT_6_IRQ_1);
 
 	return 0;
 }
@@ -381,12 +381,12 @@ static int imx_gpio_6_init(struct device *dev)
 static int imx_gpio_7_init(struct device *dev);
 
 static const struct imx_gpio_config imx_gpio_7_config = {
-	.base = (GPIO_Type *)CONFIG_GPIO_IMX_PORT_7_BASE_ADDRESS,
+	.base = (GPIO_Type *)DT_GPIO_IMX_PORT_7_BASE_ADDRESS,
 };
 
 static struct imx_gpio_data imx_gpio_7_data;
 
-DEVICE_AND_API_INIT(imx_gpio_7, CONFIG_GPIO_IMX_PORT_7_NAME,
+DEVICE_AND_API_INIT(imx_gpio_7, DT_GPIO_IMX_PORT_7_NAME,
 		    imx_gpio_7_init,
 		    &imx_gpio_7_data, &imx_gpio_7_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -394,17 +394,17 @@ DEVICE_AND_API_INIT(imx_gpio_7, CONFIG_GPIO_IMX_PORT_7_NAME,
 
 static int imx_gpio_7_init(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_GPIO_IMX_PORT_7_IRQ_0,
-		    CONFIG_GPIO_IMX_PORT_7_IRQ_0_PRI,
+	IRQ_CONNECT(DT_GPIO_IMX_PORT_7_IRQ_0,
+		    DT_GPIO_IMX_PORT_7_IRQ_0_PRI,
 		    imx_gpio_port_isr, DEVICE_GET(imx_gpio_7), 0);
 
-	irq_enable(CONFIG_GPIO_IMX_PORT_7_IRQ_0);
+	irq_enable(DT_GPIO_IMX_PORT_7_IRQ_0);
 
-	IRQ_CONNECT(CONFIG_GPIO_IMX_PORT_7_IRQ_1,
-		    CONFIG_GPIO_IMX_PORT_7_IRQ_1_PRI,
+	IRQ_CONNECT(DT_GPIO_IMX_PORT_7_IRQ_1,
+		    DT_GPIO_IMX_PORT_7_IRQ_1_PRI,
 		    imx_gpio_port_isr, DEVICE_GET(imx_gpio_7), 0);
 
-	irq_enable(CONFIG_GPIO_IMX_PORT_7_IRQ_1);
+	irq_enable(DT_GPIO_IMX_PORT_7_IRQ_1);
 
 	return 0;
 }

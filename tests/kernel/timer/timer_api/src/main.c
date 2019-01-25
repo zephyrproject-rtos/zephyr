@@ -196,6 +196,19 @@ void test_timer_expirefn_null(void)
 	k_timer_stop(&timer);
 }
 
+/* Wait for the next expiration of an OS timer tick, to synchronize
+ * test start
+ */
+static void tick_sync(void)
+{
+	static struct k_timer sync_timer;
+
+	k_timer_init(&sync_timer, NULL, NULL);
+	k_timer_start(&sync_timer, 0, 1);
+	k_timer_status_sync(&sync_timer);
+	k_timer_stop(&sync_timer);
+}
+
 /**
  * @brief Test to check timer periodicity
  *
@@ -216,6 +229,12 @@ void test_timer_expirefn_null(void)
 void test_timer_periodicity(void)
 {
 	s64_t delta;
+
+	/* Start at a tick boundary, otherwise a tick expiring between
+	 * the unlocked (and unlockable) start/uptime/sync steps below
+	 * will throw off the math.
+	 */
+	tick_sync();
 
 	init_timer_data();
 	/** TESTPOINT: set duration 0 */

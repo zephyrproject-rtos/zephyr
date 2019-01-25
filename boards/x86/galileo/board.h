@@ -7,8 +7,6 @@
 #ifndef __INC_BOARD_H
 #define __INC_BOARD_H
 
-#include <soc.h>
-
 /*
  * PINMUX configuration settings
  */

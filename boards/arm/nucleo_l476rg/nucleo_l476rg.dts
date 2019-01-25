@@ -13,6 +13,7 @@
 
 	chosen {
 		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -51,6 +52,16 @@
 	pinctrl-0 = <&usart2_pins_a>;
 	pinctrl-names = "default";
 	status = "ok";
+};
+
+arduino_i2c: &i2c1 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&i2c3 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
 };
 
 &spi1 {

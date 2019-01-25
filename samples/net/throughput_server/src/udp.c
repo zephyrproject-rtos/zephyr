@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_tp_server_udp
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_tp_server_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <errno.h>
@@ -161,7 +161,7 @@ static void udp_received(struct net_app_ctx *ctx,
 	/* Print statistics only periodically */
 	if (count > STATS_CHECK) {
 		print_statistics();
-		count = 0;
+		count = 0U;
 	}
 
 	count++;

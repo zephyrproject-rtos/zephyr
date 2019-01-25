@@ -86,7 +86,7 @@ int pthread_attr_setschedparam(pthread_attr_t *attr,
 {
 	int priority = schedparam->priority;
 
-	if (!attr || !attr->initialized ||
+	if ((attr == NULL) || (attr->initialized == 0) ||
 	    (is_posix_prio_valid(priority, attr->schedpolicy) == false)) {
 		return EINVAL;
 	}
@@ -140,7 +140,8 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	 * pointer and stack size. So even though POSIX 1003.1 spec accepts
 	 * attrib as NULL but zephyr needs it initialized with valid stack.
 	 */
-	if (!attr || !attr->initialized || !attr->stack || !attr->stacksize) {
+	if ((attr == NULL) || (attr->initialized == 0)
+	    || (attr->stack == NULL) || (attr->stacksize == 0)) {
 		return EINVAL;
 	}
 
@@ -216,7 +217,7 @@ int pthread_cancel(pthread_t pthread)
 	struct posix_thread *thread = (struct posix_thread *) pthread;
 	int cancel_state;
 
-	if (thread == NULL || thread->state == PTHREAD_TERMINATED) {
+	if ((thread == NULL) || (thread->state == PTHREAD_TERMINATED)) {
 		return ESRCH;
 	}
 
@@ -283,7 +284,7 @@ int pthread_attr_init(pthread_attr_t *attr)
 		return ENOMEM;
 	}
 
-	memcpy(attr, &init_pthread_attrs, sizeof(pthread_attr_t));
+	(void)memcpy(attr, &init_pthread_attrs, sizeof(pthread_attr_t));
 
 	return 0;
 }
@@ -299,7 +300,7 @@ int pthread_getschedparam(pthread_t pthread, int *policy,
 	struct posix_thread *thread = (struct posix_thread *) pthread;
 	u32_t priority;
 
-	if (thread == NULL || thread->state == PTHREAD_TERMINATED) {
+	if ((thread == NULL) || (thread->state == PTHREAD_TERMINATED)) {
 		return ESRCH;
 	}
 
@@ -398,7 +399,7 @@ int pthread_join(pthread_t thread, void **status)
 	}
 
 	if (pthread->state == PTHREAD_EXITED) {
-		if (status) {
+		if (status != NULL) {
 			*status = pthread->retval;
 		}
 	} else if (pthread->state == PTHREAD_DETACHED) {
@@ -460,7 +461,7 @@ int pthread_detach(pthread_t thread)
  */
 int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
 {
-	if (!attr || !attr->initialized) {
+	if ((attr == NULL) || (attr->initialized == 0)) {
 		return EINVAL;
 	}
 
@@ -475,7 +476,7 @@ int pthread_attr_getdetachstate(const pthread_attr_t *attr, int *detachstate)
  */
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
 {
-	if (!attr || !attr->initialized ||
+	if ((attr == NULL) || (attr->initialized == 0) ||
 	    (detachstate != PTHREAD_CREATE_DETACHED &&
 	     detachstate != PTHREAD_CREATE_JOINABLE)) {
 		return EINVAL;
@@ -493,7 +494,7 @@ int pthread_attr_setdetachstate(pthread_attr_t *attr, int detachstate)
  */
 int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy)
 {
-	if (!attr || !attr->initialized) {
+	if ((attr == NULL) || (attr->initialized == 0)) {
 		return EINVAL;
 	}
 
@@ -509,7 +510,7 @@ int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy)
  */
 int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy)
 {
-	if (!attr || !attr->initialized ||
+	if ((attr == NULL) || (attr->initialized == 0) ||
 	    (policy != SCHED_RR && policy != SCHED_FIFO)) {
 		return EINVAL;
 	}
@@ -525,7 +526,7 @@ int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy)
  */
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize)
 {
-	if (!attr || !attr->initialized) {
+	if ((attr == NULL) || (attr->initialized == 0)) {
 		return EINVAL;
 	}
 
@@ -542,7 +543,7 @@ int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize)
 int pthread_attr_getstack(const pthread_attr_t *attr,
 				 void **stackaddr, size_t *stacksize)
 {
-	if (!attr || !attr->initialized) {
+	if ((attr == NULL) || (attr->initialized == 0)) {
 		return EINVAL;
 	}
 
@@ -559,7 +560,7 @@ int pthread_attr_getstack(const pthread_attr_t *attr,
 int pthread_attr_getschedparam(const pthread_attr_t *attr,
 			       struct sched_param *schedparam)
 {
-	if (!attr || !attr->initialized) {
+	if ((attr == NULL) || (attr->initialized == 0)) {
 		return EINVAL;
 	}
 
@@ -574,7 +575,7 @@ int pthread_attr_getschedparam(const pthread_attr_t *attr,
  */
 int pthread_attr_destroy(pthread_attr_t *attr)
 {
-	if (attr && attr->initialized) {
+	if ((attr != NULL) && (attr->initialized != 0)) {
 		attr->initialized = false;
 		return 0;
 	}

@@ -16,6 +16,7 @@
 #include <toolchain.h>
 #include <cache.h>
 #include <cache_private.h>
+#include <stdbool.h>
 
 #if defined(CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED) || \
 	defined(CONFIG_CLFLUSH_DETECT)
@@ -69,7 +70,7 @@ static void init_cache_flush(void)
 	}
 }
 #else
-#define init_cache_flush() do { } while ((0))
+#define init_cache_flush() do { } while (false)
 
 #if defined(CONFIG_CLFLUSH_INSTRUCTION_SUPPORTED)
 FUNC_ALIAS(_cache_flush_clflush, sys_cache_flush, void);

@@ -13,7 +13,7 @@
 #define TEST_DIR	FATFS_MNTP"/testdir"
 #define TEST_DIR_FILE	FATFS_MNTP"/testdir/testfile.txt"
 
-struct fs_file_t filep;
+extern struct fs_file_t filep;
 extern const char test_str[];
 
 int check_file_dir_exists(const char *path);

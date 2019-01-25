@@ -69,7 +69,7 @@ int timer_create(clockid_t clockid, struct sigevent *evp, timer_t *timerid)
 	timer->val = evp->sigev_value;
 	timer->interval.tv_sec = 0;
 	timer->interval.tv_nsec = 0;
-	timer->reload = 0;
+	timer->reload = 0U;
 	timer->status = NOT_ACTIVE;
 
 	if (evp->sigev_notify == SIGEV_NONE) {
@@ -138,7 +138,7 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 	}
 
 	/*  Save time to expire and old reload value. */
-	if (ovalue) {
+	if (ovalue != NULL) {
 		timer_gettime(timerid, ovalue);
 	}
 
@@ -159,11 +159,11 @@ int timer_settime(timer_t timerid, int flags, const struct itimerspec *value,
 
 	/* Calcaulte timer duration */
 	duration = _ts_to_ms(&(value->it_value));
-	if (flags & TIMER_ABSTIME) {
+	if ((flags & TIMER_ABSTIME) != 0) {
 		current = k_timer_remaining_get(&timer->ztimer);
 
 		if (current >= duration) {
-			duration = 0;
+			duration = 0U;
 		} else {
 			duration -= current;
 		}

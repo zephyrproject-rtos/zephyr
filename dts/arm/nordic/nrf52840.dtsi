@@ -15,7 +15,7 @@
 	};
 
 	flash-controller@4001E000 {
-			compatible = "nrf,nrf52-flash-controller";
+			compatible = "nordic,nrf52-flash-controller";
 			reg = <0x4001E000 0x550>;
 
 			#address-cells = <1>;
@@ -36,6 +36,30 @@
 		compatible = "mmio-sram";
 	};
 
+	aliases {
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+		spi-0 = &spi0;
+		spi-1 = &spi1;
+		spi-2 = &spi2;
+		spi-3 = &spi3;
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+		adc-0 = &adc;
+		gpio-0 = &gpio0;
+		gpio-1 = &gpio1;
+		gpiote-0 = &gpiote;
+		wdt-0 = &wdt;
+		usbd-0 = &usbd;
+		cc310 = &cryptocell;
+		arm-cryptocell-310 = &cryptocell310;
+		pwm-0 = &pwm0;
+		pwm-1 = &pwm1;
+		pwm-2 = &pwm2;
+		pwm-3 = &pwm3;
+		qdec-0 = &qdec;
+	};
+
 	soc {
 		adc: adc@40007000 {
 			compatible = "nordic,nrf-saadc";
@@ -43,6 +67,13 @@
 			interrupts = <7 1>;
 			status = "disabled";
 			label = "ADC_0";
+		};
+
+		clock: clock@40000000 {
+			compatible = "nordic,nrf-clock";
+			reg = <0x40000000 0x1000>;
+			interrupts = <0 1>;
+			status = "ok";
 		};
 
 		uart0: uart@40002000 {
@@ -66,7 +97,6 @@
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x40006000 0x1000>;
 			interrupts = <6 5>;
-			interrupt-names = "gpiote";
 			status = "disabled";
 			label = "GPIOTE_0";
 		};
@@ -111,6 +141,38 @@
 			interrupts = <4 1>;
 			status = "disabled";
 			label = "I2C_1";
+		};
+
+		pwm0: pwm@4001c000 {
+			compatible = "nordic,nrf-pwm";
+			reg = <0x4001c000 0x1000>;
+			interrupts = <28 1>;
+			status = "disabled";
+			label = "PWM_0";
+		};
+
+		pwm1: pwm@40021000 {
+			compatible = "nordic,nrf-pwm";
+			reg = <0x40021000 0x1000>;
+			interrupts = <33 1>;
+			status = "disabled";
+			label = "PWM_1";
+		};
+
+		pwm2: pwm@40022000 {
+			compatible = "nordic,nrf-pwm";
+			reg = <0x40022000 0x1000>;
+			interrupts = <34 1>;
+			status = "disabled";
+			label = "PWM_2";
+		};
+
+		pwm3: pwm@4002d000 {
+			compatible = "nordic,nrf-pwm";
+			reg = <0x4002d000 0x1000>;
+			interrupts = <45 1>;
+			status = "disabled";
+			label = "PWM_3";
 		};
 
 		qdec: qdec@40012000 {
@@ -165,7 +227,6 @@
 			compatible = "nordic,nrf-usbd";
 			reg = <0x40027000 0x1000>;
 			interrupts = <39 1>;
-			interrupt-names = "usbd";
 			num-bidir-endpoints = <1>;
 			num-in-endpoints = <7>;
 			num-out-endpoints = <7>;
@@ -175,11 +236,15 @@
 			label = "USBD";
 		};
 
+		usb_cdc: virtualcom {
+			compatible = "nordic,nrf-usbd";
+			label = "CDC_ACM";
+		};
+
 		wdt: watchdog@40010000 {
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x40010000 0x1000>;
 			interrupts = <16 1>;
-			interrupt-names = "wdt";
 			label = "WDT";
 		};
 

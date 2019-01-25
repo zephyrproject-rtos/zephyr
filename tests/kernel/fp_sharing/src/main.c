@@ -141,13 +141,13 @@ void load_store_low(void)
 	 */
 
 	init_byte = MAIN_FLOAT_REG_CHECK_BYTE;
-	for (i = 0; i < SIZEOF_FP_REGISTER_SET; i++) {
+	for (i = 0U; i < SIZEOF_FP_REGISTER_SET; i++) {
 		load_ptr[i] = init_byte++;
 	}
 
 	/* Keep cranking forever, or until an error is detected. */
 
-	for (load_store_low_count = 0;; load_store_low_count++) {
+	for (load_store_low_count = 0U;; load_store_low_count++) {
 
 		/*
 		 * Clear store buffer to erase all traces of any previous
@@ -198,7 +198,7 @@ void load_store_low(void)
 
 		init_byte = MAIN_FLOAT_REG_CHECK_BYTE;
 
-		for (i = 0; i < SIZEOF_FP_REGISTER_SET; i++) {
+		for (i = 0U; i < SIZEOF_FP_REGISTER_SET; i++) {
 			if (store_ptr[i] != init_byte) {
 				TC_ERROR("load_store_low found 0x%x instead "
 					 "of 0x%x @ offset 0x%x\n",
@@ -285,7 +285,7 @@ void load_store_high(void)
 
 		init_byte = FIBER_FLOAT_REG_CHECK_BYTE;
 
-		for (i = 0; i < SIZEOF_FP_REGISTER_SET; i++) {
+		for (i = 0U; i < SIZEOF_FP_REGISTER_SET; i++) {
 			reg_set_ptr[i] = init_byte++;
 		}
 

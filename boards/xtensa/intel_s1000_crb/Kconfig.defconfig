@@ -7,9 +7,6 @@ if BOARD_INTEL_S1000_CRB
 config BOARD
 	default "intel_s1000_crb"
 
-config BOARD_XTENSA
-	def_bool y
-
 config CAVS_ICTL_0_OFFSET
 	default 0x06
 config CAVS_ICTL_1_OFFSET
@@ -49,11 +46,6 @@ config CAVS_ISR_TBL_OFFSET
 config DW_ISR_TBL_OFFSET
 	default 3RD_LVL_ISR_TBL_OFFSET
 
-config GPIO_DW_0_NAME
-	default "GPIO_PORTA"
-config GPIO_DW_0_IRQ_PRI
-	default 1
-
 config I2C_0_DEFAULT_CFG
 	default 0x12
 if DMA_CAVS
@@ -63,30 +55,40 @@ config HEAP_MEM_POOL_SIZE
 
 endif # DMA_CAVS
 
+if BOOTLOADER_MCUBOOT
+config TEXT_SECTION_OFFSET
+	default 0x100
+endif
+
 if USB
 config USB_DW
-	def_bool y
+	default y
 config USB_DW_IRQ_PRI
 	default 3
 config USB_DW_USB_2_0
-	def_bool y
+	default y
 config USB_HID_MAX_PAYLOAD_SIZE
 	default 128
 config USB_COMPOSITE_BUFFER_SIZE
 	default 128
+if USB_DFU_CLASS
+config USB_DFU_MAX_XFER_SIZE
+	default 4096
+endif
+
 endif # USB
 
 if UART_NS16550
 
 config UART_NS16550_PORT_0
-	def_bool y
+	default y
 
 if UART_NS16550_PORT_0
 
 config UART_NS16550_PORT_0_OPTIONS
 	default 0
 config UART_INTERRUPT_DRIVEN
-	def_bool y
+	default y
 
 endif # UART_NS16550_PORT_0
 
@@ -95,39 +97,39 @@ endif # UART_NS16550
 if I2C
 
 config I2C_DW
-	def_bool y
+	default y
 config I2C_0
-	def_bool y
+	default y
 
 endif
 
 if DMA
 
 config DMA_CAVS
-	def_bool y
+	default y
 
 config DCACHE_WRITEBACK
-	def_bool y
+	default y
 
 endif
 
 if I2S
 config I2S_CAVS
-	def_bool y
+	default y
 endif
 
 if AUDIO
 config AUDIO_CODEC
-	def_bool y
+	default y
 
 config AUDIO_TLV320DAC
-	def_bool y
+	default y
 
 config AUDIO_DMIC
-	def_bool y
+	default y
 
 config AUDIO_INTEL_DMIC
-	def_bool y
+	default y
 
 endif
 
@@ -135,18 +137,59 @@ endif
 if NEURAL_NET_ACCEL
 
 config INTEL_GNA
-	def_bool y
+	default y
 endif
 
 if GPIO
 
 config GPIO_DW
-	def_bool y
+	default y
 
 config GPIO_DW_0
+	default y
+
+endif
+
+if FLASH
+
+config SPI
+	def_bool y
+
+config SPI_NOR
+	def_bool y
+
+config SPI_NOR_JEDEC_ID
+	default 0xC2803A
+
+config SPI_NOR_PAGE_SIZE
+	default 256
+
+config SPI_NOR_SECTOR_SIZE
+	default 4096
+
+config FLASH_HAS_PAGE_LAYOUT
+	def_bool y
+
+config FLASH_PAGE_LAYOUT
 	def_bool y
 
 endif
 
+if SPI
+
+config SPI_DW
+	def_bool y
+
+config SPI_0
+	def_bool y
+
+endif
+
+if PINMUX
+
+config PINMUX_INTEL_S1000
+	def_bool y
+
+endif
 
 endif # BOARD_INTEL_S1000_CRB

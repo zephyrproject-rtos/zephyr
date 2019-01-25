@@ -7,9 +7,9 @@
 
 menuconfig UART_NRFX
 	bool "nRF UART nrfx drivers"
+	default y
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
-	select GPIO
 	depends on SOC_FAMILY_NRF
 	help
 	  Enable support for nrfx UART drivers for nRF MCU series.
@@ -109,6 +109,84 @@ config UART_1_NRF_TX_BUFFER_SIZE
 	  particular SoC.
 
 endif # UART_1_NRF_UARTE
+
+# ----------------- port 2 -----------------
+config UART_2_NRF_UARTE
+	bool "nRF UARTE 2"
+	depends on HAS_HW_NRF_UARTE2
+	select NRF_UARTE_PERIPHERAL
+	help
+	  Enable nRF UART with EasyDMA on port 2.
+
+if UART_2_NRF_UARTE
+
+config UART_2_INTERRUPT_DRIVEN
+	bool "Enable interrupt support on port 2"
+	depends on UART_INTERRUPT_DRIVEN
+	default y
+	help
+	  This option enables UART interrupt support on port 2.
+
+config UART_2_NRF_PARITY_BIT
+	bool "Enable parity bit"
+	help
+	  Enable parity bit.
+
+config UART_2_NRF_FLOW_CONTROL
+	bool "Enable flow control"
+	help
+	  Enable flow control. If selected, additionally two pins, RTS and CTS
+	  have to be configured.
+
+config UART_2_NRF_TX_BUFFER_SIZE
+	int "Size of RAM buffer"
+	range 1 65535
+	default 32
+	help
+	  Size of the transmit buffer for API function: fifo_fill.
+	  This value is limited by range of TXD.MAXCNT register for
+	  particular SoC.
+
+endif # UART_2_NRF_UARTE
+
+# ----------------- port 3 -----------------
+config UART_3_NRF_UARTE
+	bool "nRF UARTE 3"
+	depends on HAS_HW_NRF_UARTE3
+	select NRF_UARTE_PERIPHERAL
+	help
+	  Enable nRF UART with EasyDMA on port 3.
+
+if UART_3_NRF_UARTE
+
+config UART_3_INTERRUPT_DRIVEN
+	bool "Enable interrupt support on port 3"
+	depends on UART_INTERRUPT_DRIVEN
+	default y
+	help
+	  This option enables UART interrupt support on port 3.
+
+config UART_3_NRF_PARITY_BIT
+	bool "Enable parity bit"
+	help
+	  Enable parity bit.
+
+config UART_3_NRF_FLOW_CONTROL
+	bool "Enable flow control"
+	help
+	  Enable flow control. If selected, additionally two pins, RTS and CTS
+	  have to be configured.
+
+config UART_3_NRF_TX_BUFFER_SIZE
+	int "Size of RAM buffer"
+	range 1 65535
+	default 32
+	help
+	  Size of the transmit buffer for API function: fifo_fill.
+	  This value is limited by range of TXD.MAXCNT register for
+	  particular SoC.
+
+endif # UART_3_NRF_UARTE
 
 config NRF_UART_PERIPHERAL
 	bool

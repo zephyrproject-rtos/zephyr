@@ -37,4 +37,37 @@ config USB_HID_POLL_INTERVAL_MS
 	help
 	  Polling interval in ms selected by the USB HID Device.
 
+config USB_HID_REPORTS
+	int "HID reports in the instance"
+	default 1
+	range 1 256
+	help
+	  Number of HID reports in the instance.
+	  Must be equal or higher than highest report ID (if they are not consecutive).
+
+config USB_HID_BOOT_PROTOCOL
+	bool
+	prompt "Enable USB HID Boot Protocol handling"
+	help
+	  Sets bInterfaceSubClass to 1 and enables Set_Protocol and Get_Protocol
+	  requests handling.
+	  See Chapter 4.2 of Device Class Definition for Human Interface Devices 1.11
+	  for more information.
+
+if USB_HID_BOOT_PROTOCOL
+
+config USB_HID_PROTOCOL_CODE
+	int "HID protocol code"
+	default 0
+	range 0 2
+	help
+	  Sets bIntefaceProtocol in HID instance.
+	  0 = None
+	  1 = Keyboard
+	  2 = Mouse
+	  See Chapter 4.3 of Device Class Definition for Human Interface Devices 1.11
+	  for more information.
+
+endif # USB_HID_BOOT_PROTOCOL
+
 endif # USB_DEVICE_HID

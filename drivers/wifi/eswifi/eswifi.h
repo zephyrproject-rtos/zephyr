@@ -21,8 +21,6 @@
 #define AT_RSP_DELIMITER "\r\n"
 #define AT_RSP_DELIMITER_LEN 2
 
-struct device *uarthost;
-
 struct eswifi_gpio {
 	struct device *dev;
 	unsigned int pin;
@@ -54,6 +52,7 @@ struct eswifi_sta {
 	enum eswifi_security_type security;
 	char pass[65];
 	bool connected;
+	uint8_t channel;
 };
 
 struct eswifi_bus_ops;
@@ -69,6 +68,7 @@ struct eswifi_dev {
 	struct eswifi_sta sta;
 	enum eswifi_request req;
 	enum eswifi_role role;
+	u8_t mac[6];
 	char buf[MAX_DATA_SIZE];
 	struct k_mutex mutex;
 	void *bus_data;
@@ -97,9 +97,10 @@ static inline void eswifi_unlock(struct eswifi_dev *eswifi)
 	k_mutex_unlock(&eswifi->mutex);
 }
 
-struct eswifi_bus_ops eswifi_bus_ops_spi;
+extern struct eswifi_bus_ops eswifi_bus_ops_spi;
 int eswifi_offload_init(struct eswifi_dev *eswifi);
 struct eswifi_dev *eswifi_by_iface_idx(u8_t iface);
-bool eswifi_is_buf_at_ok(char *str);
+int eswifi_at_cmd_rsp(struct eswifi_dev *eswifi, char *cmd, char **rsp);
+int eswifi_at_cmd(struct eswifi_dev *eswifi, char *cmd);
 
 #endif

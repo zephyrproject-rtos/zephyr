@@ -40,6 +40,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;
 	};
 
@@ -96,7 +97,6 @@ arduino_serial: &uart3 {};
 
 &spi0 {
 	status = "ok";
-	cs-gpios = <&gpiod 0 0>;
 
 	mcr20a@0 {
 		compatible = "nxp,mcr20a";
@@ -145,12 +145,10 @@ arduino_serial: &uart3 {};
 		 * 0x0001ffff (sectors 16-31) is reserved for use
 		 * by the application.
 		 */
-#if defined(CONFIG_FS_FLASH_STORAGE_PARTITION)
-		 storage_partition: partition@1e000 {
+		storage_partition: partition@1e000 {
 			label = "storage";
 			reg = <0x0001e000 0x00002000>;
 		};
-#endif
 
 		slot0_partition: partition@20000 {
 			label = "image-0";

@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
 import sys
 import argparse
 import os
@@ -12,18 +17,16 @@ from elftools.elf.elffile import ELFFile
 # when APP_SHARED_MEM is enabled.
 print_template = """
 		/* Auto generated code do not modify */
-		. = ALIGN( 1 << LOG2CEIL(data_smem_{0}b_end - data_smem_{0}));
+		MPU_ALIGN(data_smem_{0}b_end - data_smem_{0});
 		data_smem_{0} = .;
 		KEEP(*(SORT(data_smem_{0}*)))
-		. = ALIGN(_app_data_align);
-		. = ALIGN( 1 << LOG2CEIL(data_smem_{0}b_end - data_smem_{0}));
+		MPU_ALIGN(data_smem_{0}b_end - data_smem_{0});
 		data_smem_{0}b_end = .;
 """
 linker_start_seq = """
 	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
 	{
 		APP_SHARED_ALIGN;
-		_image_ram_start = .;
 		_app_smem_start = .;
 """
 

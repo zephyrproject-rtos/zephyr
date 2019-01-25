@@ -8,8 +8,8 @@
 #include <kernel.h>
 #include <init.h>
 
-#include <systemview/SEGGER_SYSVIEW.h>
-#include <systemview/Global.h>
+#include <SEGGER_SYSVIEW.h>
+#include <Global.h>
 #include "SEGGER_SYSVIEW_Zephyr.h"
 
 #ifndef CONFIG_SMP

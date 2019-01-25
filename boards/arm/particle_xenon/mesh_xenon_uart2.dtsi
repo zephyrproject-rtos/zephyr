@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2018 Peter Bigot Consulting, LLC
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Add UART2 support on particle_xenon via nRF52840 UARTE1 */
+&uart1 {
+	compatible = "nordic,nrf-uarte";
+	current-speed = <115200>;
+	status ="ok";
+	tx-pin = <40>;
+	rx-pin = <42>;
+	rts-pin = <35>;
+	cts-pin = <43>;
+};
+

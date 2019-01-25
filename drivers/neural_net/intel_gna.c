@@ -111,7 +111,7 @@ static void intel_gna_interrupt_handler(struct device *dev)
 
 		k_msgq_put(&gna->response_queue, &pending_resp, K_NO_WAIT);
 
-		k_alert_send(&gna->gna_cb_alert);
+		k_work_submit(&gna->gna_work);
 	}
 
 	/* clear GNA operation and disable interrupt */
@@ -119,15 +119,14 @@ static void intel_gna_interrupt_handler(struct device *dev)
 	gna->state = GNA_STATE_IDLE;
 }
 
-static int gna_cb_alert_handler(struct k_alert *alert)
+static void gna_work_handler(struct k_work *work)
 {
-	struct intel_gna_data *gna = (struct intel_gna_data *)alert;
-	struct intel_gna_pending_resp response;
+	struct intel_gna_data *gna = (struct intel_gna_data *)work;
+	struct intel_gna_pending_resp resp;
 
-	k_msgq_get(&gna->response_queue, &response, K_NO_WAIT);
-
-	response.callback(&response.response);
-	return 0;
+	while (k_msgq_get(&gna->response_queue, &resp, K_NO_WAIT) == 0) {
+		resp.callback(&resp.response);
+	}
 }
 
 static int intel_gna_setup_page_table(void *physical, size_t size,
@@ -141,8 +140,8 @@ static int intel_gna_setup_page_table(void *physical, size_t size,
 
 	LOG_DBG("physical %p size %u virtual %p", physical, size, virtual);
 
-	if (((phys_addr + size - L2_SRAM_BASE) > L2_SRAM_SIZE) ||
-			(phys_addr < L2_SRAM_BASE)) {
+	if (((phys_addr + size - DT_L2_SRAM_BASE) > DT_L2_SRAM_SIZE) ||
+			(phys_addr < DT_L2_SRAM_BASE)) {
 		LOG_ERR("model at %p of size %u exceeds L2 SRAM space",
 				physical, size);
 		return -EINVAL;
@@ -158,7 +157,7 @@ static int intel_gna_setup_page_table(void *physical, size_t size,
 		return -EINVAL;
 	}
 
-	for (page = 0; page < GNA_NUM_PAGES(size); page++) {
+	for (page = 0U; page < GNA_NUM_PAGES(size); page++) {
 		dir_index = GNA_VA_PG_DIR(virt_addr);
 		table_index = GNA_VA_PG_TABLE(virt_addr);
 		gna_page_table[dir_index].entry[table_index] =
@@ -192,8 +191,7 @@ static int intel_gna_initialize(struct device *dev)
 	k_mem_slab_init(&gna->model_slab, (char *)gna->models,
 			sizeof(struct intel_gna_model), GNA_MAX_NUM_MODELS);
 
-	k_alert_init(&gna->gna_cb_alert, gna_cb_alert_handler,
-			GNA_REQUEST_QUEUE_LEN);
+	k_work_init(&gna->gna_work, gna_work_handler);
 
 	/* initialize the configuration descriptor's page directory table */
 	for (int page = 0; page < GNA_CONFIG_DESC_PG_DIR_SIZE; page++) {

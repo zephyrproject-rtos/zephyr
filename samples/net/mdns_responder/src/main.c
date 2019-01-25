@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_mdns_responder_app
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_mdns_responder_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <net/net_core.h>
@@ -17,5 +17,5 @@
  */
 void main(void)
 {
-	NET_INFO("Waiting mDNS queries...");
+	LOG_INF("Waiting mDNS queries...");
 }

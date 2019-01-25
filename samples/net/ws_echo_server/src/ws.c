@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_ws_echo_server_sample
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_ws_echo_server_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <errno.h>
@@ -98,14 +98,14 @@ static int setup_cert(struct net_app_ctx *ctx,
 	ret = mbedtls_x509_crt_parse(cert, echo_apps_cert_der,
 				     sizeof(echo_apps_cert_der));
 	if (ret != 0) {
-		NET_ERR("mbedtls_x509_crt_parse returned %d", ret);
+		LOG_ERR("mbedtls_x509_crt_parse returned %d", ret);
 		return ret;
 	}
 
 	ret = mbedtls_pk_parse_key(pkey, echo_apps_key_der,
 				   sizeof(echo_apps_key_der), NULL, 0);
 	if (ret != 0) {
-		NET_ERR("mbedtls_pk_parse_key returned %d", ret);
+		LOG_ERR("mbedtls_pk_parse_key returned %d", ret);
 		return ret;
 	}
 
@@ -139,7 +139,7 @@ static int http_response(struct http_ctx *ctx, const char *header,
 
 	ret = http_add_header(ctx, header, dst, NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot add HTTP header (%d)", ret);
+		LOG_ERR("Cannot add HTTP header (%d)", ret);
 		return ret;
 	}
 
@@ -153,7 +153,7 @@ static int http_response(struct http_ctx *ctx, const char *header,
 	ret = http_add_header_field(ctx, "Content-Length", content_length,
 				    dst, NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot add Content-Length HTTP header (%d)", ret);
+		LOG_ERR("Cannot add Content-Length HTTP header (%d)", ret);
 		return ret;
 	}
 
@@ -164,7 +164,7 @@ static int http_response(struct http_ctx *ctx, const char *header,
 
 	ret = http_send_chunk(ctx, payload, payload_len, dst, NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot send data to peer (%d)", ret);
+		LOG_ERR("Cannot send data to peer (%d)", ret);
 		return ret;
 	}
 
@@ -178,7 +178,7 @@ static int http_serve_index_html(struct http_ctx *ctx,
 #include "index.html.inc"
 	};
 
-	NET_DBG("Sending index.html (%zd bytes) to client",
+	LOG_DBG("Sending index.html (%zd bytes) to client",
 		sizeof(index_html));
 
 	return http_response(ctx, HTTP_STATUS_200_OK, index_html,
@@ -192,7 +192,7 @@ static int http_serve_js(struct http_ctx *ctx,
 #include "ws.js.gz.inc"
 	};
 
-	NET_DBG("Sending ws.js (%zd bytes) to client", sizeof(js_gz));
+	LOG_DBG("Sending ws.js (%zd bytes) to client", sizeof(js_gz));
 	return http_response(ctx, HTTP_STATUS_200_OK_GZ_CSS,
 			     js_gz, sizeof(js_gz), dst);
 }
@@ -232,11 +232,11 @@ static int append_and_send_data(struct http_ctx *http_ctx,
 		ret = ws_send_msg_to_client(http_ctx, buf, len,
 					    opcode, final, dst, NULL);
 		if (ret < 0) {
-			NET_DBG("Could not send %zd bytes data to client",
+			LOG_DBG("Could not send %zd bytes data to client",
 				len);
 			goto out;
 		} else {
-			NET_DBG("Sent %zd bytes to client", len);
+			LOG_DBG("Sent %zd bytes to client", len);
 		}
 
 		msg_count = 0;
@@ -251,10 +251,10 @@ static int append_and_send_data(struct http_ctx *http_ctx,
 	ret = ws_send_msg_to_client(http_ctx, buf, len,
 				    opcode, final, dst, NULL);
 	if (ret < 0) {
-		NET_DBG("Could not send %zd bytes data to client", len);
+		LOG_DBG("Could not send %zd bytes data to client", len);
 		goto out;
 	} else {
-		NET_DBG("Sent %zd bytes to client", len);
+		LOG_DBG("Sent %zd bytes to client", len);
 	}
 
 	msg_count++;
@@ -266,14 +266,12 @@ out:
 static int ws_works(struct http_ctx *ctx,
 		    const struct sockaddr *dst)
 {
-	int ret = 0;
-
-	NET_INFO("WS url called");
+	LOG_INF("WS url called");
 
 	append_and_send_data(ctx, dst, false, "connection");
 	append_and_send_data(ctx, dst, true, " established.");
 
-	return ret;
+	return 0;
 }
 
 static void ws_connected(struct http_ctx *ctx,
@@ -287,7 +285,7 @@ static void ws_connected(struct http_ctx *ctx,
 	memcpy(url, ctx->http.url, len);
 	url[len] = '\0';
 
-	NET_DBG("%s connect attempt URL %s",
+	LOG_DBG("%s connect attempt URL %s",
 		type == HTTP_CONNECTION ? "HTTP" : "WS", url);
 
 	if (type == HTTP_CONNECTION) {
@@ -343,7 +341,7 @@ static void ws_received(struct http_ctx *ctx,
 			return;
 		}
 
-		NET_DBG("Received %d bytes data", net_pkt_appdatalen(pkt));
+		LOG_DBG("Received %d bytes data", net_pkt_appdatalen(pkt));
 
 		if (flags & WS_FLAG_BINARY) {
 			opcode = WS_OPCODE_DATA_BINARY;
@@ -361,11 +359,11 @@ static void ws_received(struct http_ctx *ctx,
 						    frag->frags ? true : false,
 						    dst, user_data);
 			if (ret < 0) {
-				NET_DBG("Cannot send ws data (%d bytes) "
+				LOG_DBG("Cannot send ws data (%d bytes) "
 					"back (%d)",
 					frag->len - hdr_len, ret);
 			} else {
-				NET_DBG("Sent %d bytes to client",
+				LOG_DBG("Sent %d bytes to client",
 					frag->len - hdr_len);
 			}
 
@@ -382,7 +380,7 @@ static void ws_received(struct http_ctx *ctx,
 		net_pkt_unref(pkt);
 
 	} else {
-		NET_ERR("Receive error (%d)", status);
+		LOG_ERR("Receive error (%d)", status);
 
 		if (pkt) {
 			net_pkt_unref(pkt);
@@ -395,14 +393,14 @@ static void ws_sent(struct http_ctx *ctx,
 		    void *user_data_send,
 		    void *user_data)
 {
-	NET_DBG("Data sent status %d", status);
+	LOG_DBG("Data sent status %d", status);
 }
 
 static void ws_closed(struct http_ctx *ctx,
 		      int status,
 		      void *user_data)
 {
-	NET_DBG("Connection %p closed", ctx);
+	LOG_DBG("Connection %p closed", ctx);
 }
 
 static const char *get_string(int str_len, const char *str)
@@ -420,7 +418,7 @@ static enum http_verdict default_handler(struct http_ctx *ctx,
 					 enum http_connection_type type,
 					 const struct sockaddr *dst)
 {
-	NET_DBG("No handler for %s URL %s",
+	LOG_DBG("No handler for %s URL %s",
 		type == HTTP_CONNECTION ? "HTTP" : "WS",
 		get_string(ctx->http.url_len, ctx->http.url));
 
@@ -475,7 +473,7 @@ void start_server(void)
 
 	ret = net_ipaddr_parse(ZEPHYR_ADDR, &addr);
 	if (ret < 0) {
-		NET_ERR("Cannot set local address (%d)", ret);
+		LOG_ERR("Cannot set local address (%d)", ret);
 		panic(NULL);
 	}
 
@@ -497,7 +495,7 @@ void start_server(void)
 			       result, sizeof(result),
 			       "Zephyr WS server", NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot init web server (%d)", ret);
+		LOG_ERR("Cannot init web server (%d)", ret);
 		return;
 	}
 
@@ -518,7 +516,7 @@ void start_server(void)
 				  ws_tls_stack,
 				  K_THREAD_STACK_SIZEOF(ws_tls_stack));
 	if (ret < 0) {
-		NET_ERR("Cannot enable TLS support (%d)", ret);
+		LOG_ERR("Cannot enable TLS support (%d)", ret);
 	}
 #endif
 

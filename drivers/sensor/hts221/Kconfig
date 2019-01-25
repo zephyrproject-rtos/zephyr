@@ -36,22 +36,6 @@ endchoice # HTS221_TRIGGER_MODE
 config HTS221_TRIGGER
 	bool
 
-config HTS221_GPIO_DEV_NAME
-	string "GPIO device"
-	default "GPIO_0"
-	depends on HTS221_TRIGGER
-	help
-	  The device name of the GPIO device to which the HTS221 interrupt pin
-	  is connected.
-
-config HTS221_GPIO_PIN_NUM
-	int "Interrupt GPIO pin number"
-	default 0
-	depends on HTS221_TRIGGER
-	help
-	  The number of the GPIO on which the interrupt signal from the HTS221
-	  chip will be received.
-
 config HTS221_THREAD_PRIORITY
 	int "Thread priority"
 	depends on HTS221_TRIGGER_OWN_THREAD

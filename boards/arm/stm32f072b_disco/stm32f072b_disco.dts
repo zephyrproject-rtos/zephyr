@@ -13,6 +13,7 @@
 
 	chosen {
 		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -78,6 +79,6 @@
 &can1 {
 	pinctrl-0 = <&can_pins_a>;
 	pinctrl-names = "default";
-	bus-speed = <250000>;
+	bus-speed = <125000>;
 	status = "ok";
 };

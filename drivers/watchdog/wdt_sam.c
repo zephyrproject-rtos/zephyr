@@ -140,7 +140,7 @@ static int wdt_sam_setup(struct device *dev, u8_t options)
 static int wdt_sam_install_timeout(struct device *dev,
 				   const struct wdt_timeout_cfg *cfg)
 {
-	u32_t wdt_mode = 0;
+	u32_t wdt_mode = 0U;
 	int timeout_value;
 
 	struct wdt_sam_dev_data *data = dev->driver_data;
@@ -228,15 +228,15 @@ static const struct wdt_driver_api wdt_sam_api = {
 };
 
 static const struct wdt_sam_dev_cfg wdt_sam_cfg = {
-	.regs = (Wdt *)CONFIG_WDT_SAM_BASE_ADDRESS,
+	.regs = (Wdt *)DT_WDT_SAM_BASE_ADDRESS,
 };
 
 static void wdt_sam_irq_config(void)
 {
-	IRQ_CONNECT(CONFIG_WDT_SAM_IRQ,
-		    CONFIG_WDT_SAM_IRQ_PRIORITY, wdt_sam_isr,
+	IRQ_CONNECT(DT_WDT_SAM_IRQ,
+		    DT_WDT_SAM_IRQ_PRIORITY, wdt_sam_isr,
 		    DEVICE_GET(wdt_sam), 0);
-	irq_enable(CONFIG_WDT_SAM_IRQ);
+	irq_enable(DT_WDT_SAM_IRQ);
 }
 
 static int wdt_sam_init(struct device *dev)
@@ -249,6 +249,6 @@ static int wdt_sam_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(wdt_sam, CONFIG_WDT_0_NAME, wdt_sam_init,
+DEVICE_AND_API_INIT(wdt_sam, DT_WDT_SAM_LABEL, wdt_sam_init,
 		    &wdt_sam_data, &wdt_sam_cfg, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_sam_api);

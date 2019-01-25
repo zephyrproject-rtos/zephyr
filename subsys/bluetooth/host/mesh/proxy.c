@@ -225,7 +225,7 @@ static void send_filter_status(struct bt_mesh_proxy_client *client,
 		net_buf_simple_add_u8(buf, 0x01);
 	}
 
-	for (filter_size = 0, i = 0; i < ARRAY_SIZE(client->filter); i++) {
+	for (filter_size = 0U, i = 0; i < ARRAY_SIZE(client->filter); i++) {
 		if (client->filter[i] != BT_MESH_ADDR_UNASSIGNED) {
 			filter_size++;
 		}
@@ -361,7 +361,7 @@ void bt_mesh_proxy_identity_start(struct bt_mesh_subnet *sub)
 void bt_mesh_proxy_identity_stop(struct bt_mesh_subnet *sub)
 {
 	sub->node_id = BT_MESH_NODE_IDENTITY_STOPPED;
-	sub->node_id_start = 0;
+	sub->node_id_start = 0U;
 }
 
 int bt_mesh_proxy_identity_enable(void)

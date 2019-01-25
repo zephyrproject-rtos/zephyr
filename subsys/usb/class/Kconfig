@@ -10,6 +10,8 @@ if USB_DEVICE_STACK
 
 config USB_CDC_ACM
 	bool "USB CDC ACM Device Class Driver"
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
 	help
 	  USB CDC ACM device class driver
 

@@ -27,6 +27,6 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 20000000
 
 config HARVARD
-	def_bool y
+	default y
 
 endif #SOC_EMSK_EM9D

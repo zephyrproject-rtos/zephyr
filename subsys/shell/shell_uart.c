@@ -21,10 +21,12 @@ LOG_MODULE_REGISTER(shell_uart);
 SHELL_UART_DEFINE(shell_transport_uart,
 		  CONFIG_SHELL_BACKEND_SERIAL_TX_RING_BUFFER_SIZE,
 		  CONFIG_SHELL_BACKEND_SERIAL_RX_RING_BUFFER_SIZE);
-SHELL_DEFINE(uart_shell, "uart:~$ ", &shell_transport_uart, 10,
+SHELL_DEFINE(shell_uart, "uart:~$ ", &shell_transport_uart,
+	     CONFIG_SHELL_BACKEND_SERIAL_LOG_MESSAGE_QUEUE_SIZE,
+	     CONFIG_SHELL_BACKEND_SERIAL_LOG_MESSAGE_QUEUE_TIMEOUT,
 	     SHELL_FLAG_OLF_CRLF);
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 static void uart_rx_handle(const struct shell_uart *sh_uart)
 {
 	u8_t *data;
@@ -35,13 +37,50 @@ static void uart_rx_handle(const struct shell_uart *sh_uart)
 	do {
 		len = ring_buf_put_claim(sh_uart->rx_ringbuf, &data,
 					 sh_uart->rx_ringbuf->size);
-		rd_len = uart_fifo_read(sh_uart->ctrl_blk->dev, data, len);
 
-		if (rd_len) {
-			new_data = true;
+		if (len) {
+			rd_len = uart_fifo_read(sh_uart->ctrl_blk->dev,
+						data, len);
+#ifdef CONFIG_MCUMGR_SMP_SHELL
+			/* Divert bytes from shell handling if it is
+			 * part of an mcumgr frame.
+			 */
+			size_t i;
+
+			for (i = 0; i < rd_len; i++) {
+				if (!smp_shell_rx_byte(&sh_uart->ctrl_blk->smp,
+						       data[i])) {
+					break;
+				}
+			}
+			rd_len -= i;
+			if (rd_len) {
+				new_data = true;
+				for (u32_t j = 0; j < rd_len; j++) {
+					data[j] = data[i + j];
+				}
+			}
+#else
+			if (rd_len) {
+				new_data = true;
+			}
+#endif /* CONFIG_MCUMGR_SMP_SHELL */
+			ring_buf_put_finish(sh_uart->rx_ringbuf, rd_len);
+		} else {
+			u8_t dummy;
+
+			/* No space in the ring buffer - consume byte. */
+			LOG_WRN("RX ring buffer full.");
+
+			rd_len = uart_fifo_read(sh_uart->ctrl_blk->dev,
+						&dummy, 1);
+#ifdef CONFIG_MCUMGR_SMP_SHELL
+			/* Divert this byte from shell handling if it
+			 * is part of an mcumgr frame.
+			 */
+			smp_shell_rx_byte(&sh_uart->ctrl_blk->smp, dummy);
+#endif /* CONFIG_MCUMGR_SMP_SHELL */
 		}
-
-		ring_buf_put_finish(sh_uart->rx_ringbuf, rd_len);
 	} while (rd_len && (rd_len == len));
 
 	if (new_data) {
@@ -87,11 +126,11 @@ static void uart_callback(void *user_data)
 		uart_tx_handle(sh_uart);
 	}
 }
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN */
 
 static void uart_irq_init(const struct shell_uart *sh_uart)
 {
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 	struct device *dev = sh_uart->ctrl_blk->dev;
 
 	uart_irq_callback_user_data_set(dev, uart_callback, (void *)sh_uart);
@@ -125,7 +164,7 @@ static int init(const struct shell_transport *transport,
 	sh_uart->ctrl_blk->handler = evt_handler;
 	sh_uart->ctrl_blk->context = context;
 
-	if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
+	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN)) {
 		uart_irq_init(sh_uart);
 	} else {
 		k_timer_init(sh_uart->timer, timer_handler, NULL);
@@ -148,10 +187,10 @@ static int enable(const struct shell_transport *transport, bool blocking)
 	sh_uart->ctrl_blk->blocking = blocking;
 
 	if (blocking) {
-		if (!IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN)) {
+		if (!IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN)) {
 			k_timer_stop(sh_uart->timer);
 		}
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 		uart_irq_rx_disable(sh_uart->ctrl_blk->dev);
 		uart_irq_tx_disable(sh_uart->ctrl_blk->dev);
 #endif
@@ -166,7 +205,7 @@ static void irq_write(const struct shell_uart *sh_uart, const void *data,
 	*cnt = ring_buf_put(sh_uart->tx_ringbuf, data, length);
 
 	if (atomic_set(&sh_uart->ctrl_blk->tx_busy, 1) == 0) {
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 		uart_irq_tx_enable(sh_uart->ctrl_blk->dev);
 #endif
 	}
@@ -178,7 +217,7 @@ static int write(const struct shell_transport *transport,
 	const struct shell_uart *sh_uart = (struct shell_uart *)transport->ctx;
 	const u8_t *data8 = (const u8_t *)data;
 
-	if (IS_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN) &&
+	if (IS_ENABLED(CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN) &&
 		!sh_uart->ctrl_blk->blocking) {
 		irq_write(sh_uart, data, length, cnt);
 	} else {
@@ -205,25 +244,43 @@ static int read(const struct shell_transport *transport,
 	return 0;
 }
 
+#ifdef CONFIG_MCUMGR_SMP_SHELL
+static void update(const struct shell_transport *transport)
+{
+	struct shell_uart *sh_uart = (struct shell_uart *)transport->ctx;
+
+	smp_shell_process(&sh_uart->ctrl_blk->smp);
+}
+#endif /* CONFIG_MCUMGR_SMP_SHELL */
+
 const struct shell_transport_api shell_uart_transport_api = {
 	.init = init,
 	.uninit = uninit,
 	.enable = enable,
 	.write = write,
-	.read = read
+	.read = read,
+#ifdef CONFIG_MCUMGR_SMP_SHELL
+	.update = update,
+#endif /* CONFIG_MCUMGR_SMP_SHELL */
 };
 
 static int enable_shell_uart(struct device *arg)
 {
 	ARG_UNUSED(arg);
 	struct device *dev =
-			device_get_binding(CONFIG_UART_CONSOLE_ON_DEV_NAME);
-	shell_init(&uart_shell, dev, true, true, LOG_LEVEL_INF);
+			device_get_binding(CONFIG_UART_SHELL_ON_DEV_NAME);
+	bool log_backend = CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > 0;
+	u32_t level =
+		(CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL > LOG_LEVEL_DBG) ?
+		CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_BACKEND_SERIAL_LOG_LEVEL;
+
+	shell_init(&shell_uart, dev, true, log_backend, level);
+
 	return 0;
 }
 SYS_INIT(enable_shell_uart, POST_KERNEL, 0);
 
 const struct shell *shell_backend_uart_get_ptr(void)
 {
-	return &uart_shell;
+	return &shell_uart;
 }

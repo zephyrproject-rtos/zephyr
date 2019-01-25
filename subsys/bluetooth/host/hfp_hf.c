@@ -160,7 +160,7 @@ static void cind_handle_values(struct at_client *hf_at, u32_t index,
 
 int cind_handle(struct at_client *hf_at)
 {
-	u32_t index = 0;
+	u32_t index = 0U;
 
 	/* Parsing Example: CIND: ("call",(0,1)) etc.. */
 	while (at_has_next_list(hf_at)) {
@@ -286,7 +286,7 @@ void ag_indicator_handle_values(struct at_client *hf_at, u32_t index,
 
 int cind_status_handle(struct at_client *hf_at)
 {
-	u32_t index = 0;
+	u32_t index = 0U;
 
 	while (at_has_next_list(hf_at)) {
 		u32_t value;

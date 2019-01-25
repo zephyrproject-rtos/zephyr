@@ -44,7 +44,7 @@ static const char dat2[] = "pqrstuvwxyz0123";
 
 void message_source(struct device *ipm)
 {
-	u8_t counter = 0;
+	u8_t counter = 0U;
 
 	printk("sending messages for IPM device %p\n", ipm);
 

@@ -9,31 +9,11 @@
 
 menuconfig LSM9DS0_MFD
 	bool "LSM9DS0 I2C accelerometer, magnetometer and temperature sensor chip"
-	depends on I2C
+	depends on (I2C && HAS_DTS_I2C)
 	help
 	  Enable driver for LSM9DS0 I2C-based MFD sensor.
 
 if LSM9DS0_MFD
-
-config LSM9DS0_MFD_DEV_NAME
-	string "LSM9DS0_MFD device name"
-	default "lsm9ds0_mfd"
-
-config LSM9DS0_MFD_I2C_ADDR
-	hex "LSM9DS0_MFD I2C slave address"
-	default 0x1E
-	help
-	  Specify the I2C slave address for the LSM9DS0_MFD.
-
-	  0x1E: GND
-	  0x1F: VCC
-
-config LSM9DS0_MFD_I2C_MASTER_DEV_NAME
-	string "I2C master where LSM9DS0 gyroscope is connected"
-	default "I2C_0"
-	help
-	  Specify the device name of the I2C master device to which LSM9DS0_MFD
-	  is connected.
 
 config LSM9DS0_MFD_ACCEL_ENABLE
 	bool "Enable accelerometer"

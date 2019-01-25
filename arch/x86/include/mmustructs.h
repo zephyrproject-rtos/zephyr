@@ -243,7 +243,7 @@
 
 #endif	/* CONFIG_X86_PAE_MODE */
 
-#ifdef CONFIG_X86_USERSPACE
+#ifdef CONFIG_X86_MMU
 
 /* Flags which are only available for PAE mode page tables  */
 #ifdef CONFIG_X86_PAE_MODE
@@ -297,7 +297,7 @@
 
 #endif	/* CONFIG_X86_PAE_MODE */
 
-#endif	 /* CONFIG_X86_USERSPACE */
+#endif	 /* CONFIG_X86_MMU */
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>

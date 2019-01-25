@@ -12,8 +12,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_promisc
-#define NET_LOG_LEVEL CONFIG_NET_PROMISC_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_promisc, CONFIG_NET_PROMISC_LOG_LEVEL);
 
 #include <kernel.h>
 #include <errno.h>

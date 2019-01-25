@@ -6,32 +6,25 @@
 
 #include <shell/shell_rtt.h>
 #include <init.h>
-#include <rtt/SEGGER_RTT.h>
-#include <logging/sys_log.h>
+#include <SEGGER_RTT.h>
+#include <logging/log.h>
 
 SHELL_RTT_DEFINE(shell_transport_rtt);
-SHELL_DEFINE(rtt_shell, "rtt:~$ ", &shell_transport_rtt, 10,
+SHELL_DEFINE(shell_rtt, "rtt:~$ ", &shell_transport_rtt,
+	     CONFIG_SHELL_BACKEND_RTT_LOG_MESSAGE_QUEUE_SIZE,
+	     CONFIG_SHELL_BACKEND_RTT_LOG_MESSAGE_QUEUE_TIMEOUT,
 	     SHELL_FLAG_OLF_CRLF);
 
-static struct k_thread rtt_rx_thread;
-static K_THREAD_STACK_DEFINE(rtt_rx_stack, 1024);
+LOG_MODULE_REGISTER(shell_rtt, CONFIG_SHELL_RTT_LOG_LEVEL);
 
-static void shell_rtt_rx_process(struct shell_rtt *sh_rtt)
+static void timer_handler(struct k_timer *timer)
 {
-	u32_t count;
+	const struct shell_rtt *sh_rtt = k_timer_user_data_get(timer);
 
-	while (1) {
-		count = SEGGER_RTT_Read(0, sh_rtt->rx, sizeof(sh_rtt->rx));
-
-		if (count > 0) {
-			sh_rtt->rx_cnt = count;
-			sh_rtt->handler(SHELL_TRANSPORT_EVT_RX_RDY, sh_rtt->context);
-		}
-
-		k_sleep(K_MSEC(10));
+	if (SEGGER_RTT_HasData(0)) {
+		sh_rtt->handler(SHELL_TRANSPORT_EVT_RX_RDY, sh_rtt->context);
 	}
 }
-
 
 static int init(const struct shell_transport *transport,
 		const void *config,
@@ -43,11 +36,10 @@ static int init(const struct shell_transport *transport,
 	sh_rtt->handler = evt_handler;
 	sh_rtt->context = context;
 
-	k_thread_create(&rtt_rx_thread, rtt_rx_stack,
-			K_THREAD_STACK_SIZEOF(rtt_rx_stack),
-			(k_thread_entry_t)shell_rtt_rx_process,
-			sh_rtt, NULL, NULL, K_PRIO_COOP(8),
-			0, K_NO_WAIT);
+	k_timer_init(&sh_rtt->timer, timer_handler, NULL);
+	k_timer_user_data_set(&sh_rtt->timer, (void *)sh_rtt);
+	k_timer_start(&sh_rtt->timer, CONFIG_SHELL_RTT_RX_POLL_PERIOD,
+			CONFIG_SHELL_RTT_RX_POLL_PERIOD);
 
 	return 0;
 }
@@ -59,6 +51,12 @@ static int uninit(const struct shell_transport *transport)
 
 static int enable(const struct shell_transport *transport, bool blocking)
 {
+	struct shell_rtt *sh_rtt = (struct shell_rtt *)transport->ctx;
+
+	if (blocking) {
+		k_timer_stop(&sh_rtt->timer);
+	}
+
 	return 0;
 }
 
@@ -68,25 +66,17 @@ static int write(const struct shell_transport *transport,
 	struct shell_rtt *sh_rtt = (struct shell_rtt *)transport->ctx;
 	const u8_t *data8 = (const u8_t *)data;
 
-	SEGGER_RTT_Write(0, data8, length);
-	*cnt = length;
+	*cnt = SEGGER_RTT_Write(0, data8, length);
 
 	sh_rtt->handler(SHELL_TRANSPORT_EVT_TX_RDY, sh_rtt->context);
+
 	return 0;
 }
 
 static int read(const struct shell_transport *transport,
 		void *data, size_t length, size_t *cnt)
 {
-	struct shell_rtt *sh_rtt = (struct shell_rtt *)transport->ctx;
-
-	if (sh_rtt->rx_cnt) {
-		memcpy(data, sh_rtt->rx, sh_rtt->rx_cnt);
-		*cnt = sh_rtt->rx_cnt;
-		sh_rtt->rx_cnt = 0;
-	} else {
-		*cnt = 0;
-	}
+	*cnt = SEGGER_RTT_Read(0, data, length);
 
 	return 0;
 }
@@ -102,8 +92,11 @@ const struct shell_transport_api shell_rtt_transport_api = {
 static int enable_shell_rtt(struct device *arg)
 {
 	ARG_UNUSED(arg);
+	bool log_backend = CONFIG_SHELL_RTT_INIT_LOG_LEVEL > 0;
+	u32_t level = (CONFIG_SHELL_RTT_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
+		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_RTT_INIT_LOG_LEVEL;
 
-	shell_init(&rtt_shell, NULL, false, false, LOG_LEVEL_INF);
+	shell_init(&shell_rtt, NULL, true, log_backend, level);
 
 	return 0;
 }
@@ -111,6 +104,6 @@ static int enable_shell_rtt(struct device *arg)
 /* Function is used for testing purposes */
 const struct shell *shell_backend_rtt_get_ptr(void)
 {
-	return &rtt_shell;
+	return &shell_rtt;
 }
 SYS_INIT(enable_shell_rtt, POST_KERNEL, 0);

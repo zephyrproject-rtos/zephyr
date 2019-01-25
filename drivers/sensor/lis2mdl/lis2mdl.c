@@ -93,7 +93,7 @@ static int lis2mdl_set_hard_iron(struct device *dev, enum sensor_channel chan,
 	s16_t offs;
 	int ret;
 
-	for (i = 0; i < LIS2MDL_NUM_AXIS; i++) {
+	for (i = 0U; i < LIS2MDL_NUM_AXIS; i++) {
 		offs = sys_cpu_to_le16(val->val1);
 		ret = i2c_burst_write(lis2mdl->i2c, lis2mdl->i2c_addr,
 				      regs, (u8_t *)&offs, sizeof(offs));
@@ -120,16 +120,16 @@ static void lis2mdl_channel_get_mag(struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_MAGN_X:
-		ofs_start = ofs_stop = 0;
+		ofs_start = ofs_stop = 0U;
 		break;
 	case SENSOR_CHAN_MAGN_Y:
-		ofs_start = ofs_stop = 1;
+		ofs_start = ofs_stop = 1U;
 		break;
 	case SENSOR_CHAN_MAGN_Z:
-		ofs_start = ofs_stop = 2;
+		ofs_start = ofs_stop = 2U;
 		break;
 	default:
-		ofs_start = 0; ofs_stop = 2;
+		ofs_start = 0U; ofs_stop = 2U;
 		break;
 	}
 
@@ -310,12 +310,12 @@ static int lis2mdl_init_interface(struct device *dev)
 }
 
 static const struct lis2mdl_device_config lis2mdl_dev_config = {
-	.master_dev_name = CONFIG_LIS2MDL_I2C_MASTER_DEV_NAME,
+	.master_dev_name = DT_LIS2MDL_I2C_MASTER_DEV_NAME,
 #ifdef CONFIG_LIS2MDL_TRIGGER
-	.gpio_name = CONFIG_LIS2MDL_GPIO_DEV_NAME,
-	.gpio_pin = CONFIG_LIS2MDL_GPIO_PIN_NUM,
+	.gpio_name = DT_LIS2MDL_INT_GPIO_DEV_NAME,
+	.gpio_pin = DT_LIS2MDL_INT_GPIO_PIN_NUM,
 #endif  /* CONFIG_LIS2MDL_TRIGGER */
-	.i2c_addr_config = CONFIG_LIS2MDL_I2C_ADDR,
+	.i2c_addr_config = DT_LIS2MDL_I2C_ADDRESS,
 };
 
 static int lis2mdl_init(struct device *dev)
@@ -374,6 +374,6 @@ static int lis2mdl_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(lis2mdl, CONFIG_LIS2MDL_DEV_NAME, lis2mdl_init,
+DEVICE_AND_API_INIT(lis2mdl, DT_LIS2MDL_DEV_NAME, lis2mdl_init,
 		     &lis2mdl_device_data, &lis2mdl_dev_config, POST_KERNEL,
 		     CONFIG_SENSOR_INIT_PRIORITY, &lis2mdl_driver_api);

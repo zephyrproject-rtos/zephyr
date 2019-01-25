@@ -1,15 +1,49 @@
-Silabs Gecko SDK
-----------------
+Silicon Labs Gecko HAL
+######################
 
-Downloaded from https://github.com/SiliconLabs/Gecko_SDK
+Origin:
+   Silicon Labs Gecko SDK
+   https://www.silabs.com/products/development-tools/software/simplicity-studio
+
+Version:
+   v5.6.1
+
+Purpose:
+   Add support for Silicon Labs EXX32 SoCs
+
+Description:
+   This code component is used to add Zephyr support for Silicon Labs EXX32 SoCs.
+   To speed up the development process it is based on the Silicon Labs HAL.
+
+   The Silicon Labs HAL is split into SoC specific folders. They share the 
+   Peripheral Support library.
+
+   The following folders are imported:
+   platform/Device/SiliconLabs/$(GECKO_DEVICE)
+   platform/emlib
+
+Dependencies:
+   This source code depends on headers and sources from Zephyr:
+   ext/hal/cmsis
+
+URL:
+   https://www.silabs.com/products/development-tools/software/simplicity-studio
+
+Maintained-by:
+   External
+
+License:
+   Zlib
 
 How to update
 +++++++++++++
 
-  * Downloaded current version from https://github.com/SiliconLabs/Gecko_SDK
-  * Extract
+  * Start Simplicity Studio
+  * Start the Package Manager
+  * Install the 32-bit MCU SDK with the version you want to update to
+  * The installation directory is <Simplicity Studio Path>/developer/sdks/gecko_sdk_suite/<version>
   * Replace the necessary files in ext/hal/silabs/gecko/Device and ext/hal/silabs/gecko/emlib
-  * Ensure that the Makfile and Kbuild-file match the new version of the Gecko SDK
+  * Ensure that the CMakeLists and Kconfig files match the new version of the Gecko SDK
 
 The following folders are used in this HAL:
 

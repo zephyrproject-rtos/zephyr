@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_telnet_setup
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_telnet_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <linker/sections.h>
@@ -39,27 +39,27 @@ static void ipv4_addr_add_handler(struct net_mgmt_event_callback *cb,
 			continue;
 		}
 
-		NET_INFO("IPv4 address: %s",
-			 log_strdup(net_addr_ntop(AF_INET,
+		LOG_INF("IPv4 address: %s",
+			log_strdup(net_addr_ntop(AF_INET,
 					       &if_addr->address.in_addr,
 					       hr_addr, NET_IPV4_ADDR_LEN)));
-		NET_INFO("Lease time: %u seconds",
+		LOG_INF("Lease time: %u seconds",
 			 iface->config.dhcpv4.lease_time);
-		NET_INFO("Subnet: %s",
-			 log_strdup(net_addr_ntop(AF_INET,
+		LOG_INF("Subnet: %s",
+			log_strdup(net_addr_ntop(AF_INET,
 					       &iface->config.ip.ipv4->netmask,
 					       hr_addr, NET_IPV4_ADDR_LEN)));
-		NET_INFO("Router: %s",
-			 log_strdup(net_addr_ntop(AF_INET,
-					       &iface->config.ip.ipv4->gw,
-					       hr_addr, NET_IPV4_ADDR_LEN)));
+		LOG_INF("Router: %s",
+			log_strdup(net_addr_ntop(AF_INET,
+						 &iface->config.ip.ipv4->gw,
+						 hr_addr, NET_IPV4_ADDR_LEN)));
 		break;
 	}
 }
 
 static void setup_dhcpv4(struct net_if *iface)
 {
-	NET_INFO("Running dhcpv4 client...");
+	LOG_INF("Running dhcpv4 client...");
 
 	net_mgmt_init_event_callback(&mgmt_cb, ipv4_addr_add_handler,
 				     NET_EVENT_IPV4_ADDR_ADD);
@@ -84,15 +84,15 @@ static void setup_ipv4(struct net_if *iface)
 	struct in_addr addr;
 
 	if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &addr)) {
-		NET_ERR("Invalid address: %s", CONFIG_NET_CONFIG_MY_IPV4_ADDR);
+		LOG_ERR("Invalid address: %s", CONFIG_NET_CONFIG_MY_IPV4_ADDR);
 		return;
 	}
 
 	net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
 
-	NET_INFO("IPv4 address: %s",
-		 log_strdup(net_addr_ntop(AF_INET, &addr, hr_addr,
-					  NET_IPV4_ADDR_LEN)));
+	LOG_INF("IPv4 address: %s",
+		log_strdup(net_addr_ntop(AF_INET, &addr, hr_addr,
+					 NET_IPV4_ADDR_LEN)));
 }
 
 #else
@@ -113,18 +113,18 @@ static void setup_ipv6(struct net_if *iface)
 	struct in6_addr addr;
 
 	if (net_addr_pton(AF_INET6, CONFIG_NET_CONFIG_MY_IPV6_ADDR, &addr)) {
-		NET_ERR("Invalid address: %s", CONFIG_NET_CONFIG_MY_IPV6_ADDR);
+		LOG_ERR("Invalid address: %s", CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 		return;
 	}
 
 	net_if_ipv6_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
 
-	NET_INFO("IPv6 address: %s",
-		 log_strdup(net_addr_ntop(AF_INET6, &addr, hr_addr,
-					  NET_IPV6_ADDR_LEN)));
+	LOG_INF("IPv6 address: %s",
+		log_strdup(net_addr_ntop(AF_INET6, &addr, hr_addr,
+					 NET_IPV6_ADDR_LEN)));
 
 	if (net_addr_pton(AF_INET6, MCAST_IP6ADDR, &addr)) {
-		NET_ERR("Invalid address: %s", MCAST_IP6ADDR);
+		LOG_ERR("Invalid address: %s", MCAST_IP6ADDR);
 		return;
 	}
 
@@ -139,7 +139,7 @@ void main(void)
 {
 	struct net_if *iface = net_if_get_default();
 
-	NET_INFO("Starting Telnet sample");
+	LOG_INF("Starting Telnet sample");
 
 	setup_ipv4(iface);
 

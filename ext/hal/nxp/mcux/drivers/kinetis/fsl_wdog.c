@@ -1,42 +1,50 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_wdog.h"
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.wdog"
+#endif
 
 /*******************************************************************************
  * Code
  ******************************************************************************/
 
+/*!
+ * brief Initializes the WDOG configuration sturcture.
+ *
+ * This function initializes the WDOG configuration structure to default values. The default
+ * values are as follows.
+ * code
+ *   wdogConfig->enableWdog = true;
+ *   wdogConfig->clockSource = kWDOG_LpoClockSource;
+ *   wdogConfig->prescaler = kWDOG_ClockPrescalerDivide1;
+ *   wdogConfig->workMode.enableWait = true;
+ *   wdogConfig->workMode.enableStop = false;
+ *   wdogConfig->workMode.enableDebug = false;
+ *   wdogConfig->enableUpdate = true;
+ *   wdogConfig->enableInterrupt = false;
+ *   wdogConfig->enableWindowMode = false;
+ *   wdogConfig->windowValue = 0;
+ *   wdogConfig->timeoutValue = 0xFFFFU;
+ * endcode
+ *
+ * param config Pointer to the WDOG configuration structure.
+ * see wdog_config_t
+ */
 void WDOG_GetDefaultConfig(wdog_config_t *config)
 {
     assert(config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     config->enableWdog = true;
     config->clockSource = kWDOG_LpoClockSource;
@@ -53,6 +61,25 @@ void WDOG_GetDefaultConfig(wdog_config_t *config)
     config->timeoutValue = 0xFFFFU;
 }
 
+/*!
+ * brief Initializes the WDOG.
+ *
+ * This function initializes the WDOG. When called, the WDOG runs according to the configuration.
+ * To reconfigure WDOG without forcing a reset first, enableUpdate must be set to true
+ * in the configuration.
+ *
+ * This is an example.
+ * code
+ *   wdog_config_t config;
+ *   WDOG_GetDefaultConfig(&config);
+ *   config.timeoutValue = 0x7ffU;
+ *   config.enableUpdate = true;
+ *   WDOG_Init(wdog_base,&config);
+ * endcode
+ *
+ * param base   WDOG peripheral base address
+ * param config The configuration of WDOG
+ */
 void WDOG_Init(WDOG_Type *base, const wdog_config_t *config)
 {
     assert(config);
@@ -85,6 +112,12 @@ void WDOG_Init(WDOG_Type *base, const wdog_config_t *config)
     EnableGlobalIRQ(primaskValue);
 }
 
+/*!
+ * brief Shuts down the WDOG.
+ *
+ * This function shuts down the WDOG.
+ * Ensure that the WDOG_STCTRLH.ALLOWUPDATE is 1 which indicates that the register update is enabled.
+ */
 void WDOG_Deinit(WDOG_Type *base)
 {
     uint32_t primaskValue = 0U;
@@ -99,6 +132,23 @@ void WDOG_Deinit(WDOG_Type *base)
     WDOG_ClearResetCount(base);
 }
 
+/*!
+ * brief Configures the WDOG functional test.
+ *
+ * This function is used to configure the WDOG functional test. When called, the WDOG goes into test mode
+ * and runs according to the configuration.
+ * Ensure that the WDOG_STCTRLH.ALLOWUPDATE is 1 which means that the register update is enabled.
+ *
+ * This is an example.
+ * code
+ *   wdog_test_config_t test_config;
+ *   test_config.testMode = kWDOG_QuickTest;
+ *   test_config.timeoutValue = 0xfffffu;
+ *   WDOG_SetTestModeConfig(wdog_base, &test_config);
+ * endcode
+ * param base   WDOG peripheral base address
+ * param config The functional test configuration of WDOG
+ */
 void WDOG_SetTestModeConfig(WDOG_Type *base, wdog_test_config_t *config)
 {
     assert(config);
@@ -123,6 +173,21 @@ void WDOG_SetTestModeConfig(WDOG_Type *base, wdog_test_config_t *config)
     EnableGlobalIRQ(primaskValue);
 }
 
+/*!
+ * brief Gets the WDOG all status flags.
+ *
+ * This function gets all status flags.
+ *
+ * This is an example for getting the Running Flag.
+ * code
+ *   uint32_t status;
+ *   status = WDOG_GetStatusFlags (wdog_base) & kWDOG_RunningFlag;
+ * endcode
+ * param base        WDOG peripheral base address
+ * return            State of the status flag: asserted (true) or not-asserted (false).see _wdog_status_flags_t
+ *                    - true: a related status flag has been set.
+ *                    - false: a related status flag is not set.
+ */
 uint32_t WDOG_GetStatusFlags(WDOG_Type *base)
 {
     uint32_t status_flag = 0U;
@@ -133,6 +198,20 @@ uint32_t WDOG_GetStatusFlags(WDOG_Type *base)
     return status_flag;
 }
 
+/*!
+ * brief Clears the WDOG flag.
+ *
+ * This function clears the WDOG status flag.
+ *
+ * This is an example for clearing the timeout (interrupt) flag.
+ * code
+ *   WDOG_ClearStatusFlags(wdog_base,kWDOG_TimeoutFlag);
+ * endcode
+ * param base        WDOG peripheral base address
+ * param mask        The status flags to clear.
+ *                    The parameter could be any combination of the following values.
+ *                    kWDOG_TimeoutFlag
+ */
 void WDOG_ClearStatusFlags(WDOG_Type *base, uint32_t mask)
 {
     if (mask & kWDOG_TimeoutFlag)
@@ -141,6 +220,14 @@ void WDOG_ClearStatusFlags(WDOG_Type *base, uint32_t mask)
     }
 }
 
+/*!
+ * brief Refreshes the WDOG timer.
+ *
+ * This function feeds the WDOG.
+ * This function should be called before the WDOG timer is in timeout. Otherwise, a reset is asserted.
+ *
+ * param base WDOG peripheral base address
+ */
 void WDOG_Refresh(WDOG_Type *base)
 {
     uint32_t primaskValue = 0U;

@@ -1,0 +1,68 @@
+# Kconfig - i.MX RT1021
+#
+# Copyright (c) 2018, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_MIMXRT1021
+
+config SOC
+	string
+	default "mimxrt1021"
+
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_CCM
+	default y
+
+endif # CLOCK_CONTROL
+
+config ARM_DIV
+	default 0
+
+config AHB_DIV
+	default 0
+
+config IPG_DIV
+	default 3
+
+config GPIO
+	default y
+
+if GPIO
+
+config GPIO_MCUX_IGPIO
+	default y
+
+endif # GPIO
+
+if I2C
+
+config I2C_MCUX_LPI2C
+	default y
+
+endif # I2C
+
+if SERIAL
+
+config UART_MCUX_LPUART
+	default y
+
+endif # SERIAL
+
+if ENTROPY_GENERATOR
+
+config ENTROPY_MCUX_TRNG
+	default y
+
+endif # ENTROPY_GENERATOR
+
+if NET_L2_ETHERNET
+
+config ETH_MCUX
+	def_bool y
+
+endif # NET_L2_ETHERNET
+
+endif # SOC_MIMXRT1021

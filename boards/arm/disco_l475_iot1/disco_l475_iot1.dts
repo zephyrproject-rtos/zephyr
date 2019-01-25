@@ -13,6 +13,7 @@
 
 	chosen {
 		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -101,6 +102,7 @@ arduino_serial: &uart4 {};
 	lsm6dsl@6a {
 		compatible = "st,lsm6dsl";
 		reg = <0x6a>;
+		irq-gpios = <&gpiod 11 0>;
 		label = "LSM6DSL";
 	};
 
@@ -188,5 +190,9 @@ arduino_serial: &uart4 {};
 };
 
 &rtc {
+	status = "ok";
+};
+
+&usbotg_fs {
 	status = "ok";
 };

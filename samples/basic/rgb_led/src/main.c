@@ -15,14 +15,7 @@
 #include <device.h>
 #include <pwm.h>
 
-#if defined(CONFIG_SOC_QUARK_SE_C1000)
-#define PWM_DEV0	CONFIG_PWM_QMSI_DEV_NAME
-#define PWM_CH0		0
-#define PWM_DEV1	CONFIG_PWM_QMSI_DEV_NAME
-#define PWM_CH1		1
-#define PWM_DEV2	CONFIG_PWM_QMSI_DEV_NAME
-#define PWM_CH2		2
-#elif defined(RED_PWM_LED_PWM_CONTROLLER) && \
+#if defined(RED_PWM_LED_PWM_CONTROLLER) && \
       defined(RED_PWM_LED_PWM_CHANNEL) && \
       defined(GREEN_PWM_LED_PWM_CONTROLLER) && \
       defined(GREEN_PWM_LED_PWM_CHANNEL) && \
@@ -72,7 +65,7 @@ void main(void)
 	}
 
 	while (1) {
-		for (pulse_width0 = 0; pulse_width0 <= PERIOD;
+		for (pulse_width0 = 0U; pulse_width0 <= PERIOD;
 		     pulse_width0 += STEPSIZE) {
 			if (write_pin(pwm_dev[0], PWM_CH0,
 				      pulse_width0) != 0) {
@@ -80,7 +73,7 @@ void main(void)
 				return;
 			}
 
-			for (pulse_width1 = 0; pulse_width1 <= PERIOD;
+			for (pulse_width1 = 0U; pulse_width1 <= PERIOD;
 			     pulse_width1 += STEPSIZE) {
 				if (write_pin(pwm_dev[1], PWM_CH1,
 					      pulse_width1) != 0) {
@@ -88,7 +81,7 @@ void main(void)
 					return;
 				}
 
-				for (pulse_width2 = 0; pulse_width2 <= PERIOD;
+				for (pulse_width2 = 0U; pulse_width2 <= PERIOD;
 				     pulse_width2 += STEPSIZE) {
 					if (write_pin(pwm_dev[2], PWM_CH2,
 						      pulse_width2) != 0) {

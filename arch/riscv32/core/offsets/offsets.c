@@ -17,6 +17,10 @@
 #include <kernel_structs.h>
 #include <kernel_offsets.h>
 
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+#include <soc_context.h>
+#endif
+
 /* thread_arch_t member offsets */
 GEN_OFFSET_SYM(_thread_arch_t, swap_return_value);
 
@@ -58,19 +62,15 @@ GEN_OFFSET_SYM(NANO_ESF, a7);
 GEN_OFFSET_SYM(NANO_ESF, mepc);
 GEN_OFFSET_SYM(NANO_ESF, mstatus);
 
-#if defined(CONFIG_SOC_RISCV32_PULPINO)
-GEN_OFFSET_SYM(NANO_ESF, lpstart0);
-GEN_OFFSET_SYM(NANO_ESF, lpend0);
-GEN_OFFSET_SYM(NANO_ESF, lpcount0);
-GEN_OFFSET_SYM(NANO_ESF, lpstart1);
-GEN_OFFSET_SYM(NANO_ESF, lpend1);
-GEN_OFFSET_SYM(NANO_ESF, lpcount1);
+#if defined(CONFIG_RISCV_SOC_CONTEXT_SAVE)
+GEN_OFFSET_SYM(NANO_ESF, soc_context);
+GEN_SOC_OFFSET_SYMS();
 #endif
 
 /*
  * RISC-V requires the stack to be 16-bytes aligned, hence SP needs to grow or
  * shrink by a size, which follows the RISC-V stack alignment requirements
- * Hence, ensure that __tTCS_NOFLOAT_SIZEOF and __tTCS_NOFLOAT_SIZEOF sizes
+ * Hence, ensure that __NANO_ESF_SIZEOF and _K_THREAD_NO_FLOAT_SIZEOF sizes
  * are aligned accordingly.
  */
 GEN_ABSOLUTE_SYM(__NANO_ESF_SIZEOF, STACK_ROUND_UP(sizeof(NANO_ESF)));

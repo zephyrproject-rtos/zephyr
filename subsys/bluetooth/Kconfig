@@ -15,6 +15,10 @@ config BT
 
 if BT
 
+module = BT
+module-str = bt
+source "subsys/logging/Kconfig.template.log_config"
+
 choice
 	prompt "Bluetooth Stack Selection"
 	default BT_HCI
@@ -84,6 +88,18 @@ config BT_OBSERVER
 	  Select this for LE Observer role support.
 
 endmenu
+
+config BT_PHY_UPDATE
+	bool "PHY Update"
+	default y
+	help
+	  Enable support for Bluetooth 5.0 PHY Update Procedure.
+
+config BT_DATA_LEN_UPDATE
+	bool "Data Length Update"
+	default y
+	help
+	  Enable support for Bluetooth v4.2 LE Data Length Update procedure.
 
 source "subsys/bluetooth/services/Kconfig"
 

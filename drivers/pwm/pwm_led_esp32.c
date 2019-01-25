@@ -111,7 +111,7 @@ static u8_t pwm_led_esp32_get_gpio_config(u8_t pin,
 {
 	u8_t i;
 
-	for (i = 0; i < 16; i++) {
+	for (i = 0U; i < 16; i++) {
 		if (ch_cfg[i].gpio == pin) {
 			return i;
 		}
@@ -180,10 +180,10 @@ static void pwm_led_esp32_duty_set(int speed_mode, int channel, int duty_val)
 {
 	union pwm_led_esp32_duty duty;
 
-	duty.start = 0;
-	duty.direction = 1;
-	duty.cycle = 1;
-	duty.scale = 0;
+	duty.start = 0U;
+	duty.direction = 1U;
+	duty.cycle = 1U;
+	duty.scale = 0U;
 
 	pwm_led_esp32_duty_config(speed_mode, channel, duty_val << 4, duty);
 }

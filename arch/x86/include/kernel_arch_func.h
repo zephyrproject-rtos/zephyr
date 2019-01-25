@@ -118,16 +118,6 @@ static inline void write_x2apic(unsigned int reg, u32_t val)
 }
 #endif
 
-/*
- * _IntLibInit() is called from the non-arch specific function,
- * prepare_multithreading(). The IA-32 kernel does not require any special
- * initialization of the interrupt subsystem. However, we still need to
- * provide an _IntLibInit() of some sort to prevent build errors.
- */
-static inline void _IntLibInit(void)
-{
-}
-
 extern FUNC_NORETURN void _x86_userspace_enter(k_thread_entry_t user_entry,
 					       void *p1, void *p2, void *p3,
 					       u32_t stack_end,

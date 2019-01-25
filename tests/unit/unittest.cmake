@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8.2)
+cmake_minimum_required(VERSION 3.13.1)
 cmake_policy(SET CMP0000 OLD)
 cmake_policy(SET CMP0002 NEW)
 
@@ -20,8 +20,9 @@ endif()
 
 add_executable(testbinary ${SOURCES})
 
+set(KOBJ_TYPES_H_TARGET kobj_types_h_target)
 include($ENV{ZEPHYR_BASE}/cmake/kobj.cmake)
-add_dependencies(testbinary kobj_types_h_target)
+add_dependencies(testbinary ${KOBJ_TYPES_H_TARGET})
 gen_kobj(KOBJ_GEN_DIR)
 
 list(APPEND INCLUDE
@@ -30,6 +31,8 @@ list(APPEND INCLUDE
   include
   .
 )
+
+set (CMAKE_C_FLAGS "-m32")
 
 target_compile_options(testbinary PRIVATE
   -Wall

@@ -13,6 +13,8 @@
 	};
 
 	soc {
+		compatible = "silabs,efr32mg12p332f1024gl125", "silabs,efr32mg12p", "silabs,efr32", "simple-bus";
+
 		flash-controller@400e0000 {
 			flash0: flash@0 {
 				reg = <0 DT_SIZE_K(1024)>;

@@ -4,8 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_ieee802154_frame
-#define NET_LOG_LEVEL CONFIG_NET_L2_IEEE802154_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_ieee802154_frame, CONFIG_NET_L2_IEEE802154_LOG_LEVEL);
+
+#include <net/net_core.h>
+#include <net/net_if.h>
+
+#include <ipv6.h>
+#include <nbr.h>
+
+#include "ieee802154_frame.h"
+#include "ieee802154_security.h"
 
 #define dbg_print_fs(fs)						\
 	NET_DBG("fs(1): %u/%u/%u/%u/%u/%u",				\
@@ -16,15 +25,6 @@
 		fs->fc.seq_num_suppr, fs->fc.ie_list,			\
 		fs->fc.dst_addr_mode, fs->fc.frame_version,		\
 		fs->fc.src_addr_mode, fs->sequence)
-
-#include <net/net_core.h>
-#include <net/net_if.h>
-
-#include <ipv6.h>
-#include <nbr.h>
-
-#include "ieee802154_frame.h"
-#include "ieee802154_security.h"
 
 #define BUF_TIMEOUT K_MSEC(50)
 
@@ -246,8 +246,8 @@ validate_mac_command(struct ieee802154_mpdu *mpdu, u8_t *buf, u8_t length)
 	struct ieee802154_command *c = (struct ieee802154_command *)buf;
 	bool src_pan_brdcst_chk = false;
 	bool dst_brdcst_chk = false;
-	u8_t comp = 0;
-	u8_t ar = 0;
+	u8_t comp = 0U;
+	u8_t ar = 0U;
 	u8_t src, dst;
 
 	switch (c->cfi) {
@@ -262,14 +262,14 @@ validate_mac_command(struct ieee802154_mpdu *mpdu, u8_t *buf, u8_t length)
 	case IEEE802154_CFI_ASSOCIATION_RESPONSE:
 	case IEEE802154_CFI_DISASSOCIATION_NOTIFICATION:
 	case IEEE802154_CFI_PAN_ID_CONLICT_NOTIFICATION:
-		ar = 1;
-		comp = 1;
+		ar = 1U;
+		comp = 1U;
 		src = IEEE802154_EXT_ADDR_LENGTH;
 		dst = IEEE802154_EXT_ADDR_LENGTH;
 
 		break;
 	case IEEE802154_CFI_DATA_REQUEST:
-		ar = 1;
+		ar = 1U;
 		src = IEEE802154_ADDR_MODE_SHORT |
 			IEEE802154_ADDR_MODE_EXTENDED;
 
@@ -277,14 +277,14 @@ validate_mac_command(struct ieee802154_mpdu *mpdu, u8_t *buf, u8_t length)
 		    IEEE802154_ADDR_MODE_NONE) {
 			dst = IEEE802154_ADDR_MODE_NONE;
 		} else {
-			comp = 1;
+			comp = 1U;
 			dst = IEEE802154_ADDR_MODE_SHORT |
 				IEEE802154_ADDR_MODE_EXTENDED;
 		}
 
 		break;
 	case IEEE802154_CFI_ORPHAN_NOTIFICATION:
-		comp = 1;
+		comp = 1U;
 		src = IEEE802154_EXT_ADDR_LENGTH;
 		dst = IEEE802154_ADDR_MODE_SHORT;
 
@@ -308,7 +308,7 @@ validate_mac_command(struct ieee802154_mpdu *mpdu, u8_t *buf, u8_t length)
 
 		break;
 	case IEEE802154_CFI_GTS_REQUEST:
-		ar = 1;
+		ar = 1U;
 		src = IEEE802154_ADDR_MODE_SHORT;
 		dst = IEEE802154_ADDR_MODE_NONE;
 
@@ -410,10 +410,10 @@ bool ieee802154_validate_frame(u8_t *buf, u8_t length,
 	return validate_payload_and_mfr(mpdu, buf, p_buf, length);
 }
 
-u16_t ieee802154_compute_header_size(struct net_if *iface,
-				     struct in6_addr *dst)
+u8_t ieee802154_compute_header_size(struct net_if *iface,
+				    struct in6_addr *dst)
 {
-	u16_t hdr_len = sizeof(struct ieee802154_fcf_seq);
+	u8_t hdr_len = sizeof(struct ieee802154_fcf_seq);
 #ifdef CONFIG_NET_L2_IEEE802154_SECURITY
 	struct ieee802154_security_ctx *sec_ctx =
 		&((struct ieee802154_context *)net_if_l2_data(iface))->sec_ctx;
@@ -473,14 +473,13 @@ u16_t ieee802154_compute_header_size(struct net_if *iface,
 		hdr_len += IEEE8021254_KEY_ID_FIELD_SRC_8_INDEX_LENGTH;
 	}
 
-	/* This is a _HACK_: as net pkt do not let the possibility to
-	 * reserve tailroom - here for authentication tag - it reserves
+	/* This is a _HACK_: as net_buf do not let the possibility to
+	 * reserve tailroom - here for authentication tag - it "reserves"
 	 * it in headroom so the payload won't occupy all the left space
 	 * and then when it will come to finalize the data frame it will
-	 * reduce the reserve space by the tag size, move the payload
-	 * backward accordingly, and only then:
-	 * run the encryption/authentication which will fill the tag
-	 * space in the end.
+	 * reduce the reserved space by the tag size, move the payload
+	 * backward accordingly, and only then: run the
+	 * encryption/authentication which will fill the tag space in the end.
 	 */
 	if (sec_ctx->level < IEEE802154_SECURITY_LEVEL_ENC) {
 		hdr_len += level_2_tag_size[sec_ctx->level];
@@ -502,14 +501,14 @@ static inline struct ieee802154_fcf_seq *generate_fcf_grounds(u8_t **p_buf,
 
 	fs = (struct ieee802154_fcf_seq *) *p_buf;
 
-	fs->fc.security_enabled = 0;
-	fs->fc.frame_pending = 0;
+	fs->fc.security_enabled = 0U;
+	fs->fc.frame_pending = 0U;
 	fs->fc.ar = ack;
-	fs->fc.pan_id_comp = 0;
-	fs->fc.reserved = 0;
+	fs->fc.pan_id_comp = 0U;
+	fs->fc.reserved = 0U;
 	/** We support version 2006 only for now */
-	fs->fc.seq_num_suppr = 0;
-	fs->fc.ie_list = 0;
+	fs->fc.seq_num_suppr = 0U;
+	fs->fc.ie_list = 0U;
 	fs->fc.frame_version = IEEE802154_VERSION_802154_2006;
 
 	*p_buf += sizeof(struct ieee802154_fcf_seq);
@@ -550,12 +549,12 @@ bool data_addr_to_fs_settings(struct net_linkaddr *dst,
 
 	fs->fc.dst_addr_mode = get_dst_addr_mode(dst, &broadcast);
 	if (fs->fc.dst_addr_mode != IEEE802154_ADDR_MODE_NONE) {
-		fs->fc.pan_id_comp = 1;
+		fs->fc.pan_id_comp = 1U;
 
 		if (broadcast) {
 			params->dst.short_addr = IEEE802154_BROADCAST_ADDRESS;
 			params->dst.len = IEEE802154_SHORT_ADDR_LENGTH;
-			fs->fc.ar = 0;
+			fs->fc.ar = 0U;
 		} else {
 			params->dst.ext_addr = dst->addr;
 			params->dst.len = dst->len;
@@ -644,7 +643,7 @@ u8_t *generate_aux_security_hdr(struct ieee802154_security_ctx *sec_ctx,
 
 	aux_sec->control.security_level = sec_ctx->level;
 	aux_sec->control.key_id_mode = sec_ctx->key_mode;
-	aux_sec->control.reserved = 0;
+	aux_sec->control.reserved = 0U;
 
 	aux_sec->frame_counter = sys_cpu_to_le32(sec_ctx->frame_counter);
 
@@ -656,11 +655,11 @@ u8_t *generate_aux_security_hdr(struct ieee802154_security_ctx *sec_ctx,
 bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 				  struct net_linkaddr *dst,
 				  struct net_buf *frag,
-				  u8_t reserved_len)
+				  u8_t hdr_size)
 {
 	struct ieee802154_frame_params params;
 	struct ieee802154_fcf_seq *fs;
-	u8_t *p_buf = frag->data - reserved_len;
+	u8_t *p_buf = frag->data;
 	u8_t *frag_start = p_buf;
 	bool broadcast;
 
@@ -683,11 +682,11 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 		goto no_security_hdr;
 	}
 
-	fs->fc.security_enabled = 1;
+	fs->fc.security_enabled = 1U;
 
 	p_buf = generate_aux_security_hdr(&ctx->sec_ctx, p_buf);
 
-	/* If tagged, let's retrieve tag space from ll reserved space.
+	/* If tagged, let's retrieve tag space from hdr reserved space.
 	 * See comment in ieee802154_compute_header_size()
 	 */
 	if (ctx->sec_ctx.level != IEEE802154_SECURITY_LEVEL_NONE &&
@@ -701,18 +700,18 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 
 		/* p_buf should point to the right place */
 		memmove(p_buf, frag->data, frag->len);
-		reserved_len -= level_2_tag_size[level];
+		hdr_size -= level_2_tag_size[level];
 	}
 
 no_security_hdr:
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
-	if ((p_buf - frag_start) != reserved_len) {
-		/* ll reserve was too small? We probably overwrote
+	if ((p_buf - frag_start) != hdr_size) {
+		/* hdr_size was too small? We probably overwrote
 		 * payload bytes
 		 */
 		NET_ERR("Could not generate data frame %zu vs %u",
-			(p_buf - frag_start), reserved_len);
+			(p_buf - frag_start), hdr_size);
 		return false;
 	}
 
@@ -720,7 +719,7 @@ no_security_hdr:
 
 	/* Let's encrypt/auth only in the end, is needed */
 	return ieee802154_encrypt_auth(broadcast ? NULL : &ctx->sec_ctx,
-				       frag_start, reserved_len, frag->len,
+				       frag_start, hdr_size, frag->len,
 				       ctx->ext_addr);
 }
 
@@ -732,8 +731,8 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi,
 {
 	switch (cfi) {
 	case IEEE802154_CFI_DISASSOCIATION_NOTIFICATION:
-		fs->fc.ar = 1;
-		fs->fc.pan_id_comp = 1;
+		fs->fc.ar = 1U;
+		fs->fc.pan_id_comp = 1U;
 
 		/* Fall through for common src/dst addr mode handling */
 	case IEEE802154_CFI_ASSOCIATION_REQUEST:
@@ -748,19 +747,19 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi,
 		break;
 	case IEEE802154_CFI_ASSOCIATION_RESPONSE:
 	case IEEE802154_CFI_PAN_ID_CONLICT_NOTIFICATION:
-		fs->fc.ar = 1;
-		fs->fc.pan_id_comp = 1;
+		fs->fc.ar = 1U;
+		fs->fc.pan_id_comp = 1U;
 		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
 		fs->fc.dst_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
 
 		break;
 	case IEEE802154_CFI_DATA_REQUEST:
-		fs->fc.ar = 1;
+		fs->fc.ar = 1U;
 		/* ToDo: src/dst addr mode: see 5.3.4 */
 
 		break;
 	case IEEE802154_CFI_ORPHAN_NOTIFICATION:
-		fs->fc.pan_id_comp = 1;
+		fs->fc.pan_id_comp = 1U;
 		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_EXTENDED;
 		fs->fc.dst_addr_mode = IEEE802154_ADDR_MODE_SHORT;
 
@@ -775,7 +774,7 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi,
 
 		break;
 	case IEEE802154_CFI_GTS_REQUEST:
-		fs->fc.ar = 1;
+		fs->fc.ar = 1U;
 		fs->fc.src_addr_mode = IEEE802154_ADDR_MODE_SHORT;
 		fs->fc.dst_addr_mode = IEEE802154_ADDR_MODE_NONE;
 
@@ -789,25 +788,25 @@ static inline bool cfi_to_fs_settings(enum ieee802154_cfi cfi,
 
 static inline u8_t mac_command_length(enum ieee802154_cfi cfi)
 {
-	u8_t reserve = 1; /* cfi is at least present */
+	u8_t length = 1U; /* cfi is at least present */
 
 	switch (cfi) {
 	case IEEE802154_CFI_ASSOCIATION_REQUEST:
 	case IEEE802154_CFI_DISASSOCIATION_NOTIFICATION:
 	case IEEE802154_CFI_GTS_REQUEST:
-		reserve += 1;
+		length += 1;
 		break;
 	case IEEE802154_CFI_ASSOCIATION_RESPONSE:
-		reserve += 3;
+		length += 3;
 		break;
 	case IEEE802154_CFI_COORDINATOR_REALIGNEMENT:
-		reserve += 8;
+		length += 8;
 		break;
 	default:
 		break;
 	}
 
-	return reserve;
+	return length;
 }
 
 struct net_pkt *
@@ -818,9 +817,9 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 	struct ieee802154_fcf_seq *fs;
 	struct net_pkt *pkt;
 	struct net_buf *frag;
-	u8_t *p_buf;
+	u8_t *p_buf, *p_start;
 
-	pkt = net_pkt_get_reserve_tx(0, BUF_TIMEOUT);
+	pkt = net_pkt_get_reserve_tx(BUF_TIMEOUT);
 	if (!pkt) {
 		return NULL;
 	}
@@ -831,7 +830,8 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 	}
 
 	net_pkt_frag_add(pkt, frag);
-	p_buf = net_pkt_ll(pkt);
+	p_buf = net_pkt_data(pkt);
+	p_start = p_buf;
 
 	fs = generate_fcf_grounds(&p_buf,
 				  type == IEEE802154_CFI_BEACON_REQUEST ?
@@ -846,22 +846,10 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 
 	p_buf = generate_addressing_fields(ctx, fs, params, p_buf);
 
+	net_buf_add(frag, p_buf - p_start);
+
 	/* Let's insert the cfi */
 	((struct ieee802154_command *)p_buf)->cfi = type;
-
-	/* In MAC command, we consider ll header being the mhr.
-	 * Rest will be the MAC command itself. This will proove
-	 * to be easy to handle afterwards to point directly to MAC
-	 * command space, in order to fill-in its content.
-	 */
-	net_pkt_set_ll_reserve(pkt, p_buf - net_pkt_ll(pkt));
-	net_buf_pull(frag, net_pkt_ll_reserve(pkt));
-
-	/* Thus setting the right MAC command length
-	 * Now up to the caller to fill-in this space relevantly.
-	 * See ieee802154_mac_command() helper.
-	 */
-	frag->len = mac_command_length(type);
 
 	dbg_print_fs(fs);
 
@@ -871,13 +859,20 @@ error:
 
 	return NULL;
 }
+
+void ieee802154_mac_cmd_finalize(struct net_pkt *pkt,
+				 enum ieee802154_cfi type)
+{
+	net_buf_add(pkt->frags, mac_command_length(type));
+}
+
 #endif /* CONFIG_NET_L2_IEEE802154_RFD */
 
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY
 bool ieee802154_create_ack_frame(struct net_if *iface,
 				 struct net_pkt *pkt, u8_t seq)
 {
-	u8_t *p_buf = net_pkt_ll(pkt);
+	u8_t *p_buf = net_pkt_data(pkt);
 	struct ieee802154_fcf_seq *fs;
 
 	if (!p_buf) {
@@ -886,8 +881,8 @@ bool ieee802154_create_ack_frame(struct net_if *iface,
 
 	fs = generate_fcf_grounds(&p_buf, false);
 
-	fs->fc.dst_addr_mode = 0;
-	fs->fc.src_addr_mode = 0;
+	fs->fc.dst_addr_mode = 0U;
+	fs->fc.src_addr_mode = 0U;
 
 	fs->fc.frame_type = IEEE802154_FRAME_TYPE_ACK;
 	fs->sequence = seq;
@@ -919,8 +914,8 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	 * This will require to look up in nbr cache with short addr
 	 * in order to get the extended address related to it
 	 */
-	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_ll(pkt),
-				     net_pkt_ll_reserve(pkt),
+	if (!ieee802154_decrypt_auth(&ctx->sec_ctx, net_pkt_data(pkt),
+				     (u8_t *)mpdu->payload - net_pkt_data(pkt),
 				     net_pkt_get_len(pkt),
 				     net_pkt_lladdr_src(pkt)->addr,
 				     sys_le32_to_cpu(

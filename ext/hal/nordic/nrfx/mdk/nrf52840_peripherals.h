@@ -34,6 +34,10 @@ POSSIBILITY OF SUCH DAMAGE.
 #define _NRF52840_PERIPHERALS_H
 
 
+/* Clock Peripheral */
+#define CLOCK_PRESENT
+#define CLOCK_COUNT 1
+
 /* Power Peripheral */
 #define POWER_PRESENT
 #define POWER_COUNT 1

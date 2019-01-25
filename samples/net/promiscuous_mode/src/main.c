@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_promisc_sample
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_promisc_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <errno.h>
@@ -22,12 +22,12 @@ static void iface_cb(struct net_if *iface, void *user_data)
 
 	ret = net_promisc_mode_on(iface);
 	if (ret < 0) {
-		NET_INFO("Cannot set promiscuous mode for interface %p (%d)",
-			 iface, ret);
+		LOG_INF("Cannot set promiscuous mode for interface %p (%d)",
+			iface, ret);
 		return;
 	}
 
-	NET_INFO("Promiscuous mode enabled for interface %p", iface);
+	LOG_INF("Promiscuous mode enabled for interface %p", iface);
 }
 
 static int get_ports(struct net_pkt *pkt, u16_t *src, u16_t *dst)
@@ -77,8 +77,8 @@ static void print_info(struct net_pkt *pkt)
 	}
 
 	if (family == AF_UNSPEC) {
-		NET_INFO("Recv %p len %d (unknown address family)",
-			 pkt, net_pkt_get_len(pkt));
+		LOG_INF("Recv %p len %d (unknown address family)",
+			pkt, net_pkt_get_len(pkt));
 		return;
 	}
 
@@ -103,7 +103,7 @@ static void print_info(struct net_pkt *pkt)
 	}
 
 	if (ret < 0) {
-		NET_ERR("Cannot get port numbers for pkt %p", pkt);
+		LOG_ERR("Cannot get port numbers for pkt %p", pkt);
 		return;
 	}
 
@@ -116,25 +116,25 @@ static void print_info(struct net_pkt *pkt)
 
 	if (family == AF_INET) {
 		if (next_hdr == IPPROTO_TCP || next_hdr == IPPROTO_UDP) {
-			NET_INFO("%s %s (%zd) %s:%u -> %s:%u",
-				 "IPv4", proto, len,
-				 log_strdup(src_addr), src_port,
-				 log_strdup(dst_addr), dst_port);
+			LOG_INF("%s %s (%zd) %s:%u -> %s:%u",
+				"IPv4", proto, len,
+				log_strdup(src_addr), src_port,
+				log_strdup(dst_addr), dst_port);
 		} else {
-			NET_INFO("%s %s (%zd) %s -> %s", "IPv4", proto,
-				 len, log_strdup(src_addr),
-				 log_strdup(dst_addr));
+			LOG_INF("%s %s (%zd) %s -> %s", "IPv4", proto,
+				len, log_strdup(src_addr),
+				log_strdup(dst_addr));
 		}
 	} else {
 		if (next_hdr == IPPROTO_TCP || next_hdr == IPPROTO_UDP) {
-			NET_INFO("%s %s (%zd) [%s]:%u -> [%s]:%u",
-				 "IPv6", proto, len,
-				 log_strdup(src_addr), src_port,
-				 log_strdup(dst_addr), dst_port);
+			LOG_INF("%s %s (%zd) [%s]:%u -> [%s]:%u",
+				"IPv6", proto, len,
+				log_strdup(src_addr), src_port,
+				log_strdup(dst_addr), dst_port);
 		} else {
-			NET_INFO("%s %s (%zd) %s -> %s", "IPv6", proto,
-				 len, log_strdup(src_addr),
-				 log_strdup(dst_addr));
+			LOG_INF("%s %s (%zd) %s -> %s", "IPv6", proto,
+				len, log_strdup(src_addr),
+				log_strdup(dst_addr));
 		}
 	}
 }
@@ -145,11 +145,6 @@ static int set_promisc_mode(const struct shell *shell,
 	struct net_if *iface;
 	char *endptr;
 	int idx, ret;
-
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
-		return -ENOEXEC;
-	}
 
 	if (argc < 2) {
 		shell_fprintf(shell, SHELL_ERROR, "Invalid arguments.\n");

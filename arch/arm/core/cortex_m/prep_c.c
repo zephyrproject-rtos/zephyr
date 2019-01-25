@@ -50,7 +50,7 @@ void __weak relocate_vector_table(void)
 #if defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0) || \
     !defined(CONFIG_XIP) && (CONFIG_SRAM_BASE_ADDRESS != 0)
 	size_t vector_size = (size_t)_vector_end - (size_t)_vector_start;
-	memcpy(VECTOR_ADDRESS, _vector_start, vector_size);
+	(void)memcpy(VECTOR_ADDRESS, _vector_start, vector_size);
 #elif defined(CONFIG_SW_VECTOR_RELAY)
 	_vector_table_pointer = _vector_start;
 #endif
@@ -105,6 +105,8 @@ extern FUNC_NORETURN void _Cstart(void);
  * @return N/A
  */
 
+extern void _IntLibInit(void);
+
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	extern u64_t __start_time_stamp;
 #endif
@@ -115,8 +117,9 @@ void _PrepC(void)
 	_bss_zero();
 	_data_copy();
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
-	__start_time_stamp = 0;
+	__start_time_stamp = 0U;
 #endif
+	_IntLibInit();
 	_Cstart();
 	CODE_UNREACHABLE;
 }

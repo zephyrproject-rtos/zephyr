@@ -160,12 +160,29 @@ uint32_t LPSPI_GetInstance(LPSPI_Type *base)
     return instance;
 }
 
+/*!
+ * brief Set up the dummy data.
+ *
+ * param base LPSPI peripheral address.
+ * param dummyData Data to be transferred when tx buffer is NULL.
+ * Note:
+ *      This API has no effect when LPSPI in slave interrupt mode, because driver
+ *      will set the TXMSK bit to 1 if txData is NULL, no data is loaded from transmit
+ *      FIFO and output pin is tristated.
+ */
 void LPSPI_SetDummyData(LPSPI_Type *base, uint8_t dummyData)
 {
     uint32_t instance = LPSPI_GetInstance(base);
     g_lpspiDummyData[instance] = dummyData;
 }
 
+/*!
+ * brief Initializes the LPSPI master.
+ *
+ * param base LPSPI peripheral address.
+ * param masterConfig Pointer to structure lpspi_master_config_t.
+ * param srcClock_Hz Module source input clock in Hertz
+ */
 void LPSPI_MasterInit(LPSPI_Type *base, const lpspi_master_config_t *masterConfig, uint32_t srcClock_Hz)
 {
     assert(masterConfig);
@@ -183,9 +200,6 @@ void LPSPI_MasterInit(LPSPI_Type *base, const lpspi_master_config_t *masterConfi
 #endif
 
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
-
-    /* Reset to known status */
-    LPSPI_Reset(base);
 
     /* Set LPSPI to master */
     LPSPI_SetMasterSlaveMode(base, kLPSPI_Master);
@@ -218,9 +232,25 @@ void LPSPI_MasterInit(LPSPI_Type *base, const lpspi_master_config_t *masterConfi
     LPSPI_SetDummyData(base, LPSPI_DUMMY_DATA);
 }
 
+/*!
+ * brief Sets the lpspi_master_config_t structure to default values.
+ *
+ * This API initializes the configuration structure  for LPSPI_MasterInit().
+ * The initialized structure can remain unchanged in LPSPI_MasterInit(), or can be modified
+ * before calling the LPSPI_MasterInit().
+ * Example:
+ * code
+ *  lpspi_master_config_t  masterConfig;
+ *  LPSPI_MasterGetDefaultConfig(&masterConfig);
+ * endcode
+ * param masterConfig pointer to lpspi_master_config_t structure
+ */
 void LPSPI_MasterGetDefaultConfig(lpspi_master_config_t *masterConfig)
 {
     assert(masterConfig);
+
+    /* Initializes the configure structure to zero. */
+    memset(masterConfig, 0, sizeof(*masterConfig));
 
     masterConfig->baudRate = 500000;
     masterConfig->bitsPerFrame = 8;
@@ -239,6 +269,12 @@ void LPSPI_MasterGetDefaultConfig(lpspi_master_config_t *masterConfig)
     masterConfig->dataOutConfig = kLpspiDataOutRetained;
 }
 
+/*!
+ * brief LPSPI slave configuration.
+ *
+ * param base LPSPI peripheral address.
+ * param slaveConfig Pointer to a structure lpspi_slave_config_t.
+ */
 void LPSPI_SlaveInit(LPSPI_Type *base, const lpspi_slave_config_t *slaveConfig)
 {
     assert(slaveConfig);
@@ -254,9 +290,6 @@ void LPSPI_SlaveInit(LPSPI_Type *base, const lpspi_slave_config_t *slaveConfig)
 #endif
 
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
-
-    /* Reset to known status */
-    LPSPI_Reset(base);
 
     LPSPI_SetMasterSlaveMode(base, kLPSPI_Slave);
 
@@ -276,9 +309,25 @@ void LPSPI_SlaveInit(LPSPI_Type *base, const lpspi_slave_config_t *slaveConfig)
     LPSPI_Enable(base, true);
 }
 
+/*!
+ * brief Sets the lpspi_slave_config_t structure to default values.
+ *
+ * This API initializes the configuration structure for LPSPI_SlaveInit().
+ * The initialized structure can remain unchanged in LPSPI_SlaveInit() or can be modified
+ * before calling the LPSPI_SlaveInit().
+ * Example:
+ * code
+ *  lpspi_slave_config_t  slaveConfig;
+ *  LPSPI_SlaveGetDefaultConfig(&slaveConfig);
+ * endcode
+ * param slaveConfig pointer to lpspi_slave_config_t structure.
+ */
 void LPSPI_SlaveGetDefaultConfig(lpspi_slave_config_t *slaveConfig)
 {
     assert(slaveConfig);
+
+    /* Initializes the configure structure to zero. */
+    memset(slaveConfig, 0, sizeof(*slaveConfig));
 
     slaveConfig->bitsPerFrame = 8;                      /*!< Bits per frame, minimum 8, maximum 4096.*/
     slaveConfig->cpol = kLPSPI_ClockPolarityActiveHigh; /*!< Clock polarity. */
@@ -292,6 +341,12 @@ void LPSPI_SlaveGetDefaultConfig(lpspi_slave_config_t *slaveConfig)
     slaveConfig->dataOutConfig = kLpspiDataOutRetained;
 }
 
+/*!
+ * brief Restores the LPSPI peripheral to reset state. Note that this function
+ * sets all registers to reset state. As a result, the LPSPI module can't work after calling
+ * this API.
+ * param base LPSPI peripheral address.
+*/
 void LPSPI_Reset(LPSPI_Type *base)
 {
     /* Reset all internal logic and registers, except the Control Register. Remains set until cleared by software.*/
@@ -304,6 +359,10 @@ void LPSPI_Reset(LPSPI_Type *base)
     base->CR = 0x00U;
 }
 
+/*!
+ * brief De-initializes the LPSPI peripheral. Call this API to disable the LPSPI clock.
+ * param base LPSPI peripheral address.
+ */
 void LPSPI_Deinit(LPSPI_Type *base)
 {
     /* Reset to default value */
@@ -333,6 +392,29 @@ static void LPSPI_SetOnePcsPolarity(LPSPI_Type *base,
     /* Configure the PCS polarity bit according to the activeLowOrHigh setting */
     base->CFGR1 = cfgr1Value | ((uint32_t)activeLowOrHigh << (LPSPI_CFGR1_PCSPOL_SHIFT + pcs));
 }
+
+/*!
+ * brief Sets the LPSPI baud rate in bits per second.
+ *
+ * This function takes in the desired bitsPerSec (baud rate) and calculates the nearest
+ * possible baud rate without exceeding the desired baud rate and returns the
+ * calculated baud rate in bits-per-second. It requires the caller to provide
+ * the frequency of the module source clock (in Hertz). Note that the baud rate
+ * does not go into effect until the Transmit Control Register (TCR) is programmed
+ * with the prescale value. Hence, this function returns the prescale tcrPrescaleValue
+ * parameter for later programming in the TCR.  The higher level
+ * peripheral driver should alert the user of an out of range baud rate input.
+ *
+ * Note that the LPSPI module must first be disabled before configuring this.
+ * Note that the LPSPI module must be configured for master mode before configuring this.
+ *
+ * param base LPSPI peripheral address.
+ * param baudRate_Bps The desired baud rate in bits per second.
+ * param srcClock_Hz Module source input clock in Hertz.
+ * param tcrPrescaleValue The TCR prescale value needed to program the TCR.
+ * return  The actual calculated baud rate. This function may also return a "0" if the
+ *          LPSPI is not configured for master mode or if the LPSPI module is not disabled.
+ */
 
 uint32_t LPSPI_MasterSetBaudRate(LPSPI_Type *base,
                                  uint32_t baudRate_Bps,
@@ -408,6 +490,28 @@ uint32_t LPSPI_MasterSetBaudRate(LPSPI_Type *base,
     return bestBaudrate;
 }
 
+/*!
+ * brief Manually configures a specific LPSPI delay parameter (module must be disabled to
+ *        change the delay values).
+ *
+ * This function configures the following:
+ * SCK to PCS delay, or
+ * PCS to SCK delay, or
+ * The configurations must occur between the transfer delay.
+ *
+ * The delay names are available in type lpspi_delay_type_t.
+ *
+ * The user passes the desired delay along with the delay value.
+ * This allows the user to directly set the delay values if they have
+ * pre-calculated them or if they simply wish to manually increment the value.
+ *
+ * Note that the LPSPI module must first be disabled before configuring this.
+ * Note that the LPSPI module must be configured for master mode before configuring this.
+ *
+ * param base LPSPI peripheral address.
+ * param scaler The 8-bit delay value 0x00 to 0xFF (255).
+ * param whichDelay The desired delay to configure, must be of type lpspi_delay_type_t.
+ */
 void LPSPI_MasterSetDelayScaler(LPSPI_Type *base, uint32_t scaler, lpspi_delay_type_t whichDelay)
 {
     /*These settings are only relevant in master mode */
@@ -431,6 +535,34 @@ void LPSPI_MasterSetDelayScaler(LPSPI_Type *base, uint32_t scaler, lpspi_delay_t
     }
 }
 
+/*!
+ * brief Calculates the delay based on the desired delay input in nanoseconds (module must be
+ *        disabled to change the delay values).
+ *
+ * This function calculates the values for the following:
+ * SCK to PCS delay, or
+ * PCS to SCK delay, or
+ * The configurations must occur between the transfer delay.
+ *
+ * The delay names are available in type lpspi_delay_type_t.
+ *
+ * The user passes the desired delay and the desired delay value in
+ * nano-seconds.  The function calculates the value needed for the desired delay parameter
+ * and returns the actual calculated delay because an exact delay match may not be possible. In this
+ * case, the closest match is calculated without going below the desired delay value input.
+ * It is possible to input a very large delay value that exceeds the capability of the part, in
+ * which case the maximum supported delay is returned. It is up to the higher level
+ * peripheral driver to alert the user of an out of range delay input.
+ *
+ * Note that the LPSPI module must be configured for master mode before configuring this. And note that
+ * the delayTime = LPSPI_clockSource / (PRESCALE * Delay_scaler).
+ *
+ * param base LPSPI peripheral address.
+ * param delayTimeInNanoSec The desired delay value in nano-seconds.
+ * param whichDelay The desired delay to configuration, which must be of type lpspi_delay_type_t.
+ * param srcClock_Hz  Module source input clock in Hertz.
+ * return actual Calculated delay value in nano-seconds.
+ */
 uint32_t LPSPI_MasterSetDelayTimes(LPSPI_Type *base,
                                    uint32_t delayTimeInNanoSec,
                                    lpspi_delay_type_t whichDelay,
@@ -539,6 +671,17 @@ uint32_t LPSPI_MasterSetDelayTimes(LPSPI_Type *base,
 
 /*Transactional APIs -- Master*/
 
+/*!
+ * brief Initializes the LPSPI master handle.
+ *
+ * This function initializes the LPSPI handle, which can be used for other LPSPI transactional APIs.  Usually, for a
+ * specified LPSPI instance, call this API once to get the initialized handle.
+
+ * param base LPSPI peripheral address.
+ * param handle LPSPI handle pointer to lpspi_master_handle_t.
+ * param callback DSPI callback.
+ * param userData callback function parameter.
+ */
 void LPSPI_MasterTransferCreateHandle(LPSPI_Type *base,
                                       lpspi_master_handle_t *handle,
                                       lpspi_master_transfer_callback_t callback,
@@ -558,6 +701,14 @@ void LPSPI_MasterTransferCreateHandle(LPSPI_Type *base,
     handle->userData = userData;
 }
 
+/*!
+* brief Check the argument for transfer .
+*
+* param transfer the transfer struct to be used.
+* param bitPerFrame The bit size of one frame.
+* param bytePerFrame The byte size of one frame.
+* return Return true for right and false for wrong.
+*/
 bool LPSPI_CheckTransferArgument(lpspi_transfer_t *transfer, uint32_t bitsPerFrame, uint32_t bytesPerFrame)
 {
     assert(transfer);
@@ -607,6 +758,23 @@ bool LPSPI_CheckTransferArgument(lpspi_transfer_t *transfer, uint32_t bitsPerFra
     return true;
 }
 
+/*!
+ * brief LPSPI master transfer data using a polling method.
+ *
+ * This function transfers data using a  polling method. This is a blocking function, which does not return until all
+ * transfers have been
+ * completed.
+ *
+ * Note:
+ * The transfer data size should be integer multiples of bytesPerFrame if bytesPerFrame is less than or equal to 4.
+ * For bytesPerFrame greater than 4:
+ * The transfer data size should be equal to bytesPerFrame if the bytesPerFrame is not integer multiples of 4.
+ * Otherwise, the transfer data size can be an integer multiple of bytesPerFrame.
+ *
+ * param base LPSPI peripheral address.
+ * param transfer pointer to lpspi_transfer_t structure.
+ * return status of status_t.
+ */
 status_t LPSPI_MasterTransferBlocking(LPSPI_Type *base, lpspi_transfer_t *transfer)
 {
     assert(transfer);
@@ -771,6 +939,24 @@ status_t LPSPI_MasterTransferBlocking(LPSPI_Type *base, lpspi_transfer_t *transf
     return kStatus_Success;
 }
 
+/*!
+ * brief LPSPI master transfer data using an interrupt method.
+ *
+ * This function transfers data using an interrupt method. This is a non-blocking function, which returns right away.
+ * When all data
+ * is transferred, the callback function is called.
+ *
+ * Note:
+ * The transfer data size should be integer multiples of bytesPerFrame if bytesPerFrame is less than or equal to 4.
+ * For bytesPerFrame greater than 4:
+ * The transfer data size should be equal to bytesPerFrame if the bytesPerFrame is not integer multiples of 4.
+ * Otherwise, the transfer data size can be an integer multiple of bytesPerFrame.
+ *
+ * param base LPSPI peripheral address.
+ * param handle pointer to lpspi_master_handle_t structure which stores the transfer state.
+ * param transfer pointer to lpspi_transfer_t structure.
+ * return status of status_t.
+ */
 status_t LPSPI_MasterTransferNonBlocking(LPSPI_Type *base, lpspi_master_handle_t *handle, lpspi_transfer_t *transfer)
 {
     assert(handle);
@@ -995,6 +1181,16 @@ static void LPSPI_MasterTransferComplete(LPSPI_Type *base, lpspi_master_handle_t
     }
 }
 
+/*!
+ * brief Gets the master transfer remaining bytes.
+ *
+ * This function gets the master transfer remaining bytes.
+ *
+ * param base LPSPI peripheral address.
+ * param handle pointer to lpspi_master_handle_t structure which stores the transfer state.
+ * param count Number of bytes transferred so far by the non-blocking transaction.
+ * return status of status_t.
+ */
 status_t LPSPI_MasterTransferGetCount(LPSPI_Type *base, lpspi_master_handle_t *handle, size_t *count)
 {
     assert(handle);
@@ -1027,6 +1223,14 @@ status_t LPSPI_MasterTransferGetCount(LPSPI_Type *base, lpspi_master_handle_t *h
     return kStatus_Success;
 }
 
+/*!
+ * brief LPSPI master abort transfer which uses an interrupt method.
+ *
+ * This function aborts a transfer which uses an interrupt method.
+ *
+ * param base LPSPI peripheral address.
+ * param handle pointer to lpspi_master_handle_t structure which stores the transfer state.
+ */
 void LPSPI_MasterTransferAbort(LPSPI_Type *base, lpspi_master_handle_t *handle)
 {
     assert(handle);
@@ -1041,6 +1245,14 @@ void LPSPI_MasterTransferAbort(LPSPI_Type *base, lpspi_master_handle_t *handle)
     handle->rxRemainingByteCount = 0;
 }
 
+/*!
+ * brief LPSPI Master IRQ handler function.
+ *
+ * This function processes the LPSPI transmit and receive IRQ.
+ *
+ * param base LPSPI peripheral address.
+ * param handle pointer to lpspi_master_handle_t structure which stores the transfer state.
+ */
 void LPSPI_MasterTransferHandleIRQ(LPSPI_Type *base, lpspi_master_handle_t *handle)
 {
     assert(handle);
@@ -1139,6 +1351,17 @@ void LPSPI_MasterTransferHandleIRQ(LPSPI_Type *base, lpspi_master_handle_t *hand
 }
 
 /*Transactional APIs -- Slave*/
+/*!
+ * brief Initializes the LPSPI slave handle.
+ *
+ * This function initializes the LPSPI handle, which can be used for other LPSPI transactional APIs.  Usually, for a
+ * specified LPSPI instance, call this API once to get the initialized handle.
+ *
+ * param base LPSPI peripheral address.
+ * param handle LPSPI handle pointer to lpspi_slave_handle_t.
+ * param callback DSPI callback.
+ * param userData callback function parameter.
+ */
 void LPSPI_SlaveTransferCreateHandle(LPSPI_Type *base,
                                      lpspi_slave_handle_t *handle,
                                      lpspi_slave_transfer_callback_t callback,
@@ -1158,6 +1381,24 @@ void LPSPI_SlaveTransferCreateHandle(LPSPI_Type *base,
     handle->userData = userData;
 }
 
+/*!
+ * brief LPSPI slave transfer data using an interrupt method.
+ *
+ * This function transfer data using an interrupt method. This is a non-blocking function, which returns right away.
+ * When all data
+ * is transferred, the callback function is called.
+ *
+ * Note:
+ * The transfer data size should be integer multiples of bytesPerFrame if bytesPerFrame is less than or equal to 4.
+ * For bytesPerFrame greater than 4:
+ * The transfer data size should be equal to bytesPerFrame if the bytesPerFrame is not an integer multiple of 4.
+ * Otherwise, the transfer data size can be an integer multiple of bytesPerFrame.
+ *
+ * param base LPSPI peripheral address.
+ * param handle pointer to lpspi_slave_handle_t structure which stores the transfer state.
+ * param transfer pointer to lpspi_transfer_t structure.
+ * return status of status_t.
+ */
 status_t LPSPI_SlaveTransferNonBlocking(LPSPI_Type *base, lpspi_slave_handle_t *handle, lpspi_transfer_t *transfer)
 {
     assert(handle);
@@ -1374,6 +1615,16 @@ static void LPSPI_SlaveTransferComplete(LPSPI_Type *base, lpspi_slave_handle_t *
     }
 }
 
+/*!
+ * brief Gets the slave transfer remaining bytes.
+ *
+ * This function gets the slave transfer remaining bytes.
+ *
+ * param base LPSPI peripheral address.
+ * param handle pointer to lpspi_slave_handle_t structure which stores the transfer state.
+ * param count Number of bytes transferred so far by the non-blocking transaction.
+ * return status of status_t.
+ */
 status_t LPSPI_SlaveTransferGetCount(LPSPI_Type *base, lpspi_slave_handle_t *handle, size_t *count)
 {
     assert(handle);
@@ -1406,6 +1657,14 @@ status_t LPSPI_SlaveTransferGetCount(LPSPI_Type *base, lpspi_slave_handle_t *han
     return kStatus_Success;
 }
 
+/*!
+ * brief LPSPI slave aborts a transfer which uses an interrupt method.
+ *
+ * This function aborts a transfer which uses an interrupt method.
+ *
+ * param base LPSPI peripheral address.
+ * param handle pointer to lpspi_slave_handle_t structure which stores the transfer state.
+ */
 void LPSPI_SlaveTransferAbort(LPSPI_Type *base, lpspi_slave_handle_t *handle)
 {
     assert(handle);
@@ -1420,6 +1679,14 @@ void LPSPI_SlaveTransferAbort(LPSPI_Type *base, lpspi_slave_handle_t *handle)
     handle->rxRemainingByteCount = 0;
 }
 
+/*!
+ * brief LPSPI Slave IRQ handler function.
+ *
+ * This function processes the LPSPI transmit and receives an IRQ.
+ *
+ * param base LPSPI peripheral address.
+ * param handle pointer to lpspi_slave_handle_t structure which stores the transfer state.
+ */
 void LPSPI_SlaveTransferHandleIRQ(LPSPI_Type *base, lpspi_slave_handle_t *handle)
 {
     assert(handle);

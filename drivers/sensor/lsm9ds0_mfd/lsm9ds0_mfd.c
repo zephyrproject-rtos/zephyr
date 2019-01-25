@@ -73,7 +73,7 @@ static int lsm9ds0_mfd_accel_set_odr(struct device *dev,
 {
 	u8_t i;
 
-	for (i = 0; i < ARRAY_SIZE(lsm9ds0_mfd_accel_odr_map); ++i) {
+	for (i = 0U; i < ARRAY_SIZE(lsm9ds0_mfd_accel_odr_map); ++i) {
 		if (val->val1 < lsm9ds0_mfd_accel_odr_map[i].freq_int ||
 		    (val->val1 == lsm9ds0_mfd_accel_odr_map[i].freq_int &&
 		     val->val2 <= lsm9ds0_mfd_accel_odr_map[i].freq_micro)) {
@@ -118,7 +118,7 @@ static int lsm9ds0_mfd_accel_set_fs(struct device *dev, int val)
 {
 	u8_t i;
 
-	for (i = 0; i < ARRAY_SIZE(lsm9ds0_mfd_accel_fs_map); ++i) {
+	for (i = 0U; i < ARRAY_SIZE(lsm9ds0_mfd_accel_fs_map); ++i) {
 		if (val <= lsm9ds0_mfd_accel_fs_map[i].fs) {
 			return lsm9ds0_mfd_accel_set_fs_raw(dev, i);
 		}
@@ -158,7 +158,7 @@ static int lsm9ds0_mfd_magn_set_odr(struct device *dev,
 {
 	u8_t i;
 
-	for (i = 0; i < ARRAY_SIZE(lsm9ds0_mfd_accel_odr_map); ++i) {
+	for (i = 0U; i < ARRAY_SIZE(lsm9ds0_mfd_accel_odr_map); ++i) {
 		if (val->val1 < lsm9ds0_mfd_accel_odr_map[i].freq_int ||
 		    (val->val1 == lsm9ds0_mfd_accel_odr_map[i].freq_int &&
 		     val->val2 <= lsm9ds0_mfd_accel_odr_map[i].freq_micro)) {
@@ -203,7 +203,7 @@ static int lsm9ds0_mfd_magn_set_fs(struct device *dev,
 {
 	u8_t i;
 
-	for (i = 0; i < ARRAY_SIZE(lsm9ds0_mfd_magn_fs_map); ++i) {
+	for (i = 0U; i < ARRAY_SIZE(lsm9ds0_mfd_magn_fs_map); ++i) {
 		if (val->val1 <= lsm9ds0_mfd_magn_fs_map[i].fs) {
 			return lsm9ds0_mfd_magn_set_fs_raw(dev, i);
 		}
@@ -404,16 +404,16 @@ static inline int lsm9ds0_mfd_get_accel_channel(enum sensor_channel chan,
 						float scale)
 {
 	switch (chan) {
-	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_ACCEL_X:
 		lsm9ds0_mfd_convert_accel(val, data->sample_accel_x, scale);
 		break;
-	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_ACCEL_Y:
 		lsm9ds0_mfd_convert_accel(val, data->sample_accel_y, scale);
 		break;
-	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_ACCEL_Z:
 		lsm9ds0_mfd_convert_accel(val, data->sample_accel_z, scale);
 		break;
-	case SENSOR_CHAN_GYRO_XYZ:
+	case SENSOR_CHAN_ACCEL_XYZ:
 		lsm9ds0_mfd_convert_accel(val, data->sample_accel_x, scale);
 		lsm9ds0_mfd_convert_accel(val + 1, data->sample_accel_y, scale);
 		lsm9ds0_mfd_convert_accel(val + 2, data->sample_accel_z, scale);
@@ -490,16 +490,16 @@ static inline int lsm9ds0_mfd_get_magn_channel(enum sensor_channel chan,
 					       float scale)
 {
 	switch (chan) {
-	case SENSOR_CHAN_GYRO_X:
+	case SENSOR_CHAN_MAGN_X:
 		lsm9ds0_mfd_convert_magn(val, data->sample_magn_x, scale);
 		break;
-	case SENSOR_CHAN_GYRO_Y:
+	case SENSOR_CHAN_MAGN_Y:
 		lsm9ds0_mfd_convert_magn(val, data->sample_magn_y, scale);
 		break;
-	case SENSOR_CHAN_GYRO_Z:
+	case SENSOR_CHAN_MAGN_Z:
 		lsm9ds0_mfd_convert_magn(val, data->sample_magn_z, scale);
 		break;
-	case SENSOR_CHAN_GYRO_XYZ:
+	case SENSOR_CHAN_MAGN_XYZ:
 		lsm9ds0_mfd_convert_magn(val, data->sample_magn_x, scale);
 		lsm9ds0_mfd_convert_magn(val + 1, data->sample_magn_y, scale);
 		lsm9ds0_mfd_convert_magn(val + 2, data->sample_magn_z, scale);
@@ -788,12 +788,12 @@ int lsm9ds0_mfd_init(struct device *dev)
 }
 
 static const struct lsm9ds0_mfd_config lsm9ds0_mfd_config = {
-	.i2c_master_dev_name = CONFIG_LSM9DS0_MFD_I2C_MASTER_DEV_NAME,
-	.i2c_slave_addr = LSM9DS0_MFD_I2C_ADDR,
+	.i2c_master_dev_name = DT_LSM9DS0_MFD_I2C_MASTER_DEV_NAME,
+	.i2c_slave_addr = DT_LSM9DS0_MFD_I2C_ADDRESS,
 };
 
 static struct lsm9ds0_mfd_data lsm9ds0_mfd_data;
 
-DEVICE_AND_API_INIT(lsm9ds0_mfd, CONFIG_LSM9DS0_MFD_DEV_NAME, lsm9ds0_mfd_init,
+DEVICE_AND_API_INIT(lsm9ds0_mfd, DT_LSM9DS0_MFD_DEV_NAME, lsm9ds0_mfd_init,
 		    &lsm9ds0_mfd_data, &lsm9ds0_mfd_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lsm9ds0_mfd_api_funcs);

@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efm32wg_aes.h
  * @brief EFM32WG_AES register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,6 +29,13 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
@@ -38,27 +45,26 @@
  * @{
  * @brief EFM32WG_AES Register Declaration
  *****************************************************************************/
-typedef struct
-{
-  __IOM uint32_t CTRL;         /**< Control Register  */
-  __IOM uint32_t CMD;          /**< Command Register  */
-  __IM uint32_t  STATUS;       /**< Status Register  */
-  __IOM uint32_t IEN;          /**< Interrupt Enable Register  */
-  __IM uint32_t  IF;           /**< Interrupt Flag Register  */
-  __IOM uint32_t IFS;          /**< Interrupt Flag Set Register  */
-  __IOM uint32_t IFC;          /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t DATA;         /**< DATA Register  */
-  __IOM uint32_t XORDATA;      /**< XORDATA Register  */
-  uint32_t       RESERVED0[3]; /**< Reserved for future use **/
-  __IOM uint32_t KEYLA;        /**< KEY Low Register  */
-  __IOM uint32_t KEYLB;        /**< KEY Low Register  */
-  __IOM uint32_t KEYLC;        /**< KEY Low Register  */
-  __IOM uint32_t KEYLD;        /**< KEY Low Register  */
-  __IOM uint32_t KEYHA;        /**< KEY High Register  */
-  __IOM uint32_t KEYHB;        /**< KEY High Register  */
-  __IOM uint32_t KEYHC;        /**< KEY High Register  */
-  __IOM uint32_t KEYHD;        /**< KEY High Register  */
-} AES_TypeDef;                 /** @} */
+typedef struct {
+  __IOM uint32_t CTRL;          /**< Control Register  */
+  __IOM uint32_t CMD;           /**< Command Register  */
+  __IM uint32_t  STATUS;        /**< Status Register  */
+  __IOM uint32_t IEN;           /**< Interrupt Enable Register  */
+  __IM uint32_t  IF;            /**< Interrupt Flag Register  */
+  __IOM uint32_t IFS;           /**< Interrupt Flag Set Register  */
+  __IOM uint32_t IFC;           /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t DATA;          /**< DATA Register  */
+  __IOM uint32_t XORDATA;       /**< XORDATA Register  */
+  uint32_t       RESERVED0[3U]; /**< Reserved for future use **/
+  __IOM uint32_t KEYLA;         /**< KEY Low Register  */
+  __IOM uint32_t KEYLB;         /**< KEY Low Register  */
+  __IOM uint32_t KEYLC;         /**< KEY Low Register  */
+  __IOM uint32_t KEYLD;         /**< KEY Low Register  */
+  __IOM uint32_t KEYHA;         /**< KEY High Register  */
+  __IOM uint32_t KEYHB;         /**< KEY High Register  */
+  __IOM uint32_t KEYHC;         /**< KEY High Register  */
+  __IOM uint32_t KEYHD;         /**< KEY High Register  */
+} AES_TypeDef;                  /**< AES Register Declaration *//** @} */
 
 /**************************************************************************//**
  * @defgroup EFM32WG_AES_BitFields
@@ -240,4 +246,3 @@ typedef struct
 
 /** @} End of group EFM32WG_AES */
 /** @} End of group Parts */
-

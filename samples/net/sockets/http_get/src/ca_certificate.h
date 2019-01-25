@@ -14,8 +14,12 @@
  */
 
 /* GlobalSign Root CA - R2 for https://google.com */
+#if defined(CONFIG_TLS_CREDENTIAL_FILENAMES)
+static const unsigned char ca_certificate[] = "globalsign_r2.der";
+#else
 static const unsigned char ca_certificate[] = {
 #include "globalsign_r2.der.inc"
 };
+#endif
 
 #endif /* __CA_CERTIFICATE_H__ */

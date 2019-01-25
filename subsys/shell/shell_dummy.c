@@ -8,7 +8,7 @@
 #include <init.h>
 
 SHELL_DUMMY_DEFINE(shell_transport_dummy);
-SHELL_DEFINE(dummy_shell, "~$ ", &shell_transport_dummy, 10,
+SHELL_DEFINE(shell_dummy, "~$ ", &shell_transport_dummy, 1, 0,
 	     SHELL_FLAG_OLF_CRLF);
 
 static int init(const struct shell_transport *transport,
@@ -90,12 +90,12 @@ const struct shell_transport_api shell_dummy_transport_api = {
 static int enable_shell_dummy(struct device *arg)
 {
 	ARG_UNUSED(arg);
-	shell_init(&dummy_shell, NULL, true, true, LOG_LEVEL_INF);
+	shell_init(&shell_dummy, NULL, true, true, LOG_LEVEL_INF);
 	return 0;
 }
 SYS_INIT(enable_shell_dummy, POST_KERNEL, 0);
 
 const struct shell *shell_backend_dummy_get_ptr(void)
 {
-	return &dummy_shell;
+	return &shell_dummy;
 }

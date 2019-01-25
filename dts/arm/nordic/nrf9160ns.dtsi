@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2018 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/gpio/gpio.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m33f";
+			reg = <0>;
+		};
+	};
+
+	sram0: memory@20000000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+	};
+
+	aliases {
+		flash-controller = &flash_controller;
+		rtc-0 = &rtc0;
+		rtc-1 = &rtc1;
+		clock = &clock;
+		power = &power;
+		nvmc = &flash_controller;
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+		uart-2 = &uart2;
+		uart-3 = &uart3;
+		adc-0 = &adc;
+		gpio-0 = &gpio0;
+		gpiote-0 = &gpiote; /* FIXME alias should be gpiote-1 */
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+		i2c-2 = &i2c2;
+		i2c-3 = &i2c3;
+		spi-0 = &spi0;
+		spi-1 = &spi1;
+		spi-2 = &spi2;
+		spi-3 = &spi3;
+		pwm-0 = &pwm0;
+		pwm-1 = &pwm1;
+		pwm-2 = &pwm2;
+		pwm-3 = &pwm3;
+		wdt-0 = &wdt;
+		timer-0 = &timer0;
+		timer-1 = &timer1;
+		timer-2 = &timer2;
+	};
+
+	soc {
+		peripheral@40000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x40000000 0x10000000>;
+
+			/* Include common nRF9160 peripheral description */
+			#include "nrf9160_common.dtsi"
+		};
+
+		/* Addditional Non-Secure peripherals */
+		gpiote: gpiote@40031000 {
+			compatible = "nordic,nrf-gpiote";
+			reg = <0x40031000 0x1000>;
+			interrupts = <49 5>;
+			status = "disabled";
+			label = "GPIOTE_1";
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};

@@ -22,21 +22,18 @@ int test_export_block;
 
 int c2_var_count = 1;
 
-char *c1_handle_get(int argc, char **argv, char *val, int val_len_max);
-int c1_handle_set(int argc, char **argv, char *val);
+int c1_handle_get(int argc, char **argv, char *val, int val_len_max);
+int c1_handle_set(int argc, char **argv, void *value_ctx);
 int c1_handle_commit(void);
-int c1_handle_export(int (*cb)(const char *name, char *value),
-			enum settings_export_tgt tgt);
+int c1_handle_export(int (*cb)(const char *name, void *value, size_t val_len));
 
-char *c2_handle_get(int argc, char **argv, char *val, int val_len_max);
-int c2_handle_set(int argc, char **argv, char *val);
-int c2_handle_export(int (*cb)(const char *name, char *value),
-		     enum settings_export_tgt tgt);
+int c2_handle_get(int argc, char **argv, char *val, int val_len_max);
+int c2_handle_set(int argc, char **argv, void *value_ctx);
+int c2_handle_export(int (*cb)(const char *name, void *value, size_t val_len));
 
-char *c3_handle_get(int argc, char **argv, char *val, int val_len_max);
-int c3_handle_set(int argc, char **argv, char *val);
-int c3_handle_export(int (*cb)(const char *name, char *value),
-		     enum settings_export_tgt tgt);
+int c3_handle_get(int argc, char **argv, char *val, int val_len_max);
+int c3_handle_set(int argc, char **argv, void *value_ctx);
+int c3_handle_export(int (*cb)(const char *name,  void *value, size_t val_len));
 
 struct settings_handler c_test_handlers[] = {
 	{
@@ -65,41 +62,39 @@ struct settings_handler c_test_handlers[] = {
 char val_string[SETTINGS_TEST_FCB_VAL_STR_CNT][SETTINGS_MAX_VAL_LEN];
 char test_ref_value[SETTINGS_TEST_FCB_VAL_STR_CNT][SETTINGS_MAX_VAL_LEN];
 
-char *c1_handle_get(int argc, char **argv, char *val, int val_len_max)
+int c1_handle_get(int argc, char **argv, char *val, int val_len_max)
 {
 	test_get_called = 1;
 
 	if (argc == 1 && !strcmp(argv[0], "mybar")) {
-		return settings_str_from_value(SETTINGS_INT8, &val8, val,
-					       val_len_max);
+		val_len_max = min(val_len_max, sizeof(val8));
+		memcpy(val, &val8, min(val_len_max, sizeof(val8)));
+		return val_len_max;
 	}
 
 	if (argc == 1 && !strcmp(argv[0], "mybar64")) {
-		return settings_str_from_value(SETTINGS_INT64, &val64, val,
-					       val_len_max);
+		val_len_max = min(val_len_max, sizeof(val64));
+		memcpy(val, &val64, min(val_len_max, sizeof(val64)));
+		return val_len_max;
 	}
 
-	return NULL;
+	return -ENOENT;
 }
 
-int c1_handle_set(int argc, char **argv, char *val)
+int c1_handle_set(int argc, char **argv, void *value_ctx)
 {
-	u8_t newval;
-	u64_t newval64;
 	int rc;
 
 	test_set_called = 1;
 	if (argc == 1 && !strcmp(argv[0], "mybar")) {
-		rc = SETTINGS_VALUE_SET(val, SETTINGS_INT8, newval);
-		zassert_true(rc == 0, "SETTINGS_VALUE_SET callback");
-		val8 = newval;
+		rc = settings_val_read_cb(value_ctx, &val8, sizeof(val8));
+		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
 	if (argc == 1 && !strcmp(argv[0], "mybar64"))	 {
-		rc = SETTINGS_VALUE_SET(val, SETTINGS_INT64, newval64);
-		zassert_true(rc == 0, "SETTINGS_VALUE_SET callback");
-		val64 = newval64;
+		rc = settings_val_read_cb(value_ctx, &val64, sizeof(val64));
+		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
@@ -112,20 +107,15 @@ int c1_handle_commit(void)
 	return 0;
 }
 
-int c1_handle_export(int (*cb)(const char *name, char *value),
-			enum settings_export_tgt tgt)
+int c1_handle_export(int (*cb)(const char *name, void *value, size_t val_len))
 {
-	char value[32];
-
 	if (test_export_block) {
 		return 0;
 	}
 
-	settings_str_from_value(SETTINGS_INT8, &val8, value, sizeof(value));
-	(void)cb("myfoo/mybar", value);
+	(void)cb("myfoo/mybar", &val8, sizeof(val8));
 
-	settings_str_from_value(SETTINGS_INT64, &val64, value, sizeof(value));
-	(void)cb("myfoo/mybar64", value);
+	(void)cb("myfoo/mybar64", &val64, sizeof(val64));
 
 	return 0;
 }
@@ -214,30 +204,9 @@ char *c2_var_find(char *name)
 	return val_string[idx];
 }
 
-char *c2_handle_get(int argc, char **argv, char *val, int val_len_max)
+int c2_handle_get(int argc, char **argv, char *val, int val_len_max)
 {
 	int len;
-	char *valptr;
-
-	if (argc == 1) {
-		valptr = c2_var_find(argv[0]);
-		if (!valptr) {
-			return NULL;
-		}
-
-		len = strlen(val_string[0]);
-		if (len > val_len_max) {
-			len = val_len_max;
-		}
-
-		strncpy(val, valptr, len);
-	}
-
-	return NULL;
-}
-
-int c2_handle_set(int argc, char **argv, char *val)
-{
 	char *valptr;
 
 	if (argc == 1) {
@@ -246,11 +215,36 @@ int c2_handle_set(int argc, char **argv, char *val)
 			return -ENOENT;
 		}
 
-		if (val) {
-			strncpy(valptr, val, sizeof(val_string[0]));
-		} else {
-			(void)memset(valptr, 0, sizeof(val_string[0]));
+		len = strlen(val_string[0]);
+		if (len > val_len_max) {
+			len = val_len_max;
 		}
+
+		len = min(strlen(valptr), len);
+		memcpy(val, valptr, len);
+		return len;
+	}
+
+	return -ENOENT;
+}
+
+int c2_handle_set(int argc, char **argv, void *value_ctx)
+{
+	char *valptr;
+	int rc;
+
+	if (argc == 1) {
+		valptr = c2_var_find(argv[0]);
+		if (!valptr) {
+			return -ENOENT;
+		}
+
+			rc = settings_val_read_cb(value_ctx, valptr,
+						  sizeof(val_string[0]));
+			zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+			if (rc == 0) {
+				(void)memset(valptr, 0, sizeof(val_string[0]));
+			}
 
 		return 0;
 	}
@@ -258,61 +252,59 @@ int c2_handle_set(int argc, char **argv, char *val)
 	return -ENOENT;
 }
 
-int c2_handle_export(int (*cb)(const char *name, char *value),
-		     enum settings_export_tgt tgt)
+int c2_handle_export(int (*cb)(const char *name, void *value, size_t val_len))
 {
 	int i;
 	char name[32];
 
 	for (i = 0; i < c2_var_count; i++) {
 		snprintf(name, sizeof(name), "2nd/string%d", i);
-		(void)cb(name, val_string[i]);
+		(void)cb(name, val_string[i], strlen(val_string[i]));
 	}
 
 	return 0;
 }
 
-char *c3_handle_get(int argc, char **argv, char *val, int val_len_max)
+int c3_handle_get(int argc, char **argv, char *val, int val_len_max)
 {
 	if (argc == 1 && !strcmp(argv[0], "v")) {
-		return settings_str_from_value(SETTINGS_INT32, &val32, val,
-					       val_len_max);
+		val_len_max = min(val_len_max, sizeof(val32));
+		memcpy(val, &val32, min(val_len_max, sizeof(val32)));
+		return val_len_max;
 	}
-
-	return NULL;
+	return -EINVAL;
 }
 
-int c3_handle_set(int argc, char **argv, char *val)
+int c3_handle_set(int argc, char **argv, void *value_ctx)
 {
-	u32_t newval;
 	int rc;
+	size_t val_len;
 
 	if (argc == 1 && !strcmp(argv[0], "v")) {
-		rc = SETTINGS_VALUE_SET(val, SETTINGS_INT32, newval);
-		zassert_true(rc == 0, "SETTINGS_VALUE_SET callback");
-		val32 = newval;
+		val_len = settings_val_get_len_cb(value_ctx);
+		zassert_true(val_len == 4, "bad set-value size");
+
+		rc = settings_val_read_cb(value_ctx, &val32, sizeof(val32));
+		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
 	return -ENOENT;
 }
 
-int c3_handle_export(int (*cb)(const char *name, char *value),
-		     enum settings_export_tgt tgt)
+int c3_handle_export(int (*cb)(const char *name, void *value, size_t val_len))
 {
-	char value[32];
+	(void)cb("3/v", &val32, sizeof(val32));
 
-	settings_str_from_value(SETTINGS_INT32, &val32, value, sizeof(value));
-	(void)cb("3/v", value);
 
 	return 0;
 }
 
+void test_settings_encode(void);
 void config_empty_lookups(void);
 void test_config_insert(void);
 void test_config_getset_unknown(void);
 void test_config_getset_int(void);
-void test_config_getset_bytes(void);
 void test_config_getset_int64(void);
 void test_config_commit(void);
 
@@ -325,16 +317,22 @@ void test_config_save_3_fcb(void);
 void test_config_compress_reset(void);
 void test_config_save_one_fcb(void);
 void test_config_compress_deleted(void);
+void test_setting_raw_read(void);
+void test_setting_val_read(void);
 
 void test_main(void)
 {
 	ztest_test_suite(test_config_fcb,
+#ifdef CONFIG_SETTINGS_USE_BASE64
+			 ztest_unit_test(test_settings_encode),
+			 ztest_unit_test(test_setting_raw_read),
+			 ztest_unit_test(test_setting_val_read),
+#endif
 			 /* Config tests */
 			 ztest_unit_test(config_empty_lookups),
 			 ztest_unit_test(test_config_insert),
 			 ztest_unit_test(test_config_getset_unknown),
 			 ztest_unit_test(test_config_getset_int),
-			 ztest_unit_test(test_config_getset_bytes),
 			 ztest_unit_test(test_config_getset_int64),
 			 ztest_unit_test(test_config_commit),
 			 /* FCB as backing storage*/

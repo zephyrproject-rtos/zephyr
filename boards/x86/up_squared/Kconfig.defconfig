@@ -5,18 +5,18 @@ config BOARD
 	default "up_squared"
 
 config BUILD_OUTPUT_STRIPPED
-	def_bool y
+	default y
 
 if I2C
 
 config I2C_DW
-	def_bool y
+	default y
 
 config I2C_0
-	def_bool y
+	default y
 
 config I2C_1
-	def_bool y
+	default y
 
 endif # I2C
 

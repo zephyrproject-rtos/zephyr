@@ -19,12 +19,12 @@ static int uart_ns16550_init(struct device *dev)
 	 * send the UART the command to clear the interrupt
 	 */
 #ifdef CONFIG_UART_NS16550_PORT_0
-	sys_write32(0, CONFIG_UART_NS16550_PORT_0_BASE_ADDR+0x4);
-	sys_write32(0, CONFIG_UART_NS16550_PORT_0_BASE_ADDR+0x10);
+	sys_write32(0, DT_UART_NS16550_PORT_0_BASE_ADDR+0x4);
+	sys_write32(0, DT_UART_NS16550_PORT_0_BASE_ADDR+0x10);
 #endif /* CONFIG_UART_NS16550_PORT_0 */
 #ifdef CONFIG_UART_NS16550_PORT_1
-	sys_write32(0, CONFIG_UART_NS16550_PORT_1_BASE_ADDR+0x4);
-	sys_write32(0, CONFIG_UART_NS16550_PORT_1_BASE_ADDR+0x10);
+	sys_write32(0, DT_UART_NS16550_PORT_1_BASE_ADDR+0x4);
+	sys_write32(0, DT_UART_NS16550_PORT_1_BASE_ADDR+0x10);
 #endif /* CONFIG_UART_NS16550_PORT_1 */
 
 	return 0;

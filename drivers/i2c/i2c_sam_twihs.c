@@ -72,7 +72,7 @@ struct i2c_sam_twihs_dev_data {
 
 static int i2c_clk_set(Twihs *const twihs, u32_t speed)
 {
-	u32_t ck_div = 0;
+	u32_t ck_div = 0U;
 	u32_t cl_div;
 	bool div_completed = false;
 
@@ -199,8 +199,8 @@ static int i2c_sam_twihs_transfer(struct device *dev, struct i2c_msg *msgs,
 	for (int i = 0; i < num_msgs; i++) {
 		dev_data->msg.buf = msgs[i].buf;
 		dev_data->msg.len = msgs[i].len;
-		dev_data->msg.idx = 0;
-		dev_data->msg.twihs_sr = 0;
+		dev_data->msg.idx = 0U;
+		dev_data->msg.twihs_sr = 0U;
 		dev_data->msg.flags = msgs[i].flags;
 		if ((msgs[i].flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 			read_msg_start(twihs, &dev_data->msg, addr);
@@ -330,20 +330,20 @@ static struct device DEVICE_NAME_GET(i2c0_sam);
 
 static void i2c0_sam_irq_config(void)
 {
-	IRQ_CONNECT(CONFIG_I2C_0_IRQ, CONFIG_I2C_0_IRQ_PRI, i2c_sam_twihs_isr,
+	IRQ_CONNECT(DT_I2C_0_IRQ, DT_I2C_0_IRQ_PRI, i2c_sam_twihs_isr,
 		    DEVICE_GET(i2c0_sam), 0);
 }
 
 static const struct soc_gpio_pin pins_twihs0[] = PINS_TWIHS0;
 
 static const struct i2c_sam_twihs_dev_cfg i2c0_sam_config = {
-	.regs = (Twihs *)CONFIG_I2C_0_BASE_ADDRESS,
+	.regs = (Twihs *)DT_I2C_0_BASE_ADDRESS,
 	.irq_config = i2c0_sam_irq_config,
-	.periph_id = CONFIG_I2C_0_PERIPHERAL_ID,
-	.irq_id = CONFIG_I2C_0_IRQ,
+	.periph_id = DT_I2C_0_PERIPHERAL_ID,
+	.irq_id = DT_I2C_0_IRQ,
 	.pin_list = pins_twihs0,
 	.pin_list_size = ARRAY_SIZE(pins_twihs0),
-	.bitrate = CONFIG_I2C_0_BITRATE,
+	.bitrate = DT_I2C_0_BITRATE,
 };
 
 static struct i2c_sam_twihs_dev_data i2c0_sam_data;
@@ -360,20 +360,20 @@ static struct device DEVICE_NAME_GET(i2c1_sam);
 
 static void i2c1_sam_irq_config(void)
 {
-	IRQ_CONNECT(CONFIG_I2C_1_IRQ, CONFIG_I2C_1_IRQ_PRI, i2c_sam_twihs_isr,
+	IRQ_CONNECT(DT_I2C_1_IRQ, DT_I2C_1_IRQ_PRI, i2c_sam_twihs_isr,
 		    DEVICE_GET(i2c1_sam), 0);
 }
 
 static const struct soc_gpio_pin pins_twihs1[] = PINS_TWIHS1;
 
 static const struct i2c_sam_twihs_dev_cfg i2c1_sam_config = {
-	.regs = (Twihs *)CONFIG_I2C_1_BASE_ADDRESS,
+	.regs = (Twihs *)DT_I2C_1_BASE_ADDRESS,
 	.irq_config = i2c1_sam_irq_config,
-	.periph_id = CONFIG_I2C_1_PERIPHERAL_ID,
-	.irq_id = CONFIG_I2C_1_IRQ,
+	.periph_id = DT_I2C_1_PERIPHERAL_ID,
+	.irq_id = DT_I2C_1_IRQ,
 	.pin_list = pins_twihs1,
 	.pin_list_size = ARRAY_SIZE(pins_twihs1),
-	.bitrate = CONFIG_I2C_1_BITRATE,
+	.bitrate = DT_I2C_1_BITRATE,
 };
 
 static struct i2c_sam_twihs_dev_data i2c1_sam_data;
@@ -390,20 +390,20 @@ static struct device DEVICE_NAME_GET(i2c2_sam);
 
 static void i2c2_sam_irq_config(void)
 {
-	IRQ_CONNECT(CONFIG_I2C_2_IRQ, CONFIG_I2C_2_IRQ_PRI, i2c_sam_twihs_isr,
+	IRQ_CONNECT(DT_I2C_2_IRQ, DT_I2C_2_IRQ_PRI, i2c_sam_twihs_isr,
 		    DEVICE_GET(i2c2_sam), 0);
 }
 
 static const struct soc_gpio_pin pins_twihs2[] = PINS_TWIHS2;
 
 static const struct i2c_sam_twihs_dev_cfg i2c2_sam_config = {
-	.regs = (Twihs *)CONFIG_I2C_2_BASE_ADDRESS,
+	.regs = (Twihs *)DT_I2C_2_BASE_ADDRESS,
 	.irq_config = i2c2_sam_irq_config,
-	.periph_id = CONFIG_I2C_2_PERIPHERAL_ID,
-	.irq_id = CONFIG_I2C_2_IRQ,
+	.periph_id = DT_I2C_2_PERIPHERAL_ID,
+	.irq_id = DT_I2C_2_IRQ,
 	.pin_list = pins_twihs2,
 	.pin_list_size = ARRAY_SIZE(pins_twihs2),
-	.bitrate = CONFIG_I2C_2_BITRATE,
+	.bitrate = DT_I2C_2_BITRATE,
 };
 
 static struct i2c_sam_twihs_dev_data i2c2_sam_data;

@@ -15,7 +15,7 @@
 				gpio-controller;
 				#gpio-cells = <2>;
 				reg = <0x48001000 0x400>;
-				clocks = <&rcc STM32_CLOCK_BUS_AHB2 0x00200000>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00200000>;
 				label = "GPIOE";
 			};
 		};
@@ -54,6 +54,7 @@
 			interrupt-names = "usb";
 			num-bidir-endpoints = <8>;
 			ram-size = <1024>;
+			phys = <&usb_fs_phy>;
 			status = "disabled";
 			label= "USB";
 		};
@@ -72,5 +73,11 @@
 			prop_seg_phase_seg1 = <5>;
 			phase_seg2 = <6>;
 		};
+	};
+
+	usb_fs_phy: usbphy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
+		label = "USB_FS_PHY";
 	};
 };

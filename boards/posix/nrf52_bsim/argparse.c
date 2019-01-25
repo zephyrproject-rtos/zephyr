@@ -6,15 +6,19 @@
 #include <stdbool.h>
 #include <stdlib.h>
 #include <limits.h>
+#include "soc.h"
 #include "bs_tracing.h"
 #include "bs_oswrap.h"
 #include "bs_dump_files.h"
 #include "argparse.h"
 #include "bstests.h"
 #include "NRF_hw_args.h"
+#include "bs_cmd_line.h"
+#include "bs_dynargs.h"
 #include "bs_cmd_line_typical.h"
 #include "NRF_HWLowL.h"
 
+static bs_args_struct_t *args_struct;
 char executable_name[] = "bs_nrf52_bsim_..";
 
 void component_print_post_help(void)
@@ -23,18 +27,18 @@ void component_print_post_help(void)
 			"NRF52 HW\n\n");
 }
 
-static struct NRF_bsim_args_t *args_g;
+static struct NRF_bsim_args_t arg;
 static char *testid;
 const char *bogus_sim_id = "bogus";
 
 static void cmd_trace_lvl_found(char *argv, int offset)
 {
-	bs_trace_set_level(args_g->verb);
+	bs_trace_set_level(arg.verb);
 }
 
 static void cmd_gdev_nbr_found(char *argv, int offset)
 {
-	bs_trace_set_prefix_dev(args_g->global_device_nbr);
+	bs_trace_set_prefix_dev(arg.global_device_nbr);
 }
 
 static void cmd_testid_found(char *argv, int offset)
@@ -48,6 +52,7 @@ static void cmd_testlist_found(char *argv, int offset)
 	exit(0);
 }
 
+static bool nosim;
 static void cmd_nosim_found(char *argv, int offset)
 {
 	hwll_set_nosim(true);
@@ -77,16 +82,13 @@ static void print_no_sim_warning(void)
 			"and nosim\n");
 }
 
-/**
- * Check the arguments provided in the command line: set args based on it or
- * defaults, and check they are correct
- */
-void nrfbsim_argsparse(int argc, char *argv[], struct NRF_bsim_args_t *args)
+void nrfbsim_register_args(void)
 {
-	bool nosim;
-
-	args_g = args;
-	bs_args_struct_t args_struct[] = {
+#define args (&arg)
+	/* This define is quite ugly, but allows reusing the definitions
+	 * provided by the utils library
+	 */
+	static bs_args_struct_t args_struct_toadd[] = {
 		ARG_TABLE_S_ID,
 		ARG_TABLE_P_ID_2G4,
 		ARG_TABLE_DEV_NBR,
@@ -129,13 +131,29 @@ void nrfbsim_argsparse(int argc, char *argv[], struct NRF_bsim_args_t *args)
 		"The arguments that follow will be passed to main (default)"},
 		ARG_TABLE_ENDMARKER
 	};
+#undef args
 
+	bs_add_dynargs(&args_struct, args_struct_toadd);
+}
+
+
+void bs_add_extra_dynargs(bs_args_struct_t *args_struct_toadd)
+{
+	bs_add_dynargs(&args_struct, args_struct_toadd);
+}
+
+/**
+ * Check the arguments provided in the command line: set args based on it or
+ * defaults, and check they are correct
+ */
+struct NRF_bsim_args_t *nrfbsim_argsparse(int argc, char *argv[])
+{
 	bs_args_set_defaults(args_struct);
-	args->verb   = 2;
-	bs_trace_set_level(args->verb);
-	args->test_case_argv[0] = 0;
-	args->test_case_argc = 0;
-	nrf_hw_sub_cmline_set_defaults(&args->nrf_hw);
+	arg.verb = 2;
+	bs_trace_set_level(arg.verb);
+	arg.test_case_argv[0] = 0;
+	arg.test_case_argc = 0;
+	nrf_hw_sub_cmline_set_defaults(&arg.nrf_hw);
 	static const char default_phy[] = "2G4";
 
 	enum {Main = 0, Test = 1} parsing = Main;
@@ -156,26 +174,57 @@ void nrfbsim_argsparse(int argc, char *argv[], struct NRF_bsim_args_t *args)
 						    argv[i]);
 			}
 		} else if (parsing == Test) {
-			save_test_arg(args, argv[i]);
+			save_test_arg(&arg, argv[i]);
 		} else {
 			bs_trace_error_line("Bad error\n");
 		}
 	}
-
-	if ((args->s_id == NULL) && (args->device_nbr == UINT_MAX)) {
-		if (!nosim) {
-			print_no_sim_warning();
-		}
-
-		args->s_id = (char *)bogus_sim_id;
-		args->device_nbr = 0;
+	/**
+	 * If the user did not set the simulation id or device number
+	 * we assume he wanted to run with nosim (but warn him)
+	 */
+	if ((!nosim) && (arg.s_id == NULL) && (arg.device_nbr == UINT_MAX)) {
+		print_no_sim_warning();
+		nosim = true;
 		hwll_set_nosim(true);
 	}
-
-	bs_args_typical_dev_post_check((bs_basic_dev_args_t *)args, args_struct,
-					(char *)default_phy);
-
-	if (args->rseed == UINT_MAX) {
-		args->rseed = 0x1000 + args->device_nbr;
+	if (nosim) {
+		if (arg.s_id == NULL) {
+			arg.s_id = (char *)bogus_sim_id;
+		}
+		if (arg.device_nbr == UINT_MAX) {
+			arg.device_nbr = 0;
+		}
 	}
+
+	if (arg.device_nbr == UINT_MAX) {
+		bs_args_print_switches_help(args_struct);
+		bs_trace_error_line("The command line option <device number> "
+				    "needs to be set\n");
+	}
+	if (arg.global_device_nbr == UINT_MAX) {
+		arg.global_device_nbr = arg.device_nbr;
+		bs_trace_set_prefix_dev(arg.global_device_nbr);
+	}
+	if (!arg.s_id) {
+		bs_args_print_switches_help(args_struct);
+		bs_trace_error_line("The command line option <simulation ID> "
+				    "needs to be set\n");
+	}
+	if (!arg.p_id) {
+		arg.p_id = (char *)default_phy;
+	}
+
+	if (arg.rseed == UINT_MAX) {
+		arg.rseed = 0x1000 + arg.device_nbr;
+	}
+	return &arg;
 }
+
+void nrfbsim_cleanup_args(void)
+{
+	bs_cleanup_dynargs(&args_struct);
+}
+
+NATIVE_TASK(nrfbsim_register_args, PRE_BOOT_1, 0);
+NATIVE_TASK(nrfbsim_cleanup_args, ON_EXIT, 10);

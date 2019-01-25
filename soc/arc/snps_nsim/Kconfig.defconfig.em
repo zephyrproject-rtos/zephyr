@@ -28,13 +28,13 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 10000000
 
 config HARVARD
-	def_bool y
+	default y
 
 config ARC_FIRQ
-	def_bool y
+	default y
 
 config CACHE_FLUSHING
-	def_bool y
+	default y
 
 if (ARC_MPU_VER = 2)
 

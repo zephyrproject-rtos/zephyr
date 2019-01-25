@@ -120,12 +120,12 @@ void test_arm_irq_vector_table(void)
  * SysTick. Therefore, a pointer to the timer ISR needs to be added in
  * the custom vector table to handle the timer "tick" interrupts.
  */
-void rtc1_nrf5_isr(void);
+void rtc1_nrf_isr(void);
 typedef void (*vth)(void); /* Vector Table Handler */
 vth __irq_vector_table _irq_vector_table[RTC1_IRQn + 1] = {
 	isr0, isr1, isr2,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-	rtc1_nrf5_isr
+	rtc1_nrf_isr
 };
 #else
 typedef void (*vth)(void); /* Vector Table Handler */

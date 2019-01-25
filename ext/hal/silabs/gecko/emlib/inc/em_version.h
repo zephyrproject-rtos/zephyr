@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_version.h
  * @brief Assign correct part number for include file
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -52,29 +52,32 @@ extern "C" {
  * @{
  ******************************************************************************/
 
+/* *INDENT-OFF* */
 /** Version number of emlib peripheral API. */
-#define _EMLIB_VERSION 5.1.2
+#define _EMLIB_VERSION 5.6.0
+/* *INDENT-ON* */
 
-/** Major version of emlib. Bumped when incompatible API changes introduced. */
+/** Major version of emlib. Bumped when incompatible API changes are introduced. */
 #define _EMLIB_VERSION_MAJOR 5
 
-/** Minor version of emlib. Bumped when functionality is added in a backwards-
+/** Minor version of emlib. Bumped when functionality is added in a backward-
     compatible manner. */
-#define _EMLIB_VERSION_MINOR 1
+#define _EMLIB_VERSION_MINOR 6
 
-/** Patch revision of emlib. Bumped when adding backwards-compatible bug
+/** Patch revision of emlib. Bumped when adding backward-compatible bug
     fixes.*/
-#define _EMLIB_VERSION_PATCH 2
+#define _EMLIB_VERSION_PATCH 0
 
-
+/* *INDENT-OFF* */
 /** Version number of targeted CMSIS package. */
-#define _CMSIS_VERSION 4.5.0
+#define _CMSIS_VERSION 5.3.0
+/* *INDENT-ON* */
 
 /** Major version of CMSIS. */
-#define _CMSIS_VERSION_MAJOR 4
+#define _CMSIS_VERSION_MAJOR 5
 
 /** Minor version of CMSIS. */
-#define _CMSIS_VERSION_MINOR 5
+#define _CMSIS_VERSION_MINOR 3
 
 /** Patch revision of CMSIS. */
 #define _CMSIS_VERSION_PATCH 0

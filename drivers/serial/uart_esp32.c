@@ -11,14 +11,12 @@
 #include <uart.h>
 #include <errno.h>
 
-static unsigned char esp32_uart_tx(struct device *dev,
+static void esp32_uart_tx(struct device *dev,
 				   unsigned char c)
 {
 	ARG_UNUSED(dev);
 
 	esp32_rom_uart_tx_one_char(c);
-
-	return c;
 }
 
 static int esp32_uart_rx(struct device *dev, unsigned char *p_char)

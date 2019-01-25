@@ -151,6 +151,7 @@ static int entropy_stm32_rng_init(struct device *dev)
 {
 	struct entropy_stm32_rng_dev_data *dev_data;
 	struct entropy_stm32_rng_dev_cfg *dev_cfg;
+	int res;
 
 	__ASSERT_NO_MSG(dev != NULL);
 
@@ -186,8 +187,9 @@ static int entropy_stm32_rng_init(struct device *dev)
 	dev_data->clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	__ASSERT_NO_MSG(dev_data->clock != NULL);
 
-	clock_control_on(dev_data->clock,
+	res = clock_control_on(dev_data->clock,
 		(clock_control_subsys_t *)&dev_cfg->pclken);
+	__ASSERT_NO_MSG(res);
 
 	LL_RNG_Enable(dev_data->rng);
 

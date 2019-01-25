@@ -24,7 +24,7 @@ virtual report
 //  For context mode
 //----------------------------------------------------------
 
-@depends on i&&context@
+@depends on i&&context && !(file in "ext")@
 type T;
 T[] E;
 @@
@@ -40,7 +40,7 @@ T[] E;
 //  For patch mode
 //----------------------------------------------------------
 
-@depends on i&&patch@
+@depends on i&&patch && !(file in "ext")@
 type T;
 T[] E;
 @@
@@ -59,7 +59,7 @@ T[] E;
 //  For org and report mode
 //----------------------------------------------------------
 
-@r depends on (org || report)@
+@r depends on (org || report) && !(file in "ext")@
 type T;
 T[] E;
 position p;

@@ -39,7 +39,7 @@ static int bmg160_anymotion_set(struct device *dev,
 				sensor_trigger_handler_t handler)
 {
 	struct bmg160_device_data *bmg160 = dev->driver_data;
-	u8_t anymotion_en = 0;
+	u8_t anymotion_en = 0U;
 
 	if (handler) {
 		anymotion_en = BMG160_ANY_EN_X |

@@ -34,8 +34,8 @@
 #define ADV_SCAN_UNIT(_ms) ((_ms) * 8 / 5)
 
 /* Window and Interval are equal for continuous scanning */
-#define MESH_SCAN_INTERVAL_MS 10
-#define MESH_SCAN_WINDOW_MS   10
+#define MESH_SCAN_INTERVAL_MS 30
+#define MESH_SCAN_WINDOW_MS   30
 #define MESH_SCAN_INTERVAL    ADV_SCAN_UNIT(MESH_SCAN_INTERVAL_MS)
 #define MESH_SCAN_WINDOW      ADV_SCAN_UNIT(MESH_SCAN_WINDOW_MS)
 
@@ -187,7 +187,7 @@ static void adv_thread(void *p1, void *p2, void *p3)
 
 		/* busy == 0 means this was canceled */
 		if (BT_MESH_ADV(buf)->busy) {
-			BT_MESH_ADV(buf)->busy = 0;
+			BT_MESH_ADV(buf)->busy = 0U;
 			adv_send(buf);
 		}
 
@@ -245,7 +245,7 @@ void bt_mesh_adv_send(struct net_buf *buf, const struct bt_mesh_send_cb *cb,
 
 	BT_MESH_ADV(buf)->cb = cb;
 	BT_MESH_ADV(buf)->cb_data = cb_data;
-	BT_MESH_ADV(buf)->busy = 1;
+	BT_MESH_ADV(buf)->busy = 1U;
 
 	net_buf_put(&adv_queue, net_buf_ref(buf));
 }
@@ -306,6 +306,7 @@ void bt_mesh_adv_init(void)
 	k_thread_create(&adv_thread_data, adv_thread_stack,
 			K_THREAD_STACK_SIZEOF(adv_thread_stack), adv_thread,
 			NULL, NULL, NULL, K_PRIO_COOP(7), 0, K_NO_WAIT);
+	k_thread_name_set(&adv_thread_data, "BT Mesh adv");
 }
 
 int bt_mesh_scan_enable(void)

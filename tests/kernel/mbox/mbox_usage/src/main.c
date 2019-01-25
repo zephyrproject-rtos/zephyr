@@ -7,7 +7,7 @@
 #include <ztest.h>
 #include <kernel.h>
 
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define MAIL_LEN 64
 
 K_MEM_POOL_DEFINE(mpooltx, 8, MAIL_LEN, 1, 4);

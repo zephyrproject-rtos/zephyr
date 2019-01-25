@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.8.2)
+cmake_minimum_required(VERSION 3.13.1)
 if(NOT DEFINED TEST)
   set(TEST min) # Have TEST default to min
 endif()

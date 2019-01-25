@@ -18,46 +18,16 @@
 
 #define WORKQUEUE_THREAD_NAME	"workqueue"
 
-static void work_q_main(void *work_q_ptr, void *p2, void *p3)
-{
-	struct k_work_q *work_q = work_q_ptr;
-
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
-	while (true) {
-		struct k_work *work;
-		k_work_handler_t handler;
-
-		work = k_queue_get(&work_q->queue, K_FOREVER);
-		if (work == NULL) {
-			continue;
-		}
-
-		handler = work->handler;
-
-		/* Reset pending state so it can be resubmitted by handler */
-		if (atomic_test_and_clear_bit(work->flags,
-					      K_WORK_STATE_PENDING)) {
-			handler(work);
-		}
-
-		/* Make sure we don't hog up the CPU if the FIFO never (or
-		 * very rarely) gets empty.
-		 */
-		k_yield();
-	}
-}
+extern void z_work_q_main(void *work_q_ptr, void *p2, void *p3);
 
 void k_work_q_start(struct k_work_q *work_q, k_thread_stack_t *stack,
 		    size_t stack_size, int prio)
 {
 	k_queue_init(&work_q->queue);
-	(void)k_thread_create(&work_q->thread, stack, stack_size, work_q_main,
-			work_q, 0, 0, prio, 0, 0);
+	(void)k_thread_create(&work_q->thread, stack, stack_size, z_work_q_main,
+			work_q, NULL, NULL, prio, 0, 0);
 
 	k_thread_name_set(&work_q->thread, WORKQUEUE_THREAD_NAME);
-	_k_object_init(work_q);
 }
 
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -75,8 +45,6 @@ void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 	k_work_init(&work->work, handler);
 	_init_timeout(&work->timeout, work_timeout);
 	work->work_q = NULL;
-
-	_k_object_init(work);
 }
 
 int k_delayed_work_submit_to_queue(struct k_work_q *work_q,

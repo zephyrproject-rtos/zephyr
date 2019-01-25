@@ -1,10 +1,10 @@
 /**************************************************************************//**
  * @file efr32fg1p_rmu.h
  * @brief EFR32FG1P_RMU register and bit field definitions
- * @version 5.1.2
+ * @version 5.6.0
  ******************************************************************************
- * @section License
- * <b>Copyright 2017 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
  ******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -29,17 +29,24 @@
  * any third party, arising from your use of this Software.
  *
  *****************************************************************************/
+
+#if defined(__ICCARM__)
+#pragma system_include       /* Treat file as system include file. */
+#elif defined(__ARMCC_VERSION) && (__ARMCC_VERSION >= 6010050)
+#pragma clang system_header  /* Treat file as system include file. */
+#endif
+
 /**************************************************************************//**
 * @addtogroup Parts
 * @{
 ******************************************************************************/
 /**************************************************************************//**
- * @defgroup EFR32FG1P_RMU
+ * @defgroup EFR32FG1P_RMU RMU
  * @{
  * @brief EFR32FG1P_RMU Register Declaration
  *****************************************************************************/
-typedef struct
-{
+/** RMU Register Declaration */
+typedef struct {
   __IOM uint32_t CTRL;     /**< Control Register  */
   __IM uint32_t  RSTCAUSE; /**< Reset Cause Register  */
   __IOM uint32_t CMD;      /**< Command Register  */
@@ -48,7 +55,9 @@ typedef struct
 } RMU_TypeDef;             /** @} */
 
 /**************************************************************************//**
- * @defgroup EFR32FG1P_RMU_BitFields
+ * @addtogroup EFR32FG1P_RMU
+ * @{
+ * @defgroup EFR32FG1P_RMU_BitFields  RMU Bit Fields
  * @{
  *****************************************************************************/
 
@@ -111,7 +120,7 @@ typedef struct
 /* Bit fields for RMU RSTCAUSE */
 #define _RMU_RSTCAUSE_RESETVALUE           0x00000000UL                            /**< Default value for RMU_RSTCAUSE */
 #define _RMU_RSTCAUSE_MASK                 0x00010F1DUL                            /**< Mask for RMU_RSTCAUSE */
-#define RMU_RSTCAUSE_PORST                 (0x1UL << 0)                            /**< Power On Reset */
+#define RMU_RSTCAUSE_PORST                 (0x1UL << 0)                            /**< Power on Reset */
 #define _RMU_RSTCAUSE_PORST_SHIFT          0                                       /**< Shift value for RMU_PORST */
 #define _RMU_RSTCAUSE_PORST_MASK           0x1UL                                   /**< Bit mask for RMU_PORST */
 #define _RMU_RSTCAUSE_PORST_DEFAULT        0x00000000UL                            /**< Mode DEFAULT for RMU_RSTCAUSE */
@@ -186,6 +195,6 @@ typedef struct
 #define RMU_LOCK_LOCKKEY_LOCKED            (_RMU_LOCK_LOCKKEY_LOCKED << 0)   /**< Shifted mode LOCKED for RMU_LOCK */
 #define RMU_LOCK_LOCKKEY_UNLOCK            (_RMU_LOCK_LOCKKEY_UNLOCK << 0)   /**< Shifted mode UNLOCK for RMU_LOCK */
 
+/** @} */
 /** @} End of group EFR32FG1P_RMU */
 /** @} End of group Parts */
-

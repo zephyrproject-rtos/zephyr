@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_dbg.c
  * @brief Debug (DBG) Peripheral API
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -32,7 +32,7 @@
 
 #include "em_dbg.h"
 
-#if defined( CoreDebug_DHCSR_C_DEBUGEN_Msk )
+#if defined(CoreDebug_DHCSR_C_DEBUGEN_Msk)
 
 #include "em_assert.h"
 #include "em_cmu.h"
@@ -57,7 +57,8 @@
  **************************   GLOBAL FUNCTIONS   *******************************
  ******************************************************************************/
 
-#if defined( GPIO_ROUTE_SWOPEN ) || defined( GPIO_ROUTEPEN_SWVPEN )
+#if defined(GPIO_ROUTE_SWOPEN) || defined(GPIO_ROUTEPEN_SWVPEN) \
+  || defined(GPIO_TRACEROUTEPEN_SWVPEN)
 /***************************************************************************//**
  * @brief
  *   Enable Serial Wire Output (SWO) pin.
@@ -76,8 +77,8 @@
  * DBG_SWOEnable(1);
  * }
  * @endverbatim
- *   By checking if debugger is attached, some setup leading to higher energy
- *   consumption when debugger is attached, can be avoided when not using
+ *   By checking if the debugger is attached, a setup leading to a higher energy
+ *   consumption when the debugger is attached can be avoided when not using
  *   a debugger.
  *
  *   Another alternative may be to set the debugger tool chain to configure
@@ -87,40 +88,48 @@
  *   in the application.
  *
  * @param[in] location
- *   Pin location used for SWO pin on the application in use.
+ *   A pin location used for SWO pin on the application in use.
  ******************************************************************************/
 void DBG_SWOEnable(unsigned int location)
 {
   int port;
   int pin;
 
-  EFM_ASSERT(location < AFCHANLOC_MAX);
+#if defined(GPIO_SWV_PORT)
 
-#if defined ( AF_DBG_SWO_PORT )
+  port = GPIO_SWV_PORT;
+  pin = GPIO_SWV_PIN;
+
+#else
+  EFM_ASSERT(location < AFCHANLOC_MAX);
+  #if defined (AF_DBG_SWO_PORT)
   port = AF_DBG_SWO_PORT(location);
   pin  = AF_DBG_SWO_PIN(location);
-#elif defined (AF_DBG_SWV_PORT )
+  #elif defined (AF_DBG_SWV_PORT)
   port = AF_DBG_SWV_PORT(location);
   pin  = AF_DBG_SWV_PIN(location);
-#else
-#warning "AF debug port is not defined."
+
+  #else
+  #warning "AF debug port is not defined."
+  #endif
 #endif
 
-  /* Port/pin location not defined for device? */
-  if ((pin < 0) || (port < 0))
-  {
+  /* Port/pin location not defined for the device. */
+  if ((pin < 0) || (port < 0)) {
     EFM_ASSERT(0);
     return;
   }
 
-  /* Ensure auxiliary clock going to the Cortex debug trace module is enabled */
+  /* Ensure that the auxiliary clock going to the Cortex debug trace module is enabled. */
+#if !defined(_SILICON_LABS_32B_SERIES_2)
   CMU_OscillatorEnable(cmuOsc_AUXHFRCO, true, false);
+#endif
 
-  /* Set selected pin location for SWO pin and enable it */
+  /* Set the selected pin location for the SWO pin and enable it. */
   GPIO_DbgLocationSet(location);
   GPIO_DbgSWOEnable(true);
 
-  /* Configure SWO pin for output */
+  /* Configure the SWO pin for output. */
   GPIO_PinModeSet((GPIO_Port_TypeDef)port, pin, gpioModePushPull, 0);
 }
 #endif

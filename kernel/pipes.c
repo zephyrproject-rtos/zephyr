@@ -20,6 +20,7 @@
 #include <init.h>
 #include <syscall_handler.h>
 #include <misc/__assert.h>
+#include <kernel_internal.h>
 
 struct k_pipe_desc {
 	unsigned char *buffer;           /* Position in src/dest buffer */
@@ -150,9 +151,9 @@ int _impl_k_pipe_alloc_init(struct k_pipe *pipe, size_t size)
 	void *buffer;
 	int ret;
 
-	if (size) {
+	if (size != 0) {
 		buffer = z_thread_malloc(size);
-		if (buffer) {
+		if (buffer != NULL) {
 			k_pipe_init(pipe, buffer, size);
 			pipe->flags = K_PIPE_FLAG_ALLOC;
 			ret = 0;
@@ -181,7 +182,7 @@ void k_pipe_cleanup(struct k_pipe *pipe)
 	__ASSERT_NO_MSG(!_waitq_head(&pipe->wait_q.readers));
 	__ASSERT_NO_MSG(!_waitq_head(&pipe->wait_q.writers));
 
-	if (pipe->flags & K_PIPE_FLAG_ALLOC) {
+	if ((pipe->flags & K_PIPE_FLAG_ALLOC) != 0) {
 		k_free(pipe->buffer);
 		pipe->buffer = NULL;
 		pipe->flags &= ~K_PIPE_FLAG_ALLOC;
@@ -415,7 +416,7 @@ static void pipe_thread_ready(struct k_thread *thread)
 	unsigned int  key;
 
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-	if (thread->base.thread_state & _THREAD_DUMMY) {
+	if ((thread->base.thread_state & _THREAD_DUMMY) != 0) {
 		pipe_async_finish((struct k_pipe_async *)thread);
 		return;
 	}

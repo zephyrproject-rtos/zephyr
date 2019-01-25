@@ -45,6 +45,9 @@ extensions = [
     'sphinx.ext.extlinks',
     'sphinx.ext.autodoc',
     'zephyr.application',
+    'zephyr.html_redirects',
+    'only.eager_only',
+    'zephyr.link-roles'
 ]
 
 # Only use SVG converter when it is really needed, e.g. LaTeX.
@@ -67,8 +70,8 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'Zephyr Project'
-copyright = u'2015-2018 Zephyr Project members and individual contributors'
-author = u'many'
+copyright = u'2015-2019 Zephyr Project members and individual contributors'
+author = u'The Zephyr Project'
 
 # The following code tries to extract the information by reading the Makefile,
 # when Sphinx is run directly (e.g. by Read the Docs).
@@ -259,6 +262,13 @@ sourcelink_suffix = '.txt'
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'zephyrdoc'
 
+
+# Custom added feature to allow redirecting old URLs
+#
+# list of tuples (old_url, new_url) for pages to redirect
+# (URLs should be relative to document root, only)
+html_redirect_pages = [('contribute/contribute_guidelines', 'contribute/index'),]
+
 # -- Options for LaTeX output ---------------------------------------------
 
 latex_elements = {
@@ -368,6 +378,7 @@ html_context = {
                  ("1.9.2", "/1.9.0/"),
                 )
 }
+
 
 extlinks = {'jira': ('https://jira.zephyrproject.org/browse/%s', ''),
             'github': ('https://github.com/zephyrproject-rtos/zephyr/issues/%s', '')

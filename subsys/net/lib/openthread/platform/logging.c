@@ -25,7 +25,7 @@ void otPlatLog(otLogLevel aLogLevel, otLogRegion aLogRegion,
 	ARG_UNUSED(aLogRegion);
 
 	char logString[LOG_PARSE_BUFFER_SIZE + 1];
-	u16_t length = 0;
+	u16_t length = 0U;
 
 	/* Parse user string. */
 	va_list paramList;

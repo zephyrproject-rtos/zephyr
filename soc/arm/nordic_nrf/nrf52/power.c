@@ -57,7 +57,7 @@ static void _low_power_mode(enum power_states state)
 }
 
 /* Invoke Low Power/System Off specific Tasks */
-void _sys_soc_set_power_state(enum power_states state)
+void sys_set_power_state(enum power_states state)
 {
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS:
@@ -79,7 +79,7 @@ void _sys_soc_set_power_state(enum power_states state)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void _sys_soc_power_state_post_ops(enum power_states state)
+void sys_power_state_post_ops(enum power_states state)
 {
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS:
@@ -98,7 +98,7 @@ void _sys_soc_power_state_post_ops(enum power_states state)
 	}
 }
 
-bool _sys_soc_is_valid_power_state(enum power_states state)
+bool sys_is_valid_power_state(enum power_states state)
 {
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS:

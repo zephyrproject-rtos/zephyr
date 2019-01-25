@@ -1,47 +1,38 @@
 /*
  * Copyright (c) 2015 - 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_sysmpu.h"
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.sysmpu"
+#endif
 
 /*******************************************************************************
  * Variables
  ******************************************************************************/
 
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
-const clock_ip_name_t g_sysmpuClock[FSL_FEATURE_SOC_SYSMPU_COUNT] = SYSMPU_CLOCKS;
+static const clock_ip_name_t g_sysmpuClock[] = SYSMPU_CLOCKS;
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*******************************************************************************
  * Codes
  ******************************************************************************/
 
+/*!
+ * brief Initializes the SYSMPU with the user configuration structure.
+ *
+ * This function configures the SYSMPU module with the user-defined configuration.
+ *
+ * param base     SYSMPU peripheral base address.
+ * param config   The pointer to the configuration structure.
+ */
 void SYSMPU_Init(SYSMPU_Type *base, const sysmpu_config_t *config)
 {
     assert(config);
@@ -72,6 +63,11 @@ void SYSMPU_Init(SYSMPU_Type *base, const sysmpu_config_t *config)
     SYSMPU_Enable(base, true);
 }
 
+/*!
+ * brief Deinitializes the SYSMPU regions.
+ *
+ * param base     SYSMPU peripheral base address.
+ */
 void SYSMPU_Deinit(SYSMPU_Type *base)
 {
     /* Disable SYSMPU. */
@@ -83,6 +79,12 @@ void SYSMPU_Deinit(SYSMPU_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Gets the SYSMPU basic hardware information.
+ *
+ * param base           SYSMPU peripheral base address.
+ * param hardwareInform The pointer to the SYSMPU hardware information structure. See "sysmpu_hardware_info_t".
+ */
 void SYSMPU_GetHardwareInfo(SYSMPU_Type *base, sysmpu_hardware_info_t *hardwareInform)
 {
     assert(hardwareInform);
@@ -91,9 +93,21 @@ void SYSMPU_GetHardwareInfo(SYSMPU_Type *base, sysmpu_hardware_info_t *hardwareI
 
     hardwareInform->hardwareRevisionLevel = (cesReg & SYSMPU_CESR_HRL_MASK) >> SYSMPU_CESR_HRL_SHIFT;
     hardwareInform->slavePortsNumbers = (cesReg & SYSMPU_CESR_NSP_MASK) >> SYSMPU_CESR_NSP_SHIFT;
-    hardwareInform->regionsNumbers = (sysmpu_region_total_num_t)((cesReg & SYSMPU_CESR_NRGD_MASK) >> SYSMPU_CESR_NRGD_SHIFT);
+    hardwareInform->regionsNumbers =
+        (sysmpu_region_total_num_t)((cesReg & SYSMPU_CESR_NRGD_MASK) >> SYSMPU_CESR_NRGD_SHIFT);
 }
 
+/*!
+ * brief Sets the SYSMPU region.
+ *
+ * Note: Due to the SYSMPU protection, the region number 0 does not allow writes from
+ * core to affect the start and end address nor the permissions associated with
+ * the debugger. It can only write the permission fields associated
+ * with the other masters.
+ *
+ * param base          SYSMPU peripheral base address.
+ * param regionConfig  The pointer to the SYSMPU user configuration structure. See "sysmpu_region_config_t".
+ */
 void SYSMPU_SetRegionConfig(SYSMPU_Type *base, const sysmpu_region_config_t *regionConfig)
 {
     assert(regionConfig);
@@ -115,19 +129,19 @@ void SYSMPU_SetRegionConfig(SYSMPU_Type *base, const sysmpu_region_config_t *reg
                         (uint32_t)regionConfig->accessRights1[msPortNum].userAccessRights));
 
 #if FSL_FEATURE_SYSMPU_HAS_PROCESS_IDENTIFIER
-        wordReg |=
-            SYSMPU_REGION_RWXRIGHTS_MASTER_PE(msPortNum, regionConfig->accessRights1[msPortNum].processIdentifierEnable);
+        wordReg |= SYSMPU_REGION_RWXRIGHTS_MASTER_PE(msPortNum,
+                                                     regionConfig->accessRights1[msPortNum].processIdentifierEnable);
 #endif /* FSL_FEATURE_SYSMPU_HAS_PROCESS_IDENTIFIER */
     }
 
 #if FSL_FEATURE_SYSMPU_MASTER_COUNT > SYSMPU_MASTER_RWATTRIBUTE_START_PORT
     /* Set the normal read write rights for master 4 ~ master 7. */
-    for (msPortNum = SYSMPU_MASTER_RWATTRIBUTE_START_PORT; msPortNum < FSL_FEATURE_SYSMPU_MASTER_COUNT;
-         msPortNum++)
+    for (msPortNum = SYSMPU_MASTER_RWATTRIBUTE_START_PORT; msPortNum < FSL_FEATURE_SYSMPU_MASTER_COUNT; msPortNum++)
     {
-        wordReg |= SYSMPU_REGION_RWRIGHTS_MASTER(msPortNum,
+        wordReg |= SYSMPU_REGION_RWRIGHTS_MASTER(
+            msPortNum,
             ((uint32_t)regionConfig->accessRights2[msPortNum - SYSMPU_MASTER_RWATTRIBUTE_START_PORT].readEnable << 1U |
-            (uint32_t)regionConfig->accessRights2[msPortNum - SYSMPU_MASTER_RWATTRIBUTE_START_PORT].writeEnable));
+             (uint32_t)regionConfig->accessRights2[msPortNum - SYSMPU_MASTER_RWATTRIBUTE_START_PORT].writeEnable));
     }
 #endif /* FSL_FEATURE_SYSMPU_MASTER_COUNT > SYSMPU_MASTER_RWATTRIBUTE_START_PORT */
 
@@ -142,6 +156,22 @@ void SYSMPU_SetRegionConfig(SYSMPU_Type *base, const sysmpu_region_config_t *reg
     base->WORD[regNumber][3] = wordReg;
 }
 
+/*!
+ * brief Sets the region start and end address.
+ *
+ * Memory region start address. Note: bit0 ~ bit4 is always marked as 0 by SYSMPU.
+ * The actual start address by SYSMPU is 0-modulo-32 byte address.
+ * Memory region end address. Note: bit0 ~ bit4 always be marked as 1 by SYSMPU.
+ * The end address used by the SYSMPU is 31-modulo-32 byte address.
+ * Note: Due to the SYSMPU protection, the startAddr and endAddr can't be
+ * changed by the core when regionNum is 0.
+ *
+ * param base          SYSMPU peripheral base address.
+ * param regionNum     SYSMPU region number. The range is from 0 to
+ * FSL_FEATURE_SYSMPU_DESCRIPTOR_COUNT - 1.
+ * param startAddr     Region start address.
+ * param endAddr       Region end address.
+ */
 void SYSMPU_SetRegionAddr(SYSMPU_Type *base, uint32_t regionNum, uint32_t startAddr, uint32_t endAddr)
 {
     assert(regionNum < FSL_FEATURE_SYSMPU_DESCRIPTOR_COUNT);
@@ -150,10 +180,30 @@ void SYSMPU_SetRegionAddr(SYSMPU_Type *base, uint32_t regionNum, uint32_t startA
     base->WORD[regionNum][1] = endAddr;
 }
 
+/*!
+ * brief Sets the SYSMPU region access rights for masters with read, write, and execute rights.
+ * The SYSMPU access rights depend on two board classifications of bus masters.
+ * The privilege rights masters and the normal rights masters.
+ * The privilege rights masters have the read, write, and execute access rights.
+ * Except the normal read and write rights, the execute rights are also
+ * allowed for these masters. The privilege rights masters normally range from
+ * bus masters 0 - 3. However, the maximum master number is device-specific.
+ * See the "SYSMPU_PRIVILEGED_RIGHTS_MASTER_MAX_INDEX".
+ * The normal rights masters access rights control see
+ * "SYSMPU_SetRegionRwMasterAccessRights()".
+ *
+ * param base          SYSMPU peripheral base address.
+ * param regionNum     SYSMPU region number. Should range from 0 to
+ * FSL_FEATURE_SYSMPU_DESCRIPTOR_COUNT - 1.
+ * param masterNum     SYSMPU bus master number. Should range from 0 to
+ * SYSMPU_PRIVILEGED_RIGHTS_MASTER_MAX_INDEX.
+ * param accessRights  The pointer to the SYSMPU access rights configuration. See
+ * "sysmpu_rwxrights_master_access_control_t".
+ */
 void SYSMPU_SetRegionRwxMasterAccessRights(SYSMPU_Type *base,
-                                        uint32_t regionNum,
-                                        uint32_t masterNum,
-                                        const sysmpu_rwxrights_master_access_control_t *accessRights)
+                                           uint32_t regionNum,
+                                           uint32_t masterNum,
+                                           const sysmpu_rwxrights_master_access_control_t *accessRights)
 {
     assert(accessRights);
     assert(regionNum < FSL_FEATURE_SYSMPU_DESCRIPTOR_COUNT);
@@ -179,10 +229,25 @@ void SYSMPU_SetRegionRwxMasterAccessRights(SYSMPU_Type *base,
 }
 
 #if FSL_FEATURE_SYSMPU_MASTER_COUNT > 4
+/*!
+ * brief Sets the SYSMPU region access rights for masters with read and write rights.
+ * The SYSMPU access rights depend on two board classifications of bus masters.
+ * The privilege rights masters and the normal rights masters.
+ * The normal rights masters only have the read and write access permissions.
+ * The privilege rights access control see "SYSMPU_SetRegionRwxMasterAccessRights".
+ *
+ * param base          SYSMPU peripheral base address.
+ * param regionNum     SYSMPU region number. The range is from 0 to
+ * FSL_FEATURE_SYSMPU_DESCRIPTOR_COUNT - 1.
+ * param masterNum     SYSMPU bus master number. Should range from SYSMPU_MASTER_RWATTRIBUTE_START_PORT
+ * to ~ FSL_FEATURE_SYSMPU_MASTER_COUNT - 1.
+ * param accessRights  The pointer to the SYSMPU access rights configuration. See
+ * "sysmpu_rwrights_master_access_control_t".
+ */
 void SYSMPU_SetRegionRwMasterAccessRights(SYSMPU_Type *base,
-                                       uint32_t regionNum,
-                                       uint32_t masterNum,
-                                       const sysmpu_rwrights_master_access_control_t *accessRights)
+                                          uint32_t regionNum,
+                                          uint32_t masterNum,
+                                          const sysmpu_rwrights_master_access_control_t *accessRights)
 {
     assert(accessRights);
     assert(regionNum < FSL_FEATURE_SYSMPU_DESCRIPTOR_COUNT);
@@ -194,22 +259,39 @@ void SYSMPU_SetRegionRwMasterAccessRights(SYSMPU_Type *base,
 
     /* Build rights control value. */
     right &= ~mask;
-    right |=
-        SYSMPU_REGION_RWRIGHTS_MASTER(masterNum, (((uint32_t)accessRights->readEnable << 1U) | accessRights->writeEnable));
+    right |= SYSMPU_REGION_RWRIGHTS_MASTER(masterNum,
+                                           (((uint32_t)accessRights->readEnable << 1U) | accessRights->writeEnable));
     /* Set low master region access rights. */
     base->RGDAAC[regionNum] = right;
 }
 #endif /* FSL_FEATURE_SYSMPU_MASTER_COUNT > 4 */
 
+/*!
+ * brief Gets the numbers of slave ports where errors occur.
+ *
+ * param base       SYSMPU peripheral base address.
+ * param slaveNum   SYSMPU slave port number.
+ * return The slave ports error status.
+ *         true  - error happens in this slave port.
+ *         false - error didn't happen in this slave port.
+ */
 bool SYSMPU_GetSlavePortErrorStatus(SYSMPU_Type *base, sysmpu_slave_t slaveNum)
 {
     uint8_t sperr;
 
-    sperr = ((base->CESR & SYSMPU_CESR_SPERR_MASK) >> SYSMPU_CESR_SPERR_SHIFT) & (0x1U << (FSL_FEATURE_SYSMPU_SLAVE_COUNT - slaveNum - 1));
+    sperr = ((base->CESR & SYSMPU_CESR_SPERR_MASK) >> SYSMPU_CESR_SPERR_SHIFT) &
+            (0x1U << (FSL_FEATURE_SYSMPU_SLAVE_COUNT - slaveNum - 1));
 
     return (sperr != 0) ? true : false;
 }
 
+/*!
+ * brief Gets the SYSMPU detailed error access information.
+ *
+ * param base       SYSMPU peripheral base address.
+ * param slaveNum   SYSMPU slave port number.
+ * param errInform  The pointer to the SYSMPU access error information. See "sysmpu_access_err_info_t".
+ */
 void SYSMPU_GetDetailErrorAccessInfo(SYSMPU_Type *base, sysmpu_slave_t slaveNum, sysmpu_access_err_info_t *errInform)
 {
     assert(errInform);
@@ -244,6 +326,7 @@ void SYSMPU_GetDetailErrorAccessInfo(SYSMPU_Type *base, sysmpu_slave_t slaveNum,
 #endif
 
     /* Clears error slave port bit. */
-    cesReg = (base->CESR & ~SYSMPU_CESR_SPERR_MASK) | ((0x1U << (FSL_FEATURE_SYSMPU_SLAVE_COUNT - slaveNum - 1)) << SYSMPU_CESR_SPERR_SHIFT);
+    cesReg = (base->CESR & ~SYSMPU_CESR_SPERR_MASK) |
+             ((0x1U << (FSL_FEATURE_SYSMPU_SLAVE_COUNT - slaveNum - 1)) << SYSMPU_CESR_SPERR_SHIFT);
     base->CESR = cesReg;
 }

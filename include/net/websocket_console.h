@@ -16,6 +16,7 @@ extern "C" {
 /**
  * @brief Websocket console library
  * @defgroup websocket_console Websocket Console Library
+ * @ingroup networking
  * @{
  */
 

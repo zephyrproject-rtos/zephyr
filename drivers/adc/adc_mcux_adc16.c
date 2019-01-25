@@ -67,12 +67,37 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	const struct mcux_adc16_config *config = dev->config->config_info;
 	struct mcux_adc16_data *data = dev->driver_data;
 	adc16_hardware_average_mode_t mode;
+	adc16_resolution_t resolution;
 	int error;
+	u32_t tmp32;
+	ADC_Type *base = config->base;
 
-	if (sequence->resolution != 12) {
+	switch (sequence->resolution) {
+	case 8:
+	case 9:
+		resolution = kADC16_Resolution8or9Bit;
+		break;
+	case 10:
+	case 11:
+		resolution = kADC16_Resolution10or11Bit;
+		break;
+	case 12:
+	case 13:
+		resolution = kADC16_Resolution12or13Bit;
+		break;
+#if defined(FSL_FEATURE_ADC16_MAX_RESOLUTION) && (FSL_FEATURE_ADC16_MAX_RESOLUTION >= 16U)
+	case 16:
+		resolution = kADC16_Resolution16Bit;
+		break;
+#endif
+	default:
 		LOG_ERR("Invalid resolution");
 		return -EINVAL;
 	}
+
+	tmp32 = base->CFG1 & ~(ADC_CFG1_MODE_MASK);
+	tmp32 |= ADC_CFG1_MODE(resolution);
+	base->CFG1 = tmp32;
 
 	switch (sequence->oversampling) {
 	case 0:
@@ -97,12 +122,10 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 	ADC16_SetHardwareAverage(config->base, mode);
 
 	data->buffer = sequence->buffer;
-	data->repeat_buffer = sequence->buffer;
 
 	adc_context_start_read(&data->ctx, sequence);
-	error = adc_context_wait_for_completion(&data->ctx);
-	adc_context_release(&data->ctx, error);
 
+	error = adc_context_wait_for_completion(&data->ctx);
 	return error;
 }
 
@@ -110,9 +133,13 @@ static int mcux_adc16_read(struct device *dev,
 			   const struct adc_sequence *sequence)
 {
 	struct mcux_adc16_data *data = dev->driver_data;
+	int error;
 
 	adc_context_lock(&data->ctx, false, NULL);
-	return start_read(dev, sequence);
+	error = start_read(dev, sequence);
+	adc_context_release(&data->ctx, error);
+
+	return error;
 }
 
 #ifdef CONFIG_ADC_ASYNC
@@ -121,9 +148,13 @@ static int mcux_adc16_read_async(struct device *dev,
 				 struct k_poll_signal *async)
 {
 	struct mcux_adc16_data *data = dev->driver_data;
+	int error;
 
 	adc_context_lock(&data->ctx, true, async);
-	return start_read(dev, sequence);
+	error = start_read(dev, sequence);
+	adc_context_release(&data->ctx, error);
+
+	return error;
 }
 #endif
 
@@ -133,7 +164,7 @@ static void mcux_adc16_start_channel(struct device *dev)
 	struct mcux_adc16_data *data = dev->driver_data;
 
 	adc16_channel_config_t channel_config;
-	u32_t channel_group = 0;
+	u32_t channel_group = 0U;
 
 	data->channel_id = find_lsb_set(data->channels) - 1;
 
@@ -153,6 +184,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		CONTAINER_OF(ctx, struct mcux_adc16_data, ctx);
 
 	data->channels = ctx->sequence->channels;
+	data->repeat_buffer = data->buffer;
 
 	mcux_adc16_start_channel(data->dev);
 }
@@ -174,7 +206,7 @@ static void mcux_adc16_isr(void *arg)
 	const struct mcux_adc16_config *config = dev->config->config_info;
 	struct mcux_adc16_data *data = dev->driver_data;
 	ADC_Type *base = config->base;
-	u32_t channel_group = 0;
+	u32_t channel_group = 0U;
 	u16_t result;
 
 	result = ADC16_GetChannelConversionValue(base, channel_group);
@@ -199,7 +231,29 @@ static int mcux_adc16_init(struct device *dev)
 	adc16_config_t adc_config;
 
 	ADC16_GetDefaultConfig(&adc_config);
+
+#if CONFIG_ADC_MCUX_ADC16_VREF_DEFAULT
+	adc_config.referenceVoltageSource = kADC16_ReferenceVoltageSourceVref;
+#else /* CONFIG_ADC_MCUX_ADC16_VREF_ALTERNATE */
+	adc_config.referenceVoltageSource = kADC16_ReferenceVoltageSourceValt;
+#endif
+
+#if CONFIG_ADC_MCUX_ADC16_CLK_DIV_RATIO_1
+	adc_config.clockDivider = kADC16_ClockDivider1;
+#elif CONFIG_ADC_MCUX_ADC16_CLK_DIV_RATIO_2
+	adc_config.clockDivider = kADC16_ClockDivider2;
+#elif CONFIG_ADC_MCUX_ADC16_CLK_DIV_RATIO_4
+	adc_config.clockDivider = kADC16_ClockDivider4;
+#else /* CONFIG_ADC_MCUX_ADC16_CLK_DIV_RATIO_8 */
+	adc_config.clockDivider = kADC16_ClockDivider8;
+#endif
+
 	ADC16_Init(base, &adc_config);
+#if defined(FSL_FEATURE_ADC16_HAS_CALIBRATION) && \
+	    FSL_FEATURE_ADC16_HAS_CALIBRATION
+	ADC16_SetHardwareAverage(base, kADC16_HardwareAverageCount32);
+	ADC16_DoAutoCalibration(base);
+#endif
 
 	ADC16_EnableHardwareTrigger(base, false);
 
@@ -223,7 +277,7 @@ static const struct adc_driver_api mcux_adc16_driver_api = {
 static void mcux_adc16_config_func_0(struct device *dev);
 
 static const struct mcux_adc16_config mcux_adc16_config_0 = {
-	.base = (ADC_Type *)CONFIG_ADC_0_BASE_ADDRESS,
+	.base = (ADC_Type *)DT_ADC_0_BASE_ADDRESS,
 	.irq_config_func = mcux_adc16_config_func_0,
 };
 
@@ -233,17 +287,17 @@ static struct mcux_adc16_data mcux_adc16_data_0 = {
 	ADC_CONTEXT_INIT_SYNC(mcux_adc16_data_0, ctx),
 };
 
-DEVICE_AND_API_INIT(mcux_adc16_0, CONFIG_ADC_0_NAME, &mcux_adc16_init,
+DEVICE_AND_API_INIT(mcux_adc16_0, DT_ADC_0_NAME, &mcux_adc16_init,
 		    &mcux_adc16_data_0, &mcux_adc16_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_adc16_driver_api);
 
 static void mcux_adc16_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_ADC_0_IRQ, CONFIG_ADC_0_IRQ_PRI,
+	IRQ_CONNECT(DT_ADC_0_IRQ, DT_ADC_0_IRQ_PRI,
 		    mcux_adc16_isr, DEVICE_GET(mcux_adc16_0), 0);
 
-	irq_enable(CONFIG_ADC_0_IRQ);
+	irq_enable(DT_ADC_0_IRQ);
 }
 #endif /* CONFIG_ADC_0 */
 
@@ -251,7 +305,7 @@ static void mcux_adc16_config_func_0(struct device *dev)
 static void mcux_adc16_config_func_1(struct device *dev);
 
 static const struct mcux_adc16_config mcux_adc16_config_1 = {
-	.base = (ADC_Type *)CONFIG_ADC_1_BASE_ADDRESS,
+	.base = (ADC_Type *)DT_ADC_1_BASE_ADDRESS,
 	.irq_config_func = mcux_adc16_config_func_1,
 };
 
@@ -261,16 +315,16 @@ static struct mcux_adc16_data mcux_adc16_data_1 = {
 	ADC_CONTEXT_INIT_SYNC(mcux_adc16_data_1, ctx),
 };
 
-DEVICE_AND_API_INIT(mcux_adc16_1, CONFIG_ADC_1_NAME, &mcux_adc16_init,
+DEVICE_AND_API_INIT(mcux_adc16_1, DT_ADC_1_NAME, &mcux_adc16_init,
 		    &mcux_adc16_data_1, &mcux_adc16_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_adc16_driver_api);
 
 static void mcux_adc16_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_ADC_1_IRQ, CONFIG_ADC_1_IRQ_PRI,
+	IRQ_CONNECT(DT_ADC_1_IRQ, DT_ADC_1_IRQ_PRI,
 		    mcux_adc16_isr, DEVICE_GET(mcux_adc16_1), 0);
 
-	irq_enable(CONFIG_ADC_1_IRQ);
+	irq_enable(DT_ADC_1_IRQ);
 }
 #endif /* CONFIG_ADC_1 */

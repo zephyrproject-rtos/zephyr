@@ -29,7 +29,7 @@ LOG_MODULE_REGISTER(ws2812);
 		  SPI_WORD_SET(8) |		\
 		  SPI_LINES_SINGLE)
 
-#define SPI_FREQ              CONFIG_WS2812_STRIP_SPI_BAUD_RATE
+#define SPI_FREQ              DT_WORLDSEMI_WS2812_0_SPI_MAX_FREQUENCY
 #define ONE_FRAME             CONFIG_WS2812_STRIP_ONE_FRAME
 #define ZERO_FRAME            CONFIG_WS2812_STRIP_ZERO_FRAME
 #define RED_OFFSET            (8 * sizeof(u8_t) * CONFIG_WS2812_RED_ORDER)
@@ -181,16 +181,16 @@ static int ws2812_strip_init(struct device *dev)
 	struct ws2812_data *data = dev->driver_data;
 	struct spi_config *config = &data->config;
 
-	data->spi = device_get_binding(CONFIG_WS2812_STRIP_SPI_DEV_NAME);
+	data->spi = device_get_binding(DT_WORLDSEMI_WS2812_0_BUS_NAME);
 	if (!data->spi) {
 		LOG_ERR("SPI device %s not found",
-			    CONFIG_WS2812_STRIP_SPI_DEV_NAME);
+			    DT_WORLDSEMI_WS2812_0_BUS_NAME);
 		return -ENODEV;
 	}
 
 	config->frequency = SPI_FREQ;
 	config->operation = SPI_OPER;
-	config->slave = 0;	/* MOSI only. */
+	config->slave = DT_WORLDSEMI_WS2812_0_BASE_ADDRESS;
 	config->cs = NULL;
 
 	return 0;
@@ -203,7 +203,7 @@ static const struct led_strip_driver_api ws2812_strip_api = {
 	.update_channels = ws2812_strip_update_channels,
 };
 
-DEVICE_AND_API_INIT(ws2812_strip, CONFIG_WS2812_STRIP_NAME,
+DEVICE_AND_API_INIT(ws2812_strip, DT_WORLDSEMI_WS2812_0_LABEL,
 		    ws2812_strip_init, &ws2812_strip_data,
 		    NULL, POST_KERNEL, CONFIG_LED_STRIP_INIT_PRIORITY,
 		    &ws2812_strip_api);

@@ -27,15 +27,18 @@ enum _dcp_status
  */
 /*! @name Driver version */
 /*@{*/
-/*! @brief DCP driver version. Version 2.0.0.
+/*! @brief DCP driver version. Version 2.1.0.
  *
- * Current version: 2.0.0
+ * Current version: 2.1.0
  *
  * Change log:
+ * - Version 2.1.0
+ *   - Add byte/word swap feature for key, input and output data
+ *
  * - Version 2.0.0
  *   - Initial version
  */
-#define FSL_DCP_DRIVER_VERSION (MAKE_VERSION(2, 0, 0))
+#define FSL_DCP_DRIVER_VERSION (MAKE_VERSION(2, 1, 0))
 /*@}*/
 
 /*! @brief DCP channel enable.

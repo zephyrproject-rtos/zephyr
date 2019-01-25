@@ -322,7 +322,7 @@ static void free_block_ctx(struct block_context *ctx)
 		return;
 	}
 
-	ctx->tkl = 0;
+	ctx->tkl = 0U;
 }
 
 /* observer functions */
@@ -547,7 +547,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	observe_node_data[i].min_period_sec = attrs.pmin;
 	observe_node_data[i].max_period_sec = max(attrs.pmax, attrs.pmin);
 	observe_node_data[i].format = format;
-	observe_node_data[i].counter = 1;
+	observe_node_data[i].counter = 1U;
 	sys_slist_append(&engine_observer_list,
 			 &observe_node_data[i].node);
 
@@ -806,7 +806,7 @@ int lwm2m_delete_obj_inst(u16_t obj_id, u16_t obj_inst_id)
 static int get_option_int(const struct coap_packet *cpkt, u8_t opt)
 {
 	struct coap_option option = {};
-	u16_t count = 1;
+	u16_t count = 1U;
 	int r;
 
 	r = coap_find_options(cpkt, opt, &option, count);
@@ -833,13 +833,13 @@ static void engine_clear_context(struct lwm2m_engine_context *context)
 		(void)memset(context->path, 0, sizeof(struct lwm2m_obj_path));
 	}
 
-	context->operation = 0;
+	context->operation = 0U;
 }
 
 static u16_t atou16(u8_t *buf, u16_t buflen, u16_t *len)
 {
-	u16_t val = 0;
-	u16_t pos = 0;
+	u16_t val = 0U;
+	u16_t pos = 0U;
 
 	/* we should get a value first - consume all numbers */
 	while (pos < buflen && isdigit(buf[pos])) {
@@ -982,7 +982,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 	struct net_pkt *pkt;
 	struct net_app_ctx *app_ctx;
 	struct net_buf *frag;
-	u8_t tokenlen = 0;
+	u8_t tokenlen = 0U;
 	u8_t *token = NULL;
 	int r = 0;
 
@@ -1010,7 +1010,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 	 * msg->tkl == LWM2M_MSG_TOKEN_LEN_SKIP means dont set
 	 */
 	if (msg->tkl == 0) {
-		tokenlen = 0;
+		tokenlen = 0U;
 		token = coap_next_token();
 	} else if (msg->token && msg->tkl != LWM2M_MSG_TOKEN_LEN_SKIP) {
 		tokenlen = msg->tkl;
@@ -1123,7 +1123,7 @@ u16_t lwm2m_get_rd_data(u8_t *client_data, u16_t size)
 	struct lwm2m_engine_obj *obj;
 	struct lwm2m_engine_obj_inst *obj_inst;
 	u8_t temp[32];
-	u16_t pos = 0;
+	u16_t pos = 0U;
 	int len;
 
 	/* Add resource-type/content-type to the registration message */
@@ -1975,7 +1975,7 @@ static int lwm2m_read_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	struct lwm2m_output_context *out;
 	struct lwm2m_obj_path *path;
 	int i, loop_max = 1;
-	u16_t res_inst_id_tmp = 0;
+	u16_t res_inst_id_tmp = 0U;
 	void *data_ptr = NULL;
 	size_t data_len = 0;
 
@@ -2177,7 +2177,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 	size_t len = 0;
 	size_t total_size = 0;
 	int ret = 0;
-	u8_t tkl = 0;
+	u8_t tkl = 0U;
 	u8_t token[8];
 	bool last_block = true;
 	struct block_context *block_ctx = NULL;
@@ -2339,7 +2339,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 	struct lwm2m_attr *attr;
 	struct notification_attrs nattrs = { 0 };
 	struct observe_node *obs;
-	u8_t type = 0;
+	u8_t type = 0U;
 	void *nattr_ptrs[NR_LWM2M_ATTR] = {
 		&nattrs.pmin, &nattrs.pmax, &nattrs.gt, &nattrs.lt, &nattrs.st
 	};
@@ -2397,7 +2397,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 	for (i = 0; i < nr_opt; i++) {
 		int limit = min(options[i].len, 5), plen = 0, vlen;
 		float32_value_t val = { 0 };
-		type = 0;
+		type = 0U;
 
 		/* search for '=' */
 		while (plen < limit && options[i].value[plen] != '=') {
@@ -2410,7 +2410,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 		}
 
 		/* matching attribute name */
-		for (type = 0; type < NR_LWM2M_ATTR; type++) {
+		for (type = 0U; type < NR_LWM2M_ATTR; type++) {
 			if (LWM2M_ATTR_LEN[type] == plen &&
 			    !memcmp(options[i].value, LWM2M_ATTR_STR[type],
 				    LWM2M_ATTR_LEN[type])) {
@@ -2547,7 +2547,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 	}
 
 	/* add attribute to obj/obj_inst/res */
-	for (type = 0; nattrs.flags && type < NR_LWM2M_ATTR; type++) {
+	for (type = 0U; nattrs.flags && type < NR_LWM2M_ATTR; type++) {
 		if (!(BIT(type) & nattrs.flags)) {
 			continue;
 		}
@@ -2739,7 +2739,7 @@ int lwm2m_perform_read_op(struct lwm2m_engine_obj *obj,
 	struct lwm2m_engine_obj_field *obj_field;
 	int ret = 0, index;
 	u16_t temp_len;
-	u8_t num_read = 0;
+	u8_t num_read = 0U;
 
 	if (path->level >= 2) {
 		obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
@@ -3076,7 +3076,7 @@ int lwm2m_get_or_create_engine_obj(struct lwm2m_engine_context *context,
 	int ret = 0;
 
 	if (created) {
-		*created = 0;
+		*created = 0U;
 	}
 
 	*obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
@@ -3089,7 +3089,7 @@ int lwm2m_get_or_create_engine_obj(struct lwm2m_engine_context *context,
 
 		/* set created flag to one */
 		if (created) {
-			*created = 1;
+			*created = 1U;
 		}
 	}
 
@@ -3132,7 +3132,7 @@ static int handle_request(struct coap_packet *request,
 	struct coap_option options[4];
 	struct lwm2m_engine_obj *obj = NULL;
 	u8_t token[8];
-	u8_t tkl = 0;
+	u8_t tkl = 0U;
 	u16_t format = LWM2M_FORMAT_NONE, accept;
 	struct lwm2m_input_context in;
 	struct lwm2m_output_context out;
@@ -3634,8 +3634,19 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	/* ref pkt to avoid being freed after net_app_send_pkt() */
-	net_pkt_ref(pending->pkt);
+	if (!coap_pending_cycle(pending)) {
+		/* pending request has expired */
+		if (msg->message_timeout_cb) {
+			msg->message_timeout_cb(msg);
+		}
+
+		/*
+		 * coap_pending_clear() is called in lwm2m_reset_message()
+		 * which balances the ref we made in coap_pending_cycle()
+		 */
+		lwm2m_reset_message(msg, true);
+		return;
+	}
 
 	LOG_DBG("Resending message: %p", msg);
 	msg->send_attempts++;
@@ -3652,25 +3663,9 @@ static void retransmit_request(struct k_work *work)
 	if (r < 0) {
 		LOG_ERR("Error sending lwm2m message: %d", r);
 		/* don't error here, retry until timeout */
-		net_pkt_unref(pending->pkt);
+		net_pkt_unref(msg->cpkt.pkt);
 	}
 
-	if (!coap_pending_cycle(pending)) {
-		/* pending request has expired */
-		if (msg->message_timeout_cb) {
-			msg->message_timeout_cb(msg);
-		}
-
-		/*
-		 * coap_pending_clear() is called in lwm2m_reset_message()
-		 * which balances the ref we made in coap_pending_cycle()
-		 */
-		lwm2m_reset_message(msg, true);
-		return;
-	}
-
-	/* unref to balance ref we made for sendto() */
-	net_pkt_unref(pending->pkt);
 	k_delayed_work_submit(&client_ctx->retransmit_work, pending->timeout);
 }
 
@@ -3757,7 +3752,7 @@ static int generate_notify_message(struct observe_node *obs,
 
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_RESPONSE_CODE_CONTENT;
-	msg->mid = 0;
+	msg->mid = 0U;
 	msg->token = obs->token;
 	msg->tkl = obs->tkl;
 	msg->reply_cb = notify_message_reply_cb;
@@ -3847,7 +3842,7 @@ int lwm2m_engine_add_service(void (*service)(void), u32_t period_ms)
 
 	service_node_data[i].service_fn = service;
 	service_node_data[i].min_call_period = period_ms;
-	service_node_data[i].last_timestamp = 0;
+	service_node_data[i].last_timestamp = 0U;
 
 	sys_slist_append(&engine_service_list,
 			 &service_node_data[i].node);

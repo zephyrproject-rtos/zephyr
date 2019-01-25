@@ -118,14 +118,6 @@ _set_thread_return_value(struct k_thread *thread, unsigned int value)
 
 extern void k_cpu_atomic_idle(unsigned int key);
 
-/*
- * Required by the core kernel even though we don't have to do anything on this
- * arch.
- */
-static inline void _IntLibInit(void)
-{
-}
-
 #include <stddef.h> /* For size_t */
 
 #ifdef __cplusplus

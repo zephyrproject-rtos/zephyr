@@ -26,47 +26,6 @@ if "ZEPHYR_BASE" not in os.environ:
 
 ZEPHYR_BASE = os.environ["ZEPHYR_BASE"]
 
-class Sdk:
-    '''MCUXpresso SDK class'''
-    def __init__(self, root):
-        self.root = root
-
-    def get_devices(self):
-        '''Get a list of devices in the SDK'''
-        return os.listdir(os.path.join(self.root, 'devices'))
-
-    def get_device_headers(self, device):
-        '''Get a list of device header files in the SDK'''
-        device_root = os.path.join(self.root, 'devices', device)
-        patterns = [ device, 'fsl_device_registers' ]
-        pattern = "|".join(patterns)
-        device_headers = []
-        for f in os.listdir(device_root):
-            if re.search(pattern, f):
-                device_headers.append(os.path.join(device_root, f))
-        return device_headers
-
-    def get_drivers(self, device, shared):
-        '''Get a list of driver files in the SDK
-
-        Many drivers can be shared across multiple SoCs, but at least one
-        driver is device-specific. The 'shared' argument allows us to select
-        either device-specific drivers or shared drivers.
-        '''
-        drivers_root = os.path.join(self.root, 'devices', device, 'drivers')
-        device_specific_pattern = 'fsl_clock'
-        drivers = []
-        for f in os.listdir(drivers_root):
-            if bool(re.search(device_specific_pattern, f)) ^ bool(shared):
-                drivers.append(os.path.join(drivers_root,f))
-        return drivers
-
-    def get_shared_drivers(self, device):
-        return self.get_drivers(device, True)
-
-    def get_clock_driver(self, device):
-        return self.get_drivers(device, False)
-
 def get_soc_family(device):
     if device.startswith('MK'):
         return 'kinetis'
@@ -75,29 +34,69 @@ def get_soc_family(device):
     elif device.startswith('MIMX'):
         return 'imx'
 
+def get_files(src, pattern):
+    matches = []
+    nonmatches = []
+    if os.path.exists(src):
+        for filename in os.listdir(src):
+            path = os.path.join(src, filename)
+            if re.search(pattern, filename):
+                matches.append(path)
+            else:
+                nonmatches.append(path)
+
+    return [matches, nonmatches]
+
 def copy_files(files, dst):
+    if not files:
+        return
+    os.makedirs(dst, exist_ok=True)
     for f in files:
         shutil.copy2(f, dst)
 
 def import_sdk(directory):
-    sdk = Sdk(directory)
+    devices = os.listdir(os.path.join(directory, 'devices'))
+    boards = os.listdir(os.path.join(directory, 'boards'))
 
-    for device in sdk.get_devices():
+    for device in devices:
         family = get_soc_family(device)
         shared_dst = os.path.join(ZEPHYR_BASE, 'ext/hal/nxp/mcux/drivers', family)
         device_dst = os.path.join(ZEPHYR_BASE, 'ext/hal/nxp/mcux/devices', device)
 
-        print('Importing {} device headers'.format(device))
-        device_headers = sdk.get_device_headers(device)
+        device_src = os.path.join(directory, 'devices', device)
+        device_pattern = "|".join([device, 'fsl_device_registers'])
+        [device_headers, ignore] = get_files(device_src, device_pattern)
+
+        drivers_src = os.path.join(directory, 'devices', device, 'drivers')
+        drivers_pattern = "fsl_clock|fsl_iomuxc"
+        [device_drivers, shared_drivers] = get_files(drivers_src, drivers_pattern)
+
+        xip_boot_src = os.path.join(directory, 'devices', device, 'xip')
+        xip_boot_pattern = ".*"
+        [xip_boot, ignore] = get_files(xip_boot_src, xip_boot_pattern)
+
+        print('Importing {} device headers to {}'.format(device, device_dst))
         copy_files(device_headers, device_dst)
 
-        print('Importing {} clock driver'.format(device))
-        clock_driver = sdk.get_clock_driver(device)
-        copy_files(clock_driver, device_dst)
+        print('Importing {} device-specific drivers to {}'.format(device, device_dst))
+        copy_files(device_drivers, device_dst)
 
-        print('Importing {} family shared drivers'.format(family))
-        shared_drivers = sdk.get_shared_drivers(device)
+        print('Importing {} family shared drivers to {}'.format(family, shared_dst))
         copy_files(shared_drivers, shared_dst)
+
+        print('Importing {} xip boot to {}'.format(device, shared_dst))
+        copy_files(xip_boot, shared_dst)
+
+    for board in boards:
+        board_src = os.path.join(directory, 'boards', board)
+        board_dst = os.path.join(ZEPHYR_BASE, 'ext/hal/nxp/mcux/boards', board)
+
+        xip_config_src = os.path.join(board_src, 'xip')
+        xip_config_pattern = ".*"
+        [xip_config, ignore] = get_files(xip_config_src, xip_config_pattern)
+
+        print('Importing {} xip config to {}'.format(board, board_dst))
+        copy_files(xip_config, board_dst)
 
 def parse_args():
     parser = argparse.ArgumentParser(description=__doc__)

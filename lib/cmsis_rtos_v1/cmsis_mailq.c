@@ -16,7 +16,7 @@ osMailQId osMailCreate(const osMailQDef_t *queue_def, osThreadId thread_id)
 		return NULL;
 	}
 
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return NULL;
 	}
 

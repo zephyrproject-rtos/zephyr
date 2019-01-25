@@ -260,7 +260,7 @@ static void send_err_rsp(struct bt_l2cap_chan *chan, u16_t err,
 static u16_t parse_data_elem(struct net_buf *buf,
 				struct bt_sdp_data_elem *data_elem)
 {
-	u8_t size_field_len = 0; /* Space used to accommodate the size */
+	u8_t size_field_len = 0U; /* Space used to accommodate the size */
 
 	if (buf->len < 1) {
 		BT_WARN("Malformed packet");
@@ -462,7 +462,7 @@ static u16_t find_services(struct net_buf *buf,
 	struct bt_sdp_record *record;
 	u32_t uuid_list_size;
 	u16_t res;
-	u8_t att_idx, rec_idx = 0;
+	u8_t att_idx, rec_idx = 0U;
 	bool found;
 	union {
 		struct bt_uuid uuid;
@@ -528,7 +528,7 @@ static u16_t find_services(struct net_buf *buf,
 		/* Go over the list of services, and look for a service which
 		 * doesn't have this UUID
 		 */
-		for (rec_idx = 0; rec_idx < num_services; rec_idx++) {
+		for (rec_idx = 0U; rec_idx < num_services; rec_idx++) {
 			record = matching_recs[rec_idx];
 
 			if (!record) {
@@ -538,7 +538,7 @@ static u16_t find_services(struct net_buf *buf,
 			found = false;
 
 			/* Search for the UUID in all the attrs of the svc */
-			for (att_idx = 0; att_idx < record->attr_count;
+			for (att_idx = 0U; att_idx < record->attr_count;
 			     att_idx++) {
 				search_uuid(&record->attrs[att_idx].val,
 					    &u.uuid, &found, 1);
@@ -576,8 +576,8 @@ static u16_t sdp_svc_search_req(struct bt_sdp *sdp, struct net_buf *buf,
 	struct net_buf *resp_buf;
 	struct bt_sdp_record *record;
 	struct bt_sdp_record *matching_recs[BT_SDP_MAX_SERVICES];
-	u16_t max_rec_count, total_recs = 0, current_recs = 0, res;
-	u8_t cont_state_size, cont_state = 0, idx = 0, count = 0;
+	u16_t max_rec_count, total_recs = 0U, current_recs = 0U, res;
+	u8_t cont_state_size, cont_state = 0U, idx = 0U, count = 0U;
 	bool pkt_full = false;
 
 	res = find_services(buf, matching_recs);
@@ -595,7 +595,7 @@ static u16_t sdp_svc_search_req(struct bt_sdp *sdp, struct net_buf *buf,
 	cont_state_size = net_buf_pull_u8(buf);
 
 	/* Zero out the matching services beyond max_rec_count */
-	for (idx = 0; idx < num_services; idx++) {
+	for (idx = 0U; idx < num_services; idx++) {
 		if (count == max_rec_count) {
 			matching_recs[idx] = NULL;
 			continue;
@@ -811,7 +811,7 @@ static u8_t select_attrs(struct bt_sdp_attribute *attr, u8_t att_idx,
 	u32_t attr_size, seq_size;
 	u8_t idx_filter;
 
-	for (idx_filter = 0; idx_filter < sad->num_filters; idx_filter++) {
+	for (idx_filter = 0U; idx_filter < sad->num_filters; idx_filter++) {
 
 		att_id_lower = (sad->filter[idx_filter] >> 16);
 		att_id_upper = (sad->filter[idx_filter]);
@@ -867,7 +867,7 @@ static u8_t select_attrs(struct bt_sdp_attribute *attr, u8_t att_idx,
 				sad->seq = net_buf_add(sad->rsp_buf,
 						       sizeof(*sad->seq));
 				sad->seq->type = BT_SDP_SEQ16;
-				sad->seq->size = 0;
+				sad->seq->size = 0U;
 			}
 
 			/* Add attribute ID */
@@ -951,7 +951,7 @@ static u16_t create_attr_list(struct bt_sdp *sdp, struct bt_sdp_record *record,
 	sad.seq = NULL;
 	sad.filter = filter;
 	sad.state = state;
-	sad.att_list_len = 0;
+	sad.att_list_len = 0U;
 	sad.new_service = true;
 
 	idx_att = bt_sdp_foreach_attr(sad.rec, next_att, select_attrs, &sad);
@@ -984,7 +984,7 @@ static u16_t get_att_search_list(struct net_buf *buf, u32_t *filter,
 	u16_t res;
 	u32_t size;
 
-	*num_filters = 0;
+	*num_filters = 0U;
 	res = parse_data_elem(buf, &data_elem);
 	if (res) {
 		return res;
@@ -1071,7 +1071,7 @@ static u16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 	struct net_buf *rsp_buf;
 	u32_t svc_rec_hdl;
 	u16_t max_att_len, res, att_list_len;
-	u8_t num_filters, cont_state_size, next_att = 0;
+	u8_t num_filters, cont_state_size, next_att = 0U;
 
 	if (buf->len < 6) {
 		BT_WARN("Malformed packet");
@@ -1141,7 +1141,7 @@ static u16_t sdp_svc_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 		/* For empty responses, add an empty data element sequence */
 		net_buf_add_u8(rsp_buf, BT_SDP_SEQ8);
 		net_buf_add_u8(rsp_buf, 0);
-		att_list_len = 2;
+		att_list_len = 2U;
 	}
 
 	/* Add continuation state */
@@ -1186,8 +1186,8 @@ static u16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 	struct bt_sdp_record *record;
 	struct bt_sdp_att_rsp *rsp;
 	struct bt_sdp_data_elem_seq *seq = NULL;
-	u16_t max_att_len, res, att_list_len = 0;
-	u8_t num_filters, cont_state_size, next_svc = 0, next_att = 0;
+	u16_t max_att_len, res, att_list_len = 0U;
+	u8_t num_filters, cont_state_size, next_svc = 0U, next_att = 0U;
 	bool dry_run = false;
 
 	res = find_services(buf, matching_recs);
@@ -1248,10 +1248,10 @@ static u16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 	if (!cont_state_size) {
 		seq = net_buf_add(rsp_buf, sizeof(*seq));
 		seq->type = BT_SDP_SEQ16;
-		seq->size = 0;
+		seq->size = 0U;
 
 		/* 3 bytes for Outer Data Element Sequence declaration */
-		att_list_len = 3;
+		att_list_len = 3U;
 	}
 
 	rsp_buf_cpy = rsp_buf;
@@ -1289,7 +1289,7 @@ static u16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 			rsp_buf_cpy = NULL;
 		}
 
-		next_att = 0;
+		next_att = 0U;
 	}
 
 	if (!dry_run) {
@@ -1297,7 +1297,7 @@ static u16_t sdp_svc_search_att_req(struct bt_sdp *sdp, struct net_buf *buf,
 			/* For empty responses, add an empty data elem seq */
 			net_buf_add_u8(rsp_buf, BT_SDP_SEQ8);
 			net_buf_add_u8(rsp_buf, 0);
-			att_list_len = 2;
+			att_list_len = 2U;
 		}
 		/* Search exhausted */
 		net_buf_add_u8(rsp_buf, 0);
@@ -1607,7 +1607,7 @@ static u16_t sdp_client_get_total(struct bt_sdp_client *session,
 	 */
 	if (session->cstate.length == 0) {
 		seq = net_buf_pull_u8(buf);
-		pulled = 1;
+		pulled = 1U;
 		switch (seq) {
 		case BT_SDP_SEQ8:
 			*total = net_buf_pull_u8(buf);
@@ -1619,14 +1619,14 @@ static u16_t sdp_client_get_total(struct bt_sdp_client *session,
 			break;
 		default:
 			BT_WARN("Sequence type 0x%02x not handled", seq);
-			*total = 0;
+			*total = 0U;
 			break;
 		}
 
 		BT_DBG("Total %u octets of all attributes", *total);
 	} else {
-		pulled = 0;
-		*total = 0;
+		pulled = 0U;
+		*total = 0U;
 	}
 
 	return pulled;
@@ -1648,7 +1648,7 @@ static u16_t get_record_len(struct net_buf *buf)
 		break;
 	default:
 		BT_WARN("Sequence type 0x%02x not handled", seq);
-		len = 0;
+		len = 0U;
 		break;
 	}
 

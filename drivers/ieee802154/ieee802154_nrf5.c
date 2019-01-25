@@ -7,7 +7,7 @@
  */
 
 #define LOG_MODULE_NAME ieee802154_nrf5
-#define LOG_LEVEL CONFIG_IEEE802154_LOG_LEVEL
+#define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <random/rand32.h>
 
 #include <net/ieee802154_radio.h>
-#include <drivers/clock_control/nrf5_clock_control.h>
+#include <drivers/clock_control/nrf_clock_control.h>
 #include <clock_control.h>
 
 #include "nrf52840.h"
@@ -78,7 +78,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 
 		LOG_DBG("Frame received");
 
-		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+		pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No pkt available");
 			goto out;
@@ -121,9 +121,13 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 			goto out;
 		}
 
-		net_analyze_stack("nRF5 rx stack",
-				  K_THREAD_STACK_BUFFER(nrf5_radio->rx_stack),
-				  K_THREAD_STACK_SIZEOF(nrf5_radio->rx_stack));
+		if (CONFIG_IEEE802154_DRIVER_LOG_LEVEL >= LOG_LEVEL_DBG) {
+			net_analyze_stack(
+				"nRF5 rx stack",
+				K_THREAD_STACK_BUFFER(nrf5_radio->rx_stack),
+				K_THREAD_STACK_SIZEOF(nrf5_radio->rx_stack));
+		}
+
 		continue;
 
 out:
@@ -263,8 +267,8 @@ static int nrf5_tx(struct device *dev,
 		   struct net_buf *frag)
 {
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
-	u8_t payload_len = net_pkt_ll_reserve(pkt) + frag->len;
-	u8_t *payload = frag->data - net_pkt_ll_reserve(pkt);
+	u8_t payload_len = frag->len;
+	u8_t *payload = frag->data;
 
 	LOG_DBG("%p (%u)", payload, payload_len);
 
@@ -350,7 +354,7 @@ static int nrf5_init(struct device *dev)
 	k_sem_init(&nrf5_radio->tx_wait, 0, 1);
 	k_sem_init(&nrf5_radio->cca_wait, 0, 1);
 
-	clk_m16 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF5_M16SRC_DRV_NAME);
+	clk_m16 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF_M16SRC_DRV_NAME);
 	if (!clk_m16) {
 		return -ENODEV;
 	}
@@ -424,7 +428,6 @@ static const struct nrf5_802154_config nrf5_radio_cfg = {
 
 static struct ieee802154_radio_api nrf5_radio_api = {
 	.iface_api.init = nrf5_iface_init,
-	.iface_api.send = ieee802154_radio_send,
 
 	.get_capabilities = nrf5_get_capabilities,
 	.cca = nrf5_cca,

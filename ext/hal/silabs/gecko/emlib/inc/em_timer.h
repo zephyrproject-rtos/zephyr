@@ -1,10 +1,10 @@
 /***************************************************************************//**
  * @file em_timer.h
  * @brief Timer/counter (TIMER) peripheral API
- * @version 5.1.2
+ * @version 5.6.0
  *******************************************************************************
- * @section License
- * <b>Copyright 2016 Silicon Laboratories, Inc. http://www.silabs.com</b>
+ * # License
+ * <b>Copyright 2016 Silicon Laboratories, Inc. www.silabs.com</b>
  *******************************************************************************
  *
  * Permission is granted to anyone to use this software for any purpose,
@@ -62,11 +62,13 @@ extern "C" {
 /** Validation of TIMER register block pointer reference for assert statements. */
 #define TIMER_REF_VALID(ref)  TIMER_Valid(ref)
 
-/** Validation of TIMER compare/capture channel number */
+/** Validation of TIMER compare/capture channel number. */
 #if defined(_SILICON_LABS_32B_SERIES_0)
 #define TIMER_CH_VALID(ch)    ((ch) < 3)
 #elif defined(_SILICON_LABS_32B_SERIES_1)
 #define TIMER_CH_VALID(ch)    ((ch) < 4)
+#elif defined(_SILICON_LABS_32B_SERIES_2)
+#define TIMER_CH_VALID(ch)    ((ch) < 3)
 #else
 #error "Unknown device. Undefined number of channels."
 #endif
@@ -78,35 +80,37 @@ extern "C" {
  ******************************************************************************/
 
 /** Timer compare/capture mode. */
-typedef enum
-{
+typedef enum {
+#if defined (_TIMER_CC_CTRL_MODE_MASK)
   timerCCModeOff     = _TIMER_CC_CTRL_MODE_OFF,           /**< Channel turned off. */
   timerCCModeCapture = _TIMER_CC_CTRL_MODE_INPUTCAPTURE,  /**< Input capture. */
   timerCCModeCompare = _TIMER_CC_CTRL_MODE_OUTPUTCOMPARE, /**< Output compare. */
   timerCCModePWM     = _TIMER_CC_CTRL_MODE_PWM            /**< Pulse-Width modulation. */
+#endif
+#if defined (_TIMER_CC_CFG_MODE_MASK)
+  timerCCModeOff     = _TIMER_CC_CFG_MODE_OFF,            /**< Channel turned off. */
+  timerCCModeCapture = _TIMER_CC_CFG_MODE_INPUTCAPTURE,   /**< Input capture. */
+  timerCCModeCompare = _TIMER_CC_CFG_MODE_OUTPUTCOMPARE,  /**< Output compare. */
+  timerCCModePWM     = _TIMER_CC_CFG_MODE_PWM             /**< Pulse-Width modulation. */
+#endif
 } TIMER_CCMode_TypeDef;
 
-
 /** Clock select. */
-typedef enum
-{
-  /** Prescaled HFPER clock. */
-  timerClkSelHFPerClk = _TIMER_CTRL_CLKSEL_PRESCHFPERCLK,
-
-  /** Compare/Capture Channel 1 Input. */
-  timerClkSelCC1      = _TIMER_CTRL_CLKSEL_CC1,
-
-  /**
-   * Cascaded, clocked by underflow (down-counting) or overflow (up-counting)
-   * by lower numbered timer.
-   */
-  timerClkSelCascade  = _TIMER_CTRL_CLKSEL_TIMEROUF
+typedef enum {
+#if defined (_TIMER_CTRL_CLKSEL_MASK)
+  timerClkSelHFPerClk = _TIMER_CTRL_CLKSEL_PRESCHFPERCLK, /**< Prescaled HFPER clock. */
+  timerClkSelCC1      = _TIMER_CTRL_CLKSEL_CC1,           /**< Compare/Capture Channel 1 Input. */
+  timerClkSelCascade  = _TIMER_CTRL_CLKSEL_TIMEROUF       /**< Cascaded clocked by underflow or overflow by lower numbered timer. */
+#endif
+#if defined (_TIMER_CFG_CLKSEL_MASK)
+  timerClkSelHFPerClk = _TIMER_CFG_CLKSEL_PRESCEM01GRPACLK, /**< Prescaled EM01GRPA clock. */
+  timerClkSelCC1      = _TIMER_CFG_CLKSEL_CC1,              /**< Compare/Capture Channel 1 Input. */
+  timerClkSelCascade  = _TIMER_CFG_CLKSEL_TIMEROUF          /**< Cascaded clocked by underflow or overflow by lower numbered timer. */
+#endif
 } TIMER_ClkSel_TypeDef;
 
-
 /** Input capture edge select. */
-typedef enum
-{
+typedef enum {
   /** Rising edges detected. */
   timerEdgeRising  = _TIMER_CC_CTRL_ICEDGE_RISING,
 
@@ -120,30 +124,26 @@ typedef enum
   timerEdgeNone    = _TIMER_CC_CTRL_ICEDGE_NONE
 } TIMER_Edge_TypeDef;
 
-
 /** Input capture event control. */
-typedef enum
-{
-  /** PRS output pulse, interrupt flag and DMA request set on every capture. */
+typedef enum {
+  /** PRS output pulse, interrupt flag, and DMA request set on every capture. */
   timerEventEveryEdge    = _TIMER_CC_CTRL_ICEVCTRL_EVERYEDGE,
-  /** PRS output pulse, interrupt flag and DMA request set on every second capture. */
+  /** PRS output pulse, interrupt flag, and DMA request set on every second capture. */
   timerEventEvery2ndEdge = _TIMER_CC_CTRL_ICEVCTRL_EVERYSECONDEDGE,
   /**
-   * PRS output pulse, interrupt flag and DMA request set on rising edge (if
+   * PRS output pulse, interrupt flag, and DMA request set on rising edge (if
    * input capture edge = BOTH).
    */
   timerEventRising       = _TIMER_CC_CTRL_ICEVCTRL_RISING,
   /**
-   * PRS output pulse, interrupt flag and DMA request set on falling edge (if
+   * PRS output pulse, interrupt flag, and DMA request set on falling edge (if
    * input capture edge = BOTH).
    */
   timerEventFalling      = _TIMER_CC_CTRL_ICEVCTRL_FALLING
 } TIMER_Event_TypeDef;
 
-
 /** Input edge action. */
-typedef enum
-{
+typedef enum {
   /** No action taken. */
   timerInputActionNone        = _TIMER_CTRL_FALLA_NONE,
 
@@ -157,20 +157,24 @@ typedef enum
   timerInputActionReloadStart = _TIMER_CTRL_FALLA_RELOADSTART
 } TIMER_InputAction_TypeDef;
 
-
 /** Timer mode. */
-typedef enum
-{
-  timerModeUp     = _TIMER_CTRL_MODE_UP,     /**< Up-counting. */
-  timerModeDown   = _TIMER_CTRL_MODE_DOWN,   /**< Down-counting. */
-  timerModeUpDown = _TIMER_CTRL_MODE_UPDOWN, /**< Up/down-counting. */
-  timerModeQDec   = _TIMER_CTRL_MODE_QDEC    /**< Quadrature decoder. */
+typedef enum {
+#if defined (_TIMER_CTRL_MODE_MASK)
+  timerModeUp     = _TIMER_CTRL_MODE_UP,        /**< Up-counting. */
+  timerModeDown   = _TIMER_CTRL_MODE_DOWN,      /**< Down-counting. */
+  timerModeUpDown = _TIMER_CTRL_MODE_UPDOWN,    /**< Up/down-counting. */
+  timerModeQDec   = _TIMER_CTRL_MODE_QDEC       /**< Quadrature decoder. */
+#endif
+#if defined (_TIMER_CFG_MODE_MASK)
+  timerModeUp     = _TIMER_CFG_MODE_UP,         /**< Up-counting. */
+  timerModeDown   = _TIMER_CFG_MODE_DOWN,       /**< Down-counting. */
+  timerModeUpDown = _TIMER_CFG_MODE_UPDOWN,     /**< Up/down-counting. */
+  timerModeQDec   = _TIMER_CFG_MODE_QDEC        /**< Quadrature decoder. */
+#endif
 } TIMER_Mode_TypeDef;
 
-
 /** Compare/capture output action. */
-typedef enum
-{
+typedef enum {
   /** No action. */
   timerOutputActionNone   = _TIMER_CC_CTRL_CUFOA_NONE,
 
@@ -184,65 +188,78 @@ typedef enum
   timerOutputActionSet    = _TIMER_CC_CTRL_CUFOA_SET
 } TIMER_OutputAction_TypeDef;
 
-
 /** Prescaler. */
-typedef enum
-{
-  timerPrescale1    = _TIMER_CTRL_PRESC_DIV1,     /**< Divide by 1. */
-  timerPrescale2    = _TIMER_CTRL_PRESC_DIV2,     /**< Divide by 2. */
-  timerPrescale4    = _TIMER_CTRL_PRESC_DIV4,     /**< Divide by 4. */
-  timerPrescale8    = _TIMER_CTRL_PRESC_DIV8,     /**< Divide by 8. */
-  timerPrescale16   = _TIMER_CTRL_PRESC_DIV16,    /**< Divide by 16. */
-  timerPrescale32   = _TIMER_CTRL_PRESC_DIV32,    /**< Divide by 32. */
-  timerPrescale64   = _TIMER_CTRL_PRESC_DIV64,    /**< Divide by 64. */
-  timerPrescale128  = _TIMER_CTRL_PRESC_DIV128,   /**< Divide by 128. */
-  timerPrescale256  = _TIMER_CTRL_PRESC_DIV256,   /**< Divide by 256. */
-  timerPrescale512  = _TIMER_CTRL_PRESC_DIV512,   /**< Divide by 512. */
-  timerPrescale1024 = _TIMER_CTRL_PRESC_DIV1024   /**< Divide by 1024. */
+typedef enum {
+#if defined (_TIMER_CTRL_PRESC_MASK)
+  timerPrescale1    = _TIMER_CTRL_PRESC_DIV1,       /**< Divide by 1. */
+  timerPrescale2    = _TIMER_CTRL_PRESC_DIV2,       /**< Divide by 2. */
+  timerPrescale4    = _TIMER_CTRL_PRESC_DIV4,       /**< Divide by 4. */
+  timerPrescale8    = _TIMER_CTRL_PRESC_DIV8,       /**< Divide by 8. */
+  timerPrescale16   = _TIMER_CTRL_PRESC_DIV16,      /**< Divide by 16. */
+  timerPrescale32   = _TIMER_CTRL_PRESC_DIV32,      /**< Divide by 32. */
+  timerPrescale64   = _TIMER_CTRL_PRESC_DIV64,      /**< Divide by 64. */
+  timerPrescale128  = _TIMER_CTRL_PRESC_DIV128,     /**< Divide by 128. */
+  timerPrescale256  = _TIMER_CTRL_PRESC_DIV256,     /**< Divide by 256. */
+  timerPrescale512  = _TIMER_CTRL_PRESC_DIV512,     /**< Divide by 512. */
+  timerPrescale1024 = _TIMER_CTRL_PRESC_DIV1024     /**< Divide by 1024. */
+#endif
+#if defined (_TIMER_CFG_PRESC_MASK)
+  timerPrescale1    = _TIMER_CFG_PRESC_DIV1,        /**< Divide by 1. */
+  timerPrescale2    = _TIMER_CFG_PRESC_DIV2,        /**< Divide by 2. */
+  timerPrescale4    = _TIMER_CFG_PRESC_DIV4,        /**< Divide by 4. */
+  timerPrescale8    = _TIMER_CFG_PRESC_DIV8,        /**< Divide by 8. */
+  timerPrescale16   = _TIMER_CFG_PRESC_DIV16,       /**< Divide by 16. */
+  timerPrescale32   = _TIMER_CFG_PRESC_DIV32,       /**< Divide by 32. */
+  timerPrescale64   = _TIMER_CFG_PRESC_DIV64,       /**< Divide by 64. */
+  timerPrescale128  = _TIMER_CFG_PRESC_DIV128,      /**< Divide by 128. */
+  timerPrescale256  = _TIMER_CFG_PRESC_DIV256,      /**< Divide by 256. */
+  timerPrescale512  = _TIMER_CFG_PRESC_DIV512,      /**< Divide by 512. */
+  timerPrescale1024 = _TIMER_CFG_PRESC_DIV1024      /**< Divide by 1024. */
+#endif
 } TIMER_Prescale_TypeDef;
 
-
 /** Peripheral Reflex System signal. */
-typedef enum
-{
-  timerPRSSELCh0 = _TIMER_CC_CTRL_PRSSEL_PRSCH0,        /**< PRS channel 0. */
-  timerPRSSELCh1 = _TIMER_CC_CTRL_PRSSEL_PRSCH1,        /**< PRS channel 1. */
-  timerPRSSELCh2 = _TIMER_CC_CTRL_PRSSEL_PRSCH2,        /**< PRS channel 2. */
-  timerPRSSELCh3 = _TIMER_CC_CTRL_PRSSEL_PRSCH3,        /**< PRS channel 3. */
-#if defined(_TIMER_CC_CTRL_PRSSEL_PRSCH4)
-  timerPRSSELCh4 = _TIMER_CC_CTRL_PRSSEL_PRSCH4,        /**< PRS channel 4. */
-#endif
-#if defined(_TIMER_CC_CTRL_PRSSEL_PRSCH5)
-  timerPRSSELCh5 = _TIMER_CC_CTRL_PRSSEL_PRSCH5,        /**< PRS channel 5. */
-#endif
-#if defined(_TIMER_CC_CTRL_PRSSEL_PRSCH6)
-  timerPRSSELCh6 = _TIMER_CC_CTRL_PRSSEL_PRSCH6,        /**< PRS channel 6. */
-#endif
-#if defined(_TIMER_CC_CTRL_PRSSEL_PRSCH7)
-  timerPRSSELCh7 = _TIMER_CC_CTRL_PRSSEL_PRSCH7,        /**< PRS channel 7. */
-#endif
-#if defined(_TIMER_CC_CTRL_PRSSEL_PRSCH8)
-  timerPRSSELCh8  = _TIMER_CC_CTRL_PRSSEL_PRSCH8,       /**< PRS channel 8. */
-#endif
-#if defined(_TIMER_CC_CTRL_PRSSEL_PRSCH9)
-  timerPRSSELCh9  = _TIMER_CC_CTRL_PRSSEL_PRSCH9,       /**< PRS channel 9. */
-#endif
-#if defined(_TIMER_CC_CTRL_PRSSEL_PRSCH10)
-  timerPRSSELCh10 = _TIMER_CC_CTRL_PRSSEL_PRSCH10,      /**< PRS channel 10. */
-#endif
-#if defined(_TIMER_CC_CTRL_PRSSEL_PRSCH11)
-  timerPRSSELCh11 = _TIMER_CC_CTRL_PRSSEL_PRSCH11,      /**< PRS channel 11. */
-#endif
-} TIMER_PRSSEL_TypeDef;
+typedef uint8_t TIMER_PRSSEL_TypeDef;
 
-#if defined(_TIMER_DTFC_DTFA_NONE)
+/** Deprecated PRS channel selector. New code should use an integer instead of
+ *  using these deprecated enum values. */
+#define timerPRSSELCh0    0UL
+#define timerPRSSELCh1    1UL
+#define timerPRSSELCh2    2UL
+#define timerPRSSELCh3    3UL
+#define timerPRSSELCh4    4UL
+#define timerPRSSELCh5    5UL
+#define timerPRSSELCh6    6UL
+#define timerPRSSELCh7    7UL
+#define timerPRSSELCh8    8UL
+#define timerPRSSELCh9    9UL
+#define timerPRSSELCh10  10UL
+#define timerPRSSELCh11  11UL
+
+#if defined (_TIMER_CC_CFG_INSEL_MASK)
+typedef enum {
+  timerPrsInputNone       =  0x0,
+  timerPrsInputSync       =  _TIMER_CC_CFG_INSEL_PRSSYNC,
+  timerPrsInputAsyncLevel =  _TIMER_CC_CFG_INSEL_PRSASYNCLEVEL,
+  timerPrsInputAsyncPulse =  _TIMER_CC_CFG_INSEL_PRSASYNCPULSE,
+} TIMER_PrsInput_TypeDef;
+#endif
+
+#if defined(_TIMER_DTFC_DTFA_MASK) || defined(_TIMER_DTFCFG_DTFA_MASK)
 /** DT (Dead Time) Fault Actions. */
-typedef enum
-{
-  timerDtiFaultActionNone     = _TIMER_DTFC_DTFA_NONE,     /**< No action on fault. */
-  timerDtiFaultActionInactive = _TIMER_DTFC_DTFA_INACTIVE, /**< Set outputs inactive. */
-  timerDtiFaultActionClear    = _TIMER_DTFC_DTFA_CLEAR,    /**< Clear outputs. */
-  timerDtiFaultActionTristate = _TIMER_DTFC_DTFA_TRISTATE  /**< Tristate outputs. */
+typedef enum {
+#if defined(_TIMER_DTFC_DTFA_MASK)
+  timerDtiFaultActionNone     = _TIMER_DTFC_DTFA_NONE,          /**< No action on fault. */
+  timerDtiFaultActionInactive = _TIMER_DTFC_DTFA_INACTIVE,      /**< Set outputs inactive. */
+  timerDtiFaultActionClear    = _TIMER_DTFC_DTFA_CLEAR,         /**< Clear outputs. */
+  timerDtiFaultActionTristate = _TIMER_DTFC_DTFA_TRISTATE       /**< Tristate outputs. */
+#endif
+#if defined(_TIMER_DTFCFG_DTFA_MASK)
+  timerDtiFaultActionNone     = _TIMER_DTFCFG_DTFA_NONE,        /**< No action on fault. */
+  timerDtiFaultActionInactive = _TIMER_DTFCFG_DTFA_INACTIVE,    /**< Set outputs inactive. */
+  timerDtiFaultActionClear    = _TIMER_DTFCFG_DTFA_CLEAR,       /**< Clear outputs. */
+  timerDtiFaultActionTristate = _TIMER_DTFCFG_DTFA_TRISTATE     /**< Tristate outputs. */
+#endif
 } TIMER_DtiFaultAction_TypeDef;
 #endif
 
@@ -251,9 +268,8 @@ typedef enum
  ******************************************************************************/
 
 /** TIMER initialization structure. */
-typedef struct
-{
-  /** Start counting when init completed. */
+typedef struct {
+  /** Start counting when initialization completed. */
   bool                      enable;
 
   /** Counter shall keep running during debug halt. */
@@ -265,8 +281,8 @@ typedef struct
   /** Clock selection. */
   TIMER_ClkSel_TypeDef      clkSel;
 
-#if defined(TIMER_CTRL_X2CNT) && defined(TIMER_CTRL_ATI)
-  /** 2x Count mode, counter increments/decrements by 2, meant for PWN mode. */
+#if defined(TIMER_CTRL_X2CNT) && (defined(TIMER_CTRL_ATI) || defined(TIMER_CFG_ATI))
+  /** 2x Count mode, counter increments/decrements by 2, meant for PWM mode. */
   bool                      count2x;
 
   /** ATI (Always Track Inputs) makes CCPOL always track
@@ -296,44 +312,50 @@ typedef struct
   bool                      sync;
 } TIMER_Init_TypeDef;
 
-/** Default config for TIMER init structure. */
-#if defined(TIMER_CTRL_X2CNT) && defined(TIMER_CTRL_ATI)
+/** Default configuration for TIMER initialization structure. */
+#if defined(TIMER_CTRL_X2CNT) && (defined(TIMER_CTRL_ATI) || defined(TIMER_CFG_ATI))
 #define TIMER_INIT_DEFAULT                                                            \
-{                                                                                     \
-  true,                   /* Enable timer when init complete. */                      \
-  false,                  /* Stop counter during debug halt. */                       \
-  timerPrescale1,         /* No prescaling. */                                        \
-  timerClkSelHFPerClk,    /* Select HFPER clock. */                                   \
-  false,                  /* Not 2x count mode. */                                    \
-  false,                  /* No ATI. */                                               \
-  timerInputActionNone,   /* No action on falling input edge. */                      \
-  timerInputActionNone,   /* No action on rising input edge. */                       \
-  timerModeUp,            /* Up-counting. */                                          \
-  false,                  /* Do not clear DMA requests when DMA channel is active. */ \
-  false,                  /* Select X2 quadrature decode mode (if used). */           \
-  false,                  /* Disable one shot. */                                     \
-  false                   /* Not started/stopped/reloaded by other timers. */         \
-}
+  {                                                                                   \
+    true,                 /* Enable timer when initialization completes. */           \
+    false,                /* Stop counter during debug halt. */                       \
+    timerPrescale1,       /* No prescaling. */                                        \
+    timerClkSelHFPerClk,  /* Select HFPER clock. */                                   \
+    false,                /* Not 2x count mode. */                                    \
+    false,                /* No ATI. */                                               \
+    timerInputActionNone, /* No action on falling input edge. */                      \
+    timerInputActionNone, /* No action on rising input edge. */                       \
+    timerModeUp,          /* Up-counting. */                                          \
+    false,                /* Do not clear DMA requests when DMA channel is active. */ \
+    false,                /* Select X2 quadrature decode mode (if used). */           \
+    false,                /* Disable one shot. */                                     \
+    false                 /* Not started/stopped/reloaded by other timers. */         \
+  }
 #else
 #define TIMER_INIT_DEFAULT                                                            \
-{                                                                                     \
-  true,                   /* Enable timer when init complete. */                      \
-  false,                  /* Stop counter during debug halt. */                       \
-  timerPrescale1,         /* No prescaling. */                                        \
-  timerClkSelHFPerClk,    /* Select HFPER clock. */                                   \
-  timerInputActionNone,   /* No action on falling input edge. */                      \
-  timerInputActionNone,   /* No action on rising input edge. */                       \
-  timerModeUp,            /* Up-counting. */                                          \
-  false,                  /* Do not clear DMA requests when DMA channel is active. */ \
-  false,                  /* Select X2 quadrature decode mode (if used). */           \
-  false,                  /* Disable one shot. */                                     \
-  false                   /* Not started/stopped/reloaded by other timers. */         \
-}
+  {                                                                                   \
+    true,                 /* Enable timer when initialization completes. */           \
+    false,                /* Stop counter during debug halt. */                       \
+    timerPrescale1,       /* No prescaling. */                                        \
+    timerClkSelHFPerClk,  /* Select HFPER clock. */                                   \
+    timerInputActionNone, /* No action on falling input edge. */                      \
+    timerInputActionNone, /* No action on rising input edge. */                       \
+    timerModeUp,          /* Up-counting. */                                          \
+    false,                /* Do not clear DMA requests when DMA channel is active. */ \
+    false,                /* Select X2 quadrature decode mode (if used). */           \
+    false,                /* Disable one shot. */                                     \
+    false                 /* Not started/stopped/reloaded by other timers. */         \
+  }
 #endif
 
+/** PRS Output configuration. */
+typedef enum {
+  timerPrsOutputPulse   = 0,                   /**< Pulse PRS output from a channel. */
+  timerPrsOutputLevel   = 1,                   /**< PRS output follows CC out level. */
+  timerPrsOutputDefault = timerPrsOutputPulse, /**< Default PRS output behavior. */
+} TIMER_PrsOutput_t;
+
 /** TIMER compare/capture initialization structure. */
-typedef struct
-{
+typedef struct {
   /** Input capture event control. */
   TIMER_Event_TypeDef        eventCtrl;
 
@@ -375,38 +397,69 @@ typedef struct
 
   /** Invert output from compare/capture channel. */
   bool                       outInvert;
+
+  /**
+   * PRS output configuration. PRS output from a timer can either be a
+   * pulse output or a level output that follows the CC out value.
+   */
+  TIMER_PrsOutput_t          prsOutput;
+
+#if defined(_TIMER_CC_CFG_INSEL_MASK)
+  /* When PRS input is used this field is used to configure the type of
+   * PRS input. */
+  TIMER_PrsInput_TypeDef     prsInputType;
+#endif
 } TIMER_InitCC_TypeDef;
 
-/** Default config for TIMER compare/capture init structure. */
+/** Default configuration for TIMER compare/capture initialization structure. */
+#if defined(_TIMER_CC_CFG_INSEL_MASK)
 #define TIMER_INITCC_DEFAULT                                                 \
-{                                                                            \
-  timerEventEveryEdge,      /* Event on every capture. */                    \
-  timerEdgeRising,          /* Input capture edge on rising edge. */         \
-  timerPRSSELCh0,           /* Not used by default, select PRS channel 0. */ \
-  timerOutputActionNone,    /* No action on underflow. */                    \
-  timerOutputActionNone,    /* No action on overflow. */                     \
-  timerOutputActionNone,    /* No action on match. */                        \
-  timerCCModeOff,           /* Disable compare/capture channel. */           \
-  false,                    /* Disable filter. */                            \
-  false,                    /* Select TIMERnCCx input. */                    \
-  false,                    /* Clear output when counter disabled. */        \
-  false                     /* Do not invert output. */                      \
-}
+  {                                                                          \
+    timerEventEveryEdge,    /* Event on every capture. */                    \
+    timerEdgeRising,        /* Input capture edge on rising edge. */         \
+    0,                      /* Not used by default, select PRS channel 0. */ \
+    timerOutputActionNone,  /* No action on underflow. */                    \
+    timerOutputActionNone,  /* No action on overflow. */                     \
+    timerOutputActionNone,  /* No action on match. */                        \
+    timerCCModeOff,         /* Disable compare/capture channel. */           \
+    false,                  /* Disable filter. */                            \
+    false,                  /* No PRS input. */                              \
+    false,                  /* Clear output when counter disabled. */        \
+    false,                  /* Do not invert output. */                      \
+    timerPrsOutputDefault,  /* Use default PRS output configuration. */      \
+    timerPrsInputNone       /* No PRS input, so input type is none. */       \
+  }
+#else
+#define TIMER_INITCC_DEFAULT                                                 \
+  {                                                                          \
+    timerEventEveryEdge,    /* Event on every capture. */                    \
+    timerEdgeRising,        /* Input capture edge on rising edge. */         \
+    0,                      /* Not used by default, select PRS channel 0. */ \
+    timerOutputActionNone,  /* No action on underflow. */                    \
+    timerOutputActionNone,  /* No action on overflow. */                     \
+    timerOutputActionNone,  /* No action on match. */                        \
+    timerCCModeOff,         /* Disable compare/capture channel. */           \
+    false,                  /* Disable filter. */                            \
+    false,                  /* No PRS input. */                              \
+    false,                  /* Clear output when counter disabled. */        \
+    false,                  /* Do not invert output. */                      \
+    timerPrsOutputDefault,  /* Use default PRS output configuration. */      \
+  }
+#endif
 
 #if defined(_TIMER_DTCTRL_MASK)
 /** TIMER Dead Time Insertion (DTI) initialization structure. */
-typedef struct
-{
-  /** Enable DTI or leave it disabled until @ref TIMER_EnableDTI() is called */
+typedef struct {
+  /** Enable DTI or leave it disabled until @ref TIMER_EnableDTI() is called. */
   bool                          enable;
 
-  /** DTI Output Polarity */
+  /** DTI Output Polarity. */
   bool                          activeLowOut;
 
-  /** DTI Complementary Output Invert */
+  /** DTI Complementary Output Invert. */
   bool                          invertComplementaryOut;
 
-  /** Enable Automatic Start-up functionality (when debugger exits) */
+  /** Enable Automatic Start-up functionality (when debugger exits). */
   bool                          autoRestart;
 
   /** Enable/disable PRS as DTI input. */
@@ -426,7 +479,7 @@ typedef struct
   unsigned int                  fallTime;
 
   /** DTI outputs enable bit mask, consisting of one bit per DTI
-      output signal, i.e. CC0, CC1, CC2, CDTI0, CDTI1 and CDTI2.
+      output signal, i.e., CC0, CC1, CC2, CDTI0, CDTI1, and CDTI2.
       This value should consist of one or more TIMER_DTOGEN_DTOGnnnEN flags
       (defined in \<part_name\>_timer.h) OR'ed together. */
   uint32_t                      outputsEnableMask;
@@ -437,13 +490,13 @@ typedef struct
   /** Enable debugger as a fault source. */
   bool                          enableFaultSourceDebugger;
 
-  /** Enable PRS fault source 0 (@p faultSourcePrsSel0) */
+  /** Enable PRS fault source 0 (@p faultSourcePrsSel0). */
   bool                          enableFaultSourcePrsSel0;
 
   /** Select which PRS signal to be PRS fault source 0. */
   TIMER_PRSSEL_TypeDef          faultSourcePrsSel0;
 
-  /** Enable PRS fault source 1 (@p faultSourcePrsSel1) */
+  /** Enable PRS fault source 1 (@p faultSourcePrsSel1). */
   bool                          enableFaultSourcePrsSel1;
 
   /** Select which PRS signal to be PRS fault source 1. */
@@ -451,48 +504,44 @@ typedef struct
 
   /** Fault Action */
   TIMER_DtiFaultAction_TypeDef  faultAction;
-
 } TIMER_InitDTI_TypeDef;
 
-
-  /** Default config for TIMER DTI init structure. */
-#define TIMER_INITDTI_DEFAULT                                                \
-{                                                                            \
-  true,                     /* Enable the DTI. */                            \
-  false,                    /* CC[0|1|2] outputs are active high. */         \
-  false,                    /* CDTI[0|1|2] outputs are not inverted. */      \
-  false,                    /* No auto restart when debugger exits. */       \
-  false,                    /* No PRS source selected. */                    \
-  timerPRSSELCh0,           /* Not used by default, select PRS channel 0. */ \
-  timerPrescale1,           /* No prescaling.  */                            \
-  0,                        /* No rise time. */                              \
-  0,                        /* No fall time. */                              \
-  TIMER_DTOGEN_DTOGCC0EN|TIMER_DTOGEN_DTOGCDTI0EN, /* Enable CC0 and CDTI0 */\
-  true,                     /* Enable core lockup as fault source */         \
-  true,                     /* Enable debugger as fault source */            \
-  false,                    /* Disable PRS fault source 0 */                 \
-  timerPRSSELCh0,           /* Not used by default, select PRS channel 0. */ \
-  false,                    /* Disable PRS fault source 1 */                 \
-  timerPRSSELCh0,           /* Not used by default, select PRS channel 0. */ \
-  timerDtiFaultActionInactive, /* No fault action. */                        \
-}
+/** Default configuration for TIMER DTI initialization structure. */
+#define TIMER_INITDTI_DEFAULT                                                      \
+  {                                                                                \
+    true,                   /* Enable the DTI. */                                  \
+    false,                  /* CC[0|1|2] outputs are active high. */               \
+    false,                  /* CDTI[0|1|2] outputs are not inverted. */            \
+    false,                  /* No auto restart when debugger exits. */             \
+    false,                  /* No PRS source selected. */                          \
+    0,                      /* Not used by default, select PRS channel 0. */       \
+    timerPrescale1,         /* No prescaling.  */                                  \
+    0,                      /* No rise time. */                                    \
+    0,                      /* No fall time. */                                    \
+    TIMER_DTOGEN_DTOGCC0EN | TIMER_DTOGEN_DTOGCDTI0EN, /* Enable CC0 and CDTI0. */ \
+    true,                   /* Enable core lockup as fault source. */              \
+    true,                   /* Enable debugger as fault source. */                 \
+    false,                  /* Disable PRS fault source 0. */                      \
+    0,                      /* Not used by default, select PRS channel 0. */       \
+    false,                  /* Disable PRS fault source 1. */                      \
+    0,                      /* Not used by default, select PRS channel 0. */       \
+    timerDtiFaultActionInactive, /* No fault action. */                            \
+  }
 #endif /* _TIMER_DTCTRL_MASK */
-
 
 /*******************************************************************************
  *****************************   PROTOTYPES   **********************************
  ******************************************************************************/
 
-
 /***************************************************************************//**
  * @brief
- *   Validate the TIMER register block pointer
+ *   Validate TIMER register block pointer.
  *
  * @param[in] ref
  *   Pointer to TIMER peripheral register block.
  *
  * @return
- *   true if ref points to a valid timer, false otherwise.
+ *   True if ref points to a valid timer, false otherwise.
  ******************************************************************************/
 __STATIC_INLINE bool TIMER_Valid(const TIMER_TypeDef *ref)
 {
@@ -506,18 +555,33 @@ __STATIC_INLINE bool TIMER_Valid(const TIMER_TypeDef *ref)
 #if defined(TIMER3)
          || (ref == TIMER3)
 #endif
+#if defined(TIMER4)
+         || (ref == TIMER4)
+#endif
+#if defined(TIMER5)
+         || (ref == TIMER5)
+#endif
+#if defined(TIMER6)
+         || (ref == TIMER6)
+#endif
 #if defined(WTIMER0)
          || (ref == WTIMER0)
 #endif
 #if defined(WTIMER1)
          || (ref == WTIMER1)
 #endif
-         ;
+#if defined(WTIMER2)
+         || (ref == WTIMER2)
+#endif
+#if defined(WTIMER3)
+         || (ref == WTIMER3)
+#endif
+  ;
 }
 
 /***************************************************************************//**
  * @brief
- *   Get the Max count of the timer
+ *   Get the Max count of the timer.
  *
  * @param[in] timer
  *   Pointer to TIMER peripheral register block.
@@ -533,8 +597,13 @@ __STATIC_INLINE uint32_t TIMER_MaxCount(const TIMER_TypeDef *ref)
 #if defined(WTIMER1)
       || (ref == WTIMER1)
 #endif
-      )
-  {
+#if defined(WTIMER2)
+      || (ref == WTIMER2)
+#endif
+#if defined(WTIMER3)
+      || (ref == WTIMER3)
+#endif
+      ) {
     return 0xFFFFFFFFUL;
   }
 #else
@@ -545,8 +614,7 @@ __STATIC_INLINE uint32_t TIMER_MaxCount(const TIMER_TypeDef *ref)
 
 /***************************************************************************//**
  * @brief
- *   Get capture value for compare/capture channel when operating in capture
- *   mode.
+ *   Get compare/capture value for compare/capture channel.
  *
  * @param[in] timer
  *   Pointer to TIMER peripheral register block.
@@ -559,9 +627,42 @@ __STATIC_INLINE uint32_t TIMER_MaxCount(const TIMER_TypeDef *ref)
  ******************************************************************************/
 __STATIC_INLINE uint32_t TIMER_CaptureGet(TIMER_TypeDef *timer, unsigned int ch)
 {
+#if defined (_TIMER_CC_CFG_MASK)
+  if ((timer->CC[ch].CFG & _TIMER_CC_CFG_MODE_MASK) == TIMER_CC_CFG_MODE_INPUTCAPTURE) {
+    return timer->CC[ch].ICF;
+  } else {
+    return timer->CC[ch].OC;
+  }
+#else
   return timer->CC[ch].CCV;
+#endif
 }
 
+/***************************************************************************//**
+ * @brief
+ *   Get buffered compare/capture value for compare/capture channel.
+ *
+ * @param[in] timer
+ *   Pointer to TIMER peripheral register block.
+ *
+ * @param[in] ch
+ *   Compare/capture channel to access.
+ *
+ * @return
+ *   Current buffered capture value.
+ ******************************************************************************/
+__STATIC_INLINE uint32_t TIMER_CaptureBufGet(TIMER_TypeDef *timer, unsigned int ch)
+{
+#if defined (_TIMER_CC_CFG_MASK)
+  if ((timer->CC[ch].CFG & _TIMER_CC_CFG_MODE_MASK) == TIMER_CC_CFG_MODE_INPUTCAPTURE) {
+    return timer->CC[ch].ICOF;
+  } else {
+    return timer->CC[ch].OCB;
+  }
+#else
+  return timer->CC[ch].CCVB;
+#endif
+}
 
 /***************************************************************************//**
  * @brief
@@ -587,9 +688,13 @@ __STATIC_INLINE void TIMER_CompareBufSet(TIMER_TypeDef *timer,
                                          uint32_t val)
 {
   EFM_ASSERT(val <= TIMER_MaxCount(timer));
+#if defined (_TIMER_CC_CFG_MASK)
+  EFM_ASSERT(timer->EN & TIMER_EN_EN);
+  timer->CC[ch].OCB = val;
+#else
   timer->CC[ch].CCVB = val;
+#endif
 }
-
 
 /***************************************************************************//**
  * @brief
@@ -610,9 +715,13 @@ __STATIC_INLINE void TIMER_CompareSet(TIMER_TypeDef *timer,
                                       uint32_t val)
 {
   EFM_ASSERT(val <= TIMER_MaxCount(timer));
+#if defined (_TIMER_CC_CFG_MASK)
+  EFM_ASSERT(timer->EN & TIMER_EN_EN);
+  timer->CC[ch].OC = val;
+#else
   timer->CC[ch].CCV = val;
+#endif
 }
-
 
 /***************************************************************************//**
  * @brief
@@ -629,7 +738,6 @@ __STATIC_INLINE uint32_t TIMER_CounterGet(TIMER_TypeDef *timer)
   return timer->CNT;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Set TIMER counter value.
@@ -643,9 +751,17 @@ __STATIC_INLINE uint32_t TIMER_CounterGet(TIMER_TypeDef *timer)
 __STATIC_INLINE void TIMER_CounterSet(TIMER_TypeDef *timer, uint32_t val)
 {
   EFM_ASSERT(val <= TIMER_MaxCount(timer));
+#if defined(TIMER_HAS_SET_CLEAR)
+  bool enabled = (timer->EN & TIMER_EN_EN) != 0UL;
+  timer->EN_SET = TIMER_EN_EN;
+#endif
   timer->CNT = val;
+#if defined(TIMER_HAS_SET_CLEAR)
+  if (!enabled) {
+    timer->EN_CLR = TIMER_EN_EN;
+  }
+#endif
 }
-
 
 /***************************************************************************//**
  * @brief
@@ -655,22 +771,18 @@ __STATIC_INLINE void TIMER_CounterSet(TIMER_TypeDef *timer, uint32_t val)
  *   Pointer to TIMER peripheral register block.
  *
  * @param[in] enable
- *   true to enable counting, false to disable.
+ *   Set to true to enable counting; set to false otherwise.
  ******************************************************************************/
 __STATIC_INLINE void TIMER_Enable(TIMER_TypeDef *timer, bool enable)
 {
   EFM_ASSERT(TIMER_REF_VALID(timer));
 
-  if (enable)
-  {
+  if (enable) {
     timer->CMD = TIMER_CMD_START;
-  }
-  else
-  {
+  } else {
     timer->CMD = TIMER_CMD_STOP;
   }
 }
-
 
 void TIMER_Init(TIMER_TypeDef *timer, const TIMER_Init_TypeDef *init);
 void TIMER_InitCC(TIMER_TypeDef *timer,
@@ -688,29 +800,36 @@ void TIMER_InitDTI(TIMER_TypeDef *timer, const TIMER_InitDTI_TypeDef *init);
  *   Pointer to TIMER peripheral register block.
  *
  * @param[in] enable
- *   true to enable DTI unit, false to disable.
+ *   Set to true to enable DTI unit; set to false otherwise.
  ******************************************************************************/
 __STATIC_INLINE void TIMER_EnableDTI(TIMER_TypeDef *timer, bool enable)
 {
+#if defined(TIMER_HAS_SET_CLEAR)
+  uint32_t timerEn = timer->EN & TIMER_EN_EN;
+  timer->EN_CLR = TIMER_EN_EN;
+  if (enable) {
+    timer->DTCFG_SET = TIMER_DTCFG_DTEN;
+  } else {
+    timer->DTCFG_CLR = TIMER_DTCFG_DTEN;
+  }
+  timer->EN_SET = timerEn;
+#else
   EFM_ASSERT(TIMER0 == timer);
 
-  if (enable)
-  {
+  if (enable) {
     timer->DTCTRL |= TIMER_DTCTRL_DTEN;
-  }
-  else
-  {
+  } else {
     timer->DTCTRL &= ~TIMER_DTCTRL_DTEN;
   }
+#endif
 }
-
 
 /***************************************************************************//**
  * @brief
  *   Get DTI fault source flags status.
  *
  * @note
- *   The event bits are not cleared by the use of this function.
+ *   Event bits are not cleared by this function.
  *
  * @param[in] timer
  *   Pointer to TIMER peripheral register block.
@@ -724,7 +843,6 @@ __STATIC_INLINE uint32_t TIMER_GetDTIFault(TIMER_TypeDef *timer)
   EFM_ASSERT(TIMER0 == timer);
   return timer->DTFAULT;
 }
-
 
 /***************************************************************************//**
  * @brief
@@ -741,10 +859,13 @@ __STATIC_INLINE void TIMER_ClearDTIFault(TIMER_TypeDef *timer, uint32_t flags)
 
 {
   EFM_ASSERT(TIMER0 == timer);
+#if defined (TIMER_EN_EN)
+  EFM_ASSERT(timer->EN & TIMER_EN_EN);
+#endif
+
   timer->DTFAULTC = flags;
 }
 #endif /* _TIMER_DTCTRL_MASK */
-
 
 /***************************************************************************//**
  * @brief
@@ -759,9 +880,12 @@ __STATIC_INLINE void TIMER_ClearDTIFault(TIMER_TypeDef *timer, uint32_t flags)
  ******************************************************************************/
 __STATIC_INLINE void TIMER_IntClear(TIMER_TypeDef *timer, uint32_t flags)
 {
+#if defined (TIMER_HAS_SET_CLEAR)
+  timer->IF_CLR = flags;
+#else
   timer->IFC = flags;
+#endif
 }
-
 
 /***************************************************************************//**
  * @brief
@@ -779,15 +903,15 @@ __STATIC_INLINE void TIMER_IntDisable(TIMER_TypeDef *timer, uint32_t flags)
   timer->IEN &= ~flags;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Enable one or more TIMER interrupts.
  *
  * @note
  *   Depending on the use, a pending interrupt may already be set prior to
- *   enabling the interrupt. Consider using TIMER_IntClear() prior to enabling
- *   if such a pending interrupt should be ignored.
+ *   enabling the interrupt.  To ignore a pending interrupt, consider using
+ *   TIMER_IntClear() prior to enabling the interrupt.
+
  *
  * @param[in] timer
  *   Pointer to TIMER peripheral register block.
@@ -801,13 +925,12 @@ __STATIC_INLINE void TIMER_IntEnable(TIMER_TypeDef *timer, uint32_t flags)
   timer->IEN |= flags;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Get pending TIMER interrupt flags.
  *
  * @note
- *   The event bits are not cleared by the use of this function.
+ *   Event bits are not cleared by this function.
  *
  * @param[in] timer
  *   Pointer to TIMER peripheral register block.
@@ -821,7 +944,6 @@ __STATIC_INLINE uint32_t TIMER_IntGet(TIMER_TypeDef *timer)
   return timer->IF;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Get enabled and pending TIMER interrupt flags.
@@ -831,7 +953,7 @@ __STATIC_INLINE uint32_t TIMER_IntGet(TIMER_TypeDef *timer)
  *   Pointer to TIMER peripheral register block.
  *
  * @note
- *   Interrupt flags are not cleared by the use of this function.
+ *   Interrupt flags are not cleared by this function.
  *
  * @return
  *   Pending and enabled TIMER interrupt sources.
@@ -853,7 +975,6 @@ __STATIC_INLINE uint32_t TIMER_IntGetEnabled(TIMER_TypeDef *timer)
   return timer->IF & ien;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Set one or more pending TIMER interrupts from SW.
@@ -867,7 +988,11 @@ __STATIC_INLINE uint32_t TIMER_IntGetEnabled(TIMER_TypeDef *timer)
  ******************************************************************************/
 __STATIC_INLINE void TIMER_IntSet(TIMER_TypeDef *timer, uint32_t flags)
 {
+#if defined (TIMER_HAS_SET_CLEAR)
+  timer->IF_SET = flags;
+#else
   timer->IFS = flags;
+#endif
 }
 
 #if defined(_TIMER_DTLOCK_LOCKKEY_LOCK)
@@ -877,12 +1002,11 @@ __STATIC_INLINE void TIMER_IntSet(TIMER_TypeDef *timer, uint32_t flags)
  *   modified.
  *
  * @details
- *   Please refer to the reference manual for TIMER registers that will be
- *   locked.
+ *   Refer to the reference manual for TIMER registers that will be locked.
  *
  * @note
  *   If locking the TIMER registers, they must be unlocked prior to using any
- *   TIMER API functions modifying TIMER registers protected by the lock.
+ *   TIMER API function that modifies TIMER registers protected by the lock.
  *
  * @param[in] timer
  *   Pointer to TIMER peripheral register block.
@@ -890,6 +1014,9 @@ __STATIC_INLINE void TIMER_IntSet(TIMER_TypeDef *timer, uint32_t flags)
 __STATIC_INLINE void TIMER_Lock(TIMER_TypeDef *timer)
 {
   EFM_ASSERT(TIMER0 == timer);
+#if defined (TIMER_EN_EN)
+  EFM_ASSERT(timer->EN & TIMER_EN_EN);
+#endif
 
   timer->DTLOCK = TIMER_DTLOCK_LOCKKEY_LOCK;
 }
@@ -902,9 +1029,9 @@ void TIMER_Reset(TIMER_TypeDef *timer);
  *   Set top value buffer for timer.
  *
  * @details
- *   When the top value buffer register is updated, the value is loaded into
- *   the top value register at the next wrap around. This feature is useful
- *   in order to update the top value safely when the timer is running.
+ *   When top value buffer register is updated, value is loaded into
+ *   top value register at the next wrap around. This feature is useful
+ *   in order to update top value safely when timer is running.
  *
  * @param[in] timer
  *   Pointer to TIMER peripheral register block.
@@ -915,9 +1042,12 @@ void TIMER_Reset(TIMER_TypeDef *timer);
 __STATIC_INLINE void TIMER_TopBufSet(TIMER_TypeDef *timer, uint32_t val)
 {
   EFM_ASSERT(val <= TIMER_MaxCount(timer));
+#if defined (TIMER_EN_EN)
+  EFM_ASSERT(timer->EN & TIMER_EN_EN);
+#endif
+
   timer->TOPB = val;
 }
-
 
 /***************************************************************************//**
  * @brief
@@ -934,7 +1064,6 @@ __STATIC_INLINE uint32_t TIMER_TopGet(TIMER_TypeDef *timer)
   return timer->TOP;
 }
 
-
 /***************************************************************************//**
  * @brief
  *   Set top value for timer.
@@ -948,14 +1077,17 @@ __STATIC_INLINE uint32_t TIMER_TopGet(TIMER_TypeDef *timer)
 __STATIC_INLINE void TIMER_TopSet(TIMER_TypeDef *timer, uint32_t val)
 {
   EFM_ASSERT(val <= TIMER_MaxCount(timer));
+#if defined (TIMER_EN_EN)
+  EFM_ASSERT(timer->EN & TIMER_EN_EN);
+#endif
+
   timer->TOP = val;
 }
-
 
 #if defined(TIMER_DTLOCK_LOCKKEY_UNLOCK)
 /***************************************************************************//**
  * @brief
- *   Unlock the TIMER so that writing to locked registers again is possible.
+ *   Unlock TIMER to enable writing to locked registers again.
  *
  * @param[in] timer
  *   Pointer to TIMER peripheral register block.
@@ -963,6 +1095,9 @@ __STATIC_INLINE void TIMER_TopSet(TIMER_TypeDef *timer, uint32_t val)
 __STATIC_INLINE void TIMER_Unlock(TIMER_TypeDef *timer)
 {
   EFM_ASSERT(TIMER0 == timer);
+#if defined (TIMER_EN_EN)
+  EFM_ASSERT(timer->EN & TIMER_EN_EN);
+#endif
 
   timer->DTLOCK = TIMER_DTLOCK_LOCKKEY_UNLOCK;
 }

@@ -239,13 +239,13 @@ static int lp5562_get_engine_reg_shift(enum lp5562_led_sources engine,
 {
 	switch (engine) {
 	case LP5562_SOURCE_ENGINE_1:
-		*shift = 4;
+		*shift = 4U;
 		break;
 	case LP5562_SOURCE_ENGINE_2:
-		*shift = 2;
+		*shift = 2U;
 		break;
 	case LP5562_SOURCE_ENGINE_3:
-		*shift = 0;
+		*shift = 0U;
 		break;
 	default:
 		return -EINVAL;
@@ -275,7 +275,7 @@ static void lp5562_ms_to_prescale_and_step(struct led_data *data, u32_t ms,
 	 * the step_time value never goes above the allowed 63.
 	 */
 	if (ms < 31) {
-		*prescale = 0;
+		*prescale = 0U;
 		*step_time = ms << 1;
 
 		return;
@@ -285,7 +285,7 @@ static void lp5562_ms_to_prescale_and_step(struct led_data *data, u32_t ms,
 	 * With a prescaler value set to 1 one step takes 15.6ms. So by dividing
 	 * through 16 we get a decent enough result with low effort.
 	 */
-	*prescale = 1;
+	*prescale = 1U;
 	*step_time = ms >> 4;
 
 	return;
@@ -750,7 +750,7 @@ static int lp5562_led_blink(struct device *dev, u32_t led,
 	struct led_data *dev_data = &data->dev_data;
 	int ret;
 	enum lp5562_led_sources engine;
-	u8_t command_index = 0;
+	u8_t command_index = 0U;
 
 	ret = lp5562_get_available_engine(dev, &engine);
 	if (ret) {

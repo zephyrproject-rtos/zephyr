@@ -46,8 +46,8 @@ static s16_t data_r[SAMPLE_NO] = {
 
 #define BLOCK_SIZE (2 * sizeof(data_l))
 
-K_MEM_SLAB_DEFINE(rx_0_mem_slab, BLOCK_SIZE, NUM_BLOCKS, 1);
-K_MEM_SLAB_DEFINE(tx_0_mem_slab, BLOCK_SIZE, NUM_BLOCKS, 1);
+K_MEM_SLAB_DEFINE(rx_0_mem_slab, BLOCK_SIZE, NUM_BLOCKS, 32);
+K_MEM_SLAB_DEFINE(tx_0_mem_slab, BLOCK_SIZE, NUM_BLOCKS, 32);
 
 static void fill_buf(s16_t *tx_block, int att)
 {

@@ -24,7 +24,7 @@ static void msg_dump(const char *s, u8_t *data, unsigned len)
 	unsigned i;
 
 	printf("%s: ", s);
-	for (i = 0; i < len; i++) {
+	for (i = 0U; i < len; i++) {
 		printf("%02x ", data[i]);
 	}
 	printf("(%u bytes)\n", len);

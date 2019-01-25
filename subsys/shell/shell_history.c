@@ -19,7 +19,7 @@ void shell_history_mode_exit(struct shell_history *history)
 }
 
 bool shell_history_get(struct shell_history *history, bool up,
-		       u8_t *dst, size_t *len)
+		       u8_t *dst, u16_t *len)
 {
 	struct shell_history_item *h_item; /* history item */
 	sys_dnode_t *l_item; /* list item */

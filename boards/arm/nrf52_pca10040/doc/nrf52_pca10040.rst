@@ -19,7 +19,7 @@ the following devices:
 * :abbr:`MPU (Memory Protection Unit)`
 * :abbr:`NVIC (Nested Vectored Interrupt Controller)`
 * :abbr:`PWM (Pulse Width Modulation)`
-* RADIO (Bluetooth Low Energy and 802.15.4)
+* RADIO (Bluetooth Low Energy)
 * :abbr:`RTC (nRF RTC System Clock)`
 * Segger RTT (RTT Console)
 * :abbr:`SPI (Serial Peripheral Interface)`
@@ -34,7 +34,7 @@ the following devices:
      nRF52 PCA10040 DK (Credit: Nordic Semi)
 
 More information about the board can be found at the
-`nRF52 DK website`_. The `Nordic Semiconductor Infocenter`_
+`nRF52 DK website`_. The `Nordic Semiconductor Documentation library`_
 contains the processor's information and the datasheet.
 
 Hardware
@@ -53,7 +53,6 @@ hardware features:
 +-----------+------------+----------------------+
 | Interface | Controller | Driver/Component     |
 +===========+============+======================+
-+-----------+------------+----------------------+
 | ADC       | on-chip    | adc                  |
 +-----------+------------+----------------------+
 | CLOCK     | on-chip    | clock_control        |
@@ -84,7 +83,7 @@ hardware features:
 +-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
-See `nRF52 DK website`_ and `Nordic Semiconductor Infocenter`_
+See `nRF52 DK website`_ and `Nordic Semiconductor Documentation library`_
 for a complete list of nRF52 Development Kit board hardware features.
 
 Connections and IOs
@@ -396,13 +395,13 @@ the board are working properly with Zephyr:
    samples/basic/button
 
 You can build and flash the examples to make sure Zephyr is running correctly on
-your board. The button and LED definitions can be found in :file:`boards/arm/nrf52_pca10040/board.h`.
+your board. The button and LED definitions can be found in :file:`boards/arm/nrf52_pca10040/nrf52_pca10040.dts`.
 
 References
 **********
 
 .. target-notes::
 
-.. _nRF52 DK website: http://www.nordicsemi.com/eng/Products/Bluetooth-low-energy/nRF52-DK
-.. _Nordic Semiconductor Infocenter: http://infocenter.nordicsemi.com/
+.. _nRF52 DK website: https://www.nordicsemi.com/Software-and-Tools/Development-Kits/nRF52-DK
+.. _Nordic Semiconductor Documentation library: https://www.nordicsemi.com/DocLib
 

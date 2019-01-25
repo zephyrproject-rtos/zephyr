@@ -92,9 +92,9 @@ extern "C" {
  *
  */
 #if defined(CONFIG_MPU_STACK_GUARD)
-#define MPU_GUARD_ALIGN_AND_SIZE	32
+#define MPU_GUARD_ALIGN_AND_SIZE CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
 #else
-#define MPU_GUARD_ALIGN_AND_SIZE	0
+#define MPU_GUARD_ALIGN_AND_SIZE 0
 #endif
 
 /**
@@ -107,7 +107,7 @@ extern "C" {
  *
  */
 #if defined(CONFIG_USERSPACE)
-#define STACK_ALIGN    32
+#define STACK_ALIGN    CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
 #else
 #define STACK_ALIGN    max(STACK_ALIGN_SIZE, MPU_GUARD_ALIGN_AND_SIZE)
 #endif
@@ -252,79 +252,14 @@ extern "C" {
 #define _ARCH_THREAD_STACK_BUFFER(sym) \
 		((char *)(sym) + MPU_GUARD_ALIGN_AND_SIZE)
 
-#ifdef CONFIG_USERSPACE
+#ifdef CONFIG_ARM_MPU
 #ifdef CONFIG_CPU_HAS_ARM_MPU
-#ifndef _ASMLANGUAGE
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
-#endif /* _ASMLANGUAGE */
-#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
-	BUILD_ASSERT_MSG(!(((size) & ((size) - 1))) && (size) >= 32 && \
-		!((u32_t)(start) & ((size) - 1)), \
-		"the size of the partition must be power of 2" \
-		" and greater than or equal to 32." \
-		"start address of the partition must align with size.")
 #endif /* CONFIG_CPU_HAS_ARM_MPU */
 #ifdef CONFIG_CPU_HAS_NXP_MPU
-#ifndef _ASMLANGUAGE
 #include <arch/arm/cortex_m/mpu/nxp_mpu.h>
-
-#define K_MEM_PARTITION_P_NA_U_NA	(MPU_REGION_SU)
-#define K_MEM_PARTITION_P_RW_U_RW	(MPU_REGION_READ | MPU_REGION_WRITE | \
-					 MPU_REGION_SU)
-#define K_MEM_PARTITION_P_RW_U_RO	(MPU_REGION_READ | MPU_REGION_SU_RW)
-#define K_MEM_PARTITION_P_RW_U_NA	(MPU_REGION_SU_RW)
-#define K_MEM_PARTITION_P_RO_U_RO	(MPU_REGION_READ | MPU_REGION_SU)
-#define K_MEM_PARTITION_P_RO_U_NA	(MPU_REGION_SU_RX)
-
-/* Execution-allowed attributes */
-#define K_MEM_PARTITION_P_RWX_U_RWX	(MPU_REGION_READ | MPU_REGION_WRITE | \
-					 MPU_REGION_EXEC | MPU_REGION_SU)
-#define K_MEM_PARTITION_P_RWX_U_RX	(MPU_REGION_READ | MPU_REGION_EXEC | \
-					 MPU_REGION_SU_RWX)
-#define K_MEM_PARTITION_P_RX_U_RX	(MPU_REGION_READ | MPU_REGION_EXEC | \
-					 MPU_REGION_SU)
-
-#define K_MEM_PARTITION_IS_WRITABLE(attr) \
-	({ \
-		int __is_writable__; \
-		switch (attr) { \
-		case MPU_REGION_WRITE: \
-		case MPU_REGION_SU_RW: \
-			__is_writable__ = 1; \
-			break; \
-		default: \
-			__is_writable__ = 0; \
-		} \
-		__is_writable__; \
-	})
-#define K_MEM_PARTITION_IS_EXECUTABLE(attr) \
-	({ \
-		int __is_executable__; \
-		switch (attr) { \
-		case MPU_REGION_SU_RX: \
-		case MPU_REGION_EXEC: \
-			__is_executable__ = 1; \
-			break; \
-		default: \
-			__is_executable__ = 0; \
-		} \
-		__is_executable__; \
-	})
-
-#endif /* _ASMLANGUAGE */
-#define _ARCH_MEM_PARTITION_ALIGN_CHECK(start, size) \
-	BUILD_ASSERT_MSG((size) % 32 == 0 && (size) >= 32 && \
-		(u32_t)(start) % 32 == 0, \
-		"the size of the partition must align with 32" \
-		" and greater than or equal to 32." \
-		"start address of the partition must align with 32.")
-#endif  /* CONFIG_CPU_HAS_ARM_MPU */
-#endif /* CONFIG_USERSPACE */
-
-#ifndef _ASMLANGUAGE
-/* Typedef for the k_mem_partition attribute*/
-typedef u32_t k_mem_partition_attr_t;
-#endif /* _ASMLANGUAGE */
+#endif /* CONFIG_CPU_HAS_NXP_MPU */
+#endif /* CONFIG_ARM_MPU */
 
 #ifdef __cplusplus
 }

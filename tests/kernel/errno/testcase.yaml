@@ -6,5 +6,6 @@ tests:
   kernel.common.errno:
     tags: kernel
   kernel.common.errno.newlib:
+    platform_exclude: qemu_x86_64
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y

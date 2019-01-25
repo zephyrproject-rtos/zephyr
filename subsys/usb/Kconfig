@@ -44,6 +44,7 @@ config USB_DEVICE_PRODUCT
 
 config USB_DEVICE_SN
 	string "USB serial number"
+	default "ABCDEF012345" if USB_MASS_STORAGE
 	default "0.01"
 	help
 	  USB device SerialNumber string. MUST be configured by vendor.
@@ -59,6 +60,9 @@ config USB_COMPOSITE_BUFFER_SIZE
 	depends on USB_COMPOSITE_DEVICE
 	default 256 if USB_DEVICE_NETWORK_RNDIS
 	default 64
+
+config USB_DEVICE_SOF
+	bool "Enable Start of Frame processing in events"
 
 config USB_DEVICE_BOS
 	bool "Enable USB Binary Device Object Store (BOS)"

@@ -95,7 +95,7 @@ void k_cpu_atomic_idle(unsigned int key)
 	    "hlt\n\t");
 
 	/* restore interrupt lockout state before returning to caller */
-	if (!(key & 0x200)) {
+	if ((key & 0x200) == 0) {
 		_int_latency_start();
 		__asm__ volatile("cli");
 	}

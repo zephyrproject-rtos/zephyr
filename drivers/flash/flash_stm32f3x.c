@@ -12,10 +12,10 @@
 
 static int flash_stm32_erase(struct device *dev, off_t offset, size_t size)
 {
-	u32_t first_page_addr = 0;
-	u32_t last_page_addr = 0;
+	u32_t first_page_addr = 0U;
+	u32_t last_page_addr = 0U;
 	u16_t no_of_pages = size / CONFIG_FLASH_PAGE_SIZE;
-	u16_t page_index = 0;
+	u16_t page_index = 0U;
 
 	/* Check offset and size alignment. */
 	if (((offset % CONFIG_FLASH_PAGE_SIZE) != 0) ||
@@ -67,15 +67,15 @@ static int flash_stm32_read(struct device *dev, off_t offset,
 static int flash_stm32_write(struct device *dev, off_t offset,
 			     const void *data, size_t len)
 {
-	u16_t halfword = 0;
+	u16_t halfword = 0U;
 
 	u32_t address =
 		CONFIG_FLASH_BASE_ADDRESS + offset;
 
-	u8_t remainder = 0;
+	u8_t remainder = 0U;
 
 	if ((len % 2) != 0) {
-		remainder = 1;
+		remainder = 1U;
 	}
 
 	len = len / 2;
@@ -133,7 +133,7 @@ static const struct flash_driver_api flash_stm32_api = {
 };
 
 static const struct flash_stm32_dev_config flash_device_config = {
-	.base = (u32_t *)FLASH_DEV_BASE_ADDRESS,
+	.base = (u32_t *)DT_FLASH_DEV_BASE_ADDRESS,
 	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
 		    .enr =  LL_AHB1_GRP1_PERIPH_FLASH},
 };
@@ -142,7 +142,7 @@ static struct flash_stm32_dev_data flash_device_data = {
 
 };
 
-DEVICE_AND_API_INIT(flash_stm32, FLASH_DEV_NAME,
+DEVICE_AND_API_INIT(flash_stm32, DT_FLASH_DEV_NAME,
 		    flash_stm32_init,
 		    &flash_device_data,
 		    &flash_device_config,

@@ -39,7 +39,7 @@ static void _deep_sleep(enum power_states state)
 }
 #endif
 
-void _sys_soc_set_power_state(enum power_states state)
+void sys_set_power_state(enum power_states state)
 {
 	switch (state) {
 	case SYS_POWER_STATE_CPU_LPS:
@@ -64,7 +64,7 @@ void _sys_soc_set_power_state(enum power_states state)
 	}
 }
 
-void _sys_soc_power_state_post_ops(enum power_states state)
+void sys_power_state_post_ops(enum power_states state)
 {
 	u32_t limit;
 

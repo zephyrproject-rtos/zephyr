@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_usart.h"
@@ -33,6 +11,11 @@
 #include "fsl_dma.h"
 #include "fsl_flexcomm.h"
 #include "fsl_usart_dma.h"
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.flexcomm_usart_dma"
+#endif
 
 /*<! Structure definition for uart_dma_handle_t. The structure is private. */
 typedef struct _usart_dma_private_handle
@@ -94,6 +77,15 @@ static void USART_TransferReceiveDMACallback(dma_handle_t *handle, void *param, 
     }
 }
 
+/*!
+ * brief Initializes the USART handle which is used in transactional functions.
+ * param base USART peripheral base address.
+ * param handle Pointer to usart_dma_handle_t structure.
+ * param callback Callback function.
+ * param userData User data.
+ * param txDmaHandle User-requested DMA handle for TX DMA transfer.
+ * param rxDmaHandle User-requested DMA handle for RX DMA transfer.
+ */
 status_t USART_TransferCreateHandleDMA(USART_Type *base,
                                        usart_dma_handle_t *handle,
                                        usart_dma_transfer_callback_t callback,
@@ -148,6 +140,19 @@ status_t USART_TransferCreateHandleDMA(USART_Type *base,
     return kStatus_Success;
 }
 
+/*!
+ * brief Sends data using DMA.
+ *
+ * This function sends data using DMA. This is a non-blocking function, which returns
+ * right away. When all data is sent, the send callback function is called.
+ *
+ * param base USART peripheral base address.
+ * param handle USART handle pointer.
+ * param xfer USART DMA transfer structure. See #usart_transfer_t.
+ * retval kStatus_Success if succeed, others failed.
+ * retval kStatus_USART_TxBusy Previous transfer on going.
+ * retval kStatus_InvalidArgument Invalid argument.
+ */
 status_t USART_TransferSendDMA(USART_Type *base, usart_dma_handle_t *handle, usart_transfer_t *xfer)
 {
     assert(handle);
@@ -173,8 +178,8 @@ status_t USART_TransferSendDMA(USART_Type *base, usart_dma_handle_t *handle, usa
         USART_EnableTxDMA(base, true);
 
         /* Prepare transfer. */
-        DMA_PrepareTransfer(&xferConfig, xfer->data, (void *)&base->FIFOWR, sizeof(uint8_t), xfer->dataSize,
-                            kDMA_MemoryToPeripheral, NULL);
+        DMA_PrepareTransfer(&xferConfig, xfer->data, ((void *)((uint32_t)&base->FIFOWR)), sizeof(uint8_t),
+                            xfer->dataSize, kDMA_MemoryToPeripheral, NULL);
 
         /* Submit transfer. */
         DMA_SubmitTransfer(handle->txDmaHandle, &xferConfig);
@@ -186,6 +191,19 @@ status_t USART_TransferSendDMA(USART_Type *base, usart_dma_handle_t *handle, usa
     return status;
 }
 
+/*!
+ * brief Receives data using DMA.
+ *
+ * This function receives data using DMA. This is a non-blocking function, which returns
+ * right away. When all data is received, the receive callback function is called.
+ *
+ * param base USART peripheral base address.
+ * param handle Pointer to usart_dma_handle_t structure.
+ * param xfer USART DMA transfer structure. See #usart_transfer_t.
+ * retval kStatus_Success if succeed, others failed.
+ * retval kStatus_USART_RxBusy Previous transfer on going.
+ * retval kStatus_InvalidArgument Invalid argument.
+ */
 status_t USART_TransferReceiveDMA(USART_Type *base, usart_dma_handle_t *handle, usart_transfer_t *xfer)
 {
     assert(handle);
@@ -211,8 +229,8 @@ status_t USART_TransferReceiveDMA(USART_Type *base, usart_dma_handle_t *handle, 
         USART_EnableRxDMA(base, true);
 
         /* Prepare transfer. */
-        DMA_PrepareTransfer(&xferConfig, (void *)&base->FIFORD, xfer->data, sizeof(uint8_t), xfer->dataSize,
-                            kDMA_PeripheralToMemory, NULL);
+        DMA_PrepareTransfer(&xferConfig, ((void *)((uint32_t)&base->FIFORD)), xfer->data, sizeof(uint8_t),
+                            xfer->dataSize, kDMA_PeripheralToMemory, NULL);
 
         /* Submit transfer. */
         DMA_SubmitTransfer(handle->rxDmaHandle, &xferConfig);
@@ -224,6 +242,14 @@ status_t USART_TransferReceiveDMA(USART_Type *base, usart_dma_handle_t *handle, 
     return status;
 }
 
+/*!
+ * brief Aborts the sent data using DMA.
+ *
+ * This function aborts send data using DMA.
+ *
+ * param base USART peripheral base address
+ * param handle Pointer to usart_dma_handle_t structure
+ */
 void USART_TransferAbortSendDMA(USART_Type *base, usart_dma_handle_t *handle)
 {
     assert(NULL != handle);
@@ -234,6 +260,14 @@ void USART_TransferAbortSendDMA(USART_Type *base, usart_dma_handle_t *handle)
     handle->txState = kUSART_TxIdle;
 }
 
+/*!
+ * brief Aborts the received data using DMA.
+ *
+ * This function aborts the received data using DMA.
+ *
+ * param base USART peripheral base address
+ * param handle Pointer to usart_dma_handle_t structure
+ */
 void USART_TransferAbortReceiveDMA(USART_Type *base, usart_dma_handle_t *handle)
 {
     assert(NULL != handle);
@@ -244,6 +278,18 @@ void USART_TransferAbortReceiveDMA(USART_Type *base, usart_dma_handle_t *handle)
     handle->rxState = kUSART_RxIdle;
 }
 
+/*!
+ * brief Get the number of bytes that have been received.
+ *
+ * This function gets the number of bytes that have been received.
+ *
+ * param base USART peripheral base address.
+ * param handle USART handle pointer.
+ * param count Receive bytes count.
+ * retval kStatus_NoTransferInProgress No receive in progress.
+ * retval kStatus_InvalidArgument Parameter is invalid.
+ * retval kStatus_Success Get successfully through the parameter \p count;
+ */
 status_t USART_TransferGetReceiveCountDMA(USART_Type *base, usart_dma_handle_t *handle, uint32_t *count)
 {
     assert(handle);

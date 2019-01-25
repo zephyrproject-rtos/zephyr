@@ -25,7 +25,7 @@
 /* number of context switches */
 #define NCTXSWITCH   10000
 #ifndef STACKSIZE
-#define STACKSIZE    512
+#define STACKSIZE    (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #endif
 
 /* stack used by the threads */
@@ -93,7 +93,7 @@ static void thread_two(void)
 int coop_ctx_switch(void)
 {
 	PRINT_FORMAT(" 6 - Measure average context switch time between threads (coop)");
-	ctx_switch_counter = 0;
+	ctx_switch_counter = 0U;
 	ctx_switch_balancer = 0;
 
 	bench_test_start();

@@ -39,7 +39,7 @@ config NET_SOCKETS_SOCKOPT_TLS
 config NET_SOCKETS_ENABLE_DTLS
 	bool "Enable DTLS socket support [EXPERIMENTAL]"
 	depends on NET_SOCKETS_SOCKOPT_TLS
-	select TLS_DTLS
+	select MBEDTLS_DTLS
 	help
 	  Enable DTLS socket support. By default only TLS over TCP is supported.
 

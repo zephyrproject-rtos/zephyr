@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_echo_server_vlan
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_echo_server_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 
@@ -52,32 +52,32 @@ static int setup_iface(struct net_if *iface, const char *ipv6_addr,
 
 	ret = net_eth_vlan_enable(iface, vlan_tag);
 	if (ret < 0) {
-		NET_ERR("Cannot enable VLAN for tag %d (%d)", vlan_tag, ret);
+		LOG_ERR("Cannot enable VLAN for tag %d (%d)", vlan_tag, ret);
 	}
 
 	if (net_addr_pton(AF_INET6, ipv6_addr, &addr6)) {
-		NET_ERR("Invalid address: %s", ipv6_addr);
+		LOG_ERR("Invalid address: %s", ipv6_addr);
 		return -EINVAL;
 	}
 
 	ifaddr = net_if_ipv6_addr_add(iface, &addr6, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		NET_ERR("Cannot add %s to interface %p", ipv6_addr, iface);
+		LOG_ERR("Cannot add %s to interface %p", ipv6_addr, iface);
 		return -EINVAL;
 	}
 
 	if (net_addr_pton(AF_INET, ipv4_addr, &addr4)) {
-		NET_ERR("Invalid address: %s", ipv6_addr);
+		LOG_ERR("Invalid address: %s", ipv6_addr);
 		return -EINVAL;
 	}
 
 	ifaddr = net_if_ipv4_addr_add(iface, &addr4, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		NET_ERR("Cannot add %s to interface %p", ipv4_addr, iface);
+		LOG_ERR("Cannot add %s to interface %p", ipv4_addr, iface);
 		return -EINVAL;
 	}
 
-	NET_DBG("Interface %p VLAN tag %d setup done.", iface, vlan_tag);
+	LOG_DBG("Interface %p VLAN tag %d setup done.", iface, vlan_tag);
 
 	return 0;
 }

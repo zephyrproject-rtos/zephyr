@@ -125,7 +125,7 @@ int z_clock_driver_init(struct device *device)
  * Note that interrupts may be received in the meanwhile and that therefore this
  * thread may loose context
  */
-void k_busy_wait(u32_t usec_to_wait)
+void z_arch_busy_wait(u32_t usec_to_wait)
 {
 	u64_t time_end = hwm_get_time() + usec_to_wait;
 

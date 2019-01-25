@@ -7,3 +7,7 @@ flash: 512
 toolchain:
   - zephyr
   - gnuarmemb
+  - xtools
+supported:
+  - i2c
+  - hts221

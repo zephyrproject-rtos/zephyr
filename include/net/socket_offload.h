@@ -158,6 +158,8 @@ static inline void freeaddrinfo(struct addrinfo *res)
 	return socket_ops->freeaddrinfo(res);
 }
 
+int fcntl(int fd, int cmd, ...);
+
 #ifdef __cplusplus
 }
 #endif

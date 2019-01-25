@@ -26,41 +26,81 @@ void shell_log_backend_enable(const struct shell_log_backend *backend,
 
 static struct log_msg *msg_from_fifo(const struct shell_log_backend *backend)
 {
-	struct log_msg *msg = k_fifo_get(backend->fifo, K_NO_WAIT);
+	struct shell_log_backend_msg msg;
+	int err;
 
-	if (msg) {
-		atomic_dec(&backend->control_block->cnt);
-	}
+	err = k_msgq_get(backend->msgq, &msg, K_NO_WAIT);
 
-	return msg;
+	return (err == 0) ? msg.msg : NULL;
 }
 
 static void fifo_flush(const struct shell_log_backend *backend)
 {
-	struct log_msg *msg = msg_from_fifo(backend);
+	struct log_msg *msg;
 
 	/* Flush log messages. */
-	while (msg) {
+	while ((msg = msg_from_fifo(backend)) != NULL) {
 		log_msg_put(msg);
-		msg = msg_from_fifo(backend);
+	}
+}
+
+static void flush_expired_messages(const struct shell *shell)
+{
+	int err;
+	struct shell_log_backend_msg msg;
+	struct k_msgq *msgq = shell->log_backend->msgq;
+	u32_t timeout = shell->log_backend->timeout;
+	u32_t now = k_uptime_get_32();
+
+	while (1) {
+		err = k_msgq_peek(msgq, &msg);
+
+		if (err == 0 && ((now - msg.timestamp) > timeout)) {
+			(void)k_msgq_get(msgq, &msg, K_NO_WAIT);
+			log_msg_put(msg.msg);
+
+			if (IS_ENABLED(CONFIG_SHELL_STATS)) {
+				shell->stats->log_lost_cnt++;
+			}
+		} else {
+			break;
+		}
 	}
 }
 
 static void msg_to_fifo(const struct shell *shell,
 			struct log_msg *msg)
 {
-	atomic_val_t cnt;
+	int err;
+	struct shell_log_backend_msg t_msg = {
+		.msg = msg,
+		.timestamp = k_uptime_get_32()
+	};
 
-	k_fifo_put(shell->log_backend->fifo, msg);
+	err = k_msgq_put(shell->log_backend->msgq, &t_msg,
+			 shell->log_backend->timeout);
 
-	cnt = atomic_inc(&shell->log_backend->control_block->cnt);
+	switch (err) {
+	case 0:
+		break;
+	case -EAGAIN:
+	case -ENOMSG:
+	{
+		flush_expired_messages(shell);
 
-	/* If there is too much queued free the oldest one. */
-	if (cnt >= CONFIG_SHELL_MAX_LOG_MSG_BUFFERED) {
-		log_msg_put(msg_from_fifo(shell->log_backend));
-		if (IS_ENABLED(CONFIG_SHELL_STATS)) {
-			shell->stats->log_lost_cnt++;
+		err = k_msgq_put(shell->log_backend->msgq, &msg, K_NO_WAIT);
+		if (err) {
+			/* Unexpected case as we just freed one element and
+			 * there is no other context that puts into the msgq.
+			 */
+			__ASSERT_NO_MSG(0);
 		}
+		break;
+	}
+	default:
+		/* Other errors are not expected. */
+		__ASSERT_NO_MSG(0);
+		break;
 	}
 }
 

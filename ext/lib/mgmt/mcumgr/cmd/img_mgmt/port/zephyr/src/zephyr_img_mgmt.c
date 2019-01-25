@@ -218,7 +218,7 @@ zephyr_img_mgmt_init(struct device *dev)
 {
     ARG_UNUSED(dev);
 
-    zephyr_img_mgmt_flash_dev = device_get_binding(FLASH_DEV_NAME);
+    zephyr_img_mgmt_flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
     if (zephyr_img_mgmt_flash_dev == NULL) {
         return -ENODEV;
     }

@@ -91,7 +91,7 @@ void mem_domain_for_user(void *tc_number, void *p2, void *p3)
 {
 	set_valid_fault_value((u32_t)tc_number);
 
-	mem_domain_buf[0] = 10;
+	mem_domain_buf[0] = 10U;
 	if (valid_fault == false) {
 		ztest_test_pass();
 	} else {
@@ -103,7 +103,7 @@ void mem_domain_for_user(void *tc_number, void *p2, void *p3)
 void mem_domain_test_1(void *tc_number, void *p2, void *p3)
 {
 	if ((u32_t)tc_number == 1) {
-		mem_domain_buf[0] = 10;
+		mem_domain_buf[0] = 10U;
 		k_mem_domain_add_thread(&mem_domain_mem_domain,
 					k_current_get());
 	}
@@ -122,7 +122,7 @@ void mem_domain_test_1(void *tc_number, void *p2, void *p3)
  */
 void test_mem_domain_valid_access(void *p1, void *p2, void *p3)
 {
-	u32_t tc_number = 1;
+	u32_t tc_number = 1U;
 
 	mem_domain_init();
 
@@ -148,7 +148,7 @@ void test_mem_domain_valid_access(void *p1, void *p2, void *p3)
  */
 void test_mem_domain_invalid_access(void *p1, void *p2, void *p3)
 {
-	u32_t tc_number = 2;
+	u32_t tc_number = 2U;
 
 	k_thread_create(&mem_domain_2_tid,
 			mem_domain_2_stack,
@@ -171,7 +171,7 @@ static void thread_entry_rw(void *p1, void *p2, void *p3)
 	(void) read_data;
 
 	/* Write to the partition */
-	mem_domain_buf[0] = 99;
+	mem_domain_buf[0] = 99U;
 
 	ztest_test_pass();
 }
@@ -211,7 +211,7 @@ static void user_thread_entry_ro(void *p1, void *p2, void *p3)
 	 * as the partition has read only permission for
 	 * user threads
 	 */
-	mem_domain_buf1[0] = 10;
+	mem_domain_buf1[0] = 10U;
 
 	zassert_unreachable("The user thread is allowed to access a read only"
 			    " partition of a memory domain");
@@ -324,10 +324,10 @@ void mem_domain_for_user_tc3(void *max_partitions, void *p2, void *p3)
 	USERSPACE_BARRIER;
 
 	/* fault should be hit on the first index itself. */
-	for (index = 0;
+	for (index = 0U;
 	     (index < (u32_t)max_partitions) && (index < 8);
 	     index++) {
-		*(u32_t *)mem_domain_tc3_partition_array[index]->start = 10;
+		*(u32_t *)mem_domain_tc3_partition_array[index]->start = 10U;
 	}
 
 	zassert_unreachable(ERROR_STR);
@@ -357,7 +357,7 @@ void test_mem_domain_add_partitions_invalid(void *p1, void *p2, void *p3)
 			  1,
 			  mem_domain_memory_partition_array);
 
-	for (index = 0; (index < max_partitions) && (index < 8); index++) {
+	for (index = 0U; (index < max_partitions) && (index < 8); index++) {
 		k_mem_domain_add_partition(&mem_domain_tc3_mem_domain,
 					   mem_domain_tc3_partition_array \
 					   [index]);
@@ -392,8 +392,8 @@ void mem_domain_for_user_tc4(void *max_partitions, void *p2, void *p3)
 	valid_fault = false;
 	USERSPACE_BARRIER;
 
-	for (index = 0; (index < (u32_t)p2) && (index < 8); index++) {
-		*(u32_t *)mem_domain_tc3_partition_array[index]->start = 10;
+	for (index = 0U; (index < (u32_t)p2) && (index < 8); index++) {
+		*(u32_t *)mem_domain_tc3_partition_array[index]->start = 10U;
 	}
 
 	ztest_test_pass();
@@ -418,7 +418,7 @@ void test_mem_domain_add_partitions_simple(void *p1, void *p2, void *p3)
 			  1,
 			  mem_domain_tc3_partition_array);
 
-	for (index = 1; (index < max_partitions) && (index < 8); index++) {
+	for (index = 1U; (index < max_partitions) && (index < 8); index++) {
 		k_mem_domain_add_partition(&mem_domain_tc3_mem_domain,
 					   mem_domain_tc3_partition_array \
 					   [index]);
@@ -443,7 +443,7 @@ void mem_domain_for_user_tc5(void *p1, void *p2, void *p3)
 	USERSPACE_BARRIER;
 
 	/* will generate a fault */
-	mem_domain_tc3_part1[0] = 10;
+	mem_domain_tc3_part1[0] = 10U;
 	zassert_unreachable(ERROR_STR);
 }
 /**
@@ -474,7 +474,7 @@ void mem_domain_test_6_1(void *p1, void *p2, void *p3)
 	valid_fault = false;
 	USERSPACE_BARRIER;
 
-	mem_domain_tc3_part2[0] = 10;
+	mem_domain_tc3_part2[0] = 10U;
 	k_thread_abort(k_current_get());
 }
 
@@ -483,7 +483,7 @@ void mem_domain_test_6_2(void *p1, void *p2, void *p3)
 	valid_fault = true;
 	USERSPACE_BARRIER;
 
-	mem_domain_tc3_part2[0] = 10;
+	mem_domain_tc3_part2[0] = 10U;
 	zassert_unreachable(ERROR_STR);
 }
 
@@ -503,7 +503,7 @@ void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
 	k_mem_domain_add_thread(&mem_domain_tc3_mem_domain,
 				k_current_get());
 
-	mem_domain_tc3_part2[0] = 10;
+	mem_domain_tc3_part2[0] = 10U;
 
 	k_thread_create(&mem_domain_6_tid,
 			mem_domain_6_stack,
@@ -536,7 +536,7 @@ void mem_domain_for_user_tc7(void *p1, void *p2, void *p3)
 	USERSPACE_BARRIER;
 
 	/* will generate a fault */
-	mem_domain_tc3_part4[0] = 10;
+	mem_domain_tc3_part4[0] = 10U;
 	zassert_unreachable(ERROR_STR);
 }
 

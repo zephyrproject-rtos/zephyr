@@ -334,7 +334,7 @@ Z_GENLIST_APPEND_LIST(slist, snode)
 static inline void sys_slist_merge_slist(sys_slist_t *list,
 					 sys_slist_t *list_to_append);
 
-Z_GENLIST_MERGE_LIST(slist)
+Z_GENLIST_MERGE_LIST(slist, snode)
 
 /**
  * @brief Insert a node to the given list

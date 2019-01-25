@@ -44,28 +44,8 @@ config ADC_INIT_PRIORITY
 config ADC_0
 	bool "Enable ADC 0"
 
-config ADC_0_NAME
-	string "ADC 0 Driver's name"
-	depends on ADC_0 && !HAS_DTS_ADC
-	default "ADC_0"
-
-config ADC_0_IRQ_PRI
-	int "ADC 0 interrupt priority"
-	depends on ADC_0 && !HAS_DTS_ADC
-	default 2
-
 config ADC_1
 	bool "Enable ADC 1"
-
-config ADC_1_NAME
-	string "ADC 1 Driver's name"
-	depends on ADC_1 && !HAS_DTS_ADC
-	default "ADC_1"
-
-config ADC_1_IRQ_PRI
-	int "ADC 1 interrupt priority"
-	depends on ADC_1 && !HAS_DTS_ADC
-	default 2
 
 source "drivers/adc/Kconfig.dw"
 
@@ -74,8 +54,6 @@ source "drivers/adc/Kconfig.mcux"
 source "drivers/adc/Kconfig.nrfx"
 
 source "drivers/adc/Kconfig.sam_afec"
-
-source "drivers/adc/Kconfig.ti_adc108s102"
 
 source "drivers/adc/Kconfig.intel_quark"
 

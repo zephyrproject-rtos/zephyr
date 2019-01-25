@@ -60,7 +60,7 @@ static void tIsr_entry_push(void *p)
 	u32_t i;
 
 	/* Push items to stack */
-	for (i = 0; i < STACK_LEN; i++) {
+	for (i = 0U; i < STACK_LEN; i++) {
 		k_stack_push((struct k_stack *)p, data_isr[i]);
 	}
 }
@@ -70,7 +70,7 @@ static void tIsr_entry_pop(void *p)
 	u32_t i;
 
 	/* Pop items from stack */
-	for (i = 0; i < STACK_LEN; i++) {
+	for (i = 0U; i < STACK_LEN; i++) {
 		if (p == &stack1) {
 			k_stack_pop((struct k_stack *)p, &data1[i], K_NO_WAIT);
 		} else {
@@ -92,7 +92,7 @@ static void thread_entry_fn_single(void *p1, void *p2, void *p3)
 		      "Push & Pop items does not match");
 
 	/* Push items from stack */
-	for (i = 0; i < STACK_LEN; i++) {
+	for (i = 0U; i < STACK_LEN; i++) {
 		k_stack_push((struct k_stack *)p1, data2[i]);
 	}
 
@@ -105,7 +105,7 @@ static void thread_entry_fn_dual(void *p1, void *p2, void *p3)
 	u32_t tmp[STACK_LEN];
 	u32_t i;
 
-	for (i = 0; i < STACK_LEN; i++) {
+	for (i = 0U; i < STACK_LEN; i++) {
 		/* Pop items from stack2 */
 		k_stack_pop(p2, &tmp[i], K_FOREVER);
 
@@ -149,7 +149,7 @@ static void test_single_stack_play(void)
 	k_sem_init(&end_sema, 0, 1);
 
 	/* Push items to stack */
-	for (i = 0; i < STACK_LEN; i++) {
+	for (i = 0U; i < STACK_LEN; i++) {
 		k_stack_push(&stack1, data1[i]);
 	}
 
@@ -187,7 +187,7 @@ static void test_dual_stack_play(void)
 				      NULL, K_PRIO_PREEMPT(0), K_USER |
 				      K_INHERIT_PERMS, 0);
 
-	for (i = 0; i < STACK_LEN; i++) {
+	for (i = 0U; i < STACK_LEN; i++) {
 		/* Push items to stack2 */
 		k_stack_push(&stack2, data2[i]);
 
@@ -241,7 +241,7 @@ static void test_isr_stack_play(void)
 void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &stack1, &stack2, &thread_data,
-			      &end_sema, &threadstack, NULL);
+			      &end_sema, &threadstack);
 
 	ztest_test_suite(test_stack_usage,
 			 ztest_user_unit_test(test_single_stack_play),

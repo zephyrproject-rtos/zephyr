@@ -10,10 +10,10 @@ config SOC_SERIES
 	default "quark_se"
 
 config X86_IAMCU
-	def_bool y
+	default y
 
 config X86_NO_MELTDOWN
-	def_bool y
+	default y
 
 config	SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000
@@ -25,41 +25,38 @@ config LOAPIC_TIMER_IRQ
 	default 64 if LOAPIC_TIMER
 
 config QMSI
-	def_bool y
-
-config QMSI_BUILTIN
-	def_bool y
+	default y
 
 if PWM
 config PWM_QMSI
-	def_bool y
+	default y
 endif
 
 if PINMUX
 config PINMUX_QMSI
-	def_bool y
+	default y
 endif
 
 if GPIO
 config GPIO_QMSI
-	def_bool y
+	default y
 
 config GPIO_QMSI_0
-	def_bool y
+	default y
 
 config GPIO_QMSI_1
-	def_bool y
+	default y
 endif # GPIO
 
 if I2C
 config I2C_QMSI
-	def_bool y
+	default y
 
 config I2C_0
-	def_bool y
+	default y
 
 config I2C_1
-	def_bool y
+	default y
 
 config I2C_SDA_SETUP
 	default 2
@@ -76,22 +73,22 @@ endif # I2C
 if CLOCK_CONTROL
 
 config CLOCK_CONTROL_QUARK_SE
-	def_bool y
+	default y
 
 if CLOCK_CONTROL_QUARK_SE
 
 config CLOCK_CONTROL_QUARK_SE_PERIPHERAL
-	def_bool y
+	default y
 config CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME
 	default "clk_peripheral"
 
 config CLOCK_CONTROL_QUARK_SE_EXTERNAL
-	def_bool y
+	default y
 config CLOCK_CONTROL_QUARK_SE_EXTERNAL_DRV_NAME
 	default "clk_external"
 
 config CLOCK_CONTROL_QUARK_SE_SENSOR
-	def_bool y
+	default y
 config CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME
 	default "clk_sensor"
 
@@ -102,9 +99,9 @@ endif # CLOCK_CONTROL
 
 if COUNTER
 config AON_COUNTER_QMSI
-	def_bool y
+	default y
 config AON_TIMER_QMSI
-	def_bool y
+	default y
 config AON_TIMER_IRQ_PRI
 	default 2
 
@@ -113,13 +110,13 @@ endif
 
 if SPI
 config SPI_DW
-	def_bool y
+	default y
 
 config SPI_0
-	def_bool y
+	default y
 
 config SPI_1
-	def_bool y
+	default y
 
 config SPI_DW_FIFO_DEPTH
 	default 7
@@ -127,7 +124,7 @@ config SPI_DW_FIFO_DEPTH
 if SPI_SLAVE
 
 config SPI_2
-	def_bool y
+	default y
 
 config SPI_2_OP_MODES
 	default 2
@@ -139,34 +136,34 @@ endif # SPI
 
 if AIO_COMPARATOR
 config AIO_COMPARATOR_QMSI
-	def_bool y
+	default y
 endif
 
 
 if WATCHDOG
 config WDT_QMSI
-	def_bool y
+	default y
 endif # WATCHDOG
 
 if RTC
 config RTC_QMSI
-	def_bool y
+	default y
 endif # RTC
 
 if BT_H4
 
 config UART_QMSI_0
-	def_bool y
+	default y
 
 config UART_QMSI_0_HW_FC
-	def_bool y
+	default y
 
 endif # BT_H4
 
 if UART_QMSI
 
 config UART_QMSI_1
-	def_bool y
+	default y
 
 endif # UART_QMSI
 
@@ -177,14 +174,14 @@ endif # SOC_FLASH_QMSI
 
 if DMA
 config DMA_QMSI
-	def_bool y
+	default y
 endif
 
 if USB
 config USB_DW
-	def_bool y
+	default y
 config GPIO
-	def_bool y
+	default y
 config USB_DW_IRQ_PRI
 	default 3
 endif # USB

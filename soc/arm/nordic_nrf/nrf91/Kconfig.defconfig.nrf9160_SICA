@@ -1,0 +1,20 @@
+# Kconfig.defconfig.nrf9160 - Nordic Semiconductor nRF9160 MCU
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+
+if SOC_NRF9160_SICA
+
+config SOC
+	string
+	default "nRF9160_SICA"
+
+config NUM_IRQS
+	int
+	default 65
+
+endif # SOC_NRF9160_SICA
+

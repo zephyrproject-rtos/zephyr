@@ -265,10 +265,6 @@ static int ecm_send(struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	/* copy header */
-	memcpy(&tx_buf[b_idx], net_pkt_ll(pkt), net_pkt_ll_reserve(pkt));
-	b_idx += net_pkt_ll_reserve(pkt);
-
 	/* copy payload */
 	for (frag = pkt->frags; frag; frag = frag->frags) {
 		memcpy(&tx_buf[b_idx], frag->data, frag->len);
@@ -307,7 +303,7 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 		}
 	}
 
-	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(K_FOREVER);
 	if (!pkt) {
 		LOG_ERR("no memory for network packet\n");
 		goto done;
@@ -386,6 +382,9 @@ static void ecm_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	case USB_DC_SUSPEND:
 	case USB_DC_RESUME:
 		LOG_DBG("USB unhandlded state: %d", status);
+		break;
+
+	case USB_DC_SOF:
 		break;
 
 	case USB_DC_UNKNOWN:

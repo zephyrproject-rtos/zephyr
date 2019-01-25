@@ -8,13 +8,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_ipv6
-#define NET_LOG_LEVEL CONFIG_NET_IPV6_LOG_LEVEL
-
 /* By default this prints too much data, set the value to 1 to see
  * neighbor cache contents.
  */
 #define NET_DEBUG_NBR 0
+
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 
 #include <errno.h>
 #include <stdlib.h>
@@ -33,7 +33,6 @@
 #include "nbr.h"
 #include "6lo.h"
 #include "route.h"
-#include "rpl.h"
 #include "net_stats.h"
 
 /* Timeout value to be used when allocating net buffer during various
@@ -106,16 +105,6 @@ int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 	size_t total_len;
 	int ret;
 
-#if defined(CONFIG_NET_UDP) && defined(CONFIG_NET_RPL_INSERT_HBH_OPTION)
-	if (next_header_proto != IPPROTO_TCP &&
-	    next_header_proto != IPPROTO_ICMPV6) {
-		/* Check if we need to add RPL header to sent UDP packet. */
-		if (net_rpl_insert_header(pkt) < 0) {
-			NET_DBG("RPL HBHO insert failed");
-			return -EINVAL;
-		}
-	}
-#endif
 	net_pkt_compact(pkt);
 
 	total_len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr);
@@ -144,36 +133,6 @@ int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 	}
 
 	return 0;
-}
-
-static inline enum net_verdict process_icmpv6_pkt(struct net_pkt *pkt,
-						  struct net_ipv6_hdr *ipv6)
-{
-	struct net_icmp_hdr icmp_hdr;
-	u16_t chksum;
-	int ret;
-
-	ret = net_icmpv6_get_hdr(pkt, &icmp_hdr);
-	if (ret < 0) {
-		NET_DBG("NULL ICMPv6 header - dropping");
-		return NET_DROP;
-	}
-
-	chksum = icmp_hdr.chksum;
-	net_icmpv6_set_chksum(pkt);
-	(void)net_icmpv6_get_hdr(pkt, &icmp_hdr);
-
-	if (chksum != icmp_hdr.chksum) {
-		NET_DBG("ICMPv6 invalid checksum (0x%04x instead of 0x%04x)",
-			ntohs(chksum), ntohs(icmp_hdr.chksum));
-		return NET_DROP;
-	}
-
-	NET_DBG("ICMPv6 %s received type %d code %d",
-		net_icmpv6_type2str(icmp_hdr.type), icmp_hdr.type,
-		icmp_hdr.code);
-
-	return net_icmpv6_input(pkt, icmp_hdr.type, icmp_hdr.code);
 }
 
 static inline struct net_pkt *check_unknown_option(struct net_pkt *pkt,
@@ -226,10 +185,7 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_pkt *pkt,
 						     enum net_verdict *verdict)
 {
 	u8_t opt_type, opt_len;
-	u16_t length = 0, loc;
-#if defined(CONFIG_NET_RPL)
-	bool result;
-#endif
+	u16_t length = 0U, loc;
 
 	if (len > total_len) {
 		NET_DBG("Corrupted packet, extension header %d too long "
@@ -263,23 +219,6 @@ static inline struct net_buf *handle_ext_hdr_options(struct net_pkt *pkt,
 			length += opt_len + 2;
 			loc += opt_len + 2;
 			break;
-#if defined(CONFIG_NET_RPL)
-		case NET_IPV6_EXT_HDR_OPT_RPL:
-			NET_DBG("Processing RPL option");
-			frag = net_rpl_verify_header(pkt, frag, loc, &loc,
-						     &result);
-			if (!result) {
-				NET_DBG("RPL option error, packet dropped");
-				goto drop;
-			}
-
-			if (!frag && *pos == 0xffff) {
-				goto drop;
-			}
-
-			*verdict = NET_CONTINUE;
-			return frag;
-#endif
 		default:
 			if (!check_unknown_option(pkt, opt_type, length)) {
 				goto drop;
@@ -443,13 +382,16 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt, bool is_loopback)
 	u8_t first_option;
 	u16_t offset;
 	u16_t length;
-	u16_t total_len = 0;
+	u16_t total_len = 0U;
 	u8_t ext_bitmap;
 
-	if (real_len != pkt_len) {
+	if (real_len < pkt_len) {
 		NET_DBG("IPv6 packet size %d pkt len %d", pkt_len, real_len);
 		net_stats_update_ipv6_drop(net_pkt_iface(pkt));
 		goto drop;
+	} else if (real_len > pkt_len) {
+		net_pkt_pull(pkt, pkt_len, real_len - pkt_len);
+		real_len = net_pkt_get_len(pkt);
 	}
 
 	NET_DBG("IPv6 packet len %d received from %s to %s", real_len,
@@ -536,9 +478,9 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt, bool is_loopback)
 	frag = pkt->frags;
 	next = hdr->nexthdr;
 	first_option = next;
-	length = 0;
-	ext_bitmap = 0;
-	start_of_ext = 0;
+	length = 0U;
+	ext_bitmap = 0U;
+	start_of_ext = 0U;
 	offset = sizeof(struct net_ipv6_hdr);
 	prev_hdr = &NET_IPV6_HDR(pkt)->nexthdr - &NET_IPV6_HDR(pkt)->vtc;
 
@@ -648,19 +590,11 @@ upper_proto:
 
 	switch (next) {
 	case IPPROTO_ICMPV6:
-		return process_icmpv6_pkt(pkt, hdr);
+		return net_icmpv6_input(pkt);
 	case IPPROTO_UDP:
-#if defined(CONFIG_NET_UDP)
-		return net_conn_input(IPPROTO_UDP, pkt);
-#else
-		return NET_DROP;
-#endif
+		/* Fall through */
 	case IPPROTO_TCP:
-#if defined(CONFIG_NET_TCP)
-		return net_conn_input(IPPROTO_TCP, pkt);
-#else
-		return NET_DROP;
-#endif
+		return net_conn_input(next, pkt);
 	}
 
 drop:

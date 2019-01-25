@@ -17,6 +17,7 @@
 		zephyr,sram = &sram2;
 		zephyr,flash = &sram1;
 		/*zephyr,console = &usart0; uncomment to use console on M0  */
+		/*zephyr,shell-uart = &usart0; uncomment to use shell on M0 */
 	};
 };
 

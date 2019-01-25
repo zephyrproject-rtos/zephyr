@@ -11,6 +11,8 @@
 
 #if defined(CONFIG_X86)
 #include <arch/x86/arch.h>
+#elif defined(CONFIG_X86_64)
+#include <arch/x86_64/arch.h>
 #elif defined(CONFIG_ARM)
 #include <arch/arm/arch.h>
 #elif defined(CONFIG_ARC)

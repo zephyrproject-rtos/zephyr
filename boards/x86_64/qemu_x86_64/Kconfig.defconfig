@@ -1,0 +1,9 @@
+if BOARD_QEMU_X86_64
+
+config BUILD_OUTPUT_BIN
+	default n
+
+config BOARD
+	default "qemu_x86_64"
+
+endif # BOARD_QEMU_X86_64

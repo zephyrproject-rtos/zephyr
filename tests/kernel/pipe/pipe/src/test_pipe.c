@@ -122,7 +122,7 @@ u32_t rx_buffer_check(char *buffer, u32_t size)
 {
 	u32_t index;
 
-	for (index = 0; index < size; index++) {
+	for (index = 0U; index < size; index++) {
 		if (buffer[index] != (char) index) {
 			printk("buffer[index] = %d index = %d\n",
 			       buffer[index], (char) index);
@@ -142,7 +142,7 @@ void pipe_put_single(void)
 	int return_value;
 	size_t min_xfer;
 
-	for (index = 0; index < TOTAL_ELEMENTS; index++) {
+	for (index = 0U; index < TOTAL_ELEMENTS; index++) {
 		k_sem_take(&put_sem, K_FOREVER);
 
 		min_xfer = (single_elements[index].min_size == ALL_BYTES ?
@@ -176,7 +176,7 @@ void pipe_get_single(void *p1, void *p2, void *p3)
 	int return_value;
 	size_t min_xfer;
 
-	for (index = 0; index < TOTAL_ELEMENTS; index++) {
+	for (index = 0U; index < TOTAL_ELEMENTS; index++) {
 		k_sem_take(&get_sem, K_FOREVER);
 
 		/* reset the rx buffer for the next interation */
@@ -217,7 +217,7 @@ void pipe_put_multiple(void)
 	int return_value;
 	size_t min_xfer;
 
-	for (index = 0; index < TOTAL_ELEMENTS; index++) {
+	for (index = 0U; index < TOTAL_ELEMENTS; index++) {
 
 		min_xfer = (multiple_elements[index].min_size == ALL_BYTES ?
 			    multiple_elements[index].size :
@@ -254,7 +254,7 @@ void pipe_get_multiple(void *p1, void *p2, void *p3)
 	int return_value;
 	size_t min_xfer;
 
-	for (index = 0; index < TOTAL_ELEMENTS; index++) {
+	for (index = 0U; index < TOTAL_ELEMENTS; index++) {
 
 
 		/* reset the rx buffer for the next interation */
@@ -578,7 +578,7 @@ void pipe_put_forever_timeout(void)
 	/* using this to synchronize the 2 threads  */
 	k_sem_take(&put_sem, K_FOREVER);
 
-	for (index = 0; index < TOTAL_WAIT_ELEMENTS; index++) {
+	for (index = 0U; index < TOTAL_WAIT_ELEMENTS; index++) {
 
 		min_xfer = (wait_elements[index].min_size == ALL_BYTES ?
 			    wait_elements[index].size :
@@ -611,7 +611,7 @@ void pipe_get_forever_timeout(void *p1, void *p2, void *p3)
 
 	/* using this to synchronize the 2 threads  */
 	k_sem_give(&put_sem);
-	for (index = 0; index < TOTAL_WAIT_ELEMENTS; index++) {
+	for (index = 0U; index < TOTAL_WAIT_ELEMENTS; index++) {
 
 		min_xfer = (wait_elements[index].min_size == ALL_BYTES ?
 			    wait_elements[index].size :
@@ -647,7 +647,7 @@ void pipe_put_get_timeout(void)
 	int return_value;
 	size_t min_xfer;
 
-	for (index = 0; index < TOTAL_TIMEOUT_ELEMENTS; index++) {
+	for (index = 0U; index < TOTAL_TIMEOUT_ELEMENTS; index++) {
 
 		min_xfer = (timeout_elements[index].min_size == ALL_BYTES ?
 			    timeout_elements[index].size :

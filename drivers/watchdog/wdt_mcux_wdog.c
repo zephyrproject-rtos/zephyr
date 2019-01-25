@@ -165,9 +165,9 @@ static const struct wdt_driver_api mcux_wdog_api = {
 static void mcux_wdog_config_func_0(struct device *dev);
 
 static const struct mcux_wdog_config mcux_wdog_config_0 = {
-	.base = (WDOG_Type *) CONFIG_WDT_0_BASE_ADDRESS,
-	.clock_name = CONFIG_WDT_0_CLOCK_NAME,
-	.clock_subsys = (clock_control_subsys_t) CONFIG_WDT_0_CLOCK_SUBSYS,
+	.base = (WDOG_Type *) DT_WDT_0_BASE_ADDRESS,
+	.clock_name = DT_WDT_0_CLOCK_NAME,
+	.clock_subsys = (clock_control_subsys_t) DT_WDT_0_CLOCK_SUBSYS,
 	.irq_config_func = mcux_wdog_config_func_0,
 };
 
@@ -180,8 +180,8 @@ DEVICE_AND_API_INIT(mcux_wdog_0, CONFIG_WDT_0_NAME, &mcux_wdog_init,
 
 static void mcux_wdog_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_WDT_0_IRQ, CONFIG_WDT_0_IRQ_PRI,
+	IRQ_CONNECT(DT_WDT_0_IRQ, DT_WDT_0_IRQ_PRI,
 		    mcux_wdog_isr, DEVICE_GET(mcux_wdog_0), 0);
 
-	irq_enable(CONFIG_WDT_0_IRQ);
+	irq_enable(DT_WDT_0_IRQ);
 }

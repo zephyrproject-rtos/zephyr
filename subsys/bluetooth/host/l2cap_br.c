@@ -377,14 +377,14 @@ static int l2cap_br_info_rsp(struct bt_l2cap_br *l2cap, u8_t ident,
 	}
 done:
 	atomic_set_bit(l2cap->chan.flags, L2CAP_FLAG_SIG_INFO_DONE);
-	l2cap->info_ident = 0;
+	l2cap->info_ident = 0U;
 	return err;
 }
 
 static u8_t get_fixed_channels_mask(void)
 {
 	struct bt_l2cap_fixed_chan *fchan;
-	u8_t mask = 0;
+	u8_t mask = 0U;
 
 	/* this needs to be enhanced if AMP Test Manager support is added */
 	SYS_SLIST_FOR_EACH_CONTAINER(&br_fixed_channels, fchan, node) {

@@ -2,7 +2,7 @@
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright (c) 2017, NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -231,6 +231,14 @@ static uint32_t SNVS_LP_GetInstance(SNVS_Type *base)
 }
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
+/*!
+ * brief Ungates the SNVS clock and configures the peripheral for basic operation.
+ *
+ * note This API should be called at the beginning of the application using the SNVS driver.
+ *
+ * param base   SNVS peripheral base address
+ * param config Pointer to the user's SNVS configuration structure.
+ */
 void SNVS_LP_Init(SNVS_Type *base)
 {
 #if (!(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && \
@@ -244,6 +252,11 @@ void SNVS_LP_Init(SNVS_Type *base)
     base->LPSR = SNVS_LPSR_PGD_MASK;
 }
 
+/*!
+ * brief Deinit the SNVS LP section.
+ *
+ * param base SNVS peripheral base address
+ */
 void SNVS_LP_Deinit(SNVS_Type *base)
 {
 #if (!(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && \
@@ -253,7 +266,14 @@ void SNVS_LP_Deinit(SNVS_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
-
+/*!
+ * brief Ungates the SNVS clock and configures the peripheral for basic operation.
+ *
+ * note This API should be called at the beginning of the application using the SNVS driver.
+ *
+ * param base   SNVS peripheral base address
+ * param config Pointer to the user's SNVS configuration structure.
+ */
 void SNVS_LP_SRTC_Init(SNVS_Type *base, const snvs_lp_srtc_config_t *config)
 {
     assert(config);
@@ -279,6 +299,11 @@ void SNVS_LP_SRTC_Init(SNVS_Type *base, const snvs_lp_srtc_config_t *config)
     }
 }
 
+/*!
+ * brief Stops the SRTC timer.
+ *
+ * param base SNVS peripheral base address
+ */
 void SNVS_LP_SRTC_Deinit(SNVS_Type *base)
 {
     base->LPCR &= ~SNVS_LPCR_SRTC_ENV_MASK;
@@ -290,9 +315,22 @@ void SNVS_LP_SRTC_Deinit(SNVS_Type *base)
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 }
 
+/*!
+ * brief Fills in the SNVS_LP config struct with the default settings.
+ *
+ * The default values are as follows.
+ * code
+ *    config->srtccalenable = false;
+ *    config->srtccalvalue = 0U;
+ * endcode
+ * param config Pointer to the user's SNVS configuration structure.
+ */
 void SNVS_LP_SRTC_GetDefaultConfig(snvs_lp_srtc_config_t *config)
 {
     assert(config);
+
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
 
     config->srtcCalEnable = false;
     config->srtcCalValue = 0U;
@@ -313,6 +351,15 @@ static uint32_t SNVS_LP_SRTC_GetSeconds(SNVS_Type *base)
     return seconds;
 }
 
+/*!
+ * brief Sets the SNVS SRTC date and time according to the given time structure.
+ *
+ * param base     SNVS peripheral base address
+ * param datetime Pointer to the structure where the date and time details are stored.
+ *
+ * return kStatus_Success: Success in setting the time and starting the SNVS SRTC
+ *         kStatus_InvalidArgument: Error because the datetime format is incorrect
+ */
 status_t SNVS_LP_SRTC_SetDatetime(SNVS_Type *base, const snvs_lp_srtc_datetime_t *datetime)
 {
     assert(datetime);
@@ -344,6 +391,12 @@ status_t SNVS_LP_SRTC_SetDatetime(SNVS_Type *base, const snvs_lp_srtc_datetime_t
     return kStatus_Success;
 }
 
+/*!
+ * brief Gets the SNVS SRTC time and stores it in the given time structure.
+ *
+ * param base     SNVS peripheral base address
+ * param datetime Pointer to the structure where the date and time details are stored.
+ */
 void SNVS_LP_SRTC_GetDatetime(SNVS_Type *base, snvs_lp_srtc_datetime_t *datetime)
 {
     assert(datetime);
@@ -351,6 +404,24 @@ void SNVS_LP_SRTC_GetDatetime(SNVS_Type *base, snvs_lp_srtc_datetime_t *datetime
     SNVS_LP_ConvertSecondsToDatetime(SNVS_LP_SRTC_GetSeconds(base), datetime);
 }
 
+/*!
+ * brief Sets the SNVS SRTC alarm time.
+ *
+ * The function sets the SRTC alarm. It also checks whether the specified alarm
+ * time is greater than the present time. If not, the function does not set the alarm
+ * and returns an error.
+ * Please note, that SRTC alarm has limited resolution because only 32 most
+ * significant bits of SRTC counter are compared to SRTC Alarm register.
+ * If the alarm time is beyond SRTC resolution, the function does not set the alarm
+ * and returns an error.
+ *
+ * param base      SNVS peripheral base address
+ * param alarmTime Pointer to the structure where the alarm time is stored.
+ *
+ * return kStatus_Success: success in setting the SNVS SRTC alarm
+ *         kStatus_InvalidArgument: Error because the alarm datetime format is incorrect
+ *         kStatus_Fail: Error because the alarm time has already passed or is beyond resolution
+ */
 status_t SNVS_LP_SRTC_SetAlarm(SNVS_Type *base, const snvs_lp_srtc_datetime_t *alarmTime)
 {
     assert(alarmTime);
@@ -389,6 +460,12 @@ status_t SNVS_LP_SRTC_SetAlarm(SNVS_Type *base, const snvs_lp_srtc_datetime_t *a
     return kStatus_Success;
 }
 
+/*!
+ * brief Returns the SNVS SRTC alarm time.
+ *
+ * param base     SNVS peripheral base address
+ * param datetime Pointer to the structure where the alarm date and time details are stored.
+ */
 void SNVS_LP_SRTC_GetAlarm(SNVS_Type *base, snvs_lp_srtc_datetime_t *datetime)
 {
     assert(datetime);
@@ -401,6 +478,14 @@ void SNVS_LP_SRTC_GetAlarm(SNVS_Type *base, snvs_lp_srtc_datetime_t *datetime)
     SNVS_LP_ConvertSecondsToDatetime(alarmSeconds, datetime);
 }
 
+/*!
+ * brief Gets the SNVS status flags.
+ *
+ * param base SNVS peripheral base address
+ *
+ * return The status flags. This is the logical OR of members of the
+ *         enumeration ::snvs_status_flags_t
+ */
 uint32_t SNVS_LP_SRTC_GetStatusFlags(SNVS_Type *base)
 {
     uint32_t flags = 0U;
@@ -413,6 +498,14 @@ uint32_t SNVS_LP_SRTC_GetStatusFlags(SNVS_Type *base)
     return flags;
 }
 
+/*!
+ * brief Gets the enabled SNVS interrupts.
+ *
+ * param base SNVS peripheral base address
+ *
+ * return The enabled interrupts. This is the logical OR of members of the
+ *         enumeration ::snvs_interrupt_enable_t
+ */
 uint32_t SNVS_LP_SRTC_GetEnabledInterrupts(SNVS_Type *base)
 {
     uint32_t val = 0U;
@@ -425,6 +518,13 @@ uint32_t SNVS_LP_SRTC_GetEnabledInterrupts(SNVS_Type *base)
     return val;
 }
 
+/*!
+ * brief Enables the specified SNVS external tamper.
+ *
+ * param base SNVS peripheral base address
+ * param pin SNVS external tamper pin
+ * param polarity Polarity of external tamper
+ */
 void SNVS_LP_EnableExternalTamper(SNVS_Type *base,
                                   snvs_lp_external_tamper_t pin,
                                   snvs_lp_external_tamper_polarity_t polarity)
@@ -479,6 +579,12 @@ void SNVS_LP_EnableExternalTamper(SNVS_Type *base,
     }
 }
 
+/*!
+ * brief Disables the specified SNVS external tamper.
+ *
+ * param base SNVS peripheral base address
+ * param pin SNVS external tamper pin
+ */
 void SNVS_LP_DisableExternalTamper(SNVS_Type *base, snvs_lp_external_tamper_t pin)
 {
     switch (pin)
@@ -520,6 +626,14 @@ void SNVS_LP_DisableExternalTamper(SNVS_Type *base, snvs_lp_external_tamper_t pi
     }
 }
 
+/*!
+ * brief Returns status of the specified external tamper.
+ *
+ * param base SNVS peripheral base address
+ * param pin SNVS external tamper pin
+ *
+ * return The status flag. This is the enumeration ::snvs_external_tamper_status_t
+ */
 snvs_lp_external_tamper_status_t SNVS_LP_GetExternalTamperStatus(SNVS_Type *base, snvs_lp_external_tamper_t pin)
 {
     snvs_lp_external_tamper_status_t status = kSNVS_TamperNotDetected;
@@ -564,6 +678,12 @@ snvs_lp_external_tamper_status_t SNVS_LP_GetExternalTamperStatus(SNVS_Type *base
     return status;
 }
 
+/*!
+ * brief Clears status of the specified external tamper.
+ *
+ * param base SNVS peripheral base address
+ * param pin SNVS external tamper pin
+ */
 void SNVS_LP_ClearExternalTamperStatus(SNVS_Type *base, snvs_lp_external_tamper_t pin)
 {
     base->LPSR |= SNVS_LPSR_ET1D_MASK;
@@ -607,6 +727,12 @@ void SNVS_LP_ClearExternalTamperStatus(SNVS_Type *base, snvs_lp_external_tamper_
     }
 }
 
+/*!
+ * brief Get the current Monotonic Counter.
+ *
+ * param base SNVS peripheral base address
+ * return Current Monotonic Counter value.
+ */
 uint64_t SNVS_LP_GetMonotonicCounter(SNVS_Type *base)
 {
     uint32_t mc_lsb, mc_msb;
@@ -617,11 +743,17 @@ uint64_t SNVS_LP_GetMonotonicCounter(SNVS_Type *base)
     return ((uint64_t)mc_msb << 32UL) | (uint64_t)mc_lsb;
 }
 
+/*!
+ * brief Write Zeroizable Master Key (ZMK) to the SNVS registers.
+ *
+ * param base SNVS peripheral base address
+ * param ZMKey The ZMK write to the SNVS register.
+ */
 void SNVS_LP_WriteZeroizableMasterKey(SNVS_Type *base, uint32_t ZMKey[SNVS_ZMK_REG_COUNT])
 {
     uint8_t i = 0;
 
-    for (i=0; i<SNVS_ZMK_REG_COUNT; i++)
+    for (i = 0; i < SNVS_ZMK_REG_COUNT; i++)
     {
         base->LPZMKR[i] = ZMKey[i];
     }

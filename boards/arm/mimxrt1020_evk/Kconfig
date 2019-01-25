@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2018, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_MIMXRT1020_EVK
+
+choice
+	prompt "Code location selection"
+	default CODE_ITCM
+
+config CODE_ITCM
+	bool "Link code into internal instruction tightly coupled memory (ITCM)"
+
+config CODE_QSPI
+	depends on BOARD_MIMXRT1020_EVK
+	select NXP_IMX_RT_BOOT_HEADER
+	bool "Link code into external QSPI memory"
+
+endchoice
+
+endif # BOARD_MIMXRT1020_EVK

@@ -4,159 +4,146 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_test
-#define NET_LOG_LEVEL LOG_LEVEL_WRN
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_test, LOG_LEVEL_WRN);
 
 #include <net/mqtt.h>
+#include <net/socket.h>
 #include <ztest.h>
-
-#include <net/net_context.h>
-#include <net/net_pkt.h>
-#include <net/net_app.h>
 
 #include <string.h>
 #include <errno.h>
 
 #include "config.h"
 
-/* Container for some structures used by the MQTT publisher app. */
-struct mqtt_client_ctx {
-	/**
-	 * The connect message structure is only used during the connect
-	 * stage. Developers must set some msg properties before calling the
-	 * mqtt_tx_connect routine. See below.
-	 */
-	struct mqtt_connect_msg connect_msg;
-	/**
-	 * This is the message that will be received by the server
-	 * (MQTT broker).
-	 */
-	struct mqtt_publish_msg pub_msg;
-
-	/**
-	 * This is the MQTT application context variable.
-	 */
-	struct mqtt_ctx mqtt_ctx;
-
-	/**
-	 * This variable will be passed to the connect callback, declared inside
-	 * the mqtt context struct. If not used, it could be set to NULL.
-	 */
-	void *connect_data;
-
-	/**
-	 * This variable will be passed to the disconnect callback, declared
-	 * inside the mqtt context struct. If not used, it could be set to NULL.
-	 */
-	void *disconnect_data;
-
-	/**
-	 * This variable will be passed to the publish_tx callback, declared
-	 * inside the mqtt context struct. If not used, it could be set to NULL.
-	 */
-	void *publish_data;
-};
-
 /* This is mqtt payload message. */
 char payload[] = "DOORS:OPEN_QoSx";
 
-/* The mqtt client struct */
-static struct mqtt_client_ctx client_ctx;
+#define BUFFER_SIZE 128
 
-/* The signature of this routine must match the connect callback declared at
- * the mqtt.h header.
- */
-static void connect_cb(struct mqtt_ctx *mqtt_ctx)
+static u8_t rx_buffer[BUFFER_SIZE];
+static u8_t tx_buffer[BUFFER_SIZE];
+static struct mqtt_client client_ctx;
+static struct sockaddr broker;
+static struct pollfd fds[1];
+static int nfds;
+static bool connected;
+
+static void broker_init(void)
 {
-	struct mqtt_client_ctx *client_ctx;
+#if defined(CONFIG_NET_IPV6)
+	struct sockaddr_in6 *broker6 = net_sin6(&broker);
 
-	client_ctx = CONTAINER_OF(mqtt_ctx, struct mqtt_client_ctx, mqtt_ctx);
+	broker6->sin6_family = AF_INET6;
+	broker6->sin6_port = htons(SERVER_PORT);
+	inet_pton(AF_INET6, SERVER_ADDR, &broker6->sin6_addr);
+#else
+	struct sockaddr_in *broker4 = net_sin(&broker);
 
-	TC_PRINT("[%s:%d]", __func__, __LINE__);
-
-	if (client_ctx->connect_data) {
-		TC_PRINT(" user_data: %s",
-				(const char *)client_ctx->connect_data);
-	}
-
-	TC_PRINT("\n");
+	broker4->sin_family = AF_INET;
+	broker4->sin_port = htons(SERVER_PORT);
+	inet_pton(AF_INET, SERVER_ADDR, &broker4->sin_addr);
+#endif
 }
 
-/* The signature of this routine must match the disconnect callback declared at
- * the mqtt.h header.
- */
-static void disconnect_cb(struct mqtt_ctx *mqtt_ctx)
+static void prepare_fds(struct mqtt_client *client)
 {
-	struct mqtt_client_ctx *client_ctx;
-
-	client_ctx = CONTAINER_OF(mqtt_ctx, struct mqtt_client_ctx, mqtt_ctx);
-
-	TC_PRINT("[%s:%d]", __func__, __LINE__);
-
-	if (client_ctx->disconnect_data) {
-		TC_PRINT(" user_data: %s",
-				(const char *)client_ctx->disconnect_data);
+	if (client->transport.type == MQTT_TRANSPORT_NON_SECURE) {
+		fds[0].fd = client->transport.tcp.sock;
 	}
 
-	TC_PRINT("\n");
+	fds[0].events = ZSOCK_POLLIN;
+	nfds = 1;
 }
 
-/**
- * The signature of this routine must match the publish_tx callback declared at
- * the mqtt.h header.
- *
- * NOTE: we have two callbacks for MQTT Publish related stuff:
- *  - publish_tx, for publishers
- *  - publish_rx, for subscribers
- *
- * Applications must keep a "message database" with pkt_id's. So far, this is
- * not implemented here. For example, if we receive a PUBREC message with an
- * unknown pkt_id, this routine must return an error, for example -EINVAL or
- * any negative value.
- */
-static int publish_cb(struct mqtt_ctx *mqtt_ctx, u16_t pkt_id,
-		enum mqtt_packet type)
+static void clear_fds(void)
 {
-	struct mqtt_client_ctx *client_ctx;
-	const char *str;
-	int rc = 0;
+	nfds = 0;
+}
 
-	client_ctx = CONTAINER_OF(mqtt_ctx, struct mqtt_client_ctx, mqtt_ctx);
+static void wait(int timeout)
+{
+	if (nfds > 0) {
+		if (poll(fds, nfds, timeout) < 0) {
+			TC_PRINT("poll error: %d\n", errno);
+		}
+	}
+}
 
-	switch (type) {
-	case MQTT_PUBACK:
-		str = "MQTT_PUBACK";
+void mqtt_evt_handler(struct mqtt_client *const client,
+		      const struct mqtt_evt *evt)
+{
+	int err;
+
+	switch (evt->type) {
+	case MQTT_EVT_CONNACK:
+		if (evt->result != 0) {
+			TC_PRINT("MQTT connect failed %d\n", evt->result);
+			break;
+		}
+
+		connected = true;
+		TC_PRINT("[%s:%d] MQTT_EVT_CONNACK: Connected!\n",
+			 __func__, __LINE__);
+
 		break;
-	case MQTT_PUBCOMP:
-		str = "MQTT_PUBCOMP";
+
+	case MQTT_EVT_DISCONNECT:
+		TC_PRINT("[%s:%d] MQTT_EVT_DISCONNECT: disconnected %d\n",
+			 __func__, __LINE__, evt->result);
+
+		connected = false;
+		clear_fds();
+
 		break;
-	case MQTT_PUBREC:
-		str = "MQTT_PUBREC";
+
+	case MQTT_EVT_PUBACK:
+		if (evt->result != 0) {
+			TC_PRINT("MQTT PUBACK error %d\n", evt->result);
+			break;
+		}
+
+		TC_PRINT("[%s:%d] MQTT_EVT_PUBACK packet id: %u\n",
+			 __func__, __LINE__, evt->param.puback.message_id);
+
 		break;
+
+	case MQTT_EVT_PUBREC:
+		if (evt->result != 0) {
+			TC_PRINT("MQTT PUBREC error %d\n", evt->result);
+			break;
+		}
+
+		TC_PRINT("[%s:%d] MQTT_EVT_PUBREC packet id: %u\n",
+			 __func__, __LINE__, evt->param.pubrec.message_id);
+
+		const struct mqtt_pubrel_param rel_param = {
+			.message_id = evt->param.pubrec.message_id
+		};
+
+		err = mqtt_publish_qos2_release(client, &rel_param);
+		if (err != 0) {
+			TC_PRINT("Failed to send MQTT PUBREL: %d\n",
+				 err);
+		}
+
+		break;
+
+	case MQTT_EVT_PUBCOMP:
+		if (evt->result != 0) {
+			TC_PRINT("MQTT PUBCOMP error %d\n", evt->result);
+			break;
+		}
+
+		TC_PRINT("[%s:%d] MQTT_EVT_PUBCOMP packet id: %u\n",
+			 __func__, __LINE__, evt->param.pubcomp.message_id);
+
+		break;
+
 	default:
-		rc = -EINVAL;
-		str = "Invalid MQTT packet";
+		TC_PRINT("[%s:%d] Invalid MQTT packet\n", __func__, __LINE__);
+		break;
 	}
-
-	TC_PRINT("[%s:%d] <%s> packet id: %u", __func__, __LINE__, str, pkt_id);
-
-	if (client_ctx->publish_data) {
-		TC_PRINT(", user_data: %s",
-				(const char *)client_ctx->publish_data);
-	}
-
-	TC_PRINT("\n");
-
-	return rc;
-}
-
-/**
- * The signature of this routine must match the malformed callback declared at
- * the mqtt.h header.
- */
-static void malformed_cb(struct mqtt_ctx *mqtt_ctx, u16_t pkt_type)
-{
-	TC_PRINT("[%s:%d] pkt_type: %u\n", __func__, __LINE__, pkt_type);
 }
 
 static char *get_mqtt_payload(enum mqtt_qos qos)
@@ -171,102 +158,76 @@ static char *get_mqtt_topic(void)
 	return "sensors";
 }
 
-static void prepare_mqtt_publish_msg(struct mqtt_publish_msg *pub_msg,
-		enum mqtt_qos qos)
+static void client_init(struct mqtt_client *client)
 {
-	/* MQTT message payload may be anything, we we use C strings */
-	pub_msg->msg = (u8_t *)get_mqtt_payload(qos);
-	/* Payload's length */
-	pub_msg->msg_len = (u16_t)strlen((char *)client_ctx.pub_msg.msg);
-	/* MQTT Quality of Service */
-	pub_msg->qos = qos;
-	/* Message's topic */
-	pub_msg->topic = get_mqtt_topic();
-	pub_msg->topic_len = strlen(client_ctx.pub_msg.topic);
-	/* Packet Identifier, always use different values */
-	pub_msg->pkt_id = sys_rand32_get();
+	mqtt_client_init(client);
+
+	broker_init();
+
+	/* MQTT client configuration */
+	client->broker = &broker;
+	client->evt_cb = mqtt_evt_handler;
+	client->client_id.utf8 = (uint8_t *)MQTT_CLIENTID;
+	client->client_id.size = strlen(MQTT_CLIENTID);
+	client->password = NULL;
+	client->user_name = NULL;
+	client->protocol_version = MQTT_VERSION_3_1_1;
+	client->transport.type = MQTT_TRANSPORT_NON_SECURE;
+
+	client->rx_buf = rx_buffer;
+	client->rx_buf_size = sizeof(rx_buffer);
+	client->tx_buf = tx_buffer;
+	client->tx_buf_size = sizeof(tx_buffer);
 }
 
-#define RC_STR(rc) ((rc) == 0 ? "OK" : "ERROR")
+static int publish(enum mqtt_qos qos)
+{
+	struct mqtt_publish_param param;
 
-#define PRINT_RESULT(func, rc) \
-	TC_PRINT("[%s:%d] %s: %d <%s>\n", __func__, __LINE__, \
-			(func), rc, RC_STR(rc))
+	param.message.topic.qos = qos;
+	param.message.topic.topic.utf8 = (uint8_t *)get_mqtt_topic();
+	param.message.topic.topic.size =
+			strlen(param.message.topic.topic.utf8);
+	param.message.payload.data = get_mqtt_payload(qos);
+	param.message.payload.len =
+			strlen(param.message.payload.data);
+	param.message_id = sys_rand32_get();
+	param.dup_flag = 0;
+	param.retain_flag = 0;
+
+	return mqtt_publish(&client_ctx, &param);
+}
 
 /* In this routine we block until the connected variable is 1 */
-static int try_to_connect(struct mqtt_client_ctx *client_ctx)
+static int try_to_connect(struct mqtt_client *client)
 {
-	int i = 0;
+	int rc, i = 0;
 
-	while (i++ < APP_CONNECT_TRIES && !client_ctx->mqtt_ctx.connected) {
-		int rc;
+	while (i++ < APP_CONNECT_TRIES && !connected) {
 
-		rc = mqtt_tx_connect(&client_ctx->mqtt_ctx,
-				&client_ctx->connect_msg);
-		k_sleep(APP_SLEEP_MSECS);
+		client_init(&client_ctx);
+
+		rc = mqtt_connect(client);
 		if (rc != 0) {
+			k_sleep(APP_SLEEP_MSECS);
 			continue;
+		}
+
+		prepare_fds(client);
+
+		wait(APP_SLEEP_MSECS);
+		mqtt_input(client);
+
+		if (!connected) {
+			mqtt_abort(client);
 		}
 	}
 
-	if (client_ctx->mqtt_ctx.connected) {
-		return TC_PASS;
+	if (connected) {
+		return 0;
 	}
 
-	return TC_FAIL;
-}
-
-static int init_network(void)
-{
-	int rc;
-
-	/* Set everything to 0 and later just assign the required fields. */
-	(void)memset(&client_ctx, 0x00, sizeof(client_ctx));
-
-	/* connect, disconnect and malformed may be set to NULL */
-	client_ctx.mqtt_ctx.connect = connect_cb;
-
-	client_ctx.mqtt_ctx.disconnect = disconnect_cb;
-	client_ctx.mqtt_ctx.malformed = malformed_cb;
-
-	client_ctx.mqtt_ctx.net_init_timeout = APP_NET_INIT_TIMEOUT;
-	client_ctx.mqtt_ctx.net_timeout = APP_TX_RX_TIMEOUT;
-
-	client_ctx.mqtt_ctx.peer_addr_str = SERVER_ADDR;
-	client_ctx.mqtt_ctx.peer_port = SERVER_PORT;
-
-	/* Publisher apps TX the MQTT PUBLISH msg */
-	client_ctx.mqtt_ctx.publish_tx = publish_cb;
-
-	/* The connect message will be sent to the MQTT server (broker).
-	 * If clean_session here is 0, the mqtt_ctx clean_session variable
-	 * will be set to 0 also. Please don't do that, set always to 1.
-	 * Clean session = 0 is not yet supported.
-	 */
-	client_ctx.connect_msg.client_id = MQTT_CLIENTID;
-	client_ctx.connect_msg.client_id_len = strlen(MQTT_CLIENTID);
-	client_ctx.connect_msg.clean_session = 1;
-
-	client_ctx.connect_data = "CONNECTED";
-	client_ctx.disconnect_data = "DISCONNECTED";
-	client_ctx.publish_data = "PUBLISH";
-
-	rc = mqtt_init(&client_ctx.mqtt_ctx, MQTT_APP_PUBLISHER);
-	if (rc != 0) {
-		goto exit_app;
-	}
-
-	rc = mqtt_connect(&client_ctx.mqtt_ctx);
-	if (rc != 0) {
-		goto exit_app;
-	}
-
-	return TC_PASS;
-
-exit_app:
-	mqtt_close(&client_ctx.mqtt_ctx);
-
-	return TC_FAIL;
+	return -EINVAL;
 }
 
 static int test_connect(void)
@@ -279,18 +240,19 @@ static int test_connect(void)
 	}
 
 	return TC_PASS;
-
 }
 
 static int test_pingreq(void)
 {
 	int rc;
 
-	rc = mqtt_tx_pingreq(&client_ctx.mqtt_ctx);
-	k_sleep(APP_SLEEP_MSECS);
+	rc = mqtt_ping(&client_ctx);
 	if (rc != 0) {
 		return TC_FAIL;
 	}
+
+	wait(APP_SLEEP_MSECS);
+	mqtt_input(&client_ctx);
 
 	return TC_PASS;
 }
@@ -299,11 +261,18 @@ static int test_publish(enum mqtt_qos qos)
 {
 	int rc;
 
-	prepare_mqtt_publish_msg(&client_ctx.pub_msg, qos);
-	rc = mqtt_tx_publish(&client_ctx.mqtt_ctx, &client_ctx.pub_msg);
-	k_sleep(APP_SLEEP_MSECS);
+	rc = publish(qos);
 	if (rc != 0) {
 		return TC_FAIL;
+	}
+
+	wait(APP_SLEEP_MSECS);
+	mqtt_input(&client_ctx);
+
+	/* Second input handle for expected Publish Complete response. */
+	if (qos == MQTT_QOS_2_EXACTLY_ONCE) {
+		wait(APP_SLEEP_MSECS);
+		mqtt_input(&client_ctx);
 	}
 
 	return TC_PASS;
@@ -313,17 +282,15 @@ static int test_disconnect(void)
 {
 	int rc;
 
-	rc = mqtt_tx_disconnect(&client_ctx.mqtt_ctx);
+	rc = mqtt_disconnect(&client_ctx);
 	if (rc != 0) {
 		return TC_FAIL;
 	}
 
-	return TC_PASS;
-}
+	wait(APP_SLEEP_MSECS);
+	mqtt_input(&client_ctx);
 
-void test_mqtt_init(void)
-{
-	zassert_true(init_network() == TC_PASS, NULL);
+	return TC_PASS;
 }
 
 void test_mqtt_connect(void)
@@ -338,9 +305,9 @@ void test_mqtt_pingreq(void)
 
 void test_mqtt_publish(void)
 {
-	zassert_true(test_publish(MQTT_QoS0) == TC_PASS, NULL);
-	zassert_true(test_publish(MQTT_QoS1) == TC_PASS, NULL);
-	zassert_true(test_publish(MQTT_QoS2) == TC_PASS, NULL);
+	zassert_true(test_publish(MQTT_QOS_0_AT_MOST_ONCE) == TC_PASS, NULL);
+	zassert_true(test_publish(MQTT_QOS_1_AT_LEAST_ONCE) == TC_PASS, NULL);
+	zassert_true(test_publish(MQTT_QOS_2_EXACTLY_ONCE) == TC_PASS, NULL);
 }
 
 void test_mqtt_disconnect(void)

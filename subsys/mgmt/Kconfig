@@ -19,8 +19,8 @@ config MCUMGR_SMP_BT
 config MCUMGR_SMP_SHELL
 	bool "Shell mcumgr SMP transport"
 	select MCUMGR
-	select UART_CONSOLE_MCUMGR
-	select CONSOLE_SHELL
+	select SHELL
+	select SHELL_BACKEND_SERIAL
 	select BASE64
 	help
 	  Enables handling of SMP commands received over shell.  This allows

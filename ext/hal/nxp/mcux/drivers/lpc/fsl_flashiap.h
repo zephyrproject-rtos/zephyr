@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #ifndef _FSL_FLASHIAP_H_
@@ -46,7 +24,7 @@
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_FLASHIAP_DRIVER_VERSION (MAKE_VERSION(2, 0, 0)) /*!< Version 2.0.0. */
+#define FSL_FLASHIAP_DRIVER_VERSION (MAKE_VERSION(2, 0, 3)) /*!< Version 2.0.3. */
                                                             /*@}*/
 
 /*!
@@ -139,6 +117,8 @@ static inline void iap_entry(uint32_t *cmd_param, uint32_t *status_result)
  * FLASHIAP_ErasePage() function. The end sector must be greater than or equal to
  * start sector number.
  *
+ * @deprecated Do not use this function. It has benn moved to iap driver.
+ *
  * @param startSector Start sector number.
  * @param endSector End sector number.
  *
@@ -157,6 +137,8 @@ status_t FLASHIAP_PrepareSectorForWrite(uint32_t startSector, uint32_t endSector
  * This function programs the flash memory. Corresponding sectors must be prepared
  * via FLASHIAP_PrepareSectorForWrite before calling calling this function. The addresses
  * should be a 256 byte boundary and the number of bytes should be 256 | 512 | 1024 | 4096.
+ *
+ * @deprecated Do not use this function. It has benn moved to iap driver.
  *
  * @param dstAddr Destination flash address where data bytes are to be written.
  * @param srcAddr Source ram address from where data bytes are to be read.
@@ -184,6 +166,8 @@ status_t FLASHIAP_CopyRamToFlash(uint32_t dstAddr, uint32_t *srcAddr, uint32_t n
  * start sector number. FLASHIAP_PrepareSectorForWrite must be called before
  * calling this function.
  *
+ * @deprecated Do not use this function. It has benn moved to iap driver.
+ *
  * @param startSector Start sector number.
  * @param endSector End sector number.
  * @param systemCoreClock SystemCoreClock in Hz. It is converted to KHz before calling the
@@ -204,6 +188,8 @@ status_t FLASHIAP_EraseSector(uint32_t startSector, uint32_t endSector, uint32_t
  * This function erases page(s). The end page must be greater than or equal to
  * start page number. Corresponding sectors must be prepared via FLASHIAP_PrepareSectorForWrite
  * before calling calling this function.
+ *
+ * @deprecated Do not use this function. It has benn moved to iap driver.
  *
  * @param startPage Start page number
  * @param endPage End page number
@@ -226,6 +212,8 @@ status_t FLASHIAP_ErasePage(uint32_t startPage, uint32_t endPage, uint32_t syste
  * Blank check single or multiples sectors of flash memory. The end sector must be greater than or equal to
  * start sector number. It can be used to verify the sector eraseure after FLASHIAP_EraseSector call.
  *
+ * @deprecated Do not use this function. It has benn moved to iap driver.
+ *
  * @param	startSector	: Start sector number. Must be greater than or equal to start sector number
  * @param	endSector	: End sector number
  * @retval #kStatus_FLASHIAP_Success One or more sectors are in erased state.
@@ -240,6 +228,8 @@ status_t FLASHIAP_BlankCheckSector(uint32_t startSector, uint32_t endSector);
 
  * This function compares the contents of flash and ram. It can be used to verify the flash
  * memory contents after FLASHIAP_CopyRamToFlash call.
+ *
+ * @deprecated Do not use this function. It has benn moved to iap driver.
  *
  * @param dstAddr Destination flash address.
  * @param srcAddr Source ram address.

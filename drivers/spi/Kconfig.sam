@@ -6,6 +6,92 @@
 menuconfig SPI_SAM
 	bool "Atmel SAM series SPI driver"
 	depends on SOC_FAMILY_SAM
-	select HAS_DTS_SPI
 	help
 	  Enable support for the SAM SPI driver.
+
+config SPI_SAM_PORT_0
+	bool "Enable SPI0"
+	depends on SPI_SAM
+	help
+	  Enable SPI0 at boot
+
+if SPI_SAM_PORT_0
+
+config SPI_SAME70_PORT_0_PIN_CS0
+	bool "CS0 pin"
+	depends on SOC_SERIES_SAME70
+
+choice SPI_SAME70_PORT_0_PIN_CS1
+	bool "CS1 pin"
+	optional
+	depends on SOC_SERIES_SAME70
+
+	config SPI_SAME70_PORT_0_PIN_CS1_PA31
+		bool "PA31"
+
+	config SPI_SAME70_PORT_0_PIN_CS1_PD25
+		bool "PD25"
+
+endchoice
+
+config SPI_SAME70_PORT_0_PIN_CS2
+	bool "CS2 pin"
+	depends on SOC_SERIES_SAME70
+
+config SPI_SAME70_PORT_0_PIN_CS3
+	bool "CS3 pin"
+	depends on SOC_SERIES_SAME70
+
+endif # SPI_SAM_PORT_0
+
+config SPI_SAM_PORT_1
+	bool "Enable SPI1"
+	depends on SPI_SAM
+	help
+	  Enable SPI1 at boot
+
+if SPI_SAM_PORT_1
+
+config SPI_SAME70_PORT_1_PIN_CS0
+	bool "CS0 pin"
+	depends on SOC_SERIES_SAME70
+
+choice SPI_SAME70_PORT_1_PIN_CS1
+	prompt "CS1 pin"
+	optional
+	depends on SOC_SERIES_SAME70
+
+	config SPI_SAME70_PORT_1_PIN_CS1_PC28
+		bool "PC28"
+
+	config SPI_SAME70_PORT_1_PIN_CS1_PD0
+		bool "PD0"
+
+endchoice
+
+choice SPI_SAME70_PORT_1_PIN_CS2
+	prompt "CS2 pin"
+	optional
+	depends on SOC_SERIES_SAME70
+
+	config SPI_SAME70_PORT_1_PIN_CS2_PC29
+		bool "PC29"
+
+	config SPI_SAME70_PORT_1_PIN_CS2_PD1
+		bool "PD1"
+
+endchoice
+
+choice SPI_SAME70_PORT_1_PIN_CS3
+	prompt "CS3 pin"
+	optional
+	depends on SOC_SERIES_SAME70
+
+	config SPI_SAME70_PORT_1_PIN_CS3_PC30
+		bool "PC30"
+
+	config SPI_SAME70_PORT_1_PIN_CS3_PD2
+		bool "PD2"
+
+endchoice
+endif # SPI_SAM_PORT_1

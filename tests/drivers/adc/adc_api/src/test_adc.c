@@ -20,7 +20,7 @@
 #if defined(CONFIG_BOARD_NRF51_PCA10028)
 
 #include <hal/nrf_adc.h>
-#define ADC_DEVICE_NAME		CONFIG_ADC_0_NAME
+#define ADC_DEVICE_NAME		DT_ADC_0_NAME
 #define ADC_RESOLUTION		10
 #define ADC_GAIN		ADC_GAIN_1_3
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -31,10 +31,11 @@
 #define ADC_2ND_CHANNEL_INPUT	NRF_ADC_CONFIG_INPUT_3
 
 #elif defined(CONFIG_BOARD_NRF52_PCA10040) || \
-      defined(CONFIG_BOARD_NRF52840_PCA10056)
+      defined(CONFIG_BOARD_NRF52840_PCA10056) || \
+      defined(CONFIG_BOARD_NRF52840_BLIP)
 
 #include <hal/nrf_saadc.h>
-#define ADC_DEVICE_NAME		CONFIG_ADC_0_NAME
+#define ADC_DEVICE_NAME		DT_ADC_0_NAME
 #define ADC_RESOLUTION		10
 #define ADC_GAIN		ADC_GAIN_1_6
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -46,67 +47,61 @@
 
 #elif defined(CONFIG_BOARD_FRDM_K64F)
 
-#define ADC_DEVICE_NAME		CONFIG_ADC_1_NAME
+#define ADC_DEVICE_NAME		DT_ADC_1_NAME
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID	14
-#define ADC_1ST_CHANNEL_INPUT	0
 
 #elif defined(CONFIG_BOARD_FRDM_KL25Z)
 
-#define ADC_DEVICE_NAME		CONFIG_ADC_0_NAME
+#define ADC_DEVICE_NAME		DT_ADC_0_NAME
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID	12
-#define ADC_1ST_CHANNEL_INPUT	0
 
 #elif defined(CONFIG_BOARD_FRDM_KW41Z)
 
-#define ADC_DEVICE_NAME		CONFIG_ADC_0_NAME
+#define ADC_DEVICE_NAME		DT_ADC_0_NAME
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID	3
-#define ADC_1ST_CHANNEL_INPUT	0
 
 #elif defined(CONFIG_BOARD_HEXIWEAR_K64)
 
-#define ADC_DEVICE_NAME		CONFIG_ADC_0_NAME
+#define ADC_DEVICE_NAME		DT_ADC_0_NAME
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID	16
-#define ADC_1ST_CHANNEL_INPUT	0
 
 #elif defined(CONFIG_BOARD_HEXIWEAR_KW40Z)
 
-#define ADC_DEVICE_NAME		CONFIG_ADC_0_NAME
+#define ADC_DEVICE_NAME		DT_ADC_0_NAME
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID	1
-#define ADC_1ST_CHANNEL_INPUT	0
 
 #elif defined(CONFIG_BOARD_SAM_E70_XPLAINED)
 
-#define ADC_DEVICE_NAME		CONFIG_ADC_0_NAME
+#define ADC_DEVICE_NAME		DT_ADC_0_NAME
 #define ADC_RESOLUTION		12
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_EXTERNAL0
 #define ADC_ACQUISITION_TIME	ADC_ACQ_TIME_DEFAULT
 #define ADC_1ST_CHANNEL_ID	0
-#define ADC_1ST_CHANNEL_INPUT	0
 
 #elif defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD_SS) || \
 	defined(CONFIG_BOARD_ARDUINO_101_SSS)
-#define ADC_DEVICE_NAME		CONFIG_ADC_0_NAME
+#define ADC_DEVICE_NAME		DT_ADC_0_NAME
 #define ADC_RESOLUTION		10
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -115,7 +110,7 @@
 #define ADC_2ND_CHANNEL_ID	11
 
 #elif defined(CONFIG_BOARD_QUARK_D2000_CRB)
-#define ADC_DEVICE_NAME		CONFIG_ADC_0_NAME
+#define ADC_DEVICE_NAME		DT_ADC_0_NAME
 #define ADC_RESOLUTION		10
 #define ADC_GAIN		ADC_GAIN_1
 #define ADC_REFERENCE		ADC_REF_INTERNAL
@@ -193,25 +188,14 @@ static void check_samples(int expected_count)
 	TC_PRINT("\n");
 }
 
+
 /*******************************************************************************
  * test_adc_sample_one_channel
  */
 static int test_task_one_channel(void)
 {
 	int ret;
-
-#if defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD_SS) || \
-	defined(CONFIG_BOARD_ARDUINO_101_SSS)
-	const struct adc_sequence_options options = {
-		.interval_us     = 10,
-		.extra_samplings = 0,
-	};
-#endif
 	const struct adc_sequence sequence = {
-#if defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD_SS) || \
-	defined(CONFIG_BOARD_ARDUINO_101_SSS)
-		.options     = &options,
-#endif
 		.channels    = BIT(ADC_1ST_CHANNEL_ID),
 		.buffer      = m_sample_buffer,
 		.buffer_size = sizeof(m_sample_buffer),
@@ -236,6 +220,7 @@ void test_adc_sample_one_channel(void)
 	zassert_true(test_task_one_channel() == TC_PASS, NULL);
 }
 
+
 /*******************************************************************************
  * test_adc_sample_two_channels
  */
@@ -243,19 +228,7 @@ void test_adc_sample_one_channel(void)
 static int test_task_two_channels(void)
 {
 	int ret;
-
-#if defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD_SS) || \
-	defined(CONFIG_BOARD_ARDUINO_101_SSS)
-	const struct adc_sequence_options options = {
-		.interval_us     = 30,
-		.extra_samplings = 0,
-	};
-#endif
 	const struct adc_sequence sequence = {
-#if defined(CONFIG_BOARD_QUARK_SE_C1000_DEVBOARD_SS) || \
-	defined(CONFIG_BOARD_ARDUINO_101_SSS)
-		.options     = &options,
-#endif
 		.channels    = BIT(ADC_1ST_CHANNEL_ID) |
 			       BIT(ADC_2ND_CHANNEL_ID),
 		.buffer      = m_sample_buffer,
@@ -297,7 +270,8 @@ static int test_task_asynchronous_call(void)
 	int ret;
 	const struct adc_sequence_options options = {
 		.extra_samplings = 4,
-		.interval_us = 30,
+		/* Start consecutive samplings as fast as possible. */
+		.interval_us     = 0,
 	};
 	const struct adc_sequence sequence = {
 		.options     = &options,
@@ -437,7 +411,8 @@ static int test_task_repeated_samplings(void)
 		 * Hence, the third sampling will not take place.
 		 */
 		.extra_samplings = 2,
-		.interval_us = 15,
+		/* Start consecutive samplings as fast as possible. */
+		.interval_us     = 0,
 	};
 	const struct adc_sequence sequence = {
 		.options     = &options,
@@ -466,4 +441,52 @@ static int test_task_repeated_samplings(void)
 void test_adc_repeated_samplings(void)
 {
 	zassert_true(test_task_repeated_samplings() == TC_PASS, NULL);
+}
+
+
+/*******************************************************************************
+ * test_adc_invalid_request
+ */
+static int test_task_invalid_request(void)
+{
+	int ret;
+	struct adc_sequence sequence = {
+		.channels    = BIT(ADC_1ST_CHANNEL_ID),
+		.buffer      = m_sample_buffer,
+		.buffer_size = sizeof(m_sample_buffer),
+		.resolution  = 0, /* intentionally invalid value */
+	};
+#if defined(CONFIG_ADC_ASYNC)
+	struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
+#endif
+
+	struct device *adc_dev = init_adc();
+
+	if (!adc_dev) {
+		return TC_FAIL;
+	}
+
+	ret = adc_read(adc_dev, &sequence);
+	zassert_not_equal(ret, 0, "adc_read() unexpectedly succeeded");
+
+#if defined(CONFIG_ADC_ASYNC)
+	ret = adc_read_async(adc_dev, &sequence, &async_sig);
+	zassert_not_equal(ret, 0, "adc_read_async() unexpectedly succeeded");
+#endif
+
+	/*
+	 * Make the sequence parameters valid, now the request should succeed.
+	 */
+	sequence.resolution = ADC_RESOLUTION;
+
+	ret = adc_read(adc_dev, &sequence);
+	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
+
+	check_samples(1);
+
+	return TC_PASS;
+}
+void test_adc_invalid_request(void)
+{
+	zassert_true(test_task_invalid_request() == TC_PASS, NULL);
 }

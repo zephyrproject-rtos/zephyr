@@ -38,7 +38,7 @@ u32_t get_pwm_clock_freq(PWM_Type *base)
 
 	switch (root) {
 	case ccmRootmuxPwmOsc24m:
-		hz = 24000000;
+		hz = 24000000U;
 		break;
 	case ccmRootmuxPwmSysPllDiv4:
 		hz = CCM_ANALOG_GetSysPllFreq(CCM_ANALOG) >> 2;

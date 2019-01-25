@@ -17,9 +17,9 @@
 #define PINS_PER_PORT    16
 
 #define CMSDK_AHB_GPIO0_DEV \
-	((volatile struct gpio_cmsdk_ahb *)CMSDK_AHB_GPIO0)
+	((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO0)
 #define CMSDK_AHB_GPIO1_DEV \
-	((volatile struct gpio_cmsdk_ahb *)CMSDK_AHB_GPIO1)
+	((volatile struct gpio_cmsdk_ahb *)DT_CMSDK_AHB_GPIO1)
 
 static volatile struct gpio_cmsdk_ahb *_get_port(u32_t pin)
 {

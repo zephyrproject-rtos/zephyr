@@ -10,6 +10,9 @@
 #include <shell/shell.h>
 #include <ring_buffer.h>
 #include <atomic.h>
+#ifdef CONFIG_MCUMGR_SMP_SHELL
+#include "mgmt/smp_shell.h"
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,9 +27,12 @@ struct shell_uart_ctrl_blk {
 	void *context;
 	atomic_t tx_busy;
 	bool blocking;
+#ifdef CONFIG_MCUMGR_SMP_SHELL
+	struct smp_shell_data smp;
+#endif /* CONFIG_MCUMGR_SMP_SHELL */
 };
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
 #define UART_SHELL_TX_RINGBUF_DECLARE(_name, _size) \
 	RING_BUF_DECLARE(_name##_tx_ringbuf, _size)
 
@@ -39,13 +45,13 @@ struct shell_uart_ctrl_blk {
 
 #define UART_SHELL_RX_TIMER_PTR(_name) NULL
 
-#else /* CONFIG_UART_INTERRUPT_DRIVEN */
+#else /* CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN */
 #define UART_SHELL_TX_RINGBUF_DECLARE(_name, _size) /* Empty */
 #define UART_SHELL_TX_BUF_DECLARE(_name) /* Empty */
 #define UART_SHELL_RX_TIMER_DECLARE(_name) static struct k_timer _name##_timer
 #define UART_SHELL_TX_RINGBUF_PTR(_name) NULL
 #define UART_SHELL_RX_TIMER_PTR(_name) (&_name##_timer)
-#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#endif /* CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN */
 
 /** @brief Shell UART transport instance structure. */
 struct shell_uart {

@@ -400,7 +400,6 @@ int montecarlo_ecdh(int num_tests, bool verbose)
 	uint8_t public2[2 * NUM_ECC_BYTES] = { 0 };
 	uint8_t secret1[NUM_ECC_BYTES] = { 0 };
 	uint8_t secret2[NUM_ECC_BYTES] = { 0 };
-	unsigned int result = TC_PASS;
 
 	const struct uECC_Curve_t *curve = uECC_secp256r1();
 
@@ -444,7 +443,7 @@ int montecarlo_ecdh(int num_tests, bool verbose)
 	}
 
 	TC_PRINT("\n");
-	return result;
+	return TC_PASS;
 }
 
 void test_ecc_dh(void)

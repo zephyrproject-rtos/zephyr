@@ -8,25 +8,14 @@ source "lib/libc/Kconfig"
 
 menu "Additional libraries"
 
-config JSON_LIBRARY
-	bool "Build JSON library"
-	help
-	  Build a minimal JSON parsing/encoding library. Used by sample
-	  applications such as the NATS client.
+source "lib/cmsis_rtos_v1/Kconfig"
 
-config RING_BUFFER
-	bool "Enable ring buffers"
-	help
-	  Enable usage of ring buffers. This is similar to kernel FIFOs but ring
-	  buffers manage their own buffer memory and can store arbitrary data.
-	  For optimal performance, use buffer sizes that are a power of 2.
+source "lib/cmsis_rtos_v2/Kconfig"
 
-config BASE64
-	bool "Enable base64 encoding and decoding"
-	help
-	  Enable base64 encoding and decoding functionality
+source "lib/gui/Kconfig"
+
+source "lib/os/Kconfig"
 
 source "lib/posix/Kconfig"
 
-source "lib/cmsis_rtos_v1/Kconfig"
 endmenu

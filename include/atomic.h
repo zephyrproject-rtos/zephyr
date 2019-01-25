@@ -9,6 +9,8 @@
 #ifndef ZEPHYR_INCLUDE_ATOMIC_H_
 #define ZEPHYR_INCLUDE_ATOMIC_H_
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -33,10 +35,10 @@ typedef atomic_t atomic_val_t;
  * @param target Address of atomic variable.
  * @param old_value Original value to compare against.
  * @param new_value New value to store.
- * @return 1 if @a new_value is written, 0 otherwise.
+ * @return true if @a new_value is written, false otherwise.
  */
 #ifdef CONFIG_ATOMIC_OPERATIONS_BUILTIN
-static inline int atomic_cas(atomic_t *target, atomic_val_t old_value,
+static inline bool atomic_cas(atomic_t *target, atomic_val_t old_value,
 			  atomic_val_t new_value)
 {
 	return __atomic_compare_exchange_n(target, &old_value, new_value,
@@ -322,13 +324,13 @@ extern atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
  *
- * @return 1 if the bit was set, 0 if it wasn't.
+ * @return true if the bit was set, false if it wasn't.
  */
-static inline int atomic_test_bit(const atomic_t *target, int bit)
+static inline bool atomic_test_bit(const atomic_t *target, int bit)
 {
 	atomic_val_t val = atomic_get(ATOMIC_ELEM(target, bit));
 
-	return (1 & (val >> (bit & (ATOMIC_BITS - 1))));
+	return (1 & (val >> (bit & (ATOMIC_BITS - 1)))) != 0;
 }
 
 /**
@@ -340,9 +342,9 @@ static inline int atomic_test_bit(const atomic_t *target, int bit)
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
  *
- * @return 1 if the bit was set, 0 if it wasn't.
+ * @return true if the bit was set, false if it wasn't.
  */
-static inline int atomic_test_and_clear_bit(atomic_t *target, int bit)
+static inline bool atomic_test_and_clear_bit(atomic_t *target, int bit)
 {
 	atomic_val_t mask = ATOMIC_MASK(bit);
 	atomic_val_t old;
@@ -361,9 +363,9 @@ static inline int atomic_test_and_clear_bit(atomic_t *target, int bit)
  * @param target Address of atomic variable or array.
  * @param bit Bit number (starting from 0).
  *
- * @return 1 if the bit was set, 0 if it wasn't.
+ * @return true if the bit was set, false if it wasn't.
  */
-static inline int atomic_test_and_set_bit(atomic_t *target, int bit)
+static inline bool atomic_test_and_set_bit(atomic_t *target, int bit)
 {
 	atomic_val_t mask = ATOMIC_MASK(bit);
 	atomic_val_t old;

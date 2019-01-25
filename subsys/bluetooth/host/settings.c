@@ -86,12 +86,9 @@ int bt_settings_decode_key(char *key, bt_addr_le_t *addr)
 	return 0;
 }
 
-static int set(int argc, char **argv, char *val)
+static int set(int argc, char **argv, void *value_ctx)
 {
 	int len;
-
-	BT_DBG("argc %d argv[0] %s argv[1] %s val %s", argc, argv[0],
-	       argc > 1 ? argv[1] : "(null)", val ? val : "(null)");
 
 	if (argc > 1) {
 		const struct bt_settings_handler *h;
@@ -101,7 +98,7 @@ static int set(int argc, char **argv, char *val)
 				argc--;
 				argv++;
 
-				return h->set(argc, argv, val);
+				return h->set(argc, argv, value_ctx);
 			}
 		}
 
@@ -116,12 +113,21 @@ static int set(int argc, char **argv, char *val)
 		}
 
 		len = sizeof(bt_dev.id_addr);
-		settings_bytes_from_str(val, &bt_dev.id_addr, &len);
+
+		len = settings_val_read_cb(value_ctx, &bt_dev.id_addr, len);
+
 		if (len < sizeof(bt_dev.id_addr[0])) {
-			BT_ERR("Invalid length ID address in storage");
+			if (len < 0) {
+				BT_ERR("Failed to read ID address from storage"
+				       " (err %d)", len);
+			} else {
+				BT_ERR("Invalid length ID address in storage");
+				BT_HEXDUMP_DBG(&bt_dev.id_addr, len,
+					       "data read");
+			}
 			(void)memset(bt_dev.id_addr, 0,
 				     sizeof(bt_dev.id_addr));
-			bt_dev.id_count = 0;
+			bt_dev.id_count = 0U;
 		} else {
 			int i;
 
@@ -137,22 +143,32 @@ static int set(int argc, char **argv, char *val)
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	if (!strcmp(argv[0], "name")) {
-		len = sizeof(bt_dev.name) - 1;
-		settings_bytes_from_str(val, &bt_dev.name, &len);
-		bt_dev.name[len] = '\0';
+		len = settings_val_read_cb(value_ctx, &bt_dev.name,
+					   sizeof(bt_dev.name) - 1);
+		if (len < 0) {
+			BT_ERR("Failed to read device name from storage"
+				       " (err %d)", len);
+		} else {
+			bt_dev.name[len] = '\0';
 
-		BT_DBG("Name set to %s", bt_dev.name);
+			BT_DBG("Name set to %s", bt_dev.name);
+		}
 		return 0;
 	}
 #endif
 
 #if defined(CONFIG_BT_PRIVACY)
 	if (!strcmp(argv[0], "irk")) {
-		len = sizeof(bt_dev.irk);
-		settings_bytes_from_str(val, bt_dev.irk, &len);
+		len = settings_val_read_cb(value_ctx, bt_dev.irk,
+					   sizeof(bt_dev.irk));
 		if (len < sizeof(bt_dev.irk[0])) {
-			BT_ERR("Invalid length IRK in storage");
-			(void)memset(bt_dev.irk, 0, sizeof(bt_dev.irk));
+			if (len < 0) {
+				BT_ERR("Failed to read IRK from storage"
+				       " (err %d)", len);
+			} else {
+				BT_ERR("Invalid length IRK in storage");
+				(void)memset(bt_dev.irk, 0, sizeof(bt_dev.irk));
+			}
 		} else {
 			BT_DBG("IRK set to %s", bt_hex(bt_dev.irk[0], 16));
 		}
@@ -174,30 +190,16 @@ static int set(int argc, char **argv, char *val)
 
 static void save_id(struct k_work *work)
 {
-	char buf[BT_SETTINGS_SIZE(ID_SIZE_MAX)];
-	char *str;
-
-	str = settings_str_from_bytes(&bt_dev.id_addr,
-				      ID_DATA_LEN(bt_dev.id_addr),
-				      buf, sizeof(buf));
-	if (!str) {
-		BT_ERR("Unable to encode ID Addr as value");
-		return;
-	}
-
-	BT_DBG("Saving ID addr as value %s", str);
-	settings_save_one("bt/id", str);
+	BT_DBG("Saving ID addr");
+	BT_HEXDUMP_DBG(&bt_dev.id_addr, ID_DATA_LEN(bt_dev.id_addr),
+		       "ID addr");
+	settings_save_one("bt/id", &bt_dev.id_addr,
+			  ID_DATA_LEN(bt_dev.id_addr));
 
 #if defined(CONFIG_BT_PRIVACY)
-	str = settings_str_from_bytes(bt_dev.irk, ID_DATA_LEN(bt_dev.irk),
-				      buf, sizeof(buf));
-	if (!str) {
-		BT_ERR("Unable to encode IRK as value");
-		return;
-	}
-
-	BT_DBG("Saving IRK as value %s", str);
-	settings_save_one("bt/irk", str);
+	BT_DBG("Saving IRK");
+	BT_HEXDUMP_DBG(bt_dev.irk, ID_DATA_LEN(bt_dev.irk), "IRK");
+	settings_save_one("bt/irk", bt_dev.irk, ID_DATA_LEN(bt_dev.irk));
 #endif
 }
 
@@ -240,19 +242,15 @@ static int commit(void)
 	return 0;
 }
 
-static int export(int (*func)(const char *name, char *val),
-		  enum settings_export_tgt tgt)
+static int export(int (*export_func)(const char *name, void *val,
+				     size_t val_len))
+
 {
 	const struct bt_settings_handler *h;
 
-	if (tgt != SETTINGS_EXPORT_PERSIST) {
-		BT_WARN("Only persist target supported");
-		return -ENOTSUP;
-	}
-
 	for (h = _bt_settings_start; h < _bt_settings_end; h++) {
 		if (h->export) {
-			h->export(func);
+			h->export(export_func);
 		}
 	}
 

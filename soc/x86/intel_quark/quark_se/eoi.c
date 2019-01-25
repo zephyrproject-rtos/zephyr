@@ -27,7 +27,7 @@ void _lakemont_eoi(void)
 	 * write to IOAPIC_EOI for every interrupt
 	 */
 	sys_write32(_irq_controller_isr_vector_get(),
-		    CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_EOI);
+		    DT_IOAPIC_BASE_ADDRESS + IOAPIC_EOI);
 
 	/* Send EOI to the LOAPIC as well */
 	sys_write32(0, CONFIG_LOAPIC_BASE_ADDRESS + LOAPIC_EOI);

@@ -151,8 +151,8 @@ typedef enum _flexio_timer_start_bit_condition
 /*! @brief Define type of timer polarity for shifter control. */
 typedef enum _flexio_shifter_timer_polarity
 {
-    kFLEXIO_ShifterTimerPolarityOnPositive = 0x0U, /* Shift on positive edge of shift clock. */
-    kFLEXIO_ShifterTimerPolarityOnNegitive = 0x1U, /* Shift on negative edge of shift clock. */
+    kFLEXIO_ShifterTimerPolarityOnPositive = 0x0U, /*!< Shift on positive edge of shift clock. */
+    kFLEXIO_ShifterTimerPolarityOnNegitive = 0x1U, /*!< Shift on negative edge of shift clock. */
 } flexio_shifter_timer_polarity_t;
 
 /*! @brief Define type of shifter working mode.*/

@@ -13,7 +13,7 @@ virtual report
 virtual context
 virtual patch
 
-@depends on patch@
+@depends on patch && !(file in "ext")@
 expression *x;
 expression f;
 expression i;
@@ -47,7 +47,7 @@ f(...,i*sizeof(
    ),...,(T)(x),...)
 )
 
-@r depends on !patch@
+@r depends on !patch && !(file in "ext")@
 expression *x;
 expression f;
 expression i;

@@ -1,0 +1,44 @@
+# Kconfig.sam - Stellaris
+#
+# Copyright (c) 2018 Zilogic Systems
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig GPIO_STELLARIS
+	bool "TI Stellaris GPIO Driver"
+	depends on GPIO && SOC_TI_LM3S6965
+	select HAS_DTS_GPIO
+	help
+	  Enable support for the Stellaris GPIO controllers.
+
+if GPIO_STELLARIS
+
+config GPIO_A_STELLARIS
+	bool "Enable GPIO port A support"
+	default y
+
+config GPIO_B_STELLARIS
+	bool "Enable GPIO port B support"
+	default y
+
+config GPIO_C_STELLARIS
+	bool "Enable GPIO port C support"
+	default y
+
+config GPIO_D_STELLARIS
+	bool "Enable GPIO port D support"
+	default y
+
+config GPIO_E_STELLARIS
+	bool "Enable GPIO port E support"
+	default y
+
+config GPIO_F_STELLARIS
+	bool "Enable GPIO port F support"
+	default y
+
+config GPIO_G_STELLARIS
+	bool "Enable GPIO port G support"
+	default y
+
+endif

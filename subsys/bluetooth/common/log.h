@@ -29,29 +29,25 @@ extern "C" {
 #if BT_DBG_ENABLED
 #define LOG_LEVEL LOG_LEVEL_DBG
 #else
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#define LOG_LEVEL CONFIG_BT_LOG_LEVEL
 #endif
 
 #include <logging/log.h>
 
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
-#if IS_ENABLED(CONFIG_LOG_FUNCTION_NAME)
 #define BT_DBG(fmt, ...) LOG_DBG(fmt, ##__VA_ARGS__)
 #define BT_ERR(fmt, ...) LOG_ERR(fmt, ##__VA_ARGS__)
 #define BT_WARN(fmt, ...) LOG_WRN(fmt, ##__VA_ARGS__)
-#else
-#define BT_DBG(fmt, ...) LOG_DBG("%s: " fmt, __func__, ##__VA_ARGS__)
-#define BT_ERR(fmt, ...) LOG_ERR("%s: " fmt, __func__, ##__VA_ARGS__)
-#define BT_WARN(fmt, ...) LOG_WRN("%s: " fmt, __func__, ##__VA_ARGS__)
-#endif
-
 #define BT_INFO(fmt, ...) LOG_INF(fmt, ##__VA_ARGS__)
 
 #define BT_ASSERT(cond) if (!(cond)) { \
 				BT_ERR("assert: '" #cond "' failed"); \
 				k_oops(); \
 			}
+
+#define BT_HEXDUMP_DBG(_data, _length, _str) \
+		LOG_HEXDUMP_DBG((const u8_t *)_data, _length, _str)
 
 const char *bt_hex_real(const void *buf, size_t len);
 const char *bt_addr_str_real(const bt_addr_t *addr);

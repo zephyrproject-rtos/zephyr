@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_zperf_tcp_recv
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 
@@ -27,17 +27,8 @@
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
 
-#define TCP_RX_FIBER_STACK_SIZE 1024
-
-static K_THREAD_STACK_DEFINE(zperf_tcp_rx_stack, TCP_RX_FIBER_STACK_SIZE);
-static struct k_thread zperf_tcp_rx_thread_data;
-
-#if defined(CONFIG_NET_IPV6)
 static struct sockaddr_in6 *in6_addr_my;
-#endif
-#if defined(CONFIG_NET_IPV4)
 static struct sockaddr_in *in4_addr_my;
-#endif
 
 static void tcp_received(struct net_context *context,
 			 struct net_pkt *pkt,
@@ -87,7 +78,7 @@ static void tcp_received(struct net_context *context,
 					  (u64_t)USEC_PER_SEC) /
 					 ((u64_t)duration * 1024));
 			} else {
-				rate_in_kbps = 0;
+				rate_in_kbps = 0U;
 			}
 
 			shell_fprintf(shell, SHELL_NORMAL,
@@ -129,13 +120,23 @@ static void tcp_accepted(struct net_context *context,
 	}
 }
 
-static void zperf_tcp_rx_thread(const struct shell *shell, int port)
+void zperf_tcp_receiver_init(const struct shell *shell, int port)
 {
 	struct net_context *context4 = NULL;
 	struct net_context *context6 = NULL;
-	int ret, fail = 0;
+	const struct in_addr *in4_addr = NULL;
+	const struct in6_addr *in6_addr = NULL;
+	int ret;
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) && MY_IP4ADDR) {
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		in6_addr_my = zperf_get_sin6();
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		in4_addr_my = zperf_get_sin();
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		ret = net_context_get(AF_INET, SOCK_STREAM, IPPROTO_TCP,
 				      &context4);
 		if (ret < 0) {
@@ -144,12 +145,25 @@ static void zperf_tcp_rx_thread(const struct shell *shell, int port)
 			return;
 		}
 
-		ret = zperf_get_ipv4_addr(shell, MY_IP4ADDR,
-					  &in4_addr_my->sin_addr);
-		if (ret < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
-				      "Unable to set IPv4\n");
-			return;
+		if (MY_IP4ADDR && strlen(MY_IP4ADDR)) {
+			/* Use Setting IP */
+			ret = zperf_get_ipv4_addr(shell, MY_IP4ADDR,
+						  &in4_addr_my->sin_addr);
+			if (ret < 0) {
+				shell_fprintf(shell, SHELL_WARNING,
+					      "Unable to set IPv4\n");
+				return;
+			}
+		} else {
+			/* Use existing IP */
+			in4_addr = zperf_get_default_if_in4_addr();
+			if (!in4_addr) {
+				shell_fprintf(shell, SHELL_WARNING,
+					      "Unable to get IPv4 by default\n");
+				return;
+			}
+			memcpy(&in4_addr_my->sin_addr, in4_addr,
+				sizeof(struct in_addr));
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL, "Binding to %s\n",
@@ -158,7 +172,7 @@ static void zperf_tcp_rx_thread(const struct shell *shell, int port)
 		in4_addr_my->sin_port = htons(port);
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && MY_IP6ADDR) {
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
 		ret = net_context_get(AF_INET6, SOCK_STREAM, IPPROTO_TCP,
 				      &context6);
 		if (ret < 0) {
@@ -167,12 +181,26 @@ static void zperf_tcp_rx_thread(const struct shell *shell, int port)
 			return;
 		}
 
-		ret = zperf_get_ipv6_addr(shell, MY_IP6ADDR, MY_PREFIX_LEN_STR,
-					  &in6_addr_my->sin6_addr);
-		if (ret < 0) {
-			shell_fprintf(shell, SHELL_WARNING,
-				      "Unable to set IPv6\n");
-			return;
+		if (MY_IP6ADDR && strlen(MY_IP6ADDR)) {
+			/* Use Setting IP */
+			ret = zperf_get_ipv6_addr(shell, MY_IP6ADDR,
+						  MY_PREFIX_LEN_STR,
+						  &in6_addr_my->sin6_addr);
+			if (ret < 0) {
+				shell_fprintf(shell, SHELL_WARNING,
+					      "Unable to set IPv6\n");
+				return;
+			}
+		} else {
+			/* Use existing IP */
+			in6_addr = zperf_get_default_if_in6_addr();
+			if (!in6_addr) {
+				shell_fprintf(shell, SHELL_WARNING,
+					      "Unable to get IPv4 by default\n");
+				return;
+			}
+			memcpy(&in6_addr_my->sin6_addr, in6_addr,
+				sizeof(struct in6_addr));
 		}
 
 		shell_fprintf(shell, SHELL_NORMAL, "Binding to %s\n",
@@ -189,7 +217,7 @@ static void zperf_tcp_rx_thread(const struct shell *shell, int port)
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Cannot bind IPv6 TCP port %d (%d)\n",
 				      ntohs(in6_addr_my->sin6_port), ret);
-			fail++;
+			return;
 		}
 
 		ret = net_context_listen(context6, 0);
@@ -217,7 +245,7 @@ static void zperf_tcp_rx_thread(const struct shell *shell, int port)
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Cannot bind IPv4 TCP port %d (%d)\n",
 				      ntohs(in4_addr_my->sin_port), ret);
-			fail++;
+			return;
 		}
 
 		ret = net_context_listen(context4, 0);
@@ -237,26 +265,6 @@ static void zperf_tcp_rx_thread(const struct shell *shell, int port)
 		}
 	}
 
-	if (fail > 1) {
-		return;
-	}
-
-	k_sleep(K_FOREVER);
-}
-
-void zperf_tcp_receiver_init(const struct shell *shell, int port)
-{
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		in6_addr_my = zperf_get_sin6();
-	}
-
-	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		in4_addr_my = zperf_get_sin();
-	}
-
-	k_thread_create(&zperf_tcp_rx_thread_data, zperf_tcp_rx_stack,
-			K_THREAD_STACK_SIZEOF(zperf_tcp_rx_stack),
-			(k_thread_entry_t)zperf_tcp_rx_thread,
-			(void *)shell, INT_TO_POINTER(port), 0,
-			K_PRIO_COOP(7), 0, K_NO_WAIT);
+	shell_fprintf(shell, SHELL_NORMAL,
+		      "Listening on port %d\n", port);
 }

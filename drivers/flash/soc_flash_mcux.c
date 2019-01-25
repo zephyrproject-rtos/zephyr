@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <logging/sys_log.h>
 #include <kernel.h>
 #include <device.h>
 #include <string.h>
@@ -23,6 +22,7 @@ struct flash_priv {
 	 * HACK: flash write protection is managed in software.
 	 */
 	struct k_sem write_lock;
+	u32_t pflash_block_base;
 };
 
 /*
@@ -45,7 +45,7 @@ static int flash_mcux_erase(struct device *dev, off_t offset, size_t len)
 		return -EACCES;
 	}
 
-	addr = offset + priv->config.PFlashBlockBase;
+	addr = offset + priv->pflash_block_base;
 
 	key = irq_lock();
 	rc = FLASH_Erase(&priv->config, addr, len, kFLASH_ApiEraseKey);
@@ -67,7 +67,7 @@ static int flash_mcux_read(struct device *dev, off_t offset,
 	 * hidden below the API: until the API export these ranges, we can not
 	 * do any generic validation
 	 */
-	addr = offset + priv->config.PFlashBlockBase;
+	addr = offset + priv->pflash_block_base;
 
 	memcpy(data, (void *) addr, len);
 
@@ -86,10 +86,10 @@ static int flash_mcux_write(struct device *dev, off_t offset,
 		return -EACCES;
 	}
 
-	addr = offset + priv->config.PFlashBlockBase;
+	addr = offset + priv->pflash_block_base;
 
 	key = irq_lock();
-	rc = FLASH_Program(&priv->config, addr, (uint32_t *) data, len);
+	rc = FLASH_Program(&priv->config, addr, (uint8_t *) data, len);
 	irq_unlock(key);
 
 	k_sem_give(&priv->write_lock);
@@ -142,16 +142,21 @@ static const struct flash_driver_api flash_mcux_api = {
 static int flash_mcux_init(struct device *dev)
 {
 	struct flash_priv *priv = dev->driver_data;
+	uint32_t pflash_block_base;
 	status_t rc;
 
 	k_sem_init(&priv->write_lock, 0, 1);
 
 	rc = FLASH_Init(&priv->config);
 
+	FLASH_GetProperty(&priv->config, kFLASH_PropertyPflash0BlockBaseAddr,
+			  &pflash_block_base);
+	priv->pflash_block_base = (u32_t) pflash_block_base;
+
 	return (rc == kStatus_Success) ? 0 : -EIO;
 }
 
-DEVICE_AND_API_INIT(flash_mcux, FLASH_DEV_NAME,
+DEVICE_AND_API_INIT(flash_mcux, DT_FLASH_DEV_NAME,
 			flash_mcux_init, &flash_data, NULL, POST_KERNEL,
 			CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &flash_mcux_api);
 

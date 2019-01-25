@@ -6,7 +6,7 @@
 
 menuconfig ETH_NATIVE_POSIX
 	bool "Native Posix Ethernet driver"
-	depends on ARCH_POSIX && NET_L2_ETHERNET
+	depends on ARCH_POSIX
 	help
 	  Enable native posix ethernet driver. Note, this driver is run inside
 	  a process in your host system.
@@ -81,6 +81,7 @@ config ETH_NATIVE_POSIX_DEV_NAME
 
 config ETH_NATIVE_POSIX_PTP_CLOCK
 	bool "PTP clock driver support"
+	default y if NET_GPTP
 	select PTP_CLOCK
 	depends on NET_GPTP
 	help
@@ -107,4 +108,4 @@ config	ETH_NATIVE_POSIX_MAC_ADDR
 
 endif
 
-endif
+endif # ETH_NATIVE_POSIX

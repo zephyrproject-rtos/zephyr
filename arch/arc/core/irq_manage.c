@@ -100,8 +100,9 @@ void _irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
 	printk("_irq_spurious(). Spinning...\n");
-	for (;;)
+	for (;;) {
 		;
+	}
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS

@@ -27,7 +27,7 @@ on Linux host.
 
 To use QEMU for testing, follow the :ref:`networking_with_qemu` guide.
 
-Here's a sample server configuration file '/etc/dhcpd/dhcp.conf'
+Here's a sample server configuration file '/etc/dhcp/dhcpd.conf'
 used to configure the DHCPv4 server:
 
 .. code-block:: console

@@ -80,7 +80,7 @@
 #if defined(MBEDTLS_RSA_C)
 int rand(void)
 {
-	static u32_t seed = 7;
+	static u32_t seed = 7U;
 
 	seed ^= seed << 13;
 	seed ^= seed >> 17;

@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_utils
-#define NET_LOG_LEVEL CONFIG_NET_UTILS_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_utils, CONFIG_NET_UTILS_LOG_LEVEL);
 
 #include <stdlib.h>
 #include <zephyr/types.h>
@@ -78,17 +78,17 @@ char *net_sprint_ll_addr_buf(const u8_t *ll, u8_t ll_len,
 
 	switch (ll_len) {
 	case 8:
-		len = 8;
+		len = 8U;
 		break;
 	case 6:
-		len = 6;
+		len = 6U;
 		break;
 	default:
-		len = 6;
+		len = 6U;
 		break;
 	}
 
-	for (i = 0, blen = buflen; i < len && blen > 0; i++) {
+	for (i = 0U, blen = buflen; i < len && blen > 0; i++) {
 		ptr = net_byte_to_hex(ptr, (char)ll[i], 'A', true);
 		*ptr++ = ':';
 		blen -= 3;
@@ -109,7 +109,7 @@ static int net_value_to_udec(char *buf, u32_t value, int precision)
 	int temp;
 	char *start = buf;
 
-	divisor = 1000000000;
+	divisor = 1000000000U;
 	if (precision < 0)
 		precision = 1;
 	for (i = 9; i >= 0; i--, divisor /= 10) {
@@ -131,7 +131,7 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 	struct in_addr *addr;
 	struct in6_addr *addr6;
 	u16_t *w;
-	u8_t i, bl, bh, longest = 1;
+	u8_t i, bl, bh, longest = 1U;
 	s8_t pos = -1;
 	char delim = ':';
 	unsigned char zeros[8] = { 0 };
@@ -145,7 +145,7 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 		w = (u16_t *)addr6->s6_addr16;
 		len = 8;
 
-		for (i = 0; i < 8; i++) {
+		for (i = 0U; i < 8; i++) {
 			u8_t j;
 
 			for (j = i; j < 8; j++) {
@@ -157,7 +157,7 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 			}
 		}
 
-		for (i = 0; i < 8; i++) {
+		for (i = 0U; i < 8; i++) {
 			if (zeros[i] > longest) {
 				longest = zeros[i];
 				pos = i;
@@ -176,7 +176,7 @@ char *net_addr_ntop(sa_family_t family, const void *src,
 		return NULL;
 	}
 
-	for (i = 0; i < len; i++) {
+	for (i = 0U; i < len; i++) {
 		/* IPv4 address a.b.c.d */
 		if (len == 4) {
 			u8_t l;
@@ -470,7 +470,7 @@ static inline u16_t calc_chksum_pkt(u16_t sum, struct net_pkt *pkt,
 u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 {
 	u16_t upper_layer_len;
-	u16_t sum = 0;
+	u16_t sum = 0U;
 
 	switch (net_pkt_family(pkt)) {
 #if defined(CONFIG_NET_IPV4)
@@ -504,7 +504,7 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 
 	sum = (sum == 0) ? 0xffff : htons(sum);
 
-	return sum;
+	return ~sum;
 }
 
 #if defined(CONFIG_NET_IPV4)
@@ -516,7 +516,7 @@ u16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 
 	sum = (sum == 0) ? 0xffff : htons(sum);
 
-	return sum;
+	return ~sum;
 }
 #endif /* CONFIG_NET_IPV4 */
 
@@ -752,7 +752,7 @@ int net_bytes_from_str(u8_t *buf, int buf_len, const char *src)
 	unsigned int i;
 	char *endptr;
 
-	for (i = 0; i < strlen(src); i++) {
+	for (i = 0U; i < strlen(src); i++) {
 		if (!(src[i] >= '0' && src[i] <= '9') &&
 		    !(src[i] >= 'A' && src[i] <= 'F') &&
 		    !(src[i] >= 'a' && src[i] <= 'f') &&
@@ -763,7 +763,7 @@ int net_bytes_from_str(u8_t *buf, int buf_len, const char *src)
 
 	(void)memset(buf, 0, buf_len);
 
-	for (i = 0; i < buf_len; i++) {
+	for (i = 0U; i < buf_len; i++) {
 		buf[i] = strtol(src, &endptr, 16);
 		src = ++endptr;
 	}

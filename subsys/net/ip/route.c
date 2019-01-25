@@ -9,8 +9,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_route
-#define NET_LOG_LEVEL CONFIG_NET_ROUTE_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_route, CONFIG_NET_ROUTE_LOG_LEVEL);
 
 #include <kernel.h>
 #include <limits.h>
@@ -28,7 +28,6 @@
 #include "icmpv6.h"
 #include "nbr.h"
 #include "route.h"
-#include "rpl.h"
 
 #if !defined(NET_ROUTE_EXTRA_DATA_SIZE)
 #define NET_ROUTE_EXTRA_DATA_SIZE 0
@@ -234,7 +233,7 @@ static int nbr_nexthop_put(struct net_nbr *nbr)
 
 
 #define net_route_info(str, route, dst)					\
-	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {				\
+	if (CONFIG_NET_ROUTE_LOG_LEVEL >= LOG_LEVEL_DBG) {		\
 		struct in6_addr *naddr = net_route_get_nexthop(route);	\
 									\
 		NET_ASSERT_INFO(naddr, "Unknown nexthop address");	\
@@ -256,7 +255,7 @@ struct net_route_entry *net_route_lookup(struct net_if *iface,
 					 struct in6_addr *dst)
 {
 	struct net_route_entry *route, *found = NULL;
-	u8_t longest_match = 0;
+	u8_t longest_match = 0U;
 	int i;
 
 	for (i = 0; i < CONFIG_NET_MAX_ROUTES && longest_match < 128; i++) {
@@ -356,7 +355,7 @@ struct net_route_entry *net_route_add(struct net_if *iface,
 				     struct net_route_entry,
 				     node);
 
-		if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		if (CONFIG_NET_ROUTE_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			struct in6_addr *tmp;
 			struct net_linkaddr_storage *llstorage;
 

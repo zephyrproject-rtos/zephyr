@@ -8,11 +8,12 @@
 
 #include <zephyr.h>
 #include <shell/shell.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define SHELL_MSG_SPECIFY_SUBCOMMAND	"Please specify a subcommand.\r\n"
+#define SHELL_MSG_SPECIFY_SUBCOMMAND	"Please specify a subcommand.\n"
 
 #define SHELL_DEFAULT_TERMINAL_WIDTH	(80u) /* Default PuTTY width. */
 #define SHELL_DEFAULT_TERMINAL_HEIGHT	(24u) /* Default PuTTY height. */
@@ -30,9 +31,9 @@ s32_t column_span_with_buffer_offsets_get(struct shell_multiline_cons *cons,
 void shell_multiline_data_calc(struct shell_multiline_cons *cons,
 				   u16_t buff_pos, u16_t buff_len);
 
-static inline size_t shell_strlen(const char *str)
+static inline u16_t shell_strlen(const char *str)
 {
-	return str == NULL ? 0 : strlen(str);
+	return str == NULL ? 0U : (u16_t)strlen(str);
 }
 
 char shell_make_argv(size_t *argc, char **argv, char *cmd, uint8_t max_argc);
@@ -42,20 +43,37 @@ char shell_make_argv(size_t *argc, char **argv, char *cmd, uint8_t max_argc);
  */
 void shell_pattern_remove(char *buff, u16_t *buff_len, const char *pattern);
 
+/* @brief Function shall be used to search commands.
+ *
+ * It moves the pointer entry to command of static command structure. If the
+ * command cannot be found, the function will set entry to NULL.
+ *
+ *   @param command	Pointer to command which will be processed (no matter
+ *			the root command).
+ *   @param lvl		Level of the requested command.
+ *   @param idx		Index of the requested command.
+ *   @param entry	Pointer which points to subcommand[idx] after function
+ *			execution.
+ *   @param st_entry	Pointer to the structure where dynamic entry data can be
+ *			stored.
+ */
+void shell_cmd_get(const struct shell_cmd_entry *command, size_t lvl,
+		   size_t idx, const struct shell_static_entry **entry,
+		   struct shell_static_entry *d_entry);
+
 int shell_command_add(char *buff, u16_t *buff_len,
 		      const char *new_cmd, const char *pattern);
 
+const struct shell_cmd_entry *shell_root_cmd_find(const char *syntax);
+
 void shell_spaces_trim(char *str);
 
-/** @brief Remove white chars from beginning and end of command buffer.
- *
- */
-void shell_buffer_trim(char *buff, u16_t *buff_len);
+static inline void transport_buffer_flush(const struct shell *shell)
+{
+	shell_fprintf_buffer_flush(shell->fprintf_ctx);
+}
 
-/* Function checks how many identical characters have two strings starting
- * from the first character.
- */
-u16_t shell_str_similarity_check(const char *str_a, const char *str_b);
+void shell_cmd_trim(const struct shell *shell);
 
 #ifdef __cplusplus
 }

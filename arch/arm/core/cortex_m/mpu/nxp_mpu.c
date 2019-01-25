@@ -8,8 +8,8 @@
 #include <init.h>
 #include <kernel.h>
 #include <soc.h>
-#include <arch/arm/cortex_m/cmsis.h>
-#include <arch/arm/cortex_m/mpu/nxp_mpu.h>
+#include <arch/arm/cortex_m/mpu/arm_core_mpu_dev.h>
+#include <arch/arm/cortex_m/mpu/arm_core_mpu.h>
 #include <misc/__assert.h>
 #include <linker/linker-defs.h>
 
@@ -200,7 +200,7 @@ void arm_core_mpu_enable(void)
 		/* Enable MPU */
 		SYSMPU->CESR |= SYSMPU_CESR_VLD_MASK;
 
-		nxp_mpu_enabled = 1;
+		nxp_mpu_enabled = 1U;
 	}
 }
 
@@ -215,7 +215,7 @@ void arm_core_mpu_disable(void)
 		/* Clear Interrupts */
 		SYSMPU->CESR |=  SYSMPU_CESR_SPERR_MASK;
 
-		nxp_mpu_enabled = 0;
+		nxp_mpu_enabled = 0U;
 	}
 }
 
@@ -273,7 +273,7 @@ void arm_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 		pparts = mem_domain->partitions;
 	} else {
 		LOG_DBG("disable domain partition regions");
-		num_partitions = 0;
+		num_partitions = 0U;
 		pparts = NULL;
 	}
 
@@ -393,7 +393,7 @@ int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
 	u8_t r_index;
 
 	/* Iterate all MPU regions */
-	for (r_index = 0; r_index < _get_num_usable_regions(); r_index++) {
+	for (r_index = 0U; r_index < _get_num_usable_regions(); r_index++) {
 		if (!_is_enabled_region(r_index) ||
 		    !_is_in_region(r_index, (u32_t)addr, size)) {
 			continue;
@@ -437,7 +437,7 @@ static void _nxp_mpu_config(void)
 	/* MPU Configuration */
 
 	/* Configure regions */
-	for (r_index = 0; r_index < mpu_config.num_regions; r_index++) {
+	for (r_index = 0U; r_index < mpu_config.num_regions; r_index++) {
 		_region_init(r_index,
 			     mpu_config.mpu_regions[r_index].base,
 			     mpu_config.mpu_regions[r_index].end,
@@ -447,7 +447,7 @@ static void _nxp_mpu_config(void)
 	/* Enable MPU */
 	SYSMPU->CESR |= SYSMPU_CESR_VLD_MASK;
 
-	nxp_mpu_enabled = 1;
+	nxp_mpu_enabled = 1U;
 
 #if defined(CONFIG_APPLICATION_MEMORY)
 	u32_t index, region_attr, base, size;

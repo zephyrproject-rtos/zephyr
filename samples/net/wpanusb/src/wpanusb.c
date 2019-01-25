@@ -292,7 +292,7 @@ static int tx(struct net_pkt *pkt)
 	if (ret) {
 		LOG_ERR("Error sending data, seq %u", seq);
 		/* Send seq = 0 for unsuccessful send */
-		seq = 0;
+		seq = 0U;
 	}
 
 	try_write(WPANUSB_ENDP_BULK_IN, &seq, sizeof(seq));
@@ -310,7 +310,7 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 	struct net_pkt *pkt;
 	struct net_buf *buf;
 
-	pkt = net_pkt_get_reserve_tx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_tx(K_NO_WAIT);
 	if (!pkt) {
 		return -ENOMEM;
 	}

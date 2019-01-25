@@ -6,7 +6,6 @@
  */
 
 #include <string.h>
-#include <assert.h>
 #include <zephyr.h>
 
 #include <fs.h>
@@ -18,7 +17,7 @@
 static int settings_file_load(struct settings_store *cs, load_cb cb,
 			      void *cb_arg);
 static int settings_file_save(struct settings_store *cs, const char *name,
-			      const char *value);
+			      const char *value, size_t val_len);
 
 static struct settings_store_itf settings_file_itf = {
 	.csi_load = settings_file_load,
@@ -50,40 +49,6 @@ int settings_file_dst(struct settings_file *cf)
 	return 0;
 }
 
-int settings_getnext_line(struct fs_file_t  *file, char *buf, int blen,
-			  off_t *loc)
-{
-	int rc;
-	char *end;
-
-	rc = fs_seek(file, *loc, FS_SEEK_SET);
-	if (rc < 0) {
-		*loc = 0;
-		return -1;
-	}
-
-	rc = fs_read(file, buf, blen);
-	if (rc <= 0) {
-		*loc = 0;
-		return -1;
-	}
-
-	if (rc == blen) {
-		rc--;
-	}
-	buf[rc] = '\0';
-
-	end = strchr(buf, '\n');
-	if (end) {
-		*end = '\0';
-	} else {
-		end = strchr(buf, '\0');
-	}
-	blen = end - buf;
-	*loc += (blen + 1);
-	return blen;
-}
-
 /*
  * Called to load configuration items. cb must be called for every configuration
  * item found.
@@ -92,37 +57,53 @@ static int settings_file_load(struct settings_store *cs, load_cb cb,
 			      void *cb_arg)
 {
 	struct settings_file *cf = (struct settings_file *)cs;
+	char buf[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1];
+	struct fs_dirent file_info;
 	struct fs_file_t  file;
-	off_t loc;
-	char tmpbuf[SETTINGS_MAX_NAME_LEN + SETTINGS_MAX_VAL_LEN +
-		    SETTINGS_EXTRA_LEN];
-	char *name_str;
-	char *val_str;
-	int rc;
+	size_t len_read;
 	int lines;
+	int rc;
+
+
+	struct line_entry_ctx entry_ctx = {
+		.stor_ctx = (void *)&file,
+		.seek = 0,
+		.len = 0 /* unknown length */
+	};
+
+	lines = 0;
+
+	rc = fs_stat(cf->cf_name, &file_info);
+	if (rc) {
+		return rc;
+	}
 
 	rc = fs_open(&file, cf->cf_name);
 	if (rc != 0) {
 		return -EINVAL;
 	}
 
-	loc = 0;
-	lines = 0;
 	while (1) {
-		rc = settings_getnext_line(&file, tmpbuf, sizeof(tmpbuf), &loc);
-		if (loc == 0) {
+		rc = settings_next_line_ctx(&entry_ctx);
+
+		if (rc || entry_ctx.len == 0) {
 			break;
 		}
-		if (rc < 0) {
-			continue;
+
+		rc = settings_line_name_read(buf, sizeof(buf), &len_read,
+					     (void *)&entry_ctx);
+
+		if (rc || len_read == 0) {
+			break;
 		}
-		rc = settings_line_parse(tmpbuf, &name_str, &val_str);
-		if (rc != 0) {
-			continue;
-		}
+		buf[len_read] = '\0';
+
+		/*name, val-read_cb-ctx, val-off*/
+		/* take into account '=' separator after the name */
+		cb(buf, (void *)&entry_ctx, len_read + 1, cb_arg);
 		lines++;
-		cb(name_str, val_str, cb_arg);
 	}
+
 	rc = fs_close(&file);
 	cf->cf_lines = lines;
 
@@ -161,58 +142,101 @@ static int settings_file_create_or_replace(struct fs_file_t *zfp,
 
 	return fs_open(zfp, file_name);
 }
+
 /*
  * Try to compress configuration file by keeping unique names only.
  */
-void settings_file_compress(struct settings_file *cf)
+int settings_file_save_and_compress(struct settings_file *cf, const char *name,
+			      const char *value, size_t val_len)
 {
-	int rc;
+	int rc, rc2;
 	struct fs_file_t rf;
 	struct fs_file_t wf;
 	char tmp_file[SETTINGS_FILE_NAME_MAX];
-	char buf1[SETTINGS_MAX_NAME_LEN + SETTINGS_MAX_VAL_LEN +
-		  SETTINGS_EXTRA_LEN];
-	char buf2[SETTINGS_MAX_NAME_LEN + SETTINGS_MAX_VAL_LEN +
-		  SETTINGS_EXTRA_LEN];
-	off_t loc1, loc2;
-	char *name1, *val1;
-	char *name2, *val2;
+	char name1[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN];
+	char name2[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN];
+	struct line_entry_ctx loc1 = {
+		.stor_ctx = &rf,
+		.seek = 0,
+		.len = 0 /* unknown length */
+	};
+
+	struct line_entry_ctx loc2;
+
+	struct line_entry_ctx loc3 = {
+		.stor_ctx = &wf
+	};
+
 	int copy;
-	int len, len2;
 	int lines;
+	size_t new_name_len;
+	size_t val1_off;
 
 	if (fs_open(&rf, cf->cf_name) != 0) {
-		return;
+		return -ENOEXEC;
 	}
 
 	settings_tmpfile(tmp_file, cf->cf_name, ".cmp");
 
 	if (settings_file_create_or_replace(&wf, tmp_file)) {
 		fs_close(&rf);
-		return;
+		return -ENOEXEC;
 	}
 
-	loc1 = 0;
 	lines = 0;
+	new_name_len = strlen(name);
+
 	while (1) {
-		len = settings_getnext_line(&rf, buf1, sizeof(buf1), &loc1);
-		if (loc1 == 0 || len < 0) {
+		rc = settings_next_line_ctx(&loc1);
+
+		if (rc || loc1.len == 0) {
+			/* try to amend new value to the commpresed file */
 			break;
 		}
-		rc = settings_line_parse(buf1, &name1, &val1);
+
+		rc = settings_line_name_read(name1, sizeof(name1), &val1_off,
+					     &loc1);
 		if (rc) {
+			/* try to process next line */
 			continue;
 		}
+
+		if (val1_off + 1 == loc1.len) {
+			/* Lack of a value so the record is a deletion-record */
+			/* No sense to copy empty entry from */
+			/* the oldest sector */
+			continue;
+		}
+
+		/* avoid copping value which will be overwritten by new value*/
+		if ((val1_off == new_name_len) &&
+		    !memcmp(name1, name, val1_off)) {
+			continue;
+		}
+
 		loc2 = loc1;
+
 		copy = 1;
-		while ((len2 = settings_getnext_line(&rf, buf2, sizeof(buf2),
-						 &loc2)) > 0) {
-			rc = settings_line_parse(buf2, &name2, &val2);
+		while (1) {
+			size_t val2_off;
+
+			rc = settings_next_line_ctx(&loc2);
+
+			if (rc || loc2.len == 0) {
+				/* try to amend new value to */
+				/* the commpresed file */
+				break;
+			}
+
+			rc = settings_line_name_read(name2, sizeof(name2),
+						     &val2_off, &loc2);
 			if (rc) {
+				/* try to process next line */
 				continue;
 			}
-			if (!strcmp(name1, name2)) {
-				copy = 0;
+			if ((val1_off == val2_off) &&
+			    !memcmp(name1, name2, val1_off)) {
+				copy = 0; /* newer version doesn't exist */
 				break;
 			}
 		}
@@ -220,45 +244,58 @@ void settings_file_compress(struct settings_file *cf)
 			continue;
 		}
 
-		/*
-		 * Can't find one. Must copy.
-		 */
-		len = settings_line_make(buf2, sizeof(buf2), name1, val1);
-		if (len < 0 || len + 2 > sizeof(buf2)) {
-			continue;
+		loc2 = loc1;
+		loc2.len += 2;
+		loc2.seek -= 2;
+		rc = settings_entry_copy(&loc3, 0, &loc2, 0, loc2.len);
+		if (rc) {
+			/* compressed file might be corrupted */
+			goto end_rolback;
 		}
-		buf2[len++] = '\n';
-		if (fs_write(&wf, buf2, len) != len) {
-			ARG_UNUSED(fs_close(&rf));
-			ARG_UNUSED(fs_close(&wf));
-			return;
-		}
-	lines++;
+
+		lines++;
 	}
 
-	len = fs_close(&wf);
-	len2 = fs_close(&rf);
-	if (len == 0 && len2 == 0 && fs_unlink(cf->cf_name) == 0) {
-		ARG_UNUSED(fs_rename(tmp_file, cf->cf_name));
-		cf->cf_lines = lines;
+	/* at last store the new value */
+	rc = settings_line_write(name, value, val_len, 0, &loc3);
+	if (rc) {
+		/* compressed file might be corrupted */
+		goto end_rolback;
+	}
+
+	rc = fs_close(&wf);
+	rc2 = fs_close(&rf);
+	if (rc == 0 && rc2 == 0 && fs_unlink(cf->cf_name) == 0) {
+		if (fs_rename(tmp_file, cf->cf_name)) {
+			return -ENOENT;
+		}
+		cf->cf_lines = lines + 1;
+	} else {
+		rc = -EIO;
+	}
 	/*
 	 * XXX at settings_file_load(), look for .cmp if actual file does not
 	 * exist.
 	 */
+	return 0;
+end_rolback:
+	(void)fs_close(&wf);
+	if (fs_close(&rf) == 0) {
+		(void)fs_unlink(tmp_file);
 	}
+	return -EIO;
+
 }
 
 /*
  * Called to save configuration.
  */
 static int settings_file_save(struct settings_store *cs, const char *name,
-			      const char *value)
+			      const char *value, size_t val_len)
 {
 	struct settings_file *cf = (struct settings_file *)cs;
+	struct line_entry_ctx entry_ctx;
 	struct fs_file_t  file;
-	char buf[SETTINGS_MAX_NAME_LEN + SETTINGS_MAX_VAL_LEN +
-		 SETTINGS_EXTRA_LEN];
-	int len;
 	int rc2;
 	int rc;
 
@@ -271,13 +308,9 @@ static int settings_file_save(struct settings_store *cs, const char *name,
 		 * Compress before config file size exceeds
 		 * the max number of lines.
 		 */
-		settings_file_compress(cf);
+		return settings_file_save_and_compress(cf, name, value,
+						       val_len);
 	}
-	len = settings_line_make(buf, sizeof(buf), name, value);
-	if (len < 0 || len + 2 > sizeof(buf)) {
-		return -EINVAL;
-	}
-	buf[len++] = '\n';
 
 	/*
 	 * Open the file to add this one value.
@@ -286,8 +319,10 @@ static int settings_file_save(struct settings_store *cs, const char *name,
 	if (rc == 0) {
 		rc = fs_seek(&file, 0, FS_SEEK_END);
 		if (rc == 0) {
-			rc2 = fs_write(&file, buf, len);
-			if (rc2 == len) {
+			entry_ctx.stor_ctx = &file;
+			rc2 = settings_line_write(name, value, val_len, 0,
+						  (void *)&entry_ctx);
+			if (rc2 == 0) {
 				cf->cf_lines++;
 			}
 		}
@@ -299,4 +334,71 @@ static int settings_file_save(struct settings_store *cs, const char *name,
 	}
 
 	return rc;
+}
+
+static int read_handler(void *ctx, off_t off, char *buf, size_t *len)
+{
+	struct line_entry_ctx *entry_ctx = ctx;
+	struct fs_file_t *file = entry_ctx->stor_ctx;
+	ssize_t r_len;
+	int rc;
+
+	/* 0 is reserved for reding the length-field only */
+	if (entry_ctx->len != 0) {
+		if (off >= entry_ctx->len) {
+			return -EINVAL;
+		}
+
+		if ((off + *len) > entry_ctx->len) {
+			*len = entry_ctx->len - off;
+		}
+	}
+
+	rc = fs_seek(file, entry_ctx->seek + off, FS_SEEK_SET);
+	if (rc) {
+		goto end;
+	}
+
+	r_len = fs_read(file, buf, *len);
+
+	if (r_len >= 0) {
+		*len = r_len;
+		rc = 0;
+	} else {
+		rc = r_len;
+	}
+end:
+	return rc;
+}
+
+static size_t get_len_cb(void *ctx)
+{
+	struct line_entry_ctx *entry_ctx = ctx;
+
+	return entry_ctx->len;
+}
+
+static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
+{
+	struct line_entry_ctx *entry_ctx = ctx;
+	struct fs_file_t *file = entry_ctx->stor_ctx;
+	int rc;
+
+	/* append to file only */
+	rc = fs_seek(file, 0, FS_SEEK_END);
+
+	if (rc == 0) {
+		rc = fs_write(file, buf, len);
+
+		if (rc > 0) {
+			rc = 0;
+		}
+	}
+
+	return rc;
+}
+
+void settings_mount_fs_backend(struct settings_file *cf)
+{
+	settings_line_io_init(read_handler, write_handler, get_len_cb, 1);
 }

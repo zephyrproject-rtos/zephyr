@@ -34,13 +34,14 @@
 		pwm-led0 = &green_pwm_led;
 		red-pwm-led = &red_pwm_led;
 		green-pwm-led = &green_pwm_led;
-		blue_pwm-led = &blue_pwm_led;
+		blue-pwm-led = &blue_pwm_led;
 	};
 
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
 		zephyr,bt-uart = &uart4;
 	};
 

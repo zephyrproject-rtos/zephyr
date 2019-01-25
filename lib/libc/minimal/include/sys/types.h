@@ -20,15 +20,15 @@ typedef __SIZE_TYPE__ ssize_t;
 #if !defined(__off_t_defined)
 #define __off_t_defined
 
-#ifdef __i386
-typedef long int off_t;
+#if defined(__i386) || defined(__x86_64)
+typedef long int off_t; /* "long" works for all of i386, X32 and true 64 bit */
 #elif defined(__ARM_ARCH)
 typedef int off_t;
 #elif defined(__arc__)
 typedef int off_t;
 #elif defined(__NIOS2__)
 typedef int off_t;
-#elif defined(__riscv__)
+#elif defined(__riscv)
 typedef int off_t;
 #elif defined(__XTENSA__)
 typedef int off_t;

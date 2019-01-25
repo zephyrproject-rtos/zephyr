@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2017, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mimxrt1050_evk.dts"
+
+/ {
+	chosen {
+#if defined(CONFIG_CODE_ITCM)
+		zephyr,flash = &itcm0;
+#elif defined(CONFIG_CODE_QSPI)
+		zephyr,flash = &is25wp064;
+#endif
+	};
+};
+
+/delete-node/ &hyperflash0;
+
+&flexspi0 {
+	reg = <0x402a8000 0x4000>, <0x60000000 0x800000>;
+	is25wp064: is25wp064@0 {
+		compatible = "issi,is25wp064", "jedec,spi-nor";
+		reg = <0>;
+		status = "ok";
+	};
+};

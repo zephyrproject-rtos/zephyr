@@ -1,0 +1,60 @@
+# Any linux host toolchain should work as a default
+CC ?= gcc
+OBJCOPY ?= objcopy
+QEMU ?= qemu-system-x86_64
+
+# No unwind tables is just to save size. No SSE is allowed because GCC
+# uses it for miscellaneous optimizations that aren't related to
+# floating point, and we don't want to take the traps except on
+# threads that definitely need it.  No red zone because it's
+# incompatible with traditional stack-based interrupt entry.
+CFLAGS =  -Os -I../include -std=c11 -ffreestanding -fno-pic -fno-asynchronous-unwind-tables -mno-sse -mno-red-zone
+
+LDFLAGS = -Wl,--build-id=none -nostdlib -nodefaultlibs -nostartfiles
+
+# This works great.  But note that distros ship no libgcc for the
+# target, so once we start to need stuff from that we'll need to move
+# to a custom cross compiler.
+ARCHFLAGS = -mx32
+
+# The default build target just links the stub files.  Broader OS
+# builds just care about these files.  The xuk.elf target is a
+# demonstration kernel.
+stubs: xuk-stub32.bin xuk-stub16.bin
+
+# First link the initial 32 bit stub, which goes at the front of our
+# image.
+xuk-stub32.bin: xuk-stub32.c *.h xuk-stub32.ld
+	$(CC) -Wall -m32 $(CFLAGS) -c xuk-stub32.c
+	$(CC) -m32 -T xuk-stub32.ld $(LDFLAGS) -o stub32.elf $(CFLAGS) xuk-stub32.o
+	$(OBJCOPY) -O binary stub32.elf $@
+
+# This is the main OS image, starting with the 32 bit stub and
+# containing all the 64 bit code.
+xuk.elf64: xuk-stub32.bin xuk-stub16.bin xuk.c xuk-stubs.c demo-kernel.c *.h xuk64.ld
+	$(CC) $(ARCHFLAGS) -Wall $(CFLAGS) -c xuk.c
+	$(CC) $(ARCHFLAGS) -Wall $(CFLAGS) -c xuk-stubs.c
+	$(CC) $(ARCHFLAGS) -Wall $(CFLAGS) -c demo-kernel.c
+	$(CC) $(ARCHFLAGS) -T xuk64.ld $(LDFLAGS) -o $@ $(CFLAGS) xuk.o xuk-stubs.o demo-kernel.o
+
+# Final step.  We now have an x86_64 ELF binary, which is not a valid
+# multiboot image as the entry point is of course 32 bit.  It needs to
+# be a i386 image, so copy out the segment and relink the blob one
+# last time.
+xuk.elf: xuk.elf64 xuk64.ld
+	$(OBJCOPY) -O binary $< xuk.bin
+	echo '.incbin "xuk.bin"' | as --32 -c - -o xuk32.o
+	$(CC) -m32 -T xuk64.ld $(LDFLAGS) -o $@ $(CFLAGS) xuk32.o
+
+# We can rely on the bootloader to handover a machine running in 386
+# protected mode, but SMP cores start in real mode and need a tiny
+# bootstrap layer of 16 bit code.
+xuk-stub16.bin: xuk-stub16.c
+	$(CC) -m16 $(CFLAGS) -c $<
+	$(OBJCOPY) -O binary -j .text xuk-stub16.o $@
+
+run: xuk.elf
+	$(QEMU) -serial mon:stdio -smp cpus=2 -icount shift=1 -no-reboot -no-shutdown -d unimp,pcall,guest_errors -kernel $<
+
+clean:
+	rm -f *.elf *.elf64 *.o *~ *.bin *.disasm

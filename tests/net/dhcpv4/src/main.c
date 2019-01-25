@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_test
-#define NET_LOG_LEVEL CONFIG_NET_DHCPV4_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_test, CONFIG_NET_DHCPV4_LOG_LEVEL);
 
 #include <zephyr.h>
 #include <linker/sections.h>
@@ -26,6 +26,7 @@
 #include <net/ethernet.h>
 #include <net/net_mgmt.h>
 #include <net/udp.h>
+#include <net/dummy.h>
 
 #include <tc_util.h>
 #include <ztest.h>
@@ -207,14 +208,15 @@ static struct net_buf *pkt_get_data(struct net_pkt *pkt, struct net_if *iface)
 	struct net_buf *frag;
 	struct net_eth_hdr *hdr;
 
-	net_pkt_set_ll_reserve(pkt, net_if_get_ll_reserve(iface, NULL));
-
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
 	if (!frag) {
 		return NULL;
 	}
 
-	hdr = (struct net_eth_hdr *)(frag->data - net_pkt_ll_reserve(pkt));
+	net_buf_add(frag, sizeof(struct net_eth_hdr));
+	net_pkt_frag_add(pkt, frag);
+
+	hdr = (struct net_eth_hdr *)(net_pkt_data(pkt));
 	hdr->type = htons(NET_ETH_PTYPE_IP);
 
 	net_ipaddr_copy(&hdr->dst, &src_addr);
@@ -270,7 +272,7 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, u32_t xid)
 	int bytes, remaining = sizeof(offer), pos = 0;
 	u16_t offset;
 
-	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}
@@ -282,11 +284,8 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, u32_t xid)
 	}
 
 	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_ll_reserve(pkt, net_buf_headroom(frag));
 	net_pkt_set_family(pkt, AF_INET);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
-
-	net_pkt_frag_add(pkt, frag);
 
 	/* Place the IPv4 header */
 	set_ipv4_header(pkt);
@@ -316,7 +315,7 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, u32_t xid)
 				goto fail;
 			}
 
-			offset = 0;
+			offset = 0U;
 			net_pkt_frag_add(pkt, frag);
 		}
 	}
@@ -340,7 +339,7 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, u32_t xid)
 	int bytes, remaining = sizeof(ack), pos = 0;
 	u16_t offset;
 
-	pkt = net_pkt_get_reserve_rx(0, K_FOREVER);
+	pkt = net_pkt_get_reserve_rx(K_FOREVER);
 	if (!pkt) {
 		return NULL;
 	}
@@ -352,11 +351,8 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, u32_t xid)
 	}
 
 	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_ll_reserve(pkt, net_buf_headroom(frag));
 	net_pkt_set_family(pkt, AF_INET);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
-
-	net_pkt_frag_add(pkt, frag);
 
 	/* Place the IPv4 header */
 	set_ipv4_header(pkt);
@@ -386,7 +382,7 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, u32_t xid)
 				goto fail;
 			}
 
-			offset = 0;
+			offset = 0U;
 			net_pkt_frag_add(pkt, frag);
 		}
 	}
@@ -464,7 +460,7 @@ static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
 	return 0;
 }
 
-static int tester_send(struct net_if *iface, struct net_pkt *pkt)
+static int tester_send(struct device *dev, struct net_pkt *pkt)
 {
 	struct net_pkt *rpkt;
 	struct dhcp_msg msg;
@@ -481,13 +477,13 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 
 	if (msg.type == DISCOVER) {
 		/* Reply with DHCPv4 offer message */
-		rpkt = prepare_dhcp_offer(iface, msg.xid);
+		rpkt = prepare_dhcp_offer(net_pkt_iface(pkt), msg.xid);
 		if (!rpkt) {
 			return -EINVAL;
 		}
 	} else if (msg.type == REQUEST) {
 		/* Reply with DHCPv4 ACK message */
-		rpkt = prepare_dhcp_ack(iface, msg.xid);
+		rpkt = prepare_dhcp_ack(net_pkt_iface(pkt), msg.xid);
 		if (!rpkt) {
 			return -EINVAL;
 		}
@@ -497,20 +493,19 @@ static int tester_send(struct net_if *iface, struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	if (net_recv_data(iface, rpkt)) {
+	if (net_recv_data(net_pkt_iface(rpkt), rpkt)) {
 		net_pkt_unref(rpkt);
 
 		return -EINVAL;
 	}
 
-	net_pkt_unref(pkt);
-	return NET_OK;
+	return 0;
 }
 
 struct net_dhcpv4_context net_dhcpv4_context_data;
 
-static struct net_if_api net_dhcpv4_if_api = {
-	.init = net_dhcpv4_iface_init,
+static struct dummy_api net_dhcpv4_if_api = {
+	.iface_api.init = net_dhcpv4_iface_init,
 	.send = tester_send,
 };
 

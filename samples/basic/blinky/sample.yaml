@@ -3,4 +3,6 @@ sample:
 tests:
   test:
     tags: LED gpio
+    # The filters below are from DTS
+    filter: LED0_GPIO_CONTROLLER
     depends_on: gpio

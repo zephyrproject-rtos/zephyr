@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Nordic Semiconductor ASA
+ * Copyright (c) 2016-2018 Nordic Semiconductor ASA
  * Copyright (c) 2016 Vinayak Kariappa Chettimada
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -26,71 +26,6 @@
 #define RADIO_PACKET_TX_DATA_SIZE CONFIG_BT_CTLR_TX_BUFFER_SIZE
 #endif
 
-#define BIT64(n) (1ULL << (n))
-
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-#define RADIO_BLE_FEAT_BIT_ENC BIT64(BT_LE_FEAT_BIT_ENC)
-#else /* !CONFIG_BT_CTLR_LE_ENC */
-#define RADIO_BLE_FEAT_BIT_ENC 0
-#endif /* !CONFIG_BT_CTLR_LE_ENC */
-
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
-#define RADIO_BLE_FEAT_BIT_CONN_PARAM_REQ BIT64(BT_LE_FEAT_BIT_CONN_PARAM_REQ)
-#else /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
-#define RADIO_BLE_FEAT_BIT_CONN_PARAM_REQ 0
-#endif /* !CONFIG_BT_CTLR_CONN_PARAM_REQ */
-
-#if defined(CONFIG_BT_CTLR_LE_PING)
-#define RADIO_BLE_FEAT_BIT_PING BIT64(BT_LE_FEAT_BIT_PING)
-#else /* !CONFIG_BT_CTLR_LE_PING */
-#define RADIO_BLE_FEAT_BIT_PING 0
-#endif /* !CONFIG_BT_CTLR_LE_PING */
-
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH_MAX)
-#define RADIO_BLE_FEAT_BIT_DLE BIT64(BT_LE_FEAT_BIT_DLE)
-#define RADIO_LL_LENGTH_OCTETS_RX_MAX CONFIG_BT_CTLR_DATA_LENGTH_MAX
-#else
-#define RADIO_BLE_FEAT_BIT_DLE 0
-#define RADIO_LL_LENGTH_OCTETS_RX_MAX 27
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH_MAX */
-
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-#define RADIO_BLE_FEAT_BIT_PRIVACY BIT64(BT_LE_FEAT_BIT_PRIVACY)
-#else /* !CONFIG_BT_CTLR_PRIVACY */
-#define RADIO_BLE_FEAT_BIT_PRIVACY 0
-#endif /* !CONFIG_BT_CTLR_PRIVACY */
-
-#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-#define RADIO_BLE_FEAT_BIT_EXT_SCAN BIT64(BT_LE_FEAT_BIT_EXT_SCAN)
-#else /* !CONFIG_BT_CTLR_EXT_SCAN_FP */
-#define RADIO_BLE_FEAT_BIT_EXT_SCAN 0
-#endif /* !CONFIG_BT_CTLR_EXT_SCAN_FP */
-
-#if defined(CONFIG_BT_CTLR_CHAN_SEL_2)
-#define RADIO_BLE_FEAT_BIT_CHAN_SEL_2 BIT64(BT_LE_FEAT_BIT_CHAN_SEL_ALGO_2)
-#else /* !CONFIG_BT_CTLR_CHAN_SEL_2 */
-#define RADIO_BLE_FEAT_BIT_CHAN_SEL_2 0
-#endif /* !CONFIG_BT_CTLR_CHAN_SEL_2 */
-
-#if defined(CONFIG_BT_CTLR_MIN_USED_CHAN)
-#define RADIO_BLE_FEAT_BIT_MIN_USED_CHAN \
-		BIT64(BT_LE_FEAT_BIT_MIN_USED_CHAN_PROC)
-#else /* !CONFIG_BT_CTLR_MIN_USED_CHAN */
-#define RADIO_BLE_FEAT_BIT_MIN_USED_CHAN 0
-#endif /* !CONFIG_BT_CTLR_MIN_USED_CHAN */
-
-#if defined(CONFIG_BT_CTLR_PHY_2M)
-#define RADIO_BLE_FEAT_BIT_PHY_2M BIT64(BT_LE_FEAT_BIT_PHY_2M)
-#else /* !CONFIG_BT_CTLR_PHY_2M */
-#define RADIO_BLE_FEAT_BIT_PHY_2M 0
-#endif /* !CONFIG_BT_CTLR_PHY_2M */
-
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-#define RADIO_BLE_FEAT_BIT_PHY_CODED BIT64(BT_LE_FEAT_BIT_PHY_CODED)
-#else /* !CONFIG_BT_CTLR_PHY_CODED */
-#define RADIO_BLE_FEAT_BIT_PHY_CODED 0
-#endif /* !CONFIG_BT_CTLR_PHY_CODED */
-
 /*****************************************************************************
  * Timer Resources (Controller defined)
  ****************************************************************************/
@@ -115,46 +50,16 @@
 #define RADIO_TICKER_USER_WORKER_OPS	(7 + 1)
 #define RADIO_TICKER_USER_JOB_OPS	(2 + 1)
 #define RADIO_TICKER_USER_APP_OPS	(1 + 1)
-#define RADIO_TICKER_USER_OPS		(RADIO_TICKER_USER_WORKER_OPS \
-					+ RADIO_TICKER_USER_JOB_OPS \
-					+ RADIO_TICKER_USER_APP_OPS \
-					)
+#define RADIO_TICKER_USER_OPS		(RADIO_TICKER_USER_WORKER_OPS + \
+					 RADIO_TICKER_USER_JOB_OPS + \
+					 RADIO_TICKER_USER_APP_OPS)
 
-#define RADIO_TICKER_NODES		(RADIO_TICKER_ID_FIRST_CONNECTION \
-					+ RADIO_CONNECTION_CONTEXT_MAX \
-					)
+#define RADIO_TICKER_NODES		(RADIO_TICKER_ID_FIRST_CONNECTION + \
+					 RADIO_CONNECTION_CONTEXT_MAX)
 
 /*****************************************************************************
  * Controller Interface Defines
  ****************************************************************************/
-#define RADIO_BLE_VERSION_NUMBER	BT_HCI_VERSION_5_0
-#if defined(CONFIG_BT_CTLR_COMPANY_ID)
-#define RADIO_BLE_COMPANY_ID            CONFIG_BT_CTLR_COMPANY_ID
-#else
-#define RADIO_BLE_COMPANY_ID            0xFFFF
-#endif
-#if defined(CONFIG_BT_CTLR_SUBVERSION_NUMBER)
-#define RADIO_BLE_SUB_VERSION_NUMBER \
-				CONFIG_BT_CTLR_SUBVERSION_NUMBER
-#else
-#define RADIO_BLE_SUB_VERSION_NUMBER    0xFFFF
-#endif
-
-#define RADIO_BLE_FEAT_BIT_MASK         0x1FFFF
-#define RADIO_BLE_FEAT_BIT_MASK_VALID   0x1CF2F
-#define RADIO_BLE_FEAT                  (RADIO_BLE_FEAT_BIT_ENC | \
-					 RADIO_BLE_FEAT_BIT_CONN_PARAM_REQ | \
-					 BIT(BT_LE_FEAT_BIT_EXT_REJ_IND) | \
-					 BIT(BT_LE_FEAT_BIT_SLAVE_FEAT_REQ) | \
-					 RADIO_BLE_FEAT_BIT_PING | \
-					 RADIO_BLE_FEAT_BIT_DLE | \
-					 RADIO_BLE_FEAT_BIT_PRIVACY | \
-					 RADIO_BLE_FEAT_BIT_EXT_SCAN | \
-					 RADIO_BLE_FEAT_BIT_PHY_2M | \
-					 RADIO_BLE_FEAT_BIT_PHY_CODED | \
-					 RADIO_BLE_FEAT_BIT_CHAN_SEL_2 | \
-					 RADIO_BLE_FEAT_BIT_MIN_USED_CHAN)
-
 #if defined(CONFIG_BT_CTLR_WORKER_PRIO)
 #define RADIO_TICKER_USER_ID_WORKER_PRIO CONFIG_BT_CTLR_WORKER_PRIO
 #else
@@ -170,45 +75,32 @@
 /*****************************************************************************
  * Controller Reference Defines (compile time override-able)
  ****************************************************************************/
-/* Minimum LL Payload support (Dont change). */
-#define RADIO_LL_LENGTH_OCTETS_RX_MIN	27
-
-/* Maximum LL Payload support (27 to 251). */
-#ifndef RADIO_LL_LENGTH_OCTETS_RX_MAX
-#define RADIO_LL_LENGTH_OCTETS_RX_MAX	251
-#endif
-
 /* Implementation default L2CAP MTU */
 #ifndef RADIO_L2CAP_MTU_MAX
-#define RADIO_L2CAP_MTU_MAX		(RADIO_LL_LENGTH_OCTETS_RX_MAX - 4)
+#define RADIO_L2CAP_MTU_MAX		(LL_LENGTH_OCTETS_RX_MAX - 4)
 #endif
 
 /* Maximise L2CAP MTU to LL data PDU size */
-#if (RADIO_L2CAP_MTU_MAX < (RADIO_LL_LENGTH_OCTETS_RX_MAX - 4))
+#if (RADIO_L2CAP_MTU_MAX < (LL_LENGTH_OCTETS_RX_MAX - 4))
 #undef RADIO_L2CAP_MTU_MAX
-#define RADIO_L2CAP_MTU_MAX		(RADIO_LL_LENGTH_OCTETS_RX_MAX - 4)
+#define RADIO_L2CAP_MTU_MAX		(LL_LENGTH_OCTETS_RX_MAX - 4)
 #endif
 
 /* Maximum LL PDU Receive pool size. */
 #ifndef RADIO_PACKET_COUNT_RX_MAX
 #define RADIO_PACKET_COUNT_RX		((RADIO_L2CAP_MTU_MAX + \
-						RADIO_LL_LENGTH_OCTETS_RX_MAX \
-						+ 3) \
-						/ \
-						RADIO_LL_LENGTH_OCTETS_RX_MAX \
-					)
+					  LL_LENGTH_OCTETS_RX_MAX + 3) / \
+					 LL_LENGTH_OCTETS_RX_MAX)
 #define RADIO_PACKET_COUNT_RX_MAX	(RADIO_PACKET_COUNT_RX + \
-					((RADIO_CONNECTION_CONTEXT_MAX - 1) * \
-					(RADIO_PACKET_COUNT_RX - 1)) \
-					)
+					 ((RADIO_CONNECTION_CONTEXT_MAX - 1) * \
+					  (RADIO_PACKET_COUNT_RX - 1)))
 #endif /* RADIO_PACKET_COUNT_RX_MAX */
 
 /* Maximum LL PDU Transmit pool size and application tx count. */
 #ifndef RADIO_PACKET_COUNT_TX_MAX
-#define RADIO_PACKET_COUNT_APP_TX_MAX	(RADIO_CONNECTION_CONTEXT_MAX)
+#define RADIO_PACKET_COUNT_APP_TX_MAX	RADIO_CONNECTION_CONTEXT_MAX
 #define RADIO_PACKET_COUNT_TX_MAX	(RADIO_PACKET_COUNT_RX_MAX + \
-						RADIO_PACKET_COUNT_APP_TX_MAX \
-					)
+					 RADIO_PACKET_COUNT_APP_TX_MAX)
 #else
 #define RADIO_PACKET_COUNT_APP_TX_MAX	(RADIO_PACKET_COUNT_TX_MAX)
 #endif
@@ -233,48 +125,6 @@ struct radio_pdu_node_tx {
 	u8_t pdu_data[1];
 };
 
-enum radio_pdu_node_rx_type {
-	NODE_RX_TYPE_NONE,
-	NODE_RX_TYPE_DC_PDU,
-	NODE_RX_TYPE_REPORT,
-
-#if defined(CONFIG_BT_CTLR_ADV_EXT)
-	NODE_RX_TYPE_EXT_1M_REPORT,
-	NODE_RX_TYPE_EXT_CODED_REPORT,
-#endif /* CONFIG_BT_CTLR_ADV_EXT */
-
-#if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
-	NODE_RX_TYPE_SCAN_REQ,
-#endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
-
-	NODE_RX_TYPE_CONNECTION,
-	NODE_RX_TYPE_TERMINATE,
-	NODE_RX_TYPE_CONN_UPDATE,
-	NODE_RX_TYPE_ENC_REFRESH,
-
-#if defined(CONFIG_BT_CTLR_LE_PING)
-	NODE_RX_TYPE_APTO,
-#endif /* CONFIG_BT_CTLR_LE_PING */
-
-	NODE_RX_TYPE_CHAN_SEL_ALGO,
-
-#if defined(CONFIG_BT_CTLR_PHY)
-	NODE_RX_TYPE_PHY_UPDATE,
-#endif /* CONFIG_BT_CTLR_PHY */
-
-#if defined(CONFIG_BT_CTLR_CONN_RSSI)
-	NODE_RX_TYPE_RSSI,
-#endif /* CONFIG_BT_CTLR_CONN_RSSI */
-
-#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
-	NODE_RX_TYPE_PROFILE,
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
-
-#if defined(CONFIG_BT_CTLR_ADV_INDICATION)
-	NODE_RX_TYPE_ADV_INDICATION,
-#endif /* CONFIG_BT_CTLR_ADV_INDICATION */
-};
-
 struct radio_le_conn_cmplt {
 	u8_t  status;
 	u8_t  role;
@@ -289,24 +139,24 @@ struct radio_le_conn_cmplt {
 	u16_t latency;
 	u16_t timeout;
 	u8_t  mca;
-} __packed;
+};
 
 struct radio_le_conn_update_cmplt {
 	u8_t  status;
 	u16_t interval;
 	u16_t latency;
 	u16_t timeout;
-} __packed;
+};
 
 struct radio_le_chan_sel_algo {
 	u8_t chan_sel_algo;
-} __packed;
+};
 
 struct radio_le_phy_upd_cmplt {
 	u8_t status;
 	u8_t tx;
 	u8_t rx;
-} __packed;
+};
 
 struct radio_pdu_node_rx_hdr {
 	union {
@@ -314,9 +164,9 @@ struct radio_pdu_node_rx_hdr {
 		void *next; /* used also by k_fifo once pulled */
 		void *link;
 		u8_t packet_release_last;
-	} onion;
+	};
 
-	enum radio_pdu_node_rx_type type;
+	enum node_rx_type type;
 	u16_t handle;
 };
 
@@ -341,6 +191,17 @@ void radio_ticks_active_to_start_set(u32_t ticks_active_to_start);
 struct radio_adv_data *radio_adv_data_get(void);
 struct radio_adv_data *radio_scan_data_get(void);
 
+#if defined(CONFIG_BT_HCI_MESH_EXT)
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
+		       u8_t filter_policy, u8_t rl_idx,
+#else /* !CONFIG_BT_CTLR_ADV_EXT */
+u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
+		       u8_t rl_idx,
+#endif /* !CONFIG_BT_CTLR_ADV_EXT */
+		       u8_t at_anchor, u32_t ticks_anchor, u8_t retry,
+		       u8_t scan_window, u8_t scan_delay);
+#else /* !CONFIG_BT_HCI_MESH_EXT */
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
 		       u8_t filter_policy, u8_t rl_idx);
@@ -348,16 +209,17 @@ u32_t radio_adv_enable(u8_t phy_p, u16_t interval, u8_t chan_map,
 u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		       u8_t rl_idx);
 #endif /* !CONFIG_BT_CTLR_ADV_EXT */
+#endif /* !CONFIG_BT_HCI_MESH_EXT */
 
-u32_t radio_adv_disable(void);
-u32_t ll_adv_is_enabled(void);
+u8_t radio_adv_disable(void);
+u32_t ll_adv_is_enabled(u16_t handle);
 u32_t radio_adv_filter_pol_get(void);
 /* Downstream - Scanner */
 u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 			u16_t interval, u16_t window, u8_t filter_policy,
 			u8_t rpa_gen, u8_t rl_idx);
-u32_t radio_scan_disable(void);
-u32_t ll_scan_is_enabled(void);
+u8_t radio_scan_disable(bool scanner);
+u32_t ll_scan_is_enabled(u16_t handle);
 u32_t radio_scan_filter_pol_get(void);
 
 u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr,

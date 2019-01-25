@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_ctx
-#define NET_LOG_LEVEL CONFIG_NET_CONTEXT_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 
 #include <kernel.h>
 #include <string.h>
@@ -642,6 +642,11 @@ struct net_pkt *net_context_create_ipv4(struct net_context *context,
 	    || net_ipv4_is_addr_mcast(src)) {
 		src = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
 						  (struct in_addr *)dst);
+		/* If src address is still unspecified, do not create pkt */
+		if (net_ipv4_is_addr_unspecified(src)) {
+			NET_DBG("DROP: src addr is unspecified");
+			return NULL;
+		}
 	}
 
 	return net_ipv4_create(pkt,
@@ -1175,7 +1180,7 @@ static int recv_udp(struct net_context *context,
 		.sa_family = net_context_get_family(context),
 	};
 	struct sockaddr *laddr = NULL;
-	u16_t lport = 0;
+	u16_t lport = 0U;
 	int ret;
 
 	ARG_UNUSED(timeout);

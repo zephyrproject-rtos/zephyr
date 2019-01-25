@@ -130,7 +130,7 @@ static bool msg_cache_match(struct bt_mesh_net_rx *rx,
 	u64_t hash = msg_hash(rx, pdu);
 	u16_t i;
 
-	for (i = 0; i < ARRAY_SIZE(msg_cache); i++) {
+	for (i = 0U; i < ARRAY_SIZE(msg_cache); i++) {
 		if (msg_cache[i] == hash) {
 			return true;
 		}
@@ -340,8 +340,8 @@ void friend_cred_clear(struct friend_cred *cred)
 {
 	cred->net_idx = BT_MESH_KEY_UNUSED;
 	cred->addr = BT_MESH_ADDR_UNASSIGNED;
-	cred->lpn_counter = 0;
-	cred->frnd_counter = 0;
+	cred->lpn_counter = 0U;
+	cred->frnd_counter = 0U;
 	(void)memset(cred->cred, 0, sizeof(cred->cred));
 }
 
@@ -453,7 +453,7 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 	}
 
 	(void)memset(msg_cache, 0, sizeof(msg_cache));
-	msg_cache_next = 0;
+	msg_cache_next = 0U;
 
 	sub = &bt_mesh.sub[0];
 
@@ -472,7 +472,7 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 		}
 	}
 
-	bt_mesh.valid = 1;
+	bt_mesh.valid = 1U;
 	sub->net_idx = idx;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
@@ -585,7 +585,7 @@ void bt_mesh_iv_update_test(bool enable)
 {
 	bt_mesh.ivu_test = enable;
 	/* Reset the duration variable - needed for some PTS tests */
-	bt_mesh.ivu_duration = 0;
+	bt_mesh.ivu_duration = 0U;
 }
 
 bool bt_mesh_iv_update(void)
@@ -657,7 +657,7 @@ bool bt_mesh_net_iv_update(u32_t iv_index, bool iv_update)
 			BT_WARN("Performing IV Index Recovery");
 			(void)memset(bt_mesh.rpl, 0, sizeof(bt_mesh.rpl));
 			bt_mesh.iv_index = iv_index;
-			bt_mesh.seq = 0;
+			bt_mesh.seq = 0U;
 			goto do_update;
 		}
 
@@ -683,13 +683,13 @@ bool bt_mesh_net_iv_update(u32_t iv_index, bool iv_update)
 	/* Defer change to Normal Operation if there are pending acks */
 	if (!iv_update && bt_mesh_tx_in_progress()) {
 		BT_WARN("IV Update deferred because of pending transfer");
-		bt_mesh.pending_update = 1;
+		bt_mesh.pending_update = 1U;
 		return false;
 	}
 
 do_update:
 	bt_mesh.iv_update = iv_update;
-	bt_mesh.ivu_duration = 0;
+	bt_mesh.ivu_duration = 0U;
 
 	if (bt_mesh.iv_update) {
 		bt_mesh.iv_index = iv_index;
@@ -699,7 +699,7 @@ do_update:
 		bt_mesh_rpl_reset();
 	} else {
 		BT_DBG("Normal mode entered");
-		bt_mesh.seq = 0;
+		bt_mesh.seq = 0U;
 	}
 
 	k_delayed_work_submit(&bt_mesh.ivu_timer, BT_MESH_IVU_TIMEOUT);
@@ -835,14 +835,14 @@ int bt_mesh_net_encode(struct bt_mesh_net_tx *tx, struct net_buf_simple *buf,
 				    &nid, &enc, &priv)) {
 			BT_WARN("Falling back to master credentials");
 
-			tx->friend_cred = 0;
+			tx->friend_cred = 0U;
 
 			nid = tx->sub->keys[tx->sub->kr_flag].nid;
 			enc = tx->sub->keys[tx->sub->kr_flag].enc;
 			priv = tx->sub->keys[tx->sub->kr_flag].privacy;
 		}
 	} else {
-		tx->friend_cred = 0;
+		tx->friend_cred = 0U;
 		nid = tx->sub->keys[tx->sub->kr_flag].nid;
 		enc = tx->sub->keys[tx->sub->kr_flag].enc;
 		priv = tx->sub->keys[tx->sub->kr_flag].privacy;
@@ -1051,7 +1051,7 @@ static int friend_decrypt(struct bt_mesh_subnet *sub, const u8_t *data,
 		if (NID(data) == cred->cred[1].nid &&
 		    !net_decrypt(sub, cred->cred[1].enc, cred->cred[1].privacy,
 				 data, data_len, rx, buf)) {
-			rx->new_key = 1;
+			rx->new_key = 1U;
 			return 0;
 		}
 	}
@@ -1078,7 +1078,7 @@ static bool net_find_and_decrypt(const u8_t *data, size_t data_len,
 #if (defined(CONFIG_BT_MESH_LOW_POWER) || \
      defined(CONFIG_BT_MESH_FRIEND))
 		if (!friend_decrypt(sub, data, data_len, rx, buf)) {
-			rx->friend_cred = 1;
+			rx->friend_cred = 1U;
 			rx->ctx.net_idx = sub->net_idx;
 			rx->sub = sub;
 			return true;
@@ -1100,7 +1100,7 @@ static bool net_find_and_decrypt(const u8_t *data, size_t data_len,
 		if (NID(data) == sub->keys[1].nid &&
 		    !net_decrypt(sub, sub->keys[1].enc, sub->keys[1].privacy,
 				 data, data_len, rx, buf)) {
-			rx->new_key = 1;
+			rx->new_key = 1U;
 			rx->ctx.net_idx = sub->net_idx;
 			rx->sub = sub;
 			return true;

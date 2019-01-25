@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_tc_app
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_tc_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <errno.h>
@@ -165,14 +165,14 @@ static int init_app(void)
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
 	if (!iface) {
-		NET_ERR("No ethernet interfaces found.");
+		LOG_ERR("No ethernet interfaces found.");
 		return -ENOENT;
 	}
 
 #if defined(CONFIG_NET_VLAN)
 	ret = net_eth_vlan_enable(iface, CONFIG_SAMPLE_VLAN_TAG);
 	if (ret < 0) {
-		NET_ERR("Cannot enable VLAN for tag %d (%d)",
+		LOG_ERR("Cannot enable VLAN for tag %d (%d)",
 			CONFIG_SAMPLE_VLAN_TAG, ret);
 	}
 #endif
@@ -189,19 +189,19 @@ static int init_app(void)
 	 */
 	ret = net_eth_vlan_enable(ud.second, CONFIG_SAMPLE_VLAN_TAG_2);
 	if (ret < 0) {
-		NET_ERR("Cannot enable VLAN for tag %d (%d)",
+		LOG_ERR("Cannot enable VLAN for tag %d (%d)",
 			CONFIG_SAMPLE_VLAN_TAG_2, ret);
 	}
 
 #if defined(CONFIG_NET_IPV6)
 	if (net_addr_pton(AF_INET6, CONFIG_SAMPLE_IPV6_ADDR_2, &addr6)) {
-		NET_ERR("Invalid address: %s", CONFIG_SAMPLE_IPV6_ADDR_2);
+		LOG_ERR("Invalid address: %s", CONFIG_SAMPLE_IPV6_ADDR_2);
 		return -EINVAL;
 	}
 
 	ifaddr = net_if_ipv6_addr_add(ud.second, &addr6, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		NET_ERR("Cannot add %s to interface %p",
+		LOG_ERR("Cannot add %s to interface %p",
 			CONFIG_SAMPLE_IPV6_ADDR_2, ud.second);
 		return -EINVAL;
 	}
@@ -211,13 +211,13 @@ static int init_app(void)
 
 #if defined(CONFIG_NET_IPV4)
 	if (net_addr_pton(AF_INET, CONFIG_SAMPLE_IPV4_ADDR_2, &addr4)) {
-		NET_ERR("Invalid address: %s", CONFIG_SAMPLE_IPV4_ADDR_2);
+		LOG_ERR("Invalid address: %s", CONFIG_SAMPLE_IPV4_ADDR_2);
 		return -EINVAL;
 	}
 
 	ifaddr = net_if_ipv4_addr_add(ud.second, &addr4, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		NET_ERR("Cannot add %s to interface %p",
+		LOG_ERR("Cannot add %s to interface %p",
 			CONFIG_SAMPLE_IPV4_ADDR_2, ud.second);
 		return -EINVAL;
 	}
@@ -257,8 +257,8 @@ static void stats(struct data *data)
 			goto skip_print;
 		}
 
-		NET_INFO("Traffic class statistics:");
-		NET_INFO("   Prio\tSent\tRecv\tDrop\tMiss\tTime (us)");
+		LOG_INF("Traffic class statistics:");
+		LOG_INF("   Prio\tSent\tRecv\tDrop\tMiss\tTime (us)");
 
 #if defined(CONFIG_NET_IPV6)
 		for (i = 0; i < NET_TC_COUNT; i++) {
@@ -267,13 +267,13 @@ static void stats(struct data *data)
 				     data->conf->ipv6[i].stats.sent_time_count,
 				     data->conf->ipv6[i].stats.sent_time_sum);
 
-			NET_INFO("v6 %d\t%u\t%u\t%u\t%u\t%u",
-				 data->conf->ipv6[i].priority,
-				 data->conf->ipv6[i].stats.sent,
-				 data->conf->ipv6[i].stats.received,
-				 data->conf->ipv6[i].stats.dropped,
-				 data->conf->ipv6[i].stats.wrong_order,
-				 round_trip_time);
+			LOG_INF("v6 %d\t%u\t%u\t%u\t%u\t%u",
+				data->conf->ipv6[i].priority,
+				data->conf->ipv6[i].stats.sent,
+				data->conf->ipv6[i].stats.received,
+				data->conf->ipv6[i].stats.dropped,
+				data->conf->ipv6[i].stats.wrong_order,
+				round_trip_time);
 		}
 #endif
 
@@ -284,16 +284,16 @@ static void stats(struct data *data)
 				     data->conf->ipv4[i].stats.sent_time_count,
 				     data->conf->ipv4[i].stats.sent_time_sum);
 
-			NET_INFO("v4 %d\t%u\t%u\t%u\t%u\t%u",
-				 data->conf->ipv4[i].priority,
-				 data->conf->ipv4[i].stats.sent,
-				 data->conf->ipv4[i].stats.received,
-				 data->conf->ipv4[i].stats.dropped,
-				 data->conf->ipv4[i].stats.wrong_order,
-				 round_trip_time);
+			LOG_INF("v4 %d\t%u\t%u\t%u\t%u\t%u",
+				data->conf->ipv4[i].priority,
+				data->conf->ipv4[i].stats.sent,
+				data->conf->ipv4[i].stats.received,
+				data->conf->ipv4[i].stats.dropped,
+				data->conf->ipv4[i].stats.wrong_order,
+				round_trip_time);
 		}
 #endif
-		NET_INFO("---");
+		LOG_INF("---");
 
 skip_print:
 		new_print = curr + PRINT_STATISTICS_INTERVAL;
@@ -404,7 +404,7 @@ static void udp_received(struct net_app_ctx *ctx,
 	ARG_UNUSED(status);
 
 	if (data->expecting_udp != net_pkt_appdatalen(pkt)) {
-		NET_DBG("Sent %d bytes, received %u bytes",
+		LOG_DBG("Sent %d bytes, received %u bytes",
 			data->expecting_udp, net_pkt_appdatalen(pkt));
 	}
 
@@ -441,7 +441,7 @@ static int connect_udp(sa_family_t family, struct net_app_ctx *ctx,
 	ret = net_app_init_udp_client(ctx, NULL, NULL, peer, PEER_PORT,
 				      WAIT_TIME, user_data);
 	if (ret < 0) {
-		NET_ERR("Cannot init %s UDP client (%d)", data->proto, ret);
+		LOG_ERR("Cannot init %s UDP client (%d)", data->proto, ret);
 		goto fail;
 	}
 
@@ -451,13 +451,13 @@ static int connect_udp(sa_family_t family, struct net_app_ctx *ctx,
 
 	ret = net_app_set_cb(ctx, NULL, udp_received, NULL, NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot set callbacks (%d)", ret);
+		LOG_ERR("Cannot set callbacks (%d)", ret);
 		goto fail;
 	}
 
 	ret = net_app_connect(ctx, CONNECT_TIME);
 	if (ret < 0) {
-		NET_ERR("Cannot connect UDP (%d)", ret);
+		LOG_ERR("Cannot connect UDP (%d)", ret);
 		goto fail;
 	}
 
@@ -508,13 +508,13 @@ static void setup_clients(void)
 		conf.ipv6[i].conf = &conf;
 
 		if (i % 2) {
-			NET_DBG("TC %d connecting to %s", i,
+			LOG_DBG("TC %d connecting to %s", i,
 				CONFIG_NET_CONFIG_PEER_IPV6_ADDR);
 			ret = connect_udp(AF_INET6, &udp6[i],
 					  CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
 					  &conf.ipv6[i], i);
 		} else {
-			NET_DBG("TC %d connecting to %s", i,
+			LOG_DBG("TC %d connecting to %s", i,
 				CONFIG_SAMPLE_PEER_IPV6_ADDR_2);
 			ret = connect_udp(AF_INET6, &udp6[i],
 					  CONFIG_SAMPLE_PEER_IPV6_ADDR_2,
@@ -522,7 +522,7 @@ static void setup_clients(void)
 		}
 
 		if (ret < 0) {
-			NET_ERR("Cannot init IPv6 UDP client %d (%d)",
+			LOG_ERR("Cannot init IPv6 UDP client %d (%d)",
 				i + 1, ret);
 		}
 	}
@@ -535,13 +535,13 @@ static void setup_clients(void)
 		conf.ipv4[i].conf = &conf;
 
 		if (i % 2) {
-			NET_DBG("TC %d connecting to %s", i,
+			LOG_DBG("TC %d connecting to %s", i,
 				CONFIG_NET_CONFIG_PEER_IPV4_ADDR);
 			ret = connect_udp(AF_INET, &udp4[i],
 					  CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
 					  &conf.ipv4[i], i);
 		} else {
-			NET_DBG("TC %d connecting to %s", i,
+			LOG_DBG("TC %d connecting to %s", i,
 				CONFIG_SAMPLE_PEER_IPV4_ADDR_2);
 			ret = connect_udp(AF_INET, &udp4[i],
 					  CONFIG_SAMPLE_PEER_IPV4_ADDR_2,
@@ -549,7 +549,7 @@ static void setup_clients(void)
 		}
 
 		if (ret < 0) {
-			NET_ERR("Cannot init IPv4 UDP client %d (%d)",
+			LOG_ERR("Cannot init IPv4 UDP client %d (%d)",
 				i + 1, ret);
 		}
 	}

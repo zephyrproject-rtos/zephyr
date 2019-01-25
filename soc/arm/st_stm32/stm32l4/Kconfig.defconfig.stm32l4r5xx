@@ -18,7 +18,7 @@ config NUM_IRQS
 if GPIO_STM32
 
 config GPIO_STM32_PORTD
-	def_bool y
+	default y
 
 config GPIO_STM32_PORTE
 	default y

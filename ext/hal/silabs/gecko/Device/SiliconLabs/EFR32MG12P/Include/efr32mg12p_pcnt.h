@@ -1,7 +1,7 @@
 /**************************************************************************//**
  * @file efr32mg12p_pcnt.h
  * @brief EFR32MG12P_PCNT register and bit field definitions
- * @version 5.5.0
+ * @version 5.6.0
  ******************************************************************************
  * # License
  * <b>Copyright 2018 Silicon Laboratories, Inc. www.silabs.com</b>
@@ -47,28 +47,28 @@
  *****************************************************************************/
 /** PCNT Register Declaration */
 typedef struct {
-  __IOM uint32_t CTRL;         /**< Control Register  */
-  __IOM uint32_t CMD;          /**< Command Register  */
-  __IM uint32_t  STATUS;       /**< Status Register  */
-  __IM uint32_t  CNT;          /**< Counter Value Register  */
-  __IM uint32_t  TOP;          /**< Top Value Register  */
-  __IOM uint32_t TOPB;         /**< Top Value Buffer Register  */
-  __IM uint32_t  IF;           /**< Interrupt Flag Register  */
-  __IOM uint32_t IFS;          /**< Interrupt Flag Set Register  */
-  __IOM uint32_t IFC;          /**< Interrupt Flag Clear Register  */
-  __IOM uint32_t IEN;          /**< Interrupt Enable Register  */
-  uint32_t       RESERVED0[1]; /**< Reserved for future use **/
-  __IOM uint32_t ROUTELOC0;    /**< I/O Routing Location Register  */
+  __IOM uint32_t CTRL;          /**< Control Register  */
+  __IOM uint32_t CMD;           /**< Command Register  */
+  __IM uint32_t  STATUS;        /**< Status Register  */
+  __IM uint32_t  CNT;           /**< Counter Value Register  */
+  __IM uint32_t  TOP;           /**< Top Value Register  */
+  __IOM uint32_t TOPB;          /**< Top Value Buffer Register  */
+  __IM uint32_t  IF;            /**< Interrupt Flag Register  */
+  __IOM uint32_t IFS;           /**< Interrupt Flag Set Register  */
+  __IOM uint32_t IFC;           /**< Interrupt Flag Clear Register  */
+  __IOM uint32_t IEN;           /**< Interrupt Enable Register  */
+  uint32_t       RESERVED0[1U]; /**< Reserved for future use **/
+  __IOM uint32_t ROUTELOC0;     /**< I/O Routing Location Register  */
 
-  uint32_t       RESERVED1[4]; /**< Reserved for future use **/
-  __IOM uint32_t FREEZE;       /**< Freeze Register  */
-  __IM uint32_t  SYNCBUSY;     /**< Synchronization Busy Register  */
+  uint32_t       RESERVED1[4U]; /**< Reserved for future use **/
+  __IOM uint32_t FREEZE;        /**< Freeze Register  */
+  __IM uint32_t  SYNCBUSY;      /**< Synchronization Busy Register  */
 
-  uint32_t       RESERVED2[7]; /**< Reserved for future use **/
-  __IM uint32_t  AUXCNT;       /**< Auxiliary Counter Value Register  */
-  __IOM uint32_t INPUT;        /**< PCNT Input Register  */
-  __IOM uint32_t OVSCFG;       /**< Oversampling Config Register  */
-} PCNT_TypeDef;                /** @} */
+  uint32_t       RESERVED2[7U]; /**< Reserved for future use **/
+  __IM uint32_t  AUXCNT;        /**< Auxiliary Counter Value Register  */
+  __IOM uint32_t INPUT;         /**< PCNT Input Register  */
+  __IOM uint32_t OVSCFG;        /**< Oversampling Config Register  */
+} PCNT_TypeDef;                 /** @} */
 
 /**************************************************************************//**
  * @addtogroup EFR32MG12P_PCNT

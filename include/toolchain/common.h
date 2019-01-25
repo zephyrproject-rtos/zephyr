@@ -54,7 +54,7 @@
 
 #ifdef _ASMLANGUAGE
 
-  #ifdef CONFIG_X86
+  #if defined(CONFIG_X86) || defined(CONFIG_X86_64)
 
     #ifdef PERF_OPT
       #define PERFOPT_ALIGN .balign 16

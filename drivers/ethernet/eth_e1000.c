@@ -11,6 +11,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr.h>
 #include <net/ethernet.h>
+#include <ethernet/eth_stats.h>
 #include <pci/pci.h>
 #include "eth_e1000_priv.h"
 
@@ -51,13 +52,10 @@ static enum ethernet_hw_caps e1000_caps(struct device *dev)
 
 static size_t e1000_linearize(struct net_pkt *pkt, void *buf, size_t bufsize)
 {
-	size_t len = net_pkt_ll_reserve(pkt) + pkt->frags->len;
+	size_t len = 0;
 	struct net_buf *nb;
 
-	/* First fragment contains link layer (Ethernet) header */
-	memcpy(buf, net_pkt_ll(pkt), len);
-
-	for (nb = pkt->frags->frags; nb; nb = nb->frags) {
+	for (nb = pkt->frags; nb; nb = nb->frags) {
 		memcpy((u8_t *) buf + len, nb->data, nb->len);
 		len += nb->len;
 	}
@@ -82,19 +80,12 @@ static int e1000_tx(struct e1000_dev *dev, void *data, size_t data_len)
 	return (dev->tx.sta & TDESC_STA_DD) ? 0 : -EIO;
 }
 
-static int e1000_send(struct net_if *iface, struct net_pkt *pkt)
+static int e1000_send(struct device *device, struct net_pkt *pkt)
 {
-	struct e1000_dev *dev = net_if_get_device(iface)->driver_data;
-
+	struct e1000_dev *dev = device->driver_data;
 	size_t len = e1000_linearize(pkt, dev->txb, sizeof(dev->txb));
 
-	int err = e1000_tx(dev, dev->txb, len);
-
-	if (!err) {
-		net_pkt_unref(pkt);
-	}
-
-	return err;
+	return e1000_tx(dev, dev->txb, len);
 }
 
 static struct net_pkt *e1000_rx(struct e1000_dev *dev)
@@ -108,7 +99,7 @@ static struct net_pkt *e1000_rx(struct e1000_dev *dev)
 		goto out;
 	}
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Out of RX buffers");
 		goto out;
@@ -139,6 +130,8 @@ static void e1000_isr(struct device *device)
 
 		if (pkt) {
 			net_recv_data(dev->iface, pkt);
+		} else {
+			eth_stats_update_errors_rx(dev->iface);
 		}
 	}
 
@@ -212,11 +205,11 @@ static void e1000_init(struct net_if *iface)
 	net_if_set_link_addr(iface, dev->mac, sizeof(dev->mac),
 				NET_LINK_ETHERNET);
 
-	IRQ_CONNECT(CONFIG_ETH_E1000_IRQ, CONFIG_ETH_E1000_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_ETH_E1000_IRQ, DT_ETH_E1000_IRQ_PRIORITY,
 			e1000_isr, DEVICE_GET(eth_e1000),
-			CONFIG_ETH_E1000_IRQ_FLAGS);
+			DT_ETH_E1000_IRQ_FLAGS);
 
-	irq_enable(CONFIG_ETH_E1000_IRQ);
+	irq_enable(DT_ETH_E1000_IRQ);
 
 	iow32(dev, CTRL, CTRL_SLU); /* Set link up */
 
@@ -235,8 +228,8 @@ static struct e1000_dev e1000_dev = {
 
 static const struct ethernet_api e1000_api = {
 	.iface_api.init		= e1000_init,
-	.iface_api.send		= e1000_send,
 	.get_capabilities	= e1000_caps,
+	.send			= e1000_send,
 };
 
 NET_DEVICE_INIT(eth_e1000,

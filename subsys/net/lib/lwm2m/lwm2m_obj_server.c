@@ -75,7 +75,7 @@ static int disable_cb(u16_t obj_inst_id)
 	LOG_DBG("DISABLE %d", obj_inst_id);
 	for (i = 0; i < MAX_INSTANCE_COUNT; i++) {
 		if (inst[i].obj && inst[i].obj_inst_id == obj_inst_id) {
-			server_flag_disabled[i] = 1;
+			server_flag_disabled[i] = 1U;
 			return 0;
 		}
 	}
@@ -119,13 +119,13 @@ static struct lwm2m_engine_obj_inst *server_create(u16_t obj_inst_id)
 	}
 
 	/* Set default values */
-	server_flag_disabled[index] = 0;
-	server_flag_store_notify[index] = 0;
+	server_flag_disabled[index] = 0U;
+	server_flag_store_notify[index] = 0U;
 	server_id[index] = index + 1;
 	lifetime[index] = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
-	default_min_period[index] = 0;
-	default_max_period[index] = 0;
-	disabled_timeout[index] = 86400;
+	default_min_period[index] = 0U;
+	default_max_period[index] = 0U;
+	disabled_timeout[index] = 86400U;
 	strcpy(transport_binding[index], "U");
 
 	/* initialize instance resource data */

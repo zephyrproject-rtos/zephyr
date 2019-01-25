@@ -154,13 +154,13 @@ static const struct ipm_driver_api mcux_mailbox_driver_api = {
 static void mcux_mailbox_config_func_0(struct device *dev);
 
 static const struct mcux_mailbox_config mcux_mailbox_0_config = {
-	.base = (MAILBOX_Type *)CONFIG_MAILBOX_MCUX_MAILBOX_0_BASE_ADDRESS,
+	.base = (MAILBOX_Type *)DT_MAILBOX_MCUX_MAILBOX_0_BASE_ADDRESS,
 	.irq_config_func = mcux_mailbox_config_func_0,
 };
 
 static struct mcux_mailbox_data mcux_mailbox_0_data;
 
-DEVICE_AND_API_INIT(mailbox_0, CONFIG_MAILBOX_MCUX_MAILBOX_0_NAME,
+DEVICE_AND_API_INIT(mailbox_0, DT_MAILBOX_MCUX_MAILBOX_0_NAME,
 		    &mcux_mailbox_init,
 		    &mcux_mailbox_0_data, &mcux_mailbox_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -169,9 +169,9 @@ DEVICE_AND_API_INIT(mailbox_0, CONFIG_MAILBOX_MCUX_MAILBOX_0_NAME,
 
 static void mcux_mailbox_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(CONFIG_MAILBOX_MCUX_MAILBOX_0_IRQ,
-		    CONFIG_MAILBOX_MCUX_MAILBOX_0_IRQ_PRI,
+	IRQ_CONNECT(DT_MAILBOX_MCUX_MAILBOX_0_IRQ,
+		    DT_MAILBOX_MCUX_MAILBOX_0_IRQ_PRI,
 		    mcux_mailbox_isr, DEVICE_GET(mailbox_0), 0);
 
-	irq_enable(CONFIG_MAILBOX_MCUX_MAILBOX_0_IRQ);
+	irq_enable(DT_MAILBOX_MCUX_MAILBOX_0_IRQ);
 }

@@ -1,7 +1,7 @@
 ================ Silicon Labs Peripheral Library ============================
 
-This directory, "emlib", contains the Silicon Labs Peripheral Support
-library for the EFM32 and EZR32 series of microcontrollers and System-On-Chip
+This directory, "EMLIB", contains the Silicon Labs Peripheral Support
+library for the EFM32, EZR32 and EFR32 series of microcontrollers and System-On-Chip
 devices.
 
 Some design guidelines for this library:
@@ -23,17 +23,14 @@ Some design guidelines for this library:
 
 ================ About CMSIS ================================================
 
-These APIs are based on EM_CMSIS "Device" header file structure.
+These APIs are based on CMSIS Device header file structure.
 
 As a result of this, the library requires basic C99-support. You might have
 to enable C99 support in your compiler. Comments are in doxygen compatible
 format.
 
-The EM_CMSIS library contains all peripheral module registers and bit field
+The CMSIS Device library contains all peripheral module registers and bit field
 descriptors.
-
-To download EM_CMSIS, go to
-    http://www.silabs.com/support/pages/document-library.aspx?p=MCUs--32-bit
 
 For more information about CMSIS see
     http://www.onarm.com
@@ -48,21 +45,21 @@ src/ - source files
 
 ================ Licenses ====================================================
 
-See the top of each file for SW license. Basically you are free to use the
+See the top of each file for software license. Basically you are free to use the
 Silicon Labs code for any project using Silicon Labs devices. Parts of the
 CMSIS library is copyrighted by ARM Inc. See "License.doc" for ARM's CMSIS
 license.
 
 ================ Software updates ============================================
 
-Silicon Labs continually works to provide updated and improved emlib, example
-code and other software of use for Silicon Labs customers. Please check the
-download section of Silicon Labs's web site at
+Silicon Labs continually works to provide updated and improved EMLIB, example
+code and other software of use for Silicon Labs customers. Please check for
+software updates in Simplicity Studio
 
-        http://www.silabs.com
+        https://www.silabs.com/products/development-tools/software/simplicity-studio
 
 for the latest releases. If you download and install the
 Simplicity Studio application, you will be notified about updates when
 available.
 
-(C) Copyright Silicon Labs, 2015
+(C) Copyright Silicon Labs, 2018

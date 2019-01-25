@@ -17,10 +17,6 @@
 #ifndef _STM32F2_SOC_H_
 #define _STM32F2_SOC_H_
 
-#define GPIO_REG_SIZE         0x400
-/* base address for where GPIO registers start */
-#define GPIO_PORTS_BASE       (GPIOA_BASE)
-
 #ifndef _ASMLANGUAGE
 
 #include <stm32f2xx.h>
@@ -40,6 +36,10 @@
 
 #ifdef CONFIG_SERIAL_HAS_DRIVER
 #include <stm32f2xx_ll_usart.h>
+#endif
+
+#ifdef CONFIG_GPIO_STM32
+#include <stm32f2xx_ll_gpio.h>
 #endif
 
 #endif /* !_ASMLANGUAGE */

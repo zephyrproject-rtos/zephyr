@@ -12,10 +12,6 @@
 	compatible = "silabs,efr32mg_sltb004a", "silabs,efr32mg";
 
 	aliases {
-		i2c-0  = &i2c0;
-		i2c-1  = &i2c1;
-		usart-0 = &usart0;
-		leuart-0 = &leuart0;
 		led0 = &led0;
 		led1 = &led1;
 		sw0 = &button0;
@@ -24,6 +20,7 @@
 
 	chosen {
 		zephyr,console = &usart0;
+		zephyr,shell-uart = &usart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 	};
@@ -74,5 +71,10 @@
 
 &i2c1 {
 	location = <17>;
+	status = "ok";
+};
+
+&gpio {
+	location-swo = <0>;
 	status = "ok";
 };

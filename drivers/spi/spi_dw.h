@@ -42,9 +42,9 @@ struct spi_dw_data {
 
 /* Helper macros */
 
-#ifdef SPI_DW_SPI_CLOCK
+#ifdef DT_SPI_DW_SPI_CLOCK
 #define SPI_DW_CLK_DIVIDER(ssi_clk_hz) \
-		((SPI_DW_SPI_CLOCK / ssi_clk_hz) & 0xFFFF)
+		((DT_SPI_DW_SPI_CLOCK / ssi_clk_hz) & 0xFFFF)
 /* provision for soc.h providing a clock that is different than CPU clock */
 #else
 #define SPI_DW_CLK_DIVIDER(ssi_clk_hz) \
@@ -109,7 +109,12 @@ struct spi_dw_data {
 #define DW_SPI_CTRLR0_SLV_OE_BIT	(10)
 #define DW_SPI_CTRLR0_SLV_OE		BIT(DW_SPI_CTRLR0_SLV_OE_BIT)
 
+#ifdef CONFIG_SOC_INTEL_S1000
+#define DW_SPI_CTRLR0_TMOD_SHIFT	(10)
+#else
 #define DW_SPI_CTRLR0_TMOD_SHIFT	(8)
+#endif
+
 #define DW_SPI_CTRLR0_TMOD_TX_RX	(0)
 #define DW_SPI_CTRLR0_TMOD_TX		(1 << DW_SPI_CTRLR0_TMOD_SHIFT)
 #define DW_SPI_CTRLR0_TMOD_RX		(2 << DW_SPI_CTRLR0_TMOD_SHIFT)
@@ -119,7 +124,7 @@ struct spi_dw_data {
 #define DW_SPI_CTRLR0_DFS_16(__bpw)	((__bpw) - 1)
 #define DW_SPI_CTRLR0_DFS_32(__bpw)	(((__bpw) - 1) << 16)
 
-#ifdef CONFIG_ARC
+#if defined(CONFIG_ARC) || defined(CONFIG_SOC_INTEL_S1000)
 #define DW_SPI_CTRLR0_DFS		DW_SPI_CTRLR0_DFS_16
 #else
 #define DW_SPI_CTRLR0_DFS		DW_SPI_CTRLR0_DFS_32

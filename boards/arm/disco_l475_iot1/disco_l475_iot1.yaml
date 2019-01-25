@@ -5,12 +5,17 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
+  - xtools
 supported:
+  - arduino_i2c
   - i2c
   - hts221
+  - lps22hb
+  - lsm6dsl
   - pwm
   - gpio
   - ble
   - spi
+  - vl53l0x
 ram: 96
 flash: 1024

@@ -1,0 +1,92 @@
+/*
+ * Copyright (c) 2018, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_rt.dtsi>
+
+/ {
+	model = "NXP MIMXRT1020-EVK board";
+	compatible = "nxp,mimxrt1021";
+
+	aliases {
+		gpio-1= &gpio1;
+		gpio-2= &gpio2;
+		gpio-3= &gpio3;
+		gpio-4= &gpio4;
+		gpio-5= &gpio5;
+		i2c-1 = &i2c1;
+		i2c-4 = &i2c4;
+		uart-1 = &uart1;
+		led0 = &green_led;
+		sw0 = &user_button;
+		eth = &eth;
+	};
+
+	chosen {
+#if defined(CONFIG_CODE_ITCM)
+		zephyr,flash = &itcm0;
+#elif defined(CONFIG_CODE_QSPI)
+		zephyr,flash = &is25wp064;
+#endif
+		zephyr,sram = &dtcm0;
+		zephyr,console = &uart1;
+		zephyr,shell-uart = &uart1;
+	};
+
+	sdram0: memory@80000000 {
+		/* ISSI IS42S16160J-6TLI */
+		device_type = "memory";
+		reg = <0x80000000 0x2000000>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led-1 {
+			gpios = <&gpio1 5 GPIO_INT_ACTIVE_LOW>;
+			label = "User LD1";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button-1 {
+			label = "User SW8";
+			gpios = <&gpio5 0 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+};
+
+arduino_serial: &uart2 {};
+
+&flexspi0 {
+	reg = <0x402a8000 0x4000>, <0x60000000 0x800000>;
+	is25wp064: is25wp064@0 {
+		compatible = "issi,is25wp064", "jedec,spi-nor";
+		reg = <0>;
+		status = "ok";
+	};
+};
+
+&i2c1 {
+	status = "ok";
+};
+
+&i2c4 {
+	status = "ok";
+};
+
+&uart1 {
+	status = "ok";
+	current-speed = <115200>;
+};
+
+&eth {
+	status = "ok";
+	ptp {
+		status = "ok";
+	};
+};

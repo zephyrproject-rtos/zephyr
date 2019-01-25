@@ -31,13 +31,12 @@ class DTInterrupts(DTDirective):
     #
     # @param node_address Address of node owning the
     #                     interrupts definition.
-    # @param yaml YAML definition for the owning node.
     # @param prop compatible property name
     # @param names (unused)
     # @param def_label Define label string of node owning the
     #                  compatible definition.
     #
-    def extract(self, node_address, yaml, prop, names, def_label):
+    def extract(self, node_address, prop, names, def_label):
 
         node = reduced[node_address]
 
@@ -67,7 +66,7 @@ class DTInterrupts(DTDirective):
             except:
                 name = []
 
-            cell_yaml = yaml[get_compat(irq_parent)]
+            cell_yaml = get_binding(irq_parent)
             l_cell_prefix = ['IRQ']
 
             for i in range(reduced[irq_parent]['props']['#interrupt-cells']):
@@ -77,15 +76,25 @@ class DTInterrupts(DTDirective):
 
                 l_fqn = '_'.join(l_base + l_cell_prefix + l_idx + l_cell_name)
                 prop_def[l_fqn] = props.pop(0)
+                add_compat_alias(node_address,
+                        '_'.join(l_cell_prefix + l_idx + l_cell_name),
+                        l_fqn, prop_alias)
+
                 if len(name):
                     alias_list = l_base + l_cell_prefix + name + l_cell_name
                     prop_alias['_'.join(alias_list)] = l_fqn
+                    add_compat_alias(node_address,
+                            '_'.join(l_cell_prefix + name + l_cell_name),
+                            l_fqn, prop_alias)
 
                 if node_address in aliases:
-                    for i in aliases[node_address]:
-                        alias_label = convert_string_to_label(i)
-                        alias_list = [alias_label] + l_cell_prefix + name + l_cell_name
-                        prop_alias['_'.join(alias_list)] = l_fqn
+                    add_prop_aliases(
+                        node_address,
+                        lambda alias:
+                            '_'.join([convert_string_to_label(alias)] +
+                                     l_cell_prefix + name + l_cell_name),
+                        l_fqn,
+                        prop_alias)
 
             index += 1
             insert_defs(node_address, prop_def, prop_alias)

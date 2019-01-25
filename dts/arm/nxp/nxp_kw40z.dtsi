@@ -192,7 +192,6 @@
 			label = "SPI_0";
 			clocks = <&sim KINETIS_SIM_BUS_CLK 0x103C 12>;
 
-			cs = <&gpiob 18 0>, <&gpiob 17 0>;
 			pinctrl-0 = <&spi0_default>;
 			pinctrl-names = "default";
 			#address-cells = <1>;

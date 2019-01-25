@@ -7,7 +7,7 @@
  */
 
 #define LOG_MODULE_NAME ieee802154_cc1200
-#define LOG_LEVEL CONFIG_IEEE802154_LOG_LEVEL
+#define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -99,7 +99,7 @@ bool _cc1200_access_reg(struct cc1200_context *ctx, bool read, u8_t addr,
 		    burst ? "burst" : "single");
 	*/
 
-	cmd_buf[0] = 0;
+	cmd_buf[0] = 0U;
 
 	if (burst) {
 		cmd_buf[0] |= CC1200_ACCESS_BURST;
@@ -276,9 +276,9 @@ static bool write_reg_freq(struct cc1200_context *ctx, u32_t freq)
 static u32_t rf_evaluate_freq_setting(struct cc1200_context *ctx, u32_t chan)
 {
 	u32_t xtal = CONFIG_IEEE802154_CC1200_XOSC;
-	u32_t mult_10 = 100000;
-	u32_t factor = 1;
-	u32_t freq = 0;
+	u32_t mult_10 = 100000U;
+	u32_t factor = 1U;
+	u32_t freq = 0U;
 	u32_t rf, lo_div;
 
 	rf = ctx->rf_settings->chan_center_freq0 +
@@ -473,7 +473,7 @@ static void cc1200_rx(struct device *dev)
 			goto flush;
 		}
 
-		pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+		pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No free pkt available");
 			goto flush;
@@ -608,8 +608,8 @@ static int cc1200_tx(struct device *dev,
 		     struct net_buf *frag)
 {
 	struct cc1200_context *cc1200 = dev->driver_data;
-	u8_t *frame = frag->data - net_pkt_ll_reserve(pkt);
-	u8_t len = net_pkt_ll_reserve(pkt) + frag->len;
+	u8_t *frame = frag->data;
+	u8_t len = frag->len;
 	bool status = false;
 
 	LOG_DBG("%p (%u)", frag, len);
@@ -744,8 +744,7 @@ static int configure_spi(struct device *dev)
 {
 	struct cc1200_context *cc1200 = dev->driver_data;
 
-	cc1200->spi = device_get_binding(
-			CONFIG_IEEE802154_CC1200_SPI_DRV_NAME);
+	cc1200->spi = device_get_binding(DT_IEEE802154_CC1200_SPI_DRV_NAME);
 	if (!cc1200->spi) {
 		LOG_ERR("Unable to get SPI device");
 		return -ENODEV;
@@ -753,25 +752,25 @@ static int configure_spi(struct device *dev)
 
 	if (IS_ENABLED(CONFIG_IEEE802154_CC1200_GPIO_SPI_CS)) {
 		cs_ctrl.gpio_dev = device_get_binding(
-			CONFIG_IEEE802154_CC1200_GPIO_SPI_CS_DRV_NAME);
+			DT_IEEE802154_CC1200_GPIO_SPI_CS_DRV_NAME);
 		if (!cs_ctrl.gpio_dev) {
 			LOG_ERR("Unable to get GPIO SPI CS device");
 			return -ENODEV;
 		}
 
-		cs_ctrl.gpio_pin = CONFIG_IEEE802154_CC1200_GPIO_SPI_CS_PIN;
+		cs_ctrl.gpio_pin = DT_IEEE802154_CC1200_GPIO_SPI_CS_PIN;
 		cs_ctrl.delay = 0;
 
 		cc1200->spi_cfg.cs = &cs_ctrl;
 
 		LOG_DBG("SPI GPIO CS configured on %s:%u",
-			    CONFIG_IEEE802154_CC1200_GPIO_SPI_CS_DRV_NAME,
-			    CONFIG_IEEE802154_CC1200_GPIO_SPI_CS_PIN);
+			    DT_IEEE802154_CC1200_GPIO_SPI_CS_DRV_NAME,
+			    DT_IEEE802154_CC1200_GPIO_SPI_CS_PIN);
 	}
 
 	cc1200->spi_cfg.operation = SPI_WORD_SET(8);
-	cc1200->spi_cfg.frequency = CONFIG_IEEE802154_CC1200_SPI_FREQ;
-	cc1200->spi_cfg.slave = CONFIG_IEEE802154_CC1200_SPI_SLAVE;
+	cc1200->spi_cfg.frequency = DT_IEEE802154_CC1200_SPI_FREQ;
+	cc1200->spi_cfg.slave = DT_IEEE802154_CC1200_SPI_SLAVE;
 
 	return 0;
 }
@@ -833,7 +832,6 @@ static struct cc1200_context cc1200_context_data;
 
 static struct ieee802154_radio_api cc1200_radio_api = {
 	.iface_api.init	= cc1200_iface_init,
-	.iface_api.send	= ieee802154_radio_send,
 
 	.get_capabilities	= cc1200_get_capabilities,
 	.cca			= cc1200_cca,

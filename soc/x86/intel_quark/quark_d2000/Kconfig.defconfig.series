@@ -10,7 +10,7 @@ config SOC_SERIES
 	default "quark_d2000"
 
 config X86_IAMCU
-        def_bool y
+        default y
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000
@@ -28,24 +28,21 @@ config LOAPIC_TIMER_IRQ_PRIORITY
 	default 2
 
 config QMSI
-	def_bool y
-
-config QMSI_BUILTIN
-	def_bool y
+	default y
 
 if PINMUX
 config PINMUX_QMSI
-	def_bool y
+	default y
 endif
 
 if UART_QMSI
 config UART_QMSI_0
-	def_bool y
+	default y
 config UART_QMSI_0_IRQ_PRI
 	int
 	default 0
 config UART_QMSI_1
-	def_bool y
+	default y
 config UART_QMSI_1_IRQ_PRI
 	int
 	default 0
@@ -53,12 +50,12 @@ endif # UART_QMSI
 
 if WATCHDOG
 config WDT_QMSI
-	def_bool y
+	default y
 endif # WATCHDOG
 
 if RTC
 config RTC_QMSI
-	def_bool y
+	default y
 
 config RTC_0_IRQ_PRI
 	int
@@ -69,9 +66,9 @@ endif # RTC
 if GPIO
 
 config GPIO_QMSI
-	def_bool y
+	default y
 config GPIO_QMSI_0
-	def_bool y
+	default y
 config GPIO_QMSI_0_IRQ_PRI
 	int
 	default 0
@@ -80,16 +77,16 @@ endif # GPIO
 
 if PWM
 config PWM_QMSI
-	def_bool y
+	default y
 endif
 
 if I2C
 config I2C_QMSI
-	def_bool y
+	default y
 
 if I2C_QMSI
 config I2C_0
-	def_bool y
+	default y
 
 config I2C_0_IRQ_PRI
 	default 0
@@ -109,21 +106,21 @@ endif # I2C
 
 if AIO_COMPARATOR
 config AIO_COMPARATOR_QMSI
-	def_bool y
+	default y
 endif
 
 if COUNTER
 config AON_COUNTER_QMSI
-	def_bool y
+	default y
 config AON_TIMER_QMSI
-	def_bool y
+	default y
 config AON_TIMER_IRQ_PRI
 	default 0
 endif
 
 if ADC
 config ADC_INTEL_QUARK_D2000
-	def_bool y
+	default y
 config ADC_0_IRQ_PRI
 	int
 	default 2
@@ -131,16 +128,16 @@ endif
 
 if DMA
 config DMA_QMSI
-	def_bool y
+	default y
 endif
 
 if SPI
 config SPI_DW
-	def_bool y
+	default y
 config SPI_DW_FIFO_DEPTH
 	default 7
 config SPI_0
-	def_bool y
+	default y
 endif # SPI
 
 if SOC_FLASH_QMSI

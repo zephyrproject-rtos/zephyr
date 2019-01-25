@@ -16,7 +16,7 @@ static s32_t read_sensor(struct device *sensor, enum sensor_channel channel)
 	s32_t ret = 0;
 
 	ret = sensor_sample_fetch(sensor);
-	if (ret < 0) {
+	if (ret < 0 && ret != -EBADMSG) {
 		printf("Sensor sample update error\n");
 		goto end;
 	}
@@ -38,19 +38,19 @@ end:
 void main(void)
 {
 	struct device *accelerometer = device_get_binding(
-						CONFIG_LSM303DLHC_ACCEL_NAME);
+						DT_ST_LIS2DH_0_LABEL);
 	struct device *magnetometer = device_get_binding(
-						CONFIG_LSM303DLHC_MAGN_NAME);
+						DT_ST_LSM303DLHC_MAGN_0_LABEL);
 
 	if (accelerometer == NULL) {
 		printf("Could not get %s device\n",
-				CONFIG_LSM303DLHC_ACCEL_NAME);
+				DT_ST_LIS2DH_0_LABEL);
 		return;
 	}
 
 	if (magnetometer == NULL) {
 		printf("Could not get %s device\n",
-				CONFIG_LSM303DLHC_MAGN_NAME);
+				DT_ST_LSM303DLHC_MAGN_0_LABEL);
 		return;
 	}
 

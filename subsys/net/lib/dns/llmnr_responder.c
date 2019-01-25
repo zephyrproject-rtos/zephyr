@@ -10,8 +10,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_llmnr_responder
-#define NET_LOG_LEVEL CONFIG_LLMNR_RESPONDER_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_llmnr_responder, CONFIG_LLMNR_RESPONDER_LOG_LEVEL);
 
 #include <zephyr.h>
 #include <init.h>
@@ -92,6 +92,10 @@ static void create_ipv4_dst_addr(struct net_pkt *pkt,
 	struct net_udp_hdr *udp_hdr, hdr;
 
 	udp_hdr = net_udp_get_hdr(pkt, &hdr);
+	if (!udp_hdr) {
+		NET_ERR("could not get UDP header");
+		return;
+	}
 
 	addr->sin_family = AF_INET;
 	addr->sin_port = udp_hdr->src_port;
@@ -463,7 +467,7 @@ static int dns_read(struct net_context *ctx,
 	int hostname_len = strlen(hostname);
 	struct net_buf *result;
 	struct dns_msg_t dns_msg;
-	u16_t dns_id = 0;
+	u16_t dns_id = 0U;
 	int data_len;
 	int queries;
 	int offset;

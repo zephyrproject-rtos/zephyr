@@ -176,7 +176,7 @@ void store_flags(unsigned int irq, u32_t flags)
 
 u32_t restore_flags(unsigned int irq)
 {
-	u32_t flags = 0;
+	u32_t flags = 0U;
 
 	if (sys_bitfield_test_bit((mem_addr_t) ioapic_suspend_buf,
 		BIT_POS_FOR_IRQ_OPTION(irq, IOAPIC_BITFIELD_HI_LO))) {
@@ -328,8 +328,8 @@ static u32_t __IoApicGet(s32_t offset)
 	key = irq_lock();
 
 	*((volatile u32_t *)
-		(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_IND)) = (char)offset;
-	value = *((volatile u32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_DATA));
+		(DT_IOAPIC_BASE_ADDRESS + IOAPIC_IND)) = (char)offset;
+	value = *((volatile u32_t *)(DT_IOAPIC_BASE_ADDRESS + IOAPIC_DATA));
 
 	irq_unlock(key);
 
@@ -354,8 +354,8 @@ static void __IoApicSet(s32_t offset, u32_t value)
 
 	key = irq_lock();
 
-	*(volatile u32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_IND) = (char)offset;
-	*((volatile u32_t *)(CONFIG_IOAPIC_BASE_ADDRESS + IOAPIC_DATA)) = value;
+	*(volatile u32_t *)(DT_IOAPIC_BASE_ADDRESS + IOAPIC_IND) = (char)offset;
+	*((volatile u32_t *)(DT_IOAPIC_BASE_ADDRESS + IOAPIC_DATA)) = value;
 
 	irq_unlock(key);
 }

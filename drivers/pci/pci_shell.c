@@ -22,14 +22,14 @@ static void list_devices(const struct shell *shell,
 {
 
 	shell_fprintf(shell, SHELL_NORMAL,
-		      "%u:%u %X:%X class: 0x%X, %u, %u, %s, "
+		      "%x:%x.%x %X:%X class: 0x%X, %u, %s, "
 		      "addrs: 0x%X-0x%X, IRQ %d\n",
 		      dev_info->bus,
 		      dev_info->dev,
+		      dev_info->function,
 		      dev_info->vendor_id,
 		      dev_info->device_id,
 		      dev_info->class_type,
-		      dev_info->function,
 		      dev_info->bar,
 		      (dev_info->mem_type == BAR_SPACE_MEM) ? "MEM" : "I/O",
 		      (u32_t)dev_info->addr,
@@ -43,11 +43,6 @@ static int cmd_lspci(const struct shell *shell, size_t argc, char **argv)
 		.function = PCI_FUNCTION_ANY,
 		.bar = PCI_BAR_ANY,
 	};
-
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
-		return 1;
-	}
 
 	pci_bus_scan_init();
 

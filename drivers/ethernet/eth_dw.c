@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 #include <sys_io.h>
 #include <net/ethernet.h>
+#include <ethernet/eth_stats.h>
 
 #include "eth_dw_priv.h"
 
@@ -42,9 +43,9 @@ static inline void eth_write(u32_t base_addr, u32_t offset,
 	sys_write32(val, base_addr + offset);
 }
 
-static void eth_rx(struct device *port)
+static void eth_rx(struct device *dev)
 {
-	struct eth_runtime *context = port->driver_data;
+	struct eth_runtime *context = dev->driver_data;
 	struct net_pkt *pkt;
 	u32_t frm_len;
 	int r;
@@ -80,33 +81,37 @@ static void eth_rx(struct device *port)
 	 */
 	if (frm_len < sizeof(u32_t)) {
 		LOG_ERR("Frame too small: %u", frm_len);
-		goto release_desc;
+		goto error;
 	} else {
 		frm_len -= sizeof(u32_t);
 	}
 
-	pkt = net_pkt_get_reserve_rx(0, K_NO_WAIT);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Failed to obtain RX buffer");
-		goto release_desc;
+		goto error;
 	}
 
 	if (!net_pkt_append_all(pkt, frm_len, (u8_t *)context->rx_buf,
 				K_NO_WAIT)) {
 		LOG_ERR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
-		goto release_desc;
+		goto error;
 	}
 
 	r = net_recv_data(context->iface, pkt);
 	if (r < 0) {
 		LOG_ERR("Failed to enqueue frame into RX queue: %d", r);
 		net_pkt_unref(pkt);
+		goto error;
 	}
 
+	goto release_desc;
+error:
+	eth_stats_update_errors_rx(context->iface);
 release_desc:
 	/* Return ownership of the RX descriptor to the device. */
-	context->rx_desc.own = 1;
+	context->rx_desc.own = 1U;
 
 	/* Request that the device check for an available RX descriptor, since
 	 * ownership of the descriptor was just transferred to the device.
@@ -146,7 +151,7 @@ static void eth_tx_data(struct eth_runtime *context, u8_t *data, u16_t len)
 	eth_write(context->base_addr, REG_ADDR_TX_DESC_LIST,
 		  (u32_t)&context->tx_desc);
 
-	context->tx_desc.own = 1;
+	context->tx_desc.own = 1U;
 
 	/* Request that the device check for an available TX descriptor, since
 	 * ownership of the descriptor was just transferred to the device.
@@ -164,34 +169,24 @@ static void eth_tx_data(struct eth_runtime *context, u8_t *data, u16_t len)
  *	from each fragment's data pointer.  This procedure might yield to
  *	other threads  while waiting for the DMA transfer to finish.
  */
-static int eth_tx(struct net_if *iface, struct net_pkt *pkt)
+static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
-	struct device *port = net_if_get_device(iface);
-	struct eth_runtime *context = port->driver_data;
+	struct eth_runtime *context = dev->driver_data;
+	struct net_buf *frag;
 
 	/* Ensure we're clear to transmit. */
 	eth_tx_spin_wait(context);
 
-	if (!pkt->frags) {
-		eth_tx_data(context, net_pkt_ll(pkt),
-			    net_pkt_ll_reserve(pkt));
-	} else {
-		struct net_buf *frag;
-
-		eth_tx_data(context, net_pkt_ll(pkt),
-			    net_pkt_ll_reserve(pkt) + pkt->frags->len);
-		for (frag = pkt->frags->frags; frag; frag = frag->frags) {
-			eth_tx_data(context, frag->data, frag->len);
-		}
+	for (frag = pkt->frags; frag; frag = frag->frags) {
+		eth_tx_data(context, frag->data, frag->len);
 	}
 
-	net_pkt_unref(pkt);
 	return 0;
 }
 
-static void eth_dw_isr(struct device *port)
+static void eth_dw_isr(struct device *dev)
 {
-	struct eth_runtime *context = port->driver_data;
+	struct eth_runtime *context = dev->driver_data;
 #ifdef CONFIG_SHARED_IRQ
 	u32_t int_status;
 
@@ -205,7 +200,7 @@ static void eth_dw_isr(struct device *port)
 		return;
 	}
 #endif
-	eth_rx(port);
+	eth_rx(dev);
 
 	/* Acknowledge the interrupt. */
 	eth_write(context->base_addr, REG_ADDR_STATUS,
@@ -238,9 +233,9 @@ static inline int eth_setup(struct device *dev)
 
 static int eth_initialize_internal(struct net_if *iface)
 {
-	struct device *port = net_if_get_device(iface);
-	struct eth_runtime *context = port->driver_data;
-	const struct eth_config *config = port->config->config_info;
+	struct device *dev = net_if_get_device(iface);
+	struct eth_runtime *context = dev->driver_data;
+	const struct eth_config *config = dev->config->config_info;
 	u32_t base_addr;
 
 	context->iface = iface;
@@ -259,27 +254,27 @@ static int eth_initialize_internal(struct net_if *iface)
 
 
 	/* Initialize receive descriptor. */
-	context->rx_desc.rdes0 = 0;
-	context->rx_desc.rdes1 = 0;
+	context->rx_desc.rdes0 = 0U;
+	context->rx_desc.rdes1 = 0U;
 
 	context->rx_desc.buf1_ptr = (u8_t *)context->rx_buf;
-	context->rx_desc.first_desc = 1;
-	context->rx_desc.last_desc = 1;
-	context->rx_desc.own = 1;
+	context->rx_desc.first_desc = 1U;
+	context->rx_desc.last_desc = 1U;
+	context->rx_desc.own = 1U;
 	context->rx_desc.rx_buf1_sz = sizeof(context->rx_buf);
-	context->rx_desc.rx_end_of_ring = 1;
+	context->rx_desc.rx_end_of_ring = 1U;
 
 	/* Install receive descriptor. */
 	eth_write(base_addr, REG_ADDR_RX_DESC_LIST, (u32_t)&context->rx_desc);
 
 	/* Initialize transmit descriptor. */
-	context->tx_desc.tdes0 = 0;
-	context->tx_desc.tdes1 = 0;
+	context->tx_desc.tdes0 = 0U;
+	context->tx_desc.tdes1 = 0U;
 	context->tx_desc.buf1_ptr = NULL;
-	context->tx_desc.tx_buf1_sz = 0;
-	context->tx_desc.first_seg_in_frm = 1;
-	context->tx_desc.last_seg_in_frm = 1;
-	context->tx_desc.tx_end_of_ring = 1;
+	context->tx_desc.tx_buf1_sz = 0U;
+	context->tx_desc.first_seg_in_frm = 1U;
+	context->tx_desc.last_seg_in_frm = 1U;
+	context->tx_desc.tx_end_of_ring = 1U;
 
 	/* Install transmit descriptor. */
 	eth_write(context->base_addr, REG_ADDR_TX_DESC_LIST,
@@ -317,7 +312,7 @@ static int eth_initialize_internal(struct net_if *iface)
 
 	LOG_INF("Enabled 100M full-duplex mode");
 
-	config->config_func(port);
+	config->config_func(dev);
 
 	return 0;
 }
@@ -340,16 +335,16 @@ static enum ethernet_hw_caps eth_dw_get_capabilities(struct device *dev)
 
 static const struct ethernet_api api_funcs = {
 	.iface_api.init = eth_initialize,
-	.iface_api.send = eth_tx,
 
 	.get_capabilities = eth_dw_get_capabilities,
+	.send = eth_tx,
 };
 
 /* Bindings to the plaform */
 #if CONFIG_ETH_DW_0
-static void eth_config_0_irq(struct device *port)
+static void eth_config_0_irq(struct device *dev)
 {
-	const struct eth_config *config = port->config->config_info;
+	const struct eth_config *config = dev->config->config_info;
 	struct device *shared_irq_dev;
 
 #ifdef CONFIG_ETH_DW_0_IRQ_DIRECT
@@ -360,8 +355,8 @@ static void eth_config_0_irq(struct device *port)
 #elif defined(CONFIG_ETH_DW_0_IRQ_SHARED)
 	shared_irq_dev = device_get_binding(config->shared_irq_dev_name);
 	__ASSERT(shared_irq_dev != NULL, "Failed to get eth_dw device binding");
-	shared_irq_isr_register(shared_irq_dev, (isr_t)eth_dw_isr, port);
-	shared_irq_enable(shared_irq_dev, port);
+	shared_irq_isr_register(shared_irq_dev, (isr_t)eth_dw_isr, dev);
+	shared_irq_enable(shared_irq_dev, dev);
 #endif
 }
 

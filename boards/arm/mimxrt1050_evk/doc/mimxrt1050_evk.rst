@@ -99,10 +99,14 @@ features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| I2C       | on-chip    | i2c                                 |
++-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
++-----------+------------+-------------------------------------+
+| ENET      | on-chip    | ethernet                            |
 +-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
@@ -127,17 +131,47 @@ The MIMXRT1050 SoC has five pairs of pinmux/gpio controllers.
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_03 | LPSPI3_PCS0     | SPI                       |
 +---------------+-----------------+---------------------------+
-| GPIO_AD_B0_09 | GPIO            | LED                       |
+| GPIO_AD_B0_09 | GPIO/ENET_RST   | LED                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_10 | GPIO/ENET_INT   | GPIO/Ethernet             |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_12 | LPUART1_TX      | UART Console              |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B0_13 | LPUART1_RX      | UART Console              |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_00 | LPI2C1_SCL      | I2C                       |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B1_01 | LPI2C1_SDA      | I2C                       |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_06 | LPUART3_TX      | UART BT HCI               |
 +---------------+-----------------+---------------------------+
 | GPIO_AD_B1_07 | LPUART3_RX      | UART BT HCI               |
 +---------------+-----------------+---------------------------+
 | WAKEUP        | GPIO            | SW0                       |
++---------------+-----------------+---------------------------+
+| GPIO_B1_04    | ENET_RX_DATA00  | Ethernet                  |
++---------------+-----------------+---------------------------+
+| GPIO_B1_05    | ENET_RX_DATA01  | Ethernet                  |
++---------------+-----------------+---------------------------+
+| GPIO_B1_06    | ENET_RX_EN      | Ethernet                  |
++---------------+-----------------+---------------------------+
+| GPIO_B1_07    | ENET_TX_DATA00  | Ethernet                  |
++---------------+-----------------+---------------------------+
+| GPIO_B1_08    | ENET_TX_DATA01  | Ethernet                  |
++---------------+-----------------+---------------------------+
+| GPIO_B1_09    | ENET_TX_EN      | Ethernet                  |
++---------------+-----------------+---------------------------+
+| GPIO_B1_10    | ENET_REF_CLK    | Ethernet                  |
++---------------+-----------------+---------------------------+
+| GPIO_B1_11    | ENET_RX_ER      | Ethernet                  |
++---------------+-----------------+---------------------------+
+| GPIO_EMC_40   | ENET_MDC        | Ethernet                  |
++---------------+-----------------+---------------------------+
+| GPIO_EMC_41   | ENET_MDIO       | Ethernet                  |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_09 | ENET_RST        | Ethernet                  |
++---------------+-----------------+---------------------------+
+| GPIO_AD_B0_10 | ENET_INT        | Ethernet                  |
 +---------------+-----------------+---------------------------+
 
 System Clock
@@ -209,7 +243,7 @@ Current Zephyr build supports the new MIMXRT1050-EVKB
    https://www.nxp.com/products/microcontrollers-and-processors/arm-based-processors-and-mcus/i.mx-applications-processors/i.mx-rt-series/i.mx-rt1050-evaluation-kit:MIMXRT1050-EVK
 
 .. _MIMXRT1050-EVK User Guide:
-   https://www.nxp.com/docs/en/user-guide/IMXRT1050EVKBHUG.pdf
+   https://www.nxp.com/webapp/Download?colCode=IMXRT1050EVKBHUG
 
 .. _MIMXRT1050-EVK Schematics:
    https://www.nxp.com/webapp/Download?colCode=MIMXRT1050-EVK-DESIGNFILES

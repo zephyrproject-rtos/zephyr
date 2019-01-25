@@ -16,15 +16,19 @@
 #include <irq_offload.h>
 
 #define TIMEOUT 100
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define NUM_OF_WORK 2
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
-static struct k_work_q workq;
+static K_THREAD_STACK_DEFINE(user_tstack, STACK_SIZE);
+__kernel static struct k_work_q workq;
+__kernel static struct k_work_q user_workq;
 static struct k_work work[NUM_OF_WORK];
 static struct k_delayed_work new_work;
 static struct k_delayed_work delayed_work[NUM_OF_WORK], delayed_work_sleepy;
-static struct k_sem sync_sema;
+__kernel static struct k_sem sync_sema;
+__kernel static struct k_sem dummy_sema;
+static struct k_thread *main_thread;
 
 static void work_sleepy(struct k_work *w)
 {
@@ -34,6 +38,9 @@ static void work_sleepy(struct k_work *w)
 
 static void work_handler(struct k_work *w)
 {
+	/* Just to show an API call on this will succeed */
+	k_sem_init(&dummy_sema, 0, 1);
+
 	k_sem_give(&sync_sema);
 }
 
@@ -53,7 +60,8 @@ static void twork_submit(void *data)
 		zassert_false(k_work_pending(&work[i]), NULL);
 		if (work_q) {
 			/**TESTPOINT: work submit to queue*/
-			k_work_submit_to_queue(work_q, &work[i]);
+			zassert_false(k_work_submit_to_user_queue(work_q, &work[i]),
+				      "failed to submit to queue");
 		} else {
 			/**TESTPOINT: work submit to system queue*/
 			k_work_submit(&work[i]);
@@ -199,9 +207,46 @@ static void tdelayed_work_cancel(void *data)
  */
 void test_workq_start_before_submit(void)
 {
-	k_sem_init(&sync_sema, 0, NUM_OF_WORK);
 	k_work_q_start(&workq, tstack, STACK_SIZE,
 		       CONFIG_MAIN_THREAD_PRIORITY);
+}
+
+/**
+ * @brief Test user mode work queue start before submit
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_q_user_start()
+ */
+void test_user_workq_start_before_submit(void)
+{
+	k_work_q_user_start(&user_workq, user_tstack, STACK_SIZE,
+			    CONFIG_MAIN_THREAD_PRIORITY);
+}
+
+/**
+ * @brief Setup object permissions before test_user_workq_granted_access()
+ *
+ * @ingroup kernel_workqueue_tests
+ */
+void test_user_workq_granted_access_setup(void)
+{
+	/* Subsequent test cases will have access to the dummy_sema,
+	 * but not the user workqueue since it already started.
+	 */
+	k_object_access_grant(&dummy_sema, main_thread);
+}
+
+/**
+ * @brief Test user mode grant workqueue permissions
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_q_object_access_grant()
+ */
+void test_user_workq_granted_access(void)
+{
+	k_object_access_grant(&dummy_sema, &user_workq.thread);
 }
 
 /**
@@ -216,6 +261,23 @@ void test_work_submit_to_queue_thread(void)
 {
 	k_sem_reset(&sync_sema);
 	twork_submit(&workq);
+	for (int i = 0; i < NUM_OF_WORK; i++) {
+		k_sem_take(&sync_sema, K_FOREVER);
+	}
+}
+
+/**
+ * @brief Test work submission to work queue (user mode)
+ *
+ * @ingroup kernel_workqueue_tests
+ *
+ * @see k_work_init(), k_work_pending(), k_work_submit_to_queue(),
+ * k_work_submit()
+ */
+void test_user_work_submit_to_queue_thread(void)
+{
+	k_sem_reset(&sync_sema);
+	twork_submit(&user_workq);
 	for (int i = 0; i < NUM_OF_WORK; i++) {
 		k_sem_take(&sync_sema, K_FOREVER);
 	}
@@ -444,14 +506,28 @@ void test_delayed_work_cancel_isr(void)
 
 void test_main(void)
 {
+	main_thread = k_current_get();
+	k_thread_access_grant(main_thread, &sync_sema, &user_workq.thread,
+			      &user_workq.queue,
+			      &user_tstack);
+	k_sem_init(&sync_sema, 0, NUM_OF_WORK);
+	k_thread_system_pool_assign(k_current_get());
+
 	ztest_test_suite(workqueue_api,
-			 ztest_unit_test(test_workq_start_before_submit),/*keep first!*/
+			 /* Do not disturb the ordering of these test cases */
+			 ztest_unit_test(test_workq_start_before_submit),
+			 ztest_user_unit_test(test_user_workq_start_before_submit),
+			 ztest_unit_test(test_user_workq_granted_access_setup),
+			 ztest_user_unit_test(test_user_workq_granted_access),
+			 /* End order-important tests */
+
 			 ztest_unit_test(test_work_submit_to_multipleq),
 			 ztest_unit_test(test_work_resubmit_to_queue),
 			 ztest_unit_test(test_work_submit_to_queue_thread),
 			 ztest_unit_test(test_work_submit_to_queue_isr),
 			 ztest_unit_test(test_work_submit_thread),
 			 ztest_unit_test(test_work_submit_isr),
+			 ztest_user_unit_test(test_user_work_submit_to_queue_thread),
 			 ztest_unit_test(test_delayed_work_submit_to_queue_thread),
 			 ztest_unit_test(test_delayed_work_submit_to_queue_isr),
 			 ztest_unit_test(test_delayed_work_submit_thread),

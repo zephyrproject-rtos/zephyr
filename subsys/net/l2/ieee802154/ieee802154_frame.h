@@ -460,23 +460,27 @@ struct ieee802154_fcf_seq *ieee802154_validate_fc_seq(u8_t *buf, u8_t **p_buf);
 bool ieee802154_validate_frame(u8_t *buf, u8_t length,
 			       struct ieee802154_mpdu *mpdu);
 
-u16_t ieee802154_compute_header_size(struct net_if *iface,
-				     struct in6_addr *dst);
+u8_t ieee802154_compute_header_size(struct net_if *iface,
+				    struct in6_addr *dst);
 
 bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 				  struct net_linkaddr *dst,
 				  struct net_buf *frag,
-				  u8_t reserved_len);
+				  u8_t hdr_size);
 
 struct net_pkt *
 ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 				enum ieee802154_cfi type,
 				struct ieee802154_frame_params *params);
 
+void ieee802154_mac_cmd_finalize(struct net_pkt *pkt,
+				 enum ieee802154_cfi type);
+
 static inline
 struct ieee802154_command *ieee802154_get_mac_command(struct net_pkt *pkt)
 {
-	return (struct ieee802154_command *)net_pkt_ip_data(pkt);
+	return (struct ieee802154_command *)(pkt->frags->data +
+					     pkt->frags->len);
 }
 
 #ifdef CONFIG_NET_L2_IEEE802154_ACK_REPLY

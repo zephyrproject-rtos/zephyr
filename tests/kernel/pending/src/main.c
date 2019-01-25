@@ -16,8 +16,8 @@
 #define  THIRD_SECOND               (333)
 #define  FOURTH_SECOND              (250)
 
-#define COOP_STACKSIZE   512
-#define PREEM_STACKSIZE  1024
+#define COOP_STACKSIZE   (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define PREEM_STACKSIZE  (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 #define FIFO_TEST_START       10
 #define FIFO_TEST_END         20
@@ -408,7 +408,7 @@ void test_pending(void)
 	offload2.sem = &end_test_sem;
 	k_work_submit_to_queue(&offload_work_q, &offload2.work_item);
 
-	timer_end_tick = 0;
+	timer_end_tick = 0U;
 	k_sem_give(&start_test_sem);    /* start timer tests */
 
 	/*

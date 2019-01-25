@@ -8,10 +8,20 @@
 #include "settings_test.h"
 #include "settings/settings_file.h"
 
+#ifdef CONFIG_SETTINGS_USE_BASE64
+#define CF_FILE_CONTENT_1 "\x10\x00myfoo/mybar=CA=="
+#define CF_FILE_CONTENT_2 "\x10\x00myfoo/mybar=Kw=="
+#else
+#define CF_FILE_CONTENT_1 "\x0d\x00myfoo/mybar=\x08"
+#define CF_FILE_CONTENT_2 "\x0d\x00myfoo/mybar=\x2b"
+#endif
+
 void test_config_save_in_file(void)
 {
 	int rc;
 	struct settings_file cf;
+	const char cf_pattern_1[] = CF_FILE_CONTENT_1;
+	const char cf_pattern_2[] = CF_FILE_CONTENT_2;
 
 	config_wipe_srcs();
 
@@ -26,17 +36,19 @@ void test_config_save_in_file(void)
 	zassert_true(rc == 0,
 		     "can't register FS as configuration destination");
 
-	val8 = 8;
+	val8 = 8U;
 	rc = settings_save();
 	zassert_true(rc == 0, "fs write error");
 
-	rc = settings_test_file_strstr(cf.cf_name, "myfoo/mybar=8\n");
+	rc = settings_test_file_strstr(cf.cf_name, cf_pattern_1,
+				       sizeof(cf_pattern_1)-1);
 	zassert_true(rc == 0, "bad value read");
 
-	val8 = 43;
+	val8 = 43U;
 	rc = settings_save();
 	zassert_true(rc == 0, "fs write error");
 
-	rc = settings_test_file_strstr(cf.cf_name, "myfoo/mybar=43\n");
+	rc = settings_test_file_strstr(cf.cf_name, cf_pattern_2,
+				       sizeof(cf_pattern_2)-1);
 	zassert_true(rc == 0, "bad value read");
 }

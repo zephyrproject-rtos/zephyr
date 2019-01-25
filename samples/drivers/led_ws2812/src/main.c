@@ -23,13 +23,12 @@ LOG_MODULE_REGISTER(main);
  */
 #if defined(CONFIG_WS2812_STRIP)
 #define STRIP_NUM_LEDS 12
-#define STRIP_DEV_NAME CONFIG_WS2812_STRIP_NAME
+#define STRIP_DEV_NAME DT_WORLDSEMI_WS2812_0_LABEL
 #else
 #define STRIP_NUM_LEDS 24
 #define STRIP_DEV_NAME CONFIG_WS2812B_SW_NAME
 #endif
 
-#define SPI_DEV_NAME "ws2812_spi"
 #define DELAY_TIME K_MSEC(40)
 
 static const struct led_rgb colors[] = {
@@ -61,20 +60,6 @@ void main(void)
 {
 	struct device *strip;
 	size_t i, time;
-#if defined(CONFIG_SPI)
-	struct device *spi;
-
-	/* Double-check the configuration. */
-	spi = device_get_binding(SPI_DEV_NAME);
-	if (spi) {
-		LOG_INF("Found SPI device %s", SPI_DEV_NAME);
-	} else {
-		LOG_ERR("SPI device not found; you must choose a SPI "
-			    "device and configure its name to %s",
-			    SPI_DEV_NAME);
-		return;
-	}
-#endif
 
 	strip = device_get_binding(STRIP_DEV_NAME);
 	if (strip) {

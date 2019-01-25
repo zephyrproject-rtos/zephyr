@@ -180,12 +180,12 @@ static int lps25hb_init(struct device *dev)
 }
 
 static const struct lps25hb_config lps25hb_config = {
-	.i2c_master_dev_name = CONFIG_LPS25HB_I2C_MASTER_DEV_NAME,
-	.i2c_slave_addr = CONFIG_LPS25HB_I2C_ADDR,
+	.i2c_master_dev_name = DT_LPS25HB_I2C_MASTER_DEV_NAME,
+	.i2c_slave_addr = DT_LPS25HB_I2C_ADDR,
 };
 
 static struct lps25hb_data lps25hb_data;
 
-DEVICE_AND_API_INIT(lps25hb, CONFIG_LPS25HB_DEV_NAME, lps25hb_init,
+DEVICE_AND_API_INIT(lps25hb, DT_LPS25HB_DEV_NAME, lps25hb_init,
 		    &lps25hb_data, &lps25hb_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lps25hb_api_funcs);

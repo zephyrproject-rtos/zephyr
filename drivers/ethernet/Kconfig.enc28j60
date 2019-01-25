@@ -8,7 +8,6 @@
 
 menuconfig ETH_ENC28J60
 	bool "ENC28J60C Ethernet Controller"
-	depends on NET_L2_ETHERNET
 	depends on SPI
 	help
 	  ENC28J60C Stand-Alone Ethernet Controller
@@ -46,10 +45,6 @@ config ETH_ENC28J60_0
 	  Include port 0 driver
 
 if ETH_ENC28J60 && ETH_ENC28J60_0
-config ETH_ENC28J60_0_NAME
-	string "Driver's name"
-	default "ETH_0"
-
 config ETH_EN28J60_0_FULL_DUPLEX
 	bool "ENC28J60 full duplex"
 	default y
@@ -57,77 +52,10 @@ config ETH_EN28J60_0_FULL_DUPLEX
 	  Enable Full Duplex. Device is configured half duplex
 	  when disabled.
 
-config ETH_ENC28J60_0_GPIO_PORT_NAME
-	string "GPIO controller port name"
-	default "GPIO_0"
-	help
-	  GPIO port name through which ENC28J60C interruption is received.
-
-config ETH_ENC28J60_0_GPIO_PIN
-	int "ENC28J60C INT GPIO PIN"
-	default 19
-	help
-	  GPIO pin number used to connect INT
-
-config ETH_ENC28J60_0_SPI_PORT_NAME
-	string "SPI master controller port name"
-	default "SPI_0"
-	help
-	  Master SPI port name through which ENC28J60C chip is accessed.
-
-config ETH_ENC28J60_0_SLAVE
-	hex "ETH_ENC28J60 SPI slave select pin"
-	default 1
-	help
-	  ENC28J60C chip select pin.
-
 config ETH_ENC28J60_0_GPIO_SPI_CS
 	bool "Manage SPI CS through a GPIO pin"
 	help
 	This option is useful if one needs to manage SPI CS through a GPIO
 	pin to by-pass the SPI controller's CS logic.
-
-config ETH_ENC28J60_0_SPI_CS_PORT_NAME
-	string "SPI cs port name"
-	depends on ETH_ENC28J60_0_GPIO_SPI_CS
-	help
-	Master SPI port name through which ENC28J60C chip is accessed.
-
-config ETH_ENC28J60_0_SPI_CS_PIN
-	int "SPI CS pin"
-	default 0
-	depends on ETH_ENC28J60_0_GPIO_SPI_CS
-	help
-	CS pin used for the SPI device
-
-config ETH_ENC28J60_0_SPI_BUS_FREQ
-	int "ENC28J60C SPI bus speed in Hz"
-	default 128000
-	help
-	This is the SPI bus frequency for accessing the device.
-
-config ETH_ENC28J60_0_MAC3
-	hex "MAC Address Byte 3"
-	default 0
-	help
-	  MACADDR<0:23> are Microchip's OUI.
-	  This is the byte 3 of the MAC address.
-	  MACADDR<31:24>
-
-config ETH_ENC28J60_0_MAC4
-	hex "MAC Address Byte 4"
-	default 0
-	help
-	  MACADDR<0:23> are Microchip's OUI.
-	  This is the byte 4 of the MAC address.
-	  MACADDR<40:32>
-
-config ETH_ENC28J60_0_MAC5
-	hex "MAC Address Byte 5"
-	default 0
-	help
-	  MACADDR<0:23> are Microchip's OUI.
-	  This is the byte 5 of the MAC address.
-	  MACADDR<48:41>
 
 endif #ETH_ENC28J60 && ETH_ENC28J60_0

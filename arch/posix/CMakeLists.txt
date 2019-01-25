@@ -1,5 +1,3 @@
-zephyr_cc_option_ifdef(CONFIG_LTO -flto)
-
 zephyr_compile_options(
   -fno-freestanding
   -m32
@@ -8,6 +6,8 @@ zephyr_compile_options(
   ${ARCH_FLAG}
   -include ${ZEPHYR_BASE}/arch/posix/include/posix_cheats.h
   )
+
+zephyr_include_directories(${BOARD_DIR})
 
 zephyr_compile_options_ifdef(CONFIG_COVERAGE
   -fprofile-arcs

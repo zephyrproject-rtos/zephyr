@@ -80,6 +80,9 @@ Supported Options
 def write_kconfig_rst():
     # The "main" function. Writes index.rst and the symbol RST files.
 
+    # accelerate doc building by skipping kconfig option documentation.
+    turbo_mode = os.environ.get('KCONFIG_TURBO_MODE') == "1"
+
     if len(sys.argv) != 3:
         print("usage: {} <Kconfig> <output directory>", file=sys.stderr)
         sys.exit(1)
@@ -89,11 +92,15 @@ def write_kconfig_rst():
 
     # String with the RST for the index page
     index_rst = INDEX_RST_HEADER
+    index_def_rst = ":orphan:\n\n"
 
     # Sort the symbols by name so that they end up in sorted order in index.rst
     for sym in sorted(kconf.unique_defined_syms, key=lambda sym: sym.name):
-        # Write an RST file for the symbol
-        write_sym_rst(sym, out_dir)
+        if turbo_mode:
+            index_def_rst += ".. option:: CONFIG_{}\n".format(sym.name)
+        else:
+            # Write an RST file for the symbol
+            write_sym_rst(sym, out_dir)
 
         # Add an index entry for the symbol that links to its RST file. Also
         # list its prompt(s), if any. (A symbol can have multiple prompts if it
@@ -103,9 +110,12 @@ def write_kconfig_rst():
             " / ".join(node.prompt[0]
                        for node in sym.nodes if node.prompt))
 
-    for choice in kconf.unique_choices:
-        # Write an RST file for the choice
-        write_choice_rst(choice, out_dir)
+    if turbo_mode:
+        write_if_updated(os.path.join(out_dir, "options.rst"), index_def_rst)
+    else:
+        for choice in kconf.unique_choices:
+            # Write an RST file for the choice
+            write_choice_rst(choice, out_dir)
 
     write_if_updated(os.path.join(out_dir, "index.rst"), index_rst)
 

@@ -8,7 +8,6 @@
 
 menuconfig ETH_STM32_HAL
 	bool "STM32 HAL Ethernet driver"
-	depends on NET_L2_ETHERNET
 	select USE_STM32_HAL_ETH
 	help
 	  Enable STM32 HAL based Ethernet driver. It is available for
@@ -78,6 +77,12 @@ config ETH_STM32_HAL_MAC5
 	help
 	  This is the byte 5 of the MAC address.
 endif
+
+config ETH_STM32_HAL_MII
+	bool "Use MII interface"
+	depends on ETH_STM32_HAL
+	help
+	  Use the MII physical interface instead of RMII.
 
 endif # ETH_STM32_HAL
 

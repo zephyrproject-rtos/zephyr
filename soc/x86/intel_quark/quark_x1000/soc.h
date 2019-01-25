@@ -72,9 +72,9 @@
 #define GPIO_DW_PCI_DEVICE_ID			0x0934
 #define GPIO_DW_PCI_CLASS			0x0C
 
-#define GPIO_DW_0_BASE_ADDR			0x90006000
-#define GPIO_DW_0_IRQ				18
-#define GPIO_DW_0_BITS				8
+#define DT_GPIO_DW_0_BASE_ADDR			0x90006000
+#define DT_GPIO_DW_0_IRQ				18
+#define DT_GPIO_DW_0_BITS				8
 
 #define GPIO_DW_0_PCI_BUS			0
 #define GPIO_DW_0_PCI_DEV			21
@@ -82,7 +82,7 @@
 #define GPIO_DW_0_PCI_BAR			1
 
 #if defined(CONFIG_IOAPIC)
-#define GPIO_DW_0_IRQ_FLAGS			(IOAPIC_LEVEL | IOAPIC_LOW)
+#define DT_GPIO_DW_0_IRQ_FLAGS			(IOAPIC_LEVEL | IOAPIC_LOW)
 #endif
 
 /*

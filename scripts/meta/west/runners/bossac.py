@@ -6,7 +6,7 @@
 
 import platform
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps
+from west.runners.core import ZephyrBinaryRunner, RunnerCaps
 
 DEFAULT_BOSSAC_PORT = '/dev/ttyACM0'
 
@@ -48,7 +48,7 @@ class BossacBinaryRunner(ZephyrBinaryRunner):
                     'ospeed', '1200', 'cs8', '-cstopb', 'ignpar', 'eol', '255',
                     'eof', '255']
         cmd_flash = [self.bossac, '-p', self.port, '-R', '-e', '-w', '-v',
-                     '-b', self.cfg.kernel_bin]
+                     '-b', self.cfg.bin_file]
 
         self.check_call(cmd_stty)
         self.check_call(cmd_flash)

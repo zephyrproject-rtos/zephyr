@@ -6,9 +6,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menu "Framebuffer"
-
-config CHARACTER_FRAMEBUFFER
+menuconfig CHARACTER_FRAMEBUFFER
 	bool "Character framebuffer for dot matrix displays"
 	help
 	  Character framebuffer for dot matrix displays.
@@ -21,10 +19,25 @@ config CHARACTER_FRAMEBUFFER_USE_DEFAULT_FONTS
 	help
 	  Use default fonts.
 
+config CHARACTER_FRAMEBUFFER_SHELL
+	bool "Character Framebuffer shell"
+	depends on SHELL
+	help
+	  Activate shell module that provides Framebuffer commands to the
+	  console.
+
+if CHARACTER_FRAMEBUFFER_SHELL
+	config CHARACTER_FRAMEBUFFER_SHELL_DRIVER_NAME
+	string
+	default "SSD1673" if SSD1673
+	default "SSD1306" if SSD1306
+	help
+	  Character Framebuffer Display Driver Name
+
+endif
+
 module = CFB
 module-str = cfb
 source "subsys/logging/Kconfig.template.log_config"
 
-endif
-
-endmenu
+endif # CHARACTER_FRAMEBUFFER

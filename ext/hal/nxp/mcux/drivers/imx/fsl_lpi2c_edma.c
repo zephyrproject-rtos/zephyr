@@ -87,6 +87,23 @@ static void LPI2C_MasterEDMACallback(edma_handle_t *dmaHandle, void *userData, b
  * Code
  ******************************************************************************/
 
+/*!
+ * brief Create a new handle for the LPI2C master DMA APIs.
+ *
+ * The creation of a handle is for use with the DMA APIs. Once a handle
+ * is created, there is not a corresponding destroy handle. If the user wants to
+ * terminate a transfer, the LPI2C_MasterTransferAbortEDMA() API shall be called.
+ *
+ * For devices where the LPI2C send and receive DMA requests are OR'd together, the a txDmaHandle
+ * parameter is ignored and may be set to NULL.
+ *
+ * param base The LPI2C peripheral base address.
+ * param[out] handle Pointer to the LPI2C master driver handle.
+ * param rxDmaHandle Handle for the eDMA receive channel. Created by the user prior to calling this function.
+ * param txDmaHandle Handle for the eDMA transmit channel. Created by the user prior to calling this function.
+ * param callback User provided pointer to the asynchronous callback function.
+ * param userData User provided pointer to the application callback data.
+ */
 void LPI2C_MasterCreateEDMAHandle(LPI2C_Type *base,
                                   lpi2c_master_edma_handle_t *handle,
                                   edma_handle_t *rxDmaHandle,
@@ -178,6 +195,19 @@ static uint32_t LPI2C_GenerateCommands(lpi2c_master_edma_handle_t *handle)
     return cmdCount;
 }
 
+/*!
+ * brief Performs a non-blocking DMA-based transaction on the I2C bus.
+ *
+ * The callback specified when the a handle was created is invoked when the transaction has
+ * completed.
+ *
+ * param base The LPI2C peripheral base address.
+ * param handle Pointer to the LPI2C master driver handle.
+ * param transfer The pointer to the transfer descriptor.
+ * retval #kStatus_Success The transaction was started successfully.
+ * retval #kStatus_LPI2C_Busy Either another master is currently utilizing the bus, or another DMA
+ *      transaction is already in progress.
+ */
 status_t LPI2C_MasterTransferEDMA(LPI2C_Type *base,
                                   lpi2c_master_edma_handle_t *handle,
                                   lpi2c_master_transfer_t *transfer)
@@ -346,6 +376,15 @@ status_t LPI2C_MasterTransferEDMA(LPI2C_Type *base,
     return result;
 }
 
+/*!
+ * brief Returns number of bytes transferred so far.
+ *
+ * param base The LPI2C peripheral base address.
+ * param handle Pointer to the LPI2C master driver handle.
+ * param[out] count Number of bytes transferred so far by the non-blocking transaction.
+ * retval #kStatus_Success
+ * retval #kStatus_NoTransferInProgress There is not a DMA transaction currently in progress.
+ */
 status_t LPI2C_MasterTransferGetCountEDMA(LPI2C_Type *base, lpi2c_master_edma_handle_t *handle, size_t *count)
 {
     assert(handle);
@@ -385,6 +424,17 @@ status_t LPI2C_MasterTransferGetCountEDMA(LPI2C_Type *base, lpi2c_master_edma_ha
     return kStatus_Success;
 }
 
+/*!
+ * brief Terminates a non-blocking LPI2C master transmission early.
+ *
+ * note It is not safe to call this function from an IRQ handler that has a higher priority than the
+ *      eDMA peripheral's IRQ priority.
+ *
+ * param base The LPI2C peripheral base address.
+ * param handle Pointer to the LPI2C master driver handle.
+ * retval #kStatus_Success A transaction was successfully aborted.
+ * retval #kStatus_LPI2C_Idle There is not a DMA transaction currently in progress.
+ */
 status_t LPI2C_MasterTransferAbortEDMA(LPI2C_Type *base, lpi2c_master_edma_handle_t *handle)
 {
     /* Catch when there is not an active transfer. */

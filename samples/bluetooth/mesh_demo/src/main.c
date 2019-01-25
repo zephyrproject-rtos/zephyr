@@ -254,7 +254,7 @@ u16_t board_set_target(void)
 {
 	switch (target) {
 	case GROUP_ADDR:
-		target = 1;
+		target = 1U;
 		break;
 	case 9:
 		target = GROUP_ADDR;

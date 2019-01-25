@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_coap_server
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_coap_server_sample, LOG_LEVEL_DBG);
 
 #include <errno.h>
 #include <misc/printk.h>
@@ -75,7 +75,7 @@ static bool join_coap_multicast_group(void)
 
 	iface = net_if_get_default();
 	if (!iface) {
-		NET_ERR("Could not get te default interface\n");
+		LOG_ERR("Could not get te default interface\n");
 		return false;
 	}
 
@@ -83,14 +83,14 @@ static bool join_coap_multicast_group(void)
 	if (net_addr_pton(AF_INET6,
 			  CONFIG_NET_CONFIG_MY_IPV6_ADDR,
 			  &my_addr) < 0) {
-		NET_ERR("Invalid IPv6 address %s",
+		LOG_ERR("Invalid IPv6 address %s",
 			CONFIG_NET_CONFIG_MY_IPV6_ADDR);
 	}
 #endif
 
 	ifaddr = net_if_ipv6_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		NET_ERR("Could not add unicast address to interface");
+		LOG_ERR("Could not add unicast address to interface");
 		return false;
 	}
 
@@ -98,7 +98,7 @@ static bool join_coap_multicast_group(void)
 
 	mcast = net_if_ipv6_maddr_add(iface, &mcast_addr.sin6_addr);
 	if (!mcast) {
-		NET_ERR("Could not add multicast address to interface\n");
+		LOG_ERR("Could not add multicast address to interface\n");
 		return false;
 	}
 
@@ -118,13 +118,13 @@ static int start_coap_server(void)
 
 	sock = socket(addr6.sin6_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock < 0) {
-		NET_ERR("Failed to create UDP socket %d", errno);
+		LOG_ERR("Failed to create UDP socket %d", errno);
 		return -errno;
 	}
 
 	r = bind(sock, (struct sockaddr *)&addr6, sizeof(addr6));
 	if (r < 0) {
-		NET_ERR("Failed to bind UDP socket %d", errno);
+		LOG_ERR("Failed to bind UDP socket %d", errno);
 		return -errno;
 	}
 
@@ -144,13 +144,13 @@ static int start_coap_server(void)
 
 	sock = socket(addr.sin_family, SOCK_DGRAM, IPPROTO_UDP);
 	if (sock < 0) {
-		NET_ERR("Failed to create UDP socket %d", errno);
+		LOG_ERR("Failed to create UDP socket %d", errno);
 		return -errno;
 	}
 
 	r = bind(sock, (struct sockaddr *)&addr, sizeof(addr));
 	if (r < 0) {
-		NET_ERR("Failed to bind UDP socket %d", errno);
+		LOG_ERR("Failed to bind UDP socket %d", errno);
 		return -errno;
 	}
 
@@ -168,7 +168,7 @@ static int send_coap_reply(struct coap_packet *cpkt,
 
 	r = sendto(sock, cpkt->data, cpkt->offset, 0, addr, addr_len);
 	if (r < 0) {
-		NET_ERR("Failed to send %d", errno);
+		LOG_ERR("Failed to send %d", errno);
 		r = -errno;
 	}
 
@@ -221,9 +221,9 @@ static int piggyback_get(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******");
-	NET_INFO("type: %u code %u id %u", type, code, id);
-	NET_INFO("*******");
+	LOG_INF("*******");
+	LOG_INF("type: %u code %u id %u", type, code, id);
+	LOG_INF("*******");
 
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_ACK;
@@ -294,9 +294,9 @@ static int test_del(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******");
-	NET_INFO("type: %u code %u id %u", type, code, id);
-	NET_INFO("*******");
+	LOG_INF("*******");
+	LOG_INF("type: %u code %u id %u", type, code, id);
+	LOG_INF("*******");
 
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_ACK;
@@ -344,9 +344,9 @@ static int test_put(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******");
-	NET_INFO("type: %u code %u id %u", type, code, id);
-	NET_INFO("*******");
+	LOG_INF("*******");
+	LOG_INF("type: %u code %u id %u", type, code, id);
+	LOG_INF("*******");
 
 	payload = coap_packet_get_payload(request, &payload_len);
 	if (payload) {
@@ -404,9 +404,9 @@ static int test_post(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******");
-	NET_INFO("type: %u code %u id %u", type, code, id);
-	NET_INFO("*******");
+	LOG_INF("*******");
+	LOG_INF("type: %u code %u id %u", type, code, id);
+	LOG_INF("*******");
 
 	payload = coap_packet_get_payload(request, &payload_len);
 	if (payload) {
@@ -473,27 +473,27 @@ static int query_get(struct coap_resource *resource,
 		return -EINVAL;
 	}
 
-	NET_INFO("*******");
-	NET_INFO("type: %u code %u id %u", type, code, id);
-	NET_INFO("num queries: %d", r);
+	LOG_INF("*******");
+	LOG_INF("type: %u code %u id %u", type, code, id);
+	LOG_INF("num queries: %d", r);
 
 	for (i = 0; i < r; i++) {
 		char str[16];
 
 		if (options[i].len + 1 > sizeof(str)) {
-			NET_INFO("Unexpected length of query: "
-				 "%d (expected %zu)",
-				 options[i].len, sizeof(str));
+			LOG_INF("Unexpected length of query: "
+				"%d (expected %zu)",
+				options[i].len, sizeof(str));
 			break;
 		}
 
 		memcpy(str, options[i].value, options[i].len);
 		str[options[i].len] = '\0';
 
-		NET_INFO("query[%d]: %s", i + 1, str);
+		LOG_INF("query[%d]: %s", i + 1, str);
 	}
 
-	NET_INFO("*******");
+	LOG_INF("*******");
 
 	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
@@ -562,9 +562,9 @@ static int location_query_post(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******");
-	NET_INFO("type: %u code %u id %u", type, code, id);
-	NET_INFO("*******");
+	LOG_INF("*******");
+	LOG_INF("type: %u code %u id %u", type, code, id);
+	LOG_INF("*******");
 
 	if (type == COAP_TYPE_CON) {
 		type = COAP_TYPE_ACK;
@@ -620,9 +620,9 @@ static int separate_get(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******");
-	NET_INFO("type: %u code %u id %u", type, code, id);
-	NET_INFO("*******");
+	LOG_INF("*******");
+	LOG_INF("type: %u code %u id %u", type, code, id);
+	LOG_INF("*******");
 
 	if (type == COAP_TYPE_ACK) {
 		return 0;
@@ -723,9 +723,9 @@ static int large_get(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******");
-	NET_INFO("type: %u code %u id %u", type, code, id);
-	NET_INFO("*******");
+	LOG_INF("*******");
+	LOG_INF("type: %u code %u id %u", type, code, id);
+	LOG_INF("*******");
 
 	data = (u8_t *)k_malloc(MAX_COAP_MSG_LEN);
 	if (!data) {
@@ -824,30 +824,30 @@ static int large_update_put(struct coap_resource *resource,
 
 	r = coap_update_from_block(request, &ctx);
 	if (r < 0) {
-		NET_ERR("Invalid block size option from request");
+		LOG_ERR("Invalid block size option from request");
 		return -EINVAL;
 	}
 
 	payload = coap_packet_get_payload(request, &len);
 	if (!last_block && payload == NULL) {
-		NET_ERR("Packet without payload");
+		LOG_ERR("Packet without payload");
 		return -EINVAL;
 	}
 
-	NET_INFO("**************");
-	NET_INFO("[ctx] current %zu block_size %u total_size %zu",
-		 ctx.current, coap_block_size_to_bytes(ctx.block_size),
-		 ctx.total_size);
-	NET_INFO("**************");
+	LOG_INF("**************");
+	LOG_INF("[ctx] current %zu block_size %u total_size %zu",
+		ctx.current, coap_block_size_to_bytes(ctx.block_size),
+		ctx.total_size);
+	LOG_INF("**************");
 
 	code = coap_header_get_code(request);
 	type = coap_header_get_type(request);
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******");
-	NET_INFO("type: %u code %u id %u", type, code, id);
-	NET_INFO("*******");
+	LOG_INF("*******");
+	LOG_INF("type: %u code %u id %u", type, code, id);
+	LOG_INF("*******");
 
 	/* Do something with the payload */
 
@@ -870,7 +870,7 @@ static int large_update_put(struct coap_resource *resource,
 
 	r = coap_append_block1_option(&response, &ctx);
 	if (r < 0) {
-		NET_ERR("Could not add Block1 option to response");
+		LOG_ERR("Could not add Block1 option to response");
 		goto end;
 	}
 
@@ -913,13 +913,13 @@ static int large_create_post(struct coap_resource *resource,
 
 	r = coap_update_from_block(request, &ctx);
 	if (r < 0) {
-		NET_ERR("Invalid block size option from request");
+		LOG_ERR("Invalid block size option from request");
 		return -EINVAL;
 	}
 
 	payload = coap_packet_get_payload(request, &len);
 	if (!last_block && payload) {
-		NET_ERR("Packet without payload");
+		LOG_ERR("Packet without payload");
 		return -EINVAL;
 	}
 
@@ -928,9 +928,9 @@ static int large_create_post(struct coap_resource *resource,
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******");
-	NET_INFO("type: %u code %u id %u", type, code, id);
-	NET_INFO("*******");
+	LOG_INF("*******");
+	LOG_INF("type: %u code %u id %u", type, code, id);
+	LOG_INF("*******");
 
 	if (!last_block) {
 		code = COAP_RESPONSE_CODE_CONTINUE;
@@ -951,7 +951,7 @@ static int large_create_post(struct coap_resource *resource,
 
 	r = coap_append_block1_option(&response, &ctx);
 	if (r < 0) {
-		NET_ERR("Could not add Block1 option to response");
+		LOG_ERR("Could not add Block1 option to response");
 		goto end;
 	}
 
@@ -1148,9 +1148,9 @@ done:
 	id = coap_header_get_id(request);
 	tkl = coap_header_get_token(request, token);
 
-	NET_INFO("*******");
-	NET_INFO("type: %u code %u id %u", type, code, id);
-	NET_INFO("*******");
+	LOG_INF("*******");
+	LOG_INF("type: %u code %u id %u", type, code, id);
+	LOG_INF("*******");
 
 	return send_notification_packet(addr, addr_len,
 					observe ? resource->age : 0,
@@ -1320,13 +1320,13 @@ static void process_coap_request(u8_t *data, u16_t data_len,
 	struct coap_packet request;
 	struct coap_pending *pending;
 	struct coap_option options[16] = { 0 };
-	u8_t opt_num = 16;
+	u8_t opt_num = 16U;
 	u8_t type;
 	int r;
 
 	r = coap_packet_parse(&request, data, data_len, options, opt_num);
 	if (r < 0) {
-		NET_ERR("Invalid data received (%d)\n", r);
+		LOG_ERR("Invalid data received (%d)\n", r);
 		return;
 	}
 
@@ -1354,13 +1354,13 @@ not_found:
 		o = coap_find_observer_by_addr(observers, NUM_OBSERVERS,
 					       client_addr);
 		if (!o) {
-			NET_ERR("Observer not found\n");
+			LOG_ERR("Observer not found\n");
 			goto end;
 		}
 
 		r = find_resouce_by_observer(resources, o);
 		if (!r) {
-			NET_ERR("Observer found but Resource not found\n");
+			LOG_ERR("Observer found but Resource not found\n");
 			goto end;
 		}
 
@@ -1373,7 +1373,7 @@ end:
 	r = coap_handle_request(&request, resources, options, opt_num,
 				client_addr, client_addr_len);
 	if (r < 0) {
-		NET_WARN("No handler for such request (%d)\n", r);
+		LOG_WRN("No handler for such request (%d)\n", r);
 	}
 }
 
@@ -1389,7 +1389,7 @@ static int process_client_request(void)
 		received = recvfrom(sock, request, sizeof(request), 0,
 				    &client_addr, &client_addr_len);
 		if (received < 0) {
-			NET_ERR("Connection error %d", errno);
+			LOG_ERR("Connection error %d", errno);
 			return -errno;
 		}
 
@@ -1404,7 +1404,7 @@ void main(void)
 {
 	int r;
 
-	NET_DBG("Start CoAP-server sample");
+	LOG_DBG("Start CoAP-server sample");
 
 #if defined(CONFIG_NET_IPV6)
 	bool res;
@@ -1430,9 +1430,9 @@ void main(void)
 		}
 	}
 
-	NET_DBG("Done");
+	LOG_DBG("Done");
 	return;
 
 quit:
-	NET_ERR("Quit");
+	LOG_ERR("Quit");
 }

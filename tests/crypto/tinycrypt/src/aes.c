@@ -1079,7 +1079,7 @@ void test_aes_fixed_key_variable_text(void)
 
 	(void)tc_aes128_set_encrypt_key(&s, key);
 
-	for (i = 0; i < 128; ++i) {
+	for (i = 0U; i < 128; ++i) {
 		result = var_text_test(i, kat_tbl[i].in, kat_tbl[i].out, &s);
 		if (result == TC_FAIL) {
 			break;
@@ -2018,7 +2018,7 @@ void test_aes_variable_key_fixed_text(void)
 
 	TC_PRINT("AES128 test #4 (NIST variable-key and fixed-text):\n");
 
-	for (i = 0; i < NUM_OF_FIXED_KEYS; ++i) {
+	for (i = 0U; i < NUM_OF_FIXED_KEYS; ++i) {
 		result = var_key_test(i, kat_tbl[i].in, kat_tbl[i].out);
 		if (result == TC_FAIL) {
 			break;

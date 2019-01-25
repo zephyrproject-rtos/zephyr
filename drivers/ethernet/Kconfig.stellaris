@@ -1,0 +1,21 @@
+# Kconfig - ETH_STELLARIS Ethernet driver configuration options
+
+#
+# Copyright (c) 2018 Zilogic Systems
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ETH_STELLARIS
+	bool "Enable TI Stellaris MCU family ethernet driver."
+	help
+	  Stellaris on-board Ethernet Controller
+
+# Hidden option
+config ETH_NIC_MODEL
+	string
+	default "stellaris"
+	depends on ETH_STELLARIS
+	help
+	  Tells what Qemu network model to use. This value is given as
+	  a parameter to -nic qemu command line option.

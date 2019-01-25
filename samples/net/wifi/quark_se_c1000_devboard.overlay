@@ -1,0 +1,18 @@
+
+&spi1 {
+	status = "ok";
+
+	cs-gpios = <&gpio0 13 0>;
+
+	winc1500@0 {
+		status = "ok";
+		compatible = "atmel,winc1500";
+		reg = <0x0>;
+		label = "winc1500";
+		spi-max-frequency = <8000000>;
+		irq-gpios = <&gpio0 18 0>;
+		reset-gpios = <&gpio0 26 0>;
+		enable-gpios = <&gpio0 19 0>;
+
+	};
+};

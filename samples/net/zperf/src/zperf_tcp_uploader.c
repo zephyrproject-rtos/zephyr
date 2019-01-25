@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_zperf_tcp_send
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 
@@ -28,9 +28,9 @@ void zperf_tcp_upload(const struct shell *shell,
 		      struct zperf_results *results)
 {
 	u32_t duration = MSEC_TO_HW_CYCLES(duration_in_ms);
-	u32_t nb_packets = 0, nb_errors = 0;
+	u32_t nb_packets = 0U, nb_errors = 0U;
 	u32_t start_time, last_print_time, last_loop_time, end_time;
-	u8_t time_elapsed = 0, finished = 0;
+	u8_t time_elapsed = 0U, finished = 0U;
 
 	if (packet_size > PACKET_SIZE_MAX) {
 		shell_fprintf(shell, SHELL_WARNING,
@@ -94,13 +94,13 @@ void zperf_tcp_upload(const struct shell *shell,
 			nb_packets++;
 
 			if (time_elapsed) {
-				finished = 1;
+				finished = 1U;
 			}
 		}
 
 		if (!time_elapsed && time_delta(start_time,
 						last_loop_time) > duration) {
-			time_elapsed = 1;
+			time_elapsed = 1U;
 		}
 
 		k_yield();

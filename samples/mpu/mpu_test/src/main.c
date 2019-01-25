@@ -34,11 +34,6 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 
 	u32_t *p_mem = (u32_t *) RESERVED_MEM_MAP;
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
-		return 0;
-	}
-
 	/* Reads from an address that is reserved in the memory map */
 	PR_SHELL(shell, "The value is: %d\n", *p_mem);
 
@@ -55,12 +50,7 @@ static int cmd_write_mcux(const struct shell *shell, size_t argc, char *argv[])
 	u32_t value[2];
 	u32_t offset;
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
-		return 0;
-	}
-
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	/* 128K reserved to the application */
 	offset = FLASH_MEM + 0x20000;
@@ -90,12 +80,7 @@ static int cmd_write_stm32(const struct shell *shell, size_t argc, char *argv[])
 
 	struct device *flash_dev;
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
-		return 0;
-	}
-
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	/* 16K reserved to the application */
 	u32_t offset = FLASH_MEM + 0x4000;
@@ -123,11 +108,6 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	/* 16K reserved to the application */
 	u32_t *p_mem = (u32_t *) (FLASH_MEM + 0x4000);
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
-		return 0;
-	}
-
 	PR_SHELL(shell, "write address: 0x%x\n", FLASH_MEM + 0x4000);
 
 	/* Write in to boot FLASH/ROM */
@@ -144,11 +124,6 @@ static int cmd_run(const struct shell *shell, size_t argc, char *argv[])
 
 	void (*func_ptr)(void) = (void (*)(void)) RAM_MEM;
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
-		return 0;
-	}
-
 	/* Run code located in RAM */
 	func_ptr();
 
@@ -159,18 +134,6 @@ static int cmd_mtest(const struct shell *shell, size_t argc, char *argv[])
 {
 	u32_t *mem;
 	u32_t val;
-	int err;
-
-	if (argc > 3) {
-		PR_ERROR(shell, "mtest accepts 1 (Read) or 2 (Write)"
-				"parameters\n");
-		return -EINVAL;
-	}
-
-	err = shell_cmd_precheck(shell, (argc >= 2) && (argc <= 3), NULL, 0);
-	if (err) {
-		return err;
-	}
 
 	val = (u32_t)strtol(argv[1], NULL, 16);
 	mem = (u32_t *) val;
@@ -191,7 +154,7 @@ void main(void)
 
 SHELL_CREATE_STATIC_SUBCMD_SET(sub_mpu)
 {
-	SHELL_CMD(mtest, NULL, MTEST_CMD_HELP, cmd_mtest),
+	SHELL_CMD_ARG(mtest, NULL, MTEST_CMD_HELP, cmd_mtest, 2, 1),
 	SHELL_CMD(read, NULL, READ_CMD_HELP, cmd_read),
 	SHELL_CMD(run, NULL, RUN_CMD_HELP, cmd_run),
 #if defined(CONFIG_SOC_FLASH_MCUX)

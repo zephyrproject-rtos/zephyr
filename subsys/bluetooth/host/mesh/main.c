@@ -57,7 +57,7 @@ int bt_mesh_provision(const u8_t net_key[16], u16_t net_idx,
 		return err;
 	}
 
-	bt_mesh.seq = 0;
+	bt_mesh.seq = 0U;
 
 	bt_mesh_comp_provision(addr);
 
@@ -81,13 +81,13 @@ void bt_mesh_reset(void)
 		return;
 	}
 
-	bt_mesh.iv_index = 0;
-	bt_mesh.seq = 0;
-	bt_mesh.iv_update = 0;
-	bt_mesh.pending_update = 0;
-	bt_mesh.valid = 0;
-	bt_mesh.ivu_duration = 0;
-	bt_mesh.ivu_initiator = 0;
+	bt_mesh.iv_index = 0U;
+	bt_mesh.seq = 0U;
+	bt_mesh.iv_update = 0U;
+	bt_mesh.pending_update = 0U;
+	bt_mesh.valid = 0U;
+	bt_mesh.ivu_duration = 0U;
+	bt_mesh.ivu_initiator = 0U;
 
 	k_delayed_work_cancel(&bt_mesh.ivu_timer);
 

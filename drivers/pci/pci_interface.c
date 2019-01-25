@@ -257,7 +257,7 @@ void pci_read(u32_t controller, union pci_addr_reg addr,
 	case 4:
 	default:
 		access_size = SYS_PCI_ACCESS_32BIT;
-		access_offset = 0;
+		access_offset = 0U;
 		break;
 	}
 
@@ -348,7 +348,7 @@ void pci_write(u32_t controller, union pci_addr_reg addr,
 	case 4:
 	default:
 		access_size = SYS_PCI_ACCESS_32BIT;
-		access_offset = 0;
+		access_offset = 0U;
 		break;
 	}
 
@@ -389,7 +389,7 @@ void pci_header_get(u32_t controller,
 
 	/* fill in the PCI header from the device */
 
-	for (i = 0; i < PCI_HEADER_WORDS; i++) {
+	for (i = 0U; i < PCI_HEADER_WORDS; i++) {
 		pci_ctrl_addr.field.reg = i;
 		pci_read(controller,
 			pci_ctrl_addr,

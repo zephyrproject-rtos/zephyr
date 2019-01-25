@@ -32,15 +32,18 @@ struct driver_map_entry {
 };
 
 static const struct driver_map_entry  flash_drivers_map[] = {
-#ifdef FLASH_DEV_NAME /* SoC embedded flash driver */
-	{SOC_FLASH_0_ID, FLASH_DEV_NAME},
+#ifdef DT_FLASH_DEV_NAME /* SoC embedded flash driver */
+	{SOC_FLASH_0_ID, DT_FLASH_DEV_NAME},
 #endif
 #ifdef CONFIG_SPI_FLASH_W25QXXDV
 	{SPI_FLASH_0_ID, CONFIG_SPI_FLASH_W25QXXDV_DRV_NAME},
 #endif
+#ifdef DT_SPI_NOR_DRV_NAME
+	{SPI_FLASH_0_ID, DT_SPI_NOR_DRV_NAME},
+#endif
 };
 
-const struct flash_area *flash_map;
+extern const struct flash_area *flash_map;
 extern const int flash_map_entries;
 static struct device *flash_dev[ARRAY_SIZE(flash_drivers_map)];
 
@@ -152,7 +155,7 @@ flash_page_cb cb, struct layout_data *cb_data)
 	cb_data->area_len = fa->fa_size;
 
 	cb_data->ret = ret;
-	cb_data->ret_idx = 0;
+	cb_data->ret_idx = 0U;
 	cb_data->ret_len = *cnt;
 	cb_data->status = 0;
 
@@ -277,7 +280,7 @@ static int flash_map_init(struct device *dev)
 {
 	unsigned int i;
 
-	for (i = 0; i < ARRAY_SIZE(flash_dev); i++) {
+	for (i = 0U; i < ARRAY_SIZE(flash_dev); i++) {
 		flash_dev[i] = device_get_binding(flash_drivers_map[i].name);
 	}
 

@@ -24,7 +24,7 @@ otError utilsFlashInit(void)
 	struct flash_pages_info info;
 	size_t pages_count;
 
-	flash_dev = device_get_binding(FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	if (!flash_dev) {
 		return OT_ERROR_NOT_IMPLEMENTED;
@@ -84,7 +84,7 @@ otError utilsFlashStatusWait(u32_t aTimeout)
 
 u32_t utilsFlashWrite(u32_t aAddress, uint8_t *aData, u32_t aSize)
 {
-	u32_t index = 0;
+	u32_t index = 0U;
 
 	flash_write_protection_set(flash_dev, false);
 	if (!flash_write(flash_dev, mapAddress(aAddress), aData, aSize)) {
@@ -97,7 +97,7 @@ u32_t utilsFlashWrite(u32_t aAddress, uint8_t *aData, u32_t aSize)
 
 u32_t utilsFlashRead(u32_t aAddress, uint8_t *aData, u32_t aSize)
 {
-	u32_t index = 0;
+	u32_t index = 0U;
 
 	if (!flash_read(flash_dev, mapAddress(aAddress), aData, aSize)) {
 		index = aSize;

@@ -220,6 +220,22 @@ typedef enum
  */
 __STATIC_INLINE bool nrfx_is_in_ram(void const * p_object);
 
+
+/**
+ * @brief Function for checking if an object is aligned to a 32-bit word
+ *
+ * Several peripherals (the ones using EasyDMA) require the transfer buffers
+ * to be aligned to a 32-bit word. This function can be used to check if
+ * this condition is met.
+ *
+ * @param[in] p_object  Pointer to an object whose location is to be checked.
+ *
+ * @retval true  if the pointed object is aligned to a 32-bit word.
+ * @retval false otherwise.
+ */
+__STATIC_INLINE bool nrfx_is_word_aligned(void const * p_object);
+
+
 /**
  * @brief Function for getting the interrupt number for a specific peripheral.
  *
@@ -267,6 +283,11 @@ __STATIC_INLINE uint32_t nrfx_event_to_bitpos(uint32_t event);
 __STATIC_INLINE bool nrfx_is_in_ram(void const * p_object)
 {
     return ((((uint32_t)p_object) & 0xE0000000u) == 0x20000000u);
+}
+
+__STATIC_INLINE bool nrfx_is_word_aligned(void const * p_object)
+{
+    return ((((uint32_t)p_object) & 0x3u) == 0u);
 }
 
 __STATIC_INLINE IRQn_Type nrfx_get_irq_number(void const * p_reg)

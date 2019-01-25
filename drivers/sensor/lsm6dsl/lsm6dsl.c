@@ -773,10 +773,10 @@ static int lsm6dsl_init_chip(struct device *dev)
 }
 
 static struct lsm6dsl_config lsm6dsl_config = {
-#ifdef CONFIG_LSM6DSL_SPI
-	.comm_master_dev_name = CONFIG_LSM6DSL_SPI_MASTER_DEV_NAME,
+#ifdef DT_ST_LSM6DSL_BUS_SPI
+	.comm_master_dev_name = DT_LSM6DSL_SPI_MASTER_DEV_NAME,
 #else
-	.comm_master_dev_name = CONFIG_LSM6DSL_I2C_MASTER_DEV_NAME,
+	.comm_master_dev_name = DT_LSM6DSL_I2C_MASTER_DEV_NAME,
 #endif
 };
 
@@ -792,7 +792,7 @@ static int lsm6dsl_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_LSM6DSL_SPI
+#ifdef DT_ST_LSM6DSL_BUS_SPI
 	lsm6dsl_spi_init(dev);
 #else
 	lsm6dsl_i2c_init(dev);
@@ -823,6 +823,6 @@ static int lsm6dsl_init(struct device *dev)
 
 static struct lsm6dsl_data lsm6dsl_data;
 
-DEVICE_AND_API_INIT(lsm6dsl, CONFIG_LSM6DSL_DEV_NAME, lsm6dsl_init,
+DEVICE_AND_API_INIT(lsm6dsl, DT_LSM6DSL_DEV_NAME, lsm6dsl_init,
 		    &lsm6dsl_data, &lsm6dsl_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lsm6dsl_api_funcs);

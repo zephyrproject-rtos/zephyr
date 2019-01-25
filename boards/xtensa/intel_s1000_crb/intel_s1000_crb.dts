@@ -13,6 +13,8 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,flash = &flash0;
 	};
 };
 
@@ -29,5 +31,58 @@
 		compatible = "ti,tlv320dac";
 		reg = <0x18>;
 		label = "TLV320DAC";
+		reset-gpios = <&gpio0 4 GPIO_DIR_OUT>;
+	};
+};
+
+&spi0 {
+	status = "ok";
+
+	flash0: flash@0 {
+		compatible = "spi,flash";
+		label = "MX25UM512";
+		reg = <0>;
+		size = <0x400000>;
+		spi-max-frequency = <2000000>;
+		erase-block-size = <0x10000>;
+		write-block-size = <1>;
+	};
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* The flash is 64MB in size. Each sector is 4kB and
+		 * 16 sectors make a block (64kB). The flash is partitioned
+		 * in terms of blocks.
+		 */
+
+		/* Reserve 192kB for the bootloader */
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0x00030000>;
+			read-only;
+		};
+
+		/* Reserve 1856kB for the application in slot 0 */
+		slot0_partition: partition@10000 {
+			label = "image-0";
+			reg = <0x00030000 0x001D0000>;
+		};
+
+		/* Reserve 1856kB for the application in slot 1 */
+		slot1_partition: partition@1F0000 {
+			label = "image-1";
+			reg = <0x00200000 0x001D0000>;
+		};
+
+		/* Reserve 192kB for the scratch partition */
+		scratch_partition: partition@3D0000 {
+			label = "image-scratch";
+			reg = <0x003D0000 0x00030000>;
+		};
 	};
 };

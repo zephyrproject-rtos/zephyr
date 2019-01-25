@@ -26,56 +26,53 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default 32000000
 
 config HARVARD
-	def_bool n
+	default n
 
 config QMSI
-	def_bool y
-
-config QMSI_BUILTIN
-	def_bool y
+	default y
 
 if RTC
 
 config RTC_QMSI
-	def_bool y
+	default y
 
 endif # RTC
 
 if PWM
 config PWM_QMSI
-	def_bool y
+	default y
 endif # PWM
 
 if PINMUX
 config PINMUX_QMSI
-	def_bool y
+	default y
 endif
 
 if GPIO
 
 config GPIO_QMSI
-	def_bool n
+	default n
 
 if GPIO_QMSI
 
 config GPIO_QMSI_0
-	def_bool y
+	default y
 
 config GPIO_QMSI_1
-	def_bool y
+	default y
 
 endif # GPIO_QMSI
 
 config GPIO_QMSI_SS
-	def_bool y
+	default y
 
 if GPIO_QMSI_SS
 
 config GPIO_QMSI_SS_0
-	def_bool y
+	default y
 
 config GPIO_QMSI_SS_1
-	def_bool y
+	default y
 
 endif # GPIO_QMSI_SS
 
@@ -85,14 +82,14 @@ endif # GPIO
 if I2C
 
 config I2C_QMSI
-	def_bool n
+	default n
 
 if I2C_QMSI
 config I2C_0
-	def_bool y
+	default y
 
 config I2C_1
-	def_bool y
+	default y
 
 config I2C_SDA_SETUP
 	default 2
@@ -106,14 +103,14 @@ config I2C_SDA_RX_HOLD
 endif
 
 config I2C_QMSI_SS
-	def_bool y
+	default y
 
 if I2C_QMSI_SS
 config I2C_SS_0
-	def_bool y
+	default y
 
 config I2C_SS_1
-	def_bool y
+	default y
 
 config I2C_SS_SDA_SETUP
 	default 2
@@ -127,30 +124,30 @@ endif # I2C
 
 if ADC
 config ADC_DW
-	def_bool y
+	default y
 endif
 
 if BT_H4
 
 config UART_QMSI_0
-	def_bool y
+	default y
 
 config UART_QMSI_0_HW_FC
-	def_bool y
+	default y
 
 endif # BT_H4
 
 if UART_QMSI
 
 config UART_QMSI_1
-	def_bool y
+	default y
 
 endif # UART_QMSI
 
 if SPI
 
 config SPI_DW
-	def_bool y
+	default y
 
 if SPI_DW
 
@@ -158,22 +155,22 @@ config SPI_DW_FIFO_DEPTH
 	default 7
 
 config CLOCK_CONTROL
-	def_bool y
+	default y
 
 config CLOCK_CONTROL_QUARK_SE
-	def_bool y
+	default y
 
 config CLOCK_CONTROL_QUARK_SE_SENSOR
-	def_bool y
+	default y
 
 config SPI_0
-	def_bool y
+	default y
 
 config SPI_DW_PORT_0_INTERRUPT_SINGLE_LINE
-	def_bool n
+	default n
 
 config SPI_DW_PORT_0_CLOCK_GATE
-	def_bool y
+	default y
 
 config SPI_DW_PORT_0_CLOCK_GATE_DRV_NAME
 	default CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME
@@ -182,13 +179,13 @@ config SPI_DW_PORT_0_CLOCK_GATE_SUBSYS
 	default 3
 
 config SPI_1
-	def_bool y
+	default y
 
 config SPI_DW_PORT_1_INTERRUPT_SINGLE_LINE
-	def_bool n
+	default n
 
 config SPI_DW_PORT_1_CLOCK_GATE
-	def_bool y
+	default y
 
 config SPI_DW_PORT_1_CLOCK_GATE_DRV_NAME
 	default CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME
@@ -202,30 +199,30 @@ endif # SPI
 if AIO_COMPARATOR
 
 config AIO_COMPARATOR_QMSI
-	def_bool y
+	default y
 
 endif # AIO_COMPARATOR
 
 if WATCHDOG
 
 config WDT_QMSI
-	def_bool y
+	default y
 endif # WATCHDOG
 
 if DMA
 
 config DMA_QMSI
-	def_bool y
+	default y
 
 endif # DMA
 
 if COUNTER
 
 config AON_COUNTER_QMSI
-	def_bool y
+	default y
 
 config AON_TIMER_QMSI
-	def_bool y
+	default y
 
 config AON_TIMER_IRQ_PRI
 	default 0

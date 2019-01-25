@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_i2s.h"
@@ -35,6 +13,11 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.flexcomm_i2s"
+#endif
 
 /* TODO - absent in device header files, should be there */
 #define I2S_FIFOCFG_TXI2SE0_MASK (0x4U)
@@ -59,12 +42,60 @@ enum _i2s_state
  ******************************************************************************/
 
 static void I2S_Config(I2S_Type *base, const i2s_config_t *config);
+static void I2S_TxEnable(I2S_Type *base, bool enable);
+static void I2S_RxEnable(I2S_Type *base, bool enable);
 static status_t I2S_ValidateBuffer(i2s_handle_t *handle, i2s_transfer_t *transfer);
+
+/*******************************************************************************
+ * Variables
+ ******************************************************************************/
+
+/*! @brief Array to map i2c instance number to base address. */
+static const uint32_t s_i2sBaseAddrs[FSL_FEATURE_SOC_I2S_COUNT] = I2S_BASE_ADDRS;
+
+/*! @brief IRQ name array */
+static const IRQn_Type s_i2sIRQ[] = I2S_IRQS;
 
 /*******************************************************************************
  * Code
  ******************************************************************************/
 
+/*!
+ * brief Returns an instance number given a base address.
+ *
+ * If an invalid base address is passed, debug builds will assert. Release builds will just return
+ * instance number 0.
+ *
+ * param base The I2C peripheral base address.
+ * return I2C instance number starting from 0.
+ */
+uint32_t I2S_GetInstance(I2S_Type *base)
+{
+    int i;
+    for (i = 0; i < FSL_FEATURE_SOC_I2S_COUNT; i++)
+    {
+        if ((uint32_t)base == s_i2sBaseAddrs[i])
+        {
+            return i;
+        }
+    }
+    assert(false);
+    return 0;
+}
+/*!
+ * brief Initializes the FLEXCOMM peripheral for I2S transmit functionality.
+ *
+ * Ungates the FLEXCOMM clock and configures the module
+ * for I2S transmission using a configuration structure.
+ * The configuration structure can be custom filled or set with default values by
+ * I2S_TxGetDefaultConfig().
+ *
+ * note This API should be called at the beginning of the application to use
+ * the I2S driver.
+ *
+ * param base I2S base pointer.
+ * param config pointer to I2S configuration structure.
+ */
 void I2S_TxInit(I2S_Type *base, const i2s_config_t *config)
 {
     uint32_t cfg = 0U;
@@ -86,6 +117,20 @@ void I2S_TxInit(I2S_Type *base, const i2s_config_t *config)
     base->FIFOTRIG = trig;
 }
 
+/*!
+ * brief Initializes the FLEXCOMM peripheral for I2S receive functionality.
+ *
+ * Ungates the FLEXCOMM clock and configures the module
+ * for I2S receive using a configuration structure.
+ * The configuration structure can be custom filled or set with default values by
+ * I2S_RxGetDefaultConfig().
+ *
+ * note This API should be called at the beginning of the application to use
+ * the I2S driver.
+ *
+ * param base I2S base pointer.
+ * param config pointer to I2S configuration structure.
+ */
 void I2S_RxInit(I2S_Type *base, const i2s_config_t *config)
 {
     uint32_t cfg = 0U;
@@ -106,13 +151,51 @@ void I2S_RxInit(I2S_Type *base, const i2s_config_t *config)
     base->FIFOTRIG = trig;
 }
 
+/*!
+ * brief Sets the I2S Tx configuration structure to default values.
+ *
+ * This API initializes the configuration structure for use in I2S_TxInit().
+ * The initialized structure can remain unchanged in I2S_TxInit(), or it can be modified
+ * before calling I2S_TxInit().
+ * Example:
+   code
+   i2s_config_t config;
+   I2S_TxGetDefaultConfig(&config);
+   endcode
+ *
+ * Default values:
+ * code
+ *   config->masterSlave = kI2S_MasterSlaveNormalMaster;
+ *   config->mode = kI2S_ModeI2sClassic;
+ *   config->rightLow = false;
+ *   config->leftJust = false;
+ *   config->pdmData = false;
+ *   config->sckPol = false;
+ *   config->wsPol = false;
+ *   config->divider = 1;
+ *   config->oneChannel = false;
+ *   config->dataLength = 16;
+ *   config->frameLength = 32;
+ *   config->position = 0;
+ *   config->watermark = 4;
+ *   config->txEmptyZero = true;
+ *   config->pack48 = false;
+ * endcode
+ *
+ * param config pointer to I2S configuration structure.
+ */
 void I2S_TxGetDefaultConfig(i2s_config_t *config)
 {
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
+
     config->masterSlave = kI2S_MasterSlaveNormalMaster;
     config->mode = kI2S_ModeI2sClassic;
     config->rightLow = false;
     config->leftJust = false;
+#if defined(I2S_CFG1_PDMDATA)
     config->pdmData = false;
+#endif
     config->sckPol = false;
     config->wsPol = false;
     config->divider = 1U;
@@ -125,13 +208,51 @@ void I2S_TxGetDefaultConfig(i2s_config_t *config)
     config->pack48 = false;
 }
 
+/*!
+ * brief Sets the I2S Rx configuration structure to default values.
+ *
+ * This API initializes the configuration structure for use in I2S_RxInit().
+ * The initialized structure can remain unchanged in I2S_RxInit(), or it can be modified
+ * before calling I2S_RxInit().
+ * Example:
+   code
+   i2s_config_t config;
+   I2S_RxGetDefaultConfig(&config);
+   endcode
+ *
+ * Default values:
+ * code
+ *   config->masterSlave = kI2S_MasterSlaveNormalSlave;
+ *   config->mode = kI2S_ModeI2sClassic;
+ *   config->rightLow = false;
+ *   config->leftJust = false;
+ *   config->pdmData = false;
+ *   config->sckPol = false;
+ *   config->wsPol = false;
+ *   config->divider = 1;
+ *   config->oneChannel = false;
+ *   config->dataLength = 16;
+ *   config->frameLength = 32;
+ *   config->position = 0;
+ *   config->watermark = 4;
+ *   config->txEmptyZero = false;
+ *   config->pack48 = false;
+ * endcode
+ *
+ * param config pointer to I2S configuration structure.
+ */
 void I2S_RxGetDefaultConfig(i2s_config_t *config)
 {
+    /* Initializes the configure structure to zero. */
+    memset(config, 0, sizeof(*config));
+
     config->masterSlave = kI2S_MasterSlaveNormalSlave;
     config->mode = kI2S_ModeI2sClassic;
     config->rightLow = false;
     config->leftJust = false;
+#if defined(I2S_CFG1_PDMDATA)
     config->pdmData = false;
+#endif
     config->sckPol = false;
     config->wsPol = false;
     config->divider = 1U;
@@ -163,8 +284,10 @@ static void I2S_Config(I2S_Type *base, const i2s_config_t *config)
     /* set data justification */
     cfg1 |= I2S_CFG1_LEFTJUST(config->leftJust);
 
+#if defined(I2S_CFG1_PDMDATA)
     /* set source to PDM dmic */
     cfg1 |= I2S_CFG1_PDMDATA(config->pdmData);
+#endif
 
     /* set SCLK polarity */
     cfg1 |= I2S_CFG1_SCK_POL(config->sckPol);
@@ -192,12 +315,20 @@ static void I2S_Config(I2S_Type *base, const i2s_config_t *config)
     base->DIV = I2S_DIV_DIV(config->divider - 1U);
 }
 
+/*!
+ * brief De-initializes the I2S peripheral.
+ *
+ * This API gates the FLEXCOMM clock. The I2S module can't operate unless I2S_TxInit
+ * or I2S_RxInit is called to enable the clock.
+ *
+ * param base I2S base pointer.
+ */
 void I2S_Deinit(I2S_Type *base)
 {
     /* TODO gate FLEXCOMM clock via FLEXCOMM driver */
 }
 
-void I2S_TxEnable(I2S_Type *base, bool enable)
+static void I2S_TxEnable(I2S_Type *base, bool enable)
 {
     if (enable)
     {
@@ -212,7 +343,7 @@ void I2S_TxEnable(I2S_Type *base, bool enable)
     }
 }
 
-void I2S_RxEnable(I2S_Type *base, bool enable)
+static void I2S_RxEnable(I2S_Type *base, bool enable)
 {
     if (enable)
     {
@@ -325,12 +456,25 @@ static status_t I2S_ValidateBuffer(i2s_handle_t *handle, i2s_transfer_t *transfe
     return kStatus_Success;
 }
 
+/*!
+ * brief Initializes handle for transfer of audio data.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ * param callback function to be called back when transfer is done or fails.
+ * param userData pointer to data passed to callback.
+ */
 void I2S_TxTransferCreateHandle(I2S_Type *base, i2s_handle_t *handle, i2s_transfer_callback_t callback, void *userData)
 {
+    uint32_t instance;
+
     assert(handle);
 
     /* Clear out the handle */
     memset(handle, 0U, sizeof(*handle));
+
+    /* Look up instance number */
+    instance = I2S_GetInstance(base);
 
     /* Save callback and user data */
     handle->completionCallback = callback;
@@ -345,9 +489,22 @@ void I2S_TxTransferCreateHandle(I2S_Type *base, i2s_handle_t *handle, i2s_transf
     handle->useFifo48H = false;
 
     /* Register IRQ handling */
-    FLEXCOMM_SetIRQHandler(base, (flexcomm_irq_handler_t)(uintptr_t)I2S_TxHandleIRQ, handle);
+    FLEXCOMM_SetIRQHandler(base, (flexcomm_irq_handler_t)I2S_TxHandleIRQ, handle);
+
+    /* enable NVIC IRQ. */
+    EnableIRQ(s_i2sIRQ[instance]);
 }
 
+/*!
+ * brief Begins or queue sending of the given data.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ * param transfer data buffer.
+ *
+ * retval kStatus_Success
+ * retval kStatus_I2S_Busy if all queue slots are occupied with unsent buffers.
+ */
 status_t I2S_TxTransferNonBlocking(I2S_Type *base, i2s_handle_t *handle, i2s_transfer_t transfer)
 {
     assert(handle);
@@ -381,6 +538,12 @@ status_t I2S_TxTransferNonBlocking(I2S_Type *base, i2s_handle_t *handle, i2s_tra
     return kStatus_Success;
 }
 
+/*!
+ * brief Aborts sending of data.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ */
 void I2S_TxTransferAbort(I2S_Type *base, i2s_handle_t *handle)
 {
     assert(handle);
@@ -397,12 +560,25 @@ void I2S_TxTransferAbort(I2S_Type *base, i2s_handle_t *handle)
     handle->queueUser = 0U;
 }
 
+/*!
+ * brief Initializes handle for reception of audio data.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ * param callback function to be called back when transfer is done or fails.
+ * param userData pointer to data passed to callback.
+ */
 void I2S_RxTransferCreateHandle(I2S_Type *base, i2s_handle_t *handle, i2s_transfer_callback_t callback, void *userData)
 {
+    uint32_t instance;
+
     assert(handle);
 
     /* Clear out the handle */
     memset(handle, 0U, sizeof(*handle));
+
+    /* Look up instance number */
+    instance = I2S_GetInstance(base);
 
     /* Save callback and user data */
     handle->completionCallback = callback;
@@ -417,9 +593,22 @@ void I2S_RxTransferCreateHandle(I2S_Type *base, i2s_handle_t *handle, i2s_transf
     handle->useFifo48H = false;
 
     /* Register IRQ handling */
-    FLEXCOMM_SetIRQHandler(base, (flexcomm_irq_handler_t)(uintptr_t)I2S_RxHandleIRQ, handle);
+    FLEXCOMM_SetIRQHandler(base, (flexcomm_irq_handler_t)I2S_RxHandleIRQ, handle);
+
+    /* enable NVIC IRQ. */
+    EnableIRQ(s_i2sIRQ[instance]);
 }
 
+/*!
+ * brief Begins or queue reception of data into given buffer.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ * param transfer data buffer.
+ *
+ * retval kStatus_Success
+ * retval kStatus_I2S_Busy if all queue slots are occupied with buffers which are not full.
+ */
 status_t I2S_RxTransferNonBlocking(I2S_Type *base, i2s_handle_t *handle, i2s_transfer_t transfer)
 {
     assert(handle);
@@ -453,6 +642,12 @@ status_t I2S_RxTransferNonBlocking(I2S_Type *base, i2s_handle_t *handle, i2s_tra
     return kStatus_Success;
 }
 
+/*!
+ * brief Aborts receiving of data.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ */
 void I2S_RxTransferAbort(I2S_Type *base, i2s_handle_t *handle)
 {
     assert(handle);
@@ -469,6 +664,16 @@ void I2S_RxTransferAbort(I2S_Type *base, i2s_handle_t *handle)
     handle->queueUser = 0U;
 }
 
+/*!
+ * brief Returns number of bytes transferred so far.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ * param[out] count number of bytes transferred so far by the non-blocking transaction.
+ *
+ * retval kStatus_Success
+ * retval kStatus_NoTransferInProgress there is no non-blocking transaction currently in progress.
+ */
 status_t I2S_TransferGetCount(I2S_Type *base, i2s_handle_t *handle, size_t *count)
 {
     assert(handle);
@@ -493,6 +698,16 @@ status_t I2S_TransferGetCount(I2S_Type *base, i2s_handle_t *handle, size_t *coun
     return kStatus_Success;
 }
 
+/*!
+ * brief Returns number of buffer underruns or overruns.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ * param[out] count number of transmit errors encountered so far by the non-blocking transaction.
+ *
+ * retval kStatus_Success
+ * retval kStatus_NoTransferInProgress there is no non-blocking transaction currently in progress.
+ */
 status_t I2S_TransferGetErrorCount(I2S_Type *base, i2s_handle_t *handle, size_t *count)
 {
     assert(handle);
@@ -517,6 +732,12 @@ status_t I2S_TransferGetErrorCount(I2S_Type *base, i2s_handle_t *handle, size_t 
     return kStatus_Success;
 }
 
+/*!
+ * brief Invoked from interrupt handler when transmit FIFO level decreases.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ */
 void I2S_TxHandleIRQ(I2S_Type *base, i2s_handle_t *handle)
 {
     uint32_t intstat = base->FIFOINTSTAT;
@@ -550,7 +771,7 @@ void I2S_TxHandleIRQ(I2S_Type *base, i2s_handle_t *handle)
                 }
                 else if (handle->dataLength <= 8U)
                 {
-                    data = *((uint16_t *)handle->i2sQueue[handle->queueDriver].data);
+                    data = *((volatile uint16_t *)handle->i2sQueue[handle->queueDriver].data);
                     base->FIFOWR = ((data & 0xFF00U) << 8U) | (data & 0xFFU);
                     handle->i2sQueue[handle->queueDriver].data += sizeof(uint16_t);
                     handle->transferCount += sizeof(uint16_t);
@@ -558,7 +779,7 @@ void I2S_TxHandleIRQ(I2S_Type *base, i2s_handle_t *handle)
                 }
                 else if (handle->dataLength <= 16U)
                 {
-                    base->FIFOWR = *((uint32_t *)(handle->i2sQueue[handle->queueDriver].data));
+                    base->FIFOWR = *((volatile uint32_t *)(handle->i2sQueue[handle->queueDriver].data));
                     handle->i2sQueue[handle->queueDriver].data += sizeof(uint32_t);
                     handle->transferCount += sizeof(uint32_t);
                     handle->i2sQueue[handle->queueDriver].dataSize -= sizeof(uint32_t);
@@ -569,7 +790,7 @@ void I2S_TxHandleIRQ(I2S_Type *base, i2s_handle_t *handle)
                     {
                         if (handle->useFifo48H)
                         {
-                            base->FIFOWR48H = *((uint16_t *)(handle->i2sQueue[handle->queueDriver].data));
+                            base->FIFOWR48H = *((volatile uint16_t *)(handle->i2sQueue[handle->queueDriver].data));
                             handle->i2sQueue[handle->queueDriver].data += sizeof(uint16_t);
                             handle->transferCount += sizeof(uint16_t);
                             handle->i2sQueue[handle->queueDriver].dataSize -= sizeof(uint16_t);
@@ -577,7 +798,7 @@ void I2S_TxHandleIRQ(I2S_Type *base, i2s_handle_t *handle)
                         }
                         else
                         {
-                            base->FIFOWR = *((uint32_t *)(handle->i2sQueue[handle->queueDriver].data));
+                            base->FIFOWR = *((volatile uint32_t *)(handle->i2sQueue[handle->queueDriver].data));
                             handle->i2sQueue[handle->queueDriver].data += sizeof(uint32_t);
                             handle->transferCount += sizeof(uint32_t);
                             handle->i2sQueue[handle->queueDriver].dataSize -= sizeof(uint32_t);
@@ -605,7 +826,7 @@ void I2S_TxHandleIRQ(I2S_Type *base, i2s_handle_t *handle)
                 }
                 else /* if (handle->dataLength <= 32U) */
                 {
-                    base->FIFOWR = *((uint32_t *)(handle->i2sQueue[handle->queueDriver].data));
+                    base->FIFOWR = *((volatile uint32_t *)(handle->i2sQueue[handle->queueDriver].data));
                     handle->i2sQueue[handle->queueDriver].data += sizeof(uint32_t);
                     handle->transferCount += sizeof(uint32_t);
                     handle->i2sQueue[handle->queueDriver].dataSize -= sizeof(uint32_t);
@@ -686,6 +907,12 @@ void I2S_TxHandleIRQ(I2S_Type *base, i2s_handle_t *handle)
     }
 }
 
+/*!
+ * brief Invoked from interrupt handler when receive FIFO level decreases.
+ *
+ * param base I2S base pointer.
+ * param handle pointer to handle structure.
+ */
 void I2S_RxHandleIRQ(I2S_Type *base, i2s_handle_t *handle)
 {
     uint32_t intstat = base->FIFOINTSTAT;
@@ -715,7 +942,8 @@ void I2S_RxHandleIRQ(I2S_Type *base, i2s_handle_t *handle)
             else if (handle->dataLength <= 8U)
             {
                 data = base->FIFORD;
-                *((uint16_t *)handle->i2sQueue[handle->queueDriver].data) = ((data >> 8U) & 0xFF00U) | (data & 0xFFU);
+                *((volatile uint16_t *)handle->i2sQueue[handle->queueDriver].data) =
+                    ((data >> 8U) & 0xFF00U) | (data & 0xFFU);
                 handle->i2sQueue[handle->queueDriver].data += sizeof(uint16_t);
                 handle->transferCount += sizeof(uint16_t);
                 handle->i2sQueue[handle->queueDriver].dataSize -= sizeof(uint16_t);
@@ -723,7 +951,7 @@ void I2S_RxHandleIRQ(I2S_Type *base, i2s_handle_t *handle)
             else if (handle->dataLength <= 16U)
             {
                 data = base->FIFORD;
-                *((uint32_t *)handle->i2sQueue[handle->queueDriver].data) = data;
+                *((volatile uint32_t *)handle->i2sQueue[handle->queueDriver].data) = data;
                 handle->i2sQueue[handle->queueDriver].data += sizeof(uint32_t);
                 handle->transferCount += sizeof(uint32_t);
                 handle->i2sQueue[handle->queueDriver].dataSize -= sizeof(uint32_t);
@@ -737,7 +965,7 @@ void I2S_RxHandleIRQ(I2S_Type *base, i2s_handle_t *handle)
                         data = base->FIFORD48H;
                         handle->useFifo48H = false;
 
-                        *((uint16_t *)handle->i2sQueue[handle->queueDriver].data) = data;
+                        *((volatile uint16_t *)handle->i2sQueue[handle->queueDriver].data) = data;
                         handle->i2sQueue[handle->queueDriver].data += sizeof(uint16_t);
                         handle->transferCount += sizeof(uint16_t);
                         handle->i2sQueue[handle->queueDriver].dataSize -= sizeof(uint16_t);
@@ -747,7 +975,7 @@ void I2S_RxHandleIRQ(I2S_Type *base, i2s_handle_t *handle)
                         data = base->FIFORD;
                         handle->useFifo48H = true;
 
-                        *((uint32_t *)handle->i2sQueue[handle->queueDriver].data) = data;
+                        *((volatile uint32_t *)handle->i2sQueue[handle->queueDriver].data) = data;
                         handle->i2sQueue[handle->queueDriver].data += sizeof(uint32_t);
                         handle->transferCount += sizeof(uint32_t);
                         handle->i2sQueue[handle->queueDriver].dataSize -= sizeof(uint32_t);
@@ -776,7 +1004,7 @@ void I2S_RxHandleIRQ(I2S_Type *base, i2s_handle_t *handle)
             else /* if (handle->dataLength <= 32U) */
             {
                 data = base->FIFORD;
-                *((uint32_t *)handle->i2sQueue[handle->queueDriver].data) = data;
+                *((volatile uint32_t *)handle->i2sQueue[handle->queueDriver].data) = data;
                 handle->i2sQueue[handle->queueDriver].data += sizeof(uint32_t);
                 handle->transferCount += sizeof(uint32_t);
                 handle->i2sQueue[handle->queueDriver].dataSize -= sizeof(uint32_t);

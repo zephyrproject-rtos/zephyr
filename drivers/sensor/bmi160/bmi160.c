@@ -366,7 +366,7 @@ static int  bmi160_acc_calibrate(struct device *dev, enum sensor_channel chan,
 		BMI160_FOC_ACC_Z_POS,
 	};
 	int i;
-	u8_t reg_val = 0;
+	u8_t reg_val = 0U;
 
 	/* Calibration has to be done in normal mode. */
 	if (bmi160->pmu_sts.acc != BMI160_PMU_NORMAL) {
@@ -386,13 +386,13 @@ static int  bmi160_acc_calibrate(struct device *dev, enum sensor_channel chan,
 
 		accel_g = sensor_ms2_to_g(xyz_calib_value);
 		if (accel_g == 0) {
-			accel_val = 3;
+			accel_val = 3U;
 		} else if (accel_g == 1) {
-			accel_val = 1;
+			accel_val = 1U;
 		} else if (accel_g == -1) {
-			accel_val = 2;
+			accel_val = 2U;
 		} else {
-			accel_val = 0;
+			accel_val = 0U;
 		}
 		reg_val |= (accel_val << foc_pos[i]);
 	}
@@ -631,7 +631,7 @@ static int bmi160_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
 
-	bmi160->sample.raw[0] = 0;
+	bmi160->sample.raw[0] = 0U;
 
 	while ((bmi160->sample.raw[0] & BMI160_DATA_READY_BIT_MASK) == 0) {
 		if (bmi160_transceive(dev, BMI160_REG_STATUS | (1 << 7), false,
@@ -683,18 +683,18 @@ static void bmi160_channel_convert(enum sensor_channel chan,
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
 	case SENSOR_CHAN_GYRO_X:
-		ofs_start = ofs_stop = 0;
+		ofs_start = ofs_stop = 0U;
 		break;
 	case SENSOR_CHAN_ACCEL_Y:
 	case SENSOR_CHAN_GYRO_Y:
-		ofs_start = ofs_stop = 1;
+		ofs_start = ofs_stop = 1U;
 		break;
 	case SENSOR_CHAN_ACCEL_Z:
 	case SENSOR_CHAN_GYRO_Z:
-		ofs_start = ofs_stop = 2;
+		ofs_start = ofs_stop = 2U;
 		break;
 	default:
-		ofs_start = 0; ofs_stop = 2;
+		ofs_start = 0U; ofs_stop = 2U;
 		break;
 	}
 
@@ -729,7 +729,7 @@ static inline void bmi160_acc_channel_get(struct device *dev,
 
 static int bmi160_temp_channel_get(struct device *dev, struct sensor_value *val)
 {
-	u16_t temp_raw = 0;
+	u16_t temp_raw = 0U;
 	s32_t temp_micro = 0;
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 
@@ -793,19 +793,19 @@ static const struct sensor_driver_api bmi160_api = {
 int bmi160_init(struct device *dev)
 {
 	struct bmi160_device_data *bmi160 = dev->driver_data;
-	u8_t val = 0;
+	u8_t val = 0U;
 	s32_t acc_range, gyr_range;
 
-	bmi160->spi = device_get_binding(CONFIG_BMI160_SPI_PORT_NAME);
+	bmi160->spi = device_get_binding(DT_BOSCH_BMI160_0_BUS_NAME);
 	if (!bmi160->spi) {
 		LOG_DBG("SPI master controller not found: %s.",
-			    CONFIG_BMI160_SPI_PORT_NAME);
+			    DT_BOSCH_BMI160_0_BUS_NAME);
 		return -EINVAL;
 	}
 
 	bmi160->spi_cfg.operation = SPI_WORD_SET(8);
-	bmi160->spi_cfg.frequency = CONFIG_BMI160_SPI_BUS_FREQ;
-	bmi160->spi_cfg.slave = CONFIG_BMI160_SLAVE;
+	bmi160->spi_cfg.frequency = DT_BOSCH_BMI160_0_SPI_MAX_FREQUENCY;
+	bmi160->spi_cfg.slave = DT_BOSCH_BMI160_0_BASE_ADDRESS;
 
 	/* reboot the chip */
 	if (bmi160_byte_write(dev, BMI160_REG_CMD, BMI160_CMD_SOFT_RESET) < 0) {
@@ -895,19 +895,18 @@ int bmi160_init(struct device *dev)
 	}
 #endif
 
-	dev->driver_api = &bmi160_api;
-
 	return 0;
 }
 
 const struct bmi160_device_config bmi160_config = {
 #if defined(CONFIG_BMI160_TRIGGER)
-	.gpio_port = CONFIG_BMI160_GPIO_DEV_NAME,
-	.int_pin = CONFIG_BMI160_GPIO_PIN_NUM,
+	.gpio_port = DT_BOSCH_BMI160_0_INT_GPIOS_CONTROLLER,
+	.int_pin = DT_BOSCH_BMI160_0_INT_GPIOS_PIN,
 #endif
 };
 
 
 
-DEVICE_INIT(bmi160, CONFIG_BMI160_NAME, bmi160_init, &bmi160_data,
-	    &bmi160_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY);
+DEVICE_AND_API_INIT(bmi160, DT_BOSCH_BMI160_0_LABEL, bmi160_init, &bmi160_data,
+		&bmi160_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		&bmi160_api);

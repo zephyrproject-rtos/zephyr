@@ -235,17 +235,10 @@ Configuration Options
 
 Related configuration options:
 
-* None.
+* None
 
-APIs
-****
+API Reference
+*************
 
-The following timer APIs are provided by :file:`kernel.h`:
-
-* :c:macro:`K_TIMER_DEFINE`
-* :cpp:func:`k_timer_init()`
-* :cpp:func:`k_timer_start()`
-* :cpp:func:`k_timer_stop()`
-* :cpp:func:`k_timer_status_get()`
-* :cpp:func:`k_timer_status_sync()`
-* :cpp:func:`k_timer_remaining_get()`
+.. doxygengroup:: timer_apis
+   :project: Zephyr

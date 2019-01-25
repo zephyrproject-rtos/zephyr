@@ -181,7 +181,7 @@ static void sm_handle_timeout_state(struct lwm2m_message *msg,
 void engine_trigger_update(void)
 {
 	/* TODO: add locking? */
-	client.trigger_update = 1;
+	client.trigger_update = 1U;
 }
 
 /* state machine reply callbacks */
@@ -372,13 +372,13 @@ static int sm_do_init(void)
 		client.ep_name,
 		client.lifetime);
 	/* Zephyr has joined network already */
-	client.has_registration_info = 1;
-	client.bootstrapped = 0;
-	client.trigger_update = 0;
+	client.has_registration_info = 1U;
+	client.bootstrapped = 0U;
+	client.trigger_update = 0U;
 #if defined(CONFIG_LWM2M_BOOTSTRAP_SERVER)
-	client.use_bootstrap = 1;
+	client.use_bootstrap = 1U;
 #else
-	client.use_registration = 1;
+	client.use_registration = 1U;
 #endif
 	if (client.lifetime == 0) {
 		client.lifetime = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
@@ -412,7 +412,7 @@ static int sm_do_bootstrap(void)
 
 		msg->type = COAP_TYPE_CON;
 		msg->code = COAP_METHOD_POST;
-		msg->mid = 0;
+		msg->mid = 0U;
 		msg->reply_cb = do_bootstrap_reply_cb;
 		msg->message_timeout_cb = do_bootstrap_timeout_cb;
 
@@ -483,7 +483,7 @@ static int sm_bootstrap_done(void)
 #endif
 				LOG_ERR("Failed to parse URI!");
 			} else {
-				client.has_registration_info = 1;
+				client.has_registration_info = 1U;
 				client.bootstrapped++;
 			}
 		} else {
@@ -527,7 +527,7 @@ static int sm_send_registration(bool send_obj_support_data,
 
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_METHOD_POST;
-	msg->mid = 0;
+	msg->mid = 0U;
 	msg->reply_cb = reply_cb;
 	msg->message_timeout_cb = timeout_cb;
 
@@ -649,7 +649,7 @@ static int sm_registration_done(void)
 	     ((client.lifetime - SECONDS_TO_UPDATE_EARLY) <=
 	      (k_uptime_get() - client.last_update) / 1000))) {
 		forced_update = client.trigger_update;
-		client.trigger_update = 0;
+		client.trigger_update = 0U;
 		ret = sm_send_registration(forced_update,
 					   do_update_reply_cb,
 					   do_update_timeout_cb);
@@ -678,7 +678,7 @@ static int sm_do_deregister(void)
 
 	msg->type = COAP_TYPE_CON;
 	msg->code = COAP_METHOD_DELETE;
-	msg->mid = 0;
+	msg->mid = 0U;
 	msg->reply_cb = do_deregister_reply_cb;
 	msg->message_timeout_cb = do_deregister_timeout_cb;
 

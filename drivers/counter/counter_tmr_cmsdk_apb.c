@@ -56,7 +56,7 @@ static u32_t counter_tmr_cmsdk_apb_read(struct device *dev)
 						dev->config->config_info;
 
 	/* Return Counter Value */
-	u32_t value = 0;
+	u32_t value = 0U;
 
 	value = TIMER_MAX_RELOAD - cfg->timer->value;
 
@@ -102,13 +102,13 @@ static int counter_tmr_cmsdk_apb_init(struct device *dev)
 /* COUNTER 0 */
 #ifdef CONFIG_COUNTER_TMR_CMSDK_APB_0
 static const struct counter_tmr_cmsdk_apb_cfg counter_tmr_cmsdk_apb_cfg_0 = {
-	.timer = ((volatile struct timer_cmsdk_apb *)CMSDK_APB_TIMER0),
+	.timer = ((volatile struct timer_cmsdk_apb *)DT_CMSDK_APB_TIMER0),
 	.timer_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
-			.device = CMSDK_APB_TIMER0,},
+			.device = DT_CMSDK_APB_TIMER0,},
 	.timer_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
-			.device = CMSDK_APB_TIMER0,},
+			.device = DT_CMSDK_APB_TIMER0,},
 	.timer_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
-			 .device = CMSDK_APB_TIMER0,},
+			 .device = DT_CMSDK_APB_TIMER0,},
 };
 
 DEVICE_AND_API_INIT(counter_tmr_cmsdk_apb_0,
@@ -122,13 +122,13 @@ DEVICE_AND_API_INIT(counter_tmr_cmsdk_apb_0,
 /* COUNTER 1 */
 #ifdef CONFIG_COUNTER_TMR_CMSDK_APB_1
 static const struct counter_tmr_cmsdk_apb_cfg counter_tmr_cmsdk_apb_cfg_1 = {
-	.timer = ((volatile struct timer_cmsdk_apb *)CMSDK_APB_TIMER1),
+	.timer = ((volatile struct timer_cmsdk_apb *)DT_CMSDK_APB_TIMER1),
 	.timer_cc_as = {.bus = CMSDK_APB, .state = SOC_ACTIVE,
-			.device = CMSDK_APB_TIMER1,},
+			.device = DT_CMSDK_APB_TIMER1,},
 	.timer_cc_ss = {.bus = CMSDK_APB, .state = SOC_SLEEP,
-			.device = CMSDK_APB_TIMER1,},
+			.device = DT_CMSDK_APB_TIMER1,},
 	.timer_cc_dss = {.bus = CMSDK_APB, .state = SOC_DEEPSLEEP,
-			 .device = CMSDK_APB_TIMER1,},
+			 .device = DT_CMSDK_APB_TIMER1,},
 };
 
 DEVICE_AND_API_INIT(counter_tmr_cmsdk_apb_1,

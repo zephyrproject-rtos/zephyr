@@ -92,19 +92,21 @@ System Power Management
 
 This consists of the hook functions that the power management subsystem calls
 when the kernel enters and exits the idle state, in other words, when the kernel
-has nothing to schedule. This section provides a general overview of the hook
-functions. Refer to :ref:`power_management_api` for the detailed description of
-the APIs.
+has nothing to schedule. Enabling system power management compels Zephyr kernel
+scheduler to work in tickless idle mode (see :option:`CONFIG_TICKLESS_IDLE`).
+
+This section provides a general overview of the hook functions. Refer to
+:ref:`power_management_api` for the detailed description of the APIs.
 
 Suspend Hook function
 =====================
 
 .. code-block:: c
 
-   int _sys_soc_suspend(s32_t ticks);
+   int sys_suspend(s32_t ticks);
 
 When the kernel is about to go idle, the power management subsystem calls the
-:code:`_sys_soc_suspend()` function, notifying the SOC interface that the kernel
+:code:`sys_suspend()` function, notifying the SOC interface that the kernel
 is ready to enter the idle state.
 
 At this point, the kernel has disabled interrupts and computed the maximum
@@ -114,7 +116,7 @@ can be done in the available time. The power management operation must halt
 execution on a CPU or SOC low power state. Before entering the low power state,
 the SOC interface must setup a wake event.
 
-The power management subsystem expects the :code:`_sys_soc_suspend()` to
+The power management subsystem expects the :code:`sys_suspend()` to
 return one of the following values based on the power management operations
 the SOC interface executed:
 
@@ -135,22 +137,22 @@ Resume Hook function
 
 .. code-block:: c
 
-   void _sys_soc_resume(void);
+   void sys_resume(void);
 
 The power management subsystem optionally calls this hook function when exiting
 kernel idling if power management operations were performed in
-:code:`_sys_soc_suspend()`. Any necessary recovery operations can be performed
+:code:`sys_suspend()`. Any necessary recovery operations can be performed
 in this function before the kernel scheduler schedules another thread. Some
 power states may not need this notification. It can be disabled by calling
-:code:`_sys_soc_pm_idle_exit_notification_disable()` from
-:code:`_sys_soc_suspend()`.
+:code:`sys_pm_idle_exit_notification_disable()` from
+:code:`sys_suspend()`.
 
 Resume From Deep Sleep Hook function
 ====================================
 
 .. code-block:: c
 
-   void _sys_soc_resume_from_deep_sleep(void);
+   void sys_resume_from_deep_sleep(void);
 
 This function is optionally called when exiting from deep sleep if the SOC
 interface does not have bootloader support to handle resume from deep sleep.
@@ -229,7 +231,7 @@ in power saving mode. This method allows saving power even when the CPU is
 active. The components that use the devices need to be power aware and should
 be able to make decisions related to managing device power. In this method, the
 SOC interface can enter CPU or SOC low power states quickly when
-:code:`_sys_soc_suspend()` gets called. This is because it does not need to
+:code:`sys_suspend()` gets called. This is because it does not need to
 spend time doing device power management if the devices are already put in
 the appropriate low power state by the application or component managing the
 devices.
@@ -238,7 +240,7 @@ Central method
 ==============
 
 In this method device power management is mostly done inside
-:code:`_sys_soc_suspend()` along with entering a CPU or SOC low power state.
+:code:`sys_suspend()` along with entering a CPU or SOC low power state.
 
 If a decision to enter deep sleep is made, the implementation would enter it
 only after checking if the devices are not in the middle of a hardware
@@ -378,21 +380,21 @@ off, then such transactions would be left in an inconsistent state. This
 infrastructure guards such transactions by indicating to the SOC interface that
 the device is in the middle of a hardware transaction.
 
-When the :code:`_sys_soc_suspend()` is called, the SOC interface checks if any device
+When the :code:`sys_suspend()` is called, the SOC interface checks if any device
 is busy. The SOC interface can then decide to execute a power management scheme other than deep sleep or
 to defer power management operations until the next call of
-:code:`_sys_soc_suspend()`.
+:code:`sys_suspend()`.
 
 An alternative to using the busy status mechanism is to use the
 `distributed method`_ of device power management. In such a method where the
 device power management is handled in a distributed manner rather than centrally in
-:code:`_sys_soc_suspend()`, the decision to enter deep sleep can be made based
+:code:`sys_suspend()`, the decision to enter deep sleep can be made based
 on whether all devices are already turned off.
 
 This feature can be also used to emulate a hardware feature found in some SOCs
 that causes the system to automatically enter deep sleep when all devices are idle.
 In such an usage, the busy status can be set by default and cleared as each
-device becomes idle. When :code:`_sys_soc_suspend()` is called, deep sleep can
+device becomes idle. When :code:`sys_suspend()` is called, deep sleep can
 be entered if no device is found to be busy.
 
 Here are the APIs used to set, clear, and check the busy status of devices.

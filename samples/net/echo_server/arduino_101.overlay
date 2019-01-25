@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2018-2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi1 {
+	status = "ok";
+	cs-gpios = <&gpio0 0 0>;
+
+	enc28j60@0 {
+		compatible = "microchip,enc28j60";
+		spi-port-name = "SPI_1";
+		local-mac-address = [00 00 00 00 00 00];
+		spi-max-frequency = <128000>;
+		int-gpios = <&gpio0 19 1>;
+		status = "ok";
+		label = "ETH_0";
+		reg = <0>;
+	};
+};

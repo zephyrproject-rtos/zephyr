@@ -289,7 +289,6 @@ related to the sample and what is being demonstrated:
         sample:
           name: hello world
           description: Hello World sample, the simplest Zephyr application
-          platforms: all
         tests:
           test:
             build_only: true

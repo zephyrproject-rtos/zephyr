@@ -41,8 +41,10 @@
  * pci_bus_scan_init();
  *
  * while (pci_bus_scan(&info)) {
- *      // do something with "info" which holds a valid result, i.e. some
- *      // device information matching the PCI class PCI_CLASS_COMM_CTLR
+ *      ...
+ *      do something with "info" which holds a valid result, i.e. some
+ *      device information matching the PCI class PCI_CLASS_COMM_CTLR
+ *      ...
  * }
  *
  * INTERNALS
@@ -77,6 +79,10 @@
 
 #include <soc.h>
 
+#define LOG_LEVEL CONFIG_PCI_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(pci);
+
 #include <pci/pci_mgr.h>
 #include <pci/pci.h>
 
@@ -102,7 +108,6 @@
 #define BAR_IO_MASK(x) ((x) & ~0x3)
 #define BAR_MEM_MASK(x) ((x) & ~0xf)
 
-
 struct lookup_data {
 	struct pci_dev_info info;
 	u32_t bus:9;
@@ -111,44 +116,34 @@ struct lookup_data {
 	u32_t baridx:3;
 	u32_t barofs:3;
 	u32_t unused:7;
+	u8_t buses;
 };
 
 static struct lookup_data __noinit lookup;
 
 /**
- *
  * @brief Return the configuration for the specified BAR
  *
  * @return 0 if BAR is implemented, -1 if not.
  */
-
-static inline int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr,
-							u32_t *config)
+static int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr, u32_t *config)
 {
 	u32_t old_value;
 
 	/* save the current setting */
-	pci_read(DEFAULT_PCI_CONTROLLER,
-			pci_ctrl_addr,
-			sizeof(old_value),
-			&old_value);
+	pci_read(DEFAULT_PCI_CONTROLLER, pci_ctrl_addr,
+		 sizeof(old_value), &old_value);
 
 	/* write to the BAR to see how large it is */
-	pci_write(DEFAULT_PCI_CONTROLLER,
-			pci_ctrl_addr,
-			sizeof(u32_t),
-			0xffffffff);
+	pci_write(DEFAULT_PCI_CONTROLLER, pci_ctrl_addr,
+		  sizeof(u32_t), 0xffffffff);
 
-	pci_read(DEFAULT_PCI_CONTROLLER,
-			pci_ctrl_addr,
-			sizeof(*config),
-			config);
+	pci_read(DEFAULT_PCI_CONTROLLER, pci_ctrl_addr,
+		 sizeof(*config), config);
 
 	/* put back the old configuration */
-	pci_write(DEFAULT_PCI_CONTROLLER,
-			pci_ctrl_addr,
-			sizeof(old_value),
-			old_value);
+	pci_write(DEFAULT_PCI_CONTROLLER, pci_ctrl_addr,
+		  sizeof(old_value), old_value);
 
 	/* check if this BAR is implemented */
 	if (*config != 0xffffffff && *config != 0) {
@@ -161,16 +156,15 @@ static inline int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr,
 }
 
 /**
- *
  * @brief Retrieve the I/O address and IRQ of the specified BAR
  *
  * @return -1 on error, 0 if 32 bit BAR retrieved or 1 if 64 bit BAR retrieved
  *
  * NOTE: Routine does not set up parameters for 64 bit BARS, they are ignored.
  */
-static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
-				     struct pci_dev_info *dev_info,
-				     int max_bars)
+static int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
+			      struct pci_dev_info *dev_info,
+			      int max_bars)
 {
 	u32_t bar_value;
 	u32_t bar_config;
@@ -180,10 +174,8 @@ static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
 
 	pci_ctrl_addr.field.reg = 4 + lookup.barofs;
 
-	pci_read(DEFAULT_PCI_CONTROLLER,
-			pci_ctrl_addr,
-			sizeof(bar_value),
-			&bar_value);
+	pci_read(DEFAULT_PCI_CONTROLLER, pci_ctrl_addr,
+		 sizeof(bar_value), &bar_value);
 	if (pci_bar_config_get(pci_ctrl_addr, &bar_config) != 0) {
 		return -1;
 	}
@@ -193,17 +185,17 @@ static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
 		mask = ~0xf;
 		if (BAR_TYPE(bar_config) == BAR_TYPE_64BIT) {
 			/* Last BAR register cannot be 64-bit */
-			if (++lookup.barofs >= max_bars)
+			if (++lookup.barofs >= max_bars) {
 				return 1;
+			}
 
 			/* Make sure the address is accessible */
 			pci_ctrl_addr.field.reg++;
-			pci_read(DEFAULT_PCI_CONTROLLER,
-				 pci_ctrl_addr,
-				 sizeof(bar_hival),
-				 &bar_hival);
-			if (bar_hival)
+			pci_read(DEFAULT_PCI_CONTROLLER, pci_ctrl_addr,
+				 sizeof(bar_hival), &bar_hival);
+			if (bar_hival) {
 				return 1; /* Inaccessible memory */
+			}
 		}
 	} else {
 		dev_info->mem_type = BAR_SPACE_IO;
@@ -221,30 +213,42 @@ static inline int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
 	return 0;
 }
 
+static bool pci_read_multifunction(union pci_addr_reg pci_ctrl_addr)
+{
+	u32_t header_type;
+
+	pci_ctrl_addr.field.reg = 3;
+	pci_ctrl_addr.field.offset = 0;
+	pci_read(DEFAULT_PCI_CONTROLLER, pci_ctrl_addr, sizeof(header_type),
+		 &header_type);
+
+	return header_type >> 16 & 0x80;
+}
+
 /**
- *
  * @brief Scan the specified PCI device for all sub functions
  *
  * @return 1 if a device has been found, 0 otherwise.
  */
-static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
-					struct pci_dev_info *dev_info)
+static int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
+			struct pci_dev_info *dev_info)
 {
 	static union pci_dev pci_dev_header;
 	u32_t pci_data;
 	int max_bars;
+	bool multi_function;
 
 	/* verify first if there is a valid device at this point */
 	pci_ctrl_addr.field.func = 0;
 
-	pci_read(DEFAULT_PCI_CONTROLLER,
-			pci_ctrl_addr,
-			sizeof(pci_data),
-			&pci_data);
-
+	pci_read(DEFAULT_PCI_CONTROLLER, pci_ctrl_addr,
+		 sizeof(pci_data), &pci_data);
 	if (pci_data == 0xffffffff) {
 		return 0;
 	}
+
+	/* Check that PCI is multi a function device */
+	multi_function = pci_read_multifunction(pci_ctrl_addr);
 
 	/* scan all the possible functions for this device */
 	for (; lookup.func < LSPCI_MAX_FUNC;
@@ -254,14 +258,17 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 			return 0;
 		}
 
+		/* Skip single function device */
+		if (lookup.func != 0 && !multi_function) {
+			LOG_DBG("Skip single function device");
+			break;
+		}
+
 		pci_ctrl_addr.field.func = lookup.func;
 
 		if (lookup.func != 0) {
-			pci_read(DEFAULT_PCI_CONTROLLER,
-					pci_ctrl_addr,
-					sizeof(pci_data),
-					&pci_data);
-
+			pci_read(DEFAULT_PCI_CONTROLLER, pci_ctrl_addr,
+				 sizeof(pci_data), &pci_data);
 			if (pci_data == 0xffffffff) {
 				continue;
 			}
@@ -269,8 +276,11 @@ static inline int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 
 		/* get the PCI header from the device */
 		pci_header_get(DEFAULT_PCI_CONTROLLER,
-					pci_ctrl_addr,
-					&pci_dev_header);
+			       pci_ctrl_addr, &pci_dev_header);
+		if (pci_dev_header.field.class == PCI_CLASS_BRIDGE_CTLR &&
+		    pci_dev_header.field.subclass == PCI_SUBCLASS_P2P_BRIDGE) {
+			lookup.buses++;
+		}
 
 		/*
 		 * Skip a device if its class is specified by the
@@ -345,11 +355,10 @@ void pci_bus_scan_init(void)
 	lookup.func = 0;
 	lookup.baridx = 0;
 	lookup.barofs = 0;
+	lookup.buses = LSPCI_MAX_BUS;
 }
 
-
 /**
- *
  * @brief Scans PCI bus for devices
  *
  * The routine scans the PCI bus for the devices on criteria provided in the
@@ -363,7 +372,7 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 {
 	union pci_addr_reg pci_ctrl_addr;
 
-	int init_from_dev_info =
+	bool init_from_dev_info =
 		!lookup.info.class_type &&
 		!lookup.info.vendor_id &&
 		!lookup.info.device_id &&
@@ -386,12 +395,18 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 	}
 
 	/* run through the buses and devices */
-	for (; lookup.bus < LSPCI_MAX_BUS; lookup.bus++) {
-		for (; (lookup.dev < LSPCI_MAX_DEV); lookup.dev++) {
+	for (; lookup.bus < lookup.buses; lookup.bus++) {
+		for (; lookup.dev < LSPCI_MAX_DEV; lookup.dev++) {
+			if (lookup.bus == 0 && lookup.dev == 0) {
+				LOG_DBG("Skip Host Bridge");
+				continue;
+			}
+
 			pci_ctrl_addr.field.bus = lookup.bus;
 			pci_ctrl_addr.field.device = lookup.dev;
 
 			if (pci_dev_scan(pci_ctrl_addr, dev_info)) {
+				lookup.func++;
 				return 1;
 			}
 
@@ -419,21 +434,15 @@ static void pci_set_command_bits(struct pci_dev_info *dev_info, u32_t bits)
 	pci_ctrl_addr.field.device = dev_info->dev;
 	pci_ctrl_addr.field.reg = 1;
 
-#ifdef CONFIG_PCI_DEBUG
-	printk("pci_set_command_bits 0x%x\n", pci_ctrl_addr.value);
-#endif
+	LOG_DBG("bits 0x%x", bits);
 
-	pci_read(DEFAULT_PCI_CONTROLLER,
-			pci_ctrl_addr,
-			sizeof(u16_t),
-			&pci_data);
+	pci_read(DEFAULT_PCI_CONTROLLER, pci_ctrl_addr,
+		 sizeof(u16_t), &pci_data);
 
 	pci_data = pci_data | bits;
 
-	pci_write(DEFAULT_PCI_CONTROLLER,
-			pci_ctrl_addr,
-			sizeof(u16_t),
-			pci_data);
+	pci_write(DEFAULT_PCI_CONTROLLER, pci_ctrl_addr,
+		  sizeof(u16_t), pci_data);
 }
 
 void pci_enable_regs(struct pci_dev_info *dev_info)
@@ -446,7 +455,7 @@ void pci_enable_bus_master(struct pci_dev_info *dev_info)
 	pci_set_command_bits(dev_info, PCI_CMD_MASTER_ENABLE);
 }
 
-#ifdef CONFIG_PCI_DEBUG
+#ifdef CONFIG_PCI_LOG_LEVEL_DBG
 /**
  *
  * @brief Show PCI device
@@ -458,18 +467,18 @@ void pci_enable_bus_master(struct pci_dev_info *dev_info)
 
 void pci_show(struct pci_dev_info *dev_info)
 {
-	printk("%u:%u %X:%X class: 0x%X, %u, %u, %s, "
+	printk("%x:%x.%x %X:%X class: 0x%X, %u, %s, "
 		"addrs: 0x%X-0x%X, IRQ %d\n",
 		dev_info->bus,
 		dev_info->dev,
+		dev_info->function,
 		dev_info->vendor_id,
 		dev_info->device_id,
 		dev_info->class_type,
-		dev_info->function,
 		dev_info->bar,
 		(dev_info->mem_type == BAR_SPACE_MEM) ? "MEM" : "I/O",
 		(u32_t)dev_info->addr,
 		(u32_t)(dev_info->addr + dev_info->size - 1),
 		dev_info->irq);
 }
-#endif /* CONFIG_PCI_DEBUG */
+#endif /* CONFIG_PCI_LOG_LEVEL_DBG */

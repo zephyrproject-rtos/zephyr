@@ -1,0 +1,246 @@
+/*
+ * Copyright (c) 2018 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+flash_controller: flash-controller@39000 {
+	compatible = "nordic,nrf91-flash-controller";
+	reg = <0x39000 0x1000>;
+
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	label="NRF_FLASH_DRV_NAME";
+
+	flash0: flash@0 {
+		compatible = "soc-nv-flash";
+		label = "NRF_FLASH";
+		erase-block-size = <4096>;
+		write-block-size = <4>;
+	};
+};
+
+adc: adc@e000 {
+	compatible = "nordic,nrf-saadc";
+	reg = <0xe000 0x1000>;
+	interrupts = <14 1>;
+	status = "disabled";
+	label = "ADC_0";
+};
+
+uart0: uart@8000 {
+	compatible = "nordic,nrf-uarte";
+	reg = <0x8000 0x1000>;
+	interrupts = <8 1>;
+	status = "disabled";
+	label = "UART_0";
+};
+
+uart1: uart@9000 {
+	compatible = "nordic,nrf-uarte";
+	reg = <0x9000 0x1000>;
+	interrupts = <9 1>;
+	status = "disabled";
+	label = "UART_1";
+};
+
+uart2: uart@a000 {
+	compatible = "nordic,nrf-uarte";
+	reg = <0xa000 0x1000>;
+	interrupts = <10 1>;
+	status = "disabled";
+	label = "UART_2";
+};
+
+uart3: uart@b000 {
+	compatible = "nordic,nrf-uarte";
+	reg = <0xb000 0x1000>;
+	interrupts = <11 1>;
+	status = "disabled";
+	label = "UART_3";
+};
+
+i2c0: i2c@8000 {
+	compatible = "nordic,nrf-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x8000 0x1000>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	interrupts = <8 1>;
+	status = "disabled";
+	label = "I2C_0";
+};
+
+i2c1: i2c@9000 {
+	compatible = "nordic,nrf-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x9000 0x1000>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	interrupts = <9 1>;
+	status = "disabled";
+	label = "I2C_1";
+};
+
+i2c2: i2c@a000 {
+	compatible = "nordic,nrf-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0xa000 0x1000>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	interrupts = <10 1>;
+	status = "disabled";
+	label = "I2C_2";
+};
+
+i2c3: i2c@b000 {
+	compatible = "nordic,nrf-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0xb000 0x1000>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	interrupts = <11 1>;
+	status = "disabled";
+	label = "I2C_3";
+};
+
+spi0: spi@8000 {
+	compatible = "nordic,nrf-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x8000 0x1000>;
+	interrupts = <8 1>;
+	status = "disabled";
+	label = "SPI_0";
+};
+
+spi1: spi@9000 {
+	compatible = "nordic,nrf-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0x9000 0x1000>;
+	interrupts = <9 1>;
+	status = "disabled";
+	label = "SPI_1";
+};
+
+spi2: spi@a000 {
+	compatible = "nordic,nrf-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0xa000 0x1000>;
+	interrupts = <10 1>;
+	status = "disabled";
+	label = "SPI_2";
+};
+
+spi3: spi@b000 {
+	compatible = "nordic,nrf-spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	reg = <0xb000 0x1000>;
+	interrupts = <11 1>;
+	status = "disabled";
+	label = "SPI_3";
+};
+
+pwm0: pwm@21000 {
+	compatible = "nordic,nrf-pwm";
+	reg = <0x21000 0x1000>;
+	interrupts = <33 1>;
+	status = "disabled";
+	label = "PWM_0";
+};
+
+pwm1: pwm@22000 {
+	compatible = "nordic,nrf-pwm";
+	reg = <0x22000 0x1000>;
+	interrupts = <34 1>;
+	status = "disabled";
+	label = "PWM_1";
+};
+
+pwm2: pwm@23000 {
+	compatible = "nordic,nrf-pwm";
+	reg = <0x23000 0x1000>;
+	interrupts = <35 1>;
+	status = "disabled";
+	label = "PWM_2";
+};
+
+pwm3: pwm@24000 {
+	compatible = "nordic,nrf-pwm";
+	reg = <0x24000 0x1000>;
+	interrupts = <36 1>;
+	status = "disabled";
+	label = "PWM_3";
+};
+
+gpio0: gpio@842500 {
+	compatible = "nordic,nrf-gpio";
+	gpio-controller;
+	reg = <0x842500 0x300>;
+	#gpio-cells = <2>;
+	label = "GPIO_0";
+	status = "disabled";
+};
+
+rtc0: rtc@14000 {
+	compatible = "nordic,nrf-rtc";
+	reg = <0x14000 0x1000>;
+	interrupts = <20 1>;
+	status = "ok";
+};
+
+rtc1: rtc@15000 {
+	compatible = "nordic,nrf-rtc";
+	reg = <0x15000 0x1000>;
+	interrupts = <21 1>;
+	status = "ok";
+};
+
+clock: clock@5000 {
+	compatible = "nordic,nrf-clock";
+	reg = <0x5000 0x1000>;
+	interrupts = <5 1>;
+	status = "ok";
+};
+
+power: power@5000 {
+	compatible = "nordic,nrf-power";
+	reg = <0x5000 0x1000>;
+	interrupts = <5 1>;
+	status = "ok";
+};
+
+wdt: watchdog@18000 {
+	compatible = "nordic,nrf-watchdog";
+	reg = <0x18000 0x1000>;
+	interrupts = <24 1>;
+	label = "WDT";
+};
+
+timer0: timer@f000 {
+	compatible = "nordic,nrf-timer";
+	status = "disabled";
+	reg = <0xf000 0x1000>;
+	interrupts = <15 1>;
+	label = "TIMER0";
+};
+
+timer1: timer@10000 {
+	compatible = "nordic,nrf-timer";
+	status = "disabled";
+	reg = <0x10000 0x1000>;
+	interrupts = <16 1>;
+	label = "TIMER1";
+};
+
+timer2: timer@11000 {
+	compatible = "nordic,nrf-timer";
+	status = "disabled";
+	reg = <0x11000 0x1000>;
+	interrupts = <17 1>;
+	label = "TIMER2";
+};

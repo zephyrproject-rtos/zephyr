@@ -5,8 +5,10 @@ arch: arm
 toolchain:
   - zephyr
   - gnuarmemb
+  - xtools
 ram: 64
 flash: 256
 supported:
   - nvs
   - pwm
+  - can

@@ -6,9 +6,10 @@
 
 #include <ztest.h>
 
-#include <lib/crc/crc32_sw.c>
-#include <lib/crc/crc16_sw.c>
-#include <lib/crc/crc8_sw.c>
+#include <lib/os/crc32_sw.c>
+#include <lib/os/crc16_sw.c>
+#include <lib/os/crc8_sw.c>
+#include <lib/os/crc7_sw.c>
 
 void test_crc32_ieee(void)
 {
@@ -109,6 +110,17 @@ void test_crc8_ccitt(void)
 			   sizeof(test2)) == 0xFB, "pass", "fail");
 }
 
+void test_crc7_be(void)
+{
+	u8_t test0[] = { 0 };
+	u8_t test1[] = { 'A' };
+	u8_t test2[] = { '1', '2', '3', '4', '5', '6', '7', '8', '9' };
+
+	zassert_equal(crc7_be(0, test0, sizeof(test0)), 0, NULL);
+	zassert_equal(crc7_be(0, test1, sizeof(test1)), 0xDA, NULL);
+	zassert_equal(crc7_be(0, test2, sizeof(test2)), 0xEA, NULL);
+}
+
 void test_main(void)
 {
 	ztest_test_suite(test_crc,
@@ -118,6 +130,7 @@ void test_main(void)
 			 ztest_unit_test(test_crc16_ccitt),
 			 ztest_unit_test(test_crc16_ccitt_for_ppp),
 			 ztest_unit_test(test_crc16_itu_t),
-			 ztest_unit_test(test_crc8_ccitt));
+			 ztest_unit_test(test_crc8_ccitt),
+			 ztest_unit_test(test_crc7_be));
 	ztest_run_test_suite(test_crc);
 }

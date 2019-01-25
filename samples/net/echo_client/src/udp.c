@@ -6,8 +6,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_echo_client_udp
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_DECLARE(net_echo_client_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <errno.h>
@@ -157,7 +157,7 @@ static void send_udp_data(struct net_app_ctx *ctx, struct data *data)
 	ret = net_app_send_pkt(ctx, pkt, NULL, 0, K_FOREVER,
 			       UINT_TO_POINTER(len));
 	if (ret < 0) {
-		NET_ERR("Cannot send %s data to peer (%d)", data->proto, ret);
+		LOG_ERR("Cannot send %s data to peer (%d)", data->proto, ret);
 
 		net_pkt_unref(pkt);
 	}
@@ -185,7 +185,7 @@ static bool compare_udp_data(struct net_pkt *pkt, int expecting_len)
 
 	while (frag) {
 		if (memcmp(ptr, lorem_ipsum + pos, len)) {
-			NET_DBG("Invalid data received");
+			LOG_DBG("Invalid data received");
 			return false;
 		} else {
 			pos += len;
@@ -200,7 +200,7 @@ static bool compare_udp_data(struct net_pkt *pkt, int expecting_len)
 		}
 	}
 
-	NET_DBG("Compared %d bytes, all ok", expecting_len);
+	LOG_DBG("Compared %d bytes, all ok", expecting_len);
 
 	return true;
 }
@@ -216,12 +216,12 @@ static void udp_received(struct net_app_ctx *ctx,
 	ARG_UNUSED(status);
 
 	if (data->expecting_udp != net_pkt_appdatalen(pkt)) {
-		NET_DBG("Sent %d bytes, received %u bytes",
+		LOG_DBG("Sent %d bytes, received %u bytes",
 			data->expecting_udp, net_pkt_appdatalen(pkt));
 	}
 
 	if (!compare_udp_data(pkt, data->expecting_udp)) {
-		NET_DBG("Data mismatch");
+		LOG_DBG("Data mismatch");
 	}
 
 	net_pkt_unref(pkt);
@@ -259,7 +259,7 @@ static int connect_udp(struct net_app_ctx *ctx, const char *peer,
 	ret = net_app_init_udp_client(ctx, NULL, NULL, peer, PEER_PORT,
 				      WAIT_TIME, user_data);
 	if (ret < 0) {
-		NET_ERR("Cannot init %s UDP client (%d)", data->proto, ret);
+		LOG_ERR("Cannot init %s UDP client (%d)", data->proto, ret);
 		goto fail;
 	}
 
@@ -269,7 +269,7 @@ static int connect_udp(struct net_app_ctx *ctx, const char *peer,
 
 	ret = net_app_set_cb(ctx, udp_connected, udp_received, NULL, NULL);
 	if (ret < 0) {
-		NET_ERR("Cannot set callbacks (%d)", ret);
+		LOG_ERR("Cannot set callbacks (%d)", ret);
 		goto fail;
 	}
 
@@ -286,7 +286,7 @@ static int connect_udp(struct net_app_ctx *ctx, const char *peer,
 				 stack,
 				 stack_size);
 	if (ret < 0) {
-		NET_ERR("Cannot init DTLS");
+		LOG_ERR("Cannot init DTLS");
 		goto fail;
 	}
 #else
@@ -298,7 +298,7 @@ static int connect_udp(struct net_app_ctx *ctx, const char *peer,
 
 	ret = net_app_connect(ctx, CONNECT_TIME);
 	if (ret < 0) {
-		NET_ERR("Cannot connect UDP (%d)", ret);
+		LOG_ERR("Cannot connect UDP (%d)", ret);
 		goto fail;
 	}
 
@@ -311,7 +311,7 @@ static void wait_reply(struct k_work *work)
 	/* This means that we did not receive response in time. */
 	struct data *data = CONTAINER_OF(work, struct data, recv);
 
-	NET_ERR("Data packet not received");
+	LOG_ERR("Data packet not received");
 
 	/* Send a new packet at this point */
 	send_udp_data(data->udp, data);
@@ -331,7 +331,7 @@ void start_udp(void)
 				  K_THREAD_STACK_SIZEOF(
 					  net_app_dtls_stack_ipv6));
 		if (ret < 0) {
-			NET_ERR("Cannot init IPv6 UDP client (%d)", ret);
+			LOG_ERR("Cannot init IPv6 UDP client (%d)", ret);
 		}
 	}
 
@@ -345,7 +345,7 @@ void start_udp(void)
 				  K_THREAD_STACK_SIZEOF(
 					  net_app_dtls_stack_ipv4));
 		if (ret < 0) {
-			NET_ERR("Cannot init IPv4 UDP client (%d)", ret);
+			LOG_ERR("Cannot init IPv4 UDP client (%d)", ret);
 		}
 	}
 

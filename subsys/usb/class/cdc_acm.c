@@ -218,6 +218,7 @@ struct cdc_acm_dev_data_t {
 	/* Callback function pointer/arg */
 	uart_irq_callback_user_data_t cb;
 	void *cb_data;
+	struct k_work cb_work;
 	/* Tx ready status. Signals when */
 	u8_t tx_ready;
 	u8_t rx_ready;                 /* Rx ready status */
@@ -305,11 +306,11 @@ static void cdc_acm_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	ARG_UNUSED(ep_status);
 	ARG_UNUSED(ep);
 
-	dev_data->tx_ready = 1;
+	dev_data->tx_ready = 1U;
 	k_sem_give(&poll_wait_sem);
 	/* Call callback only if tx irq ena */
 	if (dev_data->cb && dev_data->tx_irq_ena) {
-		dev_data->cb(dev_data->cb_data);
+		k_work_submit(&dev_data->cb_work);
 	}
 }
 
@@ -339,10 +340,10 @@ static void cdc_acm_bulk_out(u8_t ep,
 	 * Quark SE USB controller is always storing data
 	 * in the FIFOs per 32-bit words.
 	 */
-	for (i = 0; i < bytes_to_read; i += 4) {
+	for (i = 0U; i < bytes_to_read; i += 4) {
 		usb_read(ep, tmp_buf, 4, NULL);
 
-		for (j = 0; j < 4; j++) {
+		for (j = 0U; j < 4; j++) {
 			if (i + j == bytes_to_read) {
 				/* We read all the data */
 				break;
@@ -360,10 +361,10 @@ static void cdc_acm_bulk_out(u8_t ep,
 	}
 
 	dev_data->rx_buf_head = buf_head;
-	dev_data->rx_ready = 1;
+	dev_data->rx_ready = 1U;
 	/* Call callback only if rx irq ena */
 	if (dev_data->cb && dev_data->rx_irq_ena) {
-		dev_data->cb(dev_data->cb_data);
+		k_work_submit(&dev_data->cb_work);
 	}
 }
 
@@ -381,7 +382,7 @@ static void cdc_acm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 
 	ARG_UNUSED(ep_status);
 
-	dev_data->notification_sent = 1;
+	dev_data->notification_sent = 1U;
 	LOG_DBG("CDC_IntIN EP[%x]\r", ep);
 }
 
@@ -400,7 +401,9 @@ static void cdc_acm_dev_status_cb(enum usb_dc_status_code status,
 	ARG_UNUSED(param);
 
 	/* Store the new status */
-	dev_data->usb_status = status;
+	if (status != USB_DC_SOF) {
+		dev_data->usb_status = status;
+	}
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
@@ -414,6 +417,7 @@ static void cdc_acm_dev_status_cb(enum usb_dc_status_code status,
 		LOG_DBG("USB device connected");
 		break;
 	case USB_DC_CONFIGURED:
+		dev_data->tx_ready = 1;
 		LOG_DBG("USB device configured");
 		break;
 	case USB_DC_DISCONNECTED:
@@ -424,6 +428,8 @@ static void cdc_acm_dev_status_cb(enum usb_dc_status_code status,
 		break;
 	case USB_DC_RESUME:
 		LOG_DBG("USB device resumed");
+		break;
+	case USB_DC_SOF:
 		break;
 	case USB_DC_UNKNOWN:
 	default:
@@ -492,6 +498,25 @@ static void cdc_acm_baudrate_set(struct device *dev, u32_t baudrate)
 }
 
 /**
+ * @brief Call the IRQ function callback.
+ *
+ * This routine is called from the system work queue to signal an UART
+ * IRQ.
+ *
+ * @param work Address of work item.
+ *
+ * @return N/A.
+ */
+static void cdc_acm_irq_callback_work_handler(struct k_work *work)
+{
+	struct cdc_acm_dev_data_t *dev_data;
+
+	dev_data = CONTAINER_OF(work, struct cdc_acm_dev_data_t, cb_work);
+
+	dev_data->cb(dev_data->cb_data);
+}
+
+/**
  * @brief Initialize UART channel
  *
  * This routine is called to reset the chip in a quiescent state.
@@ -503,11 +528,11 @@ static void cdc_acm_baudrate_set(struct device *dev, u32_t baudrate)
  */
 static int cdc_acm_init(struct device *dev)
 {
+	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 	cdc_acm_dev = dev;
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
 	int ret;
-	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	cdc_acm_config.interface.payload_data = dev_data->interface_data;
 	cdc_acm_config.usb_device_description = usb_get_device_descriptor();
@@ -526,6 +551,7 @@ static int cdc_acm_init(struct device *dev)
 	}
 #endif
 	k_sem_init(&poll_wait_sem, 0, UINT_MAX);
+	k_work_init(&dev_data->cb_work, cdc_acm_irq_callback_work_handler);
 
 	return 0;
 }
@@ -543,14 +569,14 @@ static int cdc_acm_fifo_fill(struct device *dev,
 			     const u8_t *tx_data, int len)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
-	u32_t wrote = 0;
+	u32_t wrote = 0U;
 	int err;
 
 	if (dev_data->usb_status != USB_DC_CONFIGURED) {
 		return 0;
 	}
 
-	dev_data->tx_ready = 0;
+	dev_data->tx_ready = 0U;
 
 	/* FIXME: On Quark SE Family processor, restrict writing more than
 	 * 4 bytes into TX USB Endpoint. When more than 4 bytes are written,
@@ -594,7 +620,7 @@ static int cdc_acm_fifo_read(struct device *dev, u8_t *rx_data,
 		bytes_read = avail_data;
 	}
 
-	for (i = 0; i < bytes_read; i++) {
+	for (i = 0U; i < bytes_read; i++) {
 		rx_data[i] = dev_data->rx_buf[(dev_data->rx_buf_tail + i) %
 					      CDC_ACM_BUFFER_SIZE];
 	}
@@ -604,7 +630,7 @@ static int cdc_acm_fifo_read(struct device *dev, u8_t *rx_data,
 
 	if (dev_data->rx_buf_tail == dev_data->rx_buf_head) {
 		/* Buffer empty */
-		dev_data->rx_ready = 0;
+		dev_data->rx_ready = 0U;
 	}
 
 	return bytes_read;
@@ -621,7 +647,10 @@ static void cdc_acm_irq_tx_enable(struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
-	dev_data->tx_irq_ena = 1;
+	dev_data->tx_irq_ena = 1U;
+	if (dev_data->cb && dev_data->tx_ready) {
+		k_work_submit(&dev_data->cb_work);
+	}
 }
 
 /**
@@ -635,7 +664,7 @@ static void cdc_acm_irq_tx_disable(struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
-	dev_data->tx_irq_ena = 0;
+	dev_data->tx_irq_ena = 0U;
 }
 
 /**
@@ -650,7 +679,6 @@ static int cdc_acm_irq_tx_ready(struct device *dev)
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	if (dev_data->tx_ready) {
-		dev_data->tx_ready = 0;
 		return 1;
 	}
 
@@ -668,7 +696,10 @@ static void cdc_acm_irq_rx_enable(struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
-	dev_data->rx_irq_ena = 1;
+	dev_data->rx_irq_ena = 1U;
+	if (dev_data->cb && dev_data->rx_ready) {
+		k_work_submit(&dev_data->cb_work);
+	}
 }
 
 /**
@@ -682,7 +713,7 @@ static void cdc_acm_irq_rx_disable(struct device *dev)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
-	dev_data->rx_irq_ena = 0;
+	dev_data->rx_irq_ena = 0U;
 }
 
 /**
@@ -697,7 +728,6 @@ static int cdc_acm_irq_rx_ready(struct device *dev)
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	if (dev_data->rx_ready) {
-		dev_data->rx_ready = 0;
 		return 1;
 	}
 
@@ -773,7 +803,7 @@ static int cdc_acm_send_notification(struct device *dev, u16_t serial_state)
 {
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 	struct cdc_acm_notification notification;
-	u32_t cnt = 0;
+	u32_t cnt = 0U;
 
 	notification.bmRequestType = 0xA1;
 	notification.bNotificationType = 0x20;
@@ -782,7 +812,7 @@ static int cdc_acm_send_notification(struct device *dev, u16_t serial_state)
 	notification.wLength = sys_cpu_to_le16(sizeof(serial_state));
 	notification.data = sys_cpu_to_le16(serial_state);
 
-	dev_data->notification_sent = 0;
+	dev_data->notification_sent = 0U;
 	usb_write(cdc_acm_ep_data[ACM_INT_EP_IDX].ep_addr,
 		  (const u8_t *)&notification, sizeof(notification), NULL);
 
@@ -896,16 +926,12 @@ static int cdc_acm_poll_in(struct device *dev, unsigned char *c)
  *
  * The UART poll method for USB UART is simulated by waiting till
  * we get the next BULK In upcall from the USB device controller or 100 ms.
- *
- * @return the same character which is sent
  */
-static unsigned char cdc_acm_poll_out(struct device *dev,
+static void cdc_acm_poll_out(struct device *dev,
 				      unsigned char c)
 {
 	cdc_acm_fifo_fill(dev, &c, 1);
 	k_sem_take(&poll_wait_sem, K_MSEC(100));
-
-	return c;
 }
 
 static const struct uart_driver_api cdc_acm_driver_api = {

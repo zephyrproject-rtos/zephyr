@@ -20,13 +20,48 @@ menu "RISCV32 Processor Options"
 config INCLUDE_RESET_VECTOR
 	bool "Include Reset vector"
 	help
-	  Include the reset vector stub that inits CPU and then jumps to __start
+	  Include the reset vector stub, which initializes the stack and
+	  prepares for running C code.
 
 config RISCV_SOC_CONTEXT_SAVE
-	bool "Enable SOC-based context saving in IRQ handler"
+	bool "Enable SOC-based context saving in IRQ handlers"
 	help
-	  Enable SOC-based context saving, for SOCS which require saving of
-	  extra registers when entering an interrupt/exception
+	  Enable low-level SOC-specific context management, for SOCs
+	  with extra state that must be saved when entering an
+	  interrupt/exception, and restored on exit. If unsure, leave
+	  this at the default value.
+
+	  Enabling this option requires that the SoC provide a
+	  soc_context.h header which defines the following macros:
+
+	  - SOC_ESF_MEMBERS: structure component declarations to
+	    allocate space for. The last such declaration should not
+	    end in a semicolon, for portability. The generic RISC-V
+	    architecture code will allocate space for these members in
+	    a "struct soc_esf" type (typedefed to soc_esf_t), which will
+	    be available if arch.h is included.
+
+	  - SOC_ESF_INIT: structure contents initializer for struct soc_esf
+	    state. The last initialized member should not end in a comma.
+
+	  - GEN_SOC_OFFSET_SYMS(): a macro which expands to
+	    GEN_OFFSET_SYM(soc_esf_t, soc_specific_member) calls
+	    to ensure offset macros for SOC_ESF_MEMBERS are defined
+	    in offsets.h. The last one should not end in a semicolon.
+	    See gen_offset.h for more details.
+
+	  The generic architecture IRQ wrapper will also call
+	  __soc_save_context and __soc_restore_context routines at
+	  ISR entry and exit, respectively. These should typically
+	  be implemented in assembly. If they were C functions, they
+	  would have these signatures:
+
+	  ``void __soc_save_context(soc_esf_t *state);``
+
+	  ``void __soc_restore_context(soc_esf_t *state);``
+
+	  The calls obey standard calling conventions; i.e., the state
+	  pointer address is in a0, and ra contains the return address.
 
 config RISCV_SOC_INTERRUPT_INIT
 	bool "Enable SOC-based interrupt initialization"

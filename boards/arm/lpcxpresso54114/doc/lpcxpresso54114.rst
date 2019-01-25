@@ -148,22 +148,22 @@ serial port:
 
 
 .. _LPC54114 SoC Website:
-	http://www.nxp.com/products/microcontrollers-and-processors/arm-processors/lpc-cortex-m-mcus/lpc54000-series-cortex-m4-mcus/low-power-microcontrollers-mcus-based-on-arm-cortex-m4-cores-with-optional-cortex-m0-plus-co-processor:LPC541XX
+   https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/lpc-cortex-m-mcus/lpc54000-series-cortex-m4-mcus/low-power-microcontrollers-mcus-based-on-arm-cortex-m4-cores-with-optional-cortex-m0-plus-co-processor:LPC541XX
 
 .. _LPC54114 Datasheet:
-	http://www.nxp.com/docs/en/data-sheet/LPC5411X.pdf
+   https://www.nxp.com/docs/en/data-sheet/LPC5411X.pdf
 
 .. _LPC54114 Reference Manual:
-	http://www.nxp.com/docs/en/user-guide/UM10914.pdf
+   https://www.nxp.com/webapp/Download?colCode=UM10914
 
 .. _LPCXPRESSO54114 Website:
-   http://www.nxp.com/products/developer-resources/software-development-tools/software-tools/lpcxpresso-boards/lpcxpresso54114-board:OM13089
+   https://www.nxp.com/support/developer-resources/evaluation-and-development-boards/lpcxpresso-boards/lpcxpresso54114-board:OM13089
 
 .. _LPCXPRESSO54114 User Guide:
-   http://www.nxp.com/docs/en/user-guide/UM10973.pdf
+   https://www.nxp.com/webapp/Download?colCode=UM10973
 
 .. _LPCXPRESSO54114 Schematics:
-   http://www.nxp.com/downloads/en/design-support/LPCX5411x_Schematic_Rev_A1.pdf
+   https://www.nxp.com/downloads/en/design-support/LPCX5411x_Schematic_Rev_A1.pdf
 
 .. _LPCScrypt:
-   https://www.nxp.com/support/developer-resources/software-development-tools/lpc-developer-resources-/lpc-microcontroller-utilities/lpcscrypt-v1.8.2:LPCSCRYPT?&tab=Design_Tools_Tab
+   https://www.nxp.com/support/developer-resources/software-development-tools/lpc-developer-resources-/lpc-microcontroller-utilities/lpcscrypt-v2.0.0:LPCSCRYPT

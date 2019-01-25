@@ -87,7 +87,7 @@
 * \oaram XN eXecute Never: Set to 1 for a non-executable memory region.
 */
 #define ARM_MPU_RBAR(BASE, SH, RO, NP, XN) \
-  ((BASE & MPU_RBAR_BASE_Pos) | \
+  ((BASE & MPU_RBAR_BASE_Msk) | \
   ((SH << MPU_RBAR_SH_Pos) & MPU_RBAR_SH_Msk) | \
   ((ARM_MPU_AP_(RO, NP) << MPU_RBAR_AP_Pos) & MPU_RBAR_AP_Msk) | \
   ((XN << MPU_RBAR_XN_Pos) & MPU_RBAR_XN_Msk))

@@ -48,7 +48,7 @@ void test_timer(void)
 	u32_t timerDelay;
 
 	/* Create one-shot timer */
-	exec1 = 1;
+	exec1 = 1U;
 	id1 = osTimerCreate(osTimer(Timer1), osTimerOnce, &exec1);
 	zassert_true(id1 != NULL, "error creating one-shot timer");
 
@@ -75,7 +75,7 @@ void test_timer(void)
 	zassert_true(status == osOK, "error deleting one-shot timer");
 
 	/* Create periodic timer */
-	exec2 = 2;
+	exec2 = 2U;
 	id2 = osTimerCreate(osTimer(Timer2), osTimerPeriodic, &exec2);
 	zassert_true(id2 != NULL, "error creating periodic timer");
 

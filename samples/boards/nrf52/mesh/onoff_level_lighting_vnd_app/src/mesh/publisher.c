@@ -7,10 +7,11 @@
 
 #include <gpio.h>
 
-#include "common.h"
+#include "app_gpio.h"
+
 #include "ble_mesh.h"
-#include "publisher.h"
 #include "device_composition.h"
+#include "publisher.h"
 
 #define ONOFF
 #define GENERIC_LEVEL
@@ -40,7 +41,7 @@ void randomize_publishers_TID(void)
 
 static u32_t button_read(struct device *port, u32_t pin)
 {
-	u32_t val = 0;
+	u32_t val = 0U;
 
 	gpio_pin_read(port, pin, &val);
 	return val;

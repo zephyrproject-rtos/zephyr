@@ -1,0 +1,12 @@
+# Kconfig - EFM32PG STK3402A board
+#
+# Copyright (c) 2018, Christian Taedcke
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_EFM32PG_STK3402A
+	bool "SiLabs EFM32PG-STK3402A (Pearl Gecko)"
+	depends on SOC_SERIES_EFM32PG12B
+	select SOC_PART_NUMBER_EFM32PG12B500F1024GL125
+	select HAS_DTS_I2C

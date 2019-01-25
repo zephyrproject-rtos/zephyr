@@ -47,13 +47,13 @@ static void nmi_test_isr(void)
  */
 void test_arm_runtime_nmi(void)
 {
-	u32_t i = 0;
+	u32_t i = 0U;
 
 	TC_START("nmi_test_isr");
 	/* Configure the NMI isr */
 	_NmiHandlerSet(nmi_test_isr);
 
-	for (i = 0; i < 10; i++) {
+	for (i = 0U; i < 10; i++) {
 		printk("Trigger NMI in 10s: %d s\n", i);
 		k_sleep(1000);
 	}

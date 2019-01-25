@@ -150,7 +150,7 @@ struct uart_miv_data {
 #define DEV_DATA(dev)						\
 	((struct uart_miv_data * const)(dev)->driver_data)
 
-static unsigned char uart_miv_poll_out(struct device *dev,
+static void uart_miv_poll_out(struct device *dev,
 				       unsigned char c)
 {
 	volatile struct uart_miv_regs_t *uart = DEV_UART(dev);
@@ -159,8 +159,6 @@ static unsigned char uart_miv_poll_out(struct device *dev,
 		;
 
 	uart->tx = c;
-
-	return c;
 }
 
 static int uart_miv_poll_in(struct device *dev, unsigned char *c)
@@ -390,16 +388,16 @@ static void uart_miv_irq_cfg_func_0(struct device *dev);
 #endif
 
 static const struct uart_miv_device_config uart_miv_dev_cfg_0 = {
-	.uart_addr    = CONFIG_MIV_UART_0_BASE_ADDR,
-	.sys_clk_freq = CONFIG_MIV_UART_0_CLOCK_FREQUENCY,
+	.uart_addr    = DT_MIV_UART_0_BASE_ADDR,
+	.sys_clk_freq = DT_MIV_UART_0_CLOCK_FREQUENCY,
 	.line_config  = MIV_UART_0_LINECFG,
-	.baud_rate    = CONFIG_MIV_UART_0_BAUD_RATE,
+	.baud_rate    = DT_MIV_UART_0_BAUD_RATE,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.cfg_func     = uart_miv_irq_cfg_func_0,
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_miv_0, CONFIG_MIV_UART_0_NAME,
+DEVICE_AND_API_INIT(uart_miv_0, DT_MIV_UART_0_NAME,
 		    uart_miv_init, &uart_miv_data_0, &uart_miv_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&uart_miv_driver_api);

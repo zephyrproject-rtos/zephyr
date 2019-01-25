@@ -7,7 +7,7 @@
 #include <soc.h>
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
 
-static struct arm_mpu_region mpu_regions[] = {
+static const struct arm_mpu_region mpu_regions[] = {
 	/* Region 0 */
 	MPU_REGION_ENTRY("FLASH_0",
 			 CONFIG_FLASH_BASE_ADDRESS,
@@ -18,7 +18,7 @@ static struct arm_mpu_region mpu_regions[] = {
 			 REGION_RAM_ATTR(REGION_128K)),
 };
 
-struct arm_mpu_config mpu_config = {
+const struct arm_mpu_config mpu_config = {
 	.num_regions = ARRAY_SIZE(mpu_regions),
 	.mpu_regions = mpu_regions,
 };

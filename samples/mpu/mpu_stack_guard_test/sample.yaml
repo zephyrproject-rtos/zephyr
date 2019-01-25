@@ -5,7 +5,7 @@ tests:
     tags: mpu stackguard
     harness: console
     # We do not handle segfaults here
-    arch_exclude: posix riscv32 nios2 xtensa
+    arch_exclude: posix riscv32 nios2 xtensa x86_64
     platform_exclude: qemu_cortex_m3
     harness_config:
       type: multi_line

@@ -4,8 +4,9 @@
 
 '''west "flash" command'''
 
-from commands.run_common import desc_common, add_parser_common, do_run_common
-from commands import WestCommand
+from west.commands.run_common import desc_common, add_parser_common, \
+    do_run_common
+from west.commands import WestCommand
 
 
 class Flash(WestCommand):
@@ -13,7 +14,7 @@ class Flash(WestCommand):
     def __init__(self):
         super(Flash, self).__init__(
             'flash',
-            'Flash and run a binary onto a board.\n\n' +
+            'Flash and run a binary on a board.\n\n' +
             desc_common('flash'),
             accepts_unknown_args=True)
 

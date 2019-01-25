@@ -73,6 +73,11 @@ static void SOC_RdcInit(void)
 	/* Set access to GPIO_7 for M4 core */
 	RDC_SetPdapAccess(RDC, rdcPdapGpio7, GPIO_7_RDC, false, false);
 #endif /* CONFIG_GPIO_IMX_PORT_7 */
+
+#ifdef CONFIG_IPM_IMX
+	/* Set access to MU B for M4 core */
+	RDC_SetPdapAccess(RDC, rdcPdapMuB, MU_B_RDC, false, false);
+#endif /* CONFIG_IPM_IMX */
 }
 
 /* Initialize cache. */

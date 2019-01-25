@@ -13,8 +13,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_tcp
-#define NET_LOG_LEVEL CONFIG_NET_TCP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 
 #include <kernel.h>
 #include <string.h>
@@ -115,7 +115,7 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 	u32_t rel_ack, ack;
 	u8_t flags;
 
-	if (NET_LOG_LEVEL < LOG_LEVEL_DBG) {
+	if (CONFIG_NET_TCP_LOG_LEVEL < LOG_LEVEL_DBG) {
 		return;
 	}
 
@@ -128,7 +128,7 @@ static void net_tcp_trace(struct net_pkt *pkt, struct net_tcp *tcp)
 	ack = sys_get_be32(tcp_hdr->ack);
 
 	if (!tcp->sent_ack) {
-		rel_ack = 0;
+		rel_ack = 0U;
 	} else {
 		rel_ack = ack ? ack - tcp->sent_ack : 0;
 	}
@@ -392,7 +392,7 @@ static int prepare_segment(struct net_tcp *tcp,
 	struct net_pkt *alloc_pkt;
 	u16_t dst_port, src_port;
 	bool pkt_allocated;
-	u8_t optlen = 0;
+	u8_t optlen = 0U;
 	int status;
 
 	NET_ASSERT(context);
@@ -668,13 +668,13 @@ static void net_tcp_set_syn_opt(struct net_tcp *tcp, u8_t *options,
 {
 	u32_t recv_mss;
 
-	*optionlen = 0;
+	*optionlen = 0U;
 
 	if (!(tcp->flags & NET_TCP_RECV_MSS_SET)) {
 		recv_mss = net_tcp_get_recv_mss(tcp);
 		tcp->flags |= NET_TCP_RECV_MSS_SET;
 	} else {
-		recv_mss = 0;
+		recv_mss = 0U;
 	}
 
 	recv_mss |= (NET_TCP_MSS_OPT << 24) | (NET_TCP_MSS_SIZE << 16);
@@ -764,9 +764,9 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 		}
 
 		segment.dst_addr = remote;
-		segment.wnd = 0;
+		segment.wnd = 0U;
 		segment.options = NULL;
-		segment.optlen = 0;
+		segment.optlen = 0U;
 
 		status = prepare_segment(tcp, &segment, NULL, pkt);
 	}
@@ -776,7 +776,7 @@ int net_tcp_prepare_reset(struct net_tcp *tcp,
 
 const char *net_tcp_state_str(enum net_tcp_state state)
 {
-#if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) || defined(CONFIG_NET_SHELL)
+#if (CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG) || defined(CONFIG_NET_SHELL)
 	switch (state) {
 	case NET_TCP_CLOSED:
 		return "CLOSED";
@@ -960,7 +960,7 @@ static void restart_timer(struct net_tcp *tcp)
 {
 	if (!sys_slist_is_empty(&tcp->sent_list)) {
 		tcp->flags |= NET_TCP_RETRYING;
-		tcp->retry_timeout_shift = 0;
+		tcp->retry_timeout_shift = 0U;
 		k_delayed_work_submit(&tcp->retry_timer, retry_timeout(tcp));
 	} else if (CONFIG_NET_TCP_TIME_WAIT_DELAY != 0 &&
 			(tcp->fin_sent && tcp->fin_rcvd)) {
@@ -1114,7 +1114,7 @@ void net_tcp_init(void)
 {
 }
 
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+#if CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG
 static void validate_state_transition(enum net_tcp_state current,
 				      enum net_tcp_state new)
 {
@@ -1279,7 +1279,7 @@ struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
 		/* If the pkt is compressed, then this is the typical outcome
 		 * so no use printing error in this case.
 		 */
-		if ((NET_LOG_LEVEL >= LOG_LEVEL_DBG) &&
+		if ((CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG) &&
 		    !is_6lo_technology(pkt)) {
 			NET_ASSERT(frag);
 		}
@@ -1354,13 +1354,13 @@ u16_t net_tcp_get_chksum(struct net_pkt *pkt, struct net_buf *frag)
 struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
 {
 	struct net_tcp_hdr *hdr;
-	u16_t chksum = 0;
+	u16_t chksum = 0U;
 	u16_t pos;
 
 	hdr = net_pkt_tcp_data(pkt);
 	if (net_tcp_header_fits(pkt, hdr)) {
 		hdr->chksum = 0;
-		hdr->chksum = ~net_calc_chksum_tcp(pkt);
+		hdr->chksum = net_calc_chksum_tcp(pkt);
 
 		return frag;
 	}
@@ -1374,7 +1374,7 @@ struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
 			     &pos, sizeof(chksum), (u8_t *)&chksum,
 			     ALLOC_TIMEOUT);
 
-	chksum = ~net_calc_chksum_tcp(pkt);
+	chksum = net_calc_chksum_tcp(pkt);
 
 	frag = net_pkt_write(pkt, frag, pos - 2, &pos, sizeof(chksum),
 			     (u8_t *)&chksum, ALLOC_TIMEOUT);
@@ -1417,7 +1417,7 @@ int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 		}
 
 		if (!opt_totlen) {
-			optlen = 0;
+			optlen = 0U;
 			goto error;
 		}
 
@@ -1858,7 +1858,7 @@ int net_tcp_unref(struct net_context *context)
 
 static void print_send_info(struct net_pkt *pkt, const char *msg)
 {
-	if (NET_LOG_LEVEL >= LOG_LEVEL_DBG) {
+	if (CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG) {
 		struct net_tcp_hdr hdr, *tcp_hdr;
 
 		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
@@ -1877,7 +1877,7 @@ static inline int send_syn_segment(struct net_context *context,
 	struct net_pkt *pkt = NULL;
 	int ret;
 	u8_t options[NET_TCP_MAX_OPT_SIZE];
-	u8_t optionlen = 0;
+	u8_t optionlen = 0U;
 
 	if (flags == NET_TCP_SYN) {
 		net_tcp_set_syn_opt(context->tcp, options, &optionlen);
@@ -2198,6 +2198,8 @@ NET_CONN_CB(tcp_synack_received)
 
 		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
 
+		k_sem_give(&context->tcp->connect_wait);
+
 		if (context->connect_cb) {
 			context->connect_cb(context, -ECONNREFUSED,
 					    context->user_data);
@@ -2407,8 +2409,8 @@ NET_CONN_CB(tcp_syn_rcvd)
 		pkt_get_sockaddr(net_context_get_family(context),
 				 pkt, &pkt_src_addr);
 		send_syn_ack(context, &pkt_src_addr, &remote_addr);
-
-		return NET_DROP;
+		net_pkt_unref(pkt);
+		return NET_OK;
 	}
 
 	/*
@@ -2523,6 +2525,8 @@ NET_CONN_CB(tcp_syn_rcvd)
 					addrlen,
 					0,
 					context->user_data);
+		net_pkt_unref(pkt);
+		return NET_OK;
 	}
 
 	return NET_DROP;
@@ -2541,7 +2545,7 @@ int net_tcp_accept(struct net_context *context, net_tcp_accept_cb_t cb,
 {
 	struct sockaddr local_addr;
 	struct sockaddr *laddr = NULL;
-	u16_t lport = 0;
+	u16_t lport = 0U;
 	int ret;
 
 	NET_ASSERT(context->tcp);

@@ -1,7 +1,11 @@
-.. _shell:
+.. _shell_label:
 
 Shell
 ######
+
+.. contents::
+    :local:
+    :depth: 2
 
 Overview
 ********
@@ -34,12 +38,11 @@ At this point, the following transport layers are implemented:
 * Segger RTT
 * DUMMY - not a physical transport layer
 
-See the :ref:`shell_api` documentation for more information.
-
 Connecting to Segger RTT via TCP (on macOS, for example)
 ========================================================
 
-On macOS JLinkRTTClient won't let you enter input. Instead, please use following procedure:
+On macOS JLinkRTTClient won't let you enter input. Instead, please use following
+procedure:
 
 * Open up a first Terminal window and enter:
 
@@ -55,7 +58,8 @@ On macOS JLinkRTTClient won't let you enter input. Instead, please use following
 
      nc localhost 19021
 
-* Now you should have a network connection to RTT that will let you enter input to the shell.
+* Now you should have a network connection to RTT that will let you enter input
+  to the shell.
 
 
 Commands
@@ -104,10 +108,7 @@ subcommands.
 
 .. code-block:: c
 
-	/* Creating subcommands (level 1 command) array for command "demo".
-	 * Subcommands must be added in alphabetical order to ensure correct
-	 * command autocompletion.
-	 */
+	/* Creating subcommands (level 1 command) array for command "demo". */
 	SHELL_CREATE_STATIC_SUBCMD_SET(sub_demo)
 	{
 		SHELL_CMD(params, NULL, "Print params command.",
@@ -238,128 +239,52 @@ Simple command handler implementation:
 		return 0;
 	}
 
-.. warning::
-	Do not use function :cpp:func:`shell_fprintf` outside of the command
-	handler because this might lead to incorrect text display on the
-	screen. If any text should be displayed outside of the command context,
-	then use the :ref:`logger`.
+Function :cpp:func:`shell_fprintf` or the shell print macros:
+:c:macro:`shell_print`, :c:macro:`shell_info`, :c:macro:`shell_warn` and
+:c:macro:`shell_error` can only be used from the command handler, or if the
+command context is forced to stay in the foreground by calling
+:cpp:func:`shell_command_enter` from within the command handler. In this latter
+case, the shell stops reading input and writing to the output (except for the
+logs), allowing a user to print from any thread context. Function
+:cpp:func:`shell_command_exit` or entering a :kbd:`CTRL+C` terminates a
+'foreground' command.
 
-Command help
-------------
-
-Every user-defined command, subcommand, or option can have its own help
-description. The help for commands and subcommands can be created with
-respective macros: :c:macro:`SHELL_CMD_REGISTER` and :c:macro:`SHELL_CMD`.
-In addition, you can define options for commands or subcommands using the
-macro :c:macro:`SHELL_OPT`. By default, each and every command or subcommand
-has these two options implemented: ``-h`` and ``--help``.
-
-In order to add help functionality to a command or subcommand, you must
-implement the help handler by either calling :cpp:func:`shell_cmd_precheck`
-or pair of functions :cpp:func:`shell_help_requested` and
-:cpp:func:`shell_help_print`. The former is more convenient as it also
-checks for valid arguments count.
+Here is an example foreground command implementation:
 
 .. code-block:: c
 
-	static int cmd_dummy_1(const struct shell *shell, size_t argc,
-			       char **argv)
-	{
-		ARG_UNUSED(argv);
-
-		/* Function shell_cmd_precheck will do one of below actions:
-		 * 1. print help if command called with -h or --help
-		 * 2. print error message if argc > 2
-		 *
-		 * Each of these actions can be deactivated in Kconfig.
-		 */
-		int err = shell_cmd_precheck(shell, (argc <= 2), NULL, 0);
-
-		if (err) {
-			return err;
-		}
-
-		shell_fprintf(shell, SHELL_NORMAL,
-			      "Command called with no -h or --help option."
-			      "\n");
-		return 0;
-	}
-
-	static int cmd_dummy_2(const struct shell *shell, size_t argc,
-			       char **argv)
+	static int cmd_handler(const struct shell *shell, size_t argc,
+				char **argv)
 	{
 		ARG_UNUSED(argc);
 		ARG_UNUSED(argv);
 
-		if (hell_help_requested(shell) {
-			shell_help_print(shell, NULL, 0);
-		} else {
-			shell_fprintf(shell, SHELL_NORMAL,
-			      "Command called with no -h or --help option."
-			      "\n");
-		}
+		shell_command_enter(shell);
+
+		foo_shell = shell;
+		foo_signal_thread(); /* Swtich context */
 
 		return 0;
 	}
 
-Command options
----------------
-
-When possible, use subcommands instead of options.  Options apply mainly in the
-case when an argument with ``-`` or ``--`` is requested. The main benefit of
-using subcommands is that they can be prompted or completed with the :kbd:`Tab`
-key. In addition, subcommands can have their own handler, which limits the
-usage of ``if - else if`` statements combination with the ``strcmp`` function
-in command handler.
-
-
-.. code-block:: c
-
-	static int cmd_with_options(const struct shell *shell, size_t argc,
-			            char **argv)
+	static void foo_thread_context(void)
 	{
-		int err;
-		/* Dummy options showing options usage */
-		static const struct shell_getopt_option opt[] = {
-			SHELL_OPT(
-				"--test",
-				"-t",
-				"test option help string"
-			),
-			SHELL_OPT(
-				"--dummy",
-				"-d",
-				"dummy option help string"
-			)
-		};
+		shell_print(foo_shell, "Lorem ipsum");
 
-		/* If command will be called with -h or --help option
-		 * all declared options will be listed in the help message
-		 */
-		err = shell_cmd_precheck(shell, (argc <= 2), opt,
-					 sizeof(opt)/sizeof(opt[1]));
-		if (err) {
-			return err;
-		}
-
-		/* checking if command was called with test option */
-		if (!strcmp(argv[1], "-t") || !strcmp(argv[1], "--test")) {
-		    shell_fprintf(shell, SHELL_NORMAL, "Command called with -t"
-				  " or --test option.\n");
-		    return 0;
-		}
-
-		/* checking if command was called with dummy option */
-		if (!strcmp(argv[1], "-d") || !strcmp(argv[1], "--dummy")) {
-		    shell_fprintf(shell, SHELL_NORMAL, "Command called with -d"
-				  " or --dummy option.\n");
-		    return 0;
-		}
-
-		shell_fprintf(shell, SHELL_WARNING,
-			      "Command called with no valid option.\n");
-		return 0;
+		/* Terminate foreground command. */
+		shell_command_exit(foo_shell);
 	}
+
+Command help
+------------
+
+Every user-defined command or subcommand can have its own help description.
+The help for commands and subcommands can be created with respective macros:
+:c:macro:`SHELL_CMD_REGISTER`, :c:macro:`SHELL_CMD_ARG_REGISTER`,
+:c:macro:`SHELL_CMD`, and :c:macro:`SHELL_CMD_ARG`.
+
+Shell prints this help message when you call a command
+or subcommand with ``-h`` or ``--help`` parameter.
 
 Parent commands
 ---------------
@@ -370,7 +295,7 @@ commands or the parent commands, depending on how you index ``argv``.
 * When indexing ``argv`` with positive numbers, you can access the parameters.
 * When indexing ``argv`` with negative numbers, you can access the parent
   commands.
-* The subcommand to which the handler belongs has the ``argv`` value of 0.
+* The subcommand to which the handler belongs has the ``argv`` index of 0.
 
 .. code-block:: c
 
@@ -382,18 +307,14 @@ commands or the parent commands, depending on how you index ``argv``.
 		/* If it is a subcommand handler parent command syntax
 		 * can be found using argv[-1].
 		 */
-		shell_fprintf(shell, SHELL_NORMAL,
-			      "This command has a parent command: %s\n",
+		shell_print(shell, "This command has a parent command: %s",
 			      argv[-1]);
 
 		/* Print this command syntax */
-		shell_fprintf(shell, SHELL_NORMAL,
-			      "This command syntax is: %s\n",
-			      argv[0]);
+		shell_print(shell, "This command syntax is: %s", argv[0]);
 
 		/* Print first argument */
-		shell_fprintf(shell, SHELL_NORMAL,
-			      argv[1]);
+		shell_print(shell, "%s", argv[1]);
 
 		return 0;
 	}
@@ -446,21 +367,33 @@ The shell module supports the following meta keys:
 
    * - Meta keys
      - Action
-   * - ctrl + a
+   * - :kbd:`Ctrl + a`
      - Moves the cursor to the beginning of the line.
-   * - ctrl + c
+   * - :kbd:`Ctrl + b`
+     - Moves the cursor backward one character.
+   * - :kbd:`Ctrl + c`
      - Preserves the last command on the screen and starts a new command in
        a new line.
-   * - ctrl + e
+   * - :kbd:`Ctrl + d`
+     - Deletes the character under the cursor.
+   * - :kbd:`Ctrl + e`
      - Moves the cursor to the end of the line.
-   * - ctrl + l
+   * - :kbd:`Ctrl + f`
+     - Moves the cursor forward one character.
+   * - :kbd:`Ctrl + k`
+     - Deletes from the cursor to the end of the line.
+   * - :kbd:`Ctrl + l`
      - Clears the screen and leaves the currently typed command at the top of
        the screen.
-   * - ctrl + u
+   * - :kbd:`Ctrl + u`
      - Clears the currently typed command.
-   * - ctrl + w
+   * - :kbd:`Ctrl + w`
      - Removes the word or part of the word to the left of the cursor. Words
        separated by period instead of space are treated as one word.
+   * - :kbd:`Alt + b`
+     - Moves the cursor backward one word.
+   * - :kbd:`Alt + f`
+     - Moves the cursor forward one word.
 
 Usage
 *****
@@ -483,7 +416,7 @@ The following code shows a simple use case of this library:
 		ARG_UNUSED(argc);
 		ARG_UNUSED(argv);
 
-		shell_fprintf(shell, SHELL_NORMAL, "pong\n");
+		shell_print(shell, "pong");
 		return 0;
 	}
 
@@ -492,17 +425,14 @@ The following code shows a simple use case of this library:
 	{
 		int cnt;
 
-		shell_fprintf(shell, SHELL_NORMAL, "argc = %d\n", argc);
+		shell_print(shell, "argc = %d", argc);
 		for (cnt = 0; cnt < argc; cnt++) {
-			shell_fprintf(shell, SHELL_NORMAL,
-					"  argv[%d] = %s\n", cnt, argv[cnt]);
+			shell_print(shell, "  argv[%d] = %s", cnt, argv[cnt]);
 		}
 		return 0;
 	}
 
-	/* Creating subcommands (level 1 command) array for command "demo".
-	 * Subcommands must be added in alphabetical order
-	 */
+	/* Creating subcommands (level 1 command) array for command "demo". */
 	SHELL_CREATE_STATIC_SUBCMD_SET(sub_demo)
 	{
 		SHELL_CMD(params, NULL, "Print params command.",
@@ -549,4 +479,27 @@ the shell will only print the subcommands registered for this command:
 
 	  params  ping
 
+Shell as the logger backend
+***************************
 
+Shell instance can act as the :ref:`logger` backend. Shell ensures that log
+messages are correctly multiplexed with shell output. Log messages from logger
+thread are enqueued and processed in the shell thread. Logger thread will block
+for configurable amount of time if queue is full, blocking logger thread context
+for that time. Oldest log message is removed from the queue after timeout and
+new message is enqueued. Use the ``shell stats show`` command to retrieve
+number of log messages dropped by the shell instance. Log queue size and timeout
+are :c:macro:`SHELL_DEFINE` arguments.
+
+.. warning::
+	Enqueuing timeout must be set carefully when multiple backends are used
+	in the system. The shell instance could	have a slow transport or could
+	block, for example, by a UART with hardware flow control. If timeout is
+	set too high, the logger thread could be blocked and impact other logger
+	backends.
+
+API Reference
+*************
+
+.. doxygengroup:: shell_api
+   :project: Zephyr

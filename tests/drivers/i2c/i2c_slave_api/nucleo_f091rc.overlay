@@ -1,13 +1,6 @@
-/ {
-	aliases {
-		eeprom-slave-0 = &ep_0;
-		eeprom-slave-1 = &ep_1;
-	};
-};
-
 &i2c1 {
-	ep_0: eeprom@54 {
-		compatible = "i2c,eeprom";
+	eeprom@54 {
+		compatible = "atmel,at24";
 		reg = <0x54>;
 		label = "EEPROM_SLAVE_0";
 		size = <1>;
@@ -16,8 +9,8 @@
 
 
 &i2c2 {
-	ep_1: eeprom@56 {
-		compatible = "i2c,eeprom";
+	eeprom@56 {
+		compatible = "atmel,at24";
 		reg = <0x56>;
 		label = "EEPROM_SLAVE_1";
 		size = <1>;

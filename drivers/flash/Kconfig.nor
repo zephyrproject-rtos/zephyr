@@ -1,0 +1,42 @@
+#
+# Copyright (c) 2018 Savoir-Faire Linux.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+
+menuconfig SPI_NOR
+	bool
+	prompt "SPI NOR Flash"
+	select FLASH_HAS_DRIVER_ENABLED
+	depends on SPI && FLASH
+
+if SPI_NOR
+
+config SPI_NOR_INIT_PRIORITY
+	int
+	default 80
+	help
+	  Device driver initialization priority.
+	  Device is connected to SPI bus, it has to
+	  be initialized after SPI driver.
+
+config SPI_NOR_JEDEC_ID
+	hex "Unique Id to identify SPI flash"
+	default 0
+	help
+	This is a unique id to identify SPI flash
+
+config SPI_NOR_PAGE_SIZE
+	int "Page size of SPI flash"
+	default 0
+	help
+	This option specifies page size of SPI flash
+
+config SPI_NOR_SECTOR_SIZE
+	int "Sector size of SPI flash"
+	default 0
+	help
+	This option specifies sector size of SPI flash
+
+endif # SPI_NOR

@@ -21,7 +21,7 @@ osMutexId osMutexCreate(const osMutexDef_t *mutex_def)
 		return NULL;
 	}
 
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return NULL;
 	}
 
@@ -48,7 +48,7 @@ osStatus osMutexWait(osMutexId mutex_id, uint32_t timeout)
 		return osErrorParameter;
 	}
 
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return osErrorISR;
 	}
 
@@ -80,7 +80,7 @@ osStatus osMutexRelease(osMutexId mutex_id)
 		return osErrorParameter;
 	}
 
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return osErrorISR;
 	}
 
@@ -105,7 +105,7 @@ osStatus osMutexDelete(osMutexId mutex_id)
 		return osErrorParameter;
 	}
 
-	if (_is_in_isr()) {
+	if (k_is_in_isr()) {
 		return osErrorISR;
 	}
 

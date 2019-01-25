@@ -175,7 +175,7 @@ static void ascii7_to_utf16le(void *descriptor)
 		__ASSERT(buf[ascii_idx_max] > 0x1F && buf[ascii_idx_max] < 0x7F,
 			 "Only printable ascii-7 characters are allowed in USB "
 			 "string descriptors");
-		buf[i] = 0;
+		buf[i] = 0U;
 		buf[i - 1] = buf[ascii_idx_max--];
 	}
 }
@@ -337,8 +337,8 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 	struct usb_if_descriptor *if_descr = NULL;
 	struct usb_cfg_data *cfg_data = NULL;
 	struct usb_ep_descriptor *ep_descr = NULL;
-	u8_t numof_ifaces = 0;
-	u8_t str_descr_idx = 0;
+	u8_t numof_ifaces = 0U;
+	u8_t str_descr_idx = 0U;
 	u32_t requested_ep = BIT(16) | BIT(0);
 
 	while (head->bLength != 0) {
@@ -409,9 +409,8 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 
 				LOG_DBG("Now the wTotalLength is %d",
 					(u8_t *)head - (u8_t *)cfg_descr);
-				cfg_descr->wTotalLength =
-					sys_cpu_to_le16((u8_t *)head -
-							(u8_t *)cfg_descr);
+				sys_put_le16((u8_t *)head - (u8_t *)cfg_descr,
+					     (u8_t *)&cfg_descr->wTotalLength);
 				cfg_descr->bNumInterfaces = numof_ifaces;
 			}
 

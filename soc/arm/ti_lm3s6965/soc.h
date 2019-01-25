@@ -78,7 +78,7 @@ extern "C" {
 /* uart configuration settings */
 #if defined(CONFIG_UART_STELLARIS)
 
-#define UART_STELLARIS_CLK_FREQ		SYSCLK_DEFAULT_IOSC_HZ
+#define DT_UART_STELLARIS_CLK_FREQ		SYSCLK_DEFAULT_IOSC_HZ
 
 #endif /* CONFIG_UART_STELLARIS */
 

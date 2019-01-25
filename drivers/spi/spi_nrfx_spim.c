@@ -307,39 +307,40 @@ static int init_spim(struct device *dev, const nrfx_spim_config_t *config)
 #define SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)
 #endif
 
-#define SPI_NRFX_SPIM_DEVICE(idx)					     \
-	static int spi_##idx##_init(struct device *dev)			     \
-	{								     \
-		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		     \
-			    CONFIG_SPI_##idx##_IRQ_PRI,			     \
-			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);     \
-		const nrfx_spim_config_t config = {			     \
-			.sck_pin   = CONFIG_SPI_##idx##_NRF_SCK_PIN,	     \
-			.mosi_pin  = CONFIG_SPI_##idx##_NRF_MOSI_PIN,	     \
-			.miso_pin  = CONFIG_SPI_##idx##_NRF_MISO_PIN,	     \
-			.ss_pin    = NRFX_SPIM_PIN_NOT_USED,		     \
-			.orc       = CONFIG_SPI_##idx##_NRF_ORC,	     \
-			.frequency = NRF_SPIM_FREQ_4M,			     \
-			.mode      = NRF_SPIM_MODE_0,			     \
-			.bit_order = NRF_SPIM_BIT_ORDER_MSB_FIRST,	     \
-			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		     \
-		};							     \
-		return init_spim(dev, &config);				     \
-	}								     \
-	static struct spi_nrfx_data spi_##idx##_data = {		     \
-		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		     \
-		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		     \
-		.busy = false,						     \
-	};								     \
-	static const struct spi_nrfx_config spi_##idx##_config = {	     \
-		.spim = NRFX_SPIM_INSTANCE(idx),			     \
-		.max_chunk_len = (1 << SPIM##idx##_EASYDMA_MAXCNT_SIZE) - 1, \
-	};								     \
-	DEVICE_AND_API_INIT(spi_##idx, CONFIG_SPI_##idx##_NAME,		     \
-			    spi_##idx##_init,				     \
-			    &spi_##idx##_data,				     \
-			    &spi_##idx##_config,			     \
-			    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,	     \
+#define SPI_NRFX_SPIM_DEVICE(idx)					       \
+	static int spi_##idx##_init(struct device *dev)			       \
+	{								       \
+		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_SPIM##idx),		       \
+			    DT_NORDIC_NRF_SPI_SPI_##idx##_IRQ_PRIORITY,	       \
+			    nrfx_isr, nrfx_spim_##idx##_irq_handler, 0);       \
+		const nrfx_spim_config_t config = {			       \
+			.sck_pin   = DT_NORDIC_NRF_SPI_SPI_##idx##_SCK_PIN,    \
+			.mosi_pin  = DT_NORDIC_NRF_SPI_SPI_##idx##_MOSI_PIN,   \
+			.miso_pin  = DT_NORDIC_NRF_SPI_SPI_##idx##_MISO_PIN,   \
+			.ss_pin    = NRFX_SPIM_PIN_NOT_USED,		       \
+			.orc       = CONFIG_SPI_##idx##_NRF_ORC,	       \
+			.frequency = NRF_SPIM_FREQ_4M,			       \
+			.mode      = NRF_SPIM_MODE_0,			       \
+			.bit_order = NRF_SPIM_BIT_ORDER_MSB_FIRST,	       \
+			SPI_NRFX_SPIM_EXTENDED_CONFIG(idx)		       \
+		};							       \
+		return init_spim(dev, &config);				       \
+	}								       \
+	static struct spi_nrfx_data spi_##idx##_data = {		       \
+		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
+		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
+		.busy = false,						       \
+	};								       \
+	static const struct spi_nrfx_config spi_##idx##_config = {	       \
+		.spim = NRFX_SPIM_INSTANCE(idx),			       \
+		.max_chunk_len = (1 << SPIM##idx##_EASYDMA_MAXCNT_SIZE) - 1,   \
+	};								       \
+	DEVICE_AND_API_INIT(spi_##idx,					       \
+			    DT_NORDIC_NRF_SPI_SPI_##idx##_LABEL,	       \
+			    spi_##idx##_init,				       \
+			    &spi_##idx##_data,				       \
+			    &spi_##idx##_config,			       \
+			    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,	       \
 			    &spi_nrfx_driver_api)
 
 #ifdef CONFIG_SPI_0_NRF_SPIM

@@ -86,8 +86,6 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	if (options & K_USER) {
 		thread->arch.priv_stack_start =
 			(u32_t)(stackEnd + STACK_GUARD_SIZE);
-		thread->arch.priv_stack_size =
-			(u32_t)(CONFIG_PRIVILEGED_STACK_SIZE);
 
 		stackAdjEnd = (char *)STACK_ROUND_DOWN(stackEnd + STACK_GUARD_SIZE +
 					CONFIG_PRIVILEGED_STACK_SIZE);
@@ -121,7 +119,6 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		stackEnd += CONFIG_PRIVILEGED_STACK_SIZE + STACK_GUARD_SIZE;
 
 		thread->arch.priv_stack_start = 0;
-		thread->arch.priv_stack_size = 0;
 
 #ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
 		/* reserve stack space for the userspace local data struct */
@@ -143,7 +140,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		stackAdjEnd - sizeof(struct init_stack_frame));
 
 	/* fill init context */
-	pInitCtx->status32 = 0;
+	pInitCtx->status32 = 0U;
 	if (options & K_USER) {
 		pInitCtx->pc = ((u32_t)_user_thread_entry_wrapper);
 	} else {
@@ -169,7 +166,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		STACK_ROUND_DOWN(stackAdjEnd) -
 		sizeof(struct init_stack_frame));
 
-	pInitCtx->status32 = 0;
+	pInitCtx->status32 = 0U;
 	pInitCtx->pc = ((u32_t)_thread_entry_wrapper);
 #endif
 
@@ -249,13 +246,11 @@ FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
 	_current->arch.priv_stack_start =
 			(u32_t)(_current->stack_info.start +
 				_current->stack_info.size + STACK_GUARD_SIZE);
-	_current->arch.priv_stack_size =
-			(u32_t)CONFIG_PRIVILEGED_STACK_SIZE;
 
 #ifdef CONFIG_ARC_STACK_CHECKING
 	_current->arch.k_stack_top = _current->arch.priv_stack_start;
 	_current->arch.k_stack_base = _current->arch.priv_stack_start +
-				_current->arch.priv_stack_size;
+				CONFIG_PRIVILEGED_STACK_SIZE;
 	_current->arch.u_stack_top = _current->stack_info.start;
 	_current->arch.u_stack_base = _current->stack_info.start +
 				_current->stack_info.size;

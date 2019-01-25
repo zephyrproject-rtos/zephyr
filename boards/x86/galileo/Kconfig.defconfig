@@ -2,38 +2,38 @@
 if BOARD_GALILEO
 
 config BUILD_OUTPUT_STRIPPED
-	def_bool y
+	default y
 
 config BOARD
 	default "galileo"
 
 config I2C
-	def_bool y
+	default y
 
 config GPIO
-	def_bool y
+	default y
 
 config PWM
-	def_bool y
+	default y
 
 config SPI
-	def_bool y
+	default y
 
 config SHARED_IRQ
-	def_bool y
+	default y
 
 config PCI_ENUMERATION
-	def_bool y
+	default y
 
 if GPIO && I2C
 
 config GPIO_PCAL9535A
-	def_bool y
+	default y
 
 if GPIO_PCAL9535A
 
 config GPIO_PCAL9535A_0
-	def_bool y
+	default y
 
 if GPIO_PCAL9535A_0
 
@@ -47,7 +47,7 @@ config GPIO_PCAL9535A_0_I2C_MASTER_DEV_NAME
 endif # GPIO_PCAL9535A_0
 
 config GPIO_PCAL9535A_1
-	def_bool y
+	default y
 
 if GPIO_PCAL9535A_1
 
@@ -61,7 +61,7 @@ config GPIO_PCAL9535A_1_I2C_MASTER_DEV_NAME
 endif # GPIO_PCAL9535A_1
 
 config GPIO_PCAL9535A_2
-	def_bool y
+	default y
 
 if GPIO_PCAL9535A_2
 
@@ -81,12 +81,12 @@ endif # GPIO && I2C
 if PWM && I2C
 
 config PWM_PCA9685
-	def_bool y
+	default y
 
 if PWM_PCA9685
 
 config PWM_PCA9685_0
-	def_bool y
+	default y
 
 if PWM_PCA9685_0
 

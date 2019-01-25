@@ -331,6 +331,52 @@ __STATIC_INLINE void nrf_timer_int_disable(NRF_TIMER_Type * p_reg,
 __STATIC_INLINE bool nrf_timer_int_enable_check(NRF_TIMER_Type * p_reg,
                                                 uint32_t timer_int);
 
+#if defined(DPPI_PRESENT) || defined(__NRFX_DOXYGEN__)
+/**
+ * @brief Function for setting the subscribe configuration for a given
+ *        TIMER task.
+ *
+ * @param[in] p_reg   Pointer to the structure of registers of the peripheral.
+ * @param[in] task    Task for which to set the configuration.
+ * @param[in] channel Channel through which to subscribe events.
+ */
+__STATIC_INLINE void nrf_timer_subscribe_set(NRF_TIMER_Type * p_reg,
+                                             nrf_timer_task_t task,
+                                             uint8_t          channel);
+
+/**
+ * @brief Function for clearing the subscribe configuration for a given
+ *        TIMER task.
+ *
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] task  Task for which to clear the configuration.
+ */
+__STATIC_INLINE void nrf_timer_subscribe_clear(NRF_TIMER_Type * p_reg,
+                                               nrf_timer_task_t task);
+
+/**
+ * @brief Function for setting the publish configuration for a given
+ *        TIMER event.
+ *
+ * @param[in] p_reg   Pointer to the structure of registers of the peripheral.
+ * @param[in] event   Event for which to set the configuration.
+ * @param[in] channel Channel through which to publish the event.
+ */
+__STATIC_INLINE void nrf_timer_publish_set(NRF_TIMER_Type *  p_reg,
+                                           nrf_timer_event_t event,
+                                           uint8_t           channel);
+
+/**
+ * @brief Function for clearing the publish configuration for a given
+ *        TIMER event.
+ *
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] event Event for which to clear the configuration.
+ */
+__STATIC_INLINE void nrf_timer_publish_clear(NRF_TIMER_Type *  p_reg,
+                                             nrf_timer_event_t event);
+#endif // defined(DPPI_PRESENT) || defined(__NRFX_DOXYGEN__)
+
 /**
  * @brief Function for setting the timer mode.
  *
@@ -525,6 +571,36 @@ __STATIC_INLINE bool nrf_timer_int_enable_check(NRF_TIMER_Type * p_reg,
     return (bool)(p_reg->INTENSET & timer_int);
 }
 
+#if defined(DPPI_PRESENT)
+__STATIC_INLINE void nrf_timer_subscribe_set(NRF_TIMER_Type * p_reg,
+                                             nrf_timer_task_t task,
+                                             uint8_t          channel)
+{
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) task + 0x80uL)) =
+            ((uint32_t)channel | TIMER_SUBSCRIBE_START_EN_Msk);
+}
+
+__STATIC_INLINE void nrf_timer_subscribe_clear(NRF_TIMER_Type * p_reg,
+                                               nrf_timer_task_t task)
+{
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) task + 0x80uL)) = 0;
+}
+
+__STATIC_INLINE void nrf_timer_publish_set(NRF_TIMER_Type *  p_reg,
+                                           nrf_timer_event_t event,
+                                           uint8_t           channel)
+{
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) event + 0x80uL)) =
+            ((uint32_t)channel | TIMER_PUBLISH_COMPARE_EN_Msk);
+}
+
+__STATIC_INLINE void nrf_timer_publish_clear(NRF_TIMER_Type *  p_reg,
+                                             nrf_timer_event_t event)
+{
+    *((volatile uint32_t *) ((uint8_t *) p_reg + (uint32_t) event + 0x80uL)) = 0;
+}
+#endif // defined(DPPI_PRESENT)
+
 __STATIC_INLINE void nrf_timer_mode_set(NRF_TIMER_Type * p_reg,
                                         nrf_timer_mode_t mode)
 {
@@ -594,24 +670,26 @@ __STATIC_INLINE nrf_timer_int_mask_t nrf_timer_compare_int_get(uint32_t channel)
         ((uint32_t)NRF_TIMER_INT_COMPARE0_MASK << channel);
 }
 
-__STATIC_INLINE uint32_t nrf_timer_us_to_ticks(uint32_t time_us,
+__STATIC_INLINE uint32_t nrf_timer_us_to_ticks(uint32_t              time_us,
                                                nrf_timer_frequency_t frequency)
 {
     // The "frequency" parameter here is actually the prescaler value, and the
     // timer runs at the following frequency: f = 16 MHz / 2^prescaler.
     uint32_t prescaler = (uint32_t)frequency;
-    NRFX_ASSERT(time_us <= (UINT32_MAX / 16UL));
-    return ((time_us * 16UL) >> prescaler);
+    uint64_t ticks = ((time_us * 16ULL) >> prescaler);
+    NRFX_ASSERT(ticks <= UINT32_MAX);
+    return (uint32_t)ticks;
 }
 
-__STATIC_INLINE uint32_t nrf_timer_ms_to_ticks(uint32_t time_ms,
+__STATIC_INLINE uint32_t nrf_timer_ms_to_ticks(uint32_t              time_ms,
                                                nrf_timer_frequency_t frequency)
 {
     // The "frequency" parameter here is actually the prescaler value, and the
     // timer runs at the following frequency: f = 16000 kHz / 2^prescaler.
     uint32_t prescaler = (uint32_t)frequency;
-    NRFX_ASSERT(time_ms <= (UINT32_MAX / 16000UL));
-    return ((time_ms * 16000UL) >> prescaler);
+    uint64_t ticks = ((time_ms * 16000ULL) >> prescaler);
+    NRFX_ASSERT(ticks <= UINT32_MAX);
+    return (uint32_t)ticks;
 }
 
 #endif // SUPPRESS_INLINE_IMPLEMENTATION

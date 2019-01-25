@@ -17,6 +17,7 @@ if PCI
 
 config PCI_SHELL
 	bool "Enable PCI Shell"
+	depends on SHELL
 	select PCI_ENUMERATION
 	help
 	  Enable commands for debugging PCI using the built-in shell.
@@ -57,10 +58,8 @@ config PCI_LEGACY_BRIDGE_DEVICE_ID
 	depends on PCI_LEGACY_BRIDGE
 	default 0
 
-config PCI_DEBUG
-	bool "Enable PCI debugging"
-	help
-	  This options enables PCI debugging functions
+module = PCI
+module-str = PCI
+source "subsys/logging/Kconfig.template.log_config"
 
-endif
-
+endif # PCI

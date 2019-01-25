@@ -8,11 +8,11 @@ menu "Network Protocols"
 
 source "subsys/net/lib/coap/Kconfig"
 
-source "subsys/net/lib/coap_sock/Kconfig"
-
 source "subsys/net/lib/dns/Kconfig"
 
 source "subsys/net/lib/mqtt/Kconfig"
+
+source "subsys/net/lib/mqtt_sock/Kconfig"
 
 source "subsys/net/lib/http/Kconfig"
 

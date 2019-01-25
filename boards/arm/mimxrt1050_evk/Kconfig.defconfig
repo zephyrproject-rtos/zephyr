@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if BOARD_MIMXRT1050_EVK
+if BOARD_MIMXRT1050_EVK || BOARD_MIMXRT1050_EVK_QSPI
 
 config BOARD
 	default "mimxrt1050_evk"
@@ -13,45 +13,54 @@ config BOARD
 if GPIO_MCUX_IGPIO
 
 config GPIO_MCUX_IGPIO_1
-	def_bool y
+	default y
 
 config GPIO_MCUX_IGPIO_2
-	def_bool n
+	default n
 
 config GPIO_MCUX_IGPIO_3
-	def_bool n
+	default n
 
 config GPIO_MCUX_IGPIO_4
-	def_bool n
+	default n
 
 config GPIO_MCUX_IGPIO_5
-	def_bool y
+	default y
 
 endif # GPIO_MCUX_IGPIO
+
+if I2C_MCUX_LPI2C
+
+config I2C_1
+	default y
+
+endif # I2C_MCUX_LPI2C
 
 if SPI_MCUX_LPSPI
 
 config SPI_3
-	def_bool y
+	default y
 
 endif # SPI_MCUX_LPSPI
 
 if UART_MCUX_LPUART
 
 config UART_MCUX_LPUART_1
-	def_bool y
+	default y
 
 config UART_MCUX_LPUART_3
-	def_bool y if BT_UART
+	default y if BT_UART
 
 endif # UART_MCUX_LPUART
 
-if CODE_HYPERFLASH || CODE_QSPI
+if NETWORKING
 
-# Reserve space for the IVT
-config TEXT_SECTION_OFFSET
-	default 0x2000
+config NET_L2_ETHERNET
+	def_bool y
 
-endif
+config ETH_MCUX_0
+	def_bool y if NET_L2_ETHERNET
 
-endif # BOARD_MIMXRT1050_EVK
+endif # NETWORKING
+
+endif # BOARD_MIMXRT1050_EVK || BOARD_MIMXRT1050_EVK_QSPI

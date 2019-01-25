@@ -8,8 +8,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_ipv4
-#define NET_LOG_LEVEL CONFIG_NET_IPV4_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 
 #include <errno.h>
 #include <net/net_core.h>
@@ -82,7 +82,7 @@ void net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt)) ||
 	    next_header_proto == IPPROTO_ICMP) {
-		NET_IPV4_HDR(pkt)->chksum = ~net_calc_chksum_ipv4(pkt);
+		NET_IPV4_HDR(pkt)->chksum = net_calc_chksum_ipv4(pkt);
 
 		if (IS_ENABLED(CONFIG_NET_UDP) &&
 		    next_header_proto == IPPROTO_UDP) {
@@ -117,12 +117,38 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 	int pkt_len = ntohs(hdr->len);
 	enum net_verdict verdict = NET_DROP;
 
-	if (real_len != pkt_len) {
-		NET_DBG("IPv4 packet size %d pkt len %d", pkt_len, real_len);
+	if (real_len < pkt_len) {
+		NET_DBG("DROP: pkt len per hdr %d != pkt real len %d",
+			pkt_len, real_len);
+		goto drop;
+	} else if (real_len > pkt_len) {
+		net_pkt_pull(pkt, pkt_len, real_len - pkt_len);
+	}
+
+	if (net_ipv4_is_addr_mcast(&hdr->src)) {
+		NET_DBG("DROP: src addr is mcast");
 		goto drop;
 	}
 
 	if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &hdr->src)) {
+		NET_DBG("DROP: src addr is bcast");
+		goto drop;
+	}
+
+	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
+	    net_calc_chksum_ipv4(pkt) != 0) {
+		NET_DBG("DROP: invalid chksum");
+		goto drop;
+	}
+
+	if (!net_ipv4_is_my_addr(&hdr->dst) &&
+	    !net_ipv4_is_addr_mcast(&hdr->dst) &&
+	    ((hdr->proto == IPPROTO_UDP &&
+	      net_ipv4_addr_cmp(&hdr->dst, net_ipv4_broadcast_address()) &&
+	      !IS_ENABLED(CONFIG_NET_DHCPV4)) ||
+	     (hdr->proto == IPPROTO_TCP &&
+	      net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &hdr->dst)))) {
+		NET_DBG("DROP: not for me");
 		goto drop;
 	}
 
@@ -131,36 +157,17 @@ enum net_verdict net_ipv4_process_pkt(struct net_pkt *pkt)
 		log_strdup(net_sprint_ipv4_addr(&hdr->dst)));
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
-	net_pkt_set_ipv4_ttl(pkt, NET_IPV4_HDR(pkt)->ttl);
-
-	if (!net_ipv4_is_my_addr(&hdr->dst) &&
-	    !net_ipv4_is_addr_mcast(&hdr->dst)) {
-		if (IS_ENABLED(CONFIG_NET_DHCPV4) &&
-		    hdr->proto == IPPROTO_UDP &&
-		    net_ipv4_addr_cmp(&hdr->dst,
-				      net_ipv4_broadcast_address())) {
-
-			verdict = net_conn_input(IPPROTO_UDP, pkt);
-			if (verdict != NET_DROP) {
-				return verdict;
-			}
-		}
-
-		NET_DBG("IPv4 packet in pkt %p not for me", pkt);
-		goto drop;
-	}
+	net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
 
 	net_pkt_set_transport_proto(pkt, hdr->proto);
 
 	switch (hdr->proto) {
 	case IPPROTO_ICMP:
-		verdict = net_icmpv4_input(pkt);
+		verdict = net_icmpv4_input(
+			pkt, net_ipv4_is_addr_bcast(net_pkt_iface(pkt),
+						    &hdr->dst));
 		break;
 	case IPPROTO_TCP:
-		if (net_ipv4_is_addr_bcast(net_pkt_iface(pkt), &hdr->dst)) {
-			goto drop;
-		}
-
 		/* Fall through */
 	case IPPROTO_UDP:
 		verdict = net_conn_input(hdr->proto, pkt);

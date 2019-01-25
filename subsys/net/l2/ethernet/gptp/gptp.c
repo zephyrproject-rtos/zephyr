@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_gptp
-#define NET_LOG_LEVEL CONFIG_NET_GPTP_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
 #include <net/net_pkt.h>
 #include <ptp_clock.h>
@@ -86,8 +86,12 @@ static void gptp_compute_clock_identity(int port)
 	}
 }
 
+/* Note that we do not use log_strdup() here when printing msg as currently the
+ * msg variable is always a const string that is not allocated from the stack.
+ * If this changes at some point, then add log_strdup(msg) here.
+ */
 #define PRINT_INFO(msg, hdr, pkt)				\
-	NET_DBG("Received %s seq %d pkt %p", log_strdup(msg),	\
+	NET_DBG("Received %s seq %d pkt %p", msg,		\
 		ntohs(hdr->sequence_id), pkt)			\
 
 
@@ -387,7 +391,7 @@ static void gptp_init_clock_ds(void)
 
 	default_ds->priority2 = GPTP_PRIORITY2_DEFAULT;
 
-	default_ds->cur_utc_offset = 37; /* Current leap seconds TAI - UTC */
+	default_ds->cur_utc_offset = 37U; /* Current leap seconds TAI - UTC */
 	default_ds->flags.all = 0;
 	default_ds->flags.octets[1] = GPTP_FLAG_TIME_TRACEABLE;
 	default_ds->time_source = GPTP_TS_INTERNAL_OSCILLATOR;
@@ -418,7 +422,7 @@ static void gptp_init_clock_ds(void)
 	/* Initialize properties data set. */
 
 	/* TODO: Get accurate values for below. From the GM. */
-	prop_ds->cur_utc_offset = 37; /* Current leap seconds TAI - UTC */
+	prop_ds->cur_utc_offset = 37U; /* Current leap seconds TAI - UTC */
 	prop_ds->cur_utc_offset_valid = false;
 	prop_ds->leap59 = false;
 	prop_ds->leap61 = false;
@@ -468,7 +472,7 @@ static void gptp_init_port_ds(int port)
 	port_ds->ini_log_half_sync_itv = CONFIG_NET_GPTP_INIT_LOG_SYNC_ITV - 1;
 	port_ds->cur_log_half_sync_itv = port_ds->ini_log_half_sync_itv;
 	port_ds->sync_receipt_timeout = CONFIG_NET_GPTP_SYNC_RECEIPT_TIMEOUT;
-	port_ds->sync_receipt_timeout_time_itv = 10000000; /* 10ms */
+	port_ds->sync_receipt_timeout_time_itv = 10000000U; /* 10ms */
 
 	port_ds->ini_log_pdelay_req_itv =
 		CONFIG_NET_GPTP_INIT_LOG_PDELAY_REQ_ITV;
@@ -1009,7 +1013,7 @@ static void setup_vlan_events_listener(void)
 
 void net_gptp_init(void)
 {
-	gptp_domain.default_ds.nb_ports = 0;
+	gptp_domain.default_ds.nb_ports = 0U;
 
 #if defined(CONFIG_NET_GPTP_VLAN)
 	/* If user has enabled gPTP over VLAN support, then we start gPTP

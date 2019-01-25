@@ -1,0 +1,60 @@
+# Kconfig - STM32L496ZG Nucleo board configuration
+#
+# Copyright (c) 2018 Centaur Analytics, Inc
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_NUCLEO_L496ZG
+
+config BOARD
+	default "nucleo_l496zg"
+
+if UART_CONSOLE
+
+config LPUART_1
+	default y
+
+endif # UART_CONSOLE
+
+if SERIAL
+
+config LPUART_1
+	default y
+
+endif # SERIAL
+
+if I2C
+
+config I2C_1
+	default y
+
+endif # I2C
+
+if SPI
+
+config SPI_STM32_INTERRUPT
+	default y
+
+config SPI_1
+	default y
+
+endif # SPI
+
+if PWM
+
+config PWM_STM32_1
+	default y
+
+config PWM_STM32_2
+	default y
+
+config PWM_STM32_4
+	default y
+
+config PWM_STM32_15
+	default y
+
+endif # PWM
+
+endif # BOARD_NUCLEO_L496ZG

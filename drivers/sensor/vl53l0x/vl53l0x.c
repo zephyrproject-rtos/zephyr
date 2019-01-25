@@ -198,7 +198,7 @@ static int vl53l0x_init(struct device *dev)
 {
 	struct vl53l0x_data *drv_data = dev->driver_data;
 	VL53L0X_Error ret;
-	u16_t vl53l0x_id = 0;
+	u16_t vl53l0x_id = 0U;
 	VL53L0X_DeviceInfo_t vl53l0x_dev_info;
 
 	LOG_DBG("enter in %s", __func__);
@@ -227,15 +227,15 @@ static int vl53l0x_init(struct device *dev)
 	k_sleep(100);
 #endif
 
-	drv_data->i2c = device_get_binding(CONFIG_VL53L0X_I2C_MASTER_DEV_NAME);
+	drv_data->i2c = device_get_binding(DT_ST_VL53L0X_0_BUS_NAME);
 	if (drv_data->i2c == NULL) {
 		LOG_ERR("Could not get pointer to %s device.",
-			CONFIG_VL53L0X_I2C_MASTER_DEV_NAME);
+			DT_ST_VL53L0X_0_BUS_NAME);
 		return -EINVAL;
 	}
 
 	drv_data->vl53l0x.i2c = drv_data->i2c;
-	drv_data->vl53l0x.I2cDevAddr = CONFIG_VL53L0X_I2C_ADDR;
+	drv_data->vl53l0x.I2cDevAddr = DT_ST_VL53L0X_0_BASE_ADDRESS;
 
 	/* Get info from sensor */
 	(void)memset(&vl53l0x_dev_info, 0, sizeof(VL53L0X_DeviceInfo_t));
@@ -281,7 +281,7 @@ static int vl53l0x_init(struct device *dev)
 
 static struct vl53l0x_data vl53l0x_driver;
 
-DEVICE_AND_API_INIT(vl53l0x, CONFIG_VL53L0X_NAME, vl53l0x_init, &vl53l0x_driver,
+DEVICE_AND_API_INIT(vl53l0x, DT_ST_VL53L0X_0_LABEL, vl53l0x_init, &vl53l0x_driver,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &vl53l0x_api_funcs);
 

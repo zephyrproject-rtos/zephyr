@@ -59,6 +59,13 @@ config SOC_FLASH_NRF_RADIO_SYNC
 	help
 	  Enable synchronization between flash memory driver and radio.
 
+config SOC_FLASH_NRF_UICR
+	bool "Access to UICR"
+	depends on SOC_FLASH_NRF
+	help
+	  Enable operations on UICR. Once enabled UICR are written or read as
+	  ordinary flash memory. Erase is possible for whole UICR at once.
+
 config SOC_FLASH_MCUX
 	bool "MCUX flash shim driver"
 	depends on HAS_MCUX
@@ -87,11 +94,15 @@ config SOC_FLASH_NIOS2_QSPI_DEV_NAME
 
 source "drivers/flash/Kconfig.gecko"
 
+source "drivers/flash/Kconfig.nor"
+
 source "drivers/flash/Kconfig.qmsi"
 
 source "drivers/flash/Kconfig.stm32"
 
 source "drivers/flash/Kconfig.sam0"
+
+source "drivers/flash/Kconfig.sam"
 
 source "drivers/flash/Kconfig.w25qxxdv"
 

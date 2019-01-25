@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_bt_shell
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_bt_shell, CONFIG_NET_L2_BT_LOG_LEVEL);
 
 #include <kernel.h>
 #include <toolchain.h>
@@ -84,8 +84,8 @@ static int shell_cmd_connect(const struct shell *shell,
 	bt_addr_le_t addr;
 	struct net_if *iface = net_if_get_default();
 
-	if (argc < 3 || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+	if (argc < 3) {
+		shell_help(shell);
 		return -ENOEXEC;
 	}
 
@@ -112,8 +112,8 @@ static int shell_cmd_scan(const struct shell *shell,
 {
 	struct net_if *iface = net_if_get_default();
 
-	if (argc < 2 || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+	if (argc < 2) {
+		shell_help(shell);
 		return -ENOEXEC;
 	}
 
@@ -133,11 +133,6 @@ static int shell_cmd_disconnect(const struct shell *shell,
 {
 	struct net_if *iface = net_if_get_default();
 
-	if (shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
-		return -ENOEXEC;
-	}
-
 	if (net_mgmt(NET_REQUEST_BT_DISCONNECT, iface, NULL, 0)) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      "Disconnect failed\n");
@@ -154,8 +149,8 @@ static int shell_cmd_advertise(const struct shell *shell,
 {
 	struct net_if *iface = net_if_get_default();
 
-	if (argc < 2 || shell_help_requested(shell)) {
-		shell_help_print(shell, NULL, 0);
+	if (argc < 2) {
+		shell_help(shell);
 		return -ENOEXEC;
 	}
 

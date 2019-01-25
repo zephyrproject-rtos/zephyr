@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <ctype.h>
 #include "shell_ops.h"
 
 void shell_op_cursor_vert_move(const struct shell *shell, s32_t delta)
@@ -97,6 +98,51 @@ void shell_op_cursor_move(const struct shell *shell, s16_t val)
 	shell->ctx->cmd_buff_pos = new_pos;
 }
 
+static u16_t shift_calc(const char *str, u16_t pos, u16_t len, s16_t sign)
+{
+	bool found = false;
+	u16_t ret = 0;
+	u16_t idx;
+
+	while (1) {
+		idx = pos + ret * sign;
+		if (((idx == 0) && (sign < 0)) ||
+		    ((idx == len) && (sign > 0))) {
+			break;
+		}
+		if (isalnum((int)str[idx]) != 0) {
+			found = true;
+		} else {
+			if (found) {
+				break;
+			}
+		}
+		ret++;
+	}
+
+	return ret;
+}
+
+void shell_op_cursor_word_move(const struct shell *shell, s16_t val)
+{
+	s16_t shift;
+	s16_t sign;
+
+	if (val < 0) {
+		val = -val;
+		sign = -1;
+	} else {
+		sign = 1;
+	}
+
+	while (val--) {
+		shift = shift_calc(shell->ctx->cmd_buff,
+				   shell->ctx->cmd_buff_pos,
+				   shell->ctx->cmd_buff_len, sign);
+		shell_op_cursor_move(shell, sign * shift);
+	}
+}
+
 void shell_op_word_remove(const struct shell *shell)
 {
 	char *str = &shell->ctx->cmd_buff[shell->ctx->cmd_buff_pos - 1];
@@ -110,7 +156,7 @@ void shell_op_word_remove(const struct shell *shell)
 	}
 
 	/* Start at the current position. */
-	chars_to_delete = 0;
+	chars_to_delete = 0U;
 
 	/* Look back for all spaces then for non-spaces. */
 	while ((str >= str_start) && (*str == ' ')) {
@@ -204,7 +250,7 @@ static void data_insert(const struct shell *shell, const char *data, u16_t len)
 	shell->ctx->cmd_buff_len += len;
 	shell->ctx->cmd_buff[shell->ctx->cmd_buff_len] = '\0';
 
-	if (!flag_echo_is_set(shell)) {
+	if (!flag_echo_get(shell)) {
 		shell->ctx->cmd_buff_pos += len;
 		return;
 	}
@@ -256,9 +302,118 @@ void shell_op_char_delete(const struct shell *shell)
 	reprint_from_cursor(shell, --diff, true);
 }
 
+void shell_op_delete_from_cursor(const struct shell *shell)
+{
+	shell->ctx->cmd_buff_len = shell->ctx->cmd_buff_pos;
+	shell->ctx->cmd_buff[shell->ctx->cmd_buff_pos] = '\0';
+
+	clear_eos(shell);
+}
+
 void shell_op_completion_insert(const struct shell *shell,
 				const char *compl,
 				u16_t compl_len)
 {
 	data_insert(shell, compl, compl_len);
+}
+
+void shell_cmd_line_erase(const struct shell *shell)
+{
+	shell_multiline_data_calc(&shell->ctx->vt100_ctx.cons,
+				  shell->ctx->cmd_buff_pos,
+				  shell->ctx->cmd_buff_len);
+	shell_op_cursor_horiz_move(shell, -shell->ctx->vt100_ctx.cons.cur_x);
+	shell_op_cursor_vert_move(shell, shell->ctx->vt100_ctx.cons.cur_y - 1);
+
+	clear_eos(shell);
+}
+
+static void shell_pend_on_txdone(const struct shell *shell)
+{
+	if (IS_ENABLED(CONFIG_MULTITHREADING) &&
+	    (shell->ctx->state < SHELL_STATE_PANIC_MODE_ACTIVE)) {
+		k_poll(&shell->ctx->events[SHELL_SIGNAL_TXDONE], 1, K_FOREVER);
+		k_poll_signal_reset(&shell->ctx->signals[SHELL_SIGNAL_TXDONE]);
+	} else {
+		/* Blocking wait in case of bare metal. */
+		while (!flag_tx_rdy_get(shell)) {
+		}
+		flag_tx_rdy_set(shell, false);
+	}
+}
+
+void shell_write(const struct shell *shell, const void *data,
+		 size_t length)
+{
+	__ASSERT_NO_MSG(shell && data);
+
+	size_t offset = 0;
+	size_t tmp_cnt;
+
+	while (length) {
+		int err = shell->iface->api->write(shell->iface,
+				&((const u8_t *) data)[offset], length,
+				&tmp_cnt);
+		(void)err;
+		__ASSERT_NO_MSG(err == 0);
+		__ASSERT_NO_MSG(length >= tmp_cnt);
+		offset += tmp_cnt;
+		length -= tmp_cnt;
+		if (tmp_cnt == 0 &&
+		    (shell->ctx->state != SHELL_STATE_PANIC_MODE_ACTIVE)) {
+			shell_pend_on_txdone(shell);
+		}
+	}
+}
+
+/* Function shall be only used by the fprintf module. */
+void shell_print_stream(const void *user_ctx, const char *data,
+			size_t data_len)
+{
+	shell_write((const struct shell *) user_ctx, data, data_len);
+}
+
+static void vt100_bgcolor_set(const struct shell *shell,
+			      enum shell_vt100_color bgcolor)
+{
+	if ((bgcolor == SHELL_NORMAL) ||
+	    (shell->ctx->vt100_ctx.col.bgcol == bgcolor)) {
+		return;
+	}
+
+	/* -1 because default value is first in enum */
+	u8_t cmd[] = SHELL_VT100_BGCOLOR(bgcolor - 1);
+
+	shell->ctx->vt100_ctx.col.bgcol = bgcolor;
+	shell_raw_fprintf(shell->fprintf_ctx, "%s", cmd);
+
+}
+
+void shell_vt100_color_set(const struct shell *shell,
+			   enum shell_vt100_color color)
+{
+
+	if (shell->ctx->vt100_ctx.col.col == color) {
+		return;
+	}
+
+	shell->ctx->vt100_ctx.col.col = color;
+
+	if (color != SHELL_NORMAL) {
+
+		u8_t cmd[] = SHELL_VT100_COLOR(color - 1);
+
+		shell_raw_fprintf(shell->fprintf_ctx, "%s", cmd);
+	} else {
+		static const u8_t cmd[] = SHELL_VT100_MODESOFF;
+
+		shell_raw_fprintf(shell->fprintf_ctx, "%s", cmd);
+	}
+}
+
+void shell_vt100_colors_restore(const struct shell *shell,
+				       const struct shell_vt100_colors *color)
+{
+	shell_vt100_color_set(shell, color->col);
+	vt100_bgcolor_set(shell, color->bgcol);
 }

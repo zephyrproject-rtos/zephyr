@@ -12,6 +12,15 @@ zephyr_library_sources(
 	cmdline.c
 	)
 
+if(CONFIG_HAS_SDL)
+	find_package(PkgConfig REQUIRED)
+	pkg_search_module(SDL2 REQUIRED sdl2)
+	zephyr_include_directories(${SDL2_INCLUDE_DIRS})
+	zephyr_link_libraries(${SDL2_LIBRARIES})
+	zephyr_compile_options(${SDL2_CFLAGS_OTHER})
+	zephyr_library_sources(sdl_events.c)
+endif()
+
 zephyr_ld_options(
   -lm
 )

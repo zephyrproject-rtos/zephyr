@@ -36,12 +36,14 @@
 		gpio-5 = &gpio5;
 		gpio-6 = &gpio6;
 		led0 = &red_led;
+		mu-b = &mub;
 	};
 
 	chosen {
 		zephyr,flash = &flash;
 		zephyr,sram = &tcmu;
 		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
 	};
 
 	leds {
@@ -68,5 +70,9 @@
 };
 
 &gpio6 {
+	status = "ok";
+};
+
+&mub {
 	status = "ok";
 };

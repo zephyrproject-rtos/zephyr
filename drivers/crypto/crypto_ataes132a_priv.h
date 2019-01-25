@@ -119,7 +119,7 @@ void ataes132a_atmel_crc(u8_t *input, u8_t length,
 	u16_t double_carry;
 	u8_t higher_crc_bit;
 
-	for (i = 0, crc = 0; i < length; i++) {
+	for (i = 0, crc = 0U; i < length; i++) {
 		for (j = 7; j >=  0; j--) {
 			bit = !!(input[i] & BIT(j));
 			higher_crc_bit = crc >> 15;

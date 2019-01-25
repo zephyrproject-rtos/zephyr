@@ -28,8 +28,7 @@ struct deletable_s {
 
 u32_t val4v2;
 
-int c4_handle_export(int (*cb)(const char *name, char *value),
-		     enum settings_export_tgt tgt);
+int c4_handle_export(int (*cb)(const char *name, void *value, size_t val_len));
 
 struct settings_handler c4_test_handler = {
 	.name = "4",
@@ -39,21 +38,16 @@ struct settings_handler c4_test_handler = {
 	.h_export = c4_handle_export
 };
 
-int c4_handle_export(int (*cb)(const char *name, char *value),
-		     enum settings_export_tgt tgt)
+int c4_handle_export(int (*cb)(const char *name, void *value, size_t val_len))
 {
-	char value[32];
-
 	if (deletable_val.valid) {
-		settings_str_from_value(SETTINGS_INT32, &deletable_val.val32,
-					value, sizeof(value));
-		(void)cb(NAME_DELETABLE, value);
+		(void)cb(NAME_DELETABLE, &deletable_val.val32,
+			 sizeof(deletable_val.val32));
 	} else {
-		(void)cb(NAME_DELETABLE, NULL);
+		(void)cb(NAME_DELETABLE, NULL, 0);
 	}
 
-	settings_str_from_value(SETTINGS_INT32, &val4v2, value, sizeof(value));
-	(void)cb("4/dummy", value);
+	(void)cb("4/dummy", &val4v2, sizeof(val4v2));
 
 	return 0;
 }
@@ -108,8 +102,8 @@ void test_config_compress_deleted(void)
 	zassert_true(rc == 0, "settings_register fail");
 
 	deletable_val.valid = true;
-	deletable_val.val32 = 2018;
-	val4v2 = 0;
+	deletable_val.val32 = 2018U;
+	val4v2 = 0U;
 
 	rc = settings_save();
 	zassert_true(rc == 0, "fcb write error");

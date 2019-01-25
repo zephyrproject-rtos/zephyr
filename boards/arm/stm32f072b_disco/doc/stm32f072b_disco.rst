@@ -92,6 +92,10 @@ features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | SPI controller                      |
 +-----------+------------+-------------------------------------+
+| CAN       | on-chip    | CAN controller                      |
++-----------+------------+-------------------------------------+
+
+.. note:: CAN feature requires CAN transceiver, such as `SK Pang CAN breakout board`_.
 
 Other hardware features are not yet supported in this Zephyr port.
 
@@ -124,6 +128,8 @@ Default Zephyr Peripheral Mapping:
 - LD4 : PC8
 - LD5 : PC9
 - LD6 : PC7
+- CAN_RX : PB8
+- CAN_TX : PB9
 
 System Clock
 ============
@@ -210,3 +216,6 @@ References
 
 .. _STM32F072xB reference manual:
    http://www.st.com/resource/en/reference_manual/dm00031936.pdf
+
+.. _SK Pang CAN breakout board:
+   http://skpang.co.uk/catalog/canbus-can-fd-breakout-board-5v-p-242.html

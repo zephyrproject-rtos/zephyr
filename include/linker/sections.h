@@ -46,7 +46,7 @@
 
 /* Interrupts */
 #define IRQ_VECTOR_TABLE	.gnu.linkonce.irq_vector_table
-#define SW_ISR_TABLE		.sw_isr_table
+#define SW_ISR_TABLE		.gnu.linkonce.sw_isr_table
 
 /* Architecture-specific sections */
 #if defined(CONFIG_ARM)
@@ -56,7 +56,15 @@
 #define _CCM_DATA_SECTION_NAME		.ccm_data
 #define _CCM_BSS_SECTION_NAME		.ccm_bss
 #define _CCM_NOINIT_SECTION_NAME	.ccm_noinit
+#endif
 
+#define IMX_BOOT_CONF	.boot_hdr.conf
+#define IMX_BOOT_DATA	.boot_hdr.data
+#define IMX_BOOT_IVT	.boot_hdr.ivt
+#define IMX_BOOT_DCD	.boot_hdr.dcd_data
+
+#ifdef CONFIG_NOCACHE_MEMORY
+#define _NOCACHE_SECTION_NAME nocache
 #endif
 
 #include <linker/section_tags.h>

@@ -16,6 +16,7 @@
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
 		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
 		zephyr,bt-uart = &uart2;
 		zephyr,uart-pipe = &uart1;
 		zephyr,bt-mon-uart = &uart2;
@@ -35,4 +36,36 @@
 &uart2 {
 	status = "ok";
 	current-speed = <115200>;
+};
+
+&eth {
+	status = "ok";
+};
+
+&gpio0 {
+       status = "ok";
+};
+
+&gpio1 {
+       status = "ok";
+};
+
+&gpio2 {
+       status = "ok";
+};
+
+&gpio3 {
+       status = "ok";
+};
+
+&gpio4 {
+       status = "ok";
+};
+
+&gpio5 {
+       status = "ok";
+};
+
+&gpio6 {
+       status = "ok";
 };

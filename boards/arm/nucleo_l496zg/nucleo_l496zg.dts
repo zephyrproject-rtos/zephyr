@@ -1,0 +1,130 @@
+/*
+ * Copyright (c) 2018 Centaur Analytics, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/l4/stm32l496Xg.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32L496ZG-NUCLEO board";
+	compatible = "st,stm32l496zg-nucleo", "st,stm32l496";
+
+	chosen {
+		zephyr,console = &lpuart1;
+		zephyr,shell-uart = &lpuart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led_1: led_1 {
+			gpios = <&gpioc 7 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD1";
+		};
+		blue_led_2: led_2 {
+			gpios = <&gpiob 7 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD2";
+		};
+		red_led_3: led_3 {
+			gpios = <&gpiob 14 GPIO_INT_ACTIVE_HIGH>;
+			label = "User LD3";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		red_pwm_led: red_pwm_led {
+			pwms = <&{/soc/timers@40014000/pwm} 1 4>;
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button: button {
+			label = "User Button";
+			gpios = <&gpioc 13 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led0 = &green_led_1;
+		led1 = &blue_led_2;
+		led2 = &red_led_3;
+		pwm-led0 = &red_pwm_led;
+		sw0 = &user_button;
+	};
+};
+
+arduino_i2c: &i2c1 {};
+arduino_spi: &spi1 {};
+arduino_serial: &lpuart1 {};
+
+&usart2 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_pins_d>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&usart3 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart3_pins_b>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&lpuart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&lpuart1_pins_a>;
+	pinctrl-names = "default";
+	status = "ok";
+};
+
+&timers1 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
+&timers2 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
+&timers4 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
+&timers15 {
+	status = "ok";
+
+	pwm {
+		status = "ok";
+	};
+};
+
+&i2c1 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&spi1 {
+	status = "ok";
+};
+
+&rtc {
+	status = "ok";
+};

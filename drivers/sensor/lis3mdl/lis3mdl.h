@@ -16,8 +16,8 @@
 #define LIS3MDL_I2C_ADDR_MASK           (~BIT(1))
 
 /* guard against invalid CONFIG_I2C_ADDR values */
-#if (CONFIG_LIS3MDL_I2C_ADDR & LIS3MDL_I2C_ADDR_MASK) != LIS3MDL_I2C_ADDR_BASE
-#error "Invalid value for CONFIG_LIS3MDL_I2C_ADDR"
+#if (DT_LIS3MDL_I2C_ADDR & LIS3MDL_I2C_ADDR_MASK) != LIS3MDL_I2C_ADDR_BASE
+#error "Invalid value for DT_LIS3MDL_I2C_ADDR"
 #endif
 
 #define LIS3MDL_REG_WHO_AM_I            0x0F

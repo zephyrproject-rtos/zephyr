@@ -7,6 +7,7 @@
 
 menuconfig I2C_NRFX
 	bool "nRF TWI nrfx drivers"
+	default y
 	depends on SOC_FAMILY_NRF
 	select HAS_DTS_I2C
 	help
@@ -71,5 +72,42 @@ endchoice
 
 endif # I2C_1 && !SPI_1
 
-endif #I2C_NRFX
+# Nordic TWIx2 and SPIx2 instances can not be used at the same time.
+if I2C_2 && !SPI_2
 
+choice I2C_2_NRF_TYPE
+	prompt "I2C Port 2 Driver type"
+
+config I2C_2_NRF_TWIM
+	bool "nRF TWIM 2"
+	depends on HAS_HW_NRF_TWIM2
+	select NRFX_TWIM
+	help
+	  Enable nRF TWI Master with EasyDMA on port 2.
+	  This peripheral accepts transfers from RAM only,
+	  if provided buffer is placed in flash, transfer will fail.
+
+endchoice
+
+endif # I2C_2 && !SPI_2
+
+# Nordic TWIx3 and SPIx3 instances can not be used at the same time.
+if I2C_3 && !SPI_3
+
+choice I2C_3_NRF_TYPE
+	prompt "I2C Port 3 Driver type"
+
+config I2C_3_NRF_TWIM
+	bool "nRF TWIM 3"
+	depends on HAS_HW_NRF_TWIM3
+	select NRFX_TWIM
+	help
+	  Enable nRF TWI Master with EasyDMA on port 3.
+	  This peripheral accepts transfers from RAM only,
+	  if provided buffer is placed in flash, transfer will fail.
+
+endchoice
+
+endif # I2C_3 && !SPI_3
+
+endif #I2C_NRFX

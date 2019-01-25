@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
+ * Copyright 2016-2018 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -21,7 +21,7 @@
 /*! @name Driver version */
 /*@{*/
 /*! @brief Defines WDOG driver version */
-#define FSL_WDOG_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
+#define FSL_WDOG_DRIVER_VERSION (MAKE_VERSION(2, 1, 0))
 /*@}*/
 /*! @name Refresh sequence */
 /*@{*/
@@ -46,8 +46,7 @@ typedef struct _wdog_config
     uint16_t interruptTimeValue; /*!< Interrupt count timeout value */
     bool softwareResetExtension; /*!< software reset extension */
     bool enablePowerDown;        /*!< power down enable bit */
-    bool softwareAssertion;      /*!< software assertion bit*/
-    bool softwareResetSignal;    /*!< software reset signalbit*/
+    bool enableTimeOutAssert;    /*!< Enable WDOG_B timeout assertion. */
 } wdog_config_t;
 
 /*!
@@ -165,6 +164,36 @@ static inline void WDOG_Disable(WDOG_Type *base)
 }
 
 /*!
+ * @brief Trigger the system software reset.
+ *
+ * This function will write to the WCR[SRS] bit to trigger a software system reset.
+ * This bit will automatically resets to "1" after it has been asserted to "0".
+ * Note: Calling this API will reset the system right now, please using it with more attention.
+ *
+ * @param base WDOG peripheral base address
+ */
+static inline void WDOG_TriggerSystemSoftwareReset(WDOG_Type *base)
+{
+    base->WCR &= ~WDOG_WCR_SRS_MASK;
+}
+
+/*!
+ * @brief Trigger an output assertion.
+ *
+ * This function will write to the WCR[WDA] bit to trigger WDOG_B signal assertion.
+ * The WDOG_B signal can be routed to external pin of the chip, the output pin will turn to
+ * assertion along with WDOG_B signal.
+ * Note: The WDOG_B signal will remain assert until a power on reset occurred, so, please
+ * take more attention while calling it.
+ *
+ * @param base WDOG peripheral base address
+ */
+static inline void WDOG_TriggerSoftwareSignal(WDOG_Type *base)
+{
+    base->WCR &= ~WDOG_WCR_WDA_MASK;
+}
+
+/*!
  * @brief Enables the WDOG interrupt.
  *
  *This bit is a write once only bit. Once the software does a write access to this bit, it will get
@@ -265,7 +294,6 @@ static inline void WDOG_DisablePowerDownEnable(WDOG_Type *base)
  * @param base WDOG peripheral base address
  */
 void WDOG_Refresh(WDOG_Type *base);
-
 /*@}*/
 
 #if defined(__cplusplus)

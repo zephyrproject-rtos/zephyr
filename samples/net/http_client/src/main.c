@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_http_client_sample
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_http_client_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <errno.h>
@@ -126,7 +126,7 @@ static int setup_cert(struct net_app_ctx *ctx, void *cert)
 						 echo_apps_cert_der,
 						 sizeof(echo_apps_cert_der));
 		if (ret != 0) {
-			NET_ERR("mbedtls_x509_crt_parse_der failed "
+			LOG_ERR("mbedtls_x509_crt_parse_der failed "
 				"(-0x%x)", -ret);
 			return ret;
 		}
@@ -159,24 +159,24 @@ static int do_sync_http_req(struct http_ctx *ctx,
 	req.url = url;
 	req.protocol = " " HTTP_PROTOCOL;
 
-	NET_INFO("[%d] Send %s", count, url);
+	LOG_INF("[%d] Send %s", count, url);
 
 	ret = http_client_send_req(ctx, &req, NULL, result, sizeof(result),
 				   NULL, APP_REQ_TIMEOUT);
 	if (ret < 0) {
-		NET_ERR("Cannot send %s request (%d)", http_method_str(method),
+		LOG_ERR("Cannot send %s request (%d)", http_method_str(method),
 			ret);
 		goto out;
 	}
 
 	if (ctx->http.rsp.data_len > sizeof(result)) {
-		NET_ERR("Result buffer overflow by %zd bytes",
+		LOG_ERR("Result buffer overflow by %zd bytes",
 		       ctx->http.rsp.data_len - sizeof(result));
 
 		ret = -E2BIG;
 	} else {
-		NET_INFO("HTTP server response status: %s",
-			 ctx->http.rsp.http_status);
+		LOG_INF("HTTP server response status: %s",
+			ctx->http.rsp.http_status);
 
 		if (ctx->http.parser.http_errno) {
 			if (method == HTTP_OPTIONS) {
@@ -184,21 +184,21 @@ static int do_sync_http_req(struct http_ctx *ctx,
 				goto out;
 			}
 
-			NET_INFO("HTTP parser status: %s",
-			       http_errno_description(
-				       ctx->http.parser.http_errno));
+			LOG_INF("HTTP parser status: %s",
+				http_errno_description(
+					ctx->http.parser.http_errno));
 			ret = -EINVAL;
 			goto out;
 		}
 
 		if (method != HTTP_HEAD) {
 			if (ctx->http.rsp.body_found) {
-				NET_INFO("HTTP body: %zd bytes, "
-					 "expected: %zd bytes",
-					 ctx->http.rsp.processed,
-					 ctx->http.rsp.content_length);
+				LOG_INF("HTTP body: %zd bytes, "
+					"expected: %zd bytes",
+					ctx->http.rsp.processed,
+					ctx->http.rsp.content_length);
 			} else {
-				NET_ERR("Error detected during HTTP msg "
+				LOG_ERR("Error detected during HTTP msg "
 					"processing");
 			}
 		}
@@ -220,7 +220,7 @@ void response(struct http_ctx *ctx,
 	int ret;
 
 	if (data_end == HTTP_DATA_MORE) {
-		NET_INFO("Received %zd bytes piece of data", datalen);
+		LOG_INF("Received %zd bytes piece of data", datalen);
 
 		/* Do something with the data here. For this example
 		 * we just ignore the received data.
@@ -242,7 +242,7 @@ void response(struct http_ctx *ctx,
 
 	waiter->total_len += datalen;
 
-	NET_INFO("HTTP server response status: %s", ctx->http.rsp.http_status);
+	LOG_INF("HTTP server response status: %s", ctx->http.rsp.http_status);
 
 	if (ctx->http.parser.http_errno) {
 		if (ctx->http.req.method == HTTP_OPTIONS) {
@@ -250,8 +250,8 @@ void response(struct http_ctx *ctx,
 			goto out;
 		}
 
-		NET_INFO("HTTP parser status: %s",
-			 http_errno_description(ctx->http.parser.http_errno));
+		LOG_INF("HTTP parser status: %s",
+			http_errno_description(ctx->http.parser.http_errno));
 		ret = -EINVAL;
 		goto out;
 	}
@@ -259,16 +259,16 @@ void response(struct http_ctx *ctx,
 	if (ctx->http.req.method != HTTP_HEAD &&
 	    ctx->http.req.method != HTTP_OPTIONS) {
 		if (ctx->http.rsp.body_found) {
-			NET_INFO("HTTP body: %zd bytes, expected: %zd bytes",
-				 ctx->http.rsp.processed,
-				 ctx->http.rsp.content_length);
+			LOG_INF("HTTP body: %zd bytes, expected: %zd bytes",
+				ctx->http.rsp.processed,
+				ctx->http.rsp.content_length);
 		} else {
-			NET_ERR("Error detected during HTTP msg processing");
+			LOG_ERR("Error detected during HTTP msg processing");
 		}
 
 		if (waiter->total_len !=
 		    waiter->header_len + ctx->http.rsp.content_length) {
-			NET_ERR("Error while receiving data, "
+			LOG_ERR("Error while receiving data, "
 				"received %zd expected %zd bytes",
 				waiter->total_len, waiter->header_len +
 				ctx->http.rsp.content_length);
@@ -298,18 +298,18 @@ static int do_async_http_req(struct http_ctx *ctx,
 
 	waiter.total_len = 0;
 
-	NET_INFO("[%d] Send %s", count, url);
+	LOG_INF("[%d] Send %s", count, url);
 
 	ret = http_client_send_req(ctx, &req, response, result, sizeof(result),
 				   &waiter, APP_REQ_TIMEOUT);
 	if (ret < 0 && ret != -EINPROGRESS) {
-		NET_ERR("Cannot send %s request (%d)", http_method_str(method),
+		LOG_ERR("Cannot send %s request (%d)", http_method_str(method),
 			ret);
 		goto out;
 	}
 
 	if (k_sem_take(&waiter.wait, WAIT_TIME)) {
-		NET_ERR("Timeout while waiting HTTP response");
+		LOG_ERR("Timeout while waiting HTTP response");
 		ret = -ETIMEDOUT;
 		http_request_cancel(ctx);
 		goto out;
@@ -426,12 +426,12 @@ static void http_received(struct http_ctx *ctx,
 {
 	if (!status) {
 		if (pkt) {
-			NET_DBG("Received %d bytes data",
+			LOG_DBG("Received %d bytes data",
 				net_pkt_appdatalen(pkt));
 			net_pkt_unref(pkt);
 		}
 	} else {
-		NET_ERR("Receive error (%d)", status);
+		LOG_ERR("Receive error (%d)", status);
 
 		if (pkt) {
 			net_pkt_unref(pkt);
@@ -446,7 +446,7 @@ void main(void)
 	ret = http_client_init(&http_ctx, SERVER_ADDR, SERVER_PORT, NULL,
 			       K_FOREVER);
 	if (ret < 0) {
-		NET_ERR("HTTP init failed (%d)", ret);
+		LOG_ERR("HTTP init failed (%d)", ret);
 		goto out;
 	}
 
@@ -469,19 +469,19 @@ void main(void)
 				  https_stack,
 				  K_THREAD_STACK_SIZEOF(https_stack));
 	if (ret < 0) {
-		NET_ERR("HTTPS init failed (%d)", ret);
+		LOG_ERR("HTTPS init failed (%d)", ret);
 		goto out;
 	}
 #endif
 
-	NET_INFO("--------Sending %d sync request--------", MAX_ITERATIONS);
+	LOG_INF("--------Sending %d sync request--------", MAX_ITERATIONS);
 
 	ret = do_sync_reqs(&http_ctx, MAX_ITERATIONS);
 	if (ret < 0) {
 		goto out;
 	}
 
-	NET_INFO("--------Sending %d async request--------", MAX_ITERATIONS);
+	LOG_INF("--------Sending %d async request--------", MAX_ITERATIONS);
 
 	ret = do_async_reqs(&http_ctx, MAX_ITERATIONS);
 	if (ret < 0) {
@@ -491,5 +491,5 @@ void main(void)
 out:
 	http_release(&http_ctx);
 
-	NET_INFO("Done!");
+	LOG_INF("Done!");
 }

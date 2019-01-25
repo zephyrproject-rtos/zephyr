@@ -5,3 +5,8 @@ zephyr_sources_ifdef(
   sysview_config.c
   sysview.c
   )
+
+zephyr_sources_ifdef(
+  CONFIG_TRACING_CPU_STATS
+  cpu_stats.c
+  )

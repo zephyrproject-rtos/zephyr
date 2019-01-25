@@ -23,19 +23,39 @@ config TEST_SHELL
 
 config TEST_EXTRA_STACKSIZE
 	int "Test function extra thread stack size"
+	default 1024 if COVERAGE_GCOV
 	default 768 if XTENSA
 	default 0
 	help
 	  Additional stack for tests on some platform where default is not
 	  enough.
 
+config HAS_COVERAGE_SUPPORT
+	bool
+	help
+	  The code coverage report generation is only available on boards
+	  with enough RAM.
+
 config COVERAGE
 	bool "Create coverage data"
-	depends on NATIVE_APPLICATION
+	depends on HAS_COVERAGE_SUPPORT
+	default n
 	help
 	  This option will build your application with the -coverage option
 	  which will generate data that can be used to create coverage reports.
 	  Currently this is fully supported only on the native POSIX port.
+
+if COVERAGE
+config COVERAGE_GCOV
+	bool "Create Coverage data from hardware platform"
+	depends on !NATIVE_APPLICATION
+	default y
+	help
+	  This option will select the custom gcov library. The reports will
+	  be available over serial. This serial dump can be passed to
+	  gen_gcov_files.py which creates the required .gcda files. These
+	  can be read by gcov utility. For more details see gcovr.com .
+endif
 
 config TEST_USERSPACE
 	bool "Enable userspace if available"

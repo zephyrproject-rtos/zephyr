@@ -18,8 +18,6 @@
 # Note: $ARCH and $BOARD_DIR might be glob patterns.
 source "$(BOARD_DIR)/Kconfig.defconfig"
 
-source "boards/shields/*/Kconfig.defconfig"
-
 source "$(SOC_DIR)/$(ARCH)/*/Kconfig.defconfig"
 
 source "boards/Kconfig"
@@ -68,6 +66,15 @@ config LINKER_ORPHAN_SECTION_ERROR
 	  Linker exits with error when an orphan section is found.
 
 endchoice
+
+config CODE_DATA_RELOCATION
+       bool "Relocate code/data sections"
+       depends on ARM
+       help
+	  When selected this will relocate .text, data and .bss sections from
+	  the specified files and places it in the required memory region. The
+	  files should be specified in the CMakeList.txt file with
+	  a cmake API zephyr_code_relocation().
 
 config HAS_FLASH_LOAD_OFFSET
 	bool
@@ -175,14 +182,6 @@ config CHECK_LINK_MAP
 endmenu
 
 menu "Compiler Options"
-
-config CROSS_COMPILE
-	string "Cross-compiler tool prefix"
-	help
-	  Same as running 'make CROSS_COMPILE=prefix-' but stored for
-	  default make runs in this kernel build directory.  You don't
-	  need to set this unless you want the configured kernel build
-	  directory to select the cross-compiler automatically.
 
 config NATIVE_APPLICATION
 	bool "Build as a native host application"
@@ -297,6 +296,10 @@ config BUILD_OUTPUT_S19
 	  Build a binary in S19 format. This will build a zephyr.s19 file need
 	  by some platforms.
 
+config BUILD_NO_GAP_FILL
+	bool "Don't fill gaps in generated hex/bin/s19 files."
+	depends on BUILD_OUTPUT_HEX || BUILD_OUTPUT_BIN || BUILD_OUTPUT_S19
+
 config BUILD_OUTPUT_STRIPPED
 	bool "Build a stripped binary"
 	help
@@ -327,7 +330,7 @@ config BOOTLOADER_SRAM_SIZE
 	int "SRAM reserved for bootloader"
 	default 16
 	depends on !XIP || IS_BOOTLOADER
-	depends on ARM
+	depends on ARM || XTENSA
 	help
 	  This option specifies the amount of SRAM (measure in kB) reserved for
 	  a bootloader image, when either:

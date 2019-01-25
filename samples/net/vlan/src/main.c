@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_MODULE_NAME net_vlan_app
-#define NET_LOG_LEVEL LOG_LEVEL_DBG
+#include <logging/log.h>
+LOG_MODULE_REGISTER(net_vlan_sample, LOG_LEVEL_DBG);
 
 #include <zephyr.h>
 #include <errno.h>
@@ -55,13 +55,13 @@ static int init_app(void)
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
 	if (!iface) {
-		NET_ERR("No ethernet interfaces found.");
+		LOG_ERR("No ethernet interfaces found.");
 		return -ENOENT;
 	}
 
 	ret = net_eth_vlan_enable(iface, CONFIG_SAMPLE_VLAN_TAG);
 	if (ret < 0) {
-		NET_ERR("Cannot enable VLAN for tag %d (%d)",
+		LOG_ERR("Cannot enable VLAN for tag %d (%d)",
 			CONFIG_SAMPLE_VLAN_TAG, ret);
 	}
 
@@ -77,30 +77,30 @@ static int init_app(void)
 	 */
 	ret = net_eth_vlan_enable(ud.second, CONFIG_SAMPLE_VLAN_TAG_2);
 	if (ret < 0) {
-		NET_ERR("Cannot enable VLAN for tag %d (%d)",
+		LOG_ERR("Cannot enable VLAN for tag %d (%d)",
 			CONFIG_SAMPLE_VLAN_TAG_2, ret);
 	}
 
 	if (net_addr_pton(AF_INET6, CONFIG_SAMPLE_IPV6_ADDR_2, &addr6)) {
-		NET_ERR("Invalid address: %s", CONFIG_SAMPLE_IPV6_ADDR_2);
+		LOG_ERR("Invalid address: %s", CONFIG_SAMPLE_IPV6_ADDR_2);
 		return -EINVAL;
 	}
 
 	ifaddr = net_if_ipv6_addr_add(ud.second, &addr6, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		NET_ERR("Cannot add %s to interface %p",
+		LOG_ERR("Cannot add %s to interface %p",
 			CONFIG_SAMPLE_IPV6_ADDR_2, ud.second);
 		return -EINVAL;
 	}
 
 	if (net_addr_pton(AF_INET, CONFIG_SAMPLE_IPV4_ADDR_2, &addr4)) {
-		NET_ERR("Invalid address: %s", CONFIG_SAMPLE_IPV4_ADDR_2);
+		LOG_ERR("Invalid address: %s", CONFIG_SAMPLE_IPV4_ADDR_2);
 		return -EINVAL;
 	}
 
 	ifaddr = net_if_ipv4_addr_add(ud.second, &addr4, NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		NET_ERR("Cannot add %s to interface %p",
+		LOG_ERR("Cannot add %s to interface %p",
 			CONFIG_SAMPLE_IPV4_ADDR_2, ud.second);
 		return -EINVAL;
 	}

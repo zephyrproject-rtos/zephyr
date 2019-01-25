@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_rtc.h"
@@ -33,6 +11,12 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.lpc_rtc"
+#endif
+
 #define SECONDS_IN_A_DAY (86400U)
 #define SECONDS_IN_A_HOUR (3600U)
 #define SECONDS_IN_A_MINUTE (60U)
@@ -205,6 +189,13 @@ static void RTC_ConvertSecondsToDatetime(uint32_t seconds, rtc_datetime_t *datet
     datetime->day = days;
 }
 
+/*!
+ * brief Ungates the RTC clock and enables the RTC oscillator.
+ *
+ * note This API should be called at the beginning of the application using the RTC driver.
+ *
+ * param base RTC peripheral base address
+ */
 void RTC_Init(RTC_Type *base)
 {
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
@@ -212,13 +203,30 @@ void RTC_Init(RTC_Type *base)
     CLOCK_EnableClock(kCLOCK_Rtc);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
+#if !(defined(FSL_FEATURE_RTC_HAS_NO_RESET) && FSL_FEATURE_RTC_HAS_NO_RESET)
+    RESET_PeripheralReset(kRTC_RST_SHIFT_RSTn);
+#endif
     /* Make sure the reset bit is cleared */
     base->CTRL &= ~RTC_CTRL_SWRESET_MASK;
 
+#if !(defined(FSL_FEATURE_RTC_HAS_NO_OSC_PD) && FSL_FEATURE_RTC_HAS_NO_OSC_PD)
     /* Make sure the RTC OSC is powered up */
     base->CTRL &= ~RTC_CTRL_RTC_OSC_PD_MASK;
+#endif
 }
 
+/*!
+ * brief Sets the RTC date and time according to the given time structure.
+ *
+ * The RTC counter must be stopped prior to calling this function as writes to the RTC
+ * seconds register will fail if the RTC counter is running.
+ *
+ * param base     RTC peripheral base address
+ * param datetime Pointer to structure where the date and time details to set are stored
+ *
+ * return kStatus_Success: Success in setting the time and starting the RTC
+ *         kStatus_InvalidArgument: Error because the datetime format is incorrect
+ */
 status_t RTC_SetDatetime(RTC_Type *base, const rtc_datetime_t *datetime)
 {
     assert(datetime);
@@ -235,6 +243,12 @@ status_t RTC_SetDatetime(RTC_Type *base, const rtc_datetime_t *datetime)
     return kStatus_Success;
 }
 
+/*!
+ * brief Gets the RTC time and stores it in the given time structure.
+ *
+ * param base     RTC peripheral base address
+ * param datetime Pointer to structure where the date and time details are stored.
+ */
 void RTC_GetDatetime(RTC_Type *base, rtc_datetime_t *datetime)
 {
     assert(datetime);
@@ -245,6 +259,19 @@ void RTC_GetDatetime(RTC_Type *base, rtc_datetime_t *datetime)
     RTC_ConvertSecondsToDatetime(seconds, datetime);
 }
 
+/*!
+ * brief Sets the RTC alarm time
+ *
+ * The function checks whether the specified alarm time is greater than the present
+ * time. If not, the function does not set the alarm and returns an error.
+ *
+ * param base      RTC peripheral base address
+ * param alarmTime Pointer to structure where the alarm time is stored.
+ *
+ * return kStatus_Success: success in setting the RTC alarm
+ *         kStatus_InvalidArgument: Error because the alarm datetime format is incorrect
+ *         kStatus_Fail: Error because the alarm time has already passed
+ */
 status_t RTC_SetAlarm(RTC_Type *base, const rtc_datetime_t *alarmTime)
 {
     assert(alarmTime);
@@ -275,6 +302,12 @@ status_t RTC_SetAlarm(RTC_Type *base, const rtc_datetime_t *alarmTime)
     return kStatus_Success;
 }
 
+/*!
+ * brief Returns the RTC alarm time.
+ *
+ * param base     RTC peripheral base address
+ * param datetime Pointer to structure where the alarm date and time details are stored.
+ */
 void RTC_GetAlarm(RTC_Type *base, rtc_datetime_t *datetime)
 {
     assert(datetime);
