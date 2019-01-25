@@ -96,7 +96,7 @@ in detail:
     replace submodule definitions
   - Does not support continuous tracking of the latest ``HEAD`` in external
     repositories (*R4*)
-  - Requires hardcoding of the paths/locations of the external repositories 
+  - Requires hardcoding of the paths/locations of the external repositories
 
 Finally, please see :ref:`west-history` for the motivations behind using a
 single tool for both multi-repository management as well as building, debugging
@@ -271,7 +271,7 @@ manifest), the following commands will clone/update projects.
   the existing clone, without modifying it. For example,
   ``west init -l path/to/zephyr`` is useful if you already have cloned the
   zephyr repository in the past using Git and now want to initialize a west
-  installation around it. 
+  installation around it.
   If you however want to initialize an installation directly from the remote
   repository, you have the option to specify its URL using the ``-m`` switch
   and/or its revision with the ``--mr`` one. For example, invoking west with:
