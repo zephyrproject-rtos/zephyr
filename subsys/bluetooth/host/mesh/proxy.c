@@ -653,6 +653,14 @@ int bt_mesh_proxy_prov_enable(void)
 
 	BT_DBG("");
 
+	if (gatt_svc == MESH_GATT_PROV) {
+		return -EALREADY;
+	}
+
+	if (gatt_svc != MESH_GATT_NONE) {
+		return -EBUSY;
+	}
+
 	bt_gatt_service_register(&prov_svc);
 	gatt_svc = MESH_GATT_PROV;
 	prov_fast_adv = true;
@@ -672,6 +680,14 @@ int bt_mesh_proxy_prov_disable(void)
 	int i;
 
 	BT_DBG("");
+
+	if (gatt_svc == MESH_GATT_NONE) {
+		return -EALREADY;
+	}
+
+	if (gatt_svc != MESH_GATT_PROV) {
+		return -EBUSY;
+	}
 
 	bt_gatt_service_unregister(&prov_svc);
 	gatt_svc = MESH_GATT_NONE;
@@ -760,6 +776,14 @@ int bt_mesh_proxy_gatt_enable(void)
 
 	BT_DBG("");
 
+	if (gatt_svc == MESH_GATT_PROXY) {
+		return -EALREADY;
+	}
+
+	if (gatt_svc != MESH_GATT_NONE) {
+		return -EBUSY;
+	}
+
 	bt_gatt_service_register(&proxy_svc);
 	gatt_svc = MESH_GATT_PROXY;
 
@@ -793,6 +817,14 @@ void bt_mesh_proxy_gatt_disconnect(void)
 int bt_mesh_proxy_gatt_disable(void)
 {
 	BT_DBG("");
+
+	if (gatt_svc == MESH_GATT_NONE) {
+		return -EALREADY;
+	}
+
+	if (gatt_svc != MESH_GATT_PROXY) {
+		return -EBUSY;
+	}
 
 	bt_mesh_proxy_gatt_disconnect();
 

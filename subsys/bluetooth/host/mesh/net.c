@@ -448,10 +448,6 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 
 	BT_DBG("NetKey %s", bt_hex(key, 16));
 
-	if (atomic_test_bit(bt_mesh.flags, BT_MESH_VALID)) {
-		return -EALREADY;
-	}
-
 	(void)memset(msg_cache, 0, sizeof(msg_cache));
 	msg_cache_next = 0U;
 
@@ -472,7 +468,6 @@ int bt_mesh_net_create(u16_t idx, u8_t flags, const u8_t key[16],
 		}
 	}
 
-	atomic_set_bit(bt_mesh.flags, BT_MESH_VALID);
 	sub->net_idx = idx;
 
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY)) {
