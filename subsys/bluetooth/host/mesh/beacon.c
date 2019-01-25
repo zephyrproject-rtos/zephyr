@@ -249,7 +249,7 @@ static void beacon_send(struct k_work *work)
 
 		/* Only resubmit if beaconing is still enabled */
 		if (bt_mesh_beacon_get() == BT_MESH_BEACON_ENABLED ||
-		    bt_mesh.ivu_initiator) {
+		    atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_INITIATOR)) {
 			k_delayed_work_submit(&beacon_timer,
 					      PROVISIONED_INTERVAL);
 		}
@@ -314,8 +314,9 @@ static void secure_beacon_recv(struct net_buf_simple *buf)
 	BT_DBG("net_idx 0x%04x iv_index 0x%08x, current iv_index 0x%08x",
 	       sub->net_idx, iv_index, bt_mesh.iv_index);
 
-	if (bt_mesh.ivu_initiator &&
-	    bt_mesh.iv_update == BT_MESH_IV_UPDATE(flags)) {
+	if (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_INITIATOR) &&
+	    (atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) ==
+	     BT_MESH_IV_UPDATE(flags))) {
 		bt_mesh_beacon_ivu_initiator(false);
 	}
 
@@ -373,7 +374,7 @@ void bt_mesh_beacon_init(void)
 
 void bt_mesh_beacon_ivu_initiator(bool enable)
 {
-	bt_mesh.ivu_initiator = enable;
+	atomic_set_bit_to(bt_mesh.flags, BT_MESH_IVU_INITIATOR, enable);
 
 	if (enable) {
 		k_work_submit(&beacon_timer.work);
@@ -409,7 +410,7 @@ void bt_mesh_beacon_enable(void)
 
 void bt_mesh_beacon_disable(void)
 {
-	if (!bt_mesh.ivu_initiator) {
+	if (!atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_INITIATOR)) {
 		k_delayed_work_cancel(&beacon_timer);
 	}
 }
