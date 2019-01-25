@@ -2175,7 +2175,6 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 		       sizeof(clone->lladdr_dst));
 	}
 
-	net_pkt_set_next_hdr(clone, NULL);
 	net_pkt_set_ip_hdr_len(clone, net_pkt_ip_hdr_len(pkt));
 	net_pkt_set_vlan_tag(clone, net_pkt_vlan_tag(pkt));
 	net_pkt_set_appdatalen(clone, net_pkt_appdatalen(pkt));
@@ -2187,6 +2186,7 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 	clone->ipv6_ext_len = pkt->ipv6_ext_len;
 	clone->ipv6_ext_opt_len = pkt->ipv6_ext_opt_len;
 	clone->ipv6_prev_hdr_start = pkt->ipv6_prev_hdr_start;
+	net_pkt_set_ipv6_next_hdr(clone, net_pkt_ipv6_next_hdr(pkt));
 #endif
 
 	NET_DBG("Cloned %p to %p", pkt, clone);
@@ -2939,7 +2939,6 @@ struct net_pkt *net_pkt_clone_new(struct net_pkt *pkt, s32_t timeout)
 	net_pkt_set_family(clone_pkt, net_pkt_family(pkt));
 	net_pkt_set_context(clone_pkt, net_pkt_context(pkt));
 	net_pkt_set_token(clone_pkt, net_pkt_token(pkt));
-	net_pkt_set_next_hdr(clone_pkt, NULL);
 	net_pkt_set_ip_hdr_len(clone_pkt, net_pkt_ip_hdr_len(pkt));
 	net_pkt_set_vlan_tag(clone_pkt, net_pkt_vlan_tag(pkt));
 	net_pkt_set_timestamp(clone_pkt, net_pkt_timestamp(pkt));
@@ -2957,6 +2956,8 @@ struct net_pkt *net_pkt_clone_new(struct net_pkt *pkt, s32_t timeout)
 					     net_pkt_ipv6_ext_opt_len(pkt));
 		net_pkt_set_ipv6_hdr_prev(clone_pkt,
 					  net_pkt_ipv6_hdr_prev(pkt));
+		net_pkt_set_ipv6_next_hdr(clone_pkt,
+					  net_pkt_ipv6_next_hdr(pkt));
 	}
 
 	net_pkt_cursor_init(clone_pkt);
