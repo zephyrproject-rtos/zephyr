@@ -1,0 +1,41 @@
+# The west manifest file for upstream Zephyr.
+#
+# The per-installation west configuration file, .west/config, sets the
+# path to the project containing this file in the [manifest] section's
+# "path" variable.
+#
+# You are free to create your own manifest files and put them in any
+# repository you want, to create your own custom Zephyr installations.
+# For example, you could create a manifest file in your own out of
+# tree application directory, which would pull this zephyr repository
+# in as an ordinary project.
+#
+# You can pass your manifest repositories to west init when creating a
+# new Zephyr installation. See the west documentation for more
+# information.
+
+west:
+  url: https://github.com/zephyrproject-rtos/west
+  revision: master
+
+manifest:
+  defaults:
+    remote: upstream
+
+  remotes:
+    - name: upstream
+      url-base: https://github.com/zephyrproject-rtos
+
+  # The initial list of external projects is just Zephyr's net-tools
+  # repository, which is useful for running the Zephyr networking
+  # stack in QEMU.
+  #
+  # This will grow over time as external code is migrated into its own
+  # repositories.
+  projects:
+    - name: net-tools
+      revision: 30b7efa827b04d2e47840716b0372737fe7d6c92
+
+  self:
+    path: zephyr
+    west-commands: scripts/west-commands.yml
