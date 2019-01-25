@@ -343,6 +343,11 @@ struct bt_le_adv_param {
  *  @param sd_len Number of elements in sd
  *
  *  @return Zero on success or (negative) error code otherwise.
+ *  @return -ECONNREFUSED When connectable advertising is requested and there
+ *			  is already maximum number of connections established.
+ *			  This error code is only guaranteed when using Zephyr
+ *			  controller, for other controllers code returned in
+ *			  this case may be -EIO.
  */
 int bt_le_adv_start(const struct bt_le_adv_param *param,
 		    const struct bt_data *ad, size_t ad_len,
