@@ -14,7 +14,6 @@ The Zephyr APIs are used the same way on all SoCs and boards.
    :maxdepth: 2
 
    kernel_api.rst
-   device.rst
    bluetooth.rst
    networking.rst
    io_interfaces.rst
