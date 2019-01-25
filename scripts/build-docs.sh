@@ -2,7 +2,7 @@
 
 # Script for building the daily docs and uploading them to the website.
 
-set -xe
+set -x
 
 TYPE=daily
 RELEASE=latest
