@@ -497,7 +497,7 @@ enum net_verdict net_ipv6_process_pkt(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	/* Check extension headers */
-	net_pkt_set_next_hdr(pkt, &hdr->nexthdr);
+	net_pkt_set_ipv6_next_hdr(pkt, hdr->nexthdr);
 	net_pkt_set_ipv6_ext_len(pkt, 0);
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_HDR(pkt)->hop_limit);

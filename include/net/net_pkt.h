@@ -96,7 +96,6 @@ struct net_pkt {
 #endif
 
 	u8_t *appdata;	/* application data starts here */
-	u8_t *next_hdr;	/* where is the next header */
 
 	/** Reference counter */
 	atomic_t atomic_ref;
@@ -196,6 +195,7 @@ struct net_pkt {
 #endif /* CONFIG_NET_IPV6_FRAGMENT */
 
 	u8_t ipv6_ext_opt_len; /* IPv6 ND option length */
+	u8_t ipv6_next_hdr;	/* What is the very first next header */
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_IEEE802154)
@@ -313,16 +313,6 @@ static inline void net_pkt_set_transport_proto(struct net_pkt *pkt, u8_t proto)
 	pkt->transport_proto = proto;
 }
 
-static inline u8_t *net_pkt_next_hdr(struct net_pkt *pkt)
-{
-	return pkt->next_hdr;
-}
-
-static inline void net_pkt_set_next_hdr(struct net_pkt *pkt, u8_t *hdr)
-{
-	pkt->next_hdr = hdr;
-}
-
 static inline u8_t net_pkt_sent(struct net_pkt *pkt)
 {
 	return pkt->sent_or_eof;
@@ -411,6 +401,16 @@ static inline void net_pkt_set_ipv6_ext_opt_len(struct net_pkt *pkt,
 	pkt->ipv6_ext_opt_len = len;
 }
 
+static inline u8_t net_pkt_ipv6_next_hdr(struct net_pkt *pkt)
+{
+	return pkt->ipv6_next_hdr;
+}
+
+static inline void net_pkt_set_ipv6_next_hdr(struct net_pkt *pkt, u8_t next_hdr)
+{
+	pkt->ipv6_next_hdr = next_hdr;
+}
+
 static inline u16_t net_pkt_ipv6_ext_len(struct net_pkt *pkt)
 {
 	return pkt->ipv6_ext_len;
@@ -455,6 +455,19 @@ static inline void net_pkt_set_ipv6_ext_opt_len(struct net_pkt *pkt,
 {
 	ARG_UNUSED(pkt);
 	ARG_UNUSED(len);
+}
+
+static inline u8_t net_pkt_ipv6_next_hdr(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return 0;
+}
+
+static inline void net_pkt_set_ipv6_next_hdr(struct net_pkt *pkt, u8_t next_hdr)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(next_hdr);
 }
 
 static inline u16_t net_pkt_ipv6_ext_len(struct net_pkt *pkt)
