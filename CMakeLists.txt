@@ -60,15 +60,24 @@ zephyr_library_named(zephyr)
 zephyr_include_directories(
   kernel/include
   arch/${ARCH}/include
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}
-  ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
-  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/include
   include
   include/drivers
   ${PROJECT_BINARY_DIR}/include/generated
   ${USERINCLUDE}
   ${STDINCLUDE}
 )
+
+# Don't add non-existing include directories, it creates noise and
+# warnings in some tooling
+foreach(optional_include_dir
+  ${SOC_DIR}/${ARCH}/${SOC_PATH}
+  ${SOC_DIR}/${ARCH}/${SOC_PATH}/include
+  ${SOC_DIR}/${ARCH}/${SOC_FAMILY}/include
+  )
+  if(EXISTS ${optional_include_dir})
+    zephyr_include_directories(${optional_include_dir})
+  endif()
+endforeach()
 
 zephyr_compile_definitions(
   KERNEL
