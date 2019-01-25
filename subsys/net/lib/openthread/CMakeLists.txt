@@ -23,7 +23,7 @@ if(NOT EXTERNAL_PROJECT_PATH_OPENTHREAD)
   # TODO: Point to a Zephyr fork
   # Nov. 7
   set_ifndef(ot_GIT_REPOSITORY "https://github.com/openthread/openthread.git")
-  set_ifndef(ot_GIT_TAG 2a75d30684654e0348bce9327c6f45f4e9ea71a5)
+  set_ifndef(ot_GIT_TAG f9d757a161fea4775d033a1ce88cf7962fe24a93)
   set_ifndef(ot_GIT_PROGRESS 1)
 
   list(APPEND cmd
