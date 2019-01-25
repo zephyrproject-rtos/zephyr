@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2017 Foundries.io
+ * Copyright (c) 2017-2019 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -56,7 +56,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <init.h>
 #include <misc/printk.h>
 #include <net/net_pkt.h>
-#include <net/coap.h>
 #include <net/lwm2m.h>
 
 #include "lwm2m_object.h"
@@ -580,10 +579,9 @@ static int sm_send_registration(bool send_obj_support_data,
 		/* generate the rd data */
 		client_data_len = lwm2m_get_rd_data(client_data,
 						    sizeof(client_data));
-
-		if (!net_pkt_append_all(msg->cpkt.pkt, client_data_len,
-					client_data, BUF_ALLOC_TIMEOUT)) {
-			ret = -ENOMEM;
+		ret = buf_append(CPKT_BUF_WRITE(&msg->cpkt), client_data,
+				 client_data_len);
+		if (ret < 0) {
 			goto cleanup;
 		}
 	}

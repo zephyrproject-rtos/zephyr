@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018-2019 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,7 +14,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-#include <net/coap.h>
 #include <net/net_app.h>
 #include <net/net_core.h>
 #include <net/http_parser.h>
@@ -25,7 +25,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #define URI_LEN		255
 
-#define BUF_ALLOC_TIMEOUT	K_SECONDS(1)
 #define NETWORK_INIT_TIMEOUT	K_SECONDS(10)
 #define NETWORK_CONNECT_TIMEOUT	K_SECONDS(10)
 #define PACKET_TRANSFER_RETRY_MAX	3
@@ -258,7 +257,6 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	u8_t token[8];
 	u8_t tkl;
 	u16_t payload_len, payload_offset, len;
-	struct net_buf *payload_frag;
 	struct coap_packet *check_response = (struct coap_packet *)response;
 	struct lwm2m_engine_res_inst *res = NULL;
 	lwm2m_engine_set_data_cb_t write_cb;
@@ -319,8 +317,8 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 	last_block = !coap_next_block(check_response, &firmware_block_ctx);
 
 	/* Process incoming data */
-	payload_frag = coap_packet_get_payload(check_response, &payload_offset,
-					       &payload_len);
+	payload_offset = response->hdr_len + response->opt_len;
+	coap_packet_get_payload(response, &payload_len);
 	if (payload_len > 0) {
 		LOG_DBG("total: %zd, current: %zd",
 			firmware_block_ctx.total_size,
@@ -348,20 +346,16 @@ do_firmware_transfer_reply_cb(const struct coap_packet *response,
 				len = (payload_len > write_buflen) ?
 				       write_buflen : payload_len;
 				payload_len -= len;
-				payload_frag = net_frag_read(payload_frag,
-							     payload_offset,
-							     &payload_offset,
-							     len,
-							     write_buf);
 				/* check for end of packet */
-				if (!payload_frag && payload_offset == 0xffff) {
+				if (buf_read(write_buf, len,
+					     CPKT_BUF_READ(response),
+					     &payload_offset) < 0) {
 					/* malformed packet */
 					ret = -EFAULT;
 					goto error;
 				}
 
-				ret = write_cb(0, write_buf, len,
-					       !payload_frag && last_block,
+				ret = write_cb(0, write_buf, len, last_block,
 					       firmware_block_ctx.total_size);
 				if (ret < 0) {
 					goto error;

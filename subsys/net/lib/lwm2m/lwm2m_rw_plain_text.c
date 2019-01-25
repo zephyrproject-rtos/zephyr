@@ -89,15 +89,12 @@ size_t plain_text_put_format(struct lwm2m_output_context *out,
 		return 0;
 	}
 
-	out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
-				  out->offset, &out->offset,
-				  strlen(pt_buffer), pt_buffer,
-				  BUF_ALLOC_TIMEOUT);
-	if (!out->frag) {
+	n = strlen(pt_buffer);
+	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), pt_buffer, n) < 0) {
 		return 0;
 	}
 
-	return strlen(pt_buffer);
+	return (size_t)n;
 }
 
 static size_t put_s32(struct lwm2m_output_context *out,
@@ -144,12 +141,8 @@ static size_t put_string(struct lwm2m_output_context *out,
 			 struct lwm2m_obj_path *path,
 			 char *buf, size_t buflen)
 {
-	out->frag = net_pkt_write(out->out_cpkt->pkt, out->frag,
-				  out->offset, &out->offset,
-				  buflen, buf,
-				  BUF_ALLOC_TIMEOUT);
-	if (!out->frag) {
-		return -ENOMEM;
+	if (buf_append(CPKT_BUF_WRITE(out->out_cpkt), buf, buflen) < 0) {
+		return 0;
 	}
 
 	return buflen;
@@ -166,17 +159,9 @@ static size_t put_bool(struct lwm2m_output_context *out,
 	}
 }
 
-static int pkt_length_left(struct lwm2m_input_context *in)
+static int get_length_left(struct lwm2m_input_context *in)
 {
-	struct net_buf *frag = in->frag;
-	int total_left = -in->offset;
-
-	while (frag) {
-		total_left += frag->len;
-		frag = frag->frags;
-	}
-
-	return total_left;
+	return in->in_cpkt->offset - in->offset;
 }
 
 static size_t plain_text_read_number(struct lwm2m_input_context *in,
@@ -196,10 +181,9 @@ static size_t plain_text_read_number(struct lwm2m_input_context *in,
 		value2 = 0;
 	}
 
-	while (in->frag && in->offset != 0xffff) {
-		in->frag = net_frag_read_u8(in->frag, in->offset, &in->offset,
-					    &tmp);
-		if (!in->frag && in->offset == 0xffff) {
+	while (in->offset < in->in_cpkt->offset) {
+		if (buf_read_u8(&tmp, CPKT_BUF_READ(in->in_cpkt),
+				&in->offset) < 0) {
 			break;
 		}
 
@@ -248,15 +232,15 @@ static size_t get_s64(struct lwm2m_input_context *in, s64_t *value)
 static size_t get_string(struct lwm2m_input_context *in,
 			 u8_t *value, size_t buflen)
 {
-	u16_t in_len = pkt_length_left(in);
+	u16_t in_len = get_length_left(in);
 
 	if (in_len > buflen) {
 		/* TODO: generate warning? */
 		in_len = buflen - 1;
 	}
-	in->frag = net_frag_read(in->frag, in->offset, &in->offset,
-				 in_len, value);
-	if (!in->frag && in->offset == 0xffff) {
+
+	if (buf_read(value, in_len, CPKT_BUF_READ(in->in_cpkt),
+		     &in->offset) < 0) {
 		value[0] = '\0';
 		return 0;
 	}
@@ -292,8 +276,7 @@ static size_t get_bool(struct lwm2m_input_context *in,
 {
 	u8_t tmp;
 
-	in->frag = net_frag_read_u8(in->frag, in->offset, &in->offset, &tmp);
-	if (!in->frag && in->offset == 0xffff) {
+	if (buf_read_u8(&tmp, CPKT_BUF_READ(in->in_cpkt), &in->offset) < 0) {
 		return 0;
 	}
 
@@ -308,7 +291,7 @@ static size_t get_bool(struct lwm2m_input_context *in,
 static size_t get_opaque(struct lwm2m_input_context *in,
 			 u8_t *value, size_t buflen, bool *last_block)
 {
-	in->opaque_len = pkt_length_left(in);
+	in->opaque_len = get_length_left(in);
 	return lwm2m_engine_get_opaque_more(in, value, buflen, last_block);
 }
 
