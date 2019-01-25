@@ -86,66 +86,83 @@
 /* The ENDADDR field has the last 5 bit reserved and set to 1 */
 #define ENDADDR_ROUND(x) (x - 0x1F)
 
-#define REGION_USER_MODE_ATTR (MPU_REGION_READ | \
+#define REGION_USER_MODE_ATTR {(MPU_REGION_READ | \
 				MPU_REGION_WRITE | \
-				MPU_REGION_SU)
+				MPU_REGION_SU)}
 
 /* Some helper defines for common regions */
 #if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
-#define REGION_RAM_ATTR	  ((MPU_REGION_SU_RWX) | \
+#define REGION_RAM_ATTR	  {((MPU_REGION_SU_RWX) | \
 			   ((UM_READ | UM_WRITE | UM_EXEC) << BM3_UM_SHIFT) | \
-			   (BM4_PERMISSIONS))
+			   (BM4_PERMISSIONS))}
 
-#define REGION_FLASH_ATTR (MPU_REGION_SU_RWX)
+#define REGION_FLASH_ATTR {(MPU_REGION_SU_RWX)}
 
 #else
-#define REGION_RAM_ATTR	  ((MPU_REGION_SU_RW) | \
+#define REGION_RAM_ATTR	  {((MPU_REGION_SU_RW) | \
 			   ((UM_READ | UM_WRITE) << BM3_UM_SHIFT) | \
-			   (BM4_PERMISSIONS))
+			   (BM4_PERMISSIONS))}
 
-#define REGION_FLASH_ATTR (MPU_REGION_READ | \
+#define REGION_FLASH_ATTR {(MPU_REGION_READ | \
 			   MPU_REGION_EXEC | \
-			   MPU_REGION_SU)
+			   MPU_REGION_SU)}
 #endif
 
-#define REGION_IO_ATTR	  (MPU_REGION_READ | \
+#define REGION_IO_ATTR	  {(MPU_REGION_READ | \
 			   MPU_REGION_WRITE | \
 			   MPU_REGION_EXEC | \
-			   MPU_REGION_SU)
+			   MPU_REGION_SU)}
 
-#define REGION_RO_ATTR	  (MPU_REGION_READ | MPU_REGION_SU)
+#define REGION_RO_ATTR	  {(MPU_REGION_READ | MPU_REGION_SU)}
 
-#define REGION_USER_RO_ATTR (MPU_REGION_READ | \
-			     MPU_REGION_SU)
+#define REGION_USER_RO_ATTR {(MPU_REGION_READ | \
+			     MPU_REGION_SU)}
 
-#define REGION_DEBUG_ATTR  MPU_REGION_SU
+#define REGION_DEBUG_ATTR  {MPU_REGION_SU}
 
-#define REGION_BACKGROUND_ATTR	MPU_REGION_SU_RW
+#define REGION_BACKGROUND_ATTR	{MPU_REGION_SU_RW}
 
+struct nxp_mpu_region_attr {
+	/* NXP MPU region access permission attributes */
+	u32_t attr;
+};
+
+typedef struct nxp_mpu_region_attr nxp_mpu_region_attr_t;
 
 /* Typedef for the k_mem_partition attribute*/
-typedef u32_t k_mem_partition_attr_t;
+typedef struct {
+	u32_t ap_attr;
+} k_mem_partition_attr_t;
 
 /* Kernel macros for memory attribution
  * (access permissions and cache-ability).
+ *
+ * The macros are to be stored in k_mem_partition_attr_t
+ * objects.
  */
 
 /* Read-Write access permission attributes */
-#define K_MEM_PARTITION_P_NA_U_NA	(MPU_REGION_SU)
-#define K_MEM_PARTITION_P_RW_U_RW	(MPU_REGION_READ | MPU_REGION_WRITE | \
-					 MPU_REGION_SU)
-#define K_MEM_PARTITION_P_RW_U_RO	(MPU_REGION_READ | MPU_REGION_SU_RW)
-#define K_MEM_PARTITION_P_RW_U_NA	(MPU_REGION_SU_RW)
-#define K_MEM_PARTITION_P_RO_U_RO	(MPU_REGION_READ | MPU_REGION_SU)
-#define K_MEM_PARTITION_P_RO_U_NA	(MPU_REGION_SU_RX)
+#define K_MEM_PARTITION_P_NA_U_NA	((k_mem_partition_attr_t) \
+	{(MPU_REGION_SU)})
+#define K_MEM_PARTITION_P_RW_U_RW	((k_mem_partition_attr_t) \
+	{(MPU_REGION_READ | MPU_REGION_WRITE | MPU_REGION_SU)})
+#define K_MEM_PARTITION_P_RW_U_RO	((k_mem_partition_attr_t) \
+	{(MPU_REGION_READ | MPU_REGION_SU_RW)})
+#define K_MEM_PARTITION_P_RW_U_NA	((k_mem_partition_attr_t) \
+	{(MPU_REGION_SU_RW)})
+#define K_MEM_PARTITION_P_RO_U_RO	((k_mem_partition_attr_t) \
+	{(MPU_REGION_READ | MPU_REGION_SU)})
+#define K_MEM_PARTITION_P_RO_U_NA	((k_mem_partition_attr_t) \
+	{(MPU_REGION_SU_RX)})
 
 /* Execution-allowed attributes */
-#define K_MEM_PARTITION_P_RWX_U_RWX	(MPU_REGION_READ | MPU_REGION_WRITE | \
-					 MPU_REGION_EXEC | MPU_REGION_SU)
-#define K_MEM_PARTITION_P_RWX_U_RX	(MPU_REGION_READ | MPU_REGION_EXEC | \
-					 MPU_REGION_SU_RWX)
-#define K_MEM_PARTITION_P_RX_U_RX	(MPU_REGION_READ | MPU_REGION_EXEC | \
-					 MPU_REGION_SU)
+#define K_MEM_PARTITION_P_RWX_U_RWX	((k_mem_partition_attr_t) \
+	{(MPU_REGION_READ | MPU_REGION_WRITE | \
+	  MPU_REGION_EXEC | MPU_REGION_SU)})
+#define K_MEM_PARTITION_P_RWX_U_RX	((k_mem_partition_attr_t) \
+	{(MPU_REGION_READ | MPU_REGION_EXEC | MPU_REGION_SU_RWX)})
+#define K_MEM_PARTITION_P_RX_U_RX	((k_mem_partition_attr_t) \
+	{(MPU_REGION_READ | MPU_REGION_EXEC | MPU_REGION_SU)})
 
 /*
  * @brief Evaluate Write-ability
@@ -158,7 +175,7 @@ typedef u32_t k_mem_partition_attr_t;
 #define K_MEM_PARTITION_IS_WRITABLE(attr) \
 	({ \
 		int __is_writable__; \
-		switch (attr) { \
+		switch (attr.ap_attr) { \
 		case MPU_REGION_WRITE: \
 		case MPU_REGION_SU_RW: \
 			__is_writable__ = 1; \
@@ -181,7 +198,7 @@ typedef u32_t k_mem_partition_attr_t;
 #define K_MEM_PARTITION_IS_EXECUTABLE(attr) \
 	({ \
 		int __is_executable__; \
-		switch (attr) { \
+		switch (attr.ap_attr) { \
 		case MPU_REGION_SU_RX: \
 		case MPU_REGION_EXEC: \
 			__is_executable__ = 1; \
@@ -202,7 +219,7 @@ struct nxp_mpu_region {
 	/* Region Name */
 	const char *name;
 	/* Region Attributes */
-	u32_t attr;
+	nxp_mpu_region_attr_t attr;
 };
 
 #define MPU_REGION_ENTRY(_name, _base, _end, _attr) \
