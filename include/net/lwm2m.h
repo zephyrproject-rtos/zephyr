@@ -32,6 +32,7 @@
  *
  * @details Context structure for the LwM2M high-level API.
  *
+ * @param remote_addr Stored remote IP address of the LwM2M client
  * @param net_app_ctx Related network application context.
  * @param net_init_timeout Used if the net_app API needs to do some time
  *    consuming operation, like resolving DNS address.
@@ -39,6 +40,9 @@
  *    giving up.
  */
 struct lwm2m_ctx {
+	/** destination address storage */
+	struct sockaddr remote_addr;
+
 	/** Net app context structure */
 	struct net_app_ctx net_app_ctx;
 	s32_t net_init_timeout;

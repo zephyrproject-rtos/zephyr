@@ -414,7 +414,6 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	struct lwm2m_engine_obj_field *obj_field = NULL;
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct observe_node *obs;
-	struct sockaddr *addr;
 	struct notification_attrs attrs = {
 		.flags = BIT(LWM2M_ATTR_PMIN) || BIT(LWM2M_ATTR_PMAX),
 		.pmin  = DEFAULT_SERVER_PMIN,
@@ -433,9 +432,6 @@ static int engine_add_observer(struct lwm2m_message *msg,
 		return -EINVAL;
 	}
 
-	/* remote addr */
-	addr = &msg->ctx->net_app_ctx.default_ctx->remote;
-
 	/* TODO: get server object for default pmin/pmax
 	 * and observe dup checking
 	 */
@@ -452,7 +448,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 			LOG_DBG("OBSERVER DUPLICATE %u/%u/%u(%u) [%s]",
 				msg->path.obj_id, msg->path.obj_inst_id,
 				msg->path.res_id, msg->path.level,
-				lwm2m_sprint_ip_addr(addr));
+				lwm2m_sprint_ip_addr(&msg->ctx->remote_addr));
 
 			return 0;
 		}
@@ -552,7 +548,8 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	LOG_DBG("OBSERVER ADDED %u/%u/%u(%u) token:'%s' addr:%s",
 		msg->path.obj_id, msg->path.obj_inst_id,
 		msg->path.res_id, msg->path.level,
-		sprint_token(token, tkl), lwm2m_sprint_ip_addr(addr));
+		sprint_token(token, tkl),
+		lwm2m_sprint_ip_addr(&msg->ctx->remote_addr));
 
 	return 0;
 }
@@ -999,8 +996,7 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		goto cleanup;
 	}
 
-	r = coap_pending_init(msg->pending, &msg->cpkt,
-			      &msg->ctx->net_app_ctx.default_ctx->remote);
+	r = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr);
 	if (r < 0) {
 		LOG_ERR("Unable to initialize a pending "
 			"retransmission (err:%d).", r);
@@ -1062,7 +1058,7 @@ int lwm2m_send_message(struct lwm2m_message *msg)
 	}
 
 	ret = net_app_send_pkt(&msg->ctx->net_app_ctx, pkt,
-			       &msg->ctx->net_app_ctx.default_ctx->remote,
+			       &msg->ctx->remote_addr,
 			       NET_SOCKADDR_MAX_SIZE, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		if (msg->type == COAP_TYPE_CON) {
@@ -3626,7 +3622,7 @@ static void retransmit_request(struct k_work *work)
 	 * directly here.
 	 */
 	r = net_app_send_pkt(&msg->ctx->net_app_ctx, pkt,
-			     &msg->ctx->net_app_ctx.default_ctx->remote,
+			     &msg->ctx->remote_addr,
 			     NET_SOCKADDR_MAX_SIZE, K_NO_WAIT, NULL);
 	if (r < 0) {
 		LOG_ERR("Error sending lwm2m message: %d", r);
@@ -3703,8 +3699,7 @@ static int generate_notify_message(struct observe_node *obs,
 		obs->path.res_id,
 		obs->path.level,
 		sprint_token(obs->token, obs->tkl),
-		lwm2m_sprint_ip_addr(
-			&obs->ctx->net_app_ctx.default_ctx->remote),
+		lwm2m_sprint_ip_addr(&obs->ctx->remote_addr),
 		k_uptime_get());
 
 	obj_inst = get_engine_obj_inst(obs->path.obj_id,
@@ -3962,6 +3957,20 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 	if (ret < 0) {
 		LOG_ERR("Cannot connect UDP (%d)", ret);
 		goto error_start;
+	}
+
+	/* save remote addr */
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+	if (client_ctx->net_app_ctx.dtls.ctx) {
+		memcpy(&client_ctx->remote_addr,
+		       &client_ctx->net_app_ctx.dtls.ctx->remote,
+		       sizeof(client_ctx->remote_addr));
+	} else
+#endif
+	{
+		memcpy(&client_ctx->remote_addr,
+		       &client_ctx->net_app_ctx.default_ctx->remote,
+		       sizeof(client_ctx->remote_addr));
 	}
 
 	return 0;
