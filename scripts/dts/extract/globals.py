@@ -203,9 +203,8 @@ def get_reduced(nodes, path):
         # reg = <1 2 3 4>
         for p in nodes['props']:
             prop_val = nodes['props'][p]
-            if isinstance(prop_val, list):
-                if isinstance(prop_val[0], list):
-                    nodes['props'][p] = [item for sublist in prop_val for item in sublist]
+            if isinstance(prop_val, list) and isinstance(prop_val[0], list):
+                nodes['props'][p] = [item for sublist in prop_val for item in sublist]
 
         reduced[path].pop('children', None)
         if path != '/':
@@ -351,38 +350,63 @@ def get_binding(node_address):
 def get_binding_compats():
     return bindings_compat
 
+def build_cell_array(prop_array):
+    index = 0
+    ret_array = []
+
+    while index < len(prop_array):
+        handle = prop_array[index]
+
+        if handle in {0, -1}:
+            ret_array.append([])
+            index += 1
+        else:
+            # get controller node (referenced via phandle)
+            cell_parent = phandles[handle]
+
+            for prop in reduced[cell_parent]['props']:
+                if prop[0] == '#' and '-cells' in prop:
+                    num_cells = reduced[cell_parent]['props'][prop]
+                    break
+
+            ret_array.append(prop_array[index:index+num_cells+1])
+
+            index += num_cells + 1
+
+    return ret_array
+
+
 def extract_controller(node_address, prop, prop_values, index,
                        def_label, generic, handle_single=False):
 
     prop_def = {}
     prop_alias = {}
 
-    # get controller node (referenced via phandle)
-    cell_parent = phandles[prop_values[0]]
+    prop_array = build_cell_array(prop_values)
+    if handle_single:
+        prop_array = [prop_array[index]]
 
-    for k in reduced[cell_parent]['props'].keys():
-        if k[0] == '#' and '-cells' in k:
-            num_cells = reduced[cell_parent]['props'].get(k)
+    for i, elem in enumerate(prop_array):
+        num_cells = len(elem)
 
-    # get controller node (referenced via phandle)
-    cell_parent = phandles[prop_values[0]]
+        # if the entry is empty, skip
+        if num_cells == 0:
+            continue
 
-    try:
-       l_cell = reduced[cell_parent]['props'].get('label')
-    except KeyError:
-        l_cell = None
+        cell_parent = phandles[elem[0]]
+        l_cell = reduced[cell_parent]['props'].get('label')
 
-    if l_cell is not None:
+        if l_cell is None:
+            continue
 
         l_base = def_label.split('/')
 
         # Check is defined should be indexed (_0, _1)
-        if handle_single or index == 0 and len(prop_values) < (num_cells + 2):
+        if handle_single or i == 0 and len(prop_array) == 1:
             # 0 or 1 element in prop_values
-            # ( ie len < num_cells + phandle + 1 )
             l_idx = []
         else:
-            l_idx = [str(index)]
+            l_idx = [str(i)]
 
         # Check node generation requirements
         try:
@@ -412,91 +436,85 @@ def extract_controller(node_address, prop, prop_values, index,
 
         insert_defs(node_address, prop_def, prop_alias)
 
-    # prop off phandle + num_cells to get to next list item
-    prop_values = prop_values[num_cells+1:]
-
-    # recurse if we have anything left
-    if not handle_single and len(prop_values):
-        extract_controller(node_address, prop, prop_values, index + 1,
-                           def_label, generic)
-
 
 def extract_cells(node_address, prop, prop_values, names, index,
                   def_label, generic, handle_single=False):
 
-    cell_parent = phandles[prop_values.pop(0)]
+    prop_array = build_cell_array(prop_values)
+    if handle_single:
+        prop_array = [prop_array[index]]
 
-    try:
-        cell_yaml = get_binding(cell_parent)
-    except:
-        raise Exception(
-            "Could not find yaml description for " +
-                reduced[cell_parent]['name'])
+    for i, elem in enumerate(prop_array):
+        num_cells = len(elem)
 
-    try:
-        name = names.pop(0).upper()
-    except:
-        name = ''
+        # if the entry is empty, skip
+        if num_cells == 0:
+            continue
 
-    # Get number of cells per element of current property
-    for k in reduced[cell_parent]['props'].keys():
-        if k[0] == '#' and '-cells' in k:
-            num_cells = reduced[cell_parent]['props'].get(k)
-            if k in cell_yaml.keys():
-                cell_yaml_names = k
-            else:
-                cell_yaml_names = '#cells'
-    try:
-        generation = get_binding(node_address)['properties'][prop
-                ]['generation']
-    except:
-        generation = ''
+        cell_parent = phandles[elem[0]]
 
-    if 'use-prop-name' in generation:
-        l_cell = [convert_string_to_label(str(prop))]
-    else:
-        l_cell = [convert_string_to_label(str(generic))]
+        try:
+            cell_yaml = get_binding(cell_parent)
+        except:
+            raise Exception(
+                "Could not find yaml description for " +
+                    reduced[cell_parent]['name'])
 
-    l_base = def_label.split('/')
-    # Check if #define should be indexed (_0, _1, ...)
-    if handle_single or index == 0 and len(prop_values) < (num_cells + 2):
-        # Less than 2 elements in prop_values (ie len < num_cells + phandle + 1)
-        # Indexing is not needed
-        l_idx = []
-    else:
-        l_idx = [str(index)]
+        try:
+            name = names.pop(0).upper()
+        except:
+            name = ''
 
-    prop_def = {}
-    prop_alias = {}
+        # Get number of cells per element of current property
+        for props in reduced[cell_parent]['props']:
+            if props[0] == '#' and '-cells' in props:
+                if props in cell_yaml.keys():
+                    cell_yaml_names = props
+                else:
+                    cell_yaml_names = '#cells'
+        try:
+            generation = get_binding(node_address)['properties'][prop
+                    ]['generation']
+        except:
+            generation = ''
 
-    # Generate label for each field of the property element
-    for i in range(num_cells):
-        l_cellname = [str(cell_yaml[cell_yaml_names][i]).upper()]
-        if l_cell == l_cellname:
-            label = l_base + l_cell + l_idx
+        if 'use-prop-name' in generation:
+            l_cell = [convert_string_to_label(str(prop))]
         else:
-            label = l_base + l_cell + l_cellname + l_idx
-        label_name = l_base + [name] + l_cellname
-        add_compat_alias(node_address, '_'.join(label[1:]), '_'.join(label), prop_alias)
-        prop_def['_'.join(label)] = prop_values.pop(0)
-        if len(name):
-            prop_alias['_'.join(label_name)] = '_'.join(label)
+            l_cell = [convert_string_to_label(str(generic))]
 
-        # generate defs for node aliases
-        if node_address in aliases:
-            add_prop_aliases(
-                node_address,
-                lambda alias:
-                    '_'.join([convert_string_to_label(alias)] + label[1:]),
-                '_'.join(label),
-                prop_alias)
+        l_base = def_label.split('/')
+        # Check if #define should be indexed (_0, _1, ...)
+        if handle_single or i == 0 and len(prop_array) == 1:
+            # Less than 2 elements in prop_values
+            # Indexing is not needed
+            l_idx = []
+        else:
+            l_idx = [str(i)]
 
-        insert_defs(node_address, prop_def, prop_alias)
+        prop_def = {}
+        prop_alias = {}
 
-    # recurse if we have anything left
-    if not handle_single and len(prop_values):
-        extract_cells(node_address, prop, prop_values, names,
-                      index + 1, def_label, generic)
+        # Generate label for each field of the property element
+        for j in range(num_cells-1):
+            l_cellname = [str(cell_yaml[cell_yaml_names][j]).upper()]
+            if l_cell == l_cellname:
+                label = l_base + l_cell + l_idx
+            else:
+                label = l_base + l_cell + l_cellname + l_idx
+            label_name = l_base + [name] + l_cellname
+            add_compat_alias(node_address, '_'.join(label[1:]), '_'.join(label), prop_alias)
+            prop_def['_'.join(label)] = elem[j+1]
+            if name:
+                prop_alias['_'.join(label_name)] = '_'.join(label)
 
+            # generate defs for node aliases
+            if node_address in aliases:
+                add_prop_aliases(
+                    node_address,
+                    lambda alias:
+                        '_'.join([convert_string_to_label(alias)] + label[1:]),
+                    '_'.join(label),
+                    prop_alias)
 
-
+            insert_defs(node_address, prop_def, prop_alias)
