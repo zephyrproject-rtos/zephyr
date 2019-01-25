@@ -887,22 +887,17 @@ static void state_collect(const struct shell *shell)
 		switch (shell->ctx->receive_state) {
 		case SHELL_RECEIVE_DEFAULT:
 			if (process_nl(shell, data)) {
-				int err = 0;
-
 				if (!shell->ctx->cmd_buff_len) {
 					history_mode_exit(shell);
 					cursor_next_line_move(shell);
 				} else {
 					/* Command execution */
-					err = execute(shell);
+					(void)execute(shell);
 				}
 				/* Function responsible for printing prompt
 				 * on received NL.
 				 */
-				if (err ||
-				    shell->ctx->state != SHELL_STATE_COMMAND) {
-					state_set(shell, SHELL_STATE_ACTIVE);
-				}
+				state_set(shell, SHELL_STATE_ACTIVE);
 				return;
 			}
 
@@ -1072,21 +1067,19 @@ static void shell_log_process(const struct shell *shell)
 
 		processed = shell_log_backend_process(shell->log_backend);
 
-		if (shell->ctx->state != SHELL_STATE_COMMAND) {
-			struct k_poll_signal *signal =
-				&shell->ctx->signals[SHELL_SIGNAL_RXRDY];
+		struct k_poll_signal *signal =
+			&shell->ctx->signals[SHELL_SIGNAL_RXRDY];
 
-			cmd_line_print(shell);
+		cmd_line_print(shell);
 
-			/* Arbitrary delay added to ensure that prompt is
-			 * readable and can be used to enter further commands.
-			 */
-			if (shell->ctx->cmd_buff_len) {
-				k_sleep(K_MSEC(15));
-			}
-
-			k_poll_signal_check(signal, &signaled, &result);
+		/* Arbitrary delay added to ensure that prompt is
+		 * readable and can be used to enter further commands.
+		 */
+		if (shell->ctx->cmd_buff_len) {
+			k_sleep(K_MSEC(15));
 		}
+
+		k_poll_signal_check(signal, &signaled, &result);
 
 		if (shell->ctx->state < SHELL_STATE_PANIC_MODE_ACTIVE) {
 			k_mutex_unlock(&shell->ctx->wr_mtx);
@@ -1184,11 +1177,6 @@ static void kill_handler(const struct shell *shell)
 	k_thread_abort(k_current_get());
 }
 
-static void command_exit_handler(const struct shell *shell)
-{
-	state_set(shell, SHELL_STATE_ACTIVE);
-}
-
 void shell_thread(void *shell_handle, void *arg_log_backend,
 		  void *arg_log_level)
 {
@@ -1219,26 +1207,16 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 		if (shell->iface->api->update) {
 			shell->iface->api->update(shell->iface);
 		}
-		int num_events = (shell->ctx->state != SHELL_STATE_COMMAND) ?
-				SHELL_SIGNALS : SHELL_SIGNAL_TXDONE;
 
-		err = k_poll(shell->ctx->events, num_events, K_FOREVER);
+		err = k_poll(shell->ctx->events, SHELL_SIGNALS, K_FOREVER);
 		if (err != 0) {
+			shell_error(shell, "Shell thread error: %d", err);
 			return;
 		}
 
-		/* Check for KILL request */
 		shell_signal_handle(shell, SHELL_SIGNAL_KILL, kill_handler);
 		shell_signal_handle(shell, SHELL_SIGNAL_RXRDY, shell_process);
-
-		if  (shell->ctx->state == SHELL_STATE_COMMAND) {
-			shell_signal_handle(shell, SHELL_SIGNAL_COMMAND_EXIT,
-					    command_exit_handler);
-		} else {
-			shell_signal_handle(shell, SHELL_SIGNAL_TXDONE,
-					shell_process);
-		}
-
+		shell_signal_handle(shell, SHELL_SIGNAL_TXDONE, shell_process);
 		if (IS_ENABLED(CONFIG_LOG)) {
 			shell_signal_handle(shell, SHELL_SIGNAL_LOG_MSG,
 					    shell_log_process);
@@ -1329,35 +1307,6 @@ int shell_stop(const struct shell *shell)
 	return 0;
 }
 
-void shell_command_enter(const struct shell *shell)
-{
-	state_set(shell, SHELL_STATE_COMMAND);
-}
-
-void shell_command_exit(const struct shell *shell)
-{
-	struct k_poll_signal *signal =
-			&shell->ctx->signals[SHELL_SIGNAL_COMMAND_EXIT];
-
-	(void)k_poll_signal_raise(signal, 0);
-}
-
-static void shell_state_command(const struct shell *shell)
-{
-	size_t count;
-	char data;
-
-	(void)shell->iface->api->read(shell->iface, &data,
-				      sizeof(data), &count);
-	if (count == 0) {
-		return;
-	}
-
-	if (data == SHELL_VT100_ASCII_CTRL_C) {
-		state_set(shell, SHELL_STATE_ACTIVE);
-	}
-}
-
 void shell_process(const struct shell *shell)
 {
 	__ASSERT_NO_MSG(shell);
@@ -1380,10 +1329,6 @@ void shell_process(const struct shell *shell)
 	case SHELL_STATE_ACTIVE:
 		state_collect(shell);
 		break;
-	case SHELL_STATE_COMMAND:
-		shell_state_command(shell);
-		break;
-
 	default:
 		break;
 	}
@@ -1405,8 +1350,7 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 
 	va_list args = { 0 };
 
-	if (k_current_get() != shell->ctx->tid &&
-			shell->ctx->state != SHELL_STATE_COMMAND) {
+	if (k_current_get() != shell->ctx->tid) {
 		return;
 	}
 

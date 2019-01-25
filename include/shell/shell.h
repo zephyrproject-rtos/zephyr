@@ -247,7 +247,6 @@ enum shell_state {
 	SHELL_STATE_UNINITIALIZED,
 	SHELL_STATE_INITIALIZED,
 	SHELL_STATE_ACTIVE,
-	SHELL_STATE_COMMAND,
 	SHELL_STATE_PANIC_MODE_ACTIVE,  /*!< Panic activated.*/
 	SHELL_STATE_PANIC_MODE_INACTIVE /*!< Panic requested, not supported.*/
 };
@@ -391,7 +390,6 @@ enum shell_signal {
 	SHELL_SIGNAL_RXRDY,
 	SHELL_SIGNAL_LOG_MSG,
 	SHELL_SIGNAL_KILL,
-	SHELL_SIGNAL_COMMAND_EXIT,
 	SHELL_SIGNAL_TXDONE,
 	SHELL_SIGNALS
 };
@@ -585,10 +583,8 @@ int shell_stop(const struct shell *shell);
 /**
  * @brief printf-like function which sends formatted data stream to the shell.
  *
- * This function shall not be used outside of the shell command context unless
- * command requested to stay in the foreground (see @ref shell_command_enter).
- * In that case, function can be called from any thread context until command is
- * terminated with CTRL+C or @ref shell_command_exit call.
+ * This function can be used from the command handler or from threads, but not
+ * from an interrupt context.
  *
  * @param[in] shell	Pointer to the shell instance.
  * @param[in] color	Printed text color.
@@ -653,24 +649,6 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
  * @param[in] shell Pointer to the shell instance.
  */
 void shell_process(const struct shell *shell);
-
-/**
- * @brief Indicate to shell that command stay in foreground, blocking the shell.
- *
- * Command in foreground is terminated by @ref shell_command_exit or CTRL+C.
- *
- * @param[in] shell	Pointer to the shell instance.
- */
-void shell_command_enter(const struct shell *shell);
-
-/**
- * @brief Exit command in foreground state.
- *
- * See @ref shell_command_enter.
- *
- * @param[in] shell	Pointer to the shell instance.
- */
-void shell_command_exit(const struct shell *shell);
 
 /**
  * @brief Change displayed shell prompt.
