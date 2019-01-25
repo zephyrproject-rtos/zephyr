@@ -282,6 +282,9 @@ struct lwm2m_input_context {
 
 	/* length of incoming opaque */
 	u16_t opaque_len;
+
+	/* private output data */
+	void *user_data;
 };
 
 /* Establish a message timeout callback */
@@ -406,6 +409,23 @@ static inline void
 engine_clear_out_user_data(struct lwm2m_output_context *out)
 {
 	out->user_data = NULL;
+}
+
+static inline void engine_set_in_user_data(struct lwm2m_input_context *in,
+					   void *user_data)
+{
+	in->user_data = user_data;
+}
+
+static inline void *engine_get_in_user_data(struct lwm2m_input_context *in)
+{
+	return in->user_data;
+}
+
+static inline void
+engine_clear_in_user_data(struct lwm2m_input_context *in)
+{
+	in->user_data = NULL;
 }
 
 /* inline multi-format write / read functions */
