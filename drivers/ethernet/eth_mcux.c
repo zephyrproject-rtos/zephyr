@@ -555,14 +555,13 @@ static void eth_rx(struct device *iface)
 		goto flush;
 	}
 
-	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
-	if (!pkt) {
+	if (sizeof(context->frame_buf) < frame_length) {
+		LOG_ERR("frame too large (%d)", frame_length);
 		goto flush;
 	}
 
-	if (sizeof(context->frame_buf) < frame_length) {
-		LOG_ERR("frame too large (%d)", frame_length);
-		net_pkt_unref(pkt);
+	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
+	if (!pkt) {
 		goto flush;
 	}
 
