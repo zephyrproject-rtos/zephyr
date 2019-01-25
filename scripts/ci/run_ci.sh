@@ -74,7 +74,9 @@ DOC_MATRIX=${MATRIX_BUILDS}
 
 if [ -n "$MAIN_CI" ]; then
 
-	# West handling
+        # West handling. For now, just get the latest west from PyPI.
+        # We will update the CI container later on.
+        pip3 install -U west
         cd ..
         west init -l zephyr
         west update
