@@ -199,17 +199,6 @@ function run_bsim_bt_tests() {
 	tests/bluetooth/bsim_bt/run_parallel.sh
 }
 
-function build_docs() {
-	echo "- Building Documentation";
-	make htmldocs || ( echo "Documentation build failed" ; exit 1 )
-
-	if [ -s doc/_build/doc.warnings ]; then
-		echo " => New documentation warnings/errors";
-		cp doc/_build/doc.warnings doc.warnings
-	fi
-	echo "- Verify commit message, coding style, doc build";
-}
-
 function get_tests_to_run() {
 	./scripts/ci/get_modified_tests.py --commits ${COMMIT_RANGE} > modified_tests.args;
 	./scripts/ci/get_modified_boards.py --commits ${COMMIT_RANGE} > modified_boards.args;
