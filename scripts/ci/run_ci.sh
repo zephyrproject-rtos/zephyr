@@ -25,6 +25,7 @@ SANITYCHECK_OPTIONS_RETRY_2="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-3
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
 export BSIM_COMPONENTS_PATH="${BSIM_OUT_PATH}/components/"
 BSIM_BT_TEST_RESULTS_FILE="./bsim_bt_out/bsim_results.xml"
+WEST_COMMANDS_RESULTS_FILE="./pytest_out/west_commands.xml"
 
 MATRIX_BUILDS=1
 MATRIX=1
@@ -161,6 +162,11 @@ function on_complete() {
 		cp ${BSIM_BT_TEST_RESULTS_FILE} shippable/testresults/;
 	fi;
 
+	if [ -e ${WEST_COMMANDS_RESULTS_FILE} ]; then
+		echo "Copy ${WEST_COMMANDS_RESULTS_FILE}"
+		cp ${WEST_COMMANDS_RESULTS_FILE} shippable/testresults;
+	fi;
+
 	if [ "$MATRIX" = "1" ]; then
 		echo "Handle coverage data..."
 		handle_coverage
@@ -225,6 +231,20 @@ if [ -n "$MAIN_CI" ]; then
 		fi
 	else
 		echo "Skipping BT simulator tests"
+	fi
+
+	if [ "$MATRIX" = "1" ]; then
+		# Run pytest-based testing for Python in matrix
+		# builder 1.  For now, this is just done for the west
+		# extension commands, but additional directories which
+		# run pytest could go here too.
+		mkdir -p $(dirname ${WEST_COMMANDS_RESULTS_FILE})
+		WEST_SRC=$(west list --format='{abspath}' west)/src
+		PYTHONPATH=./scripts/west_commands:$WEST_SRC pytest \
+			  --junitxml=${WEST_COMMANDS_RESULTS_FILE} \
+			  ./scripts/west_commands/tests
+	else
+		echo "Skipping west command tests"
 	fi
 
 	# In a pull-request see if we have changed any tests or board definitions
