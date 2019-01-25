@@ -142,6 +142,21 @@ void test_atomic(void)
 		zassert_true(target == (orig | (1 << i)), "atomic_set_bit");
 	}
 
+	/* atomic_set_bit_to(&target, i, false) */
+	for (i = 0; i < 32; i++) {
+		orig = 0x0F0F0F0F;
+		target = orig;
+		atomic_set_bit_to(&target, i, false);
+		zassert_true(target == (orig & ~(1 << i)), "atomic_set_bit_to");
+	}
+
+	/* atomic_set_bit_to(&target, i, true) */
+	for (i = 0; i < 32; i++) {
+		orig = 0x0F0F0F0F;
+		target = orig;
+		atomic_set_bit_to(&target, i, true);
+		zassert_true(target == (orig | (1 << i)), "atomic_set_bit_to");
+	}
 }
 /**
  * @}

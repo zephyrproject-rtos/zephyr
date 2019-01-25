@@ -412,6 +412,29 @@ static inline void atomic_set_bit(atomic_t *target, int bit)
 }
 
 /**
+ * @brief Atomically set a bit to a given value.
+ *
+ * Atomically set bit number @a bit of @a target to value @a val.
+ * The target may be a single atomic variable or an array of them.
+ *
+ * @param target Address of atomic variable or array.
+ * @param bit Bit number (starting from 0).
+ * @param val true for 1, false for 0.
+ *
+ * @return N/A
+ */
+static inline void atomic_set_bit_to(atomic_t *target, int bit, bool val)
+{
+	atomic_val_t mask = ATOMIC_MASK(bit);
+
+	if (val) {
+		(void)atomic_or(ATOMIC_ELEM(target, bit), mask);
+	} else {
+		(void)atomic_and(ATOMIC_ELEM(target, bit), ~mask);
+	}
+}
+
+/**
  * @}
  */
 
