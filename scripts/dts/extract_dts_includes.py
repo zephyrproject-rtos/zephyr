@@ -265,12 +265,6 @@ def extract_property(node_compat, node_address, prop, prop_val, names):
         except:
             prop_values = reduced[node_address]['props'].get(prop)
 
-        # Newer versions of dtc might have the property look like
-        # cs-gpios = <0x05 0x0d 0x00>, < 0x06 0x00 0x00>;
-        # So we need to flatten the list in that case
-        if isinstance(prop_values[0], list):
-            prop_values = [item for sublist in prop_values for item in sublist]
-
         extract_controller(node_address, prop, prop_values, 0,
                            def_label, generic)
         extract_cells(node_address, prop, prop_values,
