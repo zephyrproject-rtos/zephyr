@@ -1,5 +1,8 @@
-from runners.core import ZephyrBinaryRunner
+# Copyright (c) 2018 Foundries.io
+#
+# SPDX-License-Identifier: Apache-2.0
 
+from runners.core import ZephyrBinaryRunner
 
 def test_runner_imports():
     # Ensure that all runner modules are imported and returned by
