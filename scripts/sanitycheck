@@ -2677,6 +2677,8 @@ def parse_arguments():
         which will ultimately disable ccache.
         """
     )
+    parser.add_argument("--gcov-tool", default="gcov",
+                        help="Path to the gcov tool. Default is gcov in the path.")
 
     parser.add_argument("--enable-coverage", action="store_true",
                         help="Enable code coverage using gcov.")
@@ -2838,20 +2840,23 @@ def generate_coverage(outdir, ignores):
         extracted_coverage_info = retrieve_data(filename)
         create_gcda_files(extracted_coverage_info)
 
+    gcov_tool = options.gcov_tool
+
     with open(os.path.join(outdir, "coverage.log"), "a") as coveragelog:
         coveragefile = os.path.join(outdir, "coverage.info")
         ztestfile = os.path.join(outdir, "ztest.info")
-        subprocess.call(["lcov", "--capture", "--directory", outdir,
-                         "--rc", "lcov_branch_coverage=1",
-                         "--output-file", coveragefile], stdout=coveragelog)
+        subprocess.call(["lcov", "--gcov-tool", gcov_tool,
+                            "--capture", "--directory", outdir,
+                            "--rc", "lcov_branch_coverage=1",
+                            "--output-file", coveragefile], stdout=coveragelog)
         # We want to remove tests/* and tests/ztest/test/* but save tests/ztest
-        subprocess.call(["lcov", "--extract", coveragefile,
+        subprocess.call(["lcov", "--gcov-tool", gcov_tool, "--extract", coveragefile,
                          os.path.join(ZEPHYR_BASE, "tests", "ztest", "*"),
                          "--output-file", ztestfile,
                          "--rc", "lcov_branch_coverage=1"], stdout=coveragelog)
 
         if os.path.exists(ztestfile) and os.path.getsize(ztestfile) > 0:
-            subprocess.call(["lcov", "--remove", ztestfile,
+            subprocess.call(["lcov", "--gcov-tool", gcov_tool, "--remove", ztestfile,
                              os.path.join(ZEPHYR_BASE, "tests/ztest/test/*"),
                              "--output-file", ztestfile,
                              "--rc", "lcov_branch_coverage=1"],
@@ -2862,8 +2867,9 @@ def generate_coverage(outdir, ignores):
 
         for i in ignores:
             subprocess.call(
-                ["lcov", "--remove", coveragefile, i, "--output-file",
-                 coveragefile, "--rc", "lcov_branch_coverage=1"],
+                ["lcov", "--gcov-tool", gcov_tool, "--remove",
+                    coveragefile, i, "--output-file",
+                    coveragefile, "--rc", "lcov_branch_coverage=1"],
                 stdout=coveragelog)
 
         ret = subprocess.call(["genhtml", "--legend", "--branch-coverage",
