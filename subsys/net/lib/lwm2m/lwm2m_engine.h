@@ -102,6 +102,9 @@ int lwm2m_engine_get_resource(char *pathstr,
 size_t lwm2m_engine_get_opaque_more(struct lwm2m_input_context *in,
 				    u8_t *buf, size_t buflen, bool *last_block);
 
+int lwm2m_security_inst_id_to_index(u16_t obj_inst_id);
+int lwm2m_security_index_to_inst_id(int index);
+
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 u8_t lwm2m_firmware_get_update_state(void);
 void lwm2m_firmware_set_update_state(u8_t state);
