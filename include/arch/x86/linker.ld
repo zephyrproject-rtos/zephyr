@@ -107,6 +107,7 @@ SECTIONS
 	*(.text)
 	*(".text.*")
 	*(.gnu.linkonce.t.*)
+	*(.eh_frame_hdr)
 	*(.eh_frame)
 	*(.init)
 	*(.fini)
@@ -449,6 +450,8 @@ SECTIONS
 #endif
 
 #include <linker/debug-sections.ld>
+
+	/DISCARD/ : { *(.note.GNU-stack) }
 
 	}
 
