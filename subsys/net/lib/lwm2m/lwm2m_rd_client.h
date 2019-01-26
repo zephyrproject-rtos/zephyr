@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018-2019 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -38,5 +39,8 @@
 #define LWM2M_RD_CLIENT_H
 
 void engine_trigger_update(void);
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+void engine_bootstrap_finish(void);
+#endif
 
 #endif /* LWM2M_RD_CLIENT_H */

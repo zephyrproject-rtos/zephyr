@@ -14,9 +14,6 @@
 
 /*
  * TODO:
- *
- * - BOOTSTRAP/DTLS cleanup
- * - Handle WRITE_ATTRIBUTES (pmin=10&pmax=60)
  * - Handle Resource ObjLink type
  */
 
@@ -742,9 +739,6 @@ int lwm2m_create_obj_inst(u16_t obj_id, u16_t obj_inst_id,
 		}
 	}
 
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-	engine_trigger_update();
-#endif
 	return 0;
 }
 
@@ -789,9 +783,6 @@ int lwm2m_delete_obj_inst(u16_t obj_id, u16_t obj_inst_id)
 
 	clear_attrs(obj_inst);
 	(void)memset(obj_inst, 0, sizeof(struct lwm2m_engine_obj_inst));
-#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
-	engine_trigger_update();
-#endif
 	return ret;
 }
 
@@ -2110,6 +2101,11 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 		if (first_read) {
 			len = engine_get_opaque(in, (u8_t *)data_ptr,
 						data_len, &last_pkt_block);
+			if (len == 0) {
+				/* ignore empty content and continue */
+				return 0;
+			}
+
 			first_read = false;
 		} else {
 			len = lwm2m_engine_get_opaque_more(in, (u8_t *)data_ptr,
@@ -2654,12 +2650,20 @@ static int lwm2m_exec_handler(struct lwm2m_engine_obj *obj,
 static int lwm2m_delete_handler(struct lwm2m_engine_obj *obj,
 				struct lwm2m_message *msg)
 {
+	int ret;
+
 	if (!msg) {
 		return -EINVAL;
 	}
 
-	return lwm2m_delete_obj_inst(msg->path.obj_id,
-				     msg->path.obj_inst_id);
+	ret = lwm2m_delete_obj_inst(msg->path.obj_id, msg->path.obj_inst_id);
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+	if (!ret && !msg->ctx->bootstrap_mode) {
+		engine_trigger_update();
+	}
+#endif
+
+	return ret;
 }
 
 static int do_read_op(struct lwm2m_engine_obj *obj,
@@ -2874,11 +2878,11 @@ static int do_discover_op(struct lwm2m_message *msg, bool well_known)
 	int ret;
 	bool reported = false;
 
-	/* object ID is required unless it's bootstrap discover (TODO) or it's
+	/* object ID is required unless it's bootstrap discover or it's
 	 * a ".well-known/core" discovery
 	 * ref: lwm2m spec 20170208-A table 11
 	 */
-	if (!well_known &&
+	if (!msg->ctx->bootstrap_mode && !well_known &&
 	    (msg->path.level == 0 ||
 	     (msg->path.level > 0 &&
 	      msg->path.obj_id == LWM2M_OBJECT_SECURITY_ID))) {
@@ -2923,18 +2927,20 @@ static int do_discover_op(struct lwm2m_message *msg, bool well_known)
 		return 0;
 	}
 
-	/* TODO: lwm2m spec 20170208-A sec 5.2.7.3 bootstrap discover on "/"
-	 * - report object 0 (security) with ssid
-	 * - prefixed w/ lwm2m enabler version. e.g. lwm2m="1.0"
+	/*
+	 * lwm2m spec 20170208-A sec 5.2.7.3 bootstrap discover on "/"
+	 * - (TODO) prefixed w/ lwm2m enabler version. e.g. lwm2m="1.0"
 	 * - returns object and object instances only
 	 */
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_obj_inst_list, obj_inst, node) {
-		/* TODO: support bootstrap discover
-		 * Avoid discovery for security object (5.2.7.3)
-		 * Skip reporting unrelated object
+		/*
+		 * - Avoid discovery for security object (5.2.7.3) unless
+		 *   Bootstrap discover
+		 * - Skip reporting unrelated object
 		 */
-		if (obj_inst->obj->obj_id == LWM2M_OBJECT_SECURITY_ID ||
+		if ((!msg->ctx->bootstrap_mode &&
+		     obj_inst->obj->obj_id == LWM2M_OBJECT_SECURITY_ID) ||
 		    obj_inst->obj->obj_id != msg->path.obj_id) {
 			continue;
 		}
@@ -2985,6 +2991,11 @@ static int do_discover_op(struct lwm2m_message *msg, bool well_known)
 			}
 
 			reported = true;
+		}
+
+		/* don't return resource info for bootstrap discovery */
+		if (msg->ctx->bootstrap_mode) {
+			continue;
 		}
 
 		for (int i = 0; i < obj_inst->resource_count; i++) {
@@ -3048,6 +3059,12 @@ int lwm2m_get_or_create_engine_obj(struct lwm2m_message *msg,
 		if (created) {
 			*created = 1U;
 		}
+
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT)
+		if (!msg->ctx->bootstrap_mode) {
+			engine_trigger_update();
+		}
+#endif
 	}
 
 	return ret;
@@ -3080,6 +3097,29 @@ static int do_write_op(struct lwm2m_engine_obj *obj,
 
 	}
 }
+
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+static int bootstrap_delete(void)
+{
+	struct lwm2m_engine_obj_inst *obj_inst, *tmp;
+	int ret = 0;
+
+	/* delete SECURITY instances > 0 */
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&engine_obj_inst_list,
+					  obj_inst, tmp, node) {
+		if (obj_inst->obj->obj_id == LWM2M_OBJECT_SECURITY_ID &&
+		    obj_inst->obj_inst_id > 0) {
+			ret = lwm2m_delete_obj_inst(obj_inst->obj->obj_id,
+						    obj_inst->obj_inst_id);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
+	return ret;
+}
+#endif
 
 static int handle_request(struct coap_packet *request,
 			  struct lwm2m_message *msg)
@@ -3119,14 +3159,31 @@ static int handle_request(struct coap_packet *request,
 	r = coap_find_options(msg->in.in_cpkt, COAP_OPTION_URI_PATH, options,
 			      ARRAY_SIZE(options));
 	if (r <= 0) {
-		/* '/' is used by bootstrap-delete only */
+		switch (code & COAP_REQUEST_MASK) {
+#if defined(CONFIG_LWM2M_RD_CLIENT_SUPPORT_BOOTSTRAP)
+		case COAP_METHOD_DELETE:
+			if (msg->ctx->bootstrap_mode) {
+				r = bootstrap_delete();
+				if (r < 0) {
+					goto error;
+				}
 
-		/*
-		 * TODO: Handle bootstrap deleted --
-		 * re-add when DTLS support ready
-		 */
-		r = -EPERM;
-		goto error;
+				msg->code = COAP_RESPONSE_CODE_DELETED;
+				r = lwm2m_init_message(msg);
+			} else {
+				r = -EPERM;
+			}
+
+			if (r < 0) {
+				goto error;
+			}
+
+			return 0;
+#endif
+		default:
+			r = -EPERM;
+			goto error;
+		}
 	}
 
 	/* check for .well-known/core URI query (DISCOVER) */
@@ -3875,6 +3932,14 @@ static void lwm2m_engine_service(void)
 	}
 }
 
+int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
+{
+	k_delayed_work_cancel(&client_ctx->retransmit_work);
+	net_app_close(&client_ctx->net_app_ctx);
+	net_app_release(&client_ctx->net_app_ctx);
+	return 0;
+}
+
 void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 {
 	k_delayed_work_init(&client_ctx->retransmit_work, retransmit_request);
@@ -3977,8 +4042,7 @@ int lwm2m_net_app_start(struct lwm2m_ctx *client_ctx,
 	return 0;
 
 error_start:
-	net_app_close(&client_ctx->net_app_ctx);
-	net_app_release(&client_ctx->net_app_ctx);
+	lwm2m_engine_context_close(client_ctx);
 	return ret;
 }
 

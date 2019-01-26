@@ -69,6 +69,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "lwm2m_rw_oma_tlv.h"
 #include "lwm2m_engine.h"
+#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
+#include "lwm2m_rd_client.h"
+#endif
 
 enum {
 	OMA_TLV_TYPE_OBJECT_INSTANCE   = 0,
@@ -860,8 +863,9 @@ static int do_write_op_tlv_item(struct lwm2m_message *msg)
 	}
 
 	if (!res) {
-		/* if OPTIONAL and OP_CREATE use ENOTSUP */
-		if (msg->operation == LWM2M_OP_CREATE &&
+		/* if OPTIONAL and BOOTSTRAP-WRITE or CREATE use ENOTSUP */
+		if ((msg->ctx->bootstrap_mode ||
+		     msg->operation == LWM2M_OP_CREATE) &&
 		    LWM2M_HAS_PERM(obj_field, BIT(LWM2M_FLAG_OPTIONAL))) {
 			ret = -ENOTSUP;
 			goto error;
@@ -918,25 +922,34 @@ int do_write_op_tlv(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
 				if (ret < 0) {
 					return ret;
 				}
+
+#ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
+				if (!msg->ctx->bootstrap_mode) {
+					engine_trigger_update();
+				}
+#endif
 			}
 
 			while (pos < tlv.length &&
 			       (len2 = oma_tlv_get(&tlv2, &msg->in, true))) {
-				if (tlv2.type == OMA_TLV_TYPE_RESOURCE) {
-					msg->path.res_id = tlv2.id;
-					msg->path.level = 3;
-					ret = do_write_op_tlv_item(msg);
-					/*
-					 * ignore errors for CREATE op
-					 * TODO: support BOOTSTRAP WRITE where
-					 * optional resources are ignored
-					 */
-					if (ret < 0 &&
-					    (msg->operation !=
-					     LWM2M_OP_CREATE ||
-					     ret != -ENOTSUP)) {
-						return ret;
-					}
+				if (tlv2.type != OMA_TLV_TYPE_RESOURCE) {
+					pos += len2;
+					continue;
+				}
+
+				msg->path.res_id = tlv2.id;
+				msg->path.level = 3;
+				ret = do_write_op_tlv_item(msg);
+				/*
+				 * ignore errors for CREATE op
+				 * for OP_CREATE and BOOTSTRAP WRITE: errors on
+				 * optional resources are ignored (ENOTSUP)
+				 */
+				if (ret < 0 &&
+				    !((ret == -ENOTSUP) &&
+				      (msg->ctx->bootstrap_mode ||
+				       msg->operation == LWM2M_OP_CREATE))) {
+					return ret;
 				}
 
 				pos += len2;
@@ -947,11 +960,13 @@ int do_write_op_tlv(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
 			ret = do_write_op_tlv_item(msg);
 			/*
 			 * ignore errors for CREATE op
-			 * TODO: support BOOTSTRAP WRITE where optional
-			 * resources are ignored
+			 * for OP_CREATE and BOOTSTRAP WRITE: errors on optional
+			 * resources are ignored (ENOTSUP)
 			 */
-			if (ret < 0 && (msg->operation != LWM2M_OP_CREATE ||
-					ret != -ENOTSUP)) {
+			if (ret < 0 &&
+			    !((ret == -ENOTSUP) &&
+			      (msg->ctx->bootstrap_mode ||
+			       msg->operation == LWM2M_OP_CREATE))) {
 				return ret;
 			}
 		}
