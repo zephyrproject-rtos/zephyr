@@ -126,6 +126,16 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	conn_lll->enc_tx = 0;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	conn_lll->max_tx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
+	conn_lll->max_rx_octets = PDU_DC_PAYLOAD_SIZE_MIN;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	conn_lll->max_tx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0);
+	conn_lll->max_rx_time = PKT_US(PDU_DC_PAYLOAD_SIZE_MIN, 0);
+#endif /* CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 	conn_lll->phy_tx = BIT(0);
 	conn_lll->phy_flags = 0;
@@ -198,6 +208,16 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	conn->llcp_conn_param.ack = 0U;
 	conn->llcp_conn_param.disabled = 0U;
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	conn->llcp_length.req = conn->llcp_length.ack = 0U;
+	conn->llcp_length.pause_tx = 0U;
+	conn->default_tx_octets = ull_conn_default_tx_octets_get();
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	conn->default_tx_time = ull_conn_default_tx_time_get();
+#endif /* CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 #if defined(CONFIG_BT_CTLR_PHY)
 	conn->llcp_phy.req = conn->llcp_phy.ack = 0U;
