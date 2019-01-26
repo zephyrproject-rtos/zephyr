@@ -439,7 +439,7 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 
 	if (error_code) {
 		if (conn->refresh == 0U) {
-			ret = ull_conn_allowed_check(conn);
+			ret = ull_conn_llcp_req(conn);
 			if (ret) {
 				return ret;
 			}
@@ -463,7 +463,7 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 		memcpy(&conn->llcp.encryption.ltk[0], ltk,
 		       sizeof(conn->llcp.encryption.ltk));
 
-		ret = ull_conn_allowed_check(conn);
+		ret = ull_conn_llcp_req(conn);
 		if (ret) {
 			return ret;
 		}

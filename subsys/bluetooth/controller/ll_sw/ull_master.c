@@ -312,7 +312,7 @@ u8_t ll_chm_update(u8_t *chm)
 			continue;
 		}
 
-		ret = ull_conn_allowed_check(conn);
+		ret = ull_conn_llcp_req(conn);
 		if (ret) {
 			return ret;
 		}
@@ -341,7 +341,7 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	ret = ull_conn_allowed_check(conn);
+	ret = ull_conn_llcp_req(conn);
 	if (ret) {
 		return ret;
 	}
