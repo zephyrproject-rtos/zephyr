@@ -1396,10 +1396,10 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	/* Account for a sent frame */
 	ring_buf_put(&queue->tx_frames, POINTER_TO_UINT(pkt));
 
-	irq_unlock(key);
-
 	/* pkt is internally queued, so it requires to hold a reference */
 	net_pkt_ref(pkt);
+
+	irq_unlock(key);
 
 	/* Guarantee that the first fragment got its bit removed before starting
 	 * sending packets to avoid packets getting stuck.
