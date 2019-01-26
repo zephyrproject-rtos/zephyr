@@ -8,7 +8,7 @@ Introduction
 
 West includes a set of commands for working with projects composed of multiple
 Git repositories (a *multi-repo*), similar to `Git Submodules
-<https://git-scm.com/book/en/v2/Git-Tools-Submodules>` and Google's `repo
+<https://git-scm.com/book/en/v2/Git-Tools-Submodules>`_ and Google's `repo
 <https://gerrit.googlesource.com/git-repo/>`_ tool.
 
 The rest of this page introduces multi-repo concepts and gives an overview of
@@ -20,7 +20,6 @@ the multi-repo commands, along with an example workflow. See
    The multi-repo commands are meant to augment Git in minor ways for
    multi-repo work, not replace it. For tasks that aren't multi-repo-related,
    use plain Git commands.
-
    This page explains what the west multi-repo commands do behind the scenes.
 
 Requirements
@@ -33,13 +32,13 @@ instead develop a new one, do belong here.
 At the most fundamental level, the requirements for a transition to multiple
 repositories in the Zephyr Project are:
 
-* *R1*: Keep externally maintained code outside of the main repository
-* *R2*: Provide a tool that both Zephyr users and distributors can make use of
-        to benefit from and extend the functionality above
-* *R3*: Allow overriding or removing repositories without having to make changes
-        to the zephyr repository
-* *R4*: Support both continuous tracking and commit-based (bisectable) project
-        updating
+* **R1**: Keep externally maintained code outside of the main repository
+* **R2**: Provide a tool that both Zephyr users and distributors can make use of
+  to benefit from and extend the functionality above
+* **R3**: Allow overriding or removing repositories without having to make changes
+  to the zephyr repository
+* **R4**: Support both continuous tracking and commit-based (bisectable) project
+  updating
 
 Topologies supported
 ********************
@@ -47,29 +46,29 @@ Topologies supported
 The requirements above lead us to the three main source code organization
 topologies that we intend to address with west:
 
-#. *T1* Star topology with zephyr as the manifest repository:
+* **T1**: Star topology with zephyr as the manifest repository:
 
-   - The zephyr repository acts as the central repository and includes a
-     complete list of projects in itself
-   - Default (upstream) configuration
-   - Analogy with existing mechanisms: Git submodules with zephyr as the
-     superproject
+  - The zephyr repository acts as the central repository and includes a
+    complete list of projects in itself
+  - Default (upstream) configuration
+  - Analogy with existing mechanisms: Git submodules with zephyr as the
+    superproject
 
-#. *T2* Star topology with an application repository as the manifest repository
+* **T2**: Star topology with an application repository as the manifest repository
 
-   - The application repository acts as the central repository and includes a
-     complete list of projects in itself
-   - Useful for downstream distributions focused in a single application
-     repository
-   - Analogy with existing mechanisms: Git submodules with the application as
-     the superproject, zephyr as a submodule
+  - The application repository acts as the central repository and includes a
+    complete list of projects in itself
+  - Useful for downstream distributions focused in a single application
+    repository
+  - Analogy with existing mechanisms: Git submodules with the application as
+    the superproject, zephyr as a submodule
 
-#. *T3* Forest topology with a set of trees all at the same level
+* **T3**: Forest topology with a set of trees all at the same level
 
-   - A dedicated manifest repository contains only a list of repositories
-   - Useful for downstream distributions that track the latest ``HEAD`` on all
-     repositories
-   - Analogy with existing mechanisms: Google repo-based distribution
+  - A dedicated manifest repository contains only a list of repositories
+  - Useful for downstream distributions that track the latest ``HEAD`` on all
+    repositories
+  - Analogy with existing mechanisms: Google repo-based distribution
 
 Rationale for a custom tool
 ***************************
@@ -86,16 +85,16 @@ in detail:
   - Does not play well with Windows
   - It is poorly documented and maintained
   - It does not fully support a set of bisectable repositories without
-    additional intervention (*R4*)
+    additional intervention (**R4**)
 
 * Git submodules
 
-  - Does not fully support *R1*, since the externally maintained repositories
+  - Does not fully support **R1**, since the externally maintained repositories
     would still need to be inside the main zephyr Git tree
-  - Does not support *R3*. Downstream copies would need to either delete or
+  - Does not support **R3**. Downstream copies would need to either delete or
     replace submodule definitions
   - Does not support continuous tracking of the latest ``HEAD`` in external
-    repositories (*R4*)
+    repositories (**R4**)
   - Requires hardcoding of the paths/locations of the external repositories
 
 Finally, please see :ref:`west-history` for the motivations behind using a
@@ -110,9 +109,9 @@ Model
 Manifest
 ========
 
-A *manifest* is a `YAML <http://yaml.org/>`_ file that, at a minimum, gives the
-URL and revision for each project repository in the multi-repo (each *project*).
-The manifest is stored in the *manifest repository* and is named :file:`west.yml`.
+A **manifest** is a `YAML <http://yaml.org/>`_ file that, at a minimum, gives the
+URL and revision for each project repository in the multi-repo (each **project**).
+The manifest is stored in the **manifest repository** and is named :file:`west.yml`.
 
 The format of the west manifest is described by a `pykwalify
 <https://pypi.org/project/pykwalify/>`_ schema, found `here
