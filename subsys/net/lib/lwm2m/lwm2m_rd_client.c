@@ -89,7 +89,7 @@ enum sm_engine_state {
 };
 
 struct lwm2m_rd_client_info {
-	u16_t lifetime;
+	u32_t lifetime;
 	struct lwm2m_ctx *ctx;
 	u8_t engine_state;
 	u8_t use_bootstrap;
@@ -360,6 +360,69 @@ static void do_deregister_timeout_cb(struct lwm2m_message *msg)
 	sm_handle_timeout_state(msg, ENGINE_INIT);
 }
 
+static int sm_select_next_sec_inst(int *sec_obj_inst, u32_t *lifetime)
+{
+	char pathstr[MAX_RESOURCE_LEN];
+	int ret, end, i, obj_inst_id, found = -1;
+	bool temp;
+
+	/* lookup existing index */
+	i = lwm2m_security_inst_id_to_index(*sec_obj_inst);
+	if (i < 0) {
+		*sec_obj_inst = -1;
+		i = -1;
+	}
+
+	/* store end marker, due to looping */
+	end = (i == -1 ? CONFIG_LWM2M_SECURITY_INSTANCE_COUNT : i);
+
+	/* loop through servers starting from the index after the current one */
+	for (i++; i != end; i++) {
+		if (i >= CONFIG_LWM2M_SECURITY_INSTANCE_COUNT) {
+			i = 0;
+		}
+
+		obj_inst_id = lwm2m_security_index_to_inst_id(i);
+		if (obj_inst_id < 0) {
+			continue;
+		}
+
+		snprintk(pathstr, sizeof(pathstr), "0/%d/1",
+			 obj_inst_id);
+		ret = lwm2m_engine_get_bool(pathstr, &temp);
+		if (ret < 0) {
+			continue;
+		}
+
+		if (temp == false) {
+			found = obj_inst_id;
+			break;
+		}
+	}
+
+	if (found > -1) {
+		*sec_obj_inst = found;
+
+		/* query the lifetime */
+		/* TODO: use Short Server ID to link to server info */
+		snprintk(pathstr, sizeof(pathstr), "1/%d/1",
+			 obj_inst_id);
+		if (lwm2m_engine_get_u32(pathstr, lifetime) < 0) {
+			*lifetime = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
+			LOG_DBG("Using default lifetime: %u", *lifetime);
+		}
+	}
+
+	if (*sec_obj_inst < 0) {
+		/* no servers found */
+		LOG_DBG("sec_obj_inst: NOT_FOUND");
+		return -ENOENT;
+	}
+
+	LOG_DBG("sec_obj_inst: %d", *sec_obj_inst);
+	return 0;
+}
+
 /* state machine step functions */
 
 static int sm_do_init(void)
@@ -590,9 +653,29 @@ static int sm_do_registration(void)
 {
 	int ret = 0;
 
-	if (client.use_registration &&
-	    !sm_is_registered() &&
-	    client.has_registration_info) {
+	/* TODO: clear out connection data? */
+
+	ret = sm_select_next_sec_inst(&client.ctx->sec_obj_inst,
+				      &client.lifetime);
+	if (ret < 0) {
+		set_sm_state(ENGINE_INIT);
+		return -EINVAL;
+	}
+
+	if (client.lifetime == 0) {
+		client.lifetime = CONFIG_LWM2M_ENGINE_DEFAULT_LIFETIME;
+	}
+
+	LOG_INF("RD Client started with endpoint '%s' with client lifetime %d",
+		client.ep_name, client.lifetime);
+
+	ret = lwm2m_engine_start(client.ctx);
+	if (ret < 0) {
+		LOG_ERR("Cannot init LWM2M engine (%d)", ret);
+		return ret;
+	}
+
+	if (!sm_is_registered()) {
 		ret = sm_send_registration(true,
 					   do_registration_reply_cb,
 					   do_registration_timeout_cb);
@@ -735,27 +818,15 @@ static void lwm2m_rd_client_service(void)
 	}
 }
 
-int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
-			  char *peer_str, u16_t peer_port,
-			  const char *ep_name,
-			  lwm2m_ctx_event_cb_t event_cb)
+void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
+			   lwm2m_ctx_event_cb_t event_cb)
 {
-	int ret = 0;
-
-	ret = lwm2m_engine_start(client_ctx, peer_str, peer_port);
-	if (ret < 0) {
-		LOG_ERR("Cannot init LWM2M engine (%d)", ret);
-		return ret;
-	}
-
-	/* TODO: use server URI data from security */
 	client.ctx = client_ctx;
 	client.event_cb = event_cb;
+
 	set_sm_state(ENGINE_INIT);
 	strncpy(client.ep_name, ep_name, CLIENT_EP_LEN - 1);
 	LOG_INF("LWM2M Client: %s", client.ep_name);
-
-	return 0;
 }
 
 static int lwm2m_rd_client_init(struct device *dev)

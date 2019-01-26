@@ -43,13 +43,6 @@ static char proxy_uri[URI_LEN];
 
 static void do_transmit_timeout_cb(struct lwm2m_message *msg);
 
-static void
-firmware_udp_receive(struct net_app_ctx *app_ctx, struct net_pkt *pkt,
-		     int status, void *user_data)
-{
-	lwm2m_udp_receive(&firmware_ctx, pkt, true, NULL);
-}
-
 static void set_update_result_from_error(int error_code)
 {
 	if (error_code == -ENOMEM) {
@@ -409,7 +402,6 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 
 static void firmware_transfer(struct k_work *work)
 {
-	struct sockaddr client_addr;
 	int ret, family;
 	u16_t off;
 	u16_t len;
@@ -473,22 +465,11 @@ static void firmware_transfer(struct k_work *work)
 	tmp = server_addr[off + len];
 	server_addr[off + len] = '\0';
 
-	/* setup the local firmware download client port */
-	(void)memset(&client_addr, 0, sizeof(client_addr));
-#if defined(CONFIG_NET_IPV6)
-	client_addr.sa_family = AF_INET6;
-	net_sin6(&client_addr)->sin6_port =
-		htons(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_LOCAL_PORT);
-#elif defined(CONFIG_NET_IPV4)
-	client_addr.sa_family = AF_INET;
-	net_sin(&client_addr)->sin_port =
-		htons(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_LOCAL_PORT);
-#endif
+	lwm2m_engine_context_init(&firmware_ctx);
+	firmware_ctx.handle_separate_response = true;
 
-	ret = net_app_init_udp_client(&firmware_ctx.net_app_ctx,
-				      &client_addr, NULL,
-				      &server_addr[off], parsed_uri.port,
-				      firmware_ctx.net_init_timeout, NULL);
+	ret = lwm2m_net_app_start(&firmware_ctx, &server_addr[off],
+				  parsed_uri.port);
 	server_addr[off + len] = tmp;
 	if (ret < 0) {
 		LOG_ERR("Could not get an UDP context (err:%d)", ret);
@@ -499,38 +480,6 @@ static void firmware_transfer(struct k_work *work)
 	LOG_INF("Connecting to server %s, port %d", server_addr + off,
 		parsed_uri.port);
 
-	lwm2m_engine_context_init(&firmware_ctx);
-
-	/* set net_app callbacks */
-	ret = net_app_set_cb(&firmware_ctx.net_app_ctx, NULL,
-			     firmware_udp_receive, NULL, NULL);
-	if (ret < 0) {
-		LOG_ERR("Could not set receive callback (err:%d)", ret);
-		/* make sure this sets RESULT_CONNECTION_LOST */
-		ret = -ENOMSG;
-		goto cleanup;
-	}
-
-	ret = net_app_connect(&firmware_ctx.net_app_ctx,
-			      firmware_ctx.net_timeout);
-	if (ret < 0) {
-		LOG_ERR("Cannot connect UDP (%d)", ret);
-		goto cleanup;
-	}
-
-	/* save remote addr */
-#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-	if (firmware_ctx.net_app_ctx.dtls.ctx) {
-		memcpy(&firmware_ctx.remote_addr,
-		       &firmware_ctx.net_app_ctx.dtls.ctx->remote,
-		       sizeof(firmware_ctx.remote_addr));
-	} else
-#endif
-	{
-		memcpy(&firmware_ctx.remote_addr,
-		       &firmware_ctx.net_app_ctx.default_ctx->remote,
-		       sizeof(firmware_ctx.remote_addr));
-	}
 	/* reset block transfer context */
 	coap_block_transfer_init(&firmware_block_ctx,
 				 lwm2m_default_block_size(), 0);

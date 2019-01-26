@@ -88,10 +88,6 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 			struct lwm2m_engine_obj_field *obj_field,
 			struct lwm2m_message *msg);
 
-void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
-		       bool handle_separate_response,
-		       udp_request_handler_cb_t udp_request_handler);
-
 enum coap_block_size lwm2m_default_block_size(void);
 
 int lwm2m_engine_add_service(void (*service)(void), u32_t period_ms);
@@ -111,5 +107,9 @@ void lwm2m_firmware_set_update_state(u8_t state);
 void lwm2m_firmware_set_update_result(u8_t result);
 u8_t lwm2m_firmware_get_update_result(void);
 #endif
+
+/* Network API Layer */
+int lwm2m_net_app_start(struct lwm2m_ctx *client_ctx,
+			char *peer_str, u16_t peer_port);
 
 #endif /* LWM2M_ENGINE_H */
