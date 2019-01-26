@@ -31,6 +31,7 @@
 
 #include "pdu.h"
 #include "ll.h"
+#include "ll_feat.h"
 #include "lll.h"
 #include "lll_filter.h"
 #include "lll_adv.h"
@@ -146,8 +147,6 @@ static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 
 #if defined(CONFIG_BT_RX_BUF_LEN)
 #define PDU_RX_OCTETS_MAX (CONFIG_BT_RX_BUF_LEN - 11)
-#else
-#define PDU_RX_OCTETS_MAX 0
 #endif
 
 #define NODE_RX_HEADER_SIZE      (offsetof(struct node_rx_pdu, pdu))

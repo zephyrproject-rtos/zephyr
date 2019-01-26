@@ -614,6 +614,12 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 		}
 	}
 
+	p->rfu = 0U;
+
+#if !defined(CONFIG_BT_CTLR_DATA_LENGTH_CLEAR)
+	p->resv = 0U;
+#endif /* !CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
+
 	*pdu_data_tx = p;
 }
 
