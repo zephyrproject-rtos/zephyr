@@ -47,3 +47,4 @@ include: fitness wearables, smart watches, and IoT wireless gateways.
    other/float.rst
    other/ring_buffers.rst
    other/cxx_support.rst
+   other/version.rst

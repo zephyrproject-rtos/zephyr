@@ -13,7 +13,6 @@ The Zephyr APIs are used the same way on all SoCs and boards.
 .. toctree::
    :maxdepth: 2
 
-   kernel_api.rst
    bluetooth.rst
    networking.rst
    file_system
