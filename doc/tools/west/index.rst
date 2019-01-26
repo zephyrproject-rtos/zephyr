@@ -1,7 +1,7 @@
 .. _west:
 
-West
-####
+West (Zephyr's meta-tool)
+#########################
 
 The Zephyr project includes a swiss-army knife command line tool
 named ``west`` (Zephyr is an English name for the Latin
@@ -137,8 +137,9 @@ like this:
        ├── .west/
        │   ├── config
        │   └── west/
-       └── zephyr/
-           └── west.yml
+       ├── zephyr/
+       │   └── west.yml
+       └── ...
 
 ``west init`` also creates a configuration file :file:`.west/config`
 that stores configuration metadata about the west installation.
