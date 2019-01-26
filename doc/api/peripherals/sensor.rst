@@ -50,7 +50,7 @@ measures ambient temperature and atmospheric pressure.  Note that
 :c:func:`sensor_sample_fetch` is only called once, as it reads and
 compensates data for both channels.
 
-.. literalinclude:: ../../samples/sensor/bme280/src/main.c
+.. literalinclude:: ../../../samples/sensor/bme280/src/main.c
    :language: c
    :lines: 12-
    :linenos:
@@ -110,7 +110,7 @@ interest of saving power. Since the application has direct access to the
 kernel config symbols, no trigger is registered when triggering was disabled
 by the driver's configuration.
 
-.. literalinclude:: ../../samples/sensor/mcp9808/src/main.c
+.. literalinclude:: ../../../samples/sensor/mcp9808/src/main.c
    :language: c
    :lines: 12-
    :linenos:

@@ -19,6 +19,7 @@ Peripherals
    ipm.rst
    pinmux.rst
    pwm.rst
+   sensor.rst
    spi.rst
    uart.rst
    watchdog.rst
