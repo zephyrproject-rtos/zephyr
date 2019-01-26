@@ -72,6 +72,7 @@ struct lwm2m_ctx {
 
 	/** Current security object index */
 	int sec_obj_inst;
+	bool bootstrap_mode;
 
 	/** Packet Flow Settings */
 	bool handle_separate_response;
@@ -234,8 +235,9 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx);
 /* Client events */
 enum lwm2m_rd_client_event {
 	LWM2M_RD_CLIENT_EVENT_NONE,
-	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_FAILURE,
-	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_COMPLETE,
+	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_FAILURE,
+	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_REG_COMPLETE,
+	LWM2M_RD_CLIENT_EVENT_BOOTSTRAP_TRANSFER_COMPLETE,
 	LWM2M_RD_CLIENT_EVENT_REGISTRATION_FAILURE,
 	LWM2M_RD_CLIENT_EVENT_REGISTRATION_COMPLETE,
 	LWM2M_RD_CLIENT_EVENT_REG_UPDATE_FAILURE,
