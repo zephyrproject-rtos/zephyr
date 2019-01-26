@@ -788,7 +788,7 @@ cleanup:
 	return ret;
 }
 
-static void lwm2m_rd_client_service(void)
+static void lwm2m_rd_client_service(struct k_work *work)
 {
 	if (client.ctx) {
 		switch (get_sm_state()) {
