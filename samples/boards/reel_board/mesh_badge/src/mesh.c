@@ -70,7 +70,7 @@ static void heartbeat(u8_t hops, u16_t feat)
 
 static struct bt_mesh_cfg_srv cfg_srv = {
 	.relay = BT_MESH_RELAY_ENABLED,
-	.beacon = BT_MESH_BEACON_ENABLED,
+	.beacon = BT_MESH_BEACON_DISABLED,
 	.default_ttl = DEFAULT_TTL,
 
 	/* 3 transmissions with 20ms interval */
