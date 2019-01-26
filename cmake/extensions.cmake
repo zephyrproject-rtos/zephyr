@@ -709,6 +709,7 @@ function(check_dtc_flag flag ok)
     COMMAND
     ${DTC} ${flag} -v
     ERROR_QUIET
+    OUTPUT_QUIET
     RESULT_VARIABLE dtc_check_ret
   )
   if (dtc_check_ret EQUAL 0)
