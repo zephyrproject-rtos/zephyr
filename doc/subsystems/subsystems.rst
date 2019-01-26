@@ -20,6 +20,4 @@ to applications.
    shell/shell
    test/index
    usb/usb.rst
-   settings/settings.rst
-   nvs/nvs.rst
-   disk/sdhc.rst
+   storage.rst
