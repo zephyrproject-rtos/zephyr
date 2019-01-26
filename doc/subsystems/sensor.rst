@@ -22,10 +22,9 @@ humidity).  Complex sensors cover both cases, so a single device can expose
 three acceleration channels and a temperature one.
 
 It is imperative that all sensors that support a given channel express
-results in the same unit of measurement.  The following is a list of all
-supported channels, along with their description and units of measurement:
-
-.. doxygenenum:: sensor_channel
+results in the same unit of measurement. Consult the
+:ref:`sensor_api_reference` for all supported channels, along with their
+description and units of measurement:
 
 Values
 ======
@@ -33,9 +32,6 @@ Values
 Sensor devices return results as :c:type:`struct sensor_value`.  This
 representation avoids use of floating point values as they may not be
 supported on certain setups.
-
-.. doxygenstruct:: sensor_value
-    :members:
 
 Fetching Values
 ===============
@@ -118,3 +114,11 @@ by the driver's configuration.
    :language: c
    :lines: 12-
    :linenos:
+
+.. _sensor_api_reference:
+
+API Reference
+**************
+
+.. doxygengroup:: sensor_interface
+   :project: Zephyr
