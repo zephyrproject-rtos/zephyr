@@ -254,6 +254,30 @@
 			#gpio-cells = <2>;
 		};
 
+		pwm0: pwm0@40020000 {
+			compatible = "atmel,sam-pwm";
+			reg = <0x40020000 0x4000>;
+			interrupts = <31 0>;
+			peripheral-id = <31>;
+			status = "disabled";
+			label = "PWM_0";
+			prescaler = <10>;
+			divider = <1>;
+			#pwm-cells = <2>;
+		};
+
+		pwm1: pwm1@4005c000 {
+			compatible = "atmel,sam-pwm";
+			reg = <0x4005c000 0x4000>;
+			interrupts = <60 0>;
+			peripheral-id = <60>;
+			status = "disabled";
+			label = "PWM_1";
+			prescaler = <10>;
+			divider = <1>;
+			#pwm-cells = <2>;
+		};
+
 		usbhs: usbd@40038000 {
 			compatible = "atmel,sam-usbhs";
 			#address-cells = <1>;
