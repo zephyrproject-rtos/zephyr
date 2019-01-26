@@ -868,6 +868,20 @@ void *net_buf_simple_pull(struct net_buf_simple *buf, size_t len)
 	return buf->data += len;
 }
 
+void *net_buf_simple_pull_mem(struct net_buf_simple *buf, size_t len)
+{
+	void *data = buf->data;
+
+	NET_BUF_SIMPLE_DBG("buf %p len %zu", buf, len);
+
+	NET_BUF_SIMPLE_ASSERT(buf->len >= len);
+
+	buf->len -= len;
+	buf->data += len;
+
+	return data;
+}
+
 u8_t net_buf_simple_pull_u8(struct net_buf_simple *buf)
 {
 	u8_t val;
