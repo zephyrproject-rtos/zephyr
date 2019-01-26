@@ -42,17 +42,6 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-/* Macro to return PDU time */
-#if defined(CONFIG_BT_CTLR_PHY_CODED)
-#define PKT_US(octets, phy) \
-	(((phy) & BIT(2)) ? \
-	 (80 + 256 + 16 + 24 + ((((2 + (octets) + 4) * 8) + 24 + 3) * 8)) : \
-	 (((octets) + 14) * 8 / BIT(((phy) & 0x03) >> 1)))
-#else /* !CONFIG_BT_CTLR_PHY_CODED */
-#define PKT_US(octets, phy) \
-	(((octets) + 14) * 8 / BIT(((phy) & 0x03) >> 1))
-#endif /* !CONFIG_BT_CTLR_PHY_CODED */
-
 static int init_reset(void);
 static void ticker_op_update_cb(u32_t status, void *param);
 static inline void disable(u16_t handle);
@@ -184,22 +173,6 @@ struct ll_conn *ll_connected_get(u16_t handle)
 	return conn;
 }
 
-u8_t ull_conn_allowed_check(void *conn)
-{
-	struct ll_conn * const conn_hdr = conn;
-	if (conn_hdr->llcp_req != conn_hdr->llcp_ack) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	conn_hdr->llcp_req++;
-	if (((conn_hdr->llcp_req - conn_hdr->llcp_ack) & 0x03) != 1U) {
-		conn_hdr->llcp_req--;
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	return 0;
-}
-
 void *ll_tx_mem_acquire(void)
 {
 	return mem_acquire(&mem_conn_tx.free);
@@ -264,7 +237,7 @@ u8_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
 
 	if (!cmd) {
 
-		ret = ull_conn_allowed_check(conn);
+		ret = ull_conn_llcp_req(conn);
 		if (ret) {
 			return ret;
 		}
@@ -367,7 +340,7 @@ u8_t ll_feature_req_send(u16_t handle)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	ret = ull_conn_allowed_check(conn);
+	ret = ull_conn_llcp_req(conn);
 	if (ret) {
 		return ret;
 	}
@@ -388,7 +361,7 @@ u8_t ll_version_ind_send(u16_t handle)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	ret = ull_conn_allowed_check(conn);
+	ret = ull_conn_llcp_req(conn);
 	if (ret) {
 		return ret;
 	}
@@ -1279,6 +1252,22 @@ void ull_conn_tx_ack(struct ll_conn *conn, memq_link_t *link,
 	}
 
 	ll_tx_ack_put(conn->lll.handle, tx);
+}
+
+u8_t ull_conn_llcp_req(void *conn)
+{
+	struct ll_conn * const conn_hdr = conn;
+	if (conn_hdr->llcp_req != conn_hdr->llcp_ack) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	conn_hdr->llcp_req++;
+	if (((conn_hdr->llcp_req - conn_hdr->llcp_ack) & 0x03) != 1) {
+		conn_hdr->llcp_req--;
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	return 0;
 }
 
 static int init_reset(void)
