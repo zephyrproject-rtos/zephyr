@@ -97,12 +97,10 @@ struct lll_conn {
 	/* FIXME: END: Move to ULL? */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	u16_t default_tx_octets;
 	u16_t max_tx_octets;
 	u16_t max_rx_octets;
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	u16_t default_tx_time;
 	u16_t max_tx_time;
 	u16_t max_rx_time;
 #endif /* CONFIG_BT_CTLR_PHY */

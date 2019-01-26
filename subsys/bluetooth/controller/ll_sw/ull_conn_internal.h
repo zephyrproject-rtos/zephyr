@@ -17,6 +17,8 @@ int ull_conn_init(void);
 int ull_conn_reset(void);
 u8_t ull_conn_chan_map_cpy(u8_t *chan_map);
 void ull_conn_chan_map_set(u8_t *chan_map);
+u16_t ull_conn_default_tx_octets_get(void);
+u16_t ull_conn_default_tx_time_get(void);
 u8_t ull_conn_default_phy_tx_get(void);
 u8_t ull_conn_default_phy_rx_get(void);
 void ull_conn_setup(memq_link_t *link, struct node_rx_hdr *rx);

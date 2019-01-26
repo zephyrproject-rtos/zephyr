@@ -22,6 +22,14 @@ struct ll_conn {
 	u16_t apto_expire;
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	u16_t default_tx_octets;
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	u16_t default_tx_time;
+#endif /* CONFIG_BT_CTLR_PHY */
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
 	union {
 		struct {
 			u8_t fex_valid:1;
