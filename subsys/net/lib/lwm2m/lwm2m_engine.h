@@ -91,7 +91,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst,
 
 enum coap_block_size lwm2m_default_block_size(void);
 
-int lwm2m_engine_add_service(void (*service)(void), u32_t period_ms);
+int lwm2m_engine_add_service(k_work_handler_t service, u32_t period_ms);
 
 int lwm2m_engine_get_resource(char *pathstr,
 			      struct lwm2m_engine_res_inst **res);

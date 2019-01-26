@@ -268,7 +268,7 @@ int lwm2m_device_add_err(u8_t error_code)
 	return -ENOMEM;
 }
 
-static void device_periodic_service(void)
+static void device_periodic_service(struct k_work *work)
 {
 	NOTIFY_OBSERVER(LWM2M_OBJECT_DEVICE_ID, 0, DEVICE_CURRENT_TIME_ID);
 }

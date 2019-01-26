@@ -119,7 +119,7 @@ static struct observe_node observe_node_data[CONFIG_LWM2M_ENGINE_MAX_OBSERVER];
 
 struct service_node {
 	sys_snode_t node;
-	void (*service_fn)(void);
+	struct k_work service_work;
 	u32_t min_call_period;
 	u64_t last_timestamp;
 };
@@ -156,10 +156,7 @@ static const u8_t LWM2M_ATTR_LEN[] = { 4, 4, 2, 2, 2 };
 
 static struct lwm2m_attr write_attr_pool[CONFIG_LWM2M_NUM_ATTR];
 
-/* periodic / notify / observe handling stack */
-static K_THREAD_STACK_DEFINE(engine_thread_stack,
-			     CONFIG_LWM2M_ENGINE_STACK_SIZE);
-static struct k_thread engine_thread_data;
+static struct k_delayed_work periodic_work;
 
 static struct lwm2m_engine_obj *get_engine_obj(int obj_id);
 static struct lwm2m_engine_obj_inst *get_engine_obj_inst(int obj_id,
@@ -3826,10 +3823,6 @@ s32_t engine_next_service_timeout_ms(u32_t max_timeout)
 	u32_t timeout = max_timeout;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&engine_service_list, srv, node) {
-		if (!srv->service_fn) {
-			continue;
-		}
-
 		time_left_ms = srv->last_timestamp +
 				  K_MSEC(srv->min_call_period);
 
@@ -3848,13 +3841,13 @@ s32_t engine_next_service_timeout_ms(u32_t max_timeout)
 	return timeout;
 }
 
-int lwm2m_engine_add_service(void (*service)(void), u32_t period_ms)
+int lwm2m_engine_add_service(k_work_handler_t service, u32_t period_ms)
 {
 	int i;
 
 	/* find an unused service index node */
 	for (i = 0; i < MAX_PERIODIC_SERVICE; i++) {
-		if (!service_node_data[i].service_fn) {
+		if (!service_node_data[i].service_work.handler) {
 			break;
 		}
 	}
@@ -3863,9 +3856,9 @@ int lwm2m_engine_add_service(void (*service)(void), u32_t period_ms)
 		return -ENOMEM;
 	}
 
-	service_node_data[i].service_fn = service;
+	k_work_init(&service_node_data[i].service_work, service);
 	service_node_data[i].min_call_period = period_ms;
-	service_node_data[i].last_timestamp = 0U;
+	service_node_data[i].last_timestamp = 0;
 
 	sys_slist_append(&engine_service_list,
 			 &service_node_data[i].node);
@@ -3873,62 +3866,61 @@ int lwm2m_engine_add_service(void (*service)(void), u32_t period_ms)
 	return 0;
 }
 
-/* TODO: this needs to be triggered via work_queue */
-static void lwm2m_engine_service(void)
+static void lwm2m_engine_service(struct k_work *work)
 {
 	struct observe_node *obs;
 	struct service_node *srv;
 	s64_t timestamp, service_due_timestamp;
+	s32_t sleep_ms;
+	int ret;
 
-	while (true) {
+	/*
+	 * 1. scan the observer list
+	 * 2. For each notify event found, scan the observer list
+	 * 3. For each observer match, generate a NOTIFY message,
+	 *    attaching the notify response handler
+	 */
+	timestamp = k_uptime_get();
+	SYS_SLIST_FOR_EACH_CONTAINER(&engine_observer_list, obs, node) {
 		/*
-		 * 1. scan the observer list
-		 * 2. For each notify event found, scan the observer list
-		 * 3. For each observer match, generate a NOTIFY message,
-		 *    attaching the notify response handler
+		 * manual notify requirements:
+		 * - event_timestamp > last_timestamp
+		 * - current timestamp > last_timestamp + min_period_sec
 		 */
-		timestamp = k_uptime_get();
-		SYS_SLIST_FOR_EACH_CONTAINER(&engine_observer_list, obs, node) {
-			/*
-			 * manual notify requirements:
-			 * - event_timestamp > last_timestamp
-			 * - current timestamp > last_timestamp + min_period_sec
-			 */
-			if (obs->event_timestamp > obs->last_timestamp &&
-			    timestamp > obs->last_timestamp +
-					K_SECONDS(obs->min_period_sec)) {
-				obs->last_timestamp = k_uptime_get();
-				generate_notify_message(obs, true);
+		if (obs->event_timestamp > obs->last_timestamp &&
+		    timestamp > obs->last_timestamp +
+				K_SECONDS(obs->min_period_sec)) {
+			obs->last_timestamp = k_uptime_get();
+			generate_notify_message(obs, true);
 
-			/*
-			 * automatic time-based notify requirements:
-			 * - current timestamp > last_timestamp + max_period_sec
-			 */
-			} else if (timestamp > obs->last_timestamp +
-					K_SECONDS(obs->min_period_sec)) {
-				obs->last_timestamp = k_uptime_get();
-				generate_notify_message(obs, false);
-			}
-
+		/*
+		 * automatic time-based notify requirements:
+		 * - current timestamp > last_timestamp + max_period_sec
+		 */
+		} else if (timestamp > obs->last_timestamp +
+				K_SECONDS(obs->min_period_sec)) {
+			obs->last_timestamp = k_uptime_get();
+			generate_notify_message(obs, false);
 		}
 
-		timestamp = k_uptime_get();
-		SYS_SLIST_FOR_EACH_CONTAINER(&engine_service_list, srv, node) {
-			if (!srv->service_fn) {
-				continue;
-			}
+	}
 
-			service_due_timestamp = srv->last_timestamp +
-						K_MSEC(srv->min_call_period);
-			/* service is due */
-			if (timestamp > service_due_timestamp) {
-				srv->last_timestamp = k_uptime_get();
-				srv->service_fn();
-			}
+	timestamp = k_uptime_get();
+	SYS_SLIST_FOR_EACH_CONTAINER(&engine_service_list, srv, node) {
+		service_due_timestamp = srv->last_timestamp +
+					K_MSEC(srv->min_call_period);
+		/* service is due */
+		if (timestamp > service_due_timestamp) {
+			srv->last_timestamp = k_uptime_get();
+			k_work_submit(&srv->service_work);
 		}
+	}
 
-		/* calculate how long to sleep till the next service */
-		k_sleep(engine_next_service_timeout_ms(ENGINE_UPDATE_INTERVAL));
+	/* calculate how long to sleep till the next service */
+	sleep_ms = engine_next_service_timeout_ms(ENGINE_UPDATE_INTERVAL);
+	ret = k_delayed_work_submit(&periodic_work, sleep_ms);
+	if (ret < 0) {
+		LOG_ERR("Work submit error:%d", ret);
 	}
 }
 
@@ -4108,18 +4100,10 @@ static int lwm2m_engine_init(struct device *dev)
 	(void)memset(block1_contexts, 0,
 		     sizeof(struct block_context) * NUM_BLOCK1_CONTEXT);
 
-	/* start thread to handle OBSERVER / NOTIFY events */
-	k_thread_create(&engine_thread_data,
-			&engine_thread_stack[0],
-			K_THREAD_STACK_SIZEOF(engine_thread_stack),
-			(k_thread_entry_t) lwm2m_engine_service,
-			NULL, NULL, NULL,
-			/* Lowest priority cooperative thread */
-			K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1),
-			0, K_NO_WAIT);
-	k_thread_name_set(&engine_thread_data, "lwm2m");
+	k_delayed_work_init(&periodic_work, lwm2m_engine_service);
+	k_delayed_work_submit(&periodic_work, K_MSEC(2000));
+	LOG_DBG("LWM2M engine periodic work started");
 
-	LOG_DBG("LWM2M engine thread started");
 	return 0;
 }
 
