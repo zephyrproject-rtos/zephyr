@@ -23,6 +23,45 @@
 #include <kernel_internal.h>
 #include <arch/arm/cortex_m/cmsis.h>
 #include <string.h>
+#include <cortex_m/stack.h>
+
+void switch_sp_to_psp(void)
+{
+	__set_CONTROL(__get_CONTROL() | CONTROL_SPSEL_Msk);
+	/*
+	 * When changing the stack pointer, software must use an ISB instruction
+	 * immediately after the MSR instruction. This ensures that instructions
+	 * after the ISB instruction execute using the new stack pointer.
+	 */
+	__ISB();
+}
+
+void set_and_switch_to_psp(void)
+{
+	u32_t process_sp;
+
+	process_sp = (u32_t)&_interrupt_stack + CONFIG_ISR_STACK_SIZE;
+	__set_PSP(process_sp);
+	switch_sp_to_psp();
+}
+
+void lock_interrupts(void)
+{
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	__disable_irq();
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	__set_BASEPRI(_EXC_IRQ_DEFAULT_PRIO);
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+}
+
+#ifdef CONFIG_INIT_STACKS
+void init_stacks(void)
+{
+	memset(&_interrupt_stack, 0xAA, CONFIG_ISR_STACK_SIZE);
+}
+#endif
 
 #ifdef CONFIG_CPU_CORTEX_M_HAS_VTOR
 
