@@ -235,7 +235,7 @@ Follow these steps to create a new application directory. (Refer to
    directory, and enable or disable Kconfig features as needed. You can use
    existing :ref:`samples-and-demos` to get started with Kconfig variables you
    are interested in.  See :ref:`application_kconfig` for more details, and
-   :ref:`configuration` for a complete list of available options.
+   :ref:`configuration_options` for a complete list of available options.
 
 #. Optionally, you can also configure any Device Tree overlays needed by your
    application. Zephyr uses the same Device Tree system as the Linux kernel,
@@ -1114,7 +1114,7 @@ For some tips and general recommendations when writing Kconfig files, see the
 :ref:`kconfig_tips_and_tricks` page.
 
 For information on available kernel configuration options, including
-inter-dependencies between options, see the :ref:`configuration`.
+inter-dependencies between options, see the :ref:`configuration_options`.
 
 .. note::
 
@@ -1323,7 +1323,7 @@ to a whitespace-separated list of your overlay files.
 The Zephyr build system begins creation of a device tree by running
 the C preprocessor on a file which includes the following:
 
-#. Configuration options from :ref:`Kconfig <configuration>`.
+#. Configuration options from :ref:`Kconfig <configuration_options>`.
 
 #. The board's device tree source file, which by default is the Zephyr
    file :file:`boards/<ARCHITECTURE>/<BOARD>/<BOARD>.dts`. (This location
