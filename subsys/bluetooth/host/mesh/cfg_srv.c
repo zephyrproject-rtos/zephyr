@@ -1252,9 +1252,7 @@ static void mod_pub_va_set(struct bt_mesh_model *model,
 		return;
 	}
 
-	label_uuid = buf->data;
-	net_buf_simple_pull(buf, 16);
-
+	label_uuid = net_buf_simple_pull_mem(buf, 16);
 	pub_app_idx = net_buf_simple_pull_le16(buf);
 	cred_flag = ((pub_app_idx >> 12) & BIT_MASK(1));
 	pub_app_idx &= BIT_MASK(12);
@@ -1784,8 +1782,7 @@ static void mod_sub_va_add(struct bt_mesh_model *model,
 		return;
 	}
 
-	label_uuid = buf->data;
-	net_buf_simple_pull(buf, 16);
+	label_uuid = net_buf_simple_pull_mem(buf, 16);
 
 	BT_DBG("elem_addr 0x%04x", elem_addr);
 
@@ -1862,8 +1859,7 @@ static void mod_sub_va_del(struct bt_mesh_model *model,
 		return;
 	}
 
-	label_uuid = buf->data;
-	net_buf_simple_pull(buf, 16);
+	label_uuid = net_buf_simple_pull_mem(buf, 16);
 
 	BT_DBG("elem_addr 0x%04x", elem_addr);
 
@@ -1930,8 +1926,7 @@ static void mod_sub_va_overwrite(struct bt_mesh_model *model,
 		return;
 	}
 
-	label_uuid = buf->data;
-	net_buf_simple_pull(buf, 16);
+	label_uuid = net_buf_simple_pull_mem(buf, 16);
 
 	BT_DBG("elem_addr 0x%04x", elem_addr);
 
