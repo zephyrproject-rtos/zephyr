@@ -2090,10 +2090,8 @@ static int mesh_cmd_handle(struct net_buf *cmd, struct net_buf **evt)
 		return -EINVAL;
 	}
 
-	cp_mesh = (void *)cmd->data;
+	cp_mesh = net_buf_pull_mem(cmd, sizeof(*cp_mesh));
 	mesh_op = cp_mesh->opcode;
-
-	net_buf_pull(cmd, sizeof(*cp_mesh));
 
 	switch (mesh_op) {
 	case BT_HCI_OC_MESH_GET_OPTS:
@@ -2205,16 +2203,14 @@ struct net_buf *hci_cmd_handle(struct net_buf *cmd, void **node_rx)
 		return NULL;
 	}
 
-	chdr = (void *)cmd->data;
-	/* store in a global for later CC/CS event creation */
-	_opcode = sys_le16_to_cpu(chdr->opcode);
-
+	chdr = net_buf_pull_mem(cmd, sizeof(*chdr));
 	if (cmd->len < chdr->param_len) {
 		BT_ERR("Invalid HCI CMD packet length");
 		return NULL;
 	}
 
-	net_buf_pull(cmd, sizeof(*chdr));
+	/* store in a global for later CC/CS event creation */
+	_opcode = sys_le16_to_cpu(chdr->opcode);
 
 	ocf = BT_OCF(_opcode);
 
@@ -2284,10 +2280,9 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 		return -EINVAL;
 	}
 
-	acl = (void *)buf->data;
+	acl = net_buf_pull_mem(buf, sizeof(*acl));
 	len = sys_le16_to_cpu(acl->len);
 	handle = sys_le16_to_cpu(acl->handle);
-	net_buf_pull(buf, sizeof(*acl));
 
 	if (buf->len < len) {
 		BT_ERR("Invalid HCI ACL packet length");
