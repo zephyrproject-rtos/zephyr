@@ -118,13 +118,13 @@ static int hdc1008_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	if (read16(drv_data->i2c, DT_TI_HDC1008_0_BASE_ADDRESS, HDC1000_MANUFID)
-	    != 0x5449) {
+	if (read16(drv_data->i2c, DT_TI_HDC1008_0_BASE_ADDRESS,
+		   HDC1008_REG_MANUFID) != HDC1008_MANUFID) {
 		LOG_ERR("Failed to get correct manufacturer ID");
 		return -EINVAL;
 	}
 	if (read16(drv_data->i2c, DT_TI_HDC1008_0_BASE_ADDRESS,
-		   HDC1000_DEVICEID) != 0x1000) {
+		   HDC1008_REG_DEVICEID) != HDC1008_DEVICEID) {
 		LOG_ERR("Failed to get correct device ID");
 		return -EINVAL;
 	}
