@@ -624,12 +624,12 @@ static u8_t att_find_type_req(struct bt_att *att, struct net_buf *buf)
 	u16_t start_handle, end_handle, err_handle, type;
 	u8_t *value;
 
-	req = (void *)buf->data;
+	req = net_buf_pull_mem(buf, sizeof(*req));
 
 	start_handle = sys_le16_to_cpu(req->start_handle);
 	end_handle = sys_le16_to_cpu(req->end_handle);
 	type = sys_le16_to_cpu(req->type);
-	value = net_buf_pull(buf, sizeof(*req));
+	value = buf->data;
 
 	BT_DBG("start_handle 0x%04x end_handle 0x%04x type %u", start_handle,
 	       end_handle, type);
@@ -847,11 +847,10 @@ static u8_t att_read_type_req(struct bt_att *att, struct net_buf *buf)
 		return BT_ATT_ERR_INVALID_PDU;
 	}
 
-	req = (void *)buf->data;
+	req = net_buf_pull_mem(buf, sizeof(*req));
 
 	start_handle = sys_le16_to_cpu(req->start_handle);
 	end_handle = sys_le16_to_cpu(req->end_handle);
-	net_buf_pull(buf, sizeof(*req));
 
 	if (!uuid_create(&u.uuid, buf)) {
 		return BT_ATT_ERR_UNLIKELY;
@@ -1149,11 +1148,10 @@ static u8_t att_read_group_req(struct bt_att *att, struct net_buf *buf)
 		return BT_ATT_ERR_INVALID_PDU;
 	}
 
-	req = (void *)buf->data;
+	req = net_buf_pull_mem(buf, sizeof(*req));
 
 	start_handle = sys_le16_to_cpu(req->start_handle);
 	end_handle = sys_le16_to_cpu(req->end_handle);
-	net_buf_pull(buf, sizeof(*req));
 
 	if (!uuid_create(&u.uuid, buf)) {
 		return BT_ATT_ERR_UNLIKELY;
@@ -1402,11 +1400,10 @@ static u8_t att_prepare_write_req(struct bt_att *att, struct net_buf *buf)
 	struct bt_att_prepare_write_req *req;
 	u16_t handle, offset;
 
-	req = (void *)buf->data;
+	req = net_buf_pull_mem(buf, sizeof(*req));
 
 	handle = sys_le16_to_cpu(req->handle);
 	offset = sys_le16_to_cpu(req->offset);
-	net_buf_pull(buf, sizeof(*req));
 
 	BT_DBG("handle 0x%04x offset %u", handle, offset);
 
@@ -1884,7 +1881,7 @@ static att_type_t att_op_get_type(u8_t op)
 static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_att *att = ATT_CHAN(chan);
-	struct bt_att_hdr *hdr = (void *)buf->data;
+	struct bt_att_hdr *hdr;
 	const struct att_handler *handler;
 	u8_t err;
 	size_t i;
@@ -1894,9 +1891,8 @@ static int bt_att_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return 0;
 	}
 
+	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	BT_DBG("Received ATT code 0x%02x len %u", hdr->code, buf->len);
-
-	net_buf_pull(buf, sizeof(*hdr));
 
 	for (i = 0, handler = NULL; i < ARRAY_SIZE(handlers); i++) {
 		if (hdr->code == handlers[i].op) {
