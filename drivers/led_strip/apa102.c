@@ -81,12 +81,13 @@ static int apa102_init(struct device *dev)
 {
 	struct apa102_data *data = dev->driver_data;
 
-	data->spi = device_get_binding(CONFIG_APA102_STRIP_BUS_NAME);
+	data->spi = device_get_binding(DT_APA_APA102_0_BUS_NAME);
 	if (!data->spi) {
 		return -ENODEV;
 	}
 
-	data->cfg.frequency = CONFIG_APA102_STRIP_FREQUENCY;
+	data->cfg.slave = DT_APA_APA102_0_BASE_ADDRESS;
+	data->cfg.frequency = DT_APA_APA102_0_SPI_MAX_FREQUENCY;
 	data->cfg.operation =
 		SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8);
 
@@ -100,6 +101,6 @@ static const struct led_strip_driver_api apa102_api = {
 	.update_channels = apa102_update_channels,
 };
 
-DEVICE_AND_API_INIT(apa102_0, CONFIG_APA102_STRIP_NAME, apa102_init,
+DEVICE_AND_API_INIT(apa102_0, DT_APA_APA102_0_LABEL, apa102_init,
 		    &apa102_data_0, NULL, POST_KERNEL,
 		    CONFIG_LED_STRIP_INIT_PRIORITY, &apa102_api);
