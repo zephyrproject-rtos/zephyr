@@ -22,7 +22,7 @@ LOG_MODULE_REGISTER(main);
  */
 #define STRIP_NUM_LEDS 32
 
-#define STRIP_DEV_NAME CONFIG_LPD880X_STRIP_NAME
+#define STRIP_DEV_NAME DT_COLORWAY_LPD8806_0_LABEL
 #define DELAY_TIME K_MSEC(40)
 
 static const struct led_rgb colors[] = {

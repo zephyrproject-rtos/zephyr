@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2019, Linaro Limited
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Colorway LPD8806 SPI LED strip
+version: 0.1
+
+description: Colorway LPD8806 SPI LED strip binding
+
+inherits:
+    !include spi-device.yaml
+
+properties:
+    compatible:
+      constraint: "colorway,lpd8806"
+...
