@@ -706,7 +706,10 @@ int bt_mesh_model_publish(struct bt_mesh_model *model)
 
 	err = model_send(model, &tx, true, &sdu, &pub_sent_cb, model);
 	if (err) {
+		/* Don't try retransmissions for this publish attempt */
 		pub->count = 0;
+		/* Make sure the publish timer gets reset */
+		publish_sent(err, model);
 		return err;
 	}
 
