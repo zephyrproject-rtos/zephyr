@@ -68,6 +68,13 @@ struct lwm2m_ctx {
 	k_thread_stack_t *dtls_stack;
 	size_t dtls_stack_len;
 #endif
+	bool use_dtls;
+
+	/** Current security object index */
+	int sec_obj_inst;
+
+	/** Packet Flow Settings */
+	bool handle_separate_response;
 };
 
 typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,
@@ -220,8 +227,7 @@ int lwm2m_engine_set_res_data(char *pathstr, void *data_ptr, u16_t data_len,
 int lwm2m_engine_get_res_data(char *pathstr, void **data_ptr, u16_t *data_len,
 			      u8_t *data_flags);
 
-int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
-		       char *peer_str, u16_t peer_port);
+int lwm2m_engine_start(struct lwm2m_ctx *client_ctx);
 
 /* LWM2M RD Client */
 
@@ -242,9 +248,7 @@ enum lwm2m_rd_client_event {
 typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
 				     enum lwm2m_rd_client_event event);
 
-int lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx,
-			  char *peer_str, u16_t peer_port,
-			  const char *ep_name,
-			  lwm2m_ctx_event_cb_t event_cb);
+void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
+			   lwm2m_ctx_event_cb_t event_cb);
 
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */

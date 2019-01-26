@@ -25,6 +25,15 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define CONFIG_NET_CONFIG_PEER_IPV6_ADDR ""
 #endif
 
+#if defined(CONFIG_NET_IPV6)
+#define SERVER_ADDR CONFIG_NET_CONFIG_PEER_IPV6_ADDR
+#elif defined(CONFIG_NET_IPV4)
+#define SERVER_ADDR CONFIG_NET_CONFIG_PEER_IPV4_ADDR
+#else
+#error LwM2M requires either IPV6 or IPV4 support
+#endif
+
+
 #define WAIT_TIME	K_SECONDS(10)
 #define CONNECT_TIME	K_SECONDS(10)
 
@@ -207,8 +216,35 @@ static int firmware_block_received_cb(u16_t obj_inst_id,
 static int lwm2m_setup(void)
 {
 	struct float32_value float_value;
+	int ret;
+	char *server_url;
+	u16_t server_url_len;
+	u8_t server_url_flags;
 
 	/* setup SECURITY object */
+
+	/* Server URL */
+	ret = lwm2m_engine_get_res_data("0/0/0",
+					(void **)&server_url, &server_url_len,
+					&server_url_flags);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* TODO: add server port to URL */
+	snprintk(server_url, server_url_len, "coap%s//%s",
+		 IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) ? "s:" : ":",
+		 SERVER_ADDR);
+
+	/* Security Mode */
+	lwm2m_engine_set_u8("0/0/2",
+			    IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) ? 0 : 3);
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+	lwm2m_engine_set_string("0/0/3", (char *)client_psk_id);
+	lwm2m_engine_set_opaque("0/0/5",
+				(void *)client_psk, sizeof(client_psk));
+#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
+
 	/* setup SERVER object */
 
 	/* setup DEVICE object */
@@ -362,22 +398,7 @@ void main(void)
 #endif /* CONFIG_NET_APP_DTLS */
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
-#if defined(CONFIG_NET_IPV6)
-	ret = lwm2m_rd_client_start(&client, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
-				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD,
-				    rd_client_event);
-#elif defined(CONFIG_NET_IPV4)
-	ret = lwm2m_rd_client_start(&client, CONFIG_NET_CONFIG_PEER_IPV4_ADDR,
-				    CONFIG_LWM2M_PEER_PORT, CONFIG_BOARD,
-				    rd_client_event);
-#else
-	LOG_ERR("LwM2M client requires IPv4 or IPv6.");
-	ret = -EPROTONOSUPPORT;
-#endif
-	if (ret < 0) {
-		LOG_ERR("LWM2M init LWM2M RD client error (%d)", ret);
-		return;
-	}
-
+	/* client.sec_obj_inst is 0 as a starting point */
+	lwm2m_rd_client_start(&client, CONFIG_BOARD, rd_client_event);
 	k_sem_take(&quit_lock, K_FOREVER);
 }

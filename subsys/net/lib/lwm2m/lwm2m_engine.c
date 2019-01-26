@@ -15,8 +15,6 @@
 /*
  * TODO:
  *
- * - Use server / security object instance 0 for initial connection
- * - Add DNS support for security uri parsing
  * - BOOTSTRAP/DTLS cleanup
  * - Handle WRITE_ATTRIBUTES (pmin=10&pmax=60)
  * - Handle Resource ObjLink type
@@ -3406,9 +3404,8 @@ error:
 	return 0;
 }
 
-void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
-		       bool handle_separate_response,
-		       udp_request_handler_cb_t udp_request_handler)
+static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
+			      udp_request_handler_cb_t udp_request_handler)
 {
 	struct lwm2m_message *msg = NULL;
 	struct net_udp_hdr hdr, *udp_hdr;
@@ -3495,7 +3492,7 @@ void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 		 * token id for all notifications), we have to use an
 		 * additional flag to decide when to clear the reply callback.
 		 */
-		if (handle_separate_response && !tkl &&
+		if (client_ctx->handle_separate_response && !tkl &&
 			coap_header_get_type(&response) == COAP_TYPE_ACK) {
 			LOG_DBG("separated response, not removing reply");
 			return;
@@ -3567,7 +3564,7 @@ static void udp_receive(struct net_app_ctx *app_ctx, struct net_pkt *pkt,
 						    struct lwm2m_ctx,
 						    net_app_ctx);
 
-	lwm2m_udp_receive(client_ctx, pkt, false, handle_request);
+	lwm2m_udp_receive(client_ctx, pkt, handle_request);
 }
 
 static void retransmit_request(struct k_work *work)
@@ -3902,13 +3899,11 @@ static int setup_cert(struct net_app_ctx *app_ctx, void *cert)
 }
 #endif /* CONFIG_NET_APP_DTLS */
 
-int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
-		       char *peer_str, u16_t peer_port)
+int lwm2m_net_app_start(struct lwm2m_ctx *client_ctx,
+			char *peer_str, u16_t peer_port)
 {
 	struct sockaddr client_addr;
-	int ret = 0;
-
-	/* TODO: use security object for initial setup */
+	int ret;
 
 	/* setup the local client port */
 	(void)memset(&client_addr, 0, sizeof(client_addr));
@@ -3931,8 +3926,6 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 		goto error_start;
 	}
 
-	lwm2m_engine_context_init(client_ctx);
-
 	/* set net_app callbacks */
 	ret = net_app_set_cb(&client_ctx->net_app_ctx,
 			     NULL, udp_receive, NULL, NULL);
@@ -3942,20 +3935,22 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 	}
 
 #if defined(CONFIG_NET_APP_DTLS)
-	ret = net_app_client_tls(&client_ctx->net_app_ctx,
-				 client_ctx->dtls_result_buf,
-				 client_ctx->dtls_result_buf_len,
-				 INSTANCE_INFO,
-				 strlen(INSTANCE_INFO),
-				 setup_cert,
-				 client_ctx->cert_host,
-				 NULL,
-				 client_ctx->dtls_pool,
-				 client_ctx->dtls_stack,
-				 client_ctx->dtls_stack_len);
-	if (ret < 0) {
-		LOG_ERR("Cannot init DTLS (%d)", ret);
-		goto error_start;
+	if (client_ctx->use_dtls) {
+		ret = net_app_client_tls(&client_ctx->net_app_ctx,
+					 client_ctx->dtls_result_buf,
+					 client_ctx->dtls_result_buf_len,
+					 INSTANCE_INFO,
+					 strlen(INSTANCE_INFO),
+					 setup_cert,
+					 client_ctx->cert_host,
+					 NULL,
+					 client_ctx->dtls_pool,
+					 client_ctx->dtls_stack,
+					 client_ctx->dtls_stack_len);
+		if (ret < 0) {
+			LOG_ERR("Cannot init DTLS (%d)", ret);
+			goto error_start;
+		}
 	}
 #endif
 
@@ -3968,7 +3963,7 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 
 	/* save remote addr */
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-	if (client_ctx->net_app_ctx.dtls.ctx) {
+	if (client_ctx->use_dtls && client_ctx->net_app_ctx.dtls.ctx) {
 		memcpy(&client_ctx->remote_addr,
 		       &client_ctx->net_app_ctx.dtls.ctx->remote,
 		       sizeof(client_ctx->remote_addr));
@@ -3979,13 +3974,69 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx,
 		       &client_ctx->net_app_ctx.default_ctx->remote,
 		       sizeof(client_ctx->remote_addr));
 	}
-
 	return 0;
 
 error_start:
 	net_app_close(&client_ctx->net_app_ctx);
 	net_app_release(&client_ctx->net_app_ctx);
 	return ret;
+}
+
+int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
+{
+	char pathstr[MAX_RESOURCE_LEN];
+	char *data_ptr, *peer_str;
+	u16_t peer_strlen;
+	u8_t peer_data_flags;
+	int ret = 0U;
+
+	/* get the server URL */
+	snprintk(pathstr, sizeof(pathstr), "0/%d/0", client_ctx->sec_obj_inst);
+	ret = lwm2m_engine_get_res_data(pathstr, (void **)&data_ptr,
+					&peer_strlen, &peer_data_flags);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* TODO: use http parser for URL to get protocol and server */
+
+	/* walk forward till colon shifting to lower case */
+	peer_str = data_ptr;
+	while (*peer_str != '\0' && *peer_str != ':') {
+		*peer_str = tolower(*peer_str);
+		peer_str += 1;
+	}
+
+	/* check to make sure there was a colon */
+	if (*peer_str != ':') {
+		return -EINVAL;
+	}
+
+	if (strncmp(data_ptr, "coap:", 5) != 0 &&
+	    strncmp(data_ptr, "coaps:", 6) != 0) {
+		return -EPROTONOSUPPORT;
+	}
+
+	client_ctx->use_dtls = false;
+	if (strncmp(data_ptr, "coaps:", 6) == 0) {
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+		client_ctx->use_dtls = true;
+#else
+		return -EPROTONOSUPPORT;
+#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
+	}
+
+	/* skip the colons and slashes */
+	while (*peer_str == ':' || *peer_str == '/') {
+		peer_str += 1;
+	}
+
+	LOG_DBG("URL: %s", data_ptr);
+
+	lwm2m_engine_context_init(client_ctx);
+
+	return lwm2m_net_app_start(client_ctx, peer_str,
+				   CONFIG_LWM2M_PEER_PORT);
 }
 
 static int lwm2m_engine_init(struct device *dev)
