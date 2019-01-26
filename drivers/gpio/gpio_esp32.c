@@ -64,7 +64,7 @@ static int convert_int_type(int flags)
 		return 2;	/* Defaults to falling edge. */
 	}
 
-	if ((flags & GPIO_INT_LEVEL) == GPIO_INT_LEVEL) {
+	if ((flags & GPIO_INT_EDGE) == GPIO_INT_LEVEL) {
 		if ((flags & GPIO_INT_ACTIVE_HIGH) == GPIO_INT_ACTIVE_HIGH) {
 			return 5;
 		}
