@@ -46,10 +46,10 @@ def expr_str(expr):
     return kconfiglib.expr_str(expr, rst_link)
 
 
-INDEX_RST_HEADER = """.. _configuration:
+INDEX_RST_HEADER = """.. _configuration_options:
 
-Configuration Symbol Reference
-##############################
+Configuration Options
+#####################
 
 Introduction
 ************
