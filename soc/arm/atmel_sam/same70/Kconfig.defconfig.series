@@ -83,4 +83,9 @@ config SOC_FLASH_SAM
 	default y
 endif # FLASH
 
+if PWM
+config PWM_SAM
+	default y
+endif # PWM
+
 endif # SOC_SERIES_SAME70
