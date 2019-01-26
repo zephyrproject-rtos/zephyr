@@ -1339,7 +1339,7 @@ static int bt_sdp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	struct bt_l2cap_br_chan *ch = CONTAINER_OF(chan,
 			struct bt_l2cap_br_chan, chan);
 	struct bt_sdp *sdp = CONTAINER_OF(ch, struct bt_sdp, chan);
-	struct bt_sdp_hdr *hdr = (struct bt_sdp_hdr *)buf->data;
+	struct bt_sdp_hdr *hdr;
 	u16_t err = BT_SDP_INVALID_SYNTAX;
 	size_t i;
 
@@ -1352,9 +1352,8 @@ static int bt_sdp_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return 0;
 	}
 
+	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	BT_DBG("Received SDP code 0x%02x len %u", hdr->op_code, buf->len);
-
-	net_buf_pull(buf, sizeof(*hdr));
 
 	if (sys_cpu_to_be16(hdr->param_len) != buf->len) {
 		err = BT_SDP_INVALID_PDU_SIZE;
@@ -1719,7 +1718,7 @@ static void sdp_client_notify_result(struct bt_sdp_client *session,
 static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 {
 	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
-	struct bt_sdp_hdr *hdr = (void *)buf->data;
+	struct bt_sdp_hdr *hdr;
 	struct bt_sdp_pdu_cstate *cstate;
 	u16_t len, tid, frame_len;
 	u16_t total;
@@ -1731,6 +1730,7 @@ static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		return 0;
 	}
 
+	hdr = net_buf_pull_mem(buf, sizeof(*hdr));
 	if (hdr->op_code == BT_SDP_ERROR_RSP) {
 		BT_INFO("Error SDP PDU response");
 		return 0;
@@ -1738,7 +1738,6 @@ static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 
 	len = sys_be16_to_cpu(hdr->param_len);
 	tid = sys_be16_to_cpu(hdr->tid);
-	net_buf_pull(buf, sizeof(*hdr));
 
 	BT_DBG("SDP PDU tid %u len %u", tid, len);
 
