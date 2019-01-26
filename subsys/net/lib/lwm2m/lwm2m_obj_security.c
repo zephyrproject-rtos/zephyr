@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Linaro Limited
+ * Copyright (c) 2018-2019 Foundries.io
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -36,9 +37,14 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define MAX_INSTANCE_COUNT		CONFIG_LWM2M_SECURITY_INSTANCE_COUNT
 
 #define SECURITY_URI_LEN		255
+#define IDENTITY_LEN			128
+#define KEY_LEN				CONFIG_LWM2M_SECURITY_KEY_SIZE
 
 /* resource state variables */
 static char  security_uri[MAX_INSTANCE_COUNT][SECURITY_URI_LEN];
+static u8_t  client_identity[MAX_INSTANCE_COUNT][IDENTITY_LEN];
+static u8_t  server_pk[MAX_INSTANCE_COUNT][KEY_LEN];
+static u8_t  secret_key[MAX_INSTANCE_COUNT][KEY_LEN];
 static bool  bootstrap_flag[MAX_INSTANCE_COUNT];
 static u8_t  security_mode[MAX_INSTANCE_COUNT];
 static u16_t short_server_id[MAX_INSTANCE_COUNT];
@@ -48,9 +54,9 @@ static struct lwm2m_engine_obj_field fields[] = {
 	OBJ_FIELD_DATA(SECURITY_SERVER_URI_ID, RW, STRING),
 	OBJ_FIELD_DATA(SECURITY_BOOTSTRAP_FLAG_ID, W, BOOL),
 	OBJ_FIELD_DATA(SECURITY_MODE_ID, W, U8),
-	OBJ_FIELD_DATA(SECURITY_CLIENT_PK_ID, W, OPAQUE),	/* TODO */
-	OBJ_FIELD_DATA(SECURITY_SERVER_PK_ID, W, OPAQUE),	/* TODO */
-	OBJ_FIELD_DATA(SECURITY_SECRET_KEY_ID, W, OPAQUE),	/* TODO */
+	OBJ_FIELD_DATA(SECURITY_CLIENT_PK_ID, W, OPAQUE),
+	OBJ_FIELD_DATA(SECURITY_SERVER_PK_ID, W, OPAQUE),
+	OBJ_FIELD_DATA(SECURITY_SECRET_KEY_ID, W, OPAQUE),
 	OBJ_FIELD_DATA(SECURITY_SMS_MODE_ID, W_OPT, U8),
 	OBJ_FIELD_DATA(SECURITY_SMS_BINDING_KEY_PARAM_ID, W_OPT, OPAQUE),
 	OBJ_FIELD_DATA(SECURITY_SMS_BINDING_SECRET_KEY_ID, W_OPT, OPAQUE),
@@ -90,9 +96,10 @@ static struct lwm2m_engine_obj_inst *security_create(u16_t obj_inst_id)
 
 	/* default values */
 	security_uri[index][0] = '\0';
+	client_identity[index][0] = '\0';
 	bootstrap_flag[index] = 0;
-	security_mode[index] = 0U;
-	short_server_id[index] = 0U;
+	security_mode[index] = 0;
+	short_server_id[index] = 0;
 
 	/* initialize instance resource data */
 	INIT_OBJ_RES_DATA(res[index], i, SECURITY_SERVER_URI_ID,
@@ -101,10 +108,12 @@ static struct lwm2m_engine_obj_inst *security_create(u16_t obj_inst_id)
 			  &bootstrap_flag[index], sizeof(*bootstrap_flag));
 	INIT_OBJ_RES_DATA(res[index], i, SECURITY_MODE_ID,
 			  &security_mode[index], sizeof(*security_mode));
-	/* TODO: */
-	INIT_OBJ_RES_DUMMY(res[index], i, SECURITY_CLIENT_PK_ID);
-	INIT_OBJ_RES_DUMMY(res[index], i, SECURITY_SERVER_PK_ID),
-	INIT_OBJ_RES_DUMMY(res[index], i, SECURITY_SECRET_KEY_ID),
+	INIT_OBJ_RES_DATA(res[index], i, SECURITY_CLIENT_PK_ID,
+			  &client_identity[index], IDENTITY_LEN),
+	INIT_OBJ_RES_DATA(res[index], i, SECURITY_SERVER_PK_ID,
+			  &server_pk[index], KEY_LEN),
+	INIT_OBJ_RES_DATA(res[index], i, SECURITY_SECRET_KEY_ID,
+			  &secret_key[index], KEY_LEN),
 	INIT_OBJ_RES_DATA(res[index], i, SECURITY_SHORT_SERVER_ID,
 			  &short_server_id[index], sizeof(*short_server_id));
 
@@ -112,6 +121,33 @@ static struct lwm2m_engine_obj_inst *security_create(u16_t obj_inst_id)
 	inst[index].resource_count = i;
 	LOG_DBG("Create LWM2M security instance: %d", obj_inst_id);
 	return &inst[index];
+}
+
+int lwm2m_security_inst_id_to_index(u16_t obj_inst_id)
+{
+	int i;
+
+	for (i = 0; i < MAX_INSTANCE_COUNT; i++) {
+		if (inst[i].obj && inst[i].obj_inst_id == obj_inst_id) {
+			return i;
+		}
+	}
+
+	return -ENOENT;
+}
+
+int lwm2m_security_index_to_inst_id(int index)
+{
+	if (index >= MAX_INSTANCE_COUNT) {
+		return -EINVAL;
+	}
+
+	/* not instanstiated */
+	if (!inst[index].obj) {
+		return -ENOENT;
+	}
+
+	return inst[index].obj_inst_id;
 }
 
 static int lwm2m_security_init(struct device *dev)
