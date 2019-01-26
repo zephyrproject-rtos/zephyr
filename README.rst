@@ -125,7 +125,7 @@ support systems:
 .. _Zephyr Documentation: http://docs.zephyrproject.org
 .. _Zephyr Introduction: http://docs.zephyrproject.org/latest/introduction/introducing_zephyr.html
 .. _Getting Started Guide: http://docs.zephyrproject.org/latest/getting_started/getting_started.html
-.. _Contribution Guide: http://docs.zephyrproject.org/latest/contribute/contribute_guidelines.html
+.. _Contribution Guide: http://docs.zephyrproject.org/latest/contribute/index.html
 .. _Zephyr GitHub wiki: https://github.com/zephyrproject-rtos/zephyr/wiki
 .. _Zephyr Development mailing list: https://lists.zephyrproject.org/g/devel
 .. _Zephyr mailing list subgroups: https://lists.zephyrproject.org/g/main/subgroups
