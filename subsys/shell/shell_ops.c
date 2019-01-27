@@ -261,6 +261,11 @@ static void data_insert(const struct shell *shell, const char *data, u16_t len)
 void char_replace(const struct shell *shell, char data)
 {
 	shell->ctx->cmd_buff[shell->ctx->cmd_buff_pos++] = data;
+
+	if (!flag_echo_get(shell)) {
+		return;
+	}
+
 	shell_raw_fprintf(shell->fprintf_ctx, "%c", data);
 	if (shell_cursor_in_empty_line(shell)) {
 		cursor_next_line_move(shell);

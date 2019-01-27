@@ -88,8 +88,9 @@ config SHELL_METAKEYS
 	bool "Enable metakeys"
 	default y
 	help
-	  Enables shell metakeys: Home, End, ctrl+a, ctrl+c, ctrl+e, ctrl+l,
-	  ctrl+u, ctrl+w
+	  Enables shell meta keys: Ctrl+a, Ctrl+b, Ctrl+c, Ctrl+d, Ctrl+e,
+	  Ctrl+f, Ctrl+k, Ctrl+l, Ctrl+u, Ctrl+w, Alt+b, Alt+f
+	  Meta keys will not be active when shell echo is set to off.
 
 config SHELL_HELP
 	bool "Enable help message"
