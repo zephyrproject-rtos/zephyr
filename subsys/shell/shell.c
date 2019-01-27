@@ -949,7 +949,7 @@ static void state_collect(const struct shell *shell)
 				if (isprint((int) data)) {
 					flag_history_exit_set(shell, true);
 					shell_op_char_insert(shell, data);
-				} else {
+				} else if (flag_echo_get(shell)) {
 					ctrl_metakeys_handle(shell, data);
 				}
 				break;
@@ -960,11 +960,11 @@ static void state_collect(const struct shell *shell)
 			if (data == '[') {
 				receive_state_change(shell,
 						SHELL_RECEIVE_ESC_SEQ);
-			} else {
+				break;
+			} else if (flag_echo_get(shell)) {
 				alt_metakeys_handle(shell, data);
-				receive_state_change(shell,
-						SHELL_RECEIVE_DEFAULT);
 			}
+			receive_state_change(shell, SHELL_RECEIVE_DEFAULT);
 			break;
 
 		case SHELL_RECEIVE_ESC_SEQ:
