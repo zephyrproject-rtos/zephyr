@@ -246,10 +246,8 @@ upstream Zephyr, the runner should be added into a new or existing
    changes break existing test cases, CI testing on upstream pull
    requests will fail.
 
-API Documentation for the ``runners.core`` module follows.
-
-.. automodule:: runners.core
-   :members:
+API Documentation for the ``runners.core`` module can be found in
+:ref:`west-apis`.
 
 Doing it By Hand
 ****************
