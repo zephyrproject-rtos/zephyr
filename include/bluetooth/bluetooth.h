@@ -29,6 +29,13 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Generic Access Profile
+ * @defgroup bt_gap Generic Access Profile
+ * @ingroup bluetooth
+ * @{
+ */
+
 /** @def BT_ID_DEFAULT
  *
  *  Convenience macro for specifying the default identity. This helps
@@ -36,13 +43,6 @@ extern "C" {
  *  supported.
  */
 #define BT_ID_DEFAULT 0
-
-/**
- * @brief Generic Access Profile
- * @defgroup bt_gap Generic Access Profile
- * @ingroup bluetooth
- * @{
- */
 
 /**
  * @typedef bt_ready_cb_t
