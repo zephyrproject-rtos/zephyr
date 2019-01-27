@@ -379,7 +379,7 @@ int bt_le_adv_stop(void);
  *  @param addr Advertiser LE address and type.
  *  @param rssi Strength of advertiser signal.
  *  @param adv_type Type of advertising response from advertiser.
- *  @param data Buffer containing advertiser data.
+ *  @param buf Buffer containing advertiser data.
  */
 typedef void bt_le_scan_cb_t(const bt_addr_le_t *addr, s8_t rssi,
 			     u8_t adv_type, struct net_buf_simple *buf);
