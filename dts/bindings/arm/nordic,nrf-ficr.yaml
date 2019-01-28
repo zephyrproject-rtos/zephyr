@@ -1,0 +1,22 @@
+---
+title: Nordic FICR (Factory Information Configuration Registers)
+version: 0.1
+
+description: >
+    Binding for the Nordic FICR (Factory Information Configuration Registers)
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nordic,nrf-ficr"
+      generation: define
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+...
