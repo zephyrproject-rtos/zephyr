@@ -148,7 +148,7 @@ static ALWAYS_INLINE bool should_preempt(struct k_thread *th, int preempt_ok)
 	 * preemptible priorities (this is sort of an API glitch).
 	 * They must always be preemptible.
 	 */
-	if (_is_idle(_current)) {
+	if (!IS_ENABLED(CONFIG_PREEMPT_ENABLED) && _is_idle(_current)) {
 		return true;
 	}
 
