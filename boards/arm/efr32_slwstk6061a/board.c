@@ -23,8 +23,7 @@ static int efr32_slwstk6061a_init(struct device *dev)
 		return -ENODEV;
 	}
 
-	gpio_pin_configure(bce_dev, BC_ENABLE_GPIO_PIN, GPIO_DIR_OUT);
-	gpio_pin_write(bce_dev, BC_ENABLE_GPIO_PIN, 1);
+	gpio_pin_configure(bce_dev, BC_ENABLE_GPIO_PIN, GPIO_OUTPUT_HIGH);
 
 	return 0;
 }
