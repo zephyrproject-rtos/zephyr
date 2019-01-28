@@ -29,7 +29,7 @@
 /* prepare the memory partition structures  */
 FOR_EACH(appmem_partition, part0, part1, part2, part3, part4);
 /* prepare the memory domain structures  */
-FOR_EACH(appmem_domain, dom0, dom1, dom2);
+struct k_mem_domain dom0, dom1, dom2;
 /* each variable starts with a name defined in main.h
  * the names are symbolic for the memory partitions
  * purpose.
@@ -99,7 +99,9 @@ _app_ct_d char ctMSG[] = "CT!\n";
 
 void main(void)
 {
-
+	struct k_mem_partition *dom1_parts[] = {&part2, &part1, &part3};
+	struct k_mem_partition *dom2_parts[] = {&part4, &part3};
+	struct k_mem_partition *dom0_parts[] = {&part0, &part1};
 	k_tid_t tPT, tENC, tCT;
 
 	k_thread_access_grant(k_current_get(), &allforone);
@@ -120,12 +122,9 @@ void main(void)
 	k_thread_access_grant(tENC, &allforone);
 	/* use K_FOREVER followed by k_thread_start*/
 	printk("ENC Thread Created %08X\n", (unsigned int) tENC);
-	appmem_init_domain_dom1(part2);
-	printk("init domain complete\n");
-	appmem_add_part_dom1(part1);
-	appmem_add_part_dom1(part3);
+	k_mem_domain_init(&dom1, 3, dom1_parts);
 	printk("Partitions added to dom1\n");
-	appmem_add_thread_dom1(tENC);
+	k_mem_domain_add_thread(&dom1, tENC);
 	printk("dom1 Created\n");
 
 
@@ -135,9 +134,8 @@ void main(void)
 			K_FOREVER);
 	k_thread_access_grant(tPT, &allforone);
 	printk("PT Thread Created %08X\n", (unsigned int) tPT);
-	appmem_init_domain_dom0(part0);
-	appmem_add_part_dom0(part1);
-	appmem_add_thread_dom0(tPT);
+	k_mem_domain_init(&dom0, 2, dom0_parts);
+	k_mem_domain_add_thread(&dom0, tPT);
 	printk("dom0 Created\n");
 
 	tCT = k_thread_create(&ct_thread, ct_stack, STACKSIZE,
@@ -146,9 +144,8 @@ void main(void)
 			K_FOREVER);
 	k_thread_access_grant(tCT, &allforone);
 	printk("CT Thread Created %08X\n", (unsigned int) tCT);
-	appmem_init_domain_dom2(part4);
-	appmem_add_part_dom2(part3);
-	appmem_add_thread_dom2(tCT);
+	k_mem_domain_init(&dom2, 2, dom2_parts);
+	k_mem_domain_add_thread(&dom2, tCT);
 	printk("dom2 Created\n");
 
 	k_thread_start(&enc_thread);
