@@ -170,7 +170,7 @@ static inline bool verify_tail_head(sys_dlist_t *list,
  * @brief Verify doubly linked list funtionalities
  *
  * @see sys_dlist_append(), sys_dlist_remove(), sys_dlist_prepend(),
- * sys_dlist_remove(), sys_dlist_insert_after(), sys_dlist_peek_next()
+ * sys_dlist_remove(), sys_dlist_insert(), sys_dlist_peek_next()
  * SYS_DLIST_ITERATE_FROM_NODE()
  */
 void test_dlist(void)
@@ -238,8 +238,7 @@ void test_dlist(void)
 		     "test_list node links are wrong");
 
 	/* Inserting node 4 after node 2 */
-	sys_dlist_insert_after(&test_list, &test_node_2.node,
-			       &test_node_4.node);
+	sys_dlist_insert(test_node_2.node.next, &test_node_4.node);
 
 	zassert_true((verify_tail_head(&test_list, &test_node_2.node,
 				       &test_node_3.node, false)),

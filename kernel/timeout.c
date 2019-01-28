@@ -87,8 +87,7 @@ void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
 
 			if (t->dticks > to->dticks) {
 				t->dticks -= to->dticks;
-				sys_dlist_insert_before(&timeout_list,
-							&t->node, &to->node);
+				sys_dlist_insert(&t->node, &to->node);
 				break;
 			}
 			to->dticks -= t->dticks;

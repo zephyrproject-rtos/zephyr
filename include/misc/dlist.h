@@ -22,6 +22,7 @@
 
 #include <stddef.h>
 #include <stdbool.h>
+#include <toolchain.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -429,19 +430,22 @@ static inline void sys_dlist_prepend(sys_dlist_t *list, sys_dnode_t *node)
 }
 
 /**
- * @brief insert node after a node
+ * @brief Insert a node into a list
  *
- * Insert a node after a specified node in a list.
- * This and other sys_dlist_*() functions are not thread safe.
+ * Insert a node before a specified node in a dlist.
  *
- * @param list the doubly-linked list to operate on
- * @param insert_point the insert point in the list: if NULL, insert at head
- * @param node the element to append
- *
- * @return N/A
+ * @param successor the position before which "node" will be inserted
+ * @param node the element to insert
  */
+static inline void sys_dlist_insert(sys_dnode_t *successor, sys_dnode_t *node)
+{
+	node->prev = successor->prev;
+	node->next = successor;
+	successor->prev->next = node;
+	successor->prev = node;
+}
 
-static inline void sys_dlist_insert_after(sys_dlist_t *list,
+static inline void __deprecated sys_dlist_insert_after(sys_dlist_t *list,
 	sys_dnode_t *insert_point, sys_dnode_t *node)
 {
 	if (insert_point == NULL) {
@@ -454,20 +458,7 @@ static inline void sys_dlist_insert_after(sys_dlist_t *list,
 	}
 }
 
-/**
- * @brief insert node before a node
- *
- * Insert a node before a specified node in a list.
- * This and other sys_dlist_*() functions are not thread safe.
- *
- * @param list the doubly-linked list to operate on
- * @param insert_point the insert point in the list: if NULL, insert at tail
- * @param node the element to insert
- *
- * @return N/A
- */
-
-static inline void sys_dlist_insert_before(sys_dlist_t *list,
+static inline void __deprecated sys_dlist_insert_before(sys_dlist_t *list,
 	sys_dnode_t *insert_point, sys_dnode_t *node)
 {
 	if (insert_point == NULL) {
@@ -508,7 +499,11 @@ static inline void sys_dlist_insert_at(sys_dlist_t *list, sys_dnode_t *node,
 		while (pos && !cond(pos, data)) {
 			pos = sys_dlist_peek_next(list, pos);
 		}
-		sys_dlist_insert_before(list, pos, node);
+		if (pos != NULL) {
+			sys_dlist_insert(pos, node);
+		} else {
+			sys_dlist_append(list, node);
+		}
 	}
 }
 

@@ -573,8 +573,8 @@ void _priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
 
 	SYS_DLIST_FOR_EACH_CONTAINER(pq, t, base.qnode_dlist) {
 		if (_is_t1_higher_prio_than_t2(thread, t)) {
-			sys_dlist_insert_before(pq, &t->base.qnode_dlist,
-						&thread->base.qnode_dlist);
+			sys_dlist_insert(&t->base.qnode_dlist,
+					 &thread->base.qnode_dlist);
 			return;
 		}
 	}
