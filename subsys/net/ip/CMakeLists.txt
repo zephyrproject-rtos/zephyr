@@ -27,6 +27,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_STATISTICS   net_stats.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TCP          connection.c tcp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_TRICKLE      trickle.c)
 zephyr_library_sources_ifdef(CONFIG_NET_UDP          connection.c udp.c)
+zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_PACKET  connection.c)
 zephyr_library_sources_ifdef(CONFIG_NET_PROMISCUOUS_MODE promiscuous.c)
 
 if(CONFIG_NET_SHELL)

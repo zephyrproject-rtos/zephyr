@@ -50,16 +50,13 @@ enum net_context_state {
  * stored into a bit field to save space.
  */
 /** Protocol family of this connection */
-#define NET_CONTEXT_FAMILY BIT(4)
+#define NET_CONTEXT_FAMILY (BIT(4) | BIT(5))
 
-/** Type of the connection (datagram / stream) */
-#define NET_CONTEXT_TYPE   BIT(5)
-
-/** IP protocol (like UDP or TCP) */
-#define NET_CONTEXT_PROTO  BIT(6)
+/** Type of the connection (datagram / stream / raw) */
+#define NET_CONTEXT_TYPE   (BIT(6) | BIT(7))
 
 /** Remote address set */
-#define NET_CONTEXT_REMOTE_ADDR_SET  BIT(7)
+#define NET_CONTEXT_REMOTE_ADDR_SET  BIT(8)
 
 struct net_context;
 
@@ -212,11 +209,13 @@ struct net_context {
 	 */
 	struct k_mutex lock;
 
-	/** Local IP address. Note that the values are in network byte order.
+	/** Local endpoint address. Note that the values are in network byte
+	 * order.
 	 */
 	struct sockaddr_ptr local;
 
-	/** Remote IP address. Note that the values are in network byte order.
+	/** Remote endpoint address. Note that the values are in network byte
+	 * order.
 	 */
 	struct sockaddr remote;
 
@@ -291,11 +290,14 @@ struct net_context {
 #endif
 	} options;
 
-	/** Network interface assigned to this context */
-	u8_t iface;
+	/** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
+	u16_t proto;
 
 	/** Flags for the context */
-	u8_t flags;
+	u16_t flags;
+
+	/** Network interface assigned to this context */
+	u8_t iface;
 };
 
 static inline bool net_context_is_used(struct net_context *context)
@@ -359,39 +361,38 @@ static inline sa_family_t net_context_get_family(struct net_context *context)
 {
 	NET_ASSERT(context);
 
-	if (context->flags & NET_CONTEXT_FAMILY) {
-		return AF_INET6;
-	}
-
-	return AF_INET;
+	return ((context->flags & NET_CONTEXT_FAMILY) >> 4);
 }
 
 /**
  * @brief Set address family for this network context.
  *
- * @details This function sets the address family (IPv4 or IPv6)
+ * @details This function sets the address family (IPv4, IPv6 or AF_PACKET)
  * of the context.
  *
  * @param context Network context.
- * @param family Address family (AF_INET or AF_INET6)
+ * @param family Address family (AF_INET, AF_INET6 or AF_PACKET)
  */
 static inline void net_context_set_family(struct net_context *context,
 					  sa_family_t family)
 {
+	u8_t flag = 0;
+
 	NET_ASSERT(context);
 
-	if (family == AF_INET6) {
-		context->flags |= NET_CONTEXT_FAMILY;
-		return;
+	if (family == AF_UNSPEC || family == AF_INET ||
+	    family == AF_INET6 || family == AF_PACKET) {
+		/* Family is in BIT(4) and BIT(5)*/
+		flag = family << 4;
 	}
 
-	context->flags &= ~NET_CONTEXT_FAMILY;
+	context->flags |= flag;
 }
 
 /**
  * @brief Get context type for this network context.
  *
- * @details This function returns the context type (stream or datagram)
+ * @details This function returns the context type (stream, datagram or raw)
  * of the context.
  *
  * @param context Network context.
@@ -403,11 +404,7 @@ enum net_sock_type net_context_get_type(struct net_context *context)
 {
 	NET_ASSERT(context);
 
-	if (context->flags & NET_CONTEXT_TYPE) {
-		return SOCK_STREAM;
-	}
-
-	return SOCK_DGRAM;
+	return ((context->flags & NET_CONTEXT_TYPE) >> 6);
 }
 
 /**
@@ -422,36 +419,31 @@ enum net_sock_type net_context_get_type(struct net_context *context)
 static inline void net_context_set_type(struct net_context *context,
 					enum net_sock_type type)
 {
+	u16_t flag = 0;
+
 	NET_ASSERT(context);
 
-	if (type == SOCK_STREAM) {
-		context->flags |= NET_CONTEXT_TYPE;
-		return;
+	if (type == SOCK_DGRAM || type == SOCK_STREAM || type == SOCK_RAW) {
+		/* Type is in BIT(6) and BIT(7)*/
+		flag = type << 6;
 	}
 
-	context->flags &= ~NET_CONTEXT_TYPE;
+	context->flags |= flag;
 }
 
 /**
  * @brief Get context IP protocol for this network context.
  *
- * @details This function returns the context IP protocol (UDP / TCP)
- * of the context.
+ * @details This function returns the IP protocol (UDP / TCP /
+ * IEEE 802.3 protocol value) of the context.
  *
  * @param context Network context.
  *
  * @return Network context IP protocol.
  */
-static inline
-enum net_ip_protocol net_context_get_ip_proto(struct net_context *context)
+static inline u16_t net_context_get_ip_proto(struct net_context *context)
 {
-	NET_ASSERT(context);
-
-	if (context->flags & NET_CONTEXT_PROTO) {
-		return IPPROTO_TCP;
-	}
-
-	return IPPROTO_UDP;
+	return context->proto;
 }
 
 /**
@@ -461,19 +453,13 @@ enum net_ip_protocol net_context_get_ip_proto(struct net_context *context)
  * of the context.
  *
  * @param context Network context.
- * @param ip_proto Context IP protocol (IPPROTO_UDP or IPPROTO_TCP)
+ * @param proto Context IP protocol (IPPROTO_UDP, IPPROTO_TCP or IEEE 802.3
+ * protocol value)
  */
 static inline void net_context_set_ip_proto(struct net_context *context,
-					    enum net_ip_protocol ip_proto)
+					    u16_t proto)
 {
-	NET_ASSERT(context);
-
-	if (ip_proto == IPPROTO_TCP) {
-		context->flags |= NET_CONTEXT_PROTO;
-		return;
-	}
-
-	context->flags &= ~NET_CONTEXT_PROTO;
+	context->proto = proto;
 }
 
 /**
@@ -521,14 +507,15 @@ static inline void net_context_set_iface(struct net_context *context,
  *
  * @param family IP address family (AF_INET or AF_INET6)
  * @param type Type of the socket, SOCK_STREAM or SOCK_DGRAM
- * @param ip_proto IP protocol, IPPROTO_UDP or IPPROTO_TCP
+ * @param ip_proto IP protocol, IPPROTO_UDP or IPPROTO_TCP. For raw socket
+ * access, the value is the L2 protocol value from IEEE 802.3 (see ethernet.h)
  * @param context The allocated context is returned to the caller.
  *
  * @return 0 if ok, < 0 if error
  */
 int net_context_get(sa_family_t family,
 		    enum net_sock_type type,
-		    enum net_ip_protocol ip_proto,
+		    u16_t ip_proto,
 		    struct net_context **context);
 
 /**

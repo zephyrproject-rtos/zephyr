@@ -18,6 +18,7 @@ LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/udp.h>
 #include <net/tcp.h>
+#include <net/ethernet.h>
 
 #include "net_private.h"
 #include "icmpv6.h"
@@ -782,6 +783,12 @@ static bool is_invalid_packet(struct net_pkt *pkt,
 		}
 	}
 
+	/* For AF_PACKET family, we are not not parsing headers. */
+	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
+	    net_pkt_family(pkt) == AF_PACKET) {
+		return false;
+	}
+
 	return true;
 }
 
@@ -807,7 +814,14 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
 		src_port = proto_hdr->tcp->src_port;
 		dst_port = proto_hdr->tcp->dst_port;
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
+		if (net_pkt_family(pkt) != AF_PACKET || proto != ETH_P_ALL) {
+			return NET_DROP;
+		}
+
+		src_port = dst_port = 0;
 	} else {
+		NET_DBG("No suitable protocol handler configured");
 		return NET_DROP;
 	}
 
@@ -892,6 +906,9 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 				best_rank = conns[i].rank;
 				best_match = i;
 			}
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
+			best_rank = 0;
+			best_match = i;
 		}
 	}
 
@@ -939,6 +956,9 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		   net_pkt_family(pkt) == AF_INET &&
 		   net_ipv4_is_addr_mcast(&ip_hdr->ipv4->dst)) {
+		;
+	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
+		    net_pkt_family(pkt) == AF_PACKET) {
 		;
 	} else {
 		send_icmp_error(pkt);
