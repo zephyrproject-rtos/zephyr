@@ -215,7 +215,7 @@ static inline bool _is_valid_prio(int prio, void *entry_point)
 	return true;
 }
 
-static inline void _ready_thread(struct k_thread *thread)
+static ALWAYS_INLINE void _ready_thread(struct k_thread *thread)
 {
 	if (_is_thread_ready(thread)) {
 		_add_thread_to_ready_q(thread);
