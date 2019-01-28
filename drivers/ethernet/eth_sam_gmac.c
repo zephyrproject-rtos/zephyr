@@ -1873,15 +1873,15 @@ static void eth0_irq_config(void)
 	irq_enable(GMAC_IRQn);
 
 #if GMAC_PRIORITY_QUEUE_NO >= 1
-	IRQ_CONNECT(GMACQ1_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue1_isr,
+	IRQ_CONNECT(GMAC_Q1_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue1_isr,
 		    DEVICE_GET(eth0_sam_gmac), 0);
-	irq_enable(GMACQ1_IRQn);
+	irq_enable(GMAC_Q1_IRQn);
 #endif
 
 #if GMAC_PRIORITY_QUEUE_NO == 2
-	IRQ_CONNECT(GMACQ2_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue2_isr,
+	IRQ_CONNECT(GMAC_Q2_IRQn, CONFIG_ETH_SAM_GMAC_IRQ_PRI, queue2_isr,
 		    DEVICE_GET(eth0_sam_gmac), 0);
-	irq_enable(GMACQ2_IRQn);
+	irq_enable(GMAC_Q2_IRQn);
 #endif
 }
 
