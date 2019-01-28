@@ -45,6 +45,7 @@ class Build(WestCommand):
     def __init__(self):
         super(Build, self).__init__(
             'build',
+            # Keep this in sync with the string in west-commands.yml.
             'compile a Zephyr application',
             BUILD_DESCRIPTION,
             accepts_unknown_args=False)

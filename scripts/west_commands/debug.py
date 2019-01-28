@@ -17,6 +17,7 @@ class Debug(WestCommand):
     def __init__(self):
         super(Debug, self).__init__(
             'debug',
+            # Keep this in sync with the string in west-commands.yml.
             'flash and interactively debug a Zephyr application',
             dedent('''
             Connect to the board, program the flash, and start a
@@ -37,6 +38,7 @@ class DebugServer(WestCommand):
     def __init__(self):
         super(DebugServer, self).__init__(
             'debugserver',
+            # Keep this in sync with the string in west-commands.yml.
             'connect to board and launch a debug server',
             dedent('''
             Connect to the board and launch a debug server which accepts
@@ -55,11 +57,13 @@ class DebugServer(WestCommand):
         do_run_common(self, my_args, runner_args,
                       'ZEPHYR_BOARD_DEBUG_RUNNER')
 
+
 class Attach(WestCommand):
 
     def __init__(self):
         super(Attach, self).__init__(
             'attach',
+            # Keep this in sync with the string in west-commands.yml.
             'interactively debug a board',
             dedent('''
             Like 'debug', this connects to the board and starts a debugging

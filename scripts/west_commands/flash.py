@@ -17,6 +17,7 @@ class Flash(WestCommand):
     def __init__(self):
         super(Flash, self).__init__(
             'flash',
+            # Keep this in sync with the string in west-commands.yml.
             'flash and run a binary on a board',
             dedent('''
             Connects to the board and reprograms it with a new binary\n\n''') +
