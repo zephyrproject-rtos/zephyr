@@ -59,6 +59,18 @@ Additional information about west's structure can be found
 Clone the Zephyr Repositories
 =============================
 
+.. warning::
+   If you have run ``source zephyr-env.sh`` (on Linux or macOS) or
+   ``zephyr-env.cmd`` (on Windows) on a clone of zephyr that predates the
+   introduction of west, then the copy of west included in the clone will
+   override the bootstrapper installed with ``pip``. In that case close the
+   shell and open a new one in order to remove it from the ``PATH``. You
+   can check which ``west`` is being executed by running::
+
+      west --version
+
+   You should see ``West bootstrapper version: v0.5.0`` (or higher).
+
 Clone the Zephyr source code repositories from GitHub using the ``west`` tool:
 
 .. code-block:: console
@@ -75,19 +87,22 @@ Clone the Zephyr source code repositories from GitHub using the ``west`` tool:
 
 .. note::
    If you had previously cloned the zephyr repository manually using Git,
-   move the cloned :file:`zephyr/` repository to an empty enclosing folder
-   (for example :file:`zephyrproject/zephyr/`), and
-   from this enclosing folder :file:`zephyrproject/` run::
+   create an empty enclosing folder (for example :file:`zephyrproject/`),
+   and move the cloned repository into it. From the enclosing folder run::
 
       west init -l zephyr/
       west update
 
    The ``-l <path to zephyr>`` parameter instructs ``west`` to use an existing
-   local copy instead of cloning a remote repository.
+   local copy instead of cloning a remote repository. This will create a full
+   Zephyr installation (see below).
 
-This will create a full Zephyr local copy, cloning west itself along with any
-projects (i.e. remote repositories) required by Zephyr. See
-:ref:`west-struct-installation` for additional details.
+Running ``west init`` will clone west itself into ``./.west/west`` and
+initialize a local installation. Running ``west update`` will pull all the
+projects referenced by the manifest file (:file:`zephyr/west.yml`) into the
+folders specified in it.  See :ref:`west-struct-installation` for additional
+details and a list of the folders and files that west will create as part of
+the process.
 
 .. warning::
 
