@@ -1,17 +1,23 @@
+# Keep the help strings in sync with the values in the .py files!
 west-commands:
   - file: scripts/west_commands/build.py
     commands:
       - name: build
         class: Build
+        help: compile a Zephyr application
   - file: scripts/west_commands/flash.py
     commands:
       - name: flash
         class: Flash
+        help: flash and run a binary on a board
   - file: scripts/west_commands/debug.py
     commands:
       - name: debug
         class: Debug
+        help: flash and interactively debug a Zephyr application
       - name: debugserver
         class: DebugServer
+        help: connect to board and launch a debug server
       - name: attach
         class: Attach
+        help: interactively debug a board
