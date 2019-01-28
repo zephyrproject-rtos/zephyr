@@ -1015,9 +1015,10 @@ if(CONFIG_ARM AND CONFIG_USERSPACE)
   set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC}
     PROPERTIES COMPILE_DEFINITIONS "${compile_definitions_interface}")
 
+  # always compile priv_stacks_hash.c at optimization -Os
   set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/${PRIV_STACKS_OUTPUT_SRC}
     PROPERTIES COMPILE_FLAGS
-    "${NO_COVERAGE_FLAGS} -fno-function-sections -fno-data-sections ")
+    "${NO_COVERAGE_FLAGS} -Os -fno-function-sections -fno-data-sections ")
 
   # We need precise control of where generated text/data ends up in the final
   # kernel image. Disable function/data sections and use objcopy to move
