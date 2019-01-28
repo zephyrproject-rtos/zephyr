@@ -120,8 +120,10 @@ static ALWAYS_INLINE bool should_preempt(struct k_thread *th, int preempt_ok)
 		return true;
 	}
 
+	__ASSERT(_current != NULL, "");
+
 	/* Or if we're pended/suspended/dummy (duh) */
-	if (!_current || _is_thread_prevented_from_running(_current)) {
+	if (_is_thread_prevented_from_running(_current)) {
 		return true;
 	}
 
