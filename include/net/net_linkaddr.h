@@ -45,6 +45,7 @@ enum net_link_type {
 	NET_LINK_BLUETOOTH,
 	NET_LINK_ETHERNET,
 	NET_LINK_DUMMY,
+	NET_LINK_CANBUS,
 } __packed;
 
 /**
