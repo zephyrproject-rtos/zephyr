@@ -1,0 +1,4 @@
+tests:
+  sched_bench:
+    tags: benchmark
+    slow: true
