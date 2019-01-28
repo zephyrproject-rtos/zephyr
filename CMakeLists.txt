@@ -487,32 +487,21 @@ endforeach()
 set_ifndef(  DTS_BOARD_FIXUP_FILE                                   ${BOARD_DIR}/dts_fixup.h)
 set_ifndef(    DTS_SOC_FIXUP_FILE                 ${SOC_DIR}/${ARCH}/${SOC_PATH}/dts_fixup.h)
 set(           DTS_APP_FIXUP_FILE                      ${APPLICATION_SOURCE_DIR}/dts_fixup.h)
-set_ifndef(DTS_SHIELDS_FIXUP_FILE ${ZEPHYR_BINARY_DIR}/include/generated/shields/dts_fixup.h)
 
-# Concatenate the shield fixups into a single file for easy
+set_ifndef(DTS_CAT_OF_FIXUP_FILES ${ZEPHYR_BINARY_DIR}/include/generated/generated_dts_board_fixups.h)
+
+# Concatenate the fixups into a single header file for easy
 # #include'ing
-foreach(f ${shield_dts_fixups})
-  if(EXISTS ${f})
-	file(READ ${f} contents)
-	file(APPEND ${DTS_SHIELDS_FIXUP_FILE} "${contents}")
-  endif()
-endforeach()
-
-foreach(fixup_source
-      DTS_BOARD_FIXUP_FILE
-        DTS_SOC_FIXUP_FILE
-        DTS_APP_FIXUP_FILE
-	DTS_SHIELDS_FIXUP_FILE
+file(WRITE ${DTS_CAT_OF_FIXUP_FILES} "/* May only be included by generated_dts_board.h */\n\n")
+foreach(fixup_file
+      ${DTS_BOARD_FIXUP_FILE}
+      ${DTS_SOC_FIXUP_FILE}
+      ${DTS_APP_FIXUP_FILE}
+      ${shield_dts_fixups}
 	)
-  if(EXISTS ${${fixup_source}})
-	# Add defines such that generated_dts_board.h knows which fixups
-	# are present and where they
-	# are. e.g. -DDTS_SOC_FIXUP_FILE=/path/to/fixup.h
-	zephyr_compile_definitions(${fixup_source}="${${fixup_source}}")
-	set_property(GLOBAL APPEND PROPERTY
-	  PROPERTY_LINKER_SCRIPT_DEFINES
-	  -D${fixup_source}="${${fixup_source}}"
-	  )
+  if(EXISTS ${fixup_file})
+	file(READ ${fixup_file} contents)
+	file(APPEND ${DTS_CAT_OF_FIXUP_FILES} "${contents}")
   endif()
 endforeach()
 
