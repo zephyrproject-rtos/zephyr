@@ -170,11 +170,11 @@ void main(void)
 #endif
 
 #ifdef CONFIG_LSM6DSL
-	struct device *accel_dev = device_get_binding(DT_LSM6DSL_DEV_NAME);
+	struct device *accel_dev = device_get_binding(DT_ST_LSM6DSL_0_LABEL);
 
 	if (!accel_dev) {
 		printk("Could not get pointer to %s sensor\n",
-			DT_LSM6DSL_DEV_NAME);
+			DT_ST_LSM6DSL_0_LABEL);
 		return;
 	}
 

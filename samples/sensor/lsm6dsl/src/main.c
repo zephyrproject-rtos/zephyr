@@ -100,7 +100,7 @@ void main(void)
 	int cnt = 0;
 	char out_str[64];
 	struct sensor_value odr_attr;
-	struct device *lsm6dsl_dev = device_get_binding(DT_LSM6DSL_DEV_NAME);
+	struct device *lsm6dsl_dev = device_get_binding(DT_ST_LSM6DSL_0_LABEL);
 
 	if (lsm6dsl_dev == NULL) {
 		printk("Could not get LSM6DSL device\n");
