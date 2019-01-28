@@ -32,8 +32,7 @@ struct k_spinlock {
 #endif
 };
 
-
-static inline k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
+static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 {
 	k_spinlock_key_t k;
 
@@ -59,7 +58,8 @@ static inline k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 	return k;
 }
 
-static inline void k_spin_unlock(struct k_spinlock *l, k_spinlock_key_t key)
+static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
+					k_spinlock_key_t key)
 {
 #ifdef SPIN_VALIDATE
 	__ASSERT(l->thread_cpu == (_current_cpu->id | (u32_t)_current),
