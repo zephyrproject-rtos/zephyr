@@ -32,7 +32,7 @@
 	leds {
 		compatible = "gpio-leds";
 		green_led: led_0 {
-			gpios = <&portc 8 0>;
+			gpios = <&portc 8 GPIO_ACTIVE_LOW>;
 			label = "User LED";
 		};
 	};
@@ -45,8 +45,7 @@
 		 */
 		sw0_user_button: button_1 {
 			label = "User Button";
-			gpios = <&porta 11 (GPIO_PUD_PULL_UP |
-					    GPIO_INT_ACTIVE_LOW)>;
+			gpios = <&porta 11 (GPIO_PUD_PULL_UP | GPIO_INT_LOW)>;
 		};
 	};
 };
