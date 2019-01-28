@@ -306,7 +306,6 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 #ifdef CONFIG_TRACING
 	sys_trace_thread_switched_out();
 #endif
-	_current = dummy_thread;
 #ifdef CONFIG_TRACING
 	sys_trace_thread_switched_in();
 #endif
@@ -465,17 +464,9 @@ FUNC_NORETURN void _Cstart(void)
 	gcov_static_init();
 
 #ifdef CONFIG_MULTITHREADING
-#ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
-	struct k_thread *dummy_thread = NULL;
-#else
-	/* Normally, kernel objects are not allowed on the stack, special case
-	 * here since this is just being used to bootstrap the first _Swap()
-	 */
-	char dummy_thread_memory[sizeof(struct k_thread)];
-	struct k_thread *dummy_thread = (struct k_thread *)&dummy_thread_memory;
+	struct k_thread dummy_thread = { .base.thread_state = _THREAD_DUMMY };
 
-	(void)memset(dummy_thread_memory, 0, sizeof(dummy_thread_memory));
-#endif
+	_current = &dummy_thread;
 #endif
 
 	if (IS_ENABLED(CONFIG_LOG)) {
@@ -494,7 +485,7 @@ FUNC_NORETURN void _Cstart(void)
 #endif
 
 #ifdef CONFIG_MULTITHREADING
-	prepare_multithreading(dummy_thread);
+	prepare_multithreading(&dummy_thread);
 	switch_to_main_thread();
 #else
 	bg_thread_main(NULL, NULL, NULL);
