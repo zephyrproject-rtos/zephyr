@@ -8,7 +8,7 @@
 #ifndef ZEPHYR_INCLUDE_NET_LWM2M_H_
 #define ZEPHYR_INCLUDE_NET_LWM2M_H_
 
-#include <net/net_app.h>
+#include <kernel.h>
 #include <net/coap_sock.h>
 
 /* LWM2M Objects defined by OMA */
@@ -33,40 +33,19 @@
  * @details Context structure for the LwM2M high-level API.
  *
  * @param remote_addr Stored remote IP address of the LwM2M client
- * @param net_app_ctx Related network application context.
- * @param net_init_timeout Used if the net_app API needs to do some time
- *    consuming operation, like resolving DNS address.
- * @param net_timeout How long to wait for the network connection before
- *    giving up.
  */
 struct lwm2m_ctx {
 	/** destination address storage */
 	struct sockaddr remote_addr;
-
-	/** Net app context structure */
-	struct net_app_ctx net_app_ctx;
-	s32_t net_init_timeout;
-	s32_t net_timeout;
 
 	/** Private CoAP and networking structures */
 	struct coap_pending pendings[CONFIG_LWM2M_ENGINE_MAX_PENDING];
 	struct coap_reply replies[CONFIG_LWM2M_ENGINE_MAX_REPLIES];
 	struct k_delayed_work retransmit_work;
 
-#if defined(CONFIG_NET_APP_DTLS)
-	/** Pre-Shared Key  Information*/
-	unsigned char *client_psk;
-	size_t client_psk_len;
-	char *client_psk_id;
-	size_t client_psk_id_len;
-
-	/** DTLS support structures */
-	char *cert_host;
-	u8_t *dtls_result_buf;
-	size_t dtls_result_buf_len;
-	struct k_mem_pool *dtls_pool;
-	k_thread_stack_t *dtls_stack;
-	size_t dtls_stack_len;
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+	/** DTLS settings */
+	int tls_tag;
 #endif
 	bool use_dtls;
 
@@ -76,6 +55,9 @@ struct lwm2m_ctx {
 
 	/** Packet Flow Settings */
 	bool handle_separate_response;
+
+	/** Socket File Descriptor */
+	int sock_fd;
 };
 
 typedef void *(*lwm2m_engine_get_data_cb_t)(u16_t obj_inst_id,

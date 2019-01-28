@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <string.h>
 
 #include <net/http_parser.h>
-#include <net/net_app.h>
+#include <net/socket.h>
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
@@ -29,7 +29,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 static struct k_work firmware_work;
 static char firmware_uri[URI_LEN];
-static struct http_parser_url parsed_uri;
 static struct lwm2m_ctx firmware_ctx;
 static int firmware_retry;
 static struct coap_block_context firmware_block_ctx;
@@ -68,14 +67,11 @@ static int transfer_request(struct coap_block_context *ctx,
 {
 	struct lwm2m_message *msg;
 	int ret;
-	u16_t off;
-	u16_t len;
 	char *cursor;
 #if !defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
-	int i;
-	int path_len;
-#else
-	char *uri_path;
+	struct http_parser_url parser;
+	u16_t off, len;
+	char *next_slash;
 #endif
 
 	msg = lwm2m_get_message(&firmware_ctx);
@@ -99,22 +95,11 @@ static int transfer_request(struct coap_block_context *ctx,
 	}
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
-	/* if path is not available, off/len will be zero */
-	off = parsed_uri.field_data[UF_SCHEMA].off;
-	len = parsed_uri.field_data[UF_SCHEMA].len;
-	cursor = firmware_uri + off;
-
-	/* TODO: convert to lower case */
-	if (len < 4 || len > 5) {
-		ret = -EPROTONOSUPPORT;
-		LOG_ERR("Unsupported schema");
-		goto cleanup;
-	}
-
-	if (strncmp(cursor, (len == 4 ? "http" : "https"), len) == 0) {
-		uri_path = COAP2HTTP_PROXY_URI_PATH;
-	} else if (strncmp(cursor, (len == 4 ? "coap" : "coaps"), len) == 0) {
-		uri_path = COAP2COAP_PROXY_URI_PATH;
+	/* TODO: shift to lower case */
+	if (strncmp(firmware_uri, "http", 4) == 0) {
+		cursor = COAP2HTTP_PROXY_URI_PATH;
+	} else if (strncmp(firmware_uri, "coap", 4) == 0) {
+		cursor = COAP2COAP_PROXY_URI_PATH;
 	} else {
 		ret = -EPROTONOSUPPORT;
 		LOG_ERR("Unsupported schema");
@@ -122,50 +107,53 @@ static int transfer_request(struct coap_block_context *ctx,
 	}
 
 	ret = coap_packet_append_option(&msg->cpkt, COAP_OPTION_URI_PATH,
-					uri_path, strlen(uri_path));
+					cursor, strlen(cursor));
 	if (ret < 0) {
-		LOG_ERR("Error adding URI_PATH '%s'", uri_path);
+		LOG_ERR("Error adding URI_PATH '%s'", cursor);
 		goto cleanup;
 	}
 #else
+	http_parser_url_init(&parser);
+	ret = http_parser_parse_url(firmware_uri, strlen(firmware_uri), 0,
+				    &parser);
+	if (ret < 0) {
+		LOG_ERR("Invalid firmware url: %s", firmware_uri);
+		ret = -ENOTSUP;
+		goto cleanup;
+	}
+
 	/* if path is not available, off/len will be zero */
-	off = parsed_uri.field_data[UF_PATH].off;
-	len = parsed_uri.field_data[UF_PATH].len;
+	off = parser.field_data[UF_PATH].off;
+	len = parser.field_data[UF_PATH].len;
 	cursor = firmware_uri + off;
-	path_len = 0;
 
-	for (i = 0; i < len; i++) {
-		if (firmware_uri[off + i] == '/') {
-			if (path_len > 0) {
-				ret = coap_packet_append_option(&msg->cpkt,
-						      COAP_OPTION_URI_PATH,
-						      cursor, path_len);
-				if (ret < 0) {
-					LOG_ERR("Error adding URI_PATH");
-					goto cleanup;
-				}
-
-				cursor += path_len + 1;
-				path_len = 0;
-			} else {
-				/* skip current slash */
-				cursor += 1;
-			}
-			continue;
-		}
-
-		if (i == len - 1) {
-			/* flush the rest */
+	/* add path portions (separated by slashes) */
+	while (len > 0 && (next_slash = strchr(cursor, '/')) != NULL) {
+		if (next_slash != cursor) {
 			ret = coap_packet_append_option(&msg->cpkt,
 							COAP_OPTION_URI_PATH,
-							cursor, path_len + 1);
+							cursor,
+							next_slash - cursor);
 			if (ret < 0) {
 				LOG_ERR("Error adding URI_PATH");
 				goto cleanup;
 			}
-			break;
 		}
-		path_len += 1;
+
+		/* skip slash */
+		len -= (next_slash - cursor) + 1;
+		cursor = next_slash + 1;
+	}
+
+	if (len > 0) {
+		/* flush the rest */
+		ret = coap_packet_append_option(&msg->cpkt,
+						COAP_OPTION_URI_PATH,
+						cursor, len);
+		if (ret < 0) {
+			LOG_ERR("Error adding URI_PATH");
+			goto cleanup;
+		}
 	}
 #endif
 
@@ -402,14 +390,8 @@ static void do_transmit_timeout_cb(struct lwm2m_message *msg)
 
 static void firmware_transfer(struct k_work *work)
 {
-	int ret, family;
-	u16_t off;
-	u16_t len;
-	char tmp;
+	int ret;
 	char *server_addr;
-
-	/* Server Peer IP information */
-	family = AF_INET;
 
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_SUPPORT)
 	server_addr = CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_COAP_PROXY_ADDR;
@@ -426,59 +408,21 @@ static void firmware_transfer(struct k_work *work)
 	server_addr = firmware_uri;
 #endif
 
-	http_parser_url_init(&parsed_uri);
-	ret = http_parser_parse_url(server_addr,
-				    strlen(server_addr),
-				    0,
-				    &parsed_uri);
-	if (ret != 0) {
-		LOG_ERR("Invalid firmware URI: %s", server_addr);
-		ret = -ENOTSUP;
+	ret = lwm2m_parse_peerinfo(server_addr, &firmware_ctx.remote_addr,
+				   &firmware_ctx.use_dtls);
+	if (ret < 0) {
 		goto error;
 	}
-
-	/* Check schema and only support coap for now */
-	if (!(parsed_uri.field_set & (1 << UF_SCHEMA))) {
-		LOG_ERR("No schema in package uri");
-		ret = -ENOTSUP;
-		goto error;
-	}
-
-	/* TODO: enable coaps when DTLS is ready */
-	off = parsed_uri.field_data[UF_SCHEMA].off;
-	len = parsed_uri.field_data[UF_SCHEMA].len;
-	if (len != 4 || memcmp(server_addr + off, "coap", 4)) {
-		LOG_ERR("Unsupported schema");
-		ret = -EPROTONOSUPPORT;
-		goto error;
-	}
-
-	if (!(parsed_uri.field_set & (1 << UF_PORT))) {
-		/* Set to default port of CoAP */
-		parsed_uri.port = 5683;
-	}
-
-	off = parsed_uri.field_data[UF_HOST].off;
-	len = parsed_uri.field_data[UF_HOST].len;
-
-	/* truncate host portion */
-	tmp = server_addr[off + len];
-	server_addr[off + len] = '\0';
 
 	lwm2m_engine_context_init(&firmware_ctx);
 	firmware_ctx.handle_separate_response = true;
-
-	ret = lwm2m_net_app_start(&firmware_ctx, &server_addr[off],
-				  parsed_uri.port);
-	server_addr[off + len] = tmp;
+	ret = lwm2m_socket_start(&firmware_ctx);
 	if (ret < 0) {
-		LOG_ERR("Could not get an UDP context (err:%d)", ret);
-		ret = -ENOMSG;
+		LOG_ERR("Cannot start a firmware-pull connection:%d", ret);
 		goto error;
 	}
 
-	LOG_INF("Connecting to server %s, port %d", server_addr + off,
-		parsed_uri.port);
+	LOG_INF("Connecting to server %s", firmware_uri);
 
 	/* reset block transfer context */
 	coap_block_transfer_init(&firmware_block_ctx,
@@ -486,14 +430,10 @@ static void firmware_transfer(struct k_work *work)
 	ret = transfer_request(&firmware_block_ctx, coap_next_token(), 8,
 			       do_firmware_transfer_reply_cb);
 	if (ret < 0) {
-		goto cleanup;
+		goto error;
 	}
 
 	return;
-
-cleanup:
-	net_app_close(&firmware_ctx.net_app_ctx);
-	net_app_release(&firmware_ctx.net_app_ctx);
 
 error:
 	set_update_result_from_error(ret);
@@ -507,16 +447,14 @@ int lwm2m_firmware_cancel_transfer(void)
 
 int lwm2m_firmware_start_transfer(char *package_uri)
 {
-	/* free up old context */
-	if (firmware_ctx.net_app_ctx.is_init) {
-		net_app_close(&firmware_ctx.net_app_ctx);
-		net_app_release(&firmware_ctx.net_app_ctx);
+	/* close old socket */
+	if (firmware_ctx.sock_fd > 0) {
+		lwm2m_socket_del(&firmware_ctx);
+		close(firmware_ctx.sock_fd);
 	}
 
 	(void)memset(&firmware_ctx, 0, sizeof(struct lwm2m_ctx));
 	firmware_retry = 0;
-	firmware_ctx.net_init_timeout = NETWORK_INIT_TIMEOUT;
-	firmware_ctx.net_timeout = NETWORK_CONNECT_TIMEOUT;
 	k_work_init(&firmware_work, firmware_transfer);
 	lwm2m_firmware_set_update_state(STATE_DOWNLOADING);
 

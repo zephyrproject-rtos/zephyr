@@ -109,8 +109,10 @@ void lwm2m_firmware_set_update_result(u8_t result);
 u8_t lwm2m_firmware_get_update_result(void);
 #endif
 
-/* Network API Layer */
-int lwm2m_net_app_start(struct lwm2m_ctx *client_ctx,
-			char *peer_str, u16_t peer_port);
+/* Network Layer */
+int  lwm2m_socket_add(struct lwm2m_ctx *ctx);
+void lwm2m_socket_del(struct lwm2m_ctx *ctx);
+int  lwm2m_socket_start(struct lwm2m_ctx *client_ctx);
+int  lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls);
 
 #endif /* LWM2M_ENGINE_H */

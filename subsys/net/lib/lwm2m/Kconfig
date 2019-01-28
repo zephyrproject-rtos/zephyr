@@ -7,8 +7,9 @@
 menuconfig LWM2M
 	bool "OMA LWM2M protocol stack"
 	select COAP
-	select NET_APP_CLIENT
 	select HTTP_PARSER_URL
+	select NET_SOCKETS
+	select NET_SOCKETS_POSIX_NAMES
 	help
 	  This option adds logic for managing OMA LWM2M data
 
@@ -23,7 +24,9 @@ config LWM2M_DTLS_SUPPORT
 	bool "Enable DTLS support in the LwM2M client"
 	select MBEDTLS
 	select MBEDTLS_ENABLE_HEAP
-	select NET_APP_DTLS
+	select TLS_CREDENTIALS
+	select NET_SOCKETS_SOCKOPT_TLS
+	select NET_SOCKETS_ENABLE_DTLS
 
 config LWM2M_ENGINE_STACK_SIZE
 	int "LWM2M engine stack size"
