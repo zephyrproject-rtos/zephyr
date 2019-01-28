@@ -110,5 +110,5 @@ void cts_notify(void)
 	}
 
 	ct_update = 0U;
-	bt_gatt_notify(NULL, &attrs[1], &ct, sizeof(ct));
+	bt_gatt_notify(NULL, &attrs[1], 0, &ct, sizeof(ct));
 }

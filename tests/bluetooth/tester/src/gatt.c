@@ -766,7 +766,7 @@ static u8_t alloc_value(struct bt_gatt_attr *attr, struct set_value *data)
 
 	if (tester_test_bit(value->flags, GATT_VALUE_CCC_FLAG) && ccc_value) {
 		if (ccc_value == BT_GATT_CCC_NOTIFY) {
-			bt_gatt_notify(NULL, attr, value->data, value->len);
+			bt_gatt_notify(NULL, attr, 0, value->data, value->len);
 		} else {
 			indicate_params.attr = attr;
 			indicate_params.data = value->data;
@@ -1469,10 +1469,11 @@ static void write_without_rsp(u8_t *data, u16_t len, u8_t op,
 		goto rsp;
 	}
 
-	if (bt_gatt_write_without_response(conn, sys_le16_to_cpu(cmd->handle),
-					   cmd->data,
-					   sys_le16_to_cpu(cmd->data_length),
-					   sign) < 0) {
+	len = bt_gatt_write_without_response(conn, sys_le16_to_cpu(cmd->handle),
+					     sign ? BT_GATT_FLAG_SIGNED_WRITE :
+					     0, cmd->data,
+					     sys_le16_to_cpu(cmd->data_length));
+	if (len < 0) {
 		status = BTP_STATUS_FAILED;
 	}
 

@@ -102,7 +102,7 @@ void ble_send_ball(s8_t x_pos, s8_t y_pos, s8_t x_vel, s8_t y_vel)
 
 	printk("ble_send_ball(%d, %d, %d, %d)\n", x_pos, y_pos, x_vel, y_vel);
 
-	err = bt_gatt_notify(default_conn, local_attr, &data, BALL_INFO_LEN);
+	err = bt_gatt_notify(default_conn, local_attr, 0, &data, BALL_INFO_LEN);
 	if (err) {
 		printk("GATT notify failed (err %d)\n", err);
 	}
@@ -118,7 +118,7 @@ void ble_send_lost(void)
 		return;
 	}
 
-	err = bt_gatt_notify(default_conn, local_attr, &lost, sizeof(lost));
+	err = bt_gatt_notify(default_conn, local_attr, 0, &lost, sizeof(lost));
 	if (err) {
 		printk("GATT notify failed (err %d)\n", err);
 	}
@@ -200,7 +200,7 @@ static u8_t discover_func(struct bt_conn *conn,
 	} else {
 		printk("Pong CCC discovered\n");
 
-		subscribe_param.notify = notify_func;
+		subscribe_param.notify =  notify_func;
 		subscribe_param.value = BT_GATT_CCC_NOTIFY;
 		subscribe_param.ccc_handle = attr->handle;
 

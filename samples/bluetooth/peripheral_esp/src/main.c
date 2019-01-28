@@ -280,7 +280,7 @@ static void update_temperature(struct bt_conn *conn,
 	if (notify) {
 		value = sys_cpu_to_le16(sensor->temp_value);
 
-		bt_gatt_notify(conn, chrc, &value, sizeof(value));
+		bt_gatt_notify(conn, chrc, 0, &value, sizeof(value));
 	}
 }
 

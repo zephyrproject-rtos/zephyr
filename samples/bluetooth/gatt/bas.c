@@ -69,5 +69,5 @@ void bas_notify(void)
 		battery = 100U;
 	}
 
-	bt_gatt_notify(NULL, &attrs[1], &battery, sizeof(battery));
+	bt_gatt_notify(NULL, &attrs[1], 0, &battery, sizeof(battery));
 }

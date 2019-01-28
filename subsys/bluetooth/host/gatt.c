@@ -775,25 +775,52 @@ struct notify_data {
 	u16_t type;
 	const struct bt_gatt_attr *attr;
 	bt_gatt_complete_func_t func;
+	int flags;
 	const void *data;
 	u16_t len;
 	struct bt_gatt_indicate_params *params;
 };
 
-static int gatt_notify(struct bt_conn *conn, u16_t handle, const void *data,
-		       size_t len, bt_gatt_complete_func_t cb)
+static struct net_buf *bt_gatt_create_pdu(struct bt_conn *conn, uint8_t op,
+					  int flags, size_t len, int *err)
+{
+	u16_t payload_len = bt_att_get_payload_len(conn, op);
+	u16_t cmd_len = bt_att_get_mtu(conn) - payload_len;
+	struct net_buf *buf;
+
+	if (flags & BT_GATT_FLAG_STREAM_MODE) {
+		len = min(len, payload_len);
+	} else if (len > payload_len) {
+		if (err)
+			*err = -EMSGSIZE;
+		return NULL;
+	}
+
+	buf = bt_att_create_pdu(conn, op, cmd_len + len);
+	if (buf) {
+		*err = 0;
+		return buf;
+	}
+
+	if (err) {
+		*err = -ENOMEM;
+	}
+
+	return NULL;
+}
+
+static int gatt_notify(struct bt_conn *conn, u16_t handle, int flags,
+		       const void *data, size_t len,
+		       bt_gatt_complete_func_t cb)
 {
 	struct net_buf *buf;
 	struct bt_att_notify *nfy;
 	int err;
 
-	/* Only send what fits on the MTU */
-	len = min(len, bt_att_get_payload_len(conn, BT_ATT_OP_NOTIFY));
-
-	buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY, sizeof(*nfy) + len);
+	buf = bt_gatt_create_pdu(conn, BT_ATT_OP_NOTIFY, flags, len, &err);
 	if (!buf) {
-		BT_WARN("No buffer available to send notification");
-		return -ENOMEM;
+		BT_WARN("Unable to acquire buffer for notification: %d", err);
+		return err;
 	}
 
 	BT_DBG("conn %p handle 0x%04x len %zu", conn, handle, len);
@@ -974,8 +1001,8 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 			data->len = gatt_indicate(conn, data->params);
 		} else {
 			data->len = gatt_notify(conn, data->attr->handle,
-						data->data, data->len,
-						data->func);
+						data->flags, data->data,
+						data->len, data->func);
 		}
 
 		bt_conn_unref(conn);
@@ -992,7 +1019,7 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 }
 
 int bt_gatt_notify_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
-		      const void *data, u16_t len,
+		      int flags, const void *data, u16_t len,
 		      bt_gatt_complete_func_t func)
 {
 	struct notify_data nfy;
@@ -1012,14 +1039,14 @@ int bt_gatt_notify_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	}
 
 	if (conn) {
-		return gatt_notify(conn, attr->handle, data,
-				   len, func);
+		return gatt_notify(conn, attr->handle, flags, data, len, func);
 	}
 
 	nfy.err = -ENOTCONN;
 	nfy.attr = attr;
 	nfy.func = func;
 	nfy.type = BT_GATT_CCC_NOTIFY;
+	nfy.flags = flags;
 	nfy.data = data;
 	nfy.len = len;
 
@@ -2106,7 +2133,7 @@ static void gatt_write_rsp(struct bt_conn *conn, u8_t err, const void *pdu,
 }
 
 int bt_gatt_write_without_response_cb(struct bt_conn *conn, u16_t handle,
-				      const void *data, u16_t length, bool sign,
+				      int flags, const void *data, u16_t length,
 				      bt_gatt_complete_func_t func)
 {
 	struct net_buf *buf;
@@ -2124,17 +2151,16 @@ int bt_gatt_write_without_response_cb(struct bt_conn *conn, u16_t handle,
 #if defined(CONFIG_BT_SMP)
 	if (conn->encrypt) {
 		/* Don't need to sign if already encrypted */
-		sign = false;
+		flags &= ~BT_GATT_FLAG_SIGNED_WRITE;
 	}
 #endif
 
-	op = sign ? BT_ATT_OP_SIGNED_WRITE_CMD : BT_ATT_OP_WRITE_CMD;
+	op = flags & BT_GATT_FLAG_SIGNED_WRITE ? BT_ATT_OP_SIGNED_WRITE_CMD :
+						 BT_ATT_OP_WRITE_CMD;
 
-	length = min(length, bt_att_get_payload_len(conn, op));
-
-	buf = bt_att_create_pdu(conn, op, sizeof(*cmd) + length);
+	buf = bt_gatt_create_pdu(conn, op, flags, length, &err);
 	if (!buf) {
-		return -ENOMEM;
+		return err;
 	}
 
 	cmd = net_buf_add(buf, sizeof(*cmd));

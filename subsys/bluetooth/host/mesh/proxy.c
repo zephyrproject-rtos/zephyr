@@ -886,13 +886,13 @@ static int proxy_send(struct bt_conn *conn, const void *data, u16_t len)
 
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
 	if (gatt_svc == MESH_GATT_PROXY) {
-		return bt_gatt_notify(conn, &proxy_attrs[3], data, len);
+		return bt_gatt_notify(conn, &proxy_attrs[3], 0, data, len);
 	}
 #endif
 
 #if defined(CONFIG_BT_MESH_PB_GATT)
 	if (gatt_svc == MESH_GATT_PROV) {
-		return bt_gatt_notify(conn, &prov_attrs[3], data, len);
+		return bt_gatt_notify(conn, &prov_attrs[3], 0, data, len);
 	}
 #endif
 

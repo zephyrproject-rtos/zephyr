@@ -89,7 +89,7 @@ static struct bt_gatt_service smp_bt_svc = BT_GATT_SERVICE(smp_bt_attrs);
  */
 static int smp_bt_tx_rsp(struct bt_conn *conn, const void *data, u16_t len)
 {
-	return bt_gatt_notify(conn, smp_bt_attrs + 2, data, len);
+	return bt_gatt_notify(conn, smp_bt_attrs + 2, 0, data, len);
 }
 
 /**

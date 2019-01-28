@@ -243,7 +243,7 @@ static void ctrl_point_ind(struct bt_conn *conn, u8_t req_op, u8_t status,
 		memcpy(ind->data, data, data_len);
 	}
 
-	bt_gatt_notify(conn, &csc_attrs[8], buf, sizeof(buf));
+	bt_gatt_notify(conn, &csc_attrs[8], 0, buf, sizeof(buf));
 }
 
 struct csc_measurement_nfy {
@@ -296,7 +296,7 @@ static void measurement_nfy(struct bt_conn *conn, u32_t cwr, u16_t lwet,
 		memcpy(nfy->data + len, &data, sizeof(data));
 	}
 
-	bt_gatt_notify(NULL, &csc_attrs[1], buf, sizeof(buf));
+	bt_gatt_notify(NULL, &csc_attrs[1], 0, buf, sizeof(buf));
 }
 
 static u16_t lwet; /* Last Wheel Event Time */

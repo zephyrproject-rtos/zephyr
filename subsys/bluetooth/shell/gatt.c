@@ -349,7 +349,7 @@ static int cmd_write_without_rsp(const struct shell *shell,
 	u16_t repeat;
 	int err;
 	u16_t len;
-	bool sign;
+	int flags;
 	bt_gatt_complete_func_t func = NULL;
 
 	if (!default_conn) {
@@ -357,8 +357,8 @@ static int cmd_write_without_rsp(const struct shell *shell,
 		return -ENOEXEC;
 	}
 
-	sign = !strcmp(argv[0], "signed-write");
-	if (!sign) {
+	flags = strcmp(argv[0], "signed-write") ? 0 : BT_GATT_FLAG_SIGNED_WRITE;
+	if (!flags & BT_GATT_FLAG_SIGNED_WRITE) {
 		if (!strcmp(argv[0], "write-without-response-cb")) {
 			func = write_without_rsp_cb;
 		}
@@ -390,8 +390,8 @@ static int cmd_write_without_rsp(const struct shell *shell,
 
 	while (repeat--) {
 		err = bt_gatt_write_without_response_cb(default_conn, handle,
-							gatt_write_buf, len,
-							sign, func);
+							flags, gatt_write_buf,
+							len, func);
 		if (err) {
 			break;
 		}
@@ -532,7 +532,7 @@ static ssize_t write_vnd1(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 {
 	if (echo_enabled) {
 		shell_print(ctx_shell, "Echo attr len %u", len);
-		bt_gatt_notify(conn, attr, buf, len);
+		bt_gatt_notify(conn, attr, 0, buf, len);
 	}
 
 	return len;
