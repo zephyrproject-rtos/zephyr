@@ -3,7 +3,7 @@
  *
  * \brief Instance description for USBHS
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_USBHS_INSTANCE_H_
 #define _SAME70_USBHS_INSTANCE_H_
 
@@ -550,6 +551,7 @@
 #define REG_USBHS_SFR           (*(__O  uint32_t*)0x4003880CU) /**< (USBHS) General Status Set Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for USBHS peripheral ========== */
 #define USBHS_INSTANCE_ID                        34        
 

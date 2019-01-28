@@ -3,7 +3,7 @@
  *
  * \brief Instance description for PIOD
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_PIOD_INSTANCE_H_
 #define _SAME70_PIOD_INSTANCE_H_
 
@@ -54,9 +55,9 @@
 #define REG_PIOD_PUDR           (0x400E1460) /**< (PIOD) Pull-up Disable Register */
 #define REG_PIOD_PUER           (0x400E1464) /**< (PIOD) Pull-up Enable Register */
 #define REG_PIOD_PUSR           (0x400E1468) /**< (PIOD) Pad Pull-up Status Register */
-#define REG_PIOD_ABCDSR         (0x400E1470) /**< (PIOD) Peripheral Select Register 0 */
-#define REG_PIOD_ABCDSR0        (0x400E1470) /**< (PIOD) Peripheral Select Register 0 */
-#define REG_PIOD_ABCDSR1        (0x400E1474) /**< (PIOD) Peripheral Select Register 1 */
+#define REG_PIOD_ABCDSR         (0x400E1470) /**< (PIOD) Peripheral ABCD Select Register 0 */
+#define REG_PIOD_ABCDSR0        (0x400E1470) /**< (PIOD) Peripheral ABCD Select Register 0 */
+#define REG_PIOD_ABCDSR1        (0x400E1474) /**< (PIOD) Peripheral ABCD Select Register 1 */
 #define REG_PIOD_IFSCDR         (0x400E1480) /**< (PIOD) Input Filter Slow Clock Disable Register */
 #define REG_PIOD_IFSCER         (0x400E1484) /**< (PIOD) Input Filter Slow Clock Enable Register */
 #define REG_PIOD_IFSCSR         (0x400E1488) /**< (PIOD) Input Filter Slow Clock Status Register */
@@ -113,9 +114,9 @@
 #define REG_PIOD_PUDR           (*(__O  uint32_t*)0x400E1460U) /**< (PIOD) Pull-up Disable Register */
 #define REG_PIOD_PUER           (*(__O  uint32_t*)0x400E1464U) /**< (PIOD) Pull-up Enable Register */
 #define REG_PIOD_PUSR           (*(__I  uint32_t*)0x400E1468U) /**< (PIOD) Pad Pull-up Status Register */
-#define REG_PIOD_ABCDSR         (*(__IO uint32_t*)0x400E1470U) /**< (PIOD) Peripheral Select Register 0 */
-#define REG_PIOD_ABCDSR0        (*(__IO uint32_t*)0x400E1470U) /**< (PIOD) Peripheral Select Register 0 */
-#define REG_PIOD_ABCDSR1        (*(__IO uint32_t*)0x400E1474U) /**< (PIOD) Peripheral Select Register 1 */
+#define REG_PIOD_ABCDSR         (*(__IO uint32_t*)0x400E1470U) /**< (PIOD) Peripheral ABCD Select Register 0 */
+#define REG_PIOD_ABCDSR0        (*(__IO uint32_t*)0x400E1470U) /**< (PIOD) Peripheral ABCD Select Register 0 */
+#define REG_PIOD_ABCDSR1        (*(__IO uint32_t*)0x400E1474U) /**< (PIOD) Peripheral ABCD Select Register 1 */
 #define REG_PIOD_IFSCDR         (*(__O  uint32_t*)0x400E1480U) /**< (PIOD) Input Filter Slow Clock Disable Register */
 #define REG_PIOD_IFSCER         (*(__O  uint32_t*)0x400E1484U) /**< (PIOD) Input Filter Slow Clock Enable Register */
 #define REG_PIOD_IFSCSR         (*(__I  uint32_t*)0x400E1488U) /**< (PIOD) Input Filter Slow Clock Status Register */
@@ -148,6 +149,7 @@
 #define REG_PIOD_PCRHR          (*(__I  uint32_t*)0x400E1564U) /**< (PIOD) Parallel Capture Reception Holding Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for PIOD peripheral ========== */
 #define PIOD_INSTANCE_ID                         16        
 

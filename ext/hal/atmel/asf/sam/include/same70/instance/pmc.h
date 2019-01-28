@@ -3,7 +3,7 @@
  *
  * \brief Instance description for PMC
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_PMC_INSTANCE_H_
 #define _SAME70_PMC_INSTANCE_H_
 
@@ -43,15 +44,15 @@
 #define REG_CKGR_PLLAR          (0x400E0628) /**< (PMC) PLLA Register */
 #define REG_PMC_MCKR            (0x400E0630) /**< (PMC) Master Clock Register */
 #define REG_PMC_USB             (0x400E0638) /**< (PMC) USB Clock Register */
-#define REG_PMC_PCK             (0x400E0640) /**< (PMC) Programmable Clock 0 Register 0 */
-#define REG_PMC_PCK0            (0x400E0640) /**< (PMC) Programmable Clock 0 Register 0 */
-#define REG_PMC_PCK1            (0x400E0644) /**< (PMC) Programmable Clock 0 Register 1 */
-#define REG_PMC_PCK2            (0x400E0648) /**< (PMC) Programmable Clock 0 Register 2 */
-#define REG_PMC_PCK3            (0x400E064C) /**< (PMC) Programmable Clock 0 Register 3 */
-#define REG_PMC_PCK4            (0x400E0650) /**< (PMC) Programmable Clock 0 Register 4 */
-#define REG_PMC_PCK5            (0x400E0654) /**< (PMC) Programmable Clock 0 Register 5 */
-#define REG_PMC_PCK6            (0x400E0658) /**< (PMC) Programmable Clock 0 Register 6 */
-#define REG_PMC_PCK7            (0x400E065C) /**< (PMC) Programmable Clock 0 Register 7 */
+#define REG_PMC_PCK             (0x400E0640) /**< (PMC) Programmable Clock Register */
+#define REG_PMC_PCK0            (0x400E0640) /**< (PMC) Programmable Clock Register 0 */
+#define REG_PMC_PCK1            (0x400E0644) /**< (PMC) Programmable Clock Register 1 */
+#define REG_PMC_PCK2            (0x400E0648) /**< (PMC) Programmable Clock Register 2 */
+#define REG_PMC_PCK3            (0x400E064C) /**< (PMC) Programmable Clock Register 3 */
+#define REG_PMC_PCK4            (0x400E0650) /**< (PMC) Programmable Clock Register 4 */
+#define REG_PMC_PCK5            (0x400E0654) /**< (PMC) Programmable Clock Register 5 */
+#define REG_PMC_PCK6            (0x400E0658) /**< (PMC) Programmable Clock Register 6 */
+#define REG_PMC_PCK7            (0x400E065C) /**< (PMC) Programmable Clock Register 7 */
 #define REG_PMC_IER             (0x400E0660) /**< (PMC) Interrupt Enable Register */
 #define REG_PMC_IDR             (0x400E0664) /**< (PMC) Interrupt Disable Register */
 #define REG_PMC_SR              (0x400E0668) /**< (PMC) Status Register */
@@ -91,15 +92,15 @@
 #define REG_CKGR_PLLAR          (*(__IO uint32_t*)0x400E0628U) /**< (PMC) PLLA Register */
 #define REG_PMC_MCKR            (*(__IO uint32_t*)0x400E0630U) /**< (PMC) Master Clock Register */
 #define REG_PMC_USB             (*(__IO uint32_t*)0x400E0638U) /**< (PMC) USB Clock Register */
-#define REG_PMC_PCK             (*(__IO uint32_t*)0x400E0640U) /**< (PMC) Programmable Clock 0 Register 0 */
-#define REG_PMC_PCK0            (*(__IO uint32_t*)0x400E0640U) /**< (PMC) Programmable Clock 0 Register 0 */
-#define REG_PMC_PCK1            (*(__IO uint32_t*)0x400E0644U) /**< (PMC) Programmable Clock 0 Register 1 */
-#define REG_PMC_PCK2            (*(__IO uint32_t*)0x400E0648U) /**< (PMC) Programmable Clock 0 Register 2 */
-#define REG_PMC_PCK3            (*(__IO uint32_t*)0x400E064CU) /**< (PMC) Programmable Clock 0 Register 3 */
-#define REG_PMC_PCK4            (*(__IO uint32_t*)0x400E0650U) /**< (PMC) Programmable Clock 0 Register 4 */
-#define REG_PMC_PCK5            (*(__IO uint32_t*)0x400E0654U) /**< (PMC) Programmable Clock 0 Register 5 */
-#define REG_PMC_PCK6            (*(__IO uint32_t*)0x400E0658U) /**< (PMC) Programmable Clock 0 Register 6 */
-#define REG_PMC_PCK7            (*(__IO uint32_t*)0x400E065CU) /**< (PMC) Programmable Clock 0 Register 7 */
+#define REG_PMC_PCK             (*(__IO uint32_t*)0x400E0640U) /**< (PMC) Programmable Clock Register */
+#define REG_PMC_PCK0            (*(__IO uint32_t*)0x400E0640U) /**< (PMC) Programmable Clock Register 0 */
+#define REG_PMC_PCK1            (*(__IO uint32_t*)0x400E0644U) /**< (PMC) Programmable Clock Register 1 */
+#define REG_PMC_PCK2            (*(__IO uint32_t*)0x400E0648U) /**< (PMC) Programmable Clock Register 2 */
+#define REG_PMC_PCK3            (*(__IO uint32_t*)0x400E064CU) /**< (PMC) Programmable Clock Register 3 */
+#define REG_PMC_PCK4            (*(__IO uint32_t*)0x400E0650U) /**< (PMC) Programmable Clock Register 4 */
+#define REG_PMC_PCK5            (*(__IO uint32_t*)0x400E0654U) /**< (PMC) Programmable Clock Register 5 */
+#define REG_PMC_PCK6            (*(__IO uint32_t*)0x400E0658U) /**< (PMC) Programmable Clock Register 6 */
+#define REG_PMC_PCK7            (*(__IO uint32_t*)0x400E065CU) /**< (PMC) Programmable Clock Register 7 */
 #define REG_PMC_IER             (*(__O  uint32_t*)0x400E0660U) /**< (PMC) Interrupt Enable Register */
 #define REG_PMC_IDR             (*(__O  uint32_t*)0x400E0664U) /**< (PMC) Interrupt Disable Register */
 #define REG_PMC_SR              (*(__I  uint32_t*)0x400E0668U) /**< (PMC) Status Register */
@@ -126,6 +127,7 @@
 #define REG_PMC_SLPWK_AIPR      (*(__I  uint32_t*)0x400E0744U) /**< (PMC) SleepWalking Activity In Progress Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for PMC peripheral ========== */
 #define PMC_INSTANCE_ID                          5         
 

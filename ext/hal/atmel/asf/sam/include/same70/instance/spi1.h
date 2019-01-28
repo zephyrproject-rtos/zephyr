@@ -3,7 +3,7 @@
  *
  * \brief Instance description for SPI1
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_SPI1_INSTANCE_H_
 #define _SAME70_SPI1_INSTANCE_H_
 
@@ -66,6 +67,7 @@
 #define REG_SPI1_WPSR           (*(__I  uint32_t*)0x400580E8U) /**< (SPI1) Write Protection Status Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for SPI1 peripheral ========== */
 #define SPI1_INSTANCE_ID                         42        
 #define SPI1_DMAC_ID_TX                          3         

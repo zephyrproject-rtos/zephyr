@@ -3,7 +3,7 @@
  *
  * \brief Component description for GPBR
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,11 +25,12 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_GPBR_COMPONENT_H_
 #define _SAME70_GPBR_COMPONENT_H_
 #define _SAME70_GPBR_COMPONENT_         /**< \deprecated  Backward compatibility for ASF */
 
-/** \addtogroup SAME70_GPBR General Purpose Backup Registers
+/** \addtogroup SAME_SAME70 General Purpose Backup Registers
  *  @{
  */
 /* ========================================================================== */
@@ -53,14 +54,12 @@ typedef union {
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
 #define GPBR_SYS_GPBR_OFFSET                (0x00)                                        /**<  (GPBR_SYS_GPBR) General Purpose Backup Register 0  Offset */
-#if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 
 #define GPBR_SYS_GPBR_GPBR_VALUE_Pos        0                                              /**< (GPBR_SYS_GPBR) Value of GPBR x Position */
-#define GPBR_SYS_GPBR_GPBR_VALUE_Msk        (0xFFFFFFFFU << GPBR_SYS_GPBR_GPBR_VALUE_Pos)  /**< (GPBR_SYS_GPBR) Value of GPBR x Mask */
+#define GPBR_SYS_GPBR_GPBR_VALUE_Msk        (_U_(0xFFFFFFFF) << GPBR_SYS_GPBR_GPBR_VALUE_Pos)  /**< (GPBR_SYS_GPBR) Value of GPBR x Mask */
 #define GPBR_SYS_GPBR_GPBR_VALUE(value)     (GPBR_SYS_GPBR_GPBR_VALUE_Msk & ((value) << GPBR_SYS_GPBR_GPBR_VALUE_Pos))
-#define GPBR_SYS_GPBR_MASK                  (0xFFFFFFFFU)                                  /**< \deprecated (GPBR_SYS_GPBR) Register MASK  (Use GPBR_SYS_GPBR_Msk instead)  */
-#define GPBR_SYS_GPBR_Msk                   (0xFFFFFFFFU)                                  /**< (GPBR_SYS_GPBR) Register Mask  */
-#endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+#define GPBR_SYS_GPBR_MASK                  _U_(0xFFFFFFFF)                                /**< \deprecated (GPBR_SYS_GPBR) Register MASK  (Use GPBR_SYS_GPBR_Msk instead)  */
+#define GPBR_SYS_GPBR_Msk                   _U_(0xFFFFFFFF)                                /**< (GPBR_SYS_GPBR) Register Mask  */
 
 
 #if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
@@ -81,8 +80,6 @@ typedef struct {
 #endif /* COMPONENT_TYPEDEF_STYLE */
 
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
-
-
 /** @}  end of General Purpose Backup Registers */
 
 #endif /* _SAME70_GPBR_COMPONENT_H_ */

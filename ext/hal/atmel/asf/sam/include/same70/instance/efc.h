@@ -3,7 +3,7 @@
  *
  * \brief Instance description for EFC
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_EFC_INSTANCE_H_
 #define _SAME70_EFC_INSTANCE_H_
 
@@ -46,6 +47,7 @@
 #define REG_EEFC_WPMR           (*(__IO uint32_t*)0x400E0CE4U) /**< (EFC) Write Protection Mode Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for EFC peripheral ========== */
 #define EFC_FLASH_SIZE                           2097152   
 #define EFC_INSTANCE_ID                          6         

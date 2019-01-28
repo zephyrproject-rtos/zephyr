@@ -3,7 +3,7 @@
  *
  * \brief Instance description for USART2
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_USART2_INSTANCE_H_
 #define _SAME70_USART2_INSTANCE_H_
 
@@ -98,6 +99,7 @@
 #define REG_USART2_US_WPSR      (*(__I  uint32_t*)0x4002C0E8U) /**< (USART2) Write Protection Status Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for USART2 peripheral ========== */
 #define USART2_INSTANCE_ID                       15        
 #define USART2_DMAC_ID_TX                        11        

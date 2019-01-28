@@ -3,7 +3,7 @@
  *
  * \brief Instance description for ICM
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_ICM_INSTANCE_H_
 #define _SAME70_ICM_INSTANCE_H_
 
@@ -55,7 +56,7 @@
 
 #define REG_ICM_CFG             (*(__IO uint32_t*)0x40048000U) /**< (ICM) Configuration Register */
 #define REG_ICM_CTRL            (*(__O  uint32_t*)0x40048004U) /**< (ICM) Control Register */
-#define REG_ICM_SR              (*(__O  uint32_t*)0x40048008U) /**< (ICM) Status Register */
+#define REG_ICM_SR              (*(__I  uint32_t*)0x40048008U) /**< (ICM) Status Register */
 #define REG_ICM_IER             (*(__O  uint32_t*)0x40048010U) /**< (ICM) Interrupt Enable Register */
 #define REG_ICM_IDR             (*(__O  uint32_t*)0x40048014U) /**< (ICM) Interrupt Disable Register */
 #define REG_ICM_IMR             (*(__I  uint32_t*)0x40048018U) /**< (ICM) Interrupt Mask Register */
@@ -74,6 +75,7 @@
 #define REG_ICM_UIHVAL7         (*(__O  uint32_t*)0x40048054U) /**< (ICM) User Initial Hash Value 0 Register 7 */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for ICM peripheral ========== */
 #define ICM_INSTANCE_ID                          32        
 

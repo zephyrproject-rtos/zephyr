@@ -3,7 +3,7 @@
  *
  * \brief Instance description for DACC
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_DACC_INSTANCE_H_
 #define _SAME70_DACC_INSTANCE_H_
 
@@ -68,6 +69,7 @@
 #define REG_DACC_WPSR           (*(__I  uint32_t*)0x400400E8U) /**< (DACC) Write Protection Status Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for DACC peripheral ========== */
 #define DACC_INSTANCE_ID                         30        
 #define DACC_DMAC_ID_TX                          30        

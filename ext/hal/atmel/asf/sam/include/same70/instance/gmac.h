@@ -3,7 +3,7 @@
  *
  * \brief Instance description for GMAC
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_GMAC_INSTANCE_H_
 #define _SAME70_GMAC_INSTANCE_H_
 
@@ -136,97 +137,97 @@
 #define REG_GMAC_PEFTN          (0x400501F4) /**< (GMAC) PTP Peer Event Frame Transmitted Nanoseconds Register */
 #define REG_GMAC_PEFRSL         (0x400501F8) /**< (GMAC) PTP Peer Event Frame Received Seconds Low Register */
 #define REG_GMAC_PEFRN          (0x400501FC) /**< (GMAC) PTP Peer Event Frame Received Nanoseconds Register */
-#define REG_GMAC_ISRPQ          (0x40050400) /**< (GMAC) Interrupt Status Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_ISRPQ0         (0x40050400) /**< (GMAC) Interrupt Status Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_ISRPQ1         (0x40050404) /**< (GMAC) Interrupt Status Register Priority Queue  (index = 1) 1 */
-#define REG_GMAC_TBQBAPQ        (0x40050440) /**< (GMAC) Transmit Buffer Queue Base Address Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_TBQBAPQ0       (0x40050440) /**< (GMAC) Transmit Buffer Queue Base Address Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_TBQBAPQ1       (0x40050444) /**< (GMAC) Transmit Buffer Queue Base Address Register Priority Queue  (index = 1) 1 */
-#define REG_GMAC_RBQBAPQ        (0x40050480) /**< (GMAC) Receive Buffer Queue Base Address Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_RBQBAPQ0       (0x40050480) /**< (GMAC) Receive Buffer Queue Base Address Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_RBQBAPQ1       (0x40050484) /**< (GMAC) Receive Buffer Queue Base Address Register Priority Queue  (index = 1) 1 */
-#define REG_GMAC_RBSRPQ         (0x400504A0) /**< (GMAC) Receive Buffer Size Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_RBSRPQ0        (0x400504A0) /**< (GMAC) Receive Buffer Size Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_RBSRPQ1        (0x400504A4) /**< (GMAC) Receive Buffer Size Register Priority Queue  (index = 1) 1 */
+#define REG_GMAC_ISRPQ          (0x400503FC) /**< (GMAC) Interrupt Status Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_ISRPQ0         (0x400503FC) /**< (GMAC) Interrupt Status Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_ISRPQ1         (0x40050400) /**< (GMAC) Interrupt Status Register Priority Queue (index = 1) 1 */
+#define REG_GMAC_TBQBAPQ        (0x4005043C) /**< (GMAC) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_TBQBAPQ0       (0x4005043C) /**< (GMAC) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_TBQBAPQ1       (0x40050440) /**< (GMAC) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 1 */
+#define REG_GMAC_RBQBAPQ        (0x4005047C) /**< (GMAC) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_RBQBAPQ0       (0x4005047C) /**< (GMAC) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_RBQBAPQ1       (0x40050480) /**< (GMAC) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 1 */
+#define REG_GMAC_RBSRPQ         (0x4005049C) /**< (GMAC) Receive Buffer Size Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_RBSRPQ0        (0x4005049C) /**< (GMAC) Receive Buffer Size Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_RBSRPQ1        (0x400504A0) /**< (GMAC) Receive Buffer Size Register Priority Queue (index = 1) 1 */
 #define REG_GMAC_CBSCR          (0x400504BC) /**< (GMAC) Credit-Based Shaping Control Register */
 #define REG_GMAC_CBSISQA        (0x400504C0) /**< (GMAC) Credit-Based Shaping IdleSlope Register for Queue A */
 #define REG_GMAC_CBSISQB        (0x400504C4) /**< (GMAC) Credit-Based Shaping IdleSlope Register for Queue B */
-#define REG_GMAC_ST1RPQ         (0x40050500) /**< (GMAC) Screening Type 1 Register Priority Queue  (index = 0) 0 */
-#define REG_GMAC_ST1RPQ0        (0x40050500) /**< (GMAC) Screening Type 1 Register Priority Queue  (index = 0) 0 */
-#define REG_GMAC_ST1RPQ1        (0x40050504) /**< (GMAC) Screening Type 1 Register Priority Queue  (index = 0) 1 */
-#define REG_GMAC_ST1RPQ2        (0x40050508) /**< (GMAC) Screening Type 1 Register Priority Queue  (index = 0) 2 */
-#define REG_GMAC_ST1RPQ3        (0x4005050C) /**< (GMAC) Screening Type 1 Register Priority Queue  (index = 0) 3 */
-#define REG_GMAC_ST2RPQ         (0x40050540) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 0 */
-#define REG_GMAC_ST2RPQ0        (0x40050540) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 0 */
-#define REG_GMAC_ST2RPQ1        (0x40050544) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 1 */
-#define REG_GMAC_ST2RPQ2        (0x40050548) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 2 */
-#define REG_GMAC_ST2RPQ3        (0x4005054C) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 3 */
-#define REG_GMAC_ST2RPQ4        (0x40050550) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 4 */
-#define REG_GMAC_ST2RPQ5        (0x40050554) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 5 */
-#define REG_GMAC_ST2RPQ6        (0x40050558) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 6 */
-#define REG_GMAC_ST2RPQ7        (0x4005055C) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 7 */
-#define REG_GMAC_IERPQ          (0x40050600) /**< (GMAC) Interrupt Enable Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_IERPQ0         (0x40050600) /**< (GMAC) Interrupt Enable Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_IERPQ1         (0x40050604) /**< (GMAC) Interrupt Enable Register Priority Queue  (index = 1) 1 */
-#define REG_GMAC_IDRPQ          (0x40050620) /**< (GMAC) Interrupt Disable Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_IDRPQ0         (0x40050620) /**< (GMAC) Interrupt Disable Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_IDRPQ1         (0x40050624) /**< (GMAC) Interrupt Disable Register Priority Queue  (index = 1) 1 */
-#define REG_GMAC_IMRPQ          (0x40050640) /**< (GMAC) Interrupt Mask Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_IMRPQ0         (0x40050640) /**< (GMAC) Interrupt Mask Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_IMRPQ1         (0x40050644) /**< (GMAC) Interrupt Mask Register Priority Queue  (index = 1) 1 */
-#define REG_GMAC_ST2ER          (0x400506E0) /**< (GMAC) Screening Type 2 Ethertype Register  (index = 0) 0 */
-#define REG_GMAC_ST2ER0         (0x400506E0) /**< (GMAC) Screening Type 2 Ethertype Register  (index = 0) 0 */
-#define REG_GMAC_ST2ER1         (0x400506E4) /**< (GMAC) Screening Type 2 Ethertype Register  (index = 0) 1 */
-#define REG_GMAC_ST2ER2         (0x400506E8) /**< (GMAC) Screening Type 2 Ethertype Register  (index = 0) 2 */
-#define REG_GMAC_ST2ER3         (0x400506EC) /**< (GMAC) Screening Type 2 Ethertype Register  (index = 0) 3 */
-#define REG_GMAC_ST2CW00        (0x40050700) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 0) */
-#define REG_GMAC_ST2CW10        (0x40050704) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 0) */
-#define REG_GMAC_ST2CW01        (0x40050708) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 1) */
-#define REG_GMAC_ST2CW11        (0x4005070C) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 1) */
-#define REG_GMAC_ST2CW02        (0x40050710) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 2) */
-#define REG_GMAC_ST2CW12        (0x40050714) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 2) */
-#define REG_GMAC_ST2CW03        (0x40050718) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 3) */
-#define REG_GMAC_ST2CW13        (0x4005071C) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 3) */
-#define REG_GMAC_ST2CW04        (0x40050720) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 4) */
-#define REG_GMAC_ST2CW14        (0x40050724) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 4) */
-#define REG_GMAC_ST2CW05        (0x40050728) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 5) */
-#define REG_GMAC_ST2CW15        (0x4005072C) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 5) */
-#define REG_GMAC_ST2CW06        (0x40050730) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 6) */
-#define REG_GMAC_ST2CW16        (0x40050734) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 6) */
-#define REG_GMAC_ST2CW07        (0x40050738) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 7) */
-#define REG_GMAC_ST2CW17        (0x4005073C) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 7) */
-#define REG_GMAC_ST2CW08        (0x40050740) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 8) */
-#define REG_GMAC_ST2CW18        (0x40050744) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 8) */
-#define REG_GMAC_ST2CW09        (0x40050748) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 9) */
-#define REG_GMAC_ST2CW19        (0x4005074C) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 9) */
-#define REG_GMAC_ST2CW010       (0x40050750) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 10) */
-#define REG_GMAC_ST2CW110       (0x40050754) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 10) */
-#define REG_GMAC_ST2CW011       (0x40050758) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 11) */
-#define REG_GMAC_ST2CW111       (0x4005075C) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 11) */
-#define REG_GMAC_ST2CW012       (0x40050760) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 12) */
-#define REG_GMAC_ST2CW112       (0x40050764) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 12) */
-#define REG_GMAC_ST2CW013       (0x40050768) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 13) */
-#define REG_GMAC_ST2CW113       (0x4005076C) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 13) */
-#define REG_GMAC_ST2CW014       (0x40050770) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 14) */
-#define REG_GMAC_ST2CW114       (0x40050774) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 14) */
-#define REG_GMAC_ST2CW015       (0x40050778) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 15) */
-#define REG_GMAC_ST2CW115       (0x4005077C) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 15) */
-#define REG_GMAC_ST2CW016       (0x40050780) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 16) */
-#define REG_GMAC_ST2CW116       (0x40050784) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 16) */
-#define REG_GMAC_ST2CW017       (0x40050788) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 17) */
-#define REG_GMAC_ST2CW117       (0x4005078C) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 17) */
-#define REG_GMAC_ST2CW018       (0x40050790) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 18) */
-#define REG_GMAC_ST2CW118       (0x40050794) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 18) */
-#define REG_GMAC_ST2CW019       (0x40050798) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 19) */
-#define REG_GMAC_ST2CW119       (0x4005079C) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 19) */
-#define REG_GMAC_ST2CW020       (0x400507A0) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 20) */
-#define REG_GMAC_ST2CW120       (0x400507A4) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 20) */
-#define REG_GMAC_ST2CW021       (0x400507A8) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 21) */
-#define REG_GMAC_ST2CW121       (0x400507AC) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 21) */
-#define REG_GMAC_ST2CW022       (0x400507B0) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 22) */
-#define REG_GMAC_ST2CW122       (0x400507B4) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 22) */
-#define REG_GMAC_ST2CW023       (0x400507B8) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 23) */
-#define REG_GMAC_ST2CW123       (0x400507BC) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 23) */
+#define REG_GMAC_ST1RPQ         (0x40050500) /**< (GMAC) Screening Type 1 Register Priority Queue (index = 0) 0 */
+#define REG_GMAC_ST1RPQ0        (0x40050500) /**< (GMAC) Screening Type 1 Register Priority Queue (index = 0) 0 */
+#define REG_GMAC_ST1RPQ1        (0x40050504) /**< (GMAC) Screening Type 1 Register Priority Queue (index = 0) 1 */
+#define REG_GMAC_ST1RPQ2        (0x40050508) /**< (GMAC) Screening Type 1 Register Priority Queue (index = 0) 2 */
+#define REG_GMAC_ST1RPQ3        (0x4005050C) /**< (GMAC) Screening Type 1 Register Priority Queue (index = 0) 3 */
+#define REG_GMAC_ST2RPQ         (0x40050540) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 0 */
+#define REG_GMAC_ST2RPQ0        (0x40050540) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 0 */
+#define REG_GMAC_ST2RPQ1        (0x40050544) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 1 */
+#define REG_GMAC_ST2RPQ2        (0x40050548) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 2 */
+#define REG_GMAC_ST2RPQ3        (0x4005054C) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 3 */
+#define REG_GMAC_ST2RPQ4        (0x40050550) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 4 */
+#define REG_GMAC_ST2RPQ5        (0x40050554) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 5 */
+#define REG_GMAC_ST2RPQ6        (0x40050558) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 6 */
+#define REG_GMAC_ST2RPQ7        (0x4005055C) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 7 */
+#define REG_GMAC_IERPQ          (0x400505FC) /**< (GMAC) Interrupt Enable Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_IERPQ0         (0x400505FC) /**< (GMAC) Interrupt Enable Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_IERPQ1         (0x40050600) /**< (GMAC) Interrupt Enable Register Priority Queue (index = 1) 1 */
+#define REG_GMAC_IDRPQ          (0x4005061C) /**< (GMAC) Interrupt Disable Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_IDRPQ0         (0x4005061C) /**< (GMAC) Interrupt Disable Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_IDRPQ1         (0x40050620) /**< (GMAC) Interrupt Disable Register Priority Queue (index = 1) 1 */
+#define REG_GMAC_IMRPQ          (0x4005063C) /**< (GMAC) Interrupt Mask Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_IMRPQ0         (0x4005063C) /**< (GMAC) Interrupt Mask Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_IMRPQ1         (0x40050640) /**< (GMAC) Interrupt Mask Register Priority Queue (index = 1) 1 */
+#define REG_GMAC_ST2ER          (0x400506E0) /**< (GMAC) Screening Type 2 Ethertype Register (index = 0) 0 */
+#define REG_GMAC_ST2ER0         (0x400506E0) /**< (GMAC) Screening Type 2 Ethertype Register (index = 0) 0 */
+#define REG_GMAC_ST2ER1         (0x400506E4) /**< (GMAC) Screening Type 2 Ethertype Register (index = 0) 1 */
+#define REG_GMAC_ST2ER2         (0x400506E8) /**< (GMAC) Screening Type 2 Ethertype Register (index = 0) 2 */
+#define REG_GMAC_ST2ER3         (0x400506EC) /**< (GMAC) Screening Type 2 Ethertype Register (index = 0) 3 */
+#define REG_GMAC_ST2CW00        (0x40050700) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 0) */
+#define REG_GMAC_ST2CW10        (0x40050704) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 0) */
+#define REG_GMAC_ST2CW01        (0x40050708) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 1) */
+#define REG_GMAC_ST2CW11        (0x4005070C) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 1) */
+#define REG_GMAC_ST2CW02        (0x40050710) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 2) */
+#define REG_GMAC_ST2CW12        (0x40050714) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 2) */
+#define REG_GMAC_ST2CW03        (0x40050718) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 3) */
+#define REG_GMAC_ST2CW13        (0x4005071C) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 3) */
+#define REG_GMAC_ST2CW04        (0x40050720) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 4) */
+#define REG_GMAC_ST2CW14        (0x40050724) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 4) */
+#define REG_GMAC_ST2CW05        (0x40050728) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 5) */
+#define REG_GMAC_ST2CW15        (0x4005072C) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 5) */
+#define REG_GMAC_ST2CW06        (0x40050730) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 6) */
+#define REG_GMAC_ST2CW16        (0x40050734) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 6) */
+#define REG_GMAC_ST2CW07        (0x40050738) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 7) */
+#define REG_GMAC_ST2CW17        (0x4005073C) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 7) */
+#define REG_GMAC_ST2CW08        (0x40050740) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 8) */
+#define REG_GMAC_ST2CW18        (0x40050744) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 8) */
+#define REG_GMAC_ST2CW09        (0x40050748) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 9) */
+#define REG_GMAC_ST2CW19        (0x4005074C) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 9) */
+#define REG_GMAC_ST2CW010       (0x40050750) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 10) */
+#define REG_GMAC_ST2CW110       (0x40050754) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 10) */
+#define REG_GMAC_ST2CW011       (0x40050758) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 11) */
+#define REG_GMAC_ST2CW111       (0x4005075C) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 11) */
+#define REG_GMAC_ST2CW012       (0x40050760) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 12) */
+#define REG_GMAC_ST2CW112       (0x40050764) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 12) */
+#define REG_GMAC_ST2CW013       (0x40050768) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 13) */
+#define REG_GMAC_ST2CW113       (0x4005076C) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 13) */
+#define REG_GMAC_ST2CW014       (0x40050770) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 14) */
+#define REG_GMAC_ST2CW114       (0x40050774) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 14) */
+#define REG_GMAC_ST2CW015       (0x40050778) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 15) */
+#define REG_GMAC_ST2CW115       (0x4005077C) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 15) */
+#define REG_GMAC_ST2CW016       (0x40050780) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 16) */
+#define REG_GMAC_ST2CW116       (0x40050784) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 16) */
+#define REG_GMAC_ST2CW017       (0x40050788) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 17) */
+#define REG_GMAC_ST2CW117       (0x4005078C) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 17) */
+#define REG_GMAC_ST2CW018       (0x40050790) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 18) */
+#define REG_GMAC_ST2CW118       (0x40050794) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 18) */
+#define REG_GMAC_ST2CW019       (0x40050798) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 19) */
+#define REG_GMAC_ST2CW119       (0x4005079C) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 19) */
+#define REG_GMAC_ST2CW020       (0x400507A0) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 20) */
+#define REG_GMAC_ST2CW120       (0x400507A4) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 20) */
+#define REG_GMAC_ST2CW021       (0x400507A8) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 21) */
+#define REG_GMAC_ST2CW121       (0x400507AC) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 21) */
+#define REG_GMAC_ST2CW022       (0x400507B0) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 22) */
+#define REG_GMAC_ST2CW122       (0x400507B4) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 22) */
+#define REG_GMAC_ST2CW023       (0x400507B8) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 23) */
+#define REG_GMAC_ST2CW123       (0x400507BC) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 23) */
 
 #else
 
@@ -335,99 +336,100 @@
 #define REG_GMAC_PEFTN          (*(__I  uint32_t*)0x400501F4U) /**< (GMAC) PTP Peer Event Frame Transmitted Nanoseconds Register */
 #define REG_GMAC_PEFRSL         (*(__I  uint32_t*)0x400501F8U) /**< (GMAC) PTP Peer Event Frame Received Seconds Low Register */
 #define REG_GMAC_PEFRN          (*(__I  uint32_t*)0x400501FCU) /**< (GMAC) PTP Peer Event Frame Received Nanoseconds Register */
-#define REG_GMAC_ISRPQ          (*(__I  uint32_t*)0x40050400U) /**< (GMAC) Interrupt Status Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_ISRPQ0         (*(__I  uint32_t*)0x40050400U) /**< (GMAC) Interrupt Status Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_ISRPQ1         (*(__I  uint32_t*)0x40050404U) /**< (GMAC) Interrupt Status Register Priority Queue  (index = 1) 1 */
-#define REG_GMAC_TBQBAPQ        (*(__IO uint32_t*)0x40050440U) /**< (GMAC) Transmit Buffer Queue Base Address Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_TBQBAPQ0       (*(__IO uint32_t*)0x40050440U) /**< (GMAC) Transmit Buffer Queue Base Address Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_TBQBAPQ1       (*(__IO uint32_t*)0x40050444U) /**< (GMAC) Transmit Buffer Queue Base Address Register Priority Queue  (index = 1) 1 */
-#define REG_GMAC_RBQBAPQ        (*(__IO uint32_t*)0x40050480U) /**< (GMAC) Receive Buffer Queue Base Address Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_RBQBAPQ0       (*(__IO uint32_t*)0x40050480U) /**< (GMAC) Receive Buffer Queue Base Address Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_RBQBAPQ1       (*(__IO uint32_t*)0x40050484U) /**< (GMAC) Receive Buffer Queue Base Address Register Priority Queue  (index = 1) 1 */
-#define REG_GMAC_RBSRPQ         (*(__IO uint32_t*)0x400504A0U) /**< (GMAC) Receive Buffer Size Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_RBSRPQ0        (*(__IO uint32_t*)0x400504A0U) /**< (GMAC) Receive Buffer Size Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_RBSRPQ1        (*(__IO uint32_t*)0x400504A4U) /**< (GMAC) Receive Buffer Size Register Priority Queue  (index = 1) 1 */
+#define REG_GMAC_ISRPQ          (*(__I  uint32_t*)0x400503FCU) /**< (GMAC) Interrupt Status Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_ISRPQ0         (*(__I  uint32_t*)0x400503FCU) /**< (GMAC) Interrupt Status Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_ISRPQ1         (*(__I  uint32_t*)0x40050400U) /**< (GMAC) Interrupt Status Register Priority Queue (index = 1) 1 */
+#define REG_GMAC_TBQBAPQ        (*(__IO uint32_t*)0x4005043CU) /**< (GMAC) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_TBQBAPQ0       (*(__IO uint32_t*)0x4005043CU) /**< (GMAC) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_TBQBAPQ1       (*(__IO uint32_t*)0x40050440U) /**< (GMAC) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 1 */
+#define REG_GMAC_RBQBAPQ        (*(__IO uint32_t*)0x4005047CU) /**< (GMAC) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_RBQBAPQ0       (*(__IO uint32_t*)0x4005047CU) /**< (GMAC) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_RBQBAPQ1       (*(__IO uint32_t*)0x40050480U) /**< (GMAC) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 1 */
+#define REG_GMAC_RBSRPQ         (*(__IO uint32_t*)0x4005049CU) /**< (GMAC) Receive Buffer Size Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_RBSRPQ0        (*(__IO uint32_t*)0x4005049CU) /**< (GMAC) Receive Buffer Size Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_RBSRPQ1        (*(__IO uint32_t*)0x400504A0U) /**< (GMAC) Receive Buffer Size Register Priority Queue (index = 1) 1 */
 #define REG_GMAC_CBSCR          (*(__IO uint32_t*)0x400504BCU) /**< (GMAC) Credit-Based Shaping Control Register */
 #define REG_GMAC_CBSISQA        (*(__IO uint32_t*)0x400504C0U) /**< (GMAC) Credit-Based Shaping IdleSlope Register for Queue A */
 #define REG_GMAC_CBSISQB        (*(__IO uint32_t*)0x400504C4U) /**< (GMAC) Credit-Based Shaping IdleSlope Register for Queue B */
-#define REG_GMAC_ST1RPQ         (*(__IO uint32_t*)0x40050500U) /**< (GMAC) Screening Type 1 Register Priority Queue  (index = 0) 0 */
-#define REG_GMAC_ST1RPQ0        (*(__IO uint32_t*)0x40050500U) /**< (GMAC) Screening Type 1 Register Priority Queue  (index = 0) 0 */
-#define REG_GMAC_ST1RPQ1        (*(__IO uint32_t*)0x40050504U) /**< (GMAC) Screening Type 1 Register Priority Queue  (index = 0) 1 */
-#define REG_GMAC_ST1RPQ2        (*(__IO uint32_t*)0x40050508U) /**< (GMAC) Screening Type 1 Register Priority Queue  (index = 0) 2 */
-#define REG_GMAC_ST1RPQ3        (*(__IO uint32_t*)0x4005050CU) /**< (GMAC) Screening Type 1 Register Priority Queue  (index = 0) 3 */
-#define REG_GMAC_ST2RPQ         (*(__IO uint32_t*)0x40050540U) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 0 */
-#define REG_GMAC_ST2RPQ0        (*(__IO uint32_t*)0x40050540U) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 0 */
-#define REG_GMAC_ST2RPQ1        (*(__IO uint32_t*)0x40050544U) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 1 */
-#define REG_GMAC_ST2RPQ2        (*(__IO uint32_t*)0x40050548U) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 2 */
-#define REG_GMAC_ST2RPQ3        (*(__IO uint32_t*)0x4005054CU) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 3 */
-#define REG_GMAC_ST2RPQ4        (*(__IO uint32_t*)0x40050550U) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 4 */
-#define REG_GMAC_ST2RPQ5        (*(__IO uint32_t*)0x40050554U) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 5 */
-#define REG_GMAC_ST2RPQ6        (*(__IO uint32_t*)0x40050558U) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 6 */
-#define REG_GMAC_ST2RPQ7        (*(__IO uint32_t*)0x4005055CU) /**< (GMAC) Screening Type 2 Register Priority Queue  (index = 0) 7 */
-#define REG_GMAC_IERPQ          (*(__O  uint32_t*)0x40050600U) /**< (GMAC) Interrupt Enable Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_IERPQ0         (*(__O  uint32_t*)0x40050600U) /**< (GMAC) Interrupt Enable Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_IERPQ1         (*(__O  uint32_t*)0x40050604U) /**< (GMAC) Interrupt Enable Register Priority Queue  (index = 1) 1 */
-#define REG_GMAC_IDRPQ          (*(__O  uint32_t*)0x40050620U) /**< (GMAC) Interrupt Disable Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_IDRPQ0         (*(__O  uint32_t*)0x40050620U) /**< (GMAC) Interrupt Disable Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_IDRPQ1         (*(__O  uint32_t*)0x40050624U) /**< (GMAC) Interrupt Disable Register Priority Queue  (index = 1) 1 */
-#define REG_GMAC_IMRPQ          (*(__IO uint32_t*)0x40050640U) /**< (GMAC) Interrupt Mask Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_IMRPQ0         (*(__IO uint32_t*)0x40050640U) /**< (GMAC) Interrupt Mask Register Priority Queue  (index = 1) 0 */
-#define REG_GMAC_IMRPQ1         (*(__IO uint32_t*)0x40050644U) /**< (GMAC) Interrupt Mask Register Priority Queue  (index = 1) 1 */
-#define REG_GMAC_ST2ER          (*(__IO uint32_t*)0x400506E0U) /**< (GMAC) Screening Type 2 Ethertype Register  (index = 0) 0 */
-#define REG_GMAC_ST2ER0         (*(__IO uint32_t*)0x400506E0U) /**< (GMAC) Screening Type 2 Ethertype Register  (index = 0) 0 */
-#define REG_GMAC_ST2ER1         (*(__IO uint32_t*)0x400506E4U) /**< (GMAC) Screening Type 2 Ethertype Register  (index = 0) 1 */
-#define REG_GMAC_ST2ER2         (*(__IO uint32_t*)0x400506E8U) /**< (GMAC) Screening Type 2 Ethertype Register  (index = 0) 2 */
-#define REG_GMAC_ST2ER3         (*(__IO uint32_t*)0x400506ECU) /**< (GMAC) Screening Type 2 Ethertype Register  (index = 0) 3 */
-#define REG_GMAC_ST2CW00        (*(__IO uint32_t*)0x40050700U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 0) */
-#define REG_GMAC_ST2CW10        (*(__IO uint32_t*)0x40050704U) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 0) */
-#define REG_GMAC_ST2CW01        (*(__IO uint32_t*)0x40050708U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 1) */
-#define REG_GMAC_ST2CW11        (*(__IO uint32_t*)0x4005070CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 1) */
-#define REG_GMAC_ST2CW02        (*(__IO uint32_t*)0x40050710U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 2) */
-#define REG_GMAC_ST2CW12        (*(__IO uint32_t*)0x40050714U) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 2) */
-#define REG_GMAC_ST2CW03        (*(__IO uint32_t*)0x40050718U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 3) */
-#define REG_GMAC_ST2CW13        (*(__IO uint32_t*)0x4005071CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 3) */
-#define REG_GMAC_ST2CW04        (*(__IO uint32_t*)0x40050720U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 4) */
-#define REG_GMAC_ST2CW14        (*(__IO uint32_t*)0x40050724U) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 4) */
-#define REG_GMAC_ST2CW05        (*(__IO uint32_t*)0x40050728U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 5) */
-#define REG_GMAC_ST2CW15        (*(__IO uint32_t*)0x4005072CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 5) */
-#define REG_GMAC_ST2CW06        (*(__IO uint32_t*)0x40050730U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 6) */
-#define REG_GMAC_ST2CW16        (*(__IO uint32_t*)0x40050734U) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 6) */
-#define REG_GMAC_ST2CW07        (*(__IO uint32_t*)0x40050738U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 7) */
-#define REG_GMAC_ST2CW17        (*(__IO uint32_t*)0x4005073CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 7) */
-#define REG_GMAC_ST2CW08        (*(__IO uint32_t*)0x40050740U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 8) */
-#define REG_GMAC_ST2CW18        (*(__IO uint32_t*)0x40050744U) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 8) */
-#define REG_GMAC_ST2CW09        (*(__IO uint32_t*)0x40050748U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 9) */
-#define REG_GMAC_ST2CW19        (*(__IO uint32_t*)0x4005074CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 9) */
-#define REG_GMAC_ST2CW010       (*(__IO uint32_t*)0x40050750U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 10) */
-#define REG_GMAC_ST2CW110       (*(__IO uint32_t*)0x40050754U) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 10) */
-#define REG_GMAC_ST2CW011       (*(__IO uint32_t*)0x40050758U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 11) */
-#define REG_GMAC_ST2CW111       (*(__IO uint32_t*)0x4005075CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 11) */
-#define REG_GMAC_ST2CW012       (*(__IO uint32_t*)0x40050760U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 12) */
-#define REG_GMAC_ST2CW112       (*(__IO uint32_t*)0x40050764U) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 12) */
-#define REG_GMAC_ST2CW013       (*(__IO uint32_t*)0x40050768U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 13) */
-#define REG_GMAC_ST2CW113       (*(__IO uint32_t*)0x4005076CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 13) */
-#define REG_GMAC_ST2CW014       (*(__IO uint32_t*)0x40050770U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 14) */
-#define REG_GMAC_ST2CW114       (*(__IO uint32_t*)0x40050774U) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 14) */
-#define REG_GMAC_ST2CW015       (*(__IO uint32_t*)0x40050778U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 15) */
-#define REG_GMAC_ST2CW115       (*(__IO uint32_t*)0x4005077CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 15) */
-#define REG_GMAC_ST2CW016       (*(__IO uint32_t*)0x40050780U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 16) */
-#define REG_GMAC_ST2CW116       (*(__IO uint32_t*)0x40050784U) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 16) */
-#define REG_GMAC_ST2CW017       (*(__IO uint32_t*)0x40050788U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 17) */
-#define REG_GMAC_ST2CW117       (*(__IO uint32_t*)0x4005078CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 17) */
-#define REG_GMAC_ST2CW018       (*(__IO uint32_t*)0x40050790U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 18) */
-#define REG_GMAC_ST2CW118       (*(__IO uint32_t*)0x40050794U) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 18) */
-#define REG_GMAC_ST2CW019       (*(__IO uint32_t*)0x40050798U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 19) */
-#define REG_GMAC_ST2CW119       (*(__IO uint32_t*)0x4005079CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 19) */
-#define REG_GMAC_ST2CW020       (*(__IO uint32_t*)0x400507A0U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 20) */
-#define REG_GMAC_ST2CW120       (*(__IO uint32_t*)0x400507A4U) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 20) */
-#define REG_GMAC_ST2CW021       (*(__IO uint32_t*)0x400507A8U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 21) */
-#define REG_GMAC_ST2CW121       (*(__IO uint32_t*)0x400507ACU) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 21) */
-#define REG_GMAC_ST2CW022       (*(__IO uint32_t*)0x400507B0U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 22) */
-#define REG_GMAC_ST2CW122       (*(__IO uint32_t*)0x400507B4U) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 22) */
-#define REG_GMAC_ST2CW023       (*(__IO uint32_t*)0x400507B8U) /**< (GMAC) Screening Type 2 Compare Word 0 Register  (index = 23) */
-#define REG_GMAC_ST2CW123       (*(__IO uint32_t*)0x400507BCU) /**< (GMAC) Screening Type 2 Compare Word 1 Register  (index = 23) */
+#define REG_GMAC_ST1RPQ         (*(__IO uint32_t*)0x40050500U) /**< (GMAC) Screening Type 1 Register Priority Queue (index = 0) 0 */
+#define REG_GMAC_ST1RPQ0        (*(__IO uint32_t*)0x40050500U) /**< (GMAC) Screening Type 1 Register Priority Queue (index = 0) 0 */
+#define REG_GMAC_ST1RPQ1        (*(__IO uint32_t*)0x40050504U) /**< (GMAC) Screening Type 1 Register Priority Queue (index = 0) 1 */
+#define REG_GMAC_ST1RPQ2        (*(__IO uint32_t*)0x40050508U) /**< (GMAC) Screening Type 1 Register Priority Queue (index = 0) 2 */
+#define REG_GMAC_ST1RPQ3        (*(__IO uint32_t*)0x4005050CU) /**< (GMAC) Screening Type 1 Register Priority Queue (index = 0) 3 */
+#define REG_GMAC_ST2RPQ         (*(__IO uint32_t*)0x40050540U) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 0 */
+#define REG_GMAC_ST2RPQ0        (*(__IO uint32_t*)0x40050540U) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 0 */
+#define REG_GMAC_ST2RPQ1        (*(__IO uint32_t*)0x40050544U) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 1 */
+#define REG_GMAC_ST2RPQ2        (*(__IO uint32_t*)0x40050548U) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 2 */
+#define REG_GMAC_ST2RPQ3        (*(__IO uint32_t*)0x4005054CU) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 3 */
+#define REG_GMAC_ST2RPQ4        (*(__IO uint32_t*)0x40050550U) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 4 */
+#define REG_GMAC_ST2RPQ5        (*(__IO uint32_t*)0x40050554U) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 5 */
+#define REG_GMAC_ST2RPQ6        (*(__IO uint32_t*)0x40050558U) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 6 */
+#define REG_GMAC_ST2RPQ7        (*(__IO uint32_t*)0x4005055CU) /**< (GMAC) Screening Type 2 Register Priority Queue (index = 0) 7 */
+#define REG_GMAC_IERPQ          (*(__O  uint32_t*)0x400505FCU) /**< (GMAC) Interrupt Enable Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_IERPQ0         (*(__O  uint32_t*)0x400505FCU) /**< (GMAC) Interrupt Enable Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_IERPQ1         (*(__O  uint32_t*)0x40050600U) /**< (GMAC) Interrupt Enable Register Priority Queue (index = 1) 1 */
+#define REG_GMAC_IDRPQ          (*(__O  uint32_t*)0x4005061CU) /**< (GMAC) Interrupt Disable Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_IDRPQ0         (*(__O  uint32_t*)0x4005061CU) /**< (GMAC) Interrupt Disable Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_IDRPQ1         (*(__O  uint32_t*)0x40050620U) /**< (GMAC) Interrupt Disable Register Priority Queue (index = 1) 1 */
+#define REG_GMAC_IMRPQ          (*(__IO uint32_t*)0x4005063CU) /**< (GMAC) Interrupt Mask Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_IMRPQ0         (*(__IO uint32_t*)0x4005063CU) /**< (GMAC) Interrupt Mask Register Priority Queue (index = 1) 0 */
+#define REG_GMAC_IMRPQ1         (*(__IO uint32_t*)0x40050640U) /**< (GMAC) Interrupt Mask Register Priority Queue (index = 1) 1 */
+#define REG_GMAC_ST2ER          (*(__IO uint32_t*)0x400506E0U) /**< (GMAC) Screening Type 2 Ethertype Register (index = 0) 0 */
+#define REG_GMAC_ST2ER0         (*(__IO uint32_t*)0x400506E0U) /**< (GMAC) Screening Type 2 Ethertype Register (index = 0) 0 */
+#define REG_GMAC_ST2ER1         (*(__IO uint32_t*)0x400506E4U) /**< (GMAC) Screening Type 2 Ethertype Register (index = 0) 1 */
+#define REG_GMAC_ST2ER2         (*(__IO uint32_t*)0x400506E8U) /**< (GMAC) Screening Type 2 Ethertype Register (index = 0) 2 */
+#define REG_GMAC_ST2ER3         (*(__IO uint32_t*)0x400506ECU) /**< (GMAC) Screening Type 2 Ethertype Register (index = 0) 3 */
+#define REG_GMAC_ST2CW00        (*(__IO uint32_t*)0x40050700U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 0) */
+#define REG_GMAC_ST2CW10        (*(__IO uint32_t*)0x40050704U) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 0) */
+#define REG_GMAC_ST2CW01        (*(__IO uint32_t*)0x40050708U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 1) */
+#define REG_GMAC_ST2CW11        (*(__IO uint32_t*)0x4005070CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 1) */
+#define REG_GMAC_ST2CW02        (*(__IO uint32_t*)0x40050710U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 2) */
+#define REG_GMAC_ST2CW12        (*(__IO uint32_t*)0x40050714U) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 2) */
+#define REG_GMAC_ST2CW03        (*(__IO uint32_t*)0x40050718U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 3) */
+#define REG_GMAC_ST2CW13        (*(__IO uint32_t*)0x4005071CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 3) */
+#define REG_GMAC_ST2CW04        (*(__IO uint32_t*)0x40050720U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 4) */
+#define REG_GMAC_ST2CW14        (*(__IO uint32_t*)0x40050724U) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 4) */
+#define REG_GMAC_ST2CW05        (*(__IO uint32_t*)0x40050728U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 5) */
+#define REG_GMAC_ST2CW15        (*(__IO uint32_t*)0x4005072CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 5) */
+#define REG_GMAC_ST2CW06        (*(__IO uint32_t*)0x40050730U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 6) */
+#define REG_GMAC_ST2CW16        (*(__IO uint32_t*)0x40050734U) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 6) */
+#define REG_GMAC_ST2CW07        (*(__IO uint32_t*)0x40050738U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 7) */
+#define REG_GMAC_ST2CW17        (*(__IO uint32_t*)0x4005073CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 7) */
+#define REG_GMAC_ST2CW08        (*(__IO uint32_t*)0x40050740U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 8) */
+#define REG_GMAC_ST2CW18        (*(__IO uint32_t*)0x40050744U) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 8) */
+#define REG_GMAC_ST2CW09        (*(__IO uint32_t*)0x40050748U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 9) */
+#define REG_GMAC_ST2CW19        (*(__IO uint32_t*)0x4005074CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 9) */
+#define REG_GMAC_ST2CW010       (*(__IO uint32_t*)0x40050750U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 10) */
+#define REG_GMAC_ST2CW110       (*(__IO uint32_t*)0x40050754U) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 10) */
+#define REG_GMAC_ST2CW011       (*(__IO uint32_t*)0x40050758U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 11) */
+#define REG_GMAC_ST2CW111       (*(__IO uint32_t*)0x4005075CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 11) */
+#define REG_GMAC_ST2CW012       (*(__IO uint32_t*)0x40050760U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 12) */
+#define REG_GMAC_ST2CW112       (*(__IO uint32_t*)0x40050764U) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 12) */
+#define REG_GMAC_ST2CW013       (*(__IO uint32_t*)0x40050768U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 13) */
+#define REG_GMAC_ST2CW113       (*(__IO uint32_t*)0x4005076CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 13) */
+#define REG_GMAC_ST2CW014       (*(__IO uint32_t*)0x40050770U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 14) */
+#define REG_GMAC_ST2CW114       (*(__IO uint32_t*)0x40050774U) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 14) */
+#define REG_GMAC_ST2CW015       (*(__IO uint32_t*)0x40050778U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 15) */
+#define REG_GMAC_ST2CW115       (*(__IO uint32_t*)0x4005077CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 15) */
+#define REG_GMAC_ST2CW016       (*(__IO uint32_t*)0x40050780U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 16) */
+#define REG_GMAC_ST2CW116       (*(__IO uint32_t*)0x40050784U) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 16) */
+#define REG_GMAC_ST2CW017       (*(__IO uint32_t*)0x40050788U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 17) */
+#define REG_GMAC_ST2CW117       (*(__IO uint32_t*)0x4005078CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 17) */
+#define REG_GMAC_ST2CW018       (*(__IO uint32_t*)0x40050790U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 18) */
+#define REG_GMAC_ST2CW118       (*(__IO uint32_t*)0x40050794U) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 18) */
+#define REG_GMAC_ST2CW019       (*(__IO uint32_t*)0x40050798U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 19) */
+#define REG_GMAC_ST2CW119       (*(__IO uint32_t*)0x4005079CU) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 19) */
+#define REG_GMAC_ST2CW020       (*(__IO uint32_t*)0x400507A0U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 20) */
+#define REG_GMAC_ST2CW120       (*(__IO uint32_t*)0x400507A4U) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 20) */
+#define REG_GMAC_ST2CW021       (*(__IO uint32_t*)0x400507A8U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 21) */
+#define REG_GMAC_ST2CW121       (*(__IO uint32_t*)0x400507ACU) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 21) */
+#define REG_GMAC_ST2CW022       (*(__IO uint32_t*)0x400507B0U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 22) */
+#define REG_GMAC_ST2CW122       (*(__IO uint32_t*)0x400507B4U) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 22) */
+#define REG_GMAC_ST2CW023       (*(__IO uint32_t*)0x400507B8U) /**< (GMAC) Screening Type 2 Compare Word 0 Register (index = 23) */
+#define REG_GMAC_ST2CW123       (*(__IO uint32_t*)0x400507BCU) /**< (GMAC) Screening Type 2 Compare Word 1 Register (index = 23) */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for GMAC peripheral ========== */
 #define GMAC_INSTANCE_ID                         39        
 

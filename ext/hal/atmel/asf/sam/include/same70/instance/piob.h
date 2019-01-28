@@ -3,7 +3,7 @@
  *
  * \brief Instance description for PIOB
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_PIOB_INSTANCE_H_
 #define _SAME70_PIOB_INSTANCE_H_
 
@@ -54,9 +55,9 @@
 #define REG_PIOB_PUDR           (0x400E1060) /**< (PIOB) Pull-up Disable Register */
 #define REG_PIOB_PUER           (0x400E1064) /**< (PIOB) Pull-up Enable Register */
 #define REG_PIOB_PUSR           (0x400E1068) /**< (PIOB) Pad Pull-up Status Register */
-#define REG_PIOB_ABCDSR         (0x400E1070) /**< (PIOB) Peripheral Select Register 0 */
-#define REG_PIOB_ABCDSR0        (0x400E1070) /**< (PIOB) Peripheral Select Register 0 */
-#define REG_PIOB_ABCDSR1        (0x400E1074) /**< (PIOB) Peripheral Select Register 1 */
+#define REG_PIOB_ABCDSR         (0x400E1070) /**< (PIOB) Peripheral ABCD Select Register 0 */
+#define REG_PIOB_ABCDSR0        (0x400E1070) /**< (PIOB) Peripheral ABCD Select Register 0 */
+#define REG_PIOB_ABCDSR1        (0x400E1074) /**< (PIOB) Peripheral ABCD Select Register 1 */
 #define REG_PIOB_IFSCDR         (0x400E1080) /**< (PIOB) Input Filter Slow Clock Disable Register */
 #define REG_PIOB_IFSCER         (0x400E1084) /**< (PIOB) Input Filter Slow Clock Enable Register */
 #define REG_PIOB_IFSCSR         (0x400E1088) /**< (PIOB) Input Filter Slow Clock Status Register */
@@ -113,9 +114,9 @@
 #define REG_PIOB_PUDR           (*(__O  uint32_t*)0x400E1060U) /**< (PIOB) Pull-up Disable Register */
 #define REG_PIOB_PUER           (*(__O  uint32_t*)0x400E1064U) /**< (PIOB) Pull-up Enable Register */
 #define REG_PIOB_PUSR           (*(__I  uint32_t*)0x400E1068U) /**< (PIOB) Pad Pull-up Status Register */
-#define REG_PIOB_ABCDSR         (*(__IO uint32_t*)0x400E1070U) /**< (PIOB) Peripheral Select Register 0 */
-#define REG_PIOB_ABCDSR0        (*(__IO uint32_t*)0x400E1070U) /**< (PIOB) Peripheral Select Register 0 */
-#define REG_PIOB_ABCDSR1        (*(__IO uint32_t*)0x400E1074U) /**< (PIOB) Peripheral Select Register 1 */
+#define REG_PIOB_ABCDSR         (*(__IO uint32_t*)0x400E1070U) /**< (PIOB) Peripheral ABCD Select Register 0 */
+#define REG_PIOB_ABCDSR0        (*(__IO uint32_t*)0x400E1070U) /**< (PIOB) Peripheral ABCD Select Register 0 */
+#define REG_PIOB_ABCDSR1        (*(__IO uint32_t*)0x400E1074U) /**< (PIOB) Peripheral ABCD Select Register 1 */
 #define REG_PIOB_IFSCDR         (*(__O  uint32_t*)0x400E1080U) /**< (PIOB) Input Filter Slow Clock Disable Register */
 #define REG_PIOB_IFSCER         (*(__O  uint32_t*)0x400E1084U) /**< (PIOB) Input Filter Slow Clock Enable Register */
 #define REG_PIOB_IFSCSR         (*(__I  uint32_t*)0x400E1088U) /**< (PIOB) Input Filter Slow Clock Status Register */
@@ -148,6 +149,7 @@
 #define REG_PIOB_PCRHR          (*(__I  uint32_t*)0x400E1164U) /**< (PIOB) Parallel Capture Reception Holding Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for PIOB peripheral ========== */
 #define PIOB_INSTANCE_ID                         11        
 

@@ -3,7 +3,7 @@
  *
  * \brief Instance description for TC1
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_TC1_INSTANCE_H_
 #define _SAME70_TC1_INSTANCE_H_
 
@@ -130,6 +131,7 @@
 #define REG_TC1_WPMR            (*(__IO uint32_t*)0x400100E4U) /**< (TC1) Write Protection Mode Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for TC1 peripheral ========== */
 #define TC1_INSTANCE_ID_CHANNEL1                 27        
 #define TC1_INSTANCE_ID_CHANNEL0                 26        

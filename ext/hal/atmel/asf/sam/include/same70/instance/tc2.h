@@ -3,7 +3,7 @@
  *
  * \brief Instance description for TC2
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_TC2_INSTANCE_H_
 #define _SAME70_TC2_INSTANCE_H_
 
@@ -130,6 +131,7 @@
 #define REG_TC2_WPMR            (*(__IO uint32_t*)0x400140E4U) /**< (TC2) Write Protection Mode Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for TC2 peripheral ========== */
 #define TC2_INSTANCE_ID_CHANNEL1                 48        
 #define TC2_INSTANCE_ID_CHANNEL0                 47        

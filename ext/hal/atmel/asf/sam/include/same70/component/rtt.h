@@ -3,7 +3,7 @@
  *
  * \brief Component description for RTT
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,11 +25,12 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_RTT_COMPONENT_H_
 #define _SAME70_RTT_COMPONENT_H_
 #define _SAME70_RTT_COMPONENT_         /**< \deprecated  Backward compatibility for ASF */
 
-/** \addtogroup SAME70_RTT Real-time Timer
+/** \addtogroup SAME_SAME70 Real-time Timer
  *  @{
  */
 /* ========================================================================== */
@@ -61,29 +62,27 @@ typedef union {
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
 #define RTT_MR_OFFSET                       (0x00)                                        /**<  (RTT_MR) Mode Register  Offset */
-#if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 
 #define RTT_MR_RTPRES_Pos                   0                                              /**< (RTT_MR) Real-time Timer Prescaler Value Position */
-#define RTT_MR_RTPRES_Msk                   (0xFFFFU << RTT_MR_RTPRES_Pos)                 /**< (RTT_MR) Real-time Timer Prescaler Value Mask */
+#define RTT_MR_RTPRES_Msk                   (_U_(0xFFFF) << RTT_MR_RTPRES_Pos)             /**< (RTT_MR) Real-time Timer Prescaler Value Mask */
 #define RTT_MR_RTPRES(value)                (RTT_MR_RTPRES_Msk & ((value) << RTT_MR_RTPRES_Pos))
 #define RTT_MR_ALMIEN_Pos                   16                                             /**< (RTT_MR) Alarm Interrupt Enable Position */
-#define RTT_MR_ALMIEN_Msk                   (0x1U << RTT_MR_ALMIEN_Pos)                    /**< (RTT_MR) Alarm Interrupt Enable Mask */
+#define RTT_MR_ALMIEN_Msk                   (_U_(0x1) << RTT_MR_ALMIEN_Pos)                /**< (RTT_MR) Alarm Interrupt Enable Mask */
 #define RTT_MR_ALMIEN                       RTT_MR_ALMIEN_Msk                              /**< \deprecated Old style mask definition for 1 bit bitfield. Use RTT_MR_ALMIEN_Msk instead */
 #define RTT_MR_RTTINCIEN_Pos                17                                             /**< (RTT_MR) Real-time Timer Increment Interrupt Enable Position */
-#define RTT_MR_RTTINCIEN_Msk                (0x1U << RTT_MR_RTTINCIEN_Pos)                 /**< (RTT_MR) Real-time Timer Increment Interrupt Enable Mask */
+#define RTT_MR_RTTINCIEN_Msk                (_U_(0x1) << RTT_MR_RTTINCIEN_Pos)             /**< (RTT_MR) Real-time Timer Increment Interrupt Enable Mask */
 #define RTT_MR_RTTINCIEN                    RTT_MR_RTTINCIEN_Msk                           /**< \deprecated Old style mask definition for 1 bit bitfield. Use RTT_MR_RTTINCIEN_Msk instead */
 #define RTT_MR_RTTRST_Pos                   18                                             /**< (RTT_MR) Real-time Timer Restart Position */
-#define RTT_MR_RTTRST_Msk                   (0x1U << RTT_MR_RTTRST_Pos)                    /**< (RTT_MR) Real-time Timer Restart Mask */
+#define RTT_MR_RTTRST_Msk                   (_U_(0x1) << RTT_MR_RTTRST_Pos)                /**< (RTT_MR) Real-time Timer Restart Mask */
 #define RTT_MR_RTTRST                       RTT_MR_RTTRST_Msk                              /**< \deprecated Old style mask definition for 1 bit bitfield. Use RTT_MR_RTTRST_Msk instead */
 #define RTT_MR_RTTDIS_Pos                   20                                             /**< (RTT_MR) Real-time Timer Disable Position */
-#define RTT_MR_RTTDIS_Msk                   (0x1U << RTT_MR_RTTDIS_Pos)                    /**< (RTT_MR) Real-time Timer Disable Mask */
+#define RTT_MR_RTTDIS_Msk                   (_U_(0x1) << RTT_MR_RTTDIS_Pos)                /**< (RTT_MR) Real-time Timer Disable Mask */
 #define RTT_MR_RTTDIS                       RTT_MR_RTTDIS_Msk                              /**< \deprecated Old style mask definition for 1 bit bitfield. Use RTT_MR_RTTDIS_Msk instead */
 #define RTT_MR_RTC1HZ_Pos                   24                                             /**< (RTT_MR) Real-Time Clock 1Hz Clock Selection Position */
-#define RTT_MR_RTC1HZ_Msk                   (0x1U << RTT_MR_RTC1HZ_Pos)                    /**< (RTT_MR) Real-Time Clock 1Hz Clock Selection Mask */
+#define RTT_MR_RTC1HZ_Msk                   (_U_(0x1) << RTT_MR_RTC1HZ_Pos)                /**< (RTT_MR) Real-Time Clock 1Hz Clock Selection Mask */
 #define RTT_MR_RTC1HZ                       RTT_MR_RTC1HZ_Msk                              /**< \deprecated Old style mask definition for 1 bit bitfield. Use RTT_MR_RTC1HZ_Msk instead */
-#define RTT_MR_MASK                         (0x117FFFFU)                                   /**< \deprecated (RTT_MR) Register MASK  (Use RTT_MR_Msk instead)  */
-#define RTT_MR_Msk                          (0x117FFFFU)                                   /**< (RTT_MR) Register Mask  */
-#endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+#define RTT_MR_MASK                         _U_(0x117FFFF)                                 /**< \deprecated (RTT_MR) Register MASK  (Use RTT_MR_Msk instead)  */
+#define RTT_MR_Msk                          _U_(0x117FFFF)                                 /**< (RTT_MR) Register Mask  */
 
 
 /* -------- RTT_AR : (RTT Offset: 0x04) (R/W 32) Alarm Register -------- */
@@ -97,14 +96,12 @@ typedef union {
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
 #define RTT_AR_OFFSET                       (0x04)                                        /**<  (RTT_AR) Alarm Register  Offset */
-#if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 
 #define RTT_AR_ALMV_Pos                     0                                              /**< (RTT_AR) Alarm Value Position */
-#define RTT_AR_ALMV_Msk                     (0xFFFFFFFFU << RTT_AR_ALMV_Pos)               /**< (RTT_AR) Alarm Value Mask */
+#define RTT_AR_ALMV_Msk                     (_U_(0xFFFFFFFF) << RTT_AR_ALMV_Pos)           /**< (RTT_AR) Alarm Value Mask */
 #define RTT_AR_ALMV(value)                  (RTT_AR_ALMV_Msk & ((value) << RTT_AR_ALMV_Pos))
-#define RTT_AR_MASK                         (0xFFFFFFFFU)                                  /**< \deprecated (RTT_AR) Register MASK  (Use RTT_AR_Msk instead)  */
-#define RTT_AR_Msk                          (0xFFFFFFFFU)                                  /**< (RTT_AR) Register Mask  */
-#endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+#define RTT_AR_MASK                         _U_(0xFFFFFFFF)                                /**< \deprecated (RTT_AR) Register MASK  (Use RTT_AR_Msk instead)  */
+#define RTT_AR_Msk                          _U_(0xFFFFFFFF)                                /**< (RTT_AR) Register Mask  */
 
 
 /* -------- RTT_VR : (RTT Offset: 0x08) (R/ 32) Value Register -------- */
@@ -118,14 +115,12 @@ typedef union {
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
 #define RTT_VR_OFFSET                       (0x08)                                        /**<  (RTT_VR) Value Register  Offset */
-#if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 
 #define RTT_VR_CRTV_Pos                     0                                              /**< (RTT_VR) Current Real-time Value Position */
-#define RTT_VR_CRTV_Msk                     (0xFFFFFFFFU << RTT_VR_CRTV_Pos)               /**< (RTT_VR) Current Real-time Value Mask */
+#define RTT_VR_CRTV_Msk                     (_U_(0xFFFFFFFF) << RTT_VR_CRTV_Pos)           /**< (RTT_VR) Current Real-time Value Mask */
 #define RTT_VR_CRTV(value)                  (RTT_VR_CRTV_Msk & ((value) << RTT_VR_CRTV_Pos))
-#define RTT_VR_MASK                         (0xFFFFFFFFU)                                  /**< \deprecated (RTT_VR) Register MASK  (Use RTT_VR_Msk instead)  */
-#define RTT_VR_Msk                          (0xFFFFFFFFU)                                  /**< (RTT_VR) Register Mask  */
-#endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+#define RTT_VR_MASK                         _U_(0xFFFFFFFF)                                /**< \deprecated (RTT_VR) Register MASK  (Use RTT_VR_Msk instead)  */
+#define RTT_VR_Msk                          _U_(0xFFFFFFFF)                                /**< (RTT_VR) Register Mask  */
 
 
 /* -------- RTT_SR : (RTT Offset: 0x0c) (R/ 32) Status Register -------- */
@@ -141,17 +136,15 @@ typedef union {
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
 #define RTT_SR_OFFSET                       (0x0C)                                        /**<  (RTT_SR) Status Register  Offset */
-#if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 
 #define RTT_SR_ALMS_Pos                     0                                              /**< (RTT_SR) Real-time Alarm Status (cleared on read) Position */
-#define RTT_SR_ALMS_Msk                     (0x1U << RTT_SR_ALMS_Pos)                      /**< (RTT_SR) Real-time Alarm Status (cleared on read) Mask */
+#define RTT_SR_ALMS_Msk                     (_U_(0x1) << RTT_SR_ALMS_Pos)                  /**< (RTT_SR) Real-time Alarm Status (cleared on read) Mask */
 #define RTT_SR_ALMS                         RTT_SR_ALMS_Msk                                /**< \deprecated Old style mask definition for 1 bit bitfield. Use RTT_SR_ALMS_Msk instead */
 #define RTT_SR_RTTINC_Pos                   1                                              /**< (RTT_SR) Prescaler Roll-over Status (cleared on read) Position */
-#define RTT_SR_RTTINC_Msk                   (0x1U << RTT_SR_RTTINC_Pos)                    /**< (RTT_SR) Prescaler Roll-over Status (cleared on read) Mask */
+#define RTT_SR_RTTINC_Msk                   (_U_(0x1) << RTT_SR_RTTINC_Pos)                /**< (RTT_SR) Prescaler Roll-over Status (cleared on read) Mask */
 #define RTT_SR_RTTINC                       RTT_SR_RTTINC_Msk                              /**< \deprecated Old style mask definition for 1 bit bitfield. Use RTT_SR_RTTINC_Msk instead */
-#define RTT_SR_MASK                         (0x03U)                                        /**< \deprecated (RTT_SR) Register MASK  (Use RTT_SR_Msk instead)  */
-#define RTT_SR_Msk                          (0x03U)                                        /**< (RTT_SR) Register Mask  */
-#endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+#define RTT_SR_MASK                         _U_(0x03)                                      /**< \deprecated (RTT_SR) Register MASK  (Use RTT_SR_Msk instead)  */
+#define RTT_SR_Msk                          _U_(0x03)                                      /**< (RTT_SR) Register Mask  */
 
 
 #if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
@@ -178,8 +171,6 @@ typedef struct {
 #endif /* COMPONENT_TYPEDEF_STYLE */
 
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
-
-
 /** @}  end of Real-time Timer */
 
 #endif /* _SAME70_RTT_COMPONENT_H_ */

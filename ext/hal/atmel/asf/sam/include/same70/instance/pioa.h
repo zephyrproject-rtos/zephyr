@@ -3,7 +3,7 @@
  *
  * \brief Instance description for PIOA
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_PIOA_INSTANCE_H_
 #define _SAME70_PIOA_INSTANCE_H_
 
@@ -54,9 +55,9 @@
 #define REG_PIOA_PUDR           (0x400E0E60) /**< (PIOA) Pull-up Disable Register */
 #define REG_PIOA_PUER           (0x400E0E64) /**< (PIOA) Pull-up Enable Register */
 #define REG_PIOA_PUSR           (0x400E0E68) /**< (PIOA) Pad Pull-up Status Register */
-#define REG_PIOA_ABCDSR         (0x400E0E70) /**< (PIOA) Peripheral Select Register 0 */
-#define REG_PIOA_ABCDSR0        (0x400E0E70) /**< (PIOA) Peripheral Select Register 0 */
-#define REG_PIOA_ABCDSR1        (0x400E0E74) /**< (PIOA) Peripheral Select Register 1 */
+#define REG_PIOA_ABCDSR         (0x400E0E70) /**< (PIOA) Peripheral ABCD Select Register 0 */
+#define REG_PIOA_ABCDSR0        (0x400E0E70) /**< (PIOA) Peripheral ABCD Select Register 0 */
+#define REG_PIOA_ABCDSR1        (0x400E0E74) /**< (PIOA) Peripheral ABCD Select Register 1 */
 #define REG_PIOA_IFSCDR         (0x400E0E80) /**< (PIOA) Input Filter Slow Clock Disable Register */
 #define REG_PIOA_IFSCER         (0x400E0E84) /**< (PIOA) Input Filter Slow Clock Enable Register */
 #define REG_PIOA_IFSCSR         (0x400E0E88) /**< (PIOA) Input Filter Slow Clock Status Register */
@@ -113,9 +114,9 @@
 #define REG_PIOA_PUDR           (*(__O  uint32_t*)0x400E0E60U) /**< (PIOA) Pull-up Disable Register */
 #define REG_PIOA_PUER           (*(__O  uint32_t*)0x400E0E64U) /**< (PIOA) Pull-up Enable Register */
 #define REG_PIOA_PUSR           (*(__I  uint32_t*)0x400E0E68U) /**< (PIOA) Pad Pull-up Status Register */
-#define REG_PIOA_ABCDSR         (*(__IO uint32_t*)0x400E0E70U) /**< (PIOA) Peripheral Select Register 0 */
-#define REG_PIOA_ABCDSR0        (*(__IO uint32_t*)0x400E0E70U) /**< (PIOA) Peripheral Select Register 0 */
-#define REG_PIOA_ABCDSR1        (*(__IO uint32_t*)0x400E0E74U) /**< (PIOA) Peripheral Select Register 1 */
+#define REG_PIOA_ABCDSR         (*(__IO uint32_t*)0x400E0E70U) /**< (PIOA) Peripheral ABCD Select Register 0 */
+#define REG_PIOA_ABCDSR0        (*(__IO uint32_t*)0x400E0E70U) /**< (PIOA) Peripheral ABCD Select Register 0 */
+#define REG_PIOA_ABCDSR1        (*(__IO uint32_t*)0x400E0E74U) /**< (PIOA) Peripheral ABCD Select Register 1 */
 #define REG_PIOA_IFSCDR         (*(__O  uint32_t*)0x400E0E80U) /**< (PIOA) Input Filter Slow Clock Disable Register */
 #define REG_PIOA_IFSCER         (*(__O  uint32_t*)0x400E0E84U) /**< (PIOA) Input Filter Slow Clock Enable Register */
 #define REG_PIOA_IFSCSR         (*(__I  uint32_t*)0x400E0E88U) /**< (PIOA) Input Filter Slow Clock Status Register */
@@ -148,6 +149,7 @@
 #define REG_PIOA_PCRHR          (*(__I  uint32_t*)0x400E0F64U) /**< (PIOA) Parallel Capture Reception Holding Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for PIOA peripheral ========== */
 #define PIOA_INSTANCE_ID                         10        
 #define PIOA_DMAC_ID_RX                          34        

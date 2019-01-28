@@ -3,7 +3,7 @@
  *
  * \brief Instance description for PWM1
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_PWM1_INSTANCE_H_
 #define _SAME70_PWM1_INSTANCE_H_
 
@@ -254,6 +255,7 @@
 #define REG_PWM1_CMUPD3         (*(__O  uint32_t*)0x4005C460U) /**< (PWM1) PWM Channel Mode Update Register (ch_num = 3) */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for PWM1 peripheral ========== */
 #define PWM1_INSTANCE_ID                         60        
 #define PWM1_DMAC_ID_TX                          39        

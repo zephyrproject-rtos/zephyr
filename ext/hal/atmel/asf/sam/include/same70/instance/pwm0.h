@@ -3,7 +3,7 @@
  *
  * \brief Instance description for PWM0
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_PWM0_INSTANCE_H_
 #define _SAME70_PWM0_INSTANCE_H_
 
@@ -254,6 +255,7 @@
 #define REG_PWM0_CMUPD3         (*(__O  uint32_t*)0x40020460U) /**< (PWM0) PWM Channel Mode Update Register (ch_num = 3) */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for PWM0 peripheral ========== */
 #define PWM0_INSTANCE_ID                         31        
 #define PWM0_DMAC_ID_TX                          13        

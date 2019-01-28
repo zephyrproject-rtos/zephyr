@@ -3,7 +3,7 @@
  *
  * \brief Instance description for TRNG
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_TRNG_INSTANCE_H_
 #define _SAME70_TRNG_INSTANCE_H_
 
@@ -48,6 +49,7 @@
 #define REG_TRNG_ODATA          (*(__I  uint32_t*)0x40070050U) /**< (TRNG) Output Data Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for TRNG peripheral ========== */
 #define TRNG_INSTANCE_ID                         57        
 

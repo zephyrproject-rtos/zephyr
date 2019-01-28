@@ -3,7 +3,7 @@
  *
  * \brief Instance description for MATRIX
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_MATRIX_INSTANCE_H_
 #define _SAME70_MATRIX_INSTANCE_H_
 
