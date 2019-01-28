@@ -67,16 +67,6 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
     bl _WdogInit
 #endif
 
-#ifdef CONFIG_INIT_STACKS
-    bl	init_stacks
-#endif
-
-    /*
-     * Set PSP and use it to boot without using MSP, so that it
-     * gets set to _interrupt_stack during initialisation.
-     */
-    bl set_and_switch_to_psp
-
     /*
      * 'bl' jumps the furthest of the branch instructions that are
      * supported on all platforms. So it is used when jumping to _PrepC

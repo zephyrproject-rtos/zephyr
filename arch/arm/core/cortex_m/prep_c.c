@@ -25,7 +25,7 @@
 #include <string.h>
 #include <cortex_m/stack.h>
 
-void switch_sp_to_psp(void)
+static inline void switch_sp_to_psp(void)
 {
 	__set_CONTROL(__get_CONTROL() | CONTROL_SPSEL_Msk);
 	/*
@@ -36,7 +36,7 @@ void switch_sp_to_psp(void)
 	__ISB();
 }
 
-void set_and_switch_to_psp(void)
+static inline void set_and_switch_to_psp(void)
 {
 	u32_t process_sp;
 
@@ -57,7 +57,7 @@ void lock_interrupts(void)
 }
 
 #ifdef CONFIG_INIT_STACKS
-void init_stacks(void)
+static inline void init_stacks(void)
 {
 	memset(&_interrupt_stack, 0xAA, CONFIG_ISR_STACK_SIZE);
 }
@@ -151,6 +151,14 @@ extern void _IntLibInit(void);
 #endif
 void _PrepC(void)
 {
+#ifdef CONFIG_INIT_STACKS
+	init_stacks();
+#endif
+	/*
+	 * Set PSP and use it to boot without using MSP, so that it
+	 * gets set to _interrupt_stack during initialisation.
+	 */
+	set_and_switch_to_psp();
 	relocate_vector_table();
 	enable_floating_point();
 	_bss_zero();
