@@ -25,7 +25,7 @@ int lsm6dsl_trigger_set(struct device *dev,
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
-	gpio_pin_disable_callback(drv_data->gpio, DT_LSM6DSL_GPIO_PIN_NUM);
+	gpio_pin_disable_callback(drv_data->gpio, DT_ST_LSM6DSL_0_IRQ_GPIOS_PIN);
 
 	drv_data->data_ready_handler = handler;
 	if (handler == NULL) {
@@ -34,7 +34,7 @@ int lsm6dsl_trigger_set(struct device *dev,
 
 	drv_data->data_ready_trigger = *trig;
 
-	gpio_pin_enable_callback(drv_data->gpio, DT_LSM6DSL_GPIO_PIN_NUM);
+	gpio_pin_enable_callback(drv_data->gpio, DT_ST_LSM6DSL_0_IRQ_GPIOS_PIN);
 
 	return 0;
 }
@@ -47,7 +47,7 @@ static void lsm6dsl_gpio_callback(struct device *dev,
 
 	ARG_UNUSED(pins);
 
-	gpio_pin_disable_callback(dev, DT_LSM6DSL_GPIO_PIN_NUM);
+	gpio_pin_disable_callback(dev, DT_ST_LSM6DSL_0_IRQ_GPIOS_PIN);
 
 #if defined(CONFIG_LSM6DSL_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -66,7 +66,7 @@ static void lsm6dsl_thread_cb(void *arg)
 					     &drv_data->data_ready_trigger);
 	}
 
-	gpio_pin_enable_callback(drv_data->gpio, DT_LSM6DSL_GPIO_PIN_NUM);
+	gpio_pin_enable_callback(drv_data->gpio, DT_ST_LSM6DSL_0_IRQ_GPIOS_PIN);
 }
 
 #ifdef CONFIG_LSM6DSL_TRIGGER_OWN_THREAD
@@ -99,20 +99,20 @@ int lsm6dsl_init_interrupt(struct device *dev)
 	struct lsm6dsl_data *drv_data = dev->driver_data;
 
 	/* setup data ready gpio interrupt */
-	drv_data->gpio = device_get_binding(DT_LSM6DSL_GPIO_DEV_NAME);
+	drv_data->gpio = device_get_binding(DT_ST_LSM6DSL_0_IRQ_GPIOS_CONTROLLER);
 	if (drv_data->gpio == NULL) {
 		LOG_ERR("Cannot get pointer to %s device.",
-			    DT_LSM6DSL_GPIO_DEV_NAME);
+			    DT_ST_LSM6DSL_0_IRQ_GPIOS_CONTROLLER);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, DT_LSM6DSL_GPIO_PIN_NUM,
+	gpio_pin_configure(drv_data->gpio, DT_ST_LSM6DSL_0_IRQ_GPIOS_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   lsm6dsl_gpio_callback,
-			   BIT(DT_LSM6DSL_GPIO_PIN_NUM));
+			   BIT(DT_ST_LSM6DSL_0_IRQ_GPIOS_PIN));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_ERR("Could not set gpio callback.");
@@ -143,7 +143,7 @@ int lsm6dsl_init_interrupt(struct device *dev)
 	drv_data->dev = dev;
 #endif
 
-	gpio_pin_enable_callback(drv_data->gpio, DT_LSM6DSL_GPIO_PIN_NUM);
+	gpio_pin_enable_callback(drv_data->gpio, DT_ST_LSM6DSL_0_IRQ_GPIOS_PIN);
 
 	return 0;
 }

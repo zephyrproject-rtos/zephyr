@@ -18,7 +18,7 @@ void main(void)
 	struct sensor_value magn[3];
 	struct device *hts221 = device_get_binding(DT_ST_HTS221_0_LABEL);
 	struct device *lps22hb = device_get_binding(DT_ST_LPS22HB_PRESS_0_LABEL);
-	struct device *lsm6dsl = device_get_binding(DT_LSM6DSL_DEV_NAME);
+	struct device *lsm6dsl = device_get_binding(DT_ST_LSM6DSL_0_LABEL);
 	struct device *lsm303agr_a = device_get_binding(DT_ST_LIS2DH_0_LABEL);
 	struct device *lsm303agr_m = device_get_binding(DT_LIS2MDL_DEV_NAME);
 
