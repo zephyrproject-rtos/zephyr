@@ -968,12 +968,13 @@ static void tcp_sent_list_cb(struct net_tcp *tcp, void *user_data)
 		struct net_buf *frag = pkt->frags;
 
 		if (!*printed) {
-			PR("%p[%d/%zd]", pkt, pkt->ref,
+			PR("%p[%d/%zd]", pkt, atomic_get(&pkt->atomic_ref),
 			       net_pkt_get_len(pkt));
 			*printed = true;
 		} else {
 			PR("                %p[%d/%zd]",
-			       pkt, pkt->ref, net_pkt_get_len(pkt));
+			   pkt, atomic_get(&pkt->atomic_ref),
+			   net_pkt_get_len(pkt));
 		}
 
 		if (frag) {
@@ -1073,7 +1074,7 @@ static void allocs_cb(struct net_pkt *pkt,
 	if (func_alloc) {
 		if (in_use) {
 			PR("%p/%d\t%5s\t%5s\t%s():%d\n",
-			   pkt, pkt->ref, str,
+			   pkt, atomic_get(&pkt->atomic_ref), str,
 			   net_pkt_slab2str(pkt->slab),
 			   func_alloc, line_alloc);
 		} else {

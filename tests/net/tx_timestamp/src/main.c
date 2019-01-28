@@ -199,7 +199,7 @@ static void timestamp_setup(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(pkt->ref, 0, "Pkt %p not released\n");
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
 }
 
 static void timestamp_callback_2(struct net_pkt *pkt)
@@ -246,7 +246,7 @@ static void timestamp_setup_2nd_iface(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(pkt->ref, 0, "Pkt %p not released\n");
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
 }
 
 static void timestamp_setup_all(void)
@@ -272,7 +272,7 @@ static void timestamp_setup_all(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_true(timestamp_cb_called, "Timestamp callback not called\n");
-	zassert_equal(pkt->ref, 0, "Pkt %p not released\n");
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0, "Pkt %p not released\n");
 
 	net_if_unregister_timestamp_cb(&timestamp_cb_3);
 }
@@ -297,7 +297,7 @@ static void timestamp_cleanup(void)
 	net_if_call_timestamp_cb(pkt);
 
 	zassert_false(timestamp_cb_called, "Timestamp callback called\n");
-	zassert_false(pkt->ref < 1, "Pkt %p released\n");
+	zassert_false(atomic_get(&pkt->atomic_ref) < 1, "Pkt %p released\n");
 
 	net_pkt_unref(pkt);
 }
@@ -502,8 +502,9 @@ static void check_timestamp_before_enabling(void)
 	 * should have unreffed the packet by now so the ref count
 	 * should be zero now.
 	 */
-	zassert_equal(pkt->ref, 0, "packet %p was not released (ref %d)\n",
-		      pkt, pkt->ref);
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0,
+		      "packet %p was not released (ref %d)\n",
+		      pkt, atomic_get(&pkt->atomic_ref));
 }
 
 static void check_timestamp_after_enabling(void)
@@ -524,8 +525,9 @@ static void check_timestamp_after_enabling(void)
 	 * and timestamp_cb() should have unreffed the packet by now so
 	 * the ref count should be zero at this point.
 	 */
-	zassert_equal(pkt->ref, 0, "packet %p was not released (ref %d)\n",
-		      pkt, pkt->ref);
+	zassert_equal(atomic_get(&pkt->atomic_ref), 0,
+		      "packet %p was not released (ref %d)\n",
+		      pkt, atomic_get(&pkt->atomic_ref));
 }
 
 void test_main(void)
