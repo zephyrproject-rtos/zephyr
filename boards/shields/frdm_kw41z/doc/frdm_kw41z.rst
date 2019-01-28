@@ -51,7 +51,7 @@ host controller interface (HCI):
    OpenSDA circuit.
 
 #. Attach the FRDM-KW41Z to the Arduino header on your selected main board,
-   such as :ref:`mimxrt1050_evk` or :ref:`frdm_k64f`.
+   such as :ref:`mimxrt1050_evkb` or :ref:`frdm_k64f`.
 
 #. Set CONFIG_SHIELD_FRDM_KW41Z=y in your Zephyr bluetooth application.
 

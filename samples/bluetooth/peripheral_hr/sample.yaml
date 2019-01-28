@@ -8,7 +8,7 @@ tests:
     tags: bluetooth
   test_frdm_kw41z_shield:
     harness: bluetooth
-    platform_whitelist: mimxrt1020_evk mimxrt1050_evk mimxrt1060_evk frdm_k64f
+    platform_whitelist: mimxrt1020_evk mimxrt1050_evkb mimxrt1060_evk frdm_k64f
     tags: bluetooth
     extra_args: SHIELD=frdm_kw41z
 

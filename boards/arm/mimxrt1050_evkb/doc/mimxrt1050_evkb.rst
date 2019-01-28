@@ -1,7 +1,7 @@
-.. _mimxrt1050_evk:
+.. _mimxrt1050_evkb:
 
-NXP MIMXRT1050-EVK
-##################
+NXP MIMXRT1050-EVKB
+###################
 
 Overview
 ********
@@ -15,18 +15,18 @@ Bluetooth™, GPS, displays, and camera sensors. As with other i.MX processors,
 i.MX RT1050 also has rich audio and video features, including LCD display,
 basic 2D graphics, camera interface, SPDIF, and I2S audio interface.
 
-The following document refers to the discontinued MIMXRT1050-EVK board. For the
-MIMXRT1050-EVKB board, refer to `Board Revisions`_ section.
+The following document refers to the MIMXRT1050-EVKB board. For the
+discontinued MIMXRT1050-EVK board, refer to `Board Revisions`_ section.
 
-.. image:: mimxrt1050_evk.jpg
+.. image:: mimxrt1050_evkb.jpg
    :width: 720px
    :align: center
-   :alt: MIMXRT1050-EVK
+   :alt: MIMXRT1050-EVKB
 
 Hardware
 ********
 
-- MIMXRT1052DVL6A MCU (600 MHz, 512 KB TCM)
+- MIMXRT1052DVL6B MCU (600 MHz, 512 KB TCM)
 
 - Memory
 
@@ -74,7 +74,7 @@ Hardware
 
 - CAN bus connector
 
-For more information about the MIMXRT1050 SoC and MIMXRT1050-EVK board, see
+For more information about the MIMXRT1050 SoC and MIMXRT1050-EVKB board, see
 these references:
 
 - `i.MX RT1050 Website`_
@@ -87,7 +87,7 @@ these references:
 Supported Features
 ==================
 
-The mimxrt1050_evk board configuration supports the following hardware
+The mimxrt1050_evkb board configuration supports the following hardware
 features:
 
 +-----------+------------+-------------------------------------+
@@ -111,7 +111,7 @@ features:
 
 The default configuration can be found in the defconfig file:
 
-	``boards/arm/mimxrt1050_evk/mimxrt1050_evk_defconfig``
+	``boards/arm/mimxrt1050_evkb/mimxrt1050_evkb_defconfig``
 
 Other hardware features are not currently supported by the port.
 
@@ -190,7 +190,7 @@ remaining are not used.
 Programming and Debugging
 *************************
 
-The MIMXRT1050-EVK includes the :ref:`nxp_opensda` serial and debug adapter
+The MIMXRT1050-EVKB includes the :ref:`nxp_opensda` serial and debug adapter
 built into the board to provide debugging, flash programming, and serial
 communication over USB.
 
@@ -200,7 +200,7 @@ The Segger J-Link tools are the default for this board, therefore it is not
 necessary to set ``OPENSDA_FW=jlink`` explicitly when you invoke ``make
 debug``.
 
-With these mechanisms, applications for the ``mimxrt1050_evk`` board
+With these mechanisms, applications for the ``mimxrt1050_evkb`` board
 configuration can be built and debugged in the usual way (see
 :ref:`build_an_application` and :ref:`application_run` for more details).
 
@@ -222,7 +222,7 @@ your Zephyr application to flash. It will leave you at a GDB prompt.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
-   :board: mimxrt1050_evk
+   :board: mimxrt1050_evkb
    :goals: debug
 
 Board Revisions

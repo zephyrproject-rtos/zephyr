@@ -16,7 +16,7 @@ static gpio_pin_config_t enet_gpio_config = {
 };
 #endif
 
-static int mimxrt1050_evk_init(struct device *dev)
+static int mimxrt1050_evkb_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -158,4 +158,4 @@ static int mimxrt1050_evk_init(struct device *dev)
 	return 0;
 }
 
-SYS_INIT(mimxrt1050_evk_init, PRE_KERNEL_1, 0);
+SYS_INIT(mimxrt1050_evkb_init, PRE_KERNEL_1, 0);

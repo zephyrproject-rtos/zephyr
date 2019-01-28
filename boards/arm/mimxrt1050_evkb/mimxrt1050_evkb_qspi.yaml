@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-identifier: mimxrt1050_evk_qspi
-name: NXP MIMXRT1050-EVK-QSPI
+identifier: mimxrt1050_evkb_qspi
+name: NXP MIMXRT1050-EVKB-QSPI
 type: mcu
 arch: arm
 toolchain:

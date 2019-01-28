@@ -9,7 +9,7 @@
 #include <nxp/nxp_rt.dtsi>
 
 / {
-	model = "NXP MIMXRT1050-EVK board";
+	model = "NXP MIMXRT1050-EVKB board";
 	compatible = "nxp,mimxrt1052";
 
 	aliases {

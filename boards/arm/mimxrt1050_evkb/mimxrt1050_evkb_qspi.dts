@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "mimxrt1050_evk.dts"
+#include "mimxrt1050_evkb.dts"
 
 / {
 	chosen {
