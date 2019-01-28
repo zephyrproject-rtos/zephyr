@@ -16,7 +16,6 @@ nRF51822 ARM Cortex-M0 CPU and the following devices:
 * :abbr:`GPIO (General Purpose Input Output)`
 * :abbr:`I2C (Inter-Integrated Circuit)`
 * :abbr:`NVIC (Nested Vectored Interrupt Controller)`
-* :abbr:`PWM (Pulse Width Modulation)`
 * RADIO (Bluetooth Low Energy)
 * :abbr:`RTC (nRF RTC System Clock)`
 * Segger RTT (RTT Console)
@@ -62,8 +61,6 @@ hardware features:
 | I2C(M)    | on-chip    | i2c                  |
 +-----------+------------+----------------------+
 | NVIC      | on-chip    | arch/arm             |
-+-----------+------------+----------------------+
-| PWM       | on-chip    | pwm                  |
 +-----------+------------+----------------------+
 | RADIO     | on-chip    | Bluetooth            |
 +-----------+------------+----------------------+
