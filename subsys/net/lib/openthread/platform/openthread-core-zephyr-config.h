@@ -98,4 +98,24 @@
  */
 #define OPENTHREAD_CONFIG_ENABLE_PLATFORM_USEC_TIMER            0
 
+/* Zephyr does not use OpenThreads heap. mbedTLS will use heap memory allocated
+ * by Zephyr. Here, we use some dummy values to prevent OpenThread warnings.
+ */
+
+/**
+ * @def OPENTHREAD_CONFIG_HEAP_SIZE
+ *
+ * The size of heap buffer when DTLS is enabled.
+ *
+ */
+#define OPENTHREAD_CONFIG_HEAP_SIZE (4 * sizeof(void *))
+
+/**
+ * @def OPENTHREAD_CONFIG_HEAP_SIZE_NO_DTLS
+ *
+ * The size of heap buffer when DTLS is disabled.
+ *
+ */
+#define OPENTHREAD_CONFIG_HEAP_SIZE_NO_DTLS (4 * sizeof(void *))
+
 #endif  /* OPENTHREAD_CORE_NRF52840_CONFIG_H_ */
