@@ -27,7 +27,8 @@
 #define MASK_64K 0xFFFF
 
 #define SPI_NOR_MAX_ADDR_WIDTH 4
-#define SECTORS_COUNT (KB(CONFIG_FLASH_SIZE) / CONFIG_SPI_NOR_SECTOR_SIZE)
+#define SECTORS_COUNT ((DT_JEDEC_SPI_NOR_0_SIZE / 8192) \
+		       / CONFIG_SPI_NOR_SECTOR_SIZE)
 
 #define JEDEC_ID(x)		    \
 	{			    \
@@ -46,9 +47,9 @@
 struct spi_nor_data {
 	struct device *spi;
 	struct spi_config spi_cfg;
-#if defined(CONFIG_SPI_NOR_GPIO_SPI_CS)
+#ifdef DT_JEDEC_SPI_NOR_0_CS_GPIO_CONTROLLER
 	struct spi_cs_control cs_ctrl;
-#endif /* CONFIG_SPI_NOR_GPIO_SPI_CS */
+#endif /* DT_JEDEC_SPI_NOR_0_CS_GPIO_CONTROLLER */
 	struct k_sem sem;
 };
 
@@ -338,27 +339,27 @@ static int spi_nor_configure(struct device *dev)
 	struct spi_nor_data *data = dev->driver_data;
 	const struct spi_nor_config *params = dev->config->config_info;
 
-	data->spi = device_get_binding(DT_SPI_NOR_SPI_NAME);
+	data->spi = device_get_binding(DT_JEDEC_SPI_NOR_0_BUS_NAME);
 	if (!data->spi) {
 		return -EINVAL;
 	}
 
-	data->spi_cfg.frequency = DT_SPI_NOR_SPI_FREQ_0;
+	data->spi_cfg.frequency = DT_JEDEC_SPI_NOR_0_SPI_MAX_FREQUENCY;
 	data->spi_cfg.operation = SPI_WORD_SET(8);
-	data->spi_cfg.slave = DT_SPI_NOR_SPI_SLAVE_ID;
+	data->spi_cfg.slave = DT_JEDEC_SPI_NOR_0_BASE_ADDRESS;
 
-#if defined(CONFIG_SPI_NOR_GPIO_SPI_CS)
+#ifdef DT_JEDEC_SPI_NOR_0_CS_GPIO_CONTROLLER
 	data->cs_ctrl.gpio_dev =
-		device_get_binding(CONFIG_SPI_NOR_GPIO_SPI_CS_DRV_NAME);
+		device_get_binding(DT_JEDEC_SPI_NOR_0_CS_GPIO_CONTROLLER);
 	if (!data->cs_ctrl.gpio_dev) {
 		return -ENODEV;
 	}
 
-	data->cs_ctrl.gpio_pin = CONFIG_SPI_NOR_GPIO_SPI_CS_PIN;
-	data->cs_ctrl.delay = CONFIG_SPI_NOR_GPIO_SPI_CS_WAIT_DELAY;
+	data->cs_ctrl.gpio_pin = DT_JEDEC_SPI_NOR_0_HOLD_GPIOS_PIN;
+	data->cs_ctrl.delay = CONFIG_SPI_NOR_CS_WAIT_DELAY;
 
 	data->spi_cfg.cs = &data->cs_ctrl;
-#endif /* CONFIG_SPI_NOR_GPIO_SPI_CS */
+#endif /* DT_JEDEC_SPI_NOR_0_CS_GPIO_CONTROLLER */
 
 	/* now the spi bus is configured, we can verify the flash id */
 	if (spi_nor_read_id(dev, params) != 0) {
@@ -409,14 +410,19 @@ static const struct flash_driver_api spi_nor_api = {
 };
 
 static const struct spi_nor_config flash_id = {
-	JEDEC_ID(CONFIG_SPI_NOR_JEDEC_ID),
-	CONFIG_SPI_NOR_PAGE_SIZE, CONFIG_SPI_NOR_SECTOR_SIZE,
-	SECTORS_COUNT,
+	.id = {
+		DT_JEDEC_SPI_NOR_0_JEDEC_ID_0,
+		DT_JEDEC_SPI_NOR_0_JEDEC_ID_1,
+		DT_JEDEC_SPI_NOR_0_JEDEC_ID_2,
+	},
+	.page_size = CONFIG_SPI_NOR_PAGE_SIZE,
+	.sector_size = CONFIG_SPI_NOR_SECTOR_SIZE,
+	.n_sectors = SECTORS_COUNT,
 };
 
 static struct spi_nor_data spi_nor_memory_data;
 
-DEVICE_AND_API_INIT(spi_flash_memory, DT_SPI_NOR_DRV_NAME,
+DEVICE_AND_API_INIT(spi_flash_memory, DT_JEDEC_SPI_NOR_0_LABEL,
 		    &spi_nor_init, &spi_nor_memory_data,
 		    &flash_id, POST_KERNEL, CONFIG_SPI_NOR_INIT_PRIORITY,
 		    &spi_nor_api);
