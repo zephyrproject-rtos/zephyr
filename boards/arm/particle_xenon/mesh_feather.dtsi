@@ -18,7 +18,6 @@
 		led3 = &status_blue;
 		sw0 = &mode_button;
 		sw1 = &reset_button;
-		flash1 = &gd25q32c;
 	};
 
 	chosen {
@@ -124,12 +123,15 @@
 	sck-pin = <19>;
 	mosi-pin = <20>;
 	miso-pin = <21>;
-	gd25q32c: gd25q32c@11 {
-		compatible = "spi,flash";
+	cs-gpios = <&gpio0 17 0>;
+	gd25q32c@0 {
+		compatible = "jedec,spi-nor";
 		label = "GD25Q32C";
-		reg = <17>;
-		size = <4096>;
+		reg = <0>;
 		spi-max-frequency = <80000000>;
+		wp-gpios = <&gpio0 22 0>;
+		hold-gpios = <&gpio0 23 0>;
+		jedec-id = <0xc2 0x20 0x16>;
 	};
 };
 
