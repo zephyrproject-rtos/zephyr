@@ -282,7 +282,7 @@ static int lsm6dsl_gyro_config(struct device *dev, enum sensor_channel chan,
 	switch (attr) {
 #ifdef LSM6DSL_GYRO_FS_RUNTIME
 	case SENSOR_ATTR_FULL_SCALE:
-		return lsm6dsl_gyro_range_set(dev, sensor_ms2_to_g(val));
+		return lsm6dsl_gyro_range_set(dev, sensor_rad_to_degrees(val));
 #endif
 #ifdef LSM6DSL_GYRO_ODR_RUNTIME
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
