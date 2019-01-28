@@ -8,8 +8,9 @@
 #include <device.h>
 #include <gpio.h>
 
-#define LED_PORT LED0_GPIO_CONTROLLER
-#define LED	LED0_GPIO_PIN
+#define LED_PORT  LED0_GPIO_CONTROLLER
+#define LED_PIN   LED0_GPIO_PIN
+#define LED_FLAGS LED0_GPIO_FLAGS
 
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME 	1000
@@ -21,11 +22,11 @@ void main(void)
 
 	dev = device_get_binding(LED_PORT);
 	/* Set LED pin as output */
-	gpio_pin_configure(dev, LED, GPIO_DIR_OUT);
+	gpio_pin_configure(dev, LED_PIN, GPIO_DIR_OUT | LED_FLAGS);
 
 	while (1) {
 		/* Set pin to HIGH/LOW every 1 second */
-		gpio_pin_write(dev, LED, cnt % 2);
+		gpio_pin_write(dev, LED_PIN, cnt % 2);
 		cnt++;
 		k_sleep(SLEEP_TIME);
 	}
