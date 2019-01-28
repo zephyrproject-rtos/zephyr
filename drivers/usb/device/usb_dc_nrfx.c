@@ -266,7 +266,6 @@ struct nrf_usbd_ctx {
 	bool ready;
 
 	struct k_work  usb_work;
-	struct k_fifo  work_queue;
 	struct k_mutex drv_lock;
 
 	struct nrf_usbd_ep_ctx ep_ctx[CFG_EP_CNT];
@@ -275,7 +274,13 @@ struct nrf_usbd_ctx {
 };
 
 
-static struct nrf_usbd_ctx usbd_ctx;
+K_FIFO_DEFINE(work_queue);
+
+
+static struct nrf_usbd_ctx usbd_ctx = {
+	.attached = false,
+	.ready = false,
+};
 
 
 static inline struct nrf_usbd_ctx *get_usbd_ctx(void)
@@ -392,7 +397,7 @@ static inline void usbd_evt_free(struct usbd_event *ev)
  */
 static inline void usbd_evt_put(struct usbd_event *ev)
 {
-	k_fifo_put(&get_usbd_ctx()->work_queue, ev);
+	k_fifo_put(&work_queue, ev);
 }
 
 /**
@@ -400,7 +405,7 @@ static inline void usbd_evt_put(struct usbd_event *ev)
  */
 static inline struct usbd_event *usbd_evt_get(void)
 {
-	return k_fifo_get(&get_usbd_ctx()->work_queue, K_NO_WAIT);
+	return k_fifo_get(&work_queue, K_NO_WAIT);
 }
 
 /**
@@ -498,8 +503,12 @@ void usb_dc_nrfx_power_event_callback(nrf_power_event_t event)
 	ev->evt_type = USBD_EVT_POWER;
 	ev->evt.pwr_evt.state = new_state;
 
+
 	usbd_evt_put(ev);
-	usbd_work_schedule();
+
+	if (usbd_ctx.attached) {
+		usbd_work_schedule();
+	}
 }
 
 /**
@@ -1233,7 +1242,6 @@ int usb_dc_attach(void)
 	}
 
 	k_work_init(&ctx->usb_work, usbd_work_handler);
-	k_fifo_init(&ctx->work_queue);
 	k_mutex_init(&ctx->drv_lock);
 
 	IRQ_CONNECT(DT_NORDIC_NRF_USBD_USBD_0_IRQ,
@@ -1260,6 +1268,10 @@ int usb_dc_attach(void)
 	ret = eps_ctx_init();
 	if (ret == 0) {
 		ctx->attached = true;
+	}
+
+	if (!k_fifo_is_empty(&work_queue)) {
+		usbd_work_schedule();
 	}
 
 	return ret;
