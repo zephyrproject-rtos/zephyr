@@ -15,20 +15,6 @@
 
 /* The following definitions fixup the generated include */
 
-#ifdef DTS_BOARD_FIXUP_FILE
-#include DTS_BOARD_FIXUP_FILE
-#endif
-
-#ifdef DTS_SOC_FIXUP_FILE
-#include DTS_SOC_FIXUP_FILE
-#endif
-
-#ifdef DTS_APP_FIXUP_FILE
-#include DTS_APP_FIXUP_FILE
-#endif
-
-#ifdef DTS_SHIELDS_FIXUP_FILE
-#include DTS_SHIELDS_FIXUP_FILE
-#endif
+#include <generated_dts_board_fixups.h>
 
 #endif /* GENERATED_DTS_BOARD_H */
