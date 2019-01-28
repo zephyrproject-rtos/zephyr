@@ -57,6 +57,7 @@ struct gpio_gecko_data {
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
 	u32_t pin_callback_enables;
+	u32_t invert;
 };
 
 static inline void gpio_gecko_add_port(struct gpio_gecko_common_data *data,
@@ -73,25 +74,38 @@ static int gpio_gecko_configure(struct device *dev,
 	const struct gpio_gecko_config *config = dev->config->config_info;
 	GPIO_P_TypeDef *gpio_base = config->gpio_base;
 	GPIO_Port_TypeDef gpio_index = config->gpio_index;
+	struct gpio_gecko_data *data = dev->driver_data;
 	GPIO_Mode_TypeDef mode;
 	unsigned int out = 0U;
 
 	/* Check for an invalid pin configuration */
-	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
+	if ((flags & GPIO_INT_ENABLE) && (flags & GPIO_OUTPUT_ENABLE)) {
 		return -EINVAL;
 	}
 
 	/* Interrupt on static level is not supported by the hardware */
-	if ((flags & GPIO_INT) && !(flags & GPIO_INT_EDGE)) {
+	if ((flags & GPIO_INT_ENABLE) && !(flags & GPIO_INT_EDGE)) {
 		return -ENOTSUP;
 	}
 
 	/* Setting interrupt flags for a complete port is not implemented */
-	if ((flags & GPIO_INT) && (access_op == GPIO_ACCESS_BY_PORT)) {
+	if ((flags & GPIO_INT_ENABLE) && (access_op == GPIO_ACCESS_BY_PORT)) {
 		return -ENOTSUP;
 	}
 
-	if ((flags & GPIO_DIR_MASK) == GPIO_DIR_IN) {
+	if (flags & GPIO_OUTPUT_ENABLE) {
+		/* Following modes enable both output and input */
+		if (flags & GPIO_SINGLE_ENDED) {
+			if (flags & GPIO_LINE_OPEN_DRAIN) {
+				mode = gpioModeWiredAnd;
+			} else {
+				mode = gpioModeWiredOr;
+			}
+		} else {
+			mode = gpioModePushPull;
+		}
+		out = (flags & GPIO_OUTPUT_INIT_HIGH) ? 1U : 0U;
+	} else if (flags & GPIO_INPUT_ENABLE) {
 		if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
 			mode = gpioModeInputPull;
 			out = 1U; /* pull-up*/
@@ -101,8 +115,9 @@ static int gpio_gecko_configure(struct device *dev,
 		} else {
 			mode = gpioModeInput;
 		}
-	} else { /* GPIO_DIR_OUT */
-		mode = gpioModePushPull;
+	} else {
+		/* Neither input nor output mode is selected */
+		mode = gpioModeDisabled;
 	}
 	/* The flags contain options that require touching registers in the
 	 * GPIO module and the corresponding PORT module.
@@ -113,6 +128,12 @@ static int gpio_gecko_configure(struct device *dev,
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		GPIO_PinModeSet(gpio_index, pin, mode, out);
+		if (flags & GPIO_ACTIVE_LOW) {
+			data->invert |= BIT(pin);
+		} else {
+			data->invert &= ~BIT(pin);
+		}
+
 	} else {	/* GPIO_ACCESS_BY_PORT */
 		gpio_base->MODEL = GECKO_GPIO_MODEL(7, mode)
 			| GECKO_GPIO_MODEL(6, mode) | GECKO_GPIO_MODEL(5, mode)
@@ -128,15 +149,14 @@ static int gpio_gecko_configure(struct device *dev,
 			| GECKO_GPIO_MODEH(9, mode)
 			| GECKO_GPIO_MODEH(8, mode);
 		gpio_base->DOUT = (out ? 0xFFFF : 0x0000);
+		data->invert = (flags & GPIO_ACTIVE_LOW ? 0xFFFF : 0x0000);
 	}
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		GPIO_IntConfig(gpio_index, pin,
-			       (flags & GPIO_INT_ACTIVE_HIGH)
-			       || (flags & GPIO_INT_DOUBLE_EDGE),
-			       !(flags & GPIO_INT_ACTIVE_HIGH)
-			       || (flags & GPIO_INT_DOUBLE_EDGE),
-			       !!(flags & GPIO_INT));
+			       flags & GPIO_INT_HIGH,
+			       flags & GPIO_INT_LOW,
+			       flags & GPIO_INT_ENABLE);
 	}
 
 	return 0;
@@ -147,8 +167,12 @@ static int gpio_gecko_write(struct device *dev,
 {
 	const struct gpio_gecko_config *config = dev->config->config_info;
 	GPIO_P_TypeDef *gpio_base = config->gpio_base;
+	struct gpio_gecko_data *data = dev->driver_data;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
+		if (data->invert & BIT(pin)) {
+			value = !value;
+		}
 		if (value) {
 			/* Set the data output for the corresponding pin.
 			 * Writing zeros to the other bits leaves the data
@@ -164,7 +188,7 @@ static int gpio_gecko_write(struct device *dev,
 		}
 	} else { /* GPIO_ACCESS_BY_PORT */
 		/* Write the data output for all the pins */
-		gpio_base->DOUT = value;
+		gpio_base->DOUT = value ^ data->invert;
 	}
 
 	return 0;
@@ -175,8 +199,10 @@ static int gpio_gecko_read(struct device *dev,
 {
 	const struct gpio_gecko_config *config = dev->config->config_info;
 	GPIO_P_TypeDef *gpio_base = config->gpio_base;
+	struct gpio_gecko_data *data = dev->driver_data;
 
 	*value = gpio_base->DIN;
+	*value ^= data->invert;
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		*value = (*value & BIT(pin)) >> pin;
