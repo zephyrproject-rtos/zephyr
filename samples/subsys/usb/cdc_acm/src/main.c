@@ -17,7 +17,6 @@
 #include <device.h>
 #include <uart.h>
 #include <zephyr.h>
-#include <stdio.h>
 
 static const char *banner1 = "Send characters to the UART device\r\n";
 static const char *banner2 = "Characters read:\r\n";
