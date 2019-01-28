@@ -46,19 +46,9 @@ where "part0" is the name then used to refer to that partition.
 This macro only creates a function and necessary data structures for
 the later "initialization".
 
-To create a memory domain for the partition, the macro appmem_domain(dom0)
-is called where "dom0" is the name then used for the memory domain.
-To initialize the partition (effectively adding the partition
-to a linked list), appmem_init_part_part0() is called. This is followed
-by appmem_init_app_memory(), which walks all partitions in the linked
-list and calculates the sizes for each partition.
-
-Once the partition is initialized, the domain can be
-initialized with appmem_init_domain_dom0(part0) which initializes the
-domain with partition part0.
-
-After the domain has been initialized, the current thread
-can be added using appmem_add_thread_dom0(k_current_get()).
+Once the partition is initialized, the standard memory domain APIs may
+be used to add it to domains; the declared name is a k_mem_partition
+symbol.
 
 Example:
 
@@ -67,17 +57,18 @@ Example:
             /* create partition at top of file outside functions */
             appmem_partition(part0);
             /* create domain */
-            appmem_domain(dom0);
+            struct k_mem_domain dom0;
             /* assign variables to the domain */
-            _app_dmem(dom0) int var1;
-            _app_bmem(dom0) static volatile int var2;
+            _app_dmem(part0) int var1;
+            _app_bmem(part0) static volatile int var2;
 
             int main()
             {
                     appmem_init_part_part0();
                     appmem_init_app_memory();
-                    appmem_init_domain_dom0(part0);
-                    appmem_add_thread_dom0(k_current_get());
+                    k_mem_domain_init(&dom0, 0, NULL)
+                    k_mem_domain_add_partition(&dom0, part0);
+                    k_mem_domain_add_thread(&dom0, k_current_get());
                     ...
             }
 
@@ -88,12 +79,6 @@ app_macro_support.h:
 .. code-block:: c
 
  FOR_EACH(appmem_partition, part0, part1, part2);
-
-or, for multiple domains, similarly:
-
-.. code-block:: c
-
- FOR_EACH(appmem_domain, dom0, dom1);
 
 Similarly, the appmem_init_part_* can also be used in the macro:
 

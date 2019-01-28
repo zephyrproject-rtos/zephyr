@@ -55,11 +55,7 @@
 struct app_region {
 	char *dmem_start;
 	char *bmem_start;
-#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-	char *smem_size;
-#else
 	u32_t smem_size;
-#endif	/* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
 	u32_t dmem_size;
 	u32_t bmem_size;
 	struct k_mem_partition *partition;
@@ -75,7 +71,7 @@ struct app_region {
  * calculate the region sizes.
  */
 #define smem_size_declare(name) extern char data_smem_##name##_size[]
-#define smem_size_assign(name) name.smem_size = data_smem_##name##_size
+#define smem_size_assign(name) name##_region.smem_size = (u32_t)&data_smem_##name##_size
 #else
 #define smem_size_declare(name)
 #define smem_size_assign(name)
@@ -87,48 +83,17 @@ struct app_region {
 	smem_size_declare(name);		  \
 	_app_dmem_pad(name) char name##_dmem_pad; \
 	_app_bmem_pad(name) char name##_bmem_pad; \
-	__kernel struct k_mem_partition mem_domain_##name; \
-	__kernel struct app_region name; \
+	__kernel struct k_mem_partition name; \
+	__kernel struct app_region name##_region; \
 	static inline void appmem_init_part_##name(void) \
 	{ \
-		name.dmem_start = (char *)&data_smem_##name; \
-		name.bmem_start = (char *)&data_smem_##name##b; \
+		name##_region.dmem_start = (char *)&data_smem_##name; \
+		name##_region.bmem_start = (char *)&data_smem_##name##b; \
 		smem_size_assign(name);				\
-		sys_dlist_append(&app_mem_list, &name.lnode); \
-		mem_domain_##name.start = (u32_t) name.dmem_start; \
-		mem_domain_##name.attr = K_MEM_PARTITION_P_RW_U_RW; \
-		name.partition = &mem_domain_##name; \
-	}
-
-/*
- * A wrapper around the k_mem_domain_* functions. Goal here was
- * to a) differentiate these operations from the k_mem_domain*
- * functions, and b) to simply the usage and handling of data
- * types (i.e. app_region, k_mem_domain, etc).
- */
-#define appmem_domain(name) \
-	__kernel struct k_mem_domain domain_##name; \
-	static inline void appmem_add_thread_##name(k_tid_t thread) \
-	{ \
-		k_mem_domain_add_thread(&domain_##name, thread); \
-	} \
-	static inline void appmem_rm_thread_##name(k_tid_t thread) \
-	{ \
-		k_mem_domain_remove_thread(thread); \
-	} \
-	static inline void appmem_add_part_##name(struct app_region region) \
-	{ \
-		k_mem_domain_add_partition(&domain_##name, \
-			&region.partition[0]); \
-	} \
-	static inline void appmem_rm_part_##name(struct app_region region) \
-	{ \
-		k_mem_domain_remove_partition(&domain_##name, \
-			&region.partition[0]); \
-	} \
-	static inline void appmem_init_domain_##name(struct app_region region) \
-	{ \
-		k_mem_domain_init(&domain_##name, 1, &region.partition); \
+		sys_dlist_append(&app_mem_list, &name##_region.lnode); \
+		name.start = (u32_t) name##_region.dmem_start; \
+		name.attr = K_MEM_PARTITION_P_RW_U_RW; \
+		name##_region.partition = &name; \
 	}
 
 /*

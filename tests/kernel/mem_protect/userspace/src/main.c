@@ -45,7 +45,8 @@ FOR_EACH(appmem_partition, part0, part1, part2);
  * test suite, specifically. dom1 is for a specific test
  * in this test suite.
  */
-FOR_EACH(appmem_domain, dom0, dom1);
+struct k_mem_domain dom0;
+struct k_mem_domain dom1;
 
 _app_dmem(part0) static volatile bool give_uthread_end_sem;
 _app_dmem(part0) bool mem_access_check;
@@ -656,19 +657,18 @@ static void shared_mem_thread(void)
  */
 static void access_other_memdomain(void)
 {
+	struct k_mem_partition *parts[] = {&part0, &part2};
 	/*
 	 * Following tests the ability for a thread to access data
 	 * in a domain that it is denied.
 	 */
 
 	/* initialize domain dom1 with partition part2 */
-	appmem_init_domain_dom1(part2);
-	/* add partition part0 for test globals */
-	appmem_add_part_dom1(part0);
-	/* remove current thread from domain dom0 */
-	appmem_rm_thread_dom0(k_current_get());
-	/* initialize domain with current thread*/
-	appmem_add_thread_dom1(k_current_get());
+	k_mem_domain_init(&dom1, 2, parts);
+
+	/* remove current thread from domain dom0 and add to dom1 */
+	k_mem_domain_remove_thread(k_current_get());
+	k_mem_domain_add_thread(&dom1, k_current_get());
 
 	/* Create user mode thread */
 	k_thread_create(&uthread_thread, uthread_stack, STACKSIZE,
@@ -687,6 +687,8 @@ extern k_thread_stack_t ztest_thread_stack[];
 
 void test_main(void)
 {
+	struct k_mem_partition *parts[] = {&part0, &part1};
+
 	/* partitions must be initialized first */
 	FOR_EACH(appmem_init_part, part0, part1, part2);
 	/*
@@ -705,12 +707,8 @@ void test_main(void)
 #else
 	appmem_init_app_memory();
 #endif
-	/* Domain is initialized with partition part0 */
-	appmem_init_domain_dom0(part0);
-	/* Next, the partition must be added to the domain */
-	appmem_add_part_dom0(part1);
-	/* Finally, the current thread is added to domain */
-	appmem_add_thread_dom0(k_current_get());
+	k_mem_domain_init(&dom0, 2, parts);
+	k_mem_domain_add_thread(&dom0, k_current_get());
 
 #if defined(CONFIG_ARM)
 	priv_stack_ptr = (int *)_k_priv_stack_find(ztest_thread_stack) -
