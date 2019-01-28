@@ -1135,7 +1135,7 @@ int net_dhcpv4_init(void)
 	 * DHCPV4_SERVER_PORT(67) and DHCPV4_CLIENT_PORT(68) for
 	 * all dhcpv4 related incoming packets.
 	 */
-	ret = net_udp_register(NULL, &local_addr,
+	ret = net_udp_register(AF_INET, NULL, &local_addr,
 			       DHCPV4_SERVER_PORT,
 			       DHCPV4_CLIENT_PORT,
 			       net_dhcpv4_input, NULL, NULL);

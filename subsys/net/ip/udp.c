@@ -224,15 +224,16 @@ struct net_udp_hdr *net_udp_set_hdr(struct net_pkt *pkt,
 	return hdr;
 }
 
-int net_udp_register(const struct sockaddr *remote_addr,
-				   const struct sockaddr *local_addr,
-				   u16_t remote_port,
-				   u16_t local_port,
-				   net_conn_cb_t cb,
-				   void *user_data,
-				   struct net_conn_handle **handle)
+int net_udp_register(u8_t family,
+		     const struct sockaddr *remote_addr,
+		     const struct sockaddr *local_addr,
+		     u16_t remote_port,
+		     u16_t local_port,
+		     net_conn_cb_t cb,
+		     void *user_data,
+		     struct net_conn_handle **handle)
 {
-	return net_conn_register(IPPROTO_UDP, remote_addr, local_addr,
+	return net_conn_register(IPPROTO_UDP, family, remote_addr, local_addr,
 				 remote_port, local_port, cb, user_data,
 				 handle);
 }

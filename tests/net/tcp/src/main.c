@@ -666,7 +666,8 @@ static bool test_register(void)
 		set_port(family, (struct sockaddr *)raddr,		\
 			 (struct sockaddr *)laddr, rport, lport);	\
 									\
-		ret = net_tcp_register((struct sockaddr *)raddr,	\
+		ret = net_tcp_register(family,				\
+				       (struct sockaddr *)raddr,	\
 				       (struct sockaddr *)laddr,	\
 				       rport, lport,			\
 				       test_ok, &user_data,		\
@@ -681,7 +682,8 @@ static bool test_register(void)
 	})
 
 #define REGISTER_FAIL(raddr, laddr, rport, lport)			\
-	ret = net_tcp_register((struct sockaddr *)raddr,		\
+	ret = net_tcp_register(AF_INET,					\
+			       (struct sockaddr *)raddr,		\
 			       (struct sockaddr *)laddr,		\
 			       rport, lport,				\
 			       test_fail, INT_TO_POINTER(0), NULL);	\
