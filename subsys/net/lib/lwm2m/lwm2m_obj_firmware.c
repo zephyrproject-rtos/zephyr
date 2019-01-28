@@ -156,12 +156,13 @@ void lwm2m_firmware_set_update_result(u8_t result)
 		lwm2m_firmware_set_update_state(STATE_IDLE);
 		break;
 	case RESULT_UPDATE_FAILED:
-		if (update_state != STATE_UPDATING) {
+		if (update_state != STATE_DOWNLOADING &&
+		    update_state != STATE_UPDATING) {
 			error = true;
 			state = update_state;
 		}
 
-		/* Next state could be idle or downloaded */
+		lwm2m_firmware_set_update_state(STATE_IDLE);
 		break;
 	default:
 		LOG_ERR("Unhandled result: %u", result);
