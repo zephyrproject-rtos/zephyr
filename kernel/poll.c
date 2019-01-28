@@ -91,8 +91,7 @@ static inline void add_event(sys_dlist_t *events, struct k_poll_event *event,
 	SYS_DLIST_FOR_EACH_CONTAINER(events, pending, _node) {
 		if (_is_t1_higher_prio_than_t2(poller->thread,
 					       pending->poller->thread)) {
-			sys_dlist_insert_before(events, &pending->_node,
-						&event->_node);
+			sys_dlist_insert(&pending->_node, &event->_node);
 			return;
 		}
 	}
