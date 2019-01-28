@@ -1,0 +1,47 @@
+#
+# Copyright (c) 2018 Peter Bigot Consulting, LLC
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: SPI NOR flash devices (JEDEC CFI interface)
+version: 0.1
+
+description: >
+  Any SPI NOR flash that supports the JEDEC CFI interface.
+
+inherits:
+  !include [spi-device.yaml]
+
+properties:
+  compatible:
+    constraint: "jedec,spi-nor"
+
+  jedec-id:
+    type: array
+    category: required
+    description: JEDEC ID as manufacturer ID, memory type, memory density
+    generation: define
+
+  size:
+    type: int
+    category: optional
+    description: flash capacity in bits
+    generation: define, use-prop-name
+
+  wp-gpios:
+    type: compound
+    category: optional
+    description: WPn pin
+    generation: define, use-prop-name
+  hold-gpios:
+    type: compound
+    category: optional
+    description: HOLDn pin
+    generation: define, use-prop-name
+  reset-gpios:
+    type: compound
+    category: optional
+    description: RESETn pin
+    generation: define, use-prop-name
+...
