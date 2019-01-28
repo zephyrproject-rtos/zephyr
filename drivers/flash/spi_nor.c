@@ -385,7 +385,7 @@ static int spi_nor_init(struct device *dev)
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static const struct flash_pages_layout dev_layout = {
-	.pages_count = KB(CONFIG_FLASH_SIZE) / FLASH_ERASE_BLOCK_SIZE,
+	.pages_count = DT_JEDEC_SPI_NOR_0_SIZE / 8 / FLASH_ERASE_BLOCK_SIZE,
 	.pages_size = FLASH_ERASE_BLOCK_SIZE,
 };
 
