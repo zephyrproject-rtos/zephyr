@@ -11,13 +11,6 @@ config SOC
 	string
 	default "mimxrt1062"
 
-if CLOCK_CONTROL
-
-config CLOCK_CONTROL_MCUX_CCM
-	default y
-
-endif # CLOCK_CONTROL
-
 config ARM_DIV
 	default 1
 
@@ -29,33 +22,5 @@ config IPG_DIV
 
 config GPIO
 	default y
-
-if GPIO
-
-config GPIO_MCUX_IGPIO
-	default y
-
-endif # GPIO
-
-if I2C
-
-config I2C_MCUX_LPI2C
-	default y
-
-endif # I2C
-
-if SERIAL
-
-config UART_MCUX_LPUART
-	default y
-
-endif # SERIAL
-
-if ENTROPY_GENERATOR
-
-config ENTROPY_MCUX_TRNG
-	default y
-
-endif # ENTROPY_GENERATOR
 
 endif # SOC_MIMXRT1062

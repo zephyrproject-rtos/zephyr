@@ -20,6 +20,55 @@ config TEXT_SECTION_OFFSET
 
 config INIT_ENET_PLL
 
+if CLOCK_CONTROL
+
+config CLOCK_CONTROL_MCUX_CCM
+	default y if HAS_MCUX_CCM
+
+endif # CLOCK_CONTROL
+
+if GPIO
+
+config GPIO_MCUX_IGPIO
+	default y if HAS_MCUX_IGPIO
+
+endif # GPIO
+
+if ENTROPY_GENERATOR
+
+config ENTROPY_MCUX_TRNG
+	default y if HAS_MCUX_TRNG
+
+endif # ENTROPY_GENERATOR
+
+if I2C
+
+config I2C_MCUX_LPI2C
+	default y if HAS_MCUX_LPI2C
+
+endif # I2C
+
+if NET_L2_ETHERNET
+
+config ETH_MCUX
+	def_bool y if HAS_MCUX_ENET
+
+endif # NET_L2_ETHERNET
+
+if SERIAL
+
+config UART_MCUX_LPUART
+	default y if HAS_MCUX_LPUART
+
+endif # SERIAL
+
+if SPI
+
+config SPI_MCUX_LPSPI
+	default y if HAS_MCUX_LPSPI
+
+endif # SPI
+
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 
 endif # SOC_SERIES_IMX_RT
