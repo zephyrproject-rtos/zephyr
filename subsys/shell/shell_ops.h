@@ -181,8 +181,6 @@ void shell_op_cursor_home_move(const struct shell *shell);
 /* Function moves cursor to end of command. */
 void shell_op_cursor_end_move(const struct shell *shell);
 
-void char_replace(const struct shell *shell, char data);
-
 void shell_op_char_insert(const struct shell *shell, char data);
 
 void shell_op_char_backspace(const struct shell *shell);

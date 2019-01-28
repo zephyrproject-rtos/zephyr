@@ -258,7 +258,7 @@ static void data_insert(const struct shell *shell, const char *data, u16_t len)
 	reprint_from_cursor(shell, after, false);
 }
 
-void char_replace(const struct shell *shell, char data)
+static void char_replace(const struct shell *shell, char data)
 {
 	shell->ctx->cmd_buff[shell->ctx->cmd_buff_pos++] = data;
 
