@@ -1,0 +1,9 @@
+# Kconfig - Fanstel EV-BT832X board configuration
+#
+# Copyright (c) 2019 SixOctets Systems
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config  BOARD_FANSTEL_EV832X
+	bool "Fanstel EV-BT832X"
+	depends on SOC_NRF52832_QFAA

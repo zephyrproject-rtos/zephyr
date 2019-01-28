@@ -1,0 +1,10 @@
+identifier: fanstel_ev832x
+name: fanstel_ev832x
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 512

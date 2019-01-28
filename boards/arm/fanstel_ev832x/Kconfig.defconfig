@@ -1,0 +1,33 @@
+# Kconfig - Fanstel EV-BT832X board configuration
+#
+# Copyright (c) 2019 SixOctets Systems
+#
+# SPDX-License-Identifier: Apache-2.0
+
+
+if BOARD_FANSTEL_EV832X
+
+config BOARD
+	default "Fanstel EV-BT832X"
+
+if I2C
+
+config I2C_0
+	default y
+
+endif # I2C
+
+if BT_CTLR
+
+config GPIO
+	default y
+
+config BT_CTLR_GPIO_PA
+	default y
+
+config BT_CTLR_GPIO_LNA
+	default y
+
+endif # BT_CTLR
+
+endif # BOARD_FANSTEL_EV832X
