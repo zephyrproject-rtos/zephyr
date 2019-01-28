@@ -22,11 +22,19 @@ struct shell_history {
 	sys_dlist_t list;
 	sys_dnode_t *current;
 };
+
+struct shell_history_item {
+	sys_dnode_t dnode;
+	u16_t len;
+	char data[];
+};
+
 #if CONFIG_SHELL_HISTORY
 #define SHELL_HISTORY_DEFINE(_name, block_size, block_count)	\
 								\
 	K_MEM_SLAB_DEFINE(_name##_history_memslab,		\
-			  block_size, block_count, 4);		\
+		 ROUND_UP(block_size + sizeof(struct shell_history_item), \
+			  sizeof(void *)), block_count, 4);		\
 	static struct shell_history _name##_history = {		\
 		.mem_slab = &_name##_history_memslab		\
 	}

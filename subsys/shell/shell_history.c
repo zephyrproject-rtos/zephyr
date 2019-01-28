@@ -7,12 +7,6 @@
 #include <shell/shell_history.h>
 #include <string.h>
 
-struct shell_history_item {
-	sys_dnode_t dnode;
-	u16_t len;
-	char data[1];
-};
-
 void shell_history_mode_exit(struct shell_history *history)
 {
 	history->current = NULL;
