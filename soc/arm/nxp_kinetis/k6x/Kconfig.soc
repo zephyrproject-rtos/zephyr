@@ -13,6 +13,7 @@ config SOC_MK64F12
 	bool "SOC_MK64F12"
 	select HAS_MCUX
 	select HAS_MCUX_ADC16
+	select HAS_MCUX_ENET
 	select HAS_MCUX_FTM
 	select HAS_MCUX_RNGA
 	select HAS_MCUX_SIM

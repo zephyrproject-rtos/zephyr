@@ -13,6 +13,7 @@ config SOC_MIMXRT1021
 	bool "SOC_MIMXRT1021"
 	select HAS_MCUX
 	select HAS_MCUX_CCM
+	select HAS_MCUX_ENET
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPSPI
@@ -28,6 +29,7 @@ config SOC_MIMXRT1051
 	bool "SOC_MIMXRT1051"
 	select HAS_MCUX
 	select HAS_MCUX_CCM
+	select HAS_MCUX_ENET
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPSPI
@@ -43,6 +45,7 @@ config SOC_MIMXRT1052
 	bool "SOC_MIMXRT1052"
 	select HAS_MCUX
 	select HAS_MCUX_CCM
+	select HAS_MCUX_ENET
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPSPI
@@ -58,6 +61,7 @@ config SOC_MIMXRT1061
 	bool "SOC_MIMXRT1061"
 	select HAS_MCUX
 	select HAS_MCUX_CCM
+	select HAS_MCUX_ENET
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPUART
@@ -72,6 +76,7 @@ config SOC_MIMXRT1062
 	bool "SOC_MIMXRT1062"
 	select HAS_MCUX
 	select HAS_MCUX_CCM
+	select HAS_MCUX_ENET
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPUART
@@ -86,6 +91,7 @@ config SOC_MIMXRT1064
 	bool "SOC_MIMXRT1064"
 	select HAS_MCUX
 	select HAS_MCUX_CCM
+	select HAS_MCUX_ENET
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_TRNG
