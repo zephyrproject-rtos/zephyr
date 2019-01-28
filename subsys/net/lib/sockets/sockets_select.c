@@ -67,7 +67,7 @@ void ZSOCK_FD_SET(int fd, zsock_fd_set *set)
 int zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *writefds,
 		 zsock_fd_set *exceptfds, struct zsock_timeval *timeout)
 {
-	struct pollfd pfds[CONFIG_NET_SOCKETS_POLL_MAX];
+	struct zsock_pollfd pfds[CONFIG_NET_SOCKETS_POLL_MAX];
 	int i, res, poll_timeout;
 	int num_pfds = 0;
 	int num_selects = 0;
@@ -137,15 +137,15 @@ int zsock_select(int nfds, zsock_fd_set *readfds, zsock_fd_set *writefds,
 	}
 
 	if (readfds != NULL) {
-		FD_ZERO(readfds);
+		ZSOCK_FD_ZERO(readfds);
 	}
 
 	if (writefds != NULL) {
-		FD_ZERO(writefds);
+		ZSOCK_FD_ZERO(writefds);
 	}
 
 	if (exceptfds != NULL) {
-		FD_ZERO(exceptfds);
+		ZSOCK_FD_ZERO(exceptfds);
 	}
 
 	for (i = 0; i < num_pfds && res > 0; i++) {
