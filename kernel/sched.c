@@ -111,7 +111,7 @@ bool _is_t1_higher_prio_than_t2(struct k_thread *t1, struct k_thread *t2)
 	return false;
 }
 
-static bool should_preempt(struct k_thread *th, int preempt_ok)
+static ALWAYS_INLINE bool should_preempt(struct k_thread *th, int preempt_ok)
 {
 	/* Preemption is OK if it's being explicitly allowed by
 	 * software state (e.g. the thread called k_yield())
@@ -153,7 +153,7 @@ static bool should_preempt(struct k_thread *th, int preempt_ok)
 	return false;
 }
 
-static struct k_thread *next_up(void)
+static ALWAYS_INLINE struct k_thread *next_up(void)
 {
 #ifndef CONFIG_SMP
 	/* In uniprocessor mode, we can leave the current thread in
@@ -367,8 +367,8 @@ static _wait_q_t *pended_on(struct k_thread *thread)
 	return thread->base.pended_on;
 }
 
-struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
-					      struct k_thread *from)
+ALWAYS_INLINE struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
+						     struct k_thread *from)
 {
 	ARG_UNUSED(from);
 
@@ -381,7 +381,7 @@ struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
 	return ret;
 }
 
-void _unpend_thread_no_timeout(struct k_thread *thread)
+ALWAYS_INLINE void _unpend_thread_no_timeout(struct k_thread *thread)
 {
 	LOCKED(&sched_lock) {
 		_priq_wait_remove(&pended_on(thread)->waitq, thread);
@@ -565,7 +565,7 @@ void *_get_next_switch_handle(void *interrupted)
 }
 #endif
 
-void _priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
+ALWAYS_INLINE void _priq_dumb_add(sys_dlist_t *pq, struct k_thread *thread)
 {
 	struct k_thread *t;
 
@@ -667,7 +667,7 @@ struct k_thread *_priq_rb_best(struct _priq_rb *pq)
 # endif
 #endif
 
-void _priq_mq_add(struct _priq_mq *pq, struct k_thread *thread)
+ALWAYS_INLINE void _priq_mq_add(struct _priq_mq *pq, struct k_thread *thread)
 {
 	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
 
@@ -675,7 +675,7 @@ void _priq_mq_add(struct _priq_mq *pq, struct k_thread *thread)
 	pq->bitmask |= (1 << priority_bit);
 }
 
-void _priq_mq_remove(struct _priq_mq *pq, struct k_thread *thread)
+ALWAYS_INLINE void _priq_mq_remove(struct _priq_mq *pq, struct k_thread *thread)
 {
 	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
 
