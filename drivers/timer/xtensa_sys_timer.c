@@ -118,3 +118,11 @@ u32_t _timer_cycle_get_32(void)
 {
 	return ccount();
 }
+
+#ifdef CONFIG_SMP
+void smp_timer_init(void)
+{
+	set_ccompare(ccount() + CYC_PER_TICK);
+	irq_enable(TIMER_IRQ);
+}
+#endif
