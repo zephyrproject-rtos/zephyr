@@ -19,6 +19,9 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #include <shell/shell.h>
 #include <shell/shell_uart.h>
 
+#if defined CONFIG_DNS_RESOLVER
+#include <net/socket.h>
+#endif
 #include <net/net_if.h>
 #include <net/dns_resolve.h>
 #include <misc/printk.h>
@@ -1281,60 +1284,6 @@ static int cmd_net_conn(const struct shell *shell, size_t argc, char *argv[])
 }
 
 #if defined(CONFIG_DNS_RESOLVER)
-static void dns_result_cb(enum dns_resolve_status status,
-			  struct dns_addrinfo *info,
-			  void *user_data)
-{
-	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
-	bool *first = data->user_data;
-
-	if (status == DNS_EAI_CANCELED) {
-		PR_WARNING("\nTimeout while resolving name.\n");
-		*first = false;
-		return;
-	}
-
-	if (status == DNS_EAI_INPROGRESS && info) {
-		char addr[NET_IPV6_ADDR_LEN];
-
-		if (*first) {
-			PR("\n");
-			*first = false;
-		}
-
-		if (info->ai_family == AF_INET) {
-			net_addr_ntop(AF_INET,
-				      &net_sin(&info->ai_addr)->sin_addr,
-				      addr, NET_IPV4_ADDR_LEN);
-		} else if (info->ai_family == AF_INET6) {
-			net_addr_ntop(AF_INET6,
-				      &net_sin6(&info->ai_addr)->sin6_addr,
-				      addr, NET_IPV6_ADDR_LEN);
-		} else {
-			strncpy(addr, "Invalid protocol family",
-				sizeof(addr));
-		}
-
-		PR("\t%s\n", addr);
-		return;
-	}
-
-	if (status == DNS_EAI_ALLDONE) {
-		PR("All results received\n");
-		*first = false;
-		return;
-	}
-
-	if (status == DNS_EAI_FAIL) {
-		PR_WARNING("No such name found.\n");
-		*first = false;
-		return;
-	}
-
-	PR_WARNING("Unhandled status %d received\n", status);
-}
-
 static void print_dns_info(const struct shell *shell,
 			   struct dns_resolve_context *ctx)
 {
@@ -1434,11 +1383,10 @@ static int cmd_net_dns_query(const struct shell *shell, size_t argc,
 {
 
 #if defined(CONFIG_DNS_RESOLVER)
-#define DNS_TIMEOUT K_MSEC(2000) /* ms */
-	struct net_shell_user_data user_data;
-	enum dns_query_type qtype = DNS_QUERY_TYPE_A;
+	char hr_addr[NET_IPV6_ADDR_LEN];
 	char *host, *type = NULL;
-	bool first = true;
+	struct addrinfo hints;
+	struct addrinfo *lookup, *iter;
 	int ret, arg = 1;
 
 	host = argv[arg++];
@@ -1451,12 +1399,16 @@ static int cmd_net_dns_query(const struct shell *shell, size_t argc,
 		type = argv[arg];
 	}
 
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_protocol = 0;
+	hints.ai_family = AF_INET;
+
 	if (type) {
 		if (strcmp(type, "A") == 0) {
-			qtype = DNS_QUERY_TYPE_A;
+			hints.ai_family = AF_INET;
 			PR("IPv4 address type\n");
 		} else if (strcmp(type, "AAAA") == 0) {
-			qtype = DNS_QUERY_TYPE_AAAA;
+			hints.ai_family = AF_INET6;
 			PR("IPv6 address type\n");
 		} else {
 			PR_WARNING("Unknown query type, specify either "
@@ -1465,16 +1417,45 @@ static int cmd_net_dns_query(const struct shell *shell, size_t argc,
 		}
 	}
 
-	user_data.shell = shell;
-	user_data.user_data = &first;
-
-	ret = dns_get_addr_info(host, qtype, NULL, dns_result_cb, &user_data,
-				DNS_TIMEOUT);
+	ret = getaddrinfo(host, NULL, &hints, &lookup);
 	if (ret < 0) {
+		switch (ret) {
+		case DNS_EAI_FAIL:
+		case DNS_EAI_NONAME:
+		case DNS_EAI_NODATA:
+			PR_WARNING("No such name found.\n");
+			break;
+		case DNS_EAI_CANCELED:
+			PR_WARNING("Timeout while resolving name\n");
+			break;
+		default:
+			PR_WARNING("Unhandled status %d received\n", ret);
+		}
 		PR_WARNING("Cannot resolve '%s' (%d)\n", host, ret);
 	} else {
-		PR("Query for '%s' sent.\n", host);
+		if (lookup) {
+			PR("\n");
+		}
+
+		for (iter = lookup; iter; iter = iter->ai_next) {
+			if (type && iter->ai_family != hints.ai_family) {
+				continue;
+			}
+
+			if (iter->ai_family == AF_INET) {
+				net_addr_ntop(iter->ai_family,
+					&net_sin(iter->ai_addr)->sin_addr,
+					hr_addr, sizeof(hr_addr));
+			} else {
+				net_addr_ntop(iter->ai_family,
+					&net_sin6(iter->ai_addr)->sin6_addr,
+					hr_addr, sizeof(hr_addr));
+			}
+			PR("\t%s\n", hr_addr);
+		}
+		PR("All results received\n");
 	}
+
 #else
 	PR_INFO("DNS resolver not supported. Set CONFIG_DNS_RESOLVER to "
 		"enable it.\n");
