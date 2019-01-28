@@ -3,7 +3,7 @@
  *
  * \brief Instance description for RTT
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_RTT_INSTANCE_H_
 #define _SAME70_RTT_INSTANCE_H_
 
@@ -44,6 +45,7 @@
 #define REG_RTT_SR              (*(__I  uint32_t*)0x400E183CU) /**< (RTT) Status Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for RTT peripheral ========== */
 #define RTT_INSTANCE_ID                          3         
 

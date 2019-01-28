@@ -3,7 +3,7 @@
  *
  * \brief Instance description for TWIHS0
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_TWIHS0_INSTANCE_H_
 #define _SAME70_TWIHS0_INSTANCE_H_
 
@@ -68,6 +69,7 @@
 #define REG_TWIHS0_WPSR         (*(__I  uint32_t*)0x400180E8U) /**< (TWIHS0) Write Protection Status Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for TWIHS0 peripheral ========== */
 #define TWIHS0_INSTANCE_ID                       19        
 #define TWIHS0_DMAC_ID_TX                        14        

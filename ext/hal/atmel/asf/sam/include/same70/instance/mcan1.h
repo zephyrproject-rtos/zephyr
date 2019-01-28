@@ -3,7 +3,7 @@
  *
  * \brief Instance description for MCAN1
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_MCAN1_INSTANCE_H_
 #define _SAME70_MCAN1_INSTANCE_H_
 
@@ -124,6 +125,7 @@
 #define REG_MCAN1_TXEFA         (*(__IO uint32_t*)0x400340F8U) /**< (MCAN1) Transmit Event FIFO Acknowledge Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for MCAN1 peripheral ========== */
 #define MCAN1_INSTANCE_ID                        37        
 

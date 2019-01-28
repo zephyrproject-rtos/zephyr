@@ -3,7 +3,7 @@
  *
  * \brief Header file for ATSAME70N19
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-01-08T14:00:00Z */
 #ifndef _SAME70N19_H_
 #define _SAME70N19_H_
 
@@ -41,9 +42,6 @@
  extern "C" {
 #endif
 
-#if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
-#include <stdint.h>
-/* IO definitions (access restrictions to peripheral registers) */
 /** \defgroup Atmel_glob_defs Atmel Global Defines
 
     <strong>IO Type Qualifiers</strong> are used
@@ -56,6 +54,10 @@
  *  @{
  */
 
+#if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
+#include <stdint.h>
+
+/* IO definitions (access restrictions to peripheral registers) */
 #ifndef __cplusplus
 typedef volatile const uint32_t RoReg;   /**< Read only 32-bit register (volatile const unsigned int) */
 typedef volatile const uint16_t RoReg16; /**< Read only 16-bit register (volatile const unsigned int) */
@@ -71,26 +73,34 @@ typedef volatile       uint32_t WoReg8;  /**< Write only  8-bit register (volati
 typedef volatile       uint32_t RwReg;   /**< Read-Write 32-bit register (volatile unsigned int) */
 typedef volatile       uint16_t RwReg16; /**< Read-Write 16-bit register (volatile unsigned int) */
 typedef volatile       uint8_t  RwReg8;  /**< Read-Write  8-bit register (volatile unsigned int) */
+
 #define CAST(type, value) ((type *)(value)) /**< Pointer Type Conversion Macro for C/C++ */
 #define REG_ACCESS(type, address) (*(type*)(address)) /**< C code: Register value */
-
-#if !defined(_UL)
-/* Macros that deal with adding suffixes to integer literal constants for C/C++ */
-#define _U(x) x ## U    /**< C code: Unsigned integer literal constant value */
-#define _L(x) x ## L    /**< C code: Long integer literal constant value */
-#define _UL(x) x ## UL  /**< C code: Unsigned Long integer literal constant value */
-#endif /* !defined(UL) */
 #else /* Assembler */
 #define CAST(type, value) (value) /**< Pointer Type Conversion Macro for Assembler */
 #define REG_ACCESS(type, address) (address) /**< Assembly code: Register address */
-#if !defined(_UL)
-#define _U(x) x    /**< Assembler: Unsigned integer literal constant value */
-#define _L(x) x    /**< Assembler: Long integer literal constant value */
-#define _UL(x) x   /**< Assembler: Unsigned Long integer literal constant value */
-#endif /* !defined(UL) */
-
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
+#if !defined(SKIP_INTEGER_LITERALS)
+
+#if defined(_U_) || defined(_L_) || defined(_UL_)
+  #error "Integer Literals macros already defined elsewhere"
+#endif
+
+#if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
+/* Macros that deal with adding suffixes to integer literal constants for C/C++ */
+#define _U_(x) x ## U    /**< C code: Unsigned integer literal constant value */
+#define _L_(x) x ## L    /**< C code: Long integer literal constant value */
+#define _UL_(x) x ## UL  /**< C code: Unsigned Long integer literal constant value */
+
+#else /* Assembler */
+
+#define _U_(x) x    /**< Assembler: Unsigned integer literal constant value */
+#define _L_(x) x    /**< Assembler: Long integer literal constant value */
+#define _UL_(x) x   /**< Assembler: Unsigned Long integer literal constant value */
+#endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
+#endif /* SKIP_INTEGER_LITERALS */
 /** @}  end of Atmel Global Defines */
 
 /** \addtogroup SAME70N19_cmsis CMSIS Definitions
@@ -104,15 +114,16 @@ typedef volatile       uint8_t  RwReg8;  /**< Read-Write  8-bit register (volati
 typedef enum IRQn
 {
 /******  CORTEX-M7 Processor Exceptions Numbers ******************************/
-  NonMaskableInt_IRQn       = -14, /**< 2   Non Maskable Interrupt               */
-  HardFault_IRQn            = -13, /**< 3   HardFault Interrupt                  */
-  MemoryManagement_IRQn     = -12, /**< 4   Cortex-M7 Memory Management Interrupt  */
-  BusFault_IRQn             = -11, /**< 5   Cortex-M7 Bus Fault Interrupt        */
-  UsageFault_IRQn           = -10, /**< 6   Cortex-M7 Usage Fault Interrupt      */
-  SVCall_IRQn               = -5 , /**< 11  Cortex-M7 SV Call Interrupt          */
-  DebugMonitor_IRQn         = -4 , /**< 12  Cortex-M7 Debug Monitor Interrupt    */
-  PendSV_IRQn               = -2 , /**< 14  Cortex-M7 Pend SV Interrupt          */
-  SysTick_IRQn              = -1 , /**< 15  Cortex-M7 System Tick Interrupt      */
+  Reset_IRQn                = -15, /**< 1   Reset Vector, invoked on Power up and warm reset  */
+  NonMaskableInt_IRQn       = -14, /**< 2   Non maskable Interrupt, cannot be stopped or preempted  */
+  HardFault_IRQn            = -13, /**< 3   Hard Fault, all classes of Fault     */
+  MemoryManagement_IRQn     = -12, /**< 4   Memory Management, MPU mismatch, including Access Violation and No Match  */
+  BusFault_IRQn             = -11, /**< 5   Bus Fault, Pre-Fetch-, Memory Access Fault, other address/memory related Fault  */
+  UsageFault_IRQn           = -10, /**< 6   Usage Fault, i.e. Undef Instruction, Illegal State Transition  */
+  SVCall_IRQn               = -5 , /**< 11  System Service Call via SVC instruction  */
+  DebugMonitor_IRQn         = -4 , /**< 12  Debug Monitor                        */
+  PendSV_IRQn               = -2 , /**< 14  Pendable request for system service  */
+  SysTick_IRQn              = -1 , /**< 15  System Tick Timer                    */
 /******  SAME70N19 specific Interrupt Numbers ***********************************/
   SUPC_IRQn                 = 0  , /**< 0   SAME70N19 Supply Controller (SUPC)  */
   RSTC_IRQn                 = 1  , /**< 1   SAME70N19 Reset Controller (RSTC)   */
@@ -143,12 +154,13 @@ typedef enum IRQn
   ICM_IRQn                  = 32 , /**< 32  SAME70N19 Integrity Check Monitor (ICM) */
   ACC_IRQn                  = 33 , /**< 33  SAME70N19 Analog Comparator Controller (ACC) */
   USBHS_IRQn                = 34 , /**< 34  SAME70N19 USB High-Speed Interface (USBHS) */
-  MCAN0_IRQn                = 35 , /**< 35  SAME70N19 Controller Area Network (MCAN0) */
-  MCAN1_IRQn                = 37 , /**< 37  SAME70N19 Controller Area Network (MCAN1) */
+  MCAN0_INT0_IRQn           = 35 , /**< 35  SAME70N19 Controller Area Network (MCAN0) */
+  MCAN0_INT1_IRQn           = 36 , /**< 36  SAME70N19 Controller Area Network (MCAN0) */
+  MCAN1_INT0_IRQn           = 37 , /**< 37  SAME70N19 Controller Area Network (MCAN1) */
+  MCAN1_INT1_IRQn           = 38 , /**< 38  SAME70N19 Controller Area Network (MCAN1) */
   GMAC_IRQn                 = 39 , /**< 39  SAME70N19 Gigabit Ethernet MAC (GMAC) */
   AFEC1_IRQn                = 40 , /**< 40  SAME70N19 Analog Front-End Controller (AFEC1) */
   TWIHS2_IRQn               = 41 , /**< 41  SAME70N19 Two-wire Interface High Speed (TWIHS2) */
-  SPI1_IRQn                 = 42 , /**< 42  SAME70N19 Serial Peripheral Interface (SPI1) */
   QSPI_IRQn                 = 43 , /**< 43  SAME70N19 Quad Serial Peripheral Interface (QSPI) */
   UART2_IRQn                = 44 , /**< 44  SAME70N19 Universal Asynchronous Receiver Transmitter (UART2) */
   UART3_IRQn                = 45 , /**< 45  SAME70N19 Universal Asynchronous Receiver Transmitter (UART3) */
@@ -161,12 +173,17 @@ typedef enum IRQn
   XDMAC_IRQn                = 58 , /**< 58  SAME70N19 Extensible DMA Controller (XDMAC) */
   ISI_IRQn                  = 59 , /**< 59  SAME70N19 Image Sensor Interface (ISI) */
   PWM1_IRQn                 = 60 , /**< 60  SAME70N19 Pulse Width Modulation Controller (PWM1) */
+  FPU_IRQn                  = 61 , /**< 61  SAME70N19 Floating Point Unit Registers (FPU) */
   RSWDT_IRQn                = 63 , /**< 63  SAME70N19 Reinforced Safety Watchdog Timer (RSWDT) */
+  CCW_IRQn                  = 64 , /**< 64  SAME70N19 System Control Registers (SystemControl) */
+  CCF_IRQn                  = 65 , /**< 65  SAME70N19 System Control Registers (SystemControl) */
+  GMAC_Q1_IRQn              = 66 , /**< 66  SAME70N19 Gigabit Ethernet MAC (GMAC) */
+  GMAC_Q2_IRQn              = 67 , /**< 67  SAME70N19 Gigabit Ethernet MAC (GMAC) */
+  IXC_IRQn                  = 68 , /**< 68  SAME70N19 Floating Point Unit Registers (FPU) */
 
-  PERIPH_COUNT_IRQn        = 64  /**< Number of peripheral IDs */
+  PERIPH_COUNT_IRQn        = 69  /**< Number of peripheral IDs */
 } IRQn_Type;
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
-
 
 #if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 typedef struct _DeviceVectors
@@ -174,21 +191,21 @@ typedef struct _DeviceVectors
   /* Stack pointer */
   void* pvStack;
   /* Cortex-M handlers */
-  void* pfnReset_Handler;                        /* 0   Reset handler                        */
-  void* pfnNMI_Handler;                          /* 2   Non Maskable Interrupt               */
-  void* pfnHardFault_Handler;                    /* 3   HardFault Interrupt                  */
-  void* pfnMemManage_Handler;                    /* 4   Cortex-M7 Memory Management Interrupt  */
-  void* pfnBusFault_Handler;                     /* 5   Cortex-M7 Bus Fault Interrupt        */
-  void* pfnUsageFault_Handler;                   /* 6   Cortex-M7 Usage Fault Interrupt      */
-  void* pfnReserved1_Handler;
-  void* pfnReserved2_Handler;
-  void* pfnReserved3_Handler;
-  void* pfnReserved4_Handler;
-  void* pfnSVC_Handler;                          /* 11  Cortex-M7 SV Call Interrupt          */
-  void* pfnDebugMon_Handler;                     /* 12  Cortex-M7 Debug Monitor Interrupt    */
-  void* pfnReserved5_Handler;
-  void* pfnPendSV_Handler;                       /* 14  Cortex-M7 Pend SV Interrupt          */
-  void* pfnSysTick_Handler;                      /* 15  Cortex-M7 System Tick Interrupt      */
+  void* pfnReset_Handler;                        /* -15 Reset Vector, invoked on Power up and warm reset  */
+  void* pfnNonMaskableInt_Handler;               /* -14 Non maskable Interrupt, cannot be stopped or preempted  */
+  void* pfnHardFault_Handler;                    /* -13 Hard Fault, all classes of Fault     */
+  void* pfnMemoryManagement_Handler;             /* -12 Memory Management, MPU mismatch, including Access Violation and No Match  */
+  void* pfnBusFault_Handler;                     /* -11 Bus Fault, Pre-Fetch-, Memory Access Fault, other address/memory related Fault  */
+  void* pfnUsageFault_Handler;                   /* -10 Usage Fault, i.e. Undef Instruction, Illegal State Transition  */
+  void* pvReservedC9;
+  void* pvReservedC8;
+  void* pvReservedC7;
+  void* pvReservedC6;
+  void* pfnSVCall_Handler;                       /*  -5 System Service Call via SVC instruction  */
+  void* pfnDebugMonitor_Handler;                 /*  -4 Debug Monitor                        */
+  void* pvReservedC3;
+  void* pfnPendSV_Handler;                       /*  -2 Pendable request for system service  */
+  void* pfnSysTick_Handler;                      /*  -1 System Tick Timer                    */
 
   /* Peripheral handlers */
   void* pfnSUPC_Handler;                         /* 0   SAME70N19 Supply Controller (SUPC) */
@@ -226,14 +243,14 @@ typedef struct _DeviceVectors
   void* pfnICM_Handler;                          /* 32  SAME70N19 Integrity Check Monitor (ICM) */
   void* pfnACC_Handler;                          /* 33  SAME70N19 Analog Comparator Controller (ACC) */
   void* pfnUSBHS_Handler;                        /* 34  SAME70N19 USB High-Speed Interface (USBHS) */
-  void* pfnMCAN0_Handler;                        /* 35  SAME70N19 Controller Area Network (MCAN0) */
-  void* pvReserved36;
-  void* pfnMCAN1_Handler;                        /* 37  SAME70N19 Controller Area Network (MCAN1) */
-  void* pvReserved38;
+  void* pfnMCAN0_INT0_Handler;                   /* 35  SAME70N19 Controller Area Network (MCAN0) */
+  void* pfnMCAN0_INT1_Handler;                   /* 36  SAME70N19 Controller Area Network (MCAN0) */
+  void* pfnMCAN1_INT0_Handler;                   /* 37  SAME70N19 Controller Area Network (MCAN1) */
+  void* pfnMCAN1_INT1_Handler;                   /* 38  SAME70N19 Controller Area Network (MCAN1) */
   void* pfnGMAC_Handler;                         /* 39  SAME70N19 Gigabit Ethernet MAC (GMAC) */
   void* pfnAFEC1_Handler;                        /* 40  SAME70N19 Analog Front-End Controller (AFEC1) */
   void* pfnTWIHS2_Handler;                       /* 41  SAME70N19 Two-wire Interface High Speed (TWIHS2) */
-  void* pfnSPI1_Handler;                         /* 42  SAME70N19 Serial Peripheral Interface (SPI1) */
+  void* pvReserved42;
   void* pfnQSPI_Handler;                         /* 43  SAME70N19 Quad Serial Peripheral Interface (QSPI) */
   void* pfnUART2_Handler;                        /* 44  SAME70N19 Universal Asynchronous Receiver Transmitter (UART2) */
   void* pfnUART3_Handler;                        /* 45  SAME70N19 Universal Asynchronous Receiver Transmitter (UART3) */
@@ -252,80 +269,91 @@ typedef struct _DeviceVectors
   void* pfnXDMAC_Handler;                        /* 58  SAME70N19 Extensible DMA Controller (XDMAC) */
   void* pfnISI_Handler;                          /* 59  SAME70N19 Image Sensor Interface (ISI) */
   void* pfnPWM1_Handler;                         /* 60  SAME70N19 Pulse Width Modulation Controller (PWM1) */
-  void* pvReserved61;
+  void* pfnFPU_Handler;                          /* 61  SAME70N19 Floating Point Unit Registers (FPU) */
   void* pvReserved62;
   void* pfnRSWDT_Handler;                        /* 63  SAME70N19 Reinforced Safety Watchdog Timer (RSWDT) */
+  void* pfnCCW_Handler;                          /* 64  SAME70N19 System Control Registers (SystemControl) */
+  void* pfnCCF_Handler;                          /* 65  SAME70N19 System Control Registers (SystemControl) */
+  void* pfnGMAC_Q1_Handler;                      /* 66  SAME70N19 Gigabit Ethernet MAC (GMAC) */
+  void* pfnGMAC_Q2_Handler;                      /* 67  SAME70N19 Gigabit Ethernet MAC (GMAC) */
+  void* pfnIXC_Handler;                          /* 68  SAME70N19 Floating Point Unit Registers (FPU) */
 } DeviceVectors;
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
-
 
 #if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 #if !defined DONT_USE_PREDEFINED_CORE_HANDLERS
 
 /* CORTEX-M7 core handlers */
-void Reset_Handler        ( void );
-void NMI_Handler          ( void );
-void HardFault_Handler    ( void );
-void MemManage_Handler    ( void );
-void BusFault_Handler     ( void );
-void UsageFault_Handler   ( void );
-void SVC_Handler          ( void );
-void DebugMon_Handler     ( void );
-void PendSV_Handler       ( void );
-void SysTick_Handler      ( void );
+void Reset_Handler                 ( void );
+void NonMaskableInt_Handler        ( void );
+void HardFault_Handler             ( void );
+void MemoryManagement_Handler      ( void );
+void BusFault_Handler              ( void );
+void UsageFault_Handler            ( void );
+void SVCall_Handler                ( void );
+void DebugMonitor_Handler          ( void );
+void PendSV_Handler                ( void );
+void SysTick_Handler               ( void );
 #endif /* DONT_USE_PREDEFINED_CORE_HANDLERS */
 
 #if !defined DONT_USE_PREDEFINED_PERIPHERALS_HANDLERS
 
 /* Peripherals handlers */
-void ACC_Handler              ( void );
-void AES_Handler              ( void );
-void AFEC0_Handler            ( void );
-void AFEC1_Handler            ( void );
-void DACC_Handler             ( void );
-void EFC_Handler              ( void );
-void GMAC_Handler             ( void );
-void HSMCI_Handler            ( void );
-void ICM_Handler              ( void );
-void ISI_Handler              ( void );
-void MCAN0_Handler            ( void );
-void MCAN1_Handler            ( void );
-void PIOA_Handler             ( void );
-void PIOB_Handler             ( void );
-void PIOD_Handler             ( void );
-void PMC_Handler              ( void );
-void PWM0_Handler             ( void );
-void PWM1_Handler             ( void );
-void QSPI_Handler             ( void );
-void RSTC_Handler             ( void );
-void RSWDT_Handler            ( void );
-void RTC_Handler              ( void );
-void RTT_Handler              ( void );
-void SPI0_Handler             ( void );
-void SPI1_Handler             ( void );
-void SSC_Handler              ( void );
-void SUPC_Handler             ( void );
-void TC0_Handler              ( void );
-void TC10_Handler             ( void );
-void TC11_Handler             ( void );
-void TC1_Handler              ( void );
-void TC2_Handler              ( void );
-void TC9_Handler              ( void );
-void TRNG_Handler             ( void );
-void TWIHS0_Handler           ( void );
-void TWIHS1_Handler           ( void );
-void TWIHS2_Handler           ( void );
-void UART0_Handler            ( void );
-void UART1_Handler            ( void );
-void UART2_Handler            ( void );
-void UART3_Handler            ( void );
-void UART4_Handler            ( void );
-void USART0_Handler           ( void );
-void USART1_Handler           ( void );
-void USART2_Handler           ( void );
-void USBHS_Handler            ( void );
-void WDT_Handler              ( void );
-void XDMAC_Handler            ( void );
+void ACC_Handler                   ( void );
+void AES_Handler                   ( void );
+void AFEC0_Handler                 ( void );
+void AFEC1_Handler                 ( void );
+void CCF_Handler                   ( void );
+void CCW_Handler                   ( void );
+void DACC_Handler                  ( void );
+void EFC_Handler                   ( void );
+void FPU_Handler                   ( void );
+void GMAC_Handler                  ( void );
+void GMAC_Q1_Handler               ( void );
+void GMAC_Q2_Handler               ( void );
+void HSMCI_Handler                 ( void );
+void ICM_Handler                   ( void );
+void ISI_Handler                   ( void );
+void IXC_Handler                   ( void );
+void MCAN0_INT0_Handler            ( void );
+void MCAN0_INT1_Handler            ( void );
+void MCAN1_INT0_Handler            ( void );
+void MCAN1_INT1_Handler            ( void );
+void PIOA_Handler                  ( void );
+void PIOB_Handler                  ( void );
+void PIOD_Handler                  ( void );
+void PMC_Handler                   ( void );
+void PWM0_Handler                  ( void );
+void PWM1_Handler                  ( void );
+void QSPI_Handler                  ( void );
+void RSTC_Handler                  ( void );
+void RSWDT_Handler                 ( void );
+void RTC_Handler                   ( void );
+void RTT_Handler                   ( void );
+void SPI0_Handler                  ( void );
+void SSC_Handler                   ( void );
+void SUPC_Handler                  ( void );
+void TC0_Handler                   ( void );
+void TC10_Handler                  ( void );
+void TC11_Handler                  ( void );
+void TC1_Handler                   ( void );
+void TC2_Handler                   ( void );
+void TC9_Handler                   ( void );
+void TRNG_Handler                  ( void );
+void TWIHS0_Handler                ( void );
+void TWIHS1_Handler                ( void );
+void TWIHS2_Handler                ( void );
+void UART0_Handler                 ( void );
+void UART1_Handler                 ( void );
+void UART2_Handler                 ( void );
+void UART3_Handler                 ( void );
+void UART4_Handler                 ( void );
+void USART0_Handler                ( void );
+void USART1_Handler                ( void );
+void USART2_Handler                ( void );
+void USBHS_Handler                 ( void );
+void WDT_Handler                   ( void );
+void XDMAC_Handler                 ( void );
 #endif /* DONT_USE_PREDEFINED_PERIPHERALS_HANDLERS */
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
@@ -334,18 +362,23 @@ void XDMAC_Handler            ( void );
  * \brief Configuration of the CORTEX-M7 Processor and Core Peripherals
  */
 
-#define __DTCM_PRESENT          1
-#define __FPU_DP                1
-#define __Vendor_SysTickConfig  0
-#define __CM7_REV               0
-#define __MPU_PRESENT           1
-#define NUM_IRQ                 68
-#define LITTLE_ENDIAN           1
-#define __DCACHE_PRESENT        1
-#define __ICACHE_PRESENT        1
-#define __ITCM_PRESENT          1
-#define __FPU_PRESENT           1
-#define __NVIC_PRIO_BITS        3
+#define __CM7_REV                 0x0101 /**< CM7 Core Revision                                                         */
+#define __NVIC_PRIO_BITS               3 /**< Number of Bits used for Priority Levels                                   */
+#define __Vendor_SysTickConfig         0 /**< Set to 1 if different SysTick Config is used                              */
+#define __MPU_PRESENT                  1 /**< MPU present or not                                                        */
+#define __VTOR_PRESENT                 1 /**< Vector Table Offset Register present or not                               */
+#define __FPU_PRESENT                  1 /**< FPU present or not                                                        */
+#define __FPU_DP                       1 /**< Double Precision FPU                                                      */
+#define __ICACHE_PRESENT               1 /**< Instruction Cache present                                                 */
+#define __DCACHE_PRESENT               1 /**< Data Cache present                                                        */
+#define __ITCM_PRESENT                 1 /**< Instruction TCM present                                                   */
+#define __DTCM_PRESENT                 1 /**< Data TCM present                                                          */
+#define __DEBUG_LVL                    1
+#define __TRACE_LVL                    1
+#define LITTLE_ENDIAN                  1
+#define __ARCH_ARM                     1
+#define __ARCH_ARM_CORTEX_M            1
+#define __DEVICE_IS_SAM                1
 
 /*
  * \brief CMSIS includes
@@ -433,7 +466,6 @@ void XDMAC_Handler            ( void );
 #include "instance/rtc.h"
 #include "instance/rtt.h"
 #include "instance/spi0.h"
-#include "instance/spi1.h"
 #include "instance/ssc.h"
 #include "instance/supc.h"
 #include "instance/tc0.h"
@@ -497,7 +529,6 @@ void XDMAC_Handler            ( void );
 #define ID_GMAC         ( 39) /**< \brief Gigabit Ethernet MAC (GMAC) */
 #define ID_AFEC1        ( 40) /**< \brief Analog Front-End Controller (AFEC1) */
 #define ID_TWIHS2       ( 41) /**< \brief Two-wire Interface High Speed (TWIHS2) */
-#define ID_SPI1         ( 42) /**< \brief Serial Peripheral Interface (SPI1) */
 #define ID_QSPI         ( 43) /**< \brief Quad Serial Peripheral Interface (QSPI) */
 #define ID_UART2        ( 44) /**< \brief Universal Asynchronous Receiver Transmitter (UART2) */
 #define ID_UART3        ( 45) /**< \brief Universal Asynchronous Receiver Transmitter (UART3) */
@@ -571,7 +602,6 @@ void XDMAC_Handler            ( void );
 #define RTC                    (0x400E1860)                   /**< \brief (RTC       ) Base Address */
 #define RTT                    (0x400E1830)                   /**< \brief (RTT       ) Base Address */
 #define SPI0                   (0x40008000)                   /**< \brief (SPI0      ) Base Address */
-#define SPI1                   (0x40058000)                   /**< \brief (SPI1      ) Base Address */
 #define SSC                    (0x40004000)                   /**< \brief (SSC       ) Base Address */
 #define SUPC                   (0x400E1810)                   /**< \brief (SUPC      ) Base Address */
 #define TC0                    (0x4000C000)                   /**< \brief (TC0       ) Base Address */
@@ -685,9 +715,8 @@ void XDMAC_Handler            ( void );
 #define RTT_INSTS              { RTT }                        /**< \brief (RTT       ) Instances List */
 
 #define SPI0                   ((Spi *)0x40008000U)           /**< \brief (SPI0      ) Base Address */
-#define SPI1                   ((Spi *)0x40058000U)           /**< \brief (SPI1      ) Base Address */
-#define SPI_INST_NUM           2                              /**< \brief (SPI       ) Number of instances */
-#define SPI_INSTS              { SPI0, SPI1 }                 /**< \brief (SPI       ) Instances List */
+#define SPI_INST_NUM           1                              /**< \brief (SPI       ) Number of instances */
+#define SPI_INSTS              { SPI0 }                       /**< \brief (SPI       ) Instances List */
 
 #define SSC                    ((Ssc *)0x40004000U)           /**< \brief (SSC       ) Base Address */
 #define SSC_INST_NUM           1                              /**< \brief (SSC       ) Number of instances */
@@ -743,7 +772,6 @@ void XDMAC_Handler            ( void );
 #define XDMAC_INSTS            { XDMAC }                      /**< \brief (XDMAC     ) Instances List */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
-
 /** @}  end of Peripheral Base Address Definitions */
 
 /** \addtogroup SAME70N19_pio Peripheral Pio Definitions
@@ -756,72 +784,63 @@ void XDMAC_Handler            ( void );
 #include "pio/same70n19.h"
 /** @}  end of Peripheral Pio Definitions */
 
-#if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 /* ************************************************************************** */
 /*   MEMORY MAPPING DEFINITIONS FOR SAME70N19*/
 /* ************************************************************************** */
 
-#define PERIPHERALS_SIZE         (0x20000000U)       /* 524288kB Memory segment type: io */
-#define SYSTEM_SIZE              (0x10000000U)       /* 262144kB Memory segment type: io */
-#define QSPIMEM_SIZE             (0x20000000U)       /* 524288kB Memory segment type: other */
-#define AXIMX_SIZE               (0x00100000U)       /* 1024kB Memory segment type: other */
-#define ITCM_SIZE                (0x00200000U)       /* 2048kB Memory segment type: other */
-#define IFLASH_SIZE              (0x00080000U)       /*  512kB Memory segment type: flash */
-#define IFLASH_PAGE_SIZE         (       512U)
-#define IFLASH_NB_OF_PAGES       (      1024U)
+#define PERIPHERALS_SIZE         _U_(0x20000000)       /* 524288kB Memory segment type: io */
+#define SYSTEM_SIZE              _U_(0x10000000)       /* 262144kB Memory segment type: io */
+#define QSPIMEM_SIZE             _U_(0x20000000)       /* 524288kB Memory segment type: other */
+#define AXIMX_SIZE               _U_(0x00100000)       /* 1024kB Memory segment type: other */
+#define ITCM_SIZE                _U_(0x00200000)       /* 2048kB Memory segment type: other */
+#define IFLASH_SIZE              _U_(0x00080000)       /*  512kB Memory segment type: flash */
+#define IFLASH_PAGE_SIZE         _U_(       512)
+#define IFLASH_NB_OF_PAGES       _U_(      1024)
 
-#define IROM_SIZE                (0x00004000U)       /*   16kB Memory segment type: rom */
-#define DTCM_SIZE                (0x00020000U)       /*  128kB Memory segment type: other */
-#define IRAM_SIZE                (0x00040000U)       /*  256kB Memory segment type: ram */
-#define EBI_CS0_SIZE             (0x01000000U)       /* 16384kB Memory segment type: other */
-#define EBI_CS1_SIZE             (0x01000000U)       /* 16384kB Memory segment type: other */
-#define EBI_CS2_SIZE             (0x01000000U)       /* 16384kB Memory segment type: other */
-#define EBI_CS3_SIZE             (0x01000000U)       /* 16384kB Memory segment type: other */
-#define SDRAM_CS_SIZE            (0x10000000U)       /* 262144kB Memory segment type: other */
+#define IROM_SIZE                _U_(0x00004000)       /*   16kB Memory segment type: rom */
+#define DTCM_SIZE                _U_(0x00020000)       /*  128kB Memory segment type: other */
+#define IRAM_SIZE                _U_(0x00040000)       /*  256kB Memory segment type: ram */
+#define SDRAM_CS_SIZE            _U_(0x10000000)       /* 262144kB Memory segment type: other */
 
-#define PERIPHERALS_ADDR         (0x40000000U)       /**< PERIPHERALS base address (type: io)*/
-#define SYSTEM_ADDR              (0xe0000000U)       /**< SYSTEM base address (type: io)*/
-#define QSPIMEM_ADDR             (0x80000000U)       /**< QSPIMEM base address (type: other)*/
-#define AXIMX_ADDR               (0xa0000000U)       /**< AXIMX base address (type: other)*/
-#define ITCM_ADDR                (0x00000000U)       /**< ITCM base address (type: other)*/
-#define IFLASH_ADDR              (0x00400000U)       /**< IFLASH base address (type: flash)*/
-#define IROM_ADDR                (0x00800000U)       /**< IROM base address (type: rom)*/
-#define DTCM_ADDR                (0x20000000U)       /**< DTCM base address (type: other)*/
-#define IRAM_ADDR                (0x20400000U)       /**< IRAM base address (type: ram)*/
-#define EBI_CS0_ADDR             (0x60000000U)       /**< EBI_CS0 base address (type: other)*/
-#define EBI_CS1_ADDR             (0x61000000U)       /**< EBI_CS1 base address (type: other)*/
-#define EBI_CS2_ADDR             (0x62000000U)       /**< EBI_CS2 base address (type: other)*/
-#define EBI_CS3_ADDR             (0x63000000U)       /**< EBI_CS3 base address (type: other)*/
-#define SDRAM_CS_ADDR            (0x70000000U)       /**< SDRAM_CS base address (type: other)*/
+#define PERIPHERALS_ADDR         _U_(0x40000000)       /**< PERIPHERALS base address (type: io)*/
+#define SYSTEM_ADDR              _U_(0xe0000000)       /**< SYSTEM base address (type: io)*/
+#define QSPIMEM_ADDR             _U_(0x80000000)       /**< QSPIMEM base address (type: other)*/
+#define AXIMX_ADDR               _U_(0xa0000000)       /**< AXIMX base address (type: other)*/
+#define ITCM_ADDR                _U_(0x00000000)       /**< ITCM base address (type: other)*/
+#define IFLASH_ADDR              _U_(0x00400000)       /**< IFLASH base address (type: flash)*/
+#define IROM_ADDR                _U_(0x00800000)       /**< IROM base address (type: rom)*/
+#define DTCM_ADDR                _U_(0x20000000)       /**< DTCM base address (type: other)*/
+#define IRAM_ADDR                _U_(0x20400000)       /**< IRAM base address (type: ram)*/
+#define SDRAM_CS_ADDR            _U_(0x70000000)       /**< SDRAM_CS base address (type: other)*/
 
 /* ************************************************************************** */
 /**  DEVICE SIGNATURES FOR SAME70N19 */
 /* ************************************************************************** */
-#define JTAGID                   (0X05B3D03FUL)
-#define CHIP_JTAGID              (0X05B3D03FUL)
-#define CHIP_CIDR                (0XA10D0A00UL)
-#define CHIP_EXID                (0X00000001UL)
+#define JTAGID                   _UL_(0X05B3D03F)
+#define CHIP_JTAGID              _UL_(0X05B3D03F)
+#define CHIP_CIDR                _UL_(0XA10D0A00)
+#define CHIP_EXID                _UL_(0X00000001)
 
 /* ************************************************************************** */
 /**  ELECTRICAL DEFINITIONS FOR SAME70N19 */
 /* ************************************************************************** */
-#define CHIP_FREQ_SLCK_RC_MIN          (20000UL)       
-#define CHIP_FREQ_SLCK_RC              (32000UL)       
-#define CHIP_FREQ_SLCK_RC_MAX          (44000UL)       
-#define CHIP_FREQ_MAINCK_RC_4MHZ       (4000000UL)     
-#define CHIP_FREQ_MAINCK_RC_8MHZ       (8000000UL)     
-#define CHIP_FREQ_MAINCK_RC_12MHZ      (12000000UL)    
-#define CHIP_FREQ_CPU_MAX              (120000000UL)   
-#define CHIP_FREQ_XTAL_32K             (32768UL)       
-#define CHIP_FREQ_XTAL_12M             (12000000UL)    
-#define CHIP_FREQ_FWS_0                (20000000UL)    /**< \brief Maximum operating frequency when FWS is 0*/
-#define CHIP_FREQ_FWS_1                (40000000UL)    /**< \brief Maximum operating frequency when FWS is 1*/
-#define CHIP_FREQ_FWS_2                (60000000UL)    /**< \brief Maximum operating frequency when FWS is 2*/
-#define CHIP_FREQ_FWS_3                (80000000UL)    /**< \brief Maximum operating frequency when FWS is 3*/
-#define CHIP_FREQ_FWS_4                (100000000UL)   /**< \brief Maximum operating frequency when FWS is 4*/
-#define CHIP_FREQ_FWS_5                (123000000UL)   /**< \brief Maximum operating frequency when FWS is 5*/
-
-#endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+#define CHIP_FREQ_SLCK_RC_MIN          _UL_(20000)     
+#define CHIP_FREQ_SLCK_RC              _UL_(32000)     /**< \brief Typical Slow Clock Internal RC frequency*/
+#define CHIP_FREQ_SLCK_RC_MAX          _UL_(44000)     
+#define CHIP_FREQ_MAINCK_RC_4MHZ       _UL_(4000000)   
+#define CHIP_FREQ_MAINCK_RC_8MHZ       _UL_(8000000)   
+#define CHIP_FREQ_MAINCK_RC_12MHZ      _UL_(12000000)  
+#define CHIP_FREQ_CPU_MAX              _UL_(300000000) 
+#define CHIP_FREQ_XTAL_32K             _UL_(32768)     
+#define CHIP_FREQ_XTAL_12M             _UL_(12000000)  
+#define CHIP_FREQ_FWS_0                _UL_(23000000)  /**< \brief Maximum operating frequency when FWS is 0*/
+#define CHIP_FREQ_FWS_1                _UL_(46000000)  /**< \brief Maximum operating frequency when FWS is 1*/
+#define CHIP_FREQ_FWS_2                _UL_(69000000)  /**< \brief Maximum operating frequency when FWS is 2*/
+#define CHIP_FREQ_FWS_3                _UL_(92000000)  /**< \brief Maximum operating frequency when FWS is 3*/
+#define CHIP_FREQ_FWS_4                _UL_(115000000) /**< \brief Maximum operating frequency when FWS is 4*/
+#define CHIP_FREQ_FWS_5                _UL_(138000000) /**< \brief Maximum operating frequency when FWS is 5*/
+#define CHIP_FREQ_FWS_6                _UL_(150000000) /**< \brief Maximum operating frequency when FWS is 6*/
+#define CHIP_FREQ_FWS_NUMBER           _UL_(7)         /**< \brief Number of FWS ranges*/
 
 #ifdef __cplusplus
 }

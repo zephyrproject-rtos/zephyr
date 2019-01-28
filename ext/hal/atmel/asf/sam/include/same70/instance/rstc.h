@@ -3,7 +3,7 @@
  *
  * \brief Instance description for RSTC
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_RSTC_INSTANCE_H_
 #define _SAME70_RSTC_INSTANCE_H_
 
@@ -42,6 +43,7 @@
 #define REG_RSTC_MR             (*(__IO uint32_t*)0x400E1808U) /**< (RSTC) Mode Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for RSTC peripheral ========== */
 #define RSTC_INSTANCE_ID                         1         
 

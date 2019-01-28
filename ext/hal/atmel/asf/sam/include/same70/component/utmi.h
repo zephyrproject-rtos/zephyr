@@ -3,7 +3,7 @@
  *
  * \brief Component description for UTMI
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,11 +25,12 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_UTMI_COMPONENT_H_
 #define _SAME70_UTMI_COMPONENT_H_
 #define _SAME70_UTMI_COMPONENT_         /**< \deprecated  Backward compatibility for ASF */
 
-/** \addtogroup SAME70_UTMI USB Transmitter Interface Macrocell
+/** \addtogroup SAME_SAME70 USB Transmitter Interface Macrocell
  *  @{
  */
 /* ========================================================================== */
@@ -59,23 +60,21 @@ typedef union {
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
 #define UTMI_OHCIICR_OFFSET                 (0x10)                                        /**<  (UTMI_OHCIICR) OHCI Interrupt Configuration Register  Offset */
-#if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 
 #define UTMI_OHCIICR_RES0_Pos               0                                              /**< (UTMI_OHCIICR) USB PORTx Reset Position */
-#define UTMI_OHCIICR_RES0_Msk               (0x1U << UTMI_OHCIICR_RES0_Pos)                /**< (UTMI_OHCIICR) USB PORTx Reset Mask */
+#define UTMI_OHCIICR_RES0_Msk               (_U_(0x1) << UTMI_OHCIICR_RES0_Pos)            /**< (UTMI_OHCIICR) USB PORTx Reset Mask */
 #define UTMI_OHCIICR_RES0                   UTMI_OHCIICR_RES0_Msk                          /**< \deprecated Old style mask definition for 1 bit bitfield. Use UTMI_OHCIICR_RES0_Msk instead */
 #define UTMI_OHCIICR_ARIE_Pos               4                                              /**< (UTMI_OHCIICR) OHCI Asynchronous Resume Interrupt Enable Position */
-#define UTMI_OHCIICR_ARIE_Msk               (0x1U << UTMI_OHCIICR_ARIE_Pos)                /**< (UTMI_OHCIICR) OHCI Asynchronous Resume Interrupt Enable Mask */
+#define UTMI_OHCIICR_ARIE_Msk               (_U_(0x1) << UTMI_OHCIICR_ARIE_Pos)            /**< (UTMI_OHCIICR) OHCI Asynchronous Resume Interrupt Enable Mask */
 #define UTMI_OHCIICR_ARIE                   UTMI_OHCIICR_ARIE_Msk                          /**< \deprecated Old style mask definition for 1 bit bitfield. Use UTMI_OHCIICR_ARIE_Msk instead */
 #define UTMI_OHCIICR_APPSTART_Pos           5                                              /**< (UTMI_OHCIICR) Reserved Position */
-#define UTMI_OHCIICR_APPSTART_Msk           (0x1U << UTMI_OHCIICR_APPSTART_Pos)            /**< (UTMI_OHCIICR) Reserved Mask */
+#define UTMI_OHCIICR_APPSTART_Msk           (_U_(0x1) << UTMI_OHCIICR_APPSTART_Pos)        /**< (UTMI_OHCIICR) Reserved Mask */
 #define UTMI_OHCIICR_APPSTART               UTMI_OHCIICR_APPSTART_Msk                      /**< \deprecated Old style mask definition for 1 bit bitfield. Use UTMI_OHCIICR_APPSTART_Msk instead */
 #define UTMI_OHCIICR_UDPPUDIS_Pos           23                                             /**< (UTMI_OHCIICR) USB Device Pull-up Disable Position */
-#define UTMI_OHCIICR_UDPPUDIS_Msk           (0x1U << UTMI_OHCIICR_UDPPUDIS_Pos)            /**< (UTMI_OHCIICR) USB Device Pull-up Disable Mask */
+#define UTMI_OHCIICR_UDPPUDIS_Msk           (_U_(0x1) << UTMI_OHCIICR_UDPPUDIS_Pos)        /**< (UTMI_OHCIICR) USB Device Pull-up Disable Mask */
 #define UTMI_OHCIICR_UDPPUDIS               UTMI_OHCIICR_UDPPUDIS_Msk                      /**< \deprecated Old style mask definition for 1 bit bitfield. Use UTMI_OHCIICR_UDPPUDIS_Msk instead */
-#define UTMI_OHCIICR_MASK                   (0x800031U)                                    /**< \deprecated (UTMI_OHCIICR) Register MASK  (Use UTMI_OHCIICR_Msk instead)  */
-#define UTMI_OHCIICR_Msk                    (0x800031U)                                    /**< (UTMI_OHCIICR) Register Mask  */
-#endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+#define UTMI_OHCIICR_MASK                   _U_(0x800031)                                  /**< \deprecated (UTMI_OHCIICR) Register MASK  (Use UTMI_OHCIICR_Msk instead)  */
+#define UTMI_OHCIICR_Msk                    _U_(0x800031)                                  /**< (UTMI_OHCIICR) Register Mask  */
 
 
 /* -------- UTMI_CKTRIM : (UTMI Offset: 0x30) (R/W 32) UTMI Clock Trimming Register -------- */
@@ -90,36 +89,34 @@ typedef union {
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
 #define UTMI_CKTRIM_OFFSET                  (0x30)                                        /**<  (UTMI_CKTRIM) UTMI Clock Trimming Register  Offset */
-#if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 
 #define UTMI_CKTRIM_FREQ_Pos                0                                              /**< (UTMI_CKTRIM) UTMI Reference Clock Frequency Position */
-#define UTMI_CKTRIM_FREQ_Msk                (0x3U << UTMI_CKTRIM_FREQ_Pos)                 /**< (UTMI_CKTRIM) UTMI Reference Clock Frequency Mask */
+#define UTMI_CKTRIM_FREQ_Msk                (_U_(0x3) << UTMI_CKTRIM_FREQ_Pos)             /**< (UTMI_CKTRIM) UTMI Reference Clock Frequency Mask */
 #define UTMI_CKTRIM_FREQ(value)             (UTMI_CKTRIM_FREQ_Msk & ((value) << UTMI_CKTRIM_FREQ_Pos))
-#define   UTMI_CKTRIM_FREQ_XTAL12_Val       (0x0U)                                         /**< (UTMI_CKTRIM) 12 MHz reference clock  */
-#define   UTMI_CKTRIM_FREQ_XTAL16_Val       (0x1U)                                         /**< (UTMI_CKTRIM) 16 MHz reference clock  */
+#define   UTMI_CKTRIM_FREQ_XTAL12_Val       _U_(0x0)                                       /**< (UTMI_CKTRIM) 12 MHz reference clock  */
+#define   UTMI_CKTRIM_FREQ_XTAL16_Val       _U_(0x1)                                       /**< (UTMI_CKTRIM) 16 MHz reference clock  */
 #define UTMI_CKTRIM_FREQ_XTAL12             (UTMI_CKTRIM_FREQ_XTAL12_Val << UTMI_CKTRIM_FREQ_Pos)  /**< (UTMI_CKTRIM) 12 MHz reference clock Position  */
 #define UTMI_CKTRIM_FREQ_XTAL16             (UTMI_CKTRIM_FREQ_XTAL16_Val << UTMI_CKTRIM_FREQ_Pos)  /**< (UTMI_CKTRIM) 16 MHz reference clock Position  */
-#define UTMI_CKTRIM_MASK                    (0x03U)                                        /**< \deprecated (UTMI_CKTRIM) Register MASK  (Use UTMI_CKTRIM_Msk instead)  */
-#define UTMI_CKTRIM_Msk                     (0x03U)                                        /**< (UTMI_CKTRIM) Register Mask  */
-#endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+#define UTMI_CKTRIM_MASK                    _U_(0x03)                                      /**< \deprecated (UTMI_CKTRIM) Register MASK  (Use UTMI_CKTRIM_Msk instead)  */
+#define UTMI_CKTRIM_Msk                     _U_(0x03)                                      /**< (UTMI_CKTRIM) Register Mask  */
 
 
 #if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 #if COMPONENT_TYPEDEF_STYLE == 'R'
 /** \brief UTMI hardware registers */
 typedef struct {  
-  __I  uint32_t Reserved1[4];
+  RoReg8  Reserved1[0x10];
   __IO uint32_t UTMI_OHCIICR;   /**< (UTMI Offset: 0x10) OHCI Interrupt Configuration Register */
-  __I  uint32_t Reserved2[7];
+  RoReg8  Reserved2[0x1C];
   __IO uint32_t UTMI_CKTRIM;    /**< (UTMI Offset: 0x30) UTMI Clock Trimming Register */
 } Utmi;
 
 #elif COMPONENT_TYPEDEF_STYLE == 'N'
 /** \brief UTMI hardware registers */
 typedef struct {  
-       RoReg8                         Reserved1[0x10];
+  __I  uint32_t                       Reserved1[4];
   __IO UTMI_OHCIICR_Type              UTMI_OHCIICR;   /**< Offset: 0x10 (R/W  32) OHCI Interrupt Configuration Register */
-       RoReg8                         Reserved2[0x1C];
+  __I  uint32_t                       Reserved2[7];
   __IO UTMI_CKTRIM_Type               UTMI_CKTRIM;    /**< Offset: 0x30 (R/W  32) UTMI Clock Trimming Register */
 } Utmi;
 
@@ -128,8 +125,6 @@ typedef struct {
 #endif /* COMPONENT_TYPEDEF_STYLE */
 
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
-
-
 /** @}  end of USB Transmitter Interface Macrocell */
 
 #endif /* _SAME70_UTMI_COMPONENT_H_ */

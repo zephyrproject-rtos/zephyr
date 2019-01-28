@@ -3,7 +3,7 @@
  *
  * \brief Instance description for SSC
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_SSC_INSTANCE_H_
 #define _SAME70_SSC_INSTANCE_H_
 
@@ -72,6 +73,7 @@
 #define REG_SSC_WPSR            (*(__I  uint32_t*)0x400040E8U) /**< (SSC) Write Protection Status Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for SSC peripheral ========== */
 #define SSC_INSTANCE_ID                          22        
 #define SSC_DMAC_ID_TX                           32        

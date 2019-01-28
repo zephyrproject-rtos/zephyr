@@ -3,7 +3,7 @@
  *
  * \brief Instance description for AES
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_AES_INSTANCE_H_
 #define _SAME70_AES_INSTANCE_H_
 
@@ -132,6 +133,7 @@
 #define REG_AES_GCMHR3          (*(__IO uint32_t*)0x4006C0A8U) /**< (AES) GCM H Word Register 3 */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for AES peripheral ========== */
 #define AES_INSTANCE_ID                          56        
 #define AES_DMAC_ID_TX                           37        

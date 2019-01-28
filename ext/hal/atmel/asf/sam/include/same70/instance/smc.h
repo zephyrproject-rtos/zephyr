@@ -3,7 +3,7 @@
  *
  * \brief Instance description for SMC
  *
- * Copyright (c) 2016 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
+ * Copyright (c) 2018 Atmel Corporation, a wholly owned subsidiary of Microchip Technology Inc.
  *
  * \license_start
  *
@@ -25,6 +25,7 @@
  *
  */
 
+/* file generated from device description version 2017-08-25T14:00:00Z */
 #ifndef _SAME70_SMC_INSTANCE_H_
 #define _SAME70_SMC_INSTANCE_H_
 
@@ -78,6 +79,7 @@
 #define REG_SMC_WPSR            (*(__I  uint32_t*)0x400800E8U) /**< (SMC) SMC Write Protection Status Register */
 
 #endif /* (defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
+
 /* ========== Instance Parameter definitions for SMC peripheral ========== */
 #define SMC_INSTANCE_ID                          9         
 
