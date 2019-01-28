@@ -111,6 +111,48 @@ EXPECTED_COMMANDS = {
     (['nrfjprog', '--eraseall', '-f', 'NRF52', '--snr', TEST_OVR_SNR],
      ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF52', '--snr', TEST_OVR_SNR],  # noqa: E501
      ['nrfjprog', '--reset', '-f', 'NRF52', '--snr', TEST_OVR_SNR]),
+
+    # NRF91:
+    '9NNN':
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_DEF_SNR, '--sectoranduicrerase'],  # noqa: E501
+     ['nrfjprog', '--pinresetenable', '-f', 'NRF91', '--snr', TEST_DEF_SNR],
+     ['nrfjprog', '--pinreset', '-f', 'NRF91', '--snr', TEST_DEF_SNR]),
+
+    '9NNY':
+    (['nrfjprog', '--eraseall', '-f', 'NRF91', '--snr', TEST_DEF_SNR],
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_DEF_SNR],  # noqa: E501
+     ['nrfjprog', '--pinresetenable', '-f', 'NRF91', '--snr', TEST_DEF_SNR],
+     ['nrfjprog', '--pinreset', '-f', 'NRF91', '--snr', TEST_DEF_SNR]),
+
+    '9NYN':
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_OVR_SNR, '--sectoranduicrerase'],  # noqa: E501
+     ['nrfjprog', '--pinresetenable', '-f', 'NRF91', '--snr', TEST_OVR_SNR],
+     ['nrfjprog', '--pinreset', '-f', 'NRF91', '--snr', TEST_OVR_SNR]),
+
+    '9NYY':
+    (['nrfjprog', '--eraseall', '-f', 'NRF91', '--snr', TEST_OVR_SNR],
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_OVR_SNR],  # noqa: E501
+     ['nrfjprog', '--pinresetenable', '-f', 'NRF91', '--snr', TEST_OVR_SNR],
+     ['nrfjprog', '--pinreset', '-f', 'NRF91', '--snr', TEST_OVR_SNR]),
+
+    '9YNN':
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_DEF_SNR, '--sectoranduicrerase'],  # noqa: E501
+     ['nrfjprog', '--reset', '-f', 'NRF91', '--snr', TEST_DEF_SNR]),
+
+    '9YNY':
+    (['nrfjprog', '--eraseall', '-f', 'NRF91', '--snr', TEST_DEF_SNR],
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_DEF_SNR],  # noqa: E501
+     ['nrfjprog', '--reset', '-f', 'NRF91', '--snr', TEST_DEF_SNR]),
+
+    '9YYN':
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_OVR_SNR, '--sectoranduicrerase'],  # noqa: E501
+     ['nrfjprog', '--reset', '-f', 'NRF91', '--snr', TEST_OVR_SNR]),
+
+    '9YYY':
+    (['nrfjprog', '--eraseall', '-f', 'NRF91', '--snr', TEST_OVR_SNR],
+     ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_OVR_SNR],  # noqa: E501
+     ['nrfjprog', '--reset', '-f', 'NRF91', '--snr', TEST_OVR_SNR]),
+
 }
 
 
@@ -119,13 +161,13 @@ def expected_commands(family, softreset, snr, erase):
 
     Returns a factory function which expects the following arguments:
 
-    - family: string, 'NRF51' or 'NRF52'
+    - family: string, 'NRF51', 'NRF52' or 'NRF91'
     - softreset: boolean, controls whether soft reset is performed
     - snr: string serial number of board, or None
     - erase: boolean, whether to do a full chip erase or not
     '''
     expected_key = '{}{}{}{}'.format(
-        '1' if family == 'NRF51' else '2',
+        '1' if family == 'NRF51' else '2' if family == 'NRF52' else '9',
         'Y' if softreset else 'N',
         'Y' if snr else 'N',
         'Y' if erase else 'N')
