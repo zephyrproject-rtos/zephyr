@@ -593,18 +593,18 @@ void XDMAC_Handler                 ( void );
 /* ************************************************************************** */
 /*  LEGACY PERIPHERAL ID DEFINITIONS FOR SAME70Q21 */
 /* ************************************************************************** */
-#define ID_TC0                   TC0_INSTANCE_ID_CHANNEL0
-#define ID_TC1                   TC0_INSTANCE_ID_CHANNEL1
-#define ID_TC2                   TC0_INSTANCE_ID_CHANNEL2
-#define ID_TC3                   TC1_INSTANCE_ID_CHANNEL0
-#define ID_TC4                   TC1_INSTANCE_ID_CHANNEL1
-#define ID_TC5                   TC1_INSTANCE_ID_CHANNEL2
-#define ID_TC6                   TC2_INSTANCE_ID_CHANNEL0
-#define ID_TC7                   TC2_INSTANCE_ID_CHANNEL1
-#define ID_TC8                   TC2_INSTANCE_ID_CHANNEL2
-#define ID_TC9                   TC3_INSTANCE_ID_CHANNEL0
-#define ID_TC10                  TC3_INSTANCE_ID_CHANNEL1
-#define ID_TC11                  TC3_INSTANCE_ID_CHANNEL2
+#define ID_TC0                   ID_TC0_CHANNEL0
+#define ID_TC1                   ID_TC0_CHANNEL1
+#define ID_TC2                   ID_TC0_CHANNEL2
+#define ID_TC3                   ID_TC1_CHANNEL0
+#define ID_TC4                   ID_TC1_CHANNEL1
+#define ID_TC5                   ID_TC1_CHANNEL2
+#define ID_TC6                   ID_TC2_CHANNEL0
+#define ID_TC7                   ID_TC2_CHANNEL1
+#define ID_TC8                   ID_TC2_CHANNEL2
+#define ID_TC9                   ID_TC3_CHANNEL0
+#define ID_TC10                  ID_TC3_CHANNEL1
+#define ID_TC11                  ID_TC3_CHANNEL2
 /** @}  end of Legacy Peripheral Ids Definitions */
 
 /** \addtogroup SAME70Q21_base Peripheral Base Address Definitions
