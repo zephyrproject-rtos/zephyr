@@ -188,6 +188,7 @@ static inline bool net_tcp_is_used(struct net_tcp *tcp)
  * @brief Register a callback to be called when TCP packet
  * is received corresponding to received packet.
  *
+ * @param family Protocol family
  * @param remote_addr Remote address of the connection end point.
  * @param local_addr Local address of the connection end point.
  * @param remote_port Remote port of the connection end point.
@@ -198,7 +199,8 @@ static inline bool net_tcp_is_used(struct net_tcp *tcp)
  *
  * @return Return 0 if the registration succeed, <0 otherwise.
  */
-static inline int net_tcp_register(const struct sockaddr *remote_addr,
+static inline int net_tcp_register(u8_t family,
+				   const struct sockaddr *remote_addr,
 				   const struct sockaddr *local_addr,
 				   u16_t remote_port,
 				   u16_t local_port,
@@ -206,7 +208,7 @@ static inline int net_tcp_register(const struct sockaddr *remote_addr,
 				   void *user_data,
 				   struct net_conn_handle **handle)
 {
-	return net_conn_register(IPPROTO_TCP, remote_addr, local_addr,
+	return net_conn_register(IPPROTO_TCP, family, remote_addr, local_addr,
 				 remote_port, local_port, cb, user_data,
 				 handle);
 }

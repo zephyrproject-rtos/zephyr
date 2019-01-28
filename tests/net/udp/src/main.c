@@ -603,7 +603,8 @@ void test_udp(void)
 		set_port(family, (struct sockaddr *)raddr,		\
 			 (struct sockaddr *)laddr, rport, lport);	\
 									\
-		ret = net_udp_register((struct sockaddr *)raddr,	\
+		ret = net_udp_register(family,				\
+				       (struct sockaddr *)raddr,	\
 				       (struct sockaddr *)laddr,	\
 				       rport, lport,			\
 				       test_ok, &user_data,		\
@@ -618,7 +619,8 @@ void test_udp(void)
 	})
 
 #define REGISTER_FAIL(raddr, laddr, rport, lport)			\
-	ret = net_udp_register((struct sockaddr *)raddr,		\
+	ret = net_udp_register(AF_INET,					\
+			       (struct sockaddr *)raddr,		\
 			       (struct sockaddr *)laddr,		\
 			       rport, lport,				\
 			       test_fail, INT_TO_POINTER(0), NULL);	\

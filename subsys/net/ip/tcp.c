@@ -2274,7 +2274,8 @@ NET_CONN_CB(tcp_synack_received)
 
 		net_tcp_unregister(context->conn_handler);
 
-		ret = net_tcp_register(&remote_addr,
+		ret = net_tcp_register(net_pkt_family(pkt),
+				       &remote_addr,
 				       &local_addr,
 				       ntohs(tcp_hdr->src_port),
 				       ntohs(tcp_hdr->dst_port),
@@ -2503,7 +2504,8 @@ NET_CONN_CB(tcp_syn_rcvd)
 		memcpy(&new_context->remote, &remote_addr,
 		       sizeof(remote_addr));
 
-		ret = net_tcp_register(&new_context->remote,
+		ret = net_tcp_register(net_pkt_family(pkt),
+			       &new_context->remote,
 			       &local_addr,
 			       ntohs(net_sin(&new_context->remote)->sin_port),
 			       ntohs(net_sin(&local_addr)->sin_port),
@@ -2610,7 +2612,8 @@ int net_tcp_accept(struct net_context *context,
 	}
 #endif /* CONFIG_NET_IPV4 */
 
-	ret = net_tcp_register(context->flags & NET_CONTEXT_REMOTE_ADDR_SET ?
+	ret = net_tcp_register(net_context_get_family(context),
+			       context->flags & NET_CONTEXT_REMOTE_ADDR_SET ?
 			       &context->remote : NULL,
 			       laddr,
 			       ntohs(net_sin(&context->remote)->sin_port),
@@ -2652,7 +2655,8 @@ int net_tcp_connect(struct net_context *context,
 	/* We need to register a handler, otherwise the SYN-ACK
 	 * packet would not be received.
 	 */
-	ret = net_tcp_register(addr,
+	ret = net_tcp_register(net_context_get_family(context),
+			       addr,
 			       laddr,
 			       ntohs(rport),
 			       ntohs(lport),

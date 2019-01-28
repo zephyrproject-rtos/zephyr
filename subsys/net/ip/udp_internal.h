@@ -121,6 +121,7 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
  * @brief Register a callback to be called when UDP packet
  * is received corresponding to received packet.
  *
+ * @param family Protocol family
  * @param remote_addr Remote address of the connection end point.
  * @param local_addr Local address of the connection end point.
  * @param remote_port Remote port of the connection end point.
@@ -131,7 +132,8 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
  *
  * @return Return 0 if the registration succeed, <0 otherwise.
  */
-int net_udp_register(const struct sockaddr *remote_addr,
+int net_udp_register(u8_t family,
+		     const struct sockaddr *remote_addr,
 		     const struct sockaddr *local_addr,
 		     u16_t remote_port,
 		     u16_t local_port,
