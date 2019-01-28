@@ -64,7 +64,7 @@ config MBEDTLS_KEY_EXCHANGE_RSA_PSK_ENABLED
 
 config MBEDTLS_KEY_EXCHANGE_RSA_ENABLED
 	bool "Enable the RSA-only based ciphersuite modes"
-	default y
+	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_KEY_EXCHANGE_DHE_RSA_ENABLED
 	bool "Enable the DHE-RSA based ciphersuite modes"
@@ -188,7 +188,7 @@ config MBEDTLS_CIPHER_CAMELLIA_ENABLED
 
 config MBEDTLS_CIPHER_DES_ENABLED
 	bool "Enable the DES block cipher"
-	default y
+	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_CIPHER_ARC4_ENABLED
 	bool "Enable the ARC4 stream cipher"
@@ -213,7 +213,7 @@ config MBEDTLS_CIPHER_MODE_GCM_ENABLED
 
 config MBEDTLS_CIPHER_CBC_ENABLED
 	bool "Enable Cipher Block Chaining mode (CBC) for symmetric ciphers"
-	default y
+	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_CHACHAPOLY_AEAD_ENABLED
 	bool "Enable the ChaCha20-Poly1305 AEAD algorithm"
@@ -236,11 +236,11 @@ config MBEDTLS_MAC_MD4_ENABLED
 
 config MBEDTLS_MAC_MD5_ENABLED
 	bool "Enable the MD5 hash algorithm"
-	default y
+	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_MAC_SHA1_ENABLED
 	bool "Enable the SHA1 hash algorithm"
-	default y
+	default y if !NET_L2_OPENTHREAD
 
 config MBEDTLS_MAC_SHA256_ENABLED
 	bool "Enable the SHA-224 and SHA-256 hash algorithms"
