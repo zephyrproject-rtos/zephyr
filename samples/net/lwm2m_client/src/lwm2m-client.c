@@ -71,21 +71,7 @@ static u32_t led_state;
 static struct lwm2m_ctx client;
 
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-#if defined(CONFIG_NET_APP_DTLS)
-#if !defined(CONFIG_NET_APP_TLS_STACK_SIZE)
-#define CONFIG_NET_APP_TLS_STACK_SIZE		30000
-#endif /* CONFIG_NET_APP_TLS_STACK_SIZE */
-
-#define HOSTNAME "localhost"   /* for cert verification if that is enabled */
-
-/* The result buf size is set to large enough so that we can receive max size
- * buf back. Note that mbedtls needs also be configured to have equal size
- * value for its buffer size. See MBEDTLS_SSL_MAX_CONTENT_LEN option in DTLS
- * config file.
- */
-#define RESULT_BUF_SIZE 1500
-
-NET_APP_TLS_POOL_DEFINE(dtls_pool, 10);
+#define TLS_TAG			1
 
 /* "000102030405060708090a0b0c0d0e0f" */
 static unsigned char client_psk[] = {
@@ -94,11 +80,6 @@ static unsigned char client_psk[] = {
 };
 
 static const char client_psk_id[] = "Client_identity";
-
-static u8_t dtls_result[RESULT_BUF_SIZE];
-NET_STACK_DEFINE(NET_APP_DTLS, net_app_dtls_stack,
-		 CONFIG_NET_APP_TLS_STACK_SIZE, CONFIG_NET_APP_TLS_STACK_SIZE);
-#endif /* CONFIG_NET_APP_DTLS */
 #endif /* CONFIG_LWM2M_DTLS_SUPPORT */
 
 static struct k_sem quit_lock;
@@ -231,10 +212,10 @@ static int lwm2m_setup(void)
 		return ret;
 	}
 
-	/* TODO: add server port to URL */
-	snprintk(server_url, server_url_len, "coap%s//%s",
+	snprintk(server_url, server_url_len, "coap%s//%s%s%s",
 		 IS_ENABLED(CONFIG_LWM2M_DTLS_SUPPORT) ? "s:" : ":",
-		 SERVER_ADDR);
+		 strchr(SERVER_ADDR, ':') ? "[" : "", SERVER_ADDR,
+		 strchr(SERVER_ADDR, ':') ? "]" : "");
 
 	/* Security Mode */
 	lwm2m_engine_set_u8("0/0/2",
@@ -384,23 +365,9 @@ void main(void)
 	}
 
 	(void)memset(&client, 0x0, sizeof(client));
-	client.net_init_timeout = WAIT_TIME;
-	client.net_timeout = CONNECT_TIME;
-
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-#if defined(CONFIG_NET_APP_DTLS)
-	client.client_psk = client_psk;
-	client.client_psk_len = 16;
-	client.client_psk_id = (char *)client_psk_id;
-	client.client_psk_id_len = strlen(client_psk_id);
-	client.cert_host = HOSTNAME;
-	client.dtls_pool = &dtls_pool;
-	client.dtls_result_buf = dtls_result;
-	client.dtls_result_buf_len = RESULT_BUF_SIZE;
-	client.dtls_stack = net_app_dtls_stack;
-	client.dtls_stack_len = K_THREAD_STACK_SIZEOF(net_app_dtls_stack);
-#endif /* CONFIG_NET_APP_DTLS */
-#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
+	client.tls_tag = TLS_TAG;
+#endif
 
 	/* client.sec_obj_inst is 0 as a starting point */
 	lwm2m_rd_client_start(&client, CONFIG_BOARD, rd_client_event);
