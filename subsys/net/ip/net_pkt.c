@@ -2456,6 +2456,10 @@ static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, s32_t timeout)
 	pkt->atomic_ref = ATOMIC_INIT(1);
 	pkt->slab = slab;
 
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		net_pkt_set_ipv6_next_hdr(pkt, 255);
+	}
+
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 	net_pkt_alloc_add(pkt, true, caller, line);
 #endif

@@ -183,11 +183,21 @@ int net_ipv6_finalize_new(struct net_pkt *pkt, u8_t next_header_proto)
 		return -ENOBUFS;
 	}
 
-	ipv6_hdr->len     = htons(net_pkt_get_len(pkt) -
-				  sizeof(struct net_ipv6_hdr));
-	ipv6_hdr->nexthdr = next_header_proto;
+	ipv6_hdr->len = htons(net_pkt_get_len(pkt) -
+			      sizeof(struct net_ipv6_hdr));
+
+	if (net_pkt_ipv6_next_hdr(pkt) != 255) {
+		ipv6_hdr->nexthdr = net_pkt_ipv6_next_hdr(pkt);
+	} else {
+		ipv6_hdr->nexthdr = next_header_proto;
+	}
 
 	net_pkt_set_data(pkt, &ipv6_access);
+
+	if (net_pkt_ipv6_next_hdr(pkt) != 255 &&
+	    net_pkt_skip(pkt, net_pkt_ipv6_ext_len(pkt))) {
+		return -ENOBUFS;
+	}
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt)) ||
 	    next_header_proto == IPPROTO_ICMPV6) {
