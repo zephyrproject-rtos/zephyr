@@ -33,10 +33,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <init.h>
 #include <misc/printk.h>
 #include <net/net_ip.h>
-#include <net/udp.h>
-
-#include <net/net_pkt.h>
-#include <net/net_app.h>
+#include <net/http_parser_url.h>
+#include <net/socket.h>
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+#include <net/tls_credentials.h>
+#endif
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
@@ -71,10 +72,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 				";ct=" STRINGIFY(LWM2M_FORMAT_OMA_JSON)
 #else
 #define REG_PREFACE		""
-#endif
-
-#if defined(CONFIG_NET_APP_DTLS)
-#define INSTANCE_INFO "Zephyr DTLS LwM2M-client"
 #endif
 
 #if defined(CONFIG_COAP_EXTENDED_OPTIONS_LEN)
@@ -130,6 +127,16 @@ static sys_slist_t engine_obj_list;
 static sys_slist_t engine_obj_inst_list;
 static sys_slist_t engine_observer_list;
 static sys_slist_t engine_service_list;
+
+static K_THREAD_STACK_DEFINE(engine_thread_stack,
+			      CONFIG_LWM2M_ENGINE_STACK_SIZE);
+static struct k_thread engine_thread_data;
+
+#define MAX_POLL_FD		CONFIG_NET_SOCKETS_POLL_MAX
+
+static struct lwm2m_ctx *sock_ctx[MAX_POLL_FD];
+static struct pollfd sock_fds[MAX_POLL_FD];
+static int sock_nfds;
 
 #define NUM_BLOCK1_CONTEXT	CONFIG_LWM2M_NUM_BLOCK1_CONTEXT
 
@@ -1014,7 +1021,6 @@ cleanup:
 
 int lwm2m_send_message(struct lwm2m_message *msg)
 {
-	struct net_pkt *pkt;
 	int ret;
 
 	if (!msg || !msg->ctx) {
@@ -1028,30 +1034,12 @@ int lwm2m_send_message(struct lwm2m_message *msg)
 
 	msg->send_attempts++;
 
-	pkt = net_app_get_net_pkt(&msg->ctx->net_app_ctx, AF_UNSPEC,
-				  BUF_ALLOC_TIMEOUT);
-	if (!pkt) {
-		LOG_ERR("Unable to get TX packet, not enough memory.");
-		ret = -ENOMEM;
-		goto cleanup;
-	}
-
-	if (!net_pkt_append(pkt, msg->cpkt.offset, msg->cpkt.data,
-			    BUF_ALLOC_TIMEOUT)) {
-		LOG_ERR("Unable to add packet data, not enough memory.");
-		ret = -ENOMEM;
-		goto cleanup;
-	}
-
-	ret = net_app_send_pkt(&msg->ctx->net_app_ctx, pkt,
-			       &msg->ctx->remote_addr,
-			       NET_SOCKADDR_MAX_SIZE, K_NO_WAIT, NULL);
+	ret = send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
 	if (ret < 0) {
 		if (msg->type == COAP_TYPE_CON) {
 			coap_pending_clear(msg->pending);
 		}
 
-		net_pkt_unref(pkt);
 		return ret;
 	}
 
@@ -1065,13 +1053,6 @@ int lwm2m_send_message(struct lwm2m_message *msg)
 				      msg->pending->timeout);
 	} else {
 		lwm2m_reset_message(msg, true);
-	}
-
-	return ret;
-
-cleanup:
-	if (pkt) {
-		net_pkt_unref(pkt);
 	}
 
 	return ret;
@@ -3458,60 +3439,20 @@ error:
 	return 0;
 }
 
-static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
+static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx,
+			      u8_t *buf, u16_t buf_len,
+			      struct sockaddr *from_addr,
 			      udp_request_handler_cb_t udp_request_handler)
 {
 	struct lwm2m_message *msg = NULL;
-	struct net_udp_hdr hdr, *udp_hdr;
 	struct coap_pending *pending;
 	struct coap_reply *reply;
 	struct coap_packet response;
-	struct sockaddr from_addr;
-	static u8_t in_buf[NET_IPV6_MTU];
-	size_t recv_len;
 	int r;
 	u8_t token[8];
 	u8_t tkl;
 
-	udp_hdr = net_udp_get_hdr(pkt, &hdr);
-	if (!udp_hdr) {
-		LOG_ERR("Invalid UDP data");
-		return;
-	}
-
-	/* Save the from address */
-#if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(pkt) == AF_INET6) {
-		net_ipaddr_copy(&net_sin6(&from_addr)->sin6_addr,
-				&NET_IPV6_HDR(pkt)->src);
-		net_sin6(&from_addr)->sin6_port = udp_hdr->src_port;
-		net_sin6(&from_addr)->sin6_family = AF_INET6;
-	}
-#endif
-
-#if defined(CONFIG_NET_IPV4)
-	if (net_pkt_family(pkt) == AF_INET) {
-		net_ipaddr_copy(&net_sin(&from_addr)->sin_addr,
-				&NET_IPV4_HDR(pkt)->src);
-		net_sin(&from_addr)->sin_port = udp_hdr->src_port;
-		net_sin(&from_addr)->sin_family = AF_INET;
-	}
-#endif
-
-	/* copy data from pkt */
-	recv_len = net_pkt_appdatalen(pkt);
-	if (recv_len > sizeof(in_buf)) {
-		recv_len = sizeof(in_buf);
-	}
-
-	(void)net_frag_linearize(in_buf, recv_len, pkt,
-				 net_pkt_appdata(pkt) - pkt->frags->data,
-				 recv_len);
-
-	/* now that we have data, free pkt */
-	net_pkt_unref(pkt);
-
-	r = coap_packet_parse(&response, in_buf, recv_len, NULL, 0);
+	r = coap_packet_parse(&response, buf, buf_len, NULL, 0);
 	if (r < 0) {
 		LOG_ERR("Invalid data received (err:%d)", r);
 		return;
@@ -3531,8 +3472,8 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 	}
 
 	LOG_DBG("checking for reply from [%s]",
-		lwm2m_sprint_ip_addr(&from_addr));
-	reply = coap_response_received(&response, &from_addr,
+		lwm2m_sprint_ip_addr(from_addr));
+	reply = coap_response_received(&response, from_addr,
 				       client_ctx->replies,
 				       CONFIG_LWM2M_ENGINE_MAX_REPLIES);
 	if (reply) {
@@ -3611,19 +3552,8 @@ static void lwm2m_udp_receive(struct lwm2m_ctx *client_ctx, struct net_pkt *pkt,
 	}
 }
 
-static void udp_receive(struct net_app_ctx *app_ctx, struct net_pkt *pkt,
-			int status, void *user_data)
-{
-	struct lwm2m_ctx *client_ctx = CONTAINER_OF(app_ctx,
-						    struct lwm2m_ctx,
-						    net_app_ctx);
-
-	lwm2m_udp_receive(client_ctx, pkt, handle_request);
-}
-
 static void retransmit_request(struct k_work *work)
 {
-	struct net_pkt *pkt;
 	struct lwm2m_ctx *client_ctx;
 	struct lwm2m_message *msg;
 	struct coap_pending *pending;
@@ -3658,43 +3588,13 @@ static void retransmit_request(struct k_work *work)
 
 	LOG_DBG("Resending message: %p", msg);
 	msg->send_attempts++;
-
-	pkt = net_app_get_net_pkt(&msg->ctx->net_app_ctx, AF_UNSPEC,
-				  BUF_ALLOC_TIMEOUT);
-	if (!pkt) {
-		LOG_ERR("Unable to get TX packet, not enough memory.");
-		goto cleanup;
-	}
-
-	if (!net_pkt_append(pkt, msg->cpkt.offset, msg->cpkt.data,
-			    BUF_ALLOC_TIMEOUT)) {
-		LOG_ERR("Unable to add packet data, not enough memory.");
-		goto cleanup;
-	}
-
-	/*
-	 * Don't use lwm2m_send_message() because it calls
-	 * coap_pending_cycle() / coap_pending_cycle() in a different order
-	 * and under different circumstances.  It also does it's own ref /
-	 * unref of the net_pkt.  Keep it simple and call net_app_send_pkt()
-	 * directly here.
-	 */
-	r = net_app_send_pkt(&msg->ctx->net_app_ctx, pkt,
-			     &msg->ctx->remote_addr,
-			     NET_SOCKADDR_MAX_SIZE, K_NO_WAIT, NULL);
+	r = send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0);
 	if (r < 0) {
 		LOG_ERR("Error sending lwm2m message: %d", r);
 		/* don't error here, retry until timeout */
-		net_pkt_unref(pkt);
 	}
 
 	k_delayed_work_submit(&client_ctx->retransmit_work, pending->timeout);
-	return;
-
-cleanup:
-	if (pkt) {
-		net_pkt_unref(pkt);
-	}
 }
 
 static int notify_message_reply_cb(const struct coap_packet *response,
@@ -3926,10 +3826,16 @@ static void lwm2m_engine_service(struct k_work *work)
 
 int lwm2m_engine_context_close(struct lwm2m_ctx *client_ctx)
 {
+	int sock_fd = client_ctx->sock_fd;
+
 	k_delayed_work_cancel(&client_ctx->retransmit_work);
-	net_app_close(&client_ctx->net_app_ctx);
-	net_app_release(&client_ctx->net_app_ctx);
-	return 0;
+	lwm2m_socket_del(client_ctx);
+	client_ctx->sock_fd = -1;
+	if (sock_fd >= 0) {
+		return close(sock_fd);
+	} else {
+		return 0;
+	}
 }
 
 void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
@@ -3937,168 +3843,333 @@ void lwm2m_engine_context_init(struct lwm2m_ctx *client_ctx)
 	k_delayed_work_init(&client_ctx->retransmit_work, retransmit_request);
 }
 
-#if defined(CONFIG_NET_APP_DTLS)
-static int setup_cert(struct net_app_ctx *app_ctx, void *cert)
+/* LwM2M Socket Integration */
+
+int lwm2m_socket_add(struct lwm2m_ctx *ctx)
 {
-#if defined(MBEDTLS_KEY_EXCHANGE__SOME__PSK_ENABLED)
-	struct lwm2m_ctx *client_ctx = CONTAINER_OF(app_ctx,
-						    struct lwm2m_ctx,
-						    net_app_ctx);
-	return mbedtls_ssl_conf_psk(
-			&app_ctx->tls.mbedtls.conf,
-			(const unsigned char *)client_ctx->client_psk,
-			client_ctx->client_psk_len,
-			(const unsigned char *)client_ctx->client_psk_id,
-			client_ctx->client_psk_id_len);
-#else
+	int i;
+
+	if (sock_nfds < MAX_POLL_FD) {
+		i = sock_nfds++;
+	} else {
+		for (i = 0; i < MAX_POLL_FD; i++) {
+			if (sock_ctx[i] == NULL) {
+				goto found;
+			}
+		}
+
+		return -ENOMEM;
+	}
+
+found:
+	sock_ctx[i] = ctx;
+	sock_fds[i].fd = ctx->sock_fd;
+	sock_fds[i].events = POLLIN;
 	return 0;
-#endif
 }
-#endif /* CONFIG_NET_APP_DTLS */
 
-int lwm2m_net_app_start(struct lwm2m_ctx *client_ctx,
-			char *peer_str, u16_t peer_port)
+void lwm2m_socket_del(struct lwm2m_ctx *ctx)
 {
-	struct sockaddr client_addr;
-	int ret;
-
-	/* setup the local client port */
-	(void)memset(&client_addr, 0, sizeof(client_addr));
-#if defined(CONFIG_NET_IPV6)
-	client_addr.sa_family = AF_INET6;
-	net_sin6(&client_addr)->sin6_port = htons(CONFIG_LWM2M_LOCAL_PORT);
-#elif defined(CONFIG_NET_IPV4)
-	client_addr.sa_family = AF_INET;
-	net_sin(&client_addr)->sin_port = htons(CONFIG_LWM2M_LOCAL_PORT);
-#endif
-
-	ret = net_app_init_udp_client(&client_ctx->net_app_ctx,
-				      &client_addr, NULL,
-				      peer_str,
-				      peer_port,
-				      client_ctx->net_init_timeout,
-				      client_ctx);
-	if (ret) {
-		LOG_ERR("net_app_init_udp_client err:%d", ret);
-		goto error_start;
-	}
-
-	/* set net_app callbacks */
-	ret = net_app_set_cb(&client_ctx->net_app_ctx,
-			     NULL, udp_receive, NULL, NULL);
-	if (ret) {
-		LOG_ERR("Could not set receive callback (err:%d)", ret);
-		goto error_start;
-	}
-
-#if defined(CONFIG_NET_APP_DTLS)
-	if (client_ctx->use_dtls) {
-		ret = net_app_client_tls(&client_ctx->net_app_ctx,
-					 client_ctx->dtls_result_buf,
-					 client_ctx->dtls_result_buf_len,
-					 INSTANCE_INFO,
-					 strlen(INSTANCE_INFO),
-					 setup_cert,
-					 client_ctx->cert_host,
-					 NULL,
-					 client_ctx->dtls_pool,
-					 client_ctx->dtls_stack,
-					 client_ctx->dtls_stack_len);
-		if (ret < 0) {
-			LOG_ERR("Cannot init DTLS (%d)", ret);
-			goto error_start;
+	for (int i = 0; i < sock_nfds; i++) {
+		if (sock_ctx[i] == ctx) {
+			sock_ctx[i] = NULL;
+			sock_fds[i].fd = -1;
+			sock_nfds--;
+			break;
 		}
 	}
-#endif
+}
 
-	ret = net_app_connect(&client_ctx->net_app_ctx,
-			      client_ctx->net_timeout);
-	if (ret < 0) {
-		LOG_ERR("Cannot connect UDP (%d)", ret);
-		goto error_start;
+/* LwM2M main work loop */
+
+static void socket_receive_loop(void)
+{
+	static u8_t in_buf[NET_IPV6_MTU];
+	static struct sockaddr from_addr;
+	socklen_t from_addr_len;
+	ssize_t len;
+	int i;
+
+	from_addr_len = sizeof(from_addr);
+	while (1) {
+		/* wait for sockets */
+		if (sock_nfds < 1) {
+			k_sleep(ENGINE_UPDATE_INTERVAL);
+			continue;
+		}
+
+		/*
+		 * FIXME: Currently we timeout and restart poll in case fds
+		 *        were modified.
+		 */
+		if (poll(sock_fds, sock_nfds, ENGINE_UPDATE_INTERVAL) < 0) {
+			LOG_ERR("Error in poll:%d", errno);
+			errno = 0;
+			k_sleep(ENGINE_UPDATE_INTERVAL);
+			continue;
+		}
+
+		for (i = 0; i < sock_nfds; i++) {
+			if (sock_fds[i].revents & POLLERR) {
+				LOG_ERR("Error in poll.. waiting a moment.");
+				k_sleep(ENGINE_UPDATE_INTERVAL);
+				continue;
+			}
+
+			if (!(sock_fds[i].revents & POLLIN) ||
+			    sock_ctx[i] == NULL) {
+				sock_fds[i].revents = 0;
+				continue;
+			}
+
+			sock_fds[i].revents = 0;
+			len = recvfrom(sock_ctx[i]->sock_fd, in_buf,
+				       sizeof(in_buf) - 1, 0,
+				       &from_addr, &from_addr_len);
+			if (errno) {
+				LOG_ERR("Sock RECV error: %d", errno);
+				/* TODO: handle error? */
+				continue;
+			}
+
+			if (len < 0) {
+				LOG_ERR("Error reading response: %d", errno);
+				continue;
+			}
+
+			if (len == 0) {
+				LOG_ERR("Zero length recv");
+				continue;
+			}
+
+			in_buf[len] = 0;
+
+			lwm2m_udp_receive(sock_ctx[i], in_buf, len, &from_addr,
+					  handle_request);
+		}
 	}
+}
 
-	/* save remote addr */
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-	if (client_ctx->use_dtls && client_ctx->net_app_ctx.dtls.ctx) {
-		memcpy(&client_ctx->remote_addr,
-		       &client_ctx->net_app_ctx.dtls.ctx->remote,
-		       sizeof(client_ctx->remote_addr));
-	} else
-#endif
-	{
-		memcpy(&client_ctx->remote_addr,
-		       &client_ctx->net_app_ctx.default_ctx->remote,
-		       sizeof(client_ctx->remote_addr));
-	}
-	return 0;
+static int load_tls_credential(struct lwm2m_ctx *client_ctx, u16_t res_id,
+			       enum tls_credential_type type)
+{
+	int ret = 0;
+	void *cred = NULL;
+	u16_t cred_len;
+	u8_t cred_flags;
+	char pathstr[MAX_RESOURCE_LEN];
 
-error_start:
-	lwm2m_engine_context_close(client_ctx);
+	/* ignore error value */
+	tls_credential_delete(client_ctx->tls_tag, type);
+
+	snprintk(pathstr, sizeof(pathstr), "0/%d/%u", client_ctx->sec_obj_inst,
+		 res_id);
+
+	ret = lwm2m_engine_get_res_data(pathstr, &cred, &cred_len, &cred_flags);
+	if (ret < 0) {
+		LOG_ERR("Unable to get resource data for '%s'", pathstr);
+		return ret;
+	}
+
+	/* Set correct PSK_ID length */
+	if (type == TLS_CREDENTIAL_PSK_ID) {
+		cred_len = strlen(cred);
+	}
+
+	ret = tls_credential_add(client_ctx->tls_tag, type, cred, cred_len);
+	if (ret < 0) {
+		LOG_ERR("Unable to get resource data for '%s'", pathstr);
+	}
+
+	return ret;
+}
+#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
+
+int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
+{
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+	int ret;
+
+	ret = load_tls_credential(client_ctx, 3, TLS_CREDENTIAL_PSK_ID);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = load_tls_credential(client_ctx, 5, TLS_CREDENTIAL_PSK);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (client_ctx->use_dtls) {
+		client_ctx->sock_fd = socket(client_ctx->remote_addr.sa_family,
+					     SOCK_DGRAM, IPPROTO_DTLS_1_2);
+	} else
+#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
+	{
+		client_ctx->sock_fd = socket(client_ctx->remote_addr.sa_family,
+					     SOCK_DGRAM, IPPROTO_UDP);
+	}
+
+	if (client_ctx->sock_fd < 0) {
+		LOG_ERR("Failed to create socket: %d", errno);
+		return -errno;
+	}
+
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+	if (client_ctx->use_dtls) {
+		sec_tag_t tls_tag_list[] = {
+			client_ctx->tls_tag,
+		};
+
+		ret = setsockopt(client_ctx->sock_fd, SOL_TLS, TLS_SEC_TAG_LIST,
+				 tls_tag_list, sizeof(tls_tag_list));
+		if (ret < 0) {
+			LOG_ERR("Failed to set TLS_SEC_TAG_LIST option: %d",
+				errno);
+			lwm2m_engine_context_close(client_ctx);
+			return -errno;
+		}
+	}
+#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
+
+	if (connect(client_ctx->sock_fd, &client_ctx->remote_addr,
+		    NET_SOCKADDR_MAX_SIZE) < 0) {
+		LOG_ERR("Cannot connect UDP (-%d)", errno);
+		lwm2m_engine_context_close(client_ctx);
+		return -errno;
+	}
+
+	lwm2m_socket_add(client_ctx);
+	return 0;
+}
+
+int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
+{
+	struct http_parser_url parser;
+	int ret;
+	u16_t off, len;
+	u8_t tmp;
+
+	http_parser_url_init(&parser);
+	ret = http_parser_parse_url(url, strlen(url), 0, &parser);
+	if (ret < 0) {
+		LOG_ERR("Invalid url: %s", url);
+		return -ENOTSUP;
+	}
+
+	off = parser.field_data[UF_SCHEMA].off;
+	len = parser.field_data[UF_SCHEMA].len;
+
+	/* check for supported protocol */
+	if (strncmp(url + off, "coaps", len) != 0) {
+		return -EPROTONOSUPPORT;
+	}
+
+	/* check for DTLS requirement */
+	*use_dtls = false;
+	if (len == 5 && strncmp(url + off, "coaps", len) == 0) {
+#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
+		*use_dtls = true;
+#else
+		return -EPROTONOSUPPORT;
+#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
+	}
+
+	if (!(parser.field_set & (1 << UF_PORT))) {
+		/* Set to default port of CoAP */
+		parser.port = CONFIG_LWM2M_PEER_PORT;
+	}
+
+	off = parser.field_data[UF_HOST].off;
+	len = parser.field_data[UF_HOST].len;
+
+	/* truncate host portion */
+	tmp = url[off + len];
+	url[off + len] = '\0';
+
+	/* initialize addr */
+	(void)memset(addr, 0, sizeof(*addr));
+
+	/* try and set IP address directly */
+	ret = -EINVAL;
+
+#if defined(CONFIG_NET_IPV6)
+	addr->sa_family = AF_INET6;
+	ret = net_addr_pton(AF_INET6, url + off,
+			    &((struct sockaddr_in6 *)addr)->sin6_addr);
+#endif /* CONFIG_NET_IPV6 */
+
+#if defined(CONFIG_NET_IPV4)
+	if (ret < 0) {
+		addr->sa_family = AF_INET;
+		ret = net_addr_pton(AF_INET, url + off,
+				    &((struct sockaddr_in *)addr)->sin_addr);
+	}
+#endif /* CONFIG_NET_IPV4 */
+
+	if (ret < 0) {
+		goto cleanup;
+	}
+
+	/* set port */
+	if (addr->sa_family == AF_INET6) {
+		net_sin6(addr)->sin6_port = htons(parser.port);
+	} else if (addr->sa_family == AF_INET) {
+		net_sin(addr)->sin_port = htons(parser.port);
+	} else {
+		ret = -EPROTONOSUPPORT;
+	}
+
+cleanup:
+	/* restore host separator */
+	url[off + len] = tmp;
 	return ret;
 }
 
 int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 {
 	char pathstr[MAX_RESOURCE_LEN];
-	char *data_ptr, *peer_str;
-	u16_t peer_strlen;
-	u8_t peer_data_flags;
+	char *url;
+	u16_t url_len;
+	u8_t url_data_flags;
 	int ret = 0U;
 
 	/* get the server URL */
 	snprintk(pathstr, sizeof(pathstr), "0/%d/0", client_ctx->sec_obj_inst);
-	ret = lwm2m_engine_get_res_data(pathstr, (void **)&data_ptr,
-					&peer_strlen, &peer_data_flags);
+	ret = lwm2m_engine_get_res_data(pathstr, (void **)&url, &url_len,
+					&url_data_flags);
 	if (ret < 0) {
 		return ret;
 	}
 
-	/* TODO: use http parser for URL to get protocol and server */
-
-	/* walk forward till colon shifting to lower case */
-	peer_str = data_ptr;
-	while (*peer_str != '\0' && *peer_str != ':') {
-		*peer_str = tolower(*peer_str);
-		peer_str += 1;
+	url[url_len] = '\0';
+	ret = lwm2m_parse_peerinfo(url, &client_ctx->remote_addr,
+				   &client_ctx->use_dtls);
+	if (ret < 0) {
+		return ret;
 	}
-
-	/* check to make sure there was a colon */
-	if (*peer_str != ':') {
-		return -EINVAL;
-	}
-
-	if (strncmp(data_ptr, "coap:", 5) != 0 &&
-	    strncmp(data_ptr, "coaps:", 6) != 0) {
-		return -EPROTONOSUPPORT;
-	}
-
-	client_ctx->use_dtls = false;
-	if (strncmp(data_ptr, "coaps:", 6) == 0) {
-#if defined(CONFIG_LWM2M_DTLS_SUPPORT)
-		client_ctx->use_dtls = true;
-#else
-		return -EPROTONOSUPPORT;
-#endif /* CONFIG_LWM2M_DTLS_SUPPORT */
-	}
-
-	/* skip the colons and slashes */
-	while (*peer_str == ':' || *peer_str == '/') {
-		peer_str += 1;
-	}
-
-	LOG_DBG("URL: %s", data_ptr);
 
 	lwm2m_engine_context_init(client_ctx);
-
-	return lwm2m_net_app_start(client_ctx, peer_str,
-				   CONFIG_LWM2M_PEER_PORT);
+	return lwm2m_socket_start(client_ctx);
 }
 
 static int lwm2m_engine_init(struct device *dev)
 {
 	(void)memset(block1_contexts, 0,
 		     sizeof(struct block_context) * NUM_BLOCK1_CONTEXT);
+
+	/* start sock receive thread */
+	k_thread_create(&engine_thread_data,
+			&engine_thread_stack[0],
+			K_THREAD_STACK_SIZEOF(engine_thread_stack),
+			(k_thread_entry_t) socket_receive_loop,
+			NULL, NULL, NULL,
+			/* Lowest priority cooperative thread */
+			K_PRIO_COOP(CONFIG_NUM_COOP_PRIORITIES - 1),
+			0, K_NO_WAIT);
+	k_thread_name_set(&engine_thread_data, "lwm2m-sock-recv");
+	LOG_DBG("LWM2M engine socket receive thread started");
 
 	k_delayed_work_init(&periodic_work, lwm2m_engine_service);
 	k_delayed_work_submit(&periodic_work, K_MSEC(2000));
