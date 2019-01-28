@@ -79,7 +79,7 @@ static inline void _impl_rtc_disable(struct device *dev)
 	counter_stop(dev);
 }
 
-static inline void rtc_counter_wrap_callback(struct device *dev,
+static inline void rtc_counter_top_callback(struct device *dev,
 					     void *user_data)
 {
 	rtc_callback_t cb_fn = (rtc_callback_t)user_data;
@@ -98,8 +98,8 @@ __deprecated static inline int rtc_set_config(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	err = counter_set_wrap(dev, cfg->alarm_val, rtc_counter_wrap_callback,
-			       cfg->cb_fn);
+	err = counter_set_top_value(dev, cfg->alarm_val,
+				    rtc_counter_top_callback, cfg->cb_fn);
 
 	if (!err && cfg->alarm_enable) {
 		err = counter_start(dev);
@@ -114,8 +114,8 @@ __deprecated __syscall int rtc_set_alarm(struct device *dev,
 static inline int _impl_rtc_set_alarm(struct device *dev,
 				      const u32_t alarm_val)
 {
-	return counter_set_wrap(dev, alarm_val, rtc_counter_wrap_callback,
-				counter_get_user_data(dev));
+	return counter_set_top_value(dev, alarm_val, rtc_counter_top_callback,
+				     counter_get_user_data(dev));
 }
 
 /**
