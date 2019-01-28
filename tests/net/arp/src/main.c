@@ -475,7 +475,7 @@ void test_arp(void)
 	 */
 	net_pkt_unref(pkt2);
 
-	zassert_equal(pkt->ref, 2,
+	zassert_equal(atomic_get(&pkt->atomic_ref), 2,
 		"ARP cache should own the original packet");
 
 	/* Then a case where target is not in the same subnet */
@@ -579,7 +579,7 @@ void test_arp(void)
 	/**TESTPOINTS: Check ARP reply*/
 	zassert_false(send_status < 0, "ARP reply was not sent");
 
-	zassert_equal(pkt->ref, 1,
+	zassert_equal(atomic_get(&pkt->atomic_ref), 1,
 		      "ARP cache should no longer own the original packet");
 
 	net_pkt_unref(pkt);

@@ -677,7 +677,7 @@ static inline void ts_register_tx_event(struct eth_context *context)
 	enet_ptp_time_data_t timeData;
 
 	pkt = ts_tx_pkt[ts_tx_rd];
-	if (pkt && pkt->ref > 0) {
+	if (pkt && atomic_get(&pkt->atomic_ref) > 0) {
 		if (eth_get_ptp_data(net_pkt_iface(pkt), pkt, &timeData,
 				     true)) {
 			int status;

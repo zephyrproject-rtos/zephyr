@@ -355,7 +355,7 @@ struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 	NET_DBG("%s [%u] pkt %p ref %d (%s():%d)",
 		slab2str(slab), k_mem_slab_num_free_get(slab),
-		pkt, pkt->ref, caller, line);
+		pkt, atomic_get(&pkt->atomic_ref), caller, line);
 #endif
 	return pkt;
 }
