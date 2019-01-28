@@ -297,6 +297,7 @@
 /samples/sensor/                          @MaureenHelm
 /samples/net/updatehub/                   @chtavares592 @otavio
 /samples/sensor/                          @bogdan-davidoaia
+/samples/shields/                         @avisconti
 /samples/subsys/logging/                  @nordic-krch @jakub-uC
 /samples/subsys/shell/                    @jakub-uC @nordic-krch
 /samples/subsys/usb/                      @jfischer-phytec-iot @finikorg
