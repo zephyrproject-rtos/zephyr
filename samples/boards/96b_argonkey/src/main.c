@@ -223,7 +223,7 @@ void main(void)
 	struct sensor_value g_fs_attr;
 
 	/* set full scale to 245dps for accel */
-	sensor_g_to_ms2(245, &g_fs_attr);
+	sensor_degrees_to_rad(245, &g_fs_attr);
 
 	if (sensor_attr_set(accel_dev, SENSOR_CHAN_GYRO_XYZ,
 			    SENSOR_ATTR_FULL_SCALE, &g_fs_attr) < 0) {
