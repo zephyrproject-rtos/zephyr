@@ -121,11 +121,11 @@ void main(void)
 
 	int ret;
 
-	struct device *mic_dev = device_get_binding(DT_MPXXDTYY_DEV_NAME);
+	struct device *mic_dev = device_get_binding(DT_ST_MPXXDTYY_0_LABEL);
 
 	if (!mic_dev) {
 		printk("Could not get pointer to %s device\n",
-			DT_MPXXDTYY_DEV_NAME);
+			DT_ST_MPXXDTYY_0_LABEL);
 		return;
 	}
 
