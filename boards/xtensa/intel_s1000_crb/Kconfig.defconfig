@@ -158,9 +158,6 @@ config SPI
 config SPI_NOR
 	def_bool y
 
-config SPI_NOR_JEDEC_ID
-	default 0xC2803A
-
 config SPI_NOR_PAGE_SIZE
 	default 256
 
