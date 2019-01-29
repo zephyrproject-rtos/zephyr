@@ -9,6 +9,7 @@ set(arch_list
   riscv32
   posix
   x86
+  x86_64
   xtensa
   )
 

@@ -17,6 +17,8 @@ find_program(CMAKE_NM         ${CROSS_COMPILE}nm      PATH ${TOOLCHAIN_HOME} NO_
 # x86_64 should pick up a proper cross compiler if one is provided,
 # but falling back to using the host toolchain is a very sane behavior
 # too.
+# As an alternative to this fall back try ZEPHYR_TOOLCHAIN_VARIANT=host
+# directly.
 if(CONFIG_X86_64)
   if(CMAKE_C_COMPILER STREQUAL CMAKE_C_COMPILER-NOTFOUND)
     find_program(CMAKE_C_COMPILER   gcc    )
