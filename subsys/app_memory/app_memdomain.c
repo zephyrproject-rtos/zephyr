@@ -1,97 +1,43 @@
+#include <zephyr.h>
+#include <init.h>
 #include <app_memory/app_memdomain.h>
-#include <misc/dlist.h>
-#include <stdarg.h>
 #include <string.h>
+#include <misc/__assert.h>
 
-/*
- * Initializes a double linked-list for the calculation of
- * memory subsections.
- */
-sys_dlist_t app_mem_list = SYS_DLIST_STATIC_INIT(&app_mem_list);
+extern char __app_shmem_regions_start[];
+extern char __app_shmem_regions_end[];
 
-/*
- * The following zeroizes each "bss" part of each subsection
- * as per the entries in the list.
- */
-void app_bss_zero(void)
+static int app_shmem_setup(struct device *unused)
 {
-	sys_dnode_t *node, *next_node;
+	struct app_region *region, *end;
+	size_t bss_size, data_size;
 
-	SYS_DLIST_FOR_EACH_NODE_SAFE(&app_mem_list, node, next_node)
-	{
-		struct app_region *region =
-			CONTAINER_OF(node, struct app_region, lnode);
-		(void)memset(region->bmem_start, 0, region->bmem_size);
-	}
-}
+	end = (struct app_region *)&__app_shmem_regions_end;
+	region = (struct app_region *)&__app_shmem_regions_start;
 
-/*
- * The following calculates the size of each subsection and adds
- * the computed sizes to the region structures. These calculations
- * are needed both for zeroizing "bss" parts of the partitions and
- * for the creation of the k_mem_partition.
- */
-void app_calc_size(void)
-{
-	sys_dnode_t *node, *next_node;
-
-	SYS_DLIST_FOR_EACH_NODE_SAFE(&app_mem_list, node, next_node)
-	{
+	for ( ; region < end; region++) {
+		/* Determine bounds and set partition appropriately */
 #ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-		if (sys_dlist_is_tail(&app_mem_list, node)) {
-			struct app_region *region =
-				CONTAINER_OF(node, struct app_region, lnode);
-			region->bmem_size =
-				_app_smem_end -
-				(char *)region->bmem_start;
-			region->dmem_size =
-				(char *)region->bmem_start -
-				(char *)region->dmem_start;
-			region->smem_size =
-				region->bmem_size + region->dmem_size;
-			region->partition[0].size =
-				region->dmem_size + region->bmem_size;
+		data_size = region->bmem_start - region->dmem_start;
+		if (region == end - 1) {
+			bss_size = _app_smem_end - region->bmem_start;
 		} else {
-			struct app_region *region =
-				CONTAINER_OF(node, struct app_region, lnode);
-			struct app_region *nRegion =
-				CONTAINER_OF(next_node, struct app_region,
-					lnode);
-			region->bmem_size =
-				(char *)nRegion->dmem_start -
-				(char *)region->bmem_start;
-			region->dmem_size =
-				(char *)region->bmem_start -
-				(char *)region->dmem_start;
-			region->smem_size =
-				region->bmem_size + region->dmem_size;
-			region->partition[0].size =
-				region->dmem_size + region->bmem_size;
+			struct app_region *next = region + 1;
+
+			__ASSERT_NO_MSG(region->bmem_start < next->dmem_start);
+			bss_size = next->dmem_start - region->bmem_start;
 		}
-
 #else
-		/* For power of 2 MPUs linker provides support to help us
-		 * calculate the region sizes.
-		 */
-		struct app_region *region =
-				CONTAINER_OF(node, struct app_region, lnode);
+		data_size = region->bmem_start - region->dmem_start;
+		bss_size = region->smem_size - data_size;
+#endif
+		region->partition->size = data_size + bss_size;
 
-		region->dmem_size = (char *)region->bmem_start -
-			(char *)region->dmem_start;
-		region->bmem_size = (char *)region->smem_size -
-			(char *)region->dmem_size;
-
-		region->partition[0].size = (s32_t)region->smem_size;
-#endif	/* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+		/* Zero out BSS area of each partition */
+		(void)memset(region->bmem_start, 0, bss_size);
 	}
+
+	return 0;
 }
 
-/*
- * "Initializes" by calculating subsection sizes and then
- * zeroizing "bss" regions.
- */
-void appmem_init_app_memory(void)
-{
-	app_calc_size();
-	app_bss_zero();
-}
+SYS_INIT(app_shmem_setup, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);

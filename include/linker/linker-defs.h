@@ -116,7 +116,7 @@
 #define APP_INPUT_SECTION(sect)    *(MAYBE_EXCLUDE_SOME_FILES sect)
 #define KERNEL_INPUT_SECTION(sect) *(sect)
 
-#define APP_SMEM_SECTION() KEEP(*(SORT(data_smem_[_a-zA-Z0-9]*)))
+#define APP_SMEM_SECTION() KEEP(*(SORT("data_smem_*")))
 
 #ifdef CONFIG_X86 /* LINKER FILES: defines used by linker script */
 /* Should be moved to linker-common-defs.h */
