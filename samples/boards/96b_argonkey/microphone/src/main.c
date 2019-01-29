@@ -96,10 +96,10 @@ void main(void)
 #ifdef CONFIG_LP3943
 	static struct device *ledc;
 
-	ledc = device_get_binding(CONFIG_LP3943_DEV_NAME);
+	ledc = device_get_binding(DT_TI_LP3943_0_LABEL);
 	if (!ledc) {
 		printk("Could not get pointer to %s sensor\n",
-			CONFIG_LP3943_DEV_NAME);
+			DT_TI_LP3943_0_LABEL);
 		return;
 	}
 

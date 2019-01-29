@@ -3,5 +3,5 @@ sample:
   name: LP3943 sample
 tests:
   test:
-    platform_whitelist: 96b_neonkey
+    platform_whitelist: 96b_neonkey 96b_argonkey
     tags: LED
