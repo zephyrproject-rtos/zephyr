@@ -14,7 +14,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#define LED_DEV_NAME CONFIG_LP5562_DEV_NAME
+#define LED_DEV_NAME DT_TI_LP5562_0_LABEL
 #define NUM_LEDS 4
 #define BLINK_DELAY_ON 500
 #define BLINK_DELAY_OFF 500
