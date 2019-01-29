@@ -230,6 +230,8 @@ Simple command handler implementation:
 		ARG_UNUSED(argc);
 		ARG_UNUSED(argv);
 
+		shell_fprintf(shell, SHELL_INFO, "Print info message\n");
+
 		shell_print(shell, "Print simple text.");
 
 		shell_warn(shell, "Print warning text.");
@@ -241,39 +243,9 @@ Simple command handler implementation:
 
 Function :cpp:func:`shell_fprintf` or the shell print macros:
 :c:macro:`shell_print`, :c:macro:`shell_info`, :c:macro:`shell_warn` and
-:c:macro:`shell_error` can only be used from the command handler, or if the
-command context is forced to stay in the foreground by calling
-:cpp:func:`shell_command_enter` from within the command handler. In this latter
-case, the shell stops reading input and writing to the output (except for the
-logs), allowing a user to print from any thread context. Function
-:cpp:func:`shell_command_exit` or entering a :kbd:`CTRL+C` terminates a
-'foreground' command.
-
-Here is an example foreground command implementation:
-
-.. code-block:: c
-
-	static int cmd_handler(const struct shell *shell, size_t argc,
-				char **argv)
-	{
-		ARG_UNUSED(argc);
-		ARG_UNUSED(argv);
-
-		shell_command_enter(shell);
-
-		foo_shell = shell;
-		foo_signal_thread(); /* Swtich context */
-
-		return 0;
-	}
-
-	static void foo_thread_context(void)
-	{
-		shell_print(foo_shell, "Lorem ipsum");
-
-		/* Terminate foreground command. */
-		shell_command_exit(foo_shell);
-	}
+:c:macro:`shell_error` can be used from the command handler or from threads,
+but not from an interrupt context. Instead, interrupt handlers should use
+:ref:`logger` for printing.
 
 Command help
 ------------

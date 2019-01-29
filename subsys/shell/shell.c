@@ -1212,6 +1212,7 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 	}
 
 	while (true) {
+		/* waiting for all signals except SHELL_SIGNAL_TXDONE */
 		err = k_poll(shell->ctx->events, SHELL_SIGNAL_TXDONE,
 			     K_FOREVER);
 
