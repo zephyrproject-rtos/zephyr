@@ -63,6 +63,16 @@ static void sys_pm_log_debug_info(enum power_states state) { }
 void sys_pm_dump_debug_info(void) { }
 #endif
 
+__weak void sys_pm_notify_lps_entry(enum power_states state)
+{
+	/* This function can be overridden by the application. */
+}
+
+__weak void sys_pm_notify_lps_exit(enum power_states state)
+{
+	/* This function can be overridden by the application. */
+}
+
 int sys_suspend(s32_t ticks)
 {
 	int sys_state;
