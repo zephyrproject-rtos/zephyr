@@ -1445,14 +1445,8 @@ error:
 	return;
 }
 
-static void wncm14a2a_modem_reset_work(struct k_work *work)
-{
-	wncm14a2a_modem_reset();
-}
-
 static int wncm14a2a_init(struct device *dev)
 {
-	static struct k_delayed_work reset_work;
 	int i, ret = 0;
 
 	ARG_UNUSED(dev);
@@ -1513,10 +1507,7 @@ static int wncm14a2a_init(struct device *dev)
 	/* init RSSI query */
 	k_delayed_work_init(&ictx.rssi_query_work, wncm14a2a_rssi_query_work);
 
-	/* Let's start the modem reset in a workq so that init can proceed */
-	k_delayed_work_init(&reset_work, wncm14a2a_modem_reset_work);
-	ret = k_delayed_work_submit_to_queue(&wncm14a2a_workq,
-					     &reset_work, K_MSEC(10));
+	wncm14a2a_modem_reset();
 
 error:
 	return ret;
