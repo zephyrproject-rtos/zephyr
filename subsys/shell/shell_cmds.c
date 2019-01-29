@@ -70,7 +70,7 @@ static int cursor_position_get(const struct shell *shell, u16_t *x, u16_t *y)
 	/* fprintf buffer needs to be flushed to start sending prepared
 	 * escape code to the terminal.
 	 */
-	shell_fprintf_buffer_flush(shell->fprintf_ctx);
+	transport_buffer_flush(shell);
 
 	/* timeout for terminal response = ~1s */
 	for (u16_t i = 0; i < 1000; i++) {

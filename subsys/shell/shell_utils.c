@@ -378,3 +378,4 @@ void shell_cmd_trim(const struct shell *shell)
 	buffer_trim(shell->ctx->cmd_buff, &shell->ctx->cmd_buff_len);
 	shell->ctx->cmd_buff_pos = shell->ctx->cmd_buff_len;
 }
+

@@ -91,12 +91,12 @@ static void uart_rx_handle(const struct shell_uart *sh_uart)
 
 static void uart_tx_handle(const struct shell_uart *sh_uart)
 {
-	u32_t len;
-	u8_t *data;
-	int err;
 	struct device *dev = sh_uart->ctrl_blk->dev;
+	u32_t len;
+	int err;
+	const u8_t *data;
 
-	len = ring_buf_get_claim(sh_uart->tx_ringbuf, &data,
+	len = ring_buf_get_claim(sh_uart->tx_ringbuf, (u8_t **)&data,
 				 sh_uart->tx_ringbuf->size);
 	if (len) {
 		len = uart_fifo_fill(dev, data, len);
