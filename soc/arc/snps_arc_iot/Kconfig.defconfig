@@ -37,12 +37,18 @@ if SERIAL
 config UART_NS16550
 	def_bool y
 
+config UART_NS16550_DLF
+	def_bool y
+
 endif # SERIAL
 
 if UART_CONSOLE
 
 config UART_NS16550_PORT_0
 	def_bool y
+
+config UART_NS16550_PORT_0_DLF
+	default 1
 
 endif # UART_CONSOLE
 
