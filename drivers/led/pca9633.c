@@ -18,6 +18,12 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(pca9633);
 
+#ifdef CONFIG_HAS_DTS_I2C
+#define CONFIG_PCA9633_DEV_NAME                 DT_NXP_PCA9633_0_LABEL
+#define CONFIG_PCA9633_I2C_ADDRESS              DT_NXP_PCA9633_0_BASE_ADDRESS
+#define CONFIG_PCA9633_I2C_MASTER_DEV_NAME      DT_NXP_PCA9633_0_BUS_NAME
+#endif
+
 #include "led_context.h"
 
 /* PCA9633 select registers determine the source that drives LED outputs */
