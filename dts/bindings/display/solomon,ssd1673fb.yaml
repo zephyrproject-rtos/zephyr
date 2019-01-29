@@ -15,7 +15,7 @@ inherits:
 
 properties:
     compatible:
-      constraint: "solomon,ssd1673fb-spi"
+      constraint: "solomon,ssd1673fb"
 
     height:
       type: int
