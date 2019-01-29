@@ -231,7 +231,7 @@ void tz_sau_configure(int enable, int allns);
  */
 u32_t tz_sau_number_of_regions_get(void);
 
-#if defined(CONFIG_ARM_SAU)
+#if defined(CONFIG_CPU_HAS_ARM_SAU)
 /**
  *
  * @brief SAU Region configuration
@@ -267,7 +267,7 @@ typedef struct {
  */
 int tz_sau_region_configure(tz_sau_conf_t *p_sau_conf);
 
-#endif /* CONFIG_ARM_SAU */
+#endif /* CONFIG_CPU_HAS_ARM_SAU */
 
 /**
  * @brief Non-Secure function type
