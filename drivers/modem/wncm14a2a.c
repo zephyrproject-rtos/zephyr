@@ -603,7 +603,7 @@ static void on_cmd_atcmdecho_nosock_imei(struct net_buf **buf, u16_t len)
 	if (len < MDM_IMEI_LENGTH) {
 		LOG_DBG("Waiting for data");
 		/* wait for more data */
-		k_sleep(K_MSEC(100));
+		k_sleep(K_MSEC(500));
 		wncm14a2a_read_rx(buf);
 	}
 
