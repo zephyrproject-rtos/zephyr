@@ -11,8 +11,6 @@
 #include <device.h>
 #include <i2c.h>
 
-#define MS5837_ADDR 0x76
-
 #define MS5837_CMD_RESET 0x1E
 
 #define MS5837_CMD_CONV_P_256  0x40
