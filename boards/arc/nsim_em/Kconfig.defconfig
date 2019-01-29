@@ -12,9 +12,6 @@ if SERIAL
 config UART_NSIM
 	default y
 
-config UART_NSIM_PORT_0_BASE_ADDR
-	default 0xf0000000
-
 endif # SERIAL
 
 

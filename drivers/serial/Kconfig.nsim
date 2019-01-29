@@ -4,20 +4,3 @@ config UART_NSIM
 	depends on SERIAL
 	help
 	  This enables the UART driver for the MetaWare nSim simulator.
-
-config UART_NSIM_PORT_0_NAME
-	string "Port 0 Device Name"
-	default "UART_0"
-	depends on UART_NSIM
-	help
-	  This is the device name for UART, and is included in the device
-	  struct.
-
-config UART_NSIM_PORT_0_BASE_ADDR
-	hex "Port 0 Register Address"
-	default 0x00000000
-	depends on UART_NSIM
-	help
-	  The base address of UART port.
-
-	  Leave this at 0x00000000 to skip initialization at boot.
