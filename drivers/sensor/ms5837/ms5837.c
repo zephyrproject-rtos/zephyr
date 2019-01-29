@@ -260,7 +260,7 @@ static int ms5837_init(struct device *dev)
 	data->i2c_master = device_get_binding(cfg->i2c_name);
 	if (data->i2c_master == NULL) {
 		LOG_ERR("i2c master %s not found",
-			    DT_MS5837_I2C_MASTER_DEV_NAME);
+			    DT_MEAS_MS5837_0_BUS_NAME);
 		return -EINVAL;
 	}
 
@@ -318,10 +318,10 @@ static int ms5837_init(struct device *dev)
 static struct ms5837_data ms5837_data;
 
 static const struct ms5837_config ms5837_config = {
-	.i2c_name = DT_MS5837_I2C_MASTER_DEV_NAME,
-	.i2c_address = MS5837_ADDR
+	.i2c_name = DT_MEAS_MS5837_0_BUS_NAME,
+	.i2c_address = DT_MEAS_MS5837_0_BASE_ADDRESS
 };
 
-DEVICE_AND_API_INIT(ms5837, DT_MS5837_DEV_NAME, ms5837_init, &ms5837_data,
+DEVICE_AND_API_INIT(ms5837, DT_MEAS_MS5837_0_LABEL, ms5837_init, &ms5837_data,
 		    &ms5837_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &ms5837_api_funcs);
