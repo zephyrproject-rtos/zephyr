@@ -22,56 +22,79 @@ struct gpio_sam_config {
 };
 
 struct gpio_sam_runtime {
+	struct gpio_driver_data general;
 	sys_slist_t cb;
 };
 
 #define DEV_CFG(dev) \
-	((const struct gpio_sam_config *const)(dev)->config->config_info)
+	((const struct gpio_sam_config * const)(dev)->config->config_info)
+#define DEV_DATA(dev) \
+	((struct gpio_sam_runtime * const)(dev)->driver_data)
 
-static int gpio_sam_config_pin(Pio * const pio, u32_t mask, int flags)
+#define GPIO_SAM_ALL_PINS    0xFFFFFFFF
+
+static int gpio_sam_port_interrupt_configure(struct device *dev, u32_t mask,
+					     unsigned int flags);
+
+static int gpio_sam_port_configure(struct device *dev, u32_t mask, int flags)
 {
+	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	struct gpio_sam_runtime * const dev_data = DEV_DATA(dev);
+	Pio * const pio = cfg->regs;
+
+	if (flags & GPIO_SINGLE_ENDED) {
+		/* TODO: Add support for Open Source, Open Drain mode */
+		return -ENOTSUP;
+	}
+
+	if (!(flags & (GPIO_OUTPUT | GPIO_INPUT))) {
+		/* Neither input nor output mode is selected */
+
+		/* Disable the interrupt. */
+		pio->PIO_IDR = mask;
+		/* Disable pull-up. */
+		pio->PIO_PUDR = mask;
+#if defined(CONFIG_SOC_SERIES_SAM4S) || defined(CONFIG_SOC_SERIES_SAME70)
+		/* Disable pull-down. */
+		pio->PIO_PPDDR = mask;
+#endif
+		/* Let the PIO control the pin (instead of a peripheral). */
+		pio->PIO_PER = mask;
+		/* Disable output. */
+		pio->PIO_ODR = mask;
+
+		return 0;
+	}
+
 	/* Setup the pin direcion. */
-	if ((flags & GPIO_DIR_MASK) == GPIO_DIR_OUT) {
+	if (flags & GPIO_OUTPUT) {
+		if (flags & GPIO_OUTPUT_INIT_HIGH) {
+			/* Set the pin. */
+			pio->PIO_SODR = mask;
+		}
+		if (flags & GPIO_OUTPUT_INIT_LOW) {
+			/* Clear the pin. */
+			pio->PIO_CODR = mask;
+		}
+		/* Enable the output */
 		pio->PIO_OER = mask;
+		/* Enable direct control of output level via PIO_ODSR */
+		pio->PIO_OWER = mask;
 	} else {
+		/* Disable the output */
 		pio->PIO_ODR = mask;
 	}
 
-	/* Setup interrupt configuration. */
-	if (flags & GPIO_INT) {
-		if (flags & GPIO_INT_DOUBLE_EDGE) {
-			return -ENOTSUP;
-		}
+	/* Note: Input is always enabled. */
 
-		/* Enable the interrupt. */
-		pio->PIO_IER = mask;
-
-		/* Enable the additional interrupt modes. */
-		pio->PIO_AIMER = mask;
-
-		if (flags & GPIO_INT_EDGE) {
-			pio->PIO_ESR = mask;
-		} else {
-			pio->PIO_LSR = mask;
-		}
-
-		if (flags & GPIO_INT_ACTIVE_HIGH) {
-			/* Set to high-level or rising edge. */
-			pio->PIO_REHLSR = mask;
-		} else {
-			/* Set to low-level or falling edge. */
-			pio->PIO_FELLSR = mask;
-		}
+	if (flags & GPIO_ACTIVE_LOW) {
+		dev_data->general.invert |= mask;
 	} else {
-		/* Disable the interrupt. */
-		pio->PIO_IDR = mask;
-
-		/* Disable their additional interrupt modes. */
-		pio->PIO_AIMDR = mask;
+		dev_data->general.invert &= ~mask;
 	}
 
 	/* Setup Pull-up resistor. */
-	if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_UP) {
+	if (flags & GPIO_PULL_UP) {
 		/* Enable pull-up. */
 		pio->PIO_PUER = mask;
 	} else {
@@ -82,7 +105,7 @@ static int gpio_sam_config_pin(Pio * const pio, u32_t mask, int flags)
 	defined(CONFIG_SOC_SERIES_SAME70) || \
 	defined(CONFIG_SOC_SERIES_SAMV71)
 	/* Setup Pull-down resistor. */
-	if ((flags & GPIO_PUD_MASK) == GPIO_PUD_PULL_DOWN) {
+	if (flags & GPIO_PULL_DOWN) {
 		pio->PIO_PPDER = mask;
 	} else {
 		pio->PIO_PPDDR = mask;
@@ -110,40 +133,35 @@ static int gpio_sam_config_pin(Pio * const pio, u32_t mask, int flags)
 	/* Enable the PIO to control the pin (instead of a peripheral). */
 	pio->PIO_PER = mask;
 
-	return 0;
+	int ret = gpio_sam_port_interrupt_configure(dev, mask, flags);
+
+	return ret;
 }
 
 static int gpio_sam_config(struct device *dev, int access_op, u32_t pin,
 			   int flags)
 {
-	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
-	Pio * const pio = cfg->regs;
-	int i, result;
+	int ret;
 
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
-		gpio_sam_config_pin(pio, BIT(pin), flags);
+		ret = gpio_sam_port_configure(dev, BIT(pin), flags);
 		break;
 	case GPIO_ACCESS_BY_PORT:
-		for (i = 0; i < 32; i++) {
-			result = gpio_sam_config_pin(pio, BIT(i), flags);
-			if (result < 0) {
-				return result;
-			}
-		}
+		ret = gpio_sam_port_configure(dev, GPIO_SAM_ALL_PINS, flags);
 		break;
 	default:
-		return -ENOTSUP;
+		ret = -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 static int gpio_sam_write(struct device *dev, int access_op, u32_t pin,
 			  u32_t value)
 {
 	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
-	Pio *const pio = cfg->regs;
+	Pio * const pio = cfg->regs;
 	u32_t mask = 1 << pin;
 
 	switch (access_op) {
@@ -157,9 +175,7 @@ static int gpio_sam_write(struct device *dev, int access_op, u32_t pin,
 		}
 		break;
 	case GPIO_ACCESS_BY_PORT:
-		pio->PIO_OWER = pio->PIO_OSR; /* Write those out pin only */
 		pio->PIO_ODSR = value;
-		pio->PIO_OWDR = 0xffffffff;   /* Disable write ODSR */
 		break;
 	default:
 		return -ENOTSUP;
@@ -172,7 +188,7 @@ static int gpio_sam_read(struct device *dev, int access_op, u32_t pin,
 			 u32_t *value)
 {
 	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
-	Pio *const pio = cfg->regs;
+	Pio * const pio = cfg->regs;
 
 	*value = pio->PIO_PDSR;
 
@@ -189,11 +205,123 @@ static int gpio_sam_read(struct device *dev, int access_op, u32_t pin,
 	return 0;
 }
 
+static int gpio_sam_port_get_raw(struct device *dev, u32_t *value)
+{
+	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	Pio * const pio = cfg->regs;
+
+	*value = pio->PIO_PDSR;
+
+	return 0;
+}
+
+static int gpio_sam_port_set_masked_raw(struct device *dev, u32_t mask,
+					u32_t value)
+{
+	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	Pio * const pio = cfg->regs;
+
+	pio->PIO_ODSR = (pio->PIO_ODSR & ~mask) | (mask & value);
+
+	return 0;
+}
+
+static int gpio_sam_port_set_bits_raw(struct device *dev, u32_t mask)
+{
+	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	Pio * const pio = cfg->regs;
+
+	/* Set pins. */
+	pio->PIO_SODR = mask;
+
+	return 0;
+}
+
+static int gpio_sam_port_clear_bits_raw(struct device *dev, u32_t mask)
+{
+	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	Pio * const pio = cfg->regs;
+
+	/* Clear pins. */
+	pio->PIO_CODR = mask;
+
+	return 0;
+}
+
+static int gpio_sam_port_toggle_bits(struct device *dev, u32_t mask)
+{
+	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	Pio * const pio = cfg->regs;
+
+	/* Toggle pins. */
+	pio->PIO_ODSR ^= mask;
+
+	return 0;
+}
+
+static int gpio_sam_port_interrupt_configure(struct device *dev, u32_t mask,
+					     unsigned int flags)
+{
+	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
+	struct gpio_sam_runtime * const dev_data = DEV_DATA(dev);
+	Pio * const pio = cfg->regs;
+
+	/* Disable the interrupt. */
+	pio->PIO_IDR = mask;
+	/* Disable additional interrupt modes. */
+	pio->PIO_AIMDR = mask;
+
+	if (!((flags & GPIO_INT_LOW_0) && (flags & GPIO_INT_HIGH_1))) {
+		/* Enable additional interrupt modes to support single
+		 * edge/level detection.
+		 */
+		pio->PIO_AIMER = mask;
+
+		if (flags & GPIO_INT_EDGE) {
+			pio->PIO_ESR = mask;
+		} else {
+			pio->PIO_LSR = mask;
+		}
+
+		u32_t rising_edge;
+
+		if (flags & GPIO_INT_HIGH_1) {
+			rising_edge = mask;
+		} else {
+			rising_edge = ~mask;
+		}
+
+		if (flags & GPIO_INT_LEVELS_LOGICAL) {
+			rising_edge ^= dev_data->general.invert & mask;
+		}
+
+		/* Set to high-level or rising edge. */
+		pio->PIO_REHLSR = rising_edge & mask;
+		/* Set to low-level or falling edge. */
+		pio->PIO_FELLSR = ~rising_edge & mask;
+	}
+
+	if (flags & GPIO_INT_ENABLE) {
+		/* Clear any pending interrupts */
+		(void)pio->PIO_ISR;
+		/* Enable the interrupt. */
+		pio->PIO_IER = mask;
+	}
+
+	return 0;
+}
+
+static int gpio_sam_pin_interrupt_configure(struct device *dev,
+		unsigned int pin, unsigned int flags)
+{
+	return gpio_sam_port_interrupt_configure(dev, BIT(pin), flags);
+}
+
 static void gpio_sam_isr(void *arg)
 {
 	struct device *dev = (struct device *)arg;
 	const struct gpio_sam_config * const cfg = DEV_CFG(dev);
-	Pio *const pio = cfg->regs;
+	Pio * const pio = cfg->regs;
 	struct gpio_sam_runtime *context = dev->driver_data;
 	u32_t int_stat;
 
@@ -215,7 +343,7 @@ static int gpio_sam_enable_callback(struct device *port,
 				    int access_op, u32_t pin)
 {
 	const struct gpio_sam_config * const cfg = DEV_CFG(port);
-	Pio *const pio = cfg->regs;
+	Pio * const pio = cfg->regs;
 	u32_t mask;
 
 	switch (access_op) {
@@ -238,7 +366,7 @@ static int gpio_sam_disable_callback(struct device *port,
 				     int access_op, u32_t pin)
 {
 	const struct gpio_sam_config * const cfg = DEV_CFG(port);
-	Pio *const pio = cfg->regs;
+	Pio * const pio = cfg->regs;
 	u32_t mask;
 
 	switch (access_op) {
@@ -261,6 +389,12 @@ static const struct gpio_driver_api gpio_sam_api = {
 	.config = gpio_sam_config,
 	.write = gpio_sam_write,
 	.read = gpio_sam_read,
+	.port_get_raw = gpio_sam_port_get_raw,
+	.port_set_masked_raw = gpio_sam_port_set_masked_raw,
+	.port_set_bits_raw = gpio_sam_port_set_bits_raw,
+	.port_clear_bits_raw = gpio_sam_port_clear_bits_raw,
+	.port_toggle_bits = gpio_sam_port_toggle_bits,
+	.pin_interrupt_configure = gpio_sam_pin_interrupt_configure,
 	.manage_callback = gpio_sam_manage_callback,
 	.enable_callback = gpio_sam_enable_callback,
 	.disable_callback = gpio_sam_disable_callback,
