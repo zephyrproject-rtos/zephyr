@@ -17,19 +17,19 @@ LOG_MODULE_REGISTER(ssd1306);
 #include "ssd1306_regs.h"
 #include <display/cfb.h>
 
-#if DT_SSD1306_PANEL_SEGMENT_REMAP == 1
+#if DT_SOLOMON_SSD1306FB_0_PANEL_SEGMENT_REMAP == 1
 #define SSD1306_PANEL_SEGMENT_REMAP	true
 #else
 #define SSD1306_PANEL_SEGMENT_REMAP	false
 #endif
 
-#if DT_SSD1306_PANEL_COM_INVDIR == 1
+#if DT_SOLOMON_SSD1306FB_0_PANEL_COM_INVDIR == 1
 #define SSD1306_PANEL_COM_INVDIR	true
 #else
 #define SSD1306_PANEL_COM_INVDIR	false
 #endif
 
-#define SSD1306_PANEL_NUMOF_PAGES	(DT_SSD1306_PANEL_HEIGHT / 8)
+#define SSD1306_PANEL_NUMOF_PAGES	(DT_SOLOMON_SSD1306FB_0_HEIGHT / 8)
 #define SSD1306_CLOCK_DIV_RATIO		0x0
 #define SSD1306_CLOCK_FREQUENCY		0x8
 #define SSD1306_PANEL_MUX_RATIO		63
@@ -55,21 +55,21 @@ struct ssd1306_data {
 static inline int ssd1306_reg_read(struct ssd1306_data *driver,
 				   u8_t reg, u8_t * const val)
 {
-	return i2c_reg_read_byte(driver->i2c, DT_SSD1306_I2C_ADDR,
+	return i2c_reg_read_byte(driver->i2c, DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS,
 				 reg, val);
 }
 
 static inline int ssd1306_reg_write(struct ssd1306_data *driver,
 				    u8_t reg, u8_t val)
 {
-	return i2c_reg_write_byte(driver->i2c, DT_SSD1306_I2C_ADDR,
+	return i2c_reg_write_byte(driver->i2c, DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS,
 				  reg, val);
 }
 
 static inline int ssd1306_reg_update(struct ssd1306_data *driver, u8_t reg,
 				     u8_t mask, u8_t val)
 {
-	return i2c_reg_update_byte(driver->i2c, DT_SSD1306_I2C_ADDR,
+	return i2c_reg_update_byte(driver->i2c, DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS,
 				   reg, mask, val);
 }
 
@@ -88,7 +88,7 @@ static inline int ssd1306_set_panel_orientation(struct device *dev)
 	};
 
 	return i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-			 DT_SSD1306_I2C_ADDR);
+			 DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS);
 }
 
 static inline int ssd1306_set_timing_setting(struct device *dev)
@@ -102,7 +102,7 @@ static inline int ssd1306_set_timing_setting(struct device *dev)
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_CHARGE_PERIOD,
 		SSD1306_CONTROL_BYTE_CMD,
-		DT_SSD1306_PANEL_PRECHARGE_PERIOD,
+		DT_SOLOMON_SSD1306FB_0_PRECHARGEP,
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_VCOM_DESELECT_LEVEL,
 		SSD1306_CONTROL_LAST_BYTE_CMD,
@@ -110,7 +110,7 @@ static inline int ssd1306_set_timing_setting(struct device *dev)
 	};
 
 	return i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-			 DT_SSD1306_I2C_ADDR);
+			 DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS);
 }
 
 static inline int ssd1306_set_hardware_config(struct device *dev)
@@ -122,7 +122,7 @@ static inline int ssd1306_set_hardware_config(struct device *dev)
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_DISPLAY_OFFSET,
 		SSD1306_CONTROL_BYTE_CMD,
-		DT_SSD1306_PANEL_DISPLAY_OFFSET,
+		DT_SOLOMON_SSD1306FB_0_DISPLAY_OFFSET,
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_PADS_HW_CONFIG,
 		SSD1306_CONTROL_BYTE_CMD,
@@ -134,7 +134,7 @@ static inline int ssd1306_set_hardware_config(struct device *dev)
 	};
 
 	return i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-			 DT_SSD1306_I2C_ADDR);
+			 DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS);
 }
 
 static inline int ssd1306_set_charge_pump(const struct device *dev)
@@ -158,7 +158,7 @@ static inline int ssd1306_set_charge_pump(const struct device *dev)
 	};
 
 	return i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-			 DT_SSD1306_I2C_ADDR);
+			 DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS);
 }
 
 int ssd1306_resume(const struct device *dev)
@@ -190,11 +190,11 @@ int ssd1306_write_page(struct device *dev, u8_t page, void * const data,
 #endif
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_LOWER_COL_ADDRESS |
-		(DT_SSD1306_PANEL_FIRST_SEG &
+		(DT_SOLOMON_SSD1306FB_0_SEGMENT_OFFSET &
 		 SSD1306_SET_LOWER_COL_ADDRESS_MASK),
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_HIGHER_COL_ADDRESS |
-		((DT_SSD1306_PANEL_FIRST_SEG  >> 4) &
+		((DT_SOLOMON_SSD1306FB_0_SEGMENT_OFFSET  >> 4) &
 		 SSD1306_SET_LOWER_COL_ADDRESS_MASK),
 		SSD1306_CONTROL_LAST_BYTE_CMD,
 		SSD1306_SET_PAGE_START_ADDRESS | page
@@ -209,11 +209,11 @@ int ssd1306_write_page(struct device *dev, u8_t page, void * const data,
 	}
 
 	if (i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-		      DT_SSD1306_I2C_ADDR)) {
+		      DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS)) {
 		return -1;
 	}
 
-	return i2c_burst_write(driver->i2c, DT_SSD1306_I2C_ADDR,
+	return i2c_burst_write(driver->i2c, DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS,
 			       SSD1306_CONTROL_LAST_BYTE_DATA,
 			       data, length);
 }
@@ -265,25 +265,25 @@ int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 	};
 
 	if (i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-		      DT_SSD1306_I2C_ADDR)) {
+		      DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS)) {
 		LOG_ERR("Failed to write command");
 		return -1;
 	}
 
-	return i2c_burst_write(driver->i2c, DT_SSD1306_I2C_ADDR,
+	return i2c_burst_write(driver->i2c, DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS,
 			       SSD1306_CONTROL_LAST_BYTE_DATA,
 			       (u8_t *)buf, desc->buf_size);
 
 #elif defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
-	if (len != SSD1306_PANEL_NUMOF_PAGES * DT_SSD1306_PANEL_WIDTH) {
+	if (len != SSD1306_PANEL_NUMOF_PAGES * DT_SOLOMON_SSD1306FB_0_WIDTH) {
 		return -1;
 	}
 
 	for (size_t pidx = 0; pidx < SSD1306_PANEL_NUMOF_PAGES; pidx++) {
-		if (ssd1306_write_page(dev, pidx, buf, DT_SSD1306_PANEL_WIDTH)) {
+		if (ssd1306_write_page(dev, pidx, buf, DT_SOLOMON_SSD1306FB_0_WIDTH)) {
 			return -1;
 		}
-		buf = (u8_t *)buf + DT_SSD1306_PANEL_WIDTH;
+		buf = (u8_t *)buf + DT_SOLOMON_SSD1306FB_0_WIDTH;
 	}
 #endif
 
@@ -323,15 +323,15 @@ int ssd1306_set_contrast(const struct device *dev, const u8_t contrast)
 	};
 
 	return i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-			 DT_SSD1306_I2C_ADDR);
+			 DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS);
 }
 
 static void ssd1306_get_capabilities(const struct device *dev,
 				     struct display_capabilities *caps)
 {
 	memset(caps, 0, sizeof(struct display_capabilities));
-	caps->x_resolution = DT_SSD1306_PANEL_WIDTH;
-	caps->y_resolution = DT_SSD1306_PANEL_HEIGHT;
+	caps->x_resolution = DT_SOLOMON_SSD1306FB_0_WIDTH;
+	caps->y_resolution = DT_SOLOMON_SSD1306FB_0_HEIGHT;
 	caps->supported_pixel_formats = PIXEL_FORMAT_MONO10;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO10;
 	caps->screen_info = SCREEN_INFO_MONO_VTILED;
@@ -389,7 +389,7 @@ static int ssd1306_init_device(struct device *dev)
 	}
 
 	if (i2c_write(driver->i2c, cmd_buf, sizeof(cmd_buf),
-		      DT_SSD1306_I2C_ADDR)) {
+		      DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS)) {
 		return -EIO;
 	}
 
@@ -408,10 +408,10 @@ static int ssd1306_init(struct device *dev)
 
 	LOG_DBG("");
 
-	driver->i2c = device_get_binding(DT_SSD1306_I2C_MASTER_DEV_NAME);
+	driver->i2c = device_get_binding(DT_SOLOMON_SSD1306FB_0_BUS_NAME);
 	if (driver->i2c == NULL) {
 		LOG_ERR("Failed to get pointer to %s device!",
-			    DT_SSD1306_I2C_MASTER_DEV_NAME);
+			    DT_SOLOMON_SSD1306FB_0_BUS_NAME);
 		return -EINVAL;
 	}
 
@@ -438,7 +438,7 @@ static struct display_driver_api ssd1306_driver_api = {
 	.set_orientation = ssd1306_set_orientation,
 };
 
-DEVICE_AND_API_INIT(ssd1306, DT_SSD1306_DEV_NAME, ssd1306_init,
+DEVICE_AND_API_INIT(ssd1306, DT_SOLOMON_SSD1306FB_0_LABEL, ssd1306_init,
 		    &ssd1306_driver, NULL,
 		    POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
 		    &ssd1306_driver_api);

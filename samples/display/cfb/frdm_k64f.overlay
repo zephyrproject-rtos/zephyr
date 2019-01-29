@@ -2,7 +2,7 @@
 	status = "ok";
 
 	ssd1306@3c {
-		compatible = "solomon,ssd1306fb-i2c";
+		compatible = "solomon,ssd1306fb";
 		reg = <0x3c>;
 		label = "SSD1306";
 		width = <128>;
