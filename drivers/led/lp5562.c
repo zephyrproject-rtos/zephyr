@@ -37,6 +37,12 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(lp5562);
 
+#ifdef CONFIG_HAS_DTS_I2C
+#define CONFIG_LP5562_DEV_NAME            DT_TI_LP5562_0_LABEL
+#define CONFIG_LP5562_I2C_ADDRESS         DT_TI_LP5562_0_BASE_ADDRESS
+#define CONFIG_LP5562_I2C_MASTER_DEV_NAME DT_TI_LP5562_0_BUS_NAME
+#endif
+
 #include "led_context.h"
 
 /* Registers */
