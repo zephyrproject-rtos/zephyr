@@ -5,4 +5,5 @@ tests:
   test:
     harness: sensor
     tags: sensors
+    platform_whitelist: nrf52_pca20020
     depends_on: i2c
