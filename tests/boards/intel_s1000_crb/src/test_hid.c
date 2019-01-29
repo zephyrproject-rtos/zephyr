@@ -98,13 +98,21 @@ static struct hid_ops ops = {
 void hid_thread(void)
 {
 	u8_t report_1[2] = { REPORT_ID_1, 0x00 };
+	struct device *hid_dev;
 	int ret, wrote;
 
 	LOG_DBG("Starting application");
 
-	usb_hid_register_device(hid_report_desc, sizeof(hid_report_desc), &ops);
+	hid_dev = device_get_binding(CONFIG_USB_HID_DEVICE_NAME_0);
+	if (hid_dev == NULL) {
+		LOG_ERR("Cannot get USB HID Device");
+		return;
+	}
 
-	usb_hid_init();
+	usb_hid_register_device(hid_dev, hid_report_desc,
+				sizeof(hid_report_desc), &ops);
+
+	usb_hid_init(hid_dev);
 
 	while (true) {
 
@@ -112,7 +120,8 @@ void hid_thread(void)
 
 		report_1[1]++;
 
-		ret = hid_int_ep_write(report_1, sizeof(report_1), &wrote);
+		ret = hid_int_ep_write(hid_dev, report_1, sizeof(report_1),
+				       &wrote);
 		LOG_DBG("Wrote %d bytes with ret %d", wrote, ret);
 	}
 }
