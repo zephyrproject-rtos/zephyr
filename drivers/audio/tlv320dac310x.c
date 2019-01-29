@@ -41,12 +41,12 @@ struct codec_driver_data {
 
 static struct codec_driver_config codec_device_config = {
 	.i2c_device	= NULL,
-	.i2c_dev_name	= DT_CODEC_I2C_BUS_NAME,
-	.i2c_address	= DT_CODEC_I2C_BUS_ADDR,
+	.i2c_dev_name	= DT_TI_TLV320DAC_0_BUS_NAME,
+	.i2c_address	= DT_TI_TLV320DAC_0_BASE_ADDRESS,
 	.gpio_device	= NULL,
-	.gpio_dev_name	= DT_CODEC_RESET_GPIO_NAME,
-	.gpio_pin	= DT_CODEC_RESET_GPIO_PIN,
-	.gpio_flags	= DT_CODEC_RESET_GPIO_FLAGS,
+	.gpio_dev_name	= DT_TI_TLV320DAC_0_RESET_GPIOS_CONTROLLER,
+	.gpio_pin	= DT_TI_TLV320DAC_0_RESET_GPIOS_PIN,
+	.gpio_flags	= DT_TI_TLV320DAC_0_RESET_GPIOS_FLAGS,
 };
 
 static struct codec_driver_data codec_device_data;
@@ -538,6 +538,6 @@ static const struct audio_codec_api codec_driver_api = {
 	.apply_properties	= codec_apply_properties,
 };
 
-DEVICE_AND_API_INIT(tlv320dac310x, DT_CODEC_NAME, codec_initialize,
+DEVICE_AND_API_INIT(tlv320dac310x, DT_TI_TLV320DAC_0_LABEL, codec_initialize,
 		&codec_device_data, &codec_device_config, POST_KERNEL,
 		CONFIG_AUDIO_CODEC_INIT_PRIORITY, &codec_driver_api);
