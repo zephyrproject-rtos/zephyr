@@ -236,17 +236,19 @@ struct hid_ops {
 
 
 /* Register HID device */
-void usb_hid_register_device(const u8_t *desc, size_t size,
+void usb_hid_register_device(struct device *dev, const u8_t *desc, size_t size,
 			     const struct hid_ops *op);
 
 /* Write to hid interrupt endpoint */
-int hid_int_ep_write(const u8_t *data, u32_t data_len, u32_t *bytes_ret);
+int hid_int_ep_write(const struct device *dev, const u8_t *data, u32_t data_len,
+		     u32_t *bytes_ret);
 
 /* Read from hid interrupt endpoint */
-int hid_int_ep_read(u8_t *data, u32_t max_data_len, u32_t *ret_bytes);
+int hid_int_ep_read(const struct device *dev, u8_t *data, u32_t max_data_len,
+		    u32_t *ret_bytes);
 
 /* Initialize USB HID */
-int usb_hid_init(void);
+int usb_hid_init(const struct device *dev);
 
 #ifdef __cplusplus
 }
