@@ -194,9 +194,21 @@ void main(void)
 {
 	u8_t report[4] = { 0x00 };
 	u8_t toggle = 0;
-	struct device *dev = device_get_binding(LED_PORT);
+	struct device *led_dev, *hid_dev;
 
-	gpio_pin_configure(dev, LED, GPIO_DIR_OUT);
+	led_dev = device_get_binding(LED_PORT);
+	if (led_dev == NULL) {
+		LOG_ERR("Cannot get LED");
+		return;
+	}
+
+	hid_dev = device_get_binding(CONFIG_USB_HID_DEVICE_NAME_0);
+	if (hid_dev == NULL) {
+		LOG_ERR("Cannot get USB HID Device");
+		return;
+	}
+
+	gpio_pin_configure(led_dev, LED, GPIO_DIR_OUT);
 
 	if (callbacks_configure(device_get_binding(PORT0), PIN0, PIN0_FLAGS,
 				&left_button, &callback[0], &def_val[0])) {
@@ -228,8 +240,9 @@ void main(void)
 	}
 #endif
 
-	usb_hid_register_device(hid_report_desc, sizeof(hid_report_desc), NULL);
-	usb_hid_init();
+	usb_hid_register_device(hid_dev, hid_report_desc,
+				sizeof(hid_report_desc), NULL);
+	usb_hid_init(hid_dev);
 
 	while (true) {
 		k_sem_take(&sem, K_FOREVER);
@@ -239,10 +252,10 @@ void main(void)
 		status[MOUSE_X_REPORT_POS] = 0;
 		report[MOUSE_Y_REPORT_POS] = status[MOUSE_Y_REPORT_POS];
 		status[MOUSE_Y_REPORT_POS] = 0;
-		hid_int_ep_write(report, sizeof(report), NULL);
+		hid_int_ep_write(hid_dev, report, sizeof(report), NULL);
 
 		/* Toggle LED on sent report */
-		gpio_pin_write(dev, LED, toggle);
+		gpio_pin_write(led_dev, LED, toggle);
 		toggle = !toggle;
 	}
 }
