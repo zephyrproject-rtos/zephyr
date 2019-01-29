@@ -111,7 +111,7 @@ _arch_switch_to_main_thread(struct k_thread *main_thread,
 		  "r"(_main), "r"(_thread_entry),
 		  "r"(main_thread)
 
-		: "r0", "r1", "sp"
+		: "r0", "r1", "r3", "sp"
 	);
 
 	CODE_UNREACHABLE;
