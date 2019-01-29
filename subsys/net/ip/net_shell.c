@@ -159,6 +159,16 @@ static const char *iface2str(struct net_if *iface, const char **extra)
 	}
 #endif
 
+#ifdef CONFIG_NET_L2_OPENTHREAD
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(OPENTHREAD)) {
+		if (extra) {
+			*extra = "==========";
+		}
+
+		return "OpenThread";
+	}
+#endif
+
 #ifdef CONFIG_NET_L2_BT
 	if (net_if_l2(iface) == &NET_L2_GET_NAME(BLUETOOTH)) {
 		if (extra) {
