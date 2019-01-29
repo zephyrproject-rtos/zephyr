@@ -17,7 +17,7 @@ inherits:
 
 properties:
     compatible:
-      constraint: "adi,adxl372-spi"
+      constraint: "adi,adxl372"
 
     int1-gpios:
       type: compound

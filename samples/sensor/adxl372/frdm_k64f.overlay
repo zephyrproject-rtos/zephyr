@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2019 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c1 {
+	status = "ok";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	adxl372@11 {
+		compatible = "adi,adxl372";
+		reg = <0x11>;
+		label = "ADXL372";
+		int1-gpios = <&gpioc 6 0>;
+	};
+};
