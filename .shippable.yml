@@ -21,13 +21,12 @@ build:
         - ${SHIPPABLE_BUILD_DIR}/ccache
     pre_ci_boot:
         image_name: zephyrprojectrtos/ci
-        image_tag: v0.5-rc5
+        image_tag: v0.6
         pull: true
         options: "-e HOME=/home/buildslave --privileged=true --tty --net=bridge --user buildslave"
 
     ci:
       - export CCACHE_DIR=${SHIPPABLE_BUILD_DIR}/ccache/.ccache
-      - sudo pip3 install -U west pytest
       - >
         if [ "$IS_PULL_REQUEST" = "true" ]; then
           ./scripts/ci/run_ci.sh -c -b ${PULL_REQUEST_BASE_BRANCH} -r origin -m ${MATRIX_BUILD} -M ${MATRIX_BUILDS} -p ${PULL_REQUEST};
