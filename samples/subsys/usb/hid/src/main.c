@@ -19,6 +19,8 @@ LOG_MODULE_REGISTER(main);
 
 static struct k_delayed_work delayed_report_send;
 
+static struct device *hdev;
+
 #define REPORT_TIMEOUT K_SECONDS(2)
 
 /* Some HID sample Report Descriptor */
@@ -62,7 +64,7 @@ static void send_report(struct k_work *work)
 	static u8_t report_1[2] = { REPORT_ID_1, 0x00 };
 	int ret, wrote;
 
-	ret = hid_int_ep_write(report_1, sizeof(report_1), &wrote);
+	ret = hid_int_ep_write(hdev, report_1, sizeof(report_1), &wrote);
 
 	LOG_DBG("Wrote %d bytes with ret %d", wrote, ret);
 
@@ -94,7 +96,7 @@ static void idle_cb(u16_t report_id)
 	static u8_t report_1[2] = { 0x00, 0xEB };
 	int ret, wrote;
 
-	ret = hid_int_ep_write(report_1, sizeof(report_1), &wrote);
+	ret = hid_int_ep_write(hdev, report_1, sizeof(report_1), &wrote);
 
 	LOG_DBG("Idle callback: wrote %d bytes with ret %d", wrote, ret);
 }
@@ -119,17 +121,35 @@ void main(void)
 	k_delayed_work_init(&delayed_report_send, send_report);
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
-	usb_hid_register_device(hid_report_desc, sizeof(hid_report_desc), &ops);
-	usb_hid_init();
+	hdev = device_get_binding(CONFIG_USB_HID_DEVICE_NAME_0);
+	if (hdev == NULL) {
+		LOG_ERR("Cannot get USB HID Device");
+		return;
+	}
+
+	LOG_DBG("HID Device: dev %p", hdev);
+
+	usb_hid_register_device(hdev, hid_report_desc, sizeof(hid_report_desc),
+				&ops);
+	usb_hid_init(hdev);
 #endif
 }
 
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 static int composite_pre_init(struct device *dev)
 {
-	usb_hid_register_device(hid_report_desc, sizeof(hid_report_desc), &ops);
+	hdev = device_get_binding(CONFIG_USB_HID_DEVICE_NAME_0);
+	if (hdev == NULL) {
+		LOG_ERR("Cannot get USB HID Device");
+		return -ENODEV;
+	}
 
-	return usb_hid_init();
+	LOG_DBG("HID Device: dev %p", hdev);
+
+	usb_hid_register_device(hdev, hid_report_desc, sizeof(hid_report_desc),
+				&ops);
+
+	return usb_hid_init(hdev);
 }
 
 SYS_INIT(composite_pre_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
