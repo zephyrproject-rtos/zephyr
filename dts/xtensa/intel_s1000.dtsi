@@ -2,6 +2,8 @@
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
 
+#define IRQ_DW(x) ((x) << 16 | (7) << 8 | (6))
+
 / {
 	cpus {
 		#address-cells = <1>;
@@ -90,7 +92,7 @@
 			reg = <0x00080c00 0x400>;
 			bits = <32>;
 			label = "GPIO";
-			interrupts = <4 1 0>;
+			interrupts = <IRQ_DW(4) 1 0>;
 			interrupt-parent = <&dw_intc>;
 
 			gpio-controller;
@@ -107,7 +109,7 @@
 			reg = <0x80800 0x400>;
 			label = "UART_0";
 			clock-frequency = <38400000>;
-			interrupts = <3 0 0>;
+			interrupts = <IRQ_DW(3) 0 0>;
 			interrupt-parent = <&dw_intc>;
 
 
@@ -120,7 +122,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80400 0x400>;
-			interrupts = <2 0 0>;
+			interrupts = <IRQ_DW(2) 0 0>;
 			interrupt-parent = <&dw_intc>;
 			label = "I2C_0";
 
@@ -132,7 +134,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x0000E000 0x400>;
-			interrupts = <7 0 0>;
+			interrupts = <IRQ_DW(7) 0 0>;
 			interrupt-parent = <&dw_intc>;
 			label = "SPI_0";
 		};
