@@ -34,7 +34,7 @@ void main(void)
 {
 	struct device *dev;
 
-	dev = device_get_binding("CCS811");
+	dev = device_get_binding(DT_AMS_CCS811_0_LABEL);
 	if (!dev) {
 		printk("Failed to get device binding");
 		return;
