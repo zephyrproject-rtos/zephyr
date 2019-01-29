@@ -5,6 +5,7 @@
  */
 &uart2 {
 	current-speed = <115200>;
+	hw-flow-control;
 	status = "ok";
 
 	wncm14a2a {
@@ -15,7 +16,6 @@
 		mdm-keep-awake-gpios = <&gpioc 2 0>;
 		mdm-reset-gpios = <&gpioc 12 0>;
 		mdm-shld-trans-ena-gpios = <&gpioc 4 0>;
-		mdm-send-ok-gpios = <&gpiod 0 0>;
 		status = "ok";
 	};
 };
