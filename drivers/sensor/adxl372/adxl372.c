@@ -925,21 +925,21 @@ static struct adxl372_data adxl372_data;
 
 static const struct adxl372_dev_config adxl372_config = {
 #ifdef CONFIG_ADXL372_I2C
-	.i2c_port = DT_ADXL372_I2C_MASTER_DEV_NAME,
-	.i2c_addr = DT_ADXL372_I2C_ADDR,
+	.i2c_port = DT_ADI_ADXL372_0_BUS_NAME,
+	.i2c_addr = DT_ADI_ADXL372_0_BASE_ADDRESS,
 #endif
 #ifdef CONFIG_ADXL372_SPI
-	.spi_port = DT_ADXL372_SPI_DEV_NAME,
-	.spi_slave = DT_ADXL372_SPI_DEV_SLAVE,
-	.spi_max_frequency = DT_ADXL372_SPI_BUS_FREQ,
+	.spi_port = DT_ADI_ADXL372_0_BUS_NAME,
+	.spi_slave = DT_ADI_ADXL372_0_BASE_ADDRESS,
+	.spi_max_frequency = DT_ADI_ADXL372_0_SPI_MAX_FREQUENCY,
 #ifdef CONFIG_ADXL372_SPI_GPIO_CS
 	.gpio_cs_port = CONFIG_ADXL372_SPI_GPIO_CS_DRV_NAME,
 	.cs_gpio = CONFIG_ADXL372_SPI_GPIO_CS_PIN,
 #endif
 #endif
 #ifdef CONFIG_ADXL372_TRIGGER
-	.gpio_port = DT_ADXL372_GPIO_DEV_NAME,
-	.int_gpio = DT_ADXL372_GPIO_PIN_NUM,
+	.gpio_port = DT_ADI_ADXL372_0_INT1_GPIOS_CONTROLLER,
+	.int_gpio = DT_ADI_ADXL372_0_INT1_GPIOS_PIN,
 #endif
 
 	.max_peak_detect_mode = IS_ENABLED(CONFIG_ADXL372_PEAK_DETECT_MODE),
@@ -1011,6 +1011,6 @@ static const struct adxl372_dev_config adxl372_config = {
 	.op_mode = ADXL372_FULL_BW_MEASUREMENT,
 };
 
-DEVICE_AND_API_INIT(adxl372, DT_ADXL372_DEV_NAME, adxl372_init,
+DEVICE_AND_API_INIT(adxl372, DT_ADI_ADXL372_0_LABEL, adxl372_init,
 		    &adxl372_data, &adxl372_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &adxl372_api_funcs);
