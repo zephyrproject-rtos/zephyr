@@ -172,9 +172,10 @@ static void event_handler(nrfx_rtc_int_type_t int_type, void *p_context)
 		/* Manually reset counter if top value is different than max. */
 		if (data->top != COUNTER_MAX_TOP_VALUE) {
 			nrfx_rtc_counter_clear(&get_nrfx_config(dev)->rtc);
-			nrfx_rtc_cc_set(&get_nrfx_config(dev)->rtc,
-					TOP_CH, data->top, true);
 		}
+
+		nrfx_rtc_cc_set(&get_nrfx_config(dev)->rtc,
+				TOP_CH, data->top, true);
 
 		if (data->top_cb) {
 			data->top_cb(dev, data->top_user_data);
