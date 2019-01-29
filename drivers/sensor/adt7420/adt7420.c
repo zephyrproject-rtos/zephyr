@@ -216,14 +216,14 @@ static int adt7420_init(struct device *dev)
 static struct adt7420_data adt7420_driver;
 
 static const struct adt7420_dev_config adt7420_config = {
-	.i2c_port = DT_ADT7420_I2C_MASTER_DEV_NAME,
-	.i2c_addr = DT_ADT7420_I2C_ADDR,
+	.i2c_port = DT_ADI_ADT7420_0_BUS_NAME,
+	.i2c_addr = DT_ADI_ADT7420_0_BASE_ADDRESS,
 #ifdef CONFIG_ADT7420_TRIGGER
-	.gpio_port = DT_ADT7420_GPIO_DEV_NAME,
-	.int_gpio = DT_ADT7420_GPIO_PIN_NUM,
+	.gpio_port = DT_ADI_ADT7420_0_INT_GPIOS_CONTROLLER,
+	.int_gpio = DT_ADI_ADT7420_0_INT_GPIOS_PIN,
 #endif
 };
 
-DEVICE_AND_API_INIT(adt7420, DT_ADT7420_NAME, adt7420_init, &adt7420_driver,
+DEVICE_AND_API_INIT(adt7420, DT_ADI_ADT7420_0_LABEL, adt7420_init, &adt7420_driver,
 		    &adt7420_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &adt7420_driver_api);

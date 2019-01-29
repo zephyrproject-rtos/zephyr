@@ -4,4 +4,5 @@ tests:
   test:
     harness: sensor
     tags: sensors
+    platform_whitelist: frdm_k64f
     depends_on: i2c

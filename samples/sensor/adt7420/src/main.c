@@ -91,7 +91,7 @@ static void process(struct device *dev)
 
 void main(void)
 {
-	struct device *dev = device_get_binding(DT_ADT7420_NAME);
+	struct device *dev = device_get_binding(DT_ADI_ADT7420_0_LABEL);
 
 	__ASSERT(dev != NULL, "Failed to get device binding");
 	printf("device is %p, name is %s\n", dev, dev->config->name);
