@@ -197,6 +197,7 @@
 /ext/hal/atmel/asf/sam/include/same70*/   @aurel32
 /ext/hal/atmel/asf/sam0/include/samr21/   @benpicco
 /dts/bindings/sensor/*bme680*             @BoschSensortec
+/dts/bindings/sensor/st,*                 @avisconti
 /ext/hal/cmsis/                           @MaureenHelm @galak
 /ext/hal/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /ext/hal/nordic/                          @carlescufi @anangl
