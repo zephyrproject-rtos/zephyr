@@ -28,6 +28,10 @@
  */
 #include <kernel_includes.h>
 
+#ifdef CONFIG_EXTI_STM32
+#include <stm32f1xx_ll_exti.h>
+#endif
+
 #ifdef CONFIG_SERIAL_HAS_DRIVER
 #include <stm32f1xx_ll_usart.h>
 #endif
