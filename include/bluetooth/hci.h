@@ -637,6 +637,7 @@ struct bt_hci_rp_write_auth_payload_timeout {
 #define BT_HCI_VERSION_4_1                      7
 #define BT_HCI_VERSION_4_2                      8
 #define BT_HCI_VERSION_5_0                      9
+#define BT_HCI_VERSION_5_1                      10
 
 #define BT_HCI_OP_READ_LOCAL_VERSION_INFO       BT_OP(BT_OGF_INFO, 0x0001)
 struct bt_hci_rp_read_local_version_info {
