@@ -30,6 +30,12 @@ properties:
       description: pinmux information for RX, TX, CTS, RTS
       generation: define
 
+    hw-flow-control:
+      type: boolean
+      category: optional
+      description: use hw flow control
+      generation: define
+
     clocks:
       type: array
       category: required
