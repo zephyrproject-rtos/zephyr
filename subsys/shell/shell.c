@@ -44,12 +44,26 @@ static void cmd_buffer_clear(const struct shell *shell)
 
 static inline void prompt_print(const struct shell *shell)
 {
-	shell_fprintf(shell, SHELL_INFO, "%s", shell->prompt);
+	/* Below cannot be printed by shell_fprinf because it will cause
+	 * interrupt spin
+	 */
+	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
+	    shell->ctx->internal.flags.use_colors &&
+	    (SHELL_INFO != shell->ctx->vt100_ctx.col.col)) {
+		struct shell_vt100_colors col;
+
+		shell_vt100_colors_store(shell, &col);
+		shell_vt100_color_set(shell, SHELL_INFO);
+		shell_raw_fprintf(shell->fprintf_ctx, "%s", shell->prompt);
+		shell_vt100_colors_restore(shell, &col);
+	} else {
+		shell_raw_fprintf(shell->fprintf_ctx, "%s", shell->prompt);
+	}
 }
 
 static inline void cmd_print(const struct shell *shell)
 {
-	shell_fprintf(shell, SHELL_NORMAL, "%s", shell->ctx->cmd_buff);
+	shell_raw_fprintf(shell->fprintf_ctx, "%s", shell->ctx->cmd_buff);
 }
 
 static void cmd_line_print(const struct shell *shell)
@@ -76,7 +90,8 @@ static int cmd_precheck(const struct shell *shell,
 			bool arg_cnt_ok)
 {
 	if (!arg_cnt_ok) {
-		shell_fprintf(shell, SHELL_ERROR, "%s: wrong parameter count\n",
+		shell_fprintf(shell, SHELL_ERROR,
+			      "%s: wrong parameter count\n",
 			      shell->ctx->active_cmd.syntax);
 
 		if (IS_ENABLED(CONFIG_SHELL_HELP_ON_WRONG_ARGUMENT_COUNT)) {
@@ -697,7 +712,7 @@ static int execute(const struct shell *shell)
 						 * calls.
 						 */
 						shell_fprintf(shell,
-							      SHELL_ERROR,
+							SHELL_ERROR,
 							"Error: requested"
 							" multiple function"
 							" executions\n");
@@ -1059,10 +1074,6 @@ static void shell_log_process(const struct shell *shell)
 	int result;
 
 	do {
-		if (shell->ctx->state < SHELL_STATE_PANIC_MODE_ACTIVE) {
-			k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
-		}
-
 		shell_cmd_line_erase(shell);
 
 		processed = shell_log_backend_process(shell->log_backend);
@@ -1081,9 +1092,6 @@ static void shell_log_process(const struct shell *shell)
 
 		k_poll_signal_check(signal, &signaled, &result);
 
-		if (shell->ctx->state < SHELL_STATE_PANIC_MODE_ACTIVE) {
-			k_mutex_unlock(&shell->ctx->wr_mtx);
-		}
 	} while (processed && !signaled);
 }
 
@@ -1204,23 +1212,29 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 	}
 
 	while (true) {
-		if (shell->iface->api->update) {
-			shell->iface->api->update(shell->iface);
-		}
+		err = k_poll(shell->ctx->events, SHELL_SIGNAL_TXDONE,
+			     K_FOREVER);
 
-		err = k_poll(shell->ctx->events, SHELL_SIGNALS, K_FOREVER);
+		k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
+
 		if (err != 0) {
 			shell_error(shell, "Shell thread error: %d", err);
 			return;
 		}
 
+
+		if (shell->iface->api->update) {
+			shell->iface->api->update(shell->iface);
+		}
+
 		shell_signal_handle(shell, SHELL_SIGNAL_KILL, kill_handler);
 		shell_signal_handle(shell, SHELL_SIGNAL_RXRDY, shell_process);
-		shell_signal_handle(shell, SHELL_SIGNAL_TXDONE, shell_process);
 		if (IS_ENABLED(CONFIG_LOG)) {
 			shell_signal_handle(shell, SHELL_SIGNAL_LOG_MSG,
 					    shell_log_process);
 		}
+
+		k_mutex_unlock(&shell->ctx->wr_mtx);
 	}
 }
 
@@ -1339,24 +1353,25 @@ void shell_process(const struct shell *shell)
 			 internal.value);
 }
 
+
+
 void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
-		   const char *p_fmt, ...)
+		   const char *fmt, ...)
 {
 	__ASSERT_NO_MSG(shell);
 	__ASSERT(!k_is_in_isr(), "Thread context required.");
 	__ASSERT_NO_MSG(shell->ctx);
 	__ASSERT_NO_MSG(shell->fprintf_ctx);
-	__ASSERT_NO_MSG(p_fmt);
+	__ASSERT_NO_MSG(fmt);
 
 	va_list args = { 0 };
 
 	if (k_current_get() != shell->ctx->tid) {
-		return;
+		k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
+		shell_cmd_line_erase(shell);
 	}
 
-	va_start(args, p_fmt);
-
-	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
+	va_start(args, fmt);
 
 	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
 	    shell->ctx->internal.flags.use_colors &&
@@ -1366,16 +1381,20 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 		shell_vt100_colors_store(shell, &col);
 		shell_vt100_color_set(shell, color);
 
-		shell_fprintf_fmt(shell->fprintf_ctx, p_fmt, args);
+		shell_fprintf_fmt(shell->fprintf_ctx, fmt, args);
 
 		shell_vt100_colors_restore(shell, &col);
 	} else {
-		shell_fprintf_fmt(shell->fprintf_ctx, p_fmt, args);
+		shell_fprintf_fmt(shell->fprintf_ctx, fmt, args);
 	}
 
 	va_end(args);
 
-	k_mutex_unlock(&shell->ctx->wr_mtx);
+	if (k_current_get() != shell->ctx->tid) {
+		cmd_line_print(shell);
+		transport_buffer_flush(shell);
+		k_mutex_unlock(&shell->ctx->wr_mtx);
+	}
 }
 
 int shell_prompt_change(const struct shell *shell, char *prompt)

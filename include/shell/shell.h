@@ -390,7 +390,7 @@ enum shell_signal {
 	SHELL_SIGNAL_RXRDY,
 	SHELL_SIGNAL_LOG_MSG,
 	SHELL_SIGNAL_KILL,
-	SHELL_SIGNAL_TXDONE,
+	SHELL_SIGNAL_TXDONE, /* TXDONE must be last one before SHELL_SIGNALS */
 	SHELL_SIGNALS
 };
 
@@ -556,27 +556,27 @@ int shell_start(const struct shell *shell);
 int shell_stop(const struct shell *shell);
 
 /**
- * @brief Terminal default text color for nrf_shell_fprintf function.
+ * @brief Terminal default text color for shell_fprintf function.
  */
 #define SHELL_NORMAL	SHELL_VT100_COLOR_DEFAULT
 
 /**
- * @brief Green text color for nrf_shell_fprintf function.
+ * @brief Green text color for shell_fprintf function.
  */
 #define SHELL_INFO	SHELL_VT100_COLOR_GREEN
 
 /**
- * @brief Cyan text color for nrf_shell_fprintf function.
+ * @brief Cyan text color for shell_fprintf function.
  */
 #define SHELL_OPTION	SHELL_VT100_COLOR_CYAN
 
 /**
- * @brief Yellow text color for nrf_shell_fprintf function.
+ * @brief Yellow text color for shell_fprintf function.
  */
 #define SHELL_WARNING	SHELL_VT100_COLOR_YELLOW
 
 /**
- * @brief Red text color for nrf_shell_fprintf function.
+ * @brief Red text color for shell_fprintf function.
  */
 #define SHELL_ERROR	SHELL_VT100_COLOR_RED
 
@@ -588,11 +588,11 @@ int shell_stop(const struct shell *shell);
  *
  * @param[in] shell	Pointer to the shell instance.
  * @param[in] color	Printed text color.
- * @param[in] p_fmt	Format string.
+ * @param[in] fmt	Format string.
  * @param[in] ...	List of parameters to print.
  */
 void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
-		   const char *p_fmt, ...);
+		   const char *fmt, ...);
 
 /**
  * @brief Print info message to the shell.

@@ -9,6 +9,7 @@
 #include "shell_wildcard.h"
 #include "shell_utils.h"
 
+
 static void subcmd_get(const struct shell_cmd_entry *cmd,
 		       size_t idx, const struct shell_static_entry **entry,
 		       struct shell_static_entry *d_entry)

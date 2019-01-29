@@ -8,6 +8,7 @@
 #include "shell_help.h"
 #include "shell_utils.h"
 
+
 /* Function prints a string on terminal screen with requested margin.
  * It takes care to not divide words.
  *   shell		Pointer to shell instance.
