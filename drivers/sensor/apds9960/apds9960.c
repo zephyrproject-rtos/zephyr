@@ -30,7 +30,7 @@ static void apds9960_gpio_callback(struct device *dev,
 	struct apds9960_data *drv_data =
 		CONTAINER_OF(cb, struct apds9960_data, gpio_cb);
 
-	gpio_pin_disable_callback(dev, DT_APDS9960_GPIO_PIN_NUM);
+	gpio_pin_disable_callback(dev, DT_AVAGO_APDS9960_0_INT_GPIOS_PIN);
 
 #ifdef CONFIG_APDS9960_TRIGGER
 	k_work_submit(&drv_data->work);
@@ -51,7 +51,7 @@ static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 #ifndef CONFIG_APDS9960_TRIGGER
 	gpio_pin_enable_callback(data->gpio,
-				 DT_APDS9960_GPIO_PIN_NUM);
+				 DT_AVAGO_APDS9960_0_INT_GPIOS_PIN);
 
 	if (i2c_reg_update_byte(data->i2c, APDS9960_I2C_ADDRESS,
 				APDS9960_ENABLE_REG,
@@ -335,21 +335,21 @@ static int apds9960_init_interrupt(struct device *dev)
 	struct apds9960_data *drv_data = dev->driver_data;
 
 	/* setup gpio interrupt */
-	drv_data->gpio = device_get_binding(DT_APDS9960_GPIO_DEV_NAME);
+	drv_data->gpio = device_get_binding(DT_AVAGO_APDS9960_0_INT_GPIOS_CONTROLLER);
 	if (drv_data->gpio == NULL) {
 		LOG_ERR("Failed to get pointer to %s device!",
-			    DT_APDS9960_GPIO_DEV_NAME);
+			    DT_AVAGO_APDS9960_0_INT_GPIOS_CONTROLLER);
 		return -EINVAL;
 	}
 
-	gpio_pin_configure(drv_data->gpio, DT_APDS9960_GPIO_PIN_NUM,
+	gpio_pin_configure(drv_data->gpio, DT_AVAGO_APDS9960_0_INT_GPIOS_PIN,
 			   GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
 			   GPIO_INT_ACTIVE_LOW | GPIO_INT_DEBOUNCE |
 			   GPIO_PUD_PULL_UP);
 
 	gpio_init_callback(&drv_data->gpio_cb,
 			   apds9960_gpio_callback,
-			   BIT(DT_APDS9960_GPIO_PIN_NUM));
+			   BIT(DT_AVAGO_APDS9960_0_INT_GPIOS_PIN));
 
 	if (gpio_add_callback(drv_data->gpio, &drv_data->gpio_cb) < 0) {
 		LOG_DBG("Failed to set gpio callback!");
@@ -420,11 +420,11 @@ static int apds9960_init(struct device *dev)
 
 	/* Initialize time 5.7ms */
 	k_sleep(6);
-	data->i2c = device_get_binding(DT_APDS9960_I2C_DEV_NAME);
+	data->i2c = device_get_binding(DT_AVAGO_APDS9960_0_BUS_NAME);
 
 	if (data->i2c == NULL) {
 		LOG_ERR("Failed to get pointer to %s device!",
-		DT_APDS9960_I2C_DEV_NAME);
+		DT_AVAGO_APDS9960_0_BUS_NAME);
 		return -EINVAL;
 	}
 
@@ -453,11 +453,11 @@ static const struct sensor_driver_api apds9960_driver_api = {
 static struct apds9960_data apds9960_data;
 
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
-DEVICE_AND_API_INIT(apds9960, DT_APDS9960_DRV_NAME, &apds9960_init,
+DEVICE_AND_API_INIT(apds9960, DT_AVAGO_APDS9960_0_LABEL, &apds9960_init,
 		    &apds9960_data, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
 #else
-DEVICE_DEFINE(apds9960, DT_APDS9960_DRV_NAME, apds9960_init,
+DEVICE_DEFINE(apds9960, DT_AVAGO_APDS9960_0_LABEL, apds9960_init,
 	      apds9960_device_ctrl, &apds9960_data, NULL,
 	      POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &apds9960_driver_api);
 #endif

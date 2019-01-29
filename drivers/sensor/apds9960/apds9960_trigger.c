@@ -29,7 +29,7 @@ void apds9960_work_cb(struct k_work *work)
 		data->p_th_handler(dev, &data->p_th_trigger);
 	}
 
-	gpio_pin_enable_callback(data->gpio, DT_APDS9960_GPIO_PIN_NUM);
+	gpio_pin_enable_callback(data->gpio, DT_AVAGO_APDS9960_0_INT_GPIOS_PIN);
 }
 
 int apds9960_attr_set(struct device *dev,
@@ -71,7 +71,7 @@ int apds9960_trigger_set(struct device *dev,
 {
 	struct apds9960_data *data = dev->driver_data;
 
-	gpio_pin_disable_callback(data->gpio, DT_APDS9960_GPIO_PIN_NUM);
+	gpio_pin_disable_callback(data->gpio, DT_AVAGO_APDS9960_0_INT_GPIOS_PIN);
 
 	switch (trig->type) {
 	case SENSOR_TRIG_THRESHOLD:
@@ -93,7 +93,7 @@ int apds9960_trigger_set(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	gpio_pin_enable_callback(data->gpio, DT_APDS9960_GPIO_PIN_NUM);
+	gpio_pin_enable_callback(data->gpio, DT_AVAGO_APDS9960_0_INT_GPIOS_PIN);
 
 	return 0;
 }
