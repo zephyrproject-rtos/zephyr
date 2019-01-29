@@ -88,10 +88,10 @@ static int mpxxdtyy_initialize(struct device *dev)
 {
 	struct mpxxdtyy_data *const data = DEV_DATA(dev);
 
-	data->comm_master = device_get_binding(DT_MPXXDTYY_MASTER_DEV_NAME);
+	data->comm_master = device_get_binding(DT_ST_MPXXDTYY_0_BUS_NAME);
 
 	if (data->comm_master == NULL) {
-		LOG_ERR("master %s not found", DT_MPXXDTYY_MASTER_DEV_NAME);
+		LOG_ERR("master %s not found", DT_ST_MPXXDTYY_0_BUS_NAME);
 		return -EINVAL;
 	}
 
@@ -101,6 +101,6 @@ static int mpxxdtyy_initialize(struct device *dev)
 
 static struct mpxxdtyy_data mpxxdtyy_data;
 
-DEVICE_AND_API_INIT(mpxxdtyy, DT_MPXXDTYY_DEV_NAME, mpxxdtyy_initialize,
+DEVICE_AND_API_INIT(mpxxdtyy, DT_ST_MPXXDTYY_0_LABEL, mpxxdtyy_initialize,
 		&mpxxdtyy_data, NULL, POST_KERNEL,
 		CONFIG_AUDIO_DMIC_INIT_PRIORITY, &mpxxdtyy_driver_api);
