@@ -689,24 +689,6 @@ void test_main(void)
 {
 	struct k_mem_partition *parts[] = {&part0, &part1};
 
-	/* partitions must be initialized first */
-	FOR_EACH(appmem_init_part, part0, part1, part2);
-	/*
-	 * Next, the app_memory must be initialized in order to
-	 * calculate size of the dynamically created subsections.
-	 */
-#if defined(CONFIG_ARC)
-	/*
-	 * appmem_init_app_memory will access all partitions
-	 * For CONFIG_ARC_MPU_VER == 3, these partitions are not added
-	 * into MPU now, so need to disable mpu first to do app_bss_zero()
-	 */
-	arc_core_mpu_disable();
-	appmem_init_app_memory();
-	arc_core_mpu_enable();
-#else
-	appmem_init_app_memory();
-#endif
 	k_mem_domain_init(&dom0, 2, parts);
 	k_mem_domain_add_thread(&dom0, k_current_get());
 

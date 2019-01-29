@@ -105,12 +105,7 @@ void main(void)
 	k_tid_t tPT, tENC, tCT;
 
 	k_thread_access_grant(k_current_get(), &allforone);
-	/* initialize the partition structures  */
-	FOR_EACH(appmem_init_part, part0, part1, part2, part3, part4);
 
-	printk("init partitions complete\n");
-	appmem_init_app_memory();
-	printk("init app memory complete\n");
 	/*
 	 * create an enc thread init the memory domain and add partitions
 	 * then add the thread to the domain.

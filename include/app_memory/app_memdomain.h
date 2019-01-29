@@ -66,10 +66,7 @@ struct app_region {
 	char *dmem_start;
 	char *bmem_start;
 	u32_t smem_size;
-	u32_t dmem_size;
-	u32_t bmem_size;
 	struct k_mem_partition *partition;
-	sys_dnode_t lnode;
 };
 
 /*
@@ -81,10 +78,10 @@ struct app_region {
  * calculate the region sizes.
  */
 #define smem_size_declare(name) extern char data_smem_##name##_size[]
-#define smem_size_assign(name) name##_region.smem_size = (u32_t)&data_smem_##name##_size
+#define smem_size_val(name) ((u32_t)&data_smem_##name##_size)
 #else
 #define smem_size_declare(name)
-#define smem_size_assign(name)
+#define smem_size_val(name) 0
 #endif	/* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
 
 /**
@@ -105,34 +102,16 @@ struct app_region {
 	smem_size_declare(name);		  \
 	_app_dmem_pad(name) char name##_dmem_pad; \
 	_app_bmem_pad(name) char name##_bmem_pad; \
-	__kernel struct k_mem_partition name; \
-	__kernel struct app_region name##_region; \
-	static inline void appmem_init_part_##name(void) \
-	{ \
-		name##_region.dmem_start = (char *)&data_smem_##name; \
-		name##_region.bmem_start = (char *)&data_smem_##name##b; \
-		smem_size_assign(name);				\
-		sys_dlist_append(&app_mem_list, &name##_region.lnode); \
-		name.start = (u32_t) name##_region.dmem_start; \
-		name.attr = K_MEM_PARTITION_P_RW_U_RW; \
-		name##_region.partition = &name; \
-	}
-
-/*
- * The following allows the FOR_EACH macro to call each partition's
- * appmem_init_part_##name . Note: semicolon needed or else compiler
- * complains as semicolon needed for function call once expanded by
- * macro.
- */
-#define appmem_init_part(name) \
-	appmem_init_part_##name();
-
-extern sys_dlist_t app_mem_list;
-
-extern void app_bss_zero(void);
-
-extern void app_calc_size(void);
-
-extern void appmem_init_app_memory(void);
+	struct k_mem_partition name = { \
+		.start = (u32_t) &data_smem_##name, \
+		.attr = K_MEM_PARTITION_P_RW_U_RW \
+	}; \
+	_GENERIC_SECTION(.app_regions.name) \
+	struct app_region name##_region = { \
+		.dmem_start = (char *)&data_smem_##name, \
+		.bmem_start = (char *)&data_smem_##name##b, \
+		.smem_size = smem_size_val(name), \
+		.partition = &name \
+	};
 
 #endif /* ZEPHYR_INCLUDE_APP_MEMORY_APP_MEMDOMAIN_H_ */

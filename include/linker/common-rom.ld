@@ -42,6 +42,13 @@
 	}
 #endif
 
+	SECTION_PROLOGUE(app_shmem_regions, (OPTIONAL),)
+	{
+		__app_shmem_regions_start = .;
+		KEEP(*(SORT(".app_regions.*")));
+		__app_shmem_regions_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
 	SECTION_PROLOGUE (devconfig, (OPTIONAL),)
 	{
 		__devconfig_start = .;

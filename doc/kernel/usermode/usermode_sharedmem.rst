@@ -42,13 +42,9 @@ The resulting section name can be seen in the linker.map as
 "data_smem_id" and "data_smem_idb".
 
 To create a k_mem_partition, call the macro K_APPMEM_PARTITION_DEFINE(part0)
-where "part0" is the name then used to refer to that partition.
-This macro only creates a function and necessary data structures for
-the later "initialization".
-
-Once the partition is initialized, the standard memory domain APIs may
-be used to add it to domains; the declared name is a k_mem_partition
-symbol.
+where "part0" is the name then used to refer to that partition. The
+standard memory domain APIs may be used to add it to domains; the declared
+name is a k_mem_partition symbol.
 
 Example:
 
@@ -64,8 +60,6 @@ Example:
 
             int main()
             {
-                    appmem_init_part_part0();
-                    appmem_init_app_memory();
                     k_mem_domain_init(&dom0, 0, NULL)
                     k_mem_domain_add_partition(&dom0, part0);
                     k_mem_domain_add_thread(&dom0, k_current_get());
@@ -79,11 +73,4 @@ app_macro_support.h:
 .. code-block:: c
 
  FOR_EACH(K_APPMEM_PARTITION_DEFINE, part0, part1, part2);
-
-Similarly, the appmem_init_part_* can also be used in the macro:
-
-.. code-block:: c
-
- FOR_EACH(appmem_init_part, part0, part1, part2);
-
 
