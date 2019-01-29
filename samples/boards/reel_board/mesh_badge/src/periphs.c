@@ -35,7 +35,7 @@ static struct device_info dev_info[] = {
 	{ NULL, DT_TI_HDC1010_0_LABEL },
 	{ NULL, DT_NXP_MMA8652FC_0_LABEL },
 	{ NULL, DT_APDS9960_DRV_NAME },
-	{ NULL, DT_SSD1673_DEV_NAME },
+	{ NULL, DT_SOLOMON_SSD1673FB_0_LABEL },
 };
 
 static void configure_gpios(void)
