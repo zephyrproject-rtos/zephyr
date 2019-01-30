@@ -1,5 +1,6 @@
 #
 # Copyright (c) 2018-2019 Linaro
+# Copyright (c) 2019 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -8,12 +9,13 @@ import os
 # Types we support
 # 'string', 'int', 'hex', 'bool'
 
+doc_mode = os.environ.get('KCONFIG_DOC_MODE') == "1"
 bin_dir = os.environ.get('PROJECT_BINARY_DIR')
 conf_file = os.path.join(bin_dir, 'include', 'generated',
                          'generated_dts_board.conf') if bin_dir else None
 
 dt_defines = {}
-if conf_file and os.path.isfile(conf_file):
+if (not doc_mode) and conf_file and os.path.isfile(conf_file):
     with open(conf_file, 'r', encoding='utf-8') as fd:
         for line in fd:
             if '=' in line:
@@ -40,7 +42,7 @@ def dt_int_val(kconf, _, name, unit=None):
         'm' or 'M'  divide by 1,048,576 (1 << 20)
         'g' or 'G'  divide by 1,073,741,824 (1 << 30)
     """
-    if name not in dt_defines:
+    if doc_mode or name not in dt_defines:
         return "0"
 
     d = dt_defines[name]
@@ -62,7 +64,7 @@ def dt_hex_val(kconf, _, name, unit=None):
         'm' or 'M'  divide by 1,048,576 (1 << 20)
         'g' or 'G'  divide by 1,073,741,824 (1 << 30)
     """
-    if name not in dt_defines:
+    if doc_mode or name not in dt_defines:
         return "0x0"
 
     d = dt_defines[name]
