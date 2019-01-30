@@ -7,9 +7,10 @@ import os
 
 from west import log
 from west import cmake
-from west.build import DEFAULT_BUILD_DIR, DEFAULT_CMAKE_GENERATOR, \
-    is_zephyr_build
-from west.commands import WestCommand
+from west.build import DEFAULT_CMAKE_GENERATOR, is_zephyr_build
+
+from zephyr_ext_common import find_build_dir, Forceable, BUILD_DIR_DESCRIPTION
+
 
 BUILD_DESCRIPTION = '''\
 Convenience wrapper for building Zephyr applications.
@@ -36,11 +37,14 @@ Subsequent builds try to avoid re-running CMake; you can force it
 to run by setting --cmake.
 
 To pass additional options to CMake, give them as extra arguments
-after a '--' For example, "west build -- -DOVERLAY_CONFIG=some.conf" sets
-an overlay config file. (Doing this forces a CMake run.)'''
+after a '--'. For example, this sets an overlay config file:
+
+west build [...] -- -DOVERLAY_CONFIG=some.conf
+
+(Doing this forces a CMake run.)'''
 
 
-class Build(WestCommand):
+class Build(Forceable):
 
     def __init__(self):
         super(Build, self).__init__(
@@ -89,18 +93,14 @@ class Build(WestCommand):
                             cache. Otherwise, the current directory is
                             assumed.''')
         parser.add_argument('-d', '--build-dir',
-                            help='''Explicitly sets the build directory.
-                            If not given and the current directory is a Zephyr
-                            build directory, it will be used; otherwise, "{}"
-                            is assumed. The directory will be created if
-                            it doesn't exist.'''.format(DEFAULT_BUILD_DIR))
+                            help=BUILD_DIR_DESCRIPTION +
+                            "The directory is created if it doesn't exist.")
         parser.add_argument('-t', '--target',
                             help='''Override the build system target (e.g.
                             'clean', 'pristine', etc.)''')
         parser.add_argument('-c', '--cmake', action='store_true',
                             help='Force CMake to run')
-        parser.add_argument('-f', '--force', action='store_true',
-                            help='Ignore any errors and try to build anyway')
+        self.add_force_arg(parser)
         parser.add_argument('cmake_opts', nargs='*', metavar='cmake_opt',
                             help='Extra option to pass to CMake; implies -c')
 
@@ -144,12 +144,12 @@ class Build(WestCommand):
     def _sanity_precheck(self):
         app = self.args.source_dir
         if app:
-            if not os.path.isdir(app):
-                self._check_force('source directory {} does not exist'.
-                                  format(app))
-            elif 'CMakeLists.txt' not in os.listdir(app):
-                self._check_force("{} doesn't contain a CMakeLists.txt".
-                                  format(app))
+            self.check_force(
+                os.path.isdir(app),
+                'source directory {} does not exist'.format(app))
+            self.check_force(
+                'CMakeLists.txt' in os.listdir(app),
+                "{} doesn't contain a CMakeLists.txt".format(app))
 
     def _update_cache(self):
         try:
@@ -159,16 +159,9 @@ class Build(WestCommand):
 
     def _setup_build_dir(self):
         # Initialize build_dir and created_build_dir attributes.
+        # If we created the build directory, we must run CMake.
         log.dbg('setting up build directory', level=log.VERBOSE_EXTREME)
-        if self.args.build_dir:
-            build_dir = self.args.build_dir
-        else:
-            cwd = os.getcwd()
-            if is_zephyr_build(cwd):
-                build_dir = cwd
-            else:
-                build_dir = DEFAULT_BUILD_DIR
-        build_dir = os.path.abspath(build_dir)
+        build_dir = find_build_dir(self.args.build_dir)
 
         if os.path.exists(build_dir):
             if not os.path.isdir(build_dir):
@@ -211,20 +204,21 @@ class Build(WestCommand):
                     format(self.source_dir, self.build_dir))
 
         srcrel = os.path.relpath(self.source_dir)
-        if is_zephyr_build(self.source_dir):
-            self._check_force('it looks like {srcrel} is a build directory: '
-                              'did you mean -build-dir {srcrel} instead?'.
-                              format(srcrel=srcrel))
-        elif 'CMakeLists.txt' not in os.listdir(self.source_dir):
-            self._check_force('source directory "{srcrel}" does not contain '
-                              'a CMakeLists.txt; is that really what you '
-                              'want to build? (Use -s SOURCE_DIR to specify '
-                              'the application source directory)'.
-                              format(srcrel=srcrel))
-
-        if not is_zephyr_build(self.build_dir) and not self.args.board:
-            self._check_force('this looks like a new or clean build, '
-                              'please provide --board')
+        self.check_force(
+            not is_zephyr_build(self.source_dir),
+            'it looks like {srcrel} is a build directory: '
+            'did you mean --build-dir {srcrel} instead?'.
+            format(srcrel=srcrel))
+        self.check_force(
+            'CMakeLists.txt' in os.listdir(self.source_dir),
+            'source directory "{srcrel}" does not contain '
+            'a CMakeLists.txt; is this really what you '
+            'want to build? (Use -s SOURCE_DIR to specify '
+            'the application source directory)'.
+            format(srcrel=srcrel))
+        self.check_force(
+            is_zephyr_build(self.build_dir) or self.args.board,
+            'this looks like a new or clean build, please provide --board')
 
         if not self.cmake_cache:
             return          # That's all we can check without a cache.
@@ -235,37 +229,36 @@ class Build(WestCommand):
         source_abs = (os.path.abspath(self.args.source_dir)
                       if self.args.source_dir else None)
         cached_abs = os.path.abspath(cached_app) if cached_app else None
-        if cached_abs and source_abs and source_abs != cached_abs:
-            self._check_force('build directory "{}" is for application "{}", '
-                              'but source directory "{}" was specified; '
-                              'please clean it or use --build-dir to set '
-                              'another build directory'.
-                              format(self.build_dir, cached_abs,
-                                     source_abs))
+
+        # If the build directory specifies a source app, make sure it's
+        # consistent with --source-dir.
+        apps_mismatched = (source_abs and cached_abs and
+                           source_abs != cached_abs)
+        self.check_force(
+            not apps_mismatched,
+            'Build directory "{}" is for application "{}", but source '
+            'directory "{}" was specified; please clean it or use --build-dir '
+            'to set another build directory'.
+            format(self.build_dir, cached_abs, source_abs))
+        if apps_mismatched:
             self.run_cmake = True  # If they insist, we need to re-run cmake.
 
+        # If CACHED_BOARD is not defined, we need --board from the
+        # command line.
         cached_board = self.cmake_cache.get('CACHED_BOARD')
         log.dbg('CACHED_BOARD:', cached_board, level=log.VERBOSE_EXTREME)
-        if not cached_board and not self.args.board:
-            if self.created_build_dir:
-                self._check_force(
-                    'Building for the first time: you must provide --board')
-            else:
-                self._check_force(
-                    'Board is missing or unknown, please provide --board')
-        if self.args.board and cached_board and \
-           self.args.board != cached_board:
-            self._check_force('Build directory {} targets board {}, '
-                              'but board {} was specified. (Clean that '
-                              'directory or use --build-dir to specify '
-                              'a different one.)'.
-                              format(self.build_dir, cached_board,
-                                     self.args.board))
+        self.check_force(cached_board or self.args.board,
+                         'Cached board not defined, please provide --board')
 
-    def _check_force(self, msg):
-        if not self.args.force:
-            log.err(msg)
-            log.die('refusing to proceed without --force due to above error')
+        # Check consistency between cached board and --board.
+        boards_mismatched = (self.args.board and cached_board and
+                             self.args.board != cached_board)
+        self.check_force(
+            not boards_mismatched,
+            'Build directory {} targets board {}, but board {} was specified. '
+            '(Clean the directory or use --build-dir to specify a different '
+            'one.)'.
+            format(self.build_dir, cached_board, self.args.board))
 
     def _run_cmake(self, cmake_opts):
         if not self.run_cmake:
