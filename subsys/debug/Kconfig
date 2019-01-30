@@ -257,6 +257,21 @@ config TRACING_CPU_STATS_INTERVAL
 
 endmenu
 
+config TRACING_CTF
+	bool "Tracing via Common Trace Format support"
+	select THREAD_MONITOR
+	select TRACING
+	help
+	  Enable tracing to a Common Trace Format stream. In order to use it a
+	  CTF bottom layer should be selected, such as TRACING_CTF_BOTTOM_POSIX.
+
+config TRACING_CTF_BOTTOM_POSIX
+	bool "CTF backend for the native_posix port, using a file in the host filesystem"
+	depends on TRACING_CTF
+	depends on ARCH_POSIX
+	help
+	  Enable POSIX backend for CTF tracing. It will output the CTF stream to a
+	  file using fwrite.
 
 
 source "subsys/debug/Kconfig.segger"
