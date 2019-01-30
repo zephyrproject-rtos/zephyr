@@ -207,7 +207,8 @@ static int lis2dh_acc_odr_set(struct device *dev, u16_t freq)
 	}
 
 	/* adjust odr index for LP enabled mode, see table above */
-	if ((value & LIS2DH_LP_EN_BIT_MASK) == 1 && (odr == LIS2DH_ODR_9 + 1)) {
+	if (((value & LIS2DH_LP_EN_BIT_MASK) == LIS2DH_LP_EN_BIT_MASK) &&
+		(odr == LIS2DH_ODR_9 + 1)) {
 		odr--;
 	}
 
