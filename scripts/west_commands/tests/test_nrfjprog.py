@@ -114,29 +114,25 @@ EXPECTED_COMMANDS = {
 
     # NRF91:
     '9NNN':
-    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_DEF_SNR, '--sectoranduicrerase'],  # noqa: E501
-     ['nrfjprog', '--pinresetenable', '-f', 'NRF91', '--snr', TEST_DEF_SNR],
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_DEF_SNR, '--sectorerase'],  # noqa: E501
      ['nrfjprog', '--pinreset', '-f', 'NRF91', '--snr', TEST_DEF_SNR]),
 
     '9NNY':
     (['nrfjprog', '--eraseall', '-f', 'NRF91', '--snr', TEST_DEF_SNR],
      ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_DEF_SNR],  # noqa: E501
-     ['nrfjprog', '--pinresetenable', '-f', 'NRF91', '--snr', TEST_DEF_SNR],
      ['nrfjprog', '--pinreset', '-f', 'NRF91', '--snr', TEST_DEF_SNR]),
 
     '9NYN':
-    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_OVR_SNR, '--sectoranduicrerase'],  # noqa: E501
-     ['nrfjprog', '--pinresetenable', '-f', 'NRF91', '--snr', TEST_OVR_SNR],
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_OVR_SNR, '--sectorerase'],  # noqa: E501
      ['nrfjprog', '--pinreset', '-f', 'NRF91', '--snr', TEST_OVR_SNR]),
 
     '9NYY':
     (['nrfjprog', '--eraseall', '-f', 'NRF91', '--snr', TEST_OVR_SNR],
      ['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_OVR_SNR],  # noqa: E501
-     ['nrfjprog', '--pinresetenable', '-f', 'NRF91', '--snr', TEST_OVR_SNR],
      ['nrfjprog', '--pinreset', '-f', 'NRF91', '--snr', TEST_OVR_SNR]),
 
     '9YNN':
-    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_DEF_SNR, '--sectoranduicrerase'],  # noqa: E501
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_DEF_SNR, '--sectorerase'],  # noqa: E501
      ['nrfjprog', '--reset', '-f', 'NRF91', '--snr', TEST_DEF_SNR]),
 
     '9YNY':
@@ -145,7 +141,7 @@ EXPECTED_COMMANDS = {
      ['nrfjprog', '--reset', '-f', 'NRF91', '--snr', TEST_DEF_SNR]),
 
     '9YYN':
-    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_OVR_SNR, '--sectoranduicrerase'],  # noqa: E501
+    (['nrfjprog', '--program', RC_KERNEL_HEX, '-f', 'NRF91', '--snr', TEST_OVR_SNR, '--sectorerase'],  # noqa: E501
      ['nrfjprog', '--reset', '-f', 'NRF91', '--snr', TEST_OVR_SNR]),
 
     '9YYY':
