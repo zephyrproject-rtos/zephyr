@@ -139,22 +139,12 @@ SECTIONS {
 #include <app_data_alignment.ld>
 
 #if defined(CONFIG_APP_SHARED_MEM)
-#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
 #define APP_SHARED_ALIGN MPU_MIN_SIZE_ALIGN
-		#include <app_smem.ld>
-#else
-	SECTION_PROLOGUE(_APP_SMEM_SECTION_NAME, (OPTIONAL),)
-	{
-		MPU_MIN_SIZE_ALIGN
-		_image_ram_start = .;
-		_app_smem_start = .;
-		APP_SMEM_SECTION()
-		MPU_MIN_SIZE_ALIGN
-		_app_smem_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#define SMEM_PARTITION_ALIGN MPU_ALIGN
 
-#endif  /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+#include <app_smem.ld>
 
+	_image_ram_start = _app_smem_start;
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
 #endif /* CONFIG_APP_SHARED_MEM */
