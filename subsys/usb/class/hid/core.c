@@ -136,6 +136,23 @@ struct hid_device_info {
 
 static sys_slist_t usb_hid_devlist;
 
+static struct hid_device_info *get_dev_data_by_cfg(struct usb_cfg_data *cfg)
+{
+	struct hid_device_info *dev_data;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&usb_hid_devlist, dev_data, node) {
+		struct device *dev = dev_data->dev;
+		const struct usb_cfg_data *cfg_cur = dev->config->config_info;
+
+		if (cfg_cur == cfg) {
+			return dev_data;
+		}
+	}
+
+	LOG_DBG("Device data not found for cfg %p", cfg);
+	return NULL;
+}
+
 static struct hid_device_info *get_dev_data_by_iface(u8_t iface_num)
 {
 	struct hid_device_info *dev_data;
@@ -429,13 +446,13 @@ static void hid_status_composite_cb(struct usb_cfg_data *cfg,
 				    enum usb_dc_status_code status,
 				    const u8_t *param)
 {
-	struct usb_if_descriptor *if_desc = (void *)cfg->interface_descriptor;
 	struct hid_device_info *dev_data;
 
-	dev_data = get_dev_data_by_iface(if_desc->bInterfaceNumber);
+	LOG_DBG("cfg %p status %d", cfg, status);
+
+	dev_data = get_dev_data_by_cfg(cfg);
 	if (!dev_data) {
-		LOG_WRN("Device data not found for interface %u",
-			if_desc->bInterfaceNumber);
+		LOG_WRN("Device data not found for cfg %p", cfg);
 		return;
 	}
 
