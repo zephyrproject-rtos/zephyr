@@ -441,9 +441,9 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	u8_t ext_bitmap = 0U;
 	u16_t ext_len = 0U;
 	u8_t nexthdr, next_nexthdr;
-	union proto_header proto_hdr;
+	union net_proto_header proto_hdr;
 	struct net_ipv6_hdr *hdr;
-	union ip_header ip;
+	union net_ip_header ip;
 	int pkt_len;
 
 	net_stats_update_ipv6_recv(net_pkt_iface(pkt));

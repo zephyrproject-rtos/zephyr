@@ -147,8 +147,8 @@ void net_pkt_set_appdata_values(struct net_pkt *pkt,
 
 enum net_verdict net_context_packet_received(struct net_conn *conn,
 					     struct net_pkt *pkt,
-					     union ip_header *ip_hdr,
-					     union proto_header *proto_hdr,
+					     union net_ip_header *ip_hdr,
+					     union net_proto_header *proto_hdr,
 					     void *user_data);
 
 #if defined(CONFIG_NET_IPV4)

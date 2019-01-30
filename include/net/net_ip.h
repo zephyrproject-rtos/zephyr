@@ -312,6 +312,20 @@ struct net_tcp_hdr {
 	u8_t optdata[0];
 } __packed;
 
+/**
+ * This 2 unions are here temporarly, as long as net_context.h will
+ * be still public and not part of the core only.
+ */
+union net_ip_header {
+	struct net_ipv4_hdr *ipv4;
+	struct net_ipv6_hdr *ipv6;
+};
+
+union net_proto_header {
+	struct net_udp_hdr *udp;
+	struct net_tcp_hdr *tcp;
+};
+
 #define NET_UDPH_LEN	8			/* Size of UDP header */
 #define NET_TCPH_LEN	20			/* Size of TCP header */
 #define NET_ICMPH_LEN	4			/* Size of ICMP header */

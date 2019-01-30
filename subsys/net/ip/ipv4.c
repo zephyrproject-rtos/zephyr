@@ -192,9 +192,9 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
 	int real_len = net_pkt_get_len(pkt);
 	enum net_verdict verdict = NET_DROP;
-	union proto_header proto_hdr;
+	union net_proto_header proto_hdr;
 	struct net_ipv4_hdr *hdr;
-	union ip_header ip;
+	union net_ip_header ip;
 	int pkt_len;
 
 	net_stats_update_ipv4_recv(net_pkt_iface(pkt));

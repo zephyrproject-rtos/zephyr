@@ -72,13 +72,13 @@ static struct tcp_backlog_entry {
 #define NET_CONN_CB(name) \
 	static enum net_verdict _##name(struct net_conn *conn,		\
 					struct net_pkt *pkt,		\
-					union ip_header *ip_hdr,	\
-					union proto_header *proto_hdr,	\
+					union net_ip_header *ip_hdr,	\
+					union net_proto_header *proto_hdr, \
 					void *user_data);		\
 	static enum net_verdict name(struct net_conn *conn,		\
 				     struct net_pkt *pkt,		\
-				     union ip_header *ip_hdr,		\
-				     union proto_header *proto_hdr,	\
+				     union net_ip_header *ip_hdr,	\
+				     union net_proto_header *proto_hdr,	\
 				     void *user_data)			\
 	{								\
 		enum net_verdict result;				\
@@ -91,8 +91,8 @@ static struct tcp_backlog_entry {
 	}								\
 	static enum net_verdict _##name(struct net_conn *conn,		\
 					struct net_pkt *pkt,		\
-					union ip_header *ip_hdr,	\
-					union proto_header *proto_hdr,	\
+					union net_ip_header *ip_hdr,	\
+					union net_proto_header *proto_hdr, \
 					void *user_data)		\
 
 
@@ -1581,7 +1581,7 @@ static void backlog_ack_timeout(struct k_work *work)
 }
 
 static void tcp_copy_ip_addr_from_hdr(sa_family_t family,
-				      union ip_header *ip_hdr,
+				      union net_ip_header *ip_hdr,
 				      struct net_tcp_hdr *tcp_hdr,
 				      struct sockaddr *addr,
 				      bool is_src_addr)
@@ -1622,7 +1622,7 @@ static void tcp_copy_ip_addr_from_hdr(sa_family_t family,
 }
 
 static int tcp_backlog_find(struct net_pkt *pkt,
-			    union ip_header *hdr,
+			    union net_ip_header *ip_hdr,
 			    struct net_tcp_hdr *tcp_hdr,
 			    int *empty_slot)
 {
@@ -1646,7 +1646,8 @@ static int tcp_backlog_find(struct net_pkt *pkt,
 			}
 
 			if (memcmp(&net_sin(&tcp_backlog[i].remote)->sin_addr,
-				   &hdr->ipv4->src, sizeof(struct in_addr))) {
+				   &ip_hdr->ipv4->src,
+				   sizeof(struct in_addr))) {
 				continue;
 			}
 		} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
@@ -1657,7 +1658,8 @@ static int tcp_backlog_find(struct net_pkt *pkt,
 			}
 
 			if (memcmp(&net_sin6(&tcp_backlog[i].remote)->sin6_addr,
-				   &hdr->ipv6->src, sizeof(struct in6_addr))) {
+				   &ip_hdr->ipv6->src,
+				   sizeof(struct in6_addr))) {
 				continue;
 			}
 		}
@@ -1673,7 +1675,7 @@ static int tcp_backlog_find(struct net_pkt *pkt,
 }
 
 static int tcp_backlog_syn(struct net_pkt *pkt,
-			   union ip_header *ip_hdr,
+			   union net_ip_header *ip_hdr,
 			   struct net_tcp_hdr *tcp_hdr,
 			   struct net_context *context,
 			   u16_t send_mss)
@@ -1705,7 +1707,7 @@ static int tcp_backlog_syn(struct net_pkt *pkt,
 }
 
 static int tcp_backlog_ack(struct net_pkt *pkt,
-			   union ip_header *ip_hdr,
+			   union net_ip_header *ip_hdr,
 			   struct net_tcp_hdr *tcp_hdr,
 			   struct net_context *context)
 {
@@ -1734,7 +1736,7 @@ static int tcp_backlog_ack(struct net_pkt *pkt,
 }
 
 static int tcp_backlog_rst(struct net_pkt *pkt,
-			   union ip_header *ip_hdr,
+			   union net_ip_header *ip_hdr,
 			   struct net_tcp_hdr *tcp_hdr)
 {
 	int r;
@@ -2010,8 +2012,8 @@ static int send_reset(struct net_context *context,
  *
  * Prototype:
  * enum net_verdict tcp_established(struct net_conn *conn,
- *				    union ip_header *ip_hdr,
- *				    union data_header *proto_hdr,
+ *				    union net_ip_header *ip_hdr,
+ *				    union net_proto_header *proto_hdr,
  *				    struct net_pkt *pkt,
  *                                  void *user_data)
  */
@@ -2204,8 +2206,8 @@ unlock:
  * Prototype:
  * enum net_verdict tcp_synack_received(struct net_conn *conn,
  *					struct net_pkt *pkt,
- *				        union ip_header *ip_hdr,
- *				        union data_header *proto_hdr,
+ *				        union net_ip_header *ip_hdr,
+ *				        union net_proto_header *proto_hdr,
  *					void *user_data)
  */
 NET_CONN_CB(tcp_synack_received)
@@ -2298,7 +2300,7 @@ NET_CONN_CB(tcp_synack_received)
 	return NET_DROP;
 }
 
-static void get_sockaddr_ptr(union ip_header *ip_hdr,
+static void get_sockaddr_ptr(union net_ip_header *ip_hdr,
 			     struct net_tcp_hdr *tcp_hdr,
 			     sa_family_t family,
 			     struct sockaddr_ptr *addr)
@@ -2341,8 +2343,8 @@ static inline void copy_pool_vars(struct net_context *new_context,
  * Prototype:
  * enum net_verdict tcp_syn_rcvd(struct net_conn *conn,
  *			         struct net_pkt *pkt,
- *			         union ip_header *ip_hdr,
- *			         union data_header *proto_hdr,
+ *			         union net_ip_header *ip_hdr,
+ *			         union net_proto_header *proto_hdr,
  *			         void *user_data)
  */
 NET_CONN_CB(tcp_syn_rcvd)
