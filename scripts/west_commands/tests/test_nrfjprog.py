@@ -176,7 +176,7 @@ def expected_commands(family, softreset, snr, erase):
 #
 
 TEST_CASES = [(f, sr, snr, e)
-              for f in ('NRF51', 'NRF52')
+              for f in ('NRF51', 'NRF52', 'NRF91')
               for sr in (False, True)
               for snr in (TEST_OVR_SNR, None)
               for e in (False, True)]
