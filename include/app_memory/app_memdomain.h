@@ -34,17 +34,27 @@
 	__attribute__((aligned(MEM_DOMAIN_ALIGN_SIZE), \
 		section("data_smem_" #id "b")))
 
-/*
- * Qualifier to collect any object preceded with _app
- * and place into section "data_smem_".
- * _app_dmem(#) is for variables meant to be stored in .data .
- * _app_bmem(#) is intended for static variables that are
- * initialized to zero.
+/**
+ * @brief Place data in a partition's data section
+ *
+ * Globals tagged with this will end up in the data section for the
+ * specified memory partition. This data should be initalized to some
+ * desired value.
+ *
+ * @param id Name of the memory partition to associate this data
  */
-#define _app_dmem(id) \
+#define K_APP_DMEM(id) \
 	__attribute__((section("data_smem_" #id)))
 
-#define _app_bmem(id) \
+/**
+ * @brief Place data in a partition's bss section
+ *
+ * Globals tagged with this will end up in the bss section for the
+ * specified memory partition. This data will be zeroed at boot.
+ *
+ * @param id Name of the memory partition to associate this data
+ */
+#define K_APP_BMEM(id) \
 	__attribute__((section("data_smem_" #id "b")))
 
 /*
@@ -77,7 +87,19 @@ struct app_region {
 #define smem_size_assign(name)
 #endif	/* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
 
-#define appmem_partition(name) \
+/**
+ * @brief Define an application memory partition with linker support
+ *
+ * Defines a k_mem_paritition with the provided name.
+ * This name may be used with the K_APP_DMEM and K_APP_BMEM macros to
+ * place globals automatically in this partition.
+ *
+ * NOTE: placeholder char variable is defined here to prevent build errors
+ * if a partition is defined but nothing ever placed in it.
+ *
+ * @param name Name of the k_mem_partition to declare
+ */
+#define K_APPMEM_PARTITION_DEFINE(name) \
 	extern char *data_smem_##name; \
 	extern char *data_smem_##name##b; \
 	smem_size_declare(name);		  \

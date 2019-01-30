@@ -37,11 +37,11 @@ The general usage is as follows. Define CONFIG_APP_SHARED_MEM=y in the
 proj.conf file in the project folder.  Include app_memory/app_memdomain.h
 in the userspace source file.  Mark the variable to be placed in
 a memory partition.  The two markers are for data and bss respectively:
-_app_dmem(id) and _app_bmem(id).  The id is used as the partition name.
+K_APP_DMEM(id) and K_APP_BMEM(id).  The id is used as the partition name.
 The resulting section name can be seen in the linker.map as
 "data_smem_id" and "data_smem_idb".
 
-To create a k_mem_partition, call the macro appmem_partition(part0)
+To create a k_mem_partition, call the macro K_APPMEM_PARTITION_DEFINE(part0)
 where "part0" is the name then used to refer to that partition.
 This macro only creates a function and necessary data structures for
 the later "initialization".
@@ -55,12 +55,12 @@ Example:
 .. code-block:: c
 
             /* create partition at top of file outside functions */
-            appmem_partition(part0);
+            K_APPMEM_PARTITION_DEFINE(part0);
             /* create domain */
             struct k_mem_domain dom0;
             /* assign variables to the domain */
-            _app_dmem(part0) int var1;
-            _app_bmem(part0) static volatile int var2;
+            K_APP_DMEM(part0) int var1;
+            K_APP_BMEM(part0) static volatile int var2;
 
             int main()
             {
@@ -78,7 +78,7 @@ app_macro_support.h:
 
 .. code-block:: c
 
- FOR_EACH(appmem_partition, part0, part1, part2);
+ FOR_EACH(K_APPMEM_PARTITION_DEFINE, part0, part1, part2);
 
 Similarly, the appmem_init_part_* can also be used in the macro:
 

@@ -24,20 +24,20 @@ void enc(void);
 void pt(void);
 void ct(void);
 
-#define _app_user_d _app_dmem(part0)
-#define _app_user_b _app_bmem(part0)
+#define _app_user_d K_APP_DMEM(part0)
+#define _app_user_b K_APP_BMEM(part0)
 
-#define _app_red_d _app_dmem(part1)
-#define _app_red_b _app_bmem(part1)
+#define _app_red_d K_APP_DMEM(part1)
+#define _app_red_b K_APP_BMEM(part1)
 
-#define _app_enc_d _app_dmem(part2)
-#define _app_enc_b _app_bmem(part2)
+#define _app_enc_d K_APP_DMEM(part2)
+#define _app_enc_b K_APP_BMEM(part2)
 
-#define _app_blk_d _app_dmem(part3)
-#define _app_blk_b _app_bmem(part3)
+#define _app_blk_d K_APP_DMEM(part3)
+#define _app_blk_b K_APP_BMEM(part3)
 
-#define _app_ct_d _app_dmem(part4)
-#define _app_ct_b _app_bmem(part4)
+#define _app_ct_d K_APP_DMEM(part4)
+#define _app_ct_b K_APP_BMEM(part4)
 
 /*
  * Constant
