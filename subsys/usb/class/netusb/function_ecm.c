@@ -101,7 +101,7 @@ USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 		.bDescriptorSubtype = ETHERNET_FUNC_DESC,
 		.iMACAddress = 4,
 		.bmEthernetStatistics = sys_cpu_to_le32(0), /* None */
-		.wMaxSegmentSize = sys_cpu_to_le16(1514),
+		.wMaxSegmentSize = sys_cpu_to_le16(NETUSB_MTU),
 		.wNumberMCFilters = sys_cpu_to_le16(0), /* None */
 		.bNumberPowerFilters = 0, /* No wake up */
 	},
