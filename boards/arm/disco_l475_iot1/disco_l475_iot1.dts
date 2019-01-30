@@ -42,7 +42,6 @@
 		led0 = &green_led_2;
 		led1 = &green_led_1;
 		sw0 = &user_button;
-		bt = &bt0;
 		eswifi0 = &wifi0;
 	};
 };
@@ -122,8 +121,8 @@ arduino_serial: &uart4 {};
 
 	cs-gpios = <&gpiod 13 0>, <&gpioe 0 0>;
 
-	bt0: spbtle-rf@0 {
-		compatible = "st,spbtle-rf";
+	spbtle-rf@0 {
+		compatible = "zephyr,bt-hci-spi";
 		reg = <0>;
 		reset-gpios = <&gpioa 8 0>;
 		irq-gpios = <&gpioe 6 0>;

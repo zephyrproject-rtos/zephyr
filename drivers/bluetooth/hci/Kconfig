@@ -72,17 +72,6 @@ config BT_UART_ON_DEV_NAME
 	  for Bluetooth.
 endif
 
-config BT_SPI_DEV_NAME
-	string "Device Name of SPI Device for Bluetooth"
-	default "SPI_0"
-	depends on BT_SPI && !HAS_DTS_SPI
-	help
-	  This option specifies the name of SPI device to be used for Bluetooth.
-	  On the controller side, this SPI device is used to encapsulate the
-	  RAW HCI frames to send further up the stack. On the BLE stack side,
-	  this device is used to reply back with HCI frames that are sent over
-	  the air.
-
 if BT_SPI
 
 config BT_BLUENRG_ACI
@@ -96,53 +85,5 @@ config BT_SPI_BLUENRG
 	help
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST BLUENRG-MS.
-
-if !HAS_DTS_SPI
-
-config BT_SPI_CHIP_SELECT_DEV_NAME
-	string "Chip Select (CS) line driver name"
-	depends on BT_SPI_BLUENRG
-	help
-	  This option specifies the name of GPIO driver controlling
-	  the Chip Select (CS) line.
-
-config BT_SPI_IRQ_DEV_NAME
-	string "IRQ line driver name"
-	help
-	  This option specifies the name of GPIO driver controlling
-	  the chip's IRQ line.
-
-config BT_SPI_RESET_DEV_NAME
-	string "Reset line driver name"
-	help
-	  This option specifies the name of GPIO driver controlling
-	  the chip's Reset line.
-
-config BT_SPI_CHIP_SELECT_PIN
-	int "SPI Chip Select (CS) line number"
-	depends on BT_SPI_BLUENRG
-	help
-	  This option specifies the Chip Select (CS) line number on the SPI
-	  device
-
-config BT_SPI_IRQ_PIN
-	int "SPI IRQ line number"
-	help
-	  This option specifies the IRQ line number on the SPI device
-
-config BT_SPI_RESET_PIN
-	int "SPI Reset line number"
-	help
-	  This option specifies the Reset line number on the SPI device
-
-endif # !HAS_DTS_SPI
-
-config BT_SPI_MAX_CLK_FREQ
-	int "Maximum clock frequency for the HCI SPI interface"
-	default 5000000
-	depends on !HAS_DTS_SPI
-	help
-	  This option specifies the maximum clock rate the HCI SPI
-	  interface is capable of running at.
 
 endif # BT_SPI
