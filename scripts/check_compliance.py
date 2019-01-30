@@ -170,7 +170,7 @@ class Documentation(ComplianceTest):
 
     """
     _name = "Documentation"
-    _doc = "https://docs.zephyrproject.org/latest/contribute/doc-guidelines.html"
+    _doc = "https://docs.zephyrproject.org/latest/documentation/doc-guidelines.html"
 
     DOCS_WARNING_FILE = "doc.warnings"
 
