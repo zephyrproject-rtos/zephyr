@@ -83,11 +83,7 @@ struct gpio_callback {
 	 * called or not. The selected pins must be configured to trigger
 	 * an interrupt.
 	 */
-	union {
-		u32_t pin_mask;
-		/* @todo Remove `pin` when #11565 is resolved */
-		u32_t pin;
-	};
+	u32_t pin_mask;
 };
 
 /**
