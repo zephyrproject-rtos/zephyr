@@ -385,6 +385,11 @@ void log_panic(void)
 		return;
 	}
 
+	/* If panic happend early logger might not be initialized.
+	 * Forcing initialization of the logger and auto-starting backends.
+	 */
+	log_init();
+
 	for (int i = 0; i < log_backend_count_get(); i++) {
 		backend = log_backend_get(i);
 
