@@ -47,7 +47,8 @@ config SHELL_CMD_BUFF_SIZE
 	int "Shell command buffer size"
 	default 256
 	help
-	  Maximum command size.
+	  Maximum command size in bytes. One byte is reserved for the string
+	  terminator character.
 
 config SHELL_PRINTF_BUFF_SIZE
 	int "Shell print buffer size"
@@ -108,7 +109,7 @@ config SHELL_HISTORY
 	default y
 	help
 	  Enable commands history. History can be accessed using up and down
-	  arrows
+	  arrows.
 
 if SHELL_HISTORY
 
@@ -145,7 +146,7 @@ config SHELL_CMDS_RESIZE
 	  By default shell assumes width of a terminal screen set to 80
 	  characters. Each time terminal screen width is changed resize command
 	  must be called to ensure correct text display on the terminal screen.
-	  Resize command can be turned off to safe code memory (~0,5k).
+	  The resize command can be turned off to save code memory (~0,5k).
 
 config SHELL_LOG_BACKEND
 	bool
