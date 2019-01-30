@@ -8,5 +8,4 @@ tests:
     tags: device
     extra_configs:
       - CONFIG_DEVICE_POWER_MANAGEMENT=y
-      - CONFIG_SYS_POWER_MANAGEMENT=y
 
