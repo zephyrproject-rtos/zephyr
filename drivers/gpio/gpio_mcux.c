@@ -38,6 +38,11 @@ static int gpio_mcux_configure(struct device *dev,
 	u32_t pcr = 0U;
 	u8_t i;
 
+	/* Check for an invalid pin number */
+	if (pin >= ARRAY_SIZE(port_base->PCR)) {
+		return -EINVAL;
+	}
+
 	/* Check for an invalid pin configuration */
 	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
 		return -EINVAL;

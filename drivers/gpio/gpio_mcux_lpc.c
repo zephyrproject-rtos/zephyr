@@ -77,6 +77,11 @@ static int gpio_mcux_lpc_write(struct device *dev,
 	const struct gpio_mcux_lpc_config *config = dev->config->config_info;
 	GPIO_Type *gpio_base = config->gpio_base;
 
+	/* Check for an invalid pin number */
+	if (pin >= ARRAY_SIZE(gpio_base->B[config->port_no])) {
+		return -EINVAL;
+	}
+
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		/* Set/Clear the data output for the respective pin */
 		gpio_base->B[config->port_no][pin] = value;
