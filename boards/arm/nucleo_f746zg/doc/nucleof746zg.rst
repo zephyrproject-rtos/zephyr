@@ -108,6 +108,8 @@ features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | usb_device                          |
 +-----------+------------+-------------------------------------+
+| COUNTER   | on-chip    | rtc                                 |
++-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c                                 |
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
@@ -218,4 +220,3 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32F746 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00124865.pdf
-
