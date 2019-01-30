@@ -403,7 +403,7 @@ static void switch_to_main_thread(void)
 	(void)_Swap(irq_lock());
 #endif
 }
-#endif /* CONFIG_MULTITHREDING */
+#endif /* CONFIG_MULTITHREADING */
 
 u32_t z_early_boot_rand32_get(void)
 {
