@@ -1,5 +1,0 @@
-zephyr_sources_ifdef(CONFIG_NET_APP_SERVER net_app.c server.c)
-zephyr_sources_ifdef(CONFIG_NET_APP_CLIENT net_app.c client.c)
-
-zephyr_link_interface_ifdef(CONFIG_MBEDTLS mbedTLS)
-zephyr_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)

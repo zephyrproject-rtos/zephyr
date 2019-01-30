@@ -9,3 +9,6 @@ zephyr_sources(
 zephyr_sources_ifdef(CONFIG_NET_SOCKETS_SOCKOPT_TLS sockets_tls.c)
 endif()
 zephyr_sources_ifdef(CONFIG_NET_SOCKETS_OFFLOAD     socket_offload.c)
+
+zephyr_link_interface_ifdef(CONFIG_MBEDTLS mbedTLS)
+zephyr_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
