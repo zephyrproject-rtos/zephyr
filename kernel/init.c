@@ -471,7 +471,12 @@ FUNC_NORETURN void _Cstart(void)
 	kernel_arch_init();
 
 #ifdef CONFIG_MULTITHREADING
-	struct k_thread dummy_thread = { .base.thread_state = _THREAD_DUMMY };
+	struct k_thread dummy_thread = {
+		 .base.thread_state = _THREAD_DUMMY,
+# ifdef CONFIG_SCHED_CPU_MASK
+		 .base.cpu_mask = -1,
+# endif
+	};
 
 	_current = &dummy_thread;
 #endif

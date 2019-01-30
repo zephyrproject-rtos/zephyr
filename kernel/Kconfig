@@ -125,6 +125,24 @@ config SCHED_DEADLINE
 	  single priority will choose the next expiring deadline and
 	  not simply the least recently added thread.
 
+config SCHED_CPU_MASK
+	bool "Enable CPU mask affinity/pinning API"
+	depends on SCHED_DUMB
+	help
+	  When true, the app will have access to the
+	  z_thread_*_cpu_mask() APIs which control per-CPU affinity
+	  masks in SMP mode, allowing apps to pin threads to specific
+	  CPUs or disallow threads from running on given CPUs.  Note
+	  that as currently implemented, this involves an inherent
+	  O(N) scaling in the number of idle-but-runnable threads, and
+	  thus works only with the DUMB scheduler (as SCALABLE and
+	  MULTIQ would see no benefit).
+
+	  Note that this setting does not technically depend on SMP
+	  and is implemented without it for testing purposes, but for
+	  obvious reasons makes sense as an application API only where
+	  there is more than one CPU.  With one CPU, it's just a
+	  higher overhead version of k_thread_start/stop().
 
 config MAIN_STACK_SIZE
 	int "Size of stack for initialization and main thread"
