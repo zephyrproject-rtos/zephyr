@@ -205,7 +205,7 @@ static s32_t check_hash(enum net_ip_protocol proto,
 }
 
 static inline s32_t get_conn(struct net_pkt *pkt,
-			     union ip_header *hdr,
+			     union net_ip_header *ip_hdr,
 			     enum net_ip_protocol proto,
 			     u16_t src_port,
 			     u16_t dst_port,
@@ -213,13 +213,13 @@ static inline s32_t get_conn(struct net_pkt *pkt,
 {
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
 		return check_hash(proto, net_pkt_family(pkt),
-				  &hdr->ipv4->src, &hdr->ipv4->dst,
+				  &ip_hdr->ipv4->src, &ip_hdr->ipv4->dst,
 				  src_port, dst_port, cache_value);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
 		return check_hash(proto, net_pkt_family(pkt),
-				  &hdr->ipv6->src, &hdr->ipv6->dst,
+				  &ip_hdr->ipv6->src, &ip_hdr->ipv6->dst,
 				  src_port, dst_port, cache_value);
 	}
 
@@ -268,15 +268,15 @@ static void cache_clear(void)
 }
 
 static inline enum net_verdict cache_check(struct net_pkt *pkt,
-					   union ip_header *hdr,
-					   union proto_header *proto_hdr,
+					   union net_ip_header *ip_hdr,
+					   union net_proto_header *proto_hdr,
 					   enum net_ip_protocol proto,
 					   u16_t src_port,
 					   u16_t dst_port,
 					   u32_t *cache_value,
 					   s32_t *pos)
 {
-	*pos = get_conn(pkt, hdr, proto, src_port, dst_port, cache_value);
+	*pos = get_conn(pkt, ip_hdr, proto, src_port, dst_port, cache_value);
 	if (*pos >= 0) {
 		if (conn_cache[*pos].idx >= 0) {
 			/* Connection is in the cache */
@@ -290,7 +290,7 @@ static inline enum net_verdict cache_check(struct net_pkt *pkt,
 				conn_cache[*pos].value);
 
 			return conn->cb(conn, pkt,
-					hdr, proto_hdr, conn->user_data);
+					ip_hdr, proto_hdr, conn->user_data);
 		}
 	} else if (*cache_value > 0) {
 		if (cache_check_neg(*cache_value)) {
@@ -685,7 +685,7 @@ int net_conn_register(enum net_ip_protocol proto,
 }
 
 static bool check_addr(struct net_pkt *pkt,
-		       union ip_header *hdr,
+		       union net_ip_header *ip_hdr,
 		       struct sockaddr *addr,
 		       bool is_remote)
 {
@@ -698,9 +698,9 @@ static bool check_addr(struct net_pkt *pkt,
 		struct in6_addr *addr6;
 
 		if (is_remote) {
-			addr6 = &hdr->ipv6->src;
+			addr6 = &ip_hdr->ipv6->src;
 		} else {
-			addr6 = &hdr->ipv6->dst;
+			addr6 = &ip_hdr->ipv6->dst;
 		}
 
 		if (!net_ipv6_is_addr_unspecified(
@@ -720,9 +720,9 @@ static bool check_addr(struct net_pkt *pkt,
 		struct in_addr *addr4;
 
 		if (is_remote) {
-			addr4 = &hdr->ipv4->src;
+			addr4 = &ip_hdr->ipv4->src;
 		} else {
-			addr4 = &hdr->ipv4->dst;
+			addr4 = &ip_hdr->ipv4->dst;
 		}
 
 		if (net_sin(addr)->sin_addr.s_addr) {
@@ -755,7 +755,7 @@ static inline void send_icmp_error(struct net_pkt *pkt)
 }
 
 static bool is_invalid_packet(struct net_pkt *pkt,
-			      union ip_header *hdr,
+			      union net_ip_header *ip_hdr,
 			      u16_t src_port,
 			      u16_t dst_port)
 {
@@ -764,15 +764,15 @@ static bool is_invalid_packet(struct net_pkt *pkt,
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		if (net_ipv4_addr_cmp(&hdr->ipv4->src, &hdr->ipv4->dst) ||
-		    net_ipv4_is_my_addr(&hdr->ipv4->src)) {
+		if (net_ipv4_addr_cmp(&ip_hdr->ipv4->src, &ip_hdr->ipv4->dst) ||
+		    net_ipv4_is_my_addr(&ip_hdr->ipv4->src)) {
 			return true;
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
-		if (net_ipv6_addr_cmp(&hdr->ipv6->src, &hdr->ipv6->dst) ||
-		    net_ipv6_is_my_addr(&hdr->ipv6->src)) {
+		if (net_ipv6_addr_cmp(&ip_hdr->ipv6->src, &ip_hdr->ipv6->dst) ||
+		    net_ipv6_is_my_addr(&ip_hdr->ipv6->src)) {
 			return true;
 		}
 	}
@@ -780,8 +780,10 @@ static bool is_invalid_packet(struct net_pkt *pkt,
 	return true;
 }
 
-enum net_verdict net_conn_input(struct net_pkt *pkt, union ip_header *ip_hdr,
-				u8_t proto, union proto_header *proto_hdr)
+enum net_verdict net_conn_input(struct net_pkt *pkt,
+				union net_ip_header *ip_hdr,
+				u8_t proto,
+				union net_proto_header *proto_hdr)
 {
 	struct net_if *pkt_iface = net_pkt_iface(pkt);
 	int i, best_match = -1;
