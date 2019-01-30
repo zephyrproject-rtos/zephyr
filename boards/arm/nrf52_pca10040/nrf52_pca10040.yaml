@@ -11,3 +11,5 @@ flash: 512
 supported:
   - adc
   - nvs
+  - i2c
+  - spi
