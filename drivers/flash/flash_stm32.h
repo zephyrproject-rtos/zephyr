@@ -12,7 +12,8 @@
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F3X)
+	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X)
 #include <clock_control.h>
 #include <clock_control/stm32_clock_control.h>
 #endif
@@ -32,6 +33,10 @@ struct flash_stm32_priv {
 	struct stm32f7x_flash *regs;
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 	struct stm32l4x_flash *regs;
+	/* clock subsystem driving this peripheral */
+	struct stm32_pclken pclken;
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	struct stm32g0x_flash *regs;
 	/* clock subsystem driving this peripheral */
 	struct stm32_pclken pclken;
 #endif

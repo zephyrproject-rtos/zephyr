@@ -29,6 +29,9 @@
 /* STM32L4: maximum erase time of 24.47ms for a 2K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 #define STM32_FLASH_TIMEOUT	(K_MSEC(25))
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+/* STM32G0: maximum erase time of 40ms for a 2K sector */
+#define STM32_FLASH_TIMEOUT	(K_MSEC(40))
 #endif
 
 /*
@@ -98,7 +101,8 @@ int flash_stm32_wait_flash_idle(struct device *dev)
 static void flash_stm32_flush_caches(struct device *dev,
 				     off_t offset, size_t len)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X)
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(offset);
 	ARG_UNUSED(len);
@@ -195,6 +199,8 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 	struct stm32f3x_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	struct stm32g0x_flash *regs = FLASH_STM32_REGS(dev);
 #endif
 	int rc = 0;
 
@@ -236,6 +242,10 @@ static struct flash_stm32_priv flash_data = {
 	.regs = (struct stm32l4x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
 	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
 		    .enr = LL_AHB1_GRP1_PERIPH_FLASH },
+#elif defined(CONFIG_SOC_SERIES_STM32G0X)
+	.regs = (struct stm32g0x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
+	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
+		    .enr = LL_AHB1_GRP1_PERIPH_FLASH },
 #endif
 };
 
@@ -261,7 +271,8 @@ static int stm32_flash_init(struct device *dev)
 	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
 	defined(CONFIG_SOC_SERIES_STM32F0X) || \
-	defined(CONFIG_SOC_SERIES_STM32F3X)
+	defined(CONFIG_SOC_SERIES_STM32F3X) || \
+	defined(CONFIG_SOC_SERIES_STM32G0X)
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
 	/*
