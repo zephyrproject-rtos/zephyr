@@ -144,8 +144,8 @@ static inline void unit_test_noop(void)
 
 /* definitions for use with testing application shared memory   */
 #ifdef CONFIG_APP_SHARED_MEM
-#define APPDMEMP0 _app_dmem(part0)
-#define APPBMEMP0 _app_bmem(part0)
+#define APPDMEMP0 K_APP_DMEM(part0)
+#define APPBMEMP0 K_APP_BMEM(part0)
 #else
 #define APPDMEMP0
 #define APPBMEMP0

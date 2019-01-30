@@ -38,7 +38,7 @@ K_SEM_DEFINE(expect_fault_sem, 0, 1);
  * ztest and this test suite. part1 and part2 are for
  * subsequent test specifically for this new implementation.
  */
-FOR_EACH(appmem_partition, part0, part1, part2);
+FOR_EACH(K_APPMEM_PARTITION_DEFINE, part0, part1, part2);
 
 /*
  * Create memory domains. dom0 is for the ztest and this
@@ -48,10 +48,10 @@ FOR_EACH(appmem_partition, part0, part1, part2);
 struct k_mem_domain dom0;
 struct k_mem_domain dom1;
 
-_app_dmem(part0) static volatile bool give_uthread_end_sem;
-_app_dmem(part0) bool mem_access_check;
+K_APP_DMEM(part0) static volatile bool give_uthread_end_sem;
+K_APP_DMEM(part0) bool mem_access_check;
 
-_app_bmem(part0) static volatile bool expect_fault;
+K_APP_BMEM(part0) static volatile bool expect_fault;
 
 #if defined(CONFIG_X86)
 #define REASON_HW_EXCEPTION _NANO_ERR_CPU_EXCEPTION
@@ -65,7 +65,7 @@ _app_bmem(part0) static volatile bool expect_fault;
 #else
 #error "Not implemented for this architecture"
 #endif
-_app_bmem(part0) static volatile unsigned int expected_reason;
+K_APP_BMEM(part0) static volatile unsigned int expected_reason;
 
 /*
  * We need something that can act as a memory barrier
@@ -312,15 +312,15 @@ static void write_kernel_data(void)
 /*
  * volatile to avoid compiler mischief.
  */
-_app_dmem(part0) volatile int *priv_stack_ptr;
+K_APP_DMEM(part0) volatile int *priv_stack_ptr;
 #if defined(CONFIG_X86)
 /*
  * We can't inline this in the code or make it static
  * or local without triggering a warning on -Warray-bounds.
  */
-_app_dmem(part0) size_t size = MMU_PAGE_SIZE;
+K_APP_DMEM(part0) size_t size = MMU_PAGE_SIZE;
 #elif defined(CONFIG_ARC)
-_app_dmem(part0) s32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
+K_APP_DMEM(part0) s32_t size = (0 - CONFIG_PRIVILEGED_STACK_SIZE -
 			       STACK_GUARD_SIZE);
 #endif
 
@@ -377,7 +377,7 @@ static void write_priv_stack(void)
 }
 
 
-_app_bmem(part0) static struct k_sem sem;
+K_APP_BMEM(part0) static struct k_sem sem;
 
 /**
  * @brief Test to pass a user object to system call
@@ -582,7 +582,7 @@ static void user_mode_enter(void)
 
 /* Define and initialize pipe. */
 K_PIPE_DEFINE(kpipe, PIPE_LEN, BYTES_TO_READ_WRITE);
-_app_bmem(part0) static size_t bytes_written_read;
+K_APP_BMEM(part0) static size_t bytes_written_read;
 
 /**
  * @brief Test to write to kobject using pipe
@@ -634,7 +634,7 @@ static void read_kobject_user_pipe(void)
  */
 
 /* Create bool in part1 partitions */
-_app_dmem(part1) bool thread_bool;
+K_APP_DMEM(part1) bool thread_bool;
 
 static void shared_mem_thread(void)
 {
