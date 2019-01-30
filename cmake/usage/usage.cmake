@@ -20,21 +20,21 @@ foreach(arch ${arch_list})
   foreach(root ${BOARD_ROOT})
     set(board_arch_dir ${root}/boards/${arch})
 
-    # Match the .yaml files in the board directories to make sure we are
-    # finding boards, e.g. qemu_xtensa/qemu_xtensa.yaml
-    file(GLOB_RECURSE yamls_for_${arch}
+    # Match the _defconfig files in the board directories to make sure we are
+    # finding boards, e.g. qemu_xtensa/qemu_xtensa_defconfig
+    file(GLOB_RECURSE defconfigs_for_${arch}
       RELATIVE ${board_arch_dir}
-      ${board_arch_dir}/*.yaml
+      ${board_arch_dir}/*_defconfig
       )
 
     # The above gives a list like
-    # nrf51_blenano/nrf51_blenano_yaml;nrf51_pca10028/nrf51_pca10028_yaml
-    # we construct a list of board names by removing both the .yaml
+    # nrf51_blenano/nrf51_blenano_defconfig;nrf51_pca10028/nrf51_pca10028_defconfig
+    # we construct a list of board names by removing both the _defconfig
     # suffix and the path.
     set(boards_for_${arch} "")
-    foreach(yaml_path ${yamls_for_${arch}})
-      get_filename_component(board ${yaml_path} NAME_WE)
-
+    foreach(defconfig_path ${defconfigs_for_${arch}})
+      get_filename_component(board ${defconfig_path} NAME)
+      string(REPLACE "_defconfig" "" board "${board}")
       list(APPEND boards_for_${arch} ${board})
     endforeach()
   endforeach()
