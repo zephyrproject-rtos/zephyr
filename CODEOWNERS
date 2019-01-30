@@ -222,7 +222,8 @@ scripts/gen_syscalls.py                  @andrewboie
 scripts/process_gperf.py                 @andrewboie
 scripts/sanity_chk/                      @andrewboie @nashif
 scripts/sanitycheck                      @andrewboie @nashif
-scripts/support/runner/                  @mbolivar
+scripts/west_commands/                   @mbolivar
+scripts/west-commands.yml                @mbolivar
 subsys/bluetooth/                        @sjanc @jhedberg @Vudentz
 subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot
 subsys/fs/                               @nashif
