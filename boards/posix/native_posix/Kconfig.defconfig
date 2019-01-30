@@ -79,4 +79,11 @@ config SDL_DISPLAY
 
 endif # DISPLAY
 
+if TRACING_CTF
+
+config TRACING_CTF_BOTTOM_POSIX
+	default y
+
+endif # TRACING_CTF
+
 endif # BOARD_NATIVE_POSIX

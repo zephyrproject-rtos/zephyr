@@ -27,4 +27,13 @@ it to *y*. For example, this can be added to the
 
 .. _SEGGER SystemView: https://www.segger.com/products/development-tools/systemview/
 
+Common Trace Format (CTF) Support
+*********************************
+
+Documentation on CTF support can be found in the following subsection:
+
+.. toctree::
+   :maxdepth: 1
+
+   ctf.rst
 

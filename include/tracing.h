@@ -33,6 +33,9 @@ void z_sys_trace_thread_switched_out(void);
 #elif defined CONFIG_TRACING_CPU_STATS
 #include "tracing_cpu_stats.h"
 
+#elif defined CONFIG_TRACING_CTF
+#include "tracing_ctf.h"
+
 #else
 
 /**

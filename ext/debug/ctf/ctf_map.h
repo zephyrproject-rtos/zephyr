@@ -37,8 +37,8 @@
  * [3] https://en.wikipedia.org/wiki/Map_(higher-order_function)
  */
 
-#ifndef _CTF_MAP_H
-#define _CTF_MAP_H
+#ifndef EXT_DEBUG_CTF_CTF_MAP_H
+#define EXT_DEBUG_CTF_CTF_MAP_H
 
 #define EVAL0(...) __VA_ARGS__
 #define EVAL1(...) EVAL0(EVAL0(EVAL0(__VA_ARGS__)))
@@ -78,4 +78,4 @@
  */
 #define MAP_LIST(f, ...) EVAL(MAP_LIST1(f, __VA_ARGS__, ()()(), ()()(), ()()(), 0))
 
-#endif /* _CTF_MAP_H */
+#endif /* EXT_DEBUG_CTF_CTF_MAP_H */
