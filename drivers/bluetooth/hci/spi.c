@@ -45,11 +45,11 @@
 #define CMD_OGF			1
 #define CMD_OCF			2
 
-#define GPIO_IRQ_PIN		CONFIG_BT_SPI_IRQ_PIN
-#define GPIO_RESET_PIN		CONFIG_BT_SPI_RESET_PIN
-#if defined(CONFIG_BT_SPI_BLUENRG)
-#define GPIO_CS_PIN             CONFIG_BT_SPI_CHIP_SELECT_PIN
-#endif /* CONFIG_BT_SPI_BLUENRG */
+#define GPIO_IRQ_PIN		DT_ZEPHYR_BT_HCI_SPI_0_IRQ_GPIO_PIN
+#define GPIO_RESET_PIN		DT_ZEPHYR_BT_HCI_SPI_0_RESET_GPIO_PIN
+#ifdef DT_ZEPHYR_BT_HCI_SPI_0_CS_GPIO_PIN
+#define GPIO_CS_PIN		DT_ZEPHYR_BT_HCI_SPI_0_CS_GPIO_PIN
+#endif /* DT_ZEPHYR_BT_HCI_SPI_0_CS_GPIO_PIN */
 
 /* Max SPI buffer length for transceive operations.
  *
@@ -124,7 +124,7 @@ static int bt_spi_send_aci_config_data_controller_mode(void);
 static struct device *spi_dev;
 
 static struct spi_config spi_conf = {
-	.frequency = CONFIG_BT_SPI_MAX_CLK_FREQ,
+	.frequency = DT_ZEPHYR_BT_HCI_SPI_0_SPI_MAX_FREQUENCY,
 	.operation = (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) |
 		      SPI_LINES_SINGLE),
 	.slave     = 0,
@@ -194,10 +194,10 @@ static void bt_spi_handle_vendor_evt(u8_t *rxmsg)
  */
 static int configure_cs(void)
 {
-	cs_dev = device_get_binding(CONFIG_BT_SPI_CHIP_SELECT_DEV_NAME);
+	cs_dev = device_get_binding(DT_ZEPHYR_BT_HCI_SPI_0_CS_GPIO_CONTROLLER);
 	if (!cs_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       CONFIG_BT_SPI_CHIP_SELECT_DEV_NAME);
+		       DT_ZEPHYR_BT_HCI_SPI_0_CS_GPIO_CONTROLLER);
 		return -EIO;
 	}
 
@@ -246,13 +246,33 @@ static bool exit_irq_high_loop(void)
 }
 
 #else
-#define configure_cs(...) 0
+
+static int configure_cs(void)
+{
+#ifdef GPIO_CS_PIN
+	static struct spi_cs_control spi_conf_cs;
+
+	spi_conf_cs.gpio_pin = GPIO_CS_PIN,
+	spi_conf_cs.gpio_dev = device_get_binding(
+		DT_ZEPHYR_BT_HCI_SPI_0_CS_GPIO_CONTROLLER);
+	if (!spi_conf_cs.gpio_dev) {
+		BT_ERR("Failed to initialize GPIO driver: %s",
+		       DT_ZEPHYR_BT_HCI_SPI_0_CS_GPIO_CONTROLLER);
+		return -EIO;
+	}
+
+	spi_conf.cs = &spi_conf_cs;
+#endif /* GPIO_CS_PIN */
+
+	return 0;
+}
 #define kick_cs(...)
 #define release_cs(...)
 #define irq_pin_high(...) 0
 #define init_irq_high_loop(...)
 #define exit_irq_high_loop(...) 1
-#endif
+
+#endif /* CONFIG_BT_SPI_BLUENRG */
 
 #if defined(CONFIG_BT_BLUENRG_ACI)
 static int bt_spi_send_aci_config_data_controller_mode(void)
@@ -500,7 +520,7 @@ static int bt_spi_open(void)
 }
 
 static const struct bt_hci_driver drv = {
-	.name		= "BT SPI",
+	.name		= DT_ZEPHYR_BT_HCI_SPI_0_LABEL,
 	.bus		= BT_HCI_DRIVER_BUS_SPI,
 #if defined(CONFIG_BT_BLUENRG_ACI)
 	.quirks		= BT_QUIRK_NO_RESET,
@@ -513,10 +533,10 @@ static int _bt_spi_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
-	spi_dev = device_get_binding(CONFIG_BT_SPI_DEV_NAME);
+	spi_dev = device_get_binding(DT_ZEPHYR_BT_HCI_SPI_0_BUS_NAME);
 	if (!spi_dev) {
 		BT_ERR("Failed to initialize SPI driver: %s",
-		       CONFIG_BT_SPI_DEV_NAME);
+		       DT_ZEPHYR_BT_HCI_SPI_0_BUS_NAME);
 		return -EIO;
 	}
 
@@ -524,17 +544,19 @@ static int _bt_spi_init(struct device *unused)
 		return -EIO;
 	}
 
-	irq_dev = device_get_binding(CONFIG_BT_SPI_IRQ_DEV_NAME);
+	irq_dev = device_get_binding(
+		DT_ZEPHYR_BT_HCI_SPI_0_IRQ_GPIO_CONTROLLER);
 	if (!irq_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       CONFIG_BT_SPI_IRQ_DEV_NAME);
+		       DT_ZEPHYR_BT_HCI_SPI_0_IRQ_GPIO_CONTROLLER);
 		return -EIO;
 	}
 
-	rst_dev = device_get_binding(CONFIG_BT_SPI_RESET_DEV_NAME);
+	rst_dev = device_get_binding(
+		DT_ZEPHYR_BT_HCI_SPI_0_RESET_GPIO_CONTROLLER);
 	if (!rst_dev) {
 		BT_ERR("Failed to initialize GPIO driver: %s",
-		       CONFIG_BT_SPI_RESET_DEV_NAME);
+		       DT_ZEPHYR_BT_HCI_SPI_0_RESET_GPIO_CONTROLLER);
 		return -EIO;
 	}
 
