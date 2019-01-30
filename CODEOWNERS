@@ -224,7 +224,7 @@ scripts/sanity_chk/                      @andrewboie @nashif
 scripts/sanitycheck                      @andrewboie @nashif
 scripts/support/runner/                  @mbolivar
 subsys/bluetooth/                        @sjanc @jhedberg @Vudentz
-subsys/bluetooth/controller/             @carlescufi @cvinayak
+subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot
 subsys/fs/                               @nashif
 subsys/logging/                          @nordic-krch
 subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka @pfalcon
