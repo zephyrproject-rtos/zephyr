@@ -205,8 +205,14 @@ zephyr_compile_options(
   ${TOOLCHAIN_C_FLAGS}
 )
 
+# @Intent: Obtain compiler specific flags related to assembly
+toolchain_cc_asm_base_flags(ASM_BASE_FLAG)
 zephyr_compile_options(
-  $<$<COMPILE_LANGUAGE:ASM>:-xassembler-with-cpp>
+  $<$<COMPILE_LANGUAGE:ASM>:${ASM_BASE_FLAG}>
+)
+
+# Common toolchain-agnostic assembly flags
+zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:ASM>:-D_ASMLANGUAGE>
 )
 
