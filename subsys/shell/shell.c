@@ -1223,7 +1223,6 @@ void shell_thread(void *shell_handle, void *arg_log_backend,
 			return;
 		}
 
-
 		if (shell->iface->api->update) {
 			shell->iface->api->update(shell->iface);
 		}
@@ -1452,3 +1451,4 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 
 	return execute(shell);
 }
+
