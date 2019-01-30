@@ -105,4 +105,13 @@
 			status = "disabled";
 		};
 	};
+
+	sharedirq0: sharedirq0 {
+		compatible = "shared-irq";
+		label = "SHARED_IRQ0";
+		interrupts = <18 IRQ_TYPE_LEVEL_LOW 2>;
+		interrupt-parent = <&intc>;
+
+		status = "disabled";
+	};
 };

@@ -42,3 +42,7 @@
 &spi0 {
 	status = "ok";
 };
+
+&sharedirq0 {
+	status = "ok";
+};
