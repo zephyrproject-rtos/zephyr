@@ -776,6 +776,7 @@ static bool handle_socket_msg_recv(SOCKET sock,
 		if (sd->recv_cb) {
 			sd->recv_cb(sd->context,
 				    sd->rx_pkt,
+				    NULL, NULL,
 				    0,
 				    sd->recv_user_data);
 			}

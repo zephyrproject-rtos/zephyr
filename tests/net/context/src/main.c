@@ -508,6 +508,8 @@ static void net_ctx_sendto_v4(void)
 
 static void recv_cb(struct net_context *context,
 		    struct net_pkt *pkt,
+		    union net_ip_header *ip_hdr,
+		    union net_proto_header *proto_hdr,
 		    int status,
 		    void *user_data)
 {
@@ -683,6 +685,8 @@ static void net_ctx_recv_v4_again(void)
 
 static void recv_cb_another(struct net_context *context,
 			    struct net_pkt *pkt,
+			    union net_ip_header *ip_hdr,
+			    union net_proto_header *proto_hdr,
 			    int status,
 			    void *user_data)
 {
@@ -738,6 +742,8 @@ static struct k_thread thread_data;
 
 static void recv_cb_timeout(struct net_context *context,
 			    struct net_pkt *pkt,
+			    union net_ip_header *ip_hdr,
+			    union net_proto_header *proto_hdr,
 			    int status,
 			    void *user_data)
 {

@@ -225,6 +225,8 @@ static inline void set_dst_addr(sa_family_t family,
 
 static void udp_received(struct net_context *context,
 			 struct net_pkt *pkt,
+			 union net_ip_header *ip_hdr,
+			 union net_proto_header *proto_hdr,
 			 int status,
 			 void *user_data)
 {
@@ -268,6 +270,8 @@ static void setup_udp_recv(struct net_context *udp_recv6)
 
 static void tcp_received(struct net_context *context,
 			 struct net_pkt *pkt,
+			 union net_ip_header *ip_hdr,
+			 union net_proto_header *proto_hdr,
 			 int status,
 			 void *user_data)
 {

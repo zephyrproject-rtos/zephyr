@@ -777,7 +777,8 @@ static void sockreadrecv_cb_work(struct k_work *work)
 	pkt = sock->recv_pkt;
 	sock->recv_pkt = NULL;
 	if (sock->recv_cb) {
-		sock->recv_cb(sock->context, pkt, 0, sock->recv_user_data);
+		sock->recv_cb(sock->context, pkt, NULL, NULL,
+			      0, sock->recv_user_data);
 	} else {
 		net_pkt_unref(pkt);
 	}

@@ -42,8 +42,12 @@ static inline void *get_sock_vtable(
 				       (const struct fd_op_vtable **)vtable);
 }
 
-static void zsock_received_cb(struct net_context *ctx, struct net_pkt *pkt,
-			      int status, void *user_data);
+static void zsock_received_cb(struct net_context *ctx,
+			      struct net_pkt *pkt,
+			      union net_ip_header *ip_hdr,
+			      union net_proto_header *proto_hdr,
+			      int status,
+			      void *user_data);
 
 static inline int _k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
 {
@@ -193,8 +197,13 @@ static void zsock_accepted_cb(struct net_context *new_ctx,
 	}
 }
 
-static void zsock_received_cb(struct net_context *ctx, struct net_pkt *pkt,
-			      int status, void *user_data) {
+static void zsock_received_cb(struct net_context *ctx,
+			      struct net_pkt *pkt,
+			      union net_ip_header *ip_hdr,
+			      union net_proto_header *proto_hdr,
+			      int status,
+			      void *user_data)
+{
 	unsigned int header_len;
 
 	NET_DBG("ctx=%p, pkt=%p, st=%d, user_data=%p", ctx, pkt, status,

@@ -76,6 +76,8 @@ struct net_context;
  * @param pkt Network buffer that is received. If the pkt is not NULL,
  * then the callback will own the buffer and it needs to to unref the pkt
  * as soon as it has finished working with it.  On EOF, pkt will be NULL.
+ * @param ip_hdr a pointer to relevant IP (v4 or v6) header.
+ * @param proto_hdr a pointer to relevant protocol (udp or tcp) header.
  * @param status Value is set to 0 if some data or the connection is
  * at EOF, <0 if there was an error receiving data, in this case the
  * pkt parameter is set to NULL.
@@ -83,6 +85,8 @@ struct net_context;
  */
 typedef void (*net_context_recv_cb_t)(struct net_context *context,
 				      struct net_pkt *pkt,
+				      union net_ip_header *ip_hdr,
+				      union net_proto_header *proto_hdr,
 				      int status,
 				      void *user_data);
 
