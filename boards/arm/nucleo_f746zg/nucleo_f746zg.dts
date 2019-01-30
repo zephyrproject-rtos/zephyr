@@ -96,3 +96,7 @@ arduino_spi: &spi1 {};
 &idwg {
 	status = "ok";
 };
+
+&rtc {
+	status = "ok";
+};
