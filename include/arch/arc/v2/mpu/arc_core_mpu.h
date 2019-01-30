@@ -98,7 +98,7 @@ void configure_mpu_stack_guard(struct k_thread *thread);
 
 #if defined(CONFIG_USERSPACE)
 void arc_core_mpu_configure_user_context(struct k_thread *thread);
-void arc_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain);
+void arc_core_mpu_configure_mem_domain(struct k_thread *thread);
 void arc_core_mpu_mem_partition_remove(u32_t part_index);
 void arc_core_mpu_configure_mem_partition(u32_t part_index,
 					  struct k_mem_partition *part);
