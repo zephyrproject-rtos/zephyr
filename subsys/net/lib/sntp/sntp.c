@@ -105,39 +105,30 @@ static s32_t parse_response(u8_t *data, u16_t len, u32_t orig_ts,
 	return 0;
 }
 
-static int sntp_recv_response(struct sntp_ctx *sntp, u32_t timeout)
+static int sntp_recv_response(struct sntp_ctx *sntp, u32_t timeout,
+			      u64_t *epoch_time)
 {
 	struct sntp_pkt buf = { 0 };
-	u64_t epoch_time = 0;
 	int status;
 	int rcvd;
 
 	if (poll(sntp->sock.fds, sntp->sock.nfds, timeout) < 0) {
 		NET_ERR("Error in poll:%d", errno);
-		status = -errno;
-		goto error_exit;
+		return -errno;
 	}
 
 	rcvd = recv(sntp->sock.fd, (u8_t *)&buf, sizeof(buf), 0);
 	if (rcvd < 0) {
-		status = -errno;
-		goto error_exit;
+		return -errno;
 	}
 
 	if (rcvd != sizeof(struct sntp_pkt)) {
-		status = -EMSGSIZE;
-		goto error_exit;
+		return -EMSGSIZE;
 	}
 
 	status = parse_response((u8_t *)&buf, sizeof(buf),
 				sntp->expected_orig_ts,
-				&epoch_time);
-
-error_exit:
-	if (sntp->cb) {
-		sntp->cb(sntp, status, epoch_time);
-	}
-
+				epoch_time);
 	return status;
 }
 
@@ -179,17 +170,14 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr, socklen_t addr_len)
 	return 0;
 }
 
-int sntp_request(struct sntp_ctx *ctx, u32_t timeout,
-		 sntp_resp_cb_t callback)
+int sntp_request(struct sntp_ctx *ctx, u32_t timeout, u64_t *epoch_time)
 {
 	struct sntp_pkt tx_pkt = { 0 };
 	int ret = 0;
 
-	if (!ctx || !callback) {
+	if (!ctx || !epoch_time) {
 		return -EFAULT;
 	}
-
-	ctx->cb = callback;
 
 	/* prepare request pkt */
 	LVM_SET_LI(tx_pkt.lvm, 0);
@@ -204,7 +192,7 @@ int sntp_request(struct sntp_ctx *ctx, u32_t timeout,
 		return ret;
 	}
 
-	return sntp_recv_response(ctx, timeout);
+	return sntp_recv_response(ctx, timeout, epoch_time);
 }
 
 void sntp_close(struct sntp_ctx *ctx)

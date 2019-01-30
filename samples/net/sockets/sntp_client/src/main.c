@@ -12,18 +12,12 @@ LOG_MODULE_REGISTER(net_sntp_client_sample, LOG_LEVEL_DBG);
 
 #define SNTP_PORT 123
 
-void resp_callback(struct sntp_ctx *ctx, int status,
-		   u64_t epoch_time)
-{
-	LOG_DBG("time: %lld", epoch_time);
-	LOG_DBG("status: %d", status);
-}
-
 void main(void)
 {
 	struct sntp_ctx ctx;
 	struct sockaddr_in addr;
 	struct sockaddr_in6 addr6;
+	u64_t epoch_time;
 	int rv;
 
 	/* ipv4 */
@@ -40,11 +34,13 @@ void main(void)
 		goto end;
 	}
 
-	rv = sntp_request(&ctx, K_FOREVER, resp_callback);
+	rv = sntp_request(&ctx, K_FOREVER, &epoch_time);
 	if (rv < 0) {
 		LOG_ERR("Failed to send sntp request: %d", rv);
 		goto end;
 	}
+	LOG_DBG("time: %lld", epoch_time);
+	LOG_DBG("status: %d", rv);
 
 	sntp_close(&ctx);
 
@@ -62,11 +58,14 @@ void main(void)
 		goto end;
 	}
 
-	rv = sntp_request(&ctx, K_NO_WAIT, resp_callback);
+	rv = sntp_request(&ctx, K_NO_WAIT, &epoch_time);
 	if (rv < 0) {
 		LOG_ERR("Failed to send sntp request: %d", rv);
 		goto end;
 	}
+
+	LOG_DBG("time: %lld", epoch_time);
+	LOG_DBG("status: %d", rv);
 
 end:
 	sntp_close(&ctx);
