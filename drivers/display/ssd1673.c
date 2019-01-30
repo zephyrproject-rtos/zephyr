@@ -94,7 +94,7 @@ static inline void ssd1673_busy_wait(struct ssd1673_data *driver)
 
 	gpio_pin_read(driver->busy, DT_SOLOMON_SSD1673FB_0_BUSY_GPIOS_PIN, &val);
 	while (val) {
-		k_busy_wait(SSD1673_BUSY_DELAY);
+		k_sleep(SSD1673_BUSY_DELAY);
 		gpio_pin_read(driver->busy, DT_SOLOMON_SSD1673FB_0_BUSY_GPIOS_PIN, &val);
 	}
 }
