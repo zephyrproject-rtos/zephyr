@@ -21,7 +21,6 @@ LOG_MODULE_REGISTER(net_socket_echo_sample, LOG_LEVEL_DBG);
 
 #include <net/socket.h>
 #include <kernel.h>
-#include <net/net_app.h>
 
 #endif
 
