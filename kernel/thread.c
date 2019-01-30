@@ -390,6 +390,9 @@ void _setup_new_thread(struct k_thread *new_thread,
 	/* Any given thread has access to itself */
 	k_object_access_grant(new_thread, new_thread);
 #endif
+#ifdef CONFIG_SCHED_CPU_MASK
+	new_thread->base.cpu_mask = -1;
+#endif
 #ifdef CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN
 	/* _current may be null if the dummy thread is not used */
 	if (!_current) {

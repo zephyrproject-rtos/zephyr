@@ -452,6 +452,12 @@ struct _thread_base {
 
 	/* Recursive count of irq_lock() calls */
 	u8_t global_lock_count;
+
+#endif
+
+#ifdef CONFIG_SCHED_CPU_MASK
+	/* "May run on" bits for each CPU */
+	u8_t cpu_mask;
 #endif
 
 	/* data returned by APIs */
@@ -1033,6 +1039,52 @@ __syscall void k_thread_priority_set(k_tid_t thread, int prio);
  * @req K-THREAD-007
  */
 __syscall void k_thread_deadline_set(k_tid_t thread, int deadline);
+#endif
+
+#ifdef CONFIG_SCHED_CPU_MASK
+/**
+ * @brief Sets all CPU enable masks to zero
+ *
+ * After this returns, the thread will no longer be schedulable on any
+ * CPUs.  The thread must not be currently runnable.
+ *
+ * @param thread Thread to operate upon
+ * @return Zero on success, otherwise error code
+ */
+int k_thread_cpu_mask_clear(k_tid_t thread);
+
+/**
+ * @brief Sets all CPU enable masks to one
+ *
+ * After this returns, the thread will be schedulable on any CPU.  The
+ * thread must not be currently runnable.
+ *
+ * @param thread Thread to operate upon
+ * @return Zero on success, otherwise error code
+ */
+int k_thread_cpu_mask_enable_all(k_tid_t thread);
+
+/**
+ * @brief Enable thread to run on specified CPU
+ *
+ * The thread must not be currently runnable.
+ *
+ * @param thread Thread to operate upon
+ * @param cpu CPU index
+ * @return Zero on success, otherwise error code
+ */
+int k_thread_cpu_mask_enable(k_tid_t thread, int cpu);
+
+/**
+ * @brief Prevent thread to run on specified CPU
+ *
+ * The thread must not be currently runnable.
+ *
+ * @param thread Thread to operate upon
+ * @param cpu CPU index
+ * @return Zero on success, otherwise error code
+ */
+int k_thread_cpu_mask_disable(k_tid_t thread, int cpu);
 #endif
 
 /**
