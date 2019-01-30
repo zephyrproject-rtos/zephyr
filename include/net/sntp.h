@@ -10,22 +10,6 @@
 
 #include <net/socket.h>
 
-struct sntp_ctx;
-
-/**
- * @typedef sntp_resp_cb_t
- * @brief SNTP response callback.
- *
- * @details The callback is called after a sntp response is received
- *
- * @param ctx Address of sntp context.
- * @param status Error code of sntp response.
- * @param epoch_time Seconds since 1 January 1970.
- */
-
-typedef void (*sntp_resp_cb_t)(struct sntp_ctx *ctx, int status,
-			       u64_t epoch_time);
-
 /** SNTP context */
 struct sntp_ctx {
 	struct {
@@ -39,9 +23,6 @@ struct sntp_ctx {
 	 *  reply matches the one in client request.
 	 */
 	u32_t expected_orig_ts;
-
-	/** SNTP response callback */
-	sntp_resp_cb_t cb;
 };
 
 /**
@@ -61,12 +42,11 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr,
  *
  * @param ctx Address of sntp context.
  * @param timeout Timeout of waiting for sntp response (in milliseconds).
- * @param callback Callback function of sntp response.
+ * @param epoch_time Seconds since 1 January 1970.
  *
  * @return 0 if ok, <0 if error.
  */
-int sntp_request(struct sntp_ctx *ctx, u32_t timeout,
-		 sntp_resp_cb_t callback);
+int sntp_request(struct sntp_ctx *ctx, u32_t timeout, u64_t *epoch_time);
 
 /**
  * @brief Release SNTP context
