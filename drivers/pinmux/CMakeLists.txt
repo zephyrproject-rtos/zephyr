@@ -9,6 +9,3 @@ zephyr_sources_ifdef(CONFIG_PINMUX_STM32           stm32/pinmux_stm32.c)
 zephyr_sources_ifdef(CONFIG_PINMUX_SAM0            pinmux_sam0.c)
 zephyr_sources_ifdef(CONFIG_PINMUX_INTEL_S1000     pinmux_intel_s1000.c)
 zephyr_sources_ifdef(CONFIG_PINMUX_RV32M1          pinmux_rv32m1.c)
-
-# "runtime" pinmux
-add_subdirectory_ifdef(CONFIG_PINMUX_DEV dev)

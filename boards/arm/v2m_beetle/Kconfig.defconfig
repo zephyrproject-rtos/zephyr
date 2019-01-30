@@ -35,13 +35,6 @@ if PINMUX
 config PINMUX_BEETLE
 	default y
 
-if PINMUX_DEV
-
-config PINMUX_DEV_ARM_V2M_BEETLE
-	default y
-
-endif # PINMUX_DEV
-
 endif # PINMUX
 
 if SERIAL
