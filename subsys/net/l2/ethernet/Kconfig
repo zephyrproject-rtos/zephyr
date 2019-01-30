@@ -21,7 +21,8 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 config NET_L2_ETHERNET_MGMT
 	bool "Enable Ethernet network management interface"
-	depends on NET_MGMT && NET_MGMT_EVENT
+	select NET_MGMT
+	select NET_MGMT_EVENT
 	help
 	  Enable support net_mgmt Ethernet interface which can be used to
 	  configure at run-time Ethernet drivers and L2 settings.

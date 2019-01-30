@@ -24,8 +24,6 @@ menu "Network Libraries"
 
 source "subsys/net/lib/config/Kconfig"
 
-source "subsys/net/lib/app/Kconfig"
-
 source "subsys/net/lib/sockets/Kconfig"
 
 source "subsys/net/lib/tls_credentials/Kconfig"
