@@ -18,18 +18,16 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
     '''Runner front-end for pyOCD.'''
 
     def __init__(self, cfg, target,
-                 flashtool='pyocd-flashtool', flash_addr=0x0,
-                 flashtool_opts=None,
-                 gdbserver='pyocd-gdbserver',
+                 pyocd='pyocd',
+                 flash_addr=0x0, flash_opts=None,
                  gdb_port=DEFAULT_PYOCD_GDB_PORT, tui=False,
                  board_id=None, daparg=None, frequency=None):
         super(PyOcdBinaryRunner, self).__init__(cfg)
 
         self.target_args = ['-t', target]
-        self.flashtool = flashtool
+        self.pyocd = pyocd
         self.flash_addr_args = ['-a', hex(flash_addr)] if flash_addr else []
         self.gdb_cmd = [cfg.gdb] if cfg.gdb is not None else None
-        self.gdbserver = gdbserver
         self.gdb_port = gdb_port
         self.tui_args = ['-tui'] if tui else []
         self.hex_name = cfg.hex_file
@@ -51,7 +49,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             frequency_args = ['-f', frequency]
         self.frequency_args = frequency_args
 
-        self.flashtool_extra = flashtool_opts if flashtool_opts else []
+        self.flash_extra = flash_opts if flash_opts else []
 
     @classmethod
     def name(cls):
@@ -69,15 +67,13 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
         parser.add_argument('--daparg',
                             help='Additional -da arguments to pyocd tool')
-        parser.add_argument('--flashtool', default='pyocd-flashtool',
-                            help='flash tool path, default is pyocd-flashtool')
-        parser.add_argument('--flashtool-opt', default=[], action='append',
-                            help='''Additional options for pyocd-flashtool,
+        parser.add_argument('--pyocd', default='pyocd',
+                            help='path to pyocd tool, default is pyocd')
+        parser.add_argument('--flash-opt', default=[], action='append',
+                            help='''Additional options for pyocd flash,
                             e.g. -ce to chip erase''')
         parser.add_argument('--frequency',
                             help='SWD clock frequency in Hz')
-        parser.add_argument('--gdbserver', default='pyocd-gdbserver',
-                            help='GDB server, default is pyocd-gdbserver')
         parser.add_argument('--gdb-port', default=DEFAULT_PYOCD_GDB_PORT,
                             help='pyocd gdb port, defaults to {}'.format(
                                 DEFAULT_PYOCD_GDB_PORT))
@@ -101,9 +97,10 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         flash_addr = cls.get_flash_address(args, build_conf)
 
         return PyOcdBinaryRunner(
-            cfg, args.target, flashtool=args.flashtool,
-            flash_addr=flash_addr, flashtool_opts=args.flashtool_opt,
-            gdbserver=args.gdbserver, gdb_port=args.gdb_port, tui=args.tui,
+            cfg, args.target,
+            pyocd=args.pyocd,
+            flash_addr=flash_addr, flash_opts=args.flash_opt,
+            gdb_port=args.gdb_port, tui=args.tui,
             board_id=args.board_id, daparg=args.daparg,
             frequency=args.frequency)
 
@@ -126,13 +123,14 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                 'Cannot flash; no hex ({}) or bin ({}) files'.format(
                     self.hex_name, self.bin_name))
 
-        cmd = ([self.flashtool] +
+        cmd = ([self.pyocd] +
+               ['flash'] +
                self.flash_addr_args +
                self.daparg_args +
                self.target_args +
                self.board_args +
                self.frequency_args +
-               self.flashtool_extra +
+               self.flash_extra +
                [fname])
 
         log.inf('Flashing Target Device')
@@ -142,7 +140,8 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         log.inf('pyOCD GDB server running on port {}'.format(self.gdb_port))
 
     def debug_debugserver(self, command, **kwargs):
-        server_cmd = ([self.gdbserver] +
+        server_cmd = ([self.pyocd] +
+                      ['gdbserver'] +
                       self.daparg_args +
                       self.port_args() +
                       self.target_args +

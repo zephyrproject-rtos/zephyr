@@ -16,21 +16,19 @@ from conftest import RC_BUILD_DIR, RC_GDB, RC_KERNEL_HEX, RC_KERNEL_ELF
 # parameters, to verify they're respected.
 #
 
-TEST_TOOL = 'test-tool'
+TEST_PYOCD = 'test-pyocd'
 TEST_ADDR = 0xadd
 TEST_BOARD_ID = 'test-board-id'
 TEST_FREQUENCY = 'test-frequency'
 TEST_DAPARG = 'test-daparg'
 TEST_TARGET = 'test-target'
-TEST_FLASHTOOL_OPTS = ['--test-flashtool', 'args']
-TEST_SERVER = 'test-pyocd-gdbserver'
+TEST_FLASH_OPTS = ['--test-flash', 'args']
 TEST_PORT = 1
 
 TEST_ALL_KWARGS = {
-    'flashtool': TEST_TOOL,
+    'pyocd': TEST_PYOCD,
     'flash_addr': TEST_ADDR,
-    'flashtool_opts': TEST_FLASHTOOL_OPTS,
-    'gdbserver': TEST_SERVER,
+    'flash_opts': TEST_FLASH_OPTS,
     'gdb_port': TEST_PORT,
     'tui': False,
     'board_id': TEST_BOARD_ID,
@@ -42,11 +40,10 @@ TEST_DEF_KWARGS = {}
 
 TEST_ALL_PARAMS = (['--target', TEST_TARGET,
                     '--daparg', TEST_DAPARG,
-                    '--flashtool', TEST_TOOL] +
-                   ['--flashtool-opt={}'.format(o) for o in
-                    TEST_FLASHTOOL_OPTS] +
-                   ['--gdbserver', TEST_SERVER,
-                    '--gdb-port', str(TEST_PORT),
+                    '--pyocd', TEST_PYOCD] +
+                   ['--flash-opt={}'.format(o) for o in
+                    TEST_FLASH_OPTS] +
+                   ['--gdb-port', str(TEST_PORT),
                     '--board-id', TEST_BOARD_ID,
                     '--frequency', str(TEST_FREQUENCY)])
 
@@ -64,16 +61,18 @@ TEST_DEF_PARAMS = ['--target', TEST_TARGET]
 # ensure that results are consistent.
 #
 
-FLASH_ALL_EXPECTED_CALL = ([TEST_TOOL,
+FLASH_ALL_EXPECTED_CALL = ([TEST_PYOCD,
+                            'flash',
                             '-a', hex(TEST_ADDR), '-da', TEST_DAPARG,
                             '-t', TEST_TARGET, '-b', TEST_BOARD_ID,
                             '-f', TEST_FREQUENCY] +
-                           TEST_FLASHTOOL_OPTS +
+                           TEST_FLASH_OPTS +
                            [RC_KERNEL_HEX])
-FLASH_DEF_EXPECTED_CALL = ['pyocd-flashtool', '-t', TEST_TARGET, RC_KERNEL_HEX]
+FLASH_DEF_EXPECTED_CALL = ['pyocd', 'flash', '-t', TEST_TARGET, RC_KERNEL_HEX]
 
 
-DEBUG_ALL_EXPECTED_SERVER = [TEST_SERVER,
+DEBUG_ALL_EXPECTED_SERVER = [TEST_PYOCD,
+                             'gdbserver',
                              '-da', TEST_DAPARG,
                              '-p', str(TEST_PORT),
                              '-t', TEST_TARGET,
@@ -84,7 +83,8 @@ DEBUG_ALL_EXPECTED_CLIENT = [RC_GDB, RC_KERNEL_ELF,
                              '-ex', 'monitor halt',
                              '-ex', 'monitor reset',
                              '-ex', 'load']
-DEBUG_DEF_EXPECTED_SERVER = ['pyocd-gdbserver',
+DEBUG_DEF_EXPECTED_SERVER = ['pyocd',
+                             'gdbserver',
                              '-p', '3333',
                              '-t', TEST_TARGET]
 DEBUG_DEF_EXPECTED_CLIENT = [RC_GDB, RC_KERNEL_ELF,
@@ -94,13 +94,15 @@ DEBUG_DEF_EXPECTED_CLIENT = [RC_GDB, RC_KERNEL_ELF,
                              '-ex', 'load']
 
 
-DEBUGSERVER_ALL_EXPECTED_CALL = [TEST_SERVER,
+DEBUGSERVER_ALL_EXPECTED_CALL = [TEST_PYOCD,
+                                 'gdbserver',
                                  '-da', TEST_DAPARG,
                                  '-p', str(TEST_PORT),
                                  '-t', TEST_TARGET,
                                  '-b', TEST_BOARD_ID,
                                  '-f', TEST_FREQUENCY]
-DEBUGSERVER_DEF_EXPECTED_CALL = ['pyocd-gdbserver',
+DEBUGSERVER_DEF_EXPECTED_CALL = ['pyocd',
+                                 'gdbserver',
                                  '-p', '3333',
                                  '-t', TEST_TARGET]
 
