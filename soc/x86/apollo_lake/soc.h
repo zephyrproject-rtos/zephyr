@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Intel Corporation
+ * Copyright (c) 2018-2019, Intel Corporation
  * Copyright (c) 2010-2015, Wind River Systems, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -23,7 +23,9 @@
 #include <random/rand32.h>
 #endif
 
+#ifdef CONFIG_GPIO_INTEL_APL
 #include "soc_gpio.h"
+#endif
 
 #ifdef CONFIG_PCI
 

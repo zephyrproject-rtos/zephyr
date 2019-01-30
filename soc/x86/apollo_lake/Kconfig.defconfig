@@ -1,7 +1,7 @@
 #
 # Kconfig - Apollo Lake SoC configuration options
 #
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018-2019 Intel Corporation
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -76,6 +76,15 @@ if GPIO
 
 config GPIO_INTEL_APL
 	default y
+
+config SHARED_IRQ
+	default y if GPIO_INTEL_APL
+
+config SHARED_IRQ_0
+	default y if SHARED_IRQ
+
+config SHARED_IRQ_NUM_CLIENTS
+	default 10 if SHARED_IRQ
 
 endif # GPIO
 
