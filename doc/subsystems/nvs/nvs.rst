@@ -34,8 +34,7 @@ is unchanged no write to flash is performed.
 To protect the flash area against frequent erases it is important that there is
 sufficient free space. NVS has a protection mechanism to avoid getting in a
 endless loop of flash page erases when there is limited free space. When such
-an endless loop is detected NVS is placed in a locked state and becomes a
-read-only file system.
+a loop is detected NVS returns that there is no more space available.
 
 For NVS the file system is declared as:
 
