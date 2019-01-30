@@ -62,6 +62,8 @@ class ComplianceTest:
         self.suite = suite
         self.commit_range = commit_range
         self.repo_path = os.getcwd()
+        # get() defaults to None if not present
+        self.zephyr_base = os.environ.get('ZEPHYR_BASE')
 
     def prepare(self):
         """
@@ -88,10 +90,11 @@ class CheckPatch(ComplianceTest):
     _name = "checkpatch"
     _doc = "https://docs.zephyrproject.org/latest/contribute/#coding-style"
 
-
     def run(self):
         self.prepare()
-        checkpatch = '%s/scripts/checkpatch.pl' % self.repo_path
+        # Default to Zephyr's checkpatch if ZEPHYR_BASE is set
+        checkpatch = os.path.join(self.zephyr_base or self.repo_path, 'scripts',
+                                  'checkpatch.pl')
         if not os.path.exists(checkpatch):
             self.case.result = Skipped("checkpatch script not found", "skipped")
 
@@ -123,9 +126,8 @@ class KconfigCheck(ComplianceTest):
 
         # Put the Kconfiglib path first to make sure no local Kconfiglib version is
         # used
-        if 'ZEPHYR_BASE' in os.environ:
-            repo_path = os.environ['ZEPHYR_BASE']
-            kconfig_path = os.path.join(repo_path, "scripts/kconfig")
+        if self.zephyr_base:
+            kconfig_path = os.path.join(self.zephyr_base, "scripts", "kconfig")
             if os.path.exists(kconfig_path):
                 sys.path.insert(0, os.path.join(kconfig_path))
                 import kconfiglib
@@ -138,7 +140,7 @@ class KconfigCheck(ComplianceTest):
 
 
         # Look up Kconfig files relative to ZEPHYR_BASE
-        os.environ["srctree"] = repo_path
+        os.environ["srctree"] = self.zephyr_base
 
         # Parse the entire Kconfig tree, to make sure we see all symbols
         os.environ["SOC_DIR"] = "soc/"
