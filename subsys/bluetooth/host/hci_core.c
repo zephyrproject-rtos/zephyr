@@ -593,6 +593,285 @@ static void hci_num_completed_packets(struct net_buf *buf)
 }
 
 #if defined(CONFIG_BT_CENTRAL)
+#if defined(CONFIG_BT_WHITELIST)
+static void update_pending_wl(struct bt_conn *conn, void *data);
+static int hci_wl_le_create_conn_cancel(void);
+
+static int le_read_wl_size(void)
+{
+	struct bt_hci_rp_le_read_wl_size *rp;
+	struct net_buf *rsp;
+	int err;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_WL_SIZE, NULL, &rsp);
+	if (err) {
+		BT_ERR("Failed to read whitelist size");
+		return err;
+	}
+
+	rp = (void *)rsp->data;
+
+	bt_dev.le.wl_size = rp->wl_size;
+	if (bt_dev.le.wl_size < CONFIG_BT_MAX_CONN) {
+		BT_INFO("Maximum conn count exceeds whitelist size %d > %d",
+			CONFIG_BT_MAX_CONN, bt_dev.le.wl_size);
+	}
+
+	net_buf_unref(rsp);
+
+	return 0;
+}
+
+static int le_clear_wl(void)
+{
+	int err;
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CLEAR_WL, NULL, NULL);
+	if (err) {
+		BT_ERR("Failed to clear whitelist");
+		return err;
+	}
+
+	bt_dev.le.wl_entries = 0;
+
+	return 0;
+}
+
+static void wl_update(void)
+{
+	/*
+	 * Update WL if not in use. Otherwise cancel pending connection
+	 * to update the WL in enh_conn_complete.
+	 */
+	if (atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_WL_PENDING_UPDATE)) {
+		if (atomic_test_bit(bt_dev.flags, BT_DEV_WL_CONN_PENDING)) {
+			atomic_set_bit(bt_dev.flags, BT_DEV_WL_PENDING_UPDATE);
+			hci_wl_le_create_conn_cancel();
+		} else {
+			int err = 0;
+
+			bt_conn_foreach(update_pending_wl, &err);
+			if (err != 0) {
+				/* Update failed so set the flag to retry */
+				atomic_set_bit(bt_dev.flags,
+					       BT_DEV_WL_PENDING_UPDATE);
+			}
+		}
+	}
+}
+
+static int hci_wl_le_create_conn(void)
+{
+	struct net_buf *buf;
+	struct bt_hci_cp_le_create_conn *cp;
+	struct bt_conn *conn;
+	int err;
+
+	/* No connections are allowed during explicit scanning */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
+		return -EBUSY;
+	}
+
+	/* Don't enable whitelist connection if there is connection pending */
+	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_SCAN);
+	if (conn) {
+		bt_conn_unref(conn);
+		return -EINPROGRESS;
+	}
+
+	conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT);
+	if (conn) {
+		bt_conn_unref(conn);
+		return -EINPROGRESS;
+	}
+
+	/* return if whitelist is disabled */
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_WL_CONN_ENABLED)) {
+		return 0;
+	}
+
+	/* return if there is pending WL based LE Create Connection already */
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_WL_CONN_PENDING)) {
+		return 0;
+	}
+
+	if (!bt_le_conn_params_valid(&bt_dev.le.wl_conn_param)) {
+		return -EINVAL;
+	}
+
+	if (!bt_dev.le.wl_entries) {
+		return -ENODEV;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_CREATE_CONN, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	memset(cp, 0, sizeof(*cp));
+
+	/* Interval == window for continuous scanning */
+	cp->scan_interval = sys_cpu_to_le16(CONFIG_BT_BACKGROUND_SCAN_INTERVAL);
+	cp->scan_window = sys_cpu_to_le16(CONFIG_BT_BACKGROUND_SCAN_WINDOW);
+	cp->filter_policy = 0x01; /* White List is used */
+	/* TODO */
+	cp->own_addr_type = bt_dev.id_addr[BT_ID_DEFAULT].type;
+	cp->conn_interval_min = sys_cpu_to_le16(bt_dev.le.wl_conn_param.interval_min);
+	cp->conn_interval_max = sys_cpu_to_le16(bt_dev.le.wl_conn_param.interval_max);
+	cp->conn_latency = sys_cpu_to_le16(bt_dev.le.wl_conn_param.latency);
+	cp->supervision_timeout = sys_cpu_to_le16(bt_dev.le.wl_conn_param.timeout);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_WL_CONN_PENDING);
+
+	return 0;
+}
+
+int bt_hci_wl_enable(const struct bt_le_conn_param *param)
+{
+	int err;
+
+	/* Return if whitelist is enabled already */
+	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_WL_CONN_ENABLED)) {
+		return 0;
+	}
+
+	/*
+	 * Cache provided connection parameters if valid.
+	 * Otherwise, check if cached connection parameters are valid.
+	 */
+	if (param) {
+		if (bt_le_conn_params_valid(param)) {
+			bt_dev.le.wl_conn_param = *param;
+		} else {
+			err = -EINVAL;
+			goto err;
+		}
+	}
+
+	wl_update();
+
+	err = hci_wl_le_create_conn();
+	if (err) {
+		goto err;
+	}
+
+	return 0;
+
+err:
+	atomic_clear_bit(bt_dev.flags, BT_DEV_WL_CONN_ENABLED);
+
+	return err;
+}
+
+static int hci_wl_le_create_conn_cancel(void)
+{
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_WL_CONN_PENDING)) {
+		return 0;
+	}
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_CREATE_CONN_CANCEL, NULL, NULL);
+}
+
+int bt_hci_wl_disable(void)
+{
+	atomic_clear_bit(bt_dev.flags, BT_DEV_WL_CONN_ENABLED);
+	hci_wl_le_create_conn_cancel();
+
+	return 0;
+}
+
+static int hci_wl_add(const bt_addr_le_t *addr)
+{
+	struct bt_hci_cp_le_add_dev_to_wl *cp;
+	struct net_buf *buf;
+	int err;
+
+	BT_DBG("addr %s", bt_addr_le_str(addr));
+
+	if (bt_dev.le.wl_entries == bt_dev.le.wl_size) {
+		return -ENOMEM;
+	}
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_ADD_DEV_TO_WL, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_le_copy(&cp->addr, addr);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_ADD_DEV_TO_WL, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	bt_dev.le.wl_entries++;
+
+	return 0;
+}
+
+static int hci_wl_rem(const bt_addr_le_t *addr)
+{
+	struct bt_hci_cp_le_rem_dev_from_wl *cp;
+	struct net_buf *buf;
+	int err;
+
+	BT_DBG("addr %s", bt_addr_le_str(addr));
+
+	buf = bt_hci_cmd_create(BT_HCI_OP_LE_REM_DEV_FROM_WL, sizeof(*cp));
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	bt_addr_le_copy(&cp->addr, addr);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_REM_DEV_FROM_WL, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	bt_dev.le.wl_entries--;
+
+	return 0;
+}
+
+void bt_hci_wl_update(void)
+{
+	atomic_set_bit(bt_dev.flags, BT_DEV_WL_PENDING_UPDATE);
+}
+
+static void update_pending_wl(struct bt_conn *conn, void *data)
+{
+	int *err = data;
+
+	if (atomic_test_and_clear_bit(conn->flags, BT_CONN_WL_PENDING_REM)) {
+		if (hci_wl_rem(&conn->le.dst) < 0) {
+			atomic_set_bit(conn->flags, BT_CONN_WL_PENDING_REM);
+			*err = EACCES;
+		}
+		goto done;
+	}
+
+	if (atomic_test_and_clear_bit(conn->flags, BT_CONN_WL_PENDING_ADD)) {
+		if (hci_wl_add(&conn->le.dst) < 0) {
+			atomic_set_bit(conn->flags, BT_CONN_WL_PENDING_ADD);
+			*err = EACCES;
+		}
+		goto done;
+	}
+
+done:
+	bt_conn_unref(conn);
+}
+#endif /* CONFIG_BT_WHITELIST */
+
 static int hci_le_create_conn(const struct bt_conn *conn)
 {
 	struct net_buf *buf;
@@ -681,7 +960,12 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 #if defined(CONFIG_BT_CENTRAL)
 	if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+#if defined(CONFIG_BT_WHITELIST)
+		bt_conn_set_state(conn, BT_CONN_WHITELIST);
+		wl_update();
+#else
 		bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+#endif /* CONFIG_BT_WHITELIST */
 		bt_le_scan_update(false);
 	}
 #endif /* CONFIG_BT_CENTRAL */
@@ -826,7 +1110,19 @@ static struct bt_conn *find_pending_connect(bt_addr_le_t *peer_addr)
 		return conn;
 	}
 
-	return bt_conn_lookup_state_le(peer_addr, BT_CONN_CONNECT_DIR_ADV);
+	conn = bt_conn_lookup_state_le(peer_addr, BT_CONN_CONNECT_DIR_ADV);
+	if (conn) {
+		return conn;
+	}
+
+#if defined(CONFIG_BT_WHITELIST)
+	conn = bt_conn_lookup_state_le(peer_addr, BT_CONN_WHITELIST);
+	if (conn) {
+		return conn;
+	}
+#endif /* CONFIG_BT_WHITELIST */
+
+	return NULL;
 }
 
 static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
@@ -835,6 +1131,10 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	bt_addr_le_t peer_addr, id_addr;
 	struct bt_conn *conn;
 	int err;
+
+#if defined(CONFIG_BT_WHITELIST)
+	atomic_clear_bit(bt_dev.flags, BT_DEV_WL_CONN_PENDING);
+#endif /* CONFIG_BT_WHITELIST */
 
 	BT_DBG("status %u handle %u role %u %s", evt->status, handle,
 	       evt->role, bt_addr_le_str(&evt->peer_addr));
@@ -873,7 +1173,11 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 			/* check if device is market for auto connect */
 			if (atomic_test_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+#if defined(CONFIG_BT_WHITELIST)
+				bt_conn_set_state(conn, BT_CONN_WHITELIST);
+#else
 				bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+#endif /* CONFIG_BT_WHITELIST */
 			}
 
 			goto done;
@@ -994,6 +1298,9 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 
 done:
 	bt_conn_unref(conn);
+#if defined(CONFIG_BT_WHITELIST)
+	wl_update();
+#endif /* CONFIG_BT_WHITELIST */
 	if (IS_ENABLED(CONFIG_BT_CENTRAL)) {
 		bt_le_scan_update(false);
 	}
@@ -3217,8 +3524,24 @@ int bt_le_scan_update(bool fast_scan)
 
 		conn = bt_conn_lookup_state_le(NULL, BT_CONN_CONNECT_SCAN);
 		if (!conn) {
+#if defined(CONFIG_BT_WHITELIST)
+			/*
+			 * No devices in BT_CONN_CONNECT_SCAN, so we can safely
+			 * call whitelist based LE Create Connection.
+			 */
+			hci_wl_le_create_conn();
+#endif /* CONFIG_BT_WHITELIST */
 			return 0;
 		}
+
+#if defined(CONFIG_BT_WHITELIST)
+		/*
+		 * There is a device in BT_CONN_CONNECT_SCAN that needs to be
+		 * connected to, so cancel pending LE Create Connection issued
+		 * by whitelist.
+		 */
+		hci_wl_le_create_conn_cancel();
+#endif /* CONFIG_BT_WHITELIST */
 
 		atomic_set_bit(bt_dev.flags, BT_DEV_SCAN_FILTER_DUP);
 
@@ -3958,6 +4281,18 @@ static int le_init(void)
 		net_buf_unref(rsp);
 	}
 #endif
+
+#if defined(CONFIG_BT_WHITELIST)
+	err = le_read_wl_size();
+	if (err) {
+		return err;
+	}
+
+	err = le_clear_wl();
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BT_WHITELIST */
 
 	return  le_set_event_mask();
 }
@@ -5428,10 +5763,19 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 		return -EALREADY;
 	}
 
+#if defined(CONFIG_BT_WHITELIST)
+	/* need to disable WL if it is enabled */
+	hci_wl_le_create_conn_cancel();
+#endif
+
 	if (atomic_test_bit(bt_dev.flags, BT_DEV_SCANNING)) {
 		err = set_le_scan_enable(BT_HCI_LE_SCAN_DISABLE);
 		if (err) {
 			atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
+#if defined(CONFIG_BT_WHITELIST)
+			/* re-enable WL if it was enabled */
+			hci_wl_le_create_conn();
+#endif
 			return err;
 		}
 	}
@@ -5442,6 +5786,10 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 	err = start_le_scan(param->type, param->interval, param->window);
 	if (err) {
 		atomic_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN);
+#if defined(CONFIG_BT_WHITELIST)
+		/* re-enable WL if it was enabled */
+		hci_wl_le_create_conn();
+#endif
 		return err;
 	}
 
@@ -5452,6 +5800,8 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 
 int bt_le_scan_stop(void)
 {
+	int err;
+
 	/* Return if active scanning is already disabled */
 	if (!atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_EXPLICIT_SCAN)) {
 		return -EALREADY;
@@ -5459,7 +5809,15 @@ int bt_le_scan_stop(void)
 
 	scan_dev_found_cb = NULL;
 
-	return bt_le_scan_update(false);
+	err = bt_le_scan_update(false);
+#if defined(CONFIG_BT_WHITELIST)
+	if (!err) {
+		/* re-enable WL if it was enabled */
+		hci_wl_le_create_conn();
+	}
+#endif
+
+	return err;
 }
 #endif /* CONFIG_BT_OBSERVER */
 

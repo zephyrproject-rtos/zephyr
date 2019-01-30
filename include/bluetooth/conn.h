@@ -209,6 +209,50 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason);
 struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 				  const struct bt_le_conn_param *param);
 
+#if defined(CONFIG_BT_WHITELIST)
+/** @brief Add device to autoconnect list
+ *
+ *  Every time the device loses the connection with peer, this connection
+ *  will be re-established if connectable advertisement from peer is received.
+ *
+ *  @param addr Remote Bluetooth address.
+ *
+ *  @return Zero on success or error code otherwise.
+ */
+int bt_le_autoconn_add(const bt_addr_le_t *addr);
+
+/** @brief Remove device from autoconnect list
+ *
+ *  This function removes previously added device from autoconnect list.
+ *  Connection will not be re-established even if connectable advertisement from
+ *  peer is received.
+ *
+ *  @param addr Remote Bluetooth address.
+ *
+ *  @return Zero on success or error code otherwise.
+ */
+int bt_le_autoconn_remove(const bt_addr_le_t *addr);
+
+/** @brief Enable automatic connection initiation
+ *
+ *  This function enables automatic connection initiation to devices that have
+ *  been added to autoconnect list with bt_le_autoconn_add.
+ *
+ *  @param param Connection parameters used for connection establishment.
+ *
+ *  @return Zero on success or error code otherwise.
+ */
+int bt_le_autoconn_enable(const struct bt_le_conn_param *param);
+
+/** @brief Disable automatic connection initiation
+ *
+ *  This function disables automatic connection initiation to devices that have
+ *  been added to autoconnect list with bt_le_autoconn_add.
+ *
+ *  @return Zero on success or error code otherwise.
+ */
+int bt_le_autoconn_disable(void);
+#else
 /** @brief Automatically connect to remote device if it's in range.
  *
  *  This function enables/disables automatic connection initiation.
@@ -225,6 +269,7 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
  */
 int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 			const struct bt_le_conn_param *param);
+#endif /* CONFIG_BT_WHITELIST */
 
 /** @brief Initiate directed advertising to a remote device
  *

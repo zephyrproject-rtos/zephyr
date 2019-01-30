@@ -112,6 +112,8 @@ static inline const char *state2str(bt_conn_state_t state)
 	switch (state) {
 	case BT_CONN_DISCONNECTED:
 		return "disconnected";
+	case BT_CONN_WHITELIST:
+		return "whitelist";
 	case BT_CONN_CONNECT_SCAN:
 		return "connect-scan";
 	case BT_CONN_CONNECT_DIR_ADV:
@@ -1516,6 +1518,13 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			k_delayed_work_cancel(&conn->le.update_work);
 		}
 		break;
+#if defined(CONFIG_BT_WHITELIST)
+	case BT_CONN_WHITELIST:
+		atomic_clear_bit(conn->flags, BT_CONN_WL_PENDING_ADD);
+		atomic_set_bit(conn->flags, BT_CONN_WL_PENDING_REM);
+		bt_hci_wl_update();
+		break;
+#endif /* CONFIG_BT_WHITELIST */
 	default:
 		break;
 	}
@@ -1578,9 +1587,19 @@ void bt_conn_set_state(struct bt_conn *conn, bt_conn_state_t state)
 			}
 
 			bt_conn_unref(conn);
+		} else if (old_state == BT_CONN_WHITELIST) {
+			/* don't indicate conn failed on whitelist entries */
+			bt_conn_unref(conn);
 		}
 
 		break;
+#if defined(CONFIG_BT_WHITELIST)
+	case BT_CONN_WHITELIST:
+		atomic_clear_bit(conn->flags, BT_CONN_WL_PENDING_REM);
+		atomic_set_bit(conn->flags, BT_CONN_WL_PENDING_ADD);
+		bt_hci_wl_update();
+		break;
+#endif /* CONFIG_BT_WHITELIST */
 	case BT_CONN_CONNECT_SCAN:
 		break;
 	case BT_CONN_CONNECT_DIR_ADV:
@@ -1857,10 +1876,15 @@ int bt_conn_disconnect(struct bt_conn *conn, u8_t reason)
 	 */
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    conn->type == BT_CONN_TYPE_LE) {
+#if defined(CONFIG_BT_WHITELIST)
+		bt_le_autoconn_remove(&conn->le.dst);
+#else
 		bt_le_set_auto_conn(&conn->le.dst, NULL);
+#endif /* CONFIG_BT_WHITELIST */
 	}
 
 	switch (conn->state) {
+	case BT_CONN_WHITELIST:
 	case BT_CONN_CONNECT_SCAN:
 		conn->err = reason;
 		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
@@ -1927,6 +1951,11 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, peer);
 	if (conn) {
 		switch (conn->state) {
+#if defined(CONFIG_BT_WHITELIST)
+		case BT_CONN_WHITELIST:
+			/* Transition BT_CONN_WHITELIST-> BT_CONN_CONNECT_SCAN */
+			break;
+#endif /* CONFIG_BT_WHITELIST */
 		case BT_CONN_CONNECT_SCAN:
 			bt_conn_set_param_le(conn, param);
 			return conn;
@@ -1937,9 +1966,10 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 			bt_conn_unref(conn);
 			return NULL;
 		}
+	} else {
+		conn = bt_conn_add_le(peer);
 	}
 
-	conn = bt_conn_add_le(peer);
 	if (!conn) {
 		return NULL;
 	}
@@ -1958,6 +1988,74 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 
 	return conn;
 }
+
+#if defined(CONFIG_BT_WHITELIST)
+int bt_le_autoconn_add(const bt_addr_le_t *addr)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, addr);
+	if (!conn) {
+		conn = bt_conn_add_le(addr);
+		if (!conn) {
+			return -ENOMEM;
+		}
+	}
+
+	if (atomic_test_and_set_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+		bt_conn_unref(conn);
+		return 0;
+	}
+
+	/* Only default identity is supported */
+	conn->id = BT_ID_DEFAULT;
+
+	if (conn->state == BT_CONN_DISCONNECTED) {
+		bt_conn_set_state(conn, BT_CONN_WHITELIST);
+	}
+
+	/* don't drop the reference */
+
+	return 0;
+}
+
+int bt_le_autoconn_remove(const bt_addr_le_t *addr)
+{
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, addr);
+	if (!conn) {
+		return 0;
+	}
+
+	if (!atomic_test_and_clear_bit(conn->flags, BT_CONN_AUTO_CONNECT)) {
+		bt_conn_unref(conn);
+		return 0;
+	}
+
+	/* drop the reference taken by bt_le_autoconn_add */
+	bt_conn_unref(conn);
+
+	if (conn->state == BT_CONN_WHITELIST) {
+		bt_conn_set_state(conn, BT_CONN_DISCONNECTED);
+	}
+
+	bt_conn_unref(conn);
+
+	return 0;
+}
+
+int bt_le_autoconn_enable(const struct bt_le_conn_param *param)
+{
+	return bt_hci_wl_enable(param);
+}
+
+int bt_le_autoconn_disable(void)
+{
+	return bt_hci_wl_disable();
+}
+
+#else /* CONFIG_BT_WHITELIST */
 
 int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 			const struct bt_le_conn_param *param)
@@ -2008,6 +2106,7 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
 
 	return 0;
 }
+#endif /* CONFIG_BT_WHITELIST */
 #endif /* CONFIG_BT_CENTRAL */
 
 #if defined(CONFIG_BT_PERIPHERAL)
@@ -2304,10 +2403,25 @@ int bt_conn_init(void)
 					    BT_CONN_AUTO_CONNECT)) {
 				/* Only the default identity is supported */
 				conn->id = BT_ID_DEFAULT;
-				bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+				if (IS_ENABLED(CONFIG_BT_WHITELIST)) {
+					bt_conn_set_state(conn, BT_CONN_WHITELIST);
+				} else {
+					bt_conn_set_state(conn, BT_CONN_CONNECT_SCAN);
+				}
 			}
 		}
 	}
 
 	return 0;
+}
+
+void bt_conn_foreach(bt_conn_foreach_func func, void *data)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(conns); i++) {
+		if (atomic_get(&conns[i].ref)) {
+			func(bt_conn_ref(&conns[i]), data);
+		}
+	}
 }

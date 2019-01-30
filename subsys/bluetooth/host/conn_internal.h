@@ -9,6 +9,7 @@
  */
 typedef enum __packed {
 	BT_CONN_DISCONNECTED,
+	BT_CONN_WHITELIST,
 	BT_CONN_CONNECT_SCAN,
 	BT_CONN_CONNECT_DIR_ADV,
 	BT_CONN_CONNECT,
@@ -29,6 +30,11 @@ enum {
 	BT_CONN_SLAVE_PARAM_UPDATE,	/* If slave param update timer fired */
 	BT_CONN_SLAVE_PARAM_SET,	/* If slave param were set from app */
 	BT_CONN_SLAVE_PARAM_L2CAP,	/* If should force L2CAP for CPUP */
+
+#if defined(CONFIG_BT_WHITELIST)
+	BT_CONN_WL_PENDING_ADD,
+	BT_CONN_WL_PENDING_REM,
+#endif /* CONFIG_BT_WHITELIST */
 
 	/* Total number of flags - must be at the end of the enum */
 	BT_CONN_NUM_FLAGS,
@@ -226,3 +232,6 @@ struct k_sem *bt_conn_get_pkts(struct bt_conn *conn);
 int bt_conn_prepare_events(struct k_poll_event events[]);
 void bt_conn_process_tx(struct bt_conn *conn);
 void bt_conn_notify_tx(struct bt_conn *conn);
+
+typedef void (*bt_conn_foreach_func)(struct bt_conn *conn, void *data);
+void bt_conn_foreach(bt_conn_foreach_func func, void *data);

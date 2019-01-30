@@ -267,6 +267,13 @@ config BT_AUTO_PHY_UPDATE
 	  want to rely on remote device to initiate the procedure at its
 	  discretion.
 
+config BT_WHITELIST
+	bool "Whitelist support"
+	depends on BT_CENTRAL
+	default n
+	help
+	  Select this to use whitelist policy while connecting to the devices.
+
 config BT_SMP
 	bool "Security Manager Protocol support"
 	select TINYCRYPT

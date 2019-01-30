@@ -54,6 +54,12 @@ enum {
 	BT_DEV_INQUIRY,
 #endif /* CONFIG_BT_BREDR */
 
+#if defined(CONFIG_BT_WHITELIST)
+	BT_DEV_WL_CONN_ENABLED,		/* whitelist connections are enabled */
+	BT_DEV_WL_CONN_PENDING,		/* pending whitelist connection */
+	BT_DEV_WL_PENDING_UPDATE,	/* pending whitelist update */
+#endif /* CONFIG_BT_WHITELIST */
+
 	/* Total number of flags - must be at the end of the enum */
 	BT_DEV_NUM_FLAGS,
 };
@@ -83,6 +89,14 @@ struct bt_dev_le {
 	 */
 	u8_t                    rl_entries;
 #endif /* CONFIG_BT_SMP */
+
+#if defined(CONFIG_BT_WHITELIST)
+	struct bt_le_conn_param		wl_conn_param;
+	/* Controller whitelist size */
+	u8_t				wl_size;
+	/* Number of entries in the whitelist */
+	u8_t				wl_entries;
+#endif /* CONFIG_BT_WHITELIST */
 };
 
 #if defined(CONFIG_BT_BREDR)
@@ -204,3 +218,7 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 			     const struct bt_data *ad, size_t ad_len,
 			     const struct bt_data *sd, size_t sd_len,
 			     const bt_addr_le_t *peer);
+
+int bt_hci_wl_enable(const struct bt_le_conn_param *param);
+int bt_hci_wl_disable(void);
+void bt_hci_wl_update(void);
