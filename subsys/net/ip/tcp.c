@@ -1761,6 +1761,11 @@ static void handle_ack_timeout(struct k_work *work)
 		 */
 		net_tcp_change_state(tcp, NET_TCP_CLOSED);
 
+		if (tcp->context->recv_cb) {
+			tcp->context->recv_cb(tcp->context, NULL, 0,
+					      tcp->recv_user_data);
+		}
+
 		net_context_unref(tcp->context);
 	}
 }
