@@ -46,12 +46,4 @@ config I2C_DW_0_IRQ_SHARED
 
 endchoice
 
-config I2C_DW_0_IRQ_SHARED_NAME
-	string "Device name for Shared IRQ"
-	depends on I2C_0 && I2C_DW_0_IRQ_SHARED
-	help
-	  Specify the device name for the shared IRQ driver. It is used
-	  to register this driver with the shared IRQ driver, so interrupts
-	  can be dispatched correctly.
-
 endif # I2C_DW

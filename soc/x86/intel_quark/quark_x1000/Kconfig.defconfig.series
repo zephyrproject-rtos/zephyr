@@ -23,17 +23,6 @@ if SHARED_IRQ
 config SHARED_IRQ_0
 	default y
 
-if SHARED_IRQ_0
-
-config SHARED_IRQ_0_NAME
-	default "SHARED_IRQ0"
-config SHARED_IRQ_0_IRQ
-	default 18
-config SHARED_IRQ_0_PRI
-	default 2
-
-endif # SHARED_IRQ_0
-
 endif # SHARED_IRQ
 
 if PCI_LEGACY_BRIDGE
@@ -66,9 +55,6 @@ if I2C_0
 
 config I2C_0_IRQ_PRI
 	default 2
-
-config I2C_DW_0_IRQ_SHARED_NAME
-	default SHARED_IRQ_0_NAME if SHARED_IRQ
 
 endif # I2C_0
 
@@ -120,8 +106,6 @@ config GPIO_DW_0_NAME
 	default "GPIO_0"
 config GPIO_DW_0_IRQ_PRI
 	default 2
-config GPIO_DW_0_IRQ_SHARED_NAME
-	default SHARED_IRQ_0_NAME if SHARED_IRQ
 
 endif # GPIO_DW_0
 
@@ -189,13 +173,6 @@ if ETH_DW
 
 config ETH_DW_0
 	default y
-
-if ETH_DW_0
-
-config ETH_DW_0_IRQ_SHARED_NAME
-	default SHARED_IRQ_0_NAME if SHARED_IRQ
-
-endif # ETH_DW_0
 
 endif # ETH_DW
 

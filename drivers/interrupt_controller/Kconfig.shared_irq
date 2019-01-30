@@ -36,99 +36,9 @@ config SHARED_IRQ_0
 	 Provide an instance of the shared interrupt driver when system
 	 configuration requires that multiple devices share an interrupt.
 
-config SHARED_IRQ_0_NAME
-	string "Select a name for the device"
-	depends on SHARED_IRQ_0
-	default "SHARED_IRQ0"
-
-config SHARED_IRQ_0_IRQ
-	int "instance 0 interrupt"
-	depends on SHARED_IRQ_0
-	help
-	 System interrupt number to be handled by this instance of the driver.
-
-config SHARED_IRQ_0_PRI
-	int "instance 0 interrupt priority"
-	default 2
-	depends on SHARED_IRQ_0
-	help
-	 Priority of shared interrupt handler for the configured interrupt
-
-choice
-	depends on SHARED_IRQ_0
-	prompt "Shared IRQ #0 Trigger Condition"
-	default SHARED_IRQ_0_RISING_EDGE
-
-config SHARED_IRQ_0_FALLING_EDGE
-	bool "Falling Edge"
-	help
-	  Interrupt triggers on falling edge.
-
-config SHARED_IRQ_0_RISING_EDGE
-	bool "Rising Edge"
-	help
-	  Interrupt triggers on rising edge.
-
-config SHARED_IRQ_0_LEVEL_HIGH
-	bool "Level High"
-	help
-	  Interrupt triggers when level is high.
-
-config SHARED_IRQ_0_LEVEL_LOW
-	bool "Level Low"
-	help
-	  Interrupt triggers when level is low.
-
-endchoice
-
 config SHARED_IRQ_1
 	bool "Shared interrupt instance 1"
 	depends on SHARED_IRQ
 	help
 	 Provide an instance of the shared interrupt driver when system
 	 configuration requires that multiple devices share an interrupt.
-
-config SHARED_IRQ_1_NAME
-	string "Select a name for the device"
-	depends on SHARED_IRQ_1
-	default "SHARED_IRQ1"
-
-config SHARED_IRQ_1_IRQ
-	int "instance 1 interrupt"
-	depends on SHARED_IRQ_1
-	help
-	 System interrupt number to be handled by this instance of the driver.
-
-config SHARED_IRQ_1_PRI
-	int "instance 1 interrupt priority"
-	default 2
-	depends on SHARED_IRQ_1
-	help
-	 Priority of shared interrupt handler for the configured interrupt
-
-choice
-	depends on SHARED_IRQ_1
-	prompt "Shared IRQ #1 Trigger Condition"
-	default SHARED_IRQ_1_RISING_EDGE
-
-config SHARED_IRQ_1_FALLING_EDGE
-	bool "Falling Edge"
-	help
-	  Interrupt triggers on falling edge.
-
-config SHARED_IRQ_1_RISING_EDGE
-	bool "Rising Edge"
-	help
-	  Interrupt triggers on rising edge.
-
-config SHARED_IRQ_1_LEVEL_HIGH
-	bool "Level High"
-	help
-	  Interrupt triggers when level is high.
-
-config SHARED_IRQ_1_LEVEL_LOW
-	bool "Level Low"
-	help
-	  Interrupt triggers when level is low.
-
-endchoice

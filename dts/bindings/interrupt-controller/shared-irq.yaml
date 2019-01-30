@@ -1,0 +1,28 @@
+---
+title: Shared IRQ interrupt dispatcher
+version: 0.1
+
+description: >
+    This binding describes Shared IRQ interrupt dispatcher
+
+properties:
+  compatible:
+      category: required
+      type: string
+      description: compatible strings
+      constraint: "shared-irq"
+      generation: define
+
+  interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+  label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+...

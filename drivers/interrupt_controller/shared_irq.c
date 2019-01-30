@@ -125,37 +125,24 @@ int shared_irq_initialize(struct device *dev)
 void shared_irq_config_0_irq(void);
 
 const struct shared_irq_config shared_irq_config_0 = {
-	.irq_num = CONFIG_SHARED_IRQ_0_IRQ,
+	.irq_num = DT_SHARED_IRQ_SHAREDIRQ0_IRQ_0,
 	.client_count = CONFIG_SHARED_IRQ_NUM_CLIENTS,
 	.config = shared_irq_config_0_irq
 };
 
 struct shared_irq_runtime shared_irq_0_runtime;
 
-DEVICE_AND_API_INIT(shared_irq_0, CONFIG_SHARED_IRQ_0_NAME,
+DEVICE_AND_API_INIT(shared_irq_0, DT_SHARED_IRQ_SHAREDIRQ0_LABEL,
 		shared_irq_initialize, &shared_irq_0_runtime,
 		&shared_irq_config_0, POST_KERNEL,
 		CONFIG_SHARED_IRQ_INIT_PRIORITY, &api_funcs);
 
-#if defined(CONFIG_IOAPIC)
-#if defined(CONFIG_SHARED_IRQ_0_FALLING_EDGE)
-	#define SHARED_IRQ_0_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
-#elif defined(CONFIG_SHARED_IRQ_0_RISING_EDGE)
-	#define SHARED_IRQ_0_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
-#elif defined(CONFIG_SHARED_IRQ_0_LEVEL_HIGH)
-	#define SHARED_IRQ_0_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
-#elif defined(CONFIG_SHARED_IRQ_0_LEVEL_LOW)
-	#define SHARED_IRQ_0_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
-#endif
-#else
-	#define SHARED_IRQ_0_FLAGS 0
-#endif /* CONFIG_IOAPIC */
-
 void shared_irq_config_0_irq(void)
 {
-	IRQ_CONNECT(CONFIG_SHARED_IRQ_0_IRQ, CONFIG_SHARED_IRQ_0_PRI,
+	IRQ_CONNECT(DT_SHARED_IRQ_SHAREDIRQ0_IRQ_0,
+		    DT_SHARED_IRQ_SHAREDIRQ0_IRQ_0_PRIORITY,
 		    shared_irq_isr, DEVICE_GET(shared_irq_0),
-		    SHARED_IRQ_0_FLAGS);
+		    DT_SHARED_IRQ_SHAREDIRQ0_IRQ_0_SENSE);
 }
 
 #endif /* CONFIG_SHARED_IRQ_0 */
@@ -164,37 +151,24 @@ void shared_irq_config_0_irq(void)
 void shared_irq_config_1_irq(void);
 
 const struct shared_irq_config shared_irq_config_1 = {
-	.irq_num = CONFIG_SHARED_IRQ_1_IRQ,
+	.irq_num = DT_SHARED_IRQ_SHAREDIRQ1_IRQ_0,
 	.client_count = CONFIG_SHARED_IRQ_NUM_CLIENTS,
 	.config = shared_irq_config_1_irq
 };
 
 struct shared_irq_runtime shared_irq_1_runtime;
 
-DEVICE_AND_API_INIT(shared_irq_1, CONFIG_SHARED_IRQ_1_NAME,
+DEVICE_AND_API_INIT(shared_irq_1, DT_SHARED_IRQ_SHAREDIRQ1_LABEL,
 		shared_irq_initialize, &shared_irq_1_runtime,
 		&shared_irq_config_1, POST_KERNEL,
 		CONFIG_SHARED_IRQ_INIT_PRIORITY, &api_funcs);
 
-#if defined(CONFIG_IOAPIC)
-#if defined(CONFIG_SHARED_IRQ_1_FALLING_EDGE)
-	#define SHARED_IRQ_1_FLAGS (IOAPIC_EDGE | IOAPIC_LOW)
-#elif defined(CONFIG_SHARED_IRQ_1_RISING_EDGE)
-	#define SHARED_IRQ_1_FLAGS (IOAPIC_EDGE | IOAPIC_HIGH)
-#elif defined(CONFIG_SHARED_IRQ_1_LEVEL_HIGH)
-	#define SHARED_IRQ_1_FLAGS (IOAPIC_LEVEL | IOAPIC_HIGH)
-#elif defined(CONFIG_SHARED_IRQ_1_LEVEL_LOW)
-	#define SHARED_IRQ_1_FLAGS (IOAPIC_LEVEL | IOAPIC_LOW)
-#endif
-#else
-	#define SHARED_IRQ_1_FLAGS 0
-#endif /* CONFIG_IOAPIC */
-
 void shared_irq_config_1_irq(void)
 {
-	IRQ_CONNECT(CONFIG_SHARED_IRQ_1_IRQ, CONFIG_SHARED_IRQ_1_PRI,
+	IRQ_CONNECT(DT_SHARED_IRQ_SHAREDIRQ1_IRQ_0,
+		    DT_SHARED_IRQ_SHAREDIRQ1_IRQ_0_PRIORITY,
 		    shared_irq_isr, DEVICE_GET(shared_irq_1),
-		    SHARED_IRQ_1_FLAGS);
+		    DT_SHARED_IRQ_SHAREDIRQ1_IRQ_0_SENSE);
 }
 
 #endif /* CONFIG_SHARED_IRQ_1 */
