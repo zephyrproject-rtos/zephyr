@@ -198,7 +198,7 @@ void z_clock_announce(s32_t ticks)
 	curr_tick += announce_remaining;
 	announce_remaining = 0;
 
-	z_clock_set_timeout(_get_next_timeout_expiry(), false);
+	z_clock_set_timeout(next_timeout(), false);
 
 	k_spin_unlock(&timeout_lock, key);
 }
