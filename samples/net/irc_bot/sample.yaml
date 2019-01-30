@@ -1,7 +1,0 @@
-sample:
-  name: IRC Bot
-tests:
-  test:
-    harness: net
-    depends_on: netif gpio
-    tags: net irc

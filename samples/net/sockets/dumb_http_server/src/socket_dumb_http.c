@@ -20,6 +20,8 @@
 #include <net/socket.h>
 #include <kernel.h>
 
+#include <net/buf.h>
+
 #endif
 
 #define PORT 8080
