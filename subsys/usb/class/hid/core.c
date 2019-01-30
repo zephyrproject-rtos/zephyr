@@ -483,7 +483,7 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 	LOG_DBG("Class request: bRequest 0x%x bmRequestType 0x%x len %d",
 		setup->bRequest, setup->bmRequestType, *len);
 
-	dev_data = get_dev_data_by_iface(setup->wIndex);
+	dev_data = get_dev_data_by_iface(sys_le16_to_cpu(setup->wIndex));
 	if (!dev_data) {
 		LOG_WRN("Device data not found for interface %u",
 			sys_le16_to_cpu(setup->wIndex));
@@ -576,7 +576,8 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 		const struct usb_cfg_data *cfg;
 		const struct usb_hid_config *hid_desc;
 
-		dev_data = get_dev_data_by_iface(setup->wIndex);
+		dev_data =
+			get_dev_data_by_iface(sys_le16_to_cpu(setup->wIndex));
 		if (!dev_data) {
 			LOG_WRN("Device data not found for interface %u",
 				sys_le16_to_cpu(setup->wIndex));
