@@ -53,7 +53,7 @@ if [ "$win_build" -eq 1 ]; then
 fi
 unset win_build
 if ! echo "${PATH}" | grep -q "${scripts_path}"; then
-    export PATH=${scripts_path}:${PATH}
+    export PATH=${PATH}:${scripts_path}
 fi
 unset scripts_path
 
