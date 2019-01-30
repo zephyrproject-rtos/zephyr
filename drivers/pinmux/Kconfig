@@ -14,8 +14,6 @@ menuconfig PINMUX
 
 if PINMUX
 
-source "drivers/pinmux/dev/Kconfig"
-
 config PINMUX_NAME
 	string "Pinmux driver name"
 	depends on PINMUX
