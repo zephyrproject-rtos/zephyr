@@ -253,8 +253,6 @@ static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 	}
 #endif
 
-
-
 	return 0;
 }
 
@@ -447,7 +445,17 @@ void arc_core_mpu_configure_user_context(struct k_thread *thread)
 	u32_t size = thread->stack_info.size;
 
 	/* for kernel threads, no need to configure user context */
-	if (!thread->arch.priv_stack_start) {
+	if (!(thread->base.user_options & K_USER)) {
+#if defined(CONFIG_APP_SHARED_MEM) && CONFIG_ARC_MPU_VER == 3
+/*
+ * APP_SHARED_MEM is handled here, all privileged threads have the right
+ * to access it. APPLICATION_MEMORY will be handled as a static memory region
+ */
+		base = (u32_t)&_app_smem_start;
+		size = (u32_t)&_app_smem_size;
+		_region_init(_get_region_index_by_type(THREAD_APP_DATA_REGION)
+		, base, size, _get_region_attr_by_type(THREAD_APP_DATA_REGION));
+#endif
 		return;
 	}
 
@@ -472,7 +480,16 @@ void arc_core_mpu_configure_user_context(struct k_thread *thread)
 	/*
 	 * ARC MPV v3 doesn't support MPU region overlap.
 	 * Application memory should be a static memory, defined in mpu_config
+	 *
+	 * here, need to clear THREAD_APP_DATA_REGION for user thread as it will
+	 * be set by kernel thread to to access app_shared mem. For user thread
+	 * the handling of app_shared mem is done by
+	 * THREAD_DOMAIN_PARTITION_REGION
 	 */
+#if defined(CONFIG_APP_SHARED_MEM)
+	_region_init(_get_region_index_by_type(THREAD_APP_DATA_REGION)
+				, 0, 0, 0);
+#endif
 #endif
 #endif
 }
@@ -480,14 +497,19 @@ void arc_core_mpu_configure_user_context(struct k_thread *thread)
 /**
  * @brief configure MPU regions for the memory partitions of the memory domain
  *
- * @param   mem_domain    memory domain that thread belongs to
+ * @param   thread    the thread which has memory domain
  */
-void arc_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
+void arc_core_mpu_configure_mem_domain(struct k_thread *thread)
 {
 	s32_t region_index =
 		_get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
 	u32_t num_partitions;
 	struct k_mem_partition *pparts;
+	struct k_mem_domain *mem_domain = NULL;
+
+	if (thread) {
+		mem_domain = thread->mem_domain_info.mem_domain;
+	}
 
 	if (mem_domain) {
 		LOG_DBG("configure domain: %p", mem_domain);
@@ -515,8 +537,23 @@ void arc_core_mpu_configure_mem_domain(struct k_mem_domain *mem_domain)
 		if (num_partitions && pparts->size) {
 			LOG_DBG("set region 0x%x 0x%x 0x%x",
 				    region_index, pparts->start, pparts->size);
+#if CONFIG_ARC_MPU_VER == 2
 			_region_init(region_index, pparts->start, pparts->size,
 					pparts->attr);
+#elif CONFIG_ARC_MPU_VER == 3
+			if ((pparts->attr & (AUX_MPU_RDP_UW | AUX_MPU_RDP_UR))
+			 && !(thread->base.user_options & K_USER)) {
+		/*
+		 * privileged thread has access to full application
+		 * shared memory range through THREAD_APP_DATA_REGION.
+		 * no need to set again here.
+		 */
+				_region_init(region_index, 0, 0, 0);
+			} else {
+				_region_init(region_index, pparts->start,
+				pparts->size, pparts->attr);
+			}
+#endif
 			num_partitions--;
 		} else {
 			LOG_DBG("disable region 0x%x", region_index);
