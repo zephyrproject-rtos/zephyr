@@ -210,7 +210,7 @@ struct cdc_acm_dev_data_t {
 
 static sys_slist_t cdc_acm_data_devlist;
 
-static struct cdc_acm_dev_data_t *get_dev_data_by_iface(u16_t iface_num)
+static struct cdc_acm_dev_data_t *get_dev_data_by_iface(u8_t iface_num)
 {
 	struct cdc_acm_dev_data_t *dev_data;
 
