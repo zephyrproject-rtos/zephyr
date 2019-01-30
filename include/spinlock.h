@@ -8,6 +8,11 @@
 
 #include <atomic.h>
 
+#if defined(CONFIG_ASSERT) && (CONFIG_MP_NUM_CPUS < 4)
+#include <kernel_structs.h>
+#define SPIN_VALIDATE
+#endif
+
 struct k_spinlock_key {
 	int key;
 };
@@ -17,11 +22,16 @@ typedef struct k_spinlock_key k_spinlock_key_t;
 struct k_spinlock {
 #ifdef CONFIG_SMP
 	atomic_t locked;
-#ifdef CONFIG_DEBUG
-	int saved_key;
 #endif
+
+#ifdef SPIN_VALIDATE
+	/* Stores the thread that holds the lock with the locking CPU
+	 * ID in the bottom two bits.
+	 */
+	size_t thread_cpu;
 #endif
 };
+
 
 static inline k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 {
@@ -33,10 +43,15 @@ static inline k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 	 */
 	k.key = _arch_irq_lock();
 
+#ifdef SPIN_VALIDATE
+	if (l->thread_cpu) {
+		__ASSERT((l->thread_cpu & 3) != _current_cpu->id,
+			 "Recursive spinlock");
+	}
+	l->thread_cpu = _current_cpu->id | (u32_t)_current;
+#endif
+
 #ifdef CONFIG_SMP
-# ifdef CONFIG_DEBUG
-	l->saved_key = k.key;
-# endif
 	while (!atomic_cas(&l->locked, 0, 1)) {
 	}
 #endif
@@ -46,14 +61,14 @@ static inline k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 
 static inline void k_spin_unlock(struct k_spinlock *l, k_spinlock_key_t key)
 {
+#ifdef SPIN_VALIDATE
+	__ASSERT(l->thread_cpu == (_current_cpu->id | (u32_t)_current),
+		 "Not my spinlock!");
+	l->thread_cpu = 0;
+#endif
+
+
 #ifdef CONFIG_SMP
-# ifdef CONFIG_DEBUG
-	/* This doesn't attempt to catch all mismatches, just spots
-	 * where the arch state register shows a difference.  Should
-	 * add a nesting count or something...
-	 */
-	__ASSERT(l->saved_key == key.key, "Mismatched spin lock/unlock");
-# endif
 	/* Strictly we don't need atomic_clear() here (which is an
 	 * exchange operation that returns the old value).  We are always
 	 * setting a zero and (because we hold the lock) know the existing
