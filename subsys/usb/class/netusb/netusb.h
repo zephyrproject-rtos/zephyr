@@ -8,7 +8,7 @@
  * USB definitions
  */
 
-#define NETUSB_MTU 1500
+#define NETUSB_MTU 1522
 
 #define CDC_ECM_INT_EP_ADDR		0x83
 #define CDC_ECM_IN_EP_ADDR		0x82
