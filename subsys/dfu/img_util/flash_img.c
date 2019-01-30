@@ -42,7 +42,7 @@ static bool flash_verify(struct device *dev, off_t offset,
 		if (memcmp(data, &temp, size)) {
 			LOG_ERR("offset=0x%08"PRIx32" VERIFY FAIL. "
 				"expected: 0x%08x, actual: 0x%08x",
-				(u32_t)offset, temp, *(__packed u32_t*)data);
+				(u32_t)offset, temp, UNALIGNED_GET(data));
 			break;
 		}
 		len -= size;
