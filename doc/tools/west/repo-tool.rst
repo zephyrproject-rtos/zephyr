@@ -1,18 +1,19 @@
 .. _west-multi-repo:
 
-West and Multi-repository
-#########################
+Multiple Repository Management
+##############################
 
 Introduction
 ************
 
 West includes a set of commands for working with projects composed of multiple
-Git repositories (a *multi-repo*), similar to `Git Submodules
+Git repositories installed under a common parent directory (a *west
+installation*), similar to how `Git Submodules
 <https://git-scm.com/book/en/v2/Git-Tools-Submodules>`_ and Google's `repo
-<https://gerrit.googlesource.com/git-repo/>`_ tool.
+<https://gerrit.googlesource.com/git-repo/>`_ work.
 
-The rest of this page introduces multi-repo concepts and gives an overview of
-the multi-repo commands, along with an example workflow. See
+The rest of this page introduces these multi-repo concepts and gives an
+overview of the associated west commands, along with an example workflow. See
 `Zephyr issue #6770`_ for additional background and discussion.
 
 .. note::
@@ -21,6 +22,37 @@ the multi-repo commands, along with an example workflow. See
    multi-repo work, not replace it. For tasks that aren't multi-repo-related,
    use plain Git commands.
    This page explains what the west multi-repo commands do behind the scenes.
+
+A west installation is the result of running the ``west init`` command to
+either create a new installation or convert a standalone zephyr repository into
+a multi-repo installation. When using upstream Zephyr, it looks like this:
+
+.. code-block:: console
+
+   └── zephyrproject/
+       ├── .west/
+       │   ├── config
+       │   └── west/
+       ├── zephyr/
+       │   └── west.yml
+       ├── a-project
+       └── ...
+
+Above, :file:`zephyrproject` is the name of the west installation's common
+parent directory, and :file:`a-project` is another project managed by west in
+the installation. The file :file:`.west/config` is the installation's west
+configuration file. The directory :file:`.west/west` is a clone of the west
+repository itself; more details on why that is needed are given below.
+
+Every west installation contains a *manifest repository*, which is a Git
+repository containing a file named :file:`west.yml`. This file, along with
+what's in :file:`.west`, controls the installation's behavior. In the above
+example, zephyr is the manifest repository. However, as you'll see below, any
+repository in an installation can be the manifest repository; it doesn't have
+to be zephyr. However, every installation has exactly one manifest repository;
+its location is specified in :file:`.west/config`. Alongside the manifest
+repository are *projects*, which are Git repositories specified by
+:file:`west.yml`.
 
 Requirements
 ************
@@ -101,6 +133,91 @@ Finally, please see :ref:`west-history` for the motivations behind using a
 single tool for both multi-repository management as well as building, debugging
 and flashing.
 
+
+.. _west-struct:
+
+Structure
+*********
+
+West structure
+==============
+
+West is currently downloaded and installed on a system in the following stages:
+
+* Bootstrapper: Installed using ``pip``, implements ``west init``
+* Installation: Installed using ``west init``, implements built-in multi-repo
+  commands
+* Extension commands: Installed using ``west update``, parses the manifest
+  in the west installation for additional commands
+
+.. note::
+
+   The separation between the "bootstrapper" and "installation" pieces is
+   inspired by the Google Repo tool, but it's a temporary structure for
+   convenience. In the future, the two will be merged. This will lessen the
+   complexity of the design and make it easier to write and debug extension
+   commands.
+
+Repository structure
+====================
+
+Beyond west itself, the actual code repositories that west works with
+are the following:
+
+* Manifest repository: Cloned by ``west init``, and managed afterward with Git
+  by the user. Contains the list of projects in the manifest file
+  :file:`west.yml`. In the case of upstream Zephyr, the zephyr repository is
+  the manifest repository.
+* Projects: Cloned and managed by ``west update``. Listed in the manifest file.
+
+Bootstrapper
+============
+
+The bootstrapper module is distributed using `PyPI`_ and installed using
+:file:`pip`. A launcher named ``west`` is placed by :file:`pip` in the user's
+``PATH``. This the only entry point to west.  It implements a single command:
+``west init``. This command needs to be run first to use the rest of
+functionality included in ``west``, by creating a west installation. The
+command ``west init`` does the following:
+
+* Clone west itself in a :file:`.west/west` folder in the installation
+* Clone the manifest repository in the folder specified by the manifest file's
+  (:file:`west.yml`) ``self.path`` section. Additional information
+  on the manifest can be found in the :ref:`west-multi-repo` section)
+
+Once ``west init`` has been run, the bootstrapper will delegate the handling of
+any west commands other than ``init`` to the cloned west installation.
+
+This means that there is a single bootstrapper instance installed at any time
+(unless you use virtual environments), which can then be used to initialize as
+many installations as needed.
+
+.. _west-struct-installation:
+
+Installation
+============
+
+A west installation, as describe above, contains a clone of the west repository
+in :file:`.west/west`. The clone of west in the installation is where the
+built-in multi-repo command implementations are currently provided.
+
+When running a west command, the bootstrapper delegates handling for all
+commands except ``init`` to the :file:`.west/west` repository in the current
+installation.
+
+Extension Commands
+==================
+
+The west manifest file (more about which below) allows any repository in the
+installation to provide additional west commands (the flash and debug commands
+use this mechanism; they are defined in the west repository). Every repository
+which includes extension commands must provide a YAML file which configures the
+names of the commands, the Python files that implement them, and other
+metadata.
+
+The locations of these YAML files throughout the installation are specified in
+the manifest, which you'll read about next.
+
 .. _west-mr-model:
 
 Model
@@ -113,8 +230,7 @@ A **manifest** is a `YAML <http://yaml.org/>`_ file that, at a minimum, gives th
 URL and revision for each project repository in the multi-repo (each **project**).
 The manifest is stored in the **manifest repository** and is named :file:`west.yml`.
 
-The format of the west manifest is described by a `pykwalify
-<https://pypi.org/project/pykwalify/>`_ schema, found `here
+The format of the west manifest is described by a pykwalify schema, `manifest-schema.yml
 <https://github.com/zephyrproject-rtos/west/blob/master/src/west/manifest-schema.yml>`_.
 
 A west-based Zephyr installation has a special manifest repository. This
@@ -326,6 +442,9 @@ These commands perform miscellaneous functions.
   Normally, the west repository is updated automatically whenever a command
   that fetches upstream data is run (this behavior can be
   suppressed for the duration of a single command by passing ``--no-update``).
+
+.. _PyPI:
+   https://pypi.org/project/west/
 
 .. _Zephyr issue #6770:
    https://github.com/zephyrproject-rtos/zephyr/issues/6770
