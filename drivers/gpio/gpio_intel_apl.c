@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Intel Corporation
+ * Copyright (c) 2018-2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,21 +12,26 @@
  * both GPIOs and Pinmuxing function. This driver provides
  * the GPIO function.
  *
- * Currently, this driver does not handle pin triggering.
- *
- * Note that since the GPIO controller controls more then 32 pins,
- * the pin_mux of the API does not work anymore.
+ * The GPIO controller has 245 pins divided into four sets.
+ * Each set has its own MMIO address space. Due to GPIO
+ * callback only allowing 32 pins (as a 32-bit mask) at once,
+ * each set is further sub-divided into multiple devices.
+ * Because of this, shared IRQ must be used.
  */
 
 #include <errno.h>
 #include <gpio.h>
+#include <shared_irq.h>
 #include <soc.h>
 #include <sys_io.h>
+#include <misc/__assert.h>
 #include <misc/slist.h>
 
 #include "gpio_utils.h"
 
-#define NUM_ISLANDS 4
+#ifndef CONFIG_SHARED_IRQ
+#error "Need CONFIG_SHARED_IRQ!"
+#endif
 
 #define REG_PAD_BASE_ADDR		0x000C
 
@@ -85,40 +90,30 @@
 #define PAD_CFG1_IOSSTATE_MASK		(0x0F << PAD_CFG1_IOSSTATE_POS)
 #define PAD_CFG1_IOSSTATE_IGNORE	(0x0F << PAD_CFG1_IOSSTATE_POS)
 
-struct apl_gpio_island {
-	u32_t reg_base;
-	u32_t num_pins;
-};
-
 struct gpio_intel_apl_config {
-	struct apl_gpio_island islands[NUM_ISLANDS];
+	u32_t	reg_base;
+
+	u8_t	pin_offset;
+	u8_t	num_pins;
 };
 
 struct gpio_intel_apl_data {
-	/* Pad base address for each island */
-	u32_t pad_base[NUM_ISLANDS];
+	/* Pad base address */
+	u32_t		pad_base;
 
-	sys_slist_t cb;
+	sys_slist_t	cb;
 };
-
-static inline void extract_island_and_pin(u32_t pin, u32_t *island,
-					  u32_t *raw_pin)
-{
-	*island = pin >> APL_GPIO_ISLAND_POS;
-	*raw_pin = pin & APL_GPIO_PIN_MASK;
-}
 
 #ifdef CONFIG_GPIO_INTEL_APL_CHECK_PERMS
 /**
  * @brief Check if host has permission to alter this GPIO pin.
  *
  * @param "struct device *dev" Device struct
- * @param "u32_t island" Island index
  * @param "u32_t raw_pin" Raw GPIO pin
  *
  * @return true if host owns the GPIO pin, false otherwise
  */
-static bool check_perm(struct device *dev, u32_t island, u32_t raw_pin)
+static bool check_perm(struct device *dev, u32_t raw_pin)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
@@ -128,7 +123,7 @@ static bool check_perm(struct device *dev, u32_t island, u32_t raw_pin)
 
 	/* read the Pad Ownership register related to the pin */
 	offset = REG_PAD_OWNER_BASE + ((raw_pin >> 3) << 2);
-	val = sys_read32(cfg->islands[island].reg_base + offset);
+	val = sys_read32(cfg->reg_base + offset);
 
 	/* get the bits about ownership */
 	offset = raw_pin % 8;
@@ -139,8 +134,8 @@ static bool check_perm(struct device *dev, u32_t island, u32_t raw_pin)
 	}
 
 	/* Also need to make sure the function of pad is GPIO */
-	offset = data->pad_base[island] + (raw_pin << 3);
-	val = sys_read32(cfg->islands[island].reg_base + offset);
+	offset = data->pad_base + (raw_pin << 3);
+	val = sys_read32(cfg->reg_base + offset);
 	if (val & PAD_CFG0_PMODE_MASK) {
 		/* mode is not zero => not functioning as GPIO */
 		return false;
@@ -152,24 +147,31 @@ static bool check_perm(struct device *dev, u32_t island, u32_t raw_pin)
 #define check_perm(...) (1)
 #endif
 
-static void gpio_intel_apl_isr(void *arg)
+static int gpio_intel_apl_isr(struct device *dev)
 {
-	struct device *dev = arg;
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
-	struct gpio_callback *cb;
-	u32_t island, raw_pin, reg;
+	struct gpio_callback *cb, *tmp;
+	u32_t reg, int_sts, cur_mask, acc_mask;
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&data->cb, cb, node) {
-		extract_island_and_pin(cb->pin, &island, &raw_pin);
+	reg = cfg->reg_base + REG_GPI_INT_STS_BASE
+		+ ((cfg->pin_offset >> 5) << 2);
+	int_sts = sys_read32(reg);
+	acc_mask = 0;
 
-		reg = cfg->islands[island].reg_base + REG_GPI_INT_STS_BASE;
-
-		if (sys_bitfield_test_and_set_bit(reg, raw_pin)) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&data->cb, cb, tmp, node) {
+		cur_mask = int_sts & cb->pin_mask;
+		acc_mask |= cur_mask;
+		if (cur_mask) {
 			__ASSERT(cb->handler, "No callback handler!");
-			cb->handler(dev, cb, cb->pin);
+			cb->handler(dev, cb, cur_mask);
 		}
 	}
+
+	/* clear handled interrupt bits */
+	sys_write32(acc_mask, reg);
+
+	return 0;
 }
 
 static int gpio_intel_apl_config(struct device *dev, int access_op,
@@ -177,13 +179,20 @@ static int gpio_intel_apl_config(struct device *dev, int access_op,
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
-	u32_t island, raw_pin, reg, cfg0, cfg1, val;
+	u32_t raw_pin, reg, cfg0, cfg1, val;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
 
-	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
+	/*
+	 * Pin must be input for interrupt to work.
+	 * And there is no double-edge trigger according
+	 * to datasheet.
+	 */
+	if ((flags & GPIO_INT)
+		&& ((flags & GPIO_DIR_OUT)
+			|| (flags & GPIO_INT_DOUBLE_EDGE))) {
 		return -EINVAL;
 	}
 
@@ -192,21 +201,24 @@ static int gpio_intel_apl_config(struct device *dev, int access_op,
 		return -EINVAL;
 	}
 
-	extract_island_and_pin(pin, &island, &raw_pin);
+	if (pin > cfg->num_pins) {
+		return -EINVAL;
+	}
 
-	if (!check_perm(dev, island, raw_pin)) {
+	raw_pin = cfg->pin_offset + pin;
+
+	if (!check_perm(dev, raw_pin)) {
 		return -EPERM;
 	}
 
 	/* Set GPIO to trigger legacy interrupt */
 	if (flags & GPIO_INT) {
-		reg = cfg->islands[island].reg_base + REG_PAD_HOST_SW_OWNER;
+		reg = cfg->reg_base + REG_PAD_HOST_SW_OWNER;
 		sys_bitfield_set_bit(reg, raw_pin);
 	}
 
 	/* read in pad configuration register */
-	reg = cfg->islands[island].reg_base
-		+ data->pad_base[island] + (raw_pin * 8);
+	reg = cfg->reg_base + data->pad_base + (raw_pin * 8);
 	cfg0 = sys_read32(reg);
 	cfg1 = sys_read32(reg + 4);
 
@@ -273,20 +285,23 @@ static int gpio_intel_apl_write(struct device *dev, int access_op,
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
-	u32_t island, raw_pin, reg, val;
+	u32_t raw_pin, reg, val;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
 
-	extract_island_and_pin(pin, &island, &raw_pin);
+	if (pin > cfg->num_pins) {
+		return -EINVAL;
+	}
 
-	if (!check_perm(dev, island, raw_pin)) {
+	raw_pin = cfg->pin_offset + pin;
+
+	if (!check_perm(dev, raw_pin)) {
 		return -EPERM;
 	}
 
-	reg = cfg->islands[island].reg_base
-		+ data->pad_base[island] + (raw_pin * 8);
+	reg = cfg->reg_base + data->pad_base + (raw_pin * 8);
 	val = sys_read32(reg);
 
 	if (value) {
@@ -305,20 +320,23 @@ static int gpio_intel_apl_read(struct device *dev, int access_op,
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
-	u32_t island, raw_pin, reg, val;
+	u32_t raw_pin, reg, val;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
 
-	extract_island_and_pin(pin, &island, &raw_pin);
+	if (pin > cfg->num_pins) {
+		return -EINVAL;
+	}
 
-	if (!check_perm(dev, island, raw_pin)) {
+	raw_pin = cfg->pin_offset + pin;
+
+	if (!check_perm(dev, raw_pin)) {
 		return -EPERM;
 	}
 
-	reg = cfg->islands[island].reg_base
-		+ data->pad_base[island] + (raw_pin * 8);
+	reg = cfg->reg_base + data->pad_base + (raw_pin * 8);
 	val = sys_read32(reg);
 
 	if (!(val & PAD_CFG0_TXDIS)) {
@@ -345,24 +363,28 @@ static int gpio_intel_apl_enable_callback(struct device *dev,
 					  int access_op, u32_t pin)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
-	u32_t island, raw_pin, reg;
+	u32_t raw_pin, reg;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
 
-	extract_island_and_pin(pin, &island, &raw_pin);
+	if (pin > cfg->num_pins) {
+		return -EINVAL;
+	}
 
-	if (!check_perm(dev, island, raw_pin)) {
+	raw_pin = cfg->pin_offset + pin;
+
+	if (!check_perm(dev, raw_pin)) {
 		return -EPERM;
 	}
 
 	/* clear (by setting) interrupt status bit */
-	reg = cfg->islands[island].reg_base + REG_GPI_INT_STS_BASE;
+	reg = cfg->reg_base + REG_GPI_INT_STS_BASE;
 	sys_bitfield_set_bit(reg, raw_pin);
 
 	/* enable interrupt bit */
-	reg = cfg->islands[island].reg_base + REG_GPI_INT_EN_BASE;
+	reg = cfg->reg_base + REG_GPI_INT_EN_BASE;
 	sys_bitfield_set_bit(reg, raw_pin);
 
 	return 0;
@@ -372,20 +394,24 @@ static int gpio_intel_apl_disable_callback(struct device *dev,
 					   int access_op, u32_t pin)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
-	u32_t island, raw_pin, reg;
+	u32_t raw_pin, reg;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
 	}
 
-	extract_island_and_pin(pin, &island, &raw_pin);
+	if (pin > cfg->num_pins) {
+		return -EINVAL;
+	}
 
-	if (!check_perm(dev, island, raw_pin)) {
+	raw_pin = cfg->pin_offset + pin;
+
+	if (!check_perm(dev, raw_pin)) {
 		return -EPERM;
 	}
 
 	/* disable interrupt bit */
-	reg = cfg->islands[island].reg_base + REG_GPI_INT_EN_BASE;
+	reg = cfg->reg_base + REG_GPI_INT_EN_BASE;
 	sys_bitfield_clear_bit(reg, raw_pin);
 
 	return 0;
@@ -406,62 +432,60 @@ int gpio_intel_apl_init(struct device *dev)
 {
 	const struct gpio_intel_apl_config *cfg = dev->config->config_info;
 	struct gpio_intel_apl_data *data = dev->driver_data;
-	int i;
 
 	gpio_intel_apl_irq_config(dev);
 
-	for (i = 0; i < NUM_ISLANDS; i++) {
-		data->pad_base[i] = sys_read32(cfg->islands[i].reg_base
-					       + REG_PAD_BASE_ADDR);
+	data->pad_base = sys_read32(cfg->reg_base + REG_PAD_BASE_ADDR);
 
-		/* Set to route interrupt through IRQ 14 */
-		sys_bitfield_clear_bit(data->pad_base[i] + REG_MISCCFG,
-				       MISCCFG_IRQ_ROUTE_POS);
-	}
+	/* Set to route interrupt through IRQ 14 */
+	sys_bitfield_clear_bit(data->pad_base + REG_MISCCFG,
+			       MISCCFG_IRQ_ROUTE_POS);
 
 	dev->driver_api = &gpio_intel_apl_api;
 
 	return 0;
 }
 
-static const struct gpio_intel_apl_config gpio_intel_apl_cfg = {
-	.islands = {
-		{
-			/* North island */
-			.reg_base = DT_APL_GPIO_BASE_ADDRESS_0,
-			.num_pins = 78,
-		},
-		{
-			/* Northwest island */
-			.reg_base = DT_APL_GPIO_BASE_ADDRESS_1,
-			.num_pins = 77,
-		},
-		{
-			/* West island */
-			.reg_base = DT_APL_GPIO_BASE_ADDRESS_2,
-			.num_pins = 47,
-		},
-		{
-			/* Southwest island */
-			.reg_base = DT_APL_GPIO_BASE_ADDRESS_3,
-			.num_pins = 43,
-		},
-	},
-};
+#define GPIO_INTEL_APL_DEV_CFG_DATA(dir_l, dir_u, pos, offset, pins)	\
+static const struct gpio_intel_apl_config				\
+	gpio_intel_apl_cfg_##dir_l##_##pos = {				\
+	.reg_base = DT_APL_GPIO_BASE_ADDRESS_##dir_u,			\
+	.pin_offset = offset,						\
+	.num_pins = pins,						\
+};									\
+									\
+static struct gpio_intel_apl_data gpio_intel_apl_data_##dir_l##_##pos;	\
+									\
+DEVICE_AND_API_INIT(gpio_intel_apl_##dir_l##_##pos,			\
+		    DT_APL_GPIO_LABEL_##dir_u##_##pos,			\
+		    gpio_intel_apl_init,				\
+		    &gpio_intel_apl_data_##dir_l##_##pos,		\
+		    &gpio_intel_apl_cfg_##dir_l##_##pos,		\
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	\
+		    &gpio_intel_apl_api)
 
-static struct gpio_intel_apl_data gpio_intel_apl_data;
+GPIO_INTEL_APL_DEV_CFG_DATA(n, N, 0, 0, 32);
+GPIO_INTEL_APL_DEV_CFG_DATA(n, N, 1, 32, 32);
+GPIO_INTEL_APL_DEV_CFG_DATA(n, N, 2, 32, 14);
 
-DEVICE_AND_API_INIT(gpio_intel_apl, DT_APL_GPIO_LABEL,
-		    gpio_intel_apl_init,
-		    &gpio_intel_apl_data, &gpio_intel_apl_cfg,
-		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &gpio_intel_apl_api);
+GPIO_INTEL_APL_DEV_CFG_DATA(nw, NW, 0, 0, 32);
+GPIO_INTEL_APL_DEV_CFG_DATA(nw, NW, 1, 32, 32);
+GPIO_INTEL_APL_DEV_CFG_DATA(nw, NW, 2, 32, 13);
+
+GPIO_INTEL_APL_DEV_CFG_DATA(w, W, 0, 0, 32);
+GPIO_INTEL_APL_DEV_CFG_DATA(w, W, 1, 32, 15);
+
+GPIO_INTEL_APL_DEV_CFG_DATA(sw, SW, 0, 0, 32);
+GPIO_INTEL_APL_DEV_CFG_DATA(sw, SW, 1, 32, 11);
 
 static void gpio_intel_apl_irq_config(struct device *dev)
 {
-	IRQ_CONNECT(DT_APL_GPIO_IRQ, DT_APL_GPIO_IRQ_PRIORITY,
-		    gpio_intel_apl_isr, DEVICE_GET(gpio_intel_apl),
-		    DT_APL_GPIO_IRQ_SENSE);
+	struct device *irq_dev;
 
-	irq_enable(DT_APL_GPIO_IRQ);
+	irq_dev = device_get_binding(DT_SHARED_IRQ_SHAREDIRQ0_LABEL);
+	__ASSERT(irq_dev != NULL,
+		 "Failed to get shared IRQ device binding");
+
+	shared_irq_isr_register(irq_dev, gpio_intel_apl_isr, dev);
+	shared_irq_enable(irq_dev, dev);
 }
