@@ -579,7 +579,7 @@ void main(void)
 	u32_t baudrate, dtr = 0U;
 	int ret;
 
-	dev = device_get_binding(CONFIG_CDC_ACM_PORT_NAME);
+	dev = device_get_binding(CONFIG_CDC_ACM_PORT_NAME_0);
 	if (!dev) {
 		LOG_ERR("CDC ACM device not found");
 		return;
