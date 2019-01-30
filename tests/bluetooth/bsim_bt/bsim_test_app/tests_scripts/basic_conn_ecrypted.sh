@@ -4,7 +4,7 @@
 
 # Basic connection test: a central connects to a peripheral and expects a
 # notification
-SIMULATION_ID="Basic_con_encr"
+SIMULATION_ID="basic_conn_encr"
 VERBOSITY_LEVEL=2
 PROCESS_IDS=""; EXIT_CODE=0
 
