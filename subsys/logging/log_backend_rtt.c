@@ -138,17 +138,6 @@ static int line_out_drop_mode(void)
 	return 0;
 }
 
-static void on_write(void)
-{
-	host_present = true;
-
-	if (panic_mode) {
-		while (SEGGER_RTT_HasDataUp(CONFIG_LOG_BACKEND_RTT_BUFFER)) {
-			/* Pend until data is fetched by the host. */
-		}
-	}
-}
-
 static void on_failed_write(int retry_cnt)
 {
 	if (retry_cnt == 0) {
@@ -158,6 +147,23 @@ static void on_failed_write(int retry_cnt)
 	} else {
 		k_sleep(RETRY_DELAY_MS);
 	}
+}
+
+static void on_write(int retry_cnt)
+{
+	host_present = true;
+	if (panic_mode) {
+		/* In panic mode block on each write until host reads it. This
+		 * way it is ensured that if system resets all messages are read
+		 * by the host. While pending on data being read by the host we
+		 * must also detect situation where host is disconnected.
+		 */
+		while (SEGGER_RTT_HasDataUp(CONFIG_LOG_BACKEND_RTT_BUFFER) &&
+			host_present) {
+			on_failed_write(retry_cnt--);
+		}
+	}
+
 }
 
 static int data_out_block_mode(u8_t *data, size_t length, void *ctx)
@@ -178,7 +184,7 @@ static int data_out_block_mode(u8_t *data, size_t length, void *ctx)
 		}
 
 		if (ret) {
-			on_write();
+			on_write(retry_cnt);
 		} else {
 			retry_cnt--;
 			on_failed_write(retry_cnt);
