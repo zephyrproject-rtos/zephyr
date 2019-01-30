@@ -99,21 +99,26 @@ if(BUILD_VERSION)
   )
 endif()
 
-# We need to set an optimization level.
-# Default to -Os
-# unless CONFIG_NO_OPTIMIZATIONS is set, then it is -O0
-# or unless CONFIG_DEBUG is set, then it is -Og
+# @Intent: Obtain compiler optimizations flags and store in variables
+# @details:
+#   Kconfig.zephyr "Optimization level" is a kconfig choice, ensuring
+#   only *one* of CONFIG_{NO,DEBUG,SPEED,SIZE}_OPTIMIZATIONS is set.
+#   Refer to Kconfig.zephyr for selection logic and description of these choices.
+#   toolchain_cc_optimize_*() macros must provide the mapping from these kconfigs
+#   to compiler flags. Each macro will store the flags in a CMake variable, whose
+#   name is passed as argument (somewhat like by reference).
 #
-# also, some toolchain's break with -Os, and some toolchain's break
-# with -Og so allow them to override what flag to use
+#   If the user wants to tweak the optimizations, there are two ways:
+#    1) Using EXTRA_CFLAGS which is applied regardless of kconfig choice, or
+#    2) Rely on override support being implemented by your toolchain_cc_optimize_*()
 #
-# Finally, the user can use Kconfig to add compiler options that will
-# come after these options and override them
-set_ifndef(OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG "-O0")
-set_ifndef(OPTIMIZE_FOR_DEBUG_FLAG            "-Og")
-set_ifndef(OPTIMIZE_FOR_SIZE_FLAG             "-Os")
-set_ifndef(OPTIMIZE_FOR_SPEED_FLAG            "-O2")
+toolchain_cc_optimize_for_no_optimizations_flag(OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG)
+toolchain_cc_optimize_for_debug_flag(OPTIMIZE_FOR_DEBUG_FLAG)
+toolchain_cc_optimize_for_speed_flag(OPTIMIZE_FOR_SPEED_FLAG)
+toolchain_cc_optimize_for_size_flag(OPTIMIZE_FOR_SIZE_FLAG)
 
+# From kconfig choice, pick the actual OPTIMIZATION_FLAG to use.
+# Kconfig choice ensures only one of these CONFIG_*_OPTIMIZATIONS is set.
 if(CONFIG_NO_OPTIMIZATIONS)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_NO_OPTIMIZATIONS_FLAG})
 elseif(CONFIG_DEBUG_OPTIMIZATIONS)
@@ -121,10 +126,13 @@ elseif(CONFIG_DEBUG_OPTIMIZATIONS)
 elseif(CONFIG_SPEED_OPTIMIZATIONS)
   set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SPEED_FLAG})
 elseif(CONFIG_SIZE_OPTIMIZATIONS)
-  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default
+  set(OPTIMIZATION_FLAG ${OPTIMIZE_FOR_SIZE_FLAG}) # Default in kconfig
 else()
   assert(0 "Unreachable code. Expected optimization level to have been chosen. See Kconfig.zephyr")
 endif()
+
+# Apply the final optimization flag(s)
+zephyr_compile_options(${OPTIMIZATION_FLAG})
 
 # Dialects of C++, corresponding to the multiple published ISO standards.
 # Which standard it implements can be selected using the -std= command-line option.
@@ -149,7 +157,6 @@ else()
 endif()
 
 zephyr_compile_options(
-  ${OPTIMIZATION_FLAG} # Usually -Os
   -g # TODO: build configuration enough?
   -Wall
   -Wformat

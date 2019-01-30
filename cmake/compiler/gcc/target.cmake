@@ -141,3 +141,4 @@ string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 # Load toolchain_cc-family macros
 include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_security_fortify.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_security_canaries.cmake)
+include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_optimizations.cmake)
