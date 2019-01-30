@@ -30,20 +30,22 @@ function compile(){
   local EXE_NAME=${BSIM_OUT_PATH}/bin/$EXE_NAME
   local MAP_FILE_NAME=${EXE_NAME}.Tsymbols
 
+  local THIS_DIR=${WORK_DIR}/${APP}/${CONF_FILE}
+
   echo "Building $EXE_NAME"
 
   #Set INCR_BUILD when calling to only do an incremental build
-  if [ ! -v INCR_BUILD ] || [ ! -d "${WORK_DIR}/${APP}" ]; then
-      [ -d "${WORK_DIR}/${APP}" ] && rm ${WORK_DIR}/${APP} -rf
-      mkdir -p ${WORK_DIR}/${APP} && cd ${WORK_DIR}/${APP}
+  if [ ! -v INCR_BUILD ] || [ ! -d "${THIS_DIR}" ]; then
+      [ -d "${THIS_DIR}" ] && rm ${THIS_DIR} -rf
+      mkdir -p ${THIS_DIR} && cd ${THIS_DIR}
       cmake -GNinja -DBOARD_ROOT=${BOARD_ROOT} -DBOARD=${BOARD} \
             -DCONF_FILE=${CONF_FILE} ${CMAKE_ARGS} ${APP_ROOT}/${APP} \
-	  &> cmake.out || { cat cmake.out && return 0; }
+            &> cmake.out || { cat cmake.out && return 0; }
   else
-      cd ${WORK_DIR}/${APP}
+      cd ${THIS_DIR}
   fi
   ninja ${NINJA_ARGS} &> ninja.out || { cat ninja.out && return 0; }
-  cp ${WORK_DIR}/${APP}/zephyr/zephyr.exe ${EXE_NAME}
+  cp ${THIS_DIR}/zephyr/zephyr.exe ${EXE_NAME}
 
   nm ${EXE_NAME} | grep -v " [U|w] " | sort | cut -d" " -f1,3 > ${MAP_FILE_NAME}
   sed -i "1i $(wc -l ${MAP_FILE_NAME} | cut -d" " -f1)" ${MAP_FILE_NAME}
