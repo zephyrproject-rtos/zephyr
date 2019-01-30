@@ -1513,7 +1513,7 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 		net_pkt_appdata(pkt), net_pkt_appdatalen(pkt),
 		net_pkt_get_len(pkt));
 
-	context->recv_cb(context, pkt, 0, user_data);
+	context->recv_cb(context, pkt, ip_hdr, proto_hdr, 0, user_data);
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
 	k_sem_give(&context->recv_data_wait);

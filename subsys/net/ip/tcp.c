@@ -202,7 +202,8 @@ static void abort_connection(struct net_tcp *tcp)
 		tcp, CONFIG_NET_TCP_RETRY_COUNT, ctx);
 
 	if (ctx->recv_cb) {
-		ctx->recv_cb(ctx, NULL, -ECONNRESET, tcp->recv_user_data);
+		ctx->recv_cb(ctx, NULL, NULL, NULL, -ECONNRESET,
+			     tcp->recv_user_data);
 	}
 
 	net_context_unref(ctx);
@@ -1784,8 +1785,8 @@ static void handle_ack_timeout(struct k_work *work)
 		net_tcp_change_state(tcp, NET_TCP_CLOSED);
 
 		if (tcp->context->recv_cb) {
-			tcp->context->recv_cb(tcp->context, NULL, 0,
-					      tcp->recv_user_data);
+			tcp->context->recv_cb(tcp->context, NULL, NULL, NULL,
+					      0, tcp->recv_user_data);
 		}
 
 		net_context_unref(tcp->context);
@@ -1803,8 +1804,8 @@ static void handle_timewait_timeout(struct k_work *work)
 		net_tcp_change_state(tcp, NET_TCP_CLOSED);
 
 		if (tcp->context->recv_cb) {
-			tcp->context->recv_cb(tcp->context, NULL, 0,
-					      tcp->recv_user_data);
+			tcp->context->recv_cb(tcp->context, NULL, NULL, NULL,
+					      0, tcp->recv_user_data);
 		}
 
 		net_context_unref(tcp->context);
@@ -2082,7 +2083,7 @@ resend_ack:
 		net_tcp_print_recv_info("RST", pkt, tcp_hdr->src_port);
 
 		if (context->recv_cb) {
-			context->recv_cb(context, NULL, -ECONNRESET,
+			context->recv_cb(context, NULL, NULL, NULL, -ECONNRESET,
 					 context->tcp->recv_user_data);
 		}
 
@@ -2189,7 +2190,7 @@ clean_up:
 
 	if (net_tcp_get_state(context->tcp) == NET_TCP_CLOSED) {
 		if (context->recv_cb) {
-			context->recv_cb(context, NULL, 0,
+			context->recv_cb(context, NULL, NULL, NULL, 0,
 					 context->tcp->recv_user_data);
 		}
 

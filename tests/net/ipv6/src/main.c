@@ -1299,11 +1299,15 @@ static void net_ctx_listen(struct net_context *ctx)
 
 static void recv_cb(struct net_context *context,
 		    struct net_pkt *pkt,
+		    union net_ip_header *ip_hdr,
+		    union net_proto_header *proto_hdr,
 		    int status,
 		    void *user_data)
 {
 	ARG_UNUSED(context);
 	ARG_UNUSED(pkt);
+	ARG_UNUSED(ip_hdr);
+	ARG_UNUSED(proto_hdr);
 	ARG_UNUSED(status);
 	ARG_UNUSED(user_data);
 

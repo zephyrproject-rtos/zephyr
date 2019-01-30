@@ -698,15 +698,13 @@ static void tx_chksum_offload_enabled_test_v4(void)
 
 static void recv_cb_offload_disabled(struct net_context *context,
 				     struct net_pkt *pkt,
+				     union net_ip_header *ip_hdr,
+				     union net_proto_header *proto_hdr,
 				     int status,
 				     void *user_data)
 {
-	struct net_udp_hdr hdr, *udp_hdr;
-
-	udp_hdr = net_udp_get_hdr(pkt, &hdr);
-
-	zassert_not_null(udp_hdr, "UDP header missing");
-	zassert_not_equal(udp_hdr->chksum, 0, "Checksum is not set");
+	zassert_not_null(proto_hdr->udp, "UDP header missing");
+	zassert_not_equal(proto_hdr->udp->chksum, 0, "Checksum is not set");
 
 	if (net_pkt_family(pkt) == AF_INET) {
 		struct net_ipv4_hdr *ipv4 = NET_IPV4_HDR(pkt);
@@ -722,15 +720,13 @@ static void recv_cb_offload_disabled(struct net_context *context,
 
 static void recv_cb_offload_enabled(struct net_context *context,
 				    struct net_pkt *pkt,
+				    union net_ip_header *ip_hdr,
+				    union net_proto_header *proto_hdr,
 				    int status,
 				    void *user_data)
 {
-	struct net_udp_hdr hdr, *udp_hdr;
-
-	udp_hdr = net_udp_get_hdr(pkt, &hdr);
-
-	zassert_not_null(udp_hdr, "UDP header missing");
-	zassert_equal(udp_hdr->chksum, 0, "Checksum is set");
+	zassert_not_null(proto_hdr->udp, "UDP header missing");
+	zassert_equal(proto_hdr->udp->chksum, 0, "Checksum is set");
 
 	if (net_pkt_family(pkt) == AF_INET) {
 		struct net_ipv4_hdr *ipv4 = NET_IPV4_HDR(pkt);

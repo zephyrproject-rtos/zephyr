@@ -96,7 +96,8 @@ static void eswifi_off_read_work(struct k_work *work)
 		LOG_WRN("Incomplete buffer copy");
 	}
 
-	socket->recv_cb(socket->context, pkt, 0, socket->user_data);
+	socket->recv_cb(socket->context, pkt,
+			NULL, NULL, 0, socket->user_data);
 	k_sem_give(&socket->read_sem);
 	k_yield();
 

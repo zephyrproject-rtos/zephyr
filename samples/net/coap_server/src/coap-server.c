@@ -1229,6 +1229,8 @@ static struct coap_resource *find_resouce_by_observer(
 
 static void udp_receive(struct net_context *context,
 			struct net_pkt *pkt,
+			union net_ip_header *ip_hdr,
+			union net_proto_header *proto_hdr,
 			int status,
 			void *user_data)
 {
