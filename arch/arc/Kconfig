@@ -22,7 +22,8 @@ config	CPU_ARCEM4
 	bool
 	default y
 	select CPU_ARCV2
-	select ATOMIC_OPERATIONS_C
+	select ARC_EX_ATOMIC if USERSPACE
+	select ATOMIC_OPERATIONS_C  if !USERSPACE
 	help
 	  This option signifies the use of an ARC EM4 CPU
 
@@ -137,6 +138,20 @@ config ARC_HAS_SECURE
 	#  a hidden option
 	help
 	  This option is enabled when ARC core supports secure mode
+
+config ARC_EX_ATOMIC
+	bool
+	# a hidden option
+	help
+	  This option is enabled when ex instruction is used to implement
+	  atomic operations
+
+config ARC_LLOCK_ATOMIC
+	bool
+	# a hidden option
+	help
+	  This option is enabled when llock/scond instrucitons are used to implement
+	  atomic operations
 
 menu "ARC MPU Options"
 depends on CPU_HAS_MPU

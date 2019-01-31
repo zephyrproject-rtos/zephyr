@@ -2487,13 +2487,21 @@ extern struct k_work_q k_sys_work_q;
 /**
  * INTERNAL_HIDDEN @endcond
  */
-
+#if defined(CONFIG_ARC_EX_ATOMIC)
+#define _K_WORK_INITIALIZER(work_handler) \
+	{ \
+	._reserved = NULL, \
+	.handler = work_handler, \
+	.flags = { {0} } \
+	}
+#else
 #define _K_WORK_INITIALIZER(work_handler) \
 	{ \
 	._reserved = NULL, \
 	.handler = work_handler, \
 	.flags = { 0 } \
 	}
+#endif
 
 #define K_WORK_INITIALIZER DEPRECATED_MACRO _K_WORK_INITIALIZER
 

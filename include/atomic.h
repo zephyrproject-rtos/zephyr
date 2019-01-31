@@ -15,8 +15,21 @@
 extern "C" {
 #endif
 
+#if defined(CONFIG_ARC_EX_ATOMIC)
+typedef int atomic_val_t;
+
+struct arc_atomic_t {
+	atomic_val_t val;
+	int ex_lock;
+};
+
+typedef struct arc_atomic_t  atomic_t;
+
+#else
 typedef int atomic_t;
 typedef atomic_t atomic_val_t;
+#endif
+
 
 /**
  * @defgroup atomic_apis Atomic Services APIs

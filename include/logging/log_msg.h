@@ -338,7 +338,7 @@ static inline struct log_msg *_log_msg_std_alloc(void)
 
 	if (msg != NULL) {
 		/* all fields reset to 0, reference counter to 1 */
-		msg->hdr.ref_cnt = 1;
+		atomic_set(&msg->hdr.ref_cnt, 1);
 		msg->hdr.params.raw = 0;
 		msg->hdr.params.std.type = LOG_MSG_TYPE_STD;
 	}
