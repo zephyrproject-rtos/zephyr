@@ -21,7 +21,7 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_DECLARE(LIS2DS12);
 
-#if defined(CONFIG_LIS2DS12_SPI_GPIO_CS)
+#if defined(DT_ST_LIS2DS12_0_CS_GPIO_CONTROLLER)
 static struct spi_cs_control lis2ds12_cs_ctrl;
 #endif
 
@@ -156,25 +156,23 @@ int lis2ds12_spi_init(struct device *dev)
 
 	data->hw_tf = &lis2ds12_spi_transfer_fn;
 
-#if defined(CONFIG_LIS2DS12_SPI_GPIO_CS)
+#if defined(DT_ST_LIS2DS12_0_CS_GPIO_CONTROLLER)
 	/* handle SPI CS thru GPIO if it is the case */
-	if (IS_ENABLED(CONFIG_LIS2DS12_SPI_GPIO_CS)) {
-		lis2ds12_cs_ctrl.gpio_dev = device_get_binding(
-			CONFIG_LIS2DS12_SPI_GPIO_CS_DRV_NAME);
-		if (!lis2ds12_cs_ctrl.gpio_dev) {
-			LOG_ERR("Unable to get GPIO SPI CS device");
-			return -ENODEV;
-		}
-
-		lis2ds12_cs_ctrl.gpio_pin = CONFIG_LIS2DS12_SPI_GPIO_CS_PIN;
-		lis2ds12_cs_ctrl.delay = 0;
-
-		lis2ds12_spi_conf.cs = &lis2ds12_cs_ctrl;
-
-		LOG_DBG("SPI GPIO CS configured on %s:%u",
-			    CONFIG_LIS2DS12_SPI_GPIO_CS_DRV_NAME,
-			    CONFIG_LIS2DS12_SPI_GPIO_CS_PIN);
+	lis2ds12_cs_ctrl.gpio_dev = device_get_binding(
+		DT_ST_LIS2DS12_0_CS_GPIO_CONTROLLER);
+	if (!lis2ds12_cs_ctrl.gpio_dev) {
+		LOG_ERR("Unable to get GPIO SPI CS device");
+		return -ENODEV;
 	}
+
+	lis2ds12_cs_ctrl.gpio_pin = DT_ST_LIS2DS12_0_CS_GPIO_PIN;
+	lis2ds12_cs_ctrl.delay = 0;
+
+	lis2ds12_spi_conf.cs = &lis2ds12_cs_ctrl;
+
+	LOG_DBG("SPI GPIO CS configured on %s:%u",
+		    DT_ST_LIS2DS12_0_CS_GPIO_CONTROLLER,
+		    DT_ST_LIS2DS12_0_CS_GPIO_PIN);
 #endif
 
 	return 0;
