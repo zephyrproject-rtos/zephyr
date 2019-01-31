@@ -73,9 +73,6 @@
 #define SSD1673_VAL_DUMMY_LINE			0x1a
 #define SSD1673_VAL_GATE_LWIDTH			0x08
 
-/** Maximum resolution in the Y direction */
-#define SSD1673_RAM_YRES			250
-
 /* time constants in ms */
 #define SSD1673_RESET_DELAY			1
 #define SSD1673_BUSY_DELAY			1

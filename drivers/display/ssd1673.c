@@ -18,9 +18,9 @@ LOG_MODULE_REGISTER(ssd1673);
 #include "ssd1673_regs.h"
 #include <display/cfb.h>
 
-#define EPD_PANEL_WIDTH			250
-#define EPD_PANEL_HEIGHT		120
-#define EPD_PANEL_NUMOF_COLUMS		250
+#define EPD_PANEL_WIDTH			DT_SOLOMON_SSD1673FB_0_WIDTH
+#define EPD_PANEL_HEIGHT		DT_SOLOMON_SSD1673FB_0_HEIGHT
+#define EPD_PANEL_NUMOF_COLUMS		EPD_PANEL_WIDTH
 #define EPD_PANEL_NUMOF_ROWS_PER_PAGE	8
 #define EPD_PANEL_NUMOF_PAGES		(EPD_PANEL_HEIGHT / \
 					 EPD_PANEL_NUMOF_ROWS_PER_PAGE)
@@ -28,7 +28,7 @@ LOG_MODULE_REGISTER(ssd1673);
 #define SSD1673_PANEL_FIRST_PAGE	0
 #define SSD1673_PANEL_LAST_PAGE		(EPD_PANEL_NUMOF_PAGES - 1)
 #define SSD1673_PANEL_FIRST_GATE	0
-#define SSD1673_PANEL_LAST_GATE		249
+#define SSD1673_PANEL_LAST_GATE		(EPD_PANEL_NUMOF_COLUMS - 1)
 
 #define SSD1673_PIXELS_PER_BYTE		8
 
@@ -360,7 +360,7 @@ static int ssd1673_set_pixel_format(const struct device *dev,
 static int ssd1673_clear_and_write_buffer(struct device *dev)
 {
 	int err;
-	u8_t clear_page[SSD1673_RAM_YRES];
+	u8_t clear_page[EPD_PANEL_WIDTH];
 	u8_t page;
 	struct spi_buf sbuf;
 	struct spi_buf_set buf_set = {.buffers = &sbuf, .count = 1};
@@ -432,7 +432,7 @@ static int ssd1673_controller_init(struct device *dev)
 	}
 	ssd1673_busy_wait(driver);
 
-	tmp[0] = (SSD1673_RAM_YRES - 1);
+	tmp[0] = SSD1673_PANEL_LAST_GATE;
 	tmp[1] = 0U;
 	err = ssd1673_write_cmd(driver, SSD1673_CMD_GDO_CTRL, tmp, 2);
 	if (err < 0) {
