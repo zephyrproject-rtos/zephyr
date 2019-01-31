@@ -73,16 +73,11 @@
 #define SSD1673_VAL_DUMMY_LINE			0x1a
 #define SSD1673_VAL_GATE_LWIDTH			0x08
 
-/** Maximum resolution in the X direction */
-#define SSD1673_RAM_XRES			152
 /** Maximum resolution in the Y direction */
 #define SSD1673_RAM_YRES			250
 
 /* time constants in ms */
 #define SSD1673_RESET_DELAY			1
 #define SSD1673_BUSY_DELAY			1
-
-/** Size of each RAM in octets */
-#define SSD1673_RAM_SIZE	(SSD1673_RAM_XRES * SSD1673_RAM_YRES / 8)
 
 #endif /* __SSD1673_REGS_H__ */
