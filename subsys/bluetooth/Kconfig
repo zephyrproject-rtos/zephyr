@@ -140,35 +140,6 @@ config BT_CTLR_TO_HOST_UART_DEV_NAME
 	  to connect to an external Bluetooth Host when Zephyr is
 	  acting as a Bluetooth Controller.
 
-# TODO add DTS support, once SPI node definitions are available.
-
-config BT_CTLR_TO_HOST_SPI_DEV_NAME
-	string "Device Name of SPI Device to an external Bluetooth Host"
-	default "SPI_0"
-	depends on SPI && BT_HCI_RAW
-	help
-	  This option specifies the name of SPI device to be used to connect
-	  to an external Bluetooth Host when Zephyr is acting as a Bluetooth
-	  Controller.
-
-config BT_CTLR_TO_HOST_SPI_IRQ_DEV_NAME
-	string "Device Name of SPI IRQ to an external Bluetooth Host"
-	default "GPIO_0"
-	depends on SPI && BT_HCI_RAW
-	help
-	  This option specifies the name of SPI IRQ device to be used to
-	  notify an external Bluetooth Host when Zephyr is acting as a
-	  Bluetooth Controller.
-
-config BT_CTLR_TO_HOST_SPI_IRQ_PIN
-	int "SPI IRQ line number to an external Bluetooth Host"
-	default 0
-	depends on SPI && BT_HCI_RAW
-	help
-	  This option specifies the IRQ line number to be used to notify
-	  an external Bluetooth Host when Zephyr is acting as a Bluetooth
-	  Controller.
-
 source "subsys/bluetooth/common/Kconfig"
 source "subsys/bluetooth/host/Kconfig"
 source "subsys/bluetooth/controller/Kconfig"
