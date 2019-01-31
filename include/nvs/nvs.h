@@ -12,6 +12,8 @@ extern "C" {
 #endif
 
 #include <sys/types.h>
+#include <kernel.h>
+#include <device.h>
 /**
  * @brief Non-volatile Storage
  * @defgroup nvs Non-volatile Storage
@@ -38,8 +40,6 @@ extern "C" {
  * multiple of pagesize
  * @param sector_count Amount of sectors in the file systems
  * @param write_block_size Alignment size
- * @param locked State of the filesystem, locked = true means the filesystem is
- * read only
  * @param nvs_lock Mutex
  * @param flash_device Flash Device
  */
@@ -47,18 +47,12 @@ struct nvs_fs {
 	off_t offset;		/* filesystem offset in flash */
 	u32_t ate_wra;		/* next alloc table entry write address */
 	u32_t data_wra;		/* next data write address */
-	u32_t free_space;	/* free space available in file system */
 	u16_t sector_size;	/* filesystem is divided into sectors,
 				 * sector size should be multiple of pagesize
 				 */
 	u16_t sector_count;	/* amount of sectors in the filesystem */
+	u8_t write_block_size;  /* write block size for alignment */
 
-	u8_t write_block_size; /* write block size for alignment */
-	bool locked; /* the filesystem is locked after an error occurred
-		      * when it is locked it becomes a read-only filesystem
-		      * it can be unlocked by calling nvs_init again, this
-		      * will destroy all stored data
-		      */
 	struct k_mutex nvs_lock;
 	struct device *flash_device;
 };
@@ -85,18 +79,6 @@ struct nvs_fs {
  * @retval -ERRNO errno code if error
  */
 int nvs_init(struct nvs_fs *fs, const char *dev_name);
-
-/**
- * @brief nvs_reinit
- *
- * Reinitializes a NVS file system in flash, if the filesystem is locked this
- * will erase the filesystem.
- *
- * @param fs Pointer to file system
- * @retval 0 Success
- * @retval -ERRNO errno code if error
- */
-int nvs_reinit(struct nvs_fs *fs);
 
 /**
  * @brief nvs_clear
@@ -171,6 +153,20 @@ ssize_t nvs_read(struct nvs_fs *fs, u16_t id, void *data, size_t len);
  */
 ssize_t nvs_read_hist(struct nvs_fs *fs, u16_t id, void *data, size_t len,
 		  u16_t cnt);
+
+/**
+ * @brief nvs_calc_free_space
+ *
+ * Calculate the available free space in the file system.
+ *
+ * @param fs Pointer to file system
+ *
+ * @return Number of bytes free. On success, it will be equal to the number
+ * of bytes that can still be written to the file system. Calculating the
+ * free space is a time consuming operation, especially on spi flash.
+ * On error returns -ERRNO code.
+ */
+ssize_t nvs_calc_free_space(struct nvs_fs *fs);
 
 /**
  * @}
