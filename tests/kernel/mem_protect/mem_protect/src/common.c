@@ -17,11 +17,11 @@ K_SEM_DEFINE(barrier_sem,
 	     SYNC_BARRIER_SEMAPHORE_INIT_COUNT,
 	     SYNC_BARRIER_SEMAPHORE_MAX_COUNT);
 
-bool valid_fault;
+ZTEST_BMEM bool valid_fault;
 
 void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 {
-	printk("Caught system error -- reason %d\n", reason);
+	printk("Caught system error -- reason %d %d\n", reason, valid_fault);
 	if (valid_fault) {
 		valid_fault = false; /* reset back to normal */
 		ztest_test_pass();

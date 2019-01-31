@@ -44,8 +44,8 @@ static K_THREAD_STACK_DEFINE(stack_coop, INIT_COOP_STACK_SIZE);
 static K_THREAD_STACK_DEFINE(stack_preempt, INIT_PREEMPT_STACK_SIZE);
 __kernel static struct k_thread thread_coop;
 __kernel static struct k_thread thread_preempt;
-static u64_t t_create;
-static struct thread_data {
+static ZTEST_BMEM u64_t t_create;
+static ZTEST_BMEM struct thread_data {
 	int init_prio;
 	s32_t init_delay;
 	void *init_p1;
@@ -207,6 +207,10 @@ void test_main(void)
 {
 	k_thread_access_grant(k_current_get(), &thread_preempt, &stack_preempt,
 			      &start_sema, &end_sema);
+#ifdef CONFIG_APP_SHARED_MEM
+	k_mem_domain_add_thread(&ztest_mem_domain, T_KDEFINE_COOP_THREAD);
+	k_mem_domain_add_thread(&ztest_mem_domain, T_KDEFINE_PREEMPT_THREAD);
+#endif
 
 	ztest_test_suite(thread_init,
 			 ztest_user_unit_test(test_kdefine_preempt_thread),

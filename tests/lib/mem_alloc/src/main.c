@@ -61,7 +61,7 @@ void test_free(void)
  * @see calloc(), free()
  */
 #define CALLOC_BUFLEN (200)
-ZTEST_BMEM static unsigned char zerobuf[CALLOC_BUFLEN];
+static ZTEST_BMEM unsigned char zerobuf[CALLOC_BUFLEN];
 
 void test_calloc(void)
 {

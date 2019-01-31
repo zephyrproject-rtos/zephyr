@@ -32,7 +32,8 @@ K_MEM_PARTITION_DEFINE(inherit_memory_partition,
 		       K_MEM_PARTITION_P_RW_U_RW);
 
 struct k_mem_partition *inherit_memory_partition_array[] = {
-	&inherit_memory_partition
+	&inherit_memory_partition,
+	&ztest_mem_partition
 };
 
 __kernel struct k_mem_domain inherit_mem_domain;
@@ -78,11 +79,11 @@ void test_thread_1_for_SU(void *p1, void *p2, void *p3)
  */
 void test_permission_inheritance(void *p1, void *p2, void *p3)
 {
-
 	k_mem_domain_init(&inherit_mem_domain,
-			  1,
+			  ARRAY_SIZE(inherit_memory_partition_array),
 			  inherit_memory_partition_array);
 
+	k_mem_domain_remove_thread(k_current_get());
 	k_mem_domain_add_thread(&inherit_mem_domain, k_current_get());
 
 	k_thread_access_grant(k_current_get(),

@@ -687,9 +687,11 @@ extern k_thread_stack_t ztest_thread_stack[];
 
 void test_main(void)
 {
-	struct k_mem_partition *parts[] = {&part0, &part1};
+	struct k_mem_partition *parts[] = {&part0, &part1,
+		&ztest_mem_partition};
 
-	k_mem_domain_init(&dom0, 2, parts);
+	k_mem_domain_remove_thread(k_current_get());
+	k_mem_domain_init(&dom0, ARRAY_SIZE(parts), parts);
 	k_mem_domain_add_thread(&dom0, k_current_get());
 
 #if defined(CONFIG_ARM)

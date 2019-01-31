@@ -14,7 +14,10 @@
 #include <tc_util.h>
 #include <ksched.h>
 #include "timing_info.h"
+#include <app_memory/app_memdomain.h>
 
+K_APPMEM_PARTITION_DEFINE(bench_ptn);
+struct k_mem_domain bench_domain;
 
 extern char sline[256];
 extern u64_t __end_drop_to_usermode_time;
@@ -50,6 +53,13 @@ void validation_overhead(void);
 
 void userspace_bench(void)
 {
+	struct k_mem_partition *parts[] = {
+		&bench_ptn
+	};
+
+	k_mem_domain_init(&bench_domain, ARRAY_SIZE(parts), parts);
+	k_mem_domain_add_thread(&bench_domain, k_current_get());
+
 	drop_to_user_mode();
 
 	user_thread_creation();
@@ -57,7 +67,6 @@ void userspace_bench(void)
 	syscall_overhead();
 
 	validation_overhead();
-
 }
 /******************************************************************************/
 
@@ -146,7 +155,8 @@ void user_thread_creation(void)
 
 /******************************************************************************/
 /* dummy syscalls creation */
-u32_t syscall_overhead_start_time, syscall_overhead_end_time;
+K_APP_BMEM(bench_ptn) u32_t syscall_overhead_start_time,
+	syscall_overhead_end_time;
 
 int _impl_k_dummy_syscall(void)
 {
@@ -235,7 +245,6 @@ void validation_overhead_user_thread(void *p1, void *p2, void *p3)
 
 void validation_overhead(void)
 {
-
 	k_thread_access_grant(k_current_get(), &test_sema);
 
 
