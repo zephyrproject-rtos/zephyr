@@ -17,16 +17,6 @@ config MICROBIT_DISPLAY
 
 if MICROBIT_DISPLAY
 
-config MICROBIT_DISPLAY_PIN_GRANULARITY
-	bool "Access the GPIO on a per-pin instead of per-port basis"
-	help
-	  By default, the micro:bit display driver will update the GPIO
-	  pins of the display (pins 4 through 15) by accessing the entire
-	  GPIO port. This is done for efficiency, however it may interfere
-	  with other peripherals connected to the same GPIO port. Select
-	  this option if other peripherals are connected to the same GPIO
-	  port.
-
 config MICROBIT_DISPLAY_STR_MAX
 	int "Maximum length of strings that can be shown on the display"
 	range 3 255
