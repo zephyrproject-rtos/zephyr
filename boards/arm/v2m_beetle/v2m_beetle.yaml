@@ -6,3 +6,5 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+supported:
+  - counter
