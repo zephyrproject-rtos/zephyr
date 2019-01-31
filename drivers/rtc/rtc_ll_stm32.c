@@ -241,7 +241,7 @@ static int rtc_stm32_init(struct device *dev)
 
 	LL_RCC_SetRTCClockSource(LL_RCC_RTC_CLKSOURCE_LSE);
 
-#endif /* CONFIG_RTC_STM32_CLOCK_SRC */
+#endif
 
 	LL_RCC_EnableRTC();
 
