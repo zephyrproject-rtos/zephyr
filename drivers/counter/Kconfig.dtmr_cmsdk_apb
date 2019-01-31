@@ -14,22 +14,4 @@ config TIMER_DTMR_CMSDK_APB
 	  The dualtimer (DTMR) present in the platform is used as a timer.
 	  This option enables the support for the timer.
 
-if TIMER_DTMR_CMSDK_APB
-
-# ---------- Timer 0 ----------
-
-config TIMER_DTMR_CMSDK_APB_0
-	bool "Timer 0 driver"
-	help
-	  Enable support for Timer 0.
-
-config TIMER_DTMR_CMSDK_APB_0_IRQ_PRI
-	int "Interrupt Priority for Timer 0"
-	depends on TIMER_DTMR_CMSDK_APB_0
-	default 3
-	help
-	  Interrupt priority for Timer 0.
-
-endif # TIMER_DTMR_CMSDK_APB
-
 endif # SOC_FAMILY_ARM
