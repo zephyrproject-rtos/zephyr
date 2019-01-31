@@ -18,24 +18,6 @@ config IEEE802154_MCR20A_DRV_NAME
 	help
 	  This option sets the driver name
 
-if !HAS_DTS_GPIO
-
-config MCR20A_GPIO_IRQ_B_NAME
-	string "GPIO device used for IRQ_B output of MCR20A"
-
-config MCR20A_GPIO_IRQ_B_PIN
-	int "GPIO pin connected to IRQ_B output of MCR20A"
-	default 9
-
-config MCR20A_GPIO_RESET_NAME
-	string "GPIO device used for RESET input of MCR20A"
-
-config MCR20A_GPIO_RESET_PIN
-	int "GPIO pin connected to RESET input of MCR20A"
-	default 2
-
-endif # !HAS_DTS_GPIO
-
 config MCR20A_IS_PART_OF_KW2XD_SIP
 	bool "MCR20A device is part of KW2xD SiP"
 	help
