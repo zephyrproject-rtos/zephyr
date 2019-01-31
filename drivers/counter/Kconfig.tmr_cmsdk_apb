@@ -14,36 +14,4 @@ config TIMER_TMR_CMSDK_APB
 	  The timers (TMR) present in the platform are used as timers.
 	  This option enables the support for the timers.
 
-if TIMER_TMR_CMSDK_APB
-
-# ---------- Timer 0 ----------
-
-config TIMER_TMR_CMSDK_APB_0
-	bool "Timer 0 driver"
-	help
-	  Enable support for Timer 0.
-
-config TIMER_TMR_CMSDK_APB_0_IRQ_PRI
-	int "Interrupt Priority for Timer 0"
-	depends on TIMER_TMR_CMSDK_APB_0
-	default 3
-	help
-	  Interrupt priority for Timer 0.
-
-# ---------- Timer 1 ----------
-
-config TIMER_TMR_CMSDK_APB_1
-	bool "Timer 1 driver"
-	help
-	  Enable support for Timer 1.
-
-config TIMER_TMR_CMSDK_APB_1_IRQ_PRI
-	int "Interrupt Priority for Timer 1"
-	depends on TIMER_TMR_CMSDK_APB_1
-	default 3
-	help
-	  Interrupt priority for Timer 1.
-
-endif # TIMER_TMR_CMSDK_APB
-
 endif # SOC_FAMILY_ARM
