@@ -27,7 +27,7 @@ struct usb_cdc_eem_config {
 	struct usb_ep_descriptor if0_out_ep;
 } __packed;
 
-USBD_CLASS_DESCR_DEFINE(primary) struct usb_cdc_eem_config cdc_eem_cfg = {
+USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_eem_config cdc_eem_cfg = {
 	/* Interface descriptor 0 */
 	/* CDC Communication interface */
 	.if0 = {

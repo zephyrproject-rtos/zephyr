@@ -35,7 +35,7 @@ struct usb_hid_config {
 #endif
 } __packed;
 
-USBD_CLASS_DESCR_DEFINE(primary) struct usb_hid_config hid_cfg = {
+USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_hid_config hid_cfg = {
 	/* Interface descriptor */
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),

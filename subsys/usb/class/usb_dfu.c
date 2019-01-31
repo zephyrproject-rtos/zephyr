@@ -78,7 +78,7 @@ struct usb_dfu_config {
 	struct dfu_runtime_descriptor dfu_descr;
 } __packed;
 
-USBD_CLASS_DESCR_DEFINE(primary) struct usb_dfu_config dfu_cfg = {
+USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_dfu_config dfu_cfg = {
 	/* Interface descriptor */
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),

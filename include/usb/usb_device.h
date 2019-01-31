@@ -50,8 +50,8 @@ extern "C" {
  */
 #define USBD_DEVICE_DESCR_DEFINE(p) \
 	static __in_section(usb, descriptor_##p, 0) __used
-#define USBD_CLASS_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 1) __used
+#define USBD_CLASS_DESCR_DEFINE(p, instance) \
+	static __in_section(usb, descriptor_##p.1, instance) __used
 #define USBD_MISC_DESCR_DEFINE(p) \
 	static __in_section(usb, descriptor_##p, 2) __used
 #define USBD_USER_DESCR_DEFINE(p) \

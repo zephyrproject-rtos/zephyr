@@ -68,7 +68,7 @@ struct usb_mass_config {
 	struct usb_ep_descriptor if0_out_ep;
 } __packed;
 
-USBD_CLASS_DESCR_DEFINE(primary) struct usb_mass_config mass_cfg = {
+USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_mass_config mass_cfg = {
 	/* Interface descriptor */
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),
