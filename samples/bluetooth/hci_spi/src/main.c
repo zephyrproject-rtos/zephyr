@@ -94,7 +94,7 @@ NET_BUF_POOL_DEFINE(acl_tx_pool, TX_BUF_COUNT, BT_BUF_ACL_SIZE,
 
 static struct device *spi_hci_dev;
 static struct spi_config spi_cfg = {
-	.operation = SPI_WORD_SET(8),
+	.operation = SPI_WORD_SET(8) | SPI_OP_MODE_SLAVE,
 };
 static struct device *gpio_dev;
 static K_THREAD_STACK_DEFINE(bt_tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
@@ -105,11 +105,10 @@ static K_SEM_DEFINE(sem_spi_tx, 0, 1);
 
 static inline int spi_send(struct net_buf *buf)
 {
+	u8_t header_master[5] = { 0 };
+	u8_t header_slave[5] = { READY_NOW, SANITY_CHECK,
+				 0x00, 0x00, 0x00 };
 	int ret;
-
-	txmsg[0] = READY_NOW;
-	txmsg[1] = SANITY_CHECK;
-	txmsg[2] = 0x00;
 
 	LOG_DBG("buf %p type %u len %u", buf, bt_buf_get_type(buf), buf->len);
 
@@ -131,25 +130,23 @@ static inline int spi_send(struct net_buf *buf)
 		net_buf_unref(buf);
 		return -EINVAL;
 	}
-
-	txmsg[STATUS_HEADER_TOREAD] = buf->len;
-	txmsg[4] = 0x00;
-
-	tx.buf = txmsg;
-	tx.len = 5;
-	rx.buf = rxmsg;
-	rx.len = 5;
+	header_slave[STATUS_HEADER_TOREAD] = buf->len;
 
 	gpio_pin_write(gpio_dev, GPIO_IRQ_PIN, 1);
 
 	/* Coordinate transfer lock with the spi rx thread */
 	k_sem_take(&sem_spi_tx, K_FOREVER);
+
+	tx.buf = header_slave;
+	tx.len = 5;
+	rx.buf = header_master;
+	rx.len = 5;
 	do {
 		ret = spi_transceive(spi_hci_dev, &spi_cfg, &tx_bufs, &rx_bufs);
 		if (ret < 0) {
 			LOG_ERR("SPI transceive error: %d", ret);
 		}
-	} while (rxmsg[STATUS_HEADER_READY] != SPI_READ);
+	} while (header_master[STATUS_HEADER_READY] != SPI_READ);
 
 	tx.buf = buf->data;
 	tx.len = buf->len;
