@@ -1,0 +1,4 @@
+tests:
+  usb.desc_sections:
+    platform_whitelist: frdm_k64f
+    tags: usb desc_sections
