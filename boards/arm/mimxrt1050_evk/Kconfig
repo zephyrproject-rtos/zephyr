@@ -8,7 +8,8 @@ if BOARD_MIMXRT1050_EVK || BOARD_MIMXRT1050_EVK_QSPI
 
 choice
 	prompt "Code location selection"
-	default CODE_ITCM
+	default CODE_HYPERFLASH if BOARD_MIMXRT1050_EVK
+	default CODE_QSPI if BOARD_MIMXRT1050_EVK_QSPI
 
 config CODE_ITCM
 	bool "Link code into internal instruction tightly coupled memory (ITCM)"
@@ -22,6 +23,19 @@ config CODE_QSPI
 	depends on BOARD_MIMXRT1050_EVK_QSPI
 	select NXP_IMX_RT_BOOT_HEADER
 	bool "Link code into external QSPI memory"
+
+endchoice
+
+choice
+	prompt "Data location selection"
+	default DATA_SDRAM
+
+config DATA_DTCM
+	bool "Link data into internal data tightly coupled memory (DTCM)"
+
+config DATA_SDRAM
+	select DEVICE_CONFIGURATION_DATA if NXP_IMX_RT_BOOT_HEADER
+	bool "Link data into external SDRAM memory"
 
 endchoice
 
