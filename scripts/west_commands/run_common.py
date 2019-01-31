@@ -17,7 +17,8 @@ from west.build import DEFAULT_BUILD_DIR, is_zephyr_build
 from west.commands import CommandContextError
 
 from runners import get_runner_cls, ZephyrBinaryRunner
-from runners.core import RunnerConfig
+
+from zephyr_ext_common import cached_runner_config
 
 # Context-sensitive help indentation.
 # Don't change this, or output from argparse won't match up.
@@ -111,25 +112,6 @@ def desc_common(command_name):
 
     west {command} --{command}-arg=value -- --runner-arg=value2
     '''.format(**{'command': command_name}))
-
-
-def cached_runner_config(build_dir, cache):
-    '''Parse the RunnerConfig from a build directory and CMake Cache.'''
-    board_dir = cache['ZEPHYR_RUNNER_CONFIG_BOARD_DIR']
-    elf_file = cache.get('ZEPHYR_RUNNER_CONFIG_ELF_FILE',
-                         cache['ZEPHYR_RUNNER_CONFIG_KERNEL_ELF'])
-    hex_file = cache.get('ZEPHYR_RUNNER_CONFIG_HEX_FILE',
-                         cache['ZEPHYR_RUNNER_CONFIG_KERNEL_HEX'])
-    bin_file = cache.get('ZEPHYR_RUNNER_CONFIG_BIN_FILE',
-                         cache['ZEPHYR_RUNNER_CONFIG_KERNEL_BIN'])
-    gdb = cache.get('ZEPHYR_RUNNER_CONFIG_GDB')
-    openocd = cache.get('ZEPHYR_RUNNER_CONFIG_OPENOCD')
-    openocd_search = cache.get('ZEPHYR_RUNNER_CONFIG_OPENOCD_SEARCH')
-
-    return RunnerConfig(build_dir, board_dir,
-                        elf_file, hex_file, bin_file,
-                        gdb=gdb, openocd=openocd,
-                        openocd_search=openocd_search)
 
 
 def _override_config_from_namespace(cfg, namespace):
