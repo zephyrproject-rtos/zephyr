@@ -500,12 +500,12 @@ static int lsm6ds0_init(struct device *dev)
 }
 
 static const struct lsm6ds0_config lsm6ds0_config = {
-	.i2c_master_dev_name = DT_LSM6DS0_I2C_MASTER_DEV_NAME,
-	.i2c_slave_addr = DT_LSM6DS0_I2C_ADDR,
+	.i2c_master_dev_name = DT_ST_LSM6DS0_0_BUS_NAME,
+	.i2c_slave_addr = DT_ST_LSM6DS0_0_BASE_ADDRESS,
 };
 
 static struct lsm6ds0_data lsm6ds0_data;
 
-DEVICE_AND_API_INIT(lsm6ds0, DT_LSM6DS0_DEV_NAME, lsm6ds0_init,
+DEVICE_AND_API_INIT(lsm6ds0, DT_ST_LSM6DS0_0_LABEL, lsm6ds0_init,
 		    &lsm6ds0_data, &lsm6ds0_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lsm6ds0_api_funcs);
