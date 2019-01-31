@@ -8,6 +8,7 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - counter
   - netif:slip
 testing:
   default: true
