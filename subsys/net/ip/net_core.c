@@ -44,6 +44,8 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 
 #include "route.h"
 
+#include "packet_socket.h"
+
 #include "connection.h"
 #include "udp_internal.h"
 #include "tcp_internal.h"
@@ -70,6 +72,11 @@ static inline enum net_verdict process_data(struct net_pkt *pkt,
 {
 	int ret;
 	bool locally_routed = false;
+
+	ret = net_packet_socket_input(pkt);
+	if (ret != NET_CONTINUE) {
+		return ret;
+	}
 
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 	/* If the packet is routed back to us when we have reassembled
