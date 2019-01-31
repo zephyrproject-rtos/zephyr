@@ -331,7 +331,8 @@ static inline int gpio_pin_disable_callback(struct device *port, u32_t pin)
  * @param flags Flags for the port configuration. IN/OUT, interrupt ...
  * @return 0 if successful, negative errno code on failure.
  */
-static inline int gpio_port_configure(struct device *port, int flags)
+__deprecated static inline int gpio_port_configure(struct device *port,
+		int flags)
 {
 	return gpio_config(port, GPIO_ACCESS_BY_PORT, 0, flags);
 }
@@ -349,7 +350,7 @@ static inline int gpio_port_configure(struct device *port, int flags)
  * @param value Value to set on the port.
  * @return 0 if successful, negative errno code on failure.
  */
-static inline int gpio_port_write(struct device *port, u32_t value)
+__deprecated static inline int gpio_port_write(struct device *port, u32_t value)
 {
 	return gpio_write(port, GPIO_ACCESS_BY_PORT, 0, value);
 }
@@ -367,7 +368,7 @@ static inline int gpio_port_write(struct device *port, u32_t value)
  * @param value Integer pointer to receive the data value from the port.
  * @return 0 if successful, negative errno code on failure.
  */
-static inline int gpio_port_read(struct device *port, u32_t *value)
+__deprecated static inline int gpio_port_read(struct device *port, u32_t *value)
 {
 	return gpio_read(port, GPIO_ACCESS_BY_PORT, 0, value);
 }
@@ -382,7 +383,7 @@ static inline int gpio_port_read(struct device *port, u32_t *value)
  *       are configured properly. So as a semantic detail, if no callback
  *       is registered, of course none will be called.
  */
-static inline int gpio_port_enable_callback(struct device *port)
+__deprecated static inline int gpio_port_enable_callback(struct device *port)
 {
 	return gpio_enable_callback(port, GPIO_ACCESS_BY_PORT, 0);
 }
@@ -392,7 +393,7 @@ static inline int gpio_port_enable_callback(struct device *port)
  * @param port Pointer to the device structure for the driver instance.
  * @return 0 if successful, negative errno code on failure.
  */
-static inline int gpio_port_disable_callback(struct device *port)
+__deprecated static inline int gpio_port_disable_callback(struct device *port)
 {
 	return gpio_disable_callback(port, GPIO_ACCESS_BY_PORT, 0);
 }
