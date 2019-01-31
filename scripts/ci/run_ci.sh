@@ -15,7 +15,7 @@
 # -r  the remote to rebase on
 #
 # The script can be run locally using for exmaple:
-# ./scripts/ci/run_ci.sh -b master -r upstream  -p
+# ./scripts/ci/run_ci.sh -b master -r upstream  -l
 
 set -xe
 
@@ -30,10 +30,15 @@ WEST_COMMANDS_RESULTS_FILE="./pytest_out/west_commands.xml"
 MATRIX_BUILDS=1
 MATRIX=1
 
-while getopts ":p:m:b:r:M:cfs" opt; do
+while getopts ":p:m:b:r:M:cfsl" opt; do
 	case $opt in
 		c)
 			echo "Execute CI" >&2
+			MAIN_CI=1
+			;;
+		l)
+			echo "Executing script locally" >&2
+			LOCAL_RUN=1
 			MAIN_CI=1
 			;;
 		s)
@@ -250,7 +255,7 @@ if [ -n "$MAIN_CI" ]; then
 	fi
 
 	# In a pull-request see if we have changed any tests or board definitions
-	if [ -n "${PULL_REQUEST_NR}" ]; then
+	if [ -n "${PULL_REQUEST_NR}" -o -n "${LOCAL_RUN}"  ]; then
 		get_tests_to_run
 	fi
 
