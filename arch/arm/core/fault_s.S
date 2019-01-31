@@ -139,9 +139,9 @@ _s_stack_frame_endif:
 	 */
 	mov r1, lr
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
-	push {lr}
+	push {r0, lr}
 	bl _Fault
 
-	pop {pc}
+	pop {r0, pc}
 
 	.end

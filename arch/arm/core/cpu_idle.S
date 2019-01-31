@@ -114,11 +114,15 @@ SECTION_FUNC(TEXT, _NanoIdleValClear)
 
 SECTION_FUNC(TEXT, k_cpu_idle)
 #ifdef CONFIG_TRACING
-	push {lr}
+	push {r0, lr}
 	bl    z_sys_trace_idle
-	pop {r0}
-	mov lr, r0
-#endif
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	pop {r0, r1}
+        mov lr, r1
+#else
+	pop {r0, lr}
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+#endif /* CONFIG_TRACING */
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	cpsie i
@@ -158,11 +162,15 @@ SECTION_FUNC(TEXT, k_cpu_idle)
 
 SECTION_FUNC(TEXT, k_cpu_atomic_idle)
 #ifdef CONFIG_TRACING
-	push {lr}
+	push {r0, lr}
 	bl    z_sys_trace_idle
-	pop {r1}
-	mov lr, r1
-#endif
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+        pop {r0, r1}
+        mov lr, r1
+#else
+	pop {r0, lr}
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+#endif /* CONFIG_TRACING */
 
 	/*
 	 * Lock PRIMASK while sleeping: wfe will still get interrupted by
