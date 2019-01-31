@@ -55,7 +55,7 @@ GTEXT(__irq_wrapper)
  *     - __soc_handle_irq: handle SoC-specific details for a pending IRQ
  *       (e.g. clear a pending bit in a SoC-specific register)
  *
- * If CONFIG_RISCV_SOC_CONTEXT=y, calls to SoC-level context save/restore
+ * If CONFIG_RISCV_SOC_CONTEXT_SAVE=y, calls to SoC-level context save/restore
  * routines are also made here. For details, see the Kconfig help text.
  */
 
