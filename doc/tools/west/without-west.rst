@@ -21,7 +21,8 @@ west you will need to manually clone the repositories listed in the
    mkdir zephyrproject
    cd zephyrproject
    git clone https://github.com/zephyrproject-rtos/zephyr
-   # clone additional repositories listed in the manifest file
+   # clone additional repositories listed in the manifest file,
+   # and check out the specified revisions
 
 If you want to manage Zephyr's repositories without west but still need to
 use west's additional functionality (flashing, debugging, etc.) it is possible
@@ -30,17 +31,20 @@ to do so by manually creating an installation:
 .. code-block:: console
 
    # cd into zephyrproject if not already there
-   git clone https://github.com/zephyrproject-rtos/west.git
-   echo [manifest] > .west/config
-   echo path = zephyr >> .west/config
+   git clone https://github.com/zephyrproject-rtos/west.git .west/west
 
-After that, and in order for ``ninja`` to be able to invoke ``west`` you must
-specify the west directory. This can be done as:
+Then create a file :file:`.west/config` with the following contents:
 
-- Set the environment variable ``WEST_DIR`` to point to the directory where
-  ``west`` was cloned
-- Specify ``WEST_DIR`` when running ``cmake``, e.g.
-  ``cmake -DWEST_DIR=<path-to-west> ...``
+.. code-block:: none
+
+   [manifest]
+   path = zephyr
+
+After that, and in order for ``ninja`` to be able to invoke ``west``
+to flash and debug, you must specify the west directory. This can be
+done by setting the environment variable ``WEST_DIR`` to point to
+:file:`zephyrproject/.west/west` before running CMake to set up a
+build directory.
 
 .. _manifest file:
    https://github.com/zephyrproject-rtos/zephyr/blob/master/west.yml
