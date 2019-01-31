@@ -52,6 +52,7 @@ struct nvs_fs {
 				 */
 	u16_t sector_count;	/* amount of sectors in the filesystem */
 	u8_t write_block_size;  /* write block size for alignment */
+	bool ready;		/* is the filesystem initialized ? */
 
 	struct k_mutex nvs_lock;
 	struct device *flash_device;

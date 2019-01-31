@@ -42,18 +42,10 @@
 #include <misc/reboot.h>
 #include <device.h>
 #include <string.h>
+#include <flash.h>
 #include <nvs/nvs.h>
 
-#define NVS_SECTOR_SIZE DT_FLASH_ERASE_BLOCK_SIZE /* Multiple of FLASH_PAGE_SIZE */
-#define NVS_SECTOR_COUNT 3 /* At least 2 sectors */
-#define NVS_STORAGE_OFFSET DT_FLASH_AREA_STORAGE_OFFSET /* Start address of the
-							 * filesystem in flash
-							 */
-static struct nvs_fs fs = {
-	.sector_size = NVS_SECTOR_SIZE,
-	.sector_count = NVS_SECTOR_COUNT,
-	.offset = NVS_STORAGE_OFFSET,
-};
+static struct nvs_fs fs;
 
 /* 1000 msec = 1 sec */
 #define SLEEP_TIME      100
@@ -74,6 +66,21 @@ void main(void)
 	char buf[16];
 	u8_t key[8], longarray[128];
 	u32_t reboot_counter = 0U, reboot_counter_his;
+	struct flash_pages_info info;
+
+	/* define the nvs file system by settings with:
+	 *	sector_size equal to the pagesize,
+	 *	3 sectors
+	 *	starting at DT_FLASH_AREA_STORAGE_OFFSET
+	 */
+	fs.offset = DT_FLASH_AREA_STORAGE_OFFSET;
+	rc = flash_get_page_info_by_offs(device_get_binding(DT_FLASH_DEV_NAME),
+					 fs.offset, &info);
+	if (rc) {
+		printk("Unable to get page info");
+	}
+	fs.sector_size = info.size;
+	fs.sector_count = 3;
 
 	rc = nvs_init(&fs, DT_FLASH_DEV_NAME);
 	if (rc) {
