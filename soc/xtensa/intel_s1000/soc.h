@@ -88,10 +88,13 @@
 #define DMA_CHANNEL_DMIC_RXB			1
 
 /* I2S */
-#define I2S0_CAVS_IRQ				0x00000010
-#define I2S1_CAVS_IRQ				0x00000110
-#define I2S2_CAVS_IRQ				0x00000210
-#define I2S3_CAVS_IRQ				0x00000310
+#define I2S_CAVS_IRQ(i2s_num)			\
+	SOC_AGGREGATE_IRQ(0, (i2s_num) + 1, CAVS_L2_AGG_INT_LEVEL5)
+
+#define I2S0_CAVS_IRQ				I2S_CAVS_IRQ(0)
+#define I2S1_CAVS_IRQ				I2S_CAVS_IRQ(1)
+#define I2S2_CAVS_IRQ				I2S_CAVS_IRQ(2)
+#define I2S3_CAVS_IRQ				I2S_CAVS_IRQ(3)
 
 #define SSP_SIZE				0x0000200
 #define SSP_BASE(x)				(0x00077000 + (x) * SSP_SIZE)
