@@ -64,7 +64,7 @@ struct usb_loopback_config {
 
 
 #define DEFINE_LOOPBACK_DESC(x)						\
-	USBD_CLASS_DESCR_DEFINE(primary)				\
+	USBD_CLASS_DESCR_DEFINE(primary, x)				\
 	struct usb_loopback_config loopback_cfg_##x = {			\
 	.if0 = INITIALIZER_IF,						\
 	.if0_out_ep = INITIALIZER_IF_EP(LOOPBACK_OUT_EP_ADDR,		\
@@ -88,7 +88,7 @@ struct usb_loopback_config {
 	}
 
 #define DEFINE_LOOPBACK_CFG_DATA(x) \
-	USBD_CFG_DATA_DEFINE(loopback) \
+	USBD_CFG_DATA_DEFINE(loopback_##x) \
 	struct usb_cfg_data loopback_config_##x = { \
 	.usb_device_description = NULL, \
 	.interface_config = NULL, \

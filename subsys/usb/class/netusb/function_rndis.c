@@ -69,7 +69,7 @@ struct usb_rndis_config {
 	struct usb_ep_descriptor if1_out_ep;
 } __packed;
 
-USBD_CLASS_DESCR_DEFINE(primary) struct usb_rndis_config rndis_cfg = {
+USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 	.iad = {
 		.bLength = sizeof(struct usb_association_descriptor),
