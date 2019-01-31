@@ -5,6 +5,7 @@
  */
 
 #include "mem_protect.h"
+#include <syscall_handler.h>
 
 /* Kernel objects */
 K_THREAD_STACK_DEFINE(kobject_stack_1, KOBJECT_STACK_SIZE);
@@ -434,11 +435,8 @@ void test_kobject_access_grant_to_invalid_thread(void *p1, void *p2, void *p3)
 	k_object_access_revoke(&kobject_sem,
 			       &kobject_test_10_tid_uninitialized);
 
-	/* Test if this has actually taken the required branch */
-	extern void *_k_object_find(void *object);
-	void *ret_value = _k_object_find(&kobject_test_10_tid_uninitialized);
-
-	if (ret_value == NULL) {
+	if (Z_SYSCALL_OBJ(&kobject_test_10_tid_uninitialized, K_OBJ_THREAD)
+	    != 0) {
 		ztest_test_pass();
 	} else {
 		zassert_unreachable(ERROR_STR_TEST_10);

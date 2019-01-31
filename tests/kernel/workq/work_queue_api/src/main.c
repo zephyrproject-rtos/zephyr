@@ -23,7 +23,7 @@ static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static K_THREAD_STACK_DEFINE(user_tstack, STACK_SIZE);
 __kernel static struct k_work_q workq;
 __kernel static struct k_work_q user_workq;
-static struct k_work work[NUM_OF_WORK];
+static ZTEST_BMEM struct k_work work[NUM_OF_WORK];
 static struct k_delayed_work new_work;
 static struct k_delayed_work delayed_work[NUM_OF_WORK], delayed_work_sleepy;
 __kernel static struct k_sem sync_sema;

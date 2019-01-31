@@ -19,10 +19,10 @@
 #define BLK_SIZE_EXCLUDE_DESC (BLK_SIZE_MIN - 16)
 #define BLK_ALIGN BLK_SIZE_MIN
 
-
 K_MUTEX_DEFINE(pool_mutex);
+
 SYS_MEM_POOL_DEFINE(pool, &pool_mutex, BLK_SIZE_MIN, BLK_SIZE_MAX,
-		    BLK_NUM_MAX, BLK_ALIGN, .data);
+		    BLK_NUM_MAX, BLK_ALIGN, ZTEST_SECTION);
 
 /**
  * @brief Verify sys_mem_pool allocation and free

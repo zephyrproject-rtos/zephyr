@@ -6,9 +6,9 @@
 
 #include "test_msgq.h"
 extern struct k_msgq msgq;
-static char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
-static u32_t send_buf[MSGQ_LEN] = { MSG0, MSG1 };
-static u32_t rec_buf[MSGQ_LEN] = { MSG0, MSG1 };
+static ZTEST_BMEM char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
+static ZTEST_DMEM u32_t send_buf[MSGQ_LEN] = { MSG0, MSG1 };
+static ZTEST_DMEM u32_t rec_buf[MSGQ_LEN] = { MSG0, MSG1 };
 
 static void attrs_get(struct k_msgq *q)
 {
