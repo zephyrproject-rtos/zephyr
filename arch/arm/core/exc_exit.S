@@ -87,14 +87,13 @@ _EXIT_EXC:
 #endif /* CONFIG_PREEMPT_ENABLED */
 
 #ifdef CONFIG_STACK_SENTINEL
-    push {lr}
+    push {r0, lr}
     bl _check_stack_sentinel
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    pop {r0}
-    mov lr, r0
+    pop {r0, r1}
+    mov lr, r1
 #else
-    pop {lr}
+    pop {r0, lr}
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 #endif /* CONFIG_STACK_SENTINEL */
-
     bx lr

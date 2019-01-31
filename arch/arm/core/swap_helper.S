@@ -45,14 +45,14 @@ SECTION_FUNC(TEXT, __pendsv)
 
 #ifdef CONFIG_TRACING
     /* Register the context switch */
-    push {lr}
+    push {r0, lr}
     bl z_sys_trace_thread_switched_out
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    pop {r0}
-    mov lr, r0
+    pop {r0, r1}
+    mov lr, r1
 #else
-    pop {lr}
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+    pop {r0, lr}
+#endif /* CONFIG_ARMV6_M_ARMV8M_M_BASELINE */
 #endif /* CONFIG_TRACING */
 
     /* protect the kernel state while we play with the thread lists */
@@ -242,29 +242,29 @@ _thread_irq_disabled:
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-    stm sp!,{r0-r3} /* Save regs r0 to r4 on stack */
-    push {lr}
+    stm sp!,{r0-r3} /* Save regs r0 to r3 on stack */
+    push {r0, lr}
     bl read_timer_end_of_swap
-
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    pop {r3}
-    mov lr,r3
+    pop {r0, r1}
+    mov lr,r1
 #else
-    pop {lr}
+    pop {r0, lr}
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-    ldm sp!,{r0-r3} /* Load back regs ro to r4 */
+    ldm sp!,{r0-r3} /* Load back regs r0 to r3 */
+
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 
 #ifdef CONFIG_TRACING
     /* Register the context switch */
-    push {lr}
+    push {r0, lr}
     bl z_sys_trace_thread_switched_in
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    pop {r0}
-    mov lr, r0
+    pop {r0, r1}
+    mov lr, r1
 #else
-    pop {lr}
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+    pop {r0, lr}
+#endif
 #endif /* CONFIG_TRACING */
 
     /* exc return */
@@ -303,19 +303,19 @@ _stack_frame_endif:
     beq _oops
 
 #if CONFIG_IRQ_OFFLOAD
-    push {lr}
+    push {r0, lr}
     blx _irq_do_offload  /* call C routine which executes the offload */
-    pop {r3}
-    mov lr, r3
-#endif
+    pop {r0, r1}
+    mov lr, r1
+#endif /* CONFIG_IRQ_OFFLOAD */
 
     /* exception return is done in _IntExit() */
     b _IntExit
 
 _oops:
-    push {lr}
+    push {r0, lr}
     blx _do_kernel_oops
-    pop {pc}
+    pop {r0, pc}
 
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 /**
@@ -367,18 +367,18 @@ SECTION_FUNC(TEXT, __svc)
     beq _oops
 
 #if CONFIG_IRQ_OFFLOAD
-    push {lr}
+    push {r0, lr}
     blx _irq_do_offload  /* call C routine which executes the offload */
-    pop {lr}
+    pop {r0, lr}
 
     /* exception return is done in _IntExit() */
     b _IntExit
 #endif
 
 _oops:
-    push {lr}
+    push {r0, lr}
     blx _do_kernel_oops
-    pop {pc}
+    pop {r0, pc}
 
 #if CONFIG_USERSPACE
     /*

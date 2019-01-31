@@ -128,10 +128,16 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
     stm sp!,{r0-r3} /* Save regs r0 to r4 on stack */
-    push {lr}
+    push {r0, lr}
     bl read_timer_end_of_userspace_enter
-    pop {lr}
-    ldm sp!,{r0-r3} /* Load back regs ro to r4 */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    pop {r0, r3}
+    mov lr,r3
+#else
+    pop {r0, lr}
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+    ldm sp!,{r0-r3} /* Restore r0 to r3 regs */
+
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 
     /* change processor mode to unprivileged */
