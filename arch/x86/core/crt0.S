@@ -314,14 +314,6 @@ __csSet:
 
 	call	_x86_data_copy
 
-#ifdef CONFIG_APPLICATION_MEMORY
-	movl	$__app_data_ram_start, %edi /* DATA in RAM (dest) */
-	movl	$__app_data_rom_start, %esi /* DATA in ROM (src) */
-	movl	$__app_data_num_words, %ecx /* Size of DATA in quad bytes */
-
-	call	_x86_data_copy
-#endif /* CONFIG_APPLICATION_MEMORY */
-
 #ifdef CONFIG_APP_SHARED_MEM
 	movl	$_app_smem_start, %edi /* DATA in RAM (dest) */
 	movl	$_app_smem_rom_start, %esi /* DATA in ROM (src) */
@@ -347,12 +339,6 @@ __csSet:
 	movl	$__gcov_bss_num_words, %ecx	/* number of quad bytes */
 	call	_x86_bss_zero
 #endif /* CONFIG_COVERAGE_GCOV */
-
-#ifdef CONFIG_APPLICATION_MEMORY
-	movl	$__app_bss_start, %edi		/* load app BSS start address */
-	movl	$__app_bss_num_words, %ecx	/* number of quad bytes */
-	call	_x86_bss_zero
-#endif
 
 #ifdef CONFIG_GDT_DYNAMIC
 	/* activate RAM-based Global Descriptor Table (GDT) */

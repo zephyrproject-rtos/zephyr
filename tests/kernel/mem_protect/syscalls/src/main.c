@@ -11,8 +11,8 @@
 
 #define BUF_SIZE	32
 
-__kernel char kernel_string[BUF_SIZE];
-__kernel char kernel_buf[BUF_SIZE];
+char kernel_string[BUF_SIZE];
+char kernel_buf[BUF_SIZE];
 ZTEST_BMEM char user_string[BUF_SIZE];
 
 size_t _impl_string_nlen(char *src, size_t maxlen, int *err)

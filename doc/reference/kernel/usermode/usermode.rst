@@ -129,9 +129,6 @@ through the following mechanisms:
   by having shared membership of the same memory domains, or via kernel objects
   such as semaphores and pipes.
 
-- If the optional :option:`CONFIG_APPLICATION_MEMORY` feature is enabled, all
-  threads will have read/write access to non-kernel globals.
-
 - User threads cannot directly access memory belonging to kernel objects.
   Although pointers to kernel objects are used to reference them, actual
   manipulation of kernel objects is done through system call interfaces. Device

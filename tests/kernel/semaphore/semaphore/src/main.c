@@ -38,8 +38,8 @@ K_PIPE_DEFINE(timeout_info_pipe,
 	      sizeof(struct timeout_info) * TOTAL_THREADS_WAITING, 4);
 
 
-__kernel struct k_thread sem_tid, sem_tid_1, sem_tid_2;
-__kernel struct k_thread multiple_tid[TOTAL_THREADS_WAITING];
+struct k_thread sem_tid, sem_tid_1, sem_tid_2;
+struct k_thread multiple_tid[TOTAL_THREADS_WAITING];
 
 /******************************************************************************/
 /* Helper functions */

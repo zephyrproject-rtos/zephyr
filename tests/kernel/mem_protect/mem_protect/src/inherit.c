@@ -22,7 +22,7 @@ K_SEM_DEFINE(inherit_sem, SEMAPHORE_INIT_COUNT, SEMAPHORE_MAX_COUNT);
 K_MUTEX_DEFINE(inherit_mutex);
 K_TIMER_DEFINE(inherit_timer, dummy_start, dummy_end);
 K_MSGQ_DEFINE(inherit_msgq, MSG_Q_SIZE, MSG_Q_MAX_NUM_MSGS, MSG_Q_ALIGN);
-__kernel struct k_thread test_1_tid;
+struct k_thread test_1_tid;
 
 u8_t MEM_DOMAIN_ALIGNMENT inherit_buf[MEM_REGION_ALLOC]; /* for mem domain */
 
@@ -36,7 +36,7 @@ struct k_mem_partition *inherit_memory_partition_array[] = {
 	&ztest_mem_partition
 };
 
-__kernel struct k_mem_domain inherit_mem_domain;
+struct k_mem_domain inherit_mem_domain;
 
 /* generic function to do check the access permissions. */
 void access_test(void)

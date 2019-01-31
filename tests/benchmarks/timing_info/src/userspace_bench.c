@@ -25,7 +25,7 @@ extern u64_t __end_drop_to_usermode_time;
 u32_t drop_to_user_mode_end_time, drop_to_user_mode_start_time;
 u32_t user_thread_creation_end_time, user_thread_creation_start_time;
 
-__kernel struct k_thread my_thread_user;
+struct k_thread my_thread_user;
 K_THREAD_STACK_EXTERN(my_stack_area);
 K_THREAD_STACK_EXTERN(my_stack_area_0);
 

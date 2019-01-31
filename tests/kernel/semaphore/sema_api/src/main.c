@@ -13,9 +13,9 @@
 #define SEM_LIMIT 2
 /**TESTPOINT: init via K_SEM_DEFINE*/
 K_SEM_DEFINE(ksema, SEM_INITIAL, SEM_LIMIT);
-__kernel struct k_sem sema;
+struct k_sem sema;
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
-__kernel struct k_thread tdata;
+struct k_thread tdata;
 
 /*entry of contexts*/
 static void tisr_entry(void *p)

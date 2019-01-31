@@ -13,22 +13,22 @@
 K_THREAD_STACK_DEFINE(mem_domain_1_stack, MEM_DOMAIN_STACK_SIZE);
 K_THREAD_STACK_DEFINE(mem_domain_2_stack, MEM_DOMAIN_STACK_SIZE);
 K_THREAD_STACK_DEFINE(mem_domain_6_stack, MEM_DOMAIN_STACK_SIZE);
-__kernel struct k_thread mem_domain_1_tid, mem_domain_2_tid, mem_domain_6_tid;
+struct k_thread mem_domain_1_tid, mem_domain_2_tid, mem_domain_6_tid;
 
 /****************************************************************************/
 /* The mem domains needed.*/
-__kernel u8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf[MEM_REGION_ALLOC];
-__kernel u8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf1[MEM_REGION_ALLOC];
+u8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf[MEM_REGION_ALLOC];
+u8_t MEM_DOMAIN_ALIGNMENT mem_domain_buf1[MEM_REGION_ALLOC];
 
 /* partitions added later in the test cases.*/
-__kernel u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part1[MEM_REGION_ALLOC];
-__kernel u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part2[MEM_REGION_ALLOC];
-__kernel u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part3[MEM_REGION_ALLOC];
-__kernel u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part4[MEM_REGION_ALLOC];
-__kernel u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part5[MEM_REGION_ALLOC];
-__kernel u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part6[MEM_REGION_ALLOC];
-__kernel u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part7[MEM_REGION_ALLOC];
-__kernel u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part8[MEM_REGION_ALLOC];
+u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part1[MEM_REGION_ALLOC];
+u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part2[MEM_REGION_ALLOC];
+u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part3[MEM_REGION_ALLOC];
+u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part4[MEM_REGION_ALLOC];
+u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part5[MEM_REGION_ALLOC];
+u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part6[MEM_REGION_ALLOC];
+u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part7[MEM_REGION_ALLOC];
+u8_t MEM_DOMAIN_ALIGNMENT mem_domain_tc3_part8[MEM_REGION_ALLOC];
 
 K_MEM_PARTITION_DEFINE(mem_domain_memory_partition,
 		       mem_domain_buf,
@@ -59,8 +59,8 @@ struct k_mem_partition *mem_domain_memory_partition_array1[] = {
 	&mem_domain_memory_partition1,
 	&ztest_mem_partition
 };
-__kernel struct k_mem_domain mem_domain_mem_domain;
-__kernel struct k_mem_domain mem_domain1;
+struct k_mem_domain mem_domain_mem_domain;
+struct k_mem_domain mem_domain1;
 
 /****************************************************************************/
 /* Common init functions */
@@ -321,7 +321,7 @@ struct k_mem_partition *mem_domain_tc3_partition_array[] = {
 	&mem_domain_tc3_part8_struct
 };
 
-__kernel struct k_mem_domain mem_domain_tc3_mem_domain;
+struct k_mem_domain mem_domain_tc3_mem_domain;
 
 void mem_domain_for_user_tc3(void *max_partitions, void *p2, void *p3)
 {

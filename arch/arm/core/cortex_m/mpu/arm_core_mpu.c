@@ -65,13 +65,6 @@ void _arch_configure_static_mpu_regions(void)
 	 * MPU regions.
 	 */
 	const struct k_mem_partition static_regions[] = {
-#if defined(CONFIG_APPLICATION_MEMORY)
-		{
-		.start = (u32_t)&__app_ram_start,
-		.size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start,
-		.attr = K_MEM_PARTITION_P_RW_U_RW,
-		},
-#endif /* CONFIG_APPLICATION_MEMORY */
 #if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
 		{
 		.start = (u32_t)&__gcov_bss_start,
@@ -105,13 +98,6 @@ void _arch_configure_static_mpu_regions(void)
 	 * initialization.
 	 */
 	const struct k_mem_partition dyn_region_areas[] = {
-#if defined(CONFIG_APPLICATION_MEMORY)
-	/* Dynamic areas are also allowed in Application Memory. */
-		{
-		.start = (u32_t)&__app_ram_start,
-		.size = (u32_t)&__app_ram_end - (u32_t)&__app_ram_start,
-		},
-#endif /* CONFIG_APPLICATION_MEMORY */
 		{
 		.start = _MPU_DYNAMIC_REGIONS_AREA_START,
 		.size =  _MPU_DYNAMIC_REGIONS_AREA_SIZE,

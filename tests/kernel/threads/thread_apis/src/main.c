@@ -36,7 +36,7 @@ extern void test_delayed_thread_abort(void);
 extern void test_k_thread_foreach(void);
 extern void test_threads_cpu_mask(void);
 
-__kernel struct k_thread tdata;
+struct k_thread tdata;
 #define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 size_t tstack_size = K_THREAD_STACK_SIZEOF(tstack);
@@ -44,8 +44,8 @@ size_t tstack_size = K_THREAD_STACK_SIZEOF(tstack);
 /*local variables*/
 static K_THREAD_STACK_DEFINE(tstack_custom, STACK_SIZE);
 static K_THREAD_STACK_DEFINE(tstack_name, STACK_SIZE);
-__kernel static struct k_thread tdata_custom;
-__kernel static struct k_thread tdata_name;
+static struct k_thread tdata_custom;
+static struct k_thread tdata_name;
 
 static int main_prio;
 

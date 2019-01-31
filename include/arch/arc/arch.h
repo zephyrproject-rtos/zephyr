@@ -84,7 +84,7 @@ extern "C" {
 #if CONFIG_ARC_MPU_VER == 2
 
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __kernel_noinit \
+	struct _k_thread_stack_element __noinit \
 		__aligned(POW2_CEIL(STACK_SIZE_ALIGN(size))) \
 		sym[POW2_CEIL(STACK_SIZE_ALIGN(size)) + \
 		+  STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE]
@@ -95,7 +95,7 @@ extern "C" {
 		 POW2_CEIL(STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE)))
 
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __kernel_noinit \
+	struct _k_thread_stack_element __noinit \
 		__aligned(POW2_CEIL(STACK_SIZE_ALIGN(size))) \
 		sym[nmemb][_ARCH_THREAD_STACK_LEN(size)]
 
@@ -108,7 +108,7 @@ extern "C" {
 #elif CONFIG_ARC_MPU_VER == 3
 
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __kernel_noinit __aligned(STACK_ALIGN) \
+	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
 		sym[size + \
 		+ STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE]
 
@@ -116,7 +116,7 @@ extern "C" {
 		((size) + STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE)
 
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __kernel_noinit __aligned(STACK_ALIGN) \
+	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
 		sym[nmemb][_ARCH_THREAD_STACK_LEN(size)]
 
 #define _ARCH_THREAD_STACK_MEMBER(sym, size) \
@@ -135,13 +135,13 @@ extern "C" {
 #else /* CONFIG_USERSPACE */
 
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __kernel_noinit __aligned(STACK_ALIGN) \
+	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
 		sym[size + STACK_GUARD_SIZE]
 
 #define _ARCH_THREAD_STACK_LEN(size) ((size) + STACK_GUARD_SIZE)
 
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __kernel_noinit __aligned(STACK_ALIGN) \
+	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
 		sym[nmemb][_ARCH_THREAD_STACK_LEN(size)]
 
 #define _ARCH_THREAD_STACK_MEMBER(sym, size) \
