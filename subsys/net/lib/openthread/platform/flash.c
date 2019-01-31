@@ -22,7 +22,7 @@ otError utilsFlashInit(void)
 {
 	int i;
 	struct flash_pages_info info;
-	size_t pages_count;
+	u32_t ot_flash_index;
 
 	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
@@ -30,24 +30,26 @@ otError utilsFlashInit(void)
 		return OT_ERROR_NOT_IMPLEMENTED;
 	}
 
-	pages_count = flash_get_page_count(flash_dev);
-
-	if (flash_get_page_info_by_idx(flash_dev,
-		pages_count - CONFIG_OT_PLAT_FLASH_PAGES_COUNT - 1, &info)) {
-
+	if (flash_get_page_info_by_offs(flash_dev, FLASH_AREA_STORAGE_OFFSET,
+					&info)) {
 		return OT_ERROR_FAILED;
 	}
 
+	ot_flash_index = info.index;
 	ot_flash_offset = info.start_offset;
 	ot_flash_size = 0;
 
 	for (i = 0; i < CONFIG_OT_PLAT_FLASH_PAGES_COUNT; i++) {
 		if (flash_get_page_info_by_idx(flash_dev,
-			pages_count - i - 1, &info)) {
+			ot_flash_index + i, &info)) {
 
 			return OT_ERROR_FAILED;
 		}
 		ot_flash_size += info.size;
+	}
+
+	if (ot_flash_size > FLASH_AREA_STORAGE_SIZE) {
+		return OT_ERROR_FAILED;
 	}
 
 	return OT_ERROR_NONE;
