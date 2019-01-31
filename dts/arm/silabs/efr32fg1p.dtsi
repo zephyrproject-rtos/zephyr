@@ -53,6 +53,14 @@
 			label = "USART_1";
 		};
 
+		leuart0: leuart@4004a000 { /* LEUART0 */
+			compatible = "silabs,gecko-leuart";
+			reg = <0x4004a000 0x400>;
+			interrupts = <21 0>;
+			status = "disabled";
+			label = "LEUART_0";
+		};
+
 		gpio: gpio@4000a400 {
 			compatible = "silabs,efr32xg1-gpio";
 			reg = <0x4000a400 0xc00>;

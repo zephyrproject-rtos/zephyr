@@ -22,11 +22,16 @@ struct leuart_gecko_config {
 	LEUART_TypeDef *base;
 	CMU_Clock_TypeDef clock;
 	u32_t baud_rate;
-	struct soc_gpio_pin pin_rx;
-	struct soc_gpio_pin pin_tx;
-	unsigned int loc;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	void (*irq_config_func)(struct device *dev);
+#endif
+	struct soc_gpio_pin pin_rx;
+	struct soc_gpio_pin pin_tx;
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	u8_t loc_rx;
+	u8_t loc_tx;
+#else
+	u8_t loc;
 #endif
 };
 
@@ -238,18 +243,14 @@ static void leuart_gecko_init_pins(struct device *dev)
 	soc_gpio_configure(&config->pin_rx);
 	soc_gpio_configure(&config->pin_tx);
 
-#ifdef _LEUART_ROUTEPEN_MASK
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
 	base->ROUTEPEN = LEUART_ROUTEPEN_RXPEN | LEUART_ROUTEPEN_TXPEN;
-	base->ROUTELOC0 = (base->ROUTELOC0
-				   & ~(_LEUART_ROUTELOC0_TXLOC_MASK
-				   | _LEUART_ROUTELOC0_RXLOC_MASK))
-				   | (config->loc <<
-				      _LEUART_ROUTELOC0_TXLOC_SHIFT)
-				   | (config->loc <<
-				      _LEUART_ROUTELOC0_RXLOC_SHIFT);
+	base->ROUTELOC0 =
+		(config->loc_tx << _LEUART_ROUTELOC0_TXLOC_SHIFT) |
+		(config->loc_rx << _LEUART_ROUTELOC0_RXLOC_SHIFT);
 #else
 	base->ROUTE = LEUART_ROUTE_RXPEN | LEUART_ROUTE_TXPEN
-			      | (config->loc << 8);
+		| (config->loc << 8);
 #endif
 }
 
@@ -265,14 +266,14 @@ static int leuart_gecko_init(struct device *dev)
 
 	leuartInit.baudrate = config->baud_rate;
 
-	/* Enable LEUART clock */
-	CMU_ClockEnable(config->clock, true);
-
 	/* Enable CORE LE clock in order to access LE modules */
 	CMU_ClockEnable(cmuClock_CORELE, true);
 
 	/* Select LFXO for LEUARTs (and wait for it to stabilize) */
 	CMU_ClockSelectSet(cmuClock_LFB, cmuSelect_LFXO);
+
+	/* Enable LEUART clock */
+	CMU_ClockEnable(config->clock, true);
 
 	/* Init LEUART */
 	LEUART_Init(base, &leuartInit);
@@ -309,19 +310,33 @@ static const struct uart_driver_api leuart_gecko_driver_api = {
 #endif
 };
 
-#ifdef CONFIG_LEUART_GECKO_0
+#ifdef DT_SILABS_GECKO_LEUART_0
+
+#define PIN_LEUART_0_RXD {DT_SILABS_GECKO_LEUART_0_LOCATION_RX_1, \
+		DT_SILABS_GECKO_LEUART_0_LOCATION_RX_2, gpioModeInput, 1}
+#define PIN_LEUART_0_TXD {DT_SILABS_GECKO_LEUART_0_LOCATION_TX_1, \
+		DT_SILABS_GECKO_LEUART_0_LOCATION_TX_2, gpioModePushPull, 1}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void leuart_gecko_config_func_0(struct device *dev);
 #endif
 
 static const struct leuart_gecko_config leuart_gecko_0_config = {
-	.base = (LEUART_TypeDef *)DT_SILABS_GECKO_LEUART_LEUART_0_BASE_ADDRESS,
+	.base = (LEUART_TypeDef *)DT_SILABS_GECKO_LEUART_0_BASE_ADDRESS,
 	.clock = cmuClock_LEUART0,
-	.baud_rate = DT_SILABS_GECKO_LEUART_LEUART_0_CURRENT_SPEED,
-	.pin_rx = PIN_LEUART0_RXD,
-	.pin_tx = PIN_LEUART0_TXD,
-	.loc = DT_SILABS_GECKO_LEUART_LEUART_0_LOCATION,
+	.baud_rate = DT_SILABS_GECKO_LEUART_0_CURRENT_SPEED,
+	.pin_rx = PIN_LEUART_0_RXD,
+	.pin_tx = PIN_LEUART_0_TXD,
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	.loc_rx = DT_SILABS_GECKO_LEUART_0_LOCATION_RX_0,
+	.loc_tx = DT_SILABS_GECKO_LEUART_0_LOCATION_TX_0,
+#else
+#if DT_SILABS_GECKO_LEUART_0_LOCATION_RX_0 \
+	!= DT_SILABS_GECKO_LEUART_0_LOCATION_TX_0
+#error LEUART_0 DTS location-* properties must have identical value
+#endif
+	.loc = DT_SILABS_GECKO_LEUART_0_LOCATION_RX_0,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = leuart_gecko_config_func_0,
 #endif
@@ -329,7 +344,7 @@ static const struct leuart_gecko_config leuart_gecko_0_config = {
 
 static struct leuart_gecko_data leuart_gecko_0_data;
 
-DEVICE_AND_API_INIT(leuart_0, DT_SILABS_GECKO_LEUART_LEUART_0_LABEL,
+DEVICE_AND_API_INIT(leuart_0, DT_SILABS_GECKO_LEUART_0_LABEL,
 		    &leuart_gecko_init, &leuart_gecko_0_data,
 		    &leuart_gecko_0_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -338,29 +353,43 @@ DEVICE_AND_API_INIT(leuart_0, DT_SILABS_GECKO_LEUART_LEUART_0_LABEL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void leuart_gecko_config_func_0(struct device *dev)
 {
-	IRQ_CONNECT(DT_SILABS_GECKO_LEUART_LEUART_0_IRQ,
-		    DT_SILABS_GECKO_LEUART_LEUART_0_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_SILABS_GECKO_LEUART_0_IRQ_0,
+		    DT_SILABS_GECKO_LEUART_0_IRQ_0_PRIORITY,
 		    leuart_gecko_isr, DEVICE_GET(leuart_0), 0);
 
-	irq_enable(DT_SILABS_GECKO_LEUART_LEUART_0_IRQ);
+	irq_enable(DT_SILABS_GECKO_LEUART_0_IRQ_0);
 }
 #endif
 
-#endif /* CONFIG_LEUART_GECKO_0 */
+#endif /* DT_SILABS_GECKO_LEUART_0 */
 
-#ifdef CONFIG_LEUART_GECKO_1
+#ifdef DT_SILABS_GECKO_LEUART_1
+
+#define PIN_LEUART_1_RXD {DT_SILABS_GECKO_LEUART_1_LOCATION_RX_1, \
+		DT_SILABS_GECKO_LEUART_1_LOCATION_RX_2, gpioModeInput, 1}
+#define PIN_LEUART_1_TXD {DT_SILABS_GECKO_LEUART_1_LOCATION_TX_1, \
+		DT_SILABS_GECKO_LEUART_1_LOCATION_TX_2, gpioModePushPull, 1}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void leuart_gecko_config_func_1(struct device *dev);
 #endif
 
 static const struct leuart_gecko_config leuart_gecko_1_config = {
-	.base = (LEUART_TypeDef *)DT_SILABS_GECKO_LEUART_LEUART_1_BASE_ADDRESS,
+	.base = (LEUART_TypeDef *)DT_SILABS_GECKO_LEUART_1_BASE_ADDRESS,
 	.clock = cmuClock_LEUART0,
-	.baud_rate = DT_SILABS_GECKO_LEUART_LEUART_1_CURRENT_SPEED,
-	.pin_rx = PIN_LEUART1_RXD,
-	.pin_tx = PIN_LEUART1_TXD,
-	.loc = DT_SILABS_GECKO_LEUART_LEUART_1_LOCATION,
+	.baud_rate = DT_SILABS_GECKO_LEUART_1_CURRENT_SPEED,
+	.pin_rx = PIN_LEUART_1_RXD,
+	.pin_tx = PIN_LEUART_1_TXD,
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	.loc_rx = DT_SILABS_GECKO_LEUART_1_LOCATION_RX_0,
+	.loc_tx = DT_SILABS_GECKO_LEUART_1_LOCATION_TX_0,
+#else
+#if DT_SILABS_GECKO_LEUART_1_LOCATION_RX_0 \
+	!= DT_SILABS_GECKO_LEUART_1_LOCATION_TX_0
+#error LEUART_1 DTS location-* properties must have identical value
+#endif
+	.loc = DT_SILABS_GECKO_LEUART_1_LOCATION_RX_0,
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = leuart_gecko_config_func_1,
 #endif
@@ -368,7 +397,7 @@ static const struct leuart_gecko_config leuart_gecko_1_config = {
 
 static struct leuart_gecko_data leuart_gecko_1_data;
 
-DEVICE_AND_API_INIT(leuart_1, DT_SILABS_GECKO_LEUART_LEUART_1_LABEL,
+DEVICE_AND_API_INIT(leuart_1, DT_SILABS_GECKO_LEUART_1_LABEL,
 		    &leuart_gecko_init, &leuart_gecko_1_data,
 		    &leuart_gecko_1_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -377,12 +406,12 @@ DEVICE_AND_API_INIT(leuart_1, DT_SILABS_GECKO_LEUART_LEUART_1_LABEL,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void leuart_gecko_config_func_1(struct device *dev)
 {
-	IRQ_CONNECT(DT_SILABS_GECKO_LEUART_LEUART_1_IRQ,
-		    DT_SILABS_GECKO_LEUART_LEUART_1_IRQ_PRIORITY,
+	IRQ_CONNECT(DT_SILABS_GECKO_LEUART_1_IRQ_0,
+		    DT_SILABS_GECKO_LEUART_1_IRQ_0_PRIORITY,
 		    leuart_gecko_isr, DEVICE_GET(leuart_1), 0);
 
-	irq_enable(DT_SILABS_GECKO_LEUART_LEUART_1_IRQ);
+	irq_enable(DT_SILABS_GECKO_LEUART_1_IRQ_0);
 }
 #endif
 
-#endif /* CONFIG_LEUART_GECKO_1 */
+#endif /* DT_SILABS_GECKO_LEUART_1 */

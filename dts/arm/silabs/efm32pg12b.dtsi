@@ -26,7 +26,6 @@
 	};
 
 	aliases {
-		leuart-0 = &leuart0;
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
 	};

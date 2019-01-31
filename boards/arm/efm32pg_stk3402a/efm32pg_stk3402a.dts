@@ -62,7 +62,8 @@
 
 &leuart0 {
 	current-speed = <9600>;
-	location = <18>;
+	location-rx = <GECKO_LOCATION(18) GECKO_PORT_D GECKO_PIN(11)>;
+	location-tx = <GECKO_LOCATION(18) GECKO_PORT_D GECKO_PIN(10)>;
 	status = "ok";
 };
 

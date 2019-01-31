@@ -29,13 +29,6 @@ config GPIO_GECKO_PORTF
 
 endif # GPIO_GECKO
 
-if LEUART_GECKO
-
-config LEUART_GECKO_0
-	default y
-
-endif # LEUART_GECKO
-
 if I2C_GECKO
 
 config I2C_0

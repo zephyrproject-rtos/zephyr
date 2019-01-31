@@ -27,9 +27,18 @@ properties:
       description: required interrupts
       generation: define
 
-    location:
-      type: int
+    # Note: Not all SoC series support setting individual pin location. If this
+    # is a case all location-* properties need to have identical value.
+
+    location-rx:
+      type: array
       category: required
-      description: PIN location
+      description: RX pin configuration defined as <location port pin>
+      generation: define
+
+    location-tx:
+      type: array
+      category: required
+      description: TX pin configuration defined as <location port pin>
       generation: define
 ...
