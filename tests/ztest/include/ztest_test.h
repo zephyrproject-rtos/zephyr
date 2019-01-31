@@ -144,14 +144,18 @@ static inline void unit_test_noop(void)
 
 /* definitions for use with testing application shared memory   */
 #ifdef CONFIG_APP_SHARED_MEM
-#define APPDMEMP0 K_APP_DMEM(part0)
-#define APPBMEMP0 K_APP_BMEM(part0)
+#define ZTEST_DMEM	K_APP_DMEM(ztest_mem_partition)
+#define ZTEST_BMEM	K_APP_BMEM(ztest_mem_partition)
+#define ZTEST_SECTION	K_APP_DMEM_SECTION(ztest_mem_partition)
+extern struct k_mem_partition ztest_mem_partition;
+extern struct k_mem_domain ztest_mem_domain;
 #else
-#define APPDMEMP0
-#define APPBMEMP0
+#define ZTEST_DMEM
+#define ZTEST_BMEM
+#define ZTEST_SECTION	.data
 #endif
 #define ztest_test_suite(name, ...) \
-	     APPDMEMP0  static struct unit_test _##name[] = { \
+	static ZTEST_DMEM struct unit_test _##name[] = { \
 		__VA_ARGS__, { 0 } \
 	}
 /**
