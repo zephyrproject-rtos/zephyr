@@ -6,4 +6,5 @@
 config  BOARD_QEMU_XTENSA
 	bool "Xtensa emulation using QEMU"
 	depends on SOC_XTENSA_SAMPLE_CONTROLLER
+	select HAS_DTS
 	select QEMU_TARGET
