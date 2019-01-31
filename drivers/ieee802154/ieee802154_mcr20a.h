@@ -25,7 +25,7 @@ struct mcr20a_context {
 	struct gpio_callback irqb_cb;
 	struct device *spi;
 	struct spi_config spi_cfg;
-#if defined(CONFIG_IEEE802154_MCR20A_GPIO_SPI_CS)
+#if defined(DT_NXP_MCR20A_0_CS_GPIO_CONTROLLER)
 	struct spi_cs_control cs_ctrl;
 #endif
 	u8_t mac_addr[8];
