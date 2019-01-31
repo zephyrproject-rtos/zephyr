@@ -294,7 +294,7 @@ int usb_dc_attach(void)
 	}
 #else
 	regval |= USBHS_DEVCTRL_SPDCONF_NORMAL;
-#endif /* CONFIG_USBHS_MAX_SPEED */
+#endif /* DT_USBHS_MAXIMUM_SPEED */
 	USBHS->USBHS_DEVCTRL = regval;
 
 	/* Enable the USB clock */
