@@ -282,11 +282,10 @@ struct adxl372_data {
 	struct device *bus;
 #ifdef CONFIG_ADXL372_SPI
 	struct spi_config spi_cfg;
-#endif
-#if defined(CONFIG_ADXL372_SPI_GPIO_CS)
+#if defined(DT_ADI_ADXL372_0_CS_GPIO_CONTROLLER)
 	struct spi_cs_control adxl372_cs_ctrl;
 #endif
-
+#endif
 	struct adxl372_xyz_accel_data sample;
 	struct adxl372_fifo_config fifo_config;
 
@@ -319,7 +318,7 @@ struct adxl372_dev_config {
 	const char *spi_port;
 	u16_t spi_slave;
 	u32_t spi_max_frequency;
-#ifdef CONFIG_ADXL372_SPI_GPIO_CS
+#if defined(DT_ADI_ADXL372_0_CS_GPIO_CONTROLLER)
 	const char *gpio_cs_port;
 	u8_t cs_gpio;
 #endif

@@ -898,7 +898,7 @@ static int adxl372_init(struct device *dev)
 	data->spi_cfg.frequency = cfg->spi_max_frequency;
 	data->spi_cfg.slave = cfg->spi_slave;
 
-#if defined(CONFIG_ADXL372_SPI_GPIO_CS)
+#if defined(DT_ADI_ADXL372_0_CS_GPIO_CONTROLLER)
 	/* handle SPI CS thru GPIO if it is the case */
 
 	data->adxl372_cs_ctrl.gpio_dev = device_get_binding(cfg->gpio_cs_port);
@@ -932,9 +932,9 @@ static const struct adxl372_dev_config adxl372_config = {
 	.spi_port = DT_ADI_ADXL372_0_BUS_NAME,
 	.spi_slave = DT_ADI_ADXL372_0_BASE_ADDRESS,
 	.spi_max_frequency = DT_ADI_ADXL372_0_SPI_MAX_FREQUENCY,
-#ifdef CONFIG_ADXL372_SPI_GPIO_CS
-	.gpio_cs_port = CONFIG_ADXL372_SPI_GPIO_CS_DRV_NAME,
-	.cs_gpio = CONFIG_ADXL372_SPI_GPIO_CS_PIN,
+#ifdef DT_ADI_ADXL372_0_CS_GPIO_CONTROLLER
+	.gpio_cs_port = DT_ADI_ADXL372_0_CS_GPIO_CONTROLLER,
+	.cs_gpio = DT_ADI_ADXL372_0_CS_GPIO_PIN,
 #endif
 #endif
 #ifdef CONFIG_ADXL372_TRIGGER
