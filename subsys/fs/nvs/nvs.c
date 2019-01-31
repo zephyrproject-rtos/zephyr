@@ -13,9 +13,8 @@
 #include <crc.h>
 #include "nvs_priv.h"
 
-#define LOG_LEVEL CONFIG_NVS_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(fs_nvs);
+LOG_MODULE_REGISTER(fs_nvs, CONFIG_NVS_LOG_LEVEL);
 
 
 /* basic routines */
@@ -645,6 +644,11 @@ int nvs_clear(struct nvs_fs *fs)
 	int rc;
 	off_t addr;
 
+	if (!fs->ready) {
+		LOG_ERR("NVS not initialized");
+		return -EACCES;
+	}
+
 	for (u16_t i = 0; i < fs->sector_count; i++) {
 		addr = i << ADDR_SECT_SHIFT;
 		rc = _nvs_flash_erase_sector(fs, addr);
@@ -659,6 +663,7 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 {
 
 	int rc;
+	struct flash_pages_info info;
 
 	k_mutex_init(&fs->nvs_lock);
 
@@ -676,6 +681,17 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 		return -EINVAL;
 	}
 
+	/* check that sector size is a multiple of pagesize */
+	rc = flash_get_page_info_by_offs(fs->flash_device, fs->offset, &info);
+	if (rc) {
+		LOG_ERR("Unable to get page info");
+		return -EINVAL;
+	}
+	if (fs->sector_size % info.size) {
+		LOG_ERR("Invalid sector size");
+		return -EINVAL;
+	}
+
 	/* check the number of sectors, it should be at least 2 */
 	if (fs->sector_count < 2) {
 		LOG_ERR("Configuration error - sector count");
@@ -686,6 +702,9 @@ int nvs_init(struct nvs_fs *fs, const char *dev_name)
 	if (rc) {
 		return rc;
 	}
+
+	/* nvs is ready for use */
+	fs->ready = true;
 
 	LOG_INF("%d Sectors of %d bytes", fs->sector_count, fs->sector_size);
 	LOG_INF("alloc wra: %d, %x",
@@ -705,6 +724,11 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 	struct nvs_ate wlk_ate;
 	u32_t wlk_addr, rd_addr;
 	u16_t sector_freespace;
+
+	if (!fs->ready) {
+		LOG_ERR("NVS not initialized");
+		return -EACCES;
+	}
 
 	ate_size = _nvs_al_size(fs, sizeof(struct nvs_ate));
 	data_size = _nvs_al_size(fs, len);
@@ -810,6 +834,11 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, u16_t id, void *data, size_t len,
 	struct nvs_ate wlk_ate;
 	size_t ate_size;
 
+	if (!fs->ready) {
+		LOG_ERR("NVS not initialized");
+		return -EACCES;
+	}
+
 	ate_size = _nvs_al_size(fs, sizeof(struct nvs_ate));
 
 	if (len > (fs->sector_size - 2 * ate_size)) {
@@ -868,6 +897,11 @@ ssize_t nvs_calc_free_space(struct nvs_fs *fs)
 	struct nvs_ate step_ate, wlk_ate;
 	u32_t step_addr, wlk_addr;
 	size_t ate_size, free_space;
+
+	if (!fs->ready) {
+		LOG_ERR("NVS not initialized");
+		return -EACCES;
+	}
 
 	ate_size = _nvs_al_size(fs, sizeof(struct nvs_ate));
 
