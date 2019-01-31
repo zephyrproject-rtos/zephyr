@@ -12,7 +12,7 @@
 
 static ZTEST_DMEM unsigned char __aligned(4) data[] = "abcd1234";
 
-__kernel struct k_pipe put_get_pipe;
+struct k_pipe put_get_pipe;
 
 
 static void put_fail(struct k_pipe *p)

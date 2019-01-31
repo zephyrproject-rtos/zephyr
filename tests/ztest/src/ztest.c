@@ -12,7 +12,7 @@
 #endif
 
 #ifdef KERNEL
-__kernel static struct k_thread ztest_thread;
+static struct k_thread ztest_thread;
 #endif
 
 /* ZTEST_DMEM and ZTEST_BMEM are used for the application shared memory test  */
@@ -158,7 +158,7 @@ K_THREAD_STACK_DEFINE(ztest_thread_stack, CONFIG_ZTEST_STACKSIZE +
 		      CONFIG_TEST_EXTRA_STACKSIZE);
 static ZTEST_BMEM int test_result;
 
-__kernel static struct k_sem test_end_signal;
+static struct k_sem test_end_signal;
 
 void ztest_test_fail(void)
 {

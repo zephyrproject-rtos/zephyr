@@ -228,7 +228,7 @@ void thread_11(void)
 }
 
 K_THREAD_STACK_DEFINE(thread_12_stack_area, STACKSIZE);
-__kernel struct k_thread thread_12_thread_data;
+struct k_thread thread_12_thread_data;
 extern void thread_12(void);
 
 /**

@@ -607,7 +607,7 @@ extern struct task_state_segment _main_tss;
 #endif
 
 #define _ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __kernel_noinit \
+	struct _k_thread_stack_element __noinit \
 		__aligned(_STACK_BASE_ALIGN) \
 		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + _STACK_GUARD_SIZE]
 
@@ -617,7 +617,7 @@ extern struct task_state_segment _main_tss;
 		_STACK_GUARD_SIZE)
 
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __kernel_noinit \
+	struct _k_thread_stack_element __noinit \
 		__aligned(_STACK_BASE_ALIGN) \
 		sym[nmemb][_ARCH_THREAD_STACK_LEN(size)]
 

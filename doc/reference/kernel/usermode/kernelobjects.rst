@@ -56,17 +56,8 @@ call APIs, several conditions must be met on how the kernel object is declared:
   in a special table of kernel object metadata.  Kernel objects may be members
   of arrays or embedded within other data structures.
 
-* Kernel objects must be located in memory reserved for the kernel. If
-  :option:`CONFIG_APPLICATION_MEMORY` is used, all declarations of kernel
-  objects inside application code must be prefixed with the :c:macro:`__kernel`
-  attribute so that they are placed in the right memory sections. The APIs for
-  statically declaring and initializing kernel objects (such as
-  :c:macro:`K_SEM_DEFINE()`) automatically do this. However, uninitialized
-  kernel objects need to be tagged like this:
-
-.. code-block:: c
-
-    __kernel struct k_sem my_sem;
+* Kernel objects must be located in memory reserved for the kernel. They
+  must not be located in any memory partitions that are user-accessible.
 
 * Any memory reserved for a kernel object must be used exclusively for that
   object. Kernel objects may not be members of a union data type.
@@ -232,7 +223,7 @@ are embedded within some larger struct and initialized statically.
         ...
     };
 
-    __kernel struct foo my_foo = {
+    struct foo my_foo = {
         .sem = _K_SEM_INITIALIZER(my_foo.sem, 0, 1),
         ...
     };
@@ -274,7 +265,7 @@ Configuration Options
 Related configuration options:
 
 * :option:`CONFIG_USERSPACE`
-* :option:`CONFIG_APPLICATION_MEMORY`
+* :option:`CONFIG_APP_SHARED_MEM`
 * :option:`CONFIG_MAX_THREAD_BYTES`
 
 API Reference

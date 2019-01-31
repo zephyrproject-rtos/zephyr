@@ -341,12 +341,9 @@ zephyr_cc_option(-Wpointer-arith)
 
 # Declare MPU userspace dependencies before the linker scripts to make
 # sure the order of dependencies are met
-if(CONFIG_APP_SHARED_MEM AND CONFIG_USERSPACE)
+if(CONFIG_USERSPACE)
+  if(CONFIG_APP_SHARED_MEM)
     set(APP_SMEM_DEP app_smem_linker)
-endif()
-if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
-  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_ARC AND CONFIG_APPLICATION_MEMORY)
-    set(ALIGN_SIZING_DEP app_sizing_prebuilt linker_app_sizing_script)
   endif()
   if(CONFIG_ARM)
     set(PRIV_STACK_DEP priv_stacks_prebuilt)
@@ -744,101 +741,6 @@ or make sure it is not created when it has no source files.")
 endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
-
-if(CONFIG_APPLICATION_MEMORY)
-  # Objects default to being in kernel space, and then we exclude
-  # certain items.
-  set(kernel_object_file_list
-    ${ZEPHYR_LIBS_PROPERTY}
-    kernel
-    )
-  list(
-    REMOVE_ITEM
-    kernel_object_file_list
-    app
-    )
-
-  # The zephyr libraries in zephyr/lib/ and zephyr/test/ belong in
-  # userspace.
-
-  # NB: The business logic for determing what source files are in
-  # kernel space and what source files are in user space is
-  # fragile. Fix ASAP.
-  #
-  # The intended design is that certain directories are designated as
-  # containing userspace code and others for kernel space code. The
-  # implementation we have however is not working on directories of
-  # code, it is working on zephyr libraries. It is exploiting the fact
-  # that zephyr libraries follow a naming scheme as described in
-  # extensions.cmake:zephyr_library_get_current_dir_lib_name
-  #
-  # But code from test/ and lib/ that is placed in the "zephyr"
-  # library (with zephyr_sources()) will not be in a library that is
-  # prefixed with lib__ or test__ and will end up in the wrong address
-  # space.
-  set(application_space_dirs
-    lib
-    tests
-    )
-  foreach(f ${kernel_object_file_list})
-    foreach(app_dir ${application_space_dirs})
-      if(${f} MATCHES "^${app_dir}__") # Begins with ${app_dir}__, e.g. lib__libc
-        list(
-          REMOVE_ITEM
-          kernel_object_file_list
-          ${f}
-          )
-      endif()
-    endforeach()
-  endforeach()
-
-  # Create a list ks, with relative paths to kernel space libs.
-  foreach(f ${kernel_object_file_list})
-    get_target_property(target_name       ${f} NAME)
-    get_target_property(target_binary_dir ${f} BINARY_DIR)
-
-    string(REPLACE
-      ${PROJECT_BINARY_DIR}
-      ""
-      fixed_path
-      ${target_binary_dir}
-      )
-
-    # Append / if not empty
-    if(fixed_path)
-      set(fixed_path "${fixed_path}/")
-    endif()
-
-    # Cut off leading / if present
-    if(fixed_path MATCHES "^/.+")
-      string(SUBSTRING ${fixed_path} 1 -1 fixed_path)
-    endif()
-
-    set(fixed_path "${fixed_path}lib${target_name}.a")
-
-    if(CMAKE_GENERATOR STREQUAL "Ninja")
-      # Ninja invokes the linker from the root of the build directory
-      # (APPLICATION_BINARY_DIR) instead of from the build/zephyr
-      # directory (PROJECT_BINARY_DIR). So for linker-defs.h to get
-      # the correct path we need to prefix with zephyr/.
-      set(fixed_path "zephyr/${fixed_path}")
-    endif()
-
-    list(APPEND ks ${fixed_path})
-  endforeach()
-
-  # We are done constructing kernel_object_file_list, now we inject
-  # this list into the linker script through the define
-  # KERNELSPACE_OBJECT_FILES
-  set(def -DKERNELSPACE_OBJECT_FILES=)
-  foreach(f ${ks})
-    set(def "${def} ${f}")
-  endforeach()
-  set_property(GLOBAL APPEND PROPERTY
-    PROPERTY_LINKER_SCRIPT_DEFINES
-    ${def}
-    )
-endif() # CONFIG_APPLICATION_MEMORY
 
 if (CONFIG_CODE_DATA_RELOCATION)
   set(CODE_RELOCATION_DEP code_relocation_source_lib)
@@ -1244,52 +1146,7 @@ if(CONFIG_APP_SHARED_MEM AND CONFIG_USERSPACE)
     )
 endif()
 
-if(CONFIG_CPU_HAS_MPU AND CONFIG_USERSPACE)
-
-  if(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT AND CONFIG_ARC AND CONFIG_APPLICATION_MEMORY)
-
-    construct_add_custom_command_for_linker_pass(linker_app_sizing custom_command)
-    add_custom_command(
-      ${custom_command}
-      )
-
-    add_custom_target(
-      linker_app_sizing_script
-      DEPENDS
-      linker_app_sizing.cmd
-      ${OFFSETS_H_TARGET}
-      ${APP_SMEM_DEP}
-      ${CODE_RELOCATION_DEP}
-    )
-
-    set_property(TARGET
-      linker_app_sizing_script
-      PROPERTY INCLUDE_DIRECTORIES
-      ${ZEPHYR_INCLUDE_DIRS}
-      )
-
-    # For systems with MPUs, the size of the application data section must
-    # be determined so that MPU alignment requirements can be met.
-    # Create a app_sizing_prebuilt target so we can do this before the
-    # other ELF files are built
-    set(GEN_APP_ALIGN $ENV{ZEPHYR_BASE}/scripts/gen_alignment_script.py)
-    add_executable(       app_sizing_prebuilt misc/empty_file.c)
-    target_link_libraries(app_sizing_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_app_sizing.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
-    set_property(TARGET   app_sizing_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_app_sizing.cmd)
-    add_dependencies(     app_sizing_prebuilt linker_app_sizing_script ${OFFSETS_LIB} ${CODE_RELOCATION_DEP} )
-
-    add_custom_command(
-      TARGET app_sizing_prebuilt
-      POST_BUILD
-      COMMAND ${PYTHON_EXECUTABLE} ${GEN_APP_ALIGN}
-      --output ./include/generated/app_data_alignment.ld
-      --kernel $<TARGET_FILE:app_sizing_prebuilt>
-      VERBATIM
-      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
-   )
-  endif()
-
-if(CONFIG_ARM)
+if(CONFIG_USERSPACE AND CONFIG_ARM)
   construct_add_custom_command_for_linker_pass(linker_priv_stacks custom_command)
   add_custom_command(
     ${custom_command}
@@ -1315,8 +1172,6 @@ if(CONFIG_ARM)
   target_link_libraries(priv_stacks_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
   set_property(TARGET   priv_stacks_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd)
   add_dependencies(     priv_stacks_prebuilt ${ALIGN_SIZING_DEP} linker_priv_stacks_script ${OFFSETS_LIB})
-endif()
-
 endif()
 
 # FIXME: Is there any way to get rid of empty_file.c?

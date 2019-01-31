@@ -275,7 +275,7 @@ static void write_kerntext(void)
 	zassert_unreachable("Write to kernel text did not fault");
 }
 
-__kernel static int kernel_data;
+static int kernel_data;
 
 /**
  * @brief Testto read from kernel data section
@@ -292,7 +292,7 @@ static void read_kernel_data(void)
 	BARRIER();
 	value = kernel_data;
 	printk("%d\n", value);
-	zassert_unreachable("Read from __kernel data did not fault");
+	zassert_unreachable("Read from data did not fault");
 }
 
 /**
@@ -306,7 +306,7 @@ static void write_kernel_data(void)
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
 	kernel_data = 1;
-	zassert_unreachable("Write to  __kernel data did not fault");
+	zassert_unreachable("Write to  data did not fault");
 }
 
 /*
@@ -394,7 +394,7 @@ static void pass_user_object(void)
 	zassert_unreachable("Pass a user object to a syscall did not fault");
 }
 
-__kernel static struct k_sem ksem;
+static struct k_sem ksem;
 
 /**
  * @brief Test to pass object to a system call without permissions
@@ -412,7 +412,7 @@ static void pass_noperms_object(void)
 			    "syscall did not fault");
 }
 
-__kernel struct k_thread kthread_thread;
+struct k_thread kthread_thread;
 
 K_THREAD_STACK_DEFINE(kthread_stack, STACKSIZE);
 
@@ -438,7 +438,7 @@ static void start_kernel_thread(void)
 	zassert_unreachable("Create a kernel thread did not fault");
 }
 
-__kernel struct k_thread uthread_thread;
+struct k_thread uthread_thread;
 K_THREAD_STACK_DEFINE(uthread_stack, STACKSIZE);
 
 static void uthread_body(void)
@@ -625,13 +625,6 @@ static void read_kobject_user_pipe(void)
 	zassert_unreachable("System call memory read validation "
 			    "did not fault");
 }
-
-/* Removed test for access_non_app_memory
- * due to the APPLICATION_MEMORY variable
- * defaulting to y, when enabled the
- * section app_bss is made available to
- * all threads breaking the test
- */
 
 /* Create bool in part1 partitions */
 K_APP_DMEM(part1) bool thread_bool;

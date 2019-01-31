@@ -33,7 +33,7 @@ struct fd_entry {
 static const struct fd_op_vtable stdinout_fd_op_vtable;
 #endif
 
-__kernel static struct fd_entry fdtable[CONFIG_POSIX_MAX_FDS] = {
+static struct fd_entry fdtable[CONFIG_POSIX_MAX_FDS] = {
 #ifdef CONFIG_POSIX_API
 	/*
 	 * Predefine entries for stdin/stdout/stderr. Object pointer

@@ -9,18 +9,18 @@
 /**TESTPOINT: init via K_MSGQ_DEFINE*/
 K_MSGQ_DEFINE(kmsgq, MSG_SIZE, MSGQ_LEN, 4);
 K_MSGQ_DEFINE(kmsgq_test_alloc, MSG_SIZE, MSGQ_LEN, 4);
-__kernel struct k_msgq msgq;
-__kernel struct k_msgq msgq1;
+struct k_msgq msgq;
+struct k_msgq msgq1;
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 K_THREAD_STACK_DEFINE(tstack1, STACK_SIZE);
 K_THREAD_STACK_DEFINE(tstack2, STACK_SIZE);
-__kernel struct k_thread tdata;
-__kernel struct k_thread tdata1;
-__kernel struct k_thread tdata2;
+struct k_thread tdata;
+struct k_thread tdata1;
+struct k_thread tdata2;
 static ZTEST_BMEM char __aligned(4) tbuffer[MSG_SIZE * MSGQ_LEN];
 static ZTEST_DMEM char __aligned(4) tbuffer1[MSG_SIZE];
 static ZTEST_DMEM u32_t data[MSGQ_LEN] = { MSG0, MSG1 };
-__kernel struct k_sem end_sema;
+struct k_sem end_sema;
 
 static void put_msgq(struct k_msgq *pmsgq)
 {

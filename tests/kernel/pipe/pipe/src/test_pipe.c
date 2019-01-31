@@ -114,7 +114,7 @@ static struct pipe_sequence timeout_elements[] = {
 	{ PIPE_SIZE + 1, ATLEAST_1, 0, -EAGAIN }
 };
 
-__kernel struct k_thread get_single_tid;
+struct k_thread get_single_tid;
 
 /* Helper functions */
 

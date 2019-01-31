@@ -11,16 +11,12 @@
 
 #ifdef CONFIG_USERSPACE
 static struct arc_mpu_region mpu_regions[] = {
-#if CONFIG_ARC_MPU_VER == 3 && defined(CONFIG_APPLICATION_MEMORY)
+#if CONFIG_ARC_MPU_VER == 3
 	/* Region ICCM */
 	MPU_REGION_ENTRY("IMAGE ROM",
 			 (u32_t) _image_rom_start,
 			 (u32_t) _image_rom_size,
 			 REGION_FLASH_ATTR),
-	MPU_REGION_ENTRY("APP MEMORY",
-			 (u32_t) __app_ram_start,
-			 (u32_t) __app_ram_size,
-			 REGION_RAM_ATTR),
 	MPU_REGION_ENTRY("KERNEL MEMORY",
 			 (u32_t) __kernel_ram_start,
 			 (u32_t) __kernel_ram_size,

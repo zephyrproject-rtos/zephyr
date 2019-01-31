@@ -37,7 +37,7 @@ K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 
 #if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 /* Compiler will throw an error if the provided value isn't a power of two */
-MALLOC_BSS static unsigned char __kernel __aligned(CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE)
+MALLOC_BSS static unsigned char __aligned(CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE)
 	heap_base[CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE];
 #define MAX_HEAP_SIZE CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 #else

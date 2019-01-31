@@ -42,8 +42,8 @@ K_THREAD_ACCESS_GRANT(T_KDEFINE_PREEMPT_THREAD, &start_sema, &end_sema);
 /*local variables*/
 static K_THREAD_STACK_DEFINE(stack_coop, INIT_COOP_STACK_SIZE);
 static K_THREAD_STACK_DEFINE(stack_preempt, INIT_PREEMPT_STACK_SIZE);
-__kernel static struct k_thread thread_coop;
-__kernel static struct k_thread thread_preempt;
+static struct k_thread thread_coop;
+static struct k_thread thread_preempt;
 static ZTEST_BMEM u64_t t_create;
 static ZTEST_BMEM struct thread_data {
 	int init_prio;

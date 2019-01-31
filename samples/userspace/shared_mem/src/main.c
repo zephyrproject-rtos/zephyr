@@ -68,13 +68,13 @@ _app_enc_b BYTE W3R[26];
  */
 K_SEM_DEFINE(allforone, 0, 3);
 
-__kernel struct k_thread enc_thread;
+struct k_thread enc_thread;
 K_THREAD_STACK_DEFINE(enc_stack, STACKSIZE);
 
-__kernel struct k_thread pt_thread;
+struct k_thread pt_thread;
 K_THREAD_STACK_DEFINE(pt_stack, STACKSIZE);
 
-__kernel struct k_thread ct_thread;
+struct k_thread ct_thread;
 K_THREAD_STACK_DEFINE(ct_stack, STACKSIZE);
 
 _app_enc_d char encMSG[] = "ENC!\n";

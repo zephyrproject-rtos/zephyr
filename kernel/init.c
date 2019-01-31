@@ -153,10 +153,6 @@ void _bss_zero(void)
 
 	bss_zeroing_relocation();
 #endif	/* CONFIG_CODE_DATA_RELOCATION */
-#ifdef CONFIG_APPLICATION_MEMORY
-	(void)memset(&__app_bss_start, 0,
-		     ((u32_t) &__app_bss_end - (u32_t) &__app_bss_start));
-#endif
 #ifdef CONFIG_COVERAGE_GCOV
 	(void)memset(&__gcov_bss_start, 0,
 		 ((u32_t) &__gcov_bss_end - (u32_t) &__gcov_bss_start));
@@ -189,10 +185,6 @@ void _data_copy(void)
 #ifdef CONFIG_APP_SHARED_MEM
 	(void)memcpy(&_app_smem_start, &_app_smem_rom_start,
 		 ((u32_t) &_app_smem_end - (u32_t) &_app_smem_start));
-#endif
-#ifdef CONFIG_APPLICATION_MEMORY
-	(void)memcpy(&__app_data_ram_start, &__app_data_rom_start,
-		 ((u32_t) &__app_data_ram_end - (u32_t) &__app_data_ram_start));
 #endif
 }
 #endif

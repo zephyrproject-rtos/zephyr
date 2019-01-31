@@ -17,9 +17,9 @@ struct fifo_msg {
 #define FIFO_MSG_VALUE 0xdeadbeef
 
 /* verify k_poll() without waiting */
-static __kernel struct k_sem no_wait_sem;
-static __kernel struct k_fifo no_wait_fifo;
-static __kernel struct k_poll_signal no_wait_signal;
+static struct k_sem no_wait_sem;
+static struct k_fifo no_wait_fifo;
+static struct k_poll_signal no_wait_signal;
 
 /**
  * @brief Test cases to verify poll
@@ -108,12 +108,12 @@ void test_poll_no_wait(void)
 
 static K_SEM_DEFINE(wait_sem, 0, 1);
 static K_FIFO_DEFINE(wait_fifo);
-static __kernel struct k_poll_signal wait_signal =
+static struct k_poll_signal wait_signal =
 	K_POLL_SIGNAL_INITIALIZER(wait_signal);
 
 struct fifo_msg wait_msg = { NULL, FIFO_MSG_VALUE };
 
-static __kernel struct k_thread poll_wait_helper_thread;
+static struct k_thread poll_wait_helper_thread;
 static K_THREAD_STACK_DEFINE(poll_wait_helper_stack, KB(1));
 
 #define TAG_0 10
@@ -334,10 +334,10 @@ void test_poll_wait(void)
 
 /* verify k_poll() that waits on object which gets cancellation */
 
-static __kernel struct k_fifo cancel_fifo;
-static __kernel struct k_fifo non_cancel_fifo;
+static struct k_fifo cancel_fifo;
+static struct k_fifo non_cancel_fifo;
 
-static __kernel struct k_thread poll_cancel_helper_thread;
+static struct k_thread poll_cancel_helper_thread;
 static K_THREAD_STACK_DEFINE(poll_cancel_helper_stack, 768);
 
 static void poll_cancel_helper(void *p1, void *p2, void *p3)
@@ -428,7 +428,7 @@ void test_poll_cancel_main_high_prio(void)
 /* verify multiple pollers */
 static K_SEM_DEFINE(multi_sem, 0, 1);
 
-static __kernel struct k_thread multi_thread_lowprio;
+static struct k_thread multi_thread_lowprio;
 static K_THREAD_STACK_DEFINE(multi_stack_lowprio, KB(1));
 
 static void multi_lowprio(void *p1, void *p2, void *p3)
@@ -448,7 +448,7 @@ static void multi_lowprio(void *p1, void *p2, void *p3)
 
 static K_SEM_DEFINE(multi_reply, 0, 1);
 
-static __kernel struct k_thread multi_thread;
+static struct k_thread multi_thread;
 static K_THREAD_STACK_DEFINE(multi_stack, KB(1));
 
 static void multi(void *p1, void *p2, void *p3)
@@ -525,9 +525,9 @@ void test_poll_multi(void)
 	k_sleep(250);
 }
 
-static __kernel struct k_thread signal_thread;
+static struct k_thread signal_thread;
 static K_THREAD_STACK_DEFINE(signal_stack, KB(1));
-static __kernel struct k_poll_signal signal;
+static struct k_poll_signal signal;
 
 static void threadstate(void *p1, void *p2, void *p3)
 {

@@ -447,51 +447,19 @@ void arc_core_mpu_configure_user_context(struct k_thread *thread)
 	/* for kernel threads, no need to configure user context */
 	if (!(thread->base.user_options & K_USER)) {
 #if defined(CONFIG_APP_SHARED_MEM) && CONFIG_ARC_MPU_VER == 3
-/*
- * APP_SHARED_MEM is handled here, all privileged threads have the right
- * to access it. APPLICATION_MEMORY will be handled as a static memory region
- */
+		/* APP_SHARED_MEM is handled here, all privileged threads have
+		 * the right to access it.
+		 */
 		base = (u32_t)&_app_smem_start;
 		size = (u32_t)&_app_smem_size;
-		_region_init(_get_region_index_by_type(THREAD_APP_DATA_REGION)
-			     , base, size, _get_region_attr_by_type(THREAD_APP_DATA_REGION));
+		_region_init(_get_region_index_by_type(THREAD_APP_DATA_REGION),
+			     base, size,
+			     _get_region_attr_by_type(THREAD_APP_DATA_REGION));
 #endif
 		return;
 	}
 
 	arc_core_mpu_configure(THREAD_STACK_USER_REGION, base, size);
-
-	/* configure app data portion */
-#ifdef CONFIG_APPLICATION_MEMORY
-#if CONFIG_ARC_MPU_VER == 2
-	/*
-	 * _app_ram_size is guaranteed to be power of two, and
-	 * _app_ram_start is guaranteed to be aligned _app_ram_size
-	 * in linker template
-	 */
-	base = (u32_t)&__app_ram_start;
-	size = (u32_t)&__app_ram_size;
-
-	/* set up app data region if exists, otherwise disable */
-	if (size > 0) {
-		arc_core_mpu_configure(THREAD_APP_DATA_REGION, base, size);
-	}
-#elif CONFIG_ARC_MPU_VER == 3
-	/*
-	 * ARC MPV v3 doesn't support MPU region overlap.
-	 * Application memory should be a static memory, defined in mpu_config
-	 *
-	 * here, need to clear THREAD_APP_DATA_REGION for user thread as it will
-	 * be set by kernel thread to to access app_shared mem. For user thread
-	 * the handling of app_shared mem is done by
-	 * THREAD_DOMAIN_PARTITION_REGION
-	 */
-#if defined(CONFIG_APP_SHARED_MEM)
-	_region_init(_get_region_index_by_type(THREAD_APP_DATA_REGION)
-		     , 0, 0, 0);
-#endif
-#endif
-#endif
 }
 
 /**

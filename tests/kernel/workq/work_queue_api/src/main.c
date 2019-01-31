@@ -21,13 +21,13 @@
 
 static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static K_THREAD_STACK_DEFINE(user_tstack, STACK_SIZE);
-__kernel static struct k_work_q workq;
-__kernel static struct k_work_q user_workq;
+static struct k_work_q workq;
+static struct k_work_q user_workq;
 static ZTEST_BMEM struct k_work work[NUM_OF_WORK];
 static struct k_delayed_work new_work;
 static struct k_delayed_work delayed_work[NUM_OF_WORK], delayed_work_sleepy;
-__kernel static struct k_sem sync_sema;
-__kernel static struct k_sem dummy_sema;
+static struct k_sem sync_sema;
+static struct k_sem dummy_sema;
 static struct k_thread *main_thread;
 
 static void work_sleepy(struct k_work *w)

@@ -12,7 +12,7 @@
 #define LIST_LEN        5
 
 static K_THREAD_STACK_DEFINE(child_stack, STACK_SIZE);
-static __kernel struct k_thread child_thread;
+static struct k_thread child_thread;
 static ZTEST_BMEM struct qdata qdata[LIST_LEN * 2];
 
 K_MEM_POOL_DEFINE(test_pool, 16, 96, 4, 4);
