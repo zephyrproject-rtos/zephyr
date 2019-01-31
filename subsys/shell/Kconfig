@@ -157,4 +157,3 @@ source "subsys/shell/modules/Kconfig"
 
 endif #SHELL
 endmenu
-
