@@ -6,3 +6,4 @@
 config BOARD_XT_SIM
 	bool "Xtensa Development ISS"
 	depends on SIMULATOR_XTENSA
+	select HAS_DTS
