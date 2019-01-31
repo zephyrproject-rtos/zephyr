@@ -12,6 +12,7 @@ depends on SOC_SERIES_IMX_RT
 config SOC_MIMXRT1021
 	bool "SOC_MIMXRT1021"
 	select HAS_MCUX
+	select HAS_MCUX_CACHE
 	select HAS_MCUX_CCM
 	select HAS_MCUX_ENET
 	select HAS_MCUX_IGPIO
@@ -28,6 +29,7 @@ config SOC_MIMXRT1021
 config SOC_MIMXRT1051
 	bool "SOC_MIMXRT1051"
 	select HAS_MCUX
+	select HAS_MCUX_CACHE
 	select HAS_MCUX_CCM
 	select HAS_MCUX_ENET
 	select HAS_MCUX_IGPIO
@@ -44,6 +46,7 @@ config SOC_MIMXRT1051
 config SOC_MIMXRT1052
 	bool "SOC_MIMXRT1052"
 	select HAS_MCUX
+	select HAS_MCUX_CACHE
 	select HAS_MCUX_CCM
 	select HAS_MCUX_ENET
 	select HAS_MCUX_IGPIO
@@ -60,6 +63,7 @@ config SOC_MIMXRT1052
 config SOC_MIMXRT1061
 	bool "SOC_MIMXRT1061"
 	select HAS_MCUX
+	select HAS_MCUX_CACHE
 	select HAS_MCUX_CCM
 	select HAS_MCUX_ENET
 	select HAS_MCUX_IGPIO
@@ -75,6 +79,7 @@ config SOC_MIMXRT1061
 config SOC_MIMXRT1062
 	bool "SOC_MIMXRT1062"
 	select HAS_MCUX
+	select HAS_MCUX_CACHE
 	select HAS_MCUX_CCM
 	select HAS_MCUX_ENET
 	select HAS_MCUX_IGPIO

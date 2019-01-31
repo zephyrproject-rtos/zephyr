@@ -17,6 +17,11 @@ config HAS_MCUX_ADC16
 	help
 	  Set if the 16-bit ADC (ADC16) module is present in the SoC.
 
+config HAS_MCUX_CACHE
+	bool
+	help
+	  Set if the L1 or L2 cache is present in the SoC.
+
 config HAS_MCUX_CCM
 	bool
 	help
