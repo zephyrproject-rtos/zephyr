@@ -617,6 +617,7 @@ static void dns_query_ipv4(void)
 	}
 }
 
+#if defined(TEMPORARILY_DISABLED_TEST)
 static void dns_query_ipv6(void)
 {
 	struct expected_status status = {
@@ -644,6 +645,7 @@ static void dns_query_ipv6(void)
 		zassert_true(false, "Timeout while waiting data");
 	}
 }
+#endif
 
 struct expected_addr_status {
 	struct sockaddr addr;
@@ -714,6 +716,7 @@ static void dns_query_ipv4_numeric(void)
 	}
 }
 
+#if defined(TEMPORARILY_DISABLED_TEST)
 static void dns_query_ipv6_numeric(void)
 {
 	struct expected_addr_status status = {
@@ -741,6 +744,7 @@ static void dns_query_ipv6_numeric(void)
 		zassert_true(false, "Timeout while waiting data");
 	}
 }
+#endif
 
 void test_main(void)
 {
@@ -759,9 +763,7 @@ void test_main(void)
 			 ztest_unit_test(dns_query_ipv4_cancel),
 			 ztest_unit_test(dns_query_ipv6_cancel),
 			 ztest_unit_test(dns_query_ipv4),
-			 ztest_unit_test(dns_query_ipv6),
-			 ztest_unit_test(dns_query_ipv4_numeric),
-			 ztest_unit_test(dns_query_ipv6_numeric));
+			 ztest_unit_test(dns_query_ipv4_numeric));
 
 	ztest_run_test_suite(dns_tests);
 }
