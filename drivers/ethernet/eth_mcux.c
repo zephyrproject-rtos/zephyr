@@ -107,11 +107,19 @@ struct eth_context {
 
 static void eth_0_config_func(void);
 
+#ifdef CONFIG_HAS_MCUX_CACHE
+static __nocache enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
+rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];
+
+static __nocache enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
+tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
+#else
 static enet_rx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
 rx_buffer_desc[CONFIG_ETH_MCUX_RX_BUFFERS];
 
 static enet_tx_bd_struct_t __aligned(ENET_BUFF_ALIGNMENT)
 tx_buffer_desc[CONFIG_ETH_MCUX_TX_BUFFERS];
+#endif
 
 #if defined(CONFIG_PTP_CLOCK_MCUX)
 /* Packets to be timestamped. */
@@ -319,6 +327,7 @@ static void eth_mcux_phy_event(struct eth_context *context)
 			context->link_up = link_up;
 			context->phy_state = eth_mcux_phy_state_read_duplex;
 			net_eth_carrier_on(context->iface);
+			k_sleep(USEC_PER_MSEC);
 		} else if (!link_up && context->link_up) {
 			LOG_INF("Link down");
 			context->link_up = link_up;

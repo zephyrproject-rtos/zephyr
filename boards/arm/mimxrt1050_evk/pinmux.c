@@ -151,11 +151,24 @@ static int mimxrt1050_evk_init(struct device *dev)
 
 	/* pull up the ENET_INT before RESET. */
 	GPIO_WritePinOutput(GPIO1, 10, 1);
-	/* RESET PHY chip. */
-	GPIO_WritePinOutput(GPIO1, 9, 1);
+	GPIO_WritePinOutput(GPIO1, 9, 0);
 #endif
 
 	return 0;
 }
 
+#ifdef CONFIG_ETH_MCUX_0
+static int mimxrt1050_evk_phy_reset(struct device *dev)
+{
+	/* RESET PHY chip. */
+	k_busy_wait(10*USEC_PER_MSEC);
+	GPIO_WritePinOutput(GPIO1, 9, 1);
+
+	return 0;
+}
+#endif
+
 SYS_INIT(mimxrt1050_evk_init, PRE_KERNEL_1, 0);
+#ifdef CONFIG_ETH_MCUX_0
+SYS_INIT(mimxrt1050_evk_phy_reset, PRE_KERNEL_2, 0);
+#endif
