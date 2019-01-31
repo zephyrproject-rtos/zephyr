@@ -167,6 +167,108 @@ static void sc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
+struct gatt_cf_cfg {
+	u8_t                    id;
+	bt_addr_le_t		peer;
+	u8_t			data[1];
+};
+
+#if defined(CONFIG_BT_GATT_CACHING)
+#define CF_CFG_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
+static struct gatt_cf_cfg cf_cfg[CF_CFG_MAX] = {};
+
+static struct gatt_cf_cfg *find_cf_cfg(const bt_addr_le_t *addr)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
+		if (!bt_addr_le_cmp(&cf_cfg[i].peer, addr)) {
+			return &cf_cfg[i];
+		}
+	}
+
+	return NULL;
+}
+
+static ssize_t cf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+		       void *buf, u16_t len, u16_t offset)
+{
+	struct gatt_cf_cfg *cfg;
+	u8_t data[1] = {};
+
+	cfg = find_cf_cfg(&conn->le.dst);
+	if (cfg) {
+		memcpy(data, cfg->data, sizeof(data));
+	}
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, data,
+				 sizeof(data));
+}
+
+static bool cf_set_value(struct gatt_cf_cfg *cfg, const u8_t *value, u16_t len)
+{
+	u16_t i;
+
+	/* Validate the bits */
+	for (i = 0; i < len; i++) {
+		u8_t chg_bits = value[i] ^ cfg->data[i];
+		u8_t bit;
+
+		for (bit = 0; bit < 8; bit++) {
+			/* A client shall never clear a bit it has set */
+			if ((BIT(bit) & chg_bits) &&
+			    (BIT(bit) & cfg->data[i])) {
+				return false;
+			}
+		}
+	}
+
+	/* Set the bits for each octect */
+	for (i = 0; i < len; i++) {
+		cfg->data[i] |= value[i];
+		BT_DBG("byte %u: data 0x%02x value 0x%02x", i, cfg->data[i],
+		       value[i]);
+	}
+
+	return true;
+}
+
+static ssize_t cf_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
+			const void *buf, u16_t len, u16_t offset, u8_t flags)
+{
+	struct gatt_cf_cfg *cfg;
+	const u8_t *value = buf;
+
+	if (offset > sizeof(cfg->data)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
+	}
+
+	if (offset + len > sizeof(cfg->data)) {
+		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
+	}
+
+	cfg = find_cf_cfg(&conn->le.dst);
+	if (!cfg) {
+		cfg = find_cf_cfg(BT_ADDR_LE_ANY);
+	}
+
+	if (!cfg) {
+		BT_WARN("No space to store Client Supported Features");
+		return BT_GATT_ERR(BT_ATT_ERR_INSUFFICIENT_RESOURCES);
+	}
+
+	BT_DBG("handle 0x%04x len %u", attr->handle, len);
+
+	if (!cf_set_value(cfg, value, len)) {
+		return BT_GATT_ERR(BT_ATT_ERR_VALUE_NOT_ALLOWED);
+	}
+
+	bt_addr_le_copy(&cfg->peer, &conn->le.dst);
+
+	return len;
+}
+#endif /* COFNIG_BT_GATT_CACHING */
+
 static struct bt_gatt_attr gatt_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GATT),
 	/* Bluetooth 5.0, Vol3 Part G:
@@ -177,6 +279,12 @@ static struct bt_gatt_attr gatt_attrs[] = {
 	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_SC, BT_GATT_CHRC_INDICATE,
 			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
 	BT_GATT_CCC(sc_ccc_cfg, sc_ccc_cfg_changed),
+#if defined(CONFIG_BT_GATT_CACHING)
+	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_CLIENT_FEATURES,
+			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
+			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
+			       cf_read, cf_write, NULL),
+#endif /* COFNIG_BT_GATT_CACHING */
 };
 
 static struct bt_gatt_service gatt_svc = BT_GATT_SERVICE(gatt_attrs);
