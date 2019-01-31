@@ -75,10 +75,12 @@ DOC_MATRIX=${MATRIX_BUILDS}
 if [ -n "$MAIN_CI" ]; then
 
 	# West handling
-        cd ..
-        west init -l zephyr
-        west update
-        cd zephyr
+        pushd ..
+	if [ ! -d .west ]; then
+		west init -l zephyr
+		west update
+	fi
+        popd
 
 	if [ -z "$BRANCH" ]; then
 		echo "No base branch given"
