@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(ssd1673);
 #include <init.h>
 #include <gpio.h>
 #include <spi.h>
+#include <misc/byteorder.h>
 
 #include "ssd1673_regs.h"
 #include <display/cfb.h>
@@ -99,22 +100,50 @@ static inline void ssd1673_busy_wait(struct ssd1673_data *driver)
 	}
 }
 
+static inline size_t push_x_param(u8_t *data, u16_t x)
+{
+#if DT_SOLOMON_SSD1673FB_0_PP_WIDTH_BITS == 8
+	data[0] = (u8_t)x;
+	return 1;
+#elif DT_SOLOMON_SSD1673FB_0_PP_WIDTH_BITS == 16
+	sys_put_le16(sys_cpu_to_le16(x), data);
+	return 2;
+#else
+#error Unsupported DT_SOLOMON_SSD1673FB_0_PP_WIDTH_BITS value
+#endif
+}
+
+static inline size_t push_y_param(u8_t *data, u16_t y)
+{
+#if DT_SOLOMON_SSD1673FB_0_PP_HEIGHT_BITS == 8
+	data[0] = (u8_t)y;
+	return 1;
+#elif DT_SOLOMON_SSD1673FB_0_PP_HEIGHT_BITS == 16
+	sys_put_le16(sys_cpu_to_le16(y), data);
+	return 2;
+#else
+#error Unsupported DT_SOLOMON_SSD1673FB_0_PP_HEIGHT_BITS value
+#endif
+}
+
+
 static inline int ssd1673_set_ram_param(struct ssd1673_data *driver,
-					u8_t sx, u8_t ex, u8_t sy, u8_t ey)
+					u16_t sx, u16_t ex, u16_t sy, u16_t ey)
 {
 	int err;
-	u8_t tmp[2];
+	u8_t tmp[4];
+	size_t len;
 
-	tmp[0] = sx; tmp[1] = ex;
-	err = ssd1673_write_cmd(driver, SSD1673_CMD_RAM_XPOS_CTRL, tmp,
-				sizeof(tmp));
+	len  = push_x_param(tmp, sx);
+	len += push_x_param(tmp + len, ex);
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_RAM_XPOS_CTRL, tmp, len);
 	if (err < 0) {
 		return err;
 	}
 
-	tmp[0] = sy; tmp[1] = ey;
-	err = ssd1673_write_cmd(driver, SSD1673_CMD_RAM_YPOS_CTRL, tmp,
-				sizeof(tmp));
+	len  = push_y_param(tmp, sy);
+	len += push_y_param(tmp + len, ey);
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_RAM_YPOS_CTRL, tmp,	len);
 	if (err < 0) {
 		return err;
 	}
@@ -123,18 +152,20 @@ static inline int ssd1673_set_ram_param(struct ssd1673_data *driver,
 }
 
 static inline int ssd1673_set_ram_ptr(struct ssd1673_data *driver,
-				       u8_t x, u8_t y)
+				      u16_t x, u16_t y)
 {
 	int err;
+	u8_t tmp[2];
+	size_t len;
 
-	err = ssd1673_write_cmd(driver, SSD1673_CMD_RAM_XPOS_CNTR, &x,
-				sizeof(x));
+	len = push_x_param(tmp, x);
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_RAM_XPOS_CNTR, tmp, len);
 	if (err < 0) {
 		return err;
 	}
 
-	return ssd1673_write_cmd(driver, SSD1673_CMD_RAM_YPOS_CNTR, &y,
-				 sizeof(y));
+	len = push_y_param(tmp, y);
+	return ssd1673_write_cmd(driver, SSD1673_CMD_RAM_YPOS_CNTR, tmp, len);
 }
 
 static void ssd1673_set_orientation_internall(struct ssd1673_data *driver)
@@ -208,10 +239,10 @@ static int ssd1673_write(const struct device *dev, const u16_t x,
 {
 	struct ssd1673_data *driver = dev->driver_data;
 	int err;
-	u8_t x_start;
-	u8_t x_end;
-	u8_t y_start;
-	u8_t y_end;
+	u16_t x_start;
+	u16_t x_end;
+	u16_t y_start;
+	u16_t y_end;
 
 	if (desc->pitch < desc->width) {
 		LOG_ERR("Pitch is smaller then width");
@@ -416,6 +447,7 @@ static int ssd1673_controller_init(struct device *dev)
 {
 	int err;
 	u8_t tmp[3];
+	size_t len;
 	struct ssd1673_data *driver = dev->driver_data;
 
 	LOG_DBG("");
@@ -432,9 +464,9 @@ static int ssd1673_controller_init(struct device *dev)
 	}
 	ssd1673_busy_wait(driver);
 
-	tmp[0] = SSD1673_PANEL_LAST_GATE;
-	tmp[1] = 0U;
-	err = ssd1673_write_cmd(driver, SSD1673_CMD_GDO_CTRL, tmp, 2);
+	len = push_y_param(tmp, SSD1673_PANEL_LAST_GATE);
+	tmp[len++] = 0U;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_GDO_CTRL, tmp, len);
 	if (err < 0) {
 		return err;
 	}

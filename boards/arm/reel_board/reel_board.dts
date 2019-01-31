@@ -123,6 +123,8 @@
 		reg = <0>;
 		width = <250>;
 		height = <120>;
+		pp-width-bits = <8>;
+		pp-height-bits = <8>;
 		reset-gpios = <&gpio0 15 0>;
 		dc-gpios = <&gpio0 16 0>;
 		busy-gpios = <&gpio0 14 0>;

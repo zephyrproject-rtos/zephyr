@@ -29,6 +29,18 @@ properties:
       description: Width in pixel of the panel driven by the controller
       generation: define
 
+    pp-height-bits:
+      type: int
+      category: required
+      description: Number of bits used for the height parameters
+      generation: define
+
+    pp-width-bits:
+      type: int
+      category: required
+      description: Number of bits used for the width parameters
+      generation: define
+
     orientation-flipped:
       type: boolean
       category: optional
