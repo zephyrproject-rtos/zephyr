@@ -331,11 +331,23 @@ static int thread_index_get(struct k_thread *t)
 	return ko->data;
 }
 
-static void unref_check(struct _k_object *ko)
+static void unref_check(struct _k_object *ko, int index)
 {
+	int key = irq_lock();
+
+	sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
+
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	struct dyn_obj *dyn_obj =
+			CONTAINER_OF(ko, struct dyn_obj, kobj);
+
+	if ((ko->flags & K_OBJ_FLAG_ALLOC) == 0) {
+		goto out;
+	}
+
 	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
 		if (ko->perms[i] != 0) {
-			return;
+			goto out;
 		}
 	}
 
@@ -359,15 +371,12 @@ static void unref_check(struct _k_object *ko)
 		break;
 	}
 
-#ifdef CONFIG_DYNAMIC_OBJECTS
-	if ((ko->flags & K_OBJ_FLAG_ALLOC) != 0) {
-		struct dyn_obj *dyn_obj =
-			CONTAINER_OF(ko, struct dyn_obj, kobj);
-		rb_remove(&obj_rb_tree, &dyn_obj->node);
-		sys_dlist_remove(&dyn_obj->obj_list);
-		k_free(dyn_obj);
-	}
+	rb_remove(&obj_rb_tree, &dyn_obj->node);
+	sys_dlist_remove(&dyn_obj->obj_list);
+	k_free(dyn_obj);
+out:
 #endif
+	irq_unlock(key);
 }
 
 static void wordlist_cb(struct _k_object *ko, void *ctx_ptr)
@@ -407,22 +416,15 @@ void _thread_perms_clear(struct _k_object *ko, struct k_thread *thread)
 	int index = thread_index_get(thread);
 
 	if (index != -1) {
-		unsigned int key = irq_lock();
-
-		sys_bitfield_clear_bit((mem_addr_t)&ko->perms, index);
-		unref_check(ko);
-		irq_unlock(key);
+		unref_check(ko, index);
 	}
 }
 
 static void clear_perms_cb(struct _k_object *ko, void *ctx_ptr)
 {
 	int id = (int)ctx_ptr;
-	unsigned int key = irq_lock();
 
-	sys_bitfield_clear_bit((mem_addr_t)&ko->perms, id);
-	unref_check(ko);
-	irq_unlock(key);
+	unref_check(ko, id);
 }
 
 void _thread_perms_all_clear(struct k_thread *thread)
