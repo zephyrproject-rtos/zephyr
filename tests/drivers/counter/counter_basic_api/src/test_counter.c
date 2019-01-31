@@ -59,6 +59,15 @@ const char *devices[] = {
 #ifdef DT_RTC_MCUX_0_NAME
 	DT_RTC_MCUX_0_NAME,
 #endif
+#ifdef DT_ARM_CMSDK_TIMER_0_LABEL
+	DT_ARM_CMSDK_TIMER_0_LABEL,
+#endif
+#ifdef DT_ARM_CMSDK_TIMER_1_LABEL
+	DT_ARM_CMSDK_TIMER_1_LABEL,
+#endif
+#ifdef DT_ARM_CMSDK_DTIMER_0_LABEL
+	DT_ARM_CMSDK_DTIMER_0_LABEL,
+#endif
 };
 typedef void (*counter_test_func_t)(const char *dev_name);
 
