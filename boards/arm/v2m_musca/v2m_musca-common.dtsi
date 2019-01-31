@@ -8,18 +8,21 @@ timer0: timer@0 {
 	compatible = "arm,cmsdk-timer";
 	reg = <0x0 0x1000>;
 	interrupts = <3 3>;
+	label = "TIMER_0";
 };
 
 timer1: timer@1000 {
 	compatible = "arm,cmsdk-timer";
 	reg = <0x1000 0x1000>;
 	interrupts = <4 3>;
+	label = "TIMER_1";
 };
 
 dtimer0: dtimer@2000 {
 	compatible = "arm,cmsdk-dtimer";
 	reg = <0x2000 0x1000>;
 	interrupts = <5 3>;
+	label = "DTIMER_0";
 };
 
 wdog0: wdog@81000 {
