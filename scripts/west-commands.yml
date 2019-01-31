@@ -5,6 +5,11 @@ west-commands:
       - name: build
         class: Build
         help: compile a Zephyr application
+  - file: scripts/west_commands/sign.py
+    commands:
+      - name: sign
+        class: Sign
+        help: sign a Zephyr binary for bootloader chain-loading
   - file: scripts/west_commands/flash.py
     commands:
       - name: flash
