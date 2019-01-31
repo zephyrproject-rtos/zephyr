@@ -55,7 +55,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_dc_stm32);
 
-#if defined(DT_USB_BASE_ADDRESS) && defined(CONFIG_USB_HS_BASE_ADDRES)
+#if defined(DT_USB_BASE_ADDRESS) && defined(DT_USB_HS_BASE_ADDRESS)
 #error "Only one interface should be enabled at a time, OTG FS or OTG HS"
 #endif
 
@@ -329,7 +329,7 @@ static u32_t usb_dc_stm32_get_maximum_speed(void)
 			"USB controller will default to its maximum HW "
 			"capability");
 	}
-#endif /* CONFIG_USB_MAX_SPEED */
+#endif /* DT_USB_MAXIMUM_SPEED */
 
 	return speed;
 }
