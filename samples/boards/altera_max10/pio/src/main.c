@@ -15,7 +15,20 @@
 
 /* PIO pins[0:3] are wired to LED's */
 #define LED_PINS_WIRED		4
-#define LED_PIN_MASK		0xf
+
+static int write_all_leds(struct device *gpio_dev, u32_t value)
+{
+	int ret;
+
+	for (int i = 0; i < LED_PINS_WIRED; i++) {
+		ret = gpio_pin_write(gpio_dev, i, value);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
 
 void main(void)
 {
@@ -29,9 +42,12 @@ void main(void)
 	}
 
 	/* Setup GPIO output */
-	ret = gpio_port_configure(gpio_dev, GPIO_DIR_OUT);
-	if (ret) {
-		printk("Error configuring GPIO PORT\n");
+	for (i = 0; i < LED_PINS_WIRED; i++) {
+		ret = gpio_pin_configure(gpio_dev, i, GPIO_DIR_OUT);
+		if (ret) {
+			printk("Error configuring GPIO PORT\n");
+			return;
+		}
 	}
 
 	/*
@@ -39,7 +55,7 @@ void main(void)
 	 * to the Nios-II PIO core.
 	 */
 	printk("Turning off all LEDs\n");
-	ret = gpio_port_write(gpio_dev, LED_PIN_MASK);
+	ret = write_all_leds(gpio_dev, 1);
 	if (ret) {
 		printk("Error set GPIO port\n");
 	}
@@ -47,16 +63,20 @@ void main(void)
 
 	for (i = 0; i < LED_PINS_WIRED; i++) {
 		printk("Turn On LED[%d]\n", i);
-		ret = gpio_port_write(gpio_dev, LED_PIN_MASK & ~(1 << i));
+		ret = gpio_pin_write(gpio_dev, i, 0);
 		if (ret) {
-			printk("Error in seting GPIO port\n");
+			printk("Error writing led pin\n");
 		}
 
 		k_sleep(MSEC_PER_SEC * 5);
+		ret = gpio_pin_write(gpio_dev, i, 1);
+		if (ret) {
+			printk("Error writing led pin\n");
+		}
 	}
 
 	printk("Turning on all LEDs\n");
-	ret = gpio_port_write(gpio_dev, 0x0);
+	ret = write_all_leds(gpio_dev, 0);
 	if (ret) {
 		printk("Error set GPIO port\n");
 	}
