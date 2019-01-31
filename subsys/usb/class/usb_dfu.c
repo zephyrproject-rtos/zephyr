@@ -78,7 +78,7 @@ struct usb_dfu_config {
 	struct dfu_runtime_descriptor dfu_descr;
 } __packed;
 
-USBD_CLASS_DESCR_DEFINE(primary) struct usb_dfu_config dfu_cfg = {
+USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_dfu_config dfu_cfg = {
 	/* Interface descriptor */
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),
@@ -119,7 +119,7 @@ struct dev_dfu_mode_descriptor {
 } __packed;
 
 
-USBD_DEVICE_DESCR_DEFINE(secondary)
+USBD_DEVICE_DESCR_DEFINE(secondary, 0)
 struct dev_dfu_mode_descriptor dfu_mode_desc = {
 	/* Device descriptor */
 	.device_descriptor = {
@@ -223,7 +223,7 @@ struct usb_string_desription {
 	} __packed utf16le_image1;
 } __packed;
 
-USBD_STRING_DESCR_DEFINE(secondary)
+USBD_STRING_DESCR_DEFINE(secondary, 0)
 struct usb_string_desription string_descr = {
 	.lang_descr = {
 		.bLength = sizeof(struct usb_string_descriptor),
@@ -267,7 +267,7 @@ struct usb_string_desription string_descr = {
 };
 
 /* This element marks the end of the entire descriptor. */
-USBD_TERM_DESCR_DEFINE(secondary) struct usb_desc_header term_descr = {
+USBD_TERM_DESCR_DEFINE(secondary, 0) struct usb_desc_header term_descr = {
 	.bLength = 0,
 	.bDescriptorType = 0,
 };

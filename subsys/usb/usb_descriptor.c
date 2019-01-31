@@ -54,7 +54,7 @@ struct common_descriptor {
  * Device and configuration descriptor placed in the device section,
  * no additional descriptor may be placed there.
  */
-USBD_DEVICE_DESCR_DEFINE(primary) struct common_descriptor common_desc = {
+USBD_DEVICE_DESCR_DEFINE(primary, 0) struct common_descriptor common_desc = {
 	/* Device descriptor */
 	.device_descriptor = {
 		.bLength = sizeof(struct usb_device_descriptor),
@@ -119,7 +119,8 @@ struct usb_string_desription {
  * placed in the string section.
  * FIXME: These should be sorted additionally.
  */
-USBD_STRING_DESCR_DEFINE(primary) struct usb_string_desription string_descr = {
+USBD_STRING_DESCR_DEFINE(primary, 0)
+	struct usb_string_desription string_descr = {
 	.lang_descr = {
 		.bLength = sizeof(struct usb_string_descriptor),
 		.bDescriptorType = USB_STRING_DESC,
@@ -148,7 +149,7 @@ USBD_STRING_DESCR_DEFINE(primary) struct usb_string_desription string_descr = {
 };
 
 /* This element marks the end of the entire descriptor. */
-USBD_TERM_DESCR_DEFINE(primary) struct usb_desc_header term_descr = {
+USBD_TERM_DESCR_DEFINE(primary, 0) struct usb_desc_header term_descr = {
 	.bLength = 0,
 	.bDescriptorType = 0,
 };

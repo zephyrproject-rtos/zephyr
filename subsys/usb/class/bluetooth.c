@@ -57,7 +57,8 @@ struct usb_bluetooth_config {
 	struct usb_ep_descriptor if0_in_ep;
 } __packed;
 
-USBD_CLASS_DESCR_DEFINE(primary) struct usb_bluetooth_config bluetooth_cfg = {
+USBD_CLASS_DESCR_DEFINE(primary, 0)
+	struct usb_bluetooth_config bluetooth_cfg = {
 	/* Interface descriptor 0 */
 	.if0 = {
 		.bLength = sizeof(struct usb_if_descriptor),
