@@ -93,8 +93,8 @@ At the top of the tree there are several files that are of importance:
     also found at the top-level directory.
 
 :file:`west.yml`
-    The :ref:`west` manifest, listing the external repositories required to
-    build Zephyr.
+    The :ref:`west` manifest, listing the external repositories managed by
+    the west command-line tool.
 
 The Zephyr source tree also contains the following top-level
 directories, each of which may have one or more additional levels of
@@ -129,8 +129,8 @@ subdirectories which are not described here.
 
 :file:`ext`
     Externally created code that has been integrated into Zephyr
-    from other sources, such as hardware interface code supplied by
-    manufacturers and cryptographic library code.
+    from other sources and that must live inside the zephyr repository unlike
+    `external projects <ext-projs>`
 
 :file:`include`
     Include files for all public APIs, except those defined under :file:`lib`.
@@ -640,6 +640,73 @@ Zephyr binary into your application directory.
 
 You can also define the ``SOC_ROOT`` variable in the application
 :file:`CMakeLists.txt` file.
+
+.. _ext-projs:
+
+Modules (External projects)
+***************************
+
+Zephyr relies on the source code of several externally maintained projects in
+order to avoid reinventing the wheel and to reuse as much well-established,
+mature code as possible when it makes sense. In the context of Zephyr's build
+system those are called *modules*.
+There are several categories of external projects that Zephyr depends on,
+among which:
+
+- Debugger integration
+- Silicon Vendor Hardware Abstraction Layers (HALs)
+- Cryptography libraries
+- Filesystems
+- Inter-Process Communication (IPC)
+
+These modules (external projects) must be integrated with the Zephyr
+build system, which is based around Kconfig and CMake (see
+:ref:`application` for more information about Zephyr's build system).
+
+The way that the build system discovers and includes external projects when
+building an application is based around the :ref:`west` tool's ``west list``
+command. The main CMake script in zephyr (the :file:`CMakeLists.txt` located
+in the zephyr repository root folder) invokes ``west list`` to obtain a list of
+projects managed by west. For each project then the CMake scripts will verify
+if it contains the required metadata required in a module and, if it does,
+it will include it in the build.
+
+.. note::
+   Although the build system currently uses :ref:`west` to list the available
+   external projects for potential inclusion in the build, it is perfectly
+   possible to use any other script or tool instead by modifying the CMake
+   script. A future addition will make this possible even without any
+   modifications to the build scripts.
+
+The code in :file:`CMakeLists.txt` retrieves the following information for
+each project using ``west list``:
+
+- name: The name of the project as specified in the manifest file
+- path: The path of the project within the west installation
+
+Once it has collected the list, the CMake script performs the following
+operations on each project to determine if it is a module to be included in
+the build:
+
+- If a matching (see below) :file:`CMakeLists.txt` is located, it will process
+  it directly by using the CMake ``add_subdirectory`` command
+- If a matching (see below) :file:`Kconfig` is located, it will instruct
+  Kconfig to source it (i.e. process it)
+
+The way that the script determines if a matching :file:`CMakeLists.txt` and
+:file:`Kconfig` are present is the following (in order of precedence):
+
+- If the project contains a file named :file:`<path>/zephyr/module.yml` then
+  its contents are parsed:
+
+  - If a ``cmake: <folder>`` field is present then the build system will match
+    the :file:`CMakeLists.txt` in ``<folder>``
+  - If a ``kconfig: <folder>`` field is present then the build system will match
+    the :file:`Kconfig` in ``<folder>``
+- If the project contains a file named exactly
+  :file:`<path>/zephyr/CMakeLists.txt` the build system will match it
+- If the project contains a file named :file:`<path>/zephyr/Kconfig` the build
+  system will match it
 
 Application Debugging
 *********************
