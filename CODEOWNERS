@@ -176,6 +176,7 @@ include/logging/                         @nordic-krch
 include/misc/                            @andrewboie @andyross
 include/net/                             @jukkar @tbursztyka @pfalcon
 include/net/buf.h                        @jukkar @jhedberg @tbursztyka @pfalcon
+include/posix/                           @pfalcon
 include/power.h                          @ramakrishnapallala @nashif
 include/sensor.h                         @bogdan-davidoaia
 include/shared_irq.h                     @andrewboie @andyross
@@ -189,7 +190,7 @@ include/toolchain/                       @andrewboie @andyross
 include/zephyr.h                         @andrewboie @andyross
 kernel/                                  @andrewboie @andyross
 lib/gui/                                 @vanwinkeljan
-lib/posix/                               @ramakrishnapallala @nniranjhana
+lib/posix/                               @ramakrishnapallala @nniranjhana @pfalcon
 kernel/device.c                          @ramakrishnapallala @nashif
 kernel/idle.c                            @ramakrishnapallala @nashif
 samples/bluetooth/                       @sjanc @jhedberg @Vudentz
@@ -242,7 +243,7 @@ subsys/*/*native_posix*/                 @aescolar
 subsys/usb/                              @jfischer-phytec-iot @finikorg
 tests/boards/native_posix/               @aescolar
 tests/bluetooth/                         @sjanc @jhedberg @Vudentz
-tests/posix/                             @nniranjhana
+tests/posix/                             @nniranjhana @pfalcon
 tests/crypto/                            @ceolin
 tests/crypto/mbedtls/                    @nashif @ceolin
 tests/drivers/spi/                       @tbursztyka
