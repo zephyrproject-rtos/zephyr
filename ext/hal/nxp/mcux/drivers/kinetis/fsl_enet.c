@@ -885,6 +885,7 @@ static void ENET_SetRxBufferDescriptors(enet_handle_t *handle,
 static void ENET_ActiveSend(ENET_Type *base, uint32_t ringId)
 {
     assert(ringId < FSL_FEATURE_ENET_QUEUE);
+    __DSB();
 
     switch (ringId)
     {
@@ -1476,6 +1477,7 @@ static void ENET_UpdateReadBuffers(ENET_Type *base, enet_handle_t *handle, uint3
         handle->rxBdCurrent[ringId]++;
     }
 
+    __DSB();
     /* Actives the receive buffer descriptor. */
     switch (ringId)
     {
