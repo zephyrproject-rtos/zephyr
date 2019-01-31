@@ -407,6 +407,14 @@ struct bt_uuid_128 {
  *  @brief Mesh Proxy Data Out
  */
 #define BT_UUID_MESH_PROXY_DATA_OUT       BT_UUID_DECLARE_16(0x2ade)
+/** @def BT_UUID_GATT_CLIENT_FEATURES
+ *  @brief Client Supported Features
+ */
+#define BT_UUID_GATT_CLIENT_FEATURES      BT_UUID_DECLARE_16(0x2b29)
+/** @def BT_UUID_GATT_DB_HASH
+ *  @brief Database Hash
+ */
+#define BT_UUID_GATT_DB_HASH              BT_UUID_DECLARE_16(0x2b2a)
 
 /*
  * Protocol UUIDs
