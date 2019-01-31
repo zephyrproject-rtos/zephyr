@@ -248,8 +248,6 @@ int net_context_get(sa_family_t family,
 		k_sem_init(&contexts[i].recv_data_wait, 1, UINT_MAX);
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
-		k_mutex_init(&contexts[i].lock);
-
 		contexts[i].flags |= NET_CONTEXT_IN_USE;
 		*context = &contexts[i];
 
@@ -296,7 +294,7 @@ int net_context_unref(struct net_context *context)
 		return old_rc - 1;
 	}
 
-	k_mutex_lock(&context->lock, K_FOREVER);
+	k_sem_take(&contexts_lock, K_FOREVER);
 
 	net_tcp_unref(context);
 
@@ -311,29 +309,26 @@ int net_context_unref(struct net_context *context)
 
 	NET_DBG("Context %p released", context);
 
-	k_mutex_unlock(&context->lock);
+	k_sem_give(&contexts_lock);
 
 	return 0;
 }
 
 int net_context_put(struct net_context *context)
 {
-	int ret = 0;
-
 	NET_ASSERT(context);
 
 	if (!PART_OF_ARRAY(contexts, context)) {
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&context->lock, K_FOREVER);
-
 #if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
+		k_sem_take(&contexts_lock, K_FOREVER);
 		context->flags &= ~NET_CONTEXT_IN_USE;
-		ret = net_offload_put(
+		k_sem_give(&contexts_lock);
+		return net_offload_put(
 			net_context_get_iface(context), context);
-		goto unlock;
 	}
 #endif /* CONFIG_NET_OFFLOAD */
 
@@ -342,15 +337,11 @@ int net_context_put(struct net_context *context)
 	context->send_cb = NULL;
 
 	if (net_tcp_put(context) >= 0) {
-		goto unlock;
+		return 0;
 	}
 
 	net_context_unref(context);
-
-unlock:
-	k_mutex_unlock(&context->lock);
-
-	return ret;
+	return 0;
 }
 
 /* If local address is not bound, bind it to INADDR_ANY and random port. */
@@ -561,10 +552,6 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 		}
 #endif /* CONFIG_NET_OFFLOAD */
 
-		k_mutex_lock(&context->lock, K_FOREVER);
-
-		ret = 0;
-
 		net_context_set_iface(context, iface);
 
 		net_sin_ptr(&context->local)->sin_family = AF_INET;
@@ -578,7 +565,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			} else {
 				NET_ERR("Port %d is in use!",
 					ntohs(addr4->sin_port));
-				goto unlock;
+				return ret;
 			}
 		} else {
 			addr4->sin_port =
@@ -591,10 +578,7 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 			log_strdup(net_sprint_ipv4_addr(ptr)),
 			ntohs(addr4->sin_port), iface);
 
-	unlock:
-		k_mutex_unlock(&context->lock);
-
-		return ret;
+		return 0;
 	}
 #endif
 
@@ -635,14 +619,9 @@ int net_context_listen(struct net_context *context, int backlog)
 	}
 #endif /* CONFIG_NET_OFFLOAD */
 
-	k_mutex_lock(&context->lock, K_FOREVER);
-
 	if (net_tcp_listen(context) >= 0) {
-		k_mutex_unlock(&context->lock);
 		return 0;
 	}
-
-	k_mutex_unlock(&context->lock);
 
 	return -EOPNOTSUPP;
 }
@@ -719,11 +698,8 @@ int net_context_connect(struct net_context *context,
 	NET_ASSERT(addr);
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
-	k_mutex_lock(&context->lock, K_FOREVER);
-
 	if (!net_context_is_used(context)) {
-		ret = -EBADF;
-		goto unlock;
+		return -EBADF;
 	}
 
 	if (addr->sa_family != net_context_get_family(context)) {
@@ -732,13 +708,12 @@ int net_context_connect(struct net_context *context,
 				"Family mismatch %d should be %d",
 				addr->sa_family,
 				net_context_get_family(context));
-		ret = -EINVAL;
-		goto unlock;
+		return -EINVAL;
 	}
 
 #if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
-		ret = net_offload_connect(
+		return net_offload_connect(
 			net_context_get_iface(context),
 			context,
 			addr,
@@ -746,13 +721,11 @@ int net_context_connect(struct net_context *context,
 			cb,
 			timeout,
 			user_data);
-		goto unlock;
 	}
 #endif /* CONFIG_NET_OFFLOAD */
 
 	if (net_context_get_state(context) == NET_CONTEXT_LISTENING) {
-		ret = -EOPNOTSUPP;
-		goto unlock;
+		return -EOPNOTSUPP;
 	}
 
 #if defined(CONFIG_NET_IPV6)
@@ -761,14 +734,12 @@ int net_context_connect(struct net_context *context,
 							&context->remote;
 
 		if (addrlen < sizeof(struct sockaddr_in6)) {
-			ret = -EINVAL;
-			goto unlock;
+			return -EINVAL;
 		}
 
 		if (net_context_get_ip_proto(context) == IPPROTO_TCP &&
 		    net_ipv6_is_addr_mcast(&addr6->sin6_addr)) {
-			ret = -EADDRNOTAVAIL;
-			goto unlock;
+			return -EADDRNOTAVAIL;
 		}
 
 		memcpy(&addr6->sin6_addr, &net_sin6(addr)->sin6_addr,
@@ -793,7 +764,7 @@ int net_context_connect(struct net_context *context,
 		 */
 		ret = bind_default(context);
 		if (ret) {
-			goto unlock;
+			return ret;
 		}
 
 		net_sin6_ptr(&context->local)->sin6_family = AF_INET6;
@@ -816,8 +787,7 @@ int net_context_connect(struct net_context *context,
 							&context->remote;
 
 		if (addrlen < sizeof(struct sockaddr_in)) {
-			ret = -EINVAL;
-			goto unlock;
+			return -EINVAL;
 		}
 
 		/* FIXME - Add multicast and broadcast address check */
@@ -858,8 +828,7 @@ int net_context_connect(struct net_context *context,
 #endif /* CONFIG_NET_IPV4 */
 
 	{
-		ret = -EINVAL; /* Not IPv4 or IPv6 */
-		goto unlock;
+		return -EINVAL; /* Not IPv4 or IPv6 */
 	}
 
 	switch (net_context_get_type(context)) {
@@ -869,27 +838,19 @@ int net_context_connect(struct net_context *context,
 			cb(context, 0, user_data);
 		}
 
-		ret = 0;
-		goto unlock;
+		return 0;
 
 #endif /* CONFIG_NET_UDP */
 
 	case SOCK_STREAM:
-		ret = net_tcp_connect(context, addr, laddr, rport, lport,
-				      timeout, cb, user_data);
-		goto unlock;
+		return net_tcp_connect(context, addr, laddr, rport, lport,
+				       timeout, cb, user_data);
 
 	default:
-		ret = -ENOTSUP;
-		goto unlock;
+		return -ENOTSUP;
 	}
 
-	ret = 0;
-
-unlock:
-	k_mutex_unlock(&context->lock);
-
-	return ret;
+	return 0;
 }
 
 int net_context_accept(struct net_context *context,
@@ -897,25 +858,20 @@ int net_context_accept(struct net_context *context,
 		       s32_t timeout,
 		       void *user_data)
 {
-	int ret = 0;
-
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
 	if (!net_context_is_used(context)) {
 		return -EBADF;
 	}
 
-	k_mutex_lock(&context->lock, K_FOREVER);
-
 #if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
-		ret = net_offload_accept(
+		return net_offload_accept(
 			net_context_get_iface(context),
 			context,
 			cb,
 			timeout,
 			user_data);
-		goto unlock;
 	}
 #endif /* CONFIG_NET_OFFLOAD */
 
@@ -924,19 +880,14 @@ int net_context_accept(struct net_context *context,
 		NET_DBG("Invalid socket, state %d type %d",
 			net_context_get_state(context),
 			net_context_get_type(context));
-		ret = -EINVAL;
-		goto unlock;
+		return -EINVAL;
 	}
 
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		ret = net_tcp_accept(context, cb, user_data);
-		goto unlock;
+		return net_tcp_accept(context, cb, user_data);
 	}
 
-unlock:
-	k_mutex_unlock(&context->lock);
-
-	return ret;
+	return 0;
 }
 
 #if defined(CONFIG_NET_UDP)
@@ -1122,26 +1073,21 @@ int net_context_send(struct net_pkt *pkt,
 {
 	struct net_context *context = net_pkt_context(pkt);
 	socklen_t addrlen;
-	int ret = 0;
 
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
-	k_mutex_lock(&context->lock, K_FOREVER);
-
 #if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(net_pkt_iface(pkt))) {
-		ret = net_offload_send(
+		return net_offload_send(
 			net_pkt_iface(pkt),
 			pkt, cb, timeout,
 			token, user_data);
-		goto unlock;
 	}
 #endif /* CONFIG_NET_OFFLOAD */
 
 	if (!(context->flags & NET_CONTEXT_REMOTE_ADDR_SET) ||
 	    !net_sin(&context->remote)->sin_port) {
-		ret = -EDESTADDRREQ;
-		goto unlock;
+		return -EDESTADDRREQ;
 	}
 
 #if defined(CONFIG_NET_IPV6)
@@ -1159,13 +1105,8 @@ int net_context_send(struct net_pkt *pkt,
 		addrlen = 0;
 	}
 
-	ret = sendto(pkt, &context->remote, addrlen, cb, timeout, token,
-		     user_data);
-
-unlock:
-	k_mutex_unlock(&context->lock);
-
-	return ret;
+	return sendto(pkt, &context->remote, addrlen, cb, timeout, token,
+		      user_data);
 }
 
 int net_context_sendto(struct net_pkt *pkt,
@@ -1177,23 +1118,15 @@ int net_context_sendto(struct net_pkt *pkt,
 		       void *user_data)
 {
 	struct net_context *context = net_pkt_context(pkt);
-	int ret;
 
 	NET_ASSERT(PART_OF_ARRAY(contexts, context));
 
-	k_mutex_lock(&context->lock, K_FOREVER);
-
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
 		/* Match POSIX behavior and ignore dst_address and addrlen */
-		ret = net_context_send(pkt, cb, timeout, token, user_data);
-	} else {
-		ret = sendto(pkt, dst_addr, addrlen, cb, timeout, token,
-			     user_data);
+		return net_context_send(pkt, cb, timeout, token, user_data);
 	}
 
-	k_mutex_unlock(&context->lock);
-
-	return ret;
+	return sendto(pkt, dst_addr, addrlen, cb, timeout, token, user_data);
 }
 
 enum net_verdict net_context_packet_received(struct net_conn *conn,
@@ -1201,12 +1134,9 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 					     void *user_data)
 {
 	struct net_context *context = find_context(conn);
-	enum net_verdict verdict = NET_DROP;
 
 	NET_ASSERT(context);
 	NET_ASSERT(net_pkt_iface(pkt));
-
-	k_mutex_lock(&context->lock, K_FOREVER);
 
 	net_context_set_iface(context, net_pkt_iface(pkt));
 	net_pkt_set_context(pkt, context);
@@ -1216,7 +1146,7 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 	 */
 
 	if (!context->recv_cb) {
-		goto unlock;
+		return NET_DROP;
 	}
 
 	if (net_context_get_ip_proto(context) != IPPROTO_TCP) {
@@ -1237,12 +1167,7 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 	k_sem_give(&context->recv_data_wait);
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
-	verdict = NET_OK;
-
-unlock:
-	k_mutex_unlock(&context->lock);
-
-	return verdict;
+	return NET_OK;
 }
 
 #if defined(CONFIG_NET_UDP)
@@ -1326,14 +1251,11 @@ int net_context_recv(struct net_context *context,
 		return -EBADF;
 	}
 
-	k_mutex_lock(&context->lock, K_FOREVER);
-
 #if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
-		ret = net_offload_recv(
+		return net_offload_recv(
 			net_context_get_iface(context),
 			context, cb, timeout, user_data);
-		goto unlock;
 	}
 #endif /* CONFIG_NET_OFFLOAD */
 
@@ -1354,7 +1276,7 @@ int net_context_recv(struct net_context *context,
 	}
 
 	if (ret < 0) {
-		goto unlock;
+		return ret;
 	}
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
@@ -1367,37 +1289,19 @@ int net_context_recv(struct net_context *context,
 		 */
 		k_sem_reset(&context->recv_data_wait);
 
-		k_mutex_unlock(&context->lock);
-
 		ret = k_sem_take(&context->recv_data_wait, timeout);
-
-		k_mutex_lock(&context->lock, K_FOREVER);
-
 		if (ret == -EAGAIN) {
-			ret = -ETIMEDOUT;
-			goto unlock;
+			return -ETIMEDOUT;
 		}
 	}
 #endif /* CONFIG_NET_CONTEXT_SYNC_RECV */
 
-unlock:
-	k_mutex_unlock(&context->lock);
-
-	return ret;
+	return 0;
 }
 
 int net_context_update_recv_wnd(struct net_context *context,
-				s32_t delta)
-{
-	int ret;
-
-	k_mutex_lock(&context->lock, K_FOREVER);
-
-	ret = net_tcp_update_recv_wnd(context, delta);
-
-	k_mutex_unlock(&context->lock);
-
-	return ret;
+				s32_t delta) {
+	return net_tcp_update_recv_wnd(context, delta);
 }
 
 static int set_context_priority(struct net_context *context,
@@ -1444,15 +1348,11 @@ int net_context_set_option(struct net_context *context,
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&context->lock, K_FOREVER);
-
 	switch (option) {
 	case NET_OPT_PRIORITY:
 		ret = set_context_priority(context, value, len);
 		break;
 	}
-
-	k_mutex_unlock(&context->lock);
 
 	return ret;
 }
@@ -1469,15 +1369,11 @@ int net_context_get_option(struct net_context *context,
 		return -EINVAL;
 	}
 
-	k_mutex_lock(&context->lock, K_FOREVER);
-
 	switch (option) {
 	case NET_OPT_PRIORITY:
 		ret = get_context_priority(context, value, len);
 		break;
 	}
-
-	k_mutex_unlock(&context->lock);
 
 	return ret;
 }
@@ -1493,11 +1389,7 @@ void net_context_foreach(net_context_cb_t cb, void *user_data)
 			continue;
 		}
 
-		k_mutex_lock(&contexts[i].lock, K_FOREVER);
-
 		cb(&contexts[i], user_data);
-
-		k_mutex_unlock(&contexts[i].lock);
 	}
 
 	k_sem_give(&contexts_lock);

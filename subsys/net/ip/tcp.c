@@ -1989,21 +1989,17 @@ NET_CONN_CB(tcp_established)
 	u8_t tcp_flags;
 	u16_t data_len;
 
-	k_mutex_lock(&context->lock, K_FOREVER);
-
 	NET_ASSERT(context && context->tcp);
 
 	tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
 	if (!tcp_hdr) {
-		ret = NET_DROP;
-		goto unlock;
+		return NET_DROP;
 	}
 
 	if (net_tcp_get_state(context->tcp) < NET_TCP_ESTABLISHED) {
 		NET_ERR("Context %p in wrong state %d",
 			context, net_tcp_get_state(context->tcp));
-		ret = NET_DROP;
-		goto unlock;
+		return NET_DROP;
 	}
 
 	net_tcp_print_recv_info("DATA", pkt, tcp_hdr->src_port);
@@ -2021,8 +2017,7 @@ NET_CONN_CB(tcp_established)
 		 */
 resend_ack:
 		send_ack(context, &conn->remote_addr, true);
-		ret = NET_DROP;
-		goto unlock;
+		return NET_DROP;
 	}
 
 	if (net_tcp_seq_cmp(sys_get_be32(tcp_hdr->seq),
@@ -2031,8 +2026,7 @@ resend_ack:
 		 * match the next segment exactly, drop and wait for
 		 * retransmit
 		 */
-		ret = NET_DROP;
-		goto unlock;
+		return NET_DROP;
 	}
 
 	/*
@@ -2043,8 +2037,7 @@ resend_ack:
 		/* We only accept RST packet that has valid seq field. */
 		if (!net_tcp_validate_seq(context->tcp, pkt)) {
 			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
-			ret = NET_DROP;
-			goto unlock;
+			return NET_DROP;
 		}
 
 		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
@@ -2058,8 +2051,7 @@ resend_ack:
 
 		net_context_unref(context);
 
-		ret = NET_DROP;
-		goto unlock;
+		return NET_DROP;
 	}
 
 	/* Handle TCP state transition */
@@ -2129,8 +2121,7 @@ resend_ack:
 		NET_ERR("Context %p: overflow of recv window (%d vs %d), "
 			"pkt dropped",
 			context, net_tcp_get_recv_wnd(context->tcp), data_len);
-		ret = NET_DROP;
-		goto unlock;
+		return NET_DROP;
 	}
 
 	/* If the pkt has appdata, notify the recv callback which should
@@ -2165,9 +2156,6 @@ clean_up:
 
 		net_context_unref(context);
 	}
-
-unlock:
-	k_mutex_unlock(&context->lock);
 
 	return ret;
 }
