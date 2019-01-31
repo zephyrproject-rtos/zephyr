@@ -1451,4 +1451,3 @@ int shell_execute_cmd(const struct shell *shell, const char *cmd)
 
 	return execute(shell);
 }
-
