@@ -59,7 +59,7 @@ integrations:
         only:
           - master
       on_success: never
-      on_failure: always
+      on_failure: never
     - integrationName: email
       type: email
       recipients:
