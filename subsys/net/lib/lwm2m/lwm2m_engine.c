@@ -38,6 +38,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 #include <net/tls_credentials.h>
 #endif
+#if defined(CONFIG_DNS_RESOLVER)
+#include <net/dns_resolve.h>
+#endif
 
 #include "lwm2m_object.h"
 #include "lwm2m_engine.h"
@@ -4047,6 +4050,9 @@ int lwm2m_socket_start(struct lwm2m_ctx *client_ctx)
 int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
 {
 	struct http_parser_url parser;
+#if defined(CONFIG_DNS_RESOLVER)
+	struct addrinfo hints, *res;
+#endif
 	int ret;
 	u16_t off, len;
 	u8_t tmp;
@@ -4109,7 +4115,29 @@ int lwm2m_parse_peerinfo(char *url, struct sockaddr *addr, bool *use_dtls)
 #endif /* CONFIG_NET_IPV4 */
 
 	if (ret < 0) {
+#if defined(CONFIG_DNS_RESOLVER)
+#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
+		hints.ai_family = AF_UNSPEC;
+#elif defined(CONFIG_NET_IPV6)
+		hints.ai_family = AF_INET6;
+#else
+		hints.ai_family = AF_INET;
+#endif /* defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4) */
+		hints.ai_socktype = SOCK_DGRAM;
+		ret = getaddrinfo(url + off, NULL, &hints, &res);
+		if (ret != 0) {
+			LOG_ERR("Unable to resolve address");
+			/* DNS error codes don't align with normal errors */
+			ret = -ENOENT;
+			goto cleanup;
+		}
+
+		memcpy(addr, res->ai_addr, sizeof(*addr));
+		addr->sa_family = res->ai_family;
+		free(res);
+#else
 		goto cleanup;
+#endif /* CONFIG_DNS_RESOLVER */
 	}
 
 	/* set port */
