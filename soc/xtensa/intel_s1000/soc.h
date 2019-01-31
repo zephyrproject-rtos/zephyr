@@ -28,6 +28,17 @@
 #define INTR_CNTL_IRQ_NUM(_irq) \
 	(((_irq >> INTR_CNTL_IRQ_NUM_SHIFT) & INTR_CNTL_IRQ_NUM_MASK) - 1)
 
+/* Macro that aggregates the tri-level interrupt into an IRQ number */
+#define SOC_AGGREGATE_IRQ(ictl_irq, cavs_irq, core_irq)		\
+	(((core_irq & XTENSA_IRQ_NUM_MASK) << XTENSA_IRQ_NUM_SHIFT) |	\
+	(((cavs_irq) & CAVS_IRQ_NUM_MASK) << CAVS_IRQ_NUM_SHIFT) |	\
+	(((ictl_irq) & INTR_CNTL_IRQ_NUM_MASK) << INTR_CNTL_IRQ_NUM_SHIFT))
+
+#define CAVS_L2_AGG_INT_LEVEL2			DT_CAVS_ICTL_0_IRQ
+#define CAVS_L2_AGG_INT_LEVEL3			DT_CAVS_ICTL_1_IRQ
+#define CAVS_L2_AGG_INT_LEVEL4			DT_CAVS_ICTL_2_IRQ
+#define CAVS_L2_AGG_INT_LEVEL5			DT_CAVS_ICTL_3_IRQ
+
 #define IOAPIC_EDGE				0
 #define IOAPIC_HIGH				0
 
