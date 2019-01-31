@@ -14,6 +14,8 @@ from west import log
 from west.build import DEFAULT_BUILD_DIR, is_zephyr_build
 from west.commands import WestCommand
 
+from runners.core import RunnerConfig
+
 BUILD_DIR_DESCRIPTION = '''\
 Explicitly sets the build directory.  If not given and the current
 directory is a Zephyr build directory, it will be used; otherwise,
@@ -58,3 +60,22 @@ class Forceable(WestCommand):
         if not (cond or self.args.force):
             log.err(msg)
             log.die('refusing to proceed without --force due to above error')
+
+
+def cached_runner_config(build_dir, cache):
+    '''Parse the RunnerConfig from a build directory and CMake Cache.'''
+    board_dir = cache['ZEPHYR_RUNNER_CONFIG_BOARD_DIR']
+    elf_file = cache.get('ZEPHYR_RUNNER_CONFIG_ELF_FILE',
+                         cache['ZEPHYR_RUNNER_CONFIG_KERNEL_ELF'])
+    hex_file = cache.get('ZEPHYR_RUNNER_CONFIG_HEX_FILE',
+                         cache['ZEPHYR_RUNNER_CONFIG_KERNEL_HEX'])
+    bin_file = cache.get('ZEPHYR_RUNNER_CONFIG_BIN_FILE',
+                         cache['ZEPHYR_RUNNER_CONFIG_KERNEL_BIN'])
+    gdb = cache.get('ZEPHYR_RUNNER_CONFIG_GDB')
+    openocd = cache.get('ZEPHYR_RUNNER_CONFIG_OPENOCD')
+    openocd_search = cache.get('ZEPHYR_RUNNER_CONFIG_OPENOCD_SEARCH')
+
+    return RunnerConfig(build_dir, board_dir,
+                        elf_file, hex_file, bin_file,
+                        gdb=gdb, openocd=openocd,
+                        openocd_search=openocd_search)
