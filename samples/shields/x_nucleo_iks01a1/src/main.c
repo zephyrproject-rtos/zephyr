@@ -17,7 +17,7 @@ void main(void)
 	struct device *hts221 = device_get_binding(DT_ST_HTS221_0_LABEL);
 	struct device *lis3mdl = device_get_binding(DT_ST_LIS3MDL_MAGN_0_LABEL);
 	struct device *lsm6ds0 = device_get_binding(DT_ST_LSM6DS0_0_LABEL);
-	struct device *lps25hb = device_get_binding(DT_LPS25HB_DEV_NAME);
+	struct device *lps25hb = device_get_binding(DT_ST_LPS25HB_PRESS_0_LABEL);
 
 	if (hts221 == NULL) {
 		printf("Could not get HTS221 device\n");
