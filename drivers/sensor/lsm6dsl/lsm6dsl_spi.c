@@ -19,7 +19,7 @@
 #define LOG_LEVEL CONFIG_SENSOR_LOG_LEVEL
 LOG_MODULE_DECLARE(LSM6DSL);
 
-#if defined(CONFIG_LSM6DSL_SPI_GPIO_CS)
+#if defined(DT_ST_LSM6DSL_0_CS_GPIO_CONTROLLER)
 static struct spi_cs_control lsm6dsl_cs_ctrl;
 #endif
 
@@ -147,25 +147,23 @@ int lsm6dsl_spi_init(struct device *dev)
 
 	data->hw_tf = &lsm6dsl_spi_transfer_fn;
 
-#if defined(CONFIG_LSM6DSL_SPI_GPIO_CS)
+#if defined(DT_ST_LSM6DSL_0_CS_GPIO_CONTROLLER)
 	/* handle SPI CS thru GPIO if it is the case */
-	if (IS_ENABLED(CONFIG_LSM6DSL_SPI_GPIO_CS)) {
-		lsm6dsl_cs_ctrl.gpio_dev = device_get_binding(
-			CONFIG_LSM6DSL_SPI_GPIO_CS_DRV_NAME);
-		if (!lsm6dsl_cs_ctrl.gpio_dev) {
-			LOG_ERR("Unable to get GPIO SPI CS device");
-			return -ENODEV;
-		}
-
-		lsm6dsl_cs_ctrl.gpio_pin = CONFIG_LSM6DSL_SPI_GPIO_CS_PIN;
-		lsm6dsl_cs_ctrl.delay = 0;
-
-		lsm6dsl_spi_conf.cs = &lsm6dsl_cs_ctrl;
-
-		LOG_DBG("SPI GPIO CS configured on %s:%u",
-			    CONFIG_LSM6DSL_SPI_GPIO_CS_DRV_NAME,
-			    CONFIG_LSM6DSL_SPI_GPIO_CS_PIN);
+	lsm6dsl_cs_ctrl.gpio_dev = device_get_binding(
+		DT_ST_LSM6DSL_0_CS_GPIO_CONTROLLER);
+	if (!lsm6dsl_cs_ctrl.gpio_dev) {
+		LOG_ERR("Unable to get GPIO SPI CS device");
+		return -ENODEV;
 	}
+
+	lsm6dsl_cs_ctrl.gpio_pin = DT_ST_LSM6DSL_0_CS_GPIO_PIN;
+	lsm6dsl_cs_ctrl.delay = 0;
+
+	lsm6dsl_spi_conf.cs = &lsm6dsl_cs_ctrl;
+
+	LOG_DBG("SPI GPIO CS configured on %s:%u",
+		    DT_ST_LSM6DSL_0_CS_GPIO_CONTROLLER,
+		    DT_ST_LSM6DSL_0_CS_GPIO_PIN);
 #endif
 
 	return 0;
