@@ -11,6 +11,8 @@
 		uart-1 = &uart1;
 		i2c-0 = &i2c0;
 		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
 		/* sw0/1 alias defined for compatibility with samples */
 		sw0 = &sw2;
 		sw1 = &sw3;
