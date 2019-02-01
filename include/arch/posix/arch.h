@@ -54,6 +54,9 @@ FUNC_NORETURN void _SysFatalErrorHandler(unsigned int reason,
 FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *esf);
 
+extern void posix_exit(int exit_code);
+#define __ARCH_POST_ASSERT(file, line) posix_exit(1)
+
 /**
  * @brief Explicitly nop operation.
  */

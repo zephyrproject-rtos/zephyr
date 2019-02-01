@@ -159,6 +159,14 @@ config FORCE_NO_ASSERT
 	  CFLAGS and not Kconfig.  Added solely to be able to work
 	  around compiler bugs for specific tests.
 
+config POST_ASSERT_ARCH_DEFINED
+	bool "Make Arch define post assert behavior"
+	default y if ARCH_POSIX
+	help
+	  This boolean option enables architecure specific implemenation of
+	  post assertion behavior. Added to let architecture define what to
+	  do after an asserts occurs.
+
 config OBJECT_TRACING
 	bool "Kernel object tracing"
 	help
