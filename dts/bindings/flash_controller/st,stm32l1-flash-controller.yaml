@@ -1,0 +1,15 @@
+---
+title: STM32 L1 Flash Controller
+version: 0.1
+
+description: >
+    This binding gives a base representation of the STM32 L1 Flash Controller
+
+inherits:
+    !include flash-controller.yaml
+
+properties:
+    compatible:
+      constraint: "st,stm32l1-flash-controller"
+
+...
