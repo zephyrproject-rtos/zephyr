@@ -248,8 +248,6 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 	net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
 
-	net_pkt_set_transport_proto(pkt, hdr->proto);
-
 	net_pkt_set_family(pkt, PF_INET);
 
 	net_pkt_acknowledge_data(pkt, &ipv4_access);
