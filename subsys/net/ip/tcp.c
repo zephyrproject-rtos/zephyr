@@ -1266,37 +1266,6 @@ bool net_tcp_validate_seq(struct net_tcp *tcp, struct net_tcp_hdr *tcp_hdr)
 					+ net_tcp_get_recv_wnd(tcp)) < 0);
 }
 
-struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
-				    struct net_tcp_hdr *hdr)
-{
-	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(tcp_access, struct net_tcp_hdr);
-	struct net_pkt_cursor backup;
-	struct net_tcp_hdr *tcp_hdr;
-	bool overwrite;
-
-	tcp_access.data = hdr;
-
-	overwrite = net_pkt_is_being_overwritten(pkt);
-	net_pkt_set_overwrite(pkt, true);
-
-	net_pkt_cursor_backup(pkt, &backup);
-	net_pkt_cursor_init(pkt);
-
-	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
-			 net_pkt_ipv6_ext_len(pkt))) {
-		tcp_hdr = NULL;
-		goto out;
-	}
-
-	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
-
-out:
-	net_pkt_cursor_restore(pkt, &backup);
-	net_pkt_set_overwrite(pkt, overwrite);
-
-	return tcp_hdr;
-}
-
 struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
 				    struct net_tcp_hdr *hdr)
 {

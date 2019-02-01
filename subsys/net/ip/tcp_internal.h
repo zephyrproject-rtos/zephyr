@@ -678,14 +678,6 @@ static inline struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt,
 	return NULL;
 }
 
-static inline struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
-						  struct net_tcp_hdr *hdr)
-{
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(hdr);
-	return NULL;
-}
-
 static inline struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
 						  struct net_tcp_hdr *hdr)
 {

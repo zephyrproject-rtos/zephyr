@@ -216,6 +216,37 @@ static inline struct in_addr *if_get_addr(struct net_if *iface)
 	return NULL;
 }
 
+struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
+				    struct net_tcp_hdr *hdr)
+{
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(tcp_access, struct net_tcp_hdr);
+	struct net_pkt_cursor backup;
+	struct net_tcp_hdr *tcp_hdr;
+	bool overwrite;
+
+	tcp_access.data = hdr;
+
+	overwrite = net_pkt_is_being_overwritten(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+
+	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+			 net_pkt_ipv6_ext_len(pkt))) {
+		tcp_hdr = NULL;
+		goto out;
+	}
+
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
+
+out:
+	net_pkt_cursor_restore(pkt, &backup);
+	net_pkt_set_overwrite(pkt, overwrite);
+
+	return tcp_hdr;
+}
+
 struct ud {
 	const struct sockaddr *remote_addr;
 	const struct sockaddr *local_addr;
