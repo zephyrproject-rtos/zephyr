@@ -341,7 +341,7 @@ int net_config_init(const char *app_info, u32_t flags, s32_t timeout)
 }
 
 #if defined(CONFIG_NET_CONFIG_AUTO_INIT)
-static int init_net_app(struct device *device)
+static int init_app(struct device *device)
 {
 	u32_t flags = 0U;
 	int ret;
@@ -394,5 +394,5 @@ static int init_net_app(struct device *device)
 	return ret;
 }
 
-SYS_INIT(init_net_app, APPLICATION, CONFIG_NET_CONFIG_INIT_PRIO);
+SYS_INIT(init_app, APPLICATION, CONFIG_NET_CONFIG_INIT_PRIO);
 #endif /* CONFIG_NET_CONFIG_AUTO_INIT */

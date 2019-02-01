@@ -18,8 +18,6 @@ LOG_MODULE_REGISTER(net_sntp, CONFIG_SNTP_LOG_LEVEL);
 #define SNTP_STRATUM_KOD 0 /* kiss-o'-death */
 #define OFFSET_1970_JAN_1 2208988800
 
-#define SNTP_CTX_SRV_SOCKADDR(ctx) (ctx->net_app_ctx.default_ctx->remote)
-
 static void sntp_pkt_dump(struct sntp_pkt *pkt)
 {
 	if (!pkt) {
