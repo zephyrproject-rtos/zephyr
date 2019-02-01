@@ -17,6 +17,12 @@
 
 #include <settings/settings.h>
 
+#include <tinycrypt/constants.h>
+#include <tinycrypt/utils.h>
+#include <tinycrypt/aes.h>
+#include <tinycrypt/cmac_mode.h>
+#include <tinycrypt/ccm_mode.h>
+
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/conn.h>
@@ -39,6 +45,8 @@
 
 #define SC_TIMEOUT	K_MSEC(10)
 #define CCC_STORE_DELAY	K_SECONDS(1)
+
+#define DB_HASH_TIMEOUT	K_MSEC(10)
 
 /* Persistent storage format for GATT CCC */
 struct ccc_store {
@@ -267,6 +275,130 @@ static ssize_t cf_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 
 	return len;
 }
+
+static u8_t db_hash[16];
+struct k_delayed_work db_hash_work;
+
+struct gen_hash_state {
+	struct tc_cmac_struct state;
+	int err;
+};
+
+static u8_t gen_hash_m(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct gen_hash_state *state = user_data;
+	struct bt_uuid_16 *u16;
+	u8_t data[16];
+	size_t len;
+	u16_t value;
+
+	if (attr->uuid->type != BT_UUID_TYPE_16)
+		return BT_GATT_ITER_CONTINUE;
+
+	u16 = (struct bt_uuid_16 *)attr->uuid;
+
+	switch (u16->val) {
+	/* Attributes to hash: handle + UUID + value */
+	case 0x2800: /* GATT Primary Service */
+	case 0x2801: /* GATT Secondary Service */
+	case 0x2802: /* GATT Include Service */
+	case 0x2803: /* GATT Characteristic */
+	case 0x2900: /* GATT Characteristic Extended Properties */
+		value = sys_cpu_to_le16(attr->handle);
+		if (tc_cmac_update(&state->state, (uint8_t *)&value,
+				   sizeof(attr->handle)) == TC_CRYPTO_FAIL) {
+			state->err = -EINVAL;
+			return BT_GATT_ITER_STOP;
+		}
+
+		value = sys_cpu_to_le16(u16->val);
+		if (tc_cmac_update(&state->state, (uint8_t *)&value,
+				   sizeof(u16->val)) == TC_CRYPTO_FAIL) {
+			state->err = -EINVAL;
+			return BT_GATT_ITER_STOP;
+		}
+
+		len = attr->read(NULL, attr, data, sizeof(data), 0);
+		if (len < 0) {
+			state->err = len;
+			return BT_GATT_ITER_STOP;
+		}
+
+		if (tc_cmac_update(&state->state, data, len) ==
+		    TC_CRYPTO_FAIL) {
+			state->err = -EINVAL;
+			return BT_GATT_ITER_STOP;
+		}
+
+		break;
+	/* Attributes to hash: handle + UUID */
+	case 0x2901: /* GATT Characteristic User Descriptor */
+	case 0x2902: /* GATT Client Characteristic Configuration */
+	case 0x2903: /* GATT Server Characteristic Configuration */
+	case 0x2904: /* GATT Characteristic Presentation Format */
+	case 0x2905: /* GATT Characteristic Aggregated Format */
+		value = sys_cpu_to_le16(attr->handle);
+		if (tc_cmac_update(&state->state, (uint8_t *)&value,
+				   sizeof(attr->handle)) == TC_CRYPTO_FAIL) {
+			state->err = -EINVAL;
+			return BT_GATT_ITER_STOP;
+		}
+
+		value = sys_cpu_to_le16(u16->val);
+		if (tc_cmac_update(&state->state, (uint8_t *)&value,
+				   sizeof(u16->val)) == TC_CRYPTO_FAIL) {
+			state->err = -EINVAL;
+			return BT_GATT_ITER_STOP;
+		}
+		break;
+	default:
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static void db_hash_gen(void)
+{
+	u8_t key[16] = {};
+	struct tc_aes_key_sched_struct sched;
+	struct gen_hash_state state;
+
+	if (tc_cmac_setup(&state.state, key, &sched) == TC_CRYPTO_FAIL) {
+		BT_ERR("Unable to setup AES CMAC");
+		return;
+	}
+
+	bt_gatt_foreach_attr(0x0001, 0xffff, gen_hash_m, &state);
+
+	if (tc_cmac_final(db_hash, &state.state) == TC_CRYPTO_FAIL) {
+		BT_ERR("Unable to calculate hash");
+		return;
+	}
+
+	BT_HEXDUMP_DBG(db_hash, sizeof(db_hash), "Hash: ");
+}
+
+static void db_hash_process(struct k_work *work)
+{
+	db_hash_gen();
+}
+
+static ssize_t db_hash_read(struct bt_conn *conn,
+			    const struct bt_gatt_attr *attr,
+			    void *buf, u16_t len, u16_t offset)
+{
+	/* Check if db_hash is already pending in which case it shall be
+	 * generated immediately instead of waiting the work to complete.
+	 */
+	if (k_delayed_work_remaining_get(&db_hash_work)) {
+		k_delayed_work_cancel(&db_hash_work);
+		db_hash_gen();
+	}
+
+	return bt_gatt_attr_read(conn, attr, buf, len, offset, db_hash,
+				 sizeof(db_hash));
+}
 #endif /* COFNIG_BT_GATT_CACHING */
 
 static struct bt_gatt_attr gatt_attrs[] = {
@@ -284,7 +416,11 @@ static struct bt_gatt_attr gatt_attrs[] = {
 			       BT_GATT_CHRC_READ | BT_GATT_CHRC_WRITE,
 			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
 			       cf_read, cf_write, NULL),
+	BT_GATT_CHARACTERISTIC(BT_UUID_GATT_DB_HASH,
+			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
+			       db_hash_read, NULL, NULL),
 #endif /* COFNIG_BT_GATT_CACHING */
+
 };
 
 static struct bt_gatt_service gatt_svc = BT_GATT_SERVICE(gatt_attrs);
@@ -453,6 +589,11 @@ void bt_gatt_init(void)
 	gatt_register(&gatt_svc);
 	gatt_register(&gap_svc);
 
+#if defined(CONFIG_BT_GATT_CACHING)
+	k_delayed_work_init(&db_hash_work, db_hash_process);
+	db_hash_gen();
+#endif /* COFNIG_BT_GATT_CACHING */
+
 	k_delayed_work_init(&gatt_sc.work, sc_process);
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
 	k_delayed_work_init(&gatt_ccc_store.work, ccc_delayed_store);
@@ -529,6 +670,10 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	sc_indicate(&gatt_sc, svc->attrs[0].handle,
 		    svc->attrs[svc->attr_count - 1].handle);
 
+#if defined(CONFIG_BT_GATT_CACHING)
+	k_delayed_work_submit(&db_hash_work, DB_HASH_TIMEOUT);
+#endif /* COFNIG_BT_GATT_CACHING */
+
 	return 0;
 }
 
@@ -542,6 +687,10 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 
 	sc_indicate(&gatt_sc, svc->attrs[0].handle,
 		    svc->attrs[svc->attr_count - 1].handle);
+
+#if defined(CONFIG_BT_GATT_CACHING)
+	k_delayed_work_submit(&db_hash_work, DB_HASH_TIMEOUT);
+#endif /* COFNIG_BT_GATT_CACHING */
 
 	return 0;
 }
