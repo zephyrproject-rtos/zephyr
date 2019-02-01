@@ -287,7 +287,7 @@ static void uart_sam0_irq_config_##n(struct device *dev)		\
 #define UART_SAM0_IRQ_HANDLER(n)
 #endif
 
-#define CONFIG_UART_SAM0_SERCOM_PADS(n) \
+#define UART_SAM0_SERCOM_PADS(n) \
 	(DT_UART_SAM0_SERCOM##n##_RXPO << SERCOM_USART_CTRLA_RXPO_Pos) |   \
 	(DT_UART_SAM0_SERCOM##n##_TXPO << SERCOM_USART_CTRLA_TXPO_Pos)
 
@@ -297,7 +297,7 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		       \
 	.baudrate = DT_UART_SAM0_SERCOM##n##_CURRENT_SPEED,		       \
 	.pm_apbcmask = PM_APBCMASK_SERCOM##n,				       \
 	.gclk_clkctrl_id = GCLK_CLKCTRL_ID_SERCOM##n##_CORE,		       \
-	.pads = CONFIG_UART_SAM0_SERCOM_PADS(n),				       \
+	.pads = UART_SAM0_SERCOM_PADS(n),				       \
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					       \
 }
 
