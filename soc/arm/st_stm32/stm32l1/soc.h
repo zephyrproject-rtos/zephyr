@@ -35,6 +35,10 @@
 #include <stm32l1xx_ll_rcc.h>
 #endif /* CONFIG_CLOCK_CONTROL_STM32_CUBE */
 
+#ifdef CONFIG_SERIAL_HAS_DRIVER
+#include <stm32l1xx_ll_usart.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L1_SOC_H_ */
