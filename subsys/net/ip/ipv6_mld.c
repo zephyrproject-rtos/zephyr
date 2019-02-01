@@ -125,7 +125,7 @@ static int mld_send(struct net_pkt *pkt)
 {
 	net_pkt_cursor_init(pkt);
 
-	net_ipv6_finalize_new(pkt, NET_IPV6_NEXTHDR_HBHO);
+	net_ipv6_finalize(pkt, NET_IPV6_NEXTHDR_HBHO);
 
 	/* IPV6 finalization above could not update ICMPv6 checksum
 	 * due to the existence of Router Alert option in between.

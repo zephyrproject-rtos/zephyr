@@ -202,7 +202,7 @@ enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
 	}
 
 	net_pkt_cursor_init(reply);
-	net_ipv6_finalize_new(reply, IPPROTO_ICMPV6);
+	net_ipv6_finalize(reply, IPPROTO_ICMPV6);
 
 	NET_DBG("Sending Echo Reply from %s to %s",
 		log_strdup(net_sprint_ipv6_addr(src)),
@@ -318,7 +318,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 	net_pkt_lladdr_dst(pkt)->len = net_pkt_lladdr_src(orig)->len;
 
 	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize_new(pkt, IPPROTO_ICMPV6);
+	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
 
 	NET_DBG("Sending ICMPv6 Error Message type %d code %d param %d"
 		" from %s to %s", type, code, param,
@@ -377,7 +377,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 
 	net_pkt_set_data(pkt, &icmpv6_access);
 
-	net_ipv6_finalize_new(pkt, IPPROTO_ICMPV6);
+	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
 
 	NET_DBG("Sending ICMPv6 Echo Request type %d from %s to %s",
 		NET_ICMPV6_ECHO_REQUEST,

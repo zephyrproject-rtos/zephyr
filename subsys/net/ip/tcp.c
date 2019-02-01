@@ -358,7 +358,7 @@ static int finalize_segment(struct net_pkt *pkt)
 		return net_ipv4_finalize_new(pkt, IPPROTO_TCP);
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   net_pkt_family(pkt) == AF_INET6) {
-		return net_ipv6_finalize_new(pkt, IPPROTO_TCP);
+		return net_ipv6_finalize(pkt, IPPROTO_TCP);
 	}
 
 	return -EINVAL;
