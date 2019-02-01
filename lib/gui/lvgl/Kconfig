@@ -77,7 +77,7 @@ endif
 
 if LVGL_COLOR_DEPTH_32
 
-config CONFIG_LVGL_COLOR_SCREEN_TRANSP
+config LVGL_COLOR_SCREEN_TRANSP
 	bool "Transparency support"
 	help
 	  Enable screen transparency. Useful for OSD or other overlapping GUISs.
