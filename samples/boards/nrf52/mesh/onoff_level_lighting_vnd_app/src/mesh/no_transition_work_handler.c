@@ -5,9 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include "common.h"
 #include "ble_mesh.h"
 #include "device_composition.h"
-
+#include "state_binding.h"
 #include "storage.h"
 
 static void unsolicitedly_publish_states_work_handler(struct k_work *work)
@@ -44,6 +45,30 @@ K_TIMER_DEFINE(save_lightness_temp_last_values_timer,
 
 static void no_transition_work_handler(struct k_work *work)
 {
+	bool readjust_light_state;
+
+	readjust_light_state = false;
+
+	if (!bt_mesh_is_provisioned()) {
+		return;
+	}
+
+	if (target_lightness != lightness) {
+		lightness = target_lightness;
+		readjust_lightness();
+		readjust_light_state = true;
+	}
+
+	if (target_temperature != temperature) {
+		temperature = target_temperature;
+		readjust_temperature();
+		readjust_light_state = true;
+	}
+
+	if (readjust_light_state) {
+		update_led_gpio();
+	}
+
 	k_timer_start(&unsolicitedly_publish_states_timer, K_MSEC(5000), 0);
 
 	/* If Lightness & Temperature values remains stable for
