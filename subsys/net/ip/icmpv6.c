@@ -68,48 +68,6 @@ void net_icmpv6_unregister_handler(struct net_icmpv6_handler *handler)
 	sys_slist_find_and_remove(&handlers, &handler->node);
 }
 
-int net_icmpv6_set_chksum(struct net_pkt *pkt)
-{
-	u16_t chksum = 0U;
-	struct net_buf *frag;
-	struct net_buf *temp_frag;
-	u16_t temp_pos;
-	u16_t pos;
-
-	/* Skip to the position of checksum */
-	frag = net_frag_skip(pkt->frags, 0, &pos,
-			     net_pkt_ip_hdr_len(pkt) +
-			     net_pkt_ipv6_ext_len(pkt) +
-			     1 + 1 /* type + code */);
-	if (pos > 0 && !frag) {
-		return -EINVAL;
-	}
-
-	/* Cache checksum fragment and postion, to be safe side first
-	 * write 0's in checksum position and calculate checksum and
-	 * write checksum in the packet.
-	 */
-	temp_frag = frag;
-	temp_pos = pos;
-
-	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(chksum),
-			     (u8_t *)&chksum, PKT_WAIT_TIME);
-	if (pos > 0 && !frag) {
-		return -EINVAL;
-	}
-
-	chksum = net_calc_chksum_icmpv6(pkt);
-
-	temp_frag = net_pkt_write(pkt, temp_frag, temp_pos, &temp_pos,
-				  sizeof(chksum), (u8_t *)&chksum,
-				  PKT_WAIT_TIME);
-	if (temp_pos > 0 && !temp_frag) {
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 int net_icmpv6_finalize(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access,
