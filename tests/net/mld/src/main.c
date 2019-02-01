@@ -106,8 +106,6 @@ static struct net_icmp_hdr *get_icmp_hdr(struct net_pkt *pkt)
 	return (struct net_icmp_hdr *)net_pkt_cursor_get_pos(pkt);
 }
 
-#define NET_ICMP_HDR(pkt) ((struct net_icmp_hdr *)net_pkt_icmp_data(pkt))
-
 static int tester_send(struct device *dev, struct net_pkt *pkt)
 {
 	struct net_icmp_hdr *icmp;
