@@ -47,6 +47,7 @@ config RISCV32
 
 config XTENSA
 	bool "Xtensa architecture"
+	select HAS_DTS
 
 config ARCH_POSIX
 	bool "POSIX (native) architecture"
