@@ -1,4 +1,4 @@
-.. _coap-client-sock-sample:
+.. _coap-client-sample:
 
 CoAP client
 ###########

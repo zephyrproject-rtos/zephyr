@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,15 +15,58 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <errno.h>
 
 #include <misc/byteorder.h>
-#include <net/buf.h>
-#include <net/net_pkt.h>
 
 #include <misc/printk.h>
 
 #include <net/coap.h>
 #include <net/coap_link_format.h>
 
-#define PKT_WAIT_TIME K_SECONDS(1)
+static inline bool append_u8(struct coap_packet *cpkt, u8_t data)
+{
+	if (!cpkt) {
+		return false;
+	}
+
+	if (cpkt->max_len - cpkt->offset < 1) {
+		return false;
+	}
+
+	cpkt->data[cpkt->offset++] = data;
+
+	return true;
+}
+
+static inline bool append_be16(struct coap_packet *cpkt, u16_t data)
+{
+	if (!cpkt) {
+		return false;
+	}
+
+	if (cpkt->max_len - cpkt->offset < 2) {
+		return false;
+	}
+
+	cpkt->data[cpkt->offset++] = (data & 0xFF) >> 8;
+	cpkt->data[cpkt->offset++] = (u8_t) data;
+
+	return true;
+}
+
+static inline bool append(struct coap_packet *cpkt, const u8_t *data, u16_t len)
+{
+	if (!cpkt || !data) {
+		return false;
+	}
+
+	if (cpkt->max_len - cpkt->offset < len) {
+		return false;
+	}
+
+	memcpy(cpkt->data + cpkt->offset, data, len);
+	cpkt->offset += len;
+
+	return true;
+}
 
 static bool match_path_uri(const char * const *path,
 			   const char *uri, u16_t len)
@@ -171,8 +214,10 @@ enum coap_block_size default_block_size(void)
 	return COAP_BLOCK_64;
 }
 
-static bool append_to_net_pkt(struct net_pkt *pkt, const char *str, u16_t len,
-			      u16_t *remaining, size_t *offset, size_t current)
+static bool append_to_coap_pkt(struct coap_packet *response,
+			       const char *str, u16_t len,
+			       u16_t *remaining, size_t *offset,
+			       size_t current)
 {
 	u16_t pos = 0U;
 	bool res;
@@ -197,7 +242,7 @@ static bool append_to_net_pkt(struct net_pkt *pkt, const char *str, u16_t len,
 		len = *remaining;
 	}
 
-	res = net_pkt_append_all(pkt, len, str + pos, PKT_WAIT_TIME);
+	res = append(response, str + pos, len);
 
 	*remaining -= len;
 	*offset += len;
@@ -205,7 +250,8 @@ static bool append_to_net_pkt(struct net_pkt *pkt, const char *str, u16_t len,
 	return res;
 }
 
-static int format_uri(const char * const *path, struct net_pkt *pkt,
+static int format_uri(const char * const *path,
+		      struct coap_packet *response,
 		      u16_t *remaining, size_t *offset,
 		      size_t current, bool *more)
 {
@@ -217,8 +263,8 @@ static int format_uri(const char * const *path, struct net_pkt *pkt,
 		return -EINVAL;
 	}
 
-	res = append_to_net_pkt(pkt, &prefix[0], sizeof(prefix) - 1,
-				remaining, offset, current);
+	res = append_to_coap_pkt(response, &prefix[0], sizeof(prefix) - 1,
+				 remaining, offset, current);
 	if (!res) {
 		return -ENOMEM;
 	}
@@ -231,8 +277,8 @@ static int format_uri(const char * const *path, struct net_pkt *pkt,
 	for (p = path; *p; ) {
 		u16_t path_len = strlen(*p);
 
-		res = append_to_net_pkt(pkt, *p, path_len, remaining, offset,
-					current);
+		res = append_to_coap_pkt(response, *p, path_len, remaining,
+					 offset, current);
 		if (!res) {
 			return -ENOMEM;
 		}
@@ -247,8 +293,8 @@ static int format_uri(const char * const *path, struct net_pkt *pkt,
 			continue;
 		}
 
-		res = append_to_net_pkt(pkt, "/", 1, remaining, offset,
-					current);
+		res = append_to_coap_pkt(response, "/", 1, remaining, offset,
+					 current);
 		if (!res) {
 			return -ENOMEM;
 		}
@@ -260,7 +306,7 @@ static int format_uri(const char * const *path, struct net_pkt *pkt,
 
 	}
 
-	res = append_to_net_pkt(pkt, ">", 1, remaining, offset, current);
+	res = append_to_coap_pkt(response, ">", 1, remaining, offset, current);
 	if (!res) {
 		return -ENOMEM;
 	}
@@ -276,7 +322,7 @@ static int format_uri(const char * const *path, struct net_pkt *pkt,
 }
 
 static int format_attributes(const char * const *attributes,
-			     struct net_pkt *pkt,
+			     struct coap_packet *response,
 			     u16_t *remaining, size_t *offset,
 			     size_t current, bool *more)
 {
@@ -290,8 +336,8 @@ static int format_attributes(const char * const *attributes,
 	for (attr = attributes; *attr; ) {
 		int attr_len = strlen(*attr);
 
-		res = append_to_net_pkt(pkt, *attr, attr_len,
-					remaining, offset, current);
+		res = append_to_coap_pkt(response, *attr, attr_len,
+					 remaining, offset, current);
 		if (!res) {
 			return -ENOMEM;
 		}
@@ -306,8 +352,8 @@ static int format_attributes(const char * const *attributes,
 			continue;
 		}
 
-		res = append_to_net_pkt(pkt, ";", 1,
-					remaining, offset, current);
+		res = append_to_coap_pkt(response, ";", 1,
+					 remaining, offset, current);
 		if (!res) {
 			return -ENOMEM;
 		}
@@ -319,7 +365,7 @@ static int format_attributes(const char * const *attributes,
 	}
 
 terminator:
-	res = append_to_net_pkt(pkt, ";", 1, remaining, offset, current);
+	res = append_to_coap_pkt(response, ";", 1, remaining, offset, current);
 	if (!res) {
 		return -ENOMEM;
 	}
@@ -335,7 +381,7 @@ terminator:
 }
 
 static int format_resource(const struct coap_resource *resource,
-			   struct net_pkt *pkt,
+			   struct coap_packet *response,
 			   u16_t *remaining, size_t *offset,
 			   size_t current, bool *more)
 {
@@ -343,7 +389,8 @@ static int format_resource(const struct coap_resource *resource,
 	const char * const *attributes = NULL;
 	int r;
 
-	r = format_uri(resource->path, pkt, remaining, offset, current, more);
+	r = format_uri(resource->path, response, remaining,
+		       offset, current, more);
 	if (r < 0) {
 		return r;
 	}
@@ -357,32 +404,26 @@ static int format_resource(const struct coap_resource *resource,
 		attributes = meta->attributes;
 	}
 
-	return format_attributes(attributes, pkt, remaining, offset, current,
-				 more);
+	return format_attributes(attributes, response, remaining, offset,
+				 current, more);
 }
 
+/* coap_well_known_core_get() added Option (delta and len) with
+ * out any extended options so this function will not consider Extended
+ * options at the moment.
+ */
 int clear_more_flag(struct coap_packet *cpkt)
 {
-	struct net_buf *frag;
 	u16_t offset;
 	u8_t opt;
 	u8_t delta;
 	u8_t len;
 
-	frag = net_frag_skip(cpkt->frag, 0, &offset, cpkt->hdr_len);
-	if (!frag && offset == 0xffff) {
-		return -EINVAL;
-	}
-
+	offset = cpkt->hdr_len;
 	delta = 0U;
-	/* Note: coap_well_known_core_get() added Option (delta and len) witho
-	 * out any extended options so parsing will not consider at the moment.
-	 */
+
 	while (1) {
-		frag = net_frag_read_u8(frag, offset, &offset, &opt);
-		if (!frag && offset == 0xffff) {
-			return -EINVAL;
-		}
+		opt = cpkt->data[offset++];
 
 		delta += ((opt & 0xF0) >> 4);
 		len = (opt & 0xF);
@@ -391,23 +432,17 @@ int clear_more_flag(struct coap_packet *cpkt)
 			break;
 		}
 
-		frag = net_frag_skip(frag, offset, &offset, len);
-		if (!frag && offset == 0xffff) {
-			return -EINVAL;
-		}
+		offset += len;
 	}
 
 	/* As per RFC 7959 Sec 2.2 : NUM filed can be on 0-3 bytes.
 	 * Skip NUM field to update M bit.
 	 */
 	if (len > 1) {
-		frag = net_frag_skip(frag, offset, &offset, len - 1);
-		if (!frag && offset == 0xffff) {
-			return -EINVAL;
-		}
+		offset = offset + len - 1;
 	}
 
-	frag->data[offset] = frag->data[offset] & 0xF7;
+	cpkt->data[offset] = cpkt->data[offset] & 0xF7;
 
 	return 0;
 }
@@ -415,7 +450,7 @@ int clear_more_flag(struct coap_packet *cpkt)
 int coap_well_known_core_get(struct coap_resource *resource,
 			      struct coap_packet *request,
 			      struct coap_packet *response,
-			      struct net_pkt *pkt)
+			      u8_t *data, u16_t len)
 {
 	static struct coap_block_context ctx;
 	struct coap_option query;
@@ -428,6 +463,10 @@ int coap_well_known_core_get(struct coap_resource *resource,
 	u8_t format;
 	int r;
 	bool more = false;
+
+	if (!resource || !request || !response || !data || !len) {
+		return -EINVAL;
+	}
 
 	if (ctx.total_size == 0) {
 		/* We have to iterate through resources and it's attributes,
@@ -457,7 +496,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 
 	num_queries = r;
 
-	r = coap_packet_init(response, pkt, 1, COAP_TYPE_ACK,
+	r = coap_packet_init(response, data, len, 1, COAP_TYPE_ACK,
 			     tkl, token, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		goto end;
@@ -494,7 +533,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 			continue;
 		}
 
-		r = format_resource(resource, pkt, &remaining, &offset,
+		r = format_resource(resource, response, &remaining, &offset,
 				    ctx.current, &more);
 		if (r < 0) {
 			goto end;
@@ -520,7 +559,7 @@ end:
 
 #else
 
-static int format_uri(const char * const *path, struct net_pkt *pkt)
+static int format_uri(const char * const *path, struct coap_packet *response)
 {
 	const char * const *p;
 	char *prefix = "</";
@@ -530,30 +569,27 @@ static int format_uri(const char * const *path, struct net_pkt *pkt)
 		return -EINVAL;
 	}
 
-	res = net_pkt_append_all(pkt, strlen(prefix), (u8_t *) prefix,
-				 PKT_WAIT_TIME);
+	res = append(response, (u8_t *) prefix, strlen(prefix));
 	if (!res) {
 		return -ENOMEM;
 	}
 
 	for (p = path; *p; ) {
-		res = net_pkt_append_all(pkt, strlen(*p), (u8_t *) *p,
-					 PKT_WAIT_TIME);
+		res = append(response, (u8_t *) *p, strlen(*p));
 		if (!res) {
 			return -ENOMEM;
 		}
 
 		p++;
 		if (*p) {
-			res = net_pkt_append_u8_timeout(pkt, (u8_t) '/',
-							PKT_WAIT_TIME);
+			res = append_u8(response, (u8_t) '/');
 			if (!res) {
 				return -ENOMEM;
 			}
 		}
 	}
 
-	res = net_pkt_append_u8_timeout(pkt, (u8_t) '>', PKT_WAIT_TIME);
+	res = append_u8(response, (u8_t) '>');
 	if (!res) {
 		return -ENOMEM;
 	}
@@ -562,7 +598,7 @@ static int format_uri(const char * const *path, struct net_pkt *pkt)
 }
 
 static int format_attributes(const char * const *attributes,
-			     struct net_pkt *pkt)
+			     struct coap_packet *response)
 {
 	const char * const *attr;
 	bool res;
@@ -572,16 +608,14 @@ static int format_attributes(const char * const *attributes,
 	}
 
 	for (attr = attributes; *attr; ) {
-		res = net_pkt_append_all(pkt, strlen(*attr), (u8_t *) *attr,
-					 PKT_WAIT_TIME);
+		res = append(response, (u8_t *) *attr, strlen(*attr));
 		if (!res) {
 			return -ENOMEM;
 		}
 
 		attr++;
 		if (*attr) {
-			res = net_pkt_append_u8_timeout(pkt, (u8_t) ';',
-							PKT_WAIT_TIME);
+			res = append_u8(response, (u8_t) ';');
 			if (!res) {
 				return -ENOMEM;
 			}
@@ -589,7 +623,7 @@ static int format_attributes(const char * const *attributes,
 	}
 
 terminator:
-	res = net_pkt_append_u8_timeout(pkt, (u8_t) ';', PKT_WAIT_TIME);
+	res = append_u8(response, (u8_t) ';');
 	if (!res) {
 		return -ENOMEM;
 	}
@@ -598,13 +632,13 @@ terminator:
 }
 
 static int format_resource(const struct coap_resource *resource,
-			   struct net_pkt *pkt)
+			   struct coap_packet *response)
 {
 	struct coap_core_metadata *meta = resource->user_data;
 	const char * const *attributes = NULL;
 	int r;
 
-	r = format_uri(resource->path, pkt);
+	r = format_uri(resource->path, response);
 	if (r < 0) {
 		return r;
 	}
@@ -613,13 +647,13 @@ static int format_resource(const struct coap_resource *resource,
 		attributes = meta->attributes;
 	}
 
-	return format_attributes(attributes, pkt);
+	return format_attributes(attributes, response);
 }
 
 int coap_well_known_core_get(struct coap_resource *resource,
 			     struct coap_packet *request,
 			     struct coap_packet *response,
-			     struct net_pkt *pkt)
+			     u8_t *data, u16_t len)
 {
 	struct coap_option query;
 	u8_t token[8];
@@ -629,7 +663,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 	u8_t num_queries;
 	int r;
 
-	if (!resource || !request || !response || !pkt) {
+	if (!resource || !request || !response || !data || !len) {
 		return -EINVAL;
 	}
 
@@ -646,7 +680,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 
 	num_queries = r;
 
-	r = coap_packet_init(response, pkt, 1, COAP_TYPE_ACK,
+	r = coap_packet_init(response, data, len, 1, COAP_TYPE_ACK,
 			     tkl, token, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		return r;
@@ -669,7 +703,7 @@ int coap_well_known_core_get(struct coap_resource *resource,
 			continue;
 		}
 
-		r = format_resource(resource, pkt);
+		r = format_resource(resource, response);
 		if (r < 0) {
 			return r;
 		}

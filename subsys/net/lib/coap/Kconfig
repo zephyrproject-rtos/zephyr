@@ -14,21 +14,6 @@ config COAP
 
 if COAP
 
-choice COAP_CHOICE
-	prompt "CoAP Implementation"
-	default COAP_SOCK
-	help
-	  Select the CoAP implementation. CoAP based on net_pkt is deprecated.
-	  Please use the socket based implementation for new applications.
-
-config COAP_SOCK
-	bool "CoAP based on Sockets"
-
-config COAP_NET_PKT
-	bool "CoAP based on net_pkt[Deprecated]"
-
-endchoice
-
 # This setting is only used by unit test. Do not enable it in applications
 config COAP_TEST_API_ENABLE
 	bool "Enable test API for CoAP unit tests"

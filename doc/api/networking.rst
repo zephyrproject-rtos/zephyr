@@ -192,10 +192,10 @@ MQTT 3.1.1
 .. doxygengroup:: mqtt_socket
    :project: Zephyr
 
-CoAP over Sockets
-=================
+CoAP
+====
 
-.. doxygengroup:: coap_sock
+.. doxygengroup:: coap
    :project: Zephyr
 
 DNS Resolve

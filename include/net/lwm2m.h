@@ -9,7 +9,7 @@
 #define ZEPHYR_INCLUDE_NET_LWM2M_H_
 
 #include <kernel.h>
-#include <net/coap_sock.h>
+#include <net/coap.h>
 
 /* LWM2M Objects defined by OMA */
 

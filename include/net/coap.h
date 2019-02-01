@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2018 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,10 +12,6 @@
 
 #ifndef ZEPHYR_INCLUDE_NET_COAP_H_
 #define ZEPHYR_INCLUDE_NET_COAP_H_
-
-/*
- * CoAP using net_pkt is deprecated. Use CoAP over Sockets.
- */
 
 /**
  * @brief COAP library
@@ -44,7 +40,7 @@ extern "C" {
  *
  * Refer to RFC 7252, section 12.2 for more information.
  */
-__deprecated enum coap_option_num {
+enum coap_option_num {
 	COAP_OPTION_IF_MATCH = 1,
 	COAP_OPTION_URI_HOST = 3,
 	COAP_OPTION_ETAG = 4,
@@ -71,7 +67,7 @@ __deprecated enum coap_option_num {
  *
  * To be used when creating a request or a response.
  */
-__deprecated enum coap_method {
+enum coap_method {
 	COAP_METHOD_GET = 1,
 	COAP_METHOD_POST = 2,
 	COAP_METHOD_PUT = 3,
@@ -83,7 +79,7 @@ __deprecated enum coap_method {
 /**
  * @brief CoAP packets may be of one of these types.
  */
-__deprecated enum coap_msgtype {
+enum coap_msgtype {
 	/**
 	 * Confirmable message.
 	 *
@@ -120,7 +116,7 @@ __deprecated enum coap_msgtype {
  *
  * To be used when creating a response.
  */
-__deprecated enum coap_response_code {
+enum coap_response_code {
 	COAP_RESPONSE_CODE_OK = coap_make_response_code(2, 0),
 	COAP_RESPONSE_CODE_CREATED = coap_make_response_code(2, 1),
 	COAP_RESPONSE_CODE_DELETED = coap_make_response_code(2, 2),
@@ -162,16 +158,17 @@ struct coap_resource;
  * @brief Type of the callback being called when a resource's method is
  * invoked by the remote entity.
  */
-__deprecated typedef int (*coap_method_t)(struct coap_resource *resource,
-					  struct coap_packet *request);
+typedef int (*coap_method_t)(struct coap_resource *resource,
+			     struct coap_packet *request,
+			     struct sockaddr *addr, socklen_t addr_len);
 
 /**
  * @typedef coap_notify_t
  * @brief Type of the callback being called when a resource's has observers
  * to be informed when an update happens.
  */
-__deprecated typedef void (*coap_notify_t)(struct coap_resource *resource,
-					   struct coap_observer *observer);
+typedef void (*coap_notify_t)(struct coap_resource *resource,
+			      struct coap_observer *observer);
 
 /**
  * @brief Description of CoAP resource.
@@ -179,7 +176,7 @@ __deprecated typedef void (*coap_notify_t)(struct coap_resource *resource,
  * CoAP servers often want to register resources, so that clients can act on
  * them, by fetching their state or requesting updates to them.
  */
-__deprecated struct coap_resource {
+struct coap_resource {
 	/** Which function to be called for each CoAP method */
 	coap_method_t get, post, put, del;
 	coap_notify_t notify;
@@ -192,7 +189,7 @@ __deprecated struct coap_resource {
 /**
  * @brief Represents a remote device that is observing a local resource.
  */
-__deprecated struct coap_observer {
+struct coap_observer {
 	sys_snode_t list;
 	struct sockaddr addr;
 	u8_t token[8];
@@ -200,126 +197,19 @@ __deprecated struct coap_observer {
 };
 
 /**
- * @brief Representation of a CoAP packet.
+ * @brief Representation of a CoAP Packet.
  */
-__deprecated struct coap_packet {
-	struct net_pkt *pkt;
-	struct net_buf *frag; /* Where CoAP header resides */
-	u16_t offset; /* Where CoAP header starts.*/
+struct coap_packet {
+	u8_t *data; /* User allocated buffer */
+	u16_t offset; /* CoAP lib maintains offset while adding data */
+	u16_t max_len; /* Max CoAP packet data length */
 	u8_t hdr_len; /* CoAP header length */
-	u8_t opt_len; /* Total options length (delta + len + value) */
-	u16_t last_delta; /* Used only when preparing CoAP packet */
+	u16_t opt_len; /* Total options length (delta + len + value) */
+	u16_t delta; /* Used for delta calculation in CoAP packet */
 };
 
-/**
- * @typedef coap_reply_t
- * @brief Helper function to be called when a response matches the
- * a pending request.
- */
-__deprecated typedef int (*coap_reply_t)(const struct coap_packet *response,
-					 struct coap_reply *reply,
-					 const struct sockaddr *from);
-
-/**
- * @brief Represents a request awaiting for an acknowledgment (ACK).
- */
-__deprecated struct coap_pending {
-	struct net_pkt *pkt;
-	struct sockaddr addr;
-	s32_t timeout;
-	u16_t id;
-};
-
-/**
- * @brief Represents the handler for the reply of a request, it is
- * also used when observing resources.
- */
-__deprecated struct coap_reply {
-	coap_reply_t reply;
-	void *user_data;
-	int age;
-	u8_t token[8];
-	u16_t id;
-	u8_t tkl;
-};
-
-/**
- * @brief Indicates that the remote device referenced by @a addr, with
- * @a request, wants to observe a resource.
- *
- * @param observer Observer to be initialized
- * @param request Request on which the observer will be based
- * @param addr Address of the remote device
- */
-__deprecated void coap_observer_init(struct coap_observer *observer,
-				     const struct coap_packet *request,
-				     const struct sockaddr *addr);
-
-/**
- * @brief After the observer is initialized, associate the observer
- * with an resource.
- *
- * @param resource Resource to add an observer
- * @param observer Observer to be added
- *
- * @return true if this is the first observer added to this resource.
- */
-__deprecated bool coap_register_observer(struct coap_resource *resource,
-					 struct coap_observer *observer);
-
-/**
- * @brief Remove this observer from the list of registered observers
- * of that resource.
- *
- * @param resource Resource in which to remove the observer
- * @param observer Observer to be removed
- */
-__deprecated void coap_remove_observer(struct coap_resource *resource,
-				       struct coap_observer *observer);
-
-/**
- * @brief Returns the observer that matches address @a addr.
- *
- * @param observers Pointer to the array of observers
- * @param len Size of the array of observers
- * @param addr Address of the endpoint observing a resource
- *
- * @return A pointer to a observer if a match is found, NULL
- * otherwise.
- */
-__deprecated struct coap_observer *coap_find_observer_by_addr(
-	struct coap_observer *observers, size_t len,
-	const struct sockaddr *addr);
-
-/**
- * @brief Returns the next available observer representation.
- *
- * @param observers Pointer to the array of observers
- * @param len Size of the array of observers
- *
- * @return A pointer to a observer if there's an available observer,
- * NULL otherwise.
- */
-__deprecated struct coap_observer *coap_observer_next_unused(
-	struct coap_observer *observers, size_t len);
-
-/**
- * @brief Indicates that a reply is expected for @a request.
- *
- * @param reply Reply structure to be initialized
- * @param request Request from which @a reply will be based
- */
-__deprecated void coap_reply_init(struct coap_reply *reply,
-		     const struct coap_packet *request);
-
-/**
- * @brief Represents the value of a CoAP option.
- *
- * To be used with coap_find_options().
- */
-__deprecated struct coap_option {
+struct coap_option {
 	u16_t delta;
-
 #if defined(CONFIG_COAP_EXTENDED_OPTIONS_LEN)
 	u16_t len;
 	u8_t value[CONFIG_COAP_EXTENDED_OPTIONS_LEN_VALUE];
@@ -330,259 +220,149 @@ __deprecated struct coap_option {
 };
 
 /**
- * @brief Parses the CoAP packet in @a pkt, validating it and
- * initializing @a cpkt. @a pkt must remain valid while @a cpkt is used.
+ * @typedef coap_reply_t
+ * @brief Helper function to be called when a response matches the
+ * a pending request.
+ */
+typedef int (*coap_reply_t)(const struct coap_packet *response,
+			    struct coap_reply *reply,
+			    const struct sockaddr *from);
+
+/**
+ * @brief Represents a request awaiting for an acknowledgment (ACK).
+ */
+struct coap_pending {
+	struct sockaddr addr;
+	s32_t timeout;
+	u16_t id;
+	u8_t *data;
+	u16_t len;
+};
+
+/**
+ * @brief Represents the handler for the reply of a request, it is
+ * also used when observing resources.
+ */
+struct coap_reply {
+	coap_reply_t reply;
+	void *user_data;
+	int age;
+	u16_t id;
+	u8_t token[8];
+	u8_t tkl;
+};
+
+/**
+ * @brief Returns the version present in a CoAP packet.
  *
- * @param cpkt Packet to be initialized from received @a pkt.
- * @param pkt Network Packet containing a CoAP packet, its @a data pointer is
+ * @param cpkt CoAP packet representation
+ *
+ * @return the CoAP version in packet
+ */
+u8_t coap_header_get_version(const struct coap_packet *cpkt);
+
+/**
+ * @brief Returns the type of the CoAP packet.
+ *
+ * @param cpkt CoAP packet representation
+ *
+ * @return the type of the packet
+ */
+u8_t coap_header_get_type(const struct coap_packet *cpkt);
+
+/**
+ * @brief Returns the token (if any) in the CoAP packet.
+ *
+ * @param cpkt CoAP packet representation
+ * @param token Where to store the token
+ *
+ * @return Token length in the CoAP packet.
+ */
+u8_t coap_header_get_token(const struct coap_packet *cpkt, u8_t *token);
+
+/**
+ * @brief Returns the code of the CoAP packet.
+ *
+ * @param cpkt CoAP packet representation
+ *
+ * @return the code present in the packet
+ */
+u8_t coap_header_get_code(const struct coap_packet *cpkt);
+
+/**
+ * @brief Returns the message id associated with the CoAP packet.
+ *
+ * @param cpkt CoAP packet representation
+ *
+ * @return the message id present in the packet
+ */
+u16_t coap_header_get_id(const struct coap_packet *cpkt);
+
+/**
+ * @brief Returns the data pointer and length of the CoAP packet.
+ *
+ * @param cpkt CoAP packet representation
+ * @param len Total length of CoAP payload
+ *
+ * @return data pointer and length if payload exists
+ *         NULL pointer and length set to 0 in case there is no payload
+ */
+const u8_t *coap_packet_get_payload(const struct coap_packet *cpkt, u16_t *len);
+
+/**
+ * @brief Parses the CoAP packet in data, validating it and
+ * initializing @a cpkt. @a data must remain valid while @a cpkt is used.
+ *
+ * @param cpkt Packet to be initialized from received @a data.
+ * @param data Data containing a CoAP packet, its @a data pointer is
  * positioned on the start of the CoAP packet.
+ * @param len Length of the data
  * @param options Parse options and cache its details.
  * @param opt_num Number of options
  *
  * @return 0 in case of success or negative in case of error.
  */
-__deprecated int coap_packet_parse(struct coap_packet *cpkt,
-				   struct net_pkt *pkt,
-				   struct coap_option *options, u8_t opt_num);
+int coap_packet_parse(struct coap_packet *cpkt, u8_t *data, u16_t len,
+		      struct coap_option *options, u8_t opt_num);
 
 /**
- * @brief Creates a new CoAP packet from a net_pkt. @a pkt must remain
- * valid while @a cpkt is used.
+ * @brief Creates a new CoAP Packet from input data.
  *
- * @param cpkt New packet to be initialized using the storage from @a
- * pkt.
- * @param pkt Network Packet that will contain a CoAP packet
+ * @param cpkt New packet to be initialized using the storage from @a data.
+ * @param data Data that will contain a CoAP packet information
+ * @param max_len Maximum allowable length of data
  * @param ver CoAP header version
  * @param type CoAP header type
- * @param tokenlen CoAP header token length
+ * @param token_len CoAP header token length
  * @param token CoAP header token
  * @param code CoAP header code
  * @param id CoAP header message id
  *
  * @return 0 in case of success or negative in case of error.
  */
-__deprecated int coap_packet_init(struct coap_packet *cpkt, struct net_pkt *pkt,
-				  u8_t ver, u8_t type, u8_t tokenlen,
-				  u8_t *token, u8_t code, u16_t id);
+int coap_packet_init(struct coap_packet *cpkt, u8_t *data, u16_t max_len,
+		     u8_t ver, u8_t type, u8_t token_len,
+		     u8_t *token, u8_t code, u16_t id);
 
 /**
- * @brief Initialize a pending request with a request.
+ * @brief Returns a randomly generated array of 8 bytes, that can be
+ * used as a message's token.
  *
- * The request's fields are copied into the pending struct, so @a
- * request doesn't have to live for as long as the pending struct
- * lives, but net_pkt needs to live for at least that long.
- *
- * @param pending Structure representing the waiting for a
- * confirmation message, initialized with data from @a request
- * @param request Message waiting for confirmation
- * @param addr Address to send the retransmission
- *
- * @return 0 in case of success or negative in case of error.
+ * @return a 8-byte pseudo-random token.
  */
-__deprecated int coap_pending_init(struct coap_pending *pending,
-				   const struct coap_packet *request,
-				   const struct sockaddr *addr);
+u8_t *coap_next_token(void);
 
 /**
- * @brief Returns the next available pending struct, that can be used
- * to track the retransmission status of a request.
+ * @brief Helper to generate message ids
  *
- * @param pendings Pointer to the array of #coap_pending structures
- * @param len Size of the array of #coap_pending structures
- *
- * @return pointer to a free #coap_pending structure, NULL in case
- * none could be found.
+ * @return a new message id
  */
-__deprecated struct coap_pending *coap_pending_next_unused(
-				   struct coap_pending *pendings, size_t len);
+static inline u16_t coap_next_id(void)
+{
+	static u16_t message_id;
 
-/**
- * @brief Returns the next available reply struct, so it can be used
- * to track replies and notifications received.
- *
- * @param replies Pointer to the array of #coap_reply structures
- * @param len Size of the array of #coap_reply structures
- *
- * @return pointer to a free #coap_reply structure, NULL in case
- * none could be found.
- */
-__deprecated struct coap_reply *coap_reply_next_unused(
-				struct coap_reply *replies, size_t len);
-
-/**
- * @brief After a response is received, clear all pending
- * retransmissions related to that response.
- *
- * @param response The received response
- * @param pendings Pointer to the array of #coap_reply structures
- * @param len Size of the array of #coap_reply structures
- *
- * @return pointer to the associated #coap_pending structure, NULL in
- * case none could be found.
- */
-__deprecated struct coap_pending *coap_pending_received(
-	const struct coap_packet *response,
-	struct coap_pending *pendings, size_t len);
-
-/**
- * @brief After a response is received, call coap_reply_t handler
- * registered in #coap_reply structure
- *
- * @param response A response received
- * @param from Address from which the response was received
- * @param replies Pointer to the array of #coap_reply structures
- * @param len Size of the array of #coap_reply structures
- *
- * @return Pointer to the reply matching the packet received, NULL if
- * none could be found.
- */
-__deprecated struct coap_reply *coap_response_received(
-	const struct coap_packet *response,
-	const struct sockaddr *from,
-	struct coap_reply *replies, size_t len);
-
-/**
- * @brief Returns the next pending about to expire, pending->timeout
- * informs how many ms to next expiration.
- *
- * @param pendings Pointer to the array of #coap_pending structures
- * @param len Size of the array of #coap_pending structures
- *
- * @return The next #coap_pending to expire, NULL if none is about to
- * expire.
- */
-__deprecated struct coap_pending *coap_pending_next_to_expire(
-	struct coap_pending *pendings, size_t len);
-
-/**
- * @brief After a request is sent, user may want to cycle the pending
- * retransmission so the timeout is updated.
- *
- * @param pending Pending representation to have its timeout updated
- *
- * @return false if this is the last retransmission.
- */
-__deprecated bool coap_pending_cycle(struct coap_pending *pending);
-
-/**
- * @brief Cancels the pending retransmission, so it again becomes
- * available.
- *
- * @param pending Pending representation to be canceled
- */
-__deprecated void coap_pending_clear(struct coap_pending *pending);
-
-/**
- * @brief Cancels awaiting for this reply, so it becomes available
- * again.
- *
- * @param reply The reply to be canceled
- */
-__deprecated void coap_reply_clear(struct coap_reply *reply);
-
-/**
- * @brief When a request is received, call the appropriate methods of
- * the matching resources.
- *
- * @param cpkt Packet received
- * @param resources Array of known resources
- * @param options Parsed options from coap_packet_parse()
- * @param opt_num Number of options
- *
- * @return 0 in case of success or negative in case of error.
- */
-__deprecated int coap_handle_request(struct coap_packet *cpkt,
-				     struct coap_resource *resources,
-				     struct coap_option *options,
-				     u8_t opt_num);
-
-/**
- * @brief Indicates that this resource was updated and that the @a
- * notify callback should be called for every registered observer.
- *
- * @param resource Resource that was updated
- *
- * @return 0 in case of success or negative in case of error.
- */
-__deprecated int coap_resource_notify(struct coap_resource *resource);
-
-/**
- * @brief Returns if this request is enabling observing a resource.
- *
- * @param request Request to be checked
- *
- * @return True if the request is enabling observing a resource, False
- * otherwise
- */
-__deprecated bool coap_request_is_observe(const struct coap_packet *request);
-
-/**
- * @brief Append payload marker to CoAP packet
- *
- * @param cpkt Packet to append the payload marker (0xFF)
- *
- * @return 0 in case of success or negative in case of error.
- */
-__deprecated int coap_packet_append_payload_marker(struct coap_packet *cpkt);
-
-/**
- * @brief Append payload to CoAP packet
- *
- * @param cpkt Packet to append the payload
- * @param payload CoAP packet payload
- * @param payload_len CoAP packet payload len
- *
- * @return 0 in case of success or negative in case of error.
- */
-__deprecated int coap_packet_append_payload(struct coap_packet *cpkt,
-					    u8_t *payload,
-					    u16_t payload_len);
-
-/**
- * @brief Appends an option to the packet.
- *
- * Note: options must be added in numeric order of their codes. Otherwise
- * error will be returned.
- * TODO: Add support for placing options according to its delta value.
- *
- * @param cpkt Packet to be updated
- * @param code Option code to add to the packet, see #coap_option_num
- * @param value Pointer to the value of the option, will be copied to the packet
- * @param len Size of the data to be added
- *
- * @return 0 in case of success or negative in case of error.
- */
-__deprecated int coap_packet_append_option(struct coap_packet *cpkt, u16_t code,
-					   const u8_t *value, u16_t len);
-
-/**
- * @brief Converts an option to its integer representation.
- *
- * Assumes that the number is encoded in the network byte order in the
- * option.
- *
- * @param option Pointer to the option value, retrieved by
- * coap_find_options()
- *
- * @return The integer representation of the option
- */
-__deprecated unsigned int coap_option_value_to_int(
-					const struct coap_option *option);
-
-/**
- * @brief Appends an integer value option to the packet.
- *
- * The option must be added in numeric order of their codes, and the
- * least amount of bytes will be used to encode the value.
- *
- * @param cpkt Packet to be updated
- * @param code Option code to add to the packet, see #coap_option_num
- * @param val Integer value to be added
- *
- * @return 0 in case of success or negative in case of error.
- */
-__deprecated int coap_append_option_int(struct coap_packet *cpkt, u16_t code,
-					unsigned int val);
+	return ++message_id;
+}
 
 /**
  * @brief Return the values associated with the option of value @a
@@ -597,9 +377,94 @@ __deprecated int coap_append_option_int(struct coap_packet *cpkt, u16_t code,
  * @return The number of options found in packet matching code,
  * negative on error.
  */
-__deprecated int coap_find_options(const struct coap_packet *cpkt,
-				   u16_t code,
-				   struct coap_option *options, u16_t veclen);
+int coap_find_options(const struct coap_packet *cpkt, u16_t code,
+		      struct coap_option *options, u16_t veclen);
+
+/**
+ * @brief Appends an option to the packet.
+ *
+ * Note: options must be added in numeric order of their codes. Otherwise
+ * error will be returned.
+ * TODO: Add support for placing options according to its delta value.
+ *
+ * @param cpkt Packet to be updated
+ * @param code Option code to add to the packet, see #coap_option_num
+ * @param value Pointer to the value of the option, will be copied to the
+ * packet
+ * @param len Size of the data to be added
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_packet_append_option(struct coap_packet *cpkt, u16_t code,
+			      const u8_t *value, u16_t len);
+
+/**
+ * @brief Converts an option to its integer representation.
+ *
+ * Assumes that the number is encoded in the network byte order in the
+ * option.
+ *
+ * @param option Pointer to the option value, retrieved by
+ * coap_find_options()
+ *
+ * @return The integer representation of the option
+ */
+unsigned int coap_option_value_to_int(const struct coap_option *option);
+
+/**
+ * @brief Appends an integer value option to the packet.
+ *
+ * The option must be added in numeric order of their codes, and the
+ * least amount of bytes will be used to encode the value.
+ *
+ * @param cpkt Packet to be updated
+ * @param code Option code to add to the packet, see #coap_option_num
+ * @param val Integer value to be added
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_append_option_int(struct coap_packet *cpkt, u16_t code,
+			   unsigned int val);
+
+/**
+ * @brief Append payload marker to CoAP packet
+ *
+ * @param cpkt Packet to append the payload marker (0xFF)
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_packet_append_payload_marker(struct coap_packet *cpkt);
+
+/**
+ * @brief Append payload to CoAP packet
+ *
+ * @param cpkt Packet to append the payload
+ * @param payload CoAP packet payload
+ * @param payload_len CoAP packet payload len
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_packet_append_payload(struct coap_packet *cpkt, u8_t *payload,
+			       u16_t payload_len);
+
+/**
+ * @brief When a request is received, call the appropriate methods of
+ * the matching resources.
+ *
+ * @param cpkt Packet received
+ * @param resources Array of known resources
+ * @param options Parsed options from coap_packet_parse()
+ * @param opt_num Number of options
+ * @param addr Peer address
+ * @param addr_len Peer address length
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_handle_request(struct coap_packet *cpkt,
+			struct coap_resource *resources,
+			struct coap_option *options,
+			u8_t opt_num,
+			struct sockaddr *addr, socklen_t addr_len);
 
 /**
  * Represents the size of each block that will be transferred using
@@ -609,7 +474,7 @@ __deprecated int coap_find_options(const struct coap_packet *cpkt,
  *
  * https://tools.ietf.org/html/rfc7959
  */
-__deprecated enum coap_block_size {
+enum coap_block_size {
 	COAP_BLOCK_16,
 	COAP_BLOCK_32,
 	COAP_BLOCK_64,
@@ -627,7 +492,7 @@ __deprecated enum coap_block_size {
  *
  * @return The size in bytes that the block_size represents
  */
-__deprecated static inline u16_t coap_block_size_to_bytes(
+static inline u16_t coap_block_size_to_bytes(
 	enum coap_block_size block_size)
 {
 	return (1 << (block_size + 4));
@@ -636,7 +501,7 @@ __deprecated static inline u16_t coap_block_size_to_bytes(
 /**
  * @brief Represents the current state of a block-wise transaction.
  */
-__deprecated struct coap_block_context {
+struct coap_block_context {
 	size_t total_size;
 	size_t current;
 	enum coap_block_size block_size;
@@ -651,9 +516,9 @@ __deprecated struct coap_block_context {
  *
  * @return 0 in case of success or negative in case of error.
  */
-__deprecated int coap_block_transfer_init(struct coap_block_context *ctx,
-					  enum coap_block_size block_size,
-					  size_t total_size);
+int coap_block_transfer_init(struct coap_block_context *ctx,
+			     enum coap_block_size block_size,
+			     size_t total_size);
 
 /**
  * @brief Append BLOCK1 option to the packet.
@@ -664,8 +529,8 @@ __deprecated int coap_block_transfer_init(struct coap_block_context *ctx,
  *
  * @return 0 in case of success or negative in case of error.
  */
-__deprecated int coap_append_block1_option(struct coap_packet *cpkt,
-					   struct coap_block_context *ctx);
+int coap_append_block1_option(struct coap_packet *cpkt,
+			      struct coap_block_context *ctx);
 
 /**
  * @brief Append BLOCK2 option to the packet.
@@ -676,8 +541,8 @@ __deprecated int coap_append_block1_option(struct coap_packet *cpkt,
  *
  * @return 0 in case of success or negative in case of error.
  */
-__deprecated int coap_append_block2_option(struct coap_packet *cpkt,
-					   struct coap_block_context *ctx);
+int coap_append_block2_option(struct coap_packet *cpkt,
+			      struct coap_block_context *ctx);
 
 /**
  * @brief Append SIZE1 option to the packet.
@@ -688,8 +553,8 @@ __deprecated int coap_append_block2_option(struct coap_packet *cpkt,
  *
  * @return 0 in case of success or negative in case of error.
  */
-__deprecated int coap_append_size1_option(struct coap_packet *cpkt,
-					  struct coap_block_context *ctx);
+int coap_append_size1_option(struct coap_packet *cpkt,
+			     struct coap_block_context *ctx);
 
 /**
  * @brief Append SIZE2 option to the packet.
@@ -700,8 +565,8 @@ __deprecated int coap_append_size1_option(struct coap_packet *cpkt,
  *
  * @return 0 in case of success or negative in case of error.
  */
-__deprecated int coap_append_size2_option(struct coap_packet *cpkt,
-					  struct coap_block_context *ctx);
+int coap_append_size2_option(struct coap_packet *cpkt,
+			     struct coap_block_context *ctx);
 
 /**
  * @brief Retrieves BLOCK{1,2} and SIZE{1,2} from @a cpkt and updates
@@ -712,8 +577,8 @@ __deprecated int coap_append_size2_option(struct coap_packet *cpkt,
  *
  * @return 0 in case of success or negative in case of error.
  */
-__deprecated int coap_update_from_block(const struct coap_packet *cpkt,
-					struct coap_block_context *ctx);
+int coap_update_from_block(const struct coap_packet *cpkt,
+			   struct coap_block_context *ctx);
 
 /**
  * @brief Updates @a ctx so after this is called the current entry
@@ -726,93 +591,214 @@ __deprecated int coap_update_from_block(const struct coap_packet *cpkt,
  * @return The offset in the block-wise transfer, 0 if the transfer
  * has finished.
  */
-__deprecated size_t coap_next_block(const struct coap_packet *cpkt,
-				    struct coap_block_context *ctx);
+size_t coap_next_block(const struct coap_packet *cpkt,
+		       struct coap_block_context *ctx);
 
 /**
- * @brief Returns the version present in a CoAP packet.
+ * @brief Indicates that the remote device referenced by @a addr, with
+ * @a request, wants to observe a resource.
  *
- * @param cpkt CoAP packet representation
- *
- * @return the CoAP version in packet
+ * @param observer Observer to be initialized
+ * @param request Request on which the observer will be based
+ * @param addr Address of the remote device
  */
-__deprecated u8_t coap_header_get_version(const struct coap_packet *cpkt);
+void coap_observer_init(struct coap_observer *observer,
+			const struct coap_packet *request,
+			const struct sockaddr *addr);
 
 /**
- * @brief Returns the type of the CoAP packet.
+ * @brief After the observer is initialized, associate the observer
+ * with an resource.
  *
- * @param cpkt CoAP packet representation
+ * @param resource Resource to add an observer
+ * @param observer Observer to be added
  *
- * @return the type of the packet
+ * @return true if this is the first observer added to this resource.
  */
-__deprecated u8_t coap_header_get_type(const struct coap_packet *cpkt);
+bool coap_register_observer(struct coap_resource *resource,
+			    struct coap_observer *observer);
 
 /**
- * @brief Returns the token (if any) in the CoAP packet.
+ * @brief Remove this observer from the list of registered observers
+ * of that resource.
  *
- * @param cpkt CoAP packet representation
- * @param token Where to store the token
- *
- * @return Token length in the CoAP packet.
+ * @param resource Resource in which to remove the observer
+ * @param observer Observer to be removed
  */
-__deprecated u8_t coap_header_get_token(const struct coap_packet *cpkt,
-					u8_t *token);
+void coap_remove_observer(struct coap_resource *resource,
+			  struct coap_observer *observer);
 
 /**
- * @brief Returns the code of the CoAP packet.
+ * @brief Returns the observer that matches address @a addr.
  *
- * @param cpkt CoAP packet representation
+ * @param observers Pointer to the array of observers
+ * @param len Size of the array of observers
+ * @param addr Address of the endpoint observing a resource
  *
- * @return the code present in the packet
+ * @return A pointer to a observer if a match is found, NULL
+ * otherwise.
  */
-__deprecated u8_t coap_header_get_code(const struct coap_packet *cpkt);
+struct coap_observer *coap_find_observer_by_addr(
+	struct coap_observer *observers, size_t len,
+	const struct sockaddr *addr);
 
 /**
- * @brief Returns the message id associated with the CoAP packet.
+ * @brief Returns the next available observer representation.
  *
- * @param cpkt CoAP packet representation
+ * @param observers Pointer to the array of observers
+ * @param len Size of the array of observers
  *
- * @return the message id present in the packet
+ * @return A pointer to a observer if there's an available observer,
+ * NULL otherwise.
  */
-__deprecated u16_t coap_header_get_id(const struct coap_packet *cpkt);
+struct coap_observer *coap_observer_next_unused(
+	struct coap_observer *observers, size_t len);
 
 /**
- * @brief Helper to generate message ids
+ * @brief Indicates that a reply is expected for @a request.
  *
- * @return a new message id
+ * @param reply Reply structure to be initialized
+ * @param request Request from which @a reply will be based
  */
-__deprecated static inline u16_t coap_next_id(void)
-{
-	static u16_t message_id;
-
-	return ++message_id;
-}
+void coap_reply_init(struct coap_reply *reply,
+		     const struct coap_packet *request);
 
 /**
- * @brief Returns the fragment pointer and offset where payload starts
- * in the CoAP packet.
+ * @brief Initialize a pending request with a request.
  *
- * @param cpkt CoAP packet representation
- * @param offset Stores the offset value where payload starts
- * @param len Total length of CoAP payload
+ * The request's fields are copied into the pending struct, so @a
+ * request doesn't have to live for as long as the pending struct
+ * lives, but "data" that needs to live for at least that long.
  *
- * @return the net_buf fragment pointer and offset value if payload exists
- *         NULL pointer and offset set to 0 in case there is no payload
- *         NULL pointer and offset value 0xffff in case of an error
+ * @param pending Structure representing the waiting for a
+ * confirmation message, initialized with data from @a request
+ * @param request Message waiting for confirmation
+ * @param addr Address to send the retransmission
+ *
+ * @return 0 in case of success or negative in case of error.
  */
-__deprecated struct net_buf *coap_packet_get_payload(
-					const struct coap_packet *cpkt,
-					u16_t *offset,
-					u16_t *len);
-
+int coap_pending_init(struct coap_pending *pending,
+		      const struct coap_packet *request,
+		      const struct sockaddr *addr);
 
 /**
- * @brief Returns a randomly generated array of 8 bytes, that can be
- * used as a message's token.
+ * @brief Returns the next available pending struct, that can be used
+ * to track the retransmission status of a request.
  *
- * @return a 8-byte pseudo-random token.
+ * @param pendings Pointer to the array of #coap_pending structures
+ * @param len Size of the array of #coap_pending structures
+ *
+ * @return pointer to a free #coap_pending structure, NULL in case
+ * none could be found.
  */
-__deprecated u8_t *coap_next_token(void);
+struct coap_pending *coap_pending_next_unused(
+	struct coap_pending *pendings, size_t len);
+
+/**
+ * @brief Returns the next available reply struct, so it can be used
+ * to track replies and notifications received.
+ *
+ * @param replies Pointer to the array of #coap_reply structures
+ * @param len Size of the array of #coap_reply structures
+ *
+ * @return pointer to a free #coap_reply structure, NULL in case
+ * none could be found.
+ */
+struct coap_reply *coap_reply_next_unused(
+	struct coap_reply *replies, size_t len);
+
+/**
+ * @brief After a response is received, returns if there is any
+ * matching pending request exits. User has to clear all pending
+ * retransmissions related to that response by calling
+ * coap_pending_clear().
+ *
+ * @param response The received response
+ * @param pendings Pointer to the array of #coap_reply structures
+ * @param len Size of the array of #coap_reply structures
+ *
+ * @return pointer to the associated #coap_pending structure, NULL in
+ * case none could be found.
+ */
+struct coap_pending *coap_pending_received(
+	const struct coap_packet *response,
+	struct coap_pending *pendings, size_t len);
+
+/**
+ * @brief After a response is received, call coap_reply_t handler
+ * registered in #coap_reply structure
+ *
+ * @param response A response received
+ * @param from Address from which the response was received
+ * @param replies Pointer to the array of #coap_reply structures
+ * @param len Size of the array of #coap_reply structures
+ *
+ * @return Pointer to the reply matching the packet received, NULL if
+ * none could be found.
+ */
+struct coap_reply *coap_response_received(
+	const struct coap_packet *response,
+	const struct sockaddr *from,
+	struct coap_reply *replies, size_t len);
+
+/**
+ * @brief Returns the next pending about to expire, pending->timeout
+ * informs how many ms to next expiration.
+ *
+ * @param pendings Pointer to the array of #coap_pending structures
+ * @param len Size of the array of #coap_pending structures
+ *
+ * @return The next #coap_pending to expire, NULL if none is about to
+ * expire.
+ */
+struct coap_pending *coap_pending_next_to_expire(
+	struct coap_pending *pendings, size_t len);
+
+/**
+ * @brief After a request is sent, user may want to cycle the pending
+ * retransmission so the timeout is updated.
+ *
+ * @param pending Pending representation to have its timeout updated
+ *
+ * @return false if this is the last retransmission.
+ */
+bool coap_pending_cycle(struct coap_pending *pending);
+
+/**
+ * @brief Cancels the pending retransmission, so it again becomes
+ * available.
+ *
+ * @param pending Pending representation to be canceled
+ */
+void coap_pending_clear(struct coap_pending *pending);
+
+/**
+ * @brief Cancels awaiting for this reply, so it becomes available
+ * again. User responsibility to free the memory associated with data.
+ *
+ * @param reply The reply to be canceled
+ */
+void coap_reply_clear(struct coap_reply *reply);
+
+/**
+ * @brief Indicates that this resource was updated and that the @a
+ * notify callback should be called for every registered observer.
+ *
+ * @param resource Resource that was updated
+ *
+ * @return 0 in case of success or negative in case of error.
+ */
+int coap_resource_notify(struct coap_resource *resource);
+
+/**
+ * @brief Returns if this request is enabling observing a resource.
+ *
+ * @param request Request to be checked
+ *
+ * @return True if the request is enabling observing a resource, False
+ * otherwise
+ */
+bool coap_request_is_observe(const struct coap_packet *request);
 
 #ifdef __cplusplus
 }

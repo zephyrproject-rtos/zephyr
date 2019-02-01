@@ -1,7 +1,0 @@
-common:
-  platform_whitelist: native_posix qemu_x86 qemu_cortex_m3
-tests:
-  net.coap:
-    min_ram: 16
-    tags: net
-    depends_on: netif

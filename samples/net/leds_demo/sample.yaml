@@ -1,8 +1,0 @@
-sample:
-  description: Control LEDs using CoAP
-  name: LED Demo
-tests:
-  test:
-    depends_on: netif gpio
-    harness: net
-    tags: net coap

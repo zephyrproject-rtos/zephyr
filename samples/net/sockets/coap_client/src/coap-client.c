@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_coap_client_sample, LOG_LEVEL_DBG);
 #include <net/net_mgmt.h>
 #include <net/net_ip.h>
 #include <net/udp.h>
-#include <net/coap_sock.h>
+#include <net/coap.h>
 
 #include "net_private.h"
 
