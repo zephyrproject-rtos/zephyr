@@ -35,10 +35,6 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 
 #include "ipv6.h"
 
-#if defined(CONFIG_HTTP)
-#include <net/http.h>
-#endif
-
 #if defined(CONFIG_NET_ARP)
 #include "ethernet/arp.h"
 #endif
@@ -2107,114 +2103,6 @@ static int cmd_net_gptp(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-#if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
-#define MAX_HTTP_OUTPUT_LEN 64
-static char *http_str_output(char *output, int outlen, const char *str, int len)
-{
-	if (len > outlen) {
-		len = outlen;
-	}
-
-	if (len == 0) {
-		(void)memset(output, 0, outlen);
-	} else {
-		memcpy(output, str, len);
-		output[len] = '\0';
-	}
-
-	return output;
-}
-
-static void http_server_cb(struct http_ctx *entry, void *user_data)
-{
-	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
-	int *count = data->user_data;
-	static char output[MAX_HTTP_OUTPUT_LEN];
-	int i;
-
-	/* +7 for []:port */
-	char addr_local[ADDR_LEN + 7];
-	char addr_remote[ADDR_LEN + 7] = "";
-
-	if (*count == 0) {
-		PR("        HTTP ctx    Local           \t"
-		   "Remote          \tURL\n");
-	}
-
-	(*count)++;
-
-	for (i = 0; i < CONFIG_NET_APP_SERVER_NUM_CONN; i++) {
-		if (!entry->app_ctx.server.net_ctxs[i] ||
-		    !net_context_is_used(entry->app_ctx.server.net_ctxs[i])) {
-			continue;
-		}
-
-		get_addresses(entry->app_ctx.server.net_ctxs[i],
-			      addr_local, sizeof(addr_local),
-			      addr_remote, sizeof(addr_remote));
-
-		PR("[%2d] %c%c %p  %16s\t%16s\t%s\n",
-		   *count,
-		   entry->app_ctx.is_enabled ? 'E' : 'D',
-		   entry->is_tls ? 'S' : ' ',
-		   entry, addr_local, addr_remote,
-		   http_str_output(output, sizeof(output) - 1,
-				   entry->http.url, entry->http.url_len));
-	}
-}
-#endif /* CONFIG_NET_DEBUG_HTTP_CONN && CONFIG_HTTP_SERVER */
-
-#if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
-static int http_monitor_count;
-#endif
-
-static int cmd_net_http_monitor(const struct shell *shell, size_t argc,
-				char *argv[])
-{
-#if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
-	PR_INFO("Activating HTTP monitor. Type \"net http\" "
-		"to disable HTTP connection monitoring.\n");
-	http_server_conn_monitor(http_server_cb, &http_monitor_count);
-#else
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	PR_INFO("Enable CONFIG_NET_DEBUG_HTTP_CONN and CONFIG_HTTP_SERVER "
-		"to get HTTP server connection information\n");
-#endif
-
-	return 0;
-}
-
-static int cmd_net_http(const struct shell *shell, size_t argc, char *argv[])
-{
-#if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
-	struct net_shell_user_data user_data;
-	int arg = 2;
-#endif
-
-#if defined(CONFIG_NET_DEBUG_HTTP_CONN) && defined(CONFIG_HTTP_SERVER)
-	http_monitor_count = 0;
-
-	/* Turn off monitoring if it was enabled */
-	http_server_conn_monitor(NULL, NULL);
-
-	user_data.shell = shell;
-	user_data.user_data = &http_monitor_count;
-
-	http_server_conn_foreach(http_server_cb, &user_data);
-#else
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
-
-	PR_INFO("Enable CONFIG_NET_DEBUG_HTTP_CONN and CONFIG_HTTP_SERVER "
-		"to get HTTP server connection information\n");
-#endif
-
-	return 0;
-}
-
 static int get_iface_idx(const struct shell *shell, char *index_str)
 {
 	char *endptr;
@@ -3690,13 +3578,6 @@ SHELL_CREATE_STATIC_SUBCMD_SET(net_cmd_gptp)
 	SHELL_SUBCMD_SET_END
 };
 
-SHELL_CREATE_STATIC_SUBCMD_SET(net_cmd_http)
-{
-	SHELL_CMD(monitor, NULL, "Start monitoring HTTP connections.",
-		  cmd_net_http_monitor),
-	SHELL_SUBCMD_SET_END
-};
-
 #if !defined(NET_VLAN_MAX_COUNT)
 #define MAX_IFACE_COUNT NET_IF_MAX_CONFIGS
 #else
@@ -3901,9 +3782,6 @@ SHELL_CREATE_STATIC_SUBCMD_SET(net_commands)
 		  cmd_net_dns),
 	SHELL_CMD(gptp, &net_cmd_gptp, "Print information about gPTP support.",
 		  cmd_net_gptp),
-	SHELL_CMD(http, &net_cmd_http,
-		  "Print information about active HTTP connections.",
-		  cmd_net_http),
 	SHELL_CMD(iface, &net_cmd_iface,
 		  "Print information about network interfaces.",
 		  cmd_net_iface),
