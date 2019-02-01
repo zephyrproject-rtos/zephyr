@@ -463,18 +463,18 @@ FUNC_NORETURN void _Cstart(void)
 	/* gcov hook needed to get the coverage report.*/
 	gcov_static_init();
 
-#ifdef CONFIG_MULTITHREADING
-	struct k_thread dummy_thread = { .base.thread_state = _THREAD_DUMMY };
-
-	_current = &dummy_thread;
-#endif
-
 	if (IS_ENABLED(CONFIG_LOG)) {
 		log_core_init();
 	}
 
 	/* perform any architecture-specific initialization */
 	kernel_arch_init();
+
+#ifdef CONFIG_MULTITHREADING
+	struct k_thread dummy_thread = { .base.thread_state = _THREAD_DUMMY };
+
+	_current = &dummy_thread;
+#endif
 
 	/* perform basic hardware initialization */
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_1);
