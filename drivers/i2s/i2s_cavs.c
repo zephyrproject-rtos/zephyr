@@ -29,7 +29,7 @@
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
 /* length of the buffer queue */
-#define I2S_CAVS_BUF_Q_LEN			4
+#define I2S_CAVS_BUF_Q_LEN			2
 
 #ifdef CONFIG_DCACHE_WRITEBACK
 #define DCACHE_INVALIDATE(addr, size) \
