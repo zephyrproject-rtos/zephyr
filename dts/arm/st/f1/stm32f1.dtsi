@@ -157,6 +157,13 @@
 			label = "SPI_1";
 		};
 
+		idwg: watchdog@40003000 {
+			compatible = "st,stm32-watchdog";
+			reg = <0x40003000 0x400>;
+			label = "IWDG";
+			status = "disabled";
+		};
+
 		timers1: timers@40012c00 {
 			compatible = "st,stm32-timers";
 			reg = <0x40012c00 0x400>;
