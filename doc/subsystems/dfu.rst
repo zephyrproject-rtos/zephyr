@@ -16,7 +16,7 @@ consists of two different modules:
 The DFU subsystem deals with image management, but not with the transport
 or management protocols themselves required to send the image to the target
 device. For information on these protocols and frameworks please refer to the
-:ref:`mgmt` section.
+:ref:`device_mgmt` section.
 
 Bootloaders
 ***********

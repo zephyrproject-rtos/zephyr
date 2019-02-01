@@ -269,7 +269,7 @@ important submodules. For each of the modules, a dedicated architecture
 document shall be created and evaluated against the implementation.
 These documents shall serve as an entry point to new developers and as a
 basis for the security architecture. Please refer to the
-:ref:`Zephyr Kernel subsystem documentation <subsystems>` for
+:ref:`Zephyr subsystem documentation <api_reference>` for
 detailed information.
 
 Secure Coding Guidelines

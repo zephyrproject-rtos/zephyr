@@ -1,7 +1,7 @@
-.. _mgmt:
+.. _device_mgmt:
 
-Management
-##########
+Device Management
+#################
 
 Overview
 ********

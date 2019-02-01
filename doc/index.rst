@@ -65,11 +65,11 @@ licensing, as described in :ref:`Zephyr_Licensing`.
 	       by Zephyr</p>
        </li>
        <li class="grid-item">
-	   <a href="kernel/kernel.html">
+	   <a href="reference.html">
 	       <img alt="" src=""/>
-	       <h2>Kernel Services</h2>
+	       <h2>API Reference</h2>
 	   </a>
-	   <p>General introduction of the Zephyr kernel’s key capabilities and services.</p>
+	   <p>API Documentation and Reference</p>
        </li>
        <li class="grid-item">
 	   <a href="security/security.html">
@@ -86,11 +86,11 @@ licensing, as described in :ref:`Zephyr_Licensing`.
 	   <p>List if supported boards and platforms.</p>
        </li>
        <li class="grid-item">
-	   <a href="tools/index.html">
+	   <a href="user_guides.html">
 	       <img alt="" src=""/>
-	       <h2>Tools</h2>
+	       <h2>User and Developer Guides</h2>
 	   </a>
-	   <p>List of Tools used for development.</p>
+	   <p>User and Developer Guides</p>
        </li>
    </ul>
 
@@ -107,17 +107,11 @@ licensing, as described in :ref:`Zephyr_Licensing`.
    contribute/index.rst
    development_process/index.rst
    application/application.rst
-   kernel/kernel.rst
+   reference.rst
+   user_guides.rst
    security/security.rst
-   subsystems/subsystems.rst
-   devices/index.rst
-   tools/index.rst
-   porting/index.rst
-   documentation/index.rst
    samples/samples.rst
-   api/index.rst
    boards/boards.rst
-   reference/index.rst
 
 .. only:: html
 

@@ -8,7 +8,7 @@ Overview
 
 This sample application implements a Simple Management Protocol (SMP) server.
 SMP is a basic transfer encoding for use with the MCUmgr management protocol.
-For more information about MCUmgr and SMP, please see :ref:`mgmt`.
+For more information about MCUmgr and SMP, please see :ref:`device_mgmt`.
 
 This sample application supports the following mcumgr transports by default:
 
