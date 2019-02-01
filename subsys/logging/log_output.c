@@ -114,7 +114,8 @@ static int print_formatted(const struct log_output *log_output,
 	int length = 0;
 
 	va_start(args, fmt);
-#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX)
+#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX) && \
+    !defined(CONFIG_LOG_DISABLE_FANCY_OUTPUT_FORMATTING)
 	length = _prf(out_func, (void *)log_output, (char *)fmt, args);
 #else
 	_vprintk(out_func, (void *)log_output, fmt, args);
@@ -551,7 +552,8 @@ void log_output_string(const struct log_output *log_output,
 				level, domain_id, source_id);
 	}
 
-#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX)
+#if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX) && \
+    !defined(CONFIG_LOG_DISABLE_FANCY_OUTPUT_FORMATTING)
 	length = _prf(out_func, (void *)log_output, (char *)fmt, ap);
 #else
 	_vprintk(out_func, (void *)log_output, fmt, ap);
