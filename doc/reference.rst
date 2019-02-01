@@ -14,7 +14,7 @@ API Reference
    kernel/kernel.rst
    subsystems/logging/index
    api/misc_api
-   api/networking.rst
+   api/networking/index
    api/peripherals/index.rst
    subsystems/power_management.rst
    subsystems/shell/shell
