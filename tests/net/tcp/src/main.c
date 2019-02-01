@@ -23,7 +23,6 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_TCP_LOG_LEVEL);
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
-#include <net/tcp.h>
 #include <net/dummy.h>
 
 #include <tc_util.h>
@@ -245,6 +244,41 @@ out:
 	net_pkt_set_overwrite(pkt, overwrite);
 
 	return tcp_hdr;
+}
+
+struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
+				    struct net_tcp_hdr *hdr)
+{
+	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
+	struct net_pkt_cursor backup;
+	struct net_tcp_hdr *tcp_hdr;
+	bool overwrite;
+
+	overwrite = net_pkt_is_being_overwritten(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+
+	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+			 net_pkt_ipv6_ext_len(pkt))) {
+		tcp_hdr = NULL;
+		goto out;
+	}
+
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
+	if (!tcp_hdr) {
+		goto out;
+	}
+
+	memcpy(tcp_hdr, hdr, sizeof(struct net_tcp_hdr));
+
+	net_pkt_set_data(pkt, &tcp_access);
+out:
+	net_pkt_cursor_restore(pkt, &backup);
+	net_pkt_set_overwrite(pkt, overwrite);
+
+	return tcp_hdr == NULL ? NULL : hdr;
 }
 
 struct ud {

@@ -659,14 +659,6 @@ static inline int net_tcp_finalize(struct net_pkt *pkt)
 	return 0;
 }
 
-static inline struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
-						  struct net_tcp_hdr *hdr)
-{
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(hdr);
-	return NULL;
-}
-
 static inline int tcp_hdr_len(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);

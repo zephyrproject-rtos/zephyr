@@ -17,7 +17,6 @@ LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 #include <net/net_core.h>
 #include <net/net_pkt.h>
 #include <net/udp.h>
-#include <net/tcp.h>
 #include <net/ethernet.h>
 #include <net/socket_can.h>
 
