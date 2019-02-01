@@ -41,6 +41,8 @@
 #define EXTI_LINES 24
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
 #define EXTI_LINES 30
+#elif defined(CONFIG_SOC_SERIES_STM32L1X)
+#define EXTI_LINES 24
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 #define EXTI_LINES 40
 #elif defined(CONFIG_SOC_SERIES_STM32MP1X)
@@ -127,6 +129,7 @@ int stm32_exti_enable(int line)
       defined(CONFIG_SOC_SERIES_STM32F3X) || \
       defined(CONFIG_SOC_SERIES_STM32F4X) || \
       defined(CONFIG_SOC_SERIES_STM32F7X) || \
+      defined(CONFIG_SOC_SERIES_STM32L1X) || \
       defined(CONFIG_SOC_SERIES_STM32L4X) || \
       defined(CONFIG_SOC_SERIES_STM32WBX)
 	if (line >= 5 && line <= 9) {
@@ -585,6 +588,7 @@ static void __stm32_exti_connect_irqs(struct device *dev)
       defined(CONFIG_SOC_SERIES_STM32F3X) || \
       defined(CONFIG_SOC_SERIES_STM32F4X) || \
       defined(CONFIG_SOC_SERIES_STM32F7X) || \
+      defined(CONFIG_SOC_SERIES_STM32L1X) || \
       defined(CONFIG_SOC_SERIES_STM32L4X) || \
       defined(CONFIG_SOC_SERIES_STM32MP1X) || \
       defined(CONFIG_SOC_SERIES_STM32WBX)
