@@ -67,8 +67,6 @@ static struct sockaddr_in peer_v4_addr;
 static struct net_if *my_iface;
 static struct net_if *peer_iface;
 
-#define NET_TCP_HDR(pkt)  net_pkt_tcp_data(pkt)
-
 #define MY_TCP_PORT 5545
 #define PEER_TCP_PORT 9876
 
@@ -122,97 +120,6 @@ static void net_tcp_iface_init(struct net_if *iface)
 	}
 
 	return;
-}
-
-static void v6_send_syn_ack(struct net_pkt *req)
-{
-	struct net_if *iface = net_pkt_iface(req);
-	struct net_pkt *rsp = NULL;
-	int ret;
-
-	ret = net_tcp_prepare_segment(reply_v6_ctx->tcp,
-				      NET_TCP_SYN | NET_TCP_ACK, NULL, 0,
-				      NULL, (struct sockaddr *)&my_v6_addr,
-				      &rsp);
-	if (ret) {
-		DBG("TCP packet creation failed\n");
-		return;
-	}
-
-	DBG("1) rsp src %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_HDR(rsp)->src),
-	    ntohs(NET_TCP_HDR(rsp)->src_port));
-	DBG("1) rsp dst %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_HDR(rsp)->dst),
-	    ntohs(NET_TCP_HDR(rsp)->dst_port));
-
-	net_ipaddr_copy(&NET_IPV6_HDR(rsp)->src, &NET_IPV6_HDR(req)->dst);
-	net_ipaddr_copy(&NET_IPV6_HDR(rsp)->dst, &NET_IPV6_HDR(req)->src);
-
-	NET_TCP_HDR(rsp)->src_port = NET_TCP_HDR(req)->dst_port;
-	NET_TCP_HDR(rsp)->dst_port = NET_TCP_HDR(req)->src_port;
-
-	DBG("rsp src %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_HDR(rsp)->src),
-	    ntohs(NET_TCP_HDR(rsp)->src_port));
-	DBG("rsp dst %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_HDR(rsp)->dst),
-	    ntohs(NET_TCP_HDR(rsp)->dst_port));
-
-	net_hexdump_frags("request TCPv6", req, false);
-	net_hexdump_frags("reply   TCPv6", rsp, false);
-
-	ret =  net_recv_data(iface, rsp);
-	if (!ret) {
-		net_pkt_unref(rsp);
-	}
-
-	k_sem_give(&wait_connect);
-}
-
-static int send_status = -EINVAL;
-
-static int tester_send(struct device *dev, struct net_pkt *pkt)
-{
-	if (!pkt->frags) {
-		DBG("No data to send!\n");
-		return -ENODATA;
-	}
-	if (syn_v6_sent && net_pkt_family(pkt) == AF_INET6) {
-		DBG("v6 SYN was sent successfully\n");
-		syn_v6_sent = false;
-		v6_send_syn_ack(pkt);
-	}
-
-	send_status = 0;
-
-	return 0;
-}
-
-static int tester_send_peer(struct device *dev, struct net_pkt *pkt)
-{
-	if (!pkt->frags) {
-		DBG("No data to send!\n");
-		return -ENODATA;
-	}
-
-	DBG("Peer data was sent successfully\n");
-
-	return 0;
-}
-
-static inline struct in_addr *if_get_addr(struct net_if *iface)
-{
-	int i;
-
-	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
-		if (iface->config.ip.ipv4->unicast[i].is_used &&
-		    iface->config.ip.ipv4->unicast[i].address.family ==
-								AF_INET &&
-		    iface->config.ip.ipv4->unicast[i].addr_state ==
-							NET_ADDR_PREFERRED) {
-			return
-			    &iface->config.ip.ipv4->unicast[i].address.in_addr;
-		}
-	}
-
-	return NULL;
 }
 
 struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
@@ -279,6 +186,101 @@ out:
 	net_pkt_set_overwrite(pkt, overwrite);
 
 	return tcp_hdr == NULL ? NULL : hdr;
+}
+
+static void v6_send_syn_ack(struct net_pkt *req)
+{
+	struct net_if *iface = net_pkt_iface(req);
+	struct net_pkt *rsp = NULL;
+	struct net_tcp_hdr *tcp_rsp, *tcp_req;
+	int ret;
+
+	ret = net_tcp_prepare_segment(reply_v6_ctx->tcp,
+				      NET_TCP_SYN | NET_TCP_ACK, NULL, 0,
+				      NULL, (struct sockaddr *)&my_v6_addr,
+				      &rsp);
+	if (ret) {
+		DBG("TCP packet creation failed\n");
+		return;
+	}
+
+	tcp_rsp = net_tcp_get_hdr(rsp, NULL);
+	tcp_req = net_tcp_get_hdr(req, NULL);
+
+	DBG("1) rsp src %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_HDR(rsp)->src),
+	    ntohs(tcp_rsp->src_port));
+	DBG("1) rsp dst %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_HDR(rsp)->dst),
+	    ntohs(tcp_rsp->dst_port));
+
+	net_ipaddr_copy(&NET_IPV6_HDR(rsp)->src, &NET_IPV6_HDR(req)->dst);
+	net_ipaddr_copy(&NET_IPV6_HDR(rsp)->dst, &NET_IPV6_HDR(req)->src);
+
+	tcp_rsp->src_port = tcp_req->dst_port;
+	tcp_rsp->dst_port = tcp_req->src_port;
+
+	DBG("rsp src %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_HDR(rsp)->src),
+	    ntohs(tcp_rsp->src_port));
+	DBG("rsp dst %s/%d\n", net_sprint_ipv6_addr(&NET_IPV6_HDR(rsp)->dst),
+	    ntohs(tcp_rsp->dst_port));
+
+	net_hexdump_frags("request TCPv6", req, false);
+	net_hexdump_frags("reply   TCPv6", rsp, false);
+
+	ret =  net_recv_data(iface, rsp);
+	if (!ret) {
+		net_pkt_unref(rsp);
+	}
+
+	k_sem_give(&wait_connect);
+}
+
+static int send_status = -EINVAL;
+
+static int tester_send(struct device *dev, struct net_pkt *pkt)
+{
+	if (!pkt->frags) {
+		DBG("No data to send!\n");
+		return -ENODATA;
+	}
+	if (syn_v6_sent && net_pkt_family(pkt) == AF_INET6) {
+		DBG("v6 SYN was sent successfully\n");
+		syn_v6_sent = false;
+		v6_send_syn_ack(pkt);
+	}
+
+	send_status = 0;
+
+	return 0;
+}
+
+static int tester_send_peer(struct device *dev, struct net_pkt *pkt)
+{
+	if (!pkt->frags) {
+		DBG("No data to send!\n");
+		return -ENODATA;
+	}
+
+	DBG("Peer data was sent successfully\n");
+
+	return 0;
+}
+
+static inline struct in_addr *if_get_addr(struct net_if *iface)
+{
+	int i;
+
+	for (i = 0; i < NET_IF_MAX_IPV4_ADDR; i++) {
+		if (iface->config.ip.ipv4->unicast[i].is_used &&
+		    iface->config.ip.ipv4->unicast[i].address.family ==
+								AF_INET &&
+		    iface->config.ip.ipv4->unicast[i].addr_state ==
+							NET_ADDR_PREFERRED) {
+			return
+			    &iface->config.ip.ipv4->unicast[i].address.in_addr;
+		}
+	}
+
+	return NULL;
 }
 
 struct ud {
@@ -929,6 +931,10 @@ static bool v6_check_port_and_address(char *test_str, struct net_pkt *pkt,
 				      const struct in6_addr *expected_dst_addr,
 				      u16_t expected_dst_port)
 {
+	struct net_tcp_hdr *tcp_hdr;
+
+	tcp_hdr = net_tcp_get_hdr(pkt, NULL);
+
 	if (!net_ipv6_addr_cmp(&NET_IPV6_HDR(pkt)->src,
 			       &my_v6_addr.sin6_addr)) {
 		DBG("%s: IPv6 source address mismatch, should be %s ",
@@ -938,9 +944,9 @@ static bool v6_check_port_and_address(char *test_str, struct net_pkt *pkt,
 		return false;
 	}
 
-	if (NET_TCP_HDR(pkt)->src_port != my_v6_addr.sin6_port) {
+	if (tcp_hdr->src_port != my_v6_addr.sin6_port) {
 		DBG("%s: IPv6 source port mismatch, %d vs %d\n",
-		    test_str, ntohs(NET_TCP_HDR(pkt)->src_port),
+		    test_str, ntohs(tcp_hdr->src_port),
 		    ntohs(my_v6_addr.sin6_port));
 		return false;
 	}
@@ -953,9 +959,9 @@ static bool v6_check_port_and_address(char *test_str, struct net_pkt *pkt,
 		return false;
 	}
 
-	if (NET_TCP_HDR(pkt)->dst_port != htons(expected_dst_port)) {
+	if (tcp_hdr->dst_port != htons(expected_dst_port)) {
 		DBG("%s: IPv6 destination port mismatch, %d vs %d\n",
-		    test_str, ntohs(NET_TCP_HDR(pkt)->dst_port),
+		    test_str, ntohs(tcp_hdr->dst_port),
 		    expected_dst_port);
 		return false;
 	}
@@ -967,6 +973,10 @@ static bool v4_check_port_and_address(char *test_str, struct net_pkt *pkt,
 				      const struct in_addr *expected_dst_addr,
 				      u16_t expected_dst_port)
 {
+	struct net_tcp_hdr *tcp_hdr;
+
+	tcp_hdr = net_tcp_get_hdr(pkt, NULL);
+
 	if (!net_ipv4_addr_cmp(&NET_IPV4_HDR(pkt)->src,
 			       &my_v4_addr.sin_addr)) {
 		DBG("%s: IPv4 source address mismatch, should be %s ",
@@ -976,9 +986,9 @@ static bool v4_check_port_and_address(char *test_str, struct net_pkt *pkt,
 		return false;
 	}
 
-	if (NET_TCP_HDR(pkt)->src_port != my_v4_addr.sin_port) {
+	if (tcp_hdr->src_port != my_v4_addr.sin_port) {
 		DBG("%s: IPv4 source port mismatch, %d vs %d\n",
-		    test_str, ntohs(NET_TCP_HDR(pkt)->src_port),
+		    test_str, ntohs(tcp_hdr->src_port),
 		    ntohs(my_v4_addr.sin_port));
 		return false;
 	}
@@ -991,9 +1001,9 @@ static bool v4_check_port_and_address(char *test_str, struct net_pkt *pkt,
 		return false;
 	}
 
-	if (NET_TCP_HDR(pkt)->dst_port != htons(expected_dst_port)) {
+	if (tcp_hdr->dst_port != htons(expected_dst_port)) {
 		DBG("%s: IPv4 destination port mismatch, %d vs %d\n",
-		    test_str, ntohs(NET_TCP_HDR(pkt)->dst_port),
+		    test_str, ntohs(tcp_hdr->dst_port),
 		    expected_dst_port);
 		return false;
 	}
@@ -1304,6 +1314,7 @@ static bool test_v6_seq_check(void)
 	struct net_tcp *tcp = v6_ctx->tcp;
 	u8_t flags = NET_TCP_SYN;
 	struct net_pkt *pkt = NULL;
+	struct net_tcp_hdr *tcp_hdr;
 	u32_t seq;
 	int ret;
 
@@ -1314,12 +1325,14 @@ static bool test_v6_seq_check(void)
 		return false;
 	}
 
+	tcp_hdr = net_tcp_get_hdr(pkt, NULL);
+
 	net_hexdump_frags("TCPv6", pkt, false);
 
-	seq = NET_TCP_HDR(pkt)->seq[0] << 24 |
-		NET_TCP_HDR(pkt)->seq[1] << 16 |
-		NET_TCP_HDR(pkt)->seq[2] << 8 |
-		NET_TCP_HDR(pkt)->seq[3];
+	seq = tcp_hdr->seq[0] << 24 |
+		tcp_hdr->seq[1] << 16 |
+		tcp_hdr->seq[2] << 8 |
+		tcp_hdr->seq[3];
 	if (seq != tcp->send_seq) {
 		DBG("Seq does not match (%u vs %u)\n",
 		    seq, tcp->send_seq);
@@ -1336,6 +1349,7 @@ static bool test_v4_seq_check(void)
 	struct net_tcp *tcp = v4_ctx->tcp;
 	u8_t flags = NET_TCP_SYN;
 	struct net_pkt *pkt = NULL;
+	struct net_tcp_hdr *tcp_hdr;
 	u32_t seq;
 	int ret;
 
@@ -1346,12 +1360,14 @@ static bool test_v4_seq_check(void)
 		return false;
 	}
 
+	tcp_hdr = net_tcp_get_hdr(pkt, NULL);
+
 	net_hexdump_frags("TCPv4", pkt, false);
 
-	seq = NET_TCP_HDR(pkt)->seq[0] << 24 |
-		NET_TCP_HDR(pkt)->seq[1] << 16 |
-		NET_TCP_HDR(pkt)->seq[2] << 8 |
-		NET_TCP_HDR(pkt)->seq[3];
+	seq = tcp_hdr->seq[0] << 24 |
+		tcp_hdr->seq[1] << 16 |
+		tcp_hdr->seq[2] << 8 |
+		tcp_hdr->seq[3];
 	if (seq != tcp->send_seq) {
 		DBG("Seq does not match (%u vs %u)\n",
 		    seq, tcp->send_seq);

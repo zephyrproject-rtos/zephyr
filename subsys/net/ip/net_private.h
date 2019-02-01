@@ -126,20 +126,6 @@ struct net_udp_hdr *net_udp_header_fits(struct net_pkt *pkt,
 	return NULL;
 }
 
-/* Header may be split between data fragments. */
-struct net_tcp_hdr *net_pkt_tcp_data(struct net_pkt *pkt);
-
-static inline
-struct net_tcp_hdr *net_tcp_header_fits(struct net_pkt *pkt,
-					struct net_tcp_hdr *hdr)
-{
-	if (net_header_fits(pkt, (u8_t *)hdr, sizeof(*hdr))) {
-		return hdr;
-	}
-
-	return NULL;
-}
-
 void net_pkt_set_appdata_values(struct net_pkt *pkt,
 				enum net_ip_protocol proto);
 
