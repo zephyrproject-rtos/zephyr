@@ -1,4 +1,4 @@
-.. _networking:
+.. _networking_reference:
 
 Networking
 ##########
@@ -6,7 +6,7 @@ Networking
 .. toctree::
    :maxdepth: 1
 
-   bsd_sockets.rst
+   sockets.rst
    dhcpv4.rst
    dns_resolve.rst
    gptp.rst
@@ -29,6 +29,6 @@ Networking
    promiscuous.rst
    protocols.rst
    ptp_time.rst
-   tls_credentials.rst
+   traffic-class.rst
    trickle.rst
    udp.rst
