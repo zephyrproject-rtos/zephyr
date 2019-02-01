@@ -3,6 +3,10 @@
 Device Tree
 ###########
 
+.. contents::
+    :local:
+    :depth: 2
+
 Introduction
 ************
 
@@ -377,3 +381,7 @@ format.  This file is located at::
 YAML files must end in a .yaml suffix.  YAML files are scanned during the
 information extraction phase and are matched to device tree nodes via the
 compatible property.
+
+
+
+.. include:: flash_partitions.inc
