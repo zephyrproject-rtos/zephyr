@@ -138,6 +138,8 @@ Serial Port
 
 STM32F4DISCOVERY Discovery kit has up to 6 UARTs. The Zephyr console output is assigned to UART2.
 Default settings are 115200 8N1.
+Please note that ST-Link Virtual Com Port is not wired to chip serial port. In order to
+enable console output you should use a serial cable and connect it to UART2 pins (PA2/PA3).
 
 
 Programming and Debugging
@@ -156,7 +158,7 @@ This interface is supported by the openocd version included in Zephyr SDK.
 Flashing an application to STM32F4DISCOVERY
 -------------------------------------------
 
-Here is an example for the :ref:`hello_world` application.
+Here is an example for the :ref:`blinky-sample` application.
 
 Run a serial host program to connect with your board:
 
@@ -167,16 +169,11 @@ Run a serial host program to connect with your board:
 Build and flash the application:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
+   :zephyr-app: samples/basic/blinky
    :board: stm32f4_disco
    :goals: build flash
 
-You should see the following message on the console:
-
-.. code-block:: console
-
-   Hello World! arm
-
+You should see user led "LD4" blinking.
 
 Debugging
 =========
