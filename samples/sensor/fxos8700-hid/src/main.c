@@ -54,7 +54,7 @@ LOG_MODULE_REGISTER(main);
 
 #ifdef CONFIG_FXOS8700
 #include <sensor.h>
-#define CONFIG_SENSOR_ACCEL_NAME DT_NXP_FXOS8700_0_LABEL
+#define SENSOR_ACCEL_NAME DT_NXP_FXOS8700_0_LABEL
 #endif
 
 static const u8_t hid_report_desc[] = {
@@ -265,9 +265,9 @@ void main(void)
 	}
 #endif
 
-	accel = device_get_binding(CONFIG_SENSOR_ACCEL_NAME);
+	accel = device_get_binding(SENSOR_ACCEL_NAME);
 	if (accel == NULL) {
-		LOG_ERR("Could not get %s device", CONFIG_SENSOR_ACCEL_NAME);
+		LOG_ERR("Could not get %s device", SENSOR_ACCEL_NAME);
 		return;
 	}
 
