@@ -9,6 +9,7 @@
 menuconfig IWDG_STM32
 	bool "Independent Watchdog (IWDG) Driver for STM32 family of MCUs"
 	depends on SOC_FAMILY_STM32
+	select HAS_DTS_WDT
 	help
 	  Enable IWDG driver for STM32 line of MCUs
 
