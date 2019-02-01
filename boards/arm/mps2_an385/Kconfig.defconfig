@@ -47,16 +47,6 @@ endif # WATCHDOG
 
 if COUNTER
 
-if COUNTER_TMR_CMSDK_APB
-
-config COUNTER_TMR_CMSDK_APB_0
-	default y
-
-config COUNTER_TMR_CMSDK_APB_1
-	default y
-
-endif # COUNTER_TMR_CMSDK_APB
-
 if TIMER_TMR_CMSDK_APB
 
 config TIMER_TMR_CMSDK_APB_0
