@@ -212,6 +212,14 @@ config LOG_IMMEDIATE
 	  flawlessly in that mode because one log operation can be interrupted
 	  by another one in the higher priority context.
 
+config LOG_DISABLE_FANCY_OUTPUT_FORMATTING
+	depends on !NEWLIB_LIBC && !ARCH_POSIX
+	bool "Use vprintk() instead of minimal libc _prf()"
+	help
+	  Selecting this option will choose vprintk for handling format
+	  strings instead of the more robust _prf() function in minimal
+	  libc.  Choosing this option can save around ~3K flash.
+
 if !LOG_IMMEDIATE
 
 choice
