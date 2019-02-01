@@ -1,10 +1,7 @@
-.. _bt_gap::
-
-
+.. _bt_gap:
 
 Generic Access Profile (GAP)
 ############################
-
 
 API Reference
 *************

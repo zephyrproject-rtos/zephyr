@@ -1,4 +1,4 @@
-.. _bt_uuid:
+.. _bt_uuid_api:
 
 Universal Unique Identifiers (UUIDs)
 #####################################

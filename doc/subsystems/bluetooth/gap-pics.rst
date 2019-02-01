@@ -1,5 +1,5 @@
 GAP PICS
-########
+********
 
 PTS version: 7.2.0
 
@@ -13,7 +13,7 @@ O - optional
 
 
 Device Configuration
-********************
+====================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -25,7 +25,7 @@ TSPC_GAP_0_3	False (*)	BR/EDR/LE (C.3)
 
 
 Version Configuration
-*********************
+=====================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -39,7 +39,7 @@ TSPC_GAP_0A_5	False (*)	Core Spec version 5.0 (Core v5.0) (C.4)
 
 
 Modes
-*****
+=====
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -57,7 +57,7 @@ TSPC_GAP_1_9	False (*)	Synchronizable Mode (C.4)
 
 
 Security Aspects
-****************
+================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -78,7 +78,7 @@ TSPC_GAP_2_11	False (*)	Secure Connections Only Mode (C.8)
 
 
 Idle Mode Procedures
-********************
+====================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -93,7 +93,7 @@ TSPC_GAP_3_6	False (*)	Initiation of dedicated bonding (O)
 
 
 Establishment Procedures
-************************
+========================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -112,7 +112,7 @@ TSPC_GAP_4_7	False (*)	Support synchronization establishment
 
 
 LE Roles
-********
+========
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -125,7 +125,7 @@ TSPC_GAP_5_4	True		Central (C.1)
 
 
 Broadcaster Physical Layer
-**************************
+==========================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -136,7 +136,7 @@ TSPC_GAP_6_2	True		Receiver (O)
 
 
 Broadcaster Link Layer States
-*****************************
+=============================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -147,7 +147,7 @@ TSPC_GAP_7_2	True		Advertising (M)
 
 
 Broadcaster Link Layer Advertising Event Types
-**********************************************
+==============================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -162,7 +162,7 @@ TSPC_GAP_8_4	False (*)	Scannable Directed Event (C.1)
 
 
 Broadcaster Link Layer Advertising Data Types
-*********************************************
+=============================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -189,7 +189,7 @@ TSPC_GAP_8A_17	False (*)	AD Type-URI (C.3)
 
 
 Broadcaster Connection Modes and Procedures
-*******************************************
+===========================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -199,7 +199,7 @@ TSPC_GAP_9_1	True		Non-Connectable Mode (M)
 
 
 Broadcaster Broadcasting and Observing Features
-***********************************************
+===============================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -209,7 +209,7 @@ TSPC_GAP_10_1	True		Broadcast Mode (M)
 
 
 Broadcaster Privacy Feature
-***************************
+===========================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -223,7 +223,7 @@ TSPC_GAP_11_3	False (*)	Non-Resolvable Private Address Generation
 
 
 Periodic Advertising Modes and Procedures
-*****************************************
+=========================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -235,7 +235,7 @@ TSPC_GAP_11A_2	False (*)	Periodic Advertising mode (C.2)
 
 
 Observer Physical Layer
-***********************
+=======================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -246,7 +246,7 @@ TSPC_GAP_12_2	True		Transmitter (O)
 
 
 Observer Link Layer States
-**************************
+==========================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -257,7 +257,7 @@ TSPC_GAP_13_2	True		Scanning (M)
 
 
 Observer Link Layer Scanning Types
-**********************************
+==================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -268,7 +268,7 @@ TSPC_GAP_14_2	True		Active Scanning (O)
 
 
 Observer Connection Modes and Procedures
-****************************************
+========================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -278,7 +278,7 @@ TSPC_GAP_15_1	True		Non-Connectable Mode (M)
 
 
 Observer Broadcasting and Observing Features
-********************************************
+============================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -288,7 +288,7 @@ TSPC_GAP_16_1	True		Observation Procedure (M)
 
 
 Observer Privacy Feature
-************************
+========================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -304,7 +304,7 @@ TSPC_GAP_17_4	True		Resolvable Private Address Generation
 
 
 Periodic Advertising Modes and Procedures
-*****************************************
+=========================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -319,7 +319,7 @@ TSPC_GAP_17A_2	False (*)	Periodic Advertising Synchronization
 
 
 Peripheral Physical Layer
-*************************
+=========================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -330,7 +330,7 @@ TSPC_GAP_18_2	True		Receiver (M)
 
 
 Peripheral Link Layer States
-****************************
+============================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -342,7 +342,7 @@ TSPC_GAP_19_3	True		Connection, Slave Role (C.1)
 
 
 Peripheral Link Layer Advertising Event Types
-*********************************************
+=============================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -358,7 +358,7 @@ TSPC_GAP_20_7	False (*)	Scannable Directed Event (C.3)
 
 
 Peripheral Link Layer Advertising Data Types
-********************************************
+============================================
 
 ===============	=============	=======================================
 Parameter Name   Selected	Description
@@ -385,7 +385,7 @@ TSPC_GAP_20A_17	False (*)	AD Type-URI (C.4)
 
 
 Peripheral Link Layer Control Procedures
-****************************************
+========================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -407,7 +407,7 @@ TSPC_GAP_21_12	False (*)	Minimum Number Of Used Channels Procedure (C.7)
 
 
 Peripheral Discovery Modes and Procedures
-*****************************************
+=========================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -420,7 +420,7 @@ TSPC_GAP_22_4	True		Name Discovery Procedure (C.4)
 
 
 Peripheral Connection Modes and Procedures
-******************************************
+==========================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -434,7 +434,7 @@ TSPC_GAP_23_5	True		Terminate Connection Procedure (C.2)
 
 
 Peripheral Bonding Modes and Procedures
-***************************************
+=======================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -447,7 +447,7 @@ TSPC_GAP_24_4	True		Multiple Bonds (C.2)
 
 
 Peripheral Security Aspects Features
-************************************
+====================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -468,7 +468,7 @@ TSPC_GAP_25_10	False (*)	Secure Connections Only Mode  (C.4)
 
 
 Peripheral Privacy Feature
-**************************
+==========================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -484,7 +484,7 @@ TSPC_GAP_26_4	True		Resolvable Private Address Generation
 
 
 Peripheral GAP Characteristics
-******************************
+==============================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -503,7 +503,7 @@ TSPC_GAP_27_9	False (*)	Central Address Resolution (C.5)
 
 
 Central Physical Layer
-**********************
+======================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -514,7 +514,7 @@ TSPC_GAP_28_2	True		Receiver (M)
 
 
 Central Link Layer States
-*************************
+=========================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -527,7 +527,7 @@ TSPC_GAP_29_4	True		Connection, Master Role (M)
 
 
 Central Link Layer Scanning Types
-*********************************
+=================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -538,7 +538,7 @@ TSPC_GAP_30_2	True		Active Scanning (C.1)
 
 
 Central Link Layer Control Procedures
-*************************************
+=====================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -560,7 +560,7 @@ TSPC_GAP_31_12	False (*)	Minimum Number Of Used Channels Procedure (C.5)
 
 
 Central Discovery Modes and Procedures
-**************************************
+======================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -572,7 +572,7 @@ TSPC_GAP_32_3	True		Name Discovery Procedure (C.3)
 
 
 Central Connection Modes and Procedures
-***************************************
+=======================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -588,7 +588,7 @@ TSPC_GAP_33_6	True		Terminate Connection Procedure (C.2)
 
 
 Central Bonding Modes and Procedures
-************************************
+====================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -600,7 +600,7 @@ TSPC_GAP_34_3	True		Bonding Procedure (C.2)
 
 
 Central Security Features
-*************************
+=========================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -621,7 +621,7 @@ TSPC_GAP_35_10	True		Secure Connections Only Mode  (C.3)
 
 
 Central Privacy Feature
-***********************
+=======================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -639,7 +639,7 @@ TSPC_GAP_36_5	True		Resolvable Private Address Generation
 
 
 Central GAP Characteristics
-***************************
+===========================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -651,7 +651,7 @@ TSPC_GAP_37_3	True		Central Address Resolution  (C.1)
 
 
 BR/EDR/LE Roles
-***************
+===============
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -664,7 +664,7 @@ TSPC_GAP_38_4	False (*)	Central (C.1)
 
 
 Central BR/EDR/LE Modes
-***********************
+=======================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -679,7 +679,7 @@ TSPC_GAP_39_6	False (*)	Bondable Mode (C.5)
 
 
 Central BR/EDR/LE Idle Mode Procedures
-**************************************
+======================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -693,7 +693,7 @@ TSPC_GAP_40_5	False (*)	Link Establishment (C.5)
 
 
 Central BR/EDR/LE Security Aspects
-**********************************
+==================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -705,7 +705,7 @@ TSPC_GAP_41_2B	False (*)	Derivation of LE LTK from BR/EDR Link Key (C.1)
 
 
 Peripheral BR/EDR/LE Modes
-**************************
+==========================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -720,7 +720,7 @@ TSPC_GAP_42_6	False (*)	Bondable Mode (C.5)
 
 
 Peripheral BR/EDR/LE Security Aspects
-*************************************
+=====================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -732,7 +732,7 @@ TSPC_GAP_43_2B	False (*)	Derivation of LE LTK from BR/EDR Link Key (C.1)
 
 
 Central Simultaneous BR/EDR and LE Transports
-*********************************************
+=============================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description
@@ -745,7 +745,7 @@ TSPC_GAP_44_2	False (*)	Simultaneous BR/EDR and LE Transports - BR/EDR
 
 
 Peripheral Simultaneous BR/EDR and LE Transports
-************************************************
+================================================
 
 ==============	==============	=======================================
 Parameter Name	Selected	Description

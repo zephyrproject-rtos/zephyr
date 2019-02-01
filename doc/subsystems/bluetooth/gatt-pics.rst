@@ -1,5 +1,5 @@
 GATT PICS
-#########
+=========
 
 PTS version: 7.2.0
 
@@ -13,7 +13,7 @@ O - optional
 
 
 Generic Attribute Profile Role
-******************************
+==============================
 
 ==============	===========	============================================
 Parameter Name	Selected	Description
@@ -24,7 +24,7 @@ TSPC_GATT_1_2	True		Generic Attribute Profile Server (C.2)
 
 
 GATT role configuration
-***********************
+=======================
 
 ==============	===========	============================================
 Parameter Name	Selected	Description
@@ -41,7 +41,7 @@ TSPC_GATT_1a_8	False		Complete GATT Server layer over BR/EDR (C.8)
 
 
 ATT Bearer Transport
-********************
+====================
 
 ==============	===========	============================================
 Parameter Name	Selected	Description
@@ -53,7 +53,7 @@ TSPC_GATT_2_2	True		Attribute Protocol Supported over LE (C.2)
 
 
 Generic Attribute Profile Support
-*********************************
+=================================
 
 ==============	===========	============================================
 Parameter Name	Selected	Description
@@ -93,7 +93,7 @@ TSPC_GATT_3_24	False (*)	Client: Configured Broadcast (C.3)
 
 
 Profile Attribute Types and Formats, by client
-**********************************************
+==============================================
 
 ===============	===========	============================================
 Parameter Name	Selected	Description
@@ -144,7 +144,7 @@ TSPC_GATT_3B_38	False (*)	Client: Characteristic Format: struct (M)
 
 
 Attribute Profile Support, by Server
-************************************
+====================================
 
 ==============	===========	============================================
 Parameter Name	Selected	Description
@@ -185,7 +185,7 @@ TSPC_GATT_4_25	False (*)	Server: Execute Write Request with empty queue (C.7)
 
 
 Profile Attribute Types and Characteristic Formats
-**************************************************
+==================================================
 
 ===============	===========	============================================
 Parameter Name	Selected	Description
@@ -236,7 +236,7 @@ TSPC_GATT_4B_38	True		Server: Characteristic Format: struct (M)
 
 
 Generic Attribute Profile Service - SDP Interoperability
-********************************************************
+========================================================
 
 ==============	===========	============================================
 Parameter Name	Selected	Description
@@ -249,7 +249,7 @@ TSPC_GATT_6_3	False (*)	Publish SDP record for GATT services support
 
 
 Attribute Protocol Transport Security
-*************************************
+=====================================
 
 ==============	===========	============================================
 Parameter Name	Selected	Description
@@ -265,7 +265,7 @@ TSPC_GATT_7_7	True		LE Authorization Procedure (C.2)
 
 
 Attribute Protocol Transport
-****************************
+============================
 
 ==============	===========	============================================
 Parameter Name	Selected	Description
@@ -276,7 +276,7 @@ TSPC_GATT_8_1	False (*)	Support for Multiple ATT bearers from same
 
 
 Device Configuration
-********************
+====================
 
 ==============	===========	============================================
 Parameter Name	Selected	Description
