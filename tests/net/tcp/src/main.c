@@ -359,8 +359,8 @@ static void setup_ipv4_tcp(struct net_pkt *pkt,
 	net_pkt_append_all(pkt, sizeof(tcp_hdr), (u8_t *)&tcp_hdr, K_FOREVER);
 	net_pkt_append_all(pkt, sizeof(data), data, K_FOREVER);
 
-	net_ipv4_finalize(pkt, IPPROTO_TCP);
-	net_tcp_set_chksum(pkt, pkt->frags);
+	net_pkt_cursor_init(pkt);
+	net_ipv4_finalize_new(pkt, IPPROTO_TCP);
 }
 
 u8_t ipv6_hop_by_hop_ext_hdr[] = {

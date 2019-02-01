@@ -261,6 +261,8 @@ static void setup_ipv6_udp_long(struct net_pkt *pkt,
 	struct net_udp_hdr hdr, *udp_hdr;
 	struct net_ipv6_hdr ipv6;
 
+	net_pkt_set_family(pkt, AF_INET6);
+
 	ipv6.vtc = 0x60;
 	ipv6.tcflow = 0;
 	ipv6.flow = 0;
@@ -323,6 +325,8 @@ static void setup_ipv4_udp(struct net_pkt *pkt,
 			   u16_t remote_port,
 			   u16_t local_port)
 {
+	net_pkt_set_family(pkt, AF_INET);
+
 	NET_IPV4_HDR(pkt)->vhl = 0x45;
 	NET_IPV4_HDR(pkt)->tos = 0;
 	NET_IPV4_HDR(pkt)->len = htons(NET_UDPH_LEN +
@@ -330,6 +334,10 @@ static void setup_ipv4_udp(struct net_pkt *pkt,
 					strlen(payload));
 
 	NET_IPV4_HDR(pkt)->proto = IPPROTO_UDP;
+	NET_IPV4_HDR(pkt)->chksum = 0;
+
+	NET_IPV4_HDR(pkt)->offset[0] = NET_IPV4_HDR(pkt)->offset[1] = 0;
+	NET_IPV4_HDR(pkt)->id[0] = NET_IPV4_HDR(pkt)->id[1] = 0;
 
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src, remote_addr);
 	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, local_addr);
@@ -342,10 +350,12 @@ static void setup_ipv4_udp(struct net_pkt *pkt,
 
 	NET_UDP_HDR(pkt)->src_port = htons(remote_port);
 	NET_UDP_HDR(pkt)->dst_port = htons(local_port);
+	NET_UDP_HDR(pkt)->chksum = 0;
 
 	net_buf_add_mem(pkt->frags, payload, strlen(payload));
 
-	net_ipv4_finalize(pkt, IPPROTO_UDP);
+	net_pkt_cursor_init(pkt);
+	net_ipv4_finalize_new(pkt, IPPROTO_UDP);
 }
 
 #define TIMEOUT 200
