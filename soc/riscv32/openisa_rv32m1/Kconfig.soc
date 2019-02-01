@@ -11,7 +11,6 @@ config SOC_OPENISA_RV32M1_RISCV32
 	# The following select is also due to limitations in the linker script.
 	# (We can't make it a 'depends on' without causing a dependency loop).
 	select XIP
-	select HAS_DTS
 	select HAS_RV32M1_LPUART
 	select ATOMIC_OPERATIONS_C
 	select VEGA_SDK_HAL
