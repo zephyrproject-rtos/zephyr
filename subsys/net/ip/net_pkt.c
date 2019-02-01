@@ -1993,29 +1993,6 @@ struct net_udp_hdr *net_pkt_udp_data(struct net_pkt *pkt)
 	return (struct net_udp_hdr *)(frag->data + offset);
 }
 
-struct net_tcp_hdr *net_pkt_tcp_data(struct net_pkt *pkt)
-{
-	struct net_buf *frag;
-	u16_t offset;
-
-	frag = net_frag_get_pos(pkt,
-				net_pkt_ip_hdr_len(pkt) +
-				net_pkt_ipv6_ext_len(pkt),
-				&offset);
-	if (!frag) {
-		/* We tried to read past the end of the data */
-		too_short_msg("tcp data", pkt, offset, 0);
-		return NULL;
-	}
-
-	if (!frag->data) {
-		NET_ERR("NULL fragment data!");
-		return NULL;
-	}
-
-	return (struct net_tcp_hdr *)(frag->data + offset);
-}
-
 void net_pkt_set_appdata_values(struct net_pkt *pkt,
 				    enum net_ip_protocol proto)
 {
