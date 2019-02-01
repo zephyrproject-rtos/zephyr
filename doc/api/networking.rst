@@ -180,12 +180,6 @@ IEEE 802.15.4 Management
 Network and application libraries
 *********************************
 
-Network application
-===================
-
-.. doxygengroup:: net_app
-   :project: Zephyr
-
 DHCPv4
 ======
 
