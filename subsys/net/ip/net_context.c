@@ -1227,8 +1227,7 @@ static int create_udp_packet(struct net_context *context,
 		net_pkt_compact(pkt);
 		net_pkt_cursor_init(pkt);
 
-		r = net_ipv4_finalize_new(pkt,
-					  net_context_get_ip_proto(context));
+		r = net_ipv4_finalize(pkt, net_context_get_ip_proto(context));
 	} else
 #endif /* CONFIG_NET_IPV4 */
 	{
@@ -1530,8 +1529,7 @@ static void context_finalize_packet(struct net_context *context,
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
 	    net_context_get_family(context) == AF_INET) {
-		net_ipv4_finalize_new(pkt,
-				      net_context_get_ip_proto(context));
+		net_ipv4_finalize(pkt, net_context_get_ip_proto(context));
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   net_context_get_family(context) == AF_INET6) {
 		net_ipv6_finalize(pkt, net_context_get_ip_proto(context));

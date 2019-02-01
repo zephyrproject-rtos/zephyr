@@ -355,7 +355,7 @@ static void setup_ipv4_udp(struct net_pkt *pkt,
 	net_buf_add_mem(pkt->frags, payload, strlen(payload));
 
 	net_pkt_cursor_init(pkt);
-	net_ipv4_finalize_new(pkt, IPPROTO_UDP);
+	net_ipv4_finalize(pkt, IPPROTO_UDP);
 }
 
 #define TIMEOUT 200
