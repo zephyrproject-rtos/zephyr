@@ -1939,42 +1939,6 @@ static void too_short_msg(char *msg, struct net_pkt *pkt, u16_t offset,
 #define too_short_msg(...)
 #endif
 
-struct net_icmp_hdr *net_pkt_icmp_data(struct net_pkt *pkt)
-{
-	struct net_buf *frag;
-	u16_t offset;
-
-	frag = net_frag_get_pos(pkt,
-				net_pkt_ip_hdr_len(pkt) +
-				net_pkt_ipv6_ext_len(pkt),
-				&offset);
-	if (!frag) {
-		/* We tried to read past the end of the data */
-		too_short_msg("icmp data", pkt, offset, 0);
-		return NULL;
-	}
-
-	return (struct net_icmp_hdr *)(frag->data + offset);
-}
-
-u8_t *net_pkt_icmp_opt_data(struct net_pkt *pkt, size_t opt_len)
-{
-	struct net_buf *frag;
-	u16_t offset;
-
-	frag = net_frag_get_pos(pkt,
-				net_pkt_ip_hdr_len(pkt) +
-				net_pkt_ipv6_ext_len(pkt) + opt_len,
-				&offset);
-	if (!frag) {
-		/* We tried to read past the end of the data */
-		too_short_msg("icmp opt data", pkt, offset, opt_len);
-		return NULL;
-	}
-
-	return frag->data + offset;
-}
-
 struct net_udp_hdr *net_pkt_udp_data(struct net_pkt *pkt)
 {
 	struct net_buf *frag;
