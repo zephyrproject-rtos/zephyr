@@ -8,11 +8,7 @@
 #include <zephyr.h>
 #include <string.h>
 #include <stdlib.h>
-#include <bluetooth/bluetooth.h>
-#include <bluetooth/conn.h>
-#include <bluetooth/gatt.h>
 #include <stats.h>
-#include <mgmt/smp_bt.h>
 #include <mgmt/buf.h>
 
 #ifdef CONFIG_MCUMGR_CMD_FS_MGMT
@@ -29,6 +25,13 @@
 #endif
 #ifdef CONFIG_MCUMGR_CMD_STAT_MGMT
 #include "stat_mgmt/stat_mgmt.h"
+#endif
+
+#ifdef CONFIG_MCUMGR_SMP_BT
+#include <bluetooth/bluetooth.h>
+#include <bluetooth/conn.h>
+#include <bluetooth/gatt.h>
+#include <mgmt/smp_bt.h>
 #endif
 
 /* Define an example stats group; approximates seconds since boot. */
@@ -54,6 +57,7 @@ static struct fs_mount_t nffs_mnt = {
 };
 #endif
 
+#ifdef CONFIG_MCUMGR_SMP_BT
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
 	BT_DATA_BYTES(BT_DATA_UUID128_ALL,
@@ -107,6 +111,7 @@ static void bt_ready(int err)
 
 	advertise();
 }
+#endif
 
 void main(void)
 {
@@ -145,6 +150,7 @@ void main(void)
 	stat_mgmt_register_group();
 #endif
 
+#ifdef CONFIG_MCUMGR_SMP_BT
 	/* Enable Bluetooth. */
 	rc = bt_enable(bt_ready);
 	if (rc != 0) {
@@ -155,6 +161,7 @@ void main(void)
 
 	/* Initialize the Bluetooth mcumgr transport. */
 	smp_bt_register();
+#endif
 
 	/* The system work queue handles all incoming mcumgr requests.  Let the
 	 * main thread idle while the mcumgr server runs.
