@@ -1198,7 +1198,11 @@ static int create_udp_packet(struct net_context *context,
 
 		pkt = tmp;
 
-		r = net_ipv6_finalize(pkt, net_context_get_ip_proto(context));
+		net_pkt_compact(pkt);
+		net_pkt_cursor_init(pkt);
+
+		r = net_ipv6_finalize_new(pkt,
+					  net_context_get_ip_proto(context));
 	} else
 #endif /* CONFIG_NET_IPV6 */
 

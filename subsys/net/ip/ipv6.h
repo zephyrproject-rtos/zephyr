@@ -154,20 +154,6 @@ struct net_pkt *net_ipv6_create(struct net_pkt *pkt,
 				u8_t next_header_proto);
 
 /**
- * @brief Finalize IPv6 packet. It should be called right before
- * sending the packet and after all the data has been added into
- * the packet. This function will set the length of the
- * packet and calculate the higher protocol checksum if needed.
- *
- * @param pkt Network packet
- * @param next_header_proto Protocol type of the next header after IPv6 header.
- *
- * @return Return 0 on Success, < 0 on Failure.
- */
-int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto);
-
-
-/**
  * @brief Create IPv6 packet in provided net_pkt.
  *
  * @param pkt Network packet

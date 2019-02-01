@@ -367,7 +367,8 @@ static void send_query(struct net_if *iface)
 
 	net_pkt_set_ipv6_ext_len(pkt, ROUTER_ALERT_LEN);
 
-	net_ipv6_finalize(pkt, NET_IPV6_NEXTHDR_HBHO);
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize_new(pkt, NET_IPV6_NEXTHDR_HBHO);
 
 	net_pkt_set_iface(pkt, iface);
 
