@@ -99,42 +99,6 @@ struct net_pkt *net_ipv6_create(struct net_pkt *pkt,
 	return pkt;
 }
 
-int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto)
-{
-	/* Set the length of the IPv6 header */
-	size_t total_len;
-	int ret;
-
-	net_pkt_compact(pkt);
-
-	total_len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr);
-
-	NET_IPV6_HDR(pkt)->len = htons(total_len);
-
-#if defined(CONFIG_NET_UDP)
-	if (next_header_proto == IPPROTO_UDP &&
-	    net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
-		net_udp_set_chksum(pkt, pkt->frags);
-	} else
-#endif
-
-#if defined(CONFIG_NET_TCP)
-	if (next_header_proto == IPPROTO_TCP &&
-	    net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
-		net_tcp_set_chksum(pkt, pkt->frags);
-	} else
-#endif
-
-	if (next_header_proto == IPPROTO_ICMPV6) {
-		ret = net_icmpv6_set_chksum(pkt);
-		if (ret < 0) {
-			return ret;
-		}
-	}
-
-	return 0;
-}
-
 int net_ipv6_create_new(struct net_pkt *pkt,
 			const struct in6_addr *src,
 			const struct in6_addr *dst)
