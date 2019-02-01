@@ -144,7 +144,7 @@ static const struct pwm_driver_api mcux_ftm_driver_api = {
 
 #ifdef CONFIG_PWM_0
 static const struct mcux_ftm_config mcux_ftm_config_0 = {
-	.base = (FTM_Type *)CONFIG_FTM_0_BASE_ADDRESS,
+	.base = (FTM_Type *)DT_FTM_0_BASE_ADDRESS,
 	.clock_source = kCLOCK_McgFixedFreqClk,
 	.ftm_clock_source = kFTM_FixedClock,
 	.prescale = kFTM_Prescale_Divide_16,
@@ -154,7 +154,7 @@ static const struct mcux_ftm_config mcux_ftm_config_0 = {
 
 static struct mcux_ftm_data mcux_ftm_data_0;
 
-DEVICE_AND_API_INIT(mcux_ftm_0, CONFIG_FTM_0_NAME, &mcux_ftm_init,
+DEVICE_AND_API_INIT(mcux_ftm_0, DT_FTM_0_NAME, &mcux_ftm_init,
 		    &mcux_ftm_data_0, &mcux_ftm_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_ftm_driver_api);
@@ -180,7 +180,7 @@ DEVICE_AND_API_INIT(mcux_ftm_1, DT_FTM_1_NAME, &mcux_ftm_init,
 
 #ifdef CONFIG_PWM_2
 static const struct mcux_ftm_config mcux_ftm_config_2 = {
-	.base = (FTM_Type *)CONFIG_FTM_2_BASE_ADDRESS,
+	.base = (FTM_Type *)DT_FTM_2_BASE_ADDRESS,
 	.clock_source = kCLOCK_McgFixedFreqClk,
 	.ftm_clock_source = kFTM_FixedClock,
 	.prescale = kFTM_Prescale_Divide_16,
@@ -190,7 +190,7 @@ static const struct mcux_ftm_config mcux_ftm_config_2 = {
 
 static struct mcux_ftm_data mcux_ftm_data_2;
 
-DEVICE_AND_API_INIT(mcux_ftm_2, CONFIG_FTM_2_NAME, &mcux_ftm_init,
+DEVICE_AND_API_INIT(mcux_ftm_2, DT_FTM_2_NAME, &mcux_ftm_init,
 		    &mcux_ftm_data_2, &mcux_ftm_config_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_ftm_driver_api);
