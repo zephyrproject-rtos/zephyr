@@ -17,7 +17,6 @@ operation of the stacks and how they were implemented.
    secure-sockets.rst
    l2-and-drivers.rst
    network-management-api.rst
-   net-app-api.rst
    buffers.rst
    qemu_setup.rst
    native_posix_setup.rst

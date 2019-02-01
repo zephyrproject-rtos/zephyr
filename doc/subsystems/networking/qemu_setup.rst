@@ -7,7 +7,7 @@ This page describes how to set up a virtual network between a (Linux) host
 and a Zephyr application running in a QEMU virtual machine (built for Zephyr
 targets such as qemu_x86 and qemu_cortex_m3).
 
-In this example, the :ref:`echo-server-sample` sample application from
+In this example, the :ref:`sockets-echo-server-sample` sample application from
 the Zephyr source distribution is run in QEMU. The QEMU instance is
 connected to a Linux host using a serial port, and SLIP is used to
 transfer data between the Zephyr application and Linux (over a chain of
@@ -73,7 +73,7 @@ Build and start the ``echo_server`` sample application.
 In terminal #1, type:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/echo_server
+   :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
    :board: qemu_x86
    :goals: run
@@ -148,10 +148,10 @@ board is connected to a dedicated router, it should not be needed.
 
 To access the internet from a Zephyr application using IPv4,
 a gateway should be set via DHCP or configured manually.
-For applications using the "Settings" part of :ref:`net_app_api`
-facility (with the config option :option:`CONFIG_NET_CONFIG_SETTINGS` enabled),
+For applications using the "Settings" facility (with the config option
+:option:`CONFIG_NET_CONFIG_SETTINGS` enabled),
 set the :option:`CONFIG_NET_CONFIG_MY_IPV4_GW` option to the IP address
-of the gateway. For apps not using the :ref:`net_app_api` facility, set up the
+of the gateway. For apps not using the "Settings" facility, set up the
 gateway by calling the :c:func:`net_if_ipv4_set_gw` at runtime.
 
 To access the internet from a custom application running in QEMU, NAT
@@ -198,7 +198,7 @@ Terminal #1:
 ============
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/echo_server
+   :zephyr-app: samples/net/sockets/echo_server
    :host-os: unix
    :board: qemu_x86
    :goals: build
