@@ -8,5 +8,6 @@ Protocols
    :maxdepth: 1
 
    coap
+   lwm2m
    mqtt
 

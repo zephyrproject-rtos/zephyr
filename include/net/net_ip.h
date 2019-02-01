@@ -33,8 +33,10 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
 /* Specifying VLAN tag here in order to avoid circular dependencies */
 #define NET_VLAN_TAG_UNSPEC 0x0fff
+/** @endcond */
 
 /** Protocol families */
 #define PF_UNSPEC	0	/* Unspecified. */

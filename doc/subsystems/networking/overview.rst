@@ -91,7 +91,7 @@ can be disabled if not needed.
   driver.
 
 * **Virtual LAN support.** Virtual LANs (VLANs) allow partitioning of physical
-  ethernet networks into logical networks. See :ref:`vlan-support` for more
+  ethernet networks into logical networks. See :ref:`vlan_interface` for more
   details.
 
 * **Network traffic classification.** The sent and received network packets can
@@ -99,7 +99,7 @@ can be disabled if not needed.
   See :ref:`traffic-class-support` for more details.
 
 * **Time Sensitive Networking.** The gPTP (generalized Precision Time Protocol)
-  is supported. See :ref:`gptp-support` for more details.
+  is supported. See :ref:`gptp_interface` for more details.
 
 Additionally these network technologies (link layers) are supported in
 Zephyr OS v1.7 and later:

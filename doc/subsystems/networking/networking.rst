@@ -13,14 +13,6 @@ operation of the stacks and how they were implemented.
    overview.rst
    ip-stack-architecture.rst
    networking-api-usage.rst
-   bsd-sockets.rst
-   secure-sockets.rst
-   l2-and-drivers.rst
-   network-management-api.rst
-   buffers.rst
    qemu_setup.rst
    native_posix_setup.rst
    usbnet_setup.rst
-   vlan.rst
-   traffic-class.rst
-   gptp_release_notes.rst

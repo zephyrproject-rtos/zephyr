@@ -15,7 +15,7 @@
 
 /**
  * @brief VLAN definitions and helpers
- * @defgroup vlan Virtual LAN definitions and helpers
+ * @defgroup vlan_api Virtual LAN definitions and helpers
  * @ingroup networking
  * @{
  */

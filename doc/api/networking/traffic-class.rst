@@ -1,7 +1,7 @@
 .. _traffic-class-support:
 
-Network Traffic Classification
-##############################
+Traffic Classification
+#######################
 
 Overview
 ********
