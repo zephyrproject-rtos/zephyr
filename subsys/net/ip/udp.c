@@ -133,38 +133,6 @@ fail:
 	return NULL;
 }
 
-struct net_buf *net_udp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
-{
-	struct net_udp_hdr *hdr;
-	u16_t chksum = 0U;
-	u16_t pos;
-
-	hdr = net_pkt_udp_data(pkt);
-	if (net_udp_header_fits(pkt, hdr)) {
-		hdr->chksum = 0;
-		hdr->chksum = net_calc_chksum_udp(pkt);
-
-		return frag;
-	}
-
-	/* We need to set the checksum to 0 first before the calc */
-	frag = net_pkt_write(pkt, frag,
-			     net_pkt_ip_hdr_len(pkt) +
-			     net_pkt_ipv6_ext_len(pkt) +
-			     2 + 2 + 2 /* src + dst + len */,
-			     &pos, sizeof(chksum), (u8_t *)&chksum,
-			     PKT_WAIT_TIME);
-
-	chksum = net_calc_chksum_udp(pkt);
-
-	frag = net_pkt_write(pkt, frag, pos - 2, &pos, sizeof(chksum),
-			     (u8_t *)&chksum, PKT_WAIT_TIME);
-
-	NET_ASSERT(frag);
-
-	return frag;
-}
-
 struct net_udp_hdr *net_udp_get_hdr(struct net_pkt *pkt,
 				    struct net_udp_hdr *hdr)
 {

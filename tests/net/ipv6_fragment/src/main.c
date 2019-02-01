@@ -1558,9 +1558,11 @@ static void test_send_ipv6_fragment(void)
 
 	NET_IPV6_HDR(pkt)->len = htons(total_len);
 
+	net_pkt_cursor_init(pkt);
 	net_pkt_set_overwrite(pkt, true);
+	net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt));
 
-	net_udp_set_chksum(pkt, pkt->frags);
+	net_udp_finalize(pkt);
 
 	test_failed = false;
 
