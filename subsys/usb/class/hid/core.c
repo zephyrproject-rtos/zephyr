@@ -130,67 +130,10 @@ struct hid_device_info {
 #ifdef CONFIG_USB_HID_BOOT_PROTOCOL
 	u8_t protocol;
 #endif
-	struct device *dev;
-	sys_snode_t node;
+	struct usb_dev_data common;
 };
 
 static sys_slist_t usb_hid_devlist;
-
-static struct hid_device_info *get_dev_data_by_cfg(struct usb_cfg_data *cfg)
-{
-	struct hid_device_info *dev_data;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&usb_hid_devlist, dev_data, node) {
-		struct device *dev = dev_data->dev;
-		const struct usb_cfg_data *cfg_cur = dev->config->config_info;
-
-		if (cfg_cur == cfg) {
-			return dev_data;
-		}
-	}
-
-	LOG_DBG("Device data not found for cfg %p", cfg);
-	return NULL;
-}
-
-static struct hid_device_info *get_dev_data_by_iface(u8_t iface_num)
-{
-	struct hid_device_info *dev_data;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&usb_hid_devlist, dev_data, node) {
-		struct device *dev = dev_data->dev;
-		const struct usb_cfg_data *cfg = dev->config->config_info;
-		const struct usb_if_descriptor *if_desc =
-						cfg->interface_descriptor;
-
-		if (if_desc->bInterfaceNumber == iface_num) {
-			return dev_data;
-		}
-	}
-
-	LOG_DBG("Device data not found for iface number %u", iface_num);
-	return NULL;
-}
-
-static struct hid_device_info *get_dev_data_by_ep(u8_t ep)
-{
-	struct hid_device_info *dev_data;
-
-	SYS_SLIST_FOR_EACH_CONTAINER(&usb_hid_devlist, dev_data, node) {
-		struct device *dev = dev_data->dev;
-		const struct usb_cfg_data *cfg = dev->config->config_info;
-		const struct usb_ep_cfg_data *ep_data = cfg->endpoint;
-
-		for (u8_t i = 0; i < cfg->num_endpoints; i++) {
-			if (ep_data[i].ep_addr == ep) {
-				return dev_data;
-			}
-		}
-	}
-
-	LOG_DBG("Device data not found for ep %u", ep);
-	return NULL;
-}
 
 static int hid_on_get_idle(struct hid_device_info *dev_data,
 			   struct usb_setup_packet *setup, s32_t *len,
@@ -447,14 +390,17 @@ static void hid_status_composite_cb(struct usb_cfg_data *cfg,
 				    const u8_t *param)
 {
 	struct hid_device_info *dev_data;
+	struct usb_dev_data *common;
 
 	LOG_DBG("cfg %p status %d", cfg, status);
 
-	dev_data = get_dev_data_by_cfg(cfg);
-	if (!dev_data) {
+	common = usb_get_dev_data_by_cfg(&usb_hid_devlist, cfg);
+	if (common == NULL) {
 		LOG_WRN("Device data not found for cfg %p", cfg);
 		return;
 	}
+
+	dev_data = CONTAINER_OF(common, struct hid_device_info, common);
 
 	hid_do_status_cb(dev_data, status, param);
 }
@@ -462,14 +408,17 @@ static void hid_status_composite_cb(struct usb_cfg_data *cfg,
 static void hid_status_cb(enum usb_dc_status_code status, const u8_t *param)
 {
 	struct hid_device_info *dev_data;
+	struct usb_dev_data *common;
 
 	/* Should be the only one element in the list */
-	dev_data = CONTAINER_OF(sys_slist_peek_head(&usb_hid_devlist),
-				struct hid_device_info, node);
-	if (dev_data == NULL) {
+	common = CONTAINER_OF(sys_slist_peek_head(&usb_hid_devlist),
+			      struct usb_dev_data, node);
+	if (common == NULL) {
 		LOG_WRN("Device data not found");
 		return;
 	}
+
+	dev_data = CONTAINER_OF(common, struct hid_device_info, common);
 
 	hid_do_status_cb(dev_data, status, param);
 }
@@ -479,16 +428,20 @@ static int hid_class_handle_req(struct usb_setup_packet *setup,
 				s32_t *len, u8_t **data)
 {
 	struct hid_device_info *dev_data;
+	struct usb_dev_data *common;
 
 	LOG_DBG("Class request: bRequest 0x%x bmRequestType 0x%x len %d",
 		setup->bRequest, setup->bmRequestType, *len);
 
-	dev_data = get_dev_data_by_iface(sys_le16_to_cpu(setup->wIndex));
-	if (!dev_data) {
+	common = usb_get_dev_data_by_iface(&usb_hid_devlist,
+					   sys_le16_to_cpu(setup->wIndex));
+	if (common == NULL) {
 		LOG_WRN("Device data not found for interface %u",
 			sys_le16_to_cpu(setup->wIndex));
 		return -ENODEV;
 	}
+
+	dev_data = CONTAINER_OF(common, struct hid_device_info, common);
 
 	if (REQTYPE_GET_DIR(setup->bmRequestType) == REQTYPE_DIR_TO_HOST) {
 		switch (setup->bRequest) {
@@ -572,21 +525,24 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 					REQTYPE_RECIP_INTERFACE &&
 					setup->bRequest == REQ_GET_DESCRIPTOR) {
 		u8_t value = sys_le16_to_cpu(setup->wValue) >> 8;
+		u8_t iface_num = sys_le16_to_cpu(setup->wIndex);
 		struct hid_device_info *dev_data;
+		struct usb_dev_data *common;
 		const struct usb_cfg_data *cfg;
 		const struct usb_hid_config *hid_desc;
 
-		dev_data =
-			get_dev_data_by_iface(sys_le16_to_cpu(setup->wIndex));
-		if (!dev_data) {
+		common = usb_get_dev_data_by_iface(&usb_hid_devlist, iface_num);
+		if (common == NULL) {
 			LOG_WRN("Device data not found for interface %u",
 				sys_le16_to_cpu(setup->wIndex));
 			return -ENODEV;
 		}
 
+		dev_data = CONTAINER_OF(common, struct hid_device_info, common);
+
 		switch (value) {
 		case HID_CLASS_DESCRIPTOR_HID:
-			cfg = dev_data->dev->config->config_info;
+			cfg = common->dev->config->config_info;
 			hid_desc = cfg->interface_descriptor;
 
 			LOG_DBG("Return HID Descriptor");
@@ -621,12 +577,15 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 static void hid_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	struct hid_device_info *dev_data;
+	struct usb_dev_data *common;
 
-	dev_data = get_dev_data_by_ep(ep);
-	if (dev_data == NULL) {
+	common = usb_get_dev_data_by_ep(&usb_hid_devlist, ep);
+	if (common == NULL) {
 		LOG_WRN("Device data not found for endpoint %u", ep);
 		return;
 	}
+
+	dev_data = CONTAINER_OF(common, struct hid_device_info, common);
 
 	if (ep_status != USB_DC_EP_DATA_IN || dev_data->ops == NULL ||
 	    dev_data->ops->int_in_ready == NULL) {
@@ -640,12 +599,15 @@ static void hid_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 static void hid_int_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 {
 	struct hid_device_info *dev_data;
+	struct usb_dev_data *common;
 
-	dev_data = get_dev_data_by_ep(ep);
-	if (dev_data == NULL) {
+	common = usb_get_dev_data_by_ep(&usb_hid_devlist, ep);
+	if (common == NULL) {
 		LOG_WRN("Device data not found for endpoint %u", ep);
 		return;
 	}
+
+	dev_data = CONTAINER_OF(common, struct hid_device_info, common);
 
 	if (ep_status != USB_DC_EP_DATA_OUT || dev_data->ops == NULL ||
 	    dev_data->ops->int_out_ready == NULL) {
@@ -774,9 +736,9 @@ void usb_hid_register_device(struct device *dev, const u8_t *desc,
 	dev_data->report_size = size;
 
 	dev_data->ops = ops;
-	dev_data->dev = dev;
+	dev_data->common.dev = dev;
 
-	sys_slist_append(&usb_hid_devlist, &dev_data->node);
+	sys_slist_append(&usb_hid_devlist, &dev_data->common.node);
 
 	LOG_DBG("Added dev_data %p dev %p to devlist %p", dev_data, dev,
 		&usb_hid_devlist);
