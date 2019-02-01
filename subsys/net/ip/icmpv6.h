@@ -191,7 +191,6 @@ void net_icmpv6_unregister_handler(struct net_icmpv6_handler *handler);
 enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 				  struct net_ipv6_hdr *ip_hdr);
 
-int net_icmpv6_set_chksum(struct net_pkt *pkt);
 int net_icmpv6_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code);
 int net_icmpv6_finalize(struct net_pkt *pkt);
 
