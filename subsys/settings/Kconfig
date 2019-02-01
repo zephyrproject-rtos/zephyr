@@ -6,9 +6,6 @@
 
 menuconfig SETTINGS
 	bool "Enable settings subsystem with non-volatile storage"
-	# Only NFFS is currently supported as FS.
-	# The reason in that FatFs doesn't implement the fs_rename() API
-	depends on (FILE_SYSTEM && FILE_SYSTEM_NFFS) || (FCB && FLASH_PAGE_LAYOUT)
 	help
 	  The settings subsystem allows its users to serialize and
 	  deserialize state in memory into and from non-volatile memory.
@@ -21,71 +18,123 @@ module-str = settings
 source "subsys/logging/Kconfig.template.log_config"
 endif
 
-# Hidden option to enable encoding length into settings entry
-config SETTINGS_ENCODE_LEN
-	depends on SETTINGS
-	bool
-
-config SETTINGS_USE_BASE64
-	bool "encoding value using base64"
-	depends on SETTINGS
-	select BASE64
-	help
-	  Enables values encoding using Base64.
-
-choice
-	prompt "Storage back-end"
-	default SETTINGS_FCB if FCB
+config SETTINGS_RUNTIME
+	bool "Runtime support"
+	default y
 	depends on SETTINGS
 	help
-	  Storage back-end to be used by the settings subsystem.
+	  Enables runtime support.
 
 config SETTINGS_FCB
-	bool "FCB"
-	depends on FCB
+	bool "FCB non-volatile storage support"
+	default n
+	depends on SETTINGS
 	help
-	  Use FCB as a settings storage back-end.
+	  Enables FCB storage support
 
 config SETTINGS_FS
+	bool "FILE non-volatile storage support"
+	default n
+	depends on SETTINGS
+	help
+	  Enables file storage support
+
+config SETTINGS_NVS
+	bool "NVS non-volatile storage support"
+	default n
+	depends on SETTINGS
+	help
+	  Enables NVS storage support
+
+choice
+	prompt "Default backend type"
+	default SETTINGS_DEFAULT_FCB
+	depends on SETTINGS
+	help
+	  Default storage back-end to be used by the settings subsystem.
+
+config SETTINGS_DEFAULT_FCB
+	bool "FCB"
+	depends on FCB
+	select SETTINGS_FCB
+	help
+	  Use FCB as the default storage back-end.
+
+config SETTINGS_DEFAULT_FS
 	bool "File System"
 	depends on FILE_SYSTEM
-	select SETTINGS_ENCODE_LEN
+	select SETTINGS_FS
 	help
-	  Use a file system as a settings storage back-end.
+	  Use a file system as the default storage back-end.
+
+config SETTINGS_DEFAULT_NVS
+	bool "NVS"
+	depends on NVS
+	select SETTINGS_NVS
+	help
+	  Use NVS as the default storage back-end.
+
+config SETTINGS_DEFAULT_NONE
+	bool "None"
+	help
+	  Don't use a default storage back-end.
 endchoice
 
-config SETTINGS_FCB_NUM_AREAS
+config SETTINGS_DEFAULT_FCB_NUM_AREAS
 	int "Number of flash areas used by the settings subsystem"
 	default 8
-	depends on SETTINGS && SETTINGS_FCB
+	depends on SETTINGS && SETTINGS_DEFAULT_FCB
 	help
 	  Number of areas to allocate in the settings FCB. A smaller number is
 	  used if the flash hardware cannot support this value.
 
-config SETTINGS_FCB_MAGIC
+config SETTINGS_DEFAULT_FCB_MAGIC
 	hex "FCB magic for the settings subsystem"
 	default 0xc0ffeeee
-	depends on SETTINGS && SETTINGS_FCB
+	depends on SETTINGS && SETTINGS_DEFAULT_FCB
 	help
 	  Magic 32-bit word for to identify valid settings area
 
-config SETTINGS_FS_DIR
-	string "Serialization directory"
-	default "/settings"
-	depends on SETTINGS && SETTINGS_FS
+config SETTINGS_DEFAULT_FS_MNT
+	string "Serialization mount point"
+	default "/nffs"
+	depends on SETTINGS && SETTINGS_DEFAULT_FS
 	help
 	  Directory where the settings data is stored
 
-config SETTINGS_FS_FILE
+config SETTINGS_DEFAULT_FS_FILE
 	string "Default settings file"
-	default "/settings/run"
-	depends on SETTINGS && SETTINGS_FS
+	default "/nffs/settings/run"
+	depends on SETTINGS && SETTINGS_DEFAULT_FS
 	help
 	  Full path to the default settings file.
 
-config SETTINGS_FS_MAX_LINES
+config SETTINGS_DEFAULT_FS_MAX_LINES
 	int "Compression threshold"
 	default 32
-	depends on SETTINGS && SETTINGS_FS
+	depends on SETTINGS && SETTINGS_DEFAULT_FS
 	help
 	  Limit how many items stored in a file before compressing
+
+config SETTINGS_DEFAULT_NVS_SECTOR_SIZE_MULT
+	int "Sector size of the NVS settings area"
+	default 1
+	depends on SETTINGS && SETTINGS_DEFAULT_NVS
+	help
+	  The sector size to use for the NVS settings area as a multiple of
+	  FLASH_ERASE_BLOCK_SIZE.
+
+config SETTINGS_DEFAULT_NVS_SECTOR_COUNT
+	int "Sector count of the NVS settings area"
+	default 3
+	depends on SETTINGS && SETTINGS_DEFAULT_NVS
+	help
+	  Number of sectors used for the NVS settings area
+
+config SETTINGS_DEFAULT_NVS_OFFSET_MULT
+	int "Offset of the NVS settings area"
+	default 0
+	depends on SETTINGS && SETTINGS_DEFAULT_NVS
+	help
+	  The NVS settings area starts at FLASH_STORAGE_OFFSET plus the
+	  specified multiple of FLASH_ERASE_BLOCK_SIZES.

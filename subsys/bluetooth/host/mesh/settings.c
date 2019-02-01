@@ -125,33 +125,12 @@ static struct {
 	struct cfg_val cfg;
 } stored_cfg;
 
-static inline int mesh_x_set(void *val_ctx, void *out, size_t read_len)
-{
-	int len;
-
-	len = settings_val_read_cb(val_ctx, out, read_len);
-
-	if (len < 0) {
-		BT_ERR("Failed to read value (err %d)", len);
-		return len;
-	}
-
-	BT_HEXDUMP_DBG(out, len, "val");
-
-	if (len != read_len) {
-		BT_ERR("Unexpected value length (%d != %zu)", len, read_len);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-static int net_set(int argc, char **argv, void *val_ctx)
+static int net_set(int argc, char **argv, size_t len, read_fn read, void *store)
 {
 	struct net_val net;
-	int err;
+	int err, elen;
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len == 0) {
 		BT_DBG("val (null)");
 
 		bt_mesh_comp_unprovision();
@@ -159,8 +138,14 @@ static int net_set(int argc, char **argv, void *val_ctx)
 		return 0;
 	}
 
-	err = mesh_x_set(val_ctx, &net, sizeof(net));
-	if (err) {
+	elen = sizeof(net);
+	if (len != elen) {
+		BT_ERR("Unexpected value length %s (%d != %zu)", __func__, elen,
+		       len);
+		return -EINVAL;
+	}
+	err = read(store, &net, len);
+	if (err < 0) {
 		BT_ERR("Failed to set \'net\'");
 		return err;
 	}
@@ -174,12 +159,12 @@ static int net_set(int argc, char **argv, void *val_ctx)
 	return 0;
 }
 
-static int iv_set(int argc, char **argv, void *val_ctx)
+static int iv_set(int argc, char **argv, size_t len, read_fn read, void *store)
 {
 	struct iv_val iv;
-	int err;
+	int err, elen;
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len == 0) {
 		BT_DBG("IV deleted");
 
 		bt_mesh.iv_index = 0U;
@@ -187,8 +172,14 @@ static int iv_set(int argc, char **argv, void *val_ctx)
 		return 0;
 	}
 
-	err = mesh_x_set(val_ctx, &iv, sizeof(iv));
-	if (err) {
+	elen = sizeof(iv);
+	if (len != elen) {
+		BT_ERR("Unexpected value length %s (%d != %zu)", __func__, elen,
+		       len);
+		return -EINVAL;
+	}
+	err = read(store, &iv, len);
+	if (err < 0) {
 		BT_ERR("Failed to set \'iv\'");
 		return err;
 	}
@@ -203,20 +194,28 @@ static int iv_set(int argc, char **argv, void *val_ctx)
 	return 0;
 }
 
-static int seq_set(int argc, char **argv, void *val_ctx)
+static int seq_set(int argc, char **argv, size_t len, read_fn read, void *store)
 {
 	struct seq_val seq;
-	int err;
+	int err, elen;
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len == 0) {
 		BT_DBG("val (null)");
 
 		bt_mesh.seq = 0U;
 		return 0;
 	}
 
-	err = mesh_x_set(val_ctx, &seq, sizeof(seq));
-	if (err) {
+
+	elen = sizeof(seq);
+	if (len != elen) {
+		BT_ERR("Unexpected value length %s (%d != %zu)", __func__, elen,
+		       len);
+		return -EINVAL;
+	}
+
+	err = read(store, &seq, len);
+	if (err < 0) {
 		BT_ERR("Failed to set \'seq\'");
 		return err;
 	}
@@ -266,11 +265,11 @@ static struct bt_mesh_rpl *rpl_alloc(u16_t src)
 	return NULL;
 }
 
-static int rpl_set(int argc, char **argv, void *val_ctx)
+static int rpl_set(int argc, char **argv, size_t len, read_fn read, void *store)
 {
 	struct bt_mesh_rpl *entry;
 	struct rpl_val rpl;
-	int err;
+	int err, elen;
 	u16_t src;
 
 	if (argc < 1) {
@@ -281,7 +280,7 @@ static int rpl_set(int argc, char **argv, void *val_ctx)
 	src = strtol(argv[0], NULL, 16);
 	entry = rpl_find(src);
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len == 0) {
 		BT_DBG("val (null)");
 		if (entry) {
 			(void)memset(entry, 0, sizeof(*entry));
@@ -300,9 +299,16 @@ static int rpl_set(int argc, char **argv, void *val_ctx)
 		}
 	}
 
-	err = mesh_x_set(val_ctx, &rpl, sizeof(rpl));
-	if (err) {
-		BT_ERR("Failed to set `net`");
+	elen = sizeof(rpl);
+	if (len != elen) {
+		BT_ERR("Unexpected value length %s (%d != %zu)", __func__, elen,
+		       len);
+		return -EINVAL;
+	}
+
+	err = read(store, &rpl, len);
+	if (err < 0) {
+		BT_ERR("Failed to set `rpl`");
 		return err;
 	}
 
@@ -315,17 +321,18 @@ static int rpl_set(int argc, char **argv, void *val_ctx)
 	return 0;
 }
 
-static int net_key_set(int argc, char **argv, void *val_ctx)
+static int net_key_set(int argc, char **argv, size_t len, read_fn read,
+		       void *store)
 {
 	struct bt_mesh_subnet *sub;
 	struct net_key_val key;
-	int i, err;
+	int i, err, elen;
 	u16_t net_idx;
 
 	net_idx = strtol(argv[0], NULL, 16);
 	sub = bt_mesh_subnet_get(net_idx);
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len == 0) {
 		BT_DBG("val (null)");
 		if (!sub) {
 			BT_ERR("No subnet with NetKeyIndex 0x%03x", net_idx);
@@ -337,8 +344,15 @@ static int net_key_set(int argc, char **argv, void *val_ctx)
 		return 0;
 	}
 
-	err = mesh_x_set(val_ctx, &key, sizeof(key));
-	if (err) {
+	elen = sizeof(key);
+	if (len != elen) {
+		BT_ERR("Unexpected value length %s (%d != %zu)", __func__, elen,
+		       len);
+		return -EINVAL;
+	}
+
+	err = read(store, &key, len);
+	if (err < 0) {
 		BT_ERR("Failed to set \'net-key\'");
 		return err;
 	}
@@ -377,16 +391,18 @@ static int net_key_set(int argc, char **argv, void *val_ctx)
 	return 0;
 }
 
-static int app_key_set(int argc, char **argv, void *val_ctx)
+static int app_key_set(int argc, char **argv, size_t len, read_fn read,
+		       void *store)
 {
 	struct bt_mesh_app_key *app;
 	struct app_key_val key;
 	u16_t app_idx;
-	int err;
+	int err, elen;
 
 	app_idx = strtol(argv[0], NULL, 16);
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+
+	if (len == 0) {
 		BT_DBG("val (null)");
 		BT_DBG("Deleting AppKeyIndex 0x%03x", app_idx);
 
@@ -398,8 +414,15 @@ static int app_key_set(int argc, char **argv, void *val_ctx)
 		return 0;
 	}
 
-	err = mesh_x_set(val_ctx, &key, sizeof(key));
-	if (err) {
+	elen = sizeof(key);
+	if (len != elen) {
+		BT_ERR("Unexpected value length %s (%d != %zu)", __func__, elen,
+		       len);
+		return -EINVAL;
+	}
+
+	err = read(store, &key, len);
+	if (err < 0) {
 		BT_ERR("Failed to set \'app-key\'");
 		return err;
 	}
@@ -428,17 +451,18 @@ static int app_key_set(int argc, char **argv, void *val_ctx)
 	return 0;
 }
 
-static int hb_pub_set(int argc, char **argv, void *val_ctx)
+static int hb_pub_set(int argc, char **argv, size_t len, read_fn read,
+		      void *store)
 {
 	struct bt_mesh_hb_pub *pub = bt_mesh_hb_pub_get();
 	struct hb_pub_val hb_val;
-	int err;
+	int err, elen;
 
 	if (!pub) {
 		return -ENOENT;
 	}
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len == 0) {
 		BT_DBG("val (null)");
 		pub->dst = BT_MESH_ADDR_UNASSIGNED;
 		pub->count = 0;
@@ -450,8 +474,16 @@ static int hb_pub_set(int argc, char **argv, void *val_ctx)
 		return 0;
 	}
 
-	err = mesh_x_set(val_ctx, &hb_val, sizeof(hb_val));
-	if (err) {
+
+	elen = sizeof(hb_val);
+	if (len != elen) {
+		BT_ERR("Unexpected value length %s (%d != %zu)", __func__, elen,
+		       len);
+		return -EINVAL;
+	}
+
+	err = read(store, &hb_val, len);
+	if (err < 0) {
 		BT_ERR("Failed to set \'hb_val\'");
 		return err;
 	}
@@ -473,25 +505,30 @@ static int hb_pub_set(int argc, char **argv, void *val_ctx)
 	return 0;
 }
 
-static int cfg_set(int argc, char **argv, void *val_ctx)
+static int cfg_set(int argc, char **argv, size_t len, read_fn read, void *store)
 {
 	struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
-	int err;
+	int err, elen;
 
 	if (!cfg) {
 		return -ENOENT;
 	}
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len == 0) {
 		BT_DBG("val (null)");
 		stored_cfg.valid = false;
 		BT_DBG("Cleared configuration state");
 		return 0;
 	}
 
-
-	err = mesh_x_set(val_ctx, &stored_cfg.cfg, sizeof(stored_cfg.cfg));
-	if (err) {
+	elen = sizeof(stored_cfg.cfg);
+	if (len != elen) {
+		BT_ERR("Unexpected value length %s (%d != %zu)", __func__, elen,
+		       len);
+		return -EINVAL;
+	}
+	err = read(store, &stored_cfg.cfg, len);
+	if (err < 0) {
 		BT_ERR("Failed to set \'cfg\'");
 		return err;
 	}
@@ -502,25 +539,33 @@ static int cfg_set(int argc, char **argv, void *val_ctx)
 	return 0;
 }
 
-static int mod_set_bind(struct bt_mesh_model *mod, void *val_ctx)
+static int mod_set_bind(struct bt_mesh_model *mod, size_t len, read_fn read,
+			void *store)
 {
-	int len, i;
+	int err, elen, i;
 
 	/* Start with empty array regardless of cleared or set value */
 	for (i = 0; i < ARRAY_SIZE(mod->keys); i++) {
 		mod->keys[i] = BT_MESH_KEY_UNUSED;
 	}
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len == 0) {
 		BT_DBG("val (null)");
 		BT_DBG("Cleared bindings for model");
 		return 0;
 	}
 
-	len = settings_val_read_cb(val_ctx, mod->keys, sizeof(mod->keys));
-	if (len < 0) {
-		BT_ERR("Failed to read value (err %d)", len);
-		return len;
+
+	elen = sizeof(mod->keys);
+	if (len != elen) {
+		BT_ERR("Unexpected value length %s (%d != %zu)", __func__, elen,
+		       len);
+		return -EINVAL;
+	}
+	err = read(store, mod->keys, len);
+	if (err < 0) {
+		BT_ERR("Failed to read value (err %d)", err);
+		return err;
 	}
 
 
@@ -528,21 +573,28 @@ static int mod_set_bind(struct bt_mesh_model *mod, void *val_ctx)
 	return 0;
 }
 
-static int mod_set_sub(struct bt_mesh_model *mod, void *val_ctx)
+static int mod_set_sub(struct bt_mesh_model *mod, size_t len, read_fn read,
+		       void *store)
 {
-	int len;
+	int err, elen;
 
 	/* Start with empty array regardless of cleared or set value */
 	(void)memset(mod->groups, 0, sizeof(mod->groups));
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len == 0) {
 		BT_DBG("val (null)");
 		BT_DBG("Cleared subscriptions for model");
 		return 0;
 	}
 
-	len = settings_val_read_cb(val_ctx, mod->groups, sizeof(mod->groups));
-	if (len < 0) {
+	elen = sizeof(mod->groups);
+	if (len != elen) {
+		BT_ERR("Unexpected value length %s (%d != %zu)", __func__, elen,
+		       len);
+		return -EINVAL;
+	}
+	err = read(store, mod->groups, len);
+	if (err < 0) {
 		BT_ERR("Failed to read value (err %d)", len);
 		return len;
 	}
@@ -552,17 +604,18 @@ static int mod_set_sub(struct bt_mesh_model *mod, void *val_ctx)
 	return 0;
 }
 
-static int mod_set_pub(struct bt_mesh_model *mod, void *val_ctx)
+static int mod_set_pub(struct bt_mesh_model *mod, size_t len, read_fn read,
+		       void *store)
 {
 	struct mod_pub_val pub;
-	int  err;
+	int  err, elen;
 
 	if (!mod->pub) {
 		BT_WARN("Model has no publication context!");
 		return -EINVAL;
 	}
 
-	if (settings_val_get_len_cb(val_ctx) == 0) {
+	if (len == 0) {
 		BT_DBG("val (null)");
 		mod->pub->addr = BT_MESH_ADDR_UNASSIGNED;
 		mod->pub->key = 0;
@@ -576,8 +629,14 @@ static int mod_set_pub(struct bt_mesh_model *mod, void *val_ctx)
 		return 0;
 	}
 
-	err = mesh_x_set(val_ctx, &pub, sizeof(pub));
-	if (err) {
+	elen = sizeof(pub);
+	if (len != elen) {
+		BT_ERR("Unexpected value length %s (%d != %zu)", __func__, elen,
+		       len);
+		return -EINVAL;
+	}
+	err = read(store, &pub, len);
+	if (err < 0) {
 		BT_ERR("Failed to set \'model-pub\'");
 		return err;
 	}
@@ -596,7 +655,8 @@ static int mod_set_pub(struct bt_mesh_model *mod, void *val_ctx)
 	return 0;
 }
 
-static int mod_set(bool vnd, int argc, char **argv, void *val_ctx)
+static int mod_set(bool vnd, int argc, char **argv, size_t len, read_fn read,
+		   void *store)
 {
 	struct bt_mesh_model *mod;
 	u8_t elem_idx, mod_idx;
@@ -622,34 +682,37 @@ static int mod_set(bool vnd, int argc, char **argv, void *val_ctx)
 	}
 
 	if (!strcmp(argv[1], "bind")) {
-		return mod_set_bind(mod, val_ctx);
+		return mod_set_bind(mod, len, read, store);
 	}
 
 	if (!strcmp(argv[1], "sub")) {
-		return mod_set_sub(mod, val_ctx);
+		return mod_set_sub(mod, len, read, store);
 	}
 
 	if (!strcmp(argv[1], "pub")) {
-		return mod_set_pub(mod, val_ctx);
+		return mod_set_pub(mod, len, read, store);
 	}
 
 	BT_WARN("Unknown module key %s", argv[1]);
 	return -ENOENT;
 }
 
-static int sig_mod_set(int argc, char **argv, void *val_ctx)
+static int sig_mod_set(int argc, char **argv, size_t len, read_fn read,
+		       void *store)
 {
-	return mod_set(false, argc, argv, val_ctx);
+	return mod_set(false, argc, argv, len, read, store);
 }
 
-static int vnd_mod_set(int argc, char **argv, void *val_ctx)
+static int vnd_mod_set(int argc, char **argv, size_t len, read_fn read,
+		       void *store)
 {
-	return mod_set(true, argc, argv, val_ctx);
+	return mod_set(true, argc, argv, len, read, store);
 }
 
 const struct mesh_setting {
 	const char *name;
-	int (*func)(int argc, char **argv, void *val_ctx);
+	int (*func)(int argc, char **argv, size_t len, read_fn read,
+		    void *store);
 } settings[] = {
 	{ "Net", net_set },
 	{ "IV", iv_set },
@@ -663,7 +726,8 @@ const struct mesh_setting {
 	{ "v", vnd_mod_set },
 };
 
-static int mesh_set(int argc, char **argv, void *val_ctx)
+static int mesh_set(int argc, char **argv, size_t len, read_fn read,
+		    void *store)
 {
 	int i;
 
@@ -676,8 +740,7 @@ static int mesh_set(int argc, char **argv, void *val_ctx)
 		if (!strcmp(settings[i].name, argv[0])) {
 			argc--;
 			argv++;
-
-			return settings[i].func(argc, argv, val_ctx);
+			return settings[i].func(argc, argv, len, read, store);
 		}
 	}
 

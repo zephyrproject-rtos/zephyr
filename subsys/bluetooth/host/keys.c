@@ -271,7 +271,8 @@ int bt_keys_store(struct bt_keys *keys)
 	return 0;
 }
 
-static int keys_set(int argc, char **argv, void *value_ctx)
+static int keys_set(int argc, char **argv, size_t len_rd, read_fn read,
+		    void *store)
 {
 	struct bt_keys *keys;
 	bt_addr_le_t addr;
@@ -284,7 +285,7 @@ static int keys_set(int argc, char **argv, void *value_ctx)
 		return -EINVAL;
 	}
 
-	len = settings_val_read_cb(value_ctx, val, sizeof(val));
+	len = read(store, val, sizeof(val));
 	if (len < 0) {
 		BT_ERR("Failed to read value (err %d)", len);
 		return -EINVAL;

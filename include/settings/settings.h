@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2019 Laczen
  * Copyright (c) 2018 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
  *
@@ -12,6 +13,18 @@
 #include <misc/util.h>
 #include <misc/slist.h>
 #include <stdint.h>
+
+#ifdef CONFIG_SETTINGS_NVS
+#include <nvs/nvs.h>
+#endif
+
+#ifdef CONFIG_SETTINGS_FCB
+#include <fcb.h>
+#endif
+
+#ifdef CONFIG_SETTINGS_FS
+#include <fs.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -35,6 +48,8 @@ extern "C" {
 
 #define SETTINGS_NMGR_OP		0
 
+typedef ssize_t (*read_fn)(void *back_end, void *data, size_t len);
+
 /**
  * @struct settings_handler
  * Config handlers for subtree implement a set of handler functions.
@@ -47,7 +62,7 @@ struct settings_handler {
 	char *name;
 	/**< Name of subtree. */
 
-	int (*h_get)(int argc, char **argv, char *val, int val_len_max);
+	int (*h_get)(int argc, char **argv, void *val, int val_len_max);
 	/**< Get values handler of settings items identified by keyword names.
 	 *
 	 * Parameters:
@@ -57,14 +72,16 @@ struct settings_handler {
 	 *  - val_len_max - size of that buffer.
 	 */
 
-	int (*h_set)(int argc, char **argv, void *value_ctx);
+	int (*h_set)(int argc, char **argv, size_t len, read_fn read,
+		     void *back_end);
 	/**< Set value handler of settings items identified by keyword names.
 	 *
 	 * Parameters:
 	 *  - argc - count of item in argv, argv - array of pointers to keyword
 	 *   names.
-	 *  - value_ctx - pointer to the value context which is used parameter
-	 *   for data extracting routine (@ref settings_val_read_cb).
+	 *  - len - the size of the data found in the backend
+	 *  - read - function provided to read the data from the backend
+	 *  - cb_arg - arguments for the read function provided by the backend
 	 */
 
 	int (*h_commit)(void);
@@ -119,8 +136,8 @@ int settings_register(struct settings_handler *cf);
 int settings_load(void);
 
 /**
- * Save currently running serialized items. All serialized items which are different
- * from currently persisted values will be saved.
+ * Save currently running serialized items. All serialized items which are
+ * different from currently persisted values will be saved.
  *
  * @return 0 on success, non-zero on failure.
  */
@@ -152,38 +169,6 @@ int settings_save_one(const char *name, void *value, size_t val_len);
 int settings_delete(const char *name);
 
 /**
- * Set settings item identified by @p name to be value @p value.
- * This finds the settings handler for this subtree and calls it's
- * set handler.
- *
- * @param name Name/key of the settings item.
- * @param value Pointer to the value of the settings item. This value will
- * be transferred to the @ref settings_handler::h_set handler implementation.
- * @param len Length of value string.
- *
- * @return 0 on success, non-zero on failure.
- */
-int settings_set_value(char *name, void *value, size_t len);
-
-/**
- * Get value of settings item identified by @p name.
- * This calls the settings handler h_get for the subtree.
- *
- * Configuration handler should copy the string to @p buf, the maximum
- * number of bytes it will copy is limited by @p buf_len.
- *
- * @param name Name/key of the settings item.
- *
- * @param buf buffer for value of the settings item.
- * If value is not string, the value will be filled in *buf.
- *
- * @param buf_len size of buf.
- *
- * @return Positive: Length of copied dat. Negative: -ERCODE
- */
-int settings_get_value(char *name, char *buf, int buf_len);
-
-/**
  * Call commit for all settings handler. This should apply all
  * settings which has been set, but not applied yet.
  *
@@ -192,33 +177,6 @@ int settings_get_value(char *name, char *buf, int buf_len);
  * @return 0 on success, non-zero on failure.
  */
 int settings_commit(char *name);
-
-/**
- * Persistent data extracting routine.
- *
- * This function read and decode data from non-volatile storage to user buffer
- * This function should be used inside set handler in order to read the settings
- * data from backend storage.
- *
- * @param[in] value_ctx Data context provided by the h_set handler.
- * @param[out] buf Buffer for data read.
- * @param[in] len Length of @p buf.
- *
- * @retval Negative value on failure. 0 and positive: Length of data loaded to
- * the @p buf.
- */
-int settings_val_read_cb(void *value_ctx, void *buf, size_t len);
-
-/**
- * This function fetch length of decode data.
- * This function should be used inside set handler in order to detect the
- * settings data length.
- *
- * @param[in] value_ctx Data context provided by the h_set handler.
- *
- * @retval length of data.
- */
-size_t settings_val_get_len_cb(void *value_ctx);
 
 /**
  * @} settings
@@ -232,6 +190,79 @@ struct settings_store {
 	sys_snode_t cs_next;
 	const struct settings_store_itf *cs_itf;
 };
+
+#ifdef CONFIG_SETTINGS_RUNTIME
+
+int settings_runtime_set(const char *name, void *data, size_t len);
+
+int settings_runtime_get(const char *name, void *data, size_t len);
+
+#endif /* CONFIG_SETTINGS_RUNTIME */
+
+#ifdef CONFIG_SETTINGS_FCB
+
+#define SETTINGS_FCB_VERS		1
+
+struct settings_fcb {
+	struct settings_store cf_store;
+	struct fcb cf_fcb;
+	int fa_id; /* flash area id */
+};
+/* register fcb to be a source of settings */
+int settings_fcb_src(struct settings_fcb *cf);
+
+/* register fcb to be the destination of settings */
+int settings_fcb_dst(struct settings_fcb *cf);
+
+/* initialize a settings fcb  backend */
+int settings_fcb_backend_init(struct settings_fcb *cf);
+#endif /* CONFIG_SETTINGS_FCB */
+
+#ifdef CONFIG_SETTINGS_FS
+
+#define SETTINGS_FILE_NAME_MAX 32 /* max length for settings filename */
+
+struct settings_file {
+	struct settings_store cf_store;
+	const char *cf_name;	/* filename */
+	int cf_maxlines;	/* max # of lines before compressing */
+	int cf_lines;		/* private */
+	u8_t toggle;		/* private 0 or 1 used to extend the filename */
+};
+
+/* register file to be a source of settings */
+int settings_file_src(struct settings_file *cf);
+
+/* settings file to be the destination of settings */
+int settings_file_dst(struct settings_file *cf);
+
+/* initialize a settings file  backend */
+int settings_file_backend_init(struct settings_file *cf);
+
+#endif /* CONFIG_SETTINGS_FS */
+
+
+#ifdef CONFIG_SETTINGS_NVS
+
+#define NVS_NAMECNT_ID 0x8000
+#define NVS_NAME_ID_OFFSET 0x4000
+
+struct settings_nvs {
+	struct settings_store cf_store;
+	struct nvs_fs cf_nvs;
+	u16_t last_name_id;
+};
+
+/* register nvs to be a source of settings */
+int settings_nvs_src(struct settings_nvs *cf);
+
+/* register nvs to be the destination of settings */
+int settings_nvs_dst(struct settings_nvs *cf);
+
+/* Initialize a nvs backend. */
+int settings_nvs_backend_init(struct settings_nvs *cf);
+
+#endif /* CONFIG_SETTINGS_NVS */
 
 #ifdef __cplusplus
 }

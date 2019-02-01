@@ -86,7 +86,8 @@ int bt_settings_decode_key(char *key, bt_addr_le_t *addr)
 	return 0;
 }
 
-static int set(int argc, char **argv, void *value_ctx)
+static int set(int argc, char **argv, size_t len_rd, read_fn read,
+	       void *store)
 {
 	int len;
 
@@ -98,7 +99,7 @@ static int set(int argc, char **argv, void *value_ctx)
 				argc--;
 				argv++;
 
-				return h->set(argc, argv, value_ctx);
+				return h->set(argc, argv, len_rd, read, store);
 			}
 		}
 
@@ -114,7 +115,7 @@ static int set(int argc, char **argv, void *value_ctx)
 
 		len = sizeof(bt_dev.id_addr);
 
-		len = settings_val_read_cb(value_ctx, &bt_dev.id_addr, len);
+		len = read(store, &bt_dev.id_addr, len_rd);
 
 		if (len < sizeof(bt_dev.id_addr[0])) {
 			if (len < 0) {
@@ -143,8 +144,7 @@ static int set(int argc, char **argv, void *value_ctx)
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
 	if (!strcmp(argv[0], "name")) {
-		len = settings_val_read_cb(value_ctx, &bt_dev.name,
-					   sizeof(bt_dev.name) - 1);
+		len = read(store, &bt_dev.name, sizeof(bt_dev.name) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read device name from storage"
 				       " (err %d)", len);
@@ -159,8 +159,7 @@ static int set(int argc, char **argv, void *value_ctx)
 
 #if defined(CONFIG_BT_PRIVACY)
 	if (!strcmp(argv[0], "irk")) {
-		len = settings_val_read_cb(value_ctx, bt_dev.irk,
-					   sizeof(bt_dev.irk));
+		len = read(store, bt_dev.irk, sizeof(bt_dev.irk));
 		if (len < sizeof(bt_dev.irk[0])) {
 			if (len < 0) {
 				BT_ERR("Failed to read IRK from storage"

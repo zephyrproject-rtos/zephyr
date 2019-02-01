@@ -3160,7 +3160,8 @@ next:
 	return load->count ? BT_GATT_ITER_CONTINUE : BT_GATT_ITER_STOP;
 }
 
-static int ccc_set(int argc, char **argv, void *val_ctx)
+static int ccc_set(int argc, char **argv, size_t len_rd, read_fn read,
+		   void *store)
 {
 	struct ccc_store ccc_store[CCC_STORE_MAX];
 	struct ccc_load load;
@@ -3181,9 +3182,8 @@ static int ccc_set(int argc, char **argv, void *val_ctx)
 		return -EINVAL;
 	}
 
-	if (settings_val_get_len_cb(val_ctx)) {
-		len = settings_val_read_cb(val_ctx, ccc_store,
-					   sizeof(ccc_store));
+	if (len_rd) {
+		len = read(store, ccc_store, sizeof(ccc_store));
 
 		if (len < 0) {
 			BT_ERR("Failed to decode value (err %d)", len);
