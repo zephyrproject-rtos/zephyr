@@ -167,10 +167,10 @@ int net_ipv6_finalize_new(struct net_pkt *pkt, u8_t next_header_proto)
 	    next_header_proto == IPPROTO_ICMPV6) {
 		if (IS_ENABLED(CONFIG_NET_UDP) &&
 		    next_header_proto == IPPROTO_UDP) {
-			net_udp_finalize(pkt);
+			return net_udp_finalize(pkt);
 		} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 			   next_header_proto == IPPROTO_TCP) {
-			net_tcp_finalize(pkt);
+			return net_tcp_finalize(pkt);
 		} else if (next_header_proto == IPPROTO_ICMPV6) {
 			return net_icmpv6_finalize(pkt);
 		}
