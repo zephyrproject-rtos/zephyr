@@ -1317,39 +1317,6 @@ int net_tcp_finalize(struct net_pkt *pkt)
 	return net_pkt_set_data(pkt, &tcp_access);
 }
 
-struct net_buf *net_tcp_set_chksum(struct net_pkt *pkt, struct net_buf *frag)
-{
-	struct net_tcp_hdr *hdr;
-	u16_t chksum = 0U;
-	u16_t pos;
-
-	hdr = net_pkt_tcp_data(pkt);
-	if (net_tcp_header_fits(pkt, hdr)) {
-		hdr->chksum = 0;
-		hdr->chksum = net_calc_chksum_tcp(pkt);
-
-		return frag;
-	}
-
-	/* We need to set the checksum to 0 first before the calc */
-	frag = net_pkt_write(pkt, frag,
-			     net_pkt_ip_hdr_len(pkt) +
-			     net_pkt_ipv6_ext_len(pkt) +
-			     2 + 2 + 4 + 4 + /* src + dst + seq + ack */
-			     1 + 1 + 2 /* offset + flags + wnd */,
-			     &pos, sizeof(chksum), (u8_t *)&chksum,
-			     ALLOC_TIMEOUT);
-
-	chksum = net_calc_chksum_tcp(pkt);
-
-	frag = net_pkt_write(pkt, frag, pos - 2, &pos, sizeof(chksum),
-			     (u8_t *)&chksum, ALLOC_TIMEOUT);
-
-	NET_ASSERT(frag);
-
-	return frag;
-}
-
 int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 		       struct net_tcp_options *opts)
 {
