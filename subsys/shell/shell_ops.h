@@ -197,6 +197,20 @@ bool shell_cursor_in_empty_line(const struct shell *shell);
 
 void shell_cmd_line_erase(const struct shell *shell);
 
+/**
+ * @brief Print command buffer.
+ *
+ * @param shell Shell instance.
+ */
+void shell_print_cmd(const struct shell *shell);
+
+/**
+ * @brief Print prompt followed by command buffer.
+ *
+ * @param shell Shell instance.
+ */
+void shell_print_prompt_and_cmd(const struct shell *shell);
+
 /* Function sends data stream to the shell instance. Each time before the
  * shell_write function is called, it must be ensured that IO buffer of fprintf
  * is flushed to avoid synchronization issues.
