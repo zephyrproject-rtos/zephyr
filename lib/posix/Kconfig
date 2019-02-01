@@ -15,11 +15,24 @@ config	POSIX_MAX_FDS
 config POSIX_API
 	depends on !ARCH_POSIX
 	bool "POSIX APIs"
+	select POSIX_HEADERS
+	select POSIX_SLEEP
 	help
 	  Enable mostly-standards-compliant implementations of
 	  various POSIX (IEEE 1003.1) APIs.
 
-if POSIX_API
+config POSIX_HEADERS
+	bool "Make available POSIX headers"
+	help
+	  If enabled, applications will be able to include <unistd.h>,
+	  <sys/socket.h> and all other POSIX headers under their native
+	  names. If disabled, all the headers are still available, with
+	  "posix/" prefix, e.g. <posix/unistd.h>.
+
+config POSIX_SLEEP
+	bool "POSIX sleep()/usleep() calls"
+	help
+	  Provide sleep()/usleep() calls.
 
 config PTHREAD_IPC
 	bool "POSIX pthread IPC API"
@@ -95,5 +108,3 @@ config	POSIX_MAX_OPEN_FILES
 	  is additionally bounded by CONFIG_POSIX_MAX_FDS.
 endif
 endif # FILE_SYSTEM
-
-endif # POSIX_API
