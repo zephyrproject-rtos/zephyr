@@ -40,16 +40,6 @@ endif # SERIAL
 
 if COUNTER
 
-if COUNTER_TMR_CMSDK_APB
-
-config COUNTER_TMR_CMSDK_APB_0
-	def_bool y
-
-config COUNTER_TMR_CMSDK_APB_1
-	def_bool y
-
-endif # COUNTER_TMR_CMSDK_APB
-
 if TIMER_TMR_CMSDK_APB
 
 config TIMER_TMR_CMSDK_APB_0
