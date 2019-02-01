@@ -13,7 +13,6 @@ User and Developer Guides
    tools/code-relocation.rst
    documentation/doc-guidelines.rst
    devices/dts/device_tree.rst
-   devices/dts/flash_partitions.rst
    subsystems/dfu
    tools/kconfig/index.rst
    subsystems/mgmt

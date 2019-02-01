@@ -1,7 +1,9 @@
+:orphan:
+
 .. _flash_partitions:
 
-Device Tree Flash Partitions
-############################
+Flash Partitions
+*****************
 
 Device tree can be used to describe a partition layout for any flash
 device in the system.
@@ -28,7 +30,7 @@ Partitions are generally managed using device tree overlays. Refer to
 :ref:`application_dt` for details on using overlay files.
 
 Defining Partitions
-*******************
+===================
 
 The partition layout for a flash device is described inside the
 ``partitions`` child node of the flash device's node in the device
@@ -100,7 +102,7 @@ device tree compiler currently does not check if partitions overlap;
 you must ensure they do not when defining them.
 
 Example Primary Flash Partition Layout
-**************************************
+======================================
 
 Here is a complete (but hypothetical) example device tree overlay
 snippet illustrating these ideas. Notice how the partitions do not
@@ -127,7 +129,7 @@ overlap, but also do not cover the entire device.
 	};
 
 Linking Zephyr Within a Partition
-*********************************
+=================================
 
 To force the linker to output a Zephyr image within a given flash
 partition, add this to a device tree overlay:
@@ -146,7 +148,7 @@ application image link uses the entire flash device. If a
 will be restricted to that partition.
 
 Flash Partition Macros
-**********************
+======================
 
 The Zephyr build system generates definitions for each flash device
 partition. These definitions are available to any files which
@@ -179,7 +181,7 @@ offsets and sizes are available as well.
 .. _mcuboot_partitions:
 
 MCUboot Partitions
-******************
+==================
 
 `MCUboot`_ is a secure bootloader for 32-bit microcontrollers.
 
@@ -225,7 +227,7 @@ See the  `MCUboot documentation`_ for more details on these partitions.
    https://github.com/runtimeco/mcuboot/blob/master/docs/design.md#image-slots
 
 File System Partitions
-**********************
+======================
 
 **storage_partition**
   This is the area where e.g. NFFS expects its partition.
