@@ -14,12 +14,30 @@
 #include <misc/errno_private.h>
 #include <misc/libc-hooks.h>
 #include <syscall_handler.h>
+#include <app_memory/app_memdomain.h>
+#include <init.h>
+
+#ifdef CONFIG_APP_SHARED_MEM
+K_APPMEM_PARTITION_DEFINE(z_newlib_partition);
+#define LIBC_BSS	K_APP_BMEM(z_newlib_partition)
+#define LIBC_DATA	K_APP_DMEM(z_newlib_partition)
+
+#if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
+K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
+#define MALLOC_BSS	K_APP_BMEM(z_malloc_partition)
+#endif /* CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE */
+
+#else
+#define LIBC_BSS
+#define LIBC_DATA
+#define MALLOC_BSS
+#endif /* CONFIG_APP_SHARED_MEM */
 
 #define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
 
 #if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 /* Compiler will throw an error if the provided value isn't a power of two */
-static unsigned char __kernel __aligned(CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE)
+MALLOC_BSS static unsigned char __kernel __aligned(CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE)
 	heap_base[CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE];
 #define MAX_HEAP_SIZE CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 #else
@@ -48,9 +66,25 @@ extern void *_heap_sentry;
 #endif
 
 static unsigned char *heap_base = UINT_TO_POINTER(USED_RAM_END_ADDR);
+
+#ifdef CONFIG_APP_SHARED_MEM
+struct k_mem_partition z_malloc_partition;
+
+static int malloc_prepare(struct device *unused)
+{
+	ARG_UNUSED(unused);
+
+	z_malloc_partition.start = (u32_t)heap_base;
+	z_malloc_partition.size = MAX_HEAP_SIZE;
+	z_malloc_partition.attr = K_MEM_PARTITION_P_RW_U_RW;
+	return 0;
+}
+
+SYS_INIT(malloc_prepare, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif
 #endif /* CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE */
 
-static unsigned int heap_sz;
+LIBC_BSS static unsigned int heap_sz;
 
 static int _stdout_hook_default(int c)
 {
@@ -206,12 +240,6 @@ void *_sbrk(int count)
 	}
 }
 FUNC_ALIAS(_sbrk, sbrk, void *);
-
-void z_newlib_get_heap_bounds(void **base, size_t *size)
-{
-	*base = heap_base;
-	*size = MAX_HEAP_SIZE;
-}
 
 int *__errno(void)
 {

@@ -7,6 +7,10 @@
 #include <ztest.h>
 #include <stdio.h>
 #include <app_memory/app_memdomain.h>
+#ifdef CONFIG_APP_SHARED_MEM
+#include <misc/libc-hooks.h>
+#endif
+
 #ifdef KERNEL
 __kernel static struct k_thread ztest_thread;
 #endif
@@ -297,7 +301,13 @@ void main(void)
 {
 #ifdef CONFIG_APP_SHARED_MEM
 	struct k_mem_partition *parts[] = {
-		&ztest_mem_partition
+		&ztest_mem_partition,
+#ifdef CONFIG_NEWLIB_LIBC
+		/* Newlib libc.a library and hooks globals */
+		&z_newlib_partition,
+#endif
+		/* Both minimal and newlib libc expose this for malloc arena */
+		&z_malloc_partition
 	};
 
 	/* Ztests just have one memory domain with one partition.

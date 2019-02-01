@@ -206,21 +206,6 @@ extern void smp_init(void);
 
 extern void smp_timer_init(void);
 
-#ifdef CONFIG_NEWLIB_LIBC
-/**
- * @brief Fetch dimentions of newlib heap area for _sbrk()
- *
- * This memory region is used for heap allocations by the newlib C library.
- * If user threads need to have access to this, the results returned can be
- * used to program memory protection hardware appropriately.
- *
- * @param base Pointer to void pointer, filled in with the heap starting
- *             address
- * @param size Pointer to a size_y, filled in with the maximum heap size
- */
-extern void z_newlib_get_heap_bounds(void **base, size_t *size);
-#endif
-
 extern u32_t z_early_boot_rand32_get(void);
 
 #if CONFIG_STACK_POINTER_RANDOM
