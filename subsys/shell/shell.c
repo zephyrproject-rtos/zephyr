@@ -42,40 +42,6 @@ static void cmd_buffer_clear(const struct shell *shell)
 	shell->ctx->cmd_buff_len = 0;
 }
 
-static inline void prompt_print(const struct shell *shell)
-{
-	/* Below cannot be printed by shell_fprinf because it will cause
-	 * interrupt spin
-	 */
-	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
-	    shell->ctx->internal.flags.use_colors &&
-	    (SHELL_INFO != shell->ctx->vt100_ctx.col.col)) {
-		struct shell_vt100_colors col;
-
-		shell_vt100_colors_store(shell, &col);
-		shell_vt100_color_set(shell, SHELL_INFO);
-		shell_raw_fprintf(shell->fprintf_ctx, "%s", shell->prompt);
-		shell_vt100_colors_restore(shell, &col);
-	} else {
-		shell_raw_fprintf(shell->fprintf_ctx, "%s", shell->prompt);
-	}
-}
-
-static inline void cmd_print(const struct shell *shell)
-{
-	shell_raw_fprintf(shell->fprintf_ctx, "%s", shell->ctx->cmd_buff);
-}
-
-static void cmd_line_print(const struct shell *shell)
-{
-	prompt_print(shell);
-
-	if (flag_echo_get(shell)) {
-		cmd_print(shell);
-		shell_op_cursor_position_synchronize(shell);
-	}
-}
-
 /**
  * @brief Prints error message on wrong argument count.
  *	  Optionally, printing help on wrong argument count.
@@ -110,7 +76,7 @@ static void state_set(const struct shell *shell, enum shell_state state)
 
 	if (state == SHELL_STATE_ACTIVE) {
 		cmd_buffer_clear(shell);
-		prompt_print(shell);
+		shell_print_prompt_and_cmd(shell);
 	}
 }
 
@@ -224,7 +190,7 @@ static void history_handle(const struct shell *shell, bool up)
 
 	shell_op_cursor_home_move(shell);
 	clear_eos(shell);
-	cmd_print(shell);
+	shell_print_cmd(shell);
 	shell->ctx->cmd_buff_pos = len;
 	shell->ctx->cmd_buff_len = len;
 	shell_op_cond_next_line(shell);
@@ -478,7 +444,7 @@ static void tab_options_print(const struct shell *shell,
 	}
 
 	cursor_next_line_move(shell);
-	cmd_line_print(shell);
+	shell_print_prompt_and_cmd(shell);
 }
 
 static u16_t common_beginning_find(const struct shell_static_entry *cmd,
@@ -840,7 +806,7 @@ static void ctrl_metakeys_handle(const struct shell *shell, char data)
 	case SHELL_VT100_ASCII_CTRL_L: /* CTRL + L */
 		SHELL_VT100_CMD(shell, SHELL_VT100_CURSORHOME);
 		SHELL_VT100_CMD(shell, SHELL_VT100_CLEARSCREEN);
-		cmd_line_print(shell);
+		shell_print_prompt_and_cmd(shell);
 		break;
 
 	case SHELL_VT100_ASCII_CTRL_U: /* CTRL + U */
@@ -1081,7 +1047,7 @@ static void shell_log_process(const struct shell *shell)
 		struct k_poll_signal *signal =
 			&shell->ctx->signals[SHELL_SIGNAL_RXRDY];
 
-		cmd_line_print(shell);
+		shell_print_prompt_and_cmd(shell);
 
 		/* Arbitrary delay added to ensure that prompt is
 		 * readable and can be used to enter further commands.
@@ -1392,7 +1358,7 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 	va_end(args);
 
 	if (k_current_get() != shell->ctx->tid) {
-		cmd_line_print(shell);
+		shell_print_prompt_and_cmd(shell);
 		transport_buffer_flush(shell);
 		k_mutex_unlock(&shell->ctx->wr_mtx);
 	}

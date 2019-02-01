@@ -334,6 +334,40 @@ void shell_cmd_line_erase(const struct shell *shell)
 	clear_eos(shell);
 }
 
+static void print_prompt(const struct shell *shell)
+{
+	/* Below cannot be printed by shell_fprinf because it will cause
+	 * interrupt spin
+	 */
+	if (IS_ENABLED(CONFIG_SHELL_VT100_COLORS) &&
+	    shell->ctx->internal.flags.use_colors &&
+	    (SHELL_INFO != shell->ctx->vt100_ctx.col.col)) {
+		struct shell_vt100_colors col;
+
+		shell_vt100_colors_store(shell, &col);
+		shell_vt100_color_set(shell, SHELL_INFO);
+		shell_raw_fprintf(shell->fprintf_ctx, "%s", shell->prompt);
+		shell_vt100_colors_restore(shell, &col);
+	} else {
+		shell_raw_fprintf(shell->fprintf_ctx, "%s", shell->prompt);
+	}
+}
+
+void shell_print_cmd(const struct shell *shell)
+{
+	shell_raw_fprintf(shell->fprintf_ctx, "%s", shell->ctx->cmd_buff);
+}
+
+void shell_print_prompt_and_cmd(const struct shell *shell)
+{
+	print_prompt(shell);
+
+	if (flag_echo_get(shell)) {
+		shell_print_cmd(shell);
+		shell_op_cursor_position_synchronize(shell);
+	}
+}
+
 static void shell_pend_on_txdone(const struct shell *shell)
 {
 	if (IS_ENABLED(CONFIG_MULTITHREADING) &&
