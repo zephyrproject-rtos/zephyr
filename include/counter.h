@@ -256,12 +256,13 @@ static inline u32_t _impl_counter_read(struct device *dev)
 }
 
 /**
- * @brief Set an alarm on a channel.
+ * @brief Set a single shot alarm on a channel.
  *
- * In case of absolute request, maximal value that can be set is equal to
- * top value set by @ref counter_set_top_value call or default, maximal one. In
- * case of relative request, maximal value can be retrieved using
- * @ref counter_get_max_relative_alarm.
+ * After expiration alarm can be set again, disabling is not needed. When alarm
+ * expiration handler is called, channel is considered available and can be
+ * set again in that context.
+ *
+ * @note API is not thread safe.
  *
  * @param dev		Pointer to the device structure for the driver instance.
  * @param chan_id	Channel ID.
@@ -286,6 +287,8 @@ static inline int counter_set_channel_alarm(struct device *dev, u8_t chan_id,
 
 /**
  * @brief Disable an alarm on a channel.
+ *
+ * @note API is not thread safe.
  *
  * @param dev		Pointer to the device structure for the driver instance.
  * @param chan_id	Channel ID.
