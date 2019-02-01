@@ -76,11 +76,15 @@
 
 #ifdef CONFIG_WDT_NRFX
 #define TIMEOUTS                   2
+#elif defined(CONFIG_IWDG_STM32)
+#define TIMEOUTS                   0
 #else
 #define TIMEOUTS                   1
 #endif
 
+#define TEST_WDT_CALLBACK_1        (TIMEOUTS > 0)
 #define TEST_WDT_CALLBACK_2        (TIMEOUTS > 1)
+
 
 static struct wdt_timeout_cfg m_cfg_wdt0;
 #if TEST_WDT_CALLBACK_2
@@ -102,12 +106,14 @@ volatile uint32_t m_testcase_index __attribute__((section(".noinit.test_wdt")));
  */
 volatile uint32_t m_testvalue __attribute__((section(".noinit.test_wdt")));
 
+#if TEST_WDT_CALLBACK_1
 static void wdt_int_cb0(struct device *wdt_dev, int channel_id)
 {
 	ARG_UNUSED(wdt_dev);
 	ARG_UNUSED(channel_id);
 	m_testvalue += WDT_TEST_CB0_TEST_VALUE;
 }
+#endif
 
 #if TEST_WDT_CALLBACK_2
 static void wdt_int_cb1(struct device *wdt_dev, int channel_id)
@@ -158,6 +164,7 @@ static int test_wdt_no_callback(void)
 	};
 }
 
+#if TEST_WDT_CALLBACK_1
 static int test_wdt_callback_1(void)
 {
 	int err;
@@ -204,6 +211,7 @@ static int test_wdt_callback_1(void)
 		k_yield();
 	};
 }
+#endif
 
 #if TEST_WDT_CALLBACK_2
 static int test_wdt_callback_2(void)
@@ -296,7 +304,11 @@ void test_wdt(void)
 		zassert_true(test_wdt_no_callback() == TC_PASS, NULL);
 	}
 	if (m_testcase_index == 1) {
+#if TEST_WDT_CALLBACK_1
 		zassert_true(test_wdt_callback_1() == TC_PASS, NULL);
+#else
+		m_testcase_index++;
+#endif
 	}
 	if (m_testcase_index == 2) {
 #if TEST_WDT_CALLBACK_2
