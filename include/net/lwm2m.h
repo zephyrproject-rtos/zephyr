@@ -11,6 +11,12 @@
 #include <kernel.h>
 #include <net/coap.h>
 
+/**
+ * @brief LwM2M high-level API
+ * @defgroup lwm2m_api LwM2M high-level API
+ * @{
+ */
+
 /* LWM2M Objects defined by OMA */
 
 #define LWM2M_OBJECT_SECURITY_ID			0
@@ -235,4 +241,7 @@ typedef void (*lwm2m_ctx_event_cb_t)(struct lwm2m_ctx *ctx,
 void lwm2m_rd_client_start(struct lwm2m_ctx *client_ctx, const char *ep_name,
 			   lwm2m_ctx_event_cb_t event_cb);
 
+/**
+ * @}
+ */
 #endif	/* ZEPHYR_INCLUDE_NET_LWM2M_H_ */
