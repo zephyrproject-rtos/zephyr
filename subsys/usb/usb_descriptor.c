@@ -446,3 +446,64 @@ u8_t *usb_get_device_descriptor(void)
 
 	return (u8_t *) __usb_descriptor_start;
 }
+
+struct usb_dev_data *usb_get_dev_data_by_cfg(sys_slist_t *list,
+					     struct usb_cfg_data *cfg)
+{
+	struct usb_dev_data *dev_data;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(list, dev_data, node) {
+		struct device *dev = dev_data->dev;
+		const struct usb_cfg_data *cfg_cur = dev->config->config_info;
+
+		if (cfg_cur == cfg) {
+			return dev_data;
+		}
+	}
+
+	LOG_DBG("Device data not found for cfg %p", cfg);
+
+	return NULL;
+}
+
+struct usb_dev_data *usb_get_dev_data_by_iface(sys_slist_t *list,
+					       u8_t iface_num)
+{
+	struct usb_dev_data *dev_data;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(list, dev_data, node) {
+		struct device *dev = dev_data->dev;
+		const struct usb_cfg_data *cfg = dev->config->config_info;
+		const struct usb_if_descriptor *if_desc =
+						cfg->interface_descriptor;
+
+		if (if_desc->bInterfaceNumber == iface_num) {
+			return dev_data;
+		}
+	}
+
+	LOG_DBG("Device data not found for iface number %u", iface_num);
+
+	return NULL;
+}
+
+struct usb_dev_data *usb_get_dev_data_by_ep(sys_slist_t *list, u8_t ep)
+{
+	struct usb_dev_data *dev_data;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(list, dev_data, node) {
+		struct device *dev = dev_data->dev;
+		const struct usb_cfg_data *cfg = dev->config->config_info;
+		const struct usb_ep_cfg_data *ep_data = cfg->endpoint;
+
+		for (u8_t i = 0; i < cfg->num_endpoints; i++) {
+			if (ep_data[i].ep_addr == ep) {
+				return dev_data;
+			}
+		}
+	}
+
+	LOG_DBG("Device data not found for ep %u", ep);
+
+	return NULL;
+}
