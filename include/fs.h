@@ -33,6 +33,11 @@ typedef long long int off_t;
 extern "C" {
 #endif
 
+/**
+ * @brief File System APIs
+ * @defgroup file_system_api File System APIs
+ * @{
+ */
 struct fs_file_system_t;
 
 enum fs_dir_entry_type {
@@ -46,19 +51,6 @@ enum fs_type {
 	FS_TYPE_END,
 };
 
-/**
- * @brief File System and Storage
- * @defgroup file_system_storage File System and Storage
- * @{
- * @}
- */
-
-/**
- * @brief File System Data Structures
- * @defgroup data_structures File System Data Structures
- * @ingroup file_system_storage
- * @{
- */
 
 /**
  * @brief File system mount info structure
@@ -168,10 +160,6 @@ struct fs_file_system_t {
 					struct fs_statvfs *stat);
 };
 
-/**
- * @}
- */
-
 #ifndef FS_SEEK_SET
 #define FS_SEEK_SET	0	/* Seek from beginning of file. */
 #endif
@@ -182,12 +170,6 @@ struct fs_file_system_t {
 #define FS_SEEK_END	2	/* Seek from end of file.  */
 #endif
 
-/**
- * @brief File System APIs
- * @defgroup file_system_api File System APIs
- * @ingroup file_system_storage
- * @{
- */
 
 /**
  * @brief File open
