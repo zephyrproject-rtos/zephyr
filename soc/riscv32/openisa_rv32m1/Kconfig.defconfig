@@ -29,6 +29,7 @@ config XIP
 
 config RISCV_GENERIC_TOOLCHAIN
 	bool
+	default y if "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "zephyr"
 	default n
 
 config RISCV_SOC_CONTEXT_SAVE
