@@ -593,7 +593,6 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	net_pkt_set_ipv6_ext_len(pkt, ext_len);
-	net_pkt_set_transport_proto(pkt, nexthdr);
 	net_pkt_set_family(pkt, PF_INET6);
 
 	switch (nexthdr) {
