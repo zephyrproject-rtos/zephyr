@@ -105,9 +105,12 @@ static void light_default_status_init(void)
 	}
 
 	default_tt = gen_def_trans_time_srv_user_data.tt;
+
+	target_lightness = lightness;
+	target_temperature = temperature;
 }
 
-void update_light_state(void)
+void update_led_gpio(void)
 {
 	u8_t power, color;
 
@@ -139,6 +142,11 @@ void update_light_state(void)
 		/* LED4 Off */
 		gpio_pin_write(led_device[3], LED3_GPIO_PIN, 1);
 	}
+}
+
+void update_light_state(void)
+{
+	update_led_gpio();
 
 	if (*ptr_counter == 0 || reset == false) {
 		reset = true;

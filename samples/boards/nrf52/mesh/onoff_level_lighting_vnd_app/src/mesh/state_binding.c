@@ -49,7 +49,7 @@ static s32_t ceiling(float num)
 	return inum + 1;
 }
 
-u16_t actual_to_linear(u16_t val)
+static u16_t actual_to_linear(u16_t val)
 {
 	float tmp;
 
@@ -58,7 +58,7 @@ u16_t actual_to_linear(u16_t val)
 	return (u16_t) ceiling(65535 * tmp * tmp);
 }
 
-u16_t linear_to_actual(u16_t val)
+static u16_t linear_to_actual(u16_t val)
 {
 	return (u16_t) (65535 * sqrt(((float) val / 65535)));
 }
@@ -135,6 +135,30 @@ static u16_t level_to_light_ctl_temp(s16_t level)
 	/* 6.1.3.1.1 1st formula end */
 }
 
+void readjust_lightness(void)
+{
+	if (lightness != 0) {
+		light_lightness_srv_user_data.last = lightness;
+	}
+
+	if (lightness) {
+		gen_onoff_srv_root_user_data.onoff = STATE_ON;
+	} else {
+		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
+	}
+
+	gen_level_srv_root_user_data.level = lightness - 32768;
+	light_lightness_srv_user_data.actual = lightness;
+	light_lightness_srv_user_data.linear = actual_to_linear(lightness);
+	light_ctl_srv_user_data.lightness = lightness;
+}
+
+void readjust_temperature(void)
+{
+	gen_level_srv_s0_user_data.level = temperature;
+	light_ctl_srv_user_data.temp = level_to_light_ctl_temp(temperature);
+}
+
 void state_binding(u8_t light, u8_t temp)
 {
 	switch (temp) {
@@ -197,28 +221,12 @@ void state_binding(u8_t light, u8_t temp)
 	constrain_lightness(lightness);
 
 jump:
-	if (lightness != 0) {
-		light_lightness_srv_user_data.last = lightness;
-	}
-
-	if (lightness) {
-		gen_onoff_srv_root_user_data.onoff = STATE_ON;
-	} else {
-		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
-	}
-
-	gen_level_srv_root_user_data.level = lightness - 32768;
-	light_lightness_srv_user_data.actual = lightness;
-	light_lightness_srv_user_data.linear = actual_to_linear(lightness);
-	light_ctl_srv_user_data.lightness = lightness;
+	readjust_lightness();
 }
 
 void calculate_lightness_target_values(u8_t type)
 {
-	bool set_light_ctl_temp_target_value;
 	u16_t tmp;
-
-	set_light_ctl_temp_target_value = true;
 
 	switch (type) {
 	case ONOFF:
@@ -242,8 +250,6 @@ void calculate_lightness_target_values(u8_t type)
 		tmp = linear_to_actual(light_lightness_srv_user_data.target_linear);
 		break;
 	case CTL:
-		set_light_ctl_temp_target_value = false;
-
 		tmp = light_ctl_srv_user_data.target_lightness;
 
 		target_temperature = light_ctl_temp_to_level(light_ctl_srv_user_data.target_temp);
@@ -269,11 +275,6 @@ void calculate_lightness_target_values(u8_t type)
 		actual_to_linear(target_lightness);
 
 	light_ctl_srv_user_data.target_lightness = target_lightness;
-
-	if (set_light_ctl_temp_target_value) {
-		target_temperature = light_ctl_srv_user_data.temp;
-		light_ctl_srv_user_data.target_temp = target_temperature;
-	}
 }
 
 void calculate_temp_target_values(u8_t type)
@@ -297,9 +298,6 @@ void calculate_temp_target_values(u8_t type)
 	default:
 		return;
 	}
-
-	target_lightness = light_ctl_srv_user_data.lightness;
-	light_ctl_srv_user_data.target_lightness = target_lightness;
 
 	if (set_light_ctl_delta_uv_target_value) {
 
