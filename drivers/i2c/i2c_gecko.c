@@ -29,10 +29,15 @@ struct i2c_gecko_config {
 	I2C_TypeDef *base;
 	CMU_Clock_TypeDef clock;
 	I2C_Init_TypeDef i2cInit;
+	u32_t bitrate;
 	struct soc_gpio_pin pin_sda;
 	struct soc_gpio_pin pin_scl;
-	unsigned int loc;
-	u32_t bitrate;
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	u8_t loc_sda;
+	u8_t loc_scl;
+#else
+	u8_t loc;
+#endif
 };
 
 struct i2c_gecko_data {
@@ -42,19 +47,20 @@ struct i2c_gecko_data {
 
 void i2c_gecko_config_pins(struct device *dev,
 			   const struct soc_gpio_pin *pin_sda,
-			   const struct soc_gpio_pin *pin_scl, u8_t loc)
+			   const struct soc_gpio_pin *pin_scl)
 {
 	I2C_TypeDef *base = DEV_BASE(dev);
+	struct i2c_gecko_config *config = DEV_CFG(dev);
 
 	soc_gpio_configure(pin_scl);
 	soc_gpio_configure(pin_sda);
 
-#ifdef _I2C_ROUTEPEN_MASK
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
 	base->ROUTEPEN = I2C_ROUTEPEN_SDAPEN | I2C_ROUTEPEN_SCLPEN;
-	base->ROUTELOC0 = (loc << _I2C_ROUTELOC0_SDALOC_SHIFT)
-			   | (loc << _I2C_ROUTELOC0_SCLLOC_SHIFT);
+	base->ROUTELOC0 = (config->loc_sda << _I2C_ROUTELOC0_SDALOC_SHIFT) |
+			  (config->loc_scl << _I2C_ROUTELOC0_SCLLOC_SHIFT);
 #else
-	base->ROUTE = I2C_ROUTE_SDAPEN | I2C_ROUTE_SCLPEN | (loc << 8);
+	base->ROUTE = I2C_ROUTE_SDAPEN | I2C_ROUTE_SCLPEN | (config->loc << 8);
 #endif
 }
 
@@ -160,8 +166,7 @@ static int i2c_gecko_init(struct device *dev)
 
 	CMU_ClockEnable(config->clock, true);
 
-	i2c_gecko_config_pins(dev, &config->pin_sda,
-			      &config->pin_scl, config->loc);
+	i2c_gecko_config_pins(dev, &config->pin_sda, &config->pin_scl);
 
 	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
 
@@ -178,40 +183,70 @@ static const struct i2c_driver_api i2c_gecko_driver_api = {
 	.transfer = i2c_gecko_transfer,
 };
 
-#ifdef CONFIG_I2C_0
+#ifdef DT_SILABS_GECKO_I2C_0
+
+#define PIN_I2C_0_SDA {DT_SILABS_GECKO_I2C_0_LOCATION_SDA_1, \
+		DT_SILABS_GECKO_I2C_0_LOCATION_SDA_2, gpioModeWiredAnd, 1}
+#define PIN_I2C_0_SCL {DT_SILABS_GECKO_I2C_0_LOCATION_SCL_1, \
+		DT_SILABS_GECKO_I2C_0_LOCATION_SCL_2, gpioModeWiredAnd, 1}
+
 static struct i2c_gecko_config i2c_gecko_config_0 = {
-	.base = (I2C_TypeDef *)DT_SILABS_GECKO_I2C_I2C_0_BASE_ADDRESS,
+	.base = (I2C_TypeDef *)DT_SILABS_GECKO_I2C_0_BASE_ADDRESS,
 	.clock = cmuClock_I2C0,
 	.i2cInit = I2C_INIT_DEFAULT,
-	.pin_sda = PIN_I2C0_SDA,
-	.pin_scl = PIN_I2C0_SCL,
-	.loc = DT_SILABS_GECKO_I2C_I2C_0_LOCATION,
-	.bitrate = DT_SILABS_GECKO_I2C_I2C_0_CLOCK_FREQUENCY,
+	.pin_sda = PIN_I2C_0_SDA,
+	.pin_scl = PIN_I2C_0_SCL,
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	.loc_sda = DT_SILABS_GECKO_I2C_0_LOCATION_SDA_0,
+	.loc_scl = DT_SILABS_GECKO_I2C_0_LOCATION_SCL_0,
+#else
+#if DT_SILABS_GECKO_I2C_0_LOCATION_SDA_0 \
+	!= DT_SILABS_GECKO_I2C_0_LOCATION_SCL_0
+#error I2C_0 DTS location-* properties must have identical value
+#endif
+	.loc = DT_SILABS_GECKO_I2C_0_LOCATION_SCL_0,
+#endif
+	.bitrate = DT_SILABS_GECKO_I2C_0_CLOCK_FREQUENCY,
 };
 
 static struct i2c_gecko_data i2c_gecko_data_0;
 
-DEVICE_AND_API_INIT(i2c_gecko_0, DT_SILABS_GECKO_I2C_I2C_0_LABEL,
+DEVICE_AND_API_INIT(i2c_gecko_0, DT_SILABS_GECKO_I2C_0_LABEL,
 		    &i2c_gecko_init, &i2c_gecko_data_0, &i2c_gecko_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_gecko_driver_api);
-#endif /* CONFIG_I2C_0 */
+#endif /* DT_SILABS_GECKO_I2C_0 */
 
-#ifdef CONFIG_I2C_1
+#ifdef DT_SILABS_GECKO_I2C_1
+
+#define PIN_I2C_1_SDA {DT_SILABS_GECKO_I2C_1_LOCATION_SDA_1, \
+		DT_SILABS_GECKO_I2C_1_LOCATION_SDA_2, gpioModeWiredAnd, 1}
+#define PIN_I2C_1_SCL {DT_SILABS_GECKO_I2C_1_LOCATION_SCL_1, \
+		DT_SILABS_GECKO_I2C_1_LOCATION_SCL_2, gpioModeWiredAnd, 1}
+
 static struct i2c_gecko_config i2c_gecko_config_1 = {
-	.base = (I2C_TypeDef *)DT_SILABS_GECKO_I2C_I2C_1_BASE_ADDRESS,
+	.base = (I2C_TypeDef *)DT_SILABS_GECKO_I2C_1_BASE_ADDRESS,
 	.clock = cmuClock_I2C1,
 	.i2cInit = I2C_INIT_DEFAULT,
-	.pin_sda = PIN_I2C1_SDA,
-	.pin_scl = PIN_I2C1_SCL,
-	.loc = DT_SILABS_GECKO_I2C_I2C_1_LOCATION,
-	.bitrate = DT_SILABS_GECKO_I2C_I2C_1_CLOCK_FREQUENCY,
+	.pin_sda = PIN_I2C_1_SDA,
+	.pin_scl = PIN_I2C_1_SCL,
+#ifdef CONFIG_SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
+	.loc_sda = DT_SILABS_GECKO_I2C_1_LOCATION_SDA_0,
+	.loc_scl = DT_SILABS_GECKO_I2C_1_LOCATION_SCL_0,
+#else
+#if DT_SILABS_GECKO_I2C_1_LOCATION_SDA_0 \
+	!= DT_SILABS_GECKO_I2C_1_LOCATION_SCL_0
+#error I2C_1 DTS location-* properties must have identical value
+#endif
+	.loc = DT_SILABS_GECKO_I2C_1_LOCATION_SCL_0,
+#endif
+	.bitrate = DT_SILABS_GECKO_I2C_1_CLOCK_FREQUENCY,
 };
 
 static struct i2c_gecko_data i2c_gecko_data_1;
 
-DEVICE_AND_API_INIT(i2c_gecko_1, DT_SILABS_GECKO_I2C_I2C_1_LABEL,
+DEVICE_AND_API_INIT(i2c_gecko_1, DT_SILABS_GECKO_I2C_1_LABEL,
 		    &i2c_gecko_init, &i2c_gecko_data_1, &i2c_gecko_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_gecko_driver_api);
-#endif /* CONFIG_I2C_1 */
+#endif /* DT_SILABS_GECKO_I2C_1 */

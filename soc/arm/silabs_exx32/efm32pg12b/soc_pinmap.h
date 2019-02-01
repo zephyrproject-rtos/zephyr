@@ -31,24 +31,4 @@
 #endif
 #endif /* CONFIG_GPIO_GECKO */
 
-#ifdef CONFIG_I2C_GECKO
-#ifdef CONFIG_I2C_0
-#if (DT_SILABS_GECKO_I2C_I2C_0_LOCATION == 15)
-#define PIN_I2C0_SDA {gpioPortC, 10, gpioModeWiredAnd, 1}
-#define PIN_I2C0_SCL {gpioPortC, 11, gpioModeWiredAnd, 1}
-#else
-#error ("I2C Driver for Gecko MCUs not implemented for this location index")
-#endif
-#endif /* CONFIG_I2C_0 */
-
-#ifdef CONFIG_I2C_1
-#if (DT_SILABS_GECKO_I2C_I2C_1_LOCATION == 6)
-#define PIN_I2C1_SDA {gpioPortB, 6, gpioModeWiredAnd, 1}
-#define PIN_I2C1_SCL {gpioPortB, 7, gpioModeWiredAnd, 1}
-#else
-#error ("I2C Driver for Gecko MCUs not implemented for this location index")
-#endif
-#endif /* CONFIG_I2C_1 */
-#endif /* CONFIG_I2C_GECKO */
-
 #endif /* _SILABS_EFM32PG12B_SOC_PINMAP_H_ */

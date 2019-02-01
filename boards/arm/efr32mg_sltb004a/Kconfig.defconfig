@@ -29,14 +29,4 @@ config GPIO_GECKO_PORTF
 
 endif # GPIO_GECKO
 
-if I2C_GECKO
-
-config I2C_0
-	default y
-
-config I2C_1
-	default y
-
-endif # I2C_GECKO
-
 endif # BOARD_EFR32MG_SLTB004A

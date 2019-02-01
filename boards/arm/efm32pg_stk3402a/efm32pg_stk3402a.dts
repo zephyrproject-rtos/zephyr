@@ -68,7 +68,8 @@
 };
 
 &i2c0 {
-	location = <15>;
+	location-sda = <GECKO_LOCATION(15) GECKO_PORT_C GECKO_PIN(10)>;
+	location-scl = <GECKO_LOCATION(15) GECKO_PORT_C GECKO_PIN(11)>;
 	status = "ok";
 };
 

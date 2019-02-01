@@ -22,6 +22,13 @@ config UART_GECKO
 
 endif # SERIAL
 
+if I2C
+
+config I2C_GECKO
+	default y
+
+endif # I2C
+
 if FLASH
 
 config SOC_FLASH_GECKO
