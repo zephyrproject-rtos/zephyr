@@ -16,7 +16,7 @@ User and Developer Guides
    subsystems/dfu
    tools/kconfig/index.rst
    subsystems/mgmt
-   networking/networking.rst
+   subsystems/networking/networking.rst
    porting/index.rst
    subsystems/test/index
    subsystems/tracing/index
