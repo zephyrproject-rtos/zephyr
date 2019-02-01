@@ -185,6 +185,19 @@ static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *,
 static void i2s_rx_stream_disable(struct i2s_cavs_dev_data *,
 		volatile struct i2s_cavs_ssp *const, struct device *);
 
+static inline void i2s_purge_stream_buffers(struct stream *strm,
+	struct k_mem_slab *mem_slab)
+{
+	void *buffer;
+
+	while (k_msgq_get(&strm->in_queue, &buffer, K_NO_WAIT) == 0) {
+		k_mem_slab_free(mem_slab, &buffer);
+	}
+	while (k_msgq_get(&strm->out_queue, &buffer, K_NO_WAIT) == 0) {
+		k_mem_slab_free(mem_slab, &buffer);
+	}
+}
+
 /* This function is executed in the interrupt context */
 static void i2s_dma_tx_callback(void *arg, u32_t channel,
 		int status)
@@ -221,21 +234,23 @@ static void i2s_dma_tx_callback(void *arg, u32_t channel,
 			ssp->ssc1 |= SSCR1_TSRE;
 			k_msgq_put(&strm->out_queue, &buffer, K_NO_WAIT);
 		}
+
+		if (ret || status) {
+			/*
+			 * DMA encountered an error (status != 0)
+			 * or
+			 * No bufers in input queue
+			 */
+			LOG_ERR("DMA status %08x channel %u k_msgq_get ret %d",
+					status, channel, ret);
+			strm->state = I2S_STATE_STOPPING;
+			i2s_tx_stream_disable(dev_data, ssp, dev_data->dev_dma);
+		}
+
 		break;
 
 	case I2S_STATE_STOPPING:
-		strm->state = I2S_STATE_READY;
-		/* fall through */
-
-	case I2S_STATE_ERROR:
 		i2s_tx_stream_disable(dev_data, ssp, dev_data->dev_dma);
-		/* purge buffer queue */
-		while (k_msgq_get(&strm->in_queue, &buffer, K_NO_WAIT) == 0) {
-			k_mem_slab_free(dev_data->cfg.mem_slab, &buffer);
-		}
-		while (k_msgq_get(&strm->out_queue, &buffer, K_NO_WAIT) == 0) {
-			k_mem_slab_free(dev_data->cfg.mem_slab, &buffer);
-		}
 		break;
 	}
 }
@@ -271,8 +286,8 @@ static void i2s_dma_rx_callback(void *arg, u32_t channel, int status)
 		if (ret != 0) {
 			LOG_ERR("buffer alloc from slab %p err %d",
 					dev_data->cfg.mem_slab, ret);
-			strm->state = I2S_STATE_ERROR;
 			i2s_rx_stream_disable(dev_data, ssp, dev_data->dev_dma);
+			strm->state = I2S_STATE_READY;
 		} else {
 			/* put buffer in input queue */
 			ret = k_msgq_put(&strm->in_queue, &buffer, K_NO_WAIT);
@@ -292,20 +307,8 @@ static void i2s_dma_rx_callback(void *arg, u32_t channel, int status)
 		}
 		break;
 	case I2S_STATE_STOPPING:
-		strm->state = I2S_STATE_READY;
-		/* fall-through */
-
-	case I2S_STATE_ERROR:
 		i2s_rx_stream_disable(dev_data, ssp, dev_data->dev_dma);
-		/*
-		 * retrieve all buffers from input & output queues and free them
-		 */
-		while (k_msgq_get(&strm->in_queue, &buffer, K_NO_WAIT) == 0) {
-			k_mem_slab_free(dev_data->cfg.mem_slab, &buffer);
-		}
-		while (k_msgq_get(&strm->out_queue, &buffer, K_NO_WAIT) == 0) {
-			k_mem_slab_free(dev_data->cfg.mem_slab, &buffer);
-		}
+		strm->state = I2S_STATE_READY;
 		break;
 	}
 }
@@ -376,10 +379,10 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 
 	/* reset SSP settings */
 	/* sscr0 dynamic settings are DSS, EDSS, SCR, FRDC, ECS */
-	ssc0 = SSCR0_MOD | SSCR0_PSP | SSCR0_RIM | SSCR0_TIM;
+	ssc0 = SSCR0_MOD | SSCR0_PSP | SSCR0_RIM;
 
 	/* sscr1 dynamic settings are SFRMDIR, SCLKDIR, SCFR */
-	ssc1 = SSCR1_TTE | SSCR1_TTELP | SSCR1_TRAIL | SSCR1_TSRE | SSCR1_RSRE;
+	ssc1 = SSCR1_TTE | SSCR1_TTELP | SSCR1_TRAIL;
 
 	/* sscr2 dynamic setting is LJDFD */
 	ssc2 = 0U;
@@ -564,8 +567,12 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 	/* enable port */
 	ssp->ssc0 |= SSCR0_SSE;
 
+	/* enable interrupt */
+	irq_enable(dev_cfg->irq_id);
+
 	dev_data->tx.state = I2S_STATE_READY;
 	dev_data->rx.state = I2S_STATE_READY;
+
 	return 0;
 }
 
@@ -608,6 +615,7 @@ static int i2s_tx_stream_start(struct i2s_cavs_dev_data *dev_data,
 
 	/* Enable transmit operation */
 	key = irq_lock();
+	ssp->ssc1 |= SSCR1_TSRE;
 	ssp->sstsa |= SSTSA_TXEN;
 	irq_unlock(key);
 
@@ -655,6 +663,7 @@ static int i2s_rx_stream_start(struct i2s_cavs_dev_data *dev_data,
 
 	/* Enable Receive operation */
 	key = irq_lock();
+	ssp->ssc1 |= SSCR1_RSRE;
 	ssp->ssrsa |= SSRSA_RXEN;
 	irq_unlock(key);
 
@@ -666,14 +675,22 @@ static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *dev_data,
 			      struct device *dev_dma)
 {
 	struct stream *strm = &dev_data->tx;
+	unsigned int key;
 
-	/* Disable DMA service request handshake logic. Handshake is
-	 * not required now since DMA is not in operation.
+	/*
+	 * Enable transmit undderrun interrupt to allow notification
+	 * upon transmit FIFO being emptied.
+	 * Defer disabling of TX to the underrun processing in ISR
 	 */
-	ssp->sstsa &= ~SSTSA_TXEN;
+	key = irq_lock();
+	ssp->ssc0 &= ~SSCR0_TIM;
+	irq_unlock(key);
 
-	LOG_INF("Stopping TX stream & DMA channel %u", strm->dma_channel);
+	LOG_INF("Stopping DMA channel %u for TX stream", strm->dma_channel);
 	dma_stop(dev_dma, strm->dma_channel);
+
+	/* purge buffers queued in the stream */
+	i2s_purge_stream_buffers(strm, dev_data->cfg.mem_slab);
 }
 
 static void i2s_rx_stream_disable(struct i2s_cavs_dev_data *dev_data,
@@ -681,6 +698,7 @@ static void i2s_rx_stream_disable(struct i2s_cavs_dev_data *dev_data,
 			      struct device *dev_dma)
 {
 	struct stream *strm = &dev_data->rx;
+	u32_t data;
 
 	/* Disable DMA service request handshake logic. Handshake is
 	 * not required now since DMA is not in operation.
@@ -689,6 +707,15 @@ static void i2s_rx_stream_disable(struct i2s_cavs_dev_data *dev_data,
 
 	LOG_INF("Stopping RX stream & DMA channel %u", strm->dma_channel);
 	dma_stop(dev_dma, strm->dma_channel);
+
+	/* Empty the FIFO */
+	while (ssp->sss & SSSR_RNE) {
+		/* read the RX FIFO */
+		data = ssp->ssd;
+	}
+
+	/* purge buffers queued in the stream */
+	i2s_purge_stream_buffers(strm, dev_data->cfg.mem_slab);
 }
 
 static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
@@ -699,7 +726,7 @@ static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
 	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
 	struct stream *strm;
 	unsigned int key;
-	int ret;
+	int ret = 0;
 
 	strm = (dir == I2S_DIR_TX) ? &dev_data->tx : &dev_data->rx;
 
@@ -707,9 +734,9 @@ static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
 	switch (cmd) {
 	case I2S_TRIGGER_START:
 		if (strm->state != I2S_STATE_READY) {
-			irq_unlock(key);
 			LOG_ERR("START trigger: invalid state %u", strm->state);
-			return -EIO;
+			ret = -EIO;
+			break;
 		}
 
 		__ASSERT_NO_MSG(strm->mem_block == NULL);
@@ -723,63 +750,34 @@ static int i2s_cavs_trigger(struct device *dev, enum i2s_dir dir,
 		}
 
 		if (ret < 0) {
-			irq_unlock(key);
 			LOG_DBG("START trigger failed %d", ret);
-			return ret;
+			break;
 		}
 
 		strm->state = I2S_STATE_RUNNING;
 		break;
 
 	case I2S_TRIGGER_STOP:
-		if (strm->state != I2S_STATE_RUNNING) {
-			irq_unlock(key);
-			LOG_DBG("STOP trigger: invalid state");
-			return -EIO;
-		}
-		strm->state = I2S_STATE_STOPPING;
-		break;
-
 	case I2S_TRIGGER_DRAIN:
+	case I2S_TRIGGER_DROP:
 		if (strm->state != I2S_STATE_RUNNING) {
-			irq_unlock(key);
-			LOG_DBG("DRAIN trigger: invalid state");
-			return -EIO;
+			LOG_DBG("STOP/DRAIN/DROP trigger: invalid state");
+			ret = -EIO;
+			break;
 		}
 		strm->state = I2S_STATE_STOPPING;
-		break;
-
-	case I2S_TRIGGER_DROP:
-		if (strm->state == I2S_STATE_NOT_READY) {
-			irq_unlock(key);
-			LOG_DBG("DROP trigger: invalid state");
-			return -EIO;
-		}
-		if (dir == I2S_DIR_TX) {
-			i2s_tx_stream_disable(dev_data, ssp, dev_data->dev_dma);
-		} else {
-			i2s_rx_stream_disable(dev_data, ssp, dev_data->dev_dma);
-		}
-		strm->state = I2S_STATE_READY;
 		break;
 
 	case I2S_TRIGGER_PREPARE:
-		if (strm->state != I2S_STATE_ERROR) {
-			irq_unlock(key);
-			LOG_DBG("PREPARE trigger: invalid state");
-			return -EIO;
-		}
-		strm->state = I2S_STATE_READY;
 		break;
 
 	default:
-		irq_unlock(key);
 		LOG_ERR("Unsupported trigger command");
-		return -EINVAL;
+		ret = -EINVAL;
 	}
 
 	irq_unlock(key);
-	return 0;
+	return ret;
 }
 
 static int i2s_cavs_read(struct device *dev, void **mem_block, size_t *size)
@@ -789,8 +787,7 @@ static int i2s_cavs_read(struct device *dev, void **mem_block, size_t *size)
 	void *buffer;
 	int ret = 0;
 
-	if ((strm->state == I2S_STATE_NOT_READY) ||
-		(strm->state == I2S_STATE_ERROR)) {
+	if (strm->state == I2S_STATE_NOT_READY) {
 		LOG_ERR("invalid state %d", strm->state);
 		return -EIO;
 	}
@@ -834,15 +831,28 @@ static void i2s_cavs_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	volatile struct i2s_cavs_ssp *const ssp = dev_cfg->regs;
-	u32_t temp;
+	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
+	u32_t status;
 
-	/* clear IRQ */
-	temp = ssp->sss;
-	ssp->sss = temp;
+	/* clear interrupts */
+	status = ssp->sss;
+	ssp->sss = status;
+
+	if (status & SSSR_TUR) {
+		/*
+		 * transmit underrun occurred.
+		 * 1. disable transmission
+		 * 2. disable underrun interrupt
+		 */
+		ssp->sstsa &= ~SSTSA_TXEN;
+		ssp->ssc0 |= SSCR0_TIM;
+		dev_data->tx.state = I2S_STATE_READY;
+	}
 }
 
 static int i2s_cavs_initialize(struct device *dev)
 {
+	const struct i2s_cavs_config *const dev_cfg = DEV_CFG(dev);
 	struct i2s_cavs_dev_data *const dev_data = DEV_DATA(dev);
 
 	dev_data->dev_dma = device_get_binding(CONFIG_I2S_CAVS_DMA_NAME);
@@ -860,6 +870,9 @@ static int i2s_cavs_initialize(struct device *dev)
 			sizeof(void *), I2S_CAVS_BUF_Q_LEN);
 	k_msgq_init(&dev_data->rx.out_queue, (char *)dev_data->rx.out_msgs,
 			sizeof(void *), I2S_CAVS_BUF_Q_LEN);
+
+	/* register ISR */
+	dev_cfg->irq_connect();
 
 	dev_data->tx.state = I2S_STATE_NOT_READY;
 	dev_data->rx.state = I2S_STATE_NOT_READY;
