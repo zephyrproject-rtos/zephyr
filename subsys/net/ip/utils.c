@@ -472,9 +472,6 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 	struct net_pkt_cursor backup;
 	bool ow;
 
-	net_pkt_cursor_backup(pkt, &backup);
-	net_pkt_cursor_init(pkt);
-
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
 	    net_pkt_family(pkt) == AF_INET) {
 		if (proto != IPPROTO_ICMP) {
@@ -492,6 +489,9 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 		NET_DBG("Unknown protocol family %d", net_pkt_family(pkt));
 		return 0;
 	}
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
 
 	ow = net_pkt_is_being_overwritten(pkt);
 	net_pkt_set_overwrite(pkt, true);
