@@ -42,7 +42,7 @@ static void _deep_sleep(enum power_states state)
 void sys_set_power_state(enum power_states state)
 {
 	switch (state) {
-#if (defined(CONFIG_SYS_POWER_LOW_POWER_STATE))
+#if (defined(CONFIG_SYS_POWER_LOW_POWER_STATES))
 	case SYS_POWER_STATE_CPU_LPS:
 		qm_ss_power_cpu_ss1(QM_SS_POWER_CPU_SS1_TIMER_ON);
 		break;
@@ -69,7 +69,7 @@ void sys_set_power_state(enum power_states state)
 void sys_power_state_post_ops(enum power_states state)
 {
 	switch (state) {
-#if (defined(CONFIG_SYS_POWER_LOW_POWER_STATE))
+#if (defined(CONFIG_SYS_POWER_LOW_POWER_STATES))
 	case SYS_POWER_STATE_CPU_LPS_1:
 		{
 			/* Expire the timer as it is disabled in SS2. */

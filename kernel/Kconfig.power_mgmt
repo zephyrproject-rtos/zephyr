@@ -6,7 +6,7 @@
 #
 
 menuconfig SYS_POWER_MANAGEMENT
-	bool "Power management"
+	bool "System Power management"
 	select TICKLESS_IDLE
 	help
 	  This option enables the board to implement extra power management
@@ -38,9 +38,9 @@ config PM_CONTROL_OS
 
 endchoice # POWER_MANAGEMENT_CONTROL
 
-config SYS_POWER_LOW_POWER_STATE
-	bool "Low power state"
-	depends on SYS_POWER_LOW_POWER_STATE_SUPPORTED
+config SYS_POWER_LOW_POWER_STATES
+	bool "Low Power states"
+	depends on SYS_POWER_LOW_POWER_STATES_SUPPORTED
 	help
 	  This option enables the kernel to interface with a power manager
 	  application.  This permits the system to enter a custom CPU low power
@@ -49,7 +49,7 @@ config SYS_POWER_LOW_POWER_STATE
 	  saving most power.
 
 config SYS_POWER_DEEP_SLEEP
-	bool "Deep sleep state"
+	bool "Deep Sleep states"
 	depends on SYS_POWER_DEEP_SLEEP_SUPPORTED
 	help
 	  This option enables the kernel to interface with a power manager

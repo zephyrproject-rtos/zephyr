@@ -9,7 +9,7 @@ config SOC_SERIES_LPC54XXX
 	bool "LPC LPC54xxx Series MCU"
 	select HAS_MCUX
 	select SOC_FAMILY_LPC
-	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
+	select SYS_POWER_LOW_POWER_STATES_SUPPORTED
 	select CPU_HAS_SYSTICK
 	help
 	  Enable support for LPC LPC54XXX MCU series

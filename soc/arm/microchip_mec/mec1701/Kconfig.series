@@ -11,7 +11,7 @@ config SOC_SERIES_MEC1701X
 	select CPU_CORTEX_M4
 	select SOC_FAMILY_MEC
 	select CPU_HAS_SYSTICK
-	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
+	select SYS_POWER_LOW_POWER_STATES_SUPPORTED
 	select CPU_HAS_FPU
 	help
 	  Enable support for Microchip MEC Cortex-M4 MCU series
