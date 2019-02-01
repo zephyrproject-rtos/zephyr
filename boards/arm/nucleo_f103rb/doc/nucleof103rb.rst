@@ -91,7 +91,7 @@ The Zephyr nucleo_f103rb board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | flash memory                        |
 +-----------+------------+-------------------------------------+
-| IWDG      | on-chip    | independent watchdog                |
+| WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.

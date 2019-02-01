@@ -90,7 +90,7 @@ The Zephyr nucleo_f030r8 board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | flash memory                        |
 +-----------+------------+-------------------------------------+
-| IWDG      | on-chip    | independent watchdog                |
+| WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
 | I2C       | on-chip    | i2c controller                      |
 +-----------+------------+-------------------------------------+

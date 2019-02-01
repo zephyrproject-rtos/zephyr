@@ -67,7 +67,7 @@ The Zephyr stm32f0_disco board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | flash memory                        |
 +-----------+------------+-------------------------------------+
-| IWDG      | on-chip    | independent watchdog                |
+| WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
@@ -143,4 +143,3 @@ References
 
 .. _STM32F0DISCOVERY board User Manual:
    http://www.st.com/resource/en/user_manual/dm00050135.pdf
-

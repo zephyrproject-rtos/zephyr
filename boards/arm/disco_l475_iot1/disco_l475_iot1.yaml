@@ -17,5 +17,6 @@ supported:
   - ble
   - spi
   - vl53l0x
+  - watchdog
 ram: 96
 flash: 1024

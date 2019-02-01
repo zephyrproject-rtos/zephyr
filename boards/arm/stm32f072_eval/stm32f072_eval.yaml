@@ -8,6 +8,8 @@ toolchain:
   - xtools
 ram: 16
 flash: 128
+supported:
+  - watchdog
 testing:
   ignore_tags:
     - net

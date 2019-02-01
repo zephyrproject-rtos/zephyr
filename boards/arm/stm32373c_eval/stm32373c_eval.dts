@@ -50,3 +50,7 @@
 &rtc {
 	status = "ok";
 };
+
+&idwg {
+	status = "ok";
+};

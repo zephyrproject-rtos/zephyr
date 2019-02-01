@@ -46,3 +46,7 @@
 	pinctrl-names = "default";
 	status = "ok";
 };
+
+&idwg {
+	status = "ok";
+};

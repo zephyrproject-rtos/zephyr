@@ -98,7 +98,7 @@ The Zephyr stm32f072_eval board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | CLOCK     | on-chip    | reset and clock control             |
 +-----------+------------+-------------------------------------+
-| IWDG      | on-chip    | independent watchdog                |
+| WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr porting.

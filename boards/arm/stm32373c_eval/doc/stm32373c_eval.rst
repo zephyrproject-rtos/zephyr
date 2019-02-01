@@ -81,7 +81,7 @@ The Zephyr stm32373c_eval board configuration supports the following hardware fe
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | flash memory                        |
 +-----------+------------+-------------------------------------+
-| IWDG      | on-chip    | independent watchdog                |
+| WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
@@ -161,4 +161,3 @@ References
 
 .. _STM32F373VCT6 reference manual:
    http://www.st.com/resource/en/reference_manual/dm00041563.pdf
-

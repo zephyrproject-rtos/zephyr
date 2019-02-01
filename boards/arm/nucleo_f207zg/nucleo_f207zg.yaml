@@ -11,3 +11,4 @@ toolchain:
 supported:
   - gpio
   - usb_device
+  - watchdog
