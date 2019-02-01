@@ -126,9 +126,7 @@ struct net_udp_hdr *net_udp_header_fits(struct net_pkt *pkt,
 	return NULL;
 }
 
-/* Header may be split between data fragments. In most cases,
- * net_tcp_get_hdr() should be used instead.
- */
+/* Header may be split between data fragments. */
 struct net_tcp_hdr *net_pkt_tcp_data(struct net_pkt *pkt);
 
 static inline

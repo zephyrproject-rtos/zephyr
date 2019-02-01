@@ -23,24 +23,6 @@ extern "C" {
 #endif
 
 #if defined(CONFIG_NET_TCP)
-/**
- * @brief Get TCP packet header data from net_pkt. The array values are in
- * network byte order and other values are in host byte order.
- * Note that you must access the TCP header values by the returned pointer,
- * the hdr parameter is just a placeholder for the header data and it might
- * not contain anything if the header fits properly in the first fragment of
- * the network packet.
- *
- * @param pkt Network packet
- * @param hdr Where to place the header if it does not fit in first fragment
- * of the network packet. This might not be populated if TCP header fits in
- * net_buf fragment.
- *
- * @return Return pointer to header or NULL if something went wrong.
- *         Always use the returned pointer to access the TCP header.
- */
-struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
-				    struct net_tcp_hdr *hdr);
 
 /**
  * @brief Set TCP packet header data in net_pkt.
