@@ -1,5 +1,3 @@
-:orphan:
-
 .. _zephyr_release_notes:
 
 Release Notes
@@ -22,9 +20,6 @@ so with the help of west.
 
 The project's technical documentation is also tagged to correspond with a
 specific release and can be found at https://docs.zephyrproject.org/.
-
-Zephyr Kernel Releases
-**********************
 
 .. toctree::
    :maxdepth: 1
