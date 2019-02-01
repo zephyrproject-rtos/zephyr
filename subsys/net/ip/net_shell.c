@@ -29,7 +29,6 @@ LOG_MODULE_REGISTER(net_shell, LOG_LEVEL_DBG);
 #include "connection.h"
 
 #if defined(CONFIG_NET_TCP)
-#include <net/tcp.h>
 #include "tcp_internal.h"
 #endif
 

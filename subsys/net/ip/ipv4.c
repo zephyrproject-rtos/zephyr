@@ -16,7 +16,6 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/net_stats.h>
 #include <net/net_context.h>
-#include <net/tcp.h>
 #include "net_private.h"
 #include "connection.h"
 #include "net_stats.h"

@@ -37,7 +37,6 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/ethernet.h>
 #include <net/udp.h>
-#include <net/tcp.h>
 
 #include "net_private.h"
 #include "tcp_internal.h"

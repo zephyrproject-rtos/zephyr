@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(net_ctx, CONFIG_NET_CONTEXT_LOG_LEVEL);
 #include <net/net_ip.h>
 #include <net/net_context.h>
 #include <net/net_offload.h>
-#include <net/tcp.h>
 #include <net/ethernet.h>
 #include <net/socket_can.h>
 
