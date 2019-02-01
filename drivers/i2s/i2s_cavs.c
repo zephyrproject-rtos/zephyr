@@ -28,6 +28,79 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
 
+#define I2S_IRQ_CONNECT(i2s_id)					\
+	IRQ_CONNECT(I2S##i2s_id##_CAVS_IRQ,			\
+			CONFIG_I2S_CAVS_IRQ_PRI,		\
+			i2s_cavs_isr,				\
+			DEVICE_GET(i2s##i2s_id##_cavs), 0)
+
+#define I2S_DEVICE_NAME(i2s_id)		i2s##i2s_id##_cavs
+#define I2S_DEVICE_DATA_NAME(i2s_id)	i2s##i2s_id##_cavs_data
+#define I2S_DEVICE_CONFIG_NAME(i2s_id)	i2s##i2s_id##_cavs_config
+
+#define I2S_DEVICE_CONFIG_DEFINE(i2s_id)				\
+	static const struct i2s_cavs_config i2s##i2s_id##_cavs_config = {\
+		.regs = (struct i2s_cavs_ssp *)SSP_BASE(i2s_id),	\
+		.mn_regs = (struct i2s_cavs_mn_div *)SSP_MN_DIV_BASE(i2s_id),\
+		.irq_id = I2S##i2s_id##_CAVS_IRQ,		\
+		.irq_connect = i2s##i2s_id##_cavs_irq_connect,	\
+	}
+
+#define I2S_DMA_CHANNEL(i2s_id, dir)				\
+		CONFIG_I2S_CAVS_##i2s_id##_DMA_##dir##_CHANNEL
+
+#define I2S_DEVICE_OBJECT_DECLARE(i2s_id)			\
+	DEVICE_DECLARE(I2S_DEVICE_NAME(i2s_id))
+
+#define I2S_DEVICE_OBJECT(i2s_id)				\
+		DEVICE_GET(I2S_DEVICE_NAME(i2s_id))
+
+#define I2S_DEVICE_DATA_DEFINE(i2s_id)				\
+	static struct i2s_cavs_dev_data i2s##i2s_id##_cavs_data = {\
+		.tx = {						\
+			.dma_channel = I2S_DMA_CHANNEL(i2s_id, TX),	\
+			.dma_cfg = {				\
+				.source_burst_length = CAVS_I2S_DMA_BURST_SIZE,\
+				.dest_burst_length = CAVS_I2S_DMA_BURST_SIZE,\
+				.dma_callback = i2s_dma_tx_callback,	\
+				.callback_arg = I2S_DEVICE_OBJECT(i2s_id),\
+				.complete_callback_en = 1,	\
+				.error_callback_en = 1,		\
+				.block_count = 1,		\
+				.head_block =			\
+				&i2s##i2s_id##_cavs_data.tx.dma_block,\
+				.channel_direction = MEMORY_TO_PERIPHERAL,\
+				.dma_slot = DMA_HANDSHAKE_SSP##i2s_id##_TX,\
+			},					\
+		},						\
+		.rx = {						\
+			.dma_channel = I2S_DMA_CHANNEL(i2s_id, RX),	\
+			.dma_cfg = {				\
+				.source_burst_length = CAVS_I2S_DMA_BURST_SIZE,\
+				.dest_burst_length = CAVS_I2S_DMA_BURST_SIZE,\
+				.dma_callback = i2s_dma_rx_callback,\
+				.callback_arg = I2S_DEVICE_OBJECT(i2s_id),\
+				.complete_callback_en = 1,	\
+				.error_callback_en = 1,		\
+				.block_count = 1,		\
+				.head_block =			\
+				&i2s##i2s_id##_cavs_data.rx.dma_block,\
+				.channel_direction = PERIPHERAL_TO_MEMORY,\
+				.dma_slot = DMA_HANDSHAKE_SSP##i2s_id##_RX,\
+				},				\
+		},						\
+	}
+
+#define I2S_DEVICE_AND_API_INIT(i2s_id)				\
+	DEVICE_AND_API_INIT(I2S_DEVICE_NAME(i2s_id),		\
+			CONFIG_I2S_CAVS_##i2s_id##_NAME,	\
+			i2s_cavs_initialize,			\
+			&I2S_DEVICE_DATA_NAME(i2s_id),		\
+			&I2S_DEVICE_CONFIG_NAME(i2s_id),	\
+			POST_KERNEL,				\
+			CONFIG_I2S_INIT_PRIORITY,		\
+			&i2s_cavs_driver_api)
+
 /* length of the buffer queue */
 #define I2S_CAVS_BUF_Q_LEN			2
 
@@ -85,6 +158,7 @@ struct i2s_cavs_config {
 	struct i2s_cavs_ssp *regs;
 	struct i2s_cavs_mn_div *mn_regs;
 	u32_t irq_id;
+	void (*irq_connect)(void);
 };
 
 /* Device run time data */
@@ -101,9 +175,9 @@ struct i2s_cavs_dev_data {
 #define DEV_DATA(dev) \
 	((struct i2s_cavs_dev_data *const)(dev)->driver_data)
 
-static struct device DEVICE_NAME_GET(i2s1_cavs);
-static struct device DEVICE_NAME_GET(i2s2_cavs);
-static struct device DEVICE_NAME_GET(i2s3_cavs);
+I2S_DEVICE_OBJECT_DECLARE(1);
+I2S_DEVICE_OBJECT_DECLARE(2);
+I2S_DEVICE_OBJECT_DECLARE(3);
 
 static void i2s_dma_tx_callback(void *, u32_t, int);
 static void i2s_tx_stream_disable(struct i2s_cavs_dev_data *,
@@ -802,129 +876,29 @@ static const struct i2s_driver_api i2s_cavs_driver_api = {
 	.trigger = i2s_cavs_trigger,
 };
 
-static const struct i2s_cavs_config i2s1_cavs_config = {
-	.regs = (struct i2s_cavs_ssp *)SSP_BASE(1),
-	.mn_regs = (struct i2s_cavs_mn_div *)SSP_MN_DIV_BASE(1),
-	.irq_id = I2S1_CAVS_IRQ,
-};
+static void i2s1_cavs_irq_connect(void)
+{
+	I2S_IRQ_CONNECT(1);
+}
 
-static const struct i2s_cavs_config i2s2_cavs_config = {
-	.regs = (struct i2s_cavs_ssp *)SSP_BASE(2),
-	.mn_regs = (struct i2s_cavs_mn_div *)SSP_MN_DIV_BASE(2),
-	.irq_id = I2S2_CAVS_IRQ,
-};
+I2S_DEVICE_CONFIG_DEFINE(1);
+I2S_DEVICE_DATA_DEFINE(1);
+I2S_DEVICE_AND_API_INIT(1);
 
-static const struct i2s_cavs_config i2s3_cavs_config = {
-	.regs = (struct i2s_cavs_ssp *)SSP_BASE(3),
-	.mn_regs = (struct i2s_cavs_mn_div *)SSP_MN_DIV_BASE(3),
-	.irq_id = I2S3_CAVS_IRQ,
-};
+static void i2s2_cavs_irq_connect(void)
+{
+	I2S_IRQ_CONNECT(2);
+}
 
-static struct i2s_cavs_dev_data i2s1_cavs_data = {
-	.tx = {
-		.dma_channel = CONFIG_I2S_CAVS_1_DMA_TX_CHANNEL,
-		.dma_cfg = {
-			.source_burst_length = CAVS_I2S_DMA_BURST_SIZE,
-			.dest_burst_length = CAVS_I2S_DMA_BURST_SIZE,
-			.dma_callback = i2s_dma_tx_callback,
-			.callback_arg = &DEVICE_NAME_GET(i2s1_cavs),
-			.complete_callback_en = 1,
-			.error_callback_en = 1,
-			.block_count = 1,
-			.head_block = &i2s1_cavs_data.tx.dma_block,
-			.channel_direction = MEMORY_TO_PERIPHERAL,
-			.dma_slot = DMA_HANDSHAKE_SSP1_TX,
-		},
-	},
-	.rx = {
-		.dma_channel = CONFIG_I2S_CAVS_1_DMA_RX_CHANNEL,
-		.dma_cfg = {
-			.source_burst_length = CAVS_I2S_DMA_BURST_SIZE,
-			.dest_burst_length = CAVS_I2S_DMA_BURST_SIZE,
-			.dma_callback = i2s_dma_rx_callback,
-			.callback_arg = &DEVICE_NAME_GET(i2s1_cavs),
-			.complete_callback_en = 1,
-			.error_callback_en = 1,
-			.block_count = 1,
-			.head_block = &i2s1_cavs_data.rx.dma_block,
-			.channel_direction = PERIPHERAL_TO_MEMORY,
-			.dma_slot = DMA_HANDSHAKE_SSP1_RX,
-		},
-	}
-};
+I2S_DEVICE_CONFIG_DEFINE(2);
+I2S_DEVICE_DATA_DEFINE(2);
+I2S_DEVICE_AND_API_INIT(2);
 
-static struct i2s_cavs_dev_data i2s2_cavs_data = {
-	.tx = {
-		.dma_channel = CONFIG_I2S_CAVS_2_DMA_TX_CHANNEL,
-		.dma_cfg = {
-			.source_burst_length = CAVS_I2S_DMA_BURST_SIZE,
-			.dest_burst_length = CAVS_I2S_DMA_BURST_SIZE,
-			.dma_callback = i2s_dma_tx_callback,
-			.callback_arg = &DEVICE_NAME_GET(i2s2_cavs),
-			.complete_callback_en = 1,
-			.error_callback_en = 1,
-			.block_count = 1,
-			.head_block = &i2s2_cavs_data.tx.dma_block,
-			.channel_direction = MEMORY_TO_PERIPHERAL,
-			.dma_slot = DMA_HANDSHAKE_SSP2_TX,
-		},
-	},
-	.rx = {
-		.dma_channel = CONFIG_I2S_CAVS_2_DMA_RX_CHANNEL,
-		.dma_cfg = {
-			.source_burst_length = CAVS_I2S_DMA_BURST_SIZE,
-			.dest_burst_length = CAVS_I2S_DMA_BURST_SIZE,
-			.dma_callback = i2s_dma_rx_callback,
-			.callback_arg = &DEVICE_NAME_GET(i2s2_cavs),
-			.complete_callback_en = 1,
-			.error_callback_en = 1,
-			.block_count = 1,
-			.head_block = &i2s2_cavs_data.rx.dma_block,
-			.channel_direction = PERIPHERAL_TO_MEMORY,
-			.dma_slot = DMA_HANDSHAKE_SSP2_RX,
-		},
-	},
-};
+static void i2s3_cavs_irq_connect(void)
+{
+	I2S_IRQ_CONNECT(3);
+}
 
-static struct i2s_cavs_dev_data i2s3_cavs_data = {
-	.tx = {
-		.dma_channel = CONFIG_I2S_CAVS_3_DMA_TX_CHANNEL,
-		.dma_cfg = {
-			.source_burst_length = CAVS_I2S_DMA_BURST_SIZE,
-			.dest_burst_length = CAVS_I2S_DMA_BURST_SIZE,
-			.dma_callback = i2s_dma_tx_callback,
-			.callback_arg = &DEVICE_NAME_GET(i2s3_cavs),
-			.complete_callback_en = 1,
-			.error_callback_en = 1,
-			.block_count = 1,
-			.head_block = &i2s3_cavs_data.tx.dma_block,
-			.channel_direction = MEMORY_TO_PERIPHERAL,
-			.dma_slot = DMA_HANDSHAKE_SSP3_TX,
-		},
-	},
-	.rx = {
-		.dma_channel = CONFIG_I2S_CAVS_3_DMA_RX_CHANNEL,
-		.dma_cfg = {
-			.source_burst_length = CAVS_I2S_DMA_BURST_SIZE,
-			.dest_burst_length = CAVS_I2S_DMA_BURST_SIZE,
-			.dma_callback = i2s_dma_rx_callback,
-			.callback_arg = &DEVICE_NAME_GET(i2s3_cavs),
-			.complete_callback_en = 1,
-			.error_callback_en = 1,
-			.block_count = 1,
-			.head_block = &i2s3_cavs_data.rx.dma_block,
-			.channel_direction = PERIPHERAL_TO_MEMORY,
-			.dma_slot = DMA_HANDSHAKE_SSP3_RX,
-		},
-	},
-};
-
-DEVICE_AND_API_INIT(i2s1_cavs, CONFIG_I2S_CAVS_1_NAME, i2s_cavs_initialize,
-		    &i2s1_cavs_data, &i2s1_cavs_config, POST_KERNEL,
-		    CONFIG_I2S_INIT_PRIORITY, &i2s_cavs_driver_api);
-DEVICE_AND_API_INIT(i2s2_cavs, CONFIG_I2S_CAVS_2_NAME, i2s_cavs_initialize,
-		    &i2s2_cavs_data, &i2s2_cavs_config, POST_KERNEL,
-		    CONFIG_I2S_INIT_PRIORITY, &i2s_cavs_driver_api);
-DEVICE_AND_API_INIT(i2s3_cavs, CONFIG_I2S_CAVS_3_NAME, i2s_cavs_initialize,
-		    &i2s3_cavs_data, &i2s3_cavs_config, POST_KERNEL,
-		    CONFIG_I2S_INIT_PRIORITY, &i2s_cavs_driver_api);
+I2S_DEVICE_CONFIG_DEFINE(3);
+I2S_DEVICE_DATA_DEFINE(3);
+I2S_DEVICE_AND_API_INIT(3);
