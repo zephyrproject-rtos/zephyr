@@ -231,7 +231,7 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, u8_t type,
 
 	net_pkt_cursor_init(pkt);
 
-	net_ipv4_finalize_new(pkt, IPPROTO_UDP);
+	net_ipv4_finalize(pkt, IPPROTO_UDP);
 
 	return pkt;
 

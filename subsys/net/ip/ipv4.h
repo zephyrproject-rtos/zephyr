@@ -64,6 +64,6 @@ int net_ipv4_create_new(struct net_pkt *pkt,
  *
  * @return 0 on success, negative errno otherwise.
  */
-int net_ipv4_finalize_new(struct net_pkt *pkt, u8_t next_header_proto);
+int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto);
 
 #endif /* __IPV4_H */

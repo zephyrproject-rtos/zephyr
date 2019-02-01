@@ -105,7 +105,7 @@ int net_ipv4_create_new(struct net_pkt *pkt,
 	return net_pkt_set_data(pkt, &ipv4_access);
 }
 
-int net_ipv4_finalize_new(struct net_pkt *pkt, u8_t next_header_proto)
+int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	struct net_ipv4_hdr *ipv4_hdr;

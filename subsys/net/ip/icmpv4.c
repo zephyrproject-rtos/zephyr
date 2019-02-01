@@ -139,7 +139,7 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 	}
 
 	net_pkt_cursor_init(reply);
-	net_ipv4_finalize_new(reply, IPPROTO_ICMP);
+	net_ipv4_finalize(reply, IPPROTO_ICMP);
 
 	NET_DBG("Sending Echo Reply from %s to %s",
 		log_strdup(net_sprint_ipv4_addr(&ip_hdr->dst)),
@@ -209,7 +209,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 
 	net_pkt_cursor_init(pkt);
 
-	net_ipv4_finalize_new(pkt, IPPROTO_ICMP);
+	net_ipv4_finalize(pkt, IPPROTO_ICMP);
 
 	NET_DBG("Sending ICMPv4 Echo Request type %d from %s to %s",
 		NET_ICMPV4_ECHO_REQUEST,
@@ -288,7 +288,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 	}
 
 	net_pkt_cursor_init(pkt);
-	net_ipv4_finalize_new(pkt, IPPROTO_ICMP);
+	net_ipv4_finalize(pkt, IPPROTO_ICMP);
 
 	net_pkt_lladdr_dst(pkt)->addr = net_pkt_lladdr_src(orig)->addr;
 	net_pkt_lladdr_dst(pkt)->len = net_pkt_lladdr_src(orig)->len;
