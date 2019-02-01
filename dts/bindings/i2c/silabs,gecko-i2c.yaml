@@ -32,9 +32,18 @@ properties:
       description: required interrupts
       generation: define
 
-    location:
-     type: int
-     category: required
-     description: PIN location
-     generation: define
+    # Note: Not all SoC series support setting individual pin location. If this
+    # is a case all location-* properties need to have identical value.
+
+    location-sda:
+      type: array
+      category: required
+      description: SDA pin configuration defined as <location port pin>
+      generation: define
+
+    location-scl:
+      type: array
+      category: required
+      description: SCL pin configuration defined as <location port pin>
+      generation: define
 ...

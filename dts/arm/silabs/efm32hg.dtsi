@@ -1,5 +1,6 @@
 #include <arm/armv6-m.dtsi>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
 #include "gpio_gecko.h"
 
 / {
@@ -59,6 +60,17 @@
 			interrupts = <10 0>;
 			status = "disabled";
 			label = "LEUART_0";
+		};
+
+		i2c0: i2c@4000a000 {
+			compatible = "silabs,gecko-i2c";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x4000a000 0x400>;
+			interrupts = <5 0>;
+			label = "I2C_0";
+			status = "disabled";
 		};
 
 		gpio@40006100 {

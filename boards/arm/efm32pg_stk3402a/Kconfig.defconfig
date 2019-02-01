@@ -38,11 +38,4 @@ config GPIO_GECKO_PORTF
 
 endif # GPIO_GECKO
 
-if I2C_GECKO
-
-config I2C_0
-	default y
-
-endif # I2C_GECKO
-
 endif # BOARD_EFM32PG_STK3402A

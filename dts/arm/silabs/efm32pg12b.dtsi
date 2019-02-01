@@ -25,11 +25,6 @@
 	       compatible = "mmio-sram";
 	};
 
-	aliases {
-		i2c-0 = &i2c0;
-		i2c-1 = &i2c1;
-	};
-
 	soc {
 		flash-controller@400e0000 {
 			compatible = "silabs,gecko-flash-controller";
