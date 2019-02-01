@@ -1799,97 +1799,6 @@ void net_pkt_get_info(struct k_mem_slab **rx,
 	}
 }
 
-static int net_pkt_get_addr(struct net_pkt *pkt, bool is_src,
-			    struct sockaddr *addr, socklen_t addrlen)
-{
-	enum net_ip_protocol proto;
-	sa_family_t family;
-	u16_t port;
-
-	if (!addr || !pkt) {
-		return -EINVAL;
-	}
-
-	/* Set the family */
-	family = net_pkt_family(pkt);
-	addr->sa_family = family;
-
-	/* Examine the transport protocol */
-	proto = net_pkt_transport_proto(pkt);
-
-	/* Get the source port from transport protocol header */
-	if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
-		struct net_tcp_hdr hdr, *tcp_hdr;
-
-		tcp_hdr = net_tcp_get_hdr(pkt, &hdr);
-		if (!tcp_hdr) {
-			return -EINVAL;
-		}
-
-		if (is_src) {
-			port = tcp_hdr->src_port;
-		} else {
-			port = tcp_hdr->dst_port;
-		}
-
-	} else if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
-		struct net_udp_hdr hdr, *udp_hdr;
-
-		udp_hdr = net_udp_get_hdr(pkt, &hdr);
-		if (!udp_hdr) {
-			return -EINVAL;
-		}
-
-		if (is_src) {
-			port = udp_hdr->src_port;
-		} else {
-			port = udp_hdr->dst_port;
-		}
-
-	} else {
-		return -ENOTSUP;
-	}
-
-	/* Set address and port to addr */
-	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
-		struct sockaddr_in6 *addr6 = net_sin6(addr);
-
-		if (addrlen < sizeof(struct sockaddr_in6)) {
-			return -EINVAL;
-		}
-
-		if (is_src) {
-			net_ipaddr_copy(&addr6->sin6_addr,
-					&NET_IPV6_HDR(pkt)->src);
-		} else {
-			net_ipaddr_copy(&addr6->sin6_addr,
-					&NET_IPV6_HDR(pkt)->dst);
-		}
-
-		addr6->sin6_port = port;
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-		struct sockaddr_in *addr4 = net_sin(addr);
-
-		if (addrlen < sizeof(struct sockaddr_in)) {
-			return -EINVAL;
-		}
-
-		if (is_src) {
-			net_ipaddr_copy(&addr4->sin_addr,
-					&NET_IPV4_HDR(pkt)->src);
-		} else {
-			net_ipaddr_copy(&addr4->sin_addr,
-					&NET_IPV4_HDR(pkt)->dst);
-		}
-
-		addr4->sin_port = port;
-	} else {
-		return -ENOTSUP;
-	}
-
-	return 0;
-}
-
 int net_pkt_pull(struct net_pkt *pkt, u16_t offset, u16_t len)
 {
 	struct net_buf *frag;
@@ -1982,18 +1891,6 @@ int net_pkt_pull(struct net_pkt *pkt, u16_t offset, u16_t len)
 	}
 
 	return 0;
-}
-
-int net_pkt_get_src_addr(struct net_pkt *pkt, struct sockaddr *addr,
-			 socklen_t addrlen)
-{
-	return net_pkt_get_addr(pkt, true, addr, addrlen);
-}
-
-int net_pkt_get_dst_addr(struct net_pkt *pkt, struct sockaddr *addr,
-			 socklen_t addrlen)
-{
-	return net_pkt_get_addr(pkt, false, addr, addrlen);
 }
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)

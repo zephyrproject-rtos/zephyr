@@ -471,6 +471,107 @@ Z_SYSCALL_HANDLER(zsock_sendto, sock, buf, len, flags, dest_addr, addrlen)
 }
 #endif /* CONFIG_USERSPACE */
 
+static int sock_get_pkt_src_addr(struct net_pkt *pkt,
+				 enum net_ip_protocol proto,
+				 struct sockaddr *addr,
+				 socklen_t addrlen)
+{
+	int ret = 0;
+	struct net_pkt_cursor backup;
+	u16_t *port;
+
+	if (!addr || !pkt) {
+		return -EINVAL;
+	}
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+
+	addr->sa_family = net_pkt_family(pkt);
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) &&
+	    net_pkt_family(pkt) == AF_INET) {
+		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access,
+						      struct net_ipv4_hdr);
+		struct sockaddr_in *addr4 = net_sin(addr);
+		struct net_ipv4_hdr *ipv4_hdr;
+
+		if (addrlen < sizeof(struct sockaddr_in)) {
+			ret = -EINVAL;
+			goto error;
+		}
+
+		ipv4_hdr = (struct net_ipv4_hdr *)net_pkt_get_data_new(pkt,
+								&ipv4_access);
+		if (!ipv4_hdr || net_pkt_acknowledge_data(pkt, &ipv4_access)) {
+			ret = -ENOBUFS;
+			goto error;
+		}
+
+		net_ipaddr_copy(&addr4->sin_addr, &ipv4_hdr->src);
+		port = &addr4->sin_port;
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		   net_pkt_family(pkt) == AF_INET6) {
+		NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access,
+						      struct net_ipv6_hdr);
+		struct sockaddr_in6 *addr6 = net_sin6(addr);
+		struct net_ipv6_hdr *ipv6_hdr;
+
+		if (addrlen < sizeof(struct sockaddr_in6)) {
+			ret = -EINVAL;
+			goto error;
+		}
+
+		ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data_new(pkt,
+								&ipv6_access);
+		if (!ipv6_hdr ||
+		    net_pkt_acknowledge_data(pkt, &ipv6_access) ||
+		    net_pkt_skip(pkt, net_pkt_ipv6_ext_len(pkt))) {
+			ret = -ENOBUFS;
+			goto error;
+		}
+
+		net_ipaddr_copy(&addr6->sin6_addr, &ipv6_hdr->src);
+		port = &addr6->sin6_port;
+	} else {
+		ret = -ENOTSUP;
+		goto error;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
+		NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
+		struct net_udp_hdr *udp_hdr;
+
+		udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt,
+								&udp_access);
+		if (!udp_hdr) {
+			ret = -ENOBUFS;
+			goto error;
+		}
+
+		*port = udp_hdr->src_port;
+	} else if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
+		NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
+		struct net_tcp_hdr *tcp_hdr;
+
+		tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt,
+								&tcp_access);
+		if (!tcp_hdr) {
+			ret = -ENOBUFS;
+			goto error;
+		}
+
+		*port = tcp_hdr->src_port;
+	} else {
+		ret = -ENOTSUP;
+	}
+
+error:
+	net_pkt_cursor_restore(pkt, &backup);
+
+	return ret;
+}
+
 static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 				       void *buf,
 				       size_t max_len,
@@ -510,9 +611,10 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 	if (src_addr && addrlen) {
 		int rv;
 
-		rv = net_pkt_get_src_addr(pkt, src_addr, *addrlen);
+		rv = sock_get_pkt_src_addr(pkt, net_context_get_ip_proto(ctx),
+					   src_addr, *addrlen);
 		if (rv < 0) {
-			errno = rv;
+			errno = -rv;
 			return -1;
 		}
 
