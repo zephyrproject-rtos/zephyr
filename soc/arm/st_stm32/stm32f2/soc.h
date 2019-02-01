@@ -46,6 +46,10 @@
 #include <stm32f2xx_ll_gpio.h>
 #endif
 
+#ifdef CONFIG_IWDG_STM32
+#include <stm32f2xx_ll_iwdg.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F2_SOC_H_ */
