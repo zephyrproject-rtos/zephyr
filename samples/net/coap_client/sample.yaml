@@ -1,8 +1,0 @@
-sample:
-  description: TBD
-  name: TBD
-tests:
-  test:
-    harness: net
-    platform_whitelist: qemu_x86 native_posix
-    tags: net coap

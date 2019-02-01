@@ -1,4 +1,4 @@
-.. _coap-server-sock-sample:
+.. _coap-server-sample:
 
 CoAP Server
 ###########

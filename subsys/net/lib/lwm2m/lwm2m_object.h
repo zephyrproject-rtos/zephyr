@@ -53,7 +53,7 @@
 #include <misc/printk.h>
 #include <misc/util.h>
 
-#include <net/coap_sock.h>
+#include <net/coap.h>
 #include <net/lwm2m.h>
 
 #include "buf_util.h"
