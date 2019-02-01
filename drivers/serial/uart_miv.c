@@ -412,4 +412,4 @@ static void uart_miv_irq_cfg_func_0(struct device *dev)
 }
 #endif
 
-#endif /* CONFIG_MIV_UART_0 */
+#endif /* CONFIG_UART_MIV_PORT_0 */
