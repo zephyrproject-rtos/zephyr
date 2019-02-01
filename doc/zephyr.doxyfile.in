@@ -1970,6 +1970,9 @@ INCLUDE_FILE_PATTERNS  =
 PREDEFINED             = "CONFIG_SYS_CLOCK_EXISTS=y" \
                          "CONFIG_THREAD_MONITOR=y" \
                          "CONFIG_NET_MGMT_EVENT=y" \
+			 "CONFIG_NET_UDP=y" \
+			 "CONFIG_NET_TCP=y" \
+			 "CONFIG_NET_L2_ETHERNET_MGMT=y" \
                          "CONFIG_THREAD_CUSTOM_DATA=y" \
 			 "CONFIG_SCHED_DEADLINE=y" \
                          "CONFIG_ERRNO=y" \
