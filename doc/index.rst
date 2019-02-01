@@ -112,6 +112,7 @@ licensing, as described in :ref:`Zephyr_Licensing`.
    security/security.rst
    samples/samples.rst
    boards/boards.rst
+   releases/release-notes.rst
 
 .. only:: html
 
