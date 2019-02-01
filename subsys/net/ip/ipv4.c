@@ -132,15 +132,13 @@ int net_ipv4_finalize_new(struct net_pkt *pkt, u8_t next_header_proto)
 			return net_udp_finalize(pkt);
 		} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 			   next_header_proto == IPPROTO_TCP) {
-			net_tcp_finalize(pkt);
+			return net_tcp_finalize(pkt);
 		} else if (next_header_proto == IPPROTO_ICMP) {
-			net_icmpv4_finalize(pkt);
+			return net_icmpv4_finalize(pkt);
 		}
-	} else {
-		net_pkt_set_data(pkt, &ipv4_access);
 	}
 
-	return 0;
+	return net_pkt_set_data(pkt, &ipv4_access);
 }
 
 const struct in_addr *net_ipv4_unspecified_address(void)
