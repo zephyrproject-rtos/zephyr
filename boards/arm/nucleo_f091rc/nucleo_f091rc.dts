@@ -70,3 +70,8 @@ arduino_spi: &spi1 {
 &spi2 {
 	status = "ok";
 };
+
+
+&idwg {
+	status = "ok";
+};

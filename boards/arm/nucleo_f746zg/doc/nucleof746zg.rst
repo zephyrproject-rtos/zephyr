@@ -114,6 +114,8 @@ features:
 +-----------+------------+-------------------------------------+
 | SPI       | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| WATCHDOG  | on-chip    | independent watchdog                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported on this Zephyr port.
 
@@ -218,4 +220,3 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32F746 reference manual:
    https://www.st.com/resource/en/reference_manual/dm00124865.pdf
-

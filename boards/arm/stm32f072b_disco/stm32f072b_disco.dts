@@ -82,3 +82,7 @@
 	bus-speed = <125000>;
 	status = "ok";
 };
+
+&idwg {
+	status = "ok";
+};

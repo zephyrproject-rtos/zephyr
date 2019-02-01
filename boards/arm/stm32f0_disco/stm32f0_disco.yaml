@@ -7,3 +7,5 @@ toolchain:
   - gnuarmemb
   - xtools
 ram: 8
+supported:
+  - watchdog

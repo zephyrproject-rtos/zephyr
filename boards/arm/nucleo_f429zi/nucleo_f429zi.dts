@@ -92,3 +92,7 @@ arduino_serial: &usart6 {};
 &rtc {
 	status = "ok";
 };
+
+&idwg {
+	status = "ok";
+};

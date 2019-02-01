@@ -5,11 +5,11 @@ STM3210C-EVAL
 
 Overview
 ********
-The STM3210C-EVAL evaluation board is a complete development platform for STMicroelectronic's 
+The STM3210C-EVAL evaluation board is a complete development platform for STMicroelectronic's
 ARM Cortex-M3 core-based STM32F107VCT microcontroller.
 
 The range of hardware features on the board help you to evaluate all peripherals
-(USB-OTG FS, ethernet, motor control, CAN, microSD CardTM, smartcard, USART, 
+(USB-OTG FS, ethernet, motor control, CAN, microSD CardTM, smartcard, USART,
 audio DAC, MEMS, EEPROM and more) and develop your own applications.
 
 Extension headers make it easy to connect a daughterboard or wrapping board for your specific
@@ -77,7 +77,7 @@ The Zephyr stm3210c_eval board configuration supports the following hardware fea
 +-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | flash memory                        |
 +-----------+------------+-------------------------------------+
-| IWDG      | on-chip    | independent watchdog                |
+| WATCHDOG  | on-chip    | independent watchdog                |
 +-----------+------------+-------------------------------------+
 
 Other hardware features are not yet supported in this Zephyr port.
@@ -167,4 +167,3 @@ References
 
 .. _STM32F107VCT reference manual:
    http://www.st.com/resource/en/reference_manual/CD00171190.pdf
-

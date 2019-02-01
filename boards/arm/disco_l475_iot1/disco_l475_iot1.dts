@@ -196,3 +196,7 @@ arduino_serial: &uart4 {};
 &usbotg_fs {
 	status = "ok";
 };
+
+&idwg {
+	status = "ok";
+};

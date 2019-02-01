@@ -13,6 +13,7 @@ supported:
   - gpio
   - i2c
   - spi
+  - watchdog
 testing:
   ignore_tags:
     - net
