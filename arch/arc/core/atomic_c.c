@@ -3,27 +3,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-/**
- * @file Atomic ops in pure C
- *
- * This module provides the atomic operators for processors
- * which do not support native atomic operations.
- *
- * The atomic operations are guaranteed to be atomic with respect
- * to interrupt service routines, and to operations performed by peer
- * processors.
- *
- */
-
 #include <atomic.h>
 #include <toolchain.h>
 #include <arch/cpu.h>
-#include <arch/arc/syscall.h>
 
 static inline void ex_lock(int *lock)
 {
-	u32_t old_val;
+	register u32_t old_val __asm__("r1");
 
 	__asm__ volatile(
 		"mov %0, 1\n"
@@ -41,19 +27,13 @@ static inline void ex_unlock(int *lock)
 
 #define atomic_lock()  \
 	{ \
-	if (_arch_is_user_context()) { \
 		ex_lock(&target->ex_lock); \
-	} else { \
-		key = irq_lock(); \
-	} }
+	}
 
 #define atomic_unlock() \
 	{ \
-	if (_arch_is_user_context()) { \
 		ex_unlock(&target->ex_lock); \
-	} else { \
-		irq_unlock(key); \
-	} }
+	}
 /**
  *
  * @brief Atomic compare-and-set primitive
@@ -77,7 +57,6 @@ static inline void ex_unlock(int *lock)
 int atomic_cas(atomic_t *target, atomic_val_t old_value,
 			  atomic_val_t new_value)
 {
-	unsigned int key = 0;
 	int ret = 0;
 
 	atomic_lock();
@@ -107,7 +86,6 @@ int atomic_cas(atomic_t *target, atomic_val_t old_value,
  */
 atomic_val_t atomic_add(atomic_t *target, atomic_val_t value)
 {
-	unsigned int key = 0;
 	atomic_val_t ret;
 
 	atomic_lock();
@@ -135,7 +113,6 @@ atomic_val_t atomic_add(atomic_t *target, atomic_val_t value)
  */
 atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value)
 {
-	unsigned int key = 0;
 	atomic_val_t ret;
 
 	atomic_lock();
@@ -161,7 +138,6 @@ atomic_val_t atomic_sub(atomic_t *target, atomic_val_t value)
  */
 atomic_val_t atomic_inc(atomic_t *target)
 {
-	unsigned int key = 0;
 	atomic_val_t ret;
 
 	atomic_lock();
@@ -187,7 +163,6 @@ atomic_val_t atomic_inc(atomic_t *target)
  */
 atomic_val_t atomic_dec(atomic_t *target)
 {
-	unsigned int key = 0;
 	atomic_val_t ret;
 
 	atomic_lock();
@@ -231,15 +206,12 @@ atomic_val_t atomic_get(const atomic_t *target)
  */
 atomic_val_t atomic_set(atomic_t *target, atomic_val_t value)
 {
-	unsigned int key = 0;
-	atomic_val_t ret;
+	atomic_val_t ret = value;
 
-	atomic_lock();
-
-	ret = target->val;
-	target->val = value;
-
-	atomic_unlock();
+	__asm__ volatile(
+		"ex %0, [%1]\n"
+		: "=r"(ret)
+		: "r" (&(target->val)));
 
 	return ret;
 }
@@ -258,15 +230,12 @@ atomic_val_t atomic_set(atomic_t *target, atomic_val_t value)
  */
 atomic_val_t atomic_clear(atomic_t *target)
 {
-	unsigned int key = 0;
-	atomic_val_t ret;
+	atomic_val_t ret = 0;
 
-	atomic_lock();
-
-	ret = target->val;
-	target->val = 0;
-
-	atomic_unlock();
+	__asm__ volatile(
+		"ex %0, [%1]\n"
+		: "=r"(ret)
+		: "r" (&(target->val)));
 
 	return ret;
 }
@@ -286,7 +255,6 @@ atomic_val_t atomic_clear(atomic_t *target)
  */
 atomic_val_t atomic_or(atomic_t *target, atomic_val_t value)
 {
-	unsigned int key = 0;
 	atomic_val_t ret;
 
 	atomic_lock();
@@ -314,7 +282,6 @@ atomic_val_t atomic_or(atomic_t *target, atomic_val_t value)
  */
 atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value)
 {
-	unsigned int key = 0;
 	atomic_val_t ret;
 
 	atomic_lock();
@@ -342,7 +309,6 @@ atomic_val_t atomic_xor(atomic_t *target, atomic_val_t value)
  */
 atomic_val_t atomic_and(atomic_t *target, atomic_val_t value)
 {
-	unsigned int key = 0;
 	atomic_val_t ret;
 
 	atomic_lock();
@@ -370,7 +336,6 @@ atomic_val_t atomic_and(atomic_t *target, atomic_val_t value)
  */
 atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value)
 {
-	unsigned int key = 0;
 	atomic_val_t ret;
 
 	atomic_lock();
