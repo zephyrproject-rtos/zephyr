@@ -10,15 +10,26 @@
 #include <errno.h>
 #include <misc/mempool.h>
 #include <string.h>
+#include <app_memory/app_memdomain.h>
 
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 
+#ifdef CONFIG_APP_SHARED_MEM
+K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
+#endif
+
 #if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
+#ifdef CONFIG_APP_SHARED_MEM
+#define POOL_SECTION K_APP_DMEM_SECTION(z_malloc_partition)
+#else
+#define POOL_SECTION .data
+#endif /* CONFIG_APP_SHARED_MEM */
+
 K_MUTEX_DEFINE(malloc_mutex);
 SYS_MEM_POOL_DEFINE(z_malloc_mem_pool, &malloc_mutex, 16,
-		    CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE, 1, 4, .data);
+		    CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE, 1, 4, POOL_SECTION);
 
 void *malloc(size_t size)
 {

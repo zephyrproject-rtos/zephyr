@@ -1228,12 +1228,16 @@ if(CONFIG_APP_SHARED_MEM AND CONFIG_USERSPACE)
     kernel ${ZEPHYR_LIBS_PROPERTY}
     )
 
+  if(CONFIG_NEWLIB_LIBC)
+    set(NEWLIB_PART -l libc.a z_newlib_partition)
+  endif()
   add_custom_command(
     TARGET ${APP_SMEM_DEP}
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -d ${OBJ_FILE_DIR}
     -o ${APP_SMEM_LD}
+    ${NEWLIB_PART}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
     COMMENT "Generating app_smem linker section"
