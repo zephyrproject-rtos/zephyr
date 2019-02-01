@@ -134,7 +134,7 @@ int net_ipv6_create_new(struct net_pkt *pkt,
 	return net_pkt_set_data(pkt, &ipv6_access);
 }
 
-int net_ipv6_finalize_new(struct net_pkt *pkt, u8_t next_header_proto)
+int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	struct net_ipv6_hdr *ipv6_hdr;

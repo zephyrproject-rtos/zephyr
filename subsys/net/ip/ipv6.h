@@ -177,7 +177,7 @@ int net_ipv6_create_new(struct net_pkt *pkt,
  *
  * @return 0 on success, negative errno otherwise.
  */
-int net_ipv6_finalize_new(struct net_pkt *pkt, u8_t next_header_proto);
+int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto);
 
 
 #if defined(CONFIG_NET_IPV6_MLD)

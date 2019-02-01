@@ -634,7 +634,7 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 
 	net_pkt_cursor_init(frag_pkt);
 
-	if (net_ipv6_finalize_new(frag_pkt, 0) < 0) {
+	if (net_ipv6_finalize(frag_pkt, 0) < 0) {
 		goto fail;
 	}
 

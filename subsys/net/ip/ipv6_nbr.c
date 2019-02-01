@@ -970,7 +970,7 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 	}
 
 	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize_new(pkt, IPPROTO_ICMPV6);
+	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
 
 	dbg_addr_sent_tgt("Neighbor Advertisement", src, dst, &na_hdr->tgt);
 
@@ -1774,7 +1774,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 	}
 
 	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize_new(pkt, IPPROTO_ICMPV6);
+	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
 
 	nbr = nbr_lookup(&net_neighbor.table, iface, &ns_hdr->tgt);
 	if (!nbr) {
@@ -1883,7 +1883,7 @@ int net_ipv6_send_rs(struct net_if *iface)
 	}
 
 	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize_new(pkt, IPPROTO_ICMPV6);
+	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
 
 	dbg_addr_sent("Router Solicitation", src, &dst);
 
