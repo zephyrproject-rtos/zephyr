@@ -1,7 +1,8 @@
 .. _file_system:
 
-File System APIs
-#####################
+File Systems
+############
+
 
 
 .. comment
@@ -9,14 +10,9 @@ File System APIs
    .. doxygengroup:: file_system
    .. doxygengroup:: file_system_storage
 
-File System Functions
-*******************************
+
+API Reference
+*************
 
 .. doxygengroup:: file_system_api
-   :project: Zephyr
-
-File System Data Structures
-*******************************
-
-.. doxygengroup:: data_structures
    :project: Zephyr
