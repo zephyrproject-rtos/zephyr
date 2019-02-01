@@ -1,12 +1,12 @@
 L2CAP PICS
-##########
+==========
 
 PTS version: 7.2.0
 
 * - different than PTS defaults
 
 Device Configuration
-********************
+====================
 
 ================	===========	=======================================
 Parameter Name		Selected	Description
@@ -18,7 +18,7 @@ TSPC_L2CAP_0_3		False (*)	BR/EDR/Bluetooth low energy
 
 
 Roles
-*****
+=====
 
 ================	===========	=======================================
 Parameter Name		Selected	Description
@@ -33,7 +33,7 @@ TSPC_L2CAP_1_6		True		LE Data Channel Acceptor
 
 
 General Operation
-*****************
+=================
 
 ================	===========	=======================================
 Parameter Name		Selected	Description
@@ -106,7 +106,7 @@ TSCP_L2CAP_2_47		True		Support for LE Data Channel
 
 
 Configurable Parameters
-***********************
+=======================
 
 ================	===========	=======================================
 Parameter Name		Selected	Description

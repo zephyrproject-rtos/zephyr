@@ -1,12 +1,12 @@
 RFCOMM PICS
-###########
+***********
 
 PTS version: 6.4
 
 * - different than PTS defaults
 
 Protocol Version
-****************
+================
 
 ===============		============	======================================
 Parameter Name		Selected	Description
@@ -17,7 +17,7 @@ TSPC_RFCOMM_0_2		True (*)	RFCOMM 1.2 with TS 07.10
 
 
 Supported Procedures
-********************
+====================
 
 ================	===========	======================================
 Parameter Name		Selected	Description

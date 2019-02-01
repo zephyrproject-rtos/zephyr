@@ -3,7 +3,7 @@ Bluetooth
 #########
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    connection_mgmt.rst
    controller.rst
