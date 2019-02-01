@@ -1,0 +1,14 @@
+.. _ip_4_6_interface:
+
+IPv4/IPv6 Primitives and Helpers
+################################
+
+Overview
+********
+
+
+API Reference
+*************
+
+.. doxygengroup:: ip_4_6
+   :project: Zephyr
