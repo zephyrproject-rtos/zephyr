@@ -62,6 +62,7 @@
 #define ZEPHYR_INCLUDE_MISC___ASSERT_H_
 
 #include <stdbool.h>
+#include <oops.h>
 
 #ifdef CONFIG_ASSERT
 #ifndef __ASSERT_ON
@@ -86,10 +87,7 @@
 extern void posix_exit(int exit_code);
 #define __ASSERT_POST posix_exit(1)
 #else
-#define __ASSERT_POST             \
-	for (;;) {                \
-		/* spin thread */ \
-	}
+#define __ASSERT_POST k_panic()
 #endif
 
 #define __ASSERT_LOC(test)                               \
