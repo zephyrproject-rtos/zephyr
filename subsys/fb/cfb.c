@@ -32,10 +32,10 @@ struct char_framebuffer {
 	enum display_screen_info screen_info;
 
 	/** Resolution of a framebuffer in pixels in X direction */
-	u8_t x_res;
+	u16_t x_res;
 
 	/** Resolution of a framebuffer in pixels in Y direction */
-	u8_t y_res;
+	u16_t y_res;
 
 	/** Number of pixels per tile, typically 8 */
 	u8_t ppt;
