@@ -17,14 +17,6 @@ but Zephyr ignores flags from the environment. Use 'cmake -DEXTRA_${var}=$ENV{${
   endif()
 endforeach()
 
-# Until we completely deprecate it
-if(NOT DEFINED ENV{ZEPHYR_TOOLCHAIN_VARIANT})
-  if(DEFINED ENV{ZEPHYR_GCC_VARIANT})
-    message(WARNING "ZEPHYR_GCC_VARIANT is deprecated, please use ZEPHYR_TOOLCHAIN_VARIANT instead")
-    set(ZEPHYR_TOOLCHAIN_VARIANT $ENV{ZEPHYR_GCC_VARIANT})
-  endif()
-endif()
-
 if(NOT ZEPHYR_TOOLCHAIN_VARIANT)
   if(DEFINED ENV{ZEPHYR_TOOLCHAIN_VARIANT})
     set(ZEPHYR_TOOLCHAIN_VARIANT $ENV{ZEPHYR_TOOLCHAIN_VARIANT})
@@ -32,13 +24,6 @@ if(NOT ZEPHYR_TOOLCHAIN_VARIANT)
     set(ZEPHYR_TOOLCHAIN_VARIANT cross-compile)
   endif()
 endif()
-
-# Until we completely deprecate it
-if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "gccarmemb")
-  message(WARNING "gccarmemb is deprecated, please use gnuarmemb instead")
-  set(ZEPHYR_TOOLCHAIN_VARIANT "gnuarmemb")
-endif()
-
 
 set(TOOLCHAIN_ROOT ${TOOLCHAIN_ROOT} CACHE STRING "Zephyr toolchain root")
 assert(TOOLCHAIN_ROOT "Zephyr toolchain root path invalid: please set the TOOLCHAIN_ROOT-variable")

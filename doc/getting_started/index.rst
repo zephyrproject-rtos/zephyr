@@ -172,11 +172,6 @@ additional variable(s) specific to that toolchain (usually, this is just one
 more variable which contains the path where you installed the toolchain on your
 file system).
 
-.. note::
-
-   In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT`` variable
-   was called ``ZEPHYR_GCC_VARIANT``.
-
 The following toolchain installation options are available. The right choice
 for you depends on where you want to run Zephyr and any other requirements you
 may have. Check your :ref:`board-level documentation <boards>` if you are
