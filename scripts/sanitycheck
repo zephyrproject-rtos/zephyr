@@ -1207,6 +1207,14 @@ class MakeGenerator:
         build_logfile = os.path.join(outdir, "build.log")
         run_logfile = os.path.join(outdir, "run.log")
 
+        for variant in instance.platform.supported_toolchains:
+            if variant in options.toolchain_variant and \
+                (variant not in instance.test.toolchain_exclude or \
+                variant in instance.test.toolchain_whitelist):
+                args += ["ZEPHYR_TOOLCHAIN_VARIANT=\"%s\"" %variant]
+                break
+
+
         if not os.path.exists(outdir):
             os.makedirs(outdir)
 
@@ -1975,10 +1983,20 @@ class TestSuite:
 
     def apply_filters(self):
 
+        def common_member(a, b):
+            a_set = set(a)
+            b_set = set(b)
+            if (a_set & b_set):
+                return True
+            else:
+                return False
+
         toolchain = os.environ.get("ZEPHYR_TOOLCHAIN_VARIANT", None)
+        if toolchain and toolchain not in options.toolchain_variant:
+            options.toolchain_variant.append(toolchain)
 
         try:
-            if not toolchain:
+            if not options.toolchain_variant:
                 raise SanityRuntimeError("E: Variable ZEPHYR_TOOLCHAIN_VARIANT is not defined")
         except Exception as e:
             print(str(e))
@@ -2059,8 +2077,16 @@ class TestSuite:
                     if tc.platform_exclude and plat.name in tc.platform_exclude:
                         continue
 
-                    if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
-                        continue
+                    if tc.toolchain_exclude:
+                        exclude = False
+                        for toolchain in options.toolchain_variant:
+                            if toolchain in tc.toolchain_exclude:
+                                exclude = True
+                            elif toolchain in plat.supported_toolchains:
+                                exclude = False
+                                break
+                        if exclude:
+                            continue
 
                     if platform_filter and plat.name not in platform_filter:
                         continue
@@ -2083,12 +2109,21 @@ class TestSuite:
                     if tc.platform_whitelist and plat.name not in tc.platform_whitelist:
                         continue
 
-                    if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
-                        continue
+                    if tc.toolchain_whitelist:
+                        exclude = False
+                        for toolchain in options.toolchain_variant:
+                            if toolchain not in tc.toolchain_whitelist:
+                                exclude = True
+                            elif toolchain in plat.supported_toolchains:
+                                exclude = False
+                                break
+                        if exclude:
+                            continue
 
                     if (plat.env_satisfied and tc.tc_filter
                             and (plat.default or all_plats or platform_filter)
-                            and (toolchain in plat.supported_toolchains or options.force_toolchain)):
+                            and (common_member(options.toolchain_variant, plat.supported_toolchains) or \
+                                    options.force_toolchain)):
                         args = tc.extra_args[:]
                         args.append("BOARD={}".format(plat.name))
                         args.extend(extra_args)
@@ -2216,9 +2251,17 @@ class TestSuite:
                         discards[instance] = "In test case platform exclude"
                         continue
 
-                    if tc.toolchain_exclude and toolchain in tc.toolchain_exclude:
-                        discards[instance] = "In test case toolchain exclude"
-                        continue
+                    if tc.toolchain_exclude:
+                        exclude = False
+                        for toolchain in options.toolchain_variant:
+                            if toolchain in tc.toolchain_exclude:
+                                exclude = True
+                            elif toolchain in plat.supported_toolchains:
+                                exclude = False
+                                break
+                        if exclude:
+                            discards[instance] = "In test case toolchain exclude"
+                            continue
 
                     if platform_filter and plat.name not in platform_filter:
                         discards[instance] = "Command line platform filter"
@@ -2228,16 +2271,23 @@ class TestSuite:
                         discards[instance] = "Not in testcase platform whitelist"
                         continue
 
-                    if tc.toolchain_whitelist and toolchain not in tc.toolchain_whitelist:
-                        discards[instance] = "Not in testcase toolchain whitelist"
-                        continue
-
+                    if tc.toolchain_whitelist:
+                        exclude = False
+                        for toolchain in options.toolchain_variant:
+                            if toolchain not in tc.toolchain_whitelist:
+                                exclude = True
+                            elif toolchain in plat.supported_toolchains:
+                                exclude = False
+                                break
+                        if exclude:
+                            discards[instance] = "In test case toolchain exclude"
+                            continue
                     if not plat.env_satisfied:
                         discards[instance] = "Environment ({}) not satisfied".format(", ".join(plat.env))
                         continue
 
                     if not options.force_toolchain \
-                        and toolchain and (toolchain not in plat.supported_toolchains) \
+                        and not (common_member(options.toolchain_variant, plat.supported_toolchains)) \
                         and tc.type != 'unit':
                         discards[instance] = "Not supported by the toolchain"
                         continue
@@ -2642,6 +2692,10 @@ def parse_arguments():
     parser.add_argument("--force-toolchain", action="store_true",
             help="Do not filter based on toolchain, use the set "
             " toolchain unconditionally")
+
+    parser.add_argument("--toolchain-variant", action="append", default=[],
+            help="Set list of variants to support, multiple variants possible")
+
     parser.add_argument(
         "-p", "--platform", action="append",
         help="Platform filter for testing. This option may be used multiple "
