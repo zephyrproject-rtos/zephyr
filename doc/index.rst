@@ -49,7 +49,7 @@ licensing, as described in :ref:`Zephyr_Licensing`.
 	       system, and then build and run a sample application.</p>
        </li>
        <li class="grid-item">
-	   <a href="contribute/index.html">
+	   <a href="contribute/">
 	       <img alt="" src=""/>
 	       <h2>Contribution Guidelines</h2>
 	   </a>
@@ -65,7 +65,7 @@ licensing, as described in :ref:`Zephyr_Licensing`.
 	       by Zephyr</p>
        </li>
        <li class="grid-item">
-	   <a href="reference.html">
+	   <a href="reference/">
 	       <img alt="" src=""/>
 	       <h2>API Reference</h2>
 	   </a>
@@ -86,7 +86,7 @@ licensing, as described in :ref:`Zephyr_Licensing`.
 	   <p>List if supported boards and platforms.</p>
        </li>
        <li class="grid-item">
-	   <a href="user_guides.html">
+	   <a href="guides/">
 	       <img alt="" src=""/>
 	       <h2>User and Developer Guides</h2>
 	   </a>
@@ -107,8 +107,8 @@ licensing, as described in :ref:`Zephyr_Licensing`.
    contribute/index.rst
    development_process/index.rst
    application/application.rst
-   reference.rst
-   user_guides.rst
+   reference/index.rst
+   guides/index.rst
    security/security.rst
    samples/samples.rst
    boards/boards.rst

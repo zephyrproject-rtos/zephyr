@@ -320,7 +320,7 @@ of the reST files.  The names of these replacement characters are the same as us
 entities used to insert characters in HTML, e.g., \&trade; and are defined in the
 file ``sphinx_build/substitutions.txt`` as listed here:
 
-.. literalinclude:: ../substitutions.txt
+.. literalinclude:: ../../substitutions.txt
    :language: rst
 
 We've kept the substitutions list small but others can be added as
@@ -390,13 +390,13 @@ Images
 
 Images are included in documentation by using an image directive::
 
-   .. image:: ../images/doc-gen-flow.png
+   .. image:: ../../images/doc-gen-flow.png
       :align: center
       :alt: alt text for the image
 
 or if you'd like to add an image caption, use::
 
-    .. figure:: ../images/doc-gen-flow.png
+    .. figure:: ../../images/doc-gen-flow.png
        :alt: image description
 
        Caption for the figure
@@ -435,7 +435,7 @@ are an allowed exception.
 zephyr-app-commands Directive
 *****************************
 
-.. include:: ../extensions/zephyr/application.py
+.. include:: ../../extensions/zephyr/application.py
    :start-line: 10
    :start-after: '''
    :end-before: '''
