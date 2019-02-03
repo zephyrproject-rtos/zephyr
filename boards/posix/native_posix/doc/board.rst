@@ -404,7 +404,7 @@ In this way if, for example, ``--rt-ratio=2`` is given, the simulated time
 will advance at twice the real time speed.
 Similarly if ``--rt-drift=-100e-6`` is given, the simulated time will progress
 100ppm slower than real time.
-Note that the these 2 options have no meaning when running in non real-time
+Note that these 2 options have no meaning when running in non real-time
 mode.
 
 How simulated time and real time relate to each other
