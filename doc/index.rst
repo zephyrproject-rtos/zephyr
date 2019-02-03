@@ -34,14 +34,14 @@ licensing, as described in :ref:`Zephyr_Licensing`.
 
    <ul class="grid">
        <li class="grid-item">
-	   <a href="introduction/introducing_zephyr.html">
+	   <a href="introduction/index.html">
 	       <img alt="" src="_static/images/kite.png"/>
 	       <h2>Introduction</h2>
 	   </a>
 	   <p>Introducing the Zephyr Project: the overview, architecture, features and licensing</p>
        </li>
        <li class="grid-item">
-	   <a href="getting_started/getting_started.html">
+	   <a href="getting_started/index.html">
 	       <img alt="" src=""/>
 	       <h2>Getting Started Guide</h2>
 	   </a>
@@ -49,7 +49,7 @@ licensing, as described in :ref:`Zephyr_Licensing`.
 	       system, and then build and run a sample application.</p>
        </li>
        <li class="grid-item">
-	   <a href="contribute/">
+	   <a href="contribute/index.html">
 	       <img alt="" src=""/>
 	       <h2>Contribution Guidelines</h2>
 	   </a>
@@ -57,7 +57,7 @@ licensing, as described in :ref:`Zephyr_Licensing`.
            to submit patches directly to the project.</p>
        </li>
        <li class="grid-item">
-	   <a href="samples/samples.html">
+	   <a href="samples/index.html">
 	       <img alt="" src=""/>
 	       <h2>Samples and Demos</h2>
 	   </a>
@@ -65,28 +65,28 @@ licensing, as described in :ref:`Zephyr_Licensing`.
 	       by Zephyr</p>
        </li>
        <li class="grid-item">
-	   <a href="reference/">
+	   <a href="reference/index.html">
 	       <img alt="" src=""/>
 	       <h2>API Reference</h2>
 	   </a>
 	   <p>API Documentation and Reference</p>
        </li>
        <li class="grid-item">
-	   <a href="security/security.html">
+	   <a href="security/index.html">
 	       <img alt="" src=""/>
 	       <h2>Security</h2>
 	   </a>
 	   <p>Requirements, processes, and developer guidelines for ensuring security is addressed within the Zephyr project.</p>
        </li>
        <li class="grid-item">
-	   <a href="boards/boards.html">
+	   <a href="boards/index.html">
 	       <img alt="" src=""/>
 	       <h2>Supported Boards</h2>
 	   </a>
 	   <p>List if supported boards and platforms.</p>
        </li>
        <li class="grid-item">
-	   <a href="guides/">
+	   <a href="guides/index.html">
 	       <img alt="" src=""/>
 	       <h2>User and Developer Guides</h2>
 	   </a>
@@ -102,17 +102,17 @@ licensing, as described in :ref:`Zephyr_Licensing`.
 .. toctree::
    :maxdepth: 1
 
-   introduction/introducing_zephyr.rst
-   getting_started/getting_started.rst
+   introduction/index.rst
+   getting_started/index.rst
    contribute/index.rst
    development_process/index.rst
-   application/application.rst
+   application/index.rst
    reference/index.rst
    guides/index.rst
-   security/security.rst
-   samples/samples.rst
-   boards/boards.rst
-   releases/release-notes.rst
+   security/index.rst
+   samples/index.rst
+   boards/index.rst
+   releases/index.rst
 
 .. only:: html
 

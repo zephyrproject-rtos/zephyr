@@ -1,4 +1,4 @@
-.. _zephyr-security-docs:
+.. _security_section:
 
 Security
 ########
