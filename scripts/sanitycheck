@@ -2880,7 +2880,10 @@ def generate_coverage(outdir, ignores):
                     coveragefile, "--rc", "lcov_branch_coverage=1"],
                 stdout=coveragelog)
 
+        #The --ignore-errors source option is added to avoid it exiting due to
+        #samples/application_development/external_lib/
         ret = subprocess.call(["genhtml", "--legend", "--branch-coverage",
+                               "--ignore-errors", "source",
                                "-output-directory",
                                os.path.join(outdir, "coverage")] + files,
                                stdout=coveragelog)
