@@ -33,4 +33,11 @@ config HWINFO_NRF
 	help
 	  Enable Nordic NRF hwinfo driver.
 
+config HWINFO_MCUX_SIM
+	bool "NXP kinetis device ID"
+	default y
+	depends on HAS_MCUX_SIM
+	help
+	  Enable NXP kinetis mcux hwinfo driver.
+
 endif

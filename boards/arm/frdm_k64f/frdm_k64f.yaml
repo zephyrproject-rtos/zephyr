@@ -15,5 +15,6 @@ supported:
   - gpio
   - usb_device
   - watchdog
+  - hwinfo
 testing:
   default: true
