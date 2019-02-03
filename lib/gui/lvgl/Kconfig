@@ -105,7 +105,6 @@ choice
 endchoice
 
 if LVGL_CHROMA_KEY_CUSTOM
-
 config LVGL_CUSTOM_CHROMA_KEY_RED
 	hex "Chroma Key Red"
 	range 0x00 0xFF
@@ -182,6 +181,7 @@ config LVGL_MEM_POOL_NUMBER_BLOCKS
 
 endif
 
+if !LVGL_TRUE_DOUBLE_BUFFERED
 config LVGL_VDB_SIZE
 	int "Virtual Display Buffer Size"
 	default 10
@@ -189,6 +189,7 @@ config LVGL_VDB_SIZE
 	help
 	  Virtual Display Buffer (double buffering) size as a percentage of
 	  total display size.
+endif
 
 config LVGL_VDB_STATIC
 	bool "Statically allocate virtual display buffer"
@@ -201,6 +202,13 @@ config LVGL_DOUBLE_VDB
 	bool "Use 2 Virtual Display Buffers"
 	help
 	  Use 2 virtual display buffers to render and flush data in parallel
+
+if LVGL_DOUBLE_VDB
+config LVGL_TRUE_DOUBLE_BUFFERED
+	bool "True double buffered"
+	help
+	  Use true double buffering, VDB size will be set to 100%.
+endif
 
 config LVGL_SCREEN_REFRESH_PERIOD
 	int "Screen refresh period"
@@ -247,12 +255,6 @@ config LVGL_INPUT_LONG_RESS_REPEAT_TIME
 	  Period in milliseconds after which a new trigger is generated
 	  for a long press
 
-config LVGL_AVG_OBJ_COUNT
-	int "Average object counter"
-	default 32
-	help
-	  Average object counter on a screen
-
 config LVGL_UTF_8
 	bool "Enable UTF-8 support"
 	default y
@@ -264,6 +266,26 @@ config LVGL_TEXT_BREAK_CHARACTERS
 	default " ,.;:-_"
 	help
 	  Characters on which a text break can take place
+
+config LVGL_TEXT_BREAK_LONG_WORD_SIZE
+	int "Long word size for text break"
+	default 12
+	help
+	  Number of characters in a word before considering a word for a text break
+
+config LVGL_TEXT_BREAK_LONG_WORD_PRE_MIN_LEN
+	int "Minimum long word length before text break"
+	default 3
+	help
+	  Minimum number of characters of a long word that should be put before a
+	  break
+
+config LVGL_TEXT_BREAK_LONG_WORD_POST_MIN_LEN
+	int "Minimum long word length after text break"
+	default 1
+	help
+	  Minimum number of characters of a long word that should be placed after a
+	  break
 
 config LVGL_ANTIALIAS
 	bool "Enable anti-aliasing"
@@ -309,6 +331,19 @@ config LVGL_FILESYSTEM
 	default y if FILE_SYSTEM
 	help
 	  Enable LittlevGL file system
+
+config LVGL_MULTI_LANGUAGE
+	bool "Multi language support"
+	help
+	  Enable multi language support
+
+if LVGL_MULTI_LANGUAGE
+config LVGL_NBR_OF_LANGUAGES
+	int "Number of languages"
+	default 1
+	help
+	  Number of languages to support
+endif
 
 config LVGL_VLA_SUPPORT
 	bool "Enable variable length array support"
