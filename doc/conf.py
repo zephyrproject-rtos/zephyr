@@ -288,7 +288,21 @@ htmlhelp_basename = 'zephyrdoc'
 #
 # list of tuples (old_url, new_url) for pages to redirect
 # (URLs should be relative to document root, only)
-html_redirect_pages = [('contribute/contribute_guidelines', 'contribute/index'),]
+html_redirect_pages = [
+        ('contribute/contribute_guidelines', 'contribute/index'),
+        ('application/application', 'application/index.rst'),
+        ('security/security', 'security/index'),
+        ('boards/boards', 'boards/index'),
+        ('samples/samples', 'samples/index'),
+        ('releases/release-notes', 'releases/index'),
+        ('getting_started/getting_starting', 'getting_started/index'),
+        ('introduction/introducing_zephyr', 'introduction/index'),
+        ('api/index', 'reference/index'),
+        ('api/api', 'reference/index'),
+        ('subsystems/subsystems', 'reference/index'),
+        ('kernel/kernel', 'reference/kernel/index'),
+
+        ]
 
 # -- Options for LaTeX output ---------------------------------------------
 

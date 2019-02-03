@@ -8,7 +8,7 @@ Samples and Demos
    :maxdepth: 2
    :glob:
 
-   kernel
+   classic
    basic/*
    userspace/*
    subsys/subsys.rst

@@ -121,13 +121,13 @@ support systems:
 
 .. _Slack Invite: https://tinyurl.com/yarkuemx
 .. _Slack: https://zephyrproject.slack.com
-.. _supported boards: http://docs.zephyrproject.org/latest/boards/boards.html
+.. _supported boards: http://docs.zephyrproject.org/latest/boards
 .. _Zephyr Documentation: http://docs.zephyrproject.org
-.. _Zephyr Introduction: http://docs.zephyrproject.org/latest/introduction/introducing_zephyr.html
-.. _Getting Started Guide: http://docs.zephyrproject.org/latest/getting_started/getting_started.html
-.. _Contribution Guide: http://docs.zephyrproject.org/latest/contribute/index.html
+.. _Zephyr Introduction: http://docs.zephyrproject.org/latest/introduction
+.. _Getting Started Guide: http://docs.zephyrproject.org/latest/getting_started
+.. _Contribution Guide: http://docs.zephyrproject.org/latest/contribute
 .. _Zephyr GitHub wiki: https://github.com/zephyrproject-rtos/zephyr/wiki
 .. _Zephyr Development mailing list: https://lists.zephyrproject.org/g/devel
 .. _Zephyr mailing list subgroups: https://lists.zephyrproject.org/g/main/subgroups
-.. _Sample and Demo Code Examples: http://docs.zephyrproject.org/latest/samples/samples.html
-.. _Security Overview: http://docs.zephyrproject.org/latest/security/security-overview.html
+.. _Sample and Demo Code Examples: http://docs.zephyrproject.org/latest/samples
+.. _Security Overview: http://docs.zephyrproject.org/latest/security

@@ -33,7 +33,7 @@ if(${CMAKE_MATCH_1} VERSION_LESS ${MIN_DTC_VERSION})
   assert(0 "The detected dtc version is unsupported.                                 \n\
     The version was found to be ${CMAKE_MATCH_1}                                   \n\
     But the minimum supported version is ${MIN_DTC_VERSION}                        \n\
-    See https://docs.zephyrproject.org/latest/getting_started/getting_started.html \n\
+    See https://docs.zephyrproject.org/latest/getting_started/                     \n\
     for how to use the SDK's dtc alongside a custom toolchain."
   )
 endif()
