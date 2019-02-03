@@ -13,9 +13,9 @@ extern int flash_map_entries;
 struct flash_sector fs_sectors[256];
 
 /**
- * @brief Test flash_area_to_sectors()
+ * @brief Test flash_area_get_sectors()
  */
-void test_flash_area_to_sectors(void)
+void test_flash_area_get_sectors(void)
 {
 	const struct flash_area *fa;
 	u32_t sec_cnt;
@@ -100,6 +100,6 @@ void test_flash_area_to_sectors(void)
 void test_main(void)
 {
 	ztest_test_suite(test_flash_map,
-			 ztest_unit_test(test_flash_area_to_sectors));
+			 ztest_unit_test(test_flash_area_get_sectors));
 	ztest_run_test_suite(test_flash_map);
 }
