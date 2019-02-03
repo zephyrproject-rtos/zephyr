@@ -45,6 +45,8 @@
 		label = "MX25UM512";
 		jedec-id = <0xc2 0x80 0x3a>;
 		size = <0x2000000>;
+		erase-block-size = <0x10000>;
+		write-block-size = <1>;
 	};
 };
 
