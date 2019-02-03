@@ -48,7 +48,7 @@ static u32_t elapsed(void)
 }
 
 /* Callout out of platform assembly, not hooked via IRQ_CONNECT... */
-void _timer_int_handler(void *arg)
+void z_clock_isr(void *arg)
 {
 	ARG_UNUSED(arg);
 	u32_t dticks;
