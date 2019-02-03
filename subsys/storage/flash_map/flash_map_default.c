@@ -10,7 +10,7 @@
 
 #if defined(DT_FLASH_DEV_NAME)
 #define FA_DEV_ID SOC_FLASH_0_ID
-#elif defined(CONFIG_SPI_FLASH_W25QXXDV) || defined(DT_SPI_NOR_DRV_NAME)
+#elif defined(CONFIG_SPI_FLASH_W25QXXDV) || defined(DT_JEDEC_SPI_NOR_0_LABEL)
 #define FA_DEV_ID SPI_FLASH_0_ID
 #endif
 
