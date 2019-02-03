@@ -23,7 +23,7 @@
  * some prefix, and we ensure this header is included
  */
 
-#ifdef CONFIG_PTHREAD_IPC
+#ifdef CONFIG_POSIX_API
 
 #define timespec zap_timespec
 #define timeval  zap_timeval
@@ -189,7 +189,7 @@
 #define stat		zap_stat
 #define mkdir		zap_mkdir
 
-#endif /* CONFIG_PTHREAD_IPC */
+#endif /* CONFIG_POSIX_API */
 
 #endif /* CONFIG_ARCH_POSIX */
 
