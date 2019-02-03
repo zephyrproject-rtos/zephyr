@@ -11,7 +11,7 @@ set(lv_SUBBUILD_DIR ${ep_base}/Subbuild/${lv_name})
 FetchContent_Declare(
     ${lv_name}
     GIT_REPOSITORY https://github.com/littlevgl/lvgl.git
-    GIT_TAG        v5.2
+    GIT_TAG        v5.3
     SOURCE_DIR     ${lv_SOURCE_DIR}
     BINARY_DIR     ${lv_SOURCE_DIR}
     SUBBUILD_DIR   ${lv_SUBBUILD_DIR}
@@ -37,6 +37,7 @@ zephyr_library_sources(
 
     ${LVGL_SOURCE_DIR}/lv_core/lv_group.c
     ${LVGL_SOURCE_DIR}/lv_core/lv_indev.c
+    ${LVGL_SOURCE_DIR}/lv_core/lv_lang.c
     ${LVGL_SOURCE_DIR}/lv_core/lv_obj.c
     ${LVGL_SOURCE_DIR}/lv_core/lv_refr.c
     ${LVGL_SOURCE_DIR}/lv_core/lv_style.c
@@ -62,6 +63,7 @@ zephyr_library_sources(
     ${LVGL_SOURCE_DIR}/lv_misc/lv_color.c
     ${LVGL_SOURCE_DIR}/lv_misc/lv_font.c
     ${LVGL_SOURCE_DIR}/lv_misc/lv_fs.c
+    ${LVGL_SOURCE_DIR}/lv_misc/lv_gc.c
     ${LVGL_SOURCE_DIR}/lv_misc/lv_ll.c
     ${LVGL_SOURCE_DIR}/lv_misc/lv_log.c
     ${LVGL_SOURCE_DIR}/lv_misc/lv_math.c
@@ -75,6 +77,7 @@ zephyr_library_sources(
     ${LVGL_SOURCE_DIR}/lv_objx/lv_btn.c
     ${LVGL_SOURCE_DIR}/lv_objx/lv_btnm.c
     ${LVGL_SOURCE_DIR}/lv_objx/lv_calendar.c
+    ${LVGL_SOURCE_DIR}/lv_objx/lv_canvas.c
     ${LVGL_SOURCE_DIR}/lv_objx/lv_cb.c
     ${LVGL_SOURCE_DIR}/lv_objx/lv_chart.c
     ${LVGL_SOURCE_DIR}/lv_objx/lv_cont.c
@@ -94,9 +97,12 @@ zephyr_library_sources(
     ${LVGL_SOURCE_DIR}/lv_objx/lv_preload.c
     ${LVGL_SOURCE_DIR}/lv_objx/lv_roller.c
     ${LVGL_SOURCE_DIR}/lv_objx/lv_slider.c
+    ${LVGL_SOURCE_DIR}/lv_objx/lv_spinbox.c
     ${LVGL_SOURCE_DIR}/lv_objx/lv_sw.c
     ${LVGL_SOURCE_DIR}/lv_objx/lv_ta.c
+    ${LVGL_SOURCE_DIR}/lv_objx/lv_table.c
     ${LVGL_SOURCE_DIR}/lv_objx/lv_tabview.c
+    ${LVGL_SOURCE_DIR}/lv_objx/lv_tileview.c
     ${LVGL_SOURCE_DIR}/lv_objx/lv_win.c
 
     ${LVGL_SOURCE_DIR}/lv_themes/lv_theme.c

@@ -6,6 +6,12 @@
 
 menu "Objects"
 
+config LVGL_OBJ_REALIGN
+	bool "Object realign support"
+	default y
+	help
+	  Enable object realign support
+
 config LVGL_OBJ_LABEL
 	bool "Label Object"
 	default y
@@ -94,6 +100,22 @@ config LVGL_OBJ_TAB_VIEW_ANIMATION_TIME
 
 endif
 
+config LVGL_OBJ_TILE_VIEW
+	bool "Tile view object"
+	default y
+	depends on LVGL_OBJ_PAGE
+	help
+	  Enable tile view object support
+
+if LVGL_OBJ_TILE_VIEW
+config LVGL_OBJ_TILE_VIEW_ANIMATION_TIME
+	int "Tile view animation time"
+	default 300
+	help
+	  Tile view animation time in milliseconds
+
+endif
+
 config LVGL_OBJ_CALENDAR
 	bool "Calendar object"
 	default y
@@ -122,7 +144,27 @@ config LVGL_OBJ_PRELOAD_DEF_SPIN_TIME
 	help
 	  Default spin time for pre-load in ms
 
+choice
+	prompt "Default pre-load animation type"
+	default LVGL_OBJ_PRELOAD_DEF_ANIMATION_SPIN_ARC
+	help
+	  Default pre-load animation type
+
+	config LVGL_OBJ_PRELOAD_DEF_ANIMATION_SPIN_ARC
+		bool "Spinning Arc"
+
+	config LVGL_OBJ_PRELOAD_DEF_ANIMATION_FILL
+		bool "Fill"
+
+endchoice
 endif
+
+config LVGL_OBJ_CANVAS
+	bool "Canvas object"
+	default y
+	depends on LVGL_OBJ_IMAGE
+	help
+	  Enabled canvas object support
 
 config LVGL_OBJ_BAR
 	bool "Bar object"
@@ -148,6 +190,21 @@ config LVGL_OBJ_CHART
 	default y
 	help
 	  Enable chart object support
+
+config LVGL_OBJ_TABLE
+	bool "Table object"
+	default y
+	depends on LVGL_OBJ_LABEL
+	help
+	  Enable table object support
+
+if LVGL_OBJ_TABLE
+config LVGL_OBJ_TABLE_COLUMN_MAX
+	int "Maximum number of table columns"
+	default 12
+	help
+	  Maximum number of columns to support in a table
+endif
 
 config LVGL_OBJ_LED
 	bool "LED object"
@@ -185,6 +242,13 @@ config LVGL_OBJ_TEXT_AREA_PWD_SHOW_TIME
 
 endif
 
+config LVGL_OBJ_SPINBOX
+	bool "Spinbox object"
+	default y
+	depends on LVGL_OBJ_TEXT_AREA
+	help
+	  Enable spinbox object support
+
 config LVGL_OBJ_BUTTON
 	bool "Button object"
 	default y
@@ -205,6 +269,13 @@ config LVGL_OBJ_IMG_BUTTON
 	default y
 	help
 	  Enable image button object support
+
+if LVGL_OBJ_IMG_BUTTON
+config LVGL_OBJ_IMG_BUTTON_TILED
+	bool "Image button tile support"
+	help
+	  Enable tile support for image button
+endif
 
 endif
 
