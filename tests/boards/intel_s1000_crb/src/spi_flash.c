@@ -56,7 +56,7 @@ void test_flash(void)
 	u32_t magic[4];
 	int i;
 
-	flash_dev = device_get_binding(DT_SPI_NOR_DRV_NAME);
+	flash_dev = device_get_binding(DT_JEDEC_SPI_NOR_0_LABEL);
 
 	if (!flash_dev) {
 		LOG_ERR("SPI flash driver was not found!\n");
