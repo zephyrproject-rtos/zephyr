@@ -897,15 +897,15 @@ static int sdhc_init(struct device *dev)
 {
 	struct sdhc_data *data = dev->driver_data;
 
-	data->spi = device_get_binding(DT_DISK_SDHC0_BUS_NAME);
+	data->spi = device_get_binding(DT_ZEPHYR_MMC_SPI_SLOT_0_BUS_NAME);
 
 	data->cfg.frequency = SDHC_INITIAL_SPEED;
 	data->cfg.operation = SPI_WORD_SET(8) | SPI_HOLD_ON_CS;
-	data->cfg.slave = DT_DISK_SDHC0_BUS_ADDRESS;
-	data->cs = device_get_binding(DT_DISK_SDHC0_CS_GPIOS_CONTROLLER);
+	data->cfg.slave = DT_ZEPHYR_MMC_SPI_SLOT_0_BASE_ADDRESS;
+	data->cs = device_get_binding(DT_ZEPHYR_MMC_SPI_SLOT_0_CS_GPIO_CONTROLLER);
 	__ASSERT_NO_MSG(data->cs != NULL);
 
-	data->pin = DT_DISK_SDHC0_CS_GPIOS_PIN;
+	data->pin = DT_ZEPHYR_MMC_SPI_SLOT_0_CS_GPIO_PIN;
 
 	disk_sdhc_init(dev);
 
