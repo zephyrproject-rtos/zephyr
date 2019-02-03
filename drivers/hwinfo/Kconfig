@@ -62,4 +62,11 @@ config HWINFO_SAM0
 	help
 	  Enable Atmel SAM0 hwinfo driver.
 
+config HWINFO_ESP32
+	bool "ESP32 device ID"
+	default y
+	depends on SOC_ESP32
+	help
+	  Enable ESP32 hwinfo driver.
+
 endif
