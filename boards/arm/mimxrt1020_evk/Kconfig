@@ -8,7 +8,7 @@ if BOARD_MIMXRT1020_EVK
 
 choice
 	prompt "Code location selection"
-	default CODE_ITCM
+	default CODE_QSPI
 
 config CODE_ITCM
 	bool "Link code into internal instruction tightly coupled memory (ITCM)"
@@ -22,7 +22,7 @@ endchoice
 
 choice
 	prompt "Data location selection"
-	default DATA_DTCM
+	default DATA_SDRAM
 
 config DATA_DTCM
 	bool "Link data into internal data tightly coupled memory (DTCM)"
