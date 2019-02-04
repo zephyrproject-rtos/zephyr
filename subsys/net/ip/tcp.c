@@ -2097,7 +2097,8 @@ resend_ack:
 	if (tcp_flags & NET_TCP_ACK) {
 		if (!net_tcp_ack_received(context,
 					  sys_get_be32(tcp_hdr->ack))) {
-			return NET_DROP;
+			ret = NET_DROP;
+			goto unlock;
 		}
 
 		/* TCP state might be changed after maintaining the sent pkt

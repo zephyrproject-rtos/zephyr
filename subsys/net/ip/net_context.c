@@ -887,7 +887,7 @@ int net_context_connect(struct net_context *context,
 
 		ret = bind_default(context);
 		if (ret) {
-			return ret;
+			goto unlock;
 		}
 
 		net_sin_ptr(&context->local)->sin_family = AF_INET;
