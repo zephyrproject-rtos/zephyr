@@ -348,6 +348,11 @@ enum mqtt_transport_type {
 	MQTT_TRANSPORT_SECURE,
 #endif /* CONFIG_MQTT_LIB_TLS */
 
+#if defined(CONFIG_MQTT_LIB_SOCKS)
+	/** Use SOCKS5 proxy for MQTT connection. */
+	MQTT_TRANSPORT_SOCKS,
+#endif /* CONFIG_MQTT_LIB_SOCKS */
+
 	/** Shall not be used as a transport type.
 	 *  Indicator of maximum transport types possible.
 	 */
@@ -381,6 +386,18 @@ struct mqtt_transport {
 			struct mqtt_sec_config config;
 		} tls;
 #endif /* CONFIG_MQTT_LIB_TLS */
+
+#if defined(CONFIG_MQTT_LIB_SOCKS)
+		/* SOCKS5 proxy transport for MQTT */
+		struct {
+			/** Socket descriptor. */
+			int sock;
+
+			/** SOCKS5 proxy address. */
+			struct sockaddr_storage *proxy;
+		} socks5;
+#endif /* CONFIG_MQTT_LIB_SOCKS */
+
 	};
 };
 
