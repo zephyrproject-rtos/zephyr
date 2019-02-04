@@ -36,7 +36,6 @@
 #include "lll_adv.h"
 #include "lll_scan.h"
 #include "lll_conn.h"
-#include "lll_tmp.h"
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_conn_types.h"
@@ -44,7 +43,6 @@
 #include "ull_adv_internal.h"
 #include "ull_scan_internal.h"
 #include "ull_conn_internal.h"
-#include "ull_tmp_internal.h"
 
 #define LOG_MODULE_NAME bt_ctlr_llsw_ull
 #include "common/log.h"
@@ -79,12 +77,6 @@
 #define BT_CONN_TICKER_NODES 0
 #endif
 
-#if defined(CONFIG_BT_TMP)
-#define BT_TMP_TICKER_NODES ((TICKER_ID_TMP_LAST) - (TICKER_ID_TMP_BASE) + 1)
-#else
-#define BT_TMP_TICKER_NODES 0
-#endif
-
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
 #define FLASH_TICKER_NODES        1 /* No. of tickers reserved for flashing */
 #define FLASH_TICKER_USER_APP_OPS 1 /* No. of additional ticker operations */
@@ -97,7 +89,6 @@
 				   BT_ADV_TICKER_NODES + \
 				   BT_SCAN_TICKER_NODES + \
 				   BT_CONN_TICKER_NODES + \
-				   BT_TMP_TICKER_NODES + \
 				   FLASH_TICKER_NODES)
 #define TICKER_USER_APP_OPS       (TICKER_USER_THREAD_OPS + \
 				   FLASH_TICKER_USER_APP_OPS)
@@ -198,10 +189,6 @@ static inline int _init_reset(void);
 static inline void _done_alloc(void);
 static inline void _rx_alloc(u8_t max);
 static void _rx_demux(void *param);
-#if defined(CONFIG_BT_TMP)
-static inline void _rx_demux_tx_ack(u16_t handle, memq_link_t *link,
-			     struct node_tx *node_tx);
-#endif /* CONFIG_BT_TMP */
 static inline void _rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx);
 static inline void _rx_demux_event_done(memq_link_t *link,
 					struct node_rx_hdr *rx);
@@ -299,19 +286,6 @@ int ll_init(struct k_sem *sem_rx)
 	}
 #endif /* CONFIG_BT_CONN */
 
-	/* Initialize state/roles */
-#if defined(CONFIG_BT_TMP)
-	err = lll_tmp_init();
-	if (err) {
-		return err;
-	}
-
-	err = ull_tmp_init();
-	if (err) {
-		return err;
-	}
-#endif /* CONFIG_BT_TMP */
-
 	return  0;
 }
 
@@ -358,12 +332,6 @@ void ll_reset(void)
 
 	MFIFO_INIT(tx_ack);
 #endif /* CONFIG_BT_CONN */
-
-#if defined(CONFIG_BT_TMP)
-	/* Reset tmp */
-	err = ull_tmp_reset();
-	LL_ASSERT(!err);
-#endif /* CONFIG_BT_TMP */
 
 	/* Re-initialize ULL internals */
 
@@ -958,11 +926,9 @@ void ull_rx_put(memq_link_t *link, void *rx)
 	 */
 #if defined(CONFIG_BT_CONN)
 	rx_hdr->ack_last = lll_conn_ack_last_idx_get();
-#elif defined(CONFIG_BT_TMP)
-	rx_hdr->ack_last = lll_tmp_ack_last_idx_get();
-#else /* !CONFIG_BT_TMP */
+#else
 	ARG_UNUSED(rx_hdr);
-#endif /* !CONFIG_BT_TMP */
+#endif
 
 	/* Enqueue the Rx object */
 	memq_enqueue(link, rx, &memq_ull_rx.tail);
@@ -1300,16 +1266,6 @@ static inline void _rx_demux_conn_tx_ack(u8_t ack_last, u16_t handle,
 }
 #endif /* CONFIG_BT_CONN */
 
-#if defined(CONFIG_BT_TMP)
-static inline void _rx_demux_tx_ack(u16_t handle, memq_link_t *link,
-			     struct node_tx *node_tx)
-{
-	lll_tmp_ack_dequeue();
-
-	ull_tmp_link_tx_release(link);
-}
-#endif /* CONFIG_BT_TMP */
-
 static void _rx_demux(void *param)
 {
 	memq_link_t *link;
@@ -1335,13 +1291,7 @@ static void _rx_demux(void *param)
 				_rx_demux_conn_tx_ack(rx->ack_last, handle,
 						      link_tx, node_tx);
 			} else
-#elif defined(CONFIG_BT_TMP)
-			link_tx = lll_tmp_ack_by_last_peek(rx->ack_last,
-							   &handle, &node_tx);
-			if (link_tx) {
-				_rx_demux_tx_ack(handle, link_tx, node_tx);
-			} else
-#endif /* CONFIG_BT_TMP */
+#endif
 			{
 				_rx_demux_rx(link, rx);
 			}
@@ -1356,16 +1306,7 @@ static void _rx_demux(void *param)
 				_rx_demux_conn_tx_ack(ack_last, handle,
 						      link, node_tx);
 			}
-#elif defined(CONFIG_BT_TMP)
-		} else {
-			struct node_tx *node_tx;
-			u16_t handle;
-
-			link = lll_tmp_ack_peek(&handle, &node_tx);
-			if (link) {
-				_rx_demux_tx_ack(handle, link, node_tx);
-			}
-#endif /* CONFIG_BT_TMP */
+#endif
 		}
 	} while (link);
 }

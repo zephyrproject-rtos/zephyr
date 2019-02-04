@@ -127,15 +127,6 @@ if(CONFIG_BT_LL_SW_SPLIT)
     CONFIG_BT_CTLR_DTM
     ll_sw/nordic/lll/lll_test.c
     )
-  if(CONFIG_BT_TMP)
-    zephyr_library_sources(
-      ll_sw/ull_tmp.c
-      )
-    zephyr_library_sources_ifdef(
-      CONFIG_BT_LLL_VENDOR_NORDIC
-      ll_sw/nordic/lll/lll_tmp.c
-      )
-  endif()
   if(CONFIG_BT_LLL_VENDOR_NORDIC)
     zephyr_library_include_directories(
       ll_sw/nordic/lll
