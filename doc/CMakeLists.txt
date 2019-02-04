@@ -14,7 +14,7 @@ find_package(LATEX)
 
 find_program(
   SPHINXBUILD
-  sphinx-build
+  NAMES sphinx-build-3 sphinx-build
   )
 if(${SPHINXBUILD} STREQUAL SPHINXBUILD-NOTFOUND)
   message(FATAL_ERROR "The 'sphinx-build' command was not found. Make sure you have Sphinx installed.")
