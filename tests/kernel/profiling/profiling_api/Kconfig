@@ -1,0 +1,12 @@
+config KERNEL_PROFILING_API_TEST
+	bool
+	default y
+	select SYS_POWER_LOW_POWER_STATES_SUPPORTED
+	select SYS_POWER_STATE_CPU_LPS_SUPPORTED
+	help
+	  Hidden option enabling LPS power state regardless of hardware
+	  support. This ensures that power management hooks used in this
+	  test to profile idle thread will be executed.
+
+# Include Zephyr's Kconfig.
+source "$ZEPHYR_BASE/Kconfig"

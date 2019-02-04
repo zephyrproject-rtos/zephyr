@@ -8,7 +8,6 @@
 #define _PM_POLICY_H_
 
 #include <power.h>
-#include <soc_power.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -38,22 +37,6 @@ extern void sys_pm_resume_devices(void);
  * @brief Function to get the next PM state based on the ticks
  */
 extern enum power_states sys_pm_policy_next_state(s32_t ticks);
-
-/**
- * @brief Application defined function for Lower Power entry
- *
- * Application defined function for doing any target specific operations
- * for low power entry.
- */
-extern void sys_pm_notify_lps_entry(enum power_states state);
-
-/**
- * @brief Application defined function for Lower Power exit
- *
- * Application defined function for doing any target specific operations
- * for low power exit.
- */
-extern void sys_pm_notify_lps_exit(enum power_states state);
 
 #ifdef __cplusplus
 }

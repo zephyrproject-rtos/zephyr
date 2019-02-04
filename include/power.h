@@ -150,7 +150,7 @@ static inline void sys_pm_idle_exit_notification_disable(void)
  */
 extern void sys_pm_force_power_state(enum power_states state);
 
-#ifdef CONFIG_PM_CONTROL_OS_DEBUG
+#ifdef CONFIG_SYS_PM_DEBUG
 /**
  * @brief Dump Low Power states related debug info
  *
@@ -158,9 +158,9 @@ extern void sys_pm_force_power_state(enum power_states state);
  */
 extern void sys_pm_dump_debug_info(void);
 
-#endif /* CONFIG_PM_CONTROL_OS_DEBUG */
+#endif /* CONFIG_SYS_PM_DEBUG */
 
-#ifdef CONFIG_PM_CONTROL_STATE_LOCK
+#ifdef CONFIG_SYS_PM_STATE_LOCK
 /**
  * @brief Disable particular power state
  *
@@ -195,7 +195,7 @@ extern void sys_pm_ctrl_enable_state(enum power_states state);
  */
 extern bool sys_pm_ctrl_is_state_enabled(enum power_states state);
 
-#endif /* CONFIG_PM_CONTROL_STATE_LOCK */
+#endif /* CONFIG_SYS_PM_STATE_LOCK */
 
 /**
  * @}
@@ -273,6 +273,40 @@ void sys_resume(void);
  * @return Power state which was selected and entered.
  */
 extern enum power_states sys_suspend(s32_t ticks);
+
+/**
+ * @brief Put processor into low power state
+ *
+ * This function implements the SoC specific details necessary
+ * to put the processor into available power states.
+ */
+extern void sys_set_power_state(enum power_states state);
+
+/**
+ * @brief Do any SoC or architecture specific post ops after low power states.
+ *
+ * This function is a place holder to do any operations that may
+ * be needed to be done after deep sleep exits. Currently it enables
+ * interrupts after resuming from deep sleep. In future, the enabling
+ * of interrupts may be moved into the kernel.
+ */
+extern void sys_power_state_post_ops(enum power_states state);
+
+/**
+ * @brief Application defined function for Lower Power entry
+ *
+ * Application defined function for doing any target specific operations
+ * for low power entry.
+ */
+extern void sys_pm_notify_lps_entry(enum power_states state);
+
+/**
+ * @brief Application defined function for Lower Power exit
+ *
+ * Application defined function for doing any target specific operations
+ * for low power exit.
+ */
+extern void sys_pm_notify_lps_exit(enum power_states state);
 
 /**
  * @}
