@@ -7,7 +7,6 @@ zephyr_sources(
   crc16_sw.c
   crc8_sw.c
   crc7_sw.c
-  fdtable.c
   mempool.c
   rb.c
   thread_entry.c
