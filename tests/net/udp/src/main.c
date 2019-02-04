@@ -291,18 +291,13 @@ static void setup_ipv6_udp_long(struct net_pkt *pkt,
 	udp_hdr = net_udp_get_hdr(pkt, &hdr);
 
 	/**TESTPOINT: Check if pointer is valid*/
-	zassert_equal_ptr(udp_hdr, &hdr, "Invalid UDP header pointer");
+	zassert_not_null(udp_hdr, "Invalid UDP header pointer");
+
 
 	udp_hdr->src_port = htons(remote_port);
 	udp_hdr->dst_port = htons(local_port);
 
 	net_udp_set_hdr(pkt, &hdr);
-
-	udp_hdr = net_udp_get_hdr(pkt, &hdr);
-	if (udp_hdr != &hdr) {
-		TC_ERROR("Invalid UDP header pointer %p\n", udp_hdr);
-		zassert_true(0, "exiting");
-	}
 
 	if (udp_hdr->src_port != htons(remote_port)) {
 		TC_ERROR("Invalid remote port, should have been %d was %d\n",
