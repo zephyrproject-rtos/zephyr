@@ -17,6 +17,9 @@ config POSIX_API
 	bool "POSIX APIs"
 	select POSIX_HEADERS
 	select POSIX_SLEEP
+	select POSIX_FD_OPS
+	select POSIX_FCNTL_IOCTL
+	select POSIX_STDIN_OUT_ERR
 	help
 	  Enable mostly-standards-compliant implementations of
 	  various POSIX (IEEE 1003.1) APIs.
@@ -33,6 +36,22 @@ config POSIX_SLEEP
 	bool "POSIX sleep()/usleep() calls"
 	help
 	  Provide sleep()/usleep() calls.
+
+config POSIX_FD_OPS
+	bool "Basic POSIX file descriptor operations"
+	help
+	  Provide close(), read(), write(), lseek().
+
+config POSIX_FCNTL_IOCTL
+	bool "POSIX fcntl() and ioctl() calls"
+	help
+	  Provide fcntl() and ioctl().
+
+config POSIX_STDIN_OUT_ERR
+	bool "stdin/stdout/stderr POSIX file descriptors"
+	help
+	  Pre-initialize file descriptors 0, 1, and 2 for console
+	  standard input/output.
 
 config PTHREAD_IPC
 	bool "POSIX pthread IPC API"

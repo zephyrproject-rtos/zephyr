@@ -30,12 +30,12 @@ struct fd_entry {
 #define FD_OBJ_STDOUT (void *)0x11
 #define FD_OBJ_STDERR (void *)0x12
 
-#ifdef CONFIG_POSIX_API
+#ifdef CONFIG_POSIX_STDIN_OUT_ERR
 static const struct fd_op_vtable stdinout_fd_op_vtable;
 #endif
 
 static struct fd_entry fdtable[CONFIG_POSIX_MAX_FDS] = {
-#ifdef CONFIG_POSIX_API
+#ifdef CONFIG_POSIX_STDIN_OUT_ERR
 	/*
 	 * Predefine entries for stdin/stdout/stderr. Object pointer
 	 * is unused and just should be !0 (random different values
@@ -154,7 +154,7 @@ int z_alloc_fd(void *obj, const struct fd_op_vtable *vtable)
 	return fd;
 }
 
-#ifdef CONFIG_POSIX_API
+#ifdef CONFIG_POSIX_FD_OPS
 
 ssize_t read(int fd, void *buf, size_t sz)
 {
@@ -211,6 +211,10 @@ off_t lseek(int fd, off_t offset, int whence)
 }
 FUNC_ALIAS(lseek, _lseek, off_t);
 
+#endif /* CONFIG_POSIX_FD_OPS */
+
+#ifdef CONFIG_POSIX_FCNTL_IOCTL
+
 int ioctl(int fd, unsigned long request, ...)
 {
 	va_list args;
@@ -259,6 +263,10 @@ int fcntl(int fd, int cmd, ...)
 }
 #endif
 
+#endif /* CONFIG_POSIX_FCNTL_IOCTL */
+
+#ifdef CONFIG_POSIX_STDIN_OUT_ERR
+
 /*
  * fd operations for stdio/stdout/stderr
  */
@@ -294,4 +302,4 @@ static const struct fd_op_vtable stdinout_fd_op_vtable = {
 	.ioctl = stdinout_ioctl_vmeth,
 };
 
-#endif /* CONFIG_POSIX_API */
+#endif /* CONFIG_POSIX_STDIN_OUT_ERR */
