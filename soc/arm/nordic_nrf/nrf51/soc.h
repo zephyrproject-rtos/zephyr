@@ -16,8 +16,6 @@
 #include <nrf_common.h>
 #include <nrf.h>
 
-#include <soc_power.h>
-
 /* Add include for DTS generated information */
 #include <generated_dts_board.h>
 

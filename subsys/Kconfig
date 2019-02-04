@@ -37,8 +37,6 @@ source "subsys/settings/Kconfig"
 
 source "subsys/app_memory/Kconfig"
 
-source "subsys/power/Kconfig"
-
 source "subsys/fb/Kconfig"
 
 source "subsys/jwt/Kconfig"

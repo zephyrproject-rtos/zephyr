@@ -8,10 +8,10 @@
 #include <kernel.h>
 #include <init.h>
 #include <string.h>
-#include <soc.h>
+#include <power.h>
 #include "policy/pm_policy.h"
 
-#define LOG_LEVEL CONFIG_PM_LOG_LEVEL
+#define LOG_LEVEL CONFIG_SYS_PM_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(power);
 
@@ -19,7 +19,7 @@ static int post_ops_done = 1;
 static enum power_states forced_pm_state = SYS_POWER_STATE_AUTO;
 static enum power_states pm_state;
 
-#ifdef CONFIG_PM_CONTROL_OS_DEBUG
+#ifdef CONFIG_SYS_PM_DEBUG
 
 struct pm_debug_info {
 	u32_t count;

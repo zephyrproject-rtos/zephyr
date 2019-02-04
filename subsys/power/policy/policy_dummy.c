@@ -6,11 +6,10 @@
 
 #include <zephyr.h>
 #include <kernel.h>
-#include <soc.h>
 #include "pm_policy.h"
 
 #include <logging/log.h>
-LOG_MODULE_DECLARE(power, CONFIG_PM_LOG_LEVEL);
+LOG_MODULE_DECLARE(power, CONFIG_SYS_PM_LOG_LEVEL);
 
 enum power_states sys_pm_policy_next_state(s32_t ticks)
 {
@@ -25,7 +24,7 @@ enum power_states sys_pm_policy_next_state(s32_t ticks)
 	do {
 		i = (i + 1) % SYS_POWER_STATE_MAX;
 
-#ifdef CONFIG_PM_CONTROL_STATE_LOCK
+#ifdef CONFIG_SYS_PM_STATE_LOCK
 		if (!sys_pm_ctrl_is_state_enabled((enum power_states)(i))) {
 			continue;
 		}
