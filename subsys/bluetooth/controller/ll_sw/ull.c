@@ -809,6 +809,22 @@ void ll_rx_sched(void)
 	k_sem_give(sem_recv);
 }
 
+#if defined(CONFIG_BT_CONN)
+void ll_tx_ack_put(u16_t handle, struct node_tx *node_tx)
+{
+	struct lll_tx *tx;
+	u8_t idx;
+
+	idx = MFIFO_ENQUEUE_GET(tx_ack, (void **)&tx);
+	LL_ASSERT(tx);
+
+	tx->handle = handle;
+	tx->node = node_tx;
+
+	MFIFO_ENQUEUE(tx_ack, idx);
+}
+#endif /* CONFIG_BT_CONN */
+
 void ll_timeslice_ticker_id_get(u8_t * const instance_index,
 				u8_t * const user_id)
 {
@@ -942,22 +958,6 @@ void ull_rx_sched(void)
 	/* Kick the ULL (using the mayfly, tailchain it) */
 	mayfly_enqueue(TICKER_USER_ID_LLL, TICKER_USER_ID_ULL_HIGH, 1, &mfy);
 }
-
-#if defined(CONFIG_BT_CONN)
-void ull_tx_ack_put(u16_t handle, struct node_tx *node_tx)
-{
-	struct lll_tx *tx;
-	u8_t idx;
-
-	idx = MFIFO_ENQUEUE_GET(tx_ack, (void **)&tx);
-	LL_ASSERT(tx);
-
-	tx->handle = handle;
-	tx->node = node_tx;
-
-	MFIFO_ENQUEUE(tx_ack, idx);
-}
-#endif /* CONFIG_BT_CONN */
 
 int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 			lll_abort_cb_t abort_cb,
@@ -1249,7 +1249,7 @@ static inline void rx_demux_conn_tx_ack(u8_t ack_last, u16_t handle,
 			ull_conn_tx_lll_enqueue(conn, 1);
 		} else {
 			/* Pass through Tx ack */
-			ull_tx_ack_put(0xFFFF, node_tx);
+			ll_tx_ack_put(0xFFFF, node_tx);
 
 			/* Release link mem */
 			ull_conn_link_tx_release(link);
