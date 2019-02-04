@@ -51,6 +51,7 @@ void __attribute__((weak)) sys_resume_from_deep_sleep(void)
  *
  * @return N/A
  */
+#ifndef CONFIG_SMP
 static void set_kernel_idle_time_in_ticks(s32_t ticks)
 {
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
@@ -58,7 +59,6 @@ static void set_kernel_idle_time_in_ticks(s32_t ticks)
 #endif
 }
 
-#ifndef CONFIG_SMP
 static void sys_power_save_idle(void)
 {
 	s32_t ticks = _get_next_timeout_expiry();
