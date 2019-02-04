@@ -691,10 +691,9 @@ gen_kobj(KOBJ_INCLUDE_PATH)
 set(OFFSETS_LIB offsets)
 
 set(OFFSETS_C_PATH ${ZEPHYR_BASE}/arch/${ARCH}/core/offsets/offsets.c)
-set(OFFSETS_O_PATH ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${OFFSETS_LIB}.dir/arch/${ARCH}/core/offsets/offsets.c.obj)
 set(OFFSETS_H_PATH ${PROJECT_BINARY_DIR}/include/generated/offsets.h)
 
-add_library(          ${OFFSETS_LIB} STATIC ${OFFSETS_C_PATH})
+add_library(          ${OFFSETS_LIB} OBJECT ${OFFSETS_C_PATH})
 target_link_libraries(${OFFSETS_LIB} zephyr_interface)
 add_dependencies(     ${OFFSETS_LIB}
   ${SYSCALL_LIST_H_TARGET}
@@ -706,7 +705,7 @@ add_dependencies(     ${OFFSETS_LIB}
 add_custom_command(
   OUTPUT ${OFFSETS_H_PATH}
   COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/gen_offset_header.py
-  -i ${OFFSETS_O_PATH}
+  -i $<TARGET_OBJECTS:${OFFSETS_LIB}>
   -o ${OFFSETS_H_PATH}
   DEPENDS ${OFFSETS_LIB}
 )
@@ -881,7 +880,7 @@ set(zephyr_lnk
   ${ZEPHYR_LIBS_PROPERTY}
   ${LINKERFLAGPREFIX},--no-whole-archive
   kernel
-  ${OFFSETS_O_PATH}
+  $<TARGET_OBJECTS:${OFFSETS_LIB}>
   ${LIB_INCLUDE_DIR}
   -L${PROJECT_BINARY_DIR}
   ${TOOLCHAIN_LIBS}
