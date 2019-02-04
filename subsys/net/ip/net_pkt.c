@@ -1920,43 +1920,6 @@ struct net_buf *net_frag_get_pos(struct net_pkt *pkt,
 	return frag;
 }
 
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-static void too_short_msg(char *msg, struct net_pkt *pkt, u16_t offset,
-			  size_t extra_len)
-{
-	size_t total_len = net_buf_frags_len(pkt->frags);
-	size_t hdr_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ipv6_ext_len(pkt);
-
-	if (total_len != (hdr_len + extra_len)) {
-		/* Print info how many bytes past the end we tried to print */
-		NET_ERR("%s: IP hdr %d ext len %d offset %d pos %zd total %zd",
-			msg, net_pkt_ip_hdr_len(pkt),
-			net_pkt_ipv6_ext_len(pkt),
-			offset, hdr_len + extra_len, total_len);
-	}
-}
-#else
-#define too_short_msg(...)
-#endif
-
-struct net_udp_hdr *net_pkt_udp_data(struct net_pkt *pkt)
-{
-	struct net_buf *frag;
-	u16_t offset;
-
-	frag = net_frag_get_pos(pkt,
-				net_pkt_ip_hdr_len(pkt) +
-				net_pkt_ipv6_ext_len(pkt),
-				&offset);
-	if (!frag) {
-		/* We tried to read past the end of the data */
-		too_short_msg("udp data", pkt, offset, 0);
-		return NULL;
-	}
-
-	return (struct net_udp_hdr *)(frag->data + offset);
-}
-
 void net_pkt_set_appdata_values(struct net_pkt *pkt,
 				    enum net_ip_protocol proto)
 {
