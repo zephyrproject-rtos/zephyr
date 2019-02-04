@@ -41,6 +41,17 @@
 #include <soc.h>
 #include "hal/debug.h"
 
+/* Macro to return PDU time */
+#if defined(CONFIG_BT_CTLR_PHY_CODED)
+#define PKT_US(octets, phy) \
+	(((phy) & BIT(2)) ? \
+	 (80 + 256 + 16 + 24 + ((((2 + (octets) + 4) * 8) + 24 + 3) * 8)) : \
+	 (((octets) + 14) * 8 / BIT(((phy) & 0x03) >> 1)))
+#else /* !CONFIG_BT_CTLR_PHY_CODED */
+#define PKT_US(octets, phy) \
+	(((octets) + 14) * 8 / BIT(((phy) & 0x03) >> 1))
+#endif /* !CONFIG_BT_CTLR_PHY_CODED */
+
 static int init_reset(void);
 static void ticker_op_update_cb(u32_t status, void *param);
 static inline void disable(u16_t handle);
