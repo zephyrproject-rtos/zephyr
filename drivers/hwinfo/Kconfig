@@ -40,4 +40,11 @@ config HWINFO_MCUX_SIM
 	help
 	  Enable NXP kinetis mcux hwinfo driver.
 
+config HWINFO_IMXRT
+	bool "NXP i.mx RT device ID"
+	default y
+	depends on SOC_SERIES_IMX_RT
+	help
+	  Enable NXP i.mx RT hwinfo driver.
+
 endif
