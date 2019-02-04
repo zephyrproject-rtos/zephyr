@@ -40,16 +40,16 @@ static struct {
 	struct device *clk_hf;
 } lll;
 
-static int _init_reset(void);
+static int init_reset(void);
 static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		   lll_prepare_cb_t prepare_cb, int prio,
 		   struct lll_prepare_param *prepare_param, u8_t is_resume);
 static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio);
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
-static void _preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
-			       u16_t lazy, void *param);
-static void _preempt(void *param);
+static void preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
+			      u16_t lazy, void *param);
+static void preempt(void *param);
 #else /* CONFIG_BT_CTLR_LOW_LAT */
 #if (CONFIG_BT_CTLR_LLL_PRIO == CONFIG_BT_CTLR_ULL_LOW_PRIO)
 static void ticker_op_job_disable(u32_t status, void *op_context);
@@ -125,7 +125,7 @@ int lll_init(void)
 		return -ENODEV;
 	}
 
-	err = _init_reset();
+	err = init_reset();
 	if (err) {
 		return err;
 	}
@@ -153,7 +153,7 @@ int lll_reset(void)
 {
 	int err;
 
-	err = _init_reset();
+	err = init_reset();
 	if (err) {
 		return err;
 	}
@@ -342,7 +342,7 @@ u32_t lll_preempt_calc(struct evt_hdr *evt, u8_t ticker_id,
 	return 0;
 }
 
-static int _init_reset(void)
+static int init_reset(void)
 {
 	return 0;
 }
@@ -405,7 +405,7 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 				   TICKER_NULL_REMAINDER,
 				   TICKER_NULL_LAZY,
 				   TICKER_NULL_SLOT,
-				   _preempt_ticker_cb, NULL,
+				   preempt_ticker_cb, NULL,
 				   NULL, NULL);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
 			  (ret == TICKER_STATUS_FAILURE) ||
@@ -465,19 +465,19 @@ static int resume_enqueue(lll_prepare_cb_t resume_cb, int resume_prio)
 }
 
 #if !defined(CONFIG_BT_CTLR_LOW_LAT)
-static void _preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
+static void preempt_ticker_cb(u32_t ticks_at_expire, u32_t remainder,
 			       u16_t lazy, void *param)
 {
-	static memq_link_t _link;
-	static struct mayfly _mfy = {0, 0, &_link, NULL, _preempt};
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, preempt};
 	u32_t ret;
 
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
-			     0, &_mfy);
+			     0, &mfy);
 	LL_ASSERT(!ret);
 }
 
-static void _preempt(void *param)
+static void preempt(void *param)
 {
 	struct lll_event *next = ull_prepare_dequeue_get();
 	lll_prepare_cb_t resume_cb;
