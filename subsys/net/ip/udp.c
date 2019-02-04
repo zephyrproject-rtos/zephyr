@@ -136,60 +136,67 @@ fail:
 struct net_udp_hdr *net_udp_get_hdr(struct net_pkt *pkt,
 				    struct net_udp_hdr *hdr)
 {
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(udp_access, struct net_udp_hdr);
+	struct net_pkt_cursor backup;
 	struct net_udp_hdr *udp_hdr;
-	struct net_buf *frag;
-	u16_t pos;
+	bool overwrite;
 
-	udp_hdr = net_pkt_udp_data(pkt);
-	if (net_udp_header_fits(pkt, udp_hdr)) {
-		return udp_hdr;
+	udp_access.data = hdr;
+
+	overwrite = net_pkt_is_being_overwritten(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+
+	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+			 net_pkt_ipv6_ext_len(pkt))) {
+		udp_hdr = NULL;
+		goto out;
 	}
 
-	frag = net_frag_read(pkt->frags, net_pkt_ip_hdr_len(pkt) +
-			     net_pkt_ipv6_ext_len(pkt),
-			     &pos, sizeof(hdr->src_port),
-			     (u8_t *)&hdr->src_port);
-	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->dst_port),
-			     (u8_t *)&hdr->dst_port);
-	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->len),
-			     (u8_t *)&hdr->len);
-	frag = net_frag_read(frag, pos, &pos, sizeof(hdr->chksum),
-			     (u8_t *)&hdr->chksum);
-	if (!frag) {
-		NET_ASSERT(frag);
-		return NULL;
-	}
+	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt, &udp_access);
 
-	return hdr;
+out:
+	net_pkt_cursor_restore(pkt, &backup);
+	net_pkt_set_overwrite(pkt, overwrite);
+
+	return udp_hdr;
 }
 
 struct net_udp_hdr *net_udp_set_hdr(struct net_pkt *pkt,
 				    struct net_udp_hdr *hdr)
 {
-	struct net_buf *frag;
-	u16_t pos;
+	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
+	struct net_pkt_cursor backup;
+	struct net_udp_hdr *udp_hdr;
+	bool overwrite;
 
-	if (net_udp_header_fits(pkt, hdr)) {
-		return hdr;
+	overwrite = net_pkt_is_being_overwritten(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+
+	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+			 net_pkt_ipv6_ext_len(pkt))) {
+		udp_hdr = NULL;
+		goto out;
 	}
 
-	frag = net_pkt_write(pkt, pkt->frags, net_pkt_ip_hdr_len(pkt) +
-			     net_pkt_ipv6_ext_len(pkt),
-			     &pos, sizeof(hdr->src_port),
-			     (u8_t *)&hdr->src_port, PKT_WAIT_TIME);
-	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->dst_port),
-			     (u8_t *)&hdr->dst_port, PKT_WAIT_TIME);
-	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->len),
-			     (u8_t *)&hdr->len, PKT_WAIT_TIME);
-	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(hdr->chksum),
-			     (u8_t *)&hdr->chksum, PKT_WAIT_TIME);
-
-	if (!frag) {
-		NET_ASSERT(frag);
-		return NULL;
+	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt, &udp_access);
+	if (!udp_hdr) {
+		goto out;
 	}
 
-	return hdr;
+	memcpy(udp_hdr, hdr, sizeof(struct net_udp_hdr));
+
+	net_pkt_set_data(pkt, &udp_access);
+out:
+	net_pkt_cursor_restore(pkt, &backup);
+	net_pkt_set_overwrite(pkt, overwrite);
+
+	return udp_hdr == NULL ? NULL : hdr;
 }
 
 int net_udp_register(u8_t family,
