@@ -23,9 +23,24 @@ static void tdata_dump_callback(const struct k_thread *thread, void *user_data)
 						thread->stack_info.size);
 }
 
-/*power hook functions*/
+/*
+ * Weak power hook functions. Used on systems that have not implemented
+ * power management.
+ */
+__weak void sys_set_power_state(enum power_states state)
+{
+	/* Never called. */
+	__ASSERT_NO_MSG(false);
+}
 
-enum power_states sys_suspend(s32_t ticks)
+__weak void sys_power_state_post_ops(enum power_states state)
+{
+	/* Never called. */
+	__ASSERT_NO_MSG(false);
+}
+
+/* Our PM policy handler */
+enum power_states sys_pm_policy_next_state(s32_t ticks)
 {
 	static bool test_flag;
 
@@ -38,10 +53,6 @@ enum power_states sys_suspend(s32_t ticks)
 	}
 
 	return SYS_POWER_STATE_ACTIVE;
-}
-
-void sys_resume(void)
-{
 }
 
 /*work handler*/
