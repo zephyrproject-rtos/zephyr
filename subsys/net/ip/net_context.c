@@ -240,7 +240,7 @@ int net_context_get(sa_family_t family,
 			}
 		}
 
-		contexts[i].iface = 0;
+		contexts[i].iface = -1;
 		contexts[i].flags = 0;
 		atomic_set(&contexts[i].refcount, 1);
 
@@ -451,7 +451,7 @@ static int bind_default(struct net_context *context)
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) && family == AF_CAN) {
 		struct sockaddr_can can_addr;
 
-		if (context->iface) {
+		if (context->iface >= 0) {
 			return 0;
 		} else {
 #if defined(CONFIG_NET_L2_CANBUS)
