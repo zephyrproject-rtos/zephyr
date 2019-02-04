@@ -40,7 +40,7 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-static int _init_reset(void);
+static int init_reset(void);
 static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		      void *param);
 static u8_t disable(u16_t handle);
@@ -82,7 +82,7 @@ int ull_scan_init(void)
 {
 	int err;
 
-	err = _init_reset();
+	err = init_reset();
 	if (err) {
 		return err;
 	}
@@ -99,7 +99,7 @@ int ull_scan_reset(void)
 		(void)disable(handle);
 	}
 
-	err = _init_reset();
+	err = init_reset();
 	if (err) {
 		return err;
 	}
@@ -351,7 +351,7 @@ u32_t ull_scan_filter_pol_get(u16_t handle)
 	return scan->lll.filter_policy;
 }
 
-static int _init_reset(void)
+static int init_reset(void)
 {
 	return 0;
 }
@@ -359,8 +359,8 @@ static int _init_reset(void)
 static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 		      void *param)
 {
-	static memq_link_t _link;
-	static struct mayfly _mfy = {0, 0, &_link, NULL, lll_scan_prepare};
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_scan_prepare};
 	static struct lll_prepare_param p;
 	struct ll_scan_set *scan = param;
 	u32_t ret;
@@ -377,11 +377,11 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	p.remainder = remainder;
 	p.lazy = lazy;
 	p.param = &scan->lll;
-	_mfy.param = &p;
+	mfy.param = &p;
 
 	/* Kick LLL prepare */
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
-			     0, &_mfy);
+			     0, &mfy);
 	LL_ASSERT(!ret);
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_SCHED_ADVANCED)

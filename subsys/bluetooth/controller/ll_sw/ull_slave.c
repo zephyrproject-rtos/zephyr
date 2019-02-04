@@ -382,8 +382,8 @@ void ull_slave_done(struct node_rx_event_done *done, u32_t *ticks_drift_plus,
 void ull_slave_ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 			 void *param)
 {
-	static memq_link_t _link;
-	static struct mayfly _mfy = {0, 0, &_link, NULL, lll_slave_prepare};
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_slave_prepare};
 	static struct lll_prepare_param p;
 	struct ll_conn *conn = param;
 	u32_t err;
@@ -407,11 +407,11 @@ void ull_slave_ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	p.remainder = remainder;
 	p.lazy = lazy;
 	p.param = &conn->lll;
-	_mfy.param = &p;
+	mfy.param = &p;
 
 	/* Kick LLL prepare */
 	err = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH, TICKER_USER_ID_LLL,
-			     0, &_mfy);
+			     0, &mfy);
 	LL_ASSERT(!err);
 
 	/* De-mux remaining tx nodes from FIFO */

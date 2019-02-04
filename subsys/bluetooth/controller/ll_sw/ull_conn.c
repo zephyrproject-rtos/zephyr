@@ -41,7 +41,7 @@
 #include <soc.h>
 #include "hal/debug.h"
 
-static int _init_reset(void);
+static int init_reset(void);
 static void ticker_op_update_cb(u32_t status, void *param);
 static inline void disable(u16_t handle);
 static void conn_cleanup(struct ll_conn *conn);
@@ -491,7 +491,7 @@ int ull_conn_init(void)
 		return -ENODEV;
 	}
 
-	err = _init_reset();
+	err = init_reset();
 	if (err) {
 		return err;
 	}
@@ -522,7 +522,7 @@ int ull_conn_reset(void)
 	/* Reset the current conn update conn context pointer */
 	conn_upd_curr = NULL;
 
-	err = _init_reset();
+	err = init_reset();
 	if (err) {
 		return err;
 	}
@@ -1190,7 +1190,7 @@ void ull_conn_tx_ack(struct ll_conn *conn, memq_link_t *link,
 	ull_tx_ack_put(conn->lll.handle, tx);
 }
 
-static int _init_reset(void)
+static int init_reset(void)
 {
 	/* Initialize conn pool. */
 	mem_init(conn_pool, sizeof(struct ll_conn),
@@ -1242,15 +1242,15 @@ static void ticker_op_update_cb(u32_t status, void *param)
 
 static void ticker_op_stop_cb(u32_t status, void *param)
 {
-	static memq_link_t _link;
-	static struct mayfly _mfy = {0, 0, &_link, NULL, lll_conn_tx_flush};
+	static memq_link_t link;
+	static struct mayfly mfy = {0, 0, &link, NULL, lll_conn_tx_flush};
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 
-	_mfy.param = param;
+	mfy.param = param;
 
 	/* Flush pending tx PDUs in LLL (using a mayfly) */
-	mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_LLL, 1, &_mfy);
+	mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_LLL, 1, &mfy);
 }
 
 static inline void disable(u16_t handle)
