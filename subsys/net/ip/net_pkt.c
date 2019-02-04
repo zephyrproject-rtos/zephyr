@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 #include <net/net_ip.h>
 #include <net/buf.h>
 #include <net/net_pkt.h>
+#include <net/ethernet.h>
 #include <net/udp.h>
 #include <net/tcp.h>
 
@@ -2306,6 +2307,19 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 		max_len = max(max_len, NET_IPV6_MTU);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
 		max_len = max(max_len, NET_IPV4_MTU);
+	} else { /* family == AF_UNSPEC */
+#if defined (CONFIG_NET_L2_ETHERNET)
+		if (net_if_l2(net_pkt_iface(pkt)) ==
+		    &NET_L2_GET_NAME(ETHERNET)) {
+			max_len += sizeof(struct net_eth_hdr);
+		} else
+#endif /* CONFIG_NET_L2_ETHERNET */
+		{
+			/* Other L2 are not checked as the pkt MTU in this case
+			 * is based on the IP layer (IPv6 most of the time).
+			 */
+			max_len = size;
+		}
 	}
 
 	max_len -= existing;

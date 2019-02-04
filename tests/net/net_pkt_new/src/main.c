@@ -60,6 +60,7 @@ static const struct ethernet_api fake_dev_api = {
 
 #define _ETH_L2_LAYER ETHERNET_L2
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
+#define L2_HDR_SIZE sizeof(struct net_eth_hdr)
 #else
 static const struct dummy_api fake_dev_api = {
 	.iface_api.init = fake_dev_iface_init,
@@ -68,6 +69,7 @@ static const struct dummy_api fake_dev_api = {
 
 #define _ETH_L2_LAYER DUMMY_L2
 #define _ETH_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
+#define L2_HDR_SIZE 0
 #endif
 
 NET_DEVICE_INIT(fake_dev, "fake_dev",
@@ -154,7 +156,7 @@ static void test_net_pkt_allocate_with_buffer(void)
 	zassert_true(pkt != NULL, "Pkt not allocated");
 
 	zassert_false(pkt_is_of_size(pkt, 1800), "Pkt size is not right");
-	zassert_true(pkt_is_of_size(pkt, net_if_get_mtu(eth_if)),
+	zassert_true(pkt_is_of_size(pkt, net_if_get_mtu(eth_if) + L2_HDR_SIZE),
 		     "Pkt size is not right");
 
 	/* Freeing the packet */
