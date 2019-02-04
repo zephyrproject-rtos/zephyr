@@ -329,12 +329,58 @@ static ssize_t can_sock_recvfrom_vmeth(void *obj, void *buf, size_t max_len,
 static int can_sock_getsockopt_vmeth(void *obj, int level, int optname,
 				     void *optval, socklen_t *optlen)
 {
+	if (level == SOL_CAN_RAW) {
+		const struct canbus_api *api;
+		struct net_if *iface;
+		struct device *dev;
+
+		if (optval == NULL) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		iface = net_context_get_iface(obj);
+		dev = net_if_get_device(iface);
+		api = dev->driver_api;
+
+		if (!api->getsockopt) {
+			errno = ENOTSUP;
+			return -1;
+		}
+
+		return api->getsockopt(dev, obj, level, optname, optval,
+				       optlen);
+	}
+
 	return zcan_getsockopt_ctx(obj, level, optname, optval, optlen);
 }
 
 static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 				     const void *optval, socklen_t optlen)
 {
+	if (level == SOL_CAN_RAW) {
+		const struct canbus_api *api;
+		struct net_if *iface;
+		struct device *dev;
+
+		if (optval == NULL) {
+			errno = EINVAL;
+			return -1;
+		}
+
+		iface = net_context_get_iface(obj);
+		dev = net_if_get_device(iface);
+		api = dev->driver_api;
+
+		if (!api->setsockopt) {
+			errno = ENOTSUP;
+			return -1;
+		}
+
+		return api->setsockopt(dev, obj, level, optname, optval,
+				       optlen);
+	}
+
 	return zcan_setsockopt_ctx(obj, level, optname, optval, optlen);
 }
 

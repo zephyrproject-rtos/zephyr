@@ -36,6 +36,10 @@ extern "C" {
 #define SOL_CAN_BASE 100
 #define SOL_CAN_RAW (SOL_CAN_BASE + CAN_RAW)
 
+enum {
+	CAN_RAW_FILTER = 1,
+};
+
 /* Socket CAN MTU size */
 #define CAN_MTU		(sizeof(struct can_msg))
 
@@ -60,6 +64,14 @@ struct canbus_api {
 
 	/** Send a CAN packet by socket */
 	int (*send)(struct device *dev, struct net_pkt *pkt);
+
+	/** Set socket CAN option */
+	int (*setsockopt)(struct device *dev, void *obj, int level, int optname,
+			  const void *optval, socklen_t optlen);
+
+	/** Get socket CAN option */
+	int (*getsockopt)(struct device *dev, void *obj, int level, int optname,
+			  const void *optval, socklen_t *optlen);
 };
 
 /**
