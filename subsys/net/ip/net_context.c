@@ -1441,10 +1441,14 @@ int net_context_send_new(struct net_context *context,
 			 void *user_data)
 {
 	socklen_t addrlen;
+	int ret = 0;
+
+	k_mutex_lock(&context->lock, K_FOREVER);
 
 	if (!(context->flags & NET_CONTEXT_REMOTE_ADDR_SET) ||
 	    !net_sin(&context->remote)->sin_port) {
-		return -EDESTADDRREQ;
+		ret = -EDESTADDRREQ;
+		goto unlock;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
@@ -1457,8 +1461,12 @@ int net_context_send_new(struct net_context *context,
 		addrlen = 0;
 	}
 
-	return context_sendto_new(context, buf, len, &context->remote,
-				  addrlen, cb, timeout, token, user_data);
+	ret = context_sendto_new(context, buf, len, &context->remote,
+				 addrlen, cb, timeout, token, user_data);
+unlock:
+	k_mutex_unlock(&context->lock);
+
+	return ret;
 }
 
 
@@ -1472,8 +1480,16 @@ int net_context_sendto_new(struct net_context *context,
 			   void *token,
 			   void *user_data)
 {
-	return context_sendto_new(context, buf, len, dst_addr, addrlen,
-				  cb, timeout, token, user_data);
+	int ret;
+
+	k_mutex_lock(&context->lock, K_FOREVER);
+
+	ret = context_sendto_new(context, buf, len, dst_addr, addrlen,
+				 cb, timeout, token, user_data);
+
+	k_mutex_unlock(&context->lock);
+
+	return ret;
 }
 
 enum net_verdict net_context_packet_received(struct net_conn *conn,
