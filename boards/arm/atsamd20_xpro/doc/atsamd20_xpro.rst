@@ -134,7 +134,7 @@ References
 .. target-notes::
 
 .. _Microchip website:
-    www.microchip.com/DevelopmentTools/ProductDetails.aspx?PartNO=ATSAMD20-XPRO
+    https://www.microchip.com/DevelopmentTools/ProductDetails.aspx?PartNO=ATSAMD20-XPRO
 
 .. _SAM D20 Xplained Pro Schematic:
     http://ww1.microchip.com/downloads/en/DeviceDoc/SAMD20-Xplained-Pro_Design-Documentation.zip
