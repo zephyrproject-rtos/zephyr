@@ -18,3 +18,4 @@ supported:
   - i2c
   - spi
   - netif:eth
+  - hwinfo
