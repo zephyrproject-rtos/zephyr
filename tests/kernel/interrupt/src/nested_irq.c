@@ -3,6 +3,12 @@
 #define DURATION 5
 struct k_timer timer;
 
+/* This tests uses two IRQ lines, selected within the range of IRQ lines
+ * available on the target SOC the test executes on (and starting from
+ * the maximum available IRQ line index)
+ */
+#define IRQ_LINE(offset) (CONFIG_NUM_IRQS - ((offset) + 1))
+
 #define ISR0_OFFSET 1
 #define ISR1_OFFSET 2
 
