@@ -106,7 +106,7 @@ SECTION_FUNC(TEXT, _power_soc_lpss_mode)
 	sleep r0
 
 	/* If we reach this code it means the x86 core didn't put the
-	 * system in SYS_POWER_STATE_DEEP_SLEEP_2 state while we were
+	 * system in SYS_POWER_STATE_DEEP_SLEEP_3 state while we were
 	 * in LPS. Then discard saved context.
 	 */
 	_discard_callee_saved_regs
