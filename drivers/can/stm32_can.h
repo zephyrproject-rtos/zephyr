@@ -67,7 +67,7 @@ struct can_stm32_data {
 struct can_stm32_config {
 	CAN_TypeDef *can;   /*!< CAN Registers*/
 	u32_t bus_speed;
-	u8_t swj;
+	u8_t sjw;
 	u8_t prop_bs1;
 	u8_t bs2;
 	struct stm32_pclken pclken;
