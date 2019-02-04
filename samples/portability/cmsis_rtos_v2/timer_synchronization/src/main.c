@@ -50,16 +50,17 @@ void read_msg_callback(void *arg)
 	}
 }
 
-void send_msg_thread(void)
+int send_msg_thread(void)
 {
 	osStatus_t status;
 
 	status = osMessageQueuePut(message_id, &data, 0, osWaitForever);
 	if (osMessageQueueGetCount(message_id) == 1 && status == osOK) {
 		printk("Wrote to message queue: %d\n", data);
-	} else {
-		printk("\n**Error sending message to message queue**\n");
+		return 0;
 	}
+	printk("\n**Error sending message to message queue**\n");
+	return 1;
 }
 
 void main(void)
@@ -78,6 +79,7 @@ void main(void)
 		printk("Wrote to message queue: %d\n", data);
 	} else {
 		printk("\n**Error sending message to message queue**\n");
+		goto exit;
 	}
 
 	timer_id = osTimerNew(read_msg_callback, osTimerPeriodic, NULL,
@@ -86,7 +88,10 @@ void main(void)
 
 	while (--counter) {
 		data++;
-		send_msg_thread();
+		if (send_msg_thread()) {
+			/* Writing to message queue has failed */
+			break;
+		}
 	}
 	/* Let the last message be read */
 	osDelay(TIMER_TICKS);
@@ -94,6 +99,7 @@ void main(void)
 	osTimerStop(timer_id);
 	osTimerDelete(timer_id);
 
+exit:
 	if (counter == 0) {
 		printk("Sample execution successful\n");
 	} else {
