@@ -22,9 +22,9 @@ endchoice
 
 if SYS_PM_POLICY_RESIDENCY
 
-config SYS_PM_LPS_MIN_RES
-	int "LPS minimum residency"
-	depends on SYS_POWER_STATE_CPU_LPS_SUPPORTED
+config SYS_PM_LPS_0_MIN_RES
+	int "LPS_0 minimum residency"
+	depends on SYS_POWER_STATE_CPU_LPS_0_SUPPORTED
 	default 5
 	help
 	  Minimum residency in ticks to enter LPS state.
@@ -43,9 +43,9 @@ config SYS_PM_LPS_2_MIN_RES
 	help
 	  Minimum residency in ticks to enter LPS_2 state.
 
-config SYS_PM_DEEP_SLEEP_MIN_RES
+config SYS_PM_DEEP_SLEEP_0_MIN_RES
 	int "DEEP_SLEEP minimum residency"
-	depends on SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
+	depends on SYS_POWER_STATE_DEEP_SLEEP_0_SUPPORTED
 	default 60
 	help
 	  Minimum residency in ticks to enter DEEP_SLEEP state.

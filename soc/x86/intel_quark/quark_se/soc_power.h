@@ -23,10 +23,10 @@ extern "C" {
 
 /*
  * Power state map:
- * SYS_POWER_STATE_CPU_LPS:		C1 state
+ * SYS_POWER_STATE_CPU_LPS_0:		C1 state
  * SYS_POWER_STATE_CPU_LPS_1:		C2 state
  * SYS_POWER_STATE_CPU_LPS_2:		C2LP state
- * SYS_POWER_STATE_DEEP_SLEEP:		SLEEP state
+ * SYS_POWER_STATE_DEEP_SLEEP_0:	SLEEP state
  * SYS_POWER_STATE_DEEP_SLEEP_1:	SLEEP state with LPMODE enabled
  */
 

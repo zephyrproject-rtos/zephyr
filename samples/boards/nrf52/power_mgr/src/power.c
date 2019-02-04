@@ -37,8 +37,8 @@ void sys_pm_notify_lps_entry(enum power_states state)
 		k_cpu_idle();
 		break;
 
-	case SYS_POWER_STATE_DEEP_SLEEP:
-		printk("--> Entering to SYS_POWER_STATE_DEEP_SLEEP state.\n");
+	case SYS_POWER_STATE_DEEP_SLEEP_0:
+		printk("--> Entering to SYS_POWER_STATE_DEEP_SLEEP_0 state.\n");
 
 		/*
 		 * This power mode is already implemented by the OS. It will be
@@ -80,8 +80,8 @@ void sys_pm_notify_lps_exit(enum power_states state)
 		gpio_pin_write(gpio_port, LED_2, LED_ON);
 		break;
 
-	case SYS_POWER_STATE_DEEP_SLEEP:
-		printk("--> Exited from SYS_POWER_STATE_DEEP_SLEEP state.\n");
+	case SYS_POWER_STATE_DEEP_SLEEP_0:
+		printk("--> Exited from SYS_POWER_STATE_DEEP_SLEEP_0 state.\n");
 
 		/* Turn on LEDs which were powered down before deep sleep. */
 		gpio_pin_write(gpio_port, LED_1, LED_ON);

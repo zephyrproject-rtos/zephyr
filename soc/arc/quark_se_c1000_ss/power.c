@@ -43,7 +43,7 @@ void sys_set_power_state(enum power_states state)
 {
 	switch (state) {
 #if (defined(CONFIG_SYS_POWER_LOW_POWER_STATES))
-	case SYS_POWER_STATE_CPU_LPS:
+	case SYS_POWER_STATE_CPU_LPS_0:
 		qm_ss_power_cpu_ss1(QM_SS_POWER_CPU_SS1_TIMER_ON);
 		break;
 	case SYS_POWER_STATE_CPU_LPS_1:
@@ -51,7 +51,7 @@ void sys_set_power_state(enum power_states state)
 		break;
 #endif
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
-	case SYS_POWER_STATE_DEEP_SLEEP:
+	case SYS_POWER_STATE_DEEP_SLEEP_0:
 		qm_ss_power_soc_lpss_enable();
 		qm_power_soc_set_ss_restore_flag();
 		_power_soc_lpss_mode();
@@ -76,12 +76,12 @@ void sys_power_state_post_ops(enum power_states state)
 			u32_t limit = _arc_v2_aux_reg_read(_ARC_V2_TMR0_LIMIT);
 			_arc_v2_aux_reg_write(_ARC_V2_TMR0_COUNT, limit - 1);
 		}
-	case SYS_POWER_STATE_CPU_LPS:
+	case SYS_POWER_STATE_CPU_LPS_0:
 		__builtin_arc_seti(0);
 		break;
 #endif
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
-	case SYS_POWER_STATE_DEEP_SLEEP:
+	case SYS_POWER_STATE_DEEP_SLEEP_0:
 		qm_ss_power_soc_lpss_disable();
 
 		/* If flag is cleared it means the system entered in

@@ -357,11 +357,11 @@ config SYS_POWER_LOW_POWER_STATES_SUPPORTED
 	  This option signifies that the target supports the SYS_POWER_LOW_POWER_STATES
 	  configuration option.
 
-config SYS_POWER_STATE_CPU_LPS_SUPPORTED
+config SYS_POWER_STATE_CPU_LPS_0_SUPPORTED
 	# Hidden
 	bool
 	help
-	  This option signifies that the target supports the SYS_POWER_STATE_CPU_LPS
+	  This option signifies that the target supports the SYS_POWER_STATE_CPU_LPS_0
 	  configuration option.
 
 config SYS_POWER_STATE_CPU_LPS_1_SUPPORTED
@@ -385,11 +385,11 @@ config SYS_POWER_DEEP_SLEEP_STATES_SUPPORTED
 	  This option signifies that the target supports the SYS_POWER_DEEP_SLEEP_STATES
 	  configuration option.
 
-config SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
+config SYS_POWER_STATE_DEEP_SLEEP_0_SUPPORTED
 	# Hidden
 	bool
 	help
-	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP
+	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_0
 	  configuration option.
 
 config SYS_POWER_STATE_DEEP_SLEEP_1_SUPPORTED
