@@ -19,7 +19,7 @@
 
 set -xe
 
-SANITYCHECK_OPTIONS=" --inline-logs --enable-coverage -N"
+SANITYCHECK_OPTIONS="--toolchain-variant xtools --toolchain-variant espressif --toolchain-variant zephyr --inline-logs --enable-coverage -N"
 SANITYCHECK_OPTIONS_RETRY="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-2nd-pass"
 SANITYCHECK_OPTIONS_RETRY_2="${SANITYCHECK_OPTIONS} --only-failed --outdir=out-3nd-pass"
 export BSIM_OUT_PATH="${BSIM_OUT_PATH:-/opt/bsim/}"
