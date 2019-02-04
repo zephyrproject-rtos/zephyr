@@ -13,6 +13,11 @@ menuconfig HWINFO
 
 if HWINFO
 
+config HWINFO_SHELL
+	bool "Enable HWINFO Shell"
+	help
+	  Enable hwinfo Shell for testing.
+
 config HWINFO_STM32
 	bool "STM32 hwinfo"
 	default y
