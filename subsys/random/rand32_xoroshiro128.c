@@ -41,6 +41,7 @@
 #include <device.h>
 #include <entropy.h>
 #include <kernel.h>
+#include <hwinfo.h>
 
 static u64_t state[2];
 
@@ -51,6 +52,7 @@ static inline u64_t rotl(const u64_t x, int k)
 	return (x << k) | (x >> (64 - k));
 }
 
+#if CONFIG_XOROSHIRO_RANDOM_GENERATOR
 static int xoroshiro128_initialize(struct device *dev)
 {
 	dev = device_get_binding(CONFIG_ENTROPY_NAME);
@@ -76,6 +78,32 @@ static int xoroshiro128_initialize(struct device *dev)
 
 	return 0;
 }
+#elif CONFIG_XOROSHIRO_DEV_ID_RANDOM_GENERATOR
+static u32_t xoroshiro128_next(void);
+
+static int xoroshiro128_initialize(struct device *dev)
+{
+	ssize_t id_len;
+	int i;
+
+	id_len = hwinfo_get_device_id((u8_t *)&state, sizeof(state));
+	if (id_len < 1) {
+		return -EINVAL;
+	}
+
+	/* Prevent too many zeros if the device id is short in length */
+	for (i = id_len; i < sizeof(state); i++) {
+		state[i] = state[i % id_len];
+	}
+
+	/* Shuffle once */
+	xoroshiro128_next();
+
+	k_object_access_all_grant(&state_sem);
+
+	return 0;
+}
+#endif /* CONFIG_XOROSHIRO_DEV_ID_RANDOM_GENERATOR */
 
 static u32_t xoroshiro128_next(void)
 {

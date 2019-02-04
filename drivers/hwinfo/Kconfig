@@ -19,17 +19,25 @@ config HWINFO_SHELL
 	help
 	  Enable hwinfo Shell for testing.
 
+config DEVICE_ID_HAS_DRIVER
+	bool
+	help
+	  This is an option to be enabled by individual device id driver
+	  to signal that there is a driver.
+
 config HWINFO_STM32
 	bool "STM32 hwinfo"
 	default y
 	depends on SOC_FAMILY_STM32
 	select USE_STM32_LL_UTILS
+	select DEVICE_ID_HAS_DRIVER
 	help
 	  Enable STM32 hwinfo driver.
 
 config HWINFO_NRF
 	bool "NRF device ID"
 	default y
+	select DEVICE_ID_HAS_DRIVER
 	depends on (SOC_SERIES_NRF52X || SOC_SERIES_NRF51X)
 	help
 	  Enable Nordic NRF hwinfo driver.
@@ -38,6 +46,7 @@ config HWINFO_MCUX_SIM
 	bool "NXP kinetis device ID"
 	default y
 	depends on HAS_MCUX_SIM
+	select DEVICE_ID_HAS_DRIVER
 	help
 	  Enable NXP kinetis mcux hwinfo driver.
 
@@ -45,6 +54,7 @@ config HWINFO_IMXRT
 	bool "NXP i.mx RT device ID"
 	default y
 	depends on SOC_SERIES_IMX_RT
+	select DEVICE_ID_HAS_DRIVER
 	help
 	  Enable NXP i.mx RT hwinfo driver.
 
