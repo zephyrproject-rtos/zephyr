@@ -200,7 +200,8 @@ _rirq_return_from_coop:
 	ld_s r0, [r2, _thread_offset_to_return_value]
 	st_s r0, [sp, ___isf_t_r0_OFFSET]
 
-	st 0, [sp, ___isf_t_lp_count_OFFSET]
+	/* reset zero-overhead loops */
+	st 0, [sp, ___isf_t_lp_end_OFFSET]
 
 	/*
 	 * r13 is part of both the callee and caller-saved register sets because
