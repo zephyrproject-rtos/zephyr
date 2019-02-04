@@ -154,10 +154,9 @@ static inline void net_pkt_hexdump(struct net_pkt *pkt, const char *str)
 	}
 }
 
-/* Print fragment chain */
-static inline void net_print_frags(const char *str, struct net_pkt *pkt)
+static inline void net_pkt_print_buffer_info(struct net_pkt *pkt, const char *str)
 {
-	struct net_buf *frag = pkt->frags;
+	struct net_buf *buf = pkt->buffer;
 
 	if (str) {
 		printk("%s", str);
@@ -165,15 +164,16 @@ static inline void net_print_frags(const char *str, struct net_pkt *pkt)
 
 	printk("%p[%d]", pkt, atomic_get(&pkt->atomic_ref));
 
-	if (frag) {
+	if (buf) {
 		printk("->");
 	}
 
-	while (frag) {
-		printk("%p[%d/%d]", frag, frag->ref, frag->len);
+	while (buf) {
+		printk("%p[%d/%u (%u)]",
+		       buf, atomic_get(&pkt->atomic_ref), buf->len, buf->size);
 
-		frag = frag->frags;
-		if (frag) {
+		buf = buf->frags;
+		if (buf) {
 			printk("->");
 		}
 	}
