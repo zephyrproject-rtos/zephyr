@@ -22,46 +22,47 @@ endchoice
 
 if SYS_PM_POLICY_RESIDENCY
 
-config SYS_PM_LPS_MIN_RES
-	int "LPS minimum residency"
-	depends on SYS_POWER_STATE_CPU_LPS_SUPPORTED
-	default 5
-	help
-	  Minimum residency in ticks to enter LPS state.
-
 config SYS_PM_LPS_1_MIN_RES
 	int "LPS_1 minimum residency"
 	depends on SYS_POWER_STATE_CPU_LPS_1_SUPPORTED
-	default 10
+	default 5
 	help
 	  Minimum residency in ticks to enter LPS_1 state.
 
 config SYS_PM_LPS_2_MIN_RES
 	int "LPS_2 minimum residency"
 	depends on SYS_POWER_STATE_CPU_LPS_2_SUPPORTED
-	default 30
+	default 10
 	help
 	  Minimum residency in ticks to enter LPS_2 state.
 
-config SYS_PM_DEEP_SLEEP_MIN_RES
-	int "DEEP_SLEEP minimum residency"
-	depends on SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
-	default 60
+config SYS_PM_LPS_3_MIN_RES
+	int "Low Power State 3 minimum residency"
+	depends on SYS_POWER_STATE_CPU_LPS_3_SUPPORTED
+	default 30
 	help
-	  Minimum residency in ticks to enter DEEP_SLEEP state.
+	  Minimum residency in ticks to enter SYS_POWER_STATE_CPU_LPS_3 state.
 
 config SYS_PM_DEEP_SLEEP_1_MIN_RES
 	int "DEEP_SLEEP_1 minimum residency"
 	depends on SYS_POWER_STATE_DEEP_SLEEP_1_SUPPORTED
-	default 90
+	default 60
 	help
 	  Minimum residency in ticks to enter DEEP_SLEEP_1 state.
 
 config SYS_PM_DEEP_SLEEP_2_MIN_RES
 	int "DEEP_SLEEP_2 minimum residency"
 	depends on SYS_POWER_STATE_DEEP_SLEEP_2_SUPPORTED
-	default 120
+	default 90
 	help
 	  Minimum residency in ticks to enter DEEP_SLEEP_2 state.
+
+config SYS_PM_DEEP_SLEEP_3_MIN_RES
+	int "Deep Sleep State 3 minimum residency"
+	depends on SYS_POWER_STATE_DEEP_SLEEP_3_SUPPORTED
+	default 120
+	help
+	  Minimum residency in ticks to enter SYS_POWER_STATE_DEEP_SLEEP_3
+	  state.
 
 endif # SYS_PM_POLICY_RESIDENCY

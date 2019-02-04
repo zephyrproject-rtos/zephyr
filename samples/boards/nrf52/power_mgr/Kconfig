@@ -2,8 +2,8 @@ config NRF5_POWER_MGMT_EXAMPLE
 	bool
 	default y
 	select SYS_POWER_LOW_POWER_STATES_SUPPORTED
-	select SYS_POWER_STATE_CPU_LPS_1_SUPPORTED
 	select SYS_POWER_STATE_CPU_LPS_2_SUPPORTED
+	select SYS_POWER_STATE_CPU_LPS_3_SUPPORTED
 	help
 	  Hidden option enabling LPS_1 and LPS_2 low power states.
 	  This is needed, as these states are implemented by this example.

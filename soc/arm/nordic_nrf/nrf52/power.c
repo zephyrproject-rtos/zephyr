@@ -15,8 +15,8 @@ void sys_set_power_state(enum power_states state)
 {
 	switch (state) {
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
- #ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
-	case SYS_POWER_STATE_DEEP_SLEEP:
+ #ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_1_SUPPORTED
+	case SYS_POWER_STATE_DEEP_SLEEP_1:
 		nrf_power_system_off();
 		break;
  #endif
@@ -32,8 +32,8 @@ void sys_power_state_post_ops(enum power_states state)
 {
 	switch (state) {
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
- #ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
-	case SYS_POWER_STATE_DEEP_SLEEP:
+ #ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_1_SUPPORTED
+	case SYS_POWER_STATE_DEEP_SLEEP_1:
 		/* Nothing to do. */
 		break;
  #endif

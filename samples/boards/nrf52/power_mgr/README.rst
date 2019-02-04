@@ -18,9 +18,9 @@ enters idle state:
    states, which are signaled using LEDs on the development kit:
 
    A. LED1: [X], LED2: [X]: System is active, no low power state is selected.
-   B. LED1: [X], LED2: [ ]: System is idle, and the SYS_POWER_STATE_CPU_LPS_1
+   B. LED1: [X], LED2: [ ]: System is idle, and the SYS_POWER_STATE_CPU_LPS_2
       state is selected.
-   C. LED1: [ ], LED2: [ ]: System is idle, and the SYS_POWER_STATE_CPU_LPS_2
+   C. LED1: [ ], LED2: [ ]: System is idle, and the SYS_POWER_STATE_CPU_LPS_3
       state is selected.
 
 2. Deep Sleep: This Power State is mapped to SYSTEM OFF state. In this mode
@@ -68,8 +68,22 @@ nRF52 core output
   <-- App doing busy wait for 10 Sec -->
 
   <-- App going to sleep for 10 Sec -->
-  --> Entering to SYS_POWER_STATE_CPU_LPS_1 state.
-  --> Exited from SYS_POWER_STATE_CPU_LPS_1 state.
+  --> Entering to SYS_POWER_STATE_CPU_LPS_2 state.
+  --> Exited from SYS_POWER_STATE_CPU_LPS_2 state.
+
+  <-- App doing busy wait for 10 Sec -->
+
+  <-- App going to sleep for 30 Sec -->
+  --> Entering to SYS_POWER_STATE_CPU_LPS_3 state.
+  --> Exited from SYS_POWER_STATE_CPU_LPS_3 state.
+
+  <-- Disabling SYS_POWER_STATE_CPU_LPS_3 state --->
+
+  <-- App doing busy wait for 10 Sec -->
+
+  <-- App going to sleep for 10 Sec -->
+  --> Entering to SYS_POWER_STATE_CPU_LPS_2 state.
+  --> Exited from SYS_POWER_STATE_CPU_LPS_2 state.
 
   <-- App doing busy wait for 10 Sec -->
 
@@ -77,35 +91,21 @@ nRF52 core output
   --> Entering to SYS_POWER_STATE_CPU_LPS_2 state.
   --> Exited from SYS_POWER_STATE_CPU_LPS_2 state.
 
+  <-- Enabling SYS_POWER_STATE_CPU_LPS_3 state --->
   <-- Disabling SYS_POWER_STATE_CPU_LPS_2 state --->
 
   <-- App doing busy wait for 10 Sec -->
 
   <-- App going to sleep for 10 Sec -->
-  --> Entering to SYS_POWER_STATE_CPU_LPS_1 state.
-  --> Exited from SYS_POWER_STATE_CPU_LPS_1 state.
 
   <-- App doing busy wait for 10 Sec -->
 
   <-- App going to sleep for 30 Sec -->
-  --> Entering to SYS_POWER_STATE_CPU_LPS_1 state.
-  --> Exited from SYS_POWER_STATE_CPU_LPS_1 state.
+  --> Entering to SYS_POWER_STATE_CPU_LPS_3 state.
+  --> Exited from SYS_POWER_STATE_CPU_LPS_3 state.
 
   <-- Enabling SYS_POWER_STATE_CPU_LPS_2 state --->
-  <-- Disabling SYS_POWER_STATE_CPU_LPS_1 state --->
-
-  <-- App doing busy wait for 10 Sec -->
-
-  <-- App going to sleep for 10 Sec -->
-
-  <-- App doing busy wait for 10 Sec -->
-
-  <-- App going to sleep for 30 Sec -->
-  --> Entering to SYS_POWER_STATE_CPU_LPS_2 state.
-  --> Exited from SYS_POWER_STATE_CPU_LPS_2 state.
-
-  <-- Enabling SYS_POWER_STATE_CPU_LPS_1 state --->
-  <-- Forcing SYS_POWER_STATE_CPU_LPS_2 state --->
+  <-- Forcing SYS_POWER_STATE_CPU_LPS_3 state --->
 
   <-- App doing busy wait for 10 Sec -->
 

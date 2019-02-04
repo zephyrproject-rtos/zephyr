@@ -23,11 +23,11 @@ extern "C" {
 
 /*
  * Power state map:
- * SYS_POWER_STATE_CPU_LPS:		SS1 state with Timer ON
  * SYS_POWER_STATE_CPU_LPS_1:		SS1 state with Timer ON
- * SYS_POWER_STATE_DEEP_SLEEP:		SS2 with LPSS enabled state
- * SYS_POWER_STATE_DEEP_SLEEP_1:	SLEEP state
- * SYS_POWER_STATE_DEEP_SLEEP_2:	SLEEP state with LPMODE enabled
+ * SYS_POWER_STATE_CPU_LPS_2:		SS1 state with Timer ON
+ * SYS_POWER_STATE_DEEP_SLEEP_1:	SS2 with LPSS enabled state
+ * SYS_POWER_STATE_DEEP_SLEEP_2:	SLEEP state
+ * SYS_POWER_STATE_DEEP_SLEEP_3:	SLEEP state with LPMODE enabled
  */
 
 #ifdef __cplusplus
