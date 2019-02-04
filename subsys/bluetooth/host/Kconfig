@@ -355,6 +355,18 @@ config BT_L2CAP_DYNAMIC_CHANNEL
 	  This option enables support for LE Connection oriented Channels,
 	  allowing the creation of dynamic L2CAP Channels.
 
+config BT_GATT_CACHING
+	bool "GATT Caching support"
+	default y
+	select TINYCRYPT
+	select TINYCRYPT_AES
+	select TINYCRYPT_AES_CMAC
+	help
+	  This option enables support for GATT Caching. When enabled the stack
+	  will register Client Supported Features and Database Hash
+	  characteristics which can be used by clients to detect if anything has
+	  changed on the GATT database.
+
 config BT_GATT_CLIENT
 	bool "GATT client support"
 	help
