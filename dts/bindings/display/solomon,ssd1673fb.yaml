@@ -41,6 +41,54 @@ properties:
       description: Number of bits used for the width parameters
       generation: define
 
+    gdv-a:
+      type: hex
+      category: required
+      description: Gate driving voltage (A value)
+      generation: define
+
+    gdv-b:
+      type: hex
+      category: optional
+      description: Gate driving voltage (B value)
+      generation: define
+
+    sdv:
+      type: hex
+      category: required
+      description: Source driving voltage
+      generation: define
+
+    vcom:
+      type: hex
+      category: required
+      description: VCOM voltage
+      generation: define
+
+    border-waveform:
+      type: hex
+      category: required
+      description: Border waveform
+      generation: define
+
+    softstart-1:
+      type: hex
+      category: optional
+      description: Booster soft start phase 1
+      generation: define
+
+    softstart-2:
+      type: hex
+      category: optional
+      description: Booster soft start phase 2
+      generation: define
+
+    softstart-3:
+      type: hex
+      category: optional
+      description: Booster soft start phase 3
+      generation: define
+
     orientation-flipped:
       type: boolean
       category: optional
