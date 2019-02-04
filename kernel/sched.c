@@ -958,7 +958,7 @@ Z_SYSCALL_HANDLER0_SIMPLE(k_is_preempt_thread);
 #ifdef CONFIG_SCHED_CPU_MASK
 # ifdef CONFIG_SMP
 /* Right now we use a single byte for this mask */
-BUILD_ASSERT_MSG(CONFIG_MP_NUM_CPU <= 8, "Too many CPUs for mask word");
+BUILD_ASSERT_MSG(CONFIG_MP_NUM_CPUS <= 8, "Too many CPUs for mask word");
 # endif
 
 
