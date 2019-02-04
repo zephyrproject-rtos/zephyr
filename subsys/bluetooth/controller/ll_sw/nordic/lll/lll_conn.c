@@ -864,31 +864,6 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 
 			/* Enqueue non-empty PDU */
 			*is_rx_enqueue = 1;
-#if 0
-			/* MIC Failure Check or data rx during pause */
-			if ((_radio.conn_curr->enc_rx &&
-			     !radio_ccm_mic_is_valid()) ||
-			    (_radio.conn_curr->pause_rx &&
-			     isr_rx_conn_enc_unexpected(_radio.conn_curr,
-							pdu_data_rx))) {
-				_radio.state = STATE_CLOSE;
-				radio_disable();
-
-				/* assert if radio packet ptr is not set and
-				 * radio started tx
-				 */
-				LL_ASSERT(!radio_is_ready());
-
-				terminate_ind_rx_enqueue(_radio.conn_curr,
-							 0x3d);
-
-				connection_release(_radio.conn_curr);
-				_radio.conn_curr = NULL;
-
-				return 1; /* terminated */
-			}
-
-#endif
 		}
 	}
 
