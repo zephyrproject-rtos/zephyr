@@ -63,6 +63,12 @@ LOG_MODULE_REGISTER(usb_dfu);
 #define USB_DFU_MAX_XFER_SIZE		CONFIG_USB_DFU_MAX_XFER_SIZE
 #endif
 
+#ifndef FLASH_BASE_ADDRESS
+#define FLASH_BASE_ADDRESS 0
+#else
+#define FLASH_BASE_ADDRESS CONFIG_FLASH_BASE_ADDRESS
+#endif
+
 static struct k_work dfu_work;
 
 struct dfu_worker_data_t {
@@ -298,7 +304,7 @@ struct dfu_data_t {
 static struct dfu_data_t dfu_data = {
 	.state = appIDLE,
 	.status = statusOK,
-	.flash_addr = CONFIG_FLASH_BASE_ADDRESS + FLASH_AREA_IMAGE_1_OFFSET,
+	.flash_addr = FLASH_BASE_ADDRESS + FLASH_AREA_IMAGE_1_OFFSET,
 	.flash_upload_size = FLASH_AREA_IMAGE_1_SIZE,
 	.alt_setting = 0,
 };
@@ -432,7 +438,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		case dfuIDLE:
 			LOG_DBG("DFU_DNLOAD start");
 			dfu_reset_counters();
-			if (dfu_data.flash_addr != CONFIG_FLASH_BASE_ADDRESS
+			if (dfu_data.flash_addr != FLASH_BASE_ADDRESS
 						+ FLASH_AREA_IMAGE_1_OFFSET) {
 				dfu_data.status = errWRITE;
 				dfu_data.state = dfuERROR;
@@ -636,14 +642,14 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 			switch (pSetup->wValue) {
 			case 0:
 				dfu_data.flash_addr =
-					CONFIG_FLASH_BASE_ADDRESS +
+					FLASH_BASE_ADDRESS +
 					FLASH_AREA_IMAGE_0_OFFSET;
 				dfu_data.flash_upload_size =
 					FLASH_AREA_IMAGE_0_SIZE;
 				break;
 			case 1:
 				dfu_data.flash_addr =
-					CONFIG_FLASH_BASE_ADDRESS +
+					FLASH_BASE_ADDRESS +
 					FLASH_AREA_IMAGE_1_OFFSET;
 				dfu_data.flash_upload_size =
 					FLASH_AREA_IMAGE_1_SIZE;
