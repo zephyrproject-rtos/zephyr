@@ -66,10 +66,6 @@
 #define SSD1673_SLEEP_MODE_PON			0x00
 
 /* Default values */
-#define SSD1673_VAL_GDV_CTRL_A			16
-#define SSD1673_VAL_GDV_CTRL_B			10
-#define SSD1673_VAL_SDV_CTRL			0x19
-#define SSD1673_VAL_VCOM_VOLTAGE		0xa8
 #define SSD1673_VAL_DUMMY_LINE			0x1a
 #define SSD1673_VAL_GATE_LWIDTH			0x08
 

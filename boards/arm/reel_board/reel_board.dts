@@ -129,6 +129,11 @@
 		reset-gpios = <&gpio0 15 0>;
 		dc-gpios = <&gpio0 16 0>;
 		busy-gpios = <&gpio0 14 0>;
+		gdv-a = <0x10>;
+		gdv-b = <0x0a>;
+		sdv = <0x19>;
+		vcom = <0xa8>;
+		border-waveform = <0x71>;
 	};
 };
 

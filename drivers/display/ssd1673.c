@@ -467,20 +467,24 @@ static int ssd1673_controller_init(struct device *dev)
 		return err;
 	}
 
-	tmp[0] = SSD1673_VAL_GDV_CTRL_A;
-	tmp[1] = SSD1673_VAL_GDV_CTRL_B;
+	tmp[0] = DT_SOLOMON_SSD1673FB_0_GDV_A;
+#if defined(DT_SOLOMON_SSD1673FB_0_GDV_B)
+	tmp[1] = DT_SOLOMON_SSD1673FB_0_GDV_B;
 	err = ssd1673_write_cmd(driver, SSD1673_CMD_GDV_CTRL, tmp, 2);
+#else
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_GDV_CTRL, tmp, 1);
+#endif
 	if (err < 0) {
 		return err;
 	}
 
-	tmp[0] = SSD1673_VAL_SDV_CTRL;
+	tmp[0] = DT_SOLOMON_SSD1673FB_0_SDV;
 	err = ssd1673_write_cmd(driver, SSD1673_CMD_SDV_CTRL, tmp, 1);
 	if (err < 0) {
 		return err;
 	}
 
-	tmp[0] = SSD1673_VAL_VCOM_VOLTAGE;
+	tmp[0] = DT_SOLOMON_SSD1673FB_0_VCOM;
 	err = ssd1673_write_cmd(driver, SSD1673_CMD_VCOM_VOLTAGE, tmp, 1);
 	if (err < 0) {
 		return err;
@@ -494,6 +498,12 @@ static int ssd1673_controller_init(struct device *dev)
 
 	tmp[0] = SSD1673_VAL_GATE_LWIDTH;
 	err = ssd1673_write_cmd(driver, SSD1673_CMD_GATE_LINE_WIDTH, tmp, 1);
+	if (err < 0) {
+		return err;
+	}
+
+	tmp[0] = DT_SOLOMON_SSD1673FB_0_BORDER_WAVEFORM;
+	err = ssd1673_write_cmd(driver, SSD1673_CMD_BWF_CTRL, tmp, 1);
 	if (err < 0) {
 		return err;
 	}
