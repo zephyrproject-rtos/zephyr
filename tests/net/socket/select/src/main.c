@@ -94,7 +94,11 @@ void test_select(void)
 	tstamp = k_uptime_get_32();
 	res = select(s_sock + 1, &readfds, NULL, NULL, &tval);
 	tstamp = k_uptime_get_32() - tstamp;
-	zassert_true(tstamp <= 1, "");
+	/* Even though we expect select to be non-blocking, scheduler may
+	 * preempt the thread. That's why we add FUZZ to the expected
+	 * delay time. Also applies to similar cases below.
+	 */
+	zassert_true(tstamp <= FUZZ, "");
 	zassert_equal(res, 0, "");
 
 	zassert_false(FD_ISSET(c_sock, &readfds), "");
@@ -104,11 +108,11 @@ void test_select(void)
 	FD_SET(c_sock, &readfds);
 	FD_SET(s_sock, &readfds);
 	tval.tv_sec = 0;
-	tval.tv_usec = 10 * 1000;
+	tval.tv_usec = 30 * 1000;
 	tstamp = k_uptime_get_32();
 	res = select(s_sock + 1, &readfds, NULL, NULL, &tval);
 	tstamp = k_uptime_get_32() - tstamp;
-	zassert_true(tstamp >= 10 && tstamp <= 10 + FUZZ, "");
+	zassert_true(tstamp >= 30 && tstamp <= 30 + FUZZ, "");
 	zassert_equal(res, 0, "");
 
 
@@ -119,11 +123,11 @@ void test_select(void)
 	FD_SET(c_sock, &readfds);
 	FD_SET(s_sock, &readfds);
 	tval.tv_sec = 0;
-	tval.tv_usec = 10 * 1000;
+	tval.tv_usec = 30 * 1000;
 	tstamp = k_uptime_get_32();
 	res = select(s_sock + 1, &readfds, NULL, NULL, &tval);
 	tstamp = k_uptime_get_32() - tstamp;
-	zassert_true(tstamp <= 1, "");
+	zassert_true(tstamp <= FUZZ, "");
 	zassert_equal(res, 1, "");
 
 	zassert_false(FD_ISSET(c_sock, &readfds), "");
@@ -139,7 +143,7 @@ void test_select(void)
 	tval.tv_sec = tval.tv_usec = 0;
 	tstamp = k_uptime_get_32();
 	res = select(s_sock + 1, &readfds, NULL, NULL, &tval);
-	zassert_true(k_uptime_get_32() - tstamp <= 1, "");
+	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
 	zassert_equal(res, 0, "");
 	zassert_false(FD_ISSET(s_sock, &readfds), "");
 
@@ -153,7 +157,7 @@ void test_select(void)
 	tval.tv_sec = tval.tv_usec = 0;
 	tstamp = k_uptime_get_32();
 	res = select(s_sock + 1, &readfds, NULL, NULL, &tval);
-	zassert_true(k_uptime_get_32() - tstamp <= 1, "");
+	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
 	zassert_true(res < 0, "");
 	zassert_equal(errno, EBADF, "");
 
