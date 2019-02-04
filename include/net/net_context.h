@@ -297,7 +297,7 @@ struct net_context {
 	u16_t flags;
 
 	/** Network interface assigned to this context */
-	u8_t iface;
+	s8_t iface;
 };
 
 static inline bool net_context_is_used(struct net_context *context)
