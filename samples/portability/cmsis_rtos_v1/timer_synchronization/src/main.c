@@ -41,16 +41,17 @@ void read_msg_callback(void const *arg)
 	}
 }
 
-void send_msg_thread(void)
+int send_msg_thread(void)
 {
 	osStatus status;
 
 	status = osMessagePut(message_id, data, osWaitForever);
 	if (status != osOK) {
 		printk("\n**Error sending message to message queue**\n");
-	} else {
-		printk("Wrote to message queue: %d\n", data);
+		return 1;
 	}
+	printk("Wrote to message queue: %d\n", data);
+	return 0;
 }
 
 void main(void)
@@ -64,16 +65,24 @@ void main(void)
 	message_id = osMessageCreate(osMessageQ(messageq), NULL);
 
 	/* Send first message */
-	send_msg_thread();
+	if (send_msg_thread()) {
+		/* Writing to message queue failed */
+		goto exit;
+	}
 	osTimerStart(timer_id, TIMER_TICKS);
 
 	while (--counter) {
 		data++;
-		send_msg_thread();
+		if (send_msg_thread()) {
+			/* Writing to message queue failed */
+			break;
+		}
 	}
 	osDelay(TIMER_TICKS);
 
 	osTimerStop(timer_id);
+
+exit:
 	osTimerDelete(timer_id);
 
 	if (counter == 0) {
