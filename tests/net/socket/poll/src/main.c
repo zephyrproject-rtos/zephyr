@@ -58,7 +58,7 @@ void test_poll(void)
 	/* Poll non-ready fd's with timeout of 0 */
 	tstamp = k_uptime_get_32();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 0);
-	zassert_true(k_uptime_get_32() - tstamp <= 1, "");
+	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
 	zassert_equal(res, 0, "");
 
 	zassert_equal(pollfds[0].fd, c_sock, "");
@@ -69,11 +69,11 @@ void test_poll(void)
 	zassert_equal(pollfds[1].revents, 0, "");
 
 
-	/* Poll non-ready fd's with timeout of 10 */
+	/* Poll non-ready fd's with timeout of 30 */
 	tstamp = k_uptime_get_32();
-	res = poll(pollfds, ARRAY_SIZE(pollfds), 10);
+	res = poll(pollfds, ARRAY_SIZE(pollfds), 30);
 	tstamp = k_uptime_get_32() - tstamp;
-	zassert_true(tstamp >= 10 && tstamp <= 10 + FUZZ, "");
+	zassert_true(tstamp >= 30 && tstamp <= 30 + FUZZ, "");
 	zassert_equal(res, 0, "");
 
 
@@ -82,9 +82,9 @@ void test_poll(void)
 	zassert_equal(len, STRLEN(TEST_STR_SMALL), "invalid send len");
 
 	tstamp = k_uptime_get_32();
-	res = poll(pollfds, ARRAY_SIZE(pollfds), 10);
+	res = poll(pollfds, ARRAY_SIZE(pollfds), 30);
 	tstamp = k_uptime_get_32() - tstamp;
-	zassert_true(tstamp <= 1, "");
+	zassert_true(tstamp <= FUZZ, "");
 	zassert_equal(res, 1, "");
 
 	zassert_equal(pollfds[0].fd, c_sock, "");
@@ -101,7 +101,7 @@ void test_poll(void)
 
 	tstamp = k_uptime_get_32();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 0);
-	zassert_true(k_uptime_get_32() - tstamp <= 1, "");
+	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
 	zassert_equal(res, 0, "");
 	zassert_equal(pollfds[1].revents, 0, "");
 
@@ -112,7 +112,7 @@ void test_poll(void)
 
 	tstamp = k_uptime_get_32();
 	res = poll(pollfds, ARRAY_SIZE(pollfds), 0);
-	zassert_true(k_uptime_get_32() - tstamp <= 1, "");
+	zassert_true(k_uptime_get_32() - tstamp <= FUZZ, "");
 	zassert_equal(res, 1, "");
 	zassert_equal(pollfds[0].revents, POLLNVAL, "");
 	zassert_equal(pollfds[1].revents, 0, "");
