@@ -1126,7 +1126,7 @@ void ull_conn_tx_demux(u8_t count)
 			struct pdu_data *p = (void *)tx->pdu;
 
 			p->ll_id = PDU_DATA_LLID_RESV;
-			ull_tx_ack_put(0xFFFF, tx);
+			ll_tx_ack_put(0xFFFF, tx);
 		}
 
 		MFIFO_DEQUEUE(conn_tx);
@@ -1198,7 +1198,7 @@ void ull_conn_tx_ack(struct ll_conn *conn, memq_link_t *link,
 		}
 	}
 
-	ull_tx_ack_put(conn->lll.handle, tx);
+	ll_tx_ack_put(conn->lll.handle, tx);
 }
 
 static int init_reset(void)
