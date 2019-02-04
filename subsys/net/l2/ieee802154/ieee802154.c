@@ -51,12 +51,12 @@ static inline void pkt_hexdump(const char *title, struct net_pkt *pkt,
 {
 	if (IS_ENABLED(CONFIG_NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_RX) &&
 	    in) {
-		net_hexdump_frags(title, pkt, false);
+		net_pkt_hexdump(pkt, title);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_DEBUG_L2_IEEE802154_DISPLAY_PACKET_TX) &&
 	    !in) {
-		net_hexdump_frags(title, pkt, false);
+		net_pkt_hexdump(pkt, title);
 	}
 }
 

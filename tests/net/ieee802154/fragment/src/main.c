@@ -440,7 +440,7 @@ static bool test_fragment(struct net_fragment_data *data)
 
 #if DEBUG > 0
 	printk("length before compression %zd\n", net_pkt_get_len(pkt));
-	net_hexdump_frags("before-compression", pkt, false);
+	net_pkt_hexdump(pkt, "before-compression");
 #endif
 
 	hdr_diff = net_6lo_compress(pkt, data->iphc);
@@ -490,7 +490,7 @@ reassemble:
 #if DEBUG > 0
 	printk("length after compression and fragmentation %zd\n",
 	       net_pkt_get_len(f_pkt));
-	net_hexdump_frags("after-compression", f_pkt, false);
+	net_pkt_hexdump(f_pkt, "after-compression");
 #endif
 
 	frag = f_pkt->frags;
@@ -526,7 +526,7 @@ compare:
 #if DEBUG > 0
 	printk("length after reassembly and uncompression %zd\n",
 	       net_pkt_get_len(rxpkt));
-	net_hexdump_frags("after-uncompression", rxpkt, false);
+	net_pkt_hexdump(rxpkt, "after-uncompression");
 #endif
 
 	if (compare_data(rxpkt, data)) {

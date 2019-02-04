@@ -311,7 +311,7 @@ static void setup_ipv6_udp_long(struct net_pkt *pkt,
 		zassert_true(0, "exiting");
 	}
 
-	net_hexdump_frags("frag", pkt, false);
+	net_pkt_hexdump(pkt, "buffer");
 }
 
 static void setup_ipv4_udp(struct net_pkt *pkt,
