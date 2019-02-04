@@ -88,11 +88,6 @@ extern char *net_sprint_ll_addr_buf(const u8_t *ll, u8_t ll_len,
 extern u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto);
 bool net_header_fits(struct net_pkt *pkt, u8_t *hdr, size_t hdr_size);
 
-/* Header may be split between data fragments. In most cases,
- * net_udp_get_hdr() should be used instead.
- */
-struct net_udp_hdr *net_pkt_udp_data(struct net_pkt *pkt);
-
 static inline
 struct net_udp_hdr *net_udp_header_fits(struct net_pkt *pkt,
 					struct net_udp_hdr *hdr)
