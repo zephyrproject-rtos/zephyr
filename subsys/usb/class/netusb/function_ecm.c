@@ -259,7 +259,7 @@ static int ecm_send(struct net_pkt *pkt)
 	struct net_buf *frag;
 	int b_idx = 0, ret;
 
-	net_hexdump_frags("<", pkt, false);
+	net_pkt_hexdump(pkt, "<");
 
 	if (!pkt->frags) {
 		return -ENODATA;

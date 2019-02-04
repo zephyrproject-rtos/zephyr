@@ -140,20 +140,17 @@ static inline void net_hexdump(const char *str,
 
 
 /* Hexdump from all fragments */
-static inline void net_hexdump_frags(const char *str,
-				     struct net_pkt *pkt, bool full)
+static inline void net_pkt_hexdump(struct net_pkt *pkt, const char *str)
 {
-	struct net_buf *frag = pkt->frags;
-
-	ARG_UNUSED(full);
+	struct net_buf *buf = pkt->buffer;
 
 	if (str && str[0]) {
 		LOG_DBG("%s", str);
 	}
 
-	while (frag) {
-		LOG_HEXDUMP_DBG(frag->data, frag->len, "");
-		frag = frag->frags;
+	while (buf) {
+		LOG_HEXDUMP_DBG(buf->data, buf->len, "");
+		buf = buf->frags;
 	}
 }
 

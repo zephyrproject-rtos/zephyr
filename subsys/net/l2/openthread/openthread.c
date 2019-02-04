@@ -152,7 +152,7 @@ void ot_receive_handler(otMessage *aMessage, void *context)
 	NET_DBG("Injecting Ip6 packet to Zephyr net stack");
 
 #if defined(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)
-	net_hexdump_frags("Received IPv6 packet", pkt, true);
+	net_pkt_hexdump(pkt, "Received IPv6 packet");
 #endif
 
 	if (!pkt_list_is_full(ot_context)) {
@@ -199,7 +199,7 @@ static enum net_verdict openthread_recv(struct net_if *iface,
 		NET_DBG("Got injected Ip6 packet, "
 			    "sending to upper layers");
 #if defined(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)
-		net_hexdump_frags("Injected IPv6 packet", pkt, true);
+		net_pkt_hexdump(pkt, "Injected IPv6 packet");
 #endif
 		return NET_CONTINUE;
 	}
@@ -216,7 +216,7 @@ static enum net_verdict openthread_recv(struct net_if *iface,
 	recv_frame.mInfo.mRxInfo.mRssi = net_pkt_ieee802154_rssi(pkt);
 
 #if defined(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_15_4)
-	net_hexdump_frags("Received 802.15.4 frame", pkt, true);
+	net_pkt_hexdump(pkt, "Received 802.15.4 frame");
 #endif
 
 #if OPENTHREAD_ENABLE_DIAG
@@ -268,7 +268,7 @@ int openthread_send(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 #if defined(CONFIG_OPENTHREAD_L2_DEBUG_DUMP_IPV6)
-	net_hexdump_frags("Sent IPv6 packet", pkt, true);
+	net_pkt_hexdump(pkt, "Sent IPv6 packet");
 #endif
 
 exit:

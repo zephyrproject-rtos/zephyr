@@ -448,7 +448,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	if (!rndis.in_pkt_len) {
 		LOG_DBG("Assembled full RNDIS packet");
 
-		net_hexdump_frags(">", rndis.in_pkt, true);
+		net_pkt_hexdump(rndis.in_pkt, ">");
 
 		/* Queue data to iface */
 		netusb_recv(rndis.in_pkt);
@@ -1133,7 +1133,7 @@ static int rndis_send(struct net_pkt *pkt)
 		return -EPIPE;
 	}
 
-	net_hexdump_frags("<", pkt, true);
+	net_pkt_hexdump(pkt, "<");
 
 	if (!pkt->frags) {
 		return -ENODATA;
