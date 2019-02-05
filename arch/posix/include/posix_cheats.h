@@ -12,8 +12,6 @@
 #if !defined(ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CHEATS_H_) && !defined(NO_POSIX_CHEATS)
 #define ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CHEATS_H_
 
-#ifdef CONFIG_ARCH_POSIX
-
 #ifndef main
 #define main(...) zephyr_app_main(__VA_ARGS__)
 #endif
@@ -24,32 +22,6 @@
  */
 
 #ifdef CONFIG_POSIX_API
-
-#define timespec zap_timespec
-#define timeval  zap_timeval
-#define pthread_mutex_t zap_pthread_mutex_t
-#define pthread_mutexattr_t    zap_pthread_mutexattr_t
-#define pthread_cond_t         zap_pthread_cond_t
-#define pthread_condattr_t     zap_pthread_condattr_t
-#define pthread_barrier_t      zap_pthread_barrier_t
-#define pthread_barrierattr_t  zap_pthread_barrierattr_t
-#define pthread_attr_t         zap_pthread_attr_t
-#define clockid_t              zap_clockid_t
-#define sched_param	       zap_sched_param
-#define itimerspe	       zap_sched_param
-#define timer_t                zap_timer_t
-#define sigval		       zap_sigval
-#define sigevent	       zap_sigevent
-#define pthread_rwlock_obj     zap_pthread_rwlock_obj
-#define pthread_rwlockattr_t   zap_pthread_rwlockattr_t
-#define mqueue_object	       zap_mqueue_object
-#define mqueue_desc	       zap_mqueue_desc
-#define mqd_t		       zap_mqd_t
-#define mq_attr		       zap_mq_attr
-#define dirent		       zap_dirent
-#define DIR		       zap_DIR
-#define pthread_once_t	       zap_pthread_once_t
-#define pthread_key_t	       zap_pthread_key_t
 
 /* Condition variables */
 #define pthread_cond_init(...)        zap_pthread_cond_init(__VA_ARGS__)
@@ -190,7 +162,5 @@
 #define mkdir		zap_mkdir
 
 #endif /* CONFIG_POSIX_API */
-
-#endif /* CONFIG_ARCH_POSIX */
 
 #endif /* ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CHEATS_H_ */
