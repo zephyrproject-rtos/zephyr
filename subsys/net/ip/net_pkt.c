@@ -1920,45 +1920,6 @@ struct net_buf *net_frag_get_pos(struct net_pkt *pkt,
 	return frag;
 }
 
-void net_pkt_set_appdata_values(struct net_pkt *pkt,
-				    enum net_ip_protocol proto)
-{
-	size_t total_len = net_pkt_get_len(pkt);
-	u16_t proto_len = 0U;
-	struct net_buf *frag;
-	u16_t offset;
-
-	switch (proto) {
-	case IPPROTO_UDP:
-#if defined(CONFIG_NET_UDP)
-		proto_len = sizeof(struct net_udp_hdr);
-#endif /* CONFIG_NET_UDP */
-		break;
-
-	case IPPROTO_TCP:
-		proto_len = tcp_hdr_len(pkt);
-		break;
-
-	default:
-		return;
-	}
-
-	frag = net_frag_get_pos(pkt, net_pkt_ip_hdr_len(pkt) +
-				net_pkt_ipv6_ext_len(pkt) +
-				proto_len,
-				&offset);
-	if (frag) {
-		net_pkt_set_appdata(pkt, frag->data + offset);
-	}
-
-	net_pkt_set_appdatalen(pkt, total_len - net_pkt_ip_hdr_len(pkt) -
-			       net_pkt_ipv6_ext_len(pkt) - proto_len);
-
-	NET_ASSERT_INFO(net_pkt_appdatalen(pkt) < total_len,
-			"Wrong appdatalen %u, total %zu",
-			net_pkt_appdatalen(pkt), total_len);
-}
-
 struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 {
 	struct net_pkt *clone;
