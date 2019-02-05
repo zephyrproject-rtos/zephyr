@@ -88,7 +88,7 @@ static void net_ctx_get_fail(void)
 	zassert_equal(ret, -EPROTONOSUPPORT,
 		      "Invalid context protocol test failed");
 
-	ret = net_context_get(4, SOCK_DGRAM, IPPROTO_UDP, &context);
+	ret = net_context_get(99, SOCK_DGRAM, IPPROTO_UDP, &context);
 	zassert_equal(ret, -EAFNOSUPPORT,
 		      "Invalid context family test failed");
 
