@@ -15,9 +15,10 @@ config USB_CDC_ACM
 	help
 	  USB CDC ACM device class driver
 
+if USB_CDC_ACM
+
 config CDC_ACM_PORT_NAME_0
 	string "CDC ACM class device driver port name"
-	depends on USB_CDC_ACM
 	default "CDC_ACM_0"
 	help
 	  Port name through which CDC ACM class device driver is accessed
@@ -31,32 +32,30 @@ config CDC_ACM_PORT_1
 
 config CDC_ACM_PORT_NAME_1
 	string "CDC ACM class device driver port name"
-	depends on USB_CDC_ACM && CDC_ACM_PORT_1
+	depends on CDC_ACM_PORT_1
 	default "CDC_ACM_1"
 	help
 	  Port name through which CDC ACM class device driver is accessed
 
-endif
+endif # USB_COMPOSITE_DEVICE
 
 config CDC_ACM_INTERRUPT_EP_MPS
 	int
-	depends on USB_CDC_ACM
 	default 16
 	help
 	  CDC ACM class interrupt IN endpoint size
 
 config CDC_ACM_BULK_EP_MPS
 	int
-	depends on USB_CDC_ACM
 	default 64
 	help
 	  CDC ACM class bulk endpoints size
 
-if USB_CDC_ACM
 module = USB_CDC_ACM
 module-str = usb cdc acm
 source "subsys/logging/Kconfig.template.log_config"
-endif
+
+endif # USB_CDC_ACM
 
 config USB_MASS_STORAGE
 	bool "USB Mass Storage Device Class Driver"
