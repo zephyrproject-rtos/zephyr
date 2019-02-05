@@ -10,6 +10,7 @@
 #include <zephyr.h>
 #include <misc/util.h>
 #include <misc/dlist.h>
+#include <ring_buffer.h>
 #include <stdbool.h>
 
 #ifdef __cplusplus
@@ -18,45 +19,88 @@ extern "C" {
 
 
 struct shell_history {
-	struct k_mem_slab *mem_slab;
+	struct ring_buf *ring_buf;
 	sys_dlist_t list;
 	sys_dnode_t *current;
 };
 
-struct shell_history_item {
-	sys_dnode_t dnode;
-	u16_t len;
-	char data[];
-};
-
-#ifdef CONFIG_SHELL_HISTORY
-#define SHELL_HISTORY_DEFINE(_name, block_size, block_count)	\
-								\
-	K_MEM_SLAB_DEFINE(_name##_history_memslab,		\
-		 ROUND_UP(block_size + sizeof(struct shell_history_item), \
-			  sizeof(void *)), block_count, 4);		\
-	static struct shell_history _name##_history = {		\
-		.mem_slab = &_name##_history_memslab		\
+/**
+ * @brief Create shell history instance.
+ *
+ * @param _name History instance name.
+ * @param _size Memory dedicated for shell history.
+ */
+#define SHELL_HISTORY_DEFINE(_name, _size) \
+	static u8_t __noinit __aligned(sizeof(u32_t)) \
+			_name##_ring_buf_data[_size]; \
+	static struct ring_buf _name##_ring_buf = \
+		{ \
+			.size = _size, \
+			.buf =  { .buf8 = _name##_ring_buf_data } \
+		}; \
+	static struct shell_history _name = { \
+		.ring_buf = &_name##_ring_buf \
 	}
-#define SHELL_HISTORY_PTR(_name) (&_name##_history)
-#else /* CONFIG_SHELL_HISTORY */
-#define SHELL_HISTORY_DEFINE(_name, block_size, block_count) /*empty*/
-#define SHELL_HISTORY_PTR(_name) NULL
-#endif
 
 
+/**
+ * @brief Initialize shell history module.
+ *
+ * @param history Shell history instance.
+ */
 void shell_history_init(struct shell_history *history);
 
+/**
+ * @brief Purge shell history.
+ *
+ * Function clears whole shell command history.
+ *
+ * @param history Shell history instance.
+ *
+ */
 void shell_history_purge(struct shell_history *history);
 
+/**
+ * @brief Exit history browsing mode.
+ *
+ * @param history Shell history instance.
+ */
 void shell_history_mode_exit(struct shell_history *history);
 
-/* returns true if remains in history mode.*/
+/**
+ * @brief Get next entry in shell command history.
+ *
+ * Function returns next (in given direction) stored line.
+ *
+ * @param[in]     history	Shell history instance.
+ * @param[in]     up		Direction.
+ * @param[out]    dst		Buffer where line is copied.
+ * @param[in,out] len		Buffer size (intput), amount of copied
+ *				data (output).
+ * @return True if remains in history mode.
+ */
 bool shell_history_get(struct shell_history *history, bool up,
 		       u8_t *dst, u16_t *len);
 
+/**
+ * @brief Put line into shell command history.
+ *
+ * If history is full, oldest entry (or entries) is removed.
+ *
+ * @param history	Shell history instance.
+ * @param line		Data.
+ * @param len		Data length.
+ *
+ */
 void shell_history_put(struct shell_history *history, u8_t *line, size_t len);
 
+/**
+ * @brief Get state of shell history.
+ *
+ * @param history	Shell history instance.
+ *
+ * @return True if in browsing mode.
+ */
 static inline bool shell_history_active(struct shell_history *history)
 {
 	return (history->current) ? true : false;

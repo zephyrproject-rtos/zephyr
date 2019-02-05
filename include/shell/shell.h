@@ -30,6 +30,10 @@ extern "C" {
 #define CONFIG_SHELL_PRINTF_BUFF_SIZE 0
 #endif
 
+#ifndef CONFIG_SHELL_HISTORY_BUFFER
+#define CONFIG_SHELL_HISTORY_BUFFER 0
+#endif
+
 #define SHELL_CMD_ROOT_LVL		(0u)
 
 /**
@@ -643,7 +647,7 @@ extern void shell_print_stream(const void *user_ctx, const char *data,
 	SHELL_LOG_BACKEND_DEFINE(_name, _name##_out_buffer,		      \
 				 CONFIG_SHELL_PRINTF_BUFF_SIZE,		      \
 				 _log_queue_size, _log_timeout);	      \
-	SHELL_HISTORY_DEFINE(_name, CONFIG_SHELL_CMD_BUFF_SIZE, 7);	      \
+	SHELL_HISTORY_DEFINE(_name##_history, CONFIG_SHELL_HISTORY_BUFFER);   \
 	SHELL_FPRINTF_DEFINE(_name##_fprintf, &_name, _name##_out_buffer,     \
 			     CONFIG_SHELL_PRINTF_BUFF_SIZE,		      \
 			     true, shell_print_stream);			      \
@@ -655,7 +659,8 @@ extern void shell_print_stream(const void *user_ctx, const char *data,
 		.default_prompt = _prompt,				      \
 		.iface = _transport_iface,				      \
 		.ctx = &UTIL_CAT(_name, _ctx),				      \
-		.history = SHELL_HISTORY_PTR(_name),			      \
+		.history = IS_ENABLED(CONFIG_SHELL_HISTORY) ?		      \
+				&_name##_history : NULL,		      \
 		.shell_flag = _shell_flag,				      \
 		.fprintf_ctx = &_name##_fprintf,			      \
 		.stats = SHELL_STATS_PTR(_name),			      \
