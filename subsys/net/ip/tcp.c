@@ -1354,26 +1354,6 @@ error:
 	return -EINVAL;
 }
 
-int tcp_hdr_len(struct net_pkt *pkt)
-{
-	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
-	struct net_tcp_hdr *tcp_hdr;
-
-	net_pkt_cursor_init(pkt);
-
-	if (net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
-			 net_pkt_ipv6_ext_len(pkt))) {
-		return 0;
-	}
-
-	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
-	if (tcp_hdr) {
-		return NET_TCP_HDR_LEN(tcp_hdr);
-	}
-
-	return 0;
-}
-
 int net_tcp_recv(struct net_context *context, net_context_recv_cb_t cb,
 		 void *user_data)
 {
