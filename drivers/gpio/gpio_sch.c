@@ -96,7 +96,10 @@ static void _gpio_pin_config(struct device *dev, u32_t pin, int flags)
 	_set_bit_gio(info->regs, pin, !(flags & GPIO_DIR_MASK));
 
 	if (flags & GPIO_INT) {
-		if (flags & GPIO_INT_ACTIVE_HIGH) {
+		if (flags & GPIO_INT_DOUBLE_EDGE) {
+			active_high = 1U;
+			active_low = 1U;
+		} else if (flags & GPIO_INT_ACTIVE_HIGH) {
 			active_high = 1U;
 		} else {
 			active_low = 1U;
@@ -127,6 +130,12 @@ static int gpio_sch_config(struct device *dev,
 			   int access_op, u32_t pin, int flags)
 {
 	const struct gpio_sch_config *info = dev->config->config_info;
+
+	/* Do some sanity check first */
+	if (flags & (GPIO_INT | GPIO_INT_LEVEL)) {
+		/* controller does not support level trigger */
+		return -EINVAL;
+	}
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		if (pin >= info->bits) {
