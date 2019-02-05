@@ -66,6 +66,8 @@ For example, a call ``recv(sock, 1000, 0)`` may return 100,
 meaning that only 100 bytes were read (short read), and the application
 needs to retry call(s) to read the remaining 900 bytes.
 
+.. _secure_sockets_interface:
+
 Secure Sockets
 **************
 
