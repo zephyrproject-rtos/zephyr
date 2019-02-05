@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2018, Foundries.io
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: MAX170XX fuel gauge family
+version: 0.1
+
+description: >
+    This is a representation of the MAX170XX fuel gauge family.
+
+inherits:
+  !include i2c-device.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      constraint: "maxim,max170xx"
+      generation: define
+    alert-gpios:
+      type: compound
+      category: optional
+      description: ALERT pin
+      generation: define, use-prop-name
+...

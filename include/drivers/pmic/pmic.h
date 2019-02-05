@@ -20,9 +20,10 @@
 #define ZEPHYR_INCLUDE_DRIVERS_PMIC_PMIC_H_
 
 #include <zephyr.h>
+#include <device.h>
 
-typedef int (*pmic_gauge_voltage_get)(void);
-typedef float (*pmic_gauge_soc_get)(void);
+typedef int (*pmic_gauge_voltage_get)(struct device *dev);
+typedef float (*pmic_gauge_soc_get)(struct device *dev);
 
 /** @brief Fuel gauge specific API **/
 struct pmic_gauge_api {
@@ -52,10 +53,10 @@ struct pmic_charger_api {
 	pmic_charger_voltage_set charge_voltage_get;
 };
 
-typedef int (*pmic_boost_disable)(void);
-typedef int (*pmic_boost_enable)(void);
-typedef int (*pmic_boost_voltage_set)(u16_t millivolts);
-typedef u16_t (*pmic_boost_voltage_get)(void);
+typedef int (*pmic_boost_disable)(struct device *dev);
+typedef int (*pmic_boost_enable)(struct device *dev);
+typedef int (*pmic_boost_voltage_set)(struct device *dev, u16_t millivolts);
+typedef u16_t (*pmic_boost_voltage_get)(struct device *dev);
 
 /** @brief API for PMICs including boost capabilities **/
 struct pmic_boost_api {
