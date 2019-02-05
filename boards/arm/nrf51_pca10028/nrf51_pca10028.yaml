@@ -11,6 +11,7 @@ supported:
   - adc
   - ble
   - nvs
+  - pwm
   - watchdog
 testing:
   default: true
