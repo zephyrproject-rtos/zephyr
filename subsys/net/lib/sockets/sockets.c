@@ -579,9 +579,9 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 				       struct sockaddr *src_addr,
 				       socklen_t *addrlen)
 {
-	size_t recv_len = 0;
 	s32_t timeout = K_FOREVER;
-	unsigned int header_len;
+	size_t recv_len = 0;
+	struct net_pkt_cursor backup;
 	struct net_pkt *pkt;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
@@ -608,6 +608,8 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		return -1;
 	}
 
+	net_pkt_cursor_backup(pkt, &backup);
+
 	if (src_addr && addrlen) {
 		int rv;
 
@@ -631,24 +633,20 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		}
 	}
 
-	/* Set starting point behind packet header since we've
-	 * handled src addr and port.
-	 */
-	header_len = net_pkt_appdata(pkt) - pkt->frags->data;
-
-	recv_len = net_pkt_appdatalen(pkt);
+	recv_len = net_pkt_remaining_data(pkt);
 	if (recv_len > max_len) {
 		recv_len = max_len;
 	}
 
-	/* Length passed as arguments are all based on packet data size
-	 * and output buffer size, so return value is invariantly == recv_len,
-	 * and we just ignore it.
-	 */
-	(void)net_frag_linearize(buf, recv_len, pkt, header_len, recv_len);
+	if (net_pkt_read_new(pkt, buf, recv_len)) {
+		errno = ENOBUFS;
+		return -1;
+	}
 
 	if (!(flags & ZSOCK_MSG_PEEK)) {
 		net_pkt_unref(pkt);
+	} else {
+		net_pkt_cursor_restore(pkt, &backup);
 	}
 
 	return recv_len;
