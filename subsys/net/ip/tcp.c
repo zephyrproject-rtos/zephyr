@@ -2042,7 +2042,12 @@ resend_ack:
 		context->tcp->fin_rcvd = 1;
 	}
 
-	net_pkt_set_appdata_values(pkt, IPPROTO_TCP);
+	net_pkt_set_appdatalen(pkt, net_pkt_get_len(pkt) -
+			       net_pkt_ip_hdr_len(pkt) -
+			       net_pkt_ipv6_ext_len(pkt) -
+			       NET_TCP_HDR_LEN(tcp_hdr));
+
+	net_pkt_set_appdata(pkt, net_pkt_cursor_get_pos(pkt));
 
 	data_len = net_pkt_appdatalen(pkt);
 	if (data_len > net_tcp_get_recv_wnd(context->tcp)) {
