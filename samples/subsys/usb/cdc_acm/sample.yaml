@@ -9,3 +9,7 @@ tests:
       type: one_line
       regex:
         - "Wait for DTR"
+  usb.cdc-acm_comp:
+    depends_on: usb_device
+    tags: usb
+    extra_args: "-DOVERLAY_CONFIG=overlay-composite-cdc-msc.conf"
