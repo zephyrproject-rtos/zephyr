@@ -290,13 +290,7 @@ u8_t ll_chm_update(u8_t *chm)
 			continue;
 		}
 
-		if (conn->llcp_req != conn->llcp_ack) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
-
-		conn->llcp_req++;
-		if (((conn->llcp_req - conn->llcp_ack) & 0x03) != 1) {
-			conn->llcp_req--;
+		if (is_bt_hci_cmd_disallowed(conn)) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
@@ -323,13 +317,7 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (conn->llcp_req != conn->llcp_ack) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	conn->llcp_req++;
-	if (((conn->llcp_req - conn->llcp_ack) & 0x03) != 1) {
-		conn->llcp_req--;
+	if (is_bt_hci_cmd_disallowed(conn)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 

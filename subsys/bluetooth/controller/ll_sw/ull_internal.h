@@ -14,6 +14,7 @@ static inline void ull_hdr_init(struct ull_hdr *hdr)
 	hdr->disabled_cb = hdr->disabled_param = NULL;
 }
 
+int is_bt_hci_cmd_disallowed(void *conn);
 void *ll_rx_link_alloc(void);
 void ll_rx_link_release(void *link);
 void *ll_rx_alloc(void);

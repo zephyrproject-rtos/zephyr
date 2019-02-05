@@ -230,13 +230,8 @@ u8_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
 	}
 
 	if (!cmd) {
-		if (conn->llcp_req != conn->llcp_ack) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
 
-		conn->llcp_req++;
-		if (((conn->llcp_req - conn->llcp_ack) & 0x03) != 1) {
-			conn->llcp_req--;
+		if (is_bt_hci_cmd_disallowed(conn)) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
@@ -333,13 +328,11 @@ u8_t ll_feature_req_send(u16_t handle)
 	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
-	if (!conn || (conn->llcp_req != conn->llcp_ack)) {
+	if (!conn) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	conn->llcp_req++;
-	if (((conn->llcp_req - conn->llcp_ack) & 0x03) != 1) {
-		conn->llcp_req--;
+	if (is_bt_hci_cmd_disallowed(conn)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -354,13 +347,11 @@ u8_t ll_version_ind_send(u16_t handle)
 	struct ll_conn *conn;
 
 	conn = ll_connected_get(handle);
-	if (!conn || (conn->llcp_req != conn->llcp_ack)) {
+	if (!conn) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	conn->llcp_req++;
-	if (((conn->llcp_req - conn->llcp_ack) & 0x03) != 1) {
-		conn->llcp_req--;
+	if (is_bt_hci_cmd_disallowed(conn)) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 

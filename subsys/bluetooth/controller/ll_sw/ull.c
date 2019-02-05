@@ -211,6 +211,7 @@ static void _disabled_cb(void *param);
 static u8_t tx_cmplt_get(u16_t *handle, u8_t *first, u8_t last);
 #endif /* CONFIG_BT_CONN */
 
+
 int ll_init(struct k_sem *sem_rx)
 {
 	int err;
@@ -783,6 +784,22 @@ void ll_rx_mem_release(void **node_rx)
 	*node_rx = _node_rx;
 
 	_rx_alloc(UINT8_MAX);
+}
+
+int is_bt_hci_cmd_disallowed(void *conn)
+{
+	struct ll_conn * const conn_hdr = conn;
+	if (conn_hdr->llcp_req != conn_hdr->llcp_ack) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	conn_hdr->llcp_req++;
+	if (((conn_hdr->llcp_req - conn_hdr->llcp_ack) & 0x03) != 1) {
+		conn_hdr->llcp_req--;
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+
+	return 0;
 }
 
 void *ll_rx_link_alloc(void)
