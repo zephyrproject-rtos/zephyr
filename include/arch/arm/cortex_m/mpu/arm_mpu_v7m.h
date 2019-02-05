@@ -143,6 +143,19 @@ typedef struct {
 	u32_t rasr_attr;
 } k_mem_partition_attr_t;
 
+/* Read-Write access permission attributes */
+#define _K_MEM_PARTITION_P_NA_U_NA	(NO_ACCESS_Msk | NOT_EXEC)
+#define _K_MEM_PARTITION_P_RW_U_RW	(P_RW_U_RW_Msk | NOT_EXEC)
+#define _K_MEM_PARTITION_P_RW_U_RO	(P_RW_U_RO_Msk | NOT_EXEC)
+#define _K_MEM_PARTITION_P_RW_U_NA	(P_RW_U_NA_Msk | NOT_EXEC)
+#define _K_MEM_PARTITION_P_RO_U_RO	(P_RO_U_RO_Msk | NOT_EXEC)
+#define _K_MEM_PARTITION_P_RO_U_NA	(P_RO_U_NA_Msk | NOT_EXEC)
+
+/* Execution-allowed attributes */
+#define _K_MEM_PARTITION_P_RWX_U_RWX (P_RW_U_RW_Msk)
+#define _K_MEM_PARTITION_P_RWX_U_RX  (P_RW_U_RO_Msk)
+#define _K_MEM_PARTITION_P_RX_U_RX   (P_RO_U_RO_Msk)
+
 /* Kernel macros for memory attribution
  * (access permissions and cache-ability).
  *
@@ -152,27 +165,36 @@ typedef struct {
  * fields (excluding the <size> and <enable> bit-fields).
  */
 
-/* Read-Write access permission attributes */
+/* Read-Write access permission attributes (default cache-ability) */
 #define K_MEM_PARTITION_P_NA_U_NA	((k_mem_partition_attr_t) \
-	{(NO_ACCESS_Msk | NOT_EXEC)})
+	{ _K_MEM_PARTITION_P_NA_U_NA | \
+	  NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE})
 #define K_MEM_PARTITION_P_RW_U_RW	((k_mem_partition_attr_t) \
-	{(P_RW_U_RW_Msk | NOT_EXEC)})
+	{ _K_MEM_PARTITION_P_RW_U_RW | \
+	  NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE})
 #define K_MEM_PARTITION_P_RW_U_RO	((k_mem_partition_attr_t) \
-	{(P_RW_U_RO_Msk | NOT_EXEC)})
+	{ _K_MEM_PARTITION_P_RW_U_RO | \
+	  NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE})
 #define K_MEM_PARTITION_P_RW_U_NA	((k_mem_partition_attr_t) \
-	{(P_RW_U_NA_Msk | NOT_EXEC)})
+	{ _K_MEM_PARTITION_P_RW_U_NA | \
+	  NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE})
 #define K_MEM_PARTITION_P_RO_U_RO	((k_mem_partition_attr_t) \
-	{(P_RO_U_RO_Msk | NOT_EXEC)})
+	{ _K_MEM_PARTITION_P_RO_U_RO | \
+	  NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE})
 #define K_MEM_PARTITION_P_RO_U_NA	((k_mem_partition_attr_t) \
-	{(P_RO_U_NA_Msk | NOT_EXEC)})
+	{ _K_MEM_PARTITION_P_RO_U_NA | \
+	  NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE})
 
-/* Execution-allowed attributes */
+/* Execution-allowed attributes (default-cacheability) */
 #define K_MEM_PARTITION_P_RWX_U_RWX	((k_mem_partition_attr_t) \
-	{(P_RW_U_RW_Msk)})
+	{ _K_MEM_PARTITION_P_RWX_U_RWX | \
+	  NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE})
 #define K_MEM_PARTITION_P_RWX_U_RX	((k_mem_partition_attr_t) \
-	{(P_RW_U_RO_Msk)})
+	{ _K_MEM_PARTITION_P_RWX_U_RX | \
+	  NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE})
 #define K_MEM_PARTITION_P_RX_U_RX	((k_mem_partition_attr_t) \
-	{(P_RO_U_RO_Msk)})
+	{ _K_MEM_PARTITION_P_RX_U_RX | \
+	  NORMAL_OUTER_INNER_WRITE_BACK_WRITE_READ_ALLOCATE_NON_SHAREABLE})
 
 /*
  * @brief Evaluate Write-ability
@@ -212,32 +234,32 @@ typedef struct {
 /* Attributes for no-cache enabling (share-ability is selected by default) */
 
 #define K_MEM_PARTITION_P_NA_U_NA_NOCACHE ((k_mem_partition_attr_t) \
-	{(K_MEM_PARTITION_P_NA_U_NA \
+	{(_K_MEM_PARTITION_P_NA_U_NA \
 	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
 #define K_MEM_PARTITION_P_RW_U_RW_NOCACHE ((k_mem_partition_attr_t) \
-	{(K_MEM_PARTITION_P_RW_U_RW \
+	{(_K_MEM_PARTITION_P_RW_U_RW \
 	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
 #define K_MEM_PARTITION_P_RW_U_RO_NOCACHE ((k_mem_partition_attr_t) \
-	{(K_MEM_PARTITION_P_RW_U_RO \
+	{(_K_MEM_PARTITION_P_RW_U_RO \
 	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
 #define K_MEM_PARTITION_P_RW_U_NA_NOCACHE ((k_mem_partition_attr_t) \
-	{(K_MEM_PARTITION_P_RW_U_NA \
+	{(_K_MEM_PARTITION_P_RW_U_NA \
 	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
 #define K_MEM_PARTITION_P_RO_U_RO_NOCACHE ((k_mem_partition_attr_t) \
-	{(K_MEM_PARTITION_P_RO_U_RO \
+	{(_K_MEM_PARTITION_P_RO_U_RO \
 	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
 #define K_MEM_PARTITION_P_RO_U_NA_NOCACHE ((k_mem_partition_attr_t) \
-	{(K_MEM_PARTITION_P_RO_U_NA \
+	{(_K_MEM_PARTITION_P_RO_U_NA \
 	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
 
 #define K_MEM_PARTITION_P_RWX_U_RWX_NOCACHE ((k_mem_partition_attr_t) \
-	{(K_MEM_PARTITION_P_RWX_U_RWX \
+	{(_K_MEM_PARTITION_P_RWX_U_RWX \
 	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
 #define K_MEM_PARTITION_P_RWX_U_RX_NOCACHE  ((k_mem_partition_attr_t) \
-	{(K_MEM_PARTITION_P_RWX_U_RX  \
+	{(_K_MEM_PARTITION_P_RWX_U_RX  \
 	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
 #define K_MEM_PARTITION_P_RX_U_RX_NOCACHE   ((k_mem_partition_attr_t) \
-	{(K_MEM_PARTITION_P_RX_U_RX   \
+	{(_K_MEM_PARTITION_P_RX_U_RX   \
 	| NORMAL_OUTER_INNER_NON_CACHEABLE_SHAREABLE)})
 
 #endif /* _ASMLANGUAGE */
