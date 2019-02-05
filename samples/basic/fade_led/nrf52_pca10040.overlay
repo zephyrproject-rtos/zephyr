@@ -1,6 +1,0 @@
-&pwm0 {
-	status = "ok";
-	ch0-pin = <17>;
-	ch0-inverted;
-	ch1-pin = <18>;
-};

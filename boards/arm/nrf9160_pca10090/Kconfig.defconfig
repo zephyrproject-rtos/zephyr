@@ -23,6 +23,13 @@ config I2C_2
 
 endif # I2C
 
+if PWM
+
+config PWM_0
+	default y
+
+endif # PWM
+
 if SPI
 
 config SPI_3

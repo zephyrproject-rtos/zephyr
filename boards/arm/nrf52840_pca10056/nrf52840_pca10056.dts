@@ -112,6 +112,12 @@
 	scl-pin = <31>;
 };
 
+&pwm0 {
+	status = "ok";
+	ch0-pin = <13>;
+	ch0-inverted;
+};
+
 &spi0 {
 	status = "ok";
 	sck-pin = <27>;
