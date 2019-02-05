@@ -16,7 +16,7 @@ extern int mqtt_client_tcp_connect(struct mqtt_client *client);
 extern int mqtt_client_tcp_write(struct mqtt_client *client, const u8_t *data,
 				 u32_t datalen);
 extern int mqtt_client_tcp_read(struct mqtt_client *client, u8_t *data,
-				u32_t buflen);
+				u32_t buflen, bool shall_block);
 extern int mqtt_client_tcp_disconnect(struct mqtt_client *client);
 
 #if defined(CONFIG_MQTT_LIB_TLS)
@@ -25,7 +25,7 @@ extern int mqtt_client_tls_connect(struct mqtt_client *client);
 extern int mqtt_client_tls_write(struct mqtt_client *client, const u8_t *data,
 				 u32_t datalen);
 extern int mqtt_client_tls_read(struct mqtt_client *client, u8_t *data,
-				u32_t buflen);
+				u32_t buflen, bool shall_block);
 extern int mqtt_client_tls_disconnect(struct mqtt_client *client);
 #endif /* CONFIG_MQTT_LIB_TLS */
 
@@ -72,9 +72,11 @@ int mqtt_transport_write(struct mqtt_client *client, const u8_t *data,
 							  datalen);
 }
 
-int mqtt_transport_read(struct mqtt_client *client, u8_t *data, u32_t buflen)
+int mqtt_transport_read(struct mqtt_client *client, u8_t *data, u32_t buflen,
+			bool shall_block)
 {
-	return transport_fn[client->transport.type].read(client, data, buflen);
+	return transport_fn[client->transport.type].read(client, data, buflen,
+							 shall_block);
 }
 
 int mqtt_transport_disconnect(struct mqtt_client *client)
