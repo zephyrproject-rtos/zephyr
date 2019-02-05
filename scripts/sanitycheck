@@ -2382,11 +2382,16 @@ class TestSuite:
                     message=goal.reason)
                 p = ("%s/%s/%s" % (options.outdir, i.platform.name, i.test.name))
                 bl = os.path.join(p, "build.log")
+                hl = os.path.join(p, "handler.log")
+                log_file = bl
                 if goal.reason != 'build_error':
-                    bl = os.path.join(p, "handler.log")
+                    if os.path.exists(hl):
+                        log_file = hl
+                    else:
+                        log_file = bl
 
-                if os.path.exists(bl):
-                    with open(bl, "rb") as f:
+                if os.path.exists(log_file):
+                    with open(log_file, "rb") as f:
                         log = f.read().decode("utf-8")
                         filtered_string = ''.join(filter(lambda x: x in string.printable, log))
                         failure.text = filtered_string
