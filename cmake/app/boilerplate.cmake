@@ -396,6 +396,7 @@ include(${ZEPHYR_BASE}/cmake/host-tools.cmake)
 # preprocess DT sources, and then, after we have finished processing
 # both DT and Kconfig we complete the target-specific configuration,
 # and possibly change the toolchain.
+include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
 include(${ZEPHYR_BASE}/cmake/generic_toolchain.cmake)
 include(${ZEPHYR_BASE}/cmake/dts.cmake)
 include(${ZEPHYR_BASE}/cmake/kconfig.cmake)
