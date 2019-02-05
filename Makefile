@@ -1,5 +1,5 @@
 #
-# Top level makefile for things not covered by cmake
+# Top level makefile for documentation build
 #
 
 ifndef ZEPHYR_BASE
@@ -12,6 +12,9 @@ SPHINXOPTS ?= -q
 
 # Documentation targets
 # ---------------------------------------------------------------------------
+clean:
+	rm -rf ${BUILDDIR}
+
 htmldocs:
 	mkdir -p ${BUILDDIR} && cmake -GNinja -DDOC_TAG=${DOC_TAG} -DSPHINXOPTS=${SPHINXOPTS} -B${BUILDDIR} -Hdoc/ && ninja -C ${BUILDDIR} htmldocs
 
