@@ -357,12 +357,7 @@ __csSet:
 	movl $__mmu_tables_start, %eax
 	movl %eax, %cr3
 
-#ifndef CONFIG_X86_PAE_MODE
-	/*Set CR4.PAE = 0 (5th bit in CR4*/
-	movl %cr4, %eax
-	andl $CR4_PAE_DISABLE, %eax
-	movl %eax, %cr4
-#else
+	/* Enable PAE */
 	movl %cr4, %eax
 	orl $CR4_PAE_ENABLE, %eax
 	movl %eax, %cr4
@@ -372,7 +367,7 @@ __csSet:
 	rdmsr
 	orl $0x800, %eax
 	wrmsr
-#endif
+
 	/* Enable paging (CR0.PG, bit 31) / write protect (CR0.WP, bit 16) */
 	movl %cr0, %eax
 	orl $CR0_PG_WP_ENABLE, %eax

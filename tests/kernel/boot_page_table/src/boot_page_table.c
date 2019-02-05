@@ -17,7 +17,7 @@ MMU_BOOT_REGION(START_ADDR_RANGE2, ADDR_SIZE, REGION_PERM);
 MMU_BOOT_REGION(START_ADDR_RANGE3, ADDR_SIZE, REGION_PERM);
 MMU_BOOT_REGION(START_ADDR_RANGE4, ADDR_SIZE, REGION_PERM);
 
-static int check_param(union x86_mmu_pae_pte *value, uint32_t perm)
+static int check_param(union x86_mmu_pte *value, uint32_t perm)
 {
 	u32_t status = (value->rw  == ((perm & MMU_PTE_RW_MASK) >> 0x1));
 
@@ -26,7 +26,7 @@ static int check_param(union x86_mmu_pae_pte *value, uint32_t perm)
 	return status;
 }
 
-static int check_param_nonset_region(union x86_mmu_pae_pte *value,
+static int check_param_nonset_region(union x86_mmu_pte *value,
 				     uint32_t perm)
 {
 	u32_t status = (value->rw  == 0);
@@ -40,7 +40,7 @@ static void starting_addr_range(u32_t start_addr_range)
 {
 
 	u32_t addr_range, status = true;
-	union x86_mmu_pae_pte *value;
+	union x86_mmu_pte *value;
 
 	for (addr_range = start_addr_range; addr_range <=
 	     (start_addr_range + STARTING_ADDR_RANGE_LMT);
@@ -55,7 +55,7 @@ static void starting_addr_range(u32_t start_addr_range)
 static void before_start_addr_range(u32_t start_addr_range)
 {
 	u32_t addr_range, status = true;
-	union x86_mmu_pae_pte *value;
+	union x86_mmu_pte *value;
 
 	for (addr_range = start_addr_range - 0x7000;
 	     addr_range < (start_addr_range); addr_range += 0x1000) {
@@ -71,7 +71,7 @@ static void before_start_addr_range(u32_t start_addr_range)
 static void ending_start_addr_range(u32_t start_addr_range)
 {
 	u32_t addr_range, status = true;
-	union x86_mmu_pae_pte *value;
+	union x86_mmu_pte *value;
 
 	for (addr_range = start_addr_range + ADDR_SIZE; addr_range <
 	     (start_addr_range + ADDR_SIZE + 0x10000);

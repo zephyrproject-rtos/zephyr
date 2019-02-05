@@ -6,4 +6,3 @@ config SOC_ATOM
 	select BOOTLOADER_UNKNOWN
 	select X86_MMU
 	select ARCH_HAS_USERSPACE
-	select X86_PAE_MODE

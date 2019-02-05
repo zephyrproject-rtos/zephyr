@@ -70,22 +70,16 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 	u32_t ending_pte_num;
 	u32_t pde;
 	u32_t pte;
-#ifdef CONFIG_X86_PAE_MODE
-	union x86_mmu_pae_pte pte_value;
+	union x86_mmu_pte pte_value;
 	u32_t start_pdpte_num = MMU_PDPTE_NUM(addr);
 	u32_t end_pdpte_num = MMU_PDPTE_NUM((char *)addr + size - 1);
 	u32_t pdpte;
-#else
-	union x86_mmu_pte pte_value;
-#endif
-	struct x86_mmu_page_table *pte_address;
-
+	struct x86_mmu_pt *pte_address;
 
 	start_pde_num = MMU_PDE_NUM(addr);
 	end_pde_num = MMU_PDE_NUM((char *)addr + size - 1);
 	starting_pte_num = MMU_PAGE_NUM((char *)addr);
 
-#ifdef CONFIG_X86_PAE_MODE
 	for (pdpte = start_pdpte_num; pdpte <= end_pdpte_num; pdpte++) {
 		if (pdpte != start_pdpte_num) {
 			start_pde_num = 0U;
@@ -97,21 +91,16 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 			end_pde_num = MMU_PDE_NUM((char *)addr + size - 1);
 		}
 
-		struct x86_mmu_page_directory *pd_address =
+		struct x86_mmu_pd *pd_address =
 			X86_MMU_GET_PD_ADDR_INDEX(pdpte);
-#endif
+
 		/* Iterate for all the pde's the buffer might take up.
 		 * (depends on the size of the buffer and start address
 		 * of the buff)
 		 */
 		for (pde = start_pde_num; pde <= end_pde_num; pde++) {
-#ifdef CONFIG_X86_PAE_MODE
-			union x86_mmu_pae_pde pde_value =
-				pd_address->entry[pde];
-#else
 			union x86_mmu_pde_pt pde_value =
-				X86_MMU_PD->entry[pde].pt;
-#endif
+				pd_address->entry[pde].pt;
 
 			if (!pde_value.p ||
 			    !pde_value.us ||
@@ -119,8 +108,8 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 				return -EPERM;
 			}
 
-			pte_address = (struct x86_mmu_page_table *)
-				(pde_value.page_table << MMU_PAGE_SHIFT);
+			pte_address = (struct x86_mmu_pt *)
+				(pde_value.pt << MMU_PAGE_SHIFT);
 
 			/* loop over all the possible page tables for the
 			 * required size. If the pde is not the last one
@@ -163,9 +152,7 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 				return -EPERM;
 			}
 		}
-#ifdef CONFIG_X86_PAE_MODE
 	}
-#endif
 
 	return 0;
 }
@@ -186,11 +173,7 @@ void _x86_mmu_set_flags(void *ptr,
 			x86_page_entry_data_t flags,
 			x86_page_entry_data_t mask)
 {
-#ifdef CONFIG_X86_PAE_MODE
-	union x86_mmu_pae_pte *pte;
-#else
 	union x86_mmu_pte *pte;
-#endif
 
 	u32_t addr = (u32_t)ptr;
 
@@ -199,13 +182,8 @@ void _x86_mmu_set_flags(void *ptr,
 
 	while (size != 0) {
 
-#ifdef CONFIG_X86_PAE_MODE
 		/* TODO we're not generating 2MB entries at the moment */
 		__ASSERT(X86_MMU_GET_PDE(addr)->ps != 1, "2MB PDE found");
-#else
-		/* TODO we're not generating 4MB entries at the moment */
-		__ASSERT(X86_MMU_GET_4MB_PDE(addr)->ps != 1, "4MB PDE found");
-#endif
 		pte = X86_MMU_GET_PTE(addr);
 
 		pte->value = (pte->value & ~mask) | flags;

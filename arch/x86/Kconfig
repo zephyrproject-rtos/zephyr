@@ -66,20 +66,9 @@ config X86_MMU
 	bool "Enable Memory Management Unit"
 	select MEMORY_PROTECTION
 	help
-	  This options enables the memory management unit present in x86. Enabling
-	  this will create boot time page table structure.
-
-config X86_PAE_MODE
-	bool "Enable PAE page tables"
-	depends on X86_MMU
-	help
-	  When selected the Page address extension mode is enabled. The PAE
-	  page tables provides a mechanism to selectively disable execution.
-	  So any Page Table Entry (PTE) that sets the XD bit will have all
-	  instruction fetches disabled in that 4KB region. The amount of RAM
-	  needed for PAE tables is more than twice that of 32-Bit paging
-	  because each PAE entry is 64bits wide.
-	  Note: Do not enable in RAM constrained devices.
+	  This options enables the memory management unit present in x86
+	  and creates a set of page tables at build time. Requires an MMU
+	  which supports PAE page tables.
 
 config X86_NO_MELTDOWN
 	bool

@@ -649,17 +649,9 @@ extern const NANO_ESF _default_esf;
 #ifdef CONFIG_X86_MMU
 /* Linker variable. It is needed to access the start of the Page directory */
 
-
-#ifdef CONFIG_X86_PAE_MODE
 extern u64_t __mmu_tables_start;
-#define X86_MMU_PDPT ((struct x86_mmu_page_directory_pointer *)\
+#define X86_MMU_PDPT ((struct x86_mmu_pdpt *)\
 		      (u32_t *)(void *)&__mmu_tables_start)
-#else
-extern u32_t __mmu_tables_start;
-#define X86_MMU_PD ((struct x86_mmu_page_directory *)\
-		    (void *)&__mmu_tables_start)
-#endif
-
 
 /**
  * @brief Fetch page table flags for a particular page
