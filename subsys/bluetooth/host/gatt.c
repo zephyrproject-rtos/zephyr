@@ -196,12 +196,16 @@ struct gatt_cf_cfg {
 #define CF_CFG_MAX (CONFIG_BT_MAX_PAIRED + CONFIG_BT_MAX_CONN)
 static struct gatt_cf_cfg cf_cfg[CF_CFG_MAX] = {};
 
-static struct gatt_cf_cfg *find_cf_cfg(const bt_addr_le_t *addr)
+static struct gatt_cf_cfg *find_cf_cfg(struct bt_conn *conn)
 {
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
-		if (!bt_addr_le_cmp(&cf_cfg[i].peer, addr)) {
+		if (!conn) {
+			if (!bt_addr_le_cmp(&cf_cfg[i].peer, BT_ADDR_LE_ANY)) {
+				return &cf_cfg[i];
+			}
+		} else if (!bt_conn_addr_le_cmp(conn, &cf_cfg[i].peer)) {
 			return &cf_cfg[i];
 		}
 	}
@@ -215,7 +219,7 @@ static ssize_t cf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	struct gatt_cf_cfg *cfg;
 	u8_t data[1] = {};
 
-	cfg = find_cf_cfg(&conn->le.dst);
+	cfg = find_cf_cfg(conn);
 	if (cfg) {
 		memcpy(data, cfg->data, sizeof(data));
 	}
@@ -268,9 +272,9 @@ static ssize_t cf_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_ATTRIBUTE_LEN);
 	}
 
-	cfg = find_cf_cfg(&conn->le.dst);
+	cfg = find_cf_cfg(conn);
 	if (!cfg) {
-		cfg = find_cf_cfg(BT_ADDR_LE_ANY);
+		cfg = find_cf_cfg(NULL);
 	}
 
 	if (!cfg) {
@@ -421,7 +425,31 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, db_hash,
 				 sizeof(db_hash));
 }
-#endif /* COFNIG_BT_GATT_CACHING */
+
+static void remove_cf_cfg(struct bt_conn *conn)
+{
+	struct gatt_cf_cfg *cfg;
+
+	cfg = find_cf_cfg(conn);
+	if (!cfg) {
+		return;
+	}
+
+	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2405:
+	 * For clients with a trusted relationship, the characteristic value
+	 * shall be persistent across connections. For clients without a
+	 * trusted relationship the characteristic value shall be set to the
+	 * default value at each connection.
+	 */
+	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
+		bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
+		memset(cfg->data, 0, sizeof(cfg->data));
+	} else {
+		/* Update address in case it has changed */
+		bt_addr_le_copy(&cfg->peer, &conn->le.dst);
+	}
+}
+#endif /* CONFIG_BT_GATT_CACHING */
 
 static struct bt_gatt_attr gatt_attrs[] = {
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GATT),
@@ -527,7 +555,7 @@ static void sc_indicate_rsp(struct bt_conn *conn,
 	 * A connected client becomes change-aware when...
 	 * The client receives and confirms a Service Changed indication.
 	 */
-	cfg = find_cf_cfg(&conn->le.dst);
+	cfg = find_cf_cfg(conn);
 	if (cfg && CF_ROBUST_CACHING(cfg)) {
 		atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
 		BT_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
@@ -2748,7 +2776,7 @@ bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
 #if defined(CONFIG_BT_GATT_CACHING)
 	struct gatt_cf_cfg *cfg;
 
-	cfg = find_cf_cfg(&conn->le.dst);
+	cfg = find_cf_cfg(conn);
 	if (!cfg || !CF_ROBUST_CACHING(cfg)) {
 		return true;
 	}
@@ -2808,6 +2836,10 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 #if defined(CONFIG_BT_GATT_CLIENT)
 	remove_subscriptions(conn);
 #endif /* CONFIG_BT_GATT_CLIENT */
+
+#if defined(CONFIG_BT_GATT_CACHING)
+	remove_cf_cfg(conn);
+#endif
 }
 
 #if defined(CONFIG_BT_SETTINGS)
