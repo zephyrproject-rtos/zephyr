@@ -24,4 +24,5 @@ target_sources(app PRIVATE
 	src/multilib.c
   src/errno.c
   src/boot_delay.c
+  src/irq_offload.c
   )
