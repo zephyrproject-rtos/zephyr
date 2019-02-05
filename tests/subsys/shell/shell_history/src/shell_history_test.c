@@ -14,8 +14,8 @@
 
 #include <shell/shell_history.h>
 
-#define MAX_BUF_SIZE 128
-SHELL_HISTORY_DEFINE(history, MAX_BUF_SIZE, 8);
+#define HIST_BUF_SIZE 128
+SHELL_HISTORY_DEFINE(history, HIST_BUF_SIZE);
 
 static void init_test_buf(u8_t *buf, size_t len, u8_t offset)
 {
@@ -27,12 +27,12 @@ static void init_test_buf(u8_t *buf, size_t len, u8_t offset)
 static void test_get(bool ok, bool up, u8_t *exp_buf, u16_t exp_len)
 {
 	bool res;
-	u8_t out_buf[MAX_BUF_SIZE];
+	u8_t out_buf[HIST_BUF_SIZE];
 	u16_t out_len;
 
 	out_len = sizeof(out_buf);
 
-	res = shell_history_get(&history_history, up, out_buf, &out_len);
+	res = shell_history_get(&history, up, out_buf, &out_len);
 
 	if (ok) {
 		zassert_true(res, "history should contain one entry.\n");
@@ -56,32 +56,34 @@ static void test_get(bool ok, bool up, u8_t *exp_buf, u16_t exp_len)
  */
 void test_history_add_get(void)
 {
-	u8_t exp_buf[MAX_BUF_SIZE];
+	u8_t exp_buf[HIST_BUF_SIZE];
 
 	init_test_buf(exp_buf, sizeof(exp_buf), 0);
 
-	shell_history_init(&history_history);
+	shell_history_init(&history);
 
 	test_get(false, true, NULL, 0);
 
-	shell_history_put(&history_history, exp_buf, 20);
+	shell_history_put(&history, exp_buf, 20);
 
 	test_get(true, true, exp_buf, 20);
+
+	shell_history_purge(&history);
 }
 
 /* Test verifies that after purging there is no line in the history. */
 void test_history_purge(void)
 {
-	u8_t exp_buf[MAX_BUF_SIZE];
+	u8_t exp_buf[HIST_BUF_SIZE];
 
 	init_test_buf(exp_buf, sizeof(exp_buf), 0);
 
-	shell_history_init(&history_history);
+	shell_history_init(&history);
 
-	shell_history_put(&history_history, exp_buf, 20);
-	shell_history_put(&history_history, exp_buf, 20);
+	shell_history_put(&history, exp_buf, 20);
+	shell_history_put(&history, exp_buf, 20);
 
-	shell_history_purge(&history_history);
+	shell_history_purge(&history);
 
 	test_get(false, true, NULL, 0);
 }
@@ -103,26 +105,26 @@ void test_history_purge(void)
  */
 void test_history_get_up_and_down(void)
 {
-	u8_t exp1_buf[MAX_BUF_SIZE];
-	u8_t exp2_buf[MAX_BUF_SIZE];
-	u8_t exp3_buf[MAX_BUF_SIZE];
+	u8_t exp1_buf[HIST_BUF_SIZE];
+	u8_t exp2_buf[HIST_BUF_SIZE];
+	u8_t exp3_buf[HIST_BUF_SIZE];
 
 	init_test_buf(exp1_buf, sizeof(exp1_buf), 0);
 	init_test_buf(exp2_buf, sizeof(exp2_buf), 10);
 	init_test_buf(exp3_buf, sizeof(exp3_buf), 20);
 
-	shell_history_init(&history_history);
+	shell_history_init(&history);
 
-	shell_history_put(&history_history, exp1_buf, 20);
-	shell_history_put(&history_history, exp2_buf, 20);
-	shell_history_put(&history_history, exp3_buf, 20);
+	shell_history_put(&history, exp1_buf, 20);
+	shell_history_put(&history, exp2_buf, 15);
+	shell_history_put(&history, exp3_buf, 20);
 
 	test_get(true, true, exp3_buf, 20); /* up - 3*/
-	test_get(true, true, exp2_buf, 20); /* up - 2*/
+	test_get(true, true, exp2_buf, 15); /* up - 2*/
 	test_get(true, true, exp1_buf, 20); /* up - 1*/
-	test_get(true, false, exp2_buf, 20); /* down - 2 */
+	test_get(true, false, exp2_buf, 15); /* down - 2 */
 	test_get(true, true, exp1_buf, 20);  /* up - 1*/
-	test_get(true, false, exp2_buf, 20); /* down - 2 */
+	test_get(true, false, exp2_buf, 15); /* down - 2 */
 	test_get(true, false, exp3_buf, 20); /* down - 3 */
 	test_get(false, false, NULL, 0); /* down - nothing */
 }
