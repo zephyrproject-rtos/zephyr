@@ -18,7 +18,7 @@
  * @brief This module verifies the delay specified during boot.
  * @see k_cycle_get_32, #SYS_CLOCK_HW_CYCLES_TO_NS64(X)
  */
-void verify_bootdelay(void)
+void test_verify_bootdelay(void)
 {
 	u32_t current_cycles = k_cycle_get_32();
 
@@ -32,10 +32,3 @@ void verify_bootdelay(void)
  * @}
  */
 
-/*test case main entry*/
-void test_main(void)
-{
-	ztest_test_suite(test_bootdelay,
-			 ztest_unit_test(verify_bootdelay));
-	ztest_run_test_suite(test_bootdelay);
-}

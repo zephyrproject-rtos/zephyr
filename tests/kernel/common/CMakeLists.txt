@@ -23,4 +23,5 @@ target_sources(app PRIVATE
 	src/timeout_order.c
 	src/multilib.c
   src/errno.c
+  src/boot_delay.c
   )
