@@ -15,7 +15,7 @@ static void top_handler(struct device *dev, void *user_data);
 
 void *exp_user_data = (void *)199;
 
-#ifdef CONFIG_COUNTER_MCUX_RTC
+#if defined(CONFIG_COUNTER_MCUX_RTC) || defined(CONFIG_COUNTER_RTC_STM32)
 #define COUNTER_PERIOD_US (2*USEC_PER_SEC)
 #else
 #define COUNTER_PERIOD_US 20000
@@ -67,6 +67,9 @@ const char *devices[] = {
 #endif
 #ifdef DT_ARM_CMSDK_DTIMER_0_LABEL
 	DT_ARM_CMSDK_DTIMER_0_LABEL,
+#endif
+#ifdef DT_RTC_0_NAME
+	DT_RTC_0_NAME,
 #endif
 };
 typedef void (*counter_test_func_t)(const char *dev_name);
@@ -139,7 +142,7 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 
 void test_set_top_value_with_alarm(void)
 {
-#ifdef CONFIG_COUNTER_MCUX_RTC
+#if defined(CONFIG_COUNTER_MCUX_RTC) || defined(CONFIG_COUNTER_RTC_STM32)
 	ztest_test_skip();
 #else
 	test_all_instances(test_set_top_value_with_alarm_instance);
@@ -227,7 +230,7 @@ void test_single_shot_alarm_notop(void)
 
 void test_single_shot_alarm_top(void)
 {
-#ifdef CONFIG_COUNTER_MCUX_RTC
+#if defined(CONFIG_COUNTER_MCUX_RTC) || defined(CONFIG_COUNTER_RTC_STM32)
 	ztest_test_skip();
 #else
 	test_all_instances(test_single_shot_alarm_top_instance);
