@@ -428,15 +428,6 @@ int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 		       struct net_tcp_options *opts);
 
 /**
- * @brief Get TCP header length
- *
- * @param pkt Network packet
- *
- * @return TCP header length
- */
-int tcp_hdr_len(struct net_pkt *pkt);
-
-/**
  * @brief TCP receive function
  *
  * @param context Network context
@@ -656,13 +647,6 @@ static inline bool net_tcp_validate_seq(struct net_tcp *tcp,
 static inline int net_tcp_finalize(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
-	return 0;
-}
-
-static inline int tcp_hdr_len(struct net_pkt *pkt)
-{
-	ARG_UNUSED(pkt);
-
 	return 0;
 }
 
