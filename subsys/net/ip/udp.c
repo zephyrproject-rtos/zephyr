@@ -231,10 +231,16 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 	}
 
 	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt, udp_access);
-	if (udp_hdr && !net_pkt_set_data(pkt, udp_access)) {
-		return udp_hdr;
+	if (!udp_hdr || net_pkt_set_data(pkt, udp_access)) {
+		NET_DBG("DROP: corrupted header");
+		goto drop;
 	}
 
+	net_pkt_set_appdatalen(pkt, ntohs(udp_hdr->len) -
+			       sizeof(struct net_udp_hdr));
+	net_pkt_set_appdata(pkt, net_pkt_cursor_get_pos(pkt));
+
+	return udp_hdr;
 drop:
 	net_stats_update_udp_chkerr(net_pkt_iface(pkt));
 	return NULL;
