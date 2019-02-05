@@ -97,9 +97,3 @@ void test_thread_context(void)
 	}
 }
 
-void test_main(void)
-{
-	ztest_test_suite(context_errno,
-			ztest_unit_test(test_thread_context));
-	ztest_run_test_suite(context_errno);
-}

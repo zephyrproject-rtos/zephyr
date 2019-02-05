@@ -20,6 +20,7 @@ extern void test_timeout_order(void);
 extern void test_clock_cycle(void);
 extern void test_clock_uptime(void);
 extern void test_multilib(void);
+extern void test_thread_context(void);
 
 /**
  * @defgroup kernel_common_tests Common Tests
@@ -80,7 +81,8 @@ void test_main(void)
 			 ztest_unit_test(test_clock_uptime),
 			 ztest_unit_test(test_clock_cycle),
 			 ztest_unit_test(test_version),
-			 ztest_unit_test(test_multilib)
+			 ztest_unit_test(test_multilib),
+			 ztest_unit_test(test_thread_context)
 			 );
 
 	ztest_run_test_suite(common);
