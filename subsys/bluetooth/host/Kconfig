@@ -228,35 +228,6 @@ config BT_CONN_TX_MAX
 	  Maximum number of pending TX buffers that have not yet
 	  been acknowledged by the controller.
 
-config BT_ATT_ENFORCE_FLOW
-	bool "Enforce strict flow control semantics for incoming PDUs"
-	default y if !(BOARD_QEMU_CORTEX_M3 || BOARD_QEMU_X86 || BOARD_NATIVE_POSIX)
-	help
-	  Enforce flow control rules on incoming PDUs, preventing a peer
-	  from sending new requests until a previous one has been responded
-	  or sending a new indication until a previous one has been
-	  confirmed. This may need to be disabled to avoid potential race
-	  conditions arising from a USB based HCI transport that splits
-	  HCI events and ACL data to separate endpoints.
-
-config BT_ATT_PREPARE_COUNT
-	int "Number of ATT prepare write buffers"
-	default 0
-	range 0 64
-	help
-	  Number of buffers available for ATT prepare write, setting
-	  this to 0 disables GATT long/reliable writes.
-
-config BT_ATT_TX_MAX
-	int "Maximum number of queued outgoing ATT PDUs"
-	default 2
-	range 1 BT_L2CAP_TX_BUF_COUNT
-	help
-	  Number of ATT PDUs that can be at a single moment queued for
-	  transmission. If the application tries to send more than this
-	  amount the calls will block until an existing queued PDU gets
-	  sent.
-
 config BT_AUTO_PHY_UPDATE
 	bool "Auto-initiate PHY Update Procedure"
 	depends on BT_PHY_UPDATE
@@ -355,6 +326,37 @@ config BT_L2CAP_DYNAMIC_CHANNEL
 	  This option enables support for LE Connection oriented Channels,
 	  allowing the creation of dynamic L2CAP Channels.
 
+menu "ATT and GATT Options"
+
+config BT_ATT_ENFORCE_FLOW
+	bool "Enforce strict flow control semantics for incoming PDUs"
+	default y if !(BOARD_QEMU_CORTEX_M3 || BOARD_QEMU_X86 || BOARD_NATIVE_POSIX)
+	help
+	  Enforce flow control rules on incoming PDUs, preventing a peer
+	  from sending new requests until a previous one has been responded
+	  or sending a new indication until a previous one has been
+	  confirmed. This may need to be disabled to avoid potential race
+	  conditions arising from a USB based HCI transport that splits
+	  HCI events and ACL data to separate endpoints.
+
+config BT_ATT_PREPARE_COUNT
+	int "Number of ATT prepare write buffers"
+	default 0
+	range 0 64
+	help
+	  Number of buffers available for ATT prepare write, setting
+	  this to 0 disables GATT long/reliable writes.
+
+config BT_ATT_TX_MAX
+	int "Maximum number of queued outgoing ATT PDUs"
+	default 2
+	range 1 BT_L2CAP_TX_BUF_COUNT
+	help
+	  Number of ATT PDUs that can be at a single moment queued for
+	  transmission. If the application tries to send more than this
+	  amount the calls will block until an existing queued PDU gets
+	  sent.
+
 config BT_GATT_CACHING
 	bool "GATT Caching support"
 	default y
@@ -378,6 +380,8 @@ config BT_GATT_READ_MULTIPLE
 	help
 	  This option enables support for the GATT Read Multiple Characteristic
 	  Values procedure.
+
+endmenu
 
 config BT_MAX_PAIRED
 	int "Maximum number of paired devices"
