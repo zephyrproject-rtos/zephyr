@@ -1,8 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: GPL-2.0
 #
-# Read doc/application/coccinelle.rst
-#
 
 ZEPHYR_BASE=$( builtin cd "$( dirname "$DIR" )" && pwd ${PWD_OPT})
 DIR="$(dirname $(readlink -f $0))/.."
@@ -24,6 +22,7 @@ OPTIONS:
 -j= , --jobs=		number of jobs to use {0 - `nproc`}
 -c= , --cocci=		specify cocci script to use
 -d= , --debug=		specify file to store debug log
+-f= , --sp-flag=	pass additional flag to spatch
 -h  , --help		display help and exit
 
 Default values if any OPTION is not supplied:
@@ -59,6 +58,10 @@ do
 			;;
 		-d=*|--debug=*)
 			DEBUG_FILE="${i#*=}"
+			shift
+			;;
+		-f=*|--sp-flag=*)
+			SPFLAGS="${i#*=}"
 			shift
 			;;
 		-h|--help)
@@ -132,6 +135,9 @@ run_cmd_parmap() {
 		exit $err
 	fi
 }
+
+# You can override heuristics with SPFLAGS, these must always go last
+OPTIONS="$OPTIONS $SPFLAGS"
 
 coccinelle () {
     COCCI="$1"
