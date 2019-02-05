@@ -4,24 +4,70 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-
 /*
- * Header to be able to compile the Zephyr kernel on top of a POSIX OS
+ * Header to be able to compile the Zephyr kernel on top of a POSIX OS via the
+ * POSIX ARCH
+ *
+ * This file is only used in the POSIX ARCH, and not in any other architecture
+ *
+ * Most users will be normally unaware of this file existence, unless they have
+ * a link issue in which their POSIX functions calls are reported in errors (as
+ * zap_<origian_func_name>).
+ * If you do see a link error telling you that zap_something is undefined, it is
+ * likely that you forgot to select the corresponding Zephyr POSIX API.
+ *
+ * This header is included automatically when targeting POSIX ARCH boards
+ * (for ex. native_posix).
+ * It will be included in _all_ Zephyr and application source files
+ * (it is passed with the option "-include" to the compiler call)
+ *
+ * A few files (those which need to access the host OS APIs) will set
+ * NO_POSIX_CHEATS to avoid including this file. These are typically only
+ * the POSIX arch private files and some of the drivers meant only for the POSIX
+ * architecture.
+ * No file which is meant to run in an embedded target should set
+ * NO_POSIX_CHEATS
  */
 
 #if !defined(ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CHEATS_H_) && !defined(NO_POSIX_CHEATS)
 #define ZEPHYR_ARCH_POSIX_INCLUDE_POSIX_CHEATS_H_
 
+/*
+ * Normally main() is the main entry point of a C executable.
+ * When compiling for native_posix, the Zephyr "application" is not the actual
+ * entry point of the executable but something the Zephyr OS calls during
+ * boot.
+ * Therefore we need to rename this application main something else, so
+ * we free the function name "main" for its normal purpose
+ */
 #ifndef main
 #define main(...) zephyr_app_main(__VA_ARGS__)
 #endif
 
-/* For the include/posix/pthreads.h provided with Zephyr,
- * in case somebody would use it, we rename all symbols here adding
- * some prefix, and we ensure this header is included
- */
-
 #ifdef CONFIG_POSIX_API
+
+/*
+ * The defines below in this header exist only to enable the Zephyr POSIX API
+ * (include/posix/), and applications using it, to be compiled on top of
+ * native_posix.
+ *
+ * Without this header, both the Zephyr POSIX API functions and the equivalent
+ * host OS functions would have the same name. This would result in the linker
+ * not picking the correct ones.
+ *
+ * Renaming these functions allows the linker to distinguish
+ * which calls are meant for the Zephyr POSIX API (zap_something), and
+ * which are meant for the host OS.
+ *
+ * The zap_ prefix should be understood as an attempt to namespace them
+ * into something which is unlikely to collide with other real functions
+ * (Any unlikely string would have done)
+ *
+ * If you want to link an external library together with Zephyr code for the
+ * native_posix target, where that external library calls into the Zephyr
+ * POSIX API, you may want to include this header when compiling that library,
+ * or rename the calls to match the ones in the defines below.
+ */
 
 /* Condition variables */
 #define pthread_cond_init(...)        zap_pthread_cond_init(__VA_ARGS__)
