@@ -596,8 +596,8 @@ int mqtt_input(struct mqtt_client *client)
 	return err_code;
 }
 
-int mqtt_read_publish_payload(struct mqtt_client *client, void *buffer,
-			      size_t length)
+static int read_publish_payload(struct mqtt_client *client, void *buffer,
+				size_t length, bool shall_block)
 {
 	int ret;
 
@@ -614,8 +614,8 @@ int mqtt_read_publish_payload(struct mqtt_client *client, void *buffer,
 		length = client->internal.remaining_payload;
 	}
 
-	ret = mqtt_transport_read(client, buffer, length);
-	if (ret == -EAGAIN) {
+	ret = mqtt_transport_read(client, buffer, length, shall_block);
+	if (!shall_block && ret == -EAGAIN) {
 		goto exit;
 	}
 
@@ -634,4 +634,16 @@ exit:
 	mqtt_mutex_unlock(client);
 
 	return ret;
+}
+
+int mqtt_read_publish_payload(struct mqtt_client *client, void *buffer,
+			      size_t length)
+{
+	return read_publish_payload(client, buffer, length, false);
+}
+
+int mqtt_read_publish_payload_blocking(struct mqtt_client *client, void *buffer,
+				       size_t length)
+{
+	return read_publish_payload(client, buffer, length, true);
 }
