@@ -2776,6 +2776,27 @@ struct net_pkt *net_pkt_clone_new(struct net_pkt *pkt, s32_t timeout)
 	return clone_pkt;
 }
 
+size_t net_pkt_remaining_data(struct net_pkt *pkt)
+{
+	struct net_buf *buf;
+	size_t data_length;
+
+	if (!pkt || !pkt->cursor.buf || !pkt->cursor.pos) {
+		return 0;
+	}
+
+	buf = pkt->cursor.buf;
+	data_length = buf->len - (pkt->cursor.pos - buf->data);
+
+	buf = buf->frags;
+	while (buf) {
+		data_length += buf->len;
+		buf = buf->frags;
+	}
+
+	return data_length;
+}
+
 int net_pkt_update_length(struct net_pkt *pkt, size_t length)
 {
 	struct net_buf *buf;
