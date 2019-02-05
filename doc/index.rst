@@ -38,11 +38,11 @@ licensing, as described in :ref:`Zephyr_Licensing`.
 	       <img alt="" src="_static/images/kite.png"/>
 	       <h2>Introduction</h2>
 	   </a>
-	   <p>Introducing the Zephyr Project: the overview, architecture, features and licensing</p>
+	   <p>Introducing the Zephyr Project: overview, architecture, features, and licensing</p>
        </li>
        <li class="grid-item">
 	   <a href="getting_started/index.html">
-	       <img alt="" src=""/>
+               <span class="grid-icon fa fa-map-signs"></span>
 	       <h2>Getting Started Guide</h2>
 	   </a>
 	   <p>Follow this guide to set up a Zephyr development environment on your
@@ -50,7 +50,7 @@ licensing, as described in :ref:`Zephyr_Licensing`.
        </li>
        <li class="grid-item">
 	   <a href="contribute/index.html">
-	       <img alt="" src=""/>
+               <span class="grid-icon fa fa-github"></span>
 	       <h2>Contribution Guidelines</h2>
 	   </a>
 	   <p>As an open-source project, we welcome and encourage the community
@@ -58,7 +58,7 @@ licensing, as described in :ref:`Zephyr_Licensing`.
        </li>
        <li class="grid-item">
 	   <a href="samples/index.html">
-	       <img alt="" src=""/>
+               <span class="grid-icon fa fa-cogs"></span>
 	       <h2>Samples and Demos</h2>
 	   </a>
 	   <p>A list of samples and demos that can run on a variety of boards supported
@@ -66,31 +66,31 @@ licensing, as described in :ref:`Zephyr_Licensing`.
        </li>
        <li class="grid-item">
 	   <a href="reference/index.html">
-	       <img alt="" src=""/>
+               <span class="grid-icon fa fa-sign-in"></span>
 	       <h2>API Reference</h2>
 	   </a>
-	   <p>API Documentation and Reference</p>
+	   <p>API Documentation, Zephyr configuration, and subsystem Reference</p>
        </li>
        <li class="grid-item">
 	   <a href="security/index.html">
-	       <img alt="" src=""/>
+               <span class="grid-icon fa fa-lock"></span>
 	       <h2>Security</h2>
 	   </a>
 	   <p>Requirements, processes, and developer guidelines for ensuring security is addressed within the Zephyr project.</p>
        </li>
        <li class="grid-item">
 	   <a href="boards/index.html">
-	       <img alt="" src=""/>
+               <span class="grid-icon fa fa-object-group"></span>
 	       <h2>Supported Boards</h2>
 	   </a>
-	   <p>List if supported boards and platforms.</p>
+	   <p>List of supported boards and platforms.</p>
        </li>
        <li class="grid-item">
 	   <a href="guides/index.html">
-	       <img alt="" src=""/>
+               <span class="grid-icon fa fa-puzzle-piece"></span>
 	       <h2>User and Developer Guides</h2>
 	   </a>
-	   <p>User and Developer Guides</p>
+	   <p>User and Developer Guides, including tools and tips</p>
        </li>
    </ul>
 
