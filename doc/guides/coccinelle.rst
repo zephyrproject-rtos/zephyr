@@ -215,6 +215,74 @@ instance:
 
 Debugging support is only supported when using Coccinelle >= 1.0.2.
 
+Additional Flags
+****************
+
+Additional flags can be passed to spatch through the SPFLAGS
+variable. This works as Coccinelle respects the last flags
+given to it when options are in conflict.
+
+.. code-block:: console
+
+   ./scripts/coccicheck --sp-flag="--use-glimpse"
+
+Coccinelle supports idutils as well but requires coccinelle >= 1.0.6.
+When no ID file is specified coccinelle assumes your ID database file
+is in the file .id-utils.index on the top level of the kernel, coccinelle
+carries a script scripts/idutils_index.sh which creates the database with:
+
+.. code-block:: console
+
+   mkid -i C --output .id-utils.index
+
+If you have another database filename you can also just symlink with this
+name.
+
+.. code-block:: console
+
+   ./scripts/coccicheck --sp-flag="--use-idutils"
+
+Alternatively you can specify the database filename explicitly, for
+instance:
+
+.. code-block:: console
+
+   ./scripts/coccicheck --sp-flag="--use-idutils /full-path/to/ID"
+
+Sometimes coccinelle doesn't recognize or parse complex macro variables
+due to insufficient definition. Therefore, to make it parsable we
+explicitly provide the prototype of the complex macro using the
+``---macro-file-builtins <headerfile.h>`` flag.
+
+The ``<headerfile.h>`` should contain the complete prototype of
+the complex macro from which spatch engine can extract the type
+information required during transformation.
+
+For example:
+
+``Z_SYSCALL_HANDLER`` is not recognized by coccinelle. Therefore, we
+put its prototype in a header file, say for eg ``mymacros.h``.
+
+.. code-block:: console
+
+   $ cat mymacros.h
+   #define Z_SYSCALL_HANDLER int xxx
+
+Now we pass the header file ``mymacros.h`` during transformation:
+
+.. code-block:: console
+
+   ./scripts/coccicheck --sp-flag="---macro-file-builtins mymacros.h"
+
+See ``spatch --help`` to learn more about spatch options.
+
+Note that the ``--use-glimpse`` and ``--use-idutils`` options
+require external tools for indexing the code. None of them is
+thus active by default. However, by indexing the code with
+one of these tools, and according to the cocci file used,
+spatch could proceed the entire code base more quickly.
+
+
 SmPL patch specific options
 ***************************
 
