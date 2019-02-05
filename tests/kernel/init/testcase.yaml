@@ -1,3 +1,0 @@
-tests:
-  kernel.common.init:
-    tags: init bootdelay
