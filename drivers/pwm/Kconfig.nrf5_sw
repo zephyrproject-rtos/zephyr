@@ -8,8 +8,8 @@
 
 menuconfig PWM_NRF5_SW
 	bool "Nordic Semiconductor nRF5x series S/W PWM"
+	default y if !PWM_NRFX
 	depends on PWM && SOC_FAMILY_NRF
-	default y
 	help
 	  Enable driver to utilize PWM on the Nordic Semiconductor nRF5x series.
 	  This implementation provides up to 3 pins using one HF timer, two PPI
