@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016 BayLibre, SAS
+ * DMA Additions (c) Dave Marples <dave@marples.net>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,11 +21,28 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 
 #include "spi_ll_stm32.h"
 
-#define DEV_CFG(dev)						\
-(const struct spi_stm32_config * const)(dev->config->config_info)
+#ifdef CONFIG_SPI_STM32_DMA
+#include <dma.h>
 
-#define DEV_DATA(dev)					\
-(struct spi_stm32_data * const)(dev->driver_data)
+/* A couple of configuration sanity checks */
+#if defined(CONFIG_SPI_6) && defined(CONFIG_SPI_5)
+#error Both SPI_5 and SPI_6 cannot use DMA at the same time!!
+#endif
+
+#if defined(CONFIG_SPI_INTERRUPT)
+#error Cannot employ both INTERRUPT and DMA mechanisms at the sane time
+#endif
+
+/* Pointers to each stream for DMA use */
+#define TX_STREAM (0)
+#define RX_STREAM (1)
+#endif
+
+#define DEV_CFG(dev) \
+	(const struct spi_stm32_config *const)(dev->config->config_info)
+
+#define DEV_DATA(dev) \
+	(struct spi_stm32_data *const)(dev->driver_data)
 
 /*
  * Check for SPI_SR_FRE to determine support for TI mode frame format
@@ -44,10 +62,12 @@ LOG_MODULE_REGISTER(spi_ll_stm32);
 /* Value to shift out when no application data needs transmitting. */
 #define SPI_STM32_TX_NOP 0x00
 
+#ifndef CONFIG_SPI_STM32_DMA
 static bool spi_stm32_transfer_ongoing(struct spi_stm32_data *data)
 {
 	return spi_context_tx_on(&data->ctx) || spi_context_rx_on(&data->ctx);
 }
+
 
 static int spi_stm32_get_err(SPI_TypeDef *spi)
 {
@@ -67,6 +87,7 @@ static int spi_stm32_get_err(SPI_TypeDef *spi)
 
 	return 0;
 }
+#endif
 
 static inline u16_t spi_stm32_next_tx(struct spi_stm32_data *data)
 {
@@ -83,6 +104,7 @@ static inline u16_t spi_stm32_next_tx(struct spi_stm32_data *data)
 	return tx_frame;
 }
 
+#ifndef CONFIG_SPI_STM32_DMA
 /* Shift a SPI frame as master. */
 static void spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
@@ -172,6 +194,7 @@ static int spi_stm32_shift_frames(SPI_TypeDef *spi, struct spi_stm32_data *data)
 
 	return spi_stm32_get_err(spi);
 }
+#endif
 
 static void spi_stm32_complete(struct spi_stm32_data *data, SPI_TypeDef *spi,
 			       int status)
@@ -184,25 +207,48 @@ static void spi_stm32_complete(struct spi_stm32_data *data, SPI_TypeDef *spi,
 
 	spi_context_cs_control(&data->ctx, false);
 
-#if defined(CONFIG_SPI_STM32_HAS_FIFO)
+#if (!defined(CONFIG_SPI_STM32_DMA)) && defined(CONFIG_SPI_STM32_HAS_FIFO)
 	/* Flush RX buffer */
 	while (LL_SPI_IsActiveFlag_RXNE(spi)) {
 		(void) LL_SPI_ReceiveData8(spi);
 	}
-#endif
 
 	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER) {
 		while (LL_SPI_IsActiveFlag_BSY(spi)) {
 			/* NOP */
 		}
 	}
+#endif
 
 	LL_SPI_Disable(spi);
 
-#ifdef CONFIG_SPI_STM32_INTERRUPT
+#if defined(CONFIG_SPI_STM32_DMA)
+	LL_SPI_DisableDMAReq_RX(spi);
+	LL_SPI_DisableDMAReq_TX(spi);
+#endif
+
+#if defined(CONFIG_SPI_STM32_INTERRUPT) || defined(CONFIG_SPI_STM32_DMA)
 	spi_context_complete(&data->ctx, status);
 #endif
 }
+
+#ifdef CONFIG_SPI_STM32_DMA
+void dmaCallback(void *arg, u32_t channel, int error_code)
+
+{
+	/* Function callback at end of DMA transfers */
+	struct device *const dev = (struct device *) arg;
+	const struct spi_stm32_config *cfg = dev->config->config_info;
+	struct spi_stm32_data *data = dev->driver_data;
+	SPI_TypeDef *spi = cfg->spi;
+
+	__ASSERT_NO_MSG(data->nDMA);
+
+	if (!--data->nDMA) {
+		spi_stm32_complete(data, spi, error_code);
+	}
+}
+#endif
 
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 static void spi_stm32_isr(void *arg)
@@ -373,7 +419,7 @@ static int transceive(struct device *dev,
 		return 0;
 	}
 
-#ifndef CONFIG_SPI_STM32_INTERRUPT
+#if !(defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SPI_STM32_DMA))
 	if (asynchronous) {
 		return -ENOTSUP;
 	}
@@ -389,19 +435,57 @@ static int transceive(struct device *dev,
 	/* Set buffers info */
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
-#if defined(CONFIG_SPI_STM32_HAS_FIFO)
 	/* Flush RX buffer */
 	while (LL_SPI_IsActiveFlag_RXNE(spi)) {
 		(void) LL_SPI_ReceiveData8(spi);
 	}
-#endif
-
-	LL_SPI_Enable(spi);
 
 	/* This is turned off in spi_stm32_complete(). */
 	spi_context_cs_control(&data->ctx, true);
 
-#ifdef CONFIG_SPI_STM32_INTERRUPT
+#ifdef CONFIG_SPI_STM32_DMA
+	/* Perform DMA based transfer activity */
+	data->nDMA = 0;
+
+	if (spi_context_tx_on(&data->ctx)) {
+		data->b[TX_STREAM].source_address = (u32_t)data->ctx.tx_buf;
+		data->b[TX_STREAM].block_size = data->ctx.tx_len;
+		data->nDMA++;
+
+		ret = dma_config(data->d, cfg->stream[TX_STREAM],
+					&data->dma_conf[TX_STREAM]);
+		if (ret) {
+			LOG_ERR("Failed to configure TX_STREAM");
+			return ret;
+		}
+
+		LL_SPI_EnableDMAReq_TX(spi);
+		dma_start(data->d, cfg->stream[TX_STREAM]);
+	}
+
+	if (spi_context_rx_on(&data->ctx)) {
+		data->b[RX_STREAM].dest_address = (u32_t)data->ctx.rx_buf;
+		data->b[RX_STREAM].block_size = data->ctx.rx_len;
+		data->nDMA++;
+
+		ret = dma_config(data->d, cfg->stream[RX_STREAM],
+				&data->dma_conf[RX_STREAM]);
+		if (ret) {
+			LOG_ERR("Failed to configure RX_STREAM");
+			return ret;
+		}
+
+		LL_SPI_EnableDMAReq_RX(spi);
+		dma_start(data->d, cfg->stream[RX_STREAM]);
+	}
+
+	LL_SPI_Enable(spi);
+
+	/* Now just wait for it to complete, or an error */
+	ret = spi_context_wait_for_completion(&data->ctx);
+
+#elif defined(CONFIG_SPI_STM32_INTERRUPT)
+	/* Else perform Interrupt based transfer activity */
 	LL_SPI_EnableIT_ERR(spi);
 
 	if (rx_bufs) {
@@ -409,9 +493,12 @@ static int transceive(struct device *dev,
 	}
 
 	LL_SPI_EnableIT_TXE(spi);
+	LL_SPI_Enable(spi);
 
 	ret = spi_context_wait_for_completion(&data->ctx);
 #else
+	/* Else perform programmed transfer based transfer activity */
+	LL_SPI_Enable(spi);
 	do {
 		ret = spi_stm32_shift_frames(spi, data);
 	} while (!ret && spi_stm32_transfer_ongoing(data));
@@ -422,7 +509,7 @@ static int transceive(struct device *dev,
 	if (spi_context_is_slave(&data->ctx) && !ret) {
 		ret = data->ctx.recv_frames;
 	}
-#endif /* CONFIG_SPI_SLAVE */
+#endif  /* CONFIG_SPI_SLAVE */
 
 #endif
 
@@ -465,6 +552,12 @@ static int spi_stm32_init(struct device *dev)
 
 	__ASSERT_NO_MSG(device_get_binding(STM32_CLOCK_CONTROL_NAME));
 
+#ifdef CONFIG_SPI_STM32_DMA
+	data->dma_conf[RX_STREAM].callback_arg = dev;
+	data->dma_conf[TX_STREAM].callback_arg = dev;
+	data->d = device_get_binding(cfg->dmadev);
+#endif
+
 	if (clock_control_on(device_get_binding(STM32_CLOCK_CONTROL_NAME),
 			       (clock_control_subsys_t) &cfg->pclken) != 0) {
 		LOG_ERR("Could not enable SPI clock");
@@ -495,11 +588,49 @@ static const struct spi_stm32_config spi_stm32_cfg_1 = {
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	.irq_config = spi_stm32_irq_config_func_1,
 #endif
+
+#ifdef CONFIG_SPI_STM32_DMA
+	.stream[TX_STREAM] = 3,
+	.stream[RX_STREAM] = 2,
+	.dmadev = CONFIG_DMA_2_NAME,
+#endif
 };
 
 static struct spi_stm32_data spi_stm32_dev_data_1 = {
 	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_1, ctx),
 	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_1, ctx),
+
+#ifdef CONFIG_SPI_STM32_DMA
+	/* Transmit block config */
+	.b[TX_STREAM].dest_address = (u32_t)&(SPI1->DR),
+	.b[TX_STREAM].source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	.b[TX_STREAM].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+
+	/* Receive block config */
+	.b[RX_STREAM].source_address = (u32_t)&(SPI1->DR),
+	.b[RX_STREAM].source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	.b[RX_STREAM].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+
+	/* Setup for transmit stream */
+	.dma_conf[TX_STREAM].dma_slot = 0,
+	.dma_conf[TX_STREAM].channel_direction = MEMORY_TO_PERIPHERAL,
+	.dma_conf[TX_STREAM].source_data_size = 0,      /* 8 bit data */
+	.dma_conf[TX_STREAM].dest_data_size = 0,        /* 8 bit data */
+	.dma_conf[TX_STREAM].source_burst_length = 0,
+	.dma_conf[TX_STREAM].dest_burst_length = 0,
+	.dma_conf[TX_STREAM].dma_callback = dmaCallback,
+	.dma_conf[TX_STREAM].head_block = &spi_stm32_dev_data_1.b[TX_STREAM],
+
+	/* Setup for receive stream */
+	.dma_conf[RX_STREAM].dma_slot = 0,
+	.dma_conf[RX_STREAM].channel_direction = PERIPHERAL_TO_MEMORY,
+	.dma_conf[RX_STREAM].source_data_size = 0,      /* 8 bit data */
+	.dma_conf[RX_STREAM].dest_data_size = 0,        /* 8 bit data */
+	.dma_conf[RX_STREAM].source_burst_length = 0,
+	.dma_conf[RX_STREAM].dest_burst_length = 0,
+	.dma_conf[RX_STREAM].dma_callback = dmaCallback,
+	.dma_conf[RX_STREAM].head_block = &spi_stm32_dev_data_1.b[RX_STREAM],
+#endif
 };
 
 DEVICE_AND_API_INIT(spi_stm32_1, DT_SPI_1_NAME, &spi_stm32_init,
@@ -533,11 +664,49 @@ static const struct spi_stm32_config spi_stm32_cfg_2 = {
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	.irq_config = spi_stm32_irq_config_func_2,
 #endif
+
+#ifdef CONFIG_SPI_STM32_DMA
+	.stream[TX_STREAM] = 4,
+	.stream[RX_STREAM] = 3,
+	.dmadev = CONFIG_DMA_1_NAME,
+#endif
 };
 
 static struct spi_stm32_data spi_stm32_dev_data_2 = {
 	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_2, ctx),
 	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_2, ctx),
+
+#ifdef CONFIG_SPI_STM32_DMA
+	/* Transmit block config */
+	.b[TX_STREAM].dest_address = (u32_t)&(SPI2->DR),
+	.b[TX_STREAM].source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	.b[TX_STREAM].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+
+	/* Receive block config */
+	.b[RX_STREAM].source_address = (u32_t)&(SPI2->DR),
+	.b[RX_STREAM].source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	.b[RX_STREAM].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+
+	/* Setup for transmit stream */
+	.dma_conf[TX_STREAM].dma_slot = 0,
+	.dma_conf[TX_STREAM].channel_direction = MEMORY_TO_PERIPHERAL,
+	.dma_conf[TX_STREAM].source_data_size = 0,      /* 8 bit data */
+	.dma_conf[TX_STREAM].dest_data_size = 0,        /* 8 bit data */
+	.dma_conf[TX_STREAM].source_burst_length = 0,
+	.dma_conf[TX_STREAM].dest_burst_length = 0,
+	.dma_conf[TX_STREAM].dma_callback = dmaCallback,
+	.dma_conf[TX_STREAM].head_block = &spi_stm32_dev_data_2.b[TX_STREAM],
+
+	/* Setup for receive stream */
+	.dma_conf[RX_STREAM].dma_slot = 0,
+	.dma_conf[RX_STREAM].channel_direction = PERIPHERAL_TO_MEMORY,
+	.dma_conf[RX_STREAM].source_data_size = 0,      /* 8 bit data */
+	.dma_conf[RX_STREAM].dest_data_size = 0,        /* 8 bit data */
+	.dma_conf[RX_STREAM].source_burst_length = 0,
+	.dma_conf[RX_STREAM].dest_burst_length = 0,
+	.dma_conf[RX_STREAM].dma_callback = dmaCallback,
+	.dma_conf[RX_STREAM].head_block = &spi_stm32_dev_data_2.b[RX_STREAM],
+#endif
 };
 
 DEVICE_AND_API_INIT(spi_stm32_2, DT_SPI_2_NAME, &spi_stm32_init,
@@ -571,11 +740,48 @@ static const  struct spi_stm32_config spi_stm32_cfg_3 = {
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	.irq_config = spi_stm32_irq_config_func_3,
 #endif
+
+#ifdef CONFIG_SPI_STM32_DMA
+	.stream[TX_STREAM] = 2,
+	.stream[RX_STREAM] = 0,
+	.dmadev = CONFIG_DMA_1_NAME,
+#endif
 };
 
 static struct spi_stm32_data spi_stm32_dev_data_3 = {
 	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_3, ctx),
 	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_3, ctx),
+#ifdef CONFIG_SPI_STM32_DMA
+	/* Transmit block config */
+	.b[TX_STREAM].dest_address = (u32_t)&(SPI3->DR),
+	.b[TX_STREAM].source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	.b[TX_STREAM].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+
+	/* Receive block config */
+	.b[RX_STREAM].source_address = (u32_t)&(SPI3->DR),
+	.b[RX_STREAM].source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	.b[RX_STREAM].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+
+	/* Setup for transmit stream */
+	.dma_conf[TX_STREAM].dma_slot = 0,
+	.dma_conf[TX_STREAM].channel_direction = MEMORY_TO_PERIPHERAL,
+	.dma_conf[TX_STREAM].source_data_size = 0,      /* 8 bit data */
+	.dma_conf[TX_STREAM].dest_data_size = 0,        /* 8 bit data */
+	.dma_conf[TX_STREAM].source_burst_length = 0,
+	.dma_conf[TX_STREAM].dest_burst_length = 0,
+	.dma_conf[TX_STREAM].dma_callback = dmaCallback,
+	.dma_conf[TX_STREAM].head_block = &spi_stm32_dev_data_3.b[TX_STREAM],
+
+	/* Setup for receive stream */
+	.dma_conf[RX_STREAM].dma_slot = 0,
+	.dma_conf[RX_STREAM].channel_direction = PERIPHERAL_TO_MEMORY,
+	.dma_conf[RX_STREAM].source_data_size = 0,      /* 8 bit data */
+	.dma_conf[RX_STREAM].dest_data_size = 0,        /* 8 bit data */
+	.dma_conf[RX_STREAM].source_burst_length = 0,
+	.dma_conf[RX_STREAM].dest_burst_length = 0,
+	.dma_conf[RX_STREAM].dma_callback = dmaCallback,
+	.dma_conf[RX_STREAM].head_block = &spi_stm32_dev_data_3.b[RX_STREAM],
+#endif
 };
 
 DEVICE_AND_API_INIT(spi_stm32_3, DT_SPI_3_NAME, &spi_stm32_init,
@@ -609,11 +815,48 @@ static const  struct spi_stm32_config spi_stm32_cfg_4 = {
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	.irq_config = spi_stm32_irq_config_func_4,
 #endif
+
+#ifdef CONFIG_SPI_STM32_DMA
+	.stream[TX_STREAM] = 1,
+	.stream[RX_STREAM] = 0,
+	.dmadev = CONFIG_DMA_4_NAME,
+#endif
 };
 
 static struct spi_stm32_data spi_stm32_dev_data_4 = {
 	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_4, ctx),
 	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_4, ctx),
+#ifdef CONFIG_SPI_STM32_DMA
+	/* Transmit block config */
+	.b[TX_STREAM].dest_address = (u32_t)&(SPI4->DR),
+	.b[TX_STREAM].source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	.b[TX_STREAM].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+
+	/* Receive block config */
+	.b[RX_STREAM].source_address = (u32_t)&(SPI4->DR),
+	.b[RX_STREAM].source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	.b[RX_STREAM].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+
+	/* Setup for transmit stream */
+	.dma_conf[TX_STREAM].dma_slot = 0,
+	.dma_conf[TX_STREAM].channel_direction = MEMORY_TO_PERIPHERAL,
+	.dma_conf[TX_STREAM].source_data_size = 0,      /* 8 bit data */
+	.dma_conf[TX_STREAM].dest_data_size = 0,        /* 8 bit data */
+	.dma_conf[TX_STREAM].source_burst_length = 0,
+	.dma_conf[TX_STREAM].dest_burst_length = 0,
+	.dma_conf[TX_STREAM].dma_callback = dmaCallback,
+	.dma_conf[TX_STREAM].head_block = &spi_stm32_dev_data_4.b[TX_STREAM],
+
+	/* Setup for receive stream */
+	.dma_conf[RX_STREAM].dma_slot = 0,
+	.dma_conf[RX_STREAM].channel_direction = PERIPHERAL_TO_MEMORY,
+	.dma_conf[RX_STREAM].source_data_size = 0,      /* 8 bit data */
+	.dma_conf[RX_STREAM].dest_data_size = 0,        /* 8 bit data */
+	.dma_conf[RX_STREAM].source_burst_length = 0,
+	.dma_conf[RX_STREAM].dest_burst_length = 0,
+	.dma_conf[RX_STREAM].dma_callback = dmaCallback,
+	.dma_conf[RX_STREAM].head_block = &spi_stm32_dev_data_4.b[RX_STREAM],
+#endif
 };
 
 DEVICE_AND_API_INIT(spi_stm32_4, DT_SPI_4_NAME, &spi_stm32_init,
@@ -647,11 +890,48 @@ static const  struct spi_stm32_config spi_stm32_cfg_5 = {
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	.irq_config = spi_stm32_irq_config_func_5,
 #endif
+
+#ifdef CONFIG_SPI_STM32_DMA
+	.stream[TX_STREAM] = 6,
+	.stream[RX_STREAM] = 5,
+	.dmadev = CONFIG_DMA_2_NAME,
+#endif
 };
 
 static struct spi_stm32_data spi_stm32_dev_data_5 = {
 	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_5, ctx),
 	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_5, ctx),
+#ifdef CONFIG_SPI_STM32_DMA
+	/* Transmit block config */
+	.b[TX_STREAM].dest_address = (u32_t)&(SPI5->DR),
+	.b[TX_STREAM].source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	.b[TX_STREAM].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+
+	/* Receive block config */
+	.b[RX_STREAM].source_address = (u32_t)&(SPI5->DR),
+	.b[RX_STREAM].source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	.b[RX_STREAM].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+
+	/* Setup for transmit stream */
+	.dma_conf[TX_STREAM].dma_slot = 0,
+	.dma_conf[TX_STREAM].channel_direction = MEMORY_TO_PERIPHERAL,
+	.dma_conf[TX_STREAM].source_data_size = 0,      /* 8 bit data */
+	.dma_conf[TX_STREAM].dest_data_size = 0,        /* 8 bit data */
+	.dma_conf[TX_STREAM].source_burst_length = 0,
+	.dma_conf[TX_STREAM].dest_burst_length = 0,
+	.dma_conf[TX_STREAM].dma_callback = dmaCallback,
+	.dma_conf[TX_STREAM].head_block = &spi_stm32_dev_data_5.b[TX_STREAM],
+
+	/* Setup for receive stream */
+	.dma_conf[RX_STREAM].dma_slot = 0,
+	.dma_conf[RX_STREAM].channel_direction = PERIPHERAL_TO_MEMORY,
+	.dma_conf[RX_STREAM].source_data_size = 0,      /* 8 bit data */
+	.dma_conf[RX_STREAM].dest_data_size = 0,        /* 8 bit data */
+	.dma_conf[RX_STREAM].source_burst_length = 0,
+	.dma_conf[RX_STREAM].dest_burst_length = 0,
+	.dma_conf[RX_STREAM].dma_callback = dmaCallback,
+	.dma_conf[RX_STREAM].head_block = &spi_stm32_dev_data_5.b[RX_STREAM],
+#endif
 };
 
 DEVICE_AND_API_INIT(spi_stm32_5, DT_SPI_5_NAME, &spi_stm32_init,
@@ -685,11 +965,47 @@ static const  struct spi_stm32_config spi_stm32_cfg_6 = {
 #ifdef CONFIG_SPI_STM32_INTERRUPT
 	.irq_config = spi_stm32_irq_config_func_6,
 #endif
+#ifdef CONFIG_SPI_STM32_DMA
+	.stream[TX_STREAM] = 5,
+	.stream[RX_STREAM] = 6,
+	.dmadev = CONFIG_DMA_2_NAME,
+#endif
 };
 
 static struct spi_stm32_data spi_stm32_dev_data_6 = {
 	SPI_CONTEXT_INIT_LOCK(spi_stm32_dev_data_6, ctx),
 	SPI_CONTEXT_INIT_SYNC(spi_stm32_dev_data_6, ctx),
+#ifdef CONFIG_SPI_STM32_DMA
+	/* Transmit block config */
+	.b[TX_STREAM].dest_address = (u32_t)&(SPI6->DR),
+	.b[TX_STREAM].source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	.b[TX_STREAM].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+
+	/* Receive block config */
+	.b[RX_STREAM].source_address = (u32_t)&(SPI6->DR),
+	.b[RX_STREAM].source_addr_adj = DMA_ADDR_ADJ_INCREMENT,
+	.b[RX_STREAM].dest_addr_adj = DMA_ADDR_ADJ_NO_CHANGE,
+
+	/* Setup for transmit stream */
+	.dma_conf[TX_STREAM].dma_slot = 0,
+	.dma_conf[TX_STREAM].channel_direction = MEMORY_TO_PERIPHERAL,
+	.dma_conf[TX_STREAM].source_data_size = 0,      /* 8 bit data */
+	.dma_conf[TX_STREAM].dest_data_size = 0,        /* 8 bit data */
+	.dma_conf[TX_STREAM].source_burst_length = 0,
+	.dma_conf[TX_STREAM].dest_burst_length = 0,
+	.dma_conf[TX_STREAM].dma_callback = dmaCallback,
+	.dma_conf[TX_STREAM].head_block = &spi_stm32_dev_data_6.b[TX_STREAM],
+
+	/* Setup for receive stream */
+	.dma_conf[RX_STREAM].dma_slot = 0,
+	.dma_conf[RX_STREAM].channel_direction = PERIPHERAL_TO_MEMORY,
+	.dma_conf[RX_STREAM].source_data_size = 0,      /* 8 bit data */
+	.dma_conf[RX_STREAM].dest_data_size = 0,        /* 8 bit data */
+	.dma_conf[RX_STREAM].source_burst_length = 0,
+	.dma_conf[RX_STREAM].dest_burst_length = 0,
+	.dma_conf[RX_STREAM].dma_callback = dmaCallback,
+	.dma_conf[RX_STREAM].head_block = &spi_stm32_dev_data_6.b[RX_STREAM],
+#endif
 };
 
 DEVICE_AND_API_INIT(spi_stm32_6, DT_SPI_6_NAME, &spi_stm32_init,

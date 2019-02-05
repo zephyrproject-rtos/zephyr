@@ -23,6 +23,16 @@ config SPI_STM32_HAS_FIFO
 config SPI_STM32_INTERRUPT
 	bool "STM32 MCU SPI Interrupt Support"
 	help
-	  Enable Interrupt support for the SPI Driver of STM32 family.
+	  Enable Interrupt support for the SPI Driver of STM32 family. Selecting this precludes
+	  the use of DMA for SPI.
+
+config SPI_STM32_DMA
+	bool "STM32 MCU SPI DMA Support"
+	depends on SOC_SERIES_STM32F4X && !SPI_STM32_INTERRUPT
+select DMA
+select DMA_STM32F4X
+default n
+	help
+	  Enable DMA support for the SPI Driver of STM32 family.
 
 endif # SPI_STM32
