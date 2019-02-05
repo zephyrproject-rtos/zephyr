@@ -175,10 +175,21 @@ static void sc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
 	BT_DBG("value 0x%04x", value);
 }
 
+enum {
+	CF_CHANGE_AWARE,	/* Client is changed aware */
+	CF_OUT_OF_SYNC,		/* Client is out of sync */
+
+	/* Total number of flags - must be at the end of the enum */
+	CF_NUM_FLAGS,
+};
+
+#define CF_ROBUST_CACHING(_cfg) (_cfg->data[0] & BIT(0))
+
 struct gatt_cf_cfg {
 	u8_t                    id;
 	bt_addr_le_t		peer;
 	u8_t			data[1];
+	ATOMIC_DEFINE(flags, CF_NUM_FLAGS);
 };
 
 #if defined(CONFIG_BT_GATT_CACHING)
@@ -216,13 +227,15 @@ static ssize_t cf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static bool cf_set_value(struct gatt_cf_cfg *cfg, const u8_t *value, u16_t len)
 {
 	u16_t i;
+	u8_t last_byte = 1;
+	u8_t last_bit = 1;
 
 	/* Validate the bits */
-	for (i = 0; i < len; i++) {
+	for (i = 0; i < len && i < last_byte; i++) {
 		u8_t chg_bits = value[i] ^ cfg->data[i];
 		u8_t bit;
 
-		for (bit = 0; bit < 8; bit++) {
+		for (bit = 0; bit < last_bit; bit++) {
 			/* A client shall never clear a bit it has set */
 			if ((BIT(bit) & chg_bits) &&
 			    (BIT(bit) & cfg->data[i])) {
@@ -232,8 +245,8 @@ static bool cf_set_value(struct gatt_cf_cfg *cfg, const u8_t *value, u16_t len)
 	}
 
 	/* Set the bits for each octect */
-	for (i = 0; i < len; i++) {
-		cfg->data[i] |= value[i];
+	for (i = 0; i < len && i < last_byte; i++) {
+		cfg->data[i] |= value[i] & ((1 << last_bit) - 1);
 		BT_DBG("byte %u: data 0x%02x value 0x%02x", i, cfg->data[i],
 		       value[i]);
 	}
@@ -272,6 +285,7 @@ static ssize_t cf_write(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	}
 
 	bt_addr_le_copy(&cfg->peer, &conn->le.dst);
+	atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
 
 	return len;
 }
@@ -396,6 +410,14 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 		db_hash_gen();
 	}
 
+	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2347:
+	 * 2.5.2.1 Robust Caching
+	 * A connected client becomes change-aware when...
+	 * The client reads the Database Hash characteristic and then the server
+	 * receives another ATT request from the client.
+	 */
+	bt_gatt_change_aware(conn, true);
+
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, db_hash,
 				 sizeof(db_hash));
 }
@@ -485,6 +507,10 @@ static struct gatt_sc {
 static void sc_indicate_rsp(struct bt_conn *conn,
 			    const struct bt_gatt_attr *attr, u8_t err)
 {
+#if defined(CONFIG_BT_GATT_CACHING)
+	struct gatt_cf_cfg *cfg;
+#endif
+
 	BT_DBG("err 0x%02x", err);
 
 	atomic_clear_bit(gatt_sc.flags, SC_INDICATE_PENDING);
@@ -494,6 +520,19 @@ static void sc_indicate_rsp(struct bt_conn *conn,
 		/* Reschedule without any delay since it is waiting already */
 		k_delayed_work_submit(&gatt_sc.work, K_NO_WAIT);
 	}
+
+#if defined(CONFIG_BT_GATT_CACHING)
+	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2347:
+	 * 2.5.2.1 Robust Caching
+	 * A connected client becomes change-aware when...
+	 * The client receives and confirms a Service Changed indication.
+	 */
+	cfg = find_cf_cfg(&conn->le.dst);
+	if (cfg && CF_ROBUST_CACHING(cfg)) {
+		atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
+		BT_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
+	}
+#endif
 }
 
 static void sc_process(struct k_work *work)
@@ -645,6 +684,28 @@ submit:
 	k_delayed_work_submit(&sc->work, SC_TIMEOUT);
 }
 
+static void db_changed(void)
+{
+#if defined(CONFIG_BT_GATT_CACHING)
+	int i;
+
+	k_delayed_work_submit(&db_hash_work, DB_HASH_TIMEOUT);
+
+	for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
+		struct gatt_cf_cfg *cfg = &cf_cfg[i];
+
+		if (!bt_addr_le_cmp(&cfg->peer, BT_ADDR_LE_ANY)) {
+			continue;
+		}
+
+		if (CF_ROBUST_CACHING(cfg) &&
+		    atomic_test_and_clear_bit(cfg->flags, CF_CHANGE_AWARE)) {
+			BT_DBG("%s change-unaware", bt_addr_le_str(&cfg->peer));
+		}
+	}
+#endif
+}
+
 int bt_gatt_service_register(struct bt_gatt_service *svc)
 {
 	int err;
@@ -670,9 +731,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	sc_indicate(&gatt_sc, svc->attrs[0].handle,
 		    svc->attrs[svc->attr_count - 1].handle);
 
-#if defined(CONFIG_BT_GATT_CACHING)
-	k_delayed_work_submit(&db_hash_work, DB_HASH_TIMEOUT);
-#endif /* COFNIG_BT_GATT_CACHING */
+	db_changed();
 
 	return 0;
 }
@@ -688,9 +747,7 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 	sc_indicate(&gatt_sc, svc->attrs[0].handle,
 		    svc->attrs[svc->attr_count - 1].handle);
 
-#if defined(CONFIG_BT_GATT_CACHING)
-	k_delayed_work_submit(&db_hash_work, DB_HASH_TIMEOUT);
-#endif /* COFNIG_BT_GATT_CACHING */
+	db_changed();
 
 	return 0;
 }
@@ -2684,6 +2741,50 @@ void bt_gatt_connected(struct bt_conn *conn)
 #if defined(CONFIG_BT_GATT_CLIENT)
 	add_subscriptions(conn);
 #endif /* CONFIG_BT_GATT_CLIENT */
+}
+
+bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
+{
+#if defined(CONFIG_BT_GATT_CACHING)
+	struct gatt_cf_cfg *cfg;
+
+	cfg = find_cf_cfg(&conn->le.dst);
+	if (!cfg || !CF_ROBUST_CACHING(cfg)) {
+		return true;
+	}
+
+	if (atomic_test_bit(cfg->flags, CF_CHANGE_AWARE)) {
+		return true;
+	}
+
+	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2350:
+	 * If a change-unaware client sends an ATT command, the server shall
+	 * ignore it.
+	 */
+	if (!req) {
+		return false;
+	}
+
+	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2347:
+	 * 2.5.2.1 Robust Caching
+	 * A connected client becomes change-aware when...
+	 * The server sends the client a response with the error code set to
+	 * Database Out Of Sync and then the server receives another ATT
+	 * request from the client.
+	 */
+	if (atomic_test_bit(cfg->flags, CF_OUT_OF_SYNC)) {
+		atomic_clear_bit(cfg->flags, CF_OUT_OF_SYNC);
+		atomic_set_bit(cfg->flags, CF_CHANGE_AWARE);
+		BT_DBG("%s change-aware", bt_addr_le_str(&cfg->peer));
+		return true;
+	}
+
+	atomic_set_bit(cfg->flags, CF_OUT_OF_SYNC);
+
+	return false;
+#else
+	return true;
+#endif
 }
 
 void bt_gatt_disconnected(struct bt_conn *conn)
