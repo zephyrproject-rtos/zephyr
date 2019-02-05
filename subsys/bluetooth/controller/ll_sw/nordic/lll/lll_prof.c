@@ -116,6 +116,7 @@ void lll_prof_send(void)
 		/* NOTE: enqueue only if rx buffer available, else ignore */
 		rx = ull_pdu_rx_alloc_peek(3);
 		if (rx) {
+			struct pdu_data *pdu;
 			struct profile *p;
 
 			ull_pdu_rx_alloc();
@@ -123,7 +124,8 @@ void lll_prof_send(void)
 			rx->hdr.type = NODE_RX_TYPE_PROFILE;
 			rx->hdr.handle = 0xFFFF;
 
-			p = &((struct pdu_data *)rx->pdu)->profile;
+			pdu = (void *)rx->pdu;
+			p = &pdu->profile;
 			p->lcur = latency;
 			p->lmin = latency_min;
 			p->lmax = latency_max;
