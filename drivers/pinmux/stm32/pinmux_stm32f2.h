@@ -11,6 +11,13 @@
  * @file Header for STM32F2 pin multiplexing helper
  */
 
+/*
+ * Note:
+ * The SPIx_SCK pin speed must be set to VERY_HIGH to avoid last data bit
+ * corruption which is a known issue of STM32F2 SPI peripheral (see errata
+ * sheets).
+ */
+
 /* Port A */
 #define STM32F2_PINMUX_FUNC_PA0_UART4_TX    \
 	(STM32_PINMUX_ALT_FUNC_8 | STM32_PUSHPULL_PULLUP)
