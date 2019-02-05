@@ -168,6 +168,7 @@ kbd
   text-shadow:0 1px 0 #fff;
 }
 
+/* home page grid display */
 
 .grid {
     list-style-type: none !important;
@@ -197,7 +198,7 @@ kbd
     display: block;
     width: 200px;
     height: 200px;
-    padding: 10px;
+    padding: 20px;
     display: -webkit-box;
     display: -ms-flexbox;
     display: flex;
@@ -222,7 +223,7 @@ kbd
 
 .grid-item img {
     margin-bottom: 1.1rem;
-    max-width: 60%;
+    max-width: 75%;
 }
 
 
@@ -235,4 +236,10 @@ kbd
 .grid-item p {
     margin-top: 0.5rem;
     color: #333e48;
+}
+
+.grid-icon {
+   line-height: 1.8;
+   font-size: 4rem;
+   color: mediumslateblue;
 }
