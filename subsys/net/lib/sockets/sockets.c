@@ -216,8 +216,6 @@ static void zsock_received_cb(struct net_context *ctx,
 			      int status,
 			      void *user_data)
 {
-	unsigned int header_len;
-
 	NET_DBG("ctx=%p, pkt=%p, st=%d, user_data=%p", ctx, pkt, status,
 		user_data);
 
@@ -244,12 +242,7 @@ static void zsock_received_cb(struct net_context *ctx,
 	net_pkt_set_eof(pkt, false);
 
 	if (net_context_get_type(ctx) == SOCK_STREAM) {
-		/* TCP: we don't care about packet header, get rid of it asap.
-		 * UDP: keep packet header to support recvfrom().
-		 */
-		header_len = net_pkt_appdata(pkt) - pkt->frags->data;
-		net_buf_pull(pkt->frags, header_len);
-		net_context_update_recv_wnd(ctx, -net_pkt_appdatalen(pkt));
+		net_context_update_recv_wnd(ctx, -net_pkt_remaining_data(pkt));
 	}
 
 	k_fifo_put(&ctx->recv_q, pkt);
@@ -657,8 +650,9 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 					size_t max_len,
 					int flags)
 {
-	size_t recv_len = 0;
 	s32_t timeout = K_FOREVER;
+	size_t recv_len = 0;
+	struct net_pkt_cursor backup;
 	int res;
 
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
@@ -667,8 +661,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 
 	do {
 		struct net_pkt *pkt;
-		struct net_buf *frag;
-		u32_t frag_len;
+		size_t data_len;
 
 		if (sock_is_eof(ctx)) {
 			return 0;
@@ -695,39 +688,34 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 			}
 		}
 
-		frag = pkt->frags;
-		if (!frag) {
-			NET_ERR("net_pkt has empty fragments on start!");
-			errno = EAGAIN;
-			return -1;
-		}
+		net_pkt_cursor_backup(pkt, &backup);
 
-		frag_len = frag->len;
-		recv_len = frag_len;
+		data_len = net_pkt_remaining_data(pkt);
+		recv_len = data_len;
 		if (recv_len > max_len) {
 			recv_len = max_len;
 		}
 
 		/* Actually copy data to application buffer */
-		memcpy(buf, frag->data, recv_len);
+		if (net_pkt_read_new(pkt, buf, recv_len)) {
+			errno = ENOBUFS;
+			return -1;
+		}
 
 		if (!(flags & ZSOCK_MSG_PEEK)) {
-			if (recv_len != frag_len) {
-				net_buf_pull(frag, recv_len);
-			} else {
-				frag = net_pkt_frag_del(pkt, NULL, frag);
-				if (!frag) {
-					/* Finished processing head pkt in
-					 * the fifo. Drop it from there.
-					 */
-					k_fifo_get(&ctx->recv_q, K_NO_WAIT);
-					if (net_pkt_eof(pkt)) {
-						sock_set_eof(ctx);
-					}
-
-					net_pkt_unref(pkt);
+			if (recv_len == data_len) {
+				/* Finished processing head pkt in
+				 * the fifo. Drop it from there.
+				 */
+				k_fifo_get(&ctx->recv_q, K_NO_WAIT);
+				if (net_pkt_eof(pkt)) {
+					sock_set_eof(ctx);
 				}
+
+				net_pkt_unref(pkt);
 			}
+		} else {
+			net_pkt_cursor_restore(pkt, &backup);
 		}
 	} while (recv_len == 0);
 
