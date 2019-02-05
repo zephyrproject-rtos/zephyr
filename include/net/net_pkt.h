@@ -2425,6 +2425,15 @@ static inline int net_pkt_write_le32_new(struct net_pkt *pkt, u32_t data)
 }
 
 /**
+ * @brief Get the amount of data which can be read from current cursor position
+ *
+ * @param pkt Network packet
+ *
+ * @return Amount of data which can be read from current pkt cursor
+ */
+size_t net_pkt_remaining_data(struct net_pkt *pkt);
+
+/**
  * @brief Update the overall length of a packet
  *
  * Note: Unlike net_pkt_pull_new() below, this does not take packet cursor
