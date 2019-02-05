@@ -185,18 +185,18 @@ static void dma_stm32_write(struct dma_stm32_device *ddata,
 static void dma_stm32_dump_reg(struct dma_stm32_device *ddata, u32_t id)
 {
 	LOG_INF("Using stream: %d\n", id);
-	LOG_INF("SCR:   0x%x \t(config)\n",
-		    dma_stm32_read(ddata, DMA_STM32_SCR(id)));
-	LOG_INF("SNDTR:  0x%x \t(length)\n",
-		    dma_stm32_read(ddata, DMA_STM32_SNDTR(id)));
-	LOG_INF("SPAR:  0x%x \t(source)\n",
-		    dma_stm32_read(ddata, DMA_STM32_SPAR(id)));
-	LOG_INF("SM0AR: 0x%x \t(destination)\n",
-		    dma_stm32_read(ddata, DMA_STM32_SM0AR(id)));
-	LOG_INF("SM1AR: 0x%x \t(destination (double buffer mode))\n",
-		    dma_stm32_read(ddata, DMA_STM32_SM1AR(id)));
-	LOG_INF("SFCR:  0x%x \t(fifo control)\n",
-		    dma_stm32_read(ddata, DMA_STM32_SFCR(id)));
+	LOG_INF("SCR:   0x%x \t(config)",
+		dma_stm32_read(ddata, DMA_STM32_SCR(id)));
+	LOG_INF("SNDTR:  0x%x \t(length)",
+		dma_stm32_read(ddata, DMA_STM32_SNDTR(id)));
+	LOG_INF("SPAR:  0x%x \t(source)",
+		dma_stm32_read(ddata, DMA_STM32_SPAR(id)));
+	LOG_INF("SM0AR: 0x%x \t(destination)",
+		dma_stm32_read(ddata, DMA_STM32_SM0AR(id)));
+	LOG_INF("SM1AR: 0x%x \t(destination (double buffer mode))",
+		dma_stm32_read(ddata, DMA_STM32_SM1AR(id)));
+	LOG_INF("SFCR:  0x%x \t(fifo control)",
+		dma_stm32_read(ddata, DMA_STM32_SFCR(id)));
 }
 
 static u32_t dma_stm32_irq_status(struct dma_stm32_device *ddata,
@@ -246,12 +246,10 @@ static void dma_stm32_irq_handler(void *arg, u32_t id)
 
 	if ((irqstatus & DMA_STM32_TCI) && (config & DMA_STM32_SCR_TCIE)) {
 		dma_stm32_irq_clear(ddata, id, DMA_STM32_TCI);
-
 		stream->dma_callback(stream->callback_arg, id, 0);
 	} else {
-		LOG_ERR("Internal error: IRQ status: 0x%x\n", irqstatus);
+		LOG_ERR("Error on stream %d: IRQ status: 0x%x", id, irqstatus);
 		dma_stm32_irq_clear(ddata, id, irqstatus);
-
 		stream->dma_callback(stream->callback_arg, id, -EIO);
 	}
 }
@@ -387,7 +385,8 @@ static int dma_stm32_config(struct device *dev, u32_t id,
 		return -EINVAL;
 	}
 
-	if ((MEMORY_TO_MEMORY == stream->direction) && (!ddata->mem2mem)) {
+	if ((config->channel_direction == MEMORY_TO_MEMORY)
+			&& (!ddata->mem2mem)) {
 		LOG_ERR("DMA error: Memcopy not supported for device %s",
 			dev->config->name);
 		return -EINVAL;
