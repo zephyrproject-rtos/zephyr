@@ -1808,9 +1808,6 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
 		net_stats_update_tcp_recv(net_pkt_iface(pkt),
 					  net_pkt_appdatalen(pkt));
-	} else if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
-		/* TCP packets get appdata earlier in tcp_established(). */
-		net_pkt_set_appdata_values(pkt, IPPROTO_UDP);
 	}
 
 	context->recv_cb(context, pkt, ip_hdr, proto_hdr, 0, user_data);

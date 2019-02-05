@@ -87,9 +87,6 @@ extern char *net_sprint_ll_addr_buf(const u8_t *ll, u8_t ll_len,
 				    char *buf, int buflen);
 extern u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto);
 
-void net_pkt_set_appdata_values(struct net_pkt *pkt,
-				enum net_ip_protocol proto);
-
 enum net_verdict net_context_packet_received(struct net_conn *conn,
 					     struct net_pkt *pkt,
 					     union net_ip_header *ip_hdr,
