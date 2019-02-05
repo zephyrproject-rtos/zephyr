@@ -1818,10 +1818,6 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 		net_pkt_set_appdata_values(pkt, IPPROTO_UDP);
 	}
 
-	NET_DBG("Set appdata %p to len %u (total %zu)",
-		net_pkt_appdata(pkt), net_pkt_appdatalen(pkt),
-		net_pkt_get_len(pkt));
-
 	context->recv_cb(context, pkt, ip_hdr, proto_hdr, 0, user_data);
 
 #if defined(CONFIG_NET_CONTEXT_SYNC_RECV)
