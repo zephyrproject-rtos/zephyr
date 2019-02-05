@@ -54,410 +54,6 @@ PAGE_ENTRY_ALLOC = 1 << 9
 PAGE_ENTRY_CUSTOM = 0 << 10
 #############
 
-#*****************************************************************************#
-# class for 4Kb Mode
-
-
-class PageMode_4kb:
-    total_pages = 1023
-    write_page_entry_bin = "I"
-    size_addressed_per_pde = (1024 * 4096)  # 4MB In Bytes
-
-    # return the page directory number for the give address
-    def get_pde_number(self, value):
-        return (value >> 22) & 0x3FF
-
-    # return the page table number for the given address
-    def get_pte_number(self, value):
-        return (value >> 12) & 0x3FF
-
-    # get the total number of pd available
-    def get_number_of_pd(self):
-        return len(list_of_pde.keys())
-
-    # the return value will have the page address and it is assumed
-    # to be a 4096 boundary
-    # hence the output of this API will be a 20bit address of the page table
-    def address_of_page_table(self, page_table_number):
-        global pd_start_addr
-
-        # location from where the Page tables will be written
-        PT_start_addr = pd_start_addr + 4096
-        return ((PT_start_addr +
-                 (page_tables_list.index(page_table_number) * 4096) >> 12))
-
-    #   union x86_mmu_pde_pt {
-    # 	u32_t  value;
-    # 	struct {
-    # 		u32_t p:1;
-    # 		u32_t rw:1;
-    # 		u32_t us:1;
-    # 		u32_t pwt:1;
-    # 		u32_t pcd:1;
-    # 		u32_t a:1;
-    # 		u32_t ignored1:1;
-    # 		u32_t ps:1;
-    # 		u32_t ignored2:4;
-    # 		u32_t page_table:20;
-    # 	};
-    # };
-    def get_binary_pde_value(self, value):
-        perms = value.page_entries_info[0].permissions
-
-        present = PAGE_ENTRY_PRESENT
-        read_write = check_bits(perms, [1, 29]) << 1
-        user_mode = check_bits(perms, [2, 28]) << 2
-
-        pwt = PAGE_ENTRY_PWT
-        pcd = PAGE_ENTRY_PCD
-        a = PAGE_ENTRY_ACCESSED
-        ps = 0 << 7  # this is a read only field
-        page_table = self.address_of_page_table(value.pde_index) << 12
-        return (present |
-                read_write |
-                user_mode |
-                pwt |
-                pcd |
-                a |
-                ps |
-                page_table)
-
-    # union x86_mmu_pte {
-    # 	u32_t  value;
-    # 	struct {
-    # 		u32_t p:1;
-    # 		u32_t rw:1;
-    # 		u32_t us:1;
-    # 		u32_t pwt:1;
-    # 		u32_t pcd:1;
-    # 		u32_t a:1;
-    # 		u32_t d:1;
-    # 		u32_t pat:1;
-    # 		u32_t g:1;
-    # 		u32_t alloc:1;
-    # 		u32_t custom:2;
-    # 		u32_t page:20;
-    # 	};
-    # };
-    def get_binary_pte_value(self, value, pte, perm_for_pte):
-        present = PAGE_ENTRY_PRESENT
-        read_write = ((perm_for_pte >> 1) & 0x1) << 1
-        user_mode = ((perm_for_pte >> 2) & 0x1) << 2
-        pwt = PAGE_ENTRY_PWT
-        pcd = PAGE_ENTRY_PCD
-        a = PAGE_ENTRY_ACCESSED
-        d = PAGE_ENTRY_DIRTY
-        pat = PAGE_ENTRY_PAT
-        g = PAGE_ENTRY_GLOBAL
-        alloc = PAGE_ENTRY_ALLOC
-        custom = PAGE_ENTRY_CUSTOM
-
-        # This points to the actual memory in the HW
-        # totally 20 bits to rep the phy address
-        # first 10 is the number got from pde and next 10 is pte
-        page_table = ((value.pde_index << 10) | pte) << 12
-
-        binary_value = (present | read_write | user_mode |
-                        pwt | pcd | a | d | pat | g | alloc | custom |
-                        page_table)
-        return binary_value
-
-    def populate_required_structs(self):
-        for region in raw_info:
-            pde_index = self.get_pde_number(region[0])
-            pte_valid_addr_start = self.get_pte_number(region[0])
-
-            # Get the end of the page table entries
-            # Since a memory region can take up only a few entries in the Page
-            # table, this helps us get the last valid PTE.
-            pte_valid_addr_end = self.get_pte_number(region[0] +
-                                                     region[1] - 1)
-
-            mem_size = region[1]
-
-            # In-case the start address aligns with a page table entry other
-            # than zero and the mem_size is greater than (1024*4096) i.e 4MB
-            # in case where it overflows the currenty PDE's range then limit the
-            # PTE to 1024 and so make the mem_size reflect the actual size taken
-            # up in the current PDE
-            if (region[1] + (pte_valid_addr_start * 4096)) >= \
-               (self.size_addressed_per_pde):
-
-                pte_valid_addr_end = self.total_pages
-                mem_size = (((self.total_pages + 1) -
-                             pte_valid_addr_start) * 4096)
-
-            self.set_pde_pte_values(pde_index, region[0], mem_size,
-                                    pte_valid_addr_start,
-                                    pte_valid_addr_end,
-                                    region[2])
-
-            if pde_index not in page_tables_list:
-                page_tables_list.append(pde_index)
-
-            # IF the current pde couldn't fit the entire requested region size
-            # then there is a need to create new PDEs to match the size.
-            # Here the overflow_size represents the size that couldn't be fit
-            # inside the current PDE, this is will now to used to create a
-            # new PDE/PDEs so the size remaining will be
-            # requested size - allocated size(in the current PDE)
-
-            overflow_size = region[1] - mem_size
-
-            # create all the extra PDEs needed to fit the requested size
-            # this loop starts from the current pde till the last pde that is
-            # needed the last pde is calcualted as the (start_addr + size) >>
-            # 22
-            if overflow_size != 0:
-                for extra_pde in range(pde_index + 1, self.get_pde_number(
-                        region[0] + region[1]) + 1):
-
-                    # new pde's start address
-                    # each page directory entry has a addr range of (1024 *4096)
-                    # thus the new PDE start address is a multiple of that
-                    # number
-                    extra_pde_start_address = (extra_pde *
-                                               (self.size_addressed_per_pde))
-
-                    # the start address of and extra pde will always be 0
-                    # and the end address is calculated with the new pde's start
-                    # address and the overflow_size
-                    extra_pte_valid_addr_end = self.get_pte_number(
-                        extra_pde_start_address + overflow_size - 1)
-
-                    # if the overflow_size couldn't be fit inside this new pde
-                    # then need another pde and so we now need to limit the end
-                    # of the PTE to 1024 and set the size of this new region to
-                    # the max possible
-                    extra_region_size = overflow_size
-                    if overflow_size >= (self.size_addressed_per_pde):
-                        extra_region_size = self.size_addressed_per_pde
-                        extra_pte_valid_addr_end = self.total_pages
-
-                    # load the new PDE's details
-
-                    self.set_pde_pte_values(extra_pde,
-                                            extra_pde_start_address,
-                                            extra_region_size,
-                                            0,
-                                            extra_pte_valid_addr_end,
-                                            region[2])
-
-                    # for the next iteration of the loop the size needs to
-                    # decreased.
-                    overflow_size -= extra_region_size
-
-                    # print(hex_32(overflow_size),extra_pde)
-                    if extra_pde not in page_tables_list:
-                        page_tables_list.append(extra_pde)
-
-                    if overflow_size == 0:
-                        break
-
-        page_tables_list.sort()
-
-    # update the tuple values for the memory regions needed
-    def set_pde_pte_values(self, pde_index, address, mem_size,
-                           pte_valid_addr_start, pte_valid_addr_end, perm):
-
-        pages_tuple = valid_pages_inside_pde(
-            start_addr=address,
-            size=mem_size,
-            pte_valid_addr_start=pte_valid_addr_start,
-            pte_valid_addr_end=pte_valid_addr_end,
-            permissions=perm)
-
-        mem_region_values = mmu_region_details(pde_index=pde_index,
-                                               page_entries_info=[])
-
-        mem_region_values.page_entries_info.append(pages_tuple)
-
-        if pde_index in list_of_pde.keys():
-            # this step adds the new page info to the exsisting pages info
-            list_of_pde[pde_index].page_entries_info.append(pages_tuple)
-        else:
-            list_of_pde[pde_index] = mem_region_values
-
-    def page_directory_create_binary_file(self):
-        global output_buffer
-        global output_offset
-        for pde in range(self.total_pages + 1):
-            binary_value = 0  # the page directory entry is not valid
-
-            # if i have a valid entry to populate
-            if pde in sorted(list_of_pde.keys()):
-                value = list_of_pde[pde]
-                binary_value = self.get_binary_pde_value(value)
-                self.pde_verbose_output(pde, binary_value)
-
-            struct.pack_into(self.write_page_entry_bin,
-                             output_buffer,
-                             output_offset,
-                             binary_value)
-
-            output_offset += struct.calcsize(self.write_page_entry_bin)
-
-    def page_table_create_binary_file(self):
-        global output_buffer
-        global output_offset
-
-        for key, value in sorted(list_of_pde.items()):
-            for pte in range(self.total_pages + 1):
-                binary_value = 0  # the page directory entry is not valid
-
-                valid_pte = 0
-                for i in value.page_entries_info:
-                    temp_value = ((pte >= i.pte_valid_addr_start) and
-                                  (pte <= i.pte_valid_addr_end))
-                    if temp_value:
-                        perm_for_pte = i.permissions
-                    valid_pte |= temp_value
-
-                # if i have a valid entry to populate
-                if valid_pte:
-                    binary_value = self.get_binary_pte_value(value,
-                                                             pte,
-                                                             perm_for_pte)
-                    self.pte_verbose_output(key, pte, binary_value)
-
-                struct.pack_into(self.write_page_entry_bin,
-                                 output_buffer,
-                                 output_offset,
-                                 binary_value)
-                output_offset += struct.calcsize(self.write_page_entry_bin)
-
-    # To populate the binary file the module struct needs a buffer of the
-    # excat size. This returns the size needed for the given set of page
-    # tables.
-    def set_binary_file_size(self):
-        binary_size = ctypes.create_string_buffer((4096) +
-                                                  (len(list_of_pde.keys()) *
-                                                   4096))
-        return binary_size
-
-    # prints the details of the pde
-    def verbose_output(self):
-
-        print("\nTotal Page directory entries " + str(self.get_number_of_pd()))
-        count = 0
-        for key, value in list_of_pde.items():
-            for i in value.page_entries_info:
-                count += 1
-                print("In Page directory entry " +
-                      format_string(value.pde_index) +
-                      ": valid start address = " +
-                      hex_32(i.start_addr) + ", end address = " +
-                      hex_32((i.pte_valid_addr_end + 1) * 4096 - 1 +
-                             (value.pde_index * (FourMB))))
-
-    # print all the tables for a given page table mode
-    def print_all_page_table_info(self):
-        self.pde_print_elements()
-        self.pte_print_elements()
-
-    def pde_verbose_output(self, pde, binary_value):
-        if args.verbose < 2:
-            return
-
-        global print_string_pde_list
-
-        present = format_string(binary_value & 0x1)
-        read_write = format_string((binary_value >> 1) & 0x1)
-        user_mode = format_string((binary_value >> 2) & 0x1)
-        pwt = format_string((binary_value >> 3) & 0x1)
-        pcd = format_string((binary_value >> 4) & 0x1)
-        a = format_string((binary_value >> 5) & 0x1)
-        ignored1 = format_string(0)
-        ps = format_string((binary_value >> 7) & 0x1)
-        ignored2 = format_string(0000)
-        page_table_addr = format_string(hex((binary_value >> 12) & 0xFFFFF))
-
-        print_string_pde_list += (format_string(str(pde)) +
-                                  " | " +
-                                  (present) +
-                                  " | " +
-                                  (read_write) + " | " +
-                                  (user_mode) + " | " +
-                                  (pwt) + " | " +
-                                  (pcd) + " | " +
-                                  (a) + " | " +
-                                  (ps) + " | " +
-                                  page_table_addr + "\n"
-                                  )
-
-    def pde_print_elements(self):
-        global print_string_pde_list
-        print("PAGE DIRECTORY ")
-        print(format_string("PDE") + " | " +
-              format_string('P') + " | " +
-              format_string('rw') + " | " +
-              format_string('us') + " | " +
-              format_string('pwt') + " | " +
-              format_string('pcd') + " | " +
-              format_string('a') + " | " +
-              format_string('ps') + " | " +
-              format_string('Addr page table'))
-        print(print_string_pde_list)
-        print("END OF PAGE DIRECTORY")
-
-    def pte_verbose_output(self, pde, pte, binary_value):
-        global pde_pte_string
-
-        present = format_string((binary_value >> 0) & 0x1)
-        read_write = format_string((binary_value >> 1) & 0x1)
-        user_mode = format_string((binary_value >> 2) & 0x1)
-        pwt = format_string((binary_value >> 3) & 0x1)
-        pcd = format_string((binary_value >> 4) & 0x1)
-        a = format_string((binary_value >> 5) & 0x1)
-        d = format_string((binary_value >> 6) & 0x1)
-        pat = format_string((binary_value >> 7) & 0x1)
-        g = format_string((binary_value >> 8) & 0x1)
-        alloc = format_string((binary_value >> 9) & 0x1)
-        custom = format_string((binary_value >> 10) & 0x3)
-        page_table_addr = hex_20((binary_value >> 12) & 0xFFFFF)
-
-        print_string_list = (format_string(str(pte)) + " | " +
-                             (present) + " | " +
-                             (read_write) + " | " +
-                             (user_mode) + " | " +
-                             (pwt) + " | " +
-                             (pcd) + " | " +
-                             (a) + " | " +
-                             (d) + " | " +
-                             (pat) + " | " +
-                             (g) + " | " +
-                             (alloc) + " | " +
-                             (custom) + " | " +
-                             page_table_addr + "\n"
-                             )
-
-        if pde in pde_pte_string.keys():
-            pde_pte_string[pde] += (print_string_list)
-        else:
-            pde_pte_string[pde] = print_string_list
-
-    def pte_print_elements(self):
-        global pde_pte_string
-
-        for pde, print_string in sorted(pde_pte_string.items()):
-            print("\nPAGE TABLE " + str(pde))
-
-            print(format_string("PTE") + " | " +
-                  format_string('P') + " | " +
-                  format_string('rw') + " | " +
-                  format_string('us') + " | " +
-                  format_string('pwt') + " | " +
-                  format_string('pcd') + " | " +
-                  format_string('a') + " | " +
-                  format_string('d') + " | " +
-                  format_string('pat') + " | " +
-                  format_string('g') + " | " +
-                  format_string('alloc') + " | " +
-                  format_string('custom') + " | " +
-                  format_string('page addr'))
-            print(print_string)
-            print("END OF PAGE TABLE " + str(pde))
-
 
 #*****************************************************************************#
 # class for PAE 4KB Mode
@@ -1008,7 +604,7 @@ def print_list_of_pde(list_of_pde):
 # size of the region - so page tables entries will be created with this
 # read write permissions
 
-def read_mmu_list_marshal_param(page_mode):
+def read_mmu_list_marshal_param(page_table):
 
     global read_buff
     global page_tables_list
@@ -1053,7 +649,7 @@ def read_mmu_list_marshal_param(page_mode):
                 validation_issue_memory_overlap = [
                     True,
                     start_location,
-                    page_mode.get_pde_number(start_location)]
+                    page_table.get_pde_number(start_location)]
                 return
 
         # add the retrived info another list
@@ -1120,7 +716,7 @@ def parse_args():
 
 # the format for writing in the binary file would be decided by the
 # endian selected
-def set_struct_endian_format(page_mode):
+def set_struct_endian_format(page_table):
     endian_string = "<"
     if args.big_endian is True:
         endian_string = ">"
@@ -1129,8 +725,8 @@ def set_struct_endian_format(page_mode):
 
     struct_mmu_regions_format = endian_string + "IIQ"
     header_values_format = endian_string + "II"
-    page_mode.write_page_entry_bin = (endian_string +
-                                      page_mode.write_page_entry_bin)
+    page_table.write_page_entry_bin = (endian_string +
+                                      page_table.write_page_entry_bin)
 
 
 def format_string(input_str):
@@ -1152,7 +748,7 @@ def hex_20(input_value):
     return output_value
 
 
-def verbose_output(page_mode):
+def verbose_output(page_table):
     if args.verbose == 0:
         return
 
@@ -1162,10 +758,10 @@ def verbose_output(page_mode):
               ", Memory size = " + hex_32(info[1]) +
               ", Permission = " + hex(info[2]))
 
-    page_mode.verbose_output()
+    page_table.verbose_output()
 
     if args.verbose > 1:
-        page_mode.print_all_page_table_info()
+        page_table.print_all_page_table_info()
 
 # build sym table
 
@@ -1180,7 +776,7 @@ def get_symbols(obj):
 
 
 # determine which paging mode was selected
-def get_page_mode():
+def get_page_table():
     with open(args.kernel, "rb") as fp:
         kernel = ELFFile(fp)
         sym = get_symbols(kernel)
@@ -1195,12 +791,9 @@ def main():
     parse_args()
 
     # select the page table needed
-    if get_page_mode():
-        page_mode = PageMode_PAE()
-    else:
-        page_mode = PageMode_4kb()
+    page_table = PageMode_PAE()
 
-    set_struct_endian_format(page_mode)
+    set_struct_endian_format(page_table)
 
     global input_file
     input_file = open(args.input, 'rb')
@@ -1209,31 +802,31 @@ def main():
     binary_output_file = open(args.output, 'wb')
 
     # inputfile= file_name
-    read_mmu_list_marshal_param(page_mode)
+    read_mmu_list_marshal_param(page_table)
 
     # populate the required structs
-    page_mode.populate_required_structs()
+    page_table.populate_required_structs()
 
     # validate the inputs
     validate_pde_regions()
 
     # The size of the output buffer has to match the number of bytes we write
     # this corresponds to the number of page tables gets created.
-    output_buffer = page_mode.set_binary_file_size()
+    output_buffer = page_table.set_binary_file_size()
 
     try:
-        page_mode.pdpte_create_binary_file()
+        page_table.pdpte_create_binary_file()
     except BaseException:
         pass
-    page_mode.page_directory_create_binary_file()
-    page_mode.page_table_create_binary_file()
+    page_table.page_directory_create_binary_file()
+    page_table.page_table_create_binary_file()
 
     # write the binary data into the file
     binary_output_file.write(output_buffer)
     binary_output_file.close()
 
     # verbose output needed by the build system
-    verbose_output(page_mode)
+    verbose_output(page_table)
 
 
 if __name__ == "__main__":
