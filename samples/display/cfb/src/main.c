@@ -10,21 +10,20 @@
 #include <stdio.h>
 
 #if defined(CONFIG_SSD1673)
-#define DISPLAY_DRIVER				"SSD1673"
+#define DISPLAY_DRIVER		"SSD1673"
 #endif
 
 #if defined(CONFIG_SSD1306)
-#define DISPLAY_DRIVER				"SSD1306"
+#define DISPLAY_DRIVER		"SSD1306"
 #endif
 
 #ifndef DISPLAY_DRIVER
-#define DISPLAY_DRIVER "DISPLAY"
+#define DISPLAY_DRIVER		"DISPLAY"
 #endif
 
 void main(void)
 {
 	struct device *dev;
-	const struct mdotm_display_api *api;
 	u16_t rows;
 	u8_t ppt;
 	u8_t font_width;
@@ -49,7 +48,6 @@ void main(void)
 		return;
 	}
 
-	api = dev->driver_api;
 	cfb_framebuffer_clear(dev, true);
 
 	display_blanking_off(dev);
@@ -63,15 +61,15 @@ void main(void)
 		}
 		cfb_framebuffer_set_font(dev, idx);
 		printf("font width %d, font height %d\n",
-			    font_width, font_height);
+		       font_width, font_height);
 	}
 
 	printf("x_res %d, y_res %d, ppt %d, rows %d, cols %d\n",
-			cfb_get_display_parameter(dev, CFB_DISPLAY_WIDTH),
-			cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGH),
-			ppt,
-			rows,
-			cfb_get_display_parameter(dev, CFB_DISPLAY_COLS));
+	       cfb_get_display_parameter(dev, CFB_DISPLAY_WIDTH),
+	       cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGH),
+	       ppt,
+	       rows,
+	       cfb_get_display_parameter(dev, CFB_DISPLAY_COLS));
 
 	while (1) {
 		for (int i = 0; i < rows; i++) {
