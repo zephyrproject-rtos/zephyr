@@ -184,6 +184,7 @@
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x40010000 0x1000>;
 			interrupts = <16 1>;
+			status = "ok";
 			label = "WDT";
 		};
 	};
