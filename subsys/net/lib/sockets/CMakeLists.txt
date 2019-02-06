@@ -5,6 +5,7 @@ zephyr_sources(
   getaddrinfo.c
   sockets.c
   sockets_select.c
+  sockets_misc.c
   )
 zephyr_sources_ifdef(CONFIG_NET_SOCKETS_SOCKOPT_TLS sockets_tls.c)
 zephyr_sources_ifdef(CONFIG_NET_SOCKETS_PACKET sockets_packet.c)

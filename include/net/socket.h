@@ -183,6 +183,8 @@ int zsock_getsockopt(int sock, int level, int optname,
 int zsock_setsockopt(int sock, int level, int optname,
 		     const void *optval, socklen_t optlen);
 
+int zsock_gethostname(char *buf, size_t len);
+
 __syscall int zsock_inet_pton(sa_family_t family, const char *src, void *dst);
 
 __syscall int z_zsock_getaddrinfo_internal(const char *host,
@@ -316,6 +318,11 @@ static inline void freeaddrinfo(struct zsock_addrinfo *ai)
 }
 
 #define addrinfo zsock_addrinfo
+
+static inline int gethostname(char *buf, size_t len)
+{
+	return zsock_gethostname(buf, len);
+}
 
 static inline int inet_pton(sa_family_t family, const char *src, void *dst)
 {
