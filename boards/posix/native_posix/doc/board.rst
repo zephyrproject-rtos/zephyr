@@ -447,11 +447,6 @@ The following peripherals are currently provided with this board:
   An optional UART driver can be compiled with native_posix.
   For more information refer to the section `UART`_.
 
-**Console driver**:
-  A console driver is provided which by default is configured to
-  redirect any :c:func:`printk` write to the native host application's
-  ``stdout``.
-
 **Real time clock**
   The real time clock model provides a model of a constantly powered clock.
   By default this is initialized to the host time at boot.
@@ -563,3 +558,39 @@ option ``-attach_uart_cmd=<"cmd">``. Where the default command is given by
 :option:`CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD`.
 Note that the default command assumes both ``xterm`` and ``screen`` are
 installed in the system.
+
+Subsystems backends
+*******************
+
+Apart from its own peripherals, the native_posix board also has some dedicated
+backends for some of Zephyr's subsystems. These backends are designed to ease
+development by integrating more seamlessly with the host operating system:
+
+**Console backend**:
+  A console backend which by default is configured to
+  redirect any :c:func:`printk` write to the native host application's
+  ``stdout``.
+
+  This driver is selected by default if the `UART`_ is not compiled in.
+  Otherwise :option:`CONFIG_UART_CONSOLE` will be set to select the UART as
+  console backend.
+
+**Logger backend**:
+  A backend which prints all logger output to the process ``stdout``.
+  It supports timestamping, which can be enabled with
+  :option:`CONFIG_LOG_BACKEND_FORMAT_TIMESTAMP`; and colored output which can
+  be enabled with :option:`CONFIG_LOG_BACKEND_SHOW_COLOR` and controlled
+  with the command line options ``--color``, ``--no-color`` and
+  ``--force-color``.
+
+  In native_posix, by default, the logger is configured with
+  :option:`CONFIG_LOG_IMMEDIATE`.
+
+  This backend can be selected with :option:`CONFIG_LOG_BACKEND_NATIVE_POSIX`
+  and is enabled by default unless the native_posix UART is compiled in.
+  In this later case, by default, the logger is set to output to the `UART`_.
+
+**Tracing**:
+  A backend/"bottom" for Zephyr's CTF tracing subsystem which writes the tracing
+  data to a file in the host filesystem.
+  More information can be found in :ref:`Common Tracing Format <ctf>`
