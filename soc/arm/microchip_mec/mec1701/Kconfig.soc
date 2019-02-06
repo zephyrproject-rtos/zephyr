@@ -1,0 +1,17 @@
+# Kconfig - Microchip MEC1701 MCU core series
+
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "MEC1701 Selection"
+depends on SOC_SERIES_MEC1701X
+
+config SOC_MEC1701_QSZ
+	bool "MEC1701_QSZ"
+	select HAS_MEC_HAL
+
+endchoice
