@@ -1243,7 +1243,7 @@ static void usbd_work_handler(struct k_work *item)
 				break;
 			}
 		default:
-			LOG_ERR("Unknown USBD event: %"PRIu32".", ev->evt_type);
+			LOG_ERR("Unknown USBD event: %"PRId16".", ev->evt_type);
 			break;
 		}
 		usbd_evt_free(ev);
