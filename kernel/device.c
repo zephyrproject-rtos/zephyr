@@ -62,6 +62,9 @@ void _sys_device_do_config_level(s32_t level)
 		} else {
 			_k_object_init(info);
 		}
+#ifdef CONFIG_DEVICE_IDLE_PM
+		device_pm_enable(info);
+#endif
 	}
 }
 

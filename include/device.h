@@ -150,11 +150,20 @@ extern "C" {
 		.device_pm_control = (pm_control_fn),			  \
 		.config_info = (cfg_info)				  \
 	};								  \
+	static struct device_pm _CONCAT(__pm_, dev_name) __used           \
+							= {               \
+		.usage = ATOMIC_INIT(0),                                  \
+		.lock = _K_SEM_INITIALIZER(                               \
+				_CONCAT(__pm_, dev_name).lock, 1, 1),     \
+		.pm_lock = _K_SEM_INITIALIZER(                            \
+				_CONCAT(__pm_, dev_name).pm_lock, 1, 1),  \
+	};								  \
 	static struct device _CONCAT(__device_, dev_name) __used	  \
 	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
 		.config = &_CONCAT(__config_, dev_name),		  \
 		.driver_api = api,					  \
-		.driver_data = data					  \
+		.driver_data = data,					  \
+		.pm  = &_CONCAT(__pm_, dev_name),                         \
 	}
 #endif
 
@@ -208,6 +217,34 @@ extern "C" {
 
 struct device;
 
+/**
+ * @brief Device PM info
+ *
+ * @param dev pointer to device structure
+ * @param lock lock to synchronize the get/put operations
+ * @param pm_lock lock to synchronize the PM state transitions
+ * @param enable device pm enable flag
+ * @param usage device usage count
+ * @param async_request device pm async request
+ * @param async_req_pending device pm async request pending flag
+ * @param pm_status device idle pm status
+ * @param dwork device pm work for asyncroneous request
+ * @param timeout delayed work timeout value in msec
+ * @param signal signal to notify the Async API callers
+ */
+struct device_pm {
+	struct device *dev;
+	struct k_sem lock;
+	struct k_sem pm_lock;
+	bool enable;
+	atomic_t usage;
+	u32_t async_request;
+	bool async_req_pending;
+	u32_t pm_status;
+	struct k_delayed_work dwork;
+	u32_t timeout;
+	struct k_poll_signal signal;
+};
 
 /**
  * @brief Static device information (In ROM) Per driver instance
@@ -237,6 +274,9 @@ struct device {
 	struct device_config *config;
 	const void *driver_api;
 	void *driver_data;
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	struct device_pm *pm;
+#endif
 #if defined(__x86_64) && __SIZEOF_POINTER__ == 4
 	/* The x32 ABI hits an edge case.  This is a 12 byte struct,
 	 * but the x86_64 linker will pack them only in units of 8
@@ -446,6 +486,104 @@ int device_any_busy_check(void);
  * @retval -EBUSY if the device is busy
  */
 int device_busy_check(struct device *chk_dev);
+
+#ifdef CONFIG_DEVICE_IDLE_PM
+
+/* Device Idle PM status */
+#define DEVICE_PM_STATUS_ACTIVE			0
+#define DEVICE_PM_STATUS_SUSPENDED		1
+#define DEVICE_PM_STATUS_WAKEUP_ERR		2
+#define DEVICE_PM_STATUS_SUSPEND_ERR		3
+
+/**
+ * @brief Enable device idle PM
+ *
+ * Called by a device driver to enable device idle power management.
+ *
+ * @param dev Pointer to device structure of the specific device driver
+ * the caller is interested in.
+ */
+void device_pm_enable(struct device *dev);
+
+/**
+ * @brief Disable device idle PM
+ *
+ * Called by a device driver to disable device idle power management.
+ *
+ * @param dev Pointer to device structure of the specific device driver
+ * the caller is interested in.
+ */
+void device_pm_disable(struct device *dev);
+
+/**
+ * @brief Call device resume asynchronously based on usage count
+ *
+ * Called by a device driver to mark the device as being used.
+ * This API will schedule a worker to asynchronously bring the
+ * device to resume state if it not already in active state.
+ *
+ * @param dev Pointer to device structure of the specific device driver
+ * the caller is interested in.
+ * @retval 0 If successfully queued the Async request. If queued,
+ * the caller need to wait on the poll event linked to device
+ * pm signal mechanism to know the comepletion of resume operation.
+ * @retval Errno Negative errno code if failure.
+ */
+int device_pm_get(struct device *dev);
+
+/**
+ * @brief Call device resume synchronously based on usage count
+ *
+ * Called by a device driver to mark the device as being used. It
+ * will bring up or resume the device if it is in suspended state
+ * based on the device usage count. This call is blocked until the
+ * device PM state is changed to resume.
+ *
+ * @param dev Pointer to device structure of the specific device driver
+ * the caller is interested in.
+ * @retval 0 If successful.
+ * @retval Errno Negative errno code if failure.
+ */
+int device_pm_get_sync(struct device *dev);
+
+/**
+ * @brief Call device suspend asynchronously based on usage count
+ *
+ * Called by a device driver to mark the device as being free.
+ * This API will schedule a worker to asynchronously put the
+ * device to suspend state if it not already in suspend state.
+ *
+ * @param dev Pointer to device structure of the specific device driver
+ * the caller is interested in.
+ * @retval 0 If successfully queued the Async request. If queued,
+ * the caller need to wait on the poll event linked to device pm
+ * signal mechanism to know the comepletion of suspend operation.
+ * @retval Errno Negative errno code if failure.
+ */
+int device_pm_put(struct device *dev);
+
+/**
+ * @brief Call device suspend synchronously based on usage count
+ *
+ * Called by a device driver to mark the device as being free. It
+ * will put the device to suspended state if is is in active state
+ * based on the device usage count. This call is blocked until the
+ * device PM state is changed to resume.
+ *
+ * @param dev Pointer to device structure of the specific device driver
+ * the caller is interested in.
+ * @retval 0 If successful.
+ * @retval Errno Negative errno code if failure.
+ */
+int device_pm_put_sync(struct device *dev);
+#else
+static inline void device_pm_enable(struct device *dev) { }
+static inline void device_pm_disable(struct device *dev) { }
+static inline int device_pm_get(struct device *dev) { return 0; }
+static inline int device_pm_get_sync(struct device *dev) { return 0; }
+static inline int device_pm_put(struct device *dev) { return 0; }
+static inline int device_pm_put_sync(struct device *dev) { return 0; }
+#endif
 
 #endif
 

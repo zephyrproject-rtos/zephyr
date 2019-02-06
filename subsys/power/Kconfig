@@ -17,9 +17,26 @@ config PM_CONTROL_OS_DEBUG
 	help
 	  Enable OS Power Management debugging hooks.
 
+config DEVICE_IDLE_PM
+	bool "Enable device Idle Power Management"
+	depends on DEVICE_POWER_MANAGEMENT
+	help
+	  Enable device Idle Power Management to save power.
+	  With device Idle PM enabled, devices can be suspended or
+	  resumed based on the device usage even while the CPU or
+	  system is running.
+
+config DEVPM_WORKQUEUE_STACK_SIZE
+	int "Device PM workqueue stack size"
+	depends on DEVICE_IDLE_PM
+	default 1024
+	help
+	  Device PM workqueue stack size.
+
 module = PM
 module-str = Power Management
 source "subsys/logging/Kconfig.template.log_config"
 
 endmenu
+
 endif # PM_CONTROL_OS
