@@ -1,0 +1,17 @@
+# Kconfig - ST Microelectronics STM32MP157C_M4 MCU
+#
+# Copyright (c) 2019 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_STM32MP15_M4
+
+config SOC
+	string
+	default "stm32mp157cxx"
+
+config NUM_IRQS
+	int
+	default 150
+endif # SOC_STM32MP15_M4

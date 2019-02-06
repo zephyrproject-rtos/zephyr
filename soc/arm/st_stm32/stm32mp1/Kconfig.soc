@@ -1,0 +1,23 @@
+# Kconfig - ST Microelectronics STM32MP1 MPU line
+#
+# Copyright (c) 2019 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "STM32MP1 MPU Selection"
+depends on SOC_SERIES_STM32MP1X
+
+config SOC_STM32MP15_M4
+	bool "STM32MP15_M4"
+
+endchoice
+
+config RPROC_RSC_TABLE
+	bool "coprocessor resource table"
+	default y if RAM_CONSOLE || OPENAMP
+	help
+	  add the resource table in the generated binary. This table is
+	  compatible with linux remote proc framework and OpenAMP library.
+
