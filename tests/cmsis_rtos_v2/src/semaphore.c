@@ -47,15 +47,15 @@ void thread_sema(void *arg)
 
 static K_THREAD_STACK_DEFINE(test_stack, STACKSZ);
 static osThreadAttr_t thread_attr = {
-	.name       = "Sema_check",
-	.attr_bits  = osThreadDetached,
-	.cb_mem     = NULL,
-	.cb_size    = 0,
-	.stack_mem  = &test_stack,
+	.name = "Sema_check",
+	.attr_bits = osThreadDetached,
+	.cb_mem = NULL,
+	.cb_size = 0,
+	.stack_mem = &test_stack,
 	.stack_size = STACKSZ,
-	.priority   = osPriorityNormal,
-	.tz_module  = 0,
-	.reserved   = 0
+	.priority = osPriorityNormal,
+	.tz_module = 0,
+	.reserved = 0
 };
 
 const osSemaphoreAttr_t sema_attr = {

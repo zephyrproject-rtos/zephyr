@@ -8,8 +8,8 @@
 #include <kernel.h>
 #include <cmsis_os2.h>
 
-#define TIMEOUT_TICKS	10
-#define STACKSZ		512
+#define TIMEOUT_TICKS   10
+#define STACKSZ         512
 
 int max_mtx_cnt = CONFIG_CMSIS_V2_MUTEX_MAX_COUNT;
 const osMutexAttr_t mutex_attr = {
@@ -40,11 +40,11 @@ void test_max_mutex(void)
 		mutex_ids[mtx_cnt] = osMutexNew(&mutex_attr);
 		if (mtx_cnt == max_mtx_cnt) {
 			zassert_true(mutex_ids[mtx_cnt] == NULL,
-			  "Mutex creation pass unexpectedly after max count");
+				     "Mutex creation pass unexpectedly after max count");
 			cleanup_max_mutex(mutex_ids);
 		} else {
 			zassert_true(mutex_ids[mtx_cnt] != NULL,
-			  "Multiple mutex creation failed before max count");
+				     "Multiple mutex creation failed before max count");
 		}
 	}
 }
@@ -66,7 +66,7 @@ void test_mutex(void)
 
 	name = osMutexGetName(mutex_id);
 	zassert_true(strcmp(mutex_attr.name, name) == 0,
-			"Error getting Mutex name");
+		     "Error getting Mutex name");
 
 	/* Try to release mutex without obtaining it */
 	status = osMutexRelease(mutex_id);
@@ -125,7 +125,7 @@ void tThread_entry_lock_timeout(void *arg)
 
 	id = osMutexGetOwner((osMutexId_t)arg);
 	zassert_not_equal(id, osThreadGetId(),
-			 "Unexpectedly, current thread is the mutex owner!");
+			  "Unexpectedly, current thread is the mutex owner!");
 
 	/* This delay ensures that the mutex gets released by the other
 	 * thread in the meantime
@@ -142,15 +142,15 @@ void tThread_entry_lock_timeout(void *arg)
 
 static K_THREAD_STACK_DEFINE(test_stack, STACKSZ);
 static osThreadAttr_t thread_attr = {
-	.name       = "Mutex_check",
-	.attr_bits  = osThreadDetached,
-	.cb_mem	    = NULL,
-	.cb_size    = 0,
-	.stack_mem  = &test_stack,
+	.name = "Mutex_check",
+	.attr_bits = osThreadDetached,
+	.cb_mem = NULL,
+	.cb_size = 0,
+	.stack_mem = &test_stack,
 	.stack_size = STACKSZ,
-	.priority   = osPriorityNormal,
-	.tz_module  = 0,
-	.reserved   = 0
+	.priority = osPriorityNormal,
+	.tz_module = 0,
+	.reserved = 0
 };
 
 void test_mutex_lock_timeout(void)
