@@ -171,7 +171,9 @@ struct gmac_queue {
 
 	struct ring_buf rx_frag_list;
 	struct ring_buf tx_frag_list;
+#if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	struct ring_buf tx_frames;
+#endif
 
 	/** Number of RX frames dropped by the driver */
 	volatile u32_t err_rx_frames_dropped;
