@@ -170,6 +170,7 @@ struct gmac_queue {
 	struct k_sem tx_desc_sem;
 
 	struct ring_buf rx_frag_list;
+	struct ring_buf tx_frag_list;
 	struct ring_buf tx_frames;
 
 	/** Number of RX frames dropped by the driver */
