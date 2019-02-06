@@ -35,15 +35,13 @@ name_config = {
 }
 
 
-def convert_string_to_label(s):
-    # Transmute ,-@/ to _
-    s = s.replace("-", "_")
-    s = s.replace(",", "_")
-    s = s.replace("@", "_")
-    s = s.replace("/", "_")
-    # Uppercase the string
-    s = s.upper()
-    return s
+def str_to_label(s):
+    # Change ,-@/ to _ and uppercase
+    return s.replace('-', '_') \
+            .replace(',', '_') \
+            .replace('@', '_') \
+            .replace('/', '_') \
+            .upper()
 
 
 def get_all_compatibles(d, name, comp_dict):
@@ -204,7 +202,7 @@ def get_reduced(nodes, path):
 
 def get_node_label(node_address):
     node_compat = get_compat(node_address)
-    def_label = convert_string_to_label(node_compat)
+    def_label = str_to_label(node_compat)
     if '@' in node_address:
         # See if we have number we can convert
         try:
@@ -215,10 +213,9 @@ def get_node_label(node_address):
             unit_addr = "%x" % unit_addr
         except:
             unit_addr = node_address.split('@')[-1]
-        def_label += '_' + convert_string_to_label(unit_addr)
+        def_label += '_' + str_to_label(unit_addr)
     else:
-        def_label += '_' + \
-                convert_string_to_label(node_address.split('/')[-1])
+        def_label += '_' + str_to_label(node_address.split('/')[-1])
     return def_label
 
 def get_parent_address(node_address):
@@ -299,13 +296,13 @@ def add_compat_alias(node_address, label_postfix, label, prop_aliases):
         instance = reduced[node_address]['instance_id']
         for k in instance:
             i = instance[k]
-            b = 'DT_' + convert_string_to_label(k) + '_' + str(i) + '_' + label_postfix
+            b = 'DT_' + str_to_label(k) + '_' + str(i) + '_' + label_postfix
             prop_aliases[b] = label
 
 def add_prop_aliases(node_address,
                      alias_label_function, prop_label, prop_aliases):
     node_compat = get_compat(node_address)
-    new_alias_prefix = 'DT_' + convert_string_to_label(node_compat)
+    new_alias_prefix = 'DT_' + str_to_label(node_compat)
 
     for alias in aliases[node_address]:
         old_alias_label = alias_label_function(alias)
@@ -404,9 +401,9 @@ def extract_controller(node_address, prop, prop_values, index,
             generation = ''
 
         if 'use-prop-name' in generation:
-            l_cellname = convert_string_to_label(prop + '_' + 'controller')
+            l_cellname = str_to_label(prop + '_' + 'controller')
         else:
-            l_cellname = convert_string_to_label(generic + '_' + 'controller')
+            l_cellname = str_to_label(generic + '_' + 'controller')
 
         label = l_base + [l_cellname] + l_idx
 
@@ -417,8 +414,7 @@ def extract_controller(node_address, prop, prop_values, index,
         if node_address in aliases:
             add_prop_aliases(
                 node_address,
-                lambda alias:
-                    '_'.join([convert_string_to_label(alias)] + label[1:]),
+                lambda alias: '_'.join([str_to_label(alias)] + label[1:]),
                 '_'.join(label),
                 prop_alias)
 
@@ -467,9 +463,9 @@ def extract_cells(node_address, prop, prop_values, names, index,
             generation = ''
 
         if 'use-prop-name' in generation:
-            l_cell = [convert_string_to_label(str(prop))]
+            l_cell = [str_to_label(str(prop))]
         else:
-            l_cell = [convert_string_to_label(str(generic))]
+            l_cell = [str_to_label(str(generic))]
 
         l_base = def_label.split('/')
         # Check if #define should be indexed (_0, _1, ...)
@@ -500,8 +496,7 @@ def extract_cells(node_address, prop, prop_values, names, index,
             if node_address in aliases:
                 add_prop_aliases(
                     node_address,
-                    lambda alias:
-                        '_'.join([convert_string_to_label(alias)] + label[1:]),
+                    lambda alias: '_'.join([str_to_label(alias)] + label[1:]),
                     '_'.join(label),
                     prop_alias)
 

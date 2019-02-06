@@ -145,7 +145,7 @@ def extract_single(node_address, prop, key, def_label):
 
     if isinstance(prop, list):
         for i, p in enumerate(prop):
-            k = convert_string_to_label(key)
+            k = str_to_label(key)
             label = def_label + '_' + k
             if isinstance(p, str):
                 p = "\"" + p + "\""
@@ -155,7 +155,7 @@ def extract_single(node_address, prop, key, def_label):
                     prop_alias)
             prop_def[label + '_' + str(i)] = p
     else:
-        k = convert_string_to_label(key)
+        k = str_to_label(key)
         label = def_label + '_' + k
 
         if prop == 'parent-label':
@@ -170,8 +170,7 @@ def extract_single(node_address, prop, key, def_label):
         if node_address in aliases:
             add_prop_aliases(
                 node_address,
-                lambda alias:
-                    convert_string_to_label(alias) + '_' + k,
+                lambda alias: str_to_label(alias) + '_' + k,
                 label,
                 prop_alias)
 
@@ -184,7 +183,6 @@ def extract_string_prop(node_address, key, label):
     node = reduced[node_address]
     prop = node['props'][key]
 
-    k = convert_string_to_label(key)
     prop_def[label] = "\"" + prop + "\""
 
     if node_address in defs:
@@ -585,8 +583,7 @@ def main():
 
     # Add DT_CHOSEN_<X> defines to generated files
     for c in sorted(chosen):
-        chosen_def = 'DT_CHOSEN_' + convert_string_to_label(c)
-        insert_defs('chosen', {chosen_def: '1'}, {})
+        insert_defs('chosen', {'DT_CHOSEN_' + str_to_label(c): '1'}, {})
 
      # generate config and include file
     if args.keyvalue is not None:
