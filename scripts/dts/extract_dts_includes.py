@@ -312,7 +312,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                 # Handle each property individually, this ends up handling common
                 # patterns for things like reg, interrupts, etc that we don't need
                 # any special case handling at a node level
-                for c in node['props'].keys():
+                for c in node['props']:
                     # if prop is in filter list - ignore it
                     if c in filter_list:
                         continue
@@ -440,12 +440,12 @@ def get_key_value(k, v, tabstop):
 
 
 def output_keyvalue_lines(fd):
-    node_keys = sorted(defs.keys())
+    node_keys = sorted(defs)
     for node in node_keys:
         fd.write('# ' + node.split('/')[-1])
         fd.write("\n")
 
-        prop_keys = sorted(defs[node].keys())
+        prop_keys = sorted(defs[node])
         for prop in prop_keys:
             if prop == 'aliases':
                 for entry in sorted(defs[node][prop]):
@@ -472,12 +472,12 @@ def output_include_lines(fd):
     '''
     )
 
-    node_keys = sorted(defs.keys())
+    node_keys = sorted(defs)
     for node in node_keys:
         fd.write('/* ' + node.split('/')[-1] + ' */')
         fd.write("\n")
 
-        max_dict_key = lambda d: max(len(k) for k in d.keys())
+        max_dict_key = lambda d: max(len(k) for k in d)
         maxlength = 0
         if defs[node].get('aliases'):
             maxlength = max_dict_key(defs[node]['aliases'])
@@ -491,7 +491,7 @@ def output_include_lines(fd):
         if (maxtabstop * 8 - maxlength) <= 2:
             maxtabstop += 1
 
-        prop_keys = sorted(defs[node].keys())
+        prop_keys = sorted(defs[node])
         for prop in prop_keys:
             if prop == 'aliases':
                 for entry in sorted(defs[node][prop]):
@@ -588,7 +588,7 @@ def main():
     defs = generate_node_definitions()
 
     # Add DT_CHOSEN_<X> defines to generated files
-    for c in sorted(chosen.keys()):
+    for c in sorted(chosen):
         chosen_def = 'DT_CHOSEN_' + convert_string_to_label(c)
         load_defs = {
             chosen_def: "1",
