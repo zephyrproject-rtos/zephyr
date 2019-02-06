@@ -79,7 +79,7 @@ class DTFlash(DTDirective):
         # for addr/size info, and the second reg property (assume first is mmio
         # register for the controller itself)
         is_spi_flash = False
-        if (nr_size_cells == 0):
+        if nr_size_cells == 0:
             is_spi_flash = True
             node_address = get_parent_address(node_address)
             (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_address)
@@ -94,7 +94,7 @@ class DTFlash(DTDirective):
         # if we found a spi flash, but don't have mmio direct access support
         # which we determin by the spi controller node only have on reg element
         # (ie for the controller itself and no region for the MMIO flash access)
-        if (num_reg_elem == 1 and is_spi_flash):
+        if num_reg_elem == 1 and is_spi_flash:
             node_address = orig_node_addr
         else:
             # We assume the last reg property is the one we want
