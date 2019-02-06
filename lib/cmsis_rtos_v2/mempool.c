@@ -29,20 +29,20 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 {
 	struct cv2_mslab *mslab;
 
+	BUILD_ASSERT_MSG(CONFIG_HEAP_MEM_POOL_SIZE >=
+			 CONFIG_CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE,
+			 "heap must be configured to be at least the max dynamic size");
+
 	if (k_is_in_isr()) {
+		return NULL;
+	}
+
+	if ((attr != NULL) && (attr->mp_size < block_count * block_size)) {
 		return NULL;
 	}
 
 	if (attr == NULL) {
 		attr = &init_mslab_attrs;
-	}
-
-	/* This implementation requires memory to be allocated by the
-	 * App layer
-	 */
-	if ((attr->mp_mem == NULL) ||
-	    (attr->mp_size < block_count * block_size)) {
-		return NULL;
 	}
 
 	if (k_mem_slab_alloc(&cv2_mem_slab, (void **)&mslab, 100) == 0) {
@@ -51,7 +51,23 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 		return NULL;
 	}
 
-	k_mem_slab_init(&mslab->z_mslab, attr->mp_mem, block_size, block_count);
+	if (attr->mp_mem == NULL) {
+		__ASSERT((block_count * block_size) <=
+			 CONFIG_CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE,
+			 "memory slab/pool size exceeds dynamic maximum");
+
+		mslab->pool = k_calloc(block_count, block_size);
+		if (mslab->pool == NULL) {
+			k_mem_slab_free(&cv2_mem_slab, (void *) &mslab);
+			return NULL;
+		}
+		mslab->is_dynamic_allocation = TRUE;
+	} else {
+		mslab->pool = attr->mp_mem;
+		mslab->is_dynamic_allocation = FALSE;
+	}
+
+	k_mem_slab_init(&mslab->z_mslab, mslab->pool, block_size, block_count);
 	memcpy(mslab->name, attr->name, 16);
 
 	return (osMemoryPoolId_t)mslab;
@@ -207,6 +223,9 @@ osStatus_t osMemoryPoolDelete(osMemoryPoolId_t mp_id)
 	 * supported in Zephyr.
 	 */
 
+	if (mslab->is_dynamic_allocation) {
+		k_free(mslab->pool);
+	}
 	k_mem_slab_free(&cv2_mem_slab, (void *)&mslab);
 
 	return osOK;
