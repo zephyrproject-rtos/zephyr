@@ -586,10 +586,7 @@ def main():
     # Add DT_CHOSEN_<X> defines to generated files
     for c in sorted(chosen):
         chosen_def = 'DT_CHOSEN_' + convert_string_to_label(c)
-        load_defs = {
-            chosen_def: "1",
-        }
-        insert_defs('chosen', load_defs, {})
+        insert_defs('chosen', {chosen_def: '1'}, {})
 
      # generate config and include file
     if args.keyvalue is not None:

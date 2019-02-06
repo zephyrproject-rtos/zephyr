@@ -36,44 +36,35 @@ class DTCompatible(DTDirective):
             compatible = [compatible, ]
 
         for i, comp in enumerate(compatible):
-            # Generate #define's
-            compat_label = convert_string_to_label(str(comp))
-            compat_defs = 'DT_COMPAT_' + compat_label
-            load_defs = {
-                compat_defs: "1",
-            }
-            insert_defs(node_address, load_defs, {})
-            # Generate #define for BUS a "sensor" might be on
-            # for example:
+            compat_label = convert_string_to_label(comp)
+
+            # Generate #define
+            insert_defs(node_address,
+                        {'DT_COMPAT_' + compat_label: '1'},
+                        {})
+
+            # Generate #define for BUS a "sensor" might be on, for example
             # #define DT_ST_LPS22HB_PRESS_BUS_SPI 1
             if 'parent' in binding:
-                bus = binding['parent']['bus']
-                compat_defs = 'DT_' + compat_label + '_BUS_' + bus.upper()
-                load_defs = {
-                    compat_defs: "1",
-                }
-                insert_defs(node_address, load_defs, {})
+                compat_def = 'DT_' + compat_label + '_BUS_' + \
+                    binding['parent']['bus'].upper()
+                insert_defs(node_address, {compat_def: '1'}, {})
 
         # Generate defines of the form:
         # #define DT_<COMPAT>_<INSTANCE ID> 1
-        instance = reduced[node_address]['instance_id']
-        for k in instance:
-            i = instance[k]
-            compat_instance = 'DT_' + convert_string_to_label(k) + '_' + str(i)
-            load_defs = {
-                compat_instance: "1",
-            }
-            insert_defs(node_address, load_defs, {})
+        for compat, instance_id in reduced[node_address]['instance_id'].items():
+            compat_instance = 'DT_' + convert_string_to_label(compat) + '_' + \
+                str(instance_id)
+
+            insert_defs(node_address, {compat_instance: '1'}, {})
 
             # Generate defines of the form:
             # #define DT_<COMPAT>_<INSTANCE ID>_BUS_<BUS> 1
             if 'parent' in binding:
                 bus = binding['parent']['bus']
-                compat_instance += '_BUS_' + bus.upper()
-                load_defs = {
-                    compat_instance: "1",
-                }
-                insert_defs(node_address, load_defs, {})
+                insert_defs(node_address,
+                            {compat_instance + '_BUS_' + bus.upper(): '1'},
+                            {})
 
 
 ##
