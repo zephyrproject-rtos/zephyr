@@ -278,6 +278,7 @@ u8_t ll_connect_disable(void **rx)
 u8_t ll_chm_update(u8_t *chm)
 {
 	u16_t handle;
+	u8_t ret;
 
 	ull_conn_chan_map_set(chm);
 
@@ -290,14 +291,9 @@ u8_t ll_chm_update(u8_t *chm)
 			continue;
 		}
 
-		if (conn->llcp_req != conn->llcp_ack) {
-			return BT_HCI_ERR_CMD_DISALLOWED;
-		}
-
-		conn->llcp_req++;
-		if (((conn->llcp_req - conn->llcp_ack) & 0x03) != 1) {
-			conn->llcp_req--;
-			return BT_HCI_ERR_CMD_DISALLOWED;
+		ret = ull_conn_allowed_check(conn);
+		if (ret) {
+			return ret;
 		}
 
 		memcpy(conn->llcp.chan_map.chm, chm,
@@ -317,20 +313,16 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 {
 	struct ll_conn *conn;
 	struct node_tx *tx;
+	u8_t ret;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (conn->llcp_req != conn->llcp_ack) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	conn->llcp_req++;
-	if (((conn->llcp_req - conn->llcp_ack) & 0x03) != 1) {
-		conn->llcp_req--;
-		return BT_HCI_ERR_CMD_DISALLOWED;
+	ret = ull_conn_allowed_check(conn);
+	if (ret) {
+		return ret;
 	}
 
 	tx = ll_tx_mem_acquire();

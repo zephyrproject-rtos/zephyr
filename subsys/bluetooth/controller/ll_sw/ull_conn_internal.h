@@ -7,6 +7,7 @@
 /* Macro to convert time in us to connection interval units */
 #define RADIO_CONN_EVENTS(x, y) ((u16_t)(((x) + (y) - 1) / (y)))
 
+u8_t ull_conn_allowed_check(void *conn);
 struct ll_conn *ll_conn_acquire(void);
 void ll_conn_release(struct ll_conn *conn);
 u16_t ll_conn_handle_get(struct ll_conn *conn);
