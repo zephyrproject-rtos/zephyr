@@ -45,11 +45,13 @@ struct can_mailbox {
 	u32_t error_flags;
 };
 
+
+/* number = FSCx | FMBx */
 enum can_filter_type {
-	CAN_FILTER_STANDARD,
-	CAN_FILTER_STANDARD_MASKED,
-	CAN_FILTER_EXTENDED,
-	CAN_FILTER_EXTENDED_MASKED
+	CAN_FILTER_STANDARD_MASKED = 0,
+	CAN_FILTER_STANDARD = 1,
+	CAN_FILTER_EXTENDED_MASKED = 2,
+	CAN_FILTER_EXTENDED = 3
 };
 
 struct can_stm32_data {

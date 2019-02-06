@@ -19,6 +19,14 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(stm32_can);
 
+/*
+ * Translation tables
+ * filter_in_bank[enum can_filter_type] = number of filters in bank for this type
+ * reg_demand[enum can_filter_type] = how many registers are used for this type
+ */
+static const u8_t filter_in_bank[] = {2, 4, 1, 2};
+static const u8_t reg_demand[] = {2, 1, 4, 2};
+
 static void can_stm32_signal_tx_complete(struct can_mailbox *mb)
 {
 	if (mb->tx_callback) {
@@ -28,7 +36,7 @@ static void can_stm32_signal_tx_complete(struct can_mailbox *mb)
 	}
 }
 
-static inline void can_stm32_get_msg_fifo(CAN_FIFOMailBox_TypeDef *mbox,
+static void can_stm32_get_msg_fifo(CAN_FIFOMailBox_TypeDef *mbox,
 				    struct can_msg *msg)
 {
 	if (mbox->RIR & CAN_RI0R_IDE) {
@@ -401,6 +409,18 @@ int can_stm32_send(struct device *dev, struct can_msg *msg, s32_t timeout,
 	return 0;
 }
 
+static inline int can_stm32_check_free(void **arr, int start, int end)
+{
+	int i;
+
+	for (i = start; i <= end; i++) {
+		if (arr[i] != NULL) {
+			return 0;
+		}
+	}
+	return 1;
+}
+
 static int can_stm32_shift_arr(void **arr, int start, int count)
 {
 	void **start_ptr = arr + start;
@@ -413,9 +433,15 @@ static int can_stm32_shift_arr(void **arr, int start, int count)
 	if (count > 0) {
 		void *move_dest;
 
-		if ((start + count) >= CONFIG_CAN_MAX_FILTER ||
-		    arr[CONFIG_CAN_MAX_FILTER - 1 - count] != NULL) {
+		/* Check if nothing used will be overwritten */
+		if (!can_stm32_check_free(arr, CONFIG_CAN_MAX_FILTER - count,
+					       CONFIG_CAN_MAX_FILTER - 1)) {
 			return CAN_NO_FREE_FILTER;
+		}
+
+		/* No need to shift. Destination is already outside the arr*/
+		if ((start + count) >= CONFIG_CAN_MAX_FILTER) {
+			return 0;
 		}
 
 		cnt = (CONFIG_CAN_MAX_FILTER - start - count) * sizeof(void *);
@@ -440,33 +466,40 @@ static int can_stm32_shift_arr(void **arr, int start, int count)
 
 static inline void can_stm32_shift_bits(u64_t *bits, int start, int count)
 {
-	u64_t mask_right = (UINT64_MAX >> start);
+	u64_t mask_right;
+	u64_t mask_left;
 
 	if (count > 0) {
-		*bits = (*bits & ~mask_right) | ((*bits & mask_right) << count);
+		mask_right = ~(UINT64_MAX << start);
+		*bits = (*bits & mask_right) | ((*bits & ~mask_right) << count);
 	} else if (count < 0) {
-		u64_t mask_left;
-
 		count = -count;
-		mask_left  = ~(UINT64_MAX >> (start - count));
-		*bits = (*bits & mask_left) | ((*bits & mask_right) >> count);
+		mask_left = UINT64_MAX << start;
+		mask_right = ~(UINT64_MAX << (start - count));
+		*bits = (*bits & mask_right) | ((*bits & mask_left) >> count);
 	}
+}
+
+enum can_filter_type can_stm32_get_filter_type(int bank_nr, u32_t mode_reg,
+					       u32_t scale_reg)
+{
+	u32_t mode_masked  = (mode_reg  >> bank_nr) & 0x01;
+	u32_t scale_masked = (scale_reg >> bank_nr) & 0x01;
+	enum can_filter_type type = (scale_masked << 1) | mode_masked;
+
+	return type;
 }
 
 static int can_calc_filter_index(int filter_nr, u32_t mode_reg, u32_t scale_reg)
 {
 	int filter_bank = filter_nr / 4;
 	int cnt = 0;
-	u32_t mode_masked;
-	u32_t scale_masked;
-
+	u32_t mode_masked, scale_masked;
+	enum can_filter_type filter_type;
 	/*count filters in the banks before */
 	for (int i = 0; i < filter_bank; i++) {
-		mode_masked  = mode_reg & (1U << i);
-		scale_masked = scale_reg & (1U << i);
-		cnt += !scale_masked &&  mode_masked  ? 4 :
-			scale_masked && !mode_masked  ? 1 :
-							2;
+		filter_type = can_stm32_get_filter_type(i, mode_reg, scale_reg);
+		cnt += filter_in_bank[filter_type];
 	}
 
 	/* plus the filters in the same bank */
@@ -475,20 +508,6 @@ static int can_calc_filter_index(int filter_nr, u32_t mode_reg, u32_t scale_reg)
 	cnt += (!scale_masked && mode_masked) ? filter_nr & 0x03 :
 					       (filter_nr & 0x03) >> 1;
 	return cnt;
-}
-
-enum can_filter_type can_stm32_get_filter_type(u32_t bank_bit, u32_t mode_reg,
-					       u32_t scale_reg)
-{
-	u32_t mode_masked  = mode_reg  & bank_bit;
-	u32_t scale_masked = scale_reg & bank_bit;
-	enum can_filter_type type =
-		!scale_masked &&  mode_masked ? CAN_FILTER_STANDARD :
-		!scale_masked && !mode_masked ? CAN_FILTER_STANDARD_MASKED :
-		scale_masked &&  mode_masked ? CAN_FILTER_EXTENDED :
-		CAN_FILTER_EXTENDED_MASKED;
-
-	return type;
 }
 
 static void can_stm32_set_filter_bank(int filter_nr,
@@ -520,10 +539,10 @@ static void can_stm32_set_filter_bank(int filter_nr,
 		switch (filter_nr & 0x02) {
 		case 0:
 			filter_reg->FR1 = id | (mask << 16);
-		break;
+			break;
 		case 2:
 			filter_reg->FR2 = id | (mask << 16);
-		break;
+			break;
 		}
 
 		break;
@@ -545,50 +564,47 @@ static void can_stm32_set_filter_bank(int filter_nr,
 	}
 }
 
-static inline
-int can_stm32_calc_shift_width(enum can_filter_type new_filter_type,
-			       enum can_filter_type old_filter_type)
-{
-	switch (new_filter_type) {
-	case CAN_FILTER_STANDARD:
-		return old_filter_type == CAN_FILTER_EXTENDED_MASKED ? 3 : 1;
-	case CAN_FILTER_STANDARD_MASKED:
-		return old_filter_type == CAN_FILTER_STANDARD        ? -2 :
-		       old_filter_type == CAN_FILTER_EXTENDED_MASKED ?  1 :
-									0;
-	case CAN_FILTER_EXTENDED:
-		return old_filter_type == CAN_FILTER_STANDARD        ? -2 :
-		       old_filter_type == CAN_FILTER_EXTENDED_MASKED ?  1 :
-									0;
-	case CAN_FILTER_EXTENDED_MASKED:
-		return old_filter_type == CAN_FILTER_STANDARD ? -3 : -1;
-	}
-
-	return 0;
-}
-
 static inline void can_stm32_set_mode_scale(enum can_filter_type filter_type,
 					    u32_t *mode_reg, u32_t *scale_reg,
-					    u32_t bank_bit)
+					    int  filter_nr)
 {
-	switch (filter_type) {
-	case CAN_FILTER_STANDARD:
-		*mode_reg  |=  bank_bit;
-		*scale_reg &= ~bank_bit;
-		break;
-	case CAN_FILTER_STANDARD_MASKED:
-		*mode_reg  &= ~bank_bit;
-		*scale_reg &= ~bank_bit;
-		break;
-	case CAN_FILTER_EXTENDED:
-		*mode_reg  |= bank_bit;
-		*scale_reg |= bank_bit;
-		break;
-	case CAN_FILTER_EXTENDED_MASKED:
-		*mode_reg  &= ~bank_bit;
-		*scale_reg |= bank_bit;
-		break;
-	}
+	u32_t mode_reg_bit  = (filter_type & 0x01) << filter_nr;
+	u32_t scale_reg_bit = (filter_type >>   1) << filter_nr;
+
+	*mode_reg &= ~(1 << filter_nr);
+	*mode_reg |= mode_reg_bit;
+
+	*scale_reg &= ~(1 << filter_nr);
+	*scale_reg |= scale_reg_bit;
+}
+
+static inline u32_t can_generate_std_mask(const struct can_filter *filter)
+{
+	return  (filter->std_id_mask << CAN_FIRX_STD_ID_POS) |
+		(filter->rtr_mask    << CAN_FIRX_STD_RTR_POS) |
+		(1U                  << CAN_FIRX_STD_IDE_POS);
+}
+
+static inline u32_t can_generate_ext_mask(const struct can_filter *filter)
+{
+	return  (filter->ext_id_mask << CAN_FIRX_EXT_EXT_ID_POS) |
+		(filter->rtr_mask    << CAN_FIRX_EXT_RTR_POS) |
+		(1U                  << CAN_FIRX_EXT_IDE_POS);
+}
+
+static inline u32_t can_generate_std_id(const struct can_filter *filter)
+{
+
+	return  (filter->std_id << CAN_FIRX_STD_ID_POS) |
+		(filter->rtr    << CAN_FIRX_STD_RTR_POS);
+
+}
+
+static inline u32_t can_generate_ext_id(const struct can_filter *filter)
+{
+	return  (filter->ext_id << CAN_FIRX_EXT_EXT_ID_POS) |
+		(filter->rtr    << CAN_FIRX_EXT_RTR_POS) |
+		(1U             << CAN_FIRX_EXT_IDE_POS);
 }
 
 static inline int can_stm32_set_filter(const struct can_filter *filter,
@@ -599,7 +615,7 @@ static inline int can_stm32_set_filter(const struct can_filter *filter,
 	u32_t mask = 0U;
 	u32_t id = 0U;
 	int filter_nr = 0;
-	int filter_index_tmp = CAN_NO_FREE_FILTER;
+	int filter_index_new = CAN_NO_FREE_FILTER;
 	int bank_nr;
 	u32_t bank_bit;
 	int register_demand;
@@ -607,36 +623,24 @@ static inline int can_stm32_set_filter(const struct can_filter *filter,
 	enum can_filter_type bank_mode;
 
 	if (filter->id_type == CAN_STANDARD_IDENTIFIER) {
-		id = (filter->std_id << CAN_FIRX_STD_ID_POS)
-		     | (filter->rtr << CAN_FIRX_STD_RTR_POS);
+		id = can_generate_std_id(filter);
+		filter_type = CAN_FILTER_STANDARD;
 
-		if (filter->std_id_mask == CAN_STD_ID_MASK && filter->rtr_mask) {
-			filter_type = CAN_FILTER_STANDARD;
-			register_demand = 1;
-		} else {
+		if (filter->std_id_mask != CAN_STD_ID_MASK) {
+			mask = can_generate_std_mask(filter);
 			filter_type = CAN_FILTER_STANDARD_MASKED;
-			register_demand = 2;
-			mask = (filter->std_id_mask << CAN_FIRX_STD_ID_POS)
-			       | (filter->rtr_mask << CAN_FIRX_STD_RTR_POS)
-			       | (1U << CAN_FIRX_STD_IDE_POS);
 		}
-
 	} else {
-		id = (filter->ext_id << CAN_FIRX_EXT_EXT_ID_POS)
-		     | (filter->rtr << CAN_FIRX_EXT_RTR_POS)
-		     | (1U << CAN_FIRX_EXT_IDE_POS);
+		id = can_generate_ext_id(filter);
+		filter_type = CAN_FILTER_EXTENDED;
 
-		if (filter->ext_id_mask == CAN_EXT_ID_MASK && filter->rtr_mask) {
-			filter_type = CAN_FILTER_EXTENDED;
-			register_demand = 2;
-		} else {
+		if (filter->ext_id_mask != CAN_EXT_ID_MASK) {
+			mask = can_generate_ext_mask(filter);
 			filter_type = CAN_FILTER_EXTENDED_MASKED;
-			register_demand = 4;
-			mask = (filter->ext_id_mask << CAN_FIRX_EXT_EXT_ID_POS)
-			       | (filter->rtr_mask << CAN_FIRX_EXT_RTR_POS)
-			       | (1U << CAN_FIRX_EXT_IDE_POS);
 		}
 	}
+
+	register_demand = reg_demand[filter_type];
 
 	LOG_DBG("Setting filter ID: 0x%x, mask: 0x%x", filter->ext_id,
 		    filter->ext_id_mask);
@@ -651,25 +655,23 @@ static inline int can_stm32_set_filter(const struct can_filter *filter,
 
 	do {
 		u64_t usage_shifted = (device_data->filter_usage >> filter_nr);
-		u8_t usage_demand_mask = (1U << register_demand) - 1;
+		u64_t usage_demand_mask = (1U << register_demand) - 1;
 		bool bank_is_empty;
 
 		bank_nr = filter_nr / 4;
 		bank_bit = (1U << bank_nr);
-		bank_mode = can_stm32_get_filter_type(bank_bit, can->FM1R,
+		bank_mode = can_stm32_get_filter_type(bank_nr, can->FM1R,
 						      can->FS1R);
+
 		bank_is_empty = CAN_BANK_IS_EMPTY(device_data->filter_usage,
 						  bank_nr);
 
-		if ((usage_shifted & usage_demand_mask) == usage_demand_mask) {
-			if (bank_mode == filter_type || bank_is_empty) {
-				device_data->filter_usage &=
-				       ~((u64_t)usage_demand_mask << filter_nr);
-				break;
-			} else {
-				/* Filter Bank has unsuitable configuration */
-				filter_nr = (bank_nr + 1) * 4;
-			}
+		if (!bank_is_empty && bank_mode != filter_type) {
+			filter_nr = (bank_nr + 1) * 4;
+		} else if (usage_shifted & usage_demand_mask) {
+			device_data->filter_usage &=
+				~(usage_demand_mask << filter_nr);
+			break;
 		} else {
 			filter_nr += register_demand;
 		}
@@ -686,37 +688,39 @@ static inline int can_stm32_set_filter(const struct can_filter *filter,
 
 	/* TODO fifo balancing */
 	if (filter_type != bank_mode) {
-		int shift_width;
+		int shift_width, start_index;
 		int res;
 		u32_t mode_reg  = can->FM1R;
 		u32_t scale_reg = can->FS1R;
 
 		can_stm32_set_mode_scale(filter_type, &mode_reg, &scale_reg,
-					 bank_bit);
+					 filter_nr);
 
-		shift_width = can_stm32_calc_shift_width(filter_type,
-							 bank_mode);
+		shift_width = filter_in_bank[filter_type] - filter_in_bank[bank_mode];
 
-		filter_index_tmp = can_calc_filter_index(filter_nr, mode_reg,
+		filter_index_new = can_calc_filter_index(filter_nr, mode_reg,
 							 scale_reg);
 
+		start_index = filter_index_new + filter_in_bank[bank_mode];
 		res = can_stm32_shift_arr(device_data->rx_response,
-					  filter_index_tmp + 1, shift_width);
+					  start_index,
+					  shift_width);
 
-		if (filter_index_tmp >= CAN_MAX_NUMBER_OF_FILTERS || res) {
+		if (filter_index_new >= CONFIG_CAN_MAX_FILTER || res) {
 			LOG_INF("No space for a new filter!");
 			filter_nr = CAN_NO_FREE_FILTER;
 			goto done;
 		}
 
 		can_stm32_shift_bits(&device_data->response_type,
-				     filter_index_tmp + 1, shift_width);
+				     start_index,
+				     shift_width);
 		can->FM1R = mode_reg;
 		can->FS1R = scale_reg;
 	} else {
-		filter_index_tmp = can_calc_filter_index(filter_nr, can->FM1R,
+		filter_index_new = can_calc_filter_index(filter_nr, can->FM1R,
 							 can->FS1R);
-		if (filter_index_tmp >= CAN_MAX_NUMBER_OF_FILTERS) {
+		if (filter_index_new >= CAN_MAX_NUMBER_OF_FILTERS) {
 			filter_nr = CAN_NO_FREE_FILTER;
 			goto done;
 		}
@@ -728,8 +732,8 @@ done:
 	can->FA1R |= bank_bit;
 	can->FMR &= ~(CAN_FMR_FINIT);
 	LOG_DBG("Filter set! Filter number: %d (index %d)",
-		    filter_nr, filter_index_tmp);
-	*filter_index = filter_index_tmp;
+		    filter_nr, filter_index_new);
+	*filter_index = filter_index_new;
 	return filter_nr;
 }
 
@@ -804,17 +808,13 @@ void can_stm32_detach(struct device *dev, int filter_nr)
 	scale_reg = can->FS1R;
 
 	filter_index = can_calc_filter_index(filter_nr, mode_reg, scale_reg);
-	type = can_stm32_get_filter_type(bank_bit, mode_reg, scale_reg);
+	type = can_stm32_get_filter_type(bank_nr, mode_reg, scale_reg);
 
 	LOG_DBG("Detatch filter number %d (index %d), type %d", filter_nr,
 		    filter_index,
 		    type);
 
-	reset_mask = (type == CAN_FILTER_STANDARD)         ? 0x01 :
-		     (type == CAN_FILTER_EXTENDED_MASKED)  ? 0x0F :
-							     0x03;
-	reset_mask = reset_mask << filter_nr;
-
+	reset_mask = ((1 << (reg_demand[type])) - 1) << filter_nr;
 	data->filter_usage |= reset_mask;
 	can->FMR |= CAN_FMR_FINIT;
 	can->FA1R &= ~bank_bit;
@@ -830,6 +830,7 @@ void can_stm32_detach(struct device *dev, int filter_nr)
 
 	can->FMR &= ~(CAN_FMR_FINIT);
 	data->rx_response[filter_index] = NULL;
+	data->response_type &= ~(1ULL << filter_index);
 
 	k_mutex_unlock(&data->set_filter_mutex);
 }
