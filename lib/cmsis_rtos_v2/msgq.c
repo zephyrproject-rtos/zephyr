@@ -66,7 +66,13 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
 	}
 
 	k_msgq_init(&msgq->z_msgq, msgq->pool, msg_size, msg_count);
-	memcpy(msgq->name, attr->name, 16);
+
+	if (attr->name == NULL) {
+		strncpy(msgq->name, init_msgq_attrs.name,
+			sizeof(msgq->name) - 1);
+	} else {
+		strncpy(msgq->name, attr->name, sizeof(msgq->name) - 1);
+	}
 
 	return (osMessageQueueId_t)(msgq);
 }

@@ -46,7 +46,13 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 	k_poll_event_init(&events->poll_event, K_POLL_TYPE_SIGNAL,
 			  K_POLL_MODE_NOTIFY_ONLY, &events->poll_signal);
 	events->signal_results = 0;
-	memcpy(events->name, attr->name, 16);
+
+	if (attr->name == NULL) {
+		strncpy(events->name, init_event_flags_attrs.name,
+			sizeof(events->name) - 1);
+	} else {
+		strncpy(events->name, attr->name, sizeof(events->name) - 1);
+	}
 
 	return (osEventFlagsId_t)events;
 }
