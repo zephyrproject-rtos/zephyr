@@ -17,6 +17,7 @@ extern void test_mutex(void);
 extern void test_mutex_lock_timeout(void);
 extern void test_semaphore(void);
 extern void test_mempool(void);
+extern void test_mempool_dynamic(void);
 extern void test_messageq(void);
 extern void test_event_flags_no_wait_timeout(void);
 extern void test_event_flags_signalled(void);
@@ -37,6 +38,7 @@ void test_main(void)
 			 ztest_unit_test(test_mutex_lock_timeout),
 			 ztest_unit_test(test_semaphore),
 			 ztest_unit_test(test_mempool),
+			 ztest_unit_test(test_mempool_dynamic),
 			 ztest_unit_test(test_messageq),
 			 ztest_unit_test(test_event_flags_no_wait_timeout),
 			 ztest_unit_test(test_event_flags_signalled),
