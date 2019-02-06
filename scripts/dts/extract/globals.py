@@ -175,7 +175,7 @@ def get_reduced(nodes, path):
 
         # assign an instance ID for each compat
         compat = nodes['props'].get('compatible')
-        if (compat is not None):
+        if compat:
             if type(compat) is not list: compat = [ compat, ]
             reduced[path]['instance_id'] = {}
             for k in compat:
@@ -295,7 +295,7 @@ def enable_old_alias_names(enable):
     old_alias_names = enable
 
 def add_compat_alias(node_address, label_postfix, label, prop_aliases):
-    if ('instance_id' in reduced[node_address]):
+    if 'instance_id' in reduced[node_address]:
         instance = reduced[node_address]['instance_id']
         for k in instance:
             i = instance[k]
@@ -311,9 +311,9 @@ def add_prop_aliases(node_address,
         old_alias_label = alias_label_function(alias)
         new_alias_label = new_alias_prefix + '_' + old_alias_label
 
-        if (new_alias_label != prop_label):
+        if new_alias_label != prop_label:
             prop_aliases[new_alias_label] = prop_label
-        if (old_alias_names and old_alias_label != prop_label):
+        if old_alias_names and old_alias_label != prop_label:
             prop_aliases[old_alias_label] = prop_label
 
 def get_binding(node_address):

@@ -484,7 +484,7 @@ def output_include_lines(fd):
         else:
             maxtabstop = (maxlength >> 3) + 1
 
-        if (maxtabstop * 8 - maxlength) <= 2:
+        if maxtabstop * 8 - maxlength <= 2:
             maxtabstop += 1
 
         prop_keys = sorted(defs[node])
@@ -592,10 +592,10 @@ def main():
         insert_defs('chosen', load_defs, {})
 
      # generate config and include file
-    if (args.keyvalue is not None):
+    if args.keyvalue is not None:
        generate_keyvalue_file(args.keyvalue[0])
 
-    if (args.include is not None):
+    if args.include is not None:
        generate_include_file(args.include[0])
 
 
