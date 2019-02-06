@@ -85,16 +85,16 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 	static u32_t one_time;
 
 	BUILD_ASSERT_MSG(osPriorityISR <= CONFIG_NUM_PREEMPT_PRIORITIES,
-		"Configure NUM_PREEMPT_PRIORITIES to at least osPriorityISR");
+			 "Configure NUM_PREEMPT_PRIORITIES to at least osPriorityISR");
 
 	__ASSERT(attr->stack_size <= CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE,
-		"invalid stack size\n");
+		 "invalid stack size\n");
 
 	__ASSERT(thread_num <= CONFIG_CMSIS_V2_THREAD_MAX_COUNT,
-		"Exceeded max number of threads\n");
+		 "Exceeded max number of threads\n");
 
 	__ASSERT(attr != NULL,
-	"Zephyr requirement: Pass attributes explicitly for ThreadNew\n");
+		 "Zephyr requirement: Pass attributes explicitly for ThreadNew\n");
 
 	/* Zephyr needs valid stack to be specified when this API is called */
 	__ASSERT(attr->stack_mem, "");
@@ -116,7 +116,7 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 
 	k_poll_signal_init(&tid->poll_signal);
 	k_poll_event_init(&tid->poll_event, K_POLL_TYPE_SIGNAL,
-			K_POLL_MODE_NOTIFY_ONLY, &tid->poll_signal);
+			  K_POLL_MODE_NOTIFY_ONLY, &tid->poll_signal);
 	tid->signal_results = 0;
 
 	/* TODO: Do this somewhere only once */
@@ -128,10 +128,10 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 	sys_dlist_append(&thread_list, &tid->node);
 
 	(void)k_thread_create(&tid->z_thread,
-		attr->stack_mem, attr->stack_size,
-		(k_thread_entry_t)zephyr_thread_wrapper,
-		(void *)arg, NULL, threadfunc,
-		prio, 0, K_NO_WAIT);
+			      attr->stack_mem, attr->stack_size,
+			      (k_thread_entry_t)zephyr_thread_wrapper,
+			      (void *)arg, NULL, threadfunc,
+			      prio, 0, K_NO_WAIT);
 
 	k_thread_name_set(&tid->z_thread, attr->name);
 
@@ -152,7 +152,7 @@ const char *osThreadGetName(osThreadId_t thread_id)
 			name = NULL;
 		} else {
 			struct cv2_thread *tid =
-					(struct cv2_thread *)thread_id;
+				(struct cv2_thread *)thread_id;
 
 			name = k_thread_name_get(&tid->z_thread);
 		}
@@ -180,8 +180,8 @@ osPriority_t osThreadGetPriority(osThreadId_t thread_id)
 	u32_t priority;
 
 	if (k_is_in_isr() || (tid == NULL) ||
-		(is_cmsis_rtos_v2_thread(tid) == NULL) ||
-		(_is_thread_cmsis_inactive(&tid->z_thread))) {
+	    (is_cmsis_rtos_v2_thread(tid) == NULL) ||
+	    (_is_thread_cmsis_inactive(&tid->z_thread))) {
 		return osPriorityError;
 	}
 
@@ -197,7 +197,7 @@ osStatus_t osThreadSetPriority(osThreadId_t thread_id, osPriority_t priority)
 	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
 
 	if ((tid == NULL) || (is_cmsis_rtos_v2_thread(tid) == NULL) ||
-		(priority <= osPriorityNone) || (priority > osPriorityISR)) {
+	    (priority <= osPriorityNone) || (priority > osPriorityISR)) {
 		return osErrorParameter;
 	}
 
@@ -210,7 +210,7 @@ osStatus_t osThreadSetPriority(osThreadId_t thread_id, osPriority_t priority)
 	}
 
 	k_thread_priority_set((k_tid_t)&tid->z_thread,
-				cmsis_to_zephyr_priority(priority));
+			      cmsis_to_zephyr_priority(priority));
 
 	return osOK;
 }
@@ -224,7 +224,7 @@ osThreadState_t osThreadGetState(osThreadId_t thread_id)
 	osThreadState_t state;
 
 	if (k_is_in_isr() || (tid == NULL) ||
-		(is_cmsis_rtos_v2_thread(tid) == NULL)) {
+	    (is_cmsis_rtos_v2_thread(tid) == NULL)) {
 		return osThreadError;
 	}
 

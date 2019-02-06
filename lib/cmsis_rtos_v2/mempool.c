@@ -7,10 +7,10 @@
 #include <kernel_structs.h>
 #include "wrapper.h"
 
-#define TIME_OUT_TICKS	10
+#define TIME_OUT_TICKS  10
 
 K_MEM_SLAB_DEFINE(cv2_mem_slab, sizeof(struct cv2_mslab),
-			CONFIG_CMSIS_V2_MEM_SLAB_MAX_COUNT, 4);
+		  CONFIG_CMSIS_V2_MEM_SLAB_MAX_COUNT, 4);
 
 static const osMemoryPoolAttr_t init_mslab_attrs = {
 	.name = "ZephyrMemPool",
@@ -25,7 +25,7 @@ static const osMemoryPoolAttr_t init_mslab_attrs = {
  * @brief Create and Initialize a memory pool.
  */
 osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
-				const osMemoryPoolAttr_t *attr)
+				 const osMemoryPoolAttr_t *attr)
 {
 	struct cv2_mslab *mslab;
 
@@ -41,7 +41,7 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 	 * App layer
 	 */
 	if ((attr->mp_mem == NULL) ||
-		(attr->mp_size < block_count*block_size)) {
+	    (attr->mp_size < block_count * block_size)) {
 		return NULL;
 	}
 
@@ -77,16 +77,16 @@ void *osMemoryPoolAlloc(osMemoryPoolId_t mp_id, uint32_t timeout)
 
 	if (timeout == 0) {
 		retval = k_mem_slab_alloc(
-				(struct k_mem_slab *)(&mslab->z_mslab),
-				(void **)&ptr, K_NO_WAIT);
+			(struct k_mem_slab *)(&mslab->z_mslab),
+			(void **)&ptr, K_NO_WAIT);
 	} else if (timeout == osWaitForever) {
 		retval = k_mem_slab_alloc(
-				(struct k_mem_slab *)(&mslab->z_mslab),
-				(void **)&ptr, K_FOREVER);
+			(struct k_mem_slab *)(&mslab->z_mslab),
+			(void **)&ptr, K_FOREVER);
 	} else {
 		retval = k_mem_slab_alloc(
-				(struct k_mem_slab *)(&mslab->z_mslab),
-				(void **)&ptr, __ticks_to_ms(timeout));
+			(struct k_mem_slab *)(&mslab->z_mslab),
+			(void **)&ptr, __ticks_to_ms(timeout));
 	}
 
 	if (retval == 0) {
