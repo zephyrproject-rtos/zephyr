@@ -479,7 +479,13 @@ static int transceive(struct device *dev,
 		dma_start(data->d, cfg->stream[RX_STREAM]);
 	}
 
-	LL_SPI_Enable(spi);
+	/* Everything is now set, spin the plates, assuming */
+	/* we're not waiting for a trigger later */
+	if (!SPI_DEFER_GET(config->operation)) {
+		LL_SPI_Enable(spi);
+	} else   {
+		data->armed = true;
+	}
 
 	/* Now just wait for it to complete, or an error */
 	ret = spi_context_wait_for_completion(&data->ctx);
@@ -526,6 +532,23 @@ static int spi_stm32_transceive(struct device *dev,
 	return transceive(dev, config, tx_bufs, rx_bufs, false, NULL);
 }
 
+static int spi_stm32_trigger(struct device *dev,
+			     const struct spi_config *config)
+
+{
+	const struct spi_stm32_config *cfg = DEV_CFG(dev);
+	struct spi_stm32_data *data = DEV_DATA(dev);
+	SPI_TypeDef *spi = cfg->spi;
+
+	if ((!SPI_DEFER_GET(config->operation)) || (!data->armed)) {
+		return -EBUSY;
+	}
+
+	data->armed = false;
+	LL_SPI_Enable(spi);
+	return 0;
+}
+
 #ifdef CONFIG_SPI_ASYNC
 static int spi_stm32_transceive_async(struct device *dev,
 				      const struct spi_config *config,
@@ -543,6 +566,7 @@ static const struct spi_driver_api api_funcs = {
 	.transceive_async = spi_stm32_transceive_async,
 #endif
 	.release = spi_stm32_release,
+	.trigger = spi_stm32_trigger
 };
 
 static int spi_stm32_init(struct device *dev)

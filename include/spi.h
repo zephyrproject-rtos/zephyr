@@ -117,6 +117,16 @@ extern "C" {
  */
 #define SPI_CS_ACTIVE_HIGH	BIT(15)
 
+/* Defer transfer start. For interrupt and DMA modes of operation this allows
+ * a transfer to be delayed until spi_trigger is called. This is useful for
+ * setting up an SPI transfer that can respond quickly (e.g. to a pin change)
+ * with a pre-configured transfer.
+ */
+#define SPI_DEFER_TRANSFER   BIT(16)
+#define SPI_DEFER_MASK
+#define SPI_DEFER_GET(_defer_) \
+	((_defer_) & SPI_DEFER_TRANSFER)
+
 /**
  * @brief SPI Chip Select control structure
  *
@@ -159,7 +169,7 @@ struct spi_cs_control {
  */
 struct spi_config {
 	u32_t		frequency;
-	u16_t		operation;
+	u32_t		operation;
 	u16_t		slave;
 
 	const struct spi_cs_control *cs;
@@ -218,6 +228,13 @@ typedef int (*spi_api_io_async)(struct device *dev,
 typedef int (*spi_api_release)(struct device *dev,
 			       const struct spi_config *config);
 
+/**
+ * @typedef spi_api_trigger
+ * @brief Callback API for triggering SPI device.
+ * See spi_trigger() for argument descriptions
+ */
+typedef int (*spi_api_trigger)(struct device *dev,
+			       const struct spi_config *config);
 
 /**
  * @brief SPI driver API
@@ -229,6 +246,7 @@ struct spi_driver_api {
 	spi_api_io_async transceive_async;
 #endif /* CONFIG_SPI_ASYNC */
 	spi_api_release release;
+	spi_api_trigger trigger;
 };
 
 /**
@@ -410,6 +428,34 @@ static inline int _impl_spi_release(struct device *dev,
 		(const struct spi_driver_api *)dev->driver_api;
 
 	return api->release(dev, config);
+}
+
+/**
+ * @brief Trigger a configured, pending, SPI transaction
+ *
+ * Note: This function is used to trigger a previously configured
+ *       spi transfer that is deferred waiting on some external stimulus.
+ *       Typically that might be an interrupt or other external event. This
+ *       function is safe to be called from anywhere.
+ *
+ * @param dev Pointer to the device structure for the driver instance
+ * @param config Pointer to a valid spi_config structure instance.
+ */
+__syscall int spi_trigger(struct device *dev,
+			  const struct spi_config *config);
+
+static inline int _impl_spi_trigger(struct device *dev,
+				    const struct spi_config *config)
+{
+	const struct spi_driver_api *api =
+		(const struct spi_driver_api *)dev->driver_api;
+
+
+	if (!api->trigger) {
+		return -ENOTSUP;
+	}
+
+	return api->trigger(dev, config);
 }
 
 #ifdef __cplusplus
