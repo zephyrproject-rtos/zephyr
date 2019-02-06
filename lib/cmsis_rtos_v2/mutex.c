@@ -46,7 +46,13 @@ osMutexId_t osMutexNew(const osMutexAttr_t *attr)
 
 	k_mutex_init(&mutex->z_mutex);
 	mutex->state = attr->attr_bits;
-	memcpy(mutex->name, attr->name, 16);
+
+	if (attr->name == NULL) {
+		strncpy(mutex->name, init_mutex_attrs.name,
+			sizeof(mutex->name) - 1);
+	} else {
+		strncpy(mutex->name, attr->name, sizeof(mutex->name) - 1);
+	}
 
 	return (osMutexId_t)mutex;
 }

@@ -184,7 +184,14 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 			      (void *)arg, NULL, threadfunc,
 			      prio, 0, K_NO_WAIT);
 
-	memcpy(tid->name, attr->name, 16);
+
+	if (attr->name == NULL) {
+		strncpy(tid->name, init_thread_attrs.name,
+			sizeof(tid->name) - 1);
+	} else {
+		strncpy(tid->name, attr->name, sizeof(tid->name) - 1);
+	}
+
 	k_thread_name_set(&tid->z_thread, tid->name);
 
 	return (osThreadId_t)tid;

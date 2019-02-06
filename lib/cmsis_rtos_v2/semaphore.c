@@ -41,7 +41,14 @@ osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
 	}
 
 	k_sem_init(&semaphore->z_semaphore, initial_count, max_count);
-	memcpy(semaphore->name, attr->name, 16);
+
+	if (attr->name == NULL) {
+		strncpy(semaphore->name, init_sema_attrs.name,
+			sizeof(semaphore->name) - 1);
+	} else {
+		strncpy(semaphore->name, attr->name,
+			sizeof(semaphore->name) - 1);
+	}
 
 	return (osSemaphoreId_t)semaphore;
 }

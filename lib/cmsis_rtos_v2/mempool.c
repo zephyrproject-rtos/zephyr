@@ -68,7 +68,13 @@ osMemoryPoolId_t osMemoryPoolNew(uint32_t block_count, uint32_t block_size,
 	}
 
 	k_mem_slab_init(&mslab->z_mslab, mslab->pool, block_size, block_count);
-	memcpy(mslab->name, attr->name, 16);
+
+	if (attr->name == NULL) {
+		strncpy(mslab->name, init_mslab_attrs.name,
+			sizeof(mslab->name) - 1);
+	} else {
+		strncpy(mslab->name, attr->name, sizeof(mslab->name) - 1);
+	}
 
 	return (osMemoryPoolId_t)mslab;
 }

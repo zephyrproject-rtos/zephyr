@@ -62,7 +62,13 @@ osTimerId_t osTimerNew(osTimerFunc_t func, osTimerType_t type,
 	timer->status = NOT_ACTIVE;
 
 	k_timer_init(&timer->z_timer, zephyr_timer_wrapper, NULL);
-	memcpy(timer->name, attr->name, 16);
+
+	if (attr->name == NULL) {
+		strncpy(timer->name, init_timer_attrs.name,
+			sizeof(timer->name) - 1);
+	} else {
+		strncpy(timer->name, attr->name, sizeof(timer->name) - 1);
+	}
 
 	return (osTimerId_t)timer;
 }
