@@ -24,6 +24,10 @@ static void init_test_buf(u8_t *buf, size_t len, u8_t offset)
 	}
 }
 
+/**
+ * Function tests getting line from history and compares it against expected
+ * result.
+ */
 static void test_get(bool ok, bool up, u8_t *exp_buf, u16_t exp_len)
 {
 	bool res;
@@ -54,7 +58,7 @@ static void test_get(bool ok, bool up, u8_t *exp_buf, u16_t exp_len)
  * - put line to the history.
  * - read line and verify that it is the one that was put.
  */
-void test_history_add_get(void)
+static void test_history_add_get(void)
 {
 	u8_t exp_buf[HIST_BUF_SIZE];
 
@@ -72,7 +76,7 @@ void test_history_add_get(void)
 }
 
 /* Test verifies that after purging there is no line in the history. */
-void test_history_purge(void)
+static void test_history_purge(void)
 {
 	u8_t exp_buf[HIST_BUF_SIZE];
 
@@ -103,7 +107,7 @@ void test_history_purge(void)
  * - attempt to get next line in down direction and verify that there is no
  *   line.
  */
-void test_history_get_up_and_down(void)
+static void test_history_get_up_and_down(void)
 {
 	u8_t exp1_buf[HIST_BUF_SIZE];
 	u8_t exp2_buf[HIST_BUF_SIZE];
@@ -127,6 +131,126 @@ void test_history_get_up_and_down(void)
 	test_get(true, false, exp2_buf, 15); /* down - 2 */
 	test_get(true, false, exp3_buf, 20); /* down - 3 */
 	test_get(false, false, NULL, 0); /* down - nothing */
+
+	shell_history_purge(&history);
+}
+
+/* Function for getting maximal buffer size that can be stored in the history */
+static int get_max_buffer_len(void)
+{
+	u8_t buf[HIST_BUF_SIZE];
+	u8_t out_buf[HIST_BUF_SIZE];
+	int len = sizeof(buf);
+	u16_t out_len;
+
+	shell_history_init(&history);
+
+	do {
+		shell_history_put(&history, buf, len);
+		out_len = sizeof(out_buf);
+		if (shell_history_get(&history, true, out_buf, &out_len)) {
+			shell_history_purge(&history);
+			break;
+		}
+	} while (len--);
+
+	return len;
+}
+
+/* Test verifies that line that cannot fit into history buffer is not stored.
+ *
+ * Test steps:
+ * - initialize history.
+ * - put buffer that is bigger than history overall capacity.
+ * - verify that history is empty.
+ * - put short line followed by line that is close to max.
+ * - verify that long line evicted first line from history.
+ */
+static void test_too_long_line_not_stored(void)
+{
+	u8_t exp1_buf[HIST_BUF_SIZE];
+	int max_len = get_max_buffer_len();
+
+	init_test_buf(exp1_buf, sizeof(exp1_buf), 0);
+	shell_history_init(&history);
+
+	shell_history_put(&history, exp1_buf, max_len + 1);
+
+	/*validate that nothing is stored */
+	test_get(false, true, NULL, 0); /* empty */
+
+	shell_history_put(&history, exp1_buf, 20);
+	shell_history_put(&history, exp1_buf, max_len - 10);
+
+	/* Test that long entry evicts older entry. */
+	test_get(true, true, exp1_buf, max_len - 10);
+	test_get(false, true, NULL, 0); /* only one entry */
+
+	shell_history_purge(&history);
+}
+
+/* Test verifies that same line as the previous one is not stored in the
+ * history.
+ *
+ * Test steps:
+ * - initialize history.
+ * - put same line twice.
+ * - verify that only one line is in the history.
+ */
+static void test_no_duplicates_in_a_row(void)
+{
+	u8_t exp1_buf[HIST_BUF_SIZE];
+
+	init_test_buf(exp1_buf, sizeof(exp1_buf), 0);
+	shell_history_init(&history);
+
+	shell_history_put(&history, exp1_buf, 20);
+	shell_history_put(&history, exp1_buf, 20);
+
+	test_get(true, true, exp1_buf, 20);
+	/* only one line stored. */
+	test_get(false, true, NULL, 0);
+
+	shell_history_purge(&history);
+}
+
+/* Test storing long lines in the history.
+ *
+ * * Test steps:
+ * - initialize history.
+ * - Put max length line 1 in history.
+ * - Verify that it is present.
+ * - Put max length line 2 in history.
+ * - Verify that line 2 is present and line 1 was evicted.
+ * - Put max length line 3 in history.
+ * - Verify that line 3 is present and line 2 was evicted.
+ */
+static void test_storing_long_buffers(void)
+{
+	u8_t exp1_buf[HIST_BUF_SIZE];
+	u8_t exp2_buf[HIST_BUF_SIZE];
+	u8_t exp3_buf[HIST_BUF_SIZE];
+	int max_len = get_max_buffer_len();
+
+	init_test_buf(exp1_buf, sizeof(exp1_buf), 0);
+	init_test_buf(exp2_buf, sizeof(exp2_buf), 10);
+	init_test_buf(exp3_buf, sizeof(exp3_buf), 20);
+
+	shell_history_init(&history);
+
+	shell_history_put(&history, exp1_buf, max_len);
+	test_get(true, true, exp1_buf, max_len);
+	test_get(false, true, NULL, 0); /* only one entry */
+
+	shell_history_put(&history, exp2_buf, max_len);
+	test_get(true, true, exp2_buf, max_len);
+	test_get(false, true, NULL, 0); /* only one entry */
+
+	shell_history_put(&history, exp3_buf, max_len);
+	test_get(true, true, exp3_buf, max_len);
+	test_get(false, true, NULL, 0); /* only one entry */
+
+	shell_history_purge(&history);
 }
 
 void test_main(void)
@@ -134,7 +258,10 @@ void test_main(void)
 	ztest_test_suite(shell_test_suite,
 			ztest_unit_test(test_history_add_get),
 			ztest_unit_test(test_history_purge),
-			ztest_unit_test(test_history_get_up_and_down)
+			ztest_unit_test(test_history_get_up_and_down),
+			ztest_unit_test(test_too_long_line_not_stored),
+			ztest_unit_test(test_no_duplicates_in_a_row),
+			ztest_unit_test(test_storing_long_buffers)
 			);
 
 	ztest_run_test_suite(shell_test_suite);
