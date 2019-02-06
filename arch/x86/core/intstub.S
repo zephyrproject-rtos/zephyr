@@ -69,6 +69,20 @@
  * void _interrupt_enter(void *isr, void *isr_param);
  */
 SECTION_FUNC(TEXT, _interrupt_enter)
+	/*
+	 * Note that the processor has pushed both the EFLAGS register
+	 * and the logical return address (cs:eip) onto the stack prior
+	 * to invoking the handler specified in the IDT. The stack looks
+	 * like this:
+	 *
+	 *  24 SS (only on privilege level change)
+	 *  20 ESP (only on privilege level change)
+	 *  16 EFLAGS
+	 *  12 CS
+	 *  8  EIP
+	 *  4  isr_param
+	 *  0  isr   <-- stack pointer
+	 */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	pushl %eax
@@ -91,20 +105,9 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 
 	cld
 
-	/*
-	 * Note that the processor has pushed both the EFLAGS register
-	 * and the logical return address (cs:eip) onto the stack prior
-	 * to invoking the handler specified in the IDT. The stack looks
-	 * like this:
-	 *
-	 *  EFLAGS
-	 *  CS
-	 *  EIP
-	 *  isr_param
-	 *  isr   <-- stack pointer
-	 */
-
-
+#ifdef CONFIG_X86_KPTI
+	call z_x86_trampoline_to_kernel
+#endif
 	/*
 	 * Swap EAX with isr_param and EDX with isr.
 	 * Push ECX onto the stack
@@ -314,7 +317,7 @@ alreadyOnIntStack:
 	popl	%eax
 
 	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
-	iret
+	KPTI_IRET
 
 #endif /* CONFIG_PREEMPT_ENABLED */
 
@@ -350,7 +353,7 @@ nestedInterrupt:
 	popl	%edx
 	popl	%eax
 	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
-	iret
+	KPTI_IRET
 
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT

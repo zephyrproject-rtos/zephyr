@@ -649,7 +649,12 @@ extern const NANO_ESF _default_esf;
 #ifdef CONFIG_X86_MMU
 /* kernel's page table */
 extern struct x86_mmu_pdpt z_x86_kernel_pdpt;
-
+#ifdef CONFIG_X86_KPTI
+extern struct x86_mmu_pdpt z_x86_user_pdpt;
+#define USER_PDPT	z_x86_user_pdpt
+#else
+#define USER_PDPT	z_x86_kernel_pdpt
+#endif
 /**
  * @brief Fetch page table flags for a particular page
  *
@@ -683,6 +688,8 @@ void _x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
 			size_t size,
 			x86_page_entry_data_t flags,
 			x86_page_entry_data_t mask);
+
+void z_x86_reset_pages(void *start, size_t size);
 
 #endif /* CONFIG_X86_MMU */
 

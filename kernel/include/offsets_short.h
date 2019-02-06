@@ -61,7 +61,8 @@
 #define _thread_offset_to_esf \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_esf_OFFSET)
 
-
+#define _thread_offset_to_stack_start \
+	(___thread_t_stack_info_OFFSET + ___thread_stack_info_t_start_OFFSET)
 /* end - threads */
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_OFFSETS_SHORT_H_ */

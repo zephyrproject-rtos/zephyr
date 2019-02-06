@@ -72,7 +72,9 @@ SECTION_FUNC(TEXT, _exception_enter)
 
 	cld
 
-
+#ifdef CONFIG_X86_KPTI
+	call z_x86_trampoline_to_kernel
+#endif
 	/*
 	 * Swap ecx and handler function on the current stack;
 	 */
@@ -210,7 +212,7 @@ nestedException:
 	addl	$4, %esp	/* "pop" error code */
 
 	/* Pop of EFLAGS will re-enable interrupts and restore direction flag */
-	iret
+	KPTI_IRET
 
 #if CONFIG_X86_KERNEL_OOPS
 SECTION_FUNC(TEXT, _kernel_oops_handler)

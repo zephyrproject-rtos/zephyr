@@ -331,6 +331,12 @@ static void dump_page_fault(NANO_ESF *esf)
 	       cr2);
 
 #ifdef CONFIG_X86_MMU
+#ifdef CONFIG_X86_KPTI
+	if (err & US) {
+		dump_mmu_flags(&z_x86_user_pdpt, (void *)cr2);
+		return;
+	}
+#endif
 	dump_mmu_flags(&z_x86_kernel_pdpt, (void *)cr2);
 #endif
 }
@@ -376,9 +382,20 @@ static __noinit char _df_stack[8];
 
 static FUNC_NORETURN __used void _df_handler_top(void);
 
+#ifdef CONFIG_X86_KPTI
+extern char z_trampoline_stack_end[];
+#endif
+
 _GENERIC_SECTION(.tss)
 struct task_state_segment _main_tss = {
-	.ss0 = DATA_SEG
+	.ss0 = DATA_SEG,
+#ifdef CONFIG_X86_KPTI
+	/* Stack to land on when we get a soft/hard IRQ in user mode.
+	 * In a special kernel page that, unlike all other kernel pages,
+	 * is marked present in the user page table.
+	 */
+	.esp0 = (u32_t)&z_trampoline_stack_end
+#endif
 };
 
 /* Special TSS for handling double-faults with a known good stack */

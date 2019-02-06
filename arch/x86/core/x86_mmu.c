@@ -89,7 +89,7 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 		}
 
 		struct x86_mmu_pd *pd_address =
-			X86_MMU_GET_PD_ADDR_INDEX(&z_x86_kernel_pdpt, pdpte);
+			X86_MMU_GET_PD_ADDR_INDEX(&USER_PDPT, pdpte);
 
 		/* Iterate for all the pde's the buffer might take up.
 		 * (depends on the size of the buffer and start address
@@ -192,6 +192,22 @@ void _x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
 }
 
 #ifdef CONFIG_X86_USERSPACE
+void z_x86_reset_pages(void *start, size_t size)
+{
+#ifdef CONFIG_X86_KPTI
+	/* Clear both present bit and access flags. Only applies
+	 * to threads running in user mode.
+	 */
+	_x86_mmu_set_flags(&z_x86_user_pdpt, start, size,
+			   MMU_ENTRY_NOT_PRESENT,
+			   K_MEM_PARTITION_PERM_MASK | MMU_PTE_P_MASK);
+#else
+	/* Mark as supervisor read-write, user mode no access */
+	_x86_mmu_set_flags(&z_x86_kernel_pdpt, start, size,
+			   K_MEM_PARTITION_P_RW_U_NA,
+			   K_MEM_PARTITION_PERM_MASK);
+#endif /* CONFIG_X86_KPTI */
+}
 
 /* Helper macros needed to be passed to x86_update_mem_domain_pages */
 #define X86_MEM_DOMAIN_SET_PAGES   (0U)
@@ -230,18 +246,22 @@ static inline void _x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
 		partitions_count++;
 		if (page_conf == X86_MEM_DOMAIN_SET_PAGES) {
 			/* Set the partition attributes */
-			_x86_mmu_set_flags(&z_x86_kernel_pdpt,
+			u64_t attr, mask;
+
+#if CONFIG_X86_KPTI
+			attr = partition.attr | MMU_ENTRY_PRESENT;
+			mask = K_MEM_PARTITION_PERM_MASK | MMU_PTE_P_MASK;
+#else
+			attr = partition.attr;
+			mask = K_MEM_PARTITION_PERM_MASK;
+#endif /* CONFIG_X86_KPTI */
+
+			_x86_mmu_set_flags(&USER_PDPT,
 					   (void *)partition.start,
-					   partition.size,
-					   partition.attr,
-					   K_MEM_PARTITION_PERM_MASK);
+					   partition.size, attr, mask);
 		} else {
-			/* Reset the pages to supervisor RW only */
-			_x86_mmu_set_flags(&z_x86_kernel_pdpt,
-					   (void *)partition.start,
-					   partition.size,
-					   K_MEM_PARTITION_P_RW_U_NA,
-					   K_MEM_PARTITION_PERM_MASK);
+			z_x86_reset_pages((void *)partition.start,
+					  partition.size);
 		}
 	}
  out:
@@ -277,12 +297,7 @@ void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 		 "invalid partitions");
 
 	partition = domain->partitions[partition_id];
-
-	_x86_mmu_set_flags(&z_x86_kernel_pdpt, (void *)partition.start,
-			   partition.size,
-			   K_MEM_PARTITION_P_RW_U_NA,
-			   K_MEM_PARTITION_PERM_MASK);
-
+	z_x86_reset_pages((void *)partition.start, partition.size);
  out:
 	return;
 }
