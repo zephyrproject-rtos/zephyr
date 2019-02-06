@@ -68,6 +68,12 @@ config CMSIS_V2_MSGQ_MAX_COUNT
 	help
 	  Mention maximum number of message queues in CMSIS RTOS V2 compliant application.
 
+config CMSIS_V2_MSGQ_MAX_DYNAMIC_SIZE
+	int "Maximum dynamic message queue size in CMSIS RTOS V2 application"
+	default 0
+	help
+	  Mention maximum dynamic size of message queues in CMSIS RTOS V2 compliant application.
+
 config CMSIS_V2_EVT_FLAGS_MAX_COUNT
 	int "Maximum event flags count in CMSIS RTOS V2 application"
 	default 5
