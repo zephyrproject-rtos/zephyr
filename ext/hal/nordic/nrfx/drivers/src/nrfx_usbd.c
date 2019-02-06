@@ -265,7 +265,7 @@ static uint32_t m_ep_ready;
  * Mask prepared USBD data for transmission.
  * It is cleared when no more data to transmit left.
  */
-static uint32_t m_ep_dma_waiting;
+static atomic_t m_ep_dma_waiting;
 
 /**
  * @brief Current EasyDMA state.
@@ -850,7 +850,7 @@ void nrfx_usbd_ep_abort(nrfx_usbd_ep_t ep)
  */
 static void usbd_ep_abort_all(void)
 {
-    uint32_t ep_waiting = m_ep_dma_waiting | (m_ep_ready & NRFX_USBD_EPOUT_BIT_MASK);
+    atomic_t ep_waiting = m_ep_dma_waiting | (m_ep_ready & NRFX_USBD_EPOUT_BIT_MASK);
     while (0 != ep_waiting)
     {
         uint8_t bitpos = __CLZ(__RBIT(ep_waiting));
