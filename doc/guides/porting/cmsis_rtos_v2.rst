@@ -17,9 +17,6 @@ Kernel
    osKernelGetState, osKernelSuspend, osKernelResume, osKernelInitialize
    and osKernelStart are not supported.
 
-Threads
-   osThreadJoin and osThreadDetach are not supported.
-
 Mutex
    osMutexPrioInherit is supported by default and is not configurable,
    you cannot select/unselect this attribute.
