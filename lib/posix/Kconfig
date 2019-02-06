@@ -15,6 +15,7 @@ config	POSIX_MAX_FDS
 config POSIX_API
 	depends on !ARCH_POSIX
 	bool "POSIX APIs"
+	select NEWLIB_LIBC
 	select POSIX_HEADERS
 	select POSIX_SLEEP
 	select POSIX_CLOCK
