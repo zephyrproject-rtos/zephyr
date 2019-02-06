@@ -26,34 +26,20 @@ static const osMemoryPoolAttr_t mp_attrs = {
 	.mp_size = sizeof(struct mem_block) * MAX_BLOCKS,
 };
 
-/**
- * @brief Test memory pool allocation and free
- *
- * @see osMemoryPoolNew(), osMemoryPoolAlloc(), osMemoryPoolFree(),
- */
-void test_mempool(void)
+static void mempool_common_tests(osMemoryPoolId_t mp_id,
+				 const char *expected_name)
 {
 	int i;
-	osMemoryPoolId_t mp_id;
 	osMemoryPoolId_t dummy_id = NULL;
 	const char *name;
 	struct mem_block *addr_list[MAX_BLOCKS + 1];
 	osStatus_t status;
 
-	/* Create memory pool with invalid block size */
-	mp_id = osMemoryPoolNew(MAX_BLOCKS + 1, sizeof(struct mem_block),
-				&mp_attrs);
-	zassert_true(mp_id == NULL, "osMemoryPoolNew worked unexpectedly!");
-
-	mp_id = osMemoryPoolNew(MAX_BLOCKS, sizeof(struct mem_block),
-				&mp_attrs);
-	zassert_true(mp_id != NULL, "mempool creation failed");
-
 	zassert_true(osMemoryPoolGetName(dummy_id) == NULL,
 		     "Something's wrong with osMemoryPoolGetName!");
 
 	name = osMemoryPoolGetName(mp_id);
-	zassert_true(strcmp(mp_attrs.name, name) == 0,
+	zassert_true(strcmp(expected_name, name) == 0,
 		     "Error getting mempool name");
 
 	zassert_equal(osMemoryPoolGetCapacity(dummy_id), 0,
@@ -108,4 +94,41 @@ void test_mempool(void)
 
 	status = osMemoryPoolDelete(mp_id);
 	zassert_true(status == osOK, "mempool delete failure");
+}
+
+/**
+ * @brief Test dynamic memory pool allocation and free
+ *
+ * @see osMemoryPoolNew(), osMemoryPoolAlloc(), osMemoryPoolFree(),
+ */
+void test_mempool_dynamic(void)
+{
+	osMemoryPoolId_t mp_id;
+
+	mp_id = osMemoryPoolNew(MAX_BLOCKS, sizeof(struct mem_block),
+				NULL);
+	zassert_true(mp_id != NULL, "mempool creation failed");
+
+	mempool_common_tests(mp_id, "ZephyrMemPool");
+}
+
+/**
+ * @brief Test memory pool allocation and free
+ *
+ * @see osMemoryPoolNew(), osMemoryPoolAlloc(), osMemoryPoolFree(),
+ */
+void test_mempool(void)
+{
+	osMemoryPoolId_t mp_id;
+
+	/* Create memory pool with invalid block size */
+	mp_id = osMemoryPoolNew(MAX_BLOCKS + 1, sizeof(struct mem_block),
+				&mp_attrs);
+	zassert_true(mp_id == NULL, "osMemoryPoolNew worked unexpectedly!");
+
+	mp_id = osMemoryPoolNew(MAX_BLOCKS, sizeof(struct mem_block),
+				&mp_attrs);
+	zassert_true(mp_id != NULL, "mempool creation failed");
+
+	mempool_common_tests(mp_id, mp_attrs.name);
 }
