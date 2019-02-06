@@ -11,7 +11,9 @@
 extern void test_kernel_apis(void);
 extern void test_delay(void);
 extern void test_thread_apis(void);
+extern void test_thread_apis_dynamic(void);
 extern void test_thread_prio(void);
+extern void test_thread_prio_dynamic(void);
 extern void test_timer(void);
 extern void test_mutex(void);
 extern void test_mutex_lock_timeout(void);
@@ -32,7 +34,9 @@ void test_main(void)
 			 ztest_unit_test(test_kernel_apis),
 			 ztest_unit_test(test_delay),
 			 ztest_unit_test(test_thread_apis),
+			 ztest_unit_test(test_thread_apis_dynamic),
 			 ztest_unit_test(test_thread_prio),
+			 ztest_unit_test(test_thread_prio_dynamic),
 			 ztest_unit_test(test_timer),
 			 ztest_unit_test(test_mutex),
 			 ztest_unit_test(test_mutex_lock_timeout),
