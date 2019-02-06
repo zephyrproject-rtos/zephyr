@@ -123,6 +123,17 @@ config X86_USERSPACE
 	  supporting user-level threads that are protected from each other and
 	  from crashing the kernel.
 
+config X86_KPTI
+	bool "Enable kernel page table isolation"
+	default y
+	depends on USERSPACE
+	depends on !X86_NO_MELTDOWN
+	help
+	  Implements kernel page table isolation to mitigate Meltdown exploits
+	  to read Kernel RAM. Incurs a significant performance cost for
+	  user thread interrupts and system calls, and significant footprint
+	  increase for additional page tables and trampoline stacks.
+
 menu "Architecture Floating Point Options"
 depends on CPU_HAS_FPU
 
