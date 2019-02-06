@@ -930,7 +930,8 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 	}
 
 	PR("[%2d] %p %p\t%s\t%16s\t%16s\n",
-	   (*count) + 1, conn, conn->cb, net_proto2str(conn->proto),
+	   (*count) + 1, conn, conn->cb,
+	   net_proto2str(conn->local_addr.sa_family, conn->proto),
 	   addr_local, addr_remote);
 
 	(*count)++;

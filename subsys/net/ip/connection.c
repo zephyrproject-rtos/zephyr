@@ -285,7 +285,7 @@ static inline enum net_verdict cache_check(struct net_pkt *pkt,
 
 			NET_DBG("Cache %s listener for pkt %p src port %u "
 				"dst port %u family %d cache[%d] 0x%x",
-				net_proto2str(proto), pkt,
+				net_proto2str(net_pkt_family(pkt), proto), pkt,
 				src_port, dst_port,
 				net_pkt_family(pkt), *pos,
 				conn_cache[*pos].value);
@@ -844,7 +844,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 #endif
 
 	NET_DBG("Check %s listener for pkt %p src port %u dst port %u"
-		" family %d", net_proto2str(proto), pkt,
+		" family %d", net_proto2str(net_pkt_family(pkt), proto), pkt,
 		ntohs(src_port), ntohs(dst_port), net_pkt_family(pkt));
 
 	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
