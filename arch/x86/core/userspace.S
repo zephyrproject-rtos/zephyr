@@ -21,10 +21,174 @@ GTEXT(z_arch_user_string_nlen_fixup)
 /* Imports */
 GDATA(_k_syscall_table)
 
+#ifdef CONFIG_X86_KPTI
+/* Switch from the shadow to the kernel page table, switch to the interrupted
+ * thread's kernel stack, and copy all context from the trampoline stack.
+ *
+ * Assumes all registers are callee-saved since this gets called from other
+ * ASM code. Assumes a particular stack layout which is correct for
+ * _exception_enter and _interrupt_enter when invoked with a call instruction:
+ *
+ *  28 SS
+ *  24 ES
+ *  20 EFLAGS
+ *  16 CS
+ *  12 EIP
+ *  8  isr_param or exc code
+ *  4  isr or exc handler
+ *  0  return address
+ */
+SECTION_FUNC(TEXT, z_x86_trampoline_to_kernel)
+	/* Check interrupted code segment to see if we came from ring 3
+	 * and hence on the trampoline stack
+	 */
+	testb $3, 16(%esp) /* Offset of CS */
+	jz 1f
+
+	/* Stash these regs as we need to use them */
+	pushl	%esi
+	pushl	%edi
+
+	/* Switch to kernel page table */
+	movl	$z_x86_kernel_pdpt, %esi
+	movl	%esi, %cr3
+
+	/* Save old trampoline stack pointer in %edi */
+	movl	%esp, %edi
+
+	/* %esp = _kernel->current->stack_info.start
+	 *
+	 * This is the lowest address of the user mode stack, and higest
+	 * address of the kernel stack, they are adjacent.
+	 * We want to transplant context here.
+	 */
+	movl	$_kernel, %esi
+	movl	_kernel_offset_to_current(%esi), %esi
+	movl	_thread_offset_to_stack_start(%esi), %esp
+
+	/* Transplant stack context and restore ESI/EDI. Taking care to zero
+	 * or put uninteresting values where we stashed ESI/EDI since the
+	 * trampoline page is insecure and there might a context switch
+	 * on the way out instead of returning to the original thread
+	 * immediately.
+	 */
+	pushl	36(%edi)	/* SS */
+	pushl	32(%edi)	/* ESP */
+	pushl	28(%edi)	/* EFLAGS */
+	pushl	24(%edi)	/* CS */
+	pushl	20(%edi)	/* EIP */
+	pushl	16(%edi)	/* error code or isr parameter */
+	pushl	12(%edi)	/* exception/irq handler */
+	pushl   8(%edi)		/* return address */
+	movl	4(%edi), %esi	/* restore ESI */
+	movl	$0, 4(%edi)	/* Zero old esi storage area */
+	xchgl	%edi, (%edi)	/* Exchange old edi to restore it and put
+				   old sp in the storage area */
+
+	/* Trampoline stack should have nothing sensitive in it at this point */
+1:
+	ret
+
+/* Copy interrupt return stack context to the trampoline stack, switch back
+ * to the user page table, and only then 'iret'. We jump to this instead
+ * of calling 'iret' if KPTI is turned on.
+ *
+ * Stack layout is expected to be as follows:
+ *
+ * 16 SS
+ * 12 ESP
+ * 8 EFLAGS
+ * 4 CS
+ * 0 EIP
+ *
+ * This function is conditionally macroed to KPTI_IRET/KPTI_IRET_USER
+ */
+SECTION_FUNC(TEXT, z_x86_trampoline_to_user)
+	/* Check interrupted code segment to see if we came from ring 3
+	 * and hence on the trampoline stack
+	 */
+	testb $3, 4(%esp) /* Offset of CS */
+	jz 1f
+
+	/* Otherwise, fall through ... */
+
+SECTION_FUNC(TEXT, z_x86_trampoline_to_user_always)
+	/* Stash EDI, need a free register */
+	pushl	%edi
+
+	/* Store old stack pointer and switch to trampoline stack */
+	movl	%esp, %edi
+	movl	$z_trampoline_stack_end, %esp
+
+	/* Lock IRQs until we get out, we don't want anyone else using the
+	 * trampoline stack
+	 */
+	cli
+
+	/* Copy context */
+	pushl	20(%edi)	/* SS */
+	pushl	16(%edi)	/* ESP */
+	pushl	12(%edi)	/* EFLAGS */
+	pushl   8(%edi)		/* CS */
+	pushl   4(%edi)		/* EIP */
+	xchgl	%edi, (%edi)	/* Exchange old edi to restore it and put
+				   trampoline stack address in its old storage
+				   area */
+	/* Switch to user page table */
+	pushl	%eax
+	movl	$z_x86_user_pdpt, %eax
+	movl	%eax, %cr3
+	popl	%eax
+	movl	$0, -4(%esp)	/* Delete stashed EAX data */
+
+	/* Trampoline stack should have nothing sensitive in it at this point */
+1:
+	iret
+#endif /* CONFIG_X86_KPTI */
+
 /* Landing site for syscall SW IRQ. Marshal arguments and call C function for
- * further processing. We're on the kernel stack for the invoking thread.
+ * further processing. We're on the kernel stack for the invoking thread,
+ * unless KPTI is enabled, in which case we're on the trampoline stack and
+ * need to get off it before enabling interrupts.
  */
 SECTION_FUNC(TEXT, _x86_syscall_entry_stub)
+#ifdef CONFIG_X86_KPTI
+	/* Stash these regs as we need to use them */
+	pushl	%esi
+	pushl	%edi
+
+	/* Switch to kernel page table */
+	movl	$z_x86_kernel_pdpt, %esi
+	movl	%esi, %cr3
+
+	/* Save old trampoline stack pointer in %edi */
+	movl	%esp, %edi
+
+	/* %esp = _kernel->current->stack_info.start
+	 *
+	 * This is the lowest address of the user mode stack, and higest
+	 * address of the kernel stack, they are adjacent.
+	 * We want to transplant context here.
+	 */
+	movl	$_kernel, %esi
+	movl	_kernel_offset_to_current(%esi), %esi
+	movl	_thread_offset_to_stack_start(%esi), %esp
+
+	/* Transplant context according to layout above. Variant of logic
+	 * in x86_trampoline_to_kernel */
+	pushl	24(%edi)	/* SS */
+	pushl	20(%edi)	/* ESP */
+	pushl	16(%edi)	/* EFLAGS */
+	pushl	12(%edi)	/* CS */
+	pushl	8(%edi)		/* EIP */
+	movl	4(%edi), %esi	/* restore ESI */
+	movl	$0, 4(%edi)	/* Zero old esi storage area */
+	xchgl	%edi, (%edi)	/* Exchange old edi to restore it and put
+				   old sp in the storage area */
+
+	/* Trampoline stack should have nothing sensitive in it at this point */
+#endif /* CONFIG_X86_KPTI */
+
 	sti			/* re-enable interrupts */
 	cld			/* clear direction flag, restored on 'iret' */
 
@@ -74,7 +238,7 @@ _id_ok:
 	pop	%ecx		/* Clean ECX and get arg6 off the stack */
 	pop	%edx		/* Clean EDX and get ssf off the stack */
 #endif
-	iret
+	KPTI_IRET_USER
 
 _bad_syscall:
 	/* ESI had a bogus syscall value in it, replace with the bad syscall
@@ -237,4 +401,4 @@ SECTION_FUNC(TEXT, _x86_userspace_enter)
 #endif
 
 	/* We will land in _thread_entry() in user mode after this */
-	iret
+	KPTI_IRET_USER

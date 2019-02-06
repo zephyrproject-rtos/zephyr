@@ -27,7 +27,7 @@ void reset_flag(void);
 void reset_multi_pte_page_flag(void);
 void reset_multi_pde_flag(void);
 
-#define PDPT &z_x86_kernel_pdpt
+#define PDPT &USER_PDPT
 
 #define ADDR_PAGE_1 ((u8_t *)__bss_start + SKIP_SIZE * MMU_PAGE_SIZE)
 #define ADDR_PAGE_2 ((u8_t *)__bss_start + (SKIP_SIZE + 1) * MMU_PAGE_SIZE)

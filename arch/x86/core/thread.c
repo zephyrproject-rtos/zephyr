@@ -132,22 +132,28 @@ void _x86_swap_update_page_tables(struct k_thread *incoming,
 				  struct k_thread *outgoing)
 {
 	/* Outgoing thread stack no longer accessible */
-	_x86_mmu_set_flags(&z_x86_kernel_pdpt,
-			   (void *)outgoing->stack_info.start,
-			   ROUND_UP(outgoing->stack_info.size, MMU_PAGE_SIZE),
-			   MMU_ENTRY_SUPERVISOR, MMU_PTE_US_MASK);
-
+	z_x86_reset_pages((void *)outgoing->stack_info.start,
+			   ROUND_UP(outgoing->stack_info.size, MMU_PAGE_SIZE));
 
 	/* Userspace can now access the incoming thread's stack */
-	_x86_mmu_set_flags(&z_x86_kernel_pdpt,
+	_x86_mmu_set_flags(&USER_PDPT,
 			   (void *)incoming->stack_info.start,
 			   ROUND_UP(incoming->stack_info.size, MMU_PAGE_SIZE),
-			   MMU_ENTRY_USER, MMU_PTE_US_MASK);
+			   MMU_ENTRY_PRESENT | K_MEM_PARTITION_P_RW_U_RW,
+			   K_MEM_PARTITION_PERM_MASK | MMU_PTE_P_MASK);
 
+#ifndef CONFIG_X86_KPTI
 	/* In case of privilege elevation, use the incoming thread's kernel
-	 * stack, the top of the thread stack is the bottom of the kernel stack
+	 * stack, the top of the thread stack is the bottom of the kernel
+	 * stack.
+	 *
+	 * If KPTI is enabled, then privilege elevation always lands on the
+	 * trampoline stack and the irq/sycall code has to manually transition
+	 * off of it to the thread's kernel stack after switching page
+	 * tables.
 	 */
 	_main_tss.esp0 = incoming->stack_info.start;
+#endif
 
 	/* If either thread defines different memory domains, efficiently
 	 * switch between them
