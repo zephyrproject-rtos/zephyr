@@ -67,6 +67,17 @@ extensions = [
     'zephyr.link-roles'
 ]
 
+# If moderncmakedomain is missing, then excluding just zephyr-cmake.rst
+# is enough not to generate any new error or warning. In other words
+# this part of the documentation can probably be made optional.
+try:
+    import sphinxcontrib.moderncmakedomain
+except ImportError:
+    pass
+else:
+    extensions += [ 'sphinxcontrib.moderncmakedomain' ]
+    primary_domain = 'cmake'
+
 # Only use SVG converter when it is really needed, e.g. LaTeX.
 if tags.has("svgconvert"):
     extensions.append('sphinxcontrib.rsvgconverter')

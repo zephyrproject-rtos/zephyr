@@ -91,6 +91,7 @@ set(EXTRACT_CONTENT_COMMAND
   --ignore ${CMAKE_CURRENT_BINARY_DIR}
   # Copy all files in doc to the rst folder.
   "*:doc:${RST_OUT}"
+&& ./cmake_hack.sh
   # We want to copy the .rst files in samples/ and boards/ to the rst
   # folder, and also the doc folder inside rst.
   #
@@ -300,10 +301,20 @@ add_custom_target(
 
 endif()
 
+# Hack disabling doxygen entirely when not interested in it, builds docs
+# about 3 times faster.  This unsurprisingly generate at lot of "cannot
+# find doxygengroup" warnings but only when building from scratch the
+# first time.
+add_custom_target(
+  fakedoxylog
+  COMMAND echo "Doxygen disabled with doc/CMakeLists.txt hack" > ${DOXY_LOG}
+)
+
 #
 # Dependencies and final targets
 #
-add_dependencies(html content doxy_real_modified_times kconfig)
+#add_dependencies(html content doxy_real_modified_times kconfig)
+add_dependencies(html content fakedoxylog kconfig)
 
 add_custom_target(
   htmldocs

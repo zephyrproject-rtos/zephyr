@@ -1,3 +1,8 @@
+
+#.rst:
+# /cmake/extensions.cmake
+# -----------------------------
+
 ########################################################
 # Table of contents
 ########################################################
@@ -301,7 +306,8 @@ macro(get_property_and_add_prefix result target property prefix)
   endforeach()
 endmacro()
 
-# 1.2 zephyr_library_*
+#.rst:
+# .. command:: zephyr_library_*
 #
 # Zephyr libraries use CMake's library concept and a set of
 # assumptions about how zephyr code is organized to cut down on

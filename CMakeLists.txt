@@ -1,4 +1,8 @@
 # *DOCUMENTATION*
+
+#.rst:
+# /CMakeLists.txt
+# ---------------------
 #
 # Note that this is *NOT* the top-level CMakeLists.txt. That's in the
 # application. See the Application Development Primer documentation
@@ -45,6 +49,9 @@ endif()
 define_property(GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT BRIEF_DOCS " " FULL_DOCS " ")
 set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BFD format
 
+#.rst:
+# .. variable:: add_library(zephyr_interface INTERFACE)
+#
 # "zephyr_interface" is a source-less library that encapsulates all the global
 # compiler options needed by all source files. All zephyr libraries,
 # including the library named "zephyr" link with this library to
@@ -52,6 +59,12 @@ set_property(   GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT elf32-little${ARCH}) # BF
 # https://cmake.org/cmake/help/latest/manual/cmake-buildsystem.7.html#interface-libraries
 add_library(zephyr_interface INTERFACE)
 
+#.rst:
+# .. image:: zephyr_interface.svg
+
+#.rst:
+# .. variable:: zephyr_library_name(zephyr)
+#
 # "zephyr" is a catch-all CMake library for source files that can be
 # built purely with the include paths, defines, and other compiler
 # flags that come with zephyr_interface.

@@ -1,3 +1,7 @@
+
+#.rst:
+# /app/boilerplate.cmake
+# ----------------------------
 # This file must be included into the toplevel CMakeLists.txt file of
 # Zephyr applications, e.g. zephyr/samples/hello_world/CMakeLists.txt
 # must start with the line:
@@ -6,7 +10,7 @@
 #
 # It exists to reduce boilerplate code that Zephyr expects to be in
 # application CMakeLists.txt code.
-
+#
 # CMake version 3.13.1 is the real minimum supported version.
 #
 # Unfortunately CMake requires the toplevel CMakeLists.txt file to
@@ -452,6 +456,9 @@ if(CONFIG_QEMU_TARGET)
   endif()
 endif()
 
+#.rst:
+# .. variable:: zephyr_library_named(app)
+#
 # "app" is a CMake library containing all the application code and is
 # modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
 # that was specified when cmake was called.
@@ -460,6 +467,9 @@ set_property(TARGET app PROPERTY ARCHIVE_OUTPUT_DIRECTORY app)
 
 add_subdirectory(${ZEPHYR_BASE} ${__build_dir})
 
+#.rst:
+# .. command:: target_link_libraries_ifdef(app ZEPHYR_INTERFACE_LIBS)
+#
 # Link 'app' with the Zephyr interface libraries.
 #
 # NB: This must be done in boilerplate.cmake because 'app' can only be
