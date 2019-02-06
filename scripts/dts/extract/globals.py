@@ -115,23 +115,17 @@ def get_chosen(root):
 
 
 def get_phandles(root, name, handles):
-    if 'props' in root:
-        handle = root['props'].get('phandle')
-        enabled = root['props'].get('status')
-
-    if enabled == "disabled":
+    if root['props'].get('status') == 'disabled':
         return
 
-    if handle is not None:
-        phandles[handle] = name
+    if 'phandle' in root['props']:
+        phandles[root['props']['phandle']] = name
 
     if name != '/':
         name += '/'
 
-    if isinstance(root, dict):
-        if root['children']:
-            for k, v in root['children'].items():
-                get_phandles(v, name + k, handles)
+    for k, v in root['children'].items():
+        get_phandles(v, name + k, handles)
 
 
 def insert_defs(node_address, new_defs, new_aliases):
