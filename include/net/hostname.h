@@ -41,7 +41,7 @@ void net_hostname_init(void);
 #else
 static inline const char *net_hostname_get(void)
 {
-	return NULL;
+	return "zephyr";
 }
 
 static inline void net_hostname_init(void)
