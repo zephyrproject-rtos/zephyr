@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+if BOARD_MEC2016EVB_ASSY6797
+
+config BOARD
+	default "mec2016evb_assy6797"
+
+if UART_NS16550
+
+config UART_NS16550_PORT_0
+	def_bool y if UART_CONSOLE
+
+endif
+
+endif #BOARD_MEC2016EVB_ASSY6797

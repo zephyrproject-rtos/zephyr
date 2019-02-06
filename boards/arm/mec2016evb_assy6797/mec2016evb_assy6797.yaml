@@ -1,0 +1,15 @@
+#
+# Copyright (c) 2019, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mec2016evb_assy6797
+name: MEC2016 EVB ASSY 6797
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 416

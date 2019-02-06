@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2019, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_MEC2016EVB_ASSY6797
+	bool "Microchip MEC2016 EVB ASSY 6797 Development board"
+	depends on SOC_MEC1701_QSZ
