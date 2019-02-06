@@ -172,8 +172,8 @@ static struct net_pkt *setup_gptp_frame(struct net_if *iface,
 	net_buf_add(pkt->buffer, sizeof(struct gptp_hdr) + extra_header);
 	net_pkt_set_gptp(pkt, true);
 
-	net_pkt_lladdr_src(pkt)->addr = (u8_t *)net_if_get_link_addr(iface);
-	net_pkt_lladdr_src(pkt)->len = sizeof(struct net_eth_addr);
+	net_pkt_lladdr_src(pkt)->addr = net_if_get_link_addr(iface)->addr;
+	net_pkt_lladdr_src(pkt)->len = net_if_get_link_addr(iface)->len;
 
 	net_pkt_lladdr_dst(pkt)->addr = (u8_t *)&gptp_multicast_eth_addr;
 	net_pkt_lladdr_dst(pkt)->len = sizeof(struct net_eth_addr);
