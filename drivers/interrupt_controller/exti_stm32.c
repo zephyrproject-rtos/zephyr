@@ -341,7 +341,7 @@ static inline void __stm32_exti_isr_22(void *arg)
 {
 	__stm32_exti_isr(22, 23, arg);
 }
-#endif /* CONFIG_SOC_SERIES_STM32{F4X F7X, F2X} */
+#endif
 #ifdef CONFIG_SOC_SERIES_STM32F7X
 static inline void __stm32_exti_isr_23(void *arg)
 {
