@@ -57,17 +57,12 @@ class DTFlash(DTDirective):
         insert_defs(node_address, prop_def, prop_alias)
 
     def _extract_flash(self, node_address, prop, def_label):
-        load_defs = {}
-
         if node_address == 'dummy-flash':
-            load_defs = {
-                'DT_FLASH_BASE_ADDRESS': 0,
-                'DT_FLASH_SIZE': 0
-            }
-
             # We will add addr/size of 0 for systems with no flash controller
             # This is what they already do in the Kconfig options anyway
-            insert_defs(node_address, load_defs, {})
+            insert_defs(node_address,
+                        {'DT_FLASH_BASE_ADDRESS': 0, 'DT_FLASH_SIZE': 0},
+                        {})
             self._flash_base_address = 0
             return
 
@@ -107,25 +102,19 @@ class DTFlash(DTDirective):
                 for x in range(nr_size_cells):
                     size += props.pop(0) << (32 * (nr_size_cells - x - 1))
 
-            addr += translate_addr(addr, node_address,
-                    nr_address_cells, nr_size_cells)
+            addr += translate_addr(addr, node_address, nr_address_cells,
+                                   nr_size_cells)
 
-            load_defs['DT_FLASH_BASE_ADDRESS'] = hex(addr)
-            load_defs['DT_FLASH_SIZE'] = int(size / 1024)
+            insert_defs(node_address,
+                        {'DT_FLASH_BASE_ADDRESS': hex(addr),
+                         'DT_FLASH_SIZE': size//1024},
+                        {})
 
-        flash_props = ["label", "write-block-size", "erase-block-size"]
-        for prop in flash_props:
+        for prop in 'label', 'write-block-size', 'erase-block-size':
             if prop in self._flash_node['props']:
                 default.extract(node_address, prop, None, def_label)
-        insert_defs(node_address, load_defs, {})
-
-        #for address in reduced:
-        #    if address.startswith(node_address) and 'partition@' in address:
-        #        self._extract_partition(address, 'partition', None, def_label)
 
     def _extract_code_partition(self, node_address, prop, def_label):
-        load_defs = {}
-
         if node_address == 'dummy-flash':
             node = None
         else:
@@ -140,14 +129,15 @@ class DTFlash(DTDirective):
             # only compute the load offset if the code partition
             # is not the same as the flash base address
             load_offset = node['props']['reg'][0]
-            load_defs['DT_CODE_PARTITION_OFFSET'] = load_offset
             load_size = node['props']['reg'][1]
-            load_defs['DT_CODE_PARTITION_SIZE'] = load_size
         else:
-            load_defs['DT_CODE_PARTITION_OFFSET'] = 0
-            load_defs['DT_CODE_PARTITION_SIZE'] = 0
+            load_offset = 0
+            load_size = 0
 
-        insert_defs(node_address, load_defs, {})
+        insert_defs(node_address,
+                    {'DT_CODE_PARTITION_OFFSET': load_offset,
+                     'DT_CODE_PARTITION_SIZE': load_size},
+                    {})
 
     ##
     # @brief Extract flash
