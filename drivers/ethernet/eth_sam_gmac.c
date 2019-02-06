@@ -103,6 +103,14 @@ static struct net_buf *rx_frag_list_que1[PRIORITY_QUEUE1_RX_DESC_COUNT];
 #if GMAC_PRIORITY_QUEUE_NO == 2
 static struct net_buf *rx_frag_list_que2[PRIORITY_QUEUE2_RX_DESC_COUNT];
 #endif
+/* TX buffer accounting list */
+static struct net_buf *tx_frag_list_que0[MAIN_QUEUE_TX_DESC_COUNT];
+#if GMAC_PRIORITY_QUEUE_NO >= 1
+static struct net_buf *tx_frag_list_que1[PRIORITY_QUEUE1_TX_DESC_COUNT];
+#endif
+#if GMAC_PRIORITY_QUEUE_NO == 2
+static struct net_buf *tx_frag_list_que2[PRIORITY_QUEUE2_TX_DESC_COUNT];
+#endif
 /* TX frames accounting list */
 static struct net_pkt *tx_frame_list_que0[CONFIG_NET_PKT_TX_COUNT + 1];
 #if GMAC_PRIORITY_QUEUE_NO >= 1
@@ -274,6 +282,7 @@ static void tx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 	tx_desc_list->buf[tx_desc_list->len - 1].w1 |= GMAC_TXW1_WRAP;
 
 	/* Reset TX frame list */
+	ring_buf_reset(&queue->tx_frag_list);
 	ring_buf_reset(&queue->tx_frames);
 }
 
@@ -474,6 +483,7 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 {
 	struct gmac_desc_list *tx_desc_list = &queue->tx_desc_list;
 	struct gmac_desc *tx_desc;
+	struct net_buf *frag;
 	struct net_pkt *pkt;
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 	u16_t vlan_tag = NET_VLAN_TAG_UNSPEC;
@@ -492,8 +502,13 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 		MODULO_INC(tx_desc_list->tail, tx_desc_list->len);
 		k_sem_give(&queue->tx_desc_sem);
 
+		/* Release net buffer to the buffer pool */
+		frag = UINT_TO_POINTER(ring_buf_get(&queue->tx_frag_list));
+		net_pkt_frag_unref(frag);
+		LOG_DBG("Dropping frag %p", frag);
+
 		if (tx_desc->w1 & GMAC_TXW1_LASTBUFFER) {
-			/* Release net buffer to the buffer pool */
+			/* Release net packet to the packet pool */
 			pkt = UINT_TO_POINTER(ring_buf_get(&queue->tx_frames));
 #if defined(CONFIG_PTP_CLOCK_SAM_GMAC)
 #if defined(CONFIG_NET_VLAN)
@@ -526,6 +541,8 @@ static void tx_completed(Gmac *gmac, struct gmac_queue *queue)
 static void tx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 {
 	struct net_pkt *pkt;
+	struct net_buf *frag;
+	struct ring_buf *tx_frag_list = &queue->tx_frag_list;
 	struct ring_buf *tx_frames = &queue->tx_frames;
 
 	queue->err_tx_flushed_count++;
@@ -533,9 +550,18 @@ static void tx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 	/* Stop transmission, clean transmit pipeline and control registers */
 	gmac->GMAC_NCR &= ~GMAC_NCR_TXEN;
 
+	/* Free all frag resources in the TX path */
+	while (tx_frag_list->tail != tx_frag_list->head) {
+		/* Release net buffer to the buffer pool */
+		frag = UINT_TO_POINTER(tx_frag_list->buf[tx_frag_list->tail]);
+		net_pkt_frag_unref(frag);
+		LOG_DBG("Dropping frag %p", frag);
+		MODULO_INC(tx_frag_list->tail, tx_frag_list->len);
+	}
+
 	/* Free all pkt resources in the TX path */
 	while (tx_frames->tail != tx_frames->head) {
-		/* Release net buffer to the buffer pool */
+		/* Release net packet to the packet pool */
 		pkt = UINT_TO_POINTER(tx_frames->buf[tx_frames->tail]);
 		net_pkt_unref(pkt);
 		LOG_DBG("Dropping pkt %p", pkt);
@@ -1306,6 +1332,12 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 		__ASSERT(tx_desc_list->head != tx_desc_list->tail,
 			 "tx_desc_list overflow");
 
+		/* Account for a sent frag */
+		ring_buf_put(&queue->tx_frag_list, POINTER_TO_UINT(frag));
+
+		/* frag is internally queued, so it requires to hold a reference */
+		net_pkt_frag_ref(frag);
+
 		irq_unlock(key);
 
 		/* Continue with the rest of fragments (only data) */
@@ -1860,6 +1892,10 @@ static struct eth_sam_dev_data eth0_data = {
 				.buf = (u32_t *)rx_frag_list_que0,
 				.len = ARRAY_SIZE(rx_frag_list_que0),
 			},
+			.tx_frag_list = {
+				.buf = (u32_t *)tx_frag_list_que0,
+				.len = ARRAY_SIZE(tx_frag_list_que0),
+			},
 			.tx_frames = {
 				.buf = (u32_t *)tx_frame_list_que0,
 				.len = ARRAY_SIZE(tx_frame_list_que0),
@@ -1878,6 +1914,10 @@ static struct eth_sam_dev_data eth0_data = {
 			.rx_frag_list = {
 				.buf = (u32_t *)rx_frag_list_que1,
 				.len = ARRAY_SIZE(rx_frag_list_que1),
+			},
+			.tx_frag_list = {
+				.buf = (u32_t *)tx_frag_list_que1,
+				.len = ARRAY_SIZE(tx_frag_list_que1),
 			},
 			.tx_frames = {
 				.buf = (u32_t *)tx_frame_list_que1,
@@ -1898,6 +1938,10 @@ static struct eth_sam_dev_data eth0_data = {
 			.rx_frag_list = {
 				.buf = (u32_t *)rx_frag_list_que2,
 				.len = ARRAY_SIZE(rx_frag_list_que2),
+			},
+			.tx_frag_list = {
+				.buf = (u32_t *)tx_frag_list_que2,
+				.len = ARRAY_SIZE(tx_frag_list_que2),
 			},
 			.tx_frames = {
 				.buf = (u32_t *)tx_frame_list_que2,
