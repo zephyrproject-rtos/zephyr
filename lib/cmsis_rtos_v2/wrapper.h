@@ -20,7 +20,9 @@ struct cv2_thread {
 	struct k_poll_event poll_event;
 	u32_t signal_results;
 	char name[16];
-	u32_t state;
+	u32_t attr_bits;
+	struct k_sem join_guard;
+	char has_joined;
 };
 
 struct cv2_timer {
