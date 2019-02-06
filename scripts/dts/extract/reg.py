@@ -51,7 +51,7 @@ class DTReg(DTDirective):
 
         # generate defines
         l_base = def_label.split('/')
-        l_addr = [convert_string_to_label("BASE_ADDRESS")]
+        l_addr = [str_to_label("BASE_ADDRESS")]
         l_size = ["SIZE"]
 
         index = 0
@@ -103,15 +103,14 @@ class DTReg(DTDirective):
                 add_prop_aliases(
                     node_address,
                     lambda alias:
-                        '_'.join([convert_string_to_label(alias)] +
-                                 l_addr + l_idx),
+                        '_'.join([str_to_label(alias)] + l_addr + l_idx),
                     l_addr_fqn,
                     prop_alias)
+
                 add_prop_aliases(
                     node_address,
                     lambda alias:
-                        '_'.join([convert_string_to_label(alias)] +
-                                 l_size + l_idx),
+                        '_'.join([str_to_label(alias)] + l_size + l_idx),
                     l_size_fqn,
                     prop_alias)
 

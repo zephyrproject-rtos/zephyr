@@ -56,7 +56,7 @@ class DTInterrupts(DTDirective):
             l_idx = [str(index)]
 
             try:
-                name = [convert_string_to_label(names.pop(0))]
+                name = [str_to_label(names.pop(0))]
             except:
                 name = []
 
@@ -85,7 +85,7 @@ class DTInterrupts(DTDirective):
                     add_prop_aliases(
                         node_address,
                         lambda alias:
-                            '_'.join([convert_string_to_label(alias)] +
+                            '_'.join([str_to_label(alias)] +
                                      l_cell_prefix + name + l_cell_name),
                         l_fqn,
                         prop_alias)

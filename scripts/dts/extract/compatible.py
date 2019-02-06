@@ -36,25 +36,22 @@ class DTCompatible(DTDirective):
             compatible = [compatible, ]
 
         for i, comp in enumerate(compatible):
-            compat_label = convert_string_to_label(comp)
-
             # Generate #define
             insert_defs(node_address,
-                        {'DT_COMPAT_' + compat_label: '1'},
+                        {'DT_COMPAT_' + str_to_label(comp): '1'},
                         {})
 
             # Generate #define for BUS a "sensor" might be on, for example
             # #define DT_ST_LPS22HB_PRESS_BUS_SPI 1
             if 'parent' in binding:
-                compat_def = 'DT_' + compat_label + '_BUS_' + \
+                compat_def = 'DT_' + str_to_label(comp) + '_BUS_' + \
                     binding['parent']['bus'].upper()
                 insert_defs(node_address, {compat_def: '1'}, {})
 
         # Generate defines of the form:
         # #define DT_<COMPAT>_<INSTANCE ID> 1
         for compat, instance_id in reduced[node_address]['instance_id'].items():
-            compat_instance = 'DT_' + convert_string_to_label(compat) + '_' + \
-                str(instance_id)
+            compat_instance = 'DT_' + str_to_label(compat) + '_' + str(instance_id)
 
             insert_defs(node_address, {compat_instance: '1'}, {})
 

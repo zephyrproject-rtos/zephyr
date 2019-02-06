@@ -21,8 +21,7 @@ class DTDirective(object):
     #
     @staticmethod
     def get_label_string(label):
-        return convert_string_to_label(
-            '_'.join(x.strip() for x in label if x.strip()))
+        return str_to_label('_'.join(x.strip() for x in label if x.strip()))
 
     def __init__():
         pass
