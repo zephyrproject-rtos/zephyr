@@ -1,0 +1,4 @@
+tests:
+  peripheral.can:
+    tags: driver can
+    depends_on: can
