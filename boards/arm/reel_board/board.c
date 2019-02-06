@@ -5,8 +5,10 @@
  */
 
 #include <init.h>
-#include "board.h"
 #include <soc.h>
+
+/* Peripheral voltage ON/OFF GPIO */
+#define PERIPH_PON_PIN		0
 
 static int board_reel_board_init(struct device *dev)
 {
