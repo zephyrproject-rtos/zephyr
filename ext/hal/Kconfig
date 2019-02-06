@@ -20,6 +20,8 @@ source "ext/hal/cypress/Kconfig"
 
 source "ext/hal/libmetal/Kconfig"
 
+source "ext/hal/microchip/Kconfig"
+
 source "ext/hal/nordic/Kconfig"
 
 source "ext/hal/nxp/mcux/Kconfig"
