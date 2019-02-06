@@ -775,17 +775,6 @@ def get_symbols(obj):
     raise LookupError("Could not find symbol table")
 
 
-# determine which paging mode was selected
-def get_page_table():
-    with open(args.kernel, "rb") as fp:
-        kernel = ELFFile(fp)
-        sym = get_symbols(kernel)
-    try:
-        return sym["CONFIG_X86_PAE_MODE"]
-    except BaseException:
-        return 0
-
-
 def main():
     global output_buffer
     parse_args()
