@@ -45,6 +45,8 @@ struct cv2_sem {
 
 struct cv2_mslab {
 	struct k_mem_slab z_mslab;
+	void *pool;
+	char is_dynamic_allocation;
 	char name[16];
 };
 

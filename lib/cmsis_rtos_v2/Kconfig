@@ -61,6 +61,12 @@ config CMSIS_V2_MEM_SLAB_MAX_COUNT
 	help
 	  Mention maximum number of memory slabs in CMSIS RTOS V2 compliant application.
 
+config CMSIS_V2_MEM_SLAB_MAX_DYNAMIC_SIZE
+	int "Maximum dynamic mem slab/pool size in CMSIS RTOS V2 application"
+	default 0
+	help
+	  Mention maximum dynamic size of memory slabs/pools in CMSIS RTOS V2 compliant application.
+
 config CMSIS_V2_MSGQ_MAX_COUNT
 	int "Maximum message queue count in CMSIS RTOS V2 application"
 	default 5
