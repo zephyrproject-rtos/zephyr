@@ -98,6 +98,7 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 			 const osThreadAttr_t *attr)
 {
 	s32_t prio;
+	osPriority_t cv2_prio;
 	struct cv2_thread *tid;
 	static u32_t one_time;
 	void *stack;
@@ -115,6 +116,12 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 
 	if (attr == NULL) {
 		attr = &init_thread_attrs;
+	}
+
+	if (attr->priority == osPriorityNone) {
+		cv2_prio = osPriorityNormal;
+	} else {
+		cv2_prio = attr->priority;
 	}
 
 	if ((attr->stack_mem == NULL) && (thread_num_dynamic >=
@@ -136,8 +143,7 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 	__ASSERT(attr->stack_size <= CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE,
 		 "invalid stack size\n");
 
-	__ASSERT((attr->priority >= osPriorityIdle) &&
-		 (attr->priority <= osPriorityISR),
+	__ASSERT((cv2_prio >= osPriorityIdle) && (cv2_prio <= osPriorityISR),
 		 "invalid priority\n");
 
 	if (attr->stack_mem != NULL) {
@@ -146,7 +152,7 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg,
 		}
 	}
 
-	prio = cmsis_to_zephyr_priority(attr->priority);
+	prio = cmsis_to_zephyr_priority(cv2_prio);
 
 	this_thread_num = atomic_inc((atomic_t *)&thread_num);
 
