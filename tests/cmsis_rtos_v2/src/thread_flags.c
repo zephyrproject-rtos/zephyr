@@ -11,12 +11,12 @@
 #include <irq_offload.h>
 #include <kernel_structs.h>
 
-#define TIMEOUT_TICKS	(10)
-#define FLAG1		(0x00000020)
-#define FLAG2		(0x00000004)
-#define FLAG		(FLAG1 | FLAG2)
-#define ISR_FLAG	(0x50)
-#define STACKSZ		(512)
+#define TIMEOUT_TICKS   (10)
+#define FLAG1           (0x00000020)
+#define FLAG2           (0x00000004)
+#define FLAG            (FLAG1 | FLAG2)
+#define ISR_FLAG        (0x50)
+#define STACKSZ         (512)
 
 static void thread1(void *arg)
 {
@@ -37,7 +37,7 @@ static void thread1(void *arg)
 	/* Clear the Flag explicitly */
 	flags = osThreadFlagsClear(FLAG1);
 	zassert_not_equal(flags, osFlagsErrorParameter,
-				"ThreadFlagsClear failed");
+			  "ThreadFlagsClear failed");
 
 	/* wait for FLAG1. It should timeout here as the flag
 	 * though triggered, gets cleared in the previous step.
@@ -56,34 +56,34 @@ static void thread2(void *arg)
 
 	/* validate by passing invalid parameters */
 	zassert_equal(osThreadFlagsSet(NULL, 0), osFlagsErrorParameter,
-			"Invalid Thread Flags ID is unexpectedly working!");
+		      "Invalid Thread Flags ID is unexpectedly working!");
 	zassert_equal(osThreadFlagsSet(osThreadGetId(), 0x80010000),
-			osFlagsErrorParameter,
-			"Thread with MSB set is set unexpectedly");
+		      osFlagsErrorParameter,
+		      "Thread with MSB set is set unexpectedly");
 
 	zassert_equal(osThreadFlagsClear(0x80010000), osFlagsErrorParameter,
-			"Thread with MSB set is cleared unexpectedly");
+		      "Thread with MSB set is cleared unexpectedly");
 
 	/* cannot wait for Flag mask with MSB set */
 	zassert_equal(osThreadFlagsWait(0x80010000, osFlagsWaitAny, 0),
-			osFlagsErrorParameter,
-			"ThreadFlagsWait passed unexpectedly");
+		      osFlagsErrorParameter,
+		      "ThreadFlagsWait passed unexpectedly");
 }
 
 static K_THREAD_STACK_DEFINE(test_stack1, STACKSZ);
 static osThreadAttr_t thread1_attr = {
-	.name       = "Thread1",
-	.stack_mem  = &test_stack1,
+	.name = "Thread1",
+	.stack_mem = &test_stack1,
 	.stack_size = STACKSZ,
-	.priority   = osPriorityHigh,
+	.priority = osPriorityHigh,
 };
 
 static K_THREAD_STACK_DEFINE(test_stack2, STACKSZ);
 static osThreadAttr_t thread2_attr = {
-	.name       = "Thread2",
-	.stack_mem  = &test_stack2,
+	.name = "Thread2",
+	.stack_mem = &test_stack2,
 	.stack_size = STACKSZ,
-	.priority   = osPriorityHigh,
+	.priority = osPriorityHigh,
 };
 
 void test_thread_flags_no_wait_timeout(void)
@@ -113,7 +113,7 @@ void test_thread_flags_signalled(void)
 	zassert_equal(flags & FLAG1, FLAG1, "");
 
 	/* Let id run to do the tests for Thread Flags */
-	osDelay(TIMEOUT_TICKS/2);
+	osDelay(TIMEOUT_TICKS / 2);
 
 	flags = osThreadFlagsSet(id, FLAG2);
 	zassert_equal(flags & FLAG2, FLAG2, "");
@@ -122,7 +122,7 @@ void test_thread_flags_signalled(void)
 	 * Hence, this thread needs to be put to sleep for thread2
 	 * to become the active thread.
 	 */
-	osDelay(TIMEOUT_TICKS/2);
+	osDelay(TIMEOUT_TICKS / 2);
 }
 
 /* IRQ offload function handler to set Thread flag */
@@ -135,7 +135,7 @@ static void offload_function(void *param)
 
 	flags = osThreadFlagsSet((osThreadId_t)param, ISR_FLAG);
 	zassert_equal(flags & ISR_FLAG, ISR_FLAG,
-				"ThreadFlagsSet failed in ISR");
+		      "ThreadFlagsSet failed in ISR");
 }
 
 void test_thread_flags_from_isr(void *thread_id)
@@ -147,15 +147,15 @@ void test_thread_flags_from_isr(void *thread_id)
 
 	flags = osThreadFlagsWait(ISR_FLAG, osFlagsWaitAll, TIMEOUT_TICKS);
 	zassert_equal((flags & ISR_FLAG),
-			ISR_FLAG, "unexpected Thread flags value");
+		      ISR_FLAG, "unexpected Thread flags value");
 }
 
 static K_THREAD_STACK_DEFINE(test_stack3, STACKSZ);
 static osThreadAttr_t thread3_attr = {
-	.name       = "Thread3",
-	.stack_mem  = &test_stack3,
+	.name = "Thread3",
+	.stack_mem = &test_stack3,
 	.stack_size = STACKSZ,
-	.priority   = osPriorityHigh,
+	.priority = osPriorityHigh,
 };
 
 void test_thread_flags_isr(void)
@@ -163,7 +163,7 @@ void test_thread_flags_isr(void)
 	osThreadId_t id;
 
 	id = osThreadNew(test_thread_flags_from_isr, osThreadGetId(),
-				&thread3_attr);
+			 &thread3_attr);
 	zassert_true(id != NULL, "Failed creating thread");
 
 	osDelay(TIMEOUT_TICKS);

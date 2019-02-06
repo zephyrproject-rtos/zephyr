@@ -45,18 +45,18 @@ static void thread2(void *arg)
 
 static K_THREAD_STACK_DEFINE(test_stack1, STACKSZ);
 static osThreadAttr_t thread1_attr = {
-	.name       = "Thread1",
-	.stack_mem  = &test_stack1,
+	.name = "Thread1",
+	.stack_mem = &test_stack1,
 	.stack_size = STACKSZ,
-	.priority   = osPriorityHigh,
+	.priority = osPriorityHigh,
 };
 
 static K_THREAD_STACK_DEFINE(test_stack2, STACKSZ);
 static osThreadAttr_t thread2_attr = {
-	.name       = "Thread2",
-	.stack_mem  = &test_stack2,
+	.name = "Thread2",
+	.stack_mem = &test_stack2,
 	.stack_size = STACKSZ,
-	.priority   = osPriorityHigh,
+	.priority = osPriorityHigh,
 };
 
 static osEventFlagsAttr_t event_flags_attrs = {
@@ -183,10 +183,10 @@ void test_event_from_isr(void *event_id)
 
 static K_THREAD_STACK_DEFINE(test_stack3, STACKSZ);
 static osThreadAttr_t thread3_attr = {
-	.name       = "Thread3",
-	.stack_mem  = &test_stack3,
+	.name = "Thread3",
+	.stack_mem = &test_stack3,
 	.stack_size = STACKSZ,
-	.priority   = osPriorityHigh,
+	.priority = osPriorityHigh,
 };
 
 void test_event_flags_isr(void)

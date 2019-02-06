@@ -8,25 +8,25 @@
 #include <kernel.h>
 #include <cmsis_os2.h>
 
-#define STACKSZ		512
+#define STACKSZ         512
 
 /* This is used to check the thread yield functionality between 2 threads */
 static int thread_yield_check;
 
 static K_THREAD_STACK_DEFINE(test_stack1, STACKSZ);
 static osThreadAttr_t thread1_attr = {
-	.name       = "Thread1",
-	.stack_mem  = &test_stack1,
+	.name = "Thread1",
+	.stack_mem = &test_stack1,
 	.stack_size = STACKSZ,
-	.priority   = osPriorityHigh,
+	.priority = osPriorityHigh,
 };
 
 static K_THREAD_STACK_DEFINE(test_stack2, STACKSZ);
 static osThreadAttr_t thread2_attr = {
-	.name       = "Thread2",
-	.stack_mem  = &test_stack2,
+	.name = "Thread2",
+	.stack_mem = &test_stack2,
 	.stack_size = STACKSZ,
-	.priority   = osPriorityHigh,
+	.priority = osPriorityHigh,
 };
 
 static void thread1(void *argument)
@@ -40,7 +40,7 @@ static void thread1(void *argument)
 
 	name = osThreadGetName(thread_id);
 	zassert_true(strcmp(thread1_attr.name, name) == 0,
-			"Failed getting Thread name");
+		     "Failed getting Thread name");
 
 	/* This thread starts off at a high priority (same as thread2) */
 	thread_yield_check++;
@@ -72,7 +72,7 @@ static void thread2(void *argument)
 	thread_array = k_calloc(max_num_threads, sizeof(osThreadId_t));
 	num_threads = osThreadEnumerate(thread_array, max_num_threads);
 	zassert_equal(num_threads, 2,
-			"Incorrect number of cmsis rtos v2 threads");
+		      "Incorrect number of cmsis rtos v2 threads");
 
 	for (i = 0; i < num_threads; i++) {
 		zassert_true(
@@ -85,17 +85,17 @@ static void thread2(void *argument)
 	}
 
 	zassert_equal(osThreadGetState(thread_array[1]), osThreadReady,
-			"Thread not in ready state");
+		      "Thread not in ready state");
 	zassert_equal(osThreadGetState(thread_array[0]), osThreadRunning,
-			"Thread not in running state");
+		      "Thread not in running state");
 
 	zassert_equal(osThreadSuspend(thread_array[1]), osOK, "");
 	zassert_equal(osThreadGetState(thread_array[1]), osThreadBlocked,
-			"Thread not in blocked state");
+		      "Thread not in blocked state");
 
 	zassert_equal(osThreadResume(thread_array[1]), osOK, "");
 	zassert_equal(osThreadGetState(thread_array[1]), osThreadReady,
-			"Thread not in ready state");
+		      "Thread not in ready state");
 
 	k_free(thread_array);
 
@@ -115,7 +115,7 @@ void test_thread_apis(void)
 	zassert_true(id2 != NULL, "Failed creating thread2");
 
 	zassert_equal(osThreadGetCount(), 2,
-			"Incorrect number of cmsis rtos v2 threads");
+		      "Incorrect number of cmsis rtos v2 threads");
 
 	do {
 		osDelay(100);
@@ -129,10 +129,10 @@ static int thread3_state;
 
 static K_THREAD_STACK_DEFINE(test_stack3, STACKSZ);
 static osThreadAttr_t thread3_attr = {
-	.name       = "Thread3",
-	.stack_mem  = &test_stack3,
+	.name = "Thread3",
+	.stack_mem = &test_stack3,
 	.stack_size = STACKSZ,
-	.priority   = osPriorityNormal,
+	.priority = osPriorityNormal,
 };
 
 static void thread3(void *argument)
@@ -146,27 +146,27 @@ static void thread3(void *argument)
 	osThreadSetPriority(id, osPriorityBelowNormal);
 	rv = osThreadGetPriority(id);
 	zassert_equal(rv, osPriorityBelowNormal,
-			"Expected priority to be changed to %d, not %d",
-			(int)osPriorityBelowNormal, (int)rv);
+		      "Expected priority to be changed to %d, not %d",
+		      (int)osPriorityBelowNormal, (int)rv);
 
 	/* Increase the priority of the current thread */
 	osThreadSetPriority(id, osPriorityAboveNormal);
 	rv = osThreadGetPriority(id);
 	zassert_equal(rv, osPriorityAboveNormal,
-			"Expected priority to be changed to %d, not %d",
-			(int)osPriorityAboveNormal, (int)rv);
+		      "Expected priority to be changed to %d, not %d",
+		      (int)osPriorityAboveNormal, (int)rv);
 
 	/* Restore the priority of the current thread */
 	osThreadSetPriority(id, prio);
 	rv = osThreadGetPriority(id);
 	zassert_equal(rv, prio,
-			"Expected priority to be changed to %d, not %d",
-			(int)prio, (int)rv);
+		      "Expected priority to be changed to %d, not %d",
+		      (int)prio, (int)rv);
 
 	/* Try to set unsupported priority and assert failure */
 	status = osThreadSetPriority(id, OsPriorityInvalid);
 	zassert_true(status == osErrorParameter,
-			"Something's wrong with osThreadSetPriority!");
+		     "Something's wrong with osThreadSetPriority!");
 
 	/* Indication that thread3 is done with its processing */
 	thread3_state = 1;
@@ -198,12 +198,12 @@ void test_thread_prio(void)
 	/* Try to set priority to inactive thread and assert failure */
 	status = osThreadSetPriority(id3, osPriorityNormal);
 	zassert_true(status == osErrorResource,
-			"Something's wrong with osThreadSetPriority!");
+		     "Something's wrong with osThreadSetPriority!");
 
 	/* Try to terminate inactive thread and assert failure */
 	status = osThreadTerminate(id3);
 	zassert_true(status == osErrorResource,
-			"Something's wrong with osThreadTerminate!");
+		     "Something's wrong with osThreadTerminate!");
 
 	thread3_state = 0;
 }

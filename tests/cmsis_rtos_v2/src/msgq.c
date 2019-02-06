@@ -136,10 +136,10 @@ void message_recv(void)
 
 static K_THREAD_STACK_DEFINE(test_stack, STACKSZ);
 osThreadAttr_t thread_attr = {
-	.name       = "send_thread",
-	.stack_mem  = &test_stack,
+	.name = "send_thread",
+	.stack_mem = &test_stack,
 	.stack_size = STACKSZ,
-	.priority   = osPriorityNormal,
+	.priority = osPriorityNormal,
 };
 
 static char __aligned(4) sample_mem[sizeof(struct sample_data) * Q_LEN];
