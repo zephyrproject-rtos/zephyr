@@ -75,7 +75,7 @@ def get_aliases(root):
                 aliases[v].append(k)
 
     # Treat alternate names as aliases
-    for k in reduced.keys():
+    for k in reduced:
         if reduced[k].get('alt_name', None) is not None:
             aliases[k].append(reduced[k]['alt_name'])
 
@@ -83,7 +83,7 @@ def get_node_compats(node_address):
     compat = None
 
     try:
-        if 'props' in reduced[node_address].keys():
+        if 'props' in reduced[node_address]:
             compat = reduced[node_address]['props'].get('compatible')
 
         if not isinstance(compat, list):
@@ -98,7 +98,7 @@ def get_compat(node_address):
     compat = None
 
     try:
-        if 'props' in reduced[node_address].keys():
+        if 'props' in reduced[node_address]:
             compat = reduced[node_address]['props'].get('compatible')
 
         if compat == None:
@@ -142,15 +142,15 @@ def get_phandles(root, name, handles):
 
 def insert_defs(node_address, new_defs, new_aliases):
 
-    for key in new_defs.keys():
+    for key in new_defs:
         if key.startswith('DT_COMPAT_'):
             node_address = 'compatibles'
 
-    remove = [k for k in new_aliases if k in new_defs.keys()]
+    remove = [k for k in new_aliases if k in new_defs]
     for k in remove: del new_aliases[k]
 
     if node_address in defs:
-        remove = [k for k in new_aliases if k in defs[node_address].keys()]
+        remove = [k for k in new_aliases if k in defs[node_address]]
         for k in remove: del new_aliases[k]
         if 'aliases' in defs[node_address]:
             defs[node_address]['aliases'].update(new_aliases)
@@ -191,7 +191,7 @@ def get_reduced(nodes, path):
             if type(compat) is not list: compat = [ compat, ]
             reduced[path]['instance_id'] = {}
             for k in compat:
-                if k not in get_reduced.last_used_id.keys():
+                if k not in get_reduced.last_used_id:
                     get_reduced.last_used_id[k] = 0
                 else:
                     get_reduced.last_used_id[k] += 1
@@ -468,7 +468,7 @@ def extract_cells(node_address, prop, prop_values, names, index,
         # Get number of cells per element of current property
         for props in reduced[cell_parent]['props']:
             if props[0] == '#' and '-cells' in props:
-                if props in cell_yaml.keys():
+                if props in cell_yaml:
                     cell_yaml_names = props
                 else:
                     cell_yaml_names = '#cells'

@@ -46,7 +46,7 @@ class DTPinCtrl(DTDirective):
             if cell_prefix is not None:
                 post_fix.append(cell_prefix)
 
-            for subnode in reduced.keys():
+            for subnode in reduced:
                 if pin_subnode in subnode and pin_node_address != subnode:
                     # found a subnode underneath the pinmux handle
                     pin_label = def_prefix + post_fix + subnode.split('/')[-2:]

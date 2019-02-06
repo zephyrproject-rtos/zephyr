@@ -28,7 +28,7 @@ class DTDefault(DTDirective):
         prop_alias = {}
 
         if prop_type == 'boolean':
-            if prop in reduced[node_address]['props'].keys():
+            if prop in reduced[node_address]['props']:
                 prop_values = 1
             else:
                 prop_values = 0
