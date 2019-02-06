@@ -281,7 +281,7 @@ def main():
                     table_index = irq3_pos - offset
 
                 # Figure out second level interrupt position
-                if irq2:
+                elif irq2:
                     irq_parent = irq1
                     list_index = getindex(irq_parent, list_2nd_lvl_offsets)
                     irq2_pos = irq2_baseoffset + max_irq_per*list_index + irq2 - 1
@@ -291,14 +291,14 @@ def main():
                     table_index = irq2_pos - offset
 
                 # Figure out first level interrupt position
-                if not irq3 and not irq2:
+                else:
                     debug('IRQ_level = 1')
                     debug('IRQ_Indx = ' + str(irq1))
                     debug('IRQ_Pos  = ' + str(irq1))
                     table_index = irq1 - offset
 
             if swt[table_index] != (0, spurious_handler):
-                error("multiple registrations for irq %d (0x%x)" % (irq, irq))
+                error("multiple registrations at table_index %d for irq %d (0x%x)" % (table_index, irq, irq))
 
             swt[table_index] = (param, func)
 
