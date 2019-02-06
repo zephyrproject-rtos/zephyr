@@ -1,0 +1,19 @@
+# Kconfig - Microchip MEC MCU line
+#
+# Copyright (c) 2018, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+config SOC_FAMILY_MEC
+	bool
+	# omit prompt to signify a "hidden" option
+
+if SOC_FAMILY_MEC
+config SOC_FAMILY
+	string
+	default "microchip_mec"
+
+# Select SoC Part No. and configuration options
+source "soc/arm/microchip_mec/*/Kconfig.soc"
+
+endif # SOC_FAMILY_MEC

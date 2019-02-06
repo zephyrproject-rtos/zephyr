@@ -1,0 +1,17 @@
+# Kconfig - Microchip MEC1701 MCU core series
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_MEC1701X
+	bool "Microchip MEC1701X Series"
+	select CPU_CORTEX_M
+	select CPU_CORTEX_M4
+	select SOC_FAMILY_MEC
+	select CPU_HAS_SYSTICK
+	select SYS_POWER_LOW_POWER_STATE_SUPPORTED
+	select CPU_HAS_FPU
+	help
+	  Enable support for Microchip MEC Cortex-M4 MCU series
