@@ -282,7 +282,10 @@ config STACK_ALIGN_DOUBLE_WORD
 	default y
 	help
 	  This is needed to conform to AAPCS, the procedure call standard for
-	  the ARM. It wastes stack space.
+	  the ARM. It wastes stack space. The option also enforces alignment
+	  of stack upon exception entry on Cortex-M3 and Cortex-M4 (ARMv7-M).
+	  Note that for ARMv6-M, ARMv8-M, and Cortex-M7 MCUs stack alignment
+	  on exception entry is enabled by default and it is not configurable.
 
 config RUNTIME_NMI
 	bool "Attach an NMI handler at runtime"
