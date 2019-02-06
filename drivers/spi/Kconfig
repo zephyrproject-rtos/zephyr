@@ -160,6 +160,26 @@ config SPI_5_OP_MODES
 
 endif # SPI_5
 
+config SPI_6
+	bool "SPI port 6"
+	help
+	  Enable SPI controller port 6.
+
+if SPI_6
+
+config SPI_6_OP_MODES
+	int "Port 6 supported operation modes (master/slave/both)"
+	default 1
+	range 1 3
+	help
+	  This sets the supported operation modes at runtime, by the SPI
+	  port 6, where:
+	  1 is MASTER mode only (default)
+	  2 is SLAVE mode only
+	  3 is both modes are available.
+
+endif # SPI_6
+
 config SPI_INTEL
 	bool "Intel SPI controller driver"
 	depends on CPU_MINUTEIA
