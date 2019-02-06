@@ -258,12 +258,8 @@ def extract_property(node_compat, node_address, prop, prop_val, names):
     elif 'clocks' in prop:
         clocks.extract(node_address, prop, def_label)
     elif 'pwms' in prop or 'gpios' in prop:
-        # drop the 's' from the prop
-        generic = prop[:-1]
-        try:
-            prop_values = list(reduced[node_address]['props'].get(prop))
-        except:
-            prop_values = reduced[node_address]['props'].get(prop)
+        prop_values = reduced[node_address]['props'][prop]
+        generic = prop[:-1]  # Drop the 's' from the prop
 
         extract_controller(node_address, prop, prop_values, 0,
                            def_label, generic)
