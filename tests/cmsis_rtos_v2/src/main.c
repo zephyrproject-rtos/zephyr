@@ -27,6 +27,10 @@ extern void test_event_flags_isr(void);
 extern void test_thread_flags_no_wait_timeout(void);
 extern void test_thread_flags_signalled(void);
 extern void test_thread_flags_isr(void);
+extern void test_thread_join(void);
+extern void test_thread_detached(void);
+extern void test_thread_joinable_detach(void);
+extern void test_thread_joinable_terminate(void);
 
 void test_main(void)
 {
@@ -49,7 +53,11 @@ void test_main(void)
 			 ztest_unit_test(test_event_flags_isr),
 			 ztest_unit_test(test_thread_flags_no_wait_timeout),
 			 ztest_unit_test(test_thread_flags_signalled),
-			 ztest_unit_test(test_thread_flags_isr));
+			 ztest_unit_test(test_thread_flags_isr),
+			 ztest_unit_test(test_thread_join),
+			 ztest_unit_test(test_thread_detached),
+			 ztest_unit_test(test_thread_joinable_detach),
+			 ztest_unit_test(test_thread_joinable_terminate));
 
 	ztest_run_test_suite(test_cmsis_v2_apis);
 }
