@@ -55,6 +55,17 @@ static ALWAYS_INLINE void _InterruptStackSetup(void)
 #error "Built-in MSP limit checks not supported by HW"
 #endif
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
+
+#if defined(CONFIG_STACK_ALIGN_DOUBLE_WORD)
+	/* Enforce double-word stack alignment on exception entry
+	 * for Cortex-M3 and Cortex-M4 (ARMv7-M) MCUs. For the rest
+	 * of ARM Cortex-M processors this setting is enforced by
+	 * default and it is not configurable.
+	 */
+#if defined(CONFIG_CPU_CORTEX_M3) || defined(CONFIG_CPU_CORTEX_M4)
+	SCB->CCR |= SCB_CCR_STKALIGN_Msk;
+#endif
+#endif /* CONFIG_STACK_ALIGN_DOUBLE_WORD */
 }
 
 #endif /* _ASMLANGUAGE */
