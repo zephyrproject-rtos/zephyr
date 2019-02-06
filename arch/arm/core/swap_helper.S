@@ -52,7 +52,7 @@ SECTION_FUNC(TEXT, __pendsv)
     mov lr, r1
 #else
     pop {r0, lr}
-#endif /* CONFIG_ARMV6_M_ARMV8M_M_BASELINE */
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 #endif /* CONFIG_TRACING */
 
     /* protect the kernel state while we play with the thread lists */
