@@ -8,7 +8,7 @@
 #include "wrapper.h"
 
 K_MEM_SLAB_DEFINE(cv2_semaphore_slab, sizeof(struct cv2_sem),
-		CONFIG_CMSIS_V2_SEMAPHORE_MAX_COUNT, 4);
+		  CONFIG_CMSIS_V2_SEMAPHORE_MAX_COUNT, 4);
 
 static const osSemaphoreAttr_t init_sema_attrs = {
 	.name = "ZephyrSem",
@@ -21,7 +21,7 @@ static const osSemaphoreAttr_t init_sema_attrs = {
  * @brief Create and Initialize a semaphore object.
  */
 osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
-				const osSemaphoreAttr_t *attr)
+			       const osSemaphoreAttr_t *attr)
 {
 	struct cv2_sem *semaphore;
 
@@ -34,7 +34,7 @@ osSemaphoreId_t osSemaphoreNew(uint32_t max_count, uint32_t initial_count,
 	}
 
 	if (k_mem_slab_alloc(&cv2_semaphore_slab,
-				(void **)&semaphore, 100) == 0) {
+			     (void **)&semaphore, 100) == 0) {
 		(void)memset(semaphore, 0, sizeof(struct cv2_sem));
 	} else {
 		return NULL;
@@ -69,7 +69,7 @@ osStatus_t osSemaphoreAcquire(osSemaphoreId_t semaphore_id, uint32_t timeout)
 		status = k_sem_take(&semaphore->z_semaphore, K_NO_WAIT);
 	} else {
 		status = k_sem_take(&semaphore->z_semaphore,
-					__ticks_to_ms(timeout));
+				    __ticks_to_ms(timeout));
 	}
 
 	if (status == -EBUSY) {
@@ -105,7 +105,7 @@ osStatus_t osSemaphoreRelease(osSemaphoreId_t semaphore_id)
 
 	/* All tokens have already been released */
 	if (k_sem_count_get(&semaphore->z_semaphore) ==
-				semaphore->z_semaphore.limit) {
+	    semaphore->z_semaphore.limit) {
 		return osErrorResource;
 	}
 

@@ -10,15 +10,15 @@
 #include <kernel.h>
 #include <cmsis_os2.h>
 
-#define	TRUE	1
-#define FALSE	0
+#define TRUE    1
+#define FALSE   0
 
 struct cv2_thread {
 	sys_dnode_t node;
 	struct k_thread z_thread;
 	struct k_poll_signal poll_signal;
-	struct k_poll_event  poll_event;
-	u32_t            signal_results;
+	struct k_poll_event poll_event;
+	u32_t signal_results;
 	char name[16];
 	u32_t state;
 };
@@ -57,8 +57,8 @@ struct cv2_msgq {
 
 struct cv2_event_flags {
 	struct k_poll_signal poll_signal;
-	struct k_poll_event  poll_event;
-	u32_t            signal_results;
+	struct k_poll_event poll_event;
+	u32_t signal_results;
 	char name[16];
 };
 

@@ -18,7 +18,7 @@ extern u32_t z_tick_get_32(void);
 osStatus_t osKernelGetInfo(osVersion_t *version, char *id_buf, uint32_t id_size)
 {
 	if (version != NULL) {
-		version->api    = sys_kernel_version_get();
+		version->api = sys_kernel_version_get();
 		version->kernel = sys_kernel_version_get();
 	}
 
@@ -76,9 +76,9 @@ int32_t osKernelRestoreLock(int32_t lock)
 	}
 
 	if (lock < 0) {
-		return 1; /* locked */
+		return 1;       /* locked */
 	} else {
-		return 0; /* not locked */
+		return 0;       /* not locked */
 	}
 }
 

@@ -7,8 +7,8 @@
 #include <kernel_structs.h>
 #include "wrapper.h"
 
-#define DONT_CARE		(0)
-#define NSEC_PER_MSEC		(NSEC_PER_USEC * USEC_PER_MSEC)
+#define DONT_CARE               (0)
+#define NSEC_PER_MSEC           (NSEC_PER_USEC * USEC_PER_MSEC)
 
 /**
  * @brief Set the specified Thread Flags of a thread.
@@ -19,7 +19,7 @@ uint32_t osThreadFlagsSet(osThreadId_t thread_id, uint32_t flags)
 	struct cv2_thread *tid = (struct cv2_thread *)thread_id;
 
 	if ((thread_id == NULL) || (is_cmsis_rtos_v2_thread(thread_id) == NULL)
-		|| (flags & 0x80000000)) {
+	    || (flags & 0x80000000)) {
 		return osFlagsErrorParameter;
 	}
 
@@ -131,9 +131,9 @@ uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
 		}
 
 		__ASSERT(tid->poll_event.state == K_POLL_STATE_SIGNALED,
-			"event state not signalled!");
+			 "event state not signalled!");
 		__ASSERT(tid->poll_event.signal->signaled == 1,
-			"event signaled is not 1");
+			 "event signaled is not 1");
 
 		/* Reset the states to facilitate the next trigger */
 		tid->poll_event.signal->signaled = 0;
@@ -155,9 +155,9 @@ uint32_t osThreadFlagsWait(uint32_t flags, uint32_t options, uint32_t timeout)
 				(u64_t)k_cycle_get_32() - time_stamp_start;
 
 			time_delta_ns =
-			(u32_t)SYS_CLOCK_HW_CYCLES_TO_NS(hwclk_cycles_delta);
+				(u32_t)SYS_CLOCK_HW_CYCLES_TO_NS(hwclk_cycles_delta);
 
-			time_delta_ms =	(u32_t)time_delta_ns/NSEC_PER_MSEC;
+			time_delta_ms = (u32_t)time_delta_ns / NSEC_PER_MSEC;
 
 			if (timeout_ms > time_delta_ms) {
 				timeout_ms -= time_delta_ms;

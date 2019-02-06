@@ -8,7 +8,7 @@
 #include "wrapper.h"
 
 K_MEM_SLAB_DEFINE(cv2_msgq_slab, sizeof(struct cv2_msgq),
-		CONFIG_CMSIS_V2_MSGQ_MAX_COUNT, 4);
+		  CONFIG_CMSIS_V2_MSGQ_MAX_COUNT, 4);
 
 static const osMessageQueueAttr_t init_msgq_attrs = {
 	.name = "ZephyrMsgQ",
@@ -23,7 +23,7 @@ static const osMessageQueueAttr_t init_msgq_attrs = {
  * @brief Create and Initialize Message queue.
  */
 osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
-				const osMessageQueueAttr_t *attr)
+				     const osMessageQueueAttr_t *attr)
 {
 	struct cv2_msgq *msgq;
 
@@ -63,7 +63,7 @@ osMessageQueueId_t osMessageQueueNew(uint32_t msg_count, uint32_t msg_size,
  * @brief Put a message to a Queue.
  */
 osStatus_t osMessageQueuePut(osMessageQueueId_t msgq_id, const void *msg_ptr,
-				uint8_t msg_prio, uint32_t timeout)
+			     uint8_t msg_prio, uint32_t timeout)
 {
 	struct cv2_msgq *msgq = (struct cv2_msgq *)msgq_id;
 	int retval;
@@ -85,7 +85,7 @@ osStatus_t osMessageQueuePut(osMessageQueueId_t msgq_id, const void *msg_ptr,
 		retval = k_msgq_put(&msgq->z_msgq, (void *)msg_ptr, K_FOREVER);
 	} else {
 		retval = k_msgq_put(&msgq->z_msgq, (void *)msg_ptr,
-					__ticks_to_ms(timeout));
+				    __ticks_to_ms(timeout));
 	}
 
 	if (retval == 0) {
@@ -101,7 +101,7 @@ osStatus_t osMessageQueuePut(osMessageQueueId_t msgq_id, const void *msg_ptr,
  * @brief Get a message or Wait for a Message from a Queue.
  */
 osStatus_t osMessageQueueGet(osMessageQueueId_t msgq_id, void *msg_ptr,
-			uint8_t *msg_prio, uint32_t timeout)
+			     uint8_t *msg_prio, uint32_t timeout)
 {
 	struct cv2_msgq *msgq = (struct cv2_msgq *)msgq_id;
 	int retval;
@@ -123,7 +123,7 @@ osStatus_t osMessageQueueGet(osMessageQueueId_t msgq_id, void *msg_ptr,
 		retval = k_msgq_get(&msgq->z_msgq, msg_ptr, K_FOREVER);
 	} else {
 		retval = k_msgq_get(&msgq->z_msgq, msg_ptr,
-					__ticks_to_ms(timeout));
+				    __ticks_to_ms(timeout));
 	}
 
 	if (retval == 0) {

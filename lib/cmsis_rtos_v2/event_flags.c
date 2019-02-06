@@ -8,7 +8,7 @@
 #include "wrapper.h"
 
 K_MEM_SLAB_DEFINE(cv2_event_flags_slab, sizeof(struct cv2_event_flags),
-			CONFIG_CMSIS_V2_EVT_FLAGS_MAX_COUNT, 4);
+		  CONFIG_CMSIS_V2_EVT_FLAGS_MAX_COUNT, 4);
 
 static const osEventFlagsAttr_t init_event_flags_attrs = {
 	.name = "ZephyrEvent",
@@ -17,8 +17,8 @@ static const osEventFlagsAttr_t init_event_flags_attrs = {
 	.cb_size = 0,
 };
 
-#define DONT_CARE		(0)
-#define NSEC_PER_MSEC		(NSEC_PER_USEC * USEC_PER_MSEC)
+#define DONT_CARE               (0)
+#define NSEC_PER_MSEC           (NSEC_PER_USEC * USEC_PER_MSEC)
 
 /**
  * @brief Create and Initialize an Event Flags object.
@@ -36,7 +36,7 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 	}
 
 	if (k_mem_slab_alloc(&cv2_event_flags_slab, (void **)&events, 100)
-				 == 0) {
+	    == 0) {
 		memset(events, 0, sizeof(struct cv2_event_flags));
 	} else {
 		return NULL;
@@ -44,7 +44,7 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 
 	k_poll_signal_init(&events->poll_signal);
 	k_poll_event_init(&events->poll_event, K_POLL_TYPE_SIGNAL,
-				K_POLL_MODE_NOTIFY_ONLY, &events->poll_signal);
+			  K_POLL_MODE_NOTIFY_ONLY, &events->poll_signal);
 	events->signal_results = 0;
 	memcpy(events->name, attr->name, 16);
 
@@ -97,7 +97,7 @@ uint32_t osEventFlagsClear(osEventFlagsId_t ef_id, uint32_t flags)
  * @brief Wait for one or more Event Flags to become signaled.
  */
 uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags,
-				uint32_t options, uint32_t timeout)
+			  uint32_t options, uint32_t timeout)
 {
 	struct cv2_event_flags *events = (struct cv2_event_flags *)ef_id;
 	int retval, key;
@@ -140,9 +140,9 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags,
 		}
 
 		__ASSERT(events->poll_event.state == K_POLL_STATE_SIGNALED,
-			"event state not signalled!");
+			 "event state not signalled!");
 		__ASSERT(events->poll_event.signal->signaled == 1,
-			"event signaled is not 1");
+			 "event signaled is not 1");
 
 		/* Reset the states to facilitate the next trigger */
 		events->poll_event.signal->signaled = 0;
@@ -165,9 +165,9 @@ uint32_t osEventFlagsWait(osEventFlagsId_t ef_id, uint32_t flags,
 				(u64_t)k_cycle_get_32() - time_stamp_start;
 
 			time_delta_ns =
-			(u32_t)SYS_CLOCK_HW_CYCLES_TO_NS(hwclk_cycles_delta);
+				(u32_t)SYS_CLOCK_HW_CYCLES_TO_NS(hwclk_cycles_delta);
 
-			time_delta_ms =	(u32_t)time_delta_ns/NSEC_PER_MSEC;
+			time_delta_ms = (u32_t)time_delta_ns / NSEC_PER_MSEC;
 
 			if (timeout_ms > time_delta_ms) {
 				timeout_ms -= time_delta_ms;

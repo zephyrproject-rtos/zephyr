@@ -34,7 +34,7 @@ static void zephyr_timer_wrapper(struct k_timer *timer)
  * @brief Create a Timer
  */
 osTimerId_t osTimerNew(osTimerFunc_t func, osTimerType_t type,
-			void *argument, const osTimerAttr_t *attr)
+		       void *argument, const osTimerAttr_t *attr)
 {
 	struct cv2_timer *timer;
 
