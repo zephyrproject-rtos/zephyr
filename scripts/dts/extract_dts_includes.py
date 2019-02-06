@@ -198,7 +198,7 @@ def extract_property(node_compat, node_address, prop, prop_val, names):
     node = reduced[node_address]
     yaml_node_compat = get_binding(node_address)
     if 'base_label' in yaml_node_compat:
-        def_label = yaml_node_compat.get('base_label')
+        def_label = yaml_node_compat['base_label']
     else:
         def_label = get_node_label(node_address)
 
@@ -449,10 +449,10 @@ def output_keyvalue_lines(fd):
         for prop in prop_keys:
             if prop == 'aliases':
                 for entry in sorted(defs[node][prop]):
-                    a = defs[node][prop].get(entry)
+                    a = defs[node][prop][entry]
                     fd.write("%s=%s\n" % (entry, defs[node].get(a)))
             else:
-                fd.write("%s=%s\n" % (prop, defs[node].get(prop)))
+                fd.write("%s=%s\n" % (prop, defs[node][prop]))
 
         fd.write("\n")
 
@@ -495,10 +495,10 @@ def output_include_lines(fd):
         for prop in prop_keys:
             if prop == 'aliases':
                 for entry in sorted(defs[node][prop]):
-                    a = defs[node][prop].get(entry)
+                    a = defs[node][prop][entry]
                     fd.write(get_key_value(entry, a, maxtabstop))
             else:
-                fd.write(get_key_value(prop, defs[node].get(prop), maxtabstop))
+                fd.write(get_key_value(prop, defs[node][prop], maxtabstop))
 
         fd.write("\n")
 

@@ -76,7 +76,7 @@ def get_aliases(root):
 
     # Treat alternate names as aliases
     for k in reduced:
-        if reduced[k].get('alt_name', None) is not None:
+        if 'alt_name' in reduced[k]:
             aliases[k].append(reduced[k]['alt_name'])
 
 def get_node_compats(node_address):

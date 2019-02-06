@@ -261,14 +261,14 @@ def dump_to_dot(nodes, indent=0, start_string='digraph devicetree', name=None):
 
     ref_list = []
     for key, value in nodes.items():
-        if value.get('children'):
+        if value['children']:
             refs = dump_to_dot(value['children'], indent + 1, next_subgraph(), get_dot_node_name(value))
             ref_list.extend(refs)
         else:
             print("%s\"%s\";" % (spaces, get_dot_node_name(value)))
 
     for key, value in nodes.items():
-        refs = dump_all_refs(get_dot_node_name(value), value.get('props', {}), indent)
+        refs = dump_all_refs(get_dot_node_name(value), value['props'], indent)
         ref_list.extend(refs)
 
     if start_string.startswith("digraph"):

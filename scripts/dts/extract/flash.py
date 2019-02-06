@@ -32,10 +32,7 @@ class DTFlash(DTDirective):
         prop_def[label] = '"{}"'.format(partition_name)
 
         label = self.get_label_string(label_prefix + ["READ_ONLY",])
-        if node['props'].get('read-only'):
-            prop_def[label] = 1
-        else:
-            prop_def[label] = 0
+        prop_def[label] = 1 if 'read-only' in node['props'] else 0
 
         index = 0
         while index < len(partition_sectors):
