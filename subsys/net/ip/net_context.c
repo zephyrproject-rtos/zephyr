@@ -537,7 +537,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		NET_DBG("Context %p binding to %s [%s]:%d iface %p",
 			context,
-			net_proto2str(net_context_get_ip_proto(context)),
+			net_proto2str(AF_INET6,
+				      net_context_get_ip_proto(context)),
 			log_strdup(net_sprint_ipv6_addr(ptr)),
 			ntohs(addr6->sin6_port), iface);
 
@@ -628,7 +629,8 @@ int net_context_bind(struct net_context *context, const struct sockaddr *addr,
 
 		NET_DBG("Context %p binding to %s %s:%d iface %p",
 			context,
-			net_proto2str(net_context_get_ip_proto(context)),
+			net_proto2str(AF_INET,
+				      net_context_get_ip_proto(context)),
 			log_strdup(net_sprint_ipv4_addr(ptr)),
 			ntohs(addr4->sin_port), iface);
 

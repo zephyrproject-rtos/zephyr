@@ -21,6 +21,7 @@ LOG_MODULE_REGISTER(net_utils, CONFIG_NET_UTILS_LOG_LEVEL);
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
 #include <net/net_core.h>
+#include <net/socket_can.h>
 
 char *net_sprint_addr(sa_family_t af, const void *addr)
 {
@@ -32,19 +33,28 @@ char *net_sprint_addr(sa_family_t af, const void *addr)
 	return net_addr_ntop(af, addr, s, NET_IPV6_ADDR_LEN);
 }
 
-const char *net_proto2str(enum net_ip_protocol proto)
+const char *net_proto2str(int family, int proto)
 {
-	switch (proto) {
-	case IPPROTO_ICMP:
-		return "ICMPv4";
-	case IPPROTO_TCP:
-		return "TCP";
-	case IPPROTO_UDP:
-		return "UDP";
-	case IPPROTO_ICMPV6:
-		return "ICMPv6";
-	default:
-		break;
+	if (family == AF_INET || family == AF_INET6) {
+		switch (proto) {
+		case IPPROTO_ICMP:
+			return "ICMPv4";
+		case IPPROTO_TCP:
+			return "TCP";
+		case IPPROTO_UDP:
+			return "UDP";
+		case IPPROTO_ICMPV6:
+			return "ICMPv6";
+		default:
+			break;
+		}
+	} else if (family == AF_CAN) {
+		switch (proto) {
+		case CAN_RAW:
+			return "CAN_RAW";
+		default:
+			break;
+		}
 	}
 
 	return "UNK_PROTO";

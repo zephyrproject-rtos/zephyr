@@ -81,7 +81,7 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 				 u16_t pkt_len);
 #endif
 
-extern const char *net_proto2str(enum net_ip_protocol proto);
+extern const char *net_proto2str(int family, int proto);
 extern char *net_byte_to_hex(char *ptr, u8_t byte, char base, bool pad);
 extern char *net_sprint_ll_addr_buf(const u8_t *ll, u8_t ll_len,
 				    char *buf, int buflen);
