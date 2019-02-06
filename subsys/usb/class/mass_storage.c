@@ -145,11 +145,11 @@ enum Status {
 
 /* MSC Bulk-only Stage */
 enum Stage {
-	READ_CBW,     /* wait a CBW */
-	ERROR,        /* error */
-	PROCESS_CBW,  /* process a CBW request */
-	SEND_CSW,     /* send a CSW */
-	WAIT_CSW      /* wait that a CSW has been effectively sent */
+	MSC_READ_CBW,     /* wait a CBW */
+	MSC_ERROR,        /* error */
+	MSC_PROCESS_CBW,  /* process a CBW request */
+	MSC_SEND_CSW,     /* send a CSW */
+	MSC_WAIT_CSW      /* wait that a CSW has been effectively sent */
 };
 
 /* state of the bulk-only state machine */
@@ -174,7 +174,7 @@ static bool memOK;
 
 static void msd_state_machine_reset(void)
 {
-	stage = READ_CBW;
+	stage = MSC_READ_CBW;
 }
 
 static void msd_init(void)
@@ -193,7 +193,7 @@ static void sendCSW(void)
 		      sizeof(struct CSW), NULL) != 0) {
 		LOG_ERR("usb write failure");
 	}
-	stage = WAIT_CSW;
+	stage = MSC_WAIT_CSW;
 }
 
 static bool write(u8_t *buf, u16_t size)
@@ -205,7 +205,7 @@ static bool write(u8_t *buf, u16_t size)
 	/* updating the State Machine , so that we send CSW when this
 	 * transfer is complete, ie when we get a bulk in callback
 	 */
-	stage = SEND_CSW;
+	stage = MSC_SEND_CSW;
 
 	if (usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr, buf, size, NULL)) {
 		LOG_ERR("USB write failed");
@@ -372,7 +372,7 @@ static void thread_memory_read_done(void)
 	n = (length > MAX_PACKET) ? MAX_PACKET : length;
 	if ((addr + n) > memory_size) {
 		n = memory_size - addr;
-		stage = ERROR;
+		stage = MSC_ERROR;
 	}
 
 	if (usb_write(mass_ep_data[MSD_IN_EP_IDX].ep_addr,
@@ -385,9 +385,10 @@ static void thread_memory_read_done(void)
 
 	csw.DataResidue -= n;
 
-	if (!length || (stage != PROCESS_CBW)) {
-		csw.Status = (stage == PROCESS_CBW) ? CSW_PASSED : CSW_FAILED;
-		stage = (stage == PROCESS_CBW) ? SEND_CSW : stage;
+	if (!length || (stage != MSC_PROCESS_CBW)) {
+		csw.Status = (stage == MSC_PROCESS_CBW) ?
+			CSW_PASSED : CSW_FAILED;
+		stage = (stage == MSC_PROCESS_CBW) ? MSC_SEND_CSW : stage;
 	}
 }
 
@@ -399,7 +400,7 @@ static void memoryRead(void)
 	n = (length > MAX_PACKET) ? MAX_PACKET : length;
 	if ((addr + n) > memory_size) {
 		n = memory_size - addr;
-		stage = ERROR;
+		stage = MSC_ERROR;
 	}
 
 	/* we read an entire block */
@@ -416,9 +417,10 @@ static void memoryRead(void)
 
 	csw.DataResidue -= n;
 
-	if (!length || (stage != PROCESS_CBW)) {
-		csw.Status = (stage == PROCESS_CBW) ? CSW_PASSED : CSW_FAILED;
-		stage = (stage == PROCESS_CBW) ? SEND_CSW : stage;
+	if (!length || (stage != MSC_PROCESS_CBW)) {
+		csw.Status = (stage == MSC_PROCESS_CBW) ?
+			CSW_PASSED : CSW_FAILED;
+		stage = (stage == MSC_PROCESS_CBW) ? MSC_SEND_CSW : stage;
 	}
 }
 
@@ -531,7 +533,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 			LOG_DBG(">> READ");
 			if (infoTransfer()) {
 				if ((cbw.Flags & 0x80)) {
-					stage = PROCESS_CBW;
+					stage = MSC_PROCESS_CBW;
 					memoryRead();
 				} else {
 					usb_ep_set_stall(
@@ -547,7 +549,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 			LOG_DBG(">> WRITE");
 			if (infoTransfer()) {
 				if (!(cbw.Flags & 0x80)) {
-					stage = PROCESS_CBW;
+					stage = MSC_PROCESS_CBW;
 				} else {
 					usb_ep_set_stall(
 					  mass_ep_data[MSD_IN_EP_IDX].ep_addr);
@@ -566,7 +568,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 			}
 			if (infoTransfer()) {
 				if (!(cbw.Flags & 0x80)) {
-					stage = PROCESS_CBW;
+					stage = MSC_PROCESS_CBW;
 					memOK = true;
 				} else {
 					usb_ep_set_stall(
@@ -597,7 +599,7 @@ static void memoryVerify(u8_t *buf, u16_t size)
 
 	if ((addr + size) > memory_size) {
 		size = memory_size - addr;
-		stage = ERROR;
+		stage = MSC_ERROR;
 		usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
 		LOG_WRN("Stall OUT endpoint");
 	}
@@ -624,8 +626,8 @@ static void memoryVerify(u8_t *buf, u16_t size)
 	length -= size;
 	csw.DataResidue -= size;
 
-	if (!length || (stage != PROCESS_CBW)) {
-		csw.Status = (memOK && (stage == PROCESS_CBW)) ?
+	if (!length || (stage != MSC_PROCESS_CBW)) {
+		csw.Status = (memOK && (stage == MSC_PROCESS_CBW)) ?
 						CSW_PASSED : CSW_FAILED;
 		sendCSW();
 	}
@@ -635,7 +637,7 @@ static void memoryWrite(u8_t *buf, u16_t size)
 {
 	if ((addr + size) > memory_size) {
 		size = memory_size - addr;
-		stage = ERROR;
+		stage = MSC_ERROR;
 		usb_ep_set_stall(mass_ep_data[MSD_OUT_EP_IDX].ep_addr);
 		LOG_WRN("Stall OUT endpoint");
 	}
@@ -661,8 +663,8 @@ static void memoryWrite(u8_t *buf, u16_t size)
 	length -= size;
 	csw.DataResidue -= size;
 
-	if ((!length) || (stage != PROCESS_CBW)) {
-		csw.Status = (stage == ERROR) ? CSW_FAILED : CSW_PASSED;
+	if ((!length) || (stage != MSC_PROCESS_CBW)) {
+		csw.Status = (stage == MSC_ERROR) ? CSW_FAILED : CSW_PASSED;
 		sendCSW();
 	}
 }
@@ -681,13 +683,13 @@ static void mass_storage_bulk_out(u8_t ep,
 
 	switch (stage) {
 	/*the device has to decode the CBW received*/
-	case READ_CBW:
-		LOG_DBG("> BO - READ_CBW");
+	case MSC_READ_CBW:
+		LOG_DBG("> BO - MSC_READ_CBW");
 		CBWDecode(bo_buf, bytes_read);
 		break;
 
 	/*the device has to receive data from the host*/
-	case PROCESS_CBW:
+	case MSC_PROCESS_CBW:
 		switch (cbw.CB[0]) {
 		case WRITE10:
 		case WRITE12:
@@ -730,8 +732,8 @@ static void thread_memory_write_done(void)
 	csw.DataResidue -= size;
 
 
-	if ((!length) || (stage != PROCESS_CBW)) {
-		csw.Status = (stage == ERROR) ? CSW_FAILED : CSW_PASSED;
+	if ((!length) || (stage != MSC_PROCESS_CBW)) {
+		csw.Status = (stage == MSC_ERROR) ? CSW_FAILED : CSW_PASSED;
 		sendCSW();
 	}
 
@@ -756,7 +758,7 @@ static void mass_storage_bulk_in(u8_t ep,
 
 	switch (stage) {
 	/*the device has to send data to the host*/
-	case PROCESS_CBW:
+	case MSC_PROCESS_CBW:
 		switch (cbw.CB[0]) {
 		case READ10:
 		case READ12:
@@ -770,15 +772,15 @@ static void mass_storage_bulk_in(u8_t ep,
 		break;
 
 	/*the device has to send a CSW*/
-	case SEND_CSW:
-		LOG_DBG("< BI - SEND_CSW");
+	case MSC_SEND_CSW:
+		LOG_DBG("< BI - MSC_SEND_CSW");
 		sendCSW();
 		break;
 
 	/*the host has received the CSW -> we wait a CBW*/
-	case WAIT_CSW:
-		LOG_DBG("< BI - WAIT_CSW");
-		stage = READ_CBW;
+	case MSC_WAIT_CSW:
+		LOG_DBG("< BI - MSC_WAIT_CSW");
+		stage = MSC_READ_CBW;
 		break;
 
 	/*an error has occurred*/
