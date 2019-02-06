@@ -21,8 +21,8 @@ class DTInterrupts(DTDirective):
         for comp in node_address.split('/')[1:]:
             address += '/' + comp
             if 'interrupt-parent' in reduced[address]['props']:
-                interrupt_parent = reduced[address]['props'].get(
-                    'interrupt-parent')
+                interrupt_parent = reduced[address]['props'][
+                    'interrupt-parent']
 
         return phandles[interrupt_parent]
 
