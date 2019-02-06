@@ -274,14 +274,6 @@ SECTIONS
 	*(".kernel.*")
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-	. = ALIGN(8);
-	_idt_base_address = .;
-#ifdef LINKER_PASS2
-	KEEP(*(staticIdt))
-#else
-	. += CONFIG_IDT_NUM_VECTORS * 8;
-#endif /* LINKER_PASS2 */
-
 #ifndef CONFIG_X86_FIXED_IRQ_MAPPING
 	. = ALIGN(4);
 	_irq_to_interrupt_vector = .;
@@ -300,7 +292,6 @@ SECTIONS
 #endif /* LINKER_PASS2 */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
-
 #ifdef CONFIG_SOC_RWDATA_LD
 #include <soc-rwdata.ld>
 #endif
@@ -309,6 +300,27 @@ SECTIONS
 /* Located in project source directory */
 #include <custom-rwdata.ld>
 #endif
+
+#ifdef CONFIG_X86_KPTI
+	MMU_PAGE_ALIGN
+	z_shared_kernel_page_start = .;
+	/* Special page containing supervisor data that is still mapped in
+	 * user mode page tables. IDT, GDT, TSSes, trampoline stack, and
+	 * any LDT must go here as they always must live in a page that is
+	 * marked 'present'. Still not directly user accessible, but
+	 * no sensitive data should be here as Meltdown exploits may read it.
+	 */
+#endif /* CONFIG_X86_KPTI */
+
+#ifdef CONFIG_DYNAMIC_INTERRUPTS
+	. = ALIGN(8);
+	_idt_base_address = .;
+#ifdef LINKER_PASS2
+	KEEP(*(staticIdt))
+#else
+	. += CONFIG_IDT_NUM_VECTORS * 8;
+#endif /* LINKER_PASS2 */
+#endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
 #ifdef CONFIG_GDT_DYNAMIC
 	KEEP(*(.tss))
@@ -328,6 +340,18 @@ SECTIONS
 	. += GDT_NUM_ENTRIES * 8;
 #endif /* LINKER_PASS2 */
 #endif /* CONFIG_GDT_DYNAMIC */
+
+#ifdef CONFIG_X86_KPTI
+	z_trampoline_stack_start = .;
+	MMU_PAGE_ALIGN
+	z_trampoline_stack_end = .;
+	z_shared_kernel_page_end = .;
+
+	ASSERT(z_trampoline_stack_end - z_trampoline_stack_start >= 40,
+		"trampoline stack too small");
+	ASSERT(z_shared_kernel_page_end - z_shared_kernel_page_start == 4096,
+	       "shared kernel area is not one memory page");
+#endif /* CONFIG_X86_KPTI */
 
 	. = ALIGN(4);
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
