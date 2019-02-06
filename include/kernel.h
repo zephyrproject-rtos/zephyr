@@ -3631,6 +3631,7 @@ struct k_pipe {
 	size_t         bytes_used;      /**< # bytes used in buffer */
 	size_t         read_index;      /**< Where in buffer to read from */
 	size_t         write_index;     /**< Where in buffer to write */
+	struct k_spinlock lock;		/**< Synchronization lock */
 
 	struct {
 		_wait_q_t      readers; /**< Reader wait queue */
