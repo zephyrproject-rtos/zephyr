@@ -62,8 +62,8 @@ void configure_mpu_stack_guard(struct k_thread *thread)
 		 * -----------------------
 		 */
 		arc_core_mpu_configure(THREAD_STACK_GUARD_REGION,
-			thread->arch.priv_stack_start - STACK_GUARD_SIZE,
-			STACK_GUARD_SIZE);
+				       thread->arch.priv_stack_start - STACK_GUARD_SIZE,
+				       STACK_GUARD_SIZE);
 		return;
 	}
 #endif
@@ -113,7 +113,7 @@ int _arch_mem_domain_max_partitions_get(void)
  * Reset MPU region for a single memory partition
  */
 void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				       u32_t  partition_id)
+				       u32_t partition_id)
 {
 	ARG_UNUSED(domain);
 
