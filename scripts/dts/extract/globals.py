@@ -47,23 +47,17 @@ def convert_string_to_label(s):
 
 
 def get_all_compatibles(d, name, comp_dict):
-    if 'props' in d:
-        compat = d['props'].get('compatible')
-        enabled = d['props'].get('status')
-
-    if enabled == "disabled":
+    if d['props'].get('status') == 'disabled':
         return comp_dict
 
-    if compat is not None:
-        comp_dict[name] = compat
+    if 'compatible' in d['props']:
+        comp_dict[name] = d['props']['compatible']
 
     if name != '/':
         name += '/'
 
-    if isinstance(d, dict):
-        if d['children']:
-            for k, v in d['children'].items():
-                get_all_compatibles(v, name + k, comp_dict)
+    for k, v in d['children'].items():
+        get_all_compatibles(v, name + k, comp_dict)
 
     return comp_dict
 
