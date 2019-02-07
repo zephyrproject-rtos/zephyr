@@ -18,9 +18,9 @@ Convenience wrapper for building Zephyr applications.
 This command attempts to do what you mean when run from a Zephyr
 application source or a pre-existing build directory:
 
-- When "west build" is run from a Zephyr build directory, the source
-  directory is obtained from the CMake cache, and that build directory
-  is re-compiled.
+- When the build directory ('./build' by default, see below) exists and is
+  already a Zephyr build directory, the source directory is obtained from the
+  CMake cache, and that build directory is re-compiled.
 
 - Otherwise, the source directory defaults to the current working
   directory, so running "west build" from a Zephyr application's
