@@ -414,23 +414,23 @@ def get_key_value(k, v, tabstop):
     return line
 
 
-def output_keyvalue_lines(fd):
+def write_conf(f):
     for node in sorted(defs):
-        fd.write('# ' + node.split('/')[-1] + '\n')
+        f.write('# ' + node.split('/')[-1] + '\n')
 
         for prop in sorted(defs[node]):
             if prop != 'aliases':
-                fd.write('%s=%s\n' % (prop, defs[node][prop]))
+                f.write('%s=%s\n' % (prop, defs[node][prop]))
 
         for alias in sorted(defs[node]['aliases']):
             alias_target = defs[node]['aliases'][alias]
-            fd.write('%s=%s\n' % (alias, defs[node].get(alias_target)))
+            f.write('%s=%s\n' % (alias, defs[node].get(alias_target)))
 
-        fd.write('\n')
+        f.write('\n')
 
 
-def output_include_lines(fd):
-    fd.write('''\
+def write_header(f):
+    f.write('''\
 /**********************************************
 *                 Generated include file
 *                      DO NOT MODIFY
@@ -442,8 +442,8 @@ def output_include_lines(fd):
 
     node_keys = sorted(defs)
     for node in node_keys:
-        fd.write('/* ' + node.split('/')[-1] + ' */')
-        fd.write("\n")
+        f.write('/* ' + node.split('/')[-1] + ' */')
+        f.write("\n")
 
         max_dict_key = lambda d: max(len(k) for k in d)
         maxlength = 0
@@ -464,13 +464,13 @@ def output_include_lines(fd):
             if prop == 'aliases':
                 for entry in sorted(defs[node][prop]):
                     a = defs[node][prop][entry]
-                    fd.write(get_key_value(entry, a, maxtabstop))
+                    f.write(get_key_value(entry, a, maxtabstop))
             else:
-                fd.write(get_key_value(prop, defs[node][prop], maxtabstop))
+                f.write(get_key_value(prop, defs[node][prop], maxtabstop))
 
-        fd.write("\n")
+        f.write("\n")
 
-    fd.write("#endif\n")
+    f.write("#endif\n")
 
 
 def load_yaml_descriptions(dts, yaml_dirs):
@@ -551,11 +551,11 @@ def main():
 
     if args.keyvalue is not None:
         with open(args.keyvalue, 'w', encoding='utf-8') as f:
-            output_keyvalue_lines(f)
+            write_conf(f)
 
     if args.include is not None:
         with open(args.include, 'w', encoding='utf-8') as f:
-            output_include_lines(f)
+            write_header(f)
 
 
 if __name__ == '__main__':
