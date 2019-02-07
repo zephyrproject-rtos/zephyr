@@ -106,12 +106,14 @@ static ALWAYS_INLINE unsigned int find_lsb_set(u32_t op)
  *
  * @internal
  *
- * On Cortex-M3/M4, this function prevents exceptions of priority lower than
- * the two highest priorities from interrupting the CPU.
+ * On ARMv7-M and ARMv8-M Mainline CPUs, this function prevents regular
+ * exceptions (i.e. with interrupt priority lower than or equal to
+ * _EXC_IRQ_DEFAULT_PRIO) from interrupting the CPU. NMI, Faults, SVC,
+ * and Zero Latency IRQs (if supported) may still interrupt the CPU.
  *
- * On Cortex-M0/M0+, this function reads the value of PRIMASK which shows
- * if interrupts are enabled, then disables all interrupts except NMI.
- *
+ * On ARMv6-M and ARMv8-M Baseline CPUs, this function reads the value of
+ * PRIMASK which shows if interrupts are enabled, then disables all interrupts
+ * except NMI.
  */
 
 static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
