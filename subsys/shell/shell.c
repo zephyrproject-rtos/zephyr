@@ -503,14 +503,17 @@ static void partial_autocomplete(const struct shell *shell,
 }
 
 static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
-		    struct shell_static_entry help_entry)
+		    const struct shell_static_entry *help_entry)
 {
 	int ret_val = 0;
 
 	if (shell->ctx->active_cmd.handler == NULL) {
-		if ((help_entry.help) && IS_ENABLED(CONFIG_SHELL_HELP)) {
-			if (help_entry.help != shell->ctx->active_cmd.help) {
-				shell->ctx->active_cmd = help_entry;
+		if ((help_entry != NULL) && IS_ENABLED(CONFIG_SHELL_HELP)) {
+			if (help_entry->help == NULL) {
+				return -ENOEXEC;
+			}
+			if (help_entry->help != shell->ctx->active_cmd.help) {
+				shell->ctx->active_cmd = *help_entry;
 			}
 			shell_help(shell);
 			return SHELL_CMD_HELP_PRINTED;
@@ -714,7 +717,7 @@ static int execute(const struct shell *shell)
 
 	/* Executing the deepest found handler. */
 	return exec_cmd(shell, argc - cmd_with_handler_lvl,
-			&argv[cmd_with_handler_lvl], help_entry);
+			&argv[cmd_with_handler_lvl], &help_entry);
 }
 
 static void tab_handle(const struct shell *shell)
