@@ -151,13 +151,6 @@ int z_impl_zsock_socket(int family, int type, int proto)
 		return sock_family->handler(family, type, proto);
 	}
 
-#if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
-	if (((proto >= IPPROTO_TLS_1_0) && (proto <= IPPROTO_TLS_1_2)) ||
-	    (proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2)) {
-		return ztls_socket(family, type, proto);
-	}
-#endif
-
 #if defined(CONFIG_NET_SOCKETS_PACKET)
 	if (family == AF_PACKET) {
 		return zpacket_socket(family, type, proto);
