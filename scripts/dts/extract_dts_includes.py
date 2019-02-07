@@ -139,17 +139,12 @@ class Bindings(yaml.Loader):
             return yaml.load(f, Bindings)
 
 def extract_single(node_address, def_label):
-
+    label = def_label + '_BUS_NAME'
     prop_alias = {}
 
-    label = def_label + '_BUS_NAME'
-
-    prop = find_parent_prop(node_address, 'label')
-
-    prop = "\"" + prop + "\""
     add_compat_alias(node_address, 'BUS_NAME', label, prop_alias)
 
-    # generate defs for node aliases
+    # Generate defines for node aliases
     if node_address in aliases:
         add_prop_aliases(
             node_address,
@@ -157,7 +152,9 @@ def extract_single(node_address, def_label):
             label,
             prop_alias)
 
-    insert_defs(node_address, {label: prop}, prop_alias)
+    insert_defs(node_address,
+                {label: '"' + find_parent_prop(node_address, 'label') + '"'},
+                prop_alias)
 
 def extract_string_prop(node_address, key, label):
 
