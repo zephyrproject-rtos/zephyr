@@ -393,6 +393,15 @@ int usb_dc_ep_read_continue(u8_t ep);
 int usb_dc_ep_mps(u8_t ep);
 
 /**
+ * @brief Start the host wake up procedure.
+ *
+ * Function to wake up the host if it's currently in sleep mode.
+ *
+ * @return 0 on success, negative errno code on fail.
+ */
+int usb_dc_wakeup_request(void);
+
+/**
  * @}
  */
 

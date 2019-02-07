@@ -71,6 +71,9 @@
 #define FEA_REMOTE_WAKEUP           0x01
 #define FEA_TEST_MODE               0x02
 
+#define DEVICE_STATUS_SELF_POWERED  0x01
+#define DEVICE_STATUS_REMOTE_WAKEUP 0x02
+
 /*
  *  USB descriptors
  */
