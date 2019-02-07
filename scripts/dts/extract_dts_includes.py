@@ -143,36 +143,23 @@ def extract_single(node_address, prop, key, def_label):
     prop_def = {}
     prop_alias = {}
 
-    if isinstance(prop, list):
-        for i, p in enumerate(prop):
-            k = str_to_label(key)
-            label = def_label + '_' + k
-            if isinstance(p, str):
-                p = "\"" + p + "\""
-            add_compat_alias(node_address,
-                    k + '_' + str(i),
-                    label + '_' + str(i),
-                    prop_alias)
-            prop_def[label + '_' + str(i)] = p
-    else:
-        k = str_to_label(key)
-        label = def_label + '_' + k
+    k = str_to_label(key)
+    label = def_label + '_' + k
 
-        if prop == 'parent-label':
-            prop = find_parent_prop(node_address, 'label')
+    if prop == 'parent-label':
+        prop = find_parent_prop(node_address, 'label')
 
-        if isinstance(prop, str):
-            prop = "\"" + prop + "\""
-        add_compat_alias(node_address, k, label, prop_alias)
-        prop_def[label] = prop
+    prop = "\"" + prop + "\""
+    add_compat_alias(node_address, k, label, prop_alias)
+    prop_def[label] = prop
 
-        # generate defs for node aliases
-        if node_address in aliases:
-            add_prop_aliases(
-                node_address,
-                lambda alias: str_to_label(alias) + '_' + k,
-                label,
-                prop_alias)
+    # generate defs for node aliases
+    if node_address in aliases:
+        add_prop_aliases(
+            node_address,
+            lambda alias: str_to_label(alias) + '_' + k,
+            label,
+            prop_alias)
 
     insert_defs(node_address, prop_def, prop_alias)
 
