@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014 - 2018, Nordic Semiconductor ASA
+ * Copyright (c) 2014 - 2019, Nordic Semiconductor ASA
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -399,9 +399,23 @@ __STATIC_INLINE uint32_t nrf_qdec_dbfen_get(void)
 
 __STATIC_INLINE void nrf_qdec_pio_assign( uint32_t psela, uint32_t pselb, uint32_t pselled)
 {
+#if defined(QDEC_PSEL_A_CONNECT_Pos)
+    NRF_QDEC->PSEL.A = psela;
+#else
     NRF_QDEC->PSELA = psela;
+#endif
+
+#if defined(QDEC_PSEL_B_CONNECT_Pos)
+    NRF_QDEC->PSEL.B = pselb;
+#else
     NRF_QDEC->PSELB = pselb;
+#endif
+
+#if defined(QDEC_PSEL_LED_CONNECT_Pos)
+    NRF_QDEC->PSEL.LED = pselled;
+#else
     NRF_QDEC->PSELLED = pselled;
+#endif
 }
 
 __STATIC_INLINE void nrf_qdec_task_trigger(nrf_qdec_task_t qdec_task)

@@ -39,17 +39,17 @@ POSSIBILITY OF SUCH DAMAGE.
 /* Description: Clock management 0 */
 
 /* Register: CLOCK_TASKS_HFCLKSTART */
-/* Description: Start HFCLK crystal oscillator */
+/* Description: Start HFCLK source */
 
-/* Bit 0 : Start HFCLK crystal oscillator */
+/* Bit 0 : Start HFCLK source */
 #define CLOCK_TASKS_HFCLKSTART_TASKS_HFCLKSTART_Pos (0UL) /*!< Position of TASKS_HFCLKSTART field. */
 #define CLOCK_TASKS_HFCLKSTART_TASKS_HFCLKSTART_Msk (0x1UL << CLOCK_TASKS_HFCLKSTART_TASKS_HFCLKSTART_Pos) /*!< Bit mask of TASKS_HFCLKSTART field. */
 #define CLOCK_TASKS_HFCLKSTART_TASKS_HFCLKSTART_Trigger (1UL) /*!< Trigger task */
 
 /* Register: CLOCK_TASKS_HFCLKSTOP */
-/* Description: Stop HFCLK crystal oscillator */
+/* Description: Stop HFCLK source */
 
-/* Bit 0 : Stop HFCLK crystal oscillator */
+/* Bit 0 : Stop HFCLK source */
 #define CLOCK_TASKS_HFCLKSTOP_TASKS_HFCLKSTOP_Pos (0UL) /*!< Position of TASKS_HFCLKSTOP field. */
 #define CLOCK_TASKS_HFCLKSTOP_TASKS_HFCLKSTOP_Msk (0x1UL << CLOCK_TASKS_HFCLKSTOP_TASKS_HFCLKSTOP_Pos) /*!< Bit mask of TASKS_HFCLKSTOP field. */
 #define CLOCK_TASKS_HFCLKSTOP_TASKS_HFCLKSTOP_Trigger (1UL) /*!< Trigger task */

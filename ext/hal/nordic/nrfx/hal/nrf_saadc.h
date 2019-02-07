@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
+ * Copyright (c) 2015 - 2019, Nordic Semiconductor ASA
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -384,7 +384,7 @@ __STATIC_INLINE nrf_saadc_event_t nrf_saadc_event_limit_get(uint8_t channel, nrf
  * @param[in] pselp   Positive input.
  * @param[in] pseln   Negative input. Set to NRF_SAADC_INPUT_DISABLED in single ended mode.
  */
-__STATIC_INLINE void nrf_saadc_channel_input_set(uint8_t channel,
+__STATIC_INLINE void nrf_saadc_channel_input_set(uint8_t           channel,
                                                  nrf_saadc_input_t pselp,
                                                  nrf_saadc_input_t pseln);
 
@@ -394,7 +394,7 @@ __STATIC_INLINE void nrf_saadc_channel_input_set(uint8_t channel,
  * @param[in] channel Channel number.
  * @param[in] pselp   Positive input.
  */
-__STATIC_INLINE void nrf_saadc_channel_pos_input_set(uint8_t channel,
+__STATIC_INLINE void nrf_saadc_channel_pos_input_set(uint8_t           channel,
                                                      nrf_saadc_input_t pselp);
 
 /**
@@ -521,6 +521,27 @@ __STATIC_INLINE void nrf_saadc_oversample_set(nrf_saadc_oversample_t oversample)
  * @return Oversampling configuration.
  */
 __STATIC_INLINE nrf_saadc_oversample_t nrf_saadc_oversample_get(void);
+
+/**
+ * @brief Function for enabling the continuous sampling.
+ *
+ * This function configures the SAADC internal timer to automatically take new samples at a fixed
+ * sample rate. Trigger the START task to begin continuous sampling. To stop the sampling, trigger
+ * the STOP task.
+ *
+ * @note The internal timer can only be used when a single input channel is enabled.
+ *
+ * @param[in] cc Capture and compare value. Sample rate is 16 MHz/cc. Valid CC range is
+ *               from 80 to 2047.
+ */
+__STATIC_INLINE void nrf_saadc_continuous_mode_enable(uint16_t cc);
+
+/**
+ * @brief Function for disabling the continuous sampling.
+ *
+ * New samples can still be acquired by manually triggering the SAMPLE task or by PPI.
+ */
+__STATIC_INLINE void nrf_saadc_continuous_mode_disable(void);
 
 /**
  * @brief Function for initializing the SAADC channel.
@@ -727,6 +748,18 @@ __STATIC_INLINE void nrf_saadc_oversample_set(nrf_saadc_oversample_t oversample)
 __STATIC_INLINE nrf_saadc_oversample_t nrf_saadc_oversample_get(void)
 {
     return (nrf_saadc_oversample_t)NRF_SAADC->OVERSAMPLE;
+}
+
+__STATIC_INLINE void nrf_saadc_continuous_mode_enable(uint16_t cc)
+{
+    NRFX_ASSERT((cc >= 80) && (cc <= 2047));
+    NRF_SAADC->SAMPLERATE = (SAADC_SAMPLERATE_MODE_Timers << SAADC_SAMPLERATE_MODE_Pos)
+                            | ((uint32_t)cc << SAADC_SAMPLERATE_CC_Pos);
+}
+
+__STATIC_INLINE void nrf_saadc_continuous_mode_disable(void)
+{
+    NRF_SAADC->SAMPLERATE = SAADC_SAMPLERATE_MODE_Task << SAADC_SAMPLERATE_MODE_Pos;
 }
 
 __STATIC_INLINE void nrf_saadc_channel_init(uint8_t                                  channel,

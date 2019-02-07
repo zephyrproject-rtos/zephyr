@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 - 2018, Nordic Semiconductor ASA
+ * Copyright (c) 2017 - 2019, Nordic Semiconductor ASA
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -174,21 +174,31 @@ do {                                                         \
 } while(0)
 
 /**
+ * @brief Macro for getting the ID number of the specified peripheral.
+ *
+ * For peripherals in Nordic SoCs, there is a direct relationship between their
+ * ID numbers and their base addresses. See the chapter "Peripheral interface"
+ * (section "Peripheral ID") in the Product Specification.
+ *
+ * @param[in] base_addr  Peripheral base address or pointer.
+ *
+ * @return ID number associated with the specified peripheral.
+ */
+#define NRFX_PERIPHERAL_ID_GET(base_addr)  (uint8_t)((uint32_t)(base_addr) >> 12)
+
+/**
  * @brief Macro for getting the interrupt number assigned to a specific
  *        peripheral.
  *
- * In Nordic SoCs the IRQ number assigned to a peripheral is equal to the ID
- * of this peripheral, and there is a direct relationship between this ID and
- * the peripheral base address, i.e. the address of a fixed block of 0x1000
- * bytes of address space assigned to this peripheral.
- * See the chapter "Peripheral interface" (sections "Peripheral ID" and
- * "Interrupts") in the product specification of a given SoC.
+ * For peripherals in Nordic SoCs, the IRQ number assigned to a peripheral is
+ * equal to its ID number. See the chapter "Peripheral interface" (sections
+ * "Peripheral ID" and "Interrupts") in the Product Specification.
  *
  * @param[in] base_addr  Peripheral base address or pointer.
  *
  * @return Interrupt number associated with the specified peripheral.
  */
-#define NRFX_IRQ_NUMBER_GET(base_addr)  (uint8_t)((uint32_t)(base_addr) >> 12)
+#define NRFX_IRQ_NUMBER_GET(base_addr)  NRFX_PERIPHERAL_ID_GET(base_addr)
 
 /**
  * @brief IRQ handler type.

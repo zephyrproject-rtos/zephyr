@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
+ * Copyright (c) 2015 - 2019, Nordic Semiconductor ASA
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -296,9 +296,23 @@ __STATIC_INLINE void nrf_spi_pins_set(NRF_SPI_Type * p_reg,
                                       uint32_t mosi_pin,
                                       uint32_t miso_pin)
 {
+#if defined(SPI_PSEL_SCK_CONNECT_Pos)
+    p_reg->PSEL.SCK = sck_pin;
+#else
     p_reg->PSELSCK  = sck_pin;
+#endif
+
+#if defined(SPI_PSEL_MOSI_CONNECT_Pos)
+    p_reg->PSEL.MOSI = mosi_pin;
+#else
     p_reg->PSELMOSI = mosi_pin;
+#endif
+
+#if defined(SPI_PSEL_MISO_CONNECT_Pos)
+    p_reg->PSEL.MISO = miso_pin;
+#else
     p_reg->PSELMISO = miso_pin;
+#endif
 }
 
 __STATIC_INLINE void nrf_spi_txd_set(NRF_SPI_Type * p_reg, uint8_t data)
