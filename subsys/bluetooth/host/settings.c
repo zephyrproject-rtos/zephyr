@@ -86,7 +86,7 @@ int bt_settings_decode_key(char *key, bt_addr_le_t *addr)
 	return 0;
 }
 
-static int set(int argc, char **argv, size_t len_rd, read_fn read,
+static int set(int argc, char **argv, size_t len_rd, settings_read_fn read,
 	       void *store)
 {
 	int len;

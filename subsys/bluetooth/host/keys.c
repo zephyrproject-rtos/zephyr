@@ -271,7 +271,7 @@ int bt_keys_store(struct bt_keys *keys)
 	return 0;
 }
 
-static int keys_set(int argc, char **argv, size_t len_rd, read_fn read,
+static int keys_set(int argc, char **argv, size_t len_rd, settings_read_fn read,
 		    void *store)
 {
 	struct bt_keys *keys;
@@ -324,7 +324,7 @@ static int keys_set(int argc, char **argv, size_t len_rd, read_fn read,
 		return -ENOMEM;
 	}
 
-	if (settings_val_get_len_cb(value_ctx) != BT_KEYS_STORAGE_LEN) {
+	if (len_rd != BT_KEYS_STORAGE_LEN) {
 		BT_ERR("Invalid key length %d != %d", len, BT_KEYS_STORAGE_LEN);
 		bt_keys_clear(keys);
 		return -EINVAL;

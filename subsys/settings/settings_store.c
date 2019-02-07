@@ -7,13 +7,7 @@
  */
 
 #include <string.h>
-#include <stdio.h>
-
-#include <zephyr/types.h>
-#include <stddef.h>
-#include <sys/types.h>
 #include <errno.h>
-#include <misc/__assert.h>
 
 #include <settings/settings.h>
 #include "settings_priv.h"
@@ -55,7 +49,7 @@ int settings_load(void)
 	/*
 	 * finally commit the settings
 	 */
-	return settings_commit(NULL);
+	return settings_commit();
 }
 
 
@@ -65,6 +59,11 @@ int settings_load(void)
 int settings_save_one(const char *name, void *value, size_t val_len)
 {
 	struct settings_store *cs;
+
+	if ((strlen(name) > (SETTINGS_MAX_NAME_LEN+SETTINGS_EXTRA_LEN-1)) ||
+	    (val_len > (SETTINGS_MAX_VAL_LEN))) {
+		return -EINVAL;
+	}
 
 	cs = settings_save_dst;
 	if (!cs) {

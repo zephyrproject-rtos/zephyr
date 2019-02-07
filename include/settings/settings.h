@@ -48,7 +48,7 @@ extern "C" {
 
 #define SETTINGS_NMGR_OP		0
 
-typedef ssize_t (*read_fn)(void *back_end, void *data, size_t len);
+typedef ssize_t (*settings_read_fn)(void *back_end, void *data, size_t len);
 
 /**
  * @struct settings_handler
@@ -62,6 +62,9 @@ struct settings_handler {
 	char *name;
 	/**< Name of subtree. */
 
+	bool disabled;
+	/**< Status of subtree. A disabled subtree will not be loaded. */
+
 	int (*h_get)(int argc, char **argv, void *val, int val_len_max);
 	/**< Get values handler of settings items identified by keyword names.
 	 *
@@ -72,7 +75,7 @@ struct settings_handler {
 	 *  - val_len_max - size of that buffer.
 	 */
 
-	int (*h_set)(int argc, char **argv, size_t len, read_fn read,
+	int (*h_set)(int argc, char **argv, size_t len, settings_read_fn read,
 		     void *back_end);
 	/**< Set value handler of settings items identified by keyword names.
 	 *
@@ -172,11 +175,9 @@ int settings_delete(const char *name);
  * Call commit for all settings handler. This should apply all
  * settings which has been set, but not applied yet.
  *
- * @param name Name of the settings subtree, or NULL to commit everything.
- *
  * @return 0 on success, non-zero on failure.
  */
-int settings_commit(char *name);
+int settings_commit(void);
 
 /**
  * @} settings
@@ -185,17 +186,42 @@ int settings_commit(char *name);
 /*
  * Config storage
  */
+
 struct settings_store_itf;
 struct settings_store {
 	sys_snode_t cs_next;
 	const struct settings_store_itf *cs_itf;
 };
 
+struct settings_store_itf {
+	int (*csi_load)(struct settings_store *cs);
+	int (*csi_save_start)(struct settings_store *cs);
+	int (*csi_save)(struct settings_store *cs, const char *name,
+			const char *value, size_t val_len);
+	int (*csi_save_end)(struct settings_store *cs);
+};
+
+/*
+ * API for handler lookup
+ */
+
+struct settings_handler *settings_parse_and_lookup(char *name, int *name_argc,
+						   char *name_argv[]);
+
+/*
+ * API for config storage.
+ */
+
+void settings_src_register(struct settings_store *cs);
+void settings_dst_register(struct settings_store *cs);
+
 #ifdef CONFIG_SETTINGS_RUNTIME
 
 int settings_runtime_set(const char *name, void *data, size_t len);
 
 int settings_runtime_get(const char *name, void *data, size_t len);
+
+int settings_runtime_commit(const char *name);
 
 #endif /* CONFIG_SETTINGS_RUNTIME */
 
@@ -244,6 +270,13 @@ int settings_file_backend_init(struct settings_file *cf);
 
 #ifdef CONFIG_SETTINGS_NVS
 
+/* In nvs the settings data is stored as:
+ *	a. name at id starting from NVS_NAMECNT_ID + 1
+ *	b. value at id of name + NVS_NAME_ID_OFFSET
+ * Deleted records will not be found, only the last record will be
+ * read. The entry ad NVS_NAMECNT_ID is used to store the largest
+ * name id in use.
+ */
 #define NVS_NAMECNT_ID 0x8000
 #define NVS_NAME_ID_OFFSET 0x4000
 

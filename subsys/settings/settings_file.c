@@ -6,8 +6,6 @@
  */
 
 #include <string.h>
-#include <assert.h>
-#include <zephyr.h>
 #include <errno.h>
 
 #include <settings/settings.h>
@@ -77,6 +75,7 @@ int settings_file_dst(struct settings_file *cf)
 static int file_get_next_entry(struct fs_file_t *file, struct file_entry *entry)
 {
 	char buf[16];
+	char *loc_eq;
 	size_t len, add, val_len;
 	int rc;
 
@@ -107,7 +106,12 @@ static int file_get_next_entry(struct fs_file_t *file, struct file_entry *entry)
 		if (rc < 0) {
 			goto end;
 		}
-		add = strchr(buf, '=') - buf;
+		loc_eq = strchr(buf, '=');
+		if (loc_eq == NULL) {
+			rc = -ENOENT;
+			goto end;
+		}
+		add = loc_eq - buf;
 		entry->len_name += add;
 		if (add < sizeof(buf)) {
 			break;
@@ -218,8 +222,6 @@ int settings_file_compress(struct settings_file *cf)
 	off_t rd_off;
 	int lines;
 
-
-	printk("Lines before compress [%d]\n", cf->cf_lines);
 	strcpy(fname_0, cf->cf_name);
 	strcat(fname_0, "0");
 	strcpy(fname_1, cf->cf_name);
@@ -280,7 +282,7 @@ int settings_file_compress(struct settings_file *cf)
 		rd_off = loc1.off_name;
 		entry_len = loc1.len_name + 1 + sizeof(u16_t) + loc1.len_value;
 		while (entry_len) {
-			size_t cp_len = min(sizeof(buf), entry_len);
+			size_t cp_len = MIN(sizeof(buf), entry_len);
 
 			fs_seek(&rf, rd_off, FS_SEEK_SET);
 			rc = fs_read(&rf, buf, cp_len);
@@ -310,7 +312,6 @@ int settings_file_compress(struct settings_file *cf)
 			(void)fs_unlink(fname_1);
 		}
 	}
-	printk("Lines after compress [%d]\n", cf->cf_lines);
 	return rc;
 
 end_rollback:
@@ -457,7 +458,7 @@ static int settings_file_save(struct settings_store *cs, const char *name,
 				off = loc1.off_value;
 				while (len) {
 					save = false;
-					w_size = min(len, sizeof(w_buf));
+					w_size = MIN(len, sizeof(w_buf));
 					fs_seek(&file, off, FS_SEEK_SET);
 					rc = fs_read(&file, w_buf, w_size);
 					if (rc < 0) {
@@ -538,6 +539,7 @@ int settings_file_backend_init(struct settings_file *cf)
 	char dirname[SETTINGS_FILE_NAME_MAX+1];
 	char fname_0[SETTINGS_FILE_NAME_MAX+1];
 	char fname_1[SETTINGS_FILE_NAME_MAX+1];
+	char *loc_last_sep;
 	size_t fsize_0, fsize_1;
 	int rc;
 
@@ -547,8 +549,11 @@ int settings_file_backend_init(struct settings_file *cf)
 
 	/* Get the directory name from filename */
 	strcpy(dirname, cf->cf_name);
-	dirname[strrchr(dirname, '/') - dirname] = '\0';
-	printk("Directory name %s\n", dirname);
+	loc_last_sep = strrchr(dirname, '/');
+	if (loc_last_sep == NULL) {
+		return -EINVAL;
+	}
+	dirname[loc_last_sep - dirname] = '\0';
 
 	rc = fs_stat(dirname, &entry);
 	if (rc) {

@@ -5,15 +5,10 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <stdlib.h>
 #include <string.h>
-#include <stdio.h>
-#include <stdbool.h>
-#include <errno.h>
 
 #include <settings/settings.h>
 #include "settings_priv.h"
-#include <zephyr/types.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(settings, CONFIG_SETTINGS_LOG_LEVEL);
@@ -53,7 +48,7 @@ static struct settings_handler *settings_handler_lookup(char *name)
 	struct settings_handler *ch;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
-		if (!strcmp(name, ch->name)) {
+		if ((!strcmp(name, ch->name)) && (!ch->disabled)) {
 			return ch;
 		}
 	}
@@ -102,51 +97,20 @@ struct settings_handler *settings_parse_and_lookup(char *name,
 	return settings_handler_lookup(name_argv[0]);
 }
 
-int settings_get_value(char *name, char *buf, int buf_len)
+int settings_commit(void)
 {
-	int name_argc;
-	char *name_argv[SETTINGS_MAX_DIR_DEPTH];
-	struct settings_handler *ch;
-
-	ch = settings_parse_and_lookup(name, &name_argc, name_argv);
-	if (!ch) {
-		return -EINVAL;
-	}
-
-	if (!ch->h_get) {
-		return -EINVAL;
-	}
-	return ch->h_get(name_argc - 1, &name_argv[1], buf, buf_len);
-}
-
-int settings_commit(char *name)
-{
-	int name_argc;
-	char *name_argv[SETTINGS_MAX_DIR_DEPTH];
 	struct settings_handler *ch;
 	int rc;
 	int rc2;
 
-	if (name) {
-		ch = settings_parse_and_lookup(name, &name_argc, name_argv);
-		if (!ch) {
-			return -EINVAL;
-		}
+	rc = 0;
+	SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
 		if (ch->h_commit) {
-			return ch->h_commit();
-		} else {
-			return 0;
-		}
-	} else {
-		rc = 0;
-		SYS_SLIST_FOR_EACH_CONTAINER(&settings_handlers, ch, node) {
-			if (ch->h_commit) {
-				rc2 = ch->h_commit();
-				if (!rc) {
-					rc = rc2;
-				}
+			rc2 = ch->h_commit();
+			if (!rc) {
+				rc = rc2;
 			}
 		}
-		return rc;
 	}
+	return rc;
 }

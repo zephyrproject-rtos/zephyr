@@ -125,7 +125,8 @@ static struct {
 	struct cfg_val cfg;
 } stored_cfg;
 
-static int net_set(int argc, char **argv, size_t len, read_fn read, void *store)
+static int net_set(int argc, char **argv, size_t len, settings_read_fn read,
+		   void *store)
 {
 	struct net_val net;
 	int err, elen;
@@ -159,7 +160,8 @@ static int net_set(int argc, char **argv, size_t len, read_fn read, void *store)
 	return 0;
 }
 
-static int iv_set(int argc, char **argv, size_t len, read_fn read, void *store)
+static int iv_set(int argc, char **argv, size_t len, settings_read_fn read,
+		  void *store)
 {
 	struct iv_val iv;
 	int err, elen;
@@ -194,7 +196,8 @@ static int iv_set(int argc, char **argv, size_t len, read_fn read, void *store)
 	return 0;
 }
 
-static int seq_set(int argc, char **argv, size_t len, read_fn read, void *store)
+static int seq_set(int argc, char **argv, size_t len, settings_read_fn read,
+		   void *store)
 {
 	struct seq_val seq;
 	int err, elen;
@@ -265,7 +268,8 @@ static struct bt_mesh_rpl *rpl_alloc(u16_t src)
 	return NULL;
 }
 
-static int rpl_set(int argc, char **argv, size_t len, read_fn read, void *store)
+static int rpl_set(int argc, char **argv, size_t len, settings_read_fn read,
+		   void *store)
 {
 	struct bt_mesh_rpl *entry;
 	struct rpl_val rpl;
@@ -321,7 +325,7 @@ static int rpl_set(int argc, char **argv, size_t len, read_fn read, void *store)
 	return 0;
 }
 
-static int net_key_set(int argc, char **argv, size_t len, read_fn read,
+static int net_key_set(int argc, char **argv, size_t len, settings_read_fn read,
 		       void *store)
 {
 	struct bt_mesh_subnet *sub;
@@ -391,7 +395,7 @@ static int net_key_set(int argc, char **argv, size_t len, read_fn read,
 	return 0;
 }
 
-static int app_key_set(int argc, char **argv, size_t len, read_fn read,
+static int app_key_set(int argc, char **argv, size_t len, settings_read_fn read,
 		       void *store)
 {
 	struct bt_mesh_app_key *app;
@@ -451,7 +455,7 @@ static int app_key_set(int argc, char **argv, size_t len, read_fn read,
 	return 0;
 }
 
-static int hb_pub_set(int argc, char **argv, size_t len, read_fn read,
+static int hb_pub_set(int argc, char **argv, size_t len, settings_read_fn read,
 		      void *store)
 {
 	struct bt_mesh_hb_pub *pub = bt_mesh_hb_pub_get();
@@ -505,7 +509,8 @@ static int hb_pub_set(int argc, char **argv, size_t len, read_fn read,
 	return 0;
 }
 
-static int cfg_set(int argc, char **argv, size_t len, read_fn read, void *store)
+static int cfg_set(int argc, char **argv, size_t len, settings_read_fn read,
+		   void *store)
 {
 	struct bt_mesh_cfg_srv *cfg = bt_mesh_cfg_get();
 	int err, elen;
@@ -539,8 +544,8 @@ static int cfg_set(int argc, char **argv, size_t len, read_fn read, void *store)
 	return 0;
 }
 
-static int mod_set_bind(struct bt_mesh_model *mod, size_t len, read_fn read,
-			void *store)
+static int mod_set_bind(struct bt_mesh_model *mod, size_t len,
+			settings_read_fn read, void *store)
 {
 	int err, elen, i;
 
@@ -573,8 +578,8 @@ static int mod_set_bind(struct bt_mesh_model *mod, size_t len, read_fn read,
 	return 0;
 }
 
-static int mod_set_sub(struct bt_mesh_model *mod, size_t len, read_fn read,
-		       void *store)
+static int mod_set_sub(struct bt_mesh_model *mod, size_t len,
+		       settings_read_fn read, void *store)
 {
 	int err, elen;
 
@@ -604,8 +609,8 @@ static int mod_set_sub(struct bt_mesh_model *mod, size_t len, read_fn read,
 	return 0;
 }
 
-static int mod_set_pub(struct bt_mesh_model *mod, size_t len, read_fn read,
-		       void *store)
+static int mod_set_pub(struct bt_mesh_model *mod, size_t len,
+		       settings_read_fn read, void *store)
 {
 	struct mod_pub_val pub;
 	int  err, elen;
@@ -655,8 +660,8 @@ static int mod_set_pub(struct bt_mesh_model *mod, size_t len, read_fn read,
 	return 0;
 }
 
-static int mod_set(bool vnd, int argc, char **argv, size_t len, read_fn read,
-		   void *store)
+static int mod_set(bool vnd, int argc, char **argv, size_t len,
+		   settings_read_fn read, void *store)
 {
 	struct bt_mesh_model *mod;
 	u8_t elem_idx, mod_idx;
@@ -697,13 +702,13 @@ static int mod_set(bool vnd, int argc, char **argv, size_t len, read_fn read,
 	return -ENOENT;
 }
 
-static int sig_mod_set(int argc, char **argv, size_t len, read_fn read,
+static int sig_mod_set(int argc, char **argv, size_t len, settings_read_fn read,
 		       void *store)
 {
 	return mod_set(false, argc, argv, len, read, store);
 }
 
-static int vnd_mod_set(int argc, char **argv, size_t len, read_fn read,
+static int vnd_mod_set(int argc, char **argv, size_t len, settings_read_fn read,
 		       void *store)
 {
 	return mod_set(true, argc, argv, len, read, store);
@@ -711,7 +716,7 @@ static int vnd_mod_set(int argc, char **argv, size_t len, read_fn read,
 
 const struct mesh_setting {
 	const char *name;
-	int (*func)(int argc, char **argv, size_t len, read_fn read,
+	int (*func)(int argc, char **argv, size_t len, settings_read_fn read,
 		    void *store);
 } settings[] = {
 	{ "Net", net_set },
@@ -726,7 +731,7 @@ const struct mesh_setting {
 	{ "v", vnd_mod_set },
 };
 
-static int mesh_set(int argc, char **argv, size_t len, read_fn read,
+static int mesh_set(int argc, char **argv, size_t len, settings_read_fn read,
 		    void *store)
 {
 	int i;

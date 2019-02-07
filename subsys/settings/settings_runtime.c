@@ -47,3 +47,22 @@ int settings_runtime_get(const char *name, void *data, size_t len)
 
 	return ch->h_get(name_argc - 1, &name_argv[1], data, len);
 }
+
+int settings_runtime_commit(const char *name)
+{
+	struct settings_handler *ch;
+	char name1[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN];
+	char *name_argv[SETTINGS_MAX_DIR_DEPTH];
+	int name_argc;
+
+	strcpy(name1, name);
+	ch = settings_parse_and_lookup(name1, &name_argc, name_argv);
+	if (!ch) {
+		return -EINVAL;
+	}
+	if (ch->h_commit) {
+		return ch->h_commit();
+	} else {
+		return 0;
+	}
+}

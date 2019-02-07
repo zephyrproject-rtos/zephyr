@@ -14,16 +14,8 @@
 
 #ifdef CONFIG_SETTINGS_DEFAULT_NONE
 #include <device.h>
-static struct settings_nvs settings1 = {
-	.cf_nvs.sector_size = FLASH_ERASE_BLOCK_SIZE,
-	.cf_nvs.sector_count = 3,
-	.cf_nvs.offset = FLASH_AREA_STORAGE_OFFSET,
-};
-static struct settings_nvs settings2 = {
-	.cf_nvs.sector_size = FLASH_ERASE_BLOCK_SIZE,
-	.cf_nvs.sector_count = 3,
-	.cf_nvs.offset = FLASH_AREA_STORAGE_OFFSET + 3 * FLASH_ERASE_BLOCK_SIZE,
-};
+static struct settings_nvs settings1;
+static struct settings_nvs settings2;
 
 /* For custom settings sources and destination we need to provide our own
  * settings_backend_init().
@@ -31,6 +23,18 @@ static struct settings_nvs settings2 = {
 int settings_backend_init(void)
 {
 	int rc;
+	struct flash_pages_info info;
+
+	rc = flash_get_page_info_by_offs(device_get_binding(DT_FLASH_DEV_NAME),
+					 DT_FLASH_AREA_STORAGE_OFFSET, &info);
+	if (rc) {
+		return rc;
+	}
+
+	/* define the nvs file system settings 1 using the page_info */
+	settings1.cf_nvs.sector_size = info.size;
+	settings1.cf_nvs.sector_count = 3;
+	settings1.cf_nvs.offset = DT_FLASH_AREA_STORAGE_OFFSET
 
 	/* setup settings 1 and register it as first source */
 	rc = nvs_init(&settings1.cf_nvs, DT_FLASH_DEV_NAME);
@@ -48,6 +52,11 @@ int settings_backend_init(void)
 	if (rc) {
 		return rc;
 	}
+
+	/* define the nvs file system settings 2 using the page_info */
+	settings2.cf_nvs.sector_size = info.size;
+	settings2.cf_nvs.sector_count = 3;
+	settings2.cf_nvs.offset = DT_FLASH_AREA_STORAGE_OFFSET + 3 * info.size;
 
 	/* setup settings 2 and register it as second source and destination */
 	rc = nvs_init(&settings2.cf_nvs, DT_FLASH_DEV_NAME);
@@ -72,12 +81,11 @@ int settings_backend_init(void)
 }
 #endif /* CONFIG_SETTINGS_DEFAULT_NONE */
 
-/* 1000 msec = 1 sec */
-#define SLEEP_TIME      2000
+#define SLEEP_TIME	K_SECONDS(2)
 
 u8_t rst_cnt; /* reset counter */
 
-static int ps_set(int argc, char **argv, size_t len, read_fn read,
+static int ps_set(int argc, char **argv, size_t len, settings_read_fn read,
 		  void *store)
 {
 	int rc;

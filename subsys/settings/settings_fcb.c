@@ -46,7 +46,7 @@ static int settings_fcb_read(struct fcb_entry_ctx *entry_ctx, off_t off,
 			     char *buf, size_t *len)
 {
 
-	if (off >= entry_ctx->loc.fe_data_len) {
+	if (off > entry_ctx->loc.fe_data_len) {
 		return -EINVAL;
 	}
 
@@ -78,7 +78,7 @@ static ssize_t settings_fcb_read_fn(void *back_end, void *data, size_t len)
 	if (rem) {
 		/* Read from aligned offset, keep only required data */
 		off -= rem;
-		len_read = min(rd_fn_arg->rbs - rem, len);
+		len_read = MIN(rd_fn_arg->rbs - rem, len);
 		tmp_len = rd_fn_arg->rbs;
 		rc = settings_fcb_read(rd_fn_arg->entry_ctx, off, temp_buf,
 				       &tmp_len);
@@ -114,6 +114,7 @@ static int settings_fcb_load(struct settings_store *cs)
 	struct settings_handler *ch;
 	char name[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN];
 	char *name_argv[SETTINGS_MAX_DIR_DEPTH];
+	char *loc_eq;
 	int rc, name_argc;
 	size_t len_name, len_data;
 	u8_t rbs;
@@ -125,7 +126,7 @@ static int settings_fcb_load(struct settings_store *cs)
 
 	while (fcb_getnext(&cf->cf_fcb, &loc.loc) == 0) {
 
-		len_name = min(SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1,
+		len_name = MIN(SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1,
 				loc.loc.fe_data_len);
 
 		rc = settings_fcb_read(&loc, 0, name, &len_name);
@@ -134,7 +135,11 @@ static int settings_fcb_load(struct settings_store *cs)
 			continue;
 		}
 
-		len_name = strchr(name, '=') - name;
+		loc_eq = strchr(name, '=');
+		if (loc_eq == NULL) {
+			continue;
+		}
+		len_name =  loc_eq - name;
 
 		/* A record was found, setup and call h_set() */
 		name[len_name] = '\0';
@@ -172,6 +177,7 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 	char name1[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN];
 	char name2[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN];
 	char buf[16];
+	char *loc_eq;
 	int copy;
 	size_t chunk_size, len1_read, len2_read;
 	off_t src_off, dst_off;
@@ -195,7 +201,7 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 			break;
 		}
 
-		len1_read = min(SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1,
+		len1_read = MIN(SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN + 1,
 				loc1.loc.fe_data_len);
 
 		rc = settings_fcb_read(&loc1, 0, name1, &len1_read);
@@ -204,7 +210,11 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 			continue;
 		}
 
-		len1_read = strchr(name1, '=') - name1;
+		loc_eq = strchr(name1, '=');
+		if (loc_eq == NULL) {
+			continue;
+		}
+		len1_read = loc_eq - name1;
 
 		if (len1_read + 1 == loc1.loc.fe_data_len) {
 			/* Lack of a value so the record is a deletion-record */
@@ -218,7 +228,7 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 
 		while (fcb_getnext(&cf->cf_fcb, &loc2.loc) == 0) {
 
-			len2_read = min(SETTINGS_MAX_NAME_LEN +
+			len2_read = MIN(SETTINGS_MAX_NAME_LEN +
 					SETTINGS_EXTRA_LEN + 1,
 					loc2.loc.fe_data_len);
 
@@ -228,7 +238,11 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 				continue;
 			}
 
-			len2_read = strchr(name2, '=') - name2;
+			loc_eq = strchr(name2, '=');
+			if (loc_eq == NULL) {
+				continue;
+			}
+			len2_read = loc_eq - name2;
 
 			if ((len1_read == len2_read) &&
 			    !memcmp(name1, name2, len1_read)) {
@@ -253,7 +267,7 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 		dst_off = 0;
 
 		while (len) {
-			chunk_size = min(len, sizeof(buf));
+			chunk_size = MIN(len, sizeof(buf));
 
 			rc = settings_fcb_read(&loc1, src_off, buf,
 					       &chunk_size);
@@ -334,7 +348,7 @@ static int settings_fcb_save_record(struct settings_fcb *cf,
 	while (1) {
 		while (w_size < sizeof(w_buf)) {
 			if (rem) {
-				add = min(rem, sizeof(w_buf) - w_size);
+				add = MIN(rem, sizeof(w_buf) - w_size);
 				memcpy(&w_buf[w_size], value, add);
 				value += add;
 				rem -= add;
@@ -380,6 +394,7 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 	struct fcb_entry_ctx loc1, loc2;
 	char name1[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN];
 	char name2[SETTINGS_MAX_NAME_LEN + SETTINGS_EXTRA_LEN];
+	char *loc_eq;
 	int len, rc;
 	off_t off;
 	size_t w_size, len1_read, len2_read;
@@ -410,7 +425,7 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 
 			save = true;
 
-			len1_read = min(SETTINGS_MAX_NAME_LEN +
+			len1_read = MIN(SETTINGS_MAX_NAME_LEN +
 					SETTINGS_EXTRA_LEN + 1,
 					loc1.loc.fe_data_len);
 
@@ -419,7 +434,11 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 				continue;
 			}
 
-			len1_read = strchr(name1, '=') - name1;
+			loc_eq = strchr(name1, '=');
+			if (loc_eq == NULL) {
+				continue;
+			}
+			len1_read = loc_eq - name1;
 			name1[len1_read] = '\0';
 
 			if ((len1_read + 1 == loc1.loc.fe_data_len) && delete) {
@@ -465,7 +484,7 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 
 			while (fcb_getnext(&cf->cf_fcb, &loc2.loc) == 0) {
 
-				len2_read = min(SETTINGS_MAX_NAME_LEN +
+				len2_read = MIN(SETTINGS_MAX_NAME_LEN +
 						SETTINGS_EXTRA_LEN + 1,
 						loc2.loc.fe_data_len);
 
@@ -476,7 +495,11 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 					continue;
 				}
 
-				len2_read = strchr(name2, '=') - name2;
+				loc_eq = strchr(name2, '=');
+				if (loc_eq == NULL) {
+					continue;
+				}
+				len2_read = loc_eq - name2;
 				name2[len2_read] = '\0';
 
 				if ((len1_read == len2_read) &&
@@ -504,7 +527,7 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 				off = len1_read + 1;
 				while (len) {
 					save = false;
-					w_size = min(len, sizeof(w_buf));
+					w_size = MIN(len, sizeof(w_buf));
 					rc = settings_fcb_read(&loc1, off,
 						w_buf, &w_size);
 					if (rc) {

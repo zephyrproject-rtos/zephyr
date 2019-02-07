@@ -22,12 +22,12 @@ These are registered using a call to ``settings_register()``.
 
 **h_get**
     This gets called when asking for a settings element value
-    by its name using ``settings_get_value()``.
+    by its name using ``settings_runtime_get()``.
 
 **h_set**
-    This gets called when the value is being set using ``settings_set_value()``,
-    and also when setting is loaded from persisted storage with
-    ``settings_load()``.
+    This gets called when the value is being set using
+    ``settings_runtime_set()``, and also when setting is loaded
+    from persisted storage with ``settings_load()``.
 
 **h_commit**
     This gets called after the settings have been loaded in full.
@@ -43,8 +43,8 @@ These are registered using a call to ``settings_register()``.
 Persistence
 ***********
 
-Backend storage for the settings can be a Flash Circular Buffer (FCB)
-or a file in the filesystem.
+Backend storage for the settings can be a Flash Circular Buffer (FCB),
+a file in the filesystem or a NVS filesystem.
 
 You can declare multiple sources for settings; settings from
 all of these are restored when ``settings_load()`` is called.
@@ -57,6 +57,8 @@ using ``settings_fcb_dst()``. As a side-effect,  ``settings_fcb_src()``
 initializes the FCB area, so it must be called before calling
 ``settings_fcb_dst()``. File read target is registered using
 ``settings_file_src()``, and write target by using ``settings_file_dst()``.
+NVS read target is registered using ``settings_nvs_src()``, and write target
+by using ``settings_nvs_dst()``.
 
 Loading data from persisted storage
 ***********************************
@@ -65,7 +67,8 @@ A call to ``settings_load()`` uses an ``h_set`` implementation
 to load settings data from storage to volatile memory.
 For both FCB and filesystem back-end the most
 recent key values are guaranteed by traversing all stored content
-and (potentially) overwriting older key values with newer ones.
+and (potentially) overwriting older key values with newer ones. For the NVS
+backend only the most recent values are retrieved.
 After all data is loaded, the ``h_commit`` handler is issued,
 signalling the application that the settings were successfully
 retrieved.
@@ -89,12 +92,12 @@ export functionality, for example, writing to the shell console).
         .h_export = foo_settings_export
     };
 
-    static int foo_settings_set(int argc, char **argv, void *value_ctx)
+    static int foo_settings_set(int argc, char **argv, size_t len_rd,
+                                settings_read_fn read, void *store)
     {
         if (argc == 1) {
             if (!strcmp(argv[0], "bar")) {
-                return settings_val_read_cb(value_ctx, &foo_val,
-                                            sizeof(foo_val));
+                return read(store, &foo_val, sizeof(foo_val));
             }
         }
 
@@ -129,12 +132,12 @@ up from where it was before restart.
         .h_set = foo_settings_set
     };
 
-    static int foo_settings_set(int argc, char **argv, void *value_ctx)
+    static int foo_settings_set(int argc, char **argv, size_t len_rd,
+                                settings_read_fn read, void *store)
     {
         if (argc == 1) {
             if (!strcmp(argv[0], "bar")) {
-                return settings_val_read_cb(value_ctx, &foo_val,
-                                            sizeof(foo_val));
+                return read(store, &foo_val, sizeof(foo_val));
             }
         }
 

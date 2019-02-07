@@ -3160,7 +3160,7 @@ next:
 	return load->count ? BT_GATT_ITER_CONTINUE : BT_GATT_ITER_STOP;
 }
 
-static int ccc_set(int argc, char **argv, size_t len_rd, read_fn read,
+static int ccc_set(int argc, char **argv, size_t len_rd, settings_read_fn read,
 		   void *store)
 {
 	struct ccc_store ccc_store[CCC_STORE_MAX];
@@ -3225,7 +3225,8 @@ static struct gatt_cf_cfg *find_cf_cfg_by_addr(const bt_addr_le_t *addr)
 	return NULL;
 }
 
-static int cf_set(int argc, char **argv, void *val_ctx)
+static int cf_set(int argc, char **argv, size_t len_rd, settings_read_fn read,
+		  void *store)
 {
 	struct gatt_cf_cfg *cfg;
 	bt_addr_le_t addr;
@@ -3251,9 +3252,8 @@ static int cf_set(int argc, char **argv, void *val_ctx)
 		}
 	}
 
-	if (settings_val_get_len_cb(val_ctx)) {
-		len = settings_val_read_cb(val_ctx, cfg->data,
-					   sizeof(cfg->data));
+	if (len_rd) {
+		len = read(store, cfg->data, sizeof(cfg->data));
 		if (len < 0) {
 			BT_ERR("Failed to decode value (err %d)", len);
 			return len;

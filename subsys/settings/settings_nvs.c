@@ -63,10 +63,11 @@ static int settings_nvs_load(struct settings_store *cs)
 	u16_t name_id = NVS_NAMECNT_ID;
 
 	/* In nvs the settings data is stored as:
-	 *	a. name at id starting from NVS_NAMECNT_ID (0 not included)
+	 *	a. name at id starting from NVS_NAMECNT_ID + 1
 	 *	b. value at id of name + NVS_NAME_ID_OFFSET
 	 * Deleted records will not be found, only the last record will be
-	 * read.
+	 * read. The entry ad NVS_NAMECNT_ID is used to store the largest
+	 * name id in use.
 	 */
 
 	name_id = cf->last_name_id + 1;
@@ -138,7 +139,6 @@ static int settings_nvs_save(struct settings_store *cs, const char *name,
 	write_name_id = cf->last_name_id + 1;
 
 	while (1) {
-
 		name_id--;
 		if (name_id == NVS_NAMECNT_ID) {
 			break;

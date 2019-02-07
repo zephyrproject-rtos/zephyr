@@ -100,11 +100,13 @@ config SETTINGS_DEFAULT_FS_MNT
 	default "/nffs"
 	depends on SETTINGS && SETTINGS_DEFAULT_FS
 	help
-	  Directory where the settings data is stored
+	  Mount point of the file system where the settings data is stored,
+		this should be the same as the mount point of your defined file
+		system.
 
 config SETTINGS_DEFAULT_FS_FILE
 	string "Default settings file"
-	default "/nffs/settings/run"
+	default "/settings/run"
 	depends on SETTINGS && SETTINGS_DEFAULT_FS
 	help
 	  Full path to the default settings file.

@@ -28,12 +28,11 @@ static struct fs_mount_t nffs_mnt = {
 };
 #endif /* CONFIG_SETTINGS_DEFAULT_FS */
 
-/* 1000 msec = 1 sec */
-#define SLEEP_TIME      2000
+#define SLEEP_TIME	K_SECONDS(2)
 
 u8_t rst_cnt; /* reset counter */
 
-static int ps_set(int argc, char **argv, size_t len, read_fn read,
+static int ps_set(int argc, char **argv, size_t len, settings_read_fn read,
 		  void *store)
 {
 	int rc;
