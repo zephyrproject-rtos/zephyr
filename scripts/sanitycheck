@@ -499,7 +499,10 @@ class DeviceHandler(Handler):
         t.start()
 
         try:
-            subprocess.check_output(command, stderr=subprocess.PIPE)
+            if VERBOSE:
+                subprocess.check_call(command)
+            else:
+                subprocess.check_output(command, stderr=subprocess.PIPE)
         except subprocess.CalledProcessError:
             pass
 
