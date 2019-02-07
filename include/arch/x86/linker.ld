@@ -373,6 +373,7 @@ SECTIONS
 	/* Page Tables are located here if MMU is enabled.*/
 	MMU_PAGE_ALIGN
 	__mmu_tables_start = .;
+	z_x86_kernel_pdpt = .;
 	KEEP(*(.mmu_data));
 	__mmu_tables_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)

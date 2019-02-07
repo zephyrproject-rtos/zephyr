@@ -301,11 +301,11 @@ static void dump_entry_flags(x86_page_entry_data_t flags)
 	       "Execute Disable" : "Execute Enabled");
 }
 
-static void dump_mmu_flags(void *addr)
+static void dump_mmu_flags(struct x86_mmu_pdpt *pdpt, void *addr)
 {
 	x86_page_entry_data_t pde_flags, pte_flags;
 
-	_x86_mmu_get_flags(addr, &pde_flags, &pte_flags);
+	_x86_mmu_get_flags(pdpt, addr, &pde_flags, &pte_flags);
 
 	printk("PDE: ");
 	dump_entry_flags(pde_flags);
@@ -331,7 +331,7 @@ static void dump_page_fault(NANO_ESF *esf)
 	       cr2);
 
 #ifdef CONFIG_X86_MMU
-	dump_mmu_flags((void *)cr2);
+	dump_mmu_flags(&z_x86_kernel_pdpt, (void *)cr2);
 #endif
 }
 #endif /* CONFIG_EXCEPTION_DEBUG */
@@ -390,7 +390,7 @@ struct task_state_segment _df_tss = {
 	.es = DATA_SEG,
 	.ss = DATA_SEG,
 	.eip = (u32_t)_df_handler_top,
-	.cr3 = (u32_t)X86_MMU_PDPT
+	.cr3 = (u32_t)&z_x86_kernel_pdpt
 };
 
 static FUNC_NORETURN __used void _df_handler_bottom(void)
@@ -407,7 +407,8 @@ static FUNC_NORETURN __used void _df_handler_bottom(void)
 	 * one byte, since if a single push operation caused the fault ESP
 	 * wouldn't be decremented
 	 */
-	_x86_mmu_get_flags((u8_t *)_df_esf.esp - 1, &pde_flags, &pte_flags);
+	_x86_mmu_get_flags(&z_x86_kernel_pdpt,
+			   (u8_t *)_df_esf.esp - 1, &pde_flags, &pte_flags);
 	if ((pte_flags & MMU_ENTRY_PRESENT) != 0) {
 		printk("***** Double Fault *****\n");
 		reason = _NANO_ERR_CPU_EXCEPTION;
@@ -445,7 +446,7 @@ static FUNC_NORETURN __used void _df_handler_top(void)
 	_main_tss.es = DATA_SEG;
 	_main_tss.ss = DATA_SEG;
 	_main_tss.eip = (u32_t)_df_handler_bottom;
-	_main_tss.cr3 = (u32_t)X86_MMU_PDPT;
+	_main_tss.cr3 = (u32_t)&z_x86_kernel_pdpt;
 	_main_tss.eflags = 0;
 
 	/* NT bit is set in EFLAGS so we will task switch back to _main_tss

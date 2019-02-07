@@ -41,16 +41,17 @@ MMU_BOOT_REGION((u32_t)&__kernel_ram_start, (u32_t)&__kernel_ram_size,
 		MMU_ENTRY_EXECUTE_DISABLE);
 
 
-void _x86_mmu_get_flags(void *addr,
+void _x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
 			x86_page_entry_data_t *pde_flags,
 			x86_page_entry_data_t *pte_flags)
 {
-	*pde_flags = (x86_page_entry_data_t)(X86_MMU_GET_PDE(addr)->value &
-				~(x86_page_entry_data_t)MMU_PDE_PAGE_TABLE_MASK);
+	*pde_flags =
+		(x86_page_entry_data_t)(X86_MMU_GET_PDE(pdpt, addr)->value &
+			~(x86_page_entry_data_t)MMU_PDE_PAGE_TABLE_MASK);
 
 	if ((*pde_flags & MMU_ENTRY_PRESENT) != 0) {
 		*pte_flags = (x86_page_entry_data_t)
-			(X86_MMU_GET_PTE(addr)->value &
+			(X86_MMU_GET_PTE(pdpt, addr)->value &
 			 ~(x86_page_entry_data_t)MMU_PTE_PAGE_MASK);
 	} else {
 		*pte_flags = 0;
@@ -88,7 +89,7 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 		}
 
 		struct x86_mmu_pd *pd_address =
-			X86_MMU_GET_PD_ADDR_INDEX(pdpte);
+			X86_MMU_GET_PD_ADDR_INDEX(&z_x86_kernel_pdpt, pdpte);
 
 		/* Iterate for all the pde's the buffer might take up.
 		 * (depends on the size of the buffer and start address
@@ -164,7 +165,7 @@ static inline void tlb_flush_page(void *addr)
 }
 
 
-void _x86_mmu_set_flags(void *ptr,
+void _x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
 			size_t size,
 			x86_page_entry_data_t flags,
 			x86_page_entry_data_t mask)
@@ -179,8 +180,8 @@ void _x86_mmu_set_flags(void *ptr,
 	while (size != 0) {
 
 		/* TODO we're not generating 2MB entries at the moment */
-		__ASSERT(X86_MMU_GET_PDE(addr)->ps != 1, "2MB PDE found");
-		pte = X86_MMU_GET_PTE(addr);
+		__ASSERT(X86_MMU_GET_PDE(pdpt, addr)->ps != 1, "2MB PDE found");
+		pte = X86_MMU_GET_PTE(pdpt, addr);
 
 		pte->value = (pte->value & ~mask) | flags;
 		tlb_flush_page((void *)addr);
@@ -229,13 +230,15 @@ static inline void _x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
 		partitions_count++;
 		if (page_conf == X86_MEM_DOMAIN_SET_PAGES) {
 			/* Set the partition attributes */
-			_x86_mmu_set_flags((void *)partition.start,
+			_x86_mmu_set_flags(&z_x86_kernel_pdpt,
+					   (void *)partition.start,
 					   partition.size,
 					   partition.attr,
 					   K_MEM_PARTITION_PERM_MASK);
 		} else {
 			/* Reset the pages to supervisor RW only */
-			_x86_mmu_set_flags((void *)partition.start,
+			_x86_mmu_set_flags(&z_x86_kernel_pdpt,
+					   (void *)partition.start,
 					   partition.size,
 					   K_MEM_PARTITION_P_RW_U_NA,
 					   K_MEM_PARTITION_PERM_MASK);
@@ -275,7 +278,7 @@ void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 
 	partition = domain->partitions[partition_id];
 
-	_x86_mmu_set_flags((void *)partition.start,
+	_x86_mmu_set_flags(&z_x86_kernel_pdpt, (void *)partition.start,
 			   partition.size,
 			   K_MEM_PARTITION_P_RW_U_NA,
 			   K_MEM_PARTITION_PERM_MASK);
