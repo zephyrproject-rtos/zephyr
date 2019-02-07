@@ -317,7 +317,7 @@ static const struct rv32m1_lpuart_config rv32m1_lpuart_0_config = {
 
 static struct rv32m1_lpuart_data rv32m1_lpuart_0_data;
 
-DEVICE_AND_API_INIT(uart_0, UART_0_LABEL,
+DEVICE_AND_API_INIT(NULL, uart_0, UART_0_LABEL,
 		    &rv32m1_lpuart_init,
 		    &rv32m1_lpuart_0_data, &rv32m1_lpuart_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -358,7 +358,7 @@ static const struct rv32m1_lpuart_config rv32m1_lpuart_1_config = {
 
 static struct rv32m1_lpuart_data rv32m1_lpuart_1_data;
 
-DEVICE_AND_API_INIT(uart_1, UART_1_LABEL,
+DEVICE_AND_API_INIT(NULL, uart_1, UART_1_LABEL,
 		    &rv32m1_lpuart_init,
 		    &rv32m1_lpuart_1_data, &rv32m1_lpuart_1_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -399,7 +399,7 @@ static const struct rv32m1_lpuart_config rv32m1_lpuart_2_config = {
 
 static struct rv32m1_lpuart_data rv32m1_lpuart_2_data;
 
-DEVICE_AND_API_INIT(uart_2, UART_2_LABEL,
+DEVICE_AND_API_INIT(NULL, uart_2, UART_2_LABEL,
 		    &rv32m1_lpuart_init,
 		    &rv32m1_lpuart_2_data, &rv32m1_lpuart_2_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -440,7 +440,7 @@ static const struct rv32m1_lpuart_config rv32m1_lpuart_3_config = {
 
 static struct rv32m1_lpuart_data rv32m1_lpuart_3_data;
 
-DEVICE_AND_API_INIT(uart_3, UART_3_LABEL,
+DEVICE_AND_API_INIT(NULL, uart_3, UART_3_LABEL,
 		    &rv32m1_lpuart_init,
 		    &rv32m1_lpuart_3_data, &rv32m1_lpuart_3_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

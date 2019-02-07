@@ -787,7 +787,8 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_0 = {
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_ns16550_0, DT_UART_NS16550_PORT_0_NAME, &uart_ns16550_init,
+DEVICE_AND_API_INIT(DT_UART_NS16550_PORT_0_PARENT_NAME, uart_ns16550_0,
+		    DT_UART_NS16550_PORT_0_NAME, &uart_ns16550_init,
 		    &uart_ns16550_dev_data_0, &uart_ns16550_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_ns16550_driver_api);
@@ -841,7 +842,8 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_1 = {
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_ns16550_1, DT_UART_NS16550_PORT_1_NAME, &uart_ns16550_init,
+DEVICE_AND_API_INIT(DT_UART_NS16550_PORT_1_PARENT_NAME, uart_ns16550_1,
+		    DT_UART_NS16550_PORT_1_NAME, &uart_ns16550_init,
 		    &uart_ns16550_dev_data_1, &uart_ns16550_dev_cfg_1,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_ns16550_driver_api);
@@ -895,7 +897,8 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_2 = {
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_ns16550_2, DT_UART_NS16550_PORT_2_NAME, &uart_ns16550_init,
+DEVICE_AND_API_INIT(DT_UART_NS16550_PORT_2_PARENT_NAME, uart_ns16550_2,
+		    DT_UART_NS16550_PORT_2_NAME, &uart_ns16550_init,
 		    &uart_ns16550_dev_data_2, &uart_ns16550_dev_cfg_2,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_ns16550_driver_api);
@@ -949,7 +952,8 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_3 = {
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_ns16550_3, DT_UART_NS16550_PORT_3_NAME, &uart_ns16550_init,
+DEVICE_AND_API_INIT(DT_UART_NS16550_PORT_3_PARENT_NAME, uart_ns16550_3,
+		    DT_UART_NS16550_PORT_3_NAME, &uart_ns16550_init,
 		    &uart_ns16550_dev_data_3, &uart_ns16550_dev_cfg_3,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_ns16550_driver_api);

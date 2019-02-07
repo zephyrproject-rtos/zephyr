@@ -121,7 +121,7 @@ static const struct i2c_qmsi_ss_config_info config_info_0 = {
 	.irq_cfg = i2c_qmsi_ss_config_irq_0,
 };
 
-DEVICE_DEFINE(i2c_ss_0, DT_I2C_SS_0_NAME, i2c_qmsi_ss_init,
+DEVICE_DEFINE(NULL, i2c_ss_0, DT_I2C_SS_0_NAME, i2c_qmsi_ss_init,
 	      ss_i2c_device_ctrl, &driver_data_0, &config_info_0, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
@@ -178,7 +178,7 @@ static const struct i2c_qmsi_ss_config_info config_info_1 = {
 	.irq_cfg = i2c_qmsi_ss_config_irq_1,
 };
 
-DEVICE_DEFINE(i2c_ss_1, DT_I2C_SS_1_NAME, i2c_qmsi_ss_init,
+DEVICE_DEFINE(NULL, i2c_ss_1, DT_I2C_SS_1_NAME, i2c_qmsi_ss_init,
 	      ss_i2c_device_ctrl, &driver_data_1, &config_info_1, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 

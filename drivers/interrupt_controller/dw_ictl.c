@@ -132,7 +132,7 @@ static const struct irq_next_level_api dw_ictl_apis = {
 	.intr_get_state = dw_ictl_intr_get_state,
 };
 
-DEVICE_AND_API_INIT(dw_ictl, CONFIG_DW_ICTL_NAME, dw_ictl_initialize,
+DEVICE_AND_API_INIT(NULL, dw_ictl, CONFIG_DW_ICTL_NAME, dw_ictl_initialize,
 		    &dw_runtime, &dw_config,
 		    POST_KERNEL, CONFIG_DW_ICTL_INIT_PRIORITY, &dw_ictl_apis);
 

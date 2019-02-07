@@ -275,7 +275,7 @@ static int init_spis(struct device *dev, const nrfx_spis_config_t *config)
 		.spis = NRFX_SPIS_INSTANCE(idx),			       \
 		.max_buf_len = (1 << SPIS##idx##_EASYDMA_MAXCNT_SIZE) - 1,     \
 	};								       \
-	DEVICE_AND_API_INIT(spi_##idx,					       \
+	DEVICE_AND_API_INIT(NULL, spi_##idx,				       \
 			    DT_NORDIC_NRF_SPIS_SPI_##idx##_LABEL,	       \
 			    spi_##idx##_init,				       \
 			    &spi_##idx##_data,				       \

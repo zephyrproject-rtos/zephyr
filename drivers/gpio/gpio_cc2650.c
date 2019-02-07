@@ -70,10 +70,11 @@ static const struct gpio_driver_api gpio_cc2650_funcs = {
 	.get_pending_int = gpio_cc2650_get_pending_int
 };
 
-DEVICE_AND_API_INIT(gpio_cc2650_0, CONFIG_GPIO_CC2650_NAME,
+DEVICE_AND_API_INIT(NULL, gpio_cc2650_0, CONFIG_GPIO_CC2650_NAME,
 		    gpio_cc2650_init, &gpio_cc2650_data, NULL,
 		    PRE_KERNEL_1, CONFIG_GPIO_CC2650_INIT_PRIO,
 		    &gpio_cc2650_funcs);
+
 static void disconnect(const int pin, u32_t *gpiodoe31_0,
 		       u32_t *iocfg)
 {

@@ -138,7 +138,7 @@ static const struct lsm303dlhc_magn_config lsm303dlhc_magn_config = {
 
 static struct lsm303dlhc_magn_data lsm303dlhc_magn_driver;
 
-DEVICE_AND_API_INIT(lsm303dlhc_magn, DT_ST_LSM303DLHC_MAGN_0_LABEL,
+DEVICE_AND_API_INIT(NULL, lsm303dlhc_magn, DT_ST_LSM303DLHC_MAGN_0_LABEL,
 		    lsm303dlhc_magn_init, &lsm303dlhc_magn_driver,
 		    &lsm303dlhc_magn_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lsm303dlhc_magn_driver_api);

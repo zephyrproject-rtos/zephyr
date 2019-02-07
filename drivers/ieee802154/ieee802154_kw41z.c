@@ -1028,6 +1028,7 @@ static struct ieee802154_radio_api kw41z_radio_api = {
 #endif
 
 NET_DEVICE_INIT(
+	NULL,				    /* Parent Device Name */
 	kw41z,                              /* Device Name */
 	CONFIG_IEEE802154_KW41Z_DRV_NAME,   /* Driver Name */
 	kw41z_init,                         /* Initialization Function */

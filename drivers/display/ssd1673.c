@@ -652,7 +652,7 @@ static struct display_driver_api ssd1673_driver_api = {
 };
 
 
-DEVICE_AND_API_INIT(ssd1673, DT_SOLOMON_SSD1673FB_0_LABEL, ssd1673_init,
+DEVICE_AND_API_INIT(NULL, ssd1673, DT_SOLOMON_SSD1673FB_0_LABEL, ssd1673_init,
 		    &ssd1673_driver, NULL,
 		    POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
 		    &ssd1673_driver_api);

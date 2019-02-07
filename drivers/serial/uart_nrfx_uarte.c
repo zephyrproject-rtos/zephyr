@@ -614,7 +614,7 @@ static int uarte_instance_init(struct device *dev,
 				&init_config,				       \
 				UARTE_##idx##_INTERRUPT_DRIVEN);	       \
 	}								       \
-	DEVICE_AND_API_INIT(uart_nrfx_uarte##idx,			       \
+	DEVICE_AND_API_INIT(NULL, uart_nrfx_uarte##idx,			       \
 			    DT_NORDIC_NRF_UARTE_UART_##idx##_LABEL,	       \
 			    uarte_##idx##_init,				       \
 			    &uarte_##idx##_data,			       \

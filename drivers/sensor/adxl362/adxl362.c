@@ -606,6 +606,6 @@ static const struct adxl362_config adxl362_config = {
 	.spi_max_frequency = DT_ADXL362_SPI_MAX_FREQUENCY,
 };
 
-DEVICE_AND_API_INIT(adxl362, DT_ADXL362_DEV_NAME, adxl362_init,
+DEVICE_AND_API_INIT(NULL, adxl362, DT_ADXL362_DEV_NAME, adxl362_init,
 		    &adxl362_data, &adxl362_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &adxl362_api_funcs);

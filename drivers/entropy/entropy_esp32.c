@@ -53,7 +53,7 @@ static struct entropy_driver_api entropy_esp32_api_funcs = {
 	.get_entropy = entropy_esp32_get_entropy
 };
 
-DEVICE_AND_API_INIT(entropy_esp32, CONFIG_ENTROPY_NAME,
+DEVICE_AND_API_INIT(NULL, entropy_esp32, CONFIG_ENTROPY_NAME,
 		    entropy_esp32_init, NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &entropy_esp32_api_funcs);

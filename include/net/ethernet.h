@@ -575,6 +575,7 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  *
  * @brief Create an Ethernet network interface and bind it to network device.
  *
+ * @param parent_drv_name The name of parent driver instance.
  * @param dev_name Network device name.
  * @param drv_name The name this instance of the driver exposes to
  * the system.
@@ -588,18 +589,18 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
 #if defined(CONFIG_NET_VLAN)
-#define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn,		 \
+#define ETH_NET_DEVICE_INIT(parent_drv_name, dev_name, drv_name, init_fn,\
 			    data, cfg_info, prio, api, mtu)		 \
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,		 \
-			    cfg_info, POST_KERNEL, prio, api);		 \
+	DEVICE_AND_API_INIT(parent_drv_name, dev_name, drv_name, init_fn,\
+			    data, cfg_info, POST_KERNEL, prio, api);	 \
 	NET_L2_DATA_INIT(dev_name, 0, NET_L2_GET_CTX_TYPE(ETHERNET_L2)); \
 	NET_IF_INIT(dev_name, 0, ETHERNET_L2, mtu, NET_VLAN_MAX_COUNT)
 
 #else /* CONFIG_NET_VLAN */
 
-#define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn,		\
-			    data, cfg_info, prio, api, mtu)		\
-	NET_DEVICE_INIT(dev_name, drv_name, init_fn,			\
+#define ETH_NET_DEVICE_INIT(parent_drv_name, dev_name, drv_name,	\
+			    init_fn, data, cfg_info, prio, api, mtu)	\
+	NET_DEVICE_INIT(parent_drv_name, dev_name, drv_name, init_fn,	\
 			data, cfg_info, prio, api, ETHERNET_L2,		\
 			NET_L2_GET_CTX_TYPE(ETHERNET_L2), mtu)
 

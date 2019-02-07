@@ -95,7 +95,7 @@ static struct quark_se_clock_control_config clock_quark_se_peripheral_config = {
 	.base_address = CLOCK_PERIPHERAL_BASE_ADDR
 };
 
-DEVICE_AND_API_INIT(clock_quark_se_peripheral,
+DEVICE_AND_API_INIT(NULL, clock_quark_se_peripheral,
 		    CONFIG_CLOCK_CONTROL_QUARK_SE_PERIPHERAL_DRV_NAME,
 		    &quark_se_clock_control_init,
 		    NULL, &clock_quark_se_peripheral_config,
@@ -109,7 +109,7 @@ static struct quark_se_clock_control_config clock_quark_se_external_config = {
 	.base_address = CLOCK_EXTERNAL_BASE_ADDR
 };
 
-DEVICE_AND_API_INIT(clock_quark_se_external,
+DEVICE_AND_API_INIT(NULL, clock_quark_se_external,
 		    CONFIG_CLOCK_CONTROL_QUARK_SE_EXTERNAL_DRV_NAME,
 		    &quark_se_clock_control_init,
 		    NULL, &clock_quark_se_external_config,
@@ -123,7 +123,7 @@ static struct quark_se_clock_control_config clock_quark_se_sensor_config = {
 	.base_address = CLOCK_SENSOR_BASE_ADDR
 };
 
-DEVICE_AND_API_INIT(clock_quark_se_sensor,
+DEVICE_AND_API_INIT(NULL, clock_quark_se_sensor,
 		    CONFIG_CLOCK_CONTROL_QUARK_SE_SENSOR_DRV_NAME,
 		    &quark_se_clock_control_init,
 		    NULL, &clock_quark_se_sensor_config,

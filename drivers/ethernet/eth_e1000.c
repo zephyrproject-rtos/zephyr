@@ -224,7 +224,7 @@ static const struct ethernet_api e1000_api = {
 	.send			= e1000_send,
 };
 
-NET_DEVICE_INIT(eth_e1000,
+NET_DEVICE_INIT(NULL, eth_e1000,
 		"ETH_0",
 		e1000_probe,
 		&e1000_dev,

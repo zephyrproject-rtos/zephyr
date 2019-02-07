@@ -1010,7 +1010,7 @@ static struct eth_context eth_0_context = {
 	}
 };
 
-ETH_NET_DEVICE_INIT(eth_mcux_0, DT_ETH_MCUX_0_NAME, eth_0_init,
+ETH_NET_DEVICE_INIT(NULL, eth_mcux_0, DT_ETH_MCUX_0_NAME, eth_0_init,
 		    &eth_0_context, NULL, CONFIG_ETH_INIT_PRIORITY,
 		    &api_funcs, 1500);
 
@@ -1175,7 +1175,7 @@ static int ptp_mcux_init(struct device *port)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(mcux_ptp_clock_0, PTP_CLOCK_NAME, ptp_mcux_init,
+DEVICE_AND_API_INIT(NULL, mcux_ptp_clock_0, PTP_CLOCK_NAME, ptp_mcux_init,
 		    &ptp_mcux_0_context, NULL, POST_KERNEL,
 		    CONFIG_APPLICATION_INIT_PRIORITY, &api);
 

@@ -144,6 +144,6 @@ static const struct led_strip_driver_api ws2812b_sw_api = {
 	.update_channels = ws2812b_sw_update_channels,
 };
 
-DEVICE_AND_API_INIT(ws2812b_sw, CONFIG_WS2812B_SW_NAME, ws2812b_sw_init, NULL,
-		    NULL, POST_KERNEL, CONFIG_LED_STRIP_INIT_PRIORITY,
+DEVICE_AND_API_INIT(NULL, ws2812b_sw, CONFIG_WS2812B_SW_NAME, ws2812b_sw_init,
+		    NULL, NULL, POST_KERNEL, CONFIG_LED_STRIP_INIT_PRIORITY,
 		    &ws2812b_sw_api);

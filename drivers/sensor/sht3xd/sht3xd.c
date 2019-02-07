@@ -211,7 +211,7 @@ static const struct sht3xd_config sht3xd0_cfg = {
 #endif
 };
 
-DEVICE_AND_API_INIT(sht3xd0, DT_SENSIRION_SHT3XD_0_LABEL,
+DEVICE_AND_API_INIT(NULL, sht3xd0, DT_SENSIRION_SHT3XD_0_LABEL,
 		    sht3xd_init, &sht3xd0_driver, &sht3xd0_cfg,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &sht3xd_driver_api);

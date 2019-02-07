@@ -204,7 +204,7 @@ static int pwm_stm32_init(struct device *dev)
 	return 0;
 }
 
-#define PWM_DEVICE_INIT_STM32(n)			  \
+#define PWM_DEVICE_INIT_STM32(n)					  \
 	static struct pwm_stm32_data pwm_stm32_dev_data_ ## n = {	  \
 		/* Default case */					  \
 		.pwm_prescaler = DT_PWM_STM32_## n ##_PRESCALER,	  \
@@ -216,8 +216,8 @@ static int pwm_stm32_init(struct device *dev)
 			    .enr = DT_TIM_STM32_## n ##_CLOCK_BITS },	  \
 	};								  \
 									  \
-	DEVICE_AND_API_INIT(pwm_stm32_ ## n,				  \
-			    DT_PWM_STM32_ ## n ## _DEV_NAME,	  \
+	DEVICE_AND_API_INIT(NULL, pwm_stm32_ ## n,			  \
+			    DT_PWM_STM32_ ## n ## _DEV_NAME,		  \
 			    pwm_stm32_init,				  \
 			    &pwm_stm32_dev_data_ ## n,			  \
 			    &pwm_stm32_dev_cfg_ ## n,			  \

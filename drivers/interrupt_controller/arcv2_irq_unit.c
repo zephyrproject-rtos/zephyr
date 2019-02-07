@@ -202,7 +202,7 @@ static int _arc_v2_irq_unit_device_ctrl(struct device *device,
 	return 0;
 }
 
-SYS_DEVICE_DEFINE("arc_v2_irq_unit", _arc_v2_irq_unit_init,
+SYS_DEVICE_DEFINE(NULL, "arc_v2_irq_unit", _arc_v2_irq_unit_init,
 		_arc_v2_irq_unit_device_ctrl, PRE_KERNEL_1,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else

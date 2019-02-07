@@ -244,7 +244,7 @@ static struct spi_driver_api spi_sifive_api = {
 		.base = DT_SIFIVE_SPI0_##n##_CONTROL_BASE_ADDRESS, \
 		.f_sys = DT_SIFIVE_SPI0_##n##_CLOCK_FREQUENCY, \
 	}; \
-	DEVICE_AND_API_INIT(spi_##n, \
+	DEVICE_AND_API_INIT(NULL, spi_##n, \
 			DT_SIFIVE_SPI0_##n##_LABEL, \
 			spi_sifive_init, \
 			&spi_sifive_data_##n, \

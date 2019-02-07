@@ -502,8 +502,8 @@ static int loapic_device_ctrl(struct device *port, u32_t ctrl_command,
 	return 0;
 }
 
-SYS_DEVICE_DEFINE("loapic", _loapic_init, loapic_device_ctrl, PRE_KERNEL_1,
-		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_DEVICE_DEFINE(NULL, "loapic", _loapic_init, loapic_device_ctrl,
+		  PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else
 SYS_INIT(_loapic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif   /* CONFIG_DEVICE_POWER_MANAGEMENT */

@@ -30,7 +30,7 @@ static struct dummy_api offload_if_api = {
 	.send = NULL,
 };
 
-NET_DEVICE_OFFLOAD_INIT(net_offload, "net_offload",
+NET_DEVICE_OFFLOAD_INIT(NULL, net_offload, "net_offload",
 			NULL, &offload_context_data, NULL,
 			CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 			&offload_if_api, 0);

@@ -269,7 +269,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		.rtc = NRFX_RTC_INSTANCE(idx),				       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
-	DEVICE_AND_API_INIT(rtc_##idx, CONFIG_COUNTER_RTC##idx##_NAME,	       \
+	DEVICE_AND_API_INIT(NULL, rtc_##idx, CONFIG_COUNTER_RTC##idx##_NAME,   \
 			    counter_##idx##_init,			       \
 			    &counter_##idx##_data,			       \
 			    &nrfx_counter_##idx##_config.info,		       \

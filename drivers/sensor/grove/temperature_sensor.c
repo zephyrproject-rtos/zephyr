@@ -106,6 +106,6 @@ static int gts_init(struct device *dev)
 
 static struct gts_data gts_data;
 
-DEVICE_AND_API_INIT(gts_dev, CONFIG_GROVE_TEMPERATURE_SENSOR_NAME, &gts_init,
-		&gts_data, NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		&gts_api);
+DEVICE_AND_API_INIT(NULL, gts_dev, CONFIG_GROVE_TEMPERATURE_SENSOR_NAME,
+		    &gts_init, &gts_data, NULL, POST_KERNEL,
+		    CONFIG_SENSOR_INIT_PRIORITY, &gts_api);

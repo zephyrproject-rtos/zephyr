@@ -186,7 +186,7 @@ static int init_twim(struct device *dev, const nrfx_twim_config_t *config)
 	static const struct i2c_nrfx_twim_config twim_##idx##_config = {       \
 		.twim = NRFX_TWIM_INSTANCE(idx)				       \
 	};								       \
-	DEVICE_AND_API_INIT(twim_##idx,					       \
+	DEVICE_AND_API_INIT(NULL, twim_##idx,				       \
 			    DT_NORDIC_NRF_I2C_I2C_##idx##_LABEL,	       \
 			    twim_##idx##_init,				       \
 			    &twim_##idx##_data,				       \

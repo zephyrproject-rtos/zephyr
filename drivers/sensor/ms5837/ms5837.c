@@ -322,6 +322,6 @@ static const struct ms5837_config ms5837_config = {
 	.i2c_address = DT_MEAS_MS5837_0_BASE_ADDRESS
 };
 
-DEVICE_AND_API_INIT(ms5837, DT_MEAS_MS5837_0_LABEL, ms5837_init, &ms5837_data,
-		    &ms5837_config, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &ms5837_api_funcs);
+DEVICE_AND_API_INIT(NULL, ms5837, DT_MEAS_MS5837_0_LABEL, ms5837_init,
+		    &ms5837_data, &ms5837_config, POST_KERNEL,
+		    CONFIG_SENSOR_INIT_PRIORITY, &ms5837_api_funcs);

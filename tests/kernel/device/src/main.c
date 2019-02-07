@@ -53,7 +53,7 @@ void test_dummy_device(void)
  *
  * Validates device binding for an existing device object.
  *
- * @see device_get_binding(), DEVICE_AND_API_INIT()
+ * @see device_get_binding(), DEVICE_AND_API_INIT(NULL, )
  */
 static void test_dynamic_name(void)
 {
@@ -71,7 +71,7 @@ static void test_dynamic_name(void)
  * Validates binding of a random device driver(non-defined driver) named
  * "ANOTHER_BOGUS_NAME".
  *
- * @see device_get_binding(), DEVICE_AND_API_INIT()
+ * @see device_get_binding(), DEVICE_AND_API_INIT(NULL, )
  */
 static void test_bogus_dynamic_name(void)
 {

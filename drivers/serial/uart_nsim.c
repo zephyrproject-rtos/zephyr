@@ -111,7 +111,7 @@ static struct uart_device_config uart_nsim_dev_cfg_0 = {
 	.regs = DT_SNPS_NSIM_UART_0_BASE_ADDRESS,
 };
 
-DEVICE_AND_API_INIT(uart_nsim0, DT_SNPS_NSIM_UART_0_LABEL, &uart_nsim_init,
-			NULL, &uart_nsim_dev_cfg_0,
-			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-			&uart_nsim_driver_api);
+DEVICE_AND_API_INIT(NULL, uart_nsim0, DT_SNPS_NSIM_UART_0_LABEL,
+		    &uart_nsim_init, NULL, &uart_nsim_dev_cfg_0,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &uart_nsim_driver_api);

@@ -328,9 +328,10 @@ static const struct uart_gecko_config uart_gecko_0_config = {
 
 static struct uart_gecko_data uart_gecko_0_data;
 
-DEVICE_AND_API_INIT(uart_0, DT_SILABS_GECKO_UART_0_LABEL, &uart_gecko_init,
-		    &uart_gecko_0_data, &uart_gecko_0_config, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_gecko_driver_api);
+DEVICE_AND_API_INIT(NULL, uart_0, DT_SILABS_GECKO_UART_0_LABEL,
+		    &uart_gecko_init, &uart_gecko_0_data, &uart_gecko_0_config,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &uart_gecko_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_gecko_config_func_0(struct device *dev)
@@ -383,9 +384,10 @@ static const struct uart_gecko_config uart_gecko_1_config = {
 
 static struct uart_gecko_data uart_gecko_1_data;
 
-DEVICE_AND_API_INIT(uart_1, DT_SILABS_GECKO_UART_1_LABEL, &uart_gecko_init,
-		    &uart_gecko_1_data, &uart_gecko_1_config, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_gecko_driver_api);
+DEVICE_AND_API_INIT(NULL, uart_1, DT_SILABS_GECKO_UART_1_LABEL,
+		    &uart_gecko_init, &uart_gecko_1_data, &uart_gecko_1_config,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &uart_gecko_driver_api);
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 static void uart_gecko_config_func_1(struct device *dev)
@@ -438,7 +440,7 @@ static const struct uart_gecko_config usart_gecko_0_config = {
 
 static struct uart_gecko_data usart_gecko_0_data;
 
-DEVICE_AND_API_INIT(usart_0, DT_SILABS_GECKO_USART_0_LABEL,
+DEVICE_AND_API_INIT(NULL, usart_0, DT_SILABS_GECKO_USART_0_LABEL,
 		    &uart_gecko_init, &usart_gecko_0_data,
 		    &usart_gecko_0_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_gecko_driver_api);
@@ -494,7 +496,7 @@ static const struct uart_gecko_config usart_gecko_1_config = {
 
 static struct uart_gecko_data usart_gecko_1_data;
 
-DEVICE_AND_API_INIT(usart_1, DT_SILABS_GECKO_USART_1_LABEL,
+DEVICE_AND_API_INIT(NULL, usart_1, DT_SILABS_GECKO_USART_1_LABEL,
 		    &uart_gecko_init, &usart_gecko_1_data,
 		    &usart_gecko_1_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_gecko_driver_api);
@@ -550,7 +552,7 @@ static const struct uart_gecko_config usart_gecko_2_config = {
 
 static struct uart_gecko_data usart_gecko_2_data;
 
-DEVICE_AND_API_INIT(usart_2, DT_SILABS_GECKO_USART_2_LABEL,
+DEVICE_AND_API_INIT(NULL, usart_2, DT_SILABS_GECKO_USART_2_LABEL,
 		    &uart_gecko_init, &usart_gecko_2_data,
 		    &usart_gecko_2_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_gecko_driver_api);
@@ -606,7 +608,7 @@ static const struct uart_gecko_config usart_gecko_3_config = {
 
 static struct uart_gecko_data usart_gecko_3_data;
 
-DEVICE_AND_API_INIT(usart_3, DT_SILABS_GECKO_USART_3_LABEL,
+DEVICE_AND_API_INIT(NULL, usart_3, DT_SILABS_GECKO_USART_3_LABEL,
 		    &uart_gecko_init, &usart_gecko_3_data,
 		    &usart_gecko_3_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_gecko_driver_api);

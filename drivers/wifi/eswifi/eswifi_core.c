@@ -668,6 +668,6 @@ static const struct net_wifi_mgmt_offload eswifi_offload_api = {
 	.ap_disable	= eswifi_mgmt_ap_disable,
 };
 
-NET_DEVICE_OFFLOAD_INIT(eswifi_mgmt, CONFIG_WIFI_ESWIFI_NAME,
+NET_DEVICE_OFFLOAD_INIT(NULL, eswifi_mgmt, CONFIG_WIFI_ESWIFI_NAME,
 			eswifi_init, &eswifi0, NULL,
 			CONFIG_WIFI_INIT_PRIORITY, &eswifi_offload_api, 1500);

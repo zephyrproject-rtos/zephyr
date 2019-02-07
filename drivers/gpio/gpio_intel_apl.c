@@ -456,7 +456,7 @@ static const struct gpio_intel_apl_config				\
 									\
 static struct gpio_intel_apl_data gpio_intel_apl_data_##dir_l##_##pos;	\
 									\
-DEVICE_AND_API_INIT(gpio_intel_apl_##dir_l##_##pos,			\
+DEVICE_AND_API_INIT(NULL, gpio_intel_apl_##dir_l##_##pos,		\
 		    DT_APL_GPIO_LABEL_##dir_u##_##pos,			\
 		    gpio_intel_apl_init,				\
 		    &gpio_intel_apl_data_##dir_l##_##pos,		\

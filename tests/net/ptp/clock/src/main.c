@@ -154,14 +154,14 @@ static int eth_init(struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_test_1, "eth_test_1", eth_init, &eth_context_1, NULL,
-		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, 1500);
+ETH_NET_DEVICE_INIT(NULL, eth_test_1, "eth_test_1", eth_init, &eth_context_1,
+		    NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs, 1500);
 
-ETH_NET_DEVICE_INIT(eth_test_2, "eth_test_2", eth_init, &eth_context_2, NULL,
-		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, 1500);
+ETH_NET_DEVICE_INIT(NULL, eth_test_2, "eth_test_2", eth_init, &eth_context_2,
+		    NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs, 1500);
 
-ETH_NET_DEVICE_INIT(eth_test_3, "eth_test_3", eth_init, &eth_context_3, NULL,
-		    CONFIG_ETH_INIT_PRIORITY, &api_funcs, 1500);
+ETH_NET_DEVICE_INIT(NULL, eth_test_3, "eth_test_3", eth_init, &eth_context_3,
+		    NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs, 1500);
 
 static u64_t timestamp_to_nsec(struct net_ptp_time *ts)
 {
@@ -230,7 +230,7 @@ static int ptp_test_1_init(struct device *port)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(ptp_clock_1, PTP_CLOCK_NAME, ptp_test_1_init,
+DEVICE_AND_API_INIT(NULL, ptp_clock_1, PTP_CLOCK_NAME, ptp_test_1_init,
 		    &ptp_test_1_context, NULL, POST_KERNEL,
 		    CONFIG_APPLICATION_INIT_PRIORITY, &api);
 
@@ -246,7 +246,7 @@ static int ptp_test_2_init(struct device *port)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(ptp_clock_2, PTP_CLOCK_NAME, ptp_test_2_init,
+DEVICE_AND_API_INIT(NULL, ptp_clock_2, PTP_CLOCK_NAME, ptp_test_2_init,
 		    &ptp_test_2_context, NULL, POST_KERNEL,
 		    CONFIG_APPLICATION_INIT_PRIORITY, &api);
 

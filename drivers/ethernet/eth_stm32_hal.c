@@ -439,6 +439,6 @@ static struct eth_stm32_hal_dev_data eth0_data = {
 	},
 };
 
-NET_DEVICE_INIT(eth0_stm32_hal, CONFIG_ETH_STM32_HAL_NAME, eth_initialize,
+NET_DEVICE_INIT(NULL, eth0_stm32_hal, CONFIG_ETH_STM32_HAL_NAME, eth_initialize,
 	&eth0_data, &eth0_config, CONFIG_ETH_INIT_PRIORITY, &eth_api,
 	ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), ETH_STM32_HAL_MTU);

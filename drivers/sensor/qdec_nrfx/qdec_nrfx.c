@@ -306,6 +306,6 @@ static const struct sensor_driver_api qdec_nrfx_driver_api = {
 	.trigger_set  = qdec_nrfx_trigger_set,
 };
 
-DEVICE_DEFINE(qdec_nrfx, DT_NORDIC_NRF_QDEC_QDEC_0_LABEL, qdec_nrfx_init,
-		qdec_nrfx_pm_control, NULL, NULL, POST_KERNEL,
-		CONFIG_SENSOR_INIT_PRIORITY, &qdec_nrfx_driver_api);
+DEVICE_DEFINE(NULL, qdec_nrfx, DT_NORDIC_NRF_QDEC_QDEC_0_LABEL, qdec_nrfx_init,
+	      qdec_nrfx_pm_control, NULL, NULL, POST_KERNEL,
+	      CONFIG_SENSOR_INIT_PRIORITY, &qdec_nrfx_driver_api);

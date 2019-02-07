@@ -858,7 +858,7 @@ static struct i2s_stm32_data i2s_stm32_data_1 = {
 		.mem_block_queue.len = ARRAY_SIZE(tx_1_ring_buf),
 	},
 };
-DEVICE_AND_API_INIT(i2s_stm32_1, DT_I2S_1_NAME, &i2s_stm32_initialize,
+DEVICE_AND_API_INIT(NULL, i2s_stm32_1, DT_I2S_1_NAME, &i2s_stm32_initialize,
 		    &i2s_stm32_data_1, &i2s_stm32_config_1, POST_KERNEL,
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
 
@@ -928,7 +928,7 @@ static struct i2s_stm32_data i2s_stm32_data_2 = {
 		.mem_block_queue.len = ARRAY_SIZE(tx_2_ring_buf),
 	},
 };
-DEVICE_AND_API_INIT(i2s_stm32_2, DT_I2S_2_NAME, &i2s_stm32_initialize,
+DEVICE_AND_API_INIT(NULL, i2s_stm32_2, DT_I2S_2_NAME, &i2s_stm32_initialize,
 		    &i2s_stm32_data_2, &i2s_stm32_config_2, POST_KERNEL,
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
 
@@ -998,7 +998,7 @@ static struct i2s_stm32_data i2s_stm32_data_3 = {
 		.mem_block_queue.len = ARRAY_SIZE(tx_3_ring_buf),
 	},
 };
-DEVICE_AND_API_INIT(i2s_stm32_3, DT_I2S_3_NAME, &i2s_stm32_initialize,
+DEVICE_AND_API_INIT(NULL, i2s_stm32_3, DT_I2S_3_NAME, &i2s_stm32_initialize,
 		    &i2s_stm32_data_3, &i2s_stm32_config_3, POST_KERNEL,
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
 
@@ -1068,7 +1068,7 @@ static struct i2s_stm32_data i2s_stm32_data_4 = {
 		.mem_block_queue.len = ARRAY_SIZE(tx_4_ring_buf),
 	},
 };
-DEVICE_AND_API_INIT(i2s_stm32_4, DT_I2S_4_NAME, &i2s_stm32_initialize,
+DEVICE_AND_API_INIT(NULL, i2s_stm32_4, DT_I2S_4_NAME, &i2s_stm32_initialize,
 		    &i2s_stm32_data_4, &i2s_stm32_config_4, POST_KERNEL,
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
 
@@ -1138,7 +1138,7 @@ static struct i2s_stm32_data i2s_stm32_data_5 = {
 		.mem_block_queue.len = ARRAY_SIZE(tx_5_ring_buf),
 	},
 };
-DEVICE_AND_API_INIT(i2s_stm32_5, DT_I2S_5_NAME, &i2s_stm32_initialize,
+DEVICE_AND_API_INIT(NULL, i2s_stm32_5, DT_I2S_5_NAME, &i2s_stm32_initialize,
 		    &i2s_stm32_data_5, &i2s_stm32_config_5, POST_KERNEL,
 		    CONFIG_I2S_INIT_PRIORITY, &i2s_stm32_driver_api);
 

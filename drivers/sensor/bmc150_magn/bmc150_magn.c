@@ -605,6 +605,6 @@ static const struct bmc150_magn_config bmc150_magn_config = {
 
 static struct bmc150_magn_data bmc150_magn_data;
 
-DEVICE_AND_API_INIT(bmc150_magn, CONFIG_BMC150_MAGN_DEV_NAME, bmc150_magn_init,
-	    &bmc150_magn_data, &bmc150_magn_config, POST_KERNEL,
-	    CONFIG_SENSOR_INIT_PRIORITY, &bmc150_magn_api_funcs);
+DEVICE_AND_API_INIT(NULL, bmc150_magn, CONFIG_BMC150_MAGN_DEV_NAME,
+	    bmc150_magn_init, &bmc150_magn_data, &bmc150_magn_config,
+	    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &bmc150_magn_api_funcs);

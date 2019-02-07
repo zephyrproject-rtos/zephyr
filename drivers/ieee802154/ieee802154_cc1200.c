@@ -835,7 +835,7 @@ static struct ieee802154_radio_api cc1200_radio_api = {
 	.get_subg_channel_count = cc1200_get_channel_count,
 };
 
-NET_DEVICE_INIT(cc1200, CONFIG_IEEE802154_CC1200_DRV_NAME,
+NET_DEVICE_INIT(NULL, cc1200, CONFIG_IEEE802154_CC1200_DRV_NAME,
 		cc1200_init, &cc1200_context_data, NULL,
 		CONFIG_IEEE802154_CC1200_INIT_PRIO,
 		&cc1200_radio_api, IEEE802154_L2,

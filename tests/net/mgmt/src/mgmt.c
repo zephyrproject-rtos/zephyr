@@ -84,7 +84,7 @@ static struct dummy_api fake_iface_api = {
 	.send = fake_iface_send,
 };
 
-NET_DEVICE_INIT(net_event_test, "net_event_test",
+NET_DEVICE_INIT(NULL, net_event_test, "net_event_test",
 		fake_dev_init, NULL, NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&fake_iface_api, DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), 127);
 

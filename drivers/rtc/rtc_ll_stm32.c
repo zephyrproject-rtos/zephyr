@@ -299,7 +299,7 @@ static const struct rtc_driver_api rtc_api = {
 		.get_pending_int = rtc_stm32_get_pending_int,
 };
 
-DEVICE_AND_API_INIT(rtc_stm32, CONFIG_RTC_0_NAME, &rtc_stm32_init,
+DEVICE_AND_API_INIT(NULL, rtc_stm32, CONFIG_RTC_0_NAME, &rtc_stm32_init,
 		    &rtc_data, &rtc_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &rtc_api);
 

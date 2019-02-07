@@ -511,7 +511,7 @@ const static struct pwm_led_esp32_config pwm_led_esp32_config = {
 	},
 };
 
-DEVICE_AND_API_INIT(pwm_led_esp32_0, CONFIG_PWM_LED_ESP32_DEV_NAME_0,
+DEVICE_AND_API_INIT(NULL, pwm_led_esp32_0, CONFIG_PWM_LED_ESP32_DEV_NAME_0,
 		    pwm_led_esp32_init, NULL, &pwm_led_esp32_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pwm_led_esp32_api);

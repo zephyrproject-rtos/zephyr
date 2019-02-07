@@ -462,8 +462,8 @@ struct flash_nios2_qspi_config flash_cfg = {
 	}
 };
 
-DEVICE_AND_API_INIT(flash_nios2_qspi,
-			CONFIG_SOC_FLASH_NIOS2_QSPI_DEV_NAME,
-			flash_nios2_qspi_init, &flash_cfg, NULL,
-			POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-			&flash_nios2_qspi_api);
+DEVICE_AND_API_INIT(NULL, flash_nios2_qspi,
+		    CONFIG_SOC_FLASH_NIOS2_QSPI_DEV_NAME,
+		    flash_nios2_qspi_init, &flash_cfg, NULL,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &flash_nios2_qspi_api);

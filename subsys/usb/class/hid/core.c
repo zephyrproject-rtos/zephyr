@@ -781,7 +781,7 @@ static int usb_hid_device_init(struct device *dev)
 	struct hid_device_info usb_hid_dev_data_##x
 
 #define DEFINE_HID_DEVICE(x)						\
-	DEVICE_AND_API_INIT(usb_hid_device_##x,				\
+	DEVICE_AND_API_INIT(NULL, usb_hid_device_##x,			\
 			    CONFIG_USB_HID_DEVICE_NAME_##x,		\
 			    &usb_hid_device_init,			\
 			    &usb_hid_dev_data_##x,			\

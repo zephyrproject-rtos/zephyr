@@ -605,6 +605,6 @@ static const struct bmm150_config bmm150_config = {
 
 static struct bmm150_data bmm150_data;
 
-DEVICE_AND_API_INIT(bmm150, CONFIG_BMM150_DEV_NAME, bmm150_init,
-			&bmm150_data, &bmm150_config, POST_KERNEL,
-			CONFIG_SENSOR_INIT_PRIORITY, &bmm150_api_funcs);
+DEVICE_AND_API_INIT(NULL, bmm150, CONFIG_BMM150_DEV_NAME, bmm150_init,
+		    &bmm150_data, &bmm150_config, POST_KERNEL,
+		    CONFIG_SENSOR_INIT_PRIORITY, &bmm150_api_funcs);

@@ -181,7 +181,7 @@ static struct tmr_cmsdk_apb_dev_data tmr_cmsdk_apb_dev_data_0 = {
 	.load = UINT32_MAX,
 };
 
-DEVICE_AND_API_INIT(tmr_cmsdk_apb_0,
+DEVICE_AND_API_INIT(NULL, tmr_cmsdk_apb_0,
 		    DT_ARM_CMSDK_TIMER_0_LABEL,
 		    tmr_cmsdk_apb_init, &tmr_cmsdk_apb_dev_data_0,
 		    &tmr_cmsdk_apb_cfg_0, POST_KERNEL,
@@ -222,7 +222,7 @@ static struct tmr_cmsdk_apb_dev_data tmr_cmsdk_apb_dev_data_1 = {
 	.load = UINT32_MAX,
 };
 
-DEVICE_AND_API_INIT(tmr_cmsdk_apb_1,
+DEVICE_AND_API_INIT(NULL, tmr_cmsdk_apb_1,
 		    DT_ARM_CMSDK_TIMER_1_LABEL,
 		    tmr_cmsdk_apb_init, &tmr_cmsdk_apb_dev_data_1,
 		    &tmr_cmsdk_apb_cfg_1, POST_KERNEL,

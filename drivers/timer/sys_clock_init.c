@@ -46,5 +46,5 @@ void __weak sys_clock_disable(void)
 {
 }
 
-SYS_DEVICE_DEFINE("sys_clock", z_clock_driver_init, z_clock_device_ctrl,
+SYS_DEVICE_DEFINE(NULL, "sys_clock", z_clock_driver_init, z_clock_device_ctrl,
 		PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

@@ -302,7 +302,7 @@ static const struct uart_mcux_config uart_mcux_0_config = {
 
 static struct uart_mcux_data uart_mcux_0_data;
 
-DEVICE_AND_API_INIT(uart_0, DT_UART_MCUX_0_NAME,
+DEVICE_AND_API_INIT(NULL, uart_0, DT_UART_MCUX_0_NAME,
 		    &uart_mcux_init,
 		    &uart_mcux_0_data, &uart_mcux_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -346,7 +346,7 @@ static const struct uart_mcux_config uart_mcux_1_config = {
 
 static struct uart_mcux_data uart_mcux_1_data;
 
-DEVICE_AND_API_INIT(uart_1, DT_UART_MCUX_1_NAME,
+DEVICE_AND_API_INIT(NULL, uart_1, DT_UART_MCUX_1_NAME,
 		    &uart_mcux_init,
 		    &uart_mcux_1_data, &uart_mcux_1_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -390,7 +390,7 @@ static const struct uart_mcux_config uart_mcux_2_config = {
 
 static struct uart_mcux_data uart_mcux_2_data;
 
-DEVICE_AND_API_INIT(uart_2, DT_UART_MCUX_2_NAME,
+DEVICE_AND_API_INIT(NULL, uart_2, DT_UART_MCUX_2_NAME,
 		    &uart_mcux_init,
 		    &uart_mcux_2_data, &uart_mcux_2_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -434,7 +434,7 @@ static const struct uart_mcux_config uart_mcux_3_config = {
 
 static struct uart_mcux_data uart_mcux_3_data;
 
-DEVICE_AND_API_INIT(uart_3, DT_UART_MCUX_3_NAME,
+DEVICE_AND_API_INIT(NULL, uart_3, DT_UART_MCUX_3_NAME,
 		    &uart_mcux_init,
 		    &uart_mcux_3_data, &uart_mcux_3_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -478,7 +478,7 @@ static const struct uart_mcux_config uart_mcux_4_config = {
 
 static struct uart_mcux_data uart_mcux_4_data;
 
-DEVICE_AND_API_INIT(uart_4, DT_UART_MCUX_4_NAME,
+DEVICE_AND_API_INIT(NULL, uart_4, DT_UART_MCUX_4_NAME,
 		    &uart_mcux_init,
 		    &uart_mcux_4_data, &uart_mcux_4_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -522,7 +522,7 @@ static const struct uart_mcux_config uart_mcux_5_config = {
 
 static struct uart_mcux_data uart_mcux_5_data;
 
-DEVICE_AND_API_INIT(uart_5, DT_UART_MCUX_5_NAME,
+DEVICE_AND_API_INIT(NULL, uart_5, DT_UART_MCUX_5_NAME,
 		    &uart_mcux_init,
 		    &uart_mcux_5_data, &uart_mcux_5_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

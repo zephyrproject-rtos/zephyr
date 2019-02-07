@@ -46,9 +46,9 @@ extern "C" {
  * @param prio Priority within the selected initialization level. See
  * DEVICE_AND_API_INIT for details.
  */
-#define SYS_INIT(init_fn, level, prio) \
-	DEVICE_AND_API_INIT(_SYS_NAME(init_fn), "", init_fn, NULL, NULL, level,\
-	prio, NULL)
+#define SYS_INIT(init_fn, level, prio)					       \
+	DEVICE_AND_API_INIT(NULL, _SYS_NAME(init_fn), "", init_fn, NULL, NULL, \
+			    level, prio, NULL)
 
 /**
  * @def SYS_DEVICE_DEFINE
@@ -58,6 +58,7 @@ extern "C" {
  *
  * @details This macro lets you run a function at system boot.
  *
+ * @param parent_drv_name Name of parent system device
  * @param drv_name Name of this system device
  * @param init_fn Pointer to the boot function to run
  * @param pm_control_fn Pointer to device_pm_control function.
@@ -67,9 +68,11 @@ extern "C" {
  * @param prio Priority within the selected initialization level. See
  * 	       DEVICE_INIT for details.
  */
-#define SYS_DEVICE_DEFINE(drv_name, init_fn, pm_control_fn, level, prio) \
-	DEVICE_DEFINE(_SYS_NAME(init_fn), drv_name, init_fn, pm_control_fn, \
-		      NULL, NULL, level, prio, NULL)
+#define SYS_DEVICE_DEFINE(parent_drv_name, drv_name, init_fn,		 \
+			  pm_control_fn, level, prio)			 \
+	DEVICE_DEFINE(parent_drv_name, _SYS_NAME(init_fn), drv_name,	\
+		      init_fn, pm_control_fn, NULL, NULL, level,	\
+		      prio, NULL)
 
 #ifdef __cplusplus
 }

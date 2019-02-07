@@ -287,13 +287,13 @@ static int eth_init(struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_offloading_disabled_test,
+ETH_NET_DEVICE_INIT(NULL, eth_offloading_disabled_test,
 		    "eth_offloading_disabled_test",
 		    eth_init, &eth_context_offloading_disabled,
 		    NULL, CONFIG_ETH_INIT_PRIORITY,
 		    &api_funcs_offloading_disabled, 1500);
 
-ETH_NET_DEVICE_INIT(eth_offloading_enabled_test,
+ETH_NET_DEVICE_INIT(NULL, eth_offloading_enabled_test,
 		    "eth_offloading_enabled_test",
 		    eth_init, &eth_context_offloading_enabled,
 		    NULL, CONFIG_ETH_INIT_PRIORITY,

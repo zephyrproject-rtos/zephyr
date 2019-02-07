@@ -152,10 +152,10 @@ static int eth_init(struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_test, "eth_test", eth_init, &eth_context,
+ETH_NET_DEVICE_INIT(NULL, eth_test, "eth_test", eth_init, &eth_context,
 		    NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs, 1500);
 
-ETH_NET_DEVICE_INIT(eth_test2, "eth_test2", eth_init, &eth_context2,
+ETH_NET_DEVICE_INIT(NULL, eth_test2, "eth_test2", eth_init, &eth_context2,
 		    NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs, 1500);
 
 static void timestamp_callback(struct net_pkt *pkt)

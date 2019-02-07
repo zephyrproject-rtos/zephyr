@@ -234,5 +234,6 @@ static int init(struct device *dev)
 	return 0;
 }
 
-DEVICE_DEFINE(wdt, CONFIG_WDT_0_NAME, init, wdt_qmsi_device_ctrl, WDT_CONTEXT,
-	      0, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &api);
+DEVICE_DEFINE(NULL, wdt, CONFIG_WDT_0_NAME, init, wdt_qmsi_device_ctrl,
+	      WDT_CONTEXT, 0, PRE_KERNEL_1,
+	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &api);

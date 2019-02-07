@@ -539,11 +539,11 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_0_drvdata = {
 };
 
 /* This has to init after I2C master */
-DEVICE_AND_API_INIT(gpio_pcal9535a_0, CONFIG_GPIO_PCAL9535A_0_DEV_NAME,
-	    gpio_pcal9535a_init,
-	    &gpio_pcal9535a_0_drvdata, &gpio_pcal9535a_0_cfg,
-	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY,
-	    &gpio_pcal9535a_drv_api_funcs);
+DEVICE_AND_API_INIT(NULL, gpio_pcal9535a_0, CONFIG_GPIO_PCAL9535A_0_DEV_NAME,
+		    gpio_pcal9535a_init,
+		    &gpio_pcal9535a_0_drvdata, &gpio_pcal9535a_0_cfg,
+		    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY,
+		    &gpio_pcal9535a_drv_api_funcs);
 
 #endif /* CONFIG_GPIO_PCAL9535A_0 */
 
@@ -564,7 +564,7 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_1_drvdata = {
 };
 
 /* This has to init after I2C master */
-DEVICE_AND_API_INIT(gpio_pcal9535a_1, CONFIG_GPIO_PCAL9535A_1_DEV_NAME,
+DEVICE_AND_API_INIT(NULL, gpio_pcal9535a_1, CONFIG_GPIO_PCAL9535A_1_DEV_NAME,
 	    gpio_pcal9535a_init,
 	    &gpio_pcal9535a_1_drvdata, &gpio_pcal9535a_1_cfg,
 	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY,
@@ -589,11 +589,11 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_2_drvdata = {
 };
 
 /* This has to init after I2C master */
-DEVICE_AND_API_INIT(gpio_pcal9535a_2, CONFIG_GPIO_PCAL9535A_2_DEV_NAME,
-	    gpio_pcal9535a_init,
-	    &gpio_pcal9535a_2_drvdata, &gpio_pcal9535a_2_cfg,
-	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY,
-	    &gpio_pcal9535a_drv_api_funcs);
+DEVICE_AND_API_INIT(NULL, gpio_pcal9535a_2, CONFIG_GPIO_PCAL9535A_2_DEV_NAME,
+		    gpio_pcal9535a_init,
+		    &gpio_pcal9535a_2_drvdata, &gpio_pcal9535a_2_cfg,
+		    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY,
+		    &gpio_pcal9535a_drv_api_funcs);
 
 #endif /* CONFIG_GPIO_PCAL9535A_2 */
 
@@ -614,10 +614,10 @@ static struct gpio_pcal9535a_drv_data gpio_pcal9535a_3_drvdata = {
 };
 
 /* This has to init after I2C master */
-DEVICE_AND_API_INIT(gpio_pcal9535a_3, CONFIG_GPIO_PCAL9535A_3_DEV_NAME,
-	    gpio_pcal9535a_init,
-	    &gpio_pcal9535a_3_drvdata, &gpio_pcal9535a_3_cfg,
-	    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY,
-	    &gpio_pcal9535a_drv_api_funcs);
+DEVICE_AND_API_INIT(NULL, gpio_pcal9535a_3, CONFIG_GPIO_PCAL9535A_3_DEV_NAME,
+		    gpio_pcal9535a_init,
+		    &gpio_pcal9535a_3_drvdata, &gpio_pcal9535a_3_cfg,
+		    POST_KERNEL, CONFIG_GPIO_PCAL9535A_INIT_PRIORITY,
+		    &gpio_pcal9535a_drv_api_funcs);
 
 #endif /* CONFIG_GPIO_PCAL9535A_3 */

@@ -213,7 +213,7 @@ static const struct imx_mu_config imx_mu_b_config = {
 
 static struct imx_mu_data imx_mu_b_data;
 
-DEVICE_AND_API_INIT(mu_b, DT_IPM_IMX_MU_B_NAME,
+DEVICE_AND_API_INIT(NULL, mu_b, DT_IPM_IMX_MU_B_NAME,
 		    &imx_mu_init,
 		    &imx_mu_b_data, &imx_mu_b_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

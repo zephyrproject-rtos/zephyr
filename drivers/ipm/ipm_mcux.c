@@ -160,7 +160,7 @@ static const struct mcux_mailbox_config mcux_mailbox_0_config = {
 
 static struct mcux_mailbox_data mcux_mailbox_0_data;
 
-DEVICE_AND_API_INIT(mailbox_0, DT_MAILBOX_MCUX_MAILBOX_0_NAME,
+DEVICE_AND_API_INIT(NULL, mailbox_0, DT_MAILBOX_MCUX_MAILBOX_0_NAME,
 		    &mcux_mailbox_init,
 		    &mcux_mailbox_0_data, &mcux_mailbox_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

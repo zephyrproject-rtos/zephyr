@@ -27,10 +27,10 @@ static int x86_quark_se_ipm_init(void)
 static struct quark_se_ipm_controller_config_info ipm_controller_config = {
 	.controller_init = x86_quark_se_ipm_init
 };
-DEVICE_AND_API_INIT(quark_se_ipm, "", quark_se_ipm_controller_initialize,
-				NULL, &ipm_controller_config,
-				PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-				&ipm_quark_se_api_funcs);
+DEVICE_AND_API_INIT(NULL, quark_se_ipm, "", quark_se_ipm_controller_initialize,
+		    NULL, &ipm_controller_config,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &ipm_quark_se_api_funcs);
 
 #if defined(CONFIG_IPM_CONSOLE_RECEIVER) && defined(CONFIG_PRINTK)
 #include <console/ipm_console.h>
@@ -53,9 +53,9 @@ static struct ipm_console_receiver_config_info quark_se_ipm_receiver_config = {
 	.flags = IPM_CONSOLE_PRINTK
 };
 struct ipm_console_receiver_runtime_data quark_se_ipm_receiver_driver_data;
-DEVICE_INIT(ipm_console0, "ipm_console0", ipm_console_receiver_init,
-				&quark_se_ipm_receiver_driver_data, &quark_se_ipm_receiver_config,
-				POST_KERNEL, CONFIG_IPM_CONSOLE_INIT_PRIORITY);
+DEVICE_INIT(NULL, ipm_console0, "ipm_console0", ipm_console_receiver_init,
+	    &quark_se_ipm_receiver_driver_data, &quark_se_ipm_receiver_config,
+	    POST_KERNEL, CONFIG_IPM_CONSOLE_INIT_PRIORITY);
 
 #endif /* CONFIG_PRINTK && CONFIG_IPM_CONSOLE_RECEIVER */
 #endif /* CONFIG_IPM_QUARK_SE */

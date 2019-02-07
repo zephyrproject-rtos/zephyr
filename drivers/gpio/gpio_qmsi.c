@@ -117,7 +117,7 @@ static int gpio_qmsi_device_ctrl(struct device *port, u32_t ctrl_command,
 }
 #endif
 
-DEVICE_DEFINE(gpio_0, DT_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
+DEVICE_DEFINE(NULL, gpio_0, DT_GPIO_QMSI_0_NAME, &gpio_qmsi_init,
 	      gpio_qmsi_device_ctrl, &gpio_0_runtime, &gpio_0_config,
 	      POST_KERNEL, CONFIG_GPIO_QMSI_INIT_PRIORITY, NULL);
 
@@ -154,7 +154,7 @@ static int gpio_aon_device_ctrl(struct device *port, u32_t ctrl_command,
 }
 #endif
 
-DEVICE_DEFINE(gpio_aon, DT_GPIO_QMSI_1_NAME, &gpio_qmsi_init,
+DEVICE_DEFINE(NULL, gpio_aon, DT_GPIO_QMSI_1_NAME, &gpio_qmsi_init,
 	      gpio_aon_device_ctrl, &gpio_aon_runtime, &gpio_aon_config,
 	      POST_KERNEL, CONFIG_GPIO_QMSI_INIT_PRIORITY, NULL);
 

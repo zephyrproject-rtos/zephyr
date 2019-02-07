@@ -181,7 +181,7 @@ static struct dummy_api net_fragment_if_api = {
 	.send = tester_send,
 };
 
-NET_DEVICE_INIT(net_fragment_test, "net_fragment_test",
+NET_DEVICE_INIT(NULL, net_fragment_test, "net_fragment_test",
 		net_fragment_dev_init, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&net_fragment_if_api, DUMMY_L2,

@@ -372,7 +372,7 @@ static const struct gpio_driver_api gpio_sx1509b_drv_api_funcs = {
 	.read	= gpio_sx1509b_read,
 };
 
-DEVICE_AND_API_INIT(gpio_sx1509b, CONFIG_GPIO_SX1509B_DEV_NAME,
+DEVICE_AND_API_INIT(NULL, gpio_sx1509b, CONFIG_GPIO_SX1509B_DEV_NAME,
 		    gpio_sx1509b_init, &gpio_sx1509b_drvdata, &gpio_sx1509b_cfg,
 		    POST_KERNEL, CONFIG_GPIO_SX1509B_INIT_PRIORITY,
 		    &gpio_sx1509b_drv_api_funcs);

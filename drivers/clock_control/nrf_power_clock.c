@@ -450,7 +450,8 @@ static const struct clock_control_driver_api _m16src_clock_control_api = {
 	.get_rate = NULL,
 };
 
-DEVICE_AND_API_INIT(clock_nrf5_m16src,
+DEVICE_AND_API_INIT(DT_NORDIC_NRF_CLOCK_0_PARENT_LABEL,
+		    clock_nrf5_m16src,
 		    DT_NORDIC_NRF_CLOCK_0_LABEL "_16M",
 		    _clock_control_init, NULL, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -462,7 +463,8 @@ static const struct clock_control_driver_api _k32src_clock_control_api = {
 	.get_rate = NULL,
 };
 
-DEVICE_AND_API_INIT(clock_nrf5_k32src,
+DEVICE_AND_API_INIT(DT_NORDIC_NRF_CLOCK_0_PARENT_LABEL,
+		    clock_nrf5_k32src,
 		    DT_NORDIC_NRF_CLOCK_0_LABEL "_32K",
 		    _clock_control_init, NULL, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

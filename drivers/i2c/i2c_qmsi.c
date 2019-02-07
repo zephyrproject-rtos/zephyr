@@ -121,7 +121,7 @@ static const struct i2c_qmsi_config_info config_info_0 = {
 	.clock_gate = CLK_PERIPH_I2C_M0_REGISTER | CLK_PERIPH_CLK,
 };
 
-DEVICE_DEFINE(i2c_0, CONFIG_I2C_0_NAME, &i2c_qmsi_init,
+DEVICE_DEFINE(NULL, i2c_0, CONFIG_I2C_0_NAME, &i2c_qmsi_init,
 	      i2c_device_ctrl, &driver_data_0, &config_info_0, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
@@ -137,7 +137,7 @@ static const struct i2c_qmsi_config_info config_info_1 = {
 	.clock_gate = CLK_PERIPH_I2C_M1_REGISTER | CLK_PERIPH_CLK,
 };
 
-DEVICE_DEFINE(i2c_1, CONFIG_I2C_1_NAME, &i2c_qmsi_init,
+DEVICE_DEFINE(NULL, i2c_1, CONFIG_I2C_1_NAME, &i2c_qmsi_init,
 	      i2c_device_ctrl, &driver_data_1, &config_info_1, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 

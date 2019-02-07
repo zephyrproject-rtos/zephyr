@@ -63,7 +63,7 @@ static struct rv32m1_pcc_config rv32m1_pcc0_config = {
 	.base_address = PCC_0_BASE_ADDRESS
 };
 
-DEVICE_AND_API_INIT(rv32m1_pcc0, PCC_0_LABEL,
+DEVICE_AND_API_INIT(NULL, rv32m1_pcc0, PCC_0_LABEL,
 		    &rv32m1_pcc_init,
 		    NULL, &rv32m1_pcc0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,
@@ -75,7 +75,7 @@ static struct rv32m1_pcc_config rv32m1_pcc1_config = {
 	.base_address = PCC_1_BASE_ADDRESS
 };
 
-DEVICE_AND_API_INIT(rv32m1_pcc1, PCC_1_LABEL,
+DEVICE_AND_API_INIT(NULL, rv32m1_pcc1, PCC_1_LABEL,
 		    &rv32m1_pcc_init,
 		    NULL, &rv32m1_pcc1_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS,

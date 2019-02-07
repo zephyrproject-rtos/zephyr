@@ -203,7 +203,7 @@ static const struct i2c_mcux_config i2c_mcux_config_0 = {
 
 static struct i2c_mcux_data i2c_mcux_data_0;
 
-DEVICE_AND_API_INIT(i2c_mcux_0, CONFIG_I2C_0_NAME, &i2c_mcux_init,
+DEVICE_AND_API_INIT(NULL, i2c_mcux_0, CONFIG_I2C_0_NAME, &i2c_mcux_init,
 		    &i2c_mcux_data_0, &i2c_mcux_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_mcux_driver_api);
@@ -231,7 +231,7 @@ static const struct i2c_mcux_config i2c_mcux_config_1 = {
 
 static struct i2c_mcux_data i2c_mcux_data_1;
 
-DEVICE_AND_API_INIT(i2c_mcux_1, CONFIG_I2C_1_NAME, &i2c_mcux_init,
+DEVICE_AND_API_INIT(NULL, i2c_mcux_1, CONFIG_I2C_1_NAME, &i2c_mcux_init,
 		    &i2c_mcux_data_1, &i2c_mcux_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_mcux_driver_api);

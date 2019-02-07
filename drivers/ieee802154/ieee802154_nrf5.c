@@ -481,7 +481,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 #endif
 
 #if defined(CONFIG_NET_L2_IEEE802154) || defined(CONFIG_NET_L2_OPENTHREAD)
-NET_DEVICE_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
+NET_DEVICE_INIT(NULL, nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
 		nrf5_init, &nrf5_data, &nrf5_radio_cfg,
 		CONFIG_IEEE802154_NRF5_INIT_PRIO,
 		&nrf5_radio_api, L2,
@@ -492,7 +492,7 @@ NET_STACK_INFO_ADDR(RX, nrf5_154_radio,
 		    CONFIG_IEEE802154_NRF5_RX_STACK_SIZE,
 		    nrf5_data.rx_stack, 0);
 #else
-DEVICE_AND_API_INIT(nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
+DEVICE_AND_API_INIT(NULL, nrf5_154_radio, CONFIG_IEEE802154_NRF5_DRV_NAME,
 		    nrf5_init, &nrf5_data, &nrf5_radio_cfg,
 		    POST_KERNEL, CONFIG_IEEE802154_NRF5_INIT_PRIO,
 		    &nrf5_radio_api);

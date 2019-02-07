@@ -112,9 +112,9 @@ static const struct ss_gpio_qmsi_config ss_gpio_0_config = {
 
 static struct ss_gpio_qmsi_runtime ss_gpio_0_runtime;
 
-DEVICE_DEFINE(ss_gpio_0, DT_GPIO_QMSI_SS_0_NAME, &ss_gpio_qmsi_init,
-	    ss_gpio_qmsi_device_ctrl, &ss_gpio_0_runtime, &ss_gpio_0_config,
-	    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+DEVICE_DEFINE(NULL, ss_gpio_0, DT_GPIO_QMSI_SS_0_NAME, &ss_gpio_qmsi_init,
+	      ss_gpio_qmsi_device_ctrl, &ss_gpio_0_runtime, &ss_gpio_0_config,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 #endif /* CONFIG_GPIO_QMSI_SS_0 */
 
@@ -126,9 +126,9 @@ static const struct ss_gpio_qmsi_config ss_gpio_1_config = {
 
 static struct ss_gpio_qmsi_runtime gpio_1_runtime;
 
-DEVICE_DEFINE(ss_gpio_1, DT_GPIO_QMSI_SS_1_NAME, &ss_gpio_qmsi_init,
-	    ss_gpio_qmsi_device_ctrl, &gpio_1_runtime, &ss_gpio_1_config,
-	    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
+DEVICE_DEFINE(NULL, ss_gpio_1, DT_GPIO_QMSI_SS_1_NAME, &ss_gpio_qmsi_init,
+	      ss_gpio_qmsi_device_ctrl, &gpio_1_runtime, &ss_gpio_1_config,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, NULL);
 
 #endif /* CONFIG_GPIO_QMSI_SS_1 */
 

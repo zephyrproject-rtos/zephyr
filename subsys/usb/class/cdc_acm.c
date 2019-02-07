@@ -1081,7 +1081,8 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 }
 
 #define DEFINE_CDC_ACM_DEVICE(x)					\
-	DEVICE_AND_API_INIT(cdc_acm_##x, CONFIG_CDC_ACM_PORT_NAME_##x,	\
+	DEVICE_AND_API_INIT(NULL, cdc_acm_##x,				\
+			    CONFIG_CDC_ACM_PORT_NAME_##x,		\
 			    &cdc_acm_init, &cdc_acm_dev_data_##x,	\
 			    &cdc_acm_config_##x,			\
 			    APPLICATION,				\

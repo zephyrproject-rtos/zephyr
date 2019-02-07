@@ -184,6 +184,6 @@ int max44009_init(struct device *dev)
 
 static struct max44009_data max44009_drv_data;
 
-DEVICE_AND_API_INIT(max44009, CONFIG_MAX44009_DRV_NAME, max44009_init,
-	    &max44009_drv_data, NULL, POST_KERNEL,
-	    CONFIG_SENSOR_INIT_PRIORITY, &max44009_driver_api);
+DEVICE_AND_API_INIT(NULL, max44009, CONFIG_MAX44009_DRV_NAME, max44009_init,
+		    &max44009_drv_data, NULL, POST_KERNEL,
+		    CONFIG_SENSOR_INIT_PRIORITY, &max44009_driver_api);

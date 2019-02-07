@@ -52,7 +52,7 @@ static const struct uart_driver_api esp32_uart_api = {
 	.err_check = NULL,
 };
 
-DEVICE_AND_API_INIT(esp32_uart, "ROMUART",
+DEVICE_AND_API_INIT(NULL, esp32_uart, "ROMUART",
 		    esp32_uart_init, NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &esp32_uart_api);

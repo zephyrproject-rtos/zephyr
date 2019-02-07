@@ -745,6 +745,6 @@ static int pinmux_galileo_initialize(struct device *port)
  * 1 - PCA9535 and PCAL9685
  * 2 - pinmux
  */
-DEVICE_AND_API_INIT(pmux, CONFIG_PINMUX_NAME, &pinmux_galileo_initialize,
-			&galileo_pinmux_driver, NULL,
-			POST_KERNEL, CONFIG_PINMUX_INIT_PRIORITY, &api_funcs);
+DEVICE_AND_API_INIT(NULL, pmux, CONFIG_PINMUX_NAME, &pinmux_galileo_initialize,
+		    &galileo_pinmux_driver, NULL,
+		    POST_KERNEL, CONFIG_PINMUX_INIT_PRIORITY, &api_funcs);

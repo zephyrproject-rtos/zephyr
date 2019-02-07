@@ -538,6 +538,7 @@ static const struct audio_codec_api codec_driver_api = {
 	.apply_properties	= codec_apply_properties,
 };
 
-DEVICE_AND_API_INIT(tlv320dac310x, DT_TI_TLV320DAC_0_LABEL, codec_initialize,
-		&codec_device_data, &codec_device_config, POST_KERNEL,
-		CONFIG_AUDIO_CODEC_INIT_PRIORITY, &codec_driver_api);
+DEVICE_AND_API_INIT(NULL, tlv320dac310x, DT_TI_TLV320DAC_0_LABEL,
+		    codec_initialize, &codec_device_data, &codec_device_config,
+		    POST_KERNEL, CONFIG_AUDIO_CODEC_INIT_PRIORITY,
+		    &codec_driver_api);

@@ -253,7 +253,7 @@ static const struct gpio_rv32m1_config gpio_rv32m1_porta_config = {
 
 static struct gpio_rv32m1_data gpio_rv32m1_porta_data;
 
-DEVICE_AND_API_INIT(gpio_rv32m1_porta, GPIO_A_LABEL,
+DEVICE_AND_API_INIT(NULL, gpio_rv32m1_porta, GPIO_A_LABEL,
 		    gpio_rv32m1_porta_init,
 		    &gpio_rv32m1_porta_data, &gpio_rv32m1_porta_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -289,7 +289,7 @@ static const struct gpio_rv32m1_config gpio_rv32m1_portb_config = {
 
 static struct gpio_rv32m1_data gpio_rv32m1_portb_data;
 
-DEVICE_AND_API_INIT(gpio_rv32m1_portb, GPIO_B_LABEL,
+DEVICE_AND_API_INIT(NULL, gpio_rv32m1_portb, GPIO_B_LABEL,
 		    gpio_rv32m1_portb_init,
 		    &gpio_rv32m1_portb_data, &gpio_rv32m1_portb_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -325,7 +325,7 @@ static const struct gpio_rv32m1_config gpio_rv32m1_portc_config = {
 
 static struct gpio_rv32m1_data gpio_rv32m1_portc_data;
 
-DEVICE_AND_API_INIT(gpio_rv32m1_portc, GPIO_C_LABEL,
+DEVICE_AND_API_INIT(NULL, gpio_rv32m1_portc, GPIO_C_LABEL,
 		    gpio_rv32m1_portc_init,
 		    &gpio_rv32m1_portc_data, &gpio_rv32m1_portc_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -361,7 +361,7 @@ static const struct gpio_rv32m1_config gpio_rv32m1_portd_config = {
 
 static struct gpio_rv32m1_data gpio_rv32m1_portd_data;
 
-DEVICE_AND_API_INIT(gpio_rv32m1_portd, GPIO_D_LABEL,
+DEVICE_AND_API_INIT(NULL, gpio_rv32m1_portd, GPIO_D_LABEL,
 		    gpio_rv32m1_portd_init,
 		    &gpio_rv32m1_portd_data, &gpio_rv32m1_portd_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -397,7 +397,7 @@ static const struct gpio_rv32m1_config gpio_rv32m1_porte_config = {
 
 static struct gpio_rv32m1_data gpio_rv32m1_porte_data;
 
-DEVICE_AND_API_INIT(gpio_rv32m1_porte, GPIO_E_LABEL,
+DEVICE_AND_API_INIT(NULL, gpio_rv32m1_porte, GPIO_E_LABEL,
 		    gpio_rv32m1_porte_init,
 		    &gpio_rv32m1_porte_data, &gpio_rv32m1_porte_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

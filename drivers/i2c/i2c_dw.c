@@ -722,8 +722,8 @@ static struct i2c_dw_dev_config i2c_0_runtime = {
 #endif
 };
 
-DEVICE_AND_API_INIT(i2c_0, DT_SNPS_DESIGNWARE_I2C_0_LABEL, &i2c_dw_initialize,
-		    &i2c_0_runtime, &i2c_config_dw_0,
+DEVICE_AND_API_INIT(NULL, i2c_0, DT_SNPS_DESIGNWARE_I2C_0_LABEL,
+		    &i2c_dw_initialize, &i2c_0_runtime, &i2c_config_dw_0,
 		    POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,
 		    &funcs);
 
@@ -773,8 +773,8 @@ static struct i2c_dw_dev_config i2c_1_runtime = {
 #endif
 };
 
-DEVICE_AND_API_INIT(i2c_1, DT_SNPS_DESIGNWARE_I2C_1_LABEL, &i2c_dw_initialize,
-		    &i2c_1_runtime, &i2c_config_dw_1,
+DEVICE_AND_API_INIT(NULL, i2c_1, DT_SNPS_DESIGNWARE_I2C_1_LABEL,
+		    &i2c_dw_initialize, &i2c_1_runtime, &i2c_config_dw_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &funcs);
 
@@ -814,8 +814,8 @@ static struct i2c_dw_dev_config I2C_2_runtime = {
 #endif
 };
 
-DEVICE_AND_API_INIT(I2C_2, DT_SNPS_DESIGNWARE_I2C_2_LABEL, &i2c_dw_initialize,
-		    &I2C_2_runtime, &i2c_config_dw_2,
+DEVICE_AND_API_INIT(NULL, I2C_2, DT_SNPS_DESIGNWARE_I2C_2_LABEL,
+		    &i2c_dw_initialize, &I2C_2_runtime, &i2c_config_dw_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &funcs);
 
@@ -855,8 +855,8 @@ static struct i2c_dw_dev_config I2C_3_runtime = {
 #endif
 };
 
-DEVICE_AND_API_INIT(I2C_3, DT_SNPS_DESIGNWARE_I2C_3_LABEL, &i2c_dw_initialize,
-		    &I2C_3_runtime, &i2c_config_dw_3,
+DEVICE_AND_API_INIT(NULL, I2C_3, DT_SNPS_DESIGNWARE_I2C_3_LABEL,
+		    &i2c_dw_initialize, &I2C_3_runtime, &i2c_config_dw_3,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &funcs);
 
@@ -896,8 +896,8 @@ static struct i2c_dw_dev_config I2C_4_runtime = {
 #endif
 };
 
-DEVICE_AND_API_INIT(I2C_4, DT_SNPS_DESIGNWARE_I2C_4_LABEL, &i2c_dw_initialize,
-		    &I2C_4_runtime, &i2c_config_dw_4,
+DEVICE_AND_API_INIT(NULL, I2C_4, DT_SNPS_DESIGNWARE_I2C_4_LABEL,
+		    &i2c_dw_initialize, &I2C_4_runtime, &i2c_config_dw_4,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &funcs);
 
@@ -937,8 +937,8 @@ static struct i2c_dw_dev_config I2C_5_runtime = {
 #endif
 };
 
-DEVICE_AND_API_INIT(I2C_5, DT_SNPS_DESIGNWARE_I2C_5_LABEL, &i2c_dw_initialize,
-		    &I2C_5_runtime, &i2c_config_dw_5,
+DEVICE_AND_API_INIT(NULL, I2C_5, DT_SNPS_DESIGNWARE_I2C_5_LABEL,
+		    &i2c_dw_initialize, &I2C_5_runtime, &i2c_config_dw_5,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &funcs);
 
@@ -978,8 +978,8 @@ static struct i2c_dw_dev_config I2C_6_runtime = {
 #endif
 };
 
-DEVICE_AND_API_INIT(I2C_6, DT_SNPS_DESIGNWARE_I2C_6_LABEL, &i2c_dw_initialize,
-		    &I2C_6_runtime, &i2c_config_dw_6,
+DEVICE_AND_API_INIT(NULL, I2C_6, DT_SNPS_DESIGNWARE_I2C_6_LABEL,
+		    &i2c_dw_initialize, &I2C_6_runtime, &i2c_config_dw_6,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &funcs);
 
@@ -1019,8 +1019,8 @@ static struct i2c_dw_dev_config I2C_7_runtime = {
 #endif
 };
 
-DEVICE_AND_API_INIT(I2C_7, DT_SNPS_DESIGNWARE_I2C_7_LABEL, &i2c_dw_initialize,
-		    &I2C_7_runtime, &i2c_config_dw_7,
+DEVICE_AND_API_INIT(NULL, I2C_7, DT_SNPS_DESIGNWARE_I2C_7_LABEL,
+		    &i2c_dw_initialize, &I2C_7_runtime, &i2c_config_dw_7,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &funcs);
 

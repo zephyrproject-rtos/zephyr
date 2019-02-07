@@ -330,7 +330,7 @@ static struct gpio_esp32_data gpio_data_pins_32_to_39 = {
 #endif
 
 #define GPIO_DEVICE_INIT(__name, __data_struct_name) \
-	DEVICE_AND_API_INIT(gpio_esp32_ ## __data_struct_name, \
+	DEVICE_AND_API_INIT(NULL, gpio_esp32_ ## __data_struct_name, \
 			    __name, \
 			    gpio_esp32_init, \
 			    &gpio_data_pins_ ## __data_struct_name, \

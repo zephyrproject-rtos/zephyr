@@ -211,7 +211,7 @@ static struct i2c_gecko_config i2c_gecko_config_0 = {
 
 static struct i2c_gecko_data i2c_gecko_data_0;
 
-DEVICE_AND_API_INIT(i2c_gecko_0, DT_SILABS_GECKO_I2C_0_LABEL,
+DEVICE_AND_API_INIT(NULL, i2c_gecko_0, DT_SILABS_GECKO_I2C_0_LABEL,
 		    &i2c_gecko_init, &i2c_gecko_data_0, &i2c_gecko_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_gecko_driver_api);
@@ -245,7 +245,7 @@ static struct i2c_gecko_config i2c_gecko_config_1 = {
 
 static struct i2c_gecko_data i2c_gecko_data_1;
 
-DEVICE_AND_API_INIT(i2c_gecko_1, DT_SILABS_GECKO_I2C_1_LABEL,
+DEVICE_AND_API_INIT(NULL, i2c_gecko_1, DT_SILABS_GECKO_I2C_1_LABEL,
 		    &i2c_gecko_init, &i2c_gecko_data_1, &i2c_gecko_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_gecko_driver_api);

@@ -240,7 +240,8 @@ static const struct beetle_clock_control_cfg_t beetle_cc_cfg = {
  * @brief Clock Control device init
  *
  */
-DEVICE_AND_API_INIT(clock_control_beetle, CONFIG_ARM_CLOCK_CONTROL_DEV_NAME,
+DEVICE_AND_API_INIT(NULL, clock_control_beetle,
+		    CONFIG_ARM_CLOCK_CONTROL_DEV_NAME,
 		    &beetle_clock_control_init,
 		    NULL, &beetle_cc_cfg,
 		    PRE_KERNEL_1,

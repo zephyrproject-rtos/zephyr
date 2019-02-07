@@ -224,6 +224,6 @@ int mpu6050_init(struct device *dev)
 
 struct mpu6050_data mpu6050_driver;
 
-DEVICE_AND_API_INIT(mpu6050, CONFIG_MPU6050_NAME, mpu6050_init, &mpu6050_driver,
-		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &mpu6050_driver_api);
+DEVICE_AND_API_INIT(NULL, mpu6050, CONFIG_MPU6050_NAME, mpu6050_init,
+		    &mpu6050_driver, NULL, POST_KERNEL,
+		    CONFIG_SENSOR_INIT_PRIORITY, &mpu6050_driver_api);

@@ -1815,7 +1815,7 @@ static struct net_if_api api_funcs = {
 	.init	= offload_iface_init,
 };
 
-NET_DEVICE_OFFLOAD_INIT(modem_wncm14a2a, "MODEM_WNCM14A2A",
+NET_DEVICE_OFFLOAD_INIT(NULL, modem_wncm14a2a, "MODEM_WNCM14A2A",
 			wncm14a2a_init, &ictx,
 			NULL, CONFIG_MODEM_WNCM14A2A_INIT_PRIORITY, &api_funcs,
 			MDM_MAX_DATA_LENGTH);

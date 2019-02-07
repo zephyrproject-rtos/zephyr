@@ -170,7 +170,7 @@ static int eth_vlan_init(struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_vlan_test, "eth_vlan_test", eth_vlan_init,
+ETH_NET_DEVICE_INIT(NULL, eth_vlan_test, "eth_vlan_test", eth_vlan_init,
 		    &eth_vlan_context, NULL, CONFIG_ETH_INIT_PRIORITY,
 		    &api_funcs, 1500);
 
@@ -187,7 +187,7 @@ static int eth_init(struct device *dev)
  * is quite unlikely that this would be done in real life but for testing
  * purposes create it here.
  */
-NET_DEVICE_INIT(eth_test, "eth_test", eth_init, &eth_vlan_context,
+NET_DEVICE_INIT(NULL, eth_test, "eth_test", eth_init, &eth_vlan_context,
 		NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), 1500);
 
@@ -246,7 +246,8 @@ static struct dummy_api net_iface_api = {
 /* For testing purposes, create two dummy network interfaces so we can check
  * that no VLANs are created for it.
  */
-NET_DEVICE_INIT_INSTANCE(net_iface1_test,
+NET_DEVICE_INIT_INSTANCE(NULL,
+			 net_iface1_test,
 			 "iface1",
 			 iface1,
 			 net_iface_dev_init,
@@ -258,7 +259,8 @@ NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 NET_L2_GET_CTX_TYPE(DUMMY_L2),
 			 127);
 
-NET_DEVICE_INIT_INSTANCE(net_iface2_test,
+NET_DEVICE_INIT_INSTANCE(NULL,
+			 net_iface2_test,
 			 "iface2",
 			 iface2,
 			 net_iface_dev_init,

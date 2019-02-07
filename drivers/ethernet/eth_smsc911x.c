@@ -677,7 +677,7 @@ int eth_init(struct device *dev)
 
 static struct eth_context eth_0_context;
 
-ETH_NET_DEVICE_INIT(eth_smsc911x_0, "smsc911x_0",
+ETH_NET_DEVICE_INIT(NULL, eth_smsc911x_0, "smsc911x_0",
 		eth_init, &eth_0_context,
 		NULL/*&eth_config_0*/, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		1500/*MTU*/);

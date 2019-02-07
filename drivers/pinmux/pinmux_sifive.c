@@ -93,7 +93,7 @@ static const struct pinmux_sifive_config pinmux_sifive_0_config = {
 	.base = SIFIVE_PINMUX_0_BASE_ADDR,
 };
 
-DEVICE_AND_API_INIT(pinmux_sifive_0, CONFIG_PINMUX_SIFIVE_0_NAME,
+DEVICE_AND_API_INIT(NULL, pinmux_sifive_0, CONFIG_PINMUX_SIFIVE_0_NAME,
 		    &pinmux_sifive_init, NULL,
 		    &pinmux_sifive_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

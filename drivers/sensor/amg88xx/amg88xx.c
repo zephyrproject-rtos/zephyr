@@ -135,7 +135,7 @@ static const struct sensor_driver_api amg88xx_driver_api = {
 };
 
 
-DEVICE_AND_API_INIT(amg88xx, CONFIG_AMG88XX_NAME, amg88xx_init,
+DEVICE_AND_API_INIT(NULL, amg88xx, CONFIG_AMG88XX_NAME, amg88xx_init,
 		    &amg88xx_driver, NULL,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &amg88xx_driver_api);

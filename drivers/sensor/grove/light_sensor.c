@@ -99,6 +99,6 @@ static int gls_init(struct device *dev)
 
 static struct gls_data gls_data;
 
-DEVICE_AND_API_INIT(gls_dev, CONFIG_GROVE_LIGHT_SENSOR_NAME, &gls_init,
-		&gls_data, NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		&gls_api);
+DEVICE_AND_API_INIT(NULL, gls_dev, CONFIG_GROVE_LIGHT_SENSOR_NAME, &gls_init,
+		    &gls_data, NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
+		    &gls_api);

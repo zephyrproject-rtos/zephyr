@@ -285,7 +285,7 @@ static const struct gpio_sam3_config gpio_sam3_a_cfg = {
 
 static struct gpio_sam3_runtime gpio_sam3_a_runtime;
 
-DEVICE_AND_API_INIT(gpio_sam3_a, CONFIG_GPIO_ATMEL_SAM3_PORTA_DEV_NAME,
+DEVICE_AND_API_INIT(NULL, gpio_sam3_a, CONFIG_GPIO_ATMEL_SAM3_PORTA_DEV_NAME,
 		    gpio_sam3_init, &gpio_sam3_a_runtime, &gpio_sam3_a_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam3_drv_api_funcs);
@@ -313,7 +313,7 @@ static const struct gpio_sam3_config gpio_sam3_b_cfg = {
 
 static struct gpio_sam3_runtime gpio_sam3_b_runtime;
 
-DEVICE_AND_API_INIT(gpio_sam3_b, CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME,
+DEVICE_AND_API_INIT(NULL, gpio_sam3_b, CONFIG_GPIO_ATMEL_SAM3_PORTB_DEV_NAME,
 		    gpio_sam3_init, &gpio_sam3_b_runtime, &gpio_sam3_b_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam3_drv_api_funcs);
@@ -341,7 +341,7 @@ static const struct gpio_sam3_config gpio_sam3_c_cfg = {
 
 static struct gpio_sam3_runtime gpio_sam3_c_runtime;
 
-DEVICE_AND_API_INIT(gpio_sam3_c, CONFIG_GPIO_ATMEL_SAM3_PORTC_DEV_NAME,
+DEVICE_AND_API_INIT(NULL, gpio_sam3_c, CONFIG_GPIO_ATMEL_SAM3_PORTC_DEV_NAME,
 		    gpio_sam3_init, &gpio_sam3_c_runtime, &gpio_sam3_c_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam3_drv_api_funcs);
@@ -369,7 +369,7 @@ static const struct gpio_sam3_config gpio_sam3_d_cfg = {
 
 static struct gpio_sam3_runtime gpio_sam3_d_runtime;
 
-DEVICE_AND_API_INIT(gpio_sam3_d, CONFIG_GPIO_ATMEL_SAM3_PORTD_DEV_NAME,
+DEVICE_AND_API_INIT(NULL, gpio_sam3_d, CONFIG_GPIO_ATMEL_SAM3_PORTD_DEV_NAME,
 		    gpio_sam3_init, &gpio_sam3_d_runtime, &gpio_sam3_d_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam3_drv_api_funcs);

@@ -125,7 +125,7 @@ static struct ieee802154_radio_api fake_radio_api = {
 	.tx			= fake_tx,
 };
 
-NET_DEVICE_INIT(fake, "fake_ieee802154",
+NET_DEVICE_INIT(NULL, fake, "fake_ieee802154",
 		fake_init, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&fake_radio_api, IEEE802154_L2,

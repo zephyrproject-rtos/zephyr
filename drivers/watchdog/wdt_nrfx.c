@@ -170,6 +170,6 @@ static int init_wdt(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(wdt_nrf, DT_NORDIC_NRF_WATCHDOG_WDT_0_LABEL, init_wdt,
+DEVICE_AND_API_INIT(NULL, wdt_nrf, DT_NORDIC_NRF_WATCHDOG_WDT_0_LABEL, init_wdt,
 		    NULL, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &wdt_nrf_api);

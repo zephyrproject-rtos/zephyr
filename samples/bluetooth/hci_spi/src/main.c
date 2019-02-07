@@ -288,7 +288,7 @@ static int hci_spi_init(struct device *unused)
 	return 0;
 }
 
-DEVICE_INIT(hci_spi, "hci_spi", &hci_spi_init, NULL, NULL,
+DEVICE_INIT(NULL, hci_spi, "hci_spi", &hci_spi_init, NULL, NULL,
 	    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 void main(void)

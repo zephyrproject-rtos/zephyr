@@ -142,11 +142,11 @@ static const struct cypress_psoc6_config cypress_psoc6_uart5_config = {
 	.scb_clock = DT_UART_PSOC6_UART_5_CLOCK,
 };
 
-DEVICE_AND_API_INIT(uart_5, DT_UART_PSOC6_UART_5_NAME,
-			uart_psoc6_init, NULL,
-			&cypress_psoc6_uart5_config,
-			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-			(void *)&uart_psoc6_driver_api);
+DEVICE_AND_API_INIT(NULL, uart_5, DT_UART_PSOC6_UART_5_NAME,
+		    uart_psoc6_init, NULL,
+		    &cypress_psoc6_uart5_config,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    (void *)&uart_psoc6_driver_api);
 #endif /* CONFIG_UART_PSOC6_UART_5 */
 
 #ifdef CONFIG_UART_PSOC6_UART_6
@@ -160,9 +160,9 @@ static const struct cypress_psoc6_config cypress_psoc6_uart6_config = {
 	.scb_clock = DT_UART_PSOC6_UART_6_CLOCK,
 };
 
-DEVICE_AND_API_INIT(uart_6, DT_UART_PSOC6_UART_6_NAME,
-			uart_psoc6_init, NULL,
-			&cypress_psoc6_uart6_config,
-			PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-			(void *)&uart_psoc6_driver_api);
+DEVICE_AND_API_INIT(NULL, uart_6, DT_UART_PSOC6_UART_6_NAME,
+		    uart_psoc6_init, NULL,
+		    &cypress_psoc6_uart6_config,
+		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    (void *)&uart_psoc6_driver_api);
 #endif /* CONFIG_UART_PSOC6_UART_6 */

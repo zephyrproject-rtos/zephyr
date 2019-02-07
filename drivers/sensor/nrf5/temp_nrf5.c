@@ -99,7 +99,7 @@ static int temp_nrf5_init(struct device *dev);
 
 static struct temp_nrf5_data temp_nrf5_driver;
 
-DEVICE_AND_API_INIT(temp_nrf5, CONFIG_TEMP_NRF5_NAME, temp_nrf5_init,
+DEVICE_AND_API_INIT(NULL, temp_nrf5, CONFIG_TEMP_NRF5_NAME, temp_nrf5_init,
 		    &temp_nrf5_driver, NULL,
 		    POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &temp_nrf5_driver_api);

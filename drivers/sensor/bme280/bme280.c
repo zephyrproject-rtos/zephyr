@@ -382,6 +382,6 @@ int bme280_init(struct device *dev)
 
 static struct bme280_data bme280_data;
 
-DEVICE_AND_API_INIT(bme280, DT_BOSCH_BME280_0_LABEL, bme280_init, &bme280_data,
-		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
-		    &bme280_api_funcs);
+DEVICE_AND_API_INIT(NULL, bme280, DT_BOSCH_BME280_0_LABEL, bme280_init,
+		    &bme280_data, NULL, POST_KERNEL,
+		    CONFIG_SENSOR_INIT_PRIORITY, &bme280_api_funcs);

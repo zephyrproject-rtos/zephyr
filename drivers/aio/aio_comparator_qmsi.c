@@ -177,7 +177,7 @@ static struct aio_qmsi_cmp_dev_data_t aio_qmsi_cmp_dev_data = {
 		.num_cmp = AIO_QMSI_CMP_COUNT,
 };
 
-DEVICE_AND_API_INIT(aio_qmsi_cmp, CONFIG_AIO_COMPARATOR_0_NAME,
+DEVICE_AND_API_INIT(NULL, aio_qmsi_cmp, CONFIG_AIO_COMPARATOR_0_NAME,
 		    &aio_qmsi_cmp_init, &aio_qmsi_cmp_dev_data, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&aio_cmp_funcs);

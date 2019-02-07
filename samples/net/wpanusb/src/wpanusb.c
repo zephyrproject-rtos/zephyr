@@ -438,7 +438,7 @@ static struct wpanusb_dev_data_t wpanusb_dev_data = {
 };
 
 #if BOOT_INITIALIZED
-DEVICE_INIT(wpanusb, "wpanusb", &wpanusb_init,
+DEVICE_INIT(NULL, wpanusb, "wpanusb", &wpanusb_init,
 	    &wpanusb_dev_data, NULL,
 	    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 #define wpanusb_start(dev)

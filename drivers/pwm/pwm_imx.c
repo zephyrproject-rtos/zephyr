@@ -160,7 +160,7 @@ static const struct imx_pwm_config imx_pwm_config_1 = {
 
 static struct imx_pwm_data imx_pwm_data_1;
 
-DEVICE_AND_API_INIT(imx_pwm_1, PWM_1_LABEL, &imx_pwm_init,
+DEVICE_AND_API_INIT(NULL, imx_pwm_1, PWM_1_LABEL, &imx_pwm_init,
 		    &imx_pwm_data_1, &imx_pwm_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &imx_pwm_driver_api);
@@ -174,7 +174,7 @@ static const struct imx_pwm_config imx_pwm_config_2 = {
 
 static struct imx_pwm_data imx_pwm_data_2;
 
-DEVICE_AND_API_INIT(imx_pwm_2, PWM_2_LABEL, &imx_pwm_init,
+DEVICE_AND_API_INIT(NULL, imx_pwm_2, PWM_2_LABEL, &imx_pwm_init,
 		    &imx_pwm_data_2, &imx_pwm_config_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &imx_pwm_driver_api);
@@ -188,7 +188,7 @@ static const struct imx_pwm_config imx_pwm_config_3 = {
 
 static struct imx_pwm_data imx_pwm_data_3;
 
-DEVICE_AND_API_INIT(imx_pwm_3, PWM_3_LABEL, &imx_pwm_init,
+DEVICE_AND_API_INIT(NULL, imx_pwm_3, PWM_3_LABEL, &imx_pwm_init,
 		    &imx_pwm_data_3, &imx_pwm_config_3,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &imx_pwm_driver_api);
@@ -202,7 +202,7 @@ static const struct imx_pwm_config imx_pwm_config_4 = {
 
 static struct imx_pwm_data imx_pwm_data_4;
 
-DEVICE_AND_API_INIT(imx_pwm_4, PWM_4_LABEL, &imx_pwm_init,
+DEVICE_AND_API_INIT(NULL, imx_pwm_4, PWM_4_LABEL, &imx_pwm_init,
 		    &imx_pwm_data_4, &imx_pwm_config_4,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &imx_pwm_driver_api);

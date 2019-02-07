@@ -128,7 +128,7 @@ static const struct gpio_sam0_config gpio_sam0_config_0 = {
 	.regs = (PortGroup *)DT_GPIO_SAM0_PORTA_BASE_ADDRESS,
 };
 
-DEVICE_AND_API_INIT(gpio_sam0_0, DT_GPIO_SAM0_PORTA_LABEL, gpio_sam0_init,
+DEVICE_AND_API_INIT(NULL, gpio_sam0_0, DT_GPIO_SAM0_PORTA_LABEL, gpio_sam0_init,
 		    NULL, &gpio_sam0_config_0, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam0_api);
 #endif
@@ -140,7 +140,7 @@ static const struct gpio_sam0_config gpio_sam0_config_1 = {
 	.regs = (PortGroup *)DT_GPIO_SAM0_PORTB_BASE_ADDRESS,
 };
 
-DEVICE_AND_API_INIT(gpio_sam0_1, DT_GPIO_SAM0_PORTB_LABEL, gpio_sam0_init,
+DEVICE_AND_API_INIT(NULL, gpio_sam0_1, DT_GPIO_SAM0_PORTB_LABEL, gpio_sam0_init,
 		    NULL, &gpio_sam0_config_1, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam0_api);
 #endif

@@ -481,8 +481,9 @@ static const struct ethernet_api slip_if_api = {
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(ETHERNET_L2)
 #define _SLIP_MTU 1500
 
-ETH_NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, &slip_context_data,
-		    NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slip_if_api,
+ETH_NET_DEVICE_INIT(NULL, slip, CONFIG_SLIP_DRV_NAME,
+		    slip_init, &slip_context_data, NULL,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slip_if_api,
 		    _SLIP_MTU);
 #else
 
@@ -496,7 +497,7 @@ static const struct dummy_api slip_if_api = {
 #define _SLIP_L2_CTX_TYPE NET_L2_GET_CTX_TYPE(DUMMY_L2)
 #define _SLIP_MTU 576
 
-NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, &slip_context_data,
+NET_DEVICE_INIT(NULL, slip, CONFIG_SLIP_DRV_NAME, slip_init, &slip_context_data,
 		NULL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &slip_if_api,
 		_SLIP_L2_LAYER, _SLIP_L2_CTX_TYPE, _SLIP_MTU);
 #endif

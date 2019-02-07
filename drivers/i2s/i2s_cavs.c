@@ -92,7 +92,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 	}
 
 #define I2S_DEVICE_AND_API_INIT(i2s_id)				\
-	DEVICE_AND_API_INIT(I2S_DEVICE_NAME(i2s_id),		\
+	DEVICE_AND_API_INIT(NULL, I2S_DEVICE_NAME(i2s_id),	\
 			CONFIG_I2S_CAVS_##i2s_id##_NAME,	\
 			i2s_cavs_initialize,			\
 			&I2S_DEVICE_DATA_NAME(i2s_id),		\

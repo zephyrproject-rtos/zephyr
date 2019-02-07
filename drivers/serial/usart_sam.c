@@ -375,7 +375,7 @@ static struct usart_sam_dev_data usart0_sam_data = {
 	.baud_rate = DT_USART_SAM_PORT_0_BAUD_RATE,
 };
 
-DEVICE_AND_API_INIT(usart0_sam, DT_USART_SAM_PORT_0_NAME, &usart_sam_init,
+DEVICE_AND_API_INIT(NULL, usart0_sam, DT_USART_SAM_PORT_0_NAME, &usart_sam_init,
 		    &usart0_sam_data, &usart0_sam_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &usart_sam_driver_api);
 
@@ -416,7 +416,7 @@ static struct usart_sam_dev_data usart1_sam_data = {
 	.baud_rate = DT_USART_SAM_PORT_1_BAUD_RATE,
 };
 
-DEVICE_AND_API_INIT(usart1_sam, DT_USART_SAM_PORT_1_NAME, &usart_sam_init,
+DEVICE_AND_API_INIT(NULL, usart1_sam, DT_USART_SAM_PORT_1_NAME, &usart_sam_init,
 		    &usart1_sam_data, &usart1_sam_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &usart_sam_driver_api);
 
@@ -457,7 +457,7 @@ static struct usart_sam_dev_data usart2_sam_data = {
 	.baud_rate = DT_USART_SAM_PORT_2_BAUD_RATE,
 };
 
-DEVICE_AND_API_INIT(usart2_sam, DT_USART_SAM_PORT_2_NAME, &usart_sam_init,
+DEVICE_AND_API_INIT(NULL, usart2_sam, DT_USART_SAM_PORT_2_NAME, &usart_sam_init,
 		    &usart2_sam_data, &usart2_sam_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &usart_sam_driver_api);
 

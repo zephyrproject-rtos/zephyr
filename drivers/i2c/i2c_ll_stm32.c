@@ -248,7 +248,7 @@ static const struct i2c_stm32_config i2c_stm32_cfg_1 = {
 
 static struct i2c_stm32_data i2c_stm32_dev_data_1;
 
-DEVICE_AND_API_INIT(i2c_stm32_1, CONFIG_I2C_1_NAME, &i2c_stm32_init,
+DEVICE_AND_API_INIT(NULL, i2c_stm32_1, CONFIG_I2C_1_NAME, &i2c_stm32_init,
 		    &i2c_stm32_dev_data_1, &i2c_stm32_cfg_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &api_funcs);
@@ -294,7 +294,7 @@ static const struct i2c_stm32_config i2c_stm32_cfg_2 = {
 
 static struct i2c_stm32_data i2c_stm32_dev_data_2;
 
-DEVICE_AND_API_INIT(i2c_stm32_2, CONFIG_I2C_2_NAME, &i2c_stm32_init,
+DEVICE_AND_API_INIT(NULL, i2c_stm32_2, CONFIG_I2C_2_NAME, &i2c_stm32_init,
 		    &i2c_stm32_dev_data_2, &i2c_stm32_cfg_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &api_funcs);
@@ -344,7 +344,7 @@ static const struct i2c_stm32_config i2c_stm32_cfg_3 = {
 
 static struct i2c_stm32_data i2c_stm32_dev_data_3;
 
-DEVICE_AND_API_INIT(i2c_stm32_3, CONFIG_I2C_3_NAME, &i2c_stm32_init,
+DEVICE_AND_API_INIT(NULL, i2c_stm32_3, CONFIG_I2C_3_NAME, &i2c_stm32_init,
 		    &i2c_stm32_dev_data_3, &i2c_stm32_cfg_3,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &api_funcs);
@@ -388,7 +388,7 @@ static const struct i2c_stm32_config i2c_stm32_cfg_4 = {
 
 static struct i2c_stm32_data i2c_stm32_dev_data_4;
 
-DEVICE_AND_API_INIT(i2c_stm32_4, CONFIG_I2C_4_NAME, &i2c_stm32_init,
+DEVICE_AND_API_INIT(NULL, i2c_stm32_4, CONFIG_I2C_4_NAME, &i2c_stm32_init,
 		    &i2c_stm32_dev_data_4, &i2c_stm32_cfg_4,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &api_funcs);

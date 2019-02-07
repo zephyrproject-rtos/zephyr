@@ -284,7 +284,7 @@ static const struct gpio_sam_config port_a_sam_config = {
 
 static struct gpio_sam_runtime port_a_sam_runtime;
 
-DEVICE_AND_API_INIT(port_a_sam, DT_GPIO_SAM_PORTA_LABEL, gpio_sam_init,
+DEVICE_AND_API_INIT(NULL, port_a_sam, DT_GPIO_SAM_PORTA_LABEL, gpio_sam_init,
 		    &port_a_sam_runtime, &port_a_sam_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam_api);
 
@@ -309,7 +309,7 @@ static const struct gpio_sam_config port_b_sam_config = {
 
 static struct gpio_sam_runtime port_b_sam_runtime;
 
-DEVICE_AND_API_INIT(port_b_sam, DT_GPIO_SAM_PORTB_LABEL, gpio_sam_init,
+DEVICE_AND_API_INIT(NULL, port_b_sam, DT_GPIO_SAM_PORTB_LABEL, gpio_sam_init,
 		    &port_b_sam_runtime, &port_b_sam_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam_api);
 
@@ -334,7 +334,7 @@ static const struct gpio_sam_config port_c_sam_config = {
 
 static struct gpio_sam_runtime port_c_sam_runtime;
 
-DEVICE_AND_API_INIT(port_c_sam, DT_GPIO_SAM_PORTC_LABEL, gpio_sam_init,
+DEVICE_AND_API_INIT(NULL, port_c_sam, DT_GPIO_SAM_PORTC_LABEL, gpio_sam_init,
 		    &port_c_sam_runtime, &port_c_sam_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam_api);
 
@@ -359,7 +359,7 @@ static const struct gpio_sam_config port_d_sam_config = {
 
 static struct gpio_sam_runtime port_d_sam_runtime;
 
-DEVICE_AND_API_INIT(port_d_sam, DT_GPIO_SAM_PORTD_LABEL, gpio_sam_init,
+DEVICE_AND_API_INIT(NULL, port_d_sam, DT_GPIO_SAM_PORTD_LABEL, gpio_sam_init,
 		    &port_d_sam_runtime, &port_d_sam_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam_api);
 
@@ -384,7 +384,7 @@ static const struct gpio_sam_config port_e_sam_config = {
 
 static struct gpio_sam_runtime port_e_sam_runtime;
 
-DEVICE_AND_API_INIT(port_e_sam, DT_GPIO_SAM_PORTE_LABEL, gpio_sam_init,
+DEVICE_AND_API_INIT(NULL, port_e_sam, DT_GPIO_SAM_PORTE_LABEL, gpio_sam_init,
 		    &port_e_sam_runtime, &port_e_sam_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam_api);
 

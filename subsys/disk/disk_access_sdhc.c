@@ -1029,5 +1029,5 @@ static int disk_sdhc_init(struct device *dev)
 
 static struct sdhc_data sdhc_data_0;
 
-DEVICE_AND_API_INIT(sdhc_0, "sdhc_0", sdhc_init, &sdhc_data_0, NULL,
+DEVICE_AND_API_INIT(NULL, sdhc_0, "sdhc_0", sdhc_init, &sdhc_data_0, NULL,
 		    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, NULL);

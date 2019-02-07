@@ -41,6 +41,8 @@ extern "C" {
  * since the API is not specified; whenever possible, use DEVICE_AND_API_INIT
  * instead.
  *
+ * @param parent_drv_name Parent driver instance name.
+ *
  * @param dev_name Device name. This must be less than Z_DEVICE_MAX_NAME_LEN
  * characters in order to be looked up from user mode with device_get_binding().
  *
@@ -82,10 +84,10 @@ extern "C" {
  * expressions are *not* permitted
  * (e.g. CONFIG_KERNEL_INIT_PRIORITY_DEFAULT + 5).
  */
-#define DEVICE_INIT(dev_name, drv_name, init_fn, data, cfg_info, level, prio) \
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn,\
-	data, cfg_info, level, prio, NULL)
-
+#define DEVICE_INIT(parent_drv_name, dev_name, drv_name, init_fn, data,	\
+		    cfg_info, level, prio)				\
+	DEVICE_AND_API_INIT(parent_drv_name, dev_name, drv_name,	\
+			    init_fn, data, cfg_info, level, prio, NULL)
 
 /**
  * @def DEVICE_AND_API_INIT
@@ -100,11 +102,13 @@ extern "C" {
  * during initialization.
  */
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
-#define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info,  \
-			    level, prio, api)				  \
+#define DEVICE_AND_API_INIT(parent_drv_name, dev_name, drv_name,	  \
+			    init_fn, data, cfg_info, level, prio, api)	  \
 	static struct device_config _CONCAT(__config_, dev_name) __used	  \
 	__attribute__((__section__(".devconfig.init"))) = {		  \
-		.name = drv_name, .init = (init_fn),			  \
+		.name = drv_name,					  \
+		.parent_name = parent_drv_name,				  \
+		.init = (init_fn),					  \
 		.config_info = (cfg_info)				  \
 	};								  \
 	static struct device _CONCAT(__device_, dev_name) __used	  \
@@ -119,10 +123,10 @@ extern "C" {
  * DEVICE_DEFINE macro so that caller of hook functions
  * need not check device_pm_control != NULL.
  */
-#define DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
-			    level, prio, api)				 \
-	DEVICE_DEFINE(dev_name, drv_name, init_fn,			 \
-		      device_pm_control_nop, data, cfg_info, level,	 \
+#define DEVICE_AND_API_INIT(parent_drv_name, dev_name, drv_name,	\
+			    init_fn, data, cfg_info, level, prio, api)	\
+	DEVICE_DEFINE(parent_drv_name, dev_name, drv_name, init_fn,	\
+		      device_pm_control_nop, data, cfg_info, level,	\
 		      prio, api)
 #endif
 
@@ -137,16 +141,18 @@ extern "C" {
  * Can be empty function (device_pm_control_nop) if not implemented.
  */
 #ifndef CONFIG_DEVICE_POWER_MANAGEMENT
-#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	 \
-		      data, cfg_info, level, prio, api)			 \
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data, cfg_info, \
-			    level, prio, api)
+#define DEVICE_DEFINE(parent_drv_name, dev_name, drv_name, init_fn,	  \
+		      pm_control_fn, data, cfg_info, level, prio, api)	  \
+	DEVICE_AND_API_INIT(parent_drv_name, dev_name, drv_name, init_fn, \
+			    data, cfg_info, level, prio, api)
 #else
-#define DEVICE_DEFINE(dev_name, drv_name, init_fn, pm_control_fn,	  \
-		      data, cfg_info, level, prio, api)			  \
+#define DEVICE_DEFINE(parent_drv_name, dev_name, drv_name, init_fn,	  \
+		      pm_control_fn, data, cfg_info, level, prio, api)	  \
 	static struct device_config _CONCAT(__config_, dev_name) __used	  \
 	__attribute__((__section__(".devconfig.init"))) = {		  \
-		.name = drv_name, .init = (init_fn),			  \
+		.name = drv_name,					  \
+		.parent_name = parent_drv_name,				  \
+		.init = (init_fn),					  \
 		.device_pm_control = (pm_control_fn),			  \
 		.config_info = (cfg_info)				  \
 	};								  \
@@ -213,11 +219,13 @@ struct device;
  * @brief Static device information (In ROM) Per driver instance
  *
  * @param name name of the device
+ * @param parent_name name of the device parent
  * @param init init function for the driver
  * @param config_info address of driver instance config information
  */
 struct device_config {
 	const char *name;
+	const char *parent_name;
 	int (*init)(struct device *device);
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	int (*device_pm_control)(struct device *device, u32_t command,

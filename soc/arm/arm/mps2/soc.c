@@ -13,12 +13,12 @@
 #include <soc.h>
 
 /* Setup GPIO drivers for accessing FPGAIO registers */
-GPIO_MMIO32_INIT(fpgaio_led0, FPGAIO_LED0_GPIO_NAME,
-				&__MPS2_FPGAIO->led0, FPGAIO_LED0_MASK);
-GPIO_MMIO32_INIT(fpgaio_button, FPGAIO_BUTTON_GPIO_NAME,
-				&__MPS2_FPGAIO->button, FPGAIO_BUTTON_MASK);
-GPIO_MMIO32_INIT(fpgaio_misc, FPGAIO_MISC_GPIO_NAME,
-				&__MPS2_FPGAIO->misc, FPGAIO_MISC_MASK);
+GPIO_MMIO32_INIT(NULL, fpgaio_led0, FPGAIO_LED0_GPIO_NAME,
+		 &__MPS2_FPGAIO->led0, FPGAIO_LED0_MASK);
+GPIO_MMIO32_INIT(NULL, fpgaio_button, FPGAIO_BUTTON_GPIO_NAME,
+		 &__MPS2_FPGAIO->button, FPGAIO_BUTTON_MASK);
+GPIO_MMIO32_INIT(NULL, fpgaio_misc, FPGAIO_MISC_GPIO_NAME,
+		 &__MPS2_FPGAIO->misc, FPGAIO_MISC_MASK);
 
 /**
  * @brief Perform basic hardware initialization at boot.

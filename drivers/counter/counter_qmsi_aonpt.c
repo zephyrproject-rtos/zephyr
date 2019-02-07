@@ -247,7 +247,7 @@ static const struct aonpt_config aonpt_conf_info = {
 	}
 };
 
-DEVICE_DEFINE(aon_timer, CONFIG_COUNTER_0_NAME, aon_timer_init,
+DEVICE_DEFINE(NULL, aon_timer, CONFIG_COUNTER_0_NAME, aon_timer_init,
 	      aonpt_qmsi_device_ctrl, AONPT_CONTEXT, &aonpt_conf_info,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	      &aon_timer_qmsi_api);

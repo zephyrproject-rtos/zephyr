@@ -428,7 +428,7 @@ static int stm32_clock_control_init(struct device *dev)
  * @brief RCC device, note that priority is intentionally set to 1 so
  * that the device init runs just after SOC init
  */
-DEVICE_AND_API_INIT(rcc_stm32, STM32_CLOCK_CONTROL_NAME,
+DEVICE_AND_API_INIT(NULL, rcc_stm32, STM32_CLOCK_CONTROL_NAME,
 		    &stm32_clock_control_init,
 		    NULL, NULL,
 		    PRE_KERNEL_1,

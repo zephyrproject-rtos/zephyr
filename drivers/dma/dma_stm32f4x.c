@@ -532,7 +532,7 @@ const struct dma_stm32_config dma_stm32_1_cdata = {
 	.config = dma_stm32_1_config,
 };
 
-DEVICE_AND_API_INIT(dma_stm32_1, CONFIG_DMA_1_NAME, &dma_stm32_init,
+DEVICE_AND_API_INIT(NULL, dma_stm32_1, CONFIG_DMA_1_NAME, &dma_stm32_init,
 		    &device_data[DMA_STM32_1], &dma_stm32_1_cdata,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&dma_funcs);
@@ -543,7 +543,7 @@ static const struct dma_stm32_config dma_stm32_2_cdata = {
 	.config = dma_stm32_2_config,
 };
 
-DEVICE_AND_API_INIT(dma_stm32_2, CONFIG_DMA_2_NAME, &dma_stm32_init,
+DEVICE_AND_API_INIT(NULL, dma_stm32_2, CONFIG_DMA_2_NAME, &dma_stm32_init,
 		    &device_data[DMA_STM32_2], &dma_stm32_2_cdata,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&dma_funcs);

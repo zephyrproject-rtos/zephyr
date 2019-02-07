@@ -99,7 +99,7 @@ static struct dummy_api loopback_api = {
 	.send = loopback_send,
 };
 
-NET_DEVICE_INIT(loopback, "lo",
+NET_DEVICE_INIT(NULL, loopback, "lo",
 		loopback_dev_init, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&loopback_api, DUMMY_L2,

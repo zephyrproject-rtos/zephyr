@@ -534,7 +534,7 @@ static const struct ethernet_api eth_if_api = {
 #endif
 };
 
-ETH_NET_DEVICE_INIT(eth_native_posix, ETH_NATIVE_POSIX_DRV_NAME,
+ETH_NET_DEVICE_INIT(NULL, eth_native_posix, ETH_NATIVE_POSIX_DRV_NAME,
 		    eth_init, &eth_context_data, NULL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &eth_if_api,
 		    _ETH_MTU);
@@ -613,7 +613,7 @@ static int ptp_init(struct device *port)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(eth_native_posix_ptp_clock_0, PTP_CLOCK_NAME,
+DEVICE_AND_API_INIT(NULL, eth_native_posix_ptp_clock_0, PTP_CLOCK_NAME,
 		    ptp_init, &ptp_0_context, NULL, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &api);
 

@@ -190,6 +190,6 @@ static int rv32m1_intmux_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(intmux, INTMUX_LABEL, &rv32m1_intmux_init, NULL,
+DEVICE_AND_API_INIT(NULL, intmux, INTMUX_LABEL, &rv32m1_intmux_init, NULL,
 		    &rv32m1_intmux_cfg, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &rv32m1_intmux_apis);

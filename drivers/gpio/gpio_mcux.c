@@ -251,7 +251,7 @@ static const struct gpio_mcux_config gpio_mcux_porta_config = {
 
 static struct gpio_mcux_data gpio_mcux_porta_data;
 
-DEVICE_AND_API_INIT(gpio_mcux_porta, DT_NXP_KINETIS_GPIO_GPIO_A_LABEL,
+DEVICE_AND_API_INIT(NULL, gpio_mcux_porta, DT_NXP_KINETIS_GPIO_GPIO_A_LABEL,
 		    gpio_mcux_porta_init,
 		    &gpio_mcux_porta_data, &gpio_mcux_porta_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -284,7 +284,7 @@ static const struct gpio_mcux_config gpio_mcux_portb_config = {
 
 static struct gpio_mcux_data gpio_mcux_portb_data;
 
-DEVICE_AND_API_INIT(gpio_mcux_portb, DT_NXP_KINETIS_GPIO_GPIO_B_LABEL,
+DEVICE_AND_API_INIT(NULL, gpio_mcux_portb, DT_NXP_KINETIS_GPIO_GPIO_B_LABEL,
 		    gpio_mcux_portb_init,
 		    &gpio_mcux_portb_data, &gpio_mcux_portb_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -317,7 +317,7 @@ static const struct gpio_mcux_config gpio_mcux_portc_config = {
 
 static struct gpio_mcux_data gpio_mcux_portc_data;
 
-DEVICE_AND_API_INIT(gpio_mcux_portc, DT_NXP_KINETIS_GPIO_GPIO_C_LABEL,
+DEVICE_AND_API_INIT(NULL, gpio_mcux_portc, DT_NXP_KINETIS_GPIO_GPIO_C_LABEL,
 		    gpio_mcux_portc_init,
 		    &gpio_mcux_portc_data, &gpio_mcux_portc_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -350,7 +350,7 @@ static const struct gpio_mcux_config gpio_mcux_portd_config = {
 
 static struct gpio_mcux_data gpio_mcux_portd_data;
 
-DEVICE_AND_API_INIT(gpio_mcux_portd, DT_NXP_KINETIS_GPIO_GPIO_D_LABEL,
+DEVICE_AND_API_INIT(NULL, gpio_mcux_portd, DT_NXP_KINETIS_GPIO_GPIO_D_LABEL,
 		    gpio_mcux_portd_init,
 		    &gpio_mcux_portd_data, &gpio_mcux_portd_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -383,7 +383,7 @@ static const struct gpio_mcux_config gpio_mcux_porte_config = {
 
 static struct gpio_mcux_data gpio_mcux_porte_data;
 
-DEVICE_AND_API_INIT(gpio_mcux_porte, DT_NXP_KINETIS_GPIO_GPIO_E_LABEL,
+DEVICE_AND_API_INIT(NULL, gpio_mcux_porte, DT_NXP_KINETIS_GPIO_GPIO_E_LABEL,
 		    gpio_mcux_porte_init,
 		    &gpio_mcux_porte_data, &gpio_mcux_porte_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

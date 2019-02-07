@@ -1862,6 +1862,7 @@ struct net_if_api {
  *
  * @brief Create a network interface and bind it to network device.
  *
+ * @param parent_name Name of parent driver instance.
  * @param dev_name Network device name.
  * @param drv_name The name this instance of the driver exposes to
  * the system.
@@ -1876,11 +1877,12 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_INIT(dev_name, drv_name, init_fn,		\
-			data, cfg_info, prio, api, l2,		\
+#define NET_DEVICE_INIT(parent_name, dev_name, drv_name,	\
+			init_fn, data, cfg_info, prio, api, l2,	\
 			l2_ctx_type, mtu)			\
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,	\
-			    cfg_info, POST_KERNEL, prio, api);	\
+	DEVICE_AND_API_INIT(parent_name, dev_name, drv_name,	\
+			    init_fn, data, cfg_info,		\
+			    POST_KERNEL, prio, api);		\
 	NET_L2_DATA_INIT(dev_name, 0, l2_ctx_type);		\
 	NET_IF_INIT(dev_name, 0, l2, mtu, NET_IF_MAX_CONFIGS)
 
@@ -1892,6 +1894,7 @@ struct net_if_api {
  * use this macro below and provide a different instance suffix each time
  * (0, 1, 2, ... or a, b, c ... whatever works for you)
  *
+ * @param parent_name Name of parent driver instance.
  * @param dev_name Network device name.
  * @param drv_name The name this instance of the driver exposes to
  * the system.
@@ -1907,11 +1910,11 @@ struct net_if_api {
  * @param l2_ctx_type Type of L2 context data.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_INIT_INSTANCE(dev_name, drv_name, instance, init_fn,	\
-				 data, cfg_info, prio, api, l2,		\
-				 l2_ctx_type, mtu)			\
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,		\
-			    cfg_info, POST_KERNEL, prio, api);		\
+#define NET_DEVICE_INIT_INSTANCE(parent_name, dev_name, drv_name,	\
+				 instance, init_fn, data, cfg_info,	\
+				 prio, api, l2, l2_ctx_type, mtu)	\
+	DEVICE_AND_API_INIT(parent_name, dev_name, drv_name, init_fn,	\
+			    data, cfg_info, POST_KERNEL, prio, api);	\
 	NET_L2_DATA_INIT(dev_name, instance, l2_ctx_type);		\
 	NET_IF_INIT(dev_name, instance, l2, mtu, NET_IF_MAX_CONFIGS)
 
@@ -1922,6 +1925,7 @@ struct net_if_api {
  * The offloaded network interface is implemented by a device vendor HAL or
  * similar.
  *
+ * @param parent_name Name of parent driver instance.
  * @param dev_name Network device name.
  * @param drv_name The name this instance of the driver exposes to
  * the system.
@@ -1934,10 +1938,12 @@ struct net_if_api {
  * used by the driver. Can be NULL.
  * @param mtu Maximum transfer unit in bytes for this network interface.
  */
-#define NET_DEVICE_OFFLOAD_INIT(dev_name, drv_name, init_fn,	\
-				data, cfg_info, prio, api, mtu)	\
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,	\
-			    cfg_info, POST_KERNEL, prio, api);	\
+#define NET_DEVICE_OFFLOAD_INIT(parent_name, dev_name, drv_name,\
+				init_fn, data, cfg_info, prio,	\
+				api, mtu)			\
+	DEVICE_AND_API_INIT(parent_name, dev_name, drv_name,	\
+			    init_fn, data, cfg_info,		\
+			     POST_KERNEL, prio, api);		\
 	NET_IF_OFFLOAD_INIT(dev_name, 0, mtu)
 
 #ifdef __cplusplus

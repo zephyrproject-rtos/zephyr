@@ -260,7 +260,7 @@ static const struct pwm_config pwm_nrf5_sw_0_config = {
 			 sizeof(struct chan_map) * PWM_0_MAP_SIZE)
 static u8_t pwm_nrf5_sw_0_data[PWM_0_DATA_SIZE];
 
-DEVICE_AND_API_INIT(pwm_nrf5_sw_0, CONFIG_PWM_NRF5_SW_0_DEV_NAME,
+DEVICE_AND_API_INIT(NULL, pwm_nrf5_sw_0, CONFIG_PWM_NRF5_SW_0_DEV_NAME,
 		    pwm_nrf5_sw_init, pwm_nrf5_sw_0_data, &pwm_nrf5_sw_0_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &pwm_nrf5_sw_drv_api_funcs);

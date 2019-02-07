@@ -286,8 +286,8 @@ static struct spi_mcux_data spi_mcux_data_0 = {
 	SPI_CONTEXT_INIT_SYNC(spi_mcux_data_0, ctx),
 };
 
-DEVICE_AND_API_INIT(spi_mcux_0, DT_NXP_IMX_LPSPI_SPI_0_LABEL, &spi_mcux_init,
-		    &spi_mcux_data_0, &spi_mcux_config_0,
+DEVICE_AND_API_INIT(NULL, spi_mcux_0, DT_NXP_IMX_LPSPI_SPI_0_LABEL,
+		    &spi_mcux_init, &spi_mcux_data_0, &spi_mcux_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &spi_mcux_driver_api);
 
@@ -315,8 +315,8 @@ static struct spi_mcux_data spi_mcux_data_1 = {
 	SPI_CONTEXT_INIT_SYNC(spi_mcux_data_1, ctx),
 };
 
-DEVICE_AND_API_INIT(spi_mcux_1, DT_NXP_IMX_LPSPI_SPI_1_LABEL, &spi_mcux_init,
-		    &spi_mcux_data_1, &spi_mcux_config_1,
+DEVICE_AND_API_INIT(NULL, spi_mcux_1, DT_NXP_IMX_LPSPI_SPI_1_LABEL,
+		    &spi_mcux_init, &spi_mcux_data_1, &spi_mcux_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &spi_mcux_driver_api);
 
@@ -344,8 +344,8 @@ static struct spi_mcux_data spi_mcux_data_2 = {
 	SPI_CONTEXT_INIT_SYNC(spi_mcux_data_2, ctx),
 };
 
-DEVICE_AND_API_INIT(spi_mcux_2, DT_NXP_IMX_LPSPI_SPI_2_LABEL, &spi_mcux_init,
-		    &spi_mcux_data_2, &spi_mcux_config_2,
+DEVICE_AND_API_INIT(NULL, spi_mcux_2, DT_NXP_IMX_LPSPI_SPI_2_LABEL,
+		    &spi_mcux_init, &spi_mcux_data_2, &spi_mcux_config_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &spi_mcux_driver_api);
 
@@ -373,8 +373,8 @@ static struct spi_mcux_data spi_mcux_data_3 = {
 	SPI_CONTEXT_INIT_SYNC(spi_mcux_data_3, ctx),
 };
 
-DEVICE_AND_API_INIT(spi_mcux_3, DT_NXP_IMX_LPSPI_SPI_3_LABEL, &spi_mcux_init,
-		    &spi_mcux_data_3, &spi_mcux_config_3,
+DEVICE_AND_API_INIT(NULL, spi_mcux_3, DT_NXP_IMX_LPSPI_SPI_3_LABEL,
+		    &spi_mcux_init, &spi_mcux_data_3, &spi_mcux_config_3,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &spi_mcux_driver_api);
 

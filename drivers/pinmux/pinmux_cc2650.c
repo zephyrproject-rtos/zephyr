@@ -149,7 +149,7 @@ const struct pinmux_driver_api pinmux_cc2650_funcs = {
 	.input  = pinmux_cc2650_input
 };
 
-DEVICE_AND_API_INIT(pinmux_cc2650_0, CONFIG_PINMUX_NAME,
+DEVICE_AND_API_INIT(NULL, pinmux_cc2650_0, CONFIG_PINMUX_NAME,
 		    pinmux_cc2650_init, NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
 		    &pinmux_cc2650_funcs);

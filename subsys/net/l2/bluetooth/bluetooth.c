@@ -562,7 +562,7 @@ NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_SCAN, bt_scan);
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_BT_DISCONNECT, bt_disconnect);
 #endif
 
-NET_DEVICE_INIT(net_bt, "net_bt", net_bt_init, &bt_context_data, NULL,
+NET_DEVICE_INIT(NULL, net_bt, "net_bt", net_bt_init, &bt_context_data, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		&bt_if_api, BLUETOOTH_L2,
 		NET_L2_GET_CTX_TYPE(BLUETOOTH_L2), L2CAP_IPSP_MTU);

@@ -350,7 +350,7 @@ static const struct ethernet_api eth_stellaris_apis = {
 	.send =  eth_stellaris_send,
 };
 
-NET_DEVICE_INIT(eth_stellaris, DT_ETH_DRV_NAME,
+NET_DEVICE_INIT(NULL, eth_stellaris, DT_ETH_DRV_NAME,
 		eth_stellaris_dev_init, &eth_data, &eth_cfg,
 		CONFIG_ETH_INIT_PRIORITY,
 		&eth_stellaris_apis, ETHERNET_L2,

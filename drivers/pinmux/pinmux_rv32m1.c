@@ -69,7 +69,7 @@ static const struct pinmux_rv32m1_config pinmux_rv32m1_porta_config = {
 	.clock_ip_name = kCLOCK_PortA,
 };
 
-DEVICE_AND_API_INIT(pinmux_porta, CONFIG_PINMUX_RV32M1_PORTA_NAME,
+DEVICE_AND_API_INIT(NULL, pinmux_porta, CONFIG_PINMUX_RV32M1_PORTA_NAME,
 		    &pinmux_rv32m1_init,
 		    NULL, &pinmux_rv32m1_porta_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -82,7 +82,7 @@ static const struct pinmux_rv32m1_config pinmux_rv32m1_portb_config = {
 	.clock_ip_name = kCLOCK_PortB,
 };
 
-DEVICE_AND_API_INIT(pinmux_portb, CONFIG_PINMUX_RV32M1_PORTB_NAME,
+DEVICE_AND_API_INIT(NULL, pinmux_portb, CONFIG_PINMUX_RV32M1_PORTB_NAME,
 		    &pinmux_rv32m1_init,
 		    NULL, &pinmux_rv32m1_portb_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -95,7 +95,7 @@ static const struct pinmux_rv32m1_config pinmux_rv32m1_portc_config = {
 	.clock_ip_name = kCLOCK_PortC,
 };
 
-DEVICE_AND_API_INIT(pinmux_portc, CONFIG_PINMUX_RV32M1_PORTC_NAME,
+DEVICE_AND_API_INIT(NULL, pinmux_portc, CONFIG_PINMUX_RV32M1_PORTC_NAME,
 		    &pinmux_rv32m1_init,
 		    NULL, &pinmux_rv32m1_portc_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -108,7 +108,7 @@ static const struct pinmux_rv32m1_config pinmux_rv32m1_portd_config = {
 	.clock_ip_name = kCLOCK_PortD,
 };
 
-DEVICE_AND_API_INIT(pinmux_portd, CONFIG_PINMUX_RV32M1_PORTD_NAME,
+DEVICE_AND_API_INIT(NULL, pinmux_portd, CONFIG_PINMUX_RV32M1_PORTD_NAME,
 		    &pinmux_rv32m1_init,
 		    NULL, &pinmux_rv32m1_portd_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -121,7 +121,7 @@ static const struct pinmux_rv32m1_config pinmux_rv32m1_porte_config = {
 	.clock_ip_name = kCLOCK_PortE,
 };
 
-DEVICE_AND_API_INIT(pinmux_porte, CONFIG_PINMUX_RV32M1_PORTE_NAME,
+DEVICE_AND_API_INIT(NULL, pinmux_porte, CONFIG_PINMUX_RV32M1_PORTE_NAME,
 		    &pinmux_rv32m1_init,
 		    NULL, &pinmux_rv32m1_porte_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

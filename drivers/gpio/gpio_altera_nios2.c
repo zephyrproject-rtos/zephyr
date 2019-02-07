@@ -154,7 +154,8 @@ static int gpio_nios2_oput_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(gpio_nios2_oput, CONFIG_GPIO_ALTERA_NIOS2_OUTPUT_DEV_NAME,
+DEVICE_AND_API_INIT(NULL, gpio_nios2_oput,
+		    CONFIG_GPIO_ALTERA_NIOS2_OUTPUT_DEV_NAME,
 		    gpio_nios2_oput_init, NULL, &gpio_nios2_oput_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_nios2_drv_api_funcs);

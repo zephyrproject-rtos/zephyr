@@ -234,5 +234,5 @@ static int dht_init(struct device *dev)
 
 struct dht_data dht_data;
 
-DEVICE_AND_API_INIT(dht_dev, CONFIG_DHT_NAME, &dht_init, &dht_data,
+DEVICE_AND_API_INIT(NULL, dht_dev, CONFIG_DHT_NAME, &dht_init, &dht_data,
 		    NULL, POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY, &dht_api);

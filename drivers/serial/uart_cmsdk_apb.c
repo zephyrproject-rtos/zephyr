@@ -480,7 +480,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_0 = {
 			.device = DT_ARM_CMSDK_UART_0_BASE_ADDRESS,},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_0,
+DEVICE_AND_API_INIT(NULL, uart_cmsdk_apb_0,
 		    DT_ARM_CMSDK_UART_0_LABEL,
 		    &uart_cmsdk_apb_init,
 		    &uart_cmsdk_apb_dev_data_0,
@@ -545,7 +545,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_1 = {
 			.device = DT_ARM_CMSDK_UART_1_BASE_ADDRESS,},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_1,
+DEVICE_AND_API_INIT(NULL, uart_cmsdk_apb_1,
 		    DT_ARM_CMSDK_UART_1_LABEL,
 		    &uart_cmsdk_apb_init,
 		    &uart_cmsdk_apb_dev_data_1,
@@ -610,7 +610,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_2 = {
 			.device = DT_ARM_CMSDK_UART_2_BASE_ADDRESS,},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_2,
+DEVICE_AND_API_INIT(NULL, uart_cmsdk_apb_2,
 		    DT_ARM_CMSDK_UART_2_LABEL,
 		    &uart_cmsdk_apb_init,
 		    &uart_cmsdk_apb_dev_data_2,
@@ -675,7 +675,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_3 = {
 			.device = DT_ARM_CMSDK_UART_3_BASE_ADDRESS,},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_3,
+DEVICE_AND_API_INIT(NULL, uart_cmsdk_apb_3,
 		    DT_ARM_CMSDK_UART_3_LABEL,
 		    &uart_cmsdk_apb_init,
 		    &uart_cmsdk_apb_dev_data_3,
@@ -740,7 +740,7 @@ static struct uart_cmsdk_apb_dev_data uart_cmsdk_apb_dev_data_4 = {
 			.device = DT_ARM_CMSDK_UART_4_BASE_ADDRESS,},
 };
 
-DEVICE_AND_API_INIT(uart_cmsdk_apb_4,
+DEVICE_AND_API_INIT(NULL, uart_cmsdk_apb_4,
 		    DT_ARM_CMSDK_UART_4_LABEL,
 		    &uart_cmsdk_apb_init,
 		    &uart_cmsdk_apb_dev_data_4,

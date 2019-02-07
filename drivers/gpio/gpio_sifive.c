@@ -362,7 +362,7 @@ static const struct gpio_sifive_config gpio_sifive_config0 = {
 
 static struct gpio_sifive_data gpio_sifive_data0;
 
-DEVICE_AND_API_INIT(gpio_sifive_0, CONFIG_GPIO_SIFIVE_GPIO_NAME,
+DEVICE_AND_API_INIT(NULL, gpio_sifive_0, CONFIG_GPIO_SIFIVE_GPIO_NAME,
 		    gpio_sifive_init,
 		    &gpio_sifive_data0, &gpio_sifive_config0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

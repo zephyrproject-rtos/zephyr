@@ -415,6 +415,6 @@ static struct dw_dma_dev_data dw_dma0_data = {
 	.channel_data = &dmac0,
 };
 
-DEVICE_AND_API_INIT(dw_dma0, CONFIG_DMA_0_NAME, &dw_dma0_initialize,
+DEVICE_AND_API_INIT(NULL, dw_dma0, CONFIG_DMA_0_NAME, &dw_dma0_initialize,
 		    &dw_dma0_data, &dw_dma0_config, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &dw_dma_driver_api);

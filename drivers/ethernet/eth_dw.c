@@ -384,7 +384,7 @@ static struct eth_runtime eth_0_runtime = {
 #endif
 };
 
-NET_DEVICE_INIT(eth_dw_0, CONFIG_ETH_DW_0_NAME,
+NET_DEVICE_INIT(NULL, eth_dw_0, CONFIG_ETH_DW_0_NAME,
 		eth_setup, &eth_0_runtime,
 		&eth_config_0, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
 		ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2),

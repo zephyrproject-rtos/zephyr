@@ -38,25 +38,25 @@ int gpio_mmio32_init(struct device *dev);
  *
  * @see DEVICE_INIT
  */
-#define GPIO_MMIO32_INIT(_dev_name, _drv_name, _address, _mask)		\
-									\
-static struct gpio_mmio32_context _dev_name##_dev_data;			\
-									\
-static const struct gpio_mmio32_config _dev_name##_dev_cfg = {		\
-	.reg	= (volatile u32_t *)_address,			\
-	.mask	= _mask,						\
-};									\
-									\
-DEVICE_INIT(_dev_name, _drv_name,					\
-	&gpio_mmio32_init,						\
-	&_dev_name##_dev_data,						\
-	&_dev_name##_dev_cfg,						\
+#define GPIO_MMIO32_INIT(_parent_name, _dev_name, _drv_name, _address, _mask) \
+									      \
+static struct gpio_mmio32_context _dev_name##_dev_data;			      \
+									      \
+static const struct gpio_mmio32_config _dev_name##_dev_cfg = {		      \
+	.reg	= (volatile u32_t *)_address,				      \
+	.mask	= _mask,						      \
+};									      \
+									      \
+DEVICE_INIT(_parent_name, _dev_name, _drv_name,				      \
+	&gpio_mmio32_init,						      \
+	&_dev_name##_dev_data,						      \
+	&_dev_name##_dev_cfg,						      \
 	PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE)
 
 #else /* CONFIG_GPIO_MMIO32 */
 
 /* Null definition for when support not configured into kernel */
-#define GPIO_MMIO32_INIT(_dev_name, _drv_name, _address, _mask)
+#define GPIO_MMIO32_INIT(_parent_name, _dev_name, _drv_name, _address, _mask)
 
 #endif
 

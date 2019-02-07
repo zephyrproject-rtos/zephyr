@@ -301,7 +301,7 @@ static int eth_fake_init(struct device *dev)
 	return 0;
 }
 
-ETH_NET_DEVICE_INIT(eth_fake, "eth_fake", eth_fake_init, &eth_fake_data,
+ETH_NET_DEVICE_INIT(NULL, eth_fake, "eth_fake", eth_fake_init, &eth_fake_data,
 		    NULL, CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs, 1500);
 
 static void test_change_mac_when_up(void)

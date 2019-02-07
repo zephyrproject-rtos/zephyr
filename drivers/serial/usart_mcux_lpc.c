@@ -116,7 +116,7 @@ static const struct usart_mcux_lpc_config usart_mcux_lpc_0_config = {
 
 static struct usart_mcux_lpc_data usart_mcux_lpc_0_data;
 
-DEVICE_AND_API_INIT(usart_0, DT_USART_MCUX_LPC_0_NAME,
+DEVICE_AND_API_INIT(NULL, usart_0, DT_USART_MCUX_LPC_0_NAME,
 		    &usart_mcux_lpc_init,
 		    &usart_mcux_lpc_0_data, &usart_mcux_lpc_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

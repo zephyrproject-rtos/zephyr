@@ -301,7 +301,7 @@ static const struct mcux_lpuart_config mcux_lpuart_0_config = {
 
 static struct mcux_lpuart_data mcux_lpuart_0_data;
 
-DEVICE_AND_API_INIT(uart_0, DT_UART_MCUX_LPUART_0_NAME,
+DEVICE_AND_API_INIT(NULL, uart_0, DT_UART_MCUX_LPUART_0_NAME,
 		    &mcux_lpuart_init,
 		    &mcux_lpuart_0_data, &mcux_lpuart_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -339,7 +339,7 @@ static const struct mcux_lpuart_config mcux_lpuart_1_config = {
 
 static struct mcux_lpuart_data mcux_lpuart_1_data;
 
-DEVICE_AND_API_INIT(uart_1, DT_UART_MCUX_LPUART_1_NAME,
+DEVICE_AND_API_INIT(NULL, uart_1, DT_UART_MCUX_LPUART_1_NAME,
 		    &mcux_lpuart_init,
 		    &mcux_lpuart_1_data, &mcux_lpuart_1_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -377,7 +377,7 @@ static const struct mcux_lpuart_config mcux_lpuart_2_config = {
 
 static struct mcux_lpuart_data mcux_lpuart_2_data;
 
-DEVICE_AND_API_INIT(uart_2, DT_UART_MCUX_LPUART_2_NAME,
+DEVICE_AND_API_INIT(NULL, uart_2, DT_UART_MCUX_LPUART_2_NAME,
 		    &mcux_lpuart_init,
 		    &mcux_lpuart_2_data, &mcux_lpuart_2_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -415,7 +415,7 @@ static const struct mcux_lpuart_config mcux_lpuart_3_config = {
 
 static struct mcux_lpuart_data mcux_lpuart_3_data;
 
-DEVICE_AND_API_INIT(uart_3, DT_UART_MCUX_LPUART_3_NAME,
+DEVICE_AND_API_INIT(NULL, uart_3, DT_UART_MCUX_LPUART_3_NAME,
 		    &mcux_lpuart_init,
 		    &mcux_lpuart_3_data, &mcux_lpuart_3_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

@@ -494,7 +494,7 @@ static int gpio_nrfx_init(struct device *port)
 									\
 	static struct gpio_nrfx_data gpio_nrfx_p##id##_data;		\
 									\
-	DEVICE_AND_API_INIT(gpio_nrfx_p##id,				\
+	DEVICE_AND_API_INIT(NULL, gpio_nrfx_p##id,			\
 			    DT_NORDIC_NRF_GPIO_GPIO_##id##_LABEL,	\
 			    gpio_nrfx_init,				\
 			    &gpio_nrfx_p##id##_data,			\

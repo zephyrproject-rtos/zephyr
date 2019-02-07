@@ -317,7 +317,7 @@ static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_0_cfg = {
 
 static struct gpio_cmsdk_ahb_dev_data gpio_cmsdk_ahb_0_data;
 
-DEVICE_AND_API_INIT(gpio_cmsdk_ahb_0,
+DEVICE_AND_API_INIT(NULL, gpio_cmsdk_ahb_0,
 		    CONFIG_GPIO_CMSDK_AHB_PORT0_DEV_NAME,
 		    gpio_cmsdk_ahb_init, &gpio_cmsdk_ahb_0_data,
 		    &gpio_cmsdk_ahb_0_cfg, POST_KERNEL,
@@ -350,7 +350,7 @@ static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_1_cfg = {
 
 static struct gpio_cmsdk_ahb_dev_data gpio_cmsdk_ahb_1_data;
 
-DEVICE_AND_API_INIT(gpio_cmsdk_ahb_1,
+DEVICE_AND_API_INIT(NULL, gpio_cmsdk_ahb_1,
 		    CONFIG_GPIO_CMSDK_AHB_PORT1_DEV_NAME,
 		    gpio_cmsdk_ahb_init, &gpio_cmsdk_ahb_1_data,
 		    &gpio_cmsdk_ahb_1_cfg, POST_KERNEL,
@@ -383,7 +383,7 @@ static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_2_cfg = {
 
 static struct gpio_cmsdk_ahb_dev_data gpio_cmsdk_ahb_2_data;
 
-DEVICE_AND_API_INIT(gpio_cmsdk_ahb_2,
+DEVICE_AND_API_INIT(NULL, gpio_cmsdk_ahb_2,
 		    CONFIG_GPIO_CMSDK_AHB_PORT2_DEV_NAME,
 		    gpio_cmsdk_ahb_init, &gpio_cmsdk_ahb_2_data,
 		    &gpio_cmsdk_ahb_2_cfg, POST_KERNEL,
@@ -416,7 +416,7 @@ static const struct gpio_cmsdk_ahb_cfg gpio_cmsdk_ahb_3_cfg = {
 
 static struct gpio_cmsdk_ahb_dev_data gpio_cmsdk_ahb_3_data;
 
-DEVICE_AND_API_INIT(gpio_cmsdk_ahb_3,
+DEVICE_AND_API_INIT(NULL, gpio_cmsdk_ahb_3,
 		    CONFIG_GPIO_CMSDK_AHB_PORT3_DEV_NAME,
 		    gpio_cmsdk_ahb_init, &gpio_cmsdk_ahb_3_data,
 		    &gpio_cmsdk_ahb_3_cfg, POST_KERNEL,

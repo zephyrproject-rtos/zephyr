@@ -235,6 +235,6 @@ static int netusb_init_dev(struct device *dev)
 	return 0;
 }
 
-NET_DEVICE_INIT(eth_netusb, "eth_netusb", netusb_init_dev, NULL, NULL,
+NET_DEVICE_INIT(NULL, eth_netusb, "eth_netusb", netusb_init_dev, NULL, NULL,
 		CONFIG_ETH_INIT_PRIORITY, &netusb_api_funcs, ETHERNET_L2,
 		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NETUSB_MTU);
