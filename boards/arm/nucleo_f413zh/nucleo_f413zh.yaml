@@ -16,3 +16,4 @@ supported:
   - gpio
   - usb_device
   - rtc
+  - counter
