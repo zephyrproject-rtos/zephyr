@@ -102,7 +102,7 @@ static inline void enable_floating_point(void)
 {
 	/*
 	 * Upon reset, the Co-Processor Access Control Register is 0x00000000.
-	 * Enable CP10 and CP11 coprocessors to enable floating point.
+	 * Enable CP10 and CP11 co-processors to enable floating point.
 	 */
 	SCB->CPACR |= CPACR_CP10_FULL_ACCESS | CPACR_CP11_FULL_ACCESS;
 	/*
@@ -119,7 +119,7 @@ static inline void enable_floating_point(void)
 	 * have first been touched. Perform a dummy move operation so that
 	 * the stack frames are created as expected before any thread
 	 * context switching can occur. It has to be surrounded by instruction
-	 * synchronisation barriers to ensure that the whole sequence is
+	 * synchronization barriers to ensure that the whole sequence is
 	 * serialized.
 	 */
 	__asm__ volatile(
@@ -156,7 +156,7 @@ void _PrepC(void)
 #endif
 	/*
 	 * Set PSP and use it to boot without using MSP, so that it
-	 * gets set to _interrupt_stack during initialisation.
+	 * gets set to _interrupt_stack during initialization.
 	 */
 	set_and_switch_to_psp();
 	relocate_vector_table();

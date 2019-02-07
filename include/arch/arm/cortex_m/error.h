@@ -38,7 +38,7 @@ extern void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
 /* ARMv6 will hard-fault if SVC is called with interrupts locked. Just
  * force them unlocked, the thread is in an undefined state anyway
  *
- * On ARMv7m we won't get a hardfault, but if interrupts were locked the
+ * On ARMv7m we won't get a HardFault, but if interrupts were locked the
  * thread will continue executing after the exception and forbid PendSV to
  * schedule a new thread until they are unlocked which is not what we want.
  * Force them unlocked as well.

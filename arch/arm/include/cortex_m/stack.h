@@ -24,7 +24,7 @@ extern "C" {
 
 #else
 
-#include "arch/arm/cortex_m/cmsis.h"
+#include <arch/arm/cortex_m/cmsis.h>
 
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
