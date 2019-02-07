@@ -138,7 +138,7 @@ class Bindings(yaml.Loader):
         with open(filepaths[0], 'r', encoding='utf-8') as f:
             return yaml.load(f, Bindings)
 
-def extract_single(node_address, def_label):
+def extract_bus_name(node_address, def_label):
     label = def_label + '_BUS_NAME'
     prop_alias = {}
 
@@ -218,8 +218,8 @@ def extract_property(node_compat, node_address, prop, prop_val, names):
             parent_label = get_node_label(parent_address)
             def_label = parent_label + '_' + def_label
 
-            # Generate bus-name define
-            extract_single(node_address, 'DT_' + def_label)
+            # Generate *_BUS_NAME #define
+            extract_bus_name(node_address, 'DT_' + def_label)
 
     if 'base_label' not in yaml_node_compat:
         def_label = 'DT_' + def_label
