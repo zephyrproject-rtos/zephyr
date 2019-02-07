@@ -140,7 +140,6 @@ class Bindings(yaml.Loader):
 
 def extract_single(node_address, prop, key, def_label):
 
-    prop_def = {}
     prop_alias = {}
 
     k = str_to_label(key)
@@ -151,7 +150,6 @@ def extract_single(node_address, prop, key, def_label):
 
     prop = "\"" + prop + "\""
     add_compat_alias(node_address, k, label, prop_alias)
-    prop_def[label] = prop
 
     # generate defs for node aliases
     if node_address in aliases:
@@ -161,7 +159,7 @@ def extract_single(node_address, prop, key, def_label):
             label,
             prop_alias)
 
-    insert_defs(node_address, prop_def, prop_alias)
+    insert_defs(node_address, {label: prop}, prop_alias)
 
 def extract_string_prop(node_address, key, label):
 
