@@ -10,7 +10,12 @@
 #include <zephyr.h>
 #include <ztest.h>
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define MAX_NUM_THREAD 10
+#define STACK_SIZE (640 + CONFIG_TEST_EXTRA_STACKSIZE)
+
+K_THREAD_STACK_EXTERN(tstack);
+extern k_thread_stack_t
+	tstacks[MAX_NUM_THREAD][K_THREAD_STACK_LEN(STACK_SIZE)];
 
 struct thread_data {
 	k_tid_t tid;

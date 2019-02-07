@@ -6,7 +6,6 @@
 
 #include "test_sched.h"
 
-static K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 static struct k_thread tdata;
 static int last_prio;
 
