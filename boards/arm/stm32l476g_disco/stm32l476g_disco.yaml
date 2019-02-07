@@ -10,3 +10,5 @@ ram: 96
 flash: 1024
 supported:
   - gpio
+  - rtc
+  - counter
