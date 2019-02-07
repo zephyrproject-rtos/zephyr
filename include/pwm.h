@@ -105,8 +105,8 @@ static inline int _impl_pwm_get_cycles_per_sec(struct device *dev, u32_t pwm,
  *
  * @param dev Pointer to the device structure for the driver instance.
  * @param pwm PWM pin.
- * @param period Period (in micro second) set to the PWM.
- * @param pulse Pulse width (in micro second) set to the PWM.
+ * @param period Period (in microseconds) set to the PWM.
+ * @param pulse Pulse width (in microseconds) set to the PWM.
  *
  * @retval 0 If successful.
  * @retval Negative errno code if failure.
@@ -126,6 +126,40 @@ static inline int pwm_pin_set_usec(struct device *dev, u32_t pwm,
 	}
 
 	pulse_cycles = (pulse * cycles_per_sec) / USEC_PER_SEC;
+	if (pulse_cycles >= ((u64_t)1 << 32)) {
+		return -ENOTSUP;
+	}
+
+	return pwm_pin_set_cycles(dev, pwm, (u32_t)period_cycles,
+				  (u32_t)pulse_cycles);
+}
+
+/**
+ * @brief Set the period and pulse width for a single PWM output.
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ * @param pwm PWM pin.
+ * @param period Period (in nanoseconds) set to the PWM.
+ * @param pulse Pulse width (in nanoseconds) set to the PWM.
+ *
+ * @retval 0 If successful.
+ * @retval Negative errno code if failure.
+ */
+static inline int pwm_pin_set_nsec(struct device *dev, u32_t pwm,
+				   u32_t period, u32_t pulse)
+{
+	u64_t period_cycles, pulse_cycles, cycles_per_sec;
+
+	if (pwm_get_cycles_per_sec(dev, pwm, &cycles_per_sec) != 0) {
+		return -EIO;
+	}
+
+	period_cycles = (period * cycles_per_sec) / NSEC_PER_SEC;
+	if (period_cycles >= ((u64_t)1 << 32)) {
+		return -ENOTSUP;
+	}
+
+	pulse_cycles = (pulse * cycles_per_sec) / NSEC_PER_SEC;
 	if (pulse_cycles >= ((u64_t)1 << 32)) {
 		return -ENOTSUP;
 	}
