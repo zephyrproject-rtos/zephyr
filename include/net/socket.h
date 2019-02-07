@@ -196,6 +196,11 @@ int zsock_getaddrinfo(const char *host, const char *service,
 		      const struct zsock_addrinfo *hints,
 		      struct zsock_addrinfo **res);
 
+static inline void zsock_freeaddrinfo(struct zsock_addrinfo *ai)
+{
+	free(ai);
+}
+
 #if defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
 
 #define pollfd zsock_pollfd
@@ -314,7 +319,7 @@ static inline int getaddrinfo(const char *host, const char *service,
 
 static inline void freeaddrinfo(struct zsock_addrinfo *ai)
 {
-	free(ai);
+	zsock_freeaddrinfo(ai);
 }
 
 #define addrinfo zsock_addrinfo
