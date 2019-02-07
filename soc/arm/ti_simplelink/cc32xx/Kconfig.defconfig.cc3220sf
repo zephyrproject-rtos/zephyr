@@ -44,4 +44,11 @@ config GPIO_CC32XX_A3
 
 endif # GPIO
 
+if !XIP
+config FLASH_SIZE
+	default 0
+config FLASH_BASE_ADDRESS
+	default 0
+endif
+
 endif # SOC_CC3220SF
