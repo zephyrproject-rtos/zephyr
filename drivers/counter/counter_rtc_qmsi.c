@@ -83,7 +83,7 @@ static int rtc_qmsi_disable(struct device *dev)
 	return 0;
 }
 
-static int rtc_qmsi_disable_alarm(struct device *dev,
+static int rtc_qmsi_cancel_alarm(struct device *dev,
 			const struct counter_alarm_cfg *alarm_cfg)
 {
 	clk_periph_disable(CLK_PERIPH_RTC_REGISTER);
@@ -158,7 +158,7 @@ static const struct counter_driver_api api = {
 	.read = rtc_qmsi_read,
 	.set_wrap = rtc_qmsi_set_wrap,
 	.set_alarm = rtc_qmsi_set_alarm,
-	.disable_alarm = rtc_qmsi_disable_alarm,
+	.cancel_alarm = rtc_qmsi_cancel_alarm,
 	.get_pending_int = rtc_qmsi_get_pending_int,
 };
 

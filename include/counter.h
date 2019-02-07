@@ -93,7 +93,7 @@ typedef int (*counter_api_stop)(struct device *dev);
 typedef u32_t (*counter_api_read)(struct device *dev);
 typedef int (*counter_api_set_alarm)(struct device *dev, u8_t chan_id,
 				const struct counter_alarm_cfg *alarm_cfg);
-typedef int (*counter_api_disable_alarm)(struct device *dev, u8_t chan_id);
+typedef int (*counter_api_cancel_alarm)(struct device *dev, u8_t chan_id);
 typedef int (*counter_api_set_top_value)(struct device *dev, u32_t ticks,
 				    counter_top_callback_t callback,
 				    void *user_data);
@@ -107,7 +107,7 @@ struct counter_driver_api {
 	counter_api_stop stop;
 	counter_api_read read;
 	counter_api_set_alarm set_alarm;
-	counter_api_disable_alarm disable_alarm;
+	counter_api_cancel_alarm cancel_alarm;
 	counter_api_set_top_value set_top_value;
 	counter_api_get_pending_int get_pending_int;
 	counter_api_get_top_value get_top_value;
@@ -286,7 +286,7 @@ static inline int counter_set_channel_alarm(struct device *dev, u8_t chan_id,
 }
 
 /**
- * @brief Disable an alarm on a channel.
+ * @brief Cancel an alarm on a channel.
  *
  * @note API is not thread safe.
  *
@@ -297,7 +297,7 @@ static inline int counter_set_channel_alarm(struct device *dev, u8_t chan_id,
  * @retval -ENOTSUP if request is not supported or the counter was not started
  *		    yet.
  */
-static inline int counter_disable_channel_alarm(struct device *dev,
+static inline int counter_cancel_channel_alarm(struct device *dev,
 						u8_t chan_id)
 {
 	const struct counter_driver_api *api = dev->driver_api;
@@ -306,7 +306,7 @@ static inline int counter_disable_channel_alarm(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	return api->disable_alarm(dev, chan_id);
+	return api->cancel_alarm(dev, chan_id);
 }
 
 /**

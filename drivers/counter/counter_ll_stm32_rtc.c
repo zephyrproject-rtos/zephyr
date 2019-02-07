@@ -165,7 +165,7 @@ static int rtc_stm32_set_alarm(struct device *dev, u8_t chan_id,
 }
 
 
-static int rtc_stm32_disable_alarm(struct device *dev, u8_t chan_id)
+static int rtc_stm32_cancel_alarm(struct device *dev, u8_t chan_id)
 {
 	LL_RTC_DisableWriteProtection(RTC);
 	LL_RTC_ClearFlag_ALRA(RTC);
@@ -343,7 +343,7 @@ static const struct counter_driver_api rtc_stm32_driver_api = {
 		.stop = rtc_stm32_stop,
 		.read = rtc_stm32_read,
 		.set_alarm = rtc_stm32_set_alarm,
-		.disable_alarm = rtc_stm32_disable_alarm,
+		.cancel_alarm = rtc_stm32_cancel_alarm,
 		.set_top_value = rtc_stm32_set_top_value,
 		.get_pending_int = rtc_stm32_get_pending_int,
 		.get_top_value = rtc_stm32_get_top_value,
