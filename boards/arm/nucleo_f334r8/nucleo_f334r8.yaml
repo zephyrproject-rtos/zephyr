@@ -20,3 +20,4 @@ supported:
   - pwm
   - rtc
   - watchdog
+  - counter
