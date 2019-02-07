@@ -23,8 +23,8 @@ void _irq_do_offload(void)
 void irq_offload(irq_offload_routine_t routine, void *parameter)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE) && defined(CONFIG_ASSERT)
-	/* Cortex M0 hardfaults if you make a SVC call with interrupts
-	 * locked.
+	/* ARMv6-M/ARMv8-M Baseline HardFault if you make a SVC call with
+	 * interrupts locked.
 	 */
 	unsigned int key;
 

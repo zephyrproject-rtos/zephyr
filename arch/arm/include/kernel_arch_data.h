@@ -9,7 +9,7 @@
  * @brief Private kernel definitions (ARM)
  *
  * This file contains private kernel structures definitions and various
- * other definitions for the ARM Cortex-M3 processor architecture.
+ * other definitions for the ARM Cortex-M processor architecture family.
  *
  * This file is also included by assembly language files which must #define
  * _ASMLANGUAGE before including this header file.  Note that kernel
