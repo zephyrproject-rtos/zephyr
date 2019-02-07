@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <posix/sys/types.h>
 #include <ztest.h>
 #include <posix/time.h>
 #include <posix/sys/time.h>
