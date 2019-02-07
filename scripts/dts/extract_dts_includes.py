@@ -529,12 +529,12 @@ def parse_arguments():
     rdh = argparse.RawDescriptionHelpFormatter
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=rdh)
 
-    parser.add_argument("-d", "--dts", nargs=1, required=True, help="DTS file")
+    parser.add_argument("-d", "--dts", required=True, help="DTS file")
     parser.add_argument("-y", "--yaml", nargs='+', required=True,
                         help="YAML file directories, we allow multiple")
-    parser.add_argument("-i", "--include", nargs=1,
+    parser.add_argument("-i", "--include",
                         help="Generate include file for the build system")
-    parser.add_argument("-k", "--keyvalue", nargs=1,
+    parser.add_argument("-k", "--keyvalue",
                         help="Generate config file for the build system")
     parser.add_argument("--old-alias-names", action='store_true',
                         help="Generate aliases also in the old way, without "
@@ -546,7 +546,7 @@ def main():
     args = parse_arguments()
     enable_old_alias_names(args.old_alias_names)
 
-    dts = load_and_parse_dts(args.dts[0])
+    dts = load_and_parse_dts(args.dts)
 
     # build up useful lists
     get_reduced(dts['/'], '/')
@@ -565,10 +565,10 @@ def main():
 
      # generate config and include file
     if args.keyvalue is not None:
-       generate_keyvalue_file(args.keyvalue[0])
+       generate_keyvalue_file(args.keyvalue)
 
     if args.include is not None:
-       generate_include_file(args.include[0])
+       generate_include_file(args.include)
 
 
 if __name__ == '__main__':
