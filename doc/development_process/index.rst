@@ -201,7 +201,7 @@ Developers are expected to fix issues and rework their patches and submit again.
 The CI infrastructure currently runs the following tests:
 
 - Run '''checkpatch''' for code style issues (can vote -1 on errors)
-- Gitlint: Git commit style based on project requorements
+- Gitlint: Git commit style based on project requirements
 - License Check: Check for conflicting licenses
 - Run '''sanitycheck''' script:
 

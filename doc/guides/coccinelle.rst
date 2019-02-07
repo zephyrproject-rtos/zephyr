@@ -261,7 +261,7 @@ information required during transformation.
 For example:
 
 ``Z_SYSCALL_HANDLER`` is not recognized by coccinelle. Therefore, we
-put its prototype in a header file, say for eg ``mymacros.h``.
+put its prototype in a header file, say for example ``mymacros.h``.
 
 .. code-block:: console
 

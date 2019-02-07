@@ -123,7 +123,7 @@ SPI
 * MOSI = P1.02
 * MISO = P0.24
 
-Microsd is connected to these pins, and CS pin is connected to P0.17.
+MicroSD is connected to these pins, and CS pin is connected to P0.17.
 
 Programming and Debugging
 *************************
