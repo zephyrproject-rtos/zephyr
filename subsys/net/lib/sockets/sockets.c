@@ -192,6 +192,27 @@ Z_SYSCALL_HANDLER(zsock_close, sock)
 }
 #endif /* CONFIG_USERSPACE */
 
+int _impl_zsock_shutdown(int sock, int how)
+{
+	/* shutdown() is described by POSIX as just disabling recv() and/or
+	 * send() operations on socket. Of course, real-world software mostly
+	 * calls it for side effects. We treat it as null operation so far.
+	 */
+	ARG_UNUSED(sock);
+	ARG_UNUSED(how);
+
+	LOG_WRN("shutdown() not implemented");
+
+	return 0;
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(zsock_shutdown, sock, how)
+{
+	return _impl_zsock_shutdown(sock, how);
+}
+#endif /* CONFIG_USERSPACE */
+
 static void zsock_accepted_cb(struct net_context *new_ctx,
 			      struct sockaddr *addr, socklen_t addrlen,
 			      int status, void *user_data) {

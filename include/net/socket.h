@@ -58,6 +58,14 @@ typedef struct zsock_fd_set {
 #define ZSOCK_MSG_PEEK 0x02
 #define ZSOCK_MSG_DONTWAIT 0x40
 
+/* Well-known values, e.g. from Linux man 2 shutdown:
+ * "The constants SHUT_RD, SHUT_WR, SHUT_RDWR have the value 0, 1, 2,
+ * respectively". Some software uses numeric values.
+ */
+#define ZSOCK_SHUT_RD 0
+#define ZSOCK_SHUT_WR 1
+#define ZSOCK_SHUT_RDWR 2
+
 /** Protocol level for TLS.
  *  Here, the same socket protocol level for TLS as in Linux was used.
  */
@@ -129,6 +137,8 @@ struct zsock_addrinfo {
 __syscall int zsock_socket(int family, int type, int proto);
 
 __syscall int zsock_close(int sock);
+
+__syscall int zsock_shutdown(int sock, int how);
 
 __syscall int zsock_bind(int sock, const struct sockaddr *addr,
 			 socklen_t addrlen);
@@ -217,6 +227,11 @@ static inline int socket(int family, int type, int proto)
 static inline int close(int sock)
 {
 	return zsock_close(sock);
+}
+
+static inline int shutdown(int sock, int how)
+{
+	return zsock_shutdown(sock, how);
 }
 
 static inline int bind(int sock, const struct sockaddr *addr, socklen_t addrlen)
@@ -373,6 +388,10 @@ static inline int inet_pton(sa_family_t family, const char *src, void *dst)
 
 #define MSG_PEEK ZSOCK_MSG_PEEK
 #define MSG_DONTWAIT ZSOCK_MSG_DONTWAIT
+
+#define SHUT_RD ZSOCK_SHUT_RD
+#define SHUT_WR ZSOCK_SHUT_WR
+#define SHUT_RDWR ZSOCK_SHUT_RDWR
 
 static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 			      size_t size)
