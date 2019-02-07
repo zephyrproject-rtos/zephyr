@@ -712,6 +712,30 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 /** sockopt: Don't support IPv4 access (ignored, for compatibility) */
 #define IPV6_V6ONLY 26
 
+/** @cond INTERNAL_HIDDEN */
+/**
+ * @brief Registration information for a given BSD socket family.
+ */
+struct net_socket_register {
+	int family;
+	bool (*is_supported)(int family, int type, int proto);
+	int (*handler)(int family, int type, int proto);
+};
+
+#define NET_SOCKET_GET_NAME(socket_name)	\
+	(__net_socket_register_##socket_name)
+
+#define NET_SOCKET_REGISTER(socket_name, _family, _is_supported, _handler) \
+	static const struct net_socket_register				\
+			(NET_SOCKET_GET_NAME(socket_name)) __used	\
+	__attribute__((__section__(".net_socket_register.init"))) = {	\
+		.family = _family,					\
+		.is_supported = _is_supported,				\
+		.handler = _handler,					\
+	}
+
+/** @endcond */
+
 #ifdef __cplusplus
 }
 #endif

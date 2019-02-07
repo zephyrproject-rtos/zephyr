@@ -67,6 +67,16 @@
 		__net_l2_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+#if defined(CONFIG_NET_SOCKETS)
+	SECTION_PROLOGUE(net_socket_register,,)
+	{
+		__net_socket_register_start = .;
+		*(".net_socket_register.init")
+		KEEP(*(SORT_BY_NAME(".net_socket_register.init*")))
+		__net_socket_register_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
+
 	SECTION_DATA_PROLOGUE(_bt_services_area,,SUBALIGN(4))
 	{
 		_bt_services_start = .;
