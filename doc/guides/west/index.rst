@@ -36,7 +36,7 @@ about the tool.
    :maxdepth: 1
 
    repo-tool.rst
-   flash-debug.rst
+   build-flash-debug.rst
    why.rst
    without-west.rst
    planned.rst
