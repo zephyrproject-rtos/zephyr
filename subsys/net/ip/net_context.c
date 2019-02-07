@@ -53,6 +53,7 @@ static struct net_context contexts[NET_MAX_CONTEXT];
  */
 static struct k_sem contexts_lock;
 
+#if defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP)
 static int check_used_port(enum net_ip_protocol ip_proto,
 			   u16_t local_port,
 			   const struct sockaddr *local_addr)
@@ -110,6 +111,7 @@ static u16_t find_available_port(struct net_context *context,
 
 	return htons(local_port);
 }
+#endif
 
 int net_context_get(sa_family_t family,
 		    enum net_sock_type type,
@@ -932,7 +934,9 @@ int net_context_connect(struct net_context *context,
 			void *user_data)
 {
 	struct sockaddr *laddr = NULL;
+#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
 	struct sockaddr local_addr;
+#endif
 	u16_t lport, rport;
 	int ret;
 
@@ -1457,8 +1461,8 @@ static int context_setup_udp_packet(struct net_context *context,
 				    socklen_t addrlen)
 {
 	int ret = -EINVAL;
+	u16_t dst_port = 0;
 	size_t written;
-	u16_t dst_port;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
 	    net_context_get_family(context) == AF_INET) {

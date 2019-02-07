@@ -43,7 +43,8 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 #include "tcp_internal.h"
 
 /* Find max header size of IP protocol (IPv4 or IPv6) */
-#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_RAW_MODE)
+#if defined(CONFIG_NET_IPV6) || defined(CONFIG_NET_RAW_MODE) || \
+	defined(CONFIG_NET_SOCKETS_PACKET)
 #define MAX_IP_PROTO_LEN NET_IPV6H_LEN
 #else
 #if defined(CONFIG_NET_IPV4)

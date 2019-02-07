@@ -41,7 +41,9 @@ extern struct net_if __net_if_end[];
 extern struct net_if_dev __net_if_dev_start[];
 extern struct net_if_dev __net_if_dev_end[];
 
+#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
 static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
+#endif
 
 #if defined(CONFIG_NET_IPV6)
 /* Timer that triggers network address renewal */
@@ -394,6 +396,7 @@ struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
 	return NULL;
 }
 
+#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
 /* Return how many bits are shared between two IP addresses */
 static u8_t get_ipaddr_diff(const u8_t *src, const u8_t *dst, int addr_len)
 {
@@ -419,6 +422,7 @@ static u8_t get_ipaddr_diff(const u8_t *src, const u8_t *dst, int addr_len)
 
 	return len;
 }
+#endif
 
 int net_if_config_ipv6_get(struct net_if *iface, struct net_if_ipv6 **ipv6)
 {
@@ -3067,7 +3071,10 @@ void net_if_add_tx_timestamp(struct net_pkt *pkt)
 void net_if_init(void)
 {
 	struct net_if *iface;
-	int i, if_count;
+	int if_count;
+#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
+	int i;
+#endif
 
 	NET_DBG("");
 

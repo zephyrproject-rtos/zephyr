@@ -252,14 +252,18 @@ static void iface_cb(struct net_if *iface, void *user_data)
 #if defined(CONFIG_NET_VLAN)
 	struct ethernet_context *eth_ctx;
 #endif
+#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
 	struct net_if_addr *unicast;
 	struct net_if_mcast_addr *mcast;
+#endif
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
 	struct ethernet_req_params params;
 	int ret;
 #endif
 	const char *extra;
+#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
 	int i, count;
+#endif
 
 	if (data->user_data && data->user_data != iface) {
 		return;
@@ -725,6 +729,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	   GET_STAT(iface, ip_errors.chkerr),
 	   GET_STAT(iface, ip_errors.protoerr));
 
+#if defined(CONFIG_NET_ICMPV4) || defined(CONFIG_NET_ICMPV6)
 	PR("ICMP recv      %d\tsent\t%d\tdrop\t%d\n",
 	   GET_STAT(iface, icmp.recv),
 	   GET_STAT(iface, icmp.sent),
@@ -732,6 +737,7 @@ static void net_shell_print_statistics(struct net_if *iface, void *user_data)
 	PR("ICMP typeer    %d\tchkerr\t%d\n",
 	   GET_STAT(iface, icmp.typeerr),
 	   GET_STAT(iface, icmp.chkerr));
+#endif
 
 #if defined(CONFIG_NET_UDP)
 	PR("UDP recv       %d\tsent\t%d\tdrop\t%d\n",
@@ -2778,6 +2784,13 @@ static int _ping_ipv4(const struct shell *shell, char *host)
 
 static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 {
+#if !defined(CONFIG_NET_IPV4) && !defined(CONFIG_NET_IPV6)
+	ARG_UNUSED(shell);
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	return -EOPNOTSUPP;
+#else
 	char *host;
 	int ret;
 
@@ -2826,6 +2839,7 @@ wait_reply:
 	}
 
 	return 0;
+#endif
 }
 
 static int cmd_net_route(const struct shell *shell, size_t argc, char *argv[])
