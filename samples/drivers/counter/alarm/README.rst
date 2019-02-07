@@ -1,6 +1,6 @@
-.. _alarm:
+.. _alarm_sample:
 
-counter alarm sample
+Counter Alarm Sample
 #####################
 
 Overview
@@ -17,7 +17,7 @@ This sample requires the support of a timer IP compatible with alarm setting.
 References
 **********
 
-- :ref:`disco_l475_iot1`
+- :ref:`disco_l475_iot1_board`
 
 Building and Running
 ********************
