@@ -169,6 +169,9 @@ def extract_string_prop(node_address, key, label):
         defs[node_address].update(prop_def)
     else:
         defs[node_address] = prop_def
+        # Make all defs have the special 'aliases' key, to remove existence
+        # checks elsewhere
+        defs[node_address]['aliases'] = {}
 
 
 def extract_property(node_compat, node_address, prop, prop_val, names):
@@ -412,21 +415,18 @@ def get_key_value(k, v, tabstop):
 
 
 def output_keyvalue_lines(fd):
-    node_keys = sorted(defs)
-    for node in node_keys:
-        fd.write('# ' + node.split('/')[-1])
-        fd.write("\n")
+    for node in sorted(defs):
+        fd.write('# ' + node.split('/')[-1] + '\n')
 
-        prop_keys = sorted(defs[node])
-        for prop in prop_keys:
-            if prop == 'aliases':
-                for entry in sorted(defs[node][prop]):
-                    a = defs[node][prop][entry]
-                    fd.write("%s=%s\n" % (entry, defs[node].get(a)))
-            else:
-                fd.write("%s=%s\n" % (prop, defs[node][prop]))
+        for prop in sorted(defs[node]):
+            if prop != 'aliases':
+                fd.write('%s=%s\n' % (prop, defs[node][prop]))
 
-        fd.write("\n")
+        for alias in sorted(defs[node]['aliases']):
+            alias_target = defs[node]['aliases'][alias]
+            fd.write('%s=%s\n' % (alias, defs[node].get(alias_target)))
+
+        fd.write('\n')
 
 
 def output_include_lines(fd):
