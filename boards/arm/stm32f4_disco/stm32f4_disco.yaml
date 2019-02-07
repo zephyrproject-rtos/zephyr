@@ -9,4 +9,5 @@ toolchain:
 supported:
   - pwm
   - rtc
+  - counter
   - usb
