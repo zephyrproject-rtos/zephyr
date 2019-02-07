@@ -11,3 +11,4 @@ by Zephyr.
    :glob:
 
    */*
+   counter/alarm/README.rst
