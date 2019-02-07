@@ -25,4 +25,7 @@ endif # I2C_0
 
 endif # I2C
 
+config BT_CTLR
+	default BT
+
 endif # BOARD_NRF52_VBLUNO52

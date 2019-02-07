@@ -40,11 +40,7 @@ config IEEE802154_NRF5
 
 endif # IEEE802154
 
-if BT
-
 config BT_CTLR
-	default y
-
-endif # BT
+	default BT
 
 endif # BOARD_PARTICLE_ARGON

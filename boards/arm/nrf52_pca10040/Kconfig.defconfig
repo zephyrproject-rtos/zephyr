@@ -37,4 +37,7 @@ config SPI_1
 
 endif # SPI
 
+config BT_CTLR
+	default BT
+
 endif # BOARD_NRF52_PCA10040
