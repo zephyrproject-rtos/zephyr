@@ -140,11 +140,44 @@ static void test_device_setup(void)
 	zassert_equal(ret, 0, "init failed");
 }
 
+static void test_device_disable(void)
+{
+	zassert_equal(usb_disable(), TC_PASS, "usb_disable() failed");
+}
+
+static void test_device_deconfig(void)
+{
+	zassert_equal(usb_deconfig(), TC_PASS, "usb_deconfig() failed");
+}
+
+static void test_device_dc_api(void)
+{
+	zassert_equal(usb_dc_ep_mps(0x20), -EINVAL,
+		      "Invalid test usb_dc_ep_mps(INVALID) failed");
+
+	zassert_equal(usb_dc_ep_mps(0x0), 64,
+		      "usb_dc_ep_mps(0x00) failed");
+	zassert_equal(usb_dc_ep_mps(0x80), 64,
+		      "usb_dc_ep_mps(0x80) failed");
+
+	/* Bulk EP is not configured yet */
+	zassert_equal(usb_dc_ep_mps(ENDP_BULK_IN), 0,
+		      "usb_dc_ep_mps(ENDP_BULK_IN) failed");
+
+	zassert_equal(usb_dc_set_address(0x01), TC_PASS,
+		      "usb_dc_set_address(0x01) failed");
+}
+
 /*test case main entry*/
 void test_main(void)
 {
 	ztest_test_suite(test_device,
-			 ztest_unit_test(test_device_setup));
+			 /* Should return TC_PASS if not enabled yet */
+			 ztest_unit_test(test_device_disable),
+			 ztest_unit_test(test_device_setup),
+			 ztest_unit_test(test_device_dc_api),
+			 ztest_unit_test(test_device_deconfig),
+			 ztest_unit_test(test_device_disable));
 
 	ztest_run_test_suite(test_device);
 }
