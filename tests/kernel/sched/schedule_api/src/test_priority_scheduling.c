@@ -5,8 +5,8 @@
  */
 
 #include <ztest.h>
+#include "test_sched.h"
 
-#define STACK_SIZE (384 + CONFIG_TEST_EXTRA_STACKSIZE)
 /* nrf 51 has lower ram, so creating less number of threads */
 #if CONFIG_SRAM_SIZE <= 24
 	#define NUM_THREAD 2
@@ -19,7 +19,7 @@
 #define ITRERATION_COUNT 5
 #define BASE_PRIORITY 1
 
-static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
+BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
 
 /* Semaphore on which Ztest thread wait*/
 static K_SEM_DEFINE(sema2, 0, NUM_THREAD);
@@ -76,7 +76,7 @@ void test_priority_scheduling(void)
 
 	/* Create Threads with different Priority*/
 	for (int i = 0; i < NUM_THREAD; i++) {
-		tid[i] = k_thread_create(&t[i], tstack[i], STACK_SIZE,
+		tid[i] = k_thread_create(&t[i], tstacks[i], STACK_SIZE,
 					 thread_tslice, (void *)(intptr_t) i, NULL, NULL,
 					 K_PRIO_PREEMPT(BASE_PRIORITY + i), 0, 0);
 	}

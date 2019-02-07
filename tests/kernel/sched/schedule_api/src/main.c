@@ -6,6 +6,10 @@
 
 #include "test_sched.h"
 
+/* Shared threads */
+K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
+K_THREAD_STACK_ARRAY_DEFINE(tstacks, MAX_NUM_THREAD, STACK_SIZE);
+
 /**
  * @brief Test scheduling
  *

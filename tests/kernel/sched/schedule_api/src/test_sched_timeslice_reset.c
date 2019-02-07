@@ -7,9 +7,10 @@
 #include <ztest.h>
 #include "test_sched.h"
 
-#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define NUM_THREAD 3
-static K_THREAD_STACK_ARRAY_DEFINE(tstack, NUM_THREAD, STACK_SIZE);
+
+BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
+
 /* slice size in millisecond*/
 #define SLICE_SIZE 200
 /* busy for more than one slice*/
@@ -85,7 +86,7 @@ void test_slice_reset(void)
 		k_thread_priority_set(k_current_get(), K_PRIO_PREEMPT(j));
 		/* create delayed threads with equal preemptive priority*/
 		for (int i = 0; i < NUM_THREAD; i++) {
-			tid[i] = k_thread_create(&t[i], tstack[i], STACK_SIZE,
+			tid[i] = k_thread_create(&t[i], tstacks[i], STACK_SIZE,
 						 thread_tslice, NULL, NULL, NULL,
 						 K_PRIO_PREEMPT(j), 0, 0);
 		}
