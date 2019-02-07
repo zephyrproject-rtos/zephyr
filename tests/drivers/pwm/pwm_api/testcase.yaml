@@ -2,6 +2,6 @@ tests:
   peripheral.pwm:
     # FIXME: We should remove those and just rely on depends_on
     platform_whitelist: quark_se_c1000_devboard quark_se_c1000_ss_devboard
-      arduino_101 arduino_101_sss colibri_imx7d_m4
+      arduino_101 arduino_101_sss colibri_imx7d_m4 sam_e70_xplained
     tags: drivers pwm
     depends_on: pwm
