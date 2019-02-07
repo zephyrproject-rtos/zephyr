@@ -9,4 +9,7 @@ if BOARD_QUARK_SE_C1000_BLE
 config BOARD
 	default "quark_se_c1000_ble"
 
+config BT_CTLR
+	default BT
+
 endif # BOARD_QUARK_SE_C1000_BLE

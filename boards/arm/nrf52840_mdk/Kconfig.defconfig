@@ -33,4 +33,7 @@ config IEEE802154_NRF5
 
 endif # IEEE802154
 
+config BT_CTLR
+	default BT
+
 endif # BOARD_NRF52840_MDK

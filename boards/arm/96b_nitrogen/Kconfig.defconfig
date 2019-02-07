@@ -23,4 +23,7 @@ config SPI_0
 
 endif # SPI
 
+config BT_CTLR
+	default BT
+
 endif # BOARD_96B_NITROGEN

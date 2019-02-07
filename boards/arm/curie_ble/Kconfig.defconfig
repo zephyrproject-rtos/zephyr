@@ -9,4 +9,7 @@ if BOARD_CURIE_BLE
 config BOARD
 	default "curie_ble"
 
+config BT_CTLR
+	default BT
+
 endif # BOARD_CURIE_BLE
