@@ -10,6 +10,7 @@ supported:
   - arduino_i2c
   - pwm
   - rtc
+  - counter
   - gpio
   - i2c
   - spi

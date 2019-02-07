@@ -9,6 +9,7 @@ toolchain:
 supported:
   - arduino_i2c
   - rtc
+  - counter
   - gpio
   - spi
   - i2c

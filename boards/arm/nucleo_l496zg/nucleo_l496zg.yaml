@@ -12,6 +12,8 @@ supported:
   - i2c
   - spi
   - pwm
+  - rtc
+  - counter
 testing:
   ignore_tags:
     - net
