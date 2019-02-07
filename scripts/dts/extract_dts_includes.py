@@ -436,17 +436,14 @@ def write_header(f):
 */
 #ifndef GENERATED_DTS_BOARD_UNFIXED_H
 #define GENERATED_DTS_BOARD_UNFIXED_H
-    '''
-    )
+''')
 
-    node_keys = sorted(defs)
-    for node in node_keys:
-        f.write('/* ' + node.split('/')[-1] + ' */')
-        f.write("\n")
+    for node in sorted(defs):
+        f.write('/* ' + node.split('/')[-1] + ' */\n')
 
         max_dict_key = lambda d: max(len(k) for k in d)
         maxlength = 0
-        if defs[node].get('aliases'):
+        if defs[node]['aliases']:
             maxlength = max_dict_key(defs[node]['aliases'])
         maxlength = max(maxlength, max_dict_key(defs[node])) + len('#define ')
 
@@ -458,18 +455,17 @@ def write_header(f):
         if maxtabstop * 8 - maxlength <= 2:
             maxtabstop += 1
 
-        prop_keys = sorted(defs[node])
-        for prop in prop_keys:
-            if prop == 'aliases':
-                for entry in sorted(defs[node][prop]):
-                    a = defs[node][prop][entry]
-                    f.write(get_key_value(entry, a, maxtabstop))
-            else:
+        for prop in sorted(defs[node]):
+            if prop != 'aliases':
                 f.write(get_key_value(prop, defs[node][prop], maxtabstop))
 
-        f.write("\n")
+        for alias in sorted(defs[node]['aliases']):
+            alias_target = defs[node]['aliases'][alias]
+            f.write(get_key_value(alias, alias_target, maxtabstop))
 
-    f.write("#endif\n")
+        f.write('\n')
+
+    f.write('#endif\n')
 
 
 def load_yaml_descriptions(dts, yaml_dirs):
