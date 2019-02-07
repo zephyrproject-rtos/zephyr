@@ -132,9 +132,11 @@ static int gpio_sch_config(struct device *dev,
 	const struct gpio_sch_config *info = dev->config->config_info;
 
 	/* Do some sanity check first */
-	if (flags & (GPIO_INT | GPIO_INT_LEVEL)) {
-		/* controller does not support level trigger */
-		return -EINVAL;
+	if (flags & GPIO_INT) {
+		if (!(flags & GPIO_INT_EDGE)) {
+			/* controller does not support level trigger */
+			return -EINVAL;
+		}
 	}
 
 	if (access_op == GPIO_ACCESS_BY_PIN) {
