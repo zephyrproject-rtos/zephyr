@@ -490,7 +490,7 @@ def generate_node_definitions():
         if node_compat is not None and node_compat in get_binding_compats():
             extract_node_include_info(reduced, k, k, None)
 
-    if defs == {}:
+    if not defs:
         raise Exception("No information parsed from dts file.")
 
     for k, v in regs_config.items():
@@ -505,8 +505,6 @@ def generate_node_definitions():
     flash.extract(node_address, 'zephyr,flash', 'FLASH')
     node_address = chosen.get('zephyr,code-partition', node_address)
     flash.extract(node_address, 'zephyr,code-partition', 'FLASH')
-
-    return defs
 
 
 def parse_arguments():
@@ -543,7 +541,7 @@ def main():
     (extract.globals.bindings, extract.globals.bus_bindings,
      extract.globals.bindings_compat) = load_yaml_descriptions(dts, args.yaml)
 
-    defs = generate_node_definitions()
+    generate_node_definitions()
 
     # Add DT_CHOSEN_<X> defines to generated files
     for c in sorted(chosen):
