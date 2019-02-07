@@ -119,7 +119,7 @@ static int mcux_rtc_set_alarm(struct device *dev, u8_t chan_id,
 	return 0;
 }
 
-static int mcux_rtc_disable_alarm(struct device *dev, u8_t chan_id)
+static int mcux_rtc_cancel_alarm(struct device *dev, u8_t chan_id)
 {
 	struct mcux_rtc_data *data = dev->driver_data;
 
@@ -236,7 +236,7 @@ static const struct counter_driver_api mcux_rtc_driver_api = {
 	.stop = mcux_rtc_stop,
 	.read = mcux_rtc_read,
 	.set_alarm = mcux_rtc_set_alarm,
-	.disable_alarm = mcux_rtc_disable_alarm,
+	.cancel_alarm = mcux_rtc_cancel_alarm,
 	.set_top_value = mcux_rtc_set_top_value,
 	.get_pending_int = mcux_rtc_get_pending_int,
 	.get_top_value = mcux_rtc_get_top_value,

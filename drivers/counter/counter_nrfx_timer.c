@@ -108,7 +108,7 @@ static void _disable(struct device *dev, u8_t id)
 	config->ch_data[id].callback = NULL;
 }
 
-static int counter_nrfx_disable_alarm(struct device *dev, u8_t chan_id)
+static int counter_nrfx_cancel_alarm(struct device *dev, u8_t chan_id)
 {
 	_disable(dev, chan_id);
 
@@ -214,7 +214,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	.stop = counter_nrfx_stop,
 	.read = counter_nrfx_read,
 	.set_alarm = counter_nrfx_set_alarm,
-	.disable_alarm = counter_nrfx_disable_alarm,
+	.cancel_alarm = counter_nrfx_cancel_alarm,
 	.set_top_value = counter_nrfx_set_top_value,
 	.get_pending_int = counter_nrfx_get_pending_int,
 	.get_top_value = counter_nrfx_get_top_value,
