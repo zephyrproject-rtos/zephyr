@@ -19,3 +19,4 @@ supported:
   - spi
   - counter
   - rtc
+  - counter

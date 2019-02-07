@@ -14,5 +14,7 @@ supported:
   - gpio
   - usb device
   - nvs
+  - rtc
+  - counter
 ram: 640
 flash: 2048
