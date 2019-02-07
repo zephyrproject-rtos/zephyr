@@ -188,11 +188,20 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 
 int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 {
-	LOG_DBG("ep %x, mps %d, type %d", cfg->ep_addr, cfg->ep_mps,
-		cfg->ep_type);
+	u16_t ep_mps = cfg->ep_mps;
+	u8_t ep = cfg->ep_addr;
+	u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
 
-	if (!usbip_ctrl.attached && !usbip_ep_is_valid(cfg->ep_addr)) {
+	LOG_DBG("ep %x, mps %d, type %d", ep, ep_mps, cfg->ep_type);
+
+	if (!usbip_ctrl.attached && !usbip_ep_is_valid(ep)) {
 		return -EINVAL;
+	}
+
+	if (USBIP_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
+		usbip_ctrl.out_ep_ctrl[ep_idx].mps = ep_mps;
+	} else {
+		usbip_ctrl.in_ep_ctrl[ep_idx].mps = ep_mps;
 	}
 
 	return 0;
@@ -458,6 +467,12 @@ int usb_dc_set_status_callback(const usb_dc_status_callback cb)
 int usb_dc_ep_mps(const u8_t ep)
 {
 	u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
+
+	LOG_DBG("ep %x", ep);
+
+	if (!usbip_ep_is_valid(ep)) {
+		return -EINVAL;
+	}
 
 	if (USBIP_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
 		return usbip_ctrl.out_ep_ctrl[ep_idx].mps;
