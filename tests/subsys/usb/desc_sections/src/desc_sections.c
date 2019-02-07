@@ -113,6 +113,8 @@ DEFINE_LOOPBACK_DESC(1);
 DEFINE_LOOPBACK_EP_CFG(1);
 DEFINE_LOOPBACK_CFG_DATA(1);
 
+#define NUM_INSTANCES	2
+
 static void test_desc_sections(void)
 {
 	u8_t *head;
@@ -145,7 +147,10 @@ static void test_desc_sections(void)
 	zassert_equal((int)__usb_descriptor_end - (int)__usb_descriptor_start,
 		      119, NULL);
 
-	zassert_equal((int)__usb_data_end - (int)__usb_data_start, 88, NULL);
+	/* Calculate number of structures */
+	zassert_equal(__usb_data_end - __usb_data_start, NUM_INSTANCES, NULL);
+	zassert_equal((int)__usb_data_end - (int)__usb_data_start,
+		      NUM_INSTANCES * sizeof(struct usb_cfg_data), NULL);
 }
 
 /*test case main entry*/
