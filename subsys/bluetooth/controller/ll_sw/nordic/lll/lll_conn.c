@@ -12,6 +12,7 @@
 #include <misc/util.h>
 #include <drivers/clock_control/nrf_clock_control.h>
 
+#include "util/mem.h"
 #include "util/memq.h"
 #include "util/mfifo.h"
 
