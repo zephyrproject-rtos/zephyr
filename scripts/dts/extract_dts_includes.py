@@ -9,7 +9,6 @@
 # vim: ai:ts=4:sw=4
 
 import sys
-from os import listdir
 import os, fnmatch
 import re
 import yaml
