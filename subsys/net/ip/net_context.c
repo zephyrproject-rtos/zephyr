@@ -1265,7 +1265,8 @@ static int context_sendto(struct net_context *context,
 			  socklen_t addrlen,
 			  net_context_send_cb_t cb,
 			  s32_t timeout,
-			  void *user_data)
+			  void *user_data,
+			  bool sendto)
 {
 	struct net_pkt *pkt;
 	size_t tmp_len;
@@ -1389,7 +1390,24 @@ static int context_sendto(struct net_context *context,
 		}
 	}
 
-	if (IS_ENABLED(CONFIG_NET_UDP) &&
+	if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+	    net_if_is_ip_offloaded(net_context_get_iface(context))) {
+		ret = net_pkt_write(pkt, buf, len);
+		if (ret < 0) {
+			goto fail;
+		}
+
+		net_pkt_cursor_init(pkt);
+
+		if (sendto) {
+			ret = net_offload_sendto(net_context_get_iface(context),
+						 pkt, dst_addr, addrlen, cb,
+						 timeout, user_data);
+		} else {
+			ret = net_offload_send(net_context_get_iface(context),
+					       pkt, cb, timeout, user_data);
+		}
+	} else if (IS_ENABLED(CONFIG_NET_UDP) &&
 	    net_context_get_ip_proto(context) == IPPROTO_UDP) {
 		ret = context_setup_udp_packet(context, pkt, buf, len,
 					       dst_addr, addrlen);
@@ -1488,7 +1506,7 @@ int net_context_send(struct net_context *context,
 	}
 
 	ret = context_sendto(context, buf, len, &context->remote,
-			     addrlen, cb, timeout, user_data);
+			     addrlen, cb, timeout, user_data, false);
 unlock:
 	k_mutex_unlock(&context->lock);
 
@@ -1510,7 +1528,7 @@ int net_context_sendto(struct net_context *context,
 	k_mutex_lock(&context->lock, K_FOREVER);
 
 	ret = context_sendto(context, buf, len, dst_addr, addrlen,
-			     cb, timeout, user_data);
+			     cb, timeout, user_data, true);
 
 	k_mutex_unlock(&context->lock);
 
