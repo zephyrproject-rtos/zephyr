@@ -46,6 +46,11 @@
         ((NRF_CLOCK_Type *)DT_NORDIC_NRF_CLOCK_CLOCK_BASE_ADDRESS)
 #endif
 
+#ifdef DT_NORDIC_NRF_DPPIC_0_BASE_ADDRESS
+#define NRF_DPPIC \
+        ((NRF_DPPIC_Type *)DT_NORDIC_NRF_DPPIC_0_BASE_ADDRESS)
+#endif
+
 #ifdef DT_NORDIC_NRF_FICR_FICR_BASE_ADDRESS
 #define NRF_FICR \
         ((FICR_INFO_Type *)DT_NORDIC_NRF_FICR_FICR_BASE_ADDRESS)
@@ -284,8 +289,8 @@
 
 // <e> NRFX_DPPI_ENABLED - nrfx_dppi - DPPI allocator.
 //==========================================================
-#ifndef NRFX_DPPI_ENABLED
-#define NRFX_DPPI_ENABLED 0
+#ifdef CONFIG_NRFX_DPPI
+#define NRFX_DPPI_ENABLED 1
 #endif
 // <e> NRFX_DPPI_CONFIG_LOG_ENABLED - Enables logging in the module.
 //==========================================================

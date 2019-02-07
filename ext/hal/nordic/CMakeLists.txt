@@ -31,6 +31,7 @@ if(CONFIG_HAS_NRFX)
 
   zephyr_sources_ifdef(CONFIG_NRFX_ADC     nrfx/drivers/src/nrfx_adc.c)
   zephyr_sources_ifdef(CONFIG_NRFX_CLOCK   nrfx/drivers/src/nrfx_clock.c)
+  zephyr_sources_ifdef(CONFIG_NRFX_DPPI    nrfx/drivers/src/nrfx_dppi.c)
   zephyr_sources_ifdef(CONFIG_NRFX_GPIOTE  nrfx/drivers/src/nrfx_gpiote.c)
   zephyr_sources_ifdef(CONFIG_NRFX_NFCT    nrfx/drivers/src/nrfx_nfct.c)
   zephyr_sources_ifdef(CONFIG_NRFX_PPI     nrfx/drivers/src/nrfx_ppi.c)

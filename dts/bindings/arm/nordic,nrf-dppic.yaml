@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2019 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Nordic DPPIC
+version: 0.1
+
+description: >
+    Binding for the Nordic DPPIC
+    Distributed Programmable Peripheral Interconnect Controller
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "nordic,nrf-dppic"
+      generation: define
+
+    reg:
+      type: array
+      category: required
+      description: mmio register space
+      generation: define
+...
