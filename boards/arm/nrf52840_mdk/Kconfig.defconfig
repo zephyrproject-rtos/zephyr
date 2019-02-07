@@ -16,6 +16,13 @@ config I2C_0
 
 endif # I2C
 
+if PWM
+
+config PWM_0
+	default y
+
+endif # PWM
+
 if USB
 
 config USB_NRF52840
