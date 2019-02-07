@@ -603,15 +603,30 @@ class DeviceHandler(Handler):
         """
         super().__init__(instance)
 
-    def monitor_serial(self, ser, harness):
+    def monitor_serial(self, ser, halt_fileno, harness):
         log_out_fp = open(self.log, "wt")
 
+        ser_fileno = ser.fileno()
+        readlist = [halt_fileno, ser_fileno]
+
         while ser.isOpen():
+            readable, _, _ = select.select(readlist, [], [], self.timeout)
+
+            if halt_fileno in readable:
+                verbose('halted')
+                ser.close()
+                break
+            if ser_fileno not in readable:
+                continue        # Timeout.
+
+            serial_line = None
             try:
                 serial_line = ser.readline()
             except TypeError:
                 pass
 
+            # Just because ser_fileno has data doesn't mean an entire line
+            # is available yet.
             if serial_line:
                 sl = serial_line.decode('utf-8', 'ignore')
                 verbose("DEVICE: {0}".format(sl.rstrip()))
@@ -619,6 +634,7 @@ class DeviceHandler(Handler):
                 log_out_fp.write(sl)
                 log_out_fp.flush()
                 harness.handle(sl.rstrip())
+
             if harness.state:
                 ser.close()
                 break
@@ -651,8 +667,10 @@ class DeviceHandler(Handler):
         harness_import = HarnessImporter(harness_name)
         harness = harness_import.instance
         harness.configure(self.instance)
+        rpipe, wpipe = os.pipe()
 
-        t = threading.Thread(target=self.monitor_serial, args=(ser, harness))
+        t = threading.Thread(target=self.monitor_serial, daemon=True,
+                             args=(ser, rpipe, harness))
         t.start()
 
         try:
@@ -661,12 +679,11 @@ class DeviceHandler(Handler):
             else:
                 subprocess.check_output(command, stderr=subprocess.PIPE)
         except subprocess.CalledProcessError:
-            pass
+            os.write(wpipe, b'x')    # halt the thread
 
         t.join(self.timeout)
         if t.is_alive():
             out_state = "timeout"
-            ser.close()
 
         if ser.isOpen():
             ser.close()
