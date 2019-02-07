@@ -489,7 +489,7 @@ void _thread_priority_set(struct k_thread *thread, int prio)
 	}
 	sys_trace_thread_priority_set(thread);
 
-	if (need_sched) {
+	if (need_sched && _current->base.sched_locked == 0) {
 		_reschedule_unlocked();
 	}
 }
