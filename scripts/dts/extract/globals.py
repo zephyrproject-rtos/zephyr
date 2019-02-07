@@ -230,13 +230,12 @@ def get_parent_address(node_address):
 def find_parent_prop(node_address, prop):
     parent_address = get_parent_address(node_address)
 
-    if prop in reduced[parent_address]['props']:
-        parent_prop = reduced[parent_address]['props'].get(prop)
-    else:
+    if prop not in reduced[parent_address]['props']:
         raise Exception("Parent of node " + node_address +
                         " has no " + prop + " property")
 
-    return parent_prop
+    return reduced[parent_address]['props'][prop]
+
 
 # Get the #{address,size}-cells for a given node
 def get_addr_size_cells(node_address):
