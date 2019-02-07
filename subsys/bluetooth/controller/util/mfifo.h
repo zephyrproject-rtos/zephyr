@@ -10,10 +10,10 @@
 			u8_t const n; /* TODO: const, optimise RAM use */ \
 			u8_t f; \
 			u8_t l; \
-			u8_t m[sz * ((cnt) + 1)]; \
+			u8_t MALIGN(4) m[MROUND(sz) * ((cnt) + 1)]; \
 		} mfifo_##name = { \
 			.n = ((cnt) + 1), \
-			.s = (sz), \
+			.s = MROUND(sz), \
 			.f = 0, \
 			.l = 0, \
 		}
