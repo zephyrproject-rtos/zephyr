@@ -162,6 +162,8 @@ static struct usb_dev_priv {
 	bool enabled;
 	/** Currently selected configuration */
 	u8_t configuration;
+	/** Remote wakeup feature status */
+	bool remote_wakeup;
 	/** Transfer list */
 	struct usb_transfer_data transfer[MAX_NUM_TRANSFERS];
 } usb_dev;
@@ -615,9 +617,15 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 	case REQ_GET_STATUS:
 		LOG_DBG("REQ_GET_STATUS");
 		/* bit 0: self-powered */
-		/* bit 1: remote wakeup = not supported */
+		/* bit 1: remote wakeup */
 		data[0] = 0U;
 		data[1] = 0U;
+
+		if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
+			data[0] |= (usb_dev.remote_wakeup ?
+				    DEVICE_STATUS_REMOTE_WAKEUP : 0);
+		}
+
 		*len = 2;
 		break;
 
@@ -654,18 +662,29 @@ static bool usb_handle_std_device_req(struct usb_setup_packet *setup,
 
 	case REQ_CLEAR_FEATURE:
 		LOG_DBG("REQ_CLEAR_FEATURE");
+		ret = false;
+
+		if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
+			if (value == FEA_REMOTE_WAKEUP) {
+				usb_dev.remote_wakeup = false;
+				ret = true;
+			}
+		}
 		break;
 	case REQ_SET_FEATURE:
 		LOG_DBG("REQ_SET_FEATURE");
+		ret = false;
 
-		if (value == FEA_REMOTE_WAKEUP) {
-			/* put DEVICE_REMOTE_WAKEUP code here */
+		if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
+			if (value == FEA_REMOTE_WAKEUP) {
+				usb_dev.remote_wakeup = true;
+				ret = true;
+			}
 		}
 
 		if (value == FEA_TEST_MODE) {
 			/* put TEST_MODE code here */
 		}
-		ret = false;
 		break;
 
 	case REQ_SET_DESCRIPTOR:
@@ -1366,6 +1385,18 @@ int usb_transfer_sync(u8_t ep, u8_t *data, size_t dlen, unsigned int flags)
 	k_sem_take(&pdata.sem, K_FOREVER);
 
 	return pdata.tsize;
+}
+
+int usb_wakeup_request(void)
+{
+	if (IS_ENABLED(CONFIG_USB_DEVICE_REMOTE_WAKEUP)) {
+		if (usb_dev.remote_wakeup) {
+			return usb_dc_wakeup_request();
+		}
+		return -EACCES;
+	} else {
+		return -ENOTSUP;
+	}
 }
 
 #ifdef CONFIG_USB_COMPOSITE_DEVICE

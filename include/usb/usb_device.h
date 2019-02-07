@@ -419,6 +419,18 @@ int usb_transfer_sync(u8_t ep, u8_t *data, size_t dlen, unsigned int flags);
 void usb_cancel_transfer(u8_t ep);
 
 /**
+ * @brief Start the USB remote wakeup procedure
+ *
+ * Function to request a remote wakeup.
+ * This feature must be enabled in configuration, otherwise
+ * it will always return -ENOTSUP error.
+ *
+ * @return 0 on success, negative errno code on fail,
+ *         i.e. when the bus is already active.
+ */
+int usb_wakeup_request(void);
+
+/**
  * @}
  */
 

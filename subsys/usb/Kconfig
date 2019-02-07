@@ -64,6 +64,11 @@ config USB_COMPOSITE_BUFFER_SIZE
 config USB_DEVICE_SOF
 	bool "Enable Start of Frame processing in events"
 
+config USB_DEVICE_REMOTE_WAKEUP
+	bool "Enable support for remote wakeup"
+	help
+	  This option requires USBD peripheral driver to also support remote wakeup.
+
 config USB_DEVICE_BOS
 	bool "Enable USB Binary Device Object Store (BOS)"
 
