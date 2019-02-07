@@ -20,7 +20,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_PKT_LOG_LEVEL);
 #include <net/net_pkt.h>
 #include <net/net_ip.h>
 
-#if defined(CONFIG_NET_NET_PKT_LOG_LEVEL_DBG)
+#if defined(CONFIG_NET_PKT_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
 #define NET_LOG_ENABLED 1
 #else
