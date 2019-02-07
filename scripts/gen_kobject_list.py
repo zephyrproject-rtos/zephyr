@@ -51,6 +51,7 @@ subsystems = [
     "sensor_driver_api",
     "spi_driver_api",
     "uart_driver_api",
+    "can_driver_api",
 ]
 
 
