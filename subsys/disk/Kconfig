@@ -47,6 +47,12 @@ endif # DISK_ACCESS
 
 if DISK_ACCESS_RAM
 
+config DISK_RAM_VOLUME_SIZE
+	int "RAM Disk size in kilobytes"
+	default 96
+	help
+	  Size of the RAM Disk.
+
 config DISK_RAM_VOLUME_NAME
 	string "RAM Disk mount point or drive name"
 	default "RAM"
