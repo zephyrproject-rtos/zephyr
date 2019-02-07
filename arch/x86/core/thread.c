@@ -75,15 +75,16 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	if ((options & K_USER) == 0) {
 		/* Running in kernel mode, kernel stack region is also a guard
 		 * page */
-		_x86_mmu_set_flags((void *)(stack_buf - MMU_PAGE_SIZE),
+		_x86_mmu_set_flags(&z_x86_kernel_pdpt,
+				   (void *)(stack_buf - MMU_PAGE_SIZE),
 				   MMU_PAGE_SIZE, MMU_ENTRY_NOT_PRESENT,
 				   MMU_PTE_P_MASK);
 	}
 #endif /* CONFIG_X86_USERSPACE */
 
 #if CONFIG_X86_STACK_PROTECTION
-	_x86_mmu_set_flags(stack, MMU_PAGE_SIZE, MMU_ENTRY_NOT_PRESENT,
-			   MMU_PTE_P_MASK);
+	_x86_mmu_set_flags(&z_x86_kernel_pdpt, stack, MMU_PAGE_SIZE,
+			   MMU_ENTRY_NOT_PRESENT, MMU_PTE_P_MASK);
 #endif
 
 	stack_high = (char *)STACK_ROUND_DOWN(stack_buf + stack_size);
@@ -131,13 +132,15 @@ void _x86_swap_update_page_tables(struct k_thread *incoming,
 				  struct k_thread *outgoing)
 {
 	/* Outgoing thread stack no longer accessible */
-	_x86_mmu_set_flags((void *)outgoing->stack_info.start,
+	_x86_mmu_set_flags(&z_x86_kernel_pdpt,
+			   (void *)outgoing->stack_info.start,
 			   ROUND_UP(outgoing->stack_info.size, MMU_PAGE_SIZE),
 			   MMU_ENTRY_SUPERVISOR, MMU_PTE_US_MASK);
 
 
 	/* Userspace can now access the incoming thread's stack */
-	_x86_mmu_set_flags((void *)incoming->stack_info.start,
+	_x86_mmu_set_flags(&z_x86_kernel_pdpt,
+			   (void *)incoming->stack_info.start,
 			   ROUND_UP(incoming->stack_info.size, MMU_PAGE_SIZE),
 			   MMU_ENTRY_USER, MMU_PTE_US_MASK);
 
@@ -173,7 +176,8 @@ FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
 				     _current->stack_info.size);
 
 	/* Set up the kernel stack used during privilege elevation */
-	_x86_mmu_set_flags((void *)(_current->stack_info.start - MMU_PAGE_SIZE),
+	_x86_mmu_set_flags(&z_x86_kernel_pdpt,
+			   (void *)(_current->stack_info.start - MMU_PAGE_SIZE),
 			   MMU_PAGE_SIZE,
 			   (MMU_ENTRY_PRESENT | MMU_ENTRY_WRITE |
 			    MMU_ENTRY_SUPERVISOR),

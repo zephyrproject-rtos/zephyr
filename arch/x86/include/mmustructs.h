@@ -146,49 +146,48 @@
  * Returns the page table entry for the addr
  * use the union to extract page entry related information.
  */
-#define X86_MMU_GET_PTE(addr)\
+#define X86_MMU_GET_PTE(pdpt, addr)\
 	((union x86_mmu_pte *)\
-	 (&X86_MMU_GET_PT_ADDR(addr)->entry[MMU_PAGE_NUM(addr)]))
+	 (&X86_MMU_GET_PT_ADDR(pdpt, addr)->entry[MMU_PAGE_NUM(addr)]))
 
 /*
  * Returns the Page table address for the particular address.
  * Page Table address(returned value) is always 4KBytes aligned.
  */
-#define X86_MMU_GET_PT_ADDR(addr) \
+#define X86_MMU_GET_PT_ADDR(pdpt, addr) \
 	((struct x86_mmu_pt *)\
-	 (X86_MMU_GET_PDE(addr)->pt << MMU_PAGE_SHIFT))
+	 (X86_MMU_GET_PDE(pdpt, addr)->pt << MMU_PAGE_SHIFT))
 
 /* Returns the page directory entry for the addr
  * use the union to extract page directory entry related information.
  */
-#define X86_MMU_GET_PDE(addr)\
+#define X86_MMU_GET_PDE(pdpt, addr)\
 	((union x86_mmu_pde_pt *)					\
-	 (&X86_MMU_GET_PD_ADDR(addr)->entry[MMU_PDE_NUM(addr)]))
+	 (&X86_MMU_GET_PD_ADDR(pdpt, addr)->entry[MMU_PDE_NUM(addr)]))
 
 /* Returns the page directory entry for the addr
  * use the union to extract page directory entry related information.
  */
-#define X86_MMU_GET_PD_ADDR(addr) \
+#define X86_MMU_GET_PD_ADDR(pdpt, addr) \
 	((struct x86_mmu_pd *)		       \
-	 (X86_MMU_GET_PDPTE(addr)->pd << MMU_PAGE_SHIFT))
+	 (X86_MMU_GET_PDPTE(pdpt, addr)->pd << MMU_PAGE_SHIFT))
 
 /* Returns the page directory pointer entry */
-#define X86_MMU_GET_PDPTE(addr) \
-	((union x86_mmu_pdpte *)		       \
-	 (&X86_MMU_PDPT->entry[MMU_PDPTE_NUM(addr)]))
+#define X86_MMU_GET_PDPTE(pdpt, addr) \
+	(&((pdpt)->entry[MMU_PDPTE_NUM(addr)]))
 
 /* Return the Page directory address.
  * input is the entry number
  */
-#define X86_MMU_GET_PD_ADDR_INDEX(index) \
+#define X86_MMU_GET_PD_ADDR_INDEX(pdpt, index) \
 	((struct x86_mmu_pd *)		       \
-	 (X86_MMU_GET_PDPTE_INDEX(index)->pd << MMU_PAGE_SHIFT))
+	 (X86_MMU_GET_PDPTE_INDEX(pdpt, index)->pd << MMU_PAGE_SHIFT))
 
 /* Returns the page directory pointer entry.
  * Input is the entry number
  */
-#define X86_MMU_GET_PDPTE_INDEX(index) \
-	((union x86_mmu_pdpte *)(&X86_MMU_PDPT->entry[index]))
+#define X86_MMU_GET_PDPTE_INDEX(pdpt, index) \
+	(&((pdpt)->entry[index]))
 
 /* memory partition arch/soc independent attribute */
 #define K_MEM_PARTITION_P_RW_U_RW   (MMU_ENTRY_WRITE | \

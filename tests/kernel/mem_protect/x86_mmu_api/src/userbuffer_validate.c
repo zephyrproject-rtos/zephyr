@@ -27,10 +27,19 @@ void reset_flag(void);
 void reset_multi_pte_page_flag(void);
 void reset_multi_pde_flag(void);
 
+#define PDPT &z_x86_kernel_pdpt
+
 #define ADDR_PAGE_1 ((u8_t *)__bss_start + SKIP_SIZE * MMU_PAGE_SIZE)
 #define ADDR_PAGE_2 ((u8_t *)__bss_start + (SKIP_SIZE + 1) * MMU_PAGE_SIZE)
-#define PRESET_PAGE_1_VALUE (X86_MMU_GET_PTE(ADDR_PAGE_1)->p = 1)
-#define PRESET_PAGE_2_VALUE (X86_MMU_GET_PTE(ADDR_PAGE_2)->p = 1)
+#define PRESET_PAGE_1_VALUE (X86_MMU_GET_PTE(PDPT, ADDR_PAGE_1)->p = 1)
+#define PRESET_PAGE_2_VALUE (X86_MMU_GET_PTE(PDPT, ADDR_PAGE_2)->p = 1)
+
+
+static void set_flags(void *ptr, size_t size, x86_page_entry_data_t flags,
+		      x86_page_entry_data_t mask)
+{
+	_x86_mmu_set_flags(PDPT, ptr, size, flags, mask);
+}
 
 
 /* if Failure occurs
@@ -45,7 +54,7 @@ static int buffer_rw_read(void)
 {
 	PRESET_PAGE_1_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ,
 			   MMU_PDE_RW_MASK);
@@ -66,7 +75,7 @@ static int buffer_writeable_write(void)
 {
 	PRESET_PAGE_1_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE,
 			   MMU_PDE_RW_MASK);
@@ -86,7 +95,7 @@ static int buffer_readable_read(void)
 {
 	PRESET_PAGE_1_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ,
 			   MMU_PDE_RW_MASK);
@@ -106,7 +115,7 @@ static int buffer_readable_write(void)
 {
 	PRESET_PAGE_1_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE,
 			   MMU_PDE_RW_MASK);
@@ -128,7 +137,7 @@ static int buffer_supervisor_rw(void)
 {
 	PRESET_PAGE_1_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
@@ -149,7 +158,7 @@ static int buffer_supervisor_w(void)
 {
 	PRESET_PAGE_1_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
@@ -170,7 +179,7 @@ static int buffer_user_rw_user(void)
 {
 	PRESET_PAGE_1_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_USER,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
@@ -189,7 +198,7 @@ static int buffer_user_rw_supervisor(void)
 {
 	PRESET_PAGE_1_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
@@ -210,12 +219,12 @@ static int multi_page_buffer_user(void)
 	PRESET_PAGE_1_VALUE;
 	PRESET_PAGE_2_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
 
-	_x86_mmu_set_flags(ADDR_PAGE_2,
+	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
@@ -236,12 +245,12 @@ static int multi_page_buffer_write_user(void)
 	PRESET_PAGE_1_VALUE;
 	PRESET_PAGE_2_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
 
-	_x86_mmu_set_flags(ADDR_PAGE_2,
+	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
@@ -262,12 +271,12 @@ static int multi_page_buffer_read_user(void)
 	PRESET_PAGE_1_VALUE;
 	PRESET_PAGE_2_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
 
-	_x86_mmu_set_flags(ADDR_PAGE_2,
+	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
@@ -288,12 +297,12 @@ static int multi_page_buffer_read(void)
 	PRESET_PAGE_1_VALUE;
 	PRESET_PAGE_2_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
 
-	_x86_mmu_set_flags(ADDR_PAGE_2,
+	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ | MMU_ENTRY_SUPERVISOR,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
@@ -314,12 +323,12 @@ static int multi_pde_buffer_rw(void)
 	PRESET_PAGE_1_VALUE;
 	PRESET_PAGE_2_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ,
 			   MMU_PDE_RW_MASK);
 
-	_x86_mmu_set_flags(ADDR_PAGE_2,
+	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ,
 			   MMU_PDE_RW_MASK);
@@ -341,12 +350,12 @@ static int multi_pde_buffer_writeable_write(void)
 	PRESET_PAGE_1_VALUE;
 	PRESET_PAGE_2_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE,
 			   MMU_PDE_RW_MASK);
 
-	_x86_mmu_set_flags(ADDR_PAGE_2,
+	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE,
 			   MMU_PDE_RW_MASK);
@@ -367,12 +376,12 @@ static int multi_pde_buffer_readable_read(void)
 	PRESET_PAGE_1_VALUE;
 	PRESET_PAGE_2_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ,
 			   MMU_PDE_RW_MASK);
 
-	_x86_mmu_set_flags(ADDR_PAGE_2,
+	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_READ,
 			   MMU_PDE_RW_MASK);
@@ -393,12 +402,12 @@ static int multi_pde_buffer_readable_write(void)
 	PRESET_PAGE_1_VALUE;
 	PRESET_PAGE_2_VALUE;
 
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE,
 			   MMU_PDE_RW_MASK);
 
-	_x86_mmu_set_flags(ADDR_PAGE_2,
+	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE,
 			   MMU_PDE_RW_MASK);
@@ -417,7 +426,7 @@ static int multi_pde_buffer_readable_write(void)
 
 void reset_flag(void)
 {
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_USER,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
@@ -425,12 +434,12 @@ void reset_flag(void)
 
 void reset_multi_pte_page_flag(void)
 {
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_USER,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
 
-	_x86_mmu_set_flags(ADDR_PAGE_2,
+	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_USER,
 			   MMU_PTE_RW_MASK | MMU_PTE_US_MASK);
@@ -438,12 +447,12 @@ void reset_multi_pte_page_flag(void)
 
 void reset_multi_pde_flag(void)
 {
-	_x86_mmu_set_flags(ADDR_PAGE_1,
+	set_flags(ADDR_PAGE_1,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_USER,
 			   MMU_PDE_RW_MASK | MMU_PDE_US_MASK);
 
-	_x86_mmu_set_flags(ADDR_PAGE_2,
+	set_flags(ADDR_PAGE_2,
 			   MMU_PAGE_SIZE,
 			   MMU_ENTRY_WRITE | MMU_ENTRY_USER,
 			   MMU_PDE_RW_MASK | MMU_PDE_US_MASK);

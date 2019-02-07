@@ -348,7 +348,7 @@ __csSet:
 #ifdef CONFIG_X86_MMU
 
 	/* load the page directory address into the registers*/
-	movl $__mmu_tables_start, %eax
+	movl $z_x86_kernel_pdpt, %eax
 	movl %eax, %cr3
 
 	/* Enable PAE */
