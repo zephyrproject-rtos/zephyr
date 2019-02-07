@@ -395,9 +395,9 @@ def yaml_traverse_inherited(fname, node):
     return node
 
 
-def get_key_value(k, v, value_tabs):
-    line = "#define " + k
-    return line + (value_tabs - len(line)//8)*'\t' + str(v) + '\n'
+def define_str(name, value, value_tabs):
+    line = "#define " + name
+    return line + (value_tabs - len(line)//8)*'\t' + str(value) + '\n'
 
 
 def write_conf(f):
@@ -443,11 +443,11 @@ def write_header(f):
 
         for prop in sorted(defs[node]):
             if prop != 'aliases':
-                f.write(get_key_value(prop, defs[node][prop], value_tabs))
+                f.write(define_str(prop, defs[node][prop], value_tabs))
 
         for alias in sorted(defs[node]['aliases']):
             alias_target = defs[node]['aliases'][alias]
-            f.write(get_key_value(alias, alias_target, value_tabs))
+            f.write(define_str(alias, alias_target, value_tabs))
 
         f.write('\n')
 
