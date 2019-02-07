@@ -172,7 +172,7 @@ static void tls_debug(void *ctx, int level, const char *file,
 	NET_DBG("%s:%04d: |%d| %s", basename, line, level,
 		log_strdup(str));
 }
-#endif /* defined(MBEDTLS_DEBUG_C) && defined(CONFIG_NET_TLS_DEBUG) */
+#endif /* defined(MBEDTLS_DEBUG_C) && (CONFIG_NET_SOCKETS_LOG_LEVEL >= LOG_LEVEL_DBG) */
 
 #if defined(CONFIG_ENTROPY_HAS_DRIVER)
 static int tls_entropy_func(void *ctx, unsigned char *buf, size_t len)

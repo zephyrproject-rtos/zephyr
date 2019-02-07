@@ -42,7 +42,7 @@ config NET_LLDP_TX_HOLD
 	range 1 100
 	help
 	  This value (msgTxHold) is used as a multiplier of
-	  CONFIG_NET_LLDP_MSG_TX_INTERVAL, to determine the value to be used
+	  CONFIG_NET_LLDP_TX_INTERVAL, to determine the value to be used
 	  as Time to Live in LLDP frames. For further information please
 	  refer to section 9.2.5.6 of the LLDP spec.
 
