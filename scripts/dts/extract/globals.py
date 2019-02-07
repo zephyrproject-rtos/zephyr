@@ -218,13 +218,9 @@ def get_node_label(node_address):
         def_label += '_' + str_to_label(node_address.split('/')[-1])
     return def_label
 
+
 def get_parent_address(node_address):
-    parent_address = ''
-
-    for comp in node_address.split('/')[1:-1]:
-        parent_address += '/' + comp
-
-    return parent_address
+    return '/'.join(node_address.split('/')[:-1])
 
 
 def find_parent_prop(node_address, prop):
