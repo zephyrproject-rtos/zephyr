@@ -426,6 +426,13 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 				 sizeof(db_hash));
 }
 
+static void clear_cf_cfg(struct gatt_cf_cfg *cfg)
+{
+	bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
+	memset(cfg->data, 0, sizeof(cfg->data));
+	atomic_set(cfg->flags, 0);
+}
+
 static void remove_cf_cfg(struct bt_conn *conn)
 {
 	struct gatt_cf_cfg *cfg;
@@ -442,8 +449,7 @@ static void remove_cf_cfg(struct bt_conn *conn)
 	 * default value at each connection.
 	 */
 	if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
-		bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
-		memset(cfg->data, 0, sizeof(cfg->data));
+		clear_cf_cfg(cfg);
 	} else {
 		/* Update address in case it has changed */
 		bt_addr_le_copy(&cfg->peer, &conn->le.dst);
@@ -2815,6 +2821,50 @@ bool bt_gatt_change_aware(struct bt_conn *conn, bool req)
 #endif
 }
 
+static int bt_gatt_store_cf(struct bt_conn *conn)
+{
+#if defined(CONFIG_BT_GATT_CACHING)
+	struct gatt_cf_cfg *cfg;
+	char key[BT_SETTINGS_KEY_MAX];
+	char *str;
+	size_t len;
+	int err;
+
+	cfg = find_cf_cfg(conn);
+	if (!cfg) {
+		/* No cfg found just cleare it */
+		str = NULL;
+		len = 0;
+		goto save;
+	}
+
+	if (conn->id) {
+		char id_str[4];
+
+		snprintk(id_str, sizeof(id_str), "%u", conn->id);
+		bt_settings_encode_key(key, sizeof(key), "cf",
+				       &conn->le.dst, id_str);
+	} else {
+		bt_settings_encode_key(key, sizeof(key), "cf",
+				       &conn->le.dst, NULL);
+	}
+
+	str = (char *)cfg->data;
+	len = sizeof(cfg->data);
+
+save:
+	err = settings_save_one(key, str, len);
+	if (err) {
+		BT_ERR("Failed to store Client Features (err %d)", err);
+		return err;
+	}
+
+	BT_DBG("Stored CF for %s (%s)", bt_addr_le_str(&conn->le.dst), key);
+#endif /* CONFIG_BT_GATT_CACHING */
+	return 0;
+
+}
+
 void bt_gatt_disconnected(struct bt_conn *conn)
 {
 	BT_DBG("conn %p", conn);
@@ -2831,6 +2881,7 @@ void bt_gatt_disconnected(struct bt_conn *conn)
 	if (IS_ENABLED(CONFIG_BT_SETTINGS) &&
 	    bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
 		bt_gatt_store_ccc(conn->id, &conn->le.dst);
+		bt_gatt_store_cf(conn);
 	}
 
 #if defined(CONFIG_BT_GATT_CLIENT)
@@ -3121,4 +3172,66 @@ static int ccc_set(int argc, char **argv, void *val_ctx)
 }
 
 BT_SETTINGS_DEFINE(ccc, ccc_set, NULL, NULL);
+
+#if defined(CONFIG_BT_GATT_CACHING)
+static struct gatt_cf_cfg *find_cf_cfg_by_addr(const bt_addr_le_t *addr)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
+		if (!bt_addr_le_cmp(addr, &cf_cfg[i].peer)) {
+			return &cf_cfg[i];
+		}
+	}
+
+	return NULL;
+}
+
+static int cf_set(int argc, char **argv, void *val_ctx)
+{
+	struct gatt_cf_cfg *cfg;
+	bt_addr_le_t addr;
+	int len, err;
+
+	if (argc < 1) {
+		BT_ERR("Insufficient number of arguments");
+		return -EINVAL;
+	}
+
+	err = bt_settings_decode_key(argv[0], &addr);
+	if (err) {
+		BT_ERR("Unable to decode address %s", argv[0]);
+		return -EINVAL;
+	}
+
+	cfg = find_cf_cfg_by_addr(&addr);
+	if (!cfg) {
+		cfg = find_cf_cfg(NULL);
+		if (!cfg) {
+			BT_ERR("Unable to restore CF: no cfg left");
+			return 0;
+		}
+	}
+
+	if (settings_val_get_len_cb(val_ctx)) {
+		len = settings_val_read_cb(val_ctx, cfg->data,
+					   sizeof(cfg->data));
+		if (len < 0) {
+			BT_ERR("Failed to decode value (err %d)", len);
+			return len;
+		}
+
+		BT_DBG("Read CF: len %d", len);
+	} else {
+		bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
+		memset(cfg->data, 0, sizeof(cfg->data));
+	}
+
+	BT_DBG("Restored CF for %s", bt_addr_le_str(&addr));
+
+	return 0;
+}
+
+BT_SETTINGS_DEFINE(cf, cf_set, NULL, NULL);
+#endif /*CONFIG_BT_GATT_CACHING */
 #endif /* CONFIG_BT_SETTINGS */
