@@ -91,6 +91,12 @@
 	scl-pin = <31>;
 };
 
+&pwm0 {
+	status = "ok";
+	ch0-pin = <22>;
+	ch0-inverted;
+};
+
 &flash0 {
 	/*
 	 * For more information, see:
