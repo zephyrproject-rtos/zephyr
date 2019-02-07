@@ -20,10 +20,10 @@
  */
 #include "fat12_ramdisk.h"
 #else
-/* A 96KB RAM Disk, which meets ELM FAT fs's minimum block requirement. Fit for
- * qemu testing (as it may exceed target's RAM limits).
+/* RAM Disk of configurable size. Fit for qemu testing (as it may exceed
+ * target's RAM limits).
  */
-#define RAMDISK_VOLUME_SIZE (192 * RAMDISK_SECTOR_SIZE)
+#define RAMDISK_VOLUME_SIZE (CONFIG_DISK_RAM_VOLUME_SIZE * 1024)
 static u8_t ramdisk_buf[RAMDISK_VOLUME_SIZE];
 #endif
 
