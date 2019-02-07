@@ -2782,7 +2782,7 @@ typedef union {
 #define GMAC_TXLPITIME_Msk                  _U_(0xFFFFFF)                                  /**< (GMAC_TXLPITIME) Register Mask  */
 
 
-/* -------- GMAC_ISRPQ : (GMAC Offset: 0x3fc) (R/ 32) Interrupt Status Register Priority Queue (index = 1) 0 -------- */
+/* -------- GMAC_ISRPQ : (GMAC Offset: 0x400) (R/ 32) Interrupt Status Register Priority Queue (index = 1) 0 -------- */
 #if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 typedef union { 
   struct {
@@ -2802,7 +2802,7 @@ typedef union {
 } GMAC_ISRPQ_Type;
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
-#define GMAC_ISRPQ_OFFSET                   (0x3FC)                                       /**<  (GMAC_ISRPQ) Interrupt Status Register Priority Queue (index = 1) 0  Offset */
+#define GMAC_ISRPQ_OFFSET                   (0x400)                                       /**<  (GMAC_ISRPQ) Interrupt Status Register Priority Queue (index = 1) 0  Offset */
 
 #define GMAC_ISRPQ_RCOMP_Pos                1                                              /**< (GMAC_ISRPQ) Receive Complete Position */
 #define GMAC_ISRPQ_RCOMP_Msk                (_U_(0x1) << GMAC_ISRPQ_RCOMP_Pos)             /**< (GMAC_ISRPQ) Receive Complete Mask */
@@ -2829,7 +2829,7 @@ typedef union {
 #define GMAC_ISRPQ_Msk                      _U_(0xCE6)                                     /**< (GMAC_ISRPQ) Register Mask  */
 
 
-/* -------- GMAC_TBQBAPQ : (GMAC Offset: 0x43c) (R/W 32) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0 -------- */
+/* -------- GMAC_TBQBAPQ : (GMAC Offset: 0x440) (R/W 32) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0 -------- */
 #if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 typedef union { 
   struct {
@@ -2840,7 +2840,7 @@ typedef union {
 } GMAC_TBQBAPQ_Type;
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
-#define GMAC_TBQBAPQ_OFFSET                 (0x43C)                                       /**<  (GMAC_TBQBAPQ) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0  Offset */
+#define GMAC_TBQBAPQ_OFFSET                 (0x440)                                       /**<  (GMAC_TBQBAPQ) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0  Offset */
 
 #define GMAC_TBQBAPQ_TXBQBA_Pos             2                                              /**< (GMAC_TBQBAPQ) Transmit Buffer Queue Base Address Position */
 #define GMAC_TBQBAPQ_TXBQBA_Msk             (_U_(0x3FFFFFFF) << GMAC_TBQBAPQ_TXBQBA_Pos)   /**< (GMAC_TBQBAPQ) Transmit Buffer Queue Base Address Mask */
@@ -2849,7 +2849,7 @@ typedef union {
 #define GMAC_TBQBAPQ_Msk                    _U_(0xFFFFFFFC)                                /**< (GMAC_TBQBAPQ) Register Mask  */
 
 
-/* -------- GMAC_RBQBAPQ : (GMAC Offset: 0x47c) (R/W 32) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0 -------- */
+/* -------- GMAC_RBQBAPQ : (GMAC Offset: 0x480) (R/W 32) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0 -------- */
 #if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 typedef union { 
   struct {
@@ -2860,7 +2860,7 @@ typedef union {
 } GMAC_RBQBAPQ_Type;
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
-#define GMAC_RBQBAPQ_OFFSET                 (0x47C)                                       /**<  (GMAC_RBQBAPQ) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0  Offset */
+#define GMAC_RBQBAPQ_OFFSET                 (0x480)                                       /**<  (GMAC_RBQBAPQ) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0  Offset */
 
 #define GMAC_RBQBAPQ_RXBQBA_Pos             2                                              /**< (GMAC_RBQBAPQ) Receive Buffer Queue Base Address Position */
 #define GMAC_RBQBAPQ_RXBQBA_Msk             (_U_(0x3FFFFFFF) << GMAC_RBQBAPQ_RXBQBA_Pos)   /**< (GMAC_RBQBAPQ) Receive Buffer Queue Base Address Mask */
@@ -2869,7 +2869,7 @@ typedef union {
 #define GMAC_RBQBAPQ_Msk                    _U_(0xFFFFFFFC)                                /**< (GMAC_RBQBAPQ) Register Mask  */
 
 
-/* -------- GMAC_RBSRPQ : (GMAC Offset: 0x49c) (R/W 32) Receive Buffer Size Register Priority Queue (index = 1) 0 -------- */
+/* -------- GMAC_RBSRPQ : (GMAC Offset: 0x4a0) (R/W 32) Receive Buffer Size Register Priority Queue (index = 1) 0 -------- */
 #if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 typedef union { 
   struct {
@@ -2880,7 +2880,7 @@ typedef union {
 } GMAC_RBSRPQ_Type;
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
-#define GMAC_RBSRPQ_OFFSET                  (0x49C)                                       /**<  (GMAC_RBSRPQ) Receive Buffer Size Register Priority Queue (index = 1) 0  Offset */
+#define GMAC_RBSRPQ_OFFSET                  (0x4A0)                                       /**<  (GMAC_RBSRPQ) Receive Buffer Size Register Priority Queue (index = 1) 0  Offset */
 
 #define GMAC_RBSRPQ_RBS_Pos                 0                                              /**< (GMAC_RBSRPQ) Receive Buffer Size Position */
 #define GMAC_RBSRPQ_RBS_Msk                 (_U_(0xFFFF) << GMAC_RBSRPQ_RBS_Pos)           /**< (GMAC_RBSRPQ) Receive Buffer Size Mask */
@@ -3050,7 +3050,7 @@ typedef union {
 #define GMAC_ST2RPQ_Msk                     _U_(0x7FFFFF77)                                /**< (GMAC_ST2RPQ) Register Mask  */
 
 
-/* -------- GMAC_IERPQ : (GMAC Offset: 0x5fc) (/W 32) Interrupt Enable Register Priority Queue (index = 1) 0 -------- */
+/* -------- GMAC_IERPQ : (GMAC Offset: 0x600) (/W 32) Interrupt Enable Register Priority Queue (index = 1) 0 -------- */
 #if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 typedef union { 
   struct {
@@ -3070,7 +3070,7 @@ typedef union {
 } GMAC_IERPQ_Type;
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
-#define GMAC_IERPQ_OFFSET                   (0x5FC)                                       /**<  (GMAC_IERPQ) Interrupt Enable Register Priority Queue (index = 1) 0  Offset */
+#define GMAC_IERPQ_OFFSET                   (0x600)                                       /**<  (GMAC_IERPQ) Interrupt Enable Register Priority Queue (index = 1) 0  Offset */
 
 #define GMAC_IERPQ_RCOMP_Pos                1                                              /**< (GMAC_IERPQ) Receive Complete Position */
 #define GMAC_IERPQ_RCOMP_Msk                (_U_(0x1) << GMAC_IERPQ_RCOMP_Pos)             /**< (GMAC_IERPQ) Receive Complete Mask */
@@ -3097,7 +3097,7 @@ typedef union {
 #define GMAC_IERPQ_Msk                      _U_(0xCE6)                                     /**< (GMAC_IERPQ) Register Mask  */
 
 
-/* -------- GMAC_IDRPQ : (GMAC Offset: 0x61c) (/W 32) Interrupt Disable Register Priority Queue (index = 1) 0 -------- */
+/* -------- GMAC_IDRPQ : (GMAC Offset: 0x620) (/W 32) Interrupt Disable Register Priority Queue (index = 1) 0 -------- */
 #if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 typedef union { 
   struct {
@@ -3117,7 +3117,7 @@ typedef union {
 } GMAC_IDRPQ_Type;
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
-#define GMAC_IDRPQ_OFFSET                   (0x61C)                                       /**<  (GMAC_IDRPQ) Interrupt Disable Register Priority Queue (index = 1) 0  Offset */
+#define GMAC_IDRPQ_OFFSET                   (0x620)                                       /**<  (GMAC_IDRPQ) Interrupt Disable Register Priority Queue (index = 1) 0  Offset */
 
 #define GMAC_IDRPQ_RCOMP_Pos                1                                              /**< (GMAC_IDRPQ) Receive Complete Position */
 #define GMAC_IDRPQ_RCOMP_Msk                (_U_(0x1) << GMAC_IDRPQ_RCOMP_Pos)             /**< (GMAC_IDRPQ) Receive Complete Mask */
@@ -3144,7 +3144,7 @@ typedef union {
 #define GMAC_IDRPQ_Msk                      _U_(0xCE6)                                     /**< (GMAC_IDRPQ) Register Mask  */
 
 
-/* -------- GMAC_IMRPQ : (GMAC Offset: 0x63c) (R/W 32) Interrupt Mask Register Priority Queue (index = 1) 0 -------- */
+/* -------- GMAC_IMRPQ : (GMAC Offset: 0x640) (R/W 32) Interrupt Mask Register Priority Queue (index = 1) 0 -------- */
 #if !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__))
 typedef union { 
   struct {
@@ -3164,7 +3164,7 @@ typedef union {
 } GMAC_IMRPQ_Type;
 #endif /* !(defined(__ASSEMBLER__) || defined(__IAR_SYSTEMS_ASM__)) */
 
-#define GMAC_IMRPQ_OFFSET                   (0x63C)                                       /**<  (GMAC_IMRPQ) Interrupt Mask Register Priority Queue (index = 1) 0  Offset */
+#define GMAC_IMRPQ_OFFSET                   (0x640)                                       /**<  (GMAC_IMRPQ) Interrupt Mask Register Priority Queue (index = 1) 0  Offset */
 
 #define GMAC_IMRPQ_RCOMP_Pos                1                                              /**< (GMAC_IMRPQ) Receive Complete Position */
 #define GMAC_IMRPQ_RCOMP_Msk                (_U_(0x1) << GMAC_IMRPQ_RCOMP_Pos)             /**< (GMAC_IMRPQ) Receive Complete Mask */
@@ -4626,15 +4626,15 @@ typedef struct {
   __I  uint32_t GMAC_RXLPITIME; /**< (GMAC Offset: 0x274) Received LPI Time */
   __I  uint32_t GMAC_TXLPI;     /**< (GMAC Offset: 0x278) Transmit LPI Transitions */
   __I  uint32_t GMAC_TXLPITIME; /**< (GMAC Offset: 0x27C) Transmit LPI Time */
-  RoReg8  Reserved7[0x17C];
-  __I  uint32_t GMAC_ISRPQ[5];  /**< (GMAC Offset: 0x3FC) Interrupt Status Register Priority Queue (index = 1) 0 */
+  RoReg8  Reserved7[0x180];
+  __I  uint32_t GMAC_ISRPQ[5];  /**< (GMAC Offset: 0x400) Interrupt Status Register Priority Queue (index = 1) 0 */
   RoReg8  Reserved8[0x2C];
-  __IO uint32_t GMAC_TBQBAPQ[5]; /**< (GMAC Offset: 0x43C) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+  __IO uint32_t GMAC_TBQBAPQ[5]; /**< (GMAC Offset: 0x440) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
   RoReg8  Reserved9[0x2C];
-  __IO uint32_t GMAC_RBQBAPQ[5]; /**< (GMAC Offset: 0x47C) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+  __IO uint32_t GMAC_RBQBAPQ[5]; /**< (GMAC Offset: 0x480) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
   RoReg8  Reserved10[0xC];
-  __IO uint32_t GMAC_RBSRPQ[5]; /**< (GMAC Offset: 0x49C) Receive Buffer Size Register Priority Queue (index = 1) 0 */
-  RoReg8  Reserved11[0xC];
+  __IO uint32_t GMAC_RBSRPQ[5]; /**< (GMAC Offset: 0x4A0) Receive Buffer Size Register Priority Queue (index = 1) 0 */
+  RoReg8  Reserved11[0x8];
   __IO uint32_t GMAC_CBSCR;     /**< (GMAC Offset: 0x4BC) Credit-Based Shaping Control Register */
   __IO uint32_t GMAC_CBSISQA;   /**< (GMAC Offset: 0x4C0) Credit-Based Shaping IdleSlope Register for Queue A */
   __IO uint32_t GMAC_CBSISQB;   /**< (GMAC Offset: 0x4C4) Credit-Based Shaping IdleSlope Register for Queue B */
@@ -4642,12 +4642,12 @@ typedef struct {
   __IO uint32_t GMAC_ST1RPQ[4]; /**< (GMAC Offset: 0x500) Screening Type 1 Register Priority Queue (index = 0) 0 */
   RoReg8  Reserved13[0x30];
   __IO uint32_t GMAC_ST2RPQ[8]; /**< (GMAC Offset: 0x540) Screening Type 2 Register Priority Queue (index = 0) 0 */
-  RoReg8  Reserved14[0x9C];
-  __O  uint32_t GMAC_IERPQ[5];  /**< (GMAC Offset: 0x5FC) Interrupt Enable Register Priority Queue (index = 1) 0 */
+  RoReg8  Reserved14[0xA0];
+  __O  uint32_t GMAC_IERPQ[5];  /**< (GMAC Offset: 0x600) Interrupt Enable Register Priority Queue (index = 1) 0 */
   RoReg8  Reserved15[0xC];
-  __O  uint32_t GMAC_IDRPQ[5];  /**< (GMAC Offset: 0x61C) Interrupt Disable Register Priority Queue (index = 1) 0 */
+  __O  uint32_t GMAC_IDRPQ[5];  /**< (GMAC Offset: 0x620) Interrupt Disable Register Priority Queue (index = 1) 0 */
   RoReg8  Reserved16[0xC];
-  __IO uint32_t GMAC_IMRPQ[5];  /**< (GMAC Offset: 0x63C) Interrupt Mask Register Priority Queue (index = 1) 0 */
+  __IO uint32_t GMAC_IMRPQ[5];  /**< (GMAC Offset: 0x640) Interrupt Mask Register Priority Queue (index = 1) 0 */
   RoReg8  Reserved17[0x90];
   __IO uint32_t GMAC_ST2ER[4];  /**< (GMAC Offset: 0x6E0) Screening Type 2 Ethertype Register (index = 0) 0 */
   RoReg8  Reserved18[0x10];
@@ -4818,15 +4818,15 @@ typedef struct {
   __I  GMAC_RXLPITIME_Type            GMAC_RXLPITIME; /**< Offset: 0x274 (R/   32) Received LPI Time */
   __I  GMAC_TXLPI_Type                GMAC_TXLPI;     /**< Offset: 0x278 (R/   32) Transmit LPI Transitions */
   __I  GMAC_TXLPITIME_Type            GMAC_TXLPITIME; /**< Offset: 0x27C (R/   32) Transmit LPI Time */
-  __I  uint32_t                       Reserved7[95];
-  __I  GMAC_ISRPQ_Type                GMAC_ISRPQ[5];  /**< Offset: 0x3FC (R/   32) Interrupt Status Register Priority Queue (index = 1) 0 */
+  __I  uint32_t                       Reserved7[96];
+  __I  GMAC_ISRPQ_Type                GMAC_ISRPQ[5];  /**< Offset: 0x400 (R/   32) Interrupt Status Register Priority Queue (index = 1) 0 */
   __I  uint32_t                       Reserved8[11];
-  __IO GMAC_TBQBAPQ_Type              GMAC_TBQBAPQ[5]; /**< Offset: 0x43C (R/W  32) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+  __IO GMAC_TBQBAPQ_Type              GMAC_TBQBAPQ[5]; /**< Offset: 0x440 (R/W  32) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
   __I  uint32_t                       Reserved9[11];
-  __IO GMAC_RBQBAPQ_Type              GMAC_RBQBAPQ[5]; /**< Offset: 0x47C (R/W  32) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+  __IO GMAC_RBQBAPQ_Type              GMAC_RBQBAPQ[5]; /**< Offset: 0x480 (R/W  32) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
   __I  uint32_t                       Reserved10[3];
-  __IO GMAC_RBSRPQ_Type               GMAC_RBSRPQ[5]; /**< Offset: 0x49C (R/W  32) Receive Buffer Size Register Priority Queue (index = 1) 0 */
-  __I  uint32_t                       Reserved11[3];
+  __IO GMAC_RBSRPQ_Type               GMAC_RBSRPQ[5]; /**< Offset: 0x4A0 (R/W  32) Receive Buffer Size Register Priority Queue (index = 1) 0 */
+  __I  uint32_t                       Reserved11[2];
   __IO GMAC_CBSCR_Type                GMAC_CBSCR;     /**< Offset: 0x4BC (R/W  32) Credit-Based Shaping Control Register */
   __IO GMAC_CBSISQA_Type              GMAC_CBSISQA;   /**< Offset: 0x4C0 (R/W  32) Credit-Based Shaping IdleSlope Register for Queue A */
   __IO GMAC_CBSISQB_Type              GMAC_CBSISQB;   /**< Offset: 0x4C4 (R/W  32) Credit-Based Shaping IdleSlope Register for Queue B */
@@ -4834,13 +4834,13 @@ typedef struct {
   __IO GMAC_ST1RPQ_Type               GMAC_ST1RPQ[4]; /**< Offset: 0x500 (R/W  32) Screening Type 1 Register Priority Queue (index = 0) 0 */
   __I  uint32_t                       Reserved13[12];
   __IO GMAC_ST2RPQ_Type               GMAC_ST2RPQ[8]; /**< Offset: 0x540 (R/W  32) Screening Type 2 Register Priority Queue (index = 0) 0 */
-  __I  uint32_t                       Reserved14[39];
-  __O  GMAC_IERPQ_Type                GMAC_IERPQ[5];  /**< Offset: 0x5FC ( /W  32) Interrupt Enable Register Priority Queue (index = 1) 0 */
+  __I  uint32_t                       Reserved14[40];
+  __O  GMAC_IERPQ_Type                GMAC_IERPQ[5];  /**< Offset: 0x600 ( /W  32) Interrupt Enable Register Priority Queue (index = 1) 0 */
   __I  uint32_t                       Reserved15[3];
-  __O  GMAC_IDRPQ_Type                GMAC_IDRPQ[5];  /**< Offset: 0x61C ( /W  32) Interrupt Disable Register Priority Queue (index = 1) 0 */
+  __O  GMAC_IDRPQ_Type                GMAC_IDRPQ[5];  /**< Offset: 0x620 ( /W  32) Interrupt Disable Register Priority Queue (index = 1) 0 */
   __I  uint32_t                       Reserved16[3];
-  __IO GMAC_IMRPQ_Type                GMAC_IMRPQ[5];  /**< Offset: 0x63C (R/W  32) Interrupt Mask Register Priority Queue (index = 1) 0 */
-  __I  uint32_t                       Reserved17[36];
+  __IO GMAC_IMRPQ_Type                GMAC_IMRPQ[5];  /**< Offset: 0x640 (R/W  32) Interrupt Mask Register Priority Queue (index = 1) 0 */
+  __I  uint32_t                       Reserved17[35];
   __IO GMAC_ST2ER_Type                GMAC_ST2ER[4];  /**< Offset: 0x6E0 (R/W  32) Screening Type 2 Ethertype Register (index = 0) 0 */
   __I  uint32_t                       Reserved18[4];
   __IO GMAC_ST2CW00_Type              GMAC_ST2CW00;   /**< Offset: 0x700 (R/W  32) Screening Type 2 Compare Word 0 Register (index = 0) */
