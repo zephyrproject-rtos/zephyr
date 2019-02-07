@@ -137,7 +137,7 @@ The process requires the following steps:
 
 When building a Secure/Non-Secure application, the Secure application will
 have to set the IDAU (SPU) configuration to allow Non-Secure access to all
-CPU reources utilized by the Non-Secure application firmware. SPU
+CPU resources utilized by the Non-Secure application firmware. SPU
 configuration shall take place before jumping to the Non-Secure application.
 
 Building a Secure only application

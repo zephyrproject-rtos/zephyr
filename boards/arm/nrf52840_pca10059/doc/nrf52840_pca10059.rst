@@ -153,7 +153,7 @@ the steps above. Then, prepare to compile an application with MCUBoot support.
 Select :option: `CONFIG_BOOTLOADER_MCUBOOT`, under "Boot options" and set
 :option: `CONFIG_TEXT_SECTION_OFFSET` under "Build and Link features",
 "Linker options" to 0x200 to ensure the code is offset to account for MCUboot
-firwmare image metadata.
+firmware image metadata.
 
 Sign the resulting firmware image using the imgtool utility as follows::
 

@@ -124,6 +124,6 @@ Play PCM Audio
 --------------
 
 Now that we have a binary PCM file (say sound.raw), you can use,
-for example, the audicity open source editor/player to load and play it.
+for example, the audacity open source editor/player to load and play it.
 Use the 'Import->Raw Data' menu to load the sound.raw file as
 signed 16 bit PCM, Little Endian, mono format @16KHz.

@@ -34,7 +34,7 @@ RISC-V support. Download the tarball for your OS from the `SiFive website
 <https://www.sifive.com/boards>`_ and extract it.
 
 The Zephyr SDK uses a bundled version of OpenOCD by default. You can
-overwrite that behaviour by adding the ``OPENOCD`` parameter to the
+overwrite that behavior by adding the ``OPENOCD`` parameter to the
 ``cmake`` command:
 
 .. code-block:: bash

@@ -362,7 +362,7 @@ Building a secure/non-secure with Trusted Firmware
 The process requires five steps:
 
 1. Build Trusted Firmware (tfm).
-2. Import it as a library to the Zepyhr source folder.
+2. Import it as a library to the Zephyr source folder.
 3. Build Zephyr with a non-secure configuration.
 4. Merge the two binaries together and sign them.
 5. Concatenate the bootloader with the signed image blob.

@@ -152,7 +152,7 @@ By default, the board controller firmware will route the following:
 | MCU Interface 2 | COEX interface                   |
 +-----------------+----------------------------------+
 
-It is possbile to configure the behavior of the board controller firmware by
+It is possible to configure the behavior of the board controller firmware by
 using Kconfig and editing its options under "Board options".
 
 
