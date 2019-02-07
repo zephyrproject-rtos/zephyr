@@ -1806,13 +1806,13 @@ static void vs_read_version_info(struct net_buf *buf, struct net_buf **evt)
 	rp = cmd_complete(evt, sizeof(*rp));
 
 	rp->status = 0x00;
-	rp->hw_platform = BT_HCI_VS_HW_PLAT;
-	rp->hw_variant = BT_HCI_VS_HW_VAR;
+	rp->hw_platform = sys_cpu_to_le16(BT_HCI_VS_HW_PLAT);
+	rp->hw_variant = sys_cpu_to_le16(BT_HCI_VS_HW_VAR);
 
 	rp->fw_variant = 0;
 	rp->fw_version = (KERNEL_VERSION_MAJOR & 0xff);
-	rp->fw_revision = KERNEL_VERSION_MINOR;
-	rp->fw_build = (KERNEL_PATCHLEVEL & 0xffff);
+	rp->fw_revision = sys_cpu_to_le16(KERNEL_VERSION_MINOR);
+	rp->fw_build = sys_cpu_to_le32(KERNEL_PATCHLEVEL & 0xffff);
 }
 
 static void vs_read_supported_commands(struct net_buf *buf,
@@ -3142,8 +3142,8 @@ static void remote_version_info(struct pdu_data *pdu_data, u16_t handle,
 	ep->status = 0x00;
 	ep->handle = sys_cpu_to_le16(handle);
 	ep->version = ver_ind->version_number;
-	ep->manufacturer = sys_cpu_to_le16(ver_ind->company_id);
-	ep->subversion = sys_cpu_to_le16(ver_ind->sub_version_number);
+	ep->manufacturer = ver_ind->company_id;
+	ep->subversion = ver_ind->sub_version_number;
 }
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)

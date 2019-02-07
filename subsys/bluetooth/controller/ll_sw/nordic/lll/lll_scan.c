@@ -7,6 +7,7 @@
 #include <zephyr/types.h>
 #include <toolchain.h>
 #include <bluetooth/hci.h>
+#include <misc/byteorder.h>
 
 #include "hal/ccm.h"
 #include "hal/radio.h"
@@ -117,7 +118,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 {
 	struct lll_scan *lll = prepare_param->param;
 	struct node_rx_pdu *node_rx;
-	u32_t aa = 0x8e89bed6;
+	u32_t aa = sys_cpu_to_le32(0x8e89bed6);
 	u32_t ticks_at_event;
 	struct evt_hdr *evt;
 	u32_t remainder_us;
@@ -702,7 +703,7 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		if (!IS_ENABLED(CONFIG_BT_CTLR_SCHED_ADVANCED) ||
 		    lll->conn_win_offset_us == 0) {
 			conn_space_us = conn_offset_us;
-			pdu_tx->connect_ind.win_offset = 0;
+			pdu_tx->connect_ind.win_offset = sys_cpu_to_le16(0);
 		} else {
 			conn_space_us = lll->conn_win_offset_us;
 			while ((conn_space_us & ((u32_t)1 << 31)) ||
@@ -710,13 +711,17 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 				conn_space_us += conn_interval_us;
 			}
 			pdu_tx->connect_ind.win_offset =
-				(conn_space_us - conn_offset_us) / 1250;
+				sys_cpu_to_le16((conn_space_us -
+						 conn_offset_us) / 1250);
 			pdu_tx->connect_ind.win_size++;
 		}
 
-		pdu_tx->connect_ind.interval = lll_conn->interval;
-		pdu_tx->connect_ind.latency = lll_conn->latency;
-		pdu_tx->connect_ind.timeout = lll->conn_timeout;
+		pdu_tx->connect_ind.interval =
+			sys_cpu_to_le16(lll_conn->interval);
+		pdu_tx->connect_ind.latency =
+			sys_cpu_to_le16(lll_conn->latency);
+		pdu_tx->connect_ind.timeout =
+			sys_cpu_to_le16(lll->conn_timeout);
 		memcpy(&pdu_tx->connect_ind.chan_map[0],
 		       &lll_conn->data_chan_map[0],
 		       sizeof(pdu_tx->connect_ind.chan_map));

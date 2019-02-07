@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <toolchain.h>
 #include <zephyr/types.h>
+#include <misc/byteorder.h>
 #include <misc/util.h>
 
 #include "hal/ticker.h"
@@ -60,6 +61,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	u8_t peer_addr_type;
 	u16_t win_offset;
 	u16_t timeout;
+	u16_t interval;
 	u8_t chan_sel;
 
 	((struct lll_adv *)ftr->param)->conn = NULL;
@@ -76,11 +78,12 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	lll->data_chan_count = util_ones_count_get(&lll->data_chan_map[0],
 			       sizeof(lll->data_chan_map));
 	lll->data_chan_hop = pdu_adv->connect_ind.hop;
-	lll->interval = pdu_adv->connect_ind.interval;
-	lll->latency = pdu_adv->connect_ind.latency;
+	interval = sys_le16_to_cpu(pdu_adv->connect_ind.interval);
+	lll->interval = interval;
+	lll->latency = sys_le16_to_cpu(pdu_adv->connect_ind.latency);
 
-	win_offset = pdu_adv->connect_ind.win_offset;
-	conn_interval_us = pdu_adv->connect_ind.interval * 1250;
+	win_offset = sys_le16_to_cpu(pdu_adv->connect_ind.win_offset);
+	conn_interval_us = interval * 1250;
 
 	/* calculate the window widening */
 	lll->slave.sca = pdu_adv->connect_ind.sca;
@@ -92,9 +95,9 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	lll->slave.window_size_event_us = pdu_adv->connect_ind.win_size * 1250;
 
 	/* procedure timeouts */
+	timeout = sys_le16_to_cpu(pdu_adv->connect_ind.timeout);
 	conn->supervision_reload =
-		RADIO_CONN_EVENTS((pdu_adv->connect_ind.timeout * 10 * 1000),
-				  conn_interval_us);
+		RADIO_CONN_EVENTS((timeout * 10 * 1000), conn_interval_us);
 	conn->procedure_reload =
 		RADIO_CONN_EVENTS((40 * 1000 * 1000), conn_interval_us);
 
@@ -120,7 +123,6 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	chan_sel = pdu_adv->chan_sel;
 	peer_addr_type = pdu_adv->tx_addr;
 	memcpy(peer_addr, pdu_adv->connect_ind.init_addr, BDADDR_SIZE);
-	timeout = pdu_adv->connect_ind.timeout;
 
 	cc = (void *)pdu_adv;
 	cc->status = 0;

@@ -6,6 +6,7 @@
 
 #include <zephyr.h>
 #include <bluetooth/hci.h>
+#include <misc/byteorder.h>
 
 #include "util/util.h"
 #include "util/memq.h"
@@ -42,7 +43,7 @@
 
 static void ticker_op_stop_scan_cb(u32_t status, void *params);
 static void ticker_op_cb(u32_t status, void *params);
-static u32_t access_addr_get(void);
+static void access_addr_get(u8_t access_addr[]);
 
 u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 			  u8_t filter_policy, u8_t peer_addr_type,
@@ -55,7 +56,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 	struct lll_scan *lll;
 	struct ll_conn *conn;
 	memq_link_t *link;
-	u32_t access_addr;
+	u8_t access_addr[4];
 	u32_t err;
 	u8_t hop;
 
@@ -96,7 +97,7 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 	conn_lll = &conn->lll;
 
-	access_addr = access_addr_get();
+	access_addr_get(access_addr);
 	memcpy(conn_lll->access_addr, &access_addr,
 	       sizeof(conn_lll->access_addr));
 	bt_rand(&conn_lll->crc_init[0], 3);
@@ -746,7 +747,7 @@ static void ticker_op_cb(u32_t status, void *params)
  * - It shall have no more than eleven transitions in the least significant 16
  *   bits.
  */
-static u32_t access_addr_get(void)
+static void access_addr_get(u8_t access_addr[])
 {
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 	u8_t transitions_lsb16;
@@ -755,7 +756,7 @@ static u32_t access_addr_get(void)
 	u8_t consecutive_cnt;
 	u8_t consecutive_bit;
 	u32_t adv_aa_check;
-	u32_t access_addr;
+	u32_t aa;
 	u8_t transitions;
 	u8_t bit_idx;
 	u8_t retry;
@@ -765,7 +766,8 @@ again:
 	LL_ASSERT(retry);
 	retry--;
 
-	bt_rand(&access_addr, sizeof(u32_t));
+	bt_rand(access_addr, 4);
+	aa = sys_get_le32(access_addr);
 
 	bit_idx = 31;
 	transitions = 0;
@@ -774,7 +776,7 @@ again:
 	ones_count_lsb8 = 0;
 	transitions_lsb16 = 0;
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
-	consecutive_bit = (access_addr >> bit_idx) & 0x01;
+	consecutive_bit = (aa >> bit_idx) & 0x01;
 	while (bit_idx--) {
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 		u8_t transitions_lsb16_prev = transitions_lsb16;
@@ -783,7 +785,7 @@ again:
 		u8_t transitions_prev = transitions;
 		u8_t bit;
 
-		bit = (access_addr >> bit_idx) & 0x01;
+		bit = (aa >> bit_idx) & 0x01;
 		if (bit == consecutive_bit) {
 			consecutive_cnt++;
 		} else {
@@ -822,7 +824,7 @@ again:
 		      ((bit_idx < 28) && (transitions < 2))))) {
 			if (consecutive_bit) {
 				consecutive_bit = 0;
-				access_addr &= ~BIT(bit_idx);
+				aa &= ~BIT(bit_idx);
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 				if (bit_idx < 8) {
 					ones_count_lsb8--;
@@ -830,7 +832,7 @@ again:
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 			} else {
 				consecutive_bit = 1;
-				access_addr |= BIT(bit_idx);
+				aa |= BIT(bit_idx);
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 				if (bit_idx < 8) {
 					ones_count_lsb8++;
@@ -869,9 +871,9 @@ again:
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
 		    0) {
 			if (consecutive_bit) {
-				access_addr &= ~(BIT(bit_idx + 1) - 1);
+				aa &= ~(BIT(bit_idx + 1) - 1);
 			} else {
-				access_addr |= (BIT(bit_idx + 1) - 1);
+				aa |= (BIT(bit_idx + 1) - 1);
 			}
 
 			break;
@@ -882,17 +884,17 @@ again:
 	 * It shall not be a sequence that differs from the advertising channel
 	 * packets Access Address by only one bit.
 	 */
-	adv_aa_check = access_addr ^ 0x8e89bed6;
+	adv_aa_check = aa ^ 0x8e89bed6;
 	if (util_ones_count_get((u8_t *)&adv_aa_check,
 				sizeof(adv_aa_check)) <= 1) {
 		goto again;
 	}
 
 	/* It shall not have all four octets equal. */
-	if (!((access_addr & 0xFFFF) ^ (access_addr >> 16)) &&
-	    !((access_addr & 0xFF) ^ (access_addr >> 24))) {
+	if (!((aa & 0xFFFF) ^ (aa >> 16)) &&
+	    !((aa & 0xFF) ^ (aa >> 24))) {
 		goto again;
 	}
 
-	return access_addr;
+	sys_put_le32(aa, access_addr);
 }
