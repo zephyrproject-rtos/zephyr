@@ -624,6 +624,12 @@ static bool parse_ipv6(const char *str, size_t str_len,
 
 	return true;
 }
+#else
+static inline bool parse_ipv6(const char *str, size_t str_len,
+			      struct sockaddr *addr, bool has_port)
+{
+	return false;
+}
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -689,6 +695,12 @@ static bool parse_ipv4(const char *str, size_t str_len,
 		port);
 	return true;
 }
+#else
+static inline bool parse_ipv4(const char *str, size_t str_len,
+			      struct sockaddr *addr, bool has_port)
+{
+	return false;
+}
 #endif /* CONFIG_NET_IPV4 */
 
 bool net_ipaddr_parse(const char *str, size_t str_len, struct sockaddr *addr)
@@ -705,11 +717,7 @@ bool net_ipaddr_parse(const char *str, size_t str_len, struct sockaddr *addr)
 	}
 
 	if (*str == '[') {
-#if defined(CONFIG_NET_IPV6)
 		return parse_ipv6(str, str_len, addr, true);
-#else
-		return false;
-#endif /* CONFIG_NET_IPV6 */
 	}
 
 	for (count = i = 0; str[i] && i < str_len; i++) {
@@ -719,11 +727,7 @@ bool net_ipaddr_parse(const char *str, size_t str_len, struct sockaddr *addr)
 	}
 
 	if (count == 1) {
-#if defined(CONFIG_NET_IPV4)
 		return parse_ipv4(str, str_len, addr, true);
-#else
-		return false;
-#endif /* CONFIG_NET_IPV4 */
 	}
 
 #if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_IPV6)
@@ -741,6 +745,7 @@ bool net_ipaddr_parse(const char *str, size_t str_len, struct sockaddr *addr)
 #if defined(CONFIG_NET_IPV6) && !defined(CONFIG_NET_IPV4)
 	return parse_ipv6(str, str_len, addr, false);
 #endif
+	return false;
 }
 
 int net_bytes_from_str(u8_t *buf, int buf_len, const char *src)
