@@ -16,5 +16,6 @@ supported:
   - lps22hb
   - lsm6dsl
   - rtc
+  - counter
   - spi
   - vl53l0x

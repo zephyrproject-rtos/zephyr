@@ -11,6 +11,7 @@ supported:
   - ble
   - i2c
   - rtc
+  - counter
   - spi
   - usb_device
 ram: 96
