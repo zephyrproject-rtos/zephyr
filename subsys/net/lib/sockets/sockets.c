@@ -151,12 +151,6 @@ int z_impl_zsock_socket(int family, int type, int proto)
 		return sock_family->handler(family, type, proto);
 	}
 
-#if defined(CONFIG_NET_SOCKETS_PACKET)
-	if (family == AF_PACKET) {
-		return zpacket_socket(family, type, proto);
-	}
-#endif
-
 #if defined(CONFIG_NET_SOCKETS_CAN)
 	if (family == AF_CAN) {
 		return zcan_socket(family, type, proto);
