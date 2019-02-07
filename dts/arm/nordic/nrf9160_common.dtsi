@@ -29,6 +29,13 @@ adc: adc@e000 {
 	label = "ADC_0";
 };
 
+dppic: dppic@17000 {
+	compatible = "nordic,nrf-dppic";
+	reg = <0x17000 0x1000>;
+	status = "ok";
+	label = "DPPIC";
+};
+
 uart0: uart@8000 {
 	compatible = "nordic,nrf-uarte";
 	reg = <0x8000 0x1000>;

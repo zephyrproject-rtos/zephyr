@@ -19,6 +19,9 @@ config NRFX_ADC
 config NRFX_CLOCK
 	bool
 
+config NRFX_DPPI
+	bool
+
 config NRFX_GPIOTE
 	bool
 

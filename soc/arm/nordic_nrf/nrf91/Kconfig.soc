@@ -10,6 +10,7 @@ config SOC_NRF9160
 	bool
 	select HAS_HW_NRF_CC310
 	select HAS_HW_NRF_CLOCK
+	select HAS_HW_NRF_DPPIC
 	select HAS_HW_NRF_EGU0
 	select HAS_HW_NRF_EGU1
 	select HAS_HW_NRF_EGU2
