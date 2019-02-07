@@ -8,14 +8,18 @@
 #include <gpio.h>
 
 #include "app_gpio.h"
-#include "storage.h"
-
 #include "ble_mesh.h"
 #include "device_composition.h"
 #include "no_transition_work_handler.h"
 #include "publisher.h"
 #include "state_binding.h"
+#include "storage.h"
 #include "transition.h"
+
+#if defined(CONFIG_MCUMGR)
+#include <mgmt/smp_bt.h>
+#include "smp_svr.h"
+#endif
 
 static bool reset;
 
@@ -185,6 +189,10 @@ void main(void)
 
 	app_gpio_init();
 
+#if defined(CONFIG_MCUMGR)
+	smp_svr_init();
+#endif
+
 	printk("Initializing...\n");
 
 	ps_settings_init();
@@ -203,4 +211,11 @@ void main(void)
 
 	short_time_multireset_bt_mesh_unprovisioning();
 	k_timer_start(&reset_counter_timer, K_MSEC(7000), 0);
+
+#if defined(CONFIG_MCUMGR)
+	/* Initialize the Bluetooth mcumgr transport. */
+	smp_bt_register();
+
+	k_timer_start(&smp_svr_timer, 0, K_MSEC(1000));
+#endif
 }
