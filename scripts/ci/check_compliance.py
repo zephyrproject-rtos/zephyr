@@ -144,6 +144,7 @@ class KconfigCheck(ComplianceTest):
 
         # Parse the entire Kconfig tree, to make sure we see all symbols
         os.environ["SOC_DIR"] = "soc/"
+        os.environ["ARCH_DIR"] = "arch/"
         os.environ["BOARD_DIR"] = "boards/*/*"
         os.environ["ARCH"] = "*"
 
