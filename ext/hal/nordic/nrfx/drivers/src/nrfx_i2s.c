@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015 - 2018, Nordic Semiconductor ASA
+ * Copyright (c) 2015 - 2019, Nordic Semiconductor ASA
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,14 +45,12 @@
     (event == NRF_I2S_EVENT_STOPPED  ? "NRF_I2S_EVENT_STOPPED"  : \
                                        "UNKNOWN EVENT")))
 
-#if !defined(USE_WORKAROUND_FOR_ANOMALY_194) &&          \
-    (defined(NRF52832_XXAA) || defined(NRF52832_XXAB) || \
-     defined(NRF52840_XXAA))
-// Enable workaround for nRF52832 and nRF52840 anomaly 194 (STOP task does not
-// switch off all resources).
-#define USE_WORKAROUND_FOR_ANOMALY_194 1
-#else
-#define USE_WORKAROUND_FOR_ANOMALY_194 0
+#if !defined(USE_WORKAROUND_FOR_I2S_STOP_ANOMALY) &&                               \
+    (defined(NRF52832_XXAA) || defined(NRF52832_XXAB) || defined(NRF52840_XXAA) || \
+     defined(NRF9160_XXAA))
+// Enable workaround for nRF52832 and nRF52840 anomaly 194 / nrf9160 anomaly 1
+// (STOP task does not switch off all resources).
+#define USE_WORKAROUND_FOR_I2S_STOP_ANOMALY 1
 #endif
 
 // Control block - driver instance local data.
@@ -344,9 +342,9 @@ void nrfx_i2s_stop(void)
                                  NRF_I2S_INT_TXPTRUPD_MASK);
     nrf_i2s_task_trigger(NRF_I2S, NRF_I2S_TASK_STOP);
 
-#if USE_WORKAROUND_FOR_ANOMALY_194
-    *((volatile uint32_t *)0x40025038) = 1;
-    *((volatile uint32_t *)0x4002503C) = 1;
+#if NRFX_CHECK(USE_WORKAROUND_FOR_I2S_STOP_ANOMALY)
+    *((volatile uint32_t *)(((uint32_t)NRF_I2S) + 0x38)) = 1;
+    *((volatile uint32_t *)(((uint32_t)NRF_I2S) + 0x3C)) = 1;
 #endif
 }
 

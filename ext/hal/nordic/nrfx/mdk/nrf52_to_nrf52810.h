@@ -44,50 +44,107 @@ POSSIBILITY OF SUCH DAMAGE.
 
 /* Interrupt service routines handlers. Note that handlers SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQHandler and 
    SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQHandler are not redefined since functionality is not equivalent. */
-#define     UARTE0_UART0_IRQHandler     UARTE0_IRQHandler
-#define     COMP_LPCOMP_IRQHandler      COMP_IRQHandler
-#define     SWI2_EGU2_IRQHandler        SWI2_IRQHandler
-#define     SWI3_EGU3_IRQHandler        SWI3_IRQHandler
-#define     SWI4_EGU4_IRQHandler        SWI4_IRQHandler
-#define     SWI5_EGU5_IRQHandler        SWI5_IRQHandler
+#ifndef COMP_LPCOMP_IRQHandler
+    #define COMP_LPCOMP_IRQHandler      COMP_IRQHandler
+#endif
+#ifndef SWI2_EGU2_IRQHandler
+    #define SWI2_EGU2_IRQHandler        SWI2_IRQHandler
+#endif
+#ifndef SWI3_EGU3_IRQHandler
+    #define SWI3_EGU3_IRQHandler        SWI3_IRQHandler
+#endif
+#ifndef SWI4_EGU4_IRQHandler
+    #define SWI4_EGU4_IRQHandler        SWI4_IRQHandler
+#endif
+#ifndef SWI5_EGU5_IRQHandler
+    #define SWI5_EGU5_IRQHandler        SWI5_IRQHandler
+#endif
 
 /* Interrupt service routines index. Note that indexes SPIM0_SPIS0_TWIM0_TWIS0_SPI0_TWI0_IRQn and 
    SPIM1_SPIS1_TWIM1_TWIS1_SPI1_TWI1_IRQn are not redefined since functionality is not equivalent. */
-#define     UARTE0_UART0_IRQn           UARTE0_IRQn
-#define     COMP_LPCOMP_IRQn            COMP_IRQn
-#define     SWI2_EGU2_IRQn              SWI2_IRQn
-#define     SWI3_EGU3_IRQn              SWI3_IRQn
-#define     SWI4_EGU4_IRQn              SWI4_IRQn
-#define     SWI5_EGU5_IRQn              SWI5_IRQn
-
+#ifndef COMP_LPCOMP_IRQn
+    #define COMP_LPCOMP_IRQn            COMP_IRQn
+#endif
+#ifndef SWI2_EGU2_IRQn
+    #define SWI2_EGU2_IRQn              SWI2_IRQn
+#endif
+#ifndef SWI3_EGU3_IRQn
+    #define SWI3_EGU3_IRQn              SWI3_IRQn
+#endif
+#ifndef SWI4_EGU4_IRQn
+    #define SWI4_EGU4_IRQn              SWI4_IRQn
+#endif
+#ifndef SWI5_EGU5_IRQn
+    #define SWI5_EGU5_IRQn              SWI5_IRQn
+#endif
 
 /* From nrf52_name_change.h. Several macros changed in different versions of nRF52 headers. By defining the following, any code written for any version of nRF52 headers will still compile. */
 
 /* I2S */
 /* Several enumerations changed case. Adding old macros to keep compilation compatibility. */
-#define I2S_ENABLE_ENABLE_DISABLE           I2S_ENABLE_ENABLE_Disabled
-#define I2S_ENABLE_ENABLE_ENABLE            I2S_ENABLE_ENABLE_Enabled
-#define I2S_CONFIG_MODE_MODE_MASTER         I2S_CONFIG_MODE_MODE_Master
-#define I2S_CONFIG_MODE_MODE_SLAVE          I2S_CONFIG_MODE_MODE_Slave
-#define I2S_CONFIG_RXEN_RXEN_DISABLE        I2S_CONFIG_RXEN_RXEN_Disabled
-#define I2S_CONFIG_RXEN_RXEN_ENABLE         I2S_CONFIG_RXEN_RXEN_Enabled
-#define I2S_CONFIG_TXEN_TXEN_DISABLE        I2S_CONFIG_TXEN_TXEN_Disabled
-#define I2S_CONFIG_TXEN_TXEN_ENABLE         I2S_CONFIG_TXEN_TXEN_Enabled
-#define I2S_CONFIG_MCKEN_MCKEN_DISABLE      I2S_CONFIG_MCKEN_MCKEN_Disabled
-#define I2S_CONFIG_MCKEN_MCKEN_ENABLE       I2S_CONFIG_MCKEN_MCKEN_Enabled
-#define I2S_CONFIG_SWIDTH_SWIDTH_8BIT       I2S_CONFIG_SWIDTH_SWIDTH_8Bit
-#define I2S_CONFIG_SWIDTH_SWIDTH_16BIT      I2S_CONFIG_SWIDTH_SWIDTH_16Bit
-#define I2S_CONFIG_SWIDTH_SWIDTH_24BIT      I2S_CONFIG_SWIDTH_SWIDTH_24Bit
-#define I2S_CONFIG_ALIGN_ALIGN_LEFT         I2S_CONFIG_ALIGN_ALIGN_Left
-#define I2S_CONFIG_ALIGN_ALIGN_RIGHT        I2S_CONFIG_ALIGN_ALIGN_Right
-#define I2S_CONFIG_FORMAT_FORMAT_ALIGNED    I2S_CONFIG_FORMAT_FORMAT_Aligned
-#define I2S_CONFIG_CHANNELS_CHANNELS_STEREO I2S_CONFIG_CHANNELS_CHANNELS_Stereo
-#define I2S_CONFIG_CHANNELS_CHANNELS_LEFT   I2S_CONFIG_CHANNELS_CHANNELS_Left
-#define I2S_CONFIG_CHANNELS_CHANNELS_RIGHT  I2S_CONFIG_CHANNELS_CHANNELS_Right
+#ifndef I2S_ENABLE_ENABLE_DISABLE
+    #define I2S_ENABLE_ENABLE_DISABLE           I2S_ENABLE_ENABLE_Disabled
+#endif
+#ifndef I2S_ENABLE_ENABLE_ENABLE
+    #define I2S_ENABLE_ENABLE_ENABLE            I2S_ENABLE_ENABLE_Enabled
+#endif
+#ifndef I2S_CONFIG_MODE_MODE_MASTER
+    #define I2S_CONFIG_MODE_MODE_MASTER         I2S_CONFIG_MODE_MODE_Master
+#endif
+#ifndef I2S_CONFIG_MODE_MODE_SLAVE
+    #define I2S_CONFIG_MODE_MODE_SLAVE          I2S_CONFIG_MODE_MODE_Slave
+#endif
+#ifndef I2S_CONFIG_RXEN_RXEN_DISABLE
+    #define I2S_CONFIG_RXEN_RXEN_DISABLE        I2S_CONFIG_RXEN_RXEN_Disabled
+#endif
+#ifndef I2S_CONFIG_RXEN_RXEN_ENABLE
+    #define I2S_CONFIG_RXEN_RXEN_ENABLE         I2S_CONFIG_RXEN_RXEN_Enabled
+#endif
+#ifndef I2S_CONFIG_TXEN_TXEN_DISABLE
+    #define I2S_CONFIG_TXEN_TXEN_DISABLE        I2S_CONFIG_TXEN_TXEN_Disabled
+#endif
+#ifndef I2S_CONFIG_TXEN_TXEN_ENABLE
+    #define I2S_CONFIG_TXEN_TXEN_ENABLE         I2S_CONFIG_TXEN_TXEN_Enabled
+#endif
+#ifndef I2S_CONFIG_MCKEN_MCKEN_DISABLE
+    #define I2S_CONFIG_MCKEN_MCKEN_DISABLE      I2S_CONFIG_MCKEN_MCKEN_Disabled
+#endif
+#ifndef I2S_CONFIG_MCKEN_MCKEN_ENABLE
+    #define I2S_CONFIG_MCKEN_MCKEN_ENABLE       I2S_CONFIG_MCKEN_MCKEN_Enabled
+#endif
+#ifndef I2S_CONFIG_SWIDTH_SWIDTH_8BIT
+    #define I2S_CONFIG_SWIDTH_SWIDTH_8BIT       I2S_CONFIG_SWIDTH_SWIDTH_8Bit
+#endif
+#ifndef I2S_CONFIG_SWIDTH_SWIDTH_16BIT
+    #define I2S_CONFIG_SWIDTH_SWIDTH_16BIT      I2S_CONFIG_SWIDTH_SWIDTH_16Bit
+#endif
+#ifndef I2S_CONFIG_SWIDTH_SWIDTH_24BIT
+    #define I2S_CONFIG_SWIDTH_SWIDTH_24BIT      I2S_CONFIG_SWIDTH_SWIDTH_24Bit
+#endif
+#ifndef I2S_CONFIG_ALIGN_ALIGN_LEFT
+    #define I2S_CONFIG_ALIGN_ALIGN_LEFT         I2S_CONFIG_ALIGN_ALIGN_Left
+#endif
+#ifndef I2S_CONFIG_ALIGN_ALIGN_RIGHT
+    #define I2S_CONFIG_ALIGN_ALIGN_RIGHT        I2S_CONFIG_ALIGN_ALIGN_Right
+#endif
+#ifndef I2S_CONFIG_FORMAT_FORMAT_ALIGNED
+    #define I2S_CONFIG_FORMAT_FORMAT_ALIGNED    I2S_CONFIG_FORMAT_FORMAT_Aligned
+#endif
+#ifndef I2S_CONFIG_CHANNELS_CHANNELS_STEREO
+    #define I2S_CONFIG_CHANNELS_CHANNELS_STEREO I2S_CONFIG_CHANNELS_CHANNELS_Stereo
+#endif
+#ifndef I2S_CONFIG_CHANNELS_CHANNELS_LEFT
+    #define I2S_CONFIG_CHANNELS_CHANNELS_LEFT   I2S_CONFIG_CHANNELS_CHANNELS_Left
+#endif 
+#ifndef I2S_CONFIG_CHANNELS_CHANNELS_RIGHT
+    #define I2S_CONFIG_CHANNELS_CHANNELS_RIGHT  I2S_CONFIG_CHANNELS_CHANNELS_Right
+#endif
 
 /* LPCOMP */
 /* Corrected typo in RESULT register. */
-#define LPCOMP_RESULT_RESULT_Bellow         LPCOMP_RESULT_RESULT_Below
+#ifndef LPCOMP_RESULT_RESULT_Bellow
+    #define LPCOMP_RESULT_RESULT_Bellow         LPCOMP_RESULT_RESULT_Below
+#endif
 
 
 /*lint --flb "Leave library region" */

@@ -58,7 +58,7 @@ void SystemInit(void)
 
     /* Prepare the peripherals for use as indicated by the PAN 26 "System: Manual setup is required
        to enable the use of peripherals" found at Product Anomaly document for your device found at
-       https://www.nordicsemi.com/. The side effect of executing these instructions in the devices
+       https://www.nordicsemi.com/DocLib The side effect of executing these instructions in the devices
        that do not need it is that the new peripherals in the second generation devices (LPCOMP for
        example) will not be available. */
     if (is_manual_peripheral_setup_needed())
@@ -69,7 +69,7 @@ void SystemInit(void)
 
     /* Disable PROTENSET registers under debug, as indicated by PAN 59 "MPU: Reset value of DISABLEINDEBUG
        register is incorrect" found at Product Anomaly document for your device found at
-       https://www.nordicsemi.com/. There is no side effect of using these instruction if not needed. */
+       https://www.nordicsemi.com/DocLib There is no side effect of using these instruction if not needed. */
     if (is_disabled_in_debug_needed())
     {
         NRF_MPU->DISABLEINDEBUG = MPU_DISABLEINDEBUG_DISABLEINDEBUG_Disabled << MPU_DISABLEINDEBUG_DISABLEINDEBUG_Pos;
@@ -77,7 +77,7 @@ void SystemInit(void)
 
     /* Execute the following code to eliminate excessive current in sleep mode with RAM retention in nRF51802 devices,
        as indicated by PAN 76 "System: Excessive current in sleep mode with retention" found at Product Anomaly document
-       for your device found at https://www.nordicsemi.com/. */
+       for your device found at https://www.nordicsemi.com/DocLib */
     if (is_peripheral_domain_setup_needed()){
         if (*(uint32_t volatile *)0x4006EC00 != 1){
             *(uint32_t volatile *)0x4006EC00 = 0x9375;

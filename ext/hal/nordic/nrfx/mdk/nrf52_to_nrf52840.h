@@ -44,50 +44,106 @@ POSSIBILITY OF SUCH DAMAGE.
 
 /* UART */
 /* The registers PSELRTS, PSELTXD, PSELCTS, PSELRXD were restructured into a struct. */
-#define PSELRTS       PSEL.RTS
-#define PSELTXD       PSEL.TXD
-#define PSELCTS       PSEL.CTS
-#define PSELRXD       PSEL.RXD
+#ifndef PSELRTS
+    #define PSELRTS       PSEL.RTS
+#endif
+#ifndef PSELTXD    
+    #define PSELTXD       PSEL.TXD
+#endif
+#ifndef PSELCTS
+    #define PSELCTS       PSEL.CTS
+#endif
+#ifndef PSELRXD
+    #define PSELRXD       PSEL.RXD
+#endif
 
 /* TWI */
 /* The registers PSELSCL, PSELSDA were restructured into a struct. */
-#define PSELSCL       PSEL.SCL
-#define PSELSDA       PSEL.SDA
+#ifndef PSELSCL
+    #define PSELSCL       PSEL.SCL
+#endif
+#ifndef PSELSDA
+    #define PSELSDA       PSEL.SDA
+#endif
 
 
 /* LPCOMP */
 /* The hysteresis control enumerated values has changed name for nRF52840 devices. */
-#define LPCOMP_HYST_HYST_NoHyst     LPCOMP_HYST_HYST_Disabled
-#define LPCOMP_HYST_HYST_Hyst50mV   LPCOMP_HYST_HYST_Enabled
+#ifndef LPCOMP_HYST_HYST_NoHyst
+    #define LPCOMP_HYST_HYST_NoHyst     LPCOMP_HYST_HYST_Disabled
+#endif
+#ifndef LPCOMP_HYST_HYST_Hyst50mV
+    #define LPCOMP_HYST_HYST_Hyst50mV   LPCOMP_HYST_HYST_Enabled
+#endif
 
 
 /* From nrf52_name_change.h. Several macros changed in different versions of nRF52 headers. By defining the following, any code written for any version of nRF52 headers will still compile. */
 
 /* I2S */
 /* Several enumerations changed case. Adding old macros to keep compilation compatibility. */
-#define I2S_ENABLE_ENABLE_DISABLE           I2S_ENABLE_ENABLE_Disabled
-#define I2S_ENABLE_ENABLE_ENABLE            I2S_ENABLE_ENABLE_Enabled
-#define I2S_CONFIG_MODE_MODE_MASTER         I2S_CONFIG_MODE_MODE_Master
-#define I2S_CONFIG_MODE_MODE_SLAVE          I2S_CONFIG_MODE_MODE_Slave
-#define I2S_CONFIG_RXEN_RXEN_DISABLE        I2S_CONFIG_RXEN_RXEN_Disabled
-#define I2S_CONFIG_RXEN_RXEN_ENABLE         I2S_CONFIG_RXEN_RXEN_Enabled
-#define I2S_CONFIG_TXEN_TXEN_DISABLE        I2S_CONFIG_TXEN_TXEN_Disabled
-#define I2S_CONFIG_TXEN_TXEN_ENABLE         I2S_CONFIG_TXEN_TXEN_Enabled
-#define I2S_CONFIG_MCKEN_MCKEN_DISABLE      I2S_CONFIG_MCKEN_MCKEN_Disabled
-#define I2S_CONFIG_MCKEN_MCKEN_ENABLE       I2S_CONFIG_MCKEN_MCKEN_Enabled
-#define I2S_CONFIG_SWIDTH_SWIDTH_8BIT       I2S_CONFIG_SWIDTH_SWIDTH_8Bit
-#define I2S_CONFIG_SWIDTH_SWIDTH_16BIT      I2S_CONFIG_SWIDTH_SWIDTH_16Bit
-#define I2S_CONFIG_SWIDTH_SWIDTH_24BIT      I2S_CONFIG_SWIDTH_SWIDTH_24Bit
-#define I2S_CONFIG_ALIGN_ALIGN_LEFT         I2S_CONFIG_ALIGN_ALIGN_Left
-#define I2S_CONFIG_ALIGN_ALIGN_RIGHT        I2S_CONFIG_ALIGN_ALIGN_Right
-#define I2S_CONFIG_FORMAT_FORMAT_ALIGNED    I2S_CONFIG_FORMAT_FORMAT_Aligned
-#define I2S_CONFIG_CHANNELS_CHANNELS_STEREO I2S_CONFIG_CHANNELS_CHANNELS_Stereo
-#define I2S_CONFIG_CHANNELS_CHANNELS_LEFT   I2S_CONFIG_CHANNELS_CHANNELS_Left
-#define I2S_CONFIG_CHANNELS_CHANNELS_RIGHT  I2S_CONFIG_CHANNELS_CHANNELS_Right
+#ifndef I2S_ENABLE_ENABLE_DISABLE
+    #define I2S_ENABLE_ENABLE_DISABLE           I2S_ENABLE_ENABLE_Disabled
+#endif
+#ifndef I2S_ENABLE_ENABLE_ENABLE
+    #define I2S_ENABLE_ENABLE_ENABLE            I2S_ENABLE_ENABLE_Enabled
+#endif
+#ifndef I2S_CONFIG_MODE_MODE_MASTER
+    #define I2S_CONFIG_MODE_MODE_MASTER         I2S_CONFIG_MODE_MODE_Master
+#endif
+#ifndef I2S_CONFIG_MODE_MODE_SLAVE
+    #define I2S_CONFIG_MODE_MODE_SLAVE          I2S_CONFIG_MODE_MODE_Slave
+#endif
+#ifndef I2S_CONFIG_RXEN_RXEN_DISABLE
+    #define I2S_CONFIG_RXEN_RXEN_DISABLE        I2S_CONFIG_RXEN_RXEN_Disabled
+#endif
+#ifndef I2S_CONFIG_RXEN_RXEN_ENABLE
+    #define I2S_CONFIG_RXEN_RXEN_ENABLE         I2S_CONFIG_RXEN_RXEN_Enabled
+#endif
+#ifndef I2S_CONFIG_TXEN_TXEN_DISABLE
+    #define I2S_CONFIG_TXEN_TXEN_DISABLE        I2S_CONFIG_TXEN_TXEN_Disabled
+#endif
+#ifndef I2S_CONFIG_TXEN_TXEN_ENABLE
+    #define I2S_CONFIG_TXEN_TXEN_ENABLE         I2S_CONFIG_TXEN_TXEN_Enabled
+#endif
+#ifndef I2S_CONFIG_MCKEN_MCKEN_DISABLE
+    #define I2S_CONFIG_MCKEN_MCKEN_DISABLE      I2S_CONFIG_MCKEN_MCKEN_Disabled
+#endif
+#ifndef I2S_CONFIG_MCKEN_MCKEN_ENABLE
+    #define I2S_CONFIG_MCKEN_MCKEN_ENABLE       I2S_CONFIG_MCKEN_MCKEN_Enabled
+#endif
+#ifndef I2S_CONFIG_SWIDTH_SWIDTH_8BIT
+    #define I2S_CONFIG_SWIDTH_SWIDTH_8BIT       I2S_CONFIG_SWIDTH_SWIDTH_8Bit
+#endif
+#ifndef I2S_CONFIG_SWIDTH_SWIDTH_16BIT
+    #define I2S_CONFIG_SWIDTH_SWIDTH_16BIT      I2S_CONFIG_SWIDTH_SWIDTH_16Bit
+#endif
+#ifndef I2S_CONFIG_SWIDTH_SWIDTH_24BIT
+    #define I2S_CONFIG_SWIDTH_SWIDTH_24BIT      I2S_CONFIG_SWIDTH_SWIDTH_24Bit
+#endif
+#ifndef I2S_CONFIG_ALIGN_ALIGN_LEFT
+    #define I2S_CONFIG_ALIGN_ALIGN_LEFT         I2S_CONFIG_ALIGN_ALIGN_Left
+#endif
+#ifndef I2S_CONFIG_ALIGN_ALIGN_RIGHT
+    #define I2S_CONFIG_ALIGN_ALIGN_RIGHT        I2S_CONFIG_ALIGN_ALIGN_Right
+#endif
+#ifndef I2S_CONFIG_FORMAT_FORMAT_ALIGNED
+    #define I2S_CONFIG_FORMAT_FORMAT_ALIGNED    I2S_CONFIG_FORMAT_FORMAT_Aligned
+#endif
+#ifndef I2S_CONFIG_CHANNELS_CHANNELS_STEREO
+    #define I2S_CONFIG_CHANNELS_CHANNELS_STEREO I2S_CONFIG_CHANNELS_CHANNELS_Stereo
+#endif
+#ifndef I2S_CONFIG_CHANNELS_CHANNELS_LEFT
+    #define I2S_CONFIG_CHANNELS_CHANNELS_LEFT   I2S_CONFIG_CHANNELS_CHANNELS_Left
+#endif
+#ifndef I2S_CONFIG_CHANNELS_CHANNELS_RIGHT
+    #define I2S_CONFIG_CHANNELS_CHANNELS_RIGHT  I2S_CONFIG_CHANNELS_CHANNELS_Right
+#endif
 
 /* LPCOMP */
 /* Corrected typo in RESULT register. */
-#define LPCOMP_RESULT_RESULT_Bellow         LPCOMP_RESULT_RESULT_Below
+#ifndef LPCOMP_RESULT_RESULT_Bellow
+    #define LPCOMP_RESULT_RESULT_Bellow         LPCOMP_RESULT_RESULT_Below
+#endif
 
 
 /*lint --flb "Leave library region" */

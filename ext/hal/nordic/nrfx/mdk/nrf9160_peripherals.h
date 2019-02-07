@@ -44,10 +44,6 @@ POSSIBILITY OF SUCH DAMAGE.
 #define POWER_PRESENT
 #define POWER_COUNT 1
 
-/* Memory Watch Unit */
-#define MWU_PRESENT
-#define MWU_COUNT 1
-
 /* GPIO */
 #define GPIO_PRESENT
 #define GPIO_COUNT 1

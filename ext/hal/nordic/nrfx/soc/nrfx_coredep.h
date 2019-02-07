@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018, Nordic Semiconductor ASA
+ * Copyright (c) 2018 - 2019, Nordic Semiconductor ASA
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,11 +45,18 @@
 #define NRFX_DELAY_CPU_FREQ_MHZ
 /** @brief Availability of Data Watchpoint and Trace (DWT) unit in the given SoC. */
 #define NRFX_DELAY_DWT_PRESENT
+/**
+ * @brief Number of cycles consumed by one iteration of the internal loop
+ *        in the function @ref nrfx_coredep_delay_us.
+ *
+ * This value can be specified externally (for example, when the SoC is emulated).
+ */
+#define NRFX_COREDEP_DELAY_US_LOOP_CYCLES
 
 #elif defined(NRF51)
     #define NRFX_DELAY_CPU_FREQ_MHZ 16
     #define NRFX_DELAY_DWT_PRESENT  0
-#elif defined(NRF52810_XXAA)
+#elif defined(NRF52810_XXAA) || defined(NRF52811_XXAA)
     #define NRFX_DELAY_CPU_FREQ_MHZ 64
     #define NRFX_DELAY_DWT_PRESENT  0
 #elif defined(NRF52832_XXAA) || defined (NRF52832_XXAB)
@@ -72,6 +79,8 @@
  * maximum uint32_t capacity divided by frequency. For example:
  * - For SoCs working at 64MHz: 0xFFFFFFFF/64 = 0x03FFFFFF (67108863 microseconds)
  * - For SoCs working at 16MHz: 0xFFFFFFFF/16 = 0x0FFFFFFF (268435455 microseconds)
+ *
+ * @sa NRFX_COREDEP_DELAY_US_LOOP_CYCLES
  *
  * @param time_us Number of microseconds to wait.
  */
@@ -126,37 +135,35 @@ __STATIC_INLINE void nrfx_coredep_delay_us(uint32_t time_us)
         return;
     }
 
-    #if defined(NRF51)
-    // The loop takes 4 cycles: 1 for SUBS, 3 for BHI.
-    static const uint16_t delay_bytecode[] = {
-        0x3804, // SUBS r0, #4
-        0xd8fd, // BHI .-2
-        0x4770  // BX LR
-        };
-    #elif defined(NRF52810_XXAA)
-    // The loop takes 7 cycles: 1 for SUBS, 2 for BHI, 2 flash wait states for each instruction.
-    static const uint16_t delay_bytecode[] = {
-        0x3807, // SUBS r0, #7
-        0xd8fd, // BHI .-2
-        0x4770  // BX LR
-        };
-    #elif  (defined(NRF52832_XXAA) || \
-           defined (NRF52832_XXAB) || \
-           defined(NRF52840_XXAA)  || \
-           defined(NRF9160_XXAA))
-    // The loop takes 3 cycles: 1 for SUBS, 2 for BHI.
-    // Make sure that code is cached properly, so that no extra wait states appear.
+    // Allow overriding the number of cycles per loop iteration, in case it is
+    // needed to adjust this number externally (for example, when the SoC is
+    // emulated).
+    #ifndef NRFX_COREDEP_DELAY_US_LOOP_CYCLES
+        #if defined(NRF51)
+            // The loop takes 4 cycles: 1 for SUBS, 3 for BHI.
+            #define NRFX_COREDEP_DELAY_US_LOOP_CYCLES  4
+        #elif defined(NRF52810_XXAA) || defined(NRF52811_XXAA)
+            // The loop takes 7 cycles: 1 for SUBS, 2 for BHI, 2 wait states
+            // for each instruction.
+            #define NRFX_COREDEP_DELAY_US_LOOP_CYCLES  7
+        #else
+            // The loop takes 3 cycles: 1 for SUBS, 2 for BHI.
+            #define NRFX_COREDEP_DELAY_US_LOOP_CYCLES  3
+        #endif
+    #endif // NRFX_COREDEP_DELAY_US_LOOP_CYCLES
+    // Align the machine code, so that it can be cached properly and no extra
+    // wait states appear.
     __ALIGN(16)
-    static const uint16_t delay_bytecode[] = {
-        0x3803, // SUBS r0, #3
+    static const uint16_t delay_machine_code[] = {
+        0x3800 + NRFX_COREDEP_DELAY_US_LOOP_CYCLES, // SUBS r0, #loop_cycles
         0xd8fd, // BHI .-2
         0x4770  // BX LR
-        };
-    #endif
+    };
 
     typedef void (* delay_func_t)(uint32_t);
-    // Set LSB to 1 to execute code in Thumb mode.
-    const delay_func_t delay_cycles = (delay_func_t)((((uint32_t)delay_bytecode) | 1));
+    const delay_func_t delay_cycles =
+        // Set LSB to 1 to execute the code in the Thumb mode.
+        (delay_func_t)((((uint32_t)delay_machine_code) | 1));
     uint32_t cycles = time_us * NRFX_DELAY_CPU_FREQ_MHZ;
     delay_cycles(cycles);
 }

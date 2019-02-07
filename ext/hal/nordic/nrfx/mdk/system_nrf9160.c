@@ -33,6 +33,17 @@ NOTICE: This file has been modified by Nordic Semiconductor ASA.
 
 #define __SYSTEM_CLOCK      (64000000UL)     /*!< nRF9160 Application core uses a fixed System Clock Frequency of 64MHz */
 
+#define TRACE_PIN_CNF_VALUE (   (GPIO_PIN_CNF_DIR_Output << GPIO_PIN_CNF_DIR_Pos) | \
+                                (GPIO_PIN_CNF_INPUT_Connect << GPIO_PIN_CNF_INPUT_Pos) | \
+                                (GPIO_PIN_CNF_PULL_Disabled << GPIO_PIN_CNF_PULL_Pos) | \
+                                (GPIO_PIN_CNF_DRIVE_H0H1 << GPIO_PIN_CNF_DRIVE_Pos) | \
+                                (GPIO_PIN_CNF_SENSE_Disabled << GPIO_PIN_CNF_SENSE_Pos) | \
+                                (GPIO_PIN_CNF_MCUSEL_TND << GPIO_PIN_CNF_MCUSEL_Pos))
+#define TRACE_TRACECLK_PIN   (21)
+#define TRACE_TRACEDATA0_PIN (22)
+#define TRACE_TRACEDATA1_PIN (23)
+#define TRACE_TRACEDATA2_PIN (24)
+#define TRACE_TRACEDATA3_PIN (25)
 
 #if defined ( __CC_ARM )
     uint32_t SystemCoreClock __attribute__((used)) = __SYSTEM_CLOCK;  
@@ -49,6 +60,7 @@ NOTICE: This file has been modified by Nordic Semiconductor ASA.
     static bool errata_6(void);
     static bool errata_14(void);
     static bool errata_15(void);
+    static bool errata_20(void);
 #endif
 
 void SystemCoreClockUpdate(void)
@@ -109,20 +121,63 @@ void SystemInit(void)
           NVIC_SystemReset();
         }
         
+        /* Workaround for Errata 6 "POWER: SLEEPENTER and SLEEPEXIT events asserted after pin reset" found at the Errata document
+            for your device located at https://www.nordicsemi.com/DocLib  */
         if (errata_6()){
             NRF_POWER_S->EVENTS_SLEEPENTER = (POWER_EVENTS_SLEEPENTER_EVENTS_SLEEPENTER_NotGenerated << POWER_EVENTS_SLEEPENTER_EVENTS_SLEEPENTER_Pos);
             NRF_POWER_S->EVENTS_SLEEPEXIT = (POWER_EVENTS_SLEEPEXIT_EVENTS_SLEEPEXIT_NotGenerated << POWER_EVENTS_SLEEPEXIT_EVENTS_SLEEPEXIT_Pos);
         }
-        
+
+        /* Workaround for Errata 14 "REGULATORS: LDO mode at startup" found at the Errata document
+            for your device located at https://www.nordicsemi.com/DocLib  */
         if (errata_14()){
-            *(uint32_t *)0x50004A38 = 0x01ul;
+            *((volatile uint32_t *)0x50004A38) = 0x01ul;
             NRF_REGULATORS_S->DCDCEN = REGULATORS_DCDCEN_DCDCEN_Enabled << REGULATORS_DCDCEN_DCDCEN_Pos;
         }
 
+        /* Workaround for Errata 15 "REGULATORS: LDO mode at startup" found at the Errata document
+            for your device located at https://www.nordicsemi.com/DocLib  */
         if (errata_15()){
-            *(uint32_t *)0x50004A38 = 0x00ul;
+            *((volatile uint32_t *)0x50004A38) = 0x00ul;
             NRF_REGULATORS_S->DCDCEN = REGULATORS_DCDCEN_DCDCEN_Enabled << REGULATORS_DCDCEN_DCDCEN_Pos;
         }
+
+        /* Workaround for Errata 20 "RAM content cannot be trusted upon waking up from System ON Idle or System OFF mode" found at the Errata document
+            for your device located at https://www.nordicsemi.com/DocLib  */
+        if (errata_20()){
+            *((volatile uint32_t *)0x5003AEE4) = 0xC;
+        }
+
+        /* Enable SWO trace functionality. If ENABLE_SWO is not defined, SWO pin will be used as GPIO (see Product
+           Specification to see which one). */
+        #if defined (ENABLE_SWO)
+            NRF_TAD_S->ENABLE = TAD_ENABLE_ENABLE_Msk;
+            NRF_TAD_S->CLOCKSTART = TAD_CLOCKSTART_START_Msk;
+            NRF_TAD_S->PSEL.TRACEDATA0 = TRACE_TRACEDATA0_PIN;
+            NRF_TAD_S->TRACEPORTSPEED = TAD_TRACEPORTSPEED_TRACEPORTSPEED_32MHz;
+
+            NRF_P0_S->PIN_CNF[TRACE_TRACEDATA0_PIN] = TRACE_PIN_CNF_VALUE;
+        #endif
+
+        /* Enable Trace functionality. If ENABLE_TRACE is not defined, TRACE pins will be used as GPIOs (see Product
+           Specification to see which ones). */
+        #if defined (ENABLE_TRACE)
+            NRF_TAD_S->ENABLE = TAD_ENABLE_ENABLE_Msk;
+            NRF_TAD_S->CLOCKSTART = TAD_CLOCKSTART_START_Msk;
+            NRF_TAD_S->PSEL.TRACECLK   = TRACE_TRACECLK_PIN;
+            NRF_TAD_S->PSEL.TRACEDATA0 = TRACE_TRACEDATA0_PIN;
+            NRF_TAD_S->PSEL.TRACEDATA1 = TRACE_TRACEDATA1_PIN;
+            NRF_TAD_S->PSEL.TRACEDATA2 = TRACE_TRACEDATA2_PIN;
+            NRF_TAD_S->PSEL.TRACEDATA3 = TRACE_TRACEDATA3_PIN;
+            NRF_TAD_S->TRACEPORTSPEED = TAD_TRACEPORTSPEED_TRACEPORTSPEED_32MHz;
+
+            NRF_P0_S->PIN_CNF[TRACE_TRACECLK_PIN] =   TRACE_PIN_CNF_VALUE;
+            NRF_P0_S->PIN_CNF[TRACE_TRACEDATA0_PIN] = TRACE_PIN_CNF_VALUE;
+            NRF_P0_S->PIN_CNF[TRACE_TRACEDATA1_PIN] = TRACE_PIN_CNF_VALUE;
+            NRF_P0_S->PIN_CNF[TRACE_TRACEDATA2_PIN] = TRACE_PIN_CNF_VALUE;
+            NRF_P0_S->PIN_CNF[TRACE_TRACEDATA3_PIN] = TRACE_PIN_CNF_VALUE;
+
+        #endif
 
         /* Allow Non-Secure code to run FPU instructions. 
          * If only the secure code should control FPU power state these registers should be configured accordingly in the secure application code. */
@@ -190,6 +245,18 @@ void SystemInit(void)
 
 
     bool errata_15()
+    {
+        if (*(uint32_t *)0x00FF0130 == 0x9ul){
+            if (*(uint32_t *)0x00FF0134 == 0x02ul){
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+
+    bool errata_20()
     {
         if (*(uint32_t *)0x00FF0130 == 0x9ul){
             if (*(uint32_t *)0x00FF0134 == 0x02ul){

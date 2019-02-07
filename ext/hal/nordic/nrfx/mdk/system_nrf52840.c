@@ -77,7 +77,7 @@ void SystemInit(void)
     #endif
     
     /* Workaround for Errata 36 "CLOCK: Some registers are not reset when expected" found at the Errata document
-       for your device located at https://infocenter.nordicsemi.com/  */
+       for your device located at https://www.nordicsemi.com/DocLib  */
     if (errata_36()){
         NRF_CLOCK->EVENTS_DONE = 0;
         NRF_CLOCK->EVENTS_CTTO = 0;
@@ -85,7 +85,7 @@ void SystemInit(void)
     }
     
     /* Workaround for Errata 66 "TEMP: Linearity specification not met with default settings" found at the Errata document
-       for your device located at https://infocenter.nordicsemi.com/  */
+       for your device located at https://www.nordicsemi.com/DocLib  */
     if (errata_66()){
         NRF_TEMP->A0 = NRF_FICR->TEMP.A0;
         NRF_TEMP->A1 = NRF_FICR->TEMP.A1;
@@ -107,31 +107,31 @@ void SystemInit(void)
     }
     
     /* Workaround for Errata 98 "NFCT: Not able to communicate with the peer" found at the Errata document
-       for your device located at https://infocenter.nordicsemi.com/  */
+       for your device located at https://www.nordicsemi.com/DocLib  */
     if (errata_98()){
         *(volatile uint32_t *)0x4000568Cul = 0x00038148ul;
     }
     
     /* Workaround for Errata 103 "CCM: Wrong reset value of CCM MAXPACKETSIZE" found at the Errata document
-       for your device located at https://infocenter.nordicsemi.com/  */
+       for your device located at https://www.nordicsemi.com/DocLib  */
     if (errata_103()){
         NRF_CCM->MAXPACKETSIZE = 0xFBul;
     }
     
     /* Workaround for Errata 115 "RAM: RAM content cannot be trusted upon waking up from System ON Idle or System OFF mode" found at the Errata document
-       for your device located at https://infocenter.nordicsemi.com/  */
+       for your device located at https://www.nordicsemi.com/DocLib  */
     if (errata_115()){
         *(volatile uint32_t *)0x40000EE4 = (*(volatile uint32_t *)0x40000EE4 & 0xFFFFFFF0) | (*(uint32_t *)0x10000258 & 0x0000000F);
     }
     
     /* Workaround for Errata 120 "QSPI: Data read or written is corrupted" found at the Errata document
-       for your device located at https://infocenter.nordicsemi.com/  */
+       for your device located at https://www.nordicsemi.com/DocLib  */
     if (errata_120()){
         *(volatile uint32_t *)0x40029640ul = 0x200ul;
     }
     
     /* Workaround for Errata 136 "System: Bits in RESETREAS are set when they should not be" found at the Errata document
-       for your device located at https://infocenter.nordicsemi.com/  */
+       for your device located at https://www.nordicsemi.com/DocLib  */
     if (errata_136()){
         if (NRF_POWER->RESETREAS & POWER_RESETREAS_RESETPIN_Msk){
             NRF_POWER->RESETREAS =  ~POWER_RESETREAS_RESETPIN_Msk;
@@ -200,7 +200,8 @@ static bool errata_36(void)
             return true;
         }
     }
-    
+
+    /* Apply by default for unknown devices until errata is confirmed fixed. */
     return true;
 }
 
@@ -221,7 +222,8 @@ static bool errata_66(void)
             return true;
         }
     }
-    
+
+    /* Apply by default for unknown devices until errata is confirmed fixed. */
     return true;
 }
 
@@ -290,7 +292,8 @@ static bool errata_136(void)
             return true;
         }
     }
-    
+
+    /* Apply by default for unknown devices until errata is confirmed fixed. */
     return true;
 }
 
