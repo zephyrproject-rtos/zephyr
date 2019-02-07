@@ -32,13 +32,6 @@ LOG_MODULE_REGISTER(net_dns_resolve, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #define LLMNR_IPV4_ADDR "224.0.0.252:5355"
 #define LLMNR_IPV6_ADDR "[ff02::1:3]:5355"
 
-static int dns_write(struct dns_resolve_context *ctx,
-		     int server_idx,
-		     int query_idx,
-		     struct net_buf *dns_data,
-		     struct net_buf *dns_qname,
-		     int hop_limit);
-
 #define DNS_BUF_TIMEOUT 500 /* ms */
 
 /* RFC 1035, 3.1. Name space definitions
@@ -78,6 +71,13 @@ NET_BUF_POOL_DEFINE(dns_qname_pool, DNS_RESOLVER_BUF_CTR, DNS_MAX_NAME_LEN,
 		    0, NULL);
 
 static struct dns_resolve_context dns_default_ctx;
+
+static int dns_write(struct dns_resolve_context *ctx,
+		     int server_idx,
+		     int query_idx,
+		     struct net_buf *dns_data,
+		     struct net_buf *dns_qname,
+		     int hop_limit);
 
 static bool server_is_mdns(sa_family_t family, struct sockaddr *addr)
 {
