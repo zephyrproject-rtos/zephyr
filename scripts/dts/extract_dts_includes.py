@@ -395,22 +395,9 @@ def yaml_traverse_inherited(fname, node):
     return node
 
 
-def get_key_value(k, v, tabstop):
-    label = "#define " + k
-
-    # calculate the name's tabs
-    if len(label) % 8:
-        tabs = (len(label) + 7) >> 3
-    else:
-        tabs = (len(label) >> 3) + 1
-
-    line = label
-    for i in range(0, tabstop - tabs + 1):
-        line += '\t'
-    line += str(v)
-    line += '\n'
-
-    return line
+def get_key_value(k, v, value_tabs):
+    line = "#define " + k
+    return line + (value_tabs - len(line)//8)*'\t' + str(v) + '\n'
 
 
 def write_conf(f):
@@ -438,30 +425,29 @@ def write_header(f):
 #define GENERATED_DTS_BOARD_UNFIXED_H
 ''')
 
+    def max_dict_key(dct):
+        return max(len(key) for key in dct)
+
     for node in sorted(defs):
         f.write('/* ' + node.split('/')[-1] + ' */\n')
 
-        max_dict_key = lambda d: max(len(k) for k in d)
-        maxlength = 0
+        maxlen = max_dict_key(defs[node])
         if defs[node]['aliases']:
-            maxlength = max_dict_key(defs[node]['aliases'])
-        maxlength = max(maxlength, max_dict_key(defs[node])) + len('#define ')
+            maxlen = max(maxlen, max_dict_key(defs[node]['aliases']))
+        maxlen += len('#define ')
 
-        if maxlength % 8:
-            maxtabstop = (maxlength + 7) >> 3
-        else:
-            maxtabstop = (maxlength >> 3) + 1
-
-        if maxtabstop * 8 - maxlength <= 2:
-            maxtabstop += 1
+        value_tabs = (maxlen + 8)//8  # Tabstop index for value
+        if 8*value_tabs - maxlen <= 2:
+            # Add some minimum room between the macro name and the value
+            value_tabs += 1
 
         for prop in sorted(defs[node]):
             if prop != 'aliases':
-                f.write(get_key_value(prop, defs[node][prop], maxtabstop))
+                f.write(get_key_value(prop, defs[node][prop], value_tabs))
 
         for alias in sorted(defs[node]['aliases']):
             alias_target = defs[node]['aliases'][alias]
-            f.write(get_key_value(alias, alias_target, maxtabstop))
+            f.write(get_key_value(alias, alias_target, value_tabs))
 
         f.write('\n')
 
