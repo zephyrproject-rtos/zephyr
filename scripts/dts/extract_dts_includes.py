@@ -428,10 +428,6 @@ def output_keyvalue_lines(fd):
 
         fd.write("\n")
 
-def generate_keyvalue_file(kv_file):
-    with open(kv_file, "w") as fd:
-        output_keyvalue_lines(fd)
-
 
 def output_include_lines(fd):
     fd.write('''\
@@ -475,18 +471,6 @@ def output_include_lines(fd):
         fd.write("\n")
 
     fd.write("#endif\n")
-
-
-def generate_include_file(inc_file):
-    with open(inc_file, "w") as fd:
-        output_include_lines(fd)
-
-
-def load_and_parse_dts(dts_file):
-    with open(dts_file, "r", encoding="utf-8") as fd:
-        dts = parse_file(fd)
-
-    return dts
 
 
 def load_yaml_descriptions(dts, yaml_dirs):
@@ -546,9 +530,11 @@ def main():
     args = parse_arguments()
     enable_old_alias_names(args.old_alias_names)
 
-    dts = load_and_parse_dts(args.dts)
+    # Parse DTS
+    with open(args.dts, 'r', encoding='utf-8') as f:
+        dts = parse_file(f)
 
-    # build up useful lists
+    # Build up useful lists
     get_reduced(dts['/'], '/')
     get_phandles(dts['/'], '/', {})
     get_aliases(dts['/'])
@@ -563,12 +549,15 @@ def main():
     for c in sorted(chosen):
         insert_defs('chosen', {'DT_CHOSEN_' + str_to_label(c): '1'}, {})
 
-     # generate config and include file
+    # Generate config and header files
+
     if args.keyvalue is not None:
-       generate_keyvalue_file(args.keyvalue)
+        with open(args.keyvalue, 'w', encoding='utf-8') as f:
+            output_keyvalue_lines(f)
 
     if args.include is not None:
-       generate_include_file(args.include)
+        with open(args.include, 'w', encoding='utf-8') as f:
+            output_include_lines(f)
 
 
 if __name__ == '__main__':
