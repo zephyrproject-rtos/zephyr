@@ -1,15 +1,18 @@
-.. _west-flash-debug:
+.. _west-build-flash-debug:
 
-Flashing and Debugging
-######################
+Building, Flashing and Debugging
+################################
 
-West provides three commands for running and interacting with Zephyr
-programs running on a board: ``flash``, ``debug``, and
-``debugserver``.
+West provides 5 commands for building, flashing, and interacting with Zephyr
+programs running on a board: ``build``, ``flash``, ``debug``, ``debugserver``
+and ``attach``.
 
 These use information stored in the CMake cache [#cmakecache]_ to
-flash or attach a debugger to a board supported by Zephyr. The CMake
-build system commands with the same names directly delegate to West.
+flash or attach a debugger to a board supported by Zephyr. The exception is
+starting a clean build (i.e. with no previous artifacts) which will in fact
+run CMake thus creating the corresponding cache.
+The CMake build system commands with the same names (i.e. all but ``build``)
+directly delegate to West.
 
 .. Add a per-page contents at the top of the page. This page is nested
    deeply enough that it doesn't have any subheadings in the main nav.
@@ -18,6 +21,76 @@ build system commands with the same names directly delegate to West.
 
    .. contents::
       :local:
+
+.. _west-building:
+
+Building: ``west build``
+************************
+
+.. tip:: Run ``west build -h`` for additional help.
+
+The ``build`` command allows you to build any source tree from any directory
+in your file system, placing the build results in a folder of your choice.
+
+In its simplest form, the command can be run by navigating to the root folder
+(i.e. the folder containing a file:`CMakeLists.txt` file) of the Zephyr
+application of your choice and running::
+
+  west build -b <BOARD>
+
+Where ``<BOARD>`` is the name of the board you want to build for. This is
+exactly the same name you would supply to CMake if you were to invoke it with:
+``cmake -DBOARD=<BOARD>``.
+A build folder named :file:`build` (default name) will be created and the
+build output will be placed in it.
+
+To specify the build directory, use ``--build-dir`` (or ``-d``)::
+
+  west build -b <BOARD> --build-dir path/to/build/directory
+
+Since the build directory defaults to :file:`build`, if you do not specify
+a build directory but a folder named file:`build` is present, that will be used,
+allowing you to incrementally build from outside the file:`build` folder with
+no additional parameters.
+
+.. note::
+  The ``-b <BOARD>`` parameter is only required when there is no CMake cache
+  present at all, usually when you are building from scratch or creating a
+  brand new build directory. After that you can rebuild (even with additional
+  parameters) without having to specify the board again. If you're unsure
+  whether ``-b`` is required, just try leaving it out. West will print an
+  error if the option is required and was not given.
+
+To specify the source directory, use ``--source-dir`` (or ``-s``)::
+
+  west build -b <BOARD> --source-dir path/to/source/directory
+
+Additionally you can specify the build system target using the ``--target``
+(or ``-t``) option. For example, to run the ``clean`` target::
+
+  west build -t clean
+
+You can list all targets with ``ninja help`` (or ``west build -t help``) inside
+the build folder.
+
+
+Finally, you can add additional arguments to the CMake invocation performed by
+``west build`` by supplying additional parameters (after a ``--``) to the
+command. For example, to use the Unix Makefiles CMake generator instead of
+Ninja (which ``west build`` uses by default), run::
+
+  west build -- -G'Unix Makefiles'
+
+As another example, the following command adds the ``file.conf`` Kconfig
+fragment to the files which are merged into your final build configuration::
+
+  west build -- -DOVERLAY_CONFIG=file.conf
+
+Passing additional CMake arguments like this forces ``west build`` to re-run
+CMake, even if a build system has already been generated. You can also force
+a CMake re-run using the ``-c`` (or ``--cmake``) option::
+
+  west build -c
 
 .. _west-flashing:
 
@@ -40,6 +113,11 @@ Without options, the behavior is the same as ``ninja flash`` (or
 To specify the build directory, use ``--build-dir`` (or ``-d``)::
 
   west flash --build-dir path/to/build/directory
+
+Since the build directory defaults to :file:`build`, if you do not specify
+a build directory but a folder named :file:`build` is present, that will be
+used, allowing you to flash from outside the file:`build` folder with no
+additional parameters.
 
 Choosing a Runner
 =================
@@ -131,6 +209,11 @@ To specify the build directory, use ``--build-dir`` (or ``-d``)::
 
   west debug --build-dir path/to/build/directory
   west debugserver --build-dir path/to/build/directory
+
+Since the build directory defaults to :file:`build`, if you do not specify
+a build directory but a folder named :file:`build` is present, that will be
+used, allowing you to debug from outside the file:`build` folder with no
+additional parameters.
 
 Choosing a Runner
 =================
