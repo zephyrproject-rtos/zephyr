@@ -76,8 +76,18 @@ def dt_hex_val(kconf, _, name, unit=None):
 
     return hex(d)
 
+def dt_str_val(kconf, _, name):
+    """
+    This function looks up 'name' in the DTS generated "conf" style database
+    and if its found it will return the value as string.
+    """
+    if doc_mode or name not in dt_defines:
+        return ""
+
+    return dt_defines[name].strip('\"')
 
 functions = {
         "dt_int_val": (dt_int_val, 1, 2),
         "dt_hex_val": (dt_hex_val, 1, 2),
+        "dt_str_val": (dt_str_val, 1, 1),
 }
