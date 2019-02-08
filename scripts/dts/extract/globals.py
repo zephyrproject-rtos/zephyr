@@ -44,22 +44,26 @@ def str_to_label(s):
             .upper()
 
 
-def all_compats(node, name):
-    if node['props'].get('status') == 'disabled':
-        return {}
+def all_compats(node):
+    # Returns a set() of all 'compatible' strings that appear at or below
+    # 'node', skipping disabled nodes
 
-    node_to_compat = {}
+    if node['props'].get('status') == 'disabled':
+        return set()
+
+    compats = set()
 
     if 'compatible' in node['props']:
-        node_to_compat[name] = node['props']['compatible']
+        val = node['props']['compatible']
+        if isinstance(val, list):
+            compats.update(val)
+        else:
+            compats.add(val)
 
-    if name != '/':
-        name += '/'
+    for child_node in node['children'].values():
+        compats.update(all_compats(child_node))
 
-    for child_name, child_node in node['children'].items():
-        node_to_compat.update(all_compats(child_node, name + child_name))
-
-    return node_to_compat
+    return compats
 
 
 def create_aliases(root):
