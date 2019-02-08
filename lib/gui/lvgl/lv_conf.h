@@ -317,7 +317,7 @@ extern void *lv_default_font_custom_ptr;
 /* Objects */
 #define LV_OBJ_FREE_NUM_TYPE	uint32_t
 #define LV_OBJ_FREE_PTR		1
-#define LV_OBJ_REALIGN	CONFIG_VGL_OBJ_REALIGN
+#define LV_OBJ_REALIGN	CONFIG_LVGL_OBJ_REALIGN
 
 #define USE_LV_LABEL		CONFIG_LVGL_OBJ_LABEL
 #if USE_LV_LABEL != 0
