@@ -503,7 +503,7 @@ def main():
 
     # Create some global data structures from the parsed DTS
     create_reduced(root, '/')
-    create_phandles(root, '/', {})
+    create_phandles(root, '/')
     create_aliases(root)
     create_chosen(root)
 
