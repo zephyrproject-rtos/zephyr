@@ -153,16 +153,23 @@ class KconfigCheck(ComplianceTest):
         os.environ["KCONFIG_STRICT"] = "y"
 
         undef_ref_warnings = []
+        kconfig_exception = None
 
-        for warning in kconfiglib.Kconfig().warnings:
-            if "undefined symbol" in warning:
-                undef_ref_warnings.append(warning)
+        try:
+            for warning in kconfiglib.Kconfig().warnings:
+                if "undefined symbol" in warning:
+                    undef_ref_warnings.append(warning)
+        except kconfiglib.KconfigError as e:
+            kconfig_exception = str(e)
 
         # Generating multiple JUnit <failure>s would be neater, but Shippable only
         # seems to display the first one
         if undef_ref_warnings:
             self.case.result = Failure("undefined Kconfig symbols", "failure")
             self.case.result._elem.text = "\n\n\n".join(undef_ref_warnings)
+        elif kconfig_exception:
+            self.case.result = Failure("Error running kconfig", "failure")
+            self.case.result._elem.text = kconfig_exception
 
 
 class Documentation(ComplianceTest):
