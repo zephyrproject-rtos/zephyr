@@ -557,8 +557,8 @@ static int erase_storage(void)
 
 	dev = device_get_binding(DT_FLASH_DEV_NAME);
 
-	return flash_erase(dev, FLASH_AREA_STORAGE_OFFSET,
-			   FLASH_AREA_STORAGE_SIZE);
+	return flash_erase(dev, DT_FLASH_AREA_STORAGE_OFFSET,
+			   DT_FLASH_AREA_STORAGE_SIZE);
 }
 
 void board_refresh_display(void)
