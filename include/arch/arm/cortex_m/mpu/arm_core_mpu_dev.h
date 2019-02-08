@@ -147,11 +147,7 @@ void arm_core_mpu_configure_static_mpu_regions(
 /* Number of memory areas, inside which dynamic regions
  * may be programmed in run-time.
  */
-#if defined(CONFIG_APPLICATION_MEMORY)
-#define MPU_DYNAMIC_REGION_AREAS_NUM 2
-#else
 #define MPU_DYNAMIC_REGION_AREAS_NUM 1
-#endif
 
 /**
  * @brief mark a set of memory regions as eligible for dynamic configuration
