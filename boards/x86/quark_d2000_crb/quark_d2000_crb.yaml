@@ -14,7 +14,7 @@ supported:
   - spi
   - gpio
   - aio
-  - rtc
+  - counter
   - watchdog
   - dma
   - pwm

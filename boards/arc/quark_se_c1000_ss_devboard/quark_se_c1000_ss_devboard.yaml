@@ -12,7 +12,7 @@ supported:
   - i2c
   - spi
   - gpio
-  - rtc
+  - counter
   - watchdog
 testing:
   ignore_tags:
