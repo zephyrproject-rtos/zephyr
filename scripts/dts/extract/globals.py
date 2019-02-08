@@ -114,7 +114,7 @@ def create_chosen(root):
                 chosen[k] = v
 
 
-def create_phandles(root, name, handles):
+def create_phandles(root, name):
     if root['props'].get('status') == 'disabled':
         return
 
@@ -125,7 +125,7 @@ def create_phandles(root, name, handles):
         name += '/'
 
     for k, v in root['children'].items():
-        create_phandles(v, name + k, handles)
+        create_phandles(v, name + k)
 
 
 def insert_defs(node_address, new_defs, new_aliases):
