@@ -1880,28 +1880,6 @@ static inline bool net_pkt_insert_be32_timeout(struct net_pkt *pkt,
 }
 
 /**
- * @brief Split a fragment into two parts at arbitrary offset.
- *
- * @details This will split packet into two parts. Original packet will be
- * modified. Offset is relative position with input fragment. Input fragment
- * contains first part of the split. Rest of the fragment chain is in "rest"
- * parameter provided by caller.
- *
- * @param pkt Network packet
- * @param frag Original network buffer fragment which is to be split.
- * @param offset Offset relative to input fragment.
- * @param rest Rest of the fragment chain after split.
- * @param timeout Affects the action taken should the net buf pool be empty.
- * If K_NO_WAIT, then return immediately. If K_FOREVER, then wait as long as
- * necessary. Otherwise, wait up to the specified number of milliseconds before
- * timing out.
- *
- * @return 0 on success, <0 otherwise.
- */
-int net_pkt_split(struct net_pkt *pkt, struct net_buf *frag, u16_t offset,
-		  struct net_buf **rest, s32_t timeout);
-
-/**
  * @brief Return the fragment and offset within it according to network
  * packet offset.
  *
