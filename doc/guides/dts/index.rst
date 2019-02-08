@@ -298,7 +298,7 @@ The full set of Zephyr-specific ``chosen`` nodes follows:
    * - ``zephyr,sram``
      - ``CONFIG_SRAM``
    * - ``zephyr,ccm``
-     - ``CONFIG_CCM``
+     - ``DT_CCM``
    * - ``zephyr,console``
      - :option:`CONFIG_UART_CONSOLE_ON_DEV_NAME`
    * - ``zephyr,shell-uart``

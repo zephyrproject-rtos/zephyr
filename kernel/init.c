@@ -144,7 +144,7 @@ void _bss_zero(void)
 {
 	(void)memset(&__bss_start, 0,
 		     ((u32_t) &__bss_end - (u32_t) &__bss_start));
-#ifdef CONFIG_CCM_BASE_ADDRESS
+#ifdef DT_CCM_BASE_ADDRESS
 	(void)memset(&__ccm_bss_start, 0,
 		     ((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
 #endif
@@ -173,7 +173,7 @@ void _data_copy(void)
 {
 	(void)memcpy(&__data_ram_start, &__data_rom_start,
 		 ((u32_t) &__data_ram_end - (u32_t) &__data_ram_start));
-#ifdef CONFIG_CCM_BASE_ADDRESS
+#ifdef DT_CCM_BASE_ADDRESS
 	(void)memcpy(&__ccm_data_start, &__ccm_data_rom_start,
 		 ((u32_t) &__ccm_data_end - (u32_t) &__ccm_data_start));
 #endif

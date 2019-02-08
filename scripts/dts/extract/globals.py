@@ -22,7 +22,7 @@ old_alias_names = False
 
 regs_config = {
     'zephyr,sram'  : 'DT_SRAM',
-    'zephyr,ccm'   : 'CONFIG_CCM'
+    'zephyr,ccm'   : 'DT_CCM'
 }
 
 name_config = {

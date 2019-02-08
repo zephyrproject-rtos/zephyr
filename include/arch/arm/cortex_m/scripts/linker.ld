@@ -93,8 +93,8 @@ MEMORY
 #ifdef CONFIG_TI_CCFG_PRESENT
     FLASH_CCFG            (rwx): ORIGIN = CCFG_ADDR, LENGTH = CCFG_SIZE
 #endif
-#ifdef CONFIG_CCM_BASE_ADDRESS
-    CCM                   (rw) : ORIGIN = CONFIG_CCM_BASE_ADDRESS, LENGTH = CONFIG_CCM_SIZE * 1K
+#ifdef DT_CCM_BASE_ADDRESS
+    CCM                   (rw) : ORIGIN = DT_CCM_BASE_ADDRESS, LENGTH = DT_CCM_SIZE * 1K
 #endif
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
 
@@ -455,7 +455,7 @@ SECTIONS
 
     GROUP_END(RAMABLE_REGION)
 
-#ifdef CONFIG_CCM_BASE_ADDRESS
+#ifdef DT_CCM_BASE_ADDRESS
 
     GROUP_START(CCM)
 
@@ -492,7 +492,7 @@ SECTIONS
 
     GROUP_END(CCM)
 
-#endif /* CONFIG_CCM_BASE_ADDRESS */
+#endif /* DT_CCM_BASE_ADDRESS */
 
 #ifdef CONFIG_CUSTOM_SECTIONS_LD
 /* Located in project source directory */
