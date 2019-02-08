@@ -385,8 +385,10 @@ def yaml_traverse_inherited(fname, node):
     return node
 
 
-def define_str(name, value, value_tabs):
+def define_str(name, value, value_tabs, is_deprecated=False):
     line = "#define " + name
+    if is_deprecated:
+        line += " __DEPRECATED_MACRO "
     return line + (value_tabs - len(line)//8)*'\t' + str(value) + '\n'
 
 
@@ -439,7 +441,12 @@ def write_header(f):
 
         for alias in sorted(defs[node]['aliases']):
             alias_target = defs[node]['aliases'][alias]
-            f.write(define_str(alias, alias_target, value_tabs))
+            deprecated_warn = False
+            # Mark any non-DT_ prefixed define as deprecated except
+            # for now we special case LED, SW, and *PWM_LED*
+            if not alias.startswith(('DT_', 'LED', 'SW')) and not 'PWM_LED' in alias:
+                deprecated_warn = True
+            f.write(define_str(alias, alias_target, value_tabs, deprecated_warn))
 
         f.write('\n')
 
