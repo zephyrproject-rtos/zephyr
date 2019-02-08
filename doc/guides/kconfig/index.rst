@@ -637,6 +637,10 @@ Device Tree Related Functions
            'm' or 'M'  divide by 1,048,576 (1 << 20)
            'g' or 'G'  divide by 1,073,741,824 (1 << 30)
 
+  dt_str_val(kconf, _, name):
+       This function looks up 'name' in the DTS generated "conf" style database
+       and if its found it will return the value as string.
+
 Example Usage
 =============
 
