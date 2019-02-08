@@ -20,7 +20,7 @@ void ping_ipm_callback(void *context, u32_t id, volatile void *data)
 
 void main(void)
 {
-	ipm = device_get_binding(MAILBOX_0_LABEL);
+	ipm = device_get_binding(DT_NXP_LPC_MAILBOX_0_LABEL);
 	if (!ipm) {
 		while (1) {
 		}
