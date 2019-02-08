@@ -314,7 +314,7 @@ endif # NET_UDP
 
 config NET_MAX_CONN
 	int "How many network connections are supported"
-	depends on NET_UDP || NET_TCP || NET_SOCKETS_PACKET
+	depends on NET_UDP || NET_TCP || NET_SOCKETS_PACKET || NET_SOCKETS_CAN
 	default 8 if NET_IPV6 && NET_IPV4
 	default 4
 	help
