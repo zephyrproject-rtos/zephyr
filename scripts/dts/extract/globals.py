@@ -124,8 +124,8 @@ def create_phandles(root, name):
     if name != '/':
         name += '/'
 
-    for k, v in root['children'].items():
-        create_phandles(v, name + k)
+    for child_name, child_node in root['children'].items():
+        create_phandles(child_node, name + child_name)
 
 
 def insert_defs(node_address, new_defs, new_aliases):
