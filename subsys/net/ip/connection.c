@@ -922,6 +922,9 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
 			best_rank = 0;
 			best_match = i;
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
+			best_rank = 0;
+			best_match = i;
 		}
 	}
 

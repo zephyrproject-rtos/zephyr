@@ -50,7 +50,14 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 #if defined(CONFIG_NET_IPV4)
 #define MAX_IP_PROTO_LEN NET_IPV4H_LEN
 #else
+#if defined(CONFIG_NET_SOCKETS_CAN)
+/* TODO: Use CAN MTU here instead of hard coded value. There was
+ * weird circular dependency issue so this needs more TLC.
+ */
+#define MAX_IP_PROTO_LEN 8
+#else
 #error "Either IPv6 or IPv4 needs to be selected."
+#endif /* SOCKETS_CAN */
 #endif /* IPv4 */
 #endif /* IPv6 */
 
@@ -61,8 +68,12 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 #if defined(CONFIG_NET_UDP)
 #define MAX_NEXT_PROTO_LEN NET_UDPH_LEN
 #else
+#if defined(CONFIG_NET_SOCKETS_CAN)
+#define MAX_NEXT_PROTO_LEN 0
+#else
 /* If no TCP and no UDP, apparently we still want pings to work. */
 #define MAX_NEXT_PROTO_LEN NET_ICMPH_LEN
+#endif /* SOCKETS_CAN */
 #endif /* UDP */
 #endif /* TCP */
 
