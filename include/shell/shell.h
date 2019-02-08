@@ -401,6 +401,8 @@ enum shell_signal {
  * @brief Shell instance context.
  */
 struct shell_ctx {
+	const char *prompt; /*!< shell current prompt. */
+
 	enum shell_state state; /*!< Internal module state.*/
 	enum shell_receive_state receive_state;/*!< Escape sequence indicator.*/
 
@@ -447,7 +449,7 @@ enum shell_flag {
  * @brief Shell instance internals.
  */
 struct shell {
-	char *const prompt; /*!< shell prompt. */
+	const char *default_prompt; /*!< shell default prompt. */
 
 	const struct shell_transport *iface; /*!< Transport interface.*/
 	struct shell_ctx *ctx; /*!< Internal context.*/
@@ -475,7 +477,7 @@ extern void shell_print_stream(const void *user_ctx, const char *data,
  * @brief Macro for defining a shell instance.
  *
  * @param[in] _name		Instance name.
- * @param[in] _prompt		Shell prompt string.
+ * @param[in] _prompt		Shell default prompt string.
  * @param[in] _transport_iface	Pointer to the transport interface.
  * @param[in] _log_queue_size	Logger processing queue size.
  * @param[in] _log_timeout	Logger thread timeout in milliseconds on full
@@ -488,7 +490,6 @@ extern void shell_print_stream(const void *user_ctx, const char *data,
 		     _log_queue_size, _log_timeout, _shell_flag)	      \
 	static const struct shell _name;				      \
 	static struct shell_ctx UTIL_CAT(_name, _ctx);			      \
-	static char _name##prompt[CONFIG_SHELL_PROMPT_LENGTH + 1] = _prompt;  \
 	static u8_t _name##_out_buffer[CONFIG_SHELL_PRINTF_BUFF_SIZE];	      \
 	SHELL_LOG_BACKEND_DEFINE(_name, _name##_out_buffer,		      \
 				 CONFIG_SHELL_PRINTF_BUFF_SIZE,		      \
@@ -502,7 +503,7 @@ extern void shell_print_stream(const void *user_ctx, const char *data,
 	static K_THREAD_STACK_DEFINE(_name##_stack, CONFIG_SHELL_STACK_SIZE); \
 	static struct k_thread _name##_thread;				      \
 	static const struct shell _name = {				      \
-		.prompt = _name##prompt,				      \
+		.default_prompt = _prompt,				      \
 		.iface = _transport_iface,				      \
 		.ctx = &UTIL_CAT(_name, _ctx),				      \
 		.history = SHELL_HISTORY_PTR(_name),			      \
@@ -660,9 +661,9 @@ void shell_process(const struct shell *shell);
  * @param[in] prompt	New shell prompt.
  *
  * @return 0		Success.
- * @return -ENOMEM	New prompt is too long.
+ * @return -EINVAL	Pointer to new prompt is not correct.
  */
-int shell_prompt_change(const struct shell *shell, char *prompt);
+int shell_prompt_change(const struct shell *shell, const char *prompt);
 
 /**
  * @brief Prints the current command help.
