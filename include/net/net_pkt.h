@@ -2241,9 +2241,9 @@ int net_pkt_memset(struct net_pkt *pkt, int byte, size_t length);
  *
  * @return 0 on success, negative errno code otherwise.
  */
-int net_pkt_copy_new(struct net_pkt *pkt_dst,
-		     struct net_pkt *pkt_src,
-		     size_t length);
+int net_pkt_copy(struct net_pkt *pkt_dst,
+		 struct net_pkt *pkt_src,
+		 size_t length);
 
 /**
  * @brief Clone pkt and its buffer.

@@ -572,7 +572,7 @@ void test_net_pkt_copy(void)
 	pkt_print_cursor(pkt_src);
 
 	/* Now let's clone the pkt
-	 * This will test net_pkt_copy_new() as it usses it for the buffers
+	 * This will test net_pkt_copy_new() as it uses it for the buffers
 	 */
 	pkt_dst = net_pkt_clone(pkt_src, K_NO_WAIT);
 	zassert_true(pkt_dst != NULL, "Pkt not clone");

@@ -595,11 +595,11 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 	/* We copy original headers back to the fragment packet
 	 * Note that we insert the right next header to point to fragment header
 	 */
-	if (net_pkt_copy_new(frag_pkt, pkt, next_hdr_off) ||
+	if (net_pkt_copy(frag_pkt, pkt, next_hdr_off) ||
 	    net_pkt_write_u8_new(frag_pkt, NET_IPV6_NEXTHDR_FRAG) ||
 	    net_pkt_skip(pkt, 1) ||
-	    net_pkt_copy_new(frag_pkt, pkt, net_pkt_ip_hdr_len(pkt) +
-			     net_pkt_ipv6_ext_len(pkt) - next_hdr_off - 1)) {
+	    net_pkt_copy(frag_pkt, pkt, net_pkt_ip_hdr_len(pkt) +
+			 net_pkt_ipv6_ext_len(pkt) - next_hdr_off - 1)) {
 		goto fail;
 	}
 
@@ -627,7 +627,7 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 	 * the original packet
 	 */
 	if (net_pkt_skip(pkt, frag_offset) ||
-	    net_pkt_copy_new(frag_pkt, pkt, fit_len)) {
+	    net_pkt_copy(frag_pkt, pkt, fit_len)) {
 		goto fail;
 	}
 

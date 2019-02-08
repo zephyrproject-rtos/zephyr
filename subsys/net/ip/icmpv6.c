@@ -154,7 +154,7 @@ enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
 	}
 
 	if (net_icmpv6_create(reply, NET_ICMPV6_ECHO_REPLY, 0) ||
-	    net_pkt_copy_new(reply, pkt, payload_len)) {
+	    net_pkt_copy(reply, pkt, payload_len)) {
 		NET_DBG("DROP: wrong buffer");
 		goto drop;
 	}
@@ -266,7 +266,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 	 */
 	copy_len = net_pkt_available_buffer(pkt);
 
-	if (err || net_pkt_copy_new(pkt, orig, copy_len)) {
+	if (err || net_pkt_copy(pkt, orig, copy_len)) {
 		goto drop;
 	}
 

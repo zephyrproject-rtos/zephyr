@@ -2502,9 +2502,9 @@ int net_pkt_write_new(struct net_pkt *pkt, const void *data, size_t length)
 	return net_pkt_cursor_operate(pkt, (void *)data, length, true, true);
 }
 
-int net_pkt_copy_new(struct net_pkt *pkt_dst,
-		     struct net_pkt *pkt_src,
-		     size_t length)
+int net_pkt_copy(struct net_pkt *pkt_dst,
+		 struct net_pkt *pkt_src,
+		 size_t length)
 {
 	struct net_pkt_cursor *c_dst = &pkt_dst->cursor;
 	struct net_pkt_cursor *c_src = &pkt_src->cursor;
@@ -2568,7 +2568,7 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 
 	net_pkt_cursor_init(pkt);
 
-	if (net_pkt_copy_new(clone_pkt, pkt, net_pkt_get_len(pkt))) {
+	if (net_pkt_copy(clone_pkt, pkt, net_pkt_get_len(pkt))) {
 		net_pkt_unref(clone_pkt);
 		return NULL;
 	}
