@@ -37,6 +37,4 @@ properties:
             description: Denotes read only partition
             generation: define
 
-base_label: FLASH_AREA
-
 ...
