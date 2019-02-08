@@ -83,8 +83,7 @@ static int rtc_qmsi_disable(struct device *dev)
 	return 0;
 }
 
-static int rtc_qmsi_cancel_alarm(struct device *dev,
-			const struct counter_alarm_cfg *alarm_cfg)
+static int rtc_qmsi_cancel_alarm(struct device *dev, u8_t chan_id)
 {
 	clk_periph_disable(CLK_PERIPH_RTC_REGISTER);
 
