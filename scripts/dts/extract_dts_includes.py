@@ -442,8 +442,8 @@ def write_header(f):
     f.write('#endif\n')
 
 
-def load_yaml_descriptions(dts, yaml_dirs):
-    compatibles = get_all_compatibles(dts['/'], '/', {})
+def load_yaml_descriptions(root, yaml_dirs):
+    compatibles = get_all_compatibles(root, '/', {})
 
     (bindings, bus, bindings_compat) = Bindings.bindings(compatibles, yaml_dirs)
     if not bindings:
@@ -497,18 +497,18 @@ def main():
     args = parse_arguments()
     enable_old_alias_names(args.old_alias_names)
 
-    # Parse DTS
+    # Parse DTS and fetch the root node
     with open(args.dts, 'r', encoding='utf-8') as f:
-        dts = parse_file(f)
+        root = parse_file(f)['/']
 
-    # Create some global data structures
-    create_reduced(dts['/'], '/')
-    create_phandles(dts['/'], '/', {})
-    create_aliases(dts['/'])
-    create_chosen(dts['/'])
+    # Create some global data structures from the parsed DTS
+    create_reduced(root, '/')
+    create_phandles(root, '/', {})
+    create_aliases(root)
+    create_chosen(root)
 
     (extract.globals.bindings, extract.globals.bus_bindings,
-     extract.globals.bindings_compat) = load_yaml_descriptions(dts, args.yaml)
+     extract.globals.bindings_compat) = load_yaml_descriptions(root, args.yaml)
 
     generate_node_definitions()
 
