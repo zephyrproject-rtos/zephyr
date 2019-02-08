@@ -1054,12 +1054,6 @@ int net_frag_linear_copy(struct net_buf *dst, struct net_buf *src,
 	return 0;
 }
 
-size_t net_frag_linearize(void *dst, size_t dst_len, struct net_pkt *src,
-			  size_t offset, size_t len)
-{
-	return net_buf_linearize(dst, dst_len, src->frags, offset, len);
-}
-
 bool net_pkt_compact(struct net_pkt *pkt)
 {
 	struct net_buf *frag, *prev;
