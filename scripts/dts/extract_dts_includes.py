@@ -504,7 +504,7 @@ def main():
     # Create some global data structures
     create_reduced(dts['/'], '/')
     create_phandles(dts['/'], '/', {})
-    get_aliases(dts['/'])
+    create_aliases(dts['/'])
     get_chosen(dts['/'])
 
     (extract.globals.bindings, extract.globals.bus_bindings,

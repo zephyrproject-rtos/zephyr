@@ -60,7 +60,7 @@ def get_all_compatibles(d, name, comp_dict):
     return comp_dict
 
 
-def get_aliases(root):
+def create_aliases(root):
     if 'children' in root:
         if 'aliases' in root['children']:
             for k, v in root['children']['aliases']['props'].items():
