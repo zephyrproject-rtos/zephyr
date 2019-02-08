@@ -861,107 +861,6 @@ static void test_fragment_compact(void)
 	DBG("test_fragment_compact passed\n");
 }
 
-static const char frag_data[512] = { 42 };
-static void test_fragment_split(void)
-{
-	struct net_pkt *pkt;
-	struct net_buf *rest;
-	int ret;
-
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-
-	ret = net_pkt_append(pkt, 50, (u8_t *) frag_data, K_FOREVER);
-
-	zassert_false(!ret, "Failed to append data");
-
-	ret = net_pkt_split(pkt, pkt->frags, 10, &rest, K_FOREVER);
-
-	zassert_false(ret, "Failed to split net_pkt at offset 10");
-	zassert_false(!pkt->frags, "Failed to split net_pkt at offset 10");
-	zassert_false(!rest, "Failed to split net_pkt at offset 10");
-
-	net_pkt_unref(pkt);
-	net_buf_unref(rest);
-
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-
-	ret = net_pkt_append(pkt, 100, (u8_t *) frag_data, K_FOREVER);
-
-	zassert_false(!ret, "Failed to append data");
-
-	ret = net_pkt_split(pkt, pkt->frags, 100, &rest, K_FOREVER);
-
-	zassert_false(ret, "Failed to split net_pkt at offset 100");
-	zassert_false(!pkt->frags,
-		      "Failed to split net_pkt at offset 100");
-	zassert_false(rest, "Failed to split net_pkt at offset 100");
-
-	net_pkt_unref(pkt);
-
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-
-	ret = net_pkt_append(pkt, 100, (u8_t *) frag_data, K_FOREVER);
-
-	zassert_false(!ret, "Failed to append data");
-
-	ret = net_pkt_split(pkt, pkt->frags, 50, &rest, K_FOREVER);
-
-	zassert_false(ret, "Failed to split net_pkt at offset 50");
-	zassert_false(!pkt->frags,
-		      "Failed to split net_pkt at offset 50");
-	zassert_false(!rest, "Failed to split net_pkt at offset 50");
-
-	zassert_false(net_pkt_get_len(pkt) != 50,
-		      "Failed to split net_pkt at offset 50");
-	zassert_false(net_buf_frags_len(rest) != 50,
-		      "Failed to split net_pkt at offset 50");
-
-	net_pkt_unref(pkt);
-	net_buf_unref(rest);
-
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-
-	ret = net_pkt_append(pkt, 350, (u8_t *) frag_data, K_FOREVER);
-
-	zassert_false(!ret, "Failed to append data");
-
-	ret = net_pkt_split(pkt, pkt->frags, 150, &rest, K_FOREVER);
-
-	zassert_false(ret, "Failed to split net_pkt at offset 150");
-	zassert_false(!pkt->frags,
-		      "Failed to split net_pkt at offset 150");
-	zassert_false(!rest, "Failed to split net_pkt at offset 150");
-
-	zassert_false(net_pkt_get_len(pkt) != 150,
-		      "Failed to split net_pkt at offset 150");
-	zassert_false(net_buf_frags_len(rest) != 200,
-		      "Failed to split net_pkt at offset 150");
-
-	net_pkt_unref(pkt);
-	net_buf_unref(rest);
-
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-
-	ret = net_pkt_append(pkt, 512, (u8_t *) frag_data, K_FOREVER);
-
-	zassert_false(!ret, "Failed to append data");
-
-	ret = net_pkt_split(pkt, pkt->frags, 500, &rest, K_FOREVER);
-
-	zassert_false(ret, "Failed to split net_pkt at offset 500");
-	zassert_false(!pkt->frags,
-		      "Failed to split net_pkt at offset 500");
-	zassert_false(!rest, "Failed to split net_pkt at offset 500");
-
-	zassert_false(net_pkt_get_len(pkt) != 500,
-		      "Failed to split net_pkt at offset 500");
-	zassert_false(net_buf_frags_len(rest) != 12,
-		      "Failed to split net_pkt at offset 500");
-
-	net_pkt_unref(pkt);
-	net_buf_unref(rest);
-}
-
 static void test_net_pkt_append_memset(void)
 {
 	struct net_pkt *pkt;
@@ -1032,7 +931,6 @@ void test_main(void)
 			 ztest_unit_test(test_pkt_read_append),
 			 ztest_unit_test(test_pkt_read_write_insert),
 			 ztest_unit_test(test_fragment_compact),
-			 ztest_unit_test(test_fragment_split),
 			 ztest_unit_test(test_net_pkt_append_memset),
 			 ztest_unit_test(test_net_pkt_frag_linearize)
 			 );

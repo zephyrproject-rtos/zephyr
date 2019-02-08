@@ -1650,54 +1650,6 @@ bool net_pkt_insert(struct net_pkt *pkt, struct net_buf *frag,
 	return insert_data(pkt, frag, temp, offset, len, data, timeout);
 }
 
-int net_pkt_split(struct net_pkt *pkt, struct net_buf *frag, u16_t offset,
-		  struct net_buf **rest, s32_t timeout)
-{
-	struct net_buf *prev;
-
-	if (!pkt || !frag || !offset || !rest) {
-		return -EINVAL;
-	}
-
-	prev = frag;
-	*rest = NULL;
-
-	while (frag) {
-		if (offset < frag->len) {
-			break;
-		}
-
-		offset -= frag->len;
-		prev = frag;
-		frag = frag->frags;
-	}
-
-	if (!frag && offset) {
-		return -EINVAL;
-	}
-
-	if (!frag && !offset) {
-		*rest = frag;
-		prev->frags = NULL;
-
-		return 0;
-	}
-
-	*rest = net_pkt_get_frag(pkt, timeout);
-	if (!*rest) {
-		return -ENOMEM;
-	}
-
-	memcpy(net_buf_add(*rest, frag->len - offset),
-	       frag->data + offset, frag->len - offset);
-	frag->len = offset;
-
-	(*rest)->frags = frag->frags;
-	frag->frags = NULL;
-
-	return 0;
-}
-
 void net_pkt_get_info(struct k_mem_slab **rx,
 		      struct k_mem_slab **tx,
 		      struct net_buf_pool **rx_data,
