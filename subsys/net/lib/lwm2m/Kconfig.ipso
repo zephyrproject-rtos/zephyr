@@ -46,4 +46,18 @@ config LWM2M_IPSO_LIGHT_CONTROL_INSTANCE_COUNT
 	  This setting establishes the total count of IPSO Light Control
 	  instances available to the LWM2M client.
 
+config LWM2M_IPSO_TIMER
+	bool "IPSO Light Control Support"
+	help
+	  This Object is used to time events / actions
+
+config LWM2M_IPSO_TIMER_INSTANCE_COUNT
+	int "Maximum # of IPSO Timer object instances"
+	default 1
+	depends on LWM2M_IPSO_TIMER
+	range 1 20
+	help
+	  This setting establishes the total count of IPSO Timer
+	  instances available to the LWM2M client.
+
 endif # LWM2M_LWM2M_IPSO_SUPPORT
