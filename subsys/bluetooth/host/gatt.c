@@ -1134,6 +1134,17 @@ static int gatt_notify(struct bt_conn *conn, u16_t handle, const void *data,
 	struct net_buf *buf;
 	struct bt_att_notify *nfy;
 
+#if defined(CONFIG_BT_GATT_ENFORCE_CHANGE_UNAWARE)
+	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2350:
+	 * Except for the Handle Value indication, the  server shall not send
+	 * notifications and indications to such a client until it becomes
+	 * change-aware.
+	 */
+	if (!bt_gatt_change_aware(conn, false)) {
+		return -EAGAIN;
+	}
+#endif
+
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_NOTIFY, sizeof(*nfy) + len);
 	if (!buf) {
 		BT_WARN("No buffer available to send notification");
@@ -1191,6 +1202,19 @@ static int gatt_indicate(struct bt_conn *conn,
 	struct net_buf *buf;
 	struct bt_att_indicate *ind;
 	u16_t value_handle = params->attr->handle;
+
+#if defined(CONFIG_BT_GATT_ENFORCE_CHANGE_UNAWARE)
+	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2350:
+	 * Except for the Handle Value indication, the  server shall not send
+	 * notifications and indications to such a client until it becomes
+	 * change-aware.
+	 */
+	if (!(params->func && params->func == sc_indicate_rsp) &&
+	    !bt_gatt_change_aware(conn, false)) {
+		return -EAGAIN;
+	}
+#endif
+
 
 	/* Check if attribute is a characteristic then adjust the handle */
 	if (!bt_uuid_cmp(params->attr->uuid, BT_UUID_GATT_CHRC)) {
