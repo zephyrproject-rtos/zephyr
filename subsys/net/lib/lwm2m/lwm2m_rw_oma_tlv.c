@@ -72,6 +72,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #ifdef CONFIG_LWM2M_RD_CLIENT_SUPPORT
 #include "lwm2m_rd_client.h"
 #endif
+#include "lwm2m_util.h"
 
 enum {
 	OMA_TLV_TYPE_OBJECT_INSTANCE   = 0,
@@ -496,7 +497,6 @@ static size_t put_string(struct lwm2m_output_context *out,
 	return len;
 }
 
-/* use binary32 format */
 static size_t put_float32fix(struct lwm2m_output_context *out,
 			     struct lwm2m_obj_path *path,
 			     float32_value_t *value)
@@ -504,57 +504,23 @@ static size_t put_float32fix(struct lwm2m_output_context *out,
 	struct tlv_out_formatter_data *fd;
 	size_t len;
 	struct oma_tlv tlv;
-	int e = 0;
-	s32_t val = 0;
-	s32_t v;
-	u8_t b[4];
-
-	/*
-	 * TODO: Currently, there is no standard API for handling the decimal
-	 * portion of the float32_value structure.  In the future, we should use
-	 * the value->val2 (decimal portion) to set the decimal mask and in the
-	 * following binary float calculations.
-	 *
-	 * HACK BELOW: hard code the decimal mask to 0 (whole number)
-	 */
-	int bits = 0;
+	int ret;
+	u8_t b32[4];
 
 	fd = engine_get_out_user_data(out);
 	if (!fd) {
 		return 0;
 	}
 
-	v = value->val1;
-	if (v < 0) {
-		v = -v;
+	ret = lwm2m_f32_to_b32(value, b32, sizeof(b32));
+	if (ret < 0) {
+		LOG_ERR("float32 conversion error: %d", ret);
+		return 0;
 	}
-
-	while (v > 1) {
-		val = (val >> 1);
-
-		if (v & 1) {
-			val = val | (1L << 22);
-		}
-
-		v = (v >> 1);
-		e++;
-	}
-
-	/* convert to the thing we should have */
-	e = e - bits + 127;
-	if (value->val1 == 0) {
-		e = 0;
-	}
-
-	/* is this the right byte order? */
-	b[0] = (value->val1 < 0 ? 0x80 : 0) | (e >> 1);
-	b[1] = ((e & 1) << 7) | ((val >> 16) & 0x7f);
-	b[2] = (val >> 8) & 0xff;
-	b[3] = val & 0xff;
 
 	tlv_setup(&tlv, tlv_calc_type(fd->writer_flags),
-		  tlv_calc_id(fd->writer_flags, path), 4);
-	len = oma_tlv_put(&tlv, out, b, false);
+		  tlv_calc_id(fd->writer_flags, path), sizeof(b32));
+	len = oma_tlv_put(&tlv, out, b32, false);
 	return len;
 }
 
@@ -564,21 +530,24 @@ static size_t put_float64fix(struct lwm2m_output_context *out,
 {
 	struct tlv_out_formatter_data *fd;
 	size_t len;
-	s64_t binary64 = 0, net_binary64 = 0;
 	struct oma_tlv tlv;
-
-	/* TODO */
+	u8_t b64[8];
+	int ret;
 
 	fd = engine_get_out_user_data(out);
 	if (!fd) {
 		return 0;
 	}
 
-	net_binary64 = sys_cpu_to_be64(binary64);
+	ret = lwm2m_f64_to_b64(value, b64, sizeof(b64));
+	if (ret < 0) {
+		LOG_ERR("float64 conversion error: %d", ret);
+		return 0;
+	}
+
 	tlv_setup(&tlv, tlv_calc_type(fd->writer_flags),
-		  tlv_calc_id(fd->writer_flags, path),
-		  sizeof(net_binary64));
-	len = oma_tlv_put(&tlv, out, (u8_t *)&net_binary64, false);
+		  tlv_calc_id(fd->writer_flags, path), sizeof(b64));
+	len = oma_tlv_put(&tlv, out, b64, false);
 	return len;
 }
 
@@ -679,51 +648,37 @@ static size_t get_float32fix(struct lwm2m_input_context *in,
 {
 	struct oma_tlv tlv;
 	size_t size = oma_tlv_get(&tlv, in, false);
-	int e;
-	s32_t val;
-	int sign = false;
-	int bits = 0;
-	u8_t values[4];
+	u8_t b32[4];
+	int ret;
 
 	if (size > 0) {
-		/* TLV needs to be 4 bytes */
-		if (buf_read(values, 4, CPKT_BUF_READ(in->in_cpkt),
+		if (tlv.length != 4) {
+			LOG_ERR("Invalid float32 length: %d", tlv.length);
+
+			/* dummy read */
+			while (tlv.length--) {
+				if (buf_read_u8(b32,
+						CPKT_BUF_READ(in->in_cpkt),
+						&in->offset) < 0) {
+					break;
+				}
+			}
+
+			return 0;
+		}
+
+		/* read b32 in network byte order */
+		if (buf_read(b32, tlv.length, CPKT_BUF_READ(in->in_cpkt),
 			     &in->offset) < 0) {
 			/* TODO: Generate error? */
 			return 0;
 		}
 
-		/* sign */
-		sign = (values[0] & 0x80) != 0;
-
-		e = ((values[0] << 1) & 0xff) | (values[1] >> 7);
-		val = (((long)values[1] & 0x7f) << 16) |
-		      (values[2] << 8) |
-		      values[3];
-		e = e - 127 + bits;
-
-		/* e is the number of times we need to roll the number */
-		LOG_DBG("Actual e=%d", e);
-		e = e - 23;
-		LOG_DBG("E after sub %d", e);
-		val = val | 1L << 23;
-		if (e > 0) {
-			val = val << e;
-		} else {
-			val = val >> -e;
+		ret = lwm2m_b32_to_f32(b32, sizeof(b32), value);
+		if (ret < 0) {
+			LOG_ERR("binary32 conversion error: %d", ret);
+			return 0;
 		}
-
-		value->val1 = sign ? -val : val;
-
-		/*
-		 * TODO: Currently, there is no standard API for handling the
-		 * decimal portion of the float32_value structure.  In the
-		 * future, once that is settled, we should calculate
-		 * value->val2 in the above float calculations.
-		 *
-		 * HACK BELOW: hard code the decimal value 0
-		 */
-		value->val2 = 0;
 	}
 
 	return size;
@@ -734,14 +689,37 @@ static size_t get_float64fix(struct lwm2m_input_context *in,
 {
 	struct oma_tlv tlv;
 	size_t size = oma_tlv_get(&tlv, in, false);
+	u8_t b64[8];
+	int ret;
 
 	if (size > 0) {
 		if (tlv.length != 8) {
-			LOG_ERR("invalid length: %u (not 8)", tlv.length);
+			LOG_ERR("invalid float64 length: %d", tlv.length);
+
+			/* dummy read */
+			while (tlv.length--) {
+				if (buf_read_u8(b64,
+						CPKT_BUF_READ(in->in_cpkt),
+						&in->offset) < 0) {
+					break;
+				}
+			}
+
 			return 0;
 		}
 
-		/* TODO */
+		/* read b64 in network byte order */
+		if (buf_read(b64, tlv.length, CPKT_BUF_READ(in->in_cpkt),
+			     &in->offset) < 0) {
+			/* TODO: Generate error? */
+			return 0;
+		}
+
+		ret = lwm2m_b64_to_f64(b64, sizeof(b64), value);
+		if (ret < 0) {
+			LOG_ERR("binary64 conversion error: %d", ret);
+			return 0;
+		}
 	}
 
 	return size;
