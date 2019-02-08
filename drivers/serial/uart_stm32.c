@@ -630,6 +630,11 @@ static int uart_stm32_init(struct device *dev)
 	/* Set the default baudrate */
 	uart_stm32_set_baudrate(dev, data->baud_rate);
 
+	/* Configure hardware flow control */
+	if (data->hw_fc) {
+		LL_USART_SetHWFlowCtrl(UartInstance, LL_USART_HWCONTROL_RTS_CTS);
+	}
+
 	LL_USART_Enable(UartInstance);
 
 #ifdef USART_ISR_TEACK
@@ -685,7 +690,8 @@ static const struct uart_stm32_config uart_stm32_cfg_##name = {		\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##name = {		\
-	.baud_rate = DT_UART_STM32_##name##_BAUD_RATE			\
+	.baud_rate = DT_UART_STM32_##name##_BAUD_RATE,			\
+	.hw_fc = DT_UART_STM32_##name##_HW_FLOW_CONTROL \
 };									\
 									\
 DEVICE_AND_API_INIT(uart_stm32_##name, DT_UART_STM32_##name##_NAME,	\

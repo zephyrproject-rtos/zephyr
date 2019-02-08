@@ -23,6 +23,8 @@ struct uart_stm32_config {
 struct uart_stm32_data {
 	/* Baud rate */
 	u32_t baud_rate;
+	/* HW flow control */
+	bool hw_fc;
 	/* clock device */
 	struct device *clock;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
