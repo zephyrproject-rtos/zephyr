@@ -1920,69 +1920,6 @@ struct net_buf *net_frag_get_pos(struct net_pkt *pkt,
 	return frag;
 }
 
-struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
-{
-	struct net_pkt *clone;
-
-	if (!pkt) {
-		return NULL;
-	}
-
-	clone = net_pkt_get_reserve(pkt->slab, timeout);
-	if (!clone) {
-		return NULL;
-	}
-
-	clone->frags = NULL;
-
-	if (pkt->frags) {
-		clone->frags = net_pkt_copy_all(pkt, 0, timeout);
-		if (!clone->frags) {
-			net_pkt_unref(clone);
-			return NULL;
-		}
-	}
-
-	clone->context = pkt->context;
-	clone->token = pkt->token;
-	clone->iface = pkt->iface;
-
-	if (clone->frags) {
-		/* The link header pointers are only usable if there is
-		 * a fragment that we copied because those pointers point
-		 * to start of the fragment which we do not have right now.
-		 */
-		memcpy(&clone->lladdr_src, &pkt->lladdr_src,
-		       sizeof(clone->lladdr_src));
-		memcpy(&clone->lladdr_dst, &pkt->lladdr_dst,
-		       sizeof(clone->lladdr_dst));
-	}
-
-	net_pkt_set_ip_hdr_len(clone, net_pkt_ip_hdr_len(pkt));
-	net_pkt_set_vlan_tag(clone, net_pkt_vlan_tag(pkt));
-	net_pkt_set_appdata(clone, NULL);
-	net_pkt_set_appdatalen(clone, net_pkt_appdatalen(pkt));
-	net_pkt_set_transport_proto(clone, net_pkt_transport_proto(pkt));
-
-	net_pkt_set_timestamp(clone, net_pkt_timestamp(pkt));
-	net_pkt_set_priority(clone, net_pkt_priority(pkt));
-	net_pkt_set_orig_iface(clone, net_pkt_orig_iface(pkt));
-
-	net_pkt_set_family(clone, net_pkt_family(pkt));
-
-#if defined(CONFIG_NET_IPV6)
-	clone->ipv6_hop_limit = pkt->ipv6_hop_limit;
-	clone->ipv6_ext_len = pkt->ipv6_ext_len;
-	clone->ipv6_ext_opt_len = pkt->ipv6_ext_opt_len;
-	clone->ipv6_prev_hdr_start = pkt->ipv6_prev_hdr_start;
-	net_pkt_set_ipv6_next_hdr(clone, net_pkt_ipv6_next_hdr(pkt));
-#endif
-
-	NET_DBG("Cloned %p to %p", pkt, clone);
-
-	return clone;
-}
-
 /* New allocator and API starts here */
 
 #if defined(CONFIG_NET_BUF_FIXED_DATA_SIZE)
