@@ -503,8 +503,8 @@ def main():
     with open(args.dts, 'r', encoding='utf-8') as f:
         dts = parse_file(f)
 
-    # Build up useful lists
-    get_reduced(dts['/'], '/')
+    # Create some global data structures
+    create_reduced(dts['/'], '/')
     get_phandles(dts['/'], '/', {})
     get_aliases(dts['/'])
     get_chosen(dts['/'])
