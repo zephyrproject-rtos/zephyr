@@ -962,66 +962,6 @@ static void test_fragment_split(void)
 	net_buf_unref(rest);
 }
 
-static const char pull_test_data[] =
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz "
-	"abcdefghijklmnopqrstuvxyz ";
-
-static void test_pkt_pull(void)
-{
-	struct net_pkt *pkt;
-	u16_t ret;
-	int res;
-
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-
-	ret = net_pkt_append(pkt, sizeof(pull_test_data), (u8_t *)
-			     pull_test_data, K_FOREVER);
-
-	zassert_false(!ret, "Failed to append data");
-
-	res = net_pkt_pull(pkt, 0, 10);
-
-	zassert_true(res == 0, "Failed to pull 10 bytes from offset 0");
-
-	res = net_pkt_pull(pkt, 10, 20);
-
-	zassert_true(res == 0, "Failed to pull 10 bytes from offset 0");
-
-	res = net_pkt_pull(pkt, 140, 150);
-
-	zassert_true(res == 0, "Failed to pull 10 bytes from offset 0");
-
-	res = net_pkt_pull(pkt, 42, 72);
-
-	zassert_true(res == 0, "Failed to pull 10 bytes from offset 0");
-
-	res = net_pkt_pull(pkt, 0, 42);
-
-	zassert_true(res == 0, "Failed to pull 10 bytes from offset 0");
-
-	res = net_pkt_pull(pkt, 138, 69);
-
-	zassert_true(res == 0, "Failed to pull 10 bytes from offset 0");
-}
-
 static void test_net_pkt_append_memset(void)
 {
 	struct net_pkt *pkt;
@@ -1093,7 +1033,6 @@ void test_main(void)
 			 ztest_unit_test(test_pkt_read_write_insert),
 			 ztest_unit_test(test_fragment_compact),
 			 ztest_unit_test(test_fragment_split),
-			 ztest_unit_test(test_pkt_pull),
 			 ztest_unit_test(test_net_pkt_append_memset),
 			 ztest_unit_test(test_net_pkt_frag_linearize)
 			 );
