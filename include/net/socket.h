@@ -217,6 +217,16 @@ static inline void zsock_freeaddrinfo(struct zsock_addrinfo *ai)
 	free(ai);
 }
 
+#define NI_NUMERICHOST 1
+#define NI_NUMERICSERV 2
+#define NI_NOFQDN 4
+#define NI_NAMEREQD 8
+#define NI_DGRAM 16
+
+int zsock_getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
+		      char *host, socklen_t hostlen,
+		      char *serv, socklen_t servlen, int flags);
+
 #if defined(CONFIG_NET_SOCKETS_POSIX_NAMES)
 
 #define pollfd zsock_pollfd
@@ -341,6 +351,14 @@ static inline int getaddrinfo(const char *host, const char *service,
 static inline void freeaddrinfo(struct zsock_addrinfo *ai)
 {
 	zsock_freeaddrinfo(ai);
+}
+
+static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
+			      char *host, socklen_t hostlen,
+			      char *serv, socklen_t servlen, int flags)
+{
+	return zsock_getnameinfo(addr, addrlen, host, hostlen,
+				 serv, servlen, flags);
 }
 
 #define addrinfo zsock_addrinfo
