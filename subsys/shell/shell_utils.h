@@ -64,7 +64,7 @@ void shell_cmd_get(const struct shell_cmd_entry *command, size_t lvl,
 int shell_command_add(char *buff, u16_t *buff_len,
 		      const char *new_cmd, const char *pattern);
 
-const struct shell_cmd_entry *shell_root_cmd_find(const char *syntax);
+const struct shell_static_entry *shell_root_cmd_find(const char *syntax);
 
 void shell_spaces_trim(char *str);
 
