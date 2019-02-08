@@ -1,3 +1,11 @@
+# Kconfig - general options signifying CPU capabilities of ARM SoCs
+
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
 config CPU_HAS_ARM_MPU
 	bool
 	# Omit prompt to signify "hidden" option
