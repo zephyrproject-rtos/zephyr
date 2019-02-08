@@ -11,7 +11,7 @@
 #include <zephyr/types.h>
 #include <ztest_assert.h>
 
-static u8_t rambuf[FLASH_AREA_STORAGE_SIZE];
+static u8_t rambuf[DT_FLASH_AREA_STORAGE_SIZE];
 
 static int test_ram_flash_init(struct device *dev)
 {
@@ -29,7 +29,7 @@ static int test_flash_ram_erase(struct device *dev, off_t offset, size_t len)
 	off_t end_offset = offset + len;
 
 	zassert_true(offset >= 0, "invalid offset");
-	zassert_true(offset + len <= FLASH_AREA_STORAGE_SIZE,
+	zassert_true(offset + len <= DT_FLASH_AREA_STORAGE_SIZE,
 		     "flash address out of bounds");
 
 	while (offset < end_offset) {
@@ -45,7 +45,7 @@ static int test_flash_ram_write(struct device *dev, off_t offset,
 						const void *data, size_t len)
 {
 	zassert_true(offset >= 0, "invalid offset");
-	zassert_true(offset + len <= FLASH_AREA_STORAGE_SIZE,
+	zassert_true(offset + len <= DT_FLASH_AREA_STORAGE_SIZE,
 		     "flash address out of bounds");
 
 	memcpy(rambuf + offset, data, len);
@@ -57,7 +57,7 @@ static int test_flash_ram_read(struct device *dev, off_t offset, void *data,
 								size_t len)
 {
 	zassert_true(offset >= 0, "invalid offset");
-	zassert_true(offset + len <= FLASH_AREA_STORAGE_SIZE,
+	zassert_true(offset + len <= DT_FLASH_AREA_STORAGE_SIZE,
 		     "flash address out of bounds");
 
 	memcpy(data, rambuf + offset, len);
