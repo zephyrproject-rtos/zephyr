@@ -105,7 +105,7 @@ def get_compat(node_address):
     return compat
 
 
-def get_chosen(root):
+def create_chosen(root):
     if 'children' in root:
         if 'chosen' in root['children']:
             for k, v in root['children']['chosen']['props'].items():
