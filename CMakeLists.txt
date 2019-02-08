@@ -456,7 +456,9 @@ function(construct_add_custom_command_for_linker_pass linker_output_name output_
 
   set(${output_variable}
     OUTPUT ${linker_cmd_file_name}
-    DEPENDS ${LINKER_SCRIPT}
+    DEPENDS
+    ${LINKER_SCRIPT}
+    # NB: 'linker_script_dep' will use a keyword that ends 'DEPENDS'
     ${linker_script_dep}
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
@@ -479,16 +481,16 @@ endfunction()
 # Error-out when the deprecated naming convention is found (until
 # after 1.14.0 has been released)
 foreach(path
-	${BOARD_DIR}/dts.fixup
-	${PROJECT_SOURCE_DIR}/soc/${ARCH}/${SOC_PATH}/dts.fixup
+    ${BOARD_DIR}/dts.fixup
+    ${PROJECT_SOURCE_DIR}/soc/${ARCH}/${SOC_PATH}/dts.fixup
     ${APPLICATION_SOURCE_DIR}/dts.fixup
-	)
+    )
   if(EXISTS ${path})
-	message(FATAL_ERROR
-	  "A deprecated filename has been detected. Porting is required."
-	  "The file '${path}' exists, but it should be named dts_fixup.h instead."
-	  "See https://github.com/zephyrproject-rtos/zephyr/pull/10352 for more details"
-	  )
+    message(FATAL_ERROR
+      "A deprecated filename has been detected. Porting is required."
+      "The file '${path}' exists, but it should be named dts_fixup.h instead."
+      "See https://github.com/zephyrproject-rtos/zephyr/pull/10352 for more details"
+      )
   endif()
 endforeach()
 
@@ -502,14 +504,14 @@ set_ifndef(DTS_CAT_OF_FIXUP_FILES ${ZEPHYR_BINARY_DIR}/include/generated/generat
 # #include'ing
 file(WRITE ${DTS_CAT_OF_FIXUP_FILES} "/* May only be included by generated_dts_board.h */\n\n")
 foreach(fixup_file
-      ${DTS_BOARD_FIXUP_FILE}
-      ${DTS_SOC_FIXUP_FILE}
-      ${DTS_APP_FIXUP_FILE}
-      ${shield_dts_fixups}
-	)
+    ${DTS_BOARD_FIXUP_FILE}
+    ${DTS_SOC_FIXUP_FILE}
+    ${DTS_APP_FIXUP_FILE}
+    ${shield_dts_fixups}
+    )
   if(EXISTS ${fixup_file})
-	file(READ ${fixup_file} contents)
-	file(APPEND ${DTS_CAT_OF_FIXUP_FILES} "${contents}")
+    file(READ ${fixup_file} contents)
+    file(APPEND ${DTS_CAT_OF_FIXUP_FILES} "${contents}")
   endif()
 endforeach()
 
@@ -746,7 +748,10 @@ if (CONFIG_CODE_DATA_RELOCATION)
   set(CODE_RELOCATION_DEP code_relocation_source_lib)
 endif() # CONFIG_CODE_DATA_RELOCATION
 
-construct_add_custom_command_for_linker_pass(linker custom_command)
+construct_add_custom_command_for_linker_pass(
+  linker
+  custom_command
+  )
 add_custom_command(
   ${custom_command}
 )
@@ -1147,7 +1152,10 @@ if(CONFIG_APP_SHARED_MEM AND CONFIG_USERSPACE)
 endif()
 
 if(CONFIG_USERSPACE AND CONFIG_ARM)
-  construct_add_custom_command_for_linker_pass(linker_priv_stacks custom_command)
+  construct_add_custom_command_for_linker_pass(
+    linker_priv_stacks
+    custom_command
+    )
   add_custom_command(
     ${custom_command}
     )
@@ -1188,7 +1196,10 @@ if(GKOF OR GKSF)
   # The second linker pass uses the same source linker script of the
   # first pass (LINKER_SCRIPT), but this time with a different output
   # file and preprocessed with the define LINKER_PASS2.
-  construct_add_custom_command_for_linker_pass(linker_pass_final custom_command)
+  construct_add_custom_command_for_linker_pass(
+    linker_pass_final
+    custom_command
+    )
   add_custom_command(
     ${custom_command}
     )
