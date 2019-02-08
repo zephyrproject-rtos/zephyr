@@ -35,7 +35,7 @@ def _dt_units_to_scale(unit):
 def dt_int_val(kconf, _, name, unit=None):
     """
     This function looks up 'name' in the DTS generated "conf" style database
-    and if its found it will return the value as an decimal integer.  The
+    and if it's found it will return the value as an decimal integer.  The
     function will divide the value based on 'unit':
         None        No division
         'k' or 'K'  divide by 1024 (1 << 10)
@@ -57,7 +57,7 @@ def dt_int_val(kconf, _, name, unit=None):
 def dt_hex_val(kconf, _, name, unit=None):
     """
     This function looks up 'name' in the DTS generated "conf" style database
-    and if its found it will return the value as an hex integer.  The
+    and if it's found it will return the value as an hex integer.  The
     function will divide the value based on 'unit':
         None        No division
         'k' or 'K'  divide by 1024 (1 << 10)
@@ -79,7 +79,7 @@ def dt_hex_val(kconf, _, name, unit=None):
 def dt_str_val(kconf, _, name):
     """
     This function looks up 'name' in the DTS generated "conf" style database
-    and if its found it will return the value as string.  If its not found we
+    and if it's found it will return the value as string.  If it's not found we
     return an empty string.
     """
     if doc_mode or name not in dt_defines:
