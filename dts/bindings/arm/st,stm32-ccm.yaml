@@ -19,6 +19,4 @@ properties:
       generation: define
       category: required
 
-base_label: CCM
-
 ...
