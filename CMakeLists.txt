@@ -753,6 +753,11 @@ endif() # CONFIG_CODE_DATA_RELOCATION
 construct_add_custom_command_for_linker_pass(
   linker
   custom_command
+  ${ALIGN_SIZING_DEP}
+  ${PRIV_STACK_DEP}
+  ${APP_SMEM_DEP}
+  ${CODE_RELOCATION_DEP}
+  ${OFFSETS_H_TARGET}
   )
 add_custom_command(
   ${custom_command}
@@ -761,11 +766,7 @@ add_custom_command(
 add_custom_target(
   ${LINKER_SCRIPT_TARGET}
   DEPENDS
-  ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP}
-  ${APP_SMEM_DEP}
-  ${CODE_RELOCATION_DEP}
   linker.cmd
-  ${OFFSETS_H_TARGET}
   )
 
 # Give the '${LINKER_SCRIPT_TARGET}' target all of the include directories so
@@ -1132,22 +1133,25 @@ if(CONFIG_APP_SHARED_MEM AND CONFIG_USERSPACE)
   set(OBJ_FILE_DIR "${PROJECT_BINARY_DIR}/../")
 
   add_custom_target(
-    ${APP_SMEM_DEP} ALL
-    DEPENDS app
-    kernel ${ZEPHYR_LIBS_PROPERTY}
+    ${APP_SMEM_DEP}
+    DEPENDS
+    ${APP_SMEM_LD}
     )
 
   if(CONFIG_NEWLIB_LIBC)
     set(NEWLIB_PART -l libc.a z_newlib_partition)
   endif()
   add_custom_command(
-    TARGET ${APP_SMEM_DEP}
+    OUTPUT ${APP_SMEM_LD}
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -d ${OBJ_FILE_DIR}
     -o ${APP_SMEM_LD}
     ${NEWLIB_PART}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+    DEPENDS
+    kernel
+    ${ZEPHYR_LIBS_PROPERTY}
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/
     COMMENT "Generating app_smem linker section"
     )
@@ -1157,6 +1161,11 @@ if(CONFIG_USERSPACE AND CONFIG_ARM)
   construct_add_custom_command_for_linker_pass(
     linker_priv_stacks
     custom_command
+    ${ALIGN_SIZING_DEP}
+    ${CODE_RELOCATION_DEP}
+    ${APP_SMEM_DEP}
+    ${APP_SMEM_LD}
+    ${OFFSETS_H_TARGET}
     )
   add_custom_command(
     ${custom_command}
@@ -1165,10 +1174,7 @@ if(CONFIG_USERSPACE AND CONFIG_ARM)
   add_custom_target(
     linker_priv_stacks_script
     DEPENDS
-    ${ALIGN_SIZING_DEP} ${APP_SMEM_DEP}
-    ${CODE_RELOCATION_DEP}
     linker_priv_stacks.cmd
-    ${OFFSETS_H_TARGET}
     )
 
   set_property(TARGET
@@ -1201,6 +1207,11 @@ if(GKOF OR GKSF)
   construct_add_custom_command_for_linker_pass(
     linker_pass_final
     custom_command
+    ${ALIGN_SIZING_DEP}
+    ${PRIV_STACK_DEP}
+    ${CODE_RELOCATION_DEP}
+    ${ZEPHYR_PREBUILT_EXECUTABLE}
+    ${OFFSETS_H_TARGET}
     )
   add_custom_command(
     ${custom_command}
@@ -1210,11 +1221,7 @@ if(GKOF OR GKSF)
   add_custom_target(
     ${LINKER_PASS_FINAL_SCRIPT_TARGET}
     DEPENDS
-    ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP}
-    ${CODE_RELOCATION_DEP}
-    ${ZEPHYR_PREBUILT_EXECUTABLE}
     linker_pass_final.cmd
-    ${OFFSETS_H_TARGET}
     )
   set_property(TARGET
     ${LINKER_PASS_FINAL_SCRIPT_TARGET}
