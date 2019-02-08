@@ -1,0 +1,7 @@
+common:
+  depends_on: netif
+  platform_whitelist: native_posix qemu_x86 qemu_cortex_m3
+tests:
+  net.socket:
+    min_ram: 21
+    tags: net socket
