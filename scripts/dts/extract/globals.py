@@ -26,12 +26,12 @@ regs_config = {
 }
 
 name_config = {
-    'zephyr,console'     : 'CONFIG_UART_CONSOLE_ON_DEV_NAME',
-    'zephyr,shell-uart'  : 'CONFIG_UART_SHELL_ON_DEV_NAME',
-    'zephyr,bt-uart'     : 'CONFIG_BT_UART_ON_DEV_NAME',
-    'zephyr,uart-pipe'   : 'CONFIG_UART_PIPE_ON_DEV_NAME',
-    'zephyr,bt-mon-uart' : 'CONFIG_BT_MONITOR_ON_DEV_NAME',
-    'zephyr,uart-mcumgr' : 'CONFIG_UART_MCUMGR_ON_DEV_NAME'
+    'zephyr,console'     : 'DT_UART_CONSOLE_ON_DEV_NAME',
+    'zephyr,shell-uart'  : 'DT_UART_SHELL_ON_DEV_NAME',
+    'zephyr,bt-uart'     : 'DT_BT_UART_ON_DEV_NAME',
+    'zephyr,uart-pipe'   : 'DT_UART_PIPE_ON_DEV_NAME',
+    'zephyr,bt-mon-uart' : 'DT_BT_MONITOR_ON_DEV_NAME',
+    'zephyr,uart-mcumgr' : 'DT_UART_MCUMGR_ON_DEV_NAME'
 }
 
 

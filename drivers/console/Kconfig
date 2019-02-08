@@ -41,15 +41,14 @@ config UART_CONSOLE
 	  Enable this option to use one UART for console. Make sure
 	  CONFIG_UART_CONSOLE_ON_DEV_NAME is also set correctly.
 
-if !HAS_DTS
 config UART_CONSOLE_ON_DEV_NAME
 	string "Device Name of UART Device for UART Console"
+	default "$(dt_str_val,DT_UART_CONSOLE_ON_DEV_NAME)" if HAS_DTS
 	default "UART_0"
 	depends on UART_CONSOLE
 	help
 	  This option specifies the name of UART device to be used for
 	  UART console.
-endif
 
 config UART_CONSOLE_INIT_PRIORITY
 	int "Init priority"
@@ -191,15 +190,14 @@ config	UART_PIPE
 	  data (as contrary to console UART driver) and all aspects of received
 	  protocol data are handled by application provided callback.
 
-if !HAS_DTS
 config UART_PIPE_ON_DEV_NAME
 	string "Device Name of UART Device for pipe UART"
+	default "$(dt_str_val,DT_UART_PIPE_ON_DEV_NAME)" if HAS_DTS
 	default "UART_0"
 	depends on UART_PIPE
 	help
 	  This option specifies the name of UART device to be used
 	  for pipe UART.
-endif
 
 config UART_MCUMGR
 	bool "Enable mcumgr UART driver"
@@ -212,15 +210,14 @@ config UART_MCUMGR
 	  data are handled by an application provided callback.
 
 if UART_MCUMGR
-if !HAS_DTS
 config UART_MCUMGR_ON_DEV_NAME
 	string "Device Name of UART Device for mcumgr UART"
+	default "$(dt_str_val,DT_UART_MCUMGR_ON_DEV_NAME)" if HAS_DTS
 	default "UART_0"
 	depends on UART_MCUMGR
 	help
 	  This option specifies the name of UART device to be used
 	  for mcumgr UART.
-endif # !HAS_DTS
 
 config UART_MCUMGR_RX_BUF_SIZE
 	int "Size of receive buffer for mcumgr fragments received over UART, in bytes"
