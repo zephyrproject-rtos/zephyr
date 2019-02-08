@@ -157,10 +157,10 @@ def find_node_by_path(nodes, path):
     return d
 
 
-def get_reduced(nodes, path):
+def create_reduced(nodes, path):
     # compress nodes list to nodes w/ paths, add interrupt parent
-    if 'last_used_id' not in get_reduced.__dict__:
-        get_reduced.last_used_id = {}
+    if 'last_used_id' not in create_reduced.__dict__:
+        create_reduced.last_used_id = {}
 
     if 'props' in nodes:
         status = nodes['props'].get('status')
@@ -177,11 +177,11 @@ def get_reduced(nodes, path):
             if type(compat) is not list: compat = [ compat, ]
             reduced[path]['instance_id'] = {}
             for k in compat:
-                if k not in get_reduced.last_used_id:
-                    get_reduced.last_used_id[k] = 0
+                if k not in create_reduced.last_used_id:
+                    create_reduced.last_used_id[k] = 0
                 else:
-                    get_reduced.last_used_id[k] += 1
-                reduced[path]['instance_id'][k] = get_reduced.last_used_id[k]
+                    create_reduced.last_used_id[k] += 1
+                reduced[path]['instance_id'][k] = create_reduced.last_used_id[k]
 
         # Newer versions of dtc might have the properties that look like
         # reg = <1 2>, <3 4>;
@@ -197,7 +197,7 @@ def get_reduced(nodes, path):
             path += '/'
         if nodes['children']:
             for k, v in sorted(nodes['children'].items()):
-                get_reduced(v, path + k)
+                create_reduced(v, path + k)
 
 
 def get_node_label(node_address):
