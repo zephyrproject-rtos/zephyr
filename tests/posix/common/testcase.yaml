@@ -5,7 +5,7 @@ common:
   # together. This is supposed to be addressed later.
   # riscv toolchain lacks sys/timespec.h (maybe something else), so not
   # good for POSIX.
-  arch_exclude: posix riscv32
+  arch_exclude: posix riscv32 xtensa
   # qemu_x86_64 currently uses Linux host toolchains, which leaks host
   # headers into the build.
   platform_exclude: qemu_x86_64
