@@ -22,7 +22,8 @@ MMU_BOOT_REGION((u32_t)&_image_rom_start, (u32_t)&_image_rom_size,
 
 #ifdef CONFIG_APP_SHARED_MEM
 MMU_BOOT_REGION((u32_t)&_app_smem_start, (u32_t)&_app_smem_size,
-		MMU_ENTRY_WRITE | MMU_ENTRY_USER | MMU_ENTRY_EXECUTE_DISABLE);
+		MMU_ENTRY_WRITE | MMU_ENTRY_RUNTIME_USER |
+		MMU_ENTRY_EXECUTE_DISABLE);
 #endif
 
 #ifdef CONFIG_COVERAGE_GCOV
