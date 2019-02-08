@@ -1902,21 +1902,6 @@ int net_pkt_split(struct net_pkt *pkt, struct net_buf *frag, u16_t offset,
 		  struct net_buf **rest, s32_t timeout);
 
 /**
- * @brief Remove data from the packet at arbitrary offset.
- *
- * @details This will remove the data from arbitrary offset. Original packet
- * will be modified.
- *
- * @param pkt Network packet
- * @param offset Arbitrary offset to packet
- * @param len Number of bytes to be removed
- *
- * @return 0 on success, <0 otherwise
- *
- */
-int net_pkt_pull(struct net_pkt *pkt, u16_t offset, u16_t len);
-
-/**
  * @brief Return the fragment and offset within it according to network
  * packet offset.
  *
