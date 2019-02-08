@@ -1240,47 +1240,6 @@ void net_pkt_frag_insert(struct net_pkt *pkt, struct net_buf *frag);
 #endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 /**
- * @brief Copy a packet fragment list while reserving some extra space
- * in destination buffer before a copy.
- *
- * @param pkt Network packet.
- * @param amount Max amount of data to be copied.
- * @param reserve Amount of extra data in the first data fragment that is
- * returned. The function will copy the original buffer right after the
- * reserved bytes in the first destination fragment.
- * @param timeout Affects the action taken should the net buf pool be empty.
- *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
- *        wait as long as necessary. Otherwise, wait up to the specified
- *        number of milliseconds before timing out.
- *
- * @return New fragment list if successful, NULL otherwise.
- */
-struct net_buf *net_pkt_copy(struct net_pkt *pkt, size_t amount,
-			     size_t reserve, s32_t timeout);
-
-/**
- * @brief Copy a packet fragment list while reserving some extra space
- * in destination buffer before a copy.
- *
- * @param pkt Network packet.
- * @param reserve Amount of extra data in the first data fragment that is
- * returned. The function will copy the original buffer right after the
- * reserved bytes in the first destination fragment.
- * @param timeout Affects the action taken should the net buf pool be empty.
- *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
- *        wait as long as necessary. Otherwise, wait up to the specified
- *        number of milliseconds before timing out.
- *
- * @return New fragment list if successful, NULL otherwise.
- */
-static inline struct net_buf *net_pkt_copy_all(struct net_pkt *pkt,
-					       size_t reserve, s32_t timeout)
-{
-	return net_pkt_copy(pkt, net_buf_frags_len(pkt->frags),
-			    reserve, timeout);
-}
-
-/**
  * @brief Copy len bytes from src starting from	offset to dst
  *
  * This routine assumes that dst is formed of one fragment with enough space

@@ -164,120 +164,6 @@ static void test_ipv6_multi_frags(void)
 	net_pkt_unref(pkt);
 }
 
-static char buf_orig[200];
-static char buf_copy[200];
-
-static void linearize(struct net_pkt *pkt, char *buffer, int len)
-{
-	struct net_buf *frag;
-	char *ptr = buffer;
-
-	frag = pkt->frags;
-
-	while (frag && len > 0) {
-
-		memcpy(ptr, frag->data, frag->len);
-		ptr += frag->len;
-		len -= frag->len;
-
-		frag = frag->frags;
-	}
-}
-
-static void test_fragment_copy(void)
-{
-	struct net_pkt *pkt, *new_pkt;
-	struct net_buf *frag, *new_frag;
-	struct ipv6_hdr *ipv6;
-	struct udp_hdr *udp;
-	size_t orig_len, reserve;
-	int pos;
-
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-	frag = net_pkt_get_reserve_rx_data(K_FOREVER);
-
-	/* Place the IP + UDP header in the first fragment */
-	if (net_buf_tailroom(frag)) {
-		ipv6 = (struct ipv6_hdr *)(frag->data);
-		udp = (struct udp_hdr *)((u8_t *)ipv6 + sizeof(*ipv6));
-		if (net_buf_tailroom(frag) < sizeof(*ipv6)) {
-			printk("Not enough space for IPv6 header, "
-			       "needed %zd bytes, has %zd bytes\n",
-			       sizeof(ipv6), net_buf_tailroom(frag));
-			zassert_true(false, "No space for IPv6 header");
-		}
-		net_buf_add(frag, sizeof(*ipv6));
-
-		if (net_buf_tailroom(frag) < sizeof(*udp)) {
-			printk("Not enough space for UDP header, "
-			       "needed %zd bytes, has %zd bytes\n",
-			       sizeof(udp), net_buf_tailroom(frag));
-			zassert_true(false, "No space for UDP header");
-		}
-
-		net_buf_add(frag, sizeof(*udp));
-
-		memcpy(net_buf_add(frag, 15), example_data, 15);
-
-		net_pkt_set_appdata(pkt, (u8_t *)udp + sizeof(*udp) + 15);
-		net_pkt_set_appdatalen(pkt, 0);
-	}
-
-	net_pkt_frag_add(pkt, frag);
-
-	orig_len = net_pkt_get_len(pkt);
-
-	DBG("Total copy data len %zd\n", orig_len);
-
-	linearize(pkt, buf_orig, orig_len);
-
-	/* Then copy a fragment list to a new fragment list.
-	 * Reserve some space in front of the buffers.
-	 */
-	reserve = sizeof(struct ipv6_hdr) + sizeof(struct icmp_hdr);
-	new_frag = net_pkt_copy_all(pkt, reserve, K_FOREVER);
-	zassert_not_null(new_frag, "Cannot copy fragment list");
-
-	new_pkt = net_pkt_get_reserve_tx(K_FOREVER);
-	new_pkt->frags = net_buf_frag_add(new_pkt->frags, new_frag);
-
-	DBG("Total new data len %zd\n", net_pkt_get_len(new_pkt));
-
-	if ((net_pkt_get_len(pkt) + reserve) != net_pkt_get_len(new_pkt)) {
-		int diff;
-
-		diff = net_pkt_get_len(new_pkt) - reserve -
-			net_pkt_get_len(pkt);
-
-		printk("Fragment list missing data, %d bytes not copied "
-		       "(%zd vs %zd)\n", diff,
-		       net_pkt_get_len(pkt) + reserve,
-		       net_pkt_get_len(new_pkt));
-		zassert_true(false, "Frag list missing");
-	}
-
-	if (net_pkt_get_len(new_pkt) != (orig_len + sizeof(struct ipv6_hdr) +
-					   sizeof(struct icmp_hdr))) {
-		printk("Fragment list missing data, new pkt len %zd "
-		       "should be %zd\n", net_pkt_get_len(new_pkt),
-		       orig_len + sizeof(struct ipv6_hdr) +
-		       sizeof(struct icmp_hdr));
-		zassert_true(false, "Frag list missing data");
-	}
-
-	linearize(new_pkt, buf_copy, sizeof(buf_copy));
-
-	zassert_true(memcmp(buf_orig, buf_copy, sizeof(buf_orig)),
-		     "Buffer copy failed, buffers are same");
-
-	pos = memcmp(buf_orig, buf_copy + sizeof(struct ipv6_hdr) +
-		     sizeof(struct icmp_hdr), orig_len);
-	if (pos) {
-		printk("Buffer copy failed at pos %d\n", pos);
-		zassert_true(false, "Buf copy failed");
-	}
-}
-
 /* Empty data and test data must be the same size in order the test to work */
 static const char test_data[] = { '0', '1', '2', '3', '4',
 				  '5', '6', '7' };
@@ -1203,7 +1089,6 @@ void test_main(void)
 {
 	ztest_test_suite(net_pkt_tests,
 			 ztest_unit_test(test_ipv6_multi_frags),
-			 ztest_unit_test(test_fragment_copy),
 			 ztest_unit_test(test_pkt_read_append),
 			 ztest_unit_test(test_pkt_read_write_insert),
 			 ztest_unit_test(test_fragment_compact),
