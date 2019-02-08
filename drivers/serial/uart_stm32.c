@@ -684,6 +684,10 @@ static int uart_stm32_init(struct device *dev)
 				 LL_USART_PARITY_NONE,
 				 LL_USART_STOPBITS_1);
 
+	if (config->hw_flow_control) {
+		uart_stm32_set_hwctrl(dev, LL_USART_HWCONTROL_RTS_CTS);
+	}
+
 	/* Set the default baudrate */
 	uart_stm32_set_baudrate(dev, data->baud_rate);
 
@@ -739,6 +743,7 @@ static const struct uart_stm32_config uart_stm32_cfg_##name = {		\
 	.pclken = { .bus = DT_UART_STM32_##name##_CLOCK_BUS,	\
 		    .enr = DT_UART_STM32_##name##_CLOCK_BITS	\
 	},								\
+	.hw_flow_control = DT_UART_STM32_##name##_HW_FLOW_CONTROL	\
 };									\
 									\
 static struct uart_stm32_data uart_stm32_data_##name = {		\

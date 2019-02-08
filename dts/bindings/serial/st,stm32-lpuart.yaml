@@ -29,4 +29,10 @@ properties:
       category: required
       description: Clock gate information
       generation: define
+
+    hw-flow-control:
+      type: boolean
+      category: optional
+      description: Set to enable RTS/CTS flow control at boot time
+      generation: define
 ...
