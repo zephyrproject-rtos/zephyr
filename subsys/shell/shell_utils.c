@@ -225,7 +225,7 @@ static inline u32_t shell_root_cmd_count(void)
 }
 
 /* Function returning pointer to root command matching requested syntax. */
-const struct shell_cmd_entry *shell_root_cmd_find(const char *syntax)
+const struct shell_static_entry *shell_root_cmd_find(const char *syntax)
 {
 	const size_t cmd_count = shell_root_cmd_count();
 	const struct shell_cmd_entry *cmd;
@@ -233,7 +233,7 @@ const struct shell_cmd_entry *shell_root_cmd_find(const char *syntax)
 	for (size_t cmd_idx = 0; cmd_idx < cmd_count; ++cmd_idx) {
 		cmd = shell_root_cmd_get(cmd_idx);
 		if (strcmp(syntax, cmd->u.entry->syntax) == 0) {
-			return cmd;
+			return cmd->u.entry;
 		}
 	}
 
