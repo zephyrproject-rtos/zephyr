@@ -155,22 +155,14 @@ def extract_bus_name(node_address, def_label):
                 {label: '"' + find_parent_prop(node_address, 'label') + '"'},
                 prop_alias)
 
+
 def extract_string_prop(node_address, key, label):
-
-    prop_def = {}
-
-    node = reduced[node_address]
-    prop = node['props'][key]
-
-    prop_def[label] = "\"" + prop + "\""
-
-    if node_address in defs:
-        defs[node_address].update(prop_def)
-    else:
-        defs[node_address] = prop_def
+    if node_address not in defs:
         # Make all defs have the special 'aliases' key, to remove existence
         # checks elsewhere
-        defs[node_address]['aliases'] = {}
+        defs[node_address] = {'aliases': {}}
+
+    defs[node_address][label] = '"' + reduced[node_address]['props'][key] + '"'
 
 
 def extract_property(node_compat, node_address, prop, prop_val, names):
