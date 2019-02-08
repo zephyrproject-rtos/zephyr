@@ -62,15 +62,14 @@ config BT_NO_DRIVER
 
 endchoice
 
-if !HAS_DTS
 config BT_UART_ON_DEV_NAME
 	string "Device Name of UART Device for Bluetooth"
+	default "$(dt_str_val,DT_BT_UART_ON_DEV_NAME)" if HAS_DTS
 	default "UART_0"
 	depends on BT_UART
 	help
 	  This option specifies the name of UART device to be used
 	  for Bluetooth.
-endif
 
 if BT_SPI
 

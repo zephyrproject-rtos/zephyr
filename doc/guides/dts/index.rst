@@ -300,17 +300,17 @@ The full set of Zephyr-specific ``chosen`` nodes follows:
    * - ``zephyr,ccm``
      - ``DT_CCM``
    * - ``zephyr,console``
-     - :option:`CONFIG_UART_CONSOLE_ON_DEV_NAME`
+     - `DT_UART_CONSOLE_ON_DEV_NAME`
    * - ``zephyr,shell-uart``
-     - :option:`CONFIG_UART_SHELL_ON_DEV_NAME`
+     - `DT_UART_SHELL_ON_DEV_NAME`
    * - ``zephyr,bt-uart``
-     - :option:`CONFIG_BT_UART_ON_DEV_NAME`
+     - `DT_BT_UART_ON_DEV_NAME`
    * - ``zephyr,uart-pipe``
-     - :option:`CONFIG_UART_PIPE_ON_DEV_NAME`
+     - `DT_UART_PIPE_ON_DEV_NAME`
    * - ``zephyr,bt-mon-uart``
-     - :option:`CONFIG_BT_MONITOR_ON_DEV_NAME`
+     - `DT_BT_MONITOR_ON_DEV_NAME`
    * - ``zephyr,uart-mcumgr``
-     - :option:`CONFIG_UART_MCUMGR_ON_DEV_NAME`
+     - `DT_UART_MCUMGR_ON_DEV_NAME`
 
 As chosen properties tend to be related to software configuration, it can be
 useful for the build system to know if a chosen property was defined. We
