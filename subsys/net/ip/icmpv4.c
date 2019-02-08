@@ -286,7 +286,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 	if (net_ipv4_create_new(pkt, &ip_hdr->dst, &ip_hdr->src) ||
 	    icmpv4_create(pkt, type, code) ||
 	    net_pkt_memset(pkt, 0, NET_ICMPV4_UNUSED_LEN) ||
-	    net_pkt_copy_new(pkt, orig, copy_len)) {
+	    net_pkt_copy(pkt, orig, copy_len)) {
 		goto drop;
 	}
 
