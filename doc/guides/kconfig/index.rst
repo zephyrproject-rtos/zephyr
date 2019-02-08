@@ -639,7 +639,8 @@ Device Tree Related Functions
 
   dt_str_val(kconf, _, name):
        This function looks up 'name' in the DTS generated "conf" style database
-       and if its found it will return the value as string.
+       and if its found it will return the value as string. if its not found we
+       return an empty string.
 
 Example Usage
 =============
