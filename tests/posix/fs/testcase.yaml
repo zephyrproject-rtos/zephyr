@@ -1,5 +1,9 @@
 common:
-  arch_exclude: nios2 posix
+  # Currently, POSIX subsystem and "posix" pseudo-arch don't work well
+  # together. This is supposed to be addressed later.
+  # riscv toolchain lacks sys/timespec.h (maybe something else), so not
+  # good for POSIX.
+  arch_exclude: nios2 posix riscv32
   min_ram: 128
   tags: posix filesystem
 tests:
