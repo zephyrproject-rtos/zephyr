@@ -1984,16 +1984,6 @@ struct net_buf *net_frag_get_pos(struct net_pkt *pkt,
 				 u16_t *pos);
 
 /**
- * @brief Clone pkt and its fragment chain.
- *
- * @param pkt Original pkt to be cloned
- * @param timeout Timeout to wait for free net_buf
- *
- * @return NULL if error, clone fragment chain otherwise.
- */
-struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout);
-
-/**
  * @brief Get information about predefined RX, TX and DATA pools.
  *
  * @param rx Pointer to RX pool is returned.
