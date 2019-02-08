@@ -39,6 +39,15 @@ config CPU_HAS_NRF_IDAU
 	  (IDAU: "Implementation-Defined Attribution Unit", in accordance with
 	  ARM terminology).
 
+config CPU_HAS_FPU_DOUBLE_PRECISION
+	bool
+	# Omit prompt to signify "hidden" option
+	depends on CPU_CORTEX_M7
+	select CPU_HAS_FPU
+	help
+	  When enabled, indicates that the SoC has a double
+	  floating point precision unit.
+
 config HAS_SWO
 	bool
 	# Omit prompt to signify "hidden" option
