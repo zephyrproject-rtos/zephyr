@@ -406,6 +406,8 @@ def write_conf(f):
 
         for alias in sorted(defs[node]['aliases']):
             alias_target = defs[node]['aliases'][alias]
+            if alias_target not in defs[node]:
+                alias_target = defs[node]['aliases'][alias_target]
             f.write('%s=%s\n' % (alias, defs[node].get(alias_target)))
 
         f.write('\n')
