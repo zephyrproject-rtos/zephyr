@@ -79,7 +79,7 @@
  * is set in your SOC dts file.
  *
  */
-#define SETTINGS_CONFIG_PAGE_SIZE          FLASH_ERASE_BLOCK_SIZE
+#define SETTINGS_CONFIG_PAGE_SIZE          DT_FLASH_ERASE_BLOCK_SIZE
 
 /**
  * @def SETTINGS_CONFIG_PAGE_NUM
