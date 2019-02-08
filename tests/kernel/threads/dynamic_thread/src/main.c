@@ -8,7 +8,7 @@
 #include <irq_offload.h>
 #include <misc/stack.h>
 
-#define STACKSIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 #if defined(CONFIG_USERSPACE) && defined(CONFIG_DYNAMIC_OBJECTS)
 
