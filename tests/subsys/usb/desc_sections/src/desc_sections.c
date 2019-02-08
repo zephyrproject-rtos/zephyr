@@ -63,7 +63,7 @@ struct usb_loopback_config {
 	}
 
 
-#define DEFINE_LOOPBACK_DESC(x)						\
+#define DEFINE_LOOPBACK_DESC(x, _)					\
 	USBD_CLASS_DESCR_DEFINE(primary, x)				\
 	struct usb_loopback_config loopback_cfg_##x = {			\
 	.if0 = INITIALIZER_IF,						\
@@ -73,9 +73,9 @@ struct usb_loopback_config {
 	.if0_in_ep = INITIALIZER_IF_EP(LOOPBACK_IN_EP_ADDR,		\
 				       USB_DC_EP_BULK,			\
 				       LOOPBACK_BULK_EP_MPS),		\
-	}
+	};
 
-#define DEFINE_LOOPBACK_EP_CFG(x)				\
+#define DEFINE_LOOPBACK_EP_CFG(x, _)				\
 	static struct usb_ep_cfg_data ep_cfg_##x[] = {		\
 		{						\
 			.ep_cb = NULL,				\
@@ -85,35 +85,31 @@ struct usb_loopback_config {
 			.ep_cb = NULL,				\
 			.ep_addr = LOOPBACK_IN_EP_ADDR,		\
 		},						\
-	}
+	};
 
-#define DEFINE_LOOPBACK_CFG_DATA(x) \
-	USBD_CFG_DATA_DEFINE(loopback_##x) \
-	struct usb_cfg_data loopback_config_##x = { \
-	.usb_device_description = NULL, \
-	.interface_config = NULL, \
-	.interface_descriptor = &loopback_cfg_##x.if0, \
-	.cb_usb_status = NULL, \
-	.interface = { \
-		.class_handler = NULL, \
-		.custom_handler = NULL, \
-		.vendor_handler = NULL, \
-		.vendor_data = NULL, \
-		.payload_data = NULL, \
-	}, \
-	.num_endpoints = ARRAY_SIZE(ep_cfg_##x), \
-	.endpoint = ep_cfg_##x, \
-}
+#define DEFINE_LOOPBACK_CFG_DATA(x, _)				\
+	USBD_CFG_DATA_DEFINE(loopback_##x)			\
+	struct usb_cfg_data loopback_config_##x = {		\
+	.usb_device_description = NULL,				\
+	.interface_config = NULL,				\
+	.interface_descriptor = &loopback_cfg_##x.if0,		\
+	.cb_usb_status = NULL,					\
+	.interface = {						\
+		.class_handler = NULL,				\
+		.custom_handler = NULL,				\
+		.vendor_handler = NULL,				\
+		.vendor_data = NULL,				\
+		.payload_data = NULL,				\
+	},							\
+	.num_endpoints = ARRAY_SIZE(ep_cfg_##x),		\
+	.endpoint = ep_cfg_##x,					\
+	};
 
-DEFINE_LOOPBACK_DESC(0);
-DEFINE_LOOPBACK_EP_CFG(0);
-DEFINE_LOOPBACK_CFG_DATA(0);
+#define NUM_INSTANCES 2
 
-DEFINE_LOOPBACK_DESC(1);
-DEFINE_LOOPBACK_EP_CFG(1);
-DEFINE_LOOPBACK_CFG_DATA(1);
-
-#define NUM_INSTANCES	2
+UTIL_LISTIFY(NUM_INSTANCES, DEFINE_LOOPBACK_DESC, _)
+UTIL_LISTIFY(NUM_INSTANCES, DEFINE_LOOPBACK_EP_CFG, _)
+UTIL_LISTIFY(NUM_INSTANCES, DEFINE_LOOPBACK_CFG_DATA, _)
 
 static void test_desc_sections(void)
 {
