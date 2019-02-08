@@ -106,13 +106,13 @@ class DTReg(DTDirective):
                         '_'.join([str_to_label(alias)] + l_addr + l_idx),
                     l_addr_fqn,
                     prop_alias)
-
-                add_prop_aliases(
-                    node_address,
-                    lambda alias:
-                        '_'.join([str_to_label(alias)] + l_size + l_idx),
-                    l_size_fqn,
-                    prop_alias)
+                if nr_size_cells:
+                    add_prop_aliases(
+                        node_address,
+                        lambda alias:
+                            '_'.join([str_to_label(alias)] + l_size + l_idx),
+                        l_size_fqn,
+                        prop_alias)
 
             insert_defs(node_address, prop_def, prop_alias)
 
