@@ -182,6 +182,13 @@ class DTFlash(DTDirective):
             if prop in self._flash_node['props']:
                 default.extract(node_address, prop, None, def_label)
 
+                # Add an non-DT prefix alias for compatiability
+                prop_alias = {}
+                label_post = '_' + str_to_label(prop)
+                prop_alias['FLASH' + label_post] = def_label + label_post
+                insert_defs(node_address, {}, prop_alias)
+
+
     def _extract_code_partition(self, node_address, prop, def_label):
         if node_address == 'dummy-flash':
             node = None

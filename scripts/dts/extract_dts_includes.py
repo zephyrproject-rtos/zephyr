@@ -479,7 +479,7 @@ def generate_node_definitions():
             extract_string_prop(chosen[k], "label", v)
 
     node_address = chosen.get('zephyr,flash', 'dummy-flash')
-    flash.extract(node_address, 'zephyr,flash', 'FLASH')
+    flash.extract(node_address, 'zephyr,flash', 'DT_FLASH')
     node_address = chosen.get('zephyr,code-partition', node_address)
     flash.extract(node_address, 'zephyr,code-partition', 'FLASH')
 
