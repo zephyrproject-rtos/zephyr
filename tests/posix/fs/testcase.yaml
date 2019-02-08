@@ -4,6 +4,9 @@ common:
   # riscv toolchain lacks sys/timespec.h (maybe something else), so not
   # good for POSIX.
   arch_exclude: nios2 posix riscv32
+  # qemu_x86_64 currently uses Linux host toolchains, which leaks host
+  # headers into the build.
+  platform_exclude: qemu_x86_64
   min_ram: 128
   tags: posix filesystem
 tests:
