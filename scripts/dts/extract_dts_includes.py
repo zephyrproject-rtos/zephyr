@@ -445,7 +445,7 @@ def write_header(f):
 
 
 def load_yaml_descriptions(root, yaml_dirs):
-    compatibles = get_all_compatibles(root, '/', {})
+    compatibles = all_compats(root, '/')
 
     (bindings, bus, bindings_compat) = Bindings.bindings(compatibles, yaml_dirs)
     if not bindings:
