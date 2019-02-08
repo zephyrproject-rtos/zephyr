@@ -505,7 +505,7 @@ def main():
     create_reduced(dts['/'], '/')
     create_phandles(dts['/'], '/', {})
     create_aliases(dts['/'])
-    get_chosen(dts['/'])
+    create_chosen(dts['/'])
 
     (extract.globals.bindings, extract.globals.bus_bindings,
      extract.globals.bindings_compat) = load_yaml_descriptions(dts, args.yaml)
