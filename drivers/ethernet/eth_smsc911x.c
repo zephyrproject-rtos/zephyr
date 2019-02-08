@@ -471,12 +471,11 @@ static int smsc_write_tx_fifo(const u8_t *buf, u32_t len, bool is_last)
 
 static int eth_tx(struct device *dev, struct net_pkt *pkt)
 {
-	int res;
 	u16_t total_len = net_pkt_get_len(pkt);
-	u16_t sent;
 	static u8_t tx_buf[1514] __aligned(4);
 	u32_t txcmd_a, txcmd_b;
 	u32_t tx_stat;
+	int res;
 
 	txcmd_a = (1/*is_first_segment*/ << 13) | (1/*is_last_segment*/ << 12)
 		  | total_len;
@@ -485,9 +484,11 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	SMSC9220->TX_DATA_PORT = txcmd_a;
 	SMSC9220->TX_DATA_PORT = txcmd_b;
 
-	sent = net_frag_linearize(tx_buf, sizeof(tx_buf), pkt,
-				  0, sizeof(tx_buf));
-	res = smsc_write_tx_fifo(tx_buf, sent, true);
+	if (net_pkt_read(pkt, tx_buf, total_len)) {
+		goto error;
+	}
+
+	res = smsc_write_tx_fifo(tx_buf, total_len, true);
 	if (res < 0) {
 		goto error;
 	}
@@ -531,71 +532,53 @@ static inline void smsc_wait_discard_pkt(void)
 	}
 }
 
-static void smsc_read_rx_fifo(u8_t *buf, u32_t len)
+static void smsc_read_rx_fifo(struct net_pkt *pkt, u32_t len)
 {
-	u32_t *buf32;
+	u32_t buf32;
 
-	__ASSERT_NO_MSG(((uintptr_t)buf & 3) == 0);
 	__ASSERT_NO_MSG((len & 3) == 0 && len >= 4);
 
-	buf32 = (u32_t *)buf;
 	len /= 4;
+
 	do {
-		*buf32++ = SMSC9220->RX_DATA_PORT;
+		buf32 = SMSC9220->RX_DATA_PORT;
+
+		if (net_pkt_write_new(pkt, &buf32, sizeof(u32_t))) {
+			return -1;
+		}
 	} while (--len);
+
+	return 0;
 }
 
-static struct net_pkt *smsc_recv_pkt(u32_t pkt_size)
+static struct net_pkt *smsc_recv_pkt(struct dehive *dev, u32_t pkt_size)
 {
+	struct eth_context *context = dev->driver_data;
 	u32_t rem_size;
-	struct net_buf *prev_buf;
-	struct net_pkt *pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
+	struct net_pkt *pkt;
 
-	if (pkt == NULL) {
-		LOG_ERR("get_rx == NULL");
+	/* Round up to next DWORD size */
+	rem_size = (pkt_size + 3) & ~3;
+	/* Don't account for FCS when filling net pkt */
+	rem_size -= 4;
+
+	pkt = net_pkt_rx_alloc_with_buffer(context->iface, rem_size,
+					   AF_UNSPEC, 0, K_NO_WAIT);
+	if (!pkt) {
+		LOG_ERR("Failed to obtain RX buffer");
 		smsc_discard_pkt();
 		return NULL;
 	}
 
-	prev_buf = NULL;
-	/* Round up to next DWORD size */
-	rem_size = (pkt_size + 3) & ~3;
-	/* Don't account for FCS when filling net buffers */
-	rem_size -= 4;
-	do {
-		u32_t frag_len;
-		struct net_buf *pkt_buf = net_pkt_get_frag(pkt,
-							   K_NO_WAIT);
-		if (pkt_buf == NULL) {
-			LOG_ERR("Failed to get fragment buf");
-			net_pkt_unref(pkt);
-			smsc_discard_pkt();
-			return NULL;
-		}
-
-		if (!prev_buf) {
-			net_pkt_frag_insert(pkt, pkt_buf);
-		} else {
-			net_buf_frag_insert(prev_buf, pkt_buf);
-		}
-
-		frag_len = net_buf_tailroom(pkt_buf);
-		if (frag_len > rem_size) {
-			frag_len = rem_size;
-		}
-		smsc_read_rx_fifo(pkt_buf->data, frag_len);
-		rem_size -= frag_len;
-		net_buf_add(pkt_buf, frag_len);
-		/*LOG_DBG("rem_size=%u", rem_size);*/
-
-		prev_buf = pkt_buf;
-	} while (rem_size != 0);
+	if (smsc_read_rx_fifo(pkt, rem_size) < 0) {
+		smsc_discard_pkt();
+		net_pkt_unref(pkt);
+		return NULL;
+	}
 
 	/* Discard FCS */
 	{
-		u32_t dummy;
-
-		smsc_read_rx_fifo((u8_t *)&dummy, 4);
+		u32_t dummy = SMSC9220->RX_DATA_PORT;
 	}
 
 	/* Adjust len of the last buf down for DWORD alignment */
@@ -647,7 +630,7 @@ static void eth_smsc911x_isr(struct device *dev)
 		pkt_size = BFIELD(rx_stat, RX_STAT_PORT_PKT_LEN);
 		LOG_DBG("pkt sz: %u", pkt_size);
 
-		pkt = smsc_recv_pkt(pkt_size);
+		pkt = smsc_recv_pkt(dev, pkt_size);
 
 		LOG_DBG("out RX FIFO: pkts: %u, bytes: %u",
 			SMSC9220_BFIELD(RX_FIFO_INF, RXSUSED),
