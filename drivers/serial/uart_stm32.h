@@ -17,6 +17,8 @@ struct uart_stm32_config {
 	struct uart_device_config uconf;
 	/* clock subsystem driving this peripheral */
 	struct stm32_pclken pclken;
+	/* initial hardware flow control, 1 for RTS/CTS */
+	bool hw_flow_control;
 };
 
 /* driver data */
