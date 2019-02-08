@@ -187,7 +187,7 @@ class DTFlash(DTDirective):
                          'DT_FLASH_SIZE': size//1024},
                         {})
 
-        for prop in 'label', 'write-block-size', 'erase-block-size':
+        for prop in 'write-block-size', 'erase-block-size':
             if prop in self._flash_node['props']:
                 default.extract(node_address, prop, None, def_label)
 
