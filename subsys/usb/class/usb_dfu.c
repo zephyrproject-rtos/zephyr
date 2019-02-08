@@ -65,6 +65,9 @@ LOG_MODULE_REGISTER(usb_dfu);
 #define USB_DFU_MAX_XFER_SIZE		CONFIG_USB_DFU_MAX_XFER_SIZE
 #endif
 
+#define FIRMWARE_IMAGE_0_LABEL "image-1"
+#define FIRMWARE_IMAGE_1_LABEL "image-0"
+
 static struct k_work dfu_work;
 
 struct dfu_worker_data_t {
@@ -215,13 +218,13 @@ struct usb_string_desription {
 	struct image_0_descriptor {
 		u8_t bLength;
 		u8_t bDescriptorType;
-		u8_t bString[USB_BSTRING_LENGTH(FLASH_AREA_IMAGE_0_LABEL)];
+		u8_t bString[USB_BSTRING_LENGTH(FIRMWARE_IMAGE_0_LABEL)];
 	} __packed utf16le_image0;
 
 	struct image_1_descriptor {
 		u8_t bLength;
 		u8_t bDescriptorType;
-		u8_t bString[USB_BSTRING_LENGTH(FLASH_AREA_IMAGE_1_LABEL)];
+		u8_t bString[USB_BSTRING_LENGTH(FIRMWARE_IMAGE_1_LABEL)];
 	} __packed utf16le_image1;
 } __packed;
 
@@ -255,16 +258,16 @@ struct usb_string_desription string_descr = {
 	/* Image 0 String Descriptor */
 	.utf16le_image0 = {
 		.bLength = USB_STRING_DESCRIPTOR_LENGTH(
-				FLASH_AREA_IMAGE_0_LABEL),
+				FIRMWARE_IMAGE_0_LABEL),
 		.bDescriptorType = USB_STRING_DESC,
-		.bString = FLASH_AREA_IMAGE_0_LABEL,
+		.bString = FIRMWARE_IMAGE_0_LABEL,
 	},
 	/* Image 1 String Descriptor */
 	.utf16le_image1 = {
 		.bLength = USB_STRING_DESCRIPTOR_LENGTH(
-				FLASH_AREA_IMAGE_1_LABEL),
+				FIRMWARE_IMAGE_1_LABEL),
 		.bDescriptorType = USB_STRING_DESC,
-		.bString = FLASH_AREA_IMAGE_1_LABEL,
+		.bString = FIRMWARE_IMAGE_1_LABEL,
 	},
 };
 
