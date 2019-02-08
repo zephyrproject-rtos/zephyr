@@ -949,7 +949,7 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 		}
 
 		if (pkt_in_slist) {
-			new_pkt = net_pkt_clone_new(pkt, ALLOC_TIMEOUT);
+			new_pkt = net_pkt_clone(pkt, ALLOC_TIMEOUT);
 			if (!new_pkt) {
 				return -ENOMEM;
 			}

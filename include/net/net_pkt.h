@@ -2312,14 +2312,14 @@ int net_pkt_copy_new(struct net_pkt *pkt_dst,
 		     size_t length);
 
 /**
- * @brief Clone pkt and its fragment chain.
+ * @brief Clone pkt and its buffer.
  *
  * @param pkt Original pkt to be cloned
  * @param timeout Timeout to wait for free buffer
  *
  * @return NULL if error, cloned packet otherwise.
  */
-struct net_pkt *net_pkt_clone_new(struct net_pkt *pkt, s32_t timeout);
+struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout);
 
 /**
  * @brief Read some data from a net_pkt

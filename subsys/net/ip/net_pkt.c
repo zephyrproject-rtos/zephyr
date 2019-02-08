@@ -2716,7 +2716,7 @@ int net_pkt_copy_new(struct net_pkt *pkt_dst,
 	return 0;
 }
 
-struct net_pkt *net_pkt_clone_new(struct net_pkt *pkt, s32_t timeout)
+struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 {
 	struct net_pkt *clone_pkt;
 
