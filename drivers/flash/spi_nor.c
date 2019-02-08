@@ -273,7 +273,7 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 			/* chip erase */
 			spi_nor_cmd_write(dev, SPI_NOR_CMD_CE);
 			size -= (params->sector_size * params->n_sectors);
-		} else if ((FLASH_ERASE_BLOCK_SIZE == SZ_64K)
+		} else if ((DT_JEDEC_SPI_NOR_0_ERASE_BLOCK_SIZE == SZ_64K)
 			  && (size >= SZ_64K)
 			  && ((addr & MASK_64K) == 0)) {
 			/* 64 KiB block erase */
@@ -281,7 +281,7 @@ static int spi_nor_erase(struct device *dev, off_t addr, size_t size)
 			NULL, 0);
 			addr += SZ_64K;
 			size -= SZ_64K;
-		} else if ((FLASH_ERASE_BLOCK_SIZE == SZ_32K)
+		} else if ((DT_JEDEC_SPI_NOR_0_ERASE_BLOCK_SIZE == SZ_32K)
 			  && (size >= SZ_32K)
 			  && ((addr & MASK_32K) == 0)) {
 			/* 32 KiB block erase */
@@ -385,8 +385,8 @@ static int spi_nor_init(struct device *dev)
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static const struct flash_pages_layout dev_layout = {
-	.pages_count = DT_JEDEC_SPI_NOR_0_SIZE / 8 / FLASH_ERASE_BLOCK_SIZE,
-	.pages_size = FLASH_ERASE_BLOCK_SIZE,
+	.pages_count = DT_JEDEC_SPI_NOR_0_SIZE / 8 / DT_JEDEC_SPI_NOR_0_ERASE_BLOCK_SIZE,
+	.pages_size = DT_JEDEC_SPI_NOR_0_ERASE_BLOCK_SIZE,
 };
 
 static void spi_nor_pages_layout(struct device *dev,
@@ -406,7 +406,7 @@ static const struct flash_driver_api spi_nor_api = {
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 	.page_layout = spi_nor_pages_layout,
 #endif
-	.write_block_size = FLASH_WRITE_BLOCK_SIZE,
+	.write_block_size = DT_JEDEC_SPI_NOR_0_WRITE_BLOCK_SIZE,
 };
 
 static const struct spi_nor_config flash_id = {
