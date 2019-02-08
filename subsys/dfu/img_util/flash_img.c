@@ -18,9 +18,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <dfu/flash_img.h>
 #include <inttypes.h>
 
-BUILD_ASSERT_MSG((CONFIG_IMG_BLOCK_BUF_SIZE % FLASH_WRITE_BLOCK_SIZE == 0),
+BUILD_ASSERT_MSG((CONFIG_IMG_BLOCK_BUF_SIZE % DT_FLASH_WRITE_BLOCK_SIZE == 0),
 		 "CONFIG_IMG_BLOCK_BUF_SIZE is not a multiple of "
-		 "FLASH_WRITE_BLOCK_SIZE");
+		 "DT_FLASH_WRITE_BLOCK_SIZE");
 
 static bool flash_verify(const struct flash_area *fa, off_t offset,
 			 u8_t *data, size_t len)
