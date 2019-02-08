@@ -24,6 +24,12 @@ properties:
       description: required interrupts
       generation: define
 
+    hw-flow-control:
+      type: boolean
+      category: optional
+      description: Hardware flow control enabled at boot time
+      generation: define
+
     clocks:
       type: array
       category: required
