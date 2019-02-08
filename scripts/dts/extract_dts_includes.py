@@ -177,10 +177,7 @@ def extract_property(node_compat, node_address, prop, prop_val, names):
 
     node = reduced[node_address]
     yaml_node_compat = get_binding(node_address)
-    if 'base_label' in yaml_node_compat:
-        def_label = yaml_node_compat['base_label']
-    else:
-        def_label = get_node_label(node_address)
+    def_label = get_node_label(node_address)
 
     if 'parent' in yaml_node_compat:
         if 'bus' in yaml_node_compat['parent']:
@@ -222,8 +219,7 @@ def extract_property(node_compat, node_address, prop, prop_val, names):
             # Generate *_BUS_NAME #define
             extract_bus_name(node_address, 'DT_' + def_label)
 
-    if 'base_label' not in yaml_node_compat:
-        def_label = 'DT_' + def_label
+    def_label = 'DT_' + def_label
 
     if prop == 'reg':
         reg.extract(node_address, names, def_label, 1)

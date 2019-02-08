@@ -70,8 +70,4 @@ properties:
 
 # "type" attribute is currenty not used.
 
-base_label: LABEL
-# This will use 'LABEL' instead of the device generated name when we produce
-# #define's for the node
-
 ...
