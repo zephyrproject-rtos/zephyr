@@ -294,7 +294,6 @@ static struct dfu_data_t dfu_data = {
 	.state = appIDLE,
 	.status = statusOK,
 	.flash_area_id = DT_FLASH_AREA_IMAGE_1_ID,
-	.flash_upload_size = FLASH_AREA_IMAGE_1_SIZE,
 	.alt_setting = 0,
 };
 
@@ -639,23 +638,28 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 		if (pSetup->bRequest == REQ_SET_INTERFACE) {
 			LOG_DBG("DFU alternate setting %d", pSetup->wValue);
 
+			const struct flash_area *fa;
+
 			switch (pSetup->wValue) {
 			case 0:
 				dfu_data.flash_area_id =
 				    DT_FLASH_AREA_IMAGE_0_ID;
-				dfu_data.flash_upload_size =
-				    FLASH_AREA_IMAGE_0_SIZE;
 				break;
 			case 1:
 				dfu_data.flash_area_id =
 				    DT_FLASH_AREA_IMAGE_1_ID;
-				dfu_data.flash_upload_size =
-				    FLASH_AREA_IMAGE_1_SIZE;
-				break;
 			default:
 				LOG_WRN("Invalid DFU alternate setting");
 				return -ENOTSUP;
 			}
+
+			if (flash_area_open(dfu_data.flash_area_id, &fa)) {
+				return -EIO;
+			}
+
+			dfu_data.flash_upload_size = fa->fa_size;
+			flash_area_close(fa);
+
 			dfu_data.alt_setting = pSetup->wValue;
 			*data_len = 0;
 			return 0;
@@ -748,6 +752,15 @@ static int usb_dfu_init(struct device *dev)
 		return ret;
 	}
 #endif
+
+	const struct flash_area *fa;
+
+	if (flash_area_open(dfu_data.flash_area_id, &fa)) {
+		return -EIO;
+	}
+
+	dfu_data.flash_upload_size = fa->fa_size;
+	flash_area_close(fa);
 
 	return 0;
 }
