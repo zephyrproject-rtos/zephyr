@@ -481,7 +481,7 @@ def generate_node_definitions():
     node_address = chosen.get('zephyr,flash', 'dummy-flash')
     flash.extract(node_address, 'zephyr,flash', 'DT_FLASH')
     node_address = chosen.get('zephyr,code-partition', node_address)
-    flash.extract(node_address, 'zephyr,code-partition', 'FLASH')
+    flash.extract(node_address, 'zephyr,code-partition', None)
 
 
 def parse_arguments():

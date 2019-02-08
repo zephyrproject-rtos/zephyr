@@ -85,6 +85,9 @@ class DTFlash(DTDirective):
 
         insert_defs("DT_FLASH_AREA", prop_def, prop_alias)
 
+    def _create_legacy_label(self, prop_alias, label):
+        prop_alias[label.lstrip('DT_')] = label
+
     def extract_partition(self, node_address):
         prop_def = {}
         prop_alias = {}
@@ -95,12 +98,14 @@ class DTFlash(DTDirective):
         partition_name = node['props']['label']
         partition_sectors = node['props']['reg']
 
-        label_prefix = ["FLASH_AREA", partition_name]
+        label_prefix = ["DT_FLASH_AREA", partition_name]
         label = self.get_label_string(label_prefix + ["LABEL",])
         prop_def[label] = '"{}"'.format(partition_name)
+        self._create_legacy_label(prop_alias, label)
 
         label = self.get_label_string(label_prefix + ["READ_ONLY",])
         prop_def[label] = 1 if 'read-only' in node['props'] else 0
+        self._create_legacy_label(prop_alias, label)
 
         index = 0
         while index < len(partition_sectors):
@@ -110,17 +115,21 @@ class DTFlash(DTDirective):
             label = self.get_label_string(
                 label_prefix + ["OFFSET", str(sector_index)])
             prop_def[label] = "{}".format(sector_start_offset)
+            self._create_legacy_label(prop_alias, label)
             label = self.get_label_string(
                 label_prefix + ["SIZE", str(sector_index)])
             prop_def[label] = "{}".format(sector_size)
+            self._create_legacy_label(prop_alias, label)
             index += 2
         # alias sector 0
         label = self.get_label_string(label_prefix + ["OFFSET",])
         prop_alias[label] = self.get_label_string(
             label_prefix + ["OFFSET", '0'])
+        self._create_legacy_label(prop_alias, label)
         label = self.get_label_string(label_prefix + ["SIZE",])
         prop_alias[label] = self.get_label_string(
             label_prefix + ["SIZE", '0'])
+        self._create_legacy_label(prop_alias, label)
 
         insert_defs(node_address, prop_def, prop_alias)
 
