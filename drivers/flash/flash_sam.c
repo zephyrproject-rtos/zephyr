@@ -166,10 +166,10 @@ static int flash_sam_write(struct device *dev, off_t offset,
 	 * Check that the offset and length are multiples of the write
 	 * block size.
 	 */
-	if ((offset % FLASH_WRITE_BLOCK_SIZE) != 0) {
+	if ((offset % DT_SOC_NV_FLASH_0_WRITE_BLOCK_SIZE) != 0) {
 		return -EINVAL;
 	}
-	if ((len % FLASH_WRITE_BLOCK_SIZE) != 0) {
+	if ((len % DT_SOC_NV_FLASH_0_WRITE_BLOCK_SIZE) != 0) {
 		return -EINVAL;
 	}
 
@@ -253,17 +253,17 @@ static int flash_sam_erase(struct device *dev, off_t offset, size_t len)
 	 * Check that the offset and length are multiples of the write
 	 * erase block size.
 	 */
-	if ((offset % FLASH_ERASE_BLOCK_SIZE) != 0) {
+	if ((offset % DT_SOC_NV_FLASH_0_ERASE_BLOCK_SIZE) != 0) {
 		return -EINVAL;
 	}
-	if ((len % FLASH_ERASE_BLOCK_SIZE) != 0) {
+	if ((len % DT_SOC_NV_FLASH_0_ERASE_BLOCK_SIZE) != 0) {
 		return -EINVAL;
 	}
 
 	flash_sam_sem_take(dev);
 
 	/* Loop through the pages to erase */
-	for (i = offset; i < offset + len; i += FLASH_ERASE_BLOCK_SIZE) {
+	for (i = offset; i < offset + len; i += DT_SOC_NV_FLASH_0_ERASE_BLOCK_SIZE) {
 		rc = flash_sam_erase_block(dev, i);
 		if (rc < 0) {
 			goto done;
@@ -311,8 +311,8 @@ done:
  * Here a page refers to the granularity at which the flash can be erased.
  */
 static const struct flash_pages_layout flash_sam_pages_layout = {
-	.pages_count = (CONFIG_FLASH_SIZE * 1024) / FLASH_ERASE_BLOCK_SIZE,
-	.pages_size = FLASH_ERASE_BLOCK_SIZE,
+	.pages_count = (CONFIG_FLASH_SIZE * 1024) / DT_SOC_NV_FLASH_0_ERASE_BLOCK_SIZE,
+	.pages_size = DT_SOC_NV_FLASH_0_ERASE_BLOCK_SIZE,
 };
 
 void flash_sam_page_layout(struct device *dev,
@@ -341,7 +341,7 @@ static const struct flash_driver_api flash_sam_api = {
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 	.page_layout = flash_sam_page_layout,
 #endif
-	.write_block_size = FLASH_WRITE_BLOCK_SIZE,
+	.write_block_size = DT_SOC_NV_FLASH_0_WRITE_BLOCK_SIZE,
 };
 
 static const struct flash_sam_dev_cfg flash_sam_cfg = {
