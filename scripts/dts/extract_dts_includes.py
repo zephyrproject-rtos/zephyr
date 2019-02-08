@@ -42,17 +42,8 @@ class Bindings(yaml.Loader):
     _included = []
 
     @classmethod
-    def bindings(cls, compatibles, yaml_dirs):
-        # find unique set of compatibles across all active nodes
-        s = set()
-        for k, v in compatibles.items():
-            if isinstance(v, list):
-                for item in v:
-                    s.add(item)
-            else:
-                s.add(v)
-
-        # scan YAML files and find the ones we are interested in
+    def bindings(cls, compats, yaml_dirs):
+        # Scan YAML files and find the ones we are interested in
         cls._files = []
         for yaml_dir in yaml_dirs:
             for root, dirnames, filenames in os.walk(yaml_dir):
@@ -69,7 +60,7 @@ class Bindings(yaml.Loader):
                 if re.search('^\s+constraint:*', line):
                     c = line.split(':')[1].strip()
                     c = c.strip('"')
-                    if c in s:
+                    if c in compats:
                         if file not in file_load_list:
                             file_load_list.add(file)
                             with open(file, 'r', encoding='utf-8') as yf:
@@ -443,7 +434,7 @@ def write_header(f):
 
 
 def load_yaml_descriptions(root, yaml_dirs):
-    compatibles = all_compats(root, '/')
+    compatibles = all_compats(root)
 
     (bindings, bus, bindings_compat) = Bindings.bindings(compatibles, yaml_dirs)
     if not bindings:
