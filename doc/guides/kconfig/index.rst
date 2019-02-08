@@ -621,7 +621,7 @@ Device Tree Related Functions
 
   dt_int_val(kconf, _, name, unit):
        This function looks up 'name' in the DTS generated "conf" style database
-       and if its found it will return the value as an decimal integer.  The
+       and if it's found it will return the value as an decimal integer.  The
        function will divide the value based on 'unit':
            None        No division
            'k' or 'K'  divide by 1024 (1 << 10)
@@ -630,7 +630,7 @@ Device Tree Related Functions
 
   dt_hex_val(kconf, _, name, unit):
        This function looks up 'name' in the DTS generated "conf" style database
-       and if its found it will return the value as an hex integer.  The
+       and if it's found it will return the value as an hex integer.  The
        function will divide the value based on 'unit':
            None        No division
            'k' or 'K'  divide by 1024 (1 << 10)
@@ -639,7 +639,7 @@ Device Tree Related Functions
 
   dt_str_val(kconf, _, name):
        This function looks up 'name' in the DTS generated "conf" style database
-       and if its found it will return the value as string. if its not found we
+       and if it's found it will return the value as string. if it's not found we
        return an empty string.
 
 Example Usage
