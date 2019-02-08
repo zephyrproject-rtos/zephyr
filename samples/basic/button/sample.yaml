@@ -3,6 +3,5 @@ sample:
 tests:
   test:
     tags: button gpio
-    # The filters below are from DTS
-    filter: SW0_GPIO_CONTROLLER
+    filter: DT_GPIO_KEYS_SW0_GPIO_CONTROLLER
     depends_on: gpio
