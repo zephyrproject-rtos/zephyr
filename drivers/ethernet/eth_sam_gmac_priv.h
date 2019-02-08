@@ -177,7 +177,7 @@ struct gmac_queue {
 	struct k_sem tx_sem;
 #endif
 
-	struct ring_buf rx_frag_list;
+	struct net_buf **rx_frag_list;
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 	struct ring_buf tx_frag_list;
