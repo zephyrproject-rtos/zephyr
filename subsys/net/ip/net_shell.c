@@ -851,6 +851,10 @@ static void get_addresses(struct net_context *context,
 #endif
 	if (context->local.family == AF_UNSPEC) {
 		snprintk(addr_local, local_len, "AF_UNSPEC");
+	} else if (context->local.family == AF_PACKET) {
+		snprintk(addr_local, local_len, "AF_PACKET");
+	} else if (context->local.family == AF_CAN) {
+		snprintk(addr_local, local_len, "AF_CAN");
 	} else {
 		snprintk(addr_local, local_len, "AF_UNK(%d)",
 			 context->local.family);
@@ -879,9 +883,13 @@ static void context_cb(struct net_context *context, void *user_data)
 	PR("[%2d] %p\t%p    %c%c%c   %16s\t%16s\n",
 	   (*count) + 1, context,
 	   net_context_get_iface(context),
-	   net_context_get_family(context) == AF_INET6 ? '6' : '4',
-	   net_context_get_type(context) == SOCK_DGRAM ? 'D' : 'S',
-	   net_context_get_ip_proto(context) == IPPROTO_UDP ? 'U' : 'T',
+	   net_context_get_family(context) == AF_INET6 ? '6' :
+	   (net_context_get_family(context) == AF_INET ? '4' : ' '),
+	   net_context_get_type(context) == SOCK_DGRAM ? 'D' :
+	   (net_context_get_type(context) == SOCK_STREAM ? 'S' :
+	    (net_context_get_type(context) == SOCK_RAW ? 'R' : ' ')),
+	   net_context_get_ip_proto(context) == IPPROTO_UDP ? 'U' :
+	   (net_context_get_ip_proto(context) == IPPROTO_TCP ? 'T' : ' '),
 	   addr_local, addr_remote);
 
 	(*count)++;
