@@ -2753,9 +2753,8 @@ enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt)
 		net_pkt_ref(pkt);
 
 		verdict = net_if_l2(iface)->recv(iface, pkt);
-
 		if (verdict == NET_CONTINUE) {
-			new_pkt = net_pkt_clone(pkt, K_NO_WAIT);
+			new_pkt = net_pkt_clone_new(pkt, K_NO_WAIT);
 		} else {
 			new_pkt = net_pkt_ref(pkt);
 		}
