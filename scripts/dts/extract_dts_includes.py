@@ -503,7 +503,7 @@ def main():
 
     # Create some global data structures
     create_reduced(dts['/'], '/')
-    get_phandles(dts['/'], '/', {})
+    create_phandles(dts['/'], '/', {})
     get_aliases(dts['/'])
     get_chosen(dts['/'])
 
