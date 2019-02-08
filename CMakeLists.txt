@@ -426,6 +426,7 @@ endif()
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
 function(construct_add_custom_command_for_linker_pass linker_output_name output_variable)
+  set(extra_dependencies ${ARGN})
   set(linker_cmd_file_name ${linker_output_name}.cmd)
 
   if (${linker_output_name} MATCHES "^linker_pass_final$")
@@ -458,6 +459,7 @@ function(construct_add_custom_command_for_linker_pass linker_output_name output_
     OUTPUT ${linker_cmd_file_name}
     DEPENDS
     ${LINKER_SCRIPT}
+    ${extra_dependencies}
     # NB: 'linker_script_dep' will use a keyword that ends 'DEPENDS'
     ${linker_script_dep}
     COMMAND ${CMAKE_C_COMPILER}
