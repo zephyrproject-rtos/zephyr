@@ -127,6 +127,9 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 		goto drop;
 	}
 
+	/* Do not use the same ttl as original packet, resetting it */
+	net_pkt_set_ipv4_ttl(reply, 0);
+
 	/* Let's keep the original data,
 	 * we will only overwrite what is relevant
 	 */
