@@ -57,21 +57,21 @@ static void nxp_mcimx7_gpio_config(void)
 {
 
 #ifdef CONFIG_GPIO_IMX_PORT_1
-	RDC_SetPdapAccess(RDC, rdcPdapGpio1, GPIO_1_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio1, DT_NXP_IMX_GPIO_GPIO_1_RDC, false, false);
 	/* Enable gpio clock gate */
 	CCM_ControlGate(CCM, ccmCcgrGateGpio1, ccmClockNeededRunWait);
 #endif /* CONFIG_GPIO_IMX_PORT_1 */
 
 
 #ifdef CONFIG_GPIO_IMX_PORT_2
-	RDC_SetPdapAccess(RDC, rdcPdapGpio2, GPIO_2_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio2, DT_NXP_IMX_GPIO_GPIO_2_RDC, false, false);
 	/* Enable gpio clock gate */
 	CCM_ControlGate(CCM, ccmCcgrGateGpio2, ccmClockNeededRunWait);
 #endif /* CONFIG_GPIO_IMX_PORT_2 */
 
 
 #ifdef CONFIG_GPIO_IMX_PORT_7
-	RDC_SetPdapAccess(RDC, rdcPdapGpio7, GPIO_7_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapGpio7, DT_NXP_IMX_GPIO_GPIO_7_RDC, false, false);
 	/* Enable gpio clock gate */
 	CCM_ControlGate(CCM, ccmCcgrGateGpio7, ccmClockNeededRunWait);
 #endif /* CONFIG_GPIO_IMX_PORT_2 */
@@ -85,7 +85,7 @@ static void nxp_mcimx7_uart_config(void)
 
 #ifdef CONFIG_UART_IMX_UART_2
 	/* We need to grasp board uart exclusively */
-	RDC_SetPdapAccess(RDC, rdcPdapUart2, UART_2_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapUart2, DT_NXP_IMX_UART_UART_2_RDC, false, false);
 	/* Select clock derived from OSC clock(24M) */
 	CCM_UpdateRoot(CCM, ccmRootUart2, ccmRootmuxUartOsc24m, 0, 0);
 	/* Enable uart clock */
@@ -100,7 +100,7 @@ static void nxp_mcimx7_uart_config(void)
 
 #ifdef CONFIG_UART_IMX_UART_6
 	/* We need to grasp board uart exclusively */
-	RDC_SetPdapAccess(RDC, rdcPdapUart6, UART_6_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapUart6, DT_NXP_IMX_UART_UART_6_RDC, false, false);
 	/* Select clock derived from OSC clock(24M) */
 	CCM_UpdateRoot(CCM, ccmRootUart6, ccmRootmuxUartOsc24m, 0, 0);
 	/* Enable uart clock */
@@ -122,7 +122,7 @@ static void nxp_mcimx7_i2c_config(void)
 
 #ifdef CONFIG_I2C_1
 	/* In this example, we need to grasp board I2C exclusively */
-	RDC_SetPdapAccess(RDC, rdcPdapI2c1, I2C_1_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapI2c1, DT_FSL_IMX7D_I2C_I2C_1_RDC, false, false);
 	/* Select I2C clock derived from OSC clock(24M) */
 	CCM_UpdateRoot(CCM, ccmRootI2c1, ccmRootmuxI2cOsc24m, 0, 0);
 	/* Enable I2C clock */
@@ -132,7 +132,7 @@ static void nxp_mcimx7_i2c_config(void)
 
 #ifdef CONFIG_I2C_2
 	/* In this example, we need to grasp board I2C exclusively */
-	RDC_SetPdapAccess(RDC, rdcPdapI2c2, I2C_2_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapI2c2, DT_FSL_IMX7D_I2C_I2C_2_RDC, false, false);
 	/* Select I2C clock derived from OSC clock(24M) */
 	CCM_UpdateRoot(CCM, ccmRootI2c2, ccmRootmuxI2cOsc24m, 0, 0);
 	/* Enable I2C clock */
@@ -142,7 +142,7 @@ static void nxp_mcimx7_i2c_config(void)
 
 #ifdef CONFIG_I2C_3
 	/* In this example, we need to grasp board I2C exclusively */
-	RDC_SetPdapAccess(RDC, rdcPdapI2c3, I2C_3_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapI2c3, DT_FSL_IMX7D_I2C_I2C_3_RDC, false, false);
 	/* Select I2C clock derived from OSC clock(24M) */
 	CCM_UpdateRoot(CCM, ccmRootI2c3, ccmRootmuxI2cOsc24m, 0, 0);
 	/* Enable I2C clock */
@@ -152,7 +152,7 @@ static void nxp_mcimx7_i2c_config(void)
 
 #ifdef CONFIG_I2C_4
 	/* In this example, we need to grasp board I2C exclusively */
-	RDC_SetPdapAccess(RDC, rdcPdapI2c4, I2C_4_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapI2c4, DT_FSL_IMX7D_I2C_I2C_4_RDC, false, false);
 	/* Select I2C clock derived from OSC clock(24M) */
 	CCM_UpdateRoot(CCM, ccmRootI2c4, ccmRootmuxI2cOsc24m, 0, 0);
 	/* Enable I2C clock */
@@ -169,7 +169,7 @@ static void nxp_mcimx7_pwm_config(void)
 
 #ifdef CONFIG_PWM_1
 	/* We need to grasp board pwm exclusively */
-	RDC_SetPdapAccess(RDC, rdcPdapPwm1, PWM_1_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapPwm1, DT_FSL_IMX7D_PWM_PWM_1_RDC, false, false);
 	/* Select clock derived from OSC clock(24M) */
 	CCM_UpdateRoot(CCM, ccmRootPwm1, ccmRootmuxPwmOsc24m, 0, 0);
 	/* Enable pwm clock */
@@ -179,7 +179,7 @@ static void nxp_mcimx7_pwm_config(void)
 
 #ifdef CONFIG_PWM_2
 	/* We need to grasp board pwm exclusively */
-	RDC_SetPdapAccess(RDC, rdcPdapPwm2, PWM_2_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapPwm2, DT_FSL_IMX7D_PWM_PWM_2_RDC, false, false);
 	/* Select clock derived from OSC clock(24M) */
 	CCM_UpdateRoot(CCM, ccmRootPwm2, ccmRootmuxPwmOsc24m, 0, 0);
 	/* Enable pwm clock */
@@ -189,7 +189,7 @@ static void nxp_mcimx7_pwm_config(void)
 
 #ifdef CONFIG_PWM_3
 	/* We need to grasp board pwm exclusively */
-	RDC_SetPdapAccess(RDC, rdcPdapPwm3, PWM_3_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapPwm3, DT_FSL_IMX7D_PWM_PWM_3_RDC, false, false);
 	/* Select clock derived from OSC clock(24M) */
 	CCM_UpdateRoot(CCM, ccmRootPwm3, ccmRootmuxPwmOsc24m, 0, 0);
 	/* Enable pwm clock */
@@ -199,7 +199,7 @@ static void nxp_mcimx7_pwm_config(void)
 
 #ifdef CONFIG_PWM_4
 	/* We need to grasp board pwm exclusively */
-	RDC_SetPdapAccess(RDC, rdcPdapPwm4, PWM_4_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapPwm4, DT_FSL_IMX7D_PWM_PWM_4_RDC, false, false);
 	/* Select clock derived from OSC clock(24M) */
 	CCM_UpdateRoot(CCM, ccmRootPwm4, ccmRootmuxPwmOsc24m, 0, 0);
 	/* Enable pwm clock */
@@ -214,7 +214,7 @@ static void nxp_mcimx7_pwm_config(void)
 static void nxp_mcimx7_mu_config(void)
 {
 	/* Set access to MU B for M4 core */
-	RDC_SetPdapAccess(RDC, rdcPdapMuB, MU_B_RDC, false, false);
+	RDC_SetPdapAccess(RDC, rdcPdapMuB, DT_NXP_IMX_MU_MU_B_RDC, false, false);
 
 	/* Enable clock gate for MU*/
 	CCM_ControlGate(CCM, ccmCcgrGateMu, ccmClockNeededRun);
