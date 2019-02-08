@@ -4541,15 +4541,15 @@ typedef struct {
   __I  uint32_t GMAC_PEFTN;     /**< (GMAC Offset: 0x1F4) PTP Peer Event Frame Transmitted Nanoseconds Register */
   __I  uint32_t GMAC_PEFRSL;    /**< (GMAC Offset: 0x1F8) PTP Peer Event Frame Received Seconds Low Register */
   __I  uint32_t GMAC_PEFRN;     /**< (GMAC Offset: 0x1FC) PTP Peer Event Frame Received Nanoseconds Register */
-  RoReg8  Reserved6[0x1FC];
-  __I  uint32_t GMAC_ISRPQ[2];  /**< (GMAC Offset: 0x3FC) Interrupt Status Register Priority Queue (index = 1) 0 */
+  RoReg8  Reserved6[0x200];
+  __I  uint32_t GMAC_ISRPQ[2];  /**< (GMAC Offset: 0x400) Interrupt Status Register Priority Queue (index = 1) 0 */
   RoReg8  Reserved7[0x38];
-  __IO uint32_t GMAC_TBQBAPQ[2]; /**< (GMAC Offset: 0x43C) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+  __IO uint32_t GMAC_TBQBAPQ[2]; /**< (GMAC Offset: 0x440) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
   RoReg8  Reserved8[0x38];
-  __IO uint32_t GMAC_RBQBAPQ[2]; /**< (GMAC Offset: 0x47C) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+  __IO uint32_t GMAC_RBQBAPQ[2]; /**< (GMAC Offset: 0x480) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
   RoReg8  Reserved9[0x18];
-  __IO uint32_t GMAC_RBSRPQ[2]; /**< (GMAC Offset: 0x49C) Receive Buffer Size Register Priority Queue (index = 1) 0 */
-  RoReg8  Reserved10[0x18];
+  __IO uint32_t GMAC_RBSRPQ[2]; /**< (GMAC Offset: 0x4A0) Receive Buffer Size Register Priority Queue (index = 1) 0 */
+  RoReg8  Reserved10[0x14];
   __IO uint32_t GMAC_CBSCR;     /**< (GMAC Offset: 0x4BC) Credit-Based Shaping Control Register */
   __IO uint32_t GMAC_CBSISQA;   /**< (GMAC Offset: 0x4C0) Credit-Based Shaping IdleSlope Register for Queue A */
   __IO uint32_t GMAC_CBSISQB;   /**< (GMAC Offset: 0x4C4) Credit-Based Shaping IdleSlope Register for Queue B */
@@ -4557,13 +4557,13 @@ typedef struct {
   __IO uint32_t GMAC_ST1RPQ[4]; /**< (GMAC Offset: 0x500) Screening Type 1 Register Priority Queue (index = 0) 0 */
   RoReg8  Reserved12[0x30];
   __IO uint32_t GMAC_ST2RPQ[8]; /**< (GMAC Offset: 0x540) Screening Type 2 Register Priority Queue (index = 0) 0 */
-  RoReg8  Reserved13[0x9C];
-  __O  uint32_t GMAC_IERPQ[2];  /**< (GMAC Offset: 0x5FC) Interrupt Enable Register Priority Queue (index = 1) 0 */
+  RoReg8  Reserved13[0xA0];
+  __O  uint32_t GMAC_IERPQ[2];  /**< (GMAC Offset: 0x600) Interrupt Enable Register Priority Queue (index = 1) 0 */
   RoReg8  Reserved14[0x18];
-  __O  uint32_t GMAC_IDRPQ[2];  /**< (GMAC Offset: 0x61C) Interrupt Disable Register Priority Queue (index = 1) 0 */
+  __O  uint32_t GMAC_IDRPQ[2];  /**< (GMAC Offset: 0x620) Interrupt Disable Register Priority Queue (index = 1) 0 */
   RoReg8  Reserved15[0x18];
-  __IO uint32_t GMAC_IMRPQ[2];  /**< (GMAC Offset: 0x63C) Interrupt Mask Register Priority Queue (index = 1) 0 */
-  RoReg8  Reserved16[0x9C];
+  __IO uint32_t GMAC_IMRPQ[2];  /**< (GMAC Offset: 0x640) Interrupt Mask Register Priority Queue (index = 1) 0 */
+  RoReg8  Reserved16[0x98];
   __IO uint32_t GMAC_ST2ER[4];  /**< (GMAC Offset: 0x6E0) Screening Type 2 Ethertype Register (index = 0) 0 */
   RoReg8  Reserved17[0x10];
   __IO uint32_t GMAC_ST2CW00;   /**< (GMAC Offset: 0x700) Screening Type 2 Compare Word 0 Register (index = 0) */
@@ -4728,15 +4728,15 @@ typedef struct {
   __I  GMAC_PEFTN_Type                GMAC_PEFTN;     /**< Offset: 0x1F4 (R/   32) PTP Peer Event Frame Transmitted Nanoseconds Register */
   __I  GMAC_PEFRSL_Type               GMAC_PEFRSL;    /**< Offset: 0x1F8 (R/   32) PTP Peer Event Frame Received Seconds Low Register */
   __I  GMAC_PEFRN_Type                GMAC_PEFRN;     /**< Offset: 0x1FC (R/   32) PTP Peer Event Frame Received Nanoseconds Register */
-  __I  uint32_t                       Reserved6[127];
-  __I  GMAC_ISRPQ_Type                GMAC_ISRPQ[2];  /**< Offset: 0x3FC (R/   32) Interrupt Status Register Priority Queue (index = 1) 0 */
+  __I  uint32_t                       Reserved6[128];
+  __I  GMAC_ISRPQ_Type                GMAC_ISRPQ[2];  /**< Offset: 0x400 (R/   32) Interrupt Status Register Priority Queue (index = 1) 0 */
   __I  uint32_t                       Reserved7[14];
-  __IO GMAC_TBQBAPQ_Type              GMAC_TBQBAPQ[2]; /**< Offset: 0x43C (R/W  32) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+  __IO GMAC_TBQBAPQ_Type              GMAC_TBQBAPQ[2]; /**< Offset: 0x440 (R/W  32) Transmit Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
   __I  uint32_t                       Reserved8[14];
-  __IO GMAC_RBQBAPQ_Type              GMAC_RBQBAPQ[2]; /**< Offset: 0x47C (R/W  32) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
+  __IO GMAC_RBQBAPQ_Type              GMAC_RBQBAPQ[2]; /**< Offset: 0x480 (R/W  32) Receive Buffer Queue Base Address Register Priority Queue (index = 1) 0 */
   __I  uint32_t                       Reserved9[6];
-  __IO GMAC_RBSRPQ_Type               GMAC_RBSRPQ[2]; /**< Offset: 0x49C (R/W  32) Receive Buffer Size Register Priority Queue (index = 1) 0 */
-  __I  uint32_t                       Reserved10[6];
+  __IO GMAC_RBSRPQ_Type               GMAC_RBSRPQ[2]; /**< Offset: 0x4A0 (R/W  32) Receive Buffer Size Register Priority Queue (index = 1) 0 */
+  __I  uint32_t                       Reserved10[5];
   __IO GMAC_CBSCR_Type                GMAC_CBSCR;     /**< Offset: 0x4BC (R/W  32) Credit-Based Shaping Control Register */
   __IO GMAC_CBSISQA_Type              GMAC_CBSISQA;   /**< Offset: 0x4C0 (R/W  32) Credit-Based Shaping IdleSlope Register for Queue A */
   __IO GMAC_CBSISQB_Type              GMAC_CBSISQB;   /**< Offset: 0x4C4 (R/W  32) Credit-Based Shaping IdleSlope Register for Queue B */
@@ -4744,13 +4744,13 @@ typedef struct {
   __IO GMAC_ST1RPQ_Type               GMAC_ST1RPQ[4]; /**< Offset: 0x500 (R/W  32) Screening Type 1 Register Priority Queue (index = 0) 0 */
   __I  uint32_t                       Reserved12[12];
   __IO GMAC_ST2RPQ_Type               GMAC_ST2RPQ[8]; /**< Offset: 0x540 (R/W  32) Screening Type 2 Register Priority Queue (index = 0) 0 */
-  __I  uint32_t                       Reserved13[39];
-  __O  GMAC_IERPQ_Type                GMAC_IERPQ[2];  /**< Offset: 0x5FC ( /W  32) Interrupt Enable Register Priority Queue (index = 1) 0 */
+  __I  uint32_t                       Reserved13[40];
+  __O  GMAC_IERPQ_Type                GMAC_IERPQ[2];  /**< Offset: 0x600 ( /W  32) Interrupt Enable Register Priority Queue (index = 1) 0 */
   __I  uint32_t                       Reserved14[6];
-  __O  GMAC_IDRPQ_Type                GMAC_IDRPQ[2];  /**< Offset: 0x61C ( /W  32) Interrupt Disable Register Priority Queue (index = 1) 0 */
+  __O  GMAC_IDRPQ_Type                GMAC_IDRPQ[2];  /**< Offset: 0x620 ( /W  32) Interrupt Disable Register Priority Queue (index = 1) 0 */
   __I  uint32_t                       Reserved15[6];
-  __IO GMAC_IMRPQ_Type                GMAC_IMRPQ[2];  /**< Offset: 0x63C (R/W  32) Interrupt Mask Register Priority Queue (index = 1) 0 */
-  __I  uint32_t                       Reserved16[39];
+  __IO GMAC_IMRPQ_Type                GMAC_IMRPQ[2];  /**< Offset: 0x640 (R/W  32) Interrupt Mask Register Priority Queue (index = 1) 0 */
+  __I  uint32_t                       Reserved16[38];
   __IO GMAC_ST2ER_Type                GMAC_ST2ER[4];  /**< Offset: 0x6E0 (R/W  32) Screening Type 2 Ethertype Register (index = 0) 0 */
   __I  uint32_t                       Reserved17[4];
   __IO GMAC_ST2CW00_Type              GMAC_ST2CW00;   /**< Offset: 0x700 (R/W  32) Screening Type 2 Compare Word 0 Register (index = 0) */
