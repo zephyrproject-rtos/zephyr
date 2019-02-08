@@ -861,34 +861,13 @@ static void test_fragment_compact(void)
 	DBG("test_fragment_compact passed\n");
 }
 
-static void test_net_pkt_frag_linearize(void)
-{
-	struct net_pkt *pkt;
-	static u8_t buf[512];
-	size_t ret;
-	const size_t pkt_size = 500;
-
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
-	ret = net_pkt_append_memset(pkt, pkt_size, 0, K_FOREVER);
-	zassert_true(ret == pkt_size, "net_pkt_append_memset failed");
-
-	/* Limited by dest buf size */
-	ret = net_frag_linearize(buf, 100, pkt, 0, pkt_size);
-	zassert_equal(ret, 100, "");
-
-	/* Limited by pkt data size */
-	ret = net_frag_linearize(buf, sizeof(buf), pkt, 0, 10000);
-	zassert_equal(ret, pkt_size, "");
-}
-
 void test_main(void)
 {
 	ztest_test_suite(net_pkt_tests,
 			 ztest_unit_test(test_ipv6_multi_frags),
 			 ztest_unit_test(test_pkt_read_append),
 			 ztest_unit_test(test_pkt_read_write_insert),
-			 ztest_unit_test(test_fragment_compact),
-			 ztest_unit_test(test_net_pkt_frag_linearize)
+			 ztest_unit_test(test_fragment_compact)
 			 );
 
 	ztest_run_test_suite(net_pkt_tests);
