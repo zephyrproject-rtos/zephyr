@@ -20,5 +20,6 @@ config SOC_STM32F756XX
 
 config SOC_STM32F769XI
 	bool "STM32F769XI"
+	select CPU_HAS_FPU_DOUBLE_PRECISION
 
 endchoice
