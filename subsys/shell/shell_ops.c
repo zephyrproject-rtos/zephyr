@@ -30,14 +30,14 @@ void shell_op_cursor_horiz_move(const struct shell *shell, s32_t delta)
  */
 static inline bool full_line_cmd(const struct shell *shell)
 {
-	return ((shell->ctx->cmd_buff_len + shell_strlen(shell->prompt))
+	return ((shell->ctx->cmd_buff_len + shell_strlen(shell->ctx->prompt))
 			% shell->ctx->vt100_ctx.cons.terminal_wid == 0);
 }
 
 /* Function returns true if cursor is at beginning of an empty line. */
 bool shell_cursor_in_empty_line(const struct shell *shell)
 {
-	return ((shell->ctx->cmd_buff_pos + shell_strlen(shell->prompt))
+	return ((shell->ctx->cmd_buff_pos + shell_strlen(shell->ctx->prompt))
 			% shell->ctx->vt100_ctx.cons.terminal_wid == 0);
 }
 
@@ -346,10 +346,10 @@ static void print_prompt(const struct shell *shell)
 
 		shell_vt100_colors_store(shell, &col);
 		shell_vt100_color_set(shell, SHELL_INFO);
-		shell_raw_fprintf(shell->fprintf_ctx, "%s", shell->prompt);
+		shell_raw_fprintf(shell->fprintf_ctx, "%s", shell->ctx->prompt);
 		shell_vt100_colors_restore(shell, &col);
 	} else {
-		shell_raw_fprintf(shell->fprintf_ctx, "%s", shell->prompt);
+		shell_raw_fprintf(shell->fprintf_ctx, "%s", shell->ctx->prompt);
 	}
 }
 

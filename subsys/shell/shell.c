@@ -1069,8 +1069,6 @@ static void shell_log_process(const struct shell *shell)
 static int instance_init(const struct shell *shell, const void *p_config,
 			 bool use_colors)
 {
-	__ASSERT_NO_MSG(shell);
-	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
 	__ASSERT_NO_MSG((shell->shell_flag == SHELL_FLAG_CRLF_DEFAULT) ||
 			(shell->shell_flag == SHELL_FLAG_OLF_CRLF));
 
@@ -1082,6 +1080,7 @@ static int instance_init(const struct shell *shell, const void *p_config,
 	}
 
 	memset(shell->ctx, 0, sizeof(*shell->ctx));
+	shell->ctx->prompt = shell->default_prompt;
 
 	history_init(shell);
 
@@ -1098,7 +1097,7 @@ static int instance_init(const struct shell *shell, const void *p_config,
 	shell->ctx->state = SHELL_STATE_INITIALIZED;
 	shell->ctx->vt100_ctx.cons.terminal_wid = SHELL_DEFAULT_TERMINAL_WIDTH;
 	shell->ctx->vt100_ctx.cons.terminal_hei = SHELL_DEFAULT_TERMINAL_HEIGHT;
-	shell->ctx->vt100_ctx.cons.name_len = shell_strlen(shell->prompt);
+	shell->ctx->vt100_ctx.cons.name_len = shell_strlen(shell->ctx->prompt);
 	flag_use_colors_set(shell, IS_ENABLED(CONFIG_SHELL_VT100_COLORS));
 
 	return 0;
@@ -1107,7 +1106,7 @@ static int instance_init(const struct shell *shell, const void *p_config,
 static int instance_uninit(const struct shell *shell)
 {
 	__ASSERT_NO_MSG(shell);
-	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
+	__ASSERT_NO_MSG(shell->ctx && shell->iface);
 
 	int err;
 
@@ -1219,7 +1218,7 @@ int shell_init(const struct shell *shell, const void *transport_config,
 	       bool use_colors, bool log_backend, u32_t init_log_level)
 {
 	__ASSERT_NO_MSG(shell);
-	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
+	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->default_prompt);
 
 	int err = instance_init(shell, transport_config, use_colors);
 
@@ -1259,7 +1258,7 @@ int shell_uninit(const struct shell *shell)
 int shell_start(const struct shell *shell)
 {
 	__ASSERT_NO_MSG(shell);
-	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->prompt);
+	__ASSERT_NO_MSG(shell->ctx && shell->iface && shell->default_prompt);
 
 	if (shell->ctx->state != SHELL_STATE_INITIALIZED) {
 		return -ENOTSUP;
@@ -1367,20 +1366,16 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 	}
 }
 
-int shell_prompt_change(const struct shell *shell, char *prompt)
+int shell_prompt_change(const struct shell *shell, const char *prompt)
 {
-	u16_t len;
-
 	__ASSERT_NO_MSG(shell);
-	__ASSERT_NO_MSG(prompt);
 
-	len = shell_strlen(prompt);
-
-	if (len <= CONFIG_SHELL_PROMPT_LENGTH) {
-		memcpy(shell->prompt, prompt, len + 1); /* +1 for '\0' */
-		return 0;
+	if (prompt == NULL) {
+		return -EINVAL;
 	}
-	return -ENOMEM;
+	shell->ctx->prompt = prompt;
+
+	return 0;
 }
 
 void shell_help(const struct shell *shell)
