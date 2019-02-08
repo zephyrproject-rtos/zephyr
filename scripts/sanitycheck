@@ -1270,13 +1270,13 @@ class MakeGenerator:
             handler.pid_fn = os.path.join(instance.outdir, "renode.pid")
             handler.call_make_run = True
 
-
         if type == 'qemu':
             args.append("QEMU_PIPE=%s" % handler.get_fifo())
 
-        text = (self._get_rule_header(name) +
-                self._get_sub_make(name, "building", directory,
-                                   outdir, build_logfile, args, make_args=make_args))
+        text = self._get_rule_header(name)
+        if not options.test_only:
+            text += self._get_sub_make(name, "building", directory, outdir,
+                                       build_logfile, args, make_args=make_args)
         if handler and handler.run:
             text += self._get_sub_make(name, "running", directory,
                                    outdir, run_logfile,
@@ -2862,9 +2862,14 @@ Artificially long but functional example:
         action="store",
         help="Append list of tests and platforms to be run to file.")
 
-    parser.add_argument(
+    test_or_build = parser.add_mutually_exclusive_group()
+    test_or_build.add_argument(
         "-b", "--build-only", action="store_true",
         help="Only build the code, do not execute any of it in QEMU")
+    test_or_build.add_argument(
+        "--test-only", action="store_true",
+        help="""Only run device tests with current artifacts, do not build
+             the code""")
     parser.add_argument(
         "-j", "--jobs", type=int,
         help="Number of jobs for building, defaults to number of CPU threads "
