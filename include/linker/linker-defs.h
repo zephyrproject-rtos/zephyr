@@ -202,7 +202,7 @@ extern char __gcov_bss_size[];
 /* end address of image, used by newlib for the heap */
 extern char _end[];
 
-#ifdef CONFIG_CCM_BASE_ADDRESS
+#ifdef DT_CCM_BASE_ADDRESS
 extern char __ccm_data_rom_start[];
 extern char __ccm_start[];
 extern char __ccm_data_start[];
@@ -212,7 +212,7 @@ extern char __ccm_bss_end[];
 extern char __ccm_noinit_start[];
 extern char __ccm_noinit_end[];
 extern char __ccm_end[];
-#endif /* CONFIG_CCM_BASE_ADDRESS */
+#endif /* DT_CCM_BASE_ADDRESS */
 
 /* Used by the Security Attribution Unit to configure the
  * Non-Secure Callable region.
