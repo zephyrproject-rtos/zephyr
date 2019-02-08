@@ -121,7 +121,7 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 	net_pkt_cursor_init(pkt);
 
 	/* Cloning is faster here as echo request might come with data behind */
-	reply = net_pkt_clone_new(pkt, PKT_WAIT_TIME);
+	reply = net_pkt_clone(pkt, PKT_WAIT_TIME);
 	if (!reply) {
 		NET_DBG("DROP: No buffer");
 		goto drop;
