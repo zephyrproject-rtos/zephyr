@@ -287,9 +287,9 @@ static int lwm2m_setup(void)
 	/* setup TEMP SENSOR object */
 
 	lwm2m_engine_create_obj_inst("3303/0");
-	/* dummy temp data in C*/
+	/* dummy temp data in C: 25.5*/
 	float_value.val1 = 25;
-	float_value.val2 = 0;
+	float_value.val2 = 500000;
 	lwm2m_engine_set_float32("3303/0/5700", &float_value);
 
 	/* IPSO: Light Control object */
