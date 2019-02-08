@@ -113,8 +113,8 @@ static int flash_mcux_write_protection(struct device *dev, bool enable)
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static const struct flash_pages_layout dev_layout = {
-	.pages_count = KB(CONFIG_FLASH_SIZE) / FLASH_ERASE_BLOCK_SIZE,
-	.pages_size = FLASH_ERASE_BLOCK_SIZE,
+	.pages_count = KB(CONFIG_FLASH_SIZE) / DT_SOC_NV_FLASH_0_ERASE_BLOCK_SIZE,
+	.pages_size = DT_SOC_NV_FLASH_0_ERASE_BLOCK_SIZE,
 };
 
 static void flash_mcux_pages_layout(struct device *dev,
