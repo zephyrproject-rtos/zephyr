@@ -397,14 +397,15 @@ def write_conf(f):
         f.write('# ' + node.split('/')[-1] + '\n')
 
         for prop in sorted(defs[node]):
-            if prop != 'aliases':
+            if prop != 'aliases' and prop.startswith("DT_"):
                 f.write('%s=%s\n' % (prop, defs[node][prop]))
 
         for alias in sorted(defs[node]['aliases']):
             alias_target = defs[node]['aliases'][alias]
             if alias_target not in defs[node]:
                 alias_target = defs[node]['aliases'][alias_target]
-            f.write('%s=%s\n' % (alias, defs[node].get(alias_target)))
+            if alias.startswith("DT_"):
+                f.write('%s=%s\n' % (alias, defs[node].get(alias_target)))
 
         f.write('\n')
 
