@@ -273,7 +273,7 @@ static int ssd1673_write(const struct device *dev, const u16_t x,
 	u16_t y_end;
 
 	if (desc->pitch < desc->width) {
-		LOG_ERR("Pitch is smaller then width");
+		LOG_ERR("Pitch is smaller than width");
 		return -EINVAL;
 	}
 
