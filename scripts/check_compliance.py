@@ -16,6 +16,7 @@ from junitparser import TestCase, TestSuite, JUnitXml, Skipped, Error, Failure, 
 from github import Github
 from shutil import copyfile
 import json
+import tempfile
 
 logger = None
 
@@ -147,6 +148,10 @@ class KconfigCheck(ComplianceTest):
         os.environ["ARCH_DIR"] = "arch/"
         os.environ["BOARD_DIR"] = "boards/*/*"
         os.environ["ARCH"] = "*"
+        os.environ["PROJECT_BINARY_DIR"] = tempfile.gettempdir()
+
+        # For multi repo support
+        open(os.path.join(tempfile.gettempdir(), "Kconfig.modules"), 'a').close()
 
         # Enable strict Kconfig mode in Kconfiglib, which assumes there's just a
         # single Kconfig tree and warns for all references to undefined symbols
