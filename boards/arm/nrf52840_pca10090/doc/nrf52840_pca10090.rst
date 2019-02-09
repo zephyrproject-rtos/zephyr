@@ -6,10 +6,8 @@ nRF52840-PCA10090
 Overview
 ********
 
-Zephyr applications use the nrf52840_pca10090 board configuration
-to run on the nRF52840 SoC on the nRF9160 DK (PCA10090) hardware.
-It provides support for the Nordic Semiconductor nRF52840
-ARM Cortex-M4F CPU and the following devices:
+The nRF52840 SoC on the nRF9160 DK (PCA10090) hardware provides support for the
+Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 
 * CLOCK
 * FLASH

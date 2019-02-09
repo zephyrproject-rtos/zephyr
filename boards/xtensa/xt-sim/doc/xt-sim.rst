@@ -13,9 +13,6 @@ addition to a base ISA to tailor the processor for a particular application.
 
 For more information, see https://ip.cadence.com/ipportfolio/tensilica-ip/xtensa-customizable
 
-Zephyr applications use the xt-sim configuration to run on the Xtensa simulator
-emulating Xtensa hardware.
-
 .. figure:: img/Xplorer-splash.png
      :width: 612px
      :align: center

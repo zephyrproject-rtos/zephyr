@@ -7,8 +7,7 @@ Overview
 ********
 
 96Boards STM32 Sensor Mezzanine is based on the ST Microelectronics
-STM32F446VE Cortex M4 CPU. Zephyr applications uses the 96b_stm32_sensor_mez
-configuration to run on these boards.
+STM32F446VE Cortex M4 CPU.
 
 This board acts as a mezzanine platform for all 96Boards CE compliant
 boards. It can also be used as a standalone board.

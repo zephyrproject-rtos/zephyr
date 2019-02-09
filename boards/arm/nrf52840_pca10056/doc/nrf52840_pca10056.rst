@@ -6,8 +6,7 @@ nRF52840-PCA10056
 Overview
 ********
 
-Zephyr applications use the nrf52840_pca10056 board configuration
-to run on the nRF52840 Preview Development Kit (PCA10056) hardware. It provides
+The nRF52840 Preview Development Kit (PCA10056) hardware provides
 support for the Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and
 the following devices:
 

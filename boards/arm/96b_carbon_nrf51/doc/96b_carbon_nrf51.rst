@@ -13,8 +13,7 @@
 Overview
 ********
 
-Zephyr applications use the 96b_carbon_nrf51 configuration to run on
-the secondary nRF51822 chip on the 96Boards Carbon. This chip provides
+This is the secondary nRF51822 chip on the 96Boards Carbon and provides
 Bluetooth functionality to the main STM32F401RET chip via SPI.
 
 Hardware

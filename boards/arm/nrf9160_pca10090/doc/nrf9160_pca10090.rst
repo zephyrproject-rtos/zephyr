@@ -6,9 +6,7 @@ nRF9160-PCA10090
 Overview
 ********
 
-Zephyr applications use the nrf9160_pca10090 board configuration
-to run on the nRF9160 DK (PCA10090) hardware. The
-nRF9160 PCA10090 is a single-board development kit for evaluation
+The nRF9160 PCA10090 is a single-board development kit for evaluation
 and development on the nRF9160 SiP for LTE-M and NB-IoT. The
 nrf9160_pca10090 board provides support for the Nordic Semiconductor
 nRF9160 ARM Cortex-M33F CPU with ARMv8-M Security Extension and the

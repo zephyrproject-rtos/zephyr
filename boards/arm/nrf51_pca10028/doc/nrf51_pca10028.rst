@@ -6,9 +6,8 @@ nRF51-PCA10028
 Overview
 ********
 
-Zephyr applications use the nrf51_pca10028 board configuration to run on the
-nRF51 Development Kit (PCA10028) hardware. It provides support for the Nordic Semiconductor
-nRF51822 ARM Cortex-M0 CPU and the following devices:
+The nRF51 Development Kit (PCA10028) hardware provides support for the Nordic
+Semiconductor nRF51822 ARM Cortex-M0 CPU and the following devices:
 
 * :abbr:`ADC (Analog to Digital Converter)`
 * CLOCK

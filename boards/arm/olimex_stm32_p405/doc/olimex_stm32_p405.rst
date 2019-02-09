@@ -6,9 +6,8 @@ OLIMEX-STM32-P405
 Overview
 ********
 
-Zephyr applications use the olimex_stm32_p405 board configuration
-to run on the OLIMEX-STM32-P405 open source hardware. It is based on
-the STMicroelectronics STM32F405RG ARM Cortex-M4 CPU.
+The OLIMEX-STM32-P405 board is based on the STMicroelectronics STM32F405RG ARM
+Cortex-M4 CPU.
 
 .. figure:: img/olimex-stm32-p405.png
      :width: 540px

@@ -6,8 +6,7 @@
 Overview
 ********
 
-Zephyr applications use the 96b_nitrogen board configuration to run on the
-96Boards Nitrogen hardware. It provides support for the Nordic Semiconductor
+The 96Boards Nitrogen hardware provides support for the Nordic Semiconductor
 nRF52832 ARM Cortex-M4F CPU.
 
 .. figure:: img/96b-nitrogen-front.png

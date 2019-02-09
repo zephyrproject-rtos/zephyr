@@ -6,10 +6,8 @@ nRF52840-PCA10059
 Overview
 ********
 
-Zephyr applications use the nrf52840_pca10059 board configuration
-to run on the nRF52840 PCA10059 (USB Dongle) hardware. It provides
-support for the Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and
-the following devices:
+The nRF52840 PCA10059 (USB Dongle) hardware provides support for the Nordic
+Semiconductor nRF52840 ARM Cortex-M4F CPU and the following devices:
 
 * :abbr:`ADC (Analog to Digital Converter)`
 * CLOCK

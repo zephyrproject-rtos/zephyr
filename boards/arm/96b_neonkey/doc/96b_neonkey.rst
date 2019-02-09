@@ -7,8 +7,7 @@ Overview
 ********
 
 96Boards Neonkey board is based on the STMicroelectronics STM32F411CE
-Cortex M4 CPU. Zephyr applications use the 96b_neonkey configuration
-to run on these boards.
+Cortex M4 CPU.
 
 .. figure:: img/96b-neonkey-front.jpg
      :width: 500px
