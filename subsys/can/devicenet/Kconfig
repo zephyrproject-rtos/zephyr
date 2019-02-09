@@ -1,0 +1,25 @@
+# Kconfig - CAN J1939
+#
+# Copyright (c) 2019 Erwin Rol <erwin@erwinrol.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig DEVICENET
+	bool "DeviceNet stack"
+	depends on CAN_STACKS
+	help
+	  Enable support of DeviceNet stack.
+
+if DEVICENET
+
+module = DEVICENET
+module-str = devicenet
+source "subsys/logging/Kconfig.template.log_config"
+
+config DEVICENET_DUMMY
+	bool "Dummy"
+	help
+	  Dummy help.
+
+endif # DEVICENET

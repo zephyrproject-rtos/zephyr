@@ -1,0 +1,25 @@
+# Kconfig - CAN J1939
+#
+# Copyright (c) 2019 Erwin Rol <erwin@erwinrol.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig J1939
+	bool "J1939 stack"
+	depends on CAN_STACKS
+	help
+	  Enable support of J1939 stack.
+
+if J1939
+
+module = J1939
+module-str = j1939
+source "subsys/logging/Kconfig.template.log_config"
+
+config J1939_DUMMY
+	bool "Dummy"
+	help
+	  Dummy help.
+
+endif # J1939

@@ -1,0 +1,23 @@
+# Kconfig - CAN configuration options
+#
+# Copyright (c) 2019 Erwin Rol <erwin@erwinrol.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig CAN_STACKS
+	bool "CAN support"
+	help
+	  This option enables CAN support.
+
+if CAN_STACKS
+
+module = CAN_STACKS
+module-str = can_stacks
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # CAN_STACKS
+
+source "subsys/can/canopen/Kconfig"
+source "subsys/can/devicenet/Kconfig"
+source "subsys/can/j1939/Kconfig"

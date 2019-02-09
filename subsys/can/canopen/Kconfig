@@ -1,0 +1,25 @@
+# Kconfig - CAN J1939
+#
+# Copyright (c) 2019 Erwin Rol <erwin@erwinrol.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig CANOPEN
+	bool "CANOpen stack"
+	depends on CAN_STACKS
+	help
+	  Enable support of CANOpen stack.
+
+if CANOPEN
+
+module = CANOPEN
+module-str = canopen
+source "subsys/logging/Kconfig.template.log_config"
+
+config CANOPEN_DUMMY
+	bool "Dummy"
+	help
+	  Dummy help.
+
+endif # CANOPEN
