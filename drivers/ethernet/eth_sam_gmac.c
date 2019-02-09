@@ -62,13 +62,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 	are not large enough to hold a full frame
 #endif
 
-#if CONFIG_NET_BUF_DATA_SIZE * CONFIG_NET_BUF_TX_COUNT \
-	< GMAC_FRAME_SIZE_MAX
-#pragma message "Maximum frame size GMAC driver is able to transmit " \
-	"CONFIG_NET_BUF_DATA_SIZE * CONFIG_NET_BUF_TX_COUNT is smaller" \
-	"than a full Ethernet frame"
-#endif
-
 #if CONFIG_NET_BUF_DATA_SIZE & 0x3F
 #pragma message "CONFIG_NET_BUF_DATA_SIZE should be a multiple of 64 bytes " \
 	"due to the granularity of RX DMA"
