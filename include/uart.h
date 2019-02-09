@@ -20,14 +20,14 @@
  * @{
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 #include <errno.h>
 #include <stddef.h>
 
 #include <device.h>
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** @brief Line control signals. */
 enum uart_line_ctrl {
