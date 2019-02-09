@@ -252,7 +252,8 @@ static struct mcux_rtc_config mcux_rtc_config_0 = {
 	.irq_config_func = mcux_rtc_irq_config_0,
 	.info = {
 		.max_top_value = UINT32_MAX,
-		.freq = RTC_0_CLOCK_FREQUENCY / RTC_0_PRESCALER,
+		.freq = DT_NXP_KINETIS_RTC_0_CLOCK_FREQUENCY /
+				DT_NXP_KINETIS_RTC_0_PRESCALER,
 		.count_up = true,
 		.channels = 1,
 	},
