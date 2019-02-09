@@ -43,39 +43,50 @@ class Bindings(yaml.Loader):
 
     @classmethod
     def bindings(cls, compats, yaml_dirs):
-        # Scan YAML files and find the ones we are interested in
+        # Find all .yaml files in yaml_dirs
         cls._files = []
         for yaml_dir in yaml_dirs:
             for root, dirnames, filenames in os.walk(yaml_dir):
                 for filename in fnmatch.filter(filenames, '*.yaml'):
                     cls._files.append(os.path.join(root, filename))
 
-        yaml_list = {}
-        yaml_list['node'] = {}
-        yaml_list['bus'] = {}
-        yaml_list['compat'] = []
-        file_load_list = set()
+        yaml_list = {'node': {}, 'bus': {}, 'compat': []}
+        loaded_yamls = set()
+
         for file in cls._files:
+            # Extract compat from 'constraint:' line
             for line in open(file, 'r', encoding='utf-8'):
-                if re.search('^\s+constraint:*', line):
-                    c = line.split(':')[1].strip()
-                    c = c.strip('"')
-                    if c in compats:
-                        if file not in file_load_list:
-                            file_load_list.add(file)
-                            with open(file, 'r', encoding='utf-8') as yf:
-                                cls._included = []
-                                l = yaml_traverse_inherited(file, yaml.load(yf, cls))
-                                if c not in yaml_list['compat']:
-                                    yaml_list['compat'].append(c)
-                                if 'parent' in l:
-                                    bus = l['parent']['bus']
-                                    if not bus in yaml_list['bus']:
-                                        yaml_list['bus'][bus] = {}
-                                    yaml_list['bus'][bus][c] = l
-                                else:
-                                    yaml_list['node'][c] = l
-        return (yaml_list['node'], yaml_list['bus'], yaml_list['compat'])
+                match = re.match(r'\s+constraint:\s*"([^"]*)"', line)
+                if match:
+                    break
+            else:
+                # No 'constraint:' line found. Move on to next yaml file.
+                continue
+
+            compat = match.group(1)
+            if compat not in compats or file in loaded_yamls:
+                # The compat does not appear in the device tree, or the yaml
+                # file has already been loaded
+                continue
+
+            loaded_yamls.add(file)
+
+            with open(file, 'r', encoding='utf-8') as yf:
+                cls._included = []
+                l = yaml_traverse_inherited(file, yaml.load(yf, cls))
+
+                if compat not in yaml_list['compat']:
+                    yaml_list['compat'].append(compat)
+
+                if 'parent' in l:
+                    bus = l['parent']['bus']
+                    if not bus in yaml_list['bus']:
+                        yaml_list['bus'][bus] = {}
+                    yaml_list['bus'][bus][compat] = l
+                else:
+                    yaml_list['node'][compat] = l
+
+        return yaml_list['node'], yaml_list['bus'], yaml_list['compat']
 
     def __init__(self, stream):
         filepath = os.path.realpath(stream.name)
