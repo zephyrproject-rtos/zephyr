@@ -6,9 +6,8 @@
 Overview
 ********
 
-Zephyr applications use the 96b_carbon configuration to run on the 96Boards
-Carbon hardware. It is based on the STMicroelectronics STM32F401RET Cortex-M4
-CPU and also contains a nRF51822 chip connected over SPI for BLE connectivity.
+The 96Boards is based on the STMicroelectronics STM32F401RET Cortex-M4 CPU and
+also contains a nRF51822 chip connected over SPI for BLE connectivity.
 
 The 96Boards Carbon board is built with two chips: an STMicroelectronics
 STM32F401RET Cortex-M4 CPU and an nRF51822 chip connected to

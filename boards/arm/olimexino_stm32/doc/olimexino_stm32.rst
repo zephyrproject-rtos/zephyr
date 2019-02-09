@@ -6,9 +6,8 @@ OLIMEXINO-STM32
 Overview
 ********
 
-Zephyr applications use the olimexino_stm32 board configuration
-to run on the OLIMEXINO-STM32 open source hardware. It based on
-the STMicroelectronics STM32F103RB ARM Cortex-M3 CPU.
+The OLIMEXINO-STM32 board is based on the STMicroelectronics STM32F103RB ARM
+Cortex-M3 CPU.
 
 .. figure:: img/olimexino-stm32.png
      :width: 540px

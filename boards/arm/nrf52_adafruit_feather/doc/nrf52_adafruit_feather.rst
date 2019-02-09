@@ -6,8 +6,7 @@ nRF52 Adafruit Feather
 Overview
 ********
 
-Zephyr applications use the nrf52_adafruit_feather board configuration
-to run on the nRF52 Adafruit Bluefruit Feather hardware. It provides
+The nRF52 Adafruit Bluefruit Feather hardware provides
 support for the Nordic Semiconductor nRF52832 ARM Cortex-M4F CPU and
 the following devices:
 

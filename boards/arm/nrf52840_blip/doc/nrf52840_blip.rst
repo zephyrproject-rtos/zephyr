@@ -6,10 +6,8 @@ Electronut Labs Blip
 Overview
 ********
 
-Zephyr applications use the nrf52840_blip board configuration
-to run on Electronut Labs Blip hardware. It provides
-support for the Nordic Semiconductor nRF52840 ARM Cortex-M4F CPU and
-the following devices:
+The Electronut Labs Blip hardware provides support for the Nordic Semiconductor
+nRF52840 ARM Cortex-M4F CPU and the following devices:
 
 * :abbr:`ADC (Analog to Digital Converter)`
 * CLOCK

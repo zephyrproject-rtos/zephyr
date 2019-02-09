@@ -6,8 +6,7 @@ nRF52-PCA10040
 Overview
 ********
 
-Zephyr applications use the nrf52_pca10040 board configuration
-to run on the nRF52 Development Kit (PCA10040) hardware. It provides
+The nRF52 Development Kit (PCA10040) hardware provides
 support for the Nordic Semiconductor nRF52832 ARM Cortex-M4F CPU and
 the following devices:
 

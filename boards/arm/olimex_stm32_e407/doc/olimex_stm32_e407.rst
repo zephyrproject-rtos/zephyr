@@ -6,8 +6,7 @@ OLIMEX-STM32-E407
 Overview
 ********
 
-Zephyr applications use the olimex_stm32_e407 board configuration
-to run on the OLIMEX-STM32-E407 open source hardware. It is based on
+The OLIMEX-STM32-E407 board is open source hardware and is based on
 the STMicroelectronics STM32F407ZG ARM Cortex-M4 CPU.
 
 .. figure:: img/olimex-stm32-e407.png

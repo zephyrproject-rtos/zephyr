@@ -7,8 +7,7 @@ Overview
 ********
 
 96Boards Argonkey board is based on the ST Microelectronics STM32F412CG
-Cortex M4 CPU. Zephyr applications use the 96b_argonkey configuration
-to run on these boards.
+Cortex M4 CPU.
 
 This board acts as a sensor hub platform for all 96Boards compliant
 family products. It can also be used as a standalone board.
