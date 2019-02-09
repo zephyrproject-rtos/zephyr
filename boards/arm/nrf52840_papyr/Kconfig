@@ -1,0 +1,14 @@
+# Kconfig - Electronut Labs Papyr board configuration
+#
+# Copyright (c) 2018 Electronut Labs
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52840_PAPYR
+
+config BOARD_ENABLE_DCDC
+        bool "Enable DCDC mode"
+        select SOC_DCDC_NRF52X
+        default y
+
+endif # BOARD_NRF52840_PAPYR
