@@ -73,6 +73,7 @@ set(DOC_WARN ${CMAKE_CURRENT_BINARY_DIR}/doc.warnings)
 set(CONTENT_OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/extracted-content.txt)
 
 configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
+file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/Kconfig.modules)
 
 # This command is used to copy all documentation source files into the build
 # directory,
@@ -145,6 +146,7 @@ add_custom_target(
   ARCH_DIR=arch/
   SOC_DIR=soc/
   SRCARCH=x86
+  PROJECT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1
   ${PYTHON_EXECUTABLE} scripts/genrest.py Kconfig ${RST_OUT}/doc/reference/kconfig/
