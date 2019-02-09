@@ -291,14 +291,13 @@ config BT_CTLR_DATA_LENGTH
 	# Update procedure in the Controller.
 	bool
 	depends on BT_DATA_LEN_UPDATE
-	default y if SOC_COMPATIBLE_NRF52X
+	default y if SOC_COMPATIBLE_NRF52X || BT_CTLR_DATA_LENGTH_CLEAR
 
 config BT_CTLR_DATA_LENGTH_MAX
 	int "Maximum data length supported"
 	depends on BT_CTLR_DATA_LENGTH
 	default 27
-	range 27 251 if SOC_COMPATIBLE_NRF52X || BT_CTLR_DATA_LENGTH_CLEAR
-	range 27 27
+	range 27 251
 	help
 	  Set the maximum data length of PDU supported in the Controller.
 
@@ -369,7 +368,7 @@ config BT_CTLR_FILTER
 
 config BT_CTLR_DATA_LENGTH_CLEAR
 	bool "Data Length Support (Cleartext only)"
-	depends on BT_CTLR_DATA_LENGTH && SOC_SERIES_NRF51X
+	depends on SOC_SERIES_NRF51X
 	help
 	  Enable support for Bluetooth v4.2 LE Data Length Update procedure, up to
 	  251 byte cleartext payloads in the Controller. Encrypted connections
