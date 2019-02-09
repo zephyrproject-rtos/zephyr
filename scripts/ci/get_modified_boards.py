@@ -60,6 +60,8 @@ def main():
     files = commit.split("\n")
 
     for f in files:
+        if f.endswith(".rst") or f.endswith(".png") or f.endswith(".jpg"):
+            continue
         p = re.match("^boards\/[^/]+\/([^/]+)\/", f)
         if p and p.groups():
             boards.add(p.group(1))
