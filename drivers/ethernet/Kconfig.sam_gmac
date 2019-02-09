@@ -39,7 +39,7 @@ config ETH_SAM_GMAC_TX_TIMEOUT_MSEC
 
 config ETH_SAM_GMAC_BUF_RX_COUNT
 	int "Network RX buffers preallocated by the SAM ETH driver"
-	default 18
+	default 12
 	help
 	  Number of network buffers that will be permanently allocated by the
 	  Ethernet driver. These buffers are used in receive path. They are
