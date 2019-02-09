@@ -57,6 +57,8 @@ def main():
     files = commit.split("\n")
     tests = set()
     for f in files:
+        if f.endswith(".rst"):
+            continue
         d = os.path.dirname(f)
         while d:
             if os.path.exists(os.path.join(d, "testcase.yaml")) or os.path.exists(os.path.join(d, "sample.yaml")):
