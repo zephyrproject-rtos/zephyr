@@ -17,3 +17,5 @@
    :rtrim:
 .. |micro|  unicode:: U+000B5 .. MICRO SIGN
    :rtrim:
+.. |sup2|  unicode:: U+00B2 .. SUPERSCRIPT TWO
+   :ltrim:
