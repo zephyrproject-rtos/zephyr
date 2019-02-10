@@ -15,10 +15,19 @@ menuconfig FLASH_MAP
 	help
 	  Enable support of flash map abstraction.
 
+if FLASH_MAP
+
+config FLASH_MAP_SHELL
+	bool "Enable flash map shell interface"
+	depends on SHELL
+	help
+	  This enables shell commands to list and test flash maps.
+
 config FLASH_MAP_CUSTOM
 	bool "Custom flash map description"
-	depends on FLASH_MAP
 	help
 	  This option enables custom flash map description.
 	  User must provide such a description in place of default on
 	  if had enabled this option.
+
+endif
