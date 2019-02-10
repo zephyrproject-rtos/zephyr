@@ -17,6 +17,7 @@
 #include <sys/types.h>
 #include <stddef.h>
 #include <errno.h>
+#include <kernel.h>
 
 #ifdef __cplusplus
 extern "C" {
