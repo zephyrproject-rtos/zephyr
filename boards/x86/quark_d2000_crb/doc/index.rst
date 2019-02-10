@@ -9,7 +9,7 @@ Overview
 The Intel |reg| Quark |trade| microcontroller D2000 package is shipped as a 40-pin QFN
 component.
 
-.. image:: quark-d2000-developers-kit.png
+.. image:: ./quark_d2000_crb.png
    :width: 442px
    :align: center
    :alt: Quark D2000 Development Board

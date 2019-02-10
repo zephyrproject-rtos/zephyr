@@ -26,7 +26,7 @@ some highlights of the Nucleo L4R5ZI board:
 - Three User LEDs: LD1 (Green), LD2 (Blue), LD3 (Red)
 - Two push-buttons: USER and RESET
 
-.. image:: img/nucleo144_ulp_logo_1024.jpg
+.. image:: img/nucleo_l4r5zi.jpg
      :width: 250px
      :align: center
      :height: 250px

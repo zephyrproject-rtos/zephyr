@@ -28,7 +28,7 @@ some highlights of the Nucleo L476ZG board:
   power fault(LD5), power LED (LD6), USB FS OTG (LD7, LD8)
 - 2 push buttons: USER and RESET
 
-.. image:: img/en.nucleo-l496zg.jpg
+.. image:: img/nucleo_l496zg.jpg
    :width: 250px
    :align: center
    :height: 250px

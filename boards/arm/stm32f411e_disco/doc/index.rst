@@ -29,7 +29,7 @@ Here are some highlights of the STM32F411E-DISCO board:
 - USB OTG with micro-AB connector
 - Extension header for LQFP100 I/Os for a quick connection to the prototyping board and an easy probing
 
-.. image:: img/en.stm32f411e-disco.jpg
+.. image:: img/stm32f411e_disco.jpg
      :width: 533px
      :align: center
      :height: 500px

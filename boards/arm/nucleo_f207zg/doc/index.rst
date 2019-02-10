@@ -29,7 +29,7 @@ some highlights of the Nucleo F207ZG board:
 - Three user LEDs
 - Two push-buttons: USER and RESET
 
-.. image:: img/Nucleo144_perf_logo_1024.png
+.. image:: img/nucleo_f207zg.png
    :width: 720px
    :align: center
    :height: 720px

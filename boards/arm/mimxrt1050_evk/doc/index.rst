@@ -18,7 +18,7 @@ basic 2D graphics, camera interface, SPDIF, and I2S audio interface.
 The following document refers to the discontinued MIMXRT1050-EVK board. For the
 MIMXRT1050-EVKB board, refer to `Board Revisions`_ section.
 
-.. image:: mimxrt1050_evk.jpg
+.. image:: ./mimxrt1050_evk.jpg
    :width: 720px
    :align: center
    :alt: MIMXRT1050-EVK

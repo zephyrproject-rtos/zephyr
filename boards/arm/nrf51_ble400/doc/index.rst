@@ -62,7 +62,7 @@ Connections and IOs
 Motherboard
 ------------
 
-.. image:: img/BLE400-intro.jpg
+.. image:: img/nrf51_ble400.jpg
    :width: 500px
    :align: center
    :alt: BLE400

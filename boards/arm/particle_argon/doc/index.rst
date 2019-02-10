@@ -29,7 +29,7 @@ Hardware
 On the front of the board are RGB-LED, LED and LIPO circuitry.
 The RGB-LED is controlled by the nRF52840 via GPIO pins.
 
-.. figure:: img/argon-top.png
+.. figure:: img/particle_argon.png
      :width: 150px
      :align: center
      :alt: Particle Argon

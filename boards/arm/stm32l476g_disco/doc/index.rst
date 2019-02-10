@@ -42,7 +42,7 @@ some highlights of the STM32L476G Discovery board:
     - External 5 V
     - CR2032 battery (not provided)
 
-.. image:: img/en.stm32l476g-disco.jpg
+.. image:: img/stm32l476g_disco.jpg
      :width: 450px
      :align: center
      :height: 394px

@@ -26,7 +26,7 @@ some highlights of the Nucleo L476RG board:
 - Three LEDs: USB communication (LD1), user LED (LD2), power LED (LD3)
 - Two push-buttons: USER and RESET
 
-.. image:: img/nucleo64_ulp_logo_1024.jpg
+.. image:: img/nucleo_l476rg.jpg
    :width: 250px
    :align: center
    :height: 250px

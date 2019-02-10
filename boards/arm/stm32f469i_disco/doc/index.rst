@@ -31,7 +31,7 @@ some highlights of the STM32F469I-DISCO board:
 - 128-Mbit Quad-SPI NOR Flash
 - Expansion connectors and Arduino UNO V3 connectors
 
-.. image:: img/en.stm32f469i-disco.jpg
+.. image:: img/stm32f469i_disco.jpg
      :width: 457px
      :align: center
      :height: 551px

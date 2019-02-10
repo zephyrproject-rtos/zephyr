@@ -45,7 +45,7 @@ Connections and IOs
 
 BLE nano v2 pinout
 
-.. image:: nano2.png
+.. image:: ./nrf52_blenano2.png
    :width: 680px
    :align: center
    :alt: NANO2

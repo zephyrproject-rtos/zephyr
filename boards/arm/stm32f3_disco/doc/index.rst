@@ -32,7 +32,7 @@ started quickly. Here are some highlights of the STM32F3DISCOVERY board:
 - LSM303DLHC, ST MEMS system-in-package featuring a 3D digital linear
   acceleration sensor and a 3D digital magnetic sensor
 
-.. image:: img/en.stm32f3discovery.jpg
+.. image:: img/stm32f3_disco.jpg
      :width: 350px
      :align: center
      :height: 531px

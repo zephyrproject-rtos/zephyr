@@ -41,7 +41,7 @@ some highlights of the STM32L496G Discovery board:
 - Reset push button
 - 4 direction-joystick with selection
 
-.. image:: img/en.stm32l496g-disco.jpg
+.. image:: img/stm32l496g_disco.jpg
      :width: 450px
      :align: center
      :height: 394px

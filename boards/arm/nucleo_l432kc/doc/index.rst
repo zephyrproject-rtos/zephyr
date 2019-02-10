@@ -21,7 +21,7 @@ some highlights of the Nucleo L432KC board:
 - Three LEDs: USB communication (LD1), power LED (LD2), user LED (LD3)
 - One push-button: RESET
 
-.. image:: img/nucleo32_ulp_logo.jpg
+.. image:: img/nucleo_l432kc.jpg
   :width: 250px
   :align: center
   :height: 188px
