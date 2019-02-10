@@ -44,6 +44,10 @@ arduino_i2c: &i2c1 {};
 arduino_spi: &spi2 {};
 arduino_serial: &usart6 {};
 
+&sdmmc1 {
+	status = "ok";
+};
+
 &i2c1 {
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
