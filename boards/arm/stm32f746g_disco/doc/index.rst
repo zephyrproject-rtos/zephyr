@@ -35,7 +35,7 @@ and high-speed connectivity features. Important board features include:
 - USB OTG FS with Micro-AB connectors
 - Ethernet connector compliant with IEEE-802.3-2002
 
-.. image:: img/en.stm32f746g-disco.jpg
+.. image:: img/stm32f746g_disco.jpg
      :width: 500px
      :align: center
      :height: 357px

@@ -15,7 +15,7 @@ audio DAC, MEMS, EEPROM and more) and develop your own applications.
 Extension headers make it easy to connect a daughterboard or wrapping board for your specific
 application.
 
-.. image:: img/stm3210c_eval_board.jpg
+.. image:: img/stm3210c_eval.jpg
      :width: 660px
      :height: 792px
      :align: center

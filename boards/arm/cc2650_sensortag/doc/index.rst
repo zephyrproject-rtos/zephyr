@@ -10,7 +10,7 @@ The SimpleLink CC2650 SensorTag is a Texas Instruments board based
 on the CC2650 wireless MCU. It contains multiple sensors and provides
 Bluetooth and IEEE 802.15.4 connectivity.
 
-.. image:: img/sensortag.jpg
+.. image:: img/cc2650_sensortag.jpg
   :width:  600px
   :height: 600px
   :align:  center

@@ -14,7 +14,7 @@ the following devices:
 - System Tick System Clock (SYSTICK)
 - Cortex-M System Design Kit UART
 
-.. image:: img/mps2.png
+.. image:: img/mps2_an385.png
      :width: 442px
      :align: center
      :height: 335px

@@ -48,7 +48,7 @@ MMA8652FC is a 12-bit Digital Accelerometer.
 All sensors are connected to the I2C bus and one GPIO pin each,
 which can be used as an interrupt source.
 
-.. figure:: img/reel_board_descr_front.png
+.. figure:: img/reel_board.png
      :width: 442px
      :align: center
      :alt: reel board front

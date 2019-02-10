@@ -13,7 +13,7 @@ simple SPI and I2S interfaces, to the microphone array via I2S or PDM
 interfaces, and to speakers via I2S. In addition, it has an I2C interface
 for controlling platform components such as ADCs, DACs, CODECs and PMICs.
 
-.. image:: IoT-SpeechEnablKit-banner-image.png
+.. image:: ./intel_s1000_crb.png
    :width: 442px
    :align: center
    :alt: Intel Speech Enabling Developer Kit

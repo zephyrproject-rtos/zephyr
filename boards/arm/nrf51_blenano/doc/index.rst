@@ -43,7 +43,7 @@ Connections and IOs
 
 BLE nano pinout
 
-.. image:: img/nano.png
+.. image:: img/nrf51_blenano.png
    :width: 500px
    :align: center
    :alt: BLE Nano

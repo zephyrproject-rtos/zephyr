@@ -12,7 +12,7 @@ microcontrollers. The kit includes Atmel’s Embedded Debugger (EDBG),
 which provides a full debug interface without the need for additional
 hardware.
 
-.. image:: img/ATSAMD21-XPRO.png
+.. image:: img/atsamd21_xpro.png
      :width: 500px
      :align: center
      :alt: ATSAMD21-XPRO

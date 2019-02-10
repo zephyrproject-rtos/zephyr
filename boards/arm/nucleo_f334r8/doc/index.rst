@@ -21,7 +21,7 @@ debugger and programmer.
 The STM32 Nucleo board comes with the STM32 comprehensive software HAL library together
 with various packaged software examples.
 
-.. image:: img/nucleo_f334r8_board.jpg
+.. image:: img/nucleo_f334r8.jpg
    :width: 500px
    :height: 367px
    :align: center

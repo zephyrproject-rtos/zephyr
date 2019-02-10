@@ -11,7 +11,7 @@ tinyTILE is an Intel Curie module based board, a miniaturized adaptation of the
 
 See :ref:`arduino_101` for information how to use the tinyTILE board with Zephyr.
 
-.. figure:: TINYTILE.jpg
+.. figure:: ./tinytile.jpg
    :width: 442px
    :align: center
    :alt: tinyTILE

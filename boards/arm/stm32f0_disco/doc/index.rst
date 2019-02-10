@@ -11,7 +11,7 @@ integrates the ST-LINK/V2-1 debugger and programmer.  It also comes with a
 comprehensive STM32 software HAL library and various packaged software
 examples.
 
-.. image:: img/en.stm32f0discovery.jpg
+.. image:: img/stm32f0_disco.jpg
      :width: 350px
      :height: 404px
      :align: center

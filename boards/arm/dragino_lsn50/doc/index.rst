@@ -23,7 +23,7 @@ This kit provides:
 - GPIOs exposed via screw terminals on the carrier board
 - Housing
 
-.. image:: img/lsn50.png
+.. image:: img/dragino_lsn50.png
      :width: 531px
      :align: center
      :height: 354px

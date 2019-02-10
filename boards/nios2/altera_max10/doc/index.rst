@@ -10,7 +10,7 @@ Overview
 The Zephyr kernel is supported on the Altera MAX10 Rev C development kit, using
 the Nios II Gen 2 soft CPU.
 
-.. figure:: img/max_10_dev_kit_top_photo.jpg
+.. figure:: img/altera_max10.jpg
    :width: 442px
    :align: center
    :alt: Altera's MAX* 10

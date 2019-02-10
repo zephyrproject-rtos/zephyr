@@ -44,7 +44,7 @@ Key Features
 - STM32Cube MCU package.
 - Arm* Mbed Enabled* compliant (only for some Nucleo part numbers)
 
-.. image:: img/en.high-perf_nucleo-144_mbed.jpg
+.. image:: img/nucleo_f756zg.jpg
    :width: 720px
    :align: center
    :height: 720px

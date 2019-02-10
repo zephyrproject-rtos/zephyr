@@ -27,7 +27,7 @@ Here are some highlights of the Nucleo F302R8 board:
 - One user LED
 - Two push-buttons: USER and RESET
 
-.. image:: img/nucleo_f302r8_board.jpg
+.. image:: img/nucleo_f302r8.jpg
    :width: 500px
    :height: 367px
    :align: center

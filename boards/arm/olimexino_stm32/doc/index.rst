@@ -9,7 +9,7 @@ Overview
 The OLIMEXINO-STM32 board is based on the STMicroelectronics STM32F103RB ARM
 Cortex-M3 CPU.
 
-.. figure:: img/olimexino-stm32.png
+.. figure:: img/olimexino_stm32.png
      :width: 540px
      :align: center
      :height: 454px
