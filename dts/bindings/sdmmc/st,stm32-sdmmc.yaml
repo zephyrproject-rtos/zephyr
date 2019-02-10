@@ -1,0 +1,38 @@
+#
+# Copyright (c) 2019, Yurii Hamann
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: STM32 SDMMC
+version: 0.1
+
+description: >
+    This is a representation of the STM32 SDMMC nodes
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "st,stm32-sdmmc"
+      generation: define
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    clocks:
+      type: array
+      category: optional
+      description: Clock gate information
+      generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+...
