@@ -147,7 +147,8 @@ class ZephyrAppCommandsDirective(Directive):
         mkdir = 'mkdir' if num_slashes == 0 else 'mkdir -p'
 
         # Create host_os array
-        host_os = [host_os] if host_os != "all" else self.HOST_OS
+        host_os = [host_os] if host_os != "all" else [v for v in self.HOST_OS
+                                                        if v != 'all']
 
         run_config = {
             'board': board,
@@ -168,15 +169,16 @@ class ZephyrAppCommandsDirective(Directive):
             comment = '# On {}'
 
         for host in host_os:
-            if cd_to:
-                if host == "unix":
-                    if comment:
-                        content.append(comment.format('Linux/macOS'))
+            if host == "unix":
+                if comment:
+                    content.append(comment.format('Linux/macOS'))
+                if cd_to:
                     prefix = '$ZEPHYR_BASE/' if zephyr_app else ''
                     content.append('cd {}{}'.format(prefix, cd_to))
-                elif host == "win":
-                    if comment:
-                        content.append(comment.format('Windows'))
+            elif host == "win":
+                if comment:
+                    content.append(comment.format('Windows'))
+                if cd_to:
                     prefix = '%ZEPHYR_BASE%\\' if zephyr_app else ''
                     backslashified = cd_to.replace('/', '\\')
                     content.append('cd {}{}'.format(prefix, backslashified))
