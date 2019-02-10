@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017 Intel Corporation
+ * Copyright (c) 2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -33,7 +33,7 @@
 #include <device.h>
 #include <i2c.h>
 
-#define I2C_DEV                 CONFIG_I2C_0_NAME
+#define I2C_DEV                 "I2C_0"
 #define I2C_ADDR_LED_MAT0       0x65
 #define I2C_ADDR_LED_MAT1       0x69
 #define LED0                    0x02
