@@ -735,6 +735,14 @@ static int zsock_poll_prepare_ctx(struct net_context *ctx,
 		(*pev)++;
 	}
 
+	/* If socket is already in EOF, it can be reported
+	 * immediately, so we tell poll() to short-circuit wait.
+	 */
+	if (sock_is_eof(ctx)) {
+		errno = EALREADY;
+		return -1;
+	}
+
 	return 0;
 }
 
@@ -750,7 +758,7 @@ static int zsock_poll_update_ctx(struct net_context *ctx,
 	}
 
 	if (pfd->events & ZSOCK_POLLIN) {
-		if ((*pev)->state != K_POLL_STATE_NOT_READY) {
+		if ((*pev)->state != K_POLL_STATE_NOT_READY || sock_is_eof(ctx)) {
 			pfd->revents |= ZSOCK_POLLIN;
 		}
 		(*pev)++;
@@ -799,6 +807,13 @@ int _impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 
 		if (z_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_POLL_PREPARE,
 					 pfd, &pev, pev_end) < 0) {
+			/* If POLL_PREPARE returned with EALREADY, it means
+			 * it already detected that some socket is ready. In
+			 * this case, we still perform a k_poll to pick up
+			 * as many events as possible, but without any wait.
+			 * TODO: optimize, use ret value, instead of setting
+			 * errno.
+			 */
 			if (errno == EALREADY) {
 				timeout = K_NO_WAIT;
 				continue;
