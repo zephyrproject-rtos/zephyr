@@ -6,6 +6,19 @@ MinnowBoard Max
 Overview
 ********
 
+The MinnowBoard is an Intel |reg| Atom |trade| processor based board which introduces
+Intel |reg| Architecture to the small and low cost embedded market for the developer
+and maker community. It has exceptional performance, flexibility, openness and
+standards
+
+.. figure:: minnowboard.jpg
+   :width: 800px
+   :align: center
+   :alt: Minnowboard
+
+   Minnowboard (Credit: Intel)
+
+
 The `MinnowBoard`_ board configuration supports the following:
 
 * HPET
