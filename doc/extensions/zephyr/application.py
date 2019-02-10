@@ -135,7 +135,7 @@ class ZephyrAppCommandsDirective(Directive):
 
         if host_os not in self.HOST_OS:
             raise self.error('Unknown host-os {}; choose from: {}'.format(
-                generator, self.HOST_OS))
+                host_os, self.HOST_OS))
 
         if compact and skip_config:
             raise self.error('Both compact and maybe-skip-config options were given.')
