@@ -5,11 +5,9 @@ Redbear Labs Nano v2
 
 Overview
 ********
+
 The Nano v2 is a development board equipped with Nordic's next generation nRF52832 Bluetooth Low Energy SOC.
 This board was designed as a 'drop-in' replacement of BLE Nano with exactly the same form factor.
-This board will be available for Kickstart backers on February 2017.
-It is also available on Redbear store.
-https://redbear.cc/product/ble/ble-nano-kit-2.html
 
 Hardware
 ********
