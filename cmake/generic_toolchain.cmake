@@ -47,7 +47,7 @@ set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_TOOLCHAIN_VARIANT} CACHE STRING "Zephyr to
 assert(ZEPHYR_TOOLCHAIN_VARIANT "Zephyr toolchain variant invalid: please set the ZEPHYR_TOOLCHAIN_VARIANT-variable")
 
 # Pick host system's toolchain if we are targeting posix
-if(${ARCH} STREQUAL "posix")
+if((${ARCH} STREQUAL "posix") OR (${ARCH} STREQUAL "x86_64"))
   set(ZEPHYR_TOOLCHAIN_VARIANT "host")
 endif()
 
