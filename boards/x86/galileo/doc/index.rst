@@ -6,6 +6,18 @@ Galileo Gen1/Gen2
 Overview
 ********
 
+Intel Galileo is the first in a line of Arduino-certified development boards
+based on Intel x86 architecture and is designed for the maker and education
+communities. It features the Intel Quark SoC X1000, the first product from the
+Intel Quark technology family of low-power, small-core products.
+
+.. figure:: galileo.jpg
+   :width: 600px
+   :align: center
+   :alt: Galileo
+
+   Galileo (Credit: Intel)
+
 This board configuration enables kernel support for the board's Intel |reg| Quark |trade| SoC,
 along with the following devices:
 
