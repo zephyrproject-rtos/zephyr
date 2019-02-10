@@ -175,7 +175,7 @@ void _data_copy(void)
 		 ((u32_t) &__data_ram_end - (u32_t) &__data_ram_start));
 #ifdef CONFIG_RAM_FUNCTION
 	(void)memcpy(&_ramfunc_ram_start, &_ramfunc_rom_start,
-		 ((u32_t) &_ramfunc_ram_end - (u32_t) &_ramfunc_ram_start));
+		 ((u32_t) &_ramfunc_ram_size));
 #endif
 #ifdef DT_CCM_BASE_ADDRESS
 	(void)memcpy(&__ccm_data_start, &__ccm_data_rom_start,

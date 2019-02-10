@@ -82,7 +82,7 @@ void _arch_configure_static_mpu_regions(void)
 #if defined(CONFIG_RAM_FUNCTION)
 		{
 		.start = (u32_t)&_ramfunc_ram_start,
-		.size = (u32_t)&_ramfunc_ram_start - (u32_t)&_ramfunc_ram_end,
+		.size = (u32_t)&_ramfunc_ram_size,
 		.attr = K_MEM_PARTITION_P_RX_U_RX,
 		}
 #endif /* CONFIG_RAM_FUNCTION */

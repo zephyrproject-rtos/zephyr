@@ -247,6 +247,7 @@ extern char _nocache_ram_size[];
  */
 extern char _ramfunc_ram_start[];
 extern char _ramfunc_ram_end[];
+extern char _ramfunc_ram_size[];
 extern char _ramfunc_rom_start[];
 
 #endif /* ! _ASMLANGUAGE */
