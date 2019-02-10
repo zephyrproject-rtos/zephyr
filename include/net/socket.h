@@ -185,6 +185,12 @@ int zsock_setsockopt(int sock, int level, int optname,
 
 int zsock_gethostname(char *buf, size_t len);
 
+static inline char *zsock_inet_ntop(sa_family_t family, const void *src,
+				    char *dst, size_t size)
+{
+	return net_addr_ntop(family, src, dst, size);
+}
+
 __syscall int zsock_inet_pton(sa_family_t family, const char *src, void *dst);
 
 __syscall int z_zsock_getaddrinfo_internal(const char *host,
@@ -377,7 +383,7 @@ static inline int inet_pton(sa_family_t family, const char *src, void *dst)
 static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 			      size_t size)
 {
-	return net_addr_ntop(family, src, dst, size);
+	return zsock_inet_ntop(family, src, dst, size);
 }
 
 #define EAI_BADFLAGS DNS_EAI_BADFLAGS
