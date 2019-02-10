@@ -68,14 +68,14 @@ void _arch_configure_static_mpu_regions(void)
 #if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
 		{
 		.start = (u32_t)&__gcov_bss_start,
-		.size = (u32_t)&__gcov_bss_end - (u32_t)&__gcov_bss_start,
+		.size = (u32_t)&__gcov_bss_size
 		.attr = K_MEM_PARTITION_P_RW_U_RW,
 		},
 #endif /* CONFIG_COVERAGE_GCOV && CONFIG_USERSPACE */
 #if defined(CONFIG_NOCACHE_MEMORY)
 		{
 		.start = (u32_t)&_nocache_ram_start,
-		.size = (u32_t)&_nocache_ram_end - (u32_t)&_nocache_ram_start,
+		.size = (u32_t)&_nocache_ram_size,
 		.attr = K_MEM_PARTITION_P_RW_U_NA_NOCACHE,
 		}
 #endif /* CONFIG_NOCACHE_MEMORY */
