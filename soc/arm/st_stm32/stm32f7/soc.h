@@ -72,6 +72,10 @@
 #include <stm32f7xx_ll_adc.h>
 #endif
 
+#ifdef CONFIG_SDMMC_STM32
+#include <stm32f7xx_ll_sdmmc.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F7_SOC_H_ */
