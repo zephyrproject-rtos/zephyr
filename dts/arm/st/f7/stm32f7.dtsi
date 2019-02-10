@@ -612,6 +612,14 @@
 			status = "disabled";
 			label = "ADC_1";
 		};
+
+		sdmmc1: sdmmc@40012C00 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x40012C00 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000800>;
+			status = "disabled";
+			label = "SDMMC_1";
+		};
 	};
 
 	otghs_fs_phy: otghs_fs_phy {
