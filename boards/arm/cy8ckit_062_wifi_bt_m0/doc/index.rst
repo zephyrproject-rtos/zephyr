@@ -9,6 +9,7 @@ Overview
 The PSoC 6 WiFi-BT Pioneer Kit (CY8CKIT-062-WiFi-BT) is a low-cost hardware
 platform that enables design and debug of the PSoC 62 MCU and the Murata
 LBEE5KL1DX Module (CYW4343W WiFi + Bluetooth Combo Chip).
+
 The PSoC 6 WiFi-BT Pioneer Kit features the PSoC 62 MCU: a
 dual-core MCU, with a 150-MHz Arm Cortex-M4 as the primary application
 processor and a 100-MHz Arm Cortex-M0+ that supports low-power operations,
@@ -16,6 +17,7 @@ processor and a 100-MHz Arm Cortex-M0+ that supports low-power operations,
 56 programmable digital blocks, Full-Speed USB, a serial memory interface,
 a PDM-PCM digital microphone interface, and industry-leading capacitive-sensing
 with CapSense.
+
 The PSoC 6 WiFi-BT Pioneer board offers compatibility with Arduino shields.
 
 The Cortex-M0+ is a primary core on the board's SoC. It starts first and

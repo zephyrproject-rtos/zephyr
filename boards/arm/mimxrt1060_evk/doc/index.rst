@@ -8,6 +8,7 @@ Overview
 
 The i.MX RT1060 is the latest addition to the industry's first crossover
 processor series and expands the i.MX RT series to three scalable families.
+
 The i.MX RT1060 doubles the On-Chip SRAM to 1MB while keeping pin-to-pin
 compatibility with i.MX RT1050. This new series introduces additional features
 ideal for real-time applications such as High-Speed GPIO, CAN-FD, and
