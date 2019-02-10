@@ -48,4 +48,11 @@ config HWINFO_IMXRT
 	help
 	  Enable NXP i.mx RT hwinfo driver.
 
+config HWINFO_SAM
+	bool "Atmel SAM device ID"
+	default y
+	depends on SOC_FAMILY_SAM
+	help
+	  Enable Atmel SAM hwinfo driver.
+
 endif
