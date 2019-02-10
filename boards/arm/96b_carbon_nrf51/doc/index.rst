@@ -3,6 +3,12 @@
 96Boards Carbon nRF51
 #####################
 
+Overview
+********
+
+This is the secondary nRF51822 chip on the 96Boards Carbon and provides
+Bluetooth functionality to the main STM32F401RET chip via SPI.
+
 .. note::
 
    If you're looking to reprogram the main STMicro part, see
@@ -10,11 +16,6 @@
    unless they want to reprogram the secondary chip which provides
    Bluetooth connectivity.
 
-Overview
-********
-
-This is the secondary nRF51822 chip on the 96Boards Carbon and provides
-Bluetooth functionality to the main STM32F401RET chip via SPI.
 
 Hardware
 ********
