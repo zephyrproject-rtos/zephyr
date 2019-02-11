@@ -46,8 +46,8 @@ struct mcp2515_data {
 	/* filter data */
 	struct k_mutex filter_mutex;
 	u32_t filter_usage;
-	u32_t filter_response_type;
-	void *filter_response[CONFIG_CAN_MCP2515_MAX_FILTER];
+	can_rx_callback_t rx_cb[CONFIG_CAN_MCP2515_MAX_FILTER];
+	void *cb_arg[CONFIG_CAN_MCP2515_MAX_FILTER];
 	struct zcan_filter filter[CONFIG_CAN_MCP2515_MAX_FILTER];
 };
 

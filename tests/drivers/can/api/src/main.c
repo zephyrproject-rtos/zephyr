@@ -146,27 +146,31 @@ static void tx_isr(u32_t error_flags)
 
 }
 
-static void rx_std_isr(struct zcan_frame *msg)
+static void rx_std_isr(struct zcan_frame *msg, void *arg)
 {
 	check_msg(msg, &test_std_msg, 0);
+	zassert_equal_ptr(arg, &test_std_filter, "arg does not match");
 	k_sem_give(&rx_isr_sem);
 }
 
-static void rx_std_mask_isr(struct zcan_frame *msg)
+static void rx_std_mask_isr(struct zcan_frame *msg, void *arg)
 {
 	check_msg(msg, &test_std_msg, 0x0F);
+	zassert_equal_ptr(arg, &test_std_masked_filter, "arg does not match");
 	k_sem_give(&rx_isr_sem);
 }
 
-static void rx_ext_isr(struct zcan_frame *msg)
+static void rx_ext_isr(struct zcan_frame *msg, void *arg)
 {
 	check_msg(msg, &test_ext_msg, 0);
+	zassert_equal_ptr(arg, &test_ext_filter, "arg does not match");
 	k_sem_give(&rx_isr_sem);
 }
 
-static void rx_ext_mask_isr(struct zcan_frame *msg)
+static void rx_ext_mask_isr(struct zcan_frame *msg, void *arg)
 {
 	check_msg(msg, &test_ext_msg, 0x0F);
+	zassert_equal_ptr(arg, &test_ext_masked_filter, "arg does not match");
 	k_sem_give(&rx_isr_sem);
 }
 
@@ -212,15 +216,19 @@ static inline int attach_isr(struct device *can_dev,
 
 	if (filter->id_type == CAN_STANDARD_IDENTIFIER) {
 		if (filter->std_id_mask == CAN_STD_ID_MASK) {
-			filter_id = can_attach_isr(can_dev, rx_std_isr, filter);
+			filter_id = can_attach_isr(can_dev, rx_std_isr,
+						   (void *)filter, filter);
 		} else {
-			filter_id = can_attach_isr(can_dev, rx_std_mask_isr, filter);
+			filter_id = can_attach_isr(can_dev, rx_std_mask_isr,
+						   (void *)filter, filter);
 		}
 	} else {
 		if (filter->ext_id_mask == CAN_EXT_ID_MASK) {
-			filter_id = can_attach_isr(can_dev, rx_ext_isr, filter);
+			filter_id = can_attach_isr(can_dev, rx_ext_isr,
+						   (void *)filter, filter);
 		} else {
-			filter_id = can_attach_isr(can_dev, rx_ext_mask_isr, filter);
+			filter_id = can_attach_isr(can_dev, rx_ext_mask_isr,
+						   (void *)filter, filter);
 		}
 	}
 

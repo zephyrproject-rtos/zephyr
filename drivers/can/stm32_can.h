@@ -64,6 +64,7 @@ struct can_stm32_data {
 	u64_t filter_usage;
 	u64_t response_type;
 	void *rx_response[CONFIG_CAN_MAX_FILTER];
+	void *cb_arg[CONFIG_CAN_MAX_FILTER];
 };
 
 struct can_stm32_config {
