@@ -56,12 +56,33 @@ void test_COND_CODE_0(void)
 	zassert_true((y3 == 1), NULL);
 }
 
+void test_UTIL_LISTIFY(void)
+{
+	int i = 0;
+
+#define INC(x, _)		\
+	do {			\
+		i += x;		\
+	} while (0);
+
+#define DEFINE(x, _) int a##x;
+#define MARK_UNUSED(x, _) ARG_UNUSED(a##x);
+
+	UTIL_LISTIFY(4, DEFINE, _)
+	UTIL_LISTIFY(4, MARK_UNUSED, _)
+
+	UTIL_LISTIFY(4, INC, _)
+
+	zassert_equal(i, 0 + 1 + 2 + 3, NULL);
+}
+
 /*test case main entry*/
 void test_main(void)
 {
 	ztest_test_suite(test_util_api,
 			 ztest_unit_test(test_COND_CODE_1),
-			 ztest_unit_test(test_COND_CODE_0)
+			 ztest_unit_test(test_COND_CODE_0),
+			 ztest_unit_test(test_UTIL_LISTIFY)
 			 );
 	ztest_run_test_suite(test_util_api);
 }
