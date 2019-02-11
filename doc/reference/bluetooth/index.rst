@@ -1,3 +1,4 @@
+.. _bluetooth_api:
 
 Bluetooth
 #########
