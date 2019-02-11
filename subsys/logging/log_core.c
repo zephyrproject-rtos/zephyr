@@ -398,13 +398,13 @@ void log_panic(void)
 		}
 	}
 
-	panic_mode = true;
-
 	if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
 		/* Flush */
 		while (log_process(false) == true) {
 		}
 	}
+
+	panic_mode = true;
 }
 
 static bool msg_filter_check(struct log_backend const *backend,
