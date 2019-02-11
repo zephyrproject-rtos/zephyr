@@ -2398,6 +2398,26 @@ size_t net_pkt_available_buffer(struct net_pkt *pkt)
 	return pkt_get_size(pkt) - net_pkt_get_len(pkt);
 }
 
+size_t net_pkt_available_payload_buffer(struct net_pkt *pkt,
+					enum net_ip_protocol proto)
+{
+	size_t hdr_len = 0;
+	size_t len;
+
+	if (!pkt) {
+		return 0;
+	}
+
+	hdr_len = pkt_estimate_headers_length(pkt, net_pkt_family(pkt), proto);
+	len = net_pkt_get_len(pkt);
+
+	hdr_len = hdr_len <= len ? 0 : hdr_len - len;
+
+	len = net_pkt_available_buffer(pkt) - hdr_len;
+
+	return len;
+}
+
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 int net_pkt_alloc_buffer_debug(struct net_pkt *pkt,
 			       size_t size,
