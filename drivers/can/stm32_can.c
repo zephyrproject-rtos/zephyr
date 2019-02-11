@@ -81,7 +81,7 @@ void can_stm32_rx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 			} else {
 				can_rx_callback_t callback =
 					data->rx_response[filter_match_index];
-				callback(&msg);
+				callback(&msg, data->cb_arg[filter_match_index]);
 			}
 		}
 
@@ -301,6 +301,8 @@ static int can_stm32_init(struct device *dev)
 
 	data->filter_usage = (1ULL << CAN_MAX_NUMBER_OF_FILTERS) - 1ULL;
 	(void)memset(data->rx_response, 0,
+		     sizeof(void *) * CONFIG_CAN_MAX_FILTER);
+	(void)memset(data->cb_arg, 0,
 		     sizeof(void *) * CONFIG_CAN_MAX_FILTER);
 	data->response_type = 0U;
 
@@ -713,6 +715,10 @@ static inline int can_stm32_set_filter(const struct zcan_filter *filter,
 						start_index,
 						shift_width);
 
+			res |= can_stm32_shift_arr(device_data->cb_arg,
+						   start_index,
+						   shift_width);
+
 			if (filter_index_new >= CONFIG_CAN_MAX_FILTER || res) {
 				LOG_INF("No space for a new filter!");
 				filter_nr = CAN_NO_FREE_FILTER;
@@ -748,6 +754,7 @@ done:
 
 
 static inline int can_stm32_attach(struct device *dev, void *response_ptr,
+				   void *cb_arg,
 				   const struct zcan_filter *filter,
 				   int *filter_index)
 {
@@ -760,6 +767,7 @@ static inline int can_stm32_attach(struct device *dev, void *response_ptr,
 	filter_nr = can_stm32_set_filter(filter, data, can, &filter_index_tmp);
 	if (filter_nr != CAN_NO_FREE_FILTER) {
 		data->rx_response[filter_index_tmp] = response_ptr;
+		data->cb_arg[filter_index_tmp] = cb_arg;
 	}
 
 	*filter_index = filter_index_tmp;
@@ -774,13 +782,14 @@ int can_stm32_attach_msgq(struct device *dev, struct k_msgq *msgq,
 	struct can_stm32_data *data = DEV_DATA(dev);
 
 	k_mutex_lock(&data->set_filter_mutex, K_FOREVER);
-	filter_nr = can_stm32_attach(dev, msgq, filter, &filter_index);
+	filter_nr = can_stm32_attach(dev, msgq, NULL, filter, &filter_index);
 	data->response_type |= (1ULL << filter_index);
 	k_mutex_unlock(&data->set_filter_mutex);
 	return filter_nr;
 }
 
 int can_stm32_attach_isr(struct device *dev, can_rx_callback_t isr,
+			 void *cb_arg,
 			 const struct zcan_filter *filter)
 {
 	struct can_stm32_data *data = DEV_DATA(dev);
@@ -788,7 +797,7 @@ int can_stm32_attach_isr(struct device *dev, can_rx_callback_t isr,
 	int filter_index;
 
 	k_mutex_lock(&data->set_filter_mutex, K_FOREVER);
-	filter_nr = can_stm32_attach(dev, isr, filter, &filter_index);
+	filter_nr = can_stm32_attach(dev, isr, cb_arg, filter, &filter_index);
 	data->response_type &= ~(1ULL << filter_index);
 	k_mutex_unlock(&data->set_filter_mutex);
 	return filter_nr;
@@ -839,6 +848,7 @@ void can_stm32_detach(struct device *dev, int filter_nr)
 
 	can->FMR &= ~(CAN_FMR_FINIT);
 	data->rx_response[filter_index] = NULL;
+	data->cb_arg[filter_index] = NULL;
 	data->response_type &= ~(1ULL << filter_index);
 
 	k_mutex_unlock(&data->set_filter_mutex);

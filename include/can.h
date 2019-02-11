@@ -218,9 +218,10 @@ typedef void (*can_tx_callback_t)(u32_t error_flags);
  * @brief Define the application callback handler function signature
  *        for receiving.
  *
- * @param received message
+ * @param msg received message
+ * @param arg argument that was passed when the filter was attached
  */
-typedef void (*can_rx_callback_t)(struct zcan_frame *msg);
+typedef void (*can_rx_callback_t)(struct zcan_frame *msg, void *arg);
 
 typedef int (*can_configure_t)(struct device *dev, enum can_mode mode,
 				u32_t bitrate);
@@ -233,6 +234,7 @@ typedef int (*can_attach_msgq_t)(struct device *dev, struct k_msgq *msg_q,
 				 const struct zcan_filter *filter);
 
 typedef int (*can_attach_isr_t)(struct device *dev, can_rx_callback_t isr,
+				void *callback_arg,
 				const struct zcan_filter *filter);
 
 typedef void (*can_detach_t)(struct device *dev, int filter_id);
@@ -361,22 +363,24 @@ static inline int z_impl_can_attach_msgq(struct device *dev,
  * is hardware dependent.
  * A callback function can be attached to more than one filter.
  * *
- * @param dev    Pointer to the device structure for the driver instance.
- * @param isr    Callback function pointer.
- * @param filter Pointer to a zcan_filter structure defining the id
- *               filtering.
+ * @param dev          Pointer to the device structure for the driver instance.
+ * @param isr          Callback function pointer.
+ * @param callback_arg This will be passed whenever the isr is called.
+ * @param filter       Pointer to a zcan_filter structure defining the id
+ *                     filtering.
  *
  * @retval filter id on success.
  * @retval CAN_NO_FREE_FILTER if there is no filter left.
  */
 static inline int can_attach_isr(struct device *dev,
 				       can_rx_callback_t isr,
+				       void *callback_arg,
 				       const struct zcan_filter *filter)
 {
 	const struct can_driver_api *api =
 		(const struct can_driver_api *)dev->driver_api;
 
-	return api->attach_isr(dev, isr, filter);
+	return api->attach_isr(dev, isr, callback_arg, filter);
 }
 
 /**

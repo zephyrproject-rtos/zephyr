@@ -172,9 +172,11 @@ void led_thread(void *msgq, void *can_dev_param, void *gpio_dev_param)
 	}
 }
 
-void rx_button_isr(struct zcan_frame *msg)
+void rx_button_isr(struct zcan_frame *msg, void *arg)
 {
 	u16_t cnt = msg->data[0] | (msg->data[1] << 8);
+
+	ARG_UNUSED(arg);
 
 	printk("Button pressed %d times\n", cnt);
 }
@@ -235,7 +237,7 @@ void main(void)
 		printk("Error enabling callback!\n");
 	}
 
-	ret = can_attach_isr(can_dev, rx_button_isr, &filter);
+	ret = can_attach_isr(can_dev, rx_button_isr, 0, &filter);
 	if (ret == CAN_NO_FREE_FILTER) {
 		printk("Error, no filter available!\n");
 		return;

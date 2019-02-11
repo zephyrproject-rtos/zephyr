@@ -177,41 +177,6 @@ const int mcp2515_set_mode(struct device *dev, u8_t mcp2515_mode)
 	return 0;
 }
 
-static int mcp2515_attach(struct device *dev, const struct zcan_filter *filter,
-			  void *response_ptr, u8_t is_type_msgq)
-{
-	struct mcp2515_data *dev_data = DEV_DATA(dev);
-	int filter_idx = 0;
-
-	__ASSERT(response_ptr != NULL, "response_ptr can not be null");
-
-	k_mutex_lock(&dev_data->filter_mutex, K_FOREVER);
-
-	/* find free filter */
-	while ((BIT(filter_idx) & dev_data->filter_usage)
-	       && (filter_idx < CONFIG_CAN_MCP2515_MAX_FILTER)) {
-		filter_idx++;
-	}
-
-	/* setup filter */
-	if (filter_idx < CONFIG_CAN_MCP2515_MAX_FILTER) {
-		dev_data->filter_usage |= BIT(filter_idx);
-		if (is_type_msgq) {
-			dev_data->filter_response_type |= BIT(filter_idx);
-		} else {
-			dev_data->filter_response_type &= ~BIT(filter_idx);
-		}
-		dev_data->filter[filter_idx] = *filter;
-		dev_data->filter_response[filter_idx] = response_ptr;
-	} else {
-		filter_idx = CAN_NO_FREE_FILTER;
-	}
-
-	k_mutex_unlock(&dev_data->filter_mutex);
-
-	return filter_idx;
-}
-
 static int mcp2515_configure(struct device *dev, enum can_mode mode,
 			     u32_t bitrate)
 {
@@ -300,7 +265,7 @@ static int mcp2515_configure(struct device *dev, enum can_mode mode,
 				mcp2515_convert_canmode_to_mcp2515mode(mode));
 }
 
-int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
+static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 		 s32_t timeout, can_tx_callback_t callback)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
@@ -349,19 +314,41 @@ int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 	return 0;
 }
 
-int mcp2515_attach_msgq(struct device *dev, struct k_msgq *msgq,
-			const struct zcan_filter *filter)
+static int mcp2515_attach_isr(struct device *dev, can_rx_callback_t rx_cb,
+			      void *cb_arg,
+			      const struct zcan_filter *filter)
 {
-	return mcp2515_attach(dev, filter, (void *) msgq, 1);
+	struct mcp2515_data *dev_data = DEV_DATA(dev);
+	int filter_idx = 0;
+
+	__ASSERT(rx_cb != NULL, "response_ptr can not be null");
+
+	k_mutex_lock(&dev_data->filter_mutex, K_FOREVER);
+
+	/* find free filter */
+	while ((BIT(filter_idx) & dev_data->filter_usage)
+	       && (filter_idx < CONFIG_CAN_MCP2515_MAX_FILTER)) {
+		filter_idx++;
+	}
+
+	/* setup filter */
+	if (filter_idx < CONFIG_CAN_MCP2515_MAX_FILTER) {
+		dev_data->filter_usage |= BIT(filter_idx);
+
+		dev_data->filter[filter_idx] = *filter;
+		dev_data->rx_cb[filter_idx] = rx_cb;
+		dev_data->cb_arg[filter_idx] = cb_arg;
+
+	} else {
+		filter_idx = CAN_NO_FREE_FILTER;
+	}
+
+	k_mutex_unlock(&dev_data->filter_mutex);
+
+	return filter_idx;
 }
 
-int mcp2515_attach_isr(struct device *dev, can_rx_callback_t isr,
-		       const struct zcan_filter *filter)
-{
-	return mcp2515_attach(dev, filter, (void *) isr, 0);
-}
-
-void mcp2515_detach(struct device *dev, int filter_nr)
+static void mcp2515_detach(struct device *dev, int filter_nr)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 
@@ -398,6 +385,8 @@ static void mcp2515_rx_filter(struct device *dev, struct zcan_frame *msg)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	u8_t filter_idx = 0U;
+	can_rx_callback_t callback;
+	struct zcan_frame tmp_msg;
 
 	k_mutex_lock(&dev_data->filter_mutex, K_FOREVER);
 
@@ -411,17 +400,11 @@ static void mcp2515_rx_filter(struct device *dev, struct zcan_frame *msg)
 			continue; /* filter did not match */
 		}
 
-		if (dev_data->filter_response_type & BIT(filter_idx)) {
-			struct k_msgq *msg_q =
-				dev_data->filter_response[filter_idx];
+		callback = dev_data->rx_cb[filter_idx];
+		/*Make a temporary copy in case the user modifies the message*/
+		tmp_msg = *msg;
 
-			k_msgq_put(msg_q, msg, K_NO_WAIT);
-		} else {
-			can_rx_callback_t callback =
-				dev_data->filter_response[filter_idx];
-
-			callback(msg);
-		}
+		callback(&tmp_msg, dev_data->cb_arg[filter_idx]);
 	}
 
 	k_mutex_unlock(&dev_data->filter_mutex);
@@ -517,7 +500,6 @@ static void mcp2515_int_gpio_callback(struct device *dev,
 static const struct can_driver_api can_api_funcs = {
 	.configure = mcp2515_configure,
 	.send = mcp2515_send,
-	.attach_msgq = mcp2515_attach_msgq,
 	.attach_isr = mcp2515_attach_isr,
 	.detach = mcp2515_detach
 };
@@ -601,8 +583,7 @@ static int mcp2515_init(struct device *dev)
 			NULL, NULL, K_PRIO_COOP(dev_cfg->int_thread_priority),
 			0, K_NO_WAIT);
 
-	(void)memset(dev_data->filter_response, 0,
-		     sizeof(dev_data->filter_response));
+	(void)memset(dev_data->rx_cb, 0, sizeof(dev_data->rx_cb));
 	(void)memset(dev_data->filter, 0, sizeof(dev_data->filter));
 
 	ret = mcp2515_configure(dev, CAN_NORMAL_MODE, dev_cfg->bus_speed);
@@ -622,7 +603,6 @@ static struct mcp2515_data mcp2515_data_1 = {
 	.tx_cb[2].cb = NULL,
 	.tx_busy_map = 0U,
 	.filter_usage = 0U,
-	.filter_response_type = 0U,
 };
 
 static const struct mcp2515_config mcp2515_config_1 = {
