@@ -186,6 +186,14 @@ valid_syscall:
     str sp, [ip, #0]
     str lr, [ip, #4]
 
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+    /* clear stack pointer limit before setting the PSP */
+    push {r3}
+    mov r3, #0
+    msr PSPLIM, r3
+    pop {r3}
+#endif
+
     /* switch to privileged stack */
     msr PSP, ip
 
@@ -215,10 +223,8 @@ dispatch_syscall:
 
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
     /* clear stack limit (stack protection not required in user mode) */
-    push {r3}
     mov r3, #0
     msr PSPLIM, r3
-    pop {r3}
 #endif
 
     /* set stack back to unprivileged stack */
