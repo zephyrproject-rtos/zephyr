@@ -19,7 +19,9 @@ LOG_MODULE_REGISTER(usb_eem);
 #include <class/usb_cdc.h>
 #include "netusb.h"
 
-static u8_t tx_buf[NETUSB_MTU], rx_buf[NETUSB_MTU];
+#define EEM_FRAME_SIZE 1522
+
+static u8_t tx_buf[EEM_FRAME_SIZE], rx_buf[EEM_FRAME_SIZE];
 
 struct usb_cdc_eem_config {
 	struct usb_if_descriptor if0;
