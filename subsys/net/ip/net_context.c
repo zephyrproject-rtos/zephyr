@@ -1673,8 +1673,6 @@ static int context_sendto_new(struct net_context *context,
 		ret = net_tcp_send_data(context, cb, token, user_data);
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		   net_context_get_family(context) == AF_PACKET) {
-
-		net_pkt_set_family(pkt, AF_PACKET);
 		ret = net_pkt_write_new(pkt, buf, len);
 		if (ret < 0) {
 			goto fail;
@@ -1686,9 +1684,6 @@ static int context_sendto_new(struct net_context *context,
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 		   net_context_get_family(context) == AF_CAN &&
 		   net_context_get_ip_proto(context) == CAN_RAW) {
-
-		net_pkt_set_family(pkt, AF_CAN);
-
 		ret = net_pkt_write_new(pkt, buf, len);
 		if (ret < 0) {
 			goto fail;
