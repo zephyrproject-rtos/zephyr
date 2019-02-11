@@ -40,15 +40,6 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
     /* move user_entry to lr */
     mov lr, r0
 
-#if defined (CONFIG_ARM_MPU)
-    /* Re-program dynamic memory map */
-    push {r1,r2,r3,ip,lr}
-    ldr r0, =_kernel
-    ldr r0, [r0, #_kernel_offset_to_current]
-    bl _arch_configure_dynamic_mpu_regions
-    pop {r1,r2,r3,ip,lr}
-#endif
-
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
     /* clear stack pointer limit before setting the PSP */
     mov r0, #0
@@ -71,6 +62,28 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
     ldr r0, [r0, #_kernel_offset_to_current]
     ldr r0, [r0, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
     msr PSPLIM, r0
+#endif
+
+#if defined (CONFIG_ARM_MPU)
+    /* Re-program dynamic memory map.
+     *
+     * Important note:
+     * _arch_configure_dynamic_mpu_regions() may re-program the MPU Stack Guard
+     * to guard the privilege stack for overflows (if building with option
+     * CONFIG_MPU_STACK_GUARD). There is a risk of actually overflowing the
+     * stack while doing the re-programming. We minimize the risk by placing
+     * this function immediately after we have switched to the privileged stack
+     * so that the whole stack area is available for this critical operation.
+     *
+     * Note that the risk for overflow is higher if using the normal thread
+     * stack, since we do not control how much stack is actually left, when
+     * user invokes _arm_userspace_enter().
+     */
+    push {r0,r1,r2,r3,ip,lr}
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+    bl _arch_configure_dynamic_mpu_regions
+    pop {r0,r1,r2,r3,ip,lr}
 #endif
 
     /* load up stack info from user stack */
