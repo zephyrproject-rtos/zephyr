@@ -53,3 +53,11 @@ Patch List:
      CMakeLists.txt
      drivers/include/stm32f4xx_hal_conf.h
      drivers/src/Legacy/stm32f4_hal_can.c
+
+    *Use of (__packed uint32_t *) produces warning
+      Using GNU 8.2.0, (__packed uint32_t *) generates warning.
+      Replace with CMSIS macros __UNALIGNED_UINT32_READ and
+      __UNALIGNED_UINT32_WRITE.
+     Impacted files:
+      drivers/include/stm32f4xx_ll_usb.c
+     ST Bug tracker ID: 61325
