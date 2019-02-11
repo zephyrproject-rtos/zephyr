@@ -63,3 +63,12 @@ Patch List:
     Impacted files:
      drivers/include/stm32l4xx_ll_exti.h
     ST Bug tracker ID: 55275
+
+
+    *Use of (__packed uint32_t *) produces warning
+      Using GNU 8.2.0, (__packed uint32_t *) generates warning.
+      Replace with CMSIS macros __UNALIGNED_UINT32_READ and
+      __UNALIGNED_UINT32_WRITE.
+     Impacted files:
+      drivers/include/stm32l4xx_ll_usb.c
+     ST Bug tracker ID: 61328
