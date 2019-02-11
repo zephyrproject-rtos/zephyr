@@ -96,8 +96,8 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 
 static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 			       struct pdu_data *pdu_tx);
-static inline u8_t ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
-			   struct pdu_data *pdu_rx, struct ll_conn *conn);
+static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
+			  struct pdu_data *pdu_rx, struct ll_conn *conn);
 static void ticker_op_cb(u32_t status, void *params);
 
 #define CONN_TX_BUF_SIZE MROUND(offsetof(struct node_tx, pdu) + \
@@ -3898,10 +3898,10 @@ static inline bool pdu_len_cmp(u8_t opcode, u8_t len)
 	return ctrl_len_lut[opcode] == len;
 }
 
-static inline u8_t ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
-			   struct pdu_data *pdu_rx, struct ll_conn *conn)
+static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
+			  struct pdu_data *pdu_rx, struct ll_conn *conn)
 {
-	u8_t nack = 0;
+	int nack = 0;
 	u8_t opcode;
 
 	opcode = pdu_rx->llctrl.opcode;
