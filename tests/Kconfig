@@ -34,7 +34,8 @@ config HAS_COVERAGE_SUPPORT
 	bool
 	help
 	  The code coverage report generation is only available on boards
-	  with enough RAM.
+	  with enough spare RAM to buffer the coverage data, or on boards
+	  based on the POSIX ARCH.
 
 config COVERAGE
 	bool "Create coverage data"
