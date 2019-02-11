@@ -1299,23 +1299,15 @@ static void dns_result_cb(enum dns_resolve_status status,
 			  struct dns_addrinfo *info,
 			  void *user_data)
 {
-	struct net_shell_user_data *data = user_data;
-	const struct shell *shell = data->shell;
-	bool *first = data->user_data;
+	const struct shell *shell = user_data;
 
 	if (status == DNS_EAI_CANCELED) {
-		PR_WARNING("\nTimeout while resolving name.\n");
-		*first = false;
+		PR_WARNING("dns: Timeout while resolving name.\n");
 		return;
 	}
 
 	if (status == DNS_EAI_INPROGRESS && info) {
 		char addr[NET_IPV6_ADDR_LEN];
-
-		if (*first) {
-			PR("\n");
-			*first = false;
-		}
 
 		if (info->ai_family == AF_INET) {
 			net_addr_ntop(AF_INET,
@@ -1328,25 +1320,25 @@ static void dns_result_cb(enum dns_resolve_status status,
 		} else {
 			strncpy(addr, "Invalid protocol family",
 				sizeof(addr));
+			/* strncpy() doesn't guarantee NUL byte at the end. */
+			addr[sizeof(addr) - 1] = 0;
 		}
 
-		PR("\t%s\n", addr);
+		PR("dns: %s\n", addr);
 		return;
 	}
 
 	if (status == DNS_EAI_ALLDONE) {
-		PR("All results received\n");
-		*first = false;
+		PR("dns: All results received\n");
 		return;
 	}
 
 	if (status == DNS_EAI_FAIL) {
-		PR_WARNING("No such name found.\n");
-		*first = false;
+		PR_WARNING("dns: No such name found.\n");
 		return;
 	}
 
-	PR_WARNING("Unhandled status %d received\n", status);
+	PR_WARNING("dns: Unhandled status %d received\n", status);
 }
 
 static void print_dns_info(const struct shell *shell,
@@ -1449,10 +1441,8 @@ static int cmd_net_dns_query(const struct shell *shell, size_t argc,
 
 #if defined(CONFIG_DNS_RESOLVER)
 #define DNS_TIMEOUT K_MSEC(2000) /* ms */
-	struct net_shell_user_data user_data;
 	enum dns_query_type qtype = DNS_QUERY_TYPE_A;
 	char *host, *type = NULL;
-	bool first = true;
 	int ret, arg = 1;
 
 	host = argv[arg++];
@@ -1479,11 +1469,8 @@ static int cmd_net_dns_query(const struct shell *shell, size_t argc,
 		}
 	}
 
-	user_data.shell = shell;
-	user_data.user_data = &first;
-
-	ret = dns_get_addr_info(host, qtype, NULL, dns_result_cb, &user_data,
-				DNS_TIMEOUT);
+	ret = dns_get_addr_info(host, qtype, NULL, dns_result_cb,
+				(void *)shell, DNS_TIMEOUT);
 	if (ret < 0) {
 		PR_WARNING("Cannot resolve '%s' (%d)\n", host, ret);
 	} else {
