@@ -1359,6 +1359,7 @@ int shell_prompt_change(const struct shell *shell, const char *prompt)
 		return -EINVAL;
 	}
 	shell->ctx->prompt = prompt;
+	shell->ctx->vt100_ctx.cons.name_len = shell_strlen(prompt);
 
 	return 0;
 }
