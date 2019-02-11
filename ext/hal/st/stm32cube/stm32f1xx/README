@@ -52,3 +52,11 @@ Patch List:
      Impacted files:
       drivers/include/stm32f1xx_ll_rcc.h
      ST Bug tracker ID: 37419
+
+    *Use of (__packed uint32_t *) produces warning
+      Using GNU 8.2.0, (__packed uint32_t *) generates warning.
+      Replace with CMSIS macros __UNALIGNED_UINT32_READ and
+      __UNALIGNED_UINT32_WRITE.
+     Impacted files:
+      drivers/include/stm32f1xx_ll_usb.c
+     ST Bug tracker ID: 61323
