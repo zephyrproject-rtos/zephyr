@@ -99,7 +99,20 @@
 #define SSP_SIZE				0x0000200
 #define SSP_BASE(x)				(0x00077000 + (x) * SSP_SIZE)
 #define SSP_MN_DIV_SIZE				(8)
-#define SSP_MN_DIV_BASE(x)		(0x00078D00 + ((x) * SSP_MN_DIV_SIZE))
+#define SSP_MN_DIV_BASE(x)			\
+	(0x00078D00 + ((x) * SSP_MN_DIV_SIZE))
+
+/* MCLK control */
+#define SOC_MCLK_DIV_CTRL_BASE			0x78C00
+#define SOC_NUM_MCLK_OUTPUTS			2
+#define SOC_MDIVCTRL_MCLK_OUT_EN(mclk)		BIT(mclk)
+#define SOC_MDIVXR_SET_DIVIDER_BYPASS		BIT_MASK(12)
+
+struct soc_mclk_control_regs {
+	u32_t	mdivctrl;
+	u32_t	reserved[31];
+	u32_t	mdivxr[SOC_NUM_MCLK_OUTPUTS];
+};
 
 #define PDM_BASE				0x00010000
 
