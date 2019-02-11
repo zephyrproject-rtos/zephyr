@@ -14,10 +14,6 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_SYS_POWER_MANAGEMENT
-
-extern unsigned char sys_pm_idle_exit_notify;
-
 /**
  * @defgroup power_management_api Power Management
  * @{
@@ -55,6 +51,10 @@ enum power_states {
 #endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
 	SYS_POWER_STATE_MAX
 };
+
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+
+extern unsigned char sys_pm_idle_exit_notify;
 
 /**
  * @brief System Power Management API
