@@ -589,9 +589,9 @@ static const struct i2c_esp32_config i2c_esp32_config_0 = {
 	},
 	.mode = {
 		.tx_lsb_first =
-			IS_ENABLED(CONFIG_ESP32_I2C_0_TX_LSB_FIRST),
+			IS_ENABLED(CONFIG_I2C_ESP32_0_TX_LSB_FIRST),
 		.rx_lsb_first =
-			IS_ENABLED(CONFIG_ESP32_I2C_0_RX_LSB_FIRST),
+			IS_ENABLED(CONFIG_I2C_ESP32_0_RX_LSB_FIRST),
 	},
 	.irq = {
 		.source = ETS_I2C_EXT0_INTR_SOURCE,
@@ -636,9 +636,9 @@ static const struct i2c_esp32_config i2c_esp32_config_1 = {
 	},
 	.mode = {
 		.tx_lsb_first =
-			IS_ENABLED(CONFIG_ESP32_I2C_1_TX_LSB_FIRST),
+			IS_ENABLED(CONFIG_I2C_ESP32_1_TX_LSB_FIRST),
 		.rx_lsb_first =
-			IS_ENABLED(CONFIG_ESP32_I2C_1_RX_LSB_FIRST),
+			IS_ENABLED(CONFIG_I2C_ESP32_1_RX_LSB_FIRST),
 	},
 	.irq = {
 		.source = ETS_I2C_EXT1_INTR_SOURCE,
