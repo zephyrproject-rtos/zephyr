@@ -218,8 +218,8 @@ def main():
 
         out_fp.close()
 
-    debug("Input %s = %ld bytes" % (args.in_file, in_file_size))
-    debug("Output %s = %ld bytes" % (args.out_file, out_file_size))
+    debug("Input %s = %ld bytes" % (os.path.basename(args.in_file), in_file_size))
+    debug("Output %s = %ld bytes" % (os.path.basename(args.out_file), out_file_size))
 
 if __name__ == "__main__":
     main()
