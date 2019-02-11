@@ -937,7 +937,7 @@ static void eth_mcux_ptp_isr(void *p)
 }
 #endif
 
-#if defined(DT_ETH_IRQ_COMMON)
+#if defined(DT_IRQ_ETH_COMMON)
 static void eth_mcux_dispacher_isr(void *p)
 {
 	struct device *dev = p;
@@ -960,7 +960,7 @@ static void eth_mcux_dispacher_isr(void *p)
 }
 #endif
 
-#if defined(DT_ETH_IRQ_RX)
+#if defined(DT_IRQ_ETH_RX)
 static void eth_mcux_rx_isr(void *p)
 {
 	struct device *dev = p;
@@ -970,7 +970,7 @@ static void eth_mcux_rx_isr(void *p)
 }
 #endif
 
-#if defined(DT_ETH_IRQ_TX)
+#if defined(DT_IRQ_ETH_TX)
 static void eth_mcux_tx_isr(void *p)
 {
 	struct device *dev = p;
@@ -980,7 +980,7 @@ static void eth_mcux_tx_isr(void *p)
 }
 #endif
 
-#if defined(DT_ETH_IRQ_ERR_MISC)
+#if defined(DT_IRQ_ETH_ERR_MISC)
 static void eth_mcux_error_isr(void *p)
 {
 	struct device *dev = p;
@@ -1016,25 +1016,25 @@ ETH_NET_DEVICE_INIT(eth_mcux_0, DT_ETH_MCUX_0_NAME, eth_0_init,
 
 static void eth_0_config_func(void)
 {
-#if defined(DT_ETH_IRQ_RX)
+#if defined(DT_IRQ_ETH_RX)
 	IRQ_CONNECT(DT_IRQ_ETH_RX, DT_ETH_MCUX_0_IRQ_PRI,
 		    eth_mcux_rx_isr, DEVICE_GET(eth_mcux_0), 0);
 	irq_enable(DT_IRQ_ETH_RX);
 #endif
 
-#if defined(DT_ETH_IRQ_TX)
+#if defined(DT_IRQ_ETH_TX)
 	IRQ_CONNECT(DT_IRQ_ETH_TX, DT_ETH_MCUX_0_IRQ_PRI,
 		    eth_mcux_tx_isr, DEVICE_GET(eth_mcux_0), 0);
 	irq_enable(DT_IRQ_ETH_TX);
 #endif
 
-#if defined(DT_ETH_IRQ_ERR_MISC)
+#if defined(DT_IRQ_ETH_ERR_MISC)
 	IRQ_CONNECT(DT_IRQ_ETH_ERR_MISC, DT_ETH_MCUX_0_IRQ_PRI,
 		    eth_mcux_error_isr, DEVICE_GET(eth_mcux_0), 0);
 	irq_enable(DT_IRQ_ETH_ERR_MISC);
 #endif
 
-#if defined(DT_ETH_IRQ_COMMON)
+#if defined(DT_IRQ_ETH_COMMON)
 	IRQ_CONNECT(DT_IRQ_ETH_COMMON, DT_ETH_MCUX_0_IRQ_PRI,
 		    eth_mcux_dispacher_isr, DEVICE_GET(eth_mcux_0), 0);
 	irq_enable(DT_IRQ_ETH_COMMON);
