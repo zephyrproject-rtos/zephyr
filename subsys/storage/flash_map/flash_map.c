@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Nordic Semiconductor ASA
  * Copyright (c) 2015 Runtime Inc
+ * Copyright (c) 2017 Linaro Ltd
  *
  * SPDX-License-Identifier: Apache-2.0
  */
