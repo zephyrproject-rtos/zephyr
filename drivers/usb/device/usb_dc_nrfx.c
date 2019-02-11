@@ -57,6 +57,7 @@ enum usbd_periph_state {
 	USBD_ATTACHED,
 	USBD_POWERED,
 	USBD_SUSPENDED,
+	USBD_RESUMED,
 	USBD_DEFAULT,
 	USBD_ADDRESS_SET,
 	USBD_CONFIGURED,
@@ -749,6 +750,9 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 		nrfx_usbd_enable();
 		(void) hf_clock_enable(true, false);
 
+		if (ctx->status_cb) {
+			ctx->status_cb(USB_DC_CONNECTED, NULL);
+		}
 		break;
 
 	case USBD_POWERED:
@@ -770,6 +774,22 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 
 		if (ctx->status_cb) {
 			ctx->status_cb(USB_DC_DISCONNECTED, NULL);
+		}
+		break;
+
+	case USBD_SUSPENDED:
+		LOG_DBG("USB Suspend state");
+		nrfx_usbd_suspend();
+
+		if (ctx->status_cb) {
+			ctx->status_cb(USB_DC_SUSPEND, NULL);
+		}
+		break;
+	case USBD_RESUMED:
+		LOG_DBG("USB resume");
+
+		if (ctx->status_cb) {
+			ctx->status_cb(USB_DC_RESUME, NULL);
 		}
 		break;
 
@@ -1094,37 +1114,34 @@ static void usbd_event_transfer_data(nrfx_usbd_evt_t const *const p_event)
 static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
-	struct usbd_event *ev;
+	struct usbd_event evt;
+	bool put_evt = false;
 
 	switch (p_event->type) {
 	case NRFX_USBD_EVT_SUSPEND:
 		LOG_DBG("SUSPEND state detected.");
+		evt.evt_type = USBD_EVT_POWER;
+		evt.evt.pwr_evt.state = USBD_SUSPENDED;
+		put_evt = true;
 		break;
 	case NRFX_USBD_EVT_RESUME:
 		LOG_DBG("RESUMING from suspend.");
+		evt.evt_type = USBD_EVT_POWER;
+		evt.evt.pwr_evt.state = USBD_RESUMED;
+		put_evt = true;
 		break;
 	case NRFX_USBD_EVT_WUREQ:
 		LOG_DBG("RemoteWU initiated.");
 		break;
 	case NRFX_USBD_EVT_RESET:
-		ev = usbd_evt_alloc();
-		if (!ev) {
-			return;
-		}
-		ev->evt_type = USBD_EVT_RESET;
-		usbd_evt_put(ev);
-		usbd_work_schedule();
+		evt.evt_type = USBD_EVT_RESET;
+		put_evt = true;
 		break;
 	case NRFX_USBD_EVT_SOF:
-#ifdef CONFIG_USB_DEVICE_SOF
-		ev = usbd_evt_alloc();
-		if (!ev) {
-			return;
+		if (IS_ENABLED(CONFIG_USB_DEVICE_SOF)) {
+			evt.evt_type = USBD_EVT_SOF;
+			put_evt = true;
 		}
-		ev->evt_type = USBD_EVT_SOF;
-		usbd_evt_put(ev);
-		usbd_work_schedule();
-#endif
 		break;
 
 	case NRFX_USBD_EVT_EPTRANSFER:
@@ -1158,21 +1175,30 @@ static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 
 			struct nrf_usbd_ep_ctx *ep_ctx =
 				endpoint_ctx(NRF_USBD_EPOUT(0));
-			ev = usbd_evt_alloc();
-			if (!ev) {
-				return;
-			}
-			ev->evt_type = USBD_EVT_EP;
-			ev->evt.ep_evt.ep = ep_ctx;
-			ev->evt.ep_evt.evt_type = EP_EVT_SETUP_RECV;
-			usbd_evt_put(ev);
-			usbd_work_schedule();
+
+			evt.evt_type = USBD_EVT_EP;
+			evt.evt.ep_evt.ep = ep_ctx;
+			evt.evt.ep_evt.evt_type = EP_EVT_SETUP_RECV;
+			put_evt = true;
 		}
 		break;
 	}
 
 	default:
 		break;
+	}
+
+	if (put_evt) {
+		struct usbd_event *ev;
+
+		ev = usbd_evt_alloc();
+		if (!ev) {
+			return;
+		}
+		ev->evt_type = evt.evt_type;
+		ev->evt = evt.evt;
+		usbd_evt_put(ev);
+		usbd_work_schedule();
 	}
 }
 
@@ -1795,4 +1821,14 @@ int usb_dc_ep_mps(const u8_t ep)
 	}
 
 	return ep_ctx->cfg.max_sz;
+}
+
+int usb_dc_wakeup_request(void)
+{
+	bool res = nrfx_usbd_wakeup_req();
+
+	if (!res) {
+		return -EAGAIN;
+	}
+	return 0;
 }
