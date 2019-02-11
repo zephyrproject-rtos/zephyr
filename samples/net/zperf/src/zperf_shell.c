@@ -36,8 +36,8 @@ LOG_MODULE_REGISTER(net_zperf_sample, LOG_LEVEL_DBG);
 
 static const char *CONFIG =
 		"unified"
-#if defined(CONFIG_WLAN)
-		" wlan"
+#if defined(CONFIG_WIFI)
+		" wifi"
 #endif
 #if defined(CONFIG_NET_L2_ETHERNET)
 		" ethernet"
