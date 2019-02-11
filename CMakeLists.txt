@@ -269,12 +269,6 @@ endif()
 # 'cmake -DEXTRA_CFLAGS="-Werror -Wno-deprecated-declarations" ..'
 include(cmake/extra_flags.cmake)
 
-if(CONFIG_READABLE_ASM)
-  zephyr_cc_option(-fno-reorder-blocks)
-  zephyr_cc_option(-fno-ipa-cp-clone)
-  zephyr_cc_option(-fno-partial-inlining)
-endif()
-
 zephyr_cc_option(-fno-asynchronous-unwind-tables)
 zephyr_cc_option(-fno-pie)
 zephyr_cc_option(-fno-pic)
