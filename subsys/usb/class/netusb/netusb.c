@@ -57,6 +57,11 @@ static int netusb_send(struct device *dev, struct net_pkt *pkt)
 	return 0;
 }
 
+struct net_if *netusb_net_iface(void)
+{
+	return netusb.iface;
+}
+
 void netusb_recv(struct net_pkt *pkt)
 {
 	LOG_DBG("Recv pkt, len %u", net_pkt_get_len(pkt));
