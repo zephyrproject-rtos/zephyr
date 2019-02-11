@@ -2418,6 +2418,33 @@ size_t net_pkt_available_payload_buffer(struct net_pkt *pkt,
 	return len;
 }
 
+void net_pkt_trim_buffer(struct net_pkt *pkt)
+{
+	struct net_buf *buf, *prev;
+
+	buf = pkt->buffer;
+	prev = buf;
+
+	while (buf) {
+		struct net_buf *next = buf->frags;
+
+		if (!buf->len) {
+			if (buf == pkt->buffer) {
+				pkt->buffer = next;
+			} else if (buf == prev->frags) {
+				prev->frags = next;
+			}
+
+			buf->frags = NULL;
+			net_buf_unref(buf);
+		} else {
+			prev = buf;
+		}
+
+		buf = next;
+	}
+}
+
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 int net_pkt_alloc_buffer_debug(struct net_pkt *pkt,
 			       size_t size,
