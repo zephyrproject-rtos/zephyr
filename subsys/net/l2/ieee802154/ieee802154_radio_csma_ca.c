@@ -49,7 +49,7 @@ loop:
 				break;
 			}
 
-			be = min(be + 1, max_be);
+			be = MIN(be + 1, max_be);
 			nb++;
 
 			if (nb > max_bo) {

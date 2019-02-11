@@ -402,7 +402,7 @@ static void rfcomm_connected(struct bt_l2cap_chan *chan)
 	BT_DBG("Session %p", session);
 
 	/* Need to include UIH header and FCS*/
-	session->mtu = min(session->br_chan.rx.mtu,
+	session->mtu = MIN(session->br_chan.rx.mtu,
 			   session->br_chan.tx.mtu) -
 			   BT_RFCOMM_HDR_SIZE + BT_RFCOMM_FCS_SIZE;
 
@@ -480,7 +480,7 @@ static struct bt_rfcomm_dlc *rfcomm_dlc_accept(struct bt_rfcomm_session *session
 	}
 
 	rfcomm_dlc_init(dlc, session, dlci, BT_RFCOMM_ROLE_ACCEPTOR);
-	dlc->mtu = min(dlc->mtu, session->mtu);
+	dlc->mtu = MIN(dlc->mtu, session->mtu);
 
 	return dlc;
 }
@@ -963,7 +963,7 @@ static int rfcomm_dlc_start(struct bt_rfcomm_dlc *dlc)
 	result = rfcomm_dlc_security(dlc);
 	switch (result) {
 	case RFCOMM_SECURITY_PASSED:
-		dlc->mtu = min(dlc->mtu, dlc->session->mtu);
+		dlc->mtu = MIN(dlc->mtu, dlc->session->mtu);
 		dlc->state = BT_RFCOMM_STATE_CONFIG;
 		rfcomm_send_pn(dlc, BT_RFCOMM_MSG_CMD_CR);
 		break;
@@ -1182,7 +1182,7 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 
 		BT_DBG("Incoming connection accepted dlc %p", dlc);
 
-		dlc->mtu = min(dlc->mtu, sys_le16_to_cpu(pn->mtu));
+		dlc->mtu = MIN(dlc->mtu, sys_le16_to_cpu(pn->mtu));
 
 		if (pn->flow_ctrl == BT_RFCOMM_PN_CFC_CMD) {
 			if (session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
@@ -1206,14 +1206,14 @@ static void rfcomm_handle_pn(struct bt_rfcomm_session *session,
 				rfcomm_dlc_close(dlc);
 				return;
 			}
-			dlc->mtu = min(dlc->mtu, sys_le16_to_cpu(pn->mtu));
+			dlc->mtu = MIN(dlc->mtu, sys_le16_to_cpu(pn->mtu));
 			rfcomm_send_pn(dlc, BT_RFCOMM_MSG_RESP_CR);
 		} else {
 			if (dlc->state != BT_RFCOMM_STATE_CONFIG) {
 				return;
 			}
 
-			dlc->mtu = min(dlc->mtu, sys_le16_to_cpu(pn->mtu));
+			dlc->mtu = MIN(dlc->mtu, sys_le16_to_cpu(pn->mtu));
 			if (pn->flow_ctrl == BT_RFCOMM_PN_CFC_RESP) {
 				if (session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
 					session->cfc = BT_RFCOMM_CFC_SUPPORTED;
@@ -1538,7 +1538,7 @@ static void rfcomm_encrypt_change(struct bt_l2cap_chan *chan,
 			rfcomm_send_ua(session, dlc->dlci);
 			rfcomm_dlc_connected(dlc);
 		} else {
-			dlc->mtu = min(dlc->mtu, session->mtu);
+			dlc->mtu = MIN(dlc->mtu, session->mtu);
 			dlc->state = BT_RFCOMM_STATE_CONFIG;
 			rfcomm_send_pn(dlc, BT_RFCOMM_MSG_CMD_CR);
 		}

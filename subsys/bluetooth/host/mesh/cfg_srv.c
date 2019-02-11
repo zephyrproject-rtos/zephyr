@@ -3378,8 +3378,8 @@ void bt_mesh_heartbeat(u16_t src, u16_t dst, u8_t hops, u16_t feat)
 		return;
 	}
 
-	cfg->hb_sub.min_hops = min(cfg->hb_sub.min_hops, hops);
-	cfg->hb_sub.max_hops = max(cfg->hb_sub.max_hops, hops);
+	cfg->hb_sub.min_hops = MIN(cfg->hb_sub.min_hops, hops);
+	cfg->hb_sub.max_hops = MAX(cfg->hb_sub.max_hops, hops);
 
 	if (cfg->hb_sub.count < 0xffff) {
 		cfg->hb_sub.count++;

@@ -214,7 +214,7 @@ static char *sprint_token(const u8_t *token, u8_t tkl)
 	if (token && tkl != LWM2M_MSG_TOKEN_LEN_SKIP) {
 		int i;
 
-		tkl = min(tkl, sizeof(buf) / 2 - 1);
+		tkl = MIN(tkl, sizeof(buf) / 2 - 1);
 
 		for (i = 0; i < tkl; i++) {
 			*ptr++ = to_hex_digit(token[i] >> 4);
@@ -541,7 +541,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	observe_node_data[i].event_timestamp =
 			observe_node_data[i].last_timestamp;
 	observe_node_data[i].min_period_sec = attrs.pmin;
-	observe_node_data[i].max_period_sec = max(attrs.pmax, attrs.pmin);
+	observe_node_data[i].max_period_sec = MAX(attrs.pmax, attrs.pmin);
 	observe_node_data[i].format = format;
 	observe_node_data[i].counter = 1U;
 	sys_slist_append(&engine_observer_list,
@@ -2337,7 +2337,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 
 	/* loop through options to parse attribute */
 	for (i = 0; i < nr_opt; i++) {
-		int limit = min(options[i].len, 5), plen = 0, vlen;
+		int limit = MIN(options[i].len, 5), plen = 0, vlen;
 		float32_value_t val = { 0 };
 		type = 0U;
 
@@ -2595,9 +2595,9 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			obs->path.obj_id, obs->path.obj_inst_id,
 			obs->path.res_id, obs->path.level,
 			obs->min_period_sec, obs->max_period_sec,
-			nattrs.pmin, max(nattrs.pmin, nattrs.pmax));
+			nattrs.pmin, MAX(nattrs.pmin, nattrs.pmax));
 		obs->min_period_sec = (u32_t)nattrs.pmin;
-		obs->max_period_sec = (u32_t)max(nattrs.pmin, nattrs.pmax);
+		obs->max_period_sec = (u32_t)MAX(nattrs.pmin, nattrs.pmax);
 		(void)memset(&nattrs, 0, sizeof(nattrs));
 	}
 

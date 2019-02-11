@@ -178,7 +178,7 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 		while (w_size < sizeof(w_buf)) {
 #ifdef CONFIG_SETTINGS_USE_BASE64
 			if (enc_len) {
-				add = min(enc_len, sizeof(w_buf) - w_size);
+				add = MIN(enc_len, sizeof(w_buf) - w_size);
 				memcpy(&w_buf[w_size], p_enc, add);
 				enc_len -= add;
 				w_size += add;
@@ -187,7 +187,7 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 #endif
 				if (rem) {
 #ifdef CONFIG_SETTINGS_USE_BASE64
-					add = min(rem, MAX_ENC_BLOCK_SIZE/4*3);
+					add = MIN(rem, MAX_ENC_BLOCK_SIZE/4*3);
 					rc = base64_encode(enc_buf, sizeof(enc_buf), &enc_len, value, add);
 					if (rc) {
 						return -EINVAL;
@@ -196,7 +196,7 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 					rem -= add;
 					p_enc = enc_buf;
 #else
-					add = min(rem, sizeof(w_buf) - w_size);
+					add = MIN(rem, sizeof(w_buf) - w_size);
 					memcpy(&w_buf[w_size], value, add);
 					value += add;
 					rem -= add;
@@ -324,7 +324,7 @@ static int settings_line_raw_read_until(off_t seek, char *out, size_t len_req,
 
 		off = seek - off;
 		len = read_size - off;
-		len = min(rem_size, len);
+		len = MIN(rem_size, len);
 
 		if (until_char != NULL) {
 			char *pend;
@@ -384,7 +384,7 @@ int settings_line_val_read(off_t val_off, off_t off, char *out, size_t len_req,
 		read_size = rem_size / 3 * 4;
 		read_size += (rem_size % 3 != 0 || off_begin != off) ? 4 : 0;
 
-		read_size = min(read_size, sizeof(enc_buf) - 1);
+		read_size = MIN(read_size, sizeof(enc_buf) - 1);
 		exp_size = read_size;
 
 		rc = settings_line_raw_read(val_off + seek_begin, enc_buf,
@@ -406,7 +406,7 @@ int settings_line_val_read(off_t val_off, off_t off, char *out, size_t len_req,
 				   read_size);
 		dec_buf[olen] = 0;
 
-		clen = min(olen + off_begin - off, rem_size);
+		clen = MIN(olen + off_begin - off, rem_size);
 
 		memcpy(out, &dec_buf[off - off_begin], clen);
 		rem_size -= clen;
@@ -498,7 +498,7 @@ int settings_entry_copy(void *dst_ctx, off_t dst_off, void *src_ctx,
 	size_t chunk_size;
 
 	while (len) {
-		chunk_size = min(len, sizeof(buf));
+		chunk_size = MIN(len, sizeof(buf));
 
 		rc = settings_io_cb.read_cb(src_ctx, src_off, buf, &chunk_size);
 		if (rc) {

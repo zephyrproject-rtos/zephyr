@@ -490,7 +490,7 @@ int usb_dc_ep_read_ex(u8_t ep, u8_t *buf, u32_t max_data_len,
 	}
 
 	remain = bytes - data->out_at;
-	take = min(max_data_len, remain);
+	take = MIN(max_data_len, remain);
 	memcpy(buf, (u8_t *)addr + data->out_at, take);
 
 	if (read_bytes != NULL) {

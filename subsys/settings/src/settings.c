@@ -140,7 +140,7 @@ int settings_val_read_cb(void *value_ctx, void *buf, size_t len)
 
 	if (value_context->runtime) {
 		rt_ctx = value_context->read_cb_ctx;
-		len_read = min(len, rt_ctx->size);
+		len_read = MIN(len, rt_ctx->size);
 		memcpy(buf, rt_ctx->p_value, len_read);
 		return len_read;
 	} else {

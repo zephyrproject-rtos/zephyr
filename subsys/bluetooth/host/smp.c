@@ -539,7 +539,7 @@ static u8_t get_encryption_key_size(struct bt_smp *smp)
 	 * encryption key length parameters shall be used as the encryption key
 	 * size.
 	 */
-	return min(req->max_key_size, rsp->max_key_size);
+	return MIN(req->max_key_size, rsp->max_key_size);
 }
 
 #if defined(CONFIG_BT_PRIVACY) || defined(CONFIG_BT_SIGNING) || \

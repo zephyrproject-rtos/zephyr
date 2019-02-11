@@ -103,7 +103,7 @@ static size_t h4_discard(struct device *uart, size_t len)
 {
 	u8_t buf[H4_DISCARD_LEN];
 
-	return uart_fifo_read(uart, buf, min(len, sizeof(buf)));
+	return uart_fifo_read(uart, buf, MIN(len, sizeof(buf)));
 }
 
 static struct net_buf *h4_cmd_recv(int *remaining)

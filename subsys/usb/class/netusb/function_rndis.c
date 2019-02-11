@@ -1081,7 +1081,7 @@ static int append_bytes(u8_t *out_buf, u16_t buf_len, u8_t *data,
 	int ret;
 
 	do {
-		u16_t count = min(len, remaining);
+		u16_t count = MIN(len, remaining);
 #if VERBOSE_DEBUG
 		LOG_DBG("len %u remaining %u count %u", len, remaining, count);
 #endif

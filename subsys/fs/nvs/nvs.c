@@ -145,7 +145,7 @@ static int _nvs_flash_block_cmp(struct nvs_fs *fs, u32_t addr, const void *data,
 
 	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1);
 	while (len) {
-		bytes_to_cmp = min(block_size, len);
+		bytes_to_cmp = MIN(block_size, len);
 		rc = _nvs_flash_rd(fs, addr, buf, bytes_to_cmp);
 		if (rc) {
 			return rc;
@@ -175,7 +175,7 @@ static int _nvs_flash_cmp_const(struct nvs_fs *fs, u32_t addr, u8_t value,
 	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1);
 	(void)memset(cmp, value, block_size);
 	while (len) {
-		bytes_to_cmp = min(block_size, len);
+		bytes_to_cmp = MIN(block_size, len);
 		rc = _nvs_flash_block_cmp(fs, addr, cmp, bytes_to_cmp);
 		if (rc) {
 			return rc;
@@ -198,7 +198,7 @@ static int _nvs_flash_block_move(struct nvs_fs *fs, u32_t addr, size_t len)
 	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1);
 
 	while (len) {
-		bytes_to_copy = min(block_size, len);
+		bytes_to_copy = MIN(block_size, len);
 		rc = _nvs_flash_rd(fs, addr, buf, bytes_to_copy);
 		if (rc) {
 			return rc;
@@ -910,7 +910,7 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, u16_t id, void *data, size_t len,
 
 	rd_addr &= ADDR_SECT_MASK;
 	rd_addr += wlk_ate.offset;
-	rc = _nvs_flash_rd(fs, rd_addr, data, min(len, wlk_ate.len));
+	rc = _nvs_flash_rd(fs, rd_addr, data, MIN(len, wlk_ate.len));
 	if (rc) {
 		goto err;
 	}

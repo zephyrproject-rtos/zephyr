@@ -86,7 +86,7 @@ static void encode_drops(struct bt_monitor_hdr *hdr, u8_t type,
 	count = atomic_set(val, 0);
 	if (count) {
 		hdr->ext[hdr->hdr_len++] = type;
-		hdr->ext[hdr->hdr_len++] = min(count, 255);
+		hdr->ext[hdr->hdr_len++] = MIN(count, 255);
 	}
 }
 

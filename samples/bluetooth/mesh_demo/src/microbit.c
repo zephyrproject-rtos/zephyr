@@ -170,7 +170,7 @@ void board_heartbeat(u8_t hops, u16_t feat)
 	printk("%u hops\n", hops);
 
 	if (hops) {
-		hops = min(hops, ARRAY_SIZE(hops_img));
+		hops = MIN(hops, ARRAY_SIZE(hops_img));
 		mb_display_image(disp, MB_DISPLAY_MODE_SINGLE, K_SECONDS(2),
 				 &hops_img[hops - 1], 1);
 	}

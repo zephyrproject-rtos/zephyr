@@ -149,7 +149,7 @@ static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 
 #define PDU_RX_POOL_SIZE (MROUND(offsetof(struct node_rx_pdu, pdu) + \
 				 sizeof(struct node_rx_ftr) + \
-				 max((PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA), \
+				 MAX((PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA), \
 				     (offsetof(struct pdu_data, lldata) + \
 				      PDU_RX_OCTETS_MAX))) * RX_CNT)
 

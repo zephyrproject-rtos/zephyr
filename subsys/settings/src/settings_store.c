@@ -81,7 +81,7 @@ static int settings_cmp(char const *val, size_t val_len, void *val_read_cb_ctx,
 	off_t off = 0;
 
 	for (rem = val_len; rem > 0; rem -= len_read) {
-		len_read = exp_len = min(sizeof(buf), rem);
+		len_read = exp_len = MIN(sizeof(buf), rem);
 		rc = settings_line_val_read(val_off, off, buf, len_read,
 			   &len_read, val_read_cb_ctx);
 		if (rc) {

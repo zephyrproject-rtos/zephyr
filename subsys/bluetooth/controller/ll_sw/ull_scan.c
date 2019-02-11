@@ -191,7 +191,7 @@ u8_t ull_scan_enable(struct ll_scan_set *scan)
 		lll->ticks_window = 0;
 	}
 
-	ticks_slot_offset = max(scan->evt.ticks_active_to_start,
+	ticks_slot_offset = MAX(scan->evt.ticks_active_to_start,
 				scan->evt.ticks_xtal_to_start);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {

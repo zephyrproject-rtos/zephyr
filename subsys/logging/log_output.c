@@ -614,7 +614,7 @@ void log_output_dropped_process(const struct log_output *log_output, u32_t cnt)
 	log_output_func_t outf = log_output->func;
 	struct device *dev = (struct device *)log_output->control_block->ctx;
 
-	cnt = min(cnt, 9999);
+	cnt = MIN(cnt, 9999);
 	len = snprintf(buf, sizeof(buf), "%d", cnt);
 
 	buffer_write(outf, (u8_t *)prefix, sizeof(prefix) - 1, dev);

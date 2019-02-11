@@ -947,7 +947,7 @@ static int update_descriptive_block(struct coap_block_context *ctx,
 		ctx->total_size = size;
 	}
 	ctx->current = new_current;
-	ctx->block_size = min(GET_BLOCK_SIZE(block), ctx->block_size);
+	ctx->block_size = MIN(GET_BLOCK_SIZE(block), ctx->block_size);
 
 	return 0;
 }
@@ -993,7 +993,7 @@ static int update_control_block2(struct coap_block_context *ctx,
 	}
 
 	ctx->current = new_current;
-	ctx->block_size = min(GET_BLOCK_SIZE(block), ctx->block_size);
+	ctx->block_size = MIN(GET_BLOCK_SIZE(block), ctx->block_size);
 
 	return 0;
 }

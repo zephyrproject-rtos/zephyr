@@ -303,7 +303,7 @@ static void usb_handle_control_transfer(u8_t ep,
 		}
 
 		/* Send smallest of requested and offered length */
-		usb_dev.data_buf_residue = min(usb_dev.data_buf_len, length);
+		usb_dev.data_buf_residue = MIN(usb_dev.data_buf_len, length);
 		/* Send first part (possibly a zero-length status message) */
 		usb_data_to_host();
 	} else if (ep == USB_CONTROL_OUT_EP0) {

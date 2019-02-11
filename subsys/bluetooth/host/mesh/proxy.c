@@ -1170,8 +1170,8 @@ static s32_t gatt_proxy_advertise(struct bt_mesh_subnet *sub)
 		 * 6 slices, but make sure that a slice is at least one
 		 * second long (to avoid excessive rotation).
 		 */
-		max_timeout = NODE_ID_TIMEOUT / max(subnet_count, 6);
-		max_timeout = max(max_timeout, K_SECONDS(1));
+		max_timeout = NODE_ID_TIMEOUT / MAX(subnet_count, 6);
+		max_timeout = MAX(max_timeout, K_SECONDS(1));
 
 		if (remaining > max_timeout || remaining < 0) {
 			remaining = max_timeout;

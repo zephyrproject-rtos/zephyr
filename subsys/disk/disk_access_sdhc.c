@@ -567,7 +567,7 @@ static int sdhc_rx_block(struct sdhc_data *data, u8_t *buf, int len)
 
 	/* Read the data in batches */
 	for (i = 0; i < len; i += sizeof(sdhc_ones)) {
-		int remain = min(sizeof(sdhc_ones), len - i);
+		int remain = MIN(sizeof(sdhc_ones), len - i);
 
 		struct spi_buf tx_bufs[] = {
 			{

@@ -1168,7 +1168,7 @@ static inline u32_t isr_rx_adv(u8_t devmatch_ok, u8_t devmatch_id,
 			HAL_TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US);
 		conn->hdr.ticks_preempt_to_start =
 			HAL_TICKER_US_TO_TICKS(RADIO_TICKER_PREEMPT_PART_MIN_US);
-		ticks_slot_offset = max(conn->hdr.ticks_active_to_start,
+		ticks_slot_offset = MAX(conn->hdr.ticks_active_to_start,
 					conn->hdr.ticks_xtal_to_start);
 		conn_interval_us -=
 			conn->slave.window_widening_periodic_us;
@@ -1662,7 +1662,7 @@ static inline u32_t isr_rx_scan(u8_t devmatch_ok, u8_t devmatch_id,
 		conn->hdr.ticks_preempt_to_start = HAL_TICKER_US_TO_TICKS(
 			RADIO_TICKER_PREEMPT_PART_MIN_US);
 		conn->hdr.ticks_slot = _radio.scanner.ticks_conn_slot;
-		ticks_slot_offset = max(conn->hdr.ticks_active_to_start,
+		ticks_slot_offset = MAX(conn->hdr.ticks_active_to_start,
 					conn->hdr.ticks_xtal_to_start);
 
 		/* Stop Scanner */
@@ -2296,7 +2296,7 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		 * peer max_rx_octets
 		 */
 		if (lr->max_rx_octets >= PDU_DC_PAYLOAD_SIZE_MIN) {
-			eff_tx_octets = min(lr->max_rx_octets,
+			eff_tx_octets = MIN(lr->max_rx_octets,
 					    _radio.conn_curr->default_tx_octets);
 		}
 
@@ -2304,7 +2304,7 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		 * peer max_tx_octets
 		 */
 		if (lr->max_tx_octets >= PDU_DC_PAYLOAD_SIZE_MIN) {
-			eff_rx_octets = min(lr->max_tx_octets,
+			eff_rx_octets = MIN(lr->max_tx_octets,
 					    LL_LENGTH_OCTETS_RX_MAX);
 		}
 
@@ -2315,11 +2315,11 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		if (lr->max_rx_time >=
 		    RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
 			eff_tx_time =
-				min(lr->max_rx_time,
+				MIN(lr->max_rx_time,
 				    _radio.conn_curr->default_tx_time);
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 			eff_tx_time =
-				max(eff_tx_time,
+				MAX(eff_tx_time,
 				    RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN,
 						   _radio.conn_curr->phy_tx));
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
@@ -2331,12 +2331,12 @@ static inline u8_t isr_rx_conn_pkt_ctrl_dle(struct pdu_data *pdu_data_rx,
 		if (lr->max_tx_time >=
 		    RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN, 0)) {
 			eff_rx_time =
-				min(lr->max_tx_time,
+				MIN(lr->max_tx_time,
 				    RADIO_PKT_TIME(LL_LENGTH_OCTETS_RX_MAX,
 						   BIT(2)));
 #if defined(CONFIG_BT_CTLR_PHY_CODED)
 			eff_rx_time =
-				max(eff_rx_time,
+				MAX(eff_rx_time,
 				    RADIO_PKT_TIME(PDU_DC_PAYLOAD_SIZE_MIN,
 						   _radio.conn_curr->phy_rx));
 #endif /* CONFIG_BT_CTLR_PHY_CODED */
@@ -5031,7 +5031,7 @@ static void prepare_normal_set(struct shdr *hdr, u8_t ticker_user_id,
 	if (hdr->ticks_xtal_to_start & XON_BITMASK) {
 		u32_t ticker_status;
 		u32_t ticks_prepare_to_start =
-			max(hdr->ticks_active_to_start,
+			MAX(hdr->ticks_active_to_start,
 			    hdr->ticks_preempt_to_start);
 		u32_t ticks_drift_minus = (hdr->ticks_xtal_to_start &
 					   ~XON_BITMASK) -
@@ -5154,10 +5154,10 @@ static void mayfly_xtal_stop_calc(void *params)
 
 	/* Compensate for current ticker in reduced prepare */
 	if (hdr_curr->ticks_xtal_to_start & XON_BITMASK) {
-		ticks_slot_abs = max(hdr_curr->ticks_active_to_start,
+		ticks_slot_abs = MAX(hdr_curr->ticks_active_to_start,
 				     hdr_curr->ticks_preempt_to_start);
 	} else {
-		ticks_slot_abs = max(hdr_curr->ticks_active_to_start,
+		ticks_slot_abs = MAX(hdr_curr->ticks_active_to_start,
 				     hdr_curr->ticks_xtal_to_start);
 	}
 	ticks_slot_abs += hdr_curr->ticks_slot;
@@ -5167,7 +5167,7 @@ static void mayfly_xtal_stop_calc(void *params)
 	LL_ASSERT(hdr_next);
 
 	ticks_prepare_to_start_next =
-		max(hdr_next->ticks_active_to_start,
+		MAX(hdr_next->ticks_active_to_start,
 		    hdr_next->ticks_preempt_to_start);
 
 	/* Compensate for next ticker in reduced prepare */
@@ -5322,7 +5322,7 @@ static void sched_after_mstr_free_slot_get(u8_t user_id,
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 			if (conn->hdr.ticks_xtal_to_start & XON_BITMASK) {
 				u32_t ticks_prepare_to_start =
-					max(conn->hdr.ticks_active_to_start,
+					MAX(conn->hdr.ticks_active_to_start,
 					    conn->hdr.ticks_preempt_to_start);
 
 				ticks_slot_abs_curr =
@@ -5335,7 +5335,7 @@ static void sched_after_mstr_free_slot_get(u8_t user_id,
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 			{
 				u32_t ticks_prepare_to_start =
-					max(conn->hdr.ticks_active_to_start,
+					MAX(conn->hdr.ticks_active_to_start,
 					    conn->hdr.ticks_xtal_to_start);
 
 				ticks_slot_abs_curr = ticks_prepare_to_start;
@@ -5448,7 +5448,7 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 	if (conn_curr->hdr.ticks_xtal_to_start & XON_BITMASK) {
 		u32_t ticks_prepare_to_start =
-			max(conn_curr->hdr.ticks_active_to_start,
+			MAX(conn_curr->hdr.ticks_active_to_start,
 			    conn_curr->hdr.ticks_preempt_to_start);
 
 		ticks_slot_abs = conn_curr->hdr.ticks_xtal_to_start &
@@ -5458,7 +5458,7 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 	{
 		u32_t ticks_prepare_to_start =
-			max(conn_curr->hdr.ticks_active_to_start,
+			MAX(conn_curr->hdr.ticks_active_to_start,
 			    conn_curr->hdr.ticks_xtal_to_start);
 
 		ticks_slot_abs = ticks_prepare_to_start;
@@ -5537,7 +5537,7 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 			if (conn->hdr.ticks_xtal_to_start & XON_BITMASK) {
 				u32_t ticks_prepare_to_start =
-					max(conn->hdr.ticks_active_to_start,
+					MAX(conn->hdr.ticks_active_to_start,
 					    conn->hdr.ticks_preempt_to_start);
 
 				ticks_slot_abs_curr =
@@ -5550,7 +5550,7 @@ static void sched_free_win_offset_calc(struct connection *conn_curr,
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 			{
 				u32_t ticks_prepare_to_start =
-					max(conn->hdr.ticks_active_to_start,
+					MAX(conn->hdr.ticks_active_to_start,
 					    conn->hdr.ticks_xtal_to_start);
 
 				ticks_slot_abs_curr = ticks_prepare_to_start;
@@ -5807,7 +5807,7 @@ static void event_common_prepare(u32_t ticks_at_expire,
 	 * active to start duration.
 	 */
 	if (_ticks_xtal_to_start & XON_BITMASK) {
-		_ticks_xtal_to_start = max(_ticks_active_to_start,
+		_ticks_xtal_to_start = MAX(_ticks_active_to_start,
 					   ticks_preempt_to_start);
 	}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
@@ -5912,7 +5912,7 @@ static void event_common_prepare(u32_t ticks_at_expire,
 		}
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
-		ticks_to_start_new = max(_radio.ticks_active_to_start,
+		ticks_to_start_new = MAX(_radio.ticks_active_to_start,
 					 *ticks_xtal_to_start);
 
 		/* drift the primary as required due to active line change */
@@ -6754,7 +6754,7 @@ static void event_scan_prepare(u32_t ticks_at_expire, u32_t remainder,
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 		if (_radio.scanner.hdr.ticks_xtal_to_start & XON_BITMASK) {
 			u32_t ticks_prepare_to_start =
-				max(_radio.scanner.hdr.ticks_active_to_start,
+				MAX(_radio.scanner.hdr.ticks_active_to_start,
 				    _radio.scanner.hdr.ticks_preempt_to_start);
 
 			ticks_at_expire_normal -=
@@ -6944,7 +6944,7 @@ static inline void event_conn_upd_init(struct connection *conn,
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 		if (conn->hdr.ticks_xtal_to_start & XON_BITMASK) {
 			u32_t ticks_prepare_to_start =
-				max(conn->hdr.ticks_active_to_start,
+				MAX(conn->hdr.ticks_active_to_start,
 				    conn->hdr.ticks_preempt_to_start);
 
 			conn->llcp.conn_upd.ticks_anchor -=
@@ -7103,7 +7103,7 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 		/* restore to normal prepare */
 		if (conn->hdr.ticks_xtal_to_start & XON_BITMASK) {
 			u32_t ticks_prepare_to_start =
-				max(conn->hdr.ticks_active_to_start,
+				MAX(conn->hdr.ticks_active_to_start,
 				    conn->hdr.ticks_preempt_to_start);
 
 			conn->hdr.ticks_xtal_to_start &= ~XON_BITMASK;
@@ -7128,7 +7128,7 @@ static inline u32_t event_conn_upd_prep(struct connection *conn,
 		conn->latency_prepare -= (instant_latency - latency);
 
 		/* calculate the offset, window widening and interval */
-		ticks_slot_offset = max(conn->hdr.ticks_active_to_start,
+		ticks_slot_offset = MAX(conn->hdr.ticks_active_to_start,
 					conn->hdr.ticks_xtal_to_start);
 		conn_interval_us = conn->llcp.conn_upd.interval * 1250;
 		periodic_us = conn_interval_us;
@@ -7683,7 +7683,7 @@ static inline void event_conn_param_req(struct connection *conn,
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 		if (conn->hdr.ticks_xtal_to_start & XON_BITMASK) {
 			u32_t ticks_prepare_to_start =
-				max(conn->hdr.ticks_active_to_start,
+				MAX(conn->hdr.ticks_active_to_start,
 				    conn->hdr.ticks_preempt_to_start);
 
 			conn->llcp_conn_param.ticks_ref -=
@@ -10685,7 +10685,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 	_radio.advertiser.hdr.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
 
 	ticks_slot_offset =
-		max(_radio.advertiser.hdr.ticks_active_to_start,
+		MAX(_radio.advertiser.hdr.ticks_active_to_start,
 		    _radio.advertiser.hdr.ticks_xtal_to_start);
 
 #if !defined(CONFIG_BT_HCI_MESH_EXT)
@@ -10888,7 +10888,7 @@ u32_t radio_scan_enable(u8_t type, u8_t init_addr_type, u8_t *init_addr,
 			 HAL_TICKER_US_TO_TICKS(RADIO_TICKER_XTAL_OFFSET_US));
 	}
 
-	ticks_slot_offset = max(_radio.scanner.hdr.ticks_active_to_start,
+	ticks_slot_offset = MAX(_radio.scanner.hdr.ticks_active_to_start,
 				_radio.scanner.hdr.ticks_xtal_to_start);
 
 	ticks_anchor = ticker_ticks_now_get();

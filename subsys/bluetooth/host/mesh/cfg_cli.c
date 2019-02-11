@@ -55,7 +55,7 @@ static void comp_data_status(struct bt_mesh_model *model,
 	param = cli->op_param;
 
 	*(param->status) = net_buf_simple_pull_u8(buf);
-	to_copy  = min(net_buf_simple_tailroom(param->comp), buf->len);
+	to_copy  = MIN(net_buf_simple_tailroom(param->comp), buf->len);
 	net_buf_simple_add_mem(param->comp, buf->data, to_copy);
 
 	k_sem_give(&cli->op_sync);

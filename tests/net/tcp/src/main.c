@@ -1530,7 +1530,7 @@ static inline u32_t get_recv_wnd(struct net_tcp *tcp)
 	 * size is always the same.  There are two configurables to
 	 * check though.
 	 */
-	return min(NET_TCP_MAX_WIN, NET_TCP_BUF_MAX_LEN);
+	return MIN(NET_TCP_MAX_WIN, NET_TCP_BUF_MAX_LEN);
 }
 
 static bool test_tcp_seq_validity(void)

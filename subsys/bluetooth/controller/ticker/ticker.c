@@ -1040,7 +1040,7 @@ static inline void ticker_job_compare_update(struct ticker_instance *instance,
 		ticks_elapsed = ticker_ticks_diff_get(ctr, cc) +
 				HAL_TICKER_CNTR_CMP_OFFSET_MIN +
 				HAL_TICKER_CNTR_SET_LATENCY;
-		cc += max(ticks_elapsed, ticks_to_expire);
+		cc += MAX(ticks_elapsed, ticks_to_expire);
 		cc &= HAL_TICKER_CNTR_MASK;
 
 		instance->trigger_set_cb(cc);

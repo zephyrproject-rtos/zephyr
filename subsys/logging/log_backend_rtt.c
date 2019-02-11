@@ -110,7 +110,7 @@ static int line_out_drop_mode(void)
 	}
 
 	if (drop_warn) {
-		int cnt = min(drop_cnt, DROP_MAX);
+		int cnt = MIN(drop_cnt, DROP_MAX);
 
 		if (cnt < 10) {
 			line_buf[DROP_MSG_LEN - 2] = ' ';

@@ -121,7 +121,7 @@ zephyr_log_mgmt_walk_cb(struct mdlog *log, struct mdlog_offset *log_offset,
         return 0;
     }
 
-    read_len = min(len - sizeof ueh, LOG_MGMT_BODY_LEN - sizeof ueh);
+    read_len = MIN(len - sizeof ueh, LOG_MGMT_BODY_LEN - sizeof ueh);
     rc = mdlog_read(log, desciptor, zephyr_log_mgmt_walk_arg->body, sizeof ueh,
                     read_len);
     if (rc < 0) {

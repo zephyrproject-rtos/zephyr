@@ -99,7 +99,7 @@ int pipeget(struct k_pipe *pipe, enum pipe_options option, int size, int count,
 	t = BENCH_START();
 	for (i = 0; option == _1_TO_N || (i < count); i++) {
 		size_t sizexferd = 0;
-		size_t size2xfer = min(size, size2xfer_total - sizexferd_total);
+		size_t size2xfer = MIN(size, size2xfer_total - sizexferd_total);
 		int ret;
 
 		ret = k_pipe_get(pipe, data_recv, size2xfer,

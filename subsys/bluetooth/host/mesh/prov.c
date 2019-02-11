@@ -408,7 +408,7 @@ static int prov_send_adv(struct net_buf_simple *msg)
 
 	link.tx.buf[0] = start;
 
-	seg_len = min(msg->len, START_PAYLOAD_MAX);
+	seg_len = MIN(msg->len, START_PAYLOAD_MAX);
 	BT_DBG("seg 0 len %u: %s", seg_len, bt_hex(msg->data, seg_len));
 	net_buf_add_mem(start, msg->data, seg_len);
 	net_buf_simple_pull(msg, seg_len);
@@ -429,7 +429,7 @@ static int prov_send_adv(struct net_buf_simple *msg)
 
 		link.tx.buf[seg_id] = buf;
 
-		seg_len = min(msg->len, CONT_PAYLOAD_MAX);
+		seg_len = MIN(msg->len, CONT_PAYLOAD_MAX);
 
 		BT_DBG("seg_id %u len %u: %s", seg_id, seg_len,
 		       bt_hex(msg->data, seg_len));

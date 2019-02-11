@@ -68,7 +68,7 @@ extern "C" {
 	#define STACK_GUARD_SIZE 0
 #endif /* CONFIG_MPU_STACK_GUARD */
 
-#define STACK_SIZE_ALIGN(x)	max(STACK_ALIGN, x)
+#define STACK_SIZE_ALIGN(x)	MAX(STACK_ALIGN, x)
 
 
 /**
@@ -91,7 +91,7 @@ extern "C" {
 
 #define _ARCH_THREAD_STACK_LEN(size) \
 	    (POW2_CEIL(STACK_SIZE_ALIGN(size)) + \
-	     max(POW2_CEIL(STACK_SIZE_ALIGN(size)), \
+	     MAX(POW2_CEIL(STACK_SIZE_ALIGN(size)), \
 		 POW2_CEIL(STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE)))
 
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \

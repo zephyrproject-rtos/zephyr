@@ -209,7 +209,7 @@ int pipeput(struct k_pipe *pipe,
 	t = BENCH_START();
 	for (i = 0; option == _1_TO_N || (i < count); i++) {
 		size_t sizexferd = 0;
-		size_t size2xfer = min(size, size2xfer_total - sizexferd_total);
+		size_t size2xfer = MIN(size, size2xfer_total - sizexferd_total);
 		int ret;
 		size_t mim_num_of_bytes = 0;
 

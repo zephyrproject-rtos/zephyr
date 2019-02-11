@@ -114,11 +114,11 @@ u32_t ring_buf_put_claim(struct ring_buf *buf, u8_t **data, u32_t size)
 					    buf->misc.byte_mode.tmp_tail);
 
 	/* Limit requested size to available size. */
-	size = min(size, space);
+	size = MIN(size, space);
 	trail_size = buf->size - buf->misc.byte_mode.tmp_tail;
 
 	/* Limit allocated size to trail size. */
-	allocated = min(trail_size, size);
+	allocated = MIN(trail_size, size);
 
 	*data = &buf->buf.buf8[buf->misc.byte_mode.tmp_tail];
 	buf->misc.byte_mode.tmp_tail =
@@ -169,10 +169,10 @@ u32_t ring_buf_get_claim(struct ring_buf *buf, u8_t **data, u32_t size)
 	trail_size = buf->size - buf->misc.byte_mode.tmp_head;
 
 	/* Limit requested size to available size. */
-	granted_size = min(size, space);
+	granted_size = MIN(size, space);
 
 	/* Limit allocated size to trail size. */
-	granted_size = min(trail_size, granted_size);
+	granted_size = MIN(trail_size, granted_size);
 
 	*data = &buf->buf.buf8[buf->misc.byte_mode.tmp_head];
 	buf->misc.byte_mode.tmp_head =

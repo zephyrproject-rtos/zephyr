@@ -95,7 +95,7 @@ static int spi_sam0_configure(struct device *dev,
 
 	/* Use the requested or next higest possible frequency */
 	div = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / config->frequency) / 2 - 1;
-	div = max(0, min(UINT8_MAX, div));
+	div = MAX(0, MIN(UINT8_MAX, div));
 
 	/* Update the configuration only if it has changed */
 	if (regs->CTRLA.reg != ctrla.reg || regs->CTRLB.reg != ctrlb.reg ||

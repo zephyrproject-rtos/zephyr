@@ -797,7 +797,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 	 * previously stored in the buffer.
 	 */
 	if (data) {
-		read_count = min(read_count, max_data_len);
+		read_count = MIN(read_count, max_data_len);
 		memcpy(data, usb_dc_stm32_state.ep_buf[EP_IDX(ep)] +
 		       ep_state->read_offset, read_count);
 		ep_state->read_count -= read_count;

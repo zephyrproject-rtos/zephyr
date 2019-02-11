@@ -109,7 +109,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	}
 
 	ticks = ticks == K_FOREVER ? max_ticks : ticks;
-	ticks = max(min(ticks - 1, (s32_t)max_ticks), 0);
+	ticks = MAX(MIN(ticks - 1, (s32_t)max_ticks), 0);
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t now = MAIN_COUNTER_REG, cyc;
