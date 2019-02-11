@@ -184,6 +184,24 @@ u32_t soc_get_ref_clk_freq(void)
 	return ref_clk_freq;
 }
 
+static inline void soc_set_audio_mclk(void)
+{
+#if (CONFIG_AUDIO)
+	int mclk;
+	volatile struct soc_mclk_control_regs *mclk_regs =
+		(volatile struct soc_mclk_control_regs *)SOC_MCLK_DIV_CTRL_BASE;
+
+	for (mclk = 0; mclk < SOC_NUM_MCLK_OUTPUTS; mclk++) {
+		/*
+		 * set divider to bypass mode which makes MCLK output frequency
+		 * to be the same as referece clock frequency
+		 */
+		mclk_regs->mdivxr[mclk] = SOC_MDIVXR_SET_DIVIDER_BYPASS;
+		mclk_regs->mdivctrl |= SOC_MDIVCTRL_MCLK_OUT_EN(mclk);
+	}
+#endif
+}
+
 static inline void soc_set_dmic_power(void)
 {
 #if (CONFIG_AUDIO_INTEL_DMIC)
@@ -228,6 +246,7 @@ static inline void soc_set_power_and_clock(void)
 
 	soc_set_dmic_power();
 	soc_set_gna_power();
+	soc_set_audio_mclk();
 }
 
 static inline void soc_read_bootstraps(void)
