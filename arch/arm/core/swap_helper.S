@@ -233,7 +233,6 @@ _thread_irq_disabled:
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
-    stm sp!,{r0-r3} /* Save regs r0 to r3 on stack */
     push {r0, lr}
     bl read_timer_end_of_swap
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -242,7 +241,6 @@ _thread_irq_disabled:
 #else
     pop {r0, lr}
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-    ldm sp!,{r0-r3} /* Load back regs r0 to r3 */
 
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 
