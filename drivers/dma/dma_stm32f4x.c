@@ -26,8 +26,6 @@ LOG_MODULE_REGISTER(dma_stm32f4x);
 #define DMA_STM32_1		0	/* First  DMA controller */
 #define DMA_STM32_2		1	/* Second DMA controller */
 
-#define DMA_STM32_IRQ_PRI	CONFIG_DMA_0_IRQ_PRI
-
 struct dma_stm32_stream_reg {
 	/* Shared registers */
 	u32_t lisr;
@@ -64,6 +62,7 @@ static struct dma_stm32_device {
 struct dma_stm32_config {
 	struct stm32_pclken pclken;
 	void (*config)(struct dma_stm32_device *);
+	u32_t irqn[DMA_STM32_MAX_STREAMS];
 };
 
 /* DMA burst length */
@@ -420,6 +419,7 @@ static int dma_stm32_start(struct device *dev, u32_t id)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
 	struct dma_stm32_stream_reg *regs = &ddata->stream[id].regs;
+	const struct dma_stm32_config *cdata = dev->config->config_info;
 	u32_t irqstatus;
 	int ret;
 
@@ -448,6 +448,7 @@ static int dma_stm32_start(struct device *dev, u32_t id)
 	dma_stm32_dump_reg(ddata, id);
 
 	/* Push the start button */
+	irq_enable(cdata->irqn[id]);
 	dma_stm32_write(ddata, DMA_STM32_SCR(id),
 			regs->scr | DMA_STM32_SCR_EN);
 
@@ -458,6 +459,8 @@ static int dma_stm32_stop(struct device *dev, u32_t id)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
 	struct dma_stm32_stream *stream = &ddata->stream[id];
+	const struct dma_stm32_config *cdata = dev->config->config_info;
+
 	u32_t scr, sfcr, irqstatus;
 	int ret;
 
@@ -478,6 +481,8 @@ static int dma_stm32_stop(struct device *dev, u32_t id)
 	ret = dma_stm32_disable_stream(ddata, id);
 	if (ret)
 		return ret;
+
+	irq_disable(cdata->irqn[id]);
 
 	/* Clear remanent IRQs from previous transfers */
 	irqstatus = dma_stm32_irq_status(ddata, id);
@@ -529,6 +534,10 @@ const struct dma_stm32_config dma_stm32_1_cdata = {
 	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
 		    .enr = LL_AHB1_GRP1_PERIPH_DMA1 },
 	.config = dma_stm32_1_config,
+	.irqn = { DMA1_Stream0_IRQn, DMA1_Stream1_IRQn,
+			  DMA1_Stream2_IRQn, DMA1_Stream3_IRQn,
+			  DMA1_Stream4_IRQn, DMA1_Stream5_IRQn,
+			  DMA1_Stream6_IRQn, DMA1_Stream7_IRQn }
 };
 
 DEVICE_AND_API_INIT(dma_stm32_1, CONFIG_DMA_1_NAME, &dma_stm32_init,
@@ -540,6 +549,10 @@ static const struct dma_stm32_config dma_stm32_2_cdata = {
 	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
 		    .enr = LL_AHB1_GRP1_PERIPH_DMA2 },
 	.config = dma_stm32_2_config,
+	.irqn = { DMA2_Stream0_IRQn, DMA2_Stream1_IRQn,
+			  DMA2_Stream2_IRQn, DMA2_Stream3_IRQn,
+			  DMA2_Stream4_IRQn, DMA2_Stream5_IRQn,
+			  DMA2_Stream6_IRQn, DMA2_Stream7_IRQn }
 };
 
 DEVICE_AND_API_INIT(dma_stm32_2, CONFIG_DMA_2_NAME, &dma_stm32_init,
@@ -561,37 +574,29 @@ static void dma_stm32_1_config(struct dma_stm32_device *ddata)
 	ddata->base = DMA_STM32_1_BASE;
 	ddata->mem2mem = false;
 
-	IRQ_CONNECT(DMA1_Stream0_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA1_Stream0_IRQn, CONFIG_DMA_1_IRQ_PRI,
 		    dma_stm32_irq_0, DEVICE_GET(dma_stm32_1), 0);
-	irq_enable(DMA1_Stream0_IRQn);
 
-	IRQ_CONNECT(DMA1_Stream1_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA1_Stream1_IRQn, CONFIG_DMA_1_IRQ_PRI,
 		    dma_stm32_irq_1, DEVICE_GET(dma_stm32_1), 0);
-	irq_enable(DMA1_Stream1_IRQn);
 
-	IRQ_CONNECT(DMA1_Stream2_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA1_Stream2_IRQn, CONFIG_DMA_1_IRQ_PRI,
 		    dma_stm32_irq_2, DEVICE_GET(dma_stm32_1), 0);
-	irq_enable(DMA1_Stream2_IRQn);
 
-	IRQ_CONNECT(DMA1_Stream3_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA1_Stream3_IRQn, CONFIG_DMA_1_IRQ_PRI,
 		    dma_stm32_irq_3, DEVICE_GET(dma_stm32_1), 0);
-	irq_enable(DMA1_Stream3_IRQn);
 
-	IRQ_CONNECT(DMA1_Stream4_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA1_Stream4_IRQn, CONFIG_DMA_1_IRQ_PRI,
 		    dma_stm32_irq_4, DEVICE_GET(dma_stm32_1), 0);
-	irq_enable(DMA1_Stream4_IRQn);
 
-	IRQ_CONNECT(DMA1_Stream5_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA1_Stream5_IRQn, CONFIG_DMA_1_IRQ_PRI,
 		    dma_stm32_irq_5, DEVICE_GET(dma_stm32_1), 0);
-	irq_enable(DMA1_Stream5_IRQn);
 
-	IRQ_CONNECT(DMA1_Stream6_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA1_Stream6_IRQn, CONFIG_DMA_1_IRQ_PRI,
 		    dma_stm32_irq_6, DEVICE_GET(dma_stm32_1), 0);
-	irq_enable(DMA1_Stream6_IRQn);
 
-	IRQ_CONNECT(DMA1_Stream7_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA1_Stream7_IRQn, CONFIG_DMA_1_IRQ_PRI,
 		    dma_stm32_irq_7, DEVICE_GET(dma_stm32_1), 0);
-	irq_enable(DMA1_Stream7_IRQn);
 }
 
 static void dma_stm32_2_config(struct dma_stm32_device *ddata)
@@ -599,35 +604,27 @@ static void dma_stm32_2_config(struct dma_stm32_device *ddata)
 	ddata->base = DMA_STM32_2_BASE;
 	ddata->mem2mem = true;
 
-	IRQ_CONNECT(DMA2_Stream0_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA2_Stream0_IRQn, CONFIG_DMA_2_IRQ_PRI,
 		    dma_stm32_irq_0, DEVICE_GET(dma_stm32_2), 0);
-	irq_enable(DMA2_Stream0_IRQn);
 
-	IRQ_CONNECT(DMA2_Stream1_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA2_Stream1_IRQn, CONFIG_DMA_2_IRQ_PRI,
 		    dma_stm32_irq_1, DEVICE_GET(dma_stm32_2), 0);
-	irq_enable(DMA2_Stream1_IRQn);
 
-	IRQ_CONNECT(DMA2_Stream2_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA2_Stream2_IRQn, CONFIG_DMA_2_IRQ_PRI,
 		    dma_stm32_irq_2, DEVICE_GET(dma_stm32_2), 0);
-	irq_enable(DMA2_Stream2_IRQn);
 
-	IRQ_CONNECT(DMA2_Stream3_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA2_Stream3_IRQn, CONFIG_DMA_2_IRQ_PRI,
 		    dma_stm32_irq_3, DEVICE_GET(dma_stm32_2), 0);
-	irq_enable(DMA2_Stream3_IRQn);
 
-	IRQ_CONNECT(DMA2_Stream4_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA2_Stream4_IRQn, CONFIG_DMA_2_IRQ_PRI,
 		    dma_stm32_irq_4, DEVICE_GET(dma_stm32_2), 0);
-	irq_enable(DMA2_Stream4_IRQn);
 
-	IRQ_CONNECT(DMA2_Stream5_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA2_Stream5_IRQn, CONFIG_DMA_2_IRQ_PRI,
 		    dma_stm32_irq_5, DEVICE_GET(dma_stm32_2), 0);
-	irq_enable(DMA2_Stream5_IRQn);
 
-	IRQ_CONNECT(DMA2_Stream6_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA2_Stream6_IRQn, CONFIG_DMA_2_IRQ_PRI,
 		    dma_stm32_irq_6, DEVICE_GET(dma_stm32_2), 0);
-	irq_enable(DMA2_Stream6_IRQn);
 
-	IRQ_CONNECT(DMA2_Stream7_IRQn, DMA_STM32_IRQ_PRI,
+	IRQ_CONNECT(DMA2_Stream7_IRQn, CONFIG_DMA_2_IRQ_PRI,
 		    dma_stm32_irq_7, DEVICE_GET(dma_stm32_2), 0);
-	irq_enable(DMA2_Stream7_IRQn);
 }
