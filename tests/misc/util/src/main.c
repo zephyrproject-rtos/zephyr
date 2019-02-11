@@ -59,9 +59,9 @@ void test_COND_CODE_0(void)
 /*test case main entry*/
 void test_main(void)
 {
-	ztest_test_suite(test_ringbuffer_api,
+	ztest_test_suite(test_util_api,
 			 ztest_unit_test(test_COND_CODE_1),
 			 ztest_unit_test(test_COND_CODE_0)
 			 );
-	ztest_run_test_suite(test_ringbuffer_api);
+	ztest_run_test_suite(test_util_api);
 }
