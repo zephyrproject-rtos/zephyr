@@ -256,25 +256,19 @@ static size_t ecm_eth_size(void *ecm_pkt, size_t len)
 
 static int ecm_send(struct net_pkt *pkt)
 {
-	struct net_buf *frag;
-	int b_idx = 0, ret;
+	size_t len = net_pkt_get_len(pkt);
+	int ret;
 
 	net_pkt_hexdump(pkt, "<");
 
-	if (!pkt->frags) {
-		return -ENODATA;
-	}
-
-	/* copy payload */
-	for (frag = pkt->frags; frag; frag = frag->frags) {
-		memcpy(&tx_buf[b_idx], frag->data, frag->len);
-		b_idx += frag->len;
+	if (net_pkt_read_new(pkt, tx_buf, len)) {
+		return -ENOBUFS;
 	}
 
 	/* transfer data to host */
 	ret = usb_transfer_sync(ecm_ep_data[ECM_IN_EP_IDX].ep_addr,
-				tx_buf, b_idx, USB_TRANS_WRITE);
-	if (ret != b_idx) {
+				tx_buf, len, USB_TRANS_WRITE);
+	if (ret != len) {
 		LOG_ERR("Transfer failure");
 		return -EINVAL;
 	}
@@ -285,7 +279,6 @@ static int ecm_send(struct net_pkt *pkt)
 static void ecm_read_cb(u8_t ep, int size, void *priv)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 
 	if (size <= 0) {
 		goto done;
@@ -303,23 +296,15 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 		}
 	}
 
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(netusb_net_iface(), size,
+					AF_UNSPEC, 0, K_FOREVER);
 	if (!pkt) {
 		LOG_ERR("no memory for network packet\n");
 		goto done;
 	}
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-	if (!frag) {
-		LOG_ERR("no memory for network packet\n");
-		net_pkt_unref(pkt);
-		goto done;
-	}
-
-	net_pkt_frag_insert(pkt, frag);
-
-	if (!net_pkt_append_all(pkt, size, rx_buf, K_FOREVER)) {
-		LOG_ERR("no memory for network packet\n");
+	if (net_pkt_write_new(pkt, rx_buf, size)) {
+		LOG_ERR("Unable to write into pkt\n");
 		net_pkt_unref(pkt);
 		goto done;
 	}
