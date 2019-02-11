@@ -1,0 +1,176 @@
+/*
+ * Copyright (c) 2019 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52840_qiaa.dtsi>
+
+/ {
+	model = "Laird BL654 Dev Kit";
+	compatible = "nordic,pca10056-dk", "nordic,nrf52840-qiaa",
+		     "nordic,nrf52840";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led_1 {
+			gpios = <&gpio0 13 GPIO_INT_ACTIVE_HIGH>;
+			label = "Blue LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 14 GPIO_INT_ACTIVE_HIGH>;
+			label = "Blue LED 2";
+		};
+		led3: led_3 {
+			gpios = <&gpio0 15 GPIO_INT_ACTIVE_HIGH>;
+			label = "Blue LED 3";
+		};
+		led4: led_4 {
+			gpios = <&gpio0 16 GPIO_INT_ACTIVE_HIGH>;
+			label = "Blue LED 4";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button1: button_1 {
+			gpios = <&gpio0 11 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 1 (SW1)";
+		};
+		button2: button_2 {
+			gpios = <&gpio0 12 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 2 (SW2)";
+		};
+		button3: button_3 {
+			gpios = <&gpio0 24 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 3 (SW9)";
+		};
+		button4: button_4 {
+			gpios = <&gpio0 25 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 4 (SW10)";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		led2 = &led3;
+		led3 = &led4;
+		sw0 = &button1;
+		sw1 = &button2;
+		sw2 = &button3;
+		sw3 = &button4;
+	};
+};
+
+&adc {
+	status ="ok";
+};
+
+&gpiote {
+	status ="ok";
+};
+
+&gpio0 {
+	status ="ok";
+};
+
+&gpio1 {
+	status ="ok";
+};
+
+&uart0 {
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	status = "ok";
+	tx-pin = <6>;
+	rx-pin = <8>;
+	rts-pin = <5>;
+	cts-pin = <7>;
+};
+
+&i2c0 {
+	status = "ok";
+	sda-pin = <26>;
+	scl-pin = <27>;
+};
+
+&pwm0 {
+	status = "ok";
+	ch0-pin = <13>;
+};
+
+&spi0 {
+	status = "ok";
+	sck-pin = <41>;
+	mosi-pin = <40>;
+	miso-pin = <4>;
+	cs-gpios = <&gpio1 12 0>;
+};
+
+&spi1 {
+	status = "ok";
+	sck-pin = <19>;
+	mosi-pin = <20>;
+	miso-pin = <21>;
+	cs-gpios = <&gpio0 17 0>;
+	mx25r6435f@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <80000000>;
+		label = "MX25R64";
+		jedec-id = <0xc2 0x28 0x17>;
+		size = <67108864>;
+		wp-gpios = <&gpio0 22 0>;
+		hold-gpios = <&gpio0 23 0>;
+	};
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x000000000 0x0000C000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x000069000>;
+		};
+		slot1_partition: partition@75000 {
+			label = "image-1";
+			reg = <0x00075000 0x000069000>;
+		};
+		scratch_partition: partition@de000 {
+			label = "image-scratch";
+			reg = <0x000de000 0x0001e000>;
+		};
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 0x00004000>;
+		};
+	};
+};
+
+&usbd {
+	compatible = "nordic,nrf-usbd";
+	status = "ok";
+};
