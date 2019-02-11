@@ -1,4 +1,6 @@
 tests:
   arch.interrupt:
+    platform_exclude: nucleo_f103rb olimexino_stm32 stm32_min_dev
+        usb_kw24d512 v2m_beetle
     filter: CONFIG_GEN_ISR_TABLES and CONFIG_ARMV7_M_ARMV8_M_MAINLINE
     tags: interrupt isr_table
