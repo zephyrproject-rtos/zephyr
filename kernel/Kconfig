@@ -347,7 +347,7 @@ config EXECUTION_BENCHMARKING
 	  This option enables the tracking of various times inside the kernel
 	  the exact set of metrics being tracked is board-dependent.
 	  All timing measurements are enabled for X86 and ARM based architectures.
-	  In other architectures only a subset are enabled.
+	  In other architectures only a subset is enabled.
 
 config THREAD_MONITOR
 	bool "Thread monitoring [EXPERIMENTAL]"
