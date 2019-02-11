@@ -27,6 +27,8 @@ LOG_MODULE_REGISTER(usb_ecm);
 #include <class/usb_cdc.h>
 #include "netusb.h"
 
+#define ECM_FRAME_SIZE 1522
+
 #define USB_CDC_ECM_REQ_TYPE		0x21
 #define USB_CDC_SET_ETH_PKT_FILTER	0x43
 
@@ -101,7 +103,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 		.bDescriptorSubtype = ETHERNET_FUNC_DESC,
 		.iMACAddress = 4,
 		.bmEthernetStatistics = sys_cpu_to_le32(0), /* None */
-		.wMaxSegmentSize = sys_cpu_to_le16(NETUSB_MTU),
+		.wMaxSegmentSize = sys_cpu_to_le16(ECM_FRAME_SIZE),
 		.wNumberMCFilters = sys_cpu_to_le16(0), /* None */
 		.bNumberPowerFilters = 0, /* No wake up */
 	},
@@ -191,7 +193,7 @@ static struct usb_ep_cfg_data ecm_ep_data[] = {
 	},
 };
 
-static u8_t tx_buf[NETUSB_MTU], rx_buf[NETUSB_MTU];
+static u8_t tx_buf[ECM_FRAME_SIZE], rx_buf[ECM_FRAME_SIZE];
 
 static int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len,
 			     u8_t **data)
