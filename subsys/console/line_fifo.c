@@ -21,9 +21,6 @@
 #ifdef CONFIG_NATIVE_POSIX_CONSOLE
 #include <drivers/console/native_posix_console.h>
 #endif
-#ifdef CONFIG_WEBSOCKET_CONSOLE
-#include <drivers/console/websocket_console.h>
-#endif
 
 void console_register_line_input(struct k_fifo *avail_queue,
 				 struct k_fifo *out_queue,
@@ -38,8 +35,5 @@ void console_register_line_input(struct k_fifo *avail_queue,
 #endif
 #ifdef CONFIG_NATIVE_POSIX_STDIN_CONSOLE
 	native_stdin_register_input(avail_queue, out_queue, completion);
-#endif
-#ifdef CONFIG_WEBSOCKET_CONSOLE
-	ws_register_input(avail_queue, out_queue, completion);
 #endif
 }
