@@ -273,6 +273,12 @@ static int stm32_clock_control_init(struct device *dev)
 #endif /* CONFIG_CLOCK_STM32_PLL_Q_DIVISOR */
 
 #ifdef CONFIG_CLOCK_STM32_PLL_SRC_MSI
+
+#ifdef CONFIG_CLOCK_STM32_MSI_PLL_MODE
+	/* Enable MSI hardware auto calibration */
+	LL_RCC_MSI_EnablePLLMode();
+#endif
+
 	/* Switch to PLL with MSI as clock source */
 	LL_PLL_ConfigSystemClock_MSI(&s_PLLInitStruct, &s_ClkInitStruct);
 
