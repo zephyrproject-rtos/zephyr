@@ -216,11 +216,9 @@ _thread_irq_disabled:
 
 #ifdef CONFIG_BUILTIN_STACK_GUARD
     /* clear stack pointer limit before setting the PSP */
-    push {r3}
-    mov r3, #0
-    msr PSPLIM, r3
-    pop {r3}
-#endif
+    mov r0, #0
+    msr PSPLIM, r0
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 
     msr PSP, ip
 
