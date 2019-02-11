@@ -15,6 +15,7 @@ User and Developer Guides
    device_mgmt/dfu
    documentation/index
    dts/index
+   gcov.rst
    kconfig/index
    networking/index
    porting/index
