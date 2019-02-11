@@ -2242,6 +2242,21 @@ void net_pkt_append_buffer(struct net_pkt *pkt, struct net_buf *buffer);
 size_t net_pkt_available_buffer(struct net_pkt *pkt);
 
 /**
+ * @brief Get available buffer space for payload from a pkt
+ *
+ * Note: Unlike net_pkt_available_buffer(), this will take into account the
+ *       headers space.
+ *
+ * @param pkt   The net_pkt which payload buffer availability should
+ *              be evaluated
+ * @param proto The IP protocol type (can be 0 for none).
+ *
+ * @return the amount of buffer available for payload
+ */
+size_t net_pkt_available_payload_buffer(struct net_pkt *pkt,
+					enum net_ip_protocol proto);
+
+/**
  * @brief Initialize net_pkt cursor
  *
  * Note: This will inialize the net_pkt cursor from its buffer.
