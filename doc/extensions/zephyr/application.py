@@ -164,10 +164,11 @@ class ZephyrAppCommandsDirective(Directive):
                                                 if v != 'all']
         # Build the command content as a list, then convert to string.
         content = []
+        lit = []
         cd_to = zephyr_app or app
         tool_comment = None
         if len(tools) > 1:
-            tool_comment = '# Using {}'
+            tool_comment = 'Using {}:'
 
         run_config = {
             'host_os': host_os,
@@ -187,26 +188,40 @@ class ZephyrAppCommandsDirective(Directive):
             }
 
         if 'west' in tools:
+            w = self._generate_west(**run_config)
             if tool_comment:
-                c = tool_comment.format('west')
-                content.extend([c, '#' * len(c), ''])
-            content.extend(self._generate_west(**run_config))
-            if tool_comment:
-                content.append('')
+                paragraph = nodes.paragraph()
+                paragraph += nodes.Text(tool_comment.format('west'))
+                content.append(paragraph)
+                content.append(self._lit_block(w))
+            else:
+                content.extend(w)
 
         if 'cmake' in tools:
+            c = self._generate_cmake(**run_config)
             if tool_comment:
-                c = tool_comment.format('CMake and {}'.format( generator))
-                content.extend([c, '#' * len(c), ''])
-            content.extend(self._generate_cmake(**run_config))
+                paragraph = nodes.paragraph()
+                paragraph += nodes.Text(tool_comment.format(
+                                    'CMake and {}'.format( generator)))
+                content.append(paragraph)
+                content.append(self._lit_block(c))
+            else:
+                content.extend(c)
 
+        if not tool_comment:
+            content = [self._lit_block(content)]
+
+        return content
+
+    def _lit_block(self, content):
         content = '\n'.join(content)
 
         # Create the nodes.
         literal = nodes.literal_block(content, content)
         self.add_name(literal)
         literal['language'] = 'console'
-        return [literal]
+        return literal
+
 
     def _generate_west(self, **kwargs):
         content = []
