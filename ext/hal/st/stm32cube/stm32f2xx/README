@@ -48,3 +48,10 @@ Patch List:
      ext/hal/st/stm32cube/stm32f2xx/drivers/src/stm32f2xx_ll_usb.c
     ST Bug Tracker ID: 34714
 
+    *Use of (__packed uint32_t *) produces warning
+      Using GNU 8.2.0, (__packed uint32_t *) generates warning.
+      Replace with CMSIS macros __UNALIGNED_UINT32_READ and
+      __UNALIGNED_UINT32_WRITE.
+     Impacted files:
+      drivers/include/stm32f2xx_ll_usb.c
+     ST Bug tracker ID: 61324
