@@ -154,13 +154,14 @@ if(CONFIG_X86_MMU)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
   add_custom_command(
-    OUTPUT mmu_tables.bin
+    OUTPUT mmu_tables.bin user_mmu_tables.bin
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_mmu_x86.py
     -i mmulist.bin
     -k $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
     -o mmu_tables.bin
+    -u user_mmu_tables.bin
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:-v>
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS mmulist.bin
@@ -185,6 +186,28 @@ if(CONFIG_X86_MMU)
   set_property(TARGET mmu_tables PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/mmu_tables.o)
   add_dependencies(   mmu_tables mmu_tables_o)
   set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES mmu_tables)
+
+  if(CONFIG_X86_KPTI)
+    add_custom_command(
+      OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/user_mmu_tables.o
+      COMMAND
+      ${CMAKE_OBJCOPY}
+      -I binary
+      -B ${OUTPUT_ARCH}
+      -O ${OUTPUT_FORMAT}
+      --rename-section .data=.user_mmu_data
+      user_mmu_tables.bin
+      user_mmu_tables.o
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      DEPENDS user_mmu_tables.bin
+    )
+
+    add_custom_target(  user_mmu_tables_o DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/user_mmu_tables.o)
+    add_library(        user_mmu_tables STATIC IMPORTED GLOBAL)
+    set_property(TARGET user_mmu_tables PROPERTY IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/user_mmu_tables.o)
+    add_dependencies(   user_mmu_tables user_mmu_tables_o)
+    set_property(GLOBAL APPEND PROPERTY GENERATED_KERNEL_OBJECT_FILES user_mmu_tables)
+  endif()
 endif()
 
 if(CONFIG_GDT_DYNAMIC)

@@ -375,6 +375,10 @@ SECTIONS
 	__mmu_tables_start = .;
 	z_x86_kernel_pdpt = .;
 	KEEP(*(.mmu_data));
+#ifdef CONFIG_X86_KPTI
+	z_x86_user_pdpt = .;
+	KEEP(*(.user_mmu_data));
+#endif /* CONFIG_X86_KPTI */
 	__mmu_tables_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 #endif
