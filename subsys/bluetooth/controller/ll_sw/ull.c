@@ -154,7 +154,7 @@ static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 				      PDU_RX_OCTETS_MAX))) * RX_CNT)
 
 static struct {
-	u8_t size; /* Runtime (re)sized info */
+	u16_t size; /* Runtime (re)sized info */
 
 	void *free;
 	u8_t pool[PDU_RX_POOL_SIZE];
