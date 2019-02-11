@@ -297,7 +297,7 @@ static void test_con1_main(void)
 
 static const struct bst_test_instance test_connect[] = {
 	{
-		.test_id = "connect",
+		.test_id = "central",
 		.test_descr = "Basic connection test. It expects that another "
 			      "device running a sample/bluetooth/peripheral_hr "
 			      "can be found. The test will pass if it can "
@@ -308,7 +308,7 @@ static const struct bst_test_instance test_connect[] = {
 		.test_main_f = test_con1_main
 	},
 	{
-		.test_id = "connect_encrypted",
+		.test_id = "central_encrypted",
 		.test_descr = "Same as connect but with an encrypted link",
 		.test_post_init_f = test_con_encrypted_init,
 		.test_tick_f = test_con1_tick,
