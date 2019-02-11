@@ -198,7 +198,7 @@ static inline int init_reset(void);
 static inline void done_alloc(void);
 static inline void rx_alloc(u8_t max);
 static void rx_demux(void *param);
-static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx);
+static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx);
 static inline void rx_demux_event_done(memq_link_t *link,
 				       struct node_rx_hdr *rx);
 static void disabled_cb(void *param);
@@ -1330,6 +1330,7 @@ static void rx_demux(void *param)
 			memq_link_t *link_tx;
 			u16_t handle; /* Handle to Ack TX */
 #endif /* CONFIG_BT_CONN */
+			int nack = 0;
 
 			LL_ASSERT(rx);
 
@@ -1342,8 +1343,13 @@ static void rx_demux(void *param)
 			} else
 #endif
 			{
-				rx_demux_rx(link, rx);
+				nack = rx_demux_rx(link, rx);
 			}
+
+			if (nack) {
+				break;
+			}
+
 #if defined(CONFIG_BT_CONN)
 		} else {
 			struct node_tx *node_tx;
@@ -1365,7 +1371,7 @@ static void rx_demux(void *param)
  * @details Rx objects are only peeked, not dequeued yet.
  *   Execution context: ULL high priority Mayfly
  */
-static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
+static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 {
 	/* Demux Rx objects */
 	switch (rx->type) {
@@ -1433,13 +1439,15 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 		int nack;
 
 		nack = ull_conn_rx(link, (void *)&rx);
-		if (!nack) {
-			memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+		if (nack) {
+			return nack;
+		}
 
-			if (rx) {
-				ll_rx_put(link, rx);
-				ll_rx_sched();
-			}
+		memq_dequeue(memq_ull_rx.tail, &memq_ull_rx.head, NULL);
+
+		if (rx) {
+			ll_rx_put(link, rx);
+			ll_rx_sched();
 		}
 	}
 	break;
@@ -1451,6 +1459,8 @@ static inline void rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 	}
 	break;
 	}
+
+	return 0;
 }
 
 static inline void rx_demux_event_done(memq_link_t *link,
