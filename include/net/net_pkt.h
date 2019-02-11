@@ -2257,6 +2257,16 @@ size_t net_pkt_available_payload_buffer(struct net_pkt *pkt,
 					enum net_ip_protocol proto);
 
 /**
+ * @brief Trim net_pkt buffer
+ *
+ * Note: This will basically check for unused net_buf buffer and
+ *       deallocates them relevantly
+ *
+ * @param pkt The net_pkt which buffer will be trimmed
+ */
+void net_pkt_trim_buffer(struct net_pkt *pkt);
+
+/**
  * @brief Initialize net_pkt cursor
  *
  * Note: This will inialize the net_pkt cursor from its buffer.
