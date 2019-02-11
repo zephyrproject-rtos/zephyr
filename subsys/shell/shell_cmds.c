@@ -40,8 +40,14 @@
 #define SHELL_HELP_ECHO_OFF	\
 	"Disable shell echo. Editing keys and meta-keys are not handled"
 
-#define SHELL_HELP_SHELL		"Useful, not Unix-like shell commands."
-#define SHELL_HELP_HELP			"Prints help message."
+#define SHELL_HELP_SHELL	"Useful, not Unix-like shell commands."
+#define SHELL_HELP_SELECT	"Selects new root command. In order for the " \
+	"command to be selected, it must meet the criteria:\n"		      \
+	"- it is a static command\n"					      \
+	"- it is not preceded by a dynamic command\n"			      \
+	"- it has subcommands\n"					      \
+	"Return to the main command tree is done by pressing ctrl+s."
+#define SHELL_HELP_HELP		"Prints help message."
 
 #define SHELL_MSG_UNKNOWN_PARAMETER	" unknown parameter: "
 
@@ -394,6 +400,27 @@ static int cmd_resize(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
+static int cmd_select(const struct shell *shell, size_t argc, char **argv)
+{
+	const struct shell_static_entry *candidate = NULL;
+	struct shell_static_entry entry;
+	size_t matching_argc;
+
+	argc--;
+	argv = argv + 1;
+	candidate = shell_get_last_command(shell, argc, argv, &matching_argc,
+					   &entry, true);
+
+	if ((candidate != NULL) && (argc == matching_argc)) {
+		shell->ctx->selected_cmd = candidate;
+		return 0;
+	}
+
+	shell_error(shell, "Cannot select command: %s", argv[matching_argc]);
+
+	return -EINVAL;
+}
+
 SHELL_CREATE_STATIC_SUBCMD_SET(m_sub_colors)
 {
 	SHELL_CMD_ARG(off, NULL, SHELL_HELP_COLORS_OFF, cmd_colors_off, 1, 0),
@@ -449,3 +476,4 @@ SHELL_CMD_ARG_REGISTER(help, NULL, SHELL_HELP_HELP, cmd_help, 1, 255);
 SHELL_CMD_ARG_REGISTER(history, NULL, SHELL_HELP_HISTORY, cmd_history, 1, 0);
 SHELL_CMD_ARG_REGISTER(resize, &m_sub_resize, SHELL_HELP_RESIZE, cmd_resize,
 			1, 1);
+SHELL_CMD_ARG_REGISTER(select, NULL, SHELL_HELP_SELECT, cmd_select, 2, 255);

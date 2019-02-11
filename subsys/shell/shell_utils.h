@@ -48,6 +48,7 @@ void shell_pattern_remove(char *buff, u16_t *buff_len, const char *pattern);
  * It moves the pointer entry to command of static command structure. If the
  * command cannot be found, the function will set entry to NULL.
  *
+ *   @param shell	Shell instance.
  *   @param command	Pointer to command which will be processed (no matter
  *			the root command).
  *   @param lvl		Level of the requested command.
@@ -57,9 +58,18 @@ void shell_pattern_remove(char *buff, u16_t *buff_len, const char *pattern);
  *   @param st_entry	Pointer to the structure where dynamic entry data can be
  *			stored.
  */
-void shell_cmd_get(const struct shell_cmd_entry *command, size_t lvl,
+void shell_cmd_get(const struct shell *shell,
+		   const struct shell_cmd_entry *command, size_t lvl,
 		   size_t idx, const struct shell_static_entry **entry,
 		   struct shell_static_entry *d_entry);
+
+const struct shell_static_entry *shell_get_last_command(
+					     const struct shell *shell,
+					     size_t argc,
+					     char *argv[],
+					     size_t *match_arg,
+					     struct shell_static_entry *d_entry,
+					     bool only_static);
 
 int shell_command_add(char *buff, u16_t *buff_len,
 		      const char *new_cmd, const char *pattern);
@@ -74,6 +84,11 @@ static inline void transport_buffer_flush(const struct shell *shell)
 }
 
 void shell_cmd_trim(const struct shell *shell);
+
+static inline bool shell_cmd_is_selected(const struct shell *shell)
+{
+	return shell->ctx->selected_cmd == NULL ? false : true;
+}
 
 #ifdef __cplusplus
 }
