@@ -1,0 +1,137 @@
+/*
+ * Copyright (c) 2019 Laird Connectivity
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <nordic/nrf52832_qfaa.dtsi>
+
+/ {
+	model = "Laird BL652 DVK";
+	compatible = "laird,bl652_dvk", "nordic,nrf52832-qfaa",
+		     "nordic,nrf52832";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-mcumgr = &uart0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led_1 {
+			gpios = <&gpio0 17 GPIO_INT_ACTIVE_HIGH>;
+			label = "Blue LED 1";
+		};
+		led2: led_2 {
+			gpios = <&gpio0 19 GPIO_INT_ACTIVE_HIGH>;
+			label = "Blue LED 2";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+		button1: button_1 {
+			gpios = <&gpio0 11 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 1";
+		};
+		button2: button_2 {
+			gpios = <&gpio0 15 GPIO_PUD_PULL_UP>;
+			label = "Push button switch 2";
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		sw0 = &button1;
+		sw1 = &button2;
+	};
+};
+
+&adc {
+	status ="ok";
+};
+
+&gpiote {
+	status ="ok";
+};
+
+&gpio0 {
+	status ="ok";
+};
+
+&uart0 {
+	status = "ok";
+	compatible = "nordic,nrf-uart";
+	current-speed = <115200>;
+	tx-pin = <6>;
+	rx-pin = <8>;
+	rts-pin = <5>;
+	cts-pin = <7>;
+};
+
+&i2c0 {
+	status = "ok";
+	sda-pin = <26>;
+	scl-pin = <27>;
+};
+
+&pwm0 {
+	status = "ok";
+	ch0-pin = <17>;
+};
+
+&spi0 {
+	status = "ok";
+	sck-pin = <25>;
+	mosi-pin = <23>;
+	miso-pin = <24>;
+    cs-gpios = <&gpio0 22 0>;
+};
+
+&spi1 {
+	status = "ok";
+	sck-pin = <16>;
+	mosi-pin = <20>;
+	miso-pin = <14>;
+    cs-gpios = <&gpio0 12 0>;
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x32000>;
+		};
+		slot1_partition: partition@3e000 {
+			label = "image-1";
+			reg = <0x0003E000 0x32000>;
+		};
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x00070000 0xa000>;
+		};
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x0007a000 0x00006000>;
+		};
+	};
+};

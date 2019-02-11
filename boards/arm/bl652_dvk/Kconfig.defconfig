@@ -1,0 +1,46 @@
+# Kconfig - BL652 DVK board configuration
+#
+# Copyright (c) 2019 Laird Connectivity
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_BL652_DVK
+
+config BOARD
+	default "bl652_dvk"
+
+if ADC
+
+config ADC_0
+	default y
+
+endif # ADC
+
+if I2C
+
+config I2C_0
+	default y
+
+endif # I2C
+
+if PWM
+
+config PWM_0
+	default y
+
+endif # PWM
+
+if SPI
+
+config SPI_0
+	default y
+
+config SPI_1
+	default y
+
+endif # SPI
+
+config BT_CTLR
+	default BT
+
+endif # BOARD_BL652_DVK
