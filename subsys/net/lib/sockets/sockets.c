@@ -370,7 +370,7 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 #endif
 
 	if (addr != NULL && addrlen != NULL) {
-		int len = min(*addrlen, sizeof(ctx->remote));
+		int len = MIN(*addrlen, sizeof(ctx->remote));
 
 		memcpy(addr, &ctx->remote, len);
 		/* addrlen is a value-result argument, set to actual

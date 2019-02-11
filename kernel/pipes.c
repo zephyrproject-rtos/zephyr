@@ -197,7 +197,7 @@ void k_pipe_cleanup(struct k_pipe *pipe)
 static size_t pipe_xfer(unsigned char *dest, size_t dest_size,
 			 const unsigned char *src, size_t src_size)
 {
-	size_t num_bytes = min(dest_size, src_size);
+	size_t num_bytes = MIN(dest_size, src_size);
 	const unsigned char *end = src + num_bytes;
 
 	while (src != end) {
@@ -227,7 +227,7 @@ static size_t pipe_buffer_put(struct k_pipe *pipe,
 
 
 	for (i = 0; i < 2; i++) {
-		run_length = min(pipe->size - pipe->bytes_used,
+		run_length = MIN(pipe->size - pipe->bytes_used,
 				 pipe->size - pipe->write_index);
 
 		bytes_copied = pipe_xfer(pipe->buffer + pipe->write_index,
@@ -263,7 +263,7 @@ static size_t pipe_buffer_get(struct k_pipe *pipe,
 	int     i;
 
 	for (i = 0; i < 2; i++) {
-		run_length = min(pipe->bytes_used,
+		run_length = MIN(pipe->bytes_used,
 				 pipe->size - pipe->read_index);
 
 		bytes_copied = pipe_xfer(dest + num_bytes_read,

@@ -612,12 +612,12 @@ static void health_generate_faults(u8_t *data, u16_t len)
 
 	rp = net_buf_simple_add(&buf, sizeof(*rp));
 
-	cur_faults_count = min(sizeof(cur_faults), sizeof(some_faults));
+	cur_faults_count = MIN(sizeof(cur_faults), sizeof(some_faults));
 	memcpy(cur_faults, some_faults, cur_faults_count);
 	net_buf_simple_add_mem(&buf, cur_faults, cur_faults_count);
 	rp->cur_faults_count = cur_faults_count;
 
-	reg_faults_count = min(sizeof(reg_faults), sizeof(some_faults));
+	reg_faults_count = MIN(sizeof(reg_faults), sizeof(some_faults));
 	memcpy(reg_faults, some_faults, reg_faults_count);
 	net_buf_simple_add_mem(&buf, reg_faults, reg_faults_count);
 	rp->reg_faults_count = reg_faults_count;

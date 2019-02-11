@@ -443,7 +443,7 @@ static void dtls_peer_address_get(struct net_context *context,
 				  struct sockaddr *peer_addr,
 				  socklen_t *addrlen)
 {
-	socklen_t len = min(context->tls->dtls_peer_addrlen, *addrlen);
+	socklen_t len = MIN(context->tls->dtls_peer_addrlen, *addrlen);
 
 	memcpy(peer_addr, &context->tls->dtls_peer_addr, len);
 	*addrlen = len;
@@ -938,7 +938,7 @@ static int tls_opt_sec_tag_list_get(struct net_context *context,
 		return -EINVAL;
 	}
 
-	len = min(context->tls->options.sec_tag_list.sec_tag_count *
+	len = MIN(context->tls->options.sec_tag_list.sec_tag_count *
 		  sizeof(sec_tag_t), *optlen);
 
 	memcpy(optval, context->tls->options.sec_tag_list.sec_tags, len);
@@ -1266,7 +1266,7 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 	#endif
 
 	if (addr != NULL && addrlen != NULL) {
-		int len = min(*addrlen, sizeof(child->remote));
+		int len = MIN(*addrlen, sizeof(child->remote));
 
 		memcpy(addr, &child->remote, len);
 		/* addrlen is a value-result argument, set to actual

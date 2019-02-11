@@ -650,7 +650,7 @@ static u16_t sdp_svc_search_req(struct bt_sdp *sdp, struct net_buf *buf,
 
 		/* 4 bytes per Service Record Handle */
 		/* 4 bytes for ContinuationState */
-		if ((min(SDP_MTU, sdp->chan.tx.mtu) - resp_buf->len) <
+		if ((MIN(SDP_MTU, sdp->chan.tx.mtu) - resp_buf->len) <
 		    (4 + 4 + sizeof(struct bt_sdp_hdr))) {
 			pkt_full = true;
 		}
@@ -846,7 +846,7 @@ static u8_t select_attrs(struct bt_sdp_attribute *attr, u8_t att_idx,
 		}
 
 		if (sad->rsp_buf) {
-			space = min(SDP_MTU, sad->sdp->chan.tx.mtu) -
+			space = MIN(SDP_MTU, sad->sdp->chan.tx.mtu) -
 				sad->rsp_buf->len - sizeof(struct bt_sdp_hdr);
 
 			if ((!sad->state->pkt_full) &&

@@ -307,7 +307,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 		count = strtoul(argv[1], NULL, 10);
 	}
 
-	len = min(l2ch_chan.ch.tx.mtu, DATA_MTU - BT_L2CAP_CHAN_SEND_RESERVE);
+	len = MIN(l2ch_chan.ch.tx.mtu, DATA_MTU - BT_L2CAP_CHAN_SEND_RESERVE);
 
 	while (count--) {
 		buf = net_buf_alloc(&data_tx_pool, K_FOREVER);

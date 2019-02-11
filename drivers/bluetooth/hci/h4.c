@@ -232,7 +232,7 @@ static size_t h4_discard(struct device *uart, size_t len)
 {
 	u8_t buf[33];
 
-	return uart_fifo_read(uart, buf, min(len, sizeof(buf)));
+	return uart_fifo_read(uart, buf, MIN(len, sizeof(buf)));
 }
 
 static inline void read_payload(void)

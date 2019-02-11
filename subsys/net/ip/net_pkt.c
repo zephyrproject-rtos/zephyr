@@ -600,12 +600,12 @@ static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
 		iface_len = data_len = net_if_get_mtu(iface);
 
 		if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
-			data_len = max(iface_len, NET_IPV6_MTU);
+			data_len = MAX(iface_len, NET_IPV6_MTU);
 			data_len -= NET_IPV6H_LEN;
 		}
 
 		if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-			data_len = max(iface_len, NET_IPV4_MTU);
+			data_len = MAX(iface_len, NET_IPV4_MTU);
 			data_len -= NET_IPV4H_LEN;
 		}
 
@@ -1034,7 +1034,7 @@ int net_frag_linear_copy(struct net_buf *dst, struct net_buf *src,
 	/* traverse the fragment chain until len bytes are copied */
 	copied = 0U;
 	while (src && len > 0) {
-		to_copy = min(len, src->len - offset);
+		to_copy = MIN(len, src->len - offset);
 		memcpy(dst->data + copied, src->data + offset, to_copy);
 
 		copied += to_copy;
@@ -1404,7 +1404,7 @@ struct net_buf *net_pkt_write(struct net_pkt *pkt, struct net_buf *frag,
 
 	do {
 		u16_t space = frag->size - net_buf_headroom(frag) - offset;
-		u16_t count = min(len, space);
+		u16_t count = MIN(len, space);
 		int size_to_add;
 
 		memcpy(frag->data + offset, data, count);
@@ -1452,7 +1452,7 @@ static inline bool insert_data(struct net_pkt *pkt, struct net_buf *frag,
 	struct net_buf *insert;
 
 	do {
-		u16_t count = min(len, net_buf_tailroom(frag));
+		u16_t count = MIN(len, net_buf_tailroom(frag));
 
 		if (data) {
 			/* Copy insert data */
@@ -1660,7 +1660,7 @@ static struct net_buf *pkt_alloc_buffer(struct net_buf_pool *pool,
 		if (timeout != K_NO_WAIT && timeout != K_FOREVER) {
 			u32_t diff = k_uptime_get_32() - alloc_start;
 
-			timeout -= min(timeout, diff);
+			timeout -= MIN(timeout, diff);
 		}
 
 #if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
@@ -1723,9 +1723,9 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 
 	/* Family vs iface MTU */
 	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
-		max_len = max(max_len, NET_IPV6_MTU);
+		max_len = MAX(max_len, NET_IPV6_MTU);
 	} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-		max_len = max(max_len, NET_IPV4_MTU);
+		max_len = MAX(max_len, NET_IPV4_MTU);
 	} else { /* family == AF_UNSPEC */
 #if defined (CONFIG_NET_L2_ETHERNET)
 		if (net_if_l2(net_pkt_iface(pkt)) ==
@@ -1743,7 +1743,7 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 
 	max_len -= existing;
 
-	return min(size, max_len);
+	return MIN(size, max_len);
 }
 
 static size_t pkt_estimate_headers_length(struct net_pkt *pkt,
@@ -1893,7 +1893,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 	if (timeout != K_NO_WAIT && timeout != K_FOREVER) {
 		u32_t diff = k_uptime_get_32() - alloc_start;
 
-		timeout -= min(timeout, diff);
+		timeout -= MIN(timeout, diff);
 	}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
@@ -2084,7 +2084,7 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 	if (timeout != K_NO_WAIT && timeout != K_FOREVER) {
 		u32_t diff = k_uptime_get_32() - alloc_start;
 
-		timeout -= min(timeout, diff);
+		timeout -= MIN(timeout, diff);
 	}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG

@@ -379,7 +379,7 @@ static int send_seg(struct bt_mesh_net_tx *net_tx, struct net_buf_simple *sdu,
 				     (seg_o >> 3)));
 		net_buf_add_u8(seg, ((seg_o & 0x07) << 5) | tx->seg_n);
 
-		len = min(sdu->len, 12);
+		len = MIN(sdu->len, 12);
 		net_buf_add_mem(seg, sdu->data, len);
 		net_buf_simple_pull(sdu, len);
 
@@ -921,7 +921,7 @@ static inline s32_t ack_timeout(struct seg_rx *rx)
 	/* Make sure we don't send more frequently than the duration for
 	 * each packet (default is 300ms).
 	 */
-	return max(to, K_MSEC(400));
+	return MAX(to, K_MSEC(400));
 }
 
 int bt_mesh_ctl_send(struct bt_mesh_net_tx *tx, u8_t ctl_op, void *data,

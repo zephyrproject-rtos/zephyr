@@ -247,7 +247,7 @@ static u8_t att_mtu_req(struct bt_att *att, struct net_buf *buf)
 	 * A device's Exchange MTU Request shall contain the same MTU as the
 	 * device's Exchange MTU Response (i.e. the MTU shall be symmetric).
 	 */
-	att->chan.rx.mtu = min(mtu_client, mtu_server);
+	att->chan.rx.mtu = MIN(mtu_client, mtu_server);
 	att->chan.tx.mtu = att->chan.rx.mtu;
 
 	BT_DBG("Negotiated MTU %u", att->chan.rx.mtu);
@@ -363,7 +363,7 @@ static u8_t att_mtu_rsp(struct bt_att *att, struct net_buf *buf)
 		return att_handle_rsp(att, NULL, 0, BT_ATT_ERR_INVALID_PDU);
 	}
 
-	att->chan.rx.mtu = min(mtu, BT_ATT_MTU);
+	att->chan.rx.mtu = MIN(mtu, BT_ATT_MTU);
 
 	/* BLUETOOTH SPECIFICATION Version 4.2 [Vol 3, Part F] page 484:
 	 *

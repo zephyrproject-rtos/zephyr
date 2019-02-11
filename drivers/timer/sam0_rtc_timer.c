@@ -205,7 +205,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #ifdef CONFIG_TICKLESS_KERNEL
 
 	ticks = (ticks == K_FOREVER) ? MAX_TICKS : ticks;
-	ticks = max(min(ticks - 1, (s32_t) MAX_TICKS), 0);
+	ticks = MAX(MIN(ticks - 1, (s32_t) MAX_TICKS), 0);
 
 	/* Compute number of RTC cycles until the next timeout. */
 	u32_t count = rtc_count();

@@ -185,7 +185,7 @@ static int flash_sam_write(struct device *dev, off_t offset,
 
 		/* Maximum size without crossing a page */
 		eop_len = -(offset | ~(IFLASH_PAGE_SIZE - 1));
-		write_len = min(len, eop_len);
+		write_len = MIN(len, eop_len);
 
 		rc = flash_sam_write_page(dev, offset, data8, write_len);
 		if (rc < 0) {

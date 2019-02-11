@@ -159,7 +159,7 @@ data:
 	}
 
 	while (eswifi_spi_cmddata_ready(spi) && to_read) {
-		to_read = min(rlen - offset, to_read);
+		to_read = MIN(rlen - offset, to_read);
 		memset(rsp + offset, 0, to_read);
 		eswifi_spi_read(eswifi, rsp + offset, to_read);
 		offset += to_read;

@@ -1674,7 +1674,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 
 	k_mutex_lock(&ctx->drv_lock, K_FOREVER);
 
-	bytes_to_copy = min(max_data_len, ep_ctx->buf.len);
+	bytes_to_copy = MIN(max_data_len, ep_ctx->buf.len);
 
 	if (!data && !max_data_len) {
 		if (read_bytes) {

@@ -189,7 +189,7 @@ int log_printk(const char *fmt, va_list ap)
 
 			length = vsnprintk(formatted_str,
 					   sizeof(formatted_str), fmt, ap);
-			length = min(length, sizeof(formatted_str));
+			length = MIN(length, sizeof(formatted_str));
 
 			msg = log_msg_hexdump_create(NULL, formatted_str,
 						     length);
@@ -536,7 +536,7 @@ u32_t log_filter_set(struct log_backend const *const backend,
 				backend = log_backend_get(i);
 				current = log_filter_set(backend, domain_id,
 							 src_id, level);
-				max = max(current, max);
+				max = MAX(current, max);
 			}
 
 			level = max;
@@ -544,7 +544,7 @@ u32_t log_filter_set(struct log_backend const *const backend,
 			u32_t max = log_filter_get(backend, domain_id,
 						   src_id, false);
 
-			level = min(level, max);
+			level = MIN(level, max);
 
 			LOG_FILTER_SLOT_SET(filters,
 					    log_backend_id_get(backend),

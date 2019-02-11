@@ -1308,7 +1308,7 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 	/* Fragments never have a TX completion callback */
 	conn_tx(frag)->cb = NULL;
 
-	frag_len = min(conn_mtu(conn), net_buf_tailroom(frag));
+	frag_len = MIN(conn_mtu(conn), net_buf_tailroom(frag));
 
 	net_buf_add_mem(frag, buf->data, frag_len);
 	net_buf_pull(buf, frag_len);

@@ -487,7 +487,7 @@ static ssize_t write_adv_data(struct bt_conn *conn,
 		 * controlled by characteristics 4 (Radio Tx Power) and
 		 * 5 (Advertised Tx Power).
 		 */
-		slot->ad[2].data_len = min(slot->ad[2].data_len,
+		slot->ad[2].data_len = MIN(slot->ad[2].data_len,
 					   len + EDS_URL_WRITE_OFFSET);
 		memcpy(&slot->ad[2].data + EDS_URL_WRITE_OFFSET, buf,
 		       slot->ad[2].data_len - EDS_URL_WRITE_OFFSET);

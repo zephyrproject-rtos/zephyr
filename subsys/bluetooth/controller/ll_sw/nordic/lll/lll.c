@@ -326,11 +326,11 @@ u32_t lll_evt_offset_get(struct evt_hdr *evt)
 	if (0) {
 #if defined(CONFIG_BT_CTLR_XTAL_ADVANCED)
 	} else if (evt->ticks_xtal_to_start & XON_BITMASK) {
-		return max(evt->ticks_active_to_start,
+		return MAX(evt->ticks_active_to_start,
 			   evt->ticks_preempt_to_start);
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 	} else {
-		return max(evt->ticks_active_to_start,
+		return MAX(evt->ticks_active_to_start,
 			   evt->ticks_xtal_to_start);
 	}
 }
@@ -391,7 +391,7 @@ static int prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		/* Calc the preempt timeout */
 		evt = HDR_LLL2EVT(prepare_param->param);
 		preempt_anchor = prepare_param->ticks_at_expire;
-		preempt_to = max(evt->ticks_active_to_start,
+		preempt_to = MAX(evt->ticks_active_to_start,
 				 evt->ticks_xtal_to_start) -
 				 evt->ticks_preempt_to_start;
 

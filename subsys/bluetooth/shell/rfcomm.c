@@ -204,7 +204,7 @@ static int cmd_send(const struct shell *shell, size_t argc, char *argv[])
 	while (count--) {
 		buf = bt_rfcomm_create_pdu(&pool);
 		/* Should reserve one byte in tail for FCS */
-		len = min(rfcomm_dlc.mtu, net_buf_tailroom(buf) - 1);
+		len = MIN(rfcomm_dlc.mtu, net_buf_tailroom(buf) - 1);
 
 		net_buf_add_mem(buf, buf_data, len);
 		ret = bt_rfcomm_dlc_send(&rfcomm_dlc, buf);

@@ -36,7 +36,7 @@ void posix_exit(int exit_code)
 {
 	static int max_exit_code;
 
-	max_exit_code = max(exit_code, max_exit_code);
+	max_exit_code = MAX(exit_code, max_exit_code);
 	/*
 	 * posix_soc_clean_up may not return if this is called from a SW thread,
 	 * but instead it would get posix_exit() recalled again

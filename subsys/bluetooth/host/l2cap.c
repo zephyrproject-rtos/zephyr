@@ -662,7 +662,7 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 	/* MPS shall not be bigger than MTU + 2 as the remaining bytes cannot
 	 * be used.
 	 */
-	chan->rx.mps = min(chan->rx.mtu + 2, L2CAP_MAX_LE_MPS);
+	chan->rx.mps = MIN(chan->rx.mtu + 2, L2CAP_MAX_LE_MPS);
 	k_sem_init(&chan->rx.credits, 0, UINT_MAX);
 
 	if (BT_DBG_ENABLED &&
@@ -1085,9 +1085,9 @@ segment:
 	}
 
 	/* Don't send more that TX MPS including SDU length */
-	len = min(net_buf_tailroom(seg), ch->tx.mps - sdu_hdr_len);
+	len = MIN(net_buf_tailroom(seg), ch->tx.mps - sdu_hdr_len);
 	/* Limit if original buffer is smaller than the segment */
-	len = min(buf->len, len);
+	len = MIN(buf->len, len);
 	net_buf_add_mem(seg, buf->data, len);
 	net_buf_pull(buf, len);
 

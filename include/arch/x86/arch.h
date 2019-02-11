@@ -613,7 +613,7 @@ extern struct task_state_segment _main_tss;
 
 #define _ARCH_THREAD_STACK_LEN(size) \
 		(ROUND_UP((size), \
-			  max(_STACK_BASE_ALIGN, _STACK_SIZE_ALIGN)) + \
+			  MAX(_STACK_BASE_ALIGN, _STACK_SIZE_ALIGN)) + \
 		_STACK_GUARD_SIZE)
 
 #define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \

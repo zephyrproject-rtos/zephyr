@@ -145,7 +145,7 @@ static u8_t *fixed_data_alloc(struct net_buf *buf, size_t *size, s32_t timeout)
 	struct net_buf_pool *pool = net_buf_pool_get(buf->pool_id);
 	const struct net_buf_pool_fixed *fixed = pool->alloc->alloc_data;
 
-	*size = min(fixed->data_size, *size);
+	*size = MIN(fixed->data_size, *size);
 
 	return fixed->data_pool + fixed->data_size * net_buf_id(buf);
 }
@@ -316,7 +316,7 @@ success:
 		if (timeout != K_NO_WAIT && timeout != K_FOREVER) {
 			u32_t diff = k_uptime_get_32() - alloc_start;
 
-			timeout -= min(timeout, diff);
+			timeout -= MIN(timeout, diff);
 		}
 
 		buf->__buf = data_alloc(buf, &size, timeout);
@@ -590,7 +590,7 @@ struct net_buf *net_buf_clone(struct net_buf *buf, s32_t timeout)
 		if (timeout != K_NO_WAIT && timeout != K_FOREVER) {
 			u32_t diff = k_uptime_get_32() - alloc_start;
 
-			timeout -= min(timeout, diff);
+			timeout -= MIN(timeout, diff);
 		}
 
 		clone->__buf = data_alloc(clone, &size, timeout);
@@ -681,7 +681,7 @@ size_t net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
 	size_t to_copy;
 	size_t copied;
 
-	len = min(len, dst_len);
+	len = MIN(len, dst_len);
 
 	frag = src;
 
@@ -694,7 +694,7 @@ size_t net_buf_linearize(void *dst, size_t dst_len, struct net_buf *src,
 	/* traverse the fragment chain until len bytes are copied */
 	copied = 0;
 	while (frag && len > 0) {
-		to_copy = min(len, frag->len - offset);
+		to_copy = MIN(len, frag->len - offset);
 		memcpy((u8_t *)dst + copied, frag->data + offset, to_copy);
 
 		copied += to_copy;
@@ -723,7 +723,7 @@ size_t net_buf_append_bytes(struct net_buf *buf, size_t len,
 	const u8_t *value8 = value;
 
 	do {
-		u16_t count = min(len, net_buf_tailroom(frag));
+		u16_t count = MIN(len, net_buf_tailroom(frag));
 
 		net_buf_add_mem(frag, value8, count);
 		len -= count;

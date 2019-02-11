@@ -3652,7 +3652,7 @@ static void read_buffer_size_complete(struct net_buf *buf)
 
 	BT_DBG("ACL BR/EDR buffers: pkts %u mtu %u", pkts, bt_dev.le.mtu);
 
-	pkts = min(pkts, CONFIG_BT_CONN_TX_MAX);
+	pkts = MIN(pkts, CONFIG_BT_CONN_TX_MAX);
 
 	k_sem_init(&bt_dev.le.pkts, pkts, pkts);
 }
@@ -3673,7 +3673,7 @@ static void le_read_buffer_size_complete(struct net_buf *buf)
 
 	BT_DBG("ACL LE buffers: pkts %u mtu %u", rp->le_max_num, bt_dev.le.mtu);
 
-	le_max_num = min(rp->le_max_num, CONFIG_BT_CONN_TX_MAX);
+	le_max_num = MIN(rp->le_max_num, CONFIG_BT_CONN_TX_MAX);
 	k_sem_init(&bt_dev.le.pkts, le_max_num, le_max_num);
 }
 #endif
@@ -4858,7 +4858,7 @@ int bt_set_id_addr(const bt_addr_le_t *addr)
 
 void bt_id_get(bt_addr_le_t *addrs, size_t *count)
 {
-	size_t to_copy = min(*count, bt_dev.id_count);
+	size_t to_copy = MIN(*count, bt_dev.id_count);
 
 	memcpy(addrs, bt_dev.id_addr, to_copy * sizeof(bt_addr_le_t));
 	*count = to_copy;
@@ -5053,7 +5053,7 @@ static uint8_t bt_read_static_addr(bt_addr_le_t *addr)
 		return 0;
 	}
 	rp = (void *)rsp->data;
-	cnt = min(rp->num_addrs, CONFIG_BT_ID_MAX);
+	cnt = MIN(rp->num_addrs, CONFIG_BT_ID_MAX);
 
 	for (i = 0; i < cnt; i++) {
 		addr[i].type = BT_ADDR_LE_RANDOM;

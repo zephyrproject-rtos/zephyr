@@ -67,14 +67,14 @@ int c1_handle_get(int argc, char **argv, char *val, int val_len_max)
 	test_get_called = 1;
 
 	if (argc == 1 && !strcmp(argv[0], "mybar")) {
-		val_len_max = min(val_len_max, sizeof(val8));
-		memcpy(val, &val8, min(val_len_max, sizeof(val8)));
+		val_len_max = MIN(val_len_max, sizeof(val8));
+		memcpy(val, &val8, MIN(val_len_max, sizeof(val8)));
 		return val_len_max;
 	}
 
 	if (argc == 1 && !strcmp(argv[0], "mybar64")) {
-		val_len_max = min(val_len_max, sizeof(val64));
-		memcpy(val, &val64, min(val_len_max, sizeof(val64)));
+		val_len_max = MIN(val_len_max, sizeof(val64));
+		memcpy(val, &val64, MIN(val_len_max, sizeof(val64)));
 		return val_len_max;
 	}
 
@@ -220,7 +220,7 @@ int c2_handle_get(int argc, char **argv, char *val, int val_len_max)
 			len = val_len_max;
 		}
 
-		len = min(strlen(valptr), len);
+		len = MIN(strlen(valptr), len);
 		memcpy(val, valptr, len);
 		return len;
 	}
@@ -268,8 +268,8 @@ int c2_handle_export(int (*cb)(const char *name, void *value, size_t val_len))
 int c3_handle_get(int argc, char **argv, char *val, int val_len_max)
 {
 	if (argc == 1 && !strcmp(argv[0], "v")) {
-		val_len_max = min(val_len_max, sizeof(val32));
-		memcpy(val, &val32, min(val_len_max, sizeof(val32)));
+		val_len_max = MIN(val_len_max, sizeof(val32));
+		memcpy(val, &val32, MIN(val_len_max, sizeof(val32)));
 		return val_len_max;
 	}
 	return -EINVAL;

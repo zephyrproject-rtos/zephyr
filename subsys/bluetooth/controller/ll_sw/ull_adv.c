@@ -715,7 +715,7 @@ u8_t ll_adv_enable(u8_t enable)
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	adv->evt.ticks_slot = HAL_TICKER_US_TO_TICKS(slot_us);
 
-	ticks_slot_offset = max(adv->evt.ticks_active_to_start,
+	ticks_slot_offset = MAX(adv->evt.ticks_active_to_start,
 				adv->evt.ticks_xtal_to_start);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {

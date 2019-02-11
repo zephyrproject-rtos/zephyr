@@ -388,7 +388,7 @@ static int i2c_esp32_read_msg(struct device *dev, u16_t addr,
 
 	for (; msg.len; cmd = (void *)I2C_COMD0_REG(config->index)) {
 		volatile struct i2c_esp32_cmd *wait_cmd = NULL;
-		u32_t to_read = min(I2C_ESP32_BUFFER_SIZE, msg.len - 1);
+		u32_t to_read = MIN(I2C_ESP32_BUFFER_SIZE, msg.len - 1);
 
 		/* Might be the last byte, in which case, `to_read` will
 		 * be 0 here.  See comment below.
@@ -464,7 +464,7 @@ static int i2c_esp32_write_msg(struct device *dev, u16_t addr,
 	cmd = i2c_esp32_write_addr(dev, cmd, &msg, addr);
 
 	for (; msg.len; cmd = (void *)I2C_COMD0_REG(config->index)) {
-		u32_t to_send = min(I2C_ESP32_BUFFER_SIZE, msg.len);
+		u32_t to_send = MIN(I2C_ESP32_BUFFER_SIZE, msg.len);
 		u32_t i;
 		int ret;
 

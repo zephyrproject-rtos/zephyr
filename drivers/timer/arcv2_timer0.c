@@ -194,7 +194,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 #if defined(CONFIG_TICKLESS_KERNEL)
 	u32_t delay;
 
-	ticks = min(MAX_TICKS, max(ticks - 1, 0));
+	ticks = MIN(MAX_TICKS, MAX(ticks - 1, 0));
 
 	/* Desired delay in the future */
 	delay = (ticks == 0) ? MIN_DELAY : ticks * CYC_PER_TICK;

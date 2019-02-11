@@ -473,7 +473,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 				       ftr->us_radio_rdy + 328 + TIFS_US +
 				       328);
 
-	ticks_slot_offset = max(conn->evt.ticks_active_to_start,
+	ticks_slot_offset = MAX(conn->evt.ticks_active_to_start,
 				conn->evt.ticks_xtal_to_start);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
@@ -630,7 +630,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		conn->hdr.ticks_preempt_to_start = HAL_TICKER_US_TO_TICKS(
 			EVENT_OVERHEAD_PREEMPT_MIN_US);
 		conn->hdr.ticks_slot = _radio.scanner.ticks_conn_slot;
-		ticks_slot_offset = max(conn->hdr.ticks_active_to_start,
+		ticks_slot_offset = MAX(conn->hdr.ticks_active_to_start,
 					conn->hdr.ticks_xtal_to_start);
 
 		/* Stop Scanner */

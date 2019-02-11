@@ -95,7 +95,7 @@ extern "C" {
  * to zero so LLDP Rx agents can invalidate the entry related to this node.
  */
 #define NET_LLDP_TTL \
-	min((CONFIG_NET_LLDP_TX_INTERVAL * CONFIG_NET_LLDP_TX_HOLD) + 1, 65535)
+	MIN((CONFIG_NET_LLDP_TX_INTERVAL * CONFIG_NET_LLDP_TX_HOLD) + 1, 65535)
 
 
 struct net_if;

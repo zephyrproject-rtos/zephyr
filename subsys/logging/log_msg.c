@@ -199,7 +199,7 @@ static void copy_args_to_msg(struct  log_msg *msg, u32_t *args, u32_t nargs)
 	}
 
 	while (nargs != 0) {
-		u32_t cpy_args = min(nargs, ARGS_CONT_MSG);
+		u32_t cpy_args = MIN(nargs, ARGS_CONT_MSG);
 
 		(void)memcpy(cont->payload.args, args,
 			     cpy_args * sizeof(u32_t));

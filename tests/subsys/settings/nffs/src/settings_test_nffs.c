@@ -44,20 +44,20 @@ int c1_handle_get(int argc, char **argv, char *val, int val_len_max)
 	test_get_called = 1;
 
 	if (argc == 1 && !strcmp(argv[0], "mybar")) {
-		val_len_max = min(val_len_max, sizeof(val8));
-		memcpy(val, &val8, min(val_len_max, sizeof(val8)));
+		val_len_max = MIN(val_len_max, sizeof(val8));
+		memcpy(val, &val8, MIN(val_len_max, sizeof(val8)));
 		return val_len_max;
 	}
 
 	if (argc == 1 && !strcmp(argv[0], "mybar16")) {
-		val_len_max = min(val_len_max, sizeof(val16));
-		memcpy(val, &val16, min(val_len_max, sizeof(val16)));
+		val_len_max = MIN(val_len_max, sizeof(val16));
+		memcpy(val, &val16, MIN(val_len_max, sizeof(val16)));
 		return val_len_max;
 	}
 
 	if (argc == 1 && !strcmp(argv[0], "mybar64")) {
-		val_len_max = min(val_len_max, sizeof(val64));
-		memcpy(val, &val64, min(val_len_max, sizeof(val64)));
+		val_len_max = MIN(val_len_max, sizeof(val64));
+		memcpy(val, &val64, MIN(val_len_max, sizeof(val64)));
 		return val_len_max;
 	}
 

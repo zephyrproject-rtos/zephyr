@@ -105,7 +105,7 @@ static int flash_nios2_qspi_erase(struct device *dev, off_t offset, size_t len)
 		}
 
 		/* calculate the byte size of data to be written in a sector */
-		length_to_erase = min(qspi_dev->sector_size - offset_in_block,
+		length_to_erase = MIN(qspi_dev->sector_size - offset_in_block,
 							remaining_length);
 
 		/* Erase sector */
@@ -297,7 +297,7 @@ static int flash_nios2_qspi_write(struct device *dev, off_t offset,
 		}
 
 		/* calculate the byte size of data to be written in a sector */
-		length_to_write = min(qspi_dev->sector_size - offset_in_block,
+		length_to_write = MIN(qspi_dev->sector_size - offset_in_block,
 							remaining_length);
 
 		rc = flash_nios2_qspi_write_block(dev,

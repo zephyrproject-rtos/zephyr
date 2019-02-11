@@ -281,7 +281,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 		u8_t buf[16];
 		int i;
 
-		read = fs_read(&file, buf, min(count, sizeof(buf)));
+		read = fs_read(&file, buf, MIN(count, sizeof(buf)));
 		if (read <= 0) {
 			break;
 		}

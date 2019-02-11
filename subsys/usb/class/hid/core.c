@@ -547,7 +547,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 
 			LOG_DBG("Return HID Descriptor");
 
-			*len = min(*len, hid_desc->if0_hid.bLength);
+			*len = MIN(*len, hid_desc->if0_hid.bLength);
 			*data = (u8_t *)&hid_desc->if0_hid;
 			break;
 		case HID_CLASS_DESCRIPTOR_REPORT:
@@ -560,7 +560,7 @@ static int hid_custom_handle_req(struct usb_setup_packet *setup,
 			if (*len != dev_data->report_size) {
 				LOG_WRN("len %d doesn't match "
 					"Report Descriptor size", *len);
-				*len = min(*len, dev_data->report_size);
+				*len = MIN(*len, dev_data->report_size);
 			}
 			*data = (u8_t *)dev_data->report_desc;
 			break;

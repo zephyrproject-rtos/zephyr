@@ -128,7 +128,7 @@ static inline u8_t copy_data(struct ieee802154_fragment_ctx *ctx,
 {
 	u8_t move = ctx->frag->len - (ctx->pos - ctx->frag->data);
 
-	move = min(move, max);
+	move = MIN(move, max);
 
 	memcpy(frame_buf->data + frame_buf->len, ctx->pos, move);
 

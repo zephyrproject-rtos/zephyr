@@ -69,8 +69,8 @@ static inline void _i2c_dw_data_ask(struct device *dev)
 	tx_empty = I2C_DW_FIFO_DEPTH - regs->ic_txflr;
 
 	/* Figure out how many bytes we can request */
-	cnt = min(I2C_DW_FIFO_DEPTH, dw->request_bytes);
-	cnt = min(min(tx_empty, rx_empty), cnt);
+	cnt = MIN(I2C_DW_FIFO_DEPTH, dw->request_bytes);
+	cnt = MIN(MIN(tx_empty, rx_empty), cnt);
 
 	while (cnt > 0) {
 		/* Tell controller to get another byte */

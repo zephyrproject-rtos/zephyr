@@ -475,7 +475,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const cfg)
 	 * Map the endpoint size to the buffer size. Only power of 2 buffer
 	 * sizes between 8 and 1024 are possible, get the next power of 2.
 	 */
-	log2ceil_mps = 32 - __builtin_clz((max(cfg->ep_mps, 8) << 1) - 1) - 1;
+	log2ceil_mps = 32 - __builtin_clz((MAX(cfg->ep_mps, 8) << 1) - 1) - 1;
 	regval |= USBHS_DEVEPTCFG_EPSIZE(log2ceil_mps - 3);
 	dev_data.ep_data[ep_idx].mps = cfg->ep_mps;
 
@@ -695,7 +695,7 @@ int usb_dc_ep_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *ret_bytes)
 	}
 
 	/* Write the data to the FIFO */
-	packet_len = min(data_len, dev_data.ep_data[ep_idx].mps);
+	packet_len = MIN(data_len, dev_data.ep_data[ep_idx].mps);
 	for (int i = 0; i < packet_len; i++) {
 		usb_dc_ep_fifo_put(ep_idx, data[i]);
 	}

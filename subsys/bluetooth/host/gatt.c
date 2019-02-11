@@ -796,7 +796,7 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 		return BT_GATT_ERR(BT_ATT_ERR_INVALID_OFFSET);
 	}
 
-	len = min(buf_len, value_len - offset);
+	len = MIN(buf_len, value_len - offset);
 
 	BT_DBG("handle 0x%04x offset %u length %u", attr->handle, offset,
 	       len);
@@ -2552,7 +2552,7 @@ static int gatt_prepare_write(struct bt_conn *conn,
 	struct bt_att_prepare_write_req *req;
 	u16_t len;
 
-	len = min(params->length, bt_att_get_mtu(conn) - sizeof(*req) - 1);
+	len = MIN(params->length, bt_att_get_mtu(conn) - sizeof(*req) - 1);
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_PREPARE_WRITE_REQ,
 				sizeof(*req) + len);

@@ -126,7 +126,7 @@ void hwtimer_set_real_time_mode(bool new_rt)
 
 static void hwtimer_update_timer(void)
 {
-	hw_timer_timer = min(hw_timer_tick_timer, hw_timer_awake_timer);
+	hw_timer_timer = MIN(hw_timer_tick_timer, hw_timer_awake_timer);
 }
 
 static inline void host_clock_gettime(struct timespec *tv)

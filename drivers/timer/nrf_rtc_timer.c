@@ -128,7 +128,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 #ifdef CONFIG_TICKLESS_KERNEL
 	ticks = (ticks == K_FOREVER) ? MAX_TICKS : ticks;
-	ticks = max(min(ticks - 1, (s32_t)MAX_TICKS), 0);
+	ticks = MAX(MIN(ticks - 1, (s32_t)MAX_TICKS), 0);
 
 	/*
 	 * Get the requested delay in tick-aligned cycles.  Increase
@@ -136,7 +136,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	 * cycles elapsed since the last tick.  Cap at the maximum
 	 * tick-aligned delta.
 	 */
-	u32_t cyc = min((1 + ticks) * CYC_PER_TICK, MAX_DELAY);
+	u32_t cyc = MIN((1 + ticks) * CYC_PER_TICK, MAX_DELAY);
 
 	u32_t key = irq_lock();
 	u32_t d = counter_sub(counter(), last_count);
