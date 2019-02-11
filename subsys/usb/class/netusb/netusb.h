@@ -26,6 +26,7 @@ struct netusb_function {
 	int (*send_pkt)(struct net_pkt *pkt);
 };
 
+struct net_if *netusb_net_iface(void);
 void netusb_recv(struct net_pkt *pkt);
 int try_write(u8_t ep, u8_t *data, u16_t len);
 
