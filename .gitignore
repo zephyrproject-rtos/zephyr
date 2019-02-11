@@ -9,6 +9,7 @@
 *~
 build*/
 cscope.*
+.vscode
 .dir
 
 /*.patch
