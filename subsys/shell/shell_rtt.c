@@ -9,6 +9,10 @@
 #include <SEGGER_RTT.h>
 #include <logging/log.h>
 
+BUILD_ASSERT_MSG(!(IS_ENABLED(CONFIG_LOG_BACKEND_RTT) &&
+		 COND_CODE_0(CONFIG_LOG_BACKEND_RTT_BUFFER, (1), (0))),
+		 "Conflicting log RTT backend enabled on the same channel");
+
 SHELL_RTT_DEFINE(shell_transport_rtt);
 SHELL_DEFINE(shell_rtt, "rtt:~$ ", &shell_transport_rtt,
 	     CONFIG_SHELL_BACKEND_RTT_LOG_MESSAGE_QUEUE_SIZE,
@@ -16,6 +20,8 @@ SHELL_DEFINE(shell_rtt, "rtt:~$ ", &shell_transport_rtt,
 	     SHELL_FLAG_OLF_CRLF);
 
 LOG_MODULE_REGISTER(shell_rtt, CONFIG_SHELL_RTT_LOG_LEVEL);
+
+static bool rtt_blocking;
 
 static void timer_handler(struct k_timer *timer)
 {
@@ -54,6 +60,7 @@ static int enable(const struct shell_transport *transport, bool blocking)
 	struct shell_rtt *sh_rtt = (struct shell_rtt *)transport->ctx;
 
 	if (blocking) {
+		rtt_blocking = true;
 		k_timer_stop(&sh_rtt->timer);
 	}
 
@@ -66,7 +73,14 @@ static int write(const struct shell_transport *transport,
 	struct shell_rtt *sh_rtt = (struct shell_rtt *)transport->ctx;
 	const u8_t *data8 = (const u8_t *)data;
 
-	*cnt = SEGGER_RTT_Write(0, data8, length);
+	if (rtt_blocking) {
+		*cnt = SEGGER_RTT_WriteNoLock(0, data8, length);
+		while (SEGGER_RTT_HasDataUp(0)) {
+			/* empty */
+		}
+	} else {
+		*cnt = SEGGER_RTT_Write(0, data8, length);
+	}
 
 	sh_rtt->handler(SHELL_TRANSPORT_EVT_TX_RDY, sh_rtt->context);
 
