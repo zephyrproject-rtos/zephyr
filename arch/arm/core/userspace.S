@@ -49,20 +49,18 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
     pop {r1,r2,r3,ip,lr}
 #endif
 
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+    /* clear stack pointer limit before setting the PSP */
+    mov r0, #0
+    msr PSPLIM, r0
+#endif
+
     /* set stack to privileged stack */
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
     ldr r0, [r0, #_thread_offset_to_priv_stack_start]    /* priv stack ptr */
     ldr ip, =CONFIG_PRIVILEGED_STACK_SIZE
     add r0, r0, ip
-
-#if defined(CONFIG_BUILTIN_STACK_GUARD)
-    /* clear stack pointer limit before setting the PSP */
-    push {r3}
-    mov r3, #0
-    msr PSPLIM, r3
-    pop {r3}
-#endif
 
     mov ip, sp
     msr PSP, r0
