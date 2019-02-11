@@ -13,13 +13,13 @@
 static struct arc_mpu_region mpu_regions[] = {
 	/* Region ICCM */
 	MPU_REGION_ENTRY("ICCM",
-			 CONFIG_ICCM_BASE_ADDRESS,
-			 CONFIG_ICCM_SIZE * 1024,
+			 DT_ICCM_BASE_ADDRESS,
+			 DT_ICCM_SIZE * 1024,
 			 REGION_FLASH_ATTR),
 	/* Region DCCM */
 	MPU_REGION_ENTRY("DCCM",
-			 CONFIG_DCCM_BASE_ADDRESS,
-			 CONFIG_DCCM_SIZE * 1024,
+			 DT_DCCM_BASE_ADDRESS,
+			 DT_DCCM_SIZE * 1024,
 			 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR),
 	/* Region DDR RAM */
 	MPU_REGION_ENTRY("SRAM",
@@ -42,13 +42,13 @@ static struct arc_mpu_region mpu_regions[] = {
 static struct arc_mpu_region mpu_regions[] = {
 	/* Region ICCM */
 	MPU_REGION_ENTRY("ICCM",
-			 CONFIG_ICCM_BASE_ADDRESS,
-			 CONFIG_ICCM_SIZE * 1024,
+			 DT_ICCM_BASE_ADDRESS,
+			 DT_ICCM_SIZE * 1024,
 			 REGION_FLASH_ATTR),
 	/* Region DCCM */
 	MPU_REGION_ENTRY("DCCM",
-			 CONFIG_DCCM_BASE_ADDRESS,
-			 CONFIG_DCCM_SIZE * 1024,
+			 DT_DCCM_BASE_ADDRESS,
+			 DT_DCCM_SIZE * 1024,
 			 REGION_RAM_ATTR),
 	MPU_REGION_ENTRY("FLASH_0",
 			CONFIG_FLASH_BASE_ADDRESS,
