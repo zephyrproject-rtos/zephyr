@@ -23,4 +23,12 @@ config IPG_DIV
 config GPIO
 	def_bool y
 
+choice CODE_LOCATION
+	default CODE_ITCM
+endchoice
+
+choice DATA_LOCATION
+	default DATA_DTCM
+endchoice
+
 endif # SOC_MIMXRT1064
