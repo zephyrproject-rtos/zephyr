@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_LEVEL CONFIG_LOG_PWM_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(pwm_sifive);
+
+LOG_MODULE_REGISTER(pwm_sifive, CONFIG_PWM_LOG_LEVEL);
 
 #include <sys_io.h>
 #include <device.h>
