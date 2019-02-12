@@ -109,12 +109,6 @@ class Bindings(yaml.Loader):
                 result.append(self._extract_file(filename))
             return result
 
-        elif isinstance(node, yaml.MappingNode):
-            result = {}
-            for k, v in self.construct_mapping(node).iteritems():
-                result[k] = self._extract_file(v)
-            return result
-
         else:
             print("Error:: unrecognised node type in !include statement")
             raise yaml.constructor.ConstructorError
