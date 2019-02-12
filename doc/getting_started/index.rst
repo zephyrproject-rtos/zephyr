@@ -154,6 +154,11 @@ Set Up a Toolchain
    <zephyr_sdk>`, which includes toolchains for all supported Zephyr
    architectures.
 
+   In some specific configurations like non-MCU x86 targets on Linux,
+   you may be able to re-use the native development tools provided by
+   your operating system instead of an SDK by setting
+   ``ZEPHYR_TOOLCHAIN_VARIANT=host``.
+
    If you want, you can use the SDK host tools (such as OpenOCD) with a
    different toolchain by keeping the :envvar:`ZEPHYR_SDK_INSTALL_DIR`
    environment variable set to the Zephyr SDK installation directory, while
