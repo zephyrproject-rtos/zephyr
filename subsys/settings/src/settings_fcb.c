@@ -120,7 +120,8 @@ static int read_handler(void *ctx, off_t off, char *buf, size_t *len)
 	struct fcb_entry_ctx *entry_ctx = ctx;
 
 	if (off >= entry_ctx->loc.fe_data_len) {
-		return -EINVAL;
+		*len = 0;
+		return 0;
 	}
 
 	if ((off + *len) > entry_ctx->loc.fe_data_len) {
