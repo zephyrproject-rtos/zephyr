@@ -32,7 +32,7 @@ void __attribute__((weak)) sys_resume(void)
 }
 #endif
 
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP)
+#if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES)
 void __attribute__((weak)) sys_resume_from_deep_sleep(void)
 {
 }
@@ -75,7 +75,7 @@ static void sys_power_save_idle(void)
 
 	set_kernel_idle_time_in_ticks(ticks);
 #if (defined(CONFIG_SYS_POWER_LOW_POWER_STATES) || \
-	defined(CONFIG_SYS_POWER_DEEP_SLEEP))
+	defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
 
 	sys_pm_idle_exit_notify = 1U;
 

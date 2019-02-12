@@ -38,7 +38,7 @@ enum power_states {
 # endif
 #endif /* CONFIG_SYS_POWER_LOW_POWER_STATES */
 
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
 # ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
 	SYS_POWER_STATE_DEEP_SLEEP,
 # endif
@@ -48,7 +48,7 @@ enum power_states {
 # ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_2_SUPPORTED
 	SYS_POWER_STATE_DEEP_SLEEP_2,
 # endif
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP_STATES */
 	SYS_POWER_STATE_MAX
 };
 
@@ -101,7 +101,7 @@ static inline bool sys_pm_is_low_power_state(enum power_states state)
 static inline bool sys_pm_is_deep_sleep_state(enum power_states state)
 {
 	switch (state) {
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
 # ifdef CONFIG_SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED
 	case SYS_POWER_STATE_DEEP_SLEEP:
 		/* FALLTHROUGH */
@@ -115,7 +115,7 @@ static inline bool sys_pm_is_deep_sleep_state(enum power_states state)
 		/* FALLTHROUGH */
 # endif
 		return true;
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP_STATES */
 
 	default:
 		return false;

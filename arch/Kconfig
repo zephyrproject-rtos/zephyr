@@ -378,11 +378,11 @@ config SYS_POWER_STATE_CPU_LPS_2_SUPPORTED
 	  This option signifies that the target supports the SYS_POWER_STATE_CPU_LPS_2
 	  configuration option.
 
-config SYS_POWER_DEEP_SLEEP_SUPPORTED
+config SYS_POWER_DEEP_SLEEP_STATES_SUPPORTED
 	# Hidden
 	bool
 	help
-	  This option signifies that the target supports the SYS_POWER_DEEP_SLEEP
+	  This option signifies that the target supports the SYS_POWER_DEEP_SLEEP_STATES
 	  configuration option.
 
 config SYS_POWER_STATE_DEEP_SLEEP_SUPPORTED

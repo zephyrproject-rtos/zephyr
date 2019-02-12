@@ -6,7 +6,7 @@
 
 #include <arch/x86/asm.h>
 
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
 GDATA(_pm_save_gdtr)
 GDATA(_pm_save_idtr)
 GDATA(_pm_save_esp)

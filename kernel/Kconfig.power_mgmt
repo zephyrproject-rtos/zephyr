@@ -48,9 +48,9 @@ config SYS_POWER_LOW_POWER_STATES
 	  the CPU low power states supported by the processor.  Generally the one
 	  saving most power.
 
-config SYS_POWER_DEEP_SLEEP
+config SYS_POWER_DEEP_SLEEP_STATES
 	bool "Deep Sleep states"
-	depends on SYS_POWER_DEEP_SLEEP_SUPPORTED
+	depends on SYS_POWER_DEEP_SLEEP_STATES_SUPPORTED
 	help
 	  This option enables the kernel to interface with a power manager
 	  application. This permits the system to enter a Deep sleep state

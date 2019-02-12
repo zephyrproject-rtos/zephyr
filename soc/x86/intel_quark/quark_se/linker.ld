@@ -32,7 +32,7 @@
  * Since the memory regions area are at fixed address locations, only the
  * contiguous unused memory located at the end of RAM should be made available.
  */
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
 #define PHYS_RAM_SIZE DT_RAM_SIZE*1K - BSP_SHARED_RAM_SIZE
 #else
 #ifdef CONFIG_SET_GDT
@@ -50,10 +50,10 @@ MEMORY
 #else  /* !CONFIG_XIP */
     RAM (wx)        : ORIGIN = PHYS_LOAD_ADDR, LENGTH = PHYS_RAM_SIZE
 #endif /* CONFIG_XIP */
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
     BSP_SHARED_RAM (rw) : ORIGIN = CONFIG_BSP_SHARED_RESTORE_INFO_RAM_ADDR,
                           LENGTH = CONFIG_BSP_SHARED_RESTORE_INFO_SIZE
-#endif /* CONFIG_SYS_POWER_DEEP_SLEEP */
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP_STATES */
 #ifndef CONFIG_SET_GDT
     SHARED_GDT_RAM (rw) : ORIGIN = CONFIG_SHARED_GDT_RAM_ADDR,
                               LENGTH = CONFIG_SHARED_GDT_RAM_SIZE

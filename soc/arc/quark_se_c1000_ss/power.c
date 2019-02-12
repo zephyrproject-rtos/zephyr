@@ -17,7 +17,7 @@
 #include "ss_power_states.h"
 #include "vreg.h"
 
-#if (defined(CONFIG_SYS_POWER_DEEP_SLEEP))
+#if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
 extern void _power_soc_sleep(void);
 extern void _power_soc_deep_sleep(void);
 extern void _power_soc_lpss_mode(void);
@@ -50,7 +50,7 @@ void sys_set_power_state(enum power_states state)
 		qm_ss_power_cpu_ss2();
 		break;
 #endif
-#if (defined(CONFIG_SYS_POWER_DEEP_SLEEP))
+#if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
 	case SYS_POWER_STATE_DEEP_SLEEP:
 		qm_ss_power_soc_lpss_enable();
 		qm_power_soc_set_ss_restore_flag();
@@ -80,7 +80,7 @@ void sys_power_state_post_ops(enum power_states state)
 		__builtin_arc_seti(0);
 		break;
 #endif
-#if (defined(CONFIG_SYS_POWER_DEEP_SLEEP))
+#if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
 	case SYS_POWER_STATE_DEEP_SLEEP:
 		qm_ss_power_soc_lpss_disable();
 
