@@ -19,6 +19,10 @@ if(CONF_FILE)
 string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE}")
 endif()
 
+if(OVERLAY_CONFIG)
+  string(REPLACE " " ";" OVERLAY_CONFIG_AS_LIST "${OVERLAY_CONFIG}")
+endif()
+
 set(ENV{srctree}            ${ZEPHYR_BASE})
 set(ENV{KERNELVERSION}      ${KERNELVERSION})
 set(ENV{KCONFIG_CONFIG}     ${DOTCONFIG})
@@ -84,7 +88,7 @@ set(
   merge_config_files
   ${BOARD_DEFCONFIG}
   ${CONF_FILE_AS_LIST}
-  ${OVERLAY_CONFIG}
+  ${OVERLAY_CONFIG_AS_LIST}
   ${EXTRA_KCONFIG_OPTIONS_FILE}
   ${config_files}
 )
