@@ -65,7 +65,7 @@ source "drivers/sensor/fxos8700/Kconfig"
 
 source "drivers/sensor/grove/Kconfig"
 
-source "drivers/sensor/hdc1008/Kconfig"
+source "drivers/sensor/ti_hdc/Kconfig"
 
 source "drivers/sensor/hmc5883l/Kconfig"
 

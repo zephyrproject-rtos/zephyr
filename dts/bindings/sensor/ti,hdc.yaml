@@ -4,18 +4,18 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 ---
-title: HDC1008 Temperature and Humidity Sensor
+title: Texas Instruments Temperature and Humidity Sensor
 version: 0.1
 
 description: >
-    This is a representation of the HDC1008 Temperature and Humidity sensor
+    This is a representation of the TI Temperature and Humidity sensor (e.g. HDC1008)
 
 inherits:
     !include i2c-device.yaml
 
 properties:
     compatible:
-      constraint: "ti,hdc1008"
+      constraint: "ti,hdc"
 
     drdy-gpios:
       type: compound
