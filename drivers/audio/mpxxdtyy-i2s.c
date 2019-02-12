@@ -7,7 +7,7 @@
 #include "mpxxdtyy.h"
 #include <i2s.h>
 
-#define LOG_LEVEL CONFIG_MPXXDTYY_LOG_LEVEL
+#define LOG_LEVEL CONFIG_AUDIO_DMIC_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_DECLARE(mpxxdtyy);
 
