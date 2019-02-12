@@ -84,17 +84,15 @@ void main(void)
 	struct device *dev0, *dev1;
 	u32_t dtr = 0U;
 
-	dev0 = device_get_binding(CONFIG_CDC_ACM_PORT_NAME_0);
+	dev0 = device_get_binding("CDC_ACM_0");
 	if (!dev0) {
-		printf("CDC ACM device %s not found\n",
-		       CONFIG_CDC_ACM_PORT_NAME_0);
+		printf("CDC_ACM_0 device not found\n");
 		return;
 	}
 
-	dev1 = device_get_binding(CONFIG_CDC_ACM_PORT_NAME_1);
+	dev1 = device_get_binding("CDC_ACM_1");
 	if (!dev1) {
-		printf("CDC ACM device %s not found\n",
-		       CONFIG_CDC_ACM_PORT_NAME_1);
+		printf("CDC_ACM_1 device not found\n");
 		return;
 	}
 
