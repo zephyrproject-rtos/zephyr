@@ -108,7 +108,7 @@ add_custom_command(
   -I binary
   -B ${OUTPUT_ARCH}
   -O ${OUTPUT_FORMAT}
-  --rename-section .data=irq_vectors_alloc_data
+  --rename-section .data=irq_vectors_alloc
   irq_vectors_alloc.bin
   irq_vectors_alloc.o
   DEPENDS gen_idt_output irq_vectors_alloc.bin

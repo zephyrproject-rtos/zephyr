@@ -290,7 +290,7 @@ SECTIONS
 
 	z_interrupt_vectors_allocated = .;
 #ifdef LINKER_PASS2
-	KEEP(*(irq_vectors_alloc_data))
+	KEEP(*(irq_vectors_alloc))
 #else
 	. += (CONFIG_IDT_NUM_VECTORS + 7) / 8;
 #endif /* LINKER_PASS2 */
