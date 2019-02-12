@@ -366,4 +366,11 @@
 #define CONFIG_RTC_0_NAME                       DT_ST_STM32_RTC_40002800_LABEL
 #define CONFIG_RTC_PRESCALER                    DT_ST_STM32_RTC_40002800_PRESCALER
 
+#define DT_ADC_0_BASE_ADDRESS               DT_ST_STM32_ADC_40012000_BASE_ADDRESS
+#define DT_ADC_0_IRQ                        DT_ST_STM32_ADC_40012000_IRQ_0
+#define DT_ADC_0_IRQ_PRI                    DT_ST_STM32_ADC_40012000_IRQ_0_PRIORITY
+#define DT_ADC_0_NAME                       DT_ST_STM32_ADC_40012000_LABEL
+#define DT_ADC_0_CLOCK_BITS                 DT_ST_STM32_ADC_40012000_CLOCK_BITS_0
+#define DT_ADC_0_CLOCK_BUS                  DT_ST_STM32_ADC_40012000_CLOCK_BUS_0
+
 /* End of SoC Level DTS fixup file */
