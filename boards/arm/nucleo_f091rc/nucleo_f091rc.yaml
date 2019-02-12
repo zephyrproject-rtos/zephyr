@@ -12,6 +12,7 @@ supported:
   - arduino_i2c
   - gpio
   - i2c
+  - nvs
   - spi
   - watchdog
 testing:

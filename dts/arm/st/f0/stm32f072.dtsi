@@ -8,6 +8,12 @@
 
 / {
 	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				erase-block-size = <2048>;
+			};
+		};
+
 		pinctrl: pin-controller@48000000 {
 
 			gpioe: gpio@48001000 {
