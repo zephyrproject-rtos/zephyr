@@ -38,7 +38,7 @@ itself.
 Bootstrap west
 ==============
 
-Install the bootstrapper for Zephyr's command-line tool, :ref:`west` in a
+Install the bootstrapper for Zephyr's command-line tool, :ref:`west <west>` in a
 shell or ``cmd.exe`` prompt:
 
 .. code-block:: console
@@ -223,7 +223,7 @@ formats, called `generators`_. Zephyr supports the following generators:
 
 This documentation and Zephyr's continuous integration system mainly use
 ``Ninja``, but you should be able to use any supported generator to build
-Zephyr applications.
+Zephyr applications, both when using ``cmake`` directly or ``west``.
 
 Build the Application
 =====================
@@ -231,18 +231,25 @@ Build the Application
 Follow these steps to build the :ref:`hello_world` sample application provided
 with Zephyr.
 
+As mentioned earlier, Zephyr's build system is based on
+:ref:`CMake <application>`. You can build an application either by using
+``cmake`` directly or by using :ref:`west <west>`, Zephyr's meta-tool that is
+also used to :ref:`manage the repositories <west-multi-repo>`. You can find
+additional information about west's build capabilities in
+:ref:`west-build-flash-debug`.
+
 Zephyr applications have to be configured and built to run on some hardware
 configuration, which is called a "board"\ [#board_misnomer]_. These steps show
-how to build the Hello World application for the :ref:`arduino_101` board.  You
-can build for a different board by changing ``arduino_101`` to another
-supported value. See :ref:`boards` for more information, or run ``ninja usage``
-from the build directory (once you've run ``cmake``) to get a list.
+how to build the Hello World application for the :ref:`reel_board` board.  You
+can build for a different board by changing ``reel_board`` to another
+supported value. See :ref:`boards` for more information, or use the ``usage``
+build target from an initialized build directory to get a list.
 
 .. note::
 
    If you want to re-use your existing build directory to build for another
-   board, you must delete that directory's contents first by running ``ninja
-   pristine``.
+   board, you must delete that directory's contents first by using the
+   ``pristine`` build target.
 
 #. Navigate to the main project directory:
 
@@ -259,24 +266,27 @@ from the build directory (once you've run ``cmake``) to get a list.
       # On Windows
       zephyr-env.cmd
 
-#. Build the Hello World sample for the ``arduino_101``:
+#. Build the Hello World sample for the ``reel_board``:
 
    .. Note: we don't use :zephyr-app: here because we just told the user to cd
       to ZEPHYR_BASE, so it's not necessary for clarity and would clutter the
       instructions a bit.
 
    .. zephyr-app-commands::
+      :tool: all
       :app: samples/hello_world
-      :board: arduino_101
+      :board: reel_board
       :goals: build
 
-   On Linux/macOS you can also build with ``make`` instead of ``ninja``:
+   On Linux/macOS you can also use ``cmake`` to build with ``make`` instead
+   of ``ninja``:
 
    .. zephyr-app-commands::
+      :tool: cmake
       :app: samples/hello_world
       :generator: make
       :host-os: unix
-      :board: arduino_101
+      :board: reel_board
       :goals: build
 
 The main build products are in :file:`zephyr/samples/hello_world/build/zephyr`.
@@ -287,12 +297,12 @@ will be present depending on the target and build system configuration.
 Other sample projects demonstrating Zephyr's features are located in
 :file:`zephyr/samples` and are documented in :ref:`samples-and-demos`.
 
-Run the Application by Flashing to Another Board
-================================================
+Run the Application by Flashing to a Board
+==========================================
 
 Most "real hardware" boards supported by Zephyr can be flashed by running
-``ninja flash`` from the build directory. However, this may require
-board-specific tool installation and configuration to work properly.
+``west flash`` or ``ninja flash`` from the build directory. However, this may
+require board-specific tool installation and configuration to work properly.
 
 See :ref:`application_run` in the Application Development Primer and the
 documentation provided with your board at :ref:`boards` for additional details
@@ -308,6 +318,7 @@ To build and run Hello World using the x86 emulation board configuration
 (``qemu_x86``), type:
 
 .. zephyr-app-commands::
+   :tool: all
    :zephyr-app: samples/hello_world
    :host-os: unix
    :board: qemu_x86
@@ -318,8 +329,8 @@ To exit, type :kbd:`Ctrl-a`, then :kbd:`x`.
 Use the ``qemu_cortex_m3`` board configuration to run on an emulated Arm
 Cortex-M3.
 
-Running a Sample Application natively (POSIX OS)
-================================================
+Run a Sample Application natively (POSIX OS)
+============================================
 
 Finally, it is also possible to compile some samples to run as native processes
 on a POSIX OS. This is currently only tested on Linux hosts.
@@ -331,6 +342,7 @@ information.
 To compile and run Hello World in this way, type:
 
 .. zephyr-app-commands::
+   :tool: all
    :zephyr-app: samples/hello_world
    :host-os: unix
    :board: native_posix
@@ -340,6 +352,10 @@ and then:
 
 .. code-block:: console
 
+   # With west
+   west build -t run
+
+   # With ninja
    ninja run
 
    # or just:
