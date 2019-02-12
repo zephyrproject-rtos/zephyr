@@ -338,7 +338,6 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	u8_t buffer[CONFIG_RNDIS_BULK_EP_MPS];
 	u32_t hdr_offset = 0U;
 	u32_t len, read;
-	int ret;
 
 	usb_read(ep, NULL, 0, &len);
 
@@ -385,7 +384,9 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	/* Start new packet */
 	if (!rndis.in_pkt) {
 		struct net_pkt *pkt;
-		struct net_buf *buf;
+
+		/* Append data only, skipping RNDIS header */
+		hdr_offset = sizeof(struct rndis_payload_packet);
 
 		rndis.in_pkt_len = parse_rndis_header(buffer, len);
 		if (rndis.in_pkt_len < 0) {
@@ -395,9 +396,11 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 			return;
 		}
 
-		pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
+		pkt = net_pkt_alloc_with_buffer(netusb_net_iface(),
+						rndis.in_pkt_len,
+						AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
-			/* In a case of low memory skip the whole packet
+			/* In case of low memory: skip the whole packet
 			 * hoping to get buffers for later ones
 			 */
 			rndis.skip_bytes = rndis.in_pkt_len - len;
@@ -409,33 +412,12 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 			return;
 		}
 
-		buf = net_pkt_get_frag(pkt, K_NO_WAIT);
-		if (!buf) {
-			/* In a case of low memory skip the whole packet
-			 * hoping to get buffers for later ones
-			 */
-			rndis.skip_bytes = rndis.in_pkt_len - len;
-
-			LOG_ERR("Not enough net buffers, len %u, skip %u",
-				rndis.in_pkt_len, rndis.skip_bytes);
-
-			net_pkt_unref(pkt);
-			rndis.rx_no_buf++;
-			return;
-		}
-
-		net_pkt_frag_insert(pkt, buf);
-
 		rndis.in_pkt = pkt;
-
-		/* Append data only, skipping RNDIS header */
-		hdr_offset = sizeof(struct rndis_payload_packet);
 	}
 
-	ret = net_pkt_append_all(rndis.in_pkt, len - hdr_offset,
-				 buffer + hdr_offset, K_FOREVER);
-	if (ret < 0) {
-		LOG_ERR("Error appending data to pkt: %p", rndis.in_pkt);
+	if (net_pkt_write_new(rndis.in_pkt,
+			      buffer + hdr_offset, len - hdr_offset)) {
+		LOG_ERR("Error writing data to pkt: %p", rndis.in_pkt);
 		rndis_clean();
 		rndis.rx_err++;
 		return;
@@ -1075,8 +1057,8 @@ static void rndis_hdr_add(u8_t *buf, u32_t len)
  * packet frame as a buffer up to 1518 bytes and it would require two
  * iterations.
  */
-static int append_bytes(u8_t *out_buf, u16_t buf_len, u8_t *data,
-			u16_t len, u16_t remaining)
+static int append_bytes(struct net_pkt *pkt, size_t len,
+			u8_t *out_buf, u16_t buf_len, u16_t remaining)
 {
 	int ret;
 
@@ -1086,9 +1068,12 @@ static int append_bytes(u8_t *out_buf, u16_t buf_len, u8_t *data,
 		LOG_DBG("len %u remaining %u count %u", len, remaining, count);
 #endif
 
-		memcpy(out_buf + (buf_len - remaining), data, count);
+		if (net_pkt_read_new(pkt, out_buf +
+				     (buf_len - remaining), count)) {
+			LOG_ERR("Error getting data");
+			return ret;
+		}
 
-		data += count;
 		remaining -= count;
 		len -= count;
 
@@ -1106,11 +1091,6 @@ static int append_bytes(u8_t *out_buf, u16_t buf_len, u8_t *data,
 				return ret;
 			}
 
-			/* Consumed full buffer */
-			if (len == 0) {
-				return buf_len;
-			}
-
 			remaining = buf_len;
 		}
 	} while (len);
@@ -1123,10 +1103,10 @@ static int append_bytes(u8_t *out_buf, u16_t buf_len, u8_t *data,
 static int rndis_send(struct net_pkt *pkt)
 {
 	u8_t buf[CONFIG_RNDIS_BULK_EP_MPS];
+	size_t len = net_pkt_get_len(pkt);
 	int remaining = sizeof(buf);
-	struct net_buf *frag;
 
-	LOG_DBG("send pkt %p len %u", pkt, net_pkt_get_len(pkt));
+	LOG_DBG("send pkt %p len %u", pkt, len);
 
 	if (rndis.media_status == RNDIS_OBJECT_ID_MEDIA_DISCONNECTED) {
 		LOG_DBG("Media disconnected, drop pkt %p", pkt);
@@ -1135,23 +1115,11 @@ static int rndis_send(struct net_pkt *pkt)
 
 	net_pkt_hexdump(pkt, "<");
 
-	if (!pkt->frags) {
-		return -ENODATA;
-	}
-
-	rndis_hdr_add(buf, net_pkt_get_len(pkt));
+	rndis_hdr_add(buf, len);
 
 	remaining -= sizeof(struct rndis_payload_packet);
 
-	for (frag = pkt->frags->frags; frag; frag = frag->frags) {
-		LOG_DBG("Fragment %p len %u remaining %u",
-			frag, frag->len, remaining);
-		remaining = append_bytes(buf, sizeof(buf), frag->data,
-					 frag->len, remaining);
-		if (remaining < 0) {
-			return remaining;
-		}
-	}
+	remaining = append_bytes(pkt, len, buf, sizeof(buf), remaining);
 
 	if (remaining > 0 && remaining < sizeof(buf)) {
 		return try_write(rndis_ep_data[RNDIS_IN_EP_IDX].ep_addr, buf,
