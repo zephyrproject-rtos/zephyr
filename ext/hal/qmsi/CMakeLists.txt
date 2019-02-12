@@ -1,7 +1,7 @@
 zephyr_library()
 
 zephyr_compile_definitions(                                  ENABLE_EXTERNAL_ISR_HANDLING)
-zephyr_compile_definitions_ifdef(CONFIG_SYS_POWER_DEEP_SLEEP ENABLE_RESTORE_CONTEXT)
+zephyr_compile_definitions_ifdef(CONFIG_SYS_POWER_DEEP_SLEEP_STATES ENABLE_RESTORE_CONTEXT)
 
 if(CONFIG_SOC_QUARK_SE_C1000_SS)
 set(SOC_SERIES quark_se)

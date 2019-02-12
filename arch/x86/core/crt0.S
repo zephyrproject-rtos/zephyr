@@ -38,7 +38,7 @@
 	GDATA(__start_time_stamp)
 #endif
 
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
 	GTEXT(sys_resume_from_deep_sleep)
 #endif
 
@@ -284,7 +284,7 @@ __csSet:
 #else
 	addl	$CONFIG_ISR_STACK_SIZE, %esp
 #endif
-#if defined(CONFIG_SYS_POWER_DEEP_SLEEP) && \
+#if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES) && \
              !defined(CONFIG_BOOTLOADER_CONTEXT_RESTORE)
 	/*
 	 * Invoke sys_resume_from_deep_sleep() hook to handle resume from

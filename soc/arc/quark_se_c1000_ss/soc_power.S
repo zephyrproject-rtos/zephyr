@@ -8,7 +8,7 @@
 #include <arch/arc/v2/aux_regs.h>
 #include <swap_macros.h>
 
-#ifdef CONFIG_SYS_POWER_DEEP_SLEEP
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
 GDATA(_pm_arc_context)
 
 GTEXT(sys_resume_from_deep_sleep)
