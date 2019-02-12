@@ -118,20 +118,20 @@ static void help_item_print(const struct shell *shell, const char *item_name,
 
 	if (!IS_ENABLED(CONFIG_NEWLIB_LIBC) && !IS_ENABLED(CONFIG_ARCH_POSIX)) {
 		/* print option name */
-		shell_fprintf(shell, SHELL_NORMAL, "%s%-*s%s:",
-			      tabulator,
-			      item_name_width, item_name,
-			      tabulator);
+		shell_internal_fprintf(shell, SHELL_NORMAL, "%s%-*s%s:",
+				       tabulator,
+				       item_name_width, item_name,
+				       tabulator);
 	} else {
 		u16_t tmp = item_name_width - strlen(item_name);
 		char space = ' ';
 
-		shell_fprintf(shell, SHELL_NORMAL, "%s%s", tabulator,
-			      item_name);
+		shell_internal_fprintf(shell, SHELL_NORMAL, "%s%s", tabulator,
+				       item_name);
 		for (u16_t i = 0; i < tmp; i++) {
 			shell_write(shell, &space, 1);
 		}
-		shell_fprintf(shell, SHELL_NORMAL, "%s:", tabulator);
+		shell_internal_fprintf(shell, SHELL_NORMAL, "%s:", tabulator);
 	}
 
 	if (item_help == NULL) {
@@ -176,7 +176,7 @@ void shell_help_subcmd_print(const struct shell *shell)
 		return;
 	}
 
-	shell_fprintf(shell, SHELL_NORMAL, "Subcommands:\n");
+	shell_internal_fprintf(shell, SHELL_NORMAL, "Subcommands:\n");
 
 	/* Printing subcommands and help string (if exists). */
 	cmd_idx = 0;
@@ -202,8 +202,8 @@ void shell_help_cmd_print(const struct shell *shell)
 	u16_t field_width = shell_strlen(shell->ctx->active_cmd.syntax) +
 							  shell_strlen(cmd_sep);
 
-	shell_fprintf(shell, SHELL_NORMAL, "%s%s",
-		      shell->ctx->active_cmd.syntax, cmd_sep);
+	shell_internal_fprintf(shell, SHELL_NORMAL, "%s%s",
+			       shell->ctx->active_cmd.syntax, cmd_sep);
 
 	formatted_text_print(shell, shell->ctx->active_cmd.help,
 			     field_width, false);

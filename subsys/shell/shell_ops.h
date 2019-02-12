@@ -134,6 +134,16 @@ static inline void flag_history_exit_set(const struct shell *shell, bool val)
 	shell->ctx->internal.flags.history_exit = val ? 1 : 0;
 }
 
+static inline bool flag_cmd_ctx_get(const struct shell *shell)
+{
+	return shell->ctx->internal.flags.cmd_ctx == 1 ? true : false;
+}
+
+static inline void flag_cmd_ctx_set(const struct shell *shell, bool val)
+{
+	shell->ctx->internal.flags.cmd_ctx = val ? 1 : 0;
+}
+
 static inline u8_t flag_last_nl_get(const struct shell *shell)
 {
 	return shell->ctx->internal.flags.last_nl;
@@ -245,6 +255,17 @@ static inline void shell_vt100_colors_store(const struct shell *shell,
 
 void shell_vt100_colors_restore(const struct shell *shell,
 				const struct shell_vt100_colors *color);
+
+/* This function can be called only within shell thread but not from command
+ * handlers.
+ */
+void shell_internal_fprintf(const struct shell *shell,
+			    enum shell_vt100_color color,
+			    const char *fmt, ...);
+
+void shell_internal_vfprintf(const struct shell *shell,
+			     enum shell_vt100_color color, const char *fmt,
+			     va_list args);
 
 #ifdef __cplusplus
 }
