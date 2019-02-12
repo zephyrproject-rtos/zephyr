@@ -8,6 +8,12 @@
 
 / {
 	soc {
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				erase-block-size = <2048>;
+			};
+		};
+
 		timers2: timers@40000000 {
 			compatible = "st,stm32-timers";
 			reg = <0x40000000 0x400>;
