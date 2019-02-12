@@ -47,6 +47,4 @@ struct socket_op_vtable {
 			  const void *optval, socklen_t optlen);
 };
 
-int zcan_socket(int family, int type, int proto);
-
 #endif /* _SOCKETS_INTERNAL_H_ */

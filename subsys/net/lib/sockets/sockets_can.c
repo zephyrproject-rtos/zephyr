@@ -42,11 +42,6 @@ int zcan_socket(int family, int type, int proto)
 	int fd;
 	int ret;
 
-	if (proto != CAN_RAW) {
-		errno = EOPNOTSUPP;
-		return -1;
-	}
-
 	fd = z_reserve_fd();
 	if (fd < 0) {
 		return -1;
@@ -429,3 +424,14 @@ static const struct socket_op_vtable can_sock_fd_op_vtable = {
 	.getsockopt = can_sock_getsockopt_vmeth,
 	.setsockopt = can_sock_setsockopt_vmeth,
 };
+
+static bool can_is_supported(int family, int type, int proto)
+{
+	if (type != SOCK_RAW || proto != CAN_RAW) {
+		return false;
+	}
+
+	return true;
+}
+
+NET_SOCKET_REGISTER(af_can, AF_CAN, can_is_supported, zcan_socket);
