@@ -413,9 +413,15 @@ static u8_t disable(u16_t handle)
 	u8_t ret;
 
 	scan = ull_scan_is_enabled_get(handle);
-	if (!scan || scan->lll.conn) {
+	if (!scan) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+
+#if defined(CONFIG_BT_CONN)
+	if (scan->lll.conn) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif
 
 	ret = ull_scan_disable(handle, scan);
 	if (ret) {
