@@ -9,31 +9,21 @@
 config USB_DEVICE_HID
 	bool "USB Human Interface Device support"
 	help
-	  Enables USB Human Interface Device support.
+	  Enables USB Human Interface Device support. Default device name
+	  is "HID_0".
 
 if USB_DEVICE_HID
 
-config USB_HID_DEVICE_NAME_0
-	string "USB HID first device name"
-	default "HID_0"
+config USB_HID_DEVICE_NAME
+	string "USB HID device name template"
+	default "HID"
 	help
-	  Device name for the first HID Device.
+	  Device name template for the HID Devices. First device would have
+	  name $(USB_HID_DEVICE_NAME)_0, etc.
 
-if USB_COMPOSITE_DEVICE
-
-config USB_HID_DEVICE_1
-	bool "Enable second USB HID Device"
-	help
-	  Enable second USB HID Device for composite configuration.
-
-config USB_HID_DEVICE_NAME_1
-	string "USB HID second device name"
-	depends on USB_HID_DEVICE_1
-	default "HID_1"
-	help
-	  Device name for the second HID Device.
-
-endif # USB_COMPOSITE_DEVICE
+module = USB_HID
+default-count = 1
+source "subsys/usb/class/Kconfig.template.composite_device_number"
 
 config ENABLE_HID_INT_OUT_EP
 	bool "Enable USB HID Device Interrupt OUT Endpoint"
