@@ -10,7 +10,6 @@ tests:
         ordered: true
         regex:
             - "Counter alarm sample"
-            -
             - "Set alarm in 2 sec"
             - "!!! Alarm !!!"
             - "Now: 2"
