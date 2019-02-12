@@ -160,12 +160,15 @@ struct spi_cs_control {
  *     cs_hold             [ 13 ]      - Hold on the CS line if possible.
  *     lock_on             [ 14 ]      - Keep resource locked for the caller.
  *     cs_active_high      [ 15 ]      - Active high CS logic.
+ *     defer_mode          [ 16 ]      - Defer transaction start on trigger.
+ *
  * @param slave is the slave number from 0 to host controller slave limit.
  * @param cs is a valid pointer on a struct spi_cs_control is CS line is
  *    emulated through a gpio line, or NULL otherwise.
  *
- * @note Only cs_hold and lock_on can be changed between consecutive
- * transceive call. Rest of the attributes are not meant to be tweaked.
+ * @note Only cs_hold, defer_mode and lock_on can be changed between
+ * consecutive transceive call. Rest of the attributes are not meant
+ * to be tweaked.
  */
 struct spi_config {
 	u32_t		frequency;
