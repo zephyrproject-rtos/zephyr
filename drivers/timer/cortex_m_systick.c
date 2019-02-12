@@ -24,6 +24,10 @@ void _ExcExit(void);
 #define TICKLESS (IS_ENABLED(CONFIG_TICKLESS_KERNEL) &&			\
 		  !IS_ENABLED(CONFIG_QEMU_TICKLESS_WORKAROUND))
 
+#if CYC_PER_TICK > COUNTER_MAX
+#error "CYC_PER_TICK exceeds maximum 24 bit value"
+#endif
+
 static struct k_spinlock lock;
 
 static u32_t last_load;
