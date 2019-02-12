@@ -1708,6 +1708,13 @@ int net_context_recv(struct net_context *context,
 		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 			   net_context_get_family(context) == AF_CAN) {
 			ret = recv_raw(context, cb, timeout, user_data);
+			if (ret == -EALREADY) {
+				/* This is perfectly normal for CAN sockets.
+				 * The SocketCAN will dispatch the packet to
+				 * correct net_context listener.
+				 */
+				ret = 0;
+			}
 		} else {
 			ret = -EPROTOTYPE;
 		}
