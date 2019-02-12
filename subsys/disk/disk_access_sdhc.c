@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define LOG_LEVEL CONFIG_DISC_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(sdhc);
+
+LOG_MODULE_REGISTER(sdhc, CONFIG_DISK_LOG_LEVEL);
 
 #include <disk_access.h>
 #include <gpio.h>
