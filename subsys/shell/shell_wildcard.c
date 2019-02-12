@@ -8,7 +8,7 @@
 #include <fnmatch.h>
 #include "shell_wildcard.h"
 #include "shell_utils.h"
-
+#include "shell_ops.h"
 
 static void subcmd_get(const struct shell_cmd_entry *cmd,
 		       size_t idx, const struct shell_static_entry **entry,
@@ -109,7 +109,7 @@ static enum shell_wildcard_status commands_expand(const struct shell *shell,
 					      &shell->ctx->cmd_tmp_buff_len,
 					      p_static_entry->syntax, pattern);
 			if (ret_val == SHELL_WILDCARD_CMD_MISSING_SPACE) {
-				shell_fprintf(shell,
+				shell_internal_fprintf(shell,
 					      SHELL_WARNING,
 					      "Command buffer is too short to"
 					      " expand all commands matching"
