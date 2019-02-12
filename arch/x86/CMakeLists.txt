@@ -234,7 +234,7 @@ if(CONFIG_GDT_DYNAMIC)
     -I binary
     -B ${OUTPUT_ARCH}
     -O ${OUTPUT_FORMAT}
-    --rename-section .data=gdt_ram_data
+    --rename-section .data=gdt
     gdt.bin
     gdt.o
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
