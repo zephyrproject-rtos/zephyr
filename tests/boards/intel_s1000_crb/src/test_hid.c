@@ -103,7 +103,7 @@ void hid_thread(void)
 
 	LOG_DBG("Starting application");
 
-	hid_dev = device_get_binding(CONFIG_USB_HID_DEVICE_NAME_0);
+	hid_dev = device_get_binding("HID_0");
 	if (hid_dev == NULL) {
 		LOG_ERR("Cannot get USB HID Device");
 		return;
