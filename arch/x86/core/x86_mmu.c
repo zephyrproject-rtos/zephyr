@@ -88,6 +88,11 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 			end_pde_num = MMU_PDE_NUM((char *)addr + size - 1);
 		}
 
+		/* Ensure page directory pointer table entry is present */
+		if (X86_MMU_GET_PDPTE_INDEX(&USER_PDPT, pdpte)->p == 0) {
+			return -EPERM;
+		}
+
 		struct x86_mmu_pd *pd_address =
 			X86_MMU_GET_PD_ADDR_INDEX(&USER_PDPT, pdpte);
 
