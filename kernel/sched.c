@@ -45,7 +45,7 @@
 /* the only struct z_kernel instance */
 struct z_kernel _kernel;
 
-static struct k_spinlock sched_lock;
+static struct k_spinlock sched_spinlock;
 
 #define LOCKED(lck) for (k_spinlock_key_t __i = {},			\
 					  __key = k_spin_lock(lck);	\
@@ -262,7 +262,7 @@ static void reset_time_slice(void)
 
 void k_sched_time_slice_set(s32_t slice, int prio)
 {
-	LOCKED(&sched_lock) {
+	LOCKED(&sched_spinlock) {
 		_current_cpu->slice_ticks = 0;
 		slice_time = _ms_to_ticks(slice);
 		slice_max_prio = prio;
@@ -330,7 +330,7 @@ static void update_cache(int preempt_ok)
 
 void _add_thread_to_ready_q(struct k_thread *thread)
 {
-	LOCKED(&sched_lock) {
+	LOCKED(&sched_spinlock) {
 		_priq_run_add(&_kernel.ready_q.runq, thread);
 		_mark_thread_as_queued(thread);
 		update_cache(0);
@@ -339,7 +339,7 @@ void _add_thread_to_ready_q(struct k_thread *thread)
 
 void _move_thread_to_end_of_prio_q(struct k_thread *thread)
 {
-	LOCKED(&sched_lock) {
+	LOCKED(&sched_spinlock) {
 		_priq_run_remove(&_kernel.ready_q.runq, thread);
 		_priq_run_add(&_kernel.ready_q.runq, thread);
 		_mark_thread_as_queued(thread);
@@ -349,7 +349,7 @@ void _move_thread_to_end_of_prio_q(struct k_thread *thread)
 
 void _remove_thread_from_ready_q(struct k_thread *thread)
 {
-	LOCKED(&sched_lock) {
+	LOCKED(&sched_spinlock) {
 		if (_is_thread_queued(thread)) {
 			_priq_run_remove(&_kernel.ready_q.runq, thread);
 			_mark_thread_as_not_queued(thread);
@@ -397,7 +397,7 @@ ALWAYS_INLINE struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
 
 	struct k_thread *ret = NULL;
 
-	LOCKED(&sched_lock) {
+	LOCKED(&sched_spinlock) {
 		ret = _priq_wait_best(&wait_q->waitq);
 	}
 
@@ -406,7 +406,7 @@ ALWAYS_INLINE struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
 
 ALWAYS_INLINE void _unpend_thread_no_timeout(struct k_thread *thread)
 {
-	LOCKED(&sched_lock) {
+	LOCKED(&sched_spinlock) {
 		_priq_wait_remove(&pended_on(thread)->waitq, thread);
 		_mark_thread_as_not_pending(thread);
 	}
@@ -475,7 +475,7 @@ void _thread_priority_set(struct k_thread *thread, int prio)
 {
 	bool need_sched = 0;
 
-	LOCKED(&sched_lock) {
+	LOCKED(&sched_spinlock) {
 		need_sched = _is_thread_ready(thread);
 
 		if (need_sched) {
@@ -526,7 +526,7 @@ void _reschedule_irqlock(u32_t key)
 
 void k_sched_lock(void)
 {
-	LOCKED(&sched_lock) {
+	LOCKED(&sched_spinlock) {
 		_sched_lock();
 	}
 }
@@ -537,7 +537,7 @@ void k_sched_unlock(void)
 	__ASSERT(_current->base.sched_locked != 0, "");
 	__ASSERT(!_is_in_isr(), "");
 
-	LOCKED(&sched_lock) {
+	LOCKED(&sched_spinlock) {
 		++_current->base.sched_locked;
 		update_cache(1);
 	}
@@ -554,7 +554,7 @@ struct k_thread *_get_next_ready_thread(void)
 {
 	struct k_thread *ret = 0;
 
-	LOCKED(&sched_lock) {
+	LOCKED(&sched_spinlock) {
 		ret = next_up();
 	}
 
@@ -568,7 +568,7 @@ void *_get_next_switch_handle(void *interrupted)
 	_current->switch_handle = interrupted;
 
 #ifdef CONFIG_SMP
-	LOCKED(&sched_lock) {
+	LOCKED(&sched_spinlock) {
 		struct k_thread *th = next_up();
 
 		if (_current != th) {
@@ -841,7 +841,7 @@ void _impl_k_thread_deadline_set(k_tid_t tid, int deadline)
 {
 	struct k_thread *th = tid;
 
-	LOCKED(&sched_lock) {
+	LOCKED(&sched_spinlock) {
 		th->base.prio_deadline = k_cycle_get_32() + deadline;
 		if (_is_thread_queued(th)) {
 			_priq_run_remove(&_kernel.ready_q.runq, th);
@@ -871,7 +871,7 @@ void _impl_k_yield(void)
 	__ASSERT(!_is_in_isr(), "");
 
 	if (!_is_idle(_current)) {
-		LOCKED(&sched_lock) {
+		LOCKED(&sched_spinlock) {
 			_priq_run_remove(&_kernel.ready_q.runq, _current);
 			_priq_run_add(&_kernel.ready_q.runq, _current);
 			update_cache(1);
@@ -992,7 +992,7 @@ static int cpu_mask_mod(k_tid_t t, u32_t enable_mask, u32_t disable_mask)
 {
 	int ret = 0;
 
-	LOCKED(&sched_lock) {
+	LOCKED(&sched_spinlock) {
 		if (_is_thread_prevented_from_running(t)) {
 			t->base.cpu_mask |= enable_mask;
 			t->base.cpu_mask  &= ~disable_mask;
