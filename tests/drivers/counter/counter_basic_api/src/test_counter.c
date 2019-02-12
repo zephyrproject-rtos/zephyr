@@ -79,6 +79,11 @@ const char *devices[] = {
 typedef void (*counter_test_func_t)(const char *dev_name);
 
 
+static void counter_setup_instance(const char *dev_name)
+{
+	alarm_cnt = 0;
+}
+
 static void counter_tear_down_instance(const char *dev_name)
 {
 	int err;
@@ -97,6 +102,7 @@ static void counter_tear_down_instance(const char *dev_name)
 static void test_all_instances(counter_test_func_t func)
 {
 	for (int i = 0; i < ARRAY_SIZE(devices); i++) {
+		counter_setup_instance(devices[i]);
 		func(devices[i]);
 		counter_tear_down_instance(devices[i]);
 	}
@@ -190,11 +196,12 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 
 		zassert_equal(0, err, "Counter failed to set top value\n");
 
+		alarm_cfg.ticks = ticks + 1;
 		err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 		zassert_equal(-EINVAL, err,
 			      "Counter should return error because ticks"
 			      " exceeded the limit set alarm\n");
-		alarm_cfg.ticks = ticks - 100;
+		alarm_cfg.ticks = ticks - 1;
 	}
 
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
@@ -241,7 +248,7 @@ void test_single_shot_alarm_top(void)
 #endif
 }
 
-static void *clbk_data[2];
+static void *clbk_data[10];
 
 static void alarm_handler2(struct device *dev, u8_t chan_id, u32_t counter,
 			   void *user_data)
