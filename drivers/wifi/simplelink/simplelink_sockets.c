@@ -30,28 +30,58 @@ static int simplelink_socket(int family, int type, int proto)
 	int retval = 0;
 	int sl_proto = proto;
 
-	/* Map Zephyr socket.h AF_INET6 to SimpleLink's: */
-	family = (family == AF_INET6 ? SL_AF_INET6 : family);
+	/* Map Zephyr socket.h family to SimpleLink's: */
+	switch (family) {
+	case AF_INET:
+		family = SL_AF_INET;
+		break;
+	case AF_INET6:
+		family = SL_AF_INET6;
+		break;
+	default:
+		LOG_ERR("unsupported family: %d", family);
+		retval = EAFNOSUPPORT;
+		goto exit;
+	}
 
-	/* Map Zephyr TLS protocols to TI's values: */
+	/* Map Zephyr socket.h type to SimpleLink's: */
+	switch (type) {
+	case SOCK_STREAM:
+		type = SL_SOCK_STREAM;
+		break;
+	case SOCK_DGRAM:
+		type = SL_SOCK_DGRAM;
+		break;
+	case SOCK_RAW:
+		type = SL_SOCK_RAW;
+		break;
+	default:
+		LOG_ERR("unrecognized type: %d", type);
+		retval = ESOCKTNOSUPPORT;
+		goto exit;
+	}
+
+	/* Map Zephyr protocols to TI's values: */
 	if (proto >= IPPROTO_TLS_1_0 && proto <= IPPROTO_TLS_1_2) {
 		sl_proto = SL_SEC_SOCKET;
 	} else if (proto >= IPPROTO_DTLS_1_0 && proto <= IPPROTO_DTLS_1_2) {
 		/* SimpleLink doesn't handle DTLS yet! */
 		retval = EPROTONOSUPPORT;
 		goto exit;
+	} else {
+		switch (proto) {
+		case IPPROTO_TCP:
+			sl_proto = SL_IPPROTO_TCP;
+			break;
+		case IPPROTO_UDP:
+			sl_proto = SL_IPPROTO_UDP;
+			break;
+		default:
+			LOG_ERR("unrecognized proto: %d", sl_proto);
+			retval = EPROTONOSUPPORT;
+			goto exit;
+		}
 	}
-
-	/* Ensure other Zephyr definitions match SimpleLink's: */
-	__ASSERT(family == SL_AF_INET || family == SL_AF_INET6 \
-		 || family == SL_INADDR_ANY,		       \
-		 "unrecognized family: %d", family);
-	__ASSERT(type == SL_SOCK_STREAM || type == SL_SOCK_DGRAM || \
-		 type == SL_SOCK_RAW,				    \
-		 "unrecognized type: %d", type);
-	__ASSERT(sl_proto == SL_IPPROTO_TCP || sl_proto == SL_IPPROTO_UDP || \
-		 sl_proto == SL_IPPROTO_RAW || sl_proto == SL_SEC_SOCKET,    \
-		 "unrecognized proto: %d", sl_proto);
 
 	sd = sl_Socket(family, type, sl_proto);
 	if (sd < 0) {
@@ -117,7 +147,7 @@ static SlSockAddr_t *translate_z_to_sl_addrs(const struct sockaddr *addr,
 		struct sockaddr_in *z_sockaddr_in = (struct sockaddr_in *)addr;
 
 		*sl_addrlen = sizeof(SlSockAddrIn_t);
-		sl_addr_in->sin_family = AF_INET;
+		sl_addr_in->sin_family = SL_AF_INET;
 		sl_addr_in->sin_port = z_sockaddr_in->sin_port;
 		sl_addr_in->sin_addr.s_addr =
 			z_sockaddr_in->sin_addr.s_addr;
@@ -128,7 +158,7 @@ static SlSockAddr_t *translate_z_to_sl_addrs(const struct sockaddr *addr,
 			(struct sockaddr_in6 *)addr;
 
 		*sl_addrlen = sizeof(SlSockAddrIn6_t);
-		sl_addr_in6->sin6_family = AF_INET6;
+		sl_addr_in6->sin6_family = SL_AF_INET6;
 		sl_addr_in6->sin6_port = z_sockaddr_in6->sin6_port;
 		memcpy(sl_addr_in6->sin6_addr._S6_un._S6_u32,
 		       z_sockaddr_in6->sin6_addr.s6_addr,
