@@ -331,7 +331,7 @@ SECTIONS
 	. = ALIGN(8);
 	_gdt = .;
 #ifdef LINKER_PASS2
-	KEEP(*(gdt_ram_data))
+	KEEP(*(gdt))
 #else /* LINKER_PASS2 */
 
 #ifdef CONFIG_USERSPACE
