@@ -176,6 +176,11 @@ arduino_serial: &uart4 {};
 			label = "image-scratch";
 			reg = <0x000F8000 0x00006000>;
 		};
+
+		storage_partition: partition@fc000 {
+			label = "storage";
+			reg = <0x000fc000 0x00004000>;
+		};
 	};
 
 

@@ -16,6 +16,7 @@ supported:
   - gpio
   - ble
   - spi
+  - nvs
   - vl53l0x
   - watchdog
 ram: 96
