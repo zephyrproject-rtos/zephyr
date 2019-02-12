@@ -94,6 +94,22 @@ LOG_MODULE_REGISTER(net_pkt, CONFIG_NET_PKT_LOG_LEVEL);
 #error "Too small net_buf fragment size"
 #endif
 
+#if CONFIG_NET_PKT_RX_COUNT <= 0
+#error "Minimum value for CONFIG_NET_PKT_RX_COUNT is 1"
+#endif
+
+#if CONFIG_NET_PKT_TX_COUNT <= 0
+#error "Minimum value for CONFIG_NET_PKT_TX_COUNT is 1"
+#endif
+
+#if CONFIG_NET_BUF_RX_COUNT <= 0
+#error "Minimum value for CONFIG_NET_BUF_RX_COUNT is 1"
+#endif
+
+#if CONFIG_NET_BUF_TX_COUNT <= 0
+#error "Minimum value for CONFIG_NET_BUF_TX_COUNT is 1"
+#endif
+
 K_MEM_SLAB_DEFINE(rx_pkts, sizeof(struct net_pkt), CONFIG_NET_PKT_RX_COUNT, 4);
 K_MEM_SLAB_DEFINE(tx_pkts, sizeof(struct net_pkt), CONFIG_NET_PKT_TX_COUNT, 4);
 
