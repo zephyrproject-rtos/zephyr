@@ -26,6 +26,45 @@
 
 __weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
 
+#ifdef CONFIG_THREAD_STACK_INFO
+/**
+ * @brief Check if a memory address range falls within the stack
+ *
+ * Given a memory address range, ensure that it falls within the bounds
+ * of the faulting context's stack.
+ *
+ * @param addr Starting address
+ * @param size Size of the region, or 0 if we just want to see if addr is
+ *             in bounds
+ * @param cs Code segment of faulting context
+ * @return true if addr/size region is not within the thread stack
+ */
+static bool check_stack_bounds(u32_t addr, size_t size, u16_t cs)
+{
+	u32_t start, end;
+
+	if (_is_in_isr()) {
+		/* We were servicing an interrupt */
+		start = (u32_t)_ARCH_THREAD_STACK_BUFFER(_interrupt_stack);
+		end = start + CONFIG_ISR_STACK_SIZE;
+	} else if ((cs & 0x3) != 0 ||
+		   (_current->base.user_options & K_USER) == 0) {
+		/* Thread was in user mode, or is not a user mode thread.
+		 * The normal stack buffer is what we will check.
+		 */
+		start = _current->stack_info.start;
+		end = STACK_ROUND_DOWN(_current->stack_info.start +
+				       _current->stack_info.size);
+	} else {
+		/* User thread was doing a syscall, check kernel stack bounds */
+		start = _current->stack_info.start - MMU_PAGE_SIZE;
+		end = _current->stack_info.start;
+	}
+
+	return (addr <= start) || (addr + size > end);
+}
+#endif
+
 #if defined(CONFIG_EXCEPTION_STACK_TRACE)
 struct stack_frame {
 	u32_t next;
@@ -35,7 +74,7 @@ struct stack_frame {
 
 #define MAX_STACK_FRAMES 8
 
-static void unwind_stack(u32_t base_ptr)
+static void unwind_stack(u32_t base_ptr, u16_t cs)
 {
 	struct stack_frame *frame;
 	int i;
@@ -52,7 +91,21 @@ static void unwind_stack(u32_t base_ptr)
 		}
 
 		frame = (struct stack_frame *)base_ptr;
-		if ((frame == NULL) || (frame->ret_addr == 0)) {
+		if ((frame == NULL)) {
+			break;
+		}
+
+#ifdef CONFIG_THREAD_STACK_INFO
+		/* Ensure the stack frame is within the faulting context's
+		 * stack buffer
+		 */
+		if (check_stack_bounds((u32_t)frame, sizeof(*frame), cs)) {
+			printk("     corrupted? (bp=%p)\n", frame);
+			break;
+		}
+#endif
+
+		if (frame->ret_addr == 0) {
 			break;
 		}
 #ifdef CONFIG_X86_IAMCU
@@ -144,7 +197,7 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	       pEsf->esi, pEsf->edi, pEsf->ebp, pEsf->esp,
 	       pEsf->eflags, pEsf->cs & 0xFFFF, pEsf->eip);
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
-	unwind_stack(pEsf->ebp);
+	unwind_stack(pEsf->ebp, pEsf->cs);
 #endif
 
 #endif /* CONFIG_PRINTK */
@@ -366,6 +419,11 @@ void page_fault_handler(NANO_ESF *esf)
 #ifdef CONFIG_EXCEPTION_DEBUG
 	dump_page_fault(esf);
 #endif
+#ifdef CONFIG_THREAD_STACK_INFO
+	if (check_stack_bounds(esf->esp, 0, esf->cs)) {
+		_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, esf);
+	}
+#endif
 	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
 	CODE_UNREACHABLE;
 }
@@ -413,26 +471,18 @@ struct task_state_segment _df_tss = {
 static FUNC_NORETURN __used void _df_handler_bottom(void)
 {
 	/* We're back in the main hardware task on the interrupt stack */
-	x86_page_entry_data_t pte_flags, pde_flags;
-	int reason;
+	int reason = _NANO_ERR_CPU_EXCEPTION;
 
 	/* Restore the top half so it is runnable again */
 	_df_tss.esp = (u32_t)(_df_stack + sizeof(_df_stack));
 	_df_tss.eip = (u32_t)_df_handler_top;
 
-	/* Now check if the stack pointer is inside a guard area. Subtract
-	 * one byte, since if a single push operation caused the fault ESP
-	 * wouldn't be decremented
-	 */
-	_x86_mmu_get_flags(&z_x86_kernel_pdpt,
-			   (u8_t *)_df_esf.esp - 1, &pde_flags, &pte_flags);
-	if ((pte_flags & MMU_ENTRY_PRESENT) != 0) {
-		printk("***** Double Fault *****\n");
-		reason = _NANO_ERR_CPU_EXCEPTION;
-	} else {
+	printk("***** Double Fault *****\n");
+#ifdef CONFIG_THREAD_STACK_INFO
+	if (check_stack_bounds(_df_esf.esp, 0, _df_esf.cs)) {
 		reason = _NANO_ERR_STACK_CHK_FAIL;
 	}
-
+#endif
 	_NanoFatalErrorHandler(reason, (NANO_ESF *)&_df_esf);
 }
 
