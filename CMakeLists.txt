@@ -547,7 +547,9 @@ add_subdirectory(drivers)
 add_subdirectory(tests)
 
 # Add all zephyr modules subdirectories.
-message("Including module(s): ${ZEPHYR_MODULES_NAME}")
+if(ZEPHYR_MODULES_NAME)
+  message("Including module(s): ${ZEPHYR_MODULES_NAME}")
+endif()
 set(index 0)
 foreach(module_name ${ZEPHYR_MODULES_NAME})
   list(GET ZEPHYR_MODULES_DIR ${index} module_dir)
