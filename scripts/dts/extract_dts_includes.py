@@ -344,22 +344,7 @@ def merge_included_bindings(fname, node):
     # section of the binding. 'fname' is the path to the top-level binding
     # file, and 'node' the current top-level YAML node being processed.
 
-    # do some consistency checks. Especially id is needed for further
-    # processing. title must be first to check.
-    if 'title' not in node:
-        # If 'title' is missing, make fault finding more easy.
-        # Give a hint what node we are looking at.
-        print("extract_dts_includes.py: node without 'title' -", node)
-    for prop in ('title', 'version', 'description'):
-        if prop not in node:
-            node[prop] = "<unknown {}>".format(prop)
-            print("extract_dts_includes.py: '{}' property missing".format(prop),
-                  "in '{}' binding. Using '{}'.".format(node['title'], node[prop]))
-
-    # warn if we have an 'id' field
-    if 'id' in node:
-        print("extract_dts_includes.py: WARNING: id field set",
-              "in '{}', should be removed.".format(node['title']))
+    check_binding_properties(node)
 
     if 'inherits' in node:
         for inherits in node.pop('inherits'):
@@ -372,7 +357,27 @@ def merge_included_bindings(fname, node):
             inherits.pop('description', None)
             dict_merge(None, fname, inherits, node)
             node = inherits
+
     return node
+
+
+def check_binding_properties(node):
+    # Checks that the top-level YAML node 'node' has the expected properties.
+    # Prints warnings and substitutes defaults otherwise.
+
+    if 'title' not in node:
+        print("extract_dts_includes.py: node without 'title' -", node)
+
+    for prop in 'title', 'version', 'description':
+        if prop not in node:
+            node[prop] = "<unknown {}>".format(prop)
+            print("extract_dts_includes.py: '{}' property missing "
+                  "in '{}' binding. Using '{}'."
+                  .format(prop, node['title'], node[prop]))
+
+    if 'id' in node:
+        print("extract_dts_includes.py: WARNING: id field set "
+              "in '{}', should be removed.".format(node['title']))
 
 
 def define_str(name, value, value_tabs, is_deprecated=False):
