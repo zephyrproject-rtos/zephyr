@@ -149,6 +149,7 @@ class KconfigCheck(ComplianceTest):
         os.environ["BOARD_DIR"] = "boards/*/*"
         os.environ["ARCH"] = "*"
         os.environ["PROJECT_BINARY_DIR"] = tempfile.gettempdir()
+        os.environ['GENERATED_DTS_BOARD_CONF'] = "dummy"
 
         # For multi repo support
         open(os.path.join(tempfile.gettempdir(), "Kconfig.modules"), 'a').close()
