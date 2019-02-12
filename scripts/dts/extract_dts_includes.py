@@ -340,14 +340,9 @@ def dict_merge(parent, fname, dct, merge_dct):
 
 
 def merge_included_bindings(fname, node):
-    """ Recursive overload procedure inside ``node``
-    ``inherits`` section is searched for and used as node base when found.
-    Base values are then overloaded by node values
-    and some consistency checks are done.
-    :param fname: initial yaml file being processed
-    :param node:
-    :return: node
-    """
+    # Recursively merges properties from files !include'd from the 'inherits'
+    # section of the binding. 'fname' is the path to the top-level binding
+    # file, and 'node' the current top-level YAML node being processed.
 
     # do some consistency checks. Especially id is needed for further
     # processing. title must be first to check.
