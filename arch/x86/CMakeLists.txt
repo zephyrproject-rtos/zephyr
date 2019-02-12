@@ -153,6 +153,12 @@ if(CONFIG_X86_MMU)
     DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
+
+  add_custom_target(
+    mmu_tables_bin_target
+    DEPENDS
+    mmu_tables.bin
+  )
   add_custom_command(
     OUTPUT mmu_tables.bin user_mmu_tables.bin
     COMMAND
@@ -179,6 +185,7 @@ if(CONFIG_X86_MMU)
     mmu_tables.o
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS mmu_tables.bin
+    mmu_tables_bin_target
     )
 
   add_custom_target(  mmu_tables_o DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/mmu_tables.o)
@@ -216,6 +223,11 @@ if(CONFIG_GDT_DYNAMIC)
   # way.
   #
   # ${ZEPHYR_PREBUILT_EXECUTABLE}.elf -> gdt.bin -> gdt.o
+  add_custom_target(
+    gdt_bin_target
+    DEPENDS
+    gdt.bin
+  )
   add_custom_command(
     OUTPUT gdt.bin
     COMMAND
@@ -239,6 +251,7 @@ if(CONFIG_GDT_DYNAMIC)
     gdt.o
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     DEPENDS gdt.bin
+    gdt_bin_target
     )
 
   add_custom_target(  gdt_o DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/gdt.o)
