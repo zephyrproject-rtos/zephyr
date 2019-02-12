@@ -96,7 +96,7 @@ class Bindings(yaml.Loader):
     def __init__(self, stream):
         filepath = os.path.realpath(stream.name)
         if filepath in self._included:
-            print("Error:: circular inclusion for file name '{}'".
+            print("Error: circular inclusion for file name '{}'".
                   format(stream.name))
             raise yaml.constructor.ConstructorError
         self._included.append(filepath)
@@ -117,13 +117,13 @@ class Bindings(yaml.Loader):
             return [self._extract_file(fname)
                     for fname in self.construct_sequence(node)]
 
-        print("Error:: unrecognised node type in !include statement")
+        print("Error: unrecognised node type in !include statement")
         raise yaml.constructor.ConstructorError
 
     def _extract_file(self, filename):
         filepaths = [filepath for filepath in self._files if filepath.endswith(filename)]
         if len(filepaths) == 0:
-            print("Error:: unknown file name '{}' in !include statement".
+            print("Error: unknown file name '{}' in !include statement".
                   format(filename))
             raise yaml.constructor.ConstructorError
         elif len(filepaths) > 1:
@@ -133,7 +133,7 @@ class Bindings(yaml.Loader):
                 if os.path.basename(filename) == os.path.basename(filepath):
                     files.append(filepath)
             if len(files) > 1:
-                print("Error:: multiple candidates for file name '{}' in !include statement".
+                print("Error: multiple candidates for file name '{}' in !include statement".
                       format(filename), filepaths)
                 raise yaml.constructor.ConstructorError
             filepaths = files
