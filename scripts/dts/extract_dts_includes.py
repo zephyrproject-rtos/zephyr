@@ -73,7 +73,7 @@ class Bindings(yaml.Loader):
 
             with open(file, 'r', encoding='utf-8') as yf:
                 cls._included = []
-                l = yaml_traverse_inherited(file, yaml.load(yf, cls))
+                l = merge_included_bindings(file, yaml.load(yf, cls))
 
                 if compat not in yaml_list['compat']:
                     yaml_list['compat'].append(compat)
@@ -334,7 +334,7 @@ def dict_merge(parent, fname, dct, merge_dct):
             dct[k] = merge_dct[k]
 
 
-def yaml_traverse_inherited(fname, node):
+def merge_included_bindings(fname, node):
     """ Recursive overload procedure inside ``node``
     ``inherits`` section is searched for and used as node base when found.
     Base values are then overloaded by node values
@@ -364,7 +364,7 @@ def yaml_traverse_inherited(fname, node):
     if 'inherits' in node:
         for inherits in node.pop('inherits'):
             if 'inherits' in inherits:
-                inherits = yaml_traverse_inherited(fname, inherits)
+                inherits = merge_included_bindings(fname, inherits)
             # title, description, version of inherited node
             # are overwritten by intention. Remove to prevent dct_merge to
             # complain about duplicates.
