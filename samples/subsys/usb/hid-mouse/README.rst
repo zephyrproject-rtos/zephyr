@@ -11,6 +11,8 @@ by the Zephyr project. This very simple driver enumerates a board with a button
 into a mouse that has a left mouse button and optionally (depending on
 the number of buttons on the board) a right mouse button, X-axis movement,
 and Y-axis movement.
+If the USB peripheral driver supports remote wakeup feature, wakeup request
+will be performed on every button click if the bus is in suspended state.
 This sample can be found under :file:`samples/subsys/usb/hid-mouse` in the
 Zephyr project tree.
 
