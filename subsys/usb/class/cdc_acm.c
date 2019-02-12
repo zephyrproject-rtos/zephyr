@@ -1,6 +1,6 @@
 /*******************************************************************************
  *
- * Copyright(c) 2015,2016 Intel Corporation.
+ * Copyright(c) 2015-2019 Intel Corporation.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -67,22 +67,15 @@ LOG_MODULE_REGISTER(usb_cdc_acm);
 /* Size of the internal buffer used for storing received data */
 #define CDC_ACM_BUFFER_SIZE (2 * CONFIG_CDC_ACM_BULK_EP_MPS)
 
-
 /* Max CDC ACM class request max data size */
 #define CDC_CLASS_REQ_MAX_DATA_SIZE	8
 
 /* Serial state notification timeout */
 #define CDC_CONTROL_SERIAL_STATE_TIMEOUT_US 100000
 
-#define CDC_ACM_INT_EP_ADDR		0x85
-#define CDC_ACM_IN_EP_ADDR		0x84
-#define CDC_ACM_OUT_EP_ADDR		0x03
-
 #define ACM_INT_EP_IDX			0
 #define ACM_OUT_EP_IDX			1
 #define ACM_IN_EP_IDX			2
-
-#define ACM_IF0_STRING			"ACM-CDC"
 
 struct usb_cdc_acm_config {
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
@@ -973,7 +966,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		INITIALIZER_EP_DATA(cdc_acm_bulk_in, in_ep_addr),	\
 	}
 
-#define DEFINE_CDC_ACM_CFG_DATA(x)					\
+#define DEFINE_CDC_ACM_CFG_DATA(x, _)					\
 	USBD_CFG_DATA_DEFINE(cdc_acm)					\
 	struct usb_cfg_data cdc_acm_config_##x = {			\
 		.usb_device_description = NULL,				\
@@ -1040,33 +1033,32 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 }
 #endif /* CONFIG_USB_COMPOSITE_DEVICE */
 
-#define DEFINE_CDC_ACM_DEV_DATA(x)					\
+#define DEFINE_CDC_ACM_DEV_DATA(x, _)					\
 	RING_BUF_DECLARE(rx_ringbuf_##x,				\
 			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
 	static struct cdc_acm_dev_data_t cdc_acm_dev_data_##x = {	\
 		.usb_status = USB_DC_UNKNOWN,				\
 		.line_coding = CDC_ACM_DEFAUL_BAUDRATE,			\
 		.rx_ringbuf = &rx_ringbuf_##x,				\
-}
+	};
 
-#define DEFINE_CDC_ACM_DEVICE(x)					\
-	DEVICE_AND_API_INIT(cdc_acm_##x, CONFIG_CDC_ACM_PORT_NAME_##x,	\
+#define DEFINE_CDC_ACM_DEVICE(x, _)					\
+	DEVICE_AND_API_INIT(cdc_acm_##x,				\
+			    CONFIG_USB_CDC_ACM_DEVICE_NAME "_" #x,	\
 			    &cdc_acm_init, &cdc_acm_dev_data_##x,	\
 			    &cdc_acm_config_##x,			\
 			    APPLICATION,				\
 			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		\
-			    &cdc_acm_driver_api)
+			    &cdc_acm_driver_api);
 
-DEFINE_CDC_ACM_DESCR(0, 0x80, 0x00, 0x80);
-DEFINE_CDC_ACM_EP(0, 0x80, 0x00, 0x80);
-DEFINE_CDC_ACM_CFG_DATA(0);
-DEFINE_CDC_ACM_DEV_DATA(0);
-DEFINE_CDC_ACM_DEVICE(0);
+#define DEFINE_CDC_ACM_DESCR_AUTO(x, _) \
+	DEFINE_CDC_ACM_DESCR(x, AUTO_EP_IN, AUTO_EP_OUT, AUTO_EP_IN);
 
-#if defined(CONFIG_CDC_ACM_PORT_NAME_1)
-DEFINE_CDC_ACM_DESCR(1, 0x80, 0x00, 0x80);
-DEFINE_CDC_ACM_EP(1, 0x80, 0x00, 0x80);
-DEFINE_CDC_ACM_CFG_DATA(1);
-DEFINE_CDC_ACM_DEV_DATA(1);
-DEFINE_CDC_ACM_DEVICE(1);
-#endif
+#define DEFINE_CDC_ACM_EP_AUTO(x, _) \
+	DEFINE_CDC_ACM_EP(x, AUTO_EP_IN, AUTO_EP_OUT, AUTO_EP_IN);
+
+UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_DESCR_AUTO, _)
+UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_EP_AUTO, _)
+UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_CFG_DATA, _)
+UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_DEV_DATA, _)
+UTIL_LISTIFY(CONFIG_USB_CDC_ACM_DEVICE_COUNT, DEFINE_CDC_ACM_DEVICE, _)
