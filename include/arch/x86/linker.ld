@@ -117,9 +117,11 @@ SECTIONS
 
 #include <linker/kobject-text.ld>
 
+	MMU_PAGE_ALIGN
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_text_end = .;
+	_image_text_size = _image_text_end - _image_text_start;
 	_image_rodata_start = .;
 
 #include <linker/common-rom.ld>
@@ -162,19 +164,21 @@ SECTIONS
 #include <linker/kobject-rom.ld>
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
-	_image_rodata_end = .;
 	MMU_PAGE_ALIGN
+	/* ROM ends here, position counter will now be in RAM areas */
 #ifdef CONFIG_XIP
-	/* Kernel ROM extends to the end of flash. Need to do this to program
-	 * the MMU
+	/* For XIP systems, the kernel object tables are kept at the end
+	 * of ROM and are unpredictable in size; the true size of the ROM
+	 * region isn't know when the MMU tables are generated.
+	 * Just set the rom region to extend to the end of flash.
 	 */
 	_image_rom_end = _image_rom_start + KB(DT_ROM_SIZE);
 #else
-	/* ROM ends here, position counter will now be in RAM areas */
 	_image_rom_end = .;
 #endif
 	_image_rom_size = _image_rom_end - _image_rom_start;
-
+	_image_rodata_end = _image_rom_end;
+	_image_rodata_size = _image_rodata_end - _image_rodata_start;
 	GROUP_END(ROMABLE_REGION)
 	/*
 	 * Needed for dynamic linking which we do not have, do discard
