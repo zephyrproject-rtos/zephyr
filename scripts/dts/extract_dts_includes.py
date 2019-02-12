@@ -103,15 +103,12 @@ class Bindings(yaml.Loader):
         if isinstance(node, yaml.ScalarNode):
             return self._extract_file(self.construct_scalar(node))
 
-        elif isinstance(node, yaml.SequenceNode):
-            result = []
-            for filename in self.construct_sequence(node):
-                result.append(self._extract_file(filename))
-            return result
+        if isinstance(node, yaml.SequenceNode):
+            return [self._extract_file(fname)
+                    for fname in self.construct_sequence(node)]
 
-        else:
-            print("Error:: unrecognised node type in !include statement")
-            raise yaml.constructor.ConstructorError
+        print("Error:: unrecognised node type in !include statement")
+        raise yaml.constructor.ConstructorError
 
     def _extract_file(self, filename):
         filepaths = [filepath for filepath in self._files if filepath.endswith(filename)]
