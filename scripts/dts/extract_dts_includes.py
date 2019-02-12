@@ -97,7 +97,6 @@ class Bindings(yaml.Loader):
         self._included.append(filepath)
         super(Bindings, self).__init__(stream)
         Bindings.add_constructor('!include', Bindings._include)
-        Bindings.add_constructor('!import',  Bindings._include)
 
     def _include(self, node):
         if isinstance(node, yaml.ScalarNode):
