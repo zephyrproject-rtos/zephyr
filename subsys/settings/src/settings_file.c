@@ -346,7 +346,8 @@ static int read_handler(void *ctx, off_t off, char *buf, size_t *len)
 	/* 0 is reserved for reding the length-field only */
 	if (entry_ctx->len != 0) {
 		if (off >= entry_ctx->len) {
-			return -EINVAL;
+			*len = 0;
+			return 0;
 		}
 
 		if ((off + *len) > entry_ctx->len) {
