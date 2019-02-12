@@ -35,6 +35,7 @@ def _dt_units_to_scale(unit):
 def dt_int_val(kconf, _, name, unit=None):
     """
     This function looks up 'name' in the DTS generated "conf" style database
+    (generated_dts_board.conf in <build_dir>/zephyr/include/generated/)
     and if it's found it will return the value as an decimal integer.  The
     function will divide the value based on 'unit':
         None        No division
@@ -57,6 +58,7 @@ def dt_int_val(kconf, _, name, unit=None):
 def dt_hex_val(kconf, _, name, unit=None):
     """
     This function looks up 'name' in the DTS generated "conf" style database
+    (generated_dts_board.conf in <build_dir>/zephyr/include/generated/)
     and if it's found it will return the value as an hex integer.  The
     function will divide the value based on 'unit':
         None        No division
@@ -79,6 +81,7 @@ def dt_hex_val(kconf, _, name, unit=None):
 def dt_str_val(kconf, _, name):
     """
     This function looks up 'name' in the DTS generated "conf" style database
+    (generated_dts_board.conf in <build_dir>/zephyr/include/generated/)
     and if it's found it will return the value as string.  If it's not found we
     return an empty string.
     """
