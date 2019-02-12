@@ -99,10 +99,16 @@ class Bindings(yaml.Loader):
         Bindings.add_constructor('!include', Bindings._include)
 
     def _include(self, node):
+        # Implements !include. Returns a list with the top-level YAML
+        # structures for the included files (a single-element list if there's
+        # just one file).
+
         if isinstance(node, yaml.ScalarNode):
+            # !include foo.yaml
             return [self._extract_file(self.construct_scalar(node))]
 
         if isinstance(node, yaml.SequenceNode):
+            # !include [foo.yaml, bar.yaml]
             return [self._extract_file(fname)
                     for fname in self.construct_sequence(node)]
 
