@@ -378,7 +378,7 @@ SECTIONS
 	MMU_PAGE_ALIGN
 	__mmu_tables_start = .;
 	z_x86_kernel_pdpt = .;
-	KEEP(*(.mmu_data));
+	KEEP(*(mmu_tables));
 #ifdef CONFIG_X86_KPTI
 	z_x86_user_pdpt = .;
 	KEEP(*(.user_mmu_data));
