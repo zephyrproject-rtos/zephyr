@@ -76,6 +76,46 @@ config SPI_MCUX_LPSPI
 
 endif # SPI
 
+if CODE_ITCM
+
+config FLASH_SIZE
+	default $(dt_int_val,DT_NXP_IMX_ITCM_0_SIZE,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_hex_val,DT_NXP_IMX_ITCM_0_BASE_ADDRESS)
+
+endif # CODE_ITCM
+
+if CODE_FLEXSPI
+
+config FLASH_SIZE
+	default $(dt_int_val,DT_NXP_IMX_FLEXSPI_402A8000_SIZE_1,K)
+
+config FLASH_BASE_ADDRESS
+	default $(dt_hex_val,DT_NXP_IMX_FLEXSPI_402A8000_BASE_ADDRESS_1)
+
+endif # CODE_FLEXSPI
+
+if DATA_DTCM
+
+config SRAM_SIZE
+	default $(dt_int_val,DT_NXP_IMX_DTCM_0_SIZE,K)
+
+config SRAM_BASE_ADDRESS
+	default $(dt_hex_val,DT_NXP_IMX_DTCM_0_BASE_ADDRESS)
+
+endif # DATA_DTCM
+
+if DATA_SEMC
+
+config SRAM_SIZE
+	default $(dt_int_val,DT_MMIO_SRAM_80000000_SIZE,K)
+
+config SRAM_BASE_ADDRESS
+	default $(dt_hex_val,DT_MMIO_SRAM_80000000_BASE_ADDRESS)
+
+endif # DATA_SEMC
+
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 
 endif # SOC_SERIES_IMX_RT

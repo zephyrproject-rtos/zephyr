@@ -246,4 +246,30 @@ config DEVICE_CONFIGURATION_DATA
 
 endif # NXP_IMX_RT_BOOT_HEADER
 
+choice CODE_LOCATION
+	prompt "Code location selection"
+	default CODE_FLEXSPI
+
+config CODE_ITCM
+	bool "Link code into internal instruction tightly coupled memory (ITCM)"
+
+config CODE_FLEXSPI
+	bool "Link code into external FlexSPI-controlled memory"
+	select NXP_IMX_RT_BOOT_HEADER
+
+endchoice
+
+choice DATA_LOCATION
+	prompt "Data location selection"
+	default DATA_SEMC
+
+config DATA_DTCM
+	bool "Link data into internal data tightly coupled memory (DTCM)"
+
+config DATA_SEMC
+	bool "Link data into external SEMC-controlled memory"
+	select DEVICE_CONFIGURATION_DATA if NXP_IMX_RT_BOOT_HEADER
+
+endchoice
+
 endif # SOC_SERIES_IMX_RT

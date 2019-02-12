@@ -10,44 +10,6 @@ if BOARD_MIMXRT1064_EVK
 config BOARD
 	default "mimxrt1064_evk"
 
-if CODE_ITCM
-
-config FLASH_SIZE
-	default $(dt_int_val,DT_NXP_IMX_ITCM_0_SIZE,K)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_hex_val,DT_NXP_IMX_ITCM_0_BASE_ADDRESS)
-
-endif # CODE_ITCM
-
-if CODE_INTERNAL_QSPI
-
-config FLASH_SIZE
-	default $(dt_int_val,DT_NXP_IMX_FLEXSPI_402A8000_SIZE_1,K)
-
-config FLASH_BASE_ADDRESS
-	default $(dt_hex_val,DT_NXP_IMX_FLEXSPI_402A8000_BASE_ADDRESS_1)
-
-endif
-
-if DATA_DTCM
-
-config SRAM_SIZE
-	default $(dt_int_val,DT_NXP_IMX_DTCM_0_SIZE,K)
-
-config SRAM_BASE_ADDRESS
-	default $(dt_hex_val,DT_NXP_IMX_DTCM_0_BASE_ADDRESS)
-endif
-
-if DATA_SDRAM
-
-config SRAM_SIZE
-	default $(dt_int_val,DT_MMIO_SRAM_80000000_SIZE,K)
-
-config SRAM_BASE_ADDRESS
-	default $(dt_hex_val,DT_MMIO_SRAM_80000000_BASE_ADDRESS)
-endif
-
 if GPIO_MCUX_IGPIO
 
 config GPIO_MCUX_IGPIO_1
