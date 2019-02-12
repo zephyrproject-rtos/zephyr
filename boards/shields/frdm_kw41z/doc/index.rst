@@ -53,7 +53,14 @@ host controller interface (HCI):
 #. Attach the FRDM-KW41Z to the Arduino header on your selected main board,
    such as :ref:`mimxrt1050_evk` or :ref:`frdm_k64f`.
 
-#. Set CONFIG_SHIELD_FRDM_KW41Z=y in your Zephyr bluetooth application.
+#. Set ``-DSHIELD=frdm_kw41z`` when you invoke cmake in your Zephyr bluetooth
+   application. For example,
+
+   .. zephyr-app-commands::
+      :zephyr-app: samples/bluetooth/peripheral_hr
+      :board: frdm_k64f
+      :shield: frdm_kw41z
+      :goals: build
 
 References
 **********
