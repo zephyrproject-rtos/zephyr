@@ -216,6 +216,13 @@ void main(void)
 				}
 				sys_reboot(0);
 			}
+		} else {
+			printk("Reboot counter reached max value.\n");
+			printk("Reset to 0 and exit test.\n");
+			reboot_counter = 0;
+			nvs_write(&fs, RBT_CNT_ID, &reboot_counter,
+			  sizeof(reboot_counter));
+			break;
 		}
 	}
 }
