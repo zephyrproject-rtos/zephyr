@@ -33,7 +33,8 @@
 #elif defined(CONFIG_BOARD_NRF52_PCA10040) || \
       defined(CONFIG_BOARD_NRF52840_PCA10056) || \
       defined(CONFIG_BOARD_NRF52840_BLIP) || \
-      defined(CONFIG_BOARD_BL652_DVK)
+      defined(CONFIG_BOARD_BL652_DVK) || \
+      defined(CONFIG_BOARD_BL654_DVK)
 
 #include <hal/nrf_saadc.h>
 #define ADC_DEVICE_NAME		DT_ADC_0_NAME
