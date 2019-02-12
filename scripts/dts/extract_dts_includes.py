@@ -13,6 +13,7 @@ import os, fnmatch
 import re
 import yaml
 import argparse
+from collections import defaultdict
 from collections.abc import Mapping
 from copy import deepcopy
 
@@ -42,7 +43,7 @@ class Bindings(yaml.Loader):
     _included = []
 
     @classmethod
-    def bindings(cls, compats, yaml_dirs):
+    def bindings(cls, dts_compats, yaml_dirs):
         # Find all .yaml files in yaml_dirs
         cls._files = []
         for yaml_dir in yaml_dirs:
@@ -50,7 +51,11 @@ class Bindings(yaml.Loader):
                 for filename in fnmatch.filter(filenames, '*.yaml'):
                     cls._files.append(os.path.join(root, filename))
 
-        yaml_list = {'node': {}, 'bus': {}, 'compat': []}
+        compat_to_binding = {}
+        # Maps buses to dictionaries that map compats to YAML nodes
+        bus_to_binding = defaultdict(dict)
+        compats = []
+
         loaded_yamls = set()
 
         for file in cls._files:
@@ -64,29 +69,29 @@ class Bindings(yaml.Loader):
                 continue
 
             compat = match.group(1)
-            if compat not in compats or file in loaded_yamls:
+            if compat not in dts_compats or file in loaded_yamls:
                 # The compat does not appear in the device tree, or the yaml
                 # file has already been loaded
                 continue
 
+            # Found a binding (.yaml file) for a 'compatible' value that
+            # appears in DTS. Load it.
+
             loaded_yamls.add(file)
+
+            if compat not in compats:
+                compats.append(compat)
 
             with open(file, 'r', encoding='utf-8') as yf:
                 cls._included = []
-                l = merge_included_bindings(file, yaml.load(yf, cls))
+                binding = merge_included_bindings(file, yaml.load(yf, cls))
 
-                if compat not in yaml_list['compat']:
-                    yaml_list['compat'].append(compat)
-
-                if 'parent' in l:
-                    bus = l['parent']['bus']
-                    if not bus in yaml_list['bus']:
-                        yaml_list['bus'][bus] = {}
-                    yaml_list['bus'][bus][compat] = l
+                if 'parent' in binding:
+                    bus_to_binding[binding['parent']['bus']][compat] = binding
                 else:
-                    yaml_list['node'][compat] = l
+                    compat_to_binding[compat] = binding
 
-        return yaml_list['node'], yaml_list['bus'], yaml_list['compat']
+        return compat_to_binding, bus_to_binding, compats
 
     def __init__(self, stream):
         filepath = os.path.realpath(stream.name)
