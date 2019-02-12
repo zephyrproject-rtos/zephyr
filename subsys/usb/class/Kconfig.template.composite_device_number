@@ -1,0 +1,13 @@
+# Kconfig template file for setting device count for
+# various USB classes.
+#
+# Copyright (c) 2019 Intel Corporation.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config $(module)_DEVICE_COUNT
+	int "Number of $(module) Devices"
+	default $(default-count)
+	help
+	  Number of instances of this USB Device class.
