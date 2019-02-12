@@ -247,3 +247,8 @@ int flash_area_has_driver(const struct flash_area *fa)
 
 	return 1;
 }
+
+struct device *flash_area_get_device(const struct flash_area *fa)
+{
+	return device_get_binding(fa->fa_dev_name);
+}

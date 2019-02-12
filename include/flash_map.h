@@ -88,6 +88,15 @@ int flash_area_get_sectors(int fa_id, u32_t *count,
  */
 int flash_area_has_driver(const struct flash_area *fa);
 
+/**
+ * Get driver for given flash area.
+ *
+ * @param fa Flash area.
+ *
+ * @return device driver.
+ */
+struct device *flash_area_get_device(const struct flash_area *fa);
+
 #ifdef __cplusplus
 }
 #endif
