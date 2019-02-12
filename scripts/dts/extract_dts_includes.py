@@ -363,8 +363,7 @@ def merge_included_bindings(fname, node):
 
     if 'inherits' in node:
         for inherits in node.pop('inherits'):
-            if 'inherits' in inherits:
-                inherits = merge_included_bindings(fname, inherits)
+            inherits = merge_included_bindings(fname, inherits)
             # title, description, version of inherited node
             # are overwritten by intention. Remove to prevent dct_merge to
             # complain about duplicates.
