@@ -346,7 +346,7 @@ char *log_strdup(const char *str);
  *
  * @note The module's state is defined, and the module is registered,
  *       only if LOG_LEVEL for the current source file is non-zero or
- *       it is not defined and CONFIG_LOG_DEFAULT_LOG_LEVEL is non-zero.
+ *       it is not defined and CONFIG_LOG_DEFAULT_LEVEL is non-zero.
  *       In other cases, this macro has no effect.
  * @see LOG_MODULE_DECLARE
  */
@@ -383,7 +383,7 @@ char *log_strdup(const char *str);
  *
  * @note The module's state is declared only if LOG_LEVEL for the
  *       current source file is non-zero or it is not defined and
- *       CONFIG_LOG_DEFAULT_LOG_LEVEL is non-zero.  In other cases,
+ *       CONFIG_LOG_DEFAULT_LEVEL is non-zero.  In other cases,
  *       this macro has no effect.
  * @see LOG_MODULE_REGISTER
  */
