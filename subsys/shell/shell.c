@@ -535,23 +535,13 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
 		}
 	}
 
-	if (shell->ctx->active_cmd.args) {
-		const struct shell_static_args *args;
+	if (shell->ctx->active_cmd.args.mandatory) {
+		u8_t mand = shell->ctx->active_cmd.args.mandatory;
+		u8_t opt = shell->ctx->active_cmd.args.optional;
+		bool in_range = (argc >= mand) && (argc <= (mand + opt));
 
-		args = shell->ctx->active_cmd.args;
-
-		if (args->optional > 0) {
-			/* Check if argc is within allowed range */
-			ret_val = cmd_precheck(shell,
-					       ((argc >= args->mandatory)
-					       &&
-					       (argc <= args->mandatory +
-					       args->optional)));
-		} else {
-			/* Perform exact match if there are no optional args */
-			ret_val = cmd_precheck(shell,
-					       (args->mandatory == argc));
-		}
+		/* Check if argc is within allowed range */
+		ret_val = cmd_precheck(shell, in_range);
 	}
 
 	if (!ret_val) {

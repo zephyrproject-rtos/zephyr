@@ -110,7 +110,7 @@ struct shell_static_entry {
 	const char *help;			/*!< Command help string. */
 	const struct shell_cmd_entry *subcmd;	/*!< Pointer to subcommand. */
 	shell_cmd_handler handler;		/*!< Command handler. */
-	const struct shell_static_args *args;	/*!< Command arguments. */
+	struct shell_static_args args;		/*!< Command arguments. */
 };
 
 /**
@@ -213,8 +213,7 @@ struct shell_static_entry {
 	.subcmd = _subcmd,						      \
 	.help  = (const char *)_help,					      \
 	.handler = _handler,						      \
-	.args = _mandatory ?						      \
-	(&(struct shell_static_args) SHELL_ARG(_mandatory, _optional)) : NULL \
+	.args = SHELL_ARG(_mandatory, _optional)			      \
 }
 
 /**
