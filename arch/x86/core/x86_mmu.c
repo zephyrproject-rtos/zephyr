@@ -17,8 +17,12 @@
 /* Mark text and rodata as read-only.
  * Userspace may read all text and rodata.
  */
-MMU_BOOT_REGION((u32_t)&_image_rom_start, (u32_t)&_image_rom_size,
+MMU_BOOT_REGION((u32_t)&_image_text_start, (u32_t)&_image_text_size,
 		MMU_ENTRY_READ | MMU_ENTRY_USER);
+
+MMU_BOOT_REGION((u32_t)&_image_rodata_start, (u32_t)&_image_rodata_size,
+		MMU_ENTRY_READ | MMU_ENTRY_USER |
+		MMU_ENTRY_EXECUTE_DISABLE);
 
 #ifdef CONFIG_APP_SHARED_MEM
 MMU_BOOT_REGION((u32_t)&_app_smem_start, (u32_t)&_app_smem_size,
