@@ -71,17 +71,6 @@ struct shell_cmd_entry {
 
 struct shell;
 
-/**
- * @brief Initializes a shell command arguments
- *
- * @param[in] _mandatory Number of mandatory arguments.
- * @param[in] _optional  Number of optional arguments.
- */
-#define SHELL_ARG(_mandatory, _optional) {	\
-	.mandatory = _mandatory,		\
-	.optional = _optional,			\
-}
-
 struct shell_static_args {
 	u8_t mandatory; /*!< Number of mandatory arguments. */
 	u8_t optional;  /*!< Number of optional arguments. */
@@ -137,7 +126,7 @@ struct shell_static_entry {
 			STRINGIFY(UTIL_CAT(shell_root_cmd_, syntax)))))	   \
 	__attribute__((used)) = {					   \
 		.is_dynamic = false,					   \
-		.u.entry = &UTIL_CAT(_shell_, syntax)			   \
+		.u = {.entry = &UTIL_CAT(_shell_, syntax)}		   \
 	}
 
 /**
@@ -159,7 +148,32 @@ struct shell_static_entry {
 			STRINGIFY(UTIL_CAT(shell_root_cmd_, syntax)))))	   \
 	__attribute__((used)) = {					   \
 		.is_dynamic = false,					   \
-		.u.entry = &UTIL_CAT(_shell_, syntax)			   \
+		.u = { .entry = &UTIL_CAT(_shell_, syntax) }		   \
+	}
+
+/**
+ * @brief Macro for creating a subcommand set. It must be used outside of any
+ * function body.
+ *
+ * Example usage:
+ * SHELL_STATIC_SUBCMD_SET_CREATE(
+ *	foo,
+ *	SHELL_CMD(abc, ...),
+ *	SHELL_CMD(def, ...),
+ *	SHELL_SUBCMD_SET_END
+ * )
+ *
+ * @param[in] name	Name of the subcommand set.
+ * @param[in] ...	List of commands created with @ref SHELL_CMD_ARG or
+ *			or @ref SHELL_CMD
+ */
+#define SHELL_STATIC_SUBCMD_SET_CREATE(name, ...)			\
+	static const struct shell_static_entry shell_##name[] = {	\
+		__VA_ARGS__						\
+	};								\
+	static const struct shell_cmd_entry name = {			\
+		.is_dynamic = false,					\
+		.u = { .entry = shell_##name }				\
 	}
 
 /**
@@ -176,6 +190,7 @@ struct shell_static_entry {
 	};							\
 	static const struct shell_static_entry shell_##name[] =
 
+
 /**
  * @brief Define ending subcommands set.
  *
@@ -188,11 +203,20 @@ struct shell_static_entry {
  * @param[in] name	Name of the dynamic entry.
  * @param[in] get	Pointer to the function returning dynamic commands array
  */
-#define SHELL_CREATE_DYNAMIC_CMD(name, get)		\
+#define SHELL_DYNAMIC_CMD_CREATE(name, get)		\
 	static const struct shell_cmd_entry name = {	\
 		.is_dynamic = true,			\
-		.u.dynamic_get = get			\
+		.u = { .dynamic_get = get }		\
 	}
+
+/**
+ * @brief Macro for creating a dynamic entry.
+ *
+ * @param[in] name	Name of the dynamic entry.
+ * @param[in] get	Pointer to the function returning dynamic commands array
+ */
+#define SHELL_CREATE_DYNAMIC_CMD(name, get)		\
+	SHELL_DYNAMIC_CMD_CREATE(name, get)
 
 /**
  * @brief Initializes a shell command with arguments.
@@ -210,10 +234,10 @@ struct shell_static_entry {
 #define SHELL_CMD_ARG(_syntax, _subcmd, _help, _handler,		      \
 		      _mandatory, _optional) {				      \
 	.syntax = (const char *)STRINGIFY(_syntax),			      \
-	.subcmd = _subcmd,						      \
 	.help  = (const char *)_help,					      \
+	.subcmd = _subcmd,						      \
 	.handler = _handler,						      \
-	.args = SHELL_ARG(_mandatory, _optional)			      \
+	.args = {. mandatory = _mandatory, .optional =  _optional}	      \
 }
 
 /**

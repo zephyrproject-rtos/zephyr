@@ -86,11 +86,9 @@ Use the following macros for adding shell commands:
   All root commands must have different name.
 * :c:macro:`SHELL_CMD` - Initialize a command.
 * :c:macro:`SHELL_CMD_ARG` - Initialize a command with arguments.
-* :c:macro:`SHELL_CREATE_STATIC_SUBCMD_SET` - Create a static subcommands
+* :c:macro:`SHELL_STATIC_SUBCMD_SET_CREATE` - Create a static subcommands
   array.
-* :c:macro:`SHELL_SUBCMD_SET_END` - shall be placed as last in
-  :c:macro:`SHELL_CREATE_STATIC_SUBCMD_SET` macro.
-* :c:macro:`SHELL_CREATE_DYNAMIC_CMD` - Create a dynamic subcommands array.
+* :c:macro:`SHELL_DYNAMIC_CMD_CREATE` - Create a dynamic subcommands array.
 
 Commands can be created in any file in the system that includes
 :file:`include/shell/shell.h`. All created commands are available for all
@@ -109,13 +107,12 @@ subcommands.
 .. code-block:: c
 
 	/* Creating subcommands (level 1 command) array for command "demo". */
-	SHELL_CREATE_STATIC_SUBCMD_SET(sub_demo)
-	{
+	SHELL_STATIC_SUBCMD_SET_CREATE(sub_demo,
 		SHELL_CMD(params, NULL, "Print params command.",
 						       cmd_demo_params),
 		SHELL_CMD(ping,   NULL, "Ping command.", cmd_demo_ping),
-		SHELL_SUBCMD_SET_END /* Array terminated. */
-	};
+		SHELL_SUBCMD_SET_END
+	);
 	/* Creating root (level 0) command "demo" */
 	SHELL_CMD_REGISTER(demo, &sub_demo, "Demo commands", NULL);
 
@@ -166,9 +163,8 @@ Newly added commands can be prompted or autocompleted with the :kbd:`Tab` key.
 		}
 	}
 
-	SHELL_CREATE_DYNAMIC_CMD(m_sub_dynamic_set, dynamic_cmd_get);
-	SHELL_CREATE_STATIC_SUBCMD_SET(m_sub_dynamic)
-	{
+	SHELL_DYNAMIC_CMD_CREATE(m_sub_dynamic_set, dynamic_cmd_get);
+	SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_dynamic,
 		SHELL_CMD(add, NULL,"Add new command to dynamic_cmd_buffer and"
 			  " sort them alphabetically.",
 			  cmd_dynamic_add),
@@ -181,7 +177,7 @@ Newly added commands can be prompted or autocompleted with the :kbd:`Tab` key.
 			  "Show all commands in dynamic_cmd_buffer.",
 			  cmd_dynamic_show),
 		SHELL_SUBCMD_SET_END
-	};
+	);
 	SHELL_CMD_REGISTER(dynamic, &m_sub_dynamic,
 		   "Demonstrate dynamic command usage.", cmd_dynamic);
 
@@ -405,13 +401,12 @@ The following code shows a simple use case of this library:
 	}
 
 	/* Creating subcommands (level 1 command) array for command "demo". */
-	SHELL_CREATE_STATIC_SUBCMD_SET(sub_demo)
-	{
+	SHELL_STATIC_SUBCMD_SET_CREATE(sub_demo,
 		SHELL_CMD(params, NULL, "Print params command.",
 						       cmd_demo_params),
 		SHELL_CMD(ping,   NULL, "Ping command.", cmd_demo_ping),
-		SHELL_SUBCMD_SET_END /* Array terminated. */
-	};
+		SHELL_SUBCMD_SET_END
+	);
 	/* Creating root (level 0) command "demo" without a handler */
 	SHELL_CMD_REGISTER(demo, &sub_demo, "Demo commands", NULL);
 
