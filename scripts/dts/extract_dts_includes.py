@@ -100,7 +100,7 @@ class Bindings(yaml.Loader):
 
     def _include(self, node):
         if isinstance(node, yaml.ScalarNode):
-            return self._extract_file(self.construct_scalar(node))
+            return [self._extract_file(self.construct_scalar(node))]
 
         if isinstance(node, yaml.SequenceNode):
             return [self._extract_file(fname)
@@ -356,12 +356,7 @@ def yaml_traverse_inherited(fname, node):
               "in '{}', should be removed.".format(node['title']))
 
     if 'inherits' in node:
-        if isinstance(node['inherits'], list):
-            inherits_list  = node['inherits']
-        else:
-            inherits_list  = [node['inherits'],]
-        node.pop('inherits')
-        for inherits in inherits_list:
+        for inherits in node.pop('inherits'):
             if 'inherits' in inherits:
                 inherits = yaml_traverse_inherited(fname, inherits)
             # title, description, version of inherited node
