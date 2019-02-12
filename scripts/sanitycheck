@@ -1258,9 +1258,20 @@ class MakeGenerator:
             by execute() will be keyed by its .name field.
         """
         args = ti.test.extra_args[:]
+
+        # merge overlay files into one variable
+        overlays = ""
+        idx = 0
+        for a in args:
+            m = re.search('OVERLAY_CONFIG="(.*)"', a)
+            if m:
+                overlays += m.group(1)
+                del args[idx]
+                idx += 1
+
         if len(ti.test.extra_configs) > 0 or options.coverage:
-            args.append("OVERLAY_CONFIG=%s" %
-                        os.path.join(ti.outdir, "overlay.conf"))
+            args.append("OVERLAY_CONFIG=\"%s %s\"" %(overlays,
+                        os.path.join(ti.outdir, "overlay.conf")))
 
         if ti.test.type == "unit" and options.enable_coverage:
             args.append("COVERAGE=1")
