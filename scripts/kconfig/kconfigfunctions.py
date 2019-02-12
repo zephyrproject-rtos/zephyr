@@ -11,16 +11,12 @@ import os
 
 doc_mode = os.environ.get('KCONFIG_DOC_MODE') == "1"
 
-# The env var 'PROJECT_BINARY_DIR' must be set
-bin_dir = os.environ['PROJECT_BINARY_DIR']
-
-conf_file = os.path.join(
-    bin_dir, 'include', 'generated', 'generated_dts_board.conf'
-)
+# The env var 'GENERATED_DTS_BOARD_CONF' must be set
+GENERATED_DTS_BOARD_CONF = os.environ['GENERATED_DTS_BOARD_CONF']
 
 dt_defines = {}
-if (not doc_mode) and os.path.isfile(conf_file):
-    with open(conf_file, 'r', encoding='utf-8') as fd:
+if (not doc_mode) and os.path.isfile(GENERATED_DTS_BOARD_CONF):
+    with open(GENERATED_DTS_BOARD_CONF, 'r', encoding='utf-8') as fd:
         for line in fd:
             if '=' in line:
                 define, val = line.split('=')
