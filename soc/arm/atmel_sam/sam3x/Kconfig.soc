@@ -11,8 +11,16 @@ choice
 	prompt "Atmel SAM3X MCU Selection"
 	depends on SOC_SERIES_SAM3X
 
+	config SOC_PART_NUMBER_SAM3X4C
+		bool "SAM3X4C"
+	config SOC_PART_NUMBER_SAM3X4E
+		bool "SAM3X4E"
+	config SOC_PART_NUMBER_SAM3X8C
+		bool "SAM3X8C"
 	config SOC_PART_NUMBER_SAM3X8E
 		bool "SAM3X8E"
+	config SOC_PART_NUMBER_SAM3X8H
+		bool "SAM3X8H"
 endchoice
 
 if SOC_SERIES_SAM3X
