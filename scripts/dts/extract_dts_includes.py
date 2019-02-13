@@ -420,8 +420,7 @@ def yaml_include(loader, node):
         return [load_binding_file(fname)
                 for fname in loader.construct_sequence(node)]
 
-    print("Error: unrecognised node type in !include statement")
-    raise yaml.constructor.ConstructorError
+    yaml_inc_error("Error: unrecognised node type in !include statement")
 
 
 def load_binding_file(fname):
@@ -433,17 +432,21 @@ def load_binding_file(fname):
                  if os.path.basename(filepath) == os.path.basename(fname)]
 
     if not filepaths:
-        print("Error: unknown file name '{}' in !include statement"
-              .format(fname))
-        raise yaml.constructor.ConstructorError
+        yaml_inc_error("Error: unknown file name '{}' in !include statement"
+                       .format(fname))
 
     if len(filepaths) > 1:
-        print("Error: multiple candidates for file name '{}' in !include "
-              "statement: {}".format(fname, filepaths))
-        raise yaml.constructor.ConstructorError
+        yaml_inc_error("Error: multiple candidates for file name '{}' in "
+                       "!include statement: {}".format(fname, filepaths))
 
     with open(filepaths[0], 'r', encoding='utf-8') as f:
         return yaml.load(f)
+
+
+def yaml_inc_error(msg):
+    # Helper for reporting errors in the !include implementation
+
+    raise yaml.constructor.ConstructorError(None, None, msg)
 
 
 def generate_node_definitions():
