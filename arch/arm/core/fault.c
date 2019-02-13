@@ -273,6 +273,9 @@ static u32_t _MpuFault(NANO_ESF *esf, int fromHardFault)
 	}
 #endif /* !defined(CONFIG_ARMV7_M_ARMV8_M_FP) */
 
+	/* clear MMFSR sticky bits */
+	SCB->CFSR |= SCB_CFSR_MEMFAULTSR_Msk;
+
 	/* Assess whether system shall ignore/recover from this MPU fault. */
 	if (_MemoryFaultIsRecoverable(esf)) {
 		reason = _NANO_ERR_RECOVERABLE;
