@@ -17,28 +17,6 @@
 		};
 	};
 
-	flash-controller@4001E000 {
-			compatible = "nordic,nrf52-flash-controller";
-			reg = <0x4001E000 0x1000>;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			label="NRF_FLASH_DRV_NAME";
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				label = "NRF_FLASH";
-				erase-block-size = <4096>;
-				write-block-size = <4>;
-			};
-	};
-
-	sram0: memory@20000000 {
-		device_type = "memory";
-		compatible = "mmio-sram";
-	};
-
 	aliases {
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
@@ -72,6 +50,29 @@
 	};
 
 	soc {
+
+		flash-controller@4001e000 {
+			compatible = "nordic,nrf52-flash-controller";
+			reg = <0x4001e000 0x1000>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			label="NRF_FLASH_DRV_NAME";
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				label = "NRF_FLASH";
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+			};
+		};
+
+		sram0: memory@20000000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+		};
+
 		adc: adc@40007000 {
 			compatible = "nordic,nrf-saadc";
 			reg = <0x40007000 0x1000>;

@@ -20,11 +20,6 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		device_type = "memory";
-		compatible = "mmio-sram";
-	};
-
 	aliases {
 		flash-controller = &flash_controller;
 		ficr = &ficr;
@@ -60,6 +55,11 @@
 	};
 
 	soc {
+		sram0: memory@20000000 {
+			device_type = "memory";
+			compatible = "mmio-sram";
+		};
+
 		peripheral@50000000 {
 			#address-cells = <1>;
 			#size-cells = <1>;
