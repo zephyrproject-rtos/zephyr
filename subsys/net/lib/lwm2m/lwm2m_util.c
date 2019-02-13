@@ -20,6 +20,12 @@ int lwm2m_f32_to_b32(float32_value_t *f32, u8_t *b32, size_t len)
 		return -EINVAL;
 	}
 
+	/* handle zero value special case */
+	if (f32->val1 == 0 && f32->val2 == 0) {
+		memset(b32, 0, len);
+		return 0;
+	}
+
 	v = f32->val1;
 	/* sign handled later */
 	if (v < 0) {
@@ -94,6 +100,12 @@ int lwm2m_f64_to_b64(float64_value_t *f64, u8_t *b64, size_t len)
 
 	if (len != 8) {
 		return -EINVAL;
+	}
+
+	/* handle zero value special case */
+	if (f64->val1 == 0LL && f64->val2 == 0LL) {
+		memset(b64, 0, len);
+		return 0;
 	}
 
 	v = f64->val1;
