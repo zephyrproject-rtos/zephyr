@@ -97,6 +97,7 @@ static void counter_tear_down_instance(const char *dev_name)
 
 	err = counter_stop(dev);
 	zassert_equal(0, err, "Counter failed to stop\n");
+
 }
 
 static void test_all_instances(counter_test_func_t func)
@@ -106,11 +107,6 @@ static void test_all_instances(counter_test_func_t func)
 		func(devices[i]);
 		counter_tear_down_instance(devices[i]);
 	}
-}
-
-void counter_tear_down(void)
-{
-
 }
 
 static void top_handler(struct device *dev, void *user_data)
@@ -330,23 +326,22 @@ void test_all_channels_instance(const char *str)
 	const int n = 10;
 	int nchan = 0;
 	bool limit_reached = false;
-	struct counter_alarm_cfg alarm_cfgs[n];
+	struct counter_alarm_cfg alarm_cfgs;
 	u32_t ticks;
 
 	dev = device_get_binding(str);
 	ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
 
-	for (int i = 0; i < n; i++) {
-		alarm_cfgs[i].absolute = false;
-		alarm_cfgs[i].ticks = ticks;
-		alarm_cfgs[i].callback = alarm_handler2;
-	}
+	alarm_cfgs.absolute = false;
+	alarm_cfgs.ticks = ticks;
+	alarm_cfgs.callback = alarm_handler2;
+	alarm_cfgs.user_data = NULL;
 
 	err = counter_start(dev);
 	zassert_equal(0, err, "Counter failed to start");
 
 	for (int i = 0; i < n; i++) {
-		err = counter_set_channel_alarm(dev, i, &alarm_cfgs[i]);
+		err = counter_set_channel_alarm(dev, i, &alarm_cfgs);
 		if ((err == 0) && !limit_reached) {
 			nchan++;
 		} else if (err == -ENOTSUP) {
@@ -380,21 +375,11 @@ void test_all_channels(void)
 void test_main(void)
 {
 	ztest_test_suite(test_counter,
-		ztest_unit_test_setup_teardown(test_set_top_value_with_alarm,
-					unit_test_noop,
-					counter_tear_down),
-		ztest_unit_test_setup_teardown(test_single_shot_alarm_notop,
-					unit_test_noop,
-					counter_tear_down),
-		ztest_unit_test_setup_teardown(test_single_shot_alarm_top,
-					unit_test_noop,
-					counter_tear_down),
-		ztest_unit_test_setup_teardown(test_multiple_alarms,
-					unit_test_noop,
-					counter_tear_down),
-		ztest_unit_test_setup_teardown(test_all_channels,
-					unit_test_noop,
-					counter_tear_down)
+		ztest_unit_test(test_set_top_value_with_alarm),
+		ztest_unit_test(test_single_shot_alarm_notop),
+		ztest_unit_test(test_single_shot_alarm_top),
+		ztest_unit_test(test_multiple_alarms),
+		ztest_unit_test(test_all_channels)
 			 );
 	ztest_run_test_suite(test_counter);
 }
