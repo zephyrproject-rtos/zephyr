@@ -448,7 +448,7 @@ def write_header(f):
     f.write('#endif\n')
 
 
-def load_yaml_descriptions(root, yaml_dirs):
+def load_bindings(root, yaml_dirs):
     compatibles = all_compats(root)
 
     (bindings, bus, bindings_compat) = Bindings.bindings(compatibles, yaml_dirs)
@@ -514,7 +514,7 @@ def main():
     create_chosen(root)
 
     (extract.globals.bindings, extract.globals.bus_bindings,
-     extract.globals.bindings_compat) = load_yaml_descriptions(root, args.yaml)
+     extract.globals.bindings_compat) = load_bindings(root, args.yaml)
 
     generate_node_definitions()
 
