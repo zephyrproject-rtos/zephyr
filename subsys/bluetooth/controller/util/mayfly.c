@@ -23,9 +23,9 @@ static struct {
 static memq_link_t mfl[MAYFLY_CALLEE_COUNT][MAYFLY_CALLER_COUNT];
 static u8_t mfp[MAYFLY_CALLEE_COUNT];
 
-#if defined(CONFIG_MAYFLY_UT)
+#if defined(MAYFLY_UT)
 static u8_t _state;
-#endif /* CONFIG_MAYFLY_UT */
+#endif /* MAYFLY_UT */
 
 void mayfly_init(void)
 {
@@ -127,7 +127,7 @@ static void dequeue(u8_t callee_id, u8_t caller_id, memq_link_t *link,
 	if (((req - m->_ack) & 0x03) != 1) {
 		u8_t ack;
 
-#if defined(CONFIG_MAYFLY_UT)
+#if defined(MAYFLY_UT)
 		u32_t mayfly_ut_run_test(void);
 		void mayfly_ut_mfy(void *param);
 
@@ -139,7 +139,7 @@ static void dequeue(u8_t callee_id, u8_t caller_id, memq_link_t *link,
 				mayfly_ut_run_test();
 			}
 		}
-#endif /* CONFIG_MAYFLY_UT */
+#endif /* MAYFLY_UT */
 
 		/* dequeue mayfly struct */
 		memq_dequeue(mft[callee_id][caller_id].tail,
@@ -155,9 +155,9 @@ static void dequeue(u8_t callee_id, u8_t caller_id, memq_link_t *link,
 
 		/* re-insert, if re-pended by interrupt */
 		if (((m->_req - ack) & 0x03) == 1) {
-#if defined(CONFIG_MAYFLY_UT)
+#if defined(MAYFLY_UT)
 			printk("%s: RACE\n", __func__);
-#endif /* CONFIG_MAYFLY_UT */
+#endif /* MAYFLY_UT */
 
 			m->_ack = ack;
 			memq_enqueue(link, m, &mft[callee_id][callee_id].tail);
@@ -189,16 +189,16 @@ void mayfly_run(u8_t callee_id)
 		while (link) {
 			u8_t state;
 
-#if defined(CONFIG_MAYFLY_UT)
+#if defined(MAYFLY_UT)
 			_state = 0;
-#endif /* CONFIG_MAYFLY_UT */
+#endif /* MAYFLY_UT */
 
 			/* execute work if ready */
 			state = (m->_req - m->_ack) & 0x03;
 			if (state == 1) {
-#if defined(CONFIG_MAYFLY_UT)
+#if defined(MAYFLY_UT)
 				_state = 1;
-#endif /* CONFIG_MAYFLY_UT */
+#endif /* MAYFLY_UT */
 
 				/* mark mayfly as ran */
 				m->_ack--;
@@ -253,7 +253,7 @@ void mayfly_run(u8_t callee_id)
 	}
 }
 
-#if defined(CONFIG_MAYFLY_UT)
+#if defined(MAYFLY_UT)
 #define MAYFLY_CALL_ID_CALLER MAYFLY_CALL_ID_0
 #define MAYFLY_CALL_ID_CALLEE MAYFLY_CALL_ID_2
 
@@ -330,4 +330,4 @@ u32_t mayfly_ut(void)
 	printk("%s: SUCCESS.\n", __func__);
 	return 0;
 }
-#endif /* CONFIG_MAYFLY_UT */
+#endif /* MAYFLY_UT */
