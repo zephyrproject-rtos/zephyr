@@ -115,6 +115,8 @@ void alt_thread3(void)
 	irq_unlock(key);
 }
 
+#ifndef CONFIG_ARCH_POSIX
+#ifdef CONFIG_STACK_SENTINEL
 void blow_up_stack(void)
 {
 	char buf[OVERFLOW_STACKSIZE];
@@ -122,8 +124,21 @@ void blow_up_stack(void)
 	TC_PRINT("posting %zu bytes of junk to stack...\n", sizeof(buf));
 	(void)memset(buf, 0xbb, sizeof(buf));
 }
+#else
+/* stack sentinel doesn't catch it in time before it trashes the entire kernel
+ */
+int stack_smasher(int val)
+{
+	return stack_smasher(val * 2) + stack_smasher(val * 3);
+}
 
-void stack_thread1(void)
+void blow_up_stack(void)
+{
+	stack_smasher(37);
+}
+#endif
+
+void stack_sentinel_timer(void)
 {
 	/* Test that stack overflow check due to timer interrupt works */
 	blow_up_stack();
@@ -133,8 +148,7 @@ void stack_thread1(void)
 	rv = TC_FAIL;
 }
 
-
-void stack_thread2(void)
+void stack_sentinel_swap(void)
 {
 	unsigned int key = irq_lock();
 
@@ -146,6 +160,39 @@ void stack_thread2(void)
 	rv = TC_FAIL;
 	irq_unlock(key);
 }
+
+void stack_hw_overflow(void)
+{
+	/* Test that HW stack overflow check works */
+	blow_up_stack();
+	TC_ERROR("should never see this\n");
+	rv = TC_FAIL;
+}
+
+void check_stack_overflow(void *handler, u32_t flags)
+{
+	crash_reason = -1;
+#ifdef CONFIG_STACK_SENTINEL
+	/* When testing stack sentinel feature, the overflow stack is a
+	 * smaller section of alt_stack near the end.
+	 * In this way when it gets overflowed by blow_up_stack() we don't
+	 * corrupt anything else and prevent the test case from completing.
+	 */
+	k_thread_create(&alt_thread, overflow_stack, OVERFLOW_STACKSIZE,
+#else
+	k_thread_create(&alt_thread, alt_stack,
+			K_THREAD_STACK_SIZEOF(alt_stack),
+#endif /* CONFIG_STACK_SENTINEL */
+			(k_thread_entry_t)handler,
+			NULL, NULL, NULL, K_PRIO_PREEMPT(PRIORITY), flags,
+			K_NO_WAIT);
+
+	zassert_equal(crash_reason, _NANO_ERR_STACK_CHK_FAIL,
+		      "bad reason code got %d expected %d\n",
+		      crash_reason, _NANO_ERR_STACK_CHK_FAIL);
+	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
+}
+#endif /* !CONFIG_ARCH_POSIX */
 
 /**
  * @brief Test the kernel fatal error handling works correctly
@@ -208,64 +255,42 @@ void test_fatal(void)
 	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
 
 #ifndef CONFIG_ARCH_POSIX
-	TC_PRINT("test stack overflow - timer irq\n");
-#ifdef CONFIG_STACK_SENTINEL
-	/* When testing stack sentinel feature, the overflow stack is a
-	 * smaller section of alt_stack near the end.
-	 * In this way when it gets overflowed by blow_up_stack() we don't
-	 * corrupt anything else and prevent the test case from completing.
-	 */
-	k_thread_create(&alt_thread, overflow_stack, OVERFLOW_STACKSIZE,
-#else
-	k_thread_create(&alt_thread, alt_stack,
-			K_THREAD_STACK_SIZEOF(alt_stack),
-#endif
-			(k_thread_entry_t)stack_thread1,
-			NULL, NULL, NULL, K_PRIO_PREEMPT(PRIORITY), 0,
-			K_NO_WAIT);
 
-#ifdef CONFIG_ARM
-	/* FIXME: See #7706 */
-	zassert_true(crash_reason == _NANO_ERR_STACK_CHK_FAIL ||
-		     crash_reason == _NANO_ERR_HW_EXCEPTION, NULL);
-#else
-	zassert_equal(crash_reason, _NANO_ERR_STACK_CHK_FAIL,
-		      "bad reason code got %d expected %d\n",
-		      crash_reason, _NANO_ERR_STACK_CHK_FAIL);
-#endif
-	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
-
-	/* Stack sentinel has to be invoked, make sure it happens during
-	 * a context switch. Also ensure HW-based solutions can run more
-	 * than once.
-	 */
-	TC_PRINT("test stack overflow - swap\n");
 #ifdef CONFIG_STACK_SENTINEL
-	k_thread_create(&alt_thread, overflow_stack, OVERFLOW_STACKSIZE,
-#else
-	k_thread_create(&alt_thread, alt_stack,
-			K_THREAD_STACK_SIZEOF(alt_stack),
-#endif
-			(k_thread_entry_t)stack_thread2,
-			NULL, NULL, NULL, K_PRIO_PREEMPT(PRIORITY), 0,
-			K_NO_WAIT);
-#ifdef CONFIG_CPU_HAS_NXP_MPU
-	/* FIXME: See #7706 */
-	zassert_true(crash_reason == _NANO_ERR_STACK_CHK_FAIL ||
-		     crash_reason == _NANO_ERR_HW_EXCEPTION, NULL);
-#else
-	zassert_equal(crash_reason, _NANO_ERR_STACK_CHK_FAIL,
-		      "bad reason code got %d expected %d\n",
-		      crash_reason, _NANO_ERR_STACK_CHK_FAIL);
-#endif
-	zassert_not_equal(rv, TC_FAIL, "thread was not aborted");
-#else
-	TC_PRINT("test stack overflow - skipped for POSIX arch\n");
-	/*
-	 * We do not have a stack check for the posix ARCH
-	 * again we relay on the native OS
+	TC_PRINT("test stack sentinel overflow - timer irq\n");
+	check_stack_overflow(stack_sentinel_timer, 0);
+
+	TC_PRINT("test stack sentinel overflow - swap\n");
+	check_stack_overflow(stack_sentinel_swap, 0);
+#endif /* CONFIG_STACK_SENTINEL */
+
+#ifdef CONFIG_HW_STACK_PROTECTION
+	/* HW based stack overflow detection.
+	 * Do this twice to show that HW-based solutions work more than
+	 * once.
 	 */
+
+#ifndef CONFIG_CPU_HAS_NXP_MPU /* FIXME #7706 */
+	TC_PRINT("test stack HW-based overflow - supervisor 1\n");
+	check_stack_overflow(stack_hw_overflow, 0);
+
+	TC_PRINT("test stack HW-based overflow - supervisor 2\n");
+	check_stack_overflow(stack_hw_overflow, 0);
+#endif /* CONFIG_CPU_HAS_NXP_MPU */
+#endif /* CONFIG_HW_STACK_PROTECTION */
+
+#ifdef CONFIG_USERSPACE
+
+#if !defined(CONFIG_ARM) && !defined(CONFIG_ARC) /* FIXME #13341 #13342 */
+	TC_PRINT("test stack HW-based overflow - user 1\n");
+	check_stack_overflow(stack_hw_overflow, K_USER);
+
+	TC_PRINT("test stack HW-based overflow - user 2\n");
+	check_stack_overflow(stack_hw_overflow, K_USER);
 #endif
+#endif /* CONFIG_USERSPACE */
+
+#endif /* !CONFIG_ARCH_POSIX */
 }
 
 /*test case main entry*/
