@@ -219,6 +219,15 @@ extern void SwiP_dec(SwiP_Handle handle);
 extern void SwiP_inc(SwiP_Handle handle);
 
 /*!
+ *  @brief  Function  to return a status based on whether it is in a
+ *      software interrupt context.
+ *
+ *  @return A status: indicating whether the function was called in a
+ *      software interrupt routine (true) or not (false).
+ */
+extern bool SwiP_inISR(void);
+
+/*!
  *  @brief  Or the mask with the SwiP's trigger value and post the SwiP.
  *
  *  @param  handle returned from the SwiP_create or SwiP_construct call

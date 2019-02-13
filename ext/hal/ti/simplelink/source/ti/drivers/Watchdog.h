@@ -88,17 +88,18 @@
  *  function:
  *  @code
  *    Watchdog_Params params;
- *    Watchdog_Handle watchdog;
+ *    Watchdog_Handle watchdogHandle;
  *
  *    Watchdog_init();
  *
  *    Watchdog_Params_init(&params);
  *    params.resetMode = Watchdog_RESET_ON;
- *    params.callbackFxn = UserCallbackFxn;
+ *    params.callbackFxn = (Watchdog_Callback) UserCallbackFxn;
  *
- *    watchdog = Watchdog_open(Board_WATCHDOG, &params);
- *    if (watchdog == NULL) {
- *        `Error opening watchdog`
+ *    watchdogHandle = Watchdog_open(Board_WATCHDOG0, &params);
+ *    if (watchdogHandle == NULL) {
+ *        // Error opening Watchdog
+ *        while (1);
  *    }
  *  @endcode
  *
@@ -464,8 +465,8 @@ extern void Watchdog_init(void);
  *                        default values. All the fields in this structure are
  *                        RO (read-only).
  *
- *  @return A Watchdog_Handle on success or a NULL on an error or if it has been
- *          opened already.
+ *  @return A Watchdog_Handle on success or a NULL on an error or if it has
+ *          been opened already.
  *
  *  @sa     Watchdog_init()
  *  @sa     Watchdog_close()
@@ -526,7 +527,7 @@ extern int_fast16_t Watchdog_setReload(Watchdog_Handle handle, uint32_t ticks);
  *  @return Converted value in number of Watchdog clock ticks
  *          A value of zero (0) means the converted value exceeds 32 bits
  *          or that the operation is not supported for the specific device.
-     *
+ *
  *  @sa     Watchdog_setReload()
  */
 extern uint32_t Watchdog_convertMsToTicks(Watchdog_Handle handle,

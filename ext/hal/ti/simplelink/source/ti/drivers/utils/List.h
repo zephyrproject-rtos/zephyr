@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -148,7 +148,10 @@ extern void List_clearList(List_List *list);
  *
  *  @return true if empty, false if not empty
  */
-extern bool List_empty(List_List *list);
+static inline bool List_empty(List_List *list)
+{
+    return (list->head == NULL);
+}
 
 /*!
  *  @brief  Function to atomically get the first elem in a linked list
@@ -169,7 +172,10 @@ extern List_Elem *List_get(List_List *list);
  *
  *  @return Pointer to the first elem in the linked list or NULL if empty
  */
-extern List_Elem *List_head(List_List *list);
+static inline List_Elem *List_head(List_List *list)
+{
+    return (list->head);
+}
 
 /*!
  *  @brief  Function to insert an elem into a linked list
@@ -194,7 +200,10 @@ extern void List_insert(List_List *list, List_Elem *newElem,
  *
  *  @return Pointer to the next elem in linked list or NULL if at the end
  */
-extern List_Elem *List_next(List_Elem *elem);
+static inline List_Elem *List_next(List_Elem *elem)
+{
+    return (elem->next);
+}
 
 /*!
  *  @brief  Function to return the prev elem in a linked list
@@ -206,7 +215,10 @@ extern List_Elem *List_next(List_Elem *elem);
  *
  *  @return Pointer to the prev elem in linked list or NULL if at the beginning
  */
-extern List_Elem *List_prev(List_Elem *elem);
+static inline List_Elem *List_prev(List_Elem *elem)
+{
+    return (elem->prev);
+}
 
 /*!
  *  @brief  Function to atomically put an elem onto the end of a linked list
@@ -245,8 +257,10 @@ extern void List_remove(List_List *list, List_Elem *elem);
  *
  *  @return Pointer to the last elem in the linked list or NULL if empty
  */
-extern List_Elem *List_tail(List_List *list);
-
+static inline List_Elem *List_tail(List_List *list)
+{
+    return (list->tail);
+}
 
 #ifdef __cplusplus
 }

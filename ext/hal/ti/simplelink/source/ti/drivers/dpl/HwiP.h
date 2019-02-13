@@ -62,7 +62,7 @@ extern "C" {
  *  @brief    Number of bytes greater than or equal to the size of any RTOS
  *            HwiP object.
  *
- *  nortos:   4
+ *  nortos:   12
  *  SysBIOS:  28
  */
 #define HwiP_STRUCT_SIZE   (28)

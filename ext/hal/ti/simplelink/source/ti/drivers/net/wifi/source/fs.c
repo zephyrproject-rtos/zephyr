@@ -35,7 +35,6 @@
 */
 
 
-
 /*****************************************************************************/
 /* Include files                                                             */
 /*****************************************************************************/
@@ -53,7 +52,6 @@
 /* Internal functions                                                        */
 /*****************************************************************************/
 
-#ifndef SL_TINY
 static _u16 _SlFsStrlen(const _u8 *buffer);
 
 static _u32 FsGetCreateFsMode(_u8 Mode, _u32 MaxSizeInBytes,_u32 AccessFlags);
@@ -70,17 +68,12 @@ static _u16 _SlFsStrlen(const _u8 *buffer)
     }
     return len;
 }
-#endif
 /*****************************************************************************/
 /*  _SlFsGetCreateFsMode                                                       */
 /*****************************************************************************/
 
-
-
 /* Convert the user flag to the file System flag */
 #define FS_CONVERT_FLAGS( ModeAndMaxSize )  (((_u32)ModeAndMaxSize & SL_FS_OPEN_FLAGS_BIT_MASK)>>SL_NUM_OF_MAXSIZE_BIT)
-
-
 
 typedef enum
 {
@@ -119,8 +112,6 @@ typedef enum
     FS_MAX_MODE_SIZE_GRAN
 }FsFileOpenMaxSizeGran_e;
 
-#ifndef SL_TINY
-
 
 static _u32 FsGetCreateFsMode(_u8 Mode, _u32 MaxSizeInBytes,_u32 AccessFlags)
 {
@@ -141,23 +132,18 @@ static _u32 FsGetCreateFsMode(_u8 Mode, _u32 MaxSizeInBytes,_u32 AccessFlags)
 
 }
 
-
-
-#endif
-
 /*****************************************************************************/
-/* API functions                                                        */
+/* API functions                                                             */
 /*****************************************************************************/
 
 /*****************************************************************************/
-/*  sl_FsOpen */
+/*  sl_FsOpen                                                                */
 /*****************************************************************************/
 typedef union
 {
-  SlFsOpenCommand_t	    Cmd;
-  SlFsOpenResponse_t    Rsp;
+    SlFsOpenCommand_t     Cmd;
+    SlFsOpenResponse_t    Rsp;
 }_SlFsOpenMsg_u;
-
 
 #if _SL_INCLUDE_FUNC(sl_FsOpen)
 
@@ -173,17 +159,16 @@ _i32 sl_FsOpen(const _u8 *pFileName,const _u32 ModeAndMaxSize, _u32 *pToken)
 
     _SlFsOpenMsg_u        Msg;
     _SlCmdExt_t           CmdExt;
-    _i32		          FileHandle;
+    _i32                  FileHandle;
     _u32                  MaxSizeInBytes;
     _u32                  OpenMode;
-    _u8	                  CreateMode;
-
+    _u8                   CreateMode;
 
     /* verify that this api is allowed. if not allowed then
     ignore the API execution and return immediately with an error */
     VERIFY_API_ALLOWED(SL_OPCODE_SILO_FS);
 
-	_SlDrvMemZero(&CmdExt, (_u16)sizeof(_SlCmdExt_t));
+    _SlDrvMemZero(&CmdExt, (_u16)sizeof(_SlCmdExt_t));
 
     if ( _SlFsStrlen(pFileName) >= SL_FS_MAX_FILE_NAME_LENGTH )
     {
@@ -193,7 +178,7 @@ _i32 sl_FsOpen(const _u8 *pFileName,const _u32 ModeAndMaxSize, _u32 *pToken)
     CmdExt.TxPayload1Len = (_u16)((_SlFsStrlen(pFileName)+4) & (~3)); /* add 4: 1 for NULL and the 3 for align */
     CmdExt.pTxPayload1 = (_u8*)pFileName;
 
-	OpenMode = ModeAndMaxSize & SL_FS_OPEN_MODE_BIT_MASK;
+    OpenMode = ModeAndMaxSize & SL_FS_OPEN_MODE_BIT_MASK;
 
     /*convert from the interface flags to the device flags*/
     if( OpenMode == SL_FS_READ )
@@ -204,23 +189,23 @@ _i32 sl_FsOpen(const _u8 *pFileName,const _u32 ModeAndMaxSize, _u32 *pToken)
     {
         Msg.Cmd.Mode = FS_MODE(FS_MODE_OPEN_WRITE, 0, 0, FS_CONVERT_FLAGS ( ModeAndMaxSize));
     }
-	/* one of the creation mode */
+    /* one of the creation mode */
     else if ( ( OpenMode == (SL_FS_CREATE | SL_FS_OVERWRITE )) || ( OpenMode == SL_FS_CREATE) ||(OpenMode == (SL_FS_CREATE | SL_FS_WRITE )))
     {
        /* test that the size is correct */
        MaxSizeInBytes = (ModeAndMaxSize & SL_FS_OPEN_MAXSIZE_BIT_MASK) * 256;
-	   if (MaxSizeInBytes > 0xFF0000 )
-	   {
-		   return SL_ERROR_FS_FILE_MAX_SIZE_EXCEEDED;
-	   }
+       if (MaxSizeInBytes > 0xFF0000 )
+       {
+           return SL_ERROR_FS_FILE_MAX_SIZE_EXCEEDED;
+       }
 
-	   CreateMode = ((OpenMode == (SL_FS_CREATE | SL_FS_OVERWRITE )) ? FS_MODE_OPEN_WRITE_CREATE_IF_NOT_EXIST : FS_MODE_OPEN_CREATE  );
+       CreateMode = ((OpenMode == (SL_FS_CREATE | SL_FS_OVERWRITE )) ? FS_MODE_OPEN_WRITE_CREATE_IF_NOT_EXIST : FS_MODE_OPEN_CREATE  );
 
         Msg.Cmd.Mode = FsGetCreateFsMode( CreateMode ,MaxSizeInBytes, FS_CONVERT_FLAGS ( ModeAndMaxSize)  );
     }
     else
     {
-        return SL_ERROR_FS_UNVALID_FILE_MODE;
+        return SL_ERROR_FS_INVALID_FILE_MODE;
     }
 
     if(pToken != NULL)
@@ -249,10 +234,9 @@ _i32 sl_FsOpen(const _u8 *pFileName,const _u32 ModeAndMaxSize, _u32 *pToken)
 /*****************************************************************************/
 typedef union
 {
-  SlFsCloseCommand_t    Cmd;
-  _BasicResponse_t	    Rsp;
+    SlFsCloseCommand_t    Cmd;
+    _BasicResponse_t        Rsp;
 }_SlFsCloseMsg_u;
-
 
 #if _SL_INCLUDE_FUNC(sl_FsClose)
 
@@ -274,7 +258,6 @@ _i16 sl_FsClose(const _i32 FileHdl, const _u8*  pCeritificateFileName,const _u8*
     ignore the API execution and return immediately with an error */
     VERIFY_API_ALLOWED(SL_OPCODE_SILO_FS);
 
-
     Msg.Cmd.FileHandle             = (_u32)FileHdl;
     if( pCeritificateFileName != NULL )
     {
@@ -282,12 +265,12 @@ _i16 sl_FsClose(const _i32 FileHdl, const _u8*  pCeritificateFileName,const _u8*
     }
     Msg.Cmd.SignatureLen           = SignatureLen;
 
-	_SlDrvMemZero(&ExtCtrl, (_u16)sizeof(_SlCmdExt_t));
+    _SlDrvMemZero(&ExtCtrl, (_u16)sizeof(_SlCmdExt_t));
 
     ExtCtrl.TxPayload1Len = (_u16)(((SignatureLen+3) & (~3))); /* align */
     ExtCtrl.pTxPayload1   = (_u8*)pSignature;
-    ExtCtrl.RxPayloadLen = (_i16)Msg.Cmd.CertificFileNameLength;
-    ExtCtrl.pRxPayload   = (_u8*)pCeritificateFileName; /* Add signature */
+    ExtCtrl.RxPayloadLen  = (_i16)Msg.Cmd.CertificFileNameLength;
+    ExtCtrl.pRxPayload    = (_u8*)pCeritificateFileName; /* Add signature */
 
     if(ExtCtrl.pRxPayload != NULL &&  ExtCtrl.RxPayloadLen != 0)
     {
@@ -306,12 +289,11 @@ _i16 sl_FsClose(const _i32 FileHdl, const _u8*  pCeritificateFileName,const _u8*
 /*****************************************************************************/
 typedef union
 {
-  SlFsReadCommand_t	    Cmd;
-  SlFsReadResponse_t	Rsp;
+    SlFsReadCommand_t        Cmd;
+    SlFsReadResponse_t    Rsp;
 }_SlFsReadMsg_u;
 
 #if _SL_INCLUDE_FUNC(sl_FsRead)
-
 
 static const _SlCmdCtrl_t _SlFsReadCmdCtrl =
 {
@@ -324,7 +306,7 @@ _i32 sl_FsRead(const _i32 FileHdl,_u32 Offset, _u8*  pData,_u32 Len)
 {
     _SlFsReadMsg_u      Msg;
     _SlCmdExt_t         ExtCtrl;
-    _u16      ChunkLen;
+    _u16                ChunkLen;
     _SlReturnVal_t      RetVal =0;
     _i32                RetCount = 0;
 
@@ -334,7 +316,7 @@ _i32 sl_FsRead(const _i32 FileHdl,_u32 Offset, _u8*  pData,_u32 Len)
 
     _SlDrvMemZero(&ExtCtrl, (_u16)sizeof(_SlCmdExt_t));
 
-    ChunkLen = (_u16)sl_min(MAX_NVMEM_CHUNK_SIZE,Len);
+    ChunkLen             = (_u16)sl_min(MAX_NVMEM_CHUNK_SIZE,Len);
     ExtCtrl.RxPayloadLen = (_i16)ChunkLen;
     ExtCtrl.pRxPayload   = (_u8 *)(pData);
     Msg.Cmd.Offset       = Offset;
@@ -359,12 +341,12 @@ _i32 sl_FsRead(const _i32 FileHdl,_u32 Offset, _u8*  pData,_u32 Len)
             RetCount += (_i32)Msg.Rsp.status;
             Len -= ChunkLen;
             Offset += ChunkLen;
-            Msg.Cmd.Offset      = Offset;
-            ExtCtrl.pRxPayload   += ChunkLen;
+            Msg.Cmd.Offset = Offset;
+            ExtCtrl.pRxPayload += ChunkLen;
             ChunkLen = (_u16)sl_min(MAX_NVMEM_CHUNK_SIZE,Len);
             ExtCtrl.RxPayloadLen  = (_i16)ChunkLen;
-            Msg.Cmd.Len           = ChunkLen;
-            Msg.Cmd.FileHandle  = (_u32)FileHdl;
+            Msg.Cmd.Len = ChunkLen;
+            Msg.Cmd.FileHandle = (_u32)FileHdl;
         }
         else
         {
@@ -381,10 +363,9 @@ _i32 sl_FsRead(const _i32 FileHdl,_u32 Offset, _u8*  pData,_u32 Len)
 /*****************************************************************************/
 typedef union
 {
-  SlFsWriteCommand_t	    Cmd;
-  SlFsWriteResponse_t	    Rsp;
+    SlFsWriteCommand_t        Cmd;
+    SlFsWriteResponse_t        Rsp;
 }_SlFsWriteMsg_u;
-
 
 #if _SL_INCLUDE_FUNC(sl_FsWrite)
 
@@ -399,7 +380,7 @@ _i32 sl_FsWrite(const _i32 FileHdl,_u32 Offset, _u8*  pData,_u32 Len)
 {
     _SlFsWriteMsg_u     Msg;
     _SlCmdExt_t         ExtCtrl;
-    _u16      ChunkLen;
+    _u16                ChunkLen;
     _SlReturnVal_t      RetVal;
     _i32                RetCount = 0;
 
@@ -407,18 +388,17 @@ _i32 sl_FsWrite(const _i32 FileHdl,_u32 Offset, _u8*  pData,_u32 Len)
     ignore the API execution and return immediately with an error */
     VERIFY_API_ALLOWED(SL_OPCODE_SILO_FS);
 
-	_SlDrvMemZero(&ExtCtrl, (_u16)sizeof(_SlCmdExt_t));
+    _SlDrvMemZero(&ExtCtrl, (_u16)sizeof(_SlCmdExt_t));
 
-    ChunkLen = (_u16)sl_min(MAX_NVMEM_CHUNK_SIZE,Len);
+    ChunkLen              = (_u16)sl_min(MAX_NVMEM_CHUNK_SIZE,Len);
     ExtCtrl.TxPayload1Len = ChunkLen;
     ExtCtrl.pTxPayload1   = (_u8 *)(pData);
-    Msg.Cmd.Offset      = Offset;
-    Msg.Cmd.Len          = ChunkLen;
-    Msg.Cmd.FileHandle  = (_u32)FileHdl;
+    Msg.Cmd.Offset        = Offset;
+    Msg.Cmd.Len           = ChunkLen;
+    Msg.Cmd.FileHandle    = (_u32)FileHdl;
 
     do
     {
-
         RetVal = _SlDrvCmdOp((_SlCmdCtrl_t *)&_SlFsWriteCmdCtrl, &Msg, &ExtCtrl);
         if(SL_OS_RET_CODE_OK == RetVal)
         {
@@ -426,23 +406,23 @@ _i32 sl_FsWrite(const _i32 FileHdl,_u32 Offset, _u8*  pData,_u32 Len)
             {
                 if( RetCount > 0)
                 {
-                   return RetCount;
+                    return RetCount;
                 }
                 else
                 {
-                   return Msg.Rsp.status;
+                    return Msg.Rsp.status;
                 }
             }
 
             RetCount += (_i32)Msg.Rsp.status;
             Len -= ChunkLen;
             Offset += ChunkLen;
-            Msg.Cmd.Offset        = Offset;
-            ExtCtrl.pTxPayload1   += ChunkLen;
+            Msg.Cmd.Offset = Offset;
+            ExtCtrl.pTxPayload1 += ChunkLen;
             ChunkLen = (_u16)sl_min(MAX_NVMEM_CHUNK_SIZE,Len);
             ExtCtrl.TxPayload1Len  = ChunkLen;
-            Msg.Cmd.Len           = ChunkLen;
-            Msg.Cmd.FileHandle  = (_u32)FileHdl;
+            Msg.Cmd.Len = ChunkLen;
+            Msg.Cmd.FileHandle = (_u32)FileHdl;
         }
         else
         {
@@ -459,13 +439,11 @@ _i32 sl_FsWrite(const _i32 FileHdl,_u32 Offset, _u8*  pData,_u32 Len)
 /*****************************************************************************/
 typedef union
 {
-  SlFsGetInfoCommand_t	    Cmd;
-  SlFsGetInfoResponse_t    Rsp;
+    SlFsGetInfoCommand_t        Cmd;
+    SlFsGetInfoResponse_t    Rsp;
 }_SlFsGetInfoMsg_u;
 
-
 #if _SL_INCLUDE_FUNC(sl_FsGetInfo)
-
 
 static const _SlCmdCtrl_t _SlFsGetInfoCmdCtrl =
 {
@@ -474,29 +452,25 @@ static const _SlCmdCtrl_t _SlFsGetInfoCmdCtrl =
     (_SlArgSize_t)sizeof(SlFsGetInfoResponse_t)
 };
 
-
-
 const _u16 FlagsTranslate[] =
 {
-        SL_FS_INFO_OPEN_WRITE,
-        SL_FS_INFO_OPEN_READ,
-        SL_FS_INFO_NOT_FAILSAFE,
-        SL_FS_INFO_NOT_VALID,
-        SL_FS_INFO_SYS_FILE,
-        SL_FS_INFO_MUST_COMMIT,
-        SL_FS_INFO_BUNDLE_FILE,
-        SL_FS_INFO_PENDING_COMMIT,
-        SL_FS_INFO_PENDING_BUNDLE_COMMIT,
-        0,
-        SL_FS_INFO_SECURE,
-        SL_FS_INFO_NOSIGNATURE,
-        SL_FS_INFO_PUBLIC_WRITE,
-        SL_FS_INFO_PUBLIC_READ,
-        0,
-        0
+    SL_FS_INFO_OPEN_WRITE,
+    SL_FS_INFO_OPEN_READ,
+    SL_FS_INFO_NOT_FAILSAFE,
+    SL_FS_INFO_NOT_VALID,
+    SL_FS_INFO_SYS_FILE,
+    SL_FS_INFO_MUST_COMMIT,
+    SL_FS_INFO_BUNDLE_FILE,
+    SL_FS_INFO_PENDING_COMMIT,
+    SL_FS_INFO_PENDING_BUNDLE_COMMIT,
+    0,
+    SL_FS_INFO_SECURE,
+    SL_FS_INFO_NOSIGNATURE,
+    SL_FS_INFO_PUBLIC_WRITE,
+    SL_FS_INFO_PUBLIC_READ,
+    0,
+    0
 };
-
-
 
 _i16 sl_FsGetInfo(const _u8 *pFileName,const _u32 Token,SlFsFileInfo_t* pFsFileInfo)
 {
@@ -508,21 +482,19 @@ _i16 sl_FsGetInfo(const _u8 *pFileName,const _u32 Token,SlFsFileInfo_t* pFsFileI
     ignore the API execution and return immediately with an error */
     VERIFY_API_ALLOWED(SL_OPCODE_SILO_FS);
 
-	_SlDrvMemZero(&CmdExt, (_u16)sizeof(_SlCmdExt_t));
+    _SlDrvMemZero(&CmdExt, (_u16)sizeof(_SlCmdExt_t));
 
     if ( _SlFsStrlen(pFileName) >= SL_FS_MAX_FILE_NAME_LENGTH )
-	{
-		return SL_ERROR_FS_WRONG_FILE_NAME;
-	}
-
+    {
+        return SL_ERROR_FS_WRONG_FILE_NAME;
+    }
 
     CmdExt.TxPayload1Len = (_u16)((_SlFsStrlen(pFileName)+4) & (~3)); /* add 4: 1 for NULL and the 3 for align  */
     CmdExt.pTxPayload1   = (_u8*)pFileName;
 
-    Msg.Cmd.Token       = Token;
+    Msg.Cmd.Token        = Token;
 
     VERIFY_RET_OK(_SlDrvCmdOp((_SlCmdCtrl_t *)&_SlFsGetInfoCmdCtrl, &Msg, &CmdExt));
-
 
     /* convert flags */
     pFsFileInfo->Flags = 0;
@@ -535,13 +507,14 @@ _i16 sl_FsGetInfo(const _u8 *pFileName,const _u32 Token,SlFsFileInfo_t* pFsFileI
     }
 
     pFsFileInfo->Len          = Msg.Rsp.FileLen;
-	pFsFileInfo->MaxSize      = Msg.Rsp.AllocatedLen;
+    pFsFileInfo->MaxSize      = Msg.Rsp.AllocatedLen;
     pFsFileInfo->Token[0]     = Msg.Rsp.Token[0];
     pFsFileInfo->Token[1]     = Msg.Rsp.Token[1];
     pFsFileInfo->Token[2]     = Msg.Rsp.Token[2];
     pFsFileInfo->Token[3]     = Msg.Rsp.Token[3];
     pFsFileInfo->StorageSize  = Msg.Rsp.FileStorageSize;
     pFsFileInfo->WriteCounter = Msg.Rsp.FileWriteCounter;
+
     return  (_i16)((_i16)Msg.Rsp.Status);
 }
 #endif
@@ -551,8 +524,8 @@ _i16 sl_FsGetInfo(const _u8 *pFileName,const _u32 Token,SlFsFileInfo_t* pFsFileI
 /*****************************************************************************/
 typedef union
 {
-  SlFsDeleteCommand_t   	    Cmd;
-  SlFsDeleteResponse_t	        Rsp;
+    SlFsDeleteCommand_t           Cmd;
+    SlFsDeleteResponse_t          Rsp;
 }_SlFsDeleteMsg_u;
 
 
@@ -568,25 +541,22 @@ static const _SlCmdCtrl_t _SlFsDeleteCmdCtrl =
 _i16 sl_FsDel(const _u8 *pFileName,const _u32 Token)
 {
     _SlFsDeleteMsg_u Msg;
-    _SlCmdExt_t          CmdExt;
-
+    _SlCmdExt_t      CmdExt;
 
     /* verify that this api is allowed. if not allowed then
     ignore the API execution and return immediately with an error */
     VERIFY_API_ALLOWED(SL_OPCODE_SILO_FS);
 
     if ( _SlFsStrlen(pFileName) >= SL_FS_MAX_FILE_NAME_LENGTH )
-	{
-		return SL_ERROR_FS_WRONG_FILE_NAME;
-	}
+    {
+        return SL_ERROR_FS_WRONG_FILE_NAME;
+    }
 
-
-	_SlDrvMemZero(&CmdExt, (_u16)sizeof(_SlCmdExt_t));
+    _SlDrvMemZero(&CmdExt, (_u16)sizeof(_SlCmdExt_t));
 
     CmdExt.TxPayload1Len = (_u16)((_SlFsStrlen(pFileName)+4) & (~3)); /* add 4: 1 for NULL and the 3 for align */
     CmdExt.pTxPayload1   = (_u8*)pFileName;
-    Msg.Cmd.Token       = Token;
-
+    Msg.Cmd.Token        = Token;
 
     VERIFY_RET_OK(_SlDrvCmdOp((_SlCmdCtrl_t *)&_SlFsDeleteCmdCtrl, &Msg, &CmdExt));
 
@@ -599,16 +569,15 @@ _i16 sl_FsDel(const _u8 *pFileName,const _u32 Token)
 /*****************************************************************************/
 typedef union
 {
-  SlFsFileSysControlCommand_t	    Cmd;
-  SlFsFileSysControlResponse_t	    Rsp;
+  SlFsFileSysControlCommand_t        Cmd;
+  SlFsFileSysControlResponse_t       Rsp;
 }_SlFsFileSysControlMsg_u;
 
 #if _SL_INCLUDE_FUNC(sl_FsCtl)
 
-
 const _SlCmdCtrl_t _SlFsFileSysControlCmdCtrl =
 {
-  SL_OPCODE_NVMEM_NVMEMFILESYSTEMCONTROLCOMMAND,
+    SL_OPCODE_NVMEM_NVMEMFILESYSTEMCONTROLCOMMAND,
     sizeof(SlFsFileSysControlCommand_t),
     sizeof(SlFsFileSysControlResponse_t)
 };
@@ -625,17 +594,16 @@ _i32 sl_FsCtl( SlFsCtl_e Command, _u32 Token,   _u8 *pFileName, const _u8 *pData
     Msg.Cmd.Token = Token;
     Msg.Cmd.Operation = (_u8)Command;
 
-	_SlDrvMemZero(&CmdExt, (_u16)sizeof(_SlCmdExt_t));
+    _SlDrvMemZero(&CmdExt, (_u16)sizeof(_SlCmdExt_t));
 
     if ((SL_FS_CTL_ROLLBACK == Command) || (SL_FS_CTL_COMMIT == Command ))
     {
         Msg.Cmd.FileNameLength = _SlFsStrlen(pFileName) + 1 ;
 
-		if ( _SlFsStrlen(pFileName) >= SL_FS_MAX_FILE_NAME_LENGTH )
-		{
-			return SL_ERROR_FS_WRONG_FILE_NAME;
-		}
-
+        if ( _SlFsStrlen(pFileName) >= SL_FS_MAX_FILE_NAME_LENGTH )
+        {
+            return SL_ERROR_FS_WRONG_FILE_NAME;
+        }
 
         /*the data is aligned*/
         CmdExt.RxPayloadLen = DataLen;
@@ -650,24 +618,21 @@ _i32 sl_FsCtl( SlFsCtl_e Command, _u32 Token,   _u8 *pFileName, const _u8 *pData
        {
            CmdExt.RxPayloadLen = CmdExt.RxPayloadLen * (-1);
        }
-
-
     }
     else if( SL_FS_CTL_RENAME == Command )
     {
-		if ( _SlFsStrlen(pFileName) >= SL_FS_MAX_FILE_NAME_LENGTH )
-		{
-			return SL_ERROR_FS_WRONG_FILE_NAME;
-		}
+        if ( _SlFsStrlen(pFileName) >= SL_FS_MAX_FILE_NAME_LENGTH )
+        {
+            return SL_ERROR_FS_WRONG_FILE_NAME;
+        }
 
-      Msg.Cmd.FileNameLength = (_SlFsStrlen(pFileName) + 4) & (~3);
+        Msg.Cmd.FileNameLength = (_SlFsStrlen(pFileName) + 4) & (~3);
 
         /*current file name*/
         CmdExt.RxPayloadLen = (_u16)Msg.Cmd.FileNameLength;
         CmdExt.pRxPayload   = pFileName;
 
-
-      /*New file name*/
+        /*New file name*/
         CmdExt.TxPayload1Len = (_SlFsStrlen(pData) + 4) & (~3);;
         CmdExt.pTxPayload1 = (_u8 *)(pData);
 
@@ -677,29 +642,26 @@ _i32 sl_FsCtl( SlFsCtl_e Command, _u32 Token,   _u8 *pFileName, const _u8 *pData
        {
            CmdExt.RxPayloadLen = CmdExt.RxPayloadLen * (-1);
        }
-
     }
     else
     {
-    Msg.Cmd.FileNameLength = 0;
+        Msg.Cmd.FileNameLength = 0;
 
-    CmdExt.TxPayload1Len = (DataLen + 3) & (~3);
-    CmdExt.pTxPayload1 = (_u8 *)(pData);
+        CmdExt.TxPayload1Len = (DataLen + 3) & (~3);
+        CmdExt.pTxPayload1 = (_u8 *)(pData);
 
-    CmdExt.RxPayloadLen = OutputDataLen;
-    CmdExt.pRxPayload = pOutputData;
+        CmdExt.RxPayloadLen = OutputDataLen;
+        CmdExt.pRxPayload = pOutputData;
 
-    Msg.Cmd.BufferLength =  CmdExt.TxPayload1Len;
+        Msg.Cmd.BufferLength =  CmdExt.TxPayload1Len;
     }
-
-
 
     VERIFY_RET_OK(_SlDrvCmdOp((_SlCmdCtrl_t *)&_SlFsFileSysControlCmdCtrl, &Msg, &CmdExt));
 
-  if( pNewToken != NULL )
-  {
-      *pNewToken = Msg.Rsp.Token;
-  }
+    if( pNewToken != NULL )
+    {
+        *pNewToken = Msg.Rsp.Token;
+    }
 
     return  (_i32)((_i32)Msg.Rsp.Status);
 }
@@ -711,16 +673,15 @@ _i32 sl_FsCtl( SlFsCtl_e Command, _u32 Token,   _u8 *pFileName, const _u8 *pData
 /*****************************************************************************/
 typedef union
 {
-  SlFsProgramCommand_t	    Cmd;
-  SlFsProgramResponse_t	    Rsp;
+    SlFsProgramCommand_t        Cmd;
+    SlFsProgramResponse_t       Rsp;
 }_SlFsProgrammingMsg_u;
 
 #if _SL_INCLUDE_FUNC(sl_FsProgram)
 
-
 const _SlCmdCtrl_t _SlFsProgrammingCmdCtrl =
 {
-  SL_OPCODE_NVMEM_NVMEMFSPROGRAMMINGCOMMAND,
+    SL_OPCODE_NVMEM_NVMEMFSPROGRAMMINGCOMMAND,
     sizeof(SlFsProgramCommand_t),
     sizeof(SlFsProgramResponse_t)
 };
@@ -728,8 +689,8 @@ const _SlCmdCtrl_t _SlFsProgrammingCmdCtrl =
 _i32   sl_FsProgram(const _u8*  pData , _u16 DataLen ,const _u8 * pKey ,  _u32 Flags )
 {
     _SlFsProgrammingMsg_u     Msg;
-    _SlCmdExt_t                CmdExt;
-    _u16                       ChunkLen;
+    _SlCmdExt_t               CmdExt;
+    _u16                      ChunkLen;
 
     VERIFY_API_ALLOWED(SL_OPCODE_SILO_FS);
 
@@ -759,14 +720,14 @@ _i32   sl_FsProgram(const _u8*  pData , _u16 DataLen ,const _u8 * pKey ,  _u32 F
         VERIFY_RET_OK(_SlDrvCmdOp((_SlCmdCtrl_t *)&_SlFsProgrammingCmdCtrl, &Msg, &CmdExt));
     }
     else /* DataLen > 0 */
-   {
+    {
         if( (DataLen & 0xF) > 0)
         {
             return( ((_i32)SL_ERROR_FS_NOT_16_ALIGNED) << 16 );
         }
         Msg.Cmd.Flags = Flags;
 
-        CmdExt.pTxPayload1   = (_u8 *)pData;
+        CmdExt.pTxPayload1 = (_u8 *)pData;
         ChunkLen = (_u16)sl_min(MAX_NVMEM_CHUNK_SIZE, DataLen);
 
         while(ChunkLen > 0)
@@ -777,11 +738,11 @@ _i32   sl_FsProgram(const _u8*  pData , _u16 DataLen ,const _u8 * pKey ,  _u32 F
             {
                 Msg.Cmd.KeyLen = sizeof(SlFsKey_t);
                 CmdExt.RxPayloadLen = sizeof(SlFsKey_t);
-                CmdExt.pRxPayload   = (_u8 *)pKey;
+                CmdExt.pRxPayload = (_u8 *)pKey;
 
                 if(CmdExt.pRxPayload != NULL &&  CmdExt.RxPayloadLen != 0)
                 {
-                   CmdExt.RxPayloadLen = CmdExt.RxPayloadLen * (-1);
+                    CmdExt.RxPayloadLen = CmdExt.RxPayloadLen * (-1);
                 }
             }
             else /* No key */
@@ -804,6 +765,7 @@ _i32   sl_FsProgram(const _u8*  pData , _u16 DataLen ,const _u8 * pKey ,  _u32 F
             ChunkLen = (_u16)sl_min(MAX_NVMEM_CHUNK_SIZE, DataLen);
         }
     }
+
     return  (_i32)(Msg.Rsp.Status);
 }
 #endif
@@ -813,31 +775,26 @@ _i32   sl_FsProgram(const _u8*  pData , _u16 DataLen ,const _u8 * pKey ,  _u32 F
 /*****************************************************************************/
 typedef union
 {
-  SlFsGetFileListCommand_t	    Cmd;
-  SlFsGetFileListResponse_t	    Rsp;
+    SlFsGetFileListCommand_t        Cmd;
+    SlFsGetFileListResponse_t        Rsp;
 }_SlFsGetFileListMsg_u;
 
 #if _SL_INCLUDE_FUNC(sl_FsGetFileList)
 
-
 const _SlCmdCtrl_t _SlFsGetFileListCmdCtrl =
 {
-  SL_OPCODE_NVMEM_NVMEMGETFILELISTCOMMAND,
+    SL_OPCODE_NVMEM_NVMEMGETFILELISTCOMMAND,
     sizeof(SlFsGetFileListCommand_t),
     sizeof(SlFsGetFileListResponse_t)
 };
 
-
-
-
 _i32  sl_FsGetFileList(_i32* pIndex, _u8 Count, _u8 MaxEntryLen , _u8* pBuff, SlFileListFlags_t Flags )
 {
-  _SlFsGetFileListMsg_u     Msg;
-    _SlCmdExt_t                CmdExt;
-    _u16                       OutputBufferSize;
+    _SlFsGetFileListMsg_u     Msg;
+    _SlCmdExt_t               CmdExt;
+    _u16                      OutputBufferSize;
 
-
-	/* verify that this api is allowed. if not allowed then
+    /* verify that this api is allowed. if not allowed then
     ignore the API execution and return immediately with an error */
     VERIFY_API_ALLOWED(SL_OPCODE_SILO_FS);
 
@@ -851,14 +808,13 @@ _i32  sl_FsGetFileList(_i32* pIndex, _u8 Count, _u8 MaxEntryLen , _u8* pBuff, Sl
     OutputBufferSize = Msg.Cmd.Count * Msg.Cmd.MaxEntryLen;
     if( OutputBufferSize > MAX_NVMEM_CHUNK_SIZE )
     {
-      return SL_ERROR_FS_WRONG_INPUT_SIZE;
+        return SL_ERROR_FS_WRONG_INPUT_SIZE;
     }
 
     CmdExt.RxPayloadLen = OutputBufferSize;
     CmdExt.pRxPayload   = pBuff;
 
     VERIFY_RET_OK(_SlDrvCmdOp((_SlCmdCtrl_t *)&_SlFsGetFileListCmdCtrl, &Msg, &CmdExt));
-
 
     *pIndex = Msg.Rsp.Index;
 

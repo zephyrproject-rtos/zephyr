@@ -62,6 +62,8 @@
 #include <ti/devices/cc32xx/driverlib/rom_map.h>
 #include <ti/devices/cc32xx/inc/hw_types.h>
 #include <ti/devices/cc32xx/inc/hw_gprcm.h>
+#include <ti/devices/cc32xx/inc/hw_apps_rcm.h>
+#include <ti/devices/cc32xx/inc/hw_ocp_shared.h>
 #include <ti/devices/cc32xx/driverlib/prcm.h>
 #include <ti/devices/cc32xx/inc/hw_nvic.h>
 #include <ti/devices/cc32xx/inc/hw_memmap.h>
@@ -82,8 +84,8 @@
 #define uSEC_DELAY(x)                           (ROM_UtilsDelayDirect(x*80/3))
 
 #define SYNCBARRIER() {          \
-    __asm(" dsb \n"               \
-          " isb \n");             \
+    __asm(" dsb \n"              \
+          " isb \n");            \
 }
 
 /* Externs */
@@ -304,6 +306,12 @@ int_fast16_t Power_init()
         while(1){}
     }
 
+    /* Initialize CLK GPIO */
+    HWREG(OCP_SHARED_BASE + OCP_SHARED_O_GPIO_PAD_CONFIG_18) = 0x281;
+
+    /* Initialize DOUT GPIO */
+    HWREG(OCP_SHARED_BASE + OCP_SHARED_O_GPIO_PAD_CONFIG_19) = 0x281;
+
     return (Power_SOK);
 }
 
@@ -513,6 +521,18 @@ int_fast16_t Power_setDependency(uint_fast16_t resourceId)
             /* now activate this resource ... */
             id = PowerCC32XX_module.dbRecords[resourceId];
 
+            if(id == PowerCC32XX_PERIPH_LSPI)
+            {
+                 /* Check NWP generation */
+                 if((HWREG(GPRCM_BASE + GPRCM_O_GPRCM_DIEID_READ_REG4) >> 24) & 0x02)
+                 {
+                     HWREG(ARCM_BASE + APPS_RCM_O_MCSPI_A2_CLK_GEN) = 0x10303;
+                 }
+                 else
+                 {
+                     HWREG(ARCM_BASE + APPS_RCM_O_MCSPI_A2_CLK_GEN) = 0x00;
+                 }
+            }
             /* enable the peripheral clock to the resource */
             MAP_PRCMPeripheralClkEnable(id,
                 PRCM_RUN_MODE_CLK | PRCM_SLP_MODE_CLK);
@@ -1013,6 +1033,9 @@ void PowerCC32XX_shutdownSSPI(void)
         return;
     }
 
+    //Gate MCSPI clock
+    HWREG(ARCM_BASE + APPS_RCM_O_MCSPI_S0_CLK_GATING) = 0x0;
+
     /* Enable clock for SSPI module */
     MAP_PRCMPeripheralClkEnable(PRCM_SSPI, PRCM_RUN_MODE_CLK);
 
@@ -1035,6 +1058,9 @@ void PowerCC32XX_shutdownSSPI(void)
 
     /* Enable SSPI module */
     MAP_SPIEnable(SSPI_BASE);
+
+    // Ungate MCSPI clock
+    HWREG(ARCM_BASE + APPS_RCM_O_MCSPI_S0_CLK_GATING) = 0x1;
 
     /* Allow settling before enabling chip select */
     uSEC_DELAY(PowerCC32XX_SSPICSDelay);
@@ -1069,6 +1095,30 @@ void PowerCC32XX_shutdownSSPI(void)
     MAP_HwSpinLockRelease(HWSPINLOCK_SSPI);
 
     return;
+}
+
+/*
+ *  ======== PowerCC32XX_reset ========
+ *  Software reset of specific peripheral.
+ */
+int_fast16_t PowerCC32XX_reset(uint_fast16_t resourceId)
+{
+    int_fast16_t status = Power_SOK;
+    uint32_t id;
+
+    /* Ensure resourceId is valid */
+    if (resourceId >= PowerCC32XX_NUMRESOURCES) {
+        status = Power_EINVALIDINPUT;
+    }
+
+    /* resourceId is OK ... */
+    else {
+
+        id = PowerCC32XX_module.dbRecords[resourceId];
+        /* Reset the peripheral */
+        MAP_PRCMPeripheralReset(id);
+    }
+    return (status);
 }
 
 /*************************internal functions ****************************/

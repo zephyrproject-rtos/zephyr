@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -156,11 +156,11 @@
  *
  *  I2S_Params_init(&params);
  *  params.operationMode = I2S_MODE_TX_RX_SYNC;
- *  < Change other params as required >
  *
  *  handle = I2S_open(Board_I2S0, &params);
- *  if (!handle) {
- *      // Error opening I2S, handle accordingly
+ *  if (handle == NULL) {
+ *      // Error opening I2S
+ *      while (1);
  *  }
  *  @endcode
  *
@@ -436,41 +436,41 @@ typedef enum I2S_PinMode_ {
  *  @sa       I2S_Params_init()
  */
 typedef struct I2S_Params_ {
-    /*!< I2S operational mode */
     I2S_OpMode            operationMode;
+    /*!< I2S operational mode */
 
-    /*!< I2S sampling frequency configuration in samples/second */
     uint32_t              samplingFrequency;
+    /*!< I2S sampling frequency configuration in samples/second */
 
-    /*!< Slot length */
     uint8_t               slotLength;
+    /*!< Slot length */
 
-    /*!< Bits per sample (Word length) */
     uint8_t               bitsPerSample;
+    /*!< Bits per sample (Word length) */
 
-    /*!< Number of channels (slots per frame) */
     uint8_t               numChannels;
+    /*!< Number of channels (slots per frame) */
 
-    /*!< Mode for all read calls   */
     I2S_DataMode          readMode;
+    /*!< Mode for all read calls   */
 
-    /*!< Pointer to read callback */
     I2S_Callback          readCallback;
+    /*!< Pointer to read callback */
 
-    /*!< Timeout for read semaphore */
     uint32_t              readTimeout;
+    /*!< Timeout for read semaphore */
 
-    /*!< Mode for all write calls   */
     I2S_DataMode          writeMode;
+    /*!< Mode for all write calls   */
 
-    /*!< Pointer to write callback */
     I2S_Callback          writeCallback;
+    /*!< Pointer to write callback */
 
-    /*!< Timeout for write semaphore */
     uint32_t              writeTimeout;
+    /*!< Timeout for write semaphore */
 
-    /*!< Pointer to device specific custom params */
     void                 *customParams;
+    /*!< Pointer to device specific custom params */
 } I2S_Params;
 
 /*!

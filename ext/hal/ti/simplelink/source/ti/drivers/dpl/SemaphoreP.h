@@ -100,10 +100,8 @@ typedef union SemaphoreP_Struct {
 typedef enum SemaphoreP_Status {
     /*! API completed successfully */
     SemaphoreP_OK = 0,
-    /*! API failed */
-    SemaphoreP_FAILURE = -1,
     /*! API failed because of a timeout */
-    SemaphoreP_TIMEOUT = -2
+    SemaphoreP_TIMEOUT = -1
 } SemaphoreP_Status;
 
 /*!
@@ -239,7 +237,6 @@ extern void SemaphoreP_Params_init(SemaphoreP_Params *params);
  *  @return Status of the functions
  *    - SemaphoreP_OK: Obtained the semaphore
  *    - SemaphoreP_TIMEOUT: Timed out. Semaphore was not obtained.
- *    - SemaphoreP_FAILED: Non-time out failure.
  */
 extern SemaphoreP_Status SemaphoreP_pend(SemaphoreP_Handle handle,
                                          uint32_t timeout);

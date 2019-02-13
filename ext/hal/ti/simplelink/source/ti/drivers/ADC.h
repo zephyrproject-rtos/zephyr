@@ -60,7 +60,7 @@
  *  ADC_Params params;
  *
  *  ADC_Params_init(&params);
- *  adc = ADC_open(Board_ADCCHANNEL_A0, &params);
+ *  adc = ADC_open(Board_ADC0, &params);
  *  if (adc == NULL) {
  *      // ADC_open() failed
  *      while (1);
