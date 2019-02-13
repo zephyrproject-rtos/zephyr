@@ -26,15 +26,13 @@ LOG_MODULE_REGISTER(mdm_receiver, CONFIG_MODEM_LOG_LEVEL);
 
 static struct mdm_receiver_context *contexts[MAX_MDM_CTX];
 
-struct mdm_receiver_context *mdm_receiver_context_from_id(int id)
-{
-	if (id >= 0 && id < MAX_MDM_CTX) {
-		return contexts[id];
-	} else {
-		return NULL;
-	}
-}
-
+/**
+ * @brief  Finds receiver context which manages provided device.
+ *
+ * @param  *dev: device used by the receiver context.
+ *
+ * @retval Receiver context or NULL.
+ */
 static struct mdm_receiver_context *context_from_dev(struct device *dev)
 {
 	int i;
@@ -48,11 +46,20 @@ static struct mdm_receiver_context *context_from_dev(struct device *dev)
 	return NULL;
 }
 
+/**
+ * @brief  Persists receiver context if there is a free place.
+ *
+ * @note   Amount of stored receiver contexts is determined by
+ *         MAX_MDM_CTX.
+ *
+ * @param  *ctx: receiver context to persist.
+ *
+ * @retval 0 if ok, < 0 if error.
+ */
 static int mdm_receiver_get(struct mdm_receiver_context *ctx)
 {
 	int i;
 
-	/* find a free modem_context */
 	for (i = 0; i < MAX_MDM_CTX; i++) {
 		if (!contexts[i]) {
 			contexts[i] = ctx;
@@ -63,6 +70,15 @@ static int mdm_receiver_get(struct mdm_receiver_context *ctx)
 	return -ENOMEM;
 }
 
+/**
+ * @brief  Drains UART.
+ *
+ * @note   Discards remaining data.
+ *
+ * @param  *ctx: receiver context.
+ *
+ * @retval None.
+ */
 static void mdm_receiver_flush(struct mdm_receiver_context *ctx)
 {
 	u8_t c;
@@ -71,12 +87,21 @@ static void mdm_receiver_flush(struct mdm_receiver_context *ctx)
 		return;
 	}
 
-	/* Drain the fifo */
 	while (uart_fifo_read(ctx->uart_dev, &c, 1) > 0) {
 		continue;
 	}
 }
 
+/**
+ * @brief  Receiver UART interrupt handler.
+ *
+ * @note   Fills contexts ring buffer with received data.
+ *         When ring buffer is full the data is discarded.
+ *
+ * @param  *uart_dev: uart device.
+ *
+ * @retval None.
+ */
 static void mdm_receiver_isr(struct device *uart_dev)
 {
 	struct mdm_receiver_context *ctx;
@@ -105,6 +130,35 @@ static void mdm_receiver_isr(struct device *uart_dev)
 			}
 			k_sem_give(&ctx->rx_sem);
 		}
+	}
+}
+
+/**
+ * @brief  Configures receiver context and assigned device.
+ *
+ * @param  *ctx: receiver context.
+ *
+ * @retval None.
+ */
+static void mdm_receiver_setup(struct mdm_receiver_context *ctx)
+{
+	if (!ctx) {
+		return;
+	}
+
+	uart_irq_rx_disable(ctx->uart_dev);
+	uart_irq_tx_disable(ctx->uart_dev);
+	mdm_receiver_flush(ctx);
+	uart_irq_callback_set(ctx->uart_dev, mdm_receiver_isr);
+	uart_irq_rx_enable(ctx->uart_dev);
+}
+
+struct mdm_receiver_context *mdm_receiver_context_from_id(int id)
+{
+	if (id >= 0 && id < MAX_MDM_CTX) {
+		return contexts[id];
+	} else {
+		return NULL;
 	}
 }
 
@@ -145,19 +199,6 @@ int mdm_receiver_send(struct mdm_receiver_context *ctx,
 	}
 
 	return 0;
-}
-
-static void mdm_receiver_setup(struct mdm_receiver_context *ctx)
-{
-	if (!ctx) {
-		return;
-	}
-
-	uart_irq_rx_disable(ctx->uart_dev);
-	uart_irq_tx_disable(ctx->uart_dev);
-	mdm_receiver_flush(ctx);
-	uart_irq_callback_set(ctx->uart_dev, mdm_receiver_isr);
-	uart_irq_rx_enable(ctx->uart_dev);
 }
 
 int mdm_receiver_register(struct mdm_receiver_context *ctx,
