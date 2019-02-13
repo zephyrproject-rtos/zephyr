@@ -141,9 +141,32 @@ static inline void check_msg(struct zcan_frame *msg1, struct zcan_frame *msg2,
 	zassert_equal(cmp_res, 0, "Received data differ");
 }
 
-static void tx_isr(u32_t error_flags)
+static void tx_std_isr(u32_t error_flags, void *arg)
 {
+	struct zcan_frame *msg = (struct zcan_frame *)arg;
 
+	zassert_equal(msg->std_id, TEST_CAN_STD_ID, "Arg does not match");
+}
+
+static void tx_std_masked_isr(u32_t error_flags, void *arg)
+{
+	struct zcan_frame *msg = (struct zcan_frame *)arg;
+
+	zassert_equal(msg->std_id, TEST_CAN_STD_MASK_ID, "Arg does not match");
+}
+
+static void tx_ext_isr(u32_t error_flags, void *arg)
+{
+	struct zcan_frame *msg = (struct zcan_frame *)arg;
+
+	zassert_equal(msg->ext_id, TEST_CAN_EXT_ID, "Arg does not match");
+}
+
+static void tx_ext_masked_isr(u32_t error_flags, void *arg)
+{
+	struct zcan_frame *msg = (struct zcan_frame *)arg;
+
+	zassert_equal(msg->ext_id, TEST_CAN_EXT_MASK_ID, "Arg does not match");
 }
 
 static void rx_std_isr(struct zcan_frame *msg, void *arg)
@@ -178,7 +201,7 @@ static void send_test_msg(struct device *can_dev, struct zcan_frame *msg)
 {
 	int ret;
 
-	ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT, NULL);
+	ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT, NULL, NULL);
 	zassert_not_equal(ret, CAN_TX_ARB_LOST,
 			  "Arbitration though in loopback mode");
 	zassert_equal(ret, CAN_TX_OK, "Can't send a message. Err: %d", ret);
@@ -188,7 +211,24 @@ static void send_test_msg_nowait(struct device *can_dev, struct zcan_frame *msg)
 {
 	int ret;
 
-	ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT, tx_isr);
+	if (msg->id_type == CAN_STANDARD_IDENTIFIER) {
+		if (msg->std_id == TEST_CAN_STD_ID) {
+			ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT,
+				       tx_std_isr, msg);
+		} else {
+			ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT,
+				       tx_std_masked_isr, msg);
+		}
+	} else {
+		if (msg->ext_id == TEST_CAN_EXT_ID) {
+			ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT,
+				       tx_ext_isr, msg);
+		} else {
+			ret = can_send(can_dev, msg, TEST_SEND_TIMEOUT,
+				       tx_ext_masked_isr, msg);
+		}
+	}
+
 	zassert_not_equal(ret, CAN_TX_ARB_LOST,
 			  "Arbitration though in loopback mode");
 	zassert_equal(ret, CAN_TX_OK, "Can't send a message. Err: %d", ret);
