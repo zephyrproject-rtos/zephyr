@@ -174,26 +174,13 @@ int mdm_receiver_recv(struct mdm_receiver_context *ctx,
 int mdm_receiver_send(struct mdm_receiver_context *ctx,
 		      const u8_t *buf, size_t size)
 {
-	int written;
-
 	if (!ctx) {
 		return -EINVAL;
 	}
 
-	while (size) {
-		written = uart_fifo_fill(ctx->uart_dev,
-					 (const u8_t *)buf, size);
-		if (written < 0) {
-			/* error */
-			uart_irq_tx_disable(ctx->uart_dev);
-			return -EIO;
-		} else if (written < size) {
-			k_yield();
-		}
-
-		size -= written;
-		buf += written;
-	}
+	do {
+		uart_poll_out(ctx->uart_dev, *buf++);
+	} while (size--);
 
 	return 0;
 }
