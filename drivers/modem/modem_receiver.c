@@ -75,16 +75,12 @@ static void mdm_receiver_flush(struct mdm_receiver_context *ctx)
 	while (uart_fifo_read(ctx->uart_dev, &c, 1) > 0) {
 		continue;
 	}
-
-	/* clear the UART pipe */
-	k_pipe_init(&ctx->uart_pipe, ctx->uart_pipe_buf, ctx->uart_pipe_size);
 }
 
 static void mdm_receiver_isr(struct device *uart_dev)
 {
 	struct mdm_receiver_context *ctx;
 	int rx, ret;
-	size_t bytes_written;
 	static u8_t read_buf[MAX_READ_SIZE];
 
 	/* lookup the device */
@@ -98,15 +94,15 @@ static void mdm_receiver_isr(struct device *uart_dev)
 	       uart_irq_rx_ready(ctx->uart_dev)) {
 		rx = uart_fifo_read(ctx->uart_dev, read_buf, sizeof(read_buf));
 		if (rx > 0) {
-			ret = k_pipe_put(&ctx->uart_pipe, read_buf, rx,
-					 &bytes_written, rx, K_NO_WAIT);
-			if (ret < 0) {
-				LOG_ERR("UART buffer write error (%d)! "
-					    "Flushing UART!", ret);
+			ret = ring_buf_put(&ctx->rx_rb, read_buf, rx);
+			if (ret != rx) {
+				LOG_ERR("Rx buffer doesn't have enough space. "
+						"Bytes pending: %d, written: %d",
+						rx, ret);
 				mdm_receiver_flush(ctx);
-				return;
+				k_sem_give(&ctx->rx_sem);
+				break;
 			}
-
 			k_sem_give(&ctx->rx_sem);
 		}
 	}
@@ -119,7 +115,9 @@ int mdm_receiver_recv(struct mdm_receiver_context *ctx,
 		return -EINVAL;
 	}
 
-	return k_pipe_get(&ctx->uart_pipe, buf, size, bytes_read, 1, K_NO_WAIT);
+	*bytes_read = ring_buf_get(&ctx->rx_rb, buf, size);
+
+	return 0;
 }
 
 int mdm_receiver_send(struct mdm_receiver_context *ctx,
@@ -178,9 +176,7 @@ int mdm_receiver_register(struct mdm_receiver_context *ctx,
 		return -ENODEV;
 	}
 
-	/* k_pipe is setup later in mdm_receiver_flush() */
-	ctx->uart_pipe_buf = buf;
-	ctx->uart_pipe_size = size;
+	ring_buf_init(&ctx->rx_rb, size, buf);
 	k_sem_init(&ctx->rx_sem, 0, 1);
 
 	ret = mdm_receiver_get(ctx);
