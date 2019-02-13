@@ -62,7 +62,7 @@ static inline void _conn_release(struct ll_adv_set *adv);
 
 static inline u8_t disable(u16_t handle);
 
-static struct ll_adv_set ll_adv[CONFIG_BT_ADV_MAX];
+static struct ll_adv_set ll_adv[BT_CTLR_ADV_MAX];
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 u8_t ll_adv_params_set(u8_t handle, u16_t evt_prop, u32_t interval,
@@ -827,7 +827,7 @@ int ull_adv_reset(void)
 	u16_t handle;
 	int err;
 
-	for (handle = 0; handle < CONFIG_BT_ADV_MAX; handle++) {
+	for (handle = 0; handle < BT_CTLR_ADV_MAX; handle++) {
 		(void)disable(handle);
 	}
 
@@ -841,7 +841,7 @@ int ull_adv_reset(void)
 
 inline struct ll_adv_set *ull_adv_set_get(u16_t handle)
 {
-	if (handle >= CONFIG_BT_ADV_MAX) {
+	if (handle >= BT_CTLR_ADV_MAX) {
 		return NULL;
 	}
 
@@ -993,7 +993,7 @@ static void ticker_stop_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 #endif
 
 	handle = ull_adv_handle_get(adv);
-	LL_ASSERT(handle < CONFIG_BT_ADV_MAX);
+	LL_ASSERT(handle < BT_CTLR_ADV_MAX);
 
 	ret = ticker_stop(TICKER_INSTANCE_ID_CTLR, TICKER_USER_ID_ULL_HIGH,
 			  TICKER_ID_ADV_BASE + handle,

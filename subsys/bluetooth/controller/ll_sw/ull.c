@@ -161,13 +161,13 @@ static struct {
 } mem_pdu_rx;
 
 #if defined(CONFIG_BT_MAX_CONN)
-#define CONFIG_BT_CTLR_MAX_CONN CONFIG_BT_MAX_CONN
+#define BT_CTLR_MAX_CONN CONFIG_BT_MAX_CONN
 #else
-#define CONFIG_BT_CTLR_MAX_CONN 0
+#define BT_CTLR_MAX_CONN 0
 #endif
 
 #define LINK_RX_POOL_SIZE (sizeof(memq_link_t) * (RX_CNT + 2 + \
-						  CONFIG_BT_CTLR_MAX_CONN))
+						  BT_CTLR_MAX_CONN))
 static struct {
 	u8_t quota_pdu;
 
