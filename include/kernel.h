@@ -1389,11 +1389,15 @@ struct k_timer {
 
 #define _K_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
-	.timeout.dticks = 0, \
-	.timeout.fn = _timer_expiration_handler, \
+	.timeout = { \
+		.node = {},\
+		.dticks = 0, \
+		.fn = _timer_expiration_handler \
+	}, \
 	.wait_q = _WAIT_Q_INIT(&obj.wait_q), \
 	.expiry_fn = expiry, \
 	.stop_fn = stop, \
+	.period = 0, \
 	.status = 0, \
 	.user_data = 0, \
 	_OBJECT_TRACING_INIT \
@@ -3647,16 +3651,20 @@ struct k_pipe {
  */
 #define K_PIPE_FLAG_ALLOC	BIT(0)	/** Buffer was allocated */
 
-#define _K_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)        \
-	{                                                             \
-	.buffer = pipe_buffer,                                        \
-	.size = pipe_buffer_size,                                     \
-	.bytes_used = 0,                                              \
-	.read_index = 0,                                              \
-	.write_index = 0,                                             \
-	.wait_q.writers = _WAIT_Q_INIT(&obj.wait_q.writers), \
-	.wait_q.readers = _WAIT_Q_INIT(&obj.wait_q.readers), \
-	_OBJECT_TRACING_INIT                            \
+#define _K_PIPE_INITIALIZER(obj, pipe_buffer, pipe_buffer_size)     \
+	{                                                           \
+	.buffer = pipe_buffer,                                      \
+	.size = pipe_buffer_size,                                   \
+	.bytes_used = 0,                                            \
+	.read_index = 0,                                            \
+	.write_index = 0,                                           \
+	.lock = {},                                                 \
+	.wait_q = {                                                 \
+		.readers = _WAIT_Q_INIT(&obj.wait_q.readers),       \
+		.writers = _WAIT_Q_INIT(&obj.wait_q.writers)        \
+	},                                                          \
+	_OBJECT_TRACING_INIT                                        \
+	.flags = 0                                                  \
 	}
 
 #define K_PIPE_INITIALIZER DEPRECATED_MACRO _K_PIPE_INITIALIZER
