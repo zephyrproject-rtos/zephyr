@@ -16,6 +16,12 @@ then be used with any external Host (including Zephyr running natively or
 with QEMU), those are named accordingly with an "HCI" prefix in the
 documentation and are prefixed with :literal:`hci_` in their folder names.
 
+.. note::
+   The mutually-shared encryption key created during host-device paring may get
+   old after many test iterations.  If this happens, subsequent host-device
+   connections will fail. You can force a re-paring and new key to be created
+   by removing the device from the associated devices list on the host.
+
 .. toctree::
    :maxdepth: 1
    :glob:
