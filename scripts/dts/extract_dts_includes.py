@@ -31,13 +31,10 @@ from extract.default import default
 
 
 class Bindings(yaml.Loader):
-    ##
-    # Files that are already included.
-    # Must be reset on the load of every new binding
-    _included = []
-
     @classmethod
     def bindings(cls, dts_compats):
+        global included
+
         compat_to_binding = {}
         # Maps buses to dictionaries that map compats to YAML nodes
         bus_to_binding = defaultdict(dict)
@@ -70,7 +67,7 @@ class Bindings(yaml.Loader):
                 compats.append(compat)
 
             with open(file, 'r', encoding='utf-8') as yf:
-                cls._included = []
+                included = []
                 binding = merge_included_bindings(file, yaml.load(yf, cls))
 
                 if 'parent' in binding:
@@ -82,11 +79,11 @@ class Bindings(yaml.Loader):
 
     def __init__(self, stream):
         filepath = os.path.realpath(stream.name)
-        if filepath in self._included:
+        if filepath in included:
             print("Error: circular inclusion for file name '{}'".
                   format(stream.name))
             raise yaml.constructor.ConstructorError
-        self._included.append(filepath)
+        included.append(filepath)
         super(Bindings, self).__init__(stream)
         Bindings.add_constructor('!include', Bindings._include)
 
