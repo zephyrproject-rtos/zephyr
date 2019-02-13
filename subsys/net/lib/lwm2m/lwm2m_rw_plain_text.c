@@ -176,9 +176,9 @@ static size_t plain_text_read_number(struct lwm2m_input_context *in,
 	u8_t tmp;
 
 	/* initialize values to 0 */
-	value1 = 0;
+	*value1 = 0;
 	if (value2) {
-		value2 = 0;
+		*value2 = 0;
 	}
 
 	while (in->offset < in->in_cpkt->offset) {
