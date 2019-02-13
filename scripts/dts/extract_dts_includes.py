@@ -450,13 +450,12 @@ def write_header(f):
 
 
 def load_bindings(root, yaml_dirs):
-    compatibles = all_compats(root)
+    extract.globals.bindings, extract.globals.bus_bindings, \
+    extract.globals.bindings_compat = \
+        Bindings.bindings(all_compats(root), yaml_dirs)
 
-    (bindings, bus, bindings_compat) = Bindings.bindings(compatibles, yaml_dirs)
-    if not bindings:
-        raise Exception("Missing YAML information.  Check YAML sources")
-
-    return (bindings, bus, bindings_compat)
+    if not extract.globals.bindings:
+        raise Exception("No bindings found in '{}'".format(yaml_dirs))
 
 
 def generate_node_definitions():
@@ -514,8 +513,7 @@ def main():
     create_aliases(root)
     create_chosen(root)
 
-    (extract.globals.bindings, extract.globals.bus_bindings,
-     extract.globals.bindings_compat) = load_bindings(root, args.yaml)
+    load_bindings(root, args.yaml)
 
     generate_node_definitions()
 
