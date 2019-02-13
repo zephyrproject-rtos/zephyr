@@ -23,46 +23,51 @@ endchoice
 if SYS_PM_POLICY_RESIDENCY
 
 config SYS_PM_LPS_1_MIN_RES
-	int "LPS_1 minimum residency"
+	int "Low Power State 1 minimum residency"
 	depends on SYS_POWER_STATE_CPU_LPS_1_SUPPORTED
-	default 5
+	default 5000
 	help
-	  Minimum residency in ticks to enter LPS_1 state.
+	  Minimum residency in miliseconds to enter SYS_POWER_STATE_CPU_LPS_1
+	  state.
 
 config SYS_PM_LPS_2_MIN_RES
-	int "LPS_2 minimum residency"
+	int "Low Power State 2 minimum residency"
 	depends on SYS_POWER_STATE_CPU_LPS_2_SUPPORTED
-	default 10
+	default 10000
 	help
-	  Minimum residency in ticks to enter LPS_2 state.
+	  Minimum residency in miliseconds to enter SYS_POWER_STATE_CPU_LPS_2
+	  state.
 
 config SYS_PM_LPS_3_MIN_RES
 	int "Low Power State 3 minimum residency"
 	depends on SYS_POWER_STATE_CPU_LPS_3_SUPPORTED
-	default 30
+	default 30000
 	help
-	  Minimum residency in ticks to enter SYS_POWER_STATE_CPU_LPS_3 state.
+	  Minimum residency in miliseconds to enter SYS_POWER_STATE_CPU_LPS_3
+	  state.
 
 config SYS_PM_DEEP_SLEEP_1_MIN_RES
-	int "DEEP_SLEEP_1 minimum residency"
+	int "Deep Sleep State 1 minimum residency"
 	depends on SYS_POWER_STATE_DEEP_SLEEP_1_SUPPORTED
-	default 60
+	default 60000
 	help
-	  Minimum residency in ticks to enter DEEP_SLEEP_1 state.
+	  Minimum residency in miliseconds to enter SYS_POWER_STATE_DEEP_SLEEP_1
+	  state.
 
 config SYS_PM_DEEP_SLEEP_2_MIN_RES
-	int "DEEP_SLEEP_2 minimum residency"
+	int "Deep Sleep State 2 minimum residency"
 	depends on SYS_POWER_STATE_DEEP_SLEEP_2_SUPPORTED
-	default 90
+	default 90000
 	help
-	  Minimum residency in ticks to enter DEEP_SLEEP_2 state.
+	  Minimum residency in miliseconds to enter SYS_POWER_STATE_DEEP_SLEEP_2
+	  state.
 
 config SYS_PM_DEEP_SLEEP_3_MIN_RES
 	int "Deep Sleep State 3 minimum residency"
 	depends on SYS_POWER_STATE_DEEP_SLEEP_3_SUPPORTED
-	default 120
+	default 120000
 	help
-	  Minimum residency in ticks to enter SYS_POWER_STATE_DEEP_SLEEP_3
+	  Minimum residency in miliseconds to enter SYS_POWER_STATE_DEEP_SLEEP_3
 	  state.
 
 endif # SYS_PM_POLICY_RESIDENCY
