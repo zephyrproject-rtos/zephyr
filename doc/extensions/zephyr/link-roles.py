@@ -27,6 +27,13 @@ def setup(app):
     app.add_role('zephyr_file', autolink('{}/blob/{}/%s'.format(baseurl, rev)))
     app.add_role('zephyr_raw', autolink('{}/raw/{}/%s'.format(baseurl, rev)))
 
+    # The role just creates new nodes based on information in the
+    # arguments; its behavior doesn't depend on any other documents.
+    return {
+        'parallel_read_safe': True,
+        'parallel_write_safe': True,
+    }
+
 
 def autolink(pattern):
     def role(name, rawtext, text, lineno, inliner, options={}, content=[]):
