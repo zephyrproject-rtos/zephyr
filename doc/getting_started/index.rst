@@ -100,10 +100,9 @@ Clone the Zephyr source code repositories from GitHub using the ``west`` tool:
 Running ``west init`` will clone west itself into ``./.west/west`` and
 initialize a local installation. Running ``west update`` will pull all the
 projects referenced by the manifest file (:file:`zephyr/west.yml`) into the
-folders specified in it. See :ref:`west-struct-installation` for additional
-details and a list of the folders and files that west will create as part of
-the process and :ref:`west-multi-repo` for more on how ``west`` helps manage
-multiple repositories.
+folders specified in it. See :ref:`west-multi-repo` for additional details, a
+list of the folders and files that west will create as part of the process,
+and more on how ``west`` helps manage multiple repositories.
 
 .. warning::
 
