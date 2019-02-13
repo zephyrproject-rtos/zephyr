@@ -146,12 +146,12 @@ int net_context_get(sa_family_t family,
 			if (family != AF_PACKET && family != AF_CAN) {
 				return -EINVAL;
 			}
-		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_RAW) &&
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 			   !IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
 			if (family != AF_PACKET) {
 				return -EINVAL;
 			}
-		} else if (!IS_ENABLED(CONFIG_NET_SOCKETS_RAW) &&
+		} else if (!IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 			   IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
 			if (family != AF_CAN) {
 				return -EINVAL;
