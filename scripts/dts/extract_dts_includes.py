@@ -29,28 +29,15 @@ from extract.flash import flash
 from extract.pinctrl import pinctrl
 from extract.default import default
 
+
 class Bindings(yaml.Loader):
-
-    ##
-    # List of all yaml files available for yaml loaders
-    # of this class. Must be preset before the first
-    # load operation.
-    _files = []
-
     ##
     # Files that are already included.
     # Must be reset on the load of every new binding
     _included = []
 
     @classmethod
-    def bindings(cls, dts_compats, yaml_dirs):
-        # Find all .yaml files in yaml_dirs
-        cls._files = []
-        for yaml_dir in yaml_dirs:
-            for root, dirnames, filenames in os.walk(yaml_dir):
-                for filename in fnmatch.filter(filenames, '*.yaml'):
-                    cls._files.append(os.path.join(root, filename))
-
+    def bindings(cls, dts_compats):
         compat_to_binding = {}
         # Maps buses to dictionaries that map compats to YAML nodes
         bus_to_binding = defaultdict(dict)
@@ -58,7 +45,7 @@ class Bindings(yaml.Loader):
 
         loaded_yamls = set()
 
-        for file in cls._files:
+        for file in binding_files:
             # Extract compat from 'constraint:' line
             for line in open(file, 'r', encoding='utf-8'):
                 match = re.match(r'\s+constraint:\s*"([^"]*)"', line)
@@ -121,7 +108,7 @@ class Bindings(yaml.Loader):
         raise yaml.constructor.ConstructorError
 
     def _extract_file(self, filename):
-        filepaths = [filepath for filepath in self._files if filepath.endswith(filename)]
+        filepaths = [filepath for filepath in binding_files if filepath.endswith(filename)]
         if len(filepaths) == 0:
             print("Error: unknown file name '{}' in !include statement".
                   format(filename))
@@ -448,13 +435,29 @@ def write_header(f):
     f.write('#endif\n')
 
 
-def load_bindings(root, yaml_dirs):
+def load_bindings(root, binding_dirs):
+    find_binding_files(binding_dirs)
+
     extract.globals.bindings, extract.globals.bus_bindings, \
     extract.globals.bindings_compat = \
-        Bindings.bindings(all_compats(root), yaml_dirs)
+        Bindings.bindings(all_compats(root))
 
     if not extract.globals.bindings:
         raise Exception("No bindings found in '{}'".format(yaml_dirs))
+
+
+def find_binding_files(binding_dirs):
+    # Initializes the global 'binding_files' variable with a list of paths to
+    # binding (.yaml) files
+
+    global binding_files
+
+    binding_files = []
+
+    for binding_dir in binding_dirs:
+        for root, dirnames, filenames in os.walk(binding_dir):
+            for filename in fnmatch.filter(filenames, '*.yaml'):
+                binding_files.append(os.path.join(root, filename))
 
 
 def generate_node_definitions():
