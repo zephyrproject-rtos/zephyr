@@ -14,6 +14,8 @@
 extern "C" {
 #endif
 
+#ifdef CONFIG_SYS_POWER_MANAGEMENT
+
 /*
  * Power state map:
  * SYS_POWER_STATE_DEEP_SLEEP: System OFF
@@ -28,6 +30,8 @@ void sys_set_power_state(enum power_states state);
  * @brief Do any SoC or architecture specific post ops after low power states.
  */
 void sys_power_state_post_ops(enum power_states state);
+
+#endif /* CONFIG_SYS_POWER_MANAGEMENT */
 
 #ifdef __cplusplus
 }
