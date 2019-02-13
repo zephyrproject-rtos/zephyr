@@ -487,6 +487,11 @@ static int eswifi_mgmt_connect(struct device *dev,
 	return err;
 }
 
+void eswifi_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len)
+{
+	LOG_DBG("len %u", len);
+}
+
 #if defined(CONFIG_NET_IPV4)
 static int eswifi_mgmt_ap_enable(struct device *dev,
 				 struct wifi_connect_req_params *params)
