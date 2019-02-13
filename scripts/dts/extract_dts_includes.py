@@ -30,53 +30,6 @@ from extract.pinctrl import pinctrl
 from extract.default import default
 
 
-class Bindings(yaml.Loader):
-    def __init__(self, stream):
-        filepath = os.path.realpath(stream.name)
-        if filepath in included:
-            print("Error: circular inclusion for file name '{}'".
-                  format(stream.name))
-            raise yaml.constructor.ConstructorError
-        included.append(filepath)
-        super(Bindings, self).__init__(stream)
-        Bindings.add_constructor('!include', Bindings._include)
-
-    def _include(self, node):
-        # Implements !include. Returns a list with the top-level YAML
-        # structures for the included files (a single-element list if there's
-        # just one file).
-
-        if isinstance(node, yaml.ScalarNode):
-            # !include foo.yaml
-            return [self._extract_file(self.construct_scalar(node))]
-
-        if isinstance(node, yaml.SequenceNode):
-            # !include [foo.yaml, bar.yaml]
-            return [self._extract_file(fname)
-                    for fname in self.construct_sequence(node)]
-
-        print("Error: unrecognised node type in !include statement")
-        raise yaml.constructor.ConstructorError
-
-    def _extract_file(self, filename):
-        filepaths = [
-            filepath for filepath in binding_files
-            if os.path.basename(filepath) == os.path.basename(filename)]
-
-        if not filepaths:
-            print("Error: unknown file name '{}' in !include statement"
-                  .format(filename))
-            raise yaml.constructor.ConstructorError
-
-        if len(filepaths) > 1:
-            print("Error: multiple candidates for file name '{}' in !include "
-                  "statement: {}".format(filename, filepaths))
-            raise yaml.constructor.ConstructorError
-
-        with open(filepaths[0], 'r', encoding='utf-8') as f:
-            return yaml.load(f, Bindings)
-
-
 def extract_bus_name(node_address, def_label):
     label = def_label + '_BUS_NAME'
     prop_alias = {}
@@ -386,8 +339,6 @@ def write_header(f):
 
 
 def load_bindings(root, binding_dirs):
-    global included
-
     find_binding_files(binding_dirs)
     dts_compats = all_compats(root)
 
@@ -395,6 +346,9 @@ def load_bindings(root, binding_dirs):
     # Maps buses to dictionaries that map compats to YAML nodes
     bus_to_binding = defaultdict(dict)
     compats = []
+
+    # Add '!include foo.yaml' handling
+    yaml.add_constructor('!include', yaml_include)
 
     loaded_yamls = set()
 
@@ -423,8 +377,7 @@ def load_bindings(root, binding_dirs):
             compats.append(compat)
 
         with open(file, 'r', encoding='utf-8') as yf:
-            included = []
-            binding = merge_included_bindings(file, yaml.load(yf, Bindings))
+            binding = merge_included_bindings(file, yaml.load(yf))
 
             if 'parent' in binding:
                 bus_to_binding[binding['parent']['bus']][compat] = binding
@@ -451,6 +404,45 @@ def find_binding_files(binding_dirs):
         for root, dirnames, filenames in os.walk(binding_dir):
             for filename in fnmatch.filter(filenames, '*.yaml'):
                 binding_files.append(os.path.join(root, filename))
+
+
+def yaml_include(loader, node):
+    # Implements !include. Returns a list with the top-level YAML structures
+    # for the included files (a single-element list if there's just one file).
+
+    if isinstance(node, yaml.ScalarNode):
+        # !include foo.yaml
+        return [load_binding_file(loader.construct_scalar(node))]
+
+    if isinstance(node, yaml.SequenceNode):
+        # !include [foo.yaml, bar.yaml]
+        return [load_binding_file(fname)
+                for fname in loader.construct_sequence(node)]
+
+    print("Error: unrecognised node type in !include statement")
+    raise yaml.constructor.ConstructorError
+
+
+def load_binding_file(fname):
+    # yaml_include() helper for loading an !include'd file. !include takes just
+    # the basename of the file, so we need to make sure that there aren't
+    # multiple candidates.
+
+    filepaths = [filepath for filepath in binding_files
+                 if os.path.basename(filepath) == os.path.basename(fname)]
+
+    if not filepaths:
+        print("Error: unknown file name '{}' in !include statement"
+              .format(fname))
+        raise yaml.constructor.ConstructorError
+
+    if len(filepaths) > 1:
+        print("Error: multiple candidates for file name '{}' in !include "
+              "statement: {}".format(fname, filepaths))
+        raise yaml.constructor.ConstructorError
+
+    with open(filepaths[0], 'r', encoding='utf-8') as f:
+        return yaml.load(f)
 
 
 def generate_node_definitions():
