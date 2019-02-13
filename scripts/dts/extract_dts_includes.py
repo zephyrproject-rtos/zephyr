@@ -31,52 +31,6 @@ from extract.default import default
 
 
 class Bindings(yaml.Loader):
-    @classmethod
-    def bindings(cls, dts_compats):
-        global included
-
-        compat_to_binding = {}
-        # Maps buses to dictionaries that map compats to YAML nodes
-        bus_to_binding = defaultdict(dict)
-        compats = []
-
-        loaded_yamls = set()
-
-        for file in binding_files:
-            # Extract compat from 'constraint:' line
-            for line in open(file, 'r', encoding='utf-8'):
-                match = re.match(r'\s+constraint:\s*"([^"]*)"', line)
-                if match:
-                    break
-            else:
-                # No 'constraint:' line found. Move on to next yaml file.
-                continue
-
-            compat = match.group(1)
-            if compat not in dts_compats or file in loaded_yamls:
-                # The compat does not appear in the device tree, or the yaml
-                # file has already been loaded
-                continue
-
-            # Found a binding (.yaml file) for a 'compatible' value that
-            # appears in DTS. Load it.
-
-            loaded_yamls.add(file)
-
-            if compat not in compats:
-                compats.append(compat)
-
-            with open(file, 'r', encoding='utf-8') as yf:
-                included = []
-                binding = merge_included_bindings(file, yaml.load(yf, cls))
-
-                if 'parent' in binding:
-                    bus_to_binding[binding['parent']['bus']][compat] = binding
-                else:
-                    compat_to_binding[compat] = binding
-
-        return compat_to_binding, bus_to_binding, compats
-
     def __init__(self, stream):
         filepath = os.path.realpath(stream.name)
         if filepath in included:
@@ -433,14 +387,57 @@ def write_header(f):
 
 
 def load_bindings(root, binding_dirs):
+    global included
+
     find_binding_files(binding_dirs)
+    dts_compats = all_compats(root)
 
-    extract.globals.bindings, extract.globals.bus_bindings, \
-    extract.globals.bindings_compat = \
-        Bindings.bindings(all_compats(root))
+    compat_to_binding = {}
+    # Maps buses to dictionaries that map compats to YAML nodes
+    bus_to_binding = defaultdict(dict)
+    compats = []
 
-    if not extract.globals.bindings:
-        raise Exception("No bindings found in '{}'".format(yaml_dirs))
+    loaded_yamls = set()
+
+    for file in binding_files:
+        # Extract compat from 'constraint:' line
+        for line in open(file, 'r', encoding='utf-8'):
+            match = re.match(r'\s+constraint:\s*"([^"]*)"', line)
+            if match:
+                break
+        else:
+            # No 'constraint:' line found. Move on to next yaml file.
+            continue
+
+        compat = match.group(1)
+        if compat not in dts_compats or file in loaded_yamls:
+            # The compat does not appear in the device tree, or the yaml
+            # file has already been loaded
+            continue
+
+        # Found a binding (.yaml file) for a 'compatible' value that
+        # appears in DTS. Load it.
+
+        loaded_yamls.add(file)
+
+        if compat not in compats:
+            compats.append(compat)
+
+        with open(file, 'r', encoding='utf-8') as yf:
+            included = []
+            binding = merge_included_bindings(file, yaml.load(yf, Bindings))
+
+            if 'parent' in binding:
+                bus_to_binding[binding['parent']['bus']][compat] = binding
+            else:
+                compat_to_binding[compat] = binding
+
+    if not compat_to_binding:
+        raise Exception("No bindings found in '{}'".format(binding_dirs))
+
+    extract.globals.bindings = compat_to_binding
+    extract.globals.bus_bindings = bus_to_binding
+    extract.globals.bindings_compat = compats
 
 
 def find_binding_files(binding_dirs):
