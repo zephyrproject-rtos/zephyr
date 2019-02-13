@@ -139,10 +139,14 @@ enum uart_event_type {
  *
  * Values that correspond to events or errors responsible for stopping
  * receiving.
- *
- * We start counting from 1, to not use 0 which is treated as no error.
  */
 enum uart_rx_stop_reason {
+	/** @brief Overrun error */
+	UART_ERROR_OVERRUN = (1 << 0),
+	/** @brief Parity error */
+	UART_ERROR_PARITY  = (1 << 1),
+	/** @brief Framing error */
+	UART_ERROR_FRAMING = (1 << 2),
 	/**
 	 * @brief Break interrupt
 	 *
@@ -150,13 +154,7 @@ enum uart_rx_stop_reason {
 	 * is held at a logic '0' state for longer than the sum of
 	 * start time + data bits + parity + stop bits.
 	 */
-	UART_BREAK = 1,
-	/** @brief Overrun error */
-	UART_ERROR_OVERRUN,
-	/** @brief Parity error */
-	UART_ERROR_PARITY,
-	/** @brief Framing error */
-	UART_ERROR_FRAMING,
+	UART_BREAK = (1 << 3),
 };
 
 /** @brief Backward compatibility defines, deprecated */
