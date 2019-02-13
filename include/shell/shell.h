@@ -177,12 +177,14 @@ struct shell_static_entry {
 	}
 
 /**
- * @brief Macro for creating a subcommand set. It must be used outside of any
- * function body.
+ * @brief Deprecated macro for creating a subcommand set.
+ *
+ * It must be used outside of any function body.
  *
  * @param[in] name	Name of the subcommand set.
  */
 #define SHELL_CREATE_STATIC_SUBCMD_SET(name)			\
+	__DEPRECATED_MACRO					\
 	static const struct shell_static_entry shell_##name[];	\
 	static const struct shell_cmd_entry name = {		\
 		.is_dynamic = false,				\
@@ -210,13 +212,13 @@ struct shell_static_entry {
 	}
 
 /**
- * @brief Macro for creating a dynamic entry.
+ * @brief Deprecated macro for creating a dynamic entry.
  *
  * @param[in] name	Name of the dynamic entry.
  * @param[in] get	Pointer to the function returning dynamic commands array
  */
 #define SHELL_CREATE_DYNAMIC_CMD(name, get)		\
-	SHELL_DYNAMIC_CMD_CREATE(name, get)
+	__DEPRECATED_MACRO SHELL_DYNAMIC_CMD_CREATE(name, get)
 
 /**
  * @brief Initializes a shell command with arguments.

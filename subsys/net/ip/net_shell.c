@@ -3637,7 +3637,7 @@ static char *set_iface_index_help(size_t idx)
 
 static void iface_index_get(size_t idx, struct shell_static_entry *entry);
 
-SHELL_CREATE_DYNAMIC_CMD(iface_index, iface_index_get);
+SHELL_DYNAMIC_CMD_CREATE(iface_index, iface_index_get);
 
 static void iface_index_get(size_t idx, struct shell_static_entry *entry)
 {
@@ -3712,7 +3712,7 @@ static char *set_nbr_address(size_t idx)
 
 static void nbr_address_get(size_t idx, struct shell_static_entry *entry);
 
-SHELL_CREATE_DYNAMIC_CMD(nbr_address, nbr_address_get);
+SHELL_DYNAMIC_CMD_CREATE(nbr_address, nbr_address_get);
 
 #define NBR_ADDRESS_CMD &nbr_address
 
