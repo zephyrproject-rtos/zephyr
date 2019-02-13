@@ -215,6 +215,18 @@ def extract_property(node_compat, node_address, prop, prop_val, names):
 
     def_label = 'DT_' + def_label
 
+    if 'instance_id' in reduced[node_address]:
+        parent_address = get_parent_address(node_address)
+        if parent_address:
+            plabel = '""'
+            if 'label' in reduced[parent_address]['props']:
+                plabel = '"' + reduced[parent_address]['props']['label'] + '"'
+            instance = reduced[node_address]['instance_id']
+            for k in instance:
+                i = instance[k]
+                b = 'DT_' + str_to_label(k) + '_' + str(i) + '_PARENT_LABEL'
+                insert_defs(node_address, {b:plabel}, {})
+
     if prop == 'reg':
         reg.extract(node_address, names, def_label, 1)
     elif prop == 'interrupts' or prop == 'interrupts-extended':
