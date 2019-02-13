@@ -554,7 +554,9 @@ static size_t put_float64fix(struct lwm2m_output_context *out,
 static size_t put_bool(struct lwm2m_output_context *out,
 		       struct lwm2m_obj_path *path, bool value)
 {
-	return put_s8(out, path, value != 0 ? 1 : 0);
+	s8_t value_s8 = (value != 0 ? 1 : 0);
+
+	return put_s8(out, path, value_s8);
 }
 
 static size_t get_number(struct lwm2m_input_context *in, s64_t *value,
