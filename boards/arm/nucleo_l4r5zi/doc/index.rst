@@ -218,10 +218,28 @@ Ethernet over USB is configured as the default network interface (EEM)
 Programming and Debugging
 *************************
 
-Currently, the usual way of programming and debugging does not
-exist. This will hopefully be added to a future version of the SDK. In
-the meantime, the `STM32 ST-LINK utility`_ program can be used by
-connecting CN1 to your PC and selecting the zephyr.bin file to flash.
+Connect the Nucleo L4R5ZI to your host computer using the USB port.
+Then build and flash an application. Here is an example for the
+:ref:`hello_world` application.
+
+Run a serial host program to connect with your Nucleo board:
+
+.. code-block:: console
+
+   $ minicom -D /dev/ttyACM0
+
+Then build and flash the application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: nucleo_l4r5zi
+   :goals: build flash
+
+You should see the following message on the console:
+
+.. code-block:: console
+
+   Hello World! arm
 
 .. _Nucleo L4R5ZI website:
    http://www.st.com/en/evaluation-tools/nucleo-l4r5zi.html
