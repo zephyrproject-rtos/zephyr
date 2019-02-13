@@ -174,7 +174,8 @@ int mdm_receiver_register(struct mdm_receiver_context *ctx,
 
 	ctx->uart_dev = device_get_binding(uart_dev_name);
 	if (!ctx->uart_dev) {
-		return -ENOENT;
+		LOG_ERR("Binding failure for uart: %s", uart_dev_name);
+		return -ENODEV;
 	}
 
 	/* k_pipe is setup later in mdm_receiver_flush() */
