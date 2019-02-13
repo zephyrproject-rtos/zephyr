@@ -95,12 +95,10 @@ static int cmd_device_list(const struct shell *shell,
 }
 
 
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_device)
-{
-	/* Alphabetically sorted. */
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_device,
 	SHELL_CMD(levels, NULL, "List configured devices by levels", cmd_device_levels),
 	SHELL_CMD(list, NULL, "List configured devices", cmd_device_list),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
-};
+);
 
 SHELL_CMD_REGISTER(device, &sub_device, "Device commands", NULL);

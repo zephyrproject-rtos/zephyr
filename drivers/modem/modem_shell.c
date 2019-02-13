@@ -110,12 +110,11 @@ static int cmd_modem_send(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_modem) {
-	/* Alphabetically sorted. */
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_modem,
 	SHELL_CMD(list, NULL, "List registered modems", cmd_modem_list),
 	SHELL_CMD(send, NULL, "Send an AT <command> to a registered modem "
 			      "receiver", cmd_modem_send),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
-};
+);
 
 SHELL_CMD_REGISTER(modem, &sub_modem, "Modem commands", NULL);

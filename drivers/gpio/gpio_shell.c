@@ -142,12 +142,11 @@ static int cmd_gpio_set(const struct shell *shell,
 }
 
 
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_gpio) {
-	/* Alphabetically sorted. */
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_gpio,
 	SHELL_CMD(conf, NULL, "Configure GPIO", cmd_gpio_conf),
 	SHELL_CMD(get, NULL, "Get GPIO value", cmd_gpio_get),
 	SHELL_CMD(set, NULL, "Set GPIO", cmd_gpio_set),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
-};
+);
 
 SHELL_CMD_REGISTER(gpio, &sub_gpio, "GPIO commands", NULL);

@@ -1095,8 +1095,7 @@ static void zperf_init(const struct shell *shell)
 	zperf_session_init();
 }
 
-SHELL_CREATE_STATIC_SUBCMD_SET(zperf_cmd_tcp)
-{
+SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_tcp,
 	SHELL_CMD(upload, NULL,
 		  "<dest ip> <dest port> <duration> <packet size>[K]\n"
 		  "<dest ip>     IP destination\n"
@@ -1130,10 +1129,9 @@ SHELL_CREATE_STATIC_SUBCMD_SET(zperf_cmd_tcp)
 		  "Example: tcp download 5001\n",
 		  cmd_tcp_download),
 	SHELL_SUBCMD_SET_END
-};
+);
 
-SHELL_CREATE_STATIC_SUBCMD_SET(zperf_cmd_udp)
-{
+SHELL_STATIC_SUBCMD_SET_CREATE(zperf_cmd_udp,
 	SHELL_CMD(upload, NULL,
 		  "<dest ip> [<dest port> <duration> <packet size>[K] "
 							"<baud rate>[K|M]]\n"
@@ -1170,10 +1168,9 @@ SHELL_CREATE_STATIC_SUBCMD_SET(zperf_cmd_udp)
 		  "Example: udp download 5001\n",
 		  cmd_udp_download),
 	SHELL_SUBCMD_SET_END
-};
+);
 
-SHELL_CREATE_STATIC_SUBCMD_SET(zperf_commands)
-{
+SHELL_STATIC_SUBCMD_SET_CREATE(zperf_commands,
 	SHELL_CMD(connectap, NULL,
 		  "Connect to AP",
 		  cmd_connectap),
@@ -1193,7 +1190,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(zperf_commands)
 		  "Zperf version",
 		  cmd_version),
 	SHELL_SUBCMD_SET_END
-};
+);
 
 SHELL_CMD_REGISTER(zperf, &zperf_commands, "Zperf commands", NULL);
 

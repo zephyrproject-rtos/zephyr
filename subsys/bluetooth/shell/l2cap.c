@@ -395,13 +395,13 @@ static int cmd_whitelist_remove(const struct shell *shell, size_t argc, char *ar
 
 #define HELP_NONE "[none]"
 
-SHELL_CREATE_STATIC_SUBCMD_SET(whitelist_cmds) {
+SHELL_STATIC_SUBCMD_SET_CREATE(whitelist_cmds,
 	SHELL_CMD_ARG(add, NULL, HELP_NONE, cmd_whitelist_add, 1, 0),
 	SHELL_CMD_ARG(remove, NULL, HELP_NONE, cmd_whitelist_remove, 1, 0),
 	SHELL_SUBCMD_SET_END
-};
+);
 
-SHELL_CREATE_STATIC_SUBCMD_SET(l2cap_cmds) {
+SHELL_STATIC_SUBCMD_SET_CREATE(l2cap_cmds,
 	SHELL_CMD_ARG(connect, NULL, "<psm>", cmd_connect, 1, 0),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_disconnect, 1, 0),
 	SHELL_CMD_ARG(metrics, NULL, "<value on, off>", cmd_metrics, 2, 0),
@@ -411,7 +411,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(l2cap_cmds) {
 	SHELL_CMD_ARG(send, NULL, "<number of packets>", cmd_send, 2, 0),
 	SHELL_CMD_ARG(whitelist, &whitelist_cmds, HELP_NONE, NULL, 1, 0),
 	SHELL_SUBCMD_SET_END
-};
+);
 
 static int cmd_l2cap(const struct shell *shell, size_t argc, char **argv)
 {

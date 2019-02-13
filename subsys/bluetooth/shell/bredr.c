@@ -534,7 +534,7 @@ static int cmd_sdp_find_record(const struct shell *shell,
 #define HELP_NONE "[none]"
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
-SHELL_CREATE_STATIC_SUBCMD_SET(br_cmds) {
+SHELL_STATIC_SUBCMD_SET_CREATE(br_cmds,
 	SHELL_CMD_ARG(auth-pincode, NULL, "<pincode>", cmd_auth_pincode, 2, 0),
 	SHELL_CMD_ARG(connect, NULL, "<address>", cmd_connect, 2, 0),
 	SHELL_CMD_ARG(discovery, NULL,
@@ -546,7 +546,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(br_cmds) {
 	SHELL_CMD_ARG(pscan, NULL, "<value: on, off>", cmd_connectable, 2, 0),
 	SHELL_CMD_ARG(sdp-find, NULL, "<HFPAG>", cmd_sdp_find_record, 2, 0),
 	SHELL_SUBCMD_SET_END
-};
+);
 
 static int cmd_br(const struct shell *shell, size_t argc, char **argv)
 {

@@ -766,7 +766,7 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 
 #define HELP_NONE "[none]"
 
-SHELL_CREATE_STATIC_SUBCMD_SET(gatt_cmds) {
+SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 #if defined(CONFIG_BT_GATT_CLIENT)
 	SHELL_CMD_ARG(discover-characteristic, NULL,
 		      "[UUID] [start handle] [end handle]", cmd_discover, 1, 3),
@@ -807,7 +807,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(gatt_cmds) {
 		      "unregister pre-predefined test service",
 		      cmd_unregister_test_svc, 1, 0),
 	SHELL_SUBCMD_SET_END
-};
+);
 
 static int cmd_gatt(const struct shell *shell, size_t argc, char **argv)
 {

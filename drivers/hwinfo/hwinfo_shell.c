@@ -38,10 +38,9 @@ static int cmd_get_device_id(const struct shell *shell, size_t argc, char **argv
 	return 0;
 }
 
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_hwinfo) {
-	/* Alphabetically sorted. */
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_hwinfo,
 	SHELL_CMD_ARG(devid, NULL, "Show device id", cmd_get_device_id, 1, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
-};
+);
 
 SHELL_CMD_ARG_REGISTER(hwinfo, &sub_hwinfo, "HWINFO commands", NULL, 2, 0);

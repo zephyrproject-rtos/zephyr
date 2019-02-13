@@ -456,8 +456,7 @@ static int cmd_mount_nffs(const struct shell *shell, size_t argc, char **argv)
 #endif
 
 #if defined(CONFIG_FILE_SYSTEM_NFFS) || defined(CONFIG_FAT_FILESYSTEM_ELM)
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_fs_mount)
-{
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
 	SHELL_CMD_ARG(fat, NULL,
 		      "Mount fatfs. fs mount fat <mount-point>",
@@ -471,11 +470,10 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_fs_mount)
 #endif
 
 	SHELL_SUBCMD_SET_END
-};
+);
 #endif
 
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_fs)
-{
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 	SHELL_CMD(cd, NULL, "Change working directory", cmd_cd),
 	SHELL_CMD(ls, NULL, "List files in current directory", cmd_ls),
 	SHELL_CMD_ARG(mkdir, NULL, "Create directory", cmd_mkdir, 2, 0),
@@ -489,6 +487,6 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_fs)
 	SHELL_CMD_ARG(trunc, NULL, "Truncate file", cmd_trunc, 2, 255),
 	SHELL_CMD_ARG(write, NULL, "Write file", cmd_write, 3, 255),
 	SHELL_SUBCMD_SET_END
-};
+);
 
 SHELL_CMD_REGISTER(fs, &sub_fs, "File system commands", NULL);

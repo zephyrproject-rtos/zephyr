@@ -1932,7 +1932,7 @@ static int cmd_del_fault(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-SHELL_CREATE_STATIC_SUBCMD_SET(mesh_cmds) {
+SHELL_STATIC_SUBCMD_SET_CREATE(mesh_cmds,
 	SHELL_CMD_ARG(init, NULL, NULL, cmd_init, 1, 0),
 	SHELL_CMD_ARG(timeout, NULL, "[timeout in seconds]", cmd_timeout, 1, 1),
 #if defined(CONFIG_BT_MESH_PB_ADV)
@@ -2026,7 +2026,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(mesh_cmds) {
 	SHELL_CMD_ARG(del-fault, NULL, "[Fault ID]", cmd_del_fault, 1, 1),
 
 	SHELL_SUBCMD_SET_END
-};
+);
 
 static int cmd_mesh(const struct shell *shell, size_t argc, char **argv)
 {
