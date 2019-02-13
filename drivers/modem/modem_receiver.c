@@ -166,8 +166,12 @@ int mdm_receiver_recv(struct mdm_receiver_context *ctx,
 		return -EINVAL;
 	}
 
-	*bytes_read = ring_buf_get(&ctx->rx_rb, buf, size);
+	if (size == 0) {
+		*bytes_read = 0;
+		return 0;
+	}
 
+	*bytes_read = ring_buf_get(&ctx->rx_rb, buf, size);
 	return 0;
 }
 
@@ -176,6 +180,10 @@ int mdm_receiver_send(struct mdm_receiver_context *ctx,
 {
 	if (!ctx) {
 		return -EINVAL;
+	}
+
+	if (size == 0) {
+		return 0;
 	}
 
 	do {
@@ -191,7 +199,7 @@ int mdm_receiver_register(struct mdm_receiver_context *ctx,
 {
 	int ret;
 
-	if (!ctx) {
+	if ((!ctx) || (size == 0)) {
 		return -EINVAL;
 	}
 
