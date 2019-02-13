@@ -578,21 +578,21 @@ static inline void can_stm32_set_mode_scale(enum can_filter_type filter_type,
 	*scale_reg |= scale_reg_bit;
 }
 
-static inline u32_t can_generate_std_mask(const struct can_filter *filter)
+static inline u32_t can_generate_std_mask(const struct can_msg_filter *filter)
 {
 	return  (filter->std_id_mask << CAN_FIRX_STD_ID_POS) |
 		(filter->rtr_mask    << CAN_FIRX_STD_RTR_POS) |
 		(1U                  << CAN_FIRX_STD_IDE_POS);
 }
 
-static inline u32_t can_generate_ext_mask(const struct can_filter *filter)
+static inline u32_t can_generate_ext_mask(const struct can_msg_filter *filter)
 {
 	return  (filter->ext_id_mask << CAN_FIRX_EXT_EXT_ID_POS) |
 		(filter->rtr_mask    << CAN_FIRX_EXT_RTR_POS) |
 		(1U                  << CAN_FIRX_EXT_IDE_POS);
 }
 
-static inline u32_t can_generate_std_id(const struct can_filter *filter)
+static inline u32_t can_generate_std_id(const struct can_msg_filter *filter)
 {
 
 	return  (filter->std_id << CAN_FIRX_STD_ID_POS) |
@@ -600,14 +600,14 @@ static inline u32_t can_generate_std_id(const struct can_filter *filter)
 
 }
 
-static inline u32_t can_generate_ext_id(const struct can_filter *filter)
+static inline u32_t can_generate_ext_id(const struct can_msg_filter *filter)
 {
 	return  (filter->ext_id << CAN_FIRX_EXT_EXT_ID_POS) |
 		(filter->rtr    << CAN_FIRX_EXT_RTR_POS) |
 		(1U             << CAN_FIRX_EXT_IDE_POS);
 }
 
-static inline int can_stm32_set_filter(const struct can_filter *filter,
+static inline int can_stm32_set_filter(const struct can_msg_filter *filter,
 				       struct can_stm32_data *device_data,
 				       CAN_TypeDef *can,
 				       int *filter_index)
@@ -739,7 +739,7 @@ done:
 
 
 static inline int can_stm32_attach(struct device *dev, void *response_ptr,
-				   const struct can_filter *filter,
+				   const struct can_msg_filter *filter,
 				   int *filter_index)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
@@ -758,7 +758,7 @@ static inline int can_stm32_attach(struct device *dev, void *response_ptr,
 }
 
 int can_stm32_attach_msgq(struct device *dev, struct k_msgq *msgq,
-			  const struct can_filter *filter)
+			  const struct can_msg_filter *filter)
 {
 	int filter_nr;
 	int filter_index;
@@ -772,7 +772,7 @@ int can_stm32_attach_msgq(struct device *dev, struct k_msgq *msgq,
 }
 
 int can_stm32_attach_isr(struct device *dev, can_rx_callback_t isr,
-			 const struct can_filter *filter)
+			 const struct can_msg_filter *filter)
 {
 	struct can_stm32_data *data = DEV_DATA(dev);
 	int filter_nr;

@@ -90,7 +90,7 @@ static void rx(int fd)
 
 static int setup_socket(void)
 {
-	const struct can_filter filter = {
+	const struct can_msg_filter filter = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.std_id = 0x1,
