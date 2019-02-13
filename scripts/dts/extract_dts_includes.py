@@ -198,23 +198,15 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                         extract_property(
                             node_compat, sub_node_address, k, v, None)
 
-def dict_merge(parent, fname, to_dict, from_dict):
-    # from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
+def merge_properties(parent, fname, to_dict, from_dict):
+    # Recursively merges the 'from_dict' dictionary into 'to_dict', to
+    # implement !include. 'parent' is the current parent key being looked at.
+    # 'fname' is the top-level .yaml file.
 
-    """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
-    updating only top-level keys, dict_merge recurses down into dicts nested
-    to an arbitrary depth, updating keys. The ``from_dict`` is merged into
-    ``to_dict``.
-    :param parent: parent tuple key
-    :param fname: yaml file being processed
-    :param to_dict: dict onto which the merge is executed
-    :param from_dict: dictionary merged into to_dict
-    :return: None
-    """
     for k, v in from_dict.items():
         if (k in to_dict and isinstance(to_dict[k], dict)
-                and isinstance(from_dict[k], dict)):
-            dict_merge(k, fname, to_dict[k], from_dict[k])
+                         and isinstance(from_dict[k], dict)):
+            merge_properties(k, fname, to_dict[k], from_dict[k])
         else:
             to_dict[k] = from_dict[k]
 
@@ -243,7 +235,7 @@ def merge_included_bindings(fname, node):
     if 'inherits' in node:
         for inherited in node.pop('inherits'):
             inherited = merge_included_bindings(fname, inherited)
-            dict_merge(None, fname, inherited, node)
+            merge_properties(None, fname, inherited, node)
             node = inherited
 
     return node
