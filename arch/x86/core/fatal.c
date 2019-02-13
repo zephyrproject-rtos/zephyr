@@ -446,6 +446,7 @@ static FUNC_NORETURN __used void _df_handler_top(void)
 	_main_tss.ss = DATA_SEG;
 	_main_tss.eip = (u32_t)_df_handler_bottom;
 	_main_tss.cr3 = (u32_t)X86_MMU_PDPT;
+	_main_tss.eflags = 0;
 
 	/* NT bit is set in EFLAGS so we will task switch back to _main_tss
 	 * and run _df_handler_bottom
