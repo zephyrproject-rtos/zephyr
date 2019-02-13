@@ -702,19 +702,23 @@ static inline int can_stm32_set_filter(const struct can_filter *filter,
 							 scale_reg);
 
 		start_index = filter_index_new + filter_in_bank[bank_mode];
-		res = can_stm32_shift_arr(device_data->rx_response,
-					  start_index,
-					  shift_width);
 
-		if (filter_index_new >= CONFIG_CAN_MAX_FILTER || res) {
-			LOG_INF("No space for a new filter!");
-			filter_nr = CAN_NO_FREE_FILTER;
-			goto done;
+		if (shift_width && start_index <= CAN_MAX_NUMBER_OF_FILTERS) {
+			res = can_stm32_shift_arr(device_data->rx_response,
+						start_index,
+						shift_width);
+
+			if (filter_index_new >= CONFIG_CAN_MAX_FILTER || res) {
+				LOG_INF("No space for a new filter!");
+				filter_nr = CAN_NO_FREE_FILTER;
+				goto done;
+			}
+
+			can_stm32_shift_bits(&device_data->response_type,
+					start_index,
+					shift_width);
 		}
 
-		can_stm32_shift_bits(&device_data->response_type,
-				     start_index,
-				     shift_width);
 		can->FM1R = mode_reg;
 		can->FS1R = scale_reg;
 	} else {
