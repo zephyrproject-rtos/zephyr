@@ -216,17 +216,21 @@ def dict_merge(parent, fname, dct, merge_dct):
                 and isinstance(merge_dct[k], Mapping)):
             dict_merge(k, fname, dct[k], merge_dct[k])
         else:
-            if k in dct and dct[k] != merge_dct[k]:
-                merge_warn = True
-                # Don't warn if we are changing the "category" from "optional
-                # to "required"
-                if (k == "category" and dct[k] == "optional" and
-                    merge_dct[k] == "required"):
-                    merge_warn = False
-                if merge_warn:
-                    print("extract_dts_includes.py: {}('{}') merge of property '{}': '{}' overwrites '{}'.".format(
-                            fname, parent, k, merge_dct[k], dct[k]))
             dct[k] = merge_dct[k]
+
+            # Warn when overriding a property and changing its value...
+            if (k in dct and dct[k] != merge_dct[k] and
+                # ...unless it's the 'title', 'description', or 'version'
+                # property. These are overriden deliberately.
+                not k in {'title', 'version', 'description'} and
+                # Also allow the category to be changed from 'optional' to
+                # 'required' without a warning
+                not (k == "category" and dct[k] == "optional" and
+                     merge_dct[k] == "required")):
+
+                print("extract_dts_includes.py: {}('{}') merge of property "
+                      "'{}': '{}' overwrites '{}'"
+                      .format(fname, parent, k, merge_dct[k], dct[k]))
 
 
 def merge_included_bindings(fname, node):
@@ -237,16 +241,10 @@ def merge_included_bindings(fname, node):
     check_binding_properties(node)
 
     if 'inherits' in node:
-        for inherits in node.pop('inherits'):
-            inherits = merge_included_bindings(fname, inherits)
-            # title, description, version of inherited node
-            # are overwritten by intention. Remove to prevent dct_merge to
-            # complain about duplicates.
-            inherits.pop('title', None)
-            inherits.pop('version', None)
-            inherits.pop('description', None)
-            dict_merge(None, fname, inherits, node)
-            node = inherits
+        for inherited in node.pop('inherits'):
+            inherited = merge_included_bindings(fname, inherited)
+            dict_merge(None, fname, inherited, node)
+            node = inherited
 
     return node
 
