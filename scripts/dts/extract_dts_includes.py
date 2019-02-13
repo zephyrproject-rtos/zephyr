@@ -59,24 +59,23 @@ class Bindings(yaml.Loader):
         raise yaml.constructor.ConstructorError
 
     def _extract_file(self, filename):
-        filepaths = [filepath for filepath in binding_files if filepath.endswith(filename)]
-        if len(filepaths) == 0:
-            print("Error: unknown file name '{}' in !include statement".
-                  format(filename))
+        filepaths = [
+            filepath for filepath in binding_files
+            if os.path.basename(filepath) == os.path.basename(filename)]
+
+        if not filepaths:
+            print("Error: unknown file name '{}' in !include statement"
+                  .format(filename))
             raise yaml.constructor.ConstructorError
-        elif len(filepaths) > 1:
-            # multiple candidates for filename
-            files = []
-            for filepath in filepaths:
-                if os.path.basename(filename) == os.path.basename(filepath):
-                    files.append(filepath)
-            if len(files) > 1:
-                print("Error: multiple candidates for file name '{}' in !include statement".
-                      format(filename), filepaths)
-                raise yaml.constructor.ConstructorError
-            filepaths = files
+
+        if len(filepaths) > 1:
+            print("Error: multiple candidates for file name '{}' in !include "
+                  "statement: {}".format(filename, filepaths))
+            raise yaml.constructor.ConstructorError
+
         with open(filepaths[0], 'r', encoding='utf-8') as f:
             return yaml.load(f, Bindings)
+
 
 def extract_bus_name(node_address, def_label):
     label = def_label + '_BUS_NAME'
