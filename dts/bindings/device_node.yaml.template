@@ -68,6 +68,6 @@ properties:
 # name instead of controller generic name, for instance _CS_GPIO_ instead
 # of _GPIOS_
 
-# "type" attribute is currenty not used.
+# "type" attribute is currently not used.
 
 ...
