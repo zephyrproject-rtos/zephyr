@@ -31,7 +31,7 @@ class EagerOnly(sphinx.directives.other.Only):
         # Evaluate the condition eagerly, and if false return no nodes right away
         env = self.state.document.settings.env
         env.app.builder.tags.add('TRUE')
-        #print(repr(self.arguments[0]))
+
         if not env.app.builder.tags.eval_condition(self.arguments[0]):
             return []
 
@@ -44,3 +44,13 @@ class EagerOnly(sphinx.directives.other.Only):
 
 def setup(app):
     directives.register_directive('only', EagerOnly)
+
+    # The tags.add call above is setting tags.tags['TRUE'] = True.
+    # The operation is idempotent and will have taken effect before
+    # the next eval_condition() which may rely on it so this is thread
+    # safe both for read and writes (all other operations are local to
+    # the local nodes variable).
+    return {
+        'parallel_read_safe': True,
+        'parallel_write_safe': True,
+        }

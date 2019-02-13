@@ -43,6 +43,13 @@ def setup(app):
     app.add_config_value('html_redirect_pages', [], 'html')
     app.connect('build-finished', create_redirect_pages)
 
+    # Since we're just setting up a build-finished hook, which runs
+    # after both reading and writing, this extension is safe for both.
+    return {
+        'parallel_read_safe': True,
+        'parallel_write_safe': True,
+    }
+
 
 def create_redirect_pages(app, docname):
     if not isinstance(app.builder, StandaloneHTMLBuilder):
