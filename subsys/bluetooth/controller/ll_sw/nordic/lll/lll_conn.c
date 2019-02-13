@@ -391,7 +391,7 @@ void lll_conn_isr_tx(void *param)
 	LL_ASSERT(!radio_is_ready());
 
 	/* +/- 2us active clock jitter, +1 us hcto compensation */
-	hcto = radio_tmr_tifs_base_get() + TIFS_US + 4 + 1;
+	hcto = radio_tmr_tifs_base_get() + TIFS_US + 4 + RANGE_DELAY_US + 1;
 #if defined(CONFIG_BT_CTLR_PHY)
 	hcto += radio_rx_chain_delay_get(lll->phy_rx, 1);
 	hcto += addr_us_get(lll->phy_rx);

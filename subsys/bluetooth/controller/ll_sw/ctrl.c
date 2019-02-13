@@ -74,6 +74,13 @@
 #define RADIO_TIFS    150 /* BT Spec. defined */
 /* Inter Event Space */
 #define RADIO_TIES_US 625 /* Implementation defined */
+/* Range Delay
+ * Refer to BT Spec v5.1 Vol.6, Part B, Section 4.2.3 Range Delay
+ * "4 / 1000" is an approximation of the propagation time in us of the
+ * signal to travel 1 meter.
+ */
+#define RADIO_RANGE_DISTANCE 1000 /* meters */
+#define RADIO_RANGE_DELAY_US (2 * RADIO_RANGE_DISTANCE * 4 / 1000)
 
 /* Implementation defines */
 #define RADIO_TICKER_JITTER_US           16
@@ -671,8 +678,8 @@ static inline void isr_radio_state_tx(void)
 
 	_radio.state = STATE_RX;
 
-	hcto = radio_tmr_tifs_base_get()
-		+ RADIO_TIFS + 4 + 1; /* 1us, end jitter */
+	hcto = radio_tmr_tifs_base_get() + RADIO_TIFS + 4 +
+	       RADIO_RANGE_DELAY_US + 1; /* 1us, end jitter */
 
 	radio_tmr_tifs_set(RADIO_TIFS);
 
