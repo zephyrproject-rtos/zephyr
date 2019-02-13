@@ -41,8 +41,14 @@ class DTFlash(DTDirective):
 
         # For now assume node_address is something like:
         # /flash-controller@4001E000/flash@0/partitions/partition@fc000
-        # and we go up 3 levels to get the controller
-        ctrl_addr = '/' + '/'.join(node_address.split('/')[1:-3])
+        # first we go up 2 levels to get the flash, check its compat
+        #
+        # The flash controller might be the flash itself (for cases like NOR
+        # flashes), for the case of 'soc-nv-flash' we assume its the parent
+        # of the flash node.
+        ctrl_addr = '/' + '/'.join(node_address.split('/')[1:-2])
+        if get_compat(ctrl_addr) == "soc-nv-flash":
+            ctrl_addr = '/' + '/'.join(node_address.split('/')[1:-3])
 
         node = reduced[ctrl_addr]
         name = "\"{}\"".format(node['props']['label'])
