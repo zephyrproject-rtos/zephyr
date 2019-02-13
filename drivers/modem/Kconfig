@@ -17,6 +17,7 @@ config MODEM_RECEIVER
 	bool "Enable modem receiver helper driver"
 	depends on SERIAL_SUPPORT_INTERRUPT
 	select UART_INTERRUPT_DRIVEN
+	select RING_BUFFER
 	help
 	  This driver allows modem drivers to communicate over UART with custom
 	  defined protocols. Driver doesn't inspect received data and all
