@@ -109,7 +109,7 @@ void tx_thread(void *can_dev_param, void *unused2, void *unused3)
 void rx_str_thread(void *msgq, void *can_dev_param, void *unused)
 {
 	struct can_msg msg;
-	const struct can_filter filter = {
+	const struct can_msg_filter filter = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.ext_id = STR_MSG_ID,
@@ -129,7 +129,7 @@ void rx_str_thread(void *msgq, void *can_dev_param, void *unused)
 
 void led_thread(void *msgq, void *can_dev_param, void *gpio_dev_param)
 {
-	const struct can_filter filter = {
+	const struct can_msg_filter filter = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.std_id = LED_MSG_ID,
@@ -181,7 +181,7 @@ void rx_button_isr(struct can_msg *msg)
 
 void main(void)
 {
-	const struct can_filter filter = {
+	const struct can_msg_filter filter = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.std_id = BUTTON_MSG_ID,
