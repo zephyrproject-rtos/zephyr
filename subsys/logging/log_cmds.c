@@ -364,8 +364,7 @@ static int cmd_log_backends_list(const struct shell *shell,
 }
 
 
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_log_backend)
-{
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_backend,
 	SHELL_CMD_ARG(disable, &dsub_module_name,
 		  "'log disable <module_0> .. <module_n>' disables logs in "
 		  "specified modules (all if no modules specified).",
@@ -379,7 +378,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_log_backend)
 	SHELL_CMD(halt, NULL, "Halt logging", cmd_log_backend_halt),
 	SHELL_CMD(status, NULL, "Logger status", cmd_log_backend_status),
 	SHELL_SUBCMD_SET_END
-};
+);
 
 static void backend_name_get(size_t idx, struct shell_static_entry *entry)
 {
@@ -398,8 +397,7 @@ static void backend_name_get(size_t idx, struct shell_static_entry *entry)
 SHELL_CREATE_DYNAMIC_CMD(dsub_backend_name_dynamic, backend_name_get);
 
 
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_log_stat)
-{
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_stat,
 	SHELL_CMD(backend, &dsub_backend_name_dynamic,
 			"Logger backends commands.", NULL),
 	SHELL_CMD_ARG(disable, &dsub_module_name,
@@ -416,7 +414,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_log_stat)
 		      cmd_log_backends_list, 1, 0),
 	SHELL_CMD(status, NULL, "Logger status", cmd_log_self_status),
 	SHELL_SUBCMD_SET_END
-};
+);
 
 SHELL_CMD_REGISTER(log, &sub_log_stat, "Commands for controlling logger",
 		   NULL);

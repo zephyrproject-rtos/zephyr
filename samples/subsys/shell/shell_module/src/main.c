@@ -61,9 +61,7 @@ static int cmd_log_test_stop(const struct shell *shell, size_t argc,
 	return 0;
 }
 
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_log_test_start)
-{
-	/* Alphabetically sorted. */
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_test_start,
 	SHELL_CMD_ARG(demo, NULL,
 		  "Start log timer which generates log message every 200ms.",
 		  cmd_log_test_start_demo, 1, 0),
@@ -71,14 +69,12 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_log_test_start)
 		  "Start log timer which generates log message every 10ms.",
 		  cmd_log_test_start_flood, 1, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
-};
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_log_test)
-{
-	/* Alphabetically sorted. */
+);
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_test,
 	SHELL_CMD_ARG(start, &sub_log_test_start, "Start log test", NULL, 2, 0),
 	SHELL_CMD_ARG(stop, NULL, "Stop log test.", cmd_log_test_stop, 1, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
-};
+);
 
 SHELL_CMD_REGISTER(log_test, &sub_log_test, "Log test", NULL);
 
@@ -112,13 +108,11 @@ static int cmd_version(const struct shell *shell, size_t argc, char **argv)
 	return 0;
 }
 
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_demo)
-{
-	/* Alphabetically sorted. */
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_demo,
 	SHELL_CMD(params, NULL, "Print params command.", cmd_demo_params),
 	SHELL_CMD(ping, NULL, "Ping command.", cmd_demo_ping),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
-};
+);
 SHELL_CMD_REGISTER(demo, &sub_demo, "Demo commands", NULL);
 
 SHELL_CMD_ARG_REGISTER(version, NULL, "Show kernel version", cmd_version, 1, 0);

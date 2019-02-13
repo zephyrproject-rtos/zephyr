@@ -433,7 +433,7 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 	return err;
 }
 
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_cmd_get_param) {
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_cmd_get_param,
 
 	SHELL_CMD_ARG(all, NULL, NULL, cmd_get_param_all, 1, 0),
 	SHELL_CMD_ARG(height, NULL, NULL, cmd_get_param_height, 1, 0),
@@ -442,16 +442,16 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_cmd_get_param) {
 	SHELL_CMD_ARG(rows, NULL, NULL, cmd_get_param_rows, 1, 0),
 	SHELL_CMD_ARG(cols, NULL, NULL, cmd_get_param_cols, 1, 0),
 	SHELL_SUBCMD_SET_END
-};
+);
 
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_cmd_scroll) {
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_cmd_scroll,
 
 	SHELL_CMD_ARG(vertical, NULL, HELP_PRINT, cmd_scroll_vert, 4, 0),
 	SHELL_CMD_ARG(horizontal, NULL, HELP_PRINT, cmd_scroll_horz, 4, 0),
 	SHELL_SUBCMD_SET_END
-};
+);
 
-SHELL_CREATE_STATIC_SUBCMD_SET(cfb_cmds) {
+SHELL_STATIC_SUBCMD_SET_CREATE(cfb_cmds,
 	SHELL_CMD_ARG(init, NULL, HELP_NONE, cmd_init, 1, 0),
 	SHELL_CMD_ARG(get_device, NULL, HELP_NONE, cmd_get_device, 1, 0),
 	SHELL_CMD(get_param, &sub_cmd_get_param,
@@ -464,7 +464,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(cfb_cmds) {
 		  "horizontal direction", NULL),
 	SHELL_CMD_ARG(clear, NULL, HELP_NONE, cmd_clear, 1, 0),
 	SHELL_SUBCMD_SET_END
-};
+);
 
 SHELL_CMD_REGISTER(cfb, &cfb_cmds, "Character Framebuffer shell commands",
 		   NULL);

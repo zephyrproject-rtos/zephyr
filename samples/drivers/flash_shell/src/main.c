@@ -591,8 +591,7 @@ void main(void)
 }
 
 
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_flash)
-{
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_flash,
 	/* Alphabetically sorted to ensure correct Tab autocompletion. */
 	SHELL_CMD_ARG(erase,	NULL,	ERASE_HELP,	cmd_erase, 3, 0),
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
@@ -610,7 +609,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_flash)
 	SHELL_CMD_ARG(write_block_size,	NULL,	WRITE_BLOCK_SIZE_HELP,
 						    cmd_write_block_size, 1, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
-};
+);
 
 SHELL_CMD_REGISTER(flash, &sub_flash, "Flash realated commands.", cmd_flash);
 

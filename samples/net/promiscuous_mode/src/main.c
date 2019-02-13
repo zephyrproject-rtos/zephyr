@@ -200,8 +200,7 @@ static int cmd_promisc_off(const struct shell *shell,
 	return set_promisc_mode(shell, argc, argv, false);
 }
 
-SHELL_CREATE_STATIC_SUBCMD_SET(promisc_commands)
-{
+SHELL_STATIC_SUBCMD_SET_CREATE(promisc_commands,
 	SHELL_CMD(on, NULL,
 		  "Turn promiscuous mode on\n"
 		  "promisc on  <interface index>  "
@@ -212,7 +211,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(promisc_commands)
 		      "Turn off promiscuous mode for the interface\n",
 		  cmd_promisc_off),
 	SHELL_SUBCMD_SET_END
-};
+);
 
 SHELL_CMD_REGISTER(promisc, &promisc_commands,
 		   "Promiscuous mode commands", NULL);

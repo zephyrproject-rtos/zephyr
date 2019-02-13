@@ -60,14 +60,14 @@ static int cmd_hrs_simulate(const struct shell *shell,
 #define HELP_NONE "[none]"
 #define HELP_ADDR_LE "<address: XX:XX:XX:XX:XX:XX> <type: (public|random)>"
 
-SHELL_CREATE_STATIC_SUBCMD_SET(hrs_cmds) {
+SHELL_STATIC_SUBCMD_SET_CREATE(hrs_cmds,
 #if defined(CONFIG_BT_CONN)
 	SHELL_CMD_ARG(hrs-simulate, NULL,
 		"register and simulate Heart Rate Service <value: on, off>",
 		cmd_hrs_simulate, 2, 0),
 #endif /* CONFIG_BT_CONN */
 	SHELL_SUBCMD_SET_END
-};
+);
 
 static int cmd_hrs(const struct shell *shell, size_t argc, char **argv)
 {

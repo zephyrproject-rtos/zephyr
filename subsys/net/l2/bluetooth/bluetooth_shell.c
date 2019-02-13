@@ -166,8 +166,7 @@ static int shell_cmd_advertise(const struct shell *shell,
 	return 0;
 }
 
-SHELL_CREATE_STATIC_SUBCMD_SET(bt_commands)
-{
+SHELL_STATIC_SUBCMD_SET_CREATE(bt_commands,
 	SHELL_CMD(advertise, NULL,
 		  "on/off",
 		  shell_cmd_advertise),
@@ -181,7 +180,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(bt_commands)
 		  "",
 		  shell_cmd_disconnect),
 	SHELL_SUBCMD_SET_END
-};
+);
 
 SHELL_CMD_REGISTER(net_bt, &bt_commands, "Net Bluetooth commands", NULL);
 

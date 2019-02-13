@@ -152,8 +152,7 @@ void main(void)
 
 }
 
-SHELL_CREATE_STATIC_SUBCMD_SET(sub_mpu)
-{
+SHELL_STATIC_SUBCMD_SET_CREATE(sub_mpu,
 	SHELL_CMD_ARG(mtest, NULL, MTEST_CMD_HELP, cmd_mtest, 2, 1),
 	SHELL_CMD(read, NULL, READ_CMD_HELP, cmd_read),
 	SHELL_CMD(run, NULL, RUN_CMD_HELP, cmd_run),
@@ -165,7 +164,7 @@ SHELL_CREATE_STATIC_SUBCMD_SET(sub_mpu)
 	SHELL_CMD(write, NULL, WRITE_CMD_HELP, cmd_write),
 #endif /* SOC_FLASH_MCUX*/
 	SHELL_SUBCMD_SET_END /* Array terminated. */
-};
+);
 SHELL_CMD_REGISTER(mpu, &sub_mpu, "MPU related commands.", NULL);
 
 

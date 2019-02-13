@@ -219,13 +219,13 @@ static int cmd_test(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
-SHELL_CREATE_STATIC_SUBCMD_SET(flash_cmds) {
+SHELL_STATIC_SUBCMD_SET_CREATE(flash_cmds,
 	SHELL_CMD(erase, NULL, "<page address> <size>", cmd_erase),
 	SHELL_CMD(read, NULL, "<address> <Dword count>", cmd_read),
 	SHELL_CMD(test, NULL, "<address> <size> <repeat count>", cmd_test),
 	SHELL_CMD(write, NULL, "<address> <dword> <dword>...", cmd_write),
 	SHELL_SUBCMD_SET_END
-};
+);
 
 static int cmd_flash(const struct shell *shell, size_t argc, char **argv)
 {
