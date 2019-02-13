@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,6 +45,8 @@
  *
  *  This SPI driver implementation is designed to operate on a CC32XX SPI
  *  controller using a micro DMA controller.
+ *
+ *  @warning This driver does not support queueing multiple SPI transactions.
  *
  *  ## Frame Formats #
  *  This SPI controller supports 4 phase & polarity formats. Refer to the device
@@ -184,8 +186,8 @@ extern "C" {
  *  The upper 8 bits of the macro correspond to the pin mux confg mode
  *  value for the pin to operate in the SPI mode.
  *
- *  PIN_62 is special for the SDSPI driver when using an SD Boosterpack,
- *  as PIN_62 doesn't have an assigned SPI function yet the SD Boosterpack
+ *  PIN_62 is special for the SDSPI driver when using an SD BoosterPack,
+ *  as PIN_62 doesn't have an assigned SPI function yet the SD BoosterPack
  *  has it tied to the CS signal.
  */
 #define SPICC32XXDMA_PIN_05_CLK     0x0704 /*!< PIN 5 is used for SPI CLK */

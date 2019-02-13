@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -114,15 +114,47 @@ static const uint32_t bitRate[] = {
     true    /*  I2C_400kHz = 1 */
 };
 
-/* Guard to avoid power constraints getting out of sync */
-static volatile bool powerConstraint;
-
 /*
  *  ======== I2CC32XX_cancel ========
  */
 void I2CCC32XX_cancel(I2C_Handle handle)
 {
-    /* No implementation yet */
+    I2CCC32XX_Object          *object = handle->object;
+    I2CCC32XX_HWAttrsV1 const *hwAttrs = handle->hwAttrs;
+    uintptr_t key;
+
+    /* just return if no transfer is in progress */
+    if (!object->headPtr) {
+        return;
+    }
+
+    /* disable interrupts, send STOP to complete any transfer */
+    key = HwiP_disable();
+    MAP_I2CMasterIntDisable(hwAttrs->baseAddr);
+
+    MAP_I2CMasterControl(hwAttrs->baseAddr,
+        I2C_MASTER_CMD_BURST_SEND_ERROR_STOP);
+
+    /* call the transfer callback for the current transfer, indicate failure */
+    object->transferCallbackFxn(handle, object->currentTransaction, false);
+
+    /* also dequeue and call the transfer callbacks for any queued transfers */
+    while (object->headPtr != object->tailPtr) {
+        object->headPtr = object->headPtr->nextPtr;
+        object->transferCallbackFxn(handle, object->headPtr, false);
+    }
+
+    /* clean up object */
+    object->currentTransaction = NULL;
+    object->headPtr = NULL;
+    object->tailPtr = NULL;
+    object->mode = I2CCC32XX_IDLE_MODE;
+
+    /* disable and the re-initialize master mode */
+    MAP_I2CMasterDisable(hwAttrs->baseAddr);
+    initHw(handle);
+
+    HwiP_restore(key);
 }
 
 /*
@@ -130,7 +162,6 @@ void I2CCC32XX_cancel(I2C_Handle handle)
  */
 void I2CCC32XX_close(I2C_Handle handle)
 {
-    uintptr_t                 key;
     I2CCC32XX_Object          *object = handle->object;
     I2CCC32XX_HWAttrsV1 const *hwAttrs = handle->hwAttrs;
     uint32_t                  padRegister;
@@ -166,13 +197,7 @@ void I2CCC32XX_close(I2C_Handle handle)
         SemaphoreP_delete(object->transferComplete);
     }
 
-    /* Mark the module as available */
-    key = HwiP_disable();
-
     object->isOpen = false;
-    powerConstraint = false;
-
-    HwiP_restore(key);
 
     DebugP_log1("I2C: Object closed 0x%x", hwAttrs->baseAddr);
 
@@ -190,25 +215,23 @@ static void I2CCC32XX_completeTransfer(I2C_Handle handle)
     DebugP_log1("I2C:(%p) ISR Transfer Complete",
                 ((I2CCC32XX_HWAttrsV1 const *)(handle->hwAttrs))->baseAddr);
 
-    /*
-     * Perform callback in a HWI context, thus any tasks or SWIs
-     * made ready to run won't start until the interrupt has
-     * finished
-     */
-    object->transferCallbackFxn(handle, object->currentTransaction,
-                                !((bool)object->mode));
-
     /* See if we need to process any other transactions */
     if (object->headPtr == object->tailPtr) {
-        /* No other transactions need to occur */
-        object->currentTransaction = NULL;
-        object->headPtr = NULL;
 
-        if (powerConstraint) {
-            /* release constraint since transaction is done */
-            Power_releaseConstraint(PowerCC32XX_DISALLOW_LPDS);
-            powerConstraint = false;
-        }
+        /* No other transactions need to occur */
+        object->headPtr = NULL;
+        object->tailPtr = NULL;
+
+        /*
+         * Allow callback to run. If in CALLBACK mode, the application
+         * may initiate a transfer in the callback which will call
+         * primeTransfer().
+         */
+        object->transferCallbackFxn(handle, object->currentTransaction,
+            (object->mode == I2CCC32XX_IDLE_MODE));
+
+       /* release constraint since transaction is done */
+       Power_releaseConstraint(PowerCC32XX_DISALLOW_LPDS);
 
         DebugP_log1("I2C:(%p) ISR No other I2C transaction in queue",
                     ((I2CCC32XX_HWAttrsV1 const *)(handle->hwAttrs))->baseAddr);
@@ -216,6 +239,14 @@ static void I2CCC32XX_completeTransfer(I2C_Handle handle)
     else {
         /* Another transfer needs to take place */
         object->headPtr = object->headPtr->nextPtr;
+
+        /*
+         * Allow application callback to run. The application may
+         * initiate a transfer in the callback which will add an
+         * additional transfer to the queue.
+         */
+        object->transferCallbackFxn(handle, object->currentTransaction,
+            (object->mode == I2CCC32XX_IDLE_MODE));
 
         DebugP_log2("I2C:(%p) ISR Priming next I2C transaction (%p) from queue",
                     ((I2CCC32XX_HWAttrsV1 const *)(handle->hwAttrs))->baseAddr,
@@ -257,7 +288,8 @@ static void I2CCC32XX_hwiFxn(uintptr_t arg)
     MAP_I2CMasterIntClear(hwAttrs->baseAddr);
 
     /* Check for I2C Errors */
-    if ((errStatus == I2C_MASTER_ERR_NONE) || (object->mode == I2CCC32XX_ERROR)) {
+    if ((errStatus == I2C_MASTER_ERR_NONE) ||
+        (object->mode == I2CCC32XX_ERROR)) {
         /* No errors, now check what we need to do next */
         switch (object->mode) {
             /*
@@ -436,22 +468,20 @@ static void I2CCC32XX_hwiFxn(uintptr_t arg)
 
     }
     else {
-        /* Some sort of error happened! */
-        object->mode = I2CCC32XX_ERROR;
+        /* Error Handling */
+        if ((errStatus & (I2C_MASTER_ERR_ARB_LOST | I2C_MASTER_ERR_ADDR_ACK)) ||
+            (object->mode == I2CCC32XX_IDLE_MODE)) {
 
-        if (errStatus & (I2C_MASTER_ERR_ARB_LOST | I2C_MASTER_ERR_ADDR_ACK)) {
+            /* STOP condition already occurred, complete transfer */
+            object->mode = I2CCC32XX_ERROR;
             I2CCC32XX_completeTransfer((I2C_Handle) arg);
         }
         else {
-        /* Try to send a STOP bit to end all I2C communications immediately */
-        /*
-         * I2C_MASTER_CMD_BURST_SEND_ERROR_STOP -and-
-         * I2C_MASTER_CMD_BURST_RECEIVE_ERROR_STOP
-         * have the same values
-         */
+
+            /* Error occurred during a transfer, send a STOP condition */
+            object->mode = I2CCC32XX_ERROR;
             MAP_I2CMasterControl(hwAttrs->baseAddr,
                                  I2C_MASTER_CMD_BURST_SEND_ERROR_STOP);
-            I2CCC32XX_completeTransfer((I2C_Handle) arg);
         }
 
         DebugP_log2("I2C:(%p) ISR I2C Bus fault (Status Reg: 0x%x)",
@@ -485,6 +515,9 @@ I2C_Handle I2CCC32XX_open(I2C_Handle handle, I2C_Params *params)
     uint16_t                   pin;
     uint16_t                   mode;
 
+    /* Check for valid bit rate */
+    DebugP_assert(params->bitRate <= I2C_400kHz);
+
     /* Determine if the device index was already opened */
     key = HwiP_disable();
     if(object->isOpen == true){
@@ -495,9 +528,6 @@ I2C_Handle I2CCC32XX_open(I2C_Handle handle, I2C_Params *params)
     /* Mark the handle as being used */
     object->isOpen = true;
     HwiP_restore(key);
-
-    /* No power constraints on startup */
-    powerConstraint = false;
 
     /* Save parameters */
     object->transferMode = params->transferMode;
@@ -673,9 +703,10 @@ bool I2CCC32XX_transfer(I2C_Handle handle, I2C_Transaction *transaction)
         return (ret);
     }
 
+    key = HwiP_disable();
+
     if (object->transferMode == I2C_MODE_CALLBACK) {
         /* Check if a transfer is in progress */
-        key = HwiP_disable();
         if (object->headPtr) {
             /* Transfer in progress */
 
@@ -692,22 +723,27 @@ bool I2CCC32XX_transfer(I2C_Handle handle, I2C_Transaction *transaction)
             HwiP_restore(key);
             return (true);
         }
-        else {
-            /* Store the headPtr indicating I2C is in use */
-            object->headPtr = transaction;
-            object->tailPtr = transaction;
+    }
+
+    /* Store the headPtr indicating I2C is in use */
+    object->headPtr = transaction;
+    object->tailPtr = transaction;
+
+    HwiP_restore(key);
+
+    /* Get the lock for this I2C handle */
+    if (SemaphoreP_pend(object->mutex, SemaphoreP_NO_WAIT) == SemaphoreP_TIMEOUT) {
+
+        /* An I2C_transfer() may complete before the calling thread post the
+         * mutex due to preemption. We must not block in this case. */
+        if (object->transferMode == I2C_MODE_CALLBACK) {
+            return (false);
         }
-        HwiP_restore(key);
+
+        SemaphoreP_pend(object->mutex, SemaphoreP_WAIT_FOREVER);
     }
 
-    if (!powerConstraint) {
-        /* set constraints to guarantee transaction */
-        Power_setConstraint(PowerCC32XX_DISALLOW_LPDS);
-        powerConstraint = true;
-    }
-
-    /* Acquire the lock for this particular I2C handle */
-    SemaphoreP_pend(object->mutex, SemaphoreP_WAIT_FOREVER);
+    Power_setConstraint(PowerCC32XX_DISALLOW_LPDS);
 
     /*
      * I2CCC32XX_primeTransfer is a longer process and
@@ -726,12 +762,6 @@ bool I2CCC32XX_transfer(I2C_Handle handle, I2C_Transaction *transaction)
          * upon errors
          */
         SemaphoreP_pend(object->transferComplete, SemaphoreP_WAIT_FOREVER);
-
-        if (powerConstraint) {
-            /* release constraint since transaction is done */
-            Power_releaseConstraint(PowerCC32XX_DISALLOW_LPDS);
-            powerConstraint = false;
-        }
 
         DebugP_log1("I2C:(%p) Transaction completed",
                     hwAttrs->baseAddr);

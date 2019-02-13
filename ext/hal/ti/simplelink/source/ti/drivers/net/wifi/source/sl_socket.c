@@ -35,7 +35,6 @@
 */
 
 
-
 /*****************************************************************************/
 /* Include files                                                             */
 /*****************************************************************************/
@@ -47,22 +46,19 @@ static void     _SlSocketBuildAddress(const SlSockAddr_t *addr, SlSocketAddrComm
 _SlReturnVal_t  _SlSocketHandleAsync_Connect(void *pVoidBuf);
 _SlReturnVal_t _SlSocketHandleAsync_Close(void *pVoidBuf);
 
-#ifndef SL_TINY
 void             _SlSocketParseAddress(SlSocketAddrResponse_u *pRsp, SlSockAddr_t *addr, SlSocklen_t *addrlen);
 _SlReturnVal_t   _SlSocketHandleAsync_Accept(void *pVoidBuf);
 _SlReturnVal_t   _SlSocketHandleAsync_Select(void *pVoidBuf);
+_SlReturnVal_t   _SlSocketHandleAsync_StartTLS(void *pVoidBuf);
+
 #if (defined(SL_PLATFORM_MULTI_THREADED) && !defined(slcb_SocketTriggerEventHandler))
 static _i16      _SlDrvClearCtrlSocket(void);
 static _i8       _SlDrvGetNextTimeoutValue(void);
-#endif
 #endif
 
 /*******************************************************************************/
 /* Functions                                                                   */
 /*******************************************************************************/
-
-
-
 
 
 /* ******************************************************************************/
@@ -72,8 +68,8 @@ static void _SlSocketBuildAddress(const SlSockAddr_t *addr, SlSocketAddrCommand_
 {
 
     /* Note: parsing of family and port in the generic way for all IPV4, IPV6 and EUI48
-           is possible as long as these parameters are in the same offset and size for these
-           three families. */
+             is possible as long as these parameters are in the same offset and size for these
+             three families. */
     pCmd->IpV4.FamilyAndFlags = (_u8)((addr->sa_family << 4) & 0xF0);
     pCmd->IpV4.Port = ((SlSockAddrIn_t *)addr)->sin_port;
 
@@ -84,23 +80,20 @@ static void _SlSocketBuildAddress(const SlSockAddr_t *addr, SlSocketAddrCommand_
 #ifdef SL_SUPPORT_IPV6
     else
     {
-		sl_Memcpy(pCmd->IpV6.Address, ((SlSockAddrIn6_t *)addr)->sin6_addr._S6_un._S6_u32, 16 );
+        sl_Memcpy(pCmd->IpV6.Address, ((SlSockAddrIn6_t *)addr)->sin6_addr._S6_un._S6_u32, 16 );
     }
 #endif
 }
 
-
 /*******************************************************************************/
 /*  _SlSocketParseAddress */
 /*******************************************************************************/
-
-#ifndef SL_TINY
 void _SlSocketParseAddress(SlSocketAddrResponse_u    *pRsp, SlSockAddr_t *addr, SlSocklen_t *addrlen)
 {
     /*  Note: parsing of family and port in the generic way for all IPV4, IPV6 and EUI48 */
     /*  is possible as long as these parameters are in the same offset and size for these */
     /*  three families. */
-    addr->sa_family                 = pRsp->IpV4.Family;
+    addr->sa_family                    = pRsp->IpV4.Family;
     ((SlSockAddrIn_t *)addr)->sin_port = pRsp->IpV4.Port;
 
     *addrlen = (SL_AF_INET == addr->sa_family) ? sizeof(SlSockAddrIn_t) : sizeof(SlSockAddrIn6_t);
@@ -112,12 +105,10 @@ void _SlSocketParseAddress(SlSocketAddrResponse_u    *pRsp, SlSockAddr_t *addr, 
 #ifdef SL_SUPPORT_IPV6
     else
     {
-	     sl_Memcpy(((SlSockAddrIn6_t *)addr)->sin6_addr._S6_un._S6_u32, pRsp->IpV6.Address, 16);
+         sl_Memcpy(((SlSockAddrIn6_t *)addr)->sin6_addr._S6_un._S6_u32, pRsp->IpV6.Address, 16);
     }
 #endif
 }
-
-#endif
 
 /*******************************************************************************/
 /* sl_Socket */
@@ -125,11 +116,9 @@ void _SlSocketParseAddress(SlSocketAddrResponse_u    *pRsp, SlSockAddr_t *addr, 
 typedef union
 {
     _u32                Dummy;
-	SlSocketCommand_t 	Cmd;
-	SlSocketResponse_t	Rsp;
+    SlSocketCommand_t   Cmd;
+    SlSocketResponse_t  Rsp;
 }_SlSockSocketMsg_u;
-
-
 
 #if _SL_INCLUDE_FUNC(sl_Socket)
 
@@ -144,9 +133,9 @@ _i16 sl_Socket(_i16 Domain, _i16 Type, _i16 Protocol)
 {
     _SlSockSocketMsg_u  Msg;
 
-    Msg.Cmd.Domain	    = (_u8)Domain;
-    Msg.Cmd.Type     	= (_u8)Type;
-    Msg.Cmd.Protocol 	= (_u8)Protocol;
+    Msg.Cmd.Domain       = (_u8)Domain;
+    Msg.Cmd.Type         = (_u8)Type;
+    Msg.Cmd.Protocol     = (_u8)Protocol;
 
     /* verify that this api is allowed. if not allowed then
     ignore the API execution and return immediately with an error */
@@ -155,13 +144,13 @@ _i16 sl_Socket(_i16 Domain, _i16 Type, _i16 Protocol)
     VERIFY_RET_OK(_SlDrvCmdOp((_SlCmdCtrl_t *)&_SlSockSocketCmdCtrl, &Msg, NULL));
 
     if( Msg.Rsp.StatusOrLen < 0 )
-	{
-    	return ( Msg.Rsp.StatusOrLen);
-	}
-	else
-	{
-	    return (_i16)((_u8)Msg.Rsp.Sd);
-	}
+    {
+        return ( Msg.Rsp.StatusOrLen);
+    }
+    else
+    {
+        return (_i16)((_u8)Msg.Rsp.Sd);
+    }
 }
 #endif
 
@@ -170,27 +159,26 @@ _i16 sl_Socket(_i16 Domain, _i16 Type, _i16 Protocol)
 /*******************************************************************************/
 typedef union
 {
-	SlCloseCommand_t    Cmd;
-	SlSocketResponse_t	Rsp;
+    SlCloseCommand_t    Cmd;
+    SlSocketResponse_t  Rsp;
 }_SlSockCloseMsg_u;
-
 
 #if _SL_INCLUDE_FUNC(sl_Close)
 
 static const _SlCmdCtrl_t _SlSockCloseCmdCtrl =
 {
-	SL_OPCODE_SOCKET_CLOSE,
+    SL_OPCODE_SOCKET_CLOSE,
     (_SlArgSize_t)sizeof(SlCloseCommand_t),
     (_SlArgSize_t)sizeof(SlSocketResponse_t)
 };
 
 _i16 sl_Close(_i16 sd)
 {
-	_SlSockCloseMsg_u    Msg;
-	_u8 ObjIdx =		 MAX_CONCURRENT_ACTIONS;
-	SlSocketResponse_t   AsyncRsp;
-	_SlReturnVal_t       RetVal;
-	_u8 bSocketInAction = FALSE;
+    _SlSockCloseMsg_u    Msg;
+    _i16                 ObjIdx = MAX_CONCURRENT_ACTIONS;
+    SlSocketResponse_t   AsyncRsp;
+    _SlReturnVal_t       RetVal;
+    _u8                  bSocketInAction = FALSE;
 
     /* verify that this api is allowed. if not allowed then
     ignore the API execution and return immediately with an error */
@@ -199,38 +187,36 @@ _i16 sl_Close(_i16 sd)
     Msg.Cmd.Sd = (_u8)sd;
     _SlDrvMemZero(&AsyncRsp, sizeof(SlSocketResponse_t));
 
-	/* check if the socket has already action in progress */
-	bSocketInAction = !!(g_pCB->ActiveActionsBitmap & (1<<sd));
+    /* check if the socket has already action in progress */
+    bSocketInAction = !!(g_pCB->ActiveActionsBitmap & (1<<sd));
 
-	if (bSocketInAction == FALSE)
-	{
-		ObjIdx = _SlDrvProtectAsyncRespSetting((_u8*)&AsyncRsp, CLOSE_ID, (_u8)(sd  & SL_BSD_SOCKET_ID_MASK));
+    if (bSocketInAction == FALSE)
+    {
+        ObjIdx = _SlDrvProtectAsyncRespSetting((_u8*)&AsyncRsp, CLOSE_ID, (_u8)(sd  & SL_BSD_SOCKET_ID_MASK));
 
-		if (MAX_CONCURRENT_ACTIONS == ObjIdx)
-		{
-		    return SL_POOL_IS_EMPTY;
-		}
-	}
+        if (MAX_CONCURRENT_ACTIONS == ObjIdx)
+        {
+            return SL_POOL_IS_EMPTY;
+        }
+    }
 
-	VERIFY_RET_OK(_SlDrvCmdOp((_SlCmdCtrl_t *)&_SlSockCloseCmdCtrl, &Msg, NULL));
-	
-	RetVal = Msg.Rsp.StatusOrLen;
+    VERIFY_RET_OK(_SlDrvCmdOp((_SlCmdCtrl_t *)&_SlSockCloseCmdCtrl, &Msg, NULL));
+    
+    RetVal = Msg.Rsp.StatusOrLen;
 
-	if (bSocketInAction == FALSE)
-	{
-		 if( SL_RET_CODE_OK == RetVal)
-		{	
-			 SL_DRV_SYNC_OBJ_WAIT_TIMEOUT(&g_pCB->ObjPool[ObjIdx].SyncObj,
-							SL_DRIVER_TIMEOUT_LONG,
-							SL_OPCODE_SOCKET_SOCKETCLOSEASYNCEVENT
-							);
-			RetVal = AsyncRsp.StatusOrLen;
-		}
+    if (bSocketInAction == FALSE)
+    {
+        if( SL_RET_CODE_OK == RetVal)
+        {    
+            VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, SL_DRIVER_TIMEOUT_LONG, SL_OPCODE_SOCKET_SOCKETCLOSEASYNCEVENT));
 
-		_SlDrvReleasePoolObj(ObjIdx);
-	}
+            RetVal = AsyncRsp.StatusOrLen;
+        }
 
-	return RetVal;
+        _SlDrvReleasePoolObj(ObjIdx);
+    }
+
+    return RetVal;
 }
 #endif
 
@@ -239,14 +225,14 @@ _i16 sl_Close(_i16 sd)
 /*******************************************************************************/
 typedef union
 {
-	SlSocketAddrCommand_u    Cmd;
-	SlSocketResponse_t	     Rsp;
+    SlSocketAddrCommand_u    Cmd;
+    SlSocketResponse_t       Rsp;
 }_SlSockBindMsg_u;
 
 #if _SL_INCLUDE_FUNC(sl_Bind)
 _i16 sl_Bind(_i16 sd, const SlSockAddr_t *addr, _i16 addrlen)
 {
-	_SlSockBindMsg_u    Msg;
+    _SlSockBindMsg_u    Msg;
     _SlCmdCtrl_t        CmdCtrl = {0, 0, (_SlArgSize_t)sizeof(SlSocketResponse_t)};
 
     /* verify that this api is allowed. if not allowed then
@@ -255,22 +241,19 @@ _i16 sl_Bind(_i16 sd, const SlSockAddr_t *addr, _i16 addrlen)
 
     switch(addr->sa_family)
     {
-        case SL_AF_INET :
+        case SL_AF_INET:
             CmdCtrl.Opcode = SL_OPCODE_SOCKET_BIND;
             CmdCtrl.TxDescLen = (_SlArgSize_t)sizeof(SlSocketAddrIPv4Command_t);
             break;
-#ifndef SL_TINY
 #ifdef SL_SUPPORT_IPV6
         case SL_AF_INET6:
             CmdCtrl.Opcode = SL_OPCODE_SOCKET_BIND_V6;
             CmdCtrl.TxDescLen = (_SlArgSize_t)sizeof(SlSocketAddrIPv6Command_t);
             break;
 #endif
-#endif
-
-        case SL_AF_RF   :
+        case SL_AF_RF:
         default:
-        	return SL_RET_CODE_INVALID_INPUT;
+            return SL_RET_CODE_INVALID_INPUT;
     }
 
     Msg.Cmd.IpV4.LenOrPadding = 0;
@@ -305,15 +288,15 @@ _i16 sl_SendTo(_i16 sd, const void *pBuf, _i16 Len, _i16 flags, const SlSockAddr
     VERIFY_API_ALLOWED(SL_OPCODE_SILO_SOCKET);
    /* RAW transceiver use only sl_Send  */
     if ((sd & SL_SOCKET_PAYLOAD_TYPE_MASK) == SL_SOCKET_PAYLOAD_TYPE_RAW_TRANCEIVER)
-	{
-    	return SL_ERROR_BSD_SOC_ERROR;
-	}
+    {
+        return SL_ERROR_BSD_SOC_ERROR;
+    }
     else
     {
         if (Len < 1)
         {
-    	  /* ignore */
-    	  return 0;
+            /* ignore */
+            return 0;
         }
     }
 
@@ -327,17 +310,15 @@ _i16 sl_SendTo(_i16 sd, const void *pBuf, _i16 Len, _i16 flags, const SlSockAddr
             CmdCtrl.Opcode = SL_OPCODE_SOCKET_SENDTO;
             CmdCtrl.TxDescLen = (_SlArgSize_t)sizeof(SlSocketAddrIPv4Command_t);
             break;
-#ifndef SL_TINY               
 #ifdef SL_SUPPORT_IPV6
         case SL_AF_INET6:
             CmdCtrl.Opcode = SL_OPCODE_SOCKET_SENDTO_V6;
             CmdCtrl.TxDescLen = (_SlArgSize_t)sizeof(SlSocketAddrIPv6Command_t);
             break;
 #endif
-#endif
         case SL_AF_RF:
         default:
-        	return SL_RET_CODE_INVALID_INPUT;
+            return SL_RET_CODE_INVALID_INPUT;
     }
 
     Msg.Cmd.IpV4.LenOrPadding = Len;
@@ -348,7 +329,7 @@ _i16 sl_SendTo(_i16 sd, const void *pBuf, _i16 Len, _i16 flags, const SlSockAddr
     RetVal = _SlDrvDataWriteOp((_SlSd_t)sd, &CmdCtrl, &Msg, &CmdExt);
     if(SL_OS_RET_CODE_OK != RetVal)
     {
-    	return RetVal;
+        return RetVal;
     }
 
     return (_i16)Len;
@@ -360,13 +341,13 @@ _i16 sl_SendTo(_i16 sd, const void *pBuf, _i16 Len, _i16 flags, const SlSockAddr
 /*******************************************************************************/
 typedef union
 {
-    SlSendRecvCommand_t	    Cmd;
-    SlSocketAddrResponse_u	Rsp;
+    SlSendRecvCommand_t       Cmd;
+    SlSocketAddrResponse_u    Rsp;
 }_SlRecvfromMsg_u;
 
 static const _SlCmdCtrl_t _SlRecvfomCmdCtrl =
 {
-	SL_OPCODE_SOCKET_RECVFROM,
+    SL_OPCODE_SOCKET_RECVFROM,
     (_SlArgSize_t)sizeof(SlSendRecvCommand_t),
     (_SlArgSize_t)sizeof(SlSocketAddrResponse_u)
 };
@@ -376,17 +357,17 @@ _i16 sl_RecvFrom(_i16 sd, void *buf, _i16 Len, _i16 flags, SlSockAddr_t *from, S
 {
     _SlRecvfromMsg_u    Msg;
     _SlCmdExt_t         CmdExt;
-    _i16                 RetVal;
+    _i16                RetVal;
 
     /* verify that this api is allowed. if not allowed then
     ignore the API execution and return immediately with an error */
     VERIFY_API_ALLOWED(SL_OPCODE_SILO_SOCKET);
 
-	/* RAW transceiver use only sl_Recv  */
+    /* RAW transceiver use only sl_Recv  */
     if ((sd & SL_SOCKET_PAYLOAD_TYPE_MASK) == SL_SOCKET_PAYLOAD_TYPE_RAW_TRANCEIVER)
-	{
-    	return SL_ERROR_BSD_SOC_ERROR;
-	}
+    {
+        return SL_ERROR_BSD_SOC_ERROR;
+    }
 
     _SlDrvResetCmdExt(&CmdExt);
     CmdExt.RxPayloadLen = Len;
@@ -410,13 +391,13 @@ _i16 sl_RecvFrom(_i16 sd, void *buf, _i16 Len, _i16 flags, SlSockAddr_t *from, S
     }
     else
     {
-    	return SL_RET_CODE_INVALID_INPUT;
+        return SL_RET_CODE_INVALID_INPUT;
     }
 
     RetVal = _SlDrvDataReadOp((_SlSd_t)sd, (_SlCmdCtrl_t *)&_SlRecvfomCmdCtrl, &Msg, &CmdExt);
     if( RetVal != SL_OS_RET_CODE_OK )
     {
-  	   return RetVal;
+        return RetVal;
     }
 
     RetVal = Msg.Rsp.IpV4.StatusOrLen;
@@ -456,8 +437,8 @@ _i16 sl_RecvFrom(_i16 sd, void *buf, _i16 Len, _i16 flags, SlSockAddr_t *from, S
 /*******************************************************************************/
 typedef union
 {
-	SlSocketAddrCommand_u    Cmd;
-	SlSocketResponse_t	    Rsp;
+    SlSocketAddrCommand_u    Cmd;
+    SlSocketResponse_t       Rsp;
 }_SlSockConnectMsg_u;
 
 #if _SL_INCLUDE_FUNC(sl_Connect)
@@ -467,7 +448,7 @@ _i16 sl_Connect(_i16 sd, const SlSockAddr_t *addr, _i16 addrlen)
       _SlReturnVal_t       RetVal;
       _SlCmdCtrl_t         CmdCtrl = {0, (_SlArgSize_t)0, (_SlArgSize_t)sizeof(SlSocketResponse_t)};
       SlSocketResponse_t   AsyncRsp;
-      _u8 ObjIdx = MAX_CONCURRENT_ACTIONS;
+      _i16 ObjIdx = MAX_CONCURRENT_ACTIONS;
 
     /* verify that this api is allowed. if not allowed then
     ignore the API execution and return immediately with an error */
@@ -489,7 +470,7 @@ _i16 sl_Connect(_i16 sd, const SlSockAddr_t *addr, _i16 addrlen)
 #endif
         case SL_AF_RF:
         default:
-        	return SL_RET_CODE_INVALID_INPUT;
+            return SL_RET_CODE_INVALID_INPUT;
     }
 
     Msg.Cmd.IpV4.LenOrPadding = 0;
@@ -501,36 +482,35 @@ _i16 sl_Connect(_i16 sd, const SlSockAddr_t *addr, _i16 addrlen)
 
     if (MAX_CONCURRENT_ACTIONS == ObjIdx)
     {
-    	return SL_POOL_IS_EMPTY;
+        return SL_POOL_IS_EMPTY;
     }
 
     /* send the command */
     VERIFY_RET_OK(_SlDrvCmdOp((_SlCmdCtrl_t *)&CmdCtrl, &Msg, NULL));
     VERIFY_PROTOCOL(Msg.Rsp.Sd == (_u8)sd);
 
-	RetVal = Msg.Rsp.StatusOrLen;
+    RetVal = Msg.Rsp.StatusOrLen;
 
     if(SL_RET_CODE_OK == RetVal)
     {
-#ifndef SL_TINY    
-    	/*In case socket is non-blocking one, the async event should be received immediately */
-    	if( g_pCB->SocketNonBlocking & (1<<(sd & SL_BSD_SOCKET_ID_MASK) ))
-		{
-    		SL_DRV_SYNC_OBJ_WAIT_TIMEOUT(&g_pCB->ObjPool[ObjIdx].SyncObj,
-                                          SL_DRIVER_TIMEOUT_SHORT,
-                                          SL_OPCODE_SOCKET_CONNECTASYNCRESPONSE
-                                          );
-		}
-    	else
-#endif         
-    	{
+        /*In case socket is non-blocking one, the async event should be received immediately */
+        if( g_pCB->SocketNonBlocking & (1<<(sd & SL_BSD_SOCKET_ID_MASK) ))
+        {
+            VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, SL_DRIVER_TIMEOUT_SHORT, SL_OPCODE_SOCKET_CONNECTASYNCRESPONSE));
+        }
+        else
+        {
 
-    		/* wait for async and get Data Read parameters */
-    		SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[ObjIdx].SyncObj);
-    	}
-
-        VERIFY_PROTOCOL(AsyncRsp.Sd == (_u8)sd);
+            /* wait for async and get Data Read parameters */	
+            VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, 0, 0));
+        }
+        
         RetVal = AsyncRsp.StatusOrLen;
+        
+        if (0 <= RetVal)
+        {
+            VERIFY_PROTOCOL(AsyncRsp.Sd == (_u8)sd);
+        }        
     }
 
     _SlDrvReleasePoolObj(ObjIdx);
@@ -552,15 +532,13 @@ _SlReturnVal_t _SlSocketHandleAsync_Connect(void *pVoidBuf)
     VERIFY_PROTOCOL((pMsgArgs->Sd & SL_BSD_SOCKET_ID_MASK) <= SL_MAX_SOCKETS);
     VERIFY_SOCKET_CB(NULL != g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs);
     
-
     ((SlSocketResponse_t *)(g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs))->Sd = pMsgArgs->Sd;
     ((SlSocketResponse_t *)(g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs))->StatusOrLen = pMsgArgs->StatusOrLen;
-
 
     SL_DRV_SYNC_OBJ_SIGNAL(&g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].SyncObj);
     SL_DRV_PROTECTION_OBJ_UNLOCK();
     
-	return SL_OS_RET_CODE_OK;
+    return SL_OS_RET_CODE_OK;
 }
 
 /*******************************************************************************/
@@ -568,22 +546,20 @@ _SlReturnVal_t _SlSocketHandleAsync_Connect(void *pVoidBuf)
 /*******************************************************************************/
 _SlReturnVal_t _SlSocketHandleAsync_Close(void *pVoidBuf)
 {
-    SlSocketResponse_t          *pMsgArgs   = (SlSocketResponse_t *)_SL_RESP_ARGS_START(pVoidBuf);
+    SlSocketResponse_t *pMsgArgs = (SlSocketResponse_t *)_SL_RESP_ARGS_START(pVoidBuf);
 
     SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
 
     VERIFY_PROTOCOL((pMsgArgs->Sd & SL_BSD_SOCKET_ID_MASK) <= SL_MAX_SOCKETS);
     VERIFY_SOCKET_CB(NULL != g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs);
     
-
     ((SlSocketResponse_t *)(g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs))->Sd = pMsgArgs->Sd;
     ((SlSocketResponse_t *)(g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs))->StatusOrLen = pMsgArgs->StatusOrLen;
-
 
     SL_DRV_SYNC_OBJ_SIGNAL(&g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].SyncObj);
     SL_DRV_PROTECTION_OBJ_UNLOCK();
     
-	return SL_OS_RET_CODE_OK;
+    return SL_OS_RET_CODE_OK;
 }
 
 /*******************************************************************************/
@@ -591,7 +567,7 @@ _SlReturnVal_t _SlSocketHandleAsync_Close(void *pVoidBuf)
 /*******************************************************************************/
 typedef union
 {
-	SlSendRecvCommand_t    Cmd;
+    SlSendRecvCommand_t    Cmd;
     /*  no response for 'sendto' commands*/
 }_SlSendMsg_u;
 
@@ -605,10 +581,10 @@ static const _SlCmdCtrl_t _SlSendCmdCtrl =
 #if _SL_INCLUDE_FUNC(sl_Send)
 _i16 sl_Send(_i16 sd, const void *pBuf, _i16 Len, _i16 flags)
 {
-    _SlSendMsg_u   Msg;
-    _SlCmdExt_t    CmdExt;
-    _i16            RetVal;
-	_u32         tempVal;
+    _SlSendMsg_u  Msg;
+    _SlCmdExt_t   CmdExt;
+    _i16          RetVal;
+    _u32          tempVal;
 
     /* verify that this api is allowed. if not allowed then
     ignore the API execution and return immediately with an error */
@@ -621,17 +597,17 @@ _i16 sl_Send(_i16 sd, const void *pBuf, _i16 Len, _i16 flags)
     /* Only for RAW transceiver type socket, relay the flags parameter in the 2 bytes (4 byte aligned) before the actual payload */
     if ((sd & SL_SOCKET_PAYLOAD_TYPE_MASK) == SL_SOCKET_PAYLOAD_TYPE_RAW_TRANCEIVER)
     {
-		tempVal = (_u32)flags;
+        tempVal = (_u32)flags;
         CmdExt.pRxPayload = (_u8 *)&tempVal;
-		CmdExt.RxPayloadLen = -4; /* the (-) sign is used to mark the rx buff as output buff as well*/
+        CmdExt.RxPayloadLen = -4; /* the (-) sign is used to mark the rx buff as output buff as well*/
     }
     else
     {
         CmdExt.pRxPayload = NULL;
         if (Len < 1)
         {
-    	  /* ignore */
-    	  return 0;
+            /* ignore */
+            return 0;
         }
     }
 
@@ -642,7 +618,7 @@ _i16 sl_Send(_i16 sd, const void *pBuf, _i16 Len, _i16 flags)
     RetVal = _SlDrvDataWriteOp((_u8)sd, (_SlCmdCtrl_t *)&_SlSendCmdCtrl, &Msg, &CmdExt);
     if(SL_OS_RET_CODE_OK != RetVal)
     {
-    	return RetVal;
+        return RetVal;
     }
     
     return (_i16)Len;
@@ -654,11 +630,9 @@ _i16 sl_Send(_i16 sd, const void *pBuf, _i16 Len, _i16 flags)
 /*******************************************************************************/
 typedef union
 {
-	SlListenCommand_t    Cmd;
+    SlListenCommand_t    Cmd;
     _BasicResponse_t     Rsp;
 }_SlListenMsg_u;
-
-
 
 #if _SL_INCLUDE_FUNC(sl_Listen)
 
@@ -690,11 +664,9 @@ _i16 sl_Listen(_i16 sd, _i16 backlog)
 /*******************************************************************************/
 typedef union
 {
-	SlAcceptCommand_t    Cmd;
-	SlSocketResponse_t  Rsp;
+    SlAcceptCommand_t   Cmd;
+    SlSocketResponse_t  Rsp;
 }_SlSockAcceptMsg_u;
-
-
 
 #if _SL_INCLUDE_FUNC(sl_Accept)
 
@@ -707,11 +679,11 @@ static const _SlCmdCtrl_t _SlAcceptCmdCtrl =
 
 _i16 sl_Accept(_i16 sd, SlSockAddr_t *addr, SlSocklen_t *addrlen)
 {
-	_SlSockAcceptMsg_u       Msg;
+    _SlSockAcceptMsg_u       Msg;
     _SlReturnVal_t           RetVal;
     SlSocketAddrResponse_u   AsyncRsp;
 
-	_u8 ObjIdx = MAX_CONCURRENT_ACTIONS;
+    _i16 ObjIdx = MAX_CONCURRENT_ACTIONS;
 
     /* verify that this api is allowed. if not allowed then
     ignore the API execution and return immediately with an error */
@@ -734,10 +706,10 @@ _i16 sl_Accept(_i16 sd, SlSockAddr_t *addr, SlSocklen_t *addrlen)
 
     if (MAX_CONCURRENT_ACTIONS == ObjIdx)
     {
-    	return SL_POOL_IS_EMPTY;
+        return SL_POOL_IS_EMPTY;
     }
     
-	/* send the command */
+    /* send the command */
     VERIFY_RET_OK(_SlDrvCmdOp((_SlCmdCtrl_t *)&_SlAcceptCmdCtrl, &Msg, NULL));
     VERIFY_PROTOCOL(Msg.Rsp.Sd == (_u8)sd);
 
@@ -745,59 +717,59 @@ _i16 sl_Accept(_i16 sd, SlSockAddr_t *addr, SlSocklen_t *addrlen)
 
     if(SL_OS_RET_CODE_OK == RetVal)
     {
-#ifndef SL_TINY    
-    	/* in case socket is non-blocking one, the async event should be received immediately */
-    	if( g_pCB->SocketNonBlocking & (1<<(sd & SL_BSD_SOCKET_ID_MASK) ))
-    	{
-    		SL_DRV_SYNC_OBJ_WAIT_TIMEOUT(&g_pCB->ObjPool[ObjIdx].SyncObj,
-                                         SL_DRIVER_TIMEOUT_SHORT,
-                                         SL_OPCODE_SOCKET_ACCEPTASYNCRESPONSE
-                                         );
-    	}
-    	else
-#endif         
-    	{
-    		/* wait for async and get Data Read parameters */
-    		SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[ObjIdx].SyncObj);
-    	}
-
-        VERIFY_PROTOCOL(AsyncRsp.IpV4.Sd == (_u8)sd);
+        /* in case socket is non-blocking one, the async event should be received immediately */
+        if( g_pCB->SocketNonBlocking & (1<<(sd & SL_BSD_SOCKET_ID_MASK) ))
+        {
+            VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx, SL_DRIVER_TIMEOUT_SHORT, SL_OPCODE_SOCKET_ACCEPTASYNCRESPONSE));
+        }
+        else
+        {  
+            /* wait for async and get Data Read parameters */
+	    VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx,0,0));
+        }
 
         RetVal = AsyncRsp.IpV4.StatusOrLen;
-#if 0 /*  Kept for backup */
-            _SlSocketParseAddress(&AsyncRsp, addr, addrlen);
-#else
-         if((addr != NULL) && (addrlen != NULL))
-         {
-    	   addr->sa_family = AsyncRsp.IpV4.Family;
 
-    	    if(SL_AF_INET == addr->sa_family)
-    	    {
-              if( *addrlen == (SlSocklen_t)sizeof( SlSockAddrIn_t ) )
-              {
-                ((SlSockAddrIn_t *)addr)->sin_port         = AsyncRsp.IpV4.Port;
-                ((SlSockAddrIn_t *)addr)->sin_addr.s_addr  = AsyncRsp.IpV4.Address;
-              }
-              else
-              {
-                *addrlen = 0;
-              }
-    	    }
+        if (0 <= RetVal)
+        {
+            VERIFY_PROTOCOL(AsyncRsp.IpV4.Sd == (_u8)sd);
+        }
+
+       
+#if 0 /*  Kept for backup */
+        _SlSocketParseAddress(&AsyncRsp, addr, addrlen);
+#else
+        if((addr != NULL) && (addrlen != NULL))
+        {
+            addr->sa_family = AsyncRsp.IpV4.Family;
+
+            if(SL_AF_INET == addr->sa_family)
+            {
+                if( *addrlen == (SlSocklen_t)sizeof( SlSockAddrIn_t ) )
+                {
+                    ((SlSockAddrIn_t *)addr)->sin_port         = AsyncRsp.IpV4.Port;
+                    ((SlSockAddrIn_t *)addr)->sin_addr.s_addr  = AsyncRsp.IpV4.Address;
+                }
+                else
+                {
+                    *addrlen = 0;
+                }
+            }
 #ifdef SL_SUPPORT_IPV6
-    	    else if(SL_AF_INET6 == addr->sa_family)
-    	    {
-              if( *addrlen == sizeof( SlSockAddrIn6_t ) )
-              {
-    	        ((SlSockAddrIn6_t *)addr)->sin6_port                   = AsyncRsp.IpV6.Port    ;
-    	        sl_Memcpy(((SlSockAddrIn6_t *)addr)->sin6_addr._S6_un._S6_u32, AsyncRsp.IpV6.Address, 16);
-              }
-              else
-              {
-                *addrlen = 0;
-              }
-    	    }
+            else if(SL_AF_INET6 == addr->sa_family)
+            {
+                if( *addrlen == sizeof( SlSockAddrIn6_t ) )
+                {
+                    ((SlSockAddrIn6_t *)addr)->sin6_port                   = AsyncRsp.IpV6.Port    ;
+                    sl_Memcpy(((SlSockAddrIn6_t *)addr)->sin6_addr._S6_un._S6_u32, AsyncRsp.IpV6.Address, 16);
+                }
+                else
+                {
+                    *addrlen = 0;
+                }
+            }
 #endif
-         }
+        }
 #endif
     }
 
@@ -812,20 +784,20 @@ _i16 sl_Accept(_i16 sd, SlSockAddr_t *addr, SlSocklen_t *addrlen)
 /*******************************************************************************/
 _u32 sl_Htonl( _u32 val )
 {
-  _u32 i = 1; 
-  _i8 *p = (_i8 *)&i;  
-  if (p[0] == 1) /* little endian */
-  {
-    p[0] = ((_i8* )&val)[3];
-    p[1] = ((_i8* )&val)[2];
-    p[2] = ((_i8* )&val)[1];
-    p[3] = ((_i8* )&val)[0];
-    return i;
-  }
-  else /* big endian */
-  {
-    return val; 
-  }
+    _u32 i = 1; 
+    _i8 *p = (_i8 *)&i;  
+    if (p[0] == 1) /* little endian */
+    {
+        p[0] = ((_i8* )&val)[3];
+        p[1] = ((_i8* )&val)[2];
+        p[2] = ((_i8* )&val)[1];
+        p[3] = ((_i8* )&val)[0];
+        return i;
+    }
+    else /* big endian */
+    {
+        return val; 
+    }
 }
 
 /*******************************************************************************/
@@ -833,51 +805,48 @@ _u32 sl_Htonl( _u32 val )
 /*******************************************************************************/
 _u16 sl_Htons( _u16 val )
 {
-  _i16 i = 1; 
-  _i8 *p = (_i8 *)&i;  
-  if (p[0] == 1) /* little endian */
-  {
-    p[0] = ((_i8* )&val)[1];
-    p[1] = ((_i8* )&val)[0];
-    return (_u16)i;
-  }
-  else /* big endian */
-  {
-    return val; 
-  }
+    _i16 i = 1; 
+    _i8 *p = (_i8 *)&i;  
+    if (p[0] == 1) /* little endian */
+    {
+        p[0] = ((_i8* )&val)[1];
+        p[1] = ((_i8* )&val)[0];
+        return (_u16)i;
+    }
+    else /* big endian */
+    {
+        return val; 
+    }
 }
 
 /*******************************************************************************/
 /*   _SlSocketHandleAsync_Accept */
 /*******************************************************************************/
-#ifndef SL_TINY
 _SlReturnVal_t _SlSocketHandleAsync_Accept(void *pVoidBuf)
 {
-    SlSocketAddrResponse_u      *pMsgArgs   = (SlSocketAddrResponse_u *)_SL_RESP_ARGS_START(pVoidBuf);
+    SlSocketAddrResponse_u *pMsgArgs = (SlSocketAddrResponse_u *)_SL_RESP_ARGS_START(pVoidBuf);
 
     SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
 
     VERIFY_PROTOCOL(( pMsgArgs->IpV4.Sd & SL_BSD_SOCKET_ID_MASK) <= SL_MAX_SOCKETS);
     VERIFY_SOCKET_CB(NULL != g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs);
 
-	sl_Memcpy(g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs, pMsgArgs,sizeof(SlSocketAddrResponse_u));
-	SL_DRV_SYNC_OBJ_SIGNAL(&g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].SyncObj);
+    sl_Memcpy(g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs, pMsgArgs,sizeof(SlSocketAddrResponse_u));
+    SL_DRV_SYNC_OBJ_SIGNAL(&g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].SyncObj);
 
     SL_DRV_PROTECTION_OBJ_UNLOCK();
 
     return SL_OS_RET_CODE_OK;
 }
-#endif
 
 /*******************************************************************************/
 /*  sl_Recv */
 /*******************************************************************************/
 typedef union
 {
-	SlSendRecvCommand_t  Cmd;
-	SlSocketResponse_t   Rsp;    
+    SlSendRecvCommand_t  Cmd;
+    SlSocketResponse_t   Rsp;    
 }_SlRecvMsg_u;
-
 
 #if _SL_INCLUDE_FUNC(sl_Recv)
 
@@ -888,11 +857,10 @@ static const _SlCmdCtrl_t _SlRecvCmdCtrl =
     (_SlArgSize_t)sizeof(SlSocketResponse_t)
 };
 
-
 _i16 sl_Recv(_i16 sd, void *pBuf, _i16 Len, _i16 flags)
 {
-    _SlRecvMsg_u    Msg;
-    _SlCmdExt_t     CmdExt;
+    _SlRecvMsg_u   Msg;
+    _SlCmdExt_t    CmdExt;
     _SlReturnVal_t status;
 
     /* verify that this api is allowed. if not allowed then
@@ -914,7 +882,7 @@ _i16 sl_Recv(_i16 sd, void *pBuf, _i16 Len, _i16 flags)
     status = _SlDrvDataReadOp((_SlSd_t)sd, (_SlCmdCtrl_t *)&_SlRecvCmdCtrl, &Msg, &CmdExt);
     if( status != SL_OS_RET_CODE_OK )
     {
-    	return status;
+        return status;
     }
      
     /*  if the Device side sends less than expected it is not the Driver's role */
@@ -928,8 +896,8 @@ _i16 sl_Recv(_i16 sd, void *pBuf, _i16 Len, _i16 flags)
 /*******************************************************************************/
 typedef union
 {
-	SlSetSockOptCommand_t    Cmd;
-	SlSocketResponse_t       Rsp;    
+    SlSetSockOptCommand_t    Cmd;
+    SlSocketResponse_t       Rsp;    
 }_SlSetSockOptMsg_u;
 
 static const _SlCmdCtrl_t _SlSetSockOptCmdCtrl =
@@ -969,8 +937,8 @@ _i16 sl_SetSockOpt(_i16 sd, _i16 level, _i16 optname, const void *optval, SlSock
 /*******************************************************************************/
 typedef union
 {
-	SlGetSockOptCommand_t     Cmd;
-	SlGetSockOptResponse_t    Rsp;    
+    SlGetSockOptCommand_t     Cmd;
+    SlGetSockOptResponse_t    Rsp;    
 }_SlGetSockOptMsg_u;
 
 
@@ -991,10 +959,10 @@ _i16 sl_GetSockOpt(_i16 sd, _i16 level, _i16 optname, void *optval, SlSocklen_t 
     /* verify that this api is allowed. if not allowed then
     ignore the API execution and return immediately with an error */
     VERIFY_API_ALLOWED(SL_OPCODE_SILO_SOCKET);
-	if (*optlen == 0)
-	{
-		return SL_EZEROLEN;
-	}
+    if (*optlen == 0)
+    {
+        return SL_EZEROLEN;
+    }
 
     _SlDrvResetCmdExt(&CmdExt);
     CmdExt.RxPayloadLen = (_i16)(*optlen);
@@ -1007,23 +975,22 @@ _i16 sl_GetSockOpt(_i16 sd, _i16 level, _i16 optname, void *optval, SlSocklen_t 
 
     VERIFY_RET_OK(_SlDrvCmdOp((_SlCmdCtrl_t *)&_SlGetSockOptCmdCtrl, &Msg, &CmdExt));
 
-	if (CmdExt.RxPayloadLen < CmdExt.ActualRxPayloadLen) 
-	{
-	    *optlen = Msg.Rsp.OptionLen;
-	    return SL_ESMALLBUF;
-	}
-	else
-	{
-		*optlen = (_u8)CmdExt.ActualRxPayloadLen;
-	}
-	return (_i16)Msg.Rsp.Status;
+    if (CmdExt.RxPayloadLen < CmdExt.ActualRxPayloadLen) 
+    {
+        *optlen = Msg.Rsp.OptionLen;
+        return SL_ESMALLBUF;
+    }
+    else
+    {
+        *optlen = (_u8)CmdExt.ActualRxPayloadLen;
+    }
+    return (_i16)Msg.Rsp.Status;
 }
 #endif
 
 /********************************************************************************/
 /*  sl_Select */
 /* ******************************************************************************/
-#ifndef SL_TINY
 #if _SL_INCLUDE_FUNC(sl_Select)
 
 typedef union
@@ -1044,7 +1011,7 @@ static const _SlCmdCtrl_t _SlSelectCmdCtrl =
 /* ******************************************************************************/
 void SL_SOCKET_FD_SET(_i16 fd, SlFdSet_t *fdset)
 {
-   fdset->fd_array[0] |=  (1<< (fd & SL_BSD_SOCKET_ID_MASK));
+    fdset->fd_array[0] |=  (1<< (fd & SL_BSD_SOCKET_ID_MASK));
 }
 
 /*******************************************************************************/
@@ -1052,7 +1019,7 @@ void SL_SOCKET_FD_SET(_i16 fd, SlFdSet_t *fdset)
 /*******************************************************************************/
 void SL_SOCKET_FD_CLR(_i16 fd, SlFdSet_t *fdset)
 {
-  fdset->fd_array[0] &=  ~(1<< (fd & SL_BSD_SOCKET_ID_MASK));
+    fdset->fd_array[0] &=  ~(1<< (fd & SL_BSD_SOCKET_ID_MASK));
 }
 
 /*******************************************************************************/
@@ -1060,11 +1027,11 @@ void SL_SOCKET_FD_CLR(_i16 fd, SlFdSet_t *fdset)
 /*******************************************************************************/
 _i16 SL_SOCKET_FD_ISSET(_i16 fd, SlFdSet_t *fdset)
 {
-  if( fdset->fd_array[0] & (1<< (fd & SL_BSD_SOCKET_ID_MASK)) )
-  {
-    return 1;
-  }
-  return 0;
+    if( fdset->fd_array[0] & (1<< (fd & SL_BSD_SOCKET_ID_MASK)) )
+    {
+        return 1;
+    }
+    return 0;
 }
 
 /*******************************************************************************/
@@ -1072,7 +1039,7 @@ _i16 SL_SOCKET_FD_ISSET(_i16 fd, SlFdSet_t *fdset)
 /*******************************************************************************/  
 void SL_SOCKET_FD_ZERO(SlFdSet_t *fdset)
 {
-  fdset->fd_array[0] = 0;
+    fdset->fd_array[0] = 0;
 }
 
 #if (defined(SL_PLATFORM_MULTI_THREADED) && !defined(slcb_SocketTriggerEventHandler))
@@ -1096,18 +1063,16 @@ static const SlSockAddrIn_t _SlCtrlSockAddr =
 {
     SL_AF_INET,
     LOCAL_CTRL_PORT,
-    SL_INADDR_ANY,
-    (_u32)0x0,
-    (_u32)0x0
+    {SL_INADDR_ANY},
+    {0,0,0,0,0,0,0,0}
 };
 
-static const SlSockAddrIn_t _SlCtrlSockRelese =
+static const SlSockAddrIn_t _SlCtrlSockRelease =
 {
     SL_AF_INET,
     LOCAL_CTRL_PORT,
-    SL_LOOPBACK_ADDR,
-    (_u32)0x0,
-    (_u32)0x0
+    {SL_LOOPBACK_ADDR},
+    {0,0,0,0,0,0,0,0}
 };
 
 /*******************************************************************************/
@@ -1137,6 +1102,7 @@ _SlReturnVal_t _SlSocketHandleAsync_Select(void *pVoidBuf)
     _u32                         time_now;
     _u8                          TimeoutEvent = 0;
     _u16                         SelectEvent = 0;
+    _u8                          PendingSelect = FALSE;
 
     _SlDrvMemZero(&Msg, sizeof(_SlSelectMsg_u));
 
@@ -1145,7 +1111,7 @@ _SlReturnVal_t _SlSocketHandleAsync_Select(void *pVoidBuf)
     SL_DRV_OBJ_LOCK_FOREVER(&g_pCB->MultiSelectCB.SelectLockObj);
 
     /* Check if this context was triggered by a 'select joiner' only,
-     * without timeout occuering, in order to launch the next select as quick as possible */
+     * without timeout occurring, in order to launch the next select as quick as possible */
     if((CTRL_SOCK_FD == pMsgArgs->ReadFds) && (pMsgArgs->Status != SELECT_TIMEOUT))
     {
         RetVal = _SlDrvClearCtrlSocket();
@@ -1190,7 +1156,7 @@ _SlReturnVal_t _SlSocketHandleAsync_Select(void *pVoidBuf)
 
             if(SelectEvent || TimeoutEvent)
             {
-                SL_TRACE4(DBG_MSG, MSG_312, "\n\rg: %x, sl:%d, run:%d, idx:%d\n\r", g_pCB->MultiSelectCB.writesds, SelectEvent , times, RegIdx);
+
 
                 /* Clear the global select socket descriptor bitmaps */
                 g_pCB->MultiSelectCB.readsds  &= ~(g_pCB->MultiSelectCB.SelectEntry[RegIdx]->readlist);
@@ -1219,6 +1185,10 @@ _SlReturnVal_t _SlSocketHandleAsync_Select(void *pVoidBuf)
                 /* Clean it's table entry */
                 g_pCB->MultiSelectCB.SelectEntry[RegIdx] = NULL;
             }
+            else
+            {
+                PendingSelect = TRUE;
+            }
         }
     }
 
@@ -1230,7 +1200,7 @@ _SlReturnVal_t _SlSocketHandleAsync_Select(void *pVoidBuf)
     }
 
     /* If more readers/Writers are present, send select again */
-    if((0 != g_pCB->MultiSelectCB.readsds) || (0 != g_pCB->MultiSelectCB.writesds))
+    if((0 != g_pCB->MultiSelectCB.readsds) || (0 != g_pCB->MultiSelectCB.writesds) || (TRUE == PendingSelect))
     {
         Msg.Cmd.ReadFds  = g_pCB->MultiSelectCB.readsds;
         Msg.Cmd.ReadFds |= CTRL_SOCK_FD;
@@ -1357,32 +1327,32 @@ static _i16 _SlDrvOpenCtrlSocket(void)
 {
     _i16 retVal;
 
-   /* In case a control socket is already open, return. */
-   if(g_pCB->MultiSelectCB.CtrlSockFD != 0xFF)
-   {
-       return 0;
-   }
-
-   /* Open a local control socket */
-   retVal = sl_Socket(SL_AF_INET, SL_SOCK_DGRAM, 0);
-
-   if(retVal == SL_ERROR_BSD_ENSOCK)
-   {
+    /* In case a control socket is already open, return. */
+    if(g_pCB->MultiSelectCB.CtrlSockFD != 0xFF)
+    {
         return 0;
-   }
-   else if(retVal < 0)
-   {
+    }
+
+    /* Open a local control socket */
+    retVal = sl_Socket(SL_AF_INET, SL_SOCK_DGRAM, 0);
+
+    if(retVal == SL_ERROR_BSD_ENSOCK)
+    {
+        return 0;
+    }
+    else if(retVal < 0)
+    {
        return retVal;
-   }
-   else
-   {
-       g_pCB->MultiSelectCB.CtrlSockFD = retVal;
-   }
+    }
+    else
+    {
+        g_pCB->MultiSelectCB.CtrlSockFD = retVal;
+    }
 
-   /* Bind it to local control port */
-   retVal = sl_Bind(g_pCB->MultiSelectCB.CtrlSockFD, (const SlSockAddr_t *)&_SlCtrlSockAddr, sizeof(SlSockAddrIn_t));
+    /* Bind it to local control port */
+    retVal = sl_Bind(g_pCB->MultiSelectCB.CtrlSockFD, (const SlSockAddr_t *)&_SlCtrlSockAddr, sizeof(SlSockAddrIn_t));
 
-   return retVal;
+    return retVal;
 }
 
 /*******************************************************************************/
@@ -1393,23 +1363,23 @@ static _i16 _SlDrvCloseCtrlSocket(void)
     _i16 retVal = 0;
     _i16 sockfd = 0xFF;
 
-   /* Close the internal Control socket */
-   sockfd = g_pCB->MultiSelectCB.CtrlSockFD;
+    /* Close the internal Control socket */
+    sockfd = g_pCB->MultiSelectCB.CtrlSockFD;
 
-   if(sockfd != 0xFF)
-   {
-       /* Close the local control socket */
-       retVal = sl_Close(sockfd);
-   }
+    if(sockfd != 0xFF)
+    {
+        /* Close the local control socket */
+        retVal = sl_Close(sockfd);
+    }
 
-   g_pCB->MultiSelectCB.CtrlSockFD = 0xFF;
+    g_pCB->MultiSelectCB.CtrlSockFD = 0xFF;
 
-   if(retVal < 0)
-   {
-       return SL_ERROR_BSD_SOC_ERROR;
-   }
+    if(retVal < 0)
+    {
+        return SL_ERROR_BSD_SOC_ERROR;
+    }
 
-   return retVal;
+    return retVal;
 }
 
 /*******************************************************************************/
@@ -1493,15 +1463,33 @@ static _i16 _SlDrvRegisterForSelectAsync(_SlSelectEntry_t* pEntry, _SlSelectMsg_
     else
     {
         SL_DRV_OBJ_UNLOCK(&g_pCB->MultiSelectCB.SelectLockObj);
-
+#if (defined (SL_PLATFORM_MULTI_THREADED)) && (!defined (SL_PLATFORM_EXTERNAL_SPAWN))
         /* Wait here to be signaled by a successfully completed select caller */
-        SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->MultiSelectCB.SelectSyncObj);
+        if (_SlDrvIsSpawnOwnGlobalLock())
+        {
+           while (TRUE)
+           {
+               /* If we are in spawn context, this is an API which was called from event handler,
+               read any async event and check if we got signaled */
+               _SlInternalSpawnWaitForEvent();
+               /* is it mine? */
+               if (0 == sl_SyncObjWait(&g_pCB->MultiSelectCB.SelectSyncObj, SL_OS_NO_WAIT))
+               {
+                  break;
+               }
+           }
+        }
+        else
+#endif
+        {
+           SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->MultiSelectCB.SelectSyncObj);
+        }
 
         _RetVal = sl_SendTo(g_pCB->MultiSelectCB.CtrlSockFD,
                                 &dummyBuf[0],
                                 sizeof(dummyBuf),
                                 0,
-                                (const SlSockAddr_t *)&_SlCtrlSockRelese,
+                                (const SlSockAddr_t *)&_SlCtrlSockRelease,
                                 sizeof(SlSockAddrIn_t));
     }
 
@@ -1534,7 +1522,7 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
 
     if(writesds)
     {
-       Msg.Cmd.WriteFds = (_u16)writesds->fd_array[0];
+        Msg.Cmd.WriteFds = (_u16)writesds->fd_array[0];
     }
 
     if(NULL == timeout)
@@ -1590,21 +1578,21 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
 
         if(!SelectInProgress)
         {
-           ret = _SlDrvOpenCtrlSocket();
+            ret = _SlDrvOpenCtrlSocket();
 
-           if(ret < 0)
-           {
-               _SlDrvCloseCtrlSocket();
-               g_pCB->MultiSelectCB.ActiveSelect = FALSE;
-               SL_DRV_OBJ_UNLOCK(&g_pCB->MultiSelectCB.SelectLockObj);
-               _SlDrvReleasePoolObj(SelectParams.ObjIdx);
-               return ret;
-           }
-           else
-           {
-               /* All conditions are met for calling "Select" */
-               isCaller = TRUE;
-           }
+            if(ret < 0)
+            {
+                _SlDrvCloseCtrlSocket();
+                g_pCB->MultiSelectCB.ActiveSelect = FALSE;
+                SL_DRV_OBJ_UNLOCK(&g_pCB->MultiSelectCB.SelectLockObj);
+                _SlDrvReleasePoolObj(SelectParams.ObjIdx);
+                return ret;
+            }
+            else
+            {
+                /* All conditions are met for calling "Select" */
+                isCaller = TRUE;
+            }
         }
         else if(g_pCB->MultiSelectCB.CtrlSockFD == 0xFF)
         {
@@ -1617,7 +1605,28 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
 
             SL_DRV_OBJ_UNLOCK(&g_pCB->MultiSelectCB.SelectLockObj);
 
-            SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->MultiSelectCB.SelectSyncObj);
+            /* Wait here to be signaled by a successfully completed select caller */
+#if (defined (SL_PLATFORM_MULTI_THREADED)) && (!defined (SL_PLATFORM_EXTERNAL_SPAWN))
+            if (_SlDrvIsSpawnOwnGlobalLock())
+            {
+               while (TRUE)
+               {
+                   /* If we are in spawn context, this is an API which was called from event handler,
+                   read any async event and check if we got signaled */
+                   _SlInternalSpawnWaitForEvent();
+                   /* is it mine? */
+                   if (0 == sl_SyncObjWait(&g_pCB->MultiSelectCB.SelectSyncObj, SL_OS_NO_WAIT))
+                   {
+                      break;
+                   }
+               }
+            }
+            else
+#endif
+            {
+               SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->MultiSelectCB.SelectSyncObj);
+            }
+
 
             if((_i16)g_pCB->MultiSelectCB.SelectCmdResp.status != SL_RET_CODE_OK)
             {
@@ -1644,8 +1653,7 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
     }
 
     /* Wait here for a Async event, or command response in case select fails.*/
-    SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[SelectParams.ObjIdx].SyncObj);
-
+    VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(SelectParams.ObjIdx, 0, 0));
     _SlDrvReleasePoolObj(SelectParams.ObjIdx);
 
     ret = (_i16)g_pCB->MultiSelectCB.SelectCmdResp.status;
@@ -1663,7 +1671,7 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
 
             if(writesds)
             {
-               writesds->fd_array[0] = SelectParams.Response.WriteFds;
+                writesds->fd_array[0] = SelectParams.Response.WriteFds;
             }
         }
     }
@@ -1678,7 +1686,7 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
 /*******************************************************************************/
 _SlReturnVal_t _SlSocketHandleAsync_Select(void *pVoidBuf)
 {
-    SlSelectAsyncResponse_t     *pMsgArgs   = (SlSelectAsyncResponse_t *)_SL_RESP_ARGS_START(pVoidBuf);
+    SlSelectAsyncResponse_t *pMsgArgs = (SlSelectAsyncResponse_t *)_SL_RESP_ARGS_START(pVoidBuf);
 #if ((defined(SL_RUNTIME_EVENT_REGISTERATION) || defined(slcb_SocketTriggerEventHandler)))
     SlSockTriggerEvent_t SockTriggerEvent;
 #endif
@@ -1697,7 +1705,6 @@ _SlReturnVal_t _SlSocketHandleAsync_Select(void *pVoidBuf)
 
             SockTriggerEvent.Event = SL_SOCKET_TRIGGER_EVENT_SELECT;
             SockTriggerEvent.EventData = 0;
-
 
             g_pCB->SocketTriggerSelect.Info.State = SOCK_TRIGGER_RESP_RECEIVED;
 
@@ -1729,9 +1736,9 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
 {
     _SlSelectMsg_u            Msg;
     SlSelectAsyncResponse_t   AsyncRsp;
-    _u8 ObjIdx = MAX_CONCURRENT_ACTIONS;
+    _i16                      ObjIdx = MAX_CONCURRENT_ACTIONS;
 #if ((defined(SL_RUNTIME_EVENT_REGISTERATION) || defined(slcb_SocketTriggerEventHandler)))
-    _u8 IsNonBlocking = FALSE;
+    _u8                       IsNonBlocking = FALSE;
 #endif
 
     /* verify that this API is allowed. if not allowed then
@@ -1750,16 +1757,16 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
             }
             else
             {
-               SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
+                SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
 
-               /* If there is a trigger select running in the progress abort the new blocking request */
-               if (g_pCB->SocketTriggerSelect.Info.State > SOCK_TRIGGER_READY)
-               {
+                /* If there is a trigger select running in the progress abort the new blocking request */
+                if (g_pCB->SocketTriggerSelect.Info.State > SOCK_TRIGGER_READY)
+                {
                     SL_DRV_PROTECTION_OBJ_UNLOCK();
                     return SL_RET_CODE_SOCKET_SELECT_IN_PROGRESS_ERROR;
-               }
+                }
 
-               SL_DRV_PROTECTION_OBJ_UNLOCK();
+                SL_DRV_PROTECTION_OBJ_UNLOCK();
             }
 
             if (IsNonBlocking == TRUE)
@@ -1772,16 +1779,15 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
                 /* return the stored response if already received */
                 else if (g_pCB->SocketTriggerSelect.Info.State == SOCK_TRIGGER_RESP_RECEIVED)
                 {
-
                     if(  ((_i16)g_pCB->SocketTriggerSelect.Resp.Status) >= 0 )
                     {
                         if( readsds )
                         {
-                           readsds->fd_array[0]  = g_pCB->SocketTriggerSelect.Resp.ReadFds;
+                            readsds->fd_array[0]  = g_pCB->SocketTriggerSelect.Resp.ReadFds;
                         }
                         if( writesds )
                         {
-                           writesds->fd_array[0] = g_pCB->SocketTriggerSelect.Resp.WriteFds;
+                            writesds->fd_array[0] = g_pCB->SocketTriggerSelect.Resp.WriteFds;
                         }
                     }
 
@@ -1804,17 +1810,17 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
     Msg.Cmd.ReadFdsCount  = 0;
     Msg.Cmd.WriteFdsCount = 0;
 
-    Msg.Cmd.ReadFds = 0;
+    Msg.Cmd.ReadFds  = 0;
     Msg.Cmd.WriteFds = 0;
 
 
     if( readsds )
     {
-       Msg.Cmd.ReadFds = (_u16)readsds->fd_array[0];
+        Msg.Cmd.ReadFds = (_u16)readsds->fd_array[0];
     }
     if( writesds )
     {
-       Msg.Cmd.WriteFds = (_u16)writesds->fd_array[0];
+        Msg.Cmd.WriteFds = (_u16)writesds->fd_array[0];
     }
     if( NULL == timeout )
     {
@@ -1859,7 +1865,7 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
 
     if(SL_OS_RET_CODE_OK == (_i16)Msg.Rsp.status)
     {
-        SL_DRV_SYNC_OBJ_WAIT_FOREVER(&g_pCB->ObjPool[ObjIdx].SyncObj);
+	VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx,0,0));
 
         Msg.Rsp.status = (_i16)AsyncRsp.Status;
 
@@ -1904,11 +1910,11 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
         {
             if( readsds )
             {
-               readsds->fd_array[0]  = AsyncRsp.ReadFds;
+                readsds->fd_array[0]  = AsyncRsp.ReadFds;
             }
             if( writesds )
             {
-               writesds->fd_array[0] = AsyncRsp.WriteFds;
+                writesds->fd_array[0] = AsyncRsp.WriteFds;
             }
         }
     }
@@ -1919,4 +1925,77 @@ _i16 sl_Select(_i16 nfds, SlFdSet_t *readsds, SlFdSet_t *writesds, SlFdSet_t *ex
 
 #endif /* defined(SL_PLATFORM_MULTI_THREADED) || !defined(slcb_SocketTriggerEventHandler) */
 #endif /* _SL_INCLUDE_FUNC(sl_Select) */
-#endif /* SL_TINY */
+
+/*******************************************************************************/
+/*  sl_StartTLS */
+/*******************************************************************************/
+#if _SL_INCLUDE_FUNC(sl_StartTLS)
+_i16 sl_StartTLS(_i16 sd)
+{
+    _SlReturnVal_t       RetVal;
+    SlSocketAsyncEvent_t AsyncRsp;
+    _u32                 tempValue;
+    _i16 ObjIdx = MAX_CONCURRENT_ACTIONS;
+
+    /* verify that this api is allowed. if not allowed then
+       ignore the API execution and return immediately with an error */
+    VERIFY_API_ALLOWED(SL_OPCODE_SILO_SOCKET);
+    _SlDrvMemZero(&AsyncRsp, sizeof(SlSocketAsyncEvent_t));
+
+    ObjIdx = _SlDrvProtectAsyncRespSetting((_u8*)&AsyncRsp, START_TLS_ID, (_u8)(sd  & SL_BSD_SOCKET_ID_MASK));
+
+    if (MAX_CONCURRENT_ACTIONS == ObjIdx)
+    {
+        return SL_POOL_IS_EMPTY;
+    }
+
+    /* send Start TLS to sl_SetSockOpt */
+    RetVal = sl_SetSockOpt(sd, SL_SOL_SOCKET, SL_SO_STARTTLS, &tempValue, sizeof(tempValue));
+
+    if(SL_RET_CODE_OK == RetVal)
+    {
+        /* wait for async and get Data Read parameters */
+        VERIFY_RET_OK(_SlDrvWaitForInternalAsyncEvent(ObjIdx,0,0));
+
+        VERIFY_PROTOCOL(AsyncRsp.Sd == (_u8)sd);
+
+        /* Some of the errors retrieved from the NWP are treated as warnings,
+           that means that although the type is ssl notification connected secured there
+           can be a warning behind it, so we need to check the value as well and
+           retrieve it to the host */
+        if ( (SL_SSL_NOTIFICATION_CONNECTED_SECURED == AsyncRsp.Type) && (AsyncRsp.Val >= 0) )
+        {
+            RetVal = SL_RET_CODE_OK;
+        }
+        else
+        {
+            RetVal = AsyncRsp.Val;
+        }
+    }
+
+    _SlDrvReleasePoolObj(ObjIdx);
+    return RetVal;
+}
+
+/*******************************************************************************/
+/*   _SlSocketHandleAsync_StartTLS */
+/*******************************************************************************/
+_SlReturnVal_t _SlSocketHandleAsync_StartTLS(void *pVoidBuf)
+{
+    SlSocketAsyncEvent_t *pMsgArgs = (SlSocketAsyncEvent_t *)((_u32)pVoidBuf+sizeof(_u32));
+
+    SL_DRV_PROTECTION_OBJ_LOCK_FOREVER();
+
+    VERIFY_PROTOCOL((pMsgArgs->Sd & SL_BSD_SOCKET_ID_MASK) <= SL_MAX_SOCKETS);
+    VERIFY_SOCKET_CB(NULL != g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs);
+
+    ((SlSocketAsyncEvent_t *)(g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs))->Sd = pMsgArgs->Sd;
+    ((SlSocketAsyncEvent_t *)(g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs))->Type = pMsgArgs->Type;
+    ((SlSocketAsyncEvent_t *)(g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].pRespArgs))->Val = pMsgArgs->Val;
+
+    SL_DRV_SYNC_OBJ_SIGNAL(&g_pCB->ObjPool[g_pCB->FunctionParams.AsyncExt.ActionIndex].SyncObj);
+    SL_DRV_PROTECTION_OBJ_UNLOCK();
+
+    return SL_OS_RET_CODE_OK;
+}
+#endif

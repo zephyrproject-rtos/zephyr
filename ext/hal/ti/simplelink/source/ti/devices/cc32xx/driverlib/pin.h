@@ -75,6 +75,8 @@ extern "C"
 #define PIN_19 	 0x00000012
 #define PIN_20   0x00000013
 #define PIN_21   0x00000014
+#define PIN_29   0x0000001C
+#define PIN_30   0x0000001D
 #define PIN_45   0x0000002C
 #define PIN_46   0x0000002D
 #define PIN_47   0x0000002E

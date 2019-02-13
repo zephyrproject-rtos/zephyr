@@ -138,6 +138,13 @@ int_fast16_t PWM_setPeriod(PWM_Handle handle, uint32_t period)
 {
     return(handle->fxnTablePtr->setPeriodFxn(handle, period));
 }
+/*
+ *  ======== PWM_setDutyandPeriod ========
+ */
+int_fast16_t PWM_setDutyAndPeriod(PWM_Handle handle, uint32_t duty, uint32_t period)
+{
+    return(handle->fxnTablePtr->setDutyAndPeriodFxn(handle, duty, period));
+}
 
 /*
  *  ======== PWM_start ========

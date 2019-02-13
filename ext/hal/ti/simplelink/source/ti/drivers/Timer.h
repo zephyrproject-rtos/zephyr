@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, Texas Instruments Incorporated
+ * Copyright (c) 2016-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -64,7 +64,7 @@
  *  params.periodUnits = Timer_PERIOD_HZ;
  *  params.period = 1000;
  *  params.timerMode  = Timer_CONTINUOUS_CALLBACK;
- *  params.timerCallback = someTimerCallbackFunction;
+ *  params.timerCallback = UserCallbackFunction;
  *
  *  handle = Timer_open(Board_TIMER0, &params);
  *
@@ -287,17 +287,17 @@ typedef void (*Timer_CallBackFxn)(Timer_Handle handle);
  *
  */
 typedef struct Timer_Params_ {
-    /*!< Mode to be used by the timer driver. */
+    /*! Mode to be used by the timer driver. */
     Timer_Mode           timerMode;
 
-    /*!< Units used to specify the period. */
+    /*! Units used to specify the period. */
     Timer_PeriodUnits    periodUnits;
 
-    /*!< Callback function called when timerMode is Timer_ONESHOT_CALLBACK or
+    /*! Callback function called when timerMode is Timer_ONESHOT_CALLBACK or
          Timer_CONTINUOUS_CALLBACK. */
     Timer_CallBackFxn    timerCallback;
 
-    /*!< Period in units of periodUnits. */
+    /*! Period in units of periodUnits. */
     uint32_t             period;
 } Timer_Params;
 
@@ -351,25 +351,25 @@ typedef void (*Timer_StopFxn)(Timer_Handle handle);
  *              implementation.
  */
 typedef struct Timer_FxnTable_ {
-    /*!< Function to close the specified peripheral. */
+    /*! Function to close the specified peripheral. */
     Timer_CloseFxn closeFxn;
 
-    /*!< Function to implementation specific control function. */
+    /*! Function to implementation specific control function. */
     Timer_ControlFxn controlFxn;
 
-    /*!< Function to get the count of the specified peripheral. */
+    /*! Function to get the count of the specified peripheral. */
     Timer_GetCountFxn getCountFxn;
 
-    /*!< Function to initialize the given data object. */
+    /*! Function to initialize the given data object. */
     Timer_InitFxn initFxn;
 
-    /*!< Function to open the specified peripheral. */
+    /*! Function to open the specified peripheral. */
     Timer_OpenFxn openFxn;
 
-    /*!< Function to start the specified peripheral. */
+    /*! Function to start the specified peripheral. */
     Timer_StartFxn startFxn;
 
-    /*!< Function to stop the specified peripheral. */
+    /*! Function to stop the specified peripheral. */
     Timer_StopFxn stopFxn;
 } Timer_FxnTable;
 
@@ -421,8 +421,8 @@ extern void Timer_close(Timer_Handle handle);
  *  @param  arg         A pointer to an optional R/W (read/write) argument that
  *                      is accompanied with cmd.
  *
- *  @return A Timer_Status describing an error or success state. Negative values
- *          indicate an error occurred.
+ *  @return A Timer_Status describing an error or success state. Negative
+ *          values indicate an error occurred.
  *
  *  @sa     Timer_open()
  */

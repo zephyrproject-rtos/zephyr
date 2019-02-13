@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015, Texas Instruments Incorporated
+ * Copyright (c) 2015, 2017 Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,16 +44,16 @@
  */
 void List_clearList(List_List *list)
 {
+    uintptr_t key;
+
+    key = HwiP_disable();
+
     list->head = list->tail = NULL;
+
+    HwiP_restore(key);
 }
 
-/*
- *  ======== List_empty ========
- */
-bool List_empty(List_List *list)
-{
-    return (list->head == NULL);
-}
+
 
 /*
  *  ======== List_get ========
@@ -83,19 +83,16 @@ List_Elem *List_get(List_List *list)
     return (elem);
 }
 
-/*
- *  ======== List_head ========
- */
-List_Elem *List_head(List_List *list)
-{
-    return (list->head);
-}
 
 /*
  *  ======== List_insert ========
  */
 void List_insert(List_List *list, List_Elem *newElem, List_Elem *curElem)
 {
+    uintptr_t key;
+
+    key = HwiP_disable();
+
     newElem->next = curElem;
     newElem->prev = curElem->prev;
     if (curElem->prev != NULL) {
@@ -105,23 +102,10 @@ void List_insert(List_List *list, List_Elem *newElem, List_Elem *curElem)
         list->head = newElem;
     }
     curElem->prev = newElem;
+
+    HwiP_restore(key);
 }
 
-/*
- *  ======== List_next ========
- */
-List_Elem *List_next(List_Elem *elem)
-{
-    return (elem->next);
-}
-
-/*
- *  ======== List_prev ========
- */
-List_Elem *List_prev(List_Elem *elem)
-{
-    return (elem->prev);
-}
 
 /*
  *  ======== List_put ========
@@ -174,6 +158,10 @@ void List_putHead(List_List *list, List_Elem *elem)
  */
 void List_remove(List_List *list, List_Elem *elem)
 {
+    uintptr_t key;
+
+    key = HwiP_disable();
+
     /* Handle the case where the elem to remove is the last one */
     if (elem->next == NULL) {
         list->tail = elem->prev;
@@ -189,12 +177,6 @@ void List_remove(List_List *list, List_Elem *elem)
     else {
         elem->prev->next = elem->next;
     }
-}
 
-/*
- *  ======== List_tail ========
- */
-List_Elem *List_tail(List_List *list)
-{
-    return (list->tail);
+    HwiP_restore(key);
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -112,12 +112,13 @@
  *  // Fill in transmitBuffer
  *
  *  spiTransaction.count = MSGSIZE;
- *  spiTransaction.txBuf = transmitBuffer;
- *  spiTransaction.rxBuf = receiveBuffer;
+ *  spiTransaction.txBuf = (void *)transmitBuffer;
+ *  spiTransaction.rxBuf = (void *)receiveBuffer;
  *
  *  transferOK = SPI_transfer(spi, &spiTransaction);
  *  if (!transferOK) {
  *      // Error in SPI or transfer already in progress.
+ *      while (1);
  *  }
  *  @endcode
  *
@@ -241,6 +242,7 @@
  *
  *  if (spi == NULL) {
  *      // Error opening SPI
+ *      while(1);
  *  }
  *  @endcode
  *
@@ -256,6 +258,7 @@
  *  spi = SPI_open(Board_SPI0, &spiParams);
  *  if (spi == NULL) {
  *      // Error opening SPI
+ *      while (1);
  *  }
  *  @endcode
  *
@@ -272,6 +275,14 @@
  *  data set to the default value specified in the hardware attributes. If
  *  rxBuf is NULL, the driver discards all SPI frames received. SPI_transfer()
  *  of a SPI transaction is performed atomically.
+ *
+ *  @warning The use of NULL as a sentinel txBuf or rxBuf value to determine
+ *  whether the SPI transaction includes a tx or rx component implies
+ *  that it is not possible to perform a transmit or receive transfer
+ *  directly from/to a buffer with a base address of 0x00000000. To support
+ *  this rare use-case, the application will have to manually copy the
+ *  contents of location 0x00000000 to/from a temporary buffer before/after
+ *  the tx/rx SPI transaction.
  *
  *  When the SPI is opened, the dataSize value determines the element types
  *  of txBuf and rxBuf. If the dataSize is from 4 to 8 bits, the driver
@@ -517,11 +528,13 @@ typedef struct SPI_Config_    *SPI_Handle;
  *  @brief      Status codes that are set by the SPI driver.
  */
 typedef enum SPI_Status_ {
-    SPI_TRANSFER_COMPLETED = 0,
-    SPI_TRANSFER_STARTED,
-    SPI_TRANSFER_CANCELED,
-    SPI_TRANSFER_FAILED,
-    SPI_TRANSFER_CSN_DEASSERT
+    SPI_TRANSFER_COMPLETED = 0,      /*!< SPI transfer completed */
+    SPI_TRANSFER_STARTED,            /*!< SPI transfer started and in progress */
+    SPI_TRANSFER_CANCELED,           /*!< SPI transfer was canceled */
+    SPI_TRANSFER_FAILED,             /*!< SPI transfer failed */
+    SPI_TRANSFER_CSN_DEASSERT,       /*!< SPI chip select was de-asserted */
+    SPI_TRANSFER_PEND_CSN_ASSERT,    /*!< SPI transfer is pending until the chip select is asserted */
+    SPI_TRANSFER_QUEUED              /*!< SPI transfer added to transaction queue */
 } SPI_Status;
 
 /*!
@@ -540,7 +553,10 @@ typedef struct SPI_Transaction_ {
     void      *arg;         /*!< Argument to be passed to the callback function */
 
     /* User output (read-only) fields */
-    SPI_Status status;     /*!< Status code set by SPI_transfer */
+    SPI_Status status;      /*!< Status code set by SPI_transfer */
+
+    void *nextPtr;          /*!< Field used internally by the driver and must
+                                 never be accessed by the application. */
 } SPI_Transaction;
 
 /*!
@@ -818,7 +834,10 @@ extern void SPI_Params_init(SPI_Params *params);
  *  In ::SPI_MODE_CALLBACK, %SPI_transfer() does not block task execution, but
  *  calls a ::SPI_CallbackFxn once the transfer has finished. This makes
  *  %SPI_tranfer() safe to be used within a Task, software or hardware
- *  interrupt context.
+ *  interrupt context. If queued transactions are supported SPI_Transfer may
+ *  be called multiple times to queue multiple transactions. If the driver does
+ *  not support this functionality additional calls will return false. Refer to
+ *  device specific SPI driver documentation for support information.
  *
  *  From calling %SPI_transfer() until transfer completion, the SPI_Transaction
  *  structure must stay persistent and must not be altered by application code.
@@ -840,7 +859,7 @@ extern void SPI_Params_init(SPI_Params *params);
  *                      the content of SPI_Transaction.txBuffer until the transfer
  *                      has completed.
  *
- *  @return true if started successfully; else false
+ *  @return \p true if started successfully; else \p false
  *
  *  @sa     SPI_open
  *  @sa     SPI_transferCancel

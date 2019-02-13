@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2016, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,10 +29,9 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/** ============================================================================
+/*!****************************************************************************
  *  @file       WatchdogCC32XX.h
- *
- *  @brief      Watchdog driver implementation for CC32XX
+ *  @brief      Watchdog timer driver implementation for CC32XX
  *
  *  The Watchdog header file for CC32XX should be included in an application
  *  as follows:
@@ -57,8 +56,8 @@
  *
  *  Watchdog_close() is <b>not</b> supported by this driver implementation.
  *
- *  By default the Watchdog driver has resets turned on and this feature cannot
- *  be turned disabled.
+ *  By default the Watchdog driver has resets turned on. This feature cannot
+ *  be disabled.
  *
  *  To have a user-defined function run at the warning interrupt, first define
  *  a void-type function that takes a Watchdog_Handle cast to a UArg as an
@@ -89,7 +88,21 @@
  *
  *  }
  *  @endcode
- *  ============================================================================
+ *
+ *  # Power Driver Usage #
+ *
+ *  The watchdog timer driver does not set any power constraints. If the power
+ *  driver is enabled, the application will continue to aggressively attempt
+ *  to place the device into the lowest power state possible.
+ *
+ *  When the device enters Low Power Deep Sleep, the peripheral registers are
+ *  reset. After a transition from Low Power Deep Sleep, the watchdog timer will
+ *  be re-initialized automatically with the most recently set reload value. If
+ *  Watchdog_setReload() was never called, the
+ *  #WatchdogCC32XX_HWAttrs.reloadValue is used. With each transition to and
+ *  from Low Power Deep Sleep, the watchdog timer is implicitly cleared.
+ *
+ ******************************************************************************
  */
 
 #ifndef ti_drivers_watchdog_WatchdogCC32XX__include
@@ -189,7 +202,7 @@ extern const Watchdog_FxnTable WatchdogCC32XX_fxnTable;
  *  port, intPriority is passed unmodified to Hwi_create().
  */
 typedef struct WatchdogCC32XX_HWAttrs {
-    unsigned int baseAddr;       /*!< Base adddress for Watchdog */
+    unsigned int baseAddr;       /*!< Base address for Watchdog */
     unsigned int intNum;         /*!< WDT interrupt number */
     unsigned int intPriority;    /*!< WDT interrupt priority */
     uint32_t     reloadValue;    /*!< Reload value for Watchdog */
@@ -201,7 +214,14 @@ typedef struct WatchdogCC32XX_HWAttrs {
  *  Not to be accessed by the user.
  */
 typedef struct WatchdogCC32XX_Object {
-    bool         isOpen;              /* Flag for open/close status */
+    Power_NotifyObj     notifyObj;
+    /*
+     * The reload value can be set at runtime; therefore we can't rely
+     * on the reload value supplied in the HWAttrs after a LPDS transition.
+     */
+    uint32_t            reloadValue;
+    Watchdog_DebugMode  debugMode;
+    bool                isOpen;
 } WatchdogCC32XX_Object;
 
 #ifdef __cplusplus
