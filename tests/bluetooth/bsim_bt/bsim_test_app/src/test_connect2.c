@@ -39,6 +39,18 @@ static struct bt_conn *default_conn;
 #define WAIT_TIME 5 /*seconds*/
 extern enum bst_result_t bst_result;
 
+#define FAIL(...)					\
+	do {						\
+		bst_result = Failed;			\
+		bs_trace_error_time_line(__VA_ARGS__);	\
+	} while (0)
+
+#define PASS(...)					\
+	do {						\
+		bst_result = Passed;			\
+		bs_trace_info_time(1, __VA_ARGS__);	\
+	} while (0)
+
 static void test_con2_init(void)
 {
 	bst_ticker_set_next_tick_absolute(WAIT_TIME*1e6);
@@ -52,9 +64,8 @@ static void test_con2_tick(bs_time_t HW_device_time)
 	 * (and finish) we consider it failed
 	 */
 	if (bst_result != Passed) {
-		bst_result = Failed;
-		bs_trace_error_line("test: connect2 failed (not finished "
-				    "after %i seconds)\n", WAIT_TIME);
+		FAIL("test_connect2 failed (not passed after %i seconds)\n",
+		     WAIT_TIME);
 	}
 }
 
@@ -66,7 +77,7 @@ static const struct bt_data ad[] = {
 static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
-		printk("Connection failed (err %u)\n", err);
+		FAIL("Connection failed (err %u)\n", err);
 	} else {
 		default_conn = bt_conn_ref(conn);
 		printk("Connected\n");
@@ -91,7 +102,7 @@ static struct bt_conn_cb conn_callbacks = {
 static void bt_ready(int err)
 {
 	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
+		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
 
@@ -102,7 +113,7 @@ static void bt_ready(int err)
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
-		printk("Advertising failed to start (err %d)\n", err);
+		FAIL("Advertising failed to start (err %d)\n", err);
 		return;
 	}
 
@@ -116,7 +127,7 @@ static void test_con2_main(void)
 
 	err = bt_enable(bt_ready);
 	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
+		FAIL("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
 
@@ -134,9 +145,8 @@ static void test_con2_main(void)
 		/* Battery level simulation */
 		bas_notify();
 
-		if (notify_count++ == 2) { /* We consider it passed */
-			bst_result = Passed;
-			printk("Testcase passed\n");
+		if (notify_count++ == 1) { /* We consider it passed */
+			PASS("Testcase passed\n");
 		}
 	}
 }
