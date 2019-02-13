@@ -102,5 +102,6 @@ int eswifi_offload_init(struct eswifi_dev *eswifi);
 struct eswifi_dev *eswifi_by_iface_idx(u8_t iface);
 int eswifi_at_cmd_rsp(struct eswifi_dev *eswifi, char *cmd, char **rsp);
 int eswifi_at_cmd(struct eswifi_dev *eswifi, char *cmd);
+void eswifi_async_msg(struct eswifi_dev *eswifi, char *msg, size_t len);
 
 #endif

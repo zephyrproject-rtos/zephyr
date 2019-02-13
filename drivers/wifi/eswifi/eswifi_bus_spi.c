@@ -182,15 +182,34 @@ data:
 
 static void eswifi_spi_read_msg(struct eswifi_dev *eswifi)
 {
+	const char startstr[] = "[SOMA]";
+	const char endstr[] = "[EOMA]";
 	char cmd[] = "MR\r";
+	size_t msg_len;
 	char *rsp;
-	int err;
+	int ret;
+
+	LOG_DBG("");
 
 	eswifi_lock(eswifi);
 
-	err = eswifi_at_cmd_rsp(eswifi, cmd, &rsp);
-	if (err < 0) {
-		LOG_ERR("Unable to read msg %d", err);
+	ret = eswifi_at_cmd_rsp(eswifi, cmd, &rsp);
+	if (ret < 0) {
+		LOG_ERR("Unable to read msg %d", ret);
+		eswifi_unlock(eswifi);
+		return;
+	}
+
+	if (strncmp(rsp, startstr, sizeof(endstr) - 1)) {
+		LOG_ERR("Malformed async msg");
+		eswifi_unlock(eswifi);
+		return;
+	}
+
+	/* \r\n[SOMA]...[EOMA]\r\nOK\r\n> */
+	msg_len = ret - (sizeof(startstr) - 1) - (sizeof(endstr) - 1);
+	if (msg_len > 0) {
+		eswifi_async_msg(eswifi, rsp + sizeof(endstr) - 1, msg_len);
 	}
 
 	eswifi_unlock(eswifi);
