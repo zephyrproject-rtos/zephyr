@@ -848,7 +848,7 @@ static int atof32(const char *input, float32_value_t *out)
 
 	errno = 0;
 	val = strtol(buf, &end, 10);
-	if (errno || *end || val > INT_MAX || val < INT_MIN) {
+	if (errno || *end || val < INT_MIN) {
 		return -EINVAL;
 	}
 
@@ -2394,7 +2394,7 @@ static int lwm2m_write_attr_handler(struct lwm2m_engine_obj *obj,
 			 */
 			errno = 0;
 			v = strtol(opt_buf, &end, 10);
-			if (errno || *end || v > INT_MAX || v < 0) {
+			if (errno || *end || v < 0) {
 				ret = -EINVAL;
 			}
 
