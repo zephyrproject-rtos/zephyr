@@ -133,7 +133,8 @@ struct pl011_data {
 		PL011_IMSC_PEIM | PL011_IMSC_BEIM | \
 		PL011_IMSC_OEIM)
 
-#define PL011_IMSC_MASK_ALL (PL011_ERROR_MASK | \
+#define PL011_IMSC_MASK_ALL (PL011_IMSC_OEIM | PL011_IMSC_BEIM | \
+		PL011_IMSC_PEIM | PL011_IMSC_FEIM | \
 		PL011_IMSC_RIMIM | PL011_IMSC_CTSMIM | \
 		PL011_IMSC_DCDMIM | PL011_IMSC_DSRMIM | \
 		PL011_IMSC_RXIM | PL011_IMSC_TXIM | \
@@ -377,7 +378,7 @@ static int pl011_init(struct device *dev)
 
 	/* initialize all IRQs as masked */
 	PL011_REGS(dev)->imsc = 0;
-	PL011_REGS(dev)->icr = PL011_REGS(dev)->icr;
+	PL011_REGS(dev)->icr = PL011_IMSC_MASK_ALL;
 
 	PL011_REGS(dev)->dmacr = 0;
 	__ISB();
