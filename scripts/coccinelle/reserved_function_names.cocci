@@ -5,6 +5,7 @@
 
 virtual patch
 virtual report
+virtual changes
 
 @r_anyfn disable optional_storage@
 identifier fn =~ "^_[^_]+";
@@ -209,3 +210,17 @@ z << r_static_rewrite.z;
 @@
 msg="WARNING: Reserved static function name " + fn + ", should be " + z
 coccilib.report.print_report(pos[0], msg)
+
+@script:python depends on changes@
+fn << r_anyfn.fn;
+z << r_any_rewrite.z;
+@@
+
+print ("%s %s") % (fn, z)
+
+@script:python depends on changes@
+fn << r_staticfn.fn;
+z << r_static_rewrite.z;
+@@
+
+print ("%s %s") % (fn, z)
