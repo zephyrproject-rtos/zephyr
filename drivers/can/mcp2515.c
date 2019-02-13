@@ -266,7 +266,7 @@ static int mcp2515_configure(struct device *dev, enum can_mode mode,
 }
 
 static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
-		 s32_t timeout, can_tx_callback_t callback)
+		 s32_t timeout, can_tx_callback_t callback, void *callback_arg)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	u8_t tx_idx = 0U;
@@ -295,6 +295,7 @@ static int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
 	}
 
 	dev_data->tx_cb[tx_idx].cb = callback;
+	dev_data->tx_cb[tx_idx].cb_arg = callback_arg;
 
 	addr_tx_ctrl = MCP2515_ADDR_TXB0CTRL +
 		       (tx_idx * MCP2515_ADDR_OFFSET_FRAME2FRAME);
@@ -432,7 +433,7 @@ static void mcp2515_tx_done(struct device *dev, u8_t tx_idx)
 	if (dev_data->tx_cb[tx_idx].cb == NULL) {
 		k_sem_give(&dev_data->tx_cb[tx_idx].sem);
 	} else {
-		dev_data->tx_cb[tx_idx].cb(0);
+		dev_data->tx_cb[tx_idx].cb(0, dev_data->tx_cb[tx_idx].cb_arg);
 	}
 
 	k_mutex_lock(&dev_data->tx_mutex, K_FOREVER);

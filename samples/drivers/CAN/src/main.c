@@ -36,10 +36,12 @@ static struct gpio_callback gpio_cb;
 CAN_DEFINE_MSGQ(led_msgq, 2);
 CAN_DEFINE_MSGQ(str_msgq, 5);
 
-void tx_irq_callback(u32_t error_flags)
+void tx_irq_callback(u32_t error_flags, void *arg)
 {
+	char *sender = (char *)arg;
 	if (error_flags) {
-		printk("Callback! error-code: %d\n", error_flags);
+		printk("Callback! error-code: %d\nSender: %s\n",
+		       error_flags, sender);
 	}
 }
 
@@ -64,7 +66,7 @@ void send_string(char *string, struct device *can_dev)
 		str_len -= msg.dlc;
 		memcpy(msg.data, string, msg.dlc);
 		string += msg.dlc;
-		can_send(can_dev, &msg, 10, tx_irq_callback);
+		can_send(can_dev, &msg, 10, tx_irq_callback, "send_string");
 	}
 }
 
@@ -98,8 +100,8 @@ void tx_thread(void *can_dev_param, void *unused2, void *unused3)
 		msg.data[0] = toggle;
 		msg_button_cnt.data[0] = button_press_cnt & 0xFF;
 		msg_button_cnt.data[1] = (button_press_cnt >> 8) & 0xFF;
-		can_send(can_dev, &msg, 10, tx_irq_callback);
-		can_send(can_dev, &msg_button_cnt, 10, NULL);
+		can_send(can_dev, &msg, 10, tx_irq_callback, "LED msg");
+		can_send(can_dev, &msg_button_cnt, 10, NULL, "Button count");
 		if (toggle == SET_LED) {
 			send_string("String sent over CAN\n", can_dev);
 		}
@@ -109,6 +111,7 @@ void tx_thread(void *can_dev_param, void *unused2, void *unused3)
 void rx_str_thread(void *msgq, void *can_dev_param, void *unused)
 {
 	struct zcan_frame msg;
+	int filter_id;
 	const struct zcan_filter filter = {
 		.id_type = CAN_EXTENDED_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
@@ -118,7 +121,8 @@ void rx_str_thread(void *msgq, void *can_dev_param, void *unused)
 	};
 	struct device *can_dev = can_dev_param;
 
-	can_attach_msgq(can_dev, msgq, &filter);
+	filter_id = can_attach_msgq(can_dev, msgq, &filter);
+	printk("filter id: %d\n", filter_id);
 
 	while (1) {
 		k_msgq_get((struct k_msgq *)msgq, &msg, K_FOREVER);

@@ -20,6 +20,7 @@
 struct mcp2515_tx_cb {
 	struct k_sem sem;
 	can_tx_callback_t cb;
+	void *cb_arg;
 };
 
 struct mcp2515_data {

@@ -210,8 +210,9 @@ struct zcan_filter {
  * @brief Define the application callback handler function signature
  *
  * @param error_flags status of the performed send operation
+ * @param arg argument that was passed when the message was sent
  */
-typedef void (*can_tx_callback_t)(u32_t error_flags);
+typedef void (*can_tx_callback_t)(u32_t error_flags, void *arg);
 
 /**
  * @typedef can_rx_callback_t
@@ -227,7 +228,8 @@ typedef int (*can_configure_t)(struct device *dev, enum can_mode mode,
 				u32_t bitrate);
 
 typedef int (*can_send_t)(struct device *dev, const struct zcan_frame *msg,
-			  s32_t timeout, can_tx_callback_t callback_isr);
+			  s32_t timeout, can_tx_callback_t callback_isr,
+			  void *callback_arg);
 
 
 typedef int (*can_attach_msgq_t)(struct device *dev, struct k_msgq *msg_q,
@@ -260,21 +262,24 @@ struct can_driver_api {
  *                     occurred. If NULL, this function is blocking until
  *                     message is sent. This must be NULL if called from user
  *                     mode.
+ * @param callback_arg This will be passed whenever the isr is called.
  *
  * @retval 0 If successful.
  * @retval CAN_TX_* on failure.
  */
 __syscall int can_send(struct device *dev, const struct zcan_frame *msg,
-		       s32_t timeout, can_tx_callback_t callback_isr);
+		       s32_t timeout, can_tx_callback_t callback_isr,
+		       void *callback_arg);
 
 static inline int z_impl_can_send(struct device *dev,
 				 const struct zcan_frame *msg,
-				 s32_t timeout, can_tx_callback_t callback_isr)
+				 s32_t timeout, can_tx_callback_t callback_isr,
+				 void *callback_arg)
 {
 	const struct can_driver_api *api =
 		(const struct can_driver_api *)dev->driver_api;
 
-	return api->send(dev, msg, timeout, callback_isr);
+	return api->send(dev, msg, timeout, callback_isr, callback_arg);
 }
 
 /*
@@ -318,7 +323,7 @@ static inline int can_write(struct device *dev, const u8_t *data, u8_t length,
 	msg.rtr = rtr;
 	memcpy(msg.data, data, length);
 
-	return can_send(dev, &msg, timeout, NULL);
+	return can_send(dev, &msg, timeout, NULL, NULL);
 }
 
 /**

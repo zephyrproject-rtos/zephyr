@@ -30,7 +30,7 @@ static const u8_t reg_demand[] = {2, 1, 4, 2};
 static void can_stm32_signal_tx_complete(struct can_mailbox *mb)
 {
 	if (mb->tx_callback) {
-		mb->tx_callback(mb->error_flags);
+		mb->tx_callback(mb->error_flags, mb->callback_arg);
 	} else  {
 		k_sem_give(&mb->tx_int_sem);
 	}
@@ -300,11 +300,8 @@ static int can_stm32_init(struct device *dev)
 	data->mb2.tx_callback = NULL;
 
 	data->filter_usage = (1ULL << CAN_MAX_NUMBER_OF_FILTERS) - 1ULL;
-	(void)memset(data->rx_response, 0,
-		     sizeof(void *) * CONFIG_CAN_MAX_FILTER);
-	(void)memset(data->cb_arg, 0,
-		     sizeof(void *) * CONFIG_CAN_MAX_FILTER);
-	data->response_type = 0U;
+	(void)memset(data->rx_cb, 0, sizeof(data->rx_cb));
+	(void)memset(data->cb_arg, 0, sizeof(data->cb_arg));
 
 	clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	__ASSERT_NO_MSG(clock);
@@ -327,7 +324,7 @@ static int can_stm32_init(struct device *dev)
 }
 
 int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
-		   s32_t timeout, can_tx_callback_t callback)
+		   s32_t timeout, can_tx_callback_t callback, void *callback_arg)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
@@ -383,6 +380,7 @@ int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
 	}
 
 	mb->tx_callback = callback;
+	mb->callback_arg = callback_arg;
 	k_sem_reset(&mb->tx_int_sem);
 
 	/* mailbix identifier register setup */

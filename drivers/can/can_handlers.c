@@ -15,7 +15,7 @@ Z_SYSCALL_HANDLER(can_configure, dev, mode, bitrate) {
 				   (u32_t)bitrate);
 }
 
-Z_SYSCALL_HANDLER(can_send, dev, msg, timeout, callback_isr) {
+Z_SYSCALL_HANDLER(can_send, dev, msg, timeout, callback_isr, callback_arg) {
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, send));
 
@@ -26,9 +26,12 @@ Z_SYSCALL_HANDLER(can_send, dev, msg, timeout, callback_isr) {
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(callback_isr == 0,
 				    "callbacks may not be set from user mode"));
 
+	Z_OOPS(Z_SYSCALL_MEMORY_READ((void *)callback_arg, sizeof(void *)));
+
 	return z_impl_can_send((struct device *)dev,
 			      (const struct zcan_frame *)msg,
-			      (s32_t)timeout, (can_tx_callback_t) callback_isr);
+			      (s32_t)timeout, (can_tx_callback_t) callback_isr,
+			      (void *)callback_arg);
 }
 
 Z_SYSCALL_HANDLER(can_attach_msgq, dev, msgq, filter) {

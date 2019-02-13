@@ -43,10 +43,12 @@ static inline void socket_can_iface_init(struct net_if *iface)
 	LOG_DBG("Init CAN interface %p dev %p", iface, dev);
 }
 
-static inline void tx_irq_callback(u32_t error_flags)
+static inline void tx_irq_callback(u32_t error_flags, void *arg)
 {
+	char *caller_str = (char *)arg;
 	if (error_flags) {
-		LOG_DBG("Callback! error-code: %d", error_flags);
+		LOG_DBG("TX error from %s! error-code: %d",
+			caller_str, error_flags);
 	}
 }
 
@@ -62,7 +64,7 @@ static inline int socket_can_send(struct device *dev, struct net_pkt *pkt)
 
 	ret = can_send(socket_context->can_dev,
 		       (struct zcan_frame *)pkt->frags->data,
-		       SEND_TIMEOUT, tx_irq_callback);
+		       SEND_TIMEOUT, tx_irq_callback, "socket_can_send");
 	if (ret) {
 		LOG_DBG("Cannot send socket CAN msg (%d)", ret);
 	}
