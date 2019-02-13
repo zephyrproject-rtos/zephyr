@@ -266,7 +266,7 @@ static int cmd_log_backend_disable(const struct shell *shell,
 
 static void module_name_get(size_t idx, struct shell_static_entry *entry);
 
-SHELL_CREATE_DYNAMIC_CMD(dsub_module_name, module_name_get);
+SHELL_DYNAMIC_CMD_CREATE(dsub_module_name, module_name_get);
 
 static void module_name_get(size_t idx, struct shell_static_entry *entry)
 {
@@ -286,7 +286,7 @@ static void severity_lvl_get(size_t idx, struct shell_static_entry *entry)
 					severity_lvls_sorted[idx] : NULL;
 }
 
-SHELL_CREATE_DYNAMIC_CMD(dsub_severity_lvl, severity_lvl_get);
+SHELL_DYNAMIC_CMD_CREATE(dsub_severity_lvl, severity_lvl_get);
 
 static int log_halt(const struct shell *shell,
 		    const struct log_backend *backend,
@@ -394,7 +394,7 @@ static void backend_name_get(size_t idx, struct shell_static_entry *entry)
 	}
 }
 
-SHELL_CREATE_DYNAMIC_CMD(dsub_backend_name_dynamic, backend_name_get);
+SHELL_DYNAMIC_CMD_CREATE(dsub_backend_name_dynamic, backend_name_get);
 
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_stat,

@@ -155,7 +155,7 @@ static void dynamic_cmd_get(size_t idx, struct shell_static_entry *entry)
 	}
 }
 
-SHELL_CREATE_DYNAMIC_CMD(m_sub_dynamic_set, dynamic_cmd_get);
+SHELL_DYNAMIC_CMD_CREATE(m_sub_dynamic_set, dynamic_cmd_get);
 SHELL_STATIC_SUBCMD_SET_CREATE(m_sub_dynamic,
 	SHELL_CMD_ARG(add, NULL,
 		"Add a new dynamic command.\nExample usage: [ dynamic add test "

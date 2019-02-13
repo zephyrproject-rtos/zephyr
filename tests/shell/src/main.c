@@ -268,7 +268,7 @@ static void dynamic_cmd_get(size_t idx, struct shell_static_entry *entry)
 	}
 }
 
-SHELL_CREATE_DYNAMIC_CMD(m_sub_test_dynamic, dynamic_cmd_get);
+SHELL_DYNAMIC_CMD_CREATE(m_sub_test_dynamic, dynamic_cmd_get);
 SHELL_CMD_REGISTER(test_dynamic, &m_sub_test_dynamic, NULL, cmd_dynamic);
 
 
