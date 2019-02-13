@@ -198,39 +198,39 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                         extract_property(
                             node_compat, sub_node_address, k, v, None)
 
-def dict_merge(parent, fname, dct, merge_dct):
+def dict_merge(parent, fname, to_dict, from_dict):
     # from https://gist.github.com/angstwad/bf22d1822c38a92ec0a9
 
     """ Recursive dict merge. Inspired by :meth:``dict.update()``, instead of
     updating only top-level keys, dict_merge recurses down into dicts nested
-    to an arbitrary depth, updating keys. The ``merge_dct`` is merged into
-    ``dct``.
+    to an arbitrary depth, updating keys. The ``from_dict`` is merged into
+    ``to_dict``.
     :param parent: parent tuple key
     :param fname: yaml file being processed
-    :param dct: dict onto which the merge is executed
-    :param merge_dct: dct merged into dct
+    :param to_dict: dict onto which the merge is executed
+    :param from_dict: dictionary merged into to_dict
     :return: None
     """
-    for k, v in merge_dct.items():
-        if (k in dct and isinstance(dct[k], dict)
-                and isinstance(merge_dct[k], Mapping)):
-            dict_merge(k, fname, dct[k], merge_dct[k])
+    for k, v in from_dict.items():
+        if (k in to_dict and isinstance(to_dict[k], dict)
+                and isinstance(from_dict[k], dict)):
+            dict_merge(k, fname, to_dict[k], from_dict[k])
         else:
-            dct[k] = merge_dct[k]
+            to_dict[k] = from_dict[k]
 
             # Warn when overriding a property and changing its value...
-            if (k in dct and dct[k] != merge_dct[k] and
+            if (k in to_dict and to_dict[k] != from_dict[k] and
                 # ...unless it's the 'title', 'description', or 'version'
                 # property. These are overriden deliberately.
                 not k in {'title', 'version', 'description'} and
                 # Also allow the category to be changed from 'optional' to
                 # 'required' without a warning
-                not (k == "category" and dct[k] == "optional" and
-                     merge_dct[k] == "required")):
+                not (k == "category" and to_dict[k] == "optional" and
+                     from_dict[k] == "required")):
 
                 print("extract_dts_includes.py: {}('{}') merge of property "
                       "'{}': '{}' overwrites '{}'"
-                      .format(fname, parent, k, merge_dct[k], dct[k]))
+                      .format(fname, parent, k, from_dict[k], to_dict[k]))
 
 
 def merge_included_bindings(fname, node):
