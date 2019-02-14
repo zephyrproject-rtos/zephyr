@@ -229,17 +229,10 @@ FUNC_NORETURN void _arch_syscall_oops(void *ssf_ptr)
 }
 
 #ifdef CONFIG_X86_KERNEL_OOPS
-/* The reason code gets pushed onto the stack right before the exception is
- * triggered, so it would be after the nano_esf data
- */
-struct oops_esf {
-	NANO_ESF nano_esf;
-	unsigned int reason;
-};
-
-FUNC_NORETURN void _do_kernel_oops(const struct oops_esf *esf)
+FUNC_NORETURN void _do_kernel_oops(const NANO_ESF *esf)
 {
-	_NanoFatalErrorHandler(esf->reason, &esf->nano_esf);
+	u32_t *stack_ptr = (u32_t *)esf->esp;
+	_NanoFatalErrorHandler(*stack_ptr, esf);
 }
 
 extern void (*_kernel_oops_handler)(void);
