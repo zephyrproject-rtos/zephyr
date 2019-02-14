@@ -299,6 +299,16 @@ config MBEDTLS_ENTROPY_ENABLED
 	bool "Enable mbedTLS generic entropy pool"
 	depends on MBEDTLS_MAC_SHA256_ENABLED || MBEDTLS_MAC_SHA512_ENABLED
 
+config MBEDTLS_OPENTHREAD_OPTIMIZATIONS_ENABLED
+	bool "Enable mbedTLS optimizations for OpenThread"
+	depends on NET_L2_OPENTHREAD
+	default y if !NET_SOCKETS_SOCKOPT_TLS
+	help
+	  Enable some OpenThread specific mbedTLS optimizations that allows to
+	  save some RAM/ROM when OpenThread is used. Note, that when application
+	  aims to use other mbedTLS services on top of OpenThread (e.g. secure
+	  sockets), it's advised to disable this option.
+
 config MBEDTLS_USER_CONFIG_ENABLE
 	bool "Enable user mbedTLS config file"
 	help
