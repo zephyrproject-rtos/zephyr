@@ -1,16 +1,16 @@
 ---
-title: <Title should describe what node you are describing>
+title: <short description of the node>
 version: 0.1
 
 description: >
-    Describe in free form text w/ spanning lines what you
-    are describing
+    Longer free-form description of the node, with spanning
+    lines
 
 inherits:
   - !include other.yaml # or [other1.yaml, other2.yaml]
-# other.yaml contains bindings that also apply to this node.
-# In case there are duplicate definitions in the different
-# bindings the one that is defined first prevails.
+# Files with other bindings that also apply to the node. If an attribute is set
+# both in an included file and in the file that includes it, then the value
+# from the including file (the file with the !include) is used.
 
 < parent | child >:
 # parent/child is used to document implicit relation between nodes.
@@ -20,54 +20,55 @@ inherits:
 # parent and child should share same bus-type value.
    bus: <bus-type>
 
-# properties will be the contents of the device tree node
-# property names must match the property names in the DT
-
 properties:
 
-# A typical property entry will look like the following
-#   <name of property as it is in device tree>
+# A typical property entry looks like this:
+#
+#   <name of the property in the device tree - regexes are supported>:
 #     category: <required | optional>
 #     type: <string | int | array | compound>
 #     description: <description of property>
-#     generation: <define | structure>
+#     generation: define
+#
+# The 'generation' attribute can be set to 'define, use-prop-name' to use the
+# property name instead of a generic controller name, e.g. *_CS_GPIO_* instead
+# of *_GPIOS_*.
+#
+# The exact value of the 'generation' attribute is ignored otherwise. The
+# output is always #define's.
+#
+# The 'type' attribute is currently ignored.
 
-# At a minimum, the compatible is required for matching nodes
+# At a minimum, an entry for the 'compatible' property is required, for
+# matching nodes
     compatible: <list of string compatible matches>
       category: required
       type: string
       description: compatible of node
       generation: define
 
-# reg is used to denote mmio registers
+# 'reg' describes mmio registers
     reg:
+      category: required
       type: array
       description: mmio register space
       generation: define
-      category: required
 
-# interrupts specifies the interrupts that the driver may utilize
+# 'interrupts' specifies the interrupts that the driver may use
     interrupts:
-      type: array
       category: required
+      type: array
       description: required interrupts
       generation: define
 
-# If a node is a interrupt controller, gpio controller, pinmux device
-# or any device which is referenced via phandle plus some number of cells
-# then the cell fiels below must be present.
+# If a node is an interrupt controller, GPIO controller, pinmux device, or any
+# device referenced via a phandle plus some number of cells, then the cell
+# fields below must be present
 
 "#cells":
   - cell0    # name of first cell
   - cell1    # name of second cell
   - cell2    # name of third cell
   - and so on and so forth
-
-# When the "generation" attribute is set to "define", value "use-prop-name"
-# could be added to indicate that generated #define should use property
-# name instead of controller generic name, for instance _CS_GPIO_ instead
-# of _GPIOS_
-
-# "type" attribute is currently not used.
 
 ...
