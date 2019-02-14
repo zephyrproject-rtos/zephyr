@@ -159,13 +159,13 @@ struct net_mgmt_event_callback {
 	};
 };
 
-#ifdef CONFIG_NET_MGMT_EVENT
 /**
  * @brief Helper to initialize a struct net_mgmt_event_callback properly
  * @param cb A valid application's callback structure pointer.
  * @param handler A valid handler function pointer.
  * @param mgmt_event_mask A mask of relevant events for the handler
  */
+#ifdef CONFIG_NET_MGMT_EVENT
 static inline
 void net_mgmt_init_event_callback(struct net_mgmt_event_callback *cb,
 				  net_mgmt_event_handler_t handler,
@@ -177,18 +177,29 @@ void net_mgmt_init_event_callback(struct net_mgmt_event_callback *cb,
 	cb->handler = handler;
 	cb->event_mask = mgmt_event_mask;
 };
+#else
+#define net_mgmt_init_event_callback(...)
+#endif
 
 /**
  * @brief Add a user callback
  * @param cb A valid pointer on user's callback to add.
  */
+#ifdef CONFIG_NET_MGMT_EVENT
 void net_mgmt_add_event_callback(struct net_mgmt_event_callback *cb);
+#else
+#define net_mgmt_add_event_callback(...)
+#endif
 
 /**
  * @brief Delete a user callback
  * @param cb A valid pointer on user's callback to delete.
  */
+#ifdef CONFIG_NET_MGMT_EVENT
 void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb);
+#else
+#define net_mgmt_del_event_callback(...)
+#endif
 
 /**
  * @brief Used by the system to notify an event.
@@ -203,6 +214,7 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb);
  * Note: info and length are disabled if CONFIG_NET_MGMT_EVENT_INFO
  *       is not defined.
  */
+#ifdef CONFIG_NET_MGMT_EVENT
 void net_mgmt_event_notify_with_info(u32_t mgmt_event, struct net_if *iface,
 				     void *info, size_t length);
 
@@ -210,6 +222,10 @@ static inline void net_mgmt_event_notify(u32_t mgmt_event, struct net_if *iface)
 {
 	net_mgmt_event_notify_with_info(mgmt_event, iface, NULL, 0);
 }
+#else
+#define net_mgmt_event_notify(...)
+#define net_mgmt_event_notify_with_info(...)
+#endif
 
 /**
  * @brief Used to wait synchronously on an event mask
@@ -230,11 +246,22 @@ static inline void net_mgmt_event_notify(u32_t mgmt_event, struct net_if *iface)
  *         be specifically returned if the timeout kick-in instead of an
  *         actual event.
  */
+#ifdef CONFIG_NET_MGMT_EVENT
 int net_mgmt_event_wait(u32_t mgmt_event_mask,
 			u32_t *raised_event,
 			struct net_if **iface,
 			const void **info,
 			int timeout);
+#else
+static inline int net_mgmt_event_wait(u32_t mgmt_event_mask,
+				      u32_t *raised_event,
+				      struct net_if **iface,
+				      const void **info,
+				      int timeout)
+{
+	return 0;
+}
+#endif
 
 /**
  * @brief Used to wait synchronously on an event mask for a specific iface
@@ -254,33 +281,13 @@ int net_mgmt_event_wait(u32_t mgmt_event_mask,
  *         be specifically returned if the timeout kick-in instead of an
  *         actual event.
  */
+#ifdef CONFIG_NET_MGMT_EVENT
 int net_mgmt_event_wait_on_iface(struct net_if *iface,
 				 u32_t mgmt_event_mask,
 				 u32_t *raised_event,
 				 const void **info,
 				 int timeout);
-
-/**
- * @brief Used by the core of the network stack to initialize the network
- *        event processing.
- */
-void net_mgmt_event_init(void);
 #else
-#define net_mgmt_init_event_callback(...)
-#define net_mgmt_add_event_callback(...)
-#define net_mgmt_event_notify(...)
-#define net_mgmt_event_init(...)
-#define net_mgmt_event_notify_with_info(...)
-
-static inline int net_mgmt_event_wait(u32_t mgmt_event_mask,
-				      u32_t *raised_event,
-				      struct net_if **iface,
-				      const void **info,
-				      int timeout)
-{
-	return 0;
-}
-
 static inline int net_mgmt_event_wait_on_iface(struct net_if *iface,
 					       u32_t mgmt_event_mask,
 					       u32_t *raised_event,
@@ -289,7 +296,16 @@ static inline int net_mgmt_event_wait_on_iface(struct net_if *iface,
 {
 	return 0;
 }
+#endif
 
+/**
+ * @brief Used by the core of the network stack to initialize the network
+ *        event processing.
+ */
+#ifdef CONFIG_NET_MGMT_EVENT
+void net_mgmt_event_init(void);
+#else
+#define net_mgmt_event_init(...)
 #endif /* CONFIG_NET_MGMT_EVENT */
 
 /**

@@ -18,8 +18,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_NET_GPTP)
-
 #include "gptp_md.h"
 
 /**
@@ -70,8 +68,6 @@ void gptp_mi_state_machines(void);
  * @return Current time in nanoseconds.
  */
 u64_t gptp_get_current_time_nanosecond(int port);
-
-#endif /* CONFIG_NET_GPTP */
 
 #ifdef __cplusplus
 }

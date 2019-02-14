@@ -508,7 +508,6 @@ static inline struct device *net_if_get_device(struct net_if *iface)
  */
 void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt);
 
-#if defined(CONFIG_NET_OFFLOAD)
 /**
  * @brief Return the IP offload status
  *
@@ -516,10 +515,19 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt);
  *
  * @return True if IP offlining is active, false otherwise.
  */
+#if defined(CONFIG_NET_OFFLOAD)
 static inline bool net_if_is_ip_offloaded(struct net_if *iface)
 {
 	return (iface->if_dev->offload != NULL);
 }
+#else
+static inline bool net_if_is_ip_offloaded(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return false;
+}
+#endif
 
 /**
  * @brief Return the IP offload plugin
@@ -528,16 +536,10 @@ static inline bool net_if_is_ip_offloaded(struct net_if *iface)
  *
  * @return NULL if there is no offload plugin defined, valid pointer otherwise
  */
+#if defined(CONFIG_NET_OFFLOAD)
 static inline struct net_offload *net_if_offload(struct net_if *iface)
 {
 	return iface->if_dev->offload;
-}
-#else
-static inline bool net_if_is_ip_offloaded(struct net_if *iface)
-{
-	ARG_UNUSED(iface);
-
-	return false;
 }
 #endif
 

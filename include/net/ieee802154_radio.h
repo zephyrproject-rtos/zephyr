@@ -126,8 +126,6 @@ static inline bool ieee802154_is_ar_flag_set(struct net_buf *frag)
 	return (*frag->data & IEEE802154_AR_FLAG_SET);
 }
 
-#ifndef CONFIG_IEEE802154_RAW_MODE
-
 /**
  * @brief Radio driver ACK handling function that hw drivers should use
  *
@@ -139,16 +137,9 @@ static inline bool ieee802154_is_ar_flag_set(struct net_buf *frag)
  *
  * @return NET_OK if it was handled, NET_CONTINUE otherwise
  */
+#ifndef CONFIG_IEEE802154_RAW_MODE
 extern enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 						    struct net_pkt *pkt);
-
-/**
- * @brief Initialize L2 stack for a given interface
- *
- * @param iface A valid pointer on a network interface
- */
-void ieee802154_init(struct net_if *iface);
-
 #else /* CONFIG_IEEE802154_RAW_MODE */
 
 static inline enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
@@ -156,9 +147,17 @@ static inline enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 {
 	return NET_CONTINUE;
 }
+#endif /* CONFIG_IEEE802154_RAW_MODE */
 
+/**
+ * @brief Initialize L2 stack for a given interface
+ *
+ * @param iface A valid pointer on a network interface
+ */
+#ifndef CONFIG_IEEE802154_RAW_MODE
+void ieee802154_init(struct net_if *iface);
+#else
 #define ieee802154_init(_iface_)
-
 #endif /* CONFIG_IEEE802154_RAW_MODE */
 
 #ifdef __cplusplus

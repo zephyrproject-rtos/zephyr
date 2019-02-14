@@ -444,7 +444,6 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
 	return eth->get_capabilities(net_if_get_device(iface));
 }
 
-#if defined(CONFIG_NET_VLAN)
 /**
  * @brief Add VLAN tag to the interface.
  *
@@ -453,7 +452,14 @@ enum ethernet_hw_caps net_eth_get_hw_capabilities(struct net_if *iface)
  *
  * @return 0 if ok, <0 if error
  */
+#if defined(CONFIG_NET_VLAN)
 int net_eth_vlan_enable(struct net_if *iface, u16_t tag);
+#else
+static inline int net_eth_vlan_enable(struct net_if *iface, u16_t tag)
+{
+	return -EINVAL;
+}
+#endif
 
 /**
  * @brief Remove VLAN tag from the interface.
@@ -463,7 +469,14 @@ int net_eth_vlan_enable(struct net_if *iface, u16_t tag);
  *
  * @return 0 if ok, <0 if error
  */
+#if defined(CONFIG_NET_VLAN)
 int net_eth_vlan_disable(struct net_if *iface, u16_t tag);
+#else
+static inline int net_eth_vlan_disable(struct net_if *iface, u16_t tag)
+{
+	return -EINVAL;
+}
+#endif
 
 /**
  * @brief Return VLAN tag specified to network interface
@@ -473,7 +486,14 @@ int net_eth_vlan_disable(struct net_if *iface, u16_t tag);
  * @return VLAN tag for this interface or NET_VLAN_TAG_UNSPEC if VLAN
  * is not configured for that interface.
  */
+#if defined(CONFIG_NET_VLAN)
 u16_t net_eth_get_vlan_tag(struct net_if *iface);
+#else
+static inline u16_t net_eth_get_vlan_tag(struct net_if *iface)
+{
+	return NET_VLAN_TAG_UNSPEC;
+}
+#endif
 
 /**
  * @brief Return network interface related to this VLAN tag
@@ -485,7 +505,15 @@ u16_t net_eth_get_vlan_tag(struct net_if *iface);
  * @return Network interface related to this tag or NULL if no such interface
  * exists.
  */
+#if defined(CONFIG_NET_VLAN)
 struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag);
+#else
+static inline
+struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag)
+{
+	return NULL;
+}
+#endif
 
 /**
  * @brief Check if VLAN is enabled for a specific network interface.
@@ -495,8 +523,16 @@ struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag);
  *
  * @return True if VLAN is enabled for this network interface, false if not.
  */
+#if defined(CONFIG_NET_VLAN)
 bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
 			     struct net_if *iface);
+#else
+static inline bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
+					   struct net_if *iface)
+{
+	return false;
+}
+#endif
 
 /**
  * @brief Get VLAN status for a given network interface (enabled or not).
@@ -505,8 +541,16 @@ bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
  *
  * @return True if VLAN is enabled for this network interface, false if not.
  */
+#if defined(CONFIG_NET_VLAN)
 bool net_eth_get_vlan_status(struct net_if *iface);
+#else
+static inline bool net_eth_get_vlan_status(struct net_if *iface)
+{
+	return false;
+}
+#endif
 
+#if defined(CONFIG_NET_VLAN)
 #define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn,		 \
 			    data, cfg_info, prio, api, mtu)		 \
 	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,		 \
@@ -522,37 +566,6 @@ bool net_eth_get_vlan_status(struct net_if *iface);
 			data, cfg_info, prio, api, ETHERNET_L2,		\
 			NET_L2_GET_CTX_TYPE(ETHERNET_L2), mtu)
 
-static inline int net_eth_vlan_enable(struct net_if *iface, u16_t vlan_tag)
-{
-	return -EINVAL;
-}
-
-static inline int net_eth_vlan_disable(struct net_if *iface, u16_t vlan_tag)
-{
-	return -EINVAL;
-}
-
-static inline u16_t net_eth_get_vlan_tag(struct net_if *iface)
-{
-	return NET_VLAN_TAG_UNSPEC;
-}
-
-static inline
-struct net_if *net_eth_get_vlan_iface(struct net_if *iface, u16_t tag)
-{
-	return NULL;
-}
-
-static inline bool net_eth_is_vlan_enabled(struct ethernet_context *ctx,
-					   struct net_if *iface)
-{
-	return false;
-}
-
-static inline bool net_eth_get_vlan_status(struct net_if *iface)
-{
-	return false;
-}
 #endif /* CONFIG_NET_VLAN */
 
 /**
@@ -592,7 +605,6 @@ int net_eth_promisc_mode(struct net_if *iface, bool enable);
  */
 struct device *net_eth_get_ptp_clock(struct net_if *iface);
 
-#if defined(CONFIG_NET_GPTP)
 /**
  * @brief Return gPTP port number attached to this interface.
  *
@@ -600,15 +612,8 @@ struct device *net_eth_get_ptp_clock(struct net_if *iface);
  *
  * @return Port number, no such port if < 0
  */
+#if defined(CONFIG_NET_GPTP)
 int net_eth_get_ptp_port(struct net_if *iface);
-
-/**
- * @brief Set gPTP port number attached to this interface.
- *
- * @param iface Network interface
- * @param port Port number to set
- */
-void net_eth_set_ptp_port(struct net_if *iface, int port);
 #else
 static inline int net_eth_get_ptp_port(struct net_if *iface)
 {
@@ -616,6 +621,16 @@ static inline int net_eth_get_ptp_port(struct net_if *iface)
 
 	return -ENODEV;
 }
+#endif /* CONFIG_NET_GPTP */
+
+/**
+ * @brief Set gPTP port number attached to this interface.
+ *
+ * @param iface Network interface
+ * @param port Port number to set
+ */
+#if defined(CONFIG_NET_GPTP)
+void net_eth_set_ptp_port(struct net_if *iface, int port);
 #endif /* CONFIG_NET_GPTP */
 
 struct net_lldpdu;
