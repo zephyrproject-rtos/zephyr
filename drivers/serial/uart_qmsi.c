@@ -110,20 +110,25 @@ static int uart_resume_device_from_suspend(struct device *dev)
 * the *context may include IN data or/and OUT data
 */
 static int uart_qmsi_device_ctrl(struct device *dev, u32_t ctrl_command,
-				 void *context)
+				 void *context, device_pm_cb cb, void *arg)
 {
+	int ret = 0;
+
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			return uart_suspend_device(dev);
+			ret = uart_suspend_device(dev);
 		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			return uart_resume_device_from_suspend(dev);
+			ret = uart_resume_device_from_suspend(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((u32_t *)context) = uart_qmsi_get_power_state(dev);
-		return 0;
 	}
 
-	return 0;
+	if (cb) {
+		cb(dev, ret, context, arg);
+	}
+
+	return ret;
 }
 #endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 

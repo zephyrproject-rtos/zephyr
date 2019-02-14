@@ -187,19 +187,25 @@ static int _arc_v2_irq_unit_get_state(struct device *dev)
  * the *context may include IN data or/and OUT data
  */
 static int _arc_v2_irq_unit_device_ctrl(struct device *device,
-		u32_t ctrl_command, void *context)
+		u32_t ctrl_command, void *context, device_pm_cb cb, void *arg)
 {
+	int ret = 0;
+
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			return _arc_v2_irq_unit_suspend(device);
+			ret = _arc_v2_irq_unit_suspend(device);
 		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			return _arc_v2_irq_unit_resume(device);
+			ret = _arc_v2_irq_unit_resume(device);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((u32_t *)context) = _arc_v2_irq_unit_get_state(device);
-		return 0;
 	}
-	return 0;
+
+	if (cb) {
+		cb(device, ret, context, arg);
+	}
+
+	return ret;
 }
 
 SYS_DEVICE_DEFINE("arc_v2_irq_unit", _arc_v2_irq_unit_init,

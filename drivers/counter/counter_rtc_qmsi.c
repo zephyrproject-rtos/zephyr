@@ -217,20 +217,25 @@ static int rtc_resume_device(struct device *dev)
 * the *context may include IN data or/and OUT data
 */
 static int rtc_qmsi_device_ctrl(struct device *dev, u32_t ctrl_command,
-				void *context)
+				void *context, device_pm_cb cb, void *arg)
 {
+	int ret = 0;
+
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			return rtc_suspend_device(dev);
+			ret = rtc_suspend_device(dev);
 		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			return rtc_resume_device(dev);
+			ret = rtc_resume_device(dev);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((u32_t *)context) = rtc_qmsi_get_power_state(dev);
-		return 0;
 	}
 
-	return 0;
+	if (cb) {
+		cb(dev, ret, context, arg);
+	}
+
+	return ret;
 }
 #endif
 

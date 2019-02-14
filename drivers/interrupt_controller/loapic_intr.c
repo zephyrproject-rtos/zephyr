@@ -486,20 +486,25 @@ int loapic_resume(struct device *port)
 * the *context may include IN data or/and OUT data
 */
 static int loapic_device_ctrl(struct device *port, u32_t ctrl_command,
-			      void *context)
+			      void *context, device_pm_cb cb, void *arg)
 {
+	int ret = 0;
+
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			return loapic_suspend(port);
+			ret = loapic_suspend(port);
 		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			return loapic_resume(port);
+			ret = loapic_resume(port);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((u32_t *)context) = loapic_device_power_state;
-		return 0;
 	}
 
-	return 0;
+	if (cb) {
+		cb(port, ret, context, arg);
+	}
+
+	return ret;
 }
 
 SYS_DEVICE_DEFINE("loapic", _loapic_init, loapic_device_ctrl, PRE_KERNEL_1,

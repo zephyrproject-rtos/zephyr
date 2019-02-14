@@ -339,7 +339,7 @@ Device Set Power State
 
 .. code-block:: c
 
-   int device_set_power_state(struct device *device, u32_t device_power_state);
+   int device_set_power_state(struct device *device, u32_t device_power_state, device_pm_cb cb, void *arg);
 
 Calls the :c:func:`device_pm_control()` handler function implemented by the
 device driver with DEVICE_PM_SET_POWER_STATE command.

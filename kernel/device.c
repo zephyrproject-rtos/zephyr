@@ -110,7 +110,10 @@ Z_SYSCALL_HANDLER(device_get_binding, name)
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 int device_pm_control_nop(struct device *unused_device,
-		       u32_t unused_ctrl_command, void *unused_context)
+		       u32_t unused_ctrl_command,
+		       void *unused_context,
+		       device_pm_cb cb,
+		       void *unused_arg)
 {
 	return 0;
 }
