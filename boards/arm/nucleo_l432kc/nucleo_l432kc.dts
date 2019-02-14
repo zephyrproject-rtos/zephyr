@@ -74,7 +74,7 @@
 		#size-cells = <1>;
 
 		/*
-		 * Reserve the final 16 KiB for the application.
+		 * Reserve the final 16 KiB for file system partition
 		 */
 		storage_partition: partition@3c000 {
 			label = "storage";
