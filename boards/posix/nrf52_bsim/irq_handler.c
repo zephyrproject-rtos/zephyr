@@ -111,6 +111,8 @@ static inline void vector_to_irq(int irq_nbr, int *may_swap)
 			*may_swap = 1;
 		}
 	}
+
+	sys_trace_isr_exit();
 	/* _int_latency_stop(); */
 
 	bs_trace_raw_time(7, "Irq %i (%s) ended\n", irq_nbr, irqnames[irq_nbr]);
