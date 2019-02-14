@@ -7,12 +7,23 @@
 
 #define BDADDR_SIZE 6
 
-/* PDU Sizes */
+/*
+ * PDU Sizes
+ */
+/* Advertisement channel maximum payload size */
 #define PDU_AC_PAYLOAD_SIZE_MAX 37
-#define PDU_AC_SIZE_MAX         (offsetof(struct pdu_adv, payload) + \
-				PDU_AC_PAYLOAD_SIZE_MAX)
+/* Link Layer header size of Adv PDU. Assumes pdu_adv is packed */
+#define PDU_AC_LL_HEADER_SIZE  (offsetof(struct pdu_adv, payload))
+/* Advertisement channel maximum PDU size */
+#define PDU_AC_SIZE_MAX        (PDU_AC_LL_HEADER_SIZE + PDU_AC_PAYLOAD_SIZE_MAX)
+
+/* Data channel minimum payload */
 #define PDU_DC_PAYLOAD_SIZE_MIN 27
-#define PDU_EM_SIZE_MAX         offsetof(struct pdu_data, lldata)
+/* Link Layer header size of Data PDU. Assumes pdu_data is packed */
+#define PDU_DC_LL_HEADER_SIZE  (offsetof(struct pdu_data, lldata))
+
+/* Max size of an empty PDU. TODO: Remove; only used in Nordic LLL */
+#define PDU_EM_SIZE_MAX        (PDU_DC_LL_HEADER_SIZE)
 
 /* Extra bytes for enqueued node_rx metadata: rssi (always), resolving
  * index, directed adv report, and mesh channel and instant.

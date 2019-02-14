@@ -144,10 +144,6 @@ static struct {
 static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 
-#define PDU_RX_SIZE_MIN MROUND(offsetof(struct node_rx_pdu, pdu) + \
-			       sizeof(struct node_rx_ftr) + \
-			       (PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA))
-
 #if defined(CONFIG_BT_RX_BUF_LEN)
 #define PDU_RX_OCTETS_MAX (CONFIG_BT_RX_BUF_LEN - 11)
 #else
@@ -167,11 +163,9 @@ static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 		+ MAX(PDU_ADVERTIZE_SIZE, PDU_DATA_SIZE)   \
 	)
 
-#define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * RX_CNT)
+#define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * (RX_CNT + 1))
 
 static struct {
-	u16_t size; /* Runtime (re)sized info */
-
 	void *free;
 	u8_t pool[PDU_RX_POOL_SIZE];
 } mem_pdu_rx;
@@ -1103,9 +1097,8 @@ static inline int init_reset(void)
 	done_alloc();
 
 	/* Initialize rx pool. */
-	mem_pdu_rx.size = PDU_RX_SIZE_MIN;
-	mem_init(mem_pdu_rx.pool, mem_pdu_rx.size,
-		 sizeof(mem_pdu_rx.pool) / mem_pdu_rx.size,
+	mem_init(mem_pdu_rx.pool, (PDU_RX_NODE_POOL_ELEMENT_SIZE),
+		 sizeof(mem_pdu_rx.pool) / (PDU_RX_NODE_POOL_ELEMENT_SIZE),
 		 &mem_pdu_rx.free);
 
 	/* Initialize rx link pool. */
