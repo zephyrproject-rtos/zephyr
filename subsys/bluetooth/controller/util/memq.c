@@ -58,31 +58,33 @@ memq_link_t *memq_init(memq_link_t *link, memq_link_t **head, memq_link_t **tail
  *
  * @param head[in,out] Head of queue. Will be updated
  * @param tail[in,out] Tail of queue. Will be updated
- * @return             If empty, return initial link-element. Otherwise NULL
+ * @return          Head of queue before invalidation; NULL if queue was empty
  */
 memq_link_t *memq_deinit(memq_link_t **head, memq_link_t **tail)
 {
-	memq_link_t *link;
+	memq_link_t *old_head;
 
 	/* If head and tail are not equal, then queue is not empty */
 	if (*head != *tail) {
 		return NULL;
 	}
 
-	link = *head;
+	old_head = *head;
 	*head = *tail = NULL;
 
-	return link;
+	return old_head;
 }
 
 /**
  * @brief Enqueue at the tail of the queue
  * @details Enqueue is destructive so tail will change to new tail
+ * NOTE: The memory will not be associated with the link-element, but
+ *   rather the second-to-last link-element.
  *
- * @param link[in]     Element to become the new tail. Not associated mem
- * @param mem[in]      Memory buffer. Will be owned by old tail
+ * @param link[in]     Element to be appended. Becomes new tail
+ * @param mem[in]      The memory payload to be enqueued. Pointed to by old tail
  * @param tail[in,out] Tail of queue. Will be updated to point to link
- * @return             New tail
+ * @return             New tail. Note: Does not point to the new mem
  */
 memq_link_t *memq_enqueue(memq_link_t *link, void *mem, memq_link_t **tail)
 {
