@@ -172,7 +172,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
                 if c in filter_list:
                     continue
 
-                if re.match(k + '$', c):
+                if re.fullmatch(k, c):
 
                     if 'pinctrl-' in c:
                         names = deepcopy(node['props'].get(
