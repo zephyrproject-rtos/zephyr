@@ -255,8 +255,6 @@ config TRACING_CPU_STATS_INTERVAL
 	help
 	  Time period of displaying information about CPU usage.
 
-endmenu
-
 config TRACING_CTF
 	bool "Tracing via Common Trace Format support"
 	select THREAD_MONITOR
@@ -275,3 +273,6 @@ config TRACING_CTF_BOTTOM_POSIX
 
 
 source "subsys/debug/Kconfig.segger"
+
+endmenu
+
