@@ -482,8 +482,8 @@ static void test_ipv4_addresses(void)
 
 	iface = NULL;
 
-	iface1 = net_if_get_by_index(0);
-	iface2 = net_if_get_by_index(1);
+	iface1 = net_if_get_by_index(1);
+	iface2 = net_if_get_by_index(2);
 
 	ifmaddr1 = net_if_ipv4_maddr_lookup(&maddr4a, &iface);
 	zassert_not_null(ifmaddr1, "IPv4 multicast address lookup failed");
