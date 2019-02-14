@@ -27,8 +27,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_NET_UDP)
-
 /**
  * @brief Insert UDP packet into net_pkt after specific offset.
  *
@@ -40,10 +38,14 @@ extern "C" {
  * @return Return network packet that contains the UDP packet or NULL if
  * there is an failure.
  */
+#if defined(CONFIG_NET_UDP)
 struct net_pkt *net_udp_insert(struct net_pkt *pkt,
 			       u16_t offset,
 			       u16_t src_port,
 			       u16_t dst_port);
+#else
+#define net_udp_insert(pkt, offset, src_port, dst_port) (pkt)
+#endif
 
 /**
  * @brief Create UDP packet into net_pkt
@@ -57,7 +59,19 @@ struct net_pkt *net_udp_insert(struct net_pkt *pkt,
  *
  * @return 0 on success, negative errno otherwise.
  */
+#if defined(CONFIG_NET_UDP)
 int net_udp_create(struct net_pkt *pkt, u16_t src_port, u16_t dst_port);
+#else
+static inline int net_udp_create(struct net_pkt *pkt,
+				 u16_t src_port, u16_t dst_port)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(src_port);
+	ARG_UNUSED(dst_port);
+
+	return 0;
+}
+#endif
 
 /**
  * @brief Finalize UDP packet
@@ -68,31 +82,29 @@ int net_udp_create(struct net_pkt *pkt, u16_t src_port, u16_t dst_port);
  *
  * @return 0 on success, negative errno otherwise.
  */
+#if defined(CONFIG_NET_UDP)
 int net_udp_finalize(struct net_pkt *pkt);
-
-struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
-				  struct net_pkt_data_access *udp_access);
-
 #else
-#define net_udp_insert(pkt, offset, src_port, dst_port) (pkt)
-
-static inline int net_udp_create(struct net_pkt *pkt,
-				 u16_t src_port, u16_t dst_port)
-{
-	ARG_UNUSED(pkt);
-	ARG_UNUSED(src_port);
-	ARG_UNUSED(dst_port);
-
-	return 0;
-}
-
 static inline int net_udp_finalize(struct net_pkt *pkt)
 {
 	ARG_UNUSED(pkt);
 
 	return 0;
 }
+#endif
 
+/**
+ * @brief Get pointer to UDP header in net_pkt
+ *
+ * @param pkt Network packet
+ * @param udp_access Helper variable for accessing UDP header
+ *
+ * @return UDP header on success, NULL on error
+ */
+#if defined(CONFIG_NET_UDP)
+struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
+				  struct net_pkt_data_access *udp_access);
+#else
 static inline
 struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 				  struct net_pkt_data_access *udp_access)
@@ -102,8 +114,7 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 
 	return NULL;
 }
-
-#endif /* CONFIG_NET_UDP */
+#endif
 
 /**
  * @brief Register a callback to be called when UDP packet

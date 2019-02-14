@@ -18,8 +18,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_NET_GPTP)
-
 #include <net/net_pkt.h>
 #include <net/ethernet.h>
 #include <net/gptp.h>
@@ -491,8 +489,6 @@ void gptp_send_pdelay_resp(int port, struct net_pkt *pkt,
  */
 void gptp_send_pdelay_follow_up(int port, struct net_pkt *pkt,
 				struct net_ptp_time *tresp);
-
-#endif /* CONFIG_NET_GPTP */
 
 #ifdef __cplusplus
 }

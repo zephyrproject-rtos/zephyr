@@ -20,8 +20,6 @@
 
 #include "ieee802154_frame.h"
 
-#ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
-
 struct ieee802154_fragment_ctx {
 	struct net_buf *frag;
 	u8_t *pos;
@@ -64,8 +62,12 @@ void ieee802154_fragment_ctx_init(struct ieee802154_fragment_ctx *ctx,
  *
  *  @return True in case of success, false otherwise
  */
+#ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 void ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
 			 struct net_buf *frame_buf, bool iphc);
+#else
+#define ieee802154_fragment(...)
+#endif
 
 /**
  *  @brief Reassemble 802.15.4 fragments as per RFC 6282
@@ -82,18 +84,10 @@ void ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
  *          NET_OK waiting for other fragments,
  *          NET_DROP invalid fragment.
  */
+#ifdef CONFIG_NET_L2_IEEE802154_FRAGMENT
 enum net_verdict ieee802154_reassemble(struct net_pkt *pkt);
-
-#else /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
-
-struct ieee802154_fragment_ctx {
-	struct net_buf *frag;
-};
-
-#define ieee802154_fragment_is_needed(...) false
-#define ieee802154_fragment_ctx_init(...)
-#define ieee802154_fragment(...)
-
+#else
+#define ieee802154_reassemble(...)
 #endif /* CONFIG_NET_L2_IEEE802154_FRAGMENT */
 
 #endif /* __NET_IEEE802154_FRAGMENT_H__ */

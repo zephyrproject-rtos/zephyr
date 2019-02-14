@@ -910,6 +910,10 @@ static inline bool net_pkt_is_being_overwritten(struct net_pkt *pkt)
 
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC) || \
 	(CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG)
+#define NET_PKT_DEBUG_ENABLED
+#endif
+
+#if defined(NET_PKT_DEBUG_ENABLED)
 
 /* Debug versions of the net_pkt functions that are used when tracking
  * buffer usage.
@@ -1008,6 +1012,9 @@ void net_pkt_frag_insert_debug(struct net_pkt *pkt, struct net_buf *frag,
 			       const char *caller, int line);
 #define net_pkt_frag_insert(pkt, frag)					\
 	net_pkt_frag_insert_debug(pkt, frag, __func__, __LINE__)
+#endif /* CONFIG_NET_DEBUG_NET_PKT_ALLOC ||
+	* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
+	*/
 
 /**
  * @brief Print fragment list and the fragment sizes
@@ -1016,11 +1023,11 @@ void net_pkt_frag_insert_debug(struct net_pkt *pkt, struct net_buf *frag,
  *
  * @param pkt Network pkt.
  */
+#if defined(NET_PKT_DEBUG_ENABLED)
 void net_pkt_print_frags(struct net_pkt *pkt);
-
-#else /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
-
-#define net_pkt_print_frags(...)
+#else
+#define net_pkt_print_frags(pkt)
+#endif
 
 /**
  * @brief Get packet from the given packet slab.
@@ -1035,8 +1042,10 @@ void net_pkt_print_frags(struct net_pkt *pkt);
  *
  * @return Network packet if successful, NULL otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
 				    s32_t timeout);
+#endif
 
 /**
  * @brief Get packet from the RX packet slab.
@@ -1052,8 +1061,10 @@ struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
  *
  * @return Network packet if successful, NULL otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_pkt *net_pkt_get_rx(struct net_context *context,
 			       s32_t timeout);
+#endif
 
 /**
  * @brief Get packet from the TX packets slab.
@@ -1070,8 +1081,10 @@ struct net_pkt *net_pkt_get_rx(struct net_context *context,
  *
  * @return Network packet if successful, NULL otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_pkt *net_pkt_get_tx(struct net_context *context,
 			       s32_t timeout);
+#endif
 
 /**
  * @brief Get buffer from the DATA buffers pool.
@@ -1088,8 +1101,10 @@ struct net_pkt *net_pkt_get_tx(struct net_context *context,
  *
  * @return Network buffer if successful, NULL otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_buf *net_pkt_get_data(struct net_context *context,
 				 s32_t timeout);
+#endif
 
 /**
  * @brief Get RX packet from slab
@@ -1104,7 +1119,9 @@ struct net_buf *net_pkt_get_data(struct net_context *context,
  *
  * @return Network packet if successful, NULL otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_pkt *net_pkt_get_reserve_rx(s32_t timeout);
+#endif
 
 /**
  * @brief Get TX packet from slab
@@ -1119,7 +1136,9 @@ struct net_pkt *net_pkt_get_reserve_rx(s32_t timeout);
  *
  * @return Network packet if successful, NULL otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_pkt *net_pkt_get_reserve_tx(s32_t timeout);
+#endif
 
 /**
  * @brief Get RX DATA buffer from pool.
@@ -1135,7 +1154,9 @@ struct net_pkt *net_pkt_get_reserve_tx(s32_t timeout);
  *
  * @return Network buffer if successful, NULL otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_buf *net_pkt_get_reserve_rx_data(s32_t timeout);
+#endif
 
 /**
  * @brief Get TX DATA buffer from pool.
@@ -1151,7 +1172,9 @@ struct net_buf *net_pkt_get_reserve_rx_data(s32_t timeout);
  *
  * @return Network buffer if successful, NULL otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_buf *net_pkt_get_reserve_tx_data(s32_t timeout);
+#endif
 
 /**
  * @brief Get a data fragment that might be from user specific
@@ -1165,7 +1188,9 @@ struct net_buf *net_pkt_get_reserve_tx_data(s32_t timeout);
  *
  * @return Network buffer if successful, NULL otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_buf *net_pkt_get_frag(struct net_pkt *pkt, s32_t timeout);
+#endif
 
 /**
  * @brief Place packet back into the available packets slab
@@ -1176,7 +1201,9 @@ struct net_buf *net_pkt_get_frag(struct net_pkt *pkt, s32_t timeout);
  * @param pkt Network packet to release.
  *
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 void net_pkt_unref(struct net_pkt *pkt);
+#endif
 
 /**
  * @brief Increase the packet ref count
@@ -1187,7 +1214,9 @@ void net_pkt_unref(struct net_pkt *pkt);
  *
  * @return Network packet if successful, NULL otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_pkt *net_pkt_ref(struct net_pkt *pkt);
+#endif
 
 /**
  * @brief Increase the packet fragment ref count
@@ -1198,14 +1227,18 @@ struct net_pkt *net_pkt_ref(struct net_pkt *pkt);
  *
  * @return a pointer on the referenced Network fragment.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_buf *net_pkt_frag_ref(struct net_buf *frag);
+#endif
 
 /**
  * @brief Decrease the packet fragment ref count
  *
  * @param frag Network fragment to unref.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 void net_pkt_frag_unref(struct net_buf *frag);
+#endif
 
 /**
  * @brief Delete existing fragment from a packet
@@ -1217,9 +1250,11 @@ void net_pkt_frag_unref(struct net_buf *frag);
  * @return Pointer to the following fragment, or NULL if it had no
  *         further fragments.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_buf *net_pkt_frag_del(struct net_pkt *pkt,
 				 struct net_buf *parent,
 				 struct net_buf *frag);
+#endif
 
 /**
  * @brief Add a fragment to a packet at the end of its fragment list
@@ -1227,7 +1262,9 @@ struct net_buf *net_pkt_frag_del(struct net_pkt *pkt,
  * @param pkt pkt Network packet where to add the fragment
  * @param frag Fragment to add
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 void net_pkt_frag_add(struct net_pkt *pkt, struct net_buf *frag);
+#endif
 
 /**
  * @brief Insert a fragment to a packet at the beginning of its fragment list
@@ -1235,9 +1272,9 @@ void net_pkt_frag_add(struct net_pkt *pkt, struct net_buf *frag);
  * @param pkt pkt Network packet where to insert the fragment
  * @param frag Fragment to insert
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 void net_pkt_frag_insert(struct net_pkt *pkt, struct net_buf *frag);
-
-#endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
+#endif
 
 /**
  * @brief Copy len bytes from src starting from	offset to dst
@@ -1903,13 +1940,12 @@ const char *net_pkt_pool2str(struct net_buf_pool *pool);
 
 #else
 #define net_pkt_print(...)
-#endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
+#endif /* CONFIG_NET_DEBUG_NET_PKT_ALLOC */
 
 /* New allocator, and API are defined below.
  * This will be simpler when time will come to get rid of former API above.
  */
-#if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC) || \
-	(CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG)
+#if defined(NET_PKT_DEBUG_ENABLED)
 
 struct net_pkt *net_pkt_alloc_debug(s32_t timeout,
 				    const char *caller, int line);
@@ -1970,7 +2006,7 @@ struct net_pkt *net_pkt_rx_alloc_with_buffer_debug(struct net_if *iface,
 	net_pkt_rx_alloc_with_buffer_debug(_iface, _size, _family,	\
 					      _proto, _timeout,		\
 					      __func__, __LINE__)
-#else
+#endif
 
 /**
  * @brief Allocate an initialized net_pkt
@@ -1982,7 +2018,9 @@ struct net_pkt *net_pkt_rx_alloc_with_buffer_debug(struct net_if *iface,
  *
  * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_pkt *net_pkt_alloc(s32_t timeout);
+#endif
 
 /**
  * @brief Allocate an initialized net_pkt for RX
@@ -1994,7 +2032,9 @@ struct net_pkt *net_pkt_alloc(s32_t timeout);
  *
  * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_pkt *net_pkt_rx_alloc(s32_t timeout);
+#endif
 
 /**
  * @brief Allocate a network packet for a specific network interface.
@@ -2004,10 +2044,12 @@ struct net_pkt *net_pkt_rx_alloc(s32_t timeout);
  *
  * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_pkt *net_pkt_alloc_on_iface(struct net_if *iface, s32_t timeout);
 
 /* Same as above but specifically for RX packet */
 struct net_pkt *net_pkt_rx_alloc_on_iface(struct net_if *iface, s32_t timeout);
+#endif
 
 /**
  * @brief Allocate buffer for a net_pkt
@@ -2024,10 +2066,12 @@ struct net_pkt *net_pkt_rx_alloc_on_iface(struct net_if *iface, s32_t timeout);
  *
  * @return 0 on success, negative errno code otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 int net_pkt_alloc_buffer(struct net_pkt *pkt,
 			 size_t size,
 			 enum net_ip_protocol proto,
 			 s32_t timeout);
+#endif
 
 /**
  * @brief Allocate a network packet and buffer at once
@@ -2040,6 +2084,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
  *
  * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
  */
+#if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_pkt *net_pkt_alloc_with_buffer(struct net_if *iface,
 					  size_t size,
 					  sa_family_t family,
@@ -2053,9 +2098,7 @@ struct net_pkt *net_pkt_rx_alloc_with_buffer(struct net_if *iface,
 					     enum net_ip_protocol proto,
 					     s32_t timeout);
 
-#endif /* CONFIG_NET_DEBUG_NET_PKT_ALLOC |
-	*  CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	*/
+#endif
 
 /**
  * @brief Append a buffer in packet

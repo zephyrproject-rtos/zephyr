@@ -22,7 +22,6 @@ extern "C" {
  * @{
  */
 
-#if defined(CONFIG_NET_HOSTNAME_ENABLE)
 /**
  * @brief Get the device hostname
  *
@@ -30,26 +29,27 @@ extern "C" {
  *
  * @return Pointer to hostname or NULL if not set.
  */
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
 const char *net_hostname_get(void);
-
-/**
- * @brief Initialize and set the device hostname.
- *
- */
-void net_hostname_init(void);
-
 #else
 static inline const char *net_hostname_get(void)
 {
 	return "zephyr";
 }
+#endif /* CONFIG_NET_HOSTNAME_ENABLE */
 
+/**
+ * @brief Initialize and set the device hostname.
+ *
+ */
+#if defined(CONFIG_NET_HOSTNAME_ENABLE)
+void net_hostname_init(void);
+#else
 static inline void net_hostname_init(void)
 {
 }
 #endif /* CONFIG_NET_HOSTNAME_ENABLE */
 
-#if defined(CONFIG_NET_HOSTNAME_UNIQUE)
 /**
  * @brief Set the device hostname postfix
  *
@@ -62,6 +62,7 @@ static inline void net_hostname_init(void)
  *
  * @return 0 if ok, <0 if error
  */
+#if defined(CONFIG_NET_HOSTNAME_UNIQUE)
 int net_hostname_set_postfix(const u8_t *hostname_postfix,
 			      int postfix_len);
 #else

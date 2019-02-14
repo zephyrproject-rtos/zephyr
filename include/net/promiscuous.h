@@ -28,8 +28,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_NET_PROMISCUOUS_MODE)
-
 /**
  * @brief Start to wait received network packets.
  *
@@ -37,7 +35,16 @@ extern "C" {
  *
  * @return Received net_pkt, NULL if not received any packet.
  */
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 struct net_pkt *net_promisc_mode_wait_data(s32_t timeout);
+#else
+static inline struct net_pkt *net_promisc_mode_wait_data(s32_t timeout)
+{
+	ARG_UNUSED(timeout);
+
+	return NULL;
+}
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
 
 /**
  * @brief Enable promiscuous mode for a given network interface.
@@ -46,7 +53,16 @@ struct net_pkt *net_promisc_mode_wait_data(s32_t timeout);
  *
  * @return 0 if ok, <0 if error
  */
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 int net_promisc_mode_on(struct net_if *iface);
+#else
+static inline int net_promisc_mode_on(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+
+	return -ENOSUP;
+}
+#endif /* CONFIG_NET_PROMISCUOUS_MODE */
 
 /**
  * @brief Disable promiscuous mode for a given network interface.
@@ -55,31 +71,15 @@ int net_promisc_mode_on(struct net_if *iface);
  *
  * @return 0 if ok, <0 if error
  */
+#if defined(CONFIG_NET_PROMISCUOUS_MODE)
 int net_promisc_mode_off(struct net_if *iface);
-
-#else /* CONFIG_NET_PROMISCUOUS_MODE */
-
-static inline struct net_pkt *net_promisc_mode_wait_data(s32_t timeout)
-{
-	ARG_UNUSED(timeout);
-
-	return NULL;
-}
-
-static inline int net_promisc_mode_on(struct net_if *iface)
-{
-	ARG_UNUSED(iface);
-
-	return -ENOSUP;
-}
-
+#else
 static inline int net_promisc_mode_off(struct net_if *iface)
 {
 	ARG_UNUSED(iface);
 
 	return -ENOSUP;
 }
-
 #endif /* CONFIG_NET_PROMISCUOUS_MODE */
 
 #ifdef __cplusplus
