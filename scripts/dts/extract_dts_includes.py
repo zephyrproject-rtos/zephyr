@@ -129,11 +129,6 @@ def extract_property(node_compat, node_address, prop, prop_val, names):
 
 
 def generate_node_defines(root_node_address, sub_node_address, y_sub):
-
-    filter_list = ['interrupt-names',
-                    'reg-names',
-                    'phandle',
-                    'linux,phandle']
     node = reduced[sub_node_address]
     node_compat = get_compat(root_node_address)
 
@@ -166,8 +161,8 @@ def generate_node_defines(root_node_address, sub_node_address, y_sub):
             # patterns for things like reg, interrupts, etc that we don't need
             # any special case handling at a node level
             for c in node['props']:
-                # if prop is in filter list - ignore it
-                if c in filter_list:
+                if c in {'interrupt-names', 'reg-names', 'phandle',
+                         'linux,phandle'}:
                     continue
 
                 if re.fullmatch(k, c):
