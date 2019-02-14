@@ -165,7 +165,7 @@ def main():
 
     in_file_size = os.path.getsize(args.in_file)
     if in_file_size == 0:
-        error("%s file has no content\n",args.in_file)
+        error("%s file has no content\n" % args.in_file)
 
     out_file_size = FLASH_PART_TABLE_OFFSET + in_file_size
 
@@ -173,7 +173,7 @@ def main():
     zeropad_size = FLASH_SECTOR_SIZE - (out_file_size % FLASH_SECTOR_SIZE)
     out_file_size += zeropad_size
     if out_file_size > MAX_FLASH_FILE_SIZE:
-        error("%s exceeds %d bytes\n", args.out_file, MAX_FLASH_FILE_SIZE)
+        error("%s exceeds %d bytes\n" % (args.out_file, MAX_FLASH_FILE_SIZE))
 
     # pre-boot initialization commands
     set_magic_number(FLASH_MAGIC_WORD)
