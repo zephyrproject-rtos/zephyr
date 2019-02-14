@@ -128,8 +128,8 @@ def extract_property(node_compat, node_address, prop, prop_val, names):
         default.extract(node_address, prop, prop_val['type'], def_label)
 
 
-def extract_node_include_info(reduced, root_node_address, sub_node_address,
-                              y_sub):
+def generate_node_defines(reduced, root_node_address, sub_node_address,
+                          y_sub):
 
     filter_list = ['interrupt-names',
                     'reg-names',
@@ -151,8 +151,7 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
         if 'properties' in v:
             for c in reduced:
                 if root_node_address + '/' in c:
-                    extract_node_include_info(
-                        reduced, root_node_address, c, v)
+                    generate_node_defines(reduced, root_node_address, c, v)
         if 'generation' in v:
 
             match = False
@@ -443,7 +442,7 @@ def generate_defines():
     for k, v in reduced.items():
         node_compat = get_compat(k)
         if node_compat is not None and node_compat in get_binding_compats():
-            extract_node_include_info(reduced, k, k, None)
+            generate_node_defines(reduced, k, k, None)
 
     if not defs:
         raise Exception("No information parsed from dts file.")
