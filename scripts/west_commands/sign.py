@@ -117,6 +117,8 @@ class Sign(Forceable):
         if not (args.gen_bin or args.gen_hex):
             return
 
+        self.args = args        # for check_force
+
         self.check_force(os.path.isdir(args.build_dir),
                          'no such build directory {}'.format(args.build_dir))
         self.check_force(is_zephyr_build(args.build_dir),
