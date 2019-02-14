@@ -23,7 +23,7 @@
  * At the 10th reboot the string item with id=4 is deleted (or marked for
  * deletion).
  *
- * At the 11th reboot the istring tem with id=4 can no longer be read with the
+ * At the 11th reboot the string item with id=4 can no longer be read with the
  * basic nvs_read() function as it has been deleted. It is possible to read the
  * value with nvs_read_hist()
  *
