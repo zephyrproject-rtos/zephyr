@@ -128,33 +128,22 @@ def extract_property(node_compat, node_address, prop, prop_val, names):
         default.extract(node_address, prop, prop_val['type'], def_label)
 
 
-def generate_node_defines(root_node_address, sub_node_address, y_sub):
-    node = reduced[sub_node_address]
-    node_compat = get_compat(root_node_address)
+def generate_node_defines(node_path):
+    node = reduced[node_path]
+    node_compat = get_compat(node_path)
 
     if node_compat not in get_binding_compats():
-        return {}, {}
+        return
 
-    if y_sub is None:
-        y_node = get_binding(root_node_address)
-    else:
-        y_node = y_sub
-
-    # check to see if we need to process the properties
-    for k, v in y_node['properties'].items():
-        if 'properties' in v:
-            for c in reduced:
-                if root_node_address + '/' in c:
-                    generate_node_defines(root_node_address, c, v)
+    for k, v in get_binding(node_path)['properties'].items():
         if 'generation' in v:
-
             match = False
 
             # Handle any per node extraction first.  For example we
             # extract a few different defines for a flash partition so its
             # easier to handle the partition node in one step
-            if 'partition@' in sub_node_address:
-                flash.extract_partition(sub_node_address)
+            if 'partition@' in node_path:
+                flash.extract_partition(node_path)
                 continue
 
             # Handle each property individually, this ends up handling common
@@ -180,16 +169,13 @@ def generate_node_defines(root_node_address, sub_node_address, y_sub):
                     if not isinstance(names, list):
                         names = [names]
 
-                    extract_property(
-                        node_compat, sub_node_address, c, v, names)
+                    extract_property(node_compat, node_path, c, v, names)
                     match = True
 
             # Handle the case that we have a boolean property, but its not
             # in the dts
-            if not match:
-                if v['type'] == "boolean":
-                    extract_property(
-                        node_compat, sub_node_address, k, v, None)
+            if not match and v['type'] == "boolean":
+                extract_property(node_compat, node_path, k, v, None)
 
 def merge_properties(parent, fname, to_dict, from_dict):
     # Recursively merges the 'from_dict' dictionary into 'to_dict', to
@@ -435,7 +421,7 @@ def yaml_inc_error(msg):
 def generate_defines():
     for node_path in reduced.keys():
         if get_compat(node_path) in get_binding_compats():
-            generate_node_defines(node_path, node_path, None)
+            generate_node_defines(node_path)
 
     if not defs:
         raise Exception("No information parsed from dts file.")
