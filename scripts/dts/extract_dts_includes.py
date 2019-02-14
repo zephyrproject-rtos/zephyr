@@ -438,10 +438,9 @@ def yaml_inc_error(msg):
 
 
 def generate_defines():
-    for k, v in reduced.items():
-        node_compat = get_compat(k)
-        if node_compat is not None and node_compat in get_binding_compats():
-            generate_node_defines(k, k, None)
+    for node_path in reduced.keys():
+        if get_compat(node_path) in get_binding_compats():
+            generate_node_defines(node_path, node_path, None)
 
     if not defs:
         raise Exception("No information parsed from dts file.")
