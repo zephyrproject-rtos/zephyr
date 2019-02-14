@@ -28,6 +28,7 @@ extern "C" {
 
 struct net_if;
 
+/** @cond INTERNAL_HIDDEN */
 /**
  * @brief NET MGMT event mask basics, normalizing parts of bit fields
  */
@@ -68,6 +69,8 @@ struct net_if;
 #define NET_MGMT_LAYER_L1		1
 #define NET_MGMT_LAYER_L2		2
 #define NET_MGMT_LAYER_L3		3
+
+/** @endcond */
 
 #include <net/net_event.h>
 

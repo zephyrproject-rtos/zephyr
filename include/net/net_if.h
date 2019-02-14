@@ -187,6 +187,7 @@ enum {
 struct net_offload;
 #endif /* CONFIG_NET_OFFLOAD */
 
+/** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_NET_IPV6)
 #define NET_IF_MAX_IPV6_ADDR CONFIG_NET_IF_UNICAST_IPV6_ADDR_COUNT
 #define NET_IF_MAX_IPV6_MADDR CONFIG_NET_IF_MCAST_IPV6_ADDR_COUNT
@@ -196,6 +197,7 @@ struct net_offload;
 #define NET_IF_MAX_IPV6_MADDR 0
 #define NET_IF_MAX_IPV6_PREFIX 0
 #endif
+/* @endcond */
 
 struct net_if_ipv6 {
 	/** Unicast IP addresses */
@@ -231,6 +233,7 @@ struct net_if_ipv6 {
 	u8_t rs_count;
 };
 
+/** @cond INTERNAL_HIDDEN */
 #if defined(CONFIG_NET_IPV4)
 #define NET_IF_MAX_IPV4_ADDR CONFIG_NET_IF_UNICAST_IPV4_ADDR_COUNT
 #define NET_IF_MAX_IPV4_MADDR CONFIG_NET_IF_MCAST_IPV4_ADDR_COUNT
@@ -238,6 +241,7 @@ struct net_if_ipv6 {
 #define NET_IF_MAX_IPV4_ADDR 0
 #define NET_IF_MAX_IPV4_MADDR 0
 #endif
+/** @endcond */
 
 struct net_if_ipv4 {
 	/** Unicast IP addresses */
@@ -1790,6 +1794,7 @@ void net_if_unset_promisc(struct net_if *iface);
  */
 bool net_if_is_promisc(struct net_if *iface);
 
+/** @cond INTERNAL_HIDDEN */
 struct net_if_api {
 	void (*init)(struct net_if *iface);
 };
@@ -1874,6 +1879,8 @@ struct net_if_api {
 			    cfg_info, POST_KERNEL, prio, api);		\
 	NET_L2_DATA_INIT(dev_name, instance, l2_ctx_type);		\
 	NET_IF_INIT(dev_name, instance, l2, mtu, NET_IF_MAX_CONFIGS)
+
+/** @endcond */
 
 #ifdef __cplusplus
 }

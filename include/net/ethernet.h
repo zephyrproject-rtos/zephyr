@@ -35,6 +35,8 @@ extern "C" {
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
+
 struct net_eth_addr {
 	u8_t addr[6];
 };
@@ -66,6 +68,8 @@ struct net_eth_addr {
 #endif
 
 #define NET_ETH_MINIMAL_FRAME_SIZE	60
+
+/** @endcond */
 
 enum ethernet_hw_caps {
 	/** TX Checksum offloading supported */
@@ -111,6 +115,8 @@ enum ethernet_hw_caps {
 	ETHERNET_LLDP			= BIT(13),
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 enum ethernet_config_type {
 	ETHERNET_CONFIG_TYPE_AUTO_NEG,
 	ETHERNET_CONFIG_TYPE_LINK,
@@ -129,6 +135,8 @@ enum ethernet_qav_param_type {
 	ETHERNET_QAV_PARAM_TYPE_TRAFFIC_CLASS,
 	ETHERNET_QAV_PARAM_TYPE_STATUS,
 };
+
+/** @endcond */
 
 struct ethernet_qav_param {
 	/** ID of the priority queue to use */
@@ -149,10 +157,14 @@ struct ethernet_qav_param {
 	};
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 enum ethernet_filter_type {
 	ETHERNET_FILTER_TYPE_SRC_MAC_ADDRESS,
 	ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS,
 };
+
+/** @endcond */
 
 struct ethernet_filter {
 	/** Type of filter */
@@ -163,8 +175,8 @@ struct ethernet_filter {
 	bool set;
 };
 
+/** @cond INTERNAL_HIDDEN */
 struct ethernet_config {
-/** @cond ignore */
 	union {
 		bool auto_negotiation;
 		bool full_duplex;
@@ -184,8 +196,8 @@ struct ethernet_config {
 
 		struct ethernet_filter filter;
 	};
-/* @endcond */
 };
+/** @endcond */
 
 struct ethernet_api {
 	/**
@@ -240,6 +252,7 @@ struct ethernet_api {
 	int (*send)(struct device *dev, struct net_pkt *pkt);
 };
 
+/** @cond INTERNAL_HIDDEN */
 struct net_eth_hdr {
 	struct net_eth_addr dst;
 	struct net_eth_addr src;
@@ -261,6 +274,8 @@ struct ethernet_vlan {
  */
 #define NET_VLAN_MAX_COUNT 1
 #endif
+
+/** @endcond */
 
 #if defined(CONFIG_NET_LLDP)
 struct ethernet_lldp {
@@ -340,14 +355,16 @@ struct ethernet_context {
 	bool is_init;
 };
 
-#define ETHERNET_L2_CTX_TYPE	struct ethernet_context
-
 /**
  * @brief Initialize Ethernet L2 stack for a given interface
  *
  * @param iface A valid pointer to a network interface
  */
 void ethernet_init(struct net_if *iface);
+
+/** @cond INTERNAL_HIDDEN */
+
+#define ETHERNET_L2_CTX_TYPE	struct ethernet_context
 
 /* Separate header for VLAN as some of device interfaces might not
  * support VLAN.
@@ -414,6 +431,8 @@ static inline bool net_eth_is_addr_lldp_multicast(struct net_eth_addr *addr)
 }
 
 const struct net_eth_addr *net_eth_broadcast_addr(void);
+
+/** @endcond */
 
 /**
  * @brief Convert IPv6 multicast address to Ethernet address.
@@ -550,6 +569,8 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 }
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+
 #if defined(CONFIG_NET_VLAN)
 #define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn,		 \
 			    data, cfg_info, prio, api, mtu)		 \
@@ -567,6 +588,8 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 			NET_L2_GET_CTX_TYPE(ETHERNET_L2), mtu)
 
 #endif /* CONFIG_NET_VLAN */
+
+/** @endcond */
 
 /**
  * @brief Inform ethernet L2 driver that ethernet carrier is detected.
