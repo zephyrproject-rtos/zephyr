@@ -28,11 +28,15 @@
 extern "C" {
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+
 #define GPTP_OFFSET_SCALED_LOG_VAR_UNKNOWN 0x436A
 
 #define GPTP_PRIORITY1_NON_GM_CAPABLE      255
 #define GPTP_PRIORITY1_GM_CAPABLE          248
 #define GPTP_PRIORITY2_DEFAULT             248
+
+/** @endcond */
 
 /**
  * @brief Scaled Nanoseconds.
@@ -55,6 +59,8 @@ struct gptp_uscaled_ns {
 	/** Low half. */
 	u64_t low;
 } __packed;
+
+/** @cond INTERNAL_HIDDEN */
 
 #if defined(CONFIG_NEWLIB_LIBC)
 #include <math.h>
@@ -88,7 +94,6 @@ static inline double _gptp_pow2(int exp)
 /* 2^41 */
 #define GPTP_POW2_41	2199023255552.0
 
-
 /* Message types. Event messages have BIT(3) set to 0, and general messages
  * have that bit set to 1. IEEE 802.1AS chapter 10.5.2.2.2
  */
@@ -106,6 +111,8 @@ static inline double _gptp_pow2(int exp)
 #define GPTP_IS_EVENT_MSG(msg_type)      (!((msg_type) & BIT(3)))
 
 #define GPTP_CLOCK_ID_LEN                8
+
+/** @endcond */
 
 /**
  * @brief Port Identity.
@@ -172,12 +179,16 @@ struct gptp_hdr {
 	s8_t log_msg_interval;
 } __packed;
 
+/** @cond INTERNAL_HIDDEN */
+
 #define GPTP_GET_CURRENT_TIME_USCALED_NS(port, uscaled_ns_ptr)		\
 	do {								\
 		(uscaled_ns_ptr)->low =					\
 			gptp_get_current_time_nanosecond(port) << 16;	\
 		(uscaled_ns_ptr)->high = 0;				\
 	} while (false)
+
+/** @endcond */
 
 /**
  * @typedef gptp_phase_dis_callback_t

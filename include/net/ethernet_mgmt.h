@@ -26,6 +26,8 @@ extern "C" {
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
+
 #define _NET_ETHERNET_LAYER	NET_MGMT_LAYER_L2
 #define _NET_ETHERNET_CODE	0x208
 #define _NET_ETHERNET_BASE	(NET_MGMT_IFACE_BIT |			\
@@ -127,6 +129,8 @@ enum net_event_ethernet_cmd {
 	(_NET_ETHERNET_EVENT | NET_EVENT_ETHERNET_CMD_VLAN_TAG_DISABLED)
 
 struct net_if;
+
+/** @endcond */
 
 #if defined(CONFIG_NET_L2_ETHERNET_MGMT)
 void ethernet_mgmt_raise_carrier_on_event(struct net_if *iface);

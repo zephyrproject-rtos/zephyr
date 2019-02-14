@@ -908,6 +908,8 @@ static inline bool net_pkt_is_being_overwritten(struct net_pkt *pkt)
 	NET_BUF_POOL_DEFINE(name, count, CONFIG_NET_BUF_DATA_SIZE,	\
 			    CONFIG_NET_BUF_USER_DATA_SIZE, NULL)
 
+/** @cond INTERNAL_HIDDEN */
+
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC) || \
 	(CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG)
 #define NET_PKT_DEBUG_ENABLED
@@ -1015,6 +1017,7 @@ void net_pkt_frag_insert_debug(struct net_pkt *pkt, struct net_buf *frag,
 #endif /* CONFIG_NET_DEBUG_NET_PKT_ALLOC ||
 	* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
 	*/
+/** @endcond */
 
 /**
  * @brief Print fragment list and the fragment sizes
@@ -1976,6 +1979,8 @@ void net_pkt_get_info(struct k_mem_slab **rx,
 		      struct net_buf_pool **rx_data,
 		      struct net_buf_pool **tx_data);
 
+/** @cond INTERNAL_HIDDEN */
+
 #if defined(CONFIG_NET_DEBUG_NET_PKT_ALLOC)
 /**
  * @brief Debug helper to print out the buffer allocations
@@ -2065,6 +2070,7 @@ struct net_pkt *net_pkt_rx_alloc_with_buffer_debug(struct net_if *iface,
 					      _proto, _timeout,		\
 					      __func__, __LINE__)
 #endif
+/** @endcond */
 
 /**
  * @brief Allocate an initialized net_pkt

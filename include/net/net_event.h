@@ -23,6 +23,8 @@ extern "C" {
  * @{
  */
 
+/** @cond INTERNAL_HIDDEN */
+
 /* Network Interface events */
 #define _NET_IF_LAYER		NET_MGMT_LAYER_L1
 #define _NET_IF_CORE_CODE	0x001
@@ -139,6 +141,8 @@ enum net_event_ipv4_cmd {
 
 #define NET_EVENT_IPV4_ROUTER_ADD				\
 	(_NET_EVENT_IPV4_BASE |	NET_EVENT_IPV4_CMD_ROUTER_ADD)
+
+/** @endcond */
 
 #ifdef CONFIG_NET_MGMT_EVENT_INFO
 /**
