@@ -116,9 +116,13 @@ static int temp_nrf5_init(struct device *dev)
 	__ASSERT_NO_MSG(data->clk_m16_dev);
 
 	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
-	IRQ_CONNECT(NRF5_IRQ_TEMP_IRQn, CONFIG_TEMP_NRF5_PRI,
-		    temp_nrf5_isr, DEVICE_GET(temp_nrf5), 0);
-	irq_enable(NRF5_IRQ_TEMP_IRQn);
+	IRQ_CONNECT(
+		DT_NORDIC_NRF_TEMP_0_IRQ_0,
+		DT_NORDIC_NRF_TEMP_0_IRQ_0_PRIORITY,
+		temp_nrf5_isr,
+		DEVICE_GET(temp_nrf5),
+		0);
+	irq_enable(DT_NORDIC_NRF_TEMP_0_IRQ_0);
 
 	temp->INTENSET = TEMP_INTENSET_DATARDY_Set;
 
