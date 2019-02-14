@@ -461,6 +461,10 @@ def generate_defines():
     node_address = chosen.get('zephyr,code-partition', node_address)
     flash.extract(node_address, 'zephyr,code-partition', None)
 
+    # Add DT_CHOSEN_<X> defines
+    for c in sorted(chosen):
+        insert_defs('chosen', {'DT_CHOSEN_' + str_to_label(c): '1'}, {})
+
 
 def parse_arguments():
     rdh = argparse.RawDescriptionHelpFormatter
@@ -493,15 +497,14 @@ def main():
     create_aliases(root)
     create_chosen(root)
 
+    # Load any bindings (.yaml files) that match 'compatible' values from the
+    # DTS
     load_bindings(root, args.yaml)
 
+    # Generate keys and values for the configuration file and the header file
     generate_defines()
 
-    # Add DT_CHOSEN_<X> defines to generated files
-    for c in sorted(chosen):
-        insert_defs('chosen', {'DT_CHOSEN_' + str_to_label(c): '1'}, {})
-
-    # Generate config and header files
+    # Write the configuration file and the header file
 
     if args.keyvalue is not None:
         with open(args.keyvalue, 'w', encoding='utf-8') as f:
