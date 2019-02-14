@@ -1800,7 +1800,16 @@ bool net_pkt_insert(struct net_pkt *pkt, struct net_buf *frag,
 		    u16_t offset, u16_t len, u8_t *data,
 		    s32_t timeout);
 
-/* Insert u8_t data at an arbitrary offset in a series of fragments. */
+/**
+ * @brief Insert u8_t data at an arbitrary offset in a series of fragments.
+ *
+ * @param pkt    Network packet.
+ * @param frag   Network buffer fragment.
+ * @param offset Offset of fragment where insertion will start.
+ * @param data   Data to be inserted, can be NULL.
+ *
+ * @return True on success, False otherwise.
+ */
 static inline bool net_pkt_insert_u8(struct net_pkt *pkt,
 				     struct net_buf *frag,
 				     u16_t offset,
@@ -1810,8 +1819,15 @@ static inline bool net_pkt_insert_u8(struct net_pkt *pkt,
 			      K_FOREVER);
 }
 
-/* Insert u16_t big endian value at an arbitrary offset in a series of
- * fragments.
+/**
+ * @brief Insert u16_t data at an arbitrary offset in a series of fragments.
+ *
+ * @param pkt    Network packet.
+ * @param frag   Network buffer fragment.
+ * @param offset Offset of fragment where insertion will start.
+ * @param data   Data to be inserted, can be NULL.
+ *
+ * @return True on success, False otherwise.
  */
 static inline bool net_pkt_insert_be16(struct net_pkt *pkt,
 				       struct net_buf *frag,
@@ -1824,8 +1840,15 @@ static inline bool net_pkt_insert_be16(struct net_pkt *pkt,
 			      (u8_t *)&value, K_FOREVER);
 }
 
-/* Insert u32_t big endian value at an arbitrary offset in a series of
- * fragments.
+/**
+ * @brief Insert u32_t data at an arbitrary offset in a series of fragments.
+ *
+ * @param pkt    Network packet.
+ * @param frag   Network buffer fragment.
+ * @param offset Offset of fragment where insertion will start.
+ * @param data   Data to be inserted, can be NULL.
+ *
+ * @return True on success, False otherwise.
  */
 static inline bool net_pkt_insert_be32(struct net_pkt *pkt,
 				       struct net_buf *frag,
@@ -1838,7 +1861,20 @@ static inline bool net_pkt_insert_be32(struct net_pkt *pkt,
 			      (u8_t *)&value, K_FOREVER);
 }
 
-/* Insert u8_t data at an arbitrary offset in a series of fragments. */
+/**
+ * @brief Insert u8_t data at an arbitrary offset in a series of fragments.
+ *
+ * @param pkt    Network packet.
+ * @param frag   Network buffer fragment.
+ * @param offset Offset of fragment where insertion will start.
+ * @param data   Data to be inserted, can be NULL.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
+ *
+ * @return True on success, False otherwise.
+ */
 static inline bool net_pkt_insert_u8_timeout(struct net_pkt *pkt,
 					     struct net_buf *frag,
 					     u16_t offset,
@@ -1849,8 +1885,19 @@ static inline bool net_pkt_insert_u8_timeout(struct net_pkt *pkt,
 			      timeout);
 }
 
-/* Insert u16_t big endian value at an arbitrary offset in a series of
- * fragments.
+/**
+ * @brief Insert u16_t data at an arbitrary offset in a series of fragments.
+ *
+ * @param pkt    Network packet.
+ * @param frag   Network buffer fragment.
+ * @param offset Offset of fragment where insertion will start.
+ * @param data   Data to be inserted, can be NULL.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
+ *
+ * @return True on success, False otherwise.
  */
 static inline bool net_pkt_insert_be16_timeout(struct net_pkt *pkt,
 					       struct net_buf *frag,
@@ -1864,8 +1911,19 @@ static inline bool net_pkt_insert_be16_timeout(struct net_pkt *pkt,
 			      (u8_t *)&value, timeout);
 }
 
-/* Insert u32_t big endian value at an arbitrary offset in a series of
- * fragments.
+/**
+ * @brief Insert u32_t data at an arbitrary offset in a series of fragments.
+ *
+ * @param pkt    Network packet.
+ * @param frag   Network buffer fragment.
+ * @param offset Offset of fragment where insertion will start.
+ * @param data   Data to be inserted, can be NULL.
+ * @param timeout Affects the action taken should the net buf pool be empty.
+ *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
+ *        wait as long as necessary. Otherwise, wait up to the specified
+ *        number of milliseconds before timing out.
+ *
+ * @return True on success, False otherwise.
  */
 static inline bool net_pkt_insert_be32_timeout(struct net_pkt *pkt,
 					       struct net_buf *frag,
