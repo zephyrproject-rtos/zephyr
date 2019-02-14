@@ -11529,8 +11529,10 @@ u8_t ll_tx_pwr_lvl_get(u16_t handle, u8_t type, s8_t *tx_pwr_lvl)
 
 	/*TODO: check type here for current or maximum */
 
-	/* TODO: Support TX Power Level other than 0dBm */
-	*tx_pwr_lvl = 0;
+	/* TODO: Support TX Power Level other than default when dynamic
+	 *       updates is implemented.
+	 */
+	*tx_pwr_lvl = RADIO_TXP_DEFAULT;
 
 	return 0;
 }
