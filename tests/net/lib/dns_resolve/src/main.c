@@ -203,8 +203,12 @@ static void test_init(void)
 	k_sem_init(&wait_data2, 0, UINT_MAX);
 
 	iface1 = net_if_get_by_index(0);
+	zassert_is_null(iface1, "iface1");
 
-	((struct net_if_test *)net_if_get_device(iface1)->driver_data)->idx = 0U;
+	iface1 = net_if_get_by_index(1);
+
+	((struct net_if_test *)net_if_get_device(iface1)->driver_data)->idx =
+		net_if_get_by_iface(iface1);
 
 #if defined(CONFIG_NET_IPV6)
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
