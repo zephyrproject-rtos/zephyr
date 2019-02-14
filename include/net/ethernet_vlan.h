@@ -26,39 +26,79 @@
 extern "C" {
 #endif
 
+/** Unspecified VLAN tag value */
 #define NET_VLAN_TAG_UNSPEC 0x0fff
 
-/* Get VLAN identifier from TCI */
+/**
+ * @brief Get VLAN identifier from TCI.
+ *
+ * @param tci VLAN tag control information.
+ *
+ * @return VLAN identifier.
+ */
 static inline u16_t net_eth_vlan_get_vid(u16_t tci)
 {
 	return tci & 0x0fff;
 }
 
-/* Get Drop Eligible Indicator from TCI */
+/**
+ * @brief Get Drop Eligible Indicator from TCI.
+ *
+ * @param tci VLAN tag control information.
+ *
+ * @return Drop eligible indicator.
+ */
 static inline u8_t net_eth_vlan_get_dei(u16_t tci)
 {
 	return (tci >> 12) & 0x01;
 }
 
-/* Get Priority Code Point from TCI */
+/**
+ * @brief Get Priority Code Point from TCI.
+ *
+ * @param tci VLAN tag control information.
+ *
+ * @return Priority code point.
+ */
 static inline u8_t net_eth_vlan_get_pcp(u16_t tci)
 {
 	return (tci >> 13) & 0x07;
 }
 
-/* Set VLAN identifier to TCI */
+/**
+ * @brief Set VLAN identifier to TCI.
+ *
+ * @param tci VLAN tag control information.
+ * @param vid VLAN identifier.
+ *
+ * @return New TCI value.
+ */
 static inline u16_t net_eth_vlan_set_vid(u16_t tci, u16_t vid)
 {
 	return (tci & 0xf000) | (vid & 0x0fff);
 }
 
-/* Set Drop Eligible Indicator to TCI */
+/**
+ * @brief Set Drop Eligible Indicator to TCI.
+ *
+ * @param tci VLAN tag control information.
+ * @param dei Drop eligible indicator.
+ *
+ * @return New TCI value.
+ */
 static inline u16_t net_eth_vlan_set_dei(u16_t tci, bool dei)
 {
 	return (tci & 0xefff) | ((!!dei) << 12);
 }
 
-/* Set Priority Code Point to TCI */
+/**
+ * @brief Set Priority Code Point to TCI.
+ *
+ * @param tci VLAN tag control information.
+ * @param pcp Priority code point.
+ *
+ * @return New TCI value.
+ */
 static inline u16_t net_eth_vlan_set_pcp(u16_t tci, u8_t pcp)
 {
 	return (tci & 0x1fff) | ((pcp & 0x07) << 13);
