@@ -1166,17 +1166,19 @@ static void test_setup(void)
 	/* The semaphore is there to wait the data to be received. */
 	k_sem_init(&wait_data, 0, UINT_MAX);
 
-	iface1 = net_if_get_by_index(0);
-	iface2 = net_if_get_by_index(1);
+	iface1 = net_if_get_by_index(1);
+	iface2 = net_if_get_by_index(2);
 
-	((struct net_if_test *)net_if_get_device(iface1)->driver_data)->idx = 0U;
-	((struct net_if_test *)net_if_get_device(iface2)->driver_data)->idx = 1U;
+	((struct net_if_test *)net_if_get_device(iface1)->driver_data)->idx =
+		net_if_get_by_iface(iface1);
+	((struct net_if_test *)net_if_get_device(iface2)->driver_data)->idx =
+		net_if_get_by_iface(iface2);
 
 	idx = net_if_get_by_iface(iface1);
-	zassert_equal(idx, 0, "Invalid index iface1");
+	zassert_equal(idx, 1, "Invalid index iface1");
 
 	idx = net_if_get_by_iface(iface2);
-	zassert_equal(idx, 1, "Invalid index iface2");
+	zassert_equal(idx, 2, "Invalid index iface2");
 
 	zassert_not_null(iface1, "Interface 1");
 	zassert_not_null(iface2, "Interface 2");
