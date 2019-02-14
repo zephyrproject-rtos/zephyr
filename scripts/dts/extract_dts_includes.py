@@ -439,8 +439,7 @@ def yaml_inc_error(msg):
     raise yaml.constructor.ConstructorError(None, None, msg)
 
 
-def generate_node_definitions():
-
+def generate_defines():
     for k, v in reduced.items():
         node_compat = get_compat(k)
         if node_compat is not None and node_compat in get_binding_compats():
@@ -496,7 +495,7 @@ def main():
 
     load_bindings(root, args.yaml)
 
-    generate_node_definitions()
+    generate_defines()
 
     # Add DT_CHOSEN_<X> defines to generated files
     for c in sorted(chosen):
