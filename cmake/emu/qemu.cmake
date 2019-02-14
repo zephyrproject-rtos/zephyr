@@ -227,6 +227,10 @@ if(NOT QEMU_PIPE)
   set(QEMU_PIPE_COMMENT "\nTo exit from QEMU enter: 'CTRL+a, x'\n")
 endif()
 
+if(CONFIG_SMP)
+  list(APPEND QEMU_SMP_FLAGS -smp cpus=${CONFIG_MP_NUM_CPUS})
+endif()
+
 # Use flags passed in from the environment
 set(env_qemu $ENV{QEMU_EXTRA_FLAGS})
 separate_arguments(env_qemu)
@@ -254,6 +258,7 @@ foreach(target ${qemu_targets})
     ${QEMU_FLAGS}
     ${QEMU_EXTRA_FLAGS}
     ${MORE_FLAGS_FOR_${target}}
+    ${QEMU_SMP_FLAGS}
     ${QEMU_KERNEL_OPTION}
     DEPENDS ${logical_target_for_zephyr_elf}
     WORKING_DIRECTORY ${APPLICATION_BINARY_DIR}
