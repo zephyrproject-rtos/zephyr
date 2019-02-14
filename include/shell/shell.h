@@ -143,7 +143,7 @@ struct shell_static_entry {
 #define SHELL_CMD_REGISTER(syntax, subcmd, help, handler) \
 	static const struct shell_static_entry UTIL_CAT(_shell_, syntax) = \
 	SHELL_CMD(syntax, subcmd, help, handler);			   \
-	static const struct shell_cmd_entry UTIL_CAT(shell_cmd_, syntax)   \
+	const struct shell_cmd_entry UTIL_CAT(shell_cmd_, syntax)	   \
 	__attribute__ ((section("."					   \
 			STRINGIFY(UTIL_CAT(shell_root_cmd_, syntax)))))	   \
 	__attribute__((used)) = {					   \
