@@ -208,6 +208,8 @@ extern "C" {
 
 struct device;
 
+typedef void (*device_pm_cb)(struct device *dev,
+			     int status, void *context, void *arg);
 
 /**
  * @brief Static device information (In ROM) Per driver instance
@@ -221,7 +223,7 @@ struct device_config {
 	int (*init)(struct device *device);
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	int (*device_pm_control)(struct device *device, u32_t command,
-				 void *context);
+				 void *context, device_pm_cb cb, void *arg);
 #endif
 	const void *config_info;
 };
@@ -364,11 +366,16 @@ void device_busy_clear(struct device *busy_dev);
  * @param unused_device Unused
  * @param unused_ctrl_command Unused
  * @param unused_context Unused
+ * @param cb Unused
+ * @param unused_arg Unused
  *
  * @retval 0 Always returns 0
  */
 int device_pm_control_nop(struct device *unused_device,
-			  u32_t unused_ctrl_command, void *unused_context);
+			  u32_t unused_ctrl_command,
+			  void *unused_context,
+			  device_pm_cb cb,
+			  void *unused_arg);
 /**
  * @brief Call the set power state function of a device
  *
@@ -377,16 +384,19 @@ int device_pm_control_nop(struct device *unused_device,
  * Note that devices may support just some of the device power states
  * @param device Pointer to device structure of the driver instance.
  * @param device_power_state Device power state to be set
+ * @param cb Callback function to notify device power status
+ * @param arg Caller passed argument to callback function
  *
  * @retval 0 If successful.
  * @retval Errno Negative errno code if failure.
  */
 static inline int device_set_power_state(struct device *device,
-					 u32_t device_power_state)
+					 u32_t device_power_state,
+					 device_pm_cb cb, void *arg)
 {
 	return device->config->device_pm_control(device,
 						 DEVICE_PM_SET_POWER_STATE,
-						 &device_power_state);
+						 &device_power_state, cb, arg);
 }
 
 /**
@@ -407,7 +417,8 @@ static inline int device_get_power_state(struct device *device,
 {
 	return device->config->device_pm_control(device,
 						 DEVICE_PM_GET_POWER_STATE,
-						 device_power_state);
+						 device_power_state,
+						 NULL, NULL);
 }
 
 /**

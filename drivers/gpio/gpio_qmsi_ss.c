@@ -85,18 +85,24 @@ static int ss_gpio_resume_device_from_suspend(struct device *dev)
 * the *context may include IN data or/and OUT data
 */
 static int ss_gpio_qmsi_device_ctrl(struct device *port, u32_t ctrl_command,
-				    void *context)
+				    void *context, device_pm_cb cb, void *arg)
 {
+	int ret = 0;
+
 	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
 		if (*((u32_t *)context) == DEVICE_PM_SUSPEND_STATE) {
-			return ss_gpio_suspend_device(port);
+			ret = ss_gpio_suspend_device(port);
 		} else if (*((u32_t *)context) == DEVICE_PM_ACTIVE_STATE) {
-			return ss_gpio_resume_device_from_suspend(port);
+			ret = ss_gpio_resume_device_from_suspend(port);
 		}
 	} else if (ctrl_command == DEVICE_PM_GET_POWER_STATE) {
 		*((u32_t *)context) = ss_gpio_qmsi_get_power_state(port);
 	}
-	return 0;
+	if (cb) {
+		cb(port, ret, context, arg);
+	}
+
+	return ret;
 }
 #else
 #define ss_gpio_qmsi_set_power_state(...)

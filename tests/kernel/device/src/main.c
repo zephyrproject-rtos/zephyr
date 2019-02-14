@@ -124,7 +124,7 @@ void test_dummy_device_pm(void)
 	zassert_true((busy == 0), NULL);
 
 	/* Set device state to DEVICE_PM_ACTIVE_STATE */
-	ret = device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE);
+	ret = device_set_power_state(dev, DEVICE_PM_ACTIVE_STATE, NULL, NULL);
 	zassert_true((ret == 0), "Unable to set active state to device");
 
 	device_busy_set(dev);
@@ -141,7 +141,8 @@ void test_dummy_device_pm(void)
 	zassert_true((busy == 0), NULL);
 
 	/* Set device state to DEVICE_PM_FORCE_SUSPEND_STATE */
-	ret = device_set_power_state(dev, DEVICE_PM_FORCE_SUSPEND_STATE);
+	ret = device_set_power_state(dev,
+			DEVICE_PM_FORCE_SUSPEND_STATE, NULL, NULL);
 	zassert_true((ret == 0), "Unable to force suspend device");
 
 	build_suspend_device_list();

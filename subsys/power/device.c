@@ -54,7 +54,8 @@ int sys_pm_suspend_devices(void)
 		 * and set the device states accordingly.
 		 */
 		device_retval[i] = device_set_power_state(&pm_device_list[idx],
-						DEVICE_PM_SUSPEND_STATE);
+						DEVICE_PM_SUSPEND_STATE,
+						NULL, NULL);
 		if (device_retval[i]) {
 			LOG_ERR("%s suspend operation failed\n",
 					pm_device_list[idx].config->name);
@@ -71,7 +72,8 @@ int sys_pm_force_suspend_devices(void)
 		int idx = device_ordered_list[i];
 
 		device_retval[i] = device_set_power_state(&pm_device_list[idx],
-						DEVICE_PM_FORCE_SUSPEND_STATE);
+					DEVICE_PM_FORCE_SUSPEND_STATE,
+					NULL, NULL);
 		if (device_retval[i]) {
 			LOG_ERR("%s force suspend operation failed\n",
 				pm_device_list[idx].config->name);
@@ -91,7 +93,7 @@ void sys_pm_resume_devices(void)
 			int idx = device_ordered_list[i];
 
 			device_set_power_state(&pm_device_list[idx],
-						DEVICE_PM_ACTIVE_STATE);
+					DEVICE_PM_ACTIVE_STATE, NULL, NULL);
 		}
 	}
 }
