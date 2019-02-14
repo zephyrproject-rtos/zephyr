@@ -29,6 +29,10 @@ config MBEDTLS_DTLS
 	bool "Enable support for DTLS"
 	depends on MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
 
+config MBEDTLS_SSL_EXPORT_KEYS
+	bool "Enable support for exporting SSL key block and master secret"
+	depends on MBEDTLS_TLS_VERSION_1_0 || MBEDTLS_TLS_VERSION_1_1 || MBEDTLS_TLS_VERSION_1_2
+
 endmenu
 
 menu "Ciphersuite configuration"
@@ -226,6 +230,7 @@ config MBEDTLS_MAC_ALL_ENABLED
 	select MBEDTLS_MAC_SHA256_ENABLED
 	select MBEDTLS_MAC_SHA512_ENABLED
 	select MBEDTLS_MAC_POLY1305_ENABLED
+	select MBEDTLS_MAC_CMAC_ENABLED
 
 config MBEDTLS_MAC_MD4_ENABLED
 	bool "Enable the MD4 hash algorithm"
@@ -242,11 +247,23 @@ config MBEDTLS_MAC_SHA256_ENABLED
 	bool "Enable the SHA-224 and SHA-256 hash algorithms"
 	default y
 
+config MBEDTLS_SHA256_SMALLER
+	bool "Enable smaller SHA-256 implementation"
+	depends on MBEDTLS_MAC_SHA256_ENABLED
+	default y
+	help
+	  Enable an implementation of SHA-256 that has lower ROM footprint but also
+	  lower performance
+
 config MBEDTLS_MAC_SHA512_ENABLED
 	bool "Enable the SHA-384 and SHA-512 hash algorithms"
 
 config MBEDTLS_MAC_POLY1305_ENABLED
 	bool "Enable the Poly1305 MAC algorithm"
+
+config MBEDTLS_MAC_CMAC_ENABLED
+	bool "Enable the CMAC (Cipher-based Message Authentication Code) mode for block ciphers."
+	depends on MBEDTLS_CIPHER_AES_ENABLED || MBEDTLS_CIPHER_DES_ENABLED
 
 endmenu
 
@@ -278,6 +295,10 @@ config MBEDTLS_HAVE_ASM
 	  Enable use of assembly code in mbedTLS. This improves the performances
 	  of asymetric cryptography, however this might have an impact on the
 	  code size.
+
+config MBEDTLS_ENTROPY_ENABLED
+	bool "Enable mbedTLS generic entropy pool"
+	depends on MBEDTLS_MAC_SHA256_ENABLED || MBEDTLS_MAC_SHA512_ENABLED
 
 config MBEDTLS_USER_CONFIG_ENABLE
 	bool "Enable user mbedTLS config file"
