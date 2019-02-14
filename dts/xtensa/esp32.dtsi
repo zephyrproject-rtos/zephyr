@@ -34,6 +34,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "simple-bus";
+		label = "SOC";
 		ranges;
 
 		uart0: uart@40008fd0 {

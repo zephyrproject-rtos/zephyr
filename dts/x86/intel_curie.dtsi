@@ -54,6 +54,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "simple-bus";
+		label = "SOC";
 		ranges;
 
 		rtc: rtc@b0000400 {

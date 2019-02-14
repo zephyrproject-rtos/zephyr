@@ -34,6 +34,7 @@
 		#size-cells = <1>;
 		compatible = "SiFive,FE310G-0002-Z0-soc", "fe310-soc",
 			"sifive-soc", "simple-bus";
+		label = "SOC";
 		ranges;
 		aon: aon@10000000 {
 			compatible = "sifive,aon0";

@@ -51,6 +51,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "simple-bus";
+		label = "SOC";
 		ranges;
 
 		pcc0: clock-controller@4002b000 {

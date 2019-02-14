@@ -42,6 +42,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "simple-bus";
+		label = "SOC";
 		ranges;
 
 		ddr0: memory@10000000 {

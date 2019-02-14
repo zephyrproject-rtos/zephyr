@@ -28,6 +28,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "simple-bus";
+		label = "SOC";
 		ranges;
 
 		jtag_uart: uart@201000 {

@@ -29,6 +29,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "microsemi,miv-soc", "simple-bus";
+		label = "SOC";
 		ranges;
 
 		plic: interrupt-controller@40000000 {
