@@ -6,4 +6,9 @@ config BUILD_OUTPUT_BIN
 config BOARD
 	default "qemu_x86_64"
 
+# In theory we could ask qemu for any configuration, but this seems
+# like a good default.
+config MP_NUM_CPUS
+	default 2
+
 endif # BOARD_QEMU_X86_64
