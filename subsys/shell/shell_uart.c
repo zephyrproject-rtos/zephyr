@@ -137,7 +137,6 @@ static void uart_irq_init(const struct shell_uart *sh_uart)
 	struct device *dev = sh_uart->ctrl_blk->dev;
 
 	uart_irq_callback_user_data_set(dev, uart_callback, (void *)sh_uart);
-	uart_irq_rx_enable(dev);
 #endif
 }
 
@@ -194,6 +193,10 @@ static int enable(const struct shell_transport *transport, bool blocking_tx)
 		uart_irq_tx_disable(sh_uart->ctrl_blk->dev);
 #endif
 	}
+
+#ifdef CONFIG_SHELL_BACKEND_SERIAL_INTERRUPT_DRIVEN
+	uart_irq_rx_enable(sh_uart->ctrl_blk->dev);
+#endif
 
 	return 0;
 }
