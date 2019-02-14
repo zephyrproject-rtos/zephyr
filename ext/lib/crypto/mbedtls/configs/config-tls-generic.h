@@ -235,12 +235,20 @@
 #define MBEDTLS_SHA256_C
 #endif
 
+#if defined(CONFIG_MBEDTLS_SHA256_SMALLER)
+#define MBEDTLS_SHA256_SMALLER
+#endif
+
 #if defined(CONFIG_MBEDTLS_MAC_SHA512_ENABLED)
 #define MBEDTLS_SHA512_C
 #endif
 
 #if defined(CONFIG_MBEDTLS_MAC_POLY1305_ENABLED)
 #define MBEDTLS_POLY1305_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_MAC_CMAC_ENABLED)
+#define MBEDTLS_CMAC_C
 #endif
 
 /* mbedTLS modules */
@@ -265,6 +273,14 @@
 
 #if defined(CONFIG_MBEDTLS_GENPRIME_ENABLED)
 #define MBEDTLS_GENPRIME
+#endif
+
+#if defined(CONFIG_MBEDTLS_ENTROPY_ENABLED)
+#define MBEDTLS_ENTROPY_C
+#endif
+
+#if defined(CONFIG_MBEDTLS_SSL_EXPORT_KEYS)
+#define MBEDTLS_SSL_EXPORT_KEYS
 #endif
 
 /* Automatic dependencies */
