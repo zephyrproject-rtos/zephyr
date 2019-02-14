@@ -148,55 +148,55 @@ def extract_node_include_info(reduced, root_node_address, sub_node_address,
 
     # check to see if we need to process the properties
     for k, v in y_node['properties'].items():
-            if 'properties' in v:
-                for c in reduced:
-                    if root_node_address + '/' in c:
-                        extract_node_include_info(
-                            reduced, root_node_address, c, v)
-            if 'generation' in v:
+        if 'properties' in v:
+            for c in reduced:
+                if root_node_address + '/' in c:
+                    extract_node_include_info(
+                        reduced, root_node_address, c, v)
+        if 'generation' in v:
 
-                match = False
+            match = False
 
-                # Handle any per node extraction first.  For example we
-                # extract a few different defines for a flash partition so its
-                # easier to handle the partition node in one step
-                if 'partition@' in sub_node_address:
-                    flash.extract_partition(sub_node_address)
+            # Handle any per node extraction first.  For example we
+            # extract a few different defines for a flash partition so its
+            # easier to handle the partition node in one step
+            if 'partition@' in sub_node_address:
+                flash.extract_partition(sub_node_address)
+                continue
+
+            # Handle each property individually, this ends up handling common
+            # patterns for things like reg, interrupts, etc that we don't need
+            # any special case handling at a node level
+            for c in node['props']:
+                # if prop is in filter list - ignore it
+                if c in filter_list:
                     continue
 
-                # Handle each property individually, this ends up handling common
-                # patterns for things like reg, interrupts, etc that we don't need
-                # any special case handling at a node level
-                for c in node['props']:
-                    # if prop is in filter list - ignore it
-                    if c in filter_list:
-                        continue
+                if re.match(k + '$', c):
 
-                    if re.match(k + '$', c):
-
-                        if 'pinctrl-' in c:
+                    if 'pinctrl-' in c:
+                        names = deepcopy(node['props'].get(
+                                                    'pinctrl-names', []))
+                    else:
+                        if not c.endswith("-names"):
                             names = deepcopy(node['props'].get(
-                                                        'pinctrl-names', []))
-                        else:
-                            if not c.endswith("-names"):
+                                                    c[:-1] + '-names', []))
+                            if not names:
                                 names = deepcopy(node['props'].get(
-                                                        c[:-1] + '-names', []))
-                                if not names:
-                                    names = deepcopy(node['props'].get(
-                                                            c + '-names', []))
-                        if not isinstance(names, list):
-                            names = [names]
+                                                        c + '-names', []))
+                    if not isinstance(names, list):
+                        names = [names]
 
-                        extract_property(
-                            node_compat, sub_node_address, c, v, names)
-                        match = True
+                    extract_property(
+                        node_compat, sub_node_address, c, v, names)
+                    match = True
 
-                # Handle the case that we have a boolean property, but its not
-                # in the dts
-                if not match:
-                    if v['type'] == "boolean":
-                        extract_property(
-                            node_compat, sub_node_address, k, v, None)
+            # Handle the case that we have a boolean property, but its not
+            # in the dts
+            if not match:
+                if v['type'] == "boolean":
+                    extract_property(
+                        node_compat, sub_node_address, k, v, None)
 
 def merge_properties(parent, fname, to_dict, from_dict):
     # Recursively merges the 'from_dict' dictionary into 'to_dict', to
