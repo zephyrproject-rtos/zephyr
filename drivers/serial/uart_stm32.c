@@ -395,6 +395,47 @@ static void uart_stm32_poll_out(struct device *dev,
 	LL_USART_TransmitData8(UartInstance, (u8_t)c);
 }
 
+static int uart_stm32_err_check(struct device *dev)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+	u32_t err = 0U;
+
+	/* Check for errors, but don't clear them here.
+	 * Some SoC clear all error flags when at least
+	 * one is cleared. (e.g. F4X, F1X, and F2X)
+	 */
+	if (LL_USART_IsActiveFlag_ORE(UartInstance)) {
+		err |= UART_ERROR_OVERRUN;
+	}
+
+	if (LL_USART_IsActiveFlag_PE(UartInstance)) {
+		err |= UART_ERROR_PARITY;
+	}
+
+	if (LL_USART_IsActiveFlag_FE(UartInstance)) {
+		err |= UART_ERROR_FRAMING;
+	}
+
+	if (err & UART_ERROR_OVERRUN) {
+		LL_USART_ClearFlag_ORE(UartInstance);
+	}
+
+	if (err & UART_ERROR_PARITY) {
+		LL_USART_ClearFlag_PE(UartInstance);
+	}
+
+	if (err & UART_ERROR_FRAMING) {
+		LL_USART_ClearFlag_FE(UartInstance);
+	}
+
+	/* Clear noise error as well,
+	 * it is not represented by the errors enum
+	 */
+	LL_USART_ClearFlag_NE(UartInstance);
+
+	return err;
+}
+
 static inline void __uart_stm32_get_clock(struct device *dev)
 {
 	struct uart_stm32_data *data = DEV_DATA(dev);
@@ -572,6 +613,7 @@ static void uart_stm32_isr(void *arg)
 static const struct uart_driver_api uart_stm32_driver_api = {
 	.poll_in = uart_stm32_poll_in,
 	.poll_out = uart_stm32_poll_out,
+	.err_check = uart_stm32_err_check,
 	.configure = uart_stm32_configure,
 	.config_get = uart_stm32_config_get,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
