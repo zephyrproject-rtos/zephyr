@@ -21,3 +21,4 @@ supported:
   - rtc
   - watchdog
   - counter
+  - nvs

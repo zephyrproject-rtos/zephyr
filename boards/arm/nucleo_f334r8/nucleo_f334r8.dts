@@ -84,3 +84,21 @@ arduino_spi: &spi1 {
 &idwg {
 	status = "ok";
 };
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set 6Kb of storage at the end of the 64Kb of flash */
+		storage_partition: partition@e800 {
+			label = "storage";
+			reg = <0x0000e800 0x00001800>;
+		};
+	};
+};
