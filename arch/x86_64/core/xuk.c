@@ -592,32 +592,24 @@ void _cstart64(int cpu_id)
 long xuk_setup_stack(long sp, void *fn, unsigned int eflags,
 		     long *args, int nargs)
 {
-	long long *f = (long long *)(sp & ~7) - 20;
+	struct xuk_stack_frame *f;
 
-	/* FIXME: this should extend naturally to setting up usermode
-	 * frames too: the frame should have a SS and RSP at the top
-	 * that specifies the user stack into which to return (can be
-	 * this same stack as long as the mapping is correct), and the
-	 * CS should be a separate ring 3 segment.
-	 */
+	/* Align downward and make room for one frame */
+	f = &((struct xuk_stack_frame *)(sp & ~7))[-1];
 
-	f[19] = GDT_SELECTOR(2);
-	f[18] = sp;
-	f[17] = eflags;
-	f[16] = GDT_SELECTOR(1);
-	f[15] = (long)fn;
-	f[14] = nargs >= 1 ? args[0] : 0; /* RDI */
-	f[13] = nargs >= 3 ? args[2] : 0; /* RDX */
-	f[12] = 0;                        /* RAX */
-	f[11] = nargs >= 4 ? args[3] : 0; /* RCX */
-	f[10] = nargs >= 2 ? args[1] : 0; /* RSI */
-	f[9]  = nargs >= 5 ? args[4] : 0; /* R8 */
-	f[8]  = nargs >= 6 ? args[5] : 0; /* R9 */
-
-	/* R10, R11, RBX, RBP, R12, R13, R14, R15 */
-	for (int i = 7; i >= 0; i--) {
-		f[i] = 0;
-	}
+	*f = (struct xuk_stack_frame) {
+		.entry.ss     = GDT_SELECTOR(2),
+		.entry.rsp    = sp,
+		.entry.rflags = eflags,
+		.entry.cs     = GDT_SELECTOR(1),
+		.entry.rip    = (long)fn,
+		.entry.rdi    = nargs >= 1 ? args[0] : 0,
+		.entry.rsi    = nargs >= 2 ? args[1] : 0,
+		.entry.rdx    = nargs >= 3 ? args[2] : 0,
+		.entry.rcx    = nargs >= 4 ? args[3] : 0,
+		.entry.r8     = nargs >= 5 ? args[4] : 0,
+		.entry.r9     = nargs >= 6 ? args[5] : 0,
+	};
 
 	return (long)f;
 }
