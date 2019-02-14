@@ -27,7 +27,7 @@
 #define MASK_64K 0xFFFF
 
 #define SPI_NOR_MAX_ADDR_WIDTH 4
-#define SECTORS_COUNT ((DT_JEDEC_SPI_NOR_0_SIZE / 8192) \
+#define SECTORS_COUNT ((DT_JEDEC_SPI_NOR_0_SIZE / 8) \
 		       / CONFIG_SPI_NOR_SECTOR_SIZE)
 
 #define JEDEC_ID(x)		    \
