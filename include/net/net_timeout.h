@@ -28,11 +28,12 @@
 extern "C" {
 #endif
 
-/* Let the max timeout be 100 ms lower because of
+/** Let the max timeout be 100 ms lower because of
  * possible rounding in delayed work implementation.
  */
 #define NET_TIMEOUT_MAX_VALUE ((u32_t)(INT32_MAX - 100))
 
+/** Generic struct for handling network timeouts */
 struct net_timeout {
 	/** Used to track timers */
 	sys_snode_t node;
