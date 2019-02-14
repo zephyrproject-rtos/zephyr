@@ -1,151 +1,168 @@
 /*
- * Copyright (c) 2016 RnDity Sp. z o.o.
+ * Copyright (c) 2019 Linaro Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
-#include <misc/__assert.h>
-#include <clock_control/stm32_clock_control.h>
+#define LOG_DOMAIN flash_stm32f3
+#define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
+#include <logging/log.h>
+LOG_MODULE_REGISTER(LOG_DOMAIN);
 
-#include "flash_stm32f3x.h"
+#include <kernel.h>
+#include <device.h>
+#include <string.h>
+#include <flash.h>
+#include <init.h>
+#include <soc.h>
 
-static int flash_stm32_erase(struct device *dev, off_t offset, size_t size)
+#include "flash_stm32.h"
+
+
+/* offset and len must be aligned on 2 for write
+ * , positive and not beyond end of flash */
+bool flash_stm32_valid_range(struct device *dev, off_t offset, u32_t len,
+			     bool write)
 {
-	u32_t first_page_addr = 0U;
-	u32_t last_page_addr = 0U;
-	u16_t no_of_pages = size / CONFIG_FLASH_PAGE_SIZE;
-	u16_t page_index = 0U;
-
-	/* Check offset and size alignment. */
-	if (((offset % CONFIG_FLASH_PAGE_SIZE) != 0) ||
-	    ((size % CONFIG_FLASH_PAGE_SIZE) != 0) ||
-	    (no_of_pages == 0)) {
-		return -EINVAL;
-	}
-
-	/* Find address of the first page to be erased. */
-	page_index = offset / CONFIG_FLASH_PAGE_SIZE;
-
-	first_page_addr = CONFIG_FLASH_BASE_ADDRESS +
-			  page_index * CONFIG_FLASH_PAGE_SIZE;
-
-	__ASSERT_NO_MSG(IS_FLASH_PROGRAM_ADDRESS(first_page_addr));
-
-	/* Find address of the last page to be erased. */
-	page_index = ((offset + size) / CONFIG_FLASH_PAGE_SIZE) - 1;
-
-	last_page_addr = CONFIG_FLASH_BASE_ADDRESS +
-			 page_index * CONFIG_FLASH_PAGE_SIZE;
-
-	__ASSERT_NO_MSG(IS_FLASH_PROGRAM_ADDRESS(last_page_addr));
-
-	while (no_of_pages) {
-		if (flash_stm32_erase_page(dev, first_page_addr)
-				!= FLASH_COMPLETE) {
-			return -EINVAL;
-		}
-		no_of_pages--;
-		first_page_addr += CONFIG_FLASH_PAGE_SIZE;
-	}
-
-	return 0;
+	return (!write || (offset % 2 == 0 && len % 2 == 0)) &&
+		flash_stm32_range_exists(dev, offset, len);
 }
 
-static int flash_stm32_read(struct device *dev, off_t offset,
-			    void *data, size_t len)
+static unsigned int get_page(off_t offset)
 {
-	u32_t address = CONFIG_FLASH_BASE_ADDRESS + offset;
-
-	__ASSERT_NO_MSG(IS_FLASH_PROGRAM_ADDRESS(address));
-
-	flash_stm32_read_data(data, address, len);
-
-	return 0;
+	return offset / FLASH_PAGE_SIZE;
 }
 
-static int flash_stm32_write(struct device *dev, off_t offset,
-			     const void *data, size_t len)
+static int erase_page(struct device *dev, unsigned int page)
 {
-	u16_t halfword = 0U;
+	struct stm32f3x_flash *regs = FLASH_STM32_REGS(dev);
+	u32_t page_address = CONFIG_FLASH_BASE_ADDRESS;
+	int rc;
 
-	u32_t address =
-		CONFIG_FLASH_BASE_ADDRESS + offset;
-
-	u8_t remainder = 0U;
-
-	if ((len % 2) != 0) {
-		remainder = 1U;
+	/* if the control register is locked, do not fail silently */
+	if (regs->cr & FLASH_CR_LOCK) {
+		return -EIO;
 	}
 
-	len = len / 2;
-
-	while (len--) {
-		halfword = *((u8_t *)data++);
-		halfword |= *((u8_t *)data++) << 8;
-		if (flash_stm32_program_halfword(dev, address, halfword)
-				!= FLASH_COMPLETE) {
-			return -EINVAL;
-		}
-		address += 2;
+	/* Check that no Flash memory operation is ongoing */
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		return rc;
 	}
 
-	if (remainder) {
-		halfword = (*((u16_t *)data)) & 0x00FF;
-		if (flash_stm32_program_halfword(dev, address, halfword)
-				!= FLASH_COMPLETE) {
-			return -EINVAL;
+	page_address += page * FLASH_PAGE_SIZE;
+
+	/* Set the PER bit and select the page you wish to erase */
+	regs->cr |= FLASH_CR_PER;
+	/* Set page address */
+	regs->ar = page_address;
+	/* Give some time to write operation to complete */
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		return rc;
+	}
+	/* Set the STRT bit */
+	regs->cr |= FLASH_CR_STRT;
+
+	/* Wait for the BSY bit */
+	rc = flash_stm32_wait_flash_idle(dev);
+
+	regs->cr &= ~FLASH_CR_PER;
+
+	return rc;
+}
+
+int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
+				 unsigned int len)
+{
+	int i, rc = 0;
+
+	i = get_page(offset);
+	for (; i <= get_page(offset + len - 1) ; ++i) {
+		rc = erase_page(dev, i);
+		if (rc < 0) {
+			break;
 		}
 	}
 
-	return 0;
+	return rc;
 }
 
-static int flash_stm32_protection_set(struct device *dev, bool enable)
+
+static int write_hword(struct device *dev, off_t offset, u16_t val)
 {
-	if (enable) {
-		flash_stm32_lock(dev);
-	} else {
-		flash_stm32_unlock(dev);
+	volatile u16_t *flash = (u16_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
+	struct stm32f3x_flash *regs = FLASH_STM32_REGS(dev);
+	u32_t tmp;
+	int rc;
+
+	/* if the control register is locked, do not fail silently */
+	if (regs->cr & FLASH_CR_LOCK) {
+		return -EIO;
 	}
 
-	return 0;
+	/* Check that no Flash main memory operation is ongoing */
+	rc = flash_stm32_wait_flash_idle(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	/* Check if this half word is erased */
+	if (*flash != 0xFFFF) {
+		return -EIO;
+	}
+
+	/* Set the PG bit */
+	regs->cr |= FLASH_CR_PG;
+
+	/* Flush the register write */
+	tmp = regs->cr;
+
+	/* Perform the data write operation at the desired memory address */
+	*flash = val;
+
+	/* Wait until the BSY bit is cleared */
+	rc = flash_stm32_wait_flash_idle(dev);
+
+	/* Clear the PG bit */
+	regs->cr &= (~FLASH_CR_PG);
+
+	return rc;
 }
 
-static int flash_stm32_init(struct device *dev)
+
+int flash_stm32_write_range(struct device *dev, unsigned int offset,
+			    const void *data, unsigned int len)
 {
-	const struct flash_stm32_dev_config *cfg = FLASH_CFG(dev);
+	int i, rc = 0;
 
-	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+	for (i = 0; i < len; i += 2, offset += 2) {
+		rc = write_hword(dev, offset, ((const u16_t *) data)[i>>1]);
+		if (rc < 0) {
+			return rc;
+		}
+	}
 
-	if (clock_control_on(clk, (clock_control_subsys_t *) &cfg->pclken) != 0)
-		return -ENODEV;
-
-	return 0;
+	return rc;
 }
 
-static const struct flash_driver_api flash_stm32_api = {
-	.read = flash_stm32_read,
-	.write = flash_stm32_write,
-	.erase = flash_stm32_erase,
-	.write_protection = flash_stm32_protection_set,
-	.write_block_size = 2,
-};
+void flash_stm32_page_layout(struct device *dev,
+			     const struct flash_pages_layout **layout,
+			     size_t *layout_size)
+{
+	static struct flash_pages_layout stm32f3_flash_layout = {
+		.pages_count = 0,
+		.pages_size = 0,
+	};
 
-static const struct flash_stm32_dev_config flash_device_config = {
-	.base = (u32_t *)DT_FLASH_DEV_BASE_ADDRESS,
-	.pclken = { .bus = STM32_CLOCK_BUS_APB1,
-		    .enr =  LL_AHB1_GRP1_PERIPH_FLASH},
-};
+	ARG_UNUSED(dev);
 
-static struct flash_stm32_dev_data flash_device_data = {
+	if (stm32f3_flash_layout.pages_count == 0) {
+		stm32f3_flash_layout.pages_count = DT_FLASH_SIZE \
+						* 1024 / FLASH_PAGE_SIZE;
+		stm32f3_flash_layout.pages_size = FLASH_PAGE_SIZE;
+	}
 
-};
-
-DEVICE_AND_API_INIT(flash_stm32, DT_FLASH_DEV_NAME,
-		    flash_stm32_init,
-		    &flash_device_data,
-		    &flash_device_config,
-		    POST_KERNEL,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &flash_stm32_api);
+	*layout = &stm32f3_flash_layout;
+	*layout_size = 1;
+}
