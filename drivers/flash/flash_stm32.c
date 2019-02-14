@@ -17,6 +17,9 @@
 /* STM32F0: maximum erase time of 40ms for a 2K sector */
 #if defined(CONFIG_SOC_SERIES_STM32F0X)
 #define STM32_FLASH_TIMEOUT	(K_MSEC(40))
+/* STM32F3: maximum erase time of 40ms for a 2K sector */
+#elif defined(CONFIG_SOC_SERIES_STM32F3X)
+#define STM32_FLASH_TIMEOUT	(K_MSEC(40))
 /* STM32F4: maximum erase time of 4s for a 128K sector */
 #elif defined(CONFIG_SOC_SERIES_STM32F4X)
 #define STM32_FLASH_TIMEOUT	(K_MSEC(4000))
@@ -95,7 +98,7 @@ int flash_stm32_wait_flash_idle(struct device *dev)
 static void flash_stm32_flush_caches(struct device *dev,
 				     off_t offset, size_t len)
 {
-#if defined(CONFIG_SOC_SERIES_STM32F0X)
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X)
 	ARG_UNUSED(dev);
 	ARG_UNUSED(offset);
 	ARG_UNUSED(len);
@@ -188,6 +191,8 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 	struct stm32f7x_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32F0X)
 	struct stm32f0x_flash *regs = FLASH_STM32_REGS(dev);
+#elif defined(CONFIG_SOC_SERIES_STM32F3X)
+	struct stm32f3x_flash *regs = FLASH_STM32_REGS(dev);
 #elif defined(CONFIG_SOC_SERIES_STM32L4X)
 	struct stm32l4x_flash *regs = FLASH_STM32_REGS(dev);
 #endif
@@ -205,6 +210,11 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 	} else {
 		if (regs->cr & FLASH_CR_LOCK) {
 			regs->keyr = FLASH_KEY1;
+#ifdef CONFIG_SOC_SERIES_STM32F3X
+			/* On STM32F3 series some time is requested */
+			/* before writing again on key register */
+			flash_stm32_wait_flash_idle(dev);
+#endif /* CONFIG_SOC_SERIES_STM32F3X */
 			regs->keyr = FLASH_KEY2;
 		}
 	}
@@ -217,6 +227,10 @@ static int flash_stm32_write_protection(struct device *dev, bool enable)
 static struct flash_stm32_priv flash_data = {
 #if defined(CONFIG_SOC_SERIES_STM32F0X)
 	.regs = (struct stm32f0x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
+	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
+		    .enr = LL_AHB1_GRP1_PERIPH_FLASH },
+#elif defined(CONFIG_SOC_SERIES_STM32F3X)
+	.regs = (struct stm32f3x_flash *) DT_FLASH_DEV_BASE_ADDRESS,
 	.pclken = { .bus = STM32_CLOCK_BUS_AHB1,
 		    .enr = LL_AHB1_GRP1_PERIPH_FLASH },
 #elif defined(CONFIG_SOC_SERIES_STM32F4X)
@@ -251,14 +265,15 @@ static int stm32_flash_init(struct device *dev)
 {
 	struct flash_stm32_priv *p = FLASH_STM32_PRIV(dev);
 #if defined(CONFIG_SOC_SERIES_STM32L4X) || \
-	defined(CONFIG_SOC_SERIES_STM32F0X)
+	defined(CONFIG_SOC_SERIES_STM32F0X) || \
+	defined(CONFIG_SOC_SERIES_STM32F3X)
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
 	/*
 	 * On STM32F0, Flash interface clock source is always HSI,
 	 * so statically enable HSI here.
 	 */
-#if defined(CONFIG_SOC_SERIES_STM32F0X)
+#if defined(CONFIG_SOC_SERIES_STM32F0X) || defined(CONFIG_SOC_SERIES_STM32F3X)
 	LL_RCC_HSI_Enable();
 
 	while (!LL_RCC_HSI_IsReady()) {

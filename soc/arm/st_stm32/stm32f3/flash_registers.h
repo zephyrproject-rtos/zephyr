@@ -40,7 +40,7 @@ union ef_acr {
 };
 
 /* 3.3.3 Embedded flash registers */
-struct stm32_flash {
+struct stm32f3x_flash {
 	union ef_acr acr;
 	u32_t keyr;
 	u32_t optkeyr;
