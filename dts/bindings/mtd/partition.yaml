@@ -13,28 +13,4 @@ properties:
       constraint: "fixed-partitions"
       generation: define
 
-    partition\d+:
-      type: string
-      generation: define
-
-      properties:
-          reg:
-            type: array
-            description: partition offset and size from flash bank
-            generation: define
-            category: required
-            label: offset
-
-          label:
-            type: string
-            description: Partition label
-            generation: define
-            category: required
-
-          read-only:
-            type: boolean
-            category: optional
-            description: Denotes read only partition
-            generation: define
-
 ...
