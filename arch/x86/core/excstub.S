@@ -107,9 +107,22 @@ SECTION_FUNC(TEXT, _exception_enter)
 	pushl	%ebx
 	pushl	%ebp
 
+#ifdef CONFIG_USERSPACE
+	/* Test if interrupted context was in ring 3 */
+	testb	$3, 36(%esp)
+	jz 1f
+	/* It was. The original stack pointer is on the stack 44 bytes
+	 * from the current top
+	 */
+	pushl	44(%esp)
+	jmp 2f
+1:
+#endif
 	leal	44(%esp), %eax   /* Calculate ESP before interrupt occurred */
 	pushl	%eax             /* Save calculated ESP */
-
+#ifdef CONFIG_USERSPACE
+2:
+#endif
 	/* ESP is pointing to the ESF at this point */
 
 #if defined(CONFIG_FP_SHARING)
