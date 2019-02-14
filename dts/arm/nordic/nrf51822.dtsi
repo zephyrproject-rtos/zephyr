@@ -186,6 +186,14 @@
 			label = "TIMER_2";
 		};
 
+		temp: temp@4000c000 {
+			compatible = "nordic,nrf-temp";
+			reg = <0x4000c000 0x1000>;
+			interrupts = <12 1>;
+			status = "ok";
+			label = "TEMP_0";
+		};
+
 		wdt: watchdog@40010000 {
 			compatible = "nordic,nrf-watchdog";
 			reg = <0x40010000 0x1000>;

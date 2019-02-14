@@ -296,6 +296,14 @@
 			label = "TIMER_4";
 		};
 
+		temp: temp@4000c000 {
+			compatible = "nordic,nrf-temp";
+			reg = <0x4000c000 0x1000>;
+			interrupts = <12 1>;
+			status = "ok";
+			label = "TEMP_0";
+		};
+
 		usbd: usbd@40027000 {
 			compatible = "nordic,nrf-usbd";
 			reg = <0x40027000 0x1000>;
