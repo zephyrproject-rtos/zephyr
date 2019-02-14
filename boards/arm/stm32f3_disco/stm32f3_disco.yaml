@@ -15,3 +15,4 @@ supported:
   - spi
   - usb_device
   - lsm303dlhc
+  - nvs
