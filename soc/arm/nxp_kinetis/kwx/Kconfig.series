@@ -8,7 +8,6 @@
 config SOC_SERIES_KINETIS_KWX
 	bool "Kinetis KWx Series MCU"
 	select SOC_FAMILY_KINETIS
-	select SYS_POWER_LOW_POWER_STATES_SUPPORTED
 	select CPU_HAS_SYSTICK
 	select CLOCK_CONTROL
 	help
