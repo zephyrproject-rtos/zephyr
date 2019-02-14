@@ -1632,7 +1632,7 @@ bool net_if_need_calc_tx_checksum(struct net_if *iface);
  *
  * @return Pointer to interface or NULL if not found.
  */
-struct net_if *net_if_get_by_index(u8_t index);
+struct net_if *net_if_get_by_index(int index);
 
 /**
  * @brief Get interface index according to pointer
@@ -1641,7 +1641,7 @@ struct net_if *net_if_get_by_index(u8_t index);
  *
  * @return Interface index
  */
-u8_t net_if_get_by_iface(struct net_if *iface);
+int net_if_get_by_iface(struct net_if *iface);
 
 /**
  * @typedef net_if_cb_t

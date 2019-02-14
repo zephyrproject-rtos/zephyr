@@ -2818,21 +2818,27 @@ bool net_if_need_calc_rx_checksum(struct net_if *iface)
 	return need_calc_checksum(iface, ETHERNET_HW_RX_CHKSUM_OFFLOAD);
 }
 
-struct net_if *net_if_get_by_index(u8_t index)
+struct net_if *net_if_get_by_index(int index)
 {
-	if (&__net_if_start[index] >= __net_if_end) {
+	if (index <= 0) {
+		return NULL;
+	}
+
+	if (&__net_if_start[index - 1] >= __net_if_end) {
 		NET_DBG("Index %d is too large", index);
 		return NULL;
 	}
 
-	return &__net_if_start[index];
+	return &__net_if_start[index - 1];
 }
 
-u8_t net_if_get_by_iface(struct net_if *iface)
+int net_if_get_by_iface(struct net_if *iface)
 {
-	NET_ASSERT(iface >= __net_if_start && iface < __net_if_end);
+	if (!(iface >= __net_if_start && iface < __net_if_end)) {
+		return -1;
+	}
 
-	return iface - __net_if_start;
+	return (iface - __net_if_start) + 1;
 }
 
 void net_if_foreach(net_if_cb_t cb, void *user_data)
