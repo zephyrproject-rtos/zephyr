@@ -31,13 +31,18 @@ extern "C" {
  * DNS query type enum
  */
 enum dns_query_type {
-	DNS_QUERY_TYPE_A = 1,	 /* IPv4 */
-	DNS_QUERY_TYPE_AAAA = 28 /* IPv6 */
+	/** IPv4 query */
+	DNS_QUERY_TYPE_A = 1,
+	/** IPv6 query */
+	DNS_QUERY_TYPE_AAAA = 28
 };
 
+/** Max size of the resolved name. */
 #ifndef DNS_MAX_NAME_SIZE
 #define DNS_MAX_NAME_SIZE 20
 #endif
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Make sure that we can compile things even if CONFIG_DNS_RESOLVER
  * is not enabled.
@@ -76,6 +81,9 @@ enum dns_query_type {
 #endif /* CONFIG_MDNS_RESOLVER */
 
 #define DNS_MAX_MCAST_SERVERS (MDNS_SERVER_COUNT + LLMNR_SERVER_COUNT)
+
+/** @endcond */
+
 /**
  * Address info struct is passed to callback that gets all the results.
  */
@@ -90,23 +98,40 @@ struct dns_addrinfo {
  * Status values for the callback.
  */
 enum dns_resolve_status {
-	DNS_EAI_BADFLAGS    = -1,   /* Invalid value for `ai_flags' field */
-	DNS_EAI_NONAME      = -2,   /* NAME or SERVICE is unknown */
-	DNS_EAI_AGAIN       = -3,   /* Temporary failure in name resolution */
-	DNS_EAI_FAIL        = -4,   /* Non-recoverable failure in name res */
-	DNS_EAI_NODATA      = -5,   /* No address associated with NAME */
-	DNS_EAI_FAMILY      = -6,   /* `ai_family' not supported */
-	DNS_EAI_SOCKTYPE    = -7,   /* `ai_socktype' not supported */
-	DNS_EAI_SERVICE     = -8,   /* SRV not supported for `ai_socktype' */
-	DNS_EAI_ADDRFAMILY  = -9,   /* Address family for NAME not supported */
-	DNS_EAI_MEMORY      = -10,  /* Memory allocation failure */
-	DNS_EAI_SYSTEM      = -11,  /* System error returned in `errno' */
-	DNS_EAI_OVERFLOW    = -12,  /* Argument buffer overflow */
-	DNS_EAI_INPROGRESS  = -100, /* Processing request in progress */
-	DNS_EAI_CANCELED    = -101, /* Request canceled */
-	DNS_EAI_NOTCANCELED = -102, /* Request not canceled */
-	DNS_EAI_ALLDONE     = -103, /* All requests done */
-	DNS_EAI_IDN_ENCODE  = -105, /* IDN encoding failed */
+	/** Invalid value for `ai_flags' field */
+	DNS_EAI_BADFLAGS    = -1,
+	/** NAME or SERVICE is unknown */
+	DNS_EAI_NONAME      = -2,
+	/** Temporary failure in name resolution */
+	DNS_EAI_AGAIN       = -3,
+	/** Non-recoverable failure in name res */
+	DNS_EAI_FAIL        = -4,
+	/** No address associated with NAME */
+	DNS_EAI_NODATA      = -5,
+	/** `ai_family' not supported */
+	DNS_EAI_FAMILY      = -6,
+	/** `ai_socktype' not supported */
+	DNS_EAI_SOCKTYPE    = -7,
+	/** SRV not supported for `ai_socktype' */
+	DNS_EAI_SERVICE     = -8,
+	/** Address family for NAME not supported */
+	DNS_EAI_ADDRFAMILY  = -9,
+	/** Memory allocation failure */
+	DNS_EAI_MEMORY      = -10,
+	/** System error returned in `errno' */
+	DNS_EAI_SYSTEM      = -11,
+	/** Argument buffer overflow */
+	DNS_EAI_OVERFLOW    = -12,
+	/** Processing request in progress */
+	DNS_EAI_INPROGRESS  = -100,
+	/** Request canceled */
+	DNS_EAI_CANCELED    = -101,
+	/** Request not canceled */
+	DNS_EAI_NOTCANCELED = -102,
+	/** All requests done */
+	DNS_EAI_ALLDONE     = -103,
+	/** IDN encoding failed */
+	DNS_EAI_IDN_ENCODE  = -105,
 };
 
 /**
@@ -353,15 +378,19 @@ static inline int dns_cancel_addr_info(u16_t dns_id)
  * @}
  */
 
-#if defined(CONFIG_DNS_RESOLVER)
+/** @cond INTERNAL_HIDDEN */
+
 /**
  * @brief Initialize DNS subsystem.
  */
+#if defined(CONFIG_DNS_RESOLVER)
 void dns_init_resolver(void);
 
 #else
 #define dns_init_resolver(...)
 #endif /* CONFIG_DNS_RESOLVER */
+
+/** @endcond */
 
 #ifdef __cplusplus
 }
