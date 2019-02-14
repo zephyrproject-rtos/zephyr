@@ -2,8 +2,16 @@ tests:
   benchmark.timing.default_kernel:
     arch_exclude: posix
     tags: benchmark
+    harness: console
+    harness_config:
+      record:
+        regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"
   benchmark.timing.userspace:
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_args: CONF_FILE=prj_userspace.conf
     arch_whitelist: x86 arm arc
     tags: benchmark
+    harness: console
+    harness_config:
+      record:
+        regex: "(?P<metric>.*):(?P<cycles>.*) cycles ,(?P<nanoseconds>.*) ns"

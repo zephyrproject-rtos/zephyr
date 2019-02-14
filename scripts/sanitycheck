@@ -500,6 +500,18 @@ class Handler:
         self.lock.release()
         return ret
 
+    def record(self, harness):
+        if harness.recording:
+            filename = os.path.join(options.outdir,
+                    self.instance.platform.name,
+                    self.instance.test.name, "recording.csv")
+            with open(filename, "at") as csvfile:
+                cw = csv.writer(csvfile, harness.fieldnames, lineterminator=os.linesep)
+                cw.writerow(harness.fieldnames)
+                for instance in harness.recording:
+                    cw.writerow(instance)
+
+
 class BinaryHandler(Handler):
     def __init__(self, instance):
         """Constructor
@@ -703,6 +715,7 @@ class DeviceHandler(Handler):
         else:
             self.set_state(out_state, {})
 
+        self.record(harness)
 
 class QEMUHandler(Handler):
     """Spawns a thread to monitor QEMU output from pipes
@@ -794,6 +807,7 @@ class QEMUHandler(Handler):
             # APIs. Add whatever gets reported to the metrics dictionary
             line = ""
 
+        handler.record(harness)
         metrics["handler_time"] = time.time() - start_time
         verbose("QEMU complete (%s) after %f seconds" %
                 (out_state, metrics["handler_time"]))
