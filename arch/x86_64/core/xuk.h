@@ -138,14 +138,15 @@ struct xuk_stack_frame {
 long xuk_setup_stack(long sp, void *fn, unsigned int eflags,
 		     long *args, int nargs);
 
+
+/* Starts the numbered CPU running with the specified initial stack
+ * pointer
+ */
+
+void xuk_start_cpu(int cpu, unsigned int stack);
 /*
  * OS-defined utilities required by the xuk layer:
  */
-
-/* Returns the address of a stack pointer in 32 bit memory to be used
- * by AP processor bootstraping and startup.
- */
-unsigned int _init_cpu_stack(int cpu);
 
 /* OS CPU startup entry point, running on the stack returned by
  * init_cpu_stack()

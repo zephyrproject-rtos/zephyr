@@ -492,15 +492,17 @@ static void smp_init(void)
 	};
 	while (_apic.ICR_LO.send_pending) {
 	}
+}
 
-	for (int i = 1; i < CONFIG_MP_NUM_CPUS; i++) {
-		_shared.smpinit_stack = _init_cpu_stack(i);
-		printf("Granting stack @ %xh to CPU %d\n",
-		       _shared.smpinit_stack, i);
+void xuk_start_cpu(int cpu, unsigned int stack)
+{
+	int act = _shared.num_active_cpus;
 
-		while (_shared.num_active_cpus <= i) {
-			__asm__("pause");
-		}
+	printf("Granting stack @ %xh to CPU %d\n", stack, cpu);
+	_shared.smpinit_stack = stack;
+
+	while (_shared.num_active_cpus == act) {
+		__asm__ volatile("pause");
 	}
 }
 
