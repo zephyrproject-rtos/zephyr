@@ -117,7 +117,6 @@ class KconfigCheck(ComplianceTest):
     """
     Checks is we are introducing any new warnings/errors with Kconfig,
     for example using undefiend Kconfig variables.
-
     """
     _name = "Kconfig"
     _doc = "https://docs.zephyrproject.org/latest/application/kconfig-tips.html"
@@ -125,20 +124,19 @@ class KconfigCheck(ComplianceTest):
     def run(self):
         self.prepare()
 
-        # Put the Kconfiglib path first to make sure no local Kconfiglib version is
-        # used
-        if self.zephyr_base:
-            kconfig_path = os.path.join(self.zephyr_base, "scripts", "kconfig")
-            if os.path.exists(kconfig_path):
-                sys.path.insert(0, os.path.join(kconfig_path))
-                import kconfiglib
-            else:
-                self.case.result = Error("Can't find Kconfig", "error")
-                return
-        else:
+        if not self.zephyr_base:
             self.case.result = Skipped("Not a Zephyr tree", "skipped")
             return
 
+        # Put the Kconfiglib path first to make sure no local Kconfiglib version is
+        # used
+        kconfig_path = os.path.join(self.zephyr_base, "scripts", "kconfig")
+        if not os.path.exists(kconfig_path):
+            self.case.result = Error("Can't find Kconfig", "error")
+            return
+
+        sys.path.insert(0, kconfig_path)
+        import kconfiglib
 
         # Look up Kconfig files relative to ZEPHYR_BASE
         os.environ["srctree"] = self.zephyr_base
@@ -158,24 +156,22 @@ class KconfigCheck(ComplianceTest):
         # single Kconfig tree and warns for all references to undefined symbols
         os.environ["KCONFIG_STRICT"] = "y"
 
-        undef_ref_warnings = []
-        kconfig_exception = None
-
         try:
-            for warning in kconfiglib.Kconfig().warnings:
-                if "undefined symbol" in warning:
-                    undef_ref_warnings.append(warning)
+            kconf = kconfiglib.Kconfig()
         except kconfiglib.KconfigError as e:
-            kconfig_exception = str(e)
+            self.case.result = Failure("Error while parsing Kconfig files",
+                                       "failure")
+            self.case.result._elem.text = str(e)
+            return
+
+        undef_ref_warnings = [warning for warning in kconf.warnings
+                              if "undefined symbol" in warning]
 
         # Generating multiple JUnit <failure>s would be neater, but Shippable only
         # seems to display the first one
         if undef_ref_warnings:
             self.case.result = Failure("undefined Kconfig symbols", "failure")
             self.case.result._elem.text = "\n\n\n".join(undef_ref_warnings)
-        elif kconfig_exception:
-            self.case.result = Failure("Error running kconfig", "failure")
-            self.case.result._elem.text = kconfig_exception
 
 
 class Documentation(ComplianceTest):
