@@ -45,14 +45,7 @@
 #define ADV_INT_DEFAULT_MS 100
 #define ADV_INT_FAST_MS    20
 
-/* TinyCrypt PRNG consumes a lot of stack space, so we need to have
- * an increased call stack whenever it's used.
- */
-#if defined(CONFIG_BT_HOST_CRYPTO)
 #define ADV_STACK_SIZE 768
-#else
-#define ADV_STACK_SIZE 512
-#endif
 
 static K_FIFO_DEFINE(adv_queue);
 static struct k_thread adv_thread_data;
