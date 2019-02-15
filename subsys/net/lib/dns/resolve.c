@@ -335,17 +335,15 @@ static int dns_read(struct dns_resolve_context *ctx,
 	/* index that points to the current answer being analyzed */
 	int answer_ptr;
 	int data_len;
-	int offset;
 	int items;
 	int ret;
 	int server_idx, query_idx;
 
-	data_len = MIN(net_pkt_appdatalen(pkt), DNS_RESOLVER_MAX_BUF_SIZE);
-	offset = net_pkt_get_len(pkt) - data_len;
+	data_len = MIN(net_pkt_remaining_data(pkt), DNS_RESOLVER_MAX_BUF_SIZE);
 
 	/* TODO: Instead of this temporary copy, just use the net_pkt directly.
 	 */
-	ret = net_frag_linear_copy(dns_data, pkt->frags, offset, data_len);
+	ret = net_pkt_read_new(pkt, dns_data->data, data_len);
 	if (ret < 0) {
 		ret = DNS_EAI_MEMORY;
 		goto quit;
@@ -617,7 +615,6 @@ static int dns_write(struct dns_resolve_context *ctx,
 	enum dns_query_type query_type;
 	struct net_context *net_ctx;
 	struct sockaddr *server;
-	struct net_pkt *pkt;
 	int server_addr_len;
 	u16_t dns_id;
 	int ret;
@@ -631,43 +628,21 @@ static int dns_write(struct dns_resolve_context *ctx,
 				 dns_qname->data, dns_qname->len, dns_id,
 				 (enum dns_rr_type)query_type);
 	if (ret < 0) {
-		ret = -EINVAL;
-		goto quit;
+		return -EINVAL;
 	}
 
-	pkt = net_pkt_get_tx(net_ctx, ctx->buf_timeout);
-	if (!pkt) {
-		ret = -ENOMEM;
-		goto quit;
-	}
-
-	if (hop_limit > 0) {
-#if defined(CONFIG_NET_IPV6)
-		if (net_context_get_family(net_ctx) == AF_INET6) {
-			net_pkt_set_ipv6_hop_limit(pkt, hop_limit);
-		} else
-#endif
-#if defined(CONFIG_NET_IPV4)
-		if (net_context_get_family(net_ctx) == AF_INET) {
-			net_pkt_set_ipv4_ttl(pkt, hop_limit);
-		} else
-#endif
-		{
-		}
-	}
-
-	ret = net_pkt_append_all(pkt, dns_data->len, dns_data->data,
-				 ctx->buf_timeout);
-	if (ret < 0) {
-		ret = -ENOMEM;
-		goto quit;
+	if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    net_context_get_family(net_ctx) == AF_INET6) {
+		net_context_set_ipv6_hop_limit(net_ctx, hop_limit);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		   net_context_get_family(net_ctx) == AF_INET) {
+		net_context_set_ipv4_ttl(net_ctx, hop_limit);
 	}
 
 	ret = net_context_recv(net_ctx, cb_recv, K_NO_WAIT, ctx);
 	if (ret < 0 && ret != -EALREADY) {
 		NET_DBG("Could not receive from socket (%d)", ret);
-		net_pkt_unref(pkt);
-		goto quit;
+		return ret;
 	}
 
 	if (server->sa_family == AF_INET) {
@@ -676,12 +651,12 @@ static int dns_write(struct dns_resolve_context *ctx,
 		server_addr_len = sizeof(struct sockaddr_in6);
 	}
 
-	ret = net_context_sendto(pkt, server, server_addr_len, NULL,
-				 K_NO_WAIT, NULL, NULL);
+	ret = net_context_sendto_new(net_ctx, dns_data->data, dns_data->len,
+				     server, server_addr_len, NULL,
+				     K_NO_WAIT, NULL, NULL);
 	if (ret < 0) {
 		NET_DBG("Cannot send query (%d)", ret);
-		net_pkt_unref(pkt);
-		goto quit;
+		return ret;
 	}
 
 	ret = k_delayed_work_submit(&ctx->queries[query_idx].timer,
@@ -691,18 +666,16 @@ static int dns_write(struct dns_resolve_context *ctx,
 			"timeout %u ret %d",
 			query_idx, server_idx, dns_id,
 			ctx->queries[query_idx].timeout, ret);
-		goto quit;
-	} else {
-		NET_DBG("[%u] submitting work to server idx %d for id %u "
-			"timeout %u",
-			query_idx, server_idx, dns_id,
-			ctx->queries[query_idx].timeout);
+		return ret;
 	}
 
-	ret = 0;
 
-quit:
-	return ret;
+	NET_DBG("[%u] submitting work to server idx %d for id %u "
+		"timeout %u",
+		query_idx, server_idx, dns_id,
+		ctx->queries[query_idx].timeout);
+
+	return 0;
 }
 
 int dns_resolve_cancel(struct dns_resolve_context *ctx, u16_t dns_id)
