@@ -69,7 +69,7 @@ void *_isr_exit_restore_stack(void *interrupted)
 	return (nested || next == interrupted) ? NULL : next;
 }
 
-struct {
+volatile struct {
 	void (*fn)(int, void*);
 	void *arg;
 } cpu_init[CONFIG_MP_NUM_CPUS];
