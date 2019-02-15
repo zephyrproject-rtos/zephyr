@@ -750,6 +750,8 @@ WARN_LOGFILE           =
 # spaces. See also FILE_PATTERNS and EXTENSION_MAPPING
 # Note: If this tag is empty the current directory is searched.
 
+# This MUST be kept in sync with DOXY_SOURCES in doc/CMakeLists.txt
+# for incremental (and faster) builds to work correctly.
 INPUT                  = @ZEPHYR_BASE@/include/ \
                          @ZEPHYR_BASE@/include/misc/ \
                          @ZEPHYR_BASE@/include/arch/x86/ \
@@ -786,6 +788,8 @@ INPUT_ENCODING         = UTF-8
 # *.m, *.markdown, *.md, *.mm, *.dox, *.py, *.pyw, *.f90, *.f95, *.f03, *.f08,
 # *.f, *.for, *.tcl, *.vhd, *.vhdl, *.ucf and *.qsf.
 
+# This MUST be kept in sync with DOXY_SOURCES in doc/CMakeLists.txt
+# for incremental (and faster) builds to work correctly.
 FILE_PATTERNS          = "*.c" \
                          "*.h" \
                          "*.S"

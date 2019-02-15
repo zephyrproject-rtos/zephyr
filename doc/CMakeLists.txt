@@ -112,10 +112,25 @@ add_custom_target(
   COMMENT "Copying files to ${RST_OUT}"
 )
 
-set(ARGS ${DOXYFILE_OUT})
+# For incremental builds not to miss any source change this MUST be kept
+# a superset of INPUT= and FILE_PATTERNS= in zephyr.doxyfile.in
+file(GLOB_RECURSE  DOXY_SOURCES
+  ${ZEPHYR_BASE}/include/*.[c,h,S]
+  ${ZEPHYR_BASE}/lib/libc/*.[c,h,S]
+  ${ZEPHYR_BASE}/tests/*.[h,c,S]
+  )
+# For debug. Also find generated list in doc/_build/(build.ninja|CMakeFiles/)
+# message("DOXY_SOURCES= " ${DOXY_SOURCES})
 
-add_custom_target(
-  doxy
+set(ARGS ${DOXYFILE_OUT})
+set(DOXY_RUN_TSTAMP ${CMAKE_CURRENT_BINARY_DIR}/last_doxy_run_tstamp)
+
+
+# Create timestamp first so we re-run if source files are edited while
+# doxygen is running
+add_custom_command(
+  OUTPUT ${DOXY_RUN_TSTAMP}
+  COMMAND cmake -E touch ${DOXY_RUN_TSTAMP}
   COMMAND ${CMAKE_COMMAND}
     -DCOMMAND=${DOXYGEN_EXECUTABLE}
     -DARGS="${ARGS}"
@@ -123,6 +138,7 @@ add_custom_target(
     -DERROR_FILE=${DOXY_LOG}
     -DWORKING_DIRECTORY=${CMAKE_CURRENT_LIST_DIR}
     -P ${ZEPHYR_BASE}/cmake/util/execute_process.cmake
+  DEPENDS ${DOXY_SOURCES}
   COMMENT "Running ${DOXYGEN_EXECUTABLE}"
 )
 
@@ -138,9 +154,9 @@ add_custom_target(
     ${PYTHON_EXECUTABLE} scripts/restore_modification_times.py
     --loglevel  WARN  ${DOXY_OUT}/xml
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+  DEPENDS ${DOXY_RUN_TSTAMP}
+  COMMENT "Fixing modification times of ${DOXY_OUT}/xml/ output"
 )
-
-add_dependencies(doxy_real_modified_times doxy)
 
 add_custom_target(
   pristine
