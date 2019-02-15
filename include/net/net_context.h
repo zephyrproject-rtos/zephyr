@@ -293,6 +293,12 @@ struct net_context {
 
 	/** Network interface assigned to this context */
 	s8_t iface;
+
+	/** IPv6 hop limit or IPv4 ttl for packets sent via this context. */
+	union {
+		u8_t ipv6_hop_limit;
+		u8_t ipv4_ttl;
+	};
 };
 
 static inline bool net_context_is_used(struct net_context *context)
@@ -489,6 +495,28 @@ static inline void net_context_set_iface(struct net_context *context,
 	NET_ASSERT(iface);
 
 	context->iface = net_if_get_by_iface(iface);
+}
+
+static inline u8_t net_context_get_ipv4_ttl(struct net_context *context)
+{
+	return context->ipv4_ttl;
+}
+
+static inline void net_context_set_ipv4_ttl(struct net_context *context,
+					    u8_t ttl)
+{
+	context->ipv4_ttl = ttl;
+}
+
+static inline u8_t net_context_get_ipv6_hop_limit(struct net_context *context)
+{
+	return context->ipv6_hop_limit;
+}
+
+static inline void net_context_set_ipv6_hop_limit(struct net_context *context,
+						  u8_t hop_limit)
+{
+	context->ipv6_hop_limit = hop_limit;
 }
 
 /**
