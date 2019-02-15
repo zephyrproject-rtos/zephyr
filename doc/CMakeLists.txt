@@ -76,8 +76,8 @@ set(CONTENT_OUTPUTS ${CMAKE_CURRENT_BINARY_DIR}/extracted-content.txt)
 configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 file(TOUCH ${CMAKE_CURRENT_BINARY_DIR}/Kconfig.modules)
 
-# This command is used to copy all documentation source files into the build
-# directory,
+# This command is used to copy all documentation source files from the
+# ZEPHYR_BASE/ environment variable into the build directory,
 #
 # We need to make copies because Sphinx requires a single
 # documentation root directory, but Zephyr's documentation is
@@ -109,6 +109,7 @@ add_custom_target(
   # Copy all files in doc/ to the rst folder
   COMMAND ${EXTRACT_CONTENT_COMMAND}
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+  COMMENT "Copying files to ${RST_OUT}"
 )
 
 set(ARGS ${DOXYFILE_OUT})
@@ -122,6 +123,7 @@ add_custom_target(
     -DERROR_FILE=${DOXY_LOG}
     -DWORKING_DIRECTORY=${CMAKE_CURRENT_LIST_DIR}
     -P ${ZEPHYR_BASE}/cmake/util/execute_process.cmake
+  COMMENT "Running ${DOXYGEN_EXECUTABLE}"
 )
 
 # Doxygen doesn't support incremental builds.
@@ -134,7 +136,7 @@ add_custom_target(
   doxy_real_modified_times
   COMMAND ${CMAKE_COMMAND} -E env
     ${PYTHON_EXECUTABLE} scripts/restore_modification_times.py
-    --loglevel ERROR  ${DOXY_OUT}/xml
+    --loglevel  WARN  ${DOXY_OUT}/xml
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
 )
 
@@ -169,6 +171,7 @@ add_custom_target(
   KCONFIG_DOC_MODE=1
   ${PYTHON_EXECUTABLE} scripts/genrest.py Kconfig ${RST_OUT}/doc/reference/kconfig/
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+  COMMENT "Running genrest.py Kconfig ${RST_OUT}/doc/reference/kconfig/"
 )
 
 set(KI_SCRIPT ${ZEPHYR_BASE}/scripts/filter-known-issues.py)
@@ -196,6 +199,12 @@ add_custom_target(
   USES_TERMINAL
 )
 
+# "breathe", the sphinx plugin that parses XML output from doxygen, has
+# an "everything on everything" dependency issue reported at:
+# https://github.com/michaeljones/breathe/issues/420 In other words
+# changing 1 source file costs the same build time than changing all
+# source files. breathe is fortunately smart enough not to run at all
+# when *nothing* has changed.
 add_custom_target(
   html
   COMMAND ${SPHINX_BUILD_HTML_COMMAND}
@@ -203,7 +212,7 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -P ${ZEPHYR_BASE}/cmake/util/fmerge.cmake ${DOC_LOG} ${DOXY_LOG} ${SPHINX_LOG}
   COMMAND ${PYTHON_EXECUTABLE} ${KI_SCRIPT} --config-dir ${CONFIG_DIR} --errors ${DOC_WARN} --warnings ${DOC_WARN} ${DOC_LOG}
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
-  COMMENT "Generating HTML documentation"
+  COMMENT "Generating HTML documentation with ${SPHINXBUILD} ${SPHINXOPTS}"
   ${SPHINX_USES_TERMINAL}
 )
 
