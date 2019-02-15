@@ -875,6 +875,8 @@ int net_context_create_ipv4_new(struct net_context *context,
 		}
 	}
 
+	net_pkt_set_ipv4_ttl(pkt, net_context_get_ipv4_ttl(context));
+
 	return net_ipv4_create_new(pkt, src, dst);
 }
 #endif /* CONFIG_NET_IPV4 */
@@ -920,6 +922,9 @@ int net_context_create_ipv6_new(struct net_context *context,
 		src = net_if_ipv6_select_src_addr(net_pkt_iface(pkt),
 						  (struct in6_addr *)dst);
 	}
+
+	net_pkt_set_ipv6_hop_limit(pkt,
+				   net_context_get_ipv6_hop_limit(context));
 
 	return net_ipv6_create_new(pkt, src, dst);
 }
