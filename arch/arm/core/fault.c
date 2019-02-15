@@ -396,13 +396,17 @@ static u32_t _UsageFault(const NANO_ESF *esf)
 	}
 #if defined(CONFIG_ARMV8_M_MAINLINE)
 	if ((SCB->CFSR & SCB_CFSR_STKOF_Msk) != 0) {
-		PR_FAULT_INFO("  Stack overflow\n");
-#if defined(CONFIG_HW_STACK_PROTECTION)
-		/* Stack Overflows are reported as stack
-		 * corruption errors.
+		PR_FAULT_INFO("  Stack overflow (context area not valid)\n");
+#if defined(CONFIG_BUILTIN_STACK_GUARD)
+		/* Stack Overflows are always reported as stack corruption
+		 * errors. Note that the built-in stack overflow mechanism
+		 * prevents the context area to be loaded on the stack upon
+		 * UsageFault exception entry. As a result, we cannot rely
+		 * on the reported faulty instruction address, to determine
+		 * the instruction that triggered the stack overflow.
 		 */
 		reason = _NANO_ERR_STACK_CHK_FAIL;
-#endif /* CONFIG_HW_STACK_PROTECTION */
+#endif /* CONFIG_BUILTIN_STACK_GUARD */
 	}
 #endif /* CONFIG_ARMV8_M_MAINLINE */
 	if ((SCB->CFSR & SCB_CFSR_NOCP_Msk) != 0) {
