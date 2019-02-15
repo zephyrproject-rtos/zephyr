@@ -587,7 +587,7 @@ config KERNEL_INIT_PRIORITY_DEVICE
 	int "Default init priority for device drivers"
 	default 50
 	help
-	  Device driver, that depends on common components, such as
+	  Dvice driver, that depends on common components, such as
 	  interrupt controller, but does not depend on other devices,
 	  uses this init priority.
 
@@ -736,6 +736,12 @@ config TICKLESS_KERNEL
 	help
 	  This option enables a fully event driven kernel. Periodic system
 	  clock interrupt generation would be stopped at all times.
+
+config DEVICE_HIERARCHY
+	bool "Device hierarchy abstraction"
+	help
+	  This option enabled device hierarchy abstraction, which could be used
+	  to track dependencies between devices.
 
 source "kernel/Kconfig.power_mgmt"
 

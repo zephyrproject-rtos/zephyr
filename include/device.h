@@ -9,6 +9,7 @@
 #define ZEPHYR_INCLUDE_DEVICE_H_
 
 #include <kernel.h>
+#include <misc/util.h>
 
 /**
  * @brief Device Driver APIs
@@ -107,7 +108,8 @@ extern "C" {
 	static struct device_config _CONCAT(__config_, dev_name) __used	  \
 	__attribute__((__section__(".devconfig.init"))) = {		  \
 		.name = drv_name,					  \
-		.parent_name = parent_drv_name,				  \
+		COND_CODE_1(CONFIG_DEVICE_HIERARCHY,			  \
+			    (.parent_name = parent_drv_name,), ())	  \
 		.init = (init_fn),					  \
 		.config_info = (cfg_info)				  \
 	};								  \
@@ -151,7 +153,8 @@ extern "C" {
 	static struct device_config _CONCAT(__config_, dev_name) __used	  \
 	__attribute__((__section__(".devconfig.init"))) = {		  \
 		.name = drv_name,					  \
-		.parent_name = parent_drv_name,				  \
+		COND_CODE_1(CONFIG_DEVICE_HIERARCHY,			  \
+			    (.parent_name = parent_drv_name,), ())	  \
 		.init = (init_fn),					  \
 		.device_pm_control = (pm_control_fn),			  \
 		.config_info = (cfg_info)				  \
@@ -225,7 +228,9 @@ struct device;
  */
 struct device_config {
 	const char *name;
+#ifdef CONFIG_DEVICE_HIERARCHY
 	const char *parent_name;
+#endif
 	int (*init)(struct device *device);
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 	int (*device_pm_control)(struct device *device, u32_t command,
