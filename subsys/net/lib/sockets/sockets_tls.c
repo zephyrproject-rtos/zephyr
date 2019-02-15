@@ -1666,27 +1666,39 @@ static int ztls_poll_prepare_ctx(struct net_context *ctx,
 	}
 
 	if (pfd->events & ZSOCK_POLLIN) {
-		if (!IS_LISTENING(ctx)) {
-			/* If there already is mbedTLS data to read, there is no
-			 * need to set the k_poll_event object. Return EALREADY
-			 * so we won't block in the k_poll.
-			 */
-			if (mbedtls_ssl_get_bytes_avail(&ctx->tls->ssl) > 0) {
-				errno = EALREADY;
-				return -1;
-			}
-		}
-
 		if (*pev == pev_end) {
 			errno = ENOMEM;
 			return -1;
 		}
 
-		(*pev)->obj = &ctx->recv_q;
-		(*pev)->type = K_POLL_TYPE_FIFO_DATA_AVAILABLE;
+		/* DTLS client should wait for the handshake to complete before
+		 * it actually starts to poll for data.
+		 */
+		if (net_context_get_type(ctx) == SOCK_DGRAM &&
+		    ctx->tls->options.role == MBEDTLS_SSL_IS_CLIENT &&
+		    !is_handshake_complete(ctx)) {
+			(*pev)->obj = &ctx->tls->tls_established;
+			(*pev)->type = K_POLL_TYPE_SEM_AVAILABLE;
+		} else {
+			/* Otherwise, monitor fifo for data/connections. */
+			(*pev)->obj = &ctx->recv_q;
+			(*pev)->type = K_POLL_TYPE_FIFO_DATA_AVAILABLE;
+		}
+
 		(*pev)->mode = K_POLL_MODE_NOTIFY_ONLY;
 		(*pev)->state = K_POLL_STATE_NOT_READY;
 		(*pev)++;
+
+		/* If there already is mbedTLS data to read, there is no
+		 * need to set the k_poll_event object. Return EALREADY
+		 * so we won't block in the k_poll.
+		 */
+		if (!IS_LISTENING(ctx)) {
+			if (mbedtls_ssl_get_bytes_avail(&ctx->tls->ssl) > 0) {
+				errno = EALREADY;
+				return -1;
+			}
+		}
 	}
 
 	return 0;
@@ -1707,19 +1719,34 @@ static int ztls_poll_update_ctx(struct net_context *ctx,
 	}
 
 	if (pfd->events & ZSOCK_POLLIN) {
+		/* Check if socket was waiting for the handshake to complete. */
+		if ((*pev)->obj == &ctx->tls->tls_established) {
+			if ((*pev)->state == K_POLL_STATE_NOT_READY) {
+				goto next;
+			}
+
+			/* Reconfigure the poll event to wait for data now. */
+			(*pev)->obj = &ctx->recv_q;
+			(*pev)->type = K_POLL_TYPE_FIFO_DATA_AVAILABLE;
+			(*pev)->mode = K_POLL_MODE_NOTIFY_ONLY;
+			(*pev)->state = K_POLL_STATE_NOT_READY;
+
+			goto again;
+		}
+
 		if (!IS_LISTENING(ctx)) {
 			/* Already had TLS data to read on socket. */
 			if (mbedtls_ssl_get_bytes_avail(&ctx->tls->ssl) > 0) {
 				pfd->revents |= ZSOCK_POLLIN;
-				return 0;
+				goto next;
 			}
 		}
 
 		/* Some encrypted data received on the socket. */
-		if (((*pev)++)->state != K_POLL_STATE_NOT_READY) {
+		if ((*pev)->state != K_POLL_STATE_NOT_READY) {
 			if (IS_LISTENING(ctx)) {
 				pfd->revents |= ZSOCK_POLLIN;
-				return 0;
+				goto next;
 			}
 
 			/* EAGAIN might happen during or just after
@@ -1728,25 +1755,35 @@ static int ztls_poll_update_ctx(struct net_context *ctx,
 			if (recv(pfd->fd, NULL, 0, ZSOCK_MSG_DONTWAIT) < 0 &&
 			    errno != EAGAIN) {
 				pfd->revents |= ZSOCK_POLLERR;
-				return 0;
+				goto next;
 			}
 
 			if (mbedtls_ssl_get_bytes_avail(&ctx->tls->ssl) > 0 ||
 			    sock_is_eof(ctx)) {
 				pfd->revents |= ZSOCK_POLLIN;
-				return 0;
+				goto next;
 			}
 
 			/* Received encrypted data, but still not enough
 			 * to decrypt it and return data through socket,
 			 * ask for retry.
 			 */
-			errno = EAGAIN;
-			return -1;
+
+			(*pev)->state = K_POLL_STATE_NOT_READY;
+			goto again;
 		}
 	}
 
 	return 0;
+
+next:
+	(*pev)++;
+	return 0;
+
+again:
+	(*pev)++;
+	errno = EAGAIN;
+	return -1;
 }
 
 int ztls_getsockopt_ctx(struct net_context *ctx, int level, int optname,
