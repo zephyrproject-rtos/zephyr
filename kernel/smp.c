@@ -12,6 +12,7 @@
 
 #ifdef CONFIG_SMP
 static atomic_t global_lock;
+static atomic_t start_flag;
 
 unsigned int z_smp_global_lock(void)
 {
@@ -71,9 +72,8 @@ static void smp_init_top(int key, void *arg)
 	atomic_t *start_flag = arg;
 
 	/* Wait for the signal to begin scheduling */
-	do {
-		k_busy_wait(100);
-	} while (!atomic_get(start_flag));
+	while (!atomic_get(start_flag)) {
+	}
 
 	/* Switch out of a dummy thread.  Trick cribbed from the main
 	 * thread init.  Should probably unify implementations.
@@ -89,12 +89,9 @@ static void smp_init_top(int key, void *arg)
 
 	CODE_UNREACHABLE;
 }
-#endif
 
 void smp_init(void)
 {
-	atomic_t start_flag;
-
 	(void)atomic_clear(&start_flag);
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
@@ -114,3 +111,4 @@ void smp_init(void)
 
 	(void)atomic_set(&start_flag, 1);
 }
+#endif
