@@ -21,7 +21,7 @@ static unsigned int last_count;
 
 static void set_ccompare(u32_t val)
 {
-	__asm__ volatile ("wsr.CCOMPARE" STRINGIFY(CONFIG_XTENSA_TIMER_ID) " %0"
+	__asm__ volatile ("wsr.CCOMPARE" Z_STRINGIFY(CONFIG_XTENSA_TIMER_ID) " %0"
 			  :: "r"(val));
 }
 

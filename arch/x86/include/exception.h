@@ -16,7 +16,7 @@
 	".long 1f\n\t"				/* ISR_LIST.fnc */ \
 	".long -1\n\t"				/* ISR_LIST.irq */ \
 	".long -1\n\t"				/* ISR_LIST.priority */ \
-	".long " STRINGIFY(vector) "\n\t"	/* ISR_LIST.vec */ \
+	".long " Z_STRINGIFY(vector) "\n\t"	/* ISR_LIST.vec */ \
 	".long 0\n\t"				/* ISR_LIST.dpl */ \
 	".long 0\n\t"				/* ISR_LIST.tss */ \
 	".popsection\n\t" \
@@ -44,13 +44,13 @@
 #define __EXCEPTION_CONNECT(handler, vector, codepush) \
 	__asm__ ( \
 	_EXCEPTION_INTLIST(vector) \
-	".pushsection .gnu.linkonce.t.exc_" STRINGIFY(vector) \
+	".pushsection .gnu.linkonce.t.exc_" Z_STRINGIFY(vector) \
 		  "_stub, \"ax\"\n\t" \
-	".global " STRINGIFY(_EXCEPTION_STUB_NAME(handler, vector)) "\n\t" \
-	STRINGIFY(_EXCEPTION_STUB_NAME(handler, vector)) ":\n\t" \
+	".global " Z_STRINGIFY(_EXCEPTION_STUB_NAME(handler, vector)) "\n\t" \
+	Z_STRINGIFY(_EXCEPTION_STUB_NAME(handler, vector)) ":\n\t" \
 	"1:\n\t" \
 	codepush \
-	"push $" STRINGIFY(handler) "\n\t" \
+	"push $" Z_STRINGIFY(handler) "\n\t" \
 	"jmp _exception_enter\n\t" \
 	".popsection\n\t" \
 	)

@@ -108,7 +108,7 @@ extern "C" {
 		.config_info = (cfg_info)				  \
 	};								  \
 	static struct device _CONCAT(__device_, dev_name) __used	  \
-	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
+	__attribute__((__section__(".init_" #level Z_STRINGIFY(prio)))) = { \
 		.config = &_CONCAT(__config_, dev_name),		  \
 		.driver_api = api,					  \
 		.driver_data = data					  \
@@ -151,7 +151,7 @@ extern "C" {
 		.config_info = (cfg_info)				  \
 	};								  \
 	static struct device _CONCAT(__device_, dev_name) __used	  \
-	__attribute__((__section__(".init_" #level STRINGIFY(prio)))) = { \
+	__attribute__((__section__(".init_" #level Z_STRINGIFY(prio)))) = { \
 		.config = &_CONCAT(__config_, dev_name),		  \
 		.driver_api = api,					  \
 		.driver_data = data					  \

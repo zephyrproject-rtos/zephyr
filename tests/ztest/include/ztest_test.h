@@ -82,7 +82,7 @@ static inline void unit_test_noop(void)
  */
 
 #define ztest_unit_test_setup_teardown(fn, setup, teardown) { \
-		STRINGIFY(fn), fn, setup, teardown, 0 \
+		Z_STRINGIFY(fn), fn, setup, teardown, 0 \
 }
 
 /**
@@ -99,7 +99,7 @@ static inline void unit_test_noop(void)
  */
 
 #define ztest_user_unit_test_setup_teardown(fn, setup, teardown) { \
-		STRINGIFY(fn), fn, setup, teardown, K_USER \
+		Z_STRINGIFY(fn), fn, setup, teardown, K_USER \
 }
 
 /**

@@ -98,12 +98,12 @@ void test_log_output_raw_string(void)
 
 void test_log_output_string(void)
 {
-	const char *exp_str = STRINGIFY(LOG_MODULE_NAME) ".abc 1 3\r\n";
+	const char *exp_str = Z_STRINGIFY(LOG_MODULE_NAME) ".abc 1 3\r\n";
 	const char *exp_str_lvl =
-			"<dbg> " STRINGIFY(LOG_MODULE_NAME) ".abc 1 3\r\n";
+			"<dbg> " Z_STRINGIFY(LOG_MODULE_NAME) ".abc 1 3\r\n";
 	const char *exp_str_timestamp =
-			"[00123456] " STRINGIFY(LOG_MODULE_NAME) ".abc 1 3\r\n";
-	const char *exp_str_no_crlf = STRINGIFY(LOG_MODULE_NAME) ".abc 1 3";
+			"[00123456] " Z_STRINGIFY(LOG_MODULE_NAME) ".abc 1 3\r\n";
+	const char *exp_str_no_crlf = Z_STRINGIFY(LOG_MODULE_NAME) ".abc 1 3";
 	struct log_msg_ids src_level = {
 		.level = LOG_LEVEL_DBG,
 		.source_id = log_const_source_id(

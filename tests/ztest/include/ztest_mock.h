@@ -34,7 +34,7 @@
  * @param value Value for @a param
  */
 #define ztest_expect_value(func, param, value) \
-	_ztest_expect_value(STRINGIFY(func), STRINGIFY(param), \
+	_ztest_expect_value(Z_STRINGIFY(func), Z_STRINGIFY(param), \
 			    (uintptr_t)(value))
 
 /**
@@ -49,7 +49,7 @@
  * @param param Parameter to check
  */
 #define ztest_check_expected_value(param) \
-	_ztest_check_expected_value(__func__, STRINGIFY(param), \
+	_ztest_check_expected_value(__func__, Z_STRINGIFY(param), \
 				    (uintptr_t)(param))
 
 /**
@@ -59,7 +59,7 @@
  * @param value Value to return from @a func
  */
 #define ztest_returns_value(func, value) \
-	_ztest_returns_value(STRINGIFY(func), (uintptr_t)(value))
+	_ztest_returns_value(Z_STRINGIFY(func), (uintptr_t)(value))
 
 /**
  * @brief Get the return value for current function

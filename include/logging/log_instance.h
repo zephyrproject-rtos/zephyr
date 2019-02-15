@@ -45,7 +45,7 @@ struct log_source_dynamic_data {
 
 #define _LOG_CONST_ITEM_REGISTER(_name, _str_name, _level)		     \
 	const struct log_source_const_data LOG_ITEM_CONST_DATA(_name)	     \
-	__attribute__ ((section("." STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
+	__attribute__ ((section("." Z_STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
 	__attribute__((used)) = {					     \
 		.name = _str_name,					     \
 		.level  = (_level),					     \
@@ -80,11 +80,11 @@ struct log_source_dynamic_data {
 #define LOG_INSTANCE_REGISTER(_module_name, _inst_name, _level)		   \
 	_LOG_CONST_ITEM_REGISTER(					   \
 		LOG_INSTANCE_FULL_NAME(_module_name, _inst_name),	   \
-		STRINGIFY(_module_name._inst_name),			   \
+		Z_STRINGIFY(_module_name._inst_name),			   \
 		_level);						   \
 	struct log_source_dynamic_data LOG_INSTANCE_DYNAMIC_DATA(	   \
 						_module_name, _inst_name)  \
-		__attribute__ ((section("." STRINGIFY(			   \
+		__attribute__ ((section("." Z_STRINGIFY(			   \
 				LOG_INSTANCE_DYNAMIC_DATA(_module_name,	   \
 						       _inst_name)	   \
 				)					   \
@@ -101,7 +101,7 @@ struct log_source_dynamic_data {
 #define LOG_INSTANCE_REGISTER(_module_name, _inst_name, _level)	  \
 	_LOG_CONST_ITEM_REGISTER(				  \
 		LOG_INSTANCE_FULL_NAME(_module_name, _inst_name), \
-		STRINGIFY(_module_name._inst_name),		  \
+		Z_STRINGIFY(_module_name._inst_name),		  \
 		_level)
 
 

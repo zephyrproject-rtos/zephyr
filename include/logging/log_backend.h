@@ -81,7 +81,7 @@ extern const struct log_backend __log_backends_end[0];
 	{								       \
 		.api = &_api,						       \
 		.cb = &UTIL_CAT(backend_cb_, _name),			       \
-		.name = STRINGIFY(_name),				       \
+		.name = Z_STRINGIFY(_name),				       \
 		.autostart = _autostart					       \
 	}
 

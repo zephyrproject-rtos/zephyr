@@ -22,10 +22,10 @@ LOG_MODULE_REGISTER(main);
 
 extern void sample_module_func(void);
 
-#define INST1_NAME STRINGIFY(SAMPLE_INSTANCE_NAME.inst1)
+#define INST1_NAME Z_STRINGIFY(SAMPLE_INSTANCE_NAME.inst1)
 SAMPLE_INSTANCE_DEFINE(inst1);
 
-#define INST2_NAME STRINGIFY(SAMPLE_INSTANCE_NAME.inst2)
+#define INST2_NAME Z_STRINGIFY(SAMPLE_INSTANCE_NAME.inst2)
 SAMPLE_INSTANCE_DEFINE(inst2);
 
 #if !defined(NRF_RTC1) && defined(CONFIG_SOC_FAMILY_NRF)
@@ -97,7 +97,7 @@ static void module_logging_showcase(void)
 
 	} else {
 		printk("%s option disabled.\n",
-		       STRINGIFY(CONFIG_LOG_RUNTIME_FILTERING));
+		       Z_STRINGIFY(CONFIG_LOG_RUNTIME_FILTERING));
 	}
 }
 

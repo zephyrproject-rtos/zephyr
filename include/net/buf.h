@@ -573,7 +573,7 @@ struct net_buf_pool {
 		.uninit_count = _count,                                      \
 		.avail_count = _count,                                       \
 		.destroy = _destroy,                                         \
-		.name = STRINGIFY(_pool),                                    \
+		.name = Z_STRINGIFY(_pool),                                    \
 	}
 #else
 #define NET_BUF_POOL_INITIALIZER(_pool, _alloc, _bufs, _count, _destroy)     \

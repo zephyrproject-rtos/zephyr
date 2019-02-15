@@ -295,15 +295,15 @@ char *log_strdup(const char *str);
 
 #define _LOG_MODULE_CONST_DATA_CREATE(_name, _level)			     \
 	const struct log_source_const_data LOG_ITEM_CONST_DATA(_name)	     \
-	__attribute__ ((section("." STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
+	__attribute__ ((section("." Z_STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
 	__attribute__((used)) = {					     \
-		.name = STRINGIFY(_name),				     \
+		.name = Z_STRINGIFY(_name),				     \
 		.level = _level						     \
 	}
 
 #define _LOG_MODULE_DYNAMIC_DATA_CREATE(_name)				\
 	struct log_source_dynamic_data LOG_ITEM_DYNAMIC_DATA(_name)	\
-	__attribute__ ((section("." STRINGIFY(				\
+	__attribute__ ((section("." Z_STRINGIFY(				\
 				     LOG_ITEM_DYNAMIC_DATA(_name))))	\
 				     )					\
 	__attribute__((used))

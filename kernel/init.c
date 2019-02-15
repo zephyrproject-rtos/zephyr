@@ -43,14 +43,14 @@ LOG_MODULE_REGISTER(kernel);
 /* boot banner items */
 #if defined(CONFIG_BOOT_DELAY) && CONFIG_BOOT_DELAY > 0
 #define BOOT_DELAY_BANNER " (delayed boot "	\
-	STRINGIFY(CONFIG_BOOT_DELAY) "ms)"
+	Z_STRINGIFY(CONFIG_BOOT_DELAY) "ms)"
 #else
 #define BOOT_DELAY_BANNER ""
 #endif
 
 #ifdef BUILD_VERSION
 #define BOOT_BANNER "Booting Zephyr OS "	\
-	 STRINGIFY(BUILD_VERSION) BOOT_DELAY_BANNER
+	 Z_STRINGIFY(BUILD_VERSION) BOOT_DELAY_BANNER
 #else
 #define BOOT_BANNER "Booting Zephyr OS "	\
 	 KERNEL_VERSION_STRING BOOT_DELAY_BANNER
@@ -215,7 +215,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	z_stack_adjust_initialized = 1;
 #endif
 	if (boot_delay > 0) {
-		printk("***** delaying boot " STRINGIFY(CONFIG_BOOT_DELAY)
+		printk("***** delaying boot " Z_STRINGIFY(CONFIG_BOOT_DELAY)
 		       "ms (per build configuration) *****\n");
 		k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
 	}

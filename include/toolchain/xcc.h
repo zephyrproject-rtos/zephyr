@@ -15,7 +15,7 @@
 
 #undef __in_section_unique
 #define __in_section_unique(seg) \
-	__attribute__((section("." STRINGIFY(seg) "." STRINGIFY(__COUNTER__))))
+	__attribute__((section("." Z_STRINGIFY(seg) "." Z_STRINGIFY(__COUNTER__))))
 
 #ifndef __GCC_LINKER_CMD__
 #include <xtensa/config/core.h>

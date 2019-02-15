@@ -915,7 +915,7 @@ struct _static_thread_data {
 	.init_options = (options),                               \
 	.init_delay = (delay),                                   \
 	.init_abort = (abort),                                   \
-	.init_name = STRINGIFY(tname),                           \
+	.init_name = Z_STRINGIFY(tname),                           \
 	}
 
 /**

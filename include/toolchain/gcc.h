@@ -104,7 +104,7 @@ do {                                                                    \
 /* Double indirection to ensure section names are expanded before
  * stringification
  */
-#define __GENERIC_SECTION(segment) __attribute__((section(STRINGIFY(segment))))
+#define __GENERIC_SECTION(segment) __attribute__((section(Z_STRINGIFY(segment))))
 #define _GENERIC_SECTION(segment) __GENERIC_SECTION(segment)
 
 #define ___in_section(a, b, c) \

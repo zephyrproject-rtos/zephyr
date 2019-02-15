@@ -43,7 +43,7 @@ void posix_soc_clean_up(void);
  */
 #define NATIVE_TASK(fn, level, prio)	\
 	static void (*_CONCAT(__native_task_, fn)) __used	\
-	__attribute__((__section__(".native_" #level STRINGIFY(prio) "_task")))\
+	__attribute__((__section__(".native_" #level Z_STRINGIFY(prio) "_task")))\
 	= fn
 
 

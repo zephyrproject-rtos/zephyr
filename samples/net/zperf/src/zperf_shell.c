@@ -52,7 +52,7 @@ static const char *CONFIG =
 
 #define MY_SRC_PORT 50000
 #define DEF_PORT 5001
-#define DEF_PORT_STR STRINGIFY(DEF_PORT)
+#define DEF_PORT_STR Z_STRINGIFY(DEF_PORT)
 #define WAIT_CONNECT K_SECONDS(2) /* in ms */
 
 static struct in6_addr ipv6;

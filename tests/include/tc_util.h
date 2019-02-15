@@ -126,7 +126,7 @@ static __unused const char *TC_RESULT_STR[] = {
 		TC_END_RESULT(TC_PASS);			\
 		return 0;				\
 	}
-#define TC_CMD_ITEM(name) {STRINGIFY(name), cmd_##name, "none"}
+#define TC_CMD_ITEM(name) {Z_STRINGIFY(name), cmd_##name, "none"}
 #endif
 
 #endif /* __TC_UTIL_H__ */
