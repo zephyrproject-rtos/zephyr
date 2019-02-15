@@ -1,0 +1,21 @@
+config SOC_FLASH_NRF
+	bool "Nordic Semiconductor nRF flash driver"
+	depends on SOC_FAMILY_NRF
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enables Nordic Semiconductor nRF flash driver.
+
+config SOC_FLASH_NRF_RADIO_SYNC
+	bool "Nordic nRFx flash driver synchronized with radio"
+	depends on SOC_FLASH_NRF && BT_CTLR
+	default y
+	help
+	  Enable synchronization between flash memory driver and radio.
+
+config SOC_FLASH_NRF_UICR
+	bool "Access to UICR"
+	depends on SOC_FLASH_NRF
+	help
+	  Enable operations on UICR. Once enabled UICR are written or read as
+	  ordinary flash memory. Erase is possible for whole UICR at once.
