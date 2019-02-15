@@ -23,12 +23,6 @@
 #error "Error NULL definition should be done. Please add required include "
 #endif
 
-#if !defined(STDINT_H) && !defined(_GCC_STDINT_H) && !defined(__STDINT_DECLS) \
-	&& !defined(_GCC_WRAP_STDINT_H) && !defined(_STDINT_H)                \
-	&& !defined(__INC_stdint_h__)
- #pragma message("Review type definition of STDINT define for your platform")
-#endif /* _STDINT_H */
-
 /** use where fractional values are expected
  *
  * Given a floating point value f it's .16 bit point is (int)(f*(1<<16))
