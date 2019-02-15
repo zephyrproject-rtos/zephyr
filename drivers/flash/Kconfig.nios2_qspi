@@ -1,0 +1,13 @@
+config SOC_FLASH_NIOS2_QSPI
+	bool "Nios-II QSPI flash driver"
+	depends on HAS_ALTERA_HAL
+	select FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enables the Nios-II QSPI flash driver.
+
+config SOC_FLASH_NIOS2_QSPI_DEV_NAME
+	string "Nios-II QSPI flash device name"
+	depends on SOC_FLASH_NIOS2_QSPI
+	default "NIOS2_QSPI_FLASH"
+	help
+	  Specify the device name for the QSPI flash driver.
