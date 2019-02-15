@@ -70,6 +70,11 @@ static sys_slist_t hbuf_pend;
 static s32_t hbuf_count;
 #endif
 
+/**
+ * @brief Pull from memq_ll_rx and push up to Host thread recv_thread()
+ *   via recv_fifo
+ * @details Execution context: Controller thread
+ */
 static void prio_recv_thread(void *p1, void *p2, void *p3)
 {
 	while (1) {
@@ -77,6 +82,7 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 		u8_t num_cmplt;
 		u16_t handle;
 
+		/* While there are completed rx nodes */
 		while ((num_cmplt = ll_rx_get(&node_rx, &handle))) {
 #if defined(CONFIG_BT_CONN)
 			struct net_buf *buf;
@@ -90,17 +96,29 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 		}
 
 		if (node_rx) {
-
+			/* Until now we've only peeked, now we really do
+			 * the handover
+			 */
 			ll_rx_dequeue();
 
+			/* Send the rx node up to Host thread, recv_thread() */
 			BT_DBG("RX node enqueue");
 			k_fifo_put(&recv_fifo, node_rx);
 
+			/* There may still be completed nodes, continue
+			 * pushing all those up to Host before waiting for
+			 * ULL mayfly
+			 */
 			continue;
 		}
 
 		BT_DBG("sem take...");
+		/* Wait until ULL mayfly has something to give us.
+		 * Blocking-take of the semaphore; we take it once ULL mayfly
+		 * has let it go in ll_rx_sched().
+		 */
 		k_sem_take(&sem_prio_recv, K_FOREVER);
+		/* Now, ULL mayfly has something to give to us */
 		BT_DBG("sem taken");
 
 #if defined(CONFIG_INIT_STACKS)
@@ -283,6 +301,10 @@ static inline struct net_buf *process_hbuf(struct node_rx_pdu *n)
 }
 #endif
 
+/**
+ * @brief Blockingly pull from Controller thread's recv_fifo
+ * @details Execution context: Host thread
+ */
 static void recv_thread(void *p1, void *p2, void *p3)
 {
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
