@@ -38,7 +38,7 @@
  * @brief Place data in a partition's data section
  *
  * Globals tagged with this will end up in the data section for the
- * specified memory partition. This data should be initalized to some
+ * specified memory partition. This data should be initialized to some
  * desired value.
  *
  * @param id Name of the memory partition to associate this data

@@ -1006,7 +1006,7 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  * called.
  *
  * Note: By using a callback it also disable the internal flow control
- * which would prevent sending multiple commands without wainting their
+ * which would prevent sending multiple commands without waiting for their
  * transmissions to complete, so if that is required the caller shall not
  * submit more data until the callback is called.
  *

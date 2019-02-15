@@ -140,7 +140,7 @@ static inline void sys_pm_idle_exit_notification_disable(void)
  * @brief Force usage of given power state.
  *
  * This function overrides decision made by PM policy
- * forcing usage of given power state in all subseqent
+ * forcing usage of given power state in all subsequent
  * suspend operations. Forcing the SYS_POWER_STATE_AUTO
  * state restores normal operation.
  *
