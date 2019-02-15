@@ -59,50 +59,46 @@ def extract_string_prop(node_address, key, label):
 
 
 def extract_property(node_compat, node_address, prop, prop_val, names):
-
     node = reduced[node_address]
     yaml_node_compat = get_binding(node_address)
     def_label = get_node_label(node_address)
 
-    if 'parent' in yaml_node_compat:
-        if 'bus' in yaml_node_compat['parent']:
-            # get parent label
-            parent_address = get_parent_address(node_address)
+    if 'parent' in yaml_node_compat and 'bus' in yaml_node_compat['parent']:
+        # Get parent label
+        parent_address = get_parent_address(node_address)
 
-            #check parent has matching child bus value
-            try:
-                parent_yaml = get_binding(parent_address)
-                parent_bus = parent_yaml['child']['bus']
-            except (KeyError, TypeError) as e:
-                raise Exception(str(node_address) + " defines parent " +
-                        str(parent_address) + " as bus master but " +
-                        str(parent_address) + " not configured as bus master " +
-                        "in yaml description")
+        # Check that parent has matching child bus value
+        try:
+            parent_yaml = get_binding(parent_address)
+            parent_bus = parent_yaml['child']['bus']
+        except (KeyError, TypeError) as e:
+            raise Exception("{0} defines parent {1} as bus master, but {1} is "
+                            "not configured as bus master in binding"
+                            .format(node_address, parent_address))
 
-            if parent_bus != yaml_node_compat['parent']['bus']:
-                bus_value = yaml_node_compat['parent']['bus']
-                raise Exception(str(node_address) + " defines parent " +
-                        str(parent_address) + " as " + bus_value +
-                        " bus master but " + str(parent_address) +
-                        " configured as " + str(parent_bus) +
-                        " bus master")
+        if parent_bus != yaml_node_compat['parent']['bus']:
+            raise Exception("{0} defines parent {1} as {2} bus master, but "
+                            "{1} is configured as {3} bus master"
+                            .format(node_address, parent_address,
+                                    yaml_node_compat['parent']['bus'],
+                                    parent_bus))
 
-            # Generate alias definition if parent has any alias
-            if parent_address in aliases:
-                for i in aliases[parent_address]:
-                    # Build an alias name that respects device tree specs
-                    node_name = node_compat + '-' + node_address.split('@')[-1]
-                    node_strip = node_name.replace('@','-').replace(',','-')
-                    node_alias = i + '-' + node_strip
-                    if node_alias not in aliases[node_address]:
-                        # Need to generate alias name for this node:
-                        aliases[node_address].append(node_alias)
+        # Generate alias definition if parent has any alias
+        if parent_address in aliases:
+            for i in aliases[parent_address]:
+                # Build an alias name that respects device tree specs
+                node_name = node_compat + '-' + node_address.split('@')[-1]
+                node_strip = node_name.replace('@','-').replace(',','-')
+                node_alias = i + '-' + node_strip
+                if node_alias not in aliases[node_address]:
+                    # Need to generate alias name for this node:
+                    aliases[node_address].append(node_alias)
 
-            # Build the name from the parent node's label
-            def_label = get_node_label(parent_address) + '_' + def_label
+        # Build the name from the parent node's label
+        def_label = get_node_label(parent_address) + '_' + def_label
 
-            # Generate *_BUS_NAME #define
-            extract_bus_name(node_address, 'DT_' + def_label)
+        # Generate *_BUS_NAME #define
+        extract_bus_name(node_address, 'DT_' + def_label)
 
     def_label = 'DT_' + def_label
 
