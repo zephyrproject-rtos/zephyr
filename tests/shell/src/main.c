@@ -13,6 +13,7 @@
 #include <ztest.h>
 
 #include <shell/shell.h>
+#include <shell/shell_dummy.h>
 
 #define MAX_CMD_SYNTAX_LEN	(11)
 static char dynamic_cmd_buffer[][MAX_CMD_SYNTAX_LEN] = {
@@ -156,6 +157,28 @@ static void test_cmd_resize(void)
 	test_shell_execute_cmd("resize default dummy dummy", -EINVAL);
 }
 
+static void unselect_cmd(void)
+{
+	/* Unselecting command <shell color> */
+	const struct shell *shell = shell_backend_dummy_get_ptr();
+	shell->ctx->selected_cmd = NULL;
+}
+
+static void test_cmd_select(void)
+{
+	unselect_cmd();
+	test_shell_execute_cmd("select -h", 1);
+	test_shell_execute_cmd("select clear", -EINVAL);
+	test_shell_execute_cmd("off", -ENOEXEC);
+	test_shell_execute_cmd("on", -ENOEXEC);
+	test_shell_execute_cmd("select shell colors", 0);
+	test_shell_execute_cmd("off", 0);
+	test_shell_execute_cmd("on", 0);
+	unselect_cmd();
+	test_shell_execute_cmd("off", -ENOEXEC);
+	test_shell_execute_cmd("on", -ENOEXEC);
+}
+
 static void test_shell_module(void)
 {
 	test_shell_execute_cmd("test_shell_cmd", 0);
@@ -190,7 +213,6 @@ static void test_shell_wildcards_dynamic(void)
 	test_shell_execute_cmd("test_dynamic c*", 1);
 	test_shell_execute_cmd("test_dynamic d* c*", 2);
 }
-
 
 static int cmd_test_module(const struct shell *shell, size_t argc, char **argv)
 {
@@ -281,6 +303,7 @@ void test_main(void)
 			ztest_unit_test(test_cmd_shell),
 			ztest_unit_test(test_cmd_history),
 			ztest_unit_test(test_cmd_resize),
+			ztest_unit_test(test_cmd_select),
 			ztest_unit_test(test_shell_module),
 			ztest_unit_test(test_shell_wildcards_static),
 			ztest_unit_test(test_shell_wildcards_dynamic));
