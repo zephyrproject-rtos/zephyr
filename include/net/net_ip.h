@@ -379,7 +379,7 @@ struct net_tcp_hdr {
 } __packed;
 
 /**
- * This 2 unions are here temporarly, as long as net_context.h will
+ * This 2 unions are here temporarily, as long as net_context.h will
  * be still public and not part of the core only.
  */
 union net_ip_header {
