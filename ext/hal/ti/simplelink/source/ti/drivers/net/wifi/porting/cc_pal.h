@@ -49,21 +49,10 @@ extern "C" {
 
 #include <ti/drivers/dpl/ClockP.h>
 #if defined(SL_PLATFORM_MULTI_THREADED)
-#if defined(__TI_COMPILER_VERSION__)
-#include <ti/posix/ccs/pthread.h>
-#include <ti/posix/ccs/semaphore.h>
-#include <ti/posix/ccs/unistd.h>
-#elif defined(__IAR_SYSTEMS_ICC__)
-#include <ti/posix/iar/pthread.h>
-#include <ti/posix/iar/semaphore.h>
-#include <ti/posix/iar/unistd.h>
-#elif defined(__GNUC__)
-#include <ti/posix/gcc/pthread.h>
-#include <ti/posix/gcc/semaphore.h>
-#include <ti/posix/gcc/unistd.h>
-#else
-#error "Unknown compiler, use __TI_COMPILER_VERSION__ __IAR_SYSTEMS_ICC__ or __GNUC__"
-#endif
+/* Use Zephyr posix headers */
+#include <posix/pthread.h>
+#include <posix/semaphore.h>
+#include <posix/unistd.h>
 #else //SL_PLATFORM_MULTI_THREADED
 #include <ti/drivers/dpl/SemaphoreP.h>
 #include <ti/drivers/dpl/MutexP.h>
