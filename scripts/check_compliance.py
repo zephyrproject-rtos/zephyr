@@ -159,10 +159,14 @@ class KconfigCheck(ComplianceTest):
         try:
             kconf = kconfiglib.Kconfig()
         except kconfiglib.KconfigError as e:
-            self.case.result = Failure("Error while parsing Kconfig files",
+            self.case.result = Failure("error while parsing Kconfig files",
                                        "failure")
             self.case.result._elem.text = str(e)
             return
+
+        #
+        # Look for undefined symbols
+        #
 
         undef_ref_warnings = [warning for warning in kconf.warnings
                               if "undefined symbol" in warning]
@@ -172,6 +176,30 @@ class KconfigCheck(ComplianceTest):
         if undef_ref_warnings:
             self.case.result = Failure("undefined Kconfig symbols", "failure")
             self.case.result._elem.text = "\n\n\n".join(undef_ref_warnings)
+            return
+
+        #
+        # Check for stuff being added to the top-level menu
+        #
+
+        max_top_items = 50
+
+        n_top_items = 0
+        node = kconf.top_node.list
+        while node:
+            # Only count items with prompts. Other items will never be
+            # shown in the menuconfig (outside show-all mode).
+            if node.prompt:
+                n_top_items += 1
+            node = node.next
+
+        if n_top_items > max_top_items:
+            self.case.result = Failure("new entries in top menu", "failure")
+            self.case.result._elem.text = """
+Expected no more than {} potentially visible items (items with prompts) in the
+top-level Kconfig menu, found {} items. If you're deliberately adding new
+entries, then bump the 'max_top_items' variable in {}.
+""".format(max_top_items, n_top_items, __file__)
 
 
 class Documentation(ComplianceTest):
