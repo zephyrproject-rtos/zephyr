@@ -132,7 +132,7 @@ static s32_t configure_simplelink(void)
 
 	/* Configure scan parameters to default */
 	scan_default.ChannelsMask = CHANNEL_MASK_ALL;
-	scan_default.RssiThershold = RSSI_TH_MAX;
+	scan_default.RssiThreshold = RSSI_TH_MAX;
 
 	retval = sl_WlanSet(SL_WLAN_CFG_GENERAL_PARAM_ID,
 			    SL_WLAN_GENERAL_PARAM_OPT_SCAN_PARAMS,
