@@ -433,16 +433,10 @@ _xtos_mpu_attribs:
 #elif XCHAL_HAVE_CACHEATTR || XCHAL_HAVE_MIMIC_CACHEATTR \
 		|| XCHAL_HAVE_XLT_CACHEATTR \
 		|| (XCHAL_HAVE_PTP_MMU && XCHAL_HAVE_SPANNING_WAY)
-/* FixMe: Setting CACHEATTR from _memmap_cacheattr_reset is making the
- * Intel_S1000 SoC get into some unknown state. Removing them only for
- * Intel_S1000_CRB
- */
-#ifndef CONFIG_BOARD_INTEL_S1000_CRB
 	/* note: absolute symbol, not a ptr */
 	movi	a2, _memmap_cacheattr_reset
 	/* set CACHEATTR from a2 (clobbers a3-a8) */
 	cacheattr_set
-#endif
 #endif
 
 	/* Now that caches are initialized, cache coherency can be enabled. */
