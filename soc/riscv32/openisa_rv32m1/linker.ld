@@ -191,6 +191,11 @@ SECTIONS
 
 #include <linker/debug-sections.ld>
 
+    SECTION_PROLOGUE(.riscv.attributes, 0,)
+	{
+	KEEP(*(.riscv.attributes))
+	KEEP(*(.gnu.attributes))
+	}
     /*
      * Pulpino toolchains emit these sections; we don't care about them,
      * but need to avoid build system warnings about orphaned sections.
