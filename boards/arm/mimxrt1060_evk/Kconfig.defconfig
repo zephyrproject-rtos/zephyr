@@ -11,6 +11,14 @@ config BOARD
 	default "mimxrt1060_evk" if BOARD_MIMXRT1060_EVK
 	default "mimxrt1060_evk_hyperflash" if BOARD_MIMXRT1060_EVK_HYPERFLASH
 
+choice CODE_LOCATION
+	default CODE_FLEXSPI
+endchoice
+
+choice DATA_LOCATION
+	default DATA_SEMC
+endchoice
+
 if GPIO_MCUX_IGPIO
 
 config GPIO_MCUX_IGPIO_1

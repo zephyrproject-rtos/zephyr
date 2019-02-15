@@ -10,6 +10,14 @@ if BOARD_MIMXRT1020_EVK
 config BOARD
 	default "mimxrt1020_evk" if BOARD_MIMXRT1020_EVK
 
+choice CODE_LOCATION
+	default CODE_FLEXSPI
+endchoice
+
+choice DATA_LOCATION
+	default DATA_SEMC
+endchoice
+
 if GPIO_MCUX_IGPIO
 
 config GPIO_MCUX_IGPIO_1
