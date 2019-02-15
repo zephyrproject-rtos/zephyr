@@ -158,7 +158,20 @@ static inline void freeaddrinfo(struct addrinfo *res)
 	return socket_ops->freeaddrinfo(res);
 }
 
-int fcntl(int fd, int cmd, ...);
+static inline int fcntl(int fd, int cmd, ...)
+{
+	__ASSERT_NO_MSG(socket_ops);
+	__ASSERT_NO_MSG(socket_ops->fcntl);
+
+	va_list args;
+	int res;
+
+	va_start(args, cmd);
+	res = socket_ops->fcntl(fd, cmd, args);
+	va_end(args);
+
+	return res;
+}
 
 #ifdef __cplusplus
 }
