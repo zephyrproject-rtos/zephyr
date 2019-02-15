@@ -66,17 +66,7 @@ config SOC_FLASH_NRF_UICR
 	  Enable operations on UICR. Once enabled UICR are written or read as
 	  ordinary flash memory. Erase is possible for whole UICR at once.
 
-config SOC_FLASH_MCUX
-	bool "MCUX flash shim driver"
-	depends on HAS_MCUX
-	select FLASH_HAS_PAGE_LAYOUT
-	select FLASH_HAS_DRIVER_ENABLED
-	help
-	  Enables the MCUX flash shim driver.
-	  WARNING: This driver will disable the system interrupts for
-	  the duration of the flash erase/write operations. This will
-	  have an impact on the overall system performance - whether
-	  this is acceptable or not will depend on the use case.
+source "drivers/flash/Kconfig.mcux"
 
 source "drivers/flash/Kconfig.nios2_qspi"
 
