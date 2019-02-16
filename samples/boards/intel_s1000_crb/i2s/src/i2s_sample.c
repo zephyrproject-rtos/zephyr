@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(i2s_sample);
 #define I2S_PLAYBACK_DEV		"I2S_1"
 #define I2S_HOST_DEV			"I2S_2"
 
-#define I2S_PLAY_BUF_COUNT		(4)
+#define I2S_PLAY_BUF_COUNT		(6)
 #define I2S_TX_PRELOAD_BUF_COUNT	(2)
 
 #define BASE_TONE_FREQ_HZ		1046.502 /* Hz */
@@ -200,67 +200,91 @@ static void i2s_start_audio(void)
 		LOG_ERR("spk_i2s_dev TX start failed. code %d", ret);
 	}
 
+	ret = i2s_trigger(host_i2s_dev, I2S_DIR_TX, I2S_TRIGGER_START);
+	if (ret) {
+		LOG_ERR("host_i2s_dev TX start failed. code %d", ret);
+	}
+
 	ret = i2s_trigger(host_i2s_dev, I2S_DIR_RX, I2S_TRIGGER_START);
 	if (ret) {
 		LOG_ERR("host_i2s_dev RX start failed. code %d", ret);
 	}
 }
 
-static void i2s_prepare_audio(void)
+static void i2s_prepare_audio(struct device *dev)
 {
 	int frame_counter = 0;
-	void *spk_out_buf;
+	void *buffer;
 	int ret;
 
 	LOG_DBG("Preloading silence...");
 	while (frame_counter++ < I2S_TX_PRELOAD_BUF_COUNT) {
-		ret = k_mem_slab_alloc(&i2s_mem_slab, &spk_out_buf, K_NO_WAIT);
+		ret = k_mem_slab_alloc(&i2s_mem_slab, &buffer, K_NO_WAIT);
 		if (ret) {
 			LOG_ERR("buffer alloc failed %d", ret);
 			return;
 		}
 
 		LOG_DBG("allocated buffer %p frame %d",
-				spk_out_buf, frame_counter);
+				buffer, frame_counter);
 
 		/* fill the buffer with zeros (silence) */
-		memset(spk_out_buf, 0, AUDIO_FRAME_BUF_BYTES);
+		memset(buffer, 0, AUDIO_FRAME_BUF_BYTES);
 
-		ret = i2s_write(spk_i2s_dev, spk_out_buf,
-				AUDIO_FRAME_BUF_BYTES);
+		ret = i2s_write(dev, buffer, AUDIO_FRAME_BUF_BYTES);
 		if (ret) {
 			LOG_ERR("i2s_write failed %d", ret);
-			k_mem_slab_free(&i2s_mem_slab, &spk_out_buf);
+			k_mem_slab_free(&i2s_mem_slab, &buffer);
 		}
 	}
 }
 
 static void i2s_play_audio(void)
 {
-	s32_t *buffer;
+	void *in_buf;
+	void *copy_buf;
 	size_t size;
 	int ret;
 
 	while (true) {
 		/* read from host I2S interface */
-		ret = i2s_read(host_i2s_dev, (void **)&buffer, &size);
+		ret = i2s_read(host_i2s_dev, &in_buf, &size);
 		if (ret) {
 			LOG_ERR("host_i2s_dev i2s_read failed %d", ret);
+			return;
+		}
+
+		/* make a copy of the audio to send back to the host */
+		ret = k_mem_slab_alloc(&i2s_mem_slab, &copy_buf, K_NO_WAIT);
+		if (ret) {
+			LOG_ERR("buffer alloc failed %d", ret);
+			k_mem_slab_free(&i2s_mem_slab, &in_buf);
+			return;
+		}
+
+		memcpy(copy_buf, in_buf, AUDIO_FRAME_BUF_BYTES);
+
+		/* loop the audio back to the host */
+		ret = i2s_write(host_i2s_dev, copy_buf, AUDIO_FRAME_BUF_BYTES);
+		if (ret) {
+			k_mem_slab_free(&i2s_mem_slab, &copy_buf);
+			LOG_ERR("host_i2s_dev i2s_write failed %d", ret);
 			return;
 		}
 
 #ifndef AUDIO_PLAY_FROM_HOST
 		/* fill buffer with audio samples */
 		if (audio_playback_buffer_fill(audio_playback_tone_get_next(),
-				buffer, AUDIO_NUM_CHANNELS, size) < size) {
+					(s32_t *)in_buf, AUDIO_NUM_CHANNELS,
+					size) < size) {
 			/* break if all tones are exhausted */
+			k_mem_slab_free(&i2s_mem_slab, &in_buf);
 			break;
 		}
 #endif
-
-		ret = i2s_write(spk_i2s_dev, (void *)buffer,
-				AUDIO_FRAME_BUF_BYTES);
+		ret = i2s_write(spk_i2s_dev, in_buf, AUDIO_FRAME_BUF_BYTES);
 		if (ret) {
+			k_mem_slab_free(&i2s_mem_slab, &in_buf);
 			LOG_ERR("spk_i2s_dev i2s_write failed %d", ret);
 		}
 	}
@@ -288,7 +312,8 @@ static void i2s_audio_sample_app(void *p1, void *p2, void *p3)
 	i2s_audio_init();
 
 	LOG_INF("Starting I2S audio sample app in " APP_MODE_STRING " mode...");
-	i2s_prepare_audio();
+	i2s_prepare_audio(spk_i2s_dev);
+	i2s_prepare_audio(host_i2s_dev);
 	i2s_start_audio();
 #ifdef AUDIO_PLAY_FROM_HOST
 	LOG_WRN("Play audio from the host over I2S using");
