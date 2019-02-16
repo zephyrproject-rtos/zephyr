@@ -867,7 +867,7 @@ class SizeCalculator:
                    'log_const_sections',"app_smem", 'shell_root_cmds_sections',
                    'log_const_sections',"app_smem", "font_entry_sections",
                    "priv_stacks_noinit", "_TEXT_SECTION_NAME_2",
-                   '_GCOV_BSS_SECTION_NAME', 'gcov']
+                   '_GCOV_BSS_SECTION_NAME', 'gcov', 'nocache']
 
     # These get copied into RAM only on non-XIP
     ro_sections = ["text", "ctors", "init_array", "reset", "object_access",
