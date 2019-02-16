@@ -45,7 +45,8 @@ def main():
     else:
         dirlist.extend(args.directory)
     dirlist.extend(os.linesep)
-    for root, dirs, files in os.walk(args.directory):
+    for root, dirs, _ in os.walk(args.directory, topdown=True):
+        dirs.sort()
         for subdir in dirs:
             if(args.create_links is not None):
                 directory = os.path.join(root, subdir)

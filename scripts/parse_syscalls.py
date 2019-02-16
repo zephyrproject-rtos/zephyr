@@ -23,7 +23,9 @@ def analyze_headers(multiple_directories):
     ret = []
 
     for base_path in multiple_directories:
-        for root, dirs, files in os.walk(base_path):
+        for root, dirs, files in os.walk(base_path, topdown=True):
+            dirs.sort()
+            files.sort()
             for fn in files:
 
                 # toolchain/common.h has the definition of __syscall which we
@@ -52,7 +54,9 @@ def parse_args():
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
     parser.add_argument("-i", "--include", required=True, action='append',
-                        help="Base include directory")
+                        help='''include directories recursively scanned
+                        for .h files.  Can be specified multiple times:
+                        -i topdir1 -i topdir2 ...''')
     parser.add_argument(
         "-j", "--json-file", required=True,
         help="Write system call prototype information as json to file")
