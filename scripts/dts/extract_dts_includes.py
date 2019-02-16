@@ -426,8 +426,9 @@ def load_binding_file(fname):
                        .format(fname))
 
     if len(filepaths) > 1:
-        yaml_inc_error("Error: multiple candidates for file name '{}' in "
-                       "!include statement: {}".format(fname, filepaths))
+        print("Warning: multiple candidates for file name "
+              "'{}' in !include statement - using first of {}".
+              format(fname, filepaths))
 
     with open(filepaths[0], 'r', encoding='utf-8') as f:
         return yaml.load(f)
