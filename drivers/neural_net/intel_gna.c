@@ -24,16 +24,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(neural_net);
 
-#define DCACHE_INVALIDATE(addr, size) \
-	xthal_dcache_region_invalidate(addr, size)
-#ifdef CONFIG_DCACHE_WRITEBACK
-#define DCACHE_FLUSH(addr, size) \
-	xthal_dcache_region_writeback_inv(addr, size)
-#else
-#define DCACHE_FLUSH(addr, size) \
-		do { } while (0)
-#endif
-
 #define DEV_NAME(dev) ((dev)->config->name)
 #define DEV_CFG(dev) \
 	((struct intel_gna_config *const)(dev)->config->config_info)
@@ -91,7 +81,7 @@ static void intel_gna_interrupt_handler(struct device *dev)
 	if (k_msgq_get(&gna->request_queue, &pending_req, K_NO_WAIT) != 0) {
 		LOG_ERR("Pending request queue is empty");
 	} else {
-		DCACHE_INVALIDATE(pending_req.model->output,
+		SOC_DCACHE_INVALIDATE(pending_req.model->output,
 				pending_req.output_len);
 		/* copy output from the model buffer to applciation buffer */
 		memcpy(pending_req.output, pending_req.model->output,
@@ -206,7 +196,7 @@ static int intel_gna_initialize(struct device *dev)
 			DEV_NAME(dev), gna_config_desc.vamaxaddr);
 
 	/* flush cache */
-	DCACHE_FLUSH((void *)&gna_config_desc, sizeof(gna_config_desc));
+	SOC_DCACHE_FLUSH((void *)&gna_config_desc, sizeof(gna_config_desc));
 
 	LOG_INF("%s: initialized (max %u models & max %u pending requests)",
 			DEV_NAME(dev), GNA_MAX_NUM_MODELS,
@@ -345,7 +335,7 @@ static int intel_gna_register_model(struct device *dev,
 
 		intel_gna_setup_page_table(model->rw_region, rw_size,
 				virtual_base);
-		DCACHE_FLUSH(model->rw_region, rw_size);
+		SOC_DCACHE_FLUSH(model->rw_region, rw_size);
 	}
 
 	if (model->ro_region == NULL) {
@@ -363,8 +353,8 @@ static int intel_gna_register_model(struct device *dev,
 	intel_gna_setup_page_table(ro_region, ro_size,
 			(void *)((u32_t)virtual_base + rw_size));
 
-	DCACHE_FLUSH(ro_region, ro_size);
-	DCACHE_FLUSH(gna_page_table, sizeof(gna_page_table));
+	SOC_DCACHE_FLUSH(ro_region, ro_size);
+	SOC_DCACHE_FLUSH(gna_page_table, sizeof(gna_page_table));
 
 	/* copy the model pointers */
 	gna_model->model = *model;
@@ -470,12 +460,12 @@ static int intel_gna_infer(struct device *dev, struct gna_inference_req *req,
 
 	/* copy input */
 	memcpy(handle->input, req->input, input_size);
-	DCACHE_FLUSH(handle->input, input_size);
+	SOC_DCACHE_FLUSH(handle->input, input_size);
 
 	/* assign layer descriptor base address to configuration descriptor */
 	gna_config_desc.labase = (u32_t)handle->vabase;
 	gna_config_desc.lacnt = (u16_t)header->layer_count;
-	DCACHE_FLUSH(&gna_config_desc, sizeof(gna_config_desc));
+	SOC_DCACHE_FLUSH(&gna_config_desc, sizeof(gna_config_desc));
 
 	gna->state = GNA_STATE_ACTIVE;
 	regs->gnactrl = (regs->gnactrl & ~GNA_CTRL_INTR_DISABLE) |
