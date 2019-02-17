@@ -112,7 +112,7 @@ void main(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 
-	err = bt_le_scan_start(BT_LE_SCAN_ACTIVE, device_found);
+	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, device_found);
 	if (err) {
 		printk("Scanning failed to start (err %d)\n", err);
 		return;
