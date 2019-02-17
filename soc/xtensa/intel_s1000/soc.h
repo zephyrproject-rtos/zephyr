@@ -204,10 +204,15 @@ struct soc_global_regs {
 	u32_t	straps;
 };
 
+/* macros for data cache operations */
+#define SOC_DCACHE_FLUSH(addr, size)		\
+	xthal_dcache_region_writeback((addr), (size))
+#define SOC_DCACHE_INVALIDATE(addr, size)	\
+	xthal_dcache_region_invalidate((addr), (size))
+
 extern void _soc_irq_enable(u32_t irq);
 extern void _soc_irq_disable(u32_t irq);
-extern void dcache_writeback_region(void *addr, size_t size);
-extern void dcache_invalidate_region(void *addr, size_t size);
+
 extern u32_t soc_get_ref_clk_freq(void);
 
 #endif /* __INC_SOC_H */
