@@ -115,9 +115,6 @@ struct dmic_configuration {
 #define DMIC_REG_UPD(reg, mask, val)		\
 	DMIC_REG_WR((reg), (DMIC_REG_RD((reg)) & ~(mask)) | ((val) & (mask)))
 
-#define DCACHE_INVALIDATE(addr, size)		\
-	xthal_dcache_region_invalidate(addr, size)
-
 struct _stream_data {
 	struct k_msgq in_queue;
 	struct k_msgq out_queue;
@@ -1346,7 +1343,7 @@ static int dmic_read_device(struct device *dev, u8_t stream,
 		LOG_ERR("No buffers in stream %u out_queue", stream);
 	} else {
 		*size = dmic_private.streams[stream].block_size;
-		DCACHE_INVALIDATE(*buffer, *size);
+		SOC_DCACHE_INVALIDATE(*buffer, *size);
 	}
 
 	return ret;
