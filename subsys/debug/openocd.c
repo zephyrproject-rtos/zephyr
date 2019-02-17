@@ -25,10 +25,12 @@ enum {
 	OPENOCD_OFFSET_T_COOP_FLOAT,
 };
 
-/* Forward-compatibility notes: 1) Increment OPENOCD_OFFSET_VERSION element
- * each time an offset is added to this table.  2) Only append items to this
- * table; otherwise, OpenOCD versions that expects version 0 will read garbage
- * values.
+/* Forward-compatibility notes: 1) Only append items to this table; otherwise
+ * OpenOCD versions that expect less items will read garbage values.
+ * 2) Avoid incompatible changes that affect the interpretation of existing
+ * items. But if you have to do them, increment OPENOCD_OFFSET_VERSION
+ * and submit a patch for OpenOCD to deal with both the old and new scheme.
+ * Only version 1 is backward compatible to version 0.
  */
 __attribute__((used, section(".openocd_dbg")))
 size_t _kernel_openocd_offsets[] = {
@@ -81,7 +83,13 @@ size_t _kernel_openocd_offsets[] = {
 	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = OPENOCD_UNIMPLEMENTED,
 	[OPENOCD_OFFSET_T_COOP_FLOAT] = OPENOCD_UNIMPLEMENTED,
 #endif
+	/* Version is still 1, but existence of following elements must be
+	 * checked with _kernel_openocd_num_offsets.
+	 */
 };
+
+__attribute__((used, section(".openocd_dbg")))
+size_t _kernel_openocd_num_offsets = ARRAY_SIZE(_kernel_openocd_offsets);
 
 __attribute__((used, section(".openocd_dbg")))
 u8_t _kernel_openocd_size_t_size = (u8_t)sizeof(size_t);
