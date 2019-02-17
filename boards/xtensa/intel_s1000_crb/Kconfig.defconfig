@@ -108,9 +108,6 @@ if DMA
 config DMA_CAVS
 	default y
 
-config DCACHE_WRITEBACK
-	default y
-
 endif
 
 if I2S
