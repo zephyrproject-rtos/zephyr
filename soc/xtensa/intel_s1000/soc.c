@@ -169,16 +169,6 @@ static inline void soc_set_resource_ownership(void)
 		SOC_GENO_MNDIV_OWNER_DSP;
 }
 
-void dcache_writeback_region(void *addr, size_t size)
-{
-	xthal_dcache_region_writeback(addr, size);
-}
-
-void dcache_invalidate_region(void *addr, size_t size)
-{
-	xthal_dcache_region_invalidate(addr, size);
-}
-
 u32_t soc_get_ref_clk_freq(void)
 {
 	return ref_clk_freq;
