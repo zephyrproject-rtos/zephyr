@@ -200,6 +200,20 @@ if(CONFIG_X86_MMU)
       user_mmu_tables.o
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       DEPENDS user_mmu_tables.bin
+      # Note that, although mmu_tables.o is not needed here, it is
+      # specified here to avoid running the command to generate
+      # mmu_tables.bin and user_mmu_tables.bin twice under parallel
+      # build.
+      #
+      # When timing is right under parallel build, both mmu_tables.o
+      # and user_mmu_tables.o can be triggered to build at the same
+      # time. If they both don't see {,user_}mmu_tables.bin are not
+      # there, the dependencies will cause them to be built in
+      # parallel. Since both paths are writing to the same files,
+      # the .bin files may disappear or get truncated, resulting in
+      # failure to build mmu_tables.o or user_mmu_tables.o. Hence
+      # the need for "fake" dependency here.
+      DEPENDS mmu_tables_o
     )
 
     add_custom_target(  user_mmu_tables_o DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/user_mmu_tables.o)
