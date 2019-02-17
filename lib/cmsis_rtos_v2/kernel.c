@@ -17,7 +17,7 @@ extern u32_t z_tick_get_32(void);
  */
 osStatus_t osKernelGetInfo(osVersion_t *version, char *id_buf, uint32_t id_size)
 {
-	if (version != NULL) {
+	if (version) {
 		version->api = sys_kernel_version_get();
 		version->kernel = sys_kernel_version_get();
 	}
