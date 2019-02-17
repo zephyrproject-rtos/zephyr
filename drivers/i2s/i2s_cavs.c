@@ -104,19 +104,6 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 /* length of the buffer queue */
 #define I2S_CAVS_BUF_Q_LEN			2
 
-#ifdef CONFIG_DCACHE_WRITEBACK
-#define DCACHE_INVALIDATE(addr, size) \
-	{ dcache_invalidate_region(addr, size); }
-#define DCACHE_CLEAN(addr, size) \
-	{ dcache_writeback_region(addr, size); }
-#else
-#define DCACHE_INVALIDATE(addr, size) \
-	do { } while (0)
-
-#define DCACHE_CLEAN(addr, size) \
-	do { } while (0)
-#endif
-
 #define CAVS_SSP_WORD_SIZE_BITS_MIN     4
 #define CAVS_SSP_WORD_SIZE_BITS_MAX     32
 #define CAVS_SSP_WORD_PER_FRAME_MIN     1
@@ -296,7 +283,7 @@ static void i2s_dma_rx_callback(void *arg, u32_t channel, int status)
 						buffer, &strm->in_queue, ret);
 			}
 
-			DCACHE_INVALIDATE(buffer, dev_data->cfg.block_size);
+			SOC_DCACHE_INVALIDATE(buffer, dev_data->cfg.block_size);
 
 			/* reload the DMA */
 			dma_reload(dev_data->dev_dma, strm->dma_channel,
@@ -637,7 +624,7 @@ static int i2s_rx_stream_start(struct i2s_cavs_dev_data *dev_data,
 		return ret;
 	}
 
-	DCACHE_INVALIDATE(buffer, dev_data->cfg.block_size);
+	SOC_DCACHE_INVALIDATE(buffer, dev_data->cfg.block_size);
 
 	ret = dma_reload(dev_dma, strm->dma_channel, (u32_t)&ssp->ssd,
 			(u32_t)buffer, dev_data->cfg.block_size);
@@ -814,7 +801,7 @@ static int i2s_cavs_write(struct device *dev, void *mem_block, size_t size)
 		return -EIO;
 	}
 
-	DCACHE_CLEAN(mem_block, size);
+	SOC_DCACHE_FLUSH(mem_block, size);
 
 	ret = k_msgq_put(&strm->in_queue, &mem_block, dev_data->cfg.timeout);
 	if (ret) {
