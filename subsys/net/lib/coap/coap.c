@@ -575,8 +575,11 @@ int coap_packet_parse(struct coap_packet *cpkt, u8_t *data, u16_t len,
 		struct coap_option *option;
 
 		option = num < opt_num ? &options[num++] : NULL;
-		ret = parse_option(cpkt->data, offset, &offset, cpkt->max_len,
-				   &delta, &opt_len, option);
+		if(option != NULL) {
+			ret = parse_option(cpkt->data, offset, &offset, cpkt->max_len,
+						 &delta, &opt_len, option);
+		}
+
 		if (ret < 0) {
 			return ret;
 		} else if (ret == 0) {
