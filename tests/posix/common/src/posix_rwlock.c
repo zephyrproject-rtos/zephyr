@@ -22,7 +22,7 @@ static void *thread_top(void *p1)
 	pthread = (pthread_t) pthread_self();
 	pthread_getschedparam(pthread, &policy, &param);
 	printk("Thread %d scheduling policy = %d & priority %d started\n",
-	       (s32_t) p1, policy, param.priority);
+	       (s32_t) p1, policy, param.sched_priority);
 
 	ret = pthread_rwlock_tryrdlock(&rwlock);
 	if (ret) {
@@ -84,7 +84,7 @@ void test_posix_rw_lock(void)
 			      "Unable to create pthread object attrib");
 
 		/* Setting scheduling priority */
-		schedparam.priority = i + 1;
+		schedparam.sched_priority = i + 1;
 		pthread_attr_setschedparam(&attr[i], &schedparam);
 
 		/* Setting stack */

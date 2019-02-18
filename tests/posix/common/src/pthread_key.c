@@ -143,7 +143,7 @@ void test_posix_multiple_threads_single_key(void)
 					"Unable to create pthread object attr");
 		}
 
-		schedparam.priority = 2;
+		schedparam.sched_priority = 2;
 		pthread_attr_setschedparam(&attr[i], &schedparam);
 		pthread_attr_setstack(&attr[i], &stackp[i][0], STACKSZ);
 
@@ -188,7 +188,7 @@ void test_posix_single_thread_multiple_keys(void)
 				"Unable to create pthread object attr");
 	}
 
-	schedparam.priority = 2;
+	schedparam.sched_priority = 2;
 	pthread_attr_setschedparam(&attr, &schedparam);
 	pthread_attr_setstack(&attr, &stackp[0][0], STACKSZ);
 
