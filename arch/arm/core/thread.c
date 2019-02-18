@@ -165,3 +165,97 @@ void configure_builtin_stack_guard(struct k_thread *thread)
 #endif
 }
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
+
+#if defined(CONFIG_MPU_STACK_GUARD) || defined(CONFIG_USERSPACE)
+
+#define IS_MPU_GUARD_VIOLATION(guard_start, fault_addr, stack_ptr) \
+	(fault_addr == -EINVAL) ? \
+	((fault_addr >= guard_start) && \
+	(fault_addr < (guard_start + MPU_GUARD_ALIGN_AND_SIZE)) && \
+	(stack_ptr < (guard_start + MPU_GUARD_ALIGN_AND_SIZE))) \
+	: \
+	(stack_ptr < (guard_start + MPU_GUARD_ALIGN_AND_SIZE))
+
+/**
+ * @brief Assess occurrence of current thread's stack corruption
+ *
+ * This function performs an assessment whether a memory fault (on a
+ * given memory address) is the result of stack memory corruption of
+ * the current thread.
+ *
+ * Thread stack corruption for supervisor threads or user threads in
+ * privilege mode (when User Space is supported) is reported upon an
+ * attempt to access the stack guard area (if MPU Stack Guard feature
+ * is supported). Additionally the current PSP (process stack pointer)
+ * must be pointing inside or below the guard area.
+ *
+ * Thread stack corruption for user threads in user mode is reported,
+ * if the current PSP is pointing below the start of the current
+ * thread's stack.
+ *
+ * Notes:
+ * - we assume a fully descending stack,
+ * - we assume a stacking error has occurred,
+ * - the function shall be called when handling MemManage and Bus fault,
+ *   and only if a Stacking error has been reported.
+ *
+ * If stack corruption is detected, the function returns the lowest
+ * allowed address where the Stack Pointer can safely point to, to
+ * prevent from errors when un-stacking the corrupted stack frame
+ * upon exception return.
+ *
+ * @param fault_addr memory address on which memory access violation
+ *                   has been reported. It can be invalid (-EINVAL),
+ *                   if only Stacking error has been reported.
+ * @param psp        current address the PSP points to
+ *
+ * @return The lowest allowed stack frame pointer, if error is a
+ *         thread stack corruption, otherwise return 0.
+ */
+u32_t z_check_thread_stack_fail(const u32_t fault_addr, const u32_t psp)
+{
+	const struct k_thread *thread = _current;
+
+	if (!thread) {
+		return 0;
+	}
+
+#if defined(CONFIG_USERSPACE)
+	if (thread->arch.priv_stack_start) {
+		/* User thread */
+		if ((__get_CONTROL() & CONTROL_nPRIV_Msk) == 0) {
+			/* User thread in privilege mode */
+			if (IS_MPU_GUARD_VIOLATION(
+				thread->arch.priv_stack_start,
+				fault_addr, psp)) {
+				/* Thread's privilege stack corruption */
+				return thread->arch.priv_stack_start +
+					MPU_GUARD_ALIGN_AND_SIZE;
+			}
+		} else {
+			if (psp < (u32_t)thread->stack_obj) {
+				/* Thread's user stack corruption */
+				return (u32_t)thread->stack_obj;
+			}
+		}
+	} else {
+		/* Supervisor thread */
+		if (IS_MPU_GUARD_VIOLATION((u32_t)thread->stack_obj,
+			fault_addr, psp)) {
+			/* Supervisor thread stack corruption */
+			return (u32_t)thread->stack_obj +
+				MPU_GUARD_ALIGN_AND_SIZE;
+		}
+	}
+#else /* CONFIG_USERSPACE */
+	if (IS_MPU_GUARD_VIOLATION(thread->stack_info.start,
+			fault_addr, psp)) {
+		/* Thread stack corruption */
+		return thread->stack_info.start +
+			MPU_GUARD_ALIGN_AND_SIZE;
+	}
+#endif /* CONFIG_USERSPACE */
+
+	return 0;
+}
+#endif /* CONFIG_MPU_STACK_GUARD || CONFIG_USERSPACE */
