@@ -33,6 +33,8 @@
 #define DNS_ANCOUNT_LEN		2
 #define DNS_NSCOUNT_LEN		2
 #define DNS_ARCOUNT_LEN		2
+#define DNS_TTL_LEN		4
+#define DNS_RDLENGTH_LEN	2
 
 #define NS_CMPRSFLGS    0xc0   /* DNS name compression */
 
