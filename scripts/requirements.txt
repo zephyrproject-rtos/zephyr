@@ -10,7 +10,7 @@ ply==3.10
 hub==2.0
 gitlint
 pyelftools==0.24
-pyocd==0.15.0
+pyocd==0.16.1
 pyserial
 pykwalify
 # "win32" is used for 64-bit Windows as well
