@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# Kconfig symbols common to STM32F3 series
+
 if SOC_SERIES_STM32F3X
 
 source "soc/arm/st_stm32/stm32f3/Kconfig.defconfig.stm32f3*"
@@ -13,6 +15,8 @@ config SOC_SERIES
 	default "stm32f3"
 
 if GPIO_STM32
+
+# GPIO ports A, B and C are set in ../common/Kconfig.defconfig.series
 
 config GPIO_STM32_PORTD
 	default y
