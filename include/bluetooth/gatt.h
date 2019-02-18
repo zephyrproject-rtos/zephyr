@@ -511,6 +511,11 @@ struct _bt_gatt_ccc {
 	u16_t			value;
 	void			(*cfg_changed)(const struct bt_gatt_attr *attr,
 					       u16_t value);
+	bool			(*cfg_write)(struct bt_conn *conn,
+					     const struct bt_gatt_attr *attr,
+					     u16_t value);
+	bool			(*cfg_match)(struct bt_conn *conn,
+					     const struct bt_gatt_attr *attr);
 };
 
 /** @brief Read Client Characteristic Configuration Attribute helper.
@@ -551,6 +556,26 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, const void *buf,
 			       u16_t len, u16_t offset, u8_t flags);
 
+/** @def BT_GATT_CCC_MANAGED
+ *  @brief Managed Client Characteristic Configuration Declaration Macro.
+ *
+ *  Helper macro to declare a Managed CCC attribute.
+ *
+ *  @param _cfg Initial configuration.
+ *  @param _changed Configuration changed callback.
+ *  @param _write Configuration write callback.
+ *  @param _match Configuration match callback.
+ */
+#define BT_GATT_CCC_MANAGED(_cfg, _changed, _write, _match)		\
+	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CCC,				\
+			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,		\
+			bt_gatt_attr_read_ccc, bt_gatt_attr_write_ccc,	\
+			(&(struct _bt_gatt_ccc) { .cfg = _cfg,		\
+					       .cfg_len = ARRAY_SIZE(_cfg), \
+					       .cfg_changed = _changed, \
+					       .cfg_write = _write, \
+					       .cfg_match = _match }))
+
 /** @def BT_GATT_CCC
  *  @brief Client Characteristic Configuration Declaration Macro.
  *
@@ -560,12 +585,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
  *  @param _cfg_changed Configuration changed callback.
  */
 #define BT_GATT_CCC(_cfg, _cfg_changed)					\
-	BT_GATT_ATTRIBUTE(BT_UUID_GATT_CCC,				\
-			BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,		\
-			bt_gatt_attr_read_ccc, bt_gatt_attr_write_ccc,	\
-			(&(struct _bt_gatt_ccc) { .cfg = _cfg,		\
-					       .cfg_len = ARRAY_SIZE(_cfg), \
-					       .cfg_changed = _cfg_changed, }))
+	BT_GATT_CCC_MANAGED(_cfg, _cfg_changed, NULL, NULL)
 
 /** @brief Read Characteristic Extended Properties Attribute helper
  *
