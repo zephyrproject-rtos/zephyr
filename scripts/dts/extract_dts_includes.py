@@ -15,7 +15,6 @@ import yaml
 import argparse
 from collections import defaultdict
 from collections.abc import Mapping
-from copy import deepcopy
 
 from devicetree import parse_file
 from extract.globals import *
@@ -154,23 +153,34 @@ def generate_node_defines(node_path):
 
             if re.fullmatch(k, c):
                 match = True
-
-                if 'pinctrl-' in c:
-                    names = deepcopy(node['props'].get('pinctrl-names', []))
-                elif not c.endswith('-names'):
-                    names = deepcopy(node['props'].get(c[:-1] + '-names', []))
-                    if not names:
-                        names = deepcopy(node['props'].get(c + '-names', []))
-
-                if not isinstance(names, list):
-                    names = [names]
-
-                extract_property(node_compat, node_path, c, v, names)
+                extract_property(node_compat, node_path, c, v,
+                                 prop_names(node, c))
 
         # Handle the case that we have a boolean property, but its not
         # in the dts
         if not match and v['type'] == 'boolean':
             extract_property(node_compat, node_path, k, v, None)
+
+
+def prop_names(node, prop_name):
+    # Returns a list with the *-names for the property (reg-names,
+    # interrupt-names, etc.) The list is copied so that it can be modified
+    # in-place later without stomping on the device tree data.
+
+    if prop_name.startswith('pinctrl-'):
+        names = node['props'].get('pinctrl-names', [])
+    else:
+        # The first case turns 'interrupts' into 'interrupt-names'
+        names = node['props'].get(prop_name[:-1] + '-names', []) or \
+                node['props'].get(prop_name + '-names', [])
+
+    if isinstance(names, list):
+        # Allow the list of names to be modified in-place without
+        # stomping on the property
+        return names.copy()
+
+    return [names]
+
 
 def merge_properties(parent, fname, to_dict, from_dict):
     # Recursively merges the 'from_dict' dictionary into 'to_dict', to
