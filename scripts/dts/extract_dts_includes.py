@@ -136,46 +136,45 @@ def generate_node_defines(node_path):
         return
 
     for k, v in get_binding(node_path)['properties'].items():
-        if 'generation' in v:
-            match = False
+        if 'generation' not in v:
+            continue
 
-            # Handle any per node extraction first.  For example we
-            # extract a few different defines for a flash partition so its
-            # easier to handle the partition node in one step
-            if 'partition@' in node_path:
-                flash.extract_partition(node_path)
+        # Handle any per node extraction first.  For example we
+        # extract a few different defines for a flash partition so its
+        # easier to handle the partition node in one step
+        if 'partition@' in node_path:
+            flash.extract_partition(node_path)
+            continue
+
+        match = False
+
+        # Handle each property individually, this ends up handling common
+        # patterns for things like reg, interrupts, etc that we don't need
+        # any special case handling at a node level
+        for c in node['props']:
+            if c in {'interrupt-names', 'reg-names', 'phandle',
+                     'linux,phandle'}:
                 continue
 
-            # Handle each property individually, this ends up handling common
-            # patterns for things like reg, interrupts, etc that we don't need
-            # any special case handling at a node level
-            for c in node['props']:
-                if c in {'interrupt-names', 'reg-names', 'phandle',
-                         'linux,phandle'}:
-                    continue
+            if re.fullmatch(k, c):
+                match = True
 
-                if re.fullmatch(k, c):
+                if 'pinctrl-' in c:
+                    names = deepcopy(node['props'].get('pinctrl-names', []))
+                elif not c.endswith('-names'):
+                    names = deepcopy(node['props'].get(c[:-1] + '-names', []))
+                    if not names:
+                        names = deepcopy(node['props'].get(c + '-names', []))
 
-                    if 'pinctrl-' in c:
-                        names = deepcopy(node['props'].get(
-                                                    'pinctrl-names', []))
-                    else:
-                        if not c.endswith("-names"):
-                            names = deepcopy(node['props'].get(
-                                                    c[:-1] + '-names', []))
-                            if not names:
-                                names = deepcopy(node['props'].get(
-                                                        c + '-names', []))
-                    if not isinstance(names, list):
-                        names = [names]
+                if not isinstance(names, list):
+                    names = [names]
 
-                    extract_property(node_compat, node_path, c, v, names)
-                    match = True
+                extract_property(node_compat, node_path, c, v, names)
 
-            # Handle the case that we have a boolean property, but its not
-            # in the dts
-            if not match and v['type'] == "boolean":
-                extract_property(node_compat, node_path, k, v, None)
+        # Handle the case that we have a boolean property, but its not
+        # in the dts
+        if not match and v['type'] == 'boolean':
+            extract_property(node_compat, node_path, k, v, None)
 
 def merge_properties(parent, fname, to_dict, from_dict):
     # Recursively merges the 'from_dict' dictionary into 'to_dict', to
