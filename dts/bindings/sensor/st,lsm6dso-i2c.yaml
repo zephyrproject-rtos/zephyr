@@ -1,0 +1,24 @@
+#
+# Copyright (c) 2019 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: STMicroelectronics MEMS sensors LSM6DSO
+version: 0.1
+
+description: >
+    This binding gives a base representation of LSM6DSO 6-axis IMU
+    sensor accessed through I2C bus
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+        constraint: "st,lsm6dso"
+
+    irq-gpios:
+      type: compound
+      category: required
+      generation: define
