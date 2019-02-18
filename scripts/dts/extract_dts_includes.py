@@ -57,7 +57,7 @@ def extract_string_prop(node_address, key, label):
     defs[node_address][label] = '"' + reduced[node_address]['props'][key] + '"'
 
 
-def extract_property(node_compat, node_address, prop, prop_val, names):
+def extract_property(node_compat, node_address, prop, prop_val):
     node = reduced[node_address]
     yaml_node_compat = get_binding(node_address)
     def_label = get_node_label(node_address)
@@ -100,6 +100,8 @@ def extract_property(node_compat, node_address, prop, prop_val, names):
         extract_bus_name(node_address, 'DT_' + def_label)
 
     def_label = 'DT_' + def_label
+
+    names = prop_names(node, prop)
 
     if prop == 'reg':
         reg.extract(node_address, names, def_label, 1)
@@ -153,13 +155,12 @@ def generate_node_defines(node_path):
 
             if re.fullmatch(k, c):
                 match = True
-                extract_property(node_compat, node_path, c, v,
-                                 prop_names(node, c))
+                extract_property(node_compat, node_path, c, v)
 
         # Handle the case that we have a boolean property, but its not
         # in the dts
         if not match and v['type'] == 'boolean':
-            extract_property(node_compat, node_path, k, v, None)
+            extract_property(node_compat, node_path, k, v)
 
 
 def prop_names(node, prop_name):
