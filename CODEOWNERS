@@ -82,10 +82,11 @@ boards/xtensa/                           @andrewboie @ramakrishnapallala
 cmake/                                   @nashif @SebastianBoe
 /CMakeLists.txt                          @nashif @SebastianBoe
 doc/                                     @dbkinder
-doc/application/coccinelle.rst           @himanshujha199640 @JuliaLawall
+doc/guides/coccinelle.rst                @himanshujha199640 @JuliaLawall
 doc/CMakeLists.txt                       @carlescufi
 doc/scripts/                             @carlescufi
-doc/subsystems/bluetooth/                @sjanc @jhedberg @Vudentz
+doc/guides/bluetooth/                    @sjanc @jhedberg @Vudentz
+doc/reference/bluetooth/                 @sjanc @jhedberg @Vudentz
 drivers/*/*mcux*                         @MaureenHelm
 drivers/*/*qmsi*                         @nashif
 drivers/*/*stm32*                        @erwango
@@ -111,7 +112,6 @@ drivers/sensor/lis*/                     @avisconti
 drivers/sensor/lps*/                     @avisconti
 drivers/sensor/lsm*/                     @avisconti
 drivers/serial/uart_altera_jtag_hal.c    @ramakrishnapallala
-drivers/serial/uart_riscv_qemu.c         @kgugala @pgielda @nategraff-sifive
 drivers/net/slip.c                       @jukkar @tbursztyka
 drivers/spi/                             @tbursztyka
 drivers/spi/spi_ll_stm32.*               @superna9999
@@ -192,24 +192,21 @@ lib/posix/                               @pfalcon
 kernel/device.c                          @ramakrishnapallala @nashif
 kernel/idle.c                            @ramakrishnapallala @nashif
 samples/bluetooth/                       @sjanc @jhedberg @Vudentz
-samples/boards/quark_se_c1000/power*/    @ramakrishnapallala @nashif
 samples/display/                         @vanwinkeljan
 samples/gui/                             @vanwinkeljan
 samples/net/                             @jukkar @tbursztyka @pfalcon
 samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
-samples/net/http_server/                 @jukkar @tbursztyka
 samples/net/lwm2m_client/                @mike-scott
-samples/net/mbedtls_sslclient/           @jukkar
 samples/net/mqtt_publisher/              @jukkar @tbursztyka
-samples/net/coap_client/                 @rveerama1
-samples/net/coap_server/                 @rveerama1
+samples/net/sockets/coap_client/         @rveerama1
+samples/net/sockets/coap_server/         @rveerama1
 samples/net/sockets/                     @jukkar @tbursztyka @pfalcon
 samples/sensor/                          @bogdan-davidoaia
 samples/subsys/usb                       @jfischer-phytec-iot @finikorg
 scripts/coccicheck                       @himanshujha199640 @JuliaLawall
 scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 scripts/elf_helper.py                    @andrewboie
-scripts/expr_parser.py                   @andrewboie @nashif
+scripts/sanity_chk/expr_parser.py        @andrewboie @nashif
 scripts/gen_app_partitions.py            @andrewboie
 scripts/gen_gdt.py                       @andrewboie
 scripts/gen_idt.py                       @andrewboie
@@ -237,7 +234,6 @@ subsys/net/lib/mqtt/                     @jukkar @tbursztyka
 subsys/net/lib/coap/                     @rveerama1
 subsys/net/lib/sockets/                  @jukkar @tbursztyka @pfalcon
 subsys/shell/                            @jarz-nordic @nordic-krch
-subsys/*/*native_posix*/                 @aescolar
 subsys/usb/                              @jfischer-phytec-iot @finikorg
 tests/boards/native_posix/               @aescolar
 tests/bluetooth/                         @sjanc @jhedberg @Vudentz
