@@ -270,18 +270,16 @@ void test_fatal(void)
 	 * once.
 	 */
 
-#ifndef CONFIG_CPU_HAS_NXP_MPU /* FIXME #7706 */
 	TC_PRINT("test stack HW-based overflow - supervisor 1\n");
 	check_stack_overflow(stack_hw_overflow, 0);
 
 	TC_PRINT("test stack HW-based overflow - supervisor 2\n");
 	check_stack_overflow(stack_hw_overflow, 0);
-#endif /* CONFIG_CPU_HAS_NXP_MPU */
 #endif /* CONFIG_HW_STACK_PROTECTION */
 
 #ifdef CONFIG_USERSPACE
 
-#if !defined(CONFIG_ARM) && !defined(CONFIG_ARC) /* FIXME #13341 #13342 */
+#if !defined(CONFIG_ARC) /* FIXME #13341 */
 	TC_PRINT("test stack HW-based overflow - user 1\n");
 	check_stack_overflow(stack_hw_overflow, K_USER);
 
