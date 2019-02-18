@@ -425,6 +425,7 @@ static void write_auth_payload_timeout(struct net_buf *buf,
 }
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
+#if defined(CONFIG_BT_CONN)
 static void read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 {
 	struct bt_hci_cp_read_tx_power_level *cmd = (void *)buf->data;
@@ -443,6 +444,7 @@ static void read_tx_power_level(struct net_buf *buf, struct net_buf **evt)
 	rp->status = status;
 	rp->handle = sys_cpu_to_le16(handle);
 }
+#endif /* CONFIG_BT_CONN */
 
 static int ctrl_bb_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 			      struct net_buf **evt)
@@ -460,9 +462,11 @@ static int ctrl_bb_cmd_handle(u16_t  ocf, struct net_buf *cmd,
 		set_event_mask_page_2(cmd, evt);
 		break;
 
+#if defined(CONFIG_BT_CONN)
 	case BT_OCF(BT_HCI_OP_READ_TX_POWER_LEVEL):
 		read_tx_power_level(cmd, evt);
 		break;
+#endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
 	case BT_OCF(BT_HCI_OP_SET_CTL_TO_HOST_FLOW):
