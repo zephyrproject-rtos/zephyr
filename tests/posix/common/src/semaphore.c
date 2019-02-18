@@ -29,7 +29,7 @@ void initialize_thread_attr(pthread_attr_t *attr)
 {
 	int ret;
 
-	schedparam.priority = 1;
+	schedparam.sched_priority = 1;
 
 	ret = pthread_attr_init(attr);
 	if (ret != 0) {

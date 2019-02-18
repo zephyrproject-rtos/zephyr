@@ -67,7 +67,7 @@ void test_posix_normal_mutex(void)
 	int schedpolicy = SCHED_FIFO;
 	int ret, type, protocol, temp;
 
-	schedparam.priority = 2;
+	schedparam.sched_priority = 2;
 	ret = pthread_attr_init(&attr);
 	if (ret != 0) {
 		zassert_false(pthread_attr_destroy(&attr),
@@ -126,7 +126,7 @@ void test_posix_recursive_mutex(void)
 	int schedpolicy = SCHED_FIFO;
 	int ret, type, protocol, temp;
 
-	schedparam2.priority = 2;
+	schedparam2.sched_priority = 2;
 	ret = pthread_attr_init(&attr2);
 	if (ret != 0) {
 		zassert_false(pthread_attr_destroy(&attr2),

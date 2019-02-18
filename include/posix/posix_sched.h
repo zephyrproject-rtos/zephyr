@@ -21,7 +21,7 @@ extern "C" {
 #endif /* SCHED_RR */
 
 struct sched_param {
-	int priority;
+	int sched_priority;
 };
 
 /**

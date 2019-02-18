@@ -84,7 +84,7 @@ static s32_t posix_to_zephyr_priority(u32_t priority, int policy)
 int pthread_attr_setschedparam(pthread_attr_t *attr,
 			       const struct sched_param *schedparam)
 {
-	int priority = schedparam->priority;
+	int priority = schedparam->sched_priority;
 
 	if ((attr == NULL) || (attr->initialized == 0) ||
 	    (is_posix_prio_valid(priority, attr->schedpolicy) == false)) {
@@ -262,7 +262,7 @@ int pthread_setschedparam(pthread_t pthread, int policy,
 		return EINVAL;
 	}
 
-	new_prio = posix_to_zephyr_priority(param->priority, policy);
+	new_prio = posix_to_zephyr_priority(param->sched_priority, policy);
 
 	if (is_posix_prio_valid(new_prio, policy) == false) {
 		return EINVAL;
@@ -306,7 +306,7 @@ int pthread_getschedparam(pthread_t pthread, int *policy,
 
 	priority = k_thread_priority_get((k_tid_t) thread);
 
-	param->priority = zephyr_to_posix_priority(priority, policy);
+	param->sched_priority = zephyr_to_posix_priority(priority, policy);
 	return 0;
 }
 
@@ -564,7 +564,7 @@ int pthread_attr_getschedparam(const pthread_attr_t *attr,
 		return EINVAL;
 	}
 
-	schedparam->priority = attr->priority;
+	schedparam->sched_priority = attr->priority;
 	return 0;
 }
 
