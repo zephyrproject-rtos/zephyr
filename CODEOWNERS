@@ -188,7 +188,7 @@ include/toolchain/                       @andrewboie @andyross
 include/zephyr.h                         @andrewboie @andyross
 kernel/                                  @andrewboie @andyross
 lib/gui/                                 @vanwinkeljan
-lib/posix/                               @ramakrishnapallala @nniranjhana @pfalcon
+lib/posix/                               @pfalcon
 kernel/device.c                          @ramakrishnapallala @nashif
 kernel/idle.c                            @ramakrishnapallala @nashif
 samples/bluetooth/                       @sjanc @jhedberg @Vudentz
@@ -241,11 +241,11 @@ subsys/*/*native_posix*/                 @aescolar
 subsys/usb/                              @jfischer-phytec-iot @finikorg
 tests/boards/native_posix/               @aescolar
 tests/bluetooth/                         @sjanc @jhedberg @Vudentz
-tests/posix/                             @nniranjhana @pfalcon
+tests/posix/                             @pfalcon
 tests/crypto/                            @ceolin
 tests/crypto/mbedtls/                    @nashif @ceolin
 tests/drivers/spi/                       @tbursztyka
-tests/kernel/                            @andrewboie @andyross @spoorthik @nniranjhana
+tests/kernel/                            @andrewboie @andyross @nashif
 tests/net/                               @jukkar @tbursztyka @pfalcon
 tests/net/buf/                           @jukkar @jhedberg @tbursztyka @pfalcon
 tests/net/lib/                           @jukkar @tbursztyka @pfalcon
