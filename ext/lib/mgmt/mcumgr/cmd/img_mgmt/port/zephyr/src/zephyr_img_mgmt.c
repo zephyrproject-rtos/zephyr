@@ -237,7 +237,7 @@ img_mgmt_impl_write_image_data(unsigned int offset, const void *data,
 int
 img_mgmt_impl_swap_type(void)
 {
-    switch (boot_swap_type()) {
+    switch (mcuboot_swap_type()) {
     case BOOT_SWAP_TYPE_NONE:
         return IMG_MGMT_SWAP_TYPE_NONE;
     case BOOT_SWAP_TYPE_TEST:

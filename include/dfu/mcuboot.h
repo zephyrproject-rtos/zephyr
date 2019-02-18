@@ -143,7 +143,7 @@ int boot_write_img_confirmed(void);
  * @return a BOOT_SWAP_TYPE_[...] constant on success, negative errno code on
  * fail.
  */
-int boot_swap_type(void);
+int mcuboot_swap_type(void);
 
 /**
  * @brief Marks the image in slot 1 as pending. On the next reboot, the system
