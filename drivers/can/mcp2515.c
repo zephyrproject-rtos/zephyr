@@ -615,16 +615,16 @@ static struct mcp2515_data mcp2515_data_1 = {
 };
 
 static const struct mcp2515_config mcp2515_config_1 = {
-	.spi_port = CONFIG_CAN_MCP2515_SPI_PORT_NAME,
-	.spi_freq = CONFIG_CAN_MCP2515_SPI_FREQ,
-	.spi_slave = CONFIG_CAN_MCP2515_SPI_SLAVE,
-	.int_pin = CONFIG_CAN_MCP2515_INT_PIN,
-	.int_port = CONFIG_CAN_MCP2515_INT_PORT_NAME,
+	.spi_port = DT_MICROCHIP_MCP2515_0_BUS_NAME,
+	.spi_freq = DT_MICROCHIP_MCP2515_0_SPI_MAX_FREQUENCY,
+	.spi_slave = DT_MICROCHIP_MCP2515_0_BASE_ADDRESS,
+	.int_pin = DT_MICROCHIP_MCP2515_0_INT_GPIOS_PIN,
+	.int_port = DT_MICROCHIP_MCP2515_0_INT_GPIOS_CONTROLLER,
 	.int_thread_stack_size = CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE,
 	.int_thread_priority = CONFIG_CAN_MCP2515_INT_THREAD_PRIO,
 #ifdef CONFIG_CAN_MCP2515_GPIO_SPI_CS
-	.spi_cs_pin = CONFIG_CAN_MCP2515_SPI_CS_PIN,
-	.spi_cs_port = CONFIG_CAN_MCP2515_SPI_CS_PORT_NAME,
+	.spi_cs_pin = DT_MICROCHIP_MCP2515_0_CS_GPIOS_PIN,
+	.spi_cs_port = DT_MICROCHIP_MCP2515_0_CS_GPIOS_CONTROLLER,
 #endif  /* CAN_MCP2515_GPIO_SPI_CS */
 	.tq_sjw = CONFIG_CAN_SJW,
 	.tq_prop = CONFIG_CAN_PROP_SEG,
@@ -632,7 +632,7 @@ static const struct mcp2515_config mcp2515_config_1 = {
 	.tq_bs2 = CONFIG_CAN_PHASE_SEG2,
 };
 
-DEVICE_AND_API_INIT(can_mcp2515_1, CONFIG_CAN_MCP2515_NAME, &mcp2515_init,
+DEVICE_AND_API_INIT(can_mcp2515_1, DT_MICROCHIP_MCP2515_0_LABEL, &mcp2515_init,
 		    &mcp2515_data_1, &mcp2515_config_1, POST_KERNEL,
 		    CONFIG_CAN_MCP2515_INIT_PRIORITY, &can_api_funcs);
 

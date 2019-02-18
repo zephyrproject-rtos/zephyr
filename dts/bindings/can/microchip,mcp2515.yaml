@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2019 Karsten Koenig
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: MCP2515 CAN
+version: 0.1
+
+description: >
+    This binding gives a base representation of the MCP2515 SPI CAN controller
+
+inherits:
+    !include [can.yaml, spi-device.yaml]
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "microchip,mcp2515"
+    int-gpios:
+      type: compound
+      category: required
+      generation: define, use-prop-name
+...
