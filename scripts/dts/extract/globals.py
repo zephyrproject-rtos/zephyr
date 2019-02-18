@@ -155,47 +155,43 @@ def insert_defs(node_address, new_defs, new_aliases):
         defs[node_address] = new_defs
 
 
-def create_reduced(nodes, path):
-    # compress nodes list to nodes w/ paths, add interrupt parent
-    if 'last_used_id' not in create_reduced.__dict__:
-        create_reduced.last_used_id = {}
+# Dictionary where all keys default to 0. Used by create_reduced().
+last_used_id = defaultdict(int)
 
-    if 'props' in nodes:
-        status = nodes['props'].get('status')
 
-        if status == "disabled":
-            return
+def create_reduced(node, path):
+    # Compress nodes list to nodes w/ paths, add interrupt parent
 
-    if isinstance(nodes, dict):
-        reduced[path] = dict(nodes)
+    if node['props'].get('status') == 'disabled':
+        return
 
-        # assign an instance ID for each compat
-        compat = nodes['props'].get('compatible')
-        if compat:
-            if type(compat) is not list: compat = [ compat, ]
-            reduced[path]['instance_id'] = {}
-            for k in compat:
-                if k not in create_reduced.last_used_id:
-                    create_reduced.last_used_id[k] = 0
-                else:
-                    create_reduced.last_used_id[k] += 1
-                reduced[path]['instance_id'][k] = create_reduced.last_used_id[k]
+    reduced[path] = node.copy()
+    reduced[path].pop('children', None)
 
-        # Newer versions of dtc might have the properties that look like
-        # reg = <1 2>, <3 4>;
-        # So we need to flatten the list in that case to be:
-        # reg = <1 2 3 4>
-        for p in nodes['props']:
-            prop_val = nodes['props'][p]
-            if isinstance(prop_val, list) and isinstance(prop_val[0], list):
-                nodes['props'][p] = [item for sublist in prop_val for item in sublist]
+    # Assign an instance ID for each compat
+    compat = node['props'].get('compatible')
+    if compat:
+        if type(compat) is not list:
+            compat = [compat]
 
-        reduced[path].pop('children', None)
+        reduced[path]['instance_id'] = {}
+        for comp in compat:
+            reduced[path]['instance_id'][comp] = last_used_id[comp]
+            last_used_id[comp] += 1
+
+    # Flatten 'prop = <1 2>, <3 4>' (which turns into nested lists) to
+    # 'prop = <1 2 3 4>'
+    for val in node['props'].values():
+        if isinstance(val, list) and isinstance(val[0], list):
+            # In-place modification
+            val[:] = [item for sublist in val for item in sublist]
+
+    if node['children']:
         if path != '/':
             path += '/'
-        if nodes['children']:
-            for k, v in sorted(nodes['children'].items()):
-                create_reduced(v, path + k)
+
+        for child_name, child_node in sorted(node['children'].items()):
+            create_reduced(child_node, path + child_name)
 
 
 def get_node_label(node_address):
