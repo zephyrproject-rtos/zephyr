@@ -44,7 +44,8 @@ MPU design may require specific constraints on the region definition.  These
 can include alignment of beginning and end addresses, sizes of allocations,
 or even interactions between overlapping regions.
 
-Some MPUs require that each region be aligned to a power of two.  These SoCs
+Some MPUs require that each region be aligned to a power of two. For userspace
+support, these SoCs
 will have :option:`CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT` defined.
 This means that a 1500 byte stack should be aligned to a 2kB boundary and the
 stack size should also be adjusted to 2kB to ensure that nothing else is
