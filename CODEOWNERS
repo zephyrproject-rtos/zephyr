@@ -139,6 +139,7 @@
 /dts/bindings/can/                        @alexanderwachter
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
+/dts/bindings/sensor/st,*                 @avisconti
 /ext/fs/                                  @nashif @ramakrishnapallala
 /ext/hal/cmsis/                           @MaureenHelm @galak
 /ext/hal/libmetal/                        @galak

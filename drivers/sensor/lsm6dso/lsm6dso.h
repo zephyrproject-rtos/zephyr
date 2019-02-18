@@ -1,0 +1,516 @@
+/* ST Microelectronics LSM6DSO 6-axis IMU sensor driver
+ *
+ * Copyright (c) 2019 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Datasheet:
+ * https://www.st.com/resource/en/datasheet/lsm6dso.pdf
+ */
+
+#ifndef ZEPHYR_DRIVERS_SENSOR_LSM6DSO_LSM6DSO_H_
+#define ZEPHYR_DRIVERS_SENSOR_LSM6DSO_LSM6DSO_H_
+
+#include <sensor.h>
+#include <zephyr/types.h>
+#include <gpio.h>
+#include <spi.h>
+#include <misc/util.h>
+
+#define LSM6DSO_EN_BIT					0x01
+#define LSM6DSO_DIS_BIT					0x00
+
+#define LSM6DSO_REG_FUNC_CFG_ACCESS			0x01
+#define LSM6DSO_MASK_FUNC_CFG_EN			BIT(7)
+#define LSM6DSO_SHIFT_FUNC_CFG_EN			7
+#define LSM6DSO_MASK_SHUB_EN				BIT(6)
+#define LSM6DSO_SHIFT_SHUB_EN				6
+
+#define LSM6DSO_REG_SENSOR_SYNC_TIME_FRAME		0x04
+#define LSM6DSO_MASK_SENSOR_SYNC_TIME_FRAME_TPH		(BIT(3) | BIT(2) | \
+							 BIT(1) | BIT(0))
+#define LSM6DSO_SHIFT_SENSOR_SYNC_TIME_FRAME_TPH	0
+
+#define LSM6DSO_REG_SENSOR_SYNC_RES_RATIO		0x05
+#define LSM6DSO_MASK_SENSOR_SYNC_RES_RATIO		(BIT(1) | BIT(0))
+#define LSM6DSO_SHIFT_SENSOR_SYNC_RES_RATIO		0
+
+#define LSM6DSO_REG_FIFO_CTRL4				0x0A
+#define LSM6DSO_MASK_FIFO_CTRL4_FIFO_MODE		(BIT(2) | BIT(1) | \
+							 BIT(0))
+#define LSM6DSO_SHIFT_FIFO_CTRL4_FIFO_MODE		0
+
+#define LSM6DSO_REG_INT1_CTRL				0x0D
+#define LSM6DSO_MASK_INT1_CTRL_DEN_DRDY			BIT(7)
+#define LSM6DSO_SHIFT_INT1_CTRL_DEN_DRDY		7
+#define LSM6DSO_MASK_INT1_CTRL_CNT_BDR			BIT(6)
+#define LSM6DSO_SHIFT_INT1_CTRL_CNT_BDR			6
+#define LSM6DSO_MASK_INT1_CTRL_FULL_FLAG		BIT(5)
+#define LSM6DSO_SHIFT_INT1_CTRL_FULL_FLAG		5
+#define LSM6DSO_MASK_INT1_CTRL_FIFO_OVR			BIT(4)
+#define LSM6DSO_SHIFT_INT1_CTRL_FIFO_OVR		4
+#define LSM6DSO_MASK_INT1_FTH				BIT(3)
+#define LSM6DSO_SHIFT_INT1_FTH				3
+#define LSM6DSO_MASK_INT1_CTRL_BOOT			BIT(2)
+#define LSM6DSO_SHIFT_INT1_CTRL_BOOT			2
+#define LSM6DSO_MASK_INT1_CTRL_DRDY_G			BIT(1)
+#define LSM6DSO_SHIFT_INT1_CTRL_DRDY_G			1
+#define LSM6DSO_MASK_INT1_CTRL_DRDY_XL			BIT(0)
+#define LSM6DSO_SHIFT_INT1_CTRL_DRDY_XL			0
+
+#define LSM6DSO_REG_INT2_CTRL				0x0E
+#define LSM6DSO_MASK_INT2_CTRL_CNT_BDR			BIT(6)
+#define LSM6DSO_SHIFT_INT2_CTRL_CNT_BDR			6
+#define LSM6DSO_MASK_INT2_CTRL_FULL_FLAG		BIT(5)
+#define LSM6DSO_SHIFT_INT2_CTRL_FULL_FLAG		5
+#define LSM6DSO_MASK_INT2_CTRL_FIFO_OVR			BIT(4)
+#define LSM6DSO_SHIFT_INT2_CTRL_FIFO_OVR		4
+#define LSM6DSO_MASK_INT2_FTH				BIT(3)
+#define LSM6DSO_SHIFT_INT2_FTH				3
+#define LSM6DSO_MASK_INT2_CTRL_DRDY_TEMP		BIT(2)
+#define LSM6DSO_SHIFT_INT2_CTRL_DRDY_TEMP		2
+#define LSM6DSO_MASK_INT2_CTRL_DRDY_G			BIT(1)
+#define LSM6DSO_SHIFT_INT2_CTRL_DRDY_G			1
+#define LSM6DSO_MASK_INT2_CTRL_DRDY_XL			BIT(0)
+#define LSM6DSO_SHIFT_INT2_CTRL_DRDY_XL			0
+
+#define LSM6DSO_REG_WHO_AM_I				0x0F
+#define LSM6DSO_VAL_WHO_AM_I				0x6C
+
+#define LSM6DSO_REG_CTRL1_XL				0x10
+#define LSM6DSO_MASK_CTRL1_XL_ODR_XL			(BIT(7) | BIT(6) | \
+							 BIT(5) | BIT(4))
+#define LSM6DSO_SHIFT_CTRL1_XL_ODR_XL			4
+#define LSM6DSO_MASK_CTRL1_XL_FS_XL			(BIT(3) | BIT(2))
+#define LSM6DSO_SHIFT_CTRL1_XL_FS_XL			2
+#define LSM6DSO_MASK_CTRL1_XL_LPF2_BW_SEL		BIT(1)
+#define LSM6DSO_SHIFT_CTRL1_XL_LPF2_BW_SEL		1
+
+#define LSM6DSO_REG_CTRL2_G				0x11
+#define LSM6DSO_MASK_CTRL2_G_ODR_G			(BIT(7) | BIT(6) | \
+							 BIT(5) | BIT(4))
+#define LSM6DSO_SHIFT_CTRL2_G_ODR_G			4
+#define LSM6DSO_MASK_CTRL2_G_FS_G			(BIT(3) | BIT(2))
+#define LSM6DSO_SHIFT_CTRL2_G_FS_G			2
+#define LSM6DSO_MASK_CTRL2_FS125			BIT(1)
+#define LSM6DSO_SHIFT_CTRL2_FS125			1
+
+#define LSM6DSO_REG_CTRL3_C				0x12
+#define LSM6DSO_MASK_CTRL3_C_BOOT			BIT(7)
+#define LSM6DSO_SHIFT_CTRL3_C_BOOT			7
+#define LSM6DSO_MASK_CTRL3_C_BDU			BIT(6)
+#define LSM6DSO_SHIFT_CTRL3_C_BDU			6
+#define LSM6DSO_MASK_CTRL3_C_H_LACTIVE			BIT(5)
+#define LSM6DSO_SHIFT_CTRL3_C_H_LACTIVE			5
+#define LSM6DSO_MASK_CTRL3_C_PP_OD			BIT(4)
+#define LSM6DSO_SHIFT_CTRL3_C_PP_OD			4
+#define LSM6DSO_MASK_CTRL3_C_SIM			BIT(3)
+#define LSM6DSO_SHIFT_CTRL3_C_SIM			3
+#define LSM6DSO_MASK_CTRL3_C_IF_INC			BIT(2)
+#define LSM6DSO_SHIFT_CTRL3_C_IF_INC			2
+#define LSM6DSO_MASK_CTRL3_C_SW_RESET			BIT(0)
+#define LSM6DSO_SHIFT_CTRL3_C_SW_RESET			0
+
+#define LSM6DSO_REG_CTRL4_C				0x13
+#define LSM6DSO_MASK_CTRL4_C_SLEEP			BIT(6)
+#define LSM6DSO_SHIFT_CTRL4_C_SLEEP			6
+#define LSM6DSO_MASK_CTRL4_C_INT2_ON_INT1		BIT(5)
+#define LSM6DSO_SHIFT_CTRL4_C_INT2_ON_INT1		5
+#define LSM6DSO_MASK_CTRL4_C_DRDY_MASK			BIT(3)
+#define LSM6DSO_SHIFT_CTRL4_C_DRDY_MASK			3
+#define LSM6DSO_MASK_CTRL4_C_I2C_DISABLE		BIT(2)
+#define LSM6DSO_SHIFT_CTRL4_C_I2C_DISABLE		2
+#define LSM6DSO_MASK_CTRL4_C_LPF1_SEL_G			BIT(1)
+#define LSM6DSO_SHIFT_CTRL4_C_LPF1_SEL_G		1
+
+#define LSM6DSO_REG_CTRL5_C				0x14
+#define LSM6DSO_MASK_CTRL5_C_ROUNDING			(BIT(6) | BIT(5))
+#define LSM6DSO_SHIFT_CTRL5_C_ROUNDING			5
+#define LSM6DSO_MASK_CTRL5_C_ST_G			(BIT(3) | BIT(2))
+#define LSM6DSO_SHIFT_CTRL5_C_ST_G			2
+#define LSM6DSO_MASK_CTRL5_C_ST_XL			(BIT(1) | BIT(0))
+#define LSM6DSO_SHIFT_CTRL5_C_ST_XL			0
+
+#define LSM6DSO_REG_CTRL6_C				0x15
+#define LSM6DSO_MASK_CTRL6_C_TRIG_EN			BIT(7)
+#define LSM6DSO_SHIFT_CTRL6_C_TRIG_EN			7
+#define LSM6DSO_MASK_CTRL6_C_LVL_EN			BIT(6)
+#define LSM6DSO_SHIFT_CTRL6_C_LVL_EN			6
+#define LSM6DSO_MASK_CTRL6_C_LVL2_EN			BIT(5)
+#define LSM6DSO_SHIFT_CTRL6_C_LVL2_EN			5
+#define LSM6DSO_MASK_CTRL6_C_XL_HM_MODE			BIT(4)
+#define LSM6DSO_SHIFT_CTRL6_C_XL_HM_MODE		4
+#define LSM6DSO_MASK_CTRL6_C_USR_OFF_W			BIT(3)
+#define LSM6DSO_SHIFT_CTRL6_C_USR_OFF_W			3
+#define LSM6DSO_MASK_CTRL6_C_FTYPE			(BIT(2) | BIT(1) | \
+							 BIT(0))
+#define LSM6DSO_SHIFT_CTRL6_C_FTYPE			0
+
+#define LSM6DSO_REG_CTRL7_G				0x16
+#define LSM6DSO_MASK_CTRL7_G_HM_MODE			BIT(7)
+#define LSM6DSO_SHIFT_CTRL7_G_HM_MODE			7
+#define LSM6DSO_MASK_CTRL7_HP_EN_G			BIT(6)
+#define LSM6DSO_SHIFT_CTRL7_HP_EN_G			6
+#define LSM6DSO_MASK_CTRL7_HPM_G			(BIT(5) | BIT(4))
+#define LSM6DSO_SHIFT_CTRL7_HPM_G			4
+#define LSM6DSO_MASK_CTRL7_OIS_ON_EN			BIT(2)
+#define LSM6DSO_SHIFT_CTRL7_OIS_ON_EN			2
+#define LSM6DSO_MASK_CTRL7_OIS_ON			BIT(0)
+#define LSM6DSO_SHIFT_CTRL7_OIS_ON			0
+
+#define LSM6DSO_REG_CTRL8_XL				0x17
+#define LSM6DSO_MASK_CTRL8_HPCF_XL			(BIT(7) | BIT(6) | \
+							 BIT(5))
+#define LSM6DSO_SHIFT_CTRL8_HPCF_XL			5
+#define LSM6DSO_MASK_CTRL8_HP_REF_MODE			BIT(4)
+#define LSM6DSO_SHIFT_CTRL8_HP_REF_MODE			4
+#define LSM6DSO_MASK_CTRL8_FASTSETTL_MODE		BIT(3)
+#define LSM6DSO_SHIFT_CTRL8_FASTSETTL_MODE		3
+#define LSM6DSO_MASK_CTRL8_HP_SLOPE_XL_EN		BIT(2)
+#define LSM6DSO_SHIFT_CTRL8_HP_SLOPE_XL_EN		2
+#define LSM6DSO_MASK_CTRL8_LOW_PASS_ON_6D		BIT(0)
+#define LSM6DSO_SHIFT_CTRL8_LOW_PASS_ON_6D		0
+
+#define LSM6DSO_REG_CTRL9_XL				0x18
+#define LSM6DSO_MASK_CTRL9_XL_DEN_X			BIT(7)
+#define LSM6DSO_SHIFT_CTRL9_XL_DEN_X			7
+#define LSM6DSO_MASK_CTRL9_XL_DEN_Y			BIT(6)
+#define LSM6DSO_SHIFT_CTRL9_XL_DEN_Y			6
+#define LSM6DSO_MASK_CTRL9_XL_DEN_Z			BIT(5)
+#define LSM6DSO_SHIFT_CTRL9_XL_DEN_Z			5
+#define LSM6DSO_MASK_CTRL9_XL_DEN_XL_G			BIT(4)
+#define LSM6DSO_SHIFT_CTRL9_XL_DEN_XL_G			4
+#define LSM6DSO_MASK_CTRL9_XL_DEN_XL_EN			BIT(3)
+#define LSM6DSO_SHIFT_CTRL9_XL_DEN_XL_EN		3
+#define LSM6DSO_MASK_CTRL9_XL_DEN_LH			BIT(2)
+#define LSM6DSO_SHIFT_CTRL9_XL_DEN_LH			2
+#define LSM6DSO_MASK_CTRL9_XL_I3C_DIS			BIT(1)
+#define LSM6DSO_SHIFT_CTRL9_XL_I3C_DIS			1
+
+#define LSM6DSO_REG_CTRL10_C				0x19
+#define LSM6DSO_MASK_CTRL10_C_TIMESTAMP_EN		BIT(5)
+#define LSM6DSO_SHIFT_CTRL10_C_TIMESTAMP_EN		5
+
+#define LSM6DSO_REG_ALL_INT_SRC				0x1A
+
+#define LSM6DSO_REG_WAKE_UP_SRC				0x1B
+#define LSM6DSO_MASK_WAKE_UP_SRC_SLEEP_CHANGE_IA	BIT(6)
+#define LSM6DSO_SHIFT_WAKE_UP_SRC_SLEEP_CHANGE_IA	6
+#define LSM6DSO_MASK_WAKE_UP_SRC_FF_IA			BIT(5)
+#define LSM6DSO_SHIFT_WAKE_UP_SRC_FF_IA			5
+#define LSM6DSO_MASK_WAKE_UP_SRC_SLEEP_STATE_IA		BIT(4)
+#define LSM6DSO_SHIFT_WAKE_UP_SRC_SLEEP_STATE_IA	4
+#define LSM6DSO_MASK_WAKE_UP_SRC_WU_IA			BIT(3)
+#define LSM6DSO_SHIFT_WAKE_UP_SRC_WU_IA			3
+#define LSM6DSO_MASK_WAKE_UP_SRC_X_WU			BIT(2)
+#define LSM6DSO_SHIFT_WAKE_UP_SRC_X_WU			2
+#define LSM6DSO_MASK_WAKE_UP_SRC_Y_WU			BIT(1)
+#define LSM6DSO_SHIFT_WAKE_UP_SRC_Y_WU			1
+#define LSM6DSO_MASK_WAKE_UP_SRC_Z_WU			BIT(0)
+#define LSM6DSO_SHIFT_WAKE_UP_SRC_Z_WU			0
+
+#define LSM6DSO_REG_TAP_SRC				0x1C
+#define LSM6DSO_MASK_TAP_SRC_TAP_IA			BIT(6)
+#define LSM6DSO_SHIFT_TAP_SRC_TAP_IA			6
+#define LSM6DSO_MASK_TAP_SRC_SINGLE_TAP			BIT(5)
+#define LSM6DSO_SHIFT_TAP_SRC_SINGLE_TAP		5
+#define LSM6DSO_MASK_TAP_SRC_DOUBLE_TAP			BIT(4)
+#define LSM6DSO_SHIFT_TAP_SRC_DOUBLE_TAP		4
+#define LSM6DSO_MASK_TAP_SRC_TAP_SIGN			BIT(3)
+#define LSM6DSO_SHIFT_TAP_SRC_TAP_SIGN			3
+#define LSM6DSO_MASK_TAP_SRC_X_TAP			BIT(2)
+#define LSM6DSO_SHIFT_TAP_SRC_X_TAP			2
+#define LSM6DSO_MASK_TAP_SRC_Y_TAP			BIT(1)
+#define LSM6DSO_SHIFT_TAP_SRC_Y_TAP			1
+#define LSM6DSO_MASK_TAP_SRC_Z_TAP			BIT(0)
+#define LSM6DSO_SHIFT_TAP_SRC_Z_TAP			0
+
+#define LSM6DSO_REG_D6D_SRC				0x1D
+#define LSM6DSO_MASK_D6D_SRC_DEN_DRDY			BIT(7)
+#define LSM6DSO_SHIFT_D6D_SRC_DEN_DRDY			7
+#define LSM6DSO_MASK_D6D_SRC_D6D_IA			BIT(6)
+#define LSM6DSO_SHIFT_D6D_SRC_D6D_IA			6
+#define LSM6DSO_MASK_D6D_SRC_ZH				BIT(5)
+#define LSM6DSO_SHIFT_D6D_SRC_ZH			5
+#define LSM6DSO_MASK_D6D_SRC_ZL				BIT(4)
+#define LSM6DSO_SHIFT_D6D_SRC_ZL			4
+#define LSM6DSO_MASK_D6D_SRC_YH				BIT(3)
+#define LSM6DSO_SHIFT_D6D_SRC_YH			3
+#define LSM6DSO_MASK_D6D_SRC_YL				BIT(2)
+#define LSM6DSO_SHIFT_D6D_SRC_YL			2
+#define LSM6DSO_MASK_D6D_SRC_XH				BIT(1)
+#define LSM6DSO_SHIFT_D6D_SRC_XH			1
+#define LSM6DSO_MASK_D6D_SRC_XL				BIT(0)
+#define LSM6DSO_SHIFT_D6D_SRC_XL			0
+
+#define LSM6DSO_REG_STATUS_REG				0x1E
+#define LSM6DSO_MASK_STATUS_REG_TDA			BIT(2)
+#define LSM6DSO_SHIFT_STATUS_REG_TDA			2
+#define LSM6DSO_MASK_STATUS_REG_GDA			BIT(1)
+#define LSM6DSO_SHIFT_STATUS_REG_GDA			1
+#define LSM6DSO_MASK_STATUS_REG_XLDA			BIT(0)
+#define LSM6DSO_SHIFT_STATUS_REG_XLDA			0
+
+#define LSM6DSO_REG_OUT_TEMP_L				0x20
+#define LSM6DSO_REG_OUT_TEMP_H				0x21
+#define LSM6DSO_REG_OUTX_L_G				0x22
+#define LSM6DSO_REG_OUTX_H_G				0x23
+#define LSM6DSO_REG_OUTY_L_G				0x24
+#define LSM6DSO_REG_OUTY_H_G				0x25
+#define LSM6DSO_REG_OUTZ_L_G				0x26
+#define LSM6DSO_REG_OUTZ_H_G				0x27
+#define LSM6DSO_REG_OUTX_L_XL				0x28
+#define LSM6DSO_REG_OUTX_H_XL				0x29
+#define LSM6DSO_REG_OUTY_L_XL				0x2A
+#define LSM6DSO_REG_OUTY_H_XL				0x2B
+#define LSM6DSO_REG_OUTZ_L_XL				0x2C
+#define LSM6DSO_REG_OUTZ_H_XL				0x2D
+#define LSM6DSO_REG_FIFO_STATUS1			0x3A
+#define LSM6DSO_REG_FIFO_STATUS2			0x3B
+#define LSM6DSO_REG_TIMESTAMP0				0x40
+#define LSM6DSO_REG_TIMESTAMP1				0x41
+#define LSM6DSO_REG_TIMESTAMP2				0x42
+#define LSM6DSO_REG_TIMESTAMP3				0x43
+
+#define LSM6DSO_REG_TAP_CFG0				0x56
+#define LSM6DSO_MASK_INT_LIR				BIT(0)
+#define LSM6DSO_SHIFT_INT_LIR				0
+
+#define LSM6DSO_REG_TAP_CFG1				0x57
+#define LSM6DSO_REG_TAP_CFG2				0x58
+
+#define LSM6DSO_REG_TAP_THS_6D				0x59
+#define LSM6DSO_MASK_TAP_THS_6D_D4D_EN			BIT(7)
+#define LSM6DSO_SHIFT_TAP_THS_6D_D4D_EN			7
+#define LSM6DSO_MASK_TAP_THS_6D_SIXD_THS		(BIT(6) | BIT(5))
+#define LSM6DSO_SHIFT_TAP_THS_6D_SIXD_THS		5
+#define LSM6DSO_MASK_TAP_THS_6D_TAP_THS			(BIT(4) | BIT(3) | \
+							 BIT(2) | BIT(1) | \
+							 BIT(0))
+#define LSM6DSO_SHIFT_TAP_THS_6D_TAP_THS		0
+
+#define LSM6DSO_REG_INT_DUR2				0x5A
+#define LSM6DSO_MASK_INT_DUR2_DUR			(BIT(7) | BIT(6) | \
+							BIT(5) | BIT(4))
+#define LSM6DSO_SHIFT_INT_DUR2_DUR			4
+#define LSM6DSO_MASK_INT_DUR2_QUIET			(BIT(3) | BIT(2))
+#define LSM6DSO_SHIFT_INT_QUIET				2
+#define LSM6DSO_MASK_INT_DUR2_SHOCK			(BIT(1) | BIT(0))
+#define LSM6DSO_SHIFT_INT_SHOCK				0
+
+#define LSM6DSO_REG_WAKE_UP_THS				0x5B
+#define LSM6DSO_MASK_WAKE_UP_THS_SINGLE_DOUBLE_TAP	BIT(7)
+#define LSM6DSO_SHIFT_WAKE_UP_THS_SINGLE_DOUBLE_TAP	7
+#define LSM6DSO_MASK_WAKE_UP_THS_WK_THS			(BIT(5) | BIT(4) | \
+							 BIT(3) | BIT(2) | \
+							 BIT(1) | BIT(0))
+#define LSM6DSO_SHIFT_WAKE_UP_THS_WK_THS		0
+
+#define LSM6DSO_REG_WAKE_UP_DUR				0x5C
+#define LSM6DSO_MASK_WAKE_UP_DUR_FF_DUR5		BIT(7)
+#define LSM6DSO_SHIFT_WAKE_UP_DUR_FF_DUR5		7
+#define LSM6DSO_MASK_WAKE_UP_DUR_WAKE_DUR		(BIT(6) | BIT(5))
+#define LSM6DSO_SHIFT_WAKE_UP_DUAR_WAKE_DUR		5
+#define LSM6DSO_MASK_WAKE_UP_DUR_THS_WEIGHT		BIT(4)
+#define LSM6DSO_SHIFT_WAKE_UP_DUR_THS_WEIGHT		4
+#define LSM6DSO_MASK_WAKE_UP_DUR_SLEEP_DUR		(BIT(3) | BIT(2) | \
+							 BIT(1) | BIT(0))
+#define LSM6DSO_SHIFT_WAKE_UP_DUR_SLEEP_DUR		0
+
+#define LSM6DSO_REG_FREE_FALL				0x5D
+#define LSM6DSO_MASK_FREE_FALL_DUR			(BIT(7) | BIT(6) | \
+							 BIT(5) | BIT(4) | \
+							 BIT(3))
+#define LSM6DSO_SHIFT_FREE_FALL_DUR			4
+#define LSM6DSO_MASK_FREE_FALL_THS			(BIT(2) | BIT(1) | \
+							BIT(0))
+#define LSM6DSO_SHIFT_FREE_FALL_THS			0
+
+#define LSM6DSO_REG_MD1_CFG				0x5E
+#define LSM6DSO_REG_MD2_CFG				0x5F
+#define LSM6DSO_MASK_CFG_SLEEP_CHANGE			BIT(7)
+#define LSM6DSO_SHIFT_CFG_SLEEP_CHANGE			7
+#define LSM6DSO_MASK_CFG_SINGLE_TAP			BIT(6)
+#define LSM6DSO_SHIFT_CFG_SINGLE_TAP			6
+#define LSM6DSO_MASK_CFG_WU				BIT(5)
+#define LSM6DSO_SHIFT_CFG_WU				5
+#define LSM6DSO_MASK_CFG_FF				BIT(4)
+#define LSM6DSO_SHIFT_CFG_FF				4
+#define LSM6DSO_MASK_CFG_DOUBLE_TAP			BIT(3)
+#define LSM6DSO_SHIFT_CFG_DOUBLE_TAP			3
+#define LSM6DSO_MASK_CFG_6D				BIT(2)
+#define LSM6DSO_SHIFT_CFG_6D				2
+#define LSM6DSO_MASK_CFG_EFUNC				BIT(1)
+#define LSM6DSO_SHIFT_CFG_EFUNC				1
+#define LSM6DSO_MASK_CFG_SHUB				BIT(0)	/* on MD1 */
+#define LSM6DSO_SHIFT_CFG_SHUB				0
+#define LSM6DSO_MASK_CFG_TIMESTAMP			BIT(0)	/* on MD2 */
+#define LSM6DSO_SHIFT_CFG_TIMESTAMP			0
+
+#define LSM6DSO_REG_X_OFS_USR				0x73
+#define LSM6DSO_REG_Y_OFS_USR				0x74
+#define LSM6DSO_REG_Z_OFS_USR				0x75
+
+
+/* Accel sensor sensitivity grain is 0.061 mg/LSB */
+#define GAIN_UNIT_XL				(61LL / 1000.0)
+
+/* Gyro sensor sensitivity grain is 4.375 mdps/LSB */
+#define GAIN_UNIT_G				(4375LL / 1000.0)
+#define SENSOR_PI_DOUBLE			(SENSOR_PI / 1000000.0)
+#define SENSOR_DEG2RAD_DOUBLE			(SENSOR_PI_DOUBLE / 180)
+#define SENSOR_G_DOUBLE				(SENSOR_G / 1000000.0)
+
+#if CONFIG_LSM6DSO_ACCEL_FS == 0
+	#define LSM6DSO_ACCEL_FS_RUNTIME 1
+	#define LSM6DSO_DEFAULT_ACCEL_FULLSCALE		0
+	#define LSM6DSO_DEFAULT_ACCEL_SENSITIVITY	GAIN_UNIT_XL
+#elif CONFIG_LSM6DSO_ACCEL_FS == 2
+	#define LSM6DSO_DEFAULT_ACCEL_FULLSCALE		0
+	#define LSM6DSO_DEFAULT_ACCEL_SENSITIVITY	GAIN_UNIT_XL
+#elif CONFIG_LSM6DSO_ACCEL_FS == 4
+	#define LSM6DSO_DEFAULT_ACCEL_FULLSCALE		2
+	#define LSM6DSO_DEFAULT_ACCEL_SENSITIVITY	(2.0 * GAIN_UNIT_XL)
+#elif CONFIG_LSM6DSO_ACCEL_FS == 8
+	#define LSM6DSO_DEFAULT_ACCEL_FULLSCALE		3
+	#define LSM6DSO_DEFAULT_ACCEL_SENSITIVITY	(4.0 * GAIN_UNIT_XL)
+#elif CONFIG_LSM6DSO_ACCEL_FS == 16
+	#define LSM6DSO_DEFAULT_ACCEL_FULLSCALE		1
+	#define LSM6DSO_DEFAULT_ACCEL_SENSITIVITY	(8.0 * GAIN_UNIT_XL)
+#endif
+
+#if (CONFIG_LSM6DSO_ACCEL_ODR == 0)
+#define LSM6DSO_ACCEL_ODR_RUNTIME 1
+#endif
+
+#define GYRO_FULLSCALE_125 4
+
+#if CONFIG_LSM6DSO_GYRO_FS == 0
+	#define LSM6DSO_GYRO_FS_RUNTIME 1
+	#define LSM6DSO_DEFAULT_GYRO_FULLSCALE		4
+	#define LSM6DSO_DEFAULT_GYRO_SENSITIVITY	GAIN_UNIT_G
+#elif CONFIG_LSM6DSO_GYRO_FS == 125
+	#define LSM6DSO_DEFAULT_GYRO_FULLSCALE		4
+	#define LSM6DSO_DEFAULT_GYRO_SENSITIVITY	GAIN_UNIT_G
+#elif CONFIG_LSM6DSO_GYRO_FS == 250
+	#define LSM6DSO_DEFAULT_GYRO_FULLSCALE		0
+	#define LSM6DSO_DEFAULT_GYRO_SENSITIVITY	(2.0 * GAIN_UNIT_G)
+#elif CONFIG_LSM6DSO_GYRO_FS == 500
+	#define LSM6DSO_DEFAULT_GYRO_FULLSCALE		1
+	#define LSM6DSO_DEFAULT_GYRO_SENSITIVITY	(4.0 * GAIN_UNIT_G)
+#elif CONFIG_LSM6DSO_GYRO_FS == 1000
+	#define LSM6DSO_DEFAULT_GYRO_FULLSCALE		2
+	#define LSM6DSO_DEFAULT_GYRO_SENSITIVITY	(8.0 * GAIN_UNIT_G)
+#elif CONFIG_LSM6DSO_GYRO_FS == 2000
+	#define LSM6DSO_DEFAULT_GYRO_FULLSCALE		3
+	#define LSM6DSO_DEFAULT_GYRO_SENSITIVITY	(16.0 * GAIN_UNIT_G)
+#endif
+
+
+#if (CONFIG_LSM6DSO_GYRO_ODR == 0)
+#define LSM6DSO_GYRO_ODR_RUNTIME 1
+#endif
+
+struct lsm6dso_config {
+	char *bus_name;
+#ifdef CONFIG_LSM6DSO_TRIGGER
+	const char *int_gpio_port;
+	u8_t int_gpio_pin;
+	u8_t int_pin;
+#endif /* CONFIG_LSM6DSO_TRIGGER */
+};
+
+union samples {
+	u8_t raw[6];
+	struct {
+		s16_t axis[3];
+	};
+} __aligned(2);
+
+/* sensor data forward declaration (member definition is below) */
+struct lsm6dso_data;
+
+struct lsm6dso_tf {
+	int (*read_data)(struct lsm6dso_data *data, u8_t reg_addr,
+			 u8_t *value, u8_t len);
+	int (*write_data)(struct lsm6dso_data *data, u8_t reg_addr,
+			  u8_t *value, u8_t len);
+	int (*read_reg)(struct lsm6dso_data *data, u8_t reg_addr,
+			u8_t *value);
+	int (*write_reg)(struct lsm6dso_data *data, u8_t reg_addr,
+			u8_t value);
+	int (*update_reg)(struct lsm6dso_data *data, u8_t reg_addr,
+			  u8_t mask, u8_t value);
+};
+
+#define LSM6DSO_SHUB_MAX_NUM_SLVS			2
+
+struct lsm6dso_data {
+	struct device *bus;
+	s16_t acc[3];
+	float acc_gain;
+	s16_t gyro[3];
+	float gyro_gain;
+#if defined(CONFIG_LSM6DSO_ENABLE_TEMP)
+	int temp_sample;
+#endif
+#if defined(CONFIG_LSM6DSO_SENSORHUB)
+	u8_t ext_data[2][6];
+	float magn_gain;
+
+	struct hts221_data {
+		s16_t x0;
+		s16_t x1;
+		s16_t y0;
+		s16_t y1;
+	} hts221;
+#endif /* CONFIG_LSM6DSO_SENSORHUB */
+
+	const struct lsm6dso_tf *hw_tf;
+	u16_t accel_freq;
+	u8_t accel_fs;
+	u16_t gyro_freq;
+	u8_t gyro_fs;
+
+#ifdef CONFIG_LSM6DSO_TRIGGER
+	struct device *gpio;
+	struct gpio_callback gpio_cb;
+	sensor_trigger_handler_t handler_drdy_acc;
+	sensor_trigger_handler_t handler_drdy_gyr;
+	sensor_trigger_handler_t handler_drdy_temp;
+
+#if defined(CONFIG_LSM6DSO_TRIGGER_OWN_THREAD)
+	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_LSM6DSO_THREAD_STACK_SIZE);
+	struct k_thread thread;
+	struct k_sem gpio_sem;
+#elif defined(CONFIG_LSM6DSO_TRIGGER_GLOBAL_THREAD)
+	struct k_work work;
+	struct device *dev;
+#endif
+#endif /* CONFIG_LSM6DSO_TRIGGER */
+
+#if defined(DT_ST_LSM6DSO_0_CS_GPIO_CONTROLLER)
+	struct spi_cs_control cs_ctrl;
+#endif
+};
+
+int lsm6dso_spi_init(struct device *dev);
+int lsm6dso_i2c_init(struct device *dev);
+#if defined(CONFIG_LSM6DSO_SENSORHUB)
+int lsm6dso_shub_init(struct device *dev);
+int lsm6dso_shub_fetch_external_devs(struct device *dev);
+int lsm6dso_shub_get_idx(enum sensor_channel type);
+int lsm6dso_shub_config(struct device *dev, enum sensor_channel chan,
+			enum sensor_attribute attr,
+			const struct sensor_value *val);
+#endif /* CONFIG_LSM6DSO_SENSORHUB */
+
+#ifdef CONFIG_LSM6DSO_TRIGGER
+int lsm6dso_trigger_set(struct device *dev,
+			const struct sensor_trigger *trig,
+			sensor_trigger_handler_t handler);
+
+int lsm6dso_init_interrupt(struct device *dev);
+#endif
+
+#endif /* ZEPHYR_DRIVERS_SENSOR_LSM6DSO_LSM6DSO_H_ */
