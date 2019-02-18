@@ -24,4 +24,3 @@ config GPIO_STM32_PORTH
 endif # GPIO_STM32
 
 endif # SOC_STM32L432XC
-
