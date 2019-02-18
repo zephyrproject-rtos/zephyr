@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# Here are set all the Kconfig symbols common to the whole STM32 family
+
 if SOC_FAMILY_STM32
 
 if SERIAL
