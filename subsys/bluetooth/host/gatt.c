@@ -1056,6 +1056,11 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 		}
 	}
 
+	/* Confirm write if cfg is managed by application */
+	if (ccc->cfg_write && !ccc->cfg_write(conn, attr, value)) {
+		return BT_GATT_ERR(BT_ATT_ERR_WRITE_NOT_PERMITTED);
+	}
+
 	ccc->cfg[i].value = value;
 
 	BT_DBG("handle 0x%04x value %u", attr->handle, ccc->cfg[i].value);
@@ -1322,6 +1327,11 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 		if (conn->state != BT_CONN_CONNECTED) {
 			bt_conn_unref(conn);
+			continue;
+		}
+
+		/* Confirm match if cfg is managed by application */
+		if (ccc->cfg_match && !ccc->cfg_match(conn, attr)) {
 			continue;
 		}
 
