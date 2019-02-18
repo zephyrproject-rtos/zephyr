@@ -1139,9 +1139,9 @@ void ull_conn_tx_lll_enqueue(struct ll_conn *conn, u8_t count)
 
 	tx = conn->tx_head;
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-	while (tx && ((tx == conn->tx_ctrl) || !conn->pause_tx) && count--) {
+	while (tx && (!conn->pause_tx || (tx == conn->tx_ctrl)) && count--) {
 #else /* !CONFIG_BT_CTLR_LE_ENC */
-	while (tx && (tx == conn->tx_ctrl) && count--) {
+	while (tx && count--) {
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
 		struct node_tx *tx_lll;
 		memq_link_t *link;
