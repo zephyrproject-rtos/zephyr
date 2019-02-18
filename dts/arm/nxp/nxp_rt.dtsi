@@ -308,7 +308,7 @@
 			compatible = "nxp,kinetis-ethernet";
 			reg = <0x402D8000 0x628>;
 			interrupts = <114 0>;
-			interrupts-names = "COMMON";
+			interrupt-names = "COMMON";
 			status = "disabled";
 			local-mac-address = [00 00 00 00 00 00];
 			label = "ETH_0";
@@ -316,7 +316,7 @@
 				compatible = "nxp,kinetis-ptp";
 				status = "disabled";
 				interrupts = <115 0>;
-				interrupts-names = "IEEE1588_TMR";
+				interrupt-names = "IEEE1588_TMR";
 			};
 		};
 
