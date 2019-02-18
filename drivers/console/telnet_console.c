@@ -82,7 +82,6 @@ static K_TIMER_DEFINE(send_timer, telnet_send_prematurely, NULL);
 
 /* For now we handle a unique telnet client connection */
 static struct net_context *client_cnx;
-static struct net_pkt *out_pkt;
 static int (*orig_printk_hook)(int);
 
 static struct k_fifo *avail_queue;
@@ -118,22 +117,7 @@ static void telnet_end_client_connection(void)
 	net_context_put(client_cnx);
 	client_cnx = NULL;
 
-	if (out_pkt) {
-		net_pkt_unref(out_pkt);
-	}
-
 	telnet_rb_init();
-}
-
-static int telnet_setup_out_pkt(struct net_context *client)
-{
-	out_pkt = net_pkt_get_tx(client, K_FOREVER);
-	if (!out_pkt) {
-		/* Cannot happen atm, net_pkt waits indefinitely */
-		return -ENOBUFS;
-	}
-
-	return 0;
 }
 
 static void telnet_rb_switch(void)
@@ -236,17 +220,15 @@ static inline bool telnet_send(void)
 	struct line_buf *lb = telnet_rb_get_line_out();
 
 	if (lb) {
-		net_pkt_append_all(out_pkt, lb->len, (u8_t *)lb->buf,
-				   K_FOREVER);
+		if (net_context_send_new(client_cnx,
+					 (u8_t *)lb->buf, lb->len,
+					 telnet_sent_cb,
+					 K_FOREVER, NULL, NULL)) {
+			return false;
+		}
 
 		/* We reinitialize the line buffer */
 		lb->len = 0U;
-
-		if (net_context_send(out_pkt, telnet_sent_cb,
-				     K_NO_WAIT, NULL, NULL) ||
-		    telnet_setup_out_pkt(client_cnx)) {
-			return false;
-		}
 	}
 
 	return true;
@@ -261,12 +243,8 @@ static int telnet_console_out_nothing(int c)
 
 static inline void telnet_command_send_reply(u8_t *msg, u16_t len)
 {
-	net_pkt_append_all(out_pkt, len, msg, K_FOREVER);
-
-	net_context_send(out_pkt, telnet_sent_cb,
-			 K_NO_WAIT, NULL, NULL);
-
-	telnet_setup_out_pkt(client_cnx);
+	net_context_send_new(client_cnx, msg, len,
+			     telnet_sent_cb, K_FOREVER, NULL, NULL);
 }
 
 static inline void telnet_reply_ay_command(void)
@@ -330,16 +308,17 @@ out:
 
 static inline bool telnet_handle_command(struct net_pkt *pkt)
 {
-	struct telnet_simple_command *cmd =
-		(struct telnet_simple_command *)net_pkt_appdata(pkt);
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(cmd_access,
+					      struct telnet_simple_command);
+	struct telnet_simple_command *cmd;
 
-	if (cmd->iac != NVT_CMD_IAC) {
+	cmd = (struct telnet_simple_command *)net_pkt_get_data_new(pkt,
+								   &cmd_access);
+	if (!cmd || cmd->iac != NVT_CMD_IAC) {
 		return false;
 	}
 
 #ifdef CONFIG_TELNET_CONSOLE_SUPPORT_COMMAND
-	cmd = (struct telnet_simple_command *)l_start;
-
 	LOG_DBG("Got a command %u/%u/%u", cmd->iac, cmd->op, cmd->opt);
 
 	if (!k_sem_take(&cmd_lock, K_NO_WAIT)) {
@@ -356,9 +335,9 @@ static inline bool telnet_handle_command(struct net_pkt *pkt)
 static inline void telnet_handle_input(struct net_pkt *pkt)
 {
 	struct console_input *input;
-	u16_t len, offset, pos;
+	size_t len;
 
-	len = net_pkt_appdatalen(pkt);
+	len = net_pkt_remaining_data(pkt);
 	if (len > CONSOLE_MAX_LINE_LEN || len < TELNET_MIN_MSG) {
 		return;
 	}
@@ -376,8 +355,10 @@ static inline void telnet_handle_input(struct net_pkt *pkt)
 		return;
 	}
 
-	offset = net_pkt_get_len(pkt) - len;
-	net_frag_read(pkt->frags, offset, &pos, len, (u8_t *)input->line);
+	len = MIN(len, CONSOLE_MAX_LINE_LEN);
+	if (net_pkt_read_new(pkt, (u8_t *)input->line, len)) {
+		return;
+	}
 
 	/* LF/CR will be removed if only the line is not NUL terminated */
 	if (input->line[len - 1] != NVT_NUL) {
@@ -447,10 +428,6 @@ static void telnet_accept(struct net_context *client,
 	if (net_context_recv(client, telnet_recv, 0, NULL)) {
 		LOG_ERR("Unable to setup reception (family %u)",
 			net_context_get_family(client));
-		goto error;
-	}
-
-	if (telnet_setup_out_pkt(client)) {
 		goto error;
 	}
 
