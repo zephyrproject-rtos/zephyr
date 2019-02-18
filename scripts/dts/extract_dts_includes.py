@@ -129,14 +129,11 @@ def extract_property(node_address, prop):
 
 
 def generate_node_defines(node_path):
-    node = reduced[node_path]
-    node_compat = get_compat(node_path)
-
-    if node_compat not in get_binding_compats():
+    if get_compat(node_path) not in get_binding_compats():
         return
 
-    for k, v in get_binding(node_path)['properties'].items():
-        if 'generation' not in v:
+    for yaml_prop, yaml_val in get_binding(node_path)['properties'].items():
+        if 'generation' not in yaml_val:
             continue
 
         # Handle any per node extraction first.  For example we
@@ -151,19 +148,19 @@ def generate_node_defines(node_path):
         # Handle each property individually, this ends up handling common
         # patterns for things like reg, interrupts, etc that we don't need
         # any special case handling at a node level
-        for c in node['props']:
-            if c in {'interrupt-names', 'reg-names', 'phandle',
-                     'linux,phandle'}:
+        for prop in reduced[node_path]['props']:
+            if prop in {'interrupt-names', 'reg-names', 'phandle',
+                        'linux,phandle'}:
                 continue
 
-            if re.fullmatch(k, c):
+            if re.fullmatch(yaml_prop, prop):
                 match = True
-                extract_property(node_path, c)
+                extract_property(node_path, prop)
 
         # Handle the case that we have a boolean property, but its not
         # in the dts
-        if not match and v['type'] == 'boolean':
-            extract_property(node_path, k)
+        if not match and yaml_val['type'] == 'boolean':
+            extract_property(node_path, yaml_prop)
 
 
 def prop_names(node, prop_name):
