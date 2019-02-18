@@ -1,0 +1,23 @@
+---
+title: Holtek HT16K33 LED Driver
+version: 0.1
+
+description: Holtek HT16K33 LEDs binding
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "holtek,ht16k33"
+      generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+...
