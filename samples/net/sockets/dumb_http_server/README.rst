@@ -13,8 +13,8 @@ portable to both POSIX and Zephyr. As such, this HTTP server example is
 kept very minimal and does not really parse an incoming HTTP request,
 just reads and discards it, and always serve a single static page. Even
 with such simplification, it is useful as an example of a socket
-application which can be accessed via a convention web browser, or to
-perform performance/regression testing using existing HTTP testing
+application which can be accessed via a conventional web browser, or to
+perform performance/regression testing using existing HTTP diagnostic
 tools.
 
 The source code for this sample application can be found at:
@@ -32,7 +32,7 @@ Building and Running
 Build the Zephyr version of the sockets/echo application like this:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/net/sockets/dump_http_server
+   :zephyr-app: samples/net/sockets/dumb_http_server
    :board: <board_to_use>
    :goals: build
    :compact:
