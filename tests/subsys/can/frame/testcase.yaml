@@ -1,0 +1,5 @@
+common:
+  platform_whitelist: native_posix qemu_x86 qemu_cortex_m3
+tests:
+  can.frame:
+    tags: net
