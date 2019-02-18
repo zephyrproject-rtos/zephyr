@@ -513,6 +513,15 @@ config BT_CTLR_LOW_LAT
 	  Consequently, this reduces on-air radio utilization due to redundant
 	  radio state switches.
 
+config BT_CTLR_LOW_LAT_ULL
+	prompt "Low latency ULL"
+	bool
+	depends on BT_CTLR_LOW_LAT
+	default y
+	help
+	  Low latency ULL implementation that uses tailchaining instead of while
+	  loop to demux rx messages from LLL.
+
 endif # BT_LL_SW_SPLIT
 
 config BT_CTLR_RADIO_ENABLE_FAST

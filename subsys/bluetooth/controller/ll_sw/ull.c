@@ -1274,7 +1274,9 @@ static inline void rx_demux_conn_tx_ack(u8_t ack_last, u16_t handle,
 					memq_link_t *link,
 					struct node_tx *node_tx)
 {
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	do {
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 		/* Dequeue node */
 		lll_conn_ack_dequeue();
 
@@ -1307,10 +1309,17 @@ static inline void rx_demux_conn_tx_ack(u8_t ack_last, u16_t handle,
 		}
 
 		link = lll_conn_ack_by_last_peek(ack_last, &handle, &node_tx);
-	} while (link);
 
-	/* trigger thread to call ll_rx_get() */
-	ll_rx_sched();
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+		if (!link)
+#else /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+	} while (link);
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+
+		{
+			/* trigger thread to call ll_rx_get() */
+			ll_rx_sched();
+		}
 }
 #endif /* CONFIG_BT_CONN */
 
@@ -1318,7 +1327,9 @@ static void rx_demux(void *param)
 {
 	memq_link_t *link;
 
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	do {
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 		struct node_rx_hdr *rx;
 
 		link = memq_peek(memq_ull_rx.head, memq_ull_rx.tail,
@@ -1340,14 +1351,20 @@ static void rx_demux(void *param)
 				rx_demux_conn_tx_ack(rx->ack_last, handle,
 						     link_tx, node_tx);
 			} else
-#endif
+#endif /* CONFIG_BT_CONN */
 			{
 				nack = rx_demux_rx(link, rx);
 			}
 
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+			if (!nack) {
+				ull_rx_sched();
+			}
+#else /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 			if (nack) {
 				break;
 			}
+#endif /* !CONFIG_BT_CTLR_LOW_LAT_ULL */
 
 #if defined(CONFIG_BT_CONN)
 		} else {
@@ -1359,10 +1376,18 @@ static void rx_demux(void *param)
 			if (link) {
 				rx_demux_conn_tx_ack(ack_last, handle,
 						      link, node_tx);
+
+#if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
+				ull_rx_sched();
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
+
 			}
-#endif
+#endif /* CONFIG_BT_CONN */
 		}
+
+#if !defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 	} while (link);
+#endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 }
 
 /**
