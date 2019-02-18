@@ -2080,8 +2080,6 @@ static void bt_att_connected(struct bt_l2cap_chan *chan)
 
 	k_delayed_work_init(&att->timeout_work, att_timeout);
 	sys_slist_init(&att->reqs);
-
-	bt_gatt_connected(ch->chan.conn);
 }
 
 static void bt_att_disconnected(struct bt_l2cap_chan *chan)
