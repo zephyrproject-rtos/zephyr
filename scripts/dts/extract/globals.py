@@ -155,14 +155,6 @@ def insert_defs(node_address, new_defs, new_aliases):
         defs[node_address] = new_defs
 
 
-def find_node_by_path(nodes, path):
-    d = nodes
-    for k in path[1:].split('/'):
-        d = d['children'][k]
-
-    return d
-
-
 def create_reduced(nodes, path):
     # compress nodes list to nodes w/ paths, add interrupt parent
     if 'last_used_id' not in create_reduced.__dict__:
