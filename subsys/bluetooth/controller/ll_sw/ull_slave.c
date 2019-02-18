@@ -446,7 +446,7 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 			conn->llcp.encryption.initiate = 0;
 
 			conn->llcp_type = LLCP_ENCRYPTION;
-			conn->llcp_req++;
+			atomic_inc(&conn->llcp_req);
 		} else {
 			if (conn->llcp_terminate.ack !=
 			    conn->llcp_terminate.req) {
@@ -470,7 +470,7 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 		conn->llcp.encryption.initiate = 0;
 
 		conn->llcp_type = LLCP_ENCRYPTION;
-		conn->llcp_req++;
+		atomic_inc(&conn->llcp_req);
 	}
 
 	return 0;

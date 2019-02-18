@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <atomic.h>
+
 struct ll_conn {
 	struct evt_hdr  evt;
 	struct ull_hdr  ull;
@@ -37,8 +39,8 @@ struct ll_conn {
 		} master;
 	};
 
-	u8_t llcp_req;
-	u8_t llcp_ack;
+	atomic_val_t llcp_req;
+	atomic_val_t llcp_ack;
 	u8_t llcp_type;
 
 	union {

@@ -178,7 +178,9 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 	conn->common.fex_valid = 0;
 
-	conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0;
+	atomic_set(&conn->llcp_req, 0);
+	atomic_set(&conn->llcp_ack, 0);
+	conn->llcp_type = 0;
 	conn->llcp_rx = NULL;
 	conn->llcp_features = LL_FEAT;
 	conn->llcp_version.tx = conn->llcp_version.rx = 0;
@@ -302,7 +304,7 @@ u8_t ll_chm_update(u8_t *chm)
 		conn->llcp.chan_map.initiate = 1;
 
 		conn->llcp_type = LLCP_CHAN_MAP;
-		conn->llcp_req++;
+		atomic_inc(&conn->llcp_req);
 	}
 
 	return 0;
@@ -377,7 +379,7 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 		conn->llcp.encryption.initiate = 1;
 
 		conn->llcp_type = LLCP_ENCRYPTION;
-		conn->llcp_req++;
+		atomic_inc(&conn->llcp_req);
 
 		return 0;
 	}

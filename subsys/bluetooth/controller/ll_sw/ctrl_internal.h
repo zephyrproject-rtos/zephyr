@@ -5,6 +5,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <atomic.h>
+
 enum llcp {
 	LLCP_NONE,
 	LLCP_CONN_UPD,
@@ -128,8 +130,8 @@ struct connection {
 		} slave;
 	};
 
-	u8_t  llcp_req;
-	u8_t  llcp_ack;
+	atomic_var_t  llcp_req;
+	atomic_var_t  llcp_ack;
 	enum  llcp llcp_type;
 	union {
 		struct {

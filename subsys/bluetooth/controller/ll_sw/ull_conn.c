@@ -182,17 +182,17 @@ struct ll_conn *ll_connected_get(u16_t handle)
 u8_t ull_conn_allowed_check(void *conn)
 {
 	struct ll_conn * const conn_hdr = conn;
-	if (conn_hdr->llcp_req != conn_hdr->llcp_ack) {
-		return BT_HCI_ERR_CMD_DISALLOWED;
+
+	int ret = atomic_cas((atomic_t *)&conn_hdr->llcp_req,
+			     conn_hdr->llcp_ack,
+			     (conn_hdr->llcp_req + 1));
+
+	/* If ret == 1, llcp_req has been updated */
+	if (ret == 1) {
+		return 0;
 	}
 
-	conn_hdr->llcp_req++;
-	if (((conn_hdr->llcp_req - conn_hdr->llcp_ack) & 0x03) != 1) {
-		conn_hdr->llcp_req--;
-		return BT_HCI_ERR_CMD_DISALLOWED;
-	}
-
-	return 0;
+	return BT_HCI_ERR_CMD_DISALLOWED;
 }
 
 void *ll_tx_mem_acquire(void)
@@ -274,7 +274,7 @@ u8_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
 		conn->llcp.conn_upd.is_internal = 0;
 
 		conn->llcp_type = LLCP_CONN_UPD;
-		conn->llcp_req++;
+		atomic_inc(&conn->llcp_req);
 	} else {
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		cmd--;
@@ -368,7 +368,7 @@ u8_t ll_feature_req_send(u16_t handle)
 	}
 
 	conn->llcp_type = LLCP_FEATURE_EXCHANGE;
-	conn->llcp_req++;
+	atomic_inc(&conn->llcp_req);
 
 	return 0;
 }
@@ -389,7 +389,7 @@ u8_t ll_version_ind_send(u16_t handle)
 	}
 
 	conn->llcp_type = LLCP_VERSION_EXCHANGE;
-	conn->llcp_req++;
+	atomic_inc(&conn->llcp_req);
 
 	return 0;
 }
@@ -1020,7 +1020,8 @@ void ull_conn_done(struct node_rx_event_done *done)
 			if ((conn->procedure_expire == 0) &&
 			    (conn->llcp_req == conn->llcp_ack)) {
 				conn->llcp_type = LLCP_PING;
-				conn->llcp_ack -= 2;
+				atomic_dec(&conn->llcp_ack);
+				atomic_dec(&conn->llcp_ack);
 			}
 		}
 	}
@@ -1565,7 +1566,8 @@ static inline int event_conn_upd_prep(struct ll_conn *conn,
 		u16_t latency;
 
 		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		atomic_cas(&conn->llcp_ack, conn->llcp_ack, conn->llcp_req);
+
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		if ((conn->llcp_conn_param.req != conn->llcp_conn_param.ack) &&
@@ -1803,7 +1805,7 @@ static inline void event_ch_map_prep(struct ll_conn *conn,
 		struct lll_conn *lll = &conn->lll;
 
 		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		atomic_cas(&conn->llcp_ack, conn->llcp_ack, conn->llcp_req);
 
 		/* copy to active channel map */
 		memcpy(&lll->data_chan_map[0],
@@ -1984,7 +1986,8 @@ static inline void event_enc_prep(struct ll_conn *conn)
 	ctrl_tx_enqueue(conn, tx);
 
 	/* procedure request acked */
-	conn->llcp_ack = conn->llcp_req;
+	atomic_cas(&conn->llcp_ack, conn->llcp_ack, conn->llcp_req);
+
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
@@ -1997,7 +2000,7 @@ static inline void event_fex_prep(struct ll_conn *conn)
 		struct pdu_data *pdu = (void *)tx->pdu;
 
 		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		atomic_cas(&conn->llcp_ack, conn->llcp_ack, conn->llcp_req);
 
 		/* use initial feature bitmap */
 		conn->llcp_features = LL_FEAT;
@@ -2039,7 +2042,9 @@ static inline void event_vex_prep(struct ll_conn *conn)
 			struct pdu_data *pdu = (void *)tx->pdu;
 
 			/* procedure request acked */
-			conn->llcp_ack = conn->llcp_req;
+			atomic_cas(&conn->llcp_ack,
+				   conn->llcp_ack,
+				   conn->llcp_req);
 
 			/* set version ind tx-ed flag */
 			conn->llcp_version.tx = 1;
@@ -2076,7 +2081,7 @@ static inline void event_vex_prep(struct ll_conn *conn)
 		};
 
 		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		atomic_cas(&conn->llcp_ack, conn->llcp_ack, conn->llcp_req);
 
 		rx->hdr.handle = conn->lll.handle;
 		rx->hdr.type = NODE_RX_TYPE_DC_PDU;
@@ -2250,7 +2255,8 @@ static inline void event_conn_param_rsp(struct ll_conn *conn)
 		conn->llcp.conn_upd.state = LLCP_CUI_STATE_SELECT;
 		conn->llcp.conn_upd.is_internal = !conn->llcp_conn_param.cmd;
 		conn->llcp_type = LLCP_CONN_UPD;
-		conn->llcp_ack -= 2;
+		atomic_dec(&conn->llcp_ack);
+		atomic_dec(&conn->llcp_ack);
 
 		return;
 	}
@@ -2382,7 +2388,7 @@ static inline void event_ping_prep(struct ll_conn *conn)
 		struct pdu_data *pdu_ctrl_tx = (void *)tx->pdu;
 
 		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		atomic_cas(&conn->llcp_ack, conn->llcp_ack, conn->llcp_req);
 
 		/* place the ping req packet as next in tx queue */
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
@@ -2716,7 +2722,8 @@ static inline void event_phy_req_prep(struct ll_conn *conn)
 		conn->llcp.phy_upd_ind.cmd = conn->llcp_phy.cmd;
 
 		conn->llcp_type = LLCP_PHY_UPD;
-		conn->llcp_ack -= 2;
+		atomic_dec(&conn->llcp_ack);
+		atomic_dec(&conn->llcp_ack);
 	}
 	break;
 
@@ -2761,7 +2768,9 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		if (!((conn->llcp.phy_upd_ind.tx |
 		       conn->llcp.phy_upd_ind.rx) & 0x07)) {
 			/* Procedure complete */
-			conn->llcp_ack = conn->llcp_req;
+			atomic_cas(&conn->llcp_ack,
+				   conn->llcp_ack,
+				   conn->llcp_req);
 
 			/* 0 instant */
 			conn->llcp.phy_upd_ind.instant = 0;
@@ -2819,7 +2828,7 @@ static inline void event_phy_upd_ind_prep(struct ll_conn *conn,
 		u8_t old_tx, old_rx;
 
 		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		atomic_cas(&conn->llcp_ack, conn->llcp_ack, conn->llcp_req);
 
 		/* apply new phy */
 		old_tx = lll->phy_tx;
@@ -2905,7 +2914,8 @@ static u8_t conn_upd_recv(struct ll_conn *conn, memq_link_t *link,
 	*rx = NULL;
 
 	conn->llcp_type = LLCP_CONN_UPD;
-	conn->llcp_ack -= 2;
+	atomic_dec(&conn->llcp_ack);
+	atomic_dec(&conn->llcp_ack);
 
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	if ((conn->llcp_conn_param.req != conn->llcp_conn_param.ack) &&
@@ -2943,7 +2953,8 @@ static u8_t chan_map_upd_recv(struct ll_conn *conn, struct node_rx_pdu *rx,
 	conn->llcp.chan_map.initiate = 0;
 
 	conn->llcp_type = LLCP_CHAN_MAP;
-	conn->llcp_ack -= 2;
+	atomic_dec(&conn->llcp_ack);
+	atomic_dec(&conn->llcp_ack);
 
 chan_map_upd_recv_exit:
 	/* Mark for buffer for release */
@@ -3389,7 +3400,8 @@ static inline void reject_ind_conn_upd_recv(struct ll_conn *conn,
 		conn->llcp.conn_upd.state = LLCP_CUI_STATE_USE;
 		conn->llcp.conn_upd.is_internal = !conn->llcp_conn_param.cmd;
 		conn->llcp_type = LLCP_CONN_UPD;
-		conn->llcp_ack -= 2;
+		atomic_dec(&conn->llcp_ack);
+		atomic_dec(&conn->llcp_ack);
 
 		goto reject_ind_conn_upd_recv_exit;
 	}
@@ -3703,7 +3715,8 @@ static inline u8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 	*rx = NULL;
 
 	conn->llcp_type = LLCP_PHY_UPD;
-	conn->llcp_ack -= 2;
+	atomic_dec(&conn->llcp_ack);
+	atomic_dec(&conn->llcp_ack);
 
 	if (conn->llcp.phy_upd_ind.tx) {
 		conn->lll.phy_tx_time = conn->llcp.phy_upd_ind.tx;
@@ -4035,7 +4048,8 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 		conn->llcp.encryption.initiate = 0;
 		if (conn->llcp_req == conn->llcp_ack) {
 			conn->llcp_type = LLCP_ENCRYPTION;
-			conn->llcp_ack -= 2;
+			atomic_dec(&conn->llcp_ack);
+			atomic_dec(&conn->llcp_ack);
 		}
 
 		/* Mark for buffer for release */
@@ -4058,7 +4072,8 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			conn->llcp.encryption.initiate = 0;
 			if (conn->llcp_req == conn->llcp_ack) {
 				conn->llcp_type = LLCP_ENCRYPTION;
-				conn->llcp_ack -= 2;
+				atomic_dec(&conn->llcp_ack);
+				atomic_dec(&conn->llcp_ack);
 			}
 #else /* CONFIG_BT_CTLR_FAST_ENC */
 			nack = start_enc_rsp_send(conn, NULL);
@@ -4518,7 +4533,8 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				conn->llcp.conn_upd.is_internal =
 					!conn->llcp_conn_param.cmd;
 				conn->llcp_type = LLCP_CONN_UPD;
-				conn->llcp_ack -= 2;
+				atomic_dec(&conn->llcp_ack);
+				atomic_dec(&conn->llcp_ack);
 
 				/* Mark for buffer for release */
 				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
@@ -4789,7 +4805,8 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 			conn->llcp.chan_map.initiate = 1;
 
 			conn->llcp_type = LLCP_CHAN_MAP;
-			conn->llcp_ack -= 2;
+			atomic_dec(&conn->llcp_ack);
+			atomic_dec(&conn->llcp_ack);
 		}
 
 		/* Mark for buffer for release */

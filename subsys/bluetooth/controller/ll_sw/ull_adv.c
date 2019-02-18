@@ -605,7 +605,9 @@ u8_t ll_adv_enable(u8_t enable)
 
 		conn->common.fex_valid = 0;
 
-		conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0;
+		atomic_set(&conn->llcp_req, 0);
+		atomic_set(&conn->llcp_ack, 0);
+		conn->llcp_type = 0;
 		conn->llcp_rx = NULL;
 		conn->llcp_features = LL_FEAT;
 		conn->llcp_version.tx = conn->llcp_version.rx = 0;
