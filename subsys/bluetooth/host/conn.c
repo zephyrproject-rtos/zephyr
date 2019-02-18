@@ -33,6 +33,7 @@
 #include "keys.h"
 #include "smp.h"
 #include "att_internal.h"
+#include "gatt_internal.h"
 
 NET_BUF_POOL_DEFINE(acl_tx_pool, CONFIG_BT_L2CAP_TX_BUF_COUNT,
 		    BT_L2CAP_BUF_SIZE(CONFIG_BT_L2CAP_TX_MTU),
@@ -136,6 +137,8 @@ static void notify_connected(struct bt_conn *conn)
 			cb->connected(conn, conn->err);
 		}
 	}
+
+	bt_gatt_connected(conn);
 }
 
 static void notify_disconnected(struct bt_conn *conn)
