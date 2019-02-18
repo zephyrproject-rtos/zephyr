@@ -1,12 +1,37 @@
 common:
   harness: net
-  tags: net
+  tags: net socket
   depends_on: netif
+  min_flash: 140
 sample:
   description: Test network sockets using a client/server
     sample
   name: Socket Echo Client
 tests:
   test:
-    tags: net socket
-    min_flash: 140
+    platform_whitelist: qemu_x86 frdm_k64f sam_e70_xplained
+      qemu_cortex_m3 frdm_kw41z
+  test_802154:
+    extra_args: OVERLAY_CONFIG="overlay-qemu_802154.conf"
+    platform_whitelist: qemu_x86
+  test_bt:
+    extra_args: OVERLAY_CONFIG="overlay-bt.conf"
+    platform_whitelist: qemu_x86
+    tags: bluetooth
+  test_nrf_802154:
+    extra_args: OVERLAY_CONFIG="overlay-802154.conf"
+    platform_whitelist: nrf52840_pca10056
+  test_nrf_openthread:
+    extra_args: OVERLAY_CONFIG="overlay-ot.conf"
+    slow: true
+    tags: net openthread
+    platform_whitelist: nrf52840_pca10056
+  test_kw41z_openthread:
+    extra_args: OVERLAY_CONFIG="overlay-ot.conf"
+    slow: true
+    tags: net openthread
+    platform_whitelist: frdm_kw41z
+  test_enc28j60:
+    extra_args: OVERLAY_CONFIG="overlay-enc28j60.conf"
+    tags: net enc28j60
+    platform_whitelist: arduino_101
