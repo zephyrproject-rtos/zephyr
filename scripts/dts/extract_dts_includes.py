@@ -57,8 +57,9 @@ def extract_string_prop(node_address, key, label):
     defs[node_address][label] = '"' + reduced[node_address]['props'][key] + '"'
 
 
-def extract_property(node_compat, node_address, prop, prop_val):
+def extract_property(node_address, prop):
     node = reduced[node_address]
+    node_compat = get_compat(node_address)
     yaml_node_compat = get_binding(node_address)
     def_label = get_node_label(node_address)
 
@@ -122,7 +123,9 @@ def extract_property(node_compat, node_address, prop, prop_val):
         extract_cells(node_address, prop, prop_values,
                       names, 0, def_label, generic)
     else:
-        default.extract(node_address, prop, prop_val['type'], def_label)
+        default.extract(node_address, prop,
+                        yaml_node_compat['properties'][prop]['type'],
+                        def_label)
 
 
 def generate_node_defines(node_path):
@@ -155,12 +158,12 @@ def generate_node_defines(node_path):
 
             if re.fullmatch(k, c):
                 match = True
-                extract_property(node_compat, node_path, c, v)
+                extract_property(node_path, c)
 
         # Handle the case that we have a boolean property, but its not
         # in the dts
         if not match and v['type'] == 'boolean':
-            extract_property(node_compat, node_path, k, v)
+            extract_property(node_path, k)
 
 
 def prop_names(node, prop_name):
