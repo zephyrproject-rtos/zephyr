@@ -254,7 +254,7 @@ static void zsock_received_cb(struct net_context *ctx,
 			NET_DBG("Marked socket %p as peer-closed", ctx);
 		} else {
 			net_pkt_set_eof(last_pkt, true);
-			NET_DBG("Set EOF flag on pkt %p", ctx);
+			NET_DBG("Set EOF flag on pkt %p", last_pkt);
 		}
 		return;
 	}
