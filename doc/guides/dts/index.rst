@@ -16,20 +16,22 @@ PowerPC architecture.  However, it is now in use for ARM and other
 architectures.
 
 The device tree is a data structure for dynamically describing hardware
-using a Device Tree Source (DTS) data structure language, and compiled
-into a compact Device Tree Blob (DTB) using a Device Tree Compiler (DTC).
-Rather than hard coding every detail of a board's hardware into the
-operating system, the hardware-describing DTB is passed to the operating
+using a Device Tree Source (DTS) data structure language, instead of
+hard coding every detail of a board's hardware into the operating system.
+
+In Linux, DTS is compiled into a compact Device Tree Blob (DTB) using a Device
+Tree Compiler (DTC), then the hardware-describing DTB is passed to the operating
 system at boot time. This allows the same compiled Linux kernel to support
 different hardware configurations within an architecture family (e.g., ARM,
 x86, PowerPC) and moves a significant part of the hardware description out of
 the kernel binary itself.
 
-Traditional usage of device tree involves storing of the Device Tree Blob.
-The DTB is then used during runtime for configuration of device drivers.  In
-Zephyr, the DTS information will be used only during compile time.
-Information about the system is extracted from the compiled DTS and used to
-create the application image.
+For larger systems, the flexibility this offers offsets the extra runtime memory
+overhead incurred.  But the primary targets for Zephyr
+applications are small micro-controller systems with limited memory
+resources.  So instead of requiring the additional runtime memory
+to store the DTB blob and the code to parse it, the DTS information
+is used at compile time.
 
 Device tree uses a specific format to describe the device nodes in a system.
 This format is described in the `Device Tree Specification`_.
@@ -55,29 +57,29 @@ YAML packages.  Refer to the installation guide for your specific host OS:
 Zephyr and Device Tree
 **********************
 
-In Zephyr, device tree is used to not only describe hardware, but also to
-describe Zephyr-specific configuration information.  The Zephyr-specific
-information is intended to augment the device tree descriptions.  The main
-reason for this is to leverage existing device tree files that a SoC vendor may
-already have defined for a given platform.
-
 Device Tree provides a unified description of a hardware system used in an
 application. It is used in Zephyr to describe hardware and provide a boot-time
 configuration of this hardware.
+
+In Zephyr, the device tree is also used to describe Zephyr-specific
+configuration information.  This Zephyr-specific information augments the device
+tree descriptions and sits on top of it, rather than diverging from it.  The
+main reason for this is to leverage existing device tree files that a SoC vendor
+may already have defined for a given platform.
 
 The device tree files are compiled using the device tree compiler.  The compiler
 runs the .dts file through the C preprocessor to resolve any macro or #defines
 utilized in the file.  The output of the compile is another dts formatted file.
 
 After compilation, a python script extracts information from the compiled device
-tree file using a set of rules specified in YAML files.  The extracted
+tree file using a set of rules specified in YAML binding files.  The extracted
 information is placed in a header file that is used by the rest of the code as
 the project is compiled.
 
-A temporary fixup file is required for device tree support on most devices.
-This fixup file by default resides in the board directory and is named
-dts_fixup.h.  This fixup file maps the generated include information to the
-current driver/source usage.
+Temporary fixup files are required for device tree support on most devices.
+These fixup files by default reside in the board and soc directories and are
+named ``dts_fixup.h``.  These fixup files map the generated include information to
+the current driver/source usage.
 
 .. _dt_vs_kconfig:
 
@@ -169,8 +171,8 @@ of things will vary based on the board layout and application use.
 Currently supported boards
 **************************
 
-Device tree is currently supported on all ARM targets.  Support for all other
-architectures is to be completed by release 1.11.
+Device tree is currently supported on all embedded targets except posix
+(boards/posix) and qemu_x86_64 (boards/x86_64).
 
 Adding support for a board
 **************************
@@ -214,7 +216,7 @@ The following is a more precise list of required files:
     Example: dts/arm for ARM.
   * Add target specific device tree files for base SoC.  These should be
     .dtsi files to be included in the board-specific device tree files.
-  * Add target specific YAML files in the dts/bindings/ directory.
+  * Add target specific YAML binding files in the dts/bindings/ directory.
     Create the yaml directory if not present.
 
 * SoC family support
@@ -223,7 +225,7 @@ The following is a more precise list of required files:
     for a set of devices.  The file should contain all the relevant
     nodes and base configuration that would be applicable to all boards
     utilizing that SoC family.
-  * Add SoC family YAML files that describe the nodes present in the .dtsi file.
+  * Add SoC family YAML binding files that describe the nodes present in the .dtsi file.
 
 * Board specific support
 
@@ -234,7 +236,7 @@ The following is a more precise list of required files:
     * Flash device node might specify flash partitions. For more details see
       :ref:`flash_partitions`
 
-  * Add board-specific YAML files, if required.  This would occur if the
+  * Add board-specific YAML binding files, if required.  This would occur if the
     board has additional hardware that is not covered by the SoC family
     .dtsi/.yaml files.
 
@@ -300,23 +302,26 @@ The full set of Zephyr-specific ``chosen`` nodes follows:
    * - ``zephyr,ccm``
      - ``DT_CCM``
    * - ``zephyr,console``
-     - `DT_UART_CONSOLE_ON_DEV_NAME`
+     - ``DT_UART_CONSOLE_ON_DEV_NAME``
    * - ``zephyr,shell-uart``
-     - `DT_UART_SHELL_ON_DEV_NAME`
+     - ``DT_UART_SHELL_ON_DEV_NAME``
    * - ``zephyr,bt-uart``
-     - `DT_BT_UART_ON_DEV_NAME`
+     - ``DT_BT_UART_ON_DEV_NAME``
    * - ``zephyr,uart-pipe``
-     - `DT_UART_PIPE_ON_DEV_NAME`
+     - ``DT_UART_PIPE_ON_DEV_NAME``
    * - ``zephyr,bt-mon-uart``
-     - `DT_BT_MONITOR_ON_DEV_NAME`
+     - ``DT_BT_MONITOR_ON_DEV_NAME``
    * - ``zephyr,uart-mcumgr``
-     - `DT_UART_MCUMGR_ON_DEV_NAME`
+     - ``DT_UART_MCUMGR_ON_DEV_NAME``
 
 As chosen properties tend to be related to software configuration, it can be
 useful for the build system to know if a chosen property was defined. We
 generate a define for each chosen property, for example:
 
 ``zephyr,flash`` will generate: ``#define DT_CHOSEN_ZEPHYR_FLASH 1``
+
+As a consequence ``zephyr,flash`` related code could safely be implemented
+under ``#ifdef DT_CHOSEN_ZEPHYR_FLASH`` instruction.
 
 Adding support for device tree in drivers
 *****************************************
@@ -331,7 +336,8 @@ Source Tree Hierarchy
 
 The device tree files are located in a couple of different directories.  The
 directory split is done based on architecture, and there is also a common
-directory where architecture agnostic device tree and yaml files are located.
+directory where architecture agnostic device tree and YAML binding files are
+located.
 
 Assuming the current working directory is the ZEPHYR_BASE, the directory
 hierarchy looks like the following::
@@ -341,10 +347,10 @@ hierarchy looks like the following::
   dts/bindings/
   boards/<ARCH>/<BOARD>/
 
-The common directories contain a skeleton.dtsi include file that defines the
-address and size cells.  The yaml subdirectory contains common yaml files for
-Zephyr-specific nodes/properties and generic device properties common across
-architectures.
+The common directory contains a ``skeleton.dtsi`` which provides device tree root
+node definition.  The bindings subdirectory contains YAML binding files used
+to instruct how the python DTS parsing script should extract nodes information
+in a format that will be usable by the system.
 
 Example: Subset of DTS/YAML files for NXP FRDM K64F (Subject to Change)::
 
@@ -356,25 +362,26 @@ Example: Subset of DTS/YAML files for NXP FRDM K64F (Subject to Change)::
   dts/bindings/pinctrl/nxp,kinetis-pinmux.yaml
   dts/bindings/serial/nxp,kinetis-uart.yaml
 
-YAML definitions for device nodes
-*********************************
+YAML bindings for device nodes
+******************************
 
-Device tree can describe hardware and configuration, but it doesn't tell the
+Device tree describes hardware and configuration, but it doesn't tell the
 system which pieces of information are useful, or how to generate configuration
-data from the device tree nodes.  For this, we rely on YAML files to describe
-the contents or definition of a device tree node.
+data from the device tree nodes.  For this, we rely on YAML binding files to
+describe the contents or definition of a device tree node and instruct how the
+extracted information should be formatted.
 
-A YAML description must be provided for every device node that is to be a source
-of information for the system.  This YAML description can be used for more than
-one purpose.  It can be used in conjunction with the device tree to generate
-include information.  It can also be used to validate the device tree files
-themselves.  A device tree file can successfully compile and still not contain
-the necessary pieces required to build the rest of the software.  YAML provides
-a means to detect that issue.
+A YAML description (called "YAML binding") must be provided for every device node
+that is a source of information for the system.  A YAML binding file
+is associated to each node `compatible` property.  Information within the YAML
+file will instruct the python DTS parsing script (located in ``scripts/dts``) how
+each property of the node is expected to be generated, either the type of the
+value or the format of its name.  Node properties are generated as C-style
+``#define``'s in include files
+made available to all Zephyr components.
 
-YAML files reside in a subdirectory inside the common and architecture-specific
-device tree directories.  A YAML template file is provided to show the required
-format.  This file is located at::
+A YAML template file is provided to show the required format.  This file is
+located at::
 
   dts/bindings/device_node.yaml.template
 
@@ -383,5 +390,41 @@ information extraction phase and are matched to device tree nodes via the
 compatible property.
 
 
+Include files generation
+************************
+
+At build time, after a board's ``.dts`` file has been processed by the DTC
+(Device Tree Compiler), a corresponding ``.dts_compiled`` file is generated
+under the ``zephyr`` directory.
+This ``.dts_compiled`` file is processed by the python DTS parsing script
+and generates an include file named
+``include/generated/generated_dts_board_unfixed.h``
+that holds all the information extracted from the DTS file with
+the format specified by the YAML bindings.  For example:
+
+.. code-block:: c
+
+   /* gpio_keys */
+   #define DT_GPIO_KEYS_0		1
+
+   /* button_0 */
+   #define DT_GPIO_KEYS_BUTTON_0_GPIO_CONTROLLER	"GPIO_2"
+   #define DT_GPIO_KEYS_BUTTON_0_GPIO_FLAGS	0
+   #define DT_GPIO_KEYS_BUTTON_0_GPIO_PIN		6
+   #define DT_GPIO_KEYS_BUTTON_0_LABEL		"User SW2"
+   #define DT_GPIO_KEYS_SW1_GPIO_CONTROLLER	DT_GPIO_KEYS_BUTTON_0_GPIO_CONTROLLER
+   #define DT_GPIO_KEYS_SW1_GPIO_FLAGS		DT_GPIO_KEYS_BUTTON_0_GPIO_FLAGS
+   #define DT_GPIO_KEYS_SW1_GPIO_PIN		DT_GPIO_KEYS_BUTTON_0_GPIO_PIN
+   #define DT_GPIO_KEYS_SW1_LABEL			DT_GPIO_KEYS_BUTTON_0_LABEL
+   #define SW1_GPIO_CONTROLLER			DT_GPIO_KEYS_BUTTON_0_GPIO_CONTROLLER
+   #define SW1_GPIO_FLAGS				DT_GPIO_KEYS_BUTTON_0_GPIO_FLAGS
+   #define SW1_GPIO_PIN				DT_GPIO_KEYS_BUTTON_0_GPIO_PIN
+   #define SW1_LABEL				DT_GPIO_KEYS_BUTTON_0_LABEL
+
+Additionally, a file named ``generated_dts_board_fixups.h`` is
+generated in the same directory concatenating all board-related fixup files.
+
+The include file ``include/generated_dts_board.h`` includes both these generated
+files, giving Zephyr C source files access to the board's device tree information.
 
 .. include:: flash_partitions.inc
