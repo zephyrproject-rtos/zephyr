@@ -235,7 +235,7 @@ static inline void eem_status_interface(const u8_t *iface)
 	netusb_enable(&eem_function);
 }
 
-static void eem_status_cb(enum usb_dc_status_code status, const u8_t *param)
+static void eem_do_cb(enum usb_dc_status_code status, const u8_t *param)
 {
 	/* Check the USB status and do needed action if required */
 	switch (status) {
@@ -268,6 +268,21 @@ static void eem_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	}
 }
 
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+static void eem_status_composite_cb(struct usb_cfg_data *cfg,
+				    enum usb_dc_status_code status,
+				    const u8_t *param)
+{
+	ARG_UNUSED(cfg);
+	eem_do_cb(status, param);
+}
+#else
+static void eem_status_cb(enum usb_dc_status_code status, const u8_t *param)
+{
+	eem_do_cb(status, param);
+}
+#endif
+
 static void eem_interface_config(struct usb_desc_header *head,
 				 u8_t bInterfaceNumber)
 {
@@ -280,7 +295,11 @@ USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
 	.usb_device_description = NULL,
 	.interface_config = eem_interface_config,
 	.interface_descriptor = &cdc_eem_cfg.if0,
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+	.cb_usb_status_composite = eem_status_composite_cb,
+#else
 	.cb_usb_status = eem_status_cb,
+#endif
 	.interface = {
 		.class_handler = NULL,
 		.custom_handler = NULL,
