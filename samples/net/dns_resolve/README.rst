@@ -6,25 +6,15 @@ DNS Resolve Application
 Overview
 ********
 
-The DNS resolver sample application implements a basic DNS resolver according
-to RFC 1035. Supported DNS answers are IPv4/IPv6 addresses and CNAME.
+This application will setup IP address for the device, and then
+try to resolve various hostnames according to how the user has
+configured the system.
 
-If a CNAME is received, the DNS resolver will create another DNS query.
-The number of additional queries is controlled by the
-DNS_RESOLVER_ADDITIONAL_QUERIES Kconfig variable.
-
-The multicast DNS (mDNS) client resolver support can be enabled by setting
-:option:`CONFIG_MDNS_RESOLVER` Kconfig option.
-See https://tools.ietf.org/html/rfc6762 for more details about mDNS.
-
-The link-local multicast name resolution (LLMNR) client resolver support can be
-enabled by setting the :option:`CONFIG_LLMNR_RESOLVER` Kconfig option.
-See https://tools.ietf.org/html/rfc4795 for more details about LLMNR.
-
-For more information about DNS configuration variables, see:
-:file:`subsys/net/lib/dns/Kconfig`. The DNS resolver API can be found at
-:file:`include/net/dns_resolve.h`. The sample code can be found at:
-:file:`samples/net/dns_resolve`.
+- If IPv4 is enabled, then A record for ``www.zephyrproject.org`` is
+  resolved.
+- If IPv6 is enabled, then AAAA record for ``www.zephyrproject.org`` is
+  resolved.
+- If mDNS is enabled, then ``zephyr.local`` name is resolved.
 
 Requirements
 ************
