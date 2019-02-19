@@ -3290,10 +3290,7 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 	int arg = 0;
 	int ret;
 	struct net_shell_user_data user_data;
-	struct net_pkt *pkt;
-#endif
 
-#if defined(CONFIG_NET_TCP)
 	/* tcp send <data> */
 	if (!tcp_ctx || !net_context_is_used(tcp_ctx)) {
 		PR_WARNING("Not connected\n");
@@ -3305,27 +3302,13 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 		return -ENOEXEC;
 	}
 
-	pkt = net_pkt_get_tx(tcp_ctx, TCP_TIMEOUT);
-	if (!pkt) {
-		PR_WARNING("Out of pkts, msg cannot be sent.\n");
-		return -ENOEXEC;
-	}
-
-	ret = net_pkt_append_all(pkt, strlen(argv[arg]), (u8_t *)argv[arg],
-				 TCP_TIMEOUT);
-	if (!ret) {
-		PR_WARNING("Cannot build msg (out of pkts)\n");
-		net_pkt_unref(pkt);
-		return -ENOEXEC;
-	}
-
 	user_data.shell = shell;
 
-	ret = net_context_send(pkt, tcp_sent_cb, TCP_TIMEOUT, NULL,
-			       &user_data);
+	ret = net_context_send_new(tcp_ctx, (u8_t *)argv[arg],
+				   strlen(argv[arg]), tcp_sent_cb,
+				   TCP_TIMEOUT, NULL, &user_data);
 	if (ret < 0) {
 		PR_WARNING("Cannot send msg (%d)\n", ret);
-		net_pkt_unref(pkt);
 		return -ENOEXEC;
 	}
 
