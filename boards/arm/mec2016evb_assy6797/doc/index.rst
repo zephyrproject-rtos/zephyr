@@ -74,7 +74,7 @@ Microchip to provide the schematic for this board.
 System Clock
 ============
 
-The MEC1701 MCU is configured to use the 48Mhz internal oscilator with the
+The MEC1701 MCU is configured to use the 48Mhz internal oscillator with the
 on-chip PLL to generate a resulting EC clock rate of 12 MHz. See Processor clock
 control register (chapter 4 in user manual)
 
@@ -87,7 +87,7 @@ Jumper settings
 ***************
 
 Please follow the jumper settings below to properly demo this
-board. Advanced users may deviate from this recomendation.
+board. Advanced users may deviate from this recommendation.
 
 Jump setting for MEC2016 EVB Assy 6797 Rev A1p0
 ===============================================
@@ -151,7 +151,7 @@ Programming and Debugging
 *************************
 
 This board comes with a Cortex ETM port which facilitates tracing and debugging
-using a single physical conection.  In attidion, it comes with sockets for
+using a single physical connection.  In addition, it comes with sockets for
 JTAG only sessions.
 
 Flashing

@@ -124,7 +124,7 @@ column and row positions, and the text to be displayed in double quotation
 marks when it contains spaces. If the text hits the edge of the display, the
 remaining characters will be displayed in the next line. The text will scroll
 until it hits the display boundary, last column for horizontal and last row
-for vertical direction. The text passed with the srcoll command will be moved
+for vertical direction. The text passed with the scroll command will be moved
 vertically or horizontally on the display.
 
 

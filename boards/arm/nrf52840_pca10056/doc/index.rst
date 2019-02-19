@@ -209,7 +209,7 @@ To select the pin numbers for tx-pin and rx-pin:
 Open the `nRF52840 Product Specification`_, chapter 7 'Hardware and Layout'.
 In the table 7.1.1 'aQFN73 ball assignments' select the pins marked
 'General purpose I/O'.  Note that pins marked as 'low frequency I/O only' can only be used
-in under-10KHz applications. They are not sutiable for 115200 speed of UART.
+in under-10KHz applications. They are not suitable for 115200 speed of UART.
 
 Translate 'Pin' into number for Device tree by using the following formula::
 
