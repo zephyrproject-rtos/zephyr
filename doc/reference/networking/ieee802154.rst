@@ -5,7 +5,15 @@ IEEE 802.15.4
 
 Overview
 ********
+IEEE 802.15.4 is a technical standard which defines the operation of low-rate
+wireless personal area networks (LR-WPANs). For more detailed overview of this
+standard, see this
+`IEEE 802.15.4 Wikipedia article <https://en.wikipedia.org/wiki/IEEE_802.15.4>`_.
 
+Zephyr supports IEEE 802.15.4 with Thread and 6LoWPAN. The Thread implementation
+is based on `OpenThread <https://openthread.io/>`_.
+The IPv6 header compression in 6LoWPAN is shared with
+the Bluetooth IPSP (IP support profile).
 
 API Reference
 *************
