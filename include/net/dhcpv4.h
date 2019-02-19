@@ -25,6 +25,8 @@ extern "C" {
 #include <misc/slist.h>
 #include <zephyr/types.h>
 
+/** @cond INTERNAL_HIDDEN */
+
 /** Current state of DHCPv4 client address negotiation.
  *
  * Additions removals and reorders in this definition must be
@@ -39,6 +41,8 @@ enum net_dhcpv4_state {
 	NET_DHCPV4_REBINDING,
 	NET_DHCPV4_BOUND,
 } __packed;
+
+/** @endcond */
 
 /**
  *  @brief Start DHCPv4 client on an iface
@@ -62,12 +66,16 @@ void net_dhcpv4_start(struct net_if *iface);
  */
 void net_dhcpv4_stop(struct net_if *iface);
 
+/** @cond INTERNAL_HIDDEN */
+
 /**
  *  @brief DHCPv4 state name
  *
  *  @internal
  */
 const char *net_dhcpv4_state_name(enum net_dhcpv4_state state);
+
+/** @endcond */
 
 /**
  * @}
