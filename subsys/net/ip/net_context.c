@@ -1551,7 +1551,7 @@ enum net_verdict net_context_packet_received(struct net_conn *conn,
 
 	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
 		net_stats_update_tcp_recv(net_pkt_iface(pkt),
-					  net_pkt_appdatalen(pkt));
+					  net_pkt_remaining_data(pkt));
 	}
 
 	context->recv_cb(context, pkt, ip_hdr, proto_hdr, 0, user_data);

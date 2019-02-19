@@ -818,8 +818,6 @@ int net_tcp_queue_data(struct net_context *context, struct net_pkt *pkt)
 		return -ESHUTDOWN;
 	}
 
-	net_pkt_set_appdatalen(pkt, net_pkt_get_len(pkt));
-
 	/* Set PSH on all packets, our window is so small that there's
 	 * no point in the remote side trying to finesse things and
 	 * coalesce packets.
@@ -1088,7 +1086,8 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 			continue;
 		}
 
-		seq_len = net_pkt_appdatalen(pkt);
+		net_pkt_acknowledge_data(pkt, &tcp_access);
+		seq_len = net_pkt_remaining_data(pkt);
 
 		/* Each of SYN and FIN flags are counted
 		 * as one sequence number.
@@ -2017,14 +2016,7 @@ resend_ack:
 		context->tcp->fin_rcvd = 1;
 	}
 
-	net_pkt_set_appdatalen(pkt, net_pkt_get_len(pkt) -
-			       net_pkt_ip_hdr_len(pkt) -
-			       net_pkt_ipv6_ext_len(pkt) -
-			       NET_TCP_HDR_LEN(tcp_hdr));
-
-	net_pkt_set_appdata(pkt, net_pkt_cursor_get_pos(pkt));
-
-	data_len = net_pkt_appdatalen(pkt);
+	data_len = net_pkt_remaining_data(pkt);
 	if (data_len > net_tcp_get_recv_wnd(context->tcp)) {
 		/* In case we have zero window, we should still accept
 		 * Zero Window Probes from peer, which per convention
@@ -2045,7 +2037,7 @@ resend_ack:
 		goto unlock;
 	}
 
-	/* If the pkt has appdata, notify the recv callback which should
+	/* If the pkt has data, notify the recv callback which should
 	 * release the pkt. Otherwise, release the pkt immediately.
 	 */
 	if (data_len > 0) {
