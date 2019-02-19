@@ -173,8 +173,6 @@ zephyr_compile_options(
 zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:CXX>:-std=${STD_CPP_DIALECT}>
   $<$<COMPILE_LANGUAGE:CXX>:-fcheck-new>
-  $<$<COMPILE_LANGUAGE:CXX>:-ffunction-sections>
-  $<$<COMPILE_LANGUAGE:CXX>:-fdata-sections>
 
   $<$<COMPILE_LANGUAGE:ASM>:-xassembler-with-cpp>
   $<$<COMPILE_LANGUAGE:ASM>:-D_ASMLANGUAGE>
