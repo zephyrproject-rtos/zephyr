@@ -57,6 +57,24 @@ if (NOT CONFIG_X86_64)
   LIST(APPEND TOOLCHAIN_LIBS gcc)
 endif()
 
+set(NOSTDINC "")
+
+# Note that NOSYSDEF_CFLAG may be an empty string, and
+# set_ifndef() does not work with empty string.
+if(NOT DEFINED NOSYSDEF_CFLAG)
+  set(NOSYSDEF_CFLAG -undef)
+endif()
+
+foreach(file_name include)
+  execute_process(
+    COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
+    OUTPUT_VARIABLE _OUTPUT
+    )
+  string(REGEX REPLACE "\n" "" _OUTPUT "${_OUTPUT}")
+
+  list(APPEND NOSTDINC ${_OUTPUT})
+endforeach()
+
 # Load toolchain_cc-family macros
 # Significant overlap with freestanding gcc compiler so reuse it
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_fortify.cmake)

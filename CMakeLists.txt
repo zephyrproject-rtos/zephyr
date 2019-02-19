@@ -187,6 +187,10 @@ if(NOT CONFIG_RTTI)
   )
 endif()
 
+if(NOT CONFIG_NATIVE_APPLICATION)
+  set(NOSTDINC_F -nostdinc)
+endif()
+
 zephyr_compile_options(
   -g # TODO: build configuration enough?
   -Wall
@@ -373,10 +377,6 @@ zephyr_ld_options(
   ${LINKERFLAGPREFIX},--gc-sections
   ${LINKERFLAGPREFIX},--build-id=none
   )
-
-if(NOT CONFIG_NATIVE_APPLICATION)
-  set(NOSTDINC_F -nostdinc)
-endif()
 
 get_property(TOPT GLOBAL PROPERTY TOPT)
 set_ifndef(  TOPT -T)
