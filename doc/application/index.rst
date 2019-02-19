@@ -708,7 +708,7 @@ The way that the script determines if a matching :file:`CMakeLists.txt` and
 - If the project contains a file named :file:`<path>/zephyr/Kconfig` the build
   system will match it
 
-Example of a :file:`<path>/zephyr/module.yml` file refering to
+Example of a :file:`<path>/zephyr/module.yml` file referring to
 :file:`CMakeLists.txt` and :file:`Kconfig` files at the root of the module:
 
 .. code-block:: console
