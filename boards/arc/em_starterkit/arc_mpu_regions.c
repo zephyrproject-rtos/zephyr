@@ -11,6 +11,18 @@
 
 #ifdef CONFIG_USERSPACE
 static struct arc_mpu_region mpu_regions[] = {
+#if CONFIG_ARC_MPU_VER == 3
+	/* Region ICCM */
+	MPU_REGION_ENTRY("IMAGE ROM",
+			 (u32_t) _image_rom_start,
+			 (u32_t) _image_rom_size,
+			 REGION_FLASH_ATTR),
+	MPU_REGION_ENTRY("KERNEL MEMORY",
+			 (u32_t) __kernel_ram_start,
+			 (u32_t) __kernel_ram_size,
+			 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR),
+
+#else
 #if DT_ICCM_SIZE > 0
 	/* Region ICCM */
 	MPU_REGION_ENTRY("ICCM",
@@ -33,6 +45,7 @@ static struct arc_mpu_region mpu_regions[] = {
 			AUX_MPU_RDP_KW | AUX_MPU_RDP_KR |
 			AUX_MPU_RDP_KE | AUX_MPU_RDP_UE),
 #endif
+#endif /* ARC_MPU_VER == 3 */
 	/* Region Peripheral */
 	MPU_REGION_ENTRY("PERIPHERAL",
 			 0xF0000000,
