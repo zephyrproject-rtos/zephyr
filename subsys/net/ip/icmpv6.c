@@ -335,6 +335,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 
 	net_pkt_set_data(pkt, &icmpv6_access);
 
+	net_pkt_cursor_init(pkt);
 	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
 
 	NET_DBG("Sending ICMPv6 Echo Request type %d from %s to %s",
