@@ -1140,7 +1140,7 @@ zephyr_compile_options(
 )
 
 configure_file(
-     $ENV{ZEPHYR_BASE}/include/arch/arc/v2/app_data_alignment.ld
+     $ENV{ZEPHYR_BASE}/include/arch/common/app_data_alignment.ld
      ${PROJECT_BINARY_DIR}/include/generated/app_data_alignment.ld)
 
 configure_file(
