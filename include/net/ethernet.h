@@ -569,8 +569,23 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 }
 #endif
 
-/** @cond INTERNAL_HIDDEN */
-
+/**
+ * @def ETH_NET_DEVICE_INIT
+ *
+ * @brief Create an Ethernet network interface and bind it to network device.
+ *
+ * @param dev_name Network device name.
+ * @param drv_name The name this instance of the driver exposes to
+ * the system.
+ * @param init_fn Address to the init function of the driver.
+ * @param data Pointer to the device's configuration data.
+ * @param cfg_info The address to the structure containing the
+ * configuration information for this instance of the driver.
+ * @param prio The initialization level at which configuration occurs.
+ * @param api Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL.
+ * @param mtu Maximum transfer unit in bytes for this network interface.
+ */
 #if defined(CONFIG_NET_VLAN)
 #define ETH_NET_DEVICE_INIT(dev_name, drv_name, init_fn,		 \
 			    data, cfg_info, prio, api, mtu)		 \
@@ -588,8 +603,6 @@ static inline bool net_eth_get_vlan_status(struct net_if *iface)
 			NET_L2_GET_CTX_TYPE(ETHERNET_L2), mtu)
 
 #endif /* CONFIG_NET_VLAN */
-
-/** @endcond */
 
 /**
  * @brief Inform ethernet L2 driver that ethernet carrier is detected.
