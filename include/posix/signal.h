@@ -10,7 +10,7 @@
 extern "C" {
 #endif
 
-#include "sys/types.h"
+#include "posix_types.h"
 
 #ifndef SIGEV_NONE
 #define SIGEV_NONE 1

@@ -12,7 +12,7 @@ extern "C" {
 #endif
 
 #ifndef CONFIG_ARCH_POSIX
-#include_next <sys/types.h>
+#include <sys/types.h>
 #endif
 
 #include <kernel.h>

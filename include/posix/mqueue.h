@@ -9,7 +9,7 @@
 
 #include <kernel.h>
 #include <posix/time.h>
-#include "sys/types.h"
+#include "posix_types.h"
 #include "sys/stat.h"
 
 #ifdef __cplusplus

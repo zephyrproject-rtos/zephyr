@@ -6,7 +6,7 @@
 #include <kernel.h>
 #include <errno.h>
 #include <posix/time.h>
-#include <posix/sys/types.h>
+#include <posix/posix_types.h>
 
 #define INITIALIZED 1
 #define NOT_INITIALIZED 0

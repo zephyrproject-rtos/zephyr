@@ -10,13 +10,16 @@
 extern "C" {
 #endif
 
-#include "sys/types.h"
+#include "posix_types.h"
 #include "sys/stat.h"
 
 #ifdef CONFIG_POSIX_API
 #include <fs.h>
 
+#ifndef _MODE_T_DECLARED
 typedef unsigned int mode_t;
+#define _MODE_T_DECLARED
+#endif
 
 /* File related operations */
 extern int open(const char *name, int flags);

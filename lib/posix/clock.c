@@ -6,7 +6,6 @@
 #include <kernel.h>
 #include <errno.h>
 #include <posix/time.h>
-#include <posix/sys/types.h>
 
 /*
  * `k_uptime_get` returns a timestamp based on an always increasing
