@@ -170,17 +170,19 @@ struct net_if_router {
 #define __net_if_align __aligned(32)
 
 enum {
-	/* interface is up/ready to receive and transmit */
+	/** Interface is up/ready to receive and transmit */
 	NET_IF_UP,
 
-	/* interface is pointopoint */
+	/** Interface is pointopoint */
 	NET_IF_POINTOPOINT,
 
-	/* interface is in promiscuous mode */
+	/** Interface is in promiscuous mode */
 	NET_IF_PROMISC,
 
+/** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS
+/** @endcond */
 };
 
 #if defined(CONFIG_NET_OFFLOAD)
@@ -334,8 +336,10 @@ struct net_if_ipv4_autoconf {
 };
 #endif /* CONFIG_NET_IPV4_AUTO */
 
+/** @cond INTERNAL_HIDDEN */
 /* We always need to have at least one IP config */
 #define NET_IF_MAX_CONFIGS 1
+/** @endcond */
 
 /**
  * @brief Network interface IP address configuration.
@@ -1850,8 +1854,29 @@ struct net_if_api {
 		}							\
 	}
 
+/** @endcond */
+
 /* Network device initialization macros */
 
+/**
+ * @def NET_DEVICE_INIT
+ *
+ * @brief Create a network interface and bind it to network device.
+ *
+ * @param dev_name Network device name.
+ * @param drv_name The name this instance of the driver exposes to
+ * the system.
+ * @param init_fn Address to the init function of the driver.
+ * @param data Pointer to the device's configuration data.
+ * @param cfg_info The address to the structure containing the
+ * configuration information for this instance of the driver.
+ * @param prio The initialization level at which configuration occurs.
+ * @param api Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL.
+ * @param l2 Network L2 layer for this network interface.
+ * @param l2_ctx_type Type of L2 context data.
+ * @param mtu Maximum transfer unit in bytes for this network interface.
+ */
 #define NET_DEVICE_INIT(dev_name, drv_name, init_fn,		\
 			data, cfg_info, prio, api, l2,		\
 			l2_ctx_type, mtu)			\
@@ -1860,17 +1885,28 @@ struct net_if_api {
 	NET_L2_DATA_INIT(dev_name, 0, l2_ctx_type);		\
 	NET_IF_INIT(dev_name, 0, l2, mtu, NET_IF_MAX_CONFIGS)
 
-#define NET_DEVICE_OFFLOAD_INIT(dev_name, drv_name, init_fn,	\
-				data, cfg_info, prio, api, mtu)	\
-	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,	\
-			    cfg_info, POST_KERNEL, prio, api);	\
-	NET_IF_OFFLOAD_INIT(dev_name, 0, mtu)
-
-
 /**
+ * @def NET_DEVICE_INIT_INSTANCE
+ *
+ * @brief Create multiple network interfaces and bind them to network device.
  * If your network device needs more than one instance of a network interface,
- * Use this macro below and provide a different instance suffix each time
+ * use this macro below and provide a different instance suffix each time
  * (0, 1, 2, ... or a, b, c ... whatever works for you)
+ *
+ * @param dev_name Network device name.
+ * @param drv_name The name this instance of the driver exposes to
+ * the system.
+ * @param instance Instance identifier.
+ * @param init_fn Address to the init function of the driver.
+ * @param data Pointer to the device's configuration data.
+ * @param cfg_info The address to the structure containing the
+ * configuration information for this instance of the driver.
+ * @param prio The initialization level at which configuration occurs.
+ * @param api Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL.
+ * @param l2 Network L2 layer for this network interface.
+ * @param l2_ctx_type Type of L2 context data.
+ * @param mtu Maximum transfer unit in bytes for this network interface.
  */
 #define NET_DEVICE_INIT_INSTANCE(dev_name, drv_name, instance, init_fn,	\
 				 data, cfg_info, prio, api, l2,		\
@@ -1880,7 +1916,30 @@ struct net_if_api {
 	NET_L2_DATA_INIT(dev_name, instance, l2_ctx_type);		\
 	NET_IF_INIT(dev_name, instance, l2, mtu, NET_IF_MAX_CONFIGS)
 
-/** @endcond */
+/**
+ * @def NET_DEVICE_OFFLOAD_INIT
+ *
+ * @brief Create a offloaded network interface and bind it to network device.
+ * The offloaded network interface is implemented by a device vendor HAL or
+ * similar.
+ *
+ * @param dev_name Network device name.
+ * @param drv_name The name this instance of the driver exposes to
+ * the system.
+ * @param init_fn Address to the init function of the driver.
+ * @param data Pointer to the device's configuration data.
+ * @param cfg_info The address to the structure containing the
+ * configuration information for this instance of the driver.
+ * @param prio The initialization level at which configuration occurs.
+ * @param api Provides an initial pointer to the API function struct
+ * used by the driver. Can be NULL.
+ * @param mtu Maximum transfer unit in bytes for this network interface.
+ */
+#define NET_DEVICE_OFFLOAD_INIT(dev_name, drv_name, init_fn,	\
+				data, cfg_info, prio, api, mtu)	\
+	DEVICE_AND_API_INIT(dev_name, drv_name, init_fn, data,	\
+			    cfg_info, POST_KERNEL, prio, api);	\
+	NET_IF_OFFLOAD_INIT(dev_name, 0, mtu)
 
 #ifdef __cplusplus
 }
