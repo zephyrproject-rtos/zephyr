@@ -739,7 +739,7 @@ static int sm_registration_done(void)
 			LOG_ERR("Registration update err: %d", ret);
 			lwm2m_engine_context_close(client.ctx);
 			/* perform full registration */
-			set_sm_state(ENGINE_REGISTRATION_SENT);
+			set_sm_state(ENGINE_DO_REGISTRATION);
 		}
 	}
 
