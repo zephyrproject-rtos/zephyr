@@ -433,6 +433,18 @@ static inline char *inet_ntop(sa_family_t family, const void *src, char *dst,
 #define EAI_SERVICE DNS_EAI_SERVICE
 #endif /* defined(CONFIG_NET_SOCKETS_POSIX_NAMES) */
 
+#define SOL_SOCKET 1
+
+/* Socket options for SOL_SOCKET level */
+#define SO_REUSEADDR 2
+#define SO_ERROR 4
+
+/* Socket options for IPPROTO_TCP level */
+#define TCP_NODELAY 1
+
+/* Socket options for IPPROTO_IPV6 level */
+#define IPV6_V6ONLY 26
+
 #ifdef __cplusplus
 }
 #endif
