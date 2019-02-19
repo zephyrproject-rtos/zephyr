@@ -16,12 +16,24 @@
 #include "fsl_common.h"
 #include "fsl_flash.h"
 
+#if defined(CONFIG_MULTITHREADING)
+#define SYNC_INIT()	k_sem_init(&priv->write_lock, 0, 1)
+#define SYNC_LOCK(t)	k_sem_take(&priv->write_lock, t)
+#define SYNC_UNLOCK()	k_sem_give(&priv->write_lock)
+#else
+#define SYNC_INIT()
+#define SYNC_LOCK(t)	(0)
+#define SYNC_UNLOCK()
+#endif
+
 struct flash_priv {
 	flash_config_t config;
 	/*
 	 * HACK: flash write protection is managed in software.
 	 */
+#if defined(CONFIG_MULTITHREADING)
 	struct k_sem write_lock;
+#endif
 	u32_t pflash_block_base;
 };
 
@@ -41,7 +53,7 @@ static int flash_mcux_erase(struct device *dev, off_t offset, size_t len)
 	status_t rc;
 	unsigned int key;
 
-	if (k_sem_take(&priv->write_lock, K_NO_WAIT)) {
+	if (SYNC_LOCK(K_NO_WAIT)) {
 		return -EACCES;
 	}
 
@@ -51,7 +63,7 @@ static int flash_mcux_erase(struct device *dev, off_t offset, size_t len)
 	rc = FLASH_Erase(&priv->config, addr, len, kFLASH_ApiEraseKey);
 	irq_unlock(key);
 
-	k_sem_give(&priv->write_lock);
+	SYNC_UNLOCK();
 
 	return (rc == kStatus_Success) ? 0 : -EINVAL;
 }
@@ -82,7 +94,7 @@ static int flash_mcux_write(struct device *dev, off_t offset,
 	status_t rc;
 	unsigned int key;
 
-	if (k_sem_take(&priv->write_lock, K_NO_WAIT)) {
+	if (SYNC_LOCK(K_NO_WAIT)) {
 		return -EACCES;
 	}
 
@@ -92,21 +104,23 @@ static int flash_mcux_write(struct device *dev, off_t offset,
 	rc = FLASH_Program(&priv->config, addr, (uint8_t *) data, len);
 	irq_unlock(key);
 
-	k_sem_give(&priv->write_lock);
+	SYNC_UNLOCK();
 
 	return (rc == kStatus_Success) ? 0 : -EINVAL;
 }
 
 static int flash_mcux_write_protection(struct device *dev, bool enable)
 {
-	struct flash_priv *priv = dev->driver_data;
 	int rc = 0;
+#if defined(CONFIG_MULTITHREADING)
+	struct flash_priv *priv = dev->driver_data;
 
 	if (enable) {
-		rc = k_sem_take(&priv->write_lock, K_FOREVER);
+		rc = SYNC_LOCK(K_FOREVER);
 	} else {
-		k_sem_give(&priv->write_lock);
+		SYNC_UNLOCK();
 	}
+#endif
 
 	return rc;
 }
@@ -145,7 +159,7 @@ static int flash_mcux_init(struct device *dev)
 	uint32_t pflash_block_base;
 	status_t rc;
 
-	k_sem_init(&priv->write_lock, 0, 1);
+	SYNC_INIT();
 
 	rc = FLASH_Init(&priv->config);
 
