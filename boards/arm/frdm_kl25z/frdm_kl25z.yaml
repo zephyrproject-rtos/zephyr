@@ -14,6 +14,7 @@ testing:
     - bluetooth
 supported:
   - adc
+  - hwinfo
   - i2c
   - gpio
   - usb_device

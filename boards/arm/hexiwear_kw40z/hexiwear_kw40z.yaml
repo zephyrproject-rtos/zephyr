@@ -8,6 +8,8 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+supported:
+  - hwinfo
 testing:
   ignore_tags:
     - net

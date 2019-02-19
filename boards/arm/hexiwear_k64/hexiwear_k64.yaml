@@ -10,6 +10,7 @@ supported:
   - ble
   - adc
   - gpio
+  - hwinfo
   - i2c
   - spi
   - pwm
