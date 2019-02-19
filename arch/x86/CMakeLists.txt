@@ -195,7 +195,7 @@ if(CONFIG_X86_MMU)
       -I binary
       -B ${OUTPUT_ARCH}
       -O ${OUTPUT_FORMAT}
-      --rename-section .data=.user_mmu_data
+      --rename-section .data=user_mmu_tables
       user_mmu_tables.bin
       user_mmu_tables.o
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
