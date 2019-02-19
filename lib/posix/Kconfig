@@ -13,6 +13,7 @@ config	POSIX_MAX_FDS
 	  files, sockets, special devices, etc.
 
 config POSIX_API
+	depends on !ARCH_POSIX
 	bool "POSIX APIs"
 	help
 	  Enable mostly-standards-compliant implementations of
