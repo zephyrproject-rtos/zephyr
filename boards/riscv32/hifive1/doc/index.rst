@@ -17,14 +17,12 @@ Programming and debugging
 Building
 ========
 
-Applications for the ``HiFive1`` board configuration can be built as usual
-(see :ref:`build_an_application`).
-In order to build the application for ``HiFive1``, set the ``BOARD`` variable
-to ``hifive1``.
+Applications for the ``hifive1`` board configuration can be built as usual
+(see :ref:`build_an_application`) using the corresponding board name:
 
-.. code-block:: bash
-
-   export BOARD="hifive1"
+.. zephyr-app-commands::
+   :board: hifive1
+   :goals: build
 
 Flashing
 ========
@@ -34,14 +32,13 @@ RISC-V support. Download the tarball for your OS from the `SiFive website
 <https://www.sifive.com/boards>`_ and extract it.
 
 The Zephyr SDK uses a bundled version of OpenOCD by default. You can
-overwrite that behavior by adding the ``OPENOCD`` parameter to the
-``cmake`` command:
+overwrite that behavior by adding the
+``-DOPENOCD=<path/to/riscv-openocd/bin/openocd>`` parameter when building:
 
-.. code-block:: bash
-
-   # run from your build folder
-   cmake -GNinja -DBOARD=hifive1 -DOPENOCD=path/to/riscv-openocd/bin/openocd ..
-
+.. zephyr-app-commands::
+   :board: hifive1
+   :goals: build
+   :gen-args: -DOPENOCD=<path/to/riscv-openocd/bin/openocd>
 
 When using a custom toolchain it should be enough to have the downloaded
 version of the binary in your ``PATH``.

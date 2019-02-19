@@ -18,13 +18,11 @@ Building
 ========
 
 Applications for the ``m2gl025_miv`` board configuration can be built as usual
-(see :ref:`build_an_application`).
-In order to build the application for ``m2gl025_miv``, set the ``BOARD`` variable
-to ``m2gl025_miv``.
+(see :ref:`build_an_application`):
 
-.. code-block:: bash
-
-   export BOARD="m2gl025_miv"
+.. zephyr-app-commands::
+   :board: m2gl025_miv
+   :goals: build
 
 Flashing
 ========

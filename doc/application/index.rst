@@ -252,6 +252,19 @@ You can control the Zephyr build system using many variables. This
 section describes the most important ones that every Zephyr developer
 should know about.
 
+.. note::
+   All variables listed in this section can be supplied to the build system
+   in 3 ways (in order of precedence):
+
+   * As a parameter to the ``cmake`` invocation via the ``-D`` command-line
+     switch
+   * As an environment variables (``export`` on Linux/macOS and ``set`` on
+     Windows)
+   * As a ``set(<VARIABLE>, <VALUE>)`` statement in your :file:`CMakeLists.txt`
+
+   The exception is :makevar:`ZEPHYR_BASE`, which **must** be exported as an
+   environment variable.
+
 * :makevar:`ZEPHYR_BASE`: Sets the path to the directory containing Zephyr,
   which is needed by the build system's boilerplate file.  This is an
   environment variable set by the :file:`zephyr-env.sh` script on Linux/macOS
@@ -297,16 +310,12 @@ Basics
 
 #. Navigate to the application directory :file:`<home>/app`.
 
-#. Enter the following commands to build the application's
-   :file:`zephyr.elf` image using the configuration settings for the
-   board type specified in the application's :file:`CMakeLists.txt`.
+#. Enter the following commands to build the application's :file:`zephyr.elf`
+   image for the board specified in the command-line parameters:
 
-   .. code-block:: console
-
-       mkdir build
-       cd build
-       cmake -GNinja ..
-       ninja
+   .. zephyr-app-commands::
+      :board: <board>
+      :goals: build
 
    If desired, you can build the application using the configuration settings
    specified in an alternate :file:`.conf` file using the :code:`CONF_FILE`
@@ -315,21 +324,13 @@ Basics
 
    .. code-block:: console
 
-       # On Linux/macOS
-       export CONF_FILE=prj.alternate.conf
-       # On Windows
-       set CONF_FILE=prj.alternate.conf
-
-       cmake -GNinja ..
+       cmake -GNinja -DBOARD=<board> -DCONF_FILE=prj.alternate.conf ..
        ninja
 
-   If desired, you can generate project files for a different board
-   type than the one specified in the application's
-   :file:`CMakeLists.txt` by defining the environment variable
-   :code:`BOARD`.
-
-   Both the :code:`CONF_FILE` and :code:`BOARD` parameters can be specified
-   when building the application.
+   As described in the previous section, you can instead choose to permanently
+   set the board and configuration settings by either exporting :makevar:`BOARD`
+   and :makevar:`CONF_FILE` environment variables or by setting their values
+   in your :file:`CMakeLists.txt` using ``set()`` statements.
 
 Build Directory Contents
 ========================
