@@ -20,7 +20,7 @@ The source code for this sample application can be found at:
 Requirements
 ************
 
-- :ref:`networking_with_qemu`
+- :ref:`networking_with_host`
 - or, a board with hardware networking
 - NAT/routing should be set up to allow connections to the Internet
 - DNS server should be available on the host to resolve domain names

@@ -13,7 +13,7 @@ information to a serial console.
 Requirements
 ************
 
-- :ref:`networking_with_qemu`
+- :ref:`networking_with_host`
 
 Building and Running
 ********************

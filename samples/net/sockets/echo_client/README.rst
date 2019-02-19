@@ -16,7 +16,7 @@ The source code for this sample application can be found at:
 Requirements
 ************
 
-- :ref:`networking_with_qemu`
+- :ref:`networking_with_host`
 
 Building and Running
 ********************
