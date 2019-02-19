@@ -13,14 +13,10 @@ Building and Running
 
 Build the sample app by choosing the target board, for example:
 
-.. code-block:: console
-
-         cmake -DBOARD=reel_board
-
-
 .. zephyr-app-commands::
    :zephyr-app: samples/display/cfb_shell
-   :goals: run
+   :board: reel_board
+   :goals: build
 
 
 Shell Module Command Help
