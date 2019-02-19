@@ -17,87 +17,113 @@ extern struct device __device_POST_KERNEL_start[];
 extern struct device __device_APPLICATION_start[];
 extern struct device __device_init_end[];
 
-static struct device *config_levels[] = {
-	__device_PRE_KERNEL_1_start,
-	__device_PRE_KERNEL_2_start,
-	__device_POST_KERNEL_start,
-	__device_APPLICATION_start,
-	/* End marker */
-	__device_init_end,
-};
-
-static bool device_get_config_level(const struct shell *shell, int level)
+static const char *device_get_config_level(struct device *dev)
 {
-	struct device *info;
-	bool devices = false;
+	const char *level = NULL;
 
-	for (info = config_levels[level]; info < config_levels[level+1];
-								info++) {
-		if (info->driver_api != NULL) {
-			devices = true;
-			shell_fprintf(shell, SHELL_NORMAL, "- %s\n",
-					info->config->name);
-		}
+	__ASSERT_NO_MSG(dev >= __device_init_start && dev <  __device_init_end);
+
+	if (dev >= __device_PRE_KERNEL_1_start) {
+		level = "PRE_KERNEL_1";
 	}
-	return devices;
+
+	if (dev >= __device_PRE_KERNEL_2_start) {
+		level = "PRE_KERNEL_2";
+	}
+
+	if (dev >= __device_POST_KERNEL_start) {
+		level = "POST_KERNEL";
+	}
+
+	if (dev >= __device_APPLICATION_start) {
+		level = "APPLICATION";
+	}
+
+	return level;
 }
 
-static int cmd_device_levels(const struct shell *shell,
-			      size_t argc, char **argv)
+static int cmd_device_list(const struct shell *shell, size_t argc, char **argv)
 {
+	struct device *dev;
+
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
-	bool ret;
 
-	shell_fprintf(shell, SHELL_NORMAL, "POST_KERNEL:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_POST_KERNEL);
-	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
-	}
+	shell_fprintf(shell, SHELL_NORMAL, "  Device\t Init Level\t Name\n"
+			     "------------------------------------------\n");
 
-	shell_fprintf(shell, SHELL_NORMAL, "APPLICATION:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_APPLICATION);
-	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
-	}
+	for (dev = __device_init_start; dev != __device_init_end; dev++) {
+		if (dev->driver_api == NULL) {
+			continue;
+		}
 
-	shell_fprintf(shell, SHELL_NORMAL, "PRE KERNEL 1:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_PRE_KERNEL_1);
-	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
-	}
-
-	shell_fprintf(shell, SHELL_NORMAL, "PRE KERNEL 2:\n");
-	ret = device_get_config_level(shell, _SYS_INIT_LEVEL_PRE_KERNEL_2);
-	if (ret == false) {
-		shell_fprintf(shell, SHELL_NORMAL, "- None\n");
+		shell_fprintf(shell, SHELL_NORMAL, "0x%08X\t%s\t%s\n",
+			      dev, device_get_config_level(dev),
+			      dev->config->name);
 	}
 
 	return 0;
 }
 
-static int cmd_device_list(const struct shell *shell,
-			      size_t argc, char **argv)
+#if CONFIG_DEVICE_HIERARCHY
+static void device_print_subtree(const struct shell *shell,
+			       const char *name,
+			       unsigned int level,
+			       unsigned int last)
 {
-	struct device *info;
-	ARG_UNUSED(argc);
-	ARG_UNUSED(argv);
+	struct device *dev, *curr, *next;
+	int i;
 
-	shell_fprintf(shell, SHELL_NORMAL, "devices:\n");
-	for (info = __device_init_start; info != __device_init_end; info++) {
-		if (info->driver_api != NULL) {
-			shell_fprintf(shell, SHELL_NORMAL, "- %s\n",
-					info->config->name);
+	for (i = level - 1; i >= 0; i--) {
+		char *prefix;
+
+		if (i) {
+			prefix = (last & (1 << i)) ? "    " : "|   ";
+		} else {
+			prefix = "+-- ";
 		}
+
+		shell_fprintf(shell, SHELL_NORMAL, prefix);
 	}
 
-	return 0;
+	shell_fprintf(shell, SHELL_NORMAL, "%-48.48s\n", name);
+
+	for (dev = __device_init_start, curr = NULL, next = NULL;
+					dev != __device_init_end; dev++) {
+		if (strcmp(name, dev->config->parent_name) != 0) {
+			continue;
+		}
+
+		curr = next;
+		next = dev;
+
+		if (!curr) {
+			continue;
+		}
+
+		device_print_subtree(shell, curr->config->name,
+				     level + 1, (last << 1) | 0);
+	}
+
+	if (next) {
+		device_print_subtree(shell, next->config->name,
+				     level + 1, (last << 1) | 1);
+	}
 }
 
+static int cmd_device_tree(const struct shell *shell, size_t argc, char **argv)
+{
+	device_print_subtree(shell, "SOC", 0, 1);
+	return 0;
+}
+#endif /* CONFIG_DEVICE_HIERARCHY */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_device,
-	SHELL_CMD(levels, NULL, "List configured devices by levels", cmd_device_levels),
+	/* Alphabetically sorted. */
 	SHELL_CMD(list, NULL, "List configured devices", cmd_device_list),
+#if CONFIG_DEVICE_HIERARCHY
+	SHELL_CMD(tree, NULL, "Print device tree",	 cmd_device_tree),
+#endif
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
