@@ -97,9 +97,6 @@ struct net_pkt {
 	/** Timestamp if available. */
 	struct net_ptp_time timestamp;
 #endif
-
-	u8_t *appdata;	/* application data starts here */
-
 	/** Reference counter */
 	atomic_t atomic_ref;
 
@@ -116,7 +113,6 @@ struct net_pkt {
 #endif
 	u16_t data_len;         /* amount of payload data that can be added */
 
-	u16_t appdatalen;
 	u8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
 
 	u8_t overwrite  : 1;	/* Is packet content being overwritten? */
@@ -733,26 +729,6 @@ static inline u8_t *net_pkt_data(struct net_pkt *pkt)
 static inline u8_t *net_pkt_ip_data(struct net_pkt *pkt)
 {
 	return pkt->frags->data;
-}
-
-static inline u8_t *net_pkt_appdata(struct net_pkt *pkt)
-{
-	return pkt->appdata;
-}
-
-static inline void net_pkt_set_appdata(struct net_pkt *pkt, u8_t *data)
-{
-	pkt->appdata = data;
-}
-
-static inline u16_t net_pkt_appdatalen(struct net_pkt *pkt)
-{
-	return pkt->appdatalen;
-}
-
-static inline void net_pkt_set_appdatalen(struct net_pkt *pkt, u16_t len)
-{
-	pkt->appdatalen = len;
 }
 
 static inline struct net_linkaddr *net_pkt_lladdr_src(struct net_pkt *pkt)

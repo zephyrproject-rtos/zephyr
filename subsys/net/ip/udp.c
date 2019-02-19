@@ -159,10 +159,6 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	net_pkt_set_appdatalen(pkt, ntohs(udp_hdr->len) -
-			       sizeof(struct net_udp_hdr));
-	net_pkt_set_appdata(pkt, net_pkt_cursor_get_pos(pkt));
-
 	return udp_hdr;
 drop:
 	net_stats_update_udp_chkerr(net_pkt_iface(pkt));
