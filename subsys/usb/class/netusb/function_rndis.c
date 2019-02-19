@@ -1280,7 +1280,7 @@ static struct netusb_function rndis_function = {
 	.send_pkt = rndis_send,
 };
 
-static void rndis_status_cb(enum usb_dc_status_code status, const u8_t *param)
+static void rndis_do_cb(enum usb_dc_status_code status, const u8_t *param)
 {
 	/* Check the USB status and do needed action if required */
 	switch (status) {
@@ -1313,6 +1313,21 @@ static void rndis_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	}
 }
 
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+static void rndis_status_composite_cb(struct usb_cfg_data *cfg,
+				      enum usb_dc_status_code status,
+				      const u8_t *param)
+{
+	ARG_UNUSED(cfg);
+	rndis_do_cb(status, param);
+}
+#else
+static void rndis_status_cb(enum usb_dc_status_code status, const u8_t *param)
+{
+	rndis_do_cb(status, param);
+}
+#endif
+
 static void netusb_interface_config(struct usb_desc_header *head,
 				    u8_t bInterfaceNumber)
 {
@@ -1331,7 +1346,11 @@ USBD_CFG_DATA_DEFINE(netusb) struct usb_cfg_data netusb_config = {
 	.usb_device_description = NULL,
 	.interface_config = netusb_interface_config,
 	.interface_descriptor = &rndis_cfg.if0,
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+	.cb_usb_status_composite = rndis_status_composite_cb,
+#else
 	.cb_usb_status = rndis_status_cb,
+#endif
 	.interface = {
 		.class_handler = rndis_class_handler,
 		.custom_handler = NULL,
