@@ -9,6 +9,7 @@ toolchain:
   - gnuarmemb
   - xtools
 supported:
+  - hwinfo
   - ieee802154
   - usb_device
   - watchdog
