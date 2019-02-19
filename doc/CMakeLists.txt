@@ -182,7 +182,6 @@ add_custom_target(
   SOC_DIR=soc/
   SRCARCH=x86
   PROJECT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}
-  GENERATED_DTS_BOARD_CONF=not_applicable
   KCONFIG_TURBO_MODE=${KCONFIG_TURBO_MODE}
   KCONFIG_DOC_MODE=1
   ${PYTHON_EXECUTABLE} scripts/genrest.py Kconfig ${RST_OUT}/doc/reference/kconfig/
