@@ -17,8 +17,17 @@ from github import Github
 from shutil import copyfile
 import json
 import tempfile
+from colorama import Fore, Back, Style
+import glob
 
 logger = None
+
+def info(what):
+    sys.stdout.write(what + "\n")
+    sys.stdout.flush()
+
+def error(what):
+    sys.stderr.write(Fore.RED + what + Style.RESET_ALL + "\n")
 
 sh_special_args = {
     '_tty_out': False,
@@ -201,6 +210,84 @@ top-level Kconfig menu, found {} items. If you're deliberately adding new
 entries, then bump the 'max_top_items' variable in {}.
 """.format(max_top_items, n_top_items, __file__)
 
+
+class Codeowners(ComplianceTest):
+    """
+    Check if added files have an owner.
+    """
+    _name = "Codeowners"
+    _doc  = "https://help.github.com/articles/about-code-owners/"
+
+    def parse_codeowners(self, git_root, codeowners):
+        all_files = []
+        with open(codeowners, "r") as codeo:
+            for line in codeo.readlines():
+                if not line.startswith("#") and line != "\n":
+                    match = re.match("([^\s]+)\s+(.*)", line)
+                    if match:
+                        add_base = False
+                        path = match.group(1)
+                        if path.startswith("/"):
+                            abs_path = git_root + path
+                        else:
+                            abs_path = "**/{}".format(path)
+                            add_base = True
+
+                        if abs_path.endswith("/"):
+                            abs_path = abs_path + "**"
+                        elif os.path.isdir(abs_path):
+                            error("Wrong syntax: {}".format(abs_path))
+                            continue
+                        g = glob.glob(abs_path, recursive=True)
+                        if not g:
+                            error("Path does not exist: {}".format(path))
+                        else:
+                            files = []
+                            if not add_base:
+                                for f in g:
+                                    l = f.replace(git_root + "/", "")
+                                    files.append(l)
+                            else:
+                                files = g
+
+                            all_files += files
+
+                        maintainers = match.group(2).split(" ")
+
+        files = []
+        for f in all_files:
+            if os.path.isfile(f):
+                files.append(f)
+
+        return set(files)
+
+    def run(self):
+        self.prepare()
+        git_root = sh.git("rev-parse", "--show-toplevel").strip()
+        codeowners = os.path.join(git_root, "CODEOWNERS")
+        if not os.path.exists(codeowners):
+            self.case.result = Skipped("CODEOWNERS not available in this repo.",
+                                       "skipped")
+            return
+
+        commit = sh.git("diff","--name-only", "--diff-filter=A", self.commit_range, **sh_special_args)
+        new_files = commit.split("\n")
+        files_in_tree = sh.git("ls-files",  **sh_special_args).split("\n")
+        git = set(files_in_tree)
+        if new_files:
+            owned = self.parse_codeowners(git_root, codeowners)
+            new_not_owned = []
+            for f in new_files:
+                if not f:
+                    continue
+                if f not in owned:
+                    new_not_owned.append(f)
+
+            if new_not_owned:
+                self.case.result = Error("CODEOWNERS Issues", "failure")
+                self.case.result._elem.text = "New files added that are not covered in CODEOWNERS:\n\n"
+                self.case.result._elem.text += "\n".join(new_not_owned)
+                self.case.result._elem.text += "\n\nPlease add one or more entries in the CODEWONERS file to cover those files"
 
 class Documentation(ComplianceTest):
     """
