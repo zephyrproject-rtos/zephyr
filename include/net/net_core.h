@@ -64,20 +64,33 @@ struct net_if;
  * @brief Net Verdict
  */
 enum net_verdict {
-	NET_OK,		/** Packet has been taken care of */
-	NET_CONTINUE,	/** Packet has not been touched,
-			    other part should decide about its fate */
-	NET_DROP,	/** Packet must be dropped */
+	/** Packet has been taken care of. */
+	NET_OK,
+	/** Packet has not been touched, other part should decide about its
+	 * fate.
+	 */
+	NET_CONTINUE,
+	/** Packet must be dropped. */
+	NET_DROP,
 };
 
-/* Called by lower network stack when a network packet has been received */
+/**
+ * @brief Called by lower network stack or network device driver when
+ * a network packet has been received. The function will push the packet up in
+ * the network stack for further processing.
+ *
+ * @param iface Network interface where the packet was received.
+ * @param pkt Network packet data.
+ *
+ * @return 0 if ok, <0 if error.
+ */
 int net_recv_data(struct net_if *iface, struct net_pkt *pkt);
 
 /**
  * @brief Send data to network.
  *
  * @details Send data to network. This should not be used normally by
- * applications as it requires that the pktfer and fragments are properly
+ * applications as it requires that the network packet is properly
  * constructed.
  *
  * @param pkt Network packet.
