@@ -3585,7 +3585,7 @@ static void retransmit_request(struct k_work *work)
 		return;
 	}
 
-	LOG_DBG("Resending message: %p", msg);
+	LOG_INF("Resending message: %p", msg);
 	msg->send_attempts++;
 	if (send(msg->ctx->sock_fd, msg->cpkt.data, msg->cpkt.offset, 0) < 0) {
 		LOG_ERR("Error sending lwm2m message: %d", -errno);
