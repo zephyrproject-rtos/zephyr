@@ -1,6 +1,12 @@
+common:
+  arch_exclude: nios2 posix
+  min_ram: 128
+  tags: posix filesystem
 tests:
   portability.posix:
-    arch_exclude: nios2 posix
-    min_ram: 128
-    tags: posix filesystem
-
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=n
+  portability.posix.newlib:
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
