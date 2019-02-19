@@ -63,6 +63,7 @@ static int lis2dw12_set_range(struct device *dev, u16_t range)
 static int lis2dw12_set_odr(struct device *dev, u16_t odr)
 {
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
+	const struct lis2dw12_device_config *cfg = dev->config->config_info;
 
 	/* check if power off */
 	if (odr == 0) {
@@ -72,7 +73,8 @@ static int lis2dw12_set_odr(struct device *dev, u16_t odr)
 						   LIS2DW12_ODR_POWER_OFF_VAL);
 	}
 
-	if (odr > LIS2DW12_MAX_ODR) {
+	if (odr > LIS2DW12_MAX_ODR ||
+	   (odr > 200 && cfg->pm != LIS2DW12_HIGH_PERF)) {
 		LOG_ERR("ODR too high");
 		return -ENOTSUP;
 	}
