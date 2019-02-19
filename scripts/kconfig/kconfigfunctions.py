@@ -11,16 +11,17 @@ import os
 
 doc_mode = os.environ.get('KCONFIG_DOC_MODE') == "1"
 
-# The env var 'GENERATED_DTS_BOARD_CONF' must be set
-GENERATED_DTS_BOARD_CONF = os.environ['GENERATED_DTS_BOARD_CONF']
-
 dt_defines = {}
-if (not doc_mode) and os.path.isfile(GENERATED_DTS_BOARD_CONF):
-    with open(GENERATED_DTS_BOARD_CONF, 'r', encoding='utf-8') as fd:
-        for line in fd:
-            if '=' in line:
-                define, val = line.split('=')
-                dt_defines[define] = val.strip()
+if (not doc_mode):
+    # The env var 'GENERATED_DTS_BOARD_CONF' must be set unless we are in
+    # doc mode
+    GENERATED_DTS_BOARD_CONF = os.environ['GENERATED_DTS_BOARD_CONF']
+    if os.path.isfile(GENERATED_DTS_BOARD_CONF):
+        with open(GENERATED_DTS_BOARD_CONF, 'r', encoding='utf-8') as fd:
+            for line in fd:
+                if '=' in line:
+                    define, val = line.split('=')
+                    dt_defines[define] = val.strip()
 
 def _dt_units_to_scale(unit):
     if not unit:
