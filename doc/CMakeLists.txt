@@ -65,6 +65,7 @@ set(I18NSPHINXOPTS  ${SPHINXOPTS})
 
 set(DOXYFILE_IN ${CMAKE_CURRENT_LIST_DIR}/zephyr.doxyfile.in)
 set(DOXYFILE_OUT ${CMAKE_CURRENT_BINARY_DIR}/zephyr.doxyfile)
+set(DOXY_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
 set(RST_OUT ${CMAKE_CURRENT_BINARY_DIR}/rst)
 set(DOC_LOG ${CMAKE_CURRENT_BINARY_DIR}/doc.log)
 set(DOXY_LOG ${CMAKE_CURRENT_BINARY_DIR}/doxy.log)
@@ -133,7 +134,7 @@ add_custom_target(
   doxy_real_modified_times
   COMMAND ${CMAKE_COMMAND} -E env
     ${PYTHON_EXECUTABLE} scripts/restore_modification_times.py
-      --loglevel ERROR  _build/doxygen/xml
+    --loglevel ERROR  ${DOXY_OUT}/xml
   WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
 )
 
