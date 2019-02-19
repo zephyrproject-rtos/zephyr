@@ -11,7 +11,7 @@ extern "C" {
 #endif
 
 #include <limits.h>
-#include "sys/types.h"
+#include "posix_types.h"
 
 #ifdef CONFIG_POSIX_FS
 #include <fs.h>

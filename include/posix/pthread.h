@@ -11,7 +11,7 @@
 #include <wait_q.h>
 #include <posix/time.h>
 #include <posix/unistd.h>
-#include "sys/types.h"
+#include "posix_types.h"
 #include "posix_sched.h"
 #include <posix/pthread_key.h>
 #include <stdlib.h>
