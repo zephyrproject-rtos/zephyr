@@ -27,6 +27,7 @@ extern "C" {
  * @{
  */
 
+/** Maximum length of the link address */
 #ifdef CONFIG_NET_L2_IEEE802154
 #define NET_LINK_ADDR_MAX_LENGTH 8
 #else
@@ -40,11 +41,17 @@ extern "C" {
  * this enum.
  */
 enum net_link_type {
+	/** Unknown link address type. */
 	NET_LINK_UNKNOWN = 0,
+	/** IEEE 802.15.4 link address. */
 	NET_LINK_IEEE802154,
+	/** Bluetooth IPSP link address. */
 	NET_LINK_BLUETOOTH,
+	/** Ethernet link address. */
 	NET_LINK_ETHERNET,
+	/** Dummy link address. Used in testing apps and loopback support. */
 	NET_LINK_DUMMY,
+	/** CANBUS link address. */
 	NET_LINK_CANBUS,
 } __packed;
 
@@ -72,7 +79,7 @@ struct net_linkaddr {
  *
  *  Note that you cannot cast this to net_linkaddr as u8_t * is
  *  handled differently than u8_t addr[] and the fields are purposely
- *  in a different order.
+ *  in different order.
  */
 struct net_linkaddr_storage {
 	/** What kind of address is this for */
