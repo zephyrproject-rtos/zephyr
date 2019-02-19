@@ -8,7 +8,7 @@ Overview
 
 This sample application enables a remote syslog service that will
 send syslog messages to a remote server, as configured in ``prj.conf``.
-See https://tools.ietf.org/html/rfc5424 and https://tools.ietf.org/html/rfc5424
+See https://tools.ietf.org/html/rfc5424 and https://tools.ietf.org/html/rfc5426
 for more details about syslog protocol over UDP.
 
 The source code for this sample application can be found at:
