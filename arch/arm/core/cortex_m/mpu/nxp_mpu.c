@@ -327,9 +327,16 @@ static int _mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
 {
 	/* Reset MPU regions inside which dynamic memory regions may
 	 * be programmed.
+	 *
+	 * Re-programming these regions will temporarily leave memory areas
+	 * outside all MPU regions.
+	 * This might trigger memory faults if ISRs occurring during
+	 * re-programming perform access in those areas.
 	 */
+	arm_core_mpu_disable();
 	_region_init(mpu_config.sram_region, (const struct nxp_mpu_region *)
 		&mpu_config.mpu_regions[mpu_config.sram_region]);
+	arm_core_mpu_enable();
 
 	u32_t mpu_reg_index = static_regions_num;
 
