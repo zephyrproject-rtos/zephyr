@@ -560,7 +560,6 @@ add_subdirectory(boards)
 add_subdirectory(ext)
 add_subdirectory(subsys)
 add_subdirectory(drivers)
-add_subdirectory(tests)
 
 # Add all zephyr modules subdirectories.
 message("Including module(s): ${ZEPHYR_MODULES_NAME}")

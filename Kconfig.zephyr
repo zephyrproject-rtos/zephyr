@@ -38,7 +38,7 @@ source "subsys/Kconfig"
 
 source "ext/Kconfig"
 
-source "tests/Kconfig"
+source "subsys/testsuite/Kconfig"
 
 source "$(PROJECT_BINARY_DIR)/Kconfig.modules"
 

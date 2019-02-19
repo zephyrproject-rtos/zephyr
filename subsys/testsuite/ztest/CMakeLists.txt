@@ -1,6 +1,6 @@
 zephyr_include_directories(
-  $ENV{ZEPHYR_BASE}/tests/include
-  $ENV{ZEPHYR_BASE}/tests/ztest/include
+  $ENV{ZEPHYR_BASE}/subsys/testsuite/include
+  $ENV{ZEPHYR_BASE}/subsys/testsuite/ztest/include
   )
 
 zephyr_library()
