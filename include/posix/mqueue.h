@@ -17,7 +17,6 @@ extern "C" {
 #endif
 
 typedef void *mqd_t;
-typedef unsigned int mode_t;
 
 typedef struct mq_attr {
 	long mq_flags;
