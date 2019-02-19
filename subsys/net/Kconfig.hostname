@@ -25,7 +25,7 @@ config NET_HOSTNAME_UNIQUE
 	help
 	  This will append link address to hostname to create a unique
 	  hostname. For example, zephyr00005e005357 could be the hostname
-	  if this	setting is enabled.
+	  if this setting is enabled.
 
 module = NET_HOSTNAME
 module-dep = NET_LOG
