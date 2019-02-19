@@ -1083,7 +1083,7 @@ static void wncm14a2a_read_rx(struct net_buf **buf)
 					uart_buffer,
 					sizeof(uart_buffer),
 					&bytes_read);
-		if (ret < 0) {
+		if (ret < 0 || bytes_read == 0) {
 			/* mdm_receiver buffer is empty */
 			break;
 		}
