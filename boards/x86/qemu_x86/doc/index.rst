@@ -122,3 +122,7 @@ Networking
 The board supports SLIP networking over an emulated serial port
 (``CONFIG_NET_SLIP_TAP=y``). The detailed setup is described in
 :ref:`networking_with_qemu`.
+
+It is also possible to use the QEMU built-in Ethernet adapter to connect
+to the host system. This is faster than using SLIP and is also the preferred
+way. See :ref:`networking_with_eth_qemu` for details.

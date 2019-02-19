@@ -29,7 +29,7 @@ For more information about DNS configuration variables, see:
 Requirements
 ************
 
-- :ref:`networking_with_qemu`
+- :ref:`networking_with_host`
 
 - screen terminal emulator or equivalent.
 

@@ -17,7 +17,8 @@ The source code for this sample application can be found at:
 Requirements
 ************
 
-- :ref:`networking_with_native_posix`
+For generic host connectivity, that can be used for debugging purposes, see
+:ref:`networking_with_native_posix` for details.
 
 Building and Running
 ********************

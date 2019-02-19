@@ -14,7 +14,7 @@ parties try to allocate an identical address.
 Requirements
 ************
 
-- :ref:`networking_with_qemu`
+- :ref:`networking_with_host`
 
 Building and Running
 ********************

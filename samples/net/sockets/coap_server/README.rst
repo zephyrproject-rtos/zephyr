@@ -38,8 +38,8 @@ or wireshark.
 
 See the `net-tools`_ project for more details
 
-This sample can be built and executed on QEMU as described
-in :ref:`networking_with_qemu`.
+This sample can be built and executed on QEMU or native_posix board as
+described in :ref:`networking_with_host`.
 
 Use this command on the host to run the `libcoap`_ implementation of
 the ETSI test cases:
