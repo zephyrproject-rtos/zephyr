@@ -1,3 +1,3 @@
 project(crc)
-include($ENV{ZEPHYR_BASE}/tests/unit/unittest.cmake)
+include($ENV{ZEPHYR_BASE}/subsys/testsuite/unittest.cmake)
 

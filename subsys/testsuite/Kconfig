@@ -6,7 +6,7 @@
 
 menu Testing
 
-source "tests/ztest/Kconfig"
+source "subsys/testsuite/ztest/Kconfig"
 
 config TEST
 	bool "Mark project as a test"

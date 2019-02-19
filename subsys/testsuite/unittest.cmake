@@ -26,8 +26,8 @@ add_dependencies(testbinary ${KOBJ_TYPES_H_TARGET})
 gen_kobj(KOBJ_GEN_DIR)
 
 list(APPEND INCLUDE
-  tests/ztest/include
-  tests/include
+  subsys/testsuite/ztest/include
+  subsys/testsuite/include
   include
   .
 )
@@ -61,8 +61,8 @@ if(LIBS)
 endif()
 
 target_sources(testbinary PRIVATE
-  $ENV{ZEPHYR_BASE}/tests/ztest/src/ztest.c
-  $ENV{ZEPHYR_BASE}/tests/ztest/src/ztest_mock.c
+  $ENV{ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest.c
+  $ENV{ZEPHYR_BASE}/subsys/testsuite/ztest/src/ztest_mock.c
   )
 
 target_compile_definitions(testbinary PRIVATE ZTEST_UNITTEST)
