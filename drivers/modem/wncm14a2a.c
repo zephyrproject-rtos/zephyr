@@ -23,8 +23,15 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include <net/net_if.h>
 #include <net/net_offload.h>
 #include <net/net_pkt.h>
+#if defined(CONFIG_NET_IPV6)
+#include "ipv6.h"
+#endif
+#if defined(CONFIG_NET_IPV4)
+#include "ipv4.h"
+#endif
 #if defined(CONFIG_NET_UDP)
 #include <net/udp.h>
+#include "udp_internal.h"
 #endif
 #if defined(CONFIG_NET_TCP)
 #include <net/tcp.h>
@@ -453,51 +460,33 @@ static u16_t net_buf_findcrlf(struct net_buf *buf, struct net_buf **frag,
  * important.
  * Return the IP + protocol header length.
  */
-static int net_pkt_setup_ip_data(struct net_pkt *pkt,
-				  struct wncm14a2a_socket *sock)
+static int pkt_setup_ip_data(struct net_pkt *pkt,
+			     struct wncm14a2a_socket *sock)
 {
 	int hdr_len = 0;
 	u16_t src_port = 0U, dst_port = 0U;
 
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
-		net_buf_add(pkt->frags, NET_IPV6H_LEN);
+		if (net_ipv6_create_new(
+			    pkt,
+			    &((struct sockaddr_in6 *)&sock->src)->sin6_addr,
+			    &((struct sockaddr_in6 *)&sock->dst)->sin6_addr)) {
+			return -1;
+		}
 
-		/* set IPv6 data */
-		NET_IPV6_HDR(pkt)->vtc = 0x60;
-		NET_IPV6_HDR(pkt)->tcflow = 0;
-		NET_IPV6_HDR(pkt)->flow = 0;
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src,
-			&((struct sockaddr_in6 *)&sock->dst)->sin6_addr);
-		net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst,
-			&((struct sockaddr_in6 *)&sock->src)->sin6_addr);
-		NET_IPV6_HDR(pkt)->nexthdr = sock->ip_proto;
-
-		src_port = net_sin6(&sock->dst)->sin6_port;
-		dst_port = net_sin6(&sock->src)->sin6_port;
-
-		net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-		net_pkt_set_ipv6_ext_len(pkt, 0);
 		hdr_len = sizeof(struct net_ipv6_hdr);
 	} else
 #endif
 #if defined(CONFIG_NET_IPV4)
 	if (net_pkt_family(pkt) == AF_INET) {
-		net_buf_add(pkt->frags, NET_IPV4H_LEN);
+		if (net_ipv4_create_new(
+			    pkt,
+			    &((struct sockaddr_in *)&sock->dst)->sin_addr,
+			    &((struct sockaddr_in *)&sock->src)->sin_addr)) {
+			return -1;
+		}
 
-		/* set IPv4 data */
-		NET_IPV4_HDR(pkt)->vhl = 0x45;
-		NET_IPV4_HDR(pkt)->tos = 0x00;
-		net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src,
-			&((struct sockaddr_in *)&sock->dst)->sin_addr);
-		net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst,
-			&((struct sockaddr_in *)&sock->src)->sin_addr);
-		NET_IPV4_HDR(pkt)->proto = sock->ip_proto;
-
-		src_port = net_sin(&sock->dst)->sin_port;
-		dst_port = net_sin(&sock->src)->sin_port;
-
-		net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
 		hdr_len = sizeof(struct net_ipv4_hdr);
 	} else
 #endif
@@ -507,31 +496,34 @@ static int net_pkt_setup_ip_data(struct net_pkt *pkt,
 
 #if defined(CONFIG_NET_UDP)
 	if (sock->ip_proto == IPPROTO_UDP) {
-		struct net_udp_hdr hdr, *udp;
+		if (net_udp_create(pkt, src_port, dst_port)) {
+			return -1;
+		}
 
-		net_buf_add(pkt->frags, NET_UDPH_LEN);
-		udp = net_udp_get_hdr(pkt, &hdr);
-		(void)memset(udp, 0, NET_UDPH_LEN);
-
-		/* Setup UDP header */
-		udp->src_port = src_port;
-		udp->dst_port = dst_port;
-		net_udp_set_hdr(pkt, udp);
 		hdr_len += NET_UDPH_LEN;
 	} else
 #endif
 #if defined(CONFIG_NET_TCP)
 	if (sock->ip_proto == IPPROTO_TCP) {
-		struct net_tcp_hdr hdr, *tcp;
+		NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
+		struct net_tcp_hdr *tcp;
 
-		net_buf_add(pkt->frags, NET_TCPH_LEN);
-		tcp = net_tcp_get_hdr(pkt, &hdr);
+		tcp = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt,
+								 &tcp_access);
+		if (!tcp) {
+			return -1;
+		}
+
 		(void)memset(tcp, 0, NET_TCPH_LEN);
 
 		/* Setup TCP header */
 		tcp->src_port = src_port;
 		tcp->dst_port = dst_port;
-		net_tcp_set_hdr(pkt, tcp);
+
+		if (net_pkt_set_data(pkt, &tcp_access)) {
+			return -1;
+		}
+
 		hdr_len += NET_TCPH_LEN;
 	} else
 #endif /* CONFIG_NET_TCP */
@@ -788,9 +780,7 @@ static void sockreadrecv_cb_work(struct k_work *work)
 static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 {
 	struct wncm14a2a_socket *sock = NULL;
-	struct net_buf *frag;
 	u8_t c = 0U;
-	u16_t pos;
 	int i, actual_length, hdr_len = 0;
 	size_t value_size;
 	char value[10];
@@ -844,7 +834,10 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 	}
 
 	/* allocate an RX pkt */
-	sock->recv_pkt = net_pkt_get_rx(sock->context, BUF_ALLOC_TIMEOUT);
+	sock->recv_pkt = net_pkt_rx_alloc_with_buffer(
+			net_context_get_iface(sock->context),
+			actual_length, sock->family, sock->ip_proto,
+			BUF_ALLOC_TIMEOUT);
 	if (!sock->recv_pkt) {
 		LOG_ERR("Failed net_pkt_get_reserve_rx!");
 		return;
@@ -852,21 +845,9 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 
 	/* set pkt data */
 	net_pkt_set_context(sock->recv_pkt, sock->context);
-	net_pkt_set_family(sock->recv_pkt, sock->family);
-
-	/* add a data buffer */
-	frag = net_pkt_get_frag(sock->recv_pkt, BUF_ALLOC_TIMEOUT);
-	if (!frag) {
-		LOG_ERR("Failed net_pkt_get_frag!");
-		net_pkt_unref(sock->recv_pkt);
-		sock->recv_pkt = NULL;
-		return;
-	}
-
-	net_pkt_frag_add(sock->recv_pkt, frag);
 
 	/* add IP / protocol headers */
-	hdr_len = net_pkt_setup_ip_data(sock->recv_pkt, sock);
+	hdr_len = pkt_setup_ip_data(sock->recv_pkt, sock);
 
 	/* move hex encoded data from the buffer to the recv_pkt */
 	for (i = 0; i < actual_length * 2; i++) {
@@ -881,9 +862,7 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 		}
 
 		if (i % 2) {
-			pos = net_pkt_append(sock->recv_pkt, 1, &c,
-					     BUF_ALLOC_TIMEOUT);
-			if (pos != 1) {
+			if (net_pkt_write_u8_new(sock->recv_pkt, c)) {
 				LOG_ERR("Unable to add data! Aborting!");
 				net_pkt_unref(sock->recv_pkt);
 				sock->recv_pkt = NULL;
@@ -902,15 +881,11 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 		}
 	}
 
-	net_pkt_set_appdatalen(sock->recv_pkt, actual_length);
+	net_pkt_cursor_init(sock->recv_pkt);
+	net_pkt_set_overwrite(sock->recv_pkt, true);
 
 	if (hdr_len > 0) {
-		frag = net_frag_get_pos(sock->recv_pkt, hdr_len, &pos);
-		NET_ASSERT(frag);
-		net_pkt_set_appdata(sock->recv_pkt, frag->data + pos);
-	} else {
-		net_pkt_set_appdata(sock->recv_pkt,
-				    sock->recv_pkt->frags->data);
+		net_pkt_skip(sock->recv_pkt, hdr_len);
 	}
 
 	/* Let's do the callback processing in a different work queue in
