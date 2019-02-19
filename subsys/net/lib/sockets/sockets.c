@@ -1082,6 +1082,28 @@ int zsock_getsockopt(int sock, int level, int optname,
 int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			 const void *optval, socklen_t optlen)
 {
+	switch (level) {
+	case SOL_SOCKET:
+		switch (optname) {
+		case SO_REUSEADDR:
+			/* Ignore for now. Provided to let port
+			 * existing apps.
+			 */
+			return 0;
+		}
+		break;
+
+	case IPPROTO_TCP:
+		switch (optname) {
+		case TCP_NODELAY:
+			/* Ignore for now. Provided to let port
+			 * existing apps.
+			 */
+			return 0;
+		}
+		break;
+	}
+
 	errno = ENOPROTOOPT;
 	return -1;
 }
