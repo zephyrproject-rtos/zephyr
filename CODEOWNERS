@@ -11,13 +11,13 @@
 /arch/arm/                                @MaureenHelm @galak
 /soc/arm/                                 @MaureenHelm @galak
 /soc/arm/arm/mps2/                        @fvincenzo
-/soc/arm/atmel_sam/sam4s                  @fallrisk
+/soc/arm/atmel_sam/sam4s/                 @fallrisk
 /soc/arm/nxp*/                            @MaureenHelm
 /soc/arm/nordic_nrf/                      @ioannisg
 /soc/arm/st_stm32/                        @erwango
 /soc/arm/st_stm32/stm32f4/                @rsalveti @idlethread
-/soc/arm/ti_simplelink/cc32xx             @GAnthony
-/soc/arm/ti_simplelink/msp432p4xx         @Mani-Sadhasivam
+/soc/arm/ti_simplelink/cc32xx/            @GAnthony
+/soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
 /arch/nios2/                              @andrewboie @ramakrishnapallala
 /arch/posix/                              @aescolar
 /arch/riscv32/                            @kgugala @pgielda @nategraff-sifive
@@ -80,7 +80,7 @@
 /boards/xtensa/                           @andrewboie @ramakrishnapallala
 # All cmake related files
 /cmake/                                   @nashif @SebastianBoe
-/CMakeLists.txt                          @nashif @SebastianBoe
+/CMakeLists.txt                           @nashif @SebastianBoe
 /doc/                                     @dbkinder
 /doc/guides/coccinelle.rst                @himanshujha199640 @JuliaLawall
 /doc/CMakeLists.txt                       @carlescufi
@@ -121,7 +121,7 @@
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 /drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
-/drivers/wifi/eswifi                      @loicpoulain
+/drivers/wifi/eswifi/                     @loicpoulain
 /dts/arm/st/                              @erwango
 /dts/arm/nordic/                          @ioannisg @carlescufi
 /ext/fs/                                  @nashif @ramakrishnapallala
@@ -141,7 +141,7 @@
 /include/arch/nios2/                      @andrewboie
 /include/arch/nios2/arch.h                @andrewboie
 /include/arch/posix/                      @aescolar
-/include/arch/riscv32                     @nategraff-sifive @kgugala @pgielda
+/include/arch/riscv32/                    @nategraff-sifive @kgugala @pgielda
 /include/arch/x86/                        @andrewboie @ramakrishnapallala
 /include/arch/x86/arch.h                  @andrewboie
 /include/arch/xtensa/                     @andrewboie
@@ -202,7 +202,7 @@
 /samples/net/sockets/coap_server/         @rveerama1
 /samples/net/sockets/                     @jukkar @tbursztyka @pfalcon
 /samples/sensor/                          @bogdan-davidoaia
-/samples/subsys/usb                       @jfischer-phytec-iot @finikorg
+/samples/subsys/usb/                      @jfischer-phytec-iot @finikorg
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
 /scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 /scripts/elf_helper.py                    @andrewboie
@@ -252,4 +252,4 @@
 /tests/subsys/fs/                         @nashif @ramakrishnapallala
 
 # Get all docs reviewed
-*.rst                                    @dbkinder
+*.rst                                     @dbkinder
