@@ -30,8 +30,8 @@ config LWM2M_DTLS_SUPPORT
 
 config LWM2M_ENGINE_STACK_SIZE
 	int "LWM2M engine stack size"
-	default 1536 if NET_LOG
-	default 1024
+	default 2560 if NET_LOG
+	default 2048
 	help
 	 Set the stack size for the LWM2M library engine (used for handling
 	 OBSERVE and NOTIFY events)
