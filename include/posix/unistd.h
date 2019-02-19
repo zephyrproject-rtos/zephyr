@@ -16,11 +16,6 @@ extern "C" {
 #ifdef CONFIG_POSIX_API
 #include <fs.h>
 
-#ifndef _MODE_T_DECLARED
-typedef unsigned int mode_t;
-#define _MODE_T_DECLARED
-#endif
-
 /* File related operations */
 extern int open(const char *name, int flags);
 extern int close(int file);

@@ -8,6 +8,8 @@
 #ifndef ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_TYPES_H_
 #define ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_TYPES_H_
 
+typedef unsigned int mode_t;
+
 #if !defined(__ssize_t_defined)
 #define __ssize_t_defined
 
