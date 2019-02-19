@@ -58,33 +58,19 @@ static int line_out(u8_t *data, size_t length, void *output_ctx)
 {
 	struct net_context *ctx = (struct net_context *)output_ctx;
 	int ret = -ENOMEM;
-	struct net_pkt *pkt;
 
 	if (ctx == NULL) {
 		return length;
 	}
 
-	pkt = net_pkt_get_tx(ctx, K_NO_WAIT);
-	if (pkt == NULL) {
-		goto fail;
-	}
-
-	if (net_pkt_append_all(pkt, length, data, K_NO_WAIT) == false) {
-		goto fail;
-	}
-
-	ret = net_context_send(pkt, NULL, K_NO_WAIT, NULL, NULL);
+	ret = net_context_send_new(ctx, data, length,
+				   NULL, K_NO_WAIT, NULL, NULL);
 	if (ret < 0) {
 		goto fail;
 	}
 
 	DBG(data);
-
 fail:
-	if (ret < 0 && (pkt != NULL)) {
-		net_pkt_unref(pkt);
-	}
-
 	return length;
 }
 
