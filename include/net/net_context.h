@@ -790,7 +790,7 @@ int net_context_send(struct net_pkt *pkt,
 		     void *user_data);
 
 /**
- * @brief Send a network buffer to a peer.
+ * @brief Send data to a peer.
  *
  * @details This function can be used to send network data to a peer
  * connection. This function will return immediately if the timeout
@@ -861,7 +861,7 @@ int net_context_sendto(struct net_pkt *pkt,
 
 
 /**
- * @brief Send a network buffer to a peer specified by address.
+ * @brief Send data to a peer specified by address.
  *
  * @details This function can be used to send network data to a peer
  * specified by address. This variant can only be used for datagram
@@ -878,8 +878,7 @@ int net_context_sendto(struct net_pkt *pkt,
  * @param context The network context to use.
  * @param buf The data buffer to send
  * @param len Length of the buffer
- * @param dst_addr Destination address. This will override the address
- * already set in network buffer.
+ * @param dst_addr Destination address.
  * @param addrlen Length of the address.
  * @param cb Caller-supplied callback function.
  * @param timeout Timeout for the connection. Possible values
