@@ -28,26 +28,6 @@ extern "C" {
 #endif
 
 /**
- * @brief Insert UDP packet into net_pkt after specific offset.
- *
- * @param pkt Network packet
- * @param offset Offset where to insert (typically after IP header)
- * @param src_port Destination port in network byte order.
- * @param dst_port Destination port in network byte order.
- *
- * @return Return network packet that contains the UDP packet or NULL if
- * there is an failure.
- */
-#if defined(CONFIG_NET_UDP)
-struct net_pkt *net_udp_insert(struct net_pkt *pkt,
-			       u16_t offset,
-			       u16_t src_port,
-			       u16_t dst_port);
-#else
-#define net_udp_insert(pkt, offset, src_port, dst_port) (pkt)
-#endif
-
-/**
  * @brief Create UDP packet into net_pkt
  *
  * Note: pkt's cursor should be set a the right position.
