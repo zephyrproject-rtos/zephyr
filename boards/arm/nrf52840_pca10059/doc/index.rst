@@ -134,7 +134,7 @@ Create an application package, using nrfutil::
 
 Flash it onto the board::
 
-	nrfutil dfu usb_serial -pkg pkg.zip -p /dev/ttyACM0
+	nrfutil dfu usb-serial -pkg pkg.zip -p /dev/ttyACM0
 
 Observe the green LED on the board blinking.
 
