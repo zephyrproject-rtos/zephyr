@@ -90,3 +90,14 @@ DEVICE_AND_API_INIT(pinmux_sam0_1, DT_PINMUX_SAM0_B_LABEL,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
 		    &pinmux_sam0_api);
 #endif
+
+#if DT_PINMUX_SAM0_C_BASE_ADDRESS
+static const struct pinmux_sam0_config pinmux_sam0_config_2 = {
+	.regs = (PortGroup *)DT_PINMUX_SAM0_C_BASE_ADDRESS,
+};
+
+DEVICE_AND_API_INIT(pinmux_sam0_2, DT_PINMUX_SAM0_C_LABEL,
+		    pinmux_sam0_init, NULL, &pinmux_sam0_config_2,
+		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
+		    &pinmux_sam0_api);
+#endif

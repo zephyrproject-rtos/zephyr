@@ -1,0 +1,31 @@
+# Kconfig - Atmel SAMR21 MCU series
+#
+# Copyright (c) 2017 Google LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+prompt "Atmel SAMR21 MCU Selection"
+depends on SOC_SERIES_SAMR21
+
+config SOC_PART_NUMBER_SAMR21E16A
+	bool "SAMR21E16A"
+
+config SOC_PART_NUMBER_SAMR21E17A
+	bool "SAMR21E17A"
+
+config SOC_PART_NUMBER_SAMR21E18A
+	bool "SAMR21E18A"
+
+config SOC_PART_NUMBER_SAMR21E19A
+	bool "SAMR21E19A"
+
+config SOC_PART_NUMBER_SAMR21G16A
+	bool "SAMR21G16A"
+
+config SOC_PART_NUMBER_SAMR21G17A
+	bool "SAMR21G17A"
+
+config SOC_PART_NUMBER_SAMR21G18A
+	bool "SAMR21G18A"
+
+endchoice
