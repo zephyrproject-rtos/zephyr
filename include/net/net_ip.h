@@ -52,11 +52,13 @@ extern "C" {
 #define AF_PACKET       PF_PACKET  /**< Packet family.                */
 #define AF_CAN          PF_CAN     /**< Controller Area Network.      */
 
-/** Protocol numbers from IANA */
+/** Protocol numbers from IANA/BSD */
 enum net_ip_protocol {
+	IPPROTO_IP = 0,            /**< IP protocol (pseudo-val for setsockopt() */
 	IPPROTO_ICMP = 1,          /**< ICMP protocol   */
 	IPPROTO_TCP = 6,           /**< TCP protocol    */
 	IPPROTO_UDP = 17,          /**< UDP protocol    */
+	IPPROTO_IPV6 = 41,         /**< IPv6 protocol   */
 	IPPROTO_ICMPV6 = 58,       /**< ICMPv6 protocol */
 };
 
