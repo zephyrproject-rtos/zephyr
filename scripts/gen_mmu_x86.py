@@ -443,10 +443,10 @@ def read_mmu_list(filename):
             end_addr = addr + size
             other_end_addr = other_addr + other_size
 
-            overlap_occurred = ((addr >= other_addr) and
-                                (addr <= other_end_addr))
+            overlap = ((addr <= other_addr and end_addr > other_addr) or
+                       (other_addr <= addr and other_end_addr > addr))
 
-            if (addr >= other_addr) and (addr <= other_end_addr):
+            if (overlap):
                 print("Memory region %d (%x:%x) overlaps memory region %d (%x:%x)" %
                         (region_index, addr, end_addr, other_region_index,
                             other_addr, other_end_addr))
