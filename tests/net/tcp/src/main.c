@@ -382,7 +382,7 @@ static struct net_pkt *setup_ipv4_tcp(struct net_if *iface,
 		return NULL;
 	}
 
-	net_ipv4_create_new(pkt, remote_addr, local_addr);
+	net_ipv4_create(pkt, remote_addr, local_addr);
 
 	tcp_hdr.src_port = htons(remote_port);
 	tcp_hdr.dst_port = htons(local_port);

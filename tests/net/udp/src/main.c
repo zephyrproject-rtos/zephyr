@@ -355,7 +355,7 @@ static bool send_ipv4_udp_msg(struct net_if *iface,
 					IPPROTO_UDP, K_SECONDS(1));
 	zassert_not_null(pkt, "Out of mem");
 
-	if (net_ipv4_create_new(pkt, src, dst) ||
+	if (net_ipv4_create(pkt, src, dst) ||
 	    net_udp_create(pkt, htons(src_port), htons(dst_port))) {
 		printk("Cannot create IPv4 UDP pkt %p", pkt);
 		zassert_true(0, "exiting");

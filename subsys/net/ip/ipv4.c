@@ -27,49 +27,9 @@ LOG_MODULE_REGISTER(net_ipv4, CONFIG_NET_IPV4_LOG_LEVEL);
 /* Timeout for various buffer allocations in this file. */
 #define NET_BUF_TIMEOUT K_MSEC(50)
 
-struct net_pkt *net_ipv4_create(struct net_pkt *pkt,
-				const struct in_addr *src,
-				const struct in_addr *dst,
-				struct net_if *iface,
-				u8_t next_header_proto)
-{
-	struct net_buf *header;
-
-	header = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
-	if (!header) {
-		return NULL;
-	}
-
-	net_pkt_frag_insert(pkt, header);
-
-	NET_IPV4_HDR(pkt)->vhl = 0x45;
-	NET_IPV4_HDR(pkt)->tos = 0x00;
-	NET_IPV4_HDR(pkt)->proto = next_header_proto;
-	NET_IPV4_HDR(pkt)->chksum = 0;
-
-	/* User can tweak the default TTL if needed */
-	NET_IPV4_HDR(pkt)->ttl = net_pkt_ipv4_ttl(pkt);
-	if (NET_IPV4_HDR(pkt)->ttl == 0) {
-		NET_IPV4_HDR(pkt)->ttl = net_if_ipv4_get_ttl(iface);
-	}
-
-	NET_IPV4_HDR(pkt)->offset[0] = NET_IPV4_HDR(pkt)->offset[1] = 0;
-	NET_IPV4_HDR(pkt)->id[0] = NET_IPV4_HDR(pkt)->id[1] = 0;
-
-	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->dst, dst);
-	net_ipaddr_copy(&NET_IPV4_HDR(pkt)->src, src);
-
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
-	net_pkt_set_family(pkt, AF_INET);
-
-	net_buf_add(header, sizeof(struct net_ipv4_hdr));
-
-	return pkt;
-}
-
-int net_ipv4_create_new(struct net_pkt *pkt,
-			const struct in_addr *src,
-			const struct in_addr *dst)
+int net_ipv4_create(struct net_pkt *pkt,
+		    const struct in_addr *src,
+		    const struct in_addr *dst)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
 	struct net_ipv4_hdr *ipv4_hdr;

@@ -134,7 +134,7 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	if (net_ipv4_create_new(reply, &ip_hdr->dst, &ip_hdr->src) ||
+	if (net_ipv4_create(reply, &ip_hdr->dst, &ip_hdr->src) ||
 	    icmpv4_create(reply, NET_ICMPV4_ECHO_REPLY, 0) ||
 	    net_pkt_copy(reply, pkt, payload_len)) {
 		NET_DBG("DROP: wrong buffer");
@@ -194,7 +194,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 		return -ENOMEM;
 	}
 
-	if (net_ipv4_create_new(pkt, src, dst) ||
+	if (net_ipv4_create(pkt, src, dst) ||
 	    icmpv4_create(pkt, NET_ICMPV4_ECHO_REQUEST, 0)) {
 		goto drop;
 	}
@@ -283,7 +283,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 		goto drop_no_pkt;
 	}
 
-	if (net_ipv4_create_new(pkt, &ip_hdr->dst, &ip_hdr->src) ||
+	if (net_ipv4_create(pkt, &ip_hdr->dst, &ip_hdr->src) ||
 	    icmpv4_create(pkt, type, code) ||
 	    net_pkt_memset(pkt, 0, NET_ICMPV4_UNUSED_LEN) ||
 	    net_pkt_copy(pkt, orig, copy_len)) {

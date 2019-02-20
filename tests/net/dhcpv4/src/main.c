@@ -208,7 +208,7 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, u32_t xid)
 
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 
-	if (net_ipv4_create_new(pkt, &server_addr, &client_addr) ||
+	if (net_ipv4_create(pkt, &server_addr, &client_addr) ||
 	    net_udp_create(pkt, htons(SERVER_PORT), htons(CLIENT_PORT))) {
 		goto fail;
 	}
@@ -249,7 +249,7 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, u32_t xid)
 
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 
-	if (net_ipv4_create_new(pkt, &server_addr, &client_addr) ||
+	if (net_ipv4_create(pkt, &server_addr, &client_addr) ||
 	    net_udp_create(pkt, htons(SERVER_PORT), htons(CLIENT_PORT))) {
 		goto fail;
 	}
