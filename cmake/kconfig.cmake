@@ -14,6 +14,7 @@ endif()
 
 set(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_defconfig)
 set(DOTCONFIG                  ${PROJECT_BINARY_DIR}/.config)
+set(PARSED_KCONFIG_SOURCES_TXT ${PROJECT_BINARY_DIR}/kconfig/sources.txt)
 
 if(CONF_FILE)
 string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE}")
@@ -159,6 +160,7 @@ execute_process(
   ${KCONFIG_ROOT}
   ${DOTCONFIG}
   ${AUTOCONF_H}
+  ${PARSED_KCONFIG_SOURCES_TXT}
   ${merge_fragments}
   WORKING_DIRECTORY ${APPLICATION_SOURCE_DIR}
   # The working directory is set to the app dir such that the user
@@ -169,10 +171,14 @@ if(NOT "${ret}" STREQUAL "0")
   message(FATAL_ERROR "command failed with return code: ${ret}")
 endif()
 
-# Force CMAKE configure when the configuration files changes.
+# Read out the list of 'Kconfig' sources that were used by the engine.
+file(STRINGS ${PARSED_KCONFIG_SOURCES_TXT} PARSED_KCONFIG_SOURCES_LIST)
+
+# Force CMAKE configure when the Kconfig sources or configuration files changes.
 foreach(kconfig_input
     ${merge_config_files}
     ${DOTCONFIG}
+    ${PARSED_KCONFIG_SOURCES_LIST}
     )
   set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${kconfig_input})
 endforeach()
