@@ -1,2 +1,8 @@
+common:
+  harness: net
+  tags: net
 sample:
   name: Full stack sample
+tests:
+  test:
+    depends_on: netif
