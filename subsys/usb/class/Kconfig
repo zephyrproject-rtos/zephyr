@@ -126,9 +126,17 @@ source "subsys/usb/class/hid/Kconfig"
 config USB_DFU_CLASS
 	bool "USB DFU Class Driver"
 	select MPU_ALLOW_FLASH_WRITE
+	select POLL
 	depends on IMG_MANAGER
 	help
 	  USB DFU class driver
+
+config USB_DFU_WAIT_DELAY_MS
+	int
+	depends on USB_DFU_CLASS
+	default 12000
+	help
+	  A thread can wait for a prescribed time (in ms) for DFU to begin
 
 config USB_DFU_MAX_XFER_SIZE
 	int
