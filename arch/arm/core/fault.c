@@ -362,10 +362,8 @@ static int _BusFault(NANO_ESF *esf, int fromHardFault)
 	}
 #endif /* defined(CONFIG_ARM_MPU) && defined(CONFIG_CPU_HAS_NXP_MPU) */
 
-#if defined(CONFIG_ARMV8_M_MAINLINE)
-	/* clear BSFR sticky bits */
+	/* clear BFSR sticky bits */
 	SCB->CFSR |= SCB_CFSR_BUSFAULTSR_Msk;
-#endif /* CONFIG_ARMV8_M_MAINLINE */
 
 	if (_MemoryFaultIsRecoverable(esf)) {
 		return _NANO_ERR_RECOVERABLE;
