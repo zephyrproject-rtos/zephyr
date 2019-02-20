@@ -1,0 +1,39 @@
+STM32CubeMP1
+###########
+
+Origin:
+   ST Microelectronics
+   https://github.com/STMicroelectronics/STM32CubeMP1
+
+Status:
+   version 1.0.0
+
+Purpose:
+   ST Microelectronics official MCU package for STM32MP1 series.
+
+Description:
+   This package is an extract of official STM32CubeMP1 package written by ST Microelectronics.
+   It is composed of STM32Cube hardware abstraction layer (HAL) and low layer (LL) plus a set
+   of CMSIS headers files, one for each SoC in STM32MP1 series.
+
+Dependencies:
+    None.
+
+URL:
+   https://github.com/STMicroelectronics/STM32CubeMP1
+
+commit:
+   version 1.0.0
+
+Maintained-by:
+   External
+
+License:
+   BSD-3-Clause
+
+License Link:
+   https://opensource.org/licenses/BSD-3-Clause
+
+Patch List:
+
+    * Initial version
