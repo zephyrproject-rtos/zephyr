@@ -356,7 +356,7 @@ static inline void telnet_handle_input(struct net_pkt *pkt)
 	}
 
 	len = MIN(len, CONSOLE_MAX_LINE_LEN);
-	if (net_pkt_read_new(pkt, (u8_t *)input->line, len)) {
+	if (net_pkt_read(pkt, (u8_t *)input->line, len)) {
 		return;
 	}
 

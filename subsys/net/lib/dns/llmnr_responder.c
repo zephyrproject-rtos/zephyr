@@ -444,7 +444,7 @@ static int dns_read(struct net_context *ctx,
 
 	/* TODO: Instead of this temporary copy, just use the net_pkt directly.
 	 */
-	ret = net_pkt_read_new(pkt, dns_data->data, data_len);
+	ret = net_pkt_read(pkt, dns_data->data, data_len);
 	if (ret < 0) {
 		goto quit;
 	}

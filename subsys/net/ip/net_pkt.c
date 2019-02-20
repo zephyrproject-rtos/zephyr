@@ -2270,31 +2270,31 @@ int net_pkt_memset(struct net_pkt *pkt, int byte, size_t amount)
 	return net_pkt_cursor_operate(pkt, &byte, amount, false, true);
 }
 
-int net_pkt_read_new(struct net_pkt *pkt, void *data, size_t length)
+int net_pkt_read(struct net_pkt *pkt, void *data, size_t length)
 {
 	NET_DBG("pkt %p data %p length %zu", pkt, data, length);
 
 	return net_pkt_cursor_operate(pkt, data, length, true, false);
 }
 
-int net_pkt_read_be16_new(struct net_pkt *pkt, u16_t *data)
+int net_pkt_read_be16(struct net_pkt *pkt, u16_t *data)
 {
 	u8_t d16[2];
 	int ret;
 
-	ret = net_pkt_read_new(pkt, d16, sizeof(u16_t));
+	ret = net_pkt_read(pkt, d16, sizeof(u16_t));
 
 	*data = d16[0] << 8 | d16[1];
 
 	return ret;
 }
 
-int net_pkt_read_be32_new(struct net_pkt *pkt, u32_t *data)
+int net_pkt_read_be32(struct net_pkt *pkt, u32_t *data)
 {
 	u8_t d32[4];
 	int ret;
 
-	ret = net_pkt_read_new(pkt, d32, sizeof(u32_t));
+	ret = net_pkt_read(pkt, d32, sizeof(u32_t));
 
 	*data = d32[0] << 24 | d32[1] << 16 | d32[2] << 8 | d32[3];
 
@@ -2570,7 +2570,7 @@ void *net_pkt_get_data(struct net_pkt *pkt,
 
 			net_pkt_cursor_backup(pkt, &backup);
 
-			if (net_pkt_read_new(pkt, access->data, access->size)) {
+			if (net_pkt_read(pkt, access->data, access->size)) {
 				net_pkt_cursor_restore(pkt, &backup);
 				return NULL;
 			}

@@ -261,7 +261,7 @@ static int ecm_send(struct net_pkt *pkt)
 
 	net_pkt_hexdump(pkt, "<");
 
-	if (net_pkt_read_new(pkt, tx_buf, len)) {
+	if (net_pkt_read(pkt, tx_buf, len)) {
 		return -ENOBUFS;
 	}
 

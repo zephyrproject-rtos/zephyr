@@ -290,7 +290,7 @@ static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
 		return 0;
 	}
 
-	if (net_pkt_read_be32_new(pkt, &msg->xid)) {
+	if (net_pkt_read_be32(pkt, &msg->xid)) {
 		return 0;
 	}
 
@@ -303,7 +303,7 @@ static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
 		u8_t length = 0U;
 		u8_t type;
 
-		if (net_pkt_read_u8_new(pkt, &type)) {
+		if (net_pkt_read_u8(pkt, &type)) {
 			return 0;
 		}
 
@@ -312,14 +312,14 @@ static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
 				return 0;
 			}
 
-			if (net_pkt_read_u8_new(pkt, &msg->type)) {
+			if (net_pkt_read_u8(pkt, &msg->type)) {
 				return 0;
 			}
 
 			return 1;
 		}
 
-		if (net_pkt_read_u8_new(pkt, &length)) {
+		if (net_pkt_read_u8(pkt, &length)) {
 			return 0;
 		}
 

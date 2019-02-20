@@ -236,7 +236,7 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 		recv_len = max_len;
 	}
 
-	if (net_pkt_read_new(pkt, (void *)&zframe, sizeof(zframe))) {
+	if (net_pkt_read(pkt, (void *)&zframe, sizeof(zframe))) {
 		errno = EIO;
 		return -1;
 	}

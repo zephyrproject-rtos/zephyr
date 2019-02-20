@@ -658,7 +658,7 @@ static inline ssize_t zsock_recv_dgram(struct net_context *ctx,
 		recv_len = max_len;
 	}
 
-	if (net_pkt_read_new(pkt, buf, recv_len)) {
+	if (net_pkt_read(pkt, buf, recv_len)) {
 		errno = ENOBUFS;
 		return -1;
 	}
@@ -724,7 +724,7 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 		}
 
 		/* Actually copy data to application buffer */
-		if (net_pkt_read_new(pkt, buf, recv_len)) {
+		if (net_pkt_read(pkt, buf, recv_len)) {
 			errno = ENOBUFS;
 			return -1;
 		}

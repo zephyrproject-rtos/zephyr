@@ -166,7 +166,7 @@ static int build_reply(const char *name,
 
 	LOG_DBG("%s received %d bytes", name, reply_len);
 
-	net_pkt_read_new(pkt, buf, reply_len);
+	net_pkt_read(pkt, buf, reply_len);
 
 	LOG_DBG("Received %d bytes, sending %d bytes", reply_len, reply_len);
 

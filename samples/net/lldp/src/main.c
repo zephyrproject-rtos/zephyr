@@ -149,7 +149,7 @@ static enum net_verdict parse_lldp(struct net_if *iface, struct net_pkt *pkt)
 		u16_t length;
 		u8_t type;
 
-		if (net_pkt_read_be16_new(pkt, &type_length)) {
+		if (net_pkt_read_be16(pkt, &type_length)) {
 			LOG_DBG("End LLDP DU TLV");
 			break;
 		}

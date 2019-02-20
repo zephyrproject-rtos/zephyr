@@ -1286,7 +1286,7 @@ int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 	u8_t opt, optlen;
 
 	while (opt_totlen) {
-		if (net_pkt_read_u8_new(pkt, &opt)) {
+		if (net_pkt_read_u8(pkt, &opt)) {
 			optlen = 0U;
 			goto error;
 		}
@@ -1310,7 +1310,7 @@ int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 			goto error;
 		}
 
-		if (net_pkt_read_u8_new(pkt, &optlen) || optlen < 2) {
+		if (net_pkt_read_u8(pkt, &optlen) || optlen < 2) {
 			goto error;
 		}
 
@@ -1330,7 +1330,7 @@ int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 				goto error;
 			}
 
-			if (net_pkt_read_be16_new(pkt, &opts->mss)) {
+			if (net_pkt_read_be16(pkt, &opts->mss)) {
 				goto error;
 			}
 

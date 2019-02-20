@@ -181,7 +181,7 @@ static int eth_send(struct device *dev, struct net_pkt *pkt)
 	int count = net_pkt_get_len(pkt);
 	int ret;
 
-	ret = net_pkt_read_new(pkt, ctx->send, count);
+	ret = net_pkt_read(pkt, ctx->send, count);
 	if (ret) {
 		return ret;
 	}

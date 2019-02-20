@@ -583,19 +583,19 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 	u8_t length;
 	u8_t type;
 
-	if (net_pkt_read_new(pkt, cookie, sizeof(cookie)) ||
+	if (net_pkt_read(pkt, cookie, sizeof(cookie)) ||
 	    memcmp(magic_cookie, cookie, sizeof(magic_cookie))) {
 		NET_DBG("Incorrect magic cookie");
 		return false;
 	}
 
-	while (!net_pkt_read_u8_new(pkt, &type)) {
+	while (!net_pkt_read_u8(pkt, &type)) {
 		if (type == DHCPV4_OPTIONS_END) {
 			NET_DBG("options_end");
 			return true;
 		}
 
-		if (net_pkt_read_u8_new(pkt, &length)) {
+		if (net_pkt_read_u8(pkt, &length)) {
 			NET_ERR("option parsing, bad length");
 			return false;
 		}
@@ -609,7 +609,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				return false;
 			}
 
-			if (net_pkt_read_new(pkt, netmask.s4_addr, length)) {
+			if (net_pkt_read(pkt, netmask.s4_addr, length)) {
 				NET_ERR("options_subnet_mask, short packet");
 				return false;
 			}
@@ -633,7 +633,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				return false;
 			}
 
-			if (net_pkt_read_new(pkt, router.s4_addr, 4) ||
+			if (net_pkt_read(pkt, router.s4_addr, 4) ||
 			    net_pkt_skip(pkt, length - 4)) {
 				NET_ERR("options_router, short packet");
 				return false;
@@ -665,7 +665,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 
 			(void)memset(&dns, 0, sizeof(dns));
 
-			if (net_pkt_read_new(pkt, dns.sin_addr.s4_addr, 4) ||
+			if (net_pkt_read(pkt, dns.sin_addr.s4_addr, 4) ||
 			    net_pkt_skip(pkt, length - 4)) {
 				NET_ERR("options_dns, short packet");
 				return false;
@@ -691,7 +691,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				return false;
 			}
 
-			if (net_pkt_read_be32_new(
+			if (net_pkt_read_be32(
 				    pkt, &iface->config.dhcpv4.lease_time) ||
 			    !iface->config.dhcpv4.lease_time) {
 				NET_ERR("options_lease_time, wrong value");
@@ -708,7 +708,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				return false;
 			}
 
-			if (net_pkt_read_be32_new(
+			if (net_pkt_read_be32(
 				    pkt, &iface->config.dhcpv4.renewal_time) ||
 			    !iface->config.dhcpv4.renewal_time) {
 				NET_DBG("options_renewal, wrong value");
@@ -725,7 +725,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				return false;
 			}
 
-			if (net_pkt_read_be32_new(
+			if (net_pkt_read_be32(
 				    pkt,
 				    &iface->config.dhcpv4.rebinding_time) ||
 			    !iface->config.dhcpv4.rebinding_time) {
@@ -743,7 +743,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				return false;
 			}
 
-			if (net_pkt_read_new(
+			if (net_pkt_read(
 				    pkt,
 				    iface->config.dhcpv4.server_id.s4_addr,
 				    length)) {
@@ -761,7 +761,7 @@ static bool dhcpv4_parse_options(struct net_pkt *pkt,
 				return false;
 			}
 
-			if (net_pkt_read_u8_new(pkt, (u8_t *)msg_type)) {
+			if (net_pkt_read_u8(pkt, (u8_t *)msg_type)) {
 				NET_DBG("options_msg_type, read err");
 				return false;
 			}

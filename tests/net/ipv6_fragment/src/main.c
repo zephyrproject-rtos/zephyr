@@ -949,7 +949,7 @@ large:
 		}
 
 		if (net_pkt_skip(pkt, 40 + 1032 + 2) ||
-		    net_pkt_read_be16_new(pkt, &frag_offset)) {
+		    net_pkt_read_be16(pkt, &frag_offset)) {
 			return -EINVAL;
 		}
 
@@ -989,7 +989,7 @@ large:
 		}
 
 		if (net_pkt_skip(pkt, 40 + 1032 + 2) ||
-		    net_pkt_read_be16_new(pkt, &frag_offset)) {
+		    net_pkt_read_be16(pkt, &frag_offset)) {
 			return -EINVAL;
 		}
 
@@ -1029,7 +1029,7 @@ large:
 		}
 
 		if (net_pkt_skip(pkt, 40 + 1032 + 2) ||
-		    net_pkt_read_be16_new(pkt, &frag_offset)) {
+		    net_pkt_read_be16(pkt, &frag_offset)) {
 			return -EINVAL;
 		}
 
@@ -1312,13 +1312,13 @@ static void test_find_last_ipv6_fragment_hbho_1(void)
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_skip(pkt, next_hdr_pos);
-	net_pkt_read_u8_new(pkt, &next_hdr);
+	net_pkt_read_u8(pkt, &next_hdr);
 
 	zassert_equal(next_hdr, 0x11, "Invalid next header");
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_skip(pkt, last_hdr_pos);
-	net_pkt_read_u8_new(pkt, &last_hdr);
+	net_pkt_read_u8(pkt, &last_hdr);
 
 	zassert_equal(last_hdr, 0x4e, "Invalid last header");
 
@@ -1355,13 +1355,13 @@ static void test_find_last_ipv6_fragment_hbho_2(void)
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_skip(pkt, next_hdr_pos);
-	net_pkt_read_u8_new(pkt, &next_hdr);
+	net_pkt_read_u8(pkt, &next_hdr);
 
 	zassert_equal(next_hdr, 0x11, "Invalid next header");
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_skip(pkt, last_hdr_pos);
-	net_pkt_read_u8_new(pkt, &last_hdr);
+	net_pkt_read_u8(pkt, &last_hdr);
 
 	zassert_equal(last_hdr, 0x4e, "Invalid last header");
 
@@ -1398,13 +1398,13 @@ static void test_find_last_ipv6_fragment_hbho_3(void)
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_skip(pkt, next_hdr_pos);
-	net_pkt_read_u8_new(pkt, &next_hdr);
+	net_pkt_read_u8(pkt, &next_hdr);
 
 	zassert_equal(next_hdr, 0x11, "Invalid next header");
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_skip(pkt, last_hdr_pos);
-	net_pkt_read_u8_new(pkt, &last_hdr);
+	net_pkt_read_u8(pkt, &last_hdr);
 
 	zassert_equal(last_hdr, 0x4e, "Invalid last header");
 
@@ -1477,13 +1477,13 @@ static void test_find_last_ipv6_fragment_hbho_frag_1(void)
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_skip(pkt, next_hdr_pos);
-	net_pkt_read_u8_new(pkt, &next_hdr);
+	net_pkt_read_u8(pkt, &next_hdr);
 
 	zassert_equal(next_hdr, 0x3a, "Invalid next header");
 
 	net_pkt_cursor_init(pkt);
 	net_pkt_skip(pkt, last_hdr_pos);
-	net_pkt_read_u8_new(pkt, &last_hdr);
+	net_pkt_read_u8(pkt, &last_hdr);
 
 	zassert_equal(last_hdr, 0x80, "Invalid next header");
 

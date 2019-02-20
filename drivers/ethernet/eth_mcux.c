@@ -502,7 +502,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	 */
 	imask = irq_lock();
 
-	if (net_pkt_read_new(pkt, context->frame_buf, total_len)) {
+	if (net_pkt_read(pkt, context->frame_buf, total_len)) {
 		irq_unlock(imask);
 		return -EIO;
 	}
