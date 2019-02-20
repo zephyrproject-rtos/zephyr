@@ -68,6 +68,15 @@ LOG_MODULE_REGISTER(usb_dfu);
 #define FIRMWARE_IMAGE_0_LABEL "image-1"
 #define FIRMWARE_IMAGE_1_LABEL "image-0"
 
+/* MCUBoot waits for CONFIG_USB_DFU_WAIT_DELAY_MS time in total to let DFU to
+ * be commenced. It intermittently checks every INTERMITTENT_CHECK_DELAY
+ * milliseconds to see if DFU has started.
+ */
+#define INTERMITTENT_CHECK_DELAY	50
+
+static struct k_poll_event dfu_event;
+static struct k_poll_signal dfu_signal;
+
 static struct k_work dfu_work;
 
 struct dfu_worker_data_t {
@@ -433,6 +442,8 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		case dfuIDLE:
 			LOG_DBG("DFU_DNLOAD start");
 			dfu_reset_counters();
+			k_poll_signal_reset(&dfu_signal);
+
 			if (dfu_data.flash_area_id !=
 			    DT_FLASH_AREA_IMAGE_1_ID) {
 				dfu_data.status = errWRITE;
@@ -453,6 +464,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			dfu_data_worker.worker_len  = pSetup->wLength;
 			if (dfu_data_worker.worker_len == 0) {
 				dfu_data.state = dfuMANIFEST_SYNC;
+				k_poll_signal_raise(&dfu_signal, 0);
 			}
 
 			memcpy(dfu_data_worker.buf, *data, pSetup->wLength);
@@ -741,6 +753,7 @@ static int usb_dfu_init(struct device *dev)
 	ARG_UNUSED(dev);
 
 	k_work_init(&dfu_work, dfu_work_handler);
+	k_poll_signal_init(&dfu_signal);
 
 #ifndef CONFIG_USB_COMPOSITE_DEVICE
 	dfu_config.usb_device_description = usb_get_device_descriptor();
@@ -770,6 +783,51 @@ static int usb_dfu_init(struct device *dev)
 	flash_area_close(fa);
 
 	return 0;
+}
+
+/**
+ * @brief Function to check if DFU is started.
+ *
+ * @return  true if DNBUSY/DNLOAD_IDLE, false otherwise.
+ */
+static bool is_dfu_started(void)
+{
+	if ((dfu_data.state == dfuDNBUSY) ||
+	    (dfu_data.state == dfuDNLOAD_IDLE)) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * @brief Function to check and wait while the USB DFU is in progress.
+ *
+ * @return  N/A
+ */
+void wait_for_usb_dfu(void)
+{
+	/* Wait for a prescribed duration of time. If DFU hasn't started within
+	 * that time, stop waiting and proceed further.
+	 */
+	for (int time = 0;
+		time < (CONFIG_USB_DFU_WAIT_DELAY_MS/INTERMITTENT_CHECK_DELAY);
+		time++) {
+		if (is_dfu_started()) {
+			k_poll_event_init(&dfu_event, K_POLL_TYPE_SIGNAL,
+				K_POLL_MODE_NOTIFY_ONLY, &dfu_signal);
+
+			/* Wait till DFU is complete */
+			if (k_poll(&dfu_event, 1, K_FOREVER) != 0) {
+				LOG_DBG("USB DFU Error");
+			}
+
+			LOG_INF("USB DFU Completed");
+			break;
+		}
+
+		k_sleep(INTERMITTENT_CHECK_DELAY);
+	}
 }
 
 SYS_INIT(usb_dfu_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
