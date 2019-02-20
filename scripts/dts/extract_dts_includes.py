@@ -58,6 +58,9 @@ def extract_string_prop(node_path, key, label):
 
 
 def generate_prop_defines(node_path, prop):
+    # Generates #defines (and .conf file values) from the prop
+    # named 'prop' on the device tree node at 'node_path'
+
     binding = get_binding(node_path)
     if 'parent' in binding and 'bus' in binding['parent']:
         # If the binding specifies a parent for the node, then include the
@@ -95,6 +98,9 @@ def generate_prop_defines(node_path, prop):
 
 
 def generate_node_defines(node_path):
+    # Generates #defines (and .conf file values) from the device
+    # tree node at 'node_path'
+
     if get_compat(node_path) not in get_binding_compats():
         return
 
@@ -437,6 +443,8 @@ def yaml_inc_error(msg):
 
 
 def generate_defines():
+    # Generates #defines (and .conf file values) from DTS
+
     for node_path in reduced.keys():
         generate_node_defines(node_path)
 
