@@ -132,7 +132,7 @@ static void udp_received(struct net_context *context,
 		return;
 	}
 
-	hdr = (struct zperf_udp_datagram *)net_pkt_get_data_new(pkt, &zperf);
+	hdr = (struct zperf_udp_datagram *)net_pkt_get_data(pkt, &zperf);
 	if (!hdr) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      "Short iperf packet!\n");

@@ -2489,8 +2489,8 @@ struct net_pkt_data_access {
  *
  * @return a pointer to the requested contiguous data, NULL otherwise.
  */
-void *net_pkt_get_data_new(struct net_pkt *pkt,
-			   struct net_pkt_data_access *access);
+void *net_pkt_get_data(struct net_pkt *pkt,
+		       struct net_pkt_data_access *access);
 
 /**
  * @brief Set contiguous data into a network packet

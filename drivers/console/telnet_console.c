@@ -312,8 +312,8 @@ static inline bool telnet_handle_command(struct net_pkt *pkt)
 					      struct telnet_simple_command);
 	struct telnet_simple_command *cmd;
 
-	cmd = (struct telnet_simple_command *)net_pkt_get_data_new(pkt,
-								   &cmd_access);
+	cmd = (struct telnet_simple_command *)net_pkt_get_data(pkt,
+							       &cmd_access);
 	if (!cmd || cmd->iac != NVT_CMD_IAC) {
 		return false;
 	}

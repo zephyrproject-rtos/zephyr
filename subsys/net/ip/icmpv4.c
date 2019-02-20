@@ -31,8 +31,7 @@ static int icmpv4_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code)
 					      struct net_icmp_hdr);
 	struct net_icmp_hdr *icmp_hdr;
 
-	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt,
-							       &icmpv4_access);
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmpv4_access);
 	if (!icmp_hdr) {
 		return -ENOBUFS;
 	}
@@ -50,8 +49,7 @@ int net_icmpv4_finalize(struct net_pkt *pkt)
 					      struct net_icmp_hdr);
 	struct net_icmp_hdr *icmp_hdr;
 
-	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt,
-							       &icmpv4_access);
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmpv4_access);
 	if (!icmp_hdr) {
 		return -ENOBUFS;
 	}
@@ -159,7 +157,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 		goto drop;
 	}
 
-	echo_req = (struct net_icmpv4_echo_req *)net_pkt_get_data_new(
+	echo_req = (struct net_icmpv4_echo_req *)net_pkt_get_data(
 							pkt, &icmpv4_access);
 	if (!echo_req) {
 		goto drop;
@@ -204,8 +202,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 
 	net_pkt_cursor_init(orig);
 
-	ip_hdr = (struct net_ipv4_hdr *)net_pkt_get_data_new(orig,
-							     &ipv4_access);
+	ip_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(orig, &ipv4_access);
 	if (!ip_hdr) {
 		goto drop_no_pkt;
 	}
@@ -215,7 +212,7 @@ int net_icmpv4_send_error(struct net_pkt *orig, u8_t type, u8_t code)
 						      struct net_icmp_hdr);
 		struct net_icmp_hdr *icmp_hdr;
 
-		icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(
+		icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(
 							orig, &icmpv4_access);
 		if (!icmp_hdr || icmp_hdr->code < 8) {
 			/* We must not send ICMP errors back */
@@ -294,8 +291,7 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 	struct net_icmp_hdr *icmp_hdr;
 	struct net_icmpv4_handler *cb;
 
-	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt,
-							       &icmp_access);
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
 	if (!icmp_hdr) {
 		NET_DBG("DROP: NULL ICMPv4 header");
 		return NET_DROP;

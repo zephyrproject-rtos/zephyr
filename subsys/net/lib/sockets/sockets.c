@@ -521,8 +521,8 @@ static int sock_get_pkt_src_addr(struct net_pkt *pkt,
 			goto error;
 		}
 
-		ipv4_hdr = (struct net_ipv4_hdr *)net_pkt_get_data_new(pkt,
-								&ipv4_access);
+		ipv4_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(
+							pkt, &ipv4_access);
 		if (!ipv4_hdr || net_pkt_acknowledge_data(pkt, &ipv4_access)) {
 			ret = -ENOBUFS;
 			goto error;
@@ -542,8 +542,8 @@ static int sock_get_pkt_src_addr(struct net_pkt *pkt,
 			goto error;
 		}
 
-		ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data_new(pkt,
-								&ipv6_access);
+		ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(
+							pkt, &ipv6_access);
 		if (!ipv6_hdr ||
 		    net_pkt_acknowledge_data(pkt, &ipv6_access) ||
 		    net_pkt_skip(pkt, net_pkt_ipv6_ext_len(pkt))) {
@@ -562,8 +562,8 @@ static int sock_get_pkt_src_addr(struct net_pkt *pkt,
 		NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
 		struct net_udp_hdr *udp_hdr;
 
-		udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt,
-								&udp_access);
+		udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt,
+								 &udp_access);
 		if (!udp_hdr) {
 			ret = -ENOBUFS;
 			goto error;
@@ -574,8 +574,8 @@ static int sock_get_pkt_src_addr(struct net_pkt *pkt,
 		NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
 		struct net_tcp_hdr *tcp_hdr;
 
-		tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt,
-								&tcp_access);
+		tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt,
+								 &tcp_access);
 		if (!tcp_hdr) {
 			ret = -ENOBUFS;
 			goto error;

@@ -439,7 +439,7 @@ static int prepare_segment(struct net_tcp *tcp,
 		goto fail;
 	}
 
-	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt, &tcp_access);
 	if (!tcp_hdr) {
 		status = -ENOBUFS;
 		goto fail;
@@ -874,7 +874,7 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 		return -EMSGSIZE;
 	}
 
-	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt, &tcp_access);
 	if (!tcp_hdr) {
 		NET_ERR("Packet %p does not contain TCP header", pkt);
 		return -EMSGSIZE;
@@ -1074,8 +1074,8 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 			continue;
 		}
 
-		tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(
-							pkt, &tcp_access);
+		tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt,
+								 &tcp_access);
 		if (!tcp_hdr) {
 			/* The pkt does not contain TCP header, this should
 			 * not happen.
@@ -1269,7 +1269,7 @@ int net_tcp_finalize(struct net_pkt *pkt)
 	NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
 	struct net_tcp_hdr *tcp_hdr;
 
-	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt, &tcp_access);
 	if (!tcp_hdr) {
 		return -ENOBUFS;
 	}
@@ -2574,7 +2574,7 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, tcp_access);
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt, tcp_access);
 	if (tcp_hdr && !net_pkt_set_data(pkt, tcp_access)) {
 		return tcp_hdr;
 	}

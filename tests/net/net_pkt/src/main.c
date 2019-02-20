@@ -483,7 +483,7 @@ void test_net_pkt_easier_rw_usage(void)
 		struct net_ipv4_hdr *ip_hdr;
 
 		ip_hdr = (struct net_ipv4_hdr *)
-			net_pkt_get_data_new(pkt, &ip_access);
+			net_pkt_get_data(pkt, &ip_access);
 		zassert_not_null(ip_hdr, "Accessor failed");
 
 		ip_hdr->tos = 0x00;

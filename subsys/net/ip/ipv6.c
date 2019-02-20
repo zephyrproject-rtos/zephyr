@@ -63,8 +63,7 @@ int net_ipv6_create(struct net_pkt *pkt,
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	struct net_ipv6_hdr *ipv6_hdr;
 
-	ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data_new(pkt,
-							       &ipv6_access);
+	ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
 	if (!ipv6_hdr) {
 		return -ENOBUFS;
 	}
@@ -98,8 +97,7 @@ int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 
 	net_pkt_set_overwrite(pkt, true);
 
-	ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data_new(pkt,
-							       &ipv6_access);
+	ipv6_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
 	if (!ipv6_hdr) {
 		return -ENOBUFS;
 	}
@@ -369,7 +367,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 
 	net_stats_update_ipv6_recv(net_pkt_iface(pkt));
 
-	hdr = (struct net_ipv6_hdr *)net_pkt_get_data_new(pkt, &ipv6_access);
+	hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
 	if (!hdr) {
 		NET_DBG("DROP: no buffer");
 		goto drop;

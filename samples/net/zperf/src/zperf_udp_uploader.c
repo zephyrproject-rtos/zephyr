@@ -30,7 +30,7 @@ static inline void zperf_upload_decode_stat(const struct shell *shell,
 	struct zperf_server_hdr *stat;
 
 	hdr = (struct zperf_udp_datagram *)
-		net_pkt_get_data_new(pkt, &zperf_udp);
+		net_pkt_get_data(pkt, &zperf_udp);
 	if (!hdr) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      "Network packet too short\n");
@@ -40,7 +40,7 @@ static inline void zperf_upload_decode_stat(const struct shell *shell,
 	net_pkt_acknowledge_data(pkt, &zperf_udp);
 
 	stat = (struct zperf_server_hdr *)
-		net_pkt_get_data_new(pkt, &zperf_stat);
+		net_pkt_get_data(pkt, &zperf_stat);
 	if (!stat) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      "Network packet too short\n");
