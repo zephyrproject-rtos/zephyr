@@ -62,8 +62,7 @@ static int eth_stellaris_send(struct device *dev, struct net_pkt *pkt)
 {
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
 	struct net_buf *frag;
-	u16_t head_len_left, i, data_len;
-	u8_t *eth_hdr;
+	u16_t i, data_len;
 
 	/* Frame transmission
 	 * First two bytes are data_len for frame,
