@@ -654,13 +654,13 @@ u8_t *generate_aux_security_hdr(struct ieee802154_security_ctx *sec_ctx,
 
 bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 				  struct net_linkaddr *dst,
-				  struct net_buf *frag,
+				  struct net_buf *buf,
 				  u8_t hdr_size)
 {
 	struct ieee802154_frame_params params;
 	struct ieee802154_fcf_seq *fs;
-	u8_t *p_buf = frag->data;
-	u8_t *frag_start = p_buf;
+	u8_t *p_buf = buf->data;
+	u8_t *buf_start = p_buf;
 	bool broadcast;
 
 	fs = generate_fcf_grounds(&p_buf, ctx->ack_requested);
@@ -699,19 +699,19 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 		}
 
 		/* p_buf should point to the right place */
-		memmove(p_buf, frag->data, frag->len);
+		memmove(p_buf, buf->data, buf->len);
 		hdr_size -= level_2_tag_size[level];
 	}
 
 no_security_hdr:
 #endif /* CONFIG_NET_L2_IEEE802154_SECURITY */
 
-	if ((p_buf - frag_start) != hdr_size) {
+	if ((p_buf - buf_start) != hdr_size) {
 		/* hdr_size was too small? We probably overwrote
 		 * payload bytes
 		 */
 		NET_ERR("Could not generate data frame %zu vs %u",
-			(p_buf - frag_start), hdr_size);
+			(p_buf - buf_start), hdr_size);
 		return false;
 	}
 
@@ -719,7 +719,7 @@ no_security_hdr:
 
 	/* Let's encrypt/auth only in the end, is needed */
 	return ieee802154_encrypt_auth(broadcast ? NULL : &ctx->sec_ctx,
-				       frag_start, hdr_size, frag->len,
+				       buf_start, hdr_size, buf->len,
 				       ctx->ext_addr);
 }
 
@@ -810,26 +810,25 @@ static inline u8_t mac_command_length(enum ieee802154_cfi cfi)
 }
 
 struct net_pkt *
-ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
+ieee802154_create_mac_cmd_frame(struct net_if *iface,
 				enum ieee802154_cfi type,
 				struct ieee802154_frame_params *params)
 {
+	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_fcf_seq *fs;
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	u8_t *p_buf, *p_start;
 
-	pkt = net_pkt_get_reserve_tx(BUF_TIMEOUT);
+	/* It would be costly to compute the size when actual frame are never
+	 * bigger than 125 bytes, so let's allocate that size as buffer.
+	 */
+	pkt = net_pkt_alloc_with_buffer(iface,
+					IEEE802154_MTU - IEEE802154_MFR_LENGTH,
+					AF_UNSPEC, 0, BUF_TIMEOUT);
 	if (!pkt) {
 		return NULL;
 	}
 
-	frag = net_pkt_get_frag(pkt, BUF_TIMEOUT);
-	if (!frag) {
-		goto error;
-	}
-
-	net_pkt_frag_add(pkt, frag);
 	p_buf = net_pkt_data(pkt);
 	p_start = p_buf;
 
@@ -846,7 +845,7 @@ ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
 
 	p_buf = generate_addressing_fields(ctx, fs, params, p_buf);
 
-	net_buf_add(frag, p_buf - p_start);
+	net_buf_add(pkt->buffer, p_buf - p_start);
 
 	/* Let's insert the cfi */
 	((struct ieee802154_command *)p_buf)->cfi = type;
@@ -863,7 +862,7 @@ error:
 void ieee802154_mac_cmd_finalize(struct net_pkt *pkt,
 				 enum ieee802154_cfi type)
 {
-	net_buf_add(pkt->frags, mac_command_length(type));
+	net_buf_add(pkt->buffer, mac_command_length(type));
 }
 
 #endif /* CONFIG_NET_L2_IEEE802154_RFD */
@@ -886,6 +885,8 @@ bool ieee802154_create_ack_frame(struct net_if *iface,
 
 	fs->fc.frame_type = IEEE802154_FRAME_TYPE_ACK;
 	fs->sequence = seq;
+
+	net_buf_add(pkt->buffer, IEEE802154_ACK_PKT_LENGTH);
 
 	return true;
 }
@@ -929,8 +930,8 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 		level -= 4;
 	}
 
-	/* We remove tag size from frag's length, it is now useless */
-	pkt->frags->len -= level_2_tag_size[level];
+	/* We remove tag size from buf's length, it is now useless */
+	pkt->buffer->len -= level_2_tag_size[level];
 
 	return true;
 }

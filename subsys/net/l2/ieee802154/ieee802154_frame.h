@@ -469,7 +469,7 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 				  u8_t hdr_size);
 
 struct net_pkt *
-ieee802154_create_mac_cmd_frame(struct ieee802154_context *ctx,
+ieee802154_create_mac_cmd_frame(struct net_if *iface,
 				enum ieee802154_cfi type,
 				struct ieee802154_frame_params *params);
 
