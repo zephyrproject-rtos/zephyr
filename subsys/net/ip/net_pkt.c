@@ -1110,113 +1110,6 @@ u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
 	return appended;
 }
 
-/* Helper routine to retrieve single byte from fragment and move
- * offset. If required byte is last byte in fragment then return
- * next fragment and set offset = 0.
- */
-static inline struct net_buf *net_frag_read_byte(struct net_buf *frag,
-						 u16_t offset,
-						 u16_t *pos,
-						 u8_t *data)
-{
-	if (data) {
-		*data = frag->data[offset];
-	}
-
-	*pos = offset + 1;
-
-	if (*pos >= frag->len) {
-		*pos = 0U;
-
-		return frag->frags;
-	}
-
-	return frag;
-}
-
-/* Helper function to adjust offset in net_frag_read() call
- * if given offset is more than current fragment length.
- */
-static inline struct net_buf *adjust_offset(struct net_buf *frag,
-					    u16_t offset, u16_t *pos)
-{
-	if (!frag) {
-		return NULL;
-	}
-
-	while (frag) {
-		if (offset < frag->len) {
-			*pos = offset;
-
-			return frag;
-		}
-
-		offset -= frag->len;
-		frag = frag->frags;
-	}
-
-	return NULL;
-}
-
-struct net_buf *net_frag_read(struct net_buf *frag, u16_t offset,
-			      u16_t *pos, u16_t len, u8_t *data)
-{
-	u16_t copy = 0U;
-
-	frag = adjust_offset(frag, offset, pos);
-	if (!frag) {
-		goto error;
-	}
-
-	while (len-- > 0 && frag) {
-		if (data) {
-			frag = net_frag_read_byte(frag, *pos,
-						  pos, data + copy++);
-		} else {
-			frag = net_frag_read_byte(frag, *pos, pos, NULL);
-		}
-
-		/* Error: Still remaining length to be read, but no data. */
-		if (!frag && len) {
-			NET_ERR("Not enough data to read");
-			goto error;
-		}
-	}
-
-	return frag;
-
-error:
-	*pos = 0xffff;
-
-	return NULL;
-}
-
-struct net_buf *net_frag_read_be16(struct net_buf *frag, u16_t offset,
-				   u16_t *pos, u16_t *value)
-{
-	struct net_buf *ret_frag;
-	u8_t v16[2];
-
-	ret_frag = net_frag_read(frag, offset, pos, sizeof(u16_t), v16);
-
-	*value = v16[0] << 8 | v16[1];
-
-	return ret_frag;
-}
-
-struct net_buf *net_frag_read_be32(struct net_buf *frag, u16_t offset,
-				   u16_t *pos, u32_t *value)
-{
-	struct net_buf *ret_frag;
-	u8_t v32[4];
-
-	ret_frag = net_frag_read(frag, offset, pos, sizeof(u32_t), v32);
-
-	*value = v32[0] << 24 | v32[1] << 16 | v32[2] << 8 | v32[3];
-
-	return ret_frag;
-}
-
 void net_pkt_get_info(struct k_mem_slab **rx,
 		      struct k_mem_slab **tx,
 		      struct net_buf_pool **rx_data,
@@ -1248,20 +1141,6 @@ void net_pkt_print(void)
 		get_frees(&rx_bufs), get_frees(&tx_bufs));
 }
 #endif /* CONFIG_NET_DEBUG_NET_PKT_ALLOC */
-
-struct net_buf *net_frag_get_pos(struct net_pkt *pkt,
-				 u16_t offset,
-				 u16_t *pos)
-{
-	struct net_buf *frag;
-
-	frag = net_frag_skip(pkt->frags, offset, pos, 0);
-	if (!frag) {
-		return NULL;
-	}
-
-	return frag;
-}
 
 /* New allocator and API starts here */
 
