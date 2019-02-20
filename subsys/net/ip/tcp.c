@@ -1383,11 +1383,6 @@ static void queue_fin(struct net_context *ctx)
 	}
 
 	net_tcp_queue_pkt(ctx, pkt);
-
-	ret = net_tcp_send_pkt(pkt);
-	if (ret < 0) {
-		net_pkt_unref(pkt);
-	}
 }
 
 int net_tcp_put(struct net_context *context)
