@@ -38,6 +38,7 @@ static inline void z_arch_irq_unlock(int key)
 struct k_spinlock;
 int z_spin_lock_valid(struct k_spinlock *l);
 int z_spin_unlock_valid(struct k_spinlock *l);
+void z_spin_lock_set_owner(struct k_spinlock *l);
 #define SPIN_VALIDATE
 #endif
 #endif
@@ -81,6 +82,9 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 	}
 #endif
 
+#ifdef SPIN_VALIDATE
+	z_spin_lock_set_owner(l);
+#endif
 	return k;
 }
 
