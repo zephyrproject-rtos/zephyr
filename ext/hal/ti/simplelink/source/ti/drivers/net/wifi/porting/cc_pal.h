@@ -50,6 +50,15 @@ extern "C" {
 #include <ti/drivers/dpl/ClockP.h>
 #if defined(SL_PLATFORM_MULTI_THREADED)
 /* Use Zephyr posix headers */
+
+/*
+ * Hack to prevent redefining zsock_timeval. Currently it is not possible
+ * to include both socket.h and pthread.h without build errors (issue #13444)
+ */
+#ifdef timeval
+#undef timeval
+#endif
+
 #include <posix/pthread.h>
 #include <posix/semaphore.h>
 #include <posix/unistd.h>
@@ -58,7 +67,6 @@ extern "C" {
 #include <ti/drivers/dpl/MutexP.h>
 
 #endif
-
 
 
 
