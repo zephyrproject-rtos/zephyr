@@ -1051,65 +1051,6 @@ bool net_pkt_compact(struct net_pkt *pkt)
 	return true;
 }
 
-static inline struct net_buf *net_pkt_append_allocator(s32_t timeout,
-						       void *user_data)
-{
-	return net_pkt_get_frag((struct net_pkt *)user_data, timeout);
-}
-
-u16_t net_pkt_append(struct net_pkt *pkt, u16_t len, const u8_t *data,
-		    s32_t timeout)
-{
-	struct net_buf *frag;
-	struct net_context *ctx = NULL;
-	u16_t max_len, appended;
-
-	if (!pkt || !data || !len) {
-		return 0;
-	}
-
-	if (!pkt->frags) {
-		frag = net_pkt_get_frag(pkt, timeout);
-		if (!frag) {
-			return 0;
-		}
-
-		net_pkt_frag_add(pkt, frag);
-	}
-
-	if (pkt->slab != &rx_pkts) {
-		ctx = net_pkt_context(pkt);
-	}
-
-	if (ctx) {
-		/* Make sure we don't send more data in one packet than
-		 * protocol or MTU allows when there is a context for the
-		 * packet.
-		 */
-		max_len = pkt->data_len;
-
-#if defined(CONFIG_NET_TCP)
-		if (ctx->tcp && (ctx->tcp->send_mss < max_len)) {
-			max_len = ctx->tcp->send_mss;
-		}
-#endif
-
-		if (len > max_len) {
-			len = max_len;
-		}
-	}
-
-	appended = net_buf_append_bytes(net_buf_frag_last(pkt->frags),
-					len, data, timeout,
-					net_pkt_append_allocator, pkt);
-
-	if (ctx) {
-		pkt->data_len -= appended;
-	}
-
-	return appended;
-}
-
 void net_pkt_get_info(struct k_mem_slab **rx,
 		      struct k_mem_slab **tx,
 		      struct net_buf_pool **rx_data,
