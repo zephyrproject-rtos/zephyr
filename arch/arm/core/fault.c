@@ -419,7 +419,7 @@ static u32_t _UsageFault(const NANO_ESF *esf)
 		PR_FAULT_INFO("  Attempt to execute undefined instruction\n");
 	}
 
-	/* clear USFR sticky bits */
+	/* clear UFSR sticky bits */
 	SCB->CFSR |= SCB_CFSR_USGFAULTSR_Msk;
 
 	return reason;
