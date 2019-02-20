@@ -93,6 +93,9 @@ def main():
     print("Configuration written to '{}'".format(args.dotconfig))
     kconf.write_autoconf(args.autoconf)
 
+    # Write the list of processed Kconfig sources to a file
+    write_kconfig_filenames(kconf.kconfig_filenames, kconf.srctree, args.sources)
+
 
 # Message printed when a promptless symbol is assigned (and doesn't get the
 # assigned value)
@@ -182,6 +185,32 @@ def promptless(sym):
 
     return not any(node.prompt for node in sym.nodes)
 
+def write_kconfig_filenames(paths, root_path, output_file_path):
+    # 'paths' is a list of paths. The list has duplicates and the
+    # paths are either absolute or relative to 'root_path'.
+
+    # We need to write this list, in a format that CMake can easily
+    # parse, to the output file at 'output_file_path'.
+
+    # The written list should also have absolute paths instead of
+    # relative paths, and it should not have duplicates.
+
+    # Remove duplicates
+    paths_uniq = set(paths)
+
+    with open(output_file_path, 'w') as out:
+        # sort to be deterministic
+        for path in sorted(paths_uniq):
+            # Change from relative to absolute path (do nothing for
+            # absolute paths)
+            abs_path = os.path.join(root_path, path)
+
+            # Assert that the file exists, since it was sourced, it
+            # must surely also exist.
+            assert os.path.isfile(abs_path), "Internal error"
+
+            out.write("{}\n".format(abs_path))
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -192,6 +221,7 @@ def parse_args():
     parser.add_argument("kconfig_root")
     parser.add_argument("dotconfig")
     parser.add_argument("autoconf")
+    parser.add_argument("sources")
     parser.add_argument("conf_fragments", metavar='conf', type=str, nargs='+')
 
     return parser.parse_args()
