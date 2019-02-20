@@ -21,7 +21,7 @@
 #include "ieee802154_frame.h"
 
 struct ieee802154_fragment_ctx {
-	struct net_buf *frag;
+	struct net_buf *buf;
 	u8_t *pos;
 	u16_t pkt_size;
 	u16_t processed;
@@ -41,8 +41,8 @@ void ieee802154_fragment_ctx_init(struct ieee802154_fragment_ctx *ctx,
 				  struct net_pkt *pkt, u16_t hdr_diff,
 				  bool iphc)
 {
-	ctx->frag = pkt->frags;
-	ctx->pos = ctx->frag->data;
+	ctx->buf = pkt->buffer;
+	ctx->pos = ctx->buf->data;
 	ctx->hdr_diff = hdr_diff;
 	ctx->pkt_size = net_pkt_get_len(pkt) + (iphc ? hdr_diff : -1);
 	ctx->offset = 0;
