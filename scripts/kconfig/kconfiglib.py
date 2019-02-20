@@ -1,4 +1,4 @@
-# Copyright (c) 2011-2018, Ulf Magnusson
+# Copyright (c) 2011-2019, Ulf Magnusson
 # SPDX-License-Identifier: ISC
 
 """
@@ -609,7 +609,8 @@ class Kconfig(object):
     kconfig_filenames:
       A list with the filenames of all Kconfig files included in the
       configuration, relative to $srctree (or relative to the current directory
-      if $srctree isn't set).
+      if $srctree isn't set), except absolute paths (e.g.
+      'source "/foo/Kconfig") are kept as-is.
 
       The files are listed in the order they are source'd, starting with the
       top-level Kconfig file. If a file is source'd multiple times, it will
