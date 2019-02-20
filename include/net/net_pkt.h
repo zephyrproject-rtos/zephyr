@@ -929,12 +929,6 @@ struct net_pkt *net_pkt_get_tx_debug(struct net_context *context,
 #define net_pkt_get_tx(context, timeout)				\
 	net_pkt_get_tx_debug(context, timeout, __func__, __LINE__)
 
-struct net_buf *net_pkt_get_data_debug(struct net_context *context,
-				       s32_t timeout,
-				       const char *caller, int line);
-#define net_pkt_get_data(context, timeout)				\
-	net_pkt_get_data_debug(context, timeout, __func__, __LINE__)
-
 struct net_pkt *net_pkt_get_reserve_rx_debug(s32_t timeout,
 					     const char *caller, int line);
 #define net_pkt_get_reserve_rx(timeout)					\
@@ -1068,26 +1062,6 @@ struct net_pkt *net_pkt_get_rx(struct net_context *context,
 #if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_pkt *net_pkt_get_tx(struct net_context *context,
 			       s32_t timeout);
-#endif
-
-/**
- * @brief Get buffer from the DATA buffers pool.
- *
- * @details Get network buffer from DATA buffer pool. You must have
- * network context before able to use this function.
- *
- * @param context Network context that will be related to
- * this buffer.
- * @param timeout Affects the action taken should the net buf pool be empty.
- *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
- *        wait as long as necessary. Otherwise, wait up to the specified
- *        number of milliseconds before timing out.
- *
- * @return Network buffer if successful, NULL otherwise.
- */
-#if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_buf *net_pkt_get_data(struct net_context *context,
-				 s32_t timeout);
 #endif
 
 /**

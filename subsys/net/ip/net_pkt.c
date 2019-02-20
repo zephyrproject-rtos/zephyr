@@ -630,44 +630,6 @@ static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
 	return pkt;
 }
 
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-static struct net_buf *_pkt_get_data_debug(struct net_buf_pool *pool,
-					   struct net_context *context,
-					   s32_t timeout,
-					   const char *caller, int line)
-#else
-static struct net_buf *_pkt_get_data(struct net_buf_pool *pool,
-				     struct net_context *context,
-				     s32_t timeout)
-#endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
-{
-	struct in6_addr *addr6 = NULL;
-	struct net_if *iface;
-	struct net_buf *frag;
-
-	if (!context) {
-		return NULL;
-	}
-
-	iface = net_context_get_iface(context);
-	if (!iface) {
-		NET_ERR("Context has no interface");
-		return NULL;
-	}
-
-	if (net_context_get_family(context) == AF_INET6) {
-		addr6 = &((struct sockaddr_in6 *) &context->remote)->sin6_addr;
-	}
-
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	frag = net_pkt_get_reserve_data_debug(pool, timeout, caller, line);
-#else
-	frag = net_pkt_get_reserve_data(pool, timeout);
-#endif
-	return frag;
-}
-
-
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 static inline struct k_mem_slab *get_tx_slab(struct net_context *context)
 {
@@ -709,16 +671,6 @@ struct net_pkt *net_pkt_get_tx_debug(struct net_context *context,
 				 timeout, caller, line);
 }
 
-struct net_buf *net_pkt_get_data_debug(struct net_context *context,
-				       s32_t timeout,
-				       const char *caller, int line)
-{
-	struct net_buf_pool *pool = get_data_pool(context);
-
-	return _pkt_get_data_debug(pool ? pool : &tx_bufs, context,
-				   timeout, caller, line);
-}
-
 #else /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 struct net_pkt *net_pkt_get_rx(struct net_context *context, s32_t timeout)
@@ -738,21 +690,6 @@ struct net_pkt *net_pkt_get_tx(struct net_context *context, s32_t timeout)
 
 	return net_pkt_get(slab ? slab : &tx_pkts, context, timeout);
 }
-
-struct net_buf *net_pkt_get_data(struct net_context *context, s32_t timeout)
-{
-	struct net_buf_pool *pool;
-
-	NET_ASSERT_INFO(context, "Data context not set");
-
-	pool = get_data_pool(context);
-
-	/* The context is not known in RX path so we can only have TX
-	 * data here.
-	 */
-	return _pkt_get_data(pool ? pool : &tx_bufs, context, timeout);
-}
-
 #endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 
