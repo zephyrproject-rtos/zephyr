@@ -122,14 +122,20 @@ if(CONFIG_X86_MMU)
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     )
 
+  if(CONFIG_X86_KPTI)
+    set(user_mmu_tables_bin user_mmu_tables.bin)
+  endif()
+
   add_custom_target(
     mmu_tables_bin_target
     DEPENDS
-    user_mmu_tables.bin
-         mmu_tables.bin
+    mmu_tables.bin
+    ${user_mmu_tables_bin}
   )
   add_custom_command(
-    OUTPUT mmu_tables.bin user_mmu_tables.bin
+    OUTPUT
+    mmu_tables.bin
+    ${user_mmu_tables_bin}
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_mmu_x86.py
