@@ -22,8 +22,20 @@
 #include <linker/linker-defs.h>
 #include <kernel_internal.h>
 #include <arch/arm/cortex_m/cmsis.h>
-#include <string.h>
 #include <cortex_m/stack.h>
+
+#if defined(__GNUC__)
+/*
+ * GCC can detect if memcpy is passed a NULL argument, however one of
+ * the cases of relocate_vector_table() it is valid to pass NULL, so we
+ * supress the warning for this case.  We need to do this before
+ * string.h is included to get the declaration of memcpy.
+ */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wnonnull"
+#endif
+
+#include <string.h>
 
 static inline void switch_sp_to_psp(void)
 {
@@ -84,6 +96,7 @@ _GENERIC_SECTION(.vt_pointer_section) void *_vector_table_pointer;
 #endif
 
 #define VECTOR_ADDRESS 0
+
 void __weak relocate_vector_table(void)
 {
 #if defined(CONFIG_XIP) && (CONFIG_FLASH_BASE_ADDRESS != 0) || \
@@ -94,6 +107,10 @@ void __weak relocate_vector_table(void)
 	_vector_table_pointer = _vector_start;
 #endif
 }
+
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 
 #endif /* CONFIG_CPU_CORTEX_M_HAS_VTOR */
 
