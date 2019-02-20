@@ -57,7 +57,7 @@ def extract_string_prop(node_path, key, label):
     defs[node_path][label] = '"' + reduced[node_path]['props'][key] + '"'
 
 
-def extract_property(node_path, prop):
+def generate_prop_defines(node_path, prop):
     binding = get_binding(node_path)
     if 'parent' in binding and 'bus' in binding['parent']:
         # If the binding specifies a parent for the node, then include the
@@ -123,12 +123,12 @@ def generate_node_defines(node_path):
 
             if re.fullmatch(yaml_prop, prop):
                 match = True
-                extract_property(node_path, prop)
+                generate_prop_defines(node_path, prop)
 
         # Handle the case that we have a boolean property, but its not
         # in the dts
         if not match and yaml_val['type'] == 'boolean':
-            extract_property(node_path, yaml_prop)
+            generate_prop_defines(node_path, yaml_prop)
 
 
 def generate_bus_defines(node_path):
