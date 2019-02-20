@@ -61,7 +61,6 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 {
 	struct device *dev = (struct device *)arg1;
 	struct nrf5_802154_data *nrf5_radio = NRF5_802154_DATA(dev);
-	struct net_buf *frag = NULL;
 	struct net_pkt *pkt;
 	struct nrf5_802154_rx_frame *rx_frame;
 	u8_t pkt_len;
@@ -79,22 +78,6 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 
 		__ASSERT_NO_MSG(rx_frame->psdu);
 
-		LOG_DBG("Frame received");
-
-		pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
-		if (!pkt) {
-			LOG_ERR("No pkt available");
-			goto drop;
-		}
-
-		frag = net_pkt_get_frag(pkt, K_NO_WAIT);
-		if (!frag) {
-			LOG_ERR("No frag available");
-			goto drop;
-		}
-
-		net_pkt_frag_insert(pkt, frag);
-
 		/* rx_mpdu contains length, psdu, fcs|lqi
 		 * The last 2 bytes contain LQI or FCS, depending if
 		 * automatic CRC handling is enabled or not, respectively.
@@ -106,11 +89,20 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 			pkt_len = rx_frame->psdu[0] -  NRF5_FCS_LENGTH;
 		}
 
-		 __ASSERT_NO_MSG(pkt_len <= CONFIG_NET_BUF_DATA_SIZE);
+		__ASSERT_NO_MSG(pkt_len <= CONFIG_NET_BUF_DATA_SIZE);
 
-		/* Skip length (first byte) and copy the payload */
-		memcpy(frag->data, rx_frame->psdu + 1, pkt_len);
-		net_buf_add(frag, pkt_len);
+		LOG_DBG("Frame received");
+
+		pkt = net_pkt_alloc_with_buffer(nrf5_radio->iface, pkt_len,
+						AF_UNSPEC, 0, K_NO_WAIT);
+		if (!pkt) {
+			LOG_ERR("No pkt available");
+			goto drop;
+		}
+
+		if (net_pkt_write_new(pkt, rx_frame->psdu + 1, pkt_len)) {
+			goto drop;
+		}
 
 		net_pkt_set_ieee802154_lqi(pkt, rx_frame->lqi);
 		net_pkt_set_ieee802154_rssi(pkt, rx_frame->rssi);
