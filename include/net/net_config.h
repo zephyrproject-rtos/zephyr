@@ -24,9 +24,24 @@ extern "C" {
  * @{
  */
 
-/** Flags that tell what kind of functionality is needed by the client. */
+/* Flags that tell what kind of functionality is needed by the client. */
+/**
+ * @brief Application needs routers to be set so that connectivity to remote
+ * network is possible. For IPv6 networks, this means that the device should
+ * receive IPv6 router advertisement message before continuing.
+ */
 #define NET_CONFIG_NEED_ROUTER 0x00000001
+
+/**
+ * @brief Application needs IPv6 subsystem configured and initialized.
+ * Typically this means that the device has IPv6 address set.
+ */
 #define NET_CONFIG_NEED_IPV6   0x00000002
+
+/**
+ * @brief Application needs IPv4 subsystem configured and initialized.
+ * Typically this means that the device has IPv4 address set.
+ */
 #define NET_CONFIG_NEED_IPV4   0x00000004
 
 /**
