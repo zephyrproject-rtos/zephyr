@@ -475,7 +475,7 @@ static u8_t kw41z_convert_lqi(u8_t hw_lqi)
 static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 {
 	struct net_pkt *pkt = NULL;
-	struct net_buf *frag = NULL;
+	struct net_buf *buf = NULL;
 	u8_t pkt_len, hw_lqi;
 	int rslt;
 
@@ -490,28 +490,23 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 	pkt_len = len - KW41Z_FCS_LENGTH;
 #endif
 
-	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
+	pkt = net_pkt_alloc_with_buffer(kw41z->iface, pkt_len,
+					AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("No buf available");
 		goto out;
 	}
 
-	frag = net_pkt_get_frag(pkt, K_NO_WAIT);
-	if (!frag) {
-		LOG_ERR("No frag available");
-		goto out;
-	}
-
-	net_pkt_frag_insert(pkt, frag);
+	buf = pkt->buffer;
 
 #if CONFIG_SOC_MKW41Z4
 	/* PKT_BUFFER_RX needs to be accessed aligned to 16 bits */
 	for (u16_t reg_val = 0, i = 0; i < pkt_len; i++) {
 		if (i % 2 == 0) {
 			reg_val = ZLL->PKT_BUFFER_RX[i/2];
-			frag->data[i] = reg_val & 0xFF;
+			buf->data[i] = reg_val & 0xFF;
 		} else {
-			frag->data[i] = reg_val >> 8;
+			buf->data[i] = reg_val >> 8;
 		}
 	}
 #else /* CONFIG_SOC_MKW40Z4 */
@@ -520,21 +515,21 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 		switch (i % 4) {
 		case 0:
 			reg_val = ZLL->PKT_BUFFER[i/4];
-			frag->data[i] = reg_val & 0xFF;
+			buf->data[i] = reg_val & 0xFF;
 			break;
 		case 1:
-			frag->data[i] = (reg_val >> 8) & 0xFF;
+			buf->data[i] = (reg_val >> 8) & 0xFF;
 			break;
 		case 2:
-			frag->data[i] = (reg_val >> 16) & 0xFF;
+			buf->data[i] = (reg_val >> 16) & 0xFF;
 			break;
 		default:
-			frag->data[i] = reg_val >> 24;
+			buf->data[i] = reg_val >> 24;
 		}
 	}
 #endif
 
-	net_buf_add(frag, pkt_len);
+	net_buf_add(buf, pkt_len);
 
 	hw_lqi = (ZLL->LQI_AND_RSSI & ZLL_LQI_AND_RSSI_LQI_VALUE_MASK) >>
 		 ZLL_LQI_AND_RSSI_LQI_VALUE_SHIFT;
