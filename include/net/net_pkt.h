@@ -2304,12 +2304,12 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout);
  *
  * @return 0 on success, negative errno code otherwise.
  */
-int net_pkt_read_new(struct net_pkt *pkt, void *data, size_t length);
+int net_pkt_read(struct net_pkt *pkt, void *data, size_t length);
 
 /* Read u8_t data data a net_pkt */
-static inline int net_pkt_read_u8_new(struct net_pkt *pkt, u8_t *data)
+static inline int net_pkt_read_u8(struct net_pkt *pkt, u8_t *data)
 {
-	return net_pkt_read_new(pkt, data, 1);
+	return net_pkt_read(pkt, data, 1);
 }
 
 /**
@@ -2324,7 +2324,7 @@ static inline int net_pkt_read_u8_new(struct net_pkt *pkt, u8_t *data)
  *
  * @return 0 on success, negative errno code otherwise.
  */
-int net_pkt_read_be16_new(struct net_pkt *pkt, u16_t *data);
+int net_pkt_read_be16(struct net_pkt *pkt, u16_t *data);
 
 /**
  * @brief Read u32_t big endian data from a net_pkt
@@ -2338,7 +2338,7 @@ int net_pkt_read_be16_new(struct net_pkt *pkt, u16_t *data);
  *
  * @return 0 on success, negative errno code otherwise.
  */
-int net_pkt_read_be32_new(struct net_pkt *pkt, u32_t *data);
+int net_pkt_read_be32(struct net_pkt *pkt, u32_t *data);
 
 /**
  * @brief Write data into a net_pkt

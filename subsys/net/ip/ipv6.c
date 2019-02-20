@@ -184,7 +184,7 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 	u16_t exthdr_len = 0U;
 	u16_t length = 0U;
 
-	if (net_pkt_read_u8_new(pkt, (u8_t *)&exthdr_len)) {
+	if (net_pkt_read_u8(pkt, (u8_t *)&exthdr_len)) {
 		return -ENOBUFS;
 	}
 
@@ -201,12 +201,12 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 		u8_t opt_type, opt_len;
 
 		/* Each extension option has type and length */
-		if (net_pkt_read_u8_new(pkt, &opt_type)) {
+		if (net_pkt_read_u8(pkt, &opt_type)) {
 			return -ENOBUFS;
 		}
 
 		if (opt_type != NET_IPV6_EXT_HDR_OPT_PAD1) {
-			if (net_pkt_read_u8_new(pkt, &opt_len)) {
+			if (net_pkt_read_u8(pkt, &opt_len)) {
 				return -ENOBUFS;
 			}
 		}
@@ -446,7 +446,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 
 		NET_DBG("IPv6 next header %d", nexthdr);
 
-		if (net_pkt_read_u8_new(pkt, &next_nexthdr)) {
+		if (net_pkt_read_u8(pkt, &next_nexthdr)) {
 			goto drop;
 		}
 

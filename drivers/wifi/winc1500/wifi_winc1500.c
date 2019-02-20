@@ -465,7 +465,7 @@ static int winc1500_send(struct net_pkt *pkt,
 	w1500_data.socket_data[socket].send_cb = cb;
 	w1500_data.socket_data[socket].send_user_data = user_data;
 
-	if (net_pkt_read_new(pkt, buf->data, net_pkt_get_len(pkt))) {
+	if (net_pkt_read(pkt, buf->data, net_pkt_get_len(pkt))) {
 		ret = -ENOBUFS;
 		goto out;
 	}
@@ -509,7 +509,7 @@ static int winc1500_sendto(struct net_pkt *pkt,
 	w1500_data.socket_data[socket].send_cb = cb;
 	w1500_data.socket_data[socket].send_user_data = user_data;
 
-	if (net_pkt_read_new(pkt, buf->data, net_pkt_get_len(pkt))) {
+	if (net_pkt_read(pkt, buf->data, net_pkt_get_len(pkt))) {
 		ret = -ENOBUFS;
 		goto out;
 	}

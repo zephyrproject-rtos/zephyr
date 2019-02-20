@@ -1034,9 +1034,9 @@ static int rndis_send(struct net_pkt *pkt)
 
 	rndis_hdr_add(tx_buf, len);
 
-	ret = net_pkt_read_new(pkt,
-			       tx_buf + sizeof(struct rndis_payload_packet),
-			       len);
+	ret = net_pkt_read(pkt,
+			   tx_buf + sizeof(struct rndis_payload_packet),
+			   len);
 	if (ret < 0) {
 		return ret;
 	}

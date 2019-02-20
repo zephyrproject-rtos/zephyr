@@ -899,7 +899,7 @@ static inline struct net_nbr *handle_ns_neighbor(struct net_pkt *pkt,
 
 	lladdr.len = 8 * ll_len - 2;
 
-	if (net_pkt_read_new(pkt, lladdr.addr, lladdr.len)) {
+	if (net_pkt_read(pkt, lladdr.addr, lladdr.len)) {
 		return NULL;
 	}
 
@@ -1437,7 +1437,7 @@ static inline bool handle_na_neighbor(struct net_pkt *pkt,
 		net_pkt_cursor_init(pkt);
 
 		if (net_pkt_skip(pkt, tllao_offset) ||
-		    net_pkt_read_new(pkt, lladdr.addr, lladdr.len)) {
+		    net_pkt_read(pkt, lladdr.addr, lladdr.len)) {
 			return false;
 		}
 	}
@@ -1918,7 +1918,7 @@ static inline struct net_nbr *handle_ra_neighbor(struct net_pkt *pkt, u8_t len)
 		lladdr.len = net_pkt_lladdr_src(pkt)->len;
 	}
 
-	if (net_pkt_read_new(pkt, lladdr.addr, lladdr.len)) {
+	if (net_pkt_read(pkt, lladdr.addr, lladdr.len)) {
 		return NULL;
 	}
 
@@ -2235,7 +2235,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 		case NET_ICMPV6_ND_OPT_MTU:
 			/* MTU has reserved 2 bytes, so skip it. */
 			if (net_pkt_skip(pkt, 2) ||
-			    net_pkt_read_be32_new(pkt, &mtu)) {
+			    net_pkt_read_be32(pkt, &mtu)) {
 				goto drop;
 			}
 

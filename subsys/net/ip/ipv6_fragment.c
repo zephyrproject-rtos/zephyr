@@ -75,7 +75,7 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_off,
 
 	nexthdr = hdr->nexthdr;
 	while (!net_ipv6_is_nexthdr_upper_layer(nexthdr)) {
-		if (net_pkt_read_u8_new(pkt, &next_nexthdr)) {
+		if (net_pkt_read_u8(pkt, &next_nexthdr)) {
 			goto fail;
 		}
 
@@ -84,7 +84,7 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_off,
 		case NET_IPV6_NEXTHDR_DESTO:
 			length = 0U;
 
-			if (net_pkt_read_u8_new(pkt, (u8_t *)&length)) {
+			if (net_pkt_read_u8(pkt, (u8_t *)&length)) {
 				goto fail;
 			}
 
@@ -460,8 +460,8 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	 * being 1 byte too far, let's just read the next relevant pieces.
 	 */
 	if (net_pkt_skip(pkt, 1) || /* reserved */
-	    net_pkt_read_be16_new(pkt, &flag) ||
-	    net_pkt_read_be32_new(pkt, &id)) {
+	    net_pkt_read_be16(pkt, &flag) ||
+	    net_pkt_read_be32(pkt, &id)) {
 		goto drop;
 	}
 
@@ -678,9 +678,9 @@ int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 	net_pkt_cursor_init(pkt);
 
 	if (net_pkt_skip(pkt, next_hdr_off) ||
-	    net_pkt_read_u8_new(pkt, &next_hdr) ||
+	    net_pkt_read_u8(pkt, &next_hdr) ||
 	    net_pkt_skip(pkt, last_hdr_off) ||
-	    net_pkt_read_u8_new(pkt, &last_hdr)) {
+	    net_pkt_read_u8(pkt, &last_hdr)) {
 		return -ENOBUFS;
 	}
 

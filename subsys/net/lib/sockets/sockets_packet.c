@@ -216,7 +216,7 @@ ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 		recv_len = max_len;
 	}
 
-	if (net_pkt_read_new(pkt, buf, recv_len)) {
+	if (net_pkt_read(pkt, buf, recv_len)) {
 		errno = ENOBUFS;
 		return -1;
 	}

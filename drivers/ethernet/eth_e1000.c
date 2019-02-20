@@ -72,7 +72,7 @@ static int e1000_send(struct device *device, struct net_pkt *pkt)
 	struct e1000_dev *dev = device->driver_data;
 	size_t len = net_pkt_get_len(pkt);
 
-	if (net_pkt_read_new(pkt, dev->txb, len)) {
+	if (net_pkt_read(pkt, dev->txb, len)) {
 		return -EIO;
 	}
 

@@ -114,7 +114,7 @@ static int eem_send(struct net_pkt *pkt)
 	*hdr = sys_cpu_to_le16(0x3FFF & len);
 	b_idx += sizeof(u16_t);
 
-	if (net_pkt_read_new(pkt, &tx_buf[b_idx], net_pkt_get_len(pkt))) {
+	if (net_pkt_read(pkt, &tx_buf[b_idx], net_pkt_get_len(pkt))) {
 		return -ENOBUFS;
 	}
 
