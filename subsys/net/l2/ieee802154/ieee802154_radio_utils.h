@@ -67,7 +67,7 @@ static inline int wait_for_ack(struct net_if *iface,
 static inline int handle_ack(struct ieee802154_context *ctx,
 			     struct net_pkt *pkt)
 {
-	if (pkt->frags->len == IEEE802154_ACK_PKT_LENGTH) {
+	if (pkt->buffer->len == IEEE802154_ACK_PKT_LENGTH) {
 		struct ieee802154_fcf_seq *fs;
 
 		fs = ieee802154_validate_fc_seq(net_pkt_data(pkt), NULL);

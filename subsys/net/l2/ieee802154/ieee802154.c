@@ -69,29 +69,19 @@ static inline void ieee802154_acknowledge(struct net_if *iface,
 					  struct ieee802154_mpdu *mpdu)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 
 	if (!mpdu->mhr.fs->fc.ar) {
 		return;
 	}
 
-	pkt = net_pkt_get_reserve_tx(BUF_TIMEOUT);
+	pkt = net_pkt_alloc_with_buffer(iface, IEEE802154_ACK_PKT_LENGTH,
+					AF_UNSPEC, 0, BUF_TIMEOUT);
 	if (!pkt) {
 		return;
 	}
 
-	frag = net_pkt_get_frag(pkt, BUF_TIMEOUT);
-	if (!frag) {
-		net_pkt_unref(pkt);
-		return;
-	}
-
-	net_pkt_frag_insert(pkt, frag);
-
 	if (ieee802154_create_ack_frame(iface, pkt, mpdu->mhr.fs->sequence)) {
-		net_buf_add(frag, IEEE802154_ACK_PKT_LENGTH);
-
-		ieee802154_tx(iface, pkt, frag);
+		ieee802154_tx(iface, pkt, pkt->buffer);
 	}
 
 	net_pkt_unref(pkt);
@@ -228,7 +218,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	pkt_hexdump(RX_PKT_TITLE " (with ll)", pkt, true);
 
 	hdr_len = (u8_t *)mpdu.payload - net_pkt_data(pkt);
-	net_buf_pull(pkt->frags, hdr_len);
+	net_buf_pull(pkt->buffer, hdr_len);
 
 	return ieee802154_manage_recv_packet(iface, pkt, hdr_len);
 

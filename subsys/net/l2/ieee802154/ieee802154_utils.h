@@ -48,12 +48,12 @@ static inline int ieee802154_set_tx_power(struct net_if *iface, s16_t dbm)
 }
 
 static inline int ieee802154_tx(struct net_if *iface,
-				struct net_pkt *pkt, struct net_buf *frag)
+				struct net_pkt *pkt, struct net_buf *buf)
 {
 	const struct ieee802154_radio_api *radio =
 		net_if_get_device(iface)->driver_api;
 
-	return radio->tx(net_if_get_device(iface), pkt, frag);
+	return radio->tx(net_if_get_device(iface), pkt, buf);
 }
 
 static inline int ieee802154_start(struct net_if *iface)
