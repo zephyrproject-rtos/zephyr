@@ -86,7 +86,7 @@ showing this output to the console:
   [MCUBOOT] [INF] boot_status_source: Image 0: magic=unset, copy_done=0xff, image_ok=0xff
   [MCUBOOT] [INF] boot_status_source: Scratch: magic=unset, copy_done=0xe, image_ok=0xff
   [MCUBOOT] [INF] boot_status_source: Boot source: slot 0
-  [MCUBOOT] [INF] mcuboot_swap_type: Swap type: test
+  [MCUBOOT] [INF] boot_swap_type: Swap type: test
   [MCUBOOT] [INF] main: Bootloader chainload address offset: 0x20000
   [MCUBOOT] [INF] main: Jumping to the first image slot0
   ***** Booting Zephyr OS v1.11.0-830-g9df01813c4 *****
@@ -102,7 +102,7 @@ USB DFU sample, showing this output to the console:
   [MCUBOOT] [INF] boot_status_source: Image 0: magic=good, copy_done=0x1, image_ok=0xff
   [MCUBOOT] [INF] boot_status_source: Scratch: magic=unset, copy_done=0xe, image_ok=0xff
   [MCUBOOT] [INF] boot_status_source: Boot source: none
-  [MCUBOOT] [INF] mcuboot_swap_type: Swap type: revert
+  [MCUBOOT] [INF] boot_swap_type: Swap type: revert
   [MCUBOOT] [INF] main: Bootloader chainload address offset: 0x20000
   ***** Booting Zephyr OS v1.11.0-830-g9df01813c4 *****
 
