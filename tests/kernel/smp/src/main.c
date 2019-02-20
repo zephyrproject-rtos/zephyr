@@ -15,7 +15,7 @@
 #error SMP test requires at least two CPUs!
 #endif
 
-#define T2_STACK_SIZE 2048
+#define T2_STACK_SIZE (2048 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define STACK_SIZE (384 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define DELAY_US 50000
 #define TIMEOUT 1000
