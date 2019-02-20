@@ -86,13 +86,14 @@ static void eswifi_off_read_work(struct k_work *work)
 
 	LOG_ERR("payload sz = %d", len);
 
-	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
+	pkt = net_pkt_rx_alloc_with_buffer(eswifi->iface, len,
+					   AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		LOG_ERR("Cannot allocate rx packet");
 		goto done;
 	}
 
-	if (!net_pkt_append_all(pkt, len, data, K_NO_WAIT)) {
+	if (!net_pkt_write_new(pkt, data, len)) {
 		LOG_WRN("Incomplete buffer copy");
 	}
 
@@ -310,7 +311,6 @@ static int __eswifi_off_send_pkt(struct eswifi_dev *eswifi,
 				 struct eswifi_off_socket *socket)
 {
 	struct net_pkt *pkt = socket->tx_pkt;
-	struct net_buf *frag;
 	unsigned int bytes;
 	int err, offset;
 
@@ -329,10 +329,11 @@ static int __eswifi_off_send_pkt(struct eswifi_dev *eswifi,
 	offset = strlen(eswifi->buf);
 
 	/* copy payload */
-	for (frag = pkt->frags; frag; frag = frag->frags) {
-		memcpy(&eswifi->buf[offset], frag->data, frag->len);
-		offset += frag->len;
+	if (net_pkt_read_new(pkt, &eswifi->buf[offset], bytes)) {
+		return -ENOBUFS;
 	}
+
+	offset += bytes;
 
 	err = eswifi_request(eswifi, eswifi->buf, offset + 1,
 			     eswifi->buf, sizeof(eswifi->buf));
