@@ -1,12 +1,16 @@
 .. _ptp_time_interface:
 
 
-Precision Time Protocol (PTP) time
-##################################
+Precision Time Protocol (PTP) time format
+#########################################
 
 Overview
 ********
 
+The PTP time struct can store time information in high precision
+format (nanoseconds). The extended timestamp format can store the
+time in fractional nanoseconds accuracy. The PTP time format is used
+in :ref:`gptp_interface` implementation.
 
 API Reference
 *************
