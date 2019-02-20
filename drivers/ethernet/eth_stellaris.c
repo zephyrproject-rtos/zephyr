@@ -115,10 +115,12 @@ static void eth_stellaris_rx_error(struct net_if *iface)
 	sys_write32(val, REG_MACRCTL);
 }
 
-static int eth_stellaris_rx_pkt(struct device *dev, struct net_pkt *pkt)
+static struct net_pkt *eth_stellaris_rx_pkt(struct device *dev,
+					    struct net_if *iface)
 {
-	u32_t reg_val;
 	int frame_len, bytes_left;
+	struct net_pkt *pkt;
+	u32_t reg_val;
 	u16_t count;
 	u8_t *data;
 
@@ -139,14 +141,20 @@ static int eth_stellaris_rx_pkt(struct device *dev, struct net_pkt *pkt)
 	reg_val = sys_read32(REG_MACDATA);
 	frame_len = reg_val & 0x0000ffff;
 
+	pkt = net_pkt_rx_alloc_with_buffer(iface, frame_len,
+					   AF_UNSPEC, 0, K_NO_WAIT);
+	if (!pkt) {
+		return NULL;
+	}
+
 	/*
 	 * The remaining 2 bytes, in the first word is appended to the
 	 * ethernet frame.
 	 */
 	count = 2;
 	data = (u8_t *)&reg_val + 2;
-	if (net_pkt_append(pkt, count, data, K_NO_WAIT) != count) {
-		return -1;
+	if (net_pkt_write_new(pkt, data, count)) {
+		goto error;
 	}
 
 	/* A word has been read already, thus minus 4 bytes to be read. */
@@ -157,8 +165,8 @@ static int eth_stellaris_rx_pkt(struct device *dev, struct net_pkt *pkt)
 		reg_val = sys_read32(REG_MACDATA);
 		count = 4;
 		data = (u8_t *)&reg_val;
-		if (net_pkt_append(pkt, count, data, K_NO_WAIT) != count) {
-			return -1;
+		if (net_pkt_write_new(pkt, data, count)) {
+			goto error;
 		}
 	}
 
@@ -175,38 +183,34 @@ static int eth_stellaris_rx_pkt(struct device *dev, struct net_pkt *pkt)
 
 		count = bytes_left - 4;
 		data = (u8_t *)&reg_val;
-		if (net_pkt_append(pkt, count, data, K_NO_WAIT) != count) {
-			return -1;
+		if (net_pkt_write_new(pkt, data, count)) {
+			goto error;
 		}
 
 		bytes_left -= 4;
 	}
 
-	return frame_len;
+	return pkt;
+
+error:
+	net_pkt_unref(pkt);
+
+	return NULL;
 }
 
 static void eth_stellaris_rx(struct device *dev)
 {
-	struct net_pkt *pkt = NULL;
 	struct eth_stellaris_runtime *dev_data = DEV_DATA(dev);
 	struct net_if *iface = dev_data->iface;
-	int frame_len, ret;
+	struct net_pkt *pkt;
 
-	/* Obtain the packet to be populated. */
-	pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
+	pkt = eth_stellaris_rx_pkt(dev, iface);
 	if (!pkt) {
-		LOG_ERR("Could not allocate pkt");
+		LOG_ERR("Failed to read data");
 		goto err_mem;
 	}
 
-	frame_len = eth_stellaris_rx_pkt(dev, pkt);
-	if (frame_len < 0) {
-		LOG_ERR("Failed to append data to buffer");
-		goto pkt_unref;
-	}
-
-	ret = net_recv_data(iface, pkt);
-	if (ret < 0) {
+	if (net_recv_data(iface, pkt) < 0) {
 		LOG_ERR("Failed to place frame in RX Queue");
 		goto pkt_unref;
 	}
