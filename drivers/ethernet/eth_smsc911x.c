@@ -543,7 +543,7 @@ static int smsc_read_rx_fifo(struct net_pkt *pkt, u32_t len)
 	do {
 		buf32 = SMSC9220->RX_DATA_PORT;
 
-		if (net_pkt_write_new(pkt, &buf32, sizeof(u32_t))) {
+		if (net_pkt_write(pkt, &buf32, sizeof(u32_t))) {
 			return -1;
 		}
 	} while (--len);

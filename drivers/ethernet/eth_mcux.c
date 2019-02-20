@@ -600,7 +600,7 @@ static void eth_rx(struct device *iface)
 		goto error;
 	}
 
-	if (net_pkt_write_new(pkt, context->frame_buf, frame_length)) {
+	if (net_pkt_write(pkt, context->frame_buf, frame_length)) {
 		irq_unlock(imask);
 		LOG_ERR("Unable to write frame into the pkt");
 		net_pkt_unref(pkt);

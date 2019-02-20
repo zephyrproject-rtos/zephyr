@@ -297,7 +297,7 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 		zassert_true(0, "exiting");
 	}
 
-	if (net_pkt_write_new(pkt, (u8_t *)ipv6_hop_by_hop_ext_hdr,
+	if (net_pkt_write(pkt, (u8_t *)ipv6_hop_by_hop_ext_hdr,
 			      sizeof(ipv6_hop_by_hop_ext_hdr))) {
 		printk("Cannot write IPv6 ext header pkt %p", pkt);
 		zassert_true(0, "exiting");
@@ -308,7 +308,7 @@ static bool send_ipv6_udp_long_msg(struct net_if *iface,
 		zassert_true(0, "exiting");
 	}
 
-	if (net_pkt_write_new(pkt, (u8_t *)payload, sizeof(payload))) {
+	if (net_pkt_write(pkt, (u8_t *)payload, sizeof(payload))) {
 		printk("Cannot write IPv6 ext header pkt %p", pkt);
 		zassert_true(0, "exiting");
 	}

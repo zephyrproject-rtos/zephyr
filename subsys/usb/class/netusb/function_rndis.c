@@ -408,8 +408,8 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 		rndis.in_pkt = pkt;
 	}
 
-	if (net_pkt_write_new(rndis.in_pkt,
-			      buffer + hdr_offset, len - hdr_offset)) {
+	if (net_pkt_write(rndis.in_pkt,
+			  buffer + hdr_offset, len - hdr_offset)) {
 		LOG_ERR("Error writing data to pkt: %p", rndis.in_pkt);
 		rndis_clean();
 		rndis.rx_err++;

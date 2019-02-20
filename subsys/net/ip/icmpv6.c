@@ -253,7 +253,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 	/* Depending on error option, we store the param into the ICMP message.
 	 */
 	if (type == NET_ICMPV6_PARAM_PROBLEM) {
-		err = net_pkt_write_be32_new(pkt, param);
+		err = net_pkt_write_be32(pkt, param);
 	} else {
 		err = net_pkt_memset(pkt, 0, NET_ICMPV6_UNUSED_LEN);
 	}

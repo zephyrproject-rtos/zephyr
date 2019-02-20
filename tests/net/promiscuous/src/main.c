@@ -350,7 +350,7 @@ static void _recv_data(struct net_if *iface, struct net_pkt **pkt)
 	*pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(data),
 					    AF_UNSPEC, 0, K_FOREVER);
 
-	net_pkt_write_new(*pkt, data, sizeof(data));
+	net_pkt_write(*pkt, data, sizeof(data));
 
 	ret = net_recv_data(iface, *pkt);
 	zassert_equal(ret, 0, "Data receive failure");

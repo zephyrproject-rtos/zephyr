@@ -63,9 +63,9 @@ static int mld_create(struct net_pkt *pkt,
 
 	if (num_sources > 0) {
 		/* All source addresses, RFC 3810 ch 3 */
-		if (net_pkt_write_new(pkt,
-				      net_ipv6_unspecified_address()->s6_addr,
-				      sizeof(struct in6_addr))) {
+		if (net_pkt_write(pkt,
+				  net_ipv6_unspecified_address()->s6_addr,
+				  sizeof(struct in6_addr))) {
 			return -ENOBUFS;
 		}
 	}
@@ -89,8 +89,8 @@ static int mld_create_packet(struct net_pkt *pkt, u16_t count)
 	}
 
 	/* Add hop-by-hop option and router alert option, RFC 3810 ch 5. */
-	if (net_pkt_write_u8_new(pkt, IPPROTO_ICMPV6) ||
-	    net_pkt_write_u8_new(pkt, 0)) {
+	if (net_pkt_write_u8(pkt, IPPROTO_ICMPV6) ||
+	    net_pkt_write_u8(pkt, 0)) {
 		return -ENOBUFS;
 	}
 
@@ -99,9 +99,9 @@ static int mld_create_packet(struct net_pkt *pkt, u16_t count)
 	 * - MLD (value 0)
 	 * - 2 bytes of padding
 	 */
-	if (net_pkt_write_be16_new(pkt, 0x0502) ||
-	    net_pkt_write_be16_new(pkt, 0) ||
-	    net_pkt_write_be16_new(pkt, 0)) {
+	if (net_pkt_write_be16(pkt, 0x0502) ||
+	    net_pkt_write_be16(pkt, 0) ||
+	    net_pkt_write_be16(pkt, 0)) {
 		return -ENOBUFS;
 	}
 
@@ -111,8 +111,8 @@ static int mld_create_packet(struct net_pkt *pkt, u16_t count)
 	 * MLDv6 stuff will come right after
 	 */
 	if (net_icmpv6_create(pkt, NET_ICMPV6_MLDv2, 0) ||
-	    net_pkt_write_be16_new(pkt, 0) ||
-	    net_pkt_write_be16_new(pkt, count)) {
+	    net_pkt_write_be16(pkt, 0) ||
+	    net_pkt_write_be16(pkt, count)) {
 		return -ENOBUFS;
 	}
 

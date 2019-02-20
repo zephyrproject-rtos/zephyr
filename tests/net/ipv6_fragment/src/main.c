@@ -1230,7 +1230,7 @@ static void test_find_last_ipv6_fragment_udp(void)
 				 sizeof(struct net_ipv6_hdr));
 
 	/* Add IPv6 header + UDP */
-	ret = net_pkt_write_new(pkt, ipv6_udp, sizeof(ipv6_udp));
+	ret = net_pkt_write(pkt, ipv6_udp, sizeof(ipv6_udp));
 
 	zassert_true(ret == 0, "IPv6 header append failed");
 
@@ -1264,7 +1264,7 @@ static void test_find_last_ipv6_fragment_hbho_udp(void)
 	net_pkt_set_ipv6_ext_len(pkt, sizeof(ipv6_hbho) -
 				 sizeof(struct net_ipv6_hdr));
 	/* Add IPv6 header + HBH option */
-	ret = net_pkt_write_new(pkt, ipv6_hbho, sizeof(ipv6_hbho));
+	ret = net_pkt_write(pkt, ipv6_hbho, sizeof(ipv6_hbho));
 	zassert_true(ret == 0, "IPv6 header append failed");
 
 	ret = net_ipv6_find_last_ext_hdr(pkt, &next_hdr_pos, &last_hdr_pos);
@@ -1299,7 +1299,7 @@ static void test_find_last_ipv6_fragment_hbho_1(void)
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
 	/* Add IPv6 header + HBH option + fragment header */
-	ret = net_pkt_write_new(pkt, ipv6_hbho_1, sizeof(ipv6_hbho_1));
+	ret = net_pkt_write(pkt, ipv6_hbho_1, sizeof(ipv6_hbho_1));
 	zassert_true(ret == 0, "IPv6 header append failed");
 
 	net_pkt_set_overwrite(pkt, true);
@@ -1342,7 +1342,7 @@ static void test_find_last_ipv6_fragment_hbho_2(void)
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
 	/* Add IPv6 header + HBH option + fragment header */
-	ret = net_pkt_write_new(pkt, ipv6_hbho_2, sizeof(ipv6_hbho_2));
+	ret = net_pkt_write(pkt, ipv6_hbho_2, sizeof(ipv6_hbho_2));
 	zassert_true(ret == 0, "IPv6 header append failed");
 
 	net_pkt_set_overwrite(pkt, true);
@@ -1385,7 +1385,7 @@ static void test_find_last_ipv6_fragment_hbho_3(void)
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
 	/* Add IPv6 header + HBH option + fragment header */
-	ret = net_pkt_write_new(pkt, ipv6_hbho_3, sizeof(ipv6_hbho_3));
+	ret = net_pkt_write(pkt, ipv6_hbho_3, sizeof(ipv6_hbho_3));
 	zassert_true(ret == 0, "IPv6 header append failed");
 
 	net_pkt_set_overwrite(pkt, true);
@@ -1426,7 +1426,7 @@ static void test_find_last_ipv6_fragment_hbho_frag(void)
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
 	/* Add IPv6 header + HBH option + fragment header */
-	ret = net_pkt_write_new(pkt, ipv6_hbho_frag, sizeof(ipv6_hbho_frag));
+	ret = net_pkt_write(pkt, ipv6_hbho_frag, sizeof(ipv6_hbho_frag));
 	zassert_true(ret == 0, "IPv6 header append failed");
 
 	net_pkt_set_overwrite(pkt, true);
@@ -1463,8 +1463,8 @@ static void test_find_last_ipv6_fragment_hbho_frag_1(void)
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
 	/* Add IPv6 header + HBH option + fragment header */
-	ret = net_pkt_write_new(pkt, ipv6_hbho_frag_1,
-				sizeof(ipv6_hbho_frag_1));
+	ret = net_pkt_write(pkt, ipv6_hbho_frag_1,
+			    sizeof(ipv6_hbho_frag_1));
 	zassert_true(ret == 0, "IPv6 header append failed");
 
 	net_pkt_set_overwrite(pkt, true);
@@ -1515,12 +1515,12 @@ static void test_send_ipv6_fragment(void)
 	net_pkt_set_ipv6_ext_len(pkt, 8); /* hbho */
 
 	/* Add IPv6 header + HBH option */
-	ret = net_pkt_write_new(pkt, ipv6_hbho, sizeof(ipv6_hbho));
+	ret = net_pkt_write(pkt, ipv6_hbho, sizeof(ipv6_hbho));
 	zassert_true(ret == 0, "IPv6 header append failed");
 
 	/* Then add some data that is over 1280 bytes long */
 	for (i = 0; i < count; i++) {
-		ret = net_pkt_write_new(pkt, data, data_len);
+		ret = net_pkt_write(pkt, data, data_len);
 
 		zassert_true(ret == 0, "Cannot append data");
 
@@ -1577,7 +1577,7 @@ static void test_send_ipv6_fragment_large_hbho(void)
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_ipv6_ext_len(pkt, 1032); /* hbho */
 
-	ret = net_pkt_write_new(pkt, ipv6_large_hbho, sizeof(ipv6_large_hbho));
+	ret = net_pkt_write(pkt, ipv6_large_hbho, sizeof(ipv6_large_hbho));
 	zassert_true(ret == 0, "IPv6 header append failed");
 
 	net_pkt_set_overwrite(pkt, true);

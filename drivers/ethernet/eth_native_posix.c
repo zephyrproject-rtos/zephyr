@@ -249,7 +249,7 @@ static int read_data(struct eth_context *ctx, int fd)
 		return -ENOMEM;
 	}
 
-	if (net_pkt_write_new(pkt, ctx->recv, count)) {
+	if (net_pkt_write(pkt, ctx->recv, count)) {
 		return -ENOBUFS;
 	}
 

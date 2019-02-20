@@ -857,7 +857,7 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 		}
 
 		if (i % 2) {
-			if (net_pkt_write_u8_new(sock->recv_pkt, c)) {
+			if (net_pkt_write_u8(sock->recv_pkt, c)) {
 				LOG_ERR("Unable to add data! Aborting!");
 				net_pkt_unref(sock->recv_pkt);
 				sock->recv_pkt = NULL;

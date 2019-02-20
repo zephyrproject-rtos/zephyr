@@ -93,7 +93,7 @@ static void eswifi_off_read_work(struct k_work *work)
 		goto done;
 	}
 
-	if (!net_pkt_write_new(pkt, data, len)) {
+	if (!net_pkt_write(pkt, data, len)) {
 		LOG_WRN("Incomplete buffer copy");
 	}
 

@@ -150,7 +150,7 @@ static struct net_pkt *eth_rx(struct device *dev)
 		goto release_desc;
 	}
 
-	if (net_pkt_write_new(pkt, dma_buffer, total_len)) {
+	if (net_pkt_write(pkt, dma_buffer, total_len)) {
 		LOG_ERR("Failed to append RX buffer to context buffer");
 		net_pkt_unref(pkt);
 		pkt = NULL;

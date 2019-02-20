@@ -470,8 +470,7 @@ static int prepare_segment(struct net_tcp *tcp,
 
 	net_pkt_set_data(pkt, &tcp_access);
 
-	if (optlen &&
-	    net_pkt_write_new(pkt, segment->options, segment->optlen)) {
+	if (optlen && net_pkt_write(pkt, segment->options, segment->optlen)) {
 		goto fail;
 	}
 

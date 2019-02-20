@@ -128,7 +128,7 @@ static inline void rx_thread(void *ctx, void *unused1, void *unused2)
 			continue;
 		}
 
-		if (net_pkt_write_new(pkt, (void *)&msg, sizeof(msg))) {
+		if (net_pkt_write(pkt, (void *)&msg, sizeof(msg))) {
 			LOG_ERR("Failed to append RX data");
 			net_pkt_unref(pkt);
 			continue;

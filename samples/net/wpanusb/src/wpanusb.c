@@ -314,14 +314,14 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 		return -ENOMEM;
 	}
 
-	net_pkt_write_u8_new(pkt, setup->bRequest);
+	net_pkt_write_u8(pkt, setup->bRequest);
 
 	/* Add seq to TX */
 	if (setup->bRequest == TX) {
-		net_pkt_write_u8_new(pkt, setup->wIndex);
+		net_pkt_write_u8(pkt, setup->wIndex);
 	}
 
-	net_pkt_write_new(pkt, *data, *len);
+	net_pkt_write(pkt, *data, *len);
 
 	LOG_DBG("len %u seq %u", *len, setup->wIndex);
 

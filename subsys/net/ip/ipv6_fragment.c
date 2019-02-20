@@ -314,7 +314,7 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 
 	/* This one updates the previous header's nexthdr value */
 	if (net_pkt_skip(pkt, net_pkt_ipv6_hdr_prev(pkt)) ||
-	    net_pkt_write_u8_new(pkt, next_hdr)) {
+	    net_pkt_write_u8(pkt, next_hdr)) {
 		goto error;
 	}
 
@@ -595,7 +595,7 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 	 * Note that we insert the right next header to point to fragment header
 	 */
 	if (net_pkt_copy(frag_pkt, pkt, next_hdr_off) ||
-	    net_pkt_write_u8_new(frag_pkt, NET_IPV6_NEXTHDR_FRAG) ||
+	    net_pkt_write_u8(frag_pkt, NET_IPV6_NEXTHDR_FRAG) ||
 	    net_pkt_skip(pkt, 1) ||
 	    net_pkt_copy(frag_pkt, pkt, net_pkt_ip_hdr_len(pkt) +
 			 net_pkt_ipv6_ext_len(pkt) - next_hdr_off - 1)) {

@@ -152,7 +152,7 @@ static struct net_pkt *eth_stellaris_rx_pkt(struct device *dev,
 	 */
 	count = 2;
 	data = (u8_t *)&reg_val + 2;
-	if (net_pkt_write_new(pkt, data, count)) {
+	if (net_pkt_write(pkt, data, count)) {
 		goto error;
 	}
 
@@ -164,7 +164,7 @@ static struct net_pkt *eth_stellaris_rx_pkt(struct device *dev,
 		reg_val = sys_read32(REG_MACDATA);
 		count = 4;
 		data = (u8_t *)&reg_val;
-		if (net_pkt_write_new(pkt, data, count)) {
+		if (net_pkt_write(pkt, data, count)) {
 			goto error;
 		}
 	}
@@ -182,7 +182,7 @@ static struct net_pkt *eth_stellaris_rx_pkt(struct device *dev,
 
 		count = bytes_left - 4;
 		data = (u8_t *)&reg_val;
-		if (net_pkt_write_new(pkt, data, count)) {
+		if (net_pkt_write(pkt, data, count)) {
 			goto error;
 		}
 

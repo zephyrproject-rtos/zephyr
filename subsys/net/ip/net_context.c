@@ -1195,7 +1195,7 @@ static int context_setup_udp_packet(struct net_context *context,
 		return ret;
 	}
 
-	ret = net_pkt_write_new(pkt, buf, len);
+	ret = net_pkt_write(pkt, buf, len);
 	if (ret) {
 		return ret;
 	}
@@ -1404,7 +1404,7 @@ static int context_sendto(struct net_context *context,
 		ret = net_send_data(pkt);
 	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
 		   net_context_get_ip_proto(context) == IPPROTO_TCP) {
-		ret = net_pkt_write_new(pkt, buf, len);
+		ret = net_pkt_write(pkt, buf, len);
 		if (ret < 0) {
 			goto fail;
 		}
@@ -1418,7 +1418,7 @@ static int context_sendto(struct net_context *context,
 		ret = net_tcp_send_data(context, cb, token, user_data);
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		   net_context_get_family(context) == AF_PACKET) {
-		ret = net_pkt_write_new(pkt, buf, len);
+		ret = net_pkt_write(pkt, buf, len);
 		if (ret < 0) {
 			goto fail;
 		}
@@ -1429,7 +1429,7 @@ static int context_sendto(struct net_context *context,
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 		   net_context_get_family(context) == AF_CAN &&
 		   net_context_get_ip_proto(context) == CAN_RAW) {
-		ret = net_pkt_write_new(pkt, buf, len);
+		ret = net_pkt_write(pkt, buf, len);
 		if (ret < 0) {
 			goto fail;
 		}

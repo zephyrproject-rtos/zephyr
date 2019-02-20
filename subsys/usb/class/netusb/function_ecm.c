@@ -303,7 +303,7 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 		goto done;
 	}
 
-	if (net_pkt_write_new(pkt, rx_buf, size)) {
+	if (net_pkt_write(pkt, rx_buf, size)) {
 		LOG_ERR("Unable to write into pkt\n");
 		net_pkt_unref(pkt);
 		goto done;

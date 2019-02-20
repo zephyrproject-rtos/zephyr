@@ -100,7 +100,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 			goto drop;
 		}
 
-		if (net_pkt_write_new(pkt, rx_frame->psdu + 1, pkt_len)) {
+		if (net_pkt_write(pkt, rx_frame->psdu + 1, pkt_len)) {
 			goto drop;
 		}
 

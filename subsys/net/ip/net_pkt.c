@@ -2008,7 +2008,7 @@ int net_pkt_read_be32(struct net_pkt *pkt, u32_t *data)
 	return ret;
 }
 
-int net_pkt_write_new(struct net_pkt *pkt, const void *data, size_t length)
+int net_pkt_write(struct net_pkt *pkt, const void *data, size_t length)
 {
 	NET_DBG("pkt %p data %p length %zu", pkt, data, length);
 
@@ -2298,7 +2298,7 @@ int net_pkt_set_data(struct net_pkt *pkt,
 		return net_pkt_skip(pkt, access->size);
 	}
 
-	return net_pkt_write_new(pkt, access->data, access->size);
+	return net_pkt_write(pkt, access->data, access->size);
 }
 
 void net_pkt_init(void)

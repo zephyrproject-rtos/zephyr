@@ -105,7 +105,7 @@ void test_icmpv6(void)
 
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
-	net_pkt_write_new(pkt, icmpv6_inval_chksum, ICMPV6_MSG_SIZE);
+	net_pkt_write(pkt, icmpv6_inval_chksum, ICMPV6_MSG_SIZE);
 
 	hdr = (struct net_ipv6_hdr *)pkt->buffer->data;
 	net_pkt_cursor_init(pkt);
@@ -123,7 +123,7 @@ void test_icmpv6(void)
 	net_pkt_set_overwrite(pkt, false);
 	pkt->buffer->len = 0;
 
-	net_pkt_write_new(pkt, icmpv6_echo_rep, ICMPV6_MSG_SIZE);
+	net_pkt_write(pkt, icmpv6_echo_rep, ICMPV6_MSG_SIZE);
 
 	hdr = (struct net_ipv6_hdr *)pkt->buffer->data;
 	net_pkt_cursor_init(pkt);
@@ -142,7 +142,7 @@ void test_icmpv6(void)
 	net_pkt_set_overwrite(pkt, false);
 	pkt->buffer->len = 0;
 
-	net_pkt_write_new(pkt, icmpv6_echo_req, ICMPV6_MSG_SIZE);
+	net_pkt_write(pkt, icmpv6_echo_req, ICMPV6_MSG_SIZE);
 
 	hdr = (struct net_ipv6_hdr *)pkt->buffer->data;
 	net_pkt_cursor_init(pkt);
