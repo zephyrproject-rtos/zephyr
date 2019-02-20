@@ -100,8 +100,8 @@ static void syslog_hook_net(const char *fmt, ...)
 		printk("%d:%s", ++count, buf->data);
 	}
 #endif
-	net_context_send_new(ctx, buf->data, buf->len,
-			     NULL, K_NO_WAIT, NULL, NULL);
+	net_context_send(ctx, buf->data, buf->len,
+			 NULL, K_NO_WAIT, NULL, NULL);
 
 	net_buf_unref(buf);
 }

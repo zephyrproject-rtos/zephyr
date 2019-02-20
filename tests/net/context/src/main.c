@@ -397,10 +397,10 @@ static void net_ctx_send_v6(void)
 
 	test_token = SENDING;
 
-	ret = net_context_send_new(udp_v6_ctx, test_data, strlen(test_data),
-				   send_cb, K_NO_WAIT,
-				   INT_TO_POINTER(test_token),
-				   INT_TO_POINTER(AF_INET6));
+	ret = net_context_send(udp_v6_ctx, test_data, strlen(test_data),
+			       send_cb, K_NO_WAIT,
+			       INT_TO_POINTER(test_token),
+			       INT_TO_POINTER(AF_INET6));
 	zassert_false(((ret < 0) || cb_failure),
 		     "Context send IPv6 UDP test failed");
 }
@@ -411,10 +411,10 @@ static void net_ctx_send_v4(void)
 
 	test_token = SENDING;
 
-	ret = net_context_send_new(udp_v4_ctx, test_data, strlen(test_data),
-				   send_cb, K_NO_WAIT,
-				   INT_TO_POINTER(test_token),
-				   INT_TO_POINTER(AF_INET));
+	ret = net_context_send(udp_v4_ctx, test_data, strlen(test_data),
+			       send_cb, K_NO_WAIT,
+			       INT_TO_POINTER(test_token),
+			       INT_TO_POINTER(AF_INET));
 	zassert_false(((ret < 0) || cb_failure),
 		      "Context send IPv4 UDP test failed");
 }
@@ -431,11 +431,11 @@ static void net_ctx_sendto_v6(void)
 
 	test_token = SENDING;
 
-	ret = net_context_sendto_new(udp_v6_ctx, test_data, strlen(test_data),
-				     (struct sockaddr *)&addr,
-				     sizeof(struct sockaddr_in6), send_cb,
-				     K_NO_WAIT, INT_TO_POINTER(test_token),
-				     INT_TO_POINTER(AF_INET6));
+	ret = net_context_sendto(udp_v6_ctx, test_data, strlen(test_data),
+				 (struct sockaddr *)&addr,
+				 sizeof(struct sockaddr_in6), send_cb,
+				 K_NO_WAIT, INT_TO_POINTER(test_token),
+				 INT_TO_POINTER(AF_INET6));
 	zassert_false(((ret < 0) || cb_failure),
 		      "Context send IPv6 UDP test failed");
 }
@@ -451,11 +451,11 @@ static void net_ctx_sendto_v4(void)
 
 	test_token = SENDING;
 
-	ret = net_context_sendto_new(udp_v4_ctx, test_data, strlen(test_data),
-				     (struct sockaddr *)&addr,
-				     sizeof(struct sockaddr_in), send_cb,
-				     K_NO_WAIT, INT_TO_POINTER(test_token),
-				     INT_TO_POINTER(AF_INET));
+	ret = net_context_sendto(udp_v4_ctx, test_data, strlen(test_data),
+				 (struct sockaddr *)&addr,
+				 sizeof(struct sockaddr_in), send_cb,
+				 K_NO_WAIT, INT_TO_POINTER(test_token),
+				 INT_TO_POINTER(AF_INET));
 	zassert_false(((ret < 0) || cb_failure),
 		      "Context send IPv4 UDP test failed");
 }
@@ -522,11 +522,11 @@ static bool net_ctx_sendto_v6_wrong_src(void)
 
 	test_token = SENDING;
 
-	ret = net_context_sendto_new(udp_v6_ctx, test_data, strlen(test_data),
-				     (struct sockaddr *)&addr,
-				     sizeof(struct sockaddr_in6), send_cb,
-				     K_NO_WAIT, INT_TO_POINTER(test_token),
-				     INT_TO_POINTER(AF_INET6));
+	ret = net_context_sendto(udp_v6_ctx, test_data, strlen(test_data),
+				 (struct sockaddr *)&addr,
+				 sizeof(struct sockaddr_in6), send_cb,
+				 K_NO_WAIT, INT_TO_POINTER(test_token),
+				 INT_TO_POINTER(AF_INET6));
 	if ((ret < 0) || cb_failure) {
 		TC_ERROR("Context sendto IPv6 UDP wrong src "
 			 "test failed (%d)\n", ret);
@@ -560,11 +560,11 @@ static bool net_ctx_sendto_v4_wrong_src(void)
 
 	test_token = SENDING;
 
-	ret = net_context_sendto_new(udp_v4_ctx, test_data, strlen(test_data),
-				     (struct sockaddr *)&addr,
-				     sizeof(struct sockaddr_in), send_cb,
-				     K_NO_WAIT, INT_TO_POINTER(test_token),
-				     INT_TO_POINTER(AF_INET));
+	ret = net_context_sendto(udp_v4_ctx, test_data, strlen(test_data),
+				 (struct sockaddr *)&addr,
+				 sizeof(struct sockaddr_in), send_cb,
+				 K_NO_WAIT, INT_TO_POINTER(test_token),
+				 INT_TO_POINTER(AF_INET));
 	if ((ret < 0) || cb_failure) {
 		TC_ERROR("Context send IPv4 UDP test failed (%d)\n", ret);
 		return false;

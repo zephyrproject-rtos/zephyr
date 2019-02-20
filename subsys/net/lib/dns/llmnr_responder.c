@@ -400,9 +400,8 @@ static int send_response(struct net_context *ctx, struct net_pkt *pkt,
 		return -EPFNOSUPPORT;
 	}
 
-	ret = net_context_sendto_new(ctx, reply->data, reply->len,
-				     &dst, dst_len, NULL, K_NO_WAIT,
-				     NULL, NULL);
+	ret = net_context_sendto(ctx, reply->data, reply->len, &dst,
+				 dst_len, NULL, K_NO_WAIT, NULL, NULL);
 	if (ret < 0) {
 		NET_DBG("Cannot send LLMNR reply to %s (%d)",
 			net_pkt_family(pkt) == AF_INET ?

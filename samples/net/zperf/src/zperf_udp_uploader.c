@@ -91,9 +91,9 @@ static inline void zperf_upload_fin(const struct shell *shell,
 					  USEC_PER_SEC);
 
 		/* Send the packet */
-		ret = net_context_send_new(context, sample_packet,
-					   packet_size, NULL,
-					   K_NO_WAIT, NULL, NULL);
+		ret = net_context_send(context, sample_packet,
+				       packet_size, NULL,
+				       K_NO_WAIT, NULL, NULL);
 		if (ret < 0) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Failed to send the packet (%d)\n",
@@ -208,9 +208,9 @@ void zperf_udp_upload(const struct shell *shell,
 			htonl(HW_CYCLES_TO_USEC(loop_time) % USEC_PER_SEC);
 
 		/* Send the packet */
-		ret = net_context_send_new(context, sample_packet,
-					   packet_size, NULL,
-					   K_NO_WAIT, NULL, NULL);
+		ret = net_context_send(context, sample_packet,
+				       packet_size, NULL,
+				       K_NO_WAIT, NULL, NULL);
 		if (ret < 0) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Failed to send the packet (%d)\n",

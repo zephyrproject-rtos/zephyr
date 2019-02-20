@@ -3304,9 +3304,9 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 
 	user_data.shell = shell;
 
-	ret = net_context_send_new(tcp_ctx, (u8_t *)argv[arg],
-				   strlen(argv[arg]), tcp_sent_cb,
-				   TCP_TIMEOUT, NULL, &user_data);
+	ret = net_context_send(tcp_ctx, (u8_t *)argv[arg],
+			       strlen(argv[arg]), tcp_sent_cb,
+			       TCP_TIMEOUT, NULL, &user_data);
 	if (ret < 0) {
 		PR_WARNING("Cannot send msg (%d)\n", ret);
 		return -ENOEXEC;

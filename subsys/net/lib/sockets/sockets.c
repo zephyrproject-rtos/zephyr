@@ -471,12 +471,12 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	}
 
 	if (dest_addr) {
-		status = net_context_sendto_new(ctx, buf, len, dest_addr,
-						addrlen, NULL, timeout,
-						NULL, ctx->user_data);
+		status = net_context_sendto(ctx, buf, len, dest_addr,
+					    addrlen, NULL, timeout,
+					    NULL, ctx->user_data);
 	} else {
-		status = net_context_send_new(ctx, buf, len, NULL, timeout,
-					      NULL, ctx->user_data);
+		status = net_context_send(ctx, buf, len, NULL, timeout,
+					  NULL, ctx->user_data);
 	}
 
 	if (status < 0) {

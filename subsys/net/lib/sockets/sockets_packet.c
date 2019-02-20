@@ -166,9 +166,8 @@ ssize_t zpacket_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		return -1;
 	}
 
-	status = net_context_sendto_new(ctx, buf, len, dest_addr,
-					addrlen, NULL, timeout, NULL,
-					ctx->user_data);
+	status = net_context_sendto(ctx, buf, len, dest_addr, addrlen,
+				    NULL, timeout, NULL, ctx->user_data);
 	if (status < 0) {
 		errno = -status;
 		return -1;

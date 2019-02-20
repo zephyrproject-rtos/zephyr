@@ -476,10 +476,10 @@ static void traffic_class_send_packets_with_prio(enum net_priority prio,
 
 	send_priorities[net_tx_priority2tc(prio)][pkt_count - 1] = prio + 1;
 
-	ret = net_context_sendto_new(net_ctxs[tc].ctx, data, len,
-				     (struct sockaddr *)&dst_addr6,
-				     sizeof(struct sockaddr_in6),
-				     NULL, K_NO_WAIT, NULL, NULL);
+	ret = net_context_sendto(net_ctxs[tc].ctx, data, len,
+				 (struct sockaddr *)&dst_addr6,
+				 sizeof(struct sockaddr_in6),
+				 NULL, K_NO_WAIT, NULL, NULL);
 	zassert_true(ret > 0, "Send UDP pkt failed");
 }
 
@@ -768,10 +768,10 @@ static void traffic_class_recv_packets_with_prio(enum net_priority prio,
 	/* We cannot use net_recv_data() here as the packet does not have
 	 * UDP header.
 	 */
-	ret = net_context_sendto_new(net_ctxs[tc].ctx, data, len,
-				     (struct sockaddr *)&dst_addr6,
-				     sizeof(struct sockaddr_in6),
-				     NULL, K_NO_WAIT, NULL, NULL);
+	ret = net_context_sendto(net_ctxs[tc].ctx, data, len,
+				 (struct sockaddr *)&dst_addr6,
+				 sizeof(struct sockaddr_in6),
+				 NULL, K_NO_WAIT, NULL, NULL);
 	zassert_true(ret > 0, "Send UDP pkt failed");
 
 	/* Let the receiver to receive the packets */
