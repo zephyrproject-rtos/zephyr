@@ -484,7 +484,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	SMSC9220->TX_DATA_PORT = txcmd_a;
 	SMSC9220->TX_DATA_PORT = txcmd_b;
 
-	if (net_pkt_read(pkt, tx_buf, total_len)) {
+	if (net_pkt_read_new(pkt, tx_buf, total_len)) {
 		goto error;
 	}
 
@@ -532,7 +532,7 @@ static inline void smsc_wait_discard_pkt(void)
 	}
 }
 
-static void smsc_read_rx_fifo(struct net_pkt *pkt, u32_t len)
+static int smsc_read_rx_fifo(struct net_pkt *pkt, u32_t len)
 {
 	u32_t buf32;
 
@@ -551,11 +551,11 @@ static void smsc_read_rx_fifo(struct net_pkt *pkt, u32_t len)
 	return 0;
 }
 
-static struct net_pkt *smsc_recv_pkt(struct dehive *dev, u32_t pkt_size)
+static struct net_pkt *smsc_recv_pkt(struct device *dev, u32_t pkt_size)
 {
 	struct eth_context *context = dev->driver_data;
-	u32_t rem_size;
 	struct net_pkt *pkt;
+	u32_t rem_size;
 
 	/* Round up to next DWORD size */
 	rem_size = (pkt_size + 3) & ~3;
@@ -578,12 +578,13 @@ static struct net_pkt *smsc_recv_pkt(struct dehive *dev, u32_t pkt_size)
 
 	/* Discard FCS */
 	{
-		u32_t dummy = SMSC9220->RX_DATA_PORT;
+		u32_t __unused dummy = SMSC9220->RX_DATA_PORT;
 	}
 
 	/* Adjust len of the last buf down for DWORD alignment */
 	if (pkt_size & 3) {
-		prev_buf->len -= 4 - (pkt_size & 3);
+		net_pkt_update_length(pkt, net_pkt_get_len(pkt) -
+				      (4 - (pkt_size & 3)));
 	}
 
 	return pkt;
