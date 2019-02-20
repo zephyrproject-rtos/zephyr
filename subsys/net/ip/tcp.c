@@ -2462,6 +2462,14 @@ int net_tcp_accept(struct net_context *context,
 		return -EINVAL;
 	}
 
+	if (cb == NULL) {
+		/* The context is being shut down */
+		if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+			context->tcp->accept_cb = NULL;
+			return 0;
+		}
+	}
+
 	local_addr.sa_family = net_context_get_family(context);
 
 #if defined(CONFIG_NET_IPV6)
