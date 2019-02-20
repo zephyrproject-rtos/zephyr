@@ -228,7 +228,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	struct ieee802154_fragment_ctx f_ctx;
-	struct net_buf *frag;
+	struct net_buf *buf;
 	u8_t ll_hdr_size;
 	bool fragment;
 	int len;
@@ -251,21 +251,21 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 
 	len = 0;
 	frame_buf.len = 0;
-	frag = pkt->frags;
+	buf = pkt->buffer;
 
-	while (frag) {
+	while (buf) {
 		int ret;
 
 		net_buf_add(&frame_buf, ll_hdr_size);
 
 		if (fragment) {
 			ieee802154_fragment(&f_ctx, &frame_buf, true);
-			frag = f_ctx.frag;
+			buf = f_ctx.buf;
 		} else {
 			memcpy(frame_buf.data + frame_buf.len,
-			       frag->data, frag->len);
-			net_buf_add(&frame_buf, frag->len);
-			frag = frag->frags;
+			       buf->data, buf->len);
+			net_buf_add(&frame_buf, buf->len);
+			buf = buf->frags;
 		}
 
 		if (!ieee802154_create_data_frame(ctx, net_pkt_lladdr_dst(pkt),

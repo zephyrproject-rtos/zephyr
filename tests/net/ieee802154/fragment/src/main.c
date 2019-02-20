@@ -134,6 +134,21 @@ static const char user_data[] =
 		"0123456789012345678901234567890123456789"
 		"0123456789012345678901234567890123456789"
 		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
+		"0123456789012345678901234567890123456789"
 		"0123456789012345678901234567890123456789";
 
 struct net_fragment_data {
@@ -174,9 +189,9 @@ NET_DEVICE_INIT(net_fragment_test, "net_fragment_test",
 
 static bool compare_data(struct net_pkt *pkt, struct net_fragment_data *data)
 {
-	struct net_buf *frag;
-	u8_t bytes, pos, compare, offset = 0U;
 	int remaining = data->len;
+	u32_t bytes, pos, compare, offset;
+	struct net_buf *frag;
 
 	if (net_pkt_get_len(pkt) != (NET_IPV6UDPH_LEN + remaining)) {
 		printk("mismatch lengths, expected %d received %zd\n",
@@ -196,7 +211,6 @@ static bool compare_data(struct net_pkt *pkt, struct net_fragment_data *data)
 	offset = NET_IPV6UDPH_LEN;
 
 	while (remaining > 0 && frag) {
-
 		bytes = frag->len - offset;
 		compare = remaining > bytes ? bytes : remaining;
 
@@ -217,8 +231,8 @@ static bool compare_data(struct net_pkt *pkt, struct net_fragment_data *data)
 static struct net_pkt *create_pkt(struct net_fragment_data *data)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
-	u8_t bytes, pos;
+	struct net_buf *buf;
+	u32_t bytes, pos;
 	u16_t len;
 	int remaining;
 
@@ -230,14 +244,14 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 	net_pkt_set_iface(pkt, net_if_get_default());
 	net_pkt_set_ip_hdr_len(pkt, NET_IPV6H_LEN);
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-	if (!frag) {
+	buf = net_pkt_get_frag(pkt, K_FOREVER);
+	if (!buf) {
 		net_pkt_unref(pkt);
 		return NULL;
 	}
 
-	memcpy(frag->data, (u8_t *) data, NET_IPV6UDPH_LEN);
-	net_buf_add(frag, NET_IPV6UDPH_LEN);
+	memcpy(buf->data, (u8_t *) data, NET_IPV6UDPH_LEN);
+	net_buf_add(buf, NET_IPV6UDPH_LEN);
 
 	pos = 0U;
 	remaining = data->len;
@@ -245,32 +259,32 @@ static struct net_pkt *create_pkt(struct net_fragment_data *data)
 	len = NET_UDPH_LEN + remaining;
 	/* length is not set in net_fragment_data data pointer, calculate and set
 	 * in ipv6, udp and in data pointer too (it's required in comparison) */
-	frag->data[4] = len >> 8;
-	frag->data[5] = (u8_t) len;
-	frag->data[44] = len >> 8;
-	frag->data[45] = (u8_t) len;
+	buf->data[4] = len >> 8;
+	buf->data[5] = (u8_t) len;
+	buf->data[44] = len >> 8;
+	buf->data[45] = (u8_t) len;
 
 	data->ipv6.len = htons(len);
 	data->udp.len = htons(len);
 
 	while (remaining > 0) {
 		u8_t copy;
-		bytes = net_buf_tailroom(frag);
+		bytes = net_buf_tailroom(buf);
 		copy = remaining > bytes ? bytes : remaining;
-		memcpy(net_buf_add(frag, copy), &user_data[pos], copy);
+		memcpy(net_buf_add(buf, copy), &user_data[pos], copy);
 
 		pos += bytes;
 		remaining -= bytes;
 
-		if (net_buf_tailroom(frag) - (bytes - copy)) {
+		if (net_buf_tailroom(buf) - (bytes - copy)) {
 			net_pkt_unref(pkt);
 			return NULL;
 		}
 
-		net_pkt_frag_add(pkt, frag);
+		net_pkt_frag_add(pkt, buf);
 
 		if (remaining > 0) {
-			frag = net_pkt_get_frag(pkt, K_FOREVER);
+			buf = net_pkt_get_frag(pkt, K_FOREVER);
 		}
 	}
 
@@ -428,7 +442,7 @@ static bool test_fragment(struct net_fragment_data *data)
 	struct net_pkt *f_pkt = NULL;
 	int result = false;
 	struct ieee802154_fragment_ctx ctx;
-	struct net_buf *frag, *dfrag;
+	struct net_buf *buf, *dfrag;
 	struct net_pkt *pkt;
 	int hdr_diff;
 
@@ -464,10 +478,10 @@ static bool test_fragment(struct net_fragment_data *data)
 	ieee802154_fragment_ctx_init(&ctx, pkt, hdr_diff, data->iphc);
 	frame_buf.len = 0;
 
-	frag = pkt->frags;
-	while (frag) {
+	buf = pkt->buffer;
+	while (buf) {
 		ieee802154_fragment(&ctx, &frame_buf, data->iphc);
-		frag = ctx.frag;
+		buf = ctx.buf;
 
 		dfrag = net_pkt_get_frag(f_pkt, K_FOREVER);
 		if (!dfrag) {
@@ -493,8 +507,8 @@ reassemble:
 	net_pkt_hexdump(f_pkt, "after-compression");
 #endif
 
-	frag = f_pkt->frags;
-	while (frag) {
+	buf = f_pkt->buffer;
+	while (buf) {
 		rxpkt = net_pkt_get_reserve_rx(K_FOREVER);
 		if (!rxpkt) {
 			goto end;
@@ -505,14 +519,16 @@ reassemble:
 			goto end;
 		}
 
-		memcpy(dfrag->data, frag->data, frag->len);
-		dfrag->len = frag->len;
+		memcpy(dfrag->data, buf->data, buf->len);
+		dfrag->len = buf->len;
 
 		net_pkt_frag_add(rxpkt, dfrag);
 
+		net_pkt_set_overwrite(rxpkt, true);
+
 		switch (ieee802154_reassemble(rxpkt)) {
 		case NET_OK:
-			frag = frag->frags;
+			buf = buf->frags;
 			break;
 		case NET_CONTINUE:
 			goto compare;
@@ -548,24 +564,6 @@ end:
 
 	return result;
 }
-
-/* tests names are based on traffic class, flow label, source address mode
- * (sam), destination address mode (dam), based on udp source and destination
- * ports compressible type.
- */
-static const struct {
-	const char *name;
-	struct net_fragment_data *data;
-} tests[] = {
-	{ "test_fragment_sam00_dam00", &test_data_1},
-	{ "test_fragment_sam01_dam01", &test_data_2},
-	{ "test_fragment_sam10_dam10", &test_data_3},
-	{ "test_fragment_sam00_m1_dam00", &test_data_4},
-	{ "test_fragment_sam01_m1_dam01", &test_data_5},
-	{ "test_fragment_sam10_m1_dam10", &test_data_6},
-	{ "test_fragment_ipv6_dispatch_small", &test_data_7},
-	{ "test_fragment_ipv6_dispatch_big", &test_data_8},
-};
 
 static void test_fragment_sam00_dam00(void)
 {
