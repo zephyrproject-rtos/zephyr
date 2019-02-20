@@ -52,7 +52,7 @@ struct slip_context {
 				 */
 	u8_t buf[1];		/* SLIP data is read into this buf */
 	struct net_pkt *rx;	/* and then placed into this net_pkt */
-	struct net_buf *last;	/* Pointer to last fragment in the list */
+	struct net_buf *last;	/* Pointer to last buffer in the list */
 	u8_t *ptr;		/* Where in net_pkt to add data */
 	struct net_if *iface;
 	u8_t state;
@@ -137,33 +137,33 @@ static void slip_writeb_esc(unsigned char c)
 
 static int slip_send(struct device *dev, struct net_pkt *pkt)
 {
-	struct net_buf *frag;
+	struct net_buf *buf;
 	u8_t *ptr;
 	u16_t i;
 	u8_t c;
 
 	ARG_UNUSED(dev);
 
-	if (!pkt->frags) {
+	if (!pkt->buffer) {
 		/* No data? */
 		return -ENODATA;
 	}
 
 	slip_writeb(SLIP_END);
 
-	for (frag = pkt->frags; frag; frag = frag->frags) {
-		ptr = frag->data;
-		for (i = 0U; i < frag->len; ++i) {
+	for (buf = pkt->buffer; buf; buf = buf->frags) {
+		ptr = buf->data;
+		for (i = 0U; i < buf->len; ++i) {
 			c = *ptr++;
 			slip_writeb_esc(c);
 		}
 
 		if (LOG_LEVEL >= LOG_LEVEL_DBG) {
-			LOG_DBG("sent data %d bytes", frag->len);
+			LOG_DBG("sent data %d bytes", buf->len);
 
-			if (frag->len) {
-				LOG_HEXDUMP_DBG(frag->data,
-						frag->len, "<slip ");
+			if (buf->len) {
+				LOG_HEXDUMP_DBG(buf->data,
+						buf->len, "<slip ");
 			}
 		}
 	}
@@ -207,7 +207,7 @@ static void process_msg(struct slip_context *slip)
 	struct net_pkt *pkt;
 
 	pkt = slip_poll_handler(slip);
-	if (!pkt || !pkt->frags) {
+	if (!pkt || !pkt->buffer) {
 		return;
 	}
 
@@ -282,7 +282,8 @@ static inline int slip_input_byte(struct slip_context *slip,
 		if (!slip->first) {
 			slip->first = true;
 
-			slip->rx = net_pkt_get_reserve_rx(K_NO_WAIT);
+			slip->rx = net_pkt_rx_alloc_on_iface(slip->iface,
+							     K_NO_WAIT);
 			if (!slip->rx) {
 				LOG_ERR("[%p] cannot allocate pkt", slip);
 				return 0;
@@ -290,14 +291,14 @@ static inline int slip_input_byte(struct slip_context *slip,
 
 			slip->last = net_pkt_get_frag(slip->rx, K_NO_WAIT);
 			if (!slip->last) {
-				LOG_ERR("[%p] cannot allocate 1st data frag",
+				LOG_ERR("[%p] cannot allocate 1st data buffer",
 					slip);
 				net_pkt_unref(slip->rx);
 				slip->rx = NULL;
 				return 0;
 			}
 
-			net_pkt_frag_add(slip->rx, slip->last);
+			net_pkt_append_buffer(slip->rx, slip->last);
 			slip->ptr = net_pkt_ip_data(slip->rx);
 		}
 
@@ -313,12 +314,12 @@ static inline int slip_input_byte(struct slip_context *slip,
 	}
 
 	if (!net_buf_tailroom(slip->last)) {
-		/* We need to allocate a new fragment */
-		struct net_buf *frag;
+		/* We need to allocate a new buffer */
+		struct net_buf *buf;
 
-		frag = net_pkt_get_reserve_rx_data(K_NO_WAIT);
-		if (!frag) {
-			LOG_ERR("[%p] cannot allocate next data frag", slip);
+		buf = net_pkt_get_reserve_rx_data(K_NO_WAIT);
+		if (!buf) {
+			LOG_ERR("[%p] cannot allocate next data buf", slip);
 			net_pkt_unref(slip->rx);
 			slip->rx = NULL;
 			slip->last = NULL;
@@ -326,8 +327,8 @@ static inline int slip_input_byte(struct slip_context *slip,
 			return 0;
 		}
 
-		net_buf_frag_insert(slip->last, frag);
-		slip->last = frag;
+		net_buf_frag_insert(slip->last, buf);
+		slip->last = buf;
 		slip->ptr = slip->last->data;
 	}
 
@@ -360,20 +361,20 @@ static u8_t *recv_cb(u8_t *buf, size_t *off)
 		if (slip_input_byte(slip, buf[i])) {
 
 			if (LOG_LEVEL >= LOG_LEVEL_DBG) {
-				struct net_buf *frag = slip->rx->frags;
-				int bytes = net_buf_frags_len(frag);
+				struct net_buf *buf = slip->rx->buffer;
+				int bytes = net_buf_frags_len(buf);
 				int count = 0;
 
-				while (bytes && frag) {
+				while (bytes && buf) {
 					char msg[8 + 1];
 
 					snprintf(msg, sizeof(msg),
 						 ">slip %2d", count);
 
-					LOG_HEXDUMP_DBG(frag->data, frag->len,
+					LOG_HEXDUMP_DBG(buf->data, buf->len,
 							msg);
 
-					frag = frag->frags;
+					buf = buf->frags;
 					count++;
 				}
 
