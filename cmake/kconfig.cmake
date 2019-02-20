@@ -13,7 +13,7 @@ else()
 endif()
 
 set(BOARD_DEFCONFIG ${BOARD_DIR}/${BOARD}_defconfig)
-set(DOTCONFIG       ${PROJECT_BINARY_DIR}/.config)
+set(DOTCONFIG                  ${PROJECT_BINARY_DIR}/.config)
 
 if(CONF_FILE)
 string(REPLACE " " ";" CONF_FILE_AS_LIST "${CONF_FILE}")
@@ -170,8 +170,11 @@ if(NOT "${ret}" STREQUAL "0")
 endif()
 
 # Force CMAKE configure when the configuration files changes.
-foreach(merge_config_input ${merge_config_files} ${DOTCONFIG})
-  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${merge_config_input})
+foreach(kconfig_input
+    ${merge_config_files}
+    ${DOTCONFIG}
+    )
+  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${kconfig_input})
 endforeach()
 
 add_custom_target(config-sanitycheck DEPENDS ${DOTCONFIG})
