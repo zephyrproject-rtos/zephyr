@@ -2547,8 +2547,8 @@ bool net_pkt_is_contiguous(struct net_pkt *pkt, size_t size)
 	return false;
 }
 
-void *net_pkt_get_data_new(struct net_pkt *pkt,
-			   struct net_pkt_data_access *access)
+void *net_pkt_get_data(struct net_pkt *pkt,
+		       struct net_pkt_data_access *access)
 {
 	if (IS_ENABLED(CONFIG_NET_HEADERS_ALWAYS_CONTIGUOUS)) {
 		if (!net_pkt_is_contiguous(pkt, access->size)) {

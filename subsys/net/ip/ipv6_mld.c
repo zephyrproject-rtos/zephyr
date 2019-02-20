@@ -46,7 +46,7 @@ static int mld_create(struct net_pkt *pkt,
 	struct net_icmpv6_mld_mcast_record *mld;
 
 	mld = (struct net_icmpv6_mld_mcast_record *)
-				net_pkt_get_data_new(pkt, &mld_access);
+				net_pkt_get_data(pkt, &mld_access);
 	if (!mld) {
 		return -ENOBUFS;
 	}
@@ -297,7 +297,7 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt,
 	u16_t pkt_len;
 
 	mld_query = (struct net_icmpv6_mld_query *)
-				net_pkt_get_data_new(pkt, &mld_access);
+				net_pkt_get_data(pkt, &mld_access);
 	if (!mld_query) {
 		NET_DBG("DROP: NULL MLD query");
 		goto drop;

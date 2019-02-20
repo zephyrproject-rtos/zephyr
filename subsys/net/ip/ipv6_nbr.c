@@ -653,7 +653,7 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 
 	NET_ASSERT(pkt && pkt->buffer);
 
-	ip_hdr = (struct net_ipv6_hdr *)net_pkt_get_data_new(pkt, &ipv6_access);
+	ip_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(pkt, &ipv6_access);
 	if (!ip_hdr) {
 		return NET_DROP;
 	}
@@ -947,8 +947,7 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 		goto drop;
 	}
 
-	na_hdr = (struct net_icmpv6_na_hdr *)net_pkt_get_data_new(pkt,
-								  &na_access);
+	na_hdr = (struct net_icmpv6_na_hdr *)net_pkt_get_data(pkt, &na_access);
 	if (!na_hdr) {
 		goto drop;
 	}
@@ -1029,8 +1028,7 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 	const struct in6_addr *src;
 	struct in6_addr *tgt;
 
-	ns_hdr = (struct net_icmpv6_ns_hdr *)net_pkt_get_data_new(pkt,
-								  &ns_access);
+	ns_hdr = (struct net_icmpv6_ns_hdr *)net_pkt_get_data(pkt, &ns_access);
 	if (!ns_hdr) {
 		NET_ERR("DROP: NULL NS header");
 		goto drop;
@@ -1055,7 +1053,7 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 	length -= (sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr));
 
 	nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
-		net_pkt_get_data_new(pkt, &nd_access);
+				net_pkt_get_data(pkt, &nd_access);
 
 	while (nd_opt_hdr && nd_opt_hdr->len > 0 &&
 	       net_pkt_ipv6_ext_opt_len(pkt) < length) {
@@ -1097,7 +1095,7 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 		}
 
 		nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
-			net_pkt_get_data_new(pkt, &nd_access);
+					net_pkt_get_data(pkt, &nd_access);
 	}
 
 	if (IS_ENABLED(CONFIG_NET_ROUTING)) {
@@ -1599,8 +1597,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt,
 	struct net_icmpv6_na_hdr *na_hdr;
 	struct net_if_addr *ifaddr;
 
-	na_hdr = (struct net_icmpv6_na_hdr *)net_pkt_get_data_new(pkt,
-								  &na_access);
+	na_hdr = (struct net_icmpv6_na_hdr *)net_pkt_get_data(pkt, &na_access);
 	if (!na_hdr) {
 		NET_ERR("DROP: NULL NA header");
 		goto drop;
@@ -1629,7 +1626,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt,
 	length -= (sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr));
 
 	nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
-		net_pkt_get_data_new(pkt, &nd_access);
+				net_pkt_get_data(pkt, &nd_access);
 
 	while (nd_opt_hdr && nd_opt_hdr->len &&
 	       net_pkt_ipv6_ext_opt_len(pkt) < length) {
@@ -1661,7 +1658,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt,
 
 		net_pkt_acknowledge_data(pkt, &nd_access);
 		nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
-			net_pkt_get_data_new(pkt, &nd_access);
+					net_pkt_get_data(pkt, &nd_access);
 	}
 
 	ifaddr = net_if_ipv6_addr_lookup_by_iface(net_pkt_iface(pkt),
@@ -1752,8 +1749,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 		goto drop;
 	}
 
-	ns_hdr = (struct net_icmpv6_ns_hdr *)net_pkt_get_data_new(pkt,
-								  &ns_access);
+	ns_hdr = (struct net_icmpv6_ns_hdr *)net_pkt_get_data(pkt, &ns_access);
 	if (!ns_hdr) {
 		goto drop;
 	}
@@ -2092,7 +2088,7 @@ static inline bool handle_ra_prefix(struct net_pkt *pkt)
 	struct net_icmpv6_nd_opt_prefix_info *pfx_info;
 
 	pfx_info = (struct net_icmpv6_nd_opt_prefix_info *)
-				net_pkt_get_data_new(pkt, &rapfx_access);
+				net_pkt_get_data(pkt, &rapfx_access);
 	if (!pfx_info) {
 		return false;
 	}
@@ -2126,7 +2122,7 @@ static inline bool handle_ra_6co(struct net_pkt *pkt, u8_t len)
 	struct net_icmpv6_nd_opt_6co *context;
 
 	context = (struct net_icmpv6_nd_opt_6co *)
-				net_pkt_get_data_new(pkt, &ctx_access);
+				net_pkt_get_data(pkt, &ctx_access);
 	if (!context) {
 		return false;
 	}
@@ -2173,8 +2169,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 	struct net_if_router *router;
 	u32_t mtu;
 
-	ra_hdr = (struct net_icmpv6_ra_hdr *)net_pkt_get_data_new(pkt,
-								  &ra_access);
+	ra_hdr = (struct net_icmpv6_ra_hdr *)net_pkt_get_data(pkt, &ra_access);
 	if (!ra_hdr) {
 		NET_ERR("DROP: NULL RA header");
 		goto drop;
@@ -2225,8 +2220,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 	length -= (sizeof(struct net_ipv6_hdr) + sizeof(struct net_icmp_hdr));
 
 	nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
-		net_pkt_get_data_new(pkt, &nd_access);
-
+				net_pkt_get_data(pkt, &nd_access);
 	while (nd_opt_hdr) {
 		net_pkt_acknowledge_data(pkt, &nd_access);
 
@@ -2301,7 +2295,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 		}
 
 		nd_opt_hdr = (struct net_icmpv6_nd_opt_hdr *)
-			net_pkt_get_data_new(pkt, &nd_access);
+					net_pkt_get_data(pkt, &nd_access);
 	}
 
 	router = net_if_ipv6_router_lookup(net_pkt_iface(pkt), &ip_hdr->src);

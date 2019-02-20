@@ -22,7 +22,7 @@ int net_udp_create(struct net_pkt *pkt, u16_t src_port, u16_t dst_port)
 	NET_PKT_DATA_ACCESS_DEFINE(udp_access, struct net_udp_hdr);
 	struct net_udp_hdr *udp_hdr;
 
-	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt, &udp_access);
+	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
 	if (!udp_hdr) {
 		return -ENOBUFS;
 	}
@@ -41,7 +41,7 @@ int net_udp_finalize(struct net_pkt *pkt)
 	struct net_udp_hdr *udp_hdr;
 	u16_t length;
 
-	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt, &udp_access);
+	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
 	if (!udp_hdr) {
 		return -ENOBUFS;
 	}
@@ -78,7 +78,7 @@ struct net_udp_hdr *net_udp_get_hdr(struct net_pkt *pkt,
 		goto out;
 	}
 
-	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt, &udp_access);
+	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
 
 out:
 	net_pkt_cursor_restore(pkt, &backup);
@@ -107,7 +107,7 @@ struct net_udp_hdr *net_udp_set_hdr(struct net_pkt *pkt,
 		goto out;
 	}
 
-	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt, &udp_access);
+	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
 	if (!udp_hdr) {
 		goto out;
 	}
@@ -153,7 +153,7 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt, udp_access);
+	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, udp_access);
 	if (!udp_hdr || net_pkt_set_data(pkt, udp_access)) {
 		NET_DBG("DROP: corrupted header");
 		goto drop;

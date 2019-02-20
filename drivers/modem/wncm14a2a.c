@@ -504,8 +504,7 @@ static int pkt_setup_ip_data(struct net_pkt *pkt,
 		NET_PKT_DATA_ACCESS_DEFINE(tcp_access, struct net_tcp_hdr);
 		struct net_tcp_hdr *tcp;
 
-		tcp = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt,
-								 &tcp_access);
+		tcp = (struct net_tcp_hdr *)net_pkt_get_data(pkt, &tcp_access);
 		if (!tcp) {
 			return -1;
 		}

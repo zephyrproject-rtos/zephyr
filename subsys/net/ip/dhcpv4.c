@@ -182,7 +182,7 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, u8_t type,
 		goto fail;
 	}
 
-	msg = (struct dhcp_msg *)net_pkt_get_data_new(pkt, &dhcp_access);
+	msg = (struct dhcp_msg *)net_pkt_get_data(pkt, &dhcp_access);
 
 	(void)memset(msg, 0, sizeof(struct dhcp_msg));
 
@@ -916,7 +916,7 @@ static enum net_verdict net_dhcpv4_input(struct net_conn *conn,
 		return NET_DROP;
 	}
 
-	msg = (struct dhcp_msg *)net_pkt_get_data_new(pkt, &dhcp_access);
+	msg = (struct dhcp_msg *)net_pkt_get_data(pkt, &dhcp_access);
 	if (!msg) {
 		return NET_DROP;
 	}

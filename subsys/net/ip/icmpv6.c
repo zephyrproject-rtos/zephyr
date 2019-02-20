@@ -74,8 +74,7 @@ int net_icmpv6_finalize(struct net_pkt *pkt)
 					      struct net_icmp_hdr);
 	struct net_icmp_hdr *icmp_hdr;
 
-	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt,
-							       &icmp_access);
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
 	if (!icmp_hdr) {
 		return -ENOBUFS;
 	}
@@ -91,8 +90,7 @@ int net_icmpv6_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code)
 					      struct net_icmp_hdr);
 	struct net_icmp_hdr *icmp_hdr;
 
-	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt,
-							       &icmp_access);
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
 	if (!icmp_hdr) {
 		return -ENOBUFS;
 	}
@@ -198,8 +196,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 
 	net_pkt_cursor_init(orig);
 
-	ip_hdr = (struct net_ipv6_hdr *)net_pkt_get_data_new(orig,
-							     &ipv6_access);
+	ip_hdr = (struct net_ipv6_hdr *)net_pkt_get_data(orig, &ipv6_access);
 	if (!ip_hdr) {
 		goto drop_no_pkt;
 	}
@@ -211,7 +208,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 
 		net_pkt_acknowledge_data(orig, &ipv6_access);
 
-		icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(
+		icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(
 							orig, &icmpv6_access);
 		if (!icmp_hdr || icmp_hdr->code < 128) {
 			/* We must not send ICMP errors back */
@@ -324,7 +321,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 		goto drop;
 	}
 
-	echo_req = (struct net_icmpv6_echo_req *)net_pkt_get_data_new(
+	echo_req = (struct net_icmpv6_echo_req *)net_pkt_get_data(
 							pkt, &icmpv6_access);
 	if (!echo_req) {
 		goto drop;
@@ -366,8 +363,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 	struct net_icmp_hdr *icmp_hdr;
 	struct net_icmpv6_handler *cb;
 
-	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt,
-							       &icmp_access);
+	icmp_hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
 	if (!icmp_hdr) {
 		NET_DBG("DROP: NULL ICMPv6 header");
 		return NET_DROP;

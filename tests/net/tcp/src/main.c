@@ -145,7 +145,7 @@ struct net_tcp_hdr *net_tcp_get_hdr(struct net_pkt *pkt,
 		goto out;
 	}
 
-	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt, &tcp_access);
 
 out:
 	net_pkt_cursor_restore(pkt, &backup);
@@ -174,7 +174,7 @@ struct net_tcp_hdr *net_tcp_set_hdr(struct net_pkt *pkt,
 		goto out;
 	}
 
-	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data_new(pkt, &tcp_access);
+	tcp_hdr = (struct net_tcp_hdr *)net_pkt_get_data(pkt, &tcp_access);
 	if (!tcp_hdr) {
 		goto out;
 	}

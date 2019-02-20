@@ -125,7 +125,7 @@ static u16_t get_udp_chksum(struct net_pkt *pkt)
 		return 0;
 	}
 
-	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data_new(pkt, &udp_access);
+	udp_hdr = (struct net_udp_hdr *)net_pkt_get_data(pkt, &udp_access);
 	if (!udp_hdr) {
 		return 0;
 	}

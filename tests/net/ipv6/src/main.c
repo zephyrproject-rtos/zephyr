@@ -212,7 +212,7 @@ static struct net_icmp_hdr *get_icmp_hdr(struct net_pkt *pkt)
 		goto out;
 	}
 
-	hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt, &icmp_access);
+	hdr = (struct net_icmp_hdr *)net_pkt_get_data(pkt, &icmp_access);
 
 out:
 	pkt->buffer = bak;
