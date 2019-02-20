@@ -852,7 +852,7 @@ int net_context_create_ipv4_new(struct net_context *context,
 
 	net_pkt_set_ipv4_ttl(pkt, net_context_get_ipv4_ttl(context));
 
-	return net_ipv4_create_new(pkt, src, dst);
+	return net_ipv4_create(pkt, src, dst);
 }
 #endif /* CONFIG_NET_IPV4 */
 

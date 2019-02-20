@@ -176,7 +176,7 @@ static struct net_pkt *dhcpv4_create_message(struct net_if *iface, u8_t type,
 
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 
-	if (net_ipv4_create_new(pkt, &src, server_addr) ||
+	if (net_ipv4_create(pkt, &src, server_addr) ||
 	    net_udp_create(pkt, htons(DHCPV4_CLIENT_PORT),
 			   htons(DHCPV4_SERVER_PORT))) {
 		goto fail;

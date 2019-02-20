@@ -476,7 +476,7 @@ static int pkt_setup_ip_data(struct net_pkt *pkt,
 #endif
 #if defined(CONFIG_NET_IPV4)
 	if (net_pkt_family(pkt) == AF_INET) {
-		if (net_ipv4_create_new(
+		if (net_ipv4_create(
 			    pkt,
 			    &((struct sockaddr_in *)&sock->dst)->sin_addr,
 			    &((struct sockaddr_in *)&sock->src)->sin_addr)) {
