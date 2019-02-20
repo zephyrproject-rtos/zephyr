@@ -258,9 +258,8 @@ static int send_response(struct net_context *ctx,
 		return -EINVAL;
 	}
 
-	ret = net_context_sendto_new(ctx, query->data, query->len,
-				     &dst, dst_len, NULL, K_NO_WAIT,
-				     NULL, NULL);
+	ret = net_context_sendto(ctx, query->data, query->len, &dst,
+				 dst_len, NULL, K_NO_WAIT, NULL, NULL);
 	if (ret < 0) {
 		NET_DBG("Cannot send mDNS reply (%d)", ret);
 	}

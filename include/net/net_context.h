@@ -758,13 +758,13 @@ int net_context_accept(struct net_context *context,
  *
  * @return 0 if ok, < 0 if error
  */
-int net_context_send_new(struct net_context *context,
-			 const void *buf,
-			 size_t len,
-			 net_context_send_cb_t cb,
-			 s32_t timeout,
-			 void *token,
-			 void *user_data);
+int net_context_send(struct net_context *context,
+		     const void *buf,
+		     size_t len,
+		     net_context_send_cb_t cb,
+		     s32_t timeout,
+		     void *token,
+		     void *user_data);
 
 /**
  * @brief Send data to a peer specified by address.
@@ -794,15 +794,15 @@ int net_context_send_new(struct net_context *context,
  *
  * @return numbers of bytes sent on success, a negative errno otherwise
  */
-int net_context_sendto_new(struct net_context *context,
-			   const void *buf,
-			   size_t len,
-			   const struct sockaddr *dst_addr,
-			   socklen_t addrlen,
-			   net_context_send_cb_t cb,
-			   s32_t timeout,
-			   void *token,
-			   void *user_data);
+int net_context_sendto(struct net_context *context,
+		       const void *buf,
+		       size_t len,
+		       const struct sockaddr *dst_addr,
+		       socklen_t addrlen,
+		       net_context_send_cb_t cb,
+		       s32_t timeout,
+		       void *token,
+		       void *user_data);
 
 /**
  * @brief Receive network data from a peer specified by context.

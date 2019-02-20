@@ -651,9 +651,9 @@ static int dns_write(struct dns_resolve_context *ctx,
 		server_addr_len = sizeof(struct sockaddr_in6);
 	}
 
-	ret = net_context_sendto_new(net_ctx, dns_data->data, dns_data->len,
-				     server, server_addr_len, NULL,
-				     K_NO_WAIT, NULL, NULL);
+	ret = net_context_sendto(net_ctx, dns_data->data, dns_data->len,
+				 server, server_addr_len, NULL,
+				 K_NO_WAIT, NULL, NULL);
 	if (ret < 0) {
 		NET_DBG("Cannot send query (%d)", ret);
 		return ret;

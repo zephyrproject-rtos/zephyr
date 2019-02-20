@@ -220,10 +220,10 @@ static inline bool telnet_send(void)
 	struct line_buf *lb = telnet_rb_get_line_out();
 
 	if (lb) {
-		if (net_context_send_new(client_cnx,
-					 (u8_t *)lb->buf, lb->len,
-					 telnet_sent_cb,
-					 K_FOREVER, NULL, NULL)) {
+		if (net_context_send(client_cnx,
+				     (u8_t *)lb->buf, lb->len,
+				     telnet_sent_cb,
+				     K_FOREVER, NULL, NULL)) {
 			return false;
 		}
 
@@ -243,8 +243,8 @@ static int telnet_console_out_nothing(int c)
 
 static inline void telnet_command_send_reply(u8_t *msg, u16_t len)
 {
-	net_context_send_new(client_cnx, msg, len,
-			     telnet_sent_cb, K_FOREVER, NULL, NULL);
+	net_context_send(client_cnx, msg, len,
+			 telnet_sent_cb, K_FOREVER, NULL, NULL);
 }
 
 static inline void telnet_reply_ay_command(void)

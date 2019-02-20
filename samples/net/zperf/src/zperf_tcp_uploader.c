@@ -57,9 +57,9 @@ void zperf_tcp_upload(const struct shell *shell,
 		loop_time = k_cycle_get_32();
 
 		/* Send the packet */
-		ret = net_context_send_new(ctx, sample_packet,
-					   sizeof(sample_packet), NULL,
-					   K_NO_WAIT, NULL, NULL);
+		ret = net_context_send(ctx, sample_packet,
+				       sizeof(sample_packet), NULL,
+				       K_NO_WAIT, NULL, NULL);
 		if (ret < 0) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Failed to send the packet (%d)\n",

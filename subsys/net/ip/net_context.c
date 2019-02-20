@@ -1258,15 +1258,15 @@ static struct net_pkt *context_alloc_pkt(struct net_context *context,
 }
 
 
-static int context_sendto_new(struct net_context *context,
-			      const void *buf,
-			      size_t len,
-			      const struct sockaddr *dst_addr,
-			      socklen_t addrlen,
-			      net_context_send_cb_t cb,
-			      s32_t timeout,
-			      void *token,
-			      void *user_data)
+static int context_sendto(struct net_context *context,
+			  const void *buf,
+			  size_t len,
+			  const struct sockaddr *dst_addr,
+			  socklen_t addrlen,
+			  net_context_send_cb_t cb,
+			  s32_t timeout,
+			  void *token,
+			  void *user_data)
 {
 	struct net_pkt *pkt;
 	size_t tmp_len;
@@ -1454,13 +1454,13 @@ fail:
 	return ret;
 }
 
-int net_context_send_new(struct net_context *context,
-			 const void *buf,
-			 size_t len,
-			 net_context_send_cb_t cb,
-			 s32_t timeout,
-			 void *token,
-			 void *user_data)
+int net_context_send(struct net_context *context,
+		     const void *buf,
+		     size_t len,
+		     net_context_send_cb_t cb,
+		     s32_t timeout,
+		     void *token,
+		     void *user_data)
 {
 	socklen_t addrlen;
 	int ret = 0;
@@ -1490,8 +1490,8 @@ int net_context_send_new(struct net_context *context,
 		addrlen = 0;
 	}
 
-	ret = context_sendto_new(context, buf, len, &context->remote,
-				 addrlen, cb, timeout, token, user_data);
+	ret = context_sendto(context, buf, len, &context->remote,
+			     addrlen, cb, timeout, token, user_data);
 unlock:
 	k_mutex_unlock(&context->lock);
 
@@ -1499,22 +1499,22 @@ unlock:
 }
 
 
-int net_context_sendto_new(struct net_context *context,
-			   const void *buf,
-			   size_t len,
-			   const struct sockaddr *dst_addr,
-			   socklen_t addrlen,
-			   net_context_send_cb_t cb,
-			   s32_t timeout,
-			   void *token,
-			   void *user_data)
+int net_context_sendto(struct net_context *context,
+		       const void *buf,
+		       size_t len,
+		       const struct sockaddr *dst_addr,
+		       socklen_t addrlen,
+		       net_context_send_cb_t cb,
+		       s32_t timeout,
+		       void *token,
+		       void *user_data)
 {
 	int ret;
 
 	k_mutex_lock(&context->lock, K_FOREVER);
 
-	ret = context_sendto_new(context, buf, len, dst_addr, addrlen,
-				 cb, timeout, token, user_data);
+	ret = context_sendto(context, buf, len, dst_addr, addrlen,
+			     cb, timeout, token, user_data);
 
 	k_mutex_unlock(&context->lock);
 

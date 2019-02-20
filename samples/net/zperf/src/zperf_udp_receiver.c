@@ -99,11 +99,11 @@ static int zperf_receiver_send_stat(const struct shell *shell,
 
 	build_reply(hdr, stat, reply);
 
-	ret = net_context_sendto_new(context, reply, BUF_SIZE, &dst_addr,
-				     net_pkt_family(pkt) == AF_INET6 ?
-				     sizeof(struct sockaddr_in6) :
-				     sizeof(struct sockaddr_in),
-				     NULL, 0, NULL, NULL);
+	ret = net_context_sendto(context, reply, BUF_SIZE, &dst_addr,
+				 net_pkt_family(pkt) == AF_INET6 ?
+				 sizeof(struct sockaddr_in6) :
+				 sizeof(struct sockaddr_in),
+				 NULL, 0, NULL, NULL);
 	if (ret < 0) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      " Cannot send data to peer (%d)", ret);
