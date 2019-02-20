@@ -5,3 +5,5 @@ tests:
   test:
     platform_whitelist: nrf52840_pca10056
     tags: led
+    harness_config:
+        fixture: fixture_i2c_lp5562
