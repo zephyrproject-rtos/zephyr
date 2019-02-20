@@ -330,7 +330,7 @@ static void send_query(struct net_if *iface)
 	zassert_not_null(pkt, "Cannot allocate pkt");
 
 	net_pkt_set_ipv6_hop_limit(pkt, 1); /* RFC 3810 ch 7.4 */
-	net_ipv6_create_new(pkt, &peer_addr, &dst);
+	net_ipv6_create(pkt, &peer_addr, &dst);
 
 	/* Add hop-by-hop option and router alert option, RFC 3810 ch 5. */
 	net_pkt_write_u8_new(pkt, IPPROTO_ICMPV6);

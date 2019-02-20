@@ -873,7 +873,7 @@ int net_context_create_ipv6_new(struct net_context *context,
 	net_pkt_set_ipv6_hop_limit(pkt,
 				   net_context_get_ipv6_hop_limit(context));
 
-	return net_ipv6_create_new(pkt, src, dst);
+	return net_ipv6_create(pkt, src, dst);
 }
 #endif /* CONFIG_NET_IPV6 */
 
