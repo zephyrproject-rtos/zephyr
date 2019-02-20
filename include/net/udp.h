@@ -21,6 +21,11 @@
 extern "C" {
 #endif
 
+/* These APIs are mostly meant for Zephyr internal use so do not generate
+ * documentation for them.
+ */
+/** @cond INTERNAL_HIDDEN */
+
 /**
  * @brief UDP library
  * @defgroup udp UDP Library
@@ -85,6 +90,8 @@ static inline struct net_udp_hdr *net_udp_set_hdr(struct net_pkt *pkt,
 /**
  * @}
  */
+
+/** @endcond */
 
 #ifdef __cplusplus
 }

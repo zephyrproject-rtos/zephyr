@@ -31,4 +31,3 @@ Networking
    ptp_time.rst
    traffic-class.rst
    trickle.rst
-   udp.rst
