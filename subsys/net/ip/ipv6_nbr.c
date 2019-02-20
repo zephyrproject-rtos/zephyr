@@ -942,7 +942,7 @@ int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
 
 	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_ND_HOP_LIMIT);
 
-	if (net_ipv6_create_new(pkt, src, dst) ||
+	if (net_ipv6_create(pkt, src, dst) ||
 	    net_icmpv6_create(pkt, NET_ICMPV6_NA, 0)) {
 		goto drop;
 	}
@@ -1747,7 +1747,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_ND_HOP_LIMIT);
 
-	if (net_ipv6_create_new(pkt, src, dst) ||
+	if (net_ipv6_create(pkt, src, dst) ||
 	    net_icmpv6_create(pkt, NET_ICMPV6_NS, 0)) {
 		goto drop;
 	}
@@ -1868,7 +1868,7 @@ int net_ipv6_send_rs(struct net_if *iface)
 
 	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_ND_HOP_LIMIT);
 
-	if (net_ipv6_create_new(pkt, src, &dst) ||
+	if (net_ipv6_create(pkt, src, &dst) ||
 	    net_icmpv6_create(pkt, NET_ICMPV6_RS, 0) ||
 	    net_pkt_memset(pkt, 0, sizeof(struct net_icmpv6_rs_hdr))) {
 		goto drop;

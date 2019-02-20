@@ -56,51 +56,9 @@ const struct in6_addr *net_ipv6_unspecified_address(void)
 	return &in6addr_any;
 }
 
-struct net_pkt *net_ipv6_create(struct net_pkt *pkt,
-				const struct in6_addr *src,
-				const struct in6_addr *dst,
-				struct net_if *iface,
-				u8_t next_header_proto)
-{
-	struct net_buf *header;
-
-	header = net_pkt_get_frag(pkt, NET_BUF_TIMEOUT);
-	if (!header) {
-		return NULL;
-	}
-
-	net_pkt_frag_insert(pkt, header);
-
-	NET_IPV6_HDR(pkt)->vtc = 0x60;
-	NET_IPV6_HDR(pkt)->tcflow = 0;
-	NET_IPV6_HDR(pkt)->flow = 0;
-
-	NET_IPV6_HDR(pkt)->nexthdr = 0;
-
-	/* User can tweak the default hop limit if needed */
-	NET_IPV6_HDR(pkt)->hop_limit = net_pkt_ipv6_hop_limit(pkt);
-	if (NET_IPV6_HDR(pkt)->hop_limit == 0) {
-		NET_IPV6_HDR(pkt)->hop_limit =
-					net_if_ipv6_get_hop_limit(iface);
-	}
-
-	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, dst);
-	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, src);
-
-	net_pkt_set_ipv6_ext_len(pkt, 0);
-	NET_IPV6_HDR(pkt)->nexthdr = next_header_proto;
-
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-	net_pkt_set_family(pkt, AF_INET6);
-
-	net_buf_add(header, sizeof(struct net_ipv6_hdr));
-
-	return pkt;
-}
-
-int net_ipv6_create_new(struct net_pkt *pkt,
-			const struct in6_addr *src,
-			const struct in6_addr *dst)
+int net_ipv6_create(struct net_pkt *pkt,
+		    const struct in6_addr *src,
+		    const struct in6_addr *dst)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv6_access, struct net_ipv6_hdr);
 	struct net_ipv6_hdr *ipv6_hdr;

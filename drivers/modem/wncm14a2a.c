@@ -464,7 +464,7 @@ static int pkt_setup_ip_data(struct net_pkt *pkt,
 
 #if defined(CONFIG_NET_IPV6)
 	if (net_pkt_family(pkt) == AF_INET6) {
-		if (net_ipv6_create_new(
+		if (net_ipv6_create(
 			    pkt,
 			    &((struct sockaddr_in6 *)&sock->dst)->sin6_addr,
 			    &((struct sockaddr_in6 *)&sock->src)->sin6_addr)) {

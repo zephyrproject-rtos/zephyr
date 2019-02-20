@@ -353,7 +353,7 @@ static struct net_pkt *setup_ipv6_tcp(struct net_if *iface,
 		return NULL;
 	}
 
-	net_ipv6_create_new(pkt, remote_addr, local_addr);
+	net_ipv6_create(pkt, remote_addr, local_addr);
 
 	tcp_hdr.src_port = htons(remote_port);
 	tcp_hdr.dst_port = htons(local_port);
@@ -440,7 +440,7 @@ static struct net_pkt *setup_ipv6_tcp_long(struct net_if *iface,
 	}
 
 	net_pkt_set_ipv6_hop_limit(pkt, 255);
-	net_ipv6_create_new(pkt, remote_addr, local_addr);
+	net_ipv6_create(pkt, remote_addr, local_addr);
 
 	net_pkt_write_new(pkt, ipv6_hop_by_hop_ext_hdr,
 			  sizeof(ipv6_hop_by_hop_ext_hdr));

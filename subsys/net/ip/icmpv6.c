@@ -148,7 +148,7 @@ enum net_verdict icmpv6_handle_echo_request(struct net_pkt *pkt,
 	net_pkt_lladdr_dst(reply)->addr = NULL;
 	net_pkt_lladdr_src(reply)->addr = NULL;
 
-	if (net_ipv6_create_new(reply, src, &ip_hdr->src)) {
+	if (net_ipv6_create(reply, src, &ip_hdr->src)) {
 		NET_DBG("DROP: wrong buffer");
 		goto drop;
 	}
@@ -248,7 +248,7 @@ int net_icmpv6_send_error(struct net_pkt *orig, u8_t type, u8_t code,
 		src = &ip_hdr->dst;
 	}
 
-	if (net_ipv6_create_new(pkt, src, &ip_hdr->src) ||
+	if (net_ipv6_create(pkt, src, &ip_hdr->src) ||
 	    net_icmpv6_create(pkt, type, code)) {
 		goto drop;
 	}
@@ -319,7 +319,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 		return -ENOMEM;
 	}
 
-	if (net_ipv6_create_new(pkt, src, dst) ||
+	if (net_ipv6_create(pkt, src, dst) ||
 	    net_icmpv6_create(pkt, NET_ICMPV6_ECHO_REQUEST, 0)) {
 		goto drop;
 	}

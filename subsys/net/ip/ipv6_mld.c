@@ -82,10 +82,9 @@ static int mld_create_packet(struct net_pkt *pkt, u16_t count)
 
 	net_pkt_set_ipv6_hop_limit(pkt, 1); /* RFC 3810 ch 7.4 */
 
-	if (net_ipv6_create_new(pkt,
-				net_if_ipv6_select_src_addr(
-					net_pkt_iface(pkt), &dst),
-				 &dst)) {
+	if (net_ipv6_create(pkt, net_if_ipv6_select_src_addr(
+				    net_pkt_iface(pkt), &dst),
+			    &dst)) {
 		return -ENOBUFS;
 	}
 
