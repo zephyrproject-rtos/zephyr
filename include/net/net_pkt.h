@@ -1235,22 +1235,6 @@ void net_pkt_frag_insert(struct net_pkt *pkt, struct net_buf *frag);
 #endif
 
 /**
- * @brief Copy len bytes from src starting from	offset to dst
- *
- * This routine assumes that dst is formed of one fragment with enough space
- * to store @a len bytes starting from offset at src.
- *
- * @param dst Destination buffer
- * @param src Source buffer that may be fragmented
- * @param offset Starting point to copy from
- * @param len Number of bytes to copy
- * @return 0 on success
- * @return -ENOMEM on error
- */
-int net_frag_linear_copy(struct net_buf *dst, struct net_buf *src,
-			 u16_t offset, u16_t len);
-
-/**
  * @brief Compact the fragment list of a packet.
  *
  * @details After this there is no more any free space in individual fragments.
