@@ -1,6 +1,7 @@
 # Configuration for host installed llvm
 #
 
+# TODO: Address PR #13580
 set(NOSTDINC "")
 
 # Note that NOSYSDEF_CFLAG may be an empty string, and

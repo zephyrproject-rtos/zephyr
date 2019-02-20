@@ -28,6 +28,7 @@ else()
 endif()
 find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler} PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 
+# TODO: Address PR #13580
 set(NOSTDINC "")
 
 # Note that NOSYSDEF_CFLAG may be an empty string, and

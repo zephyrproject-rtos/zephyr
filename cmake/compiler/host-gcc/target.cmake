@@ -57,6 +57,7 @@ if (NOT CONFIG_X86_64)
   LIST(APPEND TOOLCHAIN_LIBS gcc)
 endif()
 
+# TODO: Address PR #13580
 set(NOSTDINC "")
 
 # Note that NOSYSDEF_CFLAG may be an empty string, and
