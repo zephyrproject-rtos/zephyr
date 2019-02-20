@@ -37,24 +37,44 @@ set(ENV{PROJECT_BINARY_DIR} ${PROJECT_BINARY_DIR})
 set(ENV{ARCH_DIR}   ${ARCH_DIR})
 set(ENV{GENERATED_DTS_BOARD_CONF} ${GENERATED_DTS_BOARD_CONF})
 
-add_custom_target(
-  menuconfig
-  ${CMAKE_COMMAND} -E env
-  PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
-  srctree=${ZEPHYR_BASE}
-  KERNELVERSION=${KERNELVERSION}
-  KCONFIG_CONFIG=${DOTCONFIG}
-  ARCH=$ENV{ARCH}
-  BOARD_DIR=$ENV{BOARD_DIR}
-  SOC_DIR=$ENV{SOC_DIR}
-  PROJECT_BINARY_DIR=$ENV{PROJECT_BINARY_DIR}
-  ZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}
-  ARCH_DIR=$ENV{ARCH_DIR}
-  GENERATED_DTS_BOARD_CONF=$ENV{GENERATED_DTS_BOARD_CONF}
-  ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/kconfig/menuconfig.py ${KCONFIG_ROOT}
-  WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
-  USES_TERMINAL
+# Allow out-of-tree users to add their own Kconfig python frontend
+# targets by appending targets to the CMake list
+# 'EXTRA_KCONFIG_TARGETS' and setting variables named
+# 'EXTRA_KCONFIG_TARGET_COMMAND_FOR_<target>'
+#
+# e.g.
+# cmake -DEXTRA_KCONFIG_TARGETS=cli
+# -DEXTRA_KCONFIG_TARGET_COMMAND_FOR_cli=cli_kconfig_frontend.py
+
+set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_menuconfig
+  ${ZEPHYR_BASE}/scripts/kconfig/menuconfig.py
   )
+
+foreach(kconfig_target
+    menuconfig
+    ${EXTRA_KCONFIG_TARGETS}
+    )
+  add_custom_target(
+    ${kconfig_target}
+    ${CMAKE_COMMAND} -E env
+    PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
+    srctree=${ZEPHYR_BASE}
+    KERNELVERSION=${KERNELVERSION}
+    KCONFIG_CONFIG=${DOTCONFIG}
+    ARCH=$ENV{ARCH}
+    BOARD_DIR=$ENV{BOARD_DIR}
+    SOC_DIR=$ENV{SOC_DIR}
+    PROJECT_BINARY_DIR=$ENV{PROJECT_BINARY_DIR}
+    ZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}
+    ARCH_DIR=$ENV{ARCH_DIR}
+    GENERATED_DTS_BOARD_CONF=${GENERATED_DTS_BOARD_CONF}
+    ${PYTHON_EXECUTABLE}
+    ${EXTRA_KCONFIG_TARGET_COMMAND_FOR_${kconfig_target}}
+    ${KCONFIG_ROOT}
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
+    USES_TERMINAL
+    )
+endforeach()
 
 # Support assigning Kconfig symbols on the command-line with CMake
 # cache variables prefixed with 'CONFIG_'. This feature is
