@@ -457,7 +457,7 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 		CONFIG_EXTI_STM32_EXTI15_10_IRQ_PRI,
 		__stm32_exti_isr_15_10, DEVICE_GET(exti_stm32),
 		0);
-#elif defined(CONFIG_SOC_SERIES_STM32F2X) || \
+#if defined(CONFIG_SOC_SERIES_STM32F2X) || \
       defined(CONFIG_SOC_SERIES_STM32F4X) || \
       defined(CONFIG_SOC_SERIES_STM32F7X)
 	IRQ_CONNECT(PVD_IRQn,
@@ -480,10 +480,12 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 		CONFIG_EXTI_STM32_RTC_WKUP_IRQ_PRI,
 		__stm32_exti_isr_22, DEVICE_GET(exti_stm32),
 		0);
-#elif CONFIG_SOC_SERIES_STM32F7X
+#endif
+#if CONFIG_SOC_SERIES_STM32F7X
 	IRQ_CONNECT(LPTIM1_IRQn,
 		CONFIG_EXTI_STM32_LPTIM1_IRQ_PRI,
 		__stm32_exti_isr_23, DEVICE_GET(exti_stm32),
 		0);
+#endif /* CONFIG_SOC_SERIES_STM32F7X */
 #endif
 }
