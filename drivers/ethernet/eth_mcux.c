@@ -497,8 +497,6 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	bool timestamped_frame;
 #endif
 
-	k_sem_take(&context->tx_buf_sem, K_FOREVER);
-
 	/* As context->frame_buf is shared resource used by both eth_tx
 	 * and eth_rx, we need to protect it with irq_lock.
 	 */
@@ -545,6 +543,8 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 		LOG_ERR("ENET_SendFrame error: %d", (int)status);
 		return -1;
 	}
+
+	k_sem_take(&context->tx_buf_sem, K_FOREVER);
 
 	return 0;
 }
@@ -795,7 +795,7 @@ static int eth_0_init(struct device *dev)
 #endif
 
 	k_sem_init(&context->tx_buf_sem,
-		   CONFIG_ETH_MCUX_TX_BUFFERS, CONFIG_ETH_MCUX_TX_BUFFERS);
+		   0, CONFIG_ETH_MCUX_TX_BUFFERS);
 	k_work_init(&context->phy_work, eth_mcux_phy_work);
 	k_delayed_work_init(&context->delayed_phy_work,
 			    eth_mcux_delayed_phy_work);
