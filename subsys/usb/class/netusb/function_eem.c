@@ -182,7 +182,7 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 		}
 
 		/* copy payload and discard 32-bit sentinel */
-		if (net_pkt_write_new(pkt, ptr, eem_size - 4)) {
+		if (net_pkt_write(pkt, ptr, eem_size - 4)) {
 			LOG_ERR("Unable to write into pkt\n");
 			net_pkt_unref(pkt);
 			break;

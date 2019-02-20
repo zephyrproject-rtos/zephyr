@@ -2045,36 +2045,36 @@ int net_pkt_read_be32(struct net_pkt *pkt, u32_t *data);
  *
  * @return 0 on success, negative errno code otherwise.
  */
-int net_pkt_write_new(struct net_pkt *pkt, const void *data, size_t length);
+int net_pkt_write(struct net_pkt *pkt, const void *data, size_t length);
 
 /* Write u8_t data into a net_pkt. */
-static inline int net_pkt_write_u8_new(struct net_pkt *pkt, u8_t data)
+static inline int net_pkt_write_u8(struct net_pkt *pkt, u8_t data)
 {
-	return net_pkt_write_new(pkt, &data, sizeof(u8_t));
+	return net_pkt_write(pkt, &data, sizeof(u8_t));
 }
 
 /* Write u16_t big endian data into a net_pkt. */
-static inline int net_pkt_write_be16_new(struct net_pkt *pkt, u16_t data)
+static inline int net_pkt_write_be16(struct net_pkt *pkt, u16_t data)
 {
 	u16_t data_be16 = htons(data);
 
-	return net_pkt_write_new(pkt, &data_be16, sizeof(u16_t));
+	return net_pkt_write(pkt, &data_be16, sizeof(u16_t));
 }
 
 /* Write u32_t big endian data into a net_pkt. */
-static inline int net_pkt_write_be32_new(struct net_pkt *pkt, u32_t data)
+static inline int net_pkt_write_be32(struct net_pkt *pkt, u32_t data)
 {
 	u32_t data_be32 = htonl(data);
 
-	return net_pkt_write_new(pkt, &data_be32, sizeof(u32_t));
+	return net_pkt_write(pkt, &data_be32, sizeof(u32_t));
 }
 
 /* Write u32_t little endian data into a net_pkt. */
-static inline int net_pkt_write_le32_new(struct net_pkt *pkt, u32_t data)
+static inline int net_pkt_write_le32(struct net_pkt *pkt, u32_t data)
 {
 	u32_t data_le32 = sys_cpu_to_le32(data);
 
-	return net_pkt_write_new(pkt, &data_le32, sizeof(u32_t));
+	return net_pkt_write(pkt, &data_le32, sizeof(u32_t));
 }
 
 /**

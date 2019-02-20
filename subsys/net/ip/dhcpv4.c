@@ -62,8 +62,8 @@ static const char *dhcpv4_msg_type_name(enum dhcpv4_msg_type msg_type)
 /* Add magic cookie to DCHPv4 messages */
 static inline bool dhcpv4_add_cookie(struct net_pkt *pkt)
 {
-	if (net_pkt_write_new(pkt, (void *)magic_cookie,
-			      ARRAY_SIZE(magic_cookie))) {
+	if (net_pkt_write(pkt, (void *)magic_cookie,
+			  ARRAY_SIZE(magic_cookie))) {
 		return false;
 	}
 
@@ -74,9 +74,9 @@ static inline bool dhcpv4_add_cookie(struct net_pkt *pkt)
 static bool dhcpv4_add_option_length_value(struct net_pkt *pkt, u8_t option,
 					   u8_t size, const void *value)
 {
-	if (net_pkt_write_u8_new(pkt, option) ||
-	    net_pkt_write_u8_new(pkt, size) ||
-	    net_pkt_write_new(pkt, value, size)) {
+	if (net_pkt_write_u8(pkt, option) ||
+	    net_pkt_write_u8(pkt, size) ||
+	    net_pkt_write(pkt, value, size)) {
 		return false;
 	}
 
@@ -120,7 +120,7 @@ static bool dhcpv4_add_req_ipaddr(struct net_pkt *pkt,
 /* Add DHCPv4 Options end, rest of the message can be padded wit zeros */
 static inline bool dhcpv4_add_end(struct net_pkt *pkt)
 {
-	if (net_pkt_write_u8_new(pkt, DHCPV4_OPTIONS_END)) {
+	if (net_pkt_write_u8(pkt, DHCPV4_OPTIONS_END)) {
 		return false;
 	}
 

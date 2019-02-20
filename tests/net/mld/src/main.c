@@ -333,33 +333,33 @@ static void send_query(struct net_if *iface)
 	net_ipv6_create(pkt, &peer_addr, &dst);
 
 	/* Add hop-by-hop option and router alert option, RFC 3810 ch 5. */
-	net_pkt_write_u8_new(pkt, IPPROTO_ICMPV6);
-	net_pkt_write_u8_new(pkt, 0); /* length (0 means 8 bytes) */
+	net_pkt_write_u8(pkt, IPPROTO_ICMPV6);
+	net_pkt_write_u8(pkt, 0); /* length (0 means 8 bytes) */
 
 #define ROUTER_ALERT_LEN 8
 
 	/* IPv6 router alert option is described in RFC 2711. */
-	net_pkt_write_be16_new(pkt, 0x0502); /* RFC 2711 ch 2.1 */
-	net_pkt_write_be16_new(pkt, 0); /* pkt contains MLD msg */
+	net_pkt_write_be16(pkt, 0x0502); /* RFC 2711 ch 2.1 */
+	net_pkt_write_be16(pkt, 0); /* pkt contains MLD msg */
 
-	net_pkt_write_u8_new(pkt, 1); /* padn */
-	net_pkt_write_u8_new(pkt, 0); /* padn len */
+	net_pkt_write_u8(pkt, 1); /* padn */
+	net_pkt_write_u8(pkt, 0); /* padn len */
 
 	net_pkt_set_ipv6_ext_len(pkt, ROUTER_ALERT_LEN);
 
 	/* ICMPv6 header */
 	net_icmpv6_create(pkt, NET_ICMPV6_MLD_QUERY, 0);
 
-	net_pkt_write_be16_new(pkt, 3); /* maximum response code */
-	net_pkt_write_be16_new(pkt, 0); /* reserved field */
+	net_pkt_write_be16(pkt, 3); /* maximum response code */
+	net_pkt_write_be16(pkt, 0); /* reserved field */
 
 	net_pkt_set_ipv6_next_hdr(pkt, NET_IPV6_NEXTHDR_HBHO);
 
-	net_pkt_write_be16_new(pkt, 0); /* Resv, S, QRV and QQIC */
-	net_pkt_write_be16_new(pkt, 0); /* number of addresses */
+	net_pkt_write_be16(pkt, 0); /* Resv, S, QRV and QQIC */
+	net_pkt_write_be16(pkt, 0); /* number of addresses */
 
-	net_pkt_write_new(pkt, net_ipv6_unspecified_address(),
-			  sizeof(struct in6_addr));
+	net_pkt_write(pkt, net_ipv6_unspecified_address(),
+		      sizeof(struct in6_addr));
 
 	net_pkt_cursor_init(pkt);
 	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);

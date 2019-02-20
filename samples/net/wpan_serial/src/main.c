@@ -226,8 +226,8 @@ static void send_data(u8_t *cfg, u8_t *data, size_t len)
 	LOG_DBG("queue pkt %p len %u", pkt, len);
 
 	/* Add configuration id */
-	net_pkt_write_new(pkt, cfg, 2);
-	net_pkt_write_new(pkt, data, len);
+	net_pkt_write(pkt, cfg, 2);
+	net_pkt_write(pkt, data, len);
 
 	/* simulate LQI */
 	net_pkt_skip(pkt, 1);

@@ -213,16 +213,16 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, u32_t xid)
 		goto fail;
 	}
 
-	if (net_pkt_write_new(pkt, offer, 4)) {
+	if (net_pkt_write(pkt, offer, 4)) {
 		goto fail;
 	}
 
 	/* Update xid from the client request */
-	if (net_pkt_write_be32_new(pkt, xid)) {
+	if (net_pkt_write_be32(pkt, xid)) {
 		goto fail;
 	}
 
-	if (net_pkt_write_new(pkt, offer + 8, sizeof(offer) - 8)) {
+	if (net_pkt_write(pkt, offer + 8, sizeof(offer) - 8)) {
 		goto fail;
 	}
 
@@ -254,16 +254,16 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, u32_t xid)
 		goto fail;
 	}
 
-	if (net_pkt_write_new(pkt, ack, 4)) {
+	if (net_pkt_write(pkt, ack, 4)) {
 		goto fail;
 	}
 
 	/* Update xid from the client request */
-	if (net_pkt_write_be32_new(pkt, xid)) {
+	if (net_pkt_write_be32(pkt, xid)) {
 		goto fail;
 	}
 
-	if (net_pkt_write_new(pkt, ack + 8, sizeof(ack) - 8)) {
+	if (net_pkt_write(pkt, ack + 8, sizeof(ack) - 8)) {
 		goto fail;
 	}
 

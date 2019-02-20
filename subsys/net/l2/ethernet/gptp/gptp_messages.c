@@ -575,9 +575,8 @@ struct net_pkt *gptp_prepare_announce(int port)
 
 	if (net_pkt_skip(pkt, sizeof(struct gptp_hdr) +
 			 sizeof(struct gptp_announce) - 8) ||
-	    net_pkt_write_new(pkt,
-			      &global_ds->path_trace.path_sequence[0][0],
-			      ntohs(global_ds->path_trace.len))) {
+	    net_pkt_write(pkt, &global_ds->path_trace.path_sequence[0][0],
+			  ntohs(global_ds->path_trace.len))) {
 		goto fail;
 	}
 

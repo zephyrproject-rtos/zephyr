@@ -881,9 +881,9 @@ static inline bool set_llao(struct net_pkt *pkt,
 		.len  = llao_len >> 3,
 	};
 
-	if (net_pkt_write_new(pkt, &opt_hdr,
-			      sizeof(struct net_icmpv6_nd_opt_hdr)) ||
-	    net_pkt_write_new(pkt, lladdr->addr, lladdr->len) ||
+	if (net_pkt_write(pkt, &opt_hdr,
+			  sizeof(struct net_icmpv6_nd_opt_hdr)) ||
+	    net_pkt_write(pkt, lladdr->addr, lladdr->len) ||
 	    net_pkt_memset(pkt, 0, llao_len - lladdr->len - 2)) {
 		return false;
 	}

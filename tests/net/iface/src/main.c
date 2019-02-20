@@ -428,7 +428,7 @@ static bool send_iface(struct net_if *iface, int val, bool expect_fail)
 		return false;
 	}
 
-	net_pkt_write_new(pkt, data, sizeof(data));
+	net_pkt_write(pkt, data, sizeof(data));
 	net_pkt_cursor_init(pkt);
 
 	ret = net_send_data(pkt);
