@@ -53,6 +53,8 @@ struct k_thread *z_find_first_thread_to_unpend(_wait_q_t *wait_q,
 					      struct k_thread *from);
 void idle(void *a, void *b, void *c);
 void z_time_slice(int ticks);
+void z_sched_abort(struct k_thread *thread);
+void z_sched_ipi(void);
 
 static inline void z_pend_curr_unlocked(_wait_q_t *wait_q, s32_t timeout)
 {

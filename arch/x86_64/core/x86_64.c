@@ -10,6 +10,12 @@
 #include <irq_offload.h>
 #include "xuk.h"
 
+/* Always pick a lowest priority interrupt for scheduling IPI's, by
+ * definition they're done on behalf of thread mode code and should
+ * never preempt a true device interrupt
+ */
+#define SCHED_IPI_VECTOR 0x20
+
 struct device;
 
 struct NANO_ESF {
@@ -112,6 +118,26 @@ void __weak x86_apic_timer_isr(void *arg, int code)
 	ARG_UNUSED(code);
 }
 
+static void sched_ipi_handler(void *arg, int err)
+{
+	ARG_UNUSED(arg);
+	ARG_UNUSED(err);
+#ifdef CONFIG_SMP
+	z_sched_ipi();
+#endif
+}
+
+void z_arch_sched_ipi(void)
+{
+	_apic.ICR_HI = (struct apic_icr_hi) {};
+	_apic.ICR_LO = (struct apic_icr_lo) {
+		.delivery_mode = FIXED,
+		.vector = SCHED_IPI_VECTOR,
+		.shorthand = NOTSELF,
+	};
+}
+
+
 /* Called from xuk layer on actual CPU start */
 void _cpu_start(int cpu)
 {
@@ -120,6 +146,9 @@ void _cpu_start(int cpu)
 	/* Set up the timer ISR, but ensure the timer is disabled */
 	xuk_set_isr(INT_APIC_LVT_TIMER, 13, x86_apic_timer_isr, 0);
 	_apic.INIT_COUNT = 0;
+
+	xuk_set_isr(XUK_INT_RAW_VECTOR(SCHED_IPI_VECTOR),
+		    -1, sched_ipi_handler, 0);
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	xuk_set_isr(XUK_INT_RAW_VECTOR(CONFIG_IRQ_OFFLOAD_VECTOR),

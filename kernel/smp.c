@@ -60,13 +60,11 @@ void z_smp_release_global_lock(struct k_thread *thread)
 	}
 }
 
-#endif
-
 extern k_thread_stack_t _interrupt_stack1[];
 extern k_thread_stack_t _interrupt_stack2[];
 extern k_thread_stack_t _interrupt_stack3[];
 
-#if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
+#if CONFIG_MP_NUM_CPUS > 1
 static void smp_init_top(int key, void *arg)
 {
 	atomic_t *start_flag = arg;
@@ -89,6 +87,7 @@ static void smp_init_top(int key, void *arg)
 
 	CODE_UNREACHABLE;
 }
+#endif
 
 void smp_init(void)
 {
@@ -111,4 +110,5 @@ void smp_init(void)
 
 	(void)atomic_set(&start_flag, 1);
 }
-#endif
+
+#endif /* CONFIG_SMP */

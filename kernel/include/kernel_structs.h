@@ -46,6 +46,9 @@
 /* Thread is suspended */
 #define _THREAD_SUSPENDED (BIT(4))
 
+/* Thread is being aborted (SMP only) */
+#define _THREAD_ABORTING (BIT(5))
+
 /* Thread is present in the ready queue */
 #define _THREAD_QUEUED (BIT(6))
 

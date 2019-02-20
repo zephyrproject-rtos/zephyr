@@ -102,4 +102,6 @@ extern int x86_64_except_reason;
 		__asm__ volatile("int $5");	\
 	} while (false)
 
+void z_arch_sched_ipi(void);
+
 #endif /* _KERNEL_ARCH_FUNC_H */
