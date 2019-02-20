@@ -20,35 +20,35 @@ class DTFlash(DTDirective):
         self._flash_node = None
         self._flash_area = {}
 
-    def _extract_partition(self, node_address):
+    def _extract_partition(self, node_path):
         prop_def = {}
         prop_alias = {}
-        node = reduced[node_address]
+        node = reduced[node_path]
 
         partition_name = node['props']['label']
         partition_sectors = node['props']['reg']
 
         # Build Index based partition IDs
-        if node_address in self._flash_area:
-            area_id = self._flash_area[node_address]["id"]
+        if node_path in self._flash_area:
+            area_id = self._flash_area[node_path]["id"]
         else:
             area_id = len(self._flash_area)
-            self._flash_area[node_address] = {'id': area_id }
+            self._flash_area[node_path] = {'id': area_id }
         partition_idx = str(area_id)
 
         # Extract a per partition dev name, something like:
         # #define DT_FLASH_AREA_1_DEV             "FLASH_CTRL"
 
-        # For now assume node_address is something like:
+        # For now assume node_path is something like:
         # /flash-controller@4001E000/flash@0/partitions/partition@fc000
         # first we go up 2 levels to get the flash, check its compat
         #
         # The flash controller might be the flash itself (for cases like NOR
         # flashes), for the case of 'soc-nv-flash' we assume its the parent
         # of the flash node.
-        ctrl_addr = '/' + '/'.join(node_address.split('/')[1:-2])
+        ctrl_addr = '/' + '/'.join(node_path.split('/')[1:-2])
         if get_compat(ctrl_addr) == "soc-nv-flash":
-            ctrl_addr = '/' + '/'.join(node_address.split('/')[1:-3])
+            ctrl_addr = '/' + '/'.join(node_path.split('/')[1:-3])
 
         node = reduced[ctrl_addr]
         name = "\"{}\"".format(node['props']['label'])
@@ -94,12 +94,12 @@ class DTFlash(DTDirective):
     def _create_legacy_label(self, prop_alias, label):
         prop_alias[label.lstrip('DT_')] = label
 
-    def extract_partition(self, node_address):
+    def extract_partition(self, node_path):
         prop_def = {}
         prop_alias = {}
-        node = reduced[node_address]
+        node = reduced[node_path]
 
-        self._extract_partition(node_address)
+        self._extract_partition(node_path)
 
         partition_name = node['props']['label']
         partition_sectors = node['props']['reg']
@@ -137,33 +137,33 @@ class DTFlash(DTDirective):
             label_prefix + ["SIZE", '0'])
         self._create_legacy_label(prop_alias, label)
 
-        insert_defs(node_address, prop_def, prop_alias)
+        insert_defs(node_path, prop_def, prop_alias)
 
-    def _extract_flash(self, node_address, prop, def_label):
-        if node_address == 'dummy-flash':
+    def _extract_flash(self, node_path, prop, def_label):
+        if node_path == 'dummy-flash':
             # We will add addr/size of 0 for systems with no flash controller
             # This is what they already do in the Kconfig options anyway
-            insert_defs(node_address,
+            insert_defs(node_path,
                         {'DT_FLASH_BASE_ADDRESS': 0, 'DT_FLASH_SIZE': 0},
                         {})
             self._flash_base_address = 0
             return
 
-        self._flash_node = reduced[node_address]
-        orig_node_addr = node_address
+        self._flash_node = reduced[node_path]
+        orig_node_addr = node_path
 
-        (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_address)
+        (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_path)
         # if the nr_size_cells is 0, assume a SPI flash, need to look at parent
         # for addr/size info, and the second reg property (assume first is mmio
         # register for the controller itself)
         is_spi_flash = False
         if nr_size_cells == 0:
             is_spi_flash = True
-            node_address = get_parent_address(node_address)
-            (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_address)
+            node_path = get_parent_path(node_path)
+            (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_path)
 
-        node_compat = get_compat(node_address)
-        reg = reduced[node_address]['props']['reg']
+        node_compat = get_compat(node_path)
+        reg = reduced[node_path]['props']['reg']
         if type(reg) is not list: reg = [ reg, ]
         props = list(reg)
 
@@ -173,7 +173,7 @@ class DTFlash(DTDirective):
         # which we determin by the spi controller node only have on reg element
         # (ie for the controller itself and no region for the MMIO flash access)
         if num_reg_elem == 1 and is_spi_flash:
-            node_address = orig_node_addr
+            node_path = orig_node_addr
         else:
             # We assume the last reg property is the one we want
             while props:
@@ -185,35 +185,35 @@ class DTFlash(DTDirective):
                 for x in range(nr_size_cells):
                     size += props.pop(0) << (32 * (nr_size_cells - x - 1))
 
-            addr += translate_addr(addr, node_address, nr_address_cells,
+            addr += translate_addr(addr, node_path, nr_address_cells,
                                    nr_size_cells)
 
-            insert_defs(node_address,
+            insert_defs(node_path,
                         {'DT_FLASH_BASE_ADDRESS': hex(addr),
                          'DT_FLASH_SIZE': size//1024},
                         {})
 
         for prop in 'write-block-size', 'erase-block-size':
             if prop in self._flash_node['props']:
-                default.extract(node_address, prop, None, def_label)
+                default.extract(node_path, prop, None, def_label)
 
                 # Add an non-DT prefix alias for compatiability
                 prop_alias = {}
                 label_post = '_' + str_to_label(prop)
                 prop_alias['FLASH' + label_post] = def_label + label_post
-                insert_defs(node_address, {}, prop_alias)
+                insert_defs(node_path, {}, prop_alias)
 
 
-    def _extract_code_partition(self, node_address, prop, def_label):
-        if node_address == 'dummy-flash':
+    def _extract_code_partition(self, node_path, prop, def_label):
+        if node_path == 'dummy-flash':
             node = None
         else:
-            node = reduced[node_address]
+            node = reduced[node_path]
             if self._flash_node is None:
                 # No flash node scanned before-
                 raise Exception(
                     "Code partition '{}' {} without flash definition."
-                        .format(prop, node_address))
+                        .format(prop, node_path))
 
         if node and node is not self._flash_node:
             # only compute the load offset if the code partition
@@ -224,7 +224,7 @@ class DTFlash(DTDirective):
             load_offset = 0
             load_size = 0
 
-        insert_defs(node_address,
+        insert_defs(node_path,
                     {'DT_CODE_PARTITION_OFFSET': load_offset,
                      'DT_CODE_PARTITION_SIZE': load_size},
                     {})
@@ -232,20 +232,20 @@ class DTFlash(DTDirective):
     ##
     # @brief Extract flash
     #
-    # @param node_address Address of node owning the
-    #                     flash definition.
+    # @param node_path Path to node owning the
+    #                  flash definition.
     # @param prop compatible property name
     # @param def_label Define label string of node owning the
     #                  compatible definition.
     #
-    def extract(self, node_address, prop, def_label):
+    def extract(self, node_path, prop, def_label):
 
         if prop == 'zephyr,flash':
             # indicator for flash
-            self._extract_flash(node_address, prop, def_label)
+            self._extract_flash(node_path, prop, def_label)
         elif prop == 'zephyr,code-partition':
             # indicator for code_partition
-            self._extract_code_partition(node_address, prop, def_label)
+            self._extract_code_partition(node_path, prop, def_label)
         else:
             raise Exception(
                 "DTFlash.extract called with unexpected directive ({})."

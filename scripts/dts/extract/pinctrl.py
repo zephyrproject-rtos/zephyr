@@ -18,14 +18,14 @@ class DTPinCtrl(DTDirective):
     ##
     # @brief Extract pinctrl information.
     #
-    # @param node_address Address of node owning the pinctrl definition.
+    # @param node_path Path to node owning the pinctrl definition.
     # @param prop pinctrl-x key
     # @param def_label Define label string of client node owning the pinctrl
     #                  definition.
     #
-    def extract(self, node_address, prop, def_label):
+    def extract(self, node_path, prop, def_label):
 
-        pinconf = reduced[node_address]['props'][prop]
+        pinconf = reduced[node_path]['props'][prop]
 
         prop_list = []
         if not isinstance(pinconf, list):
@@ -37,9 +37,9 @@ class DTPinCtrl(DTDirective):
 
         prop_def = {}
         for p in prop_list:
-            pin_node_address = phandles[p]
-            pin_subnode = '/'.join(pin_node_address.split('/')[-1:])
-            cell_yaml = get_binding(pin_node_address)
+            pin_node_path = phandles[p]
+            pin_subnode = '/'.join(pin_node_path.split('/')[-1:])
+            cell_yaml = get_binding(pin_node_path)
             cell_prefix = 'PINMUX'
             post_fix = []
 
@@ -47,7 +47,7 @@ class DTPinCtrl(DTDirective):
                 post_fix.append(cell_prefix)
 
             for subnode in reduced:
-                if pin_subnode in subnode and pin_node_address != subnode:
+                if pin_subnode in subnode and pin_node_path != subnode:
                     # found a subnode underneath the pinmux handle
                     pin_label = def_prefix + post_fix + subnode.split('/')[-2:]
 
@@ -63,7 +63,7 @@ class DTPinCtrl(DTDirective):
                         prop_def[func_label] = \
                             reduced[subnode]['props'][cells]
 
-        insert_defs(node_address, prop_def, {})
+        insert_defs(node_path, prop_def, {})
 
 ##
 # @brief Management information for pinctrl-[x].
