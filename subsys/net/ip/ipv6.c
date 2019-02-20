@@ -577,11 +577,9 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 	}
 
 	if (verdict == NET_DROP) {
-		if (nexthdr == IPPROTO_ICMPV6) {
-			return verdict;
-		}
-
 		goto drop;
+	} else if (nexthdr == IPPROTO_ICMPV6) {
+		return verdict;
 	}
 
 	ip.ipv6 = hdr;
