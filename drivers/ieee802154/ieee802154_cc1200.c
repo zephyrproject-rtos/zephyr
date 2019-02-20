@@ -419,15 +419,15 @@ static inline bool verify_rxfifo_validity(struct cc1200_context *ctx,
 }
 
 static inline bool read_rxfifo_content(struct cc1200_context *ctx,
-				       struct net_buf *frag, u8_t len)
+				       struct net_buf *buf, u8_t len)
 {
 
-	if (!read_rxfifo(ctx, frag->data, len) ||
+	if (!read_rxfifo(ctx, buf->data, len) ||
 	    (get_status(ctx) == CC1200_STATUS_RX_FIFO_ERROR)) {
 		return false;
 	}
 
-	net_buf_add(frag, len);
+	net_buf_add(buf, len);
 
 	return true;
 }
@@ -453,7 +453,6 @@ static inline bool verify_crc(struct cc1200_context *ctx, struct net_pkt *pkt)
 static void cc1200_rx(struct device *dev)
 {
 	struct cc1200_context *cc1200 = dev->driver_data;
-	struct net_buf *pkt_frag;
 	struct net_pkt *pkt;
 	u8_t pkt_len;
 
@@ -473,21 +472,14 @@ static void cc1200_rx(struct device *dev)
 			goto flush;
 		}
 
-		pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
+		pkt = net_pkt_alloc_with_buffer(cc1200->iface, pkt_len,
+						AF_UNSPEC, 0, K_NO_WAIT);
 		if (!pkt) {
 			LOG_ERR("No free pkt available");
 			goto flush;
 		}
 
-		pkt_frag = net_pkt_get_frag(pkt, K_NO_WAIT);
-		if (!pkt_frag) {
-			LOG_ERR("No free frag available");
-			goto flush;
-		}
-
-		net_pkt_frag_insert(pkt, pkt_frag);
-
-		if (!read_rxfifo_content(cc1200, pkt_frag, pkt_len)) {
+		if (!read_rxfifo_content(cc1200, pkt->buffer, pkt_len)) {
 			LOG_ERR("No content read");
 			goto flush;
 		}
