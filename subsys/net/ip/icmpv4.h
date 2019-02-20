@@ -76,7 +76,6 @@ void net_icmpv4_unregister_handler(struct net_icmpv4_handler *handler);
 enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 				  struct net_ipv4_hdr *ip_hdr);
 
-int net_icmpv4_set_chksum(struct net_pkt *pkt);
 int net_icmpv4_finalize(struct net_pkt *pkt);
 
 #if defined(CONFIG_NET_IPV4)

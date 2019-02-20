@@ -25,46 +25,6 @@ LOG_MODULE_REGISTER(net_icmpv4, CONFIG_NET_ICMPV4_LOG_LEVEL);
 
 static sys_slist_t handlers;
 
-int net_icmpv4_set_chksum(struct net_pkt *pkt)
-{
-	u16_t chksum = 0U;
-	struct net_buf *frag;
-	struct net_buf *temp_frag;
-	u16_t temp_pos;
-	u16_t pos;
-
-	frag = net_frag_skip(pkt->frags, 0, &pos,
-			     net_pkt_ip_hdr_len(pkt) +
-			     1 + 1 /* type + code */);
-	if (pos > 0 && !frag) {
-		return -EINVAL;
-	}
-
-	/* Cache checksum fragment and postion, to be safe side first
-	 * write 0's in checksum position and calculate checksum and
-	 * write checksum in the packet.
-	 */
-	temp_frag = frag;
-	temp_pos = pos;
-
-	frag = net_pkt_write(pkt, frag, pos, &pos, sizeof(chksum),
-			     (u8_t *)&chksum, PKT_WAIT_TIME);
-	if (pos > 0 && !frag) {
-		return -EINVAL;
-	}
-
-	chksum = net_calc_chksum_icmpv4(pkt);
-
-	temp_frag = net_pkt_write(pkt, temp_frag, temp_pos, &temp_pos,
-				  sizeof(chksum), (u8_t *)&chksum,
-				  PKT_WAIT_TIME);
-	if (temp_pos > 0 && !temp_frag) {
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 static int icmpv4_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
