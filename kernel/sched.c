@@ -585,6 +585,14 @@ void *z_get_next_switch_handle(void *interrupted)
 			reset_time_slice();
 			_current_cpu->swap_ok = 0;
 			set_current(th);
+#ifdef SPIN_VALIDATE
+			/* Changed _current!  Update the spinlock
+			 * bookeeping so the validation doesn't get
+			 * confused when the "wrong" thread tries to
+			 * release the lock.
+			 */
+			z_spin_lock_set_owner(&sched_spinlock);
+#endif
 		}
 	}
 #else
