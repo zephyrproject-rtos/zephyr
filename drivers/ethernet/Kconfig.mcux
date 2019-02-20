@@ -46,7 +46,7 @@ config ETH_MCUX_TX_BUFFERS
 	int "Number of MCUX TX buffers"
 	depends on ETH_MCUX
 	default 1
-	range 1 16
+	range 1 1
 	help
 	  Set the number of TX buffers provided to the MCUX driver.
 
