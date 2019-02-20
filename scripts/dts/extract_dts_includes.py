@@ -29,67 +29,67 @@ from extract.pinctrl import pinctrl
 from extract.default import default
 
 
-def extract_bus_name(node_address, def_label):
+def extract_bus_name(node_path, def_label):
     label = def_label + '_BUS_NAME'
     prop_alias = {}
 
-    add_compat_alias(node_address, 'BUS_NAME', label, prop_alias)
+    add_compat_alias(node_path, 'BUS_NAME', label, prop_alias)
 
     # Generate defines for node aliases
-    if node_address in aliases:
+    if node_path in aliases:
         add_prop_aliases(
-            node_address,
+            node_path,
             lambda alias: str_to_label(alias) + '_BUS_NAME',
             label,
             prop_alias)
 
-    insert_defs(node_address,
-                {label: '"' + find_parent_prop(node_address, 'label') + '"'},
+    insert_defs(node_path,
+                {label: '"' + find_parent_prop(node_path, 'label') + '"'},
                 prop_alias)
 
 
-def extract_string_prop(node_address, key, label):
-    if node_address not in defs:
+def extract_string_prop(node_path, key, label):
+    if node_path not in defs:
         # Make all defs have the special 'aliases' key, to remove existence
         # checks elsewhere
-        defs[node_address] = {'aliases': {}}
+        defs[node_path] = {'aliases': {}}
 
-    defs[node_address][label] = '"' + reduced[node_address]['props'][key] + '"'
+    defs[node_path][label] = '"' + reduced[node_path]['props'][key] + '"'
 
 
-def extract_property(node_address, prop):
-    binding = get_binding(node_address)
+def extract_property(node_path, prop):
+    binding = get_binding(node_path)
     if 'parent' in binding and 'bus' in binding['parent']:
         # If the binding specifies a parent for the node, then include the
         # parent in the #define's generated for the properties
-        parent_address = get_parent_address(node_address)
-        def_label = 'DT_' + get_node_label(parent_address) + '_' \
-                          + get_node_label(node_address)
+        parent_path = get_parent_path(node_path)
+        def_label = 'DT_' + get_node_label(parent_path) + '_' \
+                          + get_node_label(node_path)
     else:
-        def_label = 'DT_' + get_node_label(node_address)
+        def_label = 'DT_' + get_node_label(node_path)
 
-    names = prop_names(reduced[node_address], prop)
+    names = prop_names(reduced[node_path], prop)
 
     if prop == 'reg':
-        reg.extract(node_address, names, def_label, 1)
+        reg.extract(node_path, names, def_label, 1)
     elif prop == 'interrupts' or prop == 'interrupts-extended':
-        interrupts.extract(node_address, prop, names, def_label)
+        interrupts.extract(node_path, prop, names, def_label)
     elif prop == 'compatible':
-        compatible.extract(node_address, prop, def_label)
+        compatible.extract(node_path, prop, def_label)
     elif 'pinctrl-' in prop:
-        pinctrl.extract(node_address, prop, def_label)
+        pinctrl.extract(node_path, prop, def_label)
     elif 'clocks' in prop:
-        clocks.extract(node_address, prop, def_label)
+        clocks.extract(node_path, prop, def_label)
     elif 'pwms' in prop or 'gpios' in prop:
-        prop_values = reduced[node_address]['props'][prop]
+        prop_values = reduced[node_path]['props'][prop]
         generic = prop[:-1]  # Drop the 's' from the prop
 
-        extract_controller(node_address, prop, prop_values, 0,
+        extract_controller(node_path, prop, prop_values, 0,
                            def_label, generic)
-        extract_cells(node_address, prop, prop_values,
+        extract_cells(node_path, prop, prop_values,
                       names, 0, def_label, generic)
     else:
-        default.extract(node_address, prop,
+        default.extract(node_path, prop,
                         binding['properties'][prop]['type'],
                         def_label)
 
@@ -141,7 +141,7 @@ def generate_bus_defines(node_path):
     if not ('parent' in binding and 'bus' in binding['parent']):
         return
 
-    parent_path = get_parent_address(node_path)
+    parent_path = get_parent_path(node_path)
 
     # Check that parent has matching child bus value
     try:
@@ -451,10 +451,10 @@ def generate_defines():
         if k in chosen:
             extract_string_prop(chosen[k], "label", v)
 
-    node_address = chosen.get('zephyr,flash', 'dummy-flash')
-    flash.extract(node_address, 'zephyr,flash', 'DT_FLASH')
-    node_address = chosen.get('zephyr,code-partition', node_address)
-    flash.extract(node_address, 'zephyr,code-partition', None)
+    node_path = chosen.get('zephyr,flash', 'dummy-flash')
+    flash.extract(node_path, 'zephyr,flash', 'DT_FLASH')
+    node_path = chosen.get('zephyr,code-partition', node_path)
+    flash.extract(node_path, 'zephyr,code-partition', None)
 
     # Add DT_CHOSEN_<X> defines
     for c in sorted(chosen):
