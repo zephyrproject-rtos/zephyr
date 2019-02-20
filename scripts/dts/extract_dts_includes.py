@@ -58,51 +58,17 @@ def extract_string_prop(node_address, key, label):
 
 
 def extract_property(node_address, prop):
-    node = reduced[node_address]
-    node_compat = get_compat(node_address)
-    yaml_node_compat = get_binding(node_address)
-    def_label = get_node_label(node_address)
-
-    if 'parent' in yaml_node_compat and 'bus' in yaml_node_compat['parent']:
-        # Get parent label
+    binding = get_binding(node_address)
+    if 'parent' in binding and 'bus' in binding['parent']:
+        # If the binding specifies a parent for the node, then include the
+        # parent in the #define's generated for the properties
         parent_address = get_parent_address(node_address)
+        def_label = 'DT_' + get_node_label(parent_address) + '_' \
+                          + get_node_label(node_address)
+    else:
+        def_label = 'DT_' + get_node_label(node_address)
 
-        # Check that parent has matching child bus value
-        try:
-            parent_yaml = get_binding(parent_address)
-            parent_bus = parent_yaml['child']['bus']
-        except (KeyError, TypeError) as e:
-            raise Exception("{0} defines parent {1} as bus master, but {1} is "
-                            "not configured as bus master in binding"
-                            .format(node_address, parent_address))
-
-        if parent_bus != yaml_node_compat['parent']['bus']:
-            raise Exception("{0} defines parent {1} as {2} bus master, but "
-                            "{1} is configured as {3} bus master"
-                            .format(node_address, parent_address,
-                                    yaml_node_compat['parent']['bus'],
-                                    parent_bus))
-
-        # Generate alias definition if parent has any alias
-        if parent_address in aliases:
-            for i in aliases[parent_address]:
-                # Build an alias name that respects device tree specs
-                node_name = node_compat + '-' + node_address.split('@')[-1]
-                node_strip = node_name.replace('@','-').replace(',','-')
-                node_alias = i + '-' + node_strip
-                if node_alias not in aliases[node_address]:
-                    # Need to generate alias name for this node:
-                    aliases[node_address].append(node_alias)
-
-        # Build the name from the parent node's label
-        def_label = get_node_label(parent_address) + '_' + def_label
-
-        # Generate *_BUS_NAME #define
-        extract_bus_name(node_address, 'DT_' + def_label)
-
-    def_label = 'DT_' + def_label
-
-    names = prop_names(node, prop)
+    names = prop_names(reduced[node_address], prop)
 
     if prop == 'reg':
         reg.extract(node_address, names, def_label, 1)
@@ -124,7 +90,7 @@ def extract_property(node_address, prop):
                       names, 0, def_label, generic)
     else:
         default.extract(node_address, prop,
-                        yaml_node_compat['properties'][prop]['type'],
+                        binding['properties'][prop]['type'],
                         def_label)
 
 
@@ -138,6 +104,9 @@ def generate_node_defines(node_path):
         flash.extract_partition(node_path)
         return
 
+    generate_bus_defines(node_path)
+
+    # Generate per-property ('foo = <1 2 3>', etc.) #defines
     for yaml_prop, yaml_val in get_binding(node_path)['properties'].items():
         if 'generation' not in yaml_val:
             continue
@@ -160,6 +129,50 @@ def generate_node_defines(node_path):
         # in the dts
         if not match and yaml_val['type'] == 'boolean':
             extract_property(node_path, yaml_prop)
+
+
+def generate_bus_defines(node_path):
+    # Generates any node-level #defines related to
+    #
+    # parent:
+    #   bus: ...
+
+    binding = get_binding(node_path)
+    if not ('parent' in binding and 'bus' in binding['parent']):
+        return
+
+    parent_path = get_parent_address(node_path)
+
+    # Check that parent has matching child bus value
+    try:
+        parent_binding = get_binding(parent_path)
+        parent_bus = parent_binding['child']['bus']
+    except (KeyError, TypeError) as e:
+        raise Exception("{0} defines parent {1} as bus master, but {1} is not "
+                        "configured as bus master in binding"
+                        .format(node_path, parent_path))
+
+    if parent_bus != binding['parent']['bus']:
+        raise Exception("{0} defines parent {1} as {2} bus master, but {1} is "
+                        "configured as {3} bus master"
+                        .format(node_path, parent_path,
+                                binding['parent']['bus'], parent_bus))
+
+    # Generate alias definition if parent has any alias
+    if parent_path in aliases:
+        for i in aliases[parent_path]:
+            # Build an alias name that respects device tree specs
+            node_name = get_compat(node_path) + '-' + node_path.split('@')[-1]
+            node_strip = node_name.replace('@','-').replace(',','-')
+            node_alias = i + '-' + node_strip
+            if node_alias not in aliases[node_path]:
+                # Need to generate alias name for this node:
+                aliases[node_path].append(node_alias)
+
+    # Generate *_BUS_NAME #define
+    extract_bus_name(
+        node_path,
+        'DT_' + get_node_label(parent_path) + '_' + get_node_label(node_path))
 
 
 def prop_names(node, prop_name):
