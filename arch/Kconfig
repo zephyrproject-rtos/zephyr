@@ -35,6 +35,7 @@ config X86
 config X86_64
 	bool "x86_64 architecture"
 	select ATOMIC_OPERATIONS_BUILTIN
+	select SCHED_IPI_SUPPORTED
 
 config NIOS2
 	bool "Nios II Gen 2 architecture"

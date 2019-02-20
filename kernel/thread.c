@@ -582,6 +582,10 @@ void z_thread_single_abort(struct k_thread *thread)
 		thread->fn_abort();
 	}
 
+	if (IS_ENABLED(CONFIG_SMP)) {
+		z_sched_abort(thread);
+	}
+
 	if (z_is_thread_ready(thread)) {
 		z_remove_thread_from_ready_q(thread);
 	} else {
