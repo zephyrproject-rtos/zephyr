@@ -94,13 +94,16 @@ enum lis2dh_odr {
 #define LIS2DW12_LIR_MASK		BIT(4)
 
 #define LIS2DW12_CTRL4_ADDR		0x23
+#define LIS2DW12_INT1_STAP		BIT(6)
+#define LIS2DW12_INT1_DTAP		BIT(3)
 #define LIS2DW12_INT1_DRDY		BIT(0)
 
 #define LIS2DW12_CTRL5_ADDR		0x24
 #define LIS2DW12_INT2_DRDY		BIT(0)
 
 #define LIS2DW12_CTRL6_ADDR		0x25
-#define LIS2DW12_FS_MASK		0x30
+#define LIS2DW12_FS_MASK		(BIT(5) | BIT(4))
+#define LIS2DW12_LOW_NOISE_MASK		BIT(2)
 
 enum lis2dh_fs {
 	LIS2DW12_FS_2G_VAL,
@@ -126,7 +129,9 @@ enum lis2dh_fs {
 #define LIS2DW12_OUT_T_REG		0x26
 
 #define LIS2DW12_STATUS_REG		0x27
-#define LIS2DW12_STS_XLDA_UP		0x01
+#define LIS2DW12_STS_DTAP		BIT(4)
+#define LIS2DW12_STS_STAP		BIT(3)
+#define LIS2DW12_STS_DRDY		BIT(0)
 
 #define LIS2DW12_OUT_X_L_ADDR		0x28
 
@@ -144,6 +149,37 @@ enum lis2dh_fs {
 /* shift value for power mode */
 #define LIS2DW12_SHIFT_PM1		4
 #define LIS2DW12_SHIFT_PMOTHER		2
+
+#define LIS2DW12_TAP_THS_X		0x30
+#define LIS2DW12_TAP_THS_Y		0x31
+#define LIS2DW12_TAP_THS_Z		0x32
+/* in TAP_THS_Y register */
+#define LIS2DW12_TAP_PRI_MASK		(BIT(7) | BIT(6) | BIT(5))
+/* in TAP_THS_Z register */
+#define LIS2DW12_TAP_EN_MASK		(BIT(7) | BIT(6) | BIT(5))
+/* in TAP_THS_X/Y/Z registers */
+#define LIS2DW12_TAP_THS_MASK		(BIT(4) | BIT(3) | BIT(2) | \
+					BIT(1) | BIT(0))
+
+#define LIS2DW12_FS_2G_THS		9
+#define LIS2DW12_FS_TO_TAP_THS(_fs)	(LIS2DW12_FS_2G_THS >> ((_fs)))
+
+#define LIS2DW12_INT_DUR		0x33
+#define LIS2DW12_LATENCY_MASK		(BIT(7) | BIT(6) | \
+					BIT(5) | BIT(4))
+#define LIS2DW12_LATENCY_SHIFT		4
+#define LIS2DW12_QUIET_MASK		(BIT(3) | BIT(2))
+#define LIS2DW12_QUIET_SHIFT		2
+#define LIS2DW12_SHOCK_MASK		(BIT(1) | BIT(0))
+#define LIS2DW12_SHOCK_SHIFT		0
+
+#define LIS2DW12_WAKE_UP_THS		0x34
+#define LIS2DW12_DTAP_MASK		BIT(7)
+
+#define LIS2DW12_TAP_SRC		0x39
+
+#define LIS2DW12_CTRL7_ADDR		0x3F
+#define LIS2DW12_INTS_ENABLED		BIT(5)
 
 /**
  * struct lis2dw12_device_config - lis2dw12 hw configuration
@@ -193,6 +229,7 @@ struct lis2dw12_data {
 	struct device *gpio;
 	struct gpio_callback gpio_cb;
 	sensor_trigger_handler_t handler_drdy;
+	sensor_trigger_handler_t handler_tap;
 
 #if defined(CONFIG_LIS2DW12_TRIGGER_OWN_THREAD)
 	K_THREAD_STACK_MEMBER(thread_stack, CONFIG_LIS2DW12_THREAD_STACK_SIZE);
@@ -202,6 +239,11 @@ struct lis2dw12_data {
 	struct k_work work;
 	struct device *dev;
 #endif /* CONFIG_LIS2DW12_TRIGGER_GLOBAL_THREAD */
+
+#ifdef CONFIG_LIS2DW12_TAP
+	u8_t tap_ths;
+#endif /* CONFIG_LIS2DW12_TAP */
+
 #endif /* CONFIG_LIS2DW12_TRIGGER */
 #if defined(DT_ST_LIS2DW12_0_CS_GPIO_CONTROLLER)
 	struct spi_cs_control cs_ctrl;

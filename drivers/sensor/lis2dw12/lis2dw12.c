@@ -50,6 +50,10 @@ static int lis2dw12_set_range(struct device *dev, u16_t range)
 		lis2dw12->gain =
 			LIS2DW12_FS_TO_GAIN(LIS2DW12_FS_TO_REG(range),
 					    shift_gain);
+#ifdef CONFIG_LIS2DW12_TAP
+		lis2dw12->tap_ths =
+			LIS2DW12_FS_TO_TAP_THS(LIS2DW12_FS_TO_REG(range));
+#endif /* CONFIG_LIS2DW12_TAP */
 	}
 
 	return err;
@@ -196,7 +200,7 @@ static int lis2dw12_sample_fetch(struct device *dev, enum sensor_channel chan)
 		return -EIO;
 	}
 
-	if (!(tmp & LIS2DW12_STS_XLDA_UP)) {
+	if (!(tmp & LIS2DW12_STS_DRDY)) {
 		return -EAGAIN;
 	}
 
@@ -336,6 +340,10 @@ static int lis2dw12_init(struct device *dev)
 		LIS2DW12_FS_TO_GAIN(LIS2DW12_ACC_FS,
 				    cfg->pm == LIS2DW12_LOW_POWER_M1 ?
 				    LIS2DW12_SHFT_GAIN_NOLP1 : 0);
+
+#ifdef CONFIG_LIS2DW12_TAP
+	lis2dw12->tap_ths = LIS2DW12_FS_TO_TAP_THS(LIS2DW12_ACC_FS);
+#endif /* CONFIG_LIS2DW12_TAP */
 
 #ifdef CONFIG_LIS2DW12_TRIGGER
 	if (lis2dw12_init_interrupt(dev) < 0) {

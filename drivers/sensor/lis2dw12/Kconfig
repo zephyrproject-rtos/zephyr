@@ -52,6 +52,11 @@ config LIS2DW12_THREAD_STACK_SIZE
 	help
 	  Stack size of thread used by the driver to handle interrupts.
 
+config LIS2DW12_TAP
+	bool "Single/Double Tap recognition"
+	help
+	  Enable Single/Double Tap recognition
+
 choice
 	prompt "Sensor INT pin number"
 	default LIS2DW12_INT_PIN_1
