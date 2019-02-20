@@ -132,15 +132,14 @@ def generate_node_defines(node_path):
     if get_compat(node_path) not in get_binding_compats():
         return
 
+    # We extract a few different #defines for a flash partition, so it's easier
+    # to handle it in one step
+    if 'partition@' in node_path:
+        flash.extract_partition(node_path)
+        return
+
     for yaml_prop, yaml_val in get_binding(node_path)['properties'].items():
         if 'generation' not in yaml_val:
-            continue
-
-        # Handle any per node extraction first.  For example we
-        # extract a few different defines for a flash partition so its
-        # easier to handle the partition node in one step
-        if 'partition@' in node_path:
-            flash.extract_partition(node_path)
             continue
 
         match = False
