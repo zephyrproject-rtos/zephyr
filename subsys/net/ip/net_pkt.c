@@ -952,45 +952,6 @@ void net_pkt_frag_insert(struct net_pkt *pkt, struct net_buf *frag)
 	pkt->frags = frag;
 }
 
-int net_frag_linear_copy(struct net_buf *dst, struct net_buf *src,
-			 u16_t offset, u16_t len)
-{
-	u16_t to_copy;
-	u16_t copied;
-
-	if (dst->size < len) {
-		return -ENOMEM;
-	}
-
-	/* find the right fragment to start copying from */
-	while (src && offset >= src->len) {
-		offset -= src->len;
-		src = src->frags;
-	}
-
-	/* traverse the fragment chain until len bytes are copied */
-	copied = 0U;
-	while (src && len > 0) {
-		to_copy = MIN(len, src->len - offset);
-		memcpy(dst->data + copied, src->data + offset, to_copy);
-
-		copied += to_copy;
-		/* to_copy is always <= len */
-		len -= to_copy;
-		src = src->frags;
-		/* after the first iteration, this value will be 0 */
-		offset = 0U;
-	}
-
-	if (len > 0) {
-		return -ENOMEM;
-	}
-
-	dst->len = copied;
-
-	return 0;
-}
-
 bool net_pkt_compact(struct net_pkt *pkt)
 {
 	struct net_buf *frag, *prev;
