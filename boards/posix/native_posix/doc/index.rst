@@ -208,6 +208,12 @@ In Debian/Ubuntu this is ``libasan1``.
 .. _Address Sanitizer:
    https://github.com/google/sanitizers/wiki/AddressSanitizer
 
+Coverage reports
+================
+
+See
+:ref:`coverage reports using the POSIX architecture <coverage_posix>`.
+
 Rationale for this port
 ***********************
 

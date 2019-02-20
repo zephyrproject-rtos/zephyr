@@ -1,4 +1,6 @@
 
+.. _sanitycheck_script:
+
 Zephyr Sanity Tests
 ###################
 
