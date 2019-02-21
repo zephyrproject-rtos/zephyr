@@ -111,7 +111,6 @@ def create_phandles(root, name):
 
 
 def insert_defs(node_path, new_defs, new_aliases):
-
     for key in new_defs:
         if key.startswith('DT_COMPAT_'):
             node_path = 'compatibles'
@@ -122,11 +121,7 @@ def insert_defs(node_path, new_defs, new_aliases):
     if node_path in defs:
         remove = [k for k in new_aliases if k in defs[node_path]]
         for k in remove: del new_aliases[k]
-        if 'aliases' in defs[node_path]:
-            defs[node_path]['aliases'].update(new_aliases)
-        else:
-            defs[node_path]['aliases'] = new_aliases
-
+        defs[node_path]['aliases'].update(new_aliases)
         defs[node_path].update(new_defs)
     else:
         new_defs['aliases'] = new_aliases
