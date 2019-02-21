@@ -379,7 +379,7 @@ def load_bindings(root, binding_dirs):
 
     extract.globals.bindings = compat_to_binding
     extract.globals.bus_bindings = bus_to_binding
-    extract.globals.bindings_compat = compats
+    extract.globals.binding_compats = compats
 
 
 def find_binding_files(binding_dirs):

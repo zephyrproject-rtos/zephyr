@@ -16,7 +16,7 @@ defs = {}
 structs = {}
 bindings = {}
 bus_bindings = {}
-bindings_compat = []
+binding_compats = []
 old_alias_names = False
 
 regs_config = {
@@ -305,7 +305,7 @@ def get_binding(node_path):
     return binding
 
 def get_binding_compats():
-    return bindings_compat
+    return binding_compats
 
 def build_cell_array(prop_array):
     index = 0
