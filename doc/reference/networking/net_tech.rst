@@ -7,7 +7,5 @@ Networking Technologies
    :maxdepth: 1
 
    ethernet.rst
-   ethernet_mgmt
-   vlan
-   lldp
+   ieee802154.rst
 
