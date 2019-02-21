@@ -22,6 +22,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 #include <kernel.h>
+#include <app_memory/app_memdomain.h>
 
 /**
  *
@@ -45,7 +46,11 @@ void FUNC_NORETURN _StackCheckHandler(void)
  * Symbol referenced by GCC compiler generated code for canary value.
  * The canary value gets initialized in _Cstart().
  */
-void __noinit *__stack_chk_guard;
+#ifdef CONFIG_APP_SHARED_MEM
+K_APP_DMEM(z_libc_partition) uintptr_t __stack_chk_guard;
+#else
+__noinit uintptr_t __stack_chk_guard;
+#endif
 
 /**
  *
