@@ -187,9 +187,8 @@ if(NOT CONFIG_RTTI)
   )
 endif()
 
-if(NOT CONFIG_NATIVE_APPLICATION)
-  set(NOSTDINC_F -nostdinc)
-endif()
+# @Intent: Obtain compiler specific flags for standard C includes
+toolchain_cc_nostdinc()
 
 zephyr_compile_options(
   -g # TODO: build configuration enough?
@@ -201,7 +200,6 @@ zephyr_compile_options(
   -ffreestanding
   -Wno-main
   -fno-common
-  ${NOSTDINC_F}
   ${TOOLCHAIN_C_FLAGS}
 )
 
@@ -478,7 +476,6 @@ function(construct_add_custom_command_for_linker_pass linker_output_name output_
     ${linker_script_dep}
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
-    ${NOSTDINC_F}
     ${NOSYSDEF_CFLAG}
     -MD -MF ${linker_cmd_file_name}.dep -MT ${base_name}/${linker_cmd_file_name}
     ${current_includes}
