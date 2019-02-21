@@ -210,6 +210,7 @@ extern "C" {
 /******************************************************************************/
 /****************** Macros for standard logging *******************************/
 /******************************************************************************/
+#ifdef CONFIG_LOG
 #define __LOG(_level, _id, _filter, ...)				    \
 	do {								    \
 		if (_LOG_CONST_LEVEL_CHECK(_level) &&			    \
@@ -233,6 +234,21 @@ extern "C" {
 			log_printf_arg_checker(__VA_ARGS__);		    \
 		}							    \
 	} while (false)
+#else
+/* XCC (based on GCC 4.2) expands all these macros to log_0(), log_1(),
+ * etc. However, even though conditions are false at compiler time,
+ * it still tries to link those functions, which results in bunch of
+ * undefined references. Hence the need to actually skip the whole
+ * block above. The call to log_printf_arg_checker() is to prevent
+ * unused variables warning.
+ */
+#define __LOG(_level, _id, _filter, ...)				    \
+	do {								    \
+		if (0) {						    \
+			log_printf_arg_checker(__VA_ARGS__);		    \
+		}							    \
+	} while (false)
+#endif
 
 #define _LOG(_level, ...)			       \
 	__LOG(_level,				       \
