@@ -11,6 +11,7 @@ from west.build import DEFAULT_CMAKE_GENERATOR, is_zephyr_build
 
 from zephyr_ext_common import find_build_dir, Forceable, BUILD_DIR_DESCRIPTION
 
+_ARG_SEPARATOR = '--'
 
 BUILD_DESCRIPTION = '''\
 Convenience wrapper for building Zephyr applications.
@@ -41,7 +42,15 @@ after a '--'. For example, this sets an overlay config file:
 
 west build [...] -- -DOVERLAY_CONFIG=some.conf
 
-(Doing this forces a CMake run.)'''
+(Doing this forces a CMake run.)
+
+positional arguments:
+  source_dir            Explicitly set the source directory. If not given and
+                        rebuilding an existing Zephyr build directory, this is
+                        taken from the CMake cache. Otherwise, the current
+                        directory is assumed.
+  cmake_opt             Extra options to pass to CMake; implies -c
+'''
 
 
 class Build(Forceable):
@@ -52,7 +61,7 @@ class Build(Forceable):
             # Keep this in sync with the string in west-commands.yml.
             'compile a Zephyr application',
             BUILD_DESCRIPTION,
-            accepts_unknown_args=False)
+            accepts_unknown_args=True)
 
         self.source_dir = None
         '''Source directory for the build, or None on error.'''
@@ -78,7 +87,10 @@ class Build(Forceable):
             self.name,
             help=self.help,
             formatter_class=argparse.RawDescriptionHelpFormatter,
-            description=self.description)
+            description=self.description,
+            usage='''west build [-h] [-b BOARD] [-d BUILD_DIR]
+                  [-t TARGET] [-c] [-f] [source_dir]
+                  -- [cmake_opt [cmake_opt ...]]''')
 
         # Remember to update scripts/west-completion.bash if you add or remove
         # flags
@@ -86,12 +98,8 @@ class Build(Forceable):
         parser.add_argument('-b', '--board',
                             help='''Board to build for (must be given for the
                             first build, can be omitted later)''')
-        parser.add_argument('-s', '--source-dir',
-                            help='''Explicitly set the source directory.
-                            If not given and rebuilding an existing Zephyr
-                            build directory, this is taken from the CMake
-                            cache. Otherwise, the current directory is
-                            assumed.''')
+        # Hidden option for backwards compatibility
+        parser.add_argument('-s', '--source-dir', help=argparse.SUPPRESS)
         parser.add_argument('-d', '--build-dir',
                             help=BUILD_DIR_DESCRIPTION +
                             "The directory is created if it doesn't exist.")
@@ -101,14 +109,22 @@ class Build(Forceable):
         parser.add_argument('-c', '--cmake', action='store_true',
                             help='Force CMake to run')
         self.add_force_arg(parser)
-        parser.add_argument('cmake_opts', nargs='*', metavar='cmake_opt',
-                            help='Extra option to pass to CMake; implies -c')
-
         return parser
 
-    def do_run(self, args, ignored):
+    def do_run(self, args, remainder):
         self.args = args        # Avoid having to pass them around
-        log.dbg('args:', args, level=log.VERBOSE_EXTREME)
+        log.dbg('args: {} remainder: {}'.format(args, remainder,
+                                                level=log.VERBOSE_EXTREME))
+        # Store legacy -s option locally
+        source_dir = self.args.source_dir
+        self._parse_remainder(remainder)
+        if source_dir:
+            if self.args.source_dir:
+                log.die("source directory specified twice:({} and {})".format(
+                                            source_dir, self.args.source_dir))
+            self.args.source_dir = source_dir
+        log.dbg('source_dir: {} cmake_opts: {}'.format(self.args.source_dir,
+                                                       self.args.cmake_opts))
         self._sanity_precheck()
         self._setup_build_dir()
         if is_zephyr_build(self.build_dir):
@@ -140,6 +156,23 @@ class Build(Forceable):
 
         extra_args = ['--target', args.target] if args.target else []
         cmake.run_build(self.build_dir, extra_args=extra_args)
+
+    def _parse_remainder(self, remainder):
+        self.args.source_dir = None
+        self.args.cmake_opts = None
+        try:
+            # Only one source_dir is allowed, as the first positional arg
+            if remainder[0] != _ARG_SEPARATOR:
+                self.args.source_dir = remainder[0]
+                remainder = remainder[1:]
+            # Only the first argument separator is consumed, the rest are
+            # passed on to CMake
+            if remainder[0] == _ARG_SEPARATOR:
+                remainder = remainder[1:]
+            if len(remainder):
+                self.args.cmake_opts = remainder
+        except IndexError:
+            return
 
     def _sanity_precheck(self):
         app = self.args.source_dir
