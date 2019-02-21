@@ -77,21 +77,6 @@ def create_aliases(root):
             aliases[node_path].append(node['alt_name'])
 
 
-def get_node_compats(node_path):
-    compat = None
-
-    try:
-        if 'props' in reduced[node_path]:
-            compat = reduced[node_path]['props'].get('compatible')
-
-        if not isinstance(compat, list):
-            compat = [compat, ]
-
-    except:
-        pass
-
-    return compat
-
 def get_compat(node_path):
     compat = None
 
