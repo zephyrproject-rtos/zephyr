@@ -39,6 +39,7 @@ void settings_line_io_init(int (*read_cb)(void *ctx, off_t off, char *buf,
 int settings_line_write(const char *name, const char *value, size_t val_len,
 			off_t w_loc, void *cb_arg);
 
+/* Get len of record without alignment to write-block-size */
 int settings_line_len_calc(const char *name, size_t val_len);
 
 #ifdef CONFIG_SETTINGS_ENCODE_LEN
