@@ -78,20 +78,17 @@ def create_aliases(root):
 
 
 def get_compat(node_path):
-    compat = None
+    # Returns the value of the 'compatible' property for the node at
+    # 'node_path'. Also checks the node's parent.
+    #
+    # Returns None if neither the node nor its parent has a 'compatible'
+    # property.
 
-    try:
-        if 'props' in reduced[node_path]:
-            compat = reduced[node_path]['props'].get('compatible')
+    compat = reduced[node_path]['props'].get('compatible') or \
+             reduced[get_parent_path(node_path)]['props'].get('compatible')
 
-        if compat == None:
-            compat = find_parent_prop(node_path, 'compatible')
-
-        if isinstance(compat, list):
-            compat = compat[0]
-
-    except:
-        pass
+    if isinstance(compat, list):
+        return compat[0]
 
     return compat
 
