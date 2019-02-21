@@ -48,17 +48,20 @@ config BT_RX_BUF_LEN
 	  (4 bytes) and the ACL header (also 4 bytes) which yields 73 bytes.
 
 config BT_HCI_TX_STACK_SIZE
+	# NOTE: This value is derived from other symbols and should not be
+	# user-configurable. Do not give it a prompt.
 	int
 	default 512 if BT_H4
 	default 512 if BT_H5
 	default 416 if BT_SPI
-	default 940 if BT_CTLR && NO_OPTIMIZATIONS
-	default 1024 if BT_CTLR && BT_CENTRAL
-	default 640 if BT_CTLR
+	default 940 if BT_CTLR && (BT_LL_SW || BT_LL_SW_SPLIT) && NO_OPTIMIZATIONS
+	default 1024 if BT_CTLR && (BT_LL_SW || BT_LL_SW_SPLIT) && BT_CENTRAL
+	default 640 if BT_CTLR && (BT_LL_SW || BT_LL_SW_SPLIT)
 	default 512 if BT_USERCHAN
 	# Even if no driver is selected the following default is still
-	# needed e.g. for unit tests.
-	default 512
+	# needed e.g. for unit tests. This default will also server as
+	# the worst-case stack size if an out-of-tree controller is used.
+	default 1024
 	help
 	  Stack size needed for executing bt_send with specified driver
 
