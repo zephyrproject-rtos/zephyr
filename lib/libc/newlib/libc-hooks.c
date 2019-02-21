@@ -17,21 +17,13 @@
 #include <app_memory/app_memdomain.h>
 #include <init.h>
 
-#ifdef CONFIG_APP_SHARED_MEM
-K_APPMEM_PARTITION_DEFINE(z_newlib_partition);
-#define LIBC_BSS	K_APP_BMEM(z_newlib_partition)
-#define LIBC_DATA	K_APP_DMEM(z_newlib_partition)
+#define LIBC_BSS	K_APP_BMEM(z_libc_partition)
+#define LIBC_DATA	K_APP_DMEM(z_libc_partition)
 
 #if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 #define MALLOC_BSS	K_APP_BMEM(z_malloc_partition)
 #endif /* CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE */
-
-#else
-#define LIBC_BSS
-#define LIBC_DATA
-#define MALLOC_BSS
-#endif /* CONFIG_APP_SHARED_MEM */
 
 #define USED_RAM_END_ADDR   POINTER_TO_UINT(&_end)
 

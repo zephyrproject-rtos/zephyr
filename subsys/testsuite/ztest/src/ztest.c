@@ -302,11 +302,9 @@ void main(void)
 #ifdef CONFIG_APP_SHARED_MEM
 	struct k_mem_partition *parts[] = {
 		&ztest_mem_partition,
-#ifdef CONFIG_NEWLIB_LIBC
-		/* Newlib libc.a library and hooks globals */
-		&z_newlib_partition,
-#endif
-		/* Both minimal and newlib libc expose this for malloc arena */
+		/* C library globals, stack canary storage, etc */
+		&z_libc_partition,
+		/* Required for access to malloc arena */
 		&z_malloc_partition
 	};
 
