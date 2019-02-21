@@ -195,6 +195,8 @@ static inline void zsock_freeaddrinfo(struct zsock_addrinfo *ai)
 	free(ai);
 }
 
+const char *zsock_gai_strerror(int errcode);
+
 #define NI_NUMERICHOST 1
 #define NI_NUMERICSERV 2
 #define NI_NOFQDN 4
@@ -299,6 +301,11 @@ static inline int getaddrinfo(const char *host, const char *service,
 static inline void freeaddrinfo(struct zsock_addrinfo *ai)
 {
 	zsock_freeaddrinfo(ai);
+}
+
+static inline const char *gai_strerror(int errcode)
+{
+	return zsock_gai_strerror(errcode);
 }
 
 static inline int getnameinfo(const struct sockaddr *addr, socklen_t addrlen,
