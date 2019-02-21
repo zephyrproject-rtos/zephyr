@@ -187,7 +187,8 @@ if(NOT CONFIG_RTTI)
   )
 endif()
 
-if(NOT CONFIG_NATIVE_APPLICATION)
+# xcc requires standard includes for SoC configurations ifdefs
+if((NOT CONFIG_NATIVE_APPLICATION) AND (NOT ("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc")))
   set(NOSTDINC_F -nostdinc)
 endif()
 
