@@ -96,6 +96,16 @@ config FLASH_BASE_ADDRESS
 
 endif # CODE_FLEXSPI
 
+if CODE_FLEXSPI2
+
+config FLASH_SIZE
+        default $(dt_int_val,DT_NXP_IMX_FLEXSPI_402A4000_SIZE_1,K)
+
+config FLASH_BASE_ADDRESS
+        default $(dt_hex_val,DT_NXP_IMX_FLEXSPI_402A4000_BASE_ADDRESS_1)
+
+endif # CODE_FLEXSPI2
+
 if DATA_DTCM
 
 config SRAM_SIZE
