@@ -16,11 +16,11 @@ config NET_L2_DUMMY
 config NET_L2_BT
 	bool "Enable Bluetooth support"
 	depends on NET_IPV6
-	select BT
-	select BT_PERIPHERAL
-	select BT_CENTRAL
-	select BT_SMP
-	select BT_L2CAP_DYNAMIC_CHANNEL
+	depends on BT
+	depends on BT_PERIPHERAL
+	depends on BT_CENTRAL
+	depends on BT_SMP
+	depends on BT_L2CAP_DYNAMIC_CHANNEL
 	select NET_6LO
 	help
 	  Enable Bluetooth driver that send and receives IPv6 packets,

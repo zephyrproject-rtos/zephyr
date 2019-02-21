@@ -37,7 +37,7 @@ config FAT_FILESYSTEM_ELM
 
 config FILE_SYSTEM_NFFS
 	bool "NFFS file system support"
-	select FLASH_PAGE_LAYOUT
+	depends on FLASH_PAGE_LAYOUT
 	select FS_FLASH_STORAGE_PARTITION
 	help
 	  Enables NFFS file system support.
