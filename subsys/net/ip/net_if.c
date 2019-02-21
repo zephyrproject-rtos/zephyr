@@ -99,17 +99,6 @@ static sys_slist_t timestamp_callbacks;
 #endif /* CONFIG_NET_PKT_TIMESTAMP */
 
 #if CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG
-#if defined(CONFIG_NET_STATISTICS)
-#define debug_check_packet(pkt)						\
-	do {								\
-		NET_DBG("Processing (pkt %p, data len %d, "		\
-			"prio %d) network packet",			\
-			pkt, pkt->total_pkt_len,			\
-			net_pkt_priority(pkt));				\
-									\
-		NET_ASSERT(pkt->frags && pkt->total_pkt_len);		\
-	} while (0)
-#else /* CONFIG_NET_STATISTICS */
 #define debug_check_packet(pkt)						\
 	do {								\
 		NET_DBG("Processing (pkt %p, prio %d) network packet",	\
@@ -117,7 +106,6 @@ static sys_slist_t timestamp_callbacks;
 									\
 		NET_ASSERT(pkt->frags);					\
 	} while (0)
-#endif /* CONFIG_NET_STATISTICS */
 #else
 #define debug_check_packet(...)
 #endif /* CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG */
@@ -218,10 +206,8 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 	k_work_init(net_pkt_work(pkt), process_tx_packet);
 
 #if defined(CONFIG_NET_STATISTICS)
-	pkt->total_pkt_len = net_pkt_get_len(pkt);
-
 	net_stats_update_tc_sent_pkt(iface, tc);
-	net_stats_update_tc_sent_bytes(iface, tc, pkt->total_pkt_len);
+	net_stats_update_tc_sent_bytes(iface, tc, net_pkt_get_len(pkt));
 	net_stats_update_tc_sent_priority(iface, tc, prio);
 #endif
 
