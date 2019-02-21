@@ -2884,7 +2884,7 @@ static int bt_gatt_store_cf(struct bt_conn *conn)
 		return err;
 	}
 
-	BT_DBG("Stored CF for %s (%s)", bt_addr_le_str(&conn->le.dst), key);
+	BT_DBG("Stored CF for %s (%s)", bt_addr_le_str(&conn->le.dst), log_strdup(key));
 #endif /* CONFIG_BT_GATT_CACHING */
 	return 0;
 
