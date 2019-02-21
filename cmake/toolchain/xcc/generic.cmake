@@ -1,6 +1,6 @@
 set(TOOLCHAIN_HOME /opt/xtensa/XtDevTools/install/tools/$ENV{TOOLCHAIN_VER}/XtensaTools)
 
-set(COMPILER gcc)
+set(COMPILER xcc)
 
 set(CROSS_COMPILE_TARGET xt)
 set(SYSROOT_TARGET       xtensa-elf)
