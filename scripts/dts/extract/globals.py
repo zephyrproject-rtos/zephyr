@@ -67,15 +67,15 @@ def all_compats(node):
 
 
 def create_aliases(root):
-    if 'children' in root:
-        if 'aliases' in root['children']:
-            for k, v in root['children']['aliases']['props'].items():
-                aliases[v].append(k)
+    if 'aliases' in root['children']:
+        for name, node_path in root['children']['aliases']['props'].items():
+            aliases[node_path].append(name)
 
     # Treat alternate names as aliases
-    for k in reduced:
-        if 'alt_name' in reduced[k]:
-            aliases[k].append(reduced[k]['alt_name'])
+    for node_path, node in reduced.items():
+        if 'alt_name' in node:
+            aliases[node_path].append(node['alt_name'])
+
 
 def get_node_compats(node_path):
     compat = None
