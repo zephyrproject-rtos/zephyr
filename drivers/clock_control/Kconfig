@@ -9,6 +9,13 @@
 #
 # Clock controller drivers
 #
+
+config CLOCK_CONTROL_MUST_USE_OUT_OF_TREE_DRIVER
+	bool
+	help
+	  This option can be enabled by an out-of-tree library if it
+	  needs to take control over the clock controller.
+
 menuconfig CLOCK_CONTROL
 	bool "Hardware clock controller support"
 	help
@@ -23,18 +30,15 @@ module = CLOCK_CONTROL
 module-str = clock control
 source "subsys/logging/Kconfig.template.log_config"
 
+
+if !CLOCK_CONTROL_MUST_USE_OUT_OF_TREE_DRIVER
 source "drivers/clock_control/Kconfig.nrf"
-
 source "drivers/clock_control/Kconfig.quark_se"
-
 source "drivers/clock_control/Kconfig.stm32"
-
 source "drivers/clock_control/Kconfig.beetle"
-
 source "drivers/clock_control/Kconfig.mcux_ccm"
-
 source "drivers/clock_control/Kconfig.mcux_sim"
-
 source "drivers/clock_control/Kconfig.rv32m1"
+endif # !CLOCK_CONTROL_MUST_USE_OUT_OF_TREE_DRIVER
 
 endif # CLOCK_CONTROL

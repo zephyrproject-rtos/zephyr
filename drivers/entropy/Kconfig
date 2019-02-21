@@ -6,19 +6,28 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+config ENTROPY_MUST_USE_OUT_OF_TREE_DRIVER
+	bool
+	help
+	  This option can be enabled by an out-of-tree library if it
+	  needs to take control over the entropy driver.
+
 menuconfig ENTROPY_GENERATOR
 	bool "Entropy Drivers"
 	help
 	  Include entropy drivers in system config.
 
+
 if ENTROPY_GENERATOR
 
+if !ENTROPY_MUST_USE_OUT_OF_TREE_DRIVER
 source "drivers/entropy/Kconfig.mcux"
 source "drivers/entropy/Kconfig.stm32"
 source "drivers/entropy/Kconfig.esp32"
 source "drivers/entropy/Kconfig.nrf5"
 source "drivers/entropy/Kconfig.sam"
 source "drivers/entropy/Kconfig.native_posix"
+endif # !ENTROPY_MUST_USE_OUT_OF_TREE_DRIVER
 
 config ENTROPY_HAS_DRIVER
 	bool

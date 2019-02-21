@@ -20,6 +20,12 @@ config FLASH_HAS_PAGE_LAYOUT
 	  This option is enabled when the SoC flash driver supports
 	  retrieving the layout of flash memory pages.
 
+config FLASH_MUST_USE_OUT_OF_TREE_DRIVER
+	bool
+	help
+	  This option can be enabled by an out-of-tree library if it
+	  needs to take control over the flash memory peripheral.
+
 menuconfig FLASH
 	bool "Flash hardware support"
 	help
@@ -45,24 +51,17 @@ config FLASH_PAGE_LAYOUT
 	help
 	  Enables API for retrieving the layout of flash memory pages.
 
+if !FLASH_MUST_USE_OUT_OF_TREE_DRIVER
 source "drivers/flash/Kconfig.nrf"
-
 source "drivers/flash/Kconfig.mcux"
-
 source "drivers/flash/Kconfig.nios2_qspi"
-
 source "drivers/flash/Kconfig.gecko"
-
 source "drivers/flash/Kconfig.nor"
-
 source "drivers/flash/Kconfig.qmsi"
-
 source "drivers/flash/Kconfig.stm32"
-
 source "drivers/flash/Kconfig.sam0"
-
 source "drivers/flash/Kconfig.sam"
-
 source "drivers/flash/Kconfig.w25qxxdv"
+endif # !FLASH_MUST_USE_OUT_OF_TREE_DRIVER
 
 endif # FLASH
