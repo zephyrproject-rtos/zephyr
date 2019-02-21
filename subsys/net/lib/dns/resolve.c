@@ -653,7 +653,7 @@ static int dns_write(struct dns_resolve_context *ctx,
 
 	ret = net_context_sendto(net_ctx, dns_data->data, dns_data->len,
 				 server, server_addr_len, NULL,
-				 K_NO_WAIT, NULL, NULL);
+				 K_NO_WAIT, NULL);
 	if (ret < 0) {
 		NET_DBG("Cannot send query (%d)", ret);
 		return ret;

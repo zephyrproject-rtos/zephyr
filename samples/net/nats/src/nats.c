@@ -108,7 +108,7 @@ static int transmitv(struct net_context *conn, int iovcnt,
 		memcpy(&buf[pos], iov[i].base, iov[i].len);
 	}
 
-	return net_context_send(conn, buf, pos, NULL, K_NO_WAIT, NULL, NULL);
+	return net_context_send(conn, buf, pos, NULL, K_NO_WAIT, NULL);
 }
 
 static inline int transmit(struct net_context *conn, const char buffer[],

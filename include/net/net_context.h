@@ -100,12 +100,10 @@ typedef void (*net_context_recv_cb_t)(struct net_context *context,
  * @param status Value is set to 0 if all data was sent ok, <0 if
  * there was an error sending data. >0 amount of data that was
  * sent when not all data was sent ok.
- * @param token User specified value specified in net_send() call.
  * @param user_data The user data given in net_send() call.
  */
 typedef void (*net_context_send_cb_t)(struct net_context *context,
 				      int status,
-				      void *token,
 				      void *user_data);
 
 /**
@@ -753,7 +751,6 @@ int net_context_accept(struct net_context *context,
  * @param cb Caller-supplied callback function.
  * @param timeout Timeout for the connection. Possible values
  * are K_FOREVER, K_NO_WAIT, >0.
- * @param token Caller specified value that is passed as is to callback.
  * @param user_data Caller-supplied user data.
  *
  * @return 0 if ok, < 0 if error
@@ -763,7 +760,6 @@ int net_context_send(struct net_context *context,
 		     size_t len,
 		     net_context_send_cb_t cb,
 		     s32_t timeout,
-		     void *token,
 		     void *user_data);
 
 /**
@@ -789,7 +785,6 @@ int net_context_send(struct net_context *context,
  * @param cb Caller-supplied callback function.
  * @param timeout Timeout for the connection. Possible values
  * are K_FOREVER, K_NO_WAIT, >0.
- * @param token Caller specified value that is passed as is to callback.
  * @param user_data Caller-supplied user data.
  *
  * @return numbers of bytes sent on success, a negative errno otherwise
@@ -801,7 +796,6 @@ int net_context_sendto(struct net_context *context,
 		       socklen_t addrlen,
 		       net_context_send_cb_t cb,
 		       s32_t timeout,
-		       void *token,
 		       void *user_data);
 
 /**

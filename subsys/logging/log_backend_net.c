@@ -63,8 +63,7 @@ static int line_out(u8_t *data, size_t length, void *output_ctx)
 		return length;
 	}
 
-	ret = net_context_send(ctx, data, length,
-			       NULL, K_NO_WAIT, NULL, NULL);
+	ret = net_context_send(ctx, data, length, NULL, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		goto fail;
 	}

@@ -991,7 +991,7 @@ static void restart_timer(struct net_tcp *tcp)
 }
 
 int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
-		      void *token, void *user_data)
+		      void *user_data)
 {
 	struct net_pkt *pkt;
 
@@ -1027,10 +1027,10 @@ int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
 	 * go over the wire.  In theory it would be nice to track
 	 * specific ACK locations in the stream and make the
 	 * callback at that time, but there's nowhere to store the
-	 * potentially-separate token/user_data values right now.
+	 * user_data value right now.
 	 */
 	if (cb) {
-		cb(context, 0, token, user_data);
+		cb(context, 0, user_data);
 	}
 
 	return 0;

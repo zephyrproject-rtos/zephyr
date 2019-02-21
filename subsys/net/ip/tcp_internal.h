@@ -393,22 +393,20 @@ static inline void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
  *
  * @param context TCP context
  * @param cb TCP callback function
- * @param token TCP token
  * @param user_data User specified data
  *
  * @return 0 if ok, < 0 if error
  */
 #if defined(CONFIG_NET_TCP)
 int net_tcp_send_data(struct net_context *context, net_context_send_cb_t cb,
-		      void *token, void *user_data);
+		      void *user_data);
 #else
 static inline int net_tcp_send_data(struct net_context *context,
-				    net_context_send_cb_t cb, void *token,
+				    net_context_send_cb_t cb,
 				    void *user_data)
 {
 	ARG_UNUSED(context);
 	ARG_UNUSED(cb);
-	ARG_UNUSED(token);
 	ARG_UNUSED(user_data);
 
 	return 0;

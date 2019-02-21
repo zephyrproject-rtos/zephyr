@@ -3230,9 +3230,7 @@ static void tcp_connect(const struct shell *shell, char *host, u16_t port,
 }
 
 static void tcp_sent_cb(struct net_context *context,
-			int status,
-			void *token,
-			void *user_data)
+			int status, void *user_data)
 {
 	PR_SHELL(tcp_shell, "Message sent\n");
 }
@@ -3306,7 +3304,7 @@ static int cmd_net_tcp_send(const struct shell *shell, size_t argc,
 
 	ret = net_context_send(tcp_ctx, (u8_t *)argv[arg],
 			       strlen(argv[arg]), tcp_sent_cb,
-			       TCP_TIMEOUT, NULL, &user_data);
+			       TCP_TIMEOUT, &user_data);
 	if (ret < 0) {
 		PR_WARNING("Cannot send msg (%d)\n", ret);
 		return -ENOEXEC;
