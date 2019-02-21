@@ -13,7 +13,6 @@ aliases = defaultdict(list)
 chosen = {}
 reduced = {}
 defs = {}
-structs = {}
 bindings = {}
 bus_bindings = {}
 binding_compats = []
