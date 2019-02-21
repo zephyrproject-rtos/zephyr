@@ -186,6 +186,23 @@ __syscall int z_zsock_getaddrinfo_internal(const char *host,
 					   const struct zsock_addrinfo *hints,
 					   struct zsock_addrinfo *res);
 
+/* Flags for getaddrinfo() hints. */
+
+/** Address for bind() (vs for connect()) */
+#define AI_PASSIVE 0x1
+/** Fill in ai_canonname */
+#define AI_CANONNAME 0x2
+/** Assume host address is in numeric notation, don't DNS lookup */
+#define AI_NUMERICHOST 0x4
+/** May return IPv4 mapped address for IPv6  */
+#define AI_V4MAPPED 0x8
+/** May return both native IPv6 and mapped IPv4 address for IPv6 */
+#define AI_ALL 0x10
+/** IPv4/IPv6 support depends on local system config */
+#define AI_ADDRCONFIG 0x20
+/** Assume service (port) is numeric */
+#define AI_NUMERICSERV 0x400
+
 int zsock_getaddrinfo(const char *host, const char *service,
 		      const struct zsock_addrinfo *hints,
 		      struct zsock_addrinfo **res);
