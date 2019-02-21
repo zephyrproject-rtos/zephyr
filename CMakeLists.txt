@@ -1157,7 +1157,7 @@ if(CONFIG_APP_SHARED_MEM AND CONFIG_USERSPACE)
     )
 
   if(CONFIG_NEWLIB_LIBC)
-    set(NEWLIB_PART -l libc.a z_newlib_partition)
+    set(NEWLIB_PART -l libc.a z_libc_partition)
   endif()
   add_custom_command(
     OUTPUT ${APP_SMEM_LD}

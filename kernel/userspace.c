@@ -17,6 +17,9 @@
 #include <device.h>
 #include <init.h>
 #include <stdbool.h>
+#include <app_memory/app_memdomain.h>
+
+K_APPMEM_PARTITION_DEFINE(z_libc_partition);
 
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
