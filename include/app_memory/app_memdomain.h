@@ -5,6 +5,8 @@
 #include <misc/dlist.h>
 #include <kernel.h>
 
+#ifdef CONFIG_APP_SHARED_MEM
+
 #if defined(CONFIG_X86)
 #define MEM_DOMAIN_ALIGN_SIZE _STACK_BASE_ALIGN
 #elif defined(STACK_ALIGN)
@@ -94,4 +96,13 @@ struct z_app_region {
 	}; \
 	K_APP_BMEM(name) char name##_placeholder;
 
+#else
+
+#define K_APP_BMEM(ptn)
+#define K_APP_DMEM(ptn)
+#define K_APP_DMEM_SECTION(ptn) .data
+#define K_APP_BMEM_SECTION(ptn) .bss
+#define K_APPMEM_PARTITION_DEFINE(name)
+
+#endif /* CONFIG_APP_SHARED_MEM */
 #endif /* ZEPHYR_INCLUDE_APP_MEMORY_APP_MEMDOMAIN_H_ */
