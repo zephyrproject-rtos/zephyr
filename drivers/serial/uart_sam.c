@@ -309,8 +309,8 @@ static int uart_sam_irq_is_pending(struct device *dev)
 {
 	volatile Uart * const uart = DEV_CFG(dev)->regs;
 
-	return    ((uart->UART_SR & UART_SR_TXRDY)
-		| (uart->UART_SR & UART_SR_RXRDY));
+	return (uart->UART_IMR & (UART_IMR_TXRDY | UART_IMR_RXRDY)) &
+		(uart->UART_SR & (UART_SR_TXRDY | UART_SR_RXRDY));
 }
 
 static int uart_sam_irq_update(struct device *dev)

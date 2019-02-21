@@ -296,8 +296,8 @@ static int usart_sam_irq_is_pending(struct device *dev)
 {
 	volatile Usart * const usart = DEV_CFG(dev)->regs;
 
-	return    ((usart->US_CSR & US_CSR_TXRDY)
-		| (usart->US_CSR & US_CSR_RXRDY));
+	return (usart->US_IMR & (US_IMR_TXRDY | US_IMR_RXRDY)) &
+		(usart->US_CSR & (US_CSR_TXRDY | US_CSR_RXRDY));
 }
 
 static int usart_sam_irq_update(struct device *dev)
