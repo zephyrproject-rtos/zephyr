@@ -102,7 +102,7 @@
 				 BIT(LWM2M_OP_EXECUTE) | \
 				 BIT(LWM2M_FLAG_OPTIONAL))
 
-#define LWM2M_HAS_PERM(of, p)	((of->permissions & p) == p)
+#define LWM2M_HAS_PERM(of, p)	(((of)->permissions & p) == p)
 
 /* resource types */
 #define LWM2M_RES_TYPE_NONE	0
