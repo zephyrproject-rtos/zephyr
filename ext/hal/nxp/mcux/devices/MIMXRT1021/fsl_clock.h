@@ -39,8 +39,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief CLOCK driver version 2.1.5. */
-#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 1, 5))
+/*! @brief CLOCK driver version 2.1.6. */
+#define FSL_CLOCK_DRIVER_VERSION (MAKE_VERSION(2, 1, 6))
 
 /* analog pll definition */
 #define CCM_ANALOG_PLL_BYPASS_SHIFT (16U)
@@ -48,9 +48,32 @@
 #define CCM_ANALOG_PLL_BYPASS_CLK_SRC_SHIFT (14U)
 
 /*@}*/
-#define CCM_TUPLE(reg, shift, mask, busyShift)                               \
-    (int)((((uint32_t)(&((CCM_Type *)0U)->reg)) & 0xFFU) | ((shift) << 8U) | \
-          ((((mask) >> (shift)) & 0x1FFFU) << 13U) | ((busyShift) << 26U))
+
+/*!
+ * @brief CCM registers offset.
+ */
+#define CCSR_OFFSET 0x0C
+#define CBCDR_OFFSET 0x14
+#define CBCMR_OFFSET 0x18
+#define CSCMR1_OFFSET 0x1C
+#define CSCMR2_OFFSET 0x20
+#define CSCDR1_OFFSET 0x24
+#define CDCDR_OFFSET 0x30
+#define CSCDR2_OFFSET 0x38
+#define CACRR_OFFSET 0x10
+#define CS1CDR_OFFSET 0x28
+#define CS2CDR_OFFSET 0x2C
+
+/*!
+ * @brief CCM Analog registers offset.
+ */
+#define PLL_SYS_OFFSET 0x30
+#define PLL_USB1_OFFSET 0x10
+#define PLL_AUDIO_OFFSET 0x70
+#define PLL_ENET_OFFSET 0xE0
+
+#define CCM_TUPLE(reg, shift, mask, busyShift) \
+    (int)((reg & 0xFFU) | ((shift) << 8U) | ((((mask) >> (shift)) & 0x1FFFU) << 13U) | ((busyShift) << 26U))
 #define CCM_TUPLE_REG(base, tuple) (*((volatile uint32_t *)(((uint32_t)(base)) + ((tuple)&0xFFU))))
 #define CCM_TUPLE_SHIFT(tuple) (((tuple) >> 8U) & 0x1FU)
 #define CCM_TUPLE_MASK(tuple) ((uint32_t)((((tuple) >> 13U) & 0x1FFFU) << ((((tuple) >> 8U) & 0x1FU))))
@@ -61,7 +84,7 @@
 /*!
  * @brief CCM ANALOG tuple macros to map corresponding registers and bit fields.
  */
-#define CCM_ANALOG_TUPLE(reg, shift) ((((uint32_t)(&((CCM_ANALOG_Type *)0U)->reg) & 0xFFFU) << 16U) | (shift))
+#define CCM_ANALOG_TUPLE(reg, shift) (((reg & 0xFFFU) << 16U) | (shift))
 #define CCM_ANALOG_TUPLE_SHIFT(tuple) (((uint32_t)tuple) & 0x1FU)
 #define CCM_ANALOG_TUPLE_REG_OFF(base, tuple, off) \
     (*((volatile uint32_t *)((uint32_t)base + (((uint32_t)tuple >> 16U) & 0xFFFU) + off)))
@@ -530,73 +553,93 @@ typedef enum _clock_mode_t
  */
 typedef enum _clock_mux
 {
-    kCLOCK_Pll3SwMux = CCM_TUPLE(CCSR,
+    kCLOCK_Pll3SwMux = CCM_TUPLE(CCSR_OFFSET,
                                  CCM_CCSR_PLL3_SW_CLK_SEL_SHIFT,
                                  CCM_CCSR_PLL3_SW_CLK_SEL_MASK,
                                  CCM_NO_BUSY_WAIT), /*!< pll3_sw_clk mux name */
 
-    kCLOCK_PeriphMux = CCM_TUPLE(CBCDR,
+    kCLOCK_PeriphMux = CCM_TUPLE(CBCDR_OFFSET,
                                  CCM_CBCDR_PERIPH_CLK_SEL_SHIFT,
                                  CCM_CBCDR_PERIPH_CLK_SEL_MASK,
                                  CCM_CDHIPR_PERIPH_CLK_SEL_BUSY_SHIFT), /*!< periph mux name */
-    kCLOCK_SemcAltMux = CCM_TUPLE(CBCDR,
+    kCLOCK_SemcAltMux = CCM_TUPLE(CBCDR_OFFSET,
                                   CCM_CBCDR_SEMC_ALT_CLK_SEL_SHIFT,
                                   CCM_CBCDR_SEMC_ALT_CLK_SEL_MASK,
                                   CCM_NO_BUSY_WAIT), /*!< semc mux name */
-    kCLOCK_SemcMux = CCM_TUPLE(
-        CBCDR, CCM_CBCDR_SEMC_CLK_SEL_SHIFT, CCM_CBCDR_SEMC_CLK_SEL_MASK, CCM_NO_BUSY_WAIT), /*!< semc mux name */
+    kCLOCK_SemcMux = CCM_TUPLE(CBCDR_OFFSET,
+                               CCM_CBCDR_SEMC_CLK_SEL_SHIFT,
+                               CCM_CBCDR_SEMC_CLK_SEL_MASK,
+                               CCM_NO_BUSY_WAIT), /*!< semc mux name */
 
-    kCLOCK_PrePeriphMux = CCM_TUPLE(CBCMR,
+    kCLOCK_PrePeriphMux = CCM_TUPLE(CBCMR_OFFSET,
                                     CCM_CBCMR_PRE_PERIPH_CLK_SEL_SHIFT,
                                     CCM_CBCMR_PRE_PERIPH_CLK_SEL_MASK,
                                     CCM_NO_BUSY_WAIT), /*!< pre-periph mux name */
-    kCLOCK_TraceMux = CCM_TUPLE(
-        CBCMR, CCM_CBCMR_TRACE_CLK_SEL_SHIFT, CCM_CBCMR_TRACE_CLK_SEL_MASK, CCM_NO_BUSY_WAIT), /*!< trace mux name */
-    kCLOCK_PeriphClk2Mux = CCM_TUPLE(CBCMR,
+    kCLOCK_TraceMux = CCM_TUPLE(CBCMR_OFFSET,
+                                CCM_CBCMR_TRACE_CLK_SEL_SHIFT,
+                                CCM_CBCMR_TRACE_CLK_SEL_MASK,
+                                CCM_NO_BUSY_WAIT), /*!< trace mux name */
+    kCLOCK_PeriphClk2Mux = CCM_TUPLE(CBCMR_OFFSET,
                                      CCM_CBCMR_PERIPH_CLK2_SEL_SHIFT,
                                      CCM_CBCMR_PERIPH_CLK2_SEL_MASK,
                                      CCM_NO_BUSY_WAIT), /*!< periph clock2 mux name */
-    kCLOCK_LpspiMux = CCM_TUPLE(
-        CBCMR, CCM_CBCMR_LPSPI_CLK_SEL_SHIFT, CCM_CBCMR_LPSPI_CLK_SEL_MASK, CCM_NO_BUSY_WAIT), /*!< lpspi mux name */
+    kCLOCK_LpspiMux = CCM_TUPLE(CBCMR_OFFSET,
+                                CCM_CBCMR_LPSPI_CLK_SEL_SHIFT,
+                                CCM_CBCMR_LPSPI_CLK_SEL_MASK,
+                                CCM_NO_BUSY_WAIT), /*!< lpspi mux name */
 
-    kCLOCK_FlexspiMux = CCM_TUPLE(CSCMR1,
+    kCLOCK_FlexspiMux = CCM_TUPLE(CSCMR1_OFFSET,
                                   CCM_CSCMR1_FLEXSPI_CLK_SEL_SHIFT,
                                   CCM_CSCMR1_FLEXSPI_CLK_SEL_MASK,
                                   CCM_NO_BUSY_WAIT), /*!< flexspi mux name */
-    kCLOCK_Usdhc2Mux = CCM_TUPLE(CSCMR1,
+    kCLOCK_Usdhc2Mux = CCM_TUPLE(CSCMR1_OFFSET,
                                  CCM_CSCMR1_USDHC2_CLK_SEL_SHIFT,
                                  CCM_CSCMR1_USDHC2_CLK_SEL_MASK,
                                  CCM_NO_BUSY_WAIT), /*!< usdhc2 mux name */
-    kCLOCK_Usdhc1Mux = CCM_TUPLE(CSCMR1,
+    kCLOCK_Usdhc1Mux = CCM_TUPLE(CSCMR1_OFFSET,
                                  CCM_CSCMR1_USDHC1_CLK_SEL_SHIFT,
                                  CCM_CSCMR1_USDHC1_CLK_SEL_MASK,
                                  CCM_NO_BUSY_WAIT), /*!< usdhc1 mux name */
-    kCLOCK_Sai3Mux = CCM_TUPLE(
-        CSCMR1, CCM_CSCMR1_SAI3_CLK_SEL_SHIFT, CCM_CSCMR1_SAI3_CLK_SEL_MASK, CCM_NO_BUSY_WAIT), /*!< sai3 mux name */
-    kCLOCK_Sai2Mux = CCM_TUPLE(
-        CSCMR1, CCM_CSCMR1_SAI2_CLK_SEL_SHIFT, CCM_CSCMR1_SAI2_CLK_SEL_MASK, CCM_NO_BUSY_WAIT), /*!< sai2 mux name */
-    kCLOCK_Sai1Mux = CCM_TUPLE(
-        CSCMR1, CCM_CSCMR1_SAI1_CLK_SEL_SHIFT, CCM_CSCMR1_SAI1_CLK_SEL_MASK, CCM_NO_BUSY_WAIT), /*!< sai1 mux name */
-    kCLOCK_PerclkMux = CCM_TUPLE(CSCMR1,
+    kCLOCK_Sai3Mux = CCM_TUPLE(CSCMR1_OFFSET,
+                               CCM_CSCMR1_SAI3_CLK_SEL_SHIFT,
+                               CCM_CSCMR1_SAI3_CLK_SEL_MASK,
+                               CCM_NO_BUSY_WAIT), /*!< sai3 mux name */
+    kCLOCK_Sai2Mux = CCM_TUPLE(CSCMR1_OFFSET,
+                               CCM_CSCMR1_SAI2_CLK_SEL_SHIFT,
+                               CCM_CSCMR1_SAI2_CLK_SEL_MASK,
+                               CCM_NO_BUSY_WAIT), /*!< sai2 mux name */
+    kCLOCK_Sai1Mux = CCM_TUPLE(CSCMR1_OFFSET,
+                               CCM_CSCMR1_SAI1_CLK_SEL_SHIFT,
+                               CCM_CSCMR1_SAI1_CLK_SEL_MASK,
+                               CCM_NO_BUSY_WAIT), /*!< sai1 mux name */
+    kCLOCK_PerclkMux = CCM_TUPLE(CSCMR1_OFFSET,
                                  CCM_CSCMR1_PERCLK_CLK_SEL_SHIFT,
                                  CCM_CSCMR1_PERCLK_CLK_SEL_MASK,
                                  CCM_NO_BUSY_WAIT), /*!< perclk mux name */
 
-    kCLOCK_Flexio1Mux = CCM_TUPLE(CSCMR2,
+    kCLOCK_Flexio1Mux = CCM_TUPLE(CSCMR2_OFFSET,
                                   CCM_CSCMR2_FLEXIO1_CLK_SEL_SHIFT,
                                   CCM_CSCMR2_FLEXIO1_CLK_SEL_MASK,
                                   CCM_NO_BUSY_WAIT), /*!< flexio1 mux name */
-    kCLOCK_CanMux = CCM_TUPLE(
-        CSCMR2, CCM_CSCMR2_CAN_CLK_SEL_SHIFT, CCM_CSCMR2_CAN_CLK_SEL_MASK, CCM_NO_BUSY_WAIT), /*!< can mux name */
+    kCLOCK_CanMux = CCM_TUPLE(CSCMR2_OFFSET,
+                              CCM_CSCMR2_CAN_CLK_SEL_SHIFT,
+                              CCM_CSCMR2_CAN_CLK_SEL_MASK,
+                              CCM_NO_BUSY_WAIT), /*!< can mux name */
 
-    kCLOCK_UartMux = CCM_TUPLE(
-        CSCDR1, CCM_CSCDR1_UART_CLK_SEL_SHIFT, CCM_CSCDR1_UART_CLK_SEL_MASK, CCM_NO_BUSY_WAIT), /*!< uart mux name */
+    kCLOCK_UartMux = CCM_TUPLE(CSCDR1_OFFSET,
+                               CCM_CSCDR1_UART_CLK_SEL_SHIFT,
+                               CCM_CSCDR1_UART_CLK_SEL_MASK,
+                               CCM_NO_BUSY_WAIT), /*!< uart mux name */
 
-    kCLOCK_SpdifMux = CCM_TUPLE(
-        CDCDR, CCM_CDCDR_SPDIF0_CLK_SEL_SHIFT, CCM_CDCDR_SPDIF0_CLK_SEL_MASK, CCM_NO_BUSY_WAIT), /*!< spdif mux name */
+    kCLOCK_SpdifMux = CCM_TUPLE(CDCDR_OFFSET,
+                                CCM_CDCDR_SPDIF0_CLK_SEL_SHIFT,
+                                CCM_CDCDR_SPDIF0_CLK_SEL_MASK,
+                                CCM_NO_BUSY_WAIT), /*!< spdif mux name */
 
-    kCLOCK_Lpi2cMux = CCM_TUPLE(
-        CSCDR2, CCM_CSCDR2_LPI2C_CLK_SEL_SHIFT, CCM_CSCDR2_LPI2C_CLK_SEL_MASK, CCM_NO_BUSY_WAIT), /*!< lpi2c mux name */
+    kCLOCK_Lpi2cMux = CCM_TUPLE(CSCDR2_OFFSET,
+                                CCM_CSCDR2_LPI2C_CLK_SEL_SHIFT,
+                                CCM_CSCDR2_LPI2C_CLK_SEL_MASK,
+                                CCM_NO_BUSY_WAIT), /*!< lpi2c mux name */
 } clock_mux_t;
 
 /*!
@@ -609,80 +652,104 @@ typedef enum _clock_mux
  */
 typedef enum _clock_div
 {
-    kCLOCK_ArmDiv = CCM_TUPLE(
-        CACRR, CCM_CACRR_ARM_PODF_SHIFT, CCM_CACRR_ARM_PODF_MASK, CCM_CDHIPR_ARM_PODF_BUSY_SHIFT), /*!< core div name */
+    kCLOCK_ArmDiv = CCM_TUPLE(CACRR_OFFSET,
+                              CCM_CACRR_ARM_PODF_SHIFT,
+                              CCM_CACRR_ARM_PODF_MASK,
+                              CCM_CDHIPR_ARM_PODF_BUSY_SHIFT), /*!< core div name */
 
-    kCLOCK_PeriphClk2Div = CCM_TUPLE(CBCDR,
+    kCLOCK_PeriphClk2Div = CCM_TUPLE(CBCDR_OFFSET,
                                      CCM_CBCDR_PERIPH_CLK2_PODF_SHIFT,
                                      CCM_CBCDR_PERIPH_CLK2_PODF_MASK,
                                      CCM_NO_BUSY_WAIT), /*!< periph clock2 div name */
-    kCLOCK_SemcDiv = CCM_TUPLE(CBCDR,
+    kCLOCK_SemcDiv = CCM_TUPLE(CBCDR_OFFSET,
                                CCM_CBCDR_SEMC_PODF_SHIFT,
                                CCM_CBCDR_SEMC_PODF_MASK,
                                CCM_CDHIPR_SEMC_PODF_BUSY_SHIFT), /*!< semc div name */
-    kCLOCK_AhbDiv = CCM_TUPLE(
-        CBCDR, CCM_CBCDR_AHB_PODF_SHIFT, CCM_CBCDR_AHB_PODF_MASK, CCM_CDHIPR_AHB_PODF_BUSY_SHIFT), /*!< ahb div name */
-    kCLOCK_IpgDiv =
-        CCM_TUPLE(CBCDR, CCM_CBCDR_IPG_PODF_SHIFT, CCM_CBCDR_IPG_PODF_MASK, CCM_NO_BUSY_WAIT), /*!< ipg div name */
+    kCLOCK_AhbDiv = CCM_TUPLE(CBCDR_OFFSET,
+                              CCM_CBCDR_AHB_PODF_SHIFT,
+                              CCM_CBCDR_AHB_PODF_MASK,
+                              CCM_CDHIPR_AHB_PODF_BUSY_SHIFT), /*!< ahb div name */
+    kCLOCK_IpgDiv = CCM_TUPLE(
+        CBCDR_OFFSET, CCM_CBCDR_IPG_PODF_SHIFT, CCM_CBCDR_IPG_PODF_MASK, CCM_NO_BUSY_WAIT), /*!< ipg div name */
 
     kCLOCK_LpspiDiv = CCM_TUPLE(
-        CBCMR, CCM_CBCMR_LPSPI_PODF_SHIFT, CCM_CBCMR_LPSPI_PODF_MASK, CCM_NO_BUSY_WAIT), /*!< lpspi div name */
+        CBCMR_OFFSET, CCM_CBCMR_LPSPI_PODF_SHIFT, CCM_CBCMR_LPSPI_PODF_MASK, CCM_NO_BUSY_WAIT), /*!< lpspi div name */
 
-    kCLOCK_FlexspiDiv = CCM_TUPLE(
-        CSCMR1, CCM_CSCMR1_FLEXSPI_PODF_SHIFT, CCM_CSCMR1_FLEXSPI_PODF_MASK, CCM_NO_BUSY_WAIT), /*!< flexspi div name */
-    kCLOCK_PerclkDiv = CCM_TUPLE(
-        CSCMR1, CCM_CSCMR1_PERCLK_PODF_SHIFT, CCM_CSCMR1_PERCLK_PODF_MASK, CCM_NO_BUSY_WAIT), /*!< perclk div name */
+    kCLOCK_FlexspiDiv = CCM_TUPLE(CSCMR1_OFFSET,
+                                  CCM_CSCMR1_FLEXSPI_PODF_SHIFT,
+                                  CCM_CSCMR1_FLEXSPI_PODF_MASK,
+                                  CCM_NO_BUSY_WAIT), /*!< flexspi div name */
+    kCLOCK_PerclkDiv = CCM_TUPLE(CSCMR1_OFFSET,
+                                 CCM_CSCMR1_PERCLK_PODF_SHIFT,
+                                 CCM_CSCMR1_PERCLK_PODF_MASK,
+                                 CCM_NO_BUSY_WAIT), /*!< perclk div name */
 
-    kCLOCK_CanDiv = CCM_TUPLE(
-        CSCMR2, CCM_CSCMR2_CAN_CLK_PODF_SHIFT, CCM_CSCMR2_CAN_CLK_PODF_MASK, CCM_NO_BUSY_WAIT), /*!< can div name */
+    kCLOCK_CanDiv = CCM_TUPLE(CSCMR2_OFFSET,
+                              CCM_CSCMR2_CAN_CLK_PODF_SHIFT,
+                              CCM_CSCMR2_CAN_CLK_PODF_MASK,
+                              CCM_NO_BUSY_WAIT), /*!< can div name */
 
-    kCLOCK_TraceDiv = CCM_TUPLE(
-        CSCDR1, CCM_CSCDR1_TRACE_PODF_SHIFT, CCM_CSCDR1_TRACE_PODF_MASK, CCM_NO_BUSY_WAIT), /*!< trace div name */
-    kCLOCK_Usdhc2Div = CCM_TUPLE(
-        CSCDR1, CCM_CSCDR1_USDHC2_PODF_SHIFT, CCM_CSCDR1_USDHC2_PODF_MASK, CCM_NO_BUSY_WAIT), /*!< usdhc2 div name */
-    kCLOCK_Usdhc1Div = CCM_TUPLE(
-        CSCDR1, CCM_CSCDR1_USDHC1_PODF_SHIFT, CCM_CSCDR1_USDHC1_PODF_MASK, CCM_NO_BUSY_WAIT), /*!< usdhc1 div name */
-    kCLOCK_UartDiv = CCM_TUPLE(
-        CSCDR1, CCM_CSCDR1_UART_CLK_PODF_SHIFT, CCM_CSCDR1_UART_CLK_PODF_MASK, CCM_NO_BUSY_WAIT), /*!< uart div name */
+    kCLOCK_TraceDiv = CCM_TUPLE(CSCDR1_OFFSET,
+                                CCM_CSCDR1_TRACE_PODF_SHIFT,
+                                CCM_CSCDR1_TRACE_PODF_MASK,
+                                CCM_NO_BUSY_WAIT), /*!< trace div name */
+    kCLOCK_Usdhc2Div = CCM_TUPLE(CSCDR1_OFFSET,
+                                 CCM_CSCDR1_USDHC2_PODF_SHIFT,
+                                 CCM_CSCDR1_USDHC2_PODF_MASK,
+                                 CCM_NO_BUSY_WAIT), /*!< usdhc2 div name */
+    kCLOCK_Usdhc1Div = CCM_TUPLE(CSCDR1_OFFSET,
+                                 CCM_CSCDR1_USDHC1_PODF_SHIFT,
+                                 CCM_CSCDR1_USDHC1_PODF_MASK,
+                                 CCM_NO_BUSY_WAIT), /*!< usdhc1 div name */
+    kCLOCK_UartDiv = CCM_TUPLE(CSCDR1_OFFSET,
+                               CCM_CSCDR1_UART_CLK_PODF_SHIFT,
+                               CCM_CSCDR1_UART_CLK_PODF_MASK,
+                               CCM_NO_BUSY_WAIT), /*!< uart div name */
 
-    kCLOCK_Flexio1Div = CCM_TUPLE(CS1CDR,
+    kCLOCK_Flexio1Div = CCM_TUPLE(CS1CDR_OFFSET,
                                   CCM_CS1CDR_FLEXIO1_CLK_PODF_SHIFT,
                                   CCM_CS1CDR_FLEXIO1_CLK_PODF_MASK,
                                   CCM_NO_BUSY_WAIT), /*!< flexio1 pre div name */
-    kCLOCK_Sai3PreDiv = CCM_TUPLE(CS1CDR,
+    kCLOCK_Sai3PreDiv = CCM_TUPLE(CS1CDR_OFFSET,
                                   CCM_CS1CDR_SAI3_CLK_PRED_SHIFT,
                                   CCM_CS1CDR_SAI3_CLK_PRED_MASK,
                                   CCM_NO_BUSY_WAIT), /*!< sai3 pre div name */
-    kCLOCK_Sai3Div = CCM_TUPLE(
-        CS1CDR, CCM_CS1CDR_SAI3_CLK_PODF_SHIFT, CCM_CS1CDR_SAI3_CLK_PODF_MASK, CCM_NO_BUSY_WAIT), /*!< sai3 div name */
-    kCLOCK_Flexio1PreDiv = CCM_TUPLE(CS1CDR,
+    kCLOCK_Sai3Div = CCM_TUPLE(CS1CDR_OFFSET,
+                               CCM_CS1CDR_SAI3_CLK_PODF_SHIFT,
+                               CCM_CS1CDR_SAI3_CLK_PODF_MASK,
+                               CCM_NO_BUSY_WAIT), /*!< sai3 div name */
+    kCLOCK_Flexio1PreDiv = CCM_TUPLE(CS1CDR_OFFSET,
                                      CCM_CS1CDR_FLEXIO1_CLK_PRED_SHIFT,
                                      CCM_CS1CDR_FLEXIO1_CLK_PRED_MASK,
                                      CCM_NO_BUSY_WAIT), /*!< flexio1 pre div name */
-    kCLOCK_Sai1PreDiv = CCM_TUPLE(CS1CDR,
+    kCLOCK_Sai1PreDiv = CCM_TUPLE(CS1CDR_OFFSET,
                                   CCM_CS1CDR_SAI1_CLK_PRED_SHIFT,
                                   CCM_CS1CDR_SAI1_CLK_PRED_MASK,
                                   CCM_NO_BUSY_WAIT), /*!< sai1 pre div name */
-    kCLOCK_Sai1Div = CCM_TUPLE(
-        CS1CDR, CCM_CS1CDR_SAI1_CLK_PODF_SHIFT, CCM_CS1CDR_SAI1_CLK_PODF_MASK, CCM_NO_BUSY_WAIT), /*!< sai1 div name */
+    kCLOCK_Sai1Div = CCM_TUPLE(CS1CDR_OFFSET,
+                               CCM_CS1CDR_SAI1_CLK_PODF_SHIFT,
+                               CCM_CS1CDR_SAI1_CLK_PODF_MASK,
+                               CCM_NO_BUSY_WAIT), /*!< sai1 div name */
 
-    kCLOCK_Sai2PreDiv = CCM_TUPLE(CS2CDR,
+    kCLOCK_Sai2PreDiv = CCM_TUPLE(CS2CDR_OFFSET,
                                   CCM_CS2CDR_SAI2_CLK_PRED_SHIFT,
                                   CCM_CS2CDR_SAI2_CLK_PRED_MASK,
                                   CCM_NO_BUSY_WAIT), /*!< sai2 pre div name */
-    kCLOCK_Sai2Div = CCM_TUPLE(
-        CS2CDR, CCM_CS2CDR_SAI2_CLK_PODF_SHIFT, CCM_CS2CDR_SAI2_CLK_PODF_MASK, CCM_NO_BUSY_WAIT), /*!< sai2 div name */
+    kCLOCK_Sai2Div = CCM_TUPLE(CS2CDR_OFFSET,
+                               CCM_CS2CDR_SAI2_CLK_PODF_SHIFT,
+                               CCM_CS2CDR_SAI2_CLK_PODF_MASK,
+                               CCM_NO_BUSY_WAIT), /*!< sai2 div name */
 
-    kCLOCK_Spdif0PreDiv = CCM_TUPLE(CDCDR,
+    kCLOCK_Spdif0PreDiv = CCM_TUPLE(CDCDR_OFFSET,
                                     CCM_CDCDR_SPDIF0_CLK_PRED_SHIFT,
                                     CCM_CDCDR_SPDIF0_CLK_PRED_MASK,
                                     CCM_NO_BUSY_WAIT), /*!< spdif pre div name */
-    kCLOCK_Spdif0Div = CCM_TUPLE(CDCDR,
+    kCLOCK_Spdif0Div = CCM_TUPLE(CDCDR_OFFSET,
                                  CCM_CDCDR_SPDIF0_CLK_PODF_SHIFT,
                                  CCM_CDCDR_SPDIF0_CLK_PODF_MASK,
                                  CCM_NO_BUSY_WAIT), /*!< spdif div name */
 
-    kCLOCK_Lpi2cDiv = CCM_TUPLE(CSCDR2,
+    kCLOCK_Lpi2cDiv = CCM_TUPLE(CSCDR2_OFFSET,
                                 CCM_CSCDR2_LPI2C_CLK_PODF_SHIFT,
                                 CCM_CSCDR2_LPI2C_CLK_PODF_MASK,
                                 CCM_NO_BUSY_WAIT), /*!< lpi2c div name */
@@ -764,15 +831,15 @@ typedef struct _clock_enet_pll_config
 /*! @brief PLL name */
 typedef enum _clock_pll
 {
-    kCLOCK_PllSys = CCM_ANALOG_TUPLE(PLL_SYS, CCM_ANALOG_PLL_SYS_ENABLE_SHIFT),       /*!< PLL SYS */
-    kCLOCK_PllUsb1 = CCM_ANALOG_TUPLE(PLL_USB1, CCM_ANALOG_PLL_USB1_ENABLE_SHIFT),    /*!< PLL USB1 */
-    kCLOCK_PllAudio = CCM_ANALOG_TUPLE(PLL_AUDIO, CCM_ANALOG_PLL_AUDIO_ENABLE_SHIFT), /*!< PLL Audio */
+    kCLOCK_PllSys = CCM_ANALOG_TUPLE(PLL_SYS_OFFSET, CCM_ANALOG_PLL_SYS_ENABLE_SHIFT),       /*!< PLL SYS */
+    kCLOCK_PllUsb1 = CCM_ANALOG_TUPLE(PLL_USB1_OFFSET, CCM_ANALOG_PLL_USB1_ENABLE_SHIFT),    /*!< PLL USB1 */
+    kCLOCK_PllAudio = CCM_ANALOG_TUPLE(PLL_AUDIO_OFFSET, CCM_ANALOG_PLL_AUDIO_ENABLE_SHIFT), /*!< PLL Audio */
 
-    kCLOCK_PllEnet = CCM_ANALOG_TUPLE(PLL_ENET, CCM_ANALOG_PLL_ENET_ENABLE_SHIFT), /*!< PLL Enet0 */
+    kCLOCK_PllEnet = CCM_ANALOG_TUPLE(PLL_ENET_OFFSET, CCM_ANALOG_PLL_ENET_ENABLE_SHIFT), /*!< PLL Enet0 */
 
-    kCLOCK_PllEnet500M = CCM_ANALOG_TUPLE(PLL_ENET, CCM_ANALOG_PLL_ENET_ENET_500M_REF_EN_SHIFT), /*!< PLL ENET */
+    kCLOCK_PllEnet500M = CCM_ANALOG_TUPLE(PLL_ENET_OFFSET, CCM_ANALOG_PLL_ENET_ENET_500M_REF_EN_SHIFT), /*!< PLL ENET */
 
-    kCLOCK_PllEnet25M = CCM_ANALOG_TUPLE(PLL_ENET, CCM_ANALOG_PLL_ENET_ENET_25M_REF_EN_SHIFT), /*!< PLL Enet1 */
+    kCLOCK_PllEnet25M = CCM_ANALOG_TUPLE(PLL_ENET_OFFSET, CCM_ANALOG_PLL_ENET_ENET_25M_REF_EN_SHIFT), /*!< PLL Enet1 */
 
 } clock_pll_t;
 
