@@ -426,8 +426,8 @@ static int ssd1306_init(struct device *dev)
 static struct ssd1306_data ssd1306_driver;
 
 static struct display_driver_api ssd1306_driver_api = {
-	.blanking_on = ssd1306_resume,
-	.blanking_off = ssd1306_suspend,
+	.blanking_on = ssd1306_suspend,
+	.blanking_off = ssd1306_resume,
 	.write = ssd1306_write,
 	.read = ssd1306_read,
 	.get_framebuffer = ssd1306_get_framebuffer,
