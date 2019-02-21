@@ -1269,7 +1269,6 @@ static int context_sendto(struct net_context *context,
 			  socklen_t addrlen,
 			  net_context_send_cb_t cb,
 			  s32_t timeout,
-			  void *token,
 			  void *user_data)
 {
 	struct net_pkt *pkt;
@@ -1418,7 +1417,7 @@ static int context_sendto(struct net_context *context,
 			goto fail;
 		}
 
-		ret = net_tcp_send_data(context, cb, token, user_data);
+		ret = net_tcp_send_data(context, cb, user_data);
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		   net_context_get_family(context) == AF_PACKET) {
 		ret = net_pkt_write(pkt, buf, len);
@@ -1462,7 +1461,6 @@ int net_context_send(struct net_context *context,
 		     size_t len,
 		     net_context_send_cb_t cb,
 		     s32_t timeout,
-		     void *token,
 		     void *user_data)
 {
 	socklen_t addrlen;
@@ -1494,7 +1492,7 @@ int net_context_send(struct net_context *context,
 	}
 
 	ret = context_sendto(context, buf, len, &context->remote,
-			     addrlen, cb, timeout, token, user_data);
+			     addrlen, cb, timeout, user_data);
 unlock:
 	k_mutex_unlock(&context->lock);
 
@@ -1509,7 +1507,6 @@ int net_context_sendto(struct net_context *context,
 		       socklen_t addrlen,
 		       net_context_send_cb_t cb,
 		       s32_t timeout,
-		       void *token,
 		       void *user_data)
 {
 	int ret;
@@ -1517,7 +1514,7 @@ int net_context_sendto(struct net_context *context,
 	k_mutex_lock(&context->lock, K_FOREVER);
 
 	ret = context_sendto(context, buf, len, dst_addr, addrlen,
-			     cb, timeout, token, user_data);
+			     cb, timeout, user_data);
 
 	k_mutex_unlock(&context->lock);
 

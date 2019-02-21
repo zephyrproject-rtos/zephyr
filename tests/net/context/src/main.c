@@ -61,7 +61,7 @@ static bool data_failure;
 static bool recv_cb_called;
 static bool recv_cb_reconfig_called;
 static bool recv_cb_timeout_called;
-static int test_token, timeout_token;
+static bool test_sending;
 
 static struct k_sem wait_data;
 
@@ -368,8 +368,7 @@ static void net_ctx_accept_v4(void)
 		      "Context accept IPv4 UDP test failed");
 }
 
-static void send_cb(struct net_context *context, int status,
-		    void *token, void *user_data)
+static void send_cb(struct net_context *context, int status, void *user_data)
 {
 	sa_family_t family = POINTER_TO_INT(user_data);
 
@@ -380,27 +379,17 @@ static void send_cb(struct net_context *context, int status,
 		return;
 	}
 
-	if (POINTER_TO_INT(token) != test_token) {
-		TC_ERROR("Token mismatch %d should be %d\n",
-		       POINTER_TO_INT(token), test_token);
-		cb_failure = true;
-		return;
-	}
-
 	cb_failure = false;
-	test_token = 0;
 }
 
 static void net_ctx_send_v6(void)
 {
 	int ret;
 
-	test_token = SENDING;
+	test_sending = true;
 
 	ret = net_context_send(udp_v6_ctx, test_data, strlen(test_data),
-			       send_cb, K_NO_WAIT,
-			       INT_TO_POINTER(test_token),
-			       INT_TO_POINTER(AF_INET6));
+			       send_cb, K_NO_WAIT, INT_TO_POINTER(AF_INET6));
 	zassert_false(((ret < 0) || cb_failure),
 		     "Context send IPv6 UDP test failed");
 }
@@ -409,12 +398,10 @@ static void net_ctx_send_v4(void)
 {
 	int ret;
 
-	test_token = SENDING;
+	test_sending = true;
 
 	ret = net_context_send(udp_v4_ctx, test_data, strlen(test_data),
-			       send_cb, K_NO_WAIT,
-			       INT_TO_POINTER(test_token),
-			       INT_TO_POINTER(AF_INET));
+			       send_cb, K_NO_WAIT, INT_TO_POINTER(AF_INET));
 	zassert_false(((ret < 0) || cb_failure),
 		      "Context send IPv4 UDP test failed");
 }
@@ -429,13 +416,12 @@ static void net_ctx_sendto_v6(void)
 				   0, 0, 0, 0, 0, 0, 0, 0x2 } } },
 	};
 
-	test_token = SENDING;
+	test_sending = true;
 
 	ret = net_context_sendto(udp_v6_ctx, test_data, strlen(test_data),
 				 (struct sockaddr *)&addr,
 				 sizeof(struct sockaddr_in6), send_cb,
-				 K_NO_WAIT, INT_TO_POINTER(test_token),
-				 INT_TO_POINTER(AF_INET6));
+				 K_NO_WAIT, INT_TO_POINTER(AF_INET6));
 	zassert_false(((ret < 0) || cb_failure),
 		      "Context send IPv6 UDP test failed");
 }
@@ -449,13 +435,12 @@ static void net_ctx_sendto_v4(void)
 		.sin_addr = { { { 192, 0, 2, 2 } } },
 	};
 
-	test_token = SENDING;
+	test_sending = true;
 
 	ret = net_context_sendto(udp_v4_ctx, test_data, strlen(test_data),
 				 (struct sockaddr *)&addr,
 				 sizeof(struct sockaddr_in), send_cb,
-				 K_NO_WAIT, INT_TO_POINTER(test_token),
-				 INT_TO_POINTER(AF_INET));
+				 K_NO_WAIT, INT_TO_POINTER(AF_INET));
 	zassert_false(((ret < 0) || cb_failure),
 		      "Context send IPv4 UDP test failed");
 }
@@ -520,13 +505,12 @@ static bool net_ctx_sendto_v6_wrong_src(void)
 				   0, 0, 0, 0, 0, 0, 0, 0x3 } } },
 	};
 
-	test_token = SENDING;
+	test_sending = true;
 
 	ret = net_context_sendto(udp_v6_ctx, test_data, strlen(test_data),
 				 (struct sockaddr *)&addr,
 				 sizeof(struct sockaddr_in6), send_cb,
-				 K_NO_WAIT, INT_TO_POINTER(test_token),
-				 INT_TO_POINTER(AF_INET6));
+				 K_NO_WAIT, INT_TO_POINTER(AF_INET6));
 	if ((ret < 0) || cb_failure) {
 		TC_ERROR("Context sendto IPv6 UDP wrong src "
 			 "test failed (%d)\n", ret);
@@ -558,13 +542,12 @@ static bool net_ctx_sendto_v4_wrong_src(void)
 		.sin_addr = { { { 192, 0, 2, 3 } } },
 	};
 
-	test_token = SENDING;
+	test_sending = true;
 
 	ret = net_context_sendto(udp_v4_ctx, test_data, strlen(test_data),
 				 (struct sockaddr *)&addr,
 				 sizeof(struct sockaddr_in), send_cb,
-				 K_NO_WAIT, INT_TO_POINTER(test_token),
-				 INT_TO_POINTER(AF_INET));
+				 K_NO_WAIT, INT_TO_POINTER(AF_INET));
 	if ((ret < 0) || cb_failure) {
 		TC_ERROR("Context send IPv4 UDP test failed (%d)\n", ret);
 		return false;
@@ -744,7 +727,6 @@ static void net_ctx_recv_v6_timeout(void)
 	k_sem_take(&wait_data, WAIT_TIME_LONG * 2);
 
 	net_ctx_send_v6();
-	timeout_token = SENDING;
 
 	DBG("Sent data\n");
 
@@ -773,7 +755,6 @@ static void net_ctx_recv_v4_timeout(void)
 	k_sem_take(&wait_data, WAIT_TIME_LONG * 2);
 
 	net_ctx_send_v4();
-	timeout_token = SENDING;
 
 	DBG("Sent data\n");
 
@@ -802,7 +783,6 @@ static void net_ctx_recv_v6_timeout_forever(void)
 	k_sleep(WAIT_TIME);
 
 	net_ctx_send_v6();
-	timeout_token = SENDING;
 
 	DBG("Sent data\n");
 
@@ -829,7 +809,6 @@ static void net_ctx_recv_v4_timeout_forever(void)
 	k_sleep(WAIT_TIME);
 
 	net_ctx_send_v4();
-	timeout_token = SENDING;
 
 	DBG("Sent data\n");
 
@@ -912,7 +891,7 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 		return -ENODATA;
 	}
 
-	if (test_token == SENDING || timeout_token == SENDING) {
+	if (test_sending) {
 		/* We are now about to send data to outside but in this
 		 * test we just check what would be sent. In real life
 		 * one would not do something like this in the sending
@@ -960,7 +939,7 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 			goto out;
 		}
 
-		timeout_token = 0;
+		test_sending = false;
 
 		return 0;
 	}

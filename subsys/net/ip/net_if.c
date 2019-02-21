@@ -130,7 +130,7 @@ static inline void net_context_send_cb(struct net_context *context,
 	}
 
 	if (context->send_cb) {
-		context->send_cb(context, status, NULL, context->user_data);
+		context->send_cb(context, status, context->user_data);
 	}
 
 #if defined(CONFIG_NET_UDP)

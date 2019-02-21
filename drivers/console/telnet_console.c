@@ -207,7 +207,7 @@ static void telnet_send_prematurely(struct k_timer *timer)
 }
 
 static void telnet_sent_cb(struct net_context *client,
-			   int status, void *token, void *user_data)
+			   int status, void *user_data)
 {
 	if (status) {
 		telnet_end_client_connection();
@@ -223,7 +223,7 @@ static inline bool telnet_send(void)
 		if (net_context_send(client_cnx,
 				     (u8_t *)lb->buf, lb->len,
 				     telnet_sent_cb,
-				     K_FOREVER, NULL, NULL)) {
+				     K_FOREVER, NULL)) {
 			return false;
 		}
 
@@ -244,7 +244,7 @@ static int telnet_console_out_nothing(int c)
 static inline void telnet_command_send_reply(u8_t *msg, u16_t len)
 {
 	net_context_send(client_cnx, msg, len,
-			 telnet_sent_cb, K_FOREVER, NULL, NULL);
+			 telnet_sent_cb, K_FOREVER, NULL);
 }
 
 static inline void telnet_reply_ay_command(void)

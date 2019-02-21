@@ -479,7 +479,7 @@ static void traffic_class_send_packets_with_prio(enum net_priority prio,
 	ret = net_context_sendto(net_ctxs[tc].ctx, data, len,
 				 (struct sockaddr *)&dst_addr6,
 				 sizeof(struct sockaddr_in6),
-				 NULL, K_NO_WAIT, NULL, NULL);
+				 NULL, K_NO_WAIT, NULL);
 	zassert_true(ret > 0, "Send UDP pkt failed");
 }
 
@@ -771,7 +771,7 @@ static void traffic_class_recv_packets_with_prio(enum net_priority prio,
 	ret = net_context_sendto(net_ctxs[tc].ctx, data, len,
 				 (struct sockaddr *)&dst_addr6,
 				 sizeof(struct sockaddr_in6),
-				 NULL, K_NO_WAIT, NULL, NULL);
+				 NULL, K_NO_WAIT, NULL);
 	zassert_true(ret > 0, "Send UDP pkt failed");
 
 	/* Let the receiver to receive the packets */

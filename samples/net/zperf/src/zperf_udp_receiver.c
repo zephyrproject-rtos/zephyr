@@ -103,7 +103,7 @@ static int zperf_receiver_send_stat(const struct shell *shell,
 				 net_pkt_family(pkt) == AF_INET6 ?
 				 sizeof(struct sockaddr_in6) :
 				 sizeof(struct sockaddr_in),
-				 NULL, 0, NULL, NULL);
+				 NULL, K_NO_WAIT, NULL);
 	if (ret < 0) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      " Cannot send data to peer (%d)", ret);
