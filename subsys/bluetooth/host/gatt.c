@@ -2856,27 +2856,28 @@ static int bt_gatt_store_cf(struct bt_conn *conn)
 
 	cfg = find_cf_cfg(conn);
 	if (!cfg) {
-		/* No cfg found just cleare it */
+		/* No cfg found, just clear it */
+		BT_DBG("No config for CF");
 		str = NULL;
 		len = 0;
-		goto save;
+	} else {
+		str = (char *)cfg->data;
+		len = sizeof(cfg->data);
+
+		if (conn->id) {
+			char id_str[4];
+
+			snprintk(id_str, sizeof(id_str), "%u", conn->id);
+			bt_settings_encode_key(key, sizeof(key), "cf",
+					       &conn->le.dst, id_str);
+		}
 	}
 
-	if (conn->id) {
-		char id_str[4];
-
-		snprintk(id_str, sizeof(id_str), "%u", conn->id);
-		bt_settings_encode_key(key, sizeof(key), "cf",
-				       &conn->le.dst, id_str);
-	} else {
+	if (!cfg || !conn->id) {
 		bt_settings_encode_key(key, sizeof(key), "cf",
 				       &conn->le.dst, NULL);
 	}
 
-	str = (char *)cfg->data;
-	len = sizeof(cfg->data);
-
-save:
 	err = settings_save_one(key, str, len);
 	if (err) {
 		BT_ERR("Failed to store Client Features (err %d)", err);
