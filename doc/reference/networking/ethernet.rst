@@ -3,6 +3,12 @@
 Ethernet
 ########
 
+.. toctree::
+   :maxdepth: 1
+
+   vlan.rst
+   lldp.rst
+
 Overview
 ********
 
