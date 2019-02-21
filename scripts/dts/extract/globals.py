@@ -6,7 +6,6 @@
 #
 
 from collections import defaultdict
-from copy import deepcopy
 
 # globals
 phandles = {}
@@ -221,16 +220,20 @@ def get_addr_size_cells(node_path):
     return (nr_addr, nr_size)
 
 def translate_addr(addr, node_path, nr_addr_cells, nr_size_cells):
-
-    try:
-        ranges = deepcopy(find_parent_prop(node_path, 'ranges'))
-        if type(ranges) is not list: ranges = [ ]
-    except:
-        return 0
-
     parent_path = get_parent_path(node_path)
 
-    (nr_p_addr_cells, nr_p_size_cells) = get_addr_size_cells(parent_path)
+    ranges = reduced[parent_path]['props'].get('ranges')
+    if not ranges:
+        return 0
+
+    if isinstance(ranges, list):
+        ranges = ranges.copy()  # Modified in-place below
+    else:
+        # Empty value ('ranges;'), meaning the parent and child address spaces
+        # are the same
+        ranges = []
+
+    nr_p_addr_cells, nr_p_size_cells = get_addr_size_cells(parent_path)
 
     range_offset = 0
     while ranges:
