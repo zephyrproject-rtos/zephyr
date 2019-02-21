@@ -54,7 +54,7 @@ int lwm2m_f32_to_b32(float32_value_t *f32, u8_t *b32, size_t len)
 	i = e;
 	while (v > 0 && i < 23) {
 		v *= 2;
-		if (e < 0 && v < LWM2M_FLOAT32_DEC_MAX) {
+		if (!f && e < 0 && v < LWM2M_FLOAT32_DEC_MAX) {
 			/* handle -e */
 			e--;
 			continue;
@@ -136,7 +136,7 @@ int lwm2m_f64_to_b64(float64_value_t *f64, u8_t *b64, size_t len)
 	i = e;
 	while (v > 0 && i < 52) {
 		v *= 2;
-		if (e < 0 && v < LWM2M_FLOAT64_DEC_MAX) {
+		if (!f && e < 0 && v < LWM2M_FLOAT64_DEC_MAX) {
 			/* handle -e */
 			e--;
 			continue;
