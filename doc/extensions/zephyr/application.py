@@ -234,10 +234,10 @@ class ZephyrAppCommandsDirective(Directive):
         cmake_args = ' --{}'.format(cmake_args) if cmake_args != '' else ''
         # ignore zephyr_app since west needs to run within
         # the installation. Instead rely on relative path.
-        src = ' -s {}'.format(cd_to) if cd_to else ''
+        src = ' {}'.format(cd_to) if cd_to else ''
         dst = ' -d {}'.format(build_dir) if build_dir != 'build' else ''
 
-        goal_args = ' -b {}{}{}{}'.format(board, src, dst, cmake_args)
+        goal_args = ' -b {}{}{}{}'.format(board, dst, src, cmake_args)
         if 'build' in goals:
             content.append('west build{}'.format(goal_args))
             # No longer need to specify additional args, they are in the
