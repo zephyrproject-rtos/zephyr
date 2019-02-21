@@ -21,6 +21,8 @@ OUTPUT_ARCH(xtensa)
 #include <linker/linker-defs.h>
 #include <linker/linker-tool.h>
 
+#include <xtensa/config/core-isa.h>
+
 #define RAMABLE_REGION ram :ram_phdr
 #define ROMABLE_REGION ram :ram_phdr
 #define LPRAM_REGION lpram
@@ -179,7 +181,17 @@ _memmap_cacheattr_bp_allvalid = 0x22222222;
  * as cacheattr_set macro sets them both to the same set of
  * attributes.
  */
+#ifndef CONFIG_SMP
 _memmap_cacheattr_intel_s1000 = 0x1212fff2;
+#else
+/*
+ * Since there is no cache coherence between cores,
+ * set the data section (0xA0000000 - 0xBFFFFFFF) to be
+ * non-cacheable, for now. Until we have proper support
+ * to manipulate cache lines.
+ */
+_memmap_cacheattr_intel_s1000 = 0x1222fff2;
+#endif
 
 PROVIDE(_memmap_cacheattr_reset = _memmap_cacheattr_intel_s1000);
 SECTIONS

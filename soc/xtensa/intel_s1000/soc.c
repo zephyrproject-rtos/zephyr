@@ -284,8 +284,7 @@ static inline void soc_set_power_and_clock(void)
 
 	dsp_shim_regs->clkctl |= SOC_CLKCTL_REQ_FAST_CLK |
 		SOC_CLKCTL_OCS_FAST_CLK;
-	dsp_shim_regs->pwrctl |= SOC_PWRCTL_DISABLE_PWR_GATING_DSP1 |
-		SOC_PWRCTL_DISABLE_PWR_GATING_DSP0;
+	dsp_shim_regs->pwrctl |= SOC_PWRCTL_DISABLE_PWR_GATING_DSP0;
 
 	soc_set_dmic_power();
 	soc_set_gna_power();
