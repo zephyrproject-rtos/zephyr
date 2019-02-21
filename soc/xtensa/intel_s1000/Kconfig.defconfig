@@ -12,9 +12,9 @@ config IRQ_OFFLOAD_INTNUM
 	default 0
 
 # S1000 does not have MISC0.
-# Since EXCSAVE2 is unused by Zephyr, use it instead.
+# Since EXCSAVE7 is unused by Zephyr, use it instead.
 config XTENSA_KERNEL_CPU_PTR_SR
-	default "EXCSAVE2"
+	default "EXCSAVE7"
 
 config SPI_DW_FIFO_DEPTH
 	default 32
