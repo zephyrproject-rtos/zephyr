@@ -4,6 +4,7 @@ set_ifndef(C++ g++)
 # GCC-based toolchains
 
 find_program(CMAKE_C_COMPILER ${CROSS_COMPILE}${CC}   PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+set(CMAKE_C_COMPILER_ID GNU)
 find_program(CMAKE_OBJCOPY    ${CROSS_COMPILE}objcopy PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 find_program(CMAKE_OBJDUMP    ${CROSS_COMPILE}objdump PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
 find_program(CMAKE_AS         ${CROSS_COMPILE}as      PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
@@ -27,6 +28,8 @@ else()
   endif()
 endif()
 find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler} PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+set(CMAKE_CXX_COMPILER_ID GNU)
+
 
 set(NOSTDINC "")
 
@@ -143,3 +146,5 @@ include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_security_fortify.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_security_canaries.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_optimizations.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target_cpp.cmake)
+
+include(${ZEPHYR_BASE}/cmake/compiler/common/target.cmake)

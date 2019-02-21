@@ -1,6 +1,7 @@
 # Configures CMake for using GCC
 
 find_program(CMAKE_C_COMPILER   gcc    )
+set(CMAKE_C_COMPILER_ID GNU)
 find_program(CMAKE_OBJCOPY      objcopy)
 find_program(CMAKE_OBJDUMP      objdump)
 #find_program(CMAKE_LINKER      ld     ) # Not in use yet
@@ -36,6 +37,7 @@ else()
   endif()
 endif()
 find_program(CMAKE_CXX_COMPILER ${cplusplus_compiler}     CACHE INTERNAL " " FORCE)
+set(CMAKE_CXX_COMPILER_ID GNU)
 
 # The x32 version of libgcc is usually not available (can't trust gcc
 # -mx32 --print-libgcc-file-name) so don't fail to build for something
@@ -81,3 +83,5 @@ include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_fortify.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_canaries.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_optimizations.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_cpp.cmake)
+
+include(${ZEPHYR_BASE}/cmake/compiler/common/target.cmake)
