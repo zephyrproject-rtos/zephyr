@@ -163,7 +163,8 @@ static const struct imx_epit_config imx_epit_##idx##_config = {		       \
 	.prescaler = DT_COUNTER_IMX_EPIT_##idx##_PRESCALER,		       \
 };									       \
 static struct imx_epit_data imx_epit_##idx##_data;			       \
-DEVICE_AND_API_INIT(NULL, epit_##idx, DT_COUNTER_IMX_EPIT_##idx##_LABEL,       \
+DEVICE_AND_API_INIT(DT_COUNTER_IMX_EPIT_##idx##_PARENT_LABEL, epit_##idx,      \
+		    DT_COUNTER_IMX_EPIT_##idx##_LABEL,			       \
 		    &imx_epit_config_func_##idx,			       \
 		    &imx_epit_##idx##_data, &imx_epit_##idx##_config.info,     \
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \

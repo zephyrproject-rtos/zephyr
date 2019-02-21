@@ -367,6 +367,7 @@ int lis2dh_init(struct device *dev)
 
 static struct lis2dh_data lis2dh_driver;
 
-DEVICE_AND_API_INIT(NULL, lis2dh, DT_ST_LIS2DH_0_LABEL, lis2dh_init,
+DEVICE_AND_API_INIT(DT_ST_LIS2DH_0_PARENT_LABEL, lis2dh,
+		    DT_ST_LIS2DH_0_LABEL, lis2dh_init,
 		    &lis2dh_driver, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lis2dh_driver_api);

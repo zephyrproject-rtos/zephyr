@@ -688,7 +688,8 @@ static struct uart_stm32_data uart_stm32_data_##name = {		\
 	.baud_rate = DT_UART_STM32_##name##_BAUD_RATE			\
 };									\
 									\
-DEVICE_AND_API_INIT(NULL, uart_stm32_##name,				\
+DEVICE_AND_API_INIT(DT_UART_STM32_##name##_PARENT_NAME,			\
+		    uart_stm32_##name,					\
 		    DT_UART_STM32_##name##_NAME,			\
 		    &uart_stm32_init,					\
 		    &uart_stm32_data_##name, &uart_stm32_cfg_##name,	\

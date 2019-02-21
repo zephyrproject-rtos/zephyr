@@ -424,7 +424,7 @@ static struct pl011_data pl011_data_port_0 = {
 	.baud_rate = DT_PL011_PORT0_BAUD_RATE,
 };
 
-DEVICE_AND_API_INIT(NULL, pl011_port_0,
+DEVICE_AND_API_INIT(DT_PL011_PORT0_PARENT_NAME, pl011_port_0,
 		    DT_PL011_PORT0_NAME,
 		    &pl011_init,
 		    &pl011_data_port_0,
@@ -478,7 +478,7 @@ static struct pl011_data pl011_data_port_1 = {
 	.baud_rate = DT_PL011_PORT1_BAUD_RATE,
 };
 
-DEVICE_AND_API_INIT(NULL, pl011_port_1,
+DEVICE_AND_API_INIT(DT_PL011_PORT1_PARENT_NAME, pl011_port_1,
 		    DT_PL011_PORT1_NAME,
 		    &pl011_init,
 		    &pl011_data_port_1,

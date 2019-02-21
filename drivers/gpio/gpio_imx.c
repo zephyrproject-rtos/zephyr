@@ -186,7 +186,8 @@ static const struct imx_gpio_config imx_gpio_1_config = {
 
 static struct imx_gpio_data imx_gpio_1_data;
 
-DEVICE_AND_API_INIT(NULL, imx_gpio_1, DT_GPIO_IMX_PORT_1_NAME,
+DEVICE_AND_API_INIT(DT_GPIO_IMX_PORT_1_PARENT_NAME, imx_gpio_1,
+		    DT_GPIO_IMX_PORT_1_NAME,
 		    imx_gpio_1_init,
 		    &imx_gpio_1_data, &imx_gpio_1_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -219,7 +220,8 @@ static const struct imx_gpio_config imx_gpio_2_config = {
 
 static struct imx_gpio_data imx_gpio_2_data;
 
-DEVICE_AND_API_INIT(NULL, imx_gpio_2, DT_GPIO_IMX_PORT_2_NAME,
+DEVICE_AND_API_INIT(DT_GPIO_IMX_PORT_2_PARENT_NAME, imx_gpio_2,
+		    DT_GPIO_IMX_PORT_2_NAME,
 		    imx_gpio_2_init,
 		    &imx_gpio_2_data, &imx_gpio_2_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -252,7 +254,8 @@ static const struct imx_gpio_config imx_gpio_3_config = {
 
 static struct imx_gpio_data imx_gpio_3_data;
 
-DEVICE_AND_API_INIT(NULL, imx_gpio_3, DT_GPIO_IMX_PORT_3_NAME,
+DEVICE_AND_API_INIT(DT_GPIO_IMX_PORT_3_PARENT_NAME, imx_gpio_3,
+		    DT_GPIO_IMX_PORT_3_NAME,
 		    imx_gpio_3_init,
 		    &imx_gpio_3_data, &imx_gpio_3_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -285,7 +288,8 @@ static const struct imx_gpio_config imx_gpio_4_config = {
 
 static struct imx_gpio_data imx_gpio_4_data;
 
-DEVICE_AND_API_INIT(NULL, imx_gpio_4, DT_GPIO_IMX_PORT_4_NAME,
+DEVICE_AND_API_INIT(DT_GPIO_IMX_PORT_4_PARENT_NAME, imx_gpio_4,
+		    DT_GPIO_IMX_PORT_4_NAME,
 		    imx_gpio_4_init,
 		    &imx_gpio_4_data, &imx_gpio_4_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -318,7 +322,8 @@ static const struct imx_gpio_config imx_gpio_5_config = {
 
 static struct imx_gpio_data imx_gpio_5_data;
 
-DEVICE_AND_API_INIT(NULL, imx_gpio_5, DT_GPIO_IMX_PORT_5_NAME,
+DEVICE_AND_API_INIT(DT_GPIO_IMX_PORT_5_PARENT_NAME, imx_gpio_5,
+		    DT_GPIO_IMX_PORT_5_NAME,
 		    imx_gpio_5_init,
 		    &imx_gpio_5_data, &imx_gpio_5_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -351,7 +356,8 @@ static const struct imx_gpio_config imx_gpio_6_config = {
 
 static struct imx_gpio_data imx_gpio_6_data;
 
-DEVICE_AND_API_INIT(NULL, imx_gpio_6, DT_GPIO_IMX_PORT_6_NAME,
+DEVICE_AND_API_INIT(DT_GPIO_IMX_PORT_6_PARENT_NAME, imx_gpio_6,
+		    DT_GPIO_IMX_PORT_6_NAME,
 		    imx_gpio_6_init,
 		    &imx_gpio_6_data, &imx_gpio_6_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -384,7 +390,8 @@ static const struct imx_gpio_config imx_gpio_7_config = {
 
 static struct imx_gpio_data imx_gpio_7_data;
 
-DEVICE_AND_API_INIT(NULL, imx_gpio_7, DT_GPIO_IMX_PORT_7_NAME,
+DEVICE_AND_API_INIT(DT_GPIO_IMX_PORT_7_PARENT_NAME, imx_gpio_7,
+		    DT_GPIO_IMX_PORT_7_NAME,
 		    imx_gpio_7_init,
 		    &imx_gpio_7_data, &imx_gpio_7_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

@@ -794,7 +794,8 @@ static const struct lsm9ds0_mfd_config lsm9ds0_mfd_config = {
 
 static struct lsm9ds0_mfd_data lsm9ds0_mfd_data;
 
-DEVICE_AND_API_INIT(NULL, lsm9ds0_mfd, DT_LSM9DS0_MFD_DEV_NAME,
+DEVICE_AND_API_INIT(DT_LSM9DS0_MFD_PARENT_NAME, lsm9ds0_mfd,
+		    DT_LSM9DS0_MFD_DEV_NAME,
 		    lsm9ds0_mfd_init, &lsm9ds0_mfd_data, &lsm9ds0_mfd_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &lsm9ds0_mfd_api_funcs);

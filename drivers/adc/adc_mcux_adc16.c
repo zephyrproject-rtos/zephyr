@@ -287,8 +287,8 @@ static struct mcux_adc16_data mcux_adc16_data_0 = {
 	ADC_CONTEXT_INIT_SYNC(mcux_adc16_data_0, ctx),
 };
 
-DEVICE_AND_API_INIT(NULL, mcux_adc16_0, DT_ADC_0_NAME, &mcux_adc16_init,
-		    &mcux_adc16_data_0, &mcux_adc16_config_0,
+DEVICE_AND_API_INIT(DT_ADC_0_PARENT_NAME, mcux_adc16_0, DT_ADC_0_NAME,
+		    &mcux_adc16_init, &mcux_adc16_data_0, &mcux_adc16_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_adc16_driver_api);
 
@@ -315,8 +315,8 @@ static struct mcux_adc16_data mcux_adc16_data_1 = {
 	ADC_CONTEXT_INIT_SYNC(mcux_adc16_data_1, ctx),
 };
 
-DEVICE_AND_API_INIT(NULL, mcux_adc16_1, DT_ADC_1_NAME, &mcux_adc16_init,
-		    &mcux_adc16_data_1, &mcux_adc16_config_1,
+DEVICE_AND_API_INIT(DT_ADC_1_PARENT_NAME, mcux_adc16_1, DT_ADC_1_NAME,
+		    &mcux_adc16_init, &mcux_adc16_data_1, &mcux_adc16_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &mcux_adc16_driver_api);
 

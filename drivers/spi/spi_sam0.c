@@ -490,7 +490,8 @@ static const struct spi_driver_api spi_sam0_driver_api = {
 		SPI_CONTEXT_INIT_LOCK(spi_sam0_dev_data_##n, ctx),           \
 		SPI_CONTEXT_INIT_SYNC(spi_sam0_dev_data_##n, ctx),           \
 	};                                                                   \
-	DEVICE_AND_API_INIT(NULL, spi_sam0_##n,                              \
+	DEVICE_AND_API_INIT(DT_SPI_SAM0_SERCOM##n##_PARENT_LABEL,            \
+			    spi_sam0_##n,                                    \
 			    DT_SPI_SAM0_SERCOM##n##_LABEL,                   \
 			    &spi_sam0_init, &spi_sam0_dev_data_##n,          \
 			    &spi_sam0_config_##n, POST_KERNEL,               \

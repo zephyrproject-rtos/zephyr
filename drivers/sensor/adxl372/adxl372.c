@@ -1011,6 +1011,7 @@ static const struct adxl372_dev_config adxl372_config = {
 	.op_mode = ADXL372_FULL_BW_MEASUREMENT,
 };
 
-DEVICE_AND_API_INIT(NULL, adxl372, DT_ADI_ADXL372_0_LABEL, adxl372_init,
+DEVICE_AND_API_INIT(DT_ADI_ADXL372_0_PARENT_LABEL, adxl372,
+		    DT_ADI_ADXL372_0_LABEL, adxl372_init,
 		    &adxl372_data, &adxl372_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &adxl372_api_funcs);

@@ -218,7 +218,8 @@ static int gpio_cc32xx_a0_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(NULL, gpio_cc32xx_a0, DT_GPIO_CC32XX_A0_NAME,
+DEVICE_AND_API_INIT(DT_GPIO_CC32XX_A0_PARENT_NAME, gpio_cc32xx_a0,
+		    DT_GPIO_CC32XX_A0_NAME,
 		    &gpio_cc32xx_a0_init, &gpio_cc32xx_a0_data,
 		    &gpio_cc32xx_a0_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -248,7 +249,8 @@ static int gpio_cc32xx_a1_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(NULL, gpio_cc32xx_a1, DT_GPIO_CC32XX_A1_NAME,
+DEVICE_AND_API_INIT(DT_GPIO_CC32XX_A1_PARENT_NAME, gpio_cc32xx_a1,
+		    DT_GPIO_CC32XX_A1_NAME,
 		    &gpio_cc32xx_a1_init, &gpio_cc32xx_a1_data,
 		    &gpio_cc32xx_a1_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -278,7 +280,8 @@ static int gpio_cc32xx_a2_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(NULL, gpio_cc32xx_a2, DT_GPIO_CC32XX_A2_NAME,
+DEVICE_AND_API_INIT(DT_GPIO_CC32XX_A2_PARENT_NAME, gpio_cc32xx_a2,
+		    DT_GPIO_CC32XX_A2_NAME,
 		    &gpio_cc32xx_a2_init, &gpio_cc32xx_a2_data,
 		    &gpio_cc32xx_a2_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -308,7 +311,8 @@ static int gpio_cc32xx_a3_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(NULL, gpio_cc32xx_a3, DT_GPIO_CC32XX_A3_NAME,
+DEVICE_AND_API_INIT(DT_GPIO_CC32XX_A3_PARENT_NAME, gpio_cc32xx_a3,
+		    DT_GPIO_CC32XX_A3_NAME,
 		    &gpio_cc32xx_a3_init, &gpio_cc32xx_a3_data,
 		    &gpio_cc32xx_a3_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

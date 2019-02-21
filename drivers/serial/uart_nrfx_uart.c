@@ -1013,7 +1013,7 @@ static const struct uart_nrfx_config uart_nrfx_uart0_config = {
 #endif
 };
 
-DEVICE_DEFINE(NULL,
+DEVICE_DEFINE(DT_NORDIC_NRF_UART_UART_0_PARENT_LABEL,
 	      uart_nrfx_uart0,
 	      DT_NORDIC_NRF_UART_UART_0_LABEL,
 	      uart_nrfx_init,

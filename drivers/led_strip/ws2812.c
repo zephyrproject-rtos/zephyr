@@ -203,7 +203,8 @@ static const struct led_strip_driver_api ws2812_strip_api = {
 	.update_channels = ws2812_strip_update_channels,
 };
 
-DEVICE_AND_API_INIT(NULL, ws2812_strip, DT_WORLDSEMI_WS2812_0_LABEL,
+DEVICE_AND_API_INIT(DT_WORLDSEMI_WS2812_0_PARENT_LABEL, ws2812_strip,
+		    DT_WORLDSEMI_WS2812_0_LABEL,
 		    ws2812_strip_init, &ws2812_strip_data,
 		    NULL, POST_KERNEL, CONFIG_LED_STRIP_INIT_PRIORITY,
 		    &ws2812_strip_api);

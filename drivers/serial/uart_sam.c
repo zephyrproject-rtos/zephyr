@@ -388,7 +388,8 @@ static struct uart_sam_dev_data uart0_sam_data = {
 	.baud_rate = DT_UART_SAM_PORT_0_BAUD_RATE,
 };
 
-DEVICE_AND_API_INIT(NULL, uart0_sam, DT_UART_SAM_PORT_0_NAME, &uart_sam_init,
+DEVICE_AND_API_INIT(DT_UART_SAM_PORT_0_PARENT_NAME, uart0_sam,
+		    DT_UART_SAM_PORT_0_NAME, &uart_sam_init,
 		    &uart0_sam_data, &uart0_sam_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_sam_driver_api);
 
@@ -428,7 +429,8 @@ static struct uart_sam_dev_data uart1_sam_data = {
 	.baud_rate = DT_UART_SAM_PORT_1_BAUD_RATE,
 };
 
-DEVICE_AND_API_INIT(NULL, uart1_sam, DT_UART_SAM_PORT_1_NAME, &uart_sam_init,
+DEVICE_AND_API_INIT(DT_UART_SAM_PORT_1_PARENT_NAME, uart1_sam,
+		    DT_UART_SAM_PORT_1_NAME, &uart_sam_init,
 		    &uart1_sam_data, &uart1_sam_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_sam_driver_api);
 
@@ -469,7 +471,8 @@ static struct uart_sam_dev_data uart2_sam_data = {
 	.baud_rate = DT_UART_SAM_PORT_2_BAUD_RATE,
 };
 
-DEVICE_AND_API_INIT(NULL, uart2_sam, DT_UART_SAM_PORT_2_NAME, &uart_sam_init,
+DEVICE_AND_API_INIT(DT_UART_SAM_PORT_2_PARENT_NAME, uart2_sam,
+		    DT_UART_SAM_PORT_2_NAME, &uart_sam_init,
 		    &uart2_sam_data, &uart2_sam_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_sam_driver_api);
 
@@ -510,7 +513,8 @@ static struct uart_sam_dev_data uart3_sam_data = {
 	.baud_rate = DT_UART_SAM_PORT_3_BAUD_RATE,
 };
 
-DEVICE_AND_API_INIT(NULL, uart3_sam, DT_UART_SAM_PORT_3_NAME, &uart_sam_init,
+DEVICE_AND_API_INIT(DT_UART_SAM_PORT_3_PARENT_NAME, uart3_sam,
+		    DT_UART_SAM_PORT_3_NAME, &uart_sam_init,
 		    &uart3_sam_data, &uart3_sam_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_sam_driver_api);
 
@@ -551,7 +555,8 @@ static struct uart_sam_dev_data uart4_sam_data = {
 	.baud_rate = DT_UART_SAM_PORT_4_BAUD_RATE,
 };
 
-DEVICE_AND_API_INIT(NULL, uart4_sam, DT_UART_SAM_PORT_4_NAME, &uart_sam_init,
+DEVICE_AND_API_INIT(DT_UART_SAM_PORT_4_PARENT_NAME, uart4_sam,
+		    DT_UART_SAM_PORT_4_NAME, &uart_sam_init,
 		    &uart4_sam_data, &uart4_sam_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &uart_sam_driver_api);
 

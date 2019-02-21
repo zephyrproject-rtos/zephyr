@@ -552,7 +552,8 @@ static const struct fxos8700_config fxos8700_config = {
 
 static struct fxos8700_data fxos8700_data;
 
-DEVICE_AND_API_INIT(NULL, fxos8700, DT_NXP_FXOS8700_0_LABEL, fxos8700_init,
+DEVICE_AND_API_INIT(DT_NXP_FXOS8700_0_PARENT_LABEL, fxos8700,
+		    DT_NXP_FXOS8700_0_LABEL, fxos8700_init,
 		    &fxos8700_data, &fxos8700_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &fxos8700_driver_api);

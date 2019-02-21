@@ -362,6 +362,7 @@ const struct lis2dw12_device_config lis2dw12_cfg = {
 
 struct lis2dw12_data lis2dw12_data;
 
-DEVICE_AND_API_INIT(NULL, lis2dw12, DT_ST_LIS2DW12_0_LABEL, lis2dw12_init,
+DEVICE_AND_API_INIT(DT_ST_LIS2DW12_0_PARENT_LABEL, lis2dw12,
+	     DT_ST_LIS2DW12_0_LABEL, lis2dw12_init,
 	     &lis2dw12_data, &lis2dw12_cfg, POST_KERNEL,
 	     CONFIG_SENSOR_INIT_PRIORITY, &lis2dw12_driver_api);

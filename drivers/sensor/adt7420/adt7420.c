@@ -224,6 +224,7 @@ static const struct adt7420_dev_config adt7420_config = {
 #endif
 };
 
-DEVICE_AND_API_INIT(NULL, adt7420, DT_ADI_ADT7420_0_LABEL, adt7420_init,
+DEVICE_AND_API_INIT(DT_ADI_ADT7420_0_PARENT_LABEL, adt7420,
+		    DT_ADI_ADT7420_0_LABEL, adt7420_init,
 		    &adt7420_driver, &adt7420_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &adt7420_driver_api);

@@ -54,7 +54,7 @@ static const struct clock_control_driver_api mcux_sim_driver_api = {
 	.get_rate = mcux_sim_get_subsys_rate,
 };
 
-DEVICE_AND_API_INIT(NULL, mcux_sim, DT_SIM_NAME,
+DEVICE_AND_API_INIT(DT_SIM_PARENT_NAME, mcux_sim, DT_SIM_NAME,
 		    &mcux_sim_init,
 		    NULL, NULL,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

@@ -98,7 +98,8 @@ static const struct sam_pwm_config sam_pwm_config_0 = {
 	.divider = DT_ATMEL_SAM_PWM_0_DIVIDER,
 };
 
-DEVICE_AND_API_INIT(NULL, sam_pwm_0, DT_ATMEL_SAM_PWM_0_LABEL, &sam_pwm_init,
+DEVICE_AND_API_INIT(DT_ATMEL_SAM_PWM_0_PARENT_LABEL, sam_pwm_0,
+		    DT_ATMEL_SAM_PWM_0_LABEL, &sam_pwm_init,
 		    NULL, &sam_pwm_config_0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &sam_pwm_driver_api);
@@ -112,7 +113,8 @@ static const struct sam_pwm_config sam_pwm_config_1 = {
 	.divider = DT_ATMEL_SAM_PWM_1_DIVIDER,
 };
 
-DEVICE_AND_API_INIT(NULL, sam_pwm_1, DT_ATMEL_SAM_PWM_1_LABEL, &sam_pwm_init,
+DEVICE_AND_API_INIT(DT_ATMEL_SAM_PWM_1_PARENT_LABEL, sam_pwm_1,
+		    DT_ATMEL_SAM_PWM_1_LABEL, &sam_pwm_init,
 		    NULL, &sam_pwm_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &sam_pwm_driver_api);

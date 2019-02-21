@@ -363,7 +363,8 @@ static const struct i2c_imx_config i2c_imx_config_1 = {
 
 static struct i2c_imx_data i2c_imx_data_1;
 
-DEVICE_AND_API_INIT(NULL, i2c_imx_1, DT_FSL_IMX7D_I2C_I2C_1_LABEL,
+DEVICE_AND_API_INIT(DT_FSL_IMX7D_I2C_I2C_1_PARENT_LABEL, i2c_imx_1,
+		    DT_FSL_IMX7D_I2C_I2C_1_LABEL,
 		    &i2c_imx_init, &i2c_imx_data_1, &i2c_imx_config_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_imx_driver_api);
@@ -390,7 +391,8 @@ static const struct i2c_imx_config i2c_imx_config_2 = {
 
 static struct i2c_imx_data i2c_imx_data_2;
 
-DEVICE_AND_API_INIT(NULL, i2c_imx_2, DT_FSL_IMX7D_I2C_I2C_2_LABEL,
+DEVICE_AND_API_INIT(DT_FSL_IMX7D_I2C_I2C_2_PARENT_LABEL, i2c_imx_2,
+		    DT_FSL_IMX7D_I2C_I2C_2_LABEL,
 		    &i2c_imx_init, &i2c_imx_data_2, &i2c_imx_config_2,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_imx_driver_api);
@@ -417,7 +419,8 @@ static const struct i2c_imx_config i2c_imx_config_3 = {
 
 static struct i2c_imx_data i2c_imx_data_3;
 
-DEVICE_AND_API_INIT(NULL, i2c_imx_3, DT_FSL_IMX7D_I2C_I2C_3_LABEL,
+DEVICE_AND_API_INIT(DT_FSL_IMX7D_I2C_I2C_3_PARENT_LABEL, i2c_imx_3,
+		    DT_FSL_IMX7D_I2C_I2C_3_LABEL,
 		    &i2c_imx_init, &i2c_imx_data_3, &i2c_imx_config_3,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_imx_driver_api);
@@ -444,7 +447,8 @@ static const struct i2c_imx_config i2c_imx_config_4 = {
 
 static struct i2c_imx_data i2c_imx_data_4;
 
-DEVICE_AND_API_INIT(NULL, i2c_imx_4, DT_FSL_IMX7D_I2C_I2C_4_LABEL,
+DEVICE_AND_API_INIT(DT_FSL_IMX7D_I2C_I2C_4_PARENT_LABEL, i2c_imx_4,
+		    DT_FSL_IMX7D_I2C_I2C_4_LABEL,
 		    &i2c_imx_init, &i2c_imx_data_4, &i2c_imx_config_4,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &i2c_imx_driver_api);

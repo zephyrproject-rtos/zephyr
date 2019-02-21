@@ -216,7 +216,8 @@ static int pwm_stm32_init(struct device *dev)
 			    .enr = DT_TIM_STM32_## n ##_CLOCK_BITS },	  \
 	};								  \
 									  \
-	DEVICE_AND_API_INIT(NULL, pwm_stm32_ ## n,			  \
+	DEVICE_AND_API_INIT(DT_PWM_STM32_ ## n ## _PARENT_NAME,		  \
+			    pwm_stm32_ ## n,				  \
 			    DT_PWM_STM32_ ## n ## _DEV_NAME,		  \
 			    pwm_stm32_init,				  \
 			    &pwm_stm32_dev_data_ ## n,			  \

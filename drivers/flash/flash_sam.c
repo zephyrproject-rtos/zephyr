@@ -350,7 +350,7 @@ static const struct flash_sam_dev_cfg flash_sam_cfg = {
 
 static struct flash_sam_dev_data flash_sam_data;
 
-DEVICE_AND_API_INIT(NULL, flash_sam, DT_FLASH_DEV_NAME,
+DEVICE_AND_API_INIT(DT_FLASH_PARENT_NAME, flash_sam, DT_FLASH_DEV_NAME,
 		    flash_sam_init, &flash_sam_data, &flash_sam_cfg,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &flash_sam_api);

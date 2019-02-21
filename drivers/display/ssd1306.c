@@ -461,7 +461,8 @@ static struct display_driver_api ssd1306_driver_api = {
 	.set_orientation = ssd1306_set_orientation,
 };
 
-DEVICE_AND_API_INIT(NULL, ssd1306, DT_SOLOMON_SSD1306FB_0_LABEL, ssd1306_init,
+DEVICE_AND_API_INIT(DT_SOLOMON_SSD1306FB_0_PARENT_LABEL, ssd1306,
+		    DT_SOLOMON_SSD1306FB_0_LABEL, ssd1306_init,
 		    &ssd1306_driver, NULL,
 		    POST_KERNEL, CONFIG_APPLICATION_INIT_PRIORITY,
 		    &ssd1306_driver_api);

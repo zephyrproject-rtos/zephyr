@@ -422,7 +422,7 @@ static int gpio_stm32_init(struct device *device)
 }
 
 
-#define GPIO_DEVICE_INIT(__name, __suffix, __base_addr,			\
+#define GPIO_DEVICE_INIT(__parent, __name, __suffix, __base_addr,	\
 			 __port, __cenr, __bus)				\
 static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
 	.base = (u32_t *)__base_addr,					\
@@ -430,7 +430,7 @@ static const struct gpio_stm32_config gpio_stm32_cfg_## __suffix = {	\
 	.pclken = { .bus = __bus, .enr = __cenr }			\
 };									\
 static struct gpio_stm32_data gpio_stm32_data_## __suffix;		\
-DEVICE_AND_API_INIT(NULL, gpio_stm32_## __suffix, __name,		\
+DEVICE_AND_API_INIT(__parent, gpio_stm32_## __suffix, __name,		\
 		    gpio_stm32_init,					\
 		    &gpio_stm32_data_## __suffix,			\
 		    &gpio_stm32_cfg_## __suffix,			\
@@ -440,7 +440,8 @@ DEVICE_AND_API_INIT(NULL, gpio_stm32_## __suffix, __name,		\
 
 
 #define GPIO_DEVICE_INIT_STM32(__suffix, __SUFFIX)			\
-	GPIO_DEVICE_INIT(DT_GPIO_STM32_GPIO##__SUFFIX##_LABEL,		\
+	GPIO_DEVICE_INIT(DT_GPIO_STM32_GPIO##__SUFFIX##_PARENT_LABEL,	\
+			DT_GPIO_STM32_GPIO##__SUFFIX##_LABEL,		\
 			__suffix,					\
 			DT_GPIO_STM32_GPIO##__SUFFIX##_BASE_ADDRESS, 	\
 			STM32_PORT##__SUFFIX,				\

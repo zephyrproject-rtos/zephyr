@@ -238,6 +238,7 @@ int ccs811_init(struct device *dev)
 
 static struct ccs811_data ccs811_driver;
 
-DEVICE_AND_API_INIT(NULL, ccs811, DT_AMS_CCS811_0_LABEL, ccs811_init,
+DEVICE_AND_API_INIT(DT_AMS_CCS811_0_PARENT_LABEL, ccs811,
+		    DT_AMS_CCS811_0_LABEL, ccs811_init,
 		    &ccs811_driver, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &ccs811_driver_api);

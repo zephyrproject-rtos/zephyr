@@ -350,8 +350,8 @@ static const struct counter_driver_api rtc_stm32_driver_api = {
 		.get_max_relative_alarm = rtc_stm32_get_max_relative_alarm,
 };
 
-DEVICE_AND_API_INIT(NULL, rtc_stm32, DT_RTC_0_NAME, &rtc_stm32_init,
-		    &rtc_data, &rtc_config, PRE_KERNEL_1,
+DEVICE_AND_API_INIT(DT_RTC_0_PARENT_NAME, rtc_stm32, DT_RTC_0_NAME,
+		    &rtc_stm32_init, &rtc_data, &rtc_config, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &rtc_stm32_driver_api);
 
 static void rtc_stm32_irq_config(struct device *dev)

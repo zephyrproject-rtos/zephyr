@@ -161,6 +161,7 @@ static int hdc1008_init(struct device *dev)
 
 static struct hdc1008_data hdc1008_data;
 
-DEVICE_AND_API_INIT(NULL, hdc1008, DT_TI_HDC1008_0_LABEL, hdc1008_init,
+DEVICE_AND_API_INIT(DT_TI_HDC1008_0_PARENT_LABEL, hdc1008,
+		    DT_TI_HDC1008_0_LABEL, hdc1008_init,
 		    &hdc1008_data, NULL, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &hdc1008_driver_api);

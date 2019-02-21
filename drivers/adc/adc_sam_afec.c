@@ -392,7 +392,7 @@ static struct adc_sam_data adc1_sam_data = {
 	ADC_CONTEXT_INIT_SYNC(adc1_sam_data, ctx),
 };
 
-DEVICE_AND_API_INIT(NULL, adc1_sam, DT_ADC_1_NAME, adc_sam_init,
+DEVICE_AND_API_INIT(DT_ADC_1_PARENT_NAME, adc1_sam, DT_ADC_1_NAME, adc_sam_init,
 		    &adc1_sam_data, &adc1_sam_cfg, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &adc_sam_api);
 

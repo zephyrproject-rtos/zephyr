@@ -114,7 +114,8 @@ static const struct i2c_sbcon_config i2c_sbcon_dev_cfg_##_num = {	\
 	.sbcon		= (void *)DT_ARM_VERSATILE_I2C_##_num##_BASE_ADDRESS, \
 };									\
 									\
-DEVICE_AND_API_INIT(NULL, i2c_sbcon_##_num,				\
+DEVICE_AND_API_INIT(DT_ARM_VERSATILE_I2C_##_num##_PARENT_LABEL,		\
+	    i2c_sbcon_##_num,						\
 	    DT_ARM_VERSATILE_I2C_##_num##_LABEL,			\
 	    i2c_sbcon_init,						\
 	    &i2c_sbcon_dev_data_##_num,					\

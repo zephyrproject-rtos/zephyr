@@ -74,7 +74,8 @@ static const struct pinmux_sam0_config pinmux_sam0_config_0 = {
 	.regs = (PortGroup *)DT_PINMUX_SAM0_A_BASE_ADDRESS,
 };
 
-DEVICE_AND_API_INIT(NULL, pinmux_sam0_0, DT_PINMUX_SAM0_A_LABEL,
+DEVICE_AND_API_INIT(DT_PINMUX_SAM0_A_PARENT_LABEL, pinmux_sam0_0,
+		    DT_PINMUX_SAM0_A_LABEL,
 		    pinmux_sam0_init, NULL, &pinmux_sam0_config_0,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
 		    &pinmux_sam0_api);
@@ -85,7 +86,8 @@ static const struct pinmux_sam0_config pinmux_sam0_config_1 = {
 	.regs = (PortGroup *)DT_PINMUX_SAM0_B_BASE_ADDRESS,
 };
 
-DEVICE_AND_API_INIT(NULL, pinmux_sam0_1, DT_PINMUX_SAM0_B_LABEL,
+DEVICE_AND_API_INIT(DT_PINMUX_SAM0_B_PARENT_LABEL, pinmux_sam0_1,
+		    DT_PINMUX_SAM0_B_LABEL,
 		    pinmux_sam0_init, NULL, &pinmux_sam0_config_1,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
 		    &pinmux_sam0_api);

@@ -305,7 +305,8 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		       \
 static struct uart_sam0_dev_data uart_sam0_data_##n;			       \
 UART_SAM0_IRQ_HANDLER_DECL(n);						       \
 UART_SAM0_CONFIG_DEFN(n);						       \
-DEVICE_AND_API_INIT(NULL, uart_sam0_##n, DT_UART_SAM0_SERCOM##n##_LABEL,       \
+DEVICE_AND_API_INIT(DT_UART_SAM0_SERCOM##n##_PARENT_LABEL, uart_sam0_##n,      \
+		    DT_UART_SAM0_SERCOM##n##_LABEL,			       \
 		    uart_sam0_init, &uart_sam0_data_##n,		       \
 		    &uart_sam0_config_##n, PRE_KERNEL_1,		       \
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,			       \

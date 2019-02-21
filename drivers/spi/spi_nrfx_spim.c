@@ -335,7 +335,8 @@ static int init_spim(struct device *dev, const nrfx_spim_config_t *config)
 		.spim = NRFX_SPIM_INSTANCE(idx),			       \
 		.max_chunk_len = (1 << SPIM##idx##_EASYDMA_MAXCNT_SIZE) - 1,   \
 	};								       \
-	DEVICE_AND_API_INIT(NULL, spi_##idx,				       \
+	DEVICE_AND_API_INIT(DT_NORDIC_NRF_SPI_SPI_##idx##_PARENT_LABEL,	       \
+			    spi_##idx,					       \
 			    DT_NORDIC_NRF_SPI_SPI_##idx##_LABEL,	       \
 			    spi_##idx##_init,				       \
 			    &spi_##idx##_data,				       \

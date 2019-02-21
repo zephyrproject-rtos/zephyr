@@ -358,7 +358,8 @@ static const struct uart_driver_api uart_msp432p4xx_driver_api = {
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 };
 
-DEVICE_AND_API_INIT(NULL, uart_msp432p4xx_0, DT_UART_MSP432P4XX_NAME,
+DEVICE_AND_API_INIT(DT_UART_MSP432P4XX_PARENT_NAME, uart_msp432p4xx_0,
+		    DT_UART_MSP432P4XX_NAME,
 		    uart_msp432p4xx_init, &uart_msp432p4xx_dev_data_0,
 		    &uart_msp432p4xx_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

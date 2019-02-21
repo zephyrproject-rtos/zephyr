@@ -240,8 +240,8 @@ static const struct gpio_stellaris_config gpio_stellaris_port_a_config = {
 	.config_func = port_a_stellaris_config_func,
 };
 
-DEVICE_AND_API_INIT(NULL, gpio_stellaris_port_a, DT_GPIO_A_LABEL,
-		    gpio_stellaris_init,
+DEVICE_AND_API_INIT(DT_GPIO_A_PARENT_LABEL, gpio_stellaris_port_a,
+		    DT_GPIO_A_LABEL, gpio_stellaris_init,
 		    &port_a_stellaris_runtime, &gpio_stellaris_port_a_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_stellaris_driver_api);
@@ -271,8 +271,8 @@ static const struct gpio_stellaris_config gpio_stellaris_port_b_config = {
 	.config_func = port_b_stellaris_config_func,
 };
 
-DEVICE_AND_API_INIT(NULL, gpio_stellaris_port_b, DT_GPIO_B_LABEL,
-		    gpio_stellaris_init,
+DEVICE_AND_API_INIT(DT_GPIO_B_PARENT_LABEL, gpio_stellaris_port_b,
+		    DT_GPIO_B_LABEL, gpio_stellaris_init,
 		    &port_b_stellaris_runtime, &gpio_stellaris_port_b_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_stellaris_driver_api);
@@ -302,8 +302,8 @@ static const struct gpio_stellaris_config gpio_stellaris_port_c_config = {
 	.config_func = port_c_stellaris_config_func,
 };
 
-DEVICE_AND_API_INIT(NULL, gpio_stellaris_port_c, DT_GPIO_C_LABEL,
-		    gpio_stellaris_init,
+DEVICE_AND_API_INIT(DT_GPIO_C_PARENT_LABEL, gpio_stellaris_port_c,
+		    DT_GPIO_C_LABEL, gpio_stellaris_init,
 		    &port_c_stellaris_runtime, &gpio_stellaris_port_c_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_stellaris_driver_api);
@@ -333,8 +333,8 @@ static const struct gpio_stellaris_config gpio_stellaris_port_d_config = {
 	.config_func = port_d_stellaris_config_func,
 };
 
-DEVICE_AND_API_INIT(NULL, gpio_stellaris_port_d, DT_GPIO_D_LABEL,
-		    gpio_stellaris_init,
+DEVICE_AND_API_INIT(DT_GPIO_D_PARENT_LABEL, gpio_stellaris_port_d,
+		    DT_GPIO_D_LABEL, gpio_stellaris_init,
 		    &port_d_stellaris_runtime, &gpio_stellaris_port_d_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_stellaris_driver_api);
@@ -363,8 +363,8 @@ static const struct gpio_stellaris_config gpio_stellaris_port_e_config = {
 
 static struct gpio_stellaris_runtime port_e_stellaris_runtime;
 
-DEVICE_AND_API_INIT(NULL, gpio_stellaris_port_e, DT_GPIO_E_LABEL,
-		    gpio_stellaris_init,
+DEVICE_AND_API_INIT(DT_GPIO_E_PARENT_LABEL, gpio_stellaris_port_e,
+		    DT_GPIO_E_LABEL, gpio_stellaris_init,
 		    &port_e_stellaris_runtime, &gpio_stellaris_port_e_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_stellaris_driver_api);
@@ -394,8 +394,8 @@ static const struct gpio_stellaris_config gpio_stellaris_port_f_config = {
 	.config_func = port_f_stellaris_config_func,
 };
 
-DEVICE_AND_API_INIT(NULL, gpio_stellaris_port_f, DT_GPIO_F_LABEL,
-		    gpio_stellaris_init,
+DEVICE_AND_API_INIT(DT_GPIO_F_PARENT_LABEL, gpio_stellaris_port_f,
+		    DT_GPIO_F_LABEL, gpio_stellaris_init,
 		    &port_f_stellaris_runtime, &gpio_stellaris_port_f_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_stellaris_driver_api);
@@ -424,8 +424,8 @@ static const struct gpio_stellaris_config gpio_stellaris_port_g_config = {
 	.config_func = port_g_stellaris_config_func,
 };
 
-DEVICE_AND_API_INIT(NULL, gpio_stellaris_port_g, DT_GPIO_G_LABEL,
-		    gpio_stellaris_init,
+DEVICE_AND_API_INIT(DT_GPIO_G_PARENT_LABEL, gpio_stellaris_port_g,
+		    DT_GPIO_G_LABEL, gpio_stellaris_init,
 		    &port_g_stellaris_runtime, &gpio_stellaris_port_g_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_stellaris_driver_api);

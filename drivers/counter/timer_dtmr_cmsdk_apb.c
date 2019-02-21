@@ -179,7 +179,7 @@ static struct dtmr_cmsdk_apb_dev_data dtmr_cmsdk_apb_dev_data_0 = {
 	.load = UINT_MAX,
 };
 
-DEVICE_AND_API_INIT(NULL, dtmr_cmsdk_apb_0,
+DEVICE_AND_API_INIT(DT_ARM_CMSDK_DTIMER_0_PARENT_LABEL, dtmr_cmsdk_apb_0,
 		    DT_ARM_CMSDK_DTIMER_0_LABEL,
 		    dtmr_cmsdk_apb_init,
 		    &dtmr_cmsdk_apb_dev_data_0,

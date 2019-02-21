@@ -301,7 +301,8 @@ static const struct mcux_lpsci_config mcux_lpsci_0_config = {
 
 static struct mcux_lpsci_data mcux_lpsci_0_data;
 
-DEVICE_AND_API_INIT(NULL, uart_0, DT_UART_MCUX_LPSCI_0_NAME,
+DEVICE_AND_API_INIT(DT_UART_MCUX_LPSCI_0_PARENT_NAME, uart_0,
+		    DT_UART_MCUX_LPSCI_0_NAME,
 		    &mcux_lpsci_init,
 		    &mcux_lpsci_0_data, &mcux_lpsci_0_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,

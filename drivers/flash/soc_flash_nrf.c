@@ -268,8 +268,9 @@ static int nrf_flash_init(struct device *dev)
 	return 0;
 }
 
-DEVICE_AND_API_INIT(NULL, nrf_flash, DT_FLASH_DEV_NAME, nrf_flash_init,
-		    NULL, NULL, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+DEVICE_AND_API_INIT(DT_FLASH_PARENT_NAME, nrf_flash, DT_FLASH_DEV_NAME,
+		    nrf_flash_init, NULL, NULL, POST_KERNEL,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &flash_nrf_api);
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)

@@ -216,8 +216,8 @@ static const struct i2c_eeprom_slave_config i2c_eeprom_slave_0_cfg = {
 	.buffer = i2c_eeprom_slave_0_buffer
 };
 
-DEVICE_AND_API_INIT(NULL, i2c_eeprom_slave_0, DT_ATMEL_AT24_0_LABEL,
-		    &i2c_eeprom_slave_init,
+DEVICE_AND_API_INIT(DT_ATMEL_AT24_0_PARENT_LABEL, i2c_eeprom_slave_0,
+		    DT_ATMEL_AT24_0_LABEL, &i2c_eeprom_slave_init,
 		    &i2c_eeprom_slave_0_dev_data, &i2c_eeprom_slave_0_cfg,
 		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,
 		    &api_funcs);
@@ -237,8 +237,8 @@ static const struct i2c_eeprom_slave_config i2c_eeprom_slave_1_cfg = {
 	.buffer = i2c_eeprom_slave_1_buffer
 };
 
-DEVICE_AND_API_INIT(NULL, i2c_eeprom_slave_1, DT_ATMEL_AT24_1_LABEL,
-		    &i2c_eeprom_slave_init,
+DEVICE_AND_API_INIT(DT_ATMEL_AT24_1_PARENT_LABEL, i2c_eeprom_slave_1,
+		    DT_ATMEL_AT24_1_LABEL, &i2c_eeprom_slave_init,
 		    &i2c_eeprom_slave_1_dev_data, &i2c_eeprom_slave_1_cfg,
 		    POST_KERNEL, CONFIG_I2C_SLAVE_INIT_PRIORITY,
 		    &api_funcs);

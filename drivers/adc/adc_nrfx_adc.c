@@ -277,7 +277,8 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 };
 
 #ifdef CONFIG_ADC_0
-DEVICE_AND_API_INIT(NULL, adc_0, DT_NORDIC_NRF_ADC_ADC_0_LABEL,
+DEVICE_AND_API_INIT(DT_NORDIC_NRF_ADC_ADC_0_LABEL, adc_0,
+		    DT_NORDIC_NRF_ADC_ADC_0_LABEL,
 		    init_adc, NULL, NULL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &adc_nrfx_driver_api);

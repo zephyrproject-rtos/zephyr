@@ -397,7 +397,8 @@ static const struct uart_miv_device_config uart_miv_dev_cfg_0 = {
 #endif
 };
 
-DEVICE_AND_API_INIT(NULL, uart_miv_0, DT_MIV_UART_0_NAME,
+DEVICE_AND_API_INIT(DT_MIV_UART_0_PARENT_NAME, uart_miv_0,
+		    DT_MIV_UART_0_NAME,
 		    uart_miv_init, &uart_miv_data_0, &uart_miv_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    (void *)&uart_miv_driver_api);

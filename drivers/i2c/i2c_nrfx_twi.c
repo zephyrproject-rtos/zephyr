@@ -183,7 +183,8 @@ static int init_twi(struct device *dev, const nrfx_twi_config_t *config)
 	static const struct i2c_nrfx_twi_config twi_##idx##_config = {	       \
 		.twi = NRFX_TWI_INSTANCE(idx)				       \
 	};								       \
-	DEVICE_AND_API_INIT(NULL, twi_##idx,				       \
+	DEVICE_AND_API_INIT(DT_NORDIC_NRF_I2C_I2C_##idx##_PARENT_LABEL,        \
+			    twi_##idx,					       \
 			    DT_NORDIC_NRF_I2C_I2C_##idx##_LABEL,	       \
 			    twi_##idx##_init,				       \
 			    &twi_##idx##_data,				       \

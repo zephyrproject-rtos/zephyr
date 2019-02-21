@@ -194,7 +194,7 @@ static struct mcux_rtc_config rtc_mcux_config_0 = {
 	.irq_config_func = rtc_mcux_irq_config_0,
 };
 
-DEVICE_DEFINE(NULL, rtc, DT_RTC_MCUX_0_NAME,
+DEVICE_DEFINE(DT_RTC_MCUX_0_PARENT_NAME, rtc, DT_RTC_MCUX_0_NAME,
 	      &mcux_rtc_init, NULL, &rtc_mcux_data_0, &rtc_mcux_config_0,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 	      &mcux_rtc_driver_api);

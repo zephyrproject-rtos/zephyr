@@ -177,7 +177,8 @@ static const struct mcux_igpio_config mcux_igpio_1_config = {
 
 static struct mcux_igpio_data mcux_igpio_1_data;
 
-DEVICE_AND_API_INIT(NULL, mcux_igpio_1, DT_MCUX_IGPIO_1_NAME,
+DEVICE_AND_API_INIT(DT_MCUX_IGPIO_1_PARENT_NAME, mcux_igpio_1,
+		    DT_MCUX_IGPIO_1_NAME,
 		    mcux_igpio_1_init,
 		    &mcux_igpio_1_data, &mcux_igpio_1_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -208,7 +209,8 @@ static const struct mcux_igpio_config mcux_igpio_2_config = {
 
 static struct mcux_igpio_data mcux_igpio_2_data;
 
-DEVICE_AND_API_INIT(NULL, mcux_igpio_2, DT_MCUX_IGPIO_2_NAME,
+DEVICE_AND_API_INIT(DT_MCUX_IGPIO_2_PARENT_NAME, mcux_igpio_2,
+		    DT_MCUX_IGPIO_2_NAME,
 		    mcux_igpio_2_init,
 		    &mcux_igpio_2_data, &mcux_igpio_2_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -239,7 +241,8 @@ static const struct mcux_igpio_config mcux_igpio_3_config = {
 
 static struct mcux_igpio_data mcux_igpio_3_data;
 
-DEVICE_AND_API_INIT(NULL, mcux_igpio_3, DT_MCUX_IGPIO_3_NAME,
+DEVICE_AND_API_INIT(DT_MCUX_IGPIO_3_PARENT_NAME, mcux_igpio_3,
+		    DT_MCUX_IGPIO_3_NAME,
 		    mcux_igpio_3_init,
 		    &mcux_igpio_3_data, &mcux_igpio_3_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -270,7 +273,8 @@ static const struct mcux_igpio_config mcux_igpio_4_config = {
 
 static struct mcux_igpio_data mcux_igpio_4_data;
 
-DEVICE_AND_API_INIT(NULL, mcux_igpio_4, DT_MCUX_IGPIO_4_NAME,
+DEVICE_AND_API_INIT(DT_MCUX_IGPIO_4_PARENT_NAME, mcux_igpio_4,
+		    DT_MCUX_IGPIO_4_NAME,
 		    mcux_igpio_4_init,
 		    &mcux_igpio_4_data, &mcux_igpio_4_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
@@ -301,7 +305,8 @@ static const struct mcux_igpio_config mcux_igpio_5_config = {
 
 static struct mcux_igpio_data mcux_igpio_5_data;
 
-DEVICE_AND_API_INIT(NULL, mcux_igpio_5, DT_MCUX_IGPIO_5_NAME,
+DEVICE_AND_API_INIT(DT_MCUX_IGPIO_5_PARENT_NAME, mcux_igpio_5,
+		    DT_MCUX_IGPIO_5_NAME,
 		    mcux_igpio_5_init,
 		    &mcux_igpio_5_data, &mcux_igpio_5_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,

@@ -299,7 +299,8 @@ static const struct imx_uart_config imx_uart_1_config = {
 
 static struct imx_uart_data imx_uart_1_data;
 
-DEVICE_AND_API_INIT(NULL, uart_1, DT_UART_IMX_UART_1_NAME, &uart_imx_init,
+DEVICE_AND_API_INIT(DT_UART_IMX_UART_1_PARENT_NAME, uart_1,
+		DT_UART_IMX_UART_1_NAME, &uart_imx_init,
 		&imx_uart_1_data, &imx_uart_1_config,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&uart_imx_driver_api);
@@ -335,7 +336,8 @@ static const struct imx_uart_config imx_uart_2_config = {
 
 static struct imx_uart_data imx_uart_2_data;
 
-DEVICE_AND_API_INIT(NULL, uart_2, DT_UART_IMX_UART_2_NAME, &uart_imx_init,
+DEVICE_AND_API_INIT(DT_UART_IMX_UART_2_PARENT_NAME, uart_2,
+		DT_UART_IMX_UART_2_NAME, &uart_imx_init,
 		&imx_uart_2_data, &imx_uart_2_config,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&uart_imx_driver_api);
@@ -370,7 +372,8 @@ static const struct imx_uart_config imx_uart_3_config = {
 
 static struct imx_uart_data imx_uart_3_data;
 
-DEVICE_AND_API_INIT(NULL, uart_3, DT_UART_IMX_UART_3_NAME, &uart_imx_init,
+DEVICE_AND_API_INIT(DT_UART_IMX_UART_3_PARENT_NAME, uart_3,
+		DT_UART_IMX_UART_3_NAME, &uart_imx_init,
 		&imx_uart_3_data, &imx_uart_3_config,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&uart_imx_driver_api);
@@ -405,7 +408,8 @@ static const struct imx_uart_config imx_uart_4_config = {
 
 static struct imx_uart_data imx_uart_4_data;
 
-DEVICE_AND_API_INIT(NULL, uart_4, DT_UART_IMX_UART_4_NAME, &uart_imx_init,
+DEVICE_AND_API_INIT(DT_UART_IMX_UART_4_PARENT_NAME, uart_4,
+		DT_UART_IMX_UART_4_NAME, &uart_imx_init,
 		&imx_uart_4_data, &imx_uart_4_config,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&uart_imx_driver_api);
@@ -440,7 +444,8 @@ static const struct imx_uart_config imx_uart_5_config = {
 
 static struct imx_uart_data imx_uart_5_data;
 
-DEVICE_AND_API_INIT(NULL, uart_5, DT_UART_IMX_UART_5_NAME, &uart_imx_init,
+DEVICE_AND_API_INIT(DT_UART_IMX_UART_5_PARENT_NAME, uart_5,
+		DT_UART_IMX_UART_5_NAME, &uart_imx_init,
 		&imx_uart_5_data, &imx_uart_5_config,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&uart_imx_driver_api);
@@ -475,7 +480,8 @@ static const struct imx_uart_config imx_uart_6_config = {
 
 static struct imx_uart_data imx_uart_6_data;
 
-DEVICE_AND_API_INIT(NULL, uart_6, DT_UART_IMX_UART_6_NAME, &uart_imx_init,
+DEVICE_AND_API_INIT(DT_UART_IMX_UART_6_PARENT_NAME, uart_6,
+		DT_UART_IMX_UART_6_NAME, &uart_imx_init,
 		&imx_uart_6_data, &imx_uart_6_config,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&uart_imx_driver_api);
@@ -510,7 +516,8 @@ static const struct imx_uart_config imx_uart_7_config = {
 
 static struct imx_uart_data imx_uart_7_data;
 
-DEVICE_AND_API_INIT(NULL, uart_7, DT_UART_IMX_UART_7_NAME, &uart_imx_init,
+DEVICE_AND_API_INIT(DT_UART_IMX_UART_7_PARENT_NAME, uart_7,
+		DT_UART_IMX_UART_7_NAME, &uart_imx_init,
 		&imx_uart_7_data, &imx_uart_7_config,
 		PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&uart_imx_driver_api);

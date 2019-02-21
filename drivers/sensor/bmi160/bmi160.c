@@ -907,6 +907,7 @@ const struct bmi160_device_config bmi160_config = {
 
 
 
-DEVICE_AND_API_INIT(NULL, bmi160, DT_BOSCH_BMI160_0_LABEL, bmi160_init,
+DEVICE_AND_API_INIT(DT_BOSCH_BMI160_0_PARENT_LABEL, bmi160,
+		DT_BOSCH_BMI160_0_LABEL, bmi160_init,
 		&bmi160_data, &bmi160_config, POST_KERNEL,
 		CONFIG_SENSOR_INIT_PRIORITY, &bmi160_api);

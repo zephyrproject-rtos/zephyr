@@ -862,8 +862,8 @@ static const struct can_stm32_config can_stm32_cfg_1 = {
 
 static struct can_stm32_data can_stm32_dev_data_1;
 
-DEVICE_AND_API_INIT(NULL, can_stm32_1, DT_CAN_1_NAME, &can_stm32_init,
-		    &can_stm32_dev_data_1, &can_stm32_cfg_1,
+DEVICE_AND_API_INIT(DT_CAN_1_PARENT_NAME, can_stm32_1, DT_CAN_1_NAME,
+		    &can_stm32_init, &can_stm32_dev_data_1, &can_stm32_cfg_1,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &can_api_funcs);
 
@@ -915,8 +915,8 @@ static int socket_can_init_1(struct device *dev)
 	return 0;
 }
 
-NET_DEVICE_INIT(NULL, socket_can_stm32_1, SOCKET_CAN_NAME_1, socket_can_init_1,
-		&socket_can_context_1, NULL,
+NET_DEVICE_INIT(DT_CAN_1_NAME, socket_can_stm32_1, SOCKET_CAN_NAME_1,
+		socket_can_init_1, &socket_can_context_1, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		&socket_can_api,
 		CANBUS_L2, NET_L2_GET_CTX_TYPE(CANBUS_L2), CAN_MTU);

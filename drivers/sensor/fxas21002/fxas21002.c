@@ -303,7 +303,8 @@ static const struct fxas21002_config fxas21002_config = {
 
 static struct fxas21002_data fxas21002_data;
 
-DEVICE_AND_API_INIT(NULL, fxas21002, DT_NXP_FXAS21002_0_LABEL, fxas21002_init,
+DEVICE_AND_API_INIT(DT_NXP_FXAS21002_0_PARENT_LABEL, fxas21002,
+		    DT_NXP_FXAS21002_0_LABEL, fxas21002_init,
 		    &fxas21002_data, &fxas21002_config,
 		    POST_KERNEL, CONFIG_SENSOR_INIT_PRIORITY,
 		    &fxas21002_driver_api);

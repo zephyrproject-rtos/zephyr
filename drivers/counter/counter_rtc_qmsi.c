@@ -233,7 +233,8 @@ static const struct rtc_config  rtc_conf_info = {
 	}
 };
 
-DEVICE_DEFINE(NULL, rtc, DT_RTC_0_NAME, &rtc_qmsi_init, rtc_qmsi_device_ctrl,
+DEVICE_DEFINE(DT_RTC_0_PARENT_NAME, rtc, DT_RTC_0_NAME,
+	      &rtc_qmsi_init, rtc_qmsi_device_ctrl,
 	      RTC_CONTEXT, &rtc_conf_info, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &api);
 

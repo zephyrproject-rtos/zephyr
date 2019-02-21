@@ -506,6 +506,7 @@ static const struct lsm6ds0_config lsm6ds0_config = {
 
 static struct lsm6ds0_data lsm6ds0_data;
 
-DEVICE_AND_API_INIT(NULL, lsm6ds0, DT_ST_LSM6DS0_0_LABEL, lsm6ds0_init,
+DEVICE_AND_API_INIT(DT_ST_LSM6DS0_0_PARENT_LABEL, lsm6ds0,
+		    DT_ST_LSM6DS0_0_LABEL, lsm6ds0_init,
 		    &lsm6ds0_data, &lsm6ds0_config, POST_KERNEL,
 		    CONFIG_SENSOR_INIT_PRIORITY, &lsm6ds0_api_funcs);
