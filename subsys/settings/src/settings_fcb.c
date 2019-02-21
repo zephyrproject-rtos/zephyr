@@ -249,7 +249,7 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 		return -EINVAL;
 	}
 
-	wbs = flash_area_align(cf->cf_fcb.fap);
+	wbs = cf->cf_fcb.f_align;
 	len = settings_line_len_calc(name, val_len);
 
 	for (i = 0; i < cf->cf_fcb.f_sector_cnt - 1; i++) {
