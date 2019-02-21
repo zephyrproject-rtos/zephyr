@@ -3,6 +3,7 @@ config SOC_FLASH_NRF
 	depends on SOC_FAMILY_NRF
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
+	default y
 	help
 	  Enables Nordic Semiconductor nRF flash driver.
 
