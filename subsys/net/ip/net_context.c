@@ -1373,7 +1373,6 @@ static int context_sendto(struct net_context *context,
 
 	context->send_cb = cb;
 	context->user_data = user_data;
-	net_pkt_set_token(pkt, token);
 
 	if (IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {
 		u8_t priority;

@@ -1884,7 +1884,6 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout)
 
 	net_pkt_set_family(clone_pkt, net_pkt_family(pkt));
 	net_pkt_set_context(clone_pkt, net_pkt_context(pkt));
-	net_pkt_set_token(clone_pkt, net_pkt_token(pkt));
 	net_pkt_set_ip_hdr_len(clone_pkt, net_pkt_ip_hdr_len(pkt));
 	net_pkt_set_vlan_tag(clone_pkt, net_pkt_vlan_tag(pkt));
 	net_pkt_set_timestamp(clone_pkt, net_pkt_timestamp(pkt));
