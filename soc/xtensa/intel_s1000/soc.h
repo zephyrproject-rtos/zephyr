@@ -134,6 +134,11 @@ struct soc_resource_alloc_regs {
 	u32_t	geno;
 };
 
+/* L2 Local Memory Registers */
+#define SOC_L2RAM_LOCAL_MEM_REG_BASE		0x00071D00
+#define SOC_L2RAM_LOCAL_MEM_REG_LSPGCTL		\
+	(SOC_L2RAM_LOCAL_MEM_REG_BASE + 0x50)
+
 /* DMIC SHIM Registers */
 #define SOC_DMIC_SHIM_REG_BASE			0x00071E80
 #define SOC_DMIC_SHIM_DMICLCTL_SPA		BIT(0)
@@ -198,15 +203,22 @@ struct soc_dsp_shim_regs {
 #define SOC_GNA_POWER_CONTROL_CPA		(BIT(8))
 #define SOC_GNA_POWER_CONTROL_CLK_EN		(BIT(16))
 
+#define SOC_S1000_GLB_CTRL_DSP1_PWRCTL_CRST	BIT(1)
+#define SOC_S1000_GLB_CTRL_DSP1_PWRCTL_CSTALL	BIT(9)
+#define SOC_S1000_GLB_CTRL_DSP1_PWRCTL_SPA	BIT(17)
+#define SOC_S1000_GLB_CTRL_DSP1_PWRCTL_CPA	BIT(25)
+
 #define SOC_S1000_STRAP_REF_CLK			(BIT_MASK(2) << 3)
 #define SOC_S1000_STRAP_REF_CLK_38P4		(0 << 3)
 #define SOC_S1000_STRAP_REF_CLK_19P2		(1 << 3)
 #define SOC_S1000_STRAP_REF_CLK_24P576		(2 << 3)
 
 struct soc_global_regs {
-	u32_t	reserved1[8];
+	u32_t	reserved1[5];
+	u32_t	cavs_dsp1power_control;
+	u32_t	reserved2[2];
 	u32_t	gna_power_control;
-	u32_t	reserved2[7];
+	u32_t	reserved3[7];
 	u32_t	straps;
 };
 
