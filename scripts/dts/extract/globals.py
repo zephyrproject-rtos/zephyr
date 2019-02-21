@@ -199,7 +199,9 @@ def get_node_label(node_path):
 
 
 def get_parent_path(node_path):
-    return '/'.join(node_path.split('/')[:-1])
+    # Turns /foo/bar into /foo
+
+    return '/'.join(node_path.split('/')[:-1]) or '/'
 
 
 def find_parent_prop(node_path, prop):
@@ -215,8 +217,6 @@ def find_parent_prop(node_path, prop):
 # Get the #{address,size}-cells for a given node
 def get_addr_size_cells(node_path):
     parent_addr = get_parent_path(node_path)
-    if parent_addr == '':
-        parent_addr = '/'
 
     # The DT spec says that if #address-cells is missing default to 2
     # if #size-cells is missing default to 1
