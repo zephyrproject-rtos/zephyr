@@ -19,4 +19,8 @@ config XTENSA_KERNEL_CPU_PTR_SR
 config SPI_DW_FIFO_DEPTH
 	default 32
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 400000000 if XTENSA_TIMER
+	default 38400000 if CAVS_TIMER
+
 endif
