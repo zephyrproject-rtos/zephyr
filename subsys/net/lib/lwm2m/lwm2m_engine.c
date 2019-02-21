@@ -4187,6 +4187,8 @@ int lwm2m_engine_start(struct lwm2m_ctx *client_ctx)
 
 static int lwm2m_engine_init(struct device *dev)
 {
+	int ret;
+
 	(void)memset(block1_contexts, 0,
 		     sizeof(struct block_context) * NUM_BLOCK1_CONTEXT);
 
@@ -4203,9 +4205,13 @@ static int lwm2m_engine_init(struct device *dev)
 	LOG_DBG("LWM2M engine socket receive thread started");
 
 	k_delayed_work_init(&periodic_work, lwm2m_engine_service);
-	k_delayed_work_submit(&periodic_work, K_MSEC(2000));
-	LOG_DBG("LWM2M engine periodic work started");
+	ret = k_delayed_work_submit(&periodic_work, K_MSEC(2000));
+	if (ret < 0) {
+		LOG_ERR("Error starting periodic work: %d", ret);
+		return ret;
+	}
 
+	LOG_DBG("LWM2M engine periodic work started");
 	return 0;
 }
 
