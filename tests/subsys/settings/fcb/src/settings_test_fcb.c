@@ -12,6 +12,7 @@
 #include "flash_map.h"
 
 u8_t val8;
+u8_t val8_un;
 u32_t val32;
 u64_t val64;
 
@@ -83,6 +84,7 @@ int c1_handle_get(int argc, char **argv, char *val, int val_len_max)
 
 int c1_handle_set(int argc, char **argv, void *value_ctx)
 {
+	size_t val_len;
 	int rc;
 
 	test_set_called = 1;
@@ -94,6 +96,15 @@ int c1_handle_set(int argc, char **argv, void *value_ctx)
 
 	if (argc == 1 && !strcmp(argv[0], "mybar64"))	 {
 		rc = settings_val_read_cb(value_ctx, &val64, sizeof(val64));
+		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+		return 0;
+	}
+
+	if (argc == 1 && !strcmp(argv[0], "unaligned")) {
+		val_len = settings_val_get_len_cb(value_ctx);
+		zassert_equal(val_len, sizeof(val8_un),
+			      "value length: %d, ought equal 1", val_len);
+		rc = settings_val_read_cb(value_ctx, &val8_un, sizeof(val8_un));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
@@ -116,6 +127,8 @@ int c1_handle_export(int (*cb)(const char *name, void *value, size_t val_len))
 	(void)cb("myfoo/mybar", &val8, sizeof(val8));
 
 	(void)cb("myfoo/mybar64", &val64, sizeof(val64));
+
+	(void)cb("myfoo/unaligned", &val8_un, sizeof(val8_un));
 
 	return 0;
 }
@@ -319,6 +332,7 @@ void test_config_save_one_fcb(void);
 void test_config_compress_deleted(void);
 void test_setting_raw_read(void);
 void test_setting_val_read(void);
+void test_config_save_fcb_unaligned(void);
 
 void test_main(void)
 {
@@ -336,6 +350,7 @@ void test_main(void)
 			 ztest_unit_test(test_config_getset_int64),
 			 ztest_unit_test(test_config_commit),
 			 /* FCB as backing storage*/
+			 ztest_unit_test(test_config_save_fcb_unaligned),
 			 ztest_unit_test(test_config_empty_fcb),
 			 ztest_unit_test(test_config_save_1_fcb),
 			 ztest_unit_test(test_config_insert2),
