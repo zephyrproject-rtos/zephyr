@@ -35,4 +35,12 @@ config SSD1306_SH1106_COMPATIBLE
 
 endchoice
 
+config SSD1306_MAX_I2C_TRANSFER_SIZE
+	int "Maximum I2C transfer size"
+	range 1 8192
+	default 255 if I2C_STM32
+	default 8192
+	help
+	  Maximum size of an I2C message that can be transferred
+
 endif #SSD1306

@@ -177,6 +177,32 @@ int ssd1306_suspend(const struct device *dev)
 				 SSD1306_DISPLAY_OFF);
 }
 
+static int ssd1306_i2c_data_write(const struct device *dev, const u8_t *data,
+				  size_t length)
+{
+	int err;
+	u32_t cur_length;
+	struct ssd1306_data *driver = dev->driver_data;
+
+	do {
+		if (length > CONFIG_SSD1306_MAX_I2C_TRANSFER_SIZE) {
+			cur_length = CONFIG_SSD1306_MAX_I2C_TRANSFER_SIZE;
+			length -= CONFIG_SSD1306_MAX_I2C_TRANSFER_SIZE;
+		} else {
+			cur_length = length;
+			length = 0;
+		}
+		err = i2c_burst_write(driver->i2c,
+				      DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS,
+				      SSD1306_CONTROL_LAST_BYTE_DATA,
+				      data, cur_length);
+		data += cur_length;
+	} while ((err == 0) && (length > 0));
+
+	return err;
+}
+
+
 int ssd1306_write_page(struct device *dev, u8_t page, void * const data,
 		       size_t length)
 {
@@ -213,9 +239,7 @@ int ssd1306_write_page(struct device *dev, u8_t page, void * const data,
 		return -1;
 	}
 
-	return i2c_burst_write(driver->i2c, DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS,
-			       SSD1306_CONTROL_LAST_BYTE_DATA,
-			       data, length);
+	return ssd1306_i2c_data_write(dev, data, length);
 }
 
 int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
@@ -270,9 +294,7 @@ int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 		return -1;
 	}
 
-	return i2c_burst_write(driver->i2c, DT_SOLOMON_SSD1306FB_0_BASE_ADDRESS,
-			       SSD1306_CONTROL_LAST_BYTE_DATA,
-			       (u8_t *)buf, desc->buf_size);
+	return ssd1306_i2c_data_write(dev, buf, desc->buf_size);
 
 #elif defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
 	if (len != SSD1306_PANEL_NUMOF_PAGES * DT_SOLOMON_SSD1306FB_0_WIDTH) {
