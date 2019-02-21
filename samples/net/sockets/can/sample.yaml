@@ -1,5 +1,5 @@
 common:
-  tags: socket can CAN
+  tags: net socket can CAN
   depends_on: can
 sample:
   description: Test BSD sockets CAN support
