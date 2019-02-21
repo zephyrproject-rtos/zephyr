@@ -52,4 +52,10 @@
 #define __builtin_umulll_overflow(a, b, output) \
 	({ *output = (a) * (b); false; })
 
+#ifdef ALWAYS_INLINE
+/* XCC said it needs "gnu_inline" */
+#undef ALWAYS_INLINE
+  #define ALWAYS_INLINE inline __attribute__((always_inline)) __attribute__((gnu_inline))
+#endif
+
 #endif

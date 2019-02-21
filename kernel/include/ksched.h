@@ -37,7 +37,7 @@ void _add_thread_to_ready_q(struct k_thread *thread);
 void _move_thread_to_end_of_prio_q(struct k_thread *thread);
 void _remove_thread_from_ready_q(struct k_thread *thread);
 int _is_thread_time_slicing(struct k_thread *thread);
-void _unpend_thread_no_timeout(struct k_thread *thread);
+ALWAYS_INLINE void _unpend_thread_no_timeout(struct k_thread *thread);
 int _pend_curr(struct k_spinlock *lock, k_spinlock_key_t key,
 	       _wait_q_t *wait_q, s32_t timeout);
 int _pend_curr_irqlock(u32_t key, _wait_q_t *wait_q, s32_t timeout);
@@ -49,7 +49,7 @@ void _unpend_thread(struct k_thread *thread);
 int _unpend_all(_wait_q_t *wait_q);
 void _thread_priority_set(struct k_thread *thread, int prio);
 void *_get_next_switch_handle(void *interrupted);
-struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
+ALWAYS_INLINE struct k_thread *_find_first_thread_to_unpend(_wait_q_t *wait_q,
 					      struct k_thread *from);
 void idle(void *a, void *b, void *c);
 void z_time_slice(int ticks);
