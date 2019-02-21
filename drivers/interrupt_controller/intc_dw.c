@@ -141,7 +141,7 @@ static const struct irq_next_level_api dw_ictl_apis = {
 
 DEVICE_AND_API_INIT(dw_ictl, DT_INST_0_SNPS_DESIGNWARE_INTC_LABEL,
 		    dw_ictl_initialize, NULL, &dw_config,
-		    POST_KERNEL, CONFIG_DW_ICTL_INIT_PRIORITY, &dw_ictl_apis);
+		    PRE_KERNEL_1, CONFIG_DW_ICTL_INIT_PRIORITY, &dw_ictl_apis);
 
 static void dw_ictl_config_irq(struct device *port)
 {
