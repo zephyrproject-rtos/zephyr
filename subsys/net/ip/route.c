@@ -204,9 +204,14 @@ static struct net_nbr *nbr_nexthop_get(struct net_if *iface,
 	/* Note that the nexthop host must be already in the neighbor
 	 * cache. We just increase the ref count of an existing entry.
 	 */
-	struct net_nbr *nbr = net_ipv6_nbr_lookup(iface, addr);
+	struct net_nbr *nbr;
 
-	NET_ASSERT_INFO(nbr, "Next hop neighbor not found!");
+	nbr = net_ipv6_nbr_lookup(iface, addr);
+	if (nbr == NULL) {
+		NET_DBG("Next hop neighbor not found!");
+		return NULL;
+	}
+
 	NET_ASSERT_INFO(nbr->idx != NET_NBR_LLADDR_UNKNOWN,
 			"Nexthop %s not in neighbor cache!",
 			log_strdup(net_sprint_ipv6_addr(addr)));
