@@ -52,7 +52,7 @@ config CAVS_ICTL_3_OFFSET
 
 config CAVS_ICTL_INIT_PRIORITY
 	int "CAVS ICTL Init priority"
-	default 60
+	default 45
 	help
 	  Cavs Interrupt Logic initialization priority.
 
