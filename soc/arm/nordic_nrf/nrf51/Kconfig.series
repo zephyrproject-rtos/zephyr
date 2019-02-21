@@ -12,7 +12,6 @@ config  SOC_SERIES_NRF51X
 	select SOC_FAMILY_NRF
 	select NRF_RTC_TIMER
 	select CLOCK_CONTROL
-	select CLOCK_CONTROL_NRF
 	select HAS_STATE_DEEP_SLEEP_1
 	select XIP
 	select HAS_CMSIS
