@@ -136,6 +136,14 @@ _start:
 	/* Clear a0 again as possible CALLX to __memmap_init changed it. */
 	movi	a0, 0
 # endif
+
+# ifdef CONFIG_SMP
+	/* Only clear BSS when running on core 0 */
+	rsr	a3, PRID
+	extui	a3, a3, 0, 8	/* extract core ID */
+	bnez	a3, .L3zte
+# endif
+
 	/*
 	 *  Clear the BSS (uninitialized data) segments.
 	 *  This code supports multiple zeroed sections (*.bss).
