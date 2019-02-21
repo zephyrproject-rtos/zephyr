@@ -87,3 +87,8 @@
 		};
 	};
 };
+
+&usbd {
+	compatible = "snps,dwc2-usbd";
+	status = "ok";
+};

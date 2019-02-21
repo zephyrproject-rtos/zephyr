@@ -182,8 +182,6 @@ config USB_DW
 	default y
 config GPIO
 	default y
-config USB_DW_IRQ_PRI
-	default 3
 endif # USB
 
 source "soc/x86/intel_quark/quark_se/Kconfig.defconfig.quark_se*"

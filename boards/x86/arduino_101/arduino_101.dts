@@ -76,3 +76,8 @@
 &spi2 {
 	status = "ok";
 };
+
+&usbd {
+	compatible = "snps,dwc-usbd";
+	status = "ok";
+};

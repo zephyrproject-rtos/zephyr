@@ -55,3 +55,8 @@
 	status = "ok";
 	clock-frequency = <I2C_BITRATE_FAST>;
 };
+
+&usbd {
+	compatible = "snps,dwc-usbd";
+	status = "ok";
+};

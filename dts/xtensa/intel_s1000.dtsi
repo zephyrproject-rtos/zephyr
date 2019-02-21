@@ -139,5 +139,13 @@
 			label = "SPI_0";
 		};
 
+		usbd: usbd@000a0000 {
+			compatible = "snps,dwc2-usbd";
+			reg = <0x000a0000 0x1000>;
+			interrupts = <0x806 0 0>;
+			interrupt-parent = <&cavs0>;
+			status = "disabled";
+			label = "USBD";
+		};
 	};
 };

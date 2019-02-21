@@ -95,3 +95,8 @@
 		fifop-gpios = <&gpio1 5 0>;
 	};
 };
+
+&usbd {
+	compatible = "snps,dwc-usbd";
+	status = "ok";
+};
