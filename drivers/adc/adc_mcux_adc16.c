@@ -27,18 +27,13 @@ struct mcux_adc16_data {
 	u16_t *repeat_buffer;
 	u32_t channels;
 	u8_t channel_id;
-#if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) && FSL_FEATURE_ADC16_HAS_DIFF_MODE
-	bool differential;
-#endif
 };
 
 static int mcux_adc16_channel_setup(struct device *dev,
 				    const struct adc_channel_cfg *channel_cfg)
 {
 	u8_t channel_id = channel_cfg->channel_id;
-#if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) && FSL_FEATURE_ADC16_HAS_DIFF_MODE
-	struct mcux_adc16_data *data = dev->driver_data;
-#endif
+
 	if (channel_id > (ADC_SC1_ADCH_MASK >> ADC_SC1_ADCH_SHIFT)) {
 		LOG_ERR("Channel %d is not valid", channel_id);
 		return -EINVAL;
@@ -49,14 +44,11 @@ static int mcux_adc16_channel_setup(struct device *dev,
 		return -EINVAL;
 	}
 
-#if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) && FSL_FEATURE_ADC16_HAS_DIFF_MODE
-    data->differential = channel_cfg->differential;
-#else
 	if (channel_cfg->differential) {
 		LOG_ERR("Differential channels are not supported");
 		return -EINVAL;
 	}
-#endif
+
 	if (channel_cfg->gain != ADC_GAIN_1) {
 		LOG_ERR("Invalid channel gain");
 		return -EINVAL;
@@ -179,7 +171,7 @@ static void mcux_adc16_start_channel(struct device *dev)
 	LOG_DBG("Starting channel %d", data->channel_id);
 
 #if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) && FSL_FEATURE_ADC16_HAS_DIFF_MODE
-	channel_config.enableDifferentialConversion = data->differential;
+	channel_config.enableDifferentialConversion = false;
 #endif
 	channel_config.enableInterruptOnConversionCompleted = true;
 	channel_config.channelNumber = data->channel_id;
