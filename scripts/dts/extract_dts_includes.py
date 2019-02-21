@@ -123,10 +123,6 @@ def generate_node_defines(node_path):
         # patterns for things like reg, interrupts, etc that we don't need
         # any special case handling at a node level
         for prop in reduced[node_path]['props']:
-            if prop in {'interrupt-names', 'reg-names', 'phandle',
-                        'linux,phandle'}:
-                continue
-
             if re.fullmatch(yaml_prop, prop):
                 match = True
                 generate_prop_defines(node_path, prop)
