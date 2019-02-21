@@ -34,11 +34,6 @@ static void test_encoding_iteration(char const *name, char const *value,
 
 	settings_line_io_init(NULL, write_handler, NULL, wbs);
 
-	rc = settings_line_len_calc(name, strlen(value));
-
-	zassert_equal(rc, exp_len, "Wrong line length calculated, was %d.\n",
-		      rc);
-
 	enc_buf_cnt = 0;
 
 	rc = settings_line_write(name, value, strlen(value), 0,
