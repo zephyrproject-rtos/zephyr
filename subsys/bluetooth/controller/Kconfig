@@ -23,6 +23,7 @@ choice BT_LL_CHOICE
 config BT_LL_SW
 	bool "Software-based BLE Link Layer"
 	select BT_RECV_IS_RX_THREAD
+	select BT_HAS_HCI_VS
 	select ENTROPY_GENERATOR
 	select ENTROPY_NRF5_RNG if SOC_COMPATIBLE_NRF
 	select ENTROPY_NRF5_BIAS_CORRECTION if SOC_COMPATIBLE_NRF
