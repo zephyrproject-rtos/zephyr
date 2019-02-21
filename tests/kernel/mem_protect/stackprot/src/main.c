@@ -13,8 +13,8 @@
 #define STACKSIZE       (2048 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define PRIORITY        5
 
-static int count;
-static int ret = TC_PASS;
+ZTEST_BMEM static int count;
+ZTEST_BMEM static int ret = TC_PASS;
 
 void check_input(const char *name, const char *input);
 
@@ -118,9 +118,9 @@ void test_main(void)
 	/* Start thread */
 	k_thread_create(&alt_thread_data, alt_thread_stack_area, STACKSIZE,
 			(k_thread_entry_t)alternate_thread, NULL, NULL, NULL,
-			K_PRIO_PREEMPT(PRIORITY), 0, K_NO_WAIT);
+			K_PRIO_PREEMPT(PRIORITY), K_USER, K_NO_WAIT);
 
 	ztest_test_suite(stackprot,
-			 ztest_unit_test(test_stackprot));
+			 ztest_user_unit_test(test_stackprot));
 	ztest_run_test_suite(stackprot);
 }
