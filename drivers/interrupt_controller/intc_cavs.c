@@ -115,7 +115,7 @@ static struct cavs_ictl_runtime cavs_0_runtime = {
 
 DEVICE_AND_API_INIT(cavs_ictl_0, CONFIG_CAVS_ICTL_0_NAME,
 		    cavs_ictl_0_initialize, &cavs_0_runtime, &cavs_config_0,
-		    POST_KERNEL, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
+		    PRE_KERNEL_1, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
 
 static void cavs_config_0_irq(struct device *port)
 {
@@ -143,7 +143,7 @@ static struct cavs_ictl_runtime cavs_1_runtime = {
 
 DEVICE_AND_API_INIT(cavs_ictl_1, CONFIG_CAVS_ICTL_1_NAME,
 		    cavs_ictl_1_initialize, &cavs_1_runtime, &cavs_config_1,
-		    POST_KERNEL, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
+		    PRE_KERNEL_1, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
 
 static void cavs_config_1_irq(struct device *port)
 {
@@ -171,7 +171,7 @@ static struct cavs_ictl_runtime cavs_2_runtime = {
 
 DEVICE_AND_API_INIT(cavs_ictl_2, CONFIG_CAVS_ICTL_2_NAME,
 		    cavs_ictl_2_initialize, &cavs_2_runtime, &cavs_config_2,
-		    POST_KERNEL, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
+		    PRE_KERNEL_1, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
 
 static void cavs_config_2_irq(struct device *port)
 {
@@ -199,7 +199,7 @@ static struct cavs_ictl_runtime cavs_3_runtime = {
 
 DEVICE_AND_API_INIT(cavs_ictl_3, CONFIG_CAVS_ICTL_3_NAME,
 		    cavs_ictl_3_initialize, &cavs_3_runtime, &cavs_config_3,
-		    POST_KERNEL, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
+		    PRE_KERNEL_1, CONFIG_CAVS_ICTL_INIT_PRIORITY, &cavs_apis);
 
 static void cavs_config_3_irq(struct device *port)
 {
