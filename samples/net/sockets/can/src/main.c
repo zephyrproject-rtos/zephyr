@@ -25,7 +25,7 @@ static void tx(int *can_fd)
 	static char data[] = { 0x11, 0x22, 0x33, 0x44,
 			       0x55, 0x66, 0x77, 0x88 };
 	int fd = POINTER_TO_INT(can_fd);
-	struct can_msg msg;
+	struct zcan_frame msg;
 	int ret, i;
 
 	msg.dlc = sizeof(data);
@@ -40,7 +40,7 @@ static void tx(int *can_fd)
 	LOG_DBG("Sending CAN data...");
 
 	while (1) {
-		ret = send(fd, &msg, sizeof(struct can_msg), K_FOREVER);
+		ret = send(fd, &msg, sizeof(struct zcan_frame), K_FOREVER);
 		if (ret < 0) {
 			LOG_ERR("Cannot send CAN message (%d)", -errno);
 		}
@@ -53,7 +53,7 @@ static void rx(int fd)
 {
 	struct sockaddr_can can_addr;
 	socklen_t addr_len;
-	struct can_msg msg;
+	struct zcan_frame msg;
 	int ret;
 
 	LOG_DBG("Waiting CAN data...");
@@ -64,7 +64,7 @@ static void rx(int fd)
 		memset(&msg, 0, sizeof(msg));
 		addr_len = sizeof(can_addr);
 
-		ret = recvfrom(fd, &msg, sizeof(struct can_msg),
+		ret = recvfrom(fd, &msg, sizeof(struct zcan_frame),
 			       0, (struct sockaddr *)&can_addr, &addr_len);
 		if (ret < 0) {
 			LOG_ERR("Cannot receive CAN message (%d)", ret);
@@ -90,7 +90,7 @@ static void rx(int fd)
 
 static int setup_socket(void)
 {
-	const struct can_msg_filter filter = {
+	const struct zcan_filter filter = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.std_id = 0x1,

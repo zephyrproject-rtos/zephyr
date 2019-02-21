@@ -16,11 +16,11 @@ LOG_MODULE_REGISTER(can_test, LOG_LEVEL_ERR);
 
 #include <ztest.h>
 
-static void test_can_frame_to_msg(void)
+static void test_can_frame_to_zcan_frame(void)
 {
 	struct can_frame frame = { 0 };
-	struct can_msg expected = { 0 };
-	struct can_msg msg;
+	struct zcan_frame expected = { 0 };
+	struct zcan_frame msg;
 	const u8_t data[CAN_MAX_DLEN] = { 0x01, 0x02, 0x03, 0x04,
 					  0x05, 0x06, 0x07, 0x08 };
 
@@ -33,7 +33,7 @@ static void test_can_frame_to_msg(void)
 	expected.std_id = 1234;
 	expected.dlc = sizeof(data);
 
-	can_copy_frame_to_msg(&frame, &msg);
+	can_copy_frame_to_zframe(&frame, &msg);
 
 	LOG_HEXDUMP_DBG((const u8_t *)&frame, sizeof(frame), "frame");
 	LOG_HEXDUMP_DBG((const u8_t *)&msg, sizeof(msg), "msg");
@@ -45,11 +45,11 @@ static void test_can_frame_to_msg(void)
 	zassert_equal(msg.dlc, expected.dlc, "Msg length invalid");
 }
 
-static void test_can_msg_to_frame(void)
+static void test_zcan_frame_to_can_frame(void)
 {
 	struct can_frame frame = { 0 };
 	struct can_frame expected = { 0 };
-	struct can_msg msg = { 0 };
+	struct zcan_frame msg = { 0 };
 	const u8_t data[CAN_MAX_DLEN] = { 0x01, 0x02, 0x03, 0x04,
 					  0x05, 0x06, 0x07, 0x08 };
 
@@ -63,7 +63,7 @@ static void test_can_msg_to_frame(void)
 	msg.dlc = sizeof(data);
 	memcpy(msg.data, data, sizeof(data));
 
-	can_copy_msg_to_frame(&msg, &frame);
+	can_copy_zframe_to_frame(&msg, &frame);
 
 	LOG_HEXDUMP_DBG((const u8_t *)&frame, sizeof(frame), "frame");
 	LOG_HEXDUMP_DBG((const u8_t *)&msg, sizeof(msg), "msg");
@@ -77,11 +77,11 @@ static void test_can_msg_to_frame(void)
 		      "CAN msg length not same");
 }
 
-static void test_can_filter_to_msg_filter(void)
+static void test_can_filter_to_zcan_filter(void)
 {
 	struct can_filter filter = { 0 };
-	struct can_msg_filter expected = { 0 };
-	struct can_msg_filter msg_filter = { 0 };
+	struct zcan_filter expected = { 0 };
+	struct zcan_filter msg_filter = { 0 };
 
 	filter.can_id = BIT(31) | BIT(30) | 1234;
 	filter.can_mask = BIT(31) | BIT(30) | 1234;
@@ -92,7 +92,7 @@ static void test_can_filter_to_msg_filter(void)
 	expected.rtr_mask = 1;
 	expected.std_id_mask = 1234;
 
-	can_copy_filter_to_msg_filter(&filter, &msg_filter);
+	can_copy_filter_to_zfilter(&filter, &msg_filter);
 
 	LOG_HEXDUMP_DBG((const u8_t *)&msg_filter, sizeof(msg_filter),
 			"msg_filter");
@@ -110,11 +110,11 @@ static void test_can_filter_to_msg_filter(void)
 		      "Std id mask not set");
 }
 
-static void test_can_msg_filter_to_filter(void)
+static void test_zcan_filter_to_can_filter(void)
 {
 	struct can_filter filter = { 0 };
 	struct can_filter expected = { 0 };
-	struct can_msg_filter msg_filter = { 0 };
+	struct zcan_filter msg_filter = { 0 };
 
 	expected.can_id = BIT(31) | BIT(30) | 1234;
 	expected.can_mask = BIT(31) | BIT(30) | 1234;
@@ -125,7 +125,7 @@ static void test_can_msg_filter_to_filter(void)
 	msg_filter.rtr_mask = 1;
 	msg_filter.std_id_mask = 1234;
 
-	can_copy_msg_filter_to_filter(&msg_filter, &filter);
+	can_copy_zfilter_to_filter(&msg_filter, &filter);
 
 	LOG_HEXDUMP_DBG((const u8_t *)&msg_filter, sizeof(msg_filter),
 			"msg_filter");
@@ -141,10 +141,10 @@ static void test_can_msg_filter_to_filter(void)
 void test_main(void)
 {
 	ztest_test_suite(test_can_frame,
-			 ztest_unit_test(test_can_frame_to_msg),
-			 ztest_unit_test(test_can_msg_to_frame),
-			 ztest_unit_test(test_can_filter_to_msg_filter),
-			 ztest_unit_test(test_can_msg_filter_to_filter));
+			 ztest_unit_test(test_can_frame_to_zcan_frame),
+			 ztest_unit_test(test_zcan_frame_to_can_frame),
+			 ztest_unit_test(test_can_filter_to_zcan_filter),
+			 ztest_unit_test(test_zcan_filter_to_can_filter));
 
 	ztest_run_test_suite(test_can_frame);
 }
