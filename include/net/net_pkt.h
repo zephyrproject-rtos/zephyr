@@ -79,11 +79,6 @@ struct net_pkt {
 	/** Network connection context */
 	struct net_context *context;
 
-	/** Network context token that user can set. This is passed
-	 * to user callback when data has been sent.
-	 */
-	void *token;
-
 	/** Network interface */
 	struct net_if *iface;
 
@@ -231,16 +226,6 @@ static inline void net_pkt_set_context(struct net_pkt *pkt,
 				       struct net_context *ctx)
 {
 	pkt->context = ctx;
-}
-
-static inline void *net_pkt_token(struct net_pkt *pkt)
-{
-	return pkt->token;
-}
-
-static inline void net_pkt_set_token(struct net_pkt *pkt, void *token)
-{
-	pkt->token = token;
 }
 
 static inline struct net_if *net_pkt_iface(struct net_pkt *pkt)

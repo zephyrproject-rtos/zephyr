@@ -123,14 +123,14 @@ static sys_slist_t timestamp_callbacks;
 #endif /* CONFIG_NET_IF_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 static inline void net_context_send_cb(struct net_context *context,
-				       void *token, int status)
+				       int status)
 {
 	if (!context) {
 		return;
 	}
 
 	if (context->send_cb) {
-		context->send_cb(context, status, token, context->user_data);
+		context->send_cb(context, status, NULL, context->user_data);
 	}
 
 #if defined(CONFIG_NET_UDP)
@@ -151,7 +151,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct net_linkaddr *dst;
 	struct net_context *context;
-	void *context_token;
 	int status;
 
 	if (!pkt) {
@@ -162,7 +161,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 
 	dst = net_pkt_lladdr_dst(pkt);
 	context = net_pkt_context(pkt);
-	context_token = net_pkt_token(pkt);
 
 	if (atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
 		if (IS_ENABLED(CONFIG_NET_TCP) &&
@@ -190,10 +188,10 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (context) {
-		NET_DBG("Calling context send cb %p token %p status %d",
-			context, context_token, status);
+		NET_DBG("Calling context send cb %p status %d",
+			context, status);
 
-		net_context_send_cb(context, context_token, status);
+		net_context_send_cb(context, status);
 	}
 
 	if (dst->addr) {
@@ -250,7 +248,6 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	struct net_context *context = net_pkt_context(pkt);
 	struct net_linkaddr *dst = net_pkt_lladdr_dst(pkt);
 	enum net_verdict verdict = NET_OK;
-	void *token = net_pkt_token(pkt);
 	int status = -EIO;
 
 	if (!atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
@@ -304,9 +301,9 @@ done:
 	 */
 	if (verdict == NET_DROP) {
 		if (context) {
-			NET_DBG("Calling ctx send cb %p token %p verdict %d",
-				context, token, verdict);
-			net_context_send_cb(context, token, status);
+			NET_DBG("Calling ctx send cb %p verdict %d",
+				context, verdict);
+			net_context_send_cb(context, status);
 		}
 
 		if (dst->addr) {
