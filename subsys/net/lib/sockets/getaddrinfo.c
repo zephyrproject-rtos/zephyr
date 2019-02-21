@@ -222,4 +222,23 @@ int zsock_getaddrinfo(const char *host, const char *service,
 	return ret;
 }
 
+#define ERR(e) case DNS_ ## e: return #e
+const char *zsock_gai_strerror(int errcode)
+{
+	switch (errcode) {
+	ERR(EAI_BADFLAGS);
+	ERR(EAI_NONAME);
+	ERR(EAI_AGAIN);
+	ERR(EAI_FAIL);
+	ERR(EAI_NODATA);
+	ERR(EAI_MEMORY);
+	ERR(EAI_SYSTEM);
+	ERR(EAI_SERVICE);
+
+	default:
+		return "EAI_UNKNOWN";
+	}
+}
+#undef ERR
+
 #endif
