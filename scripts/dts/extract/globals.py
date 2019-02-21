@@ -94,10 +94,8 @@ def get_compat(node_path):
 
 
 def create_chosen(root):
-    if 'children' in root:
-        if 'chosen' in root['children']:
-            for k, v in root['children']['chosen']['props'].items():
-                chosen[k] = v
+    if 'chosen' in root['children']:
+        chosen.update(root['children']['chosen']['props'])
 
 
 def create_phandles(root, name):
