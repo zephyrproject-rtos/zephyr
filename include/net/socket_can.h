@@ -41,7 +41,7 @@ enum {
 };
 
 /* Socket CAN MTU size */
-#define CAN_MTU		(sizeof(struct can_msg))
+#define CAN_MTU		CAN_MAX_DLEN
 
 /**
  * struct sockaddr_can - The sockaddr structure for CAN sockets

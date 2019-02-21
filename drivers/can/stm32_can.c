@@ -37,7 +37,7 @@ static void can_stm32_signal_tx_complete(struct can_mailbox *mb)
 }
 
 static void can_stm32_get_msg_fifo(CAN_FIFOMailBox_TypeDef *mbox,
-				    struct can_msg *msg)
+				    struct zcan_frame *msg)
 {
 	if (mbox->RIR & CAN_RI0R_IDE) {
 		msg->ext_id = mbox->RIR >> CAN_RI0R_EXID_Pos;
@@ -58,7 +58,7 @@ void can_stm32_rx_isr_handler(CAN_TypeDef *can, struct can_stm32_data *data)
 {
 	CAN_FIFOMailBox_TypeDef *mbox;
 	int filter_match_index;
-	struct can_msg msg;
+	struct zcan_frame msg;
 
 	while (can->RF0R & CAN_RF0R_FMP0) {
 		mbox = &can->sFIFOMailBox[0];
@@ -319,7 +319,7 @@ static int can_stm32_init(struct device *dev)
 	return 0;
 }
 
-int can_stm32_send(struct device *dev, struct can_msg *msg, s32_t timeout,
+int can_stm32_send(struct device *dev, struct zcan_frame *msg, s32_t timeout,
 		   can_tx_callback_t callback)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
@@ -578,21 +578,21 @@ static inline void can_stm32_set_mode_scale(enum can_filter_type filter_type,
 	*scale_reg |= scale_reg_bit;
 }
 
-static inline u32_t can_generate_std_mask(const struct can_msg_filter *filter)
+static inline u32_t can_generate_std_mask(const struct zcan_filter *filter)
 {
 	return  (filter->std_id_mask << CAN_FIRX_STD_ID_POS) |
 		(filter->rtr_mask    << CAN_FIRX_STD_RTR_POS) |
 		(1U                  << CAN_FIRX_STD_IDE_POS);
 }
 
-static inline u32_t can_generate_ext_mask(const struct can_msg_filter *filter)
+static inline u32_t can_generate_ext_mask(const struct zcan_filter *filter)
 {
 	return  (filter->ext_id_mask << CAN_FIRX_EXT_EXT_ID_POS) |
 		(filter->rtr_mask    << CAN_FIRX_EXT_RTR_POS) |
 		(1U                  << CAN_FIRX_EXT_IDE_POS);
 }
 
-static inline u32_t can_generate_std_id(const struct can_msg_filter *filter)
+static inline u32_t can_generate_std_id(const struct zcan_filter *filter)
 {
 
 	return  (filter->std_id << CAN_FIRX_STD_ID_POS) |
@@ -600,14 +600,14 @@ static inline u32_t can_generate_std_id(const struct can_msg_filter *filter)
 
 }
 
-static inline u32_t can_generate_ext_id(const struct can_msg_filter *filter)
+static inline u32_t can_generate_ext_id(const struct zcan_filter *filter)
 {
 	return  (filter->ext_id << CAN_FIRX_EXT_EXT_ID_POS) |
 		(filter->rtr    << CAN_FIRX_EXT_RTR_POS) |
 		(1U             << CAN_FIRX_EXT_IDE_POS);
 }
 
-static inline int can_stm32_set_filter(const struct can_msg_filter *filter,
+static inline int can_stm32_set_filter(const struct zcan_filter *filter,
 				       struct can_stm32_data *device_data,
 				       CAN_TypeDef *can,
 				       int *filter_index)
@@ -739,7 +739,7 @@ done:
 
 
 static inline int can_stm32_attach(struct device *dev, void *response_ptr,
-				   const struct can_msg_filter *filter,
+				   const struct zcan_filter *filter,
 				   int *filter_index)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
@@ -758,7 +758,7 @@ static inline int can_stm32_attach(struct device *dev, void *response_ptr,
 }
 
 int can_stm32_attach_msgq(struct device *dev, struct k_msgq *msgq,
-			  const struct can_msg_filter *filter)
+			  const struct zcan_filter *filter)
 {
 	int filter_nr;
 	int filter_index;
@@ -772,7 +772,7 @@ int can_stm32_attach_msgq(struct device *dev, struct k_msgq *msgq,
 }
 
 int can_stm32_attach_isr(struct device *dev, can_rx_callback_t isr,
-			 const struct can_msg_filter *filter)
+			 const struct zcan_filter *filter)
 {
 	struct can_stm32_data *data = DEV_DATA(dev);
 	int filter_nr;
