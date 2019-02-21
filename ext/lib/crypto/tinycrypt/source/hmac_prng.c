@@ -73,19 +73,28 @@ static const unsigned int MAX_GENS = UINT32_MAX;
 static const unsigned int  MAX_OUT = (1 << 19);
 
 /*
- * Assumes: prng != NULL, e != NULL, len >= 0.
+ * Assumes: prng != NULL
  */
-static void update(TCHmacPrng_t prng, const uint8_t *e, unsigned int len)
+static void update(TCHmacPrng_t prng, const uint8_t *data, unsigned int datalen, const uint8_t *additional_data, unsigned int additional_datalen)
 {
 	const uint8_t separator0 = 0x00;
 	const uint8_t separator1 = 0x01;
+
+	/* configure the new prng key into the prng's instance of hmac */
+	tc_hmac_set_key(&prng->h, prng->key, sizeof(prng->key));
 
 	/* use current state, e and separator 0 to compute a new prng key: */
 	(void)tc_hmac_init(&prng->h);
 	(void)tc_hmac_update(&prng->h, prng->v, sizeof(prng->v));
 	(void)tc_hmac_update(&prng->h, &separator0, sizeof(separator0));
-	(void)tc_hmac_update(&prng->h, e, len);
+
+	if (data && datalen)
+		(void)tc_hmac_update(&prng->h, data, datalen);
+	if (additional_data && additional_datalen)
+		(void)tc_hmac_update(&prng->h, additional_data, additional_datalen);
+
 	(void)tc_hmac_final(prng->key, sizeof(prng->key), &prng->h);
+
 	/* configure the new prng key into the prng's instance of hmac */
 	(void)tc_hmac_set_key(&prng->h, prng->key, sizeof(prng->key));
 
@@ -94,12 +103,21 @@ static void update(TCHmacPrng_t prng, const uint8_t *e, unsigned int len)
 	(void)tc_hmac_update(&prng->h, prng->v, sizeof(prng->v));
 	(void)tc_hmac_final(prng->v, sizeof(prng->v), &prng->h);
 
+	if (data == 0 || datalen == 0)
+		return;
+
+	/* configure the new prng key into the prng's instance of hmac */
+	tc_hmac_set_key(&prng->h, prng->key, sizeof(prng->key));
+
 	/* use current state, e and separator 1 to compute a new prng key: */
 	(void)tc_hmac_init(&prng->h);
 	(void)tc_hmac_update(&prng->h, prng->v, sizeof(prng->v));
 	(void)tc_hmac_update(&prng->h, &separator1, sizeof(separator1));
-	(void)tc_hmac_update(&prng->h, e, len);
+	(void)tc_hmac_update(&prng->h, data, datalen);
+	if (additional_data && additional_datalen)
+		(void)tc_hmac_update(&prng->h, additional_data, additional_datalen);
 	(void)tc_hmac_final(prng->key, sizeof(prng->key), &prng->h);
+
 	/* configure the new prng key into the prng's instance of hmac */
 	(void)tc_hmac_set_key(&prng->h, prng->key, sizeof(prng->key));
 
@@ -124,10 +142,8 @@ int tc_hmac_prng_init(TCHmacPrng_t prng,
 	/* put the generator into a known state: */
 	_set(prng->key, 0x00, sizeof(prng->key));
 	_set(prng->v, 0x01, sizeof(prng->v));
-	tc_hmac_set_key(&prng->h, prng->key, sizeof(prng->key));
-	/* update assumes SOME key has been configured into HMAC */
 
-	update(prng, personalization, plen);
+	update(prng, personalization, plen, 0, 0);
 
 	/* force a reseed before allowing tc_hmac_prng_generate to succeed: */
 	prng->countdown = 0;
@@ -159,13 +175,12 @@ int tc_hmac_prng_reseed(TCHmacPrng_t prng,
 		    additionallen > MAX_ALEN) {
 			return TC_CRYPTO_FAIL;
 		} else {
-		/* call update for the seed and additional_input */
-		update(prng, seed, seedlen);
-		update(prng, additional_input, additionallen);
+			/* call update for the seed and additional_input */
+			update(prng, seed, seedlen, additional_input, additionallen);
 		}
 	} else {
 		/* call update only for the seed */
-		update(prng, seed, seedlen);
+		update(prng, seed, seedlen, 0, 0);
 	}
 
 	/* ... and enable hmac_prng_generate */
@@ -191,6 +206,9 @@ int tc_hmac_prng_generate(uint8_t *out, unsigned int outlen, TCHmacPrng_t prng)
 	prng->countdown--;
 
 	while (outlen != 0) {
+		/* configure the new prng key into the prng's instance of hmac */
+		tc_hmac_set_key(&prng->h, prng->key, sizeof(prng->key));
+
 		/* operate HMAC in OFB mode to create "random" outputs */
 		(void)tc_hmac_init(&prng->h);
 		(void)tc_hmac_update(&prng->h, prng->v, sizeof(prng->v));
@@ -206,7 +224,7 @@ int tc_hmac_prng_generate(uint8_t *out, unsigned int outlen, TCHmacPrng_t prng)
 	}
 
 	/* block future PRNG compromises from revealing past state */
-	update(prng, prng->v, TC_SHA256_DIGEST_SIZE);
+	update(prng, 0, 0, 0, 0);
 
 	return TC_CRYPTO_SUCCESS;
 }
