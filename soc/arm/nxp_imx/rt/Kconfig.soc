@@ -99,6 +99,7 @@ config SOC_MIMXRT1062
 config SOC_MIMXRT1064
 	bool "SOC_MIMXRT1064"
 	select HAS_MCUX
+	select HAS_MCUX_CACHE
 	select HAS_MCUX_CCM
 	select HAS_MCUX_ELCDIF
 	select HAS_MCUX_ENET

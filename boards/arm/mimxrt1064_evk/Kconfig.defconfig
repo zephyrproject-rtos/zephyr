@@ -27,4 +27,14 @@ config UART_MCUX_LPUART_1
 
 endif # UART_MCUX_LPUART
 
+if NETWORKING
+
+config NET_L2_ETHERNET
+	def_bool y
+
+config ETH_MCUX_0
+	def_bool y if NET_L2_ETHERNET
+
+endif # NETWORKING
+
 endif # BOARD_MIMXRT1064_EVK

@@ -21,6 +21,7 @@
 		uart-1 = &uart1;
 		led0 = &green_led;
 		sw0 = &user_button;
+		eth = &eth;
 	};
 
 	chosen {
@@ -65,4 +66,11 @@
 &uart1 {
 	status = "ok";
 	current-speed = <115200>;
+};
+
+&eth {
+	status = "ok";
+	ptp {
+		status = "ok";
+	};
 };
