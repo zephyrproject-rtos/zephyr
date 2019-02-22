@@ -28,6 +28,17 @@ struct getaddrinfo_state {
 	struct zsock_addrinfo *ai_arr;
 };
 
+/* Initialize static fields of addrinfo structure. A macro to let it work
+ * with any sockaddr_* type.
+ */
+#define INIT_ADDRINFO(addrinfo, sockaddr) { \
+		(addrinfo)->ai_addr = &(addrinfo)->_ai_addr; \
+		(addrinfo)->ai_addrlen = sizeof(*sockaddr); \
+		(addrinfo)->ai_canonname = (addrinfo)->_ai_canonname; \
+		(addrinfo)->_ai_canonname[0] = '\0'; \
+		(addrinfo)->ai_next = NULL; \
+	}
+
 static void dns_resolve_cb(enum dns_resolve_status status,
 			   struct dns_addrinfo *info, void *user_data)
 {
@@ -93,6 +104,25 @@ static int exec_query(const char *host, int family,
 				 CONFIG_NET_SOCKETS_DNS_TIMEOUT);
 }
 
+static int getaddrinfo_null_host(int port, const struct zsock_addrinfo *hints,
+				struct zsock_addrinfo *res)
+{
+	if (hints && (hints->ai_flags & AI_PASSIVE)) {
+		struct sockaddr_in *addr =
+		    (struct sockaddr_in *)&res->_ai_addr;
+		addr->sin_addr.s_addr = INADDR_ANY;
+		addr->sin_port = htons(port);
+		addr->sin_family = AF_INET;
+		INIT_ADDRINFO(res, addr);
+		res->ai_family = AF_INET;
+		res->ai_socktype = SOCK_STREAM;
+		res->ai_protocol = IPPROTO_TCP;
+		return 0;
+	}
+
+	return DNS_EAI_FAIL;
+}
+
 int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 				       const struct zsock_addrinfo *hints,
 				       struct zsock_addrinfo *res)
@@ -113,6 +143,16 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 		if (port < 1 || port > 65535) {
 			return DNS_EAI_NONAME;
 		}
+	}
+
+	if (host == NULL) {
+		/* Per POSIX, both can't be NULL. */
+		if (service == NULL) {
+			errno = EINVAL;
+			return DNS_EAI_SYSTEM;
+		}
+
+		return getaddrinfo_null_host(port, hints, res);
 	}
 
 	ai_state.hints = hints;
