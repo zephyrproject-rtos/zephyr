@@ -106,4 +106,7 @@
 #define SSD1306_READ_MODIFY_WRITE_START		0xe0
 #define SSD1306_READ_MODIFY_WRITE_END		0xee
 
+/* time constants in ms */
+#define SSD1306_RESET_DELAY			1
+
 #endif

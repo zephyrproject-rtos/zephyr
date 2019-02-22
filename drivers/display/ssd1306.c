@@ -47,6 +47,7 @@ LOG_MODULE_REGISTER(ssd1306);
 #endif
 
 struct ssd1306_data {
+	struct device *reset;
 	struct device *i2c;
 	u8_t contrast;
 	u8_t scan_mode;
@@ -366,6 +367,12 @@ static int ssd1306_init_device(struct device *dev)
 		SSD1306_SET_NORMAL_DISPLAY,
 	};
 
+#ifdef DT_SOLOMON_SSD1306FB_0_RESET_GPIOS_CONTROLLER
+	gpio_pin_write(driver->reset, DT_SOLOMON_SSD1306FB_0_RESET_GPIOS_PIN, 0);
+	k_sleep(SSD1306_RESET_DELAY);
+	gpio_pin_write(driver->reset, DT_SOLOMON_SSD1306FB_0_RESET_GPIOS_PIN, 1);
+#endif
+
 	/* Turn display off */
 	if (ssd1306_reg_write(driver, SSD1306_CONTROL_LAST_BYTE_CMD,
 			      SSD1306_DISPLAY_OFF)) {
@@ -414,6 +421,18 @@ static int ssd1306_init(struct device *dev)
 			    DT_SOLOMON_SSD1306FB_0_BUS_NAME);
 		return -EINVAL;
 	}
+
+#ifdef DT_SOLOMON_SSD1306FB_0_RESET_GPIOS_CONTROLLER
+	driver->reset = device_get_binding(DT_SOLOMON_SSD1306FB_0_RESET_GPIOS_CONTROLLER);
+	if (driver->reset == NULL) {
+		LOG_ERR("Failed to get pointer to %s device!",
+			    DT_SOLOMON_SSD1306FB_0_RESET_GPIOS_CONTROLLER);
+		return -EINVAL;
+	}
+
+	gpio_pin_configure(driver->reset, DT_SOLOMON_SSD1306FB_0_RESET_GPIOS_PIN,
+			   GPIO_DIR_OUT);
+#endif
 
 	if (ssd1306_init_device(dev)) {
 		LOG_ERR("Failed to initialize device!");
