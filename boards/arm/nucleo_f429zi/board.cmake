@@ -1,10 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-set_ifndef(STLINK_FW stlink)
+board_runner_args(jlink "--device=STM32F429ZI" "--speed=4000")
 
-if(STLINK_FW STREQUAL jlink)
-  board_runner_args(jlink "--device=stm32f429zi" "--speed=4000")
-  include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
-elseif(STLINK_FW STREQUAL stlink)
-  include($ENV{ZEPHYR_BASE}/boards/common/openocd.board.cmake)
-endif()
+include(${ZEPHYR_BASE}/boards/common/openocd.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
