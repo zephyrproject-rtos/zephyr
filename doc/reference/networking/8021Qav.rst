@@ -1,0 +1,17 @@
+.. _8021Qav:
+
+IEEE 802.1Qav
+#############
+
+Overview
+********
+
+Credit-based shaping is an alternative scheduling algorithm used in
+network schedulers to achieve fairness when sharing a limited network
+resource.  Zephyr has support for configuring a credit-based shaper
+described in the `IEEE 802.1Qav-2009 standard`_. Zephyr does not
+implement the actual shaper; it only provides a way to configure the
+shaper implemented by the Ethernet device driver.
+
+.. _IEEE 802.1Qav-2009 standard:
+   https://standards.ieee.org/standard/802_1Qav-2009.html
