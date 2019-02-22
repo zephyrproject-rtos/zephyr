@@ -127,7 +127,7 @@ int ll_init(struct k_sem *sem_rx)
 
 	sem_recv = sem_rx;
 
-	clk_k32 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF_K32SRC_DRV_NAME);
+	clk_k32 = device_get_binding(DT_NORDIC_NRF_CLOCK_0_LABEL "_32K");
 	if (!clk_k32) {
 		return -ENODEV;
 	}
@@ -158,7 +158,7 @@ int ll_init(struct k_sem *sem_rx)
 			  hal_ticker_instance0_trigger_set);
 	LL_ASSERT(!err);
 
-	clk_m16 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF_M16SRC_DRV_NAME);
+	clk_m16 = device_get_binding(DT_NORDIC_NRF_CLOCK_0_LABEL "_16M");
 	if (!clk_m16) {
 		return -ENODEV;
 	}

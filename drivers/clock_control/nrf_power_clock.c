@@ -436,7 +436,7 @@ static int _clock_control_init(struct device *dev)
 	 * NOTE: Currently the operations here are idempotent.
 	 */
 	IRQ_CONNECT(DT_NORDIC_NRF_CLOCK_0_IRQ_0,
-		    CONFIG_CLOCK_CONTROL_NRF_IRQ_PRIORITY,
+		    DT_NORDIC_NRF_CLOCK_0_IRQ_0_PRIORITY,
 		    _power_clock_isr, 0, 0);
 
 	irq_enable(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
@@ -451,7 +451,7 @@ static const struct clock_control_driver_api _m16src_clock_control_api = {
 };
 
 DEVICE_AND_API_INIT(clock_nrf5_m16src,
-		    CONFIG_CLOCK_CONTROL_NRF_M16SRC_DRV_NAME,
+		    DT_NORDIC_NRF_CLOCK_0_LABEL "_16M",
 		    _clock_control_init, NULL, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &_m16src_clock_control_api);
@@ -463,7 +463,7 @@ static const struct clock_control_driver_api _k32src_clock_control_api = {
 };
 
 DEVICE_AND_API_INIT(clock_nrf5_k32src,
-		    CONFIG_CLOCK_CONTROL_NRF_K32SRC_DRV_NAME,
+		    DT_NORDIC_NRF_CLOCK_0_LABEL "_32K",
 		    _clock_control_init, NULL, NULL, PRE_KERNEL_1,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &_k32src_clock_control_api);

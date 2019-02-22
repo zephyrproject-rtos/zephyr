@@ -60,7 +60,7 @@ void nrf_802154_clock_hfclk_start(void)
 {
     struct device *clk_m16;
 
-    clk_m16 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF_M16SRC_DRV_NAME);
+    clk_m16 = device_get_binding(DT_NORDIC_NRF_CLOCK_0_LABEL "_16M");
     __ASSERT_NO_MSG(clk_m16 != NULL);
 
     clock_control_on(clk_m16, (void *)1); /* Blocking call. */
@@ -74,7 +74,7 @@ void nrf_802154_clock_hfclk_stop(void)
 {
     struct device *clk_m16;
 
-    clk_m16 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF_M16SRC_DRV_NAME);
+    clk_m16 = device_get_binding(DT_NORDIC_NRF_CLOCK_0_LABEL "_16M");
     __ASSERT_NO_MSG(clk_m16 != NULL);
 
     hfclk_is_running = false;
@@ -91,7 +91,7 @@ void nrf_802154_clock_lfclk_start(void)
 {
     struct device *clk_k32;
 
-    clk_k32 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF_K32SRC_DRV_NAME);
+    clk_k32 = device_get_binding(DT_NORDIC_NRF_CLOCK_0_LABEL "_32K");
     __ASSERT_NO_MSG(clk_k32 != NULL);
 
     clock_control_on(clk_k32, (void *)CLOCK_CONTROL_NRF_K32SRC);
@@ -105,7 +105,7 @@ void nrf_802154_clock_lfclk_stop(void)
 {
     struct device *clk_k32;
 
-    clk_k32 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF_K32SRC_DRV_NAME);
+    clk_k32 = device_get_binding(DT_NORDIC_NRF_CLOCK_0_LABEL "_32K");
     __ASSERT_NO_MSG(clk_k32 != NULL);
 
     lfclk_is_running = false;

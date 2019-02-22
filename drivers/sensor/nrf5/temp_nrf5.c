@@ -112,7 +112,7 @@ static int temp_nrf5_init(struct device *dev)
 	LOG_DBG("");
 
 	data->clk_m16_dev =
-		device_get_binding(CONFIG_CLOCK_CONTROL_NRF_M16SRC_DRV_NAME);
+		device_get_binding(DT_NORDIC_NRF_CLOCK_0_LABEL "_16M");
 	__ASSERT_NO_MSG(data->clk_m16_dev);
 
 	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
