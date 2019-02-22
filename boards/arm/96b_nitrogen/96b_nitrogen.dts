@@ -108,13 +108,18 @@
 		};
 		scratch_partition: partition@70000 {
 			label = "image-scratch";
-			reg = <0x00070000 0xD000>;
+			reg = <0x00070000 0xa000>;
 		};
 
 		/*
-		 * The flash starting at 0x0007d000 and ending at
-		 * 0x0007ffff (sectors 125-127) is reserved for use
-		 * by the application.
+		 * The flash starting at 0x0007a000 and ending at
+		 * 0x0007ffff (sectors 122-127) is reserved for use
+		 * by the application. If enabled, partition for FCB/NFFS
+		 * will be created in this area.
 		 */
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x0007a000 0x00006000>;
+		};
 	};
 };
