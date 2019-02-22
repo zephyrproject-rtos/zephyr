@@ -111,7 +111,7 @@ int lll_init(void)
 	event.curr.abort_cb = NULL;
 
 	/* Initialize LF CLK */
-	clk_k32 = device_get_binding(CONFIG_CLOCK_CONTROL_NRF_K32SRC_DRV_NAME);
+	clk_k32 = device_get_binding(DT_NORDIC_NRF_CLOCK_0_LABEL "_32K");
 	if (!clk_k32) {
 		return -ENODEV;
 	}
@@ -120,7 +120,7 @@ int lll_init(void)
 
 	/* Initialize HF CLK */
 	lll.clk_hf =
-		device_get_binding(CONFIG_CLOCK_CONTROL_NRF_M16SRC_DRV_NAME);
+		device_get_binding(DT_NORDIC_NRF_CLOCK_0_LABEL "_16M");
 	if (!lll.clk_hf) {
 		return -ENODEV;
 	}

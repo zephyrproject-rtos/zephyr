@@ -4928,7 +4928,7 @@ static void k32src_wait(void)
 	done = true;
 
 	struct device *lf_clock = device_get_binding(
-		CONFIG_CLOCK_CONTROL_NRF_K32SRC_DRV_NAME);
+		DT_NORDIC_NRF_CLOCK_0_LABEL "_32K");
 
 	LL_ASSERT(lf_clock);
 

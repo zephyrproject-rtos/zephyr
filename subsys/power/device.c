@@ -27,8 +27,8 @@ LOG_MODULE_DECLARE(power);
 #define NUM_CORE_DEVICES	4
 #define MAX_DEV_NAME_LEN	16
 static const char core_devices[NUM_CORE_DEVICES][MAX_DEV_NAME_LEN] = {
-	"clk_k32src",
-	"clk_m16src",
+	"CLOCK_32K",
+	"CLOCK_16M",
 	"sys_clock",
 	"UART_0",
 };

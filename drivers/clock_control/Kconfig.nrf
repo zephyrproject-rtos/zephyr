@@ -13,21 +13,6 @@ menuconfig CLOCK_CONTROL_NRF
 
 if CLOCK_CONTROL_NRF
 
-config CLOCK_CONTROL_NRF_IRQ_PRIORITY
-	int "Power Clock Interrupt Priority"
-	range 0 7
-	default 1
-	help
-	  The interrupt priority for Power Clock interrupt.
-
-config CLOCK_CONTROL_NRF_M16SRC_DRV_NAME
-	string "NRFx 16MHz clock device name"
-	default "clk_m16src"
-
-config CLOCK_CONTROL_NRF_K32SRC_DRV_NAME
-	string "NRFx 32KHz clock device name"
-	default "clk_k32src"
-
 choice
 	prompt "32KHz clock source"
 	default CLOCK_CONTROL_NRF_K32SRC_XTAL

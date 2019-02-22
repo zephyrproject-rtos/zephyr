@@ -14,7 +14,7 @@
 #include "common/log.h"
 #include "hal/debug.h"
 
-#define DRV_NAME CONFIG_CLOCK_CONTROL_NRF_K32SRC_DRV_NAME
+#define DRV_NAME DT_NORDIC_NRF_CLOCK_0_LABEL "_32K"
 #define K32SRC   CLOCK_CONTROL_NRF_K32SRC
 
 static u8_t is_k32src_stable;
