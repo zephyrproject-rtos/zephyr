@@ -8,6 +8,7 @@ mach create $name
 machine LoadPlatformDescription @platforms/boards/miv-board.repl
 
 showAnalyzer uart
+cpu PerformanceInMips 80
 
 macro reset
 """
