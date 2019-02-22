@@ -44,8 +44,7 @@ static struct thread_info tinfo[THREADS_NUM];
 static struct k_thread tthread[THREADS_NUM];
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);
 
-static int thread_started[THREADS_NUM - 1];
-static int pending;
+static volatile int thread_started[THREADS_NUM - 1];
 /**
  * @brief Tests for SMP
  * @defgroup kernel_smp_tests SMP Tests
@@ -348,11 +347,8 @@ static void thread_wakeup_entry(void *p1, void *p2, void *p3)
 
 	thread_started[thread_num] = 1;
 
-	if (pending) {
-		k_sem_take(&sema, DELAY_US * 1000);
-	} else {
-		k_sleep(DELAY_US * 1000);
-	}
+	k_sleep(DELAY_US * 1000);
+
 	tinfo[thread_num].executed  = 1;
 }
 
@@ -382,13 +378,7 @@ static void check_wokeup_threads(int tnum)
 			threads_woke_up++;
 		}
 	}
-	if (pending) {
-		zassert_not_equal(threads_woke_up, tnum,
-				  "Pending thread woke up!");
-	} else {
-		zassert_equal(threads_woke_up, tnum,
-			      "Threads did not wakeup");
-	}
+	zassert_equal(threads_woke_up, tnum, "Threads did not wakeup");
 }
 
 /**
@@ -418,22 +408,6 @@ void test_wakeup_threads(void)
 	cleanup_resources();
 }
 
-/**
- * @brief Test wakeup() call on pending threads
- *
- * @ingroup kernel_smp_tests
- *
- * @details Spawn threads to run on remaining cores and
- * make them pend on a semaphore. Call wakeup() from
- * parent thread. Check if the threads have woken up
- */
-void test_wakeup_pending_threads(void)
-{
-	pending = 1;
-
-	test_wakeup_threads();
-}
-
 void test_main(void)
 {
 	/* Sleep a bit to guarantee that both CPUs enter an idle
@@ -449,8 +423,7 @@ void test_main(void)
 			 ztest_unit_test(test_preempt_resched_threads),
 			 ztest_unit_test(test_yield_threads),
 			 ztest_unit_test(test_sleep_threads),
-			 ztest_unit_test(test_wakeup_threads),
-			 ztest_unit_test(test_wakeup_pending_threads)
+			 ztest_unit_test(test_wakeup_threads)
 			 );
 	ztest_run_test_suite(smp);
 }
