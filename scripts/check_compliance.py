@@ -467,7 +467,7 @@ class Identity(ComplianceTest):
                 self.case.result._elem.text = failure
 
 
-def init_logs():
+def init_logs(cli_arg):
 
     """
     Initialize Logging
@@ -475,25 +475,23 @@ def init_logs():
     :return:
     """
 
-    # TODO: there may be a shorter version with something like:
-    # logging.basicConfig(level=getattr(logging, args.loglevel))
+    # TODO: there may be a shorter version thanks to:
+    # logging.basicConfig(...)
 
     global logger
-    log_lev = os.environ.get('LOG_LEVEL', None)
-    level = logging.WARN
-    if log_lev == "DEBUG":
-        level = logging.DEBUG
-    elif log_lev == "ERROR":
-        level = logging.ERROR
+
+    level = os.environ.get('LOG_LEVEL', "WARN")
 
     console = logging.StreamHandler()
     format = logging.Formatter('%(levelname)-8s: %(message)s')
     console.setFormatter(format)
+
     logger = logging.getLogger('')
     logger.addHandler(console)
-    logger.setLevel(level)
+    logger.setLevel(cli_arg if cli_arg else level)
 
-    logging.debug("Log init completed")
+    logging.info("Log init completed, level=%s",
+                 logging.getLevelName(logger.getEffectiveLevel()))
 
 
 
@@ -666,12 +664,9 @@ def main():
     :return:
     """
 
-    init_logs()
     args = parse_args()
 
-    if args.loglevel:
-        logger.setLevel(level=args.loglevel)
-    # else: os.environ.get('LOG_LEVEL'); see init_logs()
+    init_logs(args.loglevel)
 
     if args.list:
         for testcase in ComplianceTest.__subclasses__():
@@ -724,6 +719,10 @@ def main():
 
     failed_cases = []
 
+    # TODO maybe: move all the github-related code to a different .py
+    # file to draw a better line between developer code versus
+    # infrastructure-specific code, in other words keep this file
+    # 100% testable and maintainable by non-admins developers.
     if args.github and 'GH_TOKEN' in os.environ:
         errors = report_to_github(args.repo, args.pull_request, args.sha, suite, docs)
     else:
