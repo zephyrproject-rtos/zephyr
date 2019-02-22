@@ -262,20 +262,6 @@ extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
 		} \
 	} while (false)
 
-static inline __attribute__((warn_unused_result)) __printf_like(2, 3)
-bool z_syscall_verify_msg(bool expr, const char *fmt, ...)
-{
-	va_list ap;
-
-	if (expr) {
-		va_start(ap, fmt);
-		vprintk(fmt, ap);
-		va_end(ap);
-	}
-
-	return expr;
-}
-
 /**
  * @brief Runtime expression check for system call arguments
  *
@@ -287,11 +273,15 @@ bool z_syscall_verify_msg(bool expr, const char *fmt, ...)
  *             oops
  * @param fmt Printf-style format string (followed by appropriate variadic
  *            arguments) to print on verification failure
- * @return 0 on success, nonzero on failure
+ * @return False on success, True on failure
  */
-#define Z_SYSCALL_VERIFY_MSG(expr, fmt, ...) \
-	z_syscall_verify_msg(!(expr), "syscall %s failed check: " fmt "\n", \
-			     __func__, ##__VA_ARGS__)
+#define Z_SYSCALL_VERIFY_MSG(expr, fmt, ...) ({ \
+	bool expr_copy = !(expr); \
+	if (expr_copy) { \
+		printk("syscall %s failed check: " fmt "\n", \
+		       __func__, ##__VA_ARGS__); \
+	} \
+	expr_copy; })
 
 /**
  * @brief Runtime expression check for system call arguments
