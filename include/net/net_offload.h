@@ -19,8 +19,6 @@
  * @{
  */
 
-#if defined(CONFIG_NET_OFFLOAD)
-
 #include <net/buf.h>
 #include <net/net_ip.h>
 #include <net/net_context.h>
@@ -431,8 +429,6 @@ static inline int net_offload_put(struct net_if *iface,
 #ifdef __cplusplus
 }
 #endif
-
-#endif /* CONFIG_NET_OFFLOAD */
 
 /**
  * @}

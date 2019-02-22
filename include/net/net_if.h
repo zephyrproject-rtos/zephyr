@@ -523,19 +523,16 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt);
  *
  * @return True if IP offlining is active, false otherwise.
  */
+static inline bool net_if_is_ip_offloaded(struct net_if *iface)
+{
 #if defined(CONFIG_NET_OFFLOAD)
-static inline bool net_if_is_ip_offloaded(struct net_if *iface)
-{
 	return (iface->if_dev->offload != NULL);
-}
 #else
-static inline bool net_if_is_ip_offloaded(struct net_if *iface)
-{
 	ARG_UNUSED(iface);
 
 	return false;
-}
 #endif
+}
 
 /**
  * @brief Return the IP offload plugin
@@ -544,12 +541,14 @@ static inline bool net_if_is_ip_offloaded(struct net_if *iface)
  *
  * @return NULL if there is no offload plugin defined, valid pointer otherwise
  */
-#if defined(CONFIG_NET_OFFLOAD)
 static inline struct net_offload *net_if_offload(struct net_if *iface)
 {
+#if defined(CONFIG_NET_OFFLOAD)
 	return iface->if_dev->offload;
-}
+#else
+	return NULL;
 #endif
+}
 
 /**
  * @brief Get an network interface's link address
