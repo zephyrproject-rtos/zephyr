@@ -271,7 +271,7 @@ static void write_kerntext(void)
 	expect_fault = true;
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
-	memcpy(&_is_thread_essential, 0, 4);
+	memset(&_is_thread_essential, 0, 4);
 	zassert_unreachable("Write to kernel text did not fault");
 }
 
