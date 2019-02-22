@@ -113,7 +113,26 @@ static void device_print_subtree(const struct shell *shell,
 
 static int cmd_device_tree(const struct shell *shell, size_t argc, char **argv)
 {
+	struct device *dev;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
 	device_print_subtree(shell, "SOC", 0, 1);
+	
+	shell_fprintf(shell, SHELL_NORMAL, "\n");
+	for (dev = __device_init_start; dev != __device_init_end; dev++) {
+		if (dev->driver_api == NULL) {
+			continue;
+		}
+
+		if (dev->config->parent_name == NULL) {
+			shell_fprintf(shell, SHELL_WARNING,
+				"WARNING: Found dangling device: %s\n",
+				dev->config->name);
+		}
+	}
+
 	return 0;
 }
 #endif /* CONFIG_DEVICE_HIERARCHY */
