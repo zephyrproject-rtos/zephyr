@@ -387,9 +387,13 @@ def init_logs():
 
     :return:
     """
+
+    # TODO: there may be a shorter version with something like:
+    # logging.basicConfig(level=getattr(logging, args.loglevel))
+
     global logger
     log_lev = os.environ.get('LOG_LEVEL', None)
-    level = logging.INFO
+    level = logging.WARN
     if log_lev == "DEBUG":
         level = logging.DEBUG
     elif log_lev == "ERROR":
@@ -531,8 +535,9 @@ def parse_args():
     """
     parser = argparse.ArgumentParser(
         description="Check for coding style and documentation warnings.")
-    parser.add_argument('-c', '--commits', default=None,
-                        help="Commit range in the form: a..b")
+    parser.add_argument('-c', '--commits', default="HEAD~1..",
+                        help='''Commit range in the form: a..[b], default is
+                        HEAD~1..HEAD''')
     parser.add_argument('-g', '--github', action="store_true",
                         help="Send results to github as a comment.")
 
@@ -545,19 +550,24 @@ def parse_args():
                         help="Set status to pending")
     parser.add_argument('-S', '--sha', default=None, help="Commit SHA")
     parser.add_argument('-o', '--output', default="compliance.xml",
-                        help='Name of outfile in junit format.')
+                        help='''Name of outfile in JUnit format,
+                        default is ./compliance.xml''')
 
     parser.add_argument('-l', '--list', action="store_true",
                         help="List all test modules.")
 
+    parser.add_argument("-v", "--loglevel", help="python logging level")
+
     parser.add_argument('-m', '--module', action="append", default=[],
-                        help="Tets modules to run, by default run everything.")
+                        help="Test modules to run, by default run everything.")
 
     parser.add_argument('-e', '--exclude-module', action="append", default=[],
                         help="Do not run the specified modules")
 
     parser.add_argument('-j', '--previous-run', default=None,
-                        help="Load junit file in XML format from previous run for unified reporting")
+                        help='''Pre-load JUnit results in XML format
+                        from a previous run and combine with new results.''')
+
 
     return parser.parse_args()
 
@@ -568,7 +578,13 @@ def main():
 
     :return:
     """
+
+    init_logs()
     args = parse_args()
+
+    if args.loglevel:
+        logger.setLevel(level=args.loglevel)
+    # else: os.environ.get('LOG_LEVEL'); see init_logs()
 
     if args.list:
         for testcase in ComplianceTest.__subclasses__():
@@ -587,6 +603,7 @@ def main():
 
     if args.previous_run and os.path.exists(args.previous_run) and args.module:
         junit_xml = JUnitXml.fromfile(args.previous_run)
+        logging.info("Loaded previous results from %s", args.previous_run)
         for loaded_suite in junit_xml:
             suite = loaded_suite
             break
@@ -618,17 +635,23 @@ def main():
     xml.update_statistics()
     xml.write(args.output)
 
-    errors = 0
+    failed_cases = []
 
     if args.github and 'GH_TOKEN' in os.environ:
         errors = report_to_github(args.repo, args.pull_request, args.sha, suite, docs)
     else:
         for case in suite:
             if case.result and case.result.type != 'skipped':
-                errors += 1
+                failed_cases.append(case)
+        errors = len(failed_cases)
 
     if errors:
         print("{} Errors found".format(errors))
+        for case in failed_cases:
+            # not clear why junitxml doesn't clearly expose the most
+            # important part of its underlying etree.Element
+            errmsg = case.result._elem.text.strip()
+            logging.error("Test %s failed: %s", case.name, errmsg)
 
     sys.exit(errors)
 
