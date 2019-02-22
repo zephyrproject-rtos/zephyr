@@ -178,7 +178,7 @@ int ssd1306_suspend(const struct device *dev)
 				 SSD1306_DISPLAY_OFF);
 }
 
-int ssd1306_write_page(struct device *dev, u8_t page, void * const data,
+int ssd1306_write_page(const struct device *dev, u8_t page, void const *data,
 		       size_t length)
 {
 	struct ssd1306_data *driver = dev->driver_data;
@@ -276,12 +276,14 @@ int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 			       (u8_t *)buf, desc->buf_size);
 
 #elif defined(CONFIG_SSD1306_SH1106_COMPATIBLE)
-	if (len != SSD1306_PANEL_NUMOF_PAGES * DT_SOLOMON_SSD1306FB_0_WIDTH) {
+	if (desc->buf_size !=
+	    (SSD1306_PANEL_NUMOF_PAGES * DT_SOLOMON_SSD1306FB_0_WIDTH)) {
 		return -1;
 	}
 
 	for (size_t pidx = 0; pidx < SSD1306_PANEL_NUMOF_PAGES; pidx++) {
-		if (ssd1306_write_page(dev, pidx, buf, DT_SOLOMON_SSD1306FB_0_WIDTH)) {
+		if (ssd1306_write_page(dev, pidx, buf,
+		    DT_SOLOMON_SSD1306FB_0_WIDTH)) {
 			return -1;
 		}
 		buf = (u8_t *)buf + DT_SOLOMON_SSD1306FB_0_WIDTH;
