@@ -12,7 +12,9 @@
 #define ZEPHYR_INCLUDE_NET_MII_H_
 
 /**
- * @addtogroup ethernet
+ * @brief Ethernet MII (media independent interface) functions
+ * @defgroup ethernet_mii Ethernet MII Support Functions
+ * @ingroup ethernet
  * @{
  */
 
