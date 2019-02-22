@@ -382,11 +382,15 @@ int net_context_put(struct net_context *context)
 	context->recv_cb = NULL;
 	context->send_cb = NULL;
 
-	if (net_tcp_put(context) >= 0) {
-		goto unlock;
-	}
-
+	/* Decrement refcount on user app's behalf */
 	net_context_unref(context);
+
+	/* net_tcp_put() will handle decrementing refcount on stack's behalf */
+	net_tcp_put(context);
+	/* Assume it's better to have goto to immediate label than ugly
+	 * not indented #ifdef (if only they were intended!).
+	 */
+	goto unlock;
 
 unlock:
 	k_mutex_unlock(&context->lock);
