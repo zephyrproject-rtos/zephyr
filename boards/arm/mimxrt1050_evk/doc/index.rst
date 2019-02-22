@@ -114,6 +114,9 @@ features:
 +-----------+------------+-------------------------------------+
 | USB       | on-chip    | USB device                          |
 +-----------+------------+-------------------------------------+
+| FLASH     | on-chip    | Only HyperFlash for now             |
++-----------+------------+-------------------------------------+
+
 
 The default configuration can be found in the defconfig file:
 
