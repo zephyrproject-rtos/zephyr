@@ -57,7 +57,7 @@ struct xuk_shared_mem {
 	int vgacol;
 };
 
-#define _shared (*((struct xuk_shared_mem *)(long)SHARED_ADDR))
+#define _shared (*((volatile struct xuk_shared_mem *)(long)SHARED_ADDR))
 
 static inline void shared_init(void)
 {
