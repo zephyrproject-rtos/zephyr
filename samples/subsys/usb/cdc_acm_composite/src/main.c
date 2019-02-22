@@ -86,6 +86,8 @@ void main(void)
 	struct device *dev0, *dev1;
 	u32_t dtr = 0U;
 
+	printf("Wait for Bindings\n");
+
 	dev0 = device_get_binding(CONFIG_CDC_ACM_PORT_NAME_0);
 	if (!dev0) {
 		printf("CDC ACM device %s not found\n",
@@ -131,13 +133,15 @@ void main(void)
 	dev_data1->dev = dev1;
 	dev_data1->peer = dev0;
 
+	printf("Setting Interrupt handlers ...\n");
 	uart_irq_callback_user_data_set(dev0, interrupt_handler, dev_data0);
 	uart_irq_callback_user_data_set(dev1, interrupt_handler, dev_data1);
 
+	printf("Starting writing data ...\n");
 	write_data(dev0, banner, strlen(banner));
 	write_data(dev1, banner, strlen(banner));
 
-	/* Enable rx interrupts */
+	printf("Enable rx interrupts ...\n");
 	uart_irq_rx_enable(dev0);
 	uart_irq_rx_enable(dev1);
 }
