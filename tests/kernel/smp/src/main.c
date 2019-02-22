@@ -40,7 +40,7 @@ struct thread_info {
 	int priority;
 	int cpu_id;
 };
-static struct thread_info tinfo[THREADS_NUM];
+static volatile struct thread_info tinfo[THREADS_NUM];
 static struct k_thread tthread[THREADS_NUM];
 static K_THREAD_STACK_ARRAY_DEFINE(tstack, THREADS_NUM, STACK_SIZE);
 
@@ -168,6 +168,17 @@ static void thread_entry(void *p1, void *p2, void *p3)
 	}
 }
 
+static void spin_for_threads_exit(void)
+{
+	for (int i = 0; i < THREADS_NUM - 1; i++) {
+		volatile u8_t *p = &tinfo[i].tid->base.thread_state;
+
+		while (!(*p & _THREAD_DEAD)) {
+		}
+	}
+	k_busy_wait(DELAY_US);
+}
+
 static void spawn_threads(int prio, int thread_num,
 			  int equal_prio, k_thread_entry_t thread_entry, int delay)
 {
@@ -269,8 +280,7 @@ void test_preempt_resched_threads(void)
 	spawn_threads(K_PRIO_PREEMPT(10), THREADS_NUM, !EQUAL_PRIORITY,
 		      &thread_entry, THREAD_DELAY);
 
-	/* Wait for some time to let all threads run */
-	k_busy_wait(DELAY_US);
+	spin_for_threads_exit();
 
 	for (int i = 0; i < THREADS_NUM; i++) {
 		zassert_true(tinfo[i].executed == 1,
@@ -356,10 +366,17 @@ static void wakeup_on_start_thread(int tnum)
 {
 	int threads_started = 0, i;
 
+	/* For each thread, spin waiting for it to first flag that
+	 * it's going to sleep, and then that it's actually blocked
+	 */
 	for (i = 0; i < tnum; i++) {
-		/* Give it some time to start */
-		k_busy_wait(DELAY_US);
+		while (thread_started[i] == 0) {
+		}
+		while (!_is_thread_prevented_from_running(tinfo[i].tid)) {
+		}
+	}
 
+	for (i = 0; i < tnum; i++) {
 		if (thread_started[i] == 1 && threads_started <= tnum) {
 			threads_started++;
 			k_wakeup(tinfo[i].tid);
