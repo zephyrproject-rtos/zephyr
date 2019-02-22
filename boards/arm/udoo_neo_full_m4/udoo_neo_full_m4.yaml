@@ -18,5 +18,3 @@ supported:
   - uart
   - gpio
   - counter
-testing:
-  default: true
