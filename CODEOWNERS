@@ -135,6 +135,7 @@
 /drivers/ieee802154/                      @jukkar @tbursztyka
 /drivers/interrupt_controller/            @andrewboie
 /drivers/ipm/ipm_mhu*                     @karl-zh
+/drivers/ipm/ipm_stm32_ipcc.c             @arnop2
 /drivers/*/vexriscv_litex.c               @mateusz-holenko @kgugala @pgielda
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar

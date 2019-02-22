@@ -1,0 +1,24 @@
+#
+# Copyright (c) 2019, STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: STM32 MAILBOX
+version: 0.1
+
+description: >
+  This binding gives a base representation of the STM32 IPCC
+
+inherits:
+    !include base.yaml
+
+properties:
+  compatible:
+      constraint: "st,stm32-ipcc-mailbox"
+
+  clocks:
+    type: array
+    category: required
+    description: Clock gate control information
+    generation: define

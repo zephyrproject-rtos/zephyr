@@ -82,3 +82,22 @@ config IPM_MHU
 	depends on IPM
 	help
 	  Driver for SSE 200 MHU (Message Handling Unit)
+
+config IPM_STM32_IPCC
+	bool "STM32 IPCC controller"
+	depends on IPM
+	select USE_STM32_LL_IPCC
+	help
+	  Driver for stm32 IPCC mailboxes
+
+config IPM_STM32_IPCC_PROCID
+	int "STM32 IPCC Processor ID"
+	default 2
+	range 1 2
+	depends on IPM_STM32_IPCC
+	help
+	  use to define the Processor ID for IPCC access
+
+module = IPM
+module-str = ipm
+source "subsys/logging/Kconfig.template.log_config"
