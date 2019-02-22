@@ -40,7 +40,8 @@
 #define EACD(edr)  (((edr) & SYSMPU_EDR_EACD_MASK) >> SYSMPU_EDR_EACD_SHIFT)
 #endif
 
-#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+#if defined(CONFIG_ARM_SECURE_FIRMWARE) || \
+	defined(CONFIG_ARM_NONSECURE_FIRMWARE)
 
 /* Exception Return (EXC_RETURN) is provided in LR upon exception entry.
  * It is used to perform an exception return and to detect possible state
@@ -101,7 +102,7 @@
  * to the Secure stack during a Non-Secure exception entry.
  */
 #define ADDITIONAL_STATE_CONTEXT_WORDS 10
-#endif /* CONFIG_ARM_SECURE_FIRMWARE */
+#endif /* CONFIG_ARM_SECURE_FIRMWARE || CONFIG_ARM_NONSECURE_FIRMWARE */
 
 /**
  *
