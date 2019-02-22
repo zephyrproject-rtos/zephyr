@@ -6,10 +6,23 @@ tests:
     tags: usb
     harness: console
     harness_config:
-      type: one_line
+      type: multi_line
       regex:
         - "Wait for DTR"
+        - "DTR set, start test"
+        - "Baudrate detected"
+        - "Starting indefinite read/write data loop"
+        - "At least one read/write data cycle completed"
   usb.cdc-acm_comp:
     depends_on: usb_device
     tags: usb
     extra_args: "-DOVERLAY_CONFIG=overlay-composite-cdc-msc.conf"
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Wait for DTR"
+        - "DTR set, start test"
+        - "Baudrate detected"
+        - "At least one read/write data cycle completed"
+

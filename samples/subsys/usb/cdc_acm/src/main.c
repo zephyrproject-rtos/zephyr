@@ -77,6 +77,7 @@ void main(void)
 	struct device *dev;
 	u32_t baudrate, bytes_read, dtr = 0U;
 	int ret;
+	int i = 0;
 
 	dev = device_get_binding(CONFIG_CDC_ACM_PORT_NAME_0);
 	if (!dev) {
@@ -120,5 +121,9 @@ void main(void)
 	/* Echo the received data */
 	while (1) {
 		read_and_echo_data(dev, (int *) &bytes_read);
+		i++;
+		if (i == 1) {
+		    printf("At least one read/write data cycle completed");
+		}
 	}
 }
