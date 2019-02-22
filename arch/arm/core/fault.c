@@ -670,7 +670,7 @@ static void _SecureStackDump(const NANO_ESF *secure_esf)
  */
 void _Fault(NANO_ESF *esf, u32_t exc_return)
 {
-	u32_t reason;
+	u32_t reason = _NANO_ERR_HW_EXCEPTION;
 	int fault = SCB->ICSR & SCB_ICSR_VECTACTIVE_Msk;
 
 	LOG_PANIC();
@@ -753,7 +753,6 @@ void _Fault(NANO_ESF *esf, u32_t exc_return)
 #if defined(CONFIG_ARM_SECURE_FIRMWARE) || \
 	defined(CONFIG_ARM_NONSECURE_FIRMWARE)
 _exit_fatal:
-	reason = _NANO_ERR_HW_EXCEPTION;
 #endif
 	_NanoFatalErrorHandler(reason, esf);
 }
