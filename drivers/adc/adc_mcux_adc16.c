@@ -48,7 +48,7 @@ static int mcux_adc16_channel_setup(struct device *dev,
 	}
 
 	if (channel_cfg->differential) {
-		LOG_ERR("Differential channels are not supported");
+		LOG_ERR("Differential channels are not supported at the controller level");
 		return -EINVAL;
 	}
 
@@ -175,14 +175,11 @@ static void mcux_adc16_start_channel(struct device *dev)
 
 #if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) && FSL_FEATURE_ADC16_HAS_DIFF_MODE
 #ifdef CONFIG_ADC_CONFIGURABLE_DIFF_PER_CHANNEL
-    if((data->differential_channels & BIT(data->channel_id)) != 0U)
-    {
-        channel_config.enableDifferentialConversion = true;
-    }
-    else
-    {
-        channel_config.enableDifferentialConversion = false;
-    }
+	if( (data->differential_channels & BIT(data->channel_id) ) != 0U) {
+		channel_config.enableDifferentialConversion = true;
+	} else {
+		channel_config.enableDifferentialConversion = false;
+	}
 #else
 	channel_config.enableDifferentialConversion = false;
 #endif
