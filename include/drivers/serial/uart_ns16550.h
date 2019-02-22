@@ -5,7 +5,7 @@
  */
 
 /**
- * @file Header file for the NS16550 UART
+ * Header file for the NS16550 UART
  */
 
 #ifndef ZEPHYR_DRIVERS_SERIAL_UART_NS16550_H_

@@ -38,7 +38,7 @@
 #include <pci/pci_mgr.h>
 #endif /* CONFIG_PCI */
 
-#include "uart_ns16550.h"
+#include <drivers/serial/uart_ns16550.h>
 
 /* register definitions */
 
