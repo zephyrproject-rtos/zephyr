@@ -109,6 +109,17 @@ int zsock_socket_internal(int family, int type, int proto)
 	z_object_recycle(ctx);
 #endif
 
+	/* TCP context is effectively owned by both application
+	 * and the stack: stack may detect that peer closed/aborted
+	 * connection, but it must not dispose of the context behind
+	 * the application back. Likewise, when application "closes"
+	 * context, it's not disposed of immediately - there's yet
+	 * closing handshake for stack to perform.
+	 */
+	if (proto == IPPROTO_TCP) {
+		net_context_ref(ctx);
+	}
+
 	z_finalize_fd(fd, ctx, (const struct fd_op_vtable *)&sock_fd_op_vtable);
 
 	NET_DBG("socket: ctx=%p, fd=%d", ctx, fd);
@@ -389,6 +400,15 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 			return -1;
 		}
 	}
+
+	/* TCP context is effectively owned by both application
+	 * and the stack: stack may detect that peer closed/aborted
+	 * connection, but it must not dispose of the context behind
+	 * the application back. Likewise, when application "closes"
+	 * context, it's not disposed of immediately - there's yet
+	 * closing handshake for stack to perform.
+	 */
+	net_context_ref(ctx);
 
 	NET_DBG("accept: ctx=%p, fd=%d", ctx, fd);
 
