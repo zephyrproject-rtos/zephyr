@@ -71,6 +71,7 @@ struct net_eth_addr {
 
 /** @endcond */
 
+/** Ethernet hardware capabilities */
 enum ethernet_hw_caps {
 	/** TX Checksum offloading supported */
 	ETHERNET_HW_TX_CHKSUM_OFFLOAD	= BIT(0),
