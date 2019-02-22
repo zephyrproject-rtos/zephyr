@@ -218,6 +218,14 @@ struct adc_sequence {
 	 */
 	u32_t channels;
 
+#ifdef CONFIG_ADC_CONFIGURABLE_DIFF_PER_CHANNEL
+	/**
+	 * Bit-mask indicating that the matching channel is acquired in
+	 * differential mode.
+	 */
+	u32_t differential_channels;
+#endif
+
 	/**
 	 * Pointer to a buffer where the samples are to be written. Samples
 	 * from subsequent samplings are written sequentially in the buffer.

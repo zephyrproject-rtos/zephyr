@@ -26,6 +26,9 @@ struct mcux_adc16_data {
 	u16_t *buffer;
 	u16_t *repeat_buffer;
 	u32_t channels;
+#ifdef CONFIG_ADC_CONFIGURABLE_DIFF_PER_CHANNEL
+	u32_t differential_channels;
+#endif
 	u8_t channel_id;
 };
 
@@ -171,7 +174,18 @@ static void mcux_adc16_start_channel(struct device *dev)
 	LOG_DBG("Starting channel %d", data->channel_id);
 
 #if defined(FSL_FEATURE_ADC16_HAS_DIFF_MODE) && FSL_FEATURE_ADC16_HAS_DIFF_MODE
+#ifdef CONFIG_ADC_CONFIGURABLE_DIFF_PER_CHANNEL
+    if((data->differential_channels & BIT(data->channel_id)) != 0U)
+    {
+        channel_config.enableDifferentialConversion = true;
+    }
+    else
+    {
+        channel_config.enableDifferentialConversion = false;
+    }
+#else
 	channel_config.enableDifferentialConversion = false;
+#endif
 #endif
 	channel_config.enableInterruptOnConversionCompleted = true;
 	channel_config.channelNumber = data->channel_id;
@@ -184,6 +198,9 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		CONTAINER_OF(ctx, struct mcux_adc16_data, ctx);
 
 	data->channels = ctx->sequence->channels;
+#ifdef CONFIG_ADC_CONFIGURABLE_DIFF_PER_CHANNEL
+	data->differential_channels = ctx->sequence->differential_channels;
+#endif
 	data->repeat_buffer = data->buffer;
 
 	mcux_adc16_start_channel(data->dev);

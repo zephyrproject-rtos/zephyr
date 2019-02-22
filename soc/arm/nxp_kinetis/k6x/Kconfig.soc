@@ -20,7 +20,7 @@ config SOC_MK64F12
 	select HAS_OSC
 	select HAS_MCG
 	select CPU_HAS_FPU
-
+	select ADC_HAS_DIFF_PER_CHANNEL
 endchoice
 
 if SOC_SERIES_KINETIS_K6X

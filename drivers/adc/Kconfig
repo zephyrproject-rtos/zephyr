@@ -25,6 +25,20 @@ if ADC
 config ADC_CONFIGURABLE_INPUTS
 	bool
 
+config ADC_HAS_DIFF_PER_CHANNEL
+    bool
+    help
+      This option is enabled when the ADC manages differential inputs on a
+      channel to channel basis.
+
+config ADC_CONFIGURABLE_DIFF_PER_CHANNEL
+	bool "Enable differential acquisition per channel"
+    depends on ADC_HAS_DIFF_PER_CHANNEL
+	help
+	  By selecting this option a driver can (if supported) re-configure any ADC
+	  channel in a given adc sequence as differential or not without having to
+	  setup the ADC again
+
 config ADC_ASYNC
 	bool "Enable asynchronous call support"
 	select POLL
