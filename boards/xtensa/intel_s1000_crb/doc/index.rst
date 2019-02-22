@@ -66,14 +66,17 @@ In order to download the installer and the core configuration, users need to
 have a registered account at https://tensilicatools.com.
 
 The toolchain installer and the core configuration can be downloaded by following
-the links at `Tensillica Tools for Sue Creek`_
+the links at `Tensilica Tools for Sue Creek`_
 
-Select version RF-2016.4 and download the archive. The archive contains the installer
-"Xplorer-6.0.4-linux-installer.bin" and the core configuration "X6H3SUE_2016_4".
+Select version RF-2016.4 and download the archive. The archive contains two files:
+
+- Installer: :file:`Xplorer-6.0.4-linux-installer.bin` and
+- Core configuration
+  :file:`2018-05-15_5afafc055d3f4_X6H3SUE_2016_4_linux_redist.tgz`
 
 For JTAG based debugging, download the XOCD package as well.
 
-A node locked license key can also be generated from the tensilicatools.com portal.
+A node locked license key can also be generated from the `SDK portal`_.
 
 Set up build environment
 ========================
@@ -84,30 +87,59 @@ Run the installer using these commands:
 
    cd ~/Downloads
    chmod +x Xplorer-6.0.4-linux-installer.bin
-   sudo ./Xplorer-6.0.4-linux-installer.bin
+   ./Xplorer-6.0.4-linux-installer.bin
 
-Xplorer software will be installed into the /opt/xtensa folder. Please note a dialogue box
-should pop-up after running this command. Otherwise, it means your system is missing some
-package which is preventing successful installation, most probably gtk2-i686.  You can
-install this missing package with:
+Please note a dialogue box should pop-up after running this command. In case the
+graphical installation tool does not start, the tool will revert to console
+based installation. The graphical tool is the preferred installation method.
 
-.. code-block:: console
+If the graphical tool does not start, it means your system is missing some
+packages which is preventing successful installation, most probably
+``gtk2-i686``.  You can install any missing packages with::
 
    sudo apt-get install gtk2-i686
 
-After the tool chain is successfully installed, the core build needs to be installed as
-follows
+On Fedora 29 you might need to install the following packages::
+
+   sudo dnf install libXtst.i686 libnsl.i686 gtk2.i686
+
+.. note::
+
+   The SDK is a 32 bit binary, so you will need to install 32bit compatibility
+   packages for this work.
+
+Follow the instructions and install the toolchain and related tools in your
+preferred path.
+
+After a successful installation of the tool, run the Xtensa Xplorer (it will run
+automatically after installation is done) and follow the steps to install the
+software keys you have downloaded from `Tensilica Tools for Sue Creek`_
+
+
+.. note::
+
+   The license key you have requested is tied to the Ethernet MAC address on the
+   host system. The license manager expects a network device named ``eth0`` or
+   ``eth1``. On many modern Linux distribution the naming scheme is different
+   and determined automatically. You will need to either force the naming to
+   follow what the license manager expects or create a dedicated ethernet device
+   for this to work.
+
+After the tool chain is successfully installed, the core build needs to be
+installed as follows
 
 .. code-block:: console
 
-   tar -xvzf X6H3SUE_2016_4_linux_redist.tgz --directory /opt/xtensa/XtDevTools/install/builds
-   cd /opt/xtensa/XtDevTools/install/builds/RF-2016.4-linux/X6H3SUE_2016_4
-   sudo ./install
+   tar -xvzf 2018-05-15_5afafc055d3f4_X6H3SUE_2016_4_linux_redist.tgz --directory <path to SDK>/XtDevTools/install/builds
+   cd <path to  SDK>/XtDevTools/install/builds/RF-2016.4-linux/X6H3SUE_2016_4
+   ./install
 
-"install" is the Xtensa Processor Configuration Installation Tool which is required
-to update the installation path. When it prompts to enter the path to the Xtensa Tools
-directory, enter /opt/xtensa/XtDevTools/install/tools/RF-2016.4-linux/XtensaTools. You
-should use the default registry /opt/xtensa/XtDevTools/install/tools/RF-2016.4-linux/XtensaTools/config.
+The :file:`install` script is the Xtensa Processor Configuration Installation
+Tool which is required to update the installation path. When it prompts to
+enter the path to the Xtensa Tools directory, enter
+:file:`<path to SDK>/XtDevTools/install/tools/RF-2016.4-linux/XtensaTools`.
+You should use the default registry
+:file:`<path to SDK>/XtDevTools/install/tools/RF-2016.4-linux/XtensaTools/config`.
 
 With the XCC toolchain installed, the Zephyr build system must be instructed
 to use this particular variant by setting the ``ZEPHYR_TOOLCHAIN_VARIANT``
@@ -115,13 +147,13 @@ shell variable. Some more environment variables are also required (see below):
 
 .. code-block:: console
 
-   export XTENSA_PREFER_LICENSE=XTENSA
+   export XTENSA_TOOLCHAIN_PATH=<path to SDK>
    export ZEPHYR_TOOLCHAIN_VARIANT=xcc
    export TOOLCHAIN_VER=RF-2016.4-linux
    export XTENSA_CORE=X6H3SUE_2016_4
-   export XTENSA_SYSTEM=/opt/xtensa/XtDevTools/install/tools/RF-2016.4-linux/XtensaTools/config/
-   export XTENSA_BUILD_PATHS=/opt/xtensa/XtDevTools/install/builds/
-   export XTENSA_OCD_PATH=/opt/tensilica/xocd-12.0.4
+   export XTENSA_SYSTEM=${XTENSA_TOOLCHAIN_PATH}/XtDevTools/install/tools/RF-2016.4-linux/XtensaTools/config/
+   export XTENSA_BUILD_PATHS=${XTENSA_TOOLCHAIN_PATH}/XtDevTools/install/builds/
+   export XTENSA_OCD_PATH=<path to XOCD>/xocd-12.0.4
 
 Programming and Debugging
 *************************
@@ -222,6 +254,8 @@ Those 2 pins are Pin5 HOST_RST_N_LT_R) and Pin21 (+V_HOST_3P3_1P8).
 
 .. _`FT232 UART`: https://www.amazon.com/FT232RL-Serial-Converter-Adapter-Arduino/dp/B06XDH2VK9
 
-.. _Tensillica Tools for Sue Creek: https://tensilicatools.com/platform/intel-sue-creek
+.. _Tensilica Tools for Sue Creek: https://tensilicatools.com/platform/intel-sue-creek
+
+.. _SDK portal: https://tensilicatools.com
 
 .. _Intel Speech Enabling Developer Kit: https://software.intel.com/en-us/iot/speech-enabling-dev-kit
