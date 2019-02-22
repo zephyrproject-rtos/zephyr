@@ -314,8 +314,8 @@ void xuk_set_isr_mask(int interrupt, int masked)
 static void setup_fg_segs(int cpu)
 {
 	int fi = 3 + 2 * cpu, gi = 3 + 2 * cpu + 1;
-	struct gdt64 *fs = &_shared.gdt[fi];
-	struct gdt64 *gs = &_shared.gdt[gi];
+	struct gdt64 *fs = (struct gdt64 *) &_shared.gdt[fi];
+	struct gdt64 *gs = (struct gdt64 *) &_shared.gdt[gi];
 
 	gdt64_set_base(fs, (long)&_shared.fs_ptrs[cpu]);
 	gdt64_set_base(gs, (long)&_shared.gs_ptrs[cpu]);
