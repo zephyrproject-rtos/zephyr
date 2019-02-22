@@ -38,52 +38,93 @@ extern "C" {
 #define NET_VLAN_TAG_UNSPEC 0x0fff
 /** @endcond */
 
-/** Protocol families */
-#define PF_UNSPEC	0	/* Unspecified. */
-#define PF_INET		1	/* IP protocol family version 4. */
-#define PF_INET6	2	/* IP protocol family version 6. */
-#define PF_PACKET	3	/* Packet family. */
-#define PF_CAN		4	/* Controller Area Network.  */
+/* Protocol families. */
+#define PF_UNSPEC       0          /**< Unspecified protocol family.  */
+#define PF_INET         1          /**< IP protocol family version 4. */
+#define PF_INET6        2          /**< IP protocol family version 6. */
+#define PF_PACKET       3          /**< Packet family.                */
+#define PF_CAN          4          /**< Controller Area Network.      */
 
-/** Address families.  */
-#define AF_UNSPEC	PF_UNSPEC
-#define AF_INET		PF_INET
-#define AF_INET6	PF_INET6
-#define AF_PACKET	PF_PACKET
-#define AF_CAN		PF_CAN
+/* Address families. */
+#define AF_UNSPEC       PF_UNSPEC  /**< Unspecified address family.   */
+#define AF_INET         PF_INET    /**< IP protocol family version 4. */
+#define AF_INET6        PF_INET6   /**< IP protocol family version 6. */
+#define AF_PACKET       PF_PACKET  /**< Packet family.                */
+#define AF_CAN          PF_CAN     /**< Controller Area Network.      */
 
 /** Protocol numbers from IANA */
 enum net_ip_protocol {
-	IPPROTO_ICMP = 1,
-	IPPROTO_TCP = 6,
-	IPPROTO_UDP = 17,
-	IPPROTO_ICMPV6 = 58,
+	IPPROTO_ICMP = 1,          /**< ICMP protocol   */
+	IPPROTO_TCP = 6,           /**< TCP protocol    */
+	IPPROTO_UDP = 17,          /**< UDP protocol    */
+	IPPROTO_ICMPV6 = 58,       /**< ICMPv6 protocol */
 };
 
-/* Protocol numbers for TLS protocols */
+/** Protocol numbers for TLS protocols */
 enum net_ip_protocol_secure {
-	IPPROTO_TLS_1_0 = 256,
-	IPPROTO_TLS_1_1 = 257,
-	IPPROTO_TLS_1_2 = 258,
-	IPPROTO_DTLS_1_0 = 272,
-	IPPROTO_DTLS_1_2 = 273,
+	IPPROTO_TLS_1_0 = 256,     /**< TLS 1.0 protocol */
+	IPPROTO_TLS_1_1 = 257,     /**< TLS 1.1 protocol */
+	IPPROTO_TLS_1_2 = 258,     /**< TLS 1.2 protocol */
+	IPPROTO_DTLS_1_0 = 272,    /**< DTLS 1.0 protocol */
+	IPPROTO_DTLS_1_2 = 273,    /**< DTLS 1.2 protocol */
 };
 
 /** Socket type */
 enum net_sock_type {
-	SOCK_STREAM = 1,
-	SOCK_DGRAM,
-	SOCK_RAW
+	SOCK_STREAM = 1,           /**< Stream socket type   */
+	SOCK_DGRAM,                /**< Datagram socket type */
+	SOCK_RAW                   /**< RAW socket type      */
 };
 
+/** @brief Convert 16-bit value from network to host byte order.
+ *
+ * @param x The network byte order value to convert.
+ *
+ * @return Host byte order value.
+ */
 #define ntohs(x) sys_be16_to_cpu(x)
+
+/** @brief Convert 32-bit value from network to host byte order.
+ *
+ * @param x The network byte order value to convert.
+ *
+ * @return Host byte order value.
+ */
 #define ntohl(x) sys_be32_to_cpu(x)
+
+/** @brief Convert 64-bit value from network to host byte order.
+ *
+ * @param x The network byte order value to convert.
+ *
+ * @return Host byte order value.
+ */
 #define ntohll(x) sys_be64_to_cpu(x)
+
+/** @brief Convert 16-bit value from host to network byte order.
+ *
+ * @param x The host byte order value to convert.
+ *
+ * @return Network byte order value.
+ */
 #define htons(x) sys_cpu_to_be16(x)
+
+/** @brief Convert 32-bit value from host to network byte order.
+ *
+ * @param x The host byte order value to convert.
+ *
+ * @return Network byte order value.
+ */
 #define htonl(x) sys_cpu_to_be32(x)
+
+/** @brief Convert 64-bit value from host to network byte order.
+ *
+ * @param x The host byte order value to convert.
+ *
+ * @return Network byte order value.
+ */
 #define htonll(x) sys_cpu_to_be64(x)
 
-/** IPv6 address structure */
+/** IPv6 address struct */
 struct in6_addr {
 	union {
 		u8_t s6_addr[16];
@@ -92,7 +133,7 @@ struct in6_addr {
 	};
 };
 
-/** IPv4 address */
+/** IPv4 address struct */
 struct in_addr {
 	union {
 		u8_t s4_addr[4];
@@ -102,13 +143,18 @@ struct in_addr {
 	};
 };
 
+/** Socket address family type */
 typedef unsigned short int sa_family_t;
+
+/** Length of a socket address */
 typedef size_t socklen_t;
 
-/**
+/*
  * Note that the sin_port and sin6_port are in network byte order
  * in various sockaddr* structs.
  */
+
+/** Socket address struct for IPv6. */
 struct sockaddr_in6 {
 	sa_family_t		sin6_family;   /* AF_INET6               */
 	u16_t			sin6_port;     /* Port number            */
@@ -123,6 +169,7 @@ struct sockaddr_in6_ptr {
 	u8_t			sin6_scope_id; /* interfaces for a scope */
 };
 
+/** Socket address struct for IPv4. */
 struct sockaddr_in {
 	sa_family_t		sin_family;    /* AF_INET      */
 	u16_t			sin_port;      /* Port number  */
@@ -135,6 +182,7 @@ struct sockaddr_in_ptr {
 	struct in_addr		*sin_addr;     /* IPv4 address */
 };
 
+/** Socket address struct for packet socket. */
 struct sockaddr_ll {
 	sa_family_t sll_family;   /* Always AF_PACKET        */
 	u16_t       sll_protocol; /* Physical-layer protocol */
@@ -159,6 +207,8 @@ struct sockaddr_can_ptr {
 	sa_family_t can_family;
 	int         can_ifindex;
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Packet types.  */
 #define PACKET_HOST         0     /* To us            */
@@ -202,10 +252,15 @@ struct sockaddr_can_ptr {
 #endif
 #endif
 
+/** @endcond */
+
+/** Generic sockaddr struct. Must be cast to proper type. */
 struct sockaddr {
 	sa_family_t sa_family;
 	char data[NET_SOCKADDR_MAX_SIZE - sizeof(sa_family_t)];
 };
+
+/** @cond INTERNAL_HIDDEN */
 
 struct sockaddr_ptr {
 	sa_family_t family;
@@ -238,9 +293,16 @@ struct net_addr {
 extern const struct in6_addr in6addr_any;
 extern const struct in6_addr in6addr_loopback;
 
-/* Defined by POSIX. INET6_ADDRSTRLEN accounts for mapped IPv4 addresses. */
+/** @endcond */
+
+/** Max length of the IPv4 address as a string. Defined by POSIX. */
 #define INET_ADDRSTRLEN 16
+/** Max length of the IPv6 address as a string. Takes into account possible
+ * mapped IPv4 addresses.
+ */
 #define INET6_ADDRSTRLEN 46
+
+/** @cond INTERNAL_HIDDEN */
 
 /* These are for internal usage of the stack */
 #define NET_IPV6_ADDR_LEN sizeof("xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx:xxxx")
@@ -249,77 +311,64 @@ extern const struct in6_addr in6addr_loopback;
 #define INADDR_ANY 0
 #define INADDR_ANY_INIT { { { INADDR_ANY } } }
 
-#define NET_IPV6_MTU 1280
-#define NET_IPV4_MTU  576
+/** @endcond */
 
-/** IPv6 extension headers types */
-#define NET_IPV6_NEXTHDR_HBHO        0
-#define NET_IPV6_NEXTHDR_DESTO       60
-#define NET_IPV6_NEXTHDR_ROUTING     43
-#define NET_IPV6_NEXTHDR_FRAG        44
-#define NET_IPV6_NEXTHDR_NONE        59
+enum net_ip_mtu {
+	/** IPv6 MTU length. We must be able to receive this size IPv6 packet
+	 * without fragmentation.
+	 */
+	NET_IPV6_MTU = 1280,
+
+	/** IPv4 MTU length. We must be able to receive this size IPv4 packet
+	 * without fragmentation.
+	 */
+	NET_IPV4_MTU = 576,
+};
 
 /** Network packet priority settings described in IEEE 802.1Q Annex I.1 */
 enum net_priority {
-	NET_PRIORITY_BK = 1, /* Background (lowest)                */
-	NET_PRIORITY_BE = 0, /* Best effort (default)              */
-	NET_PRIORITY_EE = 2, /* Excellent effort                   */
-	NET_PRIORITY_CA = 3, /* Critical applications (highest)    */
-	NET_PRIORITY_VI = 4, /* Video, < 100 ms latency and jitter */
-	NET_PRIORITY_VO = 5, /* Voice, < 10 ms latency and jitter  */
-	NET_PRIORITY_IC = 6, /* Internetwork control               */
-	NET_PRIORITY_NC = 7  /* Network control                    */
+	NET_PRIORITY_BK = 1, /**< Background (lowest)                */
+	NET_PRIORITY_BE = 0, /**< Best effort (default)              */
+	NET_PRIORITY_EE = 2, /**< Excellent effort                   */
+	NET_PRIORITY_CA = 3, /**< Critical applications (highest)    */
+	NET_PRIORITY_VI = 4, /**< Video, < 100 ms latency and jitter */
+	NET_PRIORITY_VO = 5, /**< Voice, < 10 ms latency and jitter  */
+	NET_PRIORITY_IC = 6, /**< Internetwork control               */
+	NET_PRIORITY_NC = 7  /**< Network control                    */
 } __packed;
 
 /** IPv6/IPv4 network connection tuple */
 struct net_tuple {
-	/** IPv6/IPv4 remote address */
-	struct net_addr *remote_addr;
-	/** IPv6/IPv4 local address */
-	struct net_addr *local_addr;
-	/** UDP/TCP remote port */
-	u16_t remote_port;
-	/** UDP/TCP local port */
-	u16_t local_port;
-	/** IP protocol */
-	enum net_ip_protocol ip_proto;
+	struct net_addr *remote_addr;  /**< IPv6/IPv4 remote address */
+	struct net_addr *local_addr;   /**< IPv6/IPv4 local address  */
+	u16_t remote_port;             /**< UDP/TCP remote port      */
+	u16_t local_port;              /**< UDP/TCP local port       */
+	enum net_ip_protocol ip_proto; /**< IP protocol              */
 };
-
-/** How the network address is assigned to network interface */
-enum net_addr_type {
-	NET_ADDR_ANY = 0,
-	NET_ADDR_AUTOCONF,
-	NET_ADDR_DHCP,
-	NET_ADDR_MANUAL,
-	NET_ADDR_OVERRIDABLE,
-} __packed;
-
-static inline const char *net_addr_type2str(enum net_addr_type type)
-{
-	switch (type) {
-	case NET_ADDR_AUTOCONF:
-		return "AUTO";
-	case NET_ADDR_DHCP:
-		return "DHCP";
-	case NET_ADDR_MANUAL:
-		return "MANUAL";
-	case NET_ADDR_OVERRIDABLE:
-		return "OVERRIDE";
-	case NET_ADDR_ANY:
-	default:
-		break;
-	}
-
-	return "<unknown>";
-}
 
 /** What is the current state of the network address */
 enum net_addr_state {
-	NET_ADDR_ANY_STATE = -1,
-	NET_ADDR_TENTATIVE = 0,
-	NET_ADDR_PREFERRED,
-	NET_ADDR_DEPRECATED,
+	NET_ADDR_ANY_STATE = -1, /**< Default (invalid) address type */
+	NET_ADDR_TENTATIVE = 0,  /**< Tentative address              */
+	NET_ADDR_PREFERRED,      /**< Preferred address              */
+	NET_ADDR_DEPRECATED,     /**< Deprecated address             */
 } __packed;
+
+/** How the network address is assigned to network interface */
+enum net_addr_type {
+	/** Default value. This is not a valid value. */
+	NET_ADDR_ANY = 0,
+	/** Auto configured address */
+	NET_ADDR_AUTOCONF,
+	/** Address is from DHCP */
+	NET_ADDR_DHCP,
+	/** Manually set address */
+	NET_ADDR_MANUAL,
+	/** Manually set address which is overridable by DHCP */
+	NET_ADDR_OVERRIDABLE,
+} __packed;
+
+/** @cond INTERNAL_HIDDEN */
 
 struct net_ipv6_hdr {
 	u8_t vtc;
@@ -378,6 +427,32 @@ struct net_tcp_hdr {
 	u8_t optdata[0];
 } __packed;
 
+static inline const char *net_addr_type2str(enum net_addr_type type)
+{
+	switch (type) {
+	case NET_ADDR_AUTOCONF:
+		return "AUTO";
+	case NET_ADDR_DHCP:
+		return "DHCP";
+	case NET_ADDR_MANUAL:
+		return "MANUAL";
+	case NET_ADDR_OVERRIDABLE:
+		return "OVERRIDE";
+	case NET_ADDR_ANY:
+	default:
+		break;
+	}
+
+	return "<unknown>";
+}
+
+/* IPv6 extension headers types */
+#define NET_IPV6_NEXTHDR_HBHO        0
+#define NET_IPV6_NEXTHDR_DESTO       60
+#define NET_IPV6_NEXTHDR_ROUTING     43
+#define NET_IPV6_NEXTHDR_FRAG        44
+#define NET_IPV6_NEXTHDR_NONE        59
+
 /**
  * This 2 unions are here temporarily, as long as net_context.h will
  * be still public and not part of the core only.
@@ -408,6 +483,8 @@ union net_proto_header {
 #define NET_IPV4UDPH_LEN   (NET_UDPH_LEN + NET_IPV4H_LEN) /* IPv4 + UDP */
 #define NET_IPV4TCPH_LEN   (NET_TCPH_LEN + NET_IPV4H_LEN) /* IPv4 + TCP */
 #define NET_IPV4ICMPH_LEN  (NET_IPV4H_LEN + NET_ICMPH_LEN) /* ICMPv4 + IPv4 */
+
+/** @endcond */
 
 /**
  * @brief Check if the IPv6 address is a loopback address (::1).
