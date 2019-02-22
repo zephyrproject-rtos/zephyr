@@ -6,6 +6,7 @@
 
 /* libc headers */
 #include <stdlib.h>
+#include <ctype.h>
 
 /* Zephyr headers */
 #include <logging/log.h>
@@ -18,6 +19,13 @@ LOG_MODULE_REGISTER(net_sock_addr, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #define AI_ARR_MAX	2
 
 #if defined(CONFIG_DNS_RESOLVER)
+
+/* Helper macros which take into account the fact that ai_family as passed
+ * into getaddrinfo() may take values AF_INET, AF_INET6, or AF_UNSPEC, where
+ * AF_UNSPEC means resolve both AF_INET and AF_INET6.
+ */
+#define RESOLVE_IPV4(ai_family) (IS_ENABLED(CONFIG_NET_IPV4) && (ai_family) != AF_INET6)
+#define RESOLVE_IPV6(ai_family) (IS_ENABLED(CONFIG_NET_IPV6) && (ai_family) != AF_INET)
 
 struct getaddrinfo_state {
 	const struct zsock_addrinfo *hints;
@@ -128,6 +136,7 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 				       struct zsock_addrinfo *res)
 {
 	int family = AF_UNSPEC;
+	int ai_flags = 0;
 	long int port = 0;
 	int st1 = DNS_EAI_ADDRFAMILY, st2 = DNS_EAI_ADDRFAMILY;
 	struct sockaddr *ai_addr;
@@ -136,6 +145,7 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 
 	if (hints) {
 		family = hints->ai_family;
+		ai_flags = hints->ai_flags;
 	}
 
 	if (service) {
@@ -153,6 +163,35 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 		}
 
 		return getaddrinfo_null_host(port, hints, res);
+	}
+
+#define SIN_ADDR(ptr) (((struct sockaddr_in *)(ptr))->sin_addr)
+
+	/* Check for IPv4 numeric address. Start with a quick heuristic check,
+	 * of first char of the address, then do long validating inet_pton()
+	 * call if needed.
+	 */
+	if (RESOLVE_IPV4(family)
+	    && isdigit((int)*host)
+	    && zsock_inet_pton(AF_INET, host,
+			       &SIN_ADDR(&res->_ai_addr)) == 1) {
+		struct sockaddr_in *addr =
+		    (struct sockaddr_in *)&res->_ai_addr;
+
+		addr->sin_port = htons(port);
+		addr->sin_family = AF_INET;
+		INIT_ADDRINFO(res, addr);
+		res->ai_family = AF_INET;
+		res->ai_socktype = SOCK_STREAM;
+		res->ai_protocol = IPPROTO_TCP;
+		return 0;
+	}
+
+	if (ai_flags & AI_NUMERICHOST) {
+		/* Asked to resolve host as numeric, but it wasn't possible
+		 * to do that.
+		 */
+		return DNS_EAI_FAIL;
 	}
 
 	ai_state.hints = hints;
