@@ -47,9 +47,9 @@ More information about the board can be found at the `Disco L475 IoT1 website`_.
 Hardware
 ********
 
-The STM32L475RG SoC provides the following hardware IPs:
+The STM32L475VG SoC provides the following hardware IPs:
 
-- Ultra-low-power with FlexPowerControl (down to 130 nA Standby mode and 100 uA/MHz run mode)
+- Ultra-low-power with FlexPowerControl (down to 120 nA Standby mode and 100 uA/MHz run mode)
 - Core: ARM |reg| 32-bit Cortex |reg|-M4 CPU with FPU, frequency up to 80 MHz, 100DMIPS/1.25DMIPS/MHz (Dhrystone 2.1)
 - Clock Sources:
         - 4 to 48 MHz crystal oscillator
@@ -76,7 +76,7 @@ The STM32L475RG SoC provides the following hardware IPs:
         - Quad SPI memory interface
 - 4x digital filters for sigma delta modulator
 - Rich analog peripherals (independent supply)
-        - 3x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200 uA/MSPS
+        - 2x 12-bit ADC 5 MSPS, up to 16-bit with hardware oversampling, 200 uA/MSPS
         - 2x 12-bit DAC, low-power sample and hold
         - 2x operational amplifiers with built-in PGA
         - 2x ultra-low-power comparators
@@ -94,8 +94,8 @@ The STM32L475RG SoC provides the following hardware IPs:
 - Development support: serial wire debug (SWD), JTAG, Embedded Trace Macrocell |trade|
 
 
-More information about STM32L476RG can be found here:
-       - `STM32L475RG on www.st.com`_
+More information about STM32L475VG can be found here:
+       - `STM32L475VG on www.st.com`_
        - `STM32L475 reference manual`_
 
 Supported Features
@@ -226,8 +226,8 @@ You can debug an application in the usual way.  Here is an example for the
 .. _STM32 Disco L475 IoT1 board User Manual:
    http://www.st.com/resource/en/user_manual/dm00347848.pdf
 
-.. _STM32L475RG on www.st.com:
-   http://www.st.com/en/microcontrollers/stm32l475rg.html
+.. _STM32L475VG on www.st.com:
+   https://www.st.com/en/microcontrollers-microprocessors/stm32l475vg.html
 
 .. _STM32L475 reference manual:
    http://www.st.com/resource/en/reference_manual/dm00083560.pdf
