@@ -143,7 +143,7 @@ extern "C" {
 
 #elif defined(__GNUC__)
 /* Simplicity Studio, Atollic and Vanilla armgcc */
-#define SL_RAMFUNC_DECLARATOR          __attribute__ ((section(".ram")))
+#define SL_RAMFUNC_DECLARATOR          __attribute__ ((section(".ramfunc")))
 #define SL_RAMFUNC_DEFINITION_BEGIN    SL_RAMFUNC_DECLARATOR
 #define SL_RAMFUNC_DEFINITION_END
 
