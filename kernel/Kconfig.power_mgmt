@@ -17,9 +17,8 @@ menuconfig SYS_POWER_MANAGEMENT
 if SYS_POWER_MANAGEMENT
 config SYS_POWER_LOW_POWER_STATES
 	bool "Low Power states"
-	depends on SYS_POWER_STATE_CPU_LPS_1_SUPPORTED || \
-	           SYS_POWER_STATE_CPU_LPS_2_SUPPORTED || \
-	           SYS_POWER_STATE_CPU_LPS_3_SUPPORTED
+	depends on HAS_STATE_LOW_POWER_1 || HAS_STATE_LOW_POWER_2 || \
+	           HAS_STATE_LOW_POWER_3
 	help
 	  This option enables the kernel to interface with a power manager
 	  application.  This permits the system to enter a custom CPU low power
@@ -29,9 +28,8 @@ config SYS_POWER_LOW_POWER_STATES
 
 config SYS_POWER_DEEP_SLEEP_STATES
 	bool "Deep Sleep states"
-	depends on SYS_POWER_STATE_DEEP_SLEEP_1_SUPPORTED || \
-	           SYS_POWER_STATE_DEEP_SLEEP_2_SUPPORTED || \
-	           SYS_POWER_STATE_DEEP_SLEEP_3_SUPPORTED
+	depends on HAS_STATE_DEEP_SLEEP_1 || HAS_STATE_DEEP_SLEEP_2 || \
+	           HAS_STATE_DEEP_SLEEP_3
 	help
 	  This option enables the kernel to interface with a power manager
 	  application. This permits the system to enter a Deep sleep state
