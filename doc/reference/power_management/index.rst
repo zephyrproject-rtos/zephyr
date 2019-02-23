@@ -16,21 +16,21 @@ Terminology
    SOC and provide interfaces to the hardware features. It will abstract
    the SOC specific implementations to the applications and the OS.
 
-:dfn:`CPU LPS (Low Power State)`
-   Refers to any one of the low power states supported by the CPU. The CPU is
-   usually powered on while the clocks are power gated.
+:dfn:`SOC Power State`
+   SOC Power State describes processor and device power states implemented at
+   the SOC level. Deep Sleep State is an example of SOC Power State.
 
 :dfn:`Active State`
    The CPU and clocks are powered on. This is the normal operating state when
    the system is running.
 
-:dfn:`Deep Sleep State`
-   The CPU is power gated and loses context. Most peripherals would also be
-   power gated. RAM is selectively retained.
+:dfn:`Low Power State`
+   Refers to any one of the low power states supported by the SoC. The SoC is
+   usually powered on while the clocks are power gated.
 
-:dfn:`SOC Power State`
-   SOC Power State describes processor and device power states implemented at
-   the SOC level. Deep Sleep State is an example of SOC Power State.
+:dfn:`Deep Sleep State`
+   The SoC is power gated and loses context. Most peripherals would also be
+   power gated. RAM may be selectively retained.
 
 :dfn:`Idle Thread`
    A system thread that runs when there are no other threads ready to run.

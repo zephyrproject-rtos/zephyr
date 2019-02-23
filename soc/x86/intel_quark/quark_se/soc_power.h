@@ -23,9 +23,9 @@ extern "C" {
 
 /*
  * Power state map:
- * SYS_POWER_STATE_CPU_LPS_1:		C1 state
- * SYS_POWER_STATE_CPU_LPS_2:		C2 state
- * SYS_POWER_STATE_CPU_LPS_3:		C2LP state
+ * SYS_POWER_STATE_LOW_POWER_1:		C1 state
+ * SYS_POWER_STATE_LOW_POWER_2:		C2 state
+ * SYS_POWER_STATE_LOW_POWER_3:		C2LP state
  * SYS_POWER_STATE_DEEP_SLEEP_1:	SLEEP state
  * SYS_POWER_STATE_DEEP_SLEEP_2:	SLEEP state with LPMODE enabled
  */
