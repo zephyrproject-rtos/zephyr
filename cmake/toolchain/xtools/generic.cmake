@@ -12,6 +12,7 @@ set(COMPILER gcc)
 # toolchains because choosing between iamcu and non-iamcu is dependent
 # on Kconfig, not ARCH.
 file(GLOB toolchain_paths ${TOOLCHAIN_HOME}/*)
+list(REMOVE_ITEM toolchain_paths ${TOOLCHAIN_HOME}/sources)
 list(GET  toolchain_paths 0 some_toolchain_path)
 get_filename_component(some_toolchain "${some_toolchain_path}" NAME)
 
