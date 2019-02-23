@@ -4,7 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
 #define LOG_DOMAIN flash_stm32f0
+#elif defined(CONFIG_SOC_SERIES_STM32F1X)
+#define LOG_DOMAIN flash_stm32f1
+#endif
 #define LOG_LEVEL CONFIG_FLASH_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_DOMAIN);
@@ -36,7 +40,11 @@ static unsigned int get_page(off_t offset)
 static int write_hword(struct device *dev, off_t offset, u16_t val)
 {
 	volatile u16_t *flash = (u16_t *)(offset + CONFIG_FLASH_BASE_ADDRESS);
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
 	struct stm32f0x_flash *regs = FLASH_STM32_REGS(dev);
+#elif defined(CONFIG_SOC_SERIES_STM32F1X)
+	struct stm32f10x_flash *regs = FLASH_STM32_REGS(dev);
+#endif
 	u32_t tmp;
 	int rc;
 
@@ -76,7 +84,11 @@ static int write_hword(struct device *dev, off_t offset, u16_t val)
 
 static int erase_page(struct device *dev, unsigned int page)
 {
+#if defined(CONFIG_SOC_SERIES_STM32F0X)
 	struct stm32f0x_flash *regs = FLASH_STM32_REGS(dev);
+#elif defined(CONFIG_SOC_SERIES_STM32F1X)
+	struct stm32f10x_flash *regs = FLASH_STM32_REGS(dev);
+#endif
 	u32_t page_address = CONFIG_FLASH_BASE_ADDRESS;
 	u32_t tmp;
 	int rc;
