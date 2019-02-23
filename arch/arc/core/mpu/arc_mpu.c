@@ -446,8 +446,8 @@ void arc_core_mpu_configure_user_context(struct k_thread *thread)
 
 	/* for kernel threads, no need to configure user context */
 	if (!(thread->base.user_options & K_USER)) {
-#if defined(CONFIG_APP_SHARED_MEM) && CONFIG_ARC_MPU_VER == 3
-		/* APP_SHARED_MEM is handled here, all privileged threads have
+#if defined(CONFIG_USERSPACE) && CONFIG_ARC_MPU_VER == 3
+		/* USERSPACE is handled here, all privileged threads have
 		 * the right to access it.
 		 */
 		base = (u32_t)&_app_smem_start;

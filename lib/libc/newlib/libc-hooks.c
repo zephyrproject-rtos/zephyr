@@ -59,7 +59,7 @@ extern void *_heap_sentry;
 
 static unsigned char *heap_base = UINT_TO_POINTER(USED_RAM_END_ADDR);
 
-#ifdef CONFIG_APP_SHARED_MEM
+#ifdef CONFIG_USERSPACE
 struct k_mem_partition z_malloc_partition;
 
 static int malloc_prepare(struct device *unused)

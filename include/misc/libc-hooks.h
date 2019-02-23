@@ -36,7 +36,7 @@ __syscall size_t _zephyr_fwrite(const void *_MLIBC_RESTRICT ptr, size_t size,
 				size_t nitems, FILE *_MLIBC_RESTRICT stream);
 #endif /* CONFIG_NEWLIB_LIBC */
 
-#ifdef CONFIG_APP_SHARED_MEM
+#ifdef CONFIG_USERSPACE
 /* Memory partition containing the libc malloc arena */
 extern struct k_mem_partition z_malloc_partition;
 

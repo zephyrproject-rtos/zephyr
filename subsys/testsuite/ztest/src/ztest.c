@@ -7,7 +7,7 @@
 #include <ztest.h>
 #include <stdio.h>
 #include <app_memory/app_memdomain.h>
-#ifdef CONFIG_APP_SHARED_MEM
+#ifdef CONFIG_USERSPACE
 #include <misc/libc-hooks.h>
 #endif
 
@@ -282,7 +282,7 @@ void end_report(void)
 	}
 }
 
-#ifdef CONFIG_APP_SHARED_MEM
+#ifdef CONFIG_USERSPACE
 struct k_mem_domain ztest_mem_domain;
 K_APPMEM_PARTITION_DEFINE(ztest_mem_partition);
 #endif
@@ -299,7 +299,7 @@ int main(void)
 #else
 void main(void)
 {
-#ifdef CONFIG_APP_SHARED_MEM
+#ifdef CONFIG_USERSPACE
 	struct k_mem_partition *parts[] = {
 		&ztest_mem_partition,
 		/* C library globals, stack canary storage, etc */
@@ -314,7 +314,7 @@ void main(void)
 	 */
 	k_mem_domain_init(&ztest_mem_domain, ARRAY_SIZE(parts), parts);
 	k_mem_domain_add_thread(&ztest_mem_domain, k_current_get());
-#endif /* CONFIG_APP_SHARED_MEM */
+#endif /* CONFIG_USERSPACE */
 
 	_init_mock();
 	test_main();

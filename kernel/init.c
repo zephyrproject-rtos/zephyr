@@ -190,7 +190,7 @@ void _data_copy(void)
 
 	data_copy_xip_relocation();
 #endif	/* CONFIG_CODE_DATA_RELOCATION */
-#ifdef CONFIG_APP_SHARED_MEM
+#ifdef CONFIG_USERSPACE
 #ifdef CONFIG_STACK_CANARIES
 	/* stack canary checking is active for all C functions.
 	 * __stack_chk_guard is some uninitialized value living in the
@@ -213,7 +213,7 @@ void _data_copy(void)
 	(void)memcpy(&_app_smem_start, &_app_smem_rom_start,
 		 ((u32_t) &_app_smem_end - (u32_t) &_app_smem_start));
 #endif /* CONFIG_STACK_CANARIES */
-#endif /* CONFIG_APP_SHARED_MEM */
+#endif /* CONFIG_USERSPACE */
 }
 #endif
 

@@ -37,11 +37,11 @@ LOG_MODULE_REGISTER(mpu);
 /* Convenience macros to denote the start address and the size of the system
  * memory area, where dynamic memory regions may be programmed at run-time.
  */
-#if defined(CONFIG_APP_SHARED_MEM)
+#if defined(CONFIG_USERSPACE)
 #define _MPU_DYNAMIC_REGIONS_AREA_START ((u32_t)&_app_smem_start)
 #else
 #define _MPU_DYNAMIC_REGIONS_AREA_START ((u32_t)&__kernel_ram_start)
-#endif /* CONFIG_APP_SHARED_MEM */
+#endif /* CONFIG_USERSPACE */
 #define _MPU_DYNAMIC_REGIONS_AREA_SIZE ((u32_t)&__kernel_ram_end - \
 		_MPU_DYNAMIC_REGIONS_AREA_START)
 

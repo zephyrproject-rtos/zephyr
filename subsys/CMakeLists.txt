@@ -1,4 +1,3 @@
-add_subdirectory_ifdef(CONFIG_APP_SHARED_MEM       app_memory)
 add_subdirectory(debug)
 add_subdirectory(logging)
 add_subdirectory_ifdef(CONFIG_BT                   bluetooth)

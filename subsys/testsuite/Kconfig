@@ -63,7 +63,6 @@ config TEST_USERSPACE
 	depends on ARCH_HAS_USERSPACE
 	depends on TEST
 	select USERSPACE
-	select APP_SHARED_MEM
 	select DYNAMIC_OBJECTS
 	default y
 	help
