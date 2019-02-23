@@ -3,26 +3,29 @@ and hardware register access header files for the Texas Instruments
 SimpleLink SoCs.
 
 For an explanation of the SimpleLink family SDK directory structure, see:
-http://dev.ti.com/tirex/content/simplelink_cc13x0_sdk_1_30_00_06/docs/simplelink_mcu_sdk/Users_Guide.html#directory-structure
+http://dev.ti.com/tirex/content/simplelink_cc32xx_sdk_2_40_01_01/docs/simplelink_mcu_sdk/Users_Guide.html#directory-structure
 
-1. CC3220 SDK
+1. CC32xx SDK
 
-The current version supported in Zephyr is the SimpleLink CC3220 SDK
-1.50.00.06, downloaded from:
+The current version supported in Zephyr is the SimpleLink CC32xx SDK
+2.40.01.01, downloaded from:
 
-	http://www.ti.com/tool/download/SIMPLELINK-CC3220-SDK
+	http://www.ti.com/tool/download/simplelink-cc32xx-sdk
 
-The source files in the source/ti/devices/ and source/ti/drivers/
-directories are copied from a Linux CC3220 SDK installation, using
-the following commands:
+Source files from select subdirectories are copied from the
+source/ti/ subdirectory of the SDK installation, as follows:
 
-  % cd ~/ti/simplelink_cc32xx_sdk_1_50_00_06/
-  % find devices -name '*.[c|h]' | \
-	cpio -pdm ~/zephyr/ext/hal/ti/simplelink/source/ti
-  % find drivers -name '*.[c|h]' | \
-	cpio -pdm ~/zephyr/ext/hal/ti/simplelink/source/ti
+	EXT_DIR=$ZEPHYR_BASE/ext/hal/ti/simplelink/source/ti
+	find devices -not -path '*/\.*' -name '*.[c|h]' | \
+		cpio -pdm $EXT_DIR
+	find drivers -name '*.[c|h]' | \
+		cpio -pdm $EXT_DIR
+	find net -maxdepth 1 -name '*.[c|h]' | cpio -pdm $EXT_DIR
+	cd $EXT_DIR
+	find . -name '*.[c|h]' -exec chmod 664 {} \;
 
-In a separate commit, the file modes and trailing whitespace are fixed.
+In addition, some files in the drivers/net/wifi/porting directory
+may need to be updated: notably user.h, cc_pal.h, and CC3220SF_LAUNCHXL.c.
 
 Note: TI provides the driver library functions burned into ROM at the factory,
 or updated via a service pack patch, thus saving application code space.
