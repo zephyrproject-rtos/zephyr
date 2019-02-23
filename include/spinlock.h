@@ -24,12 +24,22 @@ static inline void _arch_irq_unlock(int key)
 }
 #endif
 
+/* There's a spinlock validation framework available when asserts are
+ * enabled.  It adds a relatively hefty overhead (about 3k or so) to
+ * kernel code size, don't use on platforms known to be small. (Note
+ * we're using the kconfig value here.  This isn't defined for every
+ * board, but the default of zero works well as an "infinity"
+ * fallback.  There is a DT_FLASH_SIZE parameter too, but that seems
+ * even more poorly supported.
+ */
+#if (CONFIG_FLASH_SIZE == 0) || (CONFIG_FLASH_SIZE > 32)
 #if defined(CONFIG_ASSERT) && (CONFIG_MP_NUM_CPUS < 4)
 #include <misc/__assert.h>
 struct k_spinlock;
 int z_spin_lock_valid(struct k_spinlock *l);
 int z_spin_unlock_valid(struct k_spinlock *l);
 #define SPIN_VALIDATE
+#endif
 #endif
 
 struct k_spinlock_key {
