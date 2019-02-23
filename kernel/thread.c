@@ -720,6 +720,7 @@ int z_spin_lock_valid(struct k_spinlock *l)
 		}
 	}
 	l->thread_cpu = _current_cpu->id | (u32_t)_current;
+	_current_cpu->spin_depth++;
 	return 1;
 }
 
@@ -729,6 +730,7 @@ int z_spin_unlock_valid(struct k_spinlock *l)
 		return 0;
 	}
 	l->thread_cpu = 0;
+	_current_cpu->spin_depth--;
 	return 1;
 }
 #endif

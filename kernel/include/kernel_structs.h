@@ -15,6 +15,7 @@
 #include <misc/rb.h>
 #include <misc/util.h>
 #include <string.h>
+#include <spinlock.h>
 #endif
 
 #define K_NUM_PRIORITIES \
@@ -106,6 +107,10 @@ struct _cpu {
 #ifdef CONFIG_SMP
 	/* True when _current is allowed to context switch */
 	u8_t swap_ok;
+#endif
+
+#ifdef SPIN_VALIDATE
+	u8_t spin_depth;
 #endif
 };
 
