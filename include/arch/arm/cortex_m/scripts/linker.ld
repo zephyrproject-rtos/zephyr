@@ -382,7 +382,7 @@ SECTIONS
 	_ramfunc_rom_start = LOADADDR(.ramfunc);
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 
-#if defined(CONFIG_APP_SHARED_MEM)
+#if defined(CONFIG_USERSPACE)
 #define APP_SHARED_ALIGN . = ALIGN(_region_min_align);
 #define SMEM_PARTITION_ALIGN MPU_ALIGN
 
@@ -390,7 +390,7 @@ SECTIONS
 
 	_app_smem_size = _app_smem_end - _app_smem_start;
 	_app_smem_rom_start = LOADADDR(_APP_SMEM_SECTION_NAME);
-#endif  /* CONFIG_APP_SHARED_MEM */
+#endif  /* CONFIG_USERSPACE */
 
     SECTION_DATA_PROLOGUE(_BSS_SECTION_NAME,(NOLOAD),)
 	{

@@ -362,9 +362,7 @@ zephyr_cc_option(-Wpointer-arith)
 # Declare MPU userspace dependencies before the linker scripts to make
 # sure the order of dependencies are met
 if(CONFIG_USERSPACE)
-  if(CONFIG_APP_SHARED_MEM)
-    set(APP_SMEM_DEP app_smem_linker)
-  endif()
+  set(APP_SMEM_DEP app_smem_linker)
   if(CONFIG_ARM)
     set(PRIV_STACK_DEP priv_stacks_prebuilt)
   endif()
@@ -1152,7 +1150,7 @@ configure_file(
      $ENV{ZEPHYR_BASE}/include/arch/arm/cortex_m/scripts/app_smem.ld
      ${PROJECT_BINARY_DIR}/include/generated/app_smem.ld)
 
-if(CONFIG_APP_SHARED_MEM AND CONFIG_USERSPACE)
+if(CONFIG_USERSPACE)
   set(APP_SMEM_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem.ld")
   set(OBJ_FILE_DIR "${PROJECT_BINARY_DIR}/../")
 

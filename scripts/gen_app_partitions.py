@@ -16,7 +16,7 @@ from elftools.elf.elffile import ELFFile
 # This script will create sections and linker variables to place the
 # application shared memory partitions.
 # these are later read by the macros defined in app_memdomain.h for
-# initialization purpose when APP_SHARED_MEM is enabled.
+# initialization purpose when USERSPACE is enabled.
 data_template = """
 		/* Auto generated code do not modify */
 		SMEM_PARTITION_ALIGN(data_smem_{0}_bss_end - data_smem_{0}_start);

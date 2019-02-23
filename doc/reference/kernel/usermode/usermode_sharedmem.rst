@@ -33,8 +33,7 @@ the proper alignment for processors requiring power of two boundaries.
 Without the wrapper, a developer is required to implement custom
 linker scripts for each processor in the project.
 
-The general usage is as follows. Define CONFIG_APP_SHARED_MEM=y in the
-proj.conf file in the project folder.  Include app_memory/app_memdomain.h
+The general usage is as follows. Include app_memory/app_memdomain.h
 in the userspace source file.  Mark the variable to be placed in
 a memory partition.  The two markers are for data and bss respectively:
 K_APP_DMEM(id) and K_APP_BMEM(id).  The id is used as the partition name.

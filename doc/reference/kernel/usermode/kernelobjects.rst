@@ -265,7 +265,6 @@ Configuration Options
 Related configuration options:
 
 * :option:`CONFIG_USERSPACE`
-* :option:`CONFIG_APP_SHARED_MEM`
 * :option:`CONFIG_MAX_THREAD_BYTES`
 
 API Reference
