@@ -350,13 +350,6 @@ config ARCH_HAS_THREAD_ABORT
 # Hidden PM feature configs which are to be selected by
 # individual SoC.
 #
-config SYS_POWER_LOW_POWER_STATES_SUPPORTED
-	# Hidden
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_LOW_POWER_STATES
-	  configuration option.
-
 config SYS_POWER_STATE_CPU_LPS_1_SUPPORTED
 	# Hidden
 	bool
@@ -376,13 +369,6 @@ config SYS_POWER_STATE_CPU_LPS_3_SUPPORTED
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_CPU_LPS_3
-	  configuration option.
-
-config SYS_POWER_DEEP_SLEEP_STATES_SUPPORTED
-	# Hidden
-	bool
-	help
-	  This option signifies that the target supports the SYS_POWER_DEEP_SLEEP_STATES
 	  configuration option.
 
 config SYS_POWER_STATE_DEEP_SLEEP_1_SUPPORTED
