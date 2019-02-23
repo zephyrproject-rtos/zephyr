@@ -42,18 +42,19 @@
 
 /* register definitions */
 
-#define REG_THR 0x00  /* Transmitter holding reg. */
-#define REG_RDR 0x00  /* Receiver data reg.       */
-#define REG_BRDL 0x00 /* Baud rate divisor (LSB)  */
-#define REG_BRDH 0x01 /* Baud rate divisor (MSB)  */
-#define REG_IER 0x01  /* Interrupt enable reg.    */
-#define REG_IIR 0x02  /* Interrupt ID reg.        */
-#define REG_FCR 0x02  /* FIFO control reg.        */
-#define REG_LCR 0x03  /* Line control reg.        */
-#define REG_MDC 0x04  /* Modem control reg.       */
-#define REG_LSR 0x05  /* Line status reg.         */
-#define REG_MSR 0x06  /* Modem status reg.        */
-#define REG_DLF 0xC0  /* Divisor Latch Fraction   */
+#define REG_THR 0x00  /* Transmitter holding reg.       */
+#define REG_RDR 0x00  /* Receiver data reg.             */
+#define REG_BRDL 0x00 /* Baud rate divisor (LSB)        */
+#define REG_BRDH 0x01 /* Baud rate divisor (MSB)        */
+#define REG_IER 0x01  /* Interrupt enable reg.          */
+#define REG_IIR 0x02  /* Interrupt ID reg.              */
+#define REG_FCR 0x02  /* FIFO control reg.              */
+#define REG_LCR 0x03  /* Line control reg.              */
+#define REG_MDC 0x04  /* Modem control reg.             */
+#define REG_LSR 0x05  /* Line status reg.               */
+#define REG_MSR 0x06  /* Modem status reg.              */
+#define REG_DLF 0xC0  /* Divisor Latch Fraction         */
+#define REG_PCP 0x200 /* PRV_CLOCK_PARAMS (Apollo Lake) */
 
 /* equates for interrupt enable register */
 
@@ -77,6 +78,11 @@
 #define FCR_FIFO 0x01    /* enable XMIT and RCVR FIFO */
 #define FCR_RCVRCLR 0x02 /* clear RCVR FIFO */
 #define FCR_XMITCLR 0x04 /* clear XMIT FIFO */
+
+/* equates for Apollo Lake clock control register (PRV_CLOCK_PARAMS) */
+
+#define PCP_UPDATE 0x80000000 /* update clock */
+#define PCP_EN 0x00000001     /* enable clock output */
 
 /*
  * Per PC16550D (Literature Number: SNLS378B):
@@ -187,6 +193,7 @@
 #define LSR(dev) (DEV_DATA(dev)->port + REG_LSR * UART_REG_ADDR_INTERVAL)
 #define MSR(dev) (DEV_DATA(dev)->port + REG_MSR * UART_REG_ADDR_INTERVAL)
 #define DLF(dev) (DEV_DATA(dev)->port + REG_DLF)
+#define PCP(dev) (DEV_DATA(dev)->port + REG_PCP)
 
 #define IIRC(dev) (DEV_DATA(dev)->iir_cache)
 
@@ -196,13 +203,17 @@
 
 #ifdef UART_NS16550_ACCESS_IOPORT
 #define INBYTE(x) sys_in8(x)
+#define INWORD(x) sys_in32(x)
 #define OUTBYTE(x, d) sys_out8(d, x)
+#define OUTWORD(x, d) sys_out32(d, x)
 #ifndef UART_REG_ADDR_INTERVAL
 #define UART_REG_ADDR_INTERVAL 1 /* address diff of adjacent regs. */
 #endif /* UART_REG_ADDR_INTERVAL */
 #else
 #define INBYTE(x) sys_read8(x)
+#define INWORD(x) sys_read32(x)
 #define OUTBYTE(x, d) sys_write8(d, x)
+#define OUTWORD(x, d) sys_write32(d, x)
 #ifndef UART_REG_ADDR_INTERVAL
 #define UART_REG_ADDR_INTERVAL 4 /* address diff of adjacent regs. */
 #endif
@@ -214,6 +225,10 @@ struct uart_ns16550_device_config {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t	irq_config_func;
+#endif
+
+#ifdef CONFIG_UART_NS16550_PCP
+	u32_t pcp;
 #endif
 };
 
@@ -247,6 +262,20 @@ static inline void set_dlf(struct device *dev, u32_t val)
 
 	OUTBYTE(DLF(dev), val);
 	dev_data->dlf = val;
+}
+#endif
+
+#ifdef CONFIG_UART_NS16550_PCP
+static inline void set_pcp(struct device *dev)
+{
+	const struct uart_ns16550_device_config * const dev_cfg = DEV_CFG(dev);
+	u32_t pcp = dev_cfg->pcp;
+
+	if (pcp) {
+		pcp |= PCP_EN;
+		OUTWORD(PCP(dev), pcp & ~PCP_UPDATE);
+		OUTWORD(PCP(dev), pcp | PCP_UPDATE);
+	}
 }
 #endif
 
@@ -337,6 +366,10 @@ static int uart_ns16550_init(struct device *dev)
 
 #ifdef CONFIG_UART_NS16550_DLF
 	set_dlf(dev, dev_data->dlf);
+#endif
+
+#ifdef CONFIG_UART_NS16550_PCP
+	set_pcp(dev);
 #endif
 
 	set_baud_rate(dev, dev_data->baud_rate);
@@ -765,6 +798,10 @@ static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_0 = {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_0,
 #endif
+
+#ifdef CONFIG_UART_NS16550_PORT_0_PCP
+	.pcp = CONFIG_UART_NS16550_PORT_0_PCP
+#endif
 };
 
 static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_0 = {
@@ -818,6 +855,10 @@ static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_1 = {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_1,
+#endif
+
+#ifdef CONFIG_UART_NS16550_PORT_1_PCP
+	.pcp = CONFIG_UART_NS16550_PORT_1_PCP
 #endif
 };
 
@@ -873,6 +914,10 @@ static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_2 = {
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_2,
 #endif
+
+#ifdef CONFIG_UART_NS16550_PORT_2_PCP
+	.pcp = CONFIG_UART_NS16550_PORT_2_PCP
+#endif
 };
 
 static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_2 = {
@@ -926,6 +971,10 @@ static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_3 = {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_3,
+#endif
+
+#ifdef CONFIG_UART_NS16550_PORT_3_PCP
+	.pcp = CONFIG_UART_NS16550_PORT_3_PCP
 #endif
 };
 
