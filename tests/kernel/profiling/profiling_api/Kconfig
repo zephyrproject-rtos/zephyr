@@ -1,7 +1,6 @@
 config KERNEL_PROFILING_API_TEST
 	bool
 	default y
-	select SYS_POWER_LOW_POWER_STATES_SUPPORTED
 	select SYS_POWER_STATE_CPU_LPS_1_SUPPORTED
 	help
 	  Hidden option enabling LPS_0 power state regardless of hardware
