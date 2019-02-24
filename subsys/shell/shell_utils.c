@@ -359,12 +359,8 @@ static void buffer_trim(char *buff, u16_t *buff_len)
 	/* Counting whitespace characters starting from beginning of the
 	 * command.
 	 */
-	while (isspace((int) buff[i++])) {
-		if (i == 0) {
-			buff[0] = '\0';
-			return;
-		}
-	}
+	while (isspace((int) buff[i++]))
+      ;
 
 	/* Removing counted whitespace characters. */
 	if (--i > 0) {
@@ -378,4 +374,3 @@ void shell_cmd_trim(const struct shell *shell)
 	buffer_trim(shell->ctx->cmd_buff, &shell->ctx->cmd_buff_len);
 	shell->ctx->cmd_buff_pos = shell->ctx->cmd_buff_len;
 }
-
