@@ -3,6 +3,15 @@
 Networking with the host system
 ###############################
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   native_posix_setup.rst
+   qemu_eth_setup.rst
+   qemu_setup.rst
+   usbnet_setup.rst
+
 While developing networking software, it is usually necessary to connect and
 exchange data with the host system like a Linux desktop computer.
 Depending on what board is used for development, the following options are
