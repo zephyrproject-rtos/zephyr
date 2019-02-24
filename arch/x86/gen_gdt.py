@@ -4,6 +4,28 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+"""Generate a Global Descriptor Table (GDT) for x86 CPUs.
+
+For additional detail on GDT and x86 memory management, please
+consult the IA Architecture SW Developer Manual, vol. 3.
+
+This script accepts as input the zephyr_prebuilt.elf binary,
+which is a link of the Zephyr kernel without various build-time
+generated data structures (such as the GDT) inserted into it.
+This kernel image has been properly padded such that inserting
+these data structures will not disturb the memory addresses of
+other symbols.
+
+The output is a GDT whose contents depend on the kernel
+configuration. With no memory protection features enabled,
+we generate flat 32-bit code and data segments. If hardware-
+based stack overflow protection or userspace is enabled,
+we additionally create descriptors for the main and double-
+fault IA tasks, needed for userspace privilege elevation and
+double-fault handling. If userspace is enabled, we also create
+flat code/data segments for ring 3 execution.
+"""
+
 import argparse
 import sys
 import struct
