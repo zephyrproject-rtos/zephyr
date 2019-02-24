@@ -86,4 +86,11 @@ config COUNTER_RTC_STM32
 
 endif # COUNTER
 
+if CAN
+
+config CAN_STM32
+	default y
+
+endif
+
 endif # SOC_FAMILY_STM32
