@@ -4,6 +4,30 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+"""Generate Interrupt Descriptor Table for x86 CPUs.
+
+This script generates the interrupt descriptor table (IDT) for x86.
+Please consule the IA Architecture SW Developer Manual, volume 3,
+for more details on this data structure.
+
+This script accepts as input the zephyr_prebuilt.elf binary,
+which is a link of the Zephyr kernel without various build-time
+generated data structures (such as the IDT) inserted into it.
+This kernel image has been properly padded such that inserting
+these data structures will not disturb the memory addresses of
+other symbols. From the kernel binary we read a special section
+"intList" which contains the desired interrupt routing configuration
+for the kernel, populated by instances of the IRQ_CONNECT() macro.
+
+This script outputs three binary tables:
+
+1. The interrupt descriptor table itself.
+2. A bitfield indicating which vectors in the IDT are free for
+   installation of dynamic interrupts at runtime.
+3. An array which maps configured IRQ lines to their associated
+   vector entries in the IDT, used to program the APIC at runtime.
+"""
+
 import argparse
 import sys
 import struct
