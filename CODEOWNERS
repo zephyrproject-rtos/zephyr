@@ -223,8 +223,8 @@
 /subsys/bluetooth/                        @sjanc @jhedberg @Vudentz
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot
 /subsys/fs/                               @nashif
-/subsys/fs/fcb                            @nvlsianpu
-/subsys/fs/nvs                            @Laczen
+/subsys/fs/fcb/                           @nvlsianpu
+/subsys/fs/nvs/                           @Laczen
 /subsys/logging/                          @nordic-krch
 /subsys/net/buf.c                         @jukkar @jhedberg @tbursztyka @pfalcon
 /subsys/net/ip/                           @jukkar @tbursztyka @pfalcon
@@ -237,7 +237,7 @@
 /subsys/net/lib/sockets/                  @jukkar @tbursztyka @pfalcon
 /subsys/settings/                         @nvlsianpu
 /subsys/shell/                            @jarz-nordic @nordic-krch
-/subsys/storage                           @nvlsianpu
+/subsys/storage/                          @nvlsianpu
 /subsys/usb/                              @jfischer-phytec-iot @finikorg
 /tests/boards/native_posix/               @aescolar
 /tests/bluetooth/                         @sjanc @jhedberg @Vudentz
