@@ -18,6 +18,7 @@
 /soc/arm/st_stm32/stm32f4/                @rsalveti @idlethread
 /soc/arm/ti_simplelink/cc32xx/            @GAnthony
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
+/soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung @rgundi
 /arch/nios2/                              @andrewboie @ramakrishnapallala
 /arch/posix/                              @aescolar
 /arch/riscv32/                            @kgugala @pgielda @nategraff-sifive
@@ -77,10 +78,13 @@
 /boards/x86/galileo/                      @nashif
 /boards/x86/quark_d2000_crb/              @nashif
 /boards/x86/quark_se_c1000_devboard/      @nashif
-/boards/xtensa/                           @andrewboie @ramakrishnapallala
+/boards/xtensa/                           @nashif @dcpleung
+/boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
 # All cmake related files
-/cmake/                                   @nashif @SebastianBoe
-/CMakeLists.txt                           @nashif @SebastianBoe
+/cmake/                                   @SebastianBoe @nashif
+/cmake/compiler/xcc/                      @nashif
+/cmake/toolchain/xcc/                     @nashif
+/CMakeLists.txt                           @SebastianBoe @nashif
 /doc/                                     @dbkinder
 /doc/guides/coccinelle.rst                @himanshujha199640 @JuliaLawall
 /doc/CMakeLists.txt                       @carlescufi
@@ -183,15 +187,16 @@
 /include/sw_isr_table.h                   @andrewboie @andyross
 /include/sys_clock.h                      @andrewboie @andyross
 /include/sys_io.h                         @andrewboie @andyross
-/include/toolchain.h                      @andrewboie @andyross
+/include/toolchain.h                      @andrewboie @andyross @nashif
 /include/toolchain/                       @andrewboie @andyross
 /include/zephyr.h                         @andrewboie @andyross
 /kernel/                                  @andrewboie @andyross
 /lib/gui/                                 @vanwinkeljan
 /lib/posix/                               @pfalcon
-/kernel/device.c                          @ramakrishnapallala @nashif
-/kernel/idle.c                            @ramakrishnapallala @nashif
+/kernel/device.c                          @andrewboie @andyross @nashif
+/kernel/idle.c                            @andrewboie @andyross @nashif
 /samples/bluetooth/                       @sjanc @jhedberg @Vudentz
+/samples/boards/intel_s1000_crb           @sathishkuttan @rgundi @nashif
 /samples/display/                         @vanwinkeljan
 /samples/gui/                             @vanwinkeljan
 /samples/net/                             @jukkar @tbursztyka @pfalcon
@@ -240,6 +245,7 @@
 /subsys/storage/                          @nvlsianpu
 /subsys/usb/                              @jfischer-phytec-iot @finikorg
 /tests/boards/native_posix/               @aescolar
+/tests/boards/intel_s1000_crb/            @rgundi @dcpleung @sathishkuttan
 /tests/bluetooth/                         @sjanc @jhedberg @Vudentz
 /tests/posix/                             @pfalcon
 /tests/crypto/                            @ceolin
