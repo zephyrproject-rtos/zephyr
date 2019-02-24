@@ -48,7 +48,7 @@ config NEWLIB_LIBC_FLOAT_SCANF
 config STDOUT_CONSOLE
 	bool "Send stdout to console"
 	depends on CONSOLE_HAS_DRIVER
-	default NEWLIB_LIBC
+	default y
 	help
 	  This option directs standard output (e.g. printf) to the console
 	  device, rather than suppressing it entirely. See also EARLY_CONSOLE

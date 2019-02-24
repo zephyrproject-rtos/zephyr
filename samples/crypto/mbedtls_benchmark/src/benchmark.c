@@ -72,13 +72,8 @@
 
 #include "kernel.h"
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define  MBEDTLS_PRINT printf
-#else
 #include <misc/printk.h>
 #define  MBEDTLS_PRINT ((int(*)(const char *, ...)) printk)
-#endif /* CONFIG_STDOUT_CONSOLE */
 
 static void my_debug(void *ctx, int level,
 		     const char *file, int line, const char *str)

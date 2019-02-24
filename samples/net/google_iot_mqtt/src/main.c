@@ -23,13 +23,6 @@ LOG_MODULE_REGISTER(net_google_iot_mqtt, LOG_LEVEL_INF);
 #include <time.h>
 #include <inttypes.h>
 
-#ifdef CONFIG_STDOUT_CONSOLE
-# include <stdio.h>
-# define PRINT printf
-#else
-# define PRINT printk
-#endif
-
 s64_t time_base;
 
 void do_sntp(struct addrinfo *addr)

@@ -19,6 +19,7 @@ struct parameter {
 #ifndef KERNEL
 
 #include <stdlib.h>
+#include <stdarg.h>
 
 static void free_parameter(struct parameter *param)
 {
@@ -43,6 +44,19 @@ void _init_mock(void)
 
 }
 
+void printk(const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+	vprintf(fmt, ap);
+	va_end(ap);
+}
+
+void vprintk(const char *fmt, va_list ap)
+{
+	vprintf(fmt, ap);
+}
 #else
 
 /*

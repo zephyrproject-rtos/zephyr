@@ -26,13 +26,6 @@ LOG_MODULE_DECLARE(net_google_iot_mqtt, LOG_LEVEL_DBG);
 
 #include <mbedtls/debug.h>
 
-#ifdef CONFIG_STDOUT_CONSOLE
-# include <stdio.h>
-# define PRINT printf
-#else
-# define PRINT printk
-#endif
-
 extern s64_t time_base;
 
 /* private key information */

@@ -74,19 +74,8 @@ osSemaphoreId forks[NUM_PHIL];
 
 #define STACK_SIZE 512
 
-/*
- * There are multiple threads doing printfs and they may conflict.
- * Therefore use puts() instead of printf().
- */
-#if defined(CONFIG_STDOUT_CONSOLE)
-#define PRINTF(...) { char output[256];	\
-		      sprintf(output, __VA_ARGS__); puts(output); }
-#else
-#define PRINTF(...) printk(__VA_ARGS__)
-#endif
-
 #if DEBUG_PRINTF
-#define PR_DEBUG PRINTF
+#define PR_DEBUG printk
 #else
 #define PR_DEBUG(...)
 #endif
@@ -96,7 +85,7 @@ osSemaphoreId forks[NUM_PHIL];
 static void set_phil_state_pos(int id)
 {
 #if !DEBUG_PRINTF
-	PRINTF("\x1b[%d;%dH", id + 1, 1);
+	printk("\x1b[%d;%dH", id + 1, 1);
 #endif
 }
 
@@ -107,18 +96,18 @@ static void print_phil_state(int id, const char *fmt, s32_t delay)
 
 	set_phil_state_pos(id);
 
-	PRINTF("Philosopher %d [%s:%s%d] ",
+	printk("Philosopher %d [%s:%s%d] ",
 	       id, prio < 0 ? "C" : "P",
 	       prio < 0 ? "" : " ",
 	       prio);
 
 	if (delay) {
-		PRINTF(fmt, delay < 1000 ? " " : "", delay);
+		printk(fmt, delay < 1000 ? " " : "", delay);
 	} else {
-		PRINTF(fmt, "");
+		printk(fmt, "");
 	}
 
-	PRINTF("\n");
+	printk("\n");
 }
 
 static s32_t get_random_delay(int id, int period_in_ms)
@@ -215,7 +204,7 @@ static void start_threads(void)
 static void display_demo_description(void)
 {
 #if !DEBUG_PRINTF
-	PRINTF(DEMO_DESCRIPTION);
+	printk(DEMO_DESCRIPTION);
 #endif
 }
 
