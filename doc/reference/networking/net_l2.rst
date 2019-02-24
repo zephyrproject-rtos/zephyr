@@ -32,7 +32,7 @@ L2 layer API
 In order to create an L2 layer, or a driver for a specific L2 layer,
 one needs to understand how the L3 layer interacts with it and
 how the L2 layer is supposed to behave.
-See also :ref:`network stack architecture <ip_stack_architecture>` for
+See also :ref:`network stack architecture <network_stack_architecture>` for
 more details. The generic L2 API has these functions:
 
 - ``recv()``: All device drivers, once they receive a packet which they put
