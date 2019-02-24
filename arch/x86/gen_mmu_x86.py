@@ -1,4 +1,43 @@
 #!/usr/bin/env python3
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+"""Generate MMU page tables for x86 CPUs.
+
+This script generates 64-bit PAE style MMU page tables for x86.
+Even though x86 is a 32-bit target, we use this type of page table
+to support the No-Execute (NX) bit. Please consult the IA
+Architecture SW Developer Manual, volume 3, chapter 4 for more
+details on this data structure.
+
+The script takes as input the zephyr_prebuilt.elf kernel binary,
+which is a link of the Zephyr kernel without various build-time
+generated data structures (such as the MMU tables) inserted into it.
+The build cannot easily predict how large these tables will be,
+so it is important that these MMU tables be inserted at the very
+end of memory.
+
+Of particular interest is the "mmulist" section, which is a
+table of memory region access policies set in code by instances
+of MMU_BOOT_REGION() macros. The set of regions defined here
+specifies the boot-time configuration of the page tables.
+
+The output of this script is a linked set of page tables, page
+directories, and a page directory pointer table, which gets linked
+into the final Zephyr binary, reflecting the access policies
+read in the "mmulist" section. Any memory ranges not specified
+in "mmulist" are marked non-present.
+
+If Kernel Page Table Isolation (CONFIG_X86_KPTI) is enabled, this
+script additionally outputs a second set of page tables intended
+for use by user threads running in Ring 3. These tables have the
+same policy as the kernel's set of page tables with one crucial
+difference: any pages not accessible to user mode threads are not
+marked 'present', preventing Meltdown-style side channel attacks
+from reading their contents.
+"""
 
 import os
 import sys
