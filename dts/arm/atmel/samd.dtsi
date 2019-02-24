@@ -38,6 +38,7 @@
 		pinmux-b = &pinmux_b;
 		port-a = &porta;
 		port-b = &portb;
+		adc-0 = &adc;
 
 		sercom-0 = &sercom0;
 		sercom-1 = &sercom1;
@@ -149,6 +150,19 @@
 			clock-generator = <0>;
 			status = "disabled";
 			label = "RTC";
+		};
+
+		adc: adc@42004000 {
+			compatible = "atmel,sam0-adc";
+			reg = <0x42004000 0x2B>;
+			label = "ADC_0";
+
+			/*
+			 * 2.1 MHz max, so clock it with the
+			 * 8 MHz GCLK / 4 = 2 MHz
+			 */
+			gclk = <3>;
+			prescaler = <4>;
 		};
 	};
 };
