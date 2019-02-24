@@ -104,24 +104,6 @@ add_bin_file_to_the_next_link(gen_idt_output irq_int_vector_map)
 add_bin_file_to_the_next_link(gen_idt_output irq_vectors_alloc)
 
 if(CONFIG_X86_MMU)
-  # Use gen_mmu.py and objcopy to generate mmu_tables.o from from the
-  # elf file ${ZEPHYR_PREBUILT_EXECUTABLE}, creating the temp files mmu_tables.bin
-  # and mmulist.bin along the way.
-  #
-  # ${ZEPHYR_PREBUILT_EXECUTABLE}.elf -> mmulist.bin -> mmu_tables.bin -> mmu_tables.o
-  add_custom_command(
-    OUTPUT mmulist.bin
-    COMMAND
-    ${CMAKE_OBJCOPY}
-    -I ${OUTPUT_FORMAT}
-    -O binary
-    -j mmulist
-    $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
-    mmulist.bin
-    DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    )
-
   if(CONFIG_X86_KPTI)
     set(user_mmu_tables_bin user_mmu_tables.bin)
   endif()
@@ -139,13 +121,11 @@ if(CONFIG_X86_MMU)
     COMMAND
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/arch/x86/gen_mmu_x86.py
-    -i mmulist.bin
     -k $<TARGET_FILE:${ZEPHYR_PREBUILT_EXECUTABLE}>
     -o mmu_tables.bin
     -u user_mmu_tables.bin
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:-v>
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    DEPENDS mmulist.bin
     DEPENDS ${ZEPHYR_PREBUILT_EXECUTABLE}
     )
 

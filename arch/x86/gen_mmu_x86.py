@@ -394,10 +394,7 @@ class PageMode_PAE:
 
 #*****************************************************************************#
 
-def read_mmu_list(filename):
-    with open(filename, 'rb') as fp:
-        mmu_list_data = fp.read()
-
+def read_mmu_list(mmu_list_data):
     regions = []
 
     # Read mmu_list header data
@@ -480,8 +477,6 @@ def parse_args():
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
 
-    parser.add_argument("-i", "--input",
-                        help="Input file from which MMU regions are read.")
     parser.add_argument("-k", "--kernel",
                         help="Zephyr kernel image")
     parser.add_argument("-o", "--output",
@@ -502,8 +497,9 @@ def main():
     with open(args.kernel, "rb") as fp:
         kernel = ELFFile(fp)
         syms = get_symbols(kernel)
+        irq_data = kernel.get_section_by_name("mmulist").data()
 
-    pd_start_addr, regions = read_mmu_list(args.input)
+    pd_start_addr, regions = read_mmu_list(irq_data)
 
     # select the page table needed
     page_table = PageMode_PAE(pd_start_addr, regions, syms, False)
