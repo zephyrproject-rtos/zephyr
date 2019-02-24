@@ -43,18 +43,14 @@ extern "C" {
 #define CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC 10000000
 /* FIXME: Properly integrate with Zephyr's arch specific code */
 #define CONFIG_X86 1
-#define PRINT printf
-#endif /* !KERNEL */
+#define CONFIG_PRINTK 1
+#endif
+
+#include <misc/printk.h>
+#define PRINT printk
 
 #include <zephyr.h>
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define  PRINT printf
-#else /* !CONFIG_STDOUT_CONSOLE */
-#include <misc/printk.h>
-#define PRINT printk
-#endif /* CONFIG_STDOUT_CONSOLE */
 
 #include <ztest_assert.h>
 #include <ztest_mock.h>

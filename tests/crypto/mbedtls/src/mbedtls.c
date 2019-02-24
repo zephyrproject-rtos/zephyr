@@ -7,13 +7,8 @@
  *  This file is part of mbed TLS (https://tls.mbed.org)
  */
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define  MBEDTLS_PRINT printf
-#else
 #include <misc/printk.h>
 #define  MBEDTLS_PRINT (int(*)(const char *, ...)) printk
-#endif /* CONFIG_STDOUT_CONSOLE */
 
 #include <string.h>
 #include <stdio.h>

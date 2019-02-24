@@ -48,13 +48,8 @@ static inline void _zassert(int cond,
 		va_start(vargs, msg);
 		PRINT("\n    Assertion failed at %s:%d: %s: %s\n",
 		      file, line, func, default_msg);
-#if defined(CONFIG_STDOUT_CONSOLE)
-		vprintf(msg, vargs);
-		printf("\n");
-#else
 		vprintk(msg, vargs);
 		printk("\n");
-#endif
 		va_end(vargs);
 		ztest_test_fail();
 	}

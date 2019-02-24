@@ -13,14 +13,9 @@
 
 #include <string.h>
 #include <shell/shell.h>
-
-#if defined(CONFIG_STDOUT_CONSOLE)
-#include <stdio.h>
-#define  PRINT_DATA(fmt, ...) printf(fmt, ##__VA_ARGS__)
-#else
 #include <misc/printk.h>
+
 #define PRINT_DATA(fmt, ...) printk(fmt, ##__VA_ARGS__)
-#endif /* CONFIG_STDOUT_CONSOLE */
 
 #if defined CONFIG_ARCH_POSIX
 #include "posix_board_if.h"
