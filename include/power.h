@@ -249,7 +249,7 @@ void sys_resume_from_deep_sleep(void);
 void sys_resume(void);
 
 /**
- * @brief Hook function to allow entry to low power state
+ * @brief Hook function to allow entry to power state
  *
  * This function is called by the kernel when it is about to idle.
  * It is passed the number of clock ticks that the kernel calculated
@@ -261,12 +261,12 @@ void sys_resume(void);
  * would not need to, because they would have done it at other places.
  *
  * Typically a wake event is set and the soc or cpu is put to any of the
- * supported low power states. The wake event should be set to wake up
+ * supported power states. The wake event should be set to wake up
  * the soc or cpu before the available idle time expires to avoid disrupting
  * the kernel's scheduling.
  *
  * This function is entered with interrupts disabled. It should
- * re-enable interrupts if it had entered a low power state.
+ * re-enable interrupts if it had entered a power state.
  *
  * @param ticks the upcoming kernel idle time
  *
@@ -275,7 +275,7 @@ void sys_resume(void);
 extern enum power_states sys_suspend(s32_t ticks);
 
 /**
- * @brief Put processor into low power state
+ * @brief Put processor into power state
  *
  * This function implements the SoC specific details necessary
  * to put the processor into available power states.
@@ -286,25 +286,25 @@ extern void sys_set_power_state(enum power_states state);
  * @brief Do any SoC or architecture specific post ops after low power states.
  *
  * This function is a place holder to do any operations that may
- * be needed to be done after deep sleep exits. Currently it enables
- * interrupts after resuming from deep sleep. In future, the enabling
+ * be needed to be done after low power exits. Currently it enables
+ * interrupts after resuming from low power state. In future, the enabling
  * of interrupts may be moved into the kernel.
  */
 extern void sys_power_state_post_ops(enum power_states state);
 
 /**
- * @brief Application defined function for Lower Power entry
+ * @brief Application defined function for power state entry
  *
  * Application defined function for doing any target specific operations
- * for low power entry.
+ * for power state entry.
  */
 extern void sys_pm_notify_lps_entry(enum power_states state);
 
 /**
- * @brief Application defined function for Lower Power exit
+ * @brief Application defined function for low power state exit
  *
  * Application defined function for doing any target specific operations
- * for low power exit.
+ * for low power state exit.
  */
 extern void sys_pm_notify_lps_exit(enum power_states state);
 
