@@ -8,6 +8,7 @@
 
 config CAN_STM32
 	bool "STM32 CAN Driver"
+	depends on SOC_FAMILY_STM32
 	select USE_STM32_HAL_CAN
 	help
 	  Enable STM32 CAN Driver (tested on stm32F0 series)
