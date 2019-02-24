@@ -43,7 +43,7 @@
 CAN_DEFINE_MSGQ(can_msgq, 5);
 struct k_sem rx_isr_sem;
 
-struct can_msg test_std_msg = {
+struct zcan_frame test_std_msg = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr     = CAN_DATAFRAME,
 	.std_id  = TEST_CAN_STD_ID,
@@ -51,7 +51,7 @@ struct can_msg test_std_msg = {
 	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
 };
 
-struct can_msg test_std_mask_msg = {
+struct zcan_frame test_std_mask_msg = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr     = CAN_DATAFRAME,
 	.std_id  = TEST_CAN_STD_MASK_ID,
@@ -59,7 +59,7 @@ struct can_msg test_std_mask_msg = {
 	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
 };
 
-struct can_msg test_ext_msg = {
+struct zcan_frame test_ext_msg = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr     = CAN_DATAFRAME,
 	.ext_id  = TEST_CAN_EXT_ID,
@@ -67,7 +67,7 @@ struct can_msg test_ext_msg = {
 	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
 };
 
-struct can_msg test_ext_mask_msg = {
+struct zcan_frame test_ext_mask_msg = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr     = CAN_DATAFRAME,
 	.ext_id  = TEST_CAN_EXT_MASK_ID,
@@ -75,7 +75,7 @@ struct can_msg test_ext_mask_msg = {
 	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
 };
 
-const struct can_filter test_std_filter = {
+const struct zcan_filter test_std_filter = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.std_id = TEST_CAN_STD_ID,
@@ -83,7 +83,7 @@ const struct can_filter test_std_filter = {
 	.std_id_mask = CAN_STD_ID_MASK
 };
 
-const struct can_filter test_std_masked_filter = {
+const struct zcan_filter test_std_masked_filter = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.std_id = TEST_CAN_STD_ID,
@@ -91,7 +91,7 @@ const struct can_filter test_std_masked_filter = {
 	.std_id_mask = TEST_CAN_STD_MASK
 };
 
-const struct can_filter test_ext_filter = {
+const struct zcan_filter test_ext_filter = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.ext_id = TEST_CAN_EXT_ID,
@@ -99,7 +99,7 @@ const struct can_filter test_ext_filter = {
 	.ext_id_mask = CAN_EXT_ID_MASK
 };
 
-const struct can_filter test_ext_masked_filter = {
+const struct zcan_filter test_ext_masked_filter = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.ext_id = TEST_CAN_EXT_ID,
@@ -107,7 +107,7 @@ const struct can_filter test_ext_masked_filter = {
 	.ext_id_mask = TEST_CAN_EXT_MASK
 };
 
-const struct can_filter test_std_some_filter = {
+const struct zcan_filter test_std_some_filter = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.std_id = TEST_CAN_SOME_STD_ID,
@@ -115,7 +115,7 @@ const struct can_filter test_std_some_filter = {
 	.std_id_mask = CAN_STD_ID_MASK
 };
 
-static inline void check_msg(struct can_msg *msg1, struct can_msg *msg2,
+static inline void check_msg(struct zcan_frame *msg1, struct zcan_frame *msg2,
 			     u32_t mask)
 {
 	int cmp_res;
@@ -146,31 +146,31 @@ static void tx_isr(u32_t error_flags)
 
 }
 
-static void rx_std_isr(struct can_msg *msg)
+static void rx_std_isr(struct zcan_frame *msg)
 {
 	check_msg(msg, &test_std_msg, 0);
 	k_sem_give(&rx_isr_sem);
 }
 
-static void rx_std_mask_isr(struct can_msg *msg)
+static void rx_std_mask_isr(struct zcan_frame *msg)
 {
 	check_msg(msg, &test_std_msg, 0x0F);
 	k_sem_give(&rx_isr_sem);
 }
 
-static void rx_ext_isr(struct can_msg *msg)
+static void rx_ext_isr(struct zcan_frame *msg)
 {
 	check_msg(msg, &test_ext_msg, 0);
 	k_sem_give(&rx_isr_sem);
 }
 
-static void rx_ext_mask_isr(struct can_msg *msg)
+static void rx_ext_mask_isr(struct zcan_frame *msg)
 {
 	check_msg(msg, &test_ext_msg, 0x0F);
 	k_sem_give(&rx_isr_sem);
 }
 
-static void send_test_msg(struct device *can_dev, struct can_msg *msg)
+static void send_test_msg(struct device *can_dev, struct zcan_frame *msg)
 {
 	int ret;
 
@@ -180,7 +180,7 @@ static void send_test_msg(struct device *can_dev, struct can_msg *msg)
 	zassert_equal(ret, CAN_TX_OK, "Can't send a message. Err: %d", ret);
 }
 
-static void send_test_msg_nowait(struct device *can_dev, struct can_msg *msg)
+static void send_test_msg_nowait(struct device *can_dev, struct zcan_frame *msg)
 {
 	int ret;
 
@@ -191,7 +191,7 @@ static void send_test_msg_nowait(struct device *can_dev, struct can_msg *msg)
 }
 
 static inline int attach_msgq(struct device *can_dev,
-			      const struct can_filter *filter)
+			      const struct zcan_filter *filter)
 {
 	int filter_id;
 
@@ -204,7 +204,7 @@ static inline int attach_msgq(struct device *can_dev,
 }
 
 static inline int attach_isr(struct device *can_dev,
-			     const struct can_filter *filter)
+			     const struct zcan_filter *filter)
 {
 	int filter_id;
 
@@ -231,11 +231,11 @@ static inline int attach_isr(struct device *can_dev,
 	return filter_id;
 }
 
-static void send_receive(const struct can_filter *filter, struct can_msg *msg)
+static void send_receive(const struct zcan_filter *filter, struct zcan_frame *msg)
 {
 	struct device *can_dev;
 	int ret, filter_id;
-	struct can_msg msg_buffer;
+	struct zcan_frame msg_buffer;
 	u32_t mask = 0;
 
 	can_dev = device_get_binding(DT_CAN_1_NAME);
@@ -346,7 +346,7 @@ static void test_receive_timeout(void)
 {
 	struct device *can_dev;
 	int ret, filter_id;
-	struct can_msg msg;
+	struct zcan_frame msg;
 
 	can_dev = device_get_binding(DT_CAN_1_NAME);
 	zassert_not_null(can_dev, "Device not not found");
@@ -412,7 +412,7 @@ static void test_send_receive_wrong_id(void)
 {
 	struct device *can_dev;
 	int ret, filter_id;
-	struct can_msg msg_buffer;
+	struct zcan_frame msg_buffer;
 
 	can_dev = device_get_binding(DT_CAN_1_NAME);
 	zassert_not_null(can_dev, "Device not not found");
