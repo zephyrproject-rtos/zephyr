@@ -46,7 +46,7 @@
 
 CAN_DEFINE_MSGQ(can_msgq, 5);
 
-struct can_msg test_std_msg = {
+struct zcan_frame test_std_msg = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr     = CAN_DATAFRAME,
 	.std_id  = TEST_CAN_STD_ID,
@@ -54,7 +54,7 @@ struct can_msg test_std_msg = {
 	.data    = {1, 2, 3, 4, 5, 6, 7, 8}
 };
 
-const struct can_filter test_std_filter = {
+const struct zcan_filter test_std_filter = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.std_id = TEST_CAN_STD_ID,
@@ -62,7 +62,7 @@ const struct can_filter test_std_filter = {
 	.std_id_mask = CAN_STD_ID_MASK
 };
 
-const struct can_filter test_ext_filter = {
+const struct zcan_filter test_ext_filter = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.ext_id = TEST_CAN_EXT_ID,
@@ -70,7 +70,7 @@ const struct can_filter test_ext_filter = {
 	.ext_id_mask = CAN_EXT_ID_MASK
 };
 
-const struct can_filter test_ext_masked_filter = {
+const struct zcan_filter test_ext_masked_filter = {
 	.id_type = CAN_EXTENDED_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.ext_id = TEST_CAN_EXT_ID,
@@ -78,7 +78,7 @@ const struct can_filter test_ext_masked_filter = {
 	.ext_id_mask = TEST_CAN_EXT_MASK
 };
 
-const struct can_filter test_std_some_filter = {
+const struct zcan_filter test_std_some_filter = {
 	.id_type = CAN_STANDARD_IDENTIFIER,
 	.rtr = CAN_DATAFRAME,
 	.std_id = TEST_CAN_SOME_STD_ID,
@@ -86,7 +86,7 @@ const struct can_filter test_std_some_filter = {
 	.std_id_mask = CAN_STD_ID_MASK
 };
 
-static inline void check_msg(struct can_msg *msg1, struct can_msg *msg2)
+static inline void check_msg(struct zcan_frame *msg1, struct zcan_frame *msg2)
 {
 	int cmp_res;
 
@@ -111,7 +111,7 @@ static inline void check_msg(struct can_msg *msg1, struct can_msg *msg2)
 	zassert_equal(cmp_res, 0, "Received data differ");
 }
 
-static void send_test_msg(struct device *can_dev, struct can_msg *msg)
+static void send_test_msg(struct device *can_dev, struct zcan_frame *msg)
 {
 	int ret;
 
@@ -130,7 +130,7 @@ static void test_filter_handling(void)
 {
 	struct device *can_dev;
 	int ret, filter_id_1, filter_id_2;
-	struct can_msg msg_buffer;
+	struct zcan_frame msg_buffer;
 
 	can_dev = device_get_binding(DT_CAN_1_NAME);
 
