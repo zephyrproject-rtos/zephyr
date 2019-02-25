@@ -105,6 +105,7 @@
 /drivers/flash/                           @nashif
 /drivers/flash/*stm32*                    @superna9999
 /drivers/gpio/*stm32*                     @rsalveti @idlethread
+/drivers/hwinfo/                          @alexanderwachter
 /drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/ieee802154/                      @jukkar @tbursztyka
 /drivers/interrupt_controller/            @andrewboie
@@ -165,6 +166,7 @@
 /include/drivers/mvic.h                   @andrewboie
 /include/fs.h                             @nashif @ramakrishnapallala
 /include/fs/                              @nashif @ramakrishnapallala
+/include/hwinfo.h                         @alexanderwachter
 /include/init.h                           @andrewboie @andyross
 /include/irq.h                            @andrewboie @andyross
 /include/irq_offload.h                    @andrewboie @andyross
@@ -255,6 +257,7 @@
 /tests/crypto/                            @ceolin
 /tests/crypto/mbedtls/                    @nashif @ceolin
 /tests/drivers/can/                       @alexanderwachter
+/tests/drivers/hwinfo/                    @alexanderwachter
 /tests/drivers/spi/                       @tbursztyka
 /tests/kernel/                            @andrewboie @andyross @nashif
 /tests/net/                               @jukkar @tbursztyka @pfalcon
