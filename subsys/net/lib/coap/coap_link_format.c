@@ -46,7 +46,7 @@ static inline bool append_be16(struct coap_packet *cpkt, u16_t data)
 		return false;
 	}
 
-	cpkt->data[cpkt->offset++] = (data & 0xFF) >> 8;
+	cpkt->data[cpkt->offset++] = data >> 8;
 	cpkt->data[cpkt->offset++] = (u8_t) data;
 
 	return true;
