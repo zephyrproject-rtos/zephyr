@@ -38,6 +38,14 @@
 				label = "FLASH_STM32";
 			};
 		};
+
+		rcc: rcc@58000000 {
+			compatible = "st,stm32-rcc";
+			clocks-controller;
+			#clock-cells = <2>;
+			reg = <0x58000000 0x400>;
+			label = "STM32_CLK_RCC";
+		};
 	};
 };
 
