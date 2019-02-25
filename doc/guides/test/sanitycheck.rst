@@ -339,11 +339,9 @@ extra_configs: <list of extra configurations>
         tests:
           test:
             depends_on: adc
-          test_resolution_6:
+          test_async:
             extra_configs:
-              - CONFIG_ADC_QMSI_SAMPLE_WIDTH=6
-            platform_whitelist: quark_se_c1000_ss_devboard
-            tags: hwtest
+              - CONFIG_ADC_ASYNC=y
 
 
 build_only: <True|False> (default False)
