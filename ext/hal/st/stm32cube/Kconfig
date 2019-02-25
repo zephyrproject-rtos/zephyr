@@ -128,6 +128,9 @@ config USE_STM32_HAL_IPCC
 config USE_STM32_HAL_I2S_EX
 	bool
 
+config USE_STM32_HAL_IPCC
+	bool
+
 config USE_STM32_HAL_IRDA
 	bool
 
