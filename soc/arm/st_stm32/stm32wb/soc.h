@@ -27,6 +27,10 @@
  */
 #include <kernel_includes.h>
 
+#ifdef CONFIG_GPIO_STM32
+#include <stm32wbxx_ll_gpio.h>
+#endif
+
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 #include <stm32wbxx_ll_utils.h>
 #include <stm32wbxx_ll_bus.h>
