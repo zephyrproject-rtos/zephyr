@@ -391,7 +391,7 @@ static size_t put_json_postfix(struct lwm2m_output_context *out)
 		return 0;
 	}
 
-	if (put_char(out, '}') < 0) {
+	if (put_char(out, '}') < 1) {
 		/* TODO: Generate error? */
 		return 0;
 	}
