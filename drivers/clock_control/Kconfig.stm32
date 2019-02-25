@@ -42,7 +42,7 @@ config CLOCK_STM32_SYSCLK_SRC_HSI
 
 config CLOCK_STM32_SYSCLK_SRC_MSI
 	bool "MSI"
-	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X
+	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
 	help
 	  Use MSI as source of SYSCLK
 
@@ -92,7 +92,7 @@ default CLOCK_STM32_PLL_SRC_HSI
 
 config CLOCK_STM32_PLL_SRC_MSI
 	bool "MSI"
-	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X
+	depends on SOC_SERIES_STM32L0X || SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
 	help
 	  Use MSI as source of PLL
 
@@ -321,7 +321,7 @@ config CLOCK_STM32_PLL_DIVISOR
 
 endif # SOC_SERIES_STM32L0X
 
-if SOC_SERIES_STM32L4X
+if SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
 
 config CLOCK_STM32_PLL_M_DIVISOR
 	int "PLL divisor"
@@ -377,12 +377,13 @@ config CLOCK_STM32_MSI_PLL_MODE
 	help
 	  Enable hardware auto-calibration with LSE.
 
-endif # SOC_SERIES_STM32L4X
+endif # SOC_SERIES_STM32L4X || SOC_SERIES_STM32WBX
 
 config CLOCK_STM32_AHB_PRESCALER
 	int "AHB prescaler"
 	default 1
 	range 1 512
+	depends on !SOC_SERIES_STM32WBX
 	help
 	  AHB prescaler, allowed values: 1, 2, 4, 8, 16, 64, 128,
 	  256, 512.
@@ -406,6 +407,34 @@ config CLOCK_STM32_APB2_PRESCALER
 	  1, 2, 4, 8, 16
 
 endif # SOC_SERIES_STM32F0X!=y
+
+if SOC_SERIES_STM32WBX
+
+config CLOCK_STM32_CPU1_PRESCALER
+	int "CPU1 HCLK prescaler"
+	default 1
+	range 1 512
+	help
+	  CPU1 HCLK prescaler, allowed values: 1, 2, 4, 8, 16, 64, 128,
+	  256, 512.
+
+config CLOCK_STM32_CPU2_PRESCALER
+	int "CPU2 HCLK prescaler"
+	default 1
+	range 1 512
+	help
+	  CPU2 HCLK prescaler, allowed values: 1, 2, 4, 8, 16, 64, 128,
+	  256, 512.
+
+config CLOCK_STM32_AHB4_PRESCALER
+	int "AHB4 HCLK prescaler"
+	default 1
+	range 1 512
+	help
+	  HCLK4 prescaler, allowed values: 1, 2, 4, 8, 16, 64, 128,
+	  256, 512.
+
+endif # SOC_SERIES_STM32WBX
 
 choice
 prompt "STM32 MCO1 Clock Source"
