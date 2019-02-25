@@ -1689,6 +1689,14 @@ static int ztls_poll_prepare_ctx(struct net_context *ctx,
 		(*pev)->state = K_POLL_STATE_NOT_READY;
 		(*pev)++;
 
+		/* If socket is already in EOF, it can be reported
+		 * immediately, so we tell poll() to short-circuit wait.
+		 */
+		if (sock_is_eof(ctx)) {
+			errno = EALREADY;
+			return -1;
+		}
+
 		/* If there already is mbedTLS data to read, there is no
 		 * need to set the k_poll_event object. Return EALREADY
 		 * so we won't block in the k_poll.
@@ -1732,6 +1740,11 @@ static int ztls_poll_update_ctx(struct net_context *ctx,
 			(*pev)->state = K_POLL_STATE_NOT_READY;
 
 			goto again;
+		}
+
+		if (sock_is_eof(ctx)) {
+			pfd->revents |= ZSOCK_POLLIN;
+			goto next;
 		}
 
 		if (!IS_LISTENING(ctx)) {
