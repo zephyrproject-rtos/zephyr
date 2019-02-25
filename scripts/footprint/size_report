@@ -367,7 +367,7 @@ def print_tree(data, total, depth):
 
     print('{:92s} {:10s} {:8s}'.format(
         bcolors["FAIL"] + "Path", "Size", "%" + bcolors["ENDC"]))
-    print("'='*110i")
+    print('=' * 110)
     for i in sorted(data):
         p = i.split(os.path.sep)
         if depth and len(p) > depth:
