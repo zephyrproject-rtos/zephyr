@@ -50,7 +50,7 @@
  */
 #define DT_UART_NS16550_PORT_0_IRQ_FLAGS	0 /* Default */
 #define DT_UART_NS16550_PORT_1_IRQ_FLAGS	0 /* Default */
-#define CONFIG_UART_NS16550_PORT_2_IRQ_FLAGS	0 /* Default */
+#define DT_UART_NS16550_PORT_2_IRQ_FLAGS	0 /* Default */
 
 #ifndef CONFIG_HAS_DTS
 /* I2C */
