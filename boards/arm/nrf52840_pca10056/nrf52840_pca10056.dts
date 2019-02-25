@@ -74,6 +74,10 @@
 	};
 };
 
+arduino_i2c: &i2c0 {};
+arduino_spi: &spi1 {};
+arduino_serial: &uart0 {};
+
 &adc {
 	status ="ok";
 };
