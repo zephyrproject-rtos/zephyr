@@ -1,0 +1,39 @@
+STM32CubeWB
+###########
+
+Origin:
+   ST Microelectronics
+   http://www.st.com/en/embedded-software/stm32cubewb.html
+
+Status:
+   version 1.0.0
+
+Purpose:
+   ST Microelectronics official MCU package for STM32WB series.
+
+Description:
+   This package is an extract of official STM32CubeWB package written by ST Microelectronics.
+   It is composed of STM32Cube hardware abstraction layer (HAL) and low layer (LL) plus a set
+   of CMSIS headers files, one for each SoC in STM32WB series.
+
+Dependencies:
+    None.
+
+URL:
+   http://www.st.com/en/embedded-software/stm32cubewb.html
+
+commit:
+   version 1.0.0
+
+Maintained-by:
+   External
+
+License:
+   BSD-3-Clause
+
+License Link:
+   https://opensource.org/licenses/BSD-3-Clause
+
+Patch List:
+
+        *Applied dos2unix
