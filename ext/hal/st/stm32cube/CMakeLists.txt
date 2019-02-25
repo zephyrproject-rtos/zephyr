@@ -27,6 +27,7 @@ set(stm_socs
   stm32f7x
   stm32l0x
   stm32l4x
+  stm32wbx
   )
 
 foreach(stm_soc ${stm_socs})
