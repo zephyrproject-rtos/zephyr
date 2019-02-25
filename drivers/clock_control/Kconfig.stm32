@@ -382,8 +382,8 @@ endif # SOC_SERIES_STM32L4X
 
 config CLOCK_STM32_AHB_PRESCALER
 	int "AHB prescaler"
-	default 0
-	range 0 512
+	default 1
+	range 1 512
 	help
 	  AHB prescaler, allowed values: 1, 2, 4, 8, 16, 64, 128,
 	  256, 512.
