@@ -45,6 +45,8 @@
 #define EXTI_LINES 40
 #elif defined(CONFIG_SOC_SERIES_STM32MP1X)
 #define EXTI_LINES 76
+#elif defined(CONFIG_SOC_SERIES_STM32WBX)
+#define EXTI_LINES 49
 #endif
 
 #if defined(CONFIG_SOC_SERIES_STM32MP1X)
@@ -125,7 +127,8 @@ int stm32_exti_enable(int line)
       defined(CONFIG_SOC_SERIES_STM32F3X) || \
       defined(CONFIG_SOC_SERIES_STM32F4X) || \
       defined(CONFIG_SOC_SERIES_STM32F7X) || \
-      defined(CONFIG_SOC_SERIES_STM32L4X)
+      defined(CONFIG_SOC_SERIES_STM32L4X) || \
+      defined(CONFIG_SOC_SERIES_STM32WBX)
 	if (line >= 5 && line <= 9) {
 		irqnum = EXTI9_5_IRQn;
 	} else if (line >= 10 && line <= 15) {
@@ -158,10 +161,11 @@ int stm32_exti_enable(int line)
 #endif
 		default:
 			/* No IRQ associated to this line */
-#if defined(CONFIG_SOC_SERIES_STM32L4X)
+#if defined(CONFIG_SOC_SERIES_STM32L4X) || \
+      defined(CONFIG_SOC_SERIES_STM32WBX)
 			/* > 15 are not mapped on an IRQ */
 			/*
-			 * On STM32L4X, this function also support enabling EXTI
+			 * On specified soc, this function also support enabling EXTI
 			 * lines that are not connected to an IRQ. This might be used
 			 * by other drivers or boards, to allow the device wakeup on
 			 * some non-GPIO signals.
@@ -582,7 +586,8 @@ static void __stm32_exti_connect_irqs(struct device *dev)
       defined(CONFIG_SOC_SERIES_STM32F4X) || \
       defined(CONFIG_SOC_SERIES_STM32F7X) || \
       defined(CONFIG_SOC_SERIES_STM32L4X) || \
-      defined(CONFIG_SOC_SERIES_STM32MP1X)
+      defined(CONFIG_SOC_SERIES_STM32MP1X) || \
+      defined(CONFIG_SOC_SERIES_STM32WBX)
 	IRQ_CONNECT(EXTI0_IRQn,
 		CONFIG_EXTI_STM32_EXTI0_IRQ_PRI,
 		__stm32_exti_isr_0, DEVICE_GET(exti_stm32),
