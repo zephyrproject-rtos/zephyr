@@ -7,6 +7,16 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+# Setting shared by different subsystems
+config UART_CONSOLE_ON_DEV_NAME
+	string "Device Name of UART Device for UART Console"
+	default "$(dt_str_val,DT_UART_CONSOLE_ON_DEV_NAME)" if HAS_DTS
+	default "UART_0"
+	depends on (UART_CONSOLE || CONSOLE_SUBSYS)
+	help
+	  This option specifies the name of UART device to be used for
+	  UART console.
+
 menuconfig CONSOLE
 	bool "Console drivers"
 
@@ -40,15 +50,6 @@ config UART_CONSOLE
 	help
 	  Enable this option to use one UART for console. Make sure
 	  CONFIG_UART_CONSOLE_ON_DEV_NAME is also set correctly.
-
-config UART_CONSOLE_ON_DEV_NAME
-	string "Device Name of UART Device for UART Console"
-	default "$(dt_str_val,DT_UART_CONSOLE_ON_DEV_NAME)" if HAS_DTS
-	default "UART_0"
-	depends on UART_CONSOLE
-	help
-	  This option specifies the name of UART device to be used for
-	  UART console.
 
 config UART_CONSOLE_INIT_PRIORITY
 	int "Init priority"
