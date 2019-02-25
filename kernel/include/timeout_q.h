@@ -14,6 +14,8 @@
 
 #include <kernel.h>
 
+#include <stdbool.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -60,12 +62,12 @@ s32_t z_timeout_remaining(struct _timeout *timeout);
 #else
 
 /* Stubs when !CONFIG_SYS_CLOCK_EXISTS */
-#define _init_thread_timeout(t) do {} while (0)
-#define _add_thread_timeout(th, to) do {} while (0 && (void *)to && (void *)th)
+#define _init_thread_timeout(t) do {} while (false)
+#define _add_thread_timeout(th, to) do {} while (false && (void *)to && (void *)th)
 #define _abort_thread_timeout(t) (0)
 #define _is_inactive_timeout(t) 0
 #define _get_next_timeout_expiry() (K_FOREVER)
-#define z_set_timeout_expiry(t, i) do {} while (0)
+#define z_set_timeout_expiry(t, i) do {} while (false)
 
 #endif
 
