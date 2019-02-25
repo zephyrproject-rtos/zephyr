@@ -115,6 +115,8 @@ void stm32_setup_pins(const struct pin_config *pinconf,
 #include "pinmux_stm32l0.h"
 #elif CONFIG_SOC_SERIES_STM32L4X
 #include "pinmux_stm32l4x.h"
+#elif CONFIG_SOC_SERIES_STM32WBX
+#include "pinmux_stm32wbx.h"
 #endif
 
 #endif	/* ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32_H_ */
