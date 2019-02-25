@@ -1785,6 +1785,8 @@ static int ztls_poll_update_ctx(struct net_context *ctx,
 			(*pev)->state = K_POLL_STATE_NOT_READY;
 			goto again;
 		}
+
+		goto next;
 	}
 
 	return 0;
