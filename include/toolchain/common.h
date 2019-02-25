@@ -64,11 +64,7 @@
 
   #elif defined(CONFIG_ARM)
 
-    #ifdef CONFIG_ISA_THUMB
-      #define PERFOPT_ALIGN .balign  2
-    #else
-      #define PERFOPT_ALIGN .balign  4
-    #endif
+    #define PERFOPT_ALIGN .balign  4
 
   #elif defined(CONFIG_ARC)
 

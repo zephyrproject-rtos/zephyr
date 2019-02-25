@@ -163,19 +163,7 @@ do {                                                                    \
 
 #ifdef CONFIG_ARM
 
-#if defined(CONFIG_ISA_THUMB)
-
-#define FUNC_CODE()				\
-	.code 16;				\
-	.thumb_func;
-
-#define FUNC_INSTR(a)				\
-	BX pc;					\
-	NOP;					\
-	.code 32;				\
-A##a:
-
-#elif defined(CONFIG_ISA_THUMB2)
+#if defined(CONFIG_ISA_THUMB2)
 
 #define FUNC_CODE() .thumb;
 #define FUNC_INSTR(a)
@@ -301,8 +289,6 @@ A##a:
 #if defined(CONFIG_ISA_THUMB2)
 /* '.syntax unified' is a gcc-ism used in thumb-2 asm files */
 #define _ASM_FILE_PROLOGUE .text; .syntax unified; .thumb
-#elif defined(CONFIG_ISA_THUMB)
-#define _ASM_FILE_PROLOGUE .text; .code 16
 #else
 #define _ASM_FILE_PROLOGUE .text; .code 32
 #endif
