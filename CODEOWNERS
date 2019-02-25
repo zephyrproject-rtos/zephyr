@@ -97,6 +97,7 @@
 /drivers/*/*native_posix*                 @aescolar
 /drivers/adc/                             @anangl
 /drivers/bluetooth/                       @sjanc @jhedberg @Vudentz
+/drivers/can/                             @alexanderwachter
 /drivers/clock_control/*stm32f4*          @rsalveti @idlethread
 /drivers/counter/                         @anangl
 /drivers/display/                         @vanwinkeljan
@@ -128,6 +129,7 @@
 /drivers/wifi/eswifi/                     @loicpoulain
 /dts/arm/st/                              @erwango
 /dts/arm/nordic/                          @ioannisg @carlescufi
+/dts/bindings/can                         @alexanderwachter
 /ext/fs/                                  @nashif @ramakrishnapallala
 /ext/hal/cmsis/                           @MaureenHelm @galak
 /ext/hal/nordic/                          @carlescufi @anangl
@@ -152,6 +154,7 @@
 /include/atomic.h                         @andrewboie @andyross
 /include/bluetooth/                       @sjanc @jhedberg @Vudentz
 /include/cache.h                          @andrewboie @andyross
+/include/can.h                            @alexanderwachter
 /include/counter.h                        @anangl
 /include/device.h                         @ramakrishnapallala @nashif
 /include/display.h                        @vanwinkeljan
@@ -198,6 +201,7 @@
 /samples/bluetooth/                       @sjanc @jhedberg @Vudentz
 /samples/boards/intel_s1000_crb           @sathishkuttan @rgundi @nashif
 /samples/display/                         @vanwinkeljan
+/samples/drivers/CAN/                     @alexanderwachter
 /samples/gui/                             @vanwinkeljan
 /samples/net/                             @jukkar @tbursztyka @pfalcon
 /samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
@@ -250,6 +254,7 @@
 /tests/posix/                             @pfalcon
 /tests/crypto/                            @ceolin
 /tests/crypto/mbedtls/                    @nashif @ceolin
+/tests/drivers/can/                       @alexanderwachter
 /tests/drivers/spi/                       @tbursztyka
 /tests/kernel/                            @andrewboie @andyross @nashif
 /tests/net/                               @jukkar @tbursztyka @pfalcon
