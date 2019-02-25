@@ -264,7 +264,7 @@ struct net_stats {
 	struct net_stats_ipv6_nd ipv6_nd;
 #endif
 
-#if defined(CONFIG_NET_IPV6_MLD)
+#if defined(CONFIG_NET_STATISTICS_MLD)
 	/** IPv6 MLD statistics */
 	struct net_stats_ipv6_mld ipv6_mld;
 #endif
