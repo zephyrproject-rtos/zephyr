@@ -110,9 +110,6 @@ int stm32_exti_enable(int line)
 		case 16:
 			irqnum = PVD_IRQn;
 			break;
-		case 17:
-			irqnum = RTC_Alarm_IRQn;
-			break;
 		case 18:
 			irqnum = OTG_FS_WKUP_IRQn;
 			break;
@@ -322,11 +319,6 @@ static inline void __stm32_exti_isr_16(void *arg)
 	__stm32_exti_isr(16, 17, arg);
 }
 
-static inline void __stm32_exti_isr_17(void *arg)
-{
-	__stm32_exti_isr(17, 18, arg);
-}
-
 static inline void __stm32_exti_isr_18(void *arg)
 {
 	__stm32_exti_isr(18, 19, arg);
@@ -463,10 +455,6 @@ static void __stm32_exti_connect_irqs(struct device *dev)
 	IRQ_CONNECT(PVD_IRQn,
 		CONFIG_EXTI_STM32_PVD_IRQ_PRI,
 		__stm32_exti_isr_16, DEVICE_GET(exti_stm32),
-		0);
-	IRQ_CONNECT(RTC_Alarm_IRQn,
-		CONFIG_EXTI_STM32_RTC_ALARM_IRQ_PRI,
-		__stm32_exti_isr_17, DEVICE_GET(exti_stm32),
 		0);
 	IRQ_CONNECT(OTG_FS_WKUP_IRQn,
 		CONFIG_EXTI_STM32_OTG_FS_WKUP_IRQ_PRI,
