@@ -31,6 +31,11 @@
 #include <stm32wbxx_ll_gpio.h>
 #endif
 
+#ifdef CONFIG_SERIAL_HAS_DRIVER
+#include <stm32wbxx_ll_usart.h>
+#include <stm32wbxx_ll_lpuart.h>
+#endif
+
 #ifdef CONFIG_CLOCK_CONTROL_STM32_CUBE
 #include <stm32wbxx_ll_utils.h>
 #include <stm32wbxx_ll_bus.h>
