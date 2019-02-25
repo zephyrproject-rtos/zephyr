@@ -97,6 +97,13 @@ void test_i2c_write_led(struct device *i2c_dev, u16_t i2c_slave_led, u8_t color)
 		break;
 
 	default:
+		/* Go dark */
+		led_val[0] = 0x00;
+		led_val[1] = 0x00;
+		led_val[2] = 0x00;
+		led_val[3] = 0x00;
+		led_val[4] = 0x00;
+		led_val[5] = 0x00;
 		break;
 	}
 
