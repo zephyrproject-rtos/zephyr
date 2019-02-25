@@ -779,7 +779,7 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_0 = {
 #endif /* CONFIG_UART_NS16550_PORT_0_PCI */
 
 	.port = DT_UART_NS16550_PORT_0_BASE_ADDR,
-	.baud_rate = CONFIG_UART_NS16550_PORT_0_BAUD_RATE,
+	.baud_rate = DT_UART_NS16550_PORT_0_BAUD_RATE,
 	.options = CONFIG_UART_NS16550_PORT_0_OPTIONS,
 
 #ifdef CONFIG_UART_NS16550_PORT_0_DLF
@@ -787,7 +787,7 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_0 = {
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_ns16550_0, CONFIG_UART_NS16550_PORT_0_NAME, &uart_ns16550_init,
+DEVICE_AND_API_INIT(uart_ns16550_0, DT_UART_NS16550_PORT_0_NAME, &uart_ns16550_init,
 		    &uart_ns16550_dev_data_0, &uart_ns16550_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_ns16550_driver_api);
@@ -798,7 +798,7 @@ static void irq_config_func_0(struct device *dev)
 	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(DT_UART_NS16550_PORT_0_IRQ,
-		    CONFIG_UART_NS16550_PORT_0_IRQ_PRI,
+		    DT_UART_NS16550_PORT_0_IRQ_PRI,
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_0),
 		    DT_UART_NS16550_PORT_0_IRQ_FLAGS);
 	irq_enable(DT_UART_NS16550_PORT_0_IRQ);
@@ -833,7 +833,7 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_1 = {
 #endif /* CONFIG_UART_NS16550_PORT_1_PCI */
 
 	.port = DT_UART_NS16550_PORT_1_BASE_ADDR,
-	.baud_rate = CONFIG_UART_NS16550_PORT_1_BAUD_RATE,
+	.baud_rate = DT_UART_NS16550_PORT_1_BAUD_RATE,
 	.options = CONFIG_UART_NS16550_PORT_1_OPTIONS,
 
 #ifdef CONFIG_UART_NS16550_PORT_1_DLF
@@ -841,7 +841,7 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_1 = {
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_ns16550_1, CONFIG_UART_NS16550_PORT_1_NAME, &uart_ns16550_init,
+DEVICE_AND_API_INIT(uart_ns16550_1, DT_UART_NS16550_PORT_1_NAME, &uart_ns16550_init,
 		    &uart_ns16550_dev_data_1, &uart_ns16550_dev_cfg_1,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_ns16550_driver_api);
@@ -852,7 +852,7 @@ static void irq_config_func_1(struct device *dev)
 	ARG_UNUSED(dev);
 
 	IRQ_CONNECT(DT_UART_NS16550_PORT_1_IRQ,
-		    CONFIG_UART_NS16550_PORT_1_IRQ_PRI,
+		    DT_UART_NS16550_PORT_1_IRQ_PRI,
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_1),
 		    DT_UART_NS16550_PORT_1_IRQ_FLAGS);
 	irq_enable(DT_UART_NS16550_PORT_1_IRQ);
@@ -908,7 +908,7 @@ static void irq_config_func_2(struct device *dev)
 	IRQ_CONNECT(DT_UART_NS16550_PORT_2_IRQ,
 		    DT_UART_NS16550_PORT_2_IRQ_PRI,
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_2),
-		    CONFIG_UART_NS16550_PORT_2_IRQ_FLAGS);
+		    DT_UART_NS16550_PORT_2_IRQ_FLAGS);
 	irq_enable(DT_UART_NS16550_PORT_2_IRQ);
 }
 #endif
@@ -922,7 +922,7 @@ static void irq_config_func_3(struct device *port);
 #endif
 
 static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_3 = {
-	.sys_clk_freq = CONFIG_UART_NS16550_PORT_3_CLK_FREQ,
+	.sys_clk_freq = DT_UART_NS16550_PORT_3_CLK_FREQ,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_3,
@@ -940,8 +940,8 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_3 = {
 	.pci_dev.bar = UART_NS16550_PORT_3_PCI_BAR,
 #endif /* CONFIG_UART_NS16550_PORT_3_PCI */
 
-	.port = CONFIG_UART_NS16550_PORT_3_BASE_ADDR,
-	.baud_rate = CONFIG_UART_NS16550_PORT_3_BAUD_RATE,
+	.port = DT_UART_NS16550_PORT_3_BASE_ADDR,
+	.baud_rate = DT_UART_NS16550_PORT_3_BAUD_RATE,
 	.options = CONFIG_UART_NS16550_PORT_3_OPTIONS,
 
 #ifdef CONFIG_UART_NS16550_PORT_3_DLF
@@ -949,7 +949,7 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_3 = {
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_ns16550_3, CONFIG_UART_NS16550_PORT_3_NAME, &uart_ns16550_init,
+DEVICE_AND_API_INIT(uart_ns16550_3, DT_UART_NS16550_PORT_3_NAME, &uart_ns16550_init,
 		    &uart_ns16550_dev_data_3, &uart_ns16550_dev_cfg_3,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &uart_ns16550_driver_api);
@@ -959,11 +959,11 @@ static void irq_config_func_3(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	IRQ_CONNECT(CONFIG_UART_NS16550_PORT_3_IRQ,
-		    CONFIG_UART_NS16550_PORT_3_IRQ_PRI,
+	IRQ_CONNECT(DT_UART_NS16550_PORT_3_IRQ,
+		    DT_UART_NS16550_PORT_3_IRQ_PRI,
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_3),
-		    CONFIG_UART_NS16550_PORT_3_IRQ_FLAGS);
-	irq_enable(CONFIG_UART_NS16550_PORT_3_IRQ);
+		    DT_UART_NS16550_PORT_3_IRQ_FLAGS);
+	irq_enable(DT_UART_NS16550_PORT_3_IRQ);
 }
 #endif
 
