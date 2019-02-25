@@ -75,7 +75,6 @@ SECTION_FUNC(TEXT, _firq_enter)
 #endif
 
 #if CONFIG_RGF_NUM_BANKS != 1
-#ifndef CONFIG_FIRQ_NO_LPCC
 	/*
 	 * Save LP_START/LP_COUNT/LP_END because called handler might use.
 	 * Save these in callee saved registers to avoid using memory.
@@ -84,7 +83,6 @@ SECTION_FUNC(TEXT, _firq_enter)
 	mov r23,lp_count
 	lr r24, [_ARC_V2_LP_START]
 	lr r25, [_ARC_V2_LP_END]
-#endif
 #endif
 
 	ld r1, [exc_nest_count]
@@ -132,12 +130,10 @@ firq_nest:
 SECTION_FUNC(TEXT, _firq_exit)
 
 #if CONFIG_RGF_NUM_BANKS != 1
-#ifndef CONFIG_FIRQ_NO_LPCC
 	/* restore lp_count, lp_start, lp_end from r23-r25 */
 	mov lp_count,r23
 	sr r24, [_ARC_V2_LP_START]
 	sr r25, [_ARC_V2_LP_END]
-#endif
 #endif
 	/* check if we're a nested interrupt: if so, let the interrupted
 	 * interrupt handle the reschedule */
