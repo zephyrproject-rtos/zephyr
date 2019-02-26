@@ -540,6 +540,10 @@ bool log_is_strdup(void *buf);
  */
 void log_free(void *buf);
 
+/** @brief Indicate to the log core that one log message has been dropped.
+ */
+void log_dropped(void);
+
 #ifdef __cplusplus
 }
 #endif
