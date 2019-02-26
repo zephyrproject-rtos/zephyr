@@ -195,9 +195,10 @@ compatible that denotes the unique board described by the .dts file.
 Device Tree Source File Template
 ================================
 
-.. code-block:: yaml
+.. code-block:: none
 
-  /dts-v1/
+  /dts-v1/;
+
   / {
           model = "Model name for your board";
           compatible = "compatible for your board";
