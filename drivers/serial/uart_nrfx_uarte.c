@@ -11,12 +11,27 @@
 #include <uart.h>
 #include <hal/nrf_gpio.h>
 #include <hal/nrf_uarte.h>
-#include <nrfx_ppi.h>
 #include <nrfx_timer.h>
 #include <misc/util.h>
 #include <kernel.h>
 #include <logging/log.h>
 LOG_MODULE_REGISTER(uart_nrfx_uarte, LOG_LEVEL_ERR);
+
+/* Generalize PPI or DPPI channel management */
+#if defined(CONFIG_HAS_HW_NRF_PPI)
+#include <nrfx_ppi.h>
+#define gppi_channel_t nrf_ppi_channel_t
+#define gppi_channel_alloc nrfx_ppi_channel_alloc
+#define gppi_channel_enable nrfx_ppi_channel_enable
+#elif defined(CONFIG_HAS_HW_NRF_DPPIC)
+#include <nrfx_dppi.h>
+#define gppi_channel_t u8_t
+#define gppi_channel_alloc nrfx_dppi_channel_alloc
+#define gppi_channel_enable nrfx_dppi_channel_enable
+#else
+#error "No PPI or DPPI"
+#endif
+
 
 #if (defined(CONFIG_UART_0_NRF_UARTE) &&         \
      defined(CONFIG_UART_0_INTERRUPT_DRIVEN)) || \
@@ -60,7 +75,7 @@ struct uarte_async_cb {
 	s32_t rx_timeout_left; /* Current time left until user callback */
 	struct k_timer rx_timeout_timer;
 	union {
-		nrf_ppi_channel_t ppi;
+		gppi_channel_t ppi;
 		u32_t cnt;
 	} rx_cnt;
 
@@ -361,13 +376,37 @@ static int uarte_nrfx_rx_counting_init(struct device *dev)
 	}
 
 	if (hw_rx_counting_enabled(data)) {
+		ret = gppi_channel_alloc(&data->async->rx_cnt.ppi);
+		if (ret != NRFX_SUCCESS) {
+			LOG_ERR("Failed to allocate PPI Channel, "
+				"switching to software byte counting.");
+			data->async->hw_rx_counting = false;
+			nrfx_timer_uninit(&cfg->timer);
+		}
+	}
+
+	if (hw_rx_counting_enabled(data)) {
+#if CONFIG_HAS_HW_NRF_PPI
 		ret = nrfx_ppi_channel_assign(
 			data->async->rx_cnt.ppi,
 			nrf_uarte_event_address_get(uarte,
 						    NRF_UARTE_EVENT_RXDRDY),
-			nrfx_timer_task_address_get(&data->async->timer,
+			nrfx_timer_task_address_get(&cfg->timer,
 						    NRF_TIMER_TASK_COUNT));
 
+		if (ret != NRFX_SUCCESS) {
+			return -EIO;
+		}
+#else
+		nrf_uarte_publish_set(uarte,
+				      NRF_UARTE_EVENT_RXDRDY,
+				      data->async->rx_cnt.ppi);
+		nrf_timer_subscribe_set(cfg->timer.p_reg,
+					NRF_TIMER_TASK_COUNT,
+					data->async->rx_cnt.ppi);
+
+#endif
+		ret = gppi_channel_enable(data->async->rx_cnt.ppi);
 		if (ret != NRFX_SUCCESS) {
 			return -EIO;
 		}
