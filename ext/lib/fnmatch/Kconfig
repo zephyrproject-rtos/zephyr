@@ -5,8 +5,7 @@
 #
 
 config FNMATCH
-	bool
-	prompt "Fnmatch Support"
+	bool "Fnmatch Support"
 	help
 	  This option enables the fnmatch library
 

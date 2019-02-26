@@ -88,8 +88,7 @@ config BT_CTLR_DUP_FILTER_LEN
 	  duplicates while scanning.
 
 config BT_CTLR_MESH_SCAN_FILTERS
-	prompt "Number of Mesh scan filters"
-	int
+	int "Number of Mesh scan filters"
 	depends on BT_HCI_MESH_EXT
 	default 1
 	range 1 15
@@ -98,8 +97,7 @@ config BT_CTLR_MESH_SCAN_FILTERS
 	  the Intel Mesh Vendor Specific Extensions.
 
 config BT_CTLR_MESH_SF_PATTERNS
-	prompt "Number of Mesh scan filter patterns"
-	int
+	int "Number of Mesh scan filter patterns"
 	depends on BT_HCI_MESH_EXT
 	default 15
 	range 1 15
@@ -338,9 +336,8 @@ config BT_CTLR_ADV_EXT
 	  Controller.
 
 config BT_ADV_SET
-	prompt "LE Advertising Extensions Sets"
+	int "LE Advertising Extensions Sets"
 	depends on BT_CTLR_ADV_EXT
-	int
 	default 1
 	help
 	  Maximum supported advertising sets.
@@ -365,8 +362,7 @@ menu "Advanced features"
 	visible if BT_CTLR_ADVANCED_FEATURES
 
 config BT_CTLR_FILTER
-	prompt "Device Whitelist Support"
-	bool
+	bool "Device Whitelist Support"
 	default y
 	help
 	  Enable support for controller device whitelist feature
@@ -477,8 +473,7 @@ config BT_CTLR_SCHED_ADVANCED
 
 if BT_LL_SW_SPLIT
 config BT_CTLR_LLL_PRIO
-	prompt "Lower Link Layer (Radio) IRQ priority"
-	int
+	int "Lower Link Layer (Radio) IRQ priority"
 	range 0 3 if SOC_SERIES_NRF51X
 	range 0 6 if SOC_SERIES_NRF52X
 	default 0
@@ -486,8 +481,7 @@ config BT_CTLR_LLL_PRIO
 	  The interrupt priority for event preparation and radio IRQ.
 
 config BT_CTLR_ULL_HIGH_PRIO
-	prompt "Upper Link Layer High IRQ priority"
-	int
+	int "Upper Link Layer High IRQ priority"
 	range BT_CTLR_LLL_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_LLL_PRIO 6 if SOC_SERIES_NRF52X
 	default 0
@@ -496,8 +490,7 @@ config BT_CTLR_ULL_HIGH_PRIO
 	  higher priority functions.
 
 config BT_CTLR_ULL_LOW_PRIO
-	prompt "Upper Link Layer Low IRQ priority"
-	int
+	int "Upper Link Layer Low IRQ priority"
 	range BT_CTLR_ULL_HIGH_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_ULL_HIGH_PRIO 6 if SOC_SERIES_NRF52X
 	default 0
@@ -506,8 +499,7 @@ config BT_CTLR_ULL_LOW_PRIO
 	  lower priority functions.
 
 config BT_CTLR_LOWEST_PRIO
-	prompt "Link Layer Lowest IRQ priority"
-	int
+	int "Link Layer Lowest IRQ priority"
 	range BT_CTLR_ULL_LOW_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_ULL_LOW_PRIO 6 if SOC_SERIES_NRF52X
 	default 0
@@ -515,8 +507,7 @@ config BT_CTLR_LOWEST_PRIO
 	  The interrupt priority for RNG and other non-critical functions.
 
 config BT_CTLR_LOW_LAT
-	prompt "Low latency non-negotiating event pre-emption"
-	bool
+	bool "Low latency non-negotiating event pre-emption"
 	default y if SOC_SERIES_NRF51X
 	help
 	  Use low latency non-negotiating event pre-emption. This reduces
@@ -689,31 +680,27 @@ config BT_CTLR_PA_LNA_GPIOTE_CHAN
 
 if BT_LL_SW_SPLIT
 config BT_TMP
-	prompt "Temporary Role"
+	bool "Temporary Role"
 	depends on BT_SHELL
-	bool
 	default y
 	help
 	  Temporary role to manual test ULL/LLL split architecture.
 
 if BT_TMP
 config BT_TMP_MAX
-	prompt "Temporary Role Max. Instances"
-	int
+	int "Temporary Role Max. Instances"
 	default 3
 	help
 	  Maximum supported Temporary role instances.
 
 config BT_TMP_TX_SIZE_MAX
-	prompt "Temporary Role Max. Tx buffer size"
-	int
+	int "Temporary Role Max. Tx buffer size"
 	default 10
 	help
 	  Temporary role's maximum transmit buffer size in bytes.
 
 config BT_TMP_TX_COUNT_MAX
-	prompt "Temporary Role Max. Tx buffers"
-	int
+	int "Temporary Role Max. Tx buffers"
 	default 1
 	help
 	  Temporary role's maximum transmit buffer count.

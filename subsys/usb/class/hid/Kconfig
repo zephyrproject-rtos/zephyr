@@ -36,8 +36,7 @@ config USB_HID_DEVICE_NAME_1
 endif # USB_COMPOSITE_DEVICE
 
 config ENABLE_HID_INT_OUT_EP
-	bool
-	prompt "Enable USB HID Device Interrupt OUT Endpoint"
+	bool "Enable USB HID Device Interrupt OUT Endpoint"
 	help
 	  Enable USB HID Device Interrupt OUT Endpoint.
 
@@ -68,8 +67,7 @@ config USB_HID_REPORTS
 	  Must be equal or higher than highest report ID (if they are not consecutive).
 
 config USB_HID_BOOT_PROTOCOL
-	bool
-	prompt "Enable USB HID Boot Protocol handling"
+	bool "Enable USB HID Boot Protocol handling"
 	help
 	  Sets bInterfaceSubClass to 1 and enables Set_Protocol and Get_Protocol
 	  requests handling.

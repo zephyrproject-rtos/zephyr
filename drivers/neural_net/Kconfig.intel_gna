@@ -6,8 +6,7 @@
 #
 
 menuconfig INTEL_GNA
-	bool
-	prompt "Intel GNA Inferencing Engine"
+	bool "Intel GNA Inferencing Engine"
 	help
 	  Enable support for Intel's GMM and Neural Network Accelerator
 

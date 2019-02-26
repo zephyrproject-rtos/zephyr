@@ -53,15 +53,13 @@ config RTC_QMSI
 if RTC_QMSI
 
 config RTC_QMSI_API_REENTRANCY
-	bool
-	prompt "RTC shim driver API reentrancy"
+	bool "RTC shim driver API reentrancy"
 	help
 	  Enable support for RTC shim driver API reentrancy.
 
 config RTC_PRESCALER
-	int
+	int "Prescaler size"
 	default 1
-	prompt "Prescaler size"
 	help
 	  RTC prescaler used to determine ticks per second
 
