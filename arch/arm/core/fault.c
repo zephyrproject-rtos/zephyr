@@ -289,6 +289,13 @@ static u32_t _MpuFault(NANO_ESF *esf, int fromHardFault)
 				 * lowest allowed position, inside the thread's
 				 * stack.
 				 *
+				 * Note:
+				 * The PSP will normally be adjusted in a tail-
+				 * chained exception performing context switch,
+				 * after aborting the corrupted thread. The
+				 * adjustment, here, is required as tail-chain
+				 * cannot always be guaranteed.
+				 *
 				 * The manual adjustment of PSP is safe, as we
 				 * will not be re-scheduling this thread again
 				 * for execution; thread stack corruption is a
@@ -437,6 +444,16 @@ static int _BusFault(NANO_ESF *esf, int fromHardFault)
 						 * Therefore, we manually force
 						 * the stack pointer to the
 						 * lowest allowed position.
+						 *
+						 * Note:
+						 * The PSP will normally be
+						 * adjusted in a tail-chained
+						 * exception performing context
+						 * switch, after aborting the
+						 * corrupted thread. Here, the
+						 * adjustment is required as
+						 * tail-chain cannot always be
+						 * guaranteed.
 						 */
 						__set_PSP(min_stack_ptr);
 
