@@ -94,7 +94,17 @@ static int rtc_qmsi_set_top(struct device *dev, u32_t ticks,
 			     counter_top_callback_t callback,
 			     void *user_data)
 {
-	return -ENODEV;
+	const struct counter_config_info *info = dev->config->config_info;
+
+	ARG_UNUSED(dev);
+	ARG_UNUSED(callback);
+	ARG_UNUSED(user_data);
+
+	if (ticks != info->max_top_value) {
+		return -ENOTSUP;
+	} else {
+		return 0;
+	}
 }
 
 static int rtc_qmsi_set_alarm(struct device *dev, u8_t chan_id,
