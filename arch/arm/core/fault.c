@@ -360,10 +360,6 @@ static int _BusFault(NANO_ESF *esf, int fromHardFault)
 				SCB->CFSR &= ~SCB_CFSR_BFARVALID_Msk;
 			}
 		}
-		/* it's possible to have both a precise and imprecise fault */
-		if ((SCB->CFSR & SCB_CFSR_IMPRECISERR_Msk) != 0) {
-			PR_FAULT_INFO("  Imprecise data bus error\n");
-		}
 	}
 	if (SCB->CFSR & SCB_CFSR_IMPRECISERR_Msk) {
 		PR_FAULT_INFO("  Imprecise data bus error\n");
