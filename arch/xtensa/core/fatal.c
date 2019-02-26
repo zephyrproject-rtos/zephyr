@@ -198,7 +198,7 @@ XTENSA_ERR_NORET void ReservedInterruptHandler(unsigned int intNo)
 	printk("*** Reserved Interrupt ***\n");
 	dump_exc_state();
 	printk("INTENABLE = 0x%x\n"
-	       "INTERRUPT = 0x%x (%d)\n",
+	       "INTERRUPT = 0x%x (%x)\n",
 	       get_sreg(INTENABLE), (1 << intNo), intNo);
 	z_NanoFatalErrorHandler(_NANO_ERR_RESERVED_IRQ, &_default_esf);
 }
