@@ -33,7 +33,6 @@ properties:
       type: stringlist
       category: optional
       description: readable string describing the interrupts
-      generation: define
 
     ram-size:
       type: int
