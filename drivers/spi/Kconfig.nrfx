@@ -162,13 +162,29 @@ endif # SPI_2
 
 if SPI_3
 
+choice
+	prompt "SPI Port 3 Driver type"
+
 config SPI_3_NRF_SPIM
-	bool
+	bool "nRF SPIM 3"
 	depends on HAS_HW_NRF_SPIM3
 	select NRFX_SPIM
-	default y
+	help
+	  Enable nRF SPI Master with EasyDMA on port 3.
 
-if SPI_3_NRF_SPIM
+config SPI_3_NRF_SPIS
+	bool "nRF SPIS 3"
+	depends on HAS_HW_NRF_SPIS3
+	depends on SPI_SLAVE
+	select NRFX_SPIS
+	help
+	  Enable nRF SPI Slave with EasyDMA on port 3.
+	  Due to hardware limitations the implementation supports only simple
+	  buffers (consisting of one part) located in RAM.
+
+endchoice
+
+if SPI_3_NRF_SPIM || SPI_3_NRF_SPIS
 
 config SPI_3_NRF_ORC
 	hex "Over-read Character"
@@ -178,16 +194,17 @@ config SPI_3_NRF_ORC
 	  Over-read character. Character clocked out after an over-read
 	  of the transmit buffer.
 
+endif # SPI_3_NRF_SPIM || SPI_3_NRF_SPIS
+
 config SPI_3_NRF_RX_DELAY
 	int "MISO sampling delay"
+	depends on SPI_3_NRF_SPIM && SOC_NRF52840
 	range 0 7
 	default 2
 	help
 	  Number of 64 MHz clock cycles (15.625 ns) delay from the sampling
 	  edge of SCK (leading or trailing, depending on the CPHA setting used)
 	  until the input serial data on MISO is actually sampled.
-
-endif # SPI_3_NRF_SPIM
 
 endif # SPI_3
 
