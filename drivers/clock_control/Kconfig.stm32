@@ -368,7 +368,6 @@ config CLOCK_STM32_PLL_R_DIVISOR
 
 config CLOCK_STM32_LSE
 	bool "Low-speed external clock"
-	default n
 	help
 	  Enable the low-speed external (LSE) clock supplied with a 32.768 kHz
 	  crystal resonator oscillator.
@@ -376,7 +375,6 @@ config CLOCK_STM32_LSE
 config CLOCK_STM32_MSI_PLL_MODE
 	bool "MSI PLL MODE"
 	depends on CLOCK_STM32_LSE
-	default n
 	help
 	  Enable hardware auto-calibration with LSE.
 

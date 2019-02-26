@@ -3,7 +3,6 @@ config ARCH
 
 config XUK_DEBUG
 	bool "Debug logging at lowest level"
-	default n
 	help
 	  When true, enables debug logging from the XUK layer in very
 	  early boot situations (including the 16 and 32 bit stub

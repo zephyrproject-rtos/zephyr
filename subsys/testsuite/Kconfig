@@ -40,7 +40,6 @@ config HAS_COVERAGE_SUPPORT
 config COVERAGE
 	bool "Create coverage data"
 	depends on HAS_COVERAGE_SUPPORT
-	default n
 	help
 	  This option will build your application with the -coverage option
 	  which will generate data that can be used to create coverage reports.

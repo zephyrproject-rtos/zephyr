@@ -7,7 +7,6 @@
 
 menuconfig BT_GATT_DIS
 	bool "Enable GATT Device Information service"
-	default n
 
 if BT_GATT_DIS
 

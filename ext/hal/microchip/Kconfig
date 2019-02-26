@@ -4,4 +4,3 @@
 
 menuconfig HAS_MEC_HAL
 	bool "Microchip MEC HAL drivers support"
-	default n

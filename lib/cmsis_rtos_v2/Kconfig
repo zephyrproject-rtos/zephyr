@@ -5,7 +5,6 @@
 #
 config CMSIS_RTOS_V2
 	bool "CMSIS RTOS v2 API"
-	default n
 	depends on POLL
 	depends on THREAD_NAME
 	depends on THREAD_STACK_INFO

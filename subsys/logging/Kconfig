@@ -435,7 +435,6 @@ endif # LOG_BACKEND_RTT
 config LOG_BACKEND_NATIVE_POSIX
 	bool "Enable native backend"
 	depends on ARCH_POSIX
-	default n
 	help
 	  Enable backend in native_posix
 

@@ -10,7 +10,6 @@ config HAS_SEGGER_RTT
 config USE_SEGGER_RTT
 	bool "Enable SEGGER RTT libraries."
 	depends on HAS_SEGGER_RTT
-	default n
 	help
 	  Enable Segger J-Link RTT libraries for platforms that support it.
 	  Selection of this option enables use of RTT for various subsytems.
@@ -28,7 +27,6 @@ config SEGGER_SYSTEMVIEW
 config SEGGER_SYSTEMVIEW_BOOT_ENABLE
 	bool "Start logging SystemView events on system start"
 	depends on SEGGER_SYSTEMVIEW
-	default n
 
 config SEGGER_SYSVIEW_RTT_BUFFER_SIZE
 	int "Buffer size for SystemView RTT"
