@@ -224,8 +224,8 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 #define COUNTER_NRFX_TIMER_DEVICE(idx)					       \
 	static int counter_##idx##_init(struct device *dev)		       \
 	{								       \
-		IRQ_CONNECT(NRFX_IRQ_NUMBER_GET(NRF_TIMER##idx),	       \
-			    CONFIG_COUNTER_TIMER##idx##_IRQ_PRI,	       \
+		IRQ_CONNECT(DT_NORDIC_NRF_TIMER_TIMER_##idx##_IRQ,	       \
+			    DT_NORDIC_NRF_TIMER_TIMER_##idx##_IRQ_PRIORITY,    \
 			    nrfx_isr, nrfx_timer_##idx##_irq_handler, 0);      \
 		const nrfx_timer_config_t config = {			       \
 			.frequency = CONFIG_COUNTER_TIMER##idx##_PRESCALER,    \
@@ -254,7 +254,8 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		.timer = NRFX_TIMER_INSTANCE(idx),			       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
-	DEVICE_AND_API_INIT(timer_##idx, CONFIG_COUNTER_TIMER##idx##_NAME,     \
+	DEVICE_AND_API_INIT(timer_##idx,				       \
+			    DT_NORDIC_NRF_TIMER_TIMER_##idx##_LABEL,	       \
 			    counter_##idx##_init,			       \
 			    &counter_##idx##_data,			       \
 			    &nrfx_counter_##idx##_config.info,		       \
