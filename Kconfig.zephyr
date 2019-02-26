@@ -38,8 +38,6 @@ source "subsys/Kconfig"
 
 source "ext/Kconfig"
 
-source "subsys/testsuite/Kconfig"
-
 source "$(PROJECT_BINARY_DIR)/Kconfig.modules"
 
 menu "Build and Link Features"
