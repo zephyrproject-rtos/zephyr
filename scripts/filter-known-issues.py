@@ -236,7 +236,8 @@ if warnings or errors:
         errors.flush()
     if ((os.path.isfile(args.warnings) and os.path.getsize(args.warnings) > 0) or
         (os.path.isfile(args.errors) and os.path.getsize(args.errors) > 0)):
-        print("\n\nNew errors/warnings found, please fix them:\n")
+        print('''\n\n ---- New errors/warnings not tracked as .known-issues/, \
+please fix them ----\n''')
         if args.warnings:
             print(open(args.warnings, "r").read())
         if args.errors and (args.errors != args.warnings):
@@ -244,3 +245,5 @@ if warnings or errors:
     else:
         print("\n\nNo new errors/warnings.\n")
 
+    print('''\nTo see *all* new error/warnings you must make/ninja clean and \
+rebuild from scratch.''')
