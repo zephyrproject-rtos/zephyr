@@ -54,6 +54,10 @@ struct ieee802154_filter {
 /* @endcond */
 };
 
+/**
+ * @brief IEEE 802.15.4 radio interface API.
+ *
+ */
 struct ieee802154_radio_api {
 	/**
 	 * Mandatory to get in first position.

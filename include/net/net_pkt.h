@@ -51,7 +51,10 @@ struct net_pkt_cursor {
 	u8_t *pos;
 };
 
-/* Note that if you add new fields into net_pkt, remember to update
+/**
+ * @brief Network packet.
+ *
+ * Note that if you add new fields into net_pkt, remember to update
  * net_pkt_clone() function.
  */
 struct net_pkt {
