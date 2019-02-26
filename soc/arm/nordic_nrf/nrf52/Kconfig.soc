@@ -26,6 +26,7 @@ config SOC_NRF52810
 	select HAS_HW_NRF_RTC0
 	select HAS_HW_NRF_RTC1
 	select HAS_HW_NRF_SAADC
+	select HAS_HW_NRF_SPI0
 	select HAS_HW_NRF_SPIM0
 	select HAS_HW_NRF_SPIS0
 	select HAS_HW_NRF_SWI0
@@ -38,8 +39,10 @@ config SOC_NRF52810
 	select HAS_HW_NRF_TIMER0
 	select HAS_HW_NRF_TIMER1
 	select HAS_HW_NRF_TIMER2
+	select HAS_HW_NRF_TWI0
 	select HAS_HW_NRF_TWIM0
 	select HAS_HW_NRF_TWIS0
+	select HAS_HW_NRF_UART0
 	select HAS_HW_NRF_UARTE0
 	select HAS_HW_NRF_WDT
 
