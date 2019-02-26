@@ -148,7 +148,8 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 
 void test_set_top_value_with_alarm(void)
 {
-#if defined(CONFIG_COUNTER_MCUX_RTC) || defined(CONFIG_COUNTER_RTC_STM32)
+#if defined(CONFIG_COUNTER_MCUX_RTC) || defined(CONFIG_COUNTER_RTC_STM32)\
+|| defined(DT_RTC_0_NAME)
 	ztest_test_skip();
 #else
 	test_all_instances(test_set_top_value_with_alarm_instance);
@@ -237,7 +238,8 @@ void test_single_shot_alarm_notop(void)
 
 void test_single_shot_alarm_top(void)
 {
-#if defined(CONFIG_COUNTER_MCUX_RTC) || defined(CONFIG_COUNTER_RTC_STM32)
+#if defined(CONFIG_COUNTER_MCUX_RTC) || defined(CONFIG_COUNTER_RTC_STM32)\
+|| defined(DT_RTC_0_NAME)
 	ztest_test_skip();
 #else
 	test_all_instances(test_single_shot_alarm_top_instance);
