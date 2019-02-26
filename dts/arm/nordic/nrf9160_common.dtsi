@@ -230,7 +230,7 @@ timer0: timer@f000 {
 	status = "disabled";
 	reg = <0xf000 0x1000>;
 	interrupts = <15 1>;
-	label = "TIMER0";
+	label = "TIMER_0";
 };
 
 timer1: timer@10000 {
@@ -238,7 +238,7 @@ timer1: timer@10000 {
 	status = "disabled";
 	reg = <0x10000 0x1000>;
 	interrupts = <16 1>;
-	label = "TIMER1";
+	label = "TIMER_1";
 };
 
 timer2: timer@11000 {
@@ -246,5 +246,5 @@ timer2: timer@11000 {
 	status = "disabled";
 	reg = <0x11000 0x1000>;
 	interrupts = <17 1>;
-	label = "TIMER2";
+	label = "TIMER_2";
 };
