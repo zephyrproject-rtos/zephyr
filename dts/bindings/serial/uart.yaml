@@ -38,7 +38,6 @@ properties:
       type: stringlist
       category: optional
       description: names of required interrupts
-      generation: define
     pinctrl-\d+:
       type: array
       category: optional

@@ -28,7 +28,6 @@ properties:
       type: array
       category: optional
       description: names off the interrupt lines
-      generation: define
 
     gpio-port:
       type: string
