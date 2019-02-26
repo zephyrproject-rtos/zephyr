@@ -16,7 +16,7 @@
 /soc/arm/nordic_nrf/                      @ioannisg
 /soc/arm/st_stm32/                        @erwango
 /soc/arm/st_stm32/stm32f4/                @rsalveti @idlethread
-/soc/arm/ti_simplelink/cc32xx/            @GAnthony
+/soc/arm/ti_simplelink/cc32xx/            @vanti
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
 /soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung @rgundi
 /arch/nios2/                              @andrewboie @ramakrishnapallala
@@ -43,7 +43,7 @@
 /boards/arm/96b_nitrogen/                 @idlethread
 /boards/arm/96b_neonkey/                  @Mani-Sadhasivam
 /boards/arm/96b_stm32_sensor_mez/         @Mani-Sadhasivam
-/boards/arm/cc3220sf_launchxl/            @GAnthony
+/boards/arm/cc3220sf_launchxl/            @vanti
 /boards/arm/curie_ble/                    @jhedberg
 /boards/arm/disco_l475_iot1/              @erwango
 /boards/arm/frdm*/                        @MaureenHelm
@@ -141,6 +141,7 @@
 /ext/hal/nxp/                             @MaureenHelm
 /ext/hal/qmsi/                            @nashif
 /ext/hal/st/stm32cube/                    @erwango
+/ext/hal/ti/simplelink/                   @vanti
 /ext/lib/crypto/mbedtls/                  @nashif
 /ext/lib/crypto/tinycrypt/                @ceolin
 /include/adc.h                            @anangl
