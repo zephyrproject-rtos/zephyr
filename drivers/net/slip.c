@@ -30,7 +30,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_core.h>
-#include <net/lldp.h>
 #include <console/uart_pipe.h>
 #include <net/ethernet.h>
 

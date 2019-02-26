@@ -24,8 +24,6 @@
 extern "C" {
 #endif
 
-#if defined(CONFIG_NET_LLDP)
-
 /* LLDP Definitions */
 
 /* According to the spec, End of LLDPDU TLV value is constant. */
@@ -197,8 +195,6 @@ int net_lldp_register_callback(struct net_if *iface, net_lldp_recv_cb_t cb);
  * @return Return the policy for network buffer
  */
 enum net_verdict net_lldp_recv(struct net_if *iface, struct net_pkt *pkt);
-
-#endif /* CONFIG_NET_LLDP */
 
 #ifdef __cplusplus
 }
