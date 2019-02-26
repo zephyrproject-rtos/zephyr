@@ -108,6 +108,14 @@ config NRFX_UARTE1
 	bool
 	select NRFX_UARTE
 
+config NRFX_UARTE2
+	bool
+	select NRFX_UARTE
+
+config NRFX_UARTE3
+	bool
+	select NRFX_UARTE
+
 config NRFX_USBD
 	bool
 	select NRFX_SYSTICK
