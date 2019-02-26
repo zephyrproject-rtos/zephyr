@@ -25,7 +25,7 @@ static inline u8_t _get_num_regions(void)
 {
 	u32_t num = z_arc_v2_aux_reg_read(_ARC_V2_MPU_BUILD);
 
-	num = (num & 0xFF00) >> 8;
+	num = (num & 0xFF00U) >> 8U;
 
 	return (u8_t)num;
 }

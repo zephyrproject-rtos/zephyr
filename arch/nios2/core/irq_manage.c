@@ -38,7 +38,7 @@ void z_arch_irq_enable(unsigned int irq)
 	key = irq_lock();
 
 	ienable = _nios2_creg_read(NIOS2_CR_IENABLE);
-	ienable |= (1 << irq);
+	ienable |= BIT(irq);
 	_nios2_creg_write(NIOS2_CR_IENABLE, ienable);
 
 	irq_unlock(key);
@@ -54,7 +54,7 @@ void z_arch_irq_disable(unsigned int irq)
 	key = irq_lock();
 
 	ienable = _nios2_creg_read(NIOS2_CR_IENABLE);
-	ienable &= ~(1 << irq);
+	ienable &= ~BIT(irq);
 	_nios2_creg_write(NIOS2_CR_IENABLE, ienable);
 
 	irq_unlock(key);
@@ -89,7 +89,7 @@ void _enter_irq(u32_t ipending)
 		z_sys_trace_isr_enter();
 
 		index = find_lsb_set(ipending) - 1;
-		ipending &= ~(1 << index);
+		ipending &= ~BIT(index);
 
 		ite = &_sw_isr_table[index];
 

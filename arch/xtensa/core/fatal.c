@@ -156,7 +156,7 @@ static inline unsigned int get_bits(int offset, int num_bits, unsigned int val)
 {
 	int mask;
 
-	mask = (1 << num_bits) - 1;
+	mask = BIT(num_bits) - 1;
 	val = val >> offset;
 	return val & mask;
 }

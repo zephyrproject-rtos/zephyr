@@ -67,7 +67,7 @@ void z_arch_irq_disable(unsigned int irq)
  */
 int z_arch_irq_is_enabled(unsigned int irq)
 {
-	return NVIC->ISER[REG_FROM_IRQ(irq)] & (1 << BIT_FROM_IRQ(irq));
+	return NVIC->ISER[REG_FROM_IRQ(irq)] & BIT(BIT_FROM_IRQ(irq));
 }
 
 /**
@@ -108,10 +108,10 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 	 * affecting performance (can still be useful on systems with a
 	 * reduced set of priorities, like Cortex-M0/M0+).
 	 */
-	__ASSERT(prio <= ((1 << DT_NUM_IRQ_PRIO_BITS) - 1),
-		 "invalid priority %d! values must be less than %d\n",
+	__ASSERT(prio <= (BIT(DT_NUM_IRQ_PRIO_BITS) - 1),
+		 "invalid priority %d! values must be less than %lu\n",
 		 prio - _IRQ_PRIO_OFFSET,
-		 (1 << DT_NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
+		 BIT(DT_NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
 	NVIC_SetPriority((IRQn_Type)irq, prio);
 }
 

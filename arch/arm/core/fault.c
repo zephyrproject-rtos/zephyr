@@ -55,24 +55,24 @@
 /* bit[0]: Exception Secure. The security domain the exception was taken to. */
 #define EXC_RETURN_EXCEPTION_SECURE_Pos 0
 #define EXC_RETURN_EXCEPTION_SECURE_Msk \
-		(1 << EXC_RETURN_EXCEPTION_SECURE_Pos)
+		BIT(EXC_RETURN_EXCEPTION_SECURE_Pos)
 #define EXC_RETURN_EXCEPTION_SECURE_Non_Secure 0
 #define EXC_RETURN_EXCEPTION_SECURE_Secure EXC_RETURN_EXCEPTION_SECURE_Msk
 /* bit[2]: Stack Pointer selection. */
 #define EXC_RETURN_SPSEL_Pos 2
-#define EXC_RETURN_SPSEL_Msk (1 << EXC_RETURN_SPSEL_Pos)
+#define EXC_RETURN_SPSEL_Msk BIT(EXC_RETURN_SPSEL_Pos)
 #define EXC_RETURN_SPSEL_MAIN 0
 #define EXC_RETURN_SPSEL_PROCESS EXC_RETURN_SPSEL_Msk
 /* bit[3]: Mode. Indicates the Mode that was stacked from. */
 #define EXC_RETURN_MODE_Pos 3
-#define EXC_RETURN_MODE_Msk (1 << EXC_RETURN_MODE_Pos)
+#define EXC_RETURN_MODE_Msk BIT(EXC_RETURN_MODE_Pos)
 #define EXC_RETURN_MODE_HANDLER 0
 #define EXC_RETURN_MODE_THREAD EXC_RETURN_MODE_Msk
 /* bit[4]: Stack frame type. Indicates whether the stack frame is a standard
  * integer only stack frame or an extended floating-point stack frame.
  */
 #define EXC_RETURN_STACK_FRAME_TYPE_Pos 4
-#define EXC_RETURN_STACK_FRAME_TYPE_Msk (1 << EXC_RETURN_STACK_FRAME_TYPE_Pos)
+#define EXC_RETURN_STACK_FRAME_TYPE_Msk BIT(EXC_RETURN_STACK_FRAME_TYPE_Pos)
 #define EXC_RETURN_STACK_FRAME_TYPE_EXTENDED 0
 #define EXC_RETURN_STACK_FRAME_TYPE_STANDARD EXC_RETURN_STACK_FRAME_TYPE_Msk
 /* bit[5]: Default callee register stacking. Indicates whether the default
@@ -80,14 +80,14 @@
  * stack.
  */
 #define EXC_RETURN_CALLEE_STACK_Pos 5
-#define EXC_RETURN_CALLEE_STACK_Msk (1 << EXC_RETURN_CALLEE_STACK_Pos)
+#define EXC_RETURN_CALLEE_STACK_Msk BIT(EXC_RETURN_CALLEE_STACK_Pos)
 #define EXC_RETURN_CALLEE_STACK_SKIPPED 0
 #define EXC_RETURN_CALLEE_STACK_DEFAULT EXC_RETURN_CALLEE_STACK_Msk
 /* bit[6]: Secure or Non-secure stack. Indicates whether a Secure or
  * Non-secure stack is used to restore stack frame on exception return.
  */
 #define EXC_RETURN_RETURN_STACK_Pos 6
-#define EXC_RETURN_RETURN_STACK_Msk (1 << EXC_RETURN_RETURN_STACK_Pos)
+#define EXC_RETURN_RETURN_STACK_Msk BIT(EXC_RETURN_RETURN_STACK_Pos)
 #define EXC_RETURN_RETURN_STACK_Non_Secure 0
 #define EXC_RETURN_RETURN_STACK_Secure EXC_RETURN_RETURN_STACK_Msk
 
