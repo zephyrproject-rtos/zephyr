@@ -74,6 +74,87 @@ config EXTI_STM32_EXTI4_IRQ_PRI
 	help
 	 IRQ priority of EXTI4 interrupt
 
+if SOC_SERIES_STM32MP1X
+config EXTI_STM32_EXTI5_IRQ_PRI
+	int "EXTI5 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI5 interrupt
+
+config EXTI_STM32_EXTI6_IRQ_PRI
+	int "EXTI6 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI6 interrupt
+
+config EXTI_STM32_EXTI7_IRQ_PRI
+	int "EXTI7 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI7 interrupt
+
+config EXTI_STM32_EXTI8_IRQ_PRI
+	int "EXTI8 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI8 interrupt
+
+config EXTI_STM32_EXTI9_IRQ_PRI
+	int "EXTI9 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI9 interrupt
+
+config EXTI_STM32_EXTI10_IRQ_PRI
+	int "EXTI10 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI10 interrupt
+
+config EXTI_STM32_EXTI11_IRQ_PRI
+	int "EXTI11 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI11 interrupt
+
+config EXTI_STM32_EXTI12_IRQ_PRI
+	int "EXTI12 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI12 interrupt
+
+config EXTI_STM32_EXTI13_IRQ_PRI
+	int "EXTI13 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI13 interrupt
+
+config EXTI_STM32_EXTI14_IRQ_PRI
+	int "EXTI14 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI14 interrupt
+
+config EXTI_STM32_EXTI15_IRQ_PRI
+	int "EXTI15 IRQ priority"
+	depends on EXTI_STM32
+	default 0
+	help
+	 IRQ priority of EXTI15 interrupt
+
+endif # SOC_SERIES_STM32MP1X
+
+if SOC_SERIES_STM32MP1X!=y
 config EXTI_STM32_EXTI9_5_IRQ_PRI
 	int "EXTI9:5 IRQ priority"
 	depends on EXTI_STM32
@@ -87,6 +168,7 @@ config EXTI_STM32_EXTI15_10_IRQ_PRI
 	default 0
 	help
 	 IRQ priority of EXTI15:10 interrupt
+endif # SOC_SERIES_STM32MP1X!=y
 
 endif # SOC_SERIES_STM32F0X!=y && SOC_SERIES_STM32L0X!=y
 
