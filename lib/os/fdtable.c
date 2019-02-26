@@ -244,7 +244,7 @@ int fcntl(int fd, int cmd, ...)
  * fd operations for stdio/stdout/stderr
  */
 
-int _impl__zephyr_write(const char *buf, int nbytes);
+int _impl__zephyr_write_stdout(const char *buf, int nbytes);
 
 static ssize_t stdinout_read_vmeth(void *obj, void *buffer, size_t count)
 {
@@ -256,7 +256,7 @@ static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 #if defined(CONFIG_BOARD_NATIVE_POSIX)
 	return write(1, buffer, count);
 #elif defined(CONFIG_NEWLIB_LIBC)
-	return _impl__zephyr_write(buffer, count);
+	return _impl__zephyr_write_stdout(buffer, count);
 #else
 	return 0;
 #endif
