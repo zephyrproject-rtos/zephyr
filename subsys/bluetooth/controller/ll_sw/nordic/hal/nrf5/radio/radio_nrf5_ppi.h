@@ -397,19 +397,32 @@ static inline void hal_radio_rxen_on_sw_switch(u8_t ppi)
 }
 
 #if defined(CONFIG_SOC_NRF52840)
+/* The 2 adjacent TIMER EVENTS_COMPARE event offsets used for implementing
+ * SW_SWITCH_TIMER-based auto-switch for TIFS, when receiving in LE Coded PHY.
+ *  'index' must be 0 or 1.
+ */
+#define SW_SWITCH_TIMER_S2_EVTS_COMP(index) \
+	(SW_SWITCH_TIMER_EVTS_COMP_S2_BASE + index)
+
 /* Wire the SW SWITCH TIMER EVENTS_COMPARE[<cc_offset>] event
  * to RADIO TASKS_TXEN/RXEN task.
  */
-#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI 16
-#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_INCLUDE \
+#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE 16
+#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI(index) \
+	(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_BASE + index)
+#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_0_INCLUDE \
 	((PPI_CHG_CH16_Included << PPI_CHG_CH16_Pos) & PPI_CHG_CH16_Msk)
-#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_EXCLUDE \
+#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_0_EXCLUDE \
 	((PPI_CHG_CH16_Excluded << PPI_CHG_CH16_Pos) & PPI_CHG_CH16_Msk)
+#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_1_INCLUDE \
+	((PPI_CHG_CH17_Included << PPI_CHG_CH17_Pos) & PPI_CHG_CH17_Msk)
+#define HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI_1_EXCLUDE \
+	((PPI_CHG_CH17_Excluded << PPI_CHG_CH17_Pos) & PPI_CHG_CH17_Msk)
 
 /* Cancel the SW switch timer running considering S8 timing:
  * wire the RADIO EVENTS_RATEBOOST event to SW_SWITCH_TIMER TASKS_CAPTURE task.
  */
-#define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI 17
+#define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI 18
 #define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_REGISTER_EVT \
 	NRF_PPI->CH[HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI].EEP
 #define HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI_EVT \
