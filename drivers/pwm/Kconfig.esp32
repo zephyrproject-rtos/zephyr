@@ -8,7 +8,6 @@
 
 menuconfig PWM_LED_ESP32
 	bool "ESP32 PWM LED driver"
-	depends on PWM
 	help
 	  This option enables the PWM LED driver for ESP32 family of
 	  processors. Say y if you wish to use PWM LED port on ESP32.
