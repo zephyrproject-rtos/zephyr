@@ -21,8 +21,7 @@ choice
 	  Specify the type of EPD connected to the SSD1673 controller.
 
 config SSD1673_EPD_GDE0213B1
-	bool
-	prompt "GDE0213B1 2.13\""
+	bool "GDE0213B1 2.13\""
 
 endchoice
 

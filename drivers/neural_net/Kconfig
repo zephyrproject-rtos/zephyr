@@ -6,8 +6,7 @@
 #
 
 menuconfig NEURAL_NET_ACCEL
-	bool
-	prompt "Neural Network Accelerator Drivers"
+	bool "Neural Network Accelerator Drivers"
 	help
 	  Enable support for Neural Network Accelerators
 
