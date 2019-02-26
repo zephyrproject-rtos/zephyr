@@ -27,7 +27,10 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 #include <net/net_core.h>
 #include <net/dns_resolve.h>
 #include <net/gptp.h>
+
+#if defined(CONFIG_NET_LLDP)
 #include <net/lldp.h>
+#endif
 
 #include "net_private.h"
 #include "net_shell.h"

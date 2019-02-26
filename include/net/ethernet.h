@@ -19,7 +19,11 @@
 
 #include <net/net_ip.h>
 #include <net/net_pkt.h>
+
+#if defined(CONFIG_NET_LLDP)
 #include <net/lldp.h>
+#endif
+
 #include <misc/util.h>
 #include <net/net_if.h>
 #include <net/ethernet_vlan.h>
