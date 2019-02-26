@@ -121,6 +121,10 @@
 	status = "ok";
 };
 
+&timer1 {
+	status = "ok";
+};
+
 &timer2 {
 	status = "ok";
 };
