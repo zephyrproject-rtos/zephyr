@@ -395,6 +395,20 @@ static inline bool net_eth_is_addr_broadcast(struct net_eth_addr *addr)
 	return false;
 }
 
+static inline bool net_eth_is_addr_unspecified(struct net_eth_addr *addr)
+{
+	if (addr->addr[0] == 0x00 &&
+	    addr->addr[1] == 0x00 &&
+	    addr->addr[2] == 0x00 &&
+	    addr->addr[3] == 0x00 &&
+	    addr->addr[4] == 0x00 &&
+	    addr->addr[5] == 0x00) {
+		return true;
+	}
+
+	return false;
+}
+
 static inline bool net_eth_is_addr_multicast(struct net_eth_addr *addr)
 {
 #if defined(CONFIG_NET_IPV6)
