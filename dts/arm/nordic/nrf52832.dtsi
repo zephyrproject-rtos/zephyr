@@ -51,6 +51,9 @@
 		pwm-1 = &pwm1;
 		pwm-2 = &pwm2;
 		qdec-0 = &qdec;
+		rtc-0 = &rtc0;
+		rtc-1 = &rtc1;
+		rtc-2 = &rtc2;
 	};
 
 	soc {
@@ -179,6 +182,30 @@
 			interrupts = <35 1>;
 			status = "disabled";
 			label = "SPI_2";
+		};
+
+		rtc0: rtc@4000b000 {
+			compatible = "nordic,nrf-rtc";
+			reg = <0x4000b000 0x1000>;
+			interrupts = <11 1>;
+			status = "ok";
+			label = "RTC_0";
+		};
+
+		rtc1: rtc@40011000 {
+			compatible = "nordic,nrf-rtc";
+			reg = <0x40011000 0x1000>;
+			interrupts = <17 1>;
+			status = "ok";
+			label = "RTC_1";
+		};
+
+		rtc2: rtc@40024000 {
+			compatible = "nordic,nrf-rtc";
+			reg = <0x40024000 0x1000>;
+			interrupts = <36 1>;
+			status = "ok";
+			label = "RTC_2";
 		};
 
 		wdt: watchdog@40010000 {
