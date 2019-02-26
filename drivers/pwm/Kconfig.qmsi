@@ -8,28 +8,29 @@
 
 menuconfig PWM_QMSI
 	bool "QMSI PWM Driver"
-	depends on QMSI && PWM
+	depends on QMSI
 	help
 	  Enable QMSI PWM driver. This driver will use the QMSI library to
 	  access the SOC underlying timer IP block. This driver uses the
 	  DesignWare IP block that can be also handled by the PWM_DW driver
 
+if PWM_QMSI
+
 config PWM_QMSI_DEV_NAME
 	string "QMSI PWM Device Name"
-	depends on PWM_QMSI
 	default "PWM_0"
 	help
 	  Specify the device name for the PWM driver.
 
 config PWM_QMSI_NUM_PORTS
 	int "Number of PWM ports for PWM"
-	depends on PWM_QMSI
 	default 1
 	help
 	  Specify how many PWM ports on the IP block.
 
 config PWM_QMSI_API_REENTRANCY
 	bool "PWM shim driver API reentrancy"
-	depends on PWM_QMSI
 	help
 	  Enable support for PWM shim driver API reentrancy.
+
+endif # PWM_QMSI
