@@ -744,7 +744,7 @@ ALWAYS_INLINE void z_priq_mq_add(struct _priq_mq *pq, struct k_thread *thread)
 	int priority_bit = thread->base.prio - K_HIGHEST_THREAD_PRIO;
 
 	sys_dlist_append(&pq->queues[priority_bit], &thread->base.qnode_dlist);
-	pq->bitmask |= (1 << priority_bit);
+	pq->bitmask |= BIT(priority_bit);
 }
 
 ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq, struct k_thread *thread)
@@ -759,7 +759,7 @@ ALWAYS_INLINE void z_priq_mq_remove(struct _priq_mq *pq, struct k_thread *thread
 
 	sys_dlist_remove(&thread->base.qnode_dlist);
 	if (sys_dlist_is_empty(&pq->queues[priority_bit])) {
-		pq->bitmask &= ~(1 << priority_bit);
+		pq->bitmask &= ~BIT(priority_bit);
 	}
 }
 
