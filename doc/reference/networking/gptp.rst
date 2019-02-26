@@ -50,14 +50,16 @@ Application interfaces
 Only two Application Interfaces as defined in section 9 of the standard
 are available:
 
-- ClockTargetPhaseDiscontinuity interface (:cpp:func:`gptp_register_phase_dis_cb()`)
-- ClockTargetEventCapture interface  (:cpp:func:`gptp_event_capture()`)
+- ``ClockTargetPhaseDiscontinuity`` interface (:cpp:func:`gptp_register_phase_dis_cb()`)
+- ``ClockTargetEventCapture`` interface  (:cpp:func:`gptp_event_capture()`)
 
 Testing
 *******
 
-The stack has been informally tested using the OpenAVB gPTP and
-Linux ptp4l daemons. The :ref:`gptp-sample` sample application from the Zephyr
+The stack has been informally tested using the
+`OpenAVnu gPTP <https://github.com/AVnu/gptp>`_ and
+`Linux ptp4l <http://linuxptp.sourceforge.net/>`_ daemons.
+The :ref:`gPTP sample application <gptp-sample>` from the Zephyr
 source distribution can be used for testing.
 
 .. _IEEE 802.1AS-2011 standard:
