@@ -44,11 +44,11 @@ const char *devices[] = {
 #endif
 #ifdef CONFIG_COUNTER_RTC0
 	/* Nordic RTC0 may be reserved for Bluetooth */
-	CONFIG_COUNTER_RTC0_NAME,
+	DT_NORDIC_NRF_RTC_RTC_0_LABEL,
 #endif
 	/* Nordic RTC1 is used for the system clock */
 #ifdef CONFIG_COUNTER_RTC2
-	CONFIG_COUNTER_RTC2_NAME,
+	DT_NORDIC_NRF_RTC_RTC_2_LABEL,
 #endif
 #ifdef CONFIG_COUNTER_IMX_EPIT_1
 	DT_COUNTER_IMX_EPIT_1_LABEL,

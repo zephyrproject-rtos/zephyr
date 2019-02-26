@@ -191,6 +191,7 @@ rtc0: rtc@14000 {
 	reg = <0x14000 0x1000>;
 	interrupts = <20 1>;
 	status = "ok";
+	label = "RTC_0";
 };
 
 rtc1: rtc@15000 {
@@ -198,6 +199,7 @@ rtc1: rtc@15000 {
 	reg = <0x15000 0x1000>;
 	interrupts = <21 1>;
 	status = "ok";
+	label = "RTC_1";
 };
 
 clock: clock@5000 {

@@ -158,16 +158,6 @@ config COUNTER_RTC0
 
 if COUNTER_RTC0
 
-config COUNTER_RTC0_NAME
-	string "Counter device name"
-	default "RTC Counter 0"
-	help
-	  Specify the device name for Counter driver instance.
-
-config COUNTER_RTC0_IRQ_PRI
-	int "Counter interrupt priority"
-	default 0
-
 config COUNTER_RTC0_PRESCALER
 	int "RTC prescaler"
 	default 0
@@ -186,16 +176,6 @@ config COUNTER_RTC1
 
 if COUNTER_RTC1
 
-config COUNTER_RTC1_NAME
-	string "Counter device name"
-	default "RTC Counter 1"
-	help
-	  Specify the device name for Counter driver instance.
-
-config COUNTER_RTC1_IRQ_PRI
-	int "Counter interrupt priority"
-	default 0
-
 config COUNTER_RTC1_PRESCALER
 	int "RTC prescaler"
 	default 0
@@ -212,16 +192,6 @@ config COUNTER_RTC2
 	select NRFX_RTC2
 
 if COUNTER_RTC2
-
-config COUNTER_RTC2_NAME
-	string "Counter device name"
-	default "RTC Counter 2"
-	help
-	  Specify the device name for Counter driver instance.
-
-config COUNTER_RTC2_IRQ_PRI
-	int "Counter interrupt priority"
-	default 0
 
 config COUNTER_RTC2_PRESCALER
 	int "RTC prescaler"
