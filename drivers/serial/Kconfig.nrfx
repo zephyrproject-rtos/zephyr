@@ -315,6 +315,11 @@ config NRFX_TIMER
 	default y
 
 config NRFX_PPI
+	depends on HAS_HW_NRF_PPI
+	default y
+
+config NRFX_DPPI
+	depends on HAS_HW_NRF_DPPIC
 	default y
 
 config UARTE_NRF_HW_ASYNC
