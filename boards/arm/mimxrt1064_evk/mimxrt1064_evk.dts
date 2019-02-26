@@ -62,6 +62,8 @@
 	};
 };
 
+arduino_i2c: &i2c1 {};
+
 &lcdif1 {
 	status = "ok";
 	port {
@@ -69,6 +71,10 @@
 			remote-endpoint = <&lcd_panel_in>;
 		};
 	};
+};
+
+&i2c1 {
+	status = "ok";
 };
 
 &uart1 {
