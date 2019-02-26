@@ -189,7 +189,7 @@ static int entropy_stm32_rng_init(struct device *dev)
 
 	res = clock_control_on(dev_data->clock,
 		(clock_control_subsys_t *)&dev_cfg->pclken);
-	__ASSERT_NO_MSG(res);
+	__ASSERT_NO_MSG(res == 0);
 
 	LL_RNG_Enable(dev_data->rng);
 
