@@ -38,7 +38,6 @@ config NET_DEBUG_NET_PKT_EXTERNALS
 
 config NET_DEBUG_NET_PKT_NON_FRAGILE_ACCESS
 	bool "Reduce r/w fragility by resetting the packet cursor when freed"
-	default n
 	select NET_DEBUG_NET_PKT_ALLOC
 	help
 	  This MUST not be used unless you have an hard to catch bug. This will

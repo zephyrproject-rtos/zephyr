@@ -260,7 +260,6 @@ menu "Interrupt Configuration"
 #
 config DYNAMIC_INTERRUPTS
 	bool "Enable installation of IRQs at runtime"
-	default n
 	help
 	  Enable installation of interrupts at runtime, which will move some
 	  interrupt-related data structures to RAM instead of ROM, and

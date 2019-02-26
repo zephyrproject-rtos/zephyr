@@ -9,7 +9,6 @@ menuconfig I2S_STM32
 	bool "STM32 MCU I2S controller driver"
 	depends on I2S && SOC_SERIES_STM32F4X
 	select DMA
-	default n
 	help
 	  Enable I2S support on the STM32 family of processors.
 	  (Tested on the STM32F4 series)
@@ -26,7 +25,6 @@ config I2S_STM32_TX_BLOCK_COUNT
 
 config I2S_STM32_USE_PLLI2S_ENABLE
 	bool "Enable usage of PLL"
-	default n
 	help
 	  Enable it if I2S clock should be provided by the PLLI2S.
 	  If not enabled the clock will be provided by HSI/HSE.
@@ -65,33 +63,28 @@ config I2S_STM32_PLLI2S_PLLR
 	  frequency is less than or equal to 192MHz.
 	  Allowed values: 2-7
 
-config	I2S_1
+config I2S_1
 	bool "I2S port 1"
-	default n
 	help
 	  Enable I2S controller port 1.
 
-config	I2S_2
+config I2S_2
 	bool "I2S port 2"
-	default n
 	help
 	  Enable I2S controller port 2.
 
-config	I2S_3
+config I2S_3
 	bool "I2S port 3"
-	default n
 	help
 	  Enable I2S controller port 3.
 
-config	I2S_4
+config I2S_4
 	bool "I2S port 4"
-	default n
 	help
 	  Enable I2S controller port 4.
 
-config	I2S_5
+config I2S_5
 	bool "I2S port 5"
-	default n
 	help
 	  Enable I2S controller port 5.
 

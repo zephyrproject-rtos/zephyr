@@ -26,7 +26,6 @@ config IPM_MCUX
 
 config IPM_IMX
 	bool "IMX IPM driver"
-	default n
 	depends on IPM && HAS_IMX_HAL
 	help
 	  Driver for NXP i.MX messaging unit

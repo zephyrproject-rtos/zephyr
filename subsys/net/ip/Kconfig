@@ -474,7 +474,6 @@ config NET_BUF_DATA_POOL_SIZE
 
 config NET_HEADERS_ALWAYS_CONTIGUOUS
 	bool
-	default n
 	help
 	  This a hidden option, which one should use with a lot of care.
 	  NO bug reports will be accepted if that option is enabled!

@@ -5,7 +5,6 @@
 #
 config CMSIS_RTOS_V1
 	bool "CMSIS RTOS v1 API"
-	default n
 	depends on THREAD_CUSTOM_DATA
 	depends on POLL
 	help

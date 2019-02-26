@@ -16,7 +16,6 @@ menuconfig IWDG_STM32
 config IWDG_STM32_START_AT_BOOT
 	bool "Start IWDG during boot"
 	depends on IWDG_STM32
-	default n
 	help
 	  Enable this setting to allow IWDG to be automatically started
 	  during device initialization. Note that once IWDG is started

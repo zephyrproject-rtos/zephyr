@@ -21,10 +21,9 @@ endchoice
 
 config SOC_FAMILY_PSOC6
 	bool
-	# omit prompt to signify a "hidden" option
-	default n
 
 if SOC_FAMILY_PSOC6
+
 config SOC_FAMILY
 	string
 	default "cypress"
