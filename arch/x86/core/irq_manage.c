@@ -206,7 +206,7 @@ static unsigned int priority_to_free_vector(unsigned int requested_priority)
 	 * Mark it as allocated by clearing the bit.
 	 */
 	--fsb;
-	z_interrupt_vectors_allocated[entry] &= ~(1 << fsb);
+	z_interrupt_vectors_allocated[entry] &= ~BIT(fsb);
 
 	/* compute vector given allocated bit within the priority level */
 	vector = (entry << 5) + fsb;
