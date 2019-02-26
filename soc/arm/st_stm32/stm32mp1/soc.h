@@ -27,6 +27,10 @@
  */
 #include <kernel_includes.h>
 
+#ifdef CONFIG_EXTI_STM32
+#include <stm32mp1xx_ll_exti.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32MP1SOC_H_ */
