@@ -7,7 +7,7 @@ standards and methods for submitting changes help reduce the chaos that can resu
 from an active development community.
 
 This document briefly summarizes the full `Contribution
-Guidelines <http://docs.zephyrproject.org/latest/contribute/contribute.html>`_
+Guidelines <http://docs.zephyrproject.org/latest/contribute/index.html>`_
 documentation.
 
 * Zephyr uses the permissive open source `Apache 2.0 license`_
