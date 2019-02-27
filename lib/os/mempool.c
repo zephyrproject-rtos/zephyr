@@ -162,35 +162,40 @@ static void *block_alloc(struct sys_mem_pool_base *p, int l, size_t lsz)
 static unsigned int bfree_recombine(struct sys_mem_pool_base *p, int level,
 				    size_t *lsizes, int bn, unsigned int key)
 {
-	int i, lsz = lsizes[level];
-	void *block = block_ptr(p, lsz, bn);
+	while (level >= 0) {
+		int i, lsz = lsizes[level];
+		void *block = block_ptr(p, lsz, bn);
 
-	__ASSERT(block_fits(p, block, lsz), "");
+		__ASSERT(block_fits(p, block, lsz), "");
 
-	/* Put it back */
-	set_free_bit(p, level, bn);
-	sys_dlist_append(&p->levels[level].free_list, block);
+		/* Put it back */
+		set_free_bit(p, level, bn);
+		sys_dlist_append(&p->levels[level].free_list, block);
 
-	/* Relax the lock (might result in it being taken, which is OK!) */
-	pool_irq_unlock(p, key);
-	key = pool_irq_lock(p);
+		/* Relax the lock (might result in it being taken, which is OK!) */
+		pool_irq_unlock(p, key);
+		key = pool_irq_lock(p);
 
-	/* Check if we can recombine its superblock, and repeat */
-	if (level == 0 || partner_bits(p, level, bn) != 0xf) {
-		return key;
-	}
-
-	for (i = 0; i < 4; i++) {
-		int b = (bn & ~3) + i;
-
-		if (block_fits(p, block_ptr(p, lsz, b), lsz)) {
-			clear_free_bit(p, level, b);
-			sys_dlist_remove(block_ptr(p, lsz, b));
+		/* Check if we can recombine its superblock, and repeat */
+		if (level == 0 || partner_bits(p, level, bn) != 0xf) {
+			return key;
 		}
-	}
 
-	/* Free the larger block (tail recursion!) */
-	return bfree_recombine(p, level - 1, lsizes, bn / 4, key);
+		for (i = 0; i < 4; i++) {
+			int b = (bn & ~3) + i;
+
+			if (block_fits(p, block_ptr(p, lsz, b), lsz)) {
+				clear_free_bit(p, level, b);
+				sys_dlist_remove(block_ptr(p, lsz, b));
+			}
+		}
+
+		/* Free the larger block */
+		level = level - 1;
+		bn = bn / 4;
+	}
+	__ASSERT(0, "out of levels");
+	return -1;
 }
 
 static void block_free(struct sys_mem_pool_base *p, int level,

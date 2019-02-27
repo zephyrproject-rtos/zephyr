@@ -490,6 +490,7 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 	tree->root = stack[0];
 }
 
+#ifndef CONFIG_MISRA_SANE
 void _rb_walk(struct rbnode *node, rb_visit_t visit_fn, void *cookie)
 {
 	if (node != NULL) {
@@ -498,6 +499,7 @@ void _rb_walk(struct rbnode *node, rb_visit_t visit_fn, void *cookie)
 		_rb_walk(get_child(node, 1), visit_fn, cookie);
 	}
 }
+#endif
 
 struct rbnode *_rb_child(struct rbnode *node, int side)
 {
