@@ -63,7 +63,7 @@
  * Interrupt Descriptor Table (IDT). This is a bogus address as this
  * section will be stripped off in the final image.
  */
-#define IDT_BASE				0xFFFFF7FF
+#define IDT_BASE				(RAM_BASE + RAM_SIZE)
 
 /* size of the Interrupt Descriptor Table (IDT) */
 #define IDT_SIZE				0x2000
