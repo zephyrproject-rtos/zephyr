@@ -137,11 +137,16 @@ typedef void (*vth)(void); /* Vector Table Handler */
  * to implement the Kernel system timer, instead of the ARM Cortex-M
  * SysTick. Therefore, a pointer to the timer ISR needs to be added in
  * the custom vector table to handle the timer "tick" interrupts.
+ *
+ * The same applies to the CLOCK Control peripheral, which may trigger
+ * IRQs that would need to be serviced.
  */
 void rtc1_nrf_isr(void);
+void nrf_power_clock_isr(void);
 vth __irq_vector_table _irq_vector_table[RTC1_IRQn + 1] = {
+	nrf_power_clock_isr,
 	isr0, isr1, isr2,
-	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	rtc1_nrf_isr
 };
 #else
