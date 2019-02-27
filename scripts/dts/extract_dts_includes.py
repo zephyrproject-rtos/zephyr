@@ -66,10 +66,10 @@ def generate_prop_defines(node_path, prop):
         # If the binding specifies a parent for the node, then include the
         # parent in the #define's generated for the properties
         parent_path = get_parent_path(node_path)
-        def_label = 'DT_' + get_node_label(parent_path) + '_' \
-                          + get_node_label(node_path)
+        def_label = 'DT_' + node_label(parent_path) + '_' \
+                          + node_label(node_path)
     else:
-        def_label = 'DT_' + get_node_label(node_path)
+        def_label = 'DT_' + node_label(node_path)
 
     names = prop_names(reduced[node_path], prop)
 
@@ -174,7 +174,7 @@ def generate_bus_defines(node_path):
     # Generate *_BUS_NAME #define
     extract_bus_name(
         node_path,
-        'DT_' + get_node_label(parent_path) + '_' + get_node_label(node_path))
+        'DT_' + node_label(parent_path) + '_' + node_label(node_path))
 
 
 def prop_names(node, prop_name):

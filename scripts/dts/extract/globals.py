@@ -167,7 +167,7 @@ def create_reduced(node, path):
             create_reduced(child_node, path + child_name)
 
 
-def get_node_label(node_path):
+def node_label(node_path):
     node_compat = get_compat(node_path)
     def_label = str_to_label(node_compat)
     if '@' in node_path:
