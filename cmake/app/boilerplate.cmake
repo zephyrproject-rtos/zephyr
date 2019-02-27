@@ -28,12 +28,10 @@ cmake_minimum_required(VERSION 3.13.1)
 # CMP0002: "Logical target names must be globally unique"
 cmake_policy(SET CMP0002 NEW)
 
-if(NOT (${CMAKE_VERSION} VERSION_LESS "3.13.0"))
-  # Use the old CMake behaviour until 3.13.x is required and the build
-  # scripts have been ported to the new behaviour.
-  # CMP0079: "target_link_libraries() allows use with targets in other directories"
-  cmake_policy(SET CMP0079 OLD)
-endif()
+# Use the old CMake behaviour until the build scripts have been ported
+# to the new behaviour.
+# CMP0079: "target_link_libraries() allows use with targets in other directories"
+cmake_policy(SET CMP0079 OLD)
 
 define_property(GLOBAL PROPERTY ZEPHYR_LIBS
     BRIEF_DOCS "Global list of all Zephyr CMake libs that should be linked in"
