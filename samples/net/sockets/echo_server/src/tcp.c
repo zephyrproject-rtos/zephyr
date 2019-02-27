@@ -105,7 +105,8 @@ static int process_tcp(struct data *data)
 	struct sockaddr_in client_addr;
 	socklen_t client_addr_len = sizeof(client_addr);
 
-	LOG_INF("Waiting for TCP connection (%s)...", data->proto);
+	LOG_INF("Waiting for TCP connection on port %d (%s)...",
+		MY_PORT, data->proto);
 
 	client = accept(data->tcp.sock, (struct sockaddr *)&client_addr,
 			&client_addr_len);

@@ -89,7 +89,8 @@ static int process_udp(struct data *data)
 	struct sockaddr client_addr;
 	socklen_t client_addr_len;
 
-	NET_INFO("Waiting for UDP packets (%s)...", data->proto);
+	NET_INFO("Waiting for UDP packets on port %d (%s)...",
+		 MY_PORT, data->proto);
 
 	do {
 		client_addr_len = sizeof(client_addr);
