@@ -101,7 +101,7 @@ void isr2(void)
  */
 void test_arm_irq_vector_table(void)
 {
-	printk("Test Cortex-M3 IRQ installed directly in vector table\n");
+	printk("Test Cortex-M IRQs installed directly in the vector table\n");
 
 	for (int ii = 0; ii < 3; ii++) {
 		irq_enable(_ISR_OFFSET + ii);
