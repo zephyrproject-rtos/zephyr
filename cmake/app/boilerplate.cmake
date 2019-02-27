@@ -6,13 +6,6 @@
 #
 # It exists to reduce boilerplate code that Zephyr expects to be in
 # application CMakeLists.txt code.
-#
-# Omitting it is permitted, but doing so incurs a maintenance cost as
-# the application must manage upstream changes to this file.
-
-# app is a CMake library containing all the application code and is
-# modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt
-# that was specified when cmake was called.
 
 # CMake version 3.13.1 is the real minimum supported version.
 #
