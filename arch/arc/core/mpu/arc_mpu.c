@@ -461,7 +461,7 @@ void arc_core_mpu_configure_user_context(struct k_thread *thread)
 
 	arc_core_mpu_configure(THREAD_STACK_USER_REGION, base, size);
 
-#if defined(CONFIG_APP_SHARED_MEM) && CONFIG_ARC_MPU_VER == 3
+#if defined(CONFIG_USERSPACE) && CONFIG_ARC_MPU_VER == 3
 	/*
 	 * here, need to clear THREAD_APP_DATA_REGION for user thread as it will
 	 * be set by kernel thread to to access app_shared mem. For user thread
