@@ -355,7 +355,7 @@ def extract_controller(node_path, prop, prop_values, index,
         if l_cell is None:
             continue
 
-        l_base = def_label.split('/')
+        l_base = [def_label]
 
         # Check is defined should be indexed (_0, _1)
         if handle_single or i == 0 and len(prop_array) == 1:
@@ -438,7 +438,7 @@ def extract_cells(node_path, prop, prop_values, names, index,
         else:
             l_cell = [str_to_label(str(generic))]
 
-        l_base = def_label.split('/')
+        l_base = [def_label]
         # Check if #define should be indexed (_0, _1, ...)
         if handle_single or i == 0 and len(prop_array) == 1:
             # Less than 2 elements in prop_values
