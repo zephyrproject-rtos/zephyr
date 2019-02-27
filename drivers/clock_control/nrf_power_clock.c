@@ -276,7 +276,15 @@ static inline void power_event_cb(nrf_power_event_t event)
 }
 #endif
 
-static void _power_clock_isr(void *arg)
+/* Note: this function has public linkage, and MUST have this
+ * particular name.  The platform architecture itself doesn't care,
+ * but there is a test (tests/kernel/arm_irq_vector_table) that needs
+ * to find it to it can set it in a custom vector table.  Should
+ * probably better abstract that at some point (e.g. query and reset
+ * it by pointer at runtime, maybe?) so we don't have this leaky
+ * symbol.
+ */
+void nrf_power_clock_isr(void *arg)
 {
 	u8_t pof, hf_intenset, hf, lf_intenset, lf;
 #if NRF_CLOCK_HAS_CALIBRATION
@@ -437,7 +445,7 @@ static int _clock_control_init(struct device *dev)
 	 */
 	IRQ_CONNECT(DT_NORDIC_NRF_CLOCK_0_IRQ_0,
 		    DT_NORDIC_NRF_CLOCK_0_IRQ_0_PRIORITY,
-		    _power_clock_isr, 0, 0);
+		    nrf_power_clock_isr, 0, 0);
 
 	irq_enable(DT_NORDIC_NRF_CLOCK_0_IRQ_0);
 
