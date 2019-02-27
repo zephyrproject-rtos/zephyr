@@ -104,6 +104,7 @@ enum bt_hci_driver_bus {
 	BT_HCI_DRIVER_BUS_SDIO          = 6,
 	BT_HCI_DRIVER_BUS_SPI           = 7,
 	BT_HCI_DRIVER_BUS_I2C           = 8,
+	BT_HCI_DRIVER_BUS_IPM           = 9,
 };
 
 /**
