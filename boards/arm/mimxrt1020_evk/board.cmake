@@ -15,7 +15,7 @@ elseif(OPENSDA_FW STREQUAL daplink)
 endif()
 
 board_runner_args(pyocd "--target=mimxrt1020")
-board_runner_args(jlink "--device=MIMXRT1021xxx5A")
+board_runner_args(jlink "--device=MIMXRT1021xxx5A" "--jlinkscriptfile=${ZEPHYR_BASE}/boards/arm/mimxrt1020_evk/evkmimxrt1020_sdram_init.jlinkscript")
 
 include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)
