@@ -11,10 +11,6 @@ from extract.directive import DTDirective
 # @brief Manage interrupts directives.
 #
 class DTInterrupts(DTDirective):
-
-    def __init__(self):
-        pass
-
     def _find_parent_irq_node(self, node_path):
         address = ''
 

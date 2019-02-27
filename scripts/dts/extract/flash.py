@@ -14,7 +14,6 @@ from extract.reg import reg
 # @brief Manage flash directives.
 #
 class DTFlash(DTDirective):
-
     def __init__(self):
         # Node of the flash
         self._flash_node = None

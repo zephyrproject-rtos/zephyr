@@ -14,10 +14,6 @@ from extract.directive import DTDirective
 # - compatible
 #
 class DTCompatible(DTDirective):
-
-    def __init__(self):
-        pass
-
     ##
     # @brief Extract compatible
     #

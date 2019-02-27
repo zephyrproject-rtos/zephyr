@@ -11,10 +11,6 @@ from extract.directive import DTDirective
 # @brief Manage pinctrl-x directive.
 #
 class DTPinCtrl(DTDirective):
-
-    def __init__(self):
-        pass
-
     ##
     # @brief Extract pinctrl information.
     #

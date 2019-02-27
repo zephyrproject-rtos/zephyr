@@ -15,10 +15,6 @@ from extract.directive import DTDirective
 # directives.
 #
 class DTClocks(DTDirective):
-
-    def __init__(self):
-        pass
-
     def _extract_consumer(self, node_path, clocks, def_label):
 
         clock_consumer = reduced[node_path]

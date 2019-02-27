@@ -11,10 +11,6 @@ from extract.directive import DTDirective
 # @brief Manage directives in a default way.
 #
 class DTDefault(DTDirective):
-
-    def __init__(self):
-        pass
-
     ##
     # @brief Extract directives in a default way
     #
