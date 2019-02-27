@@ -67,3 +67,41 @@ arduino_serial: &lpuart1 {
 	current-speed = <115200>;
 	status = "ok";
 };
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set all partitions with first 812K of flash */
+		/* last 212K are reseved for M0 usage */
+		/* Configure partitions to make use of the whole 812K */
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x5b800>;
+		};
+		slot1_partition: partition@67800 {
+			label = "image-1";
+			reg = <0x00067800 0x5b800>;
+		};
+		scratch_partition: partition@c3000 {
+			label = "image-scratch";
+			reg = <0x000c3000 0x4000>;
+		};
+		storage_partition: partition@c7000 {
+			label = "storage";
+			reg = <0x000c7000 0x4000>;
+		};
+
+	};
+};
