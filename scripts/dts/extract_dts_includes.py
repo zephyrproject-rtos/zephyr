@@ -458,10 +458,8 @@ def generate_defines():
         if k in chosen:
             extract_string_prop(chosen[k], "label", v)
 
-    node_path = chosen.get('zephyr,flash', 'dummy-flash')
-    flash.extract(node_path, 'zephyr,flash', 'DT_FLASH')
-    node_path = chosen.get('zephyr,code-partition', node_path)
-    flash.extract(node_path, 'zephyr,code-partition', None)
+    flash.extract_flash()
+    flash.extract_code_partition()
 
     # Add DT_CHOSEN_<X> defines
     for c in sorted(chosen):
