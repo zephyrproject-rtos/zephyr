@@ -3,6 +3,10 @@
 Networking with QEMU
 ####################
 
+.. contents::
+    :local:
+    :depth: 2
+
 This page describes how to set up a virtual network between a (Linux) host
 and a Zephyr application running in a QEMU virtual machine (built for Zephyr
 targets such as qemu_x86 and qemu_cortex_m3).

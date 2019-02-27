@@ -4,6 +4,10 @@
 Precision Time Protocol (PTP) time format
 #########################################
 
+.. contents::
+    :local:
+    :depth: 2
+
 Overview
 ********
 

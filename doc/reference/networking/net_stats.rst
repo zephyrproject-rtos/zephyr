@@ -3,6 +3,10 @@
 Network Statistics
 ##################
 
+.. contents::
+    :local:
+    :depth: 2
+
 Overview
 ********
 
