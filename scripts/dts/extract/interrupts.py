@@ -22,28 +22,25 @@ class DTInterrupts(DTDirective):
     #                  compatible definition.
     #
     def extract(self, node_path, prop, names, def_label):
-        node = reduced[node_path]
-
-        try:
-            props = list(node['props'].get(prop))
-        except:
-            props = [node['props'].get(prop)]
+        vals = reduced[node_path]['props'][prop]
+        if not isinstance(vals, list):
+            vals = [vals]
 
         irq_parent = parent_irq_node(node_path)
         if not irq_parent:
             err(node_path + " has no interrupt-parent")
 
-        l_base = def_label.split('/')
+        l_base = [def_label]
         index = 0
 
-        while props:
+        while vals:
             prop_def = {}
             prop_alias = {}
             l_idx = [str(index)]
 
-            try:
+            if names:
                 name = [str_to_label(names.pop(0))]
-            except:
+            else:
                 name = []
 
             cell_yaml = get_binding(irq_parent)
@@ -54,18 +51,18 @@ class DTInterrupts(DTDirective):
                 if l_cell_name == l_cell_prefix:
                     l_cell_name = []
 
-                l_fqn = '_'.join(l_base + l_cell_prefix + l_idx + l_cell_name)
-                prop_def[l_fqn] = props.pop(0)
+                full_name = '_'.join(l_base + l_cell_prefix + l_idx + l_cell_name)
+                prop_def[full_name] = vals.pop(0)
                 add_compat_alias(node_path,
-                        '_'.join(l_cell_prefix + l_idx + l_cell_name),
-                        l_fqn, prop_alias)
+                                 '_'.join(l_cell_prefix + l_idx + l_cell_name),
+                                 full_name, prop_alias)
 
-                if len(name):
+                if name:
                     alias_list = l_base + l_cell_prefix + name + l_cell_name
-                    prop_alias['_'.join(alias_list)] = l_fqn
+                    prop_alias['_'.join(alias_list)] = full_name
                     add_compat_alias(node_path,
-                            '_'.join(l_cell_prefix + name + l_cell_name),
-                            l_fqn, prop_alias)
+                                     '_'.join(l_cell_prefix + name + l_cell_name),
+                                     full_name, prop_alias)
 
                 if node_path in aliases:
                     add_prop_aliases(
@@ -73,7 +70,7 @@ class DTInterrupts(DTDirective):
                         lambda alias:
                             '_'.join([str_to_label(alias)] +
                                      l_cell_prefix + name + l_cell_name),
-                        l_fqn,
+                        full_name,
                         prop_alias)
 
             index += 1
