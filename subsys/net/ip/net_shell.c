@@ -936,6 +936,11 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 			 ntohs(net_sin(&conn->remote_addr)->sin_port));
 	} else
 #endif
+#ifdef CONFIG_NET_L2_CANBUS
+	if (conn->local_addr.sa_family == AF_CAN) {
+		snprintk(addr_local, sizeof(addr_local), "-");
+	} else
+#endif
 	if (conn->local_addr.sa_family == AF_UNSPEC) {
 		snprintk(addr_local, sizeof(addr_local), "AF_UNSPEC");
 	} else {
