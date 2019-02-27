@@ -203,12 +203,9 @@ static int _mpu_sram_partitioning(u8_t index,
 	added_sram_region.attr.attr =
 		mpu_config.mpu_regions[mpu_config.sram_region].attr.attr;
 
-	index =
-		_region_allocate_and_init(index,
-			(const struct nxp_mpu_region *)&added_sram_region);
-
-	if (index == -EINVAL) {
-		return index;
+	if (_region_allocate_and_init(index,
+		(const struct nxp_mpu_region *)&added_sram_region) < 0) {
+		return -EINVAL;
 	}
 
 	/* Increment, as an additional region index has been consumed. */
@@ -241,7 +238,7 @@ static int _mpu_configure_regions(const struct k_mem_partition
 	bool do_sanity_check)
 {
 	int i;
-	u8_t reg_index = start_reg_index;
+	int reg_index = start_reg_index;
 
 	for (i = 0; i < regions_num; i++) {
 		if (regions[i].size == 0) {
@@ -338,7 +335,7 @@ static int _mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
 		&mpu_config.mpu_regions[mpu_config.sram_region]);
 	arm_core_mpu_enable();
 
-	u32_t mpu_reg_index = static_regions_num;
+	int mpu_reg_index = static_regions_num;
 
 	/* In NXP MPU architecture the dynamic regions are
 	 * programmed on top of existing SRAM region configuration.
