@@ -48,6 +48,9 @@
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
 				label = "FLASH_STM32";
+
+				write-block-size = <8>;
+				erase-block-size = <4096>;
 			};
 		};
 
