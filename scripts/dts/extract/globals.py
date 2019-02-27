@@ -5,6 +5,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+import sys
+
 from collections import defaultdict
 
 # globals
@@ -187,7 +189,10 @@ def node_label(node_path):
 
 
 def get_parent_path(node_path):
-    # Turns /foo/bar into /foo
+    # Turns /foo/bar into /foo. Returns None for /.
+
+    if node_path == '/':
+        return None
 
     return '/'.join(node_path.split('/')[:-1]) or '/'
 
@@ -467,3 +472,10 @@ def extract_cells(node_path, prop, prop_values, names, index,
                     prop_alias)
 
             insert_defs(node_path, prop_def, prop_alias)
+
+
+def err(msg):
+    # General error reporting helper. Prints a message to stderr and exits with
+    # status 1.
+
+    sys.exit("error: " + msg)
