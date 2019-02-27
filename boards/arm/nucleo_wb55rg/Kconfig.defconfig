@@ -24,4 +24,13 @@ config UART_1
 
 endif
 
+if BT
+
+choice BT_HCI_BUS_TYPE
+	default BT_STM32_IPM
+
+endchoice
+
+endif # BT
+
 endif # BOARD_NUCLEO_WB55RG
