@@ -704,7 +704,7 @@ static const struct i2c_dw_rom_config i2c_config_dw_0 = {
 	.config_func = i2c_config_0,
 
 #ifdef CONFIG_GPIO_DW_0_IRQ_SHARED
-	.shared_irq_dev_name = CONFIG_I2C_DW_0_IRQ_SHARED_NAME,
+	.shared_irq_dev_name = DT_I2C_DW_0_IRQ_SHARED_NAME,
 #endif
 	.bitrate = DT_SNPS_DESIGNWARE_I2C_0_CLOCK_FREQUENCY,
 };
