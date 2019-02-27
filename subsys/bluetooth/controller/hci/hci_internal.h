@@ -14,10 +14,18 @@ extern atomic_t hci_state_mask;
 #define HCI_STATE_BIT_RESET 0
 #endif
 
-#define HCI_CLASS_EVT_REQUIRED    0
-#define HCI_CLASS_EVT_DISCARDABLE 1
-#define HCI_CLASS_EVT_CONNECTION  2
-#define HCI_CLASS_ACL_DATA        3
+#define HCI_CLASS_EVT_REQUIRED    0 /* Mesh and connection-{established,
+				     * disconnected}
+				     */
+#define HCI_CLASS_EVT_DISCARDABLE 1 /* Best-effort reporting. Discardable
+				     * over HCI in case of overflow
+				     */
+#define HCI_CLASS_EVT_CONNECTION  2 /* Connection management; e.g.
+				     * terminate, update, encryption
+				     */
+#define HCI_CLASS_ACL_DATA        3 /* Asynchronous Connection Less (general
+				     * data)
+				     */
 
 #if defined(CONFIG_SOC_COMPATIBLE_NRF)
 #define BT_HCI_VS_HW_PLAT BT_HCI_VS_HW_PLAT_NORDIC
