@@ -540,9 +540,9 @@ static size_t read_number(struct lwm2m_input_context *in,
 	char c;
 
 	/* initialize values to 0 */
-	value1 = 0;
+	*value1 = 0;
 	if (value2) {
-		value2 = 0;
+		*value2 = 0;
 	}
 
 	fd = engine_get_in_user_data(in);
