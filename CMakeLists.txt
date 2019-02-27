@@ -187,6 +187,11 @@ if(NOT CONFIG_RTTI)
   )
 endif()
 
+if(CONFIG_MISRA_SANE)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=vla>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror=vla>)
+endif()
+
 # @Intent: Obtain compiler specific flags for standard C includes
 toolchain_cc_nostdinc()
 

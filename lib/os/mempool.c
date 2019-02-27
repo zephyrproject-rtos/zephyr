@@ -10,6 +10,12 @@
 #include <misc/mempool_base.h>
 #include <misc/mempool.h>
 
+#ifdef CONFIG_MISRA_SANE
+#define LVL_ARRAY_SZ(n) (8 * sizeof(void *) / 2)
+#else
+#define LVL_ARRAY_SZ(n) (n)
+#endif
+
 static bool level_empty(struct sys_mem_pool_base *p, int l)
 {
 	return sys_dlist_is_empty(&p->levels[l].free_list);
@@ -228,7 +234,7 @@ int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 	int i, from_l, alloc_l = -1, free_l = -1;
 	unsigned int key;
 	void *data = NULL;
-	size_t lsizes[p->n_levels];
+	size_t lsizes[LVL_ARRAY_SZ(p->n_levels)];
 
 	/* Walk down through levels, finding the one from which we
 	 * want to allocate and the smallest one with a free entry
@@ -298,7 +304,7 @@ int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 void _sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
 			      u32_t block)
 {
-	size_t lsizes[p->n_levels];
+	size_t lsizes[LVL_ARRAY_SZ(p->n_levels)];
 	int i;
 
 	/* As in _sys_mem_pool_block_alloc(), we build a table of level sizes
