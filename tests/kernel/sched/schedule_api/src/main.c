@@ -10,6 +10,28 @@
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 K_THREAD_STACK_ARRAY_DEFINE(tstacks, MAX_NUM_THREAD, STACK_SIZE);
 
+void spin_for_ms(int ms)
+{
+#if defined(CONFIG_X86_64) && defined(CONFIG_QEMU_TARGET)
+	/* qemu-system-x86_64 has a known bug with the hpet device
+	 * where it will drop interrupts if you try to spin on the
+	 * counter.
+	 */
+	k_busy_wait(ms * 1000);
+#else
+	u32_t t32 = k_uptime_get_32();
+
+	while (k_uptime_get_32() - t32 < ms) {
+		/* In the posix arch, a busy loop takes no time, so
+		 * let's make it take some
+		 */
+		if (IS_ENABLED(CONFIG_ARCH_POSIX)) {
+			k_busy_wait(50);
+		}
+	}
+#endif
+}
+
 /**
  * @brief Test scheduling
  *
