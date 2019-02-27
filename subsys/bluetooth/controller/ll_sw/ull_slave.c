@@ -346,6 +346,13 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 #endif
 }
 
+/**
+ * @brief Extract timing from completed event
+ *
+ * @param node_rx_event_done[in] Done event containing fresh timing information
+ * @param ticks_drift_plus[out]  Positive part of drift uncertainty window
+ * @param ticks_drift_minus[out] Negative part of drift uncertainty window
+ */
 void ull_slave_done(struct node_rx_event_done *done, u32_t *ticks_drift_plus,
 		    u32_t *ticks_drift_minus)
 {

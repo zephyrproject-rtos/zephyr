@@ -71,9 +71,12 @@ static s32_t hbuf_count;
 #endif
 
 /**
- * @brief Pull from memq_ll_rx and push up to Host thread recv_thread()
- *   via recv_fifo
+ * @brief Handover from Controller thread to Host thread
  * @details Execution context: Controller thread
+ *   Pull from memq_ll_rx and push up to Host thread recv_thread() via recv_fifo
+ * @param p1  Unused. Required to conform with Zephyr thread protoype
+ * @param p2  Unused. Required to conform with Zephyr thread protoype
+ * @param p3  Unused. Required to conform with Zephyr thread protoype
  */
 static void prio_recv_thread(void *p1, void *p2, void *p3)
 {
