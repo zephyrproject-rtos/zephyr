@@ -10,6 +10,32 @@
 #include <linker/sections.h>
 
 
+/*
+ * Offset (starting from the beginning of the vector table)
+ * of the location where the ISRs will be manually installed.
+ */
+#define _ISR_OFFSET 0
+
+#if defined(CONFIG_SOC_SERIES_NRF52X)
+/* The customized solution for nRF52X-based platforms
+ * requires that the POWER_CLOCK_IRQn line equals 0.
+ */
+BUILD_ASSERT_MSG(POWER_CLOCK_IRQn == 0,
+	"POWER_CLOCK_IRQn != 0. Consider rework manual vector table.");
+
+/* The customized solution for nRF52X-based platforms
+ * requires that the RTC1 IRQ line equals 17.
+ */
+BUILD_ASSERT_MSG(RTC1_IRQn == 17,
+	 "RTC1_IRQn != 17. Consider rework manual vector table.");
+
+#undef _ISR_OFFSET
+/* Interrupt line 0 is used by POWER_CLOCK */
+#define _ISR_OFFSET 1
+
+#endif /* CONFIG_SOC_SERIES_NRF52X */
+
+
 struct k_sem sem[3];
 
 /**
@@ -78,8 +104,8 @@ void test_arm_irq_vector_table(void)
 	printk("Test Cortex-M3 IRQ installed directly in vector table\n");
 
 	for (int ii = 0; ii < 3; ii++) {
-		irq_enable(ii);
-		_irq_priority_set(ii, 0, 0);
+		irq_enable(_ISR_OFFSET + ii);
+		_irq_priority_set(_ISR_OFFSET + ii, 0, 0);
 		k_sem_init(&sem[ii], 0, UINT_MAX);
 	}
 
@@ -92,19 +118,9 @@ void test_arm_irq_vector_table(void)
 		/* the QEMU does not simulate the
 		 * STIR register: this is a workaround
 		 */
-		NVIC_SetPendingIRQ(ii);
+		NVIC_SetPendingIRQ(_ISR_OFFSET + ii);
 #else
-#if defined(CONFIG_SOC_SERIES_NRF52X)
-		/* The customized solution for nRF52X-based platforms
-		 * requires that the RTC1 IRQ line equals 17 and is larger
-		 * than the CONFIG_NUM_IRQS.
-		 */
-		__ASSERT(RTC1_IRQn == 17,
-			 "RTC1_IRQn != 17. Consider rework manual vector table.");
-		__ASSERT(RTC1_IRQn >= CONFIG_NUM_IRQS,
-			 "RTC1_IRQn < NUM_IRQs. Consider rework manual vector table.");
-#endif          /* CONFIG_SOC_SERIES_NRF52X */
-		NVIC->STIR = ii;
+		NVIC->STIR = _ISR_OFFSET + ii;
 #endif
 	}
 
@@ -114,6 +130,8 @@ void test_arm_irq_vector_table(void)
 
 }
 
+typedef void (*vth)(void); /* Vector Table Handler */
+
 #if defined(CONFIG_SOC_SERIES_NRF52X)
 /* nRF52X-based platforms employ a Hardware RTC peripheral
  * to implement the Kernel system timer, instead of the ARM Cortex-M
@@ -121,14 +139,12 @@ void test_arm_irq_vector_table(void)
  * the custom vector table to handle the timer "tick" interrupts.
  */
 void rtc1_nrf_isr(void);
-typedef void (*vth)(void); /* Vector Table Handler */
 vth __irq_vector_table _irq_vector_table[RTC1_IRQn + 1] = {
 	isr0, isr1, isr2,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	rtc1_nrf_isr
 };
 #else
-typedef void (*vth)(void); /* Vector Table Handler */
 vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
 	isr0, isr1, isr2
 };
