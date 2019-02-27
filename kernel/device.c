@@ -108,6 +108,15 @@ Z_SYSCALL_HANDLER(device_get_binding, name)
 }
 #endif /* CONFIG_USERSPACE */
 
+#ifdef CONFIG_DEVICE_HIERARCHY
+struct device *device_get_parent(struct device *dev)
+{
+	const char *parent_name = dev->config->parent_name;
+
+	return (parent_name != NULL) ? device_get_binding(parent_name) : NULL;
+}
+#endif /* CONFIG_DEVICE_HIERARCHY */
+
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
 int device_pm_control_nop(struct device *unused_device,
 		       u32_t unused_ctrl_command, void *unused_context)

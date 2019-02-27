@@ -276,6 +276,18 @@ void _sys_device_do_config_level(s32_t level);
  */
 __syscall struct device *device_get_binding(const char *name);
 
+#ifdef CONFIG_DEVICE_HIERARCHY
+/**
+ * @brief Retrieve the parent device structure for a given device
+ *
+ * @param dev Pointer to device structure.
+ *
+ * @return pointer to device structure;
+ *         NULL if no parent found or cannot be used.
+ */
+struct device *device_get_parent(struct device *dev);
+#endif /* CONFIG_DEVICE_HIERARCHY */
+
 /**
  * @}
  */
