@@ -158,7 +158,7 @@ void test_kobject_revoke_access(void *p1, void *p2, void *p3)
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 
-	k_sem_take(&sync_sem, MSEC(100));
+	k_sem_take(&sync_sem, K_MSEC(100));
 	k_object_access_revoke(&kobject_sem, k_current_get());
 
 	k_thread_create(&kobject_test_4_tid,
@@ -215,7 +215,7 @@ void test_kobject_grant_access_kobj(void *p1, void *p2, void *p3)
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 
-	k_sem_take(&sync_sem, MSEC(100));
+	k_sem_take(&sync_sem, K_MSEC(100));
 
 	k_thread_create(&kobject_test_reuse_2_tid,
 			kobject_stack_2,
@@ -346,7 +346,7 @@ void test_kobject_access_all_grant(void *p1, void *p2, void *p3)
 			NULL, NULL, NULL,
 			0, K_USER, K_NO_WAIT);
 
-	k_sem_take(&sync_sem, MSEC(100));
+	k_sem_take(&sync_sem, K_MSEC(100));
 
 	k_thread_create(&kobject_test_reuse_2_tid,
 			kobject_stack_4,
@@ -405,7 +405,7 @@ void test_thread_has_residual_permissions(void *p1, void *p2, void *p3)
 			0, K_INHERIT_PERMS | K_USER, K_NO_WAIT);
 
 
-	k_sem_take(&sync_sem, MSEC(100));
+	k_sem_take(&sync_sem, K_MSEC(100));
 
 	k_thread_create(&kobject_test_9_tid,
 			kobject_stack_1,
@@ -956,4 +956,3 @@ void test_create_new_invalid_prio_thread_from_user(void *p1, void *p2, void *p3)
 	k_sem_take(&sync_sem, SYNC_SEM_TIMEOUT);
 
 }
-
