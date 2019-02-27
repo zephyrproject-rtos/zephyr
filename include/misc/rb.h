@@ -87,7 +87,9 @@ typedef void (*rb_visit_t)(struct rbnode *node, void *cookie);
 
 struct rbnode *_rb_child(struct rbnode *node, int side);
 int _rb_is_black(struct rbnode *node);
+#ifndef CONFIG_MISRA_SANE
 void _rb_walk(struct rbnode *node, rb_visit_t visit_fn, void *cookie);
+#endif
 struct rbnode *_rb_get_minmax(struct rbtree *tree, int side);
 
 /**
@@ -127,6 +129,7 @@ static inline struct rbnode *rb_get_max(struct rbtree *tree)
  */
 bool rb_contains(struct rbtree *tree, struct rbnode *node);
 
+#ifndef CONFIG_MISRA_SANE
 /**
  * @brief Walk/enumerate a rbtree
  *
@@ -164,7 +167,6 @@ struct _rb_foreach {
 
 struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f);
 
-#ifndef CONFIG_MISRA_SANE
 /**
  * @brief Walk a tree in-order without recursing
  *
