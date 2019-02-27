@@ -11,17 +11,6 @@ from extract.directive import DTDirective
 # @brief Manage interrupts directives.
 #
 class DTInterrupts(DTDirective):
-    def _find_parent_irq_node(self, node_path):
-        address = ''
-
-        for comp in node_path.split('/')[1:]:
-            address += '/' + comp
-            if 'interrupt-parent' in reduced[address]['props']:
-                interrupt_parent = reduced[address]['props'][
-                    'interrupt-parent']
-
-        return phandles[interrupt_parent]
-
     ##
     # @brief Extract interrupts
     #
@@ -40,7 +29,9 @@ class DTInterrupts(DTDirective):
         except:
             props = [node['props'].get(prop)]
 
-        irq_parent = self._find_parent_irq_node(node_path)
+        irq_parent = parent_irq_node(node_path)
+        if not irq_parent:
+            err(node_path + " has no interrupt-parent")
 
         l_base = def_label.split('/')
         index = 0
@@ -87,6 +78,17 @@ class DTInterrupts(DTDirective):
 
             index += 1
             insert_defs(node_path, prop_def, prop_alias)
+
+
+def parent_irq_node(node_path):
+    while node_path:
+        if 'interrupt-parent' in reduced[node_path]['props']:
+            return phandles[reduced[node_path]['props']['interrupt-parent']]
+
+        node_path = get_parent_path(node_path)
+
+    return None
+
 
 ##
 # @brief Management information for interrupts.
