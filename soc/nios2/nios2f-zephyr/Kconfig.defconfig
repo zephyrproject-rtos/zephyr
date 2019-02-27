@@ -49,8 +49,6 @@ config UART_NS16550_PORT_0
 
 if UART_NS16550_PORT_0
 
-config UART_NS16550_PORT_0_IRQ_PRI
-	default 3
 config UART_NS16550_PORT_0_OPTIONS
 	default 0
 
