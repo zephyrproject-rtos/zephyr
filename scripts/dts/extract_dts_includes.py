@@ -29,17 +29,17 @@ from extract.pinctrl import pinctrl
 from extract.default import default
 
 
-def extract_bus_name(node_path, def_label):
-    label = def_label + '_BUS_NAME'
+def extract_parent_label(node_path, def_label, label_postfix):
+    label = def_label + '_' + label_postfix
     prop_alias = {}
 
-    add_compat_alias(node_path, 'BUS_NAME', label, prop_alias)
+    add_compat_alias(node_path, label_postfix, label, prop_alias)
 
     # Generate defines for node aliases
     if node_path in aliases:
         add_prop_aliases(
             node_path,
-            lambda alias: str_to_label(alias) + '_BUS_NAME',
+            lambda alias: str_to_label(alias) + '_' + label_postfix,
             label,
             prop_alias)
 
@@ -61,15 +61,21 @@ def generate_prop_defines(node_path, prop):
     # Generates #defines (and .conf file values) from the prop
     # named 'prop' on the device tree node at 'node_path'
 
+    parent_path = get_parent_path(node_path)
     binding = get_binding(node_path)
     if 'parent' in binding and 'bus' in binding['parent']:
         # If the binding specifies a parent for the node, then include the
         # parent in the #define's generated for the properties
-        parent_path = get_parent_path(node_path)
         def_label = 'DT_' + get_node_label(parent_path) + '_' \
                           + get_node_label(node_path)
     else:
         def_label = 'DT_' + get_node_label(node_path)
+
+    if prop == 'label' and \
+       parent_path and 'label' in reduced[parent_path]['props']:
+        # If both the node and its parent, provided that the node has a parent,
+        # have the 'label' property, generate *_PARENT_LABEL #define
+        extract_parent_label(node_path, def_label, 'PARENT_LABEL')
 
     names = prop_names(reduced[node_path], prop)
 
@@ -172,9 +178,10 @@ def generate_bus_defines(node_path):
                 aliases[node_path].append(node_alias)
 
     # Generate *_BUS_NAME #define
-    extract_bus_name(
+    extract_parent_label(
         node_path,
-        'DT_' + get_node_label(parent_path) + '_' + get_node_label(node_path))
+        'DT_' + get_node_label(parent_path) + '_' + get_node_label(node_path),
+        'BUS_NAME')
 
 
 def prop_names(node, prop_name):
