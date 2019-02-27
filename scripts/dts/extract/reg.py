@@ -47,7 +47,7 @@ class DTReg(DTDirective):
                     extract_cells(node_path, "cs-gpios", cs_gpios, None, reg[0], def_label, "cs-gpio", True)
 
         # generate defines
-        l_base = def_label.split('/')
+        l_base = [def_label]
         l_addr = [str_to_label("BASE_ADDRESS")]
         l_size = ["SIZE"]
 
