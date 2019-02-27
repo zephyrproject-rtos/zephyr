@@ -648,11 +648,11 @@ static inline u32_t addr_us_get(u8_t phy)
 {
 	switch (phy) {
 	default:
-	case BIT(0):
+	case BIT(0): /* 1Mbps */
 		return 40;
-	case BIT(1):
+	case BIT(1): /* 2Mbps */
 		return 24;
-	case BIT(2):
+	case BIT(2): /* Coded */
 		return 376;
 	}
 }

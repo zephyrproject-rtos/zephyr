@@ -365,6 +365,9 @@ void ll_reset(void)
  * @brief Peek the next node_rx to send up to Host
  * @details Tightly coupled with prio_recv_thread()
  *   Execution context: Controller thread
+ *
+ * @param node_rx[out]   Pointer to rx node at head of queue
+ * @param handle[out]    Connection handle
  * @return TX completed
  */
 u8_t ll_rx_get(void **node_rx, u16_t *handle)
@@ -1032,14 +1035,14 @@ void *ull_prepare_dequeue_iter(u8_t *idx)
 
 void *ull_event_done_extra_get(void)
 {
-	struct node_rx_event_done *done;
+	struct node_rx_event_done *evdone;
 
-	done = MFIFO_DEQUEUE_PEEK(done);
-	if (!done) {
+	evdone = MFIFO_DEQUEUE_PEEK(done);
+	if (!evdone) {
 		return NULL;
 	}
 
-	return &done->extra;
+	return &evdone->extra;
 }
 
 void *ull_event_done(void *param)
