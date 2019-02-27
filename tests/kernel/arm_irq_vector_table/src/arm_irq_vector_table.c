@@ -33,6 +33,26 @@ BUILD_ASSERT_MSG(RTC1_IRQn == 17,
 /* Interrupt line 0 is used by POWER_CLOCK */
 #define _ISR_OFFSET 1
 
+#elif defined(CONFIG_SOC_SERIES_NRF91X)
+/* The customized solution for nRF91X-based platforms
+ * requires that the POWER_CLOCK_IRQn line equals 5.
+ */
+BUILD_ASSERT_MSG(CLOCK_POWER_IRQn == 5,
+	"POWER_CLOCK_IRQn != 5."
+	"Consider rework manual vector table.");
+
+/* The customized solution for nRF91X-based platforms
+ * requires that the RTC1 IRQ line equals 21.
+ */
+BUILD_ASSERT_MSG(RTC1_IRQn == 21,
+	 "RTC1_IRQn != 21. Consider rework manual vector table.");
+
+#undef _ISR_OFFSET
+/* Interrupt lines 8-10 is the first set of consecutive interrupts implemented
+ * in nRF9160 SOC.
+ */
+#define _ISR_OFFSET 8
+
 #endif /* CONFIG_SOC_SERIES_NRF52X */
 
 
@@ -132,8 +152,8 @@ void test_arm_irq_vector_table(void)
 
 typedef void (*vth)(void); /* Vector Table Handler */
 
-#if defined(CONFIG_SOC_SERIES_NRF52X)
-/* nRF52X-based platforms employ a Hardware RTC peripheral
+#if defined(CONFIG_SOC_SERIES_NRF52X) || defined(CONFIG_SOC_SERIES_NRF91X)
+/* nRF52X- and nRF91X-based platforms employ a Hardware RTC peripheral
  * to implement the Kernel system timer, instead of the ARM Cortex-M
  * SysTick. Therefore, a pointer to the timer ISR needs to be added in
  * the custom vector table to handle the timer "tick" interrupts.
@@ -143,17 +163,26 @@ typedef void (*vth)(void); /* Vector Table Handler */
  */
 void rtc1_nrf_isr(void);
 void nrf_power_clock_isr(void);
+#if defined(CONFIG_SOC_SERIES_NRF52X)
 vth __irq_vector_table _irq_vector_table[RTC1_IRQn + 1] = {
 	nrf_power_clock_isr,
 	isr0, isr1, isr2,
 	0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	rtc1_nrf_isr
 };
+#elif defined(CONFIG_SOC_SERIES_NRF91X)
+vth __irq_vector_table _irq_vector_table[RTC1_IRQn + 1] = {
+	0, 0, 0, 0, 0, nrf_power_clock_isr, 0, 0,
+	isr0, isr1, isr2,
+	0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+	rtc1_nrf_isr
+};
+#endif
 #else
 vth __irq_vector_table _irq_vector_table[CONFIG_NUM_IRQS] = {
 	isr0, isr1, isr2
 };
-#endif /* CONFIG_SOC_SERIES_NRF52X */
+#endif /* CONFIG_SOC_SERIES_NRF52X || CONFIG_SOC_SERIES_NRF91X */
 
 /**
  * @}
