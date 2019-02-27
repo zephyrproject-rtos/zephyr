@@ -237,12 +237,12 @@ config IMAGE_VECTOR_TABLE_OFFSET
 	help
 	  The Image Vector Table (IVT) provides the boot ROM with pointers to
 	  the application entry point and device configuration data. The boot
-	  ROM reqiures a fixed IVT offset for each type of boot device.
+	  ROM requires a fixed IVT offset for each type of boot device.
 
 config DEVICE_CONFIGURATION_DATA
 	bool "Enable device configuration data"
 	help
-	  Device configuration data (DCD) provides a sequence of commmands to
+	  Device configuration data (DCD) provides a sequence of commands to
 	  the boot ROM to initialize components such as an SDRAM.
 
 endif # NXP_IMX_RT_BOOT_HEADER

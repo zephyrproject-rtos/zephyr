@@ -68,7 +68,7 @@ Stable
 The API has proven satisfactory, but cleanup in the underlying code may cause
 minor changes. Backwards-compatibility will be maintained if reasonable.
 
-An API can be declared ``stable`` after fullfilling the following requirements:
+An API can be declared ``stable`` after fulfilling the following requirements:
 
 - Test cases for the new API with 100% coverage
 - Complete documentation in code. All public interfaces shall be documented

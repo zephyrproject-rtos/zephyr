@@ -416,7 +416,7 @@ static inline int _impl_can_configure(struct device *dev, enum can_mode mode,
 }
 
 /**
- * @brief Converter that translates betwen can_frame and zcan_frame structs.
+ * @brief Converter that translates between can_frame and zcan_frame structs.
  *
  * @param frame Pointer to can_frame struct.
  * @param zframe Pointer to zcan_frame struct.
@@ -432,7 +432,7 @@ static inline void can_copy_frame_to_zframe(struct can_frame *frame,
 }
 
 /**
- * @brief Converter that translates betwen zcan_frame and can_frame structs.
+ * @brief Converter that translates between zcan_frame and can_frame structs.
  *
  * @param zframe Pointer to zcan_frame struct.
  * @param frame Pointer to can_frame struct.
@@ -447,7 +447,7 @@ static inline void can_copy_zframe_to_frame(struct zcan_frame *zframe,
 }
 
 /**
- * @brief Converter that translates betwen can_filter and zcan_frame_filter
+ * @brief Converter that translates between can_filter and zcan_frame_filter
  * structs.
  *
  * @param filter Pointer to can_filter struct.
@@ -465,7 +465,7 @@ void can_copy_filter_to_zfilter(struct can_filter *filter,
 }
 
 /**
- * @brief Converter that translates betwen zcan_filter and can_filter
+ * @brief Converter that translates between zcan_filter and can_filter
  * structs.
  *
  * @param zfilter Pointer to zcan_filter struct.

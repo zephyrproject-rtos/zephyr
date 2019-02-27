@@ -42,7 +42,7 @@ config NET_DEBUG_NET_PKT_NON_FRAGILE_ACCESS
 	help
 	  This MUST not be used unless you have an hard to catch bug. This will
 	  reset the pkt cursor when it's freed, so any subsequent r/w operations
-	  will not segfault, but just bail out and hopefuly it will enable you
+	  will not segfault, but just bail out and hopefully it will enable you
 	  to know who/where the packet was freed already. Do not set this, by
 	  any means, unless you are actively debugging.
 

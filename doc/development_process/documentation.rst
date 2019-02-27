@@ -8,7 +8,7 @@ API Documentation
 Well documented APIs enhance the experience for developers and are an essential
 requirement for defining an API's success. Doxygen is a general purpose
 documentation tool that the zephyr project uses for documenting APIs. It
-generates either an on-line documentation browser (in HTML) and/or providess
+generates either an on-line documentation browser (in HTML) and/or provides
 input for other tools that is used to generate a reference manual from
 documented source files. In particular, doxygen's XML output is used as an input
 when producing the Zephyr project's online documentation.
@@ -30,7 +30,7 @@ document all test code using the same tools and in the same context and generate
 documentation for all unit and integration tests maintained in the same
 environment. Tests are documented using references to the APIs or functionality
 they validate by creating a link back to the APIs and by adding a reference to
-the original resquirements.
+the original requirements.
 
 
 Documentation Guidelines
