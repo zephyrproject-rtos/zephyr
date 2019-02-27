@@ -41,12 +41,6 @@ config ADC_INIT_PRIORITY
 	help
 	  ADC Device driver initialization priority.
 
-config ADC_0
-	bool "Enable ADC 0"
-
-config ADC_1
-	bool "Enable ADC 1"
-
 source "drivers/adc/Kconfig.dw"
 
 source "drivers/adc/Kconfig.mcux"

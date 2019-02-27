@@ -482,7 +482,6 @@ static const struct adc_driver_api adc_quark_d2000_driver_api = {
 #endif
 };
 
-#if CONFIG_ADC_0
 static void adc_quark_d2000_config_func_0(struct device *dev);
 
 static const struct adc_quark_d2000_config adc_quark_d2000_config_0 = {
@@ -505,4 +504,3 @@ static void adc_quark_d2000_config_func_0(struct device *dev)
 
 	irq_enable(DT_ADC_0_IRQ);
 }
-#endif /* CONFIG_ADC_0 */

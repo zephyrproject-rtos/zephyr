@@ -9,7 +9,6 @@
 menuconfig ADC_INTEL_QUARK_D2000
 	bool "ADC Driver for Intel Quark D2000"
 	depends on SOC_QUARK_D2000
-	select ADC_0
 	help
 	  Enable the ADC driver implementation of the Intel Quark D2000.
 

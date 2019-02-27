@@ -14,6 +14,13 @@ config ADC_MCUX_ADC16
 
 if ADC_MCUX_ADC16
 
+config ADC_0
+	bool "Enable ADC 0"
+	default y
+
+config ADC_1
+	bool "Enable ADC 1"
+
 choice
 	prompt "Clock Divide Selection"
 	default ADC_MCUX_ADC16_CLK_DIV_RATIO_1
