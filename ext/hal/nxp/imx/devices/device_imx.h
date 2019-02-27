@@ -42,6 +42,7 @@
 
 #ifndef __DEVICE_IMX_H__
 #define __DEVICE_IMX_H__
+
 /*
  * Include the cpu specific register header files.
  *
@@ -50,19 +51,22 @@
 #if defined(CONFIG_SOC_MCIMX6X_M4)
 
     /* CMSIS-style register definitions */
-    #include "MCIMX6X/include/MCIMX6X_M4.h"
+    #include "MCIMX6X_M4.h"
     #define RDC_SEMAPHORE_MASTER_SELF   (5)
     #define SEMA4_PROCESSOR_SELF        (1)
 
 #elif defined(CONFIG_SOC_MCIMX7_M4)
 
     /* CMSIS-style register definitions */
-   #include "MCIMX7D_M4.h"
+    #include "MCIMX7D_M4.h"
 
     #define RDC_SEMAPHORE_MASTER_SELF   (6)
     #define SEMA4_PROCESSOR_SELF        (1)
 
+#else
+    #error "No valid CPU defined!"
 #endif
+
 #endif /* __DEVICE_IMX_H__ */
 
 /*******************************************************************************
