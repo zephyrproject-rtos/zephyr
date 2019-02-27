@@ -31,7 +31,7 @@ config USB_HID_DEVICE_NAME_1
 	depends on USB_HID_DEVICE_1
 	default "HID_1"
 	help
-	  Device name for the seconf HID Device.
+	  Device name for the second HID Device.
 
 endif # USB_COMPOSITE_DEVICE
 

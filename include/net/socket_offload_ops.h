@@ -28,7 +28,7 @@ extern "C" {
 #include <net/socket.h>  /* needed for struct pollfd */
 
 /**
- * @brief An offloaded Socket API interafce
+ * @brief An offloaded Socket API interface
  *
  * It is assumed that these offload functions follow the
  * POSIX socket API standard for arguments, return values and setting of errno.

@@ -32,7 +32,7 @@ possible:
 
 * native_posix board.
 
-  * The Zepher instance can be executed as a user space process in the host
+  * The Zephyr instance can be executed as a user space process in the host
     system. This is the most convenient way to debug the Zephyr system as one
     can attach host debugger directly to the running Zephyr instance. This
     requires that there is an adaptation driver in Zephyr for interfacing

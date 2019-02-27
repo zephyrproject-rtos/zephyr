@@ -12,7 +12,7 @@ config USE_SEGGER_RTT
 	depends on HAS_SEGGER_RTT
 	help
 	  Enable Segger J-Link RTT libraries for platforms that support it.
-	  Selection of this option enables use of RTT for various subsytems.
+	  Selection of this option enables use of RTT for various subsystems.
 	  Note that by enabling this option, RTT buffers consume more RAM.
 
 if USE_SEGGER_RTT

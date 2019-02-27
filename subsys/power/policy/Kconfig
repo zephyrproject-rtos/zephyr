@@ -27,7 +27,7 @@ config SYS_PM_LPS_1_MIN_RES
 	depends on HAS_STATE_LOW_POWER_1
 	default 5000
 	help
-	  Minimum residency in miliseconds to enter SYS_POWER_STATE_LOW_POWER_1
+	  Minimum residency in milliseconds to enter SYS_POWER_STATE_LOW_POWER_1
 	  state.
 
 config SYS_PM_LPS_2_MIN_RES
@@ -35,7 +35,7 @@ config SYS_PM_LPS_2_MIN_RES
 	depends on HAS_STATE_LOW_POWER_2
 	default 10000
 	help
-	  Minimum residency in miliseconds to enter SYS_POWER_STATE_LOW_POWER_2
+	  Minimum residency in milliseconds to enter SYS_POWER_STATE_LOW_POWER_2
 	  state.
 
 config SYS_PM_LPS_3_MIN_RES
@@ -43,7 +43,7 @@ config SYS_PM_LPS_3_MIN_RES
 	depends on HAS_STATE_LOW_POWER_3
 	default 30000
 	help
-	  Minimum residency in miliseconds to enter SYS_POWER_STATE_LOW_POWER_3
+	  Minimum residency in milliseconds to enter SYS_POWER_STATE_LOW_POWER_3
 	  state.
 
 config SYS_PM_DEEP_SLEEP_1_MIN_RES
@@ -51,7 +51,7 @@ config SYS_PM_DEEP_SLEEP_1_MIN_RES
 	depends on HAS_STATE_DEEP_SLEEP_1
 	default 60000
 	help
-	  Minimum residency in miliseconds to enter SYS_POWER_STATE_DEEP_SLEEP_1
+	  Minimum residency in milliseconds to enter SYS_POWER_STATE_DEEP_SLEEP_1
 	  state.
 
 config SYS_PM_DEEP_SLEEP_2_MIN_RES
@@ -59,7 +59,7 @@ config SYS_PM_DEEP_SLEEP_2_MIN_RES
 	depends on HAS_STATE_DEEP_SLEEP_2
 	default 90000
 	help
-	  Minimum residency in miliseconds to enter SYS_POWER_STATE_DEEP_SLEEP_2
+	  Minimum residency in milliseconds to enter SYS_POWER_STATE_DEEP_SLEEP_2
 	  state.
 
 config SYS_PM_DEEP_SLEEP_3_MIN_RES
@@ -67,7 +67,7 @@ config SYS_PM_DEEP_SLEEP_3_MIN_RES
 	depends on HAS_STATE_DEEP_SLEEP_3
 	default 120000
 	help
-	  Minimum residency in miliseconds to enter SYS_POWER_STATE_DEEP_SLEEP_3
+	  Minimum residency in milliseconds to enter SYS_POWER_STATE_DEEP_SLEEP_3
 	  state.
 
 endif # SYS_PM_POLICY_RESIDENCY

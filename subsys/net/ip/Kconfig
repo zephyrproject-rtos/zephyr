@@ -478,7 +478,7 @@ config NET_HEADERS_ALWAYS_CONTIGUOUS
 	  This a hidden option, which one should use with a lot of care.
 	  NO bug reports will be accepted if that option is enabled!
 	  You are warned.
-	  If you are 100% sure the headers memore space is always in a
+	  If you are 100% sure the headers memory space is always in a
 	  contiguous space, this will save stack usage and ROM in net core.
 	  This is a possible case when using IPv4 only, with
 	  NET_BUF_FIXED_DATA_SIZE enabled and NET_BUF_DATA_SIZE of 128 for
