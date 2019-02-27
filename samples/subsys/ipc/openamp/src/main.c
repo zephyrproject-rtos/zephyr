@@ -200,7 +200,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 
 	ipm_register_callback(ipm_handle, platform_ipm_callback, NULL);
 
-	ipm_set_enabled(ipm_handle, 1);
+	status = ipm_set_enabled(ipm_handle, 1);
 	if (status != 0) {
 		printk("ipm_set_enabled failed\n");
 		return;
