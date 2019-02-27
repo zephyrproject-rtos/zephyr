@@ -14,7 +14,7 @@ LOG_MODULE_DECLARE(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 #include "gptp_md.h"
 #include "gptp_private.h"
 
-#define NET_BUF_TIMEOUT MSEC(100)
+#define NET_BUF_TIMEOUT K_MSEC(100)
 
 static struct net_if_timestamp_cb sync_timestamp_cb;
 static struct net_if_timestamp_cb pdelay_response_timestamp_cb;

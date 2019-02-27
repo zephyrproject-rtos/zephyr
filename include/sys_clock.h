@@ -213,17 +213,6 @@ struct _timeout {
 	_timeout_func_t fn;
 };
 
-/*
- * Number of ticks for x seconds. NOTE: With MSEC() or USEC(),
- * since it does an integer division, x must be greater or equal to
- * 1000/CONFIG_SYS_CLOCK_TICKS_PER_SEC to get a non-zero value.
- * You may want to raise CONFIG_SYS_CLOCK_TICKS_PER_SEC depending on
- * your requirements.
- */
-#define SECONDS(x)	((x) * CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define MSEC(x)		(SECONDS(x) / MSEC_PER_SEC)
-#define USEC(x)		(MSEC(x) / USEC_PER_MSEC)
-
 #ifdef __cplusplus
 }
 #endif

@@ -524,7 +524,7 @@ void test_mem_domain_remove_partitions(void *p1, void *p2, void *p3)
 			10, K_USER | K_INHERIT_PERMS, K_NO_WAIT);
 
 
-	k_sem_take(&sync_sem, MSEC(100));
+	k_sem_take(&sync_sem, K_MSEC(100));
 
 	k_mem_domain_remove_partition(&mem_domain_tc3_mem_domain,
 				      &mem_domain_tc3_part2_struct);
