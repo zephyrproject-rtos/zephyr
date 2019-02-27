@@ -502,7 +502,7 @@ static const struct gpio_dw_config gpio_config_0 = {
 	.bits = DT_GPIO_DW_0_BITS,
 	.config_func = gpio_config_0_irq,
 #ifdef CONFIG_GPIO_DW_0_IRQ_SHARED
-	.shared_irq_dev_name = CONFIG_GPIO_DW_0_IRQ_SHARED_NAME,
+	.shared_irq_dev_name = DT_GPIO_DW_0_IRQ_SHARED_NAME,
 #endif
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_0_CLOCK_GATE_SUBSYS),
@@ -571,7 +571,7 @@ static const struct gpio_dw_config gpio_dw_config_1 = {
 	.config_func = gpio_config_1_irq,
 
 #ifdef CONFIG_GPIO_DW_1_IRQ_SHARED
-	.shared_irq_dev_name = CONFIG_GPIO_DW_1_IRQ_SHARED_NAME,
+	.shared_irq_dev_name = DT_GPIO_DW_1_IRQ_SHARED_NAME,
 #endif
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_1_CLOCK_GATE_SUBSYS),
@@ -638,7 +638,7 @@ static const struct gpio_dw_config gpio_dw_config_2 = {
 	.config_func = gpio_config_2_irq,
 
 #ifdef CONFIG_GPIO_DW_2_IRQ_SHARED
-	.shared_irq_dev_name = CONFIG_GPIO_DW_2_IRQ_SHARED_NAME,
+	.shared_irq_dev_name = DT_GPIO_DW_2_IRQ_SHARED_NAME,
 #endif
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_2_CLOCK_GATE_SUBSYS),
@@ -705,7 +705,7 @@ static const struct gpio_dw_config gpio_dw_config_3 = {
 	.config_func = gpio_config_3_irq,
 
 #ifdef CONFIG_GPIO_DW_3_IRQ_SHARED
-	.shared_irq_dev_name = CONFIG_GPIO_DW_3_IRQ_SHARED_NAME,
+	.shared_irq_dev_name = DT_GPIO_DW_3_IRQ_SHARED_NAME,
 #endif
 #ifdef CONFIG_GPIO_DW_CLOCK_GATE
 	.clock_data = UINT_TO_POINTER(CONFIG_GPIO_DW_3_CLOCK_GATE_SUBSYS),
