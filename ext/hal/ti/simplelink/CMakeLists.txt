@@ -50,12 +50,7 @@ if(CONFIG_HAS_CC3220SDK)
     set_source_files_properties(source/ti/drivers/net/wifi/source/driver.c
       PROPERTIES COMPILE_DEFINITIONS "__LINUX_ERRNO_EXTENSIONS__;${COMPILER}" )
     set_source_files_properties(source/ti/drivers/net/wifi/source/driver.c
-      PROPERTIES COMPILE_FLAGS -Wno-strict-aliasing) # driver.c warns on strict-aliasing
-
-    set_source_files_properties(source/ti/drivers/net/wifi/source/sl_socket.c
-      PROPERTIES COMPILE_DEFINITIONS "${COMPILER}")
-    set_source_files_properties(source/ti/drivers/net/wifi/source/sl_socket.c
-      PROPERTIES COMPILE_FLAGS -Wno-missing-braces) # sl_socket warns on missing braces 
+      PROPERTIES COMPILE_FLAGS -Wno-incompatible-pointer-types) # driver.c warns on incompatible-pointer-types
   endif()
 
 elseif(CONFIG_HAS_MSP432P4XXSDK)
