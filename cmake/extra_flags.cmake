@@ -25,4 +25,3 @@ if(EXTRA_AFLAGS)
     zephyr_compile_options($<$<COMPILE_LANGUAGE:ASM>:${F}>)
   endforeach()
 endif()
-

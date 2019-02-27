@@ -1,3 +1,4 @@
 tests:
   libraries.data_structures.rbtree:
     tags: rbtree
+    filter: not CONFIG_MISRA_SANE
