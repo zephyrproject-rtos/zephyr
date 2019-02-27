@@ -3,6 +3,10 @@
 Link Layer Discovery Protocol
 #############################
 
+.. contents::
+    :local:
+    :depth: 2
+
 Overview
 ********
 

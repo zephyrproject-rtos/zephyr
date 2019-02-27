@@ -3,6 +3,10 @@
 IEEE 802.15.4
 #############
 
+.. contents::
+    :local:
+    :depth: 2
+
 Overview
 ********
 IEEE 802.15.4 is a technical standard which defines the operation of low-rate

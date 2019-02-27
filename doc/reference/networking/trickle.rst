@@ -3,6 +3,10 @@
 Trickle Timer Library
 #####################
 
+.. contents::
+    :local:
+    :depth: 2
+
 Overview
 ********
 

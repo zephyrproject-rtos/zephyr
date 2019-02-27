@@ -3,6 +3,10 @@
 IPv4/IPv6 Primitives and Helpers
 ################################
 
+.. contents::
+    :local:
+    :depth: 2
+
 Overview
 ********
 

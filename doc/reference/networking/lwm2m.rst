@@ -3,6 +3,10 @@
 Lightweight M2M (LWM2M)
 #######################
 
+.. contents::
+    :local:
+    :depth: 2
+
 Overview
 ********
 

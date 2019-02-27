@@ -3,9 +3,6 @@
 Network Shell
 #############
 
-Overview
-********
-
 Network shell provides helpers for figuring out network status,
 enabling/disabling features, and issuing commands like ping or DNS resolving.
 Note that ``net-shell`` should probably not be used in production code
