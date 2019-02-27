@@ -24,7 +24,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                  flash_addr=0x0, erase=True,
                  iface='swd', speed='auto',
                  gdbserver='JLinkGDBServer', gdb_port=DEFAULT_JLINK_GDB_PORT,
-                 tui=False):
+                 tui=False, jlinkscriptfile=''):
         super(JLinkBinaryRunner, self).__init__(cfg)
         self.bin_name = cfg.bin_file
         self.elf_name = cfg.elf_file
@@ -38,6 +38,7 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
         self.speed = speed
         self.gdb_port = gdb_port
         self.tui_arg = ['-tui'] if tui else []
+        self.jlinkscriptfile = jlinkscriptfile
 
     @classmethod
     def name(cls):
@@ -69,6 +70,11 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                             help='J-Link Commander, default is JLinkExe')
         parser.add_argument('--erase', default=False, action='store_true',
                             help='if given, mass erase flash before loading')
+        parser.add_argument('--jlinkscriptfile', default='',
+                            help='J-Linkscriptfiles are mainly used to connect '
+                                 'to targets which need a special connection '
+                                 'sequence before communication with the core is '
+                                 'possible.')
 
     @classmethod
     def create(cls, cfg, args):
@@ -80,7 +86,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                                  iface=args.iface, speed=args.speed,
                                  gdbserver=args.gdbserver,
                                  gdb_port=args.gdb_port,
-                                 tui=args.tui)
+                                 tui=args.tui,
+                                 jlinkscriptfile=args.jlinkscriptfile)
 
     def print_gdbserver_message(self):
         log.inf('J-Link GDB server running on port {}'.format(self.gdb_port))
@@ -94,6 +101,8 @@ class JLinkBinaryRunner(ZephyrBinaryRunner):
                        '-device', self.device,
                        '-silent',
                        '-singlerun'])
+        if self.jlinkscriptfile != '':
+            server_cmd = server_cmd + ['-jlinkscriptfile', self.jlinkscriptfile]
 
         if command == 'flash':
             self.flash(**kwargs)
