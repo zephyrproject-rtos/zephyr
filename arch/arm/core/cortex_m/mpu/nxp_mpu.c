@@ -384,7 +384,8 @@ void arm_core_mpu_enable(void)
  */
 void arm_core_mpu_disable(void)
 {
-	__DSB();
+	/* Force any outstanding transfers to complete before disabling MPU */
+	__DMB();
 
 	/* Disable MPU */
 	SYSMPU->CESR &= ~SYSMPU_CESR_VLD_MASK;
