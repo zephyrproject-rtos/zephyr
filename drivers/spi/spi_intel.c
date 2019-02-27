@@ -96,6 +96,7 @@ static void push_data(struct device *dev)
 			case 1:
 				data = UNALIGNED_GET((u8_t *)
 						     (spi->ctx.tx_buf));
+				break;
 			case 2:
 				data = UNALIGNED_GET((u16_t *)
 						     (spi->ctx.tx_buf));
