@@ -14,6 +14,7 @@
 	chosen {
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
+		zephyr,flash = &flash0;
 		zephyr,sram = &sram0;
 		zephyr,sram1 = &sram2a;
 		zephyr,sram2 = &sram2b;
@@ -62,4 +63,41 @@
 &usart1 {
 	current-speed = <115200>;
 	status = "ok";
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/devices/dts/flash_partitions.html
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Set all partitions with first 512K of flash */
+		/* last 512K are reseved for M0 usage */
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000C000 0x50000>;
+		};
+		slot1_partition: partition@60000 {
+			label = "image-1";
+			reg = <0x00060000 0x1000>;
+		};
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x00070000 0x4000>;
+		};
+		storage_partition: partition@78000 {
+			label = "storage";
+			reg = <0x00078000 0x4000>;
+		};
+
+	};
 };
