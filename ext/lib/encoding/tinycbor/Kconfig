@@ -68,4 +68,9 @@ config CBOR_WITHOUT_OPEN_MEMSTREAM
 	help
 	  This option enables open memstream support.
 
+config CBOR_PRETTY_PRINTING
+	bool "Implement pretty printing functionality"
+	help
+	  This option enables cbor_value_to_pretty_stream function.
+
 endif #TINYCBOR
