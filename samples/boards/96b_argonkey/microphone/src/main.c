@@ -145,7 +145,7 @@ void main(void)
 
 	/* Acquire microphone audio */
 	for (ms = 0; ms < NUM_MS; ms++) {
-		dmic_read(mic_dev, 0, &rx_block[ms], &rx_size, 2000);
+		ret = dmic_read(mic_dev, 0, &rx_block[ms], &rx_size, 2000);
 		if (ret < 0) {
 			printk("microphone audio read error\n");
 			return;
