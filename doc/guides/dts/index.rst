@@ -300,6 +300,10 @@ The full set of Zephyr-specific ``chosen`` nodes follows:
      - ``CONFIG_FLASH``
    * - ``zephyr,sram``
      - ``CONFIG_SRAM``
+   * - ``zephyr,sram1``
+     - ``DT_SRAM1``
+   * - ``zephyr,sram2``
+     - ``DT_SRAM2``
    * - ``zephyr,ccm``
      - ``DT_CCM``
    * - ``zephyr,console``

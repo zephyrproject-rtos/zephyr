@@ -68,6 +68,22 @@
 	#define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
 #endif
 
+#define SRAM_END (RAM_ADDR + RAM_SIZE)
+
+#if defined(DT_SRAM1_BASE_ADDRESS)
+        #define RAM1_SIZE (DT_SRAM1_SIZE * 1K)
+        #define RAM1_ADDR DT_SRAM1_BASE_ADDRESS
+        #undef SRAM_END
+        #define SRAM_END (RAM1_ADDR + RAM1_SIZE)
+
+        #if defined(DT_SRAM2_BASE_ADDRESS)
+                #define RAM2_SIZE (DT_SRAM2_SIZE * 1K)
+                #define RAM2_ADDR DT_SRAM2_BASE_ADDRESS
+                #undef SRAM_END
+                #define SRAM_END (RAM2_ADDR + RAM2_SIZE)
+        #endif
+#endif
+
 /* Set alignment to CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE
  * to make linker section alignment comply with MPU granularity.
  */
@@ -97,9 +113,14 @@ MEMORY
     CCM                   (rw) : ORIGIN = DT_CCM_BASE_ADDRESS, LENGTH = DT_CCM_SIZE * 1K
 #endif
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
-
+#ifdef DT_SRAM1_BASE_ADDRESS
+    SRAM1                 (rw) : ORIGIN = RAM1_ADDR, LENGTH = RAM1_SIZE
+#ifdef DT_SRAM2_BASE_ADDRESS
+    SRAM2                 (rw) : ORIGIN = RAM2_ADDR, LENGTH = RAM2_SIZE
+#endif
+#endif
     /* Used by and documented in include/linker/intlist.ld */
-    IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
+    IDT_LIST  (wx)      : ORIGIN = SRAM_END, LENGTH = 2K
     }
 
 ENTRY(CONFIG_KERNEL_ENTRY)
