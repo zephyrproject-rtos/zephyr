@@ -24,6 +24,14 @@
 K_APPMEM_PARTITION_DEFINE(z_libc_partition);
 #endif
 
+/* TODO: Find a better place to put this. Since we pull the entire
+ * libext__lib__crypto__mbedtls.a globals into app shared memory
+ * section, we can't put this in ext/lib/crypto/mbedtls/zephyr_init.c
+ */
+#ifdef CONFIG_MBEDTLS
+K_APPMEM_PARTITION_DEFINE(k_mbedtls_partition);
+#endif
+
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_DECLARE(kernel);

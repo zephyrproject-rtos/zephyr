@@ -75,7 +75,7 @@
 #if defined(MBEDTLS_RSA_C)
 int rand(void)
 {
-	static u32_t seed = 7U;
+	static ZTEST_DMEM u32_t seed = 7U;
 
 	seed ^= seed << 13;
 	seed ^= seed >> 17;
@@ -155,7 +155,7 @@ static void create_entropy_seed_file(void)
 #endif
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C)
-unsigned char buf[16384];
+ZTEST_BMEM unsigned char buf[16000];
 #endif
 
 void test_mbedtls(void)
