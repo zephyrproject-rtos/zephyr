@@ -23,6 +23,8 @@ struct thread_data {
 	int executed;
 };
 
+void spin_for_ms(int ticks);
+
 void test_priority_cooperative(void);
 void test_priority_preemptible(void);
 void test_yield_cooperative(void);
