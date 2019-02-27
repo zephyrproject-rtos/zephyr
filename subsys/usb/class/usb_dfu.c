@@ -651,6 +651,7 @@ static int dfu_custom_handle_req(struct usb_setup_packet *pSetup,
 			case 1:
 				dfu_data.flash_area_id =
 				    DT_FLASH_AREA_IMAGE_1_ID;
+				break;
 			default:
 				LOG_WRN("Invalid DFU alternate setting");
 				return -ENOTSUP;
