@@ -12,4 +12,3 @@ Networking
    protocols.rst
    system_mgmt.rst
    tsn.rst
-   net_shell.rst
