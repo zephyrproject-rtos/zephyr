@@ -25,6 +25,16 @@
 		compatible = "mmio-sram";
 	};
 
+	sram2a:memory@20030000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+	};
+
+	sram2b:memory@20038000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+	};
+
 	soc {
 		flash-controller@58004000 {
 			compatible = "st,stm32wb-flash-controller";

@@ -529,6 +529,15 @@ SECTIONS
 
 #endif /* DT_CCM_BASE_ADDRESS */
 
+#if defined(CONFIG_BT_STM32_IPM) && defined(DT_SRAM2_BASE_ADDRESS)
+
+   MAPPING_TABLE (NOLOAD) : {_sMAPPING_TABLE = .; *(MAPPING_TABLE); _eMAPPING_TABLE = .; } >SRAM1
+   MB_MEM1 (NOLOAD) : { _sMB_MEM1 = .; *(MB_MEM1); _eMB_MEM1 = .; } >SRAM1
+   MB_MEM2 (NOLOAD) : { _sMB_MEM2 = .; *(MB_MEM2); _eMB_MEM2 = .; } >SRAM2
+
+#endif /* CONFIG_BT_STM32_IPM & DT_SRAM2_BASE_ADDRESS */
+
+
 #ifdef CONFIG_CUSTOM_SECTIONS_LD
 /* Located in project source directory */
 #include <custom-sections.ld>
