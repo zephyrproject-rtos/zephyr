@@ -736,7 +736,8 @@ def main():
         for case in failed_cases:
             # not clear why junitxml doesn't clearly expose the most
             # important part of its underlying etree.Element
-            errmsg = case.result._elem.text.strip()
+            errmsg = case.result._elem.text
+            errmsg = errmsg.strip() if errmsg else case.result.message
             logging.error("Test %s failed: %s", case.name, errmsg)
 
     sys.exit(errors)
