@@ -156,14 +156,7 @@ struct dhcp_msg {
 
 static struct k_sem test_lock;
 
-static void test_result(bool pass)
-{
-	if (pass) {
-		TC_END_REPORT(TC_PASS);
-	} else {
-		TC_END_REPORT(TC_FAIL);
-	}
-}
+#define WAIT_TIME K_SECONDS(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX + 1)
 
 struct net_dhcpv4_context {
 	u8_t mac_addr[sizeof(struct net_eth_addr)];
@@ -207,10 +200,7 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, u32_t xid)
 {
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_alloc_with_buffer(iface,
-					sizeof(struct net_ipv4_hdr) +
-					sizeof(struct net_udp_hdr) +
-					sizeof(offer), AF_INET,
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(offer), AF_INET,
 					IPPROTO_UDP, K_FOREVER);
 
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
@@ -248,10 +238,7 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, u32_t xid)
 {
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_alloc_with_buffer(iface,
-					sizeof(struct net_ipv4_hdr) +
-					sizeof(struct net_udp_hdr) +
-					sizeof(offer), AF_INET,
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(offer), AF_INET,
 					IPPROTO_UDP, K_FOREVER);
 
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
@@ -287,8 +274,6 @@ fail:
 
 static int parse_dhcp_message(struct net_pkt *pkt, struct dhcp_msg *msg)
 {
-	net_pkt_cursor_init(pkt);
-
 	/* Skip IPv4 and UDP headers */
 	if (net_pkt_skip(pkt, NET_IPV4UDPH_LEN)) {
 		return 0;
@@ -399,22 +384,19 @@ static struct net_mgmt_event_callback rx_cb;
 static void receiver_cb(struct net_mgmt_event_callback *cb,
 			u32_t nm_event, struct net_if *iface)
 {
-	k_sem_give(&test_lock);
-
 	if (nm_event != NET_EVENT_IPV4_ADDR_ADD) {
 		/* Spurious callback. */
-		test_result(false);
 		return;
 	}
 
-	test_result(true);
+	k_sem_give(&test_lock);
 }
 
 void test_dhcp(void)
 {
 	struct net_if *iface;
 
-	k_sem_init(&test_lock, 1, UINT_MAX);
+	k_sem_init(&test_lock, 0, UINT_MAX);
 
 	net_mgmt_init_event_callback(&rx_cb, receiver_cb,
 				     NET_EVENT_IPV4_ADDR_ADD);
@@ -423,13 +405,14 @@ void test_dhcp(void)
 
 	iface = net_if_get_default();
 	if (!iface) {
-		TC_PRINT("Interface not available n");
-		return;
+		zassert_true(false, "Interface not available");
 	}
 
 	net_dhcpv4_start(iface);
 
-	k_sem_take(&test_lock, K_FOREVER);
+	if (k_sem_take(&test_lock, WAIT_TIME)) {
+		zassert_true(false, "Timeout while waiting");
+	}
 }
 
 /**test case main entry */
