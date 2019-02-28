@@ -486,7 +486,7 @@ enum net_verdict net_ipv6_input(struct net_pkt *pkt, bool is_loopback)
 
 	nexthdr = hdr->nexthdr;
 	while (!net_ipv6_is_nexthdr_upper_layer(nexthdr)) {
-		u16_t exthdr_len;
+		int exthdr_len;
 
 		NET_DBG("IPv6 next header %d", nexthdr);
 
