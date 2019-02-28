@@ -78,14 +78,12 @@ config X86_NO_MELTDOWN
 
 config X86_NO_SPECTRE_V2
 	bool
-	default y
 	help
 	  This hidden option should be set on a per-SOC basis to indicate that
 	  a particular SOC is not vulnerable to the Spectre V2 CPU vulnerability.
 
 config X86_NO_SPECTRE_V4
 	bool
-	default y
 	help
 	  This hidden option should be set on a per-SOC basis to indicate that
 	  a particular SOC is not vulnerable to the Spectre V4 CPU vulnerability.
