@@ -94,5 +94,6 @@ source "drivers/can/Kconfig.mcan"
 source "drivers/can/Kconfig.rcar"
 source "drivers/can/Kconfig.loopback"
 source "drivers/can/Kconfig.net"
+source "drivers/can/Kconfig.native_posix"
 
 endif # CAN
