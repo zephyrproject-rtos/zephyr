@@ -249,6 +249,7 @@
 /subsys/net/lib/mqtt/                     @jukkar @tbursztyka
 /subsys/net/lib/coap/                     @rveerama1
 /subsys/net/lib/sockets/                  @jukkar @tbursztyka @pfalcon
+/subsys/power/                            @ramakrishnapallala @pizi-nordic
 /subsys/settings/                         @nvlsianpu
 /subsys/shell/                            @jarz-nordic @nordic-krch
 /subsys/storage/                          @nvlsianpu
