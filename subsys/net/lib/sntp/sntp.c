@@ -57,11 +57,6 @@ static s32_t parse_response(u8_t *data, u16_t len, u32_t orig_ts,
 		return -EINVAL;
 	}
 
-	if (LVM_GET_LI(pkt->lvm) > SNTP_LI_MAX) {
-		NET_DBG("Unexpected LI: %d", LVM_GET_LI(pkt->lvm));
-		return -EINVAL;
-	}
-
 	if (LVM_GET_MODE(pkt->lvm) != SNTP_MODE_SERVER) {
 		/* For unicast and manycast, server should return 4.
 		 * For broadcast (which is not supported now), server should
