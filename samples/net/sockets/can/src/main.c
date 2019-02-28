@@ -120,9 +120,9 @@ static int setup_socket(void)
 
 	ret = bind(fd, (struct sockaddr *)&can_addr, sizeof(can_addr));
 	if (ret < 0) {
-		ret = errno;
+		ret = -errno;
 		LOG_ERR("Cannot bind CAN socket (%d)", -ret);
-		return -ret;
+		goto cleanup;
 	}
 
 	setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &filter, sizeof(filter));
@@ -133,13 +133,19 @@ static int setup_socket(void)
 				 (k_thread_entry_t)tx, INT_TO_POINTER(fd),
 				 NULL, NULL, PRIORITY, 0, K_SECONDS(1));
 	if (!tx_tid) {
+		ret = -ENOENT;
+		errno = -ret;
 		LOG_ERR("Cannot create TX thread!");
-		return -ENOENT;
+		goto cleanup;
 	}
 
 	LOG_DBG("Started socket CAN TX thread");
 
 	return fd;
+
+cleanup:
+	(void)close(fd);
+	return ret;
 }
 
 void main(void)
