@@ -26,7 +26,7 @@
  */
 unsigned char sys_pm_idle_exit_notify;
 
-#if defined(CONFIG_SYS_POWER_LOW_POWER_STATES)
+#if defined(CONFIG_SYS_POWER_SLEEP_STATES)
 void __attribute__((weak)) sys_resume(void)
 {
 }
@@ -74,7 +74,7 @@ static void sys_power_save_idle(void)
 #endif
 
 	set_kernel_idle_time_in_ticks(ticks);
-#if (defined(CONFIG_SYS_POWER_LOW_POWER_STATES) || \
+#if (defined(CONFIG_SYS_POWER_SLEEP_STATES) || \
 	defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
 
 	sys_pm_idle_exit_notify = 1U;
@@ -104,7 +104,7 @@ static void sys_power_save_idle(void)
 
 void z_sys_power_save_idle_exit(s32_t ticks)
 {
-#if defined(CONFIG_SYS_POWER_LOW_POWER_STATES)
+#if defined(CONFIG_SYS_POWER_SLEEP_STATES)
 	/* Some CPU low power states require notification at the ISR
 	 * to allow any operations that needs to be done before kernel
 	 * switches task or processes nested interrupts. This can be
