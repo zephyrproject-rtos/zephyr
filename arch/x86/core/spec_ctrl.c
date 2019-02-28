@@ -14,7 +14,7 @@
 
 #define CPUID_EXTENDED_FEATURES_LVL 7
 
-#define CPUID_SPEC_CTRL BIT(26)
+#define CPUID_SPEC_CTRL BIT(31)
 #define SPEC_CTRL_SSBD BIT(2)
 
 static int
