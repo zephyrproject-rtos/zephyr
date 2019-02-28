@@ -91,6 +91,27 @@ class DTFlash(DTDirective):
 
         insert_defs("DT_FLASH_AREA", prop_def, prop_alias)
 
+    def _extract_partition_dev(self, node_path):
+        # Extract a per partition dev name, something like:
+        # #define DT_FLASH_AREA_IMAGE_0_DEV="FLASH_CTRL"
+
+        # For now assume node_path is something like:
+        # /flash-controller@4001E000/flash@0/partitions/partition@fc000
+        # first we go up 2 levels to get the flash, check its compat
+        #
+        # The flash controller might be the flash itself (for cases like NOR
+        # flashes), for the case of 'soc-nv-flash' we assume its the parent
+        # of the flash node.
+        ctrl_addr = get_parent_path(get_parent_path(node_path))
+        if get_compat(ctrl_addr) == 'soc-nv-flash':
+            ctrl_addr = get_parent_path(ctrl_addr)
+
+        partition_name = reduced[node_path]['props']['label']
+        label = self.get_label_string(["DT_FLASH_AREA", partition_name, "DEV"])
+        name = '"{}"'.format(reduced[ctrl_addr]['props']['label'])
+
+        insert_defs("DT_FLASH_AREA_DEV", {label: name}, {})
+
     def _create_legacy_label(self, prop_alias, label):
         prop_alias[label.lstrip('DT_')] = label
 
@@ -100,6 +121,7 @@ class DTFlash(DTDirective):
         node = reduced[node_path]
 
         self._extract_partition(node_path)
+        self._extract_partition_dev(node_path)
 
         partition_name = node['props']['label']
         partition_sectors = node['props']['reg']
