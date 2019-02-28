@@ -88,7 +88,7 @@
 	status ="ok";
 };
 
-&uart0 {
+arduino_serial: &uart0 {
 	status = "ok";
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
@@ -98,7 +98,7 @@
 	cts-pin = <7>;
 };
 
-&i2c0 {
+arduino_i2c: &i2c0 {
 	status = "ok";
 	sda-pin = <26>;
 	scl-pin = <27>;
@@ -125,7 +125,7 @@
 	miso-pin = <25>;
 };
 
-&spi1 {
+arduino_spi: &spi1 {
 	status = "ok";
 	sck-pin = <31>;
 	mosi-pin = <30>;
