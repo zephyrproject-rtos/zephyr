@@ -16,12 +16,9 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(os);
 
-#ifdef CONFIG_USERSPACE
-K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
-#endif
-
 #if (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
 #ifdef CONFIG_USERSPACE
+K_APPMEM_PARTITION_DEFINE(z_malloc_partition);
 #define POOL_SECTION K_APP_DMEM_SECTION(z_malloc_partition)
 #else
 #define POOL_SECTION .data

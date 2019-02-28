@@ -301,11 +301,15 @@ void main(void)
 {
 #ifdef CONFIG_USERSPACE
 	struct k_mem_partition *parts[] = {
-		&ztest_mem_partition,
+#ifdef Z_LIBC_PARTITION_EXISTS
 		/* C library globals, stack canary storage, etc */
 		&z_libc_partition,
+#endif
+#ifdef Z_MALLOC_PARTITION_EXISTS
 		/* Required for access to malloc arena */
-		&z_malloc_partition
+		&z_malloc_partition,
+#endif
+		&ztest_mem_partition
 	};
 
 	/* Ztests just have one memory domain with one partition.
