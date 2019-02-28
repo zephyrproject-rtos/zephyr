@@ -737,7 +737,7 @@ out:
 extern char __app_shmem_regions_start[];
 extern char __app_shmem_regions_end[];
 
-static int app_shmem_bss_zero(struct device *unused)
+void z_app_shmem_bss_zero(void)
 {
 	struct z_app_region *region, *end;
 
@@ -747,11 +747,7 @@ static int app_shmem_bss_zero(struct device *unused)
 	for ( ; region < end; region++) {
 		(void)memset(region->bss_start, 0, region->bss_size);
 	}
-
-	return 0;
 }
-
-SYS_INIT(app_shmem_bss_zero, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 /*
  * Default handlers if otherwise unimplemented
