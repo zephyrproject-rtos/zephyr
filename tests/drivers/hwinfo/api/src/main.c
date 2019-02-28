@@ -34,7 +34,7 @@ static void test_device_id_get(void)
 {
 	u8_t buffer_1[BUFFER_LENGTH];
 	u8_t buffer_2[BUFFER_LENGTH];
-	size_t length_read_1, length_read_2;
+	ssize_t length_read_1, length_read_2;
 	int i;
 
 	length_read_1 = hwinfo_get_device_id(buffer_1, 1);
