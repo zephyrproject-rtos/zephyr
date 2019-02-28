@@ -119,14 +119,14 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 
 			/* loop over all the possible page tables for the
 			 * required size. If the pde is not the last one
-			 * then the last pte would be 1023. So each pde
+			 * then the last pte would be 511. So each pde
 			 * will be using all the page table entires except
 			 * for the last pde. For the last pde, pte is
 			 * calculated using the last memory address
 			 * of the buffer.
 			 */
 			if (pde != end_pde_num) {
-				ending_pte_num = 1023U;
+				ending_pte_num = 511U;
 			} else {
 				ending_pte_num =
 					MMU_PAGE_NUM((char *)addr + size - 1);
