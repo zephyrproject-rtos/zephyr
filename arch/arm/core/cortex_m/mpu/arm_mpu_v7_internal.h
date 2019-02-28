@@ -249,7 +249,7 @@ static int _mpu_configure_regions(const struct k_mem_partition
 	bool do_sanity_check)
 {
 	int i;
-	u8_t reg_index = start_reg_index;
+	int reg_index = start_reg_index;
 
 	for (i = 0; i < regions_num; i++) {
 		if (regions[i].size == 0) {
@@ -316,7 +316,7 @@ static int _mpu_configure_static_mpu_regions(const struct k_mem_partition
 static int _mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
 		dynamic_regions[], u8_t regions_num)
 {
-	u32_t mpu_reg_index = static_regions_num;
+	int mpu_reg_index = static_regions_num;
 
 	/* In ARMv7-M architecture the dynamic regions are
 	 * programmed on top of existing SRAM region configuration.
