@@ -54,7 +54,7 @@ static void ccompare_isr(void *arg)
 	}
 
 	k_spin_unlock(&lock, key);
-	z_clock_announce(dticks);
+	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
 }
 
 /* The legacy Xtensa platform code handles the timer interrupt via a
