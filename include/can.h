@@ -245,7 +245,7 @@ typedef int (*can_configure_t)(struct device *dev, enum can_mode mode,
  * @retval 0 If successful.
  * @retval CAN_TX_* on failure.
  */
-typedef int (*can_send_t)(struct device *dev, struct zcan_frame *msg,
+typedef int (*can_send_t)(struct device *dev, const struct zcan_frame *msg,
 			  s32_t timeout, can_tx_callback_t callback_isr);
 
 
@@ -313,10 +313,11 @@ struct can_driver_api {
 };
 
 
-__syscall int can_send(struct device *dev, struct zcan_frame *msg,
+__syscall int can_send(struct device *dev, const struct zcan_frame *msg,
 		       s32_t timeout, can_tx_callback_t callback_isr);
 
-static inline int _impl_can_send(struct device *dev, struct zcan_frame *msg,
+static inline int _impl_can_send(struct device *dev,
+				 const struct zcan_frame *msg,
 				 s32_t timeout, can_tx_callback_t callback_isr)
 {
 	const struct can_driver_api *api = dev->driver_api;
@@ -344,7 +345,7 @@ static inline int _impl_can_send(struct device *dev, struct zcan_frame *msg,
  * @retval -EIO General input / output error.
  * @retval -EINVAL if length > 8.
  */
-static inline int can_write(struct device *dev, u8_t *data, u8_t length,
+static inline int can_write(struct device *dev, const u8_t *data, u8_t length,
 			    u32_t id, enum can_rtr rtr, s32_t timeout)
 {
 	struct zcan_frame msg;

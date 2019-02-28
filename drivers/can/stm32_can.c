@@ -319,8 +319,8 @@ static int can_stm32_init(struct device *dev)
 	return 0;
 }
 
-int can_stm32_send(struct device *dev, struct zcan_frame *msg, s32_t timeout,
-		   can_tx_callback_t callback)
+int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
+		   s32_t timeout, can_tx_callback_t callback)
 {
 	const struct can_stm32_config *cfg = DEV_CFG(dev);
 	struct can_stm32_data *data = DEV_DATA(dev);
