@@ -83,7 +83,7 @@ void rtc1_nrf_isr(void *arg)
 	}
 
 	irq_unlock(key);
-	z_clock_announce(dticks);
+	z_clock_announce(IS_ENABLED(CONFIG_TICKLESS_KERNEL) ? dticks : 1);
 }
 
 int z_clock_driver_init(struct device *device)
