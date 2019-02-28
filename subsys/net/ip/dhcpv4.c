@@ -361,8 +361,9 @@ fail:
 	}
 
 	return iface->config.dhcpv4.xid %
-		(DHCPV4_INITIAL_DELAY_MAX - DHCPV4_INITIAL_DELAY_MIN) +
-		DHCPV4_INITIAL_DELAY_MIN;
+			(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX -
+			 DHCPV4_INITIAL_DELAY_MIN) +
+			DHCPV4_INITIAL_DELAY_MIN;
 }
 
 static void dhcpv4_update_timeout_work(u32_t timeout)
@@ -1058,8 +1059,9 @@ void net_dhcpv4_start(struct net_if *iface)
 		 * discover.
 		 */
 		timeout = entropy %
-			(DHCPV4_INITIAL_DELAY_MAX - DHCPV4_INITIAL_DELAY_MIN) +
-			DHCPV4_INITIAL_DELAY_MIN;
+				(CONFIG_NET_DHCPV4_INITIAL_DELAY_MAX -
+				  DHCPV4_INITIAL_DELAY_MIN) +
+				DHCPV4_INITIAL_DELAY_MIN;
 
 		NET_DBG("wait timeout=%us", timeout);
 
