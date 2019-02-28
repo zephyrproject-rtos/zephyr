@@ -15,7 +15,7 @@
 # -r  the remote to rebase on
 #
 # The script can be run locally using for exmaple:
-# ./scripts/ci/run_ci.sh -b master -r upstream  -l
+# ./scripts/ci/run_ci.sh -b master -r origin  -l
 
 set -xe
 
@@ -89,7 +89,7 @@ if [ -n "$MAIN_CI" ]; then
 
 	if [ -z "$BRANCH" ]; then
 		echo "No base branch given"
-		exit
+		exit 1
 	else
 		COMMIT_RANGE=$REMOTE/${BRANCH}..HEAD
 		echo "Commit range:" ${COMMIT_RANGE}
@@ -245,9 +245,10 @@ if [ -n "$MAIN_CI" ]; then
 		# builder 1.  For now, this is just done for the west
 		# extension commands, but additional directories which
 		# run pytest could go here too.
+		PYTEST=$(type -p pytest-3 || echo "pytest")
 		mkdir -p $(dirname ${WEST_COMMANDS_RESULTS_FILE})
 		WEST_SRC=$(west list --format='{abspath}' west)/src
-		PYTHONPATH=./scripts/west_commands:$WEST_SRC pytest \
+		PYTHONPATH=./scripts/west_commands:$WEST_SRC "${PYTEST}" \
 			  --junitxml=${WEST_COMMANDS_RESULTS_FILE} \
 			  ./scripts/west_commands/tests
 	else
