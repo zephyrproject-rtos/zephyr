@@ -26,17 +26,17 @@ extern "C" {
 enum power_states {
 	SYS_POWER_STATE_AUTO	= (-2),
 	SYS_POWER_STATE_ACTIVE	= (-1),
-#ifdef CONFIG_SYS_POWER_LOW_POWER_STATES
-# ifdef CONFIG_HAS_STATE_LOW_POWER_1
-	SYS_POWER_STATE_LOW_POWER_1,
+#ifdef CONFIG_SYS_POWER_SLEEP_STATES
+# ifdef CONFIG_HAS_STATE_SLEEP_1
+	SYS_POWER_STATE_SLEEP_1,
 # endif
-# ifdef CONFIG_HAS_STATE_LOW_POWER_2
-	SYS_POWER_STATE_LOW_POWER_2,
+# ifdef CONFIG_HAS_STATE_SLEEP_2
+	SYS_POWER_STATE_SLEEP_2,
 # endif
-# ifdef CONFIG_HAS_STATE_LOW_POWER_3
-	SYS_POWER_STATE_LOW_POWER_3,
+# ifdef CONFIG_HAS_STATE_SLEEP_3
+	SYS_POWER_STATE_SLEEP_3,
 # endif
-#endif /* CONFIG_SYS_POWER_LOW_POWER_STATES */
+#endif /* CONFIG_SYS_POWER_SLEEP_STATES */
 
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
 # ifdef CONFIG_HAS_STATE_DEEP_SLEEP_1
@@ -65,29 +65,29 @@ extern unsigned char sys_pm_idle_exit_notify;
  */
 
 /**
- * @brief Check if particular power state is a low power state.
+ * @brief Check if particular power state is a sleep state.
  *
- * This function returns true if given power state is a low power state.
+ * This function returns true if given power state is a sleep state.
  */
-static inline bool sys_pm_is_low_power_state(enum power_states state)
+static inline bool sys_pm_is_sleep_state(enum power_states state)
 {
 	bool ret = true;
 
 	switch (state) {
-#ifdef CONFIG_SYS_POWER_LOW_POWER_STATES
-# ifdef CONFIG_HAS_STATE_LOW_POWER_1
-	case SYS_POWER_STATE_LOW_POWER_1:
+#ifdef CONFIG_SYS_POWER_SLEEP_STATES
+# ifdef CONFIG_HAS_STATE_SLEEP_1
+	case SYS_POWER_STATE_SLEEP_1:
 		break;
 # endif
-# ifdef CONFIG_HAS_STATE_LOW_POWER_2
-	case SYS_POWER_STATE_LOW_POWER_2:
+# ifdef CONFIG_HAS_STATE_SLEEP_2
+	case SYS_POWER_STATE_SLEEP_2:
 		break;
 # endif
-# ifdef CONFIG_HAS_STATE_LOW_POWER_3
-	case SYS_POWER_STATE_LOW_POWER_3:
+# ifdef CONFIG_HAS_STATE_SLEEP_3
+	case SYS_POWER_STATE_SLEEP_3:
 		break;
 # endif
-#endif /* CONFIG_SYS_POWER_LOW_POWER_STATES */
+#endif /* CONFIG_SYS_POWER_SLEEP_STATES */
 	default:
 		ret = false;
 		break;
@@ -290,11 +290,11 @@ extern enum power_states sys_suspend(s32_t ticks);
 extern void sys_set_power_state(enum power_states state);
 
 /**
- * @brief Do any SoC or architecture specific post ops after low power states.
+ * @brief Do any SoC or architecture specific post ops after sleep state exits.
  *
  * This function is a place holder to do any operations that may
- * be needed to be done after low power exits. Currently it enables
- * interrupts after resuming from low power state. In future, the enabling
+ * be needed to be done after sleep state exits. Currently it enables
+ * interrupts after resuming from sleep state. In future, the enabling
  * of interrupts may be moved into the kernel.
  */
 extern void sys_power_state_post_ops(enum power_states state);
@@ -308,10 +308,10 @@ extern void sys_power_state_post_ops(enum power_states state);
 extern void sys_pm_notify_lps_entry(enum power_states state);
 
 /**
- * @brief Application defined function for low power state exit
+ * @brief Application defined function for sleep state exit
  *
  * Application defined function for doing any target specific operations
- * for low power state exit.
+ * for sleep state exit.
  */
 extern void sys_pm_notify_lps_exit(enum power_states state);
 

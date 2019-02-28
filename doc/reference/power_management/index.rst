@@ -24,9 +24,9 @@ Terminology
    The CPU and clocks are powered on. This is the normal operating state when
    the system is running.
 
-:dfn:`Low Power State`
-   Refers to any one of the low power states supported by the SoC. The SoC is
-   usually powered on while the clocks are power gated.
+:dfn:`Sleep State`
+   Some of the SoC clocks are gated. The CPU is stopped but does not lose
+   execution context. Configuration of the peripherals is preserved.
 
 :dfn:`Deep Sleep State`
    The SoC is power gated and loses context. Most peripherals would also be
@@ -172,15 +172,16 @@ The power management subsystem classifies power management schemes
 into two categories based on whether the CPU loses execution context during the
 power state transition.
 
-* Low Power State
+* Sleep State
 * Deep Sleep State
 
-Low Power State
-===============
+Sleep State
+===========
 
-CPU does not lose execution context. Devices also do not lose power while
-entering power states in this category. The wake latencies of power states
-in this category are relatively low.
+CPU is stopped but does not lose execution context. Some of the SoC clocks are
+gated. Configuration of the peripherals is preserved but some of them may be no
+longer functional. Execution will resume at the place it stopped. The wake
+latencies of power states in this category are relatively low.
 
 Deep Sleep State
 ================
@@ -190,7 +191,7 @@ OS startup code or at a resume point determined by a bootloader that supports
 deep sleep resume. Depending on the SOC's implementation of the power saving
 feature, it may turn off power to most devices. RAM may be retained by some
 implementations, while others may remove power from RAM saving considerable
-power. Power states in this category save more power than Low Power states
+power. Power states in this category save more power than Sleep states
 and would have higher wake latencies.
 
 Device Power Management Infrastructure
@@ -523,9 +524,9 @@ the following configuration flags.
 
    This flag enables the tickless idle power saving feature.
 
-:option:`CONFIG_SYS_POWER_LOW_POWER_STATES`
+:option:`CONFIG_SYS_POWER_SLEEP_STATES`
 
-   This flag enables support for the Low Power states.
+   This flag enables support for the Sleep states.
 
 :option:`CONFIG_SYS_POWER_DEEP_SLEEP_STATES`
 

@@ -60,14 +60,14 @@ static void _deep_sleep(enum power_states state)
 void sys_set_power_state(enum power_states state)
 {
 	switch (state) {
-#if (defined(CONFIG_SYS_POWER_LOW_POWER_STATES))
-	case SYS_POWER_STATE_LOW_POWER_1:
+#if (defined(CONFIG_SYS_POWER_SLEEP_STATES))
+	case SYS_POWER_STATE_SLEEP_1:
 		qm_power_cpu_c1();
 		break;
-	case SYS_POWER_STATE_LOW_POWER_2:
+	case SYS_POWER_STATE_SLEEP_2:
 		qm_power_cpu_c2();
 		break;
-	case SYS_POWER_STATE_LOW_POWER_3:
+	case SYS_POWER_STATE_SLEEP_3:
 		qm_power_cpu_c2lp();
 		break;
 #endif
@@ -85,11 +85,11 @@ void sys_set_power_state(enum power_states state)
 void sys_power_state_post_ops(enum power_states state)
 {
 	switch (state) {
-#if (defined(CONFIG_SYS_POWER_LOW_POWER_STATES))
-	case SYS_POWER_STATE_LOW_POWER_3:
+#if (defined(CONFIG_SYS_POWER_SLEEP_STATES))
+	case SYS_POWER_STATE_SLEEP_3:
 		*_REG_TIMER_ICR = 1U;
-	case SYS_POWER_STATE_LOW_POWER_2:
-	case SYS_POWER_STATE_LOW_POWER_1:
+	case SYS_POWER_STATE_SLEEP_2:
+	case SYS_POWER_STATE_SLEEP_1:
 		__asm__ volatile("sti");
 		break;
 #endif
