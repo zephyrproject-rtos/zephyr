@@ -148,7 +148,7 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 			break;
 		}
 
-		eem_hdr = sys_le16_to_cpu(*(u16_t *)ptr);
+		eem_hdr = sys_get_le16(ptr);
 		eem_size = eem_pkt_size(eem_hdr);
 
 		if (eem_size + sizeof(u16_t) > size) {
