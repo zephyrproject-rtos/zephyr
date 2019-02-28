@@ -185,6 +185,14 @@ extern FUNC_NORETURN void _arch_syscall_oops(void *ssf);
  * @return Length of the string, not counting NULL byte, up to maxsize
  */
 extern size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err);
+
+/**
+ * @brief Zero out BSS sections for application shared memory
+ *
+ * This isn't handled by any platform bss zeroing, and is called from
+ * _Cstart() if userspace is enabled.
+ */
+extern void z_app_shmem_bss_zero(void);
 #endif /* CONFIG_USERSPACE */
 
 /**

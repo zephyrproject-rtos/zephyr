@@ -496,6 +496,10 @@ FUNC_NORETURN void _Cstart(void)
 	_current = &dummy_thread;
 #endif
 
+#ifdef CONFIG_USERSPACE
+	z_app_shmem_bss_zero();
+#endif
+
 	/* perform basic hardware initialization */
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_1);
 	_sys_device_do_config_level(_SYS_INIT_LEVEL_PRE_KERNEL_2);
