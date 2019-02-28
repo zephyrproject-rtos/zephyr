@@ -1470,6 +1470,7 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
 	struct bt_conn *conn = user_data;
 	struct _bt_gatt_ccc *ccc;
+	bool value_used;
 	size_t i;
 
 	/* Check attribute user_data must be of type struct _bt_gatt_ccc */
@@ -1483,6 +1484,9 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 	if (!ccc->value) {
 		return BT_GATT_ITER_CONTINUE;
 	}
+
+	/* Checking if all values are disabled */
+	value_used = false;
 
 	for (i = 0; i < ccc->cfg_len; i++) {
 		struct bt_gatt_ccc_cfg *cfg = &ccc->cfg[i];
@@ -1500,8 +1504,7 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 			tmp = bt_conn_lookup_addr_le(cfg->id, &cfg->peer);
 			if (tmp) {
 				if (tmp->state == BT_CONN_CONNECTED) {
-					bt_conn_unref(tmp);
-					return BT_GATT_ITER_CONTINUE;
+					value_used = true;
 				}
 
 				bt_conn_unref(tmp);
@@ -1518,13 +1521,15 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 		}
 	}
 
-	/* Reset value while disconnected */
-	(void)memset(&ccc->value, 0, sizeof(ccc->value));
-	if (ccc->cfg_changed) {
-		ccc->cfg_changed(attr, ccc->value);
-	}
+	/* If all values are now disabled, reset value while disconnected */
+	if (!value_used) {
+		ccc->value = 0;
+		if (ccc->cfg_changed) {
+			ccc->cfg_changed(attr, ccc->value);
+		}
 
-	BT_DBG("ccc %p reseted", ccc);
+		BT_DBG("ccc %p reseted", ccc);
+	}
 
 	return BT_GATT_ITER_CONTINUE;
 }
