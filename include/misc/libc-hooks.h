@@ -37,12 +37,23 @@ __syscall size_t _zephyr_fwrite(const void *_MLIBC_RESTRICT ptr, size_t size,
 #endif /* CONFIG_NEWLIB_LIBC */
 
 #ifdef CONFIG_USERSPACE
+#if defined(CONFIG_NEWLIB_LIBC) || (CONFIG_MINIMAL_LIBC_MALLOC_ARENA_SIZE > 0)
+#define Z_MALLOC_PARTITION_EXISTS 1
+
 /* Memory partition containing the libc malloc arena */
 extern struct k_mem_partition z_malloc_partition;
+#endif
+
+#if defined(CONFIG_NEWLIB_LIBC) || defined(CONFIG_STACK_CANARIES)
+/* Minimal libc has no globals. We do put the stack canary global in the
+ * libc partition since it is not worth placing in a partition of its own.
+ */
+#define Z_LIBC_PARTITION_EXISTS 1
 
 /* C library globals, except the malloc arena */
 extern struct k_mem_partition z_libc_partition;
 #endif
+#endif /* CONFIG_USERSPACE */
 
 #include <syscalls/libc-hooks.h>
 
