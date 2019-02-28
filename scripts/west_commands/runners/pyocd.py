@@ -71,7 +71,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
                             help='path to pyocd tool, default is pyocd')
         parser.add_argument('--flash-opt', default=[], action='append',
                             help='''Additional options for pyocd flash,
-                            e.g. -ce to chip erase''')
+                            e.g. \'-e chip\' to chip erase''')
         parser.add_argument('--frequency',
                             help='SWD clock frequency in Hz')
         parser.add_argument('--gdb-port', default=DEFAULT_PYOCD_GDB_PORT,
@@ -125,6 +125,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
         cmd = ([self.pyocd] +
                ['flash'] +
+               ['-e', 'sector'] +
                self.flash_addr_args +
                self.daparg_args +
                self.target_args +
