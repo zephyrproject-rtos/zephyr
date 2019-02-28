@@ -1117,8 +1117,6 @@ int net_context_connect(struct net_context *context,
 		goto unlock;
 	}
 
-	ret = 0;
-
 unlock:
 	k_mutex_unlock(&context->lock);
 
