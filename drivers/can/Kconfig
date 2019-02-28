@@ -37,5 +37,6 @@ config CAN_1
 
 source "drivers/can/Kconfig.stm32"
 source "drivers/can/Kconfig.mcp2515"
+source "drivers/can/Kconfig.native_posix"
 
 endif # CAN
