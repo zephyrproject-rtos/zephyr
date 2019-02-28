@@ -1163,15 +1163,15 @@ file.
    the configuration files specified in it are merged and used as the
    application-specific settings.
 
-   Alternatively, an application may define a CMake command, macro, or function
-   called ``set_conf_file``, which is invoked and is expected to set
-   :makevar:`CONF_FILE`.
-
 2. Otherwise (if (1.) does not apply), if a file :file:`prj_BOARD.conf` exists
    in the application directory, where :makevar:`BOARD` is the BOARD value set
    earlier, the settings in it are used.
 
-3. Otherwise, if a file :file:`prj.conf` exists in the application directory,
+3. Otherwise (if (2.) does not apply), if a file :file:`boards/BOARD.conf` exists
+   in the application directory, where :makevar:`BOARD` is the BOARD value set
+   earlier, the settings in it are merged with :file:`prj.conf` and used.
+
+4. Otherwise, if a file :file:`prj.conf` exists in the application directory,
    the settings in it are used.
 
 Configuration settings that have not been specified fall back on their
