@@ -63,4 +63,6 @@ Z_SYSCALL_HANDLER(can_detach, dev, filter_id) {
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, detach));
 
 	_impl_can_detach((struct device *)dev, (int)filter_id);
+
+	return 0;
 }
