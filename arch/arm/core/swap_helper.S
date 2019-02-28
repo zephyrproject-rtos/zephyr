@@ -116,8 +116,8 @@ SECTION_FUNC(TEXT, __pendsv)
 
     /*
      * Clear PendSV so that if another interrupt comes in and
-     * decides, with the new kernel state baseed on the new thread
-     * being context-switched in, that it needs to reschedules, it
+     * decides, with the new kernel state based on the new thread
+     * being context-switched in, that it needs to reschedule, it
      * will take, but that previously pended PendSVs do not take,
      * since they were based on the previous kernel state and this
      * has been handled.
@@ -335,7 +335,7 @@ SECTION_FUNC(TEXT, __svc)
         mrsne r0, PSP   /* thread mode, stack frame is on PSP */
 
     ldr r1, [r0, #24]   /* grab address of PC from stack frame */
-    /* SVC is a two-byte instruction, point to it and read  encoding */
+    /* SVC is a two-byte instruction, point to it and read encoding */
     ldrh r1, [r1, #-2]
 
    /*
@@ -343,7 +343,7 @@ SECTION_FUNC(TEXT, __svc)
     * 0: Unused
     * 1: irq_offload (if configured)
     * 2: kernel panic or oops (software generated fatal exception)
-    * 3: System call
+    * 3: System call (if user mode supported)
     * Planned implementation of system calls for memory protection will
     * expand this case.
     */
@@ -386,7 +386,7 @@ _oops:
      * when the SVC returns via the bx lr.
      *
      * There is some trickery involved here because we have to preserve
-     * the original LR value so that we can return back to the caller of
+     * the original PC value so that we can return back to the caller of
      * the SVC.
      *
      * On SVC exeption, the stack looks like the following:
@@ -405,7 +405,7 @@ _oops:
 _do_syscall:
     ldr r8, [r0, #24]   /* grab address of PC from stack frame */
     ldr r1, =_arm_do_syscall
-    str r1, [r0, #24]   /* overwrite the LR to point to _arm_do_syscall */
+    str r1, [r0, #24]   /* overwrite the PC to point to _arm_do_syscall */
 
     /* validate syscall limit, only set priv mode if valid */
     ldr ip, =K_SYSCALL_LIMIT
