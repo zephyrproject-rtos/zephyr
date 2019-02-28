@@ -3005,17 +3005,15 @@ int bt_gatt_store_ccc(u8_t id, const bt_addr_le_t *addr)
 				       (bt_addr_le_t *)addr, NULL);
 	}
 
-	if (!save.count) {
-		/* No entries to encode just clear */
+	if (save.count) {
+		str = (char *)save.store;
+		len = save.count * sizeof(*save.store);
+	} else {
+		/* No entries to encode, just clear */
 		str = NULL;
 		len = 0;
-		goto save;
 	}
 
-	str = (char *)save.store;
-	len = save.count * sizeof(*save.store);
-
-save:
 	err = settings_save_one(key, str, len);
 	if (err) {
 		BT_ERR("Failed to store CCCs (err %d)", err);
