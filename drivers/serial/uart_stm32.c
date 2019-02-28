@@ -414,8 +414,9 @@ static int uart_stm32_fifo_fill(struct device *dev, const u8_t *tx_data,
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 	u8_t num_tx = 0U;
 
-	while ((size - num_tx > 0) &&
-	       LL_USART_IsActiveFlag_TXE(UartInstance)) {
+	while (size - num_tx > 0) {
+		/* Wait TXE flag is set before sending next byte */
+		while (!LL_USART_IsActiveFlag_TXE(UartInstance));
 		/* TXE flag will be cleared with byte write to DR register */
 
 		/* Send a character (8bit , parity none) */
@@ -433,6 +434,7 @@ static int uart_stm32_fifo_read(struct device *dev, u8_t *rx_data,
 
 	while ((size - num_rx > 0) &&
 	       LL_USART_IsActiveFlag_RXNE(UartInstance)) {
+
 #if defined(CONFIG_SOC_SERIES_STM32F1X) || defined(CONFIG_SOC_SERIES_STM32F4X) \
 	|| defined(CONFIG_SOC_SERIES_STM32F2X)
 		/* Clear the interrupt */
@@ -448,6 +450,7 @@ static int uart_stm32_fifo_read(struct device *dev, u8_t *rx_data,
 		}
 
 	}
+
 	return num_rx;
 }
 
