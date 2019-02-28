@@ -338,10 +338,14 @@ elseif(DEFINED ENV{CONF_FILE})
   set(CONF_FILE $ENV{CONF_FILE})
 
 elseif(COMMAND set_conf_file)
+  message(WARNING "'set_conf_file' is deprecated, it will be removed in a future release.")
   set_conf_file()
 
 elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj_${BOARD}.conf)
   set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj_${BOARD}.conf)
+
+elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.conf)
+  set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj.conf ${APPLICATION_SOURCE_DIR}/boards/${BOARD}.conf)
 
 elseif(EXISTS   ${APPLICATION_SOURCE_DIR}/prj.conf)
   set(CONF_FILE ${APPLICATION_SOURCE_DIR}/prj.conf)
