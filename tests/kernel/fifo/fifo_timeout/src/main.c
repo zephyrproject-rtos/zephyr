@@ -124,6 +124,8 @@ static void test_thread_pend_and_timeout(void *p1, void *p2, void *p3)
 	u32_t start_time;
 	void *packet;
 
+	k_sleep(1); /* Align to ticks */
+
 	start_time = k_cycle_get_32();
 	packet = k_fifo_get(d->fifo, d->timeout);
 	zassert_true(packet == NULL, NULL);
@@ -298,6 +300,8 @@ static void test_timeout_empty_fifo(void)
 	void *packet;
 	u32_t start_time, timeout;
 
+	k_sleep(1); /* Align to ticks */
+
 	/* Test empty fifo with timeout */
 	timeout = 10U;
 	start_time = k_cycle_get_32();
@@ -348,6 +352,8 @@ static void test_timeout_fifo_thread(void)
 	void *packet, *scratch_packet;
 	struct reply_packet reply_packet;
 	u32_t start_time, timeout;
+
+	k_sleep(1); /* Align to ticks */
 
 	/*
 	 * Test fifo with some timeout and child thread that puts
