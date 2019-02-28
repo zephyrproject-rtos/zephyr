@@ -206,6 +206,52 @@ config SPI_NRFX_RAM_BUFFER_SIZE
 	  supplying buffers located in flash to the driver, otherwise such
 	  transfers will fail.
 
+choice
+	prompt "nRF SPIM MISO pin pull configuration"
+	default SPI_NRFX_SPIM_MISO_PULL_DOWN
+
+config SPI_NRFX_SPIM_MISO_NO_PULL
+	bool "no pull"
+	help
+	  Disable MISO pin pull.
+
+config SPI_NRFX_SPIM_MISO_PULL_DOWN
+	bool "pull down"
+	help
+	  Enable MISO pin pull down.
+
+config SPI_NRFX_SPIM_MISO_PULL_UP
+	bool "pull up"
+	help
+	  Enable MISO pin pull up.
+
+endchoice
+
 endif # NRFX_SPIM
+
+if NRFX_SPI
+
+choice
+	prompt "nRF SPI MISO pin pull configuration"
+	default SPI_NRFX_SPI_MISO_PULL_DOWN
+
+config SPI_NRFX_SPI_MISO_NO_PULL
+	bool "no pull"
+	help
+	  Disable MISO pin pull.
+
+config SPI_NRFX_SPI_MISO_PULL_DOWN
+	bool "pull down"
+	help
+	  Enable MISO pin pull down.
+
+config SPI_NRFX_SPI_MISO_PULL_UP
+	bool "pull up"
+	help
+	  Enable MISO pin pull up.
+
+endchoice
+
+endif # NRFX_SPI
 
 endif # SPI_NRFX
