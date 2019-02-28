@@ -16,6 +16,7 @@ LOG_MODULE_DECLARE(power);
 
 /* PM Policy based on SoC/Platform residency requirements */
 static const unsigned int pm_min_residency[] = {
+#ifdef CONFIG_SYS_POWER_LOW_POWER_STATES
 #ifdef CONFIG_HAS_STATE_LOW_POWER_1
 	CONFIG_SYS_PM_LPS_1_MIN_RES * SECS_TO_TICKS / MSEC_PER_SEC,
 #endif
@@ -27,7 +28,9 @@ static const unsigned int pm_min_residency[] = {
 #ifdef CONFIG_HAS_STATE_LOW_POWER_3
 	CONFIG_SYS_PM_LPS_3_MIN_RES * SECS_TO_TICKS / MSEC_PER_SEC,
 #endif
+#endif /* CONFIG_SYS_POWER_LOW_POWER_STATES */
 
+#ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
 #ifdef CONFIG_HAS_STATE_DEEP_SLEEP_1
 	CONFIG_SYS_PM_DEEP_SLEEP_1_MIN_RES * SECS_TO_TICKS / MSEC_PER_SEC,
 #endif
@@ -39,6 +42,7 @@ static const unsigned int pm_min_residency[] = {
 #ifdef CONFIG_HAS_STATE_DEEP_SLEEP_3
 	CONFIG_SYS_PM_DEEP_SLEEP_3_MIN_RES * SECS_TO_TICKS / MSEC_PER_SEC,
 #endif
+#endif /* CONFIG_SYS_POWER_DEEP_SLEEP_STATES */
 };
 
 enum power_states sys_pm_policy_next_state(s32_t ticks)
