@@ -286,10 +286,12 @@ static void eth_stellaris_init(struct net_if *iface)
 	dev_conf->config_func(dev);
 }
 
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
 static struct net_stats_eth *eth_stellaris_stats(struct device *dev)
 {
 	return &(DEV_DATA(dev)->stats);
 }
+#endif
 
 static int eth_stellaris_dev_init(struct device *dev)
 {
@@ -346,8 +348,10 @@ struct eth_stellaris_runtime eth_data = {
 
 static const struct ethernet_api eth_stellaris_apis = {
 	.iface_api.init	= eth_stellaris_init,
-	.get_stats = eth_stellaris_stats,
 	.send =  eth_stellaris_send,
+#if defined(CONFIG_NET_STATISTICS_ETHERNET)
+	.get_stats = eth_stellaris_stats,
+#endif
 };
 
 NET_DEVICE_INIT(eth_stellaris, DT_ETH_DRV_NAME,
