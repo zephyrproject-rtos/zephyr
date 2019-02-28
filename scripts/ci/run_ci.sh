@@ -96,9 +96,18 @@ if [ -n "$MAIN_CI" ]; then
 	fi
 	source zephyr-env.sh
 	SANITYCHECK="${ZEPHYR_BASE}/scripts/sanitycheck"
+
+	# Possibly the only record of what exact version is being tested:
+	short_git_log='git log -n 5 --oneline --decorate --abbrev=12 '
+
 	if [ -n "$PULL_REQUEST_NR" ]; then
+		$short_git_log $REMOTE/${BRANCH}
+		# Now let's pray this script is being run from a
+		# different location
+# https://stackoverflow.com/questions/3398258/edit-shell-script-while-its-running
 		git rebase $REMOTE/${BRANCH};
 	fi
+	$short_git_log
 fi
 
 function handle_coverage() {
