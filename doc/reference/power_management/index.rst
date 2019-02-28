@@ -423,6 +423,92 @@ Check Busy Status of All Devices API
 
 Checks if any device is busy. The API returns 0 if no device in the system is busy.
 
+Device Idle Power Management
+****************************
+
+
+The Device Idle Power Management framework is a Active Power
+Management mechanism which reduces the overall system Power consumtion
+by suspending the devices which are idle or not being used while the
+System is active or running.
+
+The framework uses device_set_power_state() API set the
+device power state accordingly based on the usage count.
+
+The interfaces and APIs provided by the Device Idle PM are
+designed to be generic and architecture independent.
+
+Device Idle Power Management API
+================================
+
+The Device Drivers use these APIs to perform device idle power management
+operations on the devices.
+
+Enable Device Idle Power Management of a Device API
+---------------------------------------------------
+
+.. code-block:: c
+
+   void device_pm_enable(struct device *dev);
+
+Enbles Idle Power Management of the device.
+
+Disable Device Idle Power Management of a Device API
+----------------------------------------------------
+
+.. code-block:: c
+
+   void device_pm_disable(struct device *dev);
+
+Disables Idle Power Management of the device.
+
+Resume Device asynchronously API
+--------------------------------
+
+.. code-block:: c
+
+   int device_pm_get(struct device *dev);
+
+Marks the device as being used. This API will asynchronously
+bring the device to resume state. The API returns 0 on success.
+
+Resume Device synchronously API
+-------------------------------
+
+.. code-block:: c
+
+   int device_pm_get_sync(struct device *dev);
+
+Marks the device as being used. It will bring up or resume
+the device if it is in suspended state based on the device
+usage count. This call is blocked until the device PM state
+is changed to active. The API returns 0 on success.
+
+Suspend Device asynchronously API
+---------------------------------
+
+.. code-block:: c
+
+   int device_pm_put(struct device *dev);
+
+Marks the device as being released. This API asynchronously put
+the device to suspend state if not already in suspend state.
+The API returns 0 on success.
+
+Suspend Device synchronously API
+--------------------------------
+
+.. code-block:: c
+
+   int device_pm_put_sync(struct device *dev);
+
+Marks the device as being released. It will put the device to
+suspended state if is is in active state based on the device
+usage count. This call is blocked until the device PM state
+is changed to resume. The API returns 0 on success. This
+call is blocked until the device is suspended.
+
+
 Power Management Configuration Flags
 ************************************
 
@@ -449,6 +535,10 @@ the following configuration flags.
 
    This flag is enabled if the SOC interface and the devices support device power
    management.
+
+:code:`CONFIG_DEVICE_IDLE_PM`
+
+   This flag enables the Device Idle Power Management.
 
 API Reference
 *************
