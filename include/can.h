@@ -39,19 +39,19 @@ extern "C" {
 /** send successfully */
 #define CAN_TX_OK       (0)
 /** general send error */
-#define CAN_TX_ERR      (1)
+#define CAN_TX_ERR      (-2)
 /** bus arbitration lost during sending */
-#define CAN_TX_ARB_LOST (2)
+#define CAN_TX_ARB_LOST (-3)
 /** controller is in bus off state */
-#define CAN_TX_BUS_OFF  (3)
+#define CAN_TX_BUS_OFF  (-4)
 /** unexpected error */
-#define CAN_TX_UNKNOWN  (4)
+#define CAN_TX_UNKNOWN  (-5)
 
 /** attach_* failed because there is no unused filter left*/
 #define CAN_NO_FREE_FILTER (-1)
 
 /** operation timed out*/
-#define CAN_TIMEOUT (1)
+#define CAN_TIMEOUT (-1)
 
 /**
  * @brief Statically define and initialize a can message queue.
