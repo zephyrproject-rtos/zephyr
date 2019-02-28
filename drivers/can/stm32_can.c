@@ -655,7 +655,7 @@ static inline int can_stm32_set_filter(const struct zcan_filter *filter,
 
 	do {
 		u64_t usage_shifted = (device_data->filter_usage >> filter_nr);
-		u64_t usage_demand_mask = (1U << register_demand) - 1;
+		u64_t usage_demand_mask = ((u64_t)1U << register_demand) - 1;
 		bool bank_is_empty;
 
 		bank_nr = filter_nr / 4;
