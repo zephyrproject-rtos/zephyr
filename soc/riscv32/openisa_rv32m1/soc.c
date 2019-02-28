@@ -59,6 +59,13 @@ static const scg_lpfll_config_t rv32m1_lpfll_cfg = {
 	.trimConfig = NULL,
 };
 
+void sys_arch_reboot(int type)
+{
+	ARG_UNUSED(type);
+
+	EVENT_UNIT->SLPCTRL |= EVENT_SLPCTRL_SYSRSTREQST_MASK;
+}
+
 void _arch_irq_enable(unsigned int irq)
 {
 	if (IS_ENABLED(CONFIG_MULTI_LEVEL_INTERRUPTS)) {
