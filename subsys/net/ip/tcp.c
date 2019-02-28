@@ -2338,7 +2338,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 	/*
 	 * If we receive ACK, we go to ESTABLISHED state.
 	 */
-	if (NET_TCP_FLAGS(tcp_hdr) == NET_TCP_ACK) {
+	if (NET_TCP_FLAGS(tcp_hdr) & NET_TCP_ACK) {
 		struct net_context *new_context;
 		socklen_t addrlen;
 		int ret;
