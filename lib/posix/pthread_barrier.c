@@ -11,10 +11,8 @@
 
 int pthread_barrier_wait(pthread_barrier_t *b)
 {
-	/* FIXME: This function should return PTHREAD_BARRIER_SERIAL_THREAD
-	 * for an arbitrary thread and 0 for the others.
-	 */
-	int key = irq_lock();
+	unsigned int key = irq_lock();
+	int ret = 0;
 
 	b->count++;
 
@@ -25,8 +23,10 @@ int pthread_barrier_wait(pthread_barrier_t *b)
 			_ready_one_thread(&b->wait_q);
 		}
 		_reschedule_irqlock(key);
-		return 0;
+		ret = PTHREAD_BARRIER_SERIAL_THREAD;
 	} else {
-		return _pend_curr_irqlock(key, &b->wait_q, K_FOREVER);
+		(void) _pend_curr_irqlock(key, &b->wait_q, K_FOREVER);
 	}
+
+	return ret;
 }
