@@ -464,9 +464,7 @@ static int map_credentials(int sd, const void *optval, socklen_t optlen)
  *  Remove once Zephyr has POSIX socket options defined.
  */
 #define SO_BROADCAST  (200)
-#define SO_REUSEADDR  (201)
 #define SO_SNDBUF     (202)
-#define TCP_NODELAY   (203)
 
 /* Needed to keep line lengths < 80: */
 #define _SEC_DOMAIN_VERIF SL_SO_SECURE_DOMAIN_NAME_VERIFICATION
