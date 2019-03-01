@@ -56,7 +56,7 @@ endchoice
 if SPI_0_NRF_SPI || SPI_0_NRF_SPIM || SPI_0_NRF_SPIS
 
 config SPI_0_NRF_ORC
-	hex "Over-read Character"
+	hex "SPI Port 0 over-read character"
 	range 0x00 0xff
 	default 0xff
 	help
@@ -106,7 +106,7 @@ endchoice
 if SPI_1_NRF_SPI || SPI_1_NRF_SPIM || SPI_1_NRF_SPIS
 
 config SPI_1_NRF_ORC
-	hex "Over-read Character"
+	hex "SPI Port 1 over-read character"
 	range 0x00 0xff
 	default 0xff
 	help
@@ -156,7 +156,7 @@ endchoice
 if SPI_2_NRF_SPI || SPI_2_NRF_SPIM || SPI_2_NRF_SPIS
 
 config SPI_2_NRF_ORC
-	hex "Over-read Character"
+	hex "SPI Port 2 over-read character"
 	range 0x00 0xff
 	default 0xff
 	help
@@ -197,7 +197,7 @@ endchoice
 if SPI_3_NRF_SPIM || SPI_3_NRF_SPIS
 
 config SPI_3_NRF_ORC
-	hex "Over-read Character"
+	hex "SPI Port 3 over-read character"
 	range 0x00 0xff
 	default 0xff
 	help
@@ -207,7 +207,7 @@ config SPI_3_NRF_ORC
 endif # SPI_3_NRF_SPIM || SPI_3_NRF_SPIS
 
 config SPI_3_NRF_RX_DELAY
-	int "MISO sampling delay"
+	int "SPIM3 MISO sampling delay"
 	depends on SPI_3_NRF_SPIM && SOC_NRF52840
 	range 0 7
 	default 2
@@ -221,7 +221,7 @@ endif # SPI_3 && !I2C_3 && !(SOC_SERIES_NRF91X && UART_3_NRF_UARTE)
 if NRFX_SPIM
 
 config SPI_NRFX_RAM_BUFFER_SIZE
-	int "Size of RAM buffer"
+	int "Size of RAM buffers for SPIM peripherals"
 	default 0
 	help
 	  SPIM peripherals cannot transmit data directly from flash. Therefore,
