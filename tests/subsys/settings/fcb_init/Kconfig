@@ -1,4 +1,0 @@
-config SETTINGS_FCB_FLASH_AREA
-	default $(dt_int_val,DT_FLASH_AREA_STORAGE_ID)
-
-source "Kconfig.zephyr"

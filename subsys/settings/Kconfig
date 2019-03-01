@@ -63,14 +63,6 @@ config SETTINGS_FCB_MAGIC
 	help
 	  Magic 32-bit word for to identify valid settings area
 
-config SETTINGS_FCB_FLASH_AREA
-	int "Flash area id used for settings"
-	default $(dt_int_val,DT_FLASH_AREA_STORAGE_ID)
-	depends on SETTINGS && SETTINGS_FCB
-	help
-	  Id of the Flash area where FCB instance used for settings is
-	  expected to operate.
-
 config SETTINGS_FS_DIR
 	string "Serialization directory"
 	default "/settings"
