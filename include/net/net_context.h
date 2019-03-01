@@ -405,7 +405,7 @@ enum net_sock_type net_context_get_type(struct net_context *context)
 {
 	NET_ASSERT(context);
 
-	return ((context->flags & NET_CONTEXT_TYPE) >> 6);
+	return (enum net_sock_type)((context->flags & NET_CONTEXT_TYPE) >> 6);
 }
 
 /**
