@@ -367,7 +367,7 @@ static const struct eth_config eth_config_0 = {
 	.config_func		= eth_config_0_irq,
 
 #ifdef CONFIG_ETH_DW_0_IRQ_SHARED
-	.shared_irq_dev_name	= CONFIG_ETH_DW_0_IRQ_SHARED_NAME,
+	.shared_irq_dev_name	= DT_ETH_DW_0_IRQ_SHARED_NAME,
 #endif
 };
 
