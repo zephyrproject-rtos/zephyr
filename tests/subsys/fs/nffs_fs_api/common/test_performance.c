@@ -39,7 +39,7 @@ void test_performance(void)
 {
 	char filename[16];
 	struct fs_file_t file;
-	s64_t reftime;
+	s64_t reftime = k_uptime_get();
 	u32_t delta;
 	int i;
 	int rc;
