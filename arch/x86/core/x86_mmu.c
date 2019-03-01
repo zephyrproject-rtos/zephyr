@@ -186,11 +186,28 @@ void _x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
 	__ASSERT(!(addr & MMU_PAGE_MASK), "unaligned address provided");
 	__ASSERT(!(size & MMU_PAGE_MASK), "unaligned size provided");
 
+	/* L1TF mitigation: non-present PTEs will have address fields
+	 * zeroed. Expand the mask to include address bits if we are changing
+	 * the present bit.
+	 */
+	if ((mask & MMU_PTE_P_MASK) != 0) {
+		mask |= MMU_PTE_PAGE_MASK;
+	}
+
 	while (size != 0) {
 
 		/* TODO we're not generating 2MB entries at the moment */
 		__ASSERT(X86_MMU_GET_PDE(pdpt, addr)->ps != 1, "2MB PDE found");
 		pte = X86_MMU_GET_PTE(pdpt, addr);
+
+		/* If we're setting the present bit, restore the address
+		 * field. If we're clearing it, then the address field
+		 * will be zeroed instead, mapping the PTE to the NULL page.
+		 */
+		if (((mask & MMU_PTE_P_MASK) != 0) &&
+		    ((flags & MMU_ENTRY_PRESENT) != 0)) {
+			flags |= addr;
+		}
 
 		pte->value = (pte->value & ~mask) | flags;
 		tlb_flush_page((void *)addr);

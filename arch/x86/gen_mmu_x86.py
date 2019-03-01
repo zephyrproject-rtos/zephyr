@@ -195,10 +195,12 @@ class PageMode_PAE:
         else:
             present = PAGE_ENTRY_PRESENT
 
+        binary_value = (present | read_write | user_mode | xd)
 
+        # L1TF mitigation: map non-present pages to the NULL page
+        if present:
+            binary_value |= page_table;
 
-
-        binary_value = (present | read_write | user_mode | page_table | xd)
         return binary_value
 
     def clean_up_unused_pdpte(self):
