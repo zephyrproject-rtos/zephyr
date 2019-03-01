@@ -1706,14 +1706,14 @@ static void eth0_iface_init(struct net_if *iface)
 
 	i = 0;
 	for (j = NET_PRIORITY_NC; j >= 0; --j) {
-		if (j > 7) {
-			/* No more screening registers available */
-			break;
-		}
-
 		if (priority2queue(j) == 0) {
 			/* No point to set rules for the regular queue */
 			continue;
+		}
+
+		if (i >= ARRAY_SIZE(cfg->regs->GMAC_ST2RPQ)) {
+			/* No more screening registers available */
+			break;
 		}
 
 		cfg->regs->GMAC_ST2RPQ[i++] =
