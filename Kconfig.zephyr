@@ -7,7 +7,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-source "$(PROJECT_BINARY_DIR)/Kconfig.modules"
+source "$(CMAKE_BINARY_DIR)/Kconfig.modules"
 
 # Include these first so that any properties (e.g. defaults) below can be
 # overriden in *.defconfig files (by defining symbols in multiple locations).
