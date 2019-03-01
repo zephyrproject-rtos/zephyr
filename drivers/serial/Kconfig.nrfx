@@ -33,7 +33,10 @@ config UART_0_NRF_UART
 
 config UART_0_NRF_UARTE
 	bool "nRF UARTE 0"
-	depends on HAS_HW_NRF_UARTE0
+	# In nRF91 Series SoCs, UART peripherals share certain resources with
+	# SPI and TWI peripherals having the same instance number, and therefore
+	# these cannot be used simultaneously.
+	depends on HAS_HW_NRF_UARTE0 && !(SOC_SERIES_NRF91X && (SPI_0 || I2C_0))
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 0.
@@ -74,7 +77,10 @@ endif # UART_0_NRF_UART || UART_0_NRF_UARTE
 # ----------------- port 1 -----------------
 config UART_1_NRF_UARTE
 	bool "nRF UARTE 1"
-	depends on HAS_HW_NRF_UARTE1
+	# In nRF91 Series SoCs, UART peripherals share certain resources with
+	# SPI and TWI peripherals having the same instance number, and therefore
+	# these cannot be used simultaneously.
+	depends on HAS_HW_NRF_UARTE1 && !(SOC_SERIES_NRF91X && (SPI_1 || I2C_1))
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 1.
@@ -113,7 +119,10 @@ endif # UART_1_NRF_UARTE
 # ----------------- port 2 -----------------
 config UART_2_NRF_UARTE
 	bool "nRF UARTE 2"
-	depends on HAS_HW_NRF_UARTE2
+	# In nRF91 Series SoCs, UART peripherals share certain resources with
+	# SPI and TWI peripherals having the same instance number, and therefore
+	# these cannot be used simultaneously.
+	depends on HAS_HW_NRF_UARTE2 && !(SOC_SERIES_NRF91X && (SPI_2 || I2C_2))
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 2.
@@ -152,7 +161,10 @@ endif # UART_2_NRF_UARTE
 # ----------------- port 3 -----------------
 config UART_3_NRF_UARTE
 	bool "nRF UARTE 3"
-	depends on HAS_HW_NRF_UARTE3
+	# In nRF91 Series SoCs, UART peripherals share certain resources with
+	# SPI and TWI peripherals having the same instance number, and therefore
+	# these cannot be used simultaneously.
+	depends on HAS_HW_NRF_UARTE3 && !(SOC_SERIES_NRF91X && (SPI_3 || I2C_3))
 	select NRF_UARTE_PERIPHERAL
 	help
 	  Enable nRF UART with EasyDMA on port 3.
