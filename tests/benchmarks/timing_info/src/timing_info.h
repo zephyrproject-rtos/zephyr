@@ -166,7 +166,7 @@ static inline u32_t get_core_freq_MHz(void)
 /* Enable this macro to print all the measurements.
  * Note: Some measurements in few architectures are not valid
  */
-/* #define PRINT_ALL_MEASUREMENTS */
+#define PRINT_ALL_MEASUREMENTS
 #ifndef PRINT_ALL_MEASUREMENTS
 /*If the measured cycles is greater than 10000 then one of the following is
  * possible.
