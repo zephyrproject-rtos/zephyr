@@ -36,8 +36,6 @@ LOG_MODULE_REGISTER(usb_ecm);
 #define ECM_OUT_EP_IDX			1
 #define ECM_IN_EP_IDX			2
 
-static void ecm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status);
-
 struct usb_cdc_ecm_config {
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 	struct usb_association_descriptor iad;
@@ -175,6 +173,11 @@ static u8_t ecm_get_first_iface_number(void)
 	return cdc_ecm_cfg.if0.bInterfaceNumber;
 }
 
+static void ecm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
+{
+	LOG_DBG("EP 0x%x status %d", ep, ep_status);
+}
+
 static struct usb_ep_cfg_data ecm_ep_data[] = {
 	/* Configuration ECM */
 	{
@@ -221,11 +224,6 @@ static int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len,
 	}
 
 	return 0;
-}
-
-static void ecm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
-{
-	LOG_DBG("EP 0x%x status %d", ep, ep_status);
 }
 
 /* Retrieve expected pkt size from ethernet/ip header */
