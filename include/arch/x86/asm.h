@@ -27,7 +27,7 @@
 
 #if defined(_ASMLANGUAGE)
 
-#if defined(CONFIG_RETPOLINE)
+#if defined(CONFIG_X86_RETPOLINE)
 /*
  * For a description of how retpolines are constructed for both indirect
  * jumps and indirect calls, please refer to this documentation:
@@ -72,7 +72,7 @@
 #define INDIRECT_CALL(reg)	call *reg
 #define INDIRECT_JMP(reg)	jmp *reg
 
-#endif /* CONFIG_RETPOLINE */
+#endif /* CONFIG_X86_RETPOLINE */
 
 #ifdef CONFIG_X86_KPTI
 GTEXT(z_x86_trampoline_to_user)
