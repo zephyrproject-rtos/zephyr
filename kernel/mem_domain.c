@@ -178,6 +178,13 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 
 	domain->num_partitions++;
 
+	/* Handle architecture-specific remove
+	 * only if it is the current thread.
+	 */
+	if (_current->mem_domain_info.mem_domain == domain) {
+		_arch_mem_domain_partition_add(domain, p_idx);
+	}
+
 	k_spin_unlock(&lock, key);
 }
 
