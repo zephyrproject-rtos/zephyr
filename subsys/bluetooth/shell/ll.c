@@ -148,7 +148,7 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 {
 	u16_t adv_interval = 0x20;
 	u16_t handle = 0U;
-	u16_t evt_prop;
+	u16_t evt_prop = 0U;
 	u8_t adv_type;
 	u8_t enable;
 	u8_t phy_p;
@@ -160,18 +160,15 @@ int cmd_advx(const struct shell *shell, size_t argc, char *argv[])
 
 	if (argc > 1) {
 		if (!strcmp(argv[1], "on")) {
-			evt_prop = 0U;
 			adv_type = 0x05; /* Adv. Ext. */
 			enable = 1U;
 		} else if (!strcmp(argv[1], "hdcd")) {
-			evt_prop = 0U;
 			adv_type = 0x01; /* Directed */
 			adv_interval = 0U; /* High Duty Cycle */
 			phy_p = BIT(0);
 			enable = 1U;
 			goto do_enable;
 		} else if (!strcmp(argv[1], "ldcd")) {
-			evt_prop = 0U;
 			adv_type = 0x04; /* Directed */
 			enable = 1U;
 		} else if (!strcmp(argv[1], "off")) {
