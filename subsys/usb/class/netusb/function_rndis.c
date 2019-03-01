@@ -138,8 +138,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
 		.bEndpointAddress = RNDIS_INT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_INTERRUPT,
 		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_RNDIS_INTERRUPT_EP_MPS),
+			sys_cpu_to_le16(CONFIG_RNDIS_INTERRUPT_EP_MPS),
 		.bInterval = 0x09,
 	},
 
@@ -163,8 +162,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
 		.bEndpointAddress = RNDIS_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_RNDIS_BULK_EP_MPS),
+			sys_cpu_to_le16(CONFIG_RNDIS_BULK_EP_MPS),
 		.bInterval = 0x00,
 	},
 	/* Data Endpoint OUT */
@@ -174,8 +172,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_rndis_config rndis_cfg = {
 		.bEndpointAddress = RNDIS_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_RNDIS_BULK_EP_MPS),
+			sys_cpu_to_le16(CONFIG_RNDIS_BULK_EP_MPS),
 		.bInterval = 0x00,
 	},
 };
