@@ -61,6 +61,7 @@ static int start_coap_client(void)
 
 	addr6.sin6_family = AF_INET6;
 	addr6.sin6_port = htons(PEER_PORT);
+	addr6.sin6_scope_id = 0;
 
 	inet_pton(AF_INET6, CONFIG_NET_CONFIG_PEER_IPV6_ADDR,
 		  &addr6.sin6_addr);
