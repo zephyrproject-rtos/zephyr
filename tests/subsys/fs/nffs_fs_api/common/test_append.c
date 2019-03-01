@@ -95,7 +95,8 @@ void test_append(void)
 
 	/*** Repeated appends to a large file. */
 	for (i = 0; i < 1000; i++) {
-		fs_stat(NFFS_MNTP"/mydir/gaga.txt", &info);
+		rc = fs_stat(NFFS_MNTP"/mydir/gaga.txt", &info);
+		zassert_equal(rc, 0, "fs_stat returned error");
 		zassert_equal(info.size, i, "file lengths not matching");
 
 		c = '0' + i % 10;
