@@ -11,6 +11,7 @@ User and Developer Guides
    ../README.rst
    coccinelle.rst
    code-relocation.rst
+   debugging/index
    device_mgmt/index
    device_mgmt/dfu
    documentation/index
