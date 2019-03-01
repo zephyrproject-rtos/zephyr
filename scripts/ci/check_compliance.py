@@ -727,8 +727,15 @@ def main():
         errors = report_to_github(args.repo, args.pull_request, args.sha, suite, docs)
     else:
         for case in suite:
-            if case.result and case.result.type != 'skipped':
-                failed_cases.append(case)
+            if case.result:
+                if case.result.type == 'skipped':
+                    logging.warning("Skipped %s, %s", case.name, case.result.message)
+                else:
+                    failed_cases.append(case)
+            else:
+                # Some checks like codeowners can produce no .result
+                logging.info("No JUnit result for %s", case.name)
+
         errors = len(failed_cases)
 
     if errors:
@@ -740,6 +747,7 @@ def main():
             errmsg = errmsg.strip() if errmsg else case.result.message
             logging.error("Test %s failed: %s", case.name, errmsg)
 
+    print("\nComplete results in %s" % args.output)
     sys.exit(errors)
 
 if __name__ == "__main__":
