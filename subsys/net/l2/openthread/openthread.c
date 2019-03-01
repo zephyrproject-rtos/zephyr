@@ -24,7 +24,10 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #include <openthread/message.h>
 #include <openthread/tasklet.h>
 #include <openthread/thread.h>
+#include <openthread/dataset.h>
+#include <openthread/joiner.h>
 #include <openthread-system.h>
+#include <openthread-config-generic.h>
 
 #include <platform-zephyr.h>
 
@@ -166,6 +169,21 @@ out:
 	otMessageFree(aMessage);
 }
 
+void ot_joiner_start_handler(otError error, void *context)
+{
+	struct openthread_context *ot_context = context;
+
+	switch (error) {
+	case OT_ERROR_NONE:
+		NET_INFO("Join success");
+		otThreadSetEnabled(ot_context->instance, true);
+		break;
+	default:
+		NET_ERR("Join failed [%d]", error);
+		break;
+	}
+}
+
 static void openthread_process(void *context, void *arg2, void *arg3)
 {
 	struct openthread_context *ot_context = context;
@@ -279,6 +297,28 @@ enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 	return NET_CONTINUE;
 }
 
+#if defined(CONFIG_OPENTHREAD_JOINER_AUTOSTART)
+void openthread_joiner_autostart(struct net_if *iface)
+{
+	struct openthread_context *ot_context = net_if_l2_data(iface);
+	otError error;
+
+	if (!otDatasetIsCommissioned(ot_context->instance)) {
+		error = otJoinerStart(ot_context->instance,
+				CONFIG_OPENTHREAD_JOINER_PSKD, NULL,
+				PACKAGE_NAME, CONFIG_OPENTHREAD_PLATFORM_INFO,
+				PACKAGE_VERSION, NULL,
+				&ot_joiner_start_handler, ot_context);
+
+		if (error != OT_ERROR_NONE) {
+			NET_ERR("Failed to start joiner [%d]", error);
+		}
+	} else {
+		otThreadSetEnabled(ot_context->instance, true);
+	}
+}
+#endif
+
 static int openthread_init(struct net_if *iface)
 {
 	struct openthread_context *ot_context = net_if_l2_data(iface);
@@ -302,6 +342,7 @@ static int openthread_init(struct net_if *iface)
 	NET_INFO("OpenThread version: %s",
 		    otGetVersionString());
 
+#if !defined(CONFIG_OPENTHREAD_JOINER_AUTOSTART)
 	otThreadSetNetworkName(ot_context->instance, CONFIG_OPENTHREAD_NETWORK_NAME);
 	NET_INFO("Network name:   %s",
 		 log_strdup(otThreadGetNetworkName(ot_context->instance)));
@@ -309,8 +350,10 @@ static int openthread_init(struct net_if *iface)
 	otLinkSetChannel(ot_context->instance, CONFIG_OPENTHREAD_CHANNEL);
 	otLinkSetPanId(ot_context->instance, CONFIG_OPENTHREAD_PANID);
 	otThreadSetExtendedPanId(ot_context->instance, &xpanid);
+#endif
+
 	otIp6SetEnabled(ot_context->instance, true);
-	otThreadSetEnabled(ot_context->instance, true);
+
 	otIp6SetReceiveFilterEnabled(ot_context->instance, true);
 	otIp6SetReceiveCallback(ot_context->instance,
 				ot_receive_handler, ot_context);
@@ -330,6 +373,12 @@ static int openthread_init(struct net_if *iface)
 				 ot_context, NULL, NULL,
 				 OT_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&ot_thread_data, "openthread");
+
+#if !defined(CONFIG_OPENTHREAD_JOINER_AUTOSTART)
+	otThreadSetEnabled(ot_context->instance, true);
+#else
+	openthread_joiner_autostart(iface);
+#endif
 
 	return 0;
 }

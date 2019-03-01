@@ -150,6 +150,25 @@ config OPENTHREAD_JOINER
 	help
 	  Enable joiner capability in OpenThread stack
 
+config OPENTHREAD_JOINER_AUTOSTART
+	bool "Support for automatic joiner start"
+	depends on OPENTHREAD_JOINER
+	help
+	  Enable automatic joiner start
+
+config OPENTHREAD_JOINER_PSKD
+	string "Default Pre Shared key for the Device to start joiner"
+	depends on OPENTHREAD_JOINER_AUTOSTART
+	default "J01NME"
+	help
+	  Pre Shared Key for the Device to start joiner
+
+config OPENTHREAD_PLATFORM_INFO
+	string "Platform information for OpenThread"
+	default "ZEPHYR"
+	help
+	  Platform information for OpenThread
+
 config OPENTHREAD_JAM_DETECTION
 	bool "Jam detection support"
 	help
