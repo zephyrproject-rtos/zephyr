@@ -148,7 +148,13 @@ static int test_file_truncate(void)
 		return res;
 	}
 
-	fs_seek(&filep, 0, FS_SEEK_END);
+	res = fs_seek(&filep, 0, FS_SEEK_END);
+	if (res) {
+		TC_PRINT("fs_seek failed after truncating file [%d]\n", res);
+		fs_close(&filep);
+		return res;
+	}
+
 	/* Verify fs_tell() */
 	if (fs_tell(&filep) > 0) {
 		TC_PRINT("Failed truncating to size 0\n");
@@ -163,7 +169,12 @@ static int test_file_truncate(void)
 		return res;
 	}
 
-	fs_seek(&filep, 0, FS_SEEK_END);
+	res = fs_seek(&filep, 0, FS_SEEK_END);
+	if (res) {
+		TC_PRINT("fs_seek failed after writing to file [%d]\n", res);
+		fs_close(&filep);
+		return res;
+	}
 
 	orig_pos = fs_tell(&filep);
 	TC_PRINT("Original size of file = %ld\n", orig_pos);
@@ -177,7 +188,13 @@ static int test_file_truncate(void)
 		return res;
 	}
 
-	fs_seek(&filep, 0, FS_SEEK_END);
+	res = fs_seek(&filep, 0, FS_SEEK_END);
+	if (res) {
+		TC_PRINT("fs_seek failed after shrinking file [%d]\n", res);
+		fs_close(&filep);
+		return res;
+	}
+
 	TC_PRINT("File size after shrinking by 5 bytes = %ld\n",
 						fs_tell(&filep));
 	if (fs_tell(&filep) != (orig_pos - 5)) {
@@ -188,7 +205,13 @@ static int test_file_truncate(void)
 
 	/* Test expanding file */
 	TC_PRINT("Testing expanding\n");
-	fs_seek(&filep, 0, FS_SEEK_END);
+	res = fs_seek(&filep, 0, FS_SEEK_END);
+	if (res) {
+		TC_PRINT("fs_seek failed before expanding file [%d]\n", res);
+		fs_close(&filep);
+		return res;
+	}
+
 	orig_pos = fs_tell(&filep);
 	res = fs_truncate(&filep, orig_pos + 10);
 	if (res) {
@@ -197,7 +220,13 @@ static int test_file_truncate(void)
 		return res;
 	}
 
-	fs_seek(&filep, 0, FS_SEEK_END);
+	res = fs_seek(&filep, 0, FS_SEEK_END);
+	if (res) {
+		TC_PRINT("fs_seek failed after expanding file [%d]\n", res);
+		fs_close(&filep);
+		return res;
+	}
+
 	TC_PRINT("File size after expanding by 10 bytes = %ld\n",
 						fs_tell(&filep));
 	if (fs_tell(&filep) != (orig_pos + 10)) {
@@ -208,7 +237,13 @@ static int test_file_truncate(void)
 
 	/* Check if expanded regions are zeroed */
 	TC_PRINT("Testing for zeroes in expanded region\n");
-	fs_seek(&filep, -5, FS_SEEK_END);
+	res = fs_seek(&filep, -5, FS_SEEK_END);
+	if (res) {
+		TC_PRINT("fs_seek failed before testing for zeroes [%d]\n",
+			 res);
+		fs_close(&filep);
+		return res;
+	}
 
 	brw = fs_read(&filep, read_buff, 5);
 
