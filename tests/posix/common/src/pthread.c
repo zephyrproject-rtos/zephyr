@@ -44,6 +44,7 @@ static int curr_bounce_thread;
 
 static int barrier_failed;
 static int barrier_done[N_THR_E];
+static int barrier_return[N_THR_E];
 
 /* First phase bounces execution between two threads using a condition
  * variable, continuously testing that no other thread is mucking with
@@ -138,7 +139,7 @@ void *thread_top_exec(void *p1)
 			sem_post(&main_sem);
 		}
 	}
-	pthread_barrier_wait(&barrier);
+	barrier_return[id] = pthread_barrier_wait(&barrier);
 	barrier_done[id] = 1;
 	sem_post(&main_sem);
 	pthread_exit(p1);
@@ -231,6 +232,7 @@ void test_posix_pthread_execution(void)
 	int schedpolicy = SCHED_FIFO;
 	void *retval, *stackaddr;
 	size_t stacksize;
+	int serial_threads = 0;
 
 	sem_init(&main_sem, 0, 1);
 	schedparam.sched_priority = CONFIG_NUM_COOP_PRIORITIES - 1;
@@ -345,6 +347,15 @@ void test_posix_pthread_execution(void)
 	for (i = 0; i < N_THR_E; i++) {
 		pthread_join(newthread[i], &retval);
 	}
+
+	for (i = 0; i < N_THR_E; i++) {
+		if (barrier_return[i] == PTHREAD_BARRIER_SERIAL_THREAD) {
+			++serial_threads;
+		}
+	}
+
+	/* TESTPOINT: Check only one PTHREAD_BARRIER_SERIAL_THREAD returned. */
+	zassert_true(serial_threads == 1, "Bungled barrier return value(s)");
 
 	printk("Barrier test OK\n");
 }

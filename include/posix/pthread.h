@@ -334,6 +334,8 @@ static inline int pthread_mutexattr_destroy(pthread_mutexattr_t *m)
 		.max = count,					\
 	}
 
+#define PTHREAD_BARRIER_SERIAL_THREAD 1
+
 /**
  * @brief POSIX threading compatibility API
  *
