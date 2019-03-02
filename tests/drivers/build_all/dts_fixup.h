@@ -190,6 +190,18 @@
 #define DT_LSM9DS0_GYRO_INT_GPIO_PIN 1
 #endif
 
+#ifndef DT_AMS_IAQCORE_0_LABEL
+#define DT_AMS_IAQCORE_0_LABEL        ""
+#define DT_AMS_IAQCORE_0_BUS_NAME     ""
+#define DT_AMS_IAQCORE_0_BASE_ADDRESS 0x00
+#endif
+
+#ifndef DT_AMS_ENS210_0_LABEL
+#define DT_AMS_ENS210_0_LABEL         ""
+#define DT_AMS_ENS210_0_BUS_NAME      ""
+#define DT_AMS_ENS210_0_BASE_ADDRESS  0x00
+#endif
+
 #endif /* CONFIG_HAS_DTS_I2C */
 
 #if defined(CONFIG_HAS_DTS_SPI)
