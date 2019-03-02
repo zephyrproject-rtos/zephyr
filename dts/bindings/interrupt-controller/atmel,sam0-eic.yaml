@@ -1,0 +1,33 @@
+---
+title: Atmel SAM0 External Interrupt Controller
+version: 0.1
+
+description: >
+    This binding describes the Atmel SAM0 series External Interrupt Controller
+
+properties:
+  compatible:
+      category: required
+      type: string
+      description: compatible strings
+      constraint: "atmel,sam0-eic"
+      generation: define
+
+  reg:
+    type: array
+    description: mmio register space
+    generation: define
+    category: required
+
+  interrupts:
+    type: array
+    category: required
+    description: required interrupts
+    generation: define
+
+  label:
+    type: string
+    category: required
+    description: Human readable string describing the device (used by Zephyr for API name)
+    generation: define
+...
