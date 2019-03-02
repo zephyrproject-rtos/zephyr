@@ -188,7 +188,7 @@ int mdm_receiver_send(struct mdm_receiver_context *ctx,
 
 	do {
 		uart_poll_out(ctx->uart_dev, *buf++);
-	} while (size--);
+	} while (--size);
 
 	return 0;
 }
