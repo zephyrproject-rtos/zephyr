@@ -122,9 +122,9 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 */
 	thread->callee_saved.esp = (unsigned long)initial_frame;
 
-#if defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_LAZY_FP_SHARING)
 	thread->arch.excNestCount = 0;
-#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_LAZY_FP_SHARING */
 }
 
 #ifdef CONFIG_X86_USERSPACE

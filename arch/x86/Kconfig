@@ -112,8 +112,8 @@ config X86_NO_SPECULATIVE_VULNERABILITIES
 	select X86_NO_SPECTRE_V4
 	select X86_NO_LAZY_FP
 	help
-	  This hidden option should be set on a per-SOC basis that a
-	  particular SOC does not perform any kind of speculative execution,
+	  This hidden option should be set on a per-SOC basis to indicate that
+	  a particular SOC does not perform any kind of speculative execution,
 	  or is a newer chip which is immune to the class of vulnerabilities
 	  which exploit speculative execution side channel attacks.
 
@@ -182,6 +182,37 @@ config SSE_FP_MATH
 
 	  Disabling this option means that the compiler utilizes only the
 	  x87 instruction set for floating point operations.
+
+config EAGER_FP_SHARING
+	bool
+	depends on FLOAT
+	depends on USERSPACE
+	default y if !X86_NO_LAZY_FP
+	help
+	  This hidden option unconditionally saves/restores the FPU/SIMD
+	  register state on every context switch.
+
+	  Mitigates CVE-2018-3665, but incurs a performance hit.
+
+	  For vulnerable systems that process sensitive information in the
+	  FPU register set, should be used any time CONFIG_FLOAT is
+	  enabled, regardless if the FPU is used by one thread or multiple.
+
+config LAZY_FP_SHARING
+	bool
+	depends on FLOAT
+	depends on !EAGER_FP_SHARING
+	depends on FP_SHARING
+	default y if X86_NO_LAZY_FP || !USERSPACE
+	help
+	  This hidden option allows multiple threads to use the floating point
+	  registers, using logic to lazily save/restore the floating point
+	  register state on context switch.
+
+	  On Intel Core procesors, may be vulnerable to exploits which allows
+	  malware to read the contents of all floating point registers, see
+	  CVE-2018-3665.
+
 endmenu
 
 choice

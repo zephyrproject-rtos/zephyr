@@ -171,7 +171,31 @@ SECTION_FUNC(TEXT, __swap)
 #endif
 #endif
 
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_EAGER_FP_SHARING
+	/* Eager floating point state restore logic
+	 *
+	 * Addresses CVE-2018-3665
+	 * Used as an alternate to CONFIG_LAZY_FP_SHARING if there is any
+	 * sensitive data in the floating point/SIMD registers in a system
+	 * with untrusted threads.
+	 *
+	 * Unconditionally save/restore floating point registers on context
+	 * switch.
+	 */
+	/* Save outgpoing thread context */
+#ifdef CONFIG_SSE
+	fxsave	_thread_offset_to_preempFloatReg(%edx)
+	fninit
+#else
+	fnsave	 _thread_offset_to_preempFloatReg(%edx)
+#endif
+	/* Restore incoming thread context */
+#ifdef CONFIG_SSE
+	fxrstor _thread_offset_to_preempFloatReg(%eax)
+#else
+	frstor _thread_offset_to_preempFloatReg(%eax)
+#endif /* CONFIG_SSE */
+#elif defined(CONFIG_LAZY_FP_SHARING)
 	/*
 	 * Clear the CR0[TS] bit (in the event the current thread
 	 * doesn't have floating point enabled) to prevent the "device not
@@ -325,7 +349,7 @@ restoreContext_NoFloatSwap:
 
 CROHandlingDone:
 
-#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_LAZY_FP_SHARING */
 
 	/* update _kernel.current to reflect incoming thread */
 

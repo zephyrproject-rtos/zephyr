@@ -17,6 +17,10 @@
  * safely by one or more cooperative threads OR by a single preemptive thread,
  * but not by both.
  *
+ * This code is not necessary for systems with CONFIG_EAGER_FP_SHARING, as
+ * the floating point context is unconditionally saved/restored with every
+ * context switch.
+ *
  * The floating point register sharing mechanism is designed for minimal
  * intrusiveness.  Floating point state saving is only performed for threads
  * that explicitly indicate they are using FPU registers, to avoid impacting
@@ -42,10 +46,6 @@
 #include <kernel_structs.h>
 #include <toolchain.h>
 #include <asm_inline.h>
-
-/* the entire library vanishes without the FP_SHARING option enabled */
-
-#ifdef CONFIG_FP_SHARING
 
 /* SSE control/status register default value (used by assembler code) */
 extern u32_t _sse_mxcsr_default_value;
@@ -244,5 +244,3 @@ void _FpNotAvailableExcHandler(NANO_ESF *pEsf)
 	k_float_enable(_current, _FP_USER_MASK);
 }
 _EXCEPTION_CONNECT_NOCODE(_FpNotAvailableExcHandler, IV_DEVICE_NOT_AVAILABLE);
-
-#endif /* CONFIG_FP_SHARING */
