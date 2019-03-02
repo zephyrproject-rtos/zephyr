@@ -125,7 +125,7 @@ SECTION_FUNC(TEXT, _exception_enter)
 #endif
 	/* ESP is pointing to the ESF at this point */
 
-#if defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_LAZY_FP_SHARING)
 
 	movl	_kernel + _kernel_offset_to_current, %edx
 
@@ -142,7 +142,7 @@ SECTION_FUNC(TEXT, _exception_enter)
 
 	orb	$_EXC_ACTIVE, _thread_offset_to_thread_state(%edx)
 
-#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_LAZY_FP_SHARING */
 
 	/*
 	 * restore interrupt enable state, then call the handler
@@ -172,7 +172,7 @@ allDone:
 	addl	$0x4, %esp
 #endif
 
-#if defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_LAZY_FP_SHARING)
 
 	movl	_kernel + _kernel_offset_to_current, %ecx
 
@@ -202,7 +202,7 @@ allDone:
 	andb	$~_EXC_ACTIVE, _thread_offset_to_thread_state(%ecx)
 
 nestedException:
-#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_LAZY_FP_SHARING */
 
 	/*
 	 * Pop the non-volatile registers from the stack.

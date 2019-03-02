@@ -260,7 +260,7 @@ alreadyOnIntStack:
 	 * debug tools that a preemptive context switch has occurred.
 	 */
 
-#if defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_LAZY_FP_SHARING)
 	orb	$_INT_ACTIVE, _thread_offset_to_thread_state(%edx)
 #endif
 
@@ -296,7 +296,7 @@ alreadyOnIntStack:
 	 * returning control to it at the point where it was interrupted ...
 	 */
 
-#if defined(CONFIG_FP_SHARING)
+#if defined(CONFIG_LAZY_FP_SHARING)
 	/*
 	 * __swap() has restored the floating point registers, if needed.
 	 * Clear the _INT_ACTIVE bit in the interrupted thread's state
@@ -305,7 +305,7 @@ alreadyOnIntStack:
 
 	movl	_kernel + _kernel_offset_to_current, %eax
 	andb	$~_INT_ACTIVE, _thread_offset_to_thread_state(%eax)
-#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_LAZY_FP_SHARING */
 
 	/* Restore volatile registers and return to the interrupted thread */
 #ifdef CONFIG_INT_LATENCY_BENCHMARK

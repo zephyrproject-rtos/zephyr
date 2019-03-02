@@ -40,7 +40,7 @@ static inline unsigned int EflagsGet(void)
 }
 
 
-#ifdef CONFIG_FP_SHARING
+#ifdef CONFIG_LAZY_FP_SHARING
 
 /**
  *
@@ -133,7 +133,7 @@ static inline void _do_sse_regs_init(void)
 }
 #endif /* CONFIG_SSE */
 
-#endif /* CONFIG_FP_SHARING */
+#endif /* CONFIG_LAZY_FP_SHARING */
 
 #endif /* _ASMLANGUAGE */
 
