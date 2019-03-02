@@ -67,6 +67,13 @@
 			};
 		};
 
+		eic: eic@40001800 {
+			compatible = "atmel,sam0-eic";
+			reg = <0x40001800 0x1C>;
+			interrupts = <4 0>;
+			label = "EIC";
+		};
+
 		pinmux_a: pinmux@41004400 {
 			compatible = "atmel,sam0-pinmux";
 			reg = <0x41004400 0x80>;
