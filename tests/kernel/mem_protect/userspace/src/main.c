@@ -35,10 +35,10 @@ K_SEM_DEFINE(expect_fault_sem, 0, 1);
 
 /*
  * Create partitions. part0 is for all variables to run
- * ztest and this test suite. part1 and part2 are for
+ * ztest and this test suite. part1 is for
  * subsequent test specifically for this new implementation.
  */
-FOR_EACH(K_APPMEM_PARTITION_DEFINE, part0, part1, part2);
+FOR_EACH(K_APPMEM_PARTITION_DEFINE, part0, part1);
 
 /*
  * Create memory domains. dom0 is for the ztest and this
@@ -650,14 +650,13 @@ static void shared_mem_thread(void)
  */
 static void access_other_memdomain(void)
 {
-	struct k_mem_partition *parts[] = {&part0, &part2};
+	struct k_mem_partition *parts[] = {&part0};
 	/*
 	 * Following tests the ability for a thread to access data
 	 * in a domain that it is denied.
 	 */
 
-	/* initialize domain dom1 with partition part2 */
-	k_mem_domain_init(&dom1, 2, parts);
+	k_mem_domain_init(&dom1, ARRAY_SIZE(parts), parts);
 
 	/* remove current thread from domain dom0 and add to dom1 */
 	k_mem_domain_remove_thread(k_current_get());
