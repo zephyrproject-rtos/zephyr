@@ -24,6 +24,9 @@
 
 #include "ll_test.h"
 
+#include "hal/debug.h"
+#include "common/log.h"
+
 #define CNTR_MIN_DELTA 3
 
 static const u32_t test_sync_word = 0x71764129;
@@ -302,6 +305,7 @@ u32_t ll_test_rx(u8_t chan, u8_t phy, u8_t mod_idx)
 
 u32_t ll_test_end(u16_t *num_rx)
 {
+	int err;
 	u8_t ack;
 
 	if (!started) {
@@ -328,7 +332,8 @@ u32_t ll_test_end(u16_t *num_rx)
 	radio_tmr_stop();
 
 	/* Release resources acquired for Radio */
-	lll_clk_off();
+	err = lll_clk_off();
+	LL_ASSERT(!err || err == -EBUSY);
 
 	/* Stop coarse timer */
 	cntr_stop();
