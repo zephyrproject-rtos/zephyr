@@ -332,18 +332,20 @@ SECTIONS
     SECTION_DATA_PROLOGUE(_GCOV_BSS_SECTION_NAME,(NOLOAD),)
 	{
 
-#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-       . = ALIGN( 1 << LOG2CEIL(__gcov_bss_end - __gcov_bss_start ));
-#endif /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+#ifdef CONFIG_USERSPACE
+       MPU_ALIGN(__gcov_bss_end - __gcov_bss_start );
+#else  /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT && CONFIG_USERSPACE */
+       . = ALIGN(_region_min_align);
+#endif /* CONFIG_USERSPACE */
 
        __gcov_bss_start = .;
        KEEP(*(".bss.__gcov0.*"));
 
-#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-       . = ALIGN( 1 << LOG2CEIL(__gcov_bss_end - __gcov_bss_start ));
-#else  /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
-       . = ALIGN(4);
-#endif /* CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT */
+#ifdef CONFIG_USERSPACE
+       MPU_ALIGN(__gcov_bss_end - __gcov_bss_start );
+#else  /* CONFIG_USERSPACE */
+       . = ALIGN(_region_min_align);
+#endif /* CONFIG_USERSPACE */
 
        __gcov_bss_end = .;
 
