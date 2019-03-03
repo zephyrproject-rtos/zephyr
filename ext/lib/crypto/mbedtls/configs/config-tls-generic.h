@@ -27,6 +27,7 @@
 #endif
 
 #if defined(CONFIG_MBEDTLS_TEST)
+#define MBEDTLS_SELF_TEST
 #define MBEDTLS_DEBUG_C
 #endif
 

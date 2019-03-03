@@ -1,7 +1,8 @@
 tests:
   crypto.mbedtls:
     filter: not CONFIG_DEBUG
-    min_flash: 33
+    platform_exclude: qemu_x86_64 # FIXME
+    min_flash: 65
     min_ram: 32
     tags: crypto mbedtls
     timeout: 200
