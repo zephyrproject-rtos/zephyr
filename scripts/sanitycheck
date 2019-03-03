@@ -624,6 +624,9 @@ class DeviceHandler(Handler):
                 serial_line = ser.readline()
             except TypeError:
                 pass
+            except serial.serialutil.SerialException:
+                ser.close()
+                break
 
             # Just because ser_fileno has data doesn't mean an entire line
             # is available yet.
