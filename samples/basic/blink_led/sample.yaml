@@ -8,3 +8,4 @@ tests:
         hexiwear_k64 colibri_imx7d_m4 nrf52832_mdk nrf52840_mdk, nucleo_l496zg
     tags: drivers pwm
     depends_on: pwm
+    harness: led

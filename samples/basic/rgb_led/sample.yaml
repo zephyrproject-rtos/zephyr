@@ -7,3 +7,4 @@ tests:
             DT_PWM_LEDS_BLUE_PWM_LED_PWM_CONTROLLER
     tags: drivers pwm
     depends_on: pwm
+    harness: led
