@@ -210,13 +210,18 @@ int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 	u32_t bs1;
 	u32_t bs2;
 	u32_t sjw;
+	int ret;
 
 	clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	__ASSERT_NO_MSG(clock);
 	hcan.Instance = can;
+	ret = clock_control_get_rate(clock, (clock_control_subsys_t *) &cfg->pclken,
+				     &clock_rate);
+	if (ret != 0) {
+		LOG_ERR("Failed call clock_control_get_rate: return [%d]", ret);
+		return -EIO;
+	}
 
-	clock_control_get_rate(clock, (clock_control_subsys_t *) &cfg->pclken,
-			       &clock_rate);
 	if (!bitrate) {
 		bitrate = cfg->bus_speed;
 	}
