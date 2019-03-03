@@ -1,0 +1,36 @@
+# Kconfig - SIMACCEL simulated 3-axis accelerometer sensor driver
+
+#
+# Copyright (c) 2019 Kevin Townsend
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SIMACCEL
+	bool "SIMACCEL simulated accelerometer sensor driver"
+	help
+	  Enable simulated 3-axis accelerometer sensor driver.
+
+if SIMACCEL
+
+choice
+	prompt "Measurements per second"
+	default SIMACCEL_MPS_1
+	help
+	  Number of measurements per second.
+
+config SIMACCEL_MPS_1
+	bool "1"
+
+config SIMACCEL_MPS_10
+	bool "10"
+
+config SIMACCEL_MPS_100
+	bool "100"
+
+config SIMACCEL_MPS_1000
+	bool "1000"
+
+endchoice
+
+endif # SIMACCEL
