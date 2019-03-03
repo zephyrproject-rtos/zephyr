@@ -443,7 +443,6 @@ building your application:
 
    CONFIG_BT_DEBUG_MONITOR=y
    CONFIG_UART_CONSOLE=n
-   CONFIG_UART_QMSI_1_BAUDRATE=1000000
 
 The first item replaces the BT_DEBUG_LOG option, the second one
 disables the default printk/printf hooks, and the third one matches the console
