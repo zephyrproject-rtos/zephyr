@@ -1,0 +1,44 @@
+# Kconfig - MIMXRT1015-EVK board
+#
+# Copyright (c) 2019, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_MIMXRT1015_EVK
+
+config BOARD
+	default "mimxrt1015_evk" if BOARD_MIMXRT1015_EVK
+
+choice CODE_LOCATION
+	default CODE_FLEXSPI
+endchoice
+
+if GPIO_MCUX_IGPIO
+
+config GPIO_MCUX_IGPIO_2
+	default y
+
+config GPIO_MCUX_IGPIO_3
+	default y
+
+endif # GPIO_MCUX_IGPIO
+
+if I2C_MCUX_LPI2C
+
+config I2C_1
+	default y
+
+endif # I2C_MCUX_LPI2C
+
+if UART_MCUX_LPUART
+
+config UART_MCUX_LPUART_1
+	default y
+
+config UART_MCUX_LPUART_4
+	default y
+
+endif # UART_MCUX_LPUART
+
+endif # BOARD_MIMXRT1015_EVK
