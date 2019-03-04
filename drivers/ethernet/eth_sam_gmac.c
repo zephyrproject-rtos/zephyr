@@ -661,7 +661,7 @@ static int eth_sam_gmac_setup_qav(Gmac *gmac, int queue_id, bool enable)
 		return -EINVAL;
 	}
 
-	if (queue_id == 1) {
+	if (queue_id == GMAC_QUE_2) {
 		if (enable) {
 			gmac->GMAC_CBSCR |= GMAC_CBSCR_QAE;
 		} else {
@@ -685,7 +685,7 @@ static int eth_sam_gmac_get_qav_status(Gmac *gmac, int queue_id, bool *enabled)
 		return -EINVAL;
 	}
 
-	if (queue_id == 1) {
+	if (queue_id == GMAC_QUE_2) {
 		*enabled = gmac->GMAC_CBSCR & GMAC_CBSCR_QAE;
 	} else {
 		*enabled = gmac->GMAC_CBSCR & GMAC_CBSCR_QBE;
@@ -706,7 +706,7 @@ static int eth_sam_gmac_setup_qav_idle_slope(Gmac *gmac, int queue_id,
 
 	cbscr_val = gmac->GMAC_CBSISQA;
 
-	if (queue_id == 1) {
+	if (queue_id == GMAC_QUE_2) {
 		gmac->GMAC_CBSCR &= ~GMAC_CBSCR_QAE;
 		gmac->GMAC_CBSISQA = idle_slope;
 	} else {
@@ -747,7 +747,7 @@ static int eth_sam_gmac_get_qav_idle_slope(Gmac *gmac, int queue_id,
 		return -EINVAL;
 	}
 
-	if (queue_id == 1) {
+	if (queue_id == GMAC_QUE_2) {
 		*idle_slope = gmac->GMAC_CBSISQA;
 	} else {
 		*idle_slope = gmac->GMAC_CBSISQB;
