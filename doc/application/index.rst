@@ -130,7 +130,7 @@ subdirectories which are not described here.
 :file:`ext`
     Externally created code that has been integrated into Zephyr
     from other sources and that must live inside the zephyr repository unlike
-    `external projects <ext-projs>`_
+    `external projects <ext-projs_>`_
 
 :file:`include`
     Include files for all public APIs, except those defined under :file:`lib`.
