@@ -271,6 +271,7 @@
 /tests/net/lib/coap/                      @rveerama1
 /tests/net/socket/                        @jukkar @tbursztyka @pfalcon
 /tests/subsys/fs/                         @nashif @ramakrishnapallala
+/tests/subsys/settings/                   @nvlsianpu
 
 # Get all docs reviewed
 *.rst                                     @dbkinder
