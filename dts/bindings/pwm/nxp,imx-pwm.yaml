@@ -1,0 +1,29 @@
+---
+title: MCUX PWM
+version: 0.1
+
+description: >
+    This binding gives a base representation of the NXP MCUX PWM
+
+inherits:
+    !include base.yaml
+
+properties:
+    compatible:
+      constraint: "nxp,imx-pwm"
+
+    index:
+      type: int
+      description: flexpwm submodule index
+      generation: define
+      category: required
+
+    interrupts:
+      category: required
+
+    label:
+      category: required
+
+"#cells":
+  - channel
+...

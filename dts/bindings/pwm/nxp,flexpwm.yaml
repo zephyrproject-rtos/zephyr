@@ -1,0 +1,20 @@
+---
+title: MCUX PWM
+version: 0.1
+
+description: >
+    This binding gives a base representation of the NXP eFLEX PWM module which
+    is supposed to contain mcux-pwm submodules.
+
+inherits:
+    !include base.yaml
+
+properties:
+    compatible:
+      constraint: "nxp,flexpwm"
+
+    reg:
+      category: required
+
+    interrupts:
+      category: required
