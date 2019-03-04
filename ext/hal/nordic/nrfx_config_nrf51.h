@@ -784,30 +784,18 @@
 #ifdef CONFIG_NRFX_RTC
 #define NRFX_RTC_ENABLED 1
 #endif
+// <q> NRFX_RTC0_ENABLED  - Enable RTC0 instance
+
 
 #ifdef CONFIG_NRFX_RTC0
 #define NRFX_RTC0_ENABLED 1
 #endif
 
-#ifdef CONFIG_NRFX_RTC1
-#define NRFX_RTC1_ENABLED 1
-#endif
-
-#ifndef NRFX_RTC_ENABLED
-#define NRFX_RTC_ENABLED 0
-#endif
-// <q> NRFX_RTC0_ENABLED  - Enable RTC0 instance
-
-
-#ifndef NRFX_RTC0_ENABLED
-#define NRFX_RTC0_ENABLED 0
-#endif
-
 // <q> NRFX_RTC1_ENABLED  - Enable RTC1 instance
 
 
-#ifndef NRFX_RTC1_ENABLED
-#define NRFX_RTC1_ENABLED 0
+#ifdef CONFIG_NRFX_RTC1
+#define NRFX_RTC1_ENABLED 1
 #endif
 
 // <o> NRFX_RTC_MAXIMUM_LATENCY_US - Maximum possible time[us] in highest priority interrupt
