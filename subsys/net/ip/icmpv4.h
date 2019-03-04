@@ -34,7 +34,8 @@ struct net_icmpv4_echo_req {
 
 typedef enum net_verdict (*icmpv4_callback_handler_t)(
 					struct net_pkt *pkt,
-					struct net_ipv4_hdr *ip_hdr);
+					struct net_ipv4_hdr *ip_hdr,
+					struct net_icmp_hdr *icmp_hdr);
 
 struct net_icmpv4_handler {
 	sys_snode_t node;
