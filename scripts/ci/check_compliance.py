@@ -91,6 +91,59 @@ class ComplianceTest:
         """
         pass
 
+    def error(self, msg):
+        """
+        Signals a problem with running the test, with message 'msg'.
+
+        Raises an exception internally, so you do not need to put a 'return'
+        after error().
+
+        Any failures generated prior to the error() are included automatically
+        in the message. Usually, any failures would indicate problems with the
+        test code.
+        """
+        if self.case.result:
+            msg += "\n\nFailures before error: " + self.case.result._elem.text
+
+        self.case.result = Error(msg, "skipped")
+
+        raise EndTest
+
+    def skip(self, msg):
+        """
+        Signals that the test should be skipped, with message 'msg'.
+
+        Raises an exception internally, so you do not need to put a 'return'
+        after error().
+
+        Any failures generated prior to the skip() are included automatically
+        in the message. Usually, any failures would indicate problems with the
+        test code.
+        """
+        if self.case.result:
+            msg += "\n\nFailures before skip: " + self.case.result._elem.text
+
+        self.case.result = Skipped(msg, "skipped")
+
+        raise EndTest
+
+    def add_failure(self, msg):
+        """
+        Signals that the test failed, with message 'msg'. Can be called many
+        times within the same test to report multiple failures.
+        """
+        if not self.case.result:
+            # First reported failure
+            self.case.result = Failure(self._name + " issues", "failure")
+            self.case.result._elem.text = ""
+
+        # If there are multiple Failures, concatenate their messages
+        self.case.result._elem.text += msg + "\n\n"
+
+
+class EndTest(Exception):
+    "Raised by ComplianceTest.error()/skip() to end the test"
+
 
 class CheckPatch(ComplianceTest):
     """
@@ -106,7 +159,7 @@ class CheckPatch(ComplianceTest):
         checkpatch = os.path.join(self.zephyr_base or self.repo_path, 'scripts',
                                   'checkpatch.pl')
         if not os.path.exists(checkpatch):
-            self.case.result = Skipped("checkpatch script not found", "skipped")
+            self.skip(checkpatch + " not found")
 
         diff = subprocess.Popen(('git', 'diff', '%s' % (self.commit_range)),
                                 stdout=subprocess.PIPE)
@@ -116,10 +169,9 @@ class CheckPatch(ComplianceTest):
                                     stderr=subprocess.STDOUT, shell=True)
 
         except subprocess.CalledProcessError as ex:
-            match = re.search("([1-9][0-9]*) errors,", ex.output.decode('utf8'))
-            if match:
-                self.case.result = Failure("Checkpatch issues", "failure")
-                self.case.result._elem.text = (ex.output.decode('utf8'))
+            output = ex.output.decode("utf-8")
+            if re.search("[1-9][0-9]* errors,", output):
+                self.add_failure(output)
 
 
 class KconfigCheck(ComplianceTest):
@@ -134,15 +186,13 @@ class KconfigCheck(ComplianceTest):
         self.prepare()
 
         if not self.zephyr_base:
-            self.case.result = Skipped("Not a Zephyr tree", "skipped")
-            return
+            self.skip("Not a Zephyr tree (ZEPHYR_BASE unset)")
 
         # Put the Kconfiglib path first to make sure no local Kconfiglib version is
         # used
         kconfig_path = os.path.join(self.zephyr_base, "scripts", "kconfig")
         if not os.path.exists(kconfig_path):
-            self.case.result = Error("Can't find Kconfig", "error")
-            return
+            self.error(kconfig_path + " not found")
 
         sys.path.insert(0, kconfig_path)
         import kconfiglib
@@ -168,9 +218,7 @@ class KconfigCheck(ComplianceTest):
         try:
             kconf = kconfiglib.Kconfig()
         except kconfiglib.KconfigError as e:
-            self.case.result = Failure("error while parsing Kconfig files",
-                                       "failure")
-            self.case.result._elem.text = str(e)
+            self.add_failure(str(e))
             return
 
         #
@@ -180,12 +228,9 @@ class KconfigCheck(ComplianceTest):
         undef_ref_warnings = [warning for warning in kconf.warnings
                               if "undefined symbol" in warning]
 
-        # Generating multiple JUnit <failure>s would be neater, but Shippable only
-        # seems to display the first one
         if undef_ref_warnings:
-            self.case.result = Failure("undefined Kconfig symbols", "failure")
-            self.case.result._elem.text = "\n\n\n".join(undef_ref_warnings)
-            return
+            self.add_failure("Undefined Kconfig symbols:\n\n"
+                             + "\n\n\n".join(undef_ref_warnings))
 
         #
         # Check for stuff being added to the top-level menu
@@ -203,12 +248,11 @@ class KconfigCheck(ComplianceTest):
             node = node.next
 
         if n_top_items > max_top_items:
-            self.case.result = Failure("new entries in top menu", "failure")
-            self.case.result._elem.text = """
+            self.add_failure("""
 Expected no more than {} potentially visible items (items with prompts) in the
 top-level Kconfig menu, found {} items. If you're deliberately adding new
 entries, then bump the 'max_top_items' variable in {}.
-""".format(max_top_items, n_top_items, __file__)
+""".format(max_top_items, n_top_items, __file__))
 
 
 class Codeowners(ComplianceTest):
@@ -266,9 +310,7 @@ class Codeowners(ComplianceTest):
         git_root = sh.git("rev-parse", "--show-toplevel").strip()
         codeowners = os.path.join(git_root, "CODEOWNERS")
         if not os.path.exists(codeowners):
-            self.case.result = Skipped("CODEOWNERS not available in this repo.",
-                                       "skipped")
-            return
+            self.skip("CODEOWNERS not available in this repo")
 
         commit = sh.git("diff","--name-only", "--diff-filter=A", self.commit_range, **sh_special_args)
         new_files = commit.split("\n")
@@ -284,10 +326,10 @@ class Codeowners(ComplianceTest):
                     new_not_owned.append(f)
 
             if new_not_owned:
-                self.case.result = Error("CODEOWNERS Issues", "failure")
-                self.case.result._elem.text = "New files added that are not covered in CODEOWNERS:\n\n"
-                self.case.result._elem.text += "\n".join(new_not_owned)
-                self.case.result._elem.text += "\n\nPlease add one or more entries in the CODEWONERS file to cover those files"
+                self.add_failure("New files added that are not covered in "
+                                 "CODEOWNERS:\n\n" + "\n".join(new_not_owned) +
+                                 "\n\nPlease add one or more entries in the "
+                                 "CODEOWNERS file to cover those files")
 
 class Documentation(ComplianceTest):
     """
@@ -304,10 +346,7 @@ class Documentation(ComplianceTest):
 
         if os.path.exists(self.DOCS_WARNING_FILE) and os.path.getsize(self.DOCS_WARNING_FILE) > 0:
             with open(self.DOCS_WARNING_FILE, "rb") as docs_warning:
-                log = docs_warning.read()
-
-                self.case.result = Error("Documentation Issues", "failure")
-                self.case.result._elem.text = log.decode('utf8')
+                self.add_failure(docs_warning.read().decode("utf-8"))
 
 
 class GitLint(ComplianceTest):
@@ -329,10 +368,7 @@ class GitLint(ComplianceTest):
             msg = proc.stdout.read()
 
         if msg != "":
-            text = (msg.decode('utf8'))
-            self.case.result = Failure("commit message syntax issues",
-                                       "failure")
-            self.case.result._elem.text = text
+            self.add_failure(msg.decode("utf-8"))
 
 
 class License(ComplianceTest):
@@ -348,9 +384,7 @@ class License(ComplianceTest):
 
         scancode = "/opt/scancode-toolkit/scancode"
         if not os.path.exists(scancode):
-            self.case.result = Skipped("scancode-toolkit not installed",
-                                       "skipped")
-            return
+            self.skip("scancode-toolkit not installed")
 
         os.makedirs("scancode-files", exist_ok=True)
         new_files = sh.git("diff", "--name-only", "--diff-filter=A",
@@ -378,9 +412,7 @@ class License(ComplianceTest):
 
         except subprocess.CalledProcessError as ex:
             logging.error(ex.output)
-            self.case.result = Error(
-                "Exception when running scancode", "error")
-            return
+            self.error("Exception when running scancode: " + str(ex))
 
         report = ""
 
@@ -413,9 +445,12 @@ class License(ComplianceTest):
                         report += ("* {} missing copyright.\n".format(original_fp))
 
         if report != "":
-            self.case.result = Failure("License/Copyright issues", "failure")
-            preamble = "In most cases you do not need to do anything here, especially if the files reported below are going into ext/ and if license was approved for inclusion into ext/ already. Fix any missing license/copyright issues. The license exception if a JFYI for the maintainers and can be overriden when merging the pull request.\n"
-            self.case.result._elem.text = preamble + report
+            self.add_failure("""
+In most cases you do not need to do anything here, especially if the files
+reported below are going into ext/ and if license was approved for inclusion
+into ext/ already. Fix any missing license/copyright issues. The license
+exception if a JFYI for the maintainers and can be overriden when merging the
+pull request.\n\n""" + report)
 
 
 class Identity(ComplianceTest):
@@ -463,8 +498,7 @@ class Identity(ComplianceTest):
                     failure = failure + "\n" + error2
 
             if failure:
-                self.case.result = Failure("identity/email issues", "failure")
-                self.case.result._elem.text = failure
+                self.add_failure(failure)
 
 
 def init_logs(cli_arg):
@@ -702,15 +736,17 @@ def main():
     for testcase in ComplianceTest.__subclasses__():
         test = testcase(suite, args.commits)
         if args.module:
-            if test._name in args.module:
-                test.run()
-                suite.add_testcase(test.case)
-        else:
-            if test._name in args.exclude_module:
-                print("Skipping {}".format(test._name))
+            if test._name not in args.module:
                 continue
+        elif test._name in args.exclude_module:
+            print("Skipping " + test._name)
+            continue
+
+        try:
             test.run()
-            suite.add_testcase(test.case)
+        except EndTest:
+            pass
+        suite.add_testcase(test.case)
 
     xml = JUnitXml()
     xml.add_testsuite(suite)
@@ -739,7 +775,7 @@ def main():
         errors = len(failed_cases)
 
     if errors:
-        print("{} Errors found".format(errors))
+        print("{} checks failed".format(errors))
         for case in failed_cases:
             # not clear why junitxml doesn't clearly expose the most
             # important part of its underlying etree.Element
