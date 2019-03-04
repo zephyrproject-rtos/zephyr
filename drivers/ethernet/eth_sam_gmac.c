@@ -1256,8 +1256,9 @@ static void eth_rx(struct gmac_queue *queue)
 	}
 }
 
-#if (CONFIG_ETH_SAM_GMAC_QUEUES != NET_TC_TX_COUNT) || \
-	((NET_TC_TX_COUNT != NET_TC_RX_COUNT) && defined(CONFIG_NET_VLAN))
+#if !defined(CONFIG_ETH_SAM_GMAC_FORCE_QUEUE) && \
+	((CONFIG_ETH_SAM_GMAC_QUEUES != NET_TC_TX_COUNT) || \
+	((NET_TC_TX_COUNT != NET_TC_RX_COUNT) && defined(CONFIG_NET_VLAN)))
 static int priority2queue(enum net_priority priority)
 {
 	static const u8_t queue_priority_map[] = {
@@ -1311,7 +1312,10 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	/* Decide which queue should be used */
 	pkt_prio = net_pkt_priority(pkt);
 
-#if CONFIG_ETH_SAM_GMAC_QUEUES == CONFIG_NET_TC_TX_COUNT
+#if defined(CONFIG_ETH_SAM_GMAC_FORCE_QUEUE)
+	/* Route eveything to the forced queue */
+	queue = &dev_data->queue_list[CONFIG_ETH_SAM_GMAC_FORCED_QUEUE];
+#elif CONFIG_ETH_SAM_GMAC_QUEUES == CONFIG_NET_TC_TX_COUNT
 	/* Prefer to chose queue based on its traffic class */
 	queue = &dev_data->queue_list[net_tx_priority2tc(pkt_prio)];
 #else
@@ -1691,7 +1695,13 @@ static void eth0_iface_init(struct net_if *iface)
 	}
 
 #if GMAC_PRIORITY_QUEUE_NO >= 1
-#if CONFIG_ETH_SAM_GMAC_QUEUES == NET_TC_RX_COUNT
+#if defined(CONFIG_ETH_SAM_GMAC_FORCE_QUEUE)
+	for (i = 0; i < CONFIG_NET_TC_RX_COUNT; ++i) {
+		cfg->regs->GMAC_ST1RPQ[i] =
+			GMAC_ST1RPQ_DSTCM(i) |
+			GMAC_ST1RPQ_QNB(CONFIG_ETH_SAM_GMAC_FORCED_QUEUE);
+	}
+#elif CONFIG_ETH_SAM_GMAC_QUEUES == NET_TC_RX_COUNT
 	/* If TC configuration is compatible with HW configuration, setup the
 	 * screening registers based on the DS/TC values.
 	 * Map them 1:1 - TC 0 -> Queue 0, TC 1 -> Queue 1 etc.
