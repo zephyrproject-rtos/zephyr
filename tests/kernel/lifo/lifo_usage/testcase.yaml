@@ -2,3 +2,4 @@ tests:
   kernel.lifo.usage:
     min_ram: 32
     tags: kernel userspace
+    platform_exclude: m2gl025_miv
