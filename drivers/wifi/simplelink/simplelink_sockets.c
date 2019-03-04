@@ -9,6 +9,7 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 
 #include <stdlib.h>
 #include <limits.h>
+#include <fcntl.h>
 
 #include <zephyr.h>
 /* Define sockaddr, etc, before simplelink.h */
@@ -1055,14 +1056,43 @@ static void simplelink_freeaddrinfo(struct addrinfo *res)
 	free(res);
 }
 
-static int simplelink_fctnl(int fd, int cmd, va_list args)
+static int simplelink_fcntl(int sd, int cmd, va_list args)
 {
-	ARG_UNUSED(fd);
-	ARG_UNUSED(cmd);
-	ARG_UNUSED(args);
+	int retval = 0;
+	SlSockNonblocking_t enableOption;
+	SlSocklen_t optlen = sizeof(SlSockNonblocking_t);
 
-	errno = ENOTSUP;
-	return -1;
+	switch (cmd) {
+	case F_GETFL:
+		retval = sl_GetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING,
+			(_u8 *)&enableOption, &optlen);
+		if (retval == 0) {
+			if (enableOption.NonBlockingEnabled) {
+				retval |= O_NONBLOCK;
+			}
+		}
+		break;
+	case F_SETFL:
+		if ((va_arg(args, int) & O_NONBLOCK) != 0) {
+			enableOption.NonBlockingEnabled = 1;
+		} else {
+			enableOption.NonBlockingEnabled = 0;
+		}
+		retval = sl_SetSockOpt(sd, SL_SOL_SOCKET, SL_SO_NONBLOCKING,
+			&enableOption, optlen);
+		break;
+	default:
+		LOG_ERR("Invalid command: %d", cmd);
+		retval = slcb_SetErrno(EINVAL);
+		goto exit;
+	}
+
+	if (retval < 0) {
+		retval = slcb_SetErrno(getErrno(retval));
+	}
+
+exit:
+	return retval;
 }
 
 void simplelink_sockets_init(void)
@@ -1086,5 +1116,5 @@ const struct socket_offload simplelink_ops = {
 	.sendto = simplelink_sendto,
 	.getaddrinfo = simplelink_getaddrinfo,
 	.freeaddrinfo = simplelink_freeaddrinfo,
-	.fcntl = simplelink_fctnl,
+	.fcntl = simplelink_fcntl,
 };
