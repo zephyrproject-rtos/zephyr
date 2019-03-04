@@ -13,6 +13,7 @@
 /arch/arm/include/cortex_m/cmse/          @ioannisg
 /soc/arm/                                 @MaureenHelm @galak
 /soc/arm/arm/mps2/                        @fvincenzo
+/soc/arm/atmel_sam/sam3x/                 @ioannisg
 /soc/arm/atmel_sam/sam4s/                 @fallrisk
 /soc/arm/nxp*/                            @MaureenHelm
 /soc/arm/nordic_nrf/                      @ioannisg
