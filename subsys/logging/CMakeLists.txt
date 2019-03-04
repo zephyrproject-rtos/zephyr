@@ -25,6 +25,11 @@ zephyr_sources_ifdef(
   )
 
 zephyr_sources_ifdef(
+  CONFIG_LOG_BACKEND_XTENSA_SIM
+  log_backend_xtensa_sim.c
+  )
+
+zephyr_sources_ifdef(
   CONFIG_LOG_BACKEND_NET
   log_backend_net.c
   )

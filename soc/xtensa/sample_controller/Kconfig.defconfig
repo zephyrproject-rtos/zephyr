@@ -16,4 +16,7 @@ config IRQ_OFFLOAD_INTNUM
 config XTENSA_ASM2
 	default y
 
+config LOG_BACKEND_XTENSA_SIM
+	default LOG
+
 endif
