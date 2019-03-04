@@ -608,6 +608,9 @@ static int execute(const struct shell *shell)
 		return -ENOEXEC;
 	}
 
+	/* Initialize help variable */
+	help_entry.help = NULL;
+
 	/* Below loop is analyzing subcommands of found root command. */
 	while (true) {
 		if (cmd_lvl >= argc) {
