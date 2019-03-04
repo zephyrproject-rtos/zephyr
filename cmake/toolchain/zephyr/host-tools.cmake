@@ -35,6 +35,7 @@ string(STRIP ${SDK_VERSION_PRE2} SDK_VERSION)
 if(${REQUIRED_SDK_VER} VERSION_GREATER ${SDK_VERSION})
   message(FATAL_ERROR "The SDK version you are using is old, please update your SDK.
 You need at least SDK version ${REQUIRED_SDK_VER}.
+You have version ${SDK_VERSION} (${ZEPHYR_SDK_INSTALL_DIR}).
 The new version of the SDK can be download from:
 https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/${REQUIRED_SDK_VER}/zephyr-sdk-${REQUIRED_SDK_VER}-setup.run
 ")
