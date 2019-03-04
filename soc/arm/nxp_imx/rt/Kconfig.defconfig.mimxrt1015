@@ -1,0 +1,29 @@
+# Kconfig - i.MX RT1015
+#
+# Copyright (c) 2019, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_MIMXRT1015
+
+config SOC
+	string
+	default "mimxrt1015"
+
+config NUM_IRQS
+	default 142
+
+config ARM_DIV
+	default 0
+
+config AHB_DIV
+	default 0
+
+config IPG_DIV
+	default 3
+
+config GPIO
+	default y
+
+endif # SOC_MIMXRT1015
