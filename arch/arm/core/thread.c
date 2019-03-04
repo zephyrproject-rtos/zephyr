@@ -59,7 +59,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	_ASSERT_VALID_PRIO(priority, pEntry);
 
-#if CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+#if CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT && CONFIG_USERSPACE
 	char *stackEnd = pStackMem + stackSize - MPU_GUARD_ALIGN_AND_SIZE;
 #else
 	char *stackEnd = pStackMem + stackSize;
