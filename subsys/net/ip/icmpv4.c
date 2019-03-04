@@ -60,7 +60,8 @@ int net_icmpv4_finalize(struct net_pkt *pkt)
 }
 
 static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
-						   struct net_ipv4_hdr *ip_hdr)
+						   struct net_ipv4_hdr *ip_hdr,
+						   struct net_icmp_hdr *icmp_hdr)
 {
 	struct net_pkt *reply = NULL;
 	s16_t payload_len;
@@ -319,7 +320,7 @@ enum net_verdict net_icmpv4_input(struct net_pkt *pkt,
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
 		if (cb->type == icmp_hdr->type &&
 		    (cb->code == icmp_hdr->code || cb->code == 0U)) {
-			return cb->handler(pkt, ip_hdr);
+			return cb->handler(pkt, ip_hdr, icmp_hdr);
 		}
 	}
 

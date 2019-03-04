@@ -2720,7 +2720,8 @@ static int ping_ipv6(const struct shell *shell, char *host)
 #if defined(CONFIG_NET_IPV4)
 
 static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
-						struct net_ipv4_hdr *ip_hdr);
+						struct net_ipv4_hdr *ip_hdr,
+						struct net_icmp_hdr *icmp_hdr);
 
 static struct net_icmpv4_handler ping4_handler = {
 	.type = NET_ICMPV4_ECHO_REPLY,
@@ -2734,7 +2735,8 @@ static inline void remove_ipv4_ping_handler(void)
 }
 
 static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
-						struct net_ipv4_hdr *ip_hdr)
+						struct net_ipv4_hdr *ip_hdr,
+						struct net_icmp_hdr *icmp_hdr)
 {
 	PR_SHELL(shell_for_ping, "Received echo reply from %s to %s\n",
 		 net_sprint_ipv4_addr(&ip_hdr->src),
