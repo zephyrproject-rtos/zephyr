@@ -2,7 +2,7 @@
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_PWM_H_
@@ -14,7 +14,6 @@
  * @addtogroup pwm_driver
  * @{
  */
-
 
 /*******************************************************************************
  * Definitions
@@ -183,18 +182,18 @@ typedef enum _pwm_interrupt_enable
     kPWM_CompareVal3InterruptEnable = (1U << 3),  /*!< PWM VAL3 compare interrupt */
     kPWM_CompareVal4InterruptEnable = (1U << 4),  /*!< PWM VAL4 compare interrupt */
     kPWM_CompareVal5InterruptEnable = (1U << 5),  /*!< PWM VAL5 compare interrupt */
-    kPWM_CaptureX0InterruptEnable = (1U << 6),    /*!< PWM capture X0 interrupt */
-    kPWM_CaptureX1InterruptEnable = (1U << 7),    /*!< PWM capture X1 interrupt */
-    kPWM_CaptureB0InterruptEnable = (1U << 8),    /*!< PWM capture B0 interrupt */
-    kPWM_CaptureB1InterruptEnable = (1U << 9),    /*!< PWM capture B1 interrupt */
-    kPWM_CaptureA0InterruptEnable = (1U << 10),   /*!< PWM capture A0 interrupt */
-    kPWM_CaptureA1InterruptEnable = (1U << 11),   /*!< PWM capture A1 interrupt */
-    kPWM_ReloadInterruptEnable = (1U << 12),      /*!< PWM reload interrupt */
+    kPWM_CaptureX0InterruptEnable   = (1U << 6),  /*!< PWM capture X0 interrupt */
+    kPWM_CaptureX1InterruptEnable   = (1U << 7),  /*!< PWM capture X1 interrupt */
+    kPWM_CaptureB0InterruptEnable   = (1U << 8),  /*!< PWM capture B0 interrupt */
+    kPWM_CaptureB1InterruptEnable   = (1U << 9),  /*!< PWM capture B1 interrupt */
+    kPWM_CaptureA0InterruptEnable   = (1U << 10), /*!< PWM capture A0 interrupt */
+    kPWM_CaptureA1InterruptEnable   = (1U << 11), /*!< PWM capture A1 interrupt */
+    kPWM_ReloadInterruptEnable      = (1U << 12), /*!< PWM reload interrupt */
     kPWM_ReloadErrorInterruptEnable = (1U << 13), /*!< PWM reload error interrupt */
-    kPWM_Fault0InterruptEnable = (1U << 16),      /*!< PWM fault 0 interrupt */
-    kPWM_Fault1InterruptEnable = (1U << 17),      /*!< PWM fault 1 interrupt */
-    kPWM_Fault2InterruptEnable = (1U << 18),      /*!< PWM fault 2 interrupt */
-    kPWM_Fault3InterruptEnable = (1U << 19)       /*!< PWM fault 3 interrupt */
+    kPWM_Fault0InterruptEnable      = (1U << 16), /*!< PWM fault 0 interrupt */
+    kPWM_Fault1InterruptEnable      = (1U << 17), /*!< PWM fault 1 interrupt */
+    kPWM_Fault2InterruptEnable      = (1U << 18), /*!< PWM fault 2 interrupt */
+    kPWM_Fault3InterruptEnable      = (1U << 19)  /*!< PWM fault 3 interrupt */
 } pwm_interrupt_enable_t;
 
 /*! @brief List of PWM status flags */
@@ -206,19 +205,19 @@ typedef enum _pwm_status_flags
     kPWM_CompareVal3Flag = (1U << 3),  /*!< PWM VAL3 compare flag */
     kPWM_CompareVal4Flag = (1U << 4),  /*!< PWM VAL4 compare flag */
     kPWM_CompareVal5Flag = (1U << 5),  /*!< PWM VAL5 compare flag */
-    kPWM_CaptureX0Flag = (1U << 6),    /*!< PWM capture X0 flag */
-    kPWM_CaptureX1Flag = (1U << 7),    /*!< PWM capture X1 flag */
-    kPWM_CaptureB0Flag = (1U << 8),    /*!< PWM capture B0 flag */
-    kPWM_CaptureB1Flag = (1U << 9),    /*!< PWM capture B1 flag */
-    kPWM_CaptureA0Flag = (1U << 10),   /*!< PWM capture A0 flag */
-    kPWM_CaptureA1Flag = (1U << 11),   /*!< PWM capture A1 flag */
-    kPWM_ReloadFlag = (1U << 12),      /*!< PWM reload flag */
+    kPWM_CaptureX0Flag   = (1U << 6),  /*!< PWM capture X0 flag */
+    kPWM_CaptureX1Flag   = (1U << 7),  /*!< PWM capture X1 flag */
+    kPWM_CaptureB0Flag   = (1U << 8),  /*!< PWM capture B0 flag */
+    kPWM_CaptureB1Flag   = (1U << 9),  /*!< PWM capture B1 flag */
+    kPWM_CaptureA0Flag   = (1U << 10), /*!< PWM capture A0 flag */
+    kPWM_CaptureA1Flag   = (1U << 11), /*!< PWM capture A1 flag */
+    kPWM_ReloadFlag      = (1U << 12), /*!< PWM reload flag */
     kPWM_ReloadErrorFlag = (1U << 13), /*!< PWM reload error flag */
-    kPWM_RegUpdatedFlag = (1U << 14),  /*!< PWM registers updated flag */
-    kPWM_Fault0Flag = (1U << 16),      /*!< PWM fault 0 flag */
-    kPWM_Fault1Flag = (1U << 17),      /*!< PWM fault 1 flag */
-    kPWM_Fault2Flag = (1U << 18),      /*!< PWM fault 2 flag */
-    kPWM_Fault3Flag = (1U << 19)       /*!< PWM fault 3 flag */
+    kPWM_RegUpdatedFlag  = (1U << 14), /*!< PWM registers updated flag */
+    kPWM_Fault0Flag      = (1U << 16), /*!< PWM fault 0 flag */
+    kPWM_Fault1Flag      = (1U << 17), /*!< PWM fault 1 flag */
+    kPWM_Fault2Flag      = (1U << 18), /*!< PWM fault 2 flag */
+    kPWM_Fault3Flag      = (1U << 19)  /*!< PWM fault 3 flag */
 } pwm_status_flags_t;
 
 /*! @brief PWM operation mode */

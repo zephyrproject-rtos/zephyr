@@ -116,12 +116,12 @@ void GPT_GetDefaultConfig(gpt_config_t *config)
     /* Initializes the configure structure to zero. */
     memset(config, 0, sizeof(*config));
 
-    config->clockSource = kGPT_ClockSource_Periph;
-    config->divider = 1U;
+    config->clockSource     = kGPT_ClockSource_Periph;
+    config->divider         = 1U;
     config->enableRunInStop = true;
     config->enableRunInWait = true;
     config->enableRunInDoze = false;
-    config->enableRunInDbg = false;
-    config->enableFreeRun = false;
-    config->enableMode = true;
+    config->enableRunInDbg  = false;
+    config->enableFreeRun   = false;
+    config->enableMode      = true;
 }

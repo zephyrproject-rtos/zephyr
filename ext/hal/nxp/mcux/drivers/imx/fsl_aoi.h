@@ -2,7 +2,7 @@
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_AOI_H_
@@ -14,7 +14,6 @@
  * @addtogroup aoi
  * @{
  */
-
 
 /*******************************************************************************
  * Definitions
@@ -32,13 +31,13 @@
  * @brief AOI input configurations.
  *
  * The selection item represents the Boolean evaluations.
-*/
+ */
 typedef enum _aoi_input_config
 {
-    kAOI_LogicZero = 0x0U,      /*!< Forces the input to logical zero. */
-    kAOI_InputSignal = 0x1U,    /*!< Passes the input signal. */
+    kAOI_LogicZero      = 0x0U, /*!< Forces the input to logical zero. */
+    kAOI_InputSignal    = 0x1U, /*!< Passes the input signal. */
     kAOI_InvInputSignal = 0x2U, /*!< Inverts the input signal. */
-    kAOI_LogicOne = 0x3U        /*!< Forces the input to logical one. */
+    kAOI_LogicOne       = 0x3U  /*!< Forces the input to logical one. */
 } aoi_input_config_t;
 
 /*!

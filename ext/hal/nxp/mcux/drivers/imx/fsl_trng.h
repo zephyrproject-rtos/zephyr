@@ -23,11 +23,13 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief TRNG driver version 2.0.3.
+/*! @brief TRNG driver version 2.0.4.
  *
- * Current version: 2.0.3
+ * Current version: 2.0.4
  *
  * Change log:
+ * - version 2.0.4
+ *   - Fix MISRA-2012 issues.
  * - Version 2.0.3
  *   - update TRNG_Init to restart entropy generation
  * - Version 2.0.2
@@ -36,14 +38,14 @@
  *   - add support for KL8x and KL28Z
  *   - update default OSCDIV for K81 to divide by 2
  */
-#define FSL_TRNG_DRIVER_VERSION (MAKE_VERSION(2, 0, 3))
+#define FSL_TRNG_DRIVER_VERSION (MAKE_VERSION(2, 0, 4))
 /*@}*/
 
 /*! @brief TRNG sample mode. Used by trng_config_t. */
 typedef enum _trng_sample_mode
 {
     kTRNG_SampleModeVonNeumann = 0U, /*!< Use von Neumann data in both Entropy shifter and Statistical Checker. */
-    kTRNG_SampleModeRaw = 1U,        /*!< Use raw data into both Entropy shifter and Statistical Checker. */
+    kTRNG_SampleModeRaw        = 1U, /*!< Use raw data into both Entropy shifter and Statistical Checker. */
     kTRNG_SampleModeVonNeumannRaw =
         2U /*!< Use von Neumann data in Entropy shifter. Use raw data into Statistical Checker. */
 } trng_sample_mode_t;
@@ -52,7 +54,7 @@ typedef enum _trng_sample_mode
 typedef enum _trng_clock_mode
 {
     kTRNG_ClockModeRingOscillator = 0U, /*!< Ring oscillator is used to operate the TRNG (default). */
-    kTRNG_ClockModeSystem = 1U          /*!< System clock is used to operate the TRNG. This is for test use only, and
+    kTRNG_ClockModeSystem         = 1U  /*!< System clock is used to operate the TRNG. This is for test use only, and
                                            indeterminate results may occur. */
 } trng_clock_mode_t;
 
@@ -89,44 +91,36 @@ typedef struct _trng_user_config
         entropyDelay; /*!< @brief Entropy Delay. Defines the length (in system clocks) of each Entropy sample taken. */
     uint16_t sampleSize; /*!< @brief Sample Size. Defines the total number of Entropy samples that will be taken during
                             Entropy generation. */
-    uint16_t
-        sparseBitLimit; /*!< @brief Sparse Bit Limit which defines the maximum number of
-                        * consecutive samples that may be discarded before an error is generated.
-                        * This limit is used only for during von Neumann sampling (enabled by TRNG_HAL_SetSampleMode()).
-                        * Samples are discarded if two consecutive raw samples are both 0 or both 1. If
-                        * this discarding occurs for a long period of time, it indicates that there is
-                        * insufficient Entropy. */
+    uint16_t sparseBitLimit; /*!< @brief Sparse Bit Limit which defines the maximum number of
+                              * consecutive samples that may be discarded before an error is generated.
+                              * This limit is used only for during von Neumann sampling (enabled by
+                              * TRNG_HAL_SetSampleMode()). Samples are discarded if two consecutive raw samples are both
+                              * 0 or both 1. If this discarding occurs for a long period of time, it indicates that
+                              * there is insufficient Entropy. */
     /* Statistical Check Parameters.*/
     uint8_t retryCount;      /*!< @brief Retry count. It defines the number of times a statistical check may fails
-                             * during the TRNG Entropy Generation before generating an error. */
+                              * during the TRNG Entropy Generation before generating an error. */
     uint8_t longRunMaxLimit; /*!< @brief Largest allowable number of consecutive samples of all 1, or all 0,
-                             * that is allowed during the Entropy generation. */
-    trng_statistical_check_limit_t
-        monobitLimit; /*!< @brief Maximum and minimum limits for statistical check of number of ones/zero detected
-                         during entropy generation. */
-    trng_statistical_check_limit_t
-        runBit1Limit; /*!< @brief Maximum and minimum limits for statistical check of number of runs of length 1
-                         detected during entropy generation. */
-    trng_statistical_check_limit_t
-        runBit2Limit; /*!< @brief Maximum and minimum limits for statistical check of number of runs of length 2
-                         detected during entropy generation. */
-    trng_statistical_check_limit_t
-        runBit3Limit; /*!< @brief Maximum and minimum limits for statistical check of number of runs of length 3
-                         detected during entropy generation. */
-    trng_statistical_check_limit_t
-        runBit4Limit; /*!< @brief Maximum and minimum limits for statistical check of number of runs of length 4
-                         detected during entropy generation. */
-    trng_statistical_check_limit_t
-        runBit5Limit; /*!< @brief Maximum and minimum limits for statistical check of number of runs of length 5
-                         detected during entropy generation. */
+                              * that is allowed during the Entropy generation. */
+    trng_statistical_check_limit_t monobitLimit; /*!< @brief Maximum and minimum limits for statistical check of number
+                                                    of ones/zero detected during entropy generation. */
+    trng_statistical_check_limit_t runBit1Limit; /*!< @brief Maximum and minimum limits for statistical check of number
+                                                    of runs of length 1 detected during entropy generation. */
+    trng_statistical_check_limit_t runBit2Limit; /*!< @brief Maximum and minimum limits for statistical check of number
+                                                    of runs of length 2 detected during entropy generation. */
+    trng_statistical_check_limit_t runBit3Limit; /*!< @brief Maximum and minimum limits for statistical check of number
+                                                    of runs of length 3 detected during entropy generation. */
+    trng_statistical_check_limit_t runBit4Limit; /*!< @brief Maximum and minimum limits for statistical check of number
+                                                    of runs of length 4 detected during entropy generation. */
+    trng_statistical_check_limit_t runBit5Limit; /*!< @brief Maximum and minimum limits for statistical check of number
+                                                    of runs of length 5 detected during entropy generation. */
     trng_statistical_check_limit_t runBit6PlusLimit; /*!< @brief Maximum and minimum limits for statistical check of
                                                         number of runs of length 6 or more detected during entropy
                                                         generation. */
     trng_statistical_check_limit_t
         pokerLimit; /*!< @brief Maximum and minimum limits for statistical check of "Poker Test". */
-    trng_statistical_check_limit_t
-        frequencyCountLimit; /*!< @brief Maximum and minimum limits for statistical check of entropy sample frequency
-                                count. */
+    trng_statistical_check_limit_t frequencyCountLimit; /*!< @brief Maximum and minimum limits for statistical check of
+                                                           entropy sample frequency count. */
 } trng_config_t;
 
 /*******************************************************************************

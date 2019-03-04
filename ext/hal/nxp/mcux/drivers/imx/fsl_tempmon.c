@@ -65,11 +65,11 @@ void TEMPMON_Init(TEMPMON_Type *base, const tempmon_config_t *config)
 
     /* ready to read calibration data */
     calibrationData = OCOTP->ANA1;
-    s_hotTemp = (uint32_t)(calibrationData & TEMPMON_HOTTEMPMASK) >> TEMPMON_HOTTEMPSHIFT;
-    s_hotCount = (uint32_t)(calibrationData & TEMPMON_HOTCOUNTMASK) >> TEMPMON_HOTCOUNTSHIFT;
-    roomCount = (uint32_t)(calibrationData & TEMPMON_ROOMCOUNTMASK) >> TEMPMON_ROOMCOUNTSHIFT;
+    s_hotTemp       = (uint32_t)(calibrationData & TEMPMON_HOTTEMPMASK) >> TEMPMON_HOTTEMPSHIFT;
+    s_hotCount      = (uint32_t)(calibrationData & TEMPMON_HOTCOUNTMASK) >> TEMPMON_HOTCOUNTSHIFT;
+    roomCount       = (uint32_t)(calibrationData & TEMPMON_ROOMCOUNTMASK) >> TEMPMON_ROOMCOUNTSHIFT;
 
-    s_hotT_ROOM = s_hotTemp - TEMPMON_ROOMTEMP;
+    s_hotT_ROOM  = s_hotTemp - TEMPMON_ROOMTEMP;
     s_roomC_hotC = roomCount - s_hotCount;
 
     /* Set alarm temperature */

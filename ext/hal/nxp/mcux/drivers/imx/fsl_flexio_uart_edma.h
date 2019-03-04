@@ -2,7 +2,7 @@
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_FLEXIO_UART_EDMA_H_
@@ -36,8 +36,8 @@ typedef void (*flexio_uart_edma_transfer_callback_t)(FLEXIO_UART_Type *base,
                                                      void *userData);
 
 /*!
-* @brief UART eDMA handle
-*/
+ * @brief UART eDMA handle
+ */
 struct _flexio_uart_edma_handle
 {
     flexio_uart_edma_transfer_callback_t callback; /*!< Callback function. */

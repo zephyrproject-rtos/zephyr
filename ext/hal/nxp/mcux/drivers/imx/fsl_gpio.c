@@ -26,15 +26,15 @@ static const clock_ip_name_t s_gpioClock[] = GPIO_CLOCKS;
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 /*******************************************************************************
-* Prototypes
-******************************************************************************/
+ * Prototypes
+ ******************************************************************************/
 
 /*!
-* @brief Gets the GPIO instance according to the GPIO base
-*
-* @param base    GPIO peripheral base pointer(PTA, PTB, PTC, etc.)
-* @retval GPIO instance
-*/
+ * @brief Gets the GPIO instance according to the GPIO base
+ *
+ * @param base    GPIO peripheral base pointer(PTA, PTB, PTC, etc.)
+ * @retval GPIO instance
+ */
 static uint32_t GPIO_GetInstance(GPIO_Type *base);
 
 /*******************************************************************************

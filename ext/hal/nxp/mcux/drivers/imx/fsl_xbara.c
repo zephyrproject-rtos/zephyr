@@ -17,6 +17,9 @@
 #define FSL_COMPONENT_ID "platform.drivers.xbara"
 #endif
 
+/* Macros for entire XBARA_CTRL register.  */
+#define XBARA_CTRLx(base, index) ((&(base->CTRL0))[index])
+
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
@@ -188,74 +191,32 @@ void XBARA_SetOutputSignalConfig(XBARA_Type *base,
                                  const xbara_control_config_t *controlConfig)
 {
     uint16_t regVal;
-    /* Set active edge for edge detection, set interrupt or DMA function. */
-    switch ((uint16_t)output)
+    uint8_t outputIndex = (uint8_t)output & 0xFFU;
+    uint8_t regIndex;
+    uint8_t shiftInReg;
+
+    assert(outputIndex < FSL_FEATURE_XBARA_INTERRUPT_COUNT);
+
+    regIndex = outputIndex / 2;
+
+    if ((outputIndex & 0x01U) != 0U)
     {
-#if defined(FSL_FEATURE_XBARA_OUTPUT_DMA_CH_MUX_REQ_30) && FSL_FEATURE_XBARA_OUTPUT_DMA_CH_MUX_REQ_30
-        case kXBARA1_OutputDmaChMuxReq30:
-#else
-        case kXBARA_OutputDmamux18:
-#endif
-            /* Assign regVal to CTRL0 register's value */
-            regVal = (base->CTRL0);
-            /* Perform this command to avoid writing 1 into interrupt flag bits and clears bit DEN0, IEN0 */
-            regVal &= (uint16_t)(
-                ~(XBARA_CTRL0_STS0_MASK | XBARA_CTRL0_STS1_MASK | XBARA_CTRL0_DEN0_MASK | XBARA_CTRL0_IEN0_MASK));
-            /* Configure edge and request type */
-            regVal |= (uint16_t)(XBARA_CTRL0_EDGE0(controlConfig->activeEdge) |
-                                 ((controlConfig->requestType) << XBARA_CTRL0_DEN0_SHIFT));
-            /* Write regVal value into CTRL0 register */
-            base->CTRL0 = regVal;
-            break;
-#if defined(FSL_FEATURE_XBARA_OUTPUT_DMA_CH_MUX_REQ_31) && FSL_FEATURE_XBARA_OUTPUT_DMA_CH_MUX_REQ_31
-        case kXBARA1_OutputDmaChMuxReq31:
-#else
-        case kXBARA_OutputDmamux19:
-#endif
-            /* Assign regVal to CTRL0 register's value */
-            regVal = (base->CTRL0);
-            /* Perform this command to avoid writing 1 into interrupt flag bits and clears bit DEN1, IEN1 */
-            regVal &= (uint16_t)(
-                ~(XBARA_CTRL0_STS0_MASK | XBARA_CTRL0_STS1_MASK | XBARA_CTRL0_DEN1_MASK | XBARA_CTRL0_IEN1_MASK));
-            /* Configure edge and request type */
-            regVal |= (uint16_t)(XBARA_CTRL0_EDGE1(controlConfig->activeEdge) |
-                                 ((controlConfig->requestType) << XBARA_CTRL0_DEN1_SHIFT));
-            /* Write regVal value into CTRL0 register */
-            base->CTRL0 = regVal;
-            break;
-#if defined(FSL_FEATURE_XBARA_OUTPUT_DMA_CH_MUX_REQ_94) && FSL_FEATURE_XBARA_OUTPUT_DMA_CH_MUX_REQ_94
-        case kXBARA1_OutputDmaChMuxReq94:
-#else
-        case kXBARA_OutputDmamux20:
-#endif
-            /* Assign regVal to CTRL1 register's value */
-            regVal = (base->CTRL1);
-            /* Perform this command to avoid writing 1 into interrupt flag bits and clears bit DEN2, IEN2 */
-            regVal &= (uint16_t)(
-                ~(XBARA_CTRL1_STS2_MASK | XBARA_CTRL1_STS3_MASK | XBARA_CTRL1_DEN2_MASK | XBARA_CTRL1_IEN2_MASK));
-            /* Configure edge and request type */
-            regVal |= (uint16_t)(XBARA_CTRL1_EDGE2(controlConfig->activeEdge) |
-                                 ((controlConfig->requestType) << XBARA_CTRL1_DEN2_SHIFT));
-            /* Write regVal value into CTRL1 register */
-            base->CTRL1 = regVal;
-            break;
-#if defined(FSL_FEATURE_XBARA_OUTPUT_DMA_CH_MUX_REQ_95) && FSL_FEATURE_XBARA_OUTPUT_DMA_CH_MUX_REQ_95
-        case kXBARA1_OutputDmaChMuxReq95:
-#else
-        case kXBARA_OutputDmamux21:
-#endif
-            /* Assign regVal to CTRL1 register's value */
-            regVal = (base->CTRL1);
-            /* Perform this command to avoid writing 1 into interrupt flag bits and clears bit DEN3, IEN3 */
-            regVal &= (uint16_t)(
-                ~(XBARA_CTRL1_STS2_MASK | XBARA_CTRL1_STS3_MASK | XBARA_CTRL1_DEN3_MASK | XBARA_CTRL1_IEN3_MASK));
-            /* Configure edge and request type */
-            regVal |= (uint16_t)(XBARA_CTRL1_EDGE3(controlConfig->activeEdge) |
-                                 ((controlConfig->requestType) << XBARA_CTRL1_DEN3_SHIFT));
-            /* Write regVal value into CTRL1 register */
-            base->CTRL1 = regVal;
-            break;
-        default:
-            break;
+        shiftInReg = 8;
     }
+    else
+    {
+        shiftInReg = 0;
+    }
+
+    regVal = XBARA_CTRLx(base, regIndex);
+
+    /* Don't clear the status flags. */
+    regVal &= (uint16_t)(~(XBARA_CTRL0_STS0_MASK | XBARA_CTRL0_STS1_MASK));
+
+    regVal &= (uint16_t)(~((XBARA_CTRL0_DEN0_MASK | XBARA_CTRL0_IEN0_MASK | XBARA_CTRL0_EDGE0_MASK) << shiftInReg));
+    regVal |= (uint16_t)(
+        (XBARA_CTRL0_EDGE0(controlConfig->activeEdge) | ((controlConfig->requestType) << XBARA_CTRL0_DEN0_SHIFT))
+        << shiftInReg);
+
+    XBARA_CTRLx(base, regIndex) = regVal;
 }

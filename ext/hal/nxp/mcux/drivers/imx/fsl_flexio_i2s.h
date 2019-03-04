@@ -29,10 +29,10 @@
 /*! @brief FlexIO I2S transfer status */
 enum _flexio_i2s_status
 {
-    kStatus_FLEXIO_I2S_Idle = MAKE_STATUS(kStatusGroup_FLEXIO_I2S, 0),      /*!< FlexIO I2S is in idle state */
-    kStatus_FLEXIO_I2S_TxBusy = MAKE_STATUS(kStatusGroup_FLEXIO_I2S, 1),    /*!< FlexIO I2S Tx is busy */
-    kStatus_FLEXIO_I2S_RxBusy = MAKE_STATUS(kStatusGroup_FLEXIO_I2S, 2),    /*!< FlexIO I2S Tx is busy */
-    kStatus_FLEXIO_I2S_Error = MAKE_STATUS(kStatusGroup_FLEXIO_I2S, 3),     /*!< FlexIO I2S error occurred */
+    kStatus_FLEXIO_I2S_Idle      = MAKE_STATUS(kStatusGroup_FLEXIO_I2S, 0), /*!< FlexIO I2S is in idle state */
+    kStatus_FLEXIO_I2S_TxBusy    = MAKE_STATUS(kStatusGroup_FLEXIO_I2S, 1), /*!< FlexIO I2S Tx is busy */
+    kStatus_FLEXIO_I2S_RxBusy    = MAKE_STATUS(kStatusGroup_FLEXIO_I2S, 2), /*!< FlexIO I2S Tx is busy */
+    kStatus_FLEXIO_I2S_Error     = MAKE_STATUS(kStatusGroup_FLEXIO_I2S, 3), /*!< FlexIO I2S error occurred */
     kStatus_FLEXIO_I2S_QueueFull = MAKE_STATUS(kStatusGroup_FLEXIO_I2S, 4), /*!< FlexIO I2S transfer queue is full. */
 };
 
@@ -54,21 +54,21 @@ typedef struct _flexio_i2s_type
 typedef enum _flexio_i2s_master_slave
 {
     kFLEXIO_I2S_Master = 0x0U, /*!< Master mode */
-    kFLEXIO_I2S_Slave = 0x1U   /*!< Slave mode */
+    kFLEXIO_I2S_Slave  = 0x1U  /*!< Slave mode */
 } flexio_i2s_master_slave_t;
 
 /*! @brief Define FlexIO FlexIO I2S interrupt mask. */
 enum _flexio_i2s_interrupt_enable
 {
     kFLEXIO_I2S_TxDataRegEmptyInterruptEnable = 0x1U, /*!< Transmit buffer empty interrupt enable. */
-    kFLEXIO_I2S_RxDataRegFullInterruptEnable = 0x2U,  /*!< Receive buffer full interrupt enable. */
+    kFLEXIO_I2S_RxDataRegFullInterruptEnable  = 0x2U, /*!< Receive buffer full interrupt enable. */
 };
 
 /*! @brief Define FlexIO FlexIO I2S status mask. */
 enum _flexio_i2s_status_flags
 {
     kFLEXIO_I2S_TxDataRegEmptyFlag = 0x1U, /*!< Transmit buffer empty flag. */
-    kFLEXIO_I2S_RxDataRegFullFlag = 0x2U,  /*!< Receive buffer full flag. */
+    kFLEXIO_I2S_RxDataRegFullFlag  = 0x2U, /*!< Receive buffer full flag. */
 };
 
 /*! @brief FlexIO I2S configure structure */
@@ -97,22 +97,22 @@ typedef struct _flexio_i2s_format
 /*! @brief Audio sample rate */
 typedef enum _flexio_i2s_sample_rate
 {
-    kFLEXIO_I2S_SampleRate8KHz = 8000U,     /*!< Sample rate 8000Hz */
+    kFLEXIO_I2S_SampleRate8KHz    = 8000U,  /*!< Sample rate 8000Hz */
     kFLEXIO_I2S_SampleRate11025Hz = 11025U, /*!< Sample rate 11025Hz */
-    kFLEXIO_I2S_SampleRate12KHz = 12000U,   /*!< Sample rate 12000Hz */
-    kFLEXIO_I2S_SampleRate16KHz = 16000U,   /*!< Sample rate 16000Hz */
+    kFLEXIO_I2S_SampleRate12KHz   = 12000U, /*!< Sample rate 12000Hz */
+    kFLEXIO_I2S_SampleRate16KHz   = 16000U, /*!< Sample rate 16000Hz */
     kFLEXIO_I2S_SampleRate22050Hz = 22050U, /*!< Sample rate 22050Hz */
-    kFLEXIO_I2S_SampleRate24KHz = 24000U,   /*!< Sample rate 24000Hz */
-    kFLEXIO_I2S_SampleRate32KHz = 32000U,   /*!< Sample rate 32000Hz */
+    kFLEXIO_I2S_SampleRate24KHz   = 24000U, /*!< Sample rate 24000Hz */
+    kFLEXIO_I2S_SampleRate32KHz   = 32000U, /*!< Sample rate 32000Hz */
     kFLEXIO_I2S_SampleRate44100Hz = 44100U, /*!< Sample rate 44100Hz */
-    kFLEXIO_I2S_SampleRate48KHz = 48000U,   /*!< Sample rate 48000Hz */
-    kFLEXIO_I2S_SampleRate96KHz = 96000U    /*!< Sample rate 96000Hz */
+    kFLEXIO_I2S_SampleRate48KHz   = 48000U, /*!< Sample rate 48000Hz */
+    kFLEXIO_I2S_SampleRate96KHz   = 96000U  /*!< Sample rate 96000Hz */
 } flexio_i2s_sample_rate_t;
 
 /*! @brief Audio word width */
 typedef enum _flexio_i2s_word_width
 {
-    kFLEXIO_I2S_WordWidth8bits = 8U,   /*!< Audio data width 8 bits */
+    kFLEXIO_I2S_WordWidth8bits  = 8U,  /*!< Audio data width 8 bits */
     kFLEXIO_I2S_WordWidth16bits = 16U, /*!< Audio data width 16 bits */
     kFLEXIO_I2S_WordWidth24bits = 24U, /*!< Audio data width 24 bits */
     kFLEXIO_I2S_WordWidth32bits = 32U  /*!< Audio data width 32 bits */
@@ -172,7 +172,7 @@ extern "C" {
  *
  * @param base FlexIO I2S base pointer
  * @param config FlexIO I2S configure structure.
-*/
+ */
 void FLEXIO_I2S_Init(FLEXIO_I2S_Type *base, const flexio_i2s_config_t *config);
 
 /*!
@@ -193,7 +193,7 @@ void FLEXIO_I2S_GetDefaultConfig(flexio_i2s_config_t *config);
  * call the FLEXO_I2S_Init to use the FlexIO I2S module.
  *
  * @param base FlexIO I2S base pointer
-*/
+ */
 void FLEXIO_I2S_Deinit(FLEXIO_I2S_Type *base);
 
 /*!
@@ -201,7 +201,7 @@ void FLEXIO_I2S_Deinit(FLEXIO_I2S_Type *base);
  *
  * @param base Pointer to FLEXIO_I2S_Type
  * @param enable True to enable, false dose not have any effect.
-*/
+ */
 static inline void FLEXIO_I2S_Enable(FLEXIO_I2S_Type *base, bool enable)
 {
     if (enable)
@@ -222,7 +222,7 @@ static inline void FLEXIO_I2S_Enable(FLEXIO_I2S_Type *base, bool enable)
  *
  * @param base Pointer to FLEXIO_I2S_Type structure
  * @return Status flag, which are ORed by the enumerators in the _flexio_i2s_status_flags.
-*/
+ */
 uint32_t FLEXIO_I2S_GetStatusFlags(FLEXIO_I2S_Type *base);
 
 /*! @} */
@@ -323,7 +323,7 @@ static inline uint32_t FLEXIO_I2S_RxGetDataRegisterAddress(FLEXIO_I2S_Type *base
  * @param base Pointer to FLEXIO_I2S_Type structure
  * @param format Pointer to FlexIO I2S audio data format structure.
  * @param srcClock_Hz I2S master clock source frequency in Hz.
-*/
+ */
 void FLEXIO_I2S_MasterSetFormat(FLEXIO_I2S_Type *base, flexio_i2s_format_t *format, uint32_t srcClock_Hz);
 
 /*!
@@ -334,7 +334,7 @@ void FLEXIO_I2S_MasterSetFormat(FLEXIO_I2S_Type *base, flexio_i2s_format_t *form
  *
  * @param base Pointer to FLEXIO_I2S_Type structure
  * @param format Pointer to FlexIO I2S audio data format structure.
-*/
+ */
 void FLEXIO_I2S_SlaveSetFormat(FLEXIO_I2S_Type *base, flexio_i2s_format_t *format);
 
 /*!
@@ -418,7 +418,7 @@ void FLEXIO_I2S_TransferTxCreateHandle(FLEXIO_I2S_Type *base,
  * @param handle FlexIO I2S handle pointer.
  * @param format Pointer to audio data format structure.
  * @param srcClock_Hz FlexIO I2S bit clock source frequency in Hz. This parameter should be 0 while in slave mode.
-*/
+ */
 void FLEXIO_I2S_TransferSetFormat(FLEXIO_I2S_Type *base,
                                   flexio_i2s_handle_t *handle,
                                   flexio_i2s_format_t *format,

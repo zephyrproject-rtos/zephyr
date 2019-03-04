@@ -66,11 +66,11 @@ enum _wdog_interrupt_enable
  */
 enum _wdog_status_flags
 {
-    kWDOG_RunningFlag = WDOG_WCR_WDE_MASK,         /*!< Running flag, set when WDOG is enabled*/
-    kWDOG_PowerOnResetFlag = WDOG_WRSR_POR_MASK,   /*!< Power On flag, set when reset is the result of a powerOnReset*/
-    kWDOG_TimeoutResetFlag = WDOG_WRSR_TOUT_MASK,  /*!< Timeout flag, set when reset is the result of a timeout*/
+    kWDOG_RunningFlag       = WDOG_WCR_WDE_MASK,   /*!< Running flag, set when WDOG is enabled*/
+    kWDOG_PowerOnResetFlag  = WDOG_WRSR_POR_MASK,  /*!< Power On flag, set when reset is the result of a powerOnReset*/
+    kWDOG_TimeoutResetFlag  = WDOG_WRSR_TOUT_MASK, /*!< Timeout flag, set when reset is the result of a timeout*/
     kWDOG_SoftwareResetFlag = WDOG_WRSR_SFTW_MASK, /*!< Software flag, set when reset is the result of a software*/
-    kWDOG_InterruptFlag = WDOG_WICR_WTIS_MASK      /*!< interrupt flag,whether interrupt has occurred or not*/
+    kWDOG_InterruptFlag     = WDOG_WICR_WTIS_MASK  /*!< interrupt flag,whether interrupt has occurred or not*/
 };
 
 /*******************************************************************************
@@ -87,7 +87,7 @@ extern "C" {
  */
 
 /*!
- * @brief Initializes the WDOG configuration sturcture.
+ * @brief Initializes the WDOG configuration structure.
  *
  * This function initializes the WDOG configuration structure to default values. The default
  * values are as follows.

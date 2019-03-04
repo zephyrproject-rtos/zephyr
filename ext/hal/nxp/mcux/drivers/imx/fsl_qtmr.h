@@ -1,7 +1,7 @@
 /*
  * Copyright 2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_QTMR_H_
@@ -13,7 +13,6 @@
  * @addtogroup qtmr
  * @{
  */
-
 
 /*******************************************************************************
  * Definitions
@@ -109,21 +108,21 @@ typedef enum _qtmr_debug_action
 /*! @brief List of Quad Timer interrupts */
 typedef enum _qtmr_interrupt_enable
 {
-    kQTMR_CompareInterruptEnable = (1U << 0),  /*!< Compare interrupt.*/
+    kQTMR_CompareInterruptEnable  = (1U << 0), /*!< Compare interrupt.*/
     kQTMR_Compare1InterruptEnable = (1U << 1), /*!< Compare 1 interrupt.*/
     kQTMR_Compare2InterruptEnable = (1U << 2), /*!< Compare 2 interrupt.*/
     kQTMR_OverflowInterruptEnable = (1U << 3), /*!< Timer overflow interrupt.*/
-    kQTMR_EdgeInterruptEnable = (1U << 4)      /*!< Input edge interrupt.*/
+    kQTMR_EdgeInterruptEnable     = (1U << 4)  /*!< Input edge interrupt.*/
 } qtmr_interrupt_enable_t;
 
 /*! @brief List of Quad Timer flags */
 typedef enum _qtmr_status_flags
 {
-    kQTMR_CompareFlag = (1U << 0),  /*!< Compare flag */
+    kQTMR_CompareFlag  = (1U << 0), /*!< Compare flag */
     kQTMR_Compare1Flag = (1U << 1), /*!< Compare 1 flag */
     kQTMR_Compare2Flag = (1U << 2), /*!< Compare 2 flag */
     kQTMR_OverflowFlag = (1U << 3), /*!< Timer overflow flag */
-    kQTMR_EdgeFlag = (1U << 4)      /*!< Input edge flag */
+    kQTMR_EdgeFlag     = (1U << 4)  /*!< Input edge flag */
 } qtmr_status_flags_t;
 
 /*! @brief List of channel selection */
@@ -138,7 +137,7 @@ typedef enum _qtmr_channel_selection
 /*! @brief List of Quad Timer DMA enable */
 typedef enum _qtmr_dma_enable
 {
-    kQTMR_InputEdgeFlagDmaEnable = (1U << 0),      /*!< Input Edge Flag DMA Enable.*/
+    kQTMR_InputEdgeFlagDmaEnable      = (1U << 0), /*!< Input Edge Flag DMA Enable.*/
     kQTMR_ComparatorPreload1DmaEnable = (1U << 1), /*!< Comparator Preload Register 1 DMA Enable.*/
     kQTMR_ComparatorPreload2DmaEnable = (1U << 2), /*!< Comparator Preload Register 2 DMA Enable.*/
 } qtmr_dma_enable_t;
@@ -233,8 +232,12 @@ void QTMR_GetDefaultConfig(qtmr_config_t *config);
  *
  * @return Returns an error if there was error setting up the signal.
  */
-status_t QTMR_SetupPwm(
-    TMR_Type *base, qtmr_channel_selection_t channel, uint32_t pwmFreqHz, uint8_t dutyCyclePercent, bool outputPolarity, uint32_t srcClock_Hz);
+status_t QTMR_SetupPwm(TMR_Type *base,
+                       qtmr_channel_selection_t channel,
+                       uint32_t pwmFreqHz,
+                       uint8_t dutyCyclePercent,
+                       bool outputPolarity,
+                       uint32_t srcClock_Hz);
 
 /*!
  * @brief Allows the user to count the source clock cycles until a capture event arrives.

@@ -2,7 +2,7 @@
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 #ifndef _FSL_PMU_H_
@@ -65,10 +65,10 @@ typedef enum _pmu_3p0_vbus_voltage_source
  */
 typedef enum _pmu_core_reg_voltage_ramp_rate
 {
-    kPMU_CoreRegVoltageRampRateFast = 0U,       /*!< Fast. */
+    kPMU_CoreRegVoltageRampRateFast       = 0U, /*!< Fast. */
     kPMU_CoreRegVoltageRampRateMediumFast = 1U, /*!< Medium Fast. */
     kPMU_CoreRegVoltageRampRateMediumSlow = 2U, /*!< Medium Slow. */
-    kPMU_CoreRegVoltageRampRateSlow = 0U,       /*!< Slow. */
+    kPMU_CoreRegVoltageRampRateSlow       = 0U, /*!< Slow. */
 } pmu_core_reg_voltage_ramp_rate_t;
 
 #if defined(FSL_FEATURE_PMU_HAS_LOWPWR_CTRL) && FSL_FEATURE_PMU_HAS_LOWPWR_CTRL
@@ -77,11 +77,11 @@ typedef enum _pmu_core_reg_voltage_ramp_rate
  */
 enum _pmu_power_gate
 {
-    kPMU_PowerGateDisplay = PMU_LOWPWR_CTRL_MIX_PWRGATE_MASK,          /*!< Display power gate control. */
-    kPMU_PowerGateDisplayLogic = PMU_LOWPWR_CTRL_DISPLAY_PWRGATE_MASK, /*!< Display logic power gate control. */
-    kPMU_PowerGateL2 = PMU_LOWPWR_CTRL_L2_PWRGATE_MASK,                /*!< L2 power gate control. */
-    kPMU_PowerGateL1 = PMU_LOWPWR_CTRL_L1_PWRGATE_MASK,                /*!< L1 power gate control. */
-    kPMU_PowerGateRefTopIBias = PMU_LOWPWR_CTRL_REFTOP_IBIAS_OFF_MASK, /*!< Low power reftop ibias disable. */
+    kPMU_PowerGateDisplay      = PMU_LOWPWR_CTRL_MIX_PWRGATE_MASK,      /*!< Display power gate control. */
+    kPMU_PowerGateDisplayLogic = PMU_LOWPWR_CTRL_DISPLAY_PWRGATE_MASK,  /*!< Display logic power gate control. */
+    kPMU_PowerGateL2           = PMU_LOWPWR_CTRL_L2_PWRGATE_MASK,       /*!< L2 power gate control. */
+    kPMU_PowerGateL1           = PMU_LOWPWR_CTRL_L1_PWRGATE_MASK,       /*!< L1 power gate control. */
+    kPMU_PowerGateRefTopIBias  = PMU_LOWPWR_CTRL_REFTOP_IBIAS_OFF_MASK, /*!< Low power reftop ibias disable. */
 };
 #endif /*  FSL_FEATURE_PMU_HAS_LOWPWR_CTRL. */
 
@@ -91,7 +91,7 @@ enum _pmu_power_gate
 typedef enum _pmu_power_bandgap
 {
     kPMU_NormalPowerBandgap = 0U, /*!< Normal power bandgap. */
-    kPMU_LowPowerBandgap = 1U,    /*!< Low power bandgap. */
+    kPMU_LowPowerBandgap    = 1U, /*!< Low power bandgap. */
 } pmu_power_bandgap_t;
 
 /*******************************************************************************
@@ -108,10 +108,10 @@ extern "C" {
  */
 
 /*!
- * @brief Get PMU status flags. 
+ * @brief Get PMU status flags.
  *
  * @param base PMU peripheral base address.
- * @return PMU status flags.It indicate if regulator output of 1P1,3P0 and 2P5 is ok 
+ * @return PMU status flags.It indicate if regulator output of 1P1,3P0 and 2P5 is ok
  * and brownout output of 1P1,3P0 and 2P5 is detected.
  */
 uint32_t PMU_GetStatusFlags(PMU_Type *base);

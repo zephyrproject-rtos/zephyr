@@ -84,7 +84,7 @@ static void FLEXIO_UART_TransferSendEDMACallback(edma_handle_t *handle, void *pa
 
     /* Avoid the warning for unused variables. */
     handle = handle;
-    tcds = tcds;
+    tcds   = tcds;
 
     if (transferDone)
     {
@@ -109,7 +109,7 @@ static void FLEXIO_UART_TransferReceiveEDMACallback(edma_handle_t *handle,
 
     /* Avoid the warning for unused variables. */
     handle = handle;
-    tcds = tcds;
+    tcds   = tcds;
 
     if (transferDone)
     {
@@ -152,7 +152,7 @@ status_t FLEXIO_UART_TransferCreateHandleEDMA(FLEXIO_UART_Type *base,
     {
         if (s_edmaPrivateHandle[index].base == NULL)
         {
-            s_edmaPrivateHandle[index].base = base;
+            s_edmaPrivateHandle[index].base   = base;
             s_edmaPrivateHandle[index].handle = handle;
             break;
         }
@@ -223,7 +223,7 @@ status_t FLEXIO_UART_TransferSendEDMA(FLEXIO_UART_Type *base,
     }
     else
     {
-        handle->txState = kFLEXIO_UART_TxBusy;
+        handle->txState       = kFLEXIO_UART_TxBusy;
         handle->txDataSizeAll = xfer->dataSize;
 
         /* Prepare transfer. */
@@ -281,7 +281,7 @@ status_t FLEXIO_UART_TransferReceiveEDMA(FLEXIO_UART_Type *base,
     }
     else
     {
-        handle->rxState = kFLEXIO_UART_RxBusy;
+        handle->rxState       = kFLEXIO_UART_RxBusy;
         handle->rxDataSizeAll = xfer->dataSize;
 
         /* Prepare transfer. */

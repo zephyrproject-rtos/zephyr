@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
+ * Copyright 2016-2018 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -22,8 +22,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief LPUART EDMA driver version 2.2.6. */
-#define FSL_LPUART_EDMA_DRIVER_VERSION (MAKE_VERSION(2, 2, 6))
+/*! @brief LPUART EDMA driver version 2.2.7. */
+#define FSL_LPUART_EDMA_DRIVER_VERSION (MAKE_VERSION(2, 2, 7))
 /*@}*/
 
 /* Forward declaration of the handle typedef. */
@@ -36,8 +36,8 @@ typedef void (*lpuart_edma_transfer_callback_t)(LPUART_Type *base,
                                                 void *userData);
 
 /*!
-* @brief LPUART eDMA handle
-*/
+ * @brief LPUART eDMA handle
+ */
 struct _lpuart_edma_handle
 {
     lpuart_edma_transfer_callback_t callback; /*!< Callback function. */

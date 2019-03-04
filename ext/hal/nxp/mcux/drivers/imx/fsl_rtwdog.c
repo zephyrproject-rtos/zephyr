@@ -69,18 +69,18 @@ void RTWDOG_GetDefaultConfig(rtwdog_config_t *config)
     /* Initializes the configure structure to zero. */
     memset(config, 0, sizeof(*config));
 
-    config->enableRtwdog = true;
-    config->clockSource = kRTWDOG_ClockSource1;
-    config->prescaler = kRTWDOG_ClockPrescalerDivide1;
-    config->workMode.enableWait = true;
-    config->workMode.enableStop = false;
+    config->enableRtwdog         = true;
+    config->clockSource          = kRTWDOG_ClockSource1;
+    config->prescaler            = kRTWDOG_ClockPrescalerDivide1;
+    config->workMode.enableWait  = true;
+    config->workMode.enableStop  = false;
     config->workMode.enableDebug = false;
-    config->testMode = kRTWDOG_TestModeDisabled;
-    config->enableUpdate = true;
-    config->enableInterrupt = false;
-    config->enableWindowMode = false;
-    config->windowValue = 0U;
-    config->timeoutValue = 0xFFFFU;
+    config->testMode             = kRTWDOG_TestModeDisabled;
+    config->enableUpdate         = true;
+    config->enableInterrupt      = false;
+    config->enableWindowMode     = false;
+    config->windowValue          = 0U;
+    config->timeoutValue         = 0xFFFFU;
 }
 
 /*!
@@ -106,7 +106,7 @@ void RTWDOG_Init(RTWDOG_Type *base, const rtwdog_config_t *config)
 {
     assert(config);
 
-    uint32_t value = 0U;
+    uint32_t value        = 0U;
     uint32_t primaskValue = 0U;
 
     value = RTWDOG_CS_EN(config->enableRtwdog) | RTWDOG_CS_CLK(config->clockSource) |
@@ -119,9 +119,9 @@ void RTWDOG_Init(RTWDOG_Type *base, const rtwdog_config_t *config)
      * and the WCT may expire. After the configuration finishes, re-enable the global interrupts. */
     primaskValue = DisableGlobalIRQ();
     RTWDOG_Unlock(base);
-    base->WIN = config->windowValue;
+    base->WIN   = config->windowValue;
     base->TOVAL = config->timeoutValue;
-    base->CS = value;
+    base->CS    = value;
     while ((base->CS & RTWDOG_CS_RCS_MASK) == 0)
     {
     }

@@ -57,8 +57,8 @@ enum _lpi2c_master_fifo_cmd
 {
     kTxDataCmd = LPI2C_MTDR_CMD(0x0U), /*!< Transmit DATA[7:0] */
     kRxDataCmd = LPI2C_MTDR_CMD(0X1U), /*!< Receive (DATA[7:0] + 1) bytes */
-    kStopCmd = LPI2C_MTDR_CMD(0x2U),   /*!< Generate STOP condition */
-    kStartCmd = LPI2C_MTDR_CMD(0x4U),  /*!< Generate(repeated) START and transmit address in DATA[[7:0] */
+    kStopCmd   = LPI2C_MTDR_CMD(0x2U), /*!< Generate STOP condition */
+    kStartCmd  = LPI2C_MTDR_CMD(0x4U), /*!< Generate(repeated) START and transmit address in DATA[[7:0] */
 };
 
 /*! @brief States for the state machine used by transactional APIs. */
@@ -120,11 +120,11 @@ void LPI2C_MasterCreateEDMAHandle(LPI2C_Type *base,
 
     /* Set up the handle. For combined rx/tx DMA requests, the tx channel handle is set to the rx handle */
     /* in order to make the transfer API code simpler. */
-    handle->base = base;
+    handle->base               = base;
     handle->completionCallback = callback;
-    handle->userData = userData;
-    handle->rx = rxDmaHandle;
-    handle->tx = FSL_FEATURE_LPI2C_HAS_SEPARATE_DMA_RX_TX_REQn(base) ? txDmaHandle : rxDmaHandle;
+    handle->userData           = userData;
+    handle->rx                 = rxDmaHandle;
+    handle->tx                 = FSL_FEATURE_LPI2C_HAS_SEPARATE_DMA_RX_TX_REQn(base) ? txDmaHandle : rxDmaHandle;
 
     /* Set DMA channel completion callbacks. */
     EDMA_SetCallback(handle->rx, LPI2C_MasterEDMACallback, handle);
@@ -142,8 +142,8 @@ void LPI2C_MasterCreateEDMAHandle(LPI2C_Type *base,
 static uint32_t LPI2C_GenerateCommands(lpi2c_master_edma_handle_t *handle)
 {
     lpi2c_master_transfer_t *xfer = &handle->transfer;
-    uint16_t *cmd = (uint16_t *)&handle->commandBuffer;
-    uint32_t cmdCount = 0;
+    uint16_t *cmd                 = (uint16_t *)&handle->commandBuffer;
+    uint32_t cmdCount             = 0;
 
     /* Handle no start option. */
     if (xfer->flags & kLPI2C_TransferNoStartFlag)
@@ -173,7 +173,7 @@ static uint32_t LPI2C_GenerateCommands(lpi2c_master_edma_handle_t *handle)
             while (subaddressRemaining--)
             {
                 uint8_t subaddressByte = (xfer->subaddress >> (8 * subaddressRemaining)) & 0xff;
-                cmd[cmdCount++] = subaddressByte;
+                cmd[cmdCount++]        = subaddressByte;
             }
         }
 
@@ -267,7 +267,7 @@ status_t LPI2C_MasterTransferEDMA(LPI2C_Type *base,
     /* Get a 32-byte aligned TCD pointer. */
     edma_tcd_t *tcd = (edma_tcd_t *)((uint32_t)(&handle->tcds[1]) & (~ALIGN_32_MASK));
 
-    bool hasSendData = (transfer->direction == kLPI2C_Write) && (transfer->dataSize);
+    bool hasSendData    = (transfer->direction == kLPI2C_Write) && (transfer->dataSize);
     bool hasReceiveData = (transfer->direction == kLPI2C_Read) && (transfer->dataSize);
 
     edma_transfer_config_t transferConfig;
@@ -276,14 +276,14 @@ status_t LPI2C_MasterTransferEDMA(LPI2C_Type *base,
     /* Set up data transmit. */
     if (hasSendData)
     {
-        transferConfig.srcAddr = (uint32_t)transfer->data;
-        transferConfig.destAddr = (uint32_t)LPI2C_MasterGetTxFifoAddress(base);
-        transferConfig.srcTransferSize = kEDMA_TransferSize1Bytes;
+        transferConfig.srcAddr          = (uint32_t)transfer->data;
+        transferConfig.destAddr         = (uint32_t)LPI2C_MasterGetTxFifoAddress(base);
+        transferConfig.srcTransferSize  = kEDMA_TransferSize1Bytes;
         transferConfig.destTransferSize = kEDMA_TransferSize1Bytes;
-        transferConfig.srcOffset = sizeof(uint8_t);
-        transferConfig.destOffset = 0;
-        transferConfig.minorLoopBytes = sizeof(uint8_t); /* TODO optimize to fill fifo */
-        transferConfig.majorLoopCounts = transfer->dataSize;
+        transferConfig.srcOffset        = sizeof(uint8_t);
+        transferConfig.destOffset       = 0;
+        transferConfig.minorLoopBytes   = sizeof(uint8_t); /* TODO optimize to fill fifo */
+        transferConfig.majorLoopCounts  = transfer->dataSize;
 
         /* Store the initially configured eDMA minor byte transfer count into the LPI2C handle */
         handle->nbytes = transferConfig.minorLoopBytes;
@@ -306,14 +306,14 @@ status_t LPI2C_MasterTransferEDMA(LPI2C_Type *base,
     else if (hasReceiveData)
     {
         /* Set up data receive. */
-        transferConfig.srcAddr = (uint32_t)LPI2C_MasterGetRxFifoAddress(base);
-        transferConfig.destAddr = (uint32_t)transfer->data;
-        transferConfig.srcTransferSize = kEDMA_TransferSize1Bytes;
+        transferConfig.srcAddr          = (uint32_t)LPI2C_MasterGetRxFifoAddress(base);
+        transferConfig.destAddr         = (uint32_t)transfer->data;
+        transferConfig.srcTransferSize  = kEDMA_TransferSize1Bytes;
         transferConfig.destTransferSize = kEDMA_TransferSize1Bytes;
-        transferConfig.srcOffset = 0;
-        transferConfig.destOffset = sizeof(uint8_t);
-        transferConfig.minorLoopBytes = sizeof(uint8_t); /* TODO optimize to empty fifo */
-        transferConfig.majorLoopCounts = transfer->dataSize;
+        transferConfig.srcOffset        = 0;
+        transferConfig.destOffset       = sizeof(uint8_t);
+        transferConfig.minorLoopBytes   = sizeof(uint8_t); /* TODO optimize to empty fifo */
+        transferConfig.majorLoopCounts  = transfer->dataSize;
 
         /* Store the initially configured eDMA minor byte transfer count into the LPI2C handle */
         handle->nbytes = transferConfig.minorLoopBytes;
@@ -342,14 +342,14 @@ status_t LPI2C_MasterTransferEDMA(LPI2C_Type *base,
     /* Set up commands transfer. */
     if (commandCount)
     {
-        transferConfig.srcAddr = (uint32_t)handle->commandBuffer;
-        transferConfig.destAddr = (uint32_t)LPI2C_MasterGetTxFifoAddress(base);
-        transferConfig.srcTransferSize = kEDMA_TransferSize2Bytes;
+        transferConfig.srcAddr          = (uint32_t)handle->commandBuffer;
+        transferConfig.destAddr         = (uint32_t)LPI2C_MasterGetTxFifoAddress(base);
+        transferConfig.srcTransferSize  = kEDMA_TransferSize2Bytes;
         transferConfig.destTransferSize = kEDMA_TransferSize2Bytes;
-        transferConfig.srcOffset = sizeof(uint16_t);
-        transferConfig.destOffset = 0;
-        transferConfig.minorLoopBytes = sizeof(uint16_t); /* TODO optimize to fill fifo */
-        transferConfig.majorLoopCounts = commandCount;
+        transferConfig.srcOffset        = sizeof(uint16_t);
+        transferConfig.destOffset       = 0;
+        transferConfig.minorLoopBytes   = sizeof(uint16_t); /* TODO optimize to fill fifo */
+        transferConfig.majorLoopCounts  = commandCount;
 
         EDMA_SetTransferConfig(handle->tx->base, handle->tx->channel, &transferConfig, linkTcd);
     }

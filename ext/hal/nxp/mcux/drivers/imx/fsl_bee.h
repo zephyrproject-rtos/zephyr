@@ -2,7 +2,7 @@
  * Copyright 2017 NXP
  * All rights reserved.
  *
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -48,13 +48,13 @@ typedef enum _bee_region
 typedef enum _bee_ac_prot_enable
 {
     kBEE_AccessProtDisabled = 0U, /*!< BEE access permission control disabled */
-    kBEE_AccessProtEnabled = 1U   /*!< BEE access permission control enabled */
+    kBEE_AccessProtEnabled  = 1U  /*!< BEE access permission control enabled */
 } bee_ac_prot_enable;
 
 typedef enum _bee_endian_swap_enable
 {
     kBEE_EndianSwapDisabled = 1U, /*!< BEE endian swap disabled */
-    kBEE_EndianSwapEnabled = 0U   /*!< BEE endian swap enabled */
+    kBEE_EndianSwapEnabled  = 0U  /*!< BEE endian swap enabled */
 } bee_endian_swap_enable;
 
 typedef enum _bee_security_level
@@ -67,13 +67,13 @@ typedef enum _bee_security_level
 
 typedef enum _bee_status_flags
 {
-    kBEE_DisableAbortFlag = 1U,              /*!< Disable abort flag. */
-    kBEE_Reg0ReadSecViolation = 2U,          /*!< Region-0 read channel security violation */
-    kBEE_ReadIllegalAccess = 4U,             /*!< Read channel illegal access detected */
-    kBEE_Reg1ReadSecViolation = 8U,          /*!< Region-1 read channel security violation */
-    kBEE_Reg0AccessViolation = 16U,          /*!< Protected region-0 access violation */
-    kBEE_Reg1AccessViolation = 32U,          /*!< Protected region-1 access violation */
-    kBEE_IdleFlag = BEE_STATUS_BEE_IDLE_MASK /*!< Idle flag */
+    kBEE_DisableAbortFlag     = 1U,                      /*!< Disable abort flag. */
+    kBEE_Reg0ReadSecViolation = 2U,                      /*!< Region-0 read channel security violation */
+    kBEE_ReadIllegalAccess    = 4U,                      /*!< Read channel illegal access detected */
+    kBEE_Reg1ReadSecViolation = 8U,                      /*!< Region-1 read channel security violation */
+    kBEE_Reg0AccessViolation  = 16U,                     /*!< Protected region-0 access violation */
+    kBEE_Reg1AccessViolation  = 32U,                     /*!< Protected region-1 access violation */
+    kBEE_IdleFlag             = BEE_STATUS_BEE_IDLE_MASK /*!< Idle flag */
 } bee_status_flags_t;
 
 /*! @brief BEE region configuration structure. */
@@ -186,8 +186,7 @@ void BEE_SetConfig(BEE_Type *base, const bee_region_config_t *config);
  * @param key AES key (in little-endian format).
  * @param keySize Size of AES key.
  */
-status_t BEE_SetRegionKey(
-    BEE_Type *base, bee_region_t region, const uint8_t *key, size_t keySize);
+status_t BEE_SetRegionKey(BEE_Type *base, bee_region_t region, const uint8_t *key, size_t keySize);
 
 /*!
  * @brief Loads the nonce for selected region into BEE nonce registers.
@@ -200,8 +199,7 @@ status_t BEE_SetRegionKey(
  * @param nonce AES nonce (in little-endian format).
  * @param nonceSize Size of AES nonce.
  */
-status_t BEE_SetRegionNonce(
-    BEE_Type *base, bee_region_t region, const uint8_t *nonce, size_t nonceSize);
+status_t BEE_SetRegionNonce(BEE_Type *base, bee_region_t region, const uint8_t *nonce, size_t nonceSize);
 
 /*!
  * @brief Gets the BEE status flags.
