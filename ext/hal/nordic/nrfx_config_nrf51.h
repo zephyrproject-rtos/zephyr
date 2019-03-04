@@ -1414,11 +1414,11 @@
 
 // <e> NRFX_UART_ENABLED - nrfx_uart - UART peripheral driver
 //==========================================================
-#ifndef NRFX_UART_ENABLED
+#ifdef CONFIG_NRFX_UART
 #define NRFX_UART_ENABLED 0
 #endif
 // <o> NRFX_UART0_ENABLED - Enable UART0 instance
-#ifndef NRFX_UART0_ENABLED
+#ifdef CONFIG_NRFX_UART
 #define NRFX_UART0_ENABLED 0
 #endif
 
