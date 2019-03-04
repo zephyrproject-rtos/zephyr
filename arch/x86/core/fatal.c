@@ -91,7 +91,7 @@ static void unwind_stack(u32_t base_ptr, u16_t cs)
 		}
 
 		frame = (struct stack_frame *)base_ptr;
-		if ((frame == NULL)) {
+		if (frame == NULL) {
 			break;
 		}
 
