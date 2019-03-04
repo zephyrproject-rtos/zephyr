@@ -55,7 +55,7 @@ static void send_task_list_cb(void)
 
 	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
 		char name[20];
-		char *tname = k_thread_name_get(thread);
+		const char *tname = k_thread_name_get(thread);
 
 		if (is_idle_thread(thread)) {
 			continue;
