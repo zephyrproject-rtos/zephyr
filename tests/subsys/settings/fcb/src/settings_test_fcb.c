@@ -341,6 +341,20 @@ int c3_handle_export(int (*cb)(const char *name,
 	return 0;
 }
 
+void tests_settings_check_target(void)
+{
+	const struct flash_area *fap;
+	int rc;
+	u8_t wbs;
+
+	rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
+	zassert_true(rc == 0, "Can't open storage flash area");
+
+	wbs = flash_area_align(fap);
+	zassert_true(wbs <= 16,
+		"Flash driver is not compatible with the settings fcb-backend");
+}
+
 void test_settings_encode(void);
 void config_empty_lookups(void);
 void test_config_insert(void);
@@ -378,6 +392,7 @@ void test_main(void)
 			 ztest_unit_test(test_config_getset_int64),
 			 ztest_unit_test(test_config_commit),
 			 /* FCB as backing storage*/
+			 ztest_unit_test(tests_settings_check_target),
 			 ztest_unit_test(test_config_save_fcb_unaligned),
 			 ztest_unit_test(test_config_empty_fcb),
 			 ztest_unit_test(test_config_save_1_fcb),
