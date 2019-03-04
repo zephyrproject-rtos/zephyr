@@ -30,7 +30,8 @@
 #error "system timer misconfiguration; unsupported clock rate"
 #endif
 
-#define SYSTEM_TIMER_INSTANCE ((LPTMR_Type *)(SYSTEM_LPTMR_BASE_ADDRESS))
+#define SYSTEM_TIMER_INSTANCE \
+	((LPTMR_Type *)(DT_OPENISA_RV32M1_LPTMR_SYSTEM_LPTMR_BASE_ADDRESS))
 #define SYSTEM_TIMER_IRQ_PRIO 0
 
 #define SIRC_RANGE_8MHZ      SCG_SIRCCFG_RANGE(1)
@@ -55,8 +56,8 @@ int z_clock_driver_init(struct device *unused)
 	u32_t csr, psr, sircdiv; /* LPTMR registers */
 
 	ARG_UNUSED(unused);
-	IRQ_CONNECT(SYSTEM_LPTMR_IRQ, SYSTEM_TIMER_IRQ_PRIO, lptmr_irq_handler,
-		    NULL, 0);
+	IRQ_CONNECT(DT_OPENISA_RV32M1_LPTMR_SYSTEM_LPTMR_IRQ,
+		    SYSTEM_TIMER_IRQ_PRIO, lptmr_irq_handler, NULL, 0);
 
 	if ((SCG->SIRCCSR & SCG_SIRCCSR_SIRCEN_MASK) == SCG_SIRCCSR_SIRCEN(0)) {
 		/*
@@ -121,7 +122,7 @@ int z_clock_driver_init(struct device *unused)
 	 * Enable interrupts and the timer. There's no need to clear the
 	 * TFC bit in the csr variable, as it's already clear.
 	 */
-	irq_enable(SYSTEM_LPTMR_IRQ);
+	irq_enable(DT_OPENISA_RV32M1_LPTMR_SYSTEM_LPTMR_IRQ);
 	csr = SYSTEM_TIMER_INSTANCE->CSR;
 	csr |= LPTMR_CSR_TEN(1);
 	SYSTEM_TIMER_INSTANCE->CSR = csr;
