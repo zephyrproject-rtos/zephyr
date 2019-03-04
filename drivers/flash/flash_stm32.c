@@ -34,6 +34,8 @@
 #define STM32_FLASH_TIMEOUT	(K_MSEC(25))
 #endif
 
+#define CFG_HW_FLASH_SEMID	2
+
 /*
  * This is named flash_stm32_sem_take instead of flash_stm32_lock (and
  * similarly for flash_stm32_sem_give) to avoid confusion with locking
@@ -41,12 +43,24 @@
  */
 static inline void flash_stm32_sem_take(struct device *dev)
 {
+
+#ifdef CONFIG_SOC_SERIES_STM32WBX
+	while (LL_HSEM_1StepLock(HSEM, CFG_HW_FLASH_SEMID))
+		;
+#endif /* CONFIG_SOC_SERIES_STM32WBX */
+
 	k_sem_take(&FLASH_STM32_PRIV(dev)->sem, K_FOREVER);
 }
 
 static inline void flash_stm32_sem_give(struct device *dev)
 {
+
 	k_sem_give(&FLASH_STM32_PRIV(dev)->sem);
+
+#ifdef CONFIG_SOC_SERIES_STM32WBX
+	LL_HSEM_ReleaseLock(HSEM, CFG_HW_FLASH_SEMID, 0);
+#endif /* CONFIG_SOC_SERIES_STM32WBX */
+
 }
 
 #if !defined(CONFIG_SOC_SERIES_STM32WBX)
@@ -278,6 +292,10 @@ static int stm32_flash_init(struct device *dev)
 		return -EIO;
 	}
 #endif
+
+#ifdef CONFIG_SOC_SERIES_STM32WBX
+	LL_AHB3_GRP1_EnableClock(LL_AHB3_GRP1_PERIPH_HSEM);
+#endif /* CONFIG_SOC_SERIES_STM32WBX */
 
 	k_sem_init(&p->sem, 1, 1);
 
