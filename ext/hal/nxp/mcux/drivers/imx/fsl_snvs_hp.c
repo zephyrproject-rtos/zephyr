@@ -184,13 +184,13 @@ static void SNVS_HP_ConvertSecondsToDatetime(uint32_t seconds, snvs_hp_rtc_datet
     secondsRemaining = secondsRemaining % SECONDS_IN_A_DAY;
 
     /* Calculate the datetime hour, minute and second fields */
-    datetime->hour = secondsRemaining / SECONDS_IN_A_HOUR;
+    datetime->hour   = secondsRemaining / SECONDS_IN_A_HOUR;
     secondsRemaining = secondsRemaining % SECONDS_IN_A_HOUR;
     datetime->minute = secondsRemaining / 60U;
     datetime->second = secondsRemaining % SECONDS_IN_A_MINUTE;
 
     /* Calculate year */
-    daysInYear = DAYS_IN_A_YEAR;
+    daysInYear     = DAYS_IN_A_YEAR;
     datetime->year = YEAR_RANGE_START;
     while (days > daysInYear)
     {
@@ -332,21 +332,21 @@ void SNVS_HP_RTC_GetDefaultConfig(snvs_hp_rtc_config_t *config)
     /* Initializes the configure structure to zero. */
     memset(config, 0, sizeof(*config));
 
-    config->rtcCalEnable = false;
-    config->rtcCalValue = 0U;
+    config->rtcCalEnable          = false;
+    config->rtcCalValue           = 0U;
     config->periodicInterruptFreq = 0U;
 }
 
 static uint32_t SNVS_HP_RTC_GetSeconds(SNVS_Type *base)
 {
     uint32_t seconds = 0;
-    uint32_t tmp = 0;
+    uint32_t tmp     = 0;
 
     /* Do consecutive reads until value is correct */
     do
     {
         seconds = tmp;
-        tmp = (base->HPRTCMR << 17U) | (base->HPRTCLR >> 15U);
+        tmp     = (base->HPRTCMR << 17U) | (base->HPRTCLR >> 15U);
     } while (tmp != seconds);
 
     return seconds;
@@ -366,7 +366,7 @@ status_t SNVS_HP_RTC_SetDatetime(SNVS_Type *base, const snvs_hp_rtc_datetime_t *
     assert(datetime);
 
     uint32_t seconds = 0U;
-    uint32_t tmp = base->HPCR;
+    uint32_t tmp     = base->HPCR;
 
     /* disable RTC */
     SNVS_HP_RTC_StopTimer(base);
@@ -424,8 +424,8 @@ status_t SNVS_HP_RTC_SetAlarm(SNVS_Type *base, const snvs_hp_rtc_datetime_t *ala
     assert(alarmTime);
 
     uint32_t alarmSeconds = 0U;
-    uint32_t currSeconds = 0U;
-    uint32_t tmp = base->HPCR;
+    uint32_t currSeconds  = 0U;
+    uint32_t tmp          = base->HPCR;
 
     /* Return error if the alarm time provided is not valid */
     if (!(SNVS_HP_CheckDatetimeFormat(alarmTime)))
@@ -434,7 +434,7 @@ status_t SNVS_HP_RTC_SetAlarm(SNVS_Type *base, const snvs_hp_rtc_datetime_t *ala
     }
 
     alarmSeconds = SNVS_HP_ConvertDatetimeToSeconds(alarmTime);
-    currSeconds = SNVS_HP_RTC_GetSeconds(base);
+    currSeconds  = SNVS_HP_RTC_GetSeconds(base);
 
     /* Return error if the alarm time has passed */
     if (alarmSeconds < currSeconds)

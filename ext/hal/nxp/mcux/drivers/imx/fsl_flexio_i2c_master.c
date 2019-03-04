@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
+ * Copyright 2016-2019 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -20,12 +20,12 @@
 /*! @brief  FLEXIO I2C transfer state */
 enum _flexio_i2c_master_transfer_states
 {
-    kFLEXIO_I2C_Idle = 0x0U,             /*!< I2C bus idle */
-    kFLEXIO_I2C_CheckAddress = 0x1U,     /*!< 7-bit address check state */
-    kFLEXIO_I2C_SendCommand = 0x2U,      /*!< Send command byte phase */
-    kFLEXIO_I2C_SendData = 0x3U,         /*!< Send data transfer phase*/
+    kFLEXIO_I2C_Idle             = 0x0U, /*!< I2C bus idle */
+    kFLEXIO_I2C_CheckAddress     = 0x1U, /*!< 7-bit address check state */
+    kFLEXIO_I2C_SendCommand      = 0x2U, /*!< Send command byte phase */
+    kFLEXIO_I2C_SendData         = 0x3U, /*!< Send data transfer phase*/
     kFLEXIO_I2C_ReceiveDataBegin = 0x4U, /*!< Receive data begin transfer phase*/
-    kFLEXIO_I2C_ReceiveData = 0x5U,      /*!< Receive data transfer phase*/
+    kFLEXIO_I2C_ReceiveData      = 0x5U, /*!< Receive data transfer phase*/
 };
 
 /*******************************************************************************
@@ -85,14 +85,14 @@ static status_t FLEXIO_I2C_MasterTransferInitStateMachine(FLEXIO_I2C_Type *base,
     uint32_t byteCount;
 
     /* Init the handle member. */
-    handle->transfer.slaveAddress = xfer->slaveAddress;
-    handle->transfer.direction = xfer->direction;
-    handle->transfer.subaddress = xfer->subaddress;
+    handle->transfer.slaveAddress   = xfer->slaveAddress;
+    handle->transfer.direction      = xfer->direction;
+    handle->transfer.subaddress     = xfer->subaddress;
     handle->transfer.subaddressSize = xfer->subaddressSize;
-    handle->transfer.data = xfer->data;
-    handle->transfer.dataSize = xfer->dataSize;
-    handle->transfer.flags = xfer->flags;
-    handle->transferSize = xfer->dataSize;
+    handle->transfer.data           = xfer->data;
+    handle->transfer.dataSize       = xfer->dataSize;
+    handle->transfer.flags          = xfer->flags;
+    handle->transferSize            = xfer->dataSize;
 
     /* Initial state, i2c check address state. */
     handle->state = kFLEXIO_I2C_CheckAddress;
@@ -388,8 +388,8 @@ status_t FLEXIO_I2C_MasterInit(FLEXIO_I2C_Type *base, flexio_i2c_master_config_t
     flexio_shifter_config_t shifterConfig;
     flexio_timer_config_t timerConfig;
     uint32_t controlVal = 0;
-    uint16_t timerDiv = 0;
-    status_t result = kStatus_Success;
+    uint16_t timerDiv   = 0;
+    status_t result     = kStatus_Success;
 
     memset(&shifterConfig, 0, sizeof(shifterConfig));
     memset(&timerConfig, 0, sizeof(timerConfig));
@@ -401,46 +401,46 @@ status_t FLEXIO_I2C_MasterInit(FLEXIO_I2C_Type *base, flexio_i2c_master_config_t
 
     /* Do hardware configuration. */
     /* 1. Configure the shifter 0 for tx. */
-    shifterConfig.timerSelect = base->timerIndex[1];
+    shifterConfig.timerSelect   = base->timerIndex[1];
     shifterConfig.timerPolarity = kFLEXIO_ShifterTimerPolarityOnPositive;
-    shifterConfig.pinConfig = kFLEXIO_PinConfigOpenDrainOrBidirection;
-    shifterConfig.pinSelect = base->SDAPinIndex;
-    shifterConfig.pinPolarity = kFLEXIO_PinActiveLow;
-    shifterConfig.shifterMode = kFLEXIO_ShifterModeTransmit;
-    shifterConfig.inputSource = kFLEXIO_ShifterInputFromPin;
-    shifterConfig.shifterStop = kFLEXIO_ShifterStopBitHigh;
-    shifterConfig.shifterStart = kFLEXIO_ShifterStartBitLow;
+    shifterConfig.pinConfig     = kFLEXIO_PinConfigOpenDrainOrBidirection;
+    shifterConfig.pinSelect     = base->SDAPinIndex;
+    shifterConfig.pinPolarity   = kFLEXIO_PinActiveLow;
+    shifterConfig.shifterMode   = kFLEXIO_ShifterModeTransmit;
+    shifterConfig.inputSource   = kFLEXIO_ShifterInputFromPin;
+    shifterConfig.shifterStop   = kFLEXIO_ShifterStopBitHigh;
+    shifterConfig.shifterStart  = kFLEXIO_ShifterStartBitLow;
 
     FLEXIO_SetShifterConfig(base->flexioBase, base->shifterIndex[0], &shifterConfig);
 
     /* 2. Configure the shifter 1 for rx. */
-    shifterConfig.timerSelect = base->timerIndex[1];
+    shifterConfig.timerSelect   = base->timerIndex[1];
     shifterConfig.timerPolarity = kFLEXIO_ShifterTimerPolarityOnNegitive;
-    shifterConfig.pinConfig = kFLEXIO_PinConfigOutputDisabled;
-    shifterConfig.pinSelect = base->SDAPinIndex;
-    shifterConfig.pinPolarity = kFLEXIO_PinActiveHigh;
-    shifterConfig.shifterMode = kFLEXIO_ShifterModeReceive;
-    shifterConfig.inputSource = kFLEXIO_ShifterInputFromPin;
-    shifterConfig.shifterStop = kFLEXIO_ShifterStopBitLow;
-    shifterConfig.shifterStart = kFLEXIO_ShifterStartBitDisabledLoadDataOnEnable;
+    shifterConfig.pinConfig     = kFLEXIO_PinConfigOutputDisabled;
+    shifterConfig.pinSelect     = base->SDAPinIndex;
+    shifterConfig.pinPolarity   = kFLEXIO_PinActiveHigh;
+    shifterConfig.shifterMode   = kFLEXIO_ShifterModeReceive;
+    shifterConfig.inputSource   = kFLEXIO_ShifterInputFromPin;
+    shifterConfig.shifterStop   = kFLEXIO_ShifterStopBitLow;
+    shifterConfig.shifterStart  = kFLEXIO_ShifterStartBitDisabledLoadDataOnEnable;
 
     FLEXIO_SetShifterConfig(base->flexioBase, base->shifterIndex[1], &shifterConfig);
 
     /*3. Configure the timer 0 for generating bit clock. */
-    timerConfig.triggerSelect = FLEXIO_TIMER_TRIGGER_SEL_SHIFTnSTAT(base->shifterIndex[0]);
+    timerConfig.triggerSelect   = FLEXIO_TIMER_TRIGGER_SEL_SHIFTnSTAT(base->shifterIndex[0]);
     timerConfig.triggerPolarity = kFLEXIO_TimerTriggerPolarityActiveLow;
-    timerConfig.triggerSource = kFLEXIO_TimerTriggerSourceInternal;
-    timerConfig.pinConfig = kFLEXIO_PinConfigOpenDrainOrBidirection;
-    timerConfig.pinSelect = base->SCLPinIndex;
-    timerConfig.pinPolarity = kFLEXIO_PinActiveHigh;
-    timerConfig.timerMode = kFLEXIO_TimerModeDual8BitBaudBit;
-    timerConfig.timerOutput = kFLEXIO_TimerOutputZeroNotAffectedByReset;
-    timerConfig.timerDecrement = kFLEXIO_TimerDecSrcOnFlexIOClockShiftTimerOutput;
-    timerConfig.timerReset = kFLEXIO_TimerResetOnTimerPinEqualToTimerOutput;
-    timerConfig.timerDisable = kFLEXIO_TimerDisableOnTimerCompare;
-    timerConfig.timerEnable = kFLEXIO_TimerEnableOnTriggerHigh;
-    timerConfig.timerStop = kFLEXIO_TimerStopBitEnableOnTimerDisable;
-    timerConfig.timerStart = kFLEXIO_TimerStartBitEnabled;
+    timerConfig.triggerSource   = kFLEXIO_TimerTriggerSourceInternal;
+    timerConfig.pinConfig       = kFLEXIO_PinConfigOpenDrainOrBidirection;
+    timerConfig.pinSelect       = base->SCLPinIndex;
+    timerConfig.pinPolarity     = kFLEXIO_PinActiveHigh;
+    timerConfig.timerMode       = kFLEXIO_TimerModeDual8BitBaudBit;
+    timerConfig.timerOutput     = kFLEXIO_TimerOutputZeroNotAffectedByReset;
+    timerConfig.timerDecrement  = kFLEXIO_TimerDecSrcOnFlexIOClockShiftTimerOutput;
+    timerConfig.timerReset      = kFLEXIO_TimerResetOnTimerPinEqualToTimerOutput;
+    timerConfig.timerDisable    = kFLEXIO_TimerDisableOnTimerCompare;
+    timerConfig.timerEnable     = kFLEXIO_TimerEnableOnTriggerHigh;
+    timerConfig.timerStop       = kFLEXIO_TimerStopBitEnableOnTimerDisable;
+    timerConfig.timerStart      = kFLEXIO_TimerStartBitEnabled;
 
     /* Set TIMCMP[7:0] = (baud rate divider / 2) - 1. */
     timerDiv = (srcClock_Hz / masterConfig->baudRate_Bps) / 2 - 1;
@@ -456,20 +456,20 @@ status_t FLEXIO_I2C_MasterInit(FLEXIO_I2C_Type *base, flexio_i2c_master_config_t
     FLEXIO_SetTimerConfig(base->flexioBase, base->timerIndex[0], &timerConfig);
 
     /* 4. Configure the timer 1 for controlling shifters. */
-    timerConfig.triggerSelect = FLEXIO_TIMER_TRIGGER_SEL_SHIFTnSTAT(base->shifterIndex[0]);
+    timerConfig.triggerSelect   = FLEXIO_TIMER_TRIGGER_SEL_SHIFTnSTAT(base->shifterIndex[0]);
     timerConfig.triggerPolarity = kFLEXIO_TimerTriggerPolarityActiveLow;
-    timerConfig.triggerSource = kFLEXIO_TimerTriggerSourceInternal;
-    timerConfig.pinConfig = kFLEXIO_PinConfigOutputDisabled;
-    timerConfig.pinSelect = base->SCLPinIndex;
-    timerConfig.pinPolarity = kFLEXIO_PinActiveLow;
-    timerConfig.timerMode = kFLEXIO_TimerModeSingle16Bit;
-    timerConfig.timerOutput = kFLEXIO_TimerOutputOneNotAffectedByReset;
-    timerConfig.timerDecrement = kFLEXIO_TimerDecSrcOnPinInputShiftPinInput;
-    timerConfig.timerReset = kFLEXIO_TimerResetNever;
-    timerConfig.timerDisable = kFLEXIO_TimerDisableOnPreTimerDisable;
-    timerConfig.timerEnable = kFLEXIO_TimerEnableOnPrevTimerEnable;
-    timerConfig.timerStop = kFLEXIO_TimerStopBitEnableOnTimerCompare;
-    timerConfig.timerStart = kFLEXIO_TimerStartBitEnabled;
+    timerConfig.triggerSource   = kFLEXIO_TimerTriggerSourceInternal;
+    timerConfig.pinConfig       = kFLEXIO_PinConfigOutputDisabled;
+    timerConfig.pinSelect       = base->SCLPinIndex;
+    timerConfig.pinPolarity     = kFLEXIO_PinActiveLow;
+    timerConfig.timerMode       = kFLEXIO_TimerModeSingle16Bit;
+    timerConfig.timerOutput     = kFLEXIO_TimerOutputOneNotAffectedByReset;
+    timerConfig.timerDecrement  = kFLEXIO_TimerDecSrcOnPinInputShiftPinInput;
+    timerConfig.timerReset      = kFLEXIO_TimerResetNever;
+    timerConfig.timerDisable    = kFLEXIO_TimerDisableOnPreTimerDisable;
+    timerConfig.timerEnable     = kFLEXIO_TimerEnableOnPrevTimerEnable;
+    timerConfig.timerStop       = kFLEXIO_TimerStopBitEnableOnTimerCompare;
+    timerConfig.timerStart      = kFLEXIO_TimerStartBitEnabled;
 
     /* Set TIMCMP[15:0] = (number of bits x 2) - 1. */
     timerConfig.timerCompare = 8 * 2 - 1;
@@ -503,12 +503,12 @@ void FLEXIO_I2C_MasterDeinit(FLEXIO_I2C_Type *base)
     base->flexioBase->SHIFTCTL[base->shifterIndex[0]] = 0;
     base->flexioBase->SHIFTCFG[base->shifterIndex[1]] = 0;
     base->flexioBase->SHIFTCTL[base->shifterIndex[1]] = 0;
-    base->flexioBase->TIMCFG[base->timerIndex[0]] = 0;
-    base->flexioBase->TIMCMP[base->timerIndex[0]] = 0;
-    base->flexioBase->TIMCTL[base->timerIndex[0]] = 0;
-    base->flexioBase->TIMCFG[base->timerIndex[1]] = 0;
-    base->flexioBase->TIMCMP[base->timerIndex[1]] = 0;
-    base->flexioBase->TIMCTL[base->timerIndex[1]] = 0;
+    base->flexioBase->TIMCFG[base->timerIndex[0]]     = 0;
+    base->flexioBase->TIMCMP[base->timerIndex[0]]     = 0;
+    base->flexioBase->TIMCTL[base->timerIndex[0]]     = 0;
+    base->flexioBase->TIMCFG[base->timerIndex[1]]     = 0;
+    base->flexioBase->TIMCMP[base->timerIndex[1]]     = 0;
+    base->flexioBase->TIMCTL[base->timerIndex[1]]     = 0;
     /* Clear the shifter flag. */
     base->flexioBase->SHIFTSTAT = (1U << base->shifterIndex[0]);
     base->flexioBase->SHIFTSTAT = (1U << base->shifterIndex[1]);
@@ -535,9 +535,9 @@ void FLEXIO_I2C_MasterGetDefaultConfig(flexio_i2c_master_config_t *masterConfig)
     /* Initializes the configure structure to zero. */
     memset(masterConfig, 0, sizeof(*masterConfig));
 
-    masterConfig->enableMaster = true;
-    masterConfig->enableInDoze = false;
-    masterConfig->enableInDebug = true;
+    masterConfig->enableMaster     = true;
+    masterConfig->enableInDoze     = false;
+    masterConfig->enableInDebug    = true;
     masterConfig->enableFastAccess = false;
 
     /* Default baud rate at 100kbps. */
@@ -549,7 +549,7 @@ void FLEXIO_I2C_MasterGetDefaultConfig(flexio_i2c_master_config_t *masterConfig)
  *
  * param base Pointer to FLEXIO_I2C_Type structure
  * return Status flag, use status flag to AND #_flexio_i2c_master_status_flags can get the related status.
-*/
+ */
 
 uint32_t FLEXIO_I2C_MasterGetStatusFlags(FLEXIO_I2C_Type *base)
 {
@@ -575,7 +575,7 @@ uint32_t FLEXIO_I2C_MasterGetStatusFlags(FLEXIO_I2C_Type *base)
  *      The parameter can be any combination of the following values:
  *          arg kFLEXIO_I2C_RxFullFlag
  *          arg kFLEXIO_I2C_ReceiveNakFlag
-*/
+ */
 
 void FLEXIO_I2C_MasterClearStatusFlags(FLEXIO_I2C_Type *base, uint32_t mask)
 {
@@ -642,8 +642,8 @@ void FLEXIO_I2C_MasterDisableInterrupts(FLEXIO_I2C_Type *base, uint32_t mask)
  */
 void FLEXIO_I2C_MasterSetBaudRate(FLEXIO_I2C_Type *base, uint32_t baudRate_Bps, uint32_t srcClock_Hz)
 {
-    uint16_t timerDiv = 0;
-    uint16_t timerCmp = 0;
+    uint16_t timerDiv       = 0;
+    uint16_t timerCmp       = 0;
     FLEXIO_Type *flexioBase = base->flexioBase;
 
     /* Set TIMCMP[7:0] = (baud rate divider / 2) - 1.*/
@@ -667,7 +667,7 @@ void FLEXIO_I2C_MasterSetBaudRate(FLEXIO_I2C_Type *base, uint32_t baudRate_Bps, 
  * param count Number of bytes need to be transferred from a start signal to a re-start/stop signal
  * retval kStatus_Success Successfully configured the count.
  * retval kStatus_InvalidArgument Input argument is invalid.
-*/
+ */
 status_t FLEXIO_I2C_MasterSetTransferCount(FLEXIO_I2C_Type *base, uint8_t count)
 {
     if (count > 14U)
@@ -675,15 +675,15 @@ status_t FLEXIO_I2C_MasterSetTransferCount(FLEXIO_I2C_Type *base, uint8_t count)
         return kStatus_InvalidArgument;
     }
 
-    uint16_t timerCmp = 0;
-    uint32_t timerConfig = 0;
+    uint16_t timerCmp       = 0;
+    uint32_t timerConfig    = 0;
     FLEXIO_Type *flexioBase = base->flexioBase;
 
     timerCmp = flexioBase->TIMCMP[base->timerIndex[0]];
     timerCmp &= 0x00FFU;
     timerCmp |= (count * 18 + 1U) << 8U;
     flexioBase->TIMCMP[base->timerIndex[0]] = timerCmp;
-    timerConfig = flexioBase->TIMCFG[base->timerIndex[0]];
+    timerConfig                             = flexioBase->TIMCFG[base->timerIndex[0]];
     timerConfig &= ~FLEXIO_TIMCFG_TIMDIS_MASK;
     timerConfig |= FLEXIO_TIMCFG_TIMDIS(kFLEXIO_TimerDisableOnTimerCompare);
     flexioBase->TIMCFG[base->timerIndex[0]] = timerConfig;
@@ -869,10 +869,15 @@ status_t FLEXIO_I2C_MasterTransferBlocking(FLEXIO_I2C_Type *base, flexio_i2c_mas
                  (kFLEXIO_I2C_TxEmptyFlag | kFLEXIO_I2C_RxFullFlag)))
         {
         }
-
+        FLEXIO_ClearTimerStatusFlags(base->flexioBase, ((1 << base->timerIndex[0]) | (1 << base->timerIndex[1])));
         result = FLEXIO_I2C_MasterTransferRunStateMachine(base, &tmpHandle, statusFlags);
 
     } while ((tmpHandle.state != kFLEXIO_I2C_Idle) && (result == kStatus_Success));
+
+    /* Timer disable on timer compare, wait until bit clock TSF set, which means timer disable and stop has been sent. */
+    while(0U == (FLEXIO_GetTimerStatusFlags(base->flexioBase) & (1 << base->timerIndex[0])))
+    {
+    }
 
     return result;
 }
@@ -901,7 +906,7 @@ status_t FLEXIO_I2C_MasterTransferCreateHandle(FLEXIO_I2C_Type *base,
 
     /* Register callback and userData. */
     handle->completionCallback = callback;
-    handle->userData = userData;
+    handle->userData           = userData;
 
     /* Enable interrupt in NVIC. */
     EnableIRQ(flexio_irqs[FLEXIO_I2C_GetInstance(base)]);
@@ -996,7 +1001,7 @@ status_t FLEXIO_I2C_MasterTransferGetCount(FLEXIO_I2C_Type *base, flexio_i2c_mas
  */
 void FLEXIO_I2C_MasterTransferHandleIRQ(void *i2cType, void *i2cHandle)
 {
-    FLEXIO_I2C_Type *base = (FLEXIO_I2C_Type *)i2cType;
+    FLEXIO_I2C_Type *base              = (FLEXIO_I2C_Type *)i2cType;
     flexio_i2c_master_handle_t *handle = (flexio_i2c_master_handle_t *)i2cHandle;
     uint32_t statusFlags;
     status_t result;

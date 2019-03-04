@@ -125,10 +125,10 @@ status_t FLEXIO_UART_Init(FLEXIO_UART_Type *base, const flexio_uart_config_t *us
 
     flexio_shifter_config_t shifterConfig;
     flexio_timer_config_t timerConfig;
-    uint32_t ctrlReg = 0;
+    uint32_t ctrlReg  = 0;
     uint16_t timerDiv = 0;
     uint16_t timerCmp = 0;
-    status_t result = kStatus_Success;
+    status_t result   = kStatus_Success;
 
     /* Clear the shifterConfig & timerConfig struct. */
     memset(&shifterConfig, 0, sizeof(shifterConfig));
@@ -153,33 +153,33 @@ status_t FLEXIO_UART_Init(FLEXIO_UART_Type *base, const flexio_uart_config_t *us
 
     /* Do hardware configuration. */
     /* 1. Configure the shifter 0 for tx. */
-    shifterConfig.timerSelect = base->timerIndex[0];
+    shifterConfig.timerSelect   = base->timerIndex[0];
     shifterConfig.timerPolarity = kFLEXIO_ShifterTimerPolarityOnPositive;
-    shifterConfig.pinConfig = kFLEXIO_PinConfigOutput;
-    shifterConfig.pinSelect = base->TxPinIndex;
-    shifterConfig.pinPolarity = kFLEXIO_PinActiveHigh;
-    shifterConfig.shifterMode = kFLEXIO_ShifterModeTransmit;
-    shifterConfig.inputSource = kFLEXIO_ShifterInputFromPin;
-    shifterConfig.shifterStop = kFLEXIO_ShifterStopBitHigh;
-    shifterConfig.shifterStart = kFLEXIO_ShifterStartBitLow;
+    shifterConfig.pinConfig     = kFLEXIO_PinConfigOutput;
+    shifterConfig.pinSelect     = base->TxPinIndex;
+    shifterConfig.pinPolarity   = kFLEXIO_PinActiveHigh;
+    shifterConfig.shifterMode   = kFLEXIO_ShifterModeTransmit;
+    shifterConfig.inputSource   = kFLEXIO_ShifterInputFromPin;
+    shifterConfig.shifterStop   = kFLEXIO_ShifterStopBitHigh;
+    shifterConfig.shifterStart  = kFLEXIO_ShifterStartBitLow;
 
     FLEXIO_SetShifterConfig(base->flexioBase, base->shifterIndex[0], &shifterConfig);
 
     /*2. Configure the timer 0 for tx. */
-    timerConfig.triggerSelect = FLEXIO_TIMER_TRIGGER_SEL_SHIFTnSTAT(base->shifterIndex[0]);
+    timerConfig.triggerSelect   = FLEXIO_TIMER_TRIGGER_SEL_SHIFTnSTAT(base->shifterIndex[0]);
     timerConfig.triggerPolarity = kFLEXIO_TimerTriggerPolarityActiveLow;
-    timerConfig.triggerSource = kFLEXIO_TimerTriggerSourceInternal;
-    timerConfig.pinConfig = kFLEXIO_PinConfigOutputDisabled;
-    timerConfig.pinSelect = base->TxPinIndex;
-    timerConfig.pinPolarity = kFLEXIO_PinActiveHigh;
-    timerConfig.timerMode = kFLEXIO_TimerModeDual8BitBaudBit;
-    timerConfig.timerOutput = kFLEXIO_TimerOutputOneNotAffectedByReset;
-    timerConfig.timerDecrement = kFLEXIO_TimerDecSrcOnFlexIOClockShiftTimerOutput;
-    timerConfig.timerReset = kFLEXIO_TimerResetNever;
-    timerConfig.timerDisable = kFLEXIO_TimerDisableOnTimerCompare;
-    timerConfig.timerEnable = kFLEXIO_TimerEnableOnTriggerHigh;
-    timerConfig.timerStop = kFLEXIO_TimerStopBitEnableOnTimerDisable;
-    timerConfig.timerStart = kFLEXIO_TimerStartBitEnabled;
+    timerConfig.triggerSource   = kFLEXIO_TimerTriggerSourceInternal;
+    timerConfig.pinConfig       = kFLEXIO_PinConfigOutputDisabled;
+    timerConfig.pinSelect       = base->TxPinIndex;
+    timerConfig.pinPolarity     = kFLEXIO_PinActiveHigh;
+    timerConfig.timerMode       = kFLEXIO_TimerModeDual8BitBaudBit;
+    timerConfig.timerOutput     = kFLEXIO_TimerOutputOneNotAffectedByReset;
+    timerConfig.timerDecrement  = kFLEXIO_TimerDecSrcOnFlexIOClockShiftTimerOutput;
+    timerConfig.timerReset      = kFLEXIO_TimerResetNever;
+    timerConfig.timerDisable    = kFLEXIO_TimerDisableOnTimerCompare;
+    timerConfig.timerEnable     = kFLEXIO_TimerEnableOnTriggerHigh;
+    timerConfig.timerStop       = kFLEXIO_TimerStopBitEnableOnTimerDisable;
+    timerConfig.timerStart      = kFLEXIO_TimerStartBitEnabled;
 
     timerDiv = srcClock_Hz / userConfig->baudRate_Bps;
     timerDiv = timerDiv / 2 - 1;
@@ -197,33 +197,33 @@ status_t FLEXIO_UART_Init(FLEXIO_UART_Type *base, const flexio_uart_config_t *us
     FLEXIO_SetTimerConfig(base->flexioBase, base->timerIndex[0], &timerConfig);
 
     /* 3. Configure the shifter 1 for rx. */
-    shifterConfig.timerSelect = base->timerIndex[1];
+    shifterConfig.timerSelect   = base->timerIndex[1];
     shifterConfig.timerPolarity = kFLEXIO_ShifterTimerPolarityOnNegitive;
-    shifterConfig.pinConfig = kFLEXIO_PinConfigOutputDisabled;
-    shifterConfig.pinSelect = base->RxPinIndex;
-    shifterConfig.pinPolarity = kFLEXIO_PinActiveHigh;
-    shifterConfig.shifterMode = kFLEXIO_ShifterModeReceive;
-    shifterConfig.inputSource = kFLEXIO_ShifterInputFromPin;
-    shifterConfig.shifterStop = kFLEXIO_ShifterStopBitHigh;
-    shifterConfig.shifterStart = kFLEXIO_ShifterStartBitLow;
+    shifterConfig.pinConfig     = kFLEXIO_PinConfigOutputDisabled;
+    shifterConfig.pinSelect     = base->RxPinIndex;
+    shifterConfig.pinPolarity   = kFLEXIO_PinActiveHigh;
+    shifterConfig.shifterMode   = kFLEXIO_ShifterModeReceive;
+    shifterConfig.inputSource   = kFLEXIO_ShifterInputFromPin;
+    shifterConfig.shifterStop   = kFLEXIO_ShifterStopBitHigh;
+    shifterConfig.shifterStart  = kFLEXIO_ShifterStartBitLow;
 
     FLEXIO_SetShifterConfig(base->flexioBase, base->shifterIndex[1], &shifterConfig);
 
     /* 4. Configure the timer 1 for rx. */
-    timerConfig.triggerSelect = FLEXIO_TIMER_TRIGGER_SEL_PININPUT(base->RxPinIndex);
+    timerConfig.triggerSelect   = FLEXIO_TIMER_TRIGGER_SEL_PININPUT(base->RxPinIndex);
     timerConfig.triggerPolarity = kFLEXIO_TimerTriggerPolarityActiveHigh;
-    timerConfig.triggerSource = kFLEXIO_TimerTriggerSourceExternal;
-    timerConfig.pinConfig = kFLEXIO_PinConfigOutputDisabled;
-    timerConfig.pinSelect = base->RxPinIndex;
-    timerConfig.pinPolarity = kFLEXIO_PinActiveLow;
-    timerConfig.timerMode = kFLEXIO_TimerModeDual8BitBaudBit;
-    timerConfig.timerOutput = kFLEXIO_TimerOutputOneAffectedByReset;
-    timerConfig.timerDecrement = kFLEXIO_TimerDecSrcOnFlexIOClockShiftTimerOutput;
-    timerConfig.timerReset = kFLEXIO_TimerResetOnTimerPinRisingEdge;
-    timerConfig.timerDisable = kFLEXIO_TimerDisableOnTimerCompare;
-    timerConfig.timerEnable = kFLEXIO_TimerEnableOnPinRisingEdge;
-    timerConfig.timerStop = kFLEXIO_TimerStopBitEnableOnTimerDisable;
-    timerConfig.timerStart = kFLEXIO_TimerStartBitEnabled;
+    timerConfig.triggerSource   = kFLEXIO_TimerTriggerSourceExternal;
+    timerConfig.pinConfig       = kFLEXIO_PinConfigOutputDisabled;
+    timerConfig.pinSelect       = base->RxPinIndex;
+    timerConfig.pinPolarity     = kFLEXIO_PinActiveLow;
+    timerConfig.timerMode       = kFLEXIO_TimerModeDual8BitBaudBit;
+    timerConfig.timerOutput     = kFLEXIO_TimerOutputOneAffectedByReset;
+    timerConfig.timerDecrement  = kFLEXIO_TimerDecSrcOnFlexIOClockShiftTimerOutput;
+    timerConfig.timerReset      = kFLEXIO_TimerResetOnTimerPinRisingEdge;
+    timerConfig.timerDisable    = kFLEXIO_TimerDisableOnTimerCompare;
+    timerConfig.timerEnable     = kFLEXIO_TimerEnableOnPinRisingEdge;
+    timerConfig.timerStop       = kFLEXIO_TimerStopBitEnableOnTimerDisable;
+    timerConfig.timerStart      = kFLEXIO_TimerStartBitEnabled;
 
     timerConfig.timerCompare = timerCmp;
 
@@ -238,19 +238,19 @@ status_t FLEXIO_UART_Init(FLEXIO_UART_Type *base, const flexio_uart_config_t *us
  * note After calling this API, call the FLEXO_UART_Init to use the FlexIO UART module.
  *
  * param base Pointer to FLEXIO_UART_Type structure
-*/
+ */
 void FLEXIO_UART_Deinit(FLEXIO_UART_Type *base)
 {
     base->flexioBase->SHIFTCFG[base->shifterIndex[0]] = 0;
     base->flexioBase->SHIFTCTL[base->shifterIndex[0]] = 0;
     base->flexioBase->SHIFTCFG[base->shifterIndex[1]] = 0;
     base->flexioBase->SHIFTCTL[base->shifterIndex[1]] = 0;
-    base->flexioBase->TIMCFG[base->timerIndex[0]] = 0;
-    base->flexioBase->TIMCMP[base->timerIndex[0]] = 0;
-    base->flexioBase->TIMCTL[base->timerIndex[0]] = 0;
-    base->flexioBase->TIMCFG[base->timerIndex[1]] = 0;
-    base->flexioBase->TIMCMP[base->timerIndex[1]] = 0;
-    base->flexioBase->TIMCTL[base->timerIndex[1]] = 0;
+    base->flexioBase->TIMCFG[base->timerIndex[0]]     = 0;
+    base->flexioBase->TIMCMP[base->timerIndex[0]]     = 0;
+    base->flexioBase->TIMCTL[base->timerIndex[0]]     = 0;
+    base->flexioBase->TIMCFG[base->timerIndex[1]]     = 0;
+    base->flexioBase->TIMCMP[base->timerIndex[1]]     = 0;
+    base->flexioBase->TIMCTL[base->timerIndex[1]]     = 0;
     /* Clear the shifter flag. */
     base->flexioBase->SHIFTSTAT = (1U << base->shifterIndex[0]);
     base->flexioBase->SHIFTSTAT = (1U << base->shifterIndex[1]);
@@ -276,9 +276,9 @@ void FLEXIO_UART_GetDefaultConfig(flexio_uart_config_t *userConfig)
     /* Initializes the configure structure to zero. */
     memset(userConfig, 0, sizeof(*userConfig));
 
-    userConfig->enableUart = true;
-    userConfig->enableInDoze = false;
-    userConfig->enableInDebug = true;
+    userConfig->enableUart       = true;
+    userConfig->enableInDoze     = false;
+    userConfig->enableInDebug    = true;
     userConfig->enableFastAccess = false;
     /* Default baud rate 115200. */
     userConfig->baudRate_Bps = 115200U;
@@ -331,7 +331,7 @@ void FLEXIO_UART_DisableInterrupts(FLEXIO_UART_Type *base, uint32_t mask)
  *
  * param base Pointer to the FLEXIO_UART_Type structure.
  * return FlexIO UART status flags.
-*/
+ */
 
 uint32_t FLEXIO_UART_GetStatusFlags(FLEXIO_UART_Type *base)
 {
@@ -356,7 +356,7 @@ uint32_t FLEXIO_UART_GetStatusFlags(FLEXIO_UART_Type *base)
  *          arg kFLEXIO_UART_TxDataRegEmptyFlag
  *          arg kFLEXIO_UART_RxEmptyFlag
  *          arg kFLEXIO_UART_RxOverRunFlag
-*/
+ */
 
 void FLEXIO_UART_ClearStatusFlags(FLEXIO_UART_Type *base, uint32_t mask)
 {
@@ -498,7 +498,7 @@ void FLEXIO_UART_TransferStartRingBuffer(FLEXIO_UART_Type *base,
     /* Setup the ringbuffer address */
     if (ringBuffer)
     {
-        handle->rxRingBuffer = ringBuffer;
+        handle->rxRingBuffer     = ringBuffer;
         handle->rxRingBufferSize = ringBufferSize;
         handle->rxRingBufferHead = 0U;
         handle->rxRingBufferTail = 0U;
@@ -525,7 +525,7 @@ void FLEXIO_UART_TransferStopRingBuffer(FLEXIO_UART_Type *base, flexio_uart_hand
         FLEXIO_UART_DisableInterrupts(base, kFLEXIO_UART_RxDataRegFullInterruptEnable);
     }
 
-    handle->rxRingBuffer = NULL;
+    handle->rxRingBuffer     = NULL;
     handle->rxRingBufferSize = 0U;
     handle->rxRingBufferHead = 0U;
     handle->rxRingBufferTail = 0U;
@@ -567,10 +567,10 @@ status_t FLEXIO_UART_TransferSendNonBlocking(FLEXIO_UART_Type *base,
     }
     else
     {
-        handle->txData = xfer->data;
-        handle->txDataSize = xfer->dataSize;
+        handle->txData        = xfer->data;
+        handle->txDataSize    = xfer->dataSize;
         handle->txDataSizeAll = xfer->dataSize;
-        handle->txState = kFLEXIO_UART_TxBusy;
+        handle->txState       = kFLEXIO_UART_TxBusy;
 
         /* Enable transmiter interrupt. */
         FLEXIO_UART_EnableInterrupts(base, kFLEXIO_UART_TxDataRegEmptyInterruptEnable);
@@ -596,7 +596,7 @@ void FLEXIO_UART_TransferAbortSend(FLEXIO_UART_Type *base, flexio_uart_handle_t 
     FLEXIO_UART_DisableInterrupts(base, kFLEXIO_UART_TxDataRegEmptyInterruptEnable);
 
     handle->txDataSize = 0;
-    handle->txState = kFLEXIO_UART_TxIdle;
+    handle->txState    = kFLEXIO_UART_TxIdle;
 }
 
 /*!
@@ -686,7 +686,7 @@ status_t FLEXIO_UART_TransferReceiveNonBlocking(FLEXIO_UART_Type *base,
     }
     else
     {
-        bytesToReceive = xfer->dataSize;
+        bytesToReceive       = xfer->dataSize;
         bytesCurrentReceived = 0U;
 
         /* If RX ring buffer is used. */
@@ -725,10 +725,10 @@ status_t FLEXIO_UART_TransferReceiveNonBlocking(FLEXIO_UART_Type *base,
             if (bytesToReceive)
             {
                 /* No data in ring buffer, save the request to UART handle. */
-                handle->rxData = xfer->data + bytesCurrentReceived;
-                handle->rxDataSize = bytesToReceive;
+                handle->rxData        = xfer->data + bytesCurrentReceived;
+                handle->rxDataSize    = bytesToReceive;
                 handle->rxDataSizeAll = bytesToReceive;
-                handle->rxState = kFLEXIO_UART_RxBusy;
+                handle->rxState       = kFLEXIO_UART_RxBusy;
             }
 
             /* Enable FLEXIO_UART RX IRQ if previously enabled. */
@@ -746,10 +746,10 @@ status_t FLEXIO_UART_TransferReceiveNonBlocking(FLEXIO_UART_Type *base,
         /* Ring buffer not used. */
         else
         {
-            handle->rxData = xfer->data + bytesCurrentReceived;
-            handle->rxDataSize = bytesToReceive;
+            handle->rxData        = xfer->data + bytesCurrentReceived;
+            handle->rxDataSize    = bytesToReceive;
             handle->rxDataSizeAll = bytesToReceive;
-            handle->rxState = kFLEXIO_UART_RxBusy;
+            handle->rxState       = kFLEXIO_UART_RxBusy;
 
             /* Enable RX interrupt. */
             FLEXIO_UART_EnableInterrupts(base, kFLEXIO_UART_RxDataRegFullInterruptEnable);
@@ -785,7 +785,7 @@ void FLEXIO_UART_TransferAbortReceive(FLEXIO_UART_Type *base, flexio_uart_handle
     }
 
     handle->rxDataSize = 0U;
-    handle->rxState = kFLEXIO_UART_RxIdle;
+    handle->rxState    = kFLEXIO_UART_RxIdle;
 }
 
 /*!
@@ -824,8 +824,8 @@ status_t FLEXIO_UART_TransferGetReceiveCount(FLEXIO_UART_Type *base, flexio_uart
  */
 void FLEXIO_UART_TransferHandleIRQ(void *uartType, void *uartHandle)
 {
-    uint8_t count = 1;
-    FLEXIO_UART_Type *base = (FLEXIO_UART_Type *)uartType;
+    uint8_t count                = 1;
+    FLEXIO_UART_Type *base       = (FLEXIO_UART_Type *)uartType;
     flexio_uart_handle_t *handle = (flexio_uart_handle_t *)uartHandle;
 
     /* Read the status back. */
@@ -881,7 +881,7 @@ void FLEXIO_UART_TransferHandleIRQ(void *uartType, void *uartHandle)
                     }
                 }
 
-                /* If ring buffer is still full after callback function, the oldest data is overrided. */
+                /* If ring buffer is still full after callback function, the oldest data is overridden. */
                 if (FLEXIO_UART_TransferIsRxRingBufferFull(handle))
                 {
                     /* Increase handle->rxRingBufferTail to make room for new data. */

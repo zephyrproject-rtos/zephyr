@@ -27,7 +27,7 @@
 
 static void aligned_memcpy(void *dst, const void *src, size_t size)
 {
-    register uint32_t *to32 = (uint32_t *)(uintptr_t)dst;
+    register uint32_t *to32         = (uint32_t *)(uintptr_t)dst;
     register const uint32_t *from32 = (const uint32_t *)(uintptr_t)src;
 
     while (size >= sizeof(uint32_t))
@@ -99,16 +99,16 @@ void BEE_GetDefaultConfig(bee_region_config_t *config)
     /* Initializes the configure structure to zero. */
     memset(config, 0, sizeof(*config));
 
-    config->region0Mode = kBEE_AesCtrMode;
-    config->region1Mode = kBEE_AesCtrMode;
+    config->region0Mode       = kBEE_AesCtrMode;
+    config->region1Mode       = kBEE_AesCtrMode;
     config->region0AddrOffset = 0U;
     config->region1AddrOffset = 0U;
-    config->region0SecLevel = kBEE_SecurityLevel3;
-    config->region1SecLevel = kBEE_SecurityLevel3;
-    config->region1Bot = 0U;
-    config->region1Top = 0U;
-    config->accessPermission = kBEE_AccessProtDisabled;
-    config->endianSwapEn = kBEE_EndianSwapEnabled;
+    config->region0SecLevel   = kBEE_SecurityLevel3;
+    config->region1SecLevel   = kBEE_SecurityLevel3;
+    config->region1Bot        = 0U;
+    config->region1Top        = 0U;
+    config->accessPermission  = kBEE_AccessProtDisabled;
+    config->endianSwapEn      = kBEE_EndianSwapEnabled;
 }
 
 /*!
@@ -145,11 +145,11 @@ void BEE_SetConfig(BEE_Type *base, const bee_region_config_t *config)
                   BEE_CTRL_SECURITY_LEVEL_R1(config->region1SecLevel) | BEE_CTRL_CTRL_AES_MODE_R1(config->region1Mode);
 
     /* Load values to registers */
-    base->CTRL = beeCtrlVal;
+    base->CTRL         = beeCtrlVal;
     base->ADDR_OFFSET0 = config->region0AddrOffset;
     base->ADDR_OFFSET1 = config->region1AddrOffset;
-    base->REGION1_BOT = config->region1Bot;
-    base->REGION1_TOP = config->region1Top;
+    base->REGION1_BOT  = config->region1Bot;
+    base->REGION1_TOP  = config->region1Top;
 
     /* Reenable BEE if it was enabled before. */
     if (reenable)

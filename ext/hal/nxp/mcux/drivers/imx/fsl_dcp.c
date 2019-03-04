@@ -52,20 +52,20 @@ typedef struct _dcp_hash_ctx_internal
 /*!< SHA-1/SHA-2 digest length in bytes  */
 enum _dcp_hash_digest_len
 {
-    kDCP_OutLenSha1 = 20u,
+    kDCP_OutLenSha1   = 20u,
     kDCP_OutLenSha256 = 32u,
-    kDCP_OutLenCrc32 = 4u,
+    kDCP_OutLenCrc32  = 4u,
 };
 
 enum _dcp_work_packet_bit_definitions
 {
-    kDCP_CONTROL0_DECR_SEMAPHOR = 1u << 1, /* DECR_SEMAPHOR */
-    kDCP_CONTROL0_ENABLE_HASH = 1u << 6,   /* ENABLE_HASH */
-    kDCP_CONTROL0_HASH_INIT = 1u << 12,    /* HASH_INIT */
-    kDCP_CONTROL0_HASH_TERM = 1u << 13,    /* HASH_TERM */
+    kDCP_CONTROL0_DECR_SEMAPHOR      = 1u << 1,  /* DECR_SEMAPHOR */
+    kDCP_CONTROL0_ENABLE_HASH        = 1u << 6,  /* ENABLE_HASH */
+    kDCP_CONTROL0_HASH_INIT          = 1u << 12, /* HASH_INIT */
+    kDCP_CONTROL0_HASH_TERM          = 1u << 13, /* HASH_TERM */
     kDCP_CONTROL1_HASH_SELECT_SHA256 = 2u << 16,
-    kDCP_CONTROL1_HASH_SELECT_SHA1 = 0u << 16,
-    kDCP_CONTROL1_HASH_SELECT_CRC32 = 1u << 16,
+    kDCP_CONTROL1_HASH_SELECT_SHA1   = 0u << 16,
+    kDCP_CONTROL1_HASH_SELECT_CRC32  = 1u << 16,
 };
 
 /*! 64-byte block represented as byte array of 16 32-bit words */
@@ -106,7 +106,7 @@ static status_t dcp_get_channel_status(DCP_Type *base, dcp_channel_t channel)
 {
     uint32_t statReg = 0;
     uint32_t semaReg = 0;
-    status_t status = kStatus_Fail;
+    status_t status  = kStatus_Fail;
 
     switch (channel)
     {
@@ -145,7 +145,7 @@ static status_t dcp_get_channel_status(DCP_Type *base, dcp_channel_t channel)
 static void dcp_clear_status(DCP_Type *base)
 {
     volatile uint32_t *dcpStatClrPtr = &base->STAT + 2u;
-    *dcpStatClrPtr = 0xFFu;
+    *dcpStatClrPtr                   = 0xFFu;
 }
 
 static void dcp_clear_channel_status(DCP_Type *base, uint32_t mask)
@@ -154,22 +154,22 @@ static void dcp_clear_channel_status(DCP_Type *base, uint32_t mask)
 
     if (mask & kDCP_Channel0)
     {
-        chStatClrPtr = &base->CH0STAT + 2u;
+        chStatClrPtr  = &base->CH0STAT + 2u;
         *chStatClrPtr = 0xFFu;
     }
     if (mask & kDCP_Channel1)
     {
-        chStatClrPtr = &base->CH1STAT + 2u;
+        chStatClrPtr  = &base->CH1STAT + 2u;
         *chStatClrPtr = 0xFFu;
     }
     if (mask & kDCP_Channel2)
     {
-        chStatClrPtr = &base->CH2STAT + 2u;
+        chStatClrPtr  = &base->CH2STAT + 2u;
         *chStatClrPtr = 0xFFu;
     }
     if (mask & kDCP_Channel3)
     {
-        chStatClrPtr = &base->CH3STAT + 2u;
+        chStatClrPtr  = &base->CH3STAT + 2u;
         *chStatClrPtr = 0xFFu;
     }
 }
@@ -178,7 +178,7 @@ static status_t dcp_aes_set_sram_based_key(DCP_Type *base, dcp_handle_t *handle,
 {
     base->KEY = DCP_KEY_INDEX(handle->keySlot) | DCP_KEY_SUBWORD(0);
     /* move the key by 32-bit words */
-    int i = 0;
+    int i          = 0;
     size_t keySize = 16u;
     while (keySize)
     {
@@ -360,19 +360,19 @@ status_t DCP_AES_EncryptEcb(
 }
 
 /*!
-* brief Encrypts AES using the ECB block mode.
-*
-* Puts AES ECB encrypt work packet to DCP channel.
-*
-* param base DCP peripheral base address
-* param handle Handle used for this request.
-* param[out] dcpPacket Memory for the DCP work packet.
-* param plaintext Input plain text to encrypt.
-* param[out] ciphertext Output cipher text
-* param size Size of input and output data in bytes. Must be multiple of 16 bytes.
-* return kStatus_Success The work packet has been scheduled at DCP channel.
-* return kStatus_DCP_Again The DCP channel is busy processing previous request.
-*/
+ * brief Encrypts AES using the ECB block mode.
+ *
+ * Puts AES ECB encrypt work packet to DCP channel.
+ *
+ * param base DCP peripheral base address
+ * param handle Handle used for this request.
+ * param[out] dcpPacket Memory for the DCP work packet.
+ * param plaintext Input plain text to encrypt.
+ * param[out] ciphertext Output cipher text
+ * param size Size of input and output data in bytes. Must be multiple of 16 bytes.
+ * return kStatus_Success The work packet has been scheduled at DCP channel.
+ * return kStatus_DCP_Again The DCP channel is busy processing previous request.
+ */
 status_t DCP_AES_EncryptEcbNonBlocking(DCP_Type *base,
                                        dcp_handle_t *handle,
                                        dcp_work_packet_t *dcpPacket,
@@ -388,9 +388,9 @@ status_t DCP_AES_EncryptEcbNonBlocking(DCP_Type *base,
 
     dcpPacket->control0 =
         0x122u | (handle->swapConfig & 0xFC0000u); /* CIPHER_ENCRYPT | ENABLE_CIPHER | DECR_SEMAPHORE */
-    dcpPacket->sourceBufferAddress = (uint32_t)plaintext;
+    dcpPacket->sourceBufferAddress      = (uint32_t)plaintext;
     dcpPacket->destinationBufferAddress = (uint32_t)ciphertext;
-    dcpPacket->bufferSize = (uint32_t)size;
+    dcpPacket->bufferSize               = (uint32_t)size;
 
     if (handle->keySlot == kDCP_OtpKey)
     {
@@ -475,10 +475,10 @@ status_t DCP_AES_DecryptEcbNonBlocking(DCP_Type *base,
         return kStatus_InvalidArgument;
     }
 
-    dcpPacket->control0 = 0x22u | (handle->swapConfig & 0xFC0000u); /* ENABLE_CIPHER | DECR_SEMAPHORE */
-    dcpPacket->sourceBufferAddress = (uint32_t)ciphertext;
+    dcpPacket->control0                 = 0x22u | (handle->swapConfig & 0xFC0000u); /* ENABLE_CIPHER | DECR_SEMAPHORE */
+    dcpPacket->sourceBufferAddress      = (uint32_t)ciphertext;
     dcpPacket->destinationBufferAddress = (uint32_t)plaintext;
-    dcpPacket->bufferSize = (uint32_t)size;
+    dcpPacket->bufferSize               = (uint32_t)size;
 
     if (handle->keySlot == kDCP_OtpKey)
     {
@@ -572,10 +572,10 @@ status_t DCP_AES_EncryptCbcNonBlocking(DCP_Type *base,
 
     dcpPacket->control0 =
         0x322u | (handle->swapConfig & 0xFC0000u); /* CIPHER_INIT | CIPHER_ENCRYPT | ENABLE_CIPHER | DECR_SEMAPHORE */
-    dcpPacket->control1 = 0x10u;                   /* CBC */
-    dcpPacket->sourceBufferAddress = (uint32_t)plaintext;
+    dcpPacket->control1                 = 0x10u;   /* CBC */
+    dcpPacket->sourceBufferAddress      = (uint32_t)plaintext;
     dcpPacket->destinationBufferAddress = (uint32_t)ciphertext;
-    dcpPacket->bufferSize = (uint32_t)size;
+    dcpPacket->bufferSize               = (uint32_t)size;
 
     if (handle->keySlot == kDCP_OtpKey)
     {
@@ -674,9 +674,9 @@ status_t DCP_AES_DecryptCbcNonBlocking(DCP_Type *base,
 
     dcpPacket->control0 = 0x222u | (handle->swapConfig & 0xFC0000u); /* CIPHER_INIT | ENABLE_CIPHER | DECR_SEMAPHORE */
     dcpPacket->control1 = 0x10u;                                     /* CBC */
-    dcpPacket->sourceBufferAddress = (uint32_t)ciphertext;
+    dcpPacket->sourceBufferAddress      = (uint32_t)ciphertext;
     dcpPacket->destinationBufferAddress = (uint32_t)plaintext;
-    dcpPacket->bufferSize = (uint32_t)size;
+    dcpPacket->bufferSize               = (uint32_t)size;
 
     if (handle->keySlot == kDCP_OtpKey)
     {
@@ -892,7 +892,7 @@ static status_t dcp_hash_engine_init(DCP_Type *base, dcp_hash_ctx_internal_t *ct
     if ((kDCP_Sha256 == ctxInternal->algo) || (kDCP_Sha1 == ctxInternal->algo) || (kDCP_Crc32 == ctxInternal->algo))
     {
         ctxInternal->ctrl0 = kDCP_CONTROL0_HASH_INIT;
-        status = kStatus_Success;
+        status             = kStatus_Success;
     }
 
     return status;
@@ -919,10 +919,10 @@ static status_t dcp_hash_update_non_blocking(
     {
         return kStatus_Fail;
     }
-    dcpPacket->sourceBufferAddress = (uint32_t)msg;
+    dcpPacket->sourceBufferAddress      = (uint32_t)msg;
     dcpPacket->destinationBufferAddress = 0;
-    dcpPacket->bufferSize = size;
-    dcpPacket->payloadPointer = (uint32_t)ctxInternal->runningHash;
+    dcpPacket->bufferSize               = size;
+    dcpPacket->payloadPointer           = (uint32_t)ctxInternal->runningHash;
 
     return dcp_schedule_work(base, ctxInternal->handle, dcpPacket);
 }
@@ -1107,16 +1107,16 @@ status_t DCP_HASH_Init(DCP_Type *base, dcp_handle_t *handle, dcp_hash_ctx_t *ctx
     }
 
     /* set algorithm in context struct for later use */
-    ctxInternal = (dcp_hash_ctx_internal_t *)ctx;
-    ctxInternal->algo = algo;
+    ctxInternal        = (dcp_hash_ctx_internal_t *)ctx;
+    ctxInternal->algo  = algo;
     ctxInternal->blksz = 0u;
     for (i = 0; i < sizeof(ctxInternal->blk.w) / sizeof(ctxInternal->blk.w[0]); i++)
     {
         ctxInternal->blk.w[0] = 0u;
     }
-    ctxInternal->state = kDCP_StateHashInit;
+    ctxInternal->state           = kDCP_StateHashInit;
     ctxInternal->fullMessageSize = 0;
-    ctxInternal->handle = handle;
+    ctxInternal->handle          = handle;
     return status;
 }
 
@@ -1148,7 +1148,7 @@ status_t DCP_HASH_Update(DCP_Type *base, dcp_hash_ctx_t *ctx, const uint8_t *inp
     }
 
     ctxInternal = (dcp_hash_ctx_internal_t *)ctx;
-    status = dcp_hash_check_context(ctxInternal, input);
+    status      = dcp_hash_check_context(ctxInternal, input);
     if (kStatus_Success != status)
     {
         return status;
@@ -1206,7 +1206,7 @@ status_t DCP_HASH_Finish(DCP_Type *base, dcp_hash_ctx_t *ctx, uint8_t *output, s
     dcp_hash_ctx_internal_t *ctxInternal;
 
     ctxInternal = (dcp_hash_ctx_internal_t *)ctx;
-    status = dcp_hash_check_context(ctxInternal, output);
+    status      = dcp_hash_check_context(ctxInternal, output);
     if (kStatus_Success != status)
     {
         return status;

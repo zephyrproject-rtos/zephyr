@@ -20,7 +20,7 @@ enum _sai_transfer_state
 {
     kSAI_Busy = 0x0U, /*!< SAI is busy */
     kSAI_Idle,        /*!< Transfer is done. */
-    kSAI_Error        /*!< Transfer error occured. */
+    kSAI_Error        /*!< Transfer error occurred. */
 };
 
 /*! @brief Typedef for sai tx interrupt handler. */
@@ -91,6 +91,19 @@ static void SAI_ReadNonBlocking(I2S_Type *base,
                                 uint32_t bitWidth,
                                 uint8_t *buffer,
                                 uint32_t size);
+
+/*!
+ * @brief Get classic I2S mode configurations.
+ *
+ * @param config transceiver configurations
+ * @param bitWidth audio data bitWidth.
+ * @param mode audio data channel
+ * @param saiChannelMask channel mask value to enable
+ */
+static void SAI_GetCommonConfig(sai_transceiver_t *config,
+                                sai_word_width_t bitWidth,
+                                sai_mono_stereo_t mode,
+                                uint32_t saiChannelMask);
 /*******************************************************************************
  * Variables
  ******************************************************************************/
@@ -118,12 +131,12 @@ static void SAI_SetMasterClockDivider(I2S_Type *base, uint32_t mclk_Hz, uint32_t
 {
     uint32_t freq = mclkSrcClock_Hz;
     uint16_t fract, divide;
-    uint32_t remaind = 0;
+    uint32_t remaind           = 0;
     uint32_t current_remainder = 0xFFFFFFFFU;
-    uint16_t current_fract = 0;
-    uint16_t current_divide = 0;
-    uint32_t mul_freq = 0;
-    uint32_t max_fract = 256;
+    uint16_t current_fract     = 0;
+    uint16_t current_divide    = 0;
+    uint32_t mul_freq          = 0;
+    uint32_t max_fract         = 256;
 
     /*In order to prevent overflow */
     freq /= 100;
@@ -140,13 +153,13 @@ static void SAI_SetMasterClockDivider(I2S_Type *base, uint32_t mclk_Hz, uint32_t
     for (fract = 1; fract < max_fract; fract++)
     {
         mul_freq = freq * fract;
-        remaind = mul_freq % mclk_Hz;
-        divide = mul_freq / mclk_Hz;
+        remaind  = mul_freq % mclk_Hz;
+        divide   = mul_freq / mclk_Hz;
 
         /* Find the exactly frequency */
         if (remaind == 0)
         {
-            current_fract = fract;
+            current_fract  = fract;
             current_divide = mul_freq / mclk_Hz;
             break;
         }
@@ -161,8 +174,8 @@ static void SAI_SetMasterClockDivider(I2S_Type *base, uint32_t mclk_Hz, uint32_t
         /* Update the closest div and fract */
         if (remaind < current_remainder)
         {
-            current_fract = fract;
-            current_divide = divide;
+            current_fract     = fract;
+            current_divide    = divide;
             current_remainder = remaind;
         }
     }
@@ -206,8 +219,8 @@ static void SAI_WriteNonBlocking(I2S_Type *base,
     uint32_t i = 0;
     uint8_t j = 0, m = 0;
     uint8_t bytesPerWord = bitWidth / 8U;
-    uint32_t data = 0;
-    uint32_t temp = 0;
+    uint32_t data        = 0;
+    uint32_t temp        = 0;
 
     for (i = 0; i < size / bytesPerWord; i++)
     {
@@ -222,7 +235,7 @@ static void SAI_WriteNonBlocking(I2S_Type *base,
                     buffer++;
                 }
                 base->TDR[j] = data;
-                data = 0;
+                data         = 0;
             }
         }
     }
@@ -239,7 +252,7 @@ static void SAI_ReadNonBlocking(I2S_Type *base,
     uint32_t i = 0;
     uint8_t j = 0, m = 0;
     uint8_t bytesPerWord = bitWidth / 8U;
-    uint32_t data = 0;
+    uint32_t data        = 0;
 
     for (i = 0; i < size / bytesPerWord; i++)
     {
@@ -258,8 +271,63 @@ static void SAI_ReadNonBlocking(I2S_Type *base,
     }
 }
 
+static void SAI_GetCommonConfig(sai_transceiver_t *config,
+                                sai_word_width_t bitWidth,
+                                sai_mono_stereo_t mode,
+                                uint32_t saiChannelMask)
+{
+    assert(NULL != config);
+    assert(saiChannelMask != 0U);
+
+    memset(config, 0U, sizeof(sai_transceiver_t));
+
+    config->channelMask = saiChannelMask;
+    /* sync mode default configurations */
+    config->syncMode = kSAI_ModeAsync;
+
+    /* master mode default */
+    config->masterSlave = kSAI_Master;
+
+    /* bit default configurations */
+    config->bitClock.bclkSrcSwap    = false;
+    config->bitClock.bclkInputDelay = false;
+    config->bitClock.bclkPolarity   = kSAI_SampleOnRisingEdge;
+    config->bitClock.bclkSource     = kSAI_BclkSourceMclkDiv;
+
+    /* frame sync default configurations */
+    config->frameSync.frameSyncWidth = bitWidth;
+    config->frameSync.frameSyncEarly = true;
+#if defined(FSL_FEATURE_SAI_HAS_FRAME_SYNC_ON_DEMAND) && FSL_FEATURE_SAI_HAS_FRAME_SYNC_ON_DEMAND
+    config->frameSync.frameSyncGenerateOnDemand = false;
+#endif
+    config->frameSync.frameSyncPolarity = kSAI_PolarityActiveLow;
+
+    /* serial data default configurations */
+#if defined(FSL_FEATURE_SAI_HAS_CHANNEL_MODE) && FSL_FEATURE_SAI_HAS_CHANNEL_MODE
+    config->serialData.dataMode = kSAI_DataPinStateOutputZero;
+#endif
+    config->serialData.dataOrder           = kSAI_DataMSB;
+    config->serialData.dataWord0Length     = bitWidth;
+    config->serialData.dataWordLength      = bitWidth;
+    config->serialData.dataWordNLength     = bitWidth;
+    config->serialData.dataFirstBitShifted = bitWidth;
+    config->serialData.dataWordNum         = 2U;
+    config->serialData.dataMaskedWord      = mode;
+
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    /* fifo configurations */
+    config->fifo.fifoWatermark = FSL_FEATURE_SAI_FIFO_COUNT / 2U;
+#endif
+
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_FUNCTION_AFTER_ERROR) && FSL_FEATURE_SAI_HAS_FIFO_FUNCTION_AFTER_ERROR
+    config->fifo.fifoContinueOneError = true;
+#endif
+}
+
 /*!
  * brief Initializes the SAI Tx peripheral.
+ *
+ * deprecated Do not use this function.  It has been superceded by @ref SAI_Init
  *
  * Ungates the SAI clock, resets the module, and configures SAI Tx with a configuration structure.
  * The configuration structure can be custom filled or set with default values by
@@ -271,7 +339,7 @@ static void SAI_ReadNonBlocking(I2S_Type *base,
  *
  * param base SAI base pointer
  * param config SAI configuration structure.
-*/
+ */
 void SAI_TxInit(I2S_Type *base, const sai_config_t *config)
 {
     uint32_t val = 0;
@@ -284,12 +352,12 @@ void SAI_TxInit(I2S_Type *base, const sai_config_t *config)
 #if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
 #if !(defined(FSL_FEATURE_SAI_HAS_NO_MCR_MICS) && (FSL_FEATURE_SAI_HAS_NO_MCR_MICS))
     /* Master clock source setting */
-    val = (base->MCR & ~I2S_MCR_MICS_MASK);
+    val       = (base->MCR & ~I2S_MCR_MICS_MASK);
     base->MCR = (val | I2S_MCR_MICS(config->mclkSource));
 #endif
 
     /* Configure Master clock output enable */
-    val = (base->MCR & ~I2S_MCR_MOE_MASK);
+    val       = (base->MCR & ~I2S_MCR_MOE_MASK);
     base->MCR = (val | I2S_MCR_MOE(config->mclkOutputEnable));
 #endif /* FSL_FEATURE_SAI_HAS_MCR */
 
@@ -339,7 +407,7 @@ void SAI_TxInit(I2S_Type *base, const sai_config_t *config)
         base->TCR4 |= I2S_TCR4_FSD_MASK;
 
         /* Bit clock source setting */
-        val = base->TCR2 & (~I2S_TCR2_MSEL_MASK);
+        val        = base->TCR2 & (~I2S_TCR2_MSEL_MASK);
         base->TCR2 = (val | I2S_TCR2_MSEL(config->bclkSource));
     }
     else
@@ -365,6 +433,7 @@ void SAI_TxInit(I2S_Type *base, const sai_config_t *config)
             val &= ~I2S_RCR2_SYNC_MASK;
             base->RCR2 = (val | I2S_RCR2_SYNC(0U));
             break;
+#if defined(FSL_FEATURE_SAI_HAS_SYNC_WITH_ANOTHER_SAI) && (FSL_FEATURE_SAI_HAS_SYNC_WITH_ANOTHER_SAI)
         case kSAI_ModeSyncWithOtherTx:
             val = base->TCR2;
             val &= ~I2S_TCR2_SYNC_MASK;
@@ -375,6 +444,7 @@ void SAI_TxInit(I2S_Type *base, const sai_config_t *config)
             val &= ~I2S_TCR2_SYNC_MASK;
             base->TCR2 = (val | I2S_TCR2_SYNC(3U));
             break;
+#endif /* FSL_FEATURE_SAI_HAS_SYNC_WITH_ANOTHER_SAI */
         default:
             break;
     }
@@ -386,6 +456,8 @@ void SAI_TxInit(I2S_Type *base, const sai_config_t *config)
 
 /*!
  * brief Initializes the SAI Rx peripheral.
+ *
+ * deprecated Do not use this function.  It has been superceded by @ref SAI_Init
  *
  * Ungates the SAI clock, resets the module, and configures the SAI Rx with a configuration structure.
  * The configuration structure can be custom filled or set with default values by
@@ -410,12 +482,12 @@ void SAI_RxInit(I2S_Type *base, const sai_config_t *config)
 #if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
 #if !(defined(FSL_FEATURE_SAI_HAS_NO_MCR_MICS) && (FSL_FEATURE_SAI_HAS_NO_MCR_MICS))
     /* Master clock source setting */
-    val = (base->MCR & ~I2S_MCR_MICS_MASK);
+    val       = (base->MCR & ~I2S_MCR_MICS_MASK);
     base->MCR = (val | I2S_MCR_MICS(config->mclkSource));
 #endif
 
     /* Configure Master clock output enable */
-    val = (base->MCR & ~I2S_MCR_MOE_MASK);
+    val       = (base->MCR & ~I2S_MCR_MOE_MASK);
     base->MCR = (val | I2S_MCR_MOE(config->mclkOutputEnable));
 #endif /* FSL_FEATURE_SAI_HAS_MCR */
 
@@ -465,7 +537,7 @@ void SAI_RxInit(I2S_Type *base, const sai_config_t *config)
         base->RCR4 |= I2S_RCR4_FSD_MASK;
 
         /* Bit clock source setting */
-        val = base->RCR2 & (~I2S_RCR2_MSEL_MASK);
+        val        = base->RCR2 & (~I2S_RCR2_MSEL_MASK);
         base->RCR2 = (val | I2S_RCR2_MSEL(config->bclkSource));
     }
     else
@@ -491,6 +563,7 @@ void SAI_RxInit(I2S_Type *base, const sai_config_t *config)
             val &= ~I2S_TCR2_SYNC_MASK;
             base->TCR2 = (val | I2S_TCR2_SYNC(0U));
             break;
+#if defined(FSL_FEATURE_SAI_HAS_SYNC_WITH_ANOTHER_SAI) && (FSL_FEATURE_SAI_HAS_SYNC_WITH_ANOTHER_SAI)
         case kSAI_ModeSyncWithOtherTx:
             val = base->RCR2;
             val &= ~I2S_RCR2_SYNC_MASK;
@@ -501,6 +574,7 @@ void SAI_RxInit(I2S_Type *base, const sai_config_t *config)
             val &= ~I2S_RCR2_SYNC_MASK;
             base->RCR2 = (val | I2S_RCR2_SYNC(3U));
             break;
+#endif /* FSL_FEATURE_SAI_HAS_SYNC_WITH_ANOTHER_SAI */
         default:
             break;
     }
@@ -511,13 +585,28 @@ void SAI_RxInit(I2S_Type *base, const sai_config_t *config)
 }
 
 /*!
+ * brief Initializes the SAI peripheral.
+ *
+ * This API gates the SAI clock. The SAI module can't operate unless SAI_Init is called to enable the clock.
+ *
+ * param base SAI base pointer
+ */
+void SAI_Init(I2S_Type *base)
+{
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+    /* Enable the SAI clock */
+    CLOCK_EnableClock(s_saiClock[SAI_GetInstance(base)]);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+}
+
+/*!
  * brief De-initializes the SAI peripheral.
  *
  * This API gates the SAI clock. The SAI module can't operate unless SAI_TxInit
  * or SAI_RxInit is called to enable the clock.
  *
  * param base SAI base pointer
-*/
+ */
 void SAI_Deinit(I2S_Type *base)
 {
     SAI_TxEnable(base, false);
@@ -529,6 +618,9 @@ void SAI_Deinit(I2S_Type *base)
 
 /*!
  * brief  Sets the SAI Tx configuration structure to default values.
+ *
+ * deprecated Do not use this function.  It has been superceded by @ref
+ * SAI_GetClassicI2SConfig/SAI_GetLeftJustifiedConfig/SAI_GetRightJustifiedConfig/SAI_GetDSPConfig/SAI_GetTDMConfig
  *
  * This API initializes the configuration structure for use in SAI_TxConfig().
  * The initialized structure can remain unchanged in SAI_TxConfig(), or it can be modified
@@ -546,7 +638,7 @@ void SAI_TxGetDefaultConfig(sai_config_t *config)
     /* Initializes the configure structure to zero. */
     memset(config, 0, sizeof(*config));
 
-    config->bclkSource = kSAI_BclkSourceMclkDiv;
+    config->bclkSource  = kSAI_BclkSourceMclkDiv;
     config->masterSlave = kSAI_Master;
 #if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
     config->mclkOutputEnable = true;
@@ -560,6 +652,9 @@ void SAI_TxGetDefaultConfig(sai_config_t *config)
 
 /*!
  * brief  Sets the SAI Rx configuration structure to default values.
+ *
+ * deprecated Do not use this function.  It has been superceded by @ref
+ * SAI_GetClassicI2SConfig/SAI_GetLeftJustifiedConfig/SAI_GetRightJustifiedConfig/SAI_GetDSPConfig/SAI_GetTDMConfig
  *
  * This API initializes the configuration structure for use in SAI_RxConfig().
  * The initialized structure can remain unchanged in SAI_RxConfig() or it can be modified
@@ -577,7 +672,7 @@ void SAI_RxGetDefaultConfig(sai_config_t *config)
     /* Initializes the configure structure to zero. */
     memset(config, 0, sizeof(*config));
 
-    config->bclkSource = kSAI_BclkSourceMclkDiv;
+    config->bclkSource  = kSAI_BclkSourceMclkDiv;
     config->masterSlave = kSAI_Master;
 #if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
     config->mclkOutputEnable = true;
@@ -609,7 +704,7 @@ void SAI_TxReset(I2S_Type *base)
     base->TCR3 = 0;
     base->TCR4 = 0;
     base->TCR5 = 0;
-    base->TMR = 0;
+    base->TMR  = 0;
 }
 
 /*!
@@ -632,7 +727,7 @@ void SAI_RxReset(I2S_Type *base)
     base->RCR3 = 0;
     base->RCR4 = 0;
     base->RCR5 = 0;
-    base->RMR = 0;
+    base->RMR  = 0;
 }
 
 /*!
@@ -698,7 +793,7 @@ void SAI_RxEnable(I2S_Type *base, bool enable)
  * brief Do software reset or FIFO reset .
  *
  * FIFO reset means clear all the data in the FIFO, and make the FIFO pointer both to 0.
- * Software reset means claer the Tx internal logic, including the bit clock, frame count etc. But software
+ * Software reset means clear the Tx internal logic, including the bit clock, frame count etc. But software
  * reset will not clear any configuration registers like TCR1~TCR5.
  * This function will also clear all the error flags such as FIFO error, sync error etc.
  *
@@ -717,7 +812,7 @@ void SAI_TxSoftwareReset(I2S_Type *base, sai_reset_type_t type)
  * brief Do software reset or FIFO reset .
  *
  * FIFO reset means clear all the data in the FIFO, and make the FIFO pointer both to 0.
- * Software reset means claer the Rx internal logic, including the bit clock, frame count etc. But software
+ * Software reset means clear the Rx internal logic, including the bit clock, frame count etc. But software
  * reset will not clear any configuration registers like RCR1~RCR5.
  * This function will also clear all the error flags such as FIFO error, sync error etc.
  *
@@ -859,11 +954,11 @@ void SAI_TxSetFIFOPacking(I2S_Type *base, sai_fifo_packing_t pack)
 }
 
 /*!
-* brief Set Rx FIFO packing feature.
-*
-* param base SAI base pointer.
-* param pack FIFO pack type. It is element of sai_fifo_packing_t.
-*/
+ * brief Set Rx FIFO packing feature.
+ *
+ * param base SAI base pointer.
+ * param pack FIFO pack type. It is element of sai_fifo_packing_t.
+ */
 void SAI_RxSetFIFOPacking(I2S_Type *base, sai_fifo_packing_t pack)
 {
     uint32_t val = base->RCR4;
@@ -875,7 +970,758 @@ void SAI_RxSetFIFOPacking(I2S_Type *base, sai_fifo_packing_t pack)
 #endif /* FSL_FEATURE_SAI_HAS_FIFO_PACKING */
 
 /*!
+ * brief Transmitter bit clock rate configurations.
+ *
+ * param base SAI base pointer.
+ * param sourceClockHz, bit clock source frequency.
+ * param sampleRate audio data sample rate.
+ * param bitWidth, audio data bitWidth.
+ * param channelNumbers, audio channel numbers.
+ */
+void SAI_TxSetBitClockRate(
+    I2S_Type *base, uint32_t sourceClockHz, uint32_t sampleRate, uint32_t bitWidth, uint32_t channelNumbers)
+{
+    uint32_t tcr2         = base->TCR2;
+    uint32_t bitClockDiv  = 0;
+    uint32_t bitClockFreq = sampleRate * bitWidth * channelNumbers;
+
+    assert(sourceClockHz >= bitClockFreq);
+
+    tcr2 &= ~I2S_TCR2_DIV_MASK;
+    /* need to check the divided bclk, if bigger than target, then divider need to re-calculate. */
+    bitClockDiv = sourceClockHz / bitClockFreq;
+    /* for the condition where the source clock is smaller than target bclk */
+    if (bitClockDiv == 0U)
+    {
+        bitClockDiv++;
+    }
+    /* recheck the divider if properly or not, to make sure output blck not bigger than target*/
+    if ((sourceClockHz / bitClockDiv) > bitClockFreq)
+    {
+        bitClockDiv++;
+    }
+
+#if defined(FSL_FEATURE_SAI_HAS_BCLK_BYPASS) && (FSL_FEATURE_SAI_HAS_BCLK_BYPASS)
+    /* if bclk same with MCLK, bypass the divider */
+    if (bitClockDiv == 1U)
+    {
+        tcr2 |= I2S_TCR2_BYP_MASK;
+    }
+    else
+#endif
+    {
+        tcr2 |= I2S_TCR2_DIV(bitClockDiv / 2U - 1U);
+    }
+
+    base->TCR2 = tcr2;
+}
+
+/*!
+ * brief Receiver bit clock rate configurations.
+ *
+ * param base SAI base pointer.
+ * param sourceClockHz, bit clock source frequency.
+ * param sampleRate audio data sample rate.
+ * param bitWidth, audio data bitWidth.
+ * param channelNumbers, audio channel numbers.
+ */
+void SAI_RxSetBitClockRate(
+    I2S_Type *base, uint32_t sourceClockHz, uint32_t sampleRate, uint32_t bitWidth, uint32_t channelNumbers)
+{
+    uint32_t rcr2         = base->RCR2;
+    uint32_t bitClockDiv  = 0;
+    uint32_t bitClockFreq = sampleRate * bitWidth * channelNumbers;
+
+    assert(sourceClockHz >= bitClockFreq);
+
+    rcr2 &= ~I2S_RCR2_DIV_MASK;
+    /* need to check the divided bclk, if bigger than target, then divider need to re-calculate. */
+    bitClockDiv = sourceClockHz / bitClockFreq;
+    /* for the condition where the source clock is smaller than target bclk */
+    if (bitClockDiv == 0U)
+    {
+        bitClockDiv++;
+    }
+    /* recheck the divider if properly or not, to make sure output blck not bigger than target*/
+    if ((sourceClockHz / bitClockDiv) > bitClockFreq)
+    {
+        bitClockDiv++;
+    }
+
+#if defined(FSL_FEATURE_SAI_HAS_BCLK_BYPASS) && (FSL_FEATURE_SAI_HAS_BCLK_BYPASS)
+    /* if bclk same with MCLK, bypass the divider */
+    if (bitClockDiv == 1U)
+    {
+        rcr2 |= I2S_RCR2_BYP_MASK;
+    }
+    else
+#endif
+    {
+        rcr2 |= I2S_RCR2_DIV(bitClockDiv / 2U - 1U);
+    }
+
+    base->RCR2 = rcr2;
+}
+
+/*!
+ * brief Transmitter Bit clock configurations.
+ *
+ * param base SAI base pointer.
+ * param masterSlave master or slave.
+ * param config bit clock other configurations, can be NULL in slave mode.
+ */
+void SAI_TxSetBitclockConfig(I2S_Type *base, sai_master_slave_t masterSlave, sai_bit_clock_t *config)
+{
+    uint32_t tcr2 = base->TCR2;
+
+    if ((masterSlave == kSAI_Master) || (masterSlave == kSAI_Bclk_Master_FrameSync_Slave))
+    {
+        assert(config != NULL);
+
+        tcr2 &= ~(I2S_TCR2_BCD_MASK | I2S_TCR2_BCP_MASK | I2S_TCR2_BCI_MASK | I2S_TCR2_BCS_MASK | I2S_TCR2_MSEL_MASK);
+        tcr2 |= I2S_TCR2_BCD(1U) | I2S_TCR2_BCP(config->bclkPolarity) | I2S_TCR2_BCI(config->bclkInputDelay) |
+                I2S_TCR2_BCS(config->bclkSrcSwap) | I2S_TCR2_MSEL(config->bclkSource);
+    }
+    else
+    {
+        tcr2 &= ~(I2S_TCR2_BCD_MASK);
+    }
+
+    base->TCR2 = tcr2;
+}
+
+/*!
+ * brief Receiver Bit clock configurations.
+ *
+ * param base SAI base pointer.
+ * param masterSlave master or slave.
+ * param config bit clock other configurations, can be NULL in slave mode.
+ */
+void SAI_RxSetBitclockConfig(I2S_Type *base, sai_master_slave_t masterSlave, sai_bit_clock_t *config)
+{
+    uint32_t rcr2 = base->RCR2;
+
+    if ((masterSlave == kSAI_Master) || (masterSlave == kSAI_Bclk_Master_FrameSync_Slave))
+    {
+        assert(config != NULL);
+
+        rcr2 &= ~(I2S_RCR2_BCD_MASK | I2S_RCR2_BCP_MASK | I2S_RCR2_BCI_MASK | I2S_RCR2_BCS_MASK | I2S_RCR2_MSEL_MASK);
+        rcr2 |= I2S_RCR2_BCD(1U) | I2S_RCR2_BCP(config->bclkPolarity) | I2S_RCR2_BCI(config->bclkInputDelay) |
+                I2S_RCR2_BCS(config->bclkSrcSwap) | I2S_RCR2_MSEL(config->bclkSource);
+    }
+    else
+    {
+        rcr2 &= ~(I2S_RCR2_BCD_MASK);
+    }
+
+    base->RCR2 = rcr2;
+}
+
+#if (defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)) || \
+    (defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER))
+/*!
+ * brief Master clock configurations.
+ *
+ * param base SAI base pointer.
+ * param config master clock configurations.
+ */
+void SAI_SetMasterClockConfig(I2S_Type *base, sai_master_clock_t *config)
+{
+    assert(config != NULL);
+
+#if defined(FSL_FEATURE_SAI_HAS_MCR) && (FSL_FEATURE_SAI_HAS_MCR)
+#if !(defined(FSL_FEATURE_SAI_HAS_NO_MCR_MICS) && (FSL_FEATURE_SAI_HAS_NO_MCR_MICS))
+    uint32_t val = 0;
+    /* Master clock source setting */
+    val       = (base->MCR & ~I2S_MCR_MICS_MASK);
+    base->MCR = (val | I2S_MCR_MICS(config->mclkSource));
+#endif
+
+    /* Configure Master clock output enable */
+    val       = (base->MCR & ~I2S_MCR_MOE_MASK);
+    base->MCR = (val | I2S_MCR_MOE(config->mclkOutputEnable));
+#endif /* FSL_FEATURE_SAI_HAS_MCR */
+
+#if defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER)
+    /* Check if master clock divider enabled, then set master clock divider */
+    if (config->mclkOutputEnable)
+    {
+        SAI_SetMasterClockDivider(base, config->mclkHz, config->mclkSourceClkHz);
+    }
+#endif /* FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER */
+}
+#endif
+
+/*!
+ * brief SAI transmitter fifo configurations.
+ *
+ * param base SAI base pointer.
+ * param config fifo configurations.
+ */
+void SAI_TxSetFifoConfig(I2S_Type *base, sai_fifo_t *config)
+{
+    assert(config != NULL);
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    assert(config->fifoWatermark <= (I2S_TCR1_TFW_MASK >> I2S_TCR1_TFW_SHIFT));
+#endif
+
+    uint32_t tcr4 = base->TCR4;
+
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_FUNCTION_COMBINE) && FSL_FEATURE_SAI_HAS_FIFO_FUNCTION_COMBINE
+    tcr4 &= ~I2S_TCR4_FCOMB_MASK;
+    tcr4 |= I2S_TCR4_FCOMB(config->fifoCombine);
+#endif
+
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_FUNCTION_AFTER_ERROR) && FSL_FEATURE_SAI_HAS_FIFO_FUNCTION_AFTER_ERROR
+    tcr4 &= ~I2S_TCR4_FCONT_MASK;
+    tcr4 |= I2S_TCR4_FCONT(config->fifoContinueOneError);
+#endif
+
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_PACKING) && FSL_FEATURE_SAI_HAS_FIFO_PACKING
+    tcr4 &= ~I2S_TCR4_FPACK_MASK;
+    tcr4 |= I2S_TCR4_FPACK(config->fifoPacking);
+#endif
+
+    base->TCR4 = tcr4;
+
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    base->TCR1 = (base->TCR1 & (~I2S_TCR1_TFW_MASK)) | I2S_TCR1_TFW(config->fifoWatermark);
+#endif
+}
+
+/*!
+ * brief SAI receiver fifo configurations.
+ *
+ * param base SAI base pointer.
+ * param config fifo configurations.
+ */
+void SAI_RxSetFifoConfig(I2S_Type *base, sai_fifo_t *config)
+{
+    assert(config != NULL);
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    assert(config->fifoWatermark <= (I2S_TCR1_TFW_MASK >> I2S_TCR1_TFW_SHIFT));
+#endif
+    uint32_t rcr4 = base->RCR4;
+
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_FUNCTION_COMBINE) && FSL_FEATURE_SAI_HAS_FIFO_FUNCTION_COMBINE
+    rcr4 &= ~I2S_RCR4_FCOMB_MASK;
+    rcr4 |= I2S_RCR4_FCOMB(config->fifoCombine);
+#endif
+
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_FUNCTION_AFTER_ERROR) && FSL_FEATURE_SAI_HAS_FIFO_FUNCTION_AFTER_ERROR
+    rcr4 &= ~I2S_RCR4_FCONT_MASK;
+    rcr4 |= I2S_RCR4_FCONT(config->fifoContinueOneError);
+#endif
+
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_PACKING) && FSL_FEATURE_SAI_HAS_FIFO_PACKING
+    rcr4 &= ~I2S_RCR4_FPACK_MASK;
+    rcr4 |= I2S_RCR4_FPACK(config->fifoPacking);
+#endif
+
+    base->RCR4 = rcr4;
+
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    base->RCR1 = (base->RCR1 & (~I2S_RCR1_RFW_MASK)) | I2S_RCR1_RFW(config->fifoWatermark);
+#endif
+}
+
+/*!
+ * brief SAI transmitter Frame sync configurations.
+ *
+ * param base SAI base pointer.
+ * param masterSlave master or slave.
+ * param config frame sync configurations, can be NULL in slave mode.
+ */
+void SAI_TxSetFrameSyncConfig(I2S_Type *base, sai_master_slave_t masterSlave, sai_frame_sync_t *config)
+{
+    uint32_t tcr4 = base->TCR4;
+
+    if ((masterSlave == kSAI_Master) || (masterSlave == kSAI_Bclk_Slave_FrameSync_Master))
+    {
+        assert(config != NULL);
+        assert((config->frameSyncWidth - 1U) <= (I2S_TCR4_SYWD_MASK >> I2S_TCR4_SYWD_SHIFT));
+
+        tcr4 &= ~(I2S_TCR4_FSE_MASK | I2S_TCR4_FSP_MASK | I2S_TCR4_FSD_MASK | I2S_TCR4_SYWD_MASK);
+
+#if defined(FSL_FEATURE_SAI_HAS_FRAME_SYNC_ON_DEMAND) && FSL_FEATURE_SAI_HAS_FRAME_SYNC_ON_DEMAND
+        tcr4 &= ~I2S_TCR4_ONDEM_MASK;
+        tcr4 |= I2S_TCR4_ONDEM(config->frameSyncGenerateOnDemand);
+#endif
+
+        tcr4 |= I2S_TCR4_FSE(config->frameSyncEarly) | I2S_TCR4_FSP(config->frameSyncPolarity) | I2S_TCR4_FSD(1U) |
+                I2S_TCR4_SYWD(config->frameSyncWidth - 1U);
+    }
+    else
+    {
+        tcr4 &= ~I2S_TCR4_FSD_MASK;
+    }
+
+    base->TCR4 = tcr4;
+}
+
+/*!
+ * brief SAI receiver Frame sync configurations.
+ *
+ * param base SAI base pointer.
+ * param masterSlave master or slave.
+ * param config frame sync configurations, can be NULL in slave mode.
+ */
+void SAI_RxSetFrameSyncConfig(I2S_Type *base, sai_master_slave_t masterSlave, sai_frame_sync_t *config)
+{
+    uint32_t rcr4 = base->RCR4;
+
+    if ((masterSlave == kSAI_Master) || (masterSlave == kSAI_Bclk_Slave_FrameSync_Master))
+    {
+        assert(config != NULL);
+        assert((config->frameSyncWidth - 1U) <= (I2S_RCR4_SYWD_MASK >> I2S_RCR4_SYWD_SHIFT));
+
+        rcr4 &= ~(I2S_RCR4_FSE_MASK | I2S_RCR4_FSP_MASK | I2S_RCR4_FSD_MASK | I2S_RCR4_SYWD_MASK);
+
+#if defined(FSL_FEATURE_SAI_HAS_FRAME_SYNC_ON_DEMAND) && FSL_FEATURE_SAI_HAS_FRAME_SYNC_ON_DEMAND
+        rcr4 &= ~I2S_RCR4_ONDEM_MASK;
+        rcr4 |= I2S_RCR4_ONDEM(config->frameSyncGenerateOnDemand);
+#endif
+
+        rcr4 |= I2S_RCR4_FSE(config->frameSyncEarly) | I2S_RCR4_FSP(config->frameSyncPolarity) | I2S_RCR4_FSD(1U) |
+                I2S_RCR4_SYWD(config->frameSyncWidth - 1U);
+    }
+    else
+    {
+        rcr4 &= ~I2S_RCR4_FSD_MASK;
+    }
+
+    base->RCR4 = rcr4;
+}
+
+/*!
+ * brief SAI transmitter Serial data configurations.
+ *
+ * param base SAI base pointer.
+ * param config serial data configurations.
+ */
+void SAI_TxSetSerialDataConfig(I2S_Type *base, sai_serial_data_t *config)
+{
+    assert(config != NULL);
+
+    uint32_t tcr4 = base->TCR4;
+
+    base->TCR5 = I2S_TCR5_WNW(config->dataWordNLength - 1U) | I2S_TCR5_W0W(config->dataWord0Length - 1U) |
+                 I2S_TCR5_FBT(config->dataFirstBitShifted - 1U);
+    base->TMR = config->dataMaskedWord;
+
+    tcr4 &= ~(I2S_TCR4_FRSZ_MASK | I2S_TCR4_MF_MASK);
+    tcr4 |= I2S_TCR4_FRSZ(config->dataWordNum - 1U) | I2S_TCR4_MF(config->dataOrder);
+
+#if defined(FSL_FEATURE_SAI_HAS_CHANNEL_MODE) && FSL_FEATURE_SAI_HAS_CHANNEL_MODE
+    tcr4 &= ~I2S_TCR4_CHMOD_MASK;
+    tcr4 |= I2S_TCR4_CHMOD(config->dataMode);
+#endif
+
+    base->TCR4 = tcr4;
+}
+
+/*!
+ * @brief SAI receiver Serial data configurations.
+ *
+ * @param base SAI base pointer.
+ * @param config serial data configurations.
+ */
+void SAI_RxSetSerialDataConfig(I2S_Type *base, sai_serial_data_t *config)
+{
+    assert(config != NULL);
+
+    uint32_t rcr4 = base->RCR4;
+
+    base->RCR5 = I2S_RCR5_WNW(config->dataWordNLength - 1U) | I2S_RCR5_W0W(config->dataWord0Length - 1U) |
+                 I2S_RCR5_FBT(config->dataFirstBitShifted - 1U);
+    base->RMR = config->dataMaskedWord;
+
+    rcr4 &= ~(I2S_RCR4_FRSZ_MASK | I2S_RCR4_MF_MASK);
+    rcr4 |= I2S_RCR4_FRSZ(config->dataWordNum - 1u) | I2S_RCR4_MF(config->dataOrder);
+
+#if defined(FSL_FEATURE_SAI_HAS_CHANNEL_MODE) && FSL_FEATURE_SAI_HAS_CHANNEL_MODE
+    rcr4 &= ~I2S_RCR4_CHMOD_MASK;
+    rcr4 |= I2S_RCR4_CHMOD(config->dataMode);
+#endif
+
+    base->RCR4 = rcr4;
+}
+
+/*!
+ * brief SAI transmitter configurations.
+ *
+ * param base SAI base pointer.
+ * param config transmitter configurations.
+ */
+void SAI_TxSetConfig(I2S_Type *base, sai_transceiver_t *config)
+{
+    assert(config != NULL);
+
+    uint32_t val = 0U, i = 0U;
+    uint32_t channelNums = 0U;
+    /* reset transmitter */
+    SAI_TxReset(base);
+
+    /* if channel mask is not set, then format->channel must be set,
+     use it to get channel mask value */
+    if (config->channelMask == 0U)
+    {
+        config->channelMask = 1U << config->startChannel;
+    }
+
+    for (i = 0U; i < FSL_FEATURE_SAI_CHANNEL_COUNTn(base); i++)
+    {
+        if (((uint32_t)1 << i) & config->channelMask)
+        {
+            /* get start channel number when channelNums = 0 only */
+            if (channelNums == 0U)
+            {
+                config->startChannel = i;
+            }
+            channelNums++;
+            config->endChannel = i;
+        }
+    }
+    assert(channelNums <= FSL_FEATURE_SAI_CHANNEL_COUNTn(base));
+    config->channelNums = channelNums;
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE) && (FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE)
+    /* make sure combine mode disabled while multipe channel is used */
+    if (config->channelNums > 1U)
+    {
+        base->TCR4 &= ~I2S_TCR4_FCOMB_MASK;
+    }
+#endif
+
+    /* Set data channel */
+    base->TCR3 &= ~I2S_TCR3_TCE_MASK;
+    base->TCR3 |= I2S_TCR3_TCE(config->channelMask);
+
+    /* Set Sync mode */
+    switch (config->syncMode)
+    {
+        case kSAI_ModeAsync:
+            val = base->TCR2;
+            val &= ~I2S_TCR2_SYNC_MASK;
+            base->TCR2 = (val | I2S_TCR2_SYNC(0U));
+            break;
+        case kSAI_ModeSync:
+            val = base->TCR2;
+            val &= ~I2S_TCR2_SYNC_MASK;
+            base->TCR2 = (val | I2S_TCR2_SYNC(1U));
+            /* If sync with Rx, should set Rx to async mode */
+            val = base->RCR2;
+            val &= ~I2S_RCR2_SYNC_MASK;
+            base->RCR2 = (val | I2S_RCR2_SYNC(0U));
+            break;
+#if defined(FSL_FEATURE_SAI_HAS_SYNC_WITH_ANOTHER_SAI) && (FSL_FEATURE_SAI_HAS_SYNC_WITH_ANOTHER_SAI)
+        case kSAI_ModeSyncWithOtherTx:
+            val = base->TCR2;
+            val &= ~I2S_TCR2_SYNC_MASK;
+            base->TCR2 = (val | I2S_TCR2_SYNC(2U));
+            break;
+        case kSAI_ModeSyncWithOtherRx:
+            val = base->TCR2;
+            val &= ~I2S_TCR2_SYNC_MASK;
+            base->TCR2 = (val | I2S_TCR2_SYNC(3U));
+            break;
+#endif /* FSL_FEATURE_SAI_HAS_SYNC_WITH_ANOTHER_SAI */
+        default:
+            break;
+    }
+
+    /* bit clock configurations */
+    SAI_TxSetBitclockConfig(base, config->masterSlave, &config->bitClock);
+    /* serial data configurations */
+    SAI_TxSetSerialDataConfig(base, &config->serialData);
+    /* frame sync configurations */
+    SAI_TxSetFrameSyncConfig(base, config->masterSlave, &config->frameSync);
+    /* fifo configurations */
+    SAI_TxSetFifoConfig(base, &config->fifo);
+}
+
+/*!
+ * brief SAI transmitter transfer configurations.
+ *
+ * This function initializes the TX, include bit clock, frame sync, master clock, serial data and fifo configurations.
+ *
+ * param base SAI base pointer.
+ * param handle SAI handle pointer.
+ * param config tranmitter configurations.
+ */
+void SAI_TransferTxSetConfig(I2S_Type *base, sai_handle_t *handle, sai_transceiver_t *config)
+{
+    assert(handle != NULL);
+    assert(config != NULL);
+
+    handle->bitWidth = config->frameSync.frameSyncWidth;
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    handle->watermark = config->fifo.fifoWatermark;
+#endif
+
+    /* transmitter configurations */
+    SAI_TxSetConfig(base, config);
+
+    handle->channel = config->startChannel;
+    /* used for multi channel */
+    handle->channelMask = config->channelMask;
+    handle->channelNums = config->channelNums;
+    handle->endChannel  = config->endChannel;
+}
+
+/*!
+ * brief SAI receiver configurations.
+ *
+ * param base SAI base pointer.
+ * param config transmitter configurations.
+ */
+void SAI_RxSetConfig(I2S_Type *base, sai_transceiver_t *config)
+{
+    assert(config != NULL);
+
+    uint32_t val = 0U, i = 0U;
+    uint32_t channelNums = 0U;
+
+    /* reset receiver */
+    SAI_RxReset(base);
+
+    /* if channel mask is not set, then format->channel must be set,
+     use it to get channel mask value */
+    if (config->channelMask == 0U)
+    {
+        config->channelMask = 1U << config->startChannel;
+    }
+
+    for (i = 0U; i < FSL_FEATURE_SAI_CHANNEL_COUNTn(base); i++)
+    {
+        if (((uint32_t)1 << i) & config->channelMask)
+        {
+            /* get start channel number when channelNums = 0 only */
+            if (channelNums == 0U)
+            {
+                config->startChannel = i;
+            }
+            channelNums++;
+            config->endChannel = i;
+        }
+    }
+    assert(channelNums <= FSL_FEATURE_SAI_CHANNEL_COUNTn(base));
+    config->channelNums = channelNums;
+#if defined(FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE) && (FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE)
+    /* make sure combine mode disabled while multipe channel is used */
+    if (config->channelNums > 1U)
+    {
+        base->RCR4 &= ~I2S_RCR4_FCOMB_MASK;
+    }
+#endif
+
+    /* Set data channel */
+    base->RCR3 &= ~I2S_RCR3_RCE_MASK;
+    base->RCR3 |= I2S_RCR3_RCE(config->channelMask);
+
+    /* Set Sync mode */
+    switch (config->syncMode)
+    {
+        case kSAI_ModeAsync:
+            val = base->RCR2;
+            val &= ~I2S_RCR2_SYNC_MASK;
+            base->RCR2 = (val | I2S_RCR2_SYNC(0U));
+            break;
+        case kSAI_ModeSync:
+            val = base->RCR2;
+            val &= ~I2S_RCR2_SYNC_MASK;
+            base->RCR2 = (val | I2S_RCR2_SYNC(1U));
+            /* If sync with Tx, should set Tx to async mode */
+            val = base->TCR2;
+            val &= ~I2S_TCR2_SYNC_MASK;
+            base->TCR2 = (val | I2S_TCR2_SYNC(0U));
+            break;
+#if defined(FSL_FEATURE_SAI_HAS_SYNC_WITH_ANOTHER_SAI) && (FSL_FEATURE_SAI_HAS_SYNC_WITH_ANOTHER_SAI)
+        case kSAI_ModeSyncWithOtherTx:
+            val = base->RCR2;
+            val &= ~I2S_RCR2_SYNC_MASK;
+            base->RCR2 = (val | I2S_RCR2_SYNC(2U));
+            break;
+        case kSAI_ModeSyncWithOtherRx:
+            val = base->RCR2;
+            val &= ~I2S_RCR2_SYNC_MASK;
+            base->RCR2 = (val | I2S_RCR2_SYNC(3U));
+            break;
+#endif /* FSL_FEATURE_SAI_HAS_SYNC_WITH_ANOTHER_SAI */
+        default:
+            break;
+    }
+
+    /* bit clock configurations */
+    SAI_RxSetBitclockConfig(base, config->masterSlave, &config->bitClock);
+    /* serial data configurations */
+    SAI_RxSetSerialDataConfig(base, &config->serialData);
+    /* frame sync configurations */
+    SAI_RxSetFrameSyncConfig(base, config->masterSlave, &config->frameSync);
+    /* fifo configurations */
+    SAI_RxSetFifoConfig(base, &config->fifo);
+}
+
+/*!
+ * brief SAI receiver transfer configurations.
+ *
+ * This function initializes the TX, include bit clock, frame sync, master clock, serial data and fifo configurations.
+ *
+ * param base SAI base pointer.
+ * param handle SAI handle pointer.
+ * param config tranmitter configurations.
+ */
+void SAI_TransferRxSetConfig(I2S_Type *base, sai_handle_t *handle, sai_transceiver_t *config)
+{
+    assert(handle != NULL);
+    assert(config != NULL);
+
+    handle->bitWidth = config->frameSync.frameSyncWidth;
+#if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
+    handle->watermark = config->fifo.fifoWatermark;
+#endif
+
+    /* receiver configurations */
+    SAI_RxSetConfig(base, config);
+
+    handle->channel = config->startChannel;
+    /* used for multi channel */
+    handle->channelMask = config->channelMask;
+    handle->channelNums = config->channelNums;
+    handle->endChannel  = config->endChannel;
+}
+
+/*!
+ * brief Get classic I2S mode configurations.
+ *
+ * param config transceiver configurations.
+ * param bitWidth audio data bitWidth.
+ * param mode audio data channel.
+ * param saiChannelMask channel mask value to enable.
+ */
+void SAI_GetClassicI2SConfig(sai_transceiver_t *config,
+                             sai_word_width_t bitWidth,
+                             sai_mono_stereo_t mode,
+                             uint32_t saiChannelMask)
+{
+    SAI_GetCommonConfig(config, bitWidth, mode, saiChannelMask);
+}
+
+/*!
+ * brief Get left justified mode configurations.
+ *
+ * param config transceiver configurations.
+ * param bitWidth audio data bitWidth.
+ * param mode audio data channel.
+ * param saiChannelMask channel mask value to enable.
+ */
+void SAI_GetLeftJustifiedConfig(sai_transceiver_t *config,
+                                sai_word_width_t bitWidth,
+                                sai_mono_stereo_t mode,
+                                uint32_t saiChannelMask)
+{
+    assert(NULL != config);
+    assert(saiChannelMask != 0U);
+
+    SAI_GetCommonConfig(config, bitWidth, mode, saiChannelMask);
+
+    config->frameSync.frameSyncEarly    = false;
+    config->frameSync.frameSyncPolarity = kSAI_PolarityActiveHigh;
+}
+
+/*!
+ * brief Get right justified mode configurations.
+ *
+ * param config transceiver configurations.
+ * param bitWidth audio data bitWidth.
+ * param mode audio data channel.
+ * param saiChannelMask channel mask value to enable.
+ */
+void SAI_GetRightJustifiedConfig(sai_transceiver_t *config,
+                                 sai_word_width_t bitWidth,
+                                 sai_mono_stereo_t mode,
+                                 uint32_t saiChannelMask)
+{
+    assert(NULL != config);
+    assert(saiChannelMask != 0U);
+
+    SAI_GetCommonConfig(config, bitWidth, mode, saiChannelMask);
+
+    config->frameSync.frameSyncEarly    = false;
+    config->frameSync.frameSyncPolarity = kSAI_PolarityActiveHigh;
+}
+
+/*!
+ * brief Get DSP mode configurations.
+ *
+ * param config transceiver configurations.
+ * param bitWidth audio data bitWidth.
+ * param mode audio data channel.
+ * param saiChannelMask channel mask value to enable.
+ */
+void SAI_GetDSPConfig(sai_transceiver_t *config,
+                      sai_frame_sync_len_t frameSyncWidth,
+                      sai_word_width_t bitWidth,
+                      sai_mono_stereo_t mode,
+                      uint32_t saiChannelMask)
+{
+    assert(NULL != config);
+    assert(saiChannelMask != 0U);
+
+    SAI_GetCommonConfig(config, bitWidth, mode, saiChannelMask);
+
+    /* frame sync default configurations */
+    switch (frameSyncWidth)
+    {
+        case kSAI_FrameSyncLenOneBitClk:
+            config->frameSync.frameSyncWidth = 1U;
+            break;
+        default:
+            assert(false);
+    }
+    config->frameSync.frameSyncEarly    = false;
+    config->frameSync.frameSyncPolarity = kSAI_PolarityActiveHigh;
+}
+
+/*!
+ * brief Get TDM mode configurations.
+ *
+ * param config transceiver configurations.
+ * param bitWidth audio data bitWidth.
+ * param mode audio data channel.
+ * param saiChannelMask channel mask value to enable.
+ */
+void SAI_GetTDMConfig(sai_transceiver_t *config,
+                      sai_frame_sync_len_t frameSyncWidth,
+                      sai_word_width_t bitWidth,
+                      uint32_t dataWordNum,
+                      uint32_t saiChannelMask)
+{
+    assert(NULL != config);
+    assert(saiChannelMask != 0U);
+    assert(dataWordNum <= 32U);
+
+    SAI_GetCommonConfig(config, bitWidth, kSAI_Stereo, saiChannelMask);
+
+    /* frame sync default configurations */
+    switch (frameSyncWidth)
+    {
+        case kSAI_FrameSyncLenOneBitClk:
+            config->frameSync.frameSyncWidth = 1U;
+            break;
+        case kSAI_FrameSyncLenPerWordWidth:
+            break;
+        default:
+            assert(false);
+    }
+    config->frameSync.frameSyncEarly    = false;
+    config->frameSync.frameSyncPolarity = kSAI_PolarityActiveHigh;
+    config->serialData.dataWordNum      = dataWordNum;
+}
+
+/*!
  * brief Configures the SAI Tx audio format.
+ *
+ * deprecated Do not use this function.  It has been superceded by @ref SAI_TxSetConfig
  *
  * The audio format can be changed at run-time. This function configures the sample rate and audio data
  * format to be transferred.
@@ -885,21 +1731,21 @@ void SAI_RxSetFIFOPacking(I2S_Type *base, sai_fifo_packing_t pack)
  * param mclkSourceClockHz SAI master clock source frequency in Hz.
  * param bclkSourceClockHz SAI bit clock source frequency in Hz. If the bit clock source is a master
  * clock, this value should equal the masterClockHz.
-*/
+ */
 void SAI_TxSetFormat(I2S_Type *base,
                      sai_transfer_format_t *format,
                      uint32_t mclkSourceClockHz,
                      uint32_t bclkSourceClockHz)
 {
-    uint32_t bclk = 0;
-    uint32_t val = 0;
-    uint32_t i = 0U;
+    uint32_t bclk    = 0;
+    uint32_t val     = 0;
+    uint32_t i       = 0U;
     uint32_t divider = 0U, channelNums = 0U;
 
     if (format->isFrameSyncCompact)
     {
         bclk = format->sampleRate_Hz * format->bitWidth * (format->stereo == kSAI_Stereo ? 2U : 1U);
-        val = (base->TCR4 & (~I2S_TCR4_SYWD_MASK));
+        val  = (base->TCR4 & (~I2S_TCR4_SYWD_MASK));
         val |= I2S_TCR4_SYWD(format->bitWidth - 1U);
         base->TCR4 = val;
     }
@@ -976,7 +1822,7 @@ void SAI_TxSetFormat(I2S_Type *base,
     }
 
     /* if channel nums is not set, calculate it here according to channelMask*/
-    for (i = 0U; i < FSL_FEATURE_SAI_CHANNEL_COUNT; i++)
+    for (i = 0U; i < FSL_FEATURE_SAI_CHANNEL_COUNTn(base); i++)
     {
         if (((uint32_t)1 << i) & format->channelMask)
         {
@@ -990,7 +1836,7 @@ void SAI_TxSetFormat(I2S_Type *base,
         }
     }
     format->channelNums = channelNums;
-    assert(format->channelNums <= FSL_FEATURE_SAI_CHANNEL_COUNT);
+    assert(format->channelNums <= FSL_FEATURE_SAI_CHANNEL_COUNTn(base));
 
 #if defined(FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE) && (FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE)
     /* make sure combine mode disabled while multipe channel is used */
@@ -1013,6 +1859,8 @@ void SAI_TxSetFormat(I2S_Type *base,
 /*!
  * brief Configures the SAI Rx audio format.
  *
+ * deprecated Do not use this function.  It has been superceded by @ref SAI_RxSetConfig
+ *
  * The audio format can be changed at run-time. This function configures the sample rate and audio data
  * format to be transferred.
  *
@@ -1021,21 +1869,21 @@ void SAI_TxSetFormat(I2S_Type *base,
  * param mclkSourceClockHz SAI master clock source frequency in Hz.
  * param bclkSourceClockHz SAI bit clock source frequency in Hz. If the bit clock source is a master
  * clock, this value should equal the masterClockHz.
-*/
+ */
 void SAI_RxSetFormat(I2S_Type *base,
                      sai_transfer_format_t *format,
                      uint32_t mclkSourceClockHz,
                      uint32_t bclkSourceClockHz)
 {
-    uint32_t bclk = 0;
-    uint32_t val = 0;
-    uint32_t i = 0U;
+    uint32_t bclk    = 0;
+    uint32_t val     = 0;
+    uint32_t i       = 0U;
     uint32_t divider = 0U, channelNums = 0U;
 
     if (format->isFrameSyncCompact)
     {
         bclk = format->sampleRate_Hz * format->bitWidth * (format->stereo == kSAI_Stereo ? 2U : 1U);
-        val = (base->RCR4 & (~I2S_RCR4_SYWD_MASK));
+        val  = (base->RCR4 & (~I2S_RCR4_SYWD_MASK));
         val |= I2S_RCR4_SYWD(format->bitWidth - 1U);
         base->RCR4 = val;
     }
@@ -1111,7 +1959,7 @@ void SAI_RxSetFormat(I2S_Type *base,
     }
 
     /* if channel nums is not set, calculate it here according to channelMask*/
-    for (i = 0U; i < FSL_FEATURE_SAI_CHANNEL_COUNT; i++)
+    for (i = 0U; i < FSL_FEATURE_SAI_CHANNEL_COUNTn(base); i++)
     {
         if (((uint32_t)1 << i) & format->channelMask)
         {
@@ -1125,7 +1973,7 @@ void SAI_RxSetFormat(I2S_Type *base,
         }
     }
     format->channelNums = channelNums;
-    assert(format->channelNums <= FSL_FEATURE_SAI_CHANNEL_COUNT);
+    assert(format->channelNums <= FSL_FEATURE_SAI_CHANNEL_COUNTn(base));
 
 #if defined(FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE) && (FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE)
     /* make sure combine mode disabled while multipe channel is used */
@@ -1159,7 +2007,7 @@ void SAI_RxSetFormat(I2S_Type *base,
  */
 void SAI_WriteBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8_t *buffer, uint32_t size)
 {
-    uint32_t i = 0;
+    uint32_t i           = 0;
     uint8_t bytesPerWord = bitWidth / 8U;
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
     bytesPerWord = (size_t)((FSL_FEATURE_SAI_FIFO_COUNT - base->TCR1) * bytesPerWord);
@@ -1206,7 +2054,7 @@ void SAI_WriteMultiChannelBlocking(
     bytesPerWord = (size_t)((FSL_FEATURE_SAI_FIFO_COUNT - base->TCR1) * bytesPerWord);
 #endif
 
-    for (i = 0U; (i < FSL_FEATURE_SAI_CHANNEL_COUNT); i++)
+    for (i = 0U; (i < FSL_FEATURE_SAI_CHANNEL_COUNTn(base)); i++)
     {
         if ((1U << i) & (channelMask))
         {
@@ -1215,7 +2063,7 @@ void SAI_WriteMultiChannelBlocking(
         }
     }
 
-    assert(channelNums <= FSL_FEATURE_SAI_CHANNEL_COUNT);
+    assert(channelNums <= FSL_FEATURE_SAI_CHANNEL_COUNTn(base));
     bytesPerWord *= channelNums;
 
     while (j < size)
@@ -1257,7 +2105,7 @@ void SAI_ReadMultiChannelBlocking(
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
     bytesPerWord = (size_t)(base->RCR1 * bytesPerWord);
 #endif
-    for (i = 0U; (i < FSL_FEATURE_SAI_CHANNEL_COUNT); i++)
+    for (i = 0U; (i < FSL_FEATURE_SAI_CHANNEL_COUNTn(base)); i++)
     {
         if ((1U << i) & (channelMask))
         {
@@ -1266,7 +2114,7 @@ void SAI_ReadMultiChannelBlocking(
         }
     }
 
-    assert(channelNums <= FSL_FEATURE_SAI_CHANNEL_COUNT);
+    assert(channelNums <= FSL_FEATURE_SAI_CHANNEL_COUNTn(base));
     bytesPerWord *= channelNums;
 
     while (j < size)
@@ -1295,7 +2143,7 @@ void SAI_ReadMultiChannelBlocking(
  */
 void SAI_ReadBlocking(I2S_Type *base, uint32_t channel, uint32_t bitWidth, uint8_t *buffer, uint32_t size)
 {
-    uint32_t i = 0;
+    uint32_t i           = 0;
     uint8_t bytesPerWord = bitWidth / 8U;
 #if defined(FSL_FEATURE_SAI_FIFO_COUNT) && (FSL_FEATURE_SAI_FIFO_COUNT > 1)
     bytesPerWord = (size_t)(base->RCR1 * bytesPerWord);
@@ -1336,7 +2184,7 @@ void SAI_TransferTxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transf
 
     handle->callback = callback;
     handle->userData = userData;
-    handle->base = base;
+    handle->base     = base;
 
     /* Set the isr pointer */
     s_saiTxIsr = SAI_TransferTxHandleIRQ;
@@ -1367,7 +2215,7 @@ void SAI_TransferRxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transf
 
     handle->callback = callback;
     handle->userData = userData;
-    handle->base = base;
+    handle->base     = base;
 
     /* Set the isr pointer */
     s_saiRxIsr = SAI_TransferRxHandleIRQ;
@@ -1379,6 +2227,8 @@ void SAI_TransferRxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transf
 /*!
  * brief Configures the SAI Tx audio format.
  *
+ * deprecated Do not use this function.  It has been superceded by @ref SAI_TxSetTransferConfig
+ *
  * The audio format can be changed at run-time. This function configures the sample rate and audio data
  * format to be transferred.
  *
@@ -1389,7 +2239,7 @@ void SAI_TransferRxCreateHandle(I2S_Type *base, sai_handle_t *handle, sai_transf
  * param bclkSourceClockHz SAI bit clock source frequency in Hz. If a bit clock source is a master
  * clock, this value should equal the masterClockHz in format.
  * return Status of this function. Return value is the status_t.
-*/
+ */
 status_t SAI_TransferTxSetFormat(I2S_Type *base,
                                  sai_handle_t *handle,
                                  sai_transfer_format_t *format,
@@ -1402,7 +2252,7 @@ status_t SAI_TransferTxSetFormat(I2S_Type *base,
 #if defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER)
         || (mclkSourceClockHz < format->sampleRate_Hz)
 #endif
-            )
+    )
     {
         return kStatus_InvalidArgument;
     }
@@ -1419,13 +2269,15 @@ status_t SAI_TransferTxSetFormat(I2S_Type *base,
     /* used for multi channel */
     handle->channelMask = format->channelMask;
     handle->channelNums = format->channelNums;
-    handle->endChannel = format->endChannel;
+    handle->endChannel  = format->endChannel;
 
     return kStatus_Success;
 }
 
 /*!
  * brief Configures the SAI Rx audio format.
+ *
+ * deprecated Do not use this function.  It has been superceded by @ref SAI_RxSetTransferConfig
  *
  * The audio format can be changed at run-time. This function configures the sample rate and audio data
  * format to be transferred.
@@ -1437,7 +2289,7 @@ status_t SAI_TransferTxSetFormat(I2S_Type *base,
  * param bclkSourceClockHz SAI bit clock source frequency in Hz. If a bit clock source is a master
  * clock, this value should equal the masterClockHz in format.
  * return Status of this function. Return value is one of status_t.
-*/
+ */
 status_t SAI_TransferRxSetFormat(I2S_Type *base,
                                  sai_handle_t *handle,
                                  sai_transfer_format_t *format,
@@ -1450,7 +2302,7 @@ status_t SAI_TransferRxSetFormat(I2S_Type *base,
 #if defined(FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER) && (FSL_FEATURE_SAI_HAS_MCLKDIV_REGISTER)
         || (mclkSourceClockHz < format->sampleRate_Hz)
 #endif
-            )
+    )
     {
         return kStatus_InvalidArgument;
     }
@@ -1467,7 +2319,7 @@ status_t SAI_TransferRxSetFormat(I2S_Type *base,
     /* used for multi channel */
     handle->channelMask = format->channelMask;
     handle->channelNums = format->channelNums;
-    handle->endChannel = format->endChannel;
+    handle->endChannel  = format->endChannel;
 
     return kStatus_Success;
 }
@@ -1498,10 +2350,10 @@ status_t SAI_TransferSendNonBlocking(I2S_Type *base, sai_handle_t *handle, sai_t
     }
 
     /* Add into queue */
-    handle->transferSize[handle->queueUser] = xfer->dataSize;
-    handle->saiQueue[handle->queueUser].data = xfer->data;
+    handle->transferSize[handle->queueUser]      = xfer->dataSize;
+    handle->saiQueue[handle->queueUser].data     = xfer->data;
     handle->saiQueue[handle->queueUser].dataSize = xfer->dataSize;
-    handle->queueUser = (handle->queueUser + 1) % SAI_XFER_QUEUE_SIZE;
+    handle->queueUser                            = (handle->queueUser + 1) % SAI_XFER_QUEUE_SIZE;
 
     /* Set the state to busy */
     handle->state = kSAI_Busy;
@@ -1546,10 +2398,10 @@ status_t SAI_TransferReceiveNonBlocking(I2S_Type *base, sai_handle_t *handle, sa
     }
 
     /* Add into queue */
-    handle->transferSize[handle->queueUser] = xfer->dataSize;
-    handle->saiQueue[handle->queueUser].data = xfer->data;
+    handle->transferSize[handle->queueUser]      = xfer->dataSize;
+    handle->saiQueue[handle->queueUser].data     = xfer->data;
     handle->saiQueue[handle->queueUser].dataSize = xfer->dataSize;
-    handle->queueUser = (handle->queueUser + 1) % SAI_XFER_QUEUE_SIZE;
+    handle->queueUser                            = (handle->queueUser + 1) % SAI_XFER_QUEUE_SIZE;
 
     /* Set state to busy */
     handle->state = kSAI_Busy;
@@ -1649,7 +2501,7 @@ void SAI_TransferAbortSend(I2S_Type *base, sai_handle_t *handle)
     /* Clear the queue */
     memset(handle->saiQueue, 0, sizeof(sai_transfer_t) * SAI_XFER_QUEUE_SIZE);
     handle->queueDriver = 0;
-    handle->queueUser = 0;
+    handle->queueUser   = 0;
 }
 
 /*!
@@ -1679,7 +2531,7 @@ void SAI_TransferAbortReceive(I2S_Type *base, sai_handle_t *handle)
     /* Clear the queue */
     memset(handle->saiQueue, 0, sizeof(sai_transfer_t) * SAI_XFER_QUEUE_SIZE);
     handle->queueDriver = 0;
-    handle->queueUser = 0;
+    handle->queueUser   = 0;
 }
 
 /*!
@@ -1701,7 +2553,7 @@ void SAI_TransferTerminateSend(I2S_Type *base, sai_handle_t *handle)
     /* Clear all the internal information */
     memset(handle->saiQueue, 0U, sizeof(handle->saiQueue));
     memset(handle->transferSize, 0U, sizeof(handle->transferSize));
-    handle->queueUser = 0U;
+    handle->queueUser   = 0U;
     handle->queueDriver = 0U;
 }
 
@@ -1724,7 +2576,7 @@ void SAI_TransferTerminateReceive(I2S_Type *base, sai_handle_t *handle)
     /* Clear all the internal information */
     memset(handle->saiQueue, 0U, sizeof(handle->saiQueue));
     memset(handle->transferSize, 0U, sizeof(handle->transferSize));
-    handle->queueUser = 0U;
+    handle->queueUser   = 0U;
     handle->queueDriver = 0U;
 }
 
@@ -1738,7 +2590,7 @@ void SAI_TransferTxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
 {
     assert(handle);
 
-    uint8_t *buffer = handle->saiQueue[handle->queueDriver].data;
+    uint8_t *buffer  = handle->saiQueue[handle->queueDriver].data;
     uint8_t dataSize = (handle->bitWidth / 8U) * handle->channelNums;
 
     /* Handle Error */
@@ -1787,7 +2639,7 @@ void SAI_TransferTxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
     }
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT */
 
-    /* If finished a blcok, call the callback function */
+    /* If finished a block, call the callback function */
     if (handle->saiQueue[handle->queueDriver].dataSize == 0U)
     {
         memset(&handle->saiQueue[handle->queueDriver], 0, sizeof(sai_transfer_t));
@@ -1815,7 +2667,7 @@ void SAI_TransferRxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
 {
     assert(handle);
 
-    uint8_t *buffer = handle->saiQueue[handle->queueDriver].data;
+    uint8_t *buffer  = handle->saiQueue[handle->queueDriver].data;
     uint8_t dataSize = (handle->bitWidth / 8U) * handle->channelNums;
 
     /* Handle Error */
@@ -1863,7 +2715,7 @@ void SAI_TransferRxHandleIRQ(I2S_Type *base, sai_handle_t *handle)
     }
 #endif /* FSL_FEATURE_SAI_FIFO_COUNT */
 
-    /* If finished a blcok, call the callback function */
+    /* If finished a block, call the callback function */
     if (handle->saiQueue[handle->queueDriver].dataSize == 0U)
     {
         memset(&handle->saiQueue[handle->queueDriver], 0, sizeof(sai_transfer_t));
@@ -2146,7 +2998,8 @@ void I2S4_Rx_DriverIRQHandler(void)
 }
 #endif
 
-#if defined(FSL_FEATURE_SAI5_SAI6_SHARE_IRQ) && (FSL_FEATURE_SAI5_SAI6_SHARE_IRQ) && defined(I2S5) && defined(I2S6)
+#if defined(FSL_FEATURE_SAI_SAI5_SAI6_SHARE_IRQ) && (FSL_FEATURE_SAI_SAI5_SAI6_SHARE_IRQ) && defined(I2S5) && \
+    defined(I2S6)
 void I2S56_DriverIRQHandler(void)
 {
     /* use index 5 to get handle when I2S5 & I2S6 share IRQ NUMBER */

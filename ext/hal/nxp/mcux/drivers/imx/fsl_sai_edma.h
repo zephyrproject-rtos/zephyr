@@ -8,8 +8,8 @@
 #ifndef _FSL_SAI_EDMA_H_
 #define _FSL_SAI_EDMA_H_
 
-#include "fsl_sai.h"
 #include "fsl_edma.h"
+#include "fsl_sai.h"
 
 /*!
  * @addtogroup sai_edma
@@ -22,7 +22,7 @@
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_SAI_EDMA_DRIVER_VERSION (MAKE_VERSION(2, 1, 5)) /*!< Version 2.1.5 */
+#define FSL_SAI_EDMA_DRIVER_VERSION (MAKE_VERSION(2, 2, 0)) /*!< Version 2.2.0 */
 /*@}*/
 
 typedef struct _sai_edma_handle sai_edma_handle_t;
@@ -106,7 +106,7 @@ void SAI_TransferRxCreateHandleEDMA(
  * clock, this value should equals to masterClockHz in format.
  * @retval kStatus_Success Audio format set successfully.
  * @retval kStatus_InvalidArgument The input argument is invalid.
-*/
+ */
 void SAI_TransferTxSetFormatEDMA(I2S_Type *base,
                                  sai_edma_handle_t *handle,
                                  sai_transfer_format_t *format,
@@ -127,12 +127,32 @@ void SAI_TransferTxSetFormatEDMA(I2S_Type *base,
  * clock, this value should equal to masterClockHz in format.
  * @retval kStatus_Success Audio format set successfully.
  * @retval kStatus_InvalidArgument The input argument is invalid.
-*/
+ */
 void SAI_TransferRxSetFormatEDMA(I2S_Type *base,
                                  sai_edma_handle_t *handle,
                                  sai_transfer_format_t *format,
                                  uint32_t mclkSourceClockHz,
                                  uint32_t bclkSourceClockHz);
+
+/*!
+ * @brief Configures the SAI Tx.
+ *
+ *
+ * @param base SAI base pointer.
+ * @param handle SAI eDMA handle pointer.
+ * @param saiConfig sai configurations.
+ */
+void SAI_TransferTxSetConfigEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transceiver_t *saiConfig);
+
+/*!
+ * @brief Configures the SAI Rx.
+ *
+ *
+ * @param base SAI base pointer.
+ * @param handle SAI eDMA handle pointer.
+ * @param saiConfig sai configurations.
+ */
+void SAI_TransferRxSetConfigEDMA(I2S_Type *base, sai_edma_handle_t *handle, sai_transceiver_t *saiConfig);
 
 /*!
  * @brief Performs a non-blocking SAI transfer using DMA.

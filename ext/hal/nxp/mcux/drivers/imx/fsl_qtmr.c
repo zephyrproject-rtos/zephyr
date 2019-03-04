@@ -182,8 +182,8 @@ status_t QTMR_SetupPwm(TMR_Type *base,
 
     /* Counter values to generate a PWM signal */
     periodCount = (srcClock_Hz / pwmFreqHz);
-    highCount = (periodCount * dutyCyclePercent) / 100;
-    lowCount = periodCount - highCount;
+    highCount   = (periodCount * dutyCyclePercent) / 100;
+    lowCount    = periodCount - highCount;
 
     /* Setup the compare registers for PWM output */
     base->CHANNEL[channel].COMP1 = lowCount;

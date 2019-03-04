@@ -138,8 +138,8 @@ void KPP_keyPressScanning(KPP_Type *base, uint8_t *data, uint32_t clockSrc_Hz)
 {
     assert(data);
 
-    uint16_t kppKCO = base->KPCR & KPP_KPCR_KCO_MASK;
-    uint8_t columIndex = 0;
+    uint16_t kppKCO      = base->KPCR & KPP_KPCR_KCO_MASK;
+    uint8_t columIndex   = 0;
     uint8_t activeColumn = (base->KPCR & KPP_KPCR_KCO_MASK) >> KPP_KPCR_KCO_SHIFT;
     uint8_t times;
     uint8_t rowData[KPP_KEYPAD_SCAN_TIMES][KPP_KEYPAD_COLUMNNUM_MAX];

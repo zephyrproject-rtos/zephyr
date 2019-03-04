@@ -2,7 +2,7 @@
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -16,15 +16,14 @@
  * @{
  */
 
-
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief DMAMUX driver version 2.0.2. */
-#define FSL_DMAMUX_DRIVER_VERSION (MAKE_VERSION(2, 0, 2))
+/*! @brief DMAMUX driver version 2.0.3. */
+#define FSL_DMAMUX_DRIVER_VERSION (MAKE_VERSION(2, 0, 3))
 /*@}*/
 
 /*******************************************************************************
@@ -75,7 +74,7 @@ void DMAMUX_Deinit(DMAMUX_Type *base);
  */
 static inline void DMAMUX_EnableChannel(DMAMUX_Type *base, uint32_t channel)
 {
-    assert(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
+    assert(channel < (uint32_t)FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
 
     base->CHCFG[channel] |= DMAMUX_CHCFG_ENBL_MASK;
 }
@@ -91,9 +90,9 @@ static inline void DMAMUX_EnableChannel(DMAMUX_Type *base, uint32_t channel)
  */
 static inline void DMAMUX_DisableChannel(DMAMUX_Type *base, uint32_t channel)
 {
-    assert(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
+    assert(channel < (uint32_t)FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
 
-    base->CHCFG[channel] &= ~DMAMUX_CHCFG_ENBL_MASK;
+    base->CHCFG[channel] &= ~(uint8_t)DMAMUX_CHCFG_ENBL_MASK;
 }
 
 /*!
@@ -105,9 +104,9 @@ static inline void DMAMUX_DisableChannel(DMAMUX_Type *base, uint32_t channel)
  */
 static inline void DMAMUX_SetSource(DMAMUX_Type *base, uint32_t channel, uint32_t source)
 {
-    assert(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
+    assert(channel < (uint32_t)FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
 
-    base->CHCFG[channel] = ((base->CHCFG[channel] & ~DMAMUX_CHCFG_SOURCE_MASK) | DMAMUX_CHCFG_SOURCE(source));
+    base->CHCFG[channel] = (uint8_t)((base->CHCFG[channel] & ~DMAMUX_CHCFG_SOURCE_MASK) | DMAMUX_CHCFG_SOURCE(source));
 }
 
 #if defined(FSL_FEATURE_DMAMUX_HAS_TRIG) && FSL_FEATURE_DMAMUX_HAS_TRIG > 0U
@@ -121,7 +120,7 @@ static inline void DMAMUX_SetSource(DMAMUX_Type *base, uint32_t channel, uint32_
  */
 static inline void DMAMUX_EnablePeriodTrigger(DMAMUX_Type *base, uint32_t channel)
 {
-    assert(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
+    assert(channel < (uint32_t)FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
 
     base->CHCFG[channel] |= DMAMUX_CHCFG_TRIG_MASK;
 }
@@ -136,9 +135,9 @@ static inline void DMAMUX_EnablePeriodTrigger(DMAMUX_Type *base, uint32_t channe
  */
 static inline void DMAMUX_DisablePeriodTrigger(DMAMUX_Type *base, uint32_t channel)
 {
-    assert(channel < FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
+    assert(channel < (uint32_t)FSL_FEATURE_DMAMUX_MODULE_CHANNEL);
 
-    base->CHCFG[channel] &= ~DMAMUX_CHCFG_TRIG_MASK;
+    base->CHCFG[channel] &= ~(uint8_t)DMAMUX_CHCFG_TRIG_MASK;
 }
 #endif /* FSL_FEATURE_DMAMUX_HAS_TRIG */
 

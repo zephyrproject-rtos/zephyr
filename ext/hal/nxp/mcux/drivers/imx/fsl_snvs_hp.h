@@ -28,34 +28,34 @@
 /*! @brief List of SNVS interrupts */
 typedef enum _snvs_hp_interrupts
 {
-    kSNVS_RTC_AlarmInterrupt = SNVS_HPCR_HPTA_EN_MASK,  /*!< RTC time alarm */
-    kSNVS_RTC_PeriodicInterrupt = SNVS_HPCR_PI_EN_MASK, /*!< RTC periodic interrupt */
+    kSNVS_RTC_AlarmInterrupt    = SNVS_HPCR_HPTA_EN_MASK, /*!< RTC time alarm */
+    kSNVS_RTC_PeriodicInterrupt = SNVS_HPCR_PI_EN_MASK,   /*!< RTC periodic interrupt */
 } snvs_hp_interrupts_t;
 
 /*! @brief List of SNVS flags */
 typedef enum _snvs_hp_status_flags
 {
-    kSNVS_RTC_AlarmInterruptFlag = SNVS_HPSR_HPTA_MASK,  /*!< RTC time alarm flag */
-    kSNVS_RTC_PeriodicInterruptFlag = SNVS_HPSR_PI_MASK, /*!< RTC periodic interrupt flag */
-    kSNVS_ZMK_ZeroFlag = (int)SNVS_HPSR_ZMK_ZERO_MASK,   /*!< The ZMK is zero */
-    kSNVS_OTPMK_ZeroFlag = SNVS_HPSR_OTPMK_ZERO_MASK,    /*!< The OTPMK is zero */
+    kSNVS_RTC_AlarmInterruptFlag    = SNVS_HPSR_HPTA_MASK,          /*!< RTC time alarm flag */
+    kSNVS_RTC_PeriodicInterruptFlag = SNVS_HPSR_PI_MASK,            /*!< RTC periodic interrupt flag */
+    kSNVS_ZMK_ZeroFlag              = (int)SNVS_HPSR_ZMK_ZERO_MASK, /*!< The ZMK is zero */
+    kSNVS_OTPMK_ZeroFlag            = SNVS_HPSR_OTPMK_ZERO_MASK,    /*!< The OTPMK is zero */
 } snvs_hp_status_flags_t;
 
 /*! @brief List of SNVS security violation flags */
 typedef enum _snvs_hp_sv_status_flags
 {
-    kSNVS_LP_ViolationFlag = SNVS_HPSVSR_SW_LPSV_MASK,          /*!< Low Power section Security Violation */
-    kSNVS_ZMK_EccFailFlag = SNVS_HPSVSR_ZMK_ECC_FAIL_MASK,      /*!< Zeroizable Master Key Error Correcting Code Check
-                                                                  Failure */
-    kSNVS_LP_SoftwareViolationFlag = SNVS_HPSVSR_SW_LPSV_MASK,  /*!< LP Software Security Violation */
-    kSNVS_FatalSoftwareViolationFlag = SNVS_HPSVSR_SW_FSV_MASK, /*!< Software Fatal Security Violation */
-    kSNVS_SoftwareViolationFlag = SNVS_HPSVSR_SW_SV_MASK,       /*!< Software Security Violation */
-    kSNVS_Violation0Flag = SNVS_HPSVSR_SV0_MASK,                /*!< Security Violation 0 */
-    kSNVS_Violation1Flag = SNVS_HPSVSR_SV1_MASK,                /*!< Security Violation 1 */
-    kSNVS_Violation2Flag = SNVS_HPSVSR_SV2_MASK,                /*!< Security Violation 2 */
-    kSNVS_Violation3Flag = SNVS_HPSVSR_SV3_MASK,                /*!< Security Violation 3 */
-    kSNVS_Violation4Flag = SNVS_HPSVSR_SV4_MASK,                /*!< Security Violation 4 */
-    kSNVS_Violation5Flag = SNVS_HPSVSR_SV5_MASK,                /*!< Security Violation 5 */
+    kSNVS_LP_ViolationFlag = SNVS_HPSVSR_SW_LPSV_MASK,           /*!< Low Power section Security Violation */
+    kSNVS_ZMK_EccFailFlag  = SNVS_HPSVSR_ZMK_ECC_FAIL_MASK,      /*!< Zeroizable Master Key Error Correcting Code Check
+                                                                   Failure */
+    kSNVS_LP_SoftwareViolationFlag   = SNVS_HPSVSR_SW_LPSV_MASK, /*!< LP Software Security Violation */
+    kSNVS_FatalSoftwareViolationFlag = SNVS_HPSVSR_SW_FSV_MASK,  /*!< Software Fatal Security Violation */
+    kSNVS_SoftwareViolationFlag      = SNVS_HPSVSR_SW_SV_MASK,   /*!< Software Security Violation */
+    kSNVS_Violation0Flag             = SNVS_HPSVSR_SV0_MASK,     /*!< Security Violation 0 */
+    kSNVS_Violation1Flag             = SNVS_HPSVSR_SV1_MASK,     /*!< Security Violation 1 */
+    kSNVS_Violation2Flag             = SNVS_HPSVSR_SV2_MASK,     /*!< Security Violation 2 */
+    kSNVS_Violation3Flag             = SNVS_HPSVSR_SV3_MASK,     /*!< Security Violation 3 */
+    kSNVS_Violation4Flag             = SNVS_HPSVSR_SV4_MASK,     /*!< Security Violation 4 */
+    kSNVS_Violation5Flag             = SNVS_HPSVSR_SV5_MASK,     /*!< Security Violation 5 */
 } snvs_hp_sv_status_flags_t;
 
 /*!
@@ -98,14 +98,14 @@ typedef struct _snvs_hp_rtc_config
 
 typedef enum _snvs_hp_ssm_state
 {
-    kSNVS_SSMInit = 0x00,      /*!< Init */
-    kSNVS_SSMHardFail = 0x01,  /*!< Hard Fail */
-    kSNVS_SSMSoftFail = 0x03,  /*!< Soft Fail */
+    kSNVS_SSMInit      = 0x00, /*!< Init */
+    kSNVS_SSMHardFail  = 0x01, /*!< Hard Fail */
+    kSNVS_SSMSoftFail  = 0x03, /*!< Soft Fail */
     kSNVS_SSMInitInter = 0x08, /*!< Init Intermediate (transition state between Init and Check) */
-    kSNVS_SSMCheck = 0x09,     /*!< Check */
+    kSNVS_SSMCheck     = 0x09, /*!< Check */
     kSNVS_SSMNonSecure = 0x0B, /*!< Non-Secure */
-    kSNVS_SSMTrusted = 0x0D,   /*!< Trusted */
-    kSNVS_SSMSecure = 0x0F,    /*!< Secure */
+    kSNVS_SSMTrusted   = 0x0D, /*!< Trusted */
+    kSNVS_SSMSecure    = 0x0F, /*!< Secure */
 } snvs_hp_ssm_state_t;
 
 /*******************************************************************************

@@ -21,8 +21,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief PIT Driver Version 2.0.1 */
-#define FSL_PIT_DRIVER_VERSION (MAKE_VERSION(2, 0, 1))
+/*! @brief PIT Driver Version 2.0.2 */
+#define FSL_PIT_DRIVER_VERSION (MAKE_VERSION(2, 0, 2))
 /*@}*/
 
 /*!
@@ -104,7 +104,7 @@ void PIT_Deinit(PIT_Type *base);
  */
 static inline void PIT_GetDefaultConfig(pit_config_t *config)
 {
-    assert(config);
+    assert(NULL != config);
 
     /* Timers are stopped in Debug mode */
     config->enableRunInDebug = false;

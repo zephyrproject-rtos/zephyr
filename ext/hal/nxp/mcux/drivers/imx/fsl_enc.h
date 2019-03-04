@@ -2,7 +2,7 @@
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
  * All rights reserved.
- * 
+ *
  * SPDX-License-Identifier: BSD-3-Clause
  */
 
@@ -25,13 +25,13 @@
  */
 enum _enc_interrupt_enable
 {
-    kENC_HOMETransitionInterruptEnable = (1U << 0U),  /*!< HOME interrupt enable. */
-    kENC_INDEXPulseInterruptEnable = (1U << 1U),      /*!< INDEX pulse interrupt enable. */
+    kENC_HOMETransitionInterruptEnable  = (1U << 0U), /*!< HOME interrupt enable. */
+    kENC_INDEXPulseInterruptEnable      = (1U << 1U), /*!< INDEX pulse interrupt enable. */
     kENC_WatchdogTimeoutInterruptEnable = (1U << 2U), /*!< Watchdog timeout interrupt enable. */
-    kENC_PositionCompareInerruptEnable = (1U << 3U),  /*!< Position compare interrupt enable. */
+    kENC_PositionCompareInerruptEnable  = (1U << 3U), /*!< Position compare interrupt enable. */
     kENC_SimultBothPhaseChangeInterruptEnable =
         (1U << 4U),                                     /*!< Simultaneous PHASEA and PHASEB change interrupt enable. */
-    kENC_PositionRollOverInterruptEnable = (1U << 5U),  /*!< Roll-over interrupt enable. */
+    kENC_PositionRollOverInterruptEnable  = (1U << 5U), /*!< Roll-over interrupt enable. */
     kENC_PositionRollUnderInterruptEnable = (1U << 6U), /*!< Roll-under interrupt enable. */
 };
 
@@ -42,14 +42,14 @@ enum _enc_interrupt_enable
  */
 enum _enc_status_flags
 {
-    kENC_HOMETransitionFlag = (1U << 0U),        /*!< HOME signal transition interrupt request. */
-    kENC_INDEXPulseFlag = (1U << 1U),            /*!< INDEX Pulse Interrupt Request. */
-    kENC_WatchdogTimeoutFlag = (1U << 2U),       /*!< Watchdog timeout interrupt request. */
-    kENC_PositionCompareFlag = (1U << 3U),       /*!< Position compare interrupt request. */
+    kENC_HOMETransitionFlag        = (1U << 0U), /*!< HOME signal transition interrupt request. */
+    kENC_INDEXPulseFlag            = (1U << 1U), /*!< INDEX Pulse Interrupt Request. */
+    kENC_WatchdogTimeoutFlag       = (1U << 2U), /*!< Watchdog timeout interrupt request. */
+    kENC_PositionCompareFlag       = (1U << 3U), /*!< Position compare interrupt request. */
     kENC_SimultBothPhaseChangeFlag = (1U << 4U), /*!< Simultaneous PHASEA and PHASEB change interrupt request. */
-    kENC_PositionRollOverFlag = (1U << 5U),      /*!< Roll-over interrupt request. */
-    kENC_PositionRollUnderFlag = (1U << 6U),     /*!< Roll-under interrupt request. */
-    kENC_LastCountDirectionFlag = (1U << 7U),    /*!< Last count was in the up direction, or the down direction. */
+    kENC_PositionRollOverFlag      = (1U << 5U), /*!< Roll-over interrupt request. */
+    kENC_PositionRollUnderFlag     = (1U << 6U), /*!< Roll-under interrupt request. */
+    kENC_LastCountDirectionFlag    = (1U << 7U), /*!< Last count was in the up direction, or the down direction. */
 };
 
 /*!
@@ -59,14 +59,14 @@ enum _enc_status_flags
  */
 enum _enc_signal_status_flags
 {
-    kENC_RawHOMEStatusFlag = ENC_IMR_HOME_MASK,       /*!< Raw HOME input. */
-    kENC_RawINDEXStatusFlag = ENC_IMR_INDEX_MASK,     /*!< Raw INDEX input. */
-    kENC_RawPHBStatusFlag = ENC_IMR_PHB_MASK,         /*!< Raw PHASEB input. */
-    kENC_RawPHAEXStatusFlag = ENC_IMR_PHA_MASK,       /*!< Raw PHASEA input. */
-    kENC_FilteredHOMEStatusFlag = ENC_IMR_FHOM_MASK,  /*!< The filtered version of HOME input. */
-    kENC_FilteredINDEXStatusFlag = ENC_IMR_FIND_MASK, /*!< The filtered version of INDEX input. */
-    kENC_FilteredPHBStatusFlag = ENC_IMR_FPHB_MASK,   /*!< The filtered version of PHASEB input. */
-    kENC_FilteredPHAStatusFlag = ENC_IMR_FPHA_MASK,   /*!< The filtered version of PHASEA input. */
+    kENC_RawHOMEStatusFlag       = ENC_IMR_HOME_MASK,  /*!< Raw HOME input. */
+    kENC_RawINDEXStatusFlag      = ENC_IMR_INDEX_MASK, /*!< Raw INDEX input. */
+    kENC_RawPHBStatusFlag        = ENC_IMR_PHB_MASK,   /*!< Raw PHASEB input. */
+    kENC_RawPHAEXStatusFlag      = ENC_IMR_PHA_MASK,   /*!< Raw PHASEA input. */
+    kENC_FilteredHOMEStatusFlag  = ENC_IMR_FHOM_MASK,  /*!< The filtered version of HOME input. */
+    kENC_FilteredINDEXStatusFlag = ENC_IMR_FIND_MASK,  /*!< The filtered version of INDEX input. */
+    kENC_FilteredPHBStatusFlag   = ENC_IMR_FPHB_MASK,  /*!< The filtered version of PHASEB input. */
+    kENC_FilteredPHAStatusFlag   = ENC_IMR_FPHA_MASK,  /*!< The filtered version of PHASEA input. */
 };
 
 /*!
@@ -151,7 +151,7 @@ typedef struct _enc_config
     enc_index_trigger_mode_t INDEXTriggerMode; /*!< Enable INDEX to initialize position counters. */
     bool enableTRIGGERClearPositionCounter;    /*!< Clear POSD, REV, UPOS and LPOS on rising edge of TRIGGER, or not. */
     bool enableTRIGGERClearHoldPositionCounter; /*!< Enable update of hold registers on rising edge of TRIGGER, or not.
-                                                   */
+                                                 */
 
     /* Watchdog. */
     bool enableWatchdog;           /*!< Enable the watchdog to detect if the target is moving or not. */

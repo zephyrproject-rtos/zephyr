@@ -176,13 +176,13 @@ static void SNVS_LP_ConvertSecondsToDatetime(uint32_t seconds, snvs_lp_srtc_date
     secondsRemaining = secondsRemaining % SECONDS_IN_A_DAY;
 
     /* Calculate the datetime hour, minute and second fields */
-    datetime->hour = secondsRemaining / SECONDS_IN_A_HOUR;
+    datetime->hour   = secondsRemaining / SECONDS_IN_A_HOUR;
     secondsRemaining = secondsRemaining % SECONDS_IN_A_HOUR;
     datetime->minute = secondsRemaining / 60U;
     datetime->second = secondsRemaining % SECONDS_IN_A_MINUTE;
 
     /* Calculate year */
-    daysInYear = DAYS_IN_A_YEAR;
+    daysInYear     = DAYS_IN_A_YEAR;
     datetime->year = YEAR_RANGE_START;
     while (days > daysInYear)
     {
@@ -249,7 +249,7 @@ void SNVS_LP_Init(SNVS_Type *base)
 
     /* Power glitch detector: set the PGD value and clear the previous status. */
     base->LPPGDR = SNVS_DEFAULT_PGD_VALUE;
-    base->LPSR = SNVS_LPSR_PGD_MASK;
+    base->LPSR   = SNVS_LPSR_PGD_MASK;
 }
 
 /*!
@@ -333,19 +333,19 @@ void SNVS_LP_SRTC_GetDefaultConfig(snvs_lp_srtc_config_t *config)
     memset(config, 0, sizeof(*config));
 
     config->srtcCalEnable = false;
-    config->srtcCalValue = 0U;
+    config->srtcCalValue  = 0U;
 }
 
 static uint32_t SNVS_LP_SRTC_GetSeconds(SNVS_Type *base)
 {
     uint32_t seconds = 0;
-    uint32_t tmp = 0;
+    uint32_t tmp     = 0;
 
     /* Do consecutive reads until value is correct */
     do
     {
         seconds = tmp;
-        tmp = (base->LPSRTCMR << 17U) | (base->LPSRTCLR >> 15U);
+        tmp     = (base->LPSRTCMR << 17U) | (base->LPSRTCLR >> 15U);
     } while (tmp != seconds);
 
     return seconds;
@@ -365,7 +365,7 @@ status_t SNVS_LP_SRTC_SetDatetime(SNVS_Type *base, const snvs_lp_srtc_datetime_t
     assert(datetime);
 
     uint32_t seconds = 0U;
-    uint32_t tmp = base->LPCR;
+    uint32_t tmp     = base->LPCR;
 
     /* disable RTC */
     SNVS_LP_SRTC_StopTimer(base);
@@ -427,8 +427,8 @@ status_t SNVS_LP_SRTC_SetAlarm(SNVS_Type *base, const snvs_lp_srtc_datetime_t *a
     assert(alarmTime);
 
     uint32_t alarmSeconds = 0U;
-    uint32_t currSeconds = 0U;
-    uint32_t tmp = base->LPCR;
+    uint32_t currSeconds  = 0U;
+    uint32_t tmp          = base->LPCR;
 
     /* Return error if the alarm time provided is not valid */
     if (!(SNVS_LP_CheckDatetimeFormat(alarmTime)))
@@ -437,7 +437,7 @@ status_t SNVS_LP_SRTC_SetAlarm(SNVS_Type *base, const snvs_lp_srtc_datetime_t *a
     }
 
     alarmSeconds = SNVS_LP_ConvertDatetimeToSeconds(alarmTime);
-    currSeconds = SNVS_LP_SRTC_GetSeconds(base);
+    currSeconds  = SNVS_LP_SRTC_GetSeconds(base);
 
     /* Return error if the alarm time has passed */
     if (alarmSeconds <= currSeconds)
