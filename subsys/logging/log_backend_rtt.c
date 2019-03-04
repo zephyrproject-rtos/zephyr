@@ -185,7 +185,7 @@ static int data_out_block_mode(u8_t *data, size_t length, void *ctx)
 
 		if (ret) {
 			on_write(retry_cnt);
-		} else {
+		} else if (host_present) {
 			retry_cnt--;
 			on_failed_write(retry_cnt);
 		}
