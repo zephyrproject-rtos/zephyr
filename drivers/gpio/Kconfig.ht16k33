@@ -1,0 +1,30 @@
+#
+# Copyright (c) 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig GPIO_HT16K33
+	bool "HT16K33 keyscan driver"
+	depends on HT16K33_KEYSCAN && GPIO
+	help
+	  Enable keyscan driver for HT16K33.
+
+	  The HT16K33 is a memory mapping, multifunction LED
+	  controller driver. The controller supports matrix key scan
+	  circuit of up to 13x3 keys.
+
+	  The keyscan functionality is exposed as up to 3 GPIO
+	  controller drivers, each supporting GPIO callbacks for
+	  keyscan event notifications.
+
+if GPIO_HT16K33
+
+config GPIO_HT16K33_INIT_PRIORITY
+	int "Driver init priority"
+	default 99
+	help
+	  Device driver initialization priority. This driver must be
+	  initilized after the HT16K33 LED driver.
+
+endif #GPIO_HT16K33

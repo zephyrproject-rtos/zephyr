@@ -110,6 +110,7 @@
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 /drivers/flash/                           @nashif
 /drivers/flash/*stm32*                    @superna9999
+/drivers/gpio/*ht16k33*                   @henrikbrixandersen
 /drivers/gpio/*stm32*                     @rsalveti @idlethread
 /drivers/hwinfo/                          @alexanderwachter
 /drivers/i2s/i2s_ll_stm32*                @avisconti
@@ -195,6 +196,7 @@
 /include/display.h                        @vanwinkeljan
 /include/display/                         @vanwinkeljan
 /include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz
+/include/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/drivers/modem/                   @mike-scott
 /include/drivers/ioapic.h                 @andrewboie
 /include/drivers/loapic.h                 @andrewboie
