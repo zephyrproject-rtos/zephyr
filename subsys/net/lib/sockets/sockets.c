@@ -682,6 +682,11 @@ static inline ssize_t zsock_recv_stream(struct net_context *ctx,
 	struct net_pkt_cursor backup;
 	int res;
 
+	if (!net_context_is_used(ctx)) {
+		errno = EBADF;
+		return -1;
+	}
+
 	if ((flags & ZSOCK_MSG_DONTWAIT) || sock_is_nonblock(ctx)) {
 		timeout = K_NO_WAIT;
 	}
