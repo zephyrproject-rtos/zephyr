@@ -559,25 +559,25 @@ void main(void)
 
 	/* Configure devices */
 
-	hid0_dev = device_get_binding(CONFIG_USB_HID_DEVICE_NAME_0);
+	hid0_dev = device_get_binding("HID_0");
 	if (hid0_dev == NULL) {
 		LOG_ERR("Cannot get USB HID 0 Device");
 		return;
 	}
 
-	hid1_dev = device_get_binding(CONFIG_USB_HID_DEVICE_NAME_1);
+	hid1_dev = device_get_binding("HID_1");
 	if (hid1_dev == NULL) {
 		LOG_ERR("Cannot get USB HID 1 Device");
 		return;
 	}
 
-	cdc0_dev = device_get_binding(CONFIG_CDC_ACM_PORT_NAME_0);
+	cdc0_dev = device_get_binding("CDC_ACM_0");
 	if (cdc0_dev == NULL) {
 		LOG_ERR("Cannot get USB CDC 0 Device");
 		return;
 	}
 
-	cdc1_dev = device_get_binding(CONFIG_CDC_ACM_PORT_NAME_1);
+	cdc1_dev = device_get_binding("CDC_ACM_1");
 	if (cdc1_dev == NULL) {
 		LOG_ERR("Cannot get USB CDC 1 Device");
 		return;
