@@ -60,31 +60,44 @@ LOG_MODULE_REGISTER(mpu);
  */
 void _arch_configure_static_mpu_regions(void)
 {
-	/* Define a constant array of k_mem_partition objects
-	 * to hold the configuration of the respective static
-	 * MPU regions.
-	 */
-	const struct k_mem_partition static_regions[] = {
 #if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
+		const struct k_mem_partition gcov_region =
 		{
 		.start = (u32_t)&__gcov_bss_start,
 		.size = (u32_t)&__gcov_bss_size,
 		.attr = K_MEM_PARTITION_P_RW_U_RW,
-		},
+		};
 #endif /* CONFIG_COVERAGE_GCOV && CONFIG_USERSPACE */
 #if defined(CONFIG_NOCACHE_MEMORY)
+		const struct k_mem_partition nocache_region =
 		{
 		.start = (u32_t)&_nocache_ram_start,
 		.size = (u32_t)&_nocache_ram_size,
 		.attr = K_MEM_PARTITION_P_RW_U_NA_NOCACHE,
-		},
+		};
 #endif /* CONFIG_NOCACHE_MEMORY */
 #if defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
+		const struct k_mem_partition ramfunc_region =
 		{
 		.start = (u32_t)&_ramfunc_ram_start,
 		.size = (u32_t)&_ramfunc_ram_size,
 		.attr = K_MEM_PARTITION_P_RX_U_RX,
-		}
+		};
+#endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
+
+	/* Define a constant array of k_mem_partition objects
+	 * to hold the configuration of the respective static
+	 * MPU regions.
+	 */
+	const struct k_mem_partition *static_regions[] = {
+#if defined(CONFIG_COVERAGE_GCOV) && defined(CONFIG_USERSPACE)
+		&gcov_region,
+#endif /* CONFIG_COVERAGE_GCOV && CONFIG_USERSPACE */
+#if defined(CONFIG_NOCACHE_MEMORY)
+		&nocache_region,
+#endif /* CONFIG_NOCACHE_MEMORY */
+#if defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
+		&ramfunc_region
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 	};
 
@@ -110,6 +123,7 @@ void _arch_configure_static_mpu_regions(void)
 		.size =  _MPU_DYNAMIC_REGIONS_AREA_SIZE,
 		}
 	};
+
 	arm_core_mpu_mark_areas_for_dynamic_regions(dyn_region_areas,
 		ARRAY_SIZE(dyn_region_areas));
 #endif /* CONFIG_MPU_REQUIRES_NON_OVERLAPPING_REGIONS */
@@ -134,11 +148,13 @@ void _arch_configure_dynamic_mpu_regions(struct k_thread *thread)
 	 * the given thread. The array of partitions (along with its
 	 * actual size) will be supplied to the underlying MPU driver.
 	 */
-	struct k_mem_partition dynamic_regions[_MAX_DYNAMIC_MPU_REGIONS_NUM];
+	struct k_mem_partition *dynamic_regions[_MAX_DYNAMIC_MPU_REGIONS_NUM];
 
 	u8_t region_num = 0;
 
 #if defined(CONFIG_USERSPACE)
+	struct k_mem_partition thread_stack;
+
 	/* Memory domain */
 	LOG_DBG("configure thread %p's domain", thread);
 	struct k_mem_domain *mem_domain = thread->mem_domain_info.mem_domain;
@@ -163,7 +179,8 @@ void _arch_configure_dynamic_mpu_regions(struct k_thread *thread)
 				partition.start, partition.size);
 			__ASSERT(region_num < _MAX_DYNAMIC_MPU_REGIONS_NUM,
 				"Out-of-bounds error for dynamic region map.");
-			dynamic_regions[region_num] = partition;
+			dynamic_regions[region_num] =
+				&mem_domain->partitions[i];
 
 			region_num++;
 			num_partitions--;
@@ -187,14 +204,18 @@ void _arch_configure_dynamic_mpu_regions(struct k_thread *thread)
 #endif
 		__ASSERT(region_num < _MAX_DYNAMIC_MPU_REGIONS_NUM,
 			"Out-of-bounds error for dynamic region map.");
-		dynamic_regions[region_num] = (const struct k_mem_partition)
+		thread_stack = (const struct k_mem_partition)
 			{base, size, K_MEM_PARTITION_P_RW_U_RW};
+
+		dynamic_regions[region_num] = &thread_stack;
 
 		region_num++;
 	}
 #endif /* CONFIG_USERSPACE */
 
 #if defined(CONFIG_MPU_STACK_GUARD)
+	struct k_mem_partition guard;
+
 	/* Privileged stack guard */
 	u32_t guard_start;
 #if defined(CONFIG_USERSPACE)
@@ -214,18 +235,20 @@ void _arch_configure_dynamic_mpu_regions(struct k_thread *thread)
 
 	__ASSERT(region_num < _MAX_DYNAMIC_MPU_REGIONS_NUM,
 		"Out-of-bounds error for dynamic region map.");
-	dynamic_regions[region_num] = (const struct k_mem_partition)
+	guard = (const struct k_mem_partition)
 	{
 		guard_start,
 		MPU_GUARD_ALIGN_AND_SIZE,
 		K_MEM_PARTITION_P_RO_U_NA
 	};
+	dynamic_regions[region_num] = &guard;
 
 	region_num++;
 #endif /* CONFIG_MPU_STACK_GUARD */
 
 	/* Configure the dynamic MPU regions */
-	arm_core_mpu_configure_dynamic_mpu_regions(dynamic_regions,
+	arm_core_mpu_configure_dynamic_mpu_regions(
+		(const struct k_mem_partition **)dynamic_regions,
 		region_num);
 }
 
