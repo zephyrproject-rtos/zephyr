@@ -62,13 +62,18 @@ int net_icmpv4_send_error(struct net_pkt *pkt, u8_t type, u8_t code);
  * to this Echo Request. May be zero.
  * @param sequence A sequence number to aid in matching Echo Replies
  * to this Echo Request. May be zero.
+ * @param data Arbitrary payload data that will be included in the
+ * Echo Reply verbatim. May be zero.
+ * @param data_size Size of the Payload Data in bytes. May be zero.
  *
  * @return Return 0 if the sending succeed, <0 otherwise.
  */
 int net_icmpv4_send_echo_request(struct net_if *iface,
 				 struct in_addr *dst,
 				 u16_t identifier,
-				 u16_t sequence);
+				 u16_t sequence,
+				 const void *data,
+				 size_t data_size);
 
 void net_icmpv4_register_handler(struct net_icmpv4_handler *handler);
 

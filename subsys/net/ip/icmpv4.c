@@ -129,7 +129,9 @@ drop:
 int net_icmpv4_send_echo_request(struct net_if *iface,
 				 struct in_addr *dst,
 				 u16_t identifier,
-				 u16_t sequence)
+				 u16_t sequence,
+				 const void *data,
+				 size_t data_size)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv4_access,
 					      struct net_icmpv4_echo_req);
@@ -146,7 +148,8 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	src = &iface->config.ip.ipv4->unicast[0].address.in_addr;
 
 	pkt = net_pkt_alloc_with_buffer(iface,
-					sizeof(struct net_icmpv4_echo_req),
+					sizeof(struct net_icmpv4_echo_req)
+					+ data_size,
 					AF_INET, IPPROTO_ICMP,
 					PKT_WAIT_TIME);
 	if (!pkt) {
@@ -168,6 +171,7 @@ int net_icmpv4_send_echo_request(struct net_if *iface,
 	echo_req->sequence   = htons(sequence);
 
 	net_pkt_set_data(pkt, &icmpv4_access);
+	net_pkt_write(pkt, data, data_size);
 
 	net_pkt_cursor_init(pkt);
 

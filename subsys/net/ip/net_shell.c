@@ -2763,7 +2763,9 @@ static int ping_ipv4(const struct shell *shell, char *host)
 		net_if_ipv4_select_src_iface(&ipv4_target),
 		&ipv4_target,
 		sys_rand32_get(),
-		sys_rand32_get());
+		sys_rand32_get(),
+		NULL,
+		0);
 	if (ret) {
 		remove_ipv4_ping_handler();
 	} else {
