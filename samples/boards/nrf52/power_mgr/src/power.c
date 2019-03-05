@@ -10,7 +10,7 @@
  * Application defined function for doing any target specific operations
  * for low power entry.
  */
-void sys_pm_notify_lps_entry(enum power_states state)
+void sys_pm_notify_power_state_entry(enum power_states state)
 {
 	switch (state) {
 	case SYS_POWER_STATE_SLEEP_2:
@@ -61,7 +61,7 @@ void sys_pm_notify_lps_entry(enum power_states state)
  * Application defined function for doing any target specific operations
  * for low power exit.
  */
-void sys_pm_notify_lps_exit(enum power_states state)
+void sys_pm_notify_power_state_exit(enum power_states state)
 {
 	switch (state) {
 	case SYS_POWER_STATE_SLEEP_2:

@@ -37,7 +37,7 @@ static void _deep_sleep(enum power_states state)
 	 * is restored. If necessary, it is possible to set the
 	 * resume vector to a location where additional processing
 	 * can be done before cpu context is restored and control
-	 * transferred to sys_suspend.
+	 * transferred to _sys_suspend.
 	 */
 	qm_x86_set_resume_vector(_power_restore_cpu_context,
 				 *__x86_restore_info);
@@ -82,7 +82,7 @@ void sys_set_power_state(enum power_states state)
 	}
 }
 
-void sys_power_state_post_ops(enum power_states state)
+void _sys_pm_power_state_exit_post_ops(enum power_states state)
 {
 	switch (state) {
 #if (defined(CONFIG_SYS_POWER_SLEEP_STATES))
