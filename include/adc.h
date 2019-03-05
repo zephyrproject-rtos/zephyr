@@ -325,7 +325,7 @@ static inline int adc_channel_setup(struct device *dev,
  * @retval -ENOMEM  If the provided buffer is to small to hold the results
  *                  of all requested samplings.
  * @retval -ENOTSUP If the requested mode of operation is not supported.
- * @retval -EIO     If another sampling was triggered while the previous one
+ * @retval -EBUSY   If another sampling was triggered while the previous one
  *                  was still in progress. This may occur only when samplings
  *                  are done with intervals, and it indicates that the selected
  *                  interval was too small. All requested samples are written
