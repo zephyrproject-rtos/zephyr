@@ -100,9 +100,9 @@
 		drdy-gpios = <&gpio0 22 GPIO_PUD_PULL_UP>;
 	};
 
-	apds9960@29 {
+	apds9960@39 {
 		compatible = "avago,apds9960";
-		reg = <0x29>;
+		reg = <0x39>;
 		label = "APDS9960";
 		int-gpios = <&gpio0 23 0>;
 	};
