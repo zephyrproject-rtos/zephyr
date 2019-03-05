@@ -11,26 +11,33 @@ import os
 import struct
 from elf_helper import ElfHelper, kobject_to_enum
 
+from collections import OrderedDict
+
 # Keys in this dictionary are structs which should be recognized as kernel
 # objects. Values should either be None, or the name of a Kconfig that
 # indicates the presence of this object's definition in case it is not
 # available in all configurations.
 
-kobjects = {
-    "k_mem_slab": None,
-    "k_msgq": None,
-    "k_mutex": None,
-    "k_pipe": None,
-    "k_queue": None,
-    "k_poll_signal": None,
-    "k_sem": None,
-    "k_stack": None,
-    "k_thread": None,
-    "k_timer": None,
-    "_k_thread_stack_element": None,
-    "net_context": "CONFIG_NETWORKING",
-    "device": None
-}
+# Regular dictionaries are ordered only with Python 3.6 and
+# above. Good summary and pointers to official documents at:
+# https://stackoverflow.com/questions/39980323/are-dictionaries-ordered-in-python-3-6
+kobjects = OrderedDict ([
+    ("k_mem_slab", None),
+    ("k_msgq", None),
+    ("k_mutex", None),
+    ("k_pipe", None),
+    ("k_queue", None),
+    ("k_poll_signal", None),
+    ("k_sem", None),
+    ("k_stack", None),
+    ("k_thread", None),
+    ("k_timer", None),
+    ("_k_thread_stack_element", None),
+    ("net_context", "CONFIG_NETWORKING"),
+    ("device", None),
+])
+
+
 
 subsystems = [
     "adc_driver_api",
@@ -269,10 +276,14 @@ def main():
     parse_args()
 
     if args.gperf_output:
+        assert args.kernel, "--kernel ELF required for --gperf-output"
         eh = ElfHelper(args.kernel, args.verbose, kobjects, subsystems)
         syms = eh.get_symbols()
         max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
         objs = eh.find_kobjects(syms)
+        if not objs:
+            sys.stderr.write("WARNING: zero kobject found in %s\n"
+                             % args.kernel)
 
         thread_counter = eh.get_thread_counter()
         if thread_counter > max_threads:
