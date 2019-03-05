@@ -52,12 +52,18 @@ extern "C" {
 /* Use Zephyr posix headers */
 
 /*
- * Hack to prevent redefining zsock_timeval. Currently it is not possible
- * to include both socket.h and pthread.h without build errors (issue #13444)
+ * Hacks to prevent redefining symbols in posix headers. Currently it is not
+ * possible to include both socket.h and some posix headers without build
+ * errors (issue #13444). So we are disabling some headers, and defining
+ * only what is necessary. We should remove these when the POSIX integration
+ * story has improved.
  */
-#ifdef timeval
-#undef timeval
-#endif
+#define ZEPHYR_INCLUDE_POSIX_TIME_H_
+#define ZEPHYR_INCLUDE_POSIX_UNISTD_H_
+#define ZEPHYR_INCLUDE_POSIX_SYS_STAT_H_
+#include <time.h>
+extern int clock_gettime(clockid_t clock_id, struct timespec *ts);
+extern int usleep(useconds_t useconds);
 
 #include <posix/pthread.h>
 #include <posix/semaphore.h>
