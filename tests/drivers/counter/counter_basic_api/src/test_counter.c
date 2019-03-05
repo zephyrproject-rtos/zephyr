@@ -205,10 +205,10 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 	zassert_equal(0, err, "Counter set alarm failed\n");
 
 	k_busy_wait(1.5*counter_ticks_to_us(dev, ticks));
-	zassert_equal(1, alarm_cnt, "Expecting alarm callback\n");
+	zassert_equal(1, (u32_t)alarm_cnt, "Expecting alarm callback\n");
 
 	k_busy_wait(1.5*counter_ticks_to_us(dev, ticks));
-	zassert_equal(1, alarm_cnt, "Expecting alarm callback\n");
+	zassert_equal(1, (u32_t)alarm_cnt, "Expecting alarm callback\n");
 
 	err = counter_cancel_channel_alarm(dev, 0);
 	zassert_equal(0, err, "Counter disabling alarm failed\n");
@@ -302,7 +302,7 @@ void test_multiple_alarms_instance(const char *dev_name)
 	zassert_equal(0, err, "Counter set alarm failed\n");
 
 	k_busy_wait(1.2*counter_ticks_to_us(dev, 2*ticks));
-	zassert_equal(2, alarm_cnt, "Counter set alarm failed\n");
+	zassert_equal(2, (u32_t)alarm_cnt, "Counter set alarm failed\n");
 	zassert_equal(&alarm_cfg2, clbk_data[0],
 			"Expected different order or callbacks\n");
 	zassert_equal(&alarm_cfg, clbk_data[1],
@@ -355,7 +355,7 @@ void test_all_channels_instance(const char *str)
 	}
 
 	k_busy_wait(1.5*counter_ticks_to_us(dev, ticks));
-	zassert_equal(nchan, alarm_cnt, "Expecting alarm callback\n");
+	zassert_equal(nchan, (u32_t)alarm_cnt, "Expecting alarm callback\n");
 
 	for (int i = 0; i < nchan; i++) {
 		err = counter_cancel_channel_alarm(dev, i);
