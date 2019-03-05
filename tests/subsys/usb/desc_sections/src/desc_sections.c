@@ -91,7 +91,7 @@ struct usb_loopback_config {
 	USBD_CFG_DATA_DEFINE(loopback_##x)			\
 	struct usb_cfg_data loopback_config_##x = {		\
 	.usb_device_description = NULL,				\
-	.interface_config = NULL,				\
+	.interface_config = interface_config,			\
 	.interface_descriptor = &loopback_cfg_##x.if0,		\
 	.cb_usb_status = NULL,					\
 	.interface = {						\
@@ -107,13 +107,86 @@ struct usb_loopback_config {
 
 #define NUM_INSTANCES 2
 
+static void interface_config(struct usb_desc_header *head,
+			     u8_t iface_num)
+{
+	struct usb_if_descriptor *if_desc = (struct usb_if_descriptor *)head;
+
+	LOG_DBG("head %p iface_num %u", head, iface_num);
+
+	if_desc->bInterfaceNumber = iface_num;
+}
+
 UTIL_LISTIFY(NUM_INSTANCES, DEFINE_LOOPBACK_DESC, _)
 UTIL_LISTIFY(NUM_INSTANCES, DEFINE_LOOPBACK_EP_CFG, _)
 UTIL_LISTIFY(NUM_INSTANCES, DEFINE_LOOPBACK_CFG_DATA, _)
 
+static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
+{
+	size_t length = (__usb_data_end - __usb_data_start);
+
+	for (size_t i = 0; i < length; i++) {
+		if (__usb_data_start[i].interface_descriptor == iface) {
+			return &__usb_data_start[i];
+		}
+	}
+
+	return NULL;
+}
+
+static bool find_cfg_data_ep(const struct usb_ep_descriptor * const ep_descr,
+			     const struct usb_cfg_data * const cfg_data)
+{
+	for (int i = 0; i < cfg_data->num_endpoints; i++) {
+		if (cfg_data->endpoint[i].ep_addr ==
+				ep_descr->bEndpointAddress) {
+			LOG_DBG("found ep[%d] %x", i,
+				ep_descr->bEndpointAddress);
+
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static void check_endpoint_allocation(struct usb_desc_header *head)
+{
+	struct usb_cfg_data *cfg_data = NULL;
+	static u8_t interfaces;
+
+	while (head->bLength != 0) {
+		if (head->bDescriptorType == USB_INTERFACE_DESC) {
+			struct usb_if_descriptor *if_descr = (void *)head;
+
+			LOG_DBG("iface %u", if_descr->bInterfaceNumber);
+
+			/* Check that interfaces get correct numbers */
+			zassert_equal(if_descr->bInterfaceNumber, interfaces++,
+				      "Interfaces numbering failed");
+
+			cfg_data = usb_get_cfg_data(if_descr);
+			zassert_not_null(cfg_data, "Check available cfg data");
+		}
+
+		if (head->bDescriptorType == USB_ENDPOINT_DESC) {
+			struct usb_ep_descriptor *ep_descr =
+				(struct usb_ep_descriptor *)head;
+
+			/* Check that we get iface desc before */
+			zassert_not_null(cfg_data, "Check available cfg data");
+
+			zassert_true(find_cfg_data_ep(ep_descr, cfg_data),
+				     "Check endpoint config in cfg_data");
+		}
+
+		head = (struct usb_desc_header *)((u8_t *)head + head->bLength);
+	}
+}
+
 static void test_desc_sections(void)
 {
-	u8_t *head;
+	struct usb_desc_header *head;
 
 	TC_PRINT("__usb_descriptor_start %p\n", __usb_descriptor_start);
 	TC_PRINT("__usb_descriptor_end %p\n",  __usb_descriptor_end);
@@ -137,7 +210,7 @@ static void test_desc_sections(void)
 			(int)__usb_data_end - (int)__usb_data_start,
 			"USB Configuratio structures section");
 
-	head = usb_get_device_descriptor();
+	head = (struct usb_desc_header *)usb_get_device_descriptor();
 	zassert_not_null(head, NULL);
 
 	zassert_equal((int)__usb_descriptor_end - (int)__usb_descriptor_start,
@@ -147,6 +220,8 @@ static void test_desc_sections(void)
 	zassert_equal(__usb_data_end - __usb_data_start, NUM_INSTANCES, NULL);
 	zassert_equal((int)__usb_data_end - (int)__usb_data_start,
 		      NUM_INSTANCES * sizeof(struct usb_cfg_data), NULL);
+
+	check_endpoint_allocation(head);
 }
 
 /*test case main entry*/
