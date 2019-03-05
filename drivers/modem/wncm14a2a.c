@@ -1182,13 +1182,17 @@ static void wncm14a2a_rx(void)
 						break;
 					}
 
-					/* locate next cr/lf */
-					len = net_buf_findcrlf(rx_buf,
+					/*
+					 * We've handled the current line
+					 * and need to exit the "search for
+					 * handler loop".  Let's skip any
+					 * "extra" data and look for the next
+					 * CR/LF, leaving us ready for the
+					 * next handler search.  Ignore the
+					 * length returned.
+					 */
+					(void)net_buf_findcrlf(rx_buf,
 							       &frag, &offset);
-					if (!frag) {
-						break;
-					}
-
 					break;
 				}
 			}
