@@ -387,7 +387,7 @@ static int dma_stm32_config(struct device *dev, u32_t id,
 		return -EINVAL;
 	}
 
-	if ((MEMORY_TO_MEMORY == stream->direction) && (!ddata->mem2mem)) {
+	if (MEMORY_TO_MEMORY == config->channel_direction && !ddata->mem2mem) {
 		LOG_ERR("DMA error: Memcopy not supported for device %s",
 			dev->config->name);
 		return -EINVAL;
