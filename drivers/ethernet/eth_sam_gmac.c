@@ -893,8 +893,18 @@ static int gmac_init(Gmac *gmac, u32_t gmac_ncfgr_val)
 	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 1, 75);
 	eth_sam_gmac_setup_qav(gmac, 1, true);
 #elif GMAC_PRIORITY_QUEUE_NO == 2
-	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 1, 0);
-	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 2, 75);
+	/* For multiple priority queues, 802.1Qav suggests using 75% for the
+	 * highest priority queue, and 0% for the lower priority queues.
+	 * This is because the lower priority queues are supposed to be using
+	 * the bandwidth available from the higher priority queues AND its own
+	 * available bandwidth (see 802.1Q 34.3.1 for more details).
+	 * This does not work like that in SAM GMAC - the lower priority queues
+	 * are not using the bandwidth reserved for the higher priority queues
+	 * at all. Thus we still set the default to a total of the recommended
+	 * 75%, but split the bandwidth between them manually.
+	 */
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 1, 25);
+	eth_sam_gmac_setup_qav_delta_bandwidth(gmac, 2, 50);
 	eth_sam_gmac_setup_qav(gmac, 1, true);
 	eth_sam_gmac_setup_qav(gmac, 2, true);
 #endif
