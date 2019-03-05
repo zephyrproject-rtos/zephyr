@@ -1718,8 +1718,14 @@ static size_t pkt_buffer_length(struct net_pkt *pkt,
 				enum net_ip_protocol proto,
 				size_t existing)
 {
-	size_t max_len = net_if_get_mtu(net_pkt_iface(pkt));
 	sa_family_t family = net_pkt_family(pkt);
+	size_t max_len;
+
+	if (net_pkt_iface(pkt)) {
+		max_len = net_if_get_mtu(net_pkt_iface(pkt));
+	} else {
+		max_len = 0;
+	}
 
 	/* Family vs iface MTU */
 	if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
