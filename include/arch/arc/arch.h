@@ -159,34 +159,34 @@ extern "C" {
 #ifndef _ASMLANGUAGE
 #include <arch/arc/v2/mpu/arc_mpu.h>
 
-#define K_MEM_PARTITION_P_NA_U_NA	AUX_MPU_RDP_N
-#define K_MEM_PARTITION_P_RW_U_RW	(AUX_MPU_RDP_UW | AUX_MPU_RDP_UR | \
-					 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR)
-#define K_MEM_PARTITION_P_RW_U_RO	(AUX_MPU_RDP_UR | \
-					 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR)
-#define K_MEM_PARTITION_P_RW_U_NA	(AUX_MPU_RDP_KW | AUX_MPU_RDP_KR)
-#define K_MEM_PARTITION_P_RO_U_RO	(AUX_MPU_RDP_UR | AUX_MPU_RDP_KR)
-#define K_MEM_PARTITION_P_RO_U_NA	(AUX_MPU_RDP_KR)
+#define K_MEM_PARTITION_P_NA_U_NA	AUX_MPU_ATTR_N
+#define K_MEM_PARTITION_P_RW_U_RW	(AUX_MPU_ATTR_UW | AUX_MPU_ATTR_UR | \
+					 AUX_MPU_ATTR_KW | AUX_MPU_ATTR_KR)
+#define K_MEM_PARTITION_P_RW_U_RO	(AUX_MPU_ATTR_UR | \
+					 AUX_MPU_ATTR_KW | AUX_MPU_ATTR_KR)
+#define K_MEM_PARTITION_P_RW_U_NA	(AUX_MPU_ATTR_KW | AUX_MPU_ATTR_KR)
+#define K_MEM_PARTITION_P_RO_U_RO	(AUX_MPU_ATTR_UR | AUX_MPU_ATTR_KR)
+#define K_MEM_PARTITION_P_RO_U_NA	(AUX_MPU_ATTR_KR)
 
 /* Execution-allowed attributes */
-#define K_MEM_PARTITION_P_RWX_U_RWX	(AUX_MPU_RDP_UW | AUX_MPU_RDP_UR | \
-					 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR | \
-					 AUX_MPU_RDP_KE | AUX_MPU_RDP_UE)
-#define K_MEM_PARTITION_P_RWX_U_RX	(AUX_MPU_RDP_UR | \
-					 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR | \
-					 AUX_MPU_RDP_KE | AUX_MPU_RDP_UE)
-#define K_MEM_PARTITION_P_RX_U_RX	(AUX_MPU_RDP_UR | \
-					 AUX_MPU_RDP_KR | \
-					 AUX_MPU_RDP_KE | AUX_MPU_RDP_UE)
+#define K_MEM_PARTITION_P_RWX_U_RWX	(AUX_MPU_ATTR_UW | AUX_MPU_ATTR_UR | \
+					 AUX_MPU_ATTR_KW | AUX_MPU_ATTR_KR | \
+					 AUX_MPU_ATTR_KE | AUX_MPU_ATTR_UE)
+#define K_MEM_PARTITION_P_RWX_U_RX	(AUX_MPU_ATTR_UR | \
+					 AUX_MPU_ATTR_KW | AUX_MPU_ATTR_KR | \
+					 AUX_MPU_ATTR_KE | AUX_MPU_ATTR_UE)
+#define K_MEM_PARTITION_P_RX_U_RX	(AUX_MPU_ATTR_UR | \
+					 AUX_MPU_ATTR_KR | \
+					 AUX_MPU_ATTR_KE | AUX_MPU_ATTR_UE)
 
 #define K_MEM_PARTITION_IS_WRITABLE(attr) \
 	({ \
 		int __is_writable__; \
-		attr &= (AUX_MPU_RDP_UW | AUX_MPU_RDP_KW); \
+		attr &= (AUX_MPU_ATTR_UW | AUX_MPU_ATTR_KW); \
 		switch (attr) { \
-		case (AUX_MPU_RDP_UW | AUX_MPU_RDP_KW): \
-		case AUX_MPU_RDP_UW: \
-		case AUX_MPU_RDP_KW: \
+		case (AUX_MPU_ATTR_UW | AUX_MPU_ATTR_KW): \
+		case AUX_MPU_ATTR_UW: \
+		case AUX_MPU_ATTR_KW: \
 			__is_writable__ = 1; \
 			break; \
 		default: \
@@ -196,7 +196,7 @@ extern "C" {
 		__is_writable__; \
 	})
 #define K_MEM_PARTITION_IS_EXECUTABLE(attr) \
-	((attr) & (AUX_MPU_RDP_KE | AUX_MPU_RDP_UE))
+	((attr) & (AUX_MPU_ATTR_KE | AUX_MPU_ATTR_UE))
 
 #endif /* _ASMLANGUAGE */
 

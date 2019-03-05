@@ -9,64 +9,27 @@
 #include <arch/arc/v2/mpu/arc_mpu.h>
 #include <linker/linker-defs.h>
 
-#ifdef CONFIG_USERSPACE
-static struct arc_mpu_region mpu_regions[] = {
-#if CONFIG_ARC_MPU_VER == 3
-	/* Region ICCM */
-	MPU_REGION_ENTRY("IMAGE ROM",
-			 (u32_t) _image_rom_start,
-			 (u32_t) _image_rom_size,
-			 REGION_FLASH_ATTR),
-	MPU_REGION_ENTRY("KERNEL MEMORY",
-			 (u32_t) __kernel_ram_start,
-			 (u32_t) __kernel_ram_size,
-			 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR),
-
-#else
-#if DT_ICCM_SIZE > 0
-	/* Region ICCM */
-	MPU_REGION_ENTRY("ICCM",
-			 DT_ICCM_BASE_ADDRESS,
-			 DT_ICCM_SIZE * 1024,
-			 REGION_FLASH_ATTR),
-#endif
-#if DT_DCCM_SIZE > 0
-	/* Region DCCM */
-	MPU_REGION_ENTRY("DCCM",
-			 DT_DCCM_BASE_ADDRESS,
-			 DT_DCCM_SIZE * 1024,
-			 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR),
-#endif
-#endif /* ARC_MPU_VER == 3 */
-	/* Region Peripheral */
-	MPU_REGION_ENTRY("PERIPHERAL",
-			 0xF0000000,
-			 64 * 1024,
-			 AUX_MPU_RDP_KW | AUX_MPU_RDP_KR),
-};
-#else /* CONFIG_USERSPACE */
 static struct arc_mpu_region mpu_regions[] = {
 #if DT_ICCM_SIZE > 0
 	/* Region ICCM */
 	MPU_REGION_ENTRY("ICCM",
 			 DT_ICCM_BASE_ADDRESS,
 			 DT_ICCM_SIZE * 1024,
-			 REGION_FLASH_ATTR),
+			 REGION_ROM_ATTR),
 #endif
 #if DT_DCCM_SIZE > 0
 	/* Region DCCM */
 	MPU_REGION_ENTRY("DCCM",
 			 DT_DCCM_BASE_ADDRESS,
 			 DT_DCCM_SIZE * 1024,
-			 REGION_RAM_ATTR),
+			 REGION_KERNEL_RAM_ATTR | REGION_DYNAMIC),
 #endif
 	/* Region Peripheral */
 	MPU_REGION_ENTRY("PERIPHERAL",
 			 0xF0000000,
 			 64 * 1024,
-			 REGION_IO_ATTR),
+			 REGION_KERNEL_RAM_ATTR),
 };
-#endif
 
 struct arc_mpu_config mpu_config = {
 	.num_regions = ARRAY_SIZE(mpu_regions),
