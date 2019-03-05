@@ -297,7 +297,9 @@ drop_no_pkt:
 int net_icmpv6_send_echo_request(struct net_if *iface,
 				 struct in6_addr *dst,
 				 u16_t identifier,
-				 u16_t sequence)
+				 u16_t sequence,
+				 const void *data,
+				 size_t data_size)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmpv6_access,
 					      struct net_icmpv6_echo_req);
@@ -309,7 +311,8 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	src = net_if_ipv6_select_src_addr(iface, dst);
 
 	pkt = net_pkt_alloc_with_buffer(iface,
-					sizeof(struct net_icmpv6_echo_req),
+					sizeof(struct net_icmpv6_echo_req)
+					+ data_size,
 					AF_INET6, IPPROTO_ICMPV6,
 					PKT_WAIT_TIME);
 	if (!pkt) {
@@ -331,6 +334,7 @@ int net_icmpv6_send_echo_request(struct net_if *iface,
 	echo_req->sequence   = htons(sequence);
 
 	net_pkt_set_data(pkt, &icmpv6_access);
+	net_pkt_write(pkt, data, data_size);
 
 	net_pkt_cursor_init(pkt);
 	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
