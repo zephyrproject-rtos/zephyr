@@ -23,34 +23,22 @@ if(OVERLAY_CONFIG)
   string(REPLACE " " ";" OVERLAY_CONFIG_AS_LIST "${OVERLAY_CONFIG}")
 endif()
 
-set(ENV{srctree}            ${ZEPHYR_BASE})
-set(ENV{KERNELVERSION}      ${KERNELVERSION})
-set(ENV{KCONFIG_CONFIG}     ${DOTCONFIG})
-set(ENV{PYTHON_EXECUTABLE} ${PYTHON_EXECUTABLE})
+# Read environmental variables which needs to be set for Kconfig
+# Ideally the variable name and environmental variable name should be the same
+file(STRINGS ${CMAKE_CURRENT_LIST_DIR}/kconfig_env_vars.txt KCONFIG_ENV_VARS_AS_LIST)
 
 # Set environment variables so that Kconfig can prune Kconfig source
-# files for other architectures
-set(ENV{ARCH}      ${ARCH})
-set(ENV{BOARD_DIR} ${BOARD_DIR})
-set(ENV{SOC_DIR}   ${SOC_DIR})
-set(ENV{PROJECT_BINARY_DIR} ${PROJECT_BINARY_DIR})
-set(ENV{ARCH_DIR}   ${ARCH_DIR})
-set(ENV{GENERATED_DTS_BOARD_CONF} ${GENERATED_DTS_BOARD_CONF})
+set(srctree ${ZEPHYR_BASE})
+set(KCONFIG_CONFIG ${DOTCONFIG})
+foreach(env_var ${KCONFIG_ENV_VARS_AS_LIST})
+  set(ENV{${env_var}} ${${env_var}})
+  set(env_vars "${env_vars} ${env_var}=${${env_var}}")
+endforeach(env_var)
 
 add_custom_target(
   menuconfig
   ${CMAKE_COMMAND} -E env
-  PYTHON_EXECUTABLE=${PYTHON_EXECUTABLE}
-  srctree=${ZEPHYR_BASE}
-  KERNELVERSION=${KERNELVERSION}
-  KCONFIG_CONFIG=${DOTCONFIG}
-  ARCH=$ENV{ARCH}
-  BOARD_DIR=$ENV{BOARD_DIR}
-  SOC_DIR=$ENV{SOC_DIR}
-  PROJECT_BINARY_DIR=$ENV{PROJECT_BINARY_DIR}
-  ZEPHYR_TOOLCHAIN_VARIANT=${ZEPHYR_TOOLCHAIN_VARIANT}
-  ARCH_DIR=$ENV{ARCH_DIR}
-  GENERATED_DTS_BOARD_CONF=$ENV{GENERATED_DTS_BOARD_CONF}
+  env_vars
   ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/kconfig/menuconfig.py ${KCONFIG_ROOT}
   WORKING_DIRECTORY ${PROJECT_BINARY_DIR}/kconfig
   USES_TERMINAL
