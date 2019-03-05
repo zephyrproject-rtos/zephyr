@@ -30,6 +30,36 @@ config I2C_STM32_INTERRUPT
 
 endif # I2C
 
+if I2S
+
+config I2S_STM32
+	default y
+
+# configure PLLI2S to generate a I2SxCLK=128MHz
+config I2S_STM32_USE_PLLI2S_ENABLE
+	default y
+
+config I2S_STM32_PLLI2S_PLLM
+	default 8
+
+config I2S_STM32_PLLI2S_PLLN
+	default 192
+
+config I2S_STM32_PLLI2S_PLLR
+	default 3
+
+config I2S_2
+	default y
+
+endif # I2S
+
+if DMA
+
+config DMA_STM32F4X
+	default y
+
+endif # DMA
+
 if SPI
 
 config SPI_1
