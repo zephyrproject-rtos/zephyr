@@ -72,6 +72,8 @@ hardware features:
 +-----------+------------+-------------------------------------+
 | PWM       | on-chip    | pwm                                 |
 +-----------+------------+-------------------------------------+
+| I2S       | on-chip    | i2s                                 |
++-----------+------------+-------------------------------------+
 
 The default board configuration can be found in the defconfig file:
 
@@ -147,6 +149,15 @@ connector. The default PWM mapping is:
 - PWM4_CH4  : PD15 : D5
 - PWM9_CH1  : PE5  : D12
 - PWM9_CH2  : PE6  : D11
+
+I2S
+---
+
+96Boards STM32 Sensor Mezzanine board exposes 1 I2S port which is connected
+to the on-board ST MP34DT01 DMIC. The default I2S mapping is:
+
+- I2S2_SD   : PC1
+- I2S2_CK   : PC7
 
 Programming and Debugging
 *************************
