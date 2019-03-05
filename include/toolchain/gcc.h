@@ -184,6 +184,11 @@ do {                                                                    \
 #define FUNC_CODE() .thumb;
 #define FUNC_INSTR(a)
 
+#elif defined(CONFIG_ISA_ARM)
+
+#define FUNC_CODE() .code 32
+#define FUNC_INSTR(a)
+
 #else
 
 #error unknown instruction set
