@@ -1028,6 +1028,8 @@ static int priority_queue_init(Gmac *gmac, struct gmac_queue *queue)
 	queue->err_rx_flushed_count = 0U;
 	queue->err_tx_flushed_count = 0U;
 
+	LOG_INF("Queue %d activated", queue->que_idx);
+
 	return 0;
 }
 
@@ -1057,6 +1059,8 @@ static int priority_queue_init_as_idle(Gmac *gmac, struct gmac_queue *queue)
 	gmac->GMAC_RBQBAPQ[queue->que_idx - 1] = (u32_t)rx_desc_list->buf;
 	/* Set Transmit Buffer Queue Pointer Register */
 	gmac->GMAC_TBQBAPQ[queue->que_idx - 1] = (u32_t)tx_desc_list->buf;
+
+	LOG_INF("Queue %d set to idle", queue->que_idx);
 
 	return 0;
 }
