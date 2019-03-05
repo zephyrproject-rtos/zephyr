@@ -29,7 +29,7 @@ config ETH_ENC28J60_RX_THREAD_PRIO
 	  Priority level for internal thread which is ran for incoming
 	  packet processing.
 
-config ETH_EN28J60_TIMEOUT
+config ETH_ENC28J60_TIMEOUT
 	int "IP buffer timeout"
 	depends on ETH_ENC28J60
 	default 100
@@ -45,7 +45,7 @@ config ETH_ENC28J60_0
 	  Include port 0 driver
 
 if ETH_ENC28J60 && ETH_ENC28J60_0
-config ETH_EN28J60_0_FULL_DUPLEX
+config ETH_ENC28J60_0_FULL_DUPLEX
 	bool "ENC28J60 full duplex"
 	default y
 	help
