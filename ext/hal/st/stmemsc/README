@@ -1,0 +1,58 @@
+C-Driver-MEMS
+#############
+
+Origin:
+   ST Microelectronics
+   https://www.st.com/en/embedded-software/c-driver-mems.html
+
+Status:
+   version v1.00
+
+Purpose:
+   ST Microelectronics standard C platform-independent drivers for MEMS
+   motion and environmental sensors.
+
+Description:
+   This package is an extract (examples have not been retained) of official
+   C-Driver-MEMS package written by ST Microelectronics.
+   It contains standard drivers for STMicroelectronics MEMS sensors to
+   provide a common and stable interface to access sensor registers.
+   For each supported sensor following files are provided:
+
+       - xyz_reg.c: contains the function to read/write 'xyz' sensor registers
+       - xyz_reg.h: contains structures and defines to describe in details
+                    the 'xyz' sensor registers.
+
+   The driver is platform-independent, you only need to define the two
+   functions for read and write transactions from the sensor hardware bus
+   (ie. SPI or I2C).
+
+   Define in your 'xyz' driver code the read and write functions that use the
+   I2C or SPI platform driver like the following:
+
+   /** Please note that is MANDATORY: return 0 -> no Error.**/
+   int platform_wr(void *handle, u8_t reg, u8_t *bufp, u16_t len);
+   int platform_rd(void *handle, u8_t reg, u8_t *bufp, u16_t len);
+
+   xyz_ctx_t xyz_ctx = {
+       .read_reg = (xyz_read_ptr) platform_rd,
+       .write_reg = (xyz_write_ptr) platform_wr,
+   };
+
+Dependencies:
+    None.
+
+URL:
+   https://www.st.com/en/embedded-software/c-driver-mems.html
+
+commit:
+   version v1.00
+
+Maintained-by:
+   ST Microelectronics
+
+License:
+   BSD-3-Clause
+
+License Link:
+   https://opensource.org/licenses/BSD-3-Clause
