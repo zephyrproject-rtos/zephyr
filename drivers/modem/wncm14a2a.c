@@ -789,7 +789,7 @@ static void on_cmd_sockread(struct net_buf **buf, u16_t len)
 	i = 0;
 	value_size = sizeof(value);
 	(void)memset(value, 0, value_size);
-	while (*buf && i < value_size) {
+	while (*buf && i < value_size - 1) {
 		value[i++] = net_buf_pull_u8(*buf);
 		len--;
 		if (!(*buf)->len) {
