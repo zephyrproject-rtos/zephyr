@@ -19,8 +19,8 @@ from elftools.elf.elffile import ELFFile
 # initialization purpose when USERSPACE is enabled.
 data_template = """
 		/* Auto generated code do not modify */
-		SMEM_PARTITION_ALIGN(data_smem_{0}_bss_end - data_smem_{0}_start);
-		data_smem_{0}_start = .;
+		SMEM_PARTITION_ALIGN(z_data_smem_{0}_bss_end - z_data_smem_{0}_part_start);
+		z_data_smem_{0}_part_start = .;
 		KEEP(*(data_smem_{0}_data))
 """
 
@@ -29,7 +29,7 @@ library_data_template = """
 """
 
 bss_template = """
-		data_smem_{0}_bss_start = .;
+		z_data_smem_{0}_bss_start = .;
 		KEEP(*(data_smem_{0}_bss))
 """
 
@@ -38,9 +38,9 @@ library_bss_template = """
 """
 
 footer_template = """
-		SMEM_PARTITION_ALIGN(data_smem_{0}_bss_end - data_smem_{0}_start);
-		data_smem_{0}_bss_end = .;
-		data_smem_{0}_end = .;
+		z_data_smem_{0}_bss_end = .;
+		SMEM_PARTITION_ALIGN(z_data_smem_{0}_bss_end - z_data_smem_{0}_part_start);
+		z_data_smem_{0}_part_end = .;
 """
 
 linker_start_seq = """
@@ -57,8 +57,8 @@ linker_end_seq = """
 """
 
 size_cal_string = """
-	data_smem_{0}_size = data_smem_{0}_end - data_smem_{0}_start;
-	data_smem_{0}_bss_size = data_smem_{0}_bss_end - data_smem_{0}_bss_start;
+	z_data_smem_{0}_part_size = z_data_smem_{0}_part_end - z_data_smem_{0}_part_start;
+	z_data_smem_{0}_bss_size = z_data_smem_{0}_bss_end - z_data_smem_{0}_bss_start;
 """
 
 section_regex = re.compile(r'data_smem_([A-Za-z0-9_]*)_(data|bss)')
