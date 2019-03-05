@@ -9,6 +9,8 @@ import os
 import struct
 from distutils.version import LooseVersion
 
+from collections import OrderedDict
+
 import elftools
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
@@ -518,7 +520,14 @@ class ElfHelper:
             ret[addr] = ko
 
         self.debug("found %d kernel object instances total" % len(ret))
-        return ret
+
+        # 1. Before python 3.7 dict order is not guaranteed. With Python
+        #    3.5 it doesn't seem random with *integer* keys but can't
+        #    rely on that.
+        # 2. OrderedDict means _insertion_ order, so not enough because
+        #    built from other (random!) dicts: need to _sort_ first.
+        # 3. Sorting memory address looks good.
+        return OrderedDict(sorted(ret.items()))
 
     def get_symbols(self):
         for section in self.elf.iter_sections():

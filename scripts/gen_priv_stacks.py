@@ -105,6 +105,9 @@ def main():
     syms = eh.get_symbols()
     max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
     objs = eh.find_kobjects(syms)
+    if not objs:
+        sys.stderr.write("WARNING: zero kobject found in %s\n"
+                         % args.kernel)
 
     thread_counter = eh.get_thread_counter()
     if thread_counter > max_threads:
