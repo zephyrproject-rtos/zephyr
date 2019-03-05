@@ -171,40 +171,37 @@ static void net_test_iface_init(struct net_if *iface)
  */
 static void prepare_ra_message(struct net_pkt *pkt)
 {
-	struct net_eth_hdr *hdr;
-	struct net_buf *frag;
+	struct net_eth_hdr hdr;
 
-	/* Let's cleanup the frag entirely */
-	frag = pkt->frags;
-	pkt->frags = NULL;
+	net_buf_unref(pkt->buffer);
+	pkt->buffer = NULL;
 
-	net_buf_unref(frag);
+	net_pkt_alloc_buffer(pkt, sizeof(struct net_eth_hdr) +
+			     sizeof(icmpv6_ra), AF_UNSPEC, 0);
+	net_pkt_cursor_init(pkt);
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-	net_pkt_frag_add(pkt, frag);
-
-	hdr = (struct net_eth_hdr *)frag->data;
-
-	memset(&hdr->src, 0, sizeof(struct net_eth_addr));
-	memcpy(&hdr->dst, net_pkt_iface(pkt)->if_dev->link_addr.addr,
+	hdr.type = htons(NET_ETH_PTYPE_IPV6);
+	memset(&hdr.src, 0, sizeof(struct net_eth_addr));
+	memcpy(&hdr.dst, net_pkt_iface(pkt)->if_dev->link_addr.addr,
 	       sizeof(struct net_eth_addr));
-	hdr->type = htons(NET_ETH_PTYPE_IPV6);
 
-	net_buf_add(frag, sizeof(struct net_eth_hdr));
+	net_pkt_set_overwrite(pkt, false);
 
-	memcpy(net_buf_add(frag, sizeof(icmpv6_ra)),
-	       icmpv6_ra, sizeof(icmpv6_ra));
+	net_pkt_write_new(pkt, &hdr, sizeof(struct net_eth_hdr));
+	net_pkt_write_new(pkt, icmpv6_ra, sizeof(icmpv6_ra));
+
+	net_pkt_cursor_init(pkt);
 }
 
 static struct net_icmp_hdr *get_icmp_hdr(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(icmp_access, struct net_icmp_hdr);
 	/* First frag is the ll header */
-	struct net_buf *bak = pkt->frags;
+	struct net_buf *bak = pkt->buffer;
 	struct net_pkt_cursor backup;
 	struct net_icmp_hdr *hdr;
 
-	pkt->frags = bak->frags;
+	pkt->buffer = bak->frags;
 
 	net_pkt_cursor_backup(pkt, &backup);
 	net_pkt_cursor_init(pkt);
@@ -218,7 +215,7 @@ static struct net_icmp_hdr *get_icmp_hdr(struct net_pkt *pkt)
 	hdr = (struct net_icmp_hdr *)net_pkt_get_data_new(pkt, &icmp_access);
 
 out:
-	pkt->frags = bak;
+	pkt->buffer = bak;
 
 	net_pkt_cursor_restore(pkt, &backup);
 
@@ -230,7 +227,7 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 {
 	struct net_icmp_hdr *icmp;
 
-	if (!pkt->frags) {
+	if (!pkt->buffer) {
 		TC_ERROR("No data to send!\n");
 		return -ENODATA;
 	}
@@ -449,27 +446,17 @@ static void test_nbr_lookup_ok(void)
 static void test_send_ns_extra_options(void)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct net_if *iface;
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(icmpv6_ns_invalid),
+					AF_UNSPEC, 0, K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-
+	net_pkt_write_new(pkt, icmpv6_ns_invalid, sizeof(icmpv6_ns_invalid));
 	net_pkt_lladdr_clear(pkt);
-
-	memcpy(net_buf_add(frag, sizeof(icmpv6_ns_invalid)),
-	       icmpv6_ns_invalid, sizeof(icmpv6_ns_invalid));
 
 	zassert_false((net_recv_data(iface, pkt) < 0),
 		      "Data receive for invalid NS failed.");
@@ -482,27 +469,17 @@ static void test_send_ns_extra_options(void)
 static void test_send_ns_no_options(void)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct net_if *iface;
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(icmpv6_ns_no_sllao),
+					AF_UNSPEC, 0, K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-
+	net_pkt_write_new(pkt, icmpv6_ns_no_sllao, sizeof(icmpv6_ns_no_sllao));
 	net_pkt_lladdr_clear(pkt);
-
-	memcpy(net_buf_add(frag, sizeof(icmpv6_ns_no_sllao)),
-	       icmpv6_ns_no_sllao, sizeof(icmpv6_ns_no_sllao));
 
 	zassert_false((net_recv_data(iface, pkt) < 0),
 		      "Data receive for invalid NS failed.");
@@ -608,29 +585,20 @@ static void test_ra_message(void)
 static void test_hbho_message(void)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct net_if *iface;
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho),
+					AF_UNSPEC, 0, K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-
+	net_pkt_write_new(pkt, ipv6_hbho, sizeof(ipv6_hbho));
 	net_pkt_lladdr_clear(pkt);
 
-	memcpy(net_buf_add(frag, sizeof(ipv6_hbho)),
-	       ipv6_hbho, sizeof(ipv6_hbho));
-
-	zassert_false(net_recv_data(iface, pkt) < 0, "Data receive for HBHO failed.");
+	zassert_false(net_recv_data(iface, pkt) < 0,
+		      "Data receive for HBHO failed.");
 }
 
 /* IPv6 hop-by-hop option in the message HBHO (72 Bytes) */
@@ -668,28 +636,18 @@ static const unsigned char ipv6_hbho_1[] = {
 static void test_hbho_message_1(void)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct net_if *iface;
-	u16_t pos;
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho_1),
+					AF_UNSPEC, 0, K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
+	net_pkt_write_new(pkt, ipv6_hbho_1, sizeof(ipv6_hbho_1));
 
 	net_pkt_lladdr_clear(pkt);
-
-	net_pkt_write(pkt, pkt->frags, 0, &pos, sizeof(ipv6_hbho_1),
-		      (u8_t *)ipv6_hbho_1, K_FOREVER);
 
 	zassert_false(net_recv_data(iface, pkt) < 0,
 		      "Data receive for HBHO failed.");
@@ -738,28 +696,18 @@ static const unsigned char ipv6_hbho_2[] = {
 static void test_hbho_message_2(void)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct net_if *iface;
-	u16_t pos;
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho_2),
+					AF_UNSPEC, 0, K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
 
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-
+	net_pkt_write_new(pkt, ipv6_hbho_2, sizeof(ipv6_hbho_2));
 	net_pkt_lladdr_clear(pkt);
-
-	net_pkt_write(pkt, pkt->frags, 0, &pos, sizeof(ipv6_hbho_2),
-		      (u8_t *)ipv6_hbho_2, K_FOREVER);
 
 	zassert_false(net_recv_data(iface, pkt) < 0,
 		      "Data receive for HBHO failed.");
@@ -911,28 +859,17 @@ static const unsigned char ipv6_hbho_3[] = {
 static void test_hbho_message_3(void)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct net_if *iface;
-	u16_t pos;
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hbho_3),
+					AF_UNSPEC, 0, K_FOREVER);
 
 	NET_ASSERT_INFO(pkt, "Out of TX packets");
 
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-
+	net_pkt_write_new(pkt, ipv6_hbho_3, sizeof(ipv6_hbho_3));
 	net_pkt_lladdr_clear(pkt);
-
-	net_pkt_write(pkt, pkt->frags, 0, &pos, sizeof(ipv6_hbho_3),
-		      (u8_t *)ipv6_hbho_3, K_FOREVER);
 
 	zassert_false(net_recv_data(iface, pkt) < 0,
 		      "Data receive for HBHO failed.");
@@ -1019,8 +956,6 @@ static void test_change_ll_addr(void)
 	static u8_t new_mac[] = { 00, 01, 02, 03, 04, 05 };
 	struct net_linkaddr_storage *ll;
 	struct net_linkaddr *ll_iface;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct in6_addr dst;
 	struct net_if *iface;
 	struct net_nbr *nbr;
@@ -1030,18 +965,6 @@ static void test_change_ll_addr(void)
 	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 1);
 
 	iface = net_if_get_default();
-
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
-
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
-
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 
 	flags = NET_ICMPV6_NA_FLAG_ROUTER |
 		NET_ICMPV6_NA_FLAG_OVERRIDE;
@@ -1117,13 +1040,17 @@ static void test_dad_timeout(void)
 
 #define NET_UDP_HDR(pkt)  ((struct net_udp_hdr *)(net_udp_get_hdr(pkt, NULL)))
 
-static void setup_ipv6_udp(struct net_pkt *pkt,
-			   struct in6_addr *local_addr,
-			   struct in6_addr *remote_addr,
-			   u16_t local_port,
-			   u16_t remote_port)
+static struct net_pkt *setup_ipv6_udp(struct net_if *iface,
+				      struct in6_addr *local_addr,
+				      struct in6_addr *remote_addr,
+				      u16_t local_port,
+				      u16_t remote_port)
 {
 	static const char payload[] = "foobar";
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(iface, strlen(payload),
+					AF_INET6, IPPROTO_UDP, K_FOREVER);
 
 	NET_IPV6_HDR(pkt)->vtc = 0x60;
 	NET_IPV6_HDR(pkt)->tcflow = 0;
@@ -1139,40 +1066,27 @@ static void setup_ipv6_udp(struct net_pkt *pkt,
 	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
 	net_pkt_set_ipv6_ext_len(pkt, 0);
 
-	net_buf_add(pkt->frags, net_pkt_ip_hdr_len(pkt) +
-				sizeof(struct net_udp_hdr));
+	net_buf_add(pkt->buffer, net_pkt_ip_hdr_len(pkt) +
+		    sizeof(struct net_udp_hdr));
 
 	NET_UDP_HDR(pkt)->src_port = htons(local_port);
 	NET_UDP_HDR(pkt)->dst_port = htons(remote_port);
 
-	net_buf_add_mem(pkt->frags, payload, strlen(payload));
+	net_buf_add_mem(pkt->buffer, payload, strlen(payload));
+
+	net_pkt_cursor_init(pkt);
+
+	return pkt;
 }
 
 static enum net_verdict recv_msg(struct in6_addr *src, struct in6_addr *dst)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct net_if *iface;
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
-
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
-
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-
-	net_pkt_lladdr_clear(pkt);
-
-	setup_ipv6_udp(pkt, src, dst, 4242, 4321);
-
-	net_pkt_cursor_init(pkt);
+	pkt = setup_ipv6_udp(iface, src, dst, 4242, 4321);
 
 	/* We by-pass the normal packet receiving flow in this case in order
 	 * to simplify the testing.
@@ -1183,26 +1097,11 @@ static enum net_verdict recv_msg(struct in6_addr *src, struct in6_addr *dst)
 static int send_msg(struct in6_addr *src, struct in6_addr *dst)
 {
 	struct net_pkt *pkt;
-	struct net_buf *frag;
 	struct net_if *iface;
 
 	iface = net_if_get_default();
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
-
-	NET_ASSERT_INFO(pkt, "Out of TX packets");
-
-	frag = net_pkt_get_frag(pkt, K_FOREVER);
-
-	net_pkt_frag_add(pkt, frag);
-
-	net_pkt_set_iface(pkt, iface);
-	net_pkt_set_family(pkt, AF_INET6);
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv6_hdr));
-
-	net_pkt_lladdr_clear(pkt);
-
-	setup_ipv6_udp(pkt, src, dst, 4242, 4321);
+	pkt = setup_ipv6_udp(iface, src, dst, 4242, 4321);
 
 	return net_send_data(pkt);
 }
