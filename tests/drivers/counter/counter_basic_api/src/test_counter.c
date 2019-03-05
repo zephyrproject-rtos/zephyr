@@ -141,9 +141,9 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 
 	k_busy_wait(5.2*COUNTER_PERIOD_US);
 
-	zassert_true(top_cnt == 5,
+	zassert_true((u32_t)top_cnt == 5,
 			"Unexpected number of turnarounds (%d) (dev: %s).\n",
-			top_cnt, dev_name);
+			(u32_t)top_cnt, dev_name);
 }
 
 void test_set_top_value_with_alarm(void)
