@@ -282,11 +282,18 @@ void log_hexdump_sync(struct log_msg_ids src_level, const char *metadata,
 
 static u32_t timestamp_get(void)
 {
-	return k_cycle_get_32();
+	if (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 1000000) {
+		return k_uptime_get_32();
+	} else {
+		return k_cycle_get_32();
+	}
 }
 
 void log_core_init(void)
 {
+	u32_t freq = (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > 1000000) ?
+			1000 : CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+
 	if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
 		log_msg_pool_init();
 		log_list_init(&list);
@@ -298,7 +305,7 @@ void log_core_init(void)
 
 	/* Set default timestamp. */
 	timestamp_func = timestamp_get;
-	log_output_timestamp_freq_set(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	log_output_timestamp_freq_set(freq);
 
 	/*
 	 * Initialize aggregated runtime filter levels (no backends are
