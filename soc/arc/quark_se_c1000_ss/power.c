@@ -66,7 +66,7 @@ void sys_set_power_state(enum power_states state)
 	}
 }
 
-void sys_power_state_post_ops(enum power_states state)
+void _sys_pm_power_state_exit_post_ops(enum power_states state)
 {
 	switch (state) {
 #if (defined(CONFIG_SYS_POWER_SLEEP_STATES))

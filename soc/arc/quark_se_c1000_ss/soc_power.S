@@ -11,7 +11,7 @@
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
 GDATA(_pm_arc_context)
 
-GTEXT(sys_resume_from_deep_sleep)
+GTEXT(_sys_resume_from_deep_sleep)
 GTEXT(_power_restore_cpu_context)
 GTEXT(_power_soc_sleep)
 GTEXT(_power_soc_deep_sleep)
@@ -24,7 +24,7 @@ GTEXT(_power_soc_lpss_mode)
 #define SLEEP_INTR_ENABLED_BIT 4
 #define SLEEP_MODE_RTC_ENABLED_BIT 5
 
-SECTION_FUNC(TEXT, sys_resume_from_deep_sleep)
+SECTION_FUNC(TEXT, _sys_resume_from_deep_sleep)
         /* Check is this wakeup after sleep event. */
         ld r0,[GPS0_REGISTER]
         bbit1 r0,RESTORE_SS_BIT,restore

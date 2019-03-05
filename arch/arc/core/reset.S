@@ -99,7 +99,7 @@ done_cache_invalidate:
 
 #if defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES) && \
 	!defined(CONFIG_BOOTLOADER_CONTEXT_RESTORE)
-        jl @sys_resume_from_deep_sleep
+        jl @_sys_resume_from_deep_sleep
 #endif
 
 #ifdef CONFIG_INIT_STACKS

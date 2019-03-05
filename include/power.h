@@ -132,13 +132,13 @@ static inline bool sys_pm_is_deep_sleep_state(enum power_states state)
 /**
  * @brief Function to disable power management idle exit notification
  *
- * The sys_resume() would be called from the ISR of the event that caused
+ * The _sys_resume() would be called from the ISR of the event that caused
  * exit from kernel idling after PM operations. For some power operations,
  * this notification may not be necessary. This function can be called in
- * sys_suspend to disable the corresponding sys_resume notification.
+ * _sys_suspend to disable the corresponding _sys_resume notification.
  *
  */
-static inline void sys_pm_idle_exit_notification_disable(void)
+static inline void _sys_pm_idle_exit_notification_disable(void)
 {
 	sys_pm_idle_exit_notify = 0;
 }
@@ -231,13 +231,13 @@ extern bool sys_pm_ctrl_is_state_enabled(enum power_states state);
  * function should return immediately.
  *
  */
-void sys_resume_from_deep_sleep(void);
+void _sys_resume_from_deep_sleep(void);
 
 /**
  * @brief Hook function to notify exit from kernel idling after PM operations
  *
  * This function would notify exit from kernel idling if a corresponding
- * sys_suspend() notification was handled and did not return
+ * _sys_suspend() notification was handled and did not return
  * SYS_POWER_STATE_ACTIVE.
  *
  * This function would be called from the ISR context of the event
@@ -249,11 +249,11 @@ void sys_resume_from_deep_sleep(void);
  * those cases, the ISR would be invoked immediately after the event wakes up
  * the CPU, before code following the CPU wait, gets a chance to execute. This
  * can be ignored if no operation needs to be done at the wake event
- * notification. Alternatively sys_pm_idle_exit_notification_disable() can
- * be called in sys_suspend to disable this notification.
+ * notification. Alternatively _sys_pm_idle_exit_notification_disable() can
+ * be called in _sys_suspend to disable this notification.
  *
  */
-void sys_resume(void);
+void _sys_resume(void);
 
 /**
  * @brief Hook function to allow entry to power state
@@ -279,7 +279,7 @@ void sys_resume(void);
  *
  * @return Power state which was selected and entered.
  */
-extern enum power_states sys_suspend(s32_t ticks);
+extern enum power_states _sys_suspend(s32_t ticks);
 
 /**
  * @brief Put processor into power state
@@ -297,7 +297,7 @@ extern void sys_set_power_state(enum power_states state);
  * interrupts after resuming from sleep state. In future, the enabling
  * of interrupts may be moved into the kernel.
  */
-extern void sys_power_state_post_ops(enum power_states state);
+extern void _sys_pm_power_state_exit_post_ops(enum power_states state);
 
 /**
  * @brief Application defined function for power state entry
@@ -305,7 +305,7 @@ extern void sys_power_state_post_ops(enum power_states state);
  * Application defined function for doing any target specific operations
  * for power state entry.
  */
-extern void sys_pm_notify_lps_entry(enum power_states state);
+extern void sys_pm_notify_power_state_entry(enum power_states state);
 
 /**
  * @brief Application defined function for sleep state exit
@@ -313,7 +313,7 @@ extern void sys_pm_notify_lps_entry(enum power_states state);
  * Application defined function for doing any target specific operations
  * for sleep state exit.
  */
-extern void sys_pm_notify_lps_exit(enum power_states state);
+extern void sys_pm_notify_power_state_exit(enum power_states state);
 
 /**
  * @}

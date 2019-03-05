@@ -28,7 +28,7 @@ void sys_set_power_state(enum power_states state)
 }
 
 /* Handle SOC specific activity after Low Power Mode Exit */
-void sys_power_state_post_ops(enum power_states state)
+void _sys_pm_power_state_exit_post_ops(enum power_states state)
 {
 	switch (state) {
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
