@@ -2703,7 +2703,9 @@ static int ping_ipv6(const struct shell *shell, char *host)
 	ret = net_icmpv6_send_echo_request(iface,
 					   &ipv6_target,
 					   sys_rand32_get(),
-					   sys_rand32_get());
+					   sys_rand32_get(),
+					   NULL,
+					   0);
 	if (ret) {
 		remove_ipv6_ping_handler();
 	} else {
