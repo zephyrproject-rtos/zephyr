@@ -63,18 +63,34 @@ struct lp3943_data {
 static int lp3943_get_led_reg(u32_t *led, u8_t *reg)
 {
 	switch (*led) {
-	case 0 ... 3:
+	case 0:
+	case 1:
+	case 2:
+		/* Fall through */
+	case 3:
 		*reg = LP3943_LS0;
 		break;
-	case 4 ... 7:
+	case 4:
+	case 5:
+	case 6:
+		/* Fall through */
+	case 7:
 		*reg = LP3943_LS1;
 		*led -= 4;
 		break;
-	case 8 ... 11:
+	case 8:
+	case 9:
+	case 10:
+		/* Fall through */
+	case 11:
 		*reg = LP3943_LS2;
 		*led -= 8;
 		break;
-	case 12 ... 15:
+	case 12:
+	case 13:
+	case 14:
+		/* Fall through */
+	case 15:
 		*reg = LP3943_LS3;
 		*led -= 12;
 		break;
