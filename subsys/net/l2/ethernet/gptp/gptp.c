@@ -19,9 +19,7 @@ LOG_MODULE_REGISTER(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 
 #include "gptp_private.h"
 
-#if !defined(CONFIG_NET_GPTP_STACK_SIZE)
-#define CONFIG_NET_GPTP_STACK_SIZE 2048
-#endif
+#define NET_GPTP_STACK_SIZE 2048
 
 #if CONFIG_NET_GPTP_NUM_PORTS > 32
 /*
@@ -32,8 +30,7 @@ LOG_MODULE_REGISTER(net_gptp, CONFIG_NET_GPTP_LOG_LEVEL);
 #error Maximum number of ports exceeded. (Max is 32).
 #endif
 
-NET_STACK_DEFINE(GPTP, gptp_stack, CONFIG_NET_GPTP_STACK_SIZE,
-		CONFIG_NET_GPTP_STACK_SIZE);
+NET_STACK_DEFINE(GPTP, gptp_stack, NET_GPTP_STACK_SIZE, NET_GPTP_STACK_SIZE);
 K_FIFO_DEFINE(gptp_rx_queue);
 
 static k_tid_t tid;
