@@ -43,6 +43,26 @@ config UART_NS16550_PORT_1_OPTIONS
 
 endif # UART_NS16550_PORT_1
 
+config UART_NS16550_PORT_2
+	default y
+
+if UART_NS16550_PORT_2
+
+config UART_NS16550_PORT_2_OPTIONS
+	default 0
+
+endif # UART_NS16550_PORT_2
+
+config UART_NS16550_PORT_3
+	default y
+
+if UART_NS16550_PORT_3
+
+config UART_NS16550_PORT_3_OPTIONS
+	default 0
+
+endif # UART_NS16550_PORT_3
+
 endif # UART_NS16550
 
 endif
