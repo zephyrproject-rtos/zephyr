@@ -62,10 +62,10 @@ struct z_app_region {
 	size_t bss_size;
 };
 
-#define Z_APP_START(id) data_smem_##id##_start
-#define Z_APP_SIZE(id) data_smem_##id##_size
-#define Z_APP_BSS_START(id) data_smem_##id##_bss_start
-#define Z_APP_BSS_SIZE(id) data_smem_##id##_bss_size
+#define Z_APP_START(id) z_data_smem_##id##_part_start
+#define Z_APP_SIZE(id) z_data_smem_##id##_part_size
+#define Z_APP_BSS_START(id) z_data_smem_##id##_bss_start
+#define Z_APP_BSS_SIZE(id) z_data_smem_##id##_bss_size
 
 /* If a partition is declared with K_APPMEM_PARTITION, but never has any
  * data assigned to its contents, then no symbols with its prefix will end
