@@ -84,7 +84,7 @@ static inline void adc_context_request_next_sampling(struct adc_context *ctx)
 		 * complete. Instead, note this fact, and inform the user about
 		 * it after the sequence is done.
 		 */
-		ctx->status = -EIO;
+		ctx->status = -EBUSY;
 	}
 }
 
