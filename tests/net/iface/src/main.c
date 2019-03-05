@@ -109,7 +109,7 @@ static void net_iface_init(struct net_if *iface)
 
 static int sender_iface(struct device *dev, struct net_pkt *pkt)
 {
-	if (!pkt->frags) {
+	if (!pkt->buffer) {
 		DBG("No data to send!\n");
 		return -ENODATA;
 	}
@@ -420,10 +420,11 @@ static bool send_iface(struct net_if *iface, int val, bool expect_fail)
 	struct net_pkt *pkt;
 	int ret;
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
-	net_pkt_set_iface(pkt, iface);
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(data),
+					AF_UNSPEC, 0, K_FOREVER);
 
-	net_pkt_append_all(pkt, sizeof(data), data, K_FOREVER);
+	net_pkt_write_new(pkt, data, sizeof(data));
+	net_pkt_cursor_init(pkt);
 
 	ret = net_send_data(pkt);
 	if (!expect_fail && ret < 0) {
