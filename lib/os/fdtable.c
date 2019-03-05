@@ -227,6 +227,12 @@ int ioctl(int fd, unsigned long request, ...)
 	return res;
 }
 
+/*
+ * In the SimpleLink case, we have yet to add support for the fdtable
+ * feature. The socket offload subsys has already defined fcntl, hence we
+ * avoid redefining fcntl here.
+ */
+#ifndef CONFIG_SOC_FAMILY_TISIMPLELINK
 int fcntl(int fd, int cmd, ...)
 {
 	va_list args;
@@ -251,6 +257,7 @@ int fcntl(int fd, int cmd, ...)
 
 	return res;
 }
+#endif
 
 /*
  * fd operations for stdio/stdout/stderr
