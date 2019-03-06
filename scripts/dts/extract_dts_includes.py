@@ -441,7 +441,9 @@ def yaml_inc_error(msg):
 def generate_defines():
     # Generates #defines (and .conf file values) from DTS
 
-    for node_path in reduced.keys():
+    # sorted() otherwise Python < 3.6 randomizes the order of the flash
+    # partition table
+    for node_path in sorted(reduced.keys()):
         generate_node_defines(node_path)
 
     if not defs:
