@@ -169,9 +169,15 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 	if (key) {
 		return;
 	}
-	__asm__ volatile("cpsie i" : : : "memory");
+	__asm__ volatile(
+		"cpsie i;"
+		"isb"
+		: : : "memory");
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	__asm__ volatile("msr BASEPRI, %0" :  : "r"(key) : "memory");
+	__asm__ volatile(
+		"msr BASEPRI, %0;"
+		"isb;"
+		:  : "r"(key) : "memory");
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
