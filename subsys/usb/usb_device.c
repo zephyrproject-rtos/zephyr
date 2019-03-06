@@ -1051,10 +1051,7 @@ int usb_enable(struct usb_cfg_data *config)
 	}
 
 	usb_register_status_callback(forward_status_cb);
-	ret = usb_dc_set_status_callback(forward_status_cb);
-	if (ret < 0) {
-		return ret;
-	}
+	usb_dc_set_status_callback(forward_status_cb);
 
 	ret = usb_dc_attach();
 	if (ret < 0) {
@@ -1577,10 +1574,7 @@ static int usb_composite_init(struct device *dev)
 	usb_register_custom_req_handler(custom_handler);
 
 	usb_register_status_callback(forward_status_cb);
-	ret = usb_dc_set_status_callback(forward_status_cb);
-	if (ret < 0) {
-		return ret;
-	}
+	usb_dc_set_status_callback(forward_status_cb);
 
 	/* Enable VBUS if needed */
 	ret = usb_vbus_set(true);

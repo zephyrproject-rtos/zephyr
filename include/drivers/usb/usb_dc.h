@@ -173,10 +173,8 @@ int usb_dc_set_address(const u8_t addr);
  * The status code are described by the usb_dc_status_code enumeration.
  *
  * @param[in] cb Callback function
- *
- * @return 0 on success, negative errno code on fail.
  */
-int usb_dc_set_status_callback(const usb_dc_status_callback cb);
+void usb_dc_set_status_callback(const usb_dc_status_callback cb);
 
 /**
  * @brief check endpoint capabilities
