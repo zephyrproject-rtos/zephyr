@@ -2,6 +2,8 @@
 import re
 from collections import OrderedDict
 
+result_re = re.compile("(PASS|FAIL|SKIP) - (test_)?(.*)")
+
 class Harness:
     GCOV_START = "GCOV_COVERAGE_DUMP_START"
     GCOV_END = "GCOV_COVERAGE_DUMP_END"
@@ -41,15 +43,23 @@ class Harness:
 
 class Console(Harness):
 
+    def configure(self, instance):
+        super(Console, self).configure(instance)
+        if self.type == "one_line":
+            self.pattern = re.compile(self.regex[0])
+        elif self.type == "multi_line":
+            self.patterns = []
+            for r in self.regex:
+                self.patterns.append(re.compile(r))
+
     def handle(self, line):
 
         if self.type == "one_line":
-            pattern = re.compile(self.regex[0])
-            if pattern.search(line):
+            if self.pattern.search(line):
                 self.state = "passed"
         elif self.type == "multi_line":
-            for r in self.regex:
-                pattern = re.compile(r)
+            for i, pattern in enumerate(self.patterns):
+                r = self.regex[i]
                 if pattern.search(line) and not r in self.matches:
                     self.matches[r] = line
 
@@ -85,14 +95,13 @@ class Console(Harness):
         else:
             self.tests[self.id] = "FAIL"
 
+
 class Test(Harness):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
 
-
     def handle(self, line):
-        result = re.compile("(PASS|FAIL|SKIP) - (test_)?(.*)")
-        match = result.match(line)
+        match = result_re.match(line)
         if match:
             name = "{}.{}".format(self.id, match.group(3))
             self.tests[name] = match.group(1)
