@@ -78,7 +78,7 @@ LOG_MODULE_REGISTER(usb_cdc_acm);
 #define ACM_IN_EP_IDX			2
 
 struct usb_cdc_acm_config {
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
+#if (CONFIG_USB_COMPOSITE_DEVICE || CONFIG_CDC_ACM_IAD)
 	struct usb_association_descriptor iad_cdc;
 #endif
 	struct usb_if_descriptor if0;
@@ -989,7 +989,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		.endpoint = cdc_acm_ep_data_##x,			\
 	};
 
-#if CONFIG_USB_COMPOSITE_DEVICE
+#if (CONFIG_USB_COMPOSITE_DEVICE || CONFIG_CDC_ACM_IAD)
 #define DEFINE_CDC_ACM_DESCR(x, int_ep_addr, out_ep_addr, in_ep_addr)	\
 	USBD_CLASS_DESCR_DEFINE(primary, x)				\
 	struct usb_cdc_acm_config cdc_acm_cfg_##x = {			\
@@ -1014,7 +1014,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 					CONFIG_CDC_ACM_BULK_EP_MPS,	\
 					0x00),				\
 }
-#else /* CONFIG_USB_COMPOSITE_DEVICE */
+#else /* (CONFIG_USB_COMPOSITE_DEVICE || CONFIG_CDC_ACM_IAD) */
 #define DEFINE_CDC_ACM_DESCR(x, int_ep_addr, out_ep_addr, in_ep_addr)	\
 	USBD_CLASS_DESCR_DEFINE(primary, x)				\
 	struct usb_cdc_acm_config cdc_acm_cfg_##x = {			\
@@ -1038,7 +1038,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 					CONFIG_CDC_ACM_BULK_EP_MPS,	\
 					0x00),				\
 }
-#endif /* CONFIG_USB_COMPOSITE_DEVICE */
+#endif /* (CONFIG_USB_COMPOSITE_DEVICE || CONFIG_CDC_ACM_IAD) */
 
 #define DEFINE_CDC_ACM_DEV_DATA(x, _)					\
 	RING_BUF_DECLARE(rx_ringbuf_##x,				\
