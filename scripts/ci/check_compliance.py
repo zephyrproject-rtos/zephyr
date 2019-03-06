@@ -715,7 +715,7 @@ def main():
     xml = JUnitXml()
     xml.add_testsuite(suite)
     xml.update_statistics()
-    xml.write(args.output)
+    xml.write(args.output, pretty=True)
 
     failed_cases = []
 
