@@ -2171,8 +2171,8 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
  * @brief Allocate a network packet and buffer at once
  *
  * @param iface   The network interface the packet is supposed to go through.
- * @param size    The size of buffer being requested.
- * @param family  The family to which the packet belongs to.
+ * @param size    The size of buffer.
+ * @param family  The family to which the packet belongs.
  * @param proto   The IP protocol type (can be 0 for none).
  * @param timeout Maximum time in milliseconds to wait for an allocation.
  *
@@ -2240,14 +2240,14 @@ void net_pkt_trim_buffer(struct net_pkt *pkt);
  *
  * Note: This will initialize the net_pkt cursor from its buffer.
  *
- * @param pkt The net_pkt which cursor is going to be initialized
+ * @param pkt The net_pkt whose cursor is going to be initialized
  */
 void net_pkt_cursor_init(struct net_pkt *pkt);
 
 /**
  * @brief Backup net_pkt cursor
  *
- * @param pkt    The net_pkt which cursor is going to be backed up
+ * @param pkt    The net_pkt whose cursor is going to be backed up
  * @param backup The cursor where to backup net_pkt cursor
  */
 static inline void net_pkt_cursor_backup(struct net_pkt *pkt,
@@ -2260,7 +2260,7 @@ static inline void net_pkt_cursor_backup(struct net_pkt *pkt,
 /**
  * @brief Restore net_pkt cursor from a backup
  *
- * @param pkt    The net_pkt which cursor is going to be restored
+ * @param pkt    The net_pkt whose cursor is going to be restored
  * @param backup The cursor from where to restore net_pkt cursor
  */
 static inline void net_pkt_cursor_restore(struct net_pkt *pkt,
@@ -2273,7 +2273,7 @@ static inline void net_pkt_cursor_restore(struct net_pkt *pkt,
 /**
  * @brief Returns current position of the cursor
  *
- * @param pkt The net_pkt which cursor's position is going to be returned
+ * @param pkt The net_pkt whose cursor position is going to be returned
  *
  * @return cursor's position
  */
@@ -2286,12 +2286,12 @@ static inline void *net_pkt_cursor_get_pos(struct net_pkt *pkt)
  * @brief Skip some data from a net_pkt
  *
  * Note: net_pkt's cursor should be properly initialized
- *       Cursor will be updated according to parameter.
+ *       Cursor position will be updated after the operation.
  *       Depending on the value of pkt->overwrite bit, this function
  *       will affect the buffer length or not: if it's 0, skip will
  *       actually apply the move in the buffer as it had written in it.
  *
- * @param pkt    The net_pkt which cursor will be updated to skip given
+ * @param pkt    The net_pkt whose cursor will be updated to skip given
  *               amount of data from the buffer.
  * @param length Amount of data to skip in the buffer
  *
@@ -2302,12 +2302,12 @@ int net_pkt_skip(struct net_pkt *pkt, size_t length);
 /**
  * @brief Memset some data in a net_pkt
  *
- * Note: net_pkt's cursor should be properly initialized and,
- *       eventually, properly positioned using net_pkt_skip.
- *       Cursor will be updated according to parameter.
+ * Note: net_pkt's cursor should be properly initialized and, if needed,
+ *       positioned using net_pkt_skip.
+ *       Cursor position will be updated after the operation.
  *
- * @param pkt    The net_pkt which cursor will be updated to skip given
- *               amount of data from the buffer.
+ * @param pkt    The net_pkt whose buffer to fill starting at the current
+ *               cursor position.
  * @param byte   The byte to write in memory
  * @param length Amount of data to memset with given byte
  *
@@ -2318,9 +2318,9 @@ int net_pkt_memset(struct net_pkt *pkt, int byte, size_t length);
 /**
  * @brief Copy data from a packet into another one.
  *
- * Note: Both net_pkt cursors should be properly initialized and,
- *       eventually, properly positioned using net_pkt_skip.
- *       Cursors will be updated according to parameters.
+ * Note: Both net_pkt cursors should be properly initialized and, if needed,
+ *       positioned using net_pkt_skip.
+ *       The cursors will be updated after the operation.
  *
  * @param pkt_dst Destination network packet.
  * @param pkt_src Source network packet.
@@ -2345,9 +2345,9 @@ struct net_pkt *net_pkt_clone(struct net_pkt *pkt, s32_t timeout);
 /**
  * @brief Read some data from a net_pkt
  *
- * Note: net_pkt's cursor should be properly initialized and,
- *       eventually, properly positioned using net_pkt_skip.
- *       Cursor will be updated according to parameters.
+ * Note: net_pkt's cursor should be properly initialized and, if needed,
+ *       positioned using net_pkt_skip.
+ *       Cursor position will be updated after the operation.
  * @param pkt    The network packet from where to read some data
  * @param data   The destination buffer where to copy the data
  * @param length The amount of data to copy
@@ -2367,7 +2367,7 @@ static inline int net_pkt_read_u8_new(struct net_pkt *pkt, u8_t *data)
  *
  * Note: net_pkt's cursor should be properly initialized and,
  *       eventually, properly positioned using net_pkt_skip.
- *       Cursor will be updated according to parameters.
+ *       Cursor position will be updated after the operation.
  *
  * @param pkt  The network packet from where to read
  * @param data The destination u16_t where to copy the data
@@ -2381,7 +2381,7 @@ int net_pkt_read_be16_new(struct net_pkt *pkt, u16_t *data);
  *
  * Note: net_pkt's cursor should be properly initialized and,
  *       eventually, properly positioned using net_pkt_skip.
- *       Cursor will be updated according to parameters.
+ *       Cursor position will be updated after the operation.
  *
  * @param pkt  The network packet from where to read
  * @param data The destination u32_t where to copy the data
@@ -2393,9 +2393,9 @@ int net_pkt_read_be32_new(struct net_pkt *pkt, u32_t *data);
 /**
  * @brief Write data into a net_pkt
  *
- * Note: net_pkt's cursor should be properly initialized and,
- *       eventually, properly positioned using net_pkt_skip_read/write.
- *       Cursor will be updated according to parameters.
+ * Note: net_pkt's cursor should be properly initialized and, if needed,
+ *       positioned using net_pkt_skip.
+ *       Cursor position will be updated after the operation.
  *
  * @param pkt    The network packet where to write
  * @param data   Data to be written
@@ -2484,8 +2484,8 @@ u16_t net_pkt_get_current_offset(struct net_pkt *pkt);
 /**
  * @brief Check if a data size could fit contiguously
  *
- * Note: net_pkt's cursor should be properly initialized and,
- *       eventually, properly positioned using net_pkt_skip_read/write.
+ * Note: net_pkt's cursor should be properly initialized and, if needed,
+ *       positioned using net_pkt_skip.
  *
  * @param pkt  Network packet.
  * @param size The size to check for contiguity
@@ -2529,9 +2529,9 @@ struct net_pkt_data_access {
 /**
  * @brief Get data from a network packet in a contiguous way
  *
- * Note: net_pkt's cursor should be properly initialized and,
- *       eventually, properly positioned using net_pkt_skip_read/write.
- *       Cursor will be updated according to parameters.
+ * Note: net_pkt's cursor should be properly initialized and, if needed,
+ *       positioned using net_pkt_skip.
+ *       Cursor position will be updated after the operation.
  *
  * @param pkt    The network packet from where to get the data.
  * @param access A pointer to a valid net_pkt_data_access describing the
@@ -2545,9 +2545,9 @@ void *net_pkt_get_data_new(struct net_pkt *pkt,
 /**
  * @brief Set contiguous data into a network packet
  *
- * Note: net_pkt's cursor should be properly initialized and,
- *       eventually, properly positioned using net_pkt_skip_read/write.
- *       Cursor will be updated according to parameters.
+ * Note: net_pkt's cursor should be properly initialized and, if needed,
+ *       properly positioned using net_pkt_skip.
+ *       Cursor position will be updated after the operation.
  *
  * @param pkt    The network packet to where the data should be set.
  * @param access A pointer to a valid net_pkt_data_access describing the
