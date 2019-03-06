@@ -65,5 +65,8 @@ int __swap(int key)
 	/* clear mask or enable all irqs to take a pendsv */
 	irq_unlock(0);
 
+	/* Context switch is performed here. Returning implies the
+	 * thread has been context-switched-in again.
+	 */
 	return _current->arch.swap_return_value;
 }
