@@ -137,7 +137,7 @@ static int ccm_ctr_mode(uint8_t *out, unsigned int outlen, const uint8_t *in,
 int tc_ccm_generation_encryption(uint8_t *out, unsigned int olen,
 				 const uint8_t *associated_data,
 				 unsigned int alen, const uint8_t *payload,
-				 unsigned int plen, TCCcmMode_t c)
+				 unsigned int plen, TCCcmMode_t c, uint8_t *pTag)
 {
 
 	/* input sanity check: */
@@ -147,7 +147,7 @@ int tc_ccm_generation_encryption(uint8_t *out, unsigned int olen,
 		((alen > 0) && (associated_data == (uint8_t *) 0)) ||
 		(alen >= TC_CCM_AAD_MAX_BYTES) || /* associated data size unsupported */
 		(plen >= TC_CCM_PAYLOAD_MAX_BYTES) || /* payload size unsupported */
-		(olen < (plen + c->mlen))) {  /* invalid output buffer size */
+		(olen < plen)) {  /* invalid output buffer size */
 		return TC_CRYPTO_FAIL;
 	}
 
@@ -187,9 +187,8 @@ int tc_ccm_generation_encryption(uint8_t *out, unsigned int olen,
 
 	/* encrypting b and adding the tag to the output: */
 	(void) tc_aes_encrypt(b, b, c->sched);
-	out += plen;
 	for (i = 0; i < c->mlen; ++i) {
-		*out++ = tag[i] ^ b[i];
+		*pTag++ = tag[i] ^ b[i];
 	}
 
 	return TC_CRYPTO_SUCCESS;
@@ -198,7 +197,8 @@ int tc_ccm_generation_encryption(uint8_t *out, unsigned int olen,
 int tc_ccm_decryption_verification(uint8_t *out, unsigned int olen,
 				   const uint8_t *associated_data,
 				   unsigned int alen, const uint8_t *payload,
-				   unsigned int plen, TCCcmMode_t c)
+				   unsigned int plen, TCCcmMode_t c,
+				   const uint8_t *pTag)
 {
 
 	/* input sanity check: */
@@ -208,9 +208,9 @@ int tc_ccm_decryption_verification(uint8_t *out, unsigned int olen,
 	    ((alen > 0) && (associated_data == (uint8_t *) 0)) ||
 	    (alen >= TC_CCM_AAD_MAX_BYTES) || /* associated data size unsupported */
 	    (plen >= TC_CCM_PAYLOAD_MAX_BYTES) || /* payload size unsupported */
-	    (olen < plen - c->mlen)) { /* invalid output buffer size */
+	    (olen < plen)) { /* invalid output buffer size */
 		return TC_CRYPTO_FAIL;
-  }
+	}
 
 	uint8_t b[Nb * Nk];
 	uint8_t tag[Nb * Nk];
@@ -226,14 +226,14 @@ int tc_ccm_decryption_verification(uint8_t *out, unsigned int olen,
 	b[14] = b[15] = TC_ZERO_BYTE; /* initial counter value is 0 */
 
 	/* decrypting payload using ctr mode: */
-	ccm_ctr_mode(out, plen - c->mlen, payload, plen - c->mlen, b, c->sched);
+	ccm_ctr_mode(out, plen, payload, plen, b, c->sched);
 
 	b[14] = b[15] = TC_ZERO_BYTE; /* restoring initial counter value (0) */
 
 	/* encrypting b and restoring the tag from input: */
 	(void) tc_aes_encrypt(b, b, c->sched);
 	for (i = 0; i < c->mlen; ++i) {
-		tag[i] = *(payload + plen - c->mlen + i) ^ b[i];
+		tag[i] = *(pTag + i) ^ b[i];
 	}
 
 	/* VERIFYING THE AUTHENTICATION TAG: */
@@ -243,8 +243,8 @@ int tc_ccm_decryption_verification(uint8_t *out, unsigned int olen,
 	for (i = 1; i < 14; ++i) {
 		b[i] = c->nonce[i - 1];
 	}
-	b[14] = (uint8_t)((plen - c->mlen) >> 8);
-	b[15] = (uint8_t)(plen - c->mlen);
+	b[14] = (uint8_t)(plen >> 8);
+	b[15] = (uint8_t)plen;
 
 	/* computing the authentication tag using cbc-mac: */
 	(void) tc_aes_encrypt(b, b, c->sched);
@@ -252,7 +252,7 @@ int tc_ccm_decryption_verification(uint8_t *out, unsigned int olen,
 		ccm_cbc_mac(b, associated_data, alen, 1, c->sched);
 	}
 	if (plen > 0) {
-		ccm_cbc_mac(b, out, plen - c->mlen, 0, c->sched);
+		ccm_cbc_mac(b, out, plen, 0, c->sched);
 	}
 
 	/* comparing the received tag and the computed one: */
@@ -260,7 +260,7 @@ int tc_ccm_decryption_verification(uint8_t *out, unsigned int olen,
 		return TC_CRYPTO_SUCCESS;
   	} else {
 		/* erase the decrypted buffer in case of mac validation failure: */
-		_set(out, 0, plen - c->mlen);
+		_set(out, 0, plen);
 		return TC_CRYPTO_FAIL;
 	}
 }

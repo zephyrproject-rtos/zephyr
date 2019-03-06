@@ -114,24 +114,13 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 	}
 
 	if (tc_ccm_generation_encryption(op->out_buf, op->out_buf_max,
-					 aead_op->ad, aead_op->ad_len, op->in_buf,
-					 op->in_len, &ccm) == TC_CRYPTO_FAIL) {
+				aead_op->ad, aead_op->ad_len, op->in_buf,
+				op->in_len, &ccm, aead_op->tag) == TC_CRYPTO_FAIL) {
 		LOG_ERR("TC internal error during CCM Encryption OP");
 		return -EIO;
 	}
 
-	/* Looks like TinyCrypt appends the MAC to the end of out_buf as it
-	 * does not give a separate hash parameter. The user needs to be aware
-	 * of this and provide sufficient buffer space in output buffer to hold
-	 * both encrypted output and hash
-	 */
-	aead_op->tag = op->out_buf + op->in_len;
-
-	/* Before returning TC_CRYPTO_SUCCESS, tc_ccm_generation_encryption()
-	 * will advance the output buffer pointer by op->in_len bytes,
-	 * and then increment it ccm.mlen times (while writing to it).
-	 */
-	op->out_len = op->in_len + ccm.mlen;
+	op->out_len = op->in_len;
 
 	return 0;
 }
@@ -151,25 +140,15 @@ static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
 		return -EIO;
 	}
 
-	/* TinyCrypt expects the hash/MAC to be present at the end of in_buf
-	 * as it doesnt take a separate hash parameter. Ideally this should
-	 * be moved to a ctx.flag check during session_setup, later.
-	 */
-	if (aead_op->tag != op->in_buf + op->in_len) {
-		LOG_ERR("TC needs contiguous hash  at the end of inbuf");
-		return -EIO;
-	}
-
 	if (tc_ccm_decryption_verification(op->out_buf, op->out_buf_max,
 					   aead_op->ad, aead_op->ad_len,
-					   op->in_buf,
-					   op->in_len + ccm_param->tag_len,
-					   &ccm) == TC_CRYPTO_FAIL) {
+					   op->in_buf, op->in_len, &ccm,
+					   aead_op->tag) == TC_CRYPTO_FAIL) {
 		LOG_ERR("TC internal error during CCM decryption OP");
 		return -EIO;
 	}
 
-	op->out_len = op->in_len + ccm_param->tag_len;
+	op->out_len = op->in_len;
 
 	return 0;
 }

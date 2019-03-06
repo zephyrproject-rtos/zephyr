@@ -59,6 +59,7 @@
 #define HEADER_LEN 8
 #define M_LEN8 8
 #define M_LEN10 10
+#define M_MAX_LEN 16
 #define DATA_BUF_LEN23 23
 #define DATA_BUF_LEN24 24
 #define DATA_BUF_LEN25 25
@@ -76,6 +77,7 @@ u32_t do_test(const u8_t *key,
 		 const int mlen)
 {
 	u32_t result = TC_PASS;
+	u8_t tag[M_MAX_LEN];
 	u8_t ciphertext[CIPHERTEXT_LEN];
 	u8_t decrypted[DECRYPTED_LEN];
 	struct tc_ccm_mode_struct c;
@@ -89,10 +91,12 @@ u32_t do_test(const u8_t *key,
 	zassert_true(result, "CCM config failed");
 
 	result = tc_ccm_generation_encryption(ciphertext, sizeof(ciphertext),
-					      hdr, hlen, data, dlen, &c);
+					      hdr, hlen, data, dlen, &c, tag);
 
 	/**TESTPOINT: Check CCM encrypt*/
 	zassert_true(result, "ccm_encrypt failed");
+
+	memcpy(ciphertext+dlen, tag, mlen);
 
 	/**TESTPOINT: Verify ciphertext*/
 	if (memcmp(expected, ciphertext, elen) != 0) {
@@ -105,7 +109,7 @@ u32_t do_test(const u8_t *key,
 
 	result = tc_ccm_decryption_verification(decrypted, sizeof(decrypted),
 						hdr, hlen, ciphertext,
-						dlen + mlen, &c);
+						dlen, &c, tag);
 
 	/**TESTPOINT: Check decryption*/
 	if (result == 0) {
@@ -376,6 +380,7 @@ void test_ccm_vector_7(void)
 	};
 	struct tc_ccm_mode_struct c;
 	struct tc_aes_key_sched_struct sched;
+	u8_t tag[M_MAX_LEN];
 	u8_t decrypted[DECRYPTED_LEN];
 	u8_t ciphertext[CIPHERTEXT_LEN];
 	u16_t mlen = M_LEN10;
@@ -390,13 +395,15 @@ void test_ccm_vector_7(void)
 		"ccm_config failed");
 
 	result = tc_ccm_generation_encryption(ciphertext, sizeof(ciphertext),
-					      hdr, 0, data, sizeof(data), &c);
+					      hdr, 0, data, sizeof(data), &c, tag);
 	/**TESTPOINT: Check CCM encryption*/
 	zassert_true(result, "ccm_encryption failed");
 
+	memcpy(ciphertext+sizeof(data), tag, mlen);
+
 	result = tc_ccm_decryption_verification(decrypted, sizeof(decrypted),
 						hdr, 0, ciphertext,
-						sizeof(data) + mlen, &c);
+						sizeof(data), &c, tag);
 
 	if (result == 0) {
 		TC_ERROR("ccm_decrypt failed in %s.\n", __func__);
@@ -433,6 +440,7 @@ void test_ccm_vector_8(void)
 	u8_t data[] = {};
 	struct tc_ccm_mode_struct c;
 	struct tc_aes_key_sched_struct sched;
+	u8_t tag[M_MAX_LEN];
 	u8_t decrypted[DECRYPTED_LEN];
 	u8_t ciphertext[CIPHERTEXT_LEN];
 	u16_t mlen = M_LEN10;
@@ -447,13 +455,15 @@ void test_ccm_vector_8(void)
 
 	result = tc_ccm_generation_encryption(ciphertext, sizeof(ciphertext),
 					      hdr, sizeof(hdr), data,
-					      sizeof(data), &c);
+					      sizeof(data), &c, tag);
 	/**TESTPOINT: Check CCM encryption*/
 	zassert_true(result, "ccm_encrypt failed");
 
+	memcpy(ciphertext+sizeof(data), tag, mlen);
+
 	result = tc_ccm_decryption_verification(decrypted, sizeof(decrypted),
-						hdr, sizeof(hdr),
-						ciphertext, mlen, &c);
+						hdr, sizeof(hdr), ciphertext,
+						sizeof(data), &c, tag);
 	/**TESTPOINT: Check CCM decryption*/
 	if (result == 0) {
 		show_str("\t\tExpected", data, sizeof(data));
