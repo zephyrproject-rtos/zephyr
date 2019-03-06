@@ -9,7 +9,7 @@
 #define BUF_SZ 1024
 
 static int pos;
-char ram_console[BUF_SZ];
+char pk_console[BUF_SZ];
 
 void __printk_hook_install(int (*fn)(int));
 void *__printk_get_hook(void);
@@ -53,7 +53,7 @@ void *ptr = (void *)0xBEEF;
 
 static int ram_console_out(int character)
 {
-	ram_console[pos] = (char)character;
+	pk_console[pos] = (char)character;
 	pos = (pos + 1) % BUF_SZ;
 	return _old_char_out(character);
 }
@@ -88,39 +88,39 @@ void test_printk(void)
 	printk("%-8u%-6d%-4x%-2p%8d\n", 0xFF, 42, 0xABCDEF, (char *)42, 42);
 	printk("%lld %lld %llu %llx\n", 0xFFFFFFFFFULL, -1LL, -1ULL, -1ULL);
 
-	ram_console[pos] = '\0';
-	zassert_true((strcmp(ram_console, expected) == 0), "printk failed");
+	pk_console[pos] = '\0';
+	zassert_true((strcmp(pk_console, expected) == 0), "printk failed");
 
-	(void)memset(ram_console, 0, sizeof(ram_console));
+	(void)memset(pk_console, 0, sizeof(pk_console));
 	count = 0;
 
-	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%zu %hhu %hu %u %lu %llu\n",
 			  stv, uc, usi, ui, ul, ull);
-	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%c %hhd %hd %d %ld %lld\n", c, c, ssi, si, sl, sll);
-	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "0x%x %p\n", hex, ptr);
-	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "0x%x 0x%02x 0x%04x 0x%08x 0x%016x\n", 1, 1, 1, 1, 1);
-	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "0x%x 0x%2x 0x%4x 0x%8x\n", 1, 1, 1, 1);
-	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%d %02d %04d %08d\n", 42, 42, 42, 42);
-	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%d %02d %04d %08d\n", -42, -42, -42, -42);
-	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%u %2u %4u %8u\n", 42, 42, 42, 42);
-	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%u %02u %04u %08u\n", 42, 42, 42, 42);
-	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%-8u%-6d%-4x%-2p%8d\n",
 			  0xFF, 42, 0xABCDEF, (char *)42, 42);
-	count += snprintk(ram_console + count, sizeof(ram_console) - count,
+	count += snprintk(pk_console + count, sizeof(pk_console) - count,
 			  "%lld %lld %llu %llx\n",
 			  0xFFFFFFFFFULL, -1LL, -1ULL, -1ULL);
-	ram_console[count] = '\0';
-	zassert_true((strcmp(ram_console, expected) == 0), "snprintk failed");
+	pk_console[count] = '\0';
+	zassert_true((strcmp(pk_console, expected) == 0), "snprintk failed");
 }
 /**
  * @}
