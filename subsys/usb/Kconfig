@@ -18,6 +18,8 @@ module = USB_DEVICE
 module-str = usb device
 source "subsys/logging/Kconfig.template.log_config"
 
+source "samples/subsys/usb/usb_pid.Kconfig"
+
 config USB_DEVICE_VID
 	hex "USB Vendor ID"
 	default 0x2FE3
@@ -26,7 +28,7 @@ config USB_DEVICE_VID
 
 config USB_DEVICE_PID
 	hex "USB Product ID"
-	default 0x100
+	default 0x0100
 	help
 	  USB device product ID. MUST be configured by vendor.
 
