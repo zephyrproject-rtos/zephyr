@@ -831,12 +831,11 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 	return 0;
 }
 
-int usb_dc_set_status_callback(const usb_dc_status_callback cb)
+void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 {
-	dev_data.status_cb = cb;
 	LOG_DBG("");
 
-	return 0;
+	dev_data.status_cb = cb;
 }
 
 int usb_dc_ep_mps(const u8_t ep)

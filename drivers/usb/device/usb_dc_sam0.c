@@ -251,13 +251,11 @@ int usb_dc_set_address(const u8_t addr)
 	return 0;
 }
 
-int usb_dc_set_status_callback(const usb_dc_status_callback cb)
+void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 {
 	struct usb_sam0_data *data = usb_sam0_get_data();
 
 	data->cb = cb;
-
-	return 0;
 }
 
 int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
