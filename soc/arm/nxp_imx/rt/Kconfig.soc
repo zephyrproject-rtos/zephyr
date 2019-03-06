@@ -121,6 +121,7 @@ config SOC_MIMXRT1062
 	select HAS_MCUX_CCM
 	select HAS_MCUX_ELCDIF
 	select HAS_MCUX_ENET
+	select HAS_MCUX_PWM
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPUART
@@ -143,6 +144,7 @@ config SOC_MIMXRT1064
 	select HAS_MCUX_CCM
 	select HAS_MCUX_ELCDIF
 	select HAS_MCUX_ENET
+	select HAS_MCUX_PWM
 	select HAS_MCUX_IGPIO
 	select HAS_MCUX_LPI2C
 	select HAS_MCUX_LPUART

@@ -50,6 +50,13 @@ config I2C_MCUX_LPI2C
 
 endif # I2C
 
+if PWM
+
+config PWM_MCUX
+	default y if HAS_MCUX_PWM
+
+endif # PWM
+
 if NET_L2_ETHERNET
 
 config ETH_MCUX
