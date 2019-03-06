@@ -89,13 +89,15 @@
 };
 
 &i2c1 {
-	status = "ok";
+	/* Cannot be used together with spi1. */
+	/* status = "ok"; */
 	sda-pin = <2>;
 	scl-pin = <3>;
 };
 
 &spi0 {
-	status = "ok";
+	/* Cannot be used together with i2c0. */
+	/* status = "ok"; */
 	sck-pin = <19>;
 	mosi-pin = <20>;
 	miso-pin = <21>;
