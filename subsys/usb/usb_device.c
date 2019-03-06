@@ -946,7 +946,6 @@ static int usb_vbus_set(bool on)
 	struct device *gpio_dev;
 
 	gpio_dev = device_get_binding(CONFIG_USB_VBUS_GPIO_DEV_NAME);
-
 	if (!gpio_dev) {
 		LOG_DBG("USB requires GPIO. Cannot find %s!",
 			CONFIG_USB_VBUS_GPIO_DEV_NAME);
@@ -956,13 +955,15 @@ static int usb_vbus_set(bool on)
 	/* Enable USB IO */
 	ret = gpio_pin_configure(gpio_dev, CONFIG_USB_VBUS_GPIO_PIN_NUM,
 				 GPIO_DIR_OUT);
-	if (ret)
+	if (ret) {
 		return ret;
+	}
 
 	ret = gpio_pin_write(gpio_dev, CONFIG_USB_VBUS_GPIO_PIN_NUM,
 			     on == true ? 1 : 0);
-	if (ret)
+	if (ret) {
 		return ret;
+	}
 #endif
 
 	return 0;
@@ -970,8 +971,9 @@ static int usb_vbus_set(bool on)
 
 int usb_set_config(struct usb_cfg_data *config)
 {
-	if (!config)
+	if (!config) {
 		return -EINVAL;
+	}
 
 	/* register descriptors */
 	usb_register_descriptors(config->usb_device_description);
@@ -1003,7 +1005,7 @@ int usb_set_config(struct usb_cfg_data *config)
 	/* register class request handlers for each interface*/
 	if (config->interface.custom_handler != NULL) {
 		usb_register_custom_req_handler(
-		    config->interface.custom_handler);
+			config->interface.custom_handler);
 	}
 
 	return 0;
@@ -1038,14 +1040,15 @@ int usb_enable(struct usb_cfg_data *config)
 	u32_t i;
 	struct usb_dc_ep_cfg_data ep0_cfg;
 
-	if (true == usb_dev.enabled) {
+	if (usb_dev.enabled == true) {
 		return 0;
 	}
 
 	/* Enable VBUS if needed */
 	ret = usb_vbus_set(true);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	usb_register_status_callback(forward_status_cb);
 	ret = usb_dc_set_status_callback(forward_status_cb);
@@ -1054,8 +1057,9 @@ int usb_enable(struct usb_cfg_data *config)
 	}
 
 	ret = usb_dc_attach();
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	/* Configure control EP */
 	ep0_cfg.ep_mps = USB_MAX_CTRL_MPS;
@@ -1063,46 +1067,54 @@ int usb_enable(struct usb_cfg_data *config)
 
 	ep0_cfg.ep_addr = USB_CONTROL_OUT_EP0;
 	ret = usb_dc_ep_configure(&ep0_cfg);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	ep0_cfg.ep_addr = USB_CONTROL_IN_EP0;
 	ret = usb_dc_ep_configure(&ep0_cfg);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
-
-	/*register endpoint 0 handlers*/
-	ret = usb_dc_ep_set_callback(USB_CONTROL_OUT_EP0,
-	    usb_handle_control_transfer);
-	if (ret < 0)
-		return ret;
-	ret = usb_dc_ep_set_callback(USB_CONTROL_IN_EP0,
-	    usb_handle_control_transfer);
-	if (ret < 0)
-		return ret;
-
-	/*register endpoint handlers*/
-	for (i = 0U; i < config->num_endpoints; i++) {
-		ret = usb_dc_ep_set_callback(config->endpoint[i].ep_addr,
-		    config->endpoint[i].ep_cb);
-		if (ret < 0)
-			return ret;
 	}
 
-	/* init transfer slots */
+	/* Register endpoint 0 handlers*/
+	ret = usb_dc_ep_set_callback(USB_CONTROL_OUT_EP0,
+				     usb_handle_control_transfer);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = usb_dc_ep_set_callback(USB_CONTROL_IN_EP0,
+				     usb_handle_control_transfer);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* Register endpoint handlers*/
+	for (i = 0U; i < config->num_endpoints; i++) {
+		ret = usb_dc_ep_set_callback(config->endpoint[i].ep_addr,
+					     config->endpoint[i].ep_cb);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	/* Init transfer slots */
 	for (i = 0U; i < MAX_NUM_TRANSFERS; i++) {
 		k_work_init(&usb_dev.transfer[i].work, usb_transfer_work);
 		k_sem_init(&usb_dev.transfer[i].sem, 1, 1);
 	}
 
-	/* enable control EP */
+	/* Enable control EP */
 	ret = usb_dc_ep_enable(USB_CONTROL_OUT_EP0);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	ret = usb_dc_ep_enable(USB_CONTROL_IN_EP0);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	usb_dev.enabled = true;
 
@@ -1113,14 +1125,15 @@ int usb_disable(void)
 {
 	int ret;
 
-	if (true != usb_dev.enabled) {
+	if (usb_dev.enabled != true) {
 		/*Already disabled*/
 		return 0;
 	}
 
 	ret = usb_dc_detach();
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	/* Disable VBUS if needed */
 	usb_vbus_set(false);
@@ -1130,14 +1143,12 @@ int usb_disable(void)
 	return 0;
 }
 
-int usb_write(u8_t ep, const u8_t *data, u32_t data_len,
-		u32_t *bytes_ret)
+int usb_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *bytes_ret)
 {
 	return usb_dc_ep_write(ep, data, data_len, bytes_ret);
 }
 
-int usb_read(u8_t ep, u8_t *data, u32_t max_data_len,
-		u32_t *ret_bytes)
+int usb_read(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *ret_bytes)
 {
 	return usb_dc_ep_read(ep, data, max_data_len, ret_bytes);
 }
@@ -1152,8 +1163,7 @@ int usb_ep_clear_stall(u8_t ep)
 	return usb_dc_ep_clear_stall(ep);
 }
 
-int usb_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
-			u32_t *ret_bytes)
+int usb_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *ret_bytes)
 {
 	return usb_dc_ep_read_wait(ep, data, max_data_len, ret_bytes);
 }
@@ -1166,9 +1176,7 @@ int usb_ep_read_continue(u8_t ep)
 /* Transfer management */
 static struct usb_transfer_data *usb_ep_get_transfer(u8_t ep)
 {
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(usb_dev.transfer); i++) {
+	for (int i = 0; i < ARRAY_SIZE(usb_dev.transfer); i++) {
 		if (usb_dev.transfer[i].ep == ep) {
 			return &usb_dev.transfer[i];
 		}
@@ -1537,7 +1545,7 @@ static int usb_composite_init(struct device *dev)
 	struct usb_dc_ep_cfg_data ep0_cfg;
 	u8_t *device_descriptor;
 
-	if (true == usb_dev.enabled) {
+	if (usb_dev.enabled == true) {
 		return 0;
 	}
 
@@ -1604,13 +1612,15 @@ static int usb_composite_init(struct device *dev)
 	/*register endpoint 0 handlers*/
 	ret = usb_dc_ep_set_callback(USB_CONTROL_OUT_EP0,
 				     usb_handle_control_transfer);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	ret = usb_dc_ep_set_callback(USB_CONTROL_IN_EP0,
 				     usb_handle_control_transfer);
-	if (ret < 0)
+	if (ret < 0) {
 		return ret;
+	}
 
 	if (composite_setup_ep_cb()) {
 		return -1;
