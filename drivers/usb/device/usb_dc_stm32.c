@@ -480,13 +480,11 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 	return 0;
 }
 
-int usb_dc_set_status_callback(const usb_dc_status_callback cb)
+void usb_dc_set_status_callback(const usb_dc_status_callback cb)
 {
 	LOG_DBG("");
 
 	usb_dc_stm32_state.status_cb = cb;
-
-	return 0;
 }
 
 int usb_dc_set_address(const u8_t addr)
