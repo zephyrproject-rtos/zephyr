@@ -14,6 +14,9 @@
 #include "settings_priv.h"
 #include <zephyr/types.h>
 
+#include <logging/log.h>
+LOG_MODULE_REGISTER(settings, CONFIG_SETTINGS_LOG_LEVEL);
+
 sys_slist_t settings_handlers;
 
 static u8_t settings_cmd_inited;

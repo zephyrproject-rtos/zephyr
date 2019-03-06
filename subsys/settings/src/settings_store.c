@@ -12,10 +12,12 @@
 #include <stddef.h>
 #include <sys/types.h>
 #include <errno.h>
-#include <misc/__assert.h>
 
 #include "settings/settings.h"
 #include "settings_priv.h"
+
+#include <logging/log.h>
+LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
 struct settings_dup_check_arg {
 	const char *name;
@@ -48,8 +50,15 @@ void settings_dst_register(struct settings_store *cs)
 static void settings_load_cb(char *name, void *val_read_cb_ctx, off_t off,
 			     void *cb_arg)
 {
-	 int rc = settings_set_value_priv(name, val_read_cb_ctx, off, 0);
-	__ASSERT(rc == 0, "set-value operation failure\n");
+	int rc = settings_set_value_priv(name, val_read_cb_ctx, off, 0);
+
+	if (rc != 0) {
+		LOG_ERR("set-value failure. key: %s error(%d)",
+			name, rc);
+	} else {
+		LOG_DBG("set-value OK. key: %s",
+			name);
+	}
 	(void)rc;
 }
 
