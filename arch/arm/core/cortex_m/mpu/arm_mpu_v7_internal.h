@@ -245,25 +245,25 @@ static int _mpu_configure_region(const u8_t index,
  * sanity check of the memory regions to be programmed.
  */
 static int _mpu_configure_regions(const struct k_mem_partition
-	regions[], u8_t regions_num, u8_t start_reg_index,
+	*regions[], u8_t regions_num, u8_t start_reg_index,
 	bool do_sanity_check)
 {
 	int i;
 	int reg_index = start_reg_index;
 
 	for (i = 0; i < regions_num; i++) {
-		if (regions[i].size == 0) {
+		if (regions[i]->size == 0) {
 			continue;
 		}
 		/* Non-empty region. */
 
 		if (do_sanity_check &&
-				(!_mpu_partition_is_valid(&regions[i]))) {
+				(!_mpu_partition_is_valid(regions[i]))) {
 			LOG_ERR("Partition %u: sanity check failed.", i);
 			return -EINVAL;
 		}
 
-		reg_index = _mpu_configure_region(reg_index, &regions[i]);
+		reg_index = _mpu_configure_region(reg_index, regions[i]);
 
 		if (reg_index == -EINVAL) {
 			return reg_index;
@@ -285,7 +285,7 @@ static int _mpu_configure_regions(const struct k_mem_partition
  * performed, the error signal is propagated to the caller of the function.
  */
 static int _mpu_configure_static_mpu_regions(const struct k_mem_partition
-	static_regions[], const u8_t regions_num,
+	*static_regions[], const u8_t regions_num,
 	const u32_t background_area_base,
 	const u32_t background_area_end)
 {
@@ -314,7 +314,7 @@ static int _mpu_configure_static_mpu_regions(const struct k_mem_partition
  * performed, the error signal is propagated to the caller of the function.
  */
 static int _mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
-		dynamic_regions[], u8_t regions_num)
+	*dynamic_regions[], u8_t regions_num)
 {
 	int mpu_reg_index = static_regions_num;
 

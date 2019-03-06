@@ -191,7 +191,7 @@ int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
  * @brief configure fixed (static) MPU regions.
  */
 void arm_core_mpu_configure_static_mpu_regions(const struct k_mem_partition
-	static_regions[], const u8_t regions_num,
+	*static_regions[], const u8_t regions_num,
 	const u32_t background_area_start, const u32_t background_area_end)
 {
 	if (_mpu_configure_static_mpu_regions(static_regions, regions_num,
@@ -223,7 +223,7 @@ void arm_core_mpu_mark_areas_for_dynamic_regions(
  * @brief configure dynamic MPU regions.
  */
 void arm_core_mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
-	dynamic_regions[], u8_t regions_num)
+	*dynamic_regions[], u8_t regions_num)
 {
 	if (_mpu_configure_dynamic_mpu_regions(dynamic_regions, regions_num)
 		== -EINVAL) {
