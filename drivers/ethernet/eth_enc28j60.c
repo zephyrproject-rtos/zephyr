@@ -533,7 +533,7 @@ static int eth_enc28j60_rx(struct device *dev)
 		/* Get the frame length from the rx status vector,
 		 * minus CRC size at the end which is always present
 		 */
-		frm_len = (info[1] << 8) | (info[0] - 4);
+		frm_len = sys_get_le16(info) - 4;
 		lengthfr = frm_len;
 
 		/* Get the frame from the buffer */
