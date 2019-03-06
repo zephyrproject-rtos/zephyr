@@ -801,10 +801,12 @@ static void mass_storage_bulk_in(u8_t ep,
  *
  * @return  N/A.
  */
-static void mass_storage_status_cb(enum usb_dc_status_code status,
+static void mass_storage_status_cb(struct usb_cfg_data *cfg,
+				   enum usb_dc_status_code status,
 				   const u8_t *param)
 {
 	ARG_UNUSED(param);
+	ARG_UNUSED(cfg);
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {

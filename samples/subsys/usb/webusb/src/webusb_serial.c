@@ -283,12 +283,12 @@ done:
  *
  * @return  N/A.
  */
-static void webusb_serial_dev_status_cb(enum usb_dc_status_code status,
+static void webusb_serial_dev_status_cb(struct usb_cfg_data *cfg,
+					enum usb_dc_status_code status,
 					const u8_t *param)
 {
 	ARG_UNUSED(param);
-
-	LOG_DBG("");
+	ARG_UNUSED(cfg);
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {

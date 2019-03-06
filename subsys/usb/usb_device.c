@@ -909,6 +909,19 @@ static void usb_register_status_callback(usb_dc_status_callback cb)
 	usb_dev.status_callback = cb;
 }
 
+static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
+{
+	size_t size = (__usb_data_end - __usb_data_start);
+
+	for (size_t i = 0; i < size; i++) {
+		struct usb_cfg_data *cfg = &__usb_data_start[i];
+
+		if (cfg->cb_usb_status) {
+			cfg->cb_usb_status(cfg, status, param);
+		}
+	}
+}
+
 /**
  * @brief turn on/off USB VBUS voltage
  *
@@ -983,11 +996,6 @@ int usb_set_config(struct usb_cfg_data *config)
 		    config->interface.custom_handler);
 	}
 
-	/* register status callback */
-	if (config->cb_usb_status != NULL) {
-		usb_register_status_callback(config->cb_usb_status);
-	}
-
 	return 0;
 }
 
@@ -1029,9 +1037,11 @@ int usb_enable(struct usb_cfg_data *config)
 	if (ret < 0)
 		return ret;
 
-	ret = usb_dc_set_status_callback(config->cb_usb_status);
-	if (ret < 0)
+	usb_register_status_callback(forward_status_cb);
+	ret = usb_dc_set_status_callback(forward_status_cb);
+	if (ret < 0) {
 		return ret;
+	}
 
 	ret = usb_dc_attach();
 	if (ret < 0)
@@ -1402,19 +1412,6 @@ int usb_wakeup_request(void)
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
 
 static u8_t iface_data_buf[CONFIG_USB_COMPOSITE_BUFFER_SIZE];
-
-static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
-{
-	size_t size = (__usb_data_end - __usb_data_start);
-
-	for (size_t i = 0; i < size; i++) {
-		struct usb_cfg_data *cfg = &__usb_data_start[i];
-
-		if (cfg->cb_usb_status_composite) {
-			cfg->cb_usb_status_composite(cfg, status, param);
-		}
-	}
-}
 
 /*
  * The functions class_handler(), custom_handler() and vendor_handler()

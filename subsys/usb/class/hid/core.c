@@ -384,10 +384,9 @@ static void hid_do_status_cb(struct hid_device_info *dev_data,
 	}
 }
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-static void hid_status_composite_cb(struct usb_cfg_data *cfg,
-				    enum usb_dc_status_code status,
-				    const u8_t *param)
+static void hid_status_cb(struct usb_cfg_data *cfg,
+			  enum usb_dc_status_code status,
+			  const u8_t *param)
 {
 	struct hid_device_info *dev_data;
 	struct usb_dev_data *common;
@@ -404,25 +403,6 @@ static void hid_status_composite_cb(struct usb_cfg_data *cfg,
 
 	hid_do_status_cb(dev_data, status, param);
 }
-#else
-static void hid_status_cb(enum usb_dc_status_code status, const u8_t *param)
-{
-	struct hid_device_info *dev_data;
-	struct usb_dev_data *common;
-
-	/* Should be the only one element in the list */
-	common = CONTAINER_OF(sys_slist_peek_head(&usb_hid_devlist),
-			      struct usb_dev_data, node);
-	if (common == NULL) {
-		LOG_WRN("Device data not found");
-		return;
-	}
-
-	dev_data = CONTAINER_OF(common, struct hid_device_info, common);
-
-	hid_do_status_cb(dev_data, status, param);
-}
-#endif
 
 static int hid_class_handle_req(struct usb_setup_packet *setup,
 				s32_t *len, u8_t **data)
@@ -653,23 +633,6 @@ static void hid_interface_config(struct usb_desc_header *head,
 #endif
 }
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-#define DEFINE_HID_CFG_DATA(x)						\
-	USBD_CFG_DATA_DEFINE(hid)					\
-	struct usb_cfg_data hid_config_##x = {				\
-		.usb_device_description = NULL,				\
-		.interface_config = hid_interface_config,		\
-		.interface_descriptor = &hid_cfg_##x.if0,		\
-		.cb_usb_status_composite = hid_status_composite_cb,	\
-		.interface = {						\
-			.class_handler = hid_class_handle_req,		\
-			.custom_handler = hid_custom_handle_req,	\
-			.payload_data = NULL,				\
-		},							\
-		.num_endpoints = ARRAY_SIZE(hid_ep_data_##x),		\
-		.endpoint = hid_ep_data_##x,				\
-	}
-#else
 #define DEFINE_HID_CFG_DATA(x)						\
 	USBD_CFG_DATA_DEFINE(hid)					\
 	struct usb_cfg_data hid_config_##x = {				\
@@ -684,8 +647,7 @@ static void hid_interface_config(struct usb_desc_header *head,
 		},							\
 		.num_endpoints = ARRAY_SIZE(hid_ep_data_##x),		\
 		.endpoint = hid_ep_data_##x,				\
-	}
-#endif
+	};
 
 #if !defined(CONFIG_USB_COMPOSITE_DEVICE)
 static u8_t interface_data[CONFIG_USB_HID_MAX_PAYLOAD_SIZE];

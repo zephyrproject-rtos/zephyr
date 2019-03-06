@@ -88,8 +88,13 @@ static const struct dev_common_descriptor {
 
 struct usb_desc_header *__usb_descriptor_start = (void *)&desc;
 
-static void status_cb(enum usb_dc_status_code status, const u8_t *param)
+static void status_cb(struct usb_cfg_data *cfg,
+		      enum usb_dc_status_code status,
+		      const u8_t *param)
 {
+	ARG_UNUSED(cfg);
+	ARG_UNUSED(status);
+	ARG_UNUSED(param);
 }
 
 /* EP Bulk IN handler, used to send data to the Host */

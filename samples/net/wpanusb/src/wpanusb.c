@@ -136,11 +136,14 @@ static struct usb_ep_cfg_data wpanusb_ep[] = {
 	},
 };
 
-static void wpanusb_status_cb(enum usb_dc_status_code status, const u8_t *param)
+static void wpanusb_status_cb(struct usb_cfg_data *cfg,
+			      enum usb_dc_status_code status,
+			      const u8_t *param)
 {
 	struct wpanusb_dev_data_t * const dev_data = DEV_DATA(wpanusb_dev);
 
 	ARG_UNUSED(param);
+	ARG_UNUSED(cfg);
 
 	/* Store the new status */
 	dev_data->usb_status = status;
