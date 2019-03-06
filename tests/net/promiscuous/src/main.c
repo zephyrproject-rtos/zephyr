@@ -345,10 +345,10 @@ static void _recv_data(struct net_if *iface, struct net_pkt **pkt)
 	static u8_t data[] = { 't', 'e', 's', 't', '\0' };
 	int ret;
 
-	*pkt = net_pkt_get_reserve_tx(K_FOREVER);
-	net_pkt_set_iface(*pkt, iface);
+	*pkt = net_pkt_rx_alloc_with_buffer(iface, sizeof(data),
+					    AF_UNSPEC, 0, K_FOREVER);
 
-	net_pkt_append_all(*pkt, sizeof(data), data, K_FOREVER);
+	net_pkt_write_new(*pkt, data, sizeof(data));
 
 	ret = net_recv_data(iface, *pkt);
 	zassert_equal(ret, 0, "Data receive failure");
