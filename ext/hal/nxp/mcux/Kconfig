@@ -144,4 +144,9 @@ config HAS_MCUX_WDOG32
 	help
 	  Set if the watchdog (WDOG32) module is present in the SoC.
 
+config HAS_MCUX_PWM
+	bool
+	help
+	  Set if the PWM  module is present in the SoC.
+
 endif # HAS_MCUX
