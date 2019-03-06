@@ -31,4 +31,9 @@ endif()
 
 zephyr_include_directories(../common)
 FILE(GLOB app_sources ../common/*.c src/*.c)
+
+if(CONFIG_QEMU_TARGET)
+    list(APPEND app_sources ../ram_backend/test_ram_backend.c)
+endif()
+
 target_sources(app PRIVATE ${app_sources})
