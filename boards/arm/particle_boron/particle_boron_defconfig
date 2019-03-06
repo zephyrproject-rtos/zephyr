@@ -21,10 +21,6 @@ CONFIG_UART_1_NRF_UARTE=y
 CONFIG_I2C=y
 CONFIG_I2C_1=y
 
-# enable SPI flash interface
-CONFIG_SPI=y
-CONFIG_SPI_2=y
-
 # enable console
 CONFIG_CONSOLE=y
 CONFIG_UART_CONSOLE=y
