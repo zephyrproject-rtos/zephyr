@@ -234,8 +234,12 @@ void nffs_test_util_create_file_blocks(const char *filename,
 	int rc;
 	int i;
 
-	/* We do not have 'truncate' flag in fs_open, so unlink here instead */
-	fs_unlink(filename);
+	/* We do not have 'truncate' flag in fs_open, so unlink here instead*/
+	rc = fs_unlink(filename);
+	/* Don't fail on -ENOENT or 0, as can't truncate as file doesn't exists
+	 * or 0 on successful, fail on all other error values
+	 */
+	zassert_true(((rc == 0) || (rc == -ENOENT)), "unlink/truncate failed");
 
 	rc = fs_open(&file, filename);
 	zassert_equal(rc, 0, NULL);
