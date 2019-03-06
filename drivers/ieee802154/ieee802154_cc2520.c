@@ -1283,7 +1283,7 @@ static int _cc2520_crypto_ccm(struct cipher_ctx *ctx,
 		return -EINVAL;
 	}
 
-	if (apkt->tag) {
+	if (!apkt->tag) {
 		LOG_ERR("CCM encryption does not take a tag");
 		return -EINVAL;
 	}
@@ -1312,7 +1312,8 @@ static int _cc2520_crypto_ccm(struct cipher_ctx *ctx,
 		return -EIO;
 	}
 
-	apkt->tag = apkt->pkt->out_buf + apkt->pkt->in_len;
+	memcpy(apkt->tag, apkt->pkt->out_buf + apkt->pkt->in_len,
+				ctx->mode_params.ccm_info.tag_len);
 
 	return 0;
 }

@@ -156,7 +156,7 @@ int tc_ccm_config(TCCcmMode_t c, TCAesKeySched_t sched, uint8_t *nonce,
 int tc_ccm_generation_encryption(uint8_t *out, unsigned int olen,
 			   	 const uint8_t *associated_data,
 			   	 unsigned int alen, const uint8_t *payload,
-				 unsigned int plen, TCCcmMode_t c);
+				 unsigned int plen, TCCcmMode_t c, uint8_t *pTag);
 
 /**
  * @brief CCM decryption and tag verification procedure
@@ -202,7 +202,7 @@ int tc_ccm_generation_encryption(uint8_t *out, unsigned int olen,
 int tc_ccm_decryption_verification(uint8_t *out, unsigned int olen,
 				   const uint8_t *associated_data,
 				   unsigned int alen, const uint8_t *payload, unsigned int plen,
-				   TCCcmMode_t c);
+				   TCCcmMode_t c, const uint8_t *pTag);
 
 #ifdef __cplusplus
 }
