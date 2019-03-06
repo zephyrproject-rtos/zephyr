@@ -17,7 +17,9 @@ LOG_MODULE_REGISTER(display_ili9340);
 #include <string.h>
 
 struct ili9340_data {
+#ifdef DT_ILITEK_ILI9340_0_RESET_GPIOS_CONTROLLER
 	struct device *reset_gpio;
+#endif
 	struct device *command_data_gpio;
 	struct device *spi_dev;
 	struct spi_config spi_config;
@@ -61,6 +63,7 @@ static int ili9340_init(struct device *dev)
 	data->spi_config.cs = NULL;
 #endif
 
+#ifdef DT_ILITEK_ILI9340_0_RESET_GPIOS_CONTROLLER
 	data->reset_gpio =
 		device_get_binding(DT_ILITEK_ILI9340_0_RESET_GPIOS_CONTROLLER);
 	if (data->reset_gpio == NULL) {
@@ -70,6 +73,7 @@ static int ili9340_init(struct device *dev)
 
 	gpio_pin_configure(data->reset_gpio, DT_ILITEK_ILI9340_0_RESET_GPIOS_PIN,
 			   GPIO_DIR_OUT);
+#endif
 
 	data->command_data_gpio =
 		device_get_binding(DT_ILITEK_ILI9340_0_CMD_DATA_GPIOS_CONTROLLER);
@@ -81,6 +85,7 @@ static int ili9340_init(struct device *dev)
 	gpio_pin_configure(data->command_data_gpio, DT_ILITEK_ILI9340_0_CMD_DATA_GPIOS_PIN,
 			   GPIO_DIR_OUT);
 
+#ifdef DT_ILITEK_ILI9340_0_RESET_GPIOS_CONTROLLER
 	LOG_DBG("Resetting display driver");
 	gpio_pin_write(data->reset_gpio, DT_ILITEK_ILI9340_0_RESET_GPIOS_PIN, 1);
 	k_sleep(1);
@@ -88,6 +93,7 @@ static int ili9340_init(struct device *dev)
 	k_sleep(1);
 	gpio_pin_write(data->reset_gpio, DT_ILITEK_ILI9340_0_RESET_GPIOS_PIN, 1);
 	k_sleep(5);
+#endif
 
 	LOG_DBG("Initializing LCD");
 	ili9340_lcd_init(data);
