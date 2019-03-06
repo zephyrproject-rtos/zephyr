@@ -580,7 +580,7 @@ targeting this board by specifying the location of your custom board
 information with the ``-DBOARD_ROOT`` parameter to the CMake
 build system::
 
-   cmake -DBOARD=<board name> -DBOARD_ROOT=<path the directory containig a "boards" directory> ..
+   cmake -DBOARD=<board name> -DBOARD_ROOT=<path to directory containing a boards/ directory> ..
 
 
 This will use your custom board configuration and will generate the
