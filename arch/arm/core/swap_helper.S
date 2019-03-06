@@ -61,6 +61,7 @@ SECTION_FUNC(TEXT, __pendsv)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
     msr BASEPRI, r0
+    isb /* Make the effect of disabling interrupts be realized immediately */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
