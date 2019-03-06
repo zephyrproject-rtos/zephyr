@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016-2017, Texas Instruments Incorporated
+ * Copyright (c) 2016-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -89,8 +89,8 @@ typedef union ClockP_Struct {
  *  @brief  Frequency-in-hertz struct
  */
 typedef struct ClockP_FreqHz {
-    uint32_t hi;      /*! most significant 32-bits of frequency */
-    uint32_t lo;      /*! least significant 32-bits of frequency */
+    uint32_t hi;      /*!< most significant 32-bits of frequency */
+    uint32_t lo;      /*!< least significant 32-bits of frequency */
 } ClockP_FreqHz;
 
 /*!

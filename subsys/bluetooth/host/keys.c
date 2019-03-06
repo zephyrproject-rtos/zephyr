@@ -266,7 +266,7 @@ int bt_keys_store(struct bt_keys *keys)
 		return err;
 	}
 
-	BT_DBG("Stored keys for %s (%s)", bt_addr_le_str(&keys->addr), key);
+	BT_DBG("Stored keys for %s (%s)", bt_addr_le_str(&keys->addr), log_strdup(key));
 
 	return 0;
 }

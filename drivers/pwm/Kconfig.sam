@@ -7,6 +7,5 @@
 menuconfig PWM_SAM
 	bool "Atmel SAM MCU Family PWM Driver"
 	depends on SOC_FAMILY_SAM
-	depends on PWM
 	help
 	  Enable PWM driver for Atmel SAM MCUs.

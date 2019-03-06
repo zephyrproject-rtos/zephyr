@@ -16,7 +16,7 @@
 /soc/arm/nordic_nrf/                      @ioannisg
 /soc/arm/st_stm32/                        @erwango
 /soc/arm/st_stm32/stm32f4/                @rsalveti @idlethread
-/soc/arm/ti_simplelink/cc32xx/            @GAnthony
+/soc/arm/ti_simplelink/cc32xx/            @vanti
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
 /soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung @rgundi
 /arch/nios2/                              @andrewboie @ramakrishnapallala
@@ -43,7 +43,7 @@
 /boards/arm/96b_nitrogen/                 @idlethread
 /boards/arm/96b_neonkey/                  @Mani-Sadhasivam
 /boards/arm/96b_stm32_sensor_mez/         @Mani-Sadhasivam
-/boards/arm/cc3220sf_launchxl/            @GAnthony
+/boards/arm/cc3220sf_launchxl/            @vanti
 /boards/arm/curie_ble/                    @jhedberg
 /boards/arm/disco_l475_iot1/              @erwango
 /boards/arm/frdm*/                        @MaureenHelm
@@ -114,6 +114,7 @@
 /drivers/interrupt_controller/            @andrewboie
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar
+/drivers/modem/                           @mike-scott
 /drivers/pinmux/stm32/                    @rsalveti @idlethread
 /drivers/sensor/                          @bogdan-davidoaia @MaureenHelm
 /drivers/sensor/hts*/                     @avisconti
@@ -140,9 +141,11 @@
 /ext/hal/nxp/                             @MaureenHelm
 /ext/hal/qmsi/                            @nashif
 /ext/hal/st/stm32cube/                    @erwango
+/ext/hal/ti/simplelink/                   @vanti
 /ext/lib/crypto/mbedtls/                  @nashif
 /ext/lib/crypto/tinycrypt/                @ceolin
 /include/adc.h                            @anangl
+/include/app_memory/                      @andrewboie
 /include/arch/arc/                        @vonhust @ruuddw
 /include/arch/arc/arch.h                  @andrewboie
 /include/arch/arc/v2/irq.h                @andrewboie
@@ -164,6 +167,7 @@
 /include/display.h                        @vanwinkeljan
 /include/display/                         @vanwinkeljan
 /include/drivers/bluetooth/               @sjanc @jhedberg @Vudentz
+/include/drivers/modem/                   @mike-scott
 /include/drivers/ioapic.h                 @andrewboie
 /include/drivers/loapic.h                 @andrewboie
 /include/drivers/mvic.h                   @andrewboie
@@ -271,6 +275,7 @@
 /tests/net/lib/coap/                      @rveerama1
 /tests/net/socket/                        @jukkar @tbursztyka @pfalcon
 /tests/subsys/fs/                         @nashif @ramakrishnapallala
+/tests/subsys/settings/                   @nvlsianpu
 
 # Get all docs reviewed
 *.rst                                     @dbkinder

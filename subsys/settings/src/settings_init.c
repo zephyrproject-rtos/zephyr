@@ -59,7 +59,7 @@ static void settings_init_fcb(void)
 	int rc;
 	const struct flash_area *fap;
 
-	rc = flash_area_get_sectors(CONFIG_SETTINGS_FCB_FLASH_AREA, &cnt,
+	rc = flash_area_get_sectors(DT_FLASH_AREA_STORAGE_ID, &cnt,
 				    settings_fcb_area);
 	if (rc != 0 && rc != -ENOMEM) {
 		k_panic();
@@ -70,7 +70,7 @@ static void settings_init_fcb(void)
 	rc = settings_fcb_src(&config_init_settings_fcb);
 
 	if (rc != 0) {
-		rc = flash_area_open(CONFIG_SETTINGS_FCB_FLASH_AREA, &fap);
+		rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
 
 		if (rc == 0) {
 			rc = flash_area_erase(fap, 0, fap->fa_size);

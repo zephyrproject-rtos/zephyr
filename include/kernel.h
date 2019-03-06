@@ -1561,7 +1561,8 @@ __syscall u32_t k_timer_remaining_get(struct k_timer *timer);
 
 static inline u32_t _impl_k_timer_remaining_get(struct k_timer *timer)
 {
-	return (u32_t)__ticks_to_ms(z_timeout_remaining(&timer->timeout));
+	const s32_t ticks = z_timeout_remaining(&timer->timeout);
+	return (ticks > 0) ? (u32_t)__ticks_to_ms(ticks) : 0U;
 }
 
 /**

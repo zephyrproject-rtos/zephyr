@@ -14,11 +14,13 @@ menuconfig SPI_NRFX
 
 if SPI_NRFX
 
-# In most Nordic SoCs the SPI and TWI peripherals with the same instance
-# number share certain resources and cannot be used at the same time.
-# In nRF52810 there are only single instances of these peripherals and
-# they are arranged in a different way so this limitation does not apply.
-if SPI_0 && (!I2C_0 || SOC_NRF52810)
+# In most Nordic SoCs, SPI and TWI peripherals with the same instance number
+# share certain resources and therefore cannot be used at the same time
+# (in nRF91 Series this limitation concerns UART peripherals as well).
+# In nRF52810 though, there are only single instances of these peripherals
+# and they are arranged in a different way, so this limitation does not apply.
+if SPI_0 && (SOC_NRF52810 || \
+             (!I2C_0 && !(SOC_SERIES_NRF91X && UART_0_NRF_UARTE)))
 
 choice
 	prompt "SPI Port 0 Driver type"
@@ -54,7 +56,7 @@ endchoice
 if SPI_0_NRF_SPI || SPI_0_NRF_SPIM || SPI_0_NRF_SPIS
 
 config SPI_0_NRF_ORC
-	hex "Over-read Character"
+	hex "SPI Port 0 over-read character"
 	range 0x00 0xff
 	default 0xff
 	help
@@ -63,10 +65,12 @@ config SPI_0_NRF_ORC
 
 endif # SPI_0_NRF_SPI || SPI_0_NRF_SPIM || SPI_0_NRF_SPIS
 
-endif # SPI_0 && (!I2C_0 || SOC_NRF52810)
+endif # SPI_0 && (SOC_NRF52810 || ...
 
-# Nordic TWIx1 and SPIx1 instances can not be used at the same time.
-if SPI_1 && !I2C_1
+# In Nordic SoCs, SPI and TWI peripherals with the same instance number
+# share certain resources and therefore cannot be used at the same time
+# (in nRF91 Series this limitation concerns UART peripherals as well).
+if SPI_1 && !I2C_1 && !(SOC_SERIES_NRF91X && UART_1_NRF_UARTE)
 
 choice
 	prompt "SPI Port 1 Driver type"
@@ -102,7 +106,7 @@ endchoice
 if SPI_1_NRF_SPI || SPI_1_NRF_SPIM || SPI_1_NRF_SPIS
 
 config SPI_1_NRF_ORC
-	hex "Over-read Character"
+	hex "SPI Port 1 over-read character"
 	range 0x00 0xff
 	default 0xff
 	help
@@ -111,9 +115,12 @@ config SPI_1_NRF_ORC
 
 endif # SPI_1_NRF_SPI || SPI_1_NRF_SPIM || SPI_1_NRF_SPIS
 
-endif # SPI_1 && !I2C_1
+endif # SPI_1 && !I2C_1 && !(SOC_SERIES_NRF91X && UART_1_NRF_UARTE)
 
-if SPI_2
+# In Nordic SoCs, SPI and TWI peripherals with the same instance number
+# share certain resources and therefore cannot be used at the same time
+# (in nRF91 Series this limitation concerns UART peripherals as well).
+if SPI_2 && !I2C_2 && !(SOC_SERIES_NRF91X && UART_2_NRF_UARTE)
 
 choice
 	prompt "SPI Port 2 Driver type"
@@ -149,7 +156,7 @@ endchoice
 if SPI_2_NRF_SPI || SPI_2_NRF_SPIM || SPI_2_NRF_SPIS
 
 config SPI_2_NRF_ORC
-	hex "Over-read Character"
+	hex "SPI Port 2 over-read character"
 	range 0x00 0xff
 	default 0xff
 	help
@@ -158,28 +165,50 @@ config SPI_2_NRF_ORC
 
 endif # SPI_2_NRF_SPI || SPI_2_NRF_SPIM || SPI_2_NRF_SPIS
 
-endif # SPI_2
+endif # SPI_2 && !I2C_2 && !(SOC_SERIES_NRF91X && UART_2_NRF_UARTE)
 
-if SPI_3
+# In Nordic SoCs, SPI and TWI peripherals with the same instance number
+# share certain resources and therefore cannot be used at the same time
+# (in nRF91 Series this limitation concerns UART peripherals as well).
+if SPI_3 && !I2C_3 && !(SOC_SERIES_NRF91X && UART_3_NRF_UARTE)
+
+choice
+	prompt "SPI Port 3 Driver type"
 
 config SPI_3_NRF_SPIM
-	bool
+	bool "nRF SPIM 3"
 	depends on HAS_HW_NRF_SPIM3
 	select NRFX_SPIM
-	default y
+	help
+	  Enable nRF SPI Master with EasyDMA on port 3.
 
-if SPI_3_NRF_SPIM
+config SPI_3_NRF_SPIS
+	bool "nRF SPIS 3"
+	depends on HAS_HW_NRF_SPIS3
+	depends on SPI_SLAVE
+	select NRFX_SPIS
+	help
+	  Enable nRF SPI Slave with EasyDMA on port 3.
+	  Due to hardware limitations the implementation supports only simple
+	  buffers (consisting of one part) located in RAM.
+
+endchoice
+
+if SPI_3_NRF_SPIM || SPI_3_NRF_SPIS
 
 config SPI_3_NRF_ORC
-	hex "Over-read Character"
+	hex "SPI Port 3 over-read character"
 	range 0x00 0xff
 	default 0xff
 	help
 	  Over-read character. Character clocked out after an over-read
 	  of the transmit buffer.
 
+endif # SPI_3_NRF_SPIM || SPI_3_NRF_SPIS
+
 config SPI_3_NRF_RX_DELAY
-	int "MISO sampling delay"
+	int "SPIM3 MISO sampling delay"
+	depends on SPI_3_NRF_SPIM && SOC_NRF52840
 	range 0 7
 	default 2
 	help
@@ -187,14 +216,12 @@ config SPI_3_NRF_RX_DELAY
 	  edge of SCK (leading or trailing, depending on the CPHA setting used)
 	  until the input serial data on MISO is actually sampled.
 
-endif # SPI_3_NRF_SPIM
-
-endif # SPI_3
+endif # SPI_3 && !I2C_3 && !(SOC_SERIES_NRF91X && UART_3_NRF_UARTE)
 
 if NRFX_SPIM
 
 config SPI_NRFX_RAM_BUFFER_SIZE
-	int "Size of RAM buffer"
+	int "Size of RAM buffers for SPIM peripherals"
 	default 0
 	help
 	  SPIM peripherals cannot transmit data directly from flash. Therefore,
@@ -206,6 +233,52 @@ config SPI_NRFX_RAM_BUFFER_SIZE
 	  supplying buffers located in flash to the driver, otherwise such
 	  transfers will fail.
 
+choice
+	prompt "nRF SPIM MISO pin pull configuration"
+	default SPI_NRFX_SPIM_MISO_PULL_DOWN
+
+config SPI_NRFX_SPIM_MISO_NO_PULL
+	bool "no pull"
+	help
+	  Disable MISO pin pull.
+
+config SPI_NRFX_SPIM_MISO_PULL_DOWN
+	bool "pull down"
+	help
+	  Enable MISO pin pull down.
+
+config SPI_NRFX_SPIM_MISO_PULL_UP
+	bool "pull up"
+	help
+	  Enable MISO pin pull up.
+
+endchoice
+
 endif # NRFX_SPIM
+
+if NRFX_SPI
+
+choice
+	prompt "nRF SPI MISO pin pull configuration"
+	default SPI_NRFX_SPI_MISO_PULL_DOWN
+
+config SPI_NRFX_SPI_MISO_NO_PULL
+	bool "no pull"
+	help
+	  Disable MISO pin pull.
+
+config SPI_NRFX_SPI_MISO_PULL_DOWN
+	bool "pull down"
+	help
+	  Enable MISO pin pull down.
+
+config SPI_NRFX_SPI_MISO_PULL_UP
+	bool "pull up"
+	help
+	  Enable MISO pin pull up.
+
+endchoice
+
+endif # NRFX_SPI
 
 endif # SPI_NRFX

@@ -28,7 +28,7 @@ following devices:
 * :abbr:`IDAU (Implementation Defined Attribution Unit)`
 
 .. figure:: img/nrf9160_pca10090.png
-     :width: 442px
+     :width: 711px
      :align: center
      :alt: nRF9160 PCA10090 DK
 

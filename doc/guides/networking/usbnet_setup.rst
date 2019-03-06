@@ -3,6 +3,10 @@
 USB Device Networking
 #####################
 
+.. contents::
+    :local:
+    :depth: 2
+
 This page describes how to set up networking between a Linux host
 and a Zephyr application running on USB supported devices.
 

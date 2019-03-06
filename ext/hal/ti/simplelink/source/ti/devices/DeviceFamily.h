@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -58,16 +58,17 @@ extern "C" {
  * DeviceFamily_XYZ define.
  */
 #define DeviceFamily_ID_CC13X0                 1
-#define DeviceFamily_ID_CC13X2                 2
-#define DeviceFamily_ID_CC26X0                 3
-#define DeviceFamily_ID_CC26X0R2               4
+#define DeviceFamily_ID_CC26X0                 2
+#define DeviceFamily_ID_CC26X0R2               3
+#define DeviceFamily_ID_CC13X2                 4
 #define DeviceFamily_ID_CC26X2                 5
-#define DeviceFamily_ID_CC3200                 6
-#define DeviceFamily_ID_CC3220                 7
-#define DeviceFamily_ID_MSP432P401x            8
-#define DeviceFamily_ID_MSP432P4x1xI           9
-#define DeviceFamily_ID_MSP432P4x1xT           10
-#define DeviceFamily_ID_MSP432E4               11
+#define DeviceFamily_ID_CC3200                 8
+#define DeviceFamily_ID_CC3220                 9
+#define DeviceFamily_ID_MSP432P401x            10
+#define DeviceFamily_ID_MSP432P4x1xI           11
+#define DeviceFamily_ID_MSP432P4x1xT           12
+#define DeviceFamily_ID_MSP432E401Y            13
+#define DeviceFamily_ID_MSP432E411Y            14
 
 /*
  * DeviceFamily_PARENT_XYZ values.
@@ -91,28 +92,35 @@ extern "C" {
     #define DeviceFamily_ID             DeviceFamily_ID_CC13X0
     #define DeviceFamily_DIRECTORY      cc13x0
     #define DeviceFamily_PARENT         DeviceFamily_PARENT_CC13X0_CC26X0
+
 #elif defined(DeviceFamily_CC13X2)
     #define DeviceFamily_ID             DeviceFamily_ID_CC13X2
     #define DeviceFamily_DIRECTORY      cc13x2_cc26x2
     #define DeviceFamily_PARENT         DeviceFamily_PARENT_CC13X2_CC26X2
+
 #elif defined(DeviceFamily_CC26X0)
     #define DeviceFamily_ID             DeviceFamily_ID_CC26X0
     #define DeviceFamily_DIRECTORY      cc26x0
     #define DeviceFamily_PARENT         DeviceFamily_PARENT_CC13X0_CC26X0
+
 #elif defined(DeviceFamily_CC26X0R2)
     #define DeviceFamily_ID             DeviceFamily_ID_CC26X0R2
     #define DeviceFamily_DIRECTORY      cc26x0r2
     #define DeviceFamily_PARENT         DeviceFamily_PARENT_CC13X0_CC26X0
+
 #elif defined(DeviceFamily_CC26X2)
     #define DeviceFamily_ID             DeviceFamily_ID_CC26X2
     #define DeviceFamily_DIRECTORY      cc13x2_cc26x2
     #define DeviceFamily_PARENT         DeviceFamily_PARENT_CC13X2_CC26X2
+
 #elif defined(DeviceFamily_CC3200)
     #define DeviceFamily_ID             DeviceFamily_ID_CC3200
     #define DeviceFamily_DIRECTORY      cc32xx
+
 #elif defined(DeviceFamily_CC3220)
     #define DeviceFamily_ID             DeviceFamily_ID_CC3220
     #define DeviceFamily_DIRECTORY      cc32xx
+
 #elif defined(DeviceFamily_MSP432P401x) || defined(__MSP432P401R__)
     #define DeviceFamily_ID             DeviceFamily_ID_MSP432P401x
     #define DeviceFamily_DIRECTORY      msp432p4xx
@@ -120,6 +128,7 @@ extern "C" {
     #if !defined(__MSP432P401R__)
         #define __MSP432P401R__
     #endif
+
 #elif defined(DeviceFamily_MSP432P4x1xI)
     #define DeviceFamily_ID             DeviceFamily_ID_MSP432P4x1xI
     #define DeviceFamily_DIRECTORY      msp432p4xx
@@ -127,6 +136,7 @@ extern "C" {
     #if !defined(__MSP432P4111__)
         #define __MSP432P4111__
     #endif
+
 #elif defined(DeviceFamily_MSP432P4x1xT)
     #define DeviceFamily_ID             DeviceFamily_ID_MSP432P4x1xT
     #define DeviceFamily_DIRECTORY      msp432p4xx
@@ -134,14 +144,34 @@ extern "C" {
     #if !defined(__MSP432P4111__)
         #define __MSP432P4111__
     #endif
-#elif defined(DeviceFamily_MSP432E4)
-    #define DeviceFamily_ID             DeviceFamily_ID_MSP432E4
+
+#elif defined(DeviceFamily_MSP432E401Y)
+    #define DeviceFamily_ID             DeviceFamily_ID_MSP432E401Y
     #define DeviceFamily_DIRECTORY      msp432e4
     #if !defined(__MSP432E401Y__)
         #define __MSP432E401Y__
     #endif
+
+#elif defined(DeviceFamily_MSP432E411Y)
+    #define DeviceFamily_ID             DeviceFamily_ID_MSP432E411Y
+    #define DeviceFamily_DIRECTORY      msp432e4
+    #if !defined(__MSP432E411Y__)
+        #define __MSP432E411Y__
+    #endif
 #else
-    #error "DeviceFamily_XYZ undefined. You must defined DeviceFamily_XYZ!"
+    #error "DeviceFamily_XYZ undefined. You must define a DeviceFamily_XYZ!"
+#endif
+
+/* Ensure that only one DeviceFamily was specified */
+#if (defined(DeviceFamily_CC13X0) + defined(DeviceFamily_CC13X2)        \
+    + defined(DeviceFamily_CC26X0) + defined(DeviceFamily_CC26X0R2)     \
+    + defined(DeviceFamily_CC26X2)                                      \
+    + defined(DeviceFamily_CC3200) + defined(DeviceFamily_CC3220)       \
+    + defined(DeviceFamily_MSP432P401x) + defined(DeviceFamily_MSP432P4x1xI) \
+    + defined(DeviceFamily_MSP432P4x1xT) + defined(DeviceFamily_MSP432E401Y) \
+    + defined(DeviceFamily_MSP432E411Y)                                      \
+    ) > 1
+    #error More then one DeviceFamily has been defined!
 #endif
 
 /*!

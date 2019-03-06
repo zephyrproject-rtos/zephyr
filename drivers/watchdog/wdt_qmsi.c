@@ -97,7 +97,7 @@ static u32_t get_timeout(u32_t  timeout)
 		count++;
 	}
 
-	return count - 1;
+	return ((count > 1U) ? (count - 1U) : 0);
 }
 
 static int wdt_qmsi_install_timeout(struct device *dev,

@@ -71,26 +71,29 @@ extern unsigned char sys_pm_idle_exit_notify;
  */
 static inline bool sys_pm_is_low_power_state(enum power_states state)
 {
+	bool ret = true;
+
 	switch (state) {
 #ifdef CONFIG_SYS_POWER_LOW_POWER_STATES
 # ifdef CONFIG_HAS_STATE_LOW_POWER_1
 	case SYS_POWER_STATE_LOW_POWER_1:
-		/* FALLTHROUGH */
+		break;
 # endif
 # ifdef CONFIG_HAS_STATE_LOW_POWER_2
 	case SYS_POWER_STATE_LOW_POWER_2:
-		/* FALLTHROUGH */
+		break;
 # endif
 # ifdef CONFIG_HAS_STATE_LOW_POWER_3
 	case SYS_POWER_STATE_LOW_POWER_3:
-		/* FALLTHROUGH */
+		break;
 # endif
-		return true;
 #endif /* CONFIG_SYS_POWER_LOW_POWER_STATES */
-
 	default:
-		return false;
+		ret = false;
+		break;
 	}
+
+	return ret;
 }
 
 /**
@@ -100,26 +103,30 @@ static inline bool sys_pm_is_low_power_state(enum power_states state)
  */
 static inline bool sys_pm_is_deep_sleep_state(enum power_states state)
 {
+	bool ret = true;
+
 	switch (state) {
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
 # ifdef CONFIG_HAS_STATE_DEEP_SLEEP_1
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
-		/* FALLTHROUGH */
+		break;
 # endif
 # ifdef CONFIG_HAS_STATE_DEEP_SLEEP_2
 	case SYS_POWER_STATE_DEEP_SLEEP_2:
-		/* FALLTHROUGH */
+		break;
 # endif
 # ifdef CONFIG_HAS_STATE_DEEP_SLEEP_3
 	case SYS_POWER_STATE_DEEP_SLEEP_3:
-		/* FALLTHROUGH */
+		break;
 # endif
-		return true;
 #endif /* CONFIG_SYS_POWER_DEEP_SLEEP_STATES */
 
 	default:
-		return false;
+		ret = false;
+		break;
 	}
+
+	return ret;
 }
 
 /**

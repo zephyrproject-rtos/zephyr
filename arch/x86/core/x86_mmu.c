@@ -186,13 +186,31 @@ void _x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
 	__ASSERT(!(addr & MMU_PAGE_MASK), "unaligned address provided");
 	__ASSERT(!(size & MMU_PAGE_MASK), "unaligned size provided");
 
+	/* L1TF mitigation: non-present PTEs will have address fields
+	 * zeroed. Expand the mask to include address bits if we are changing
+	 * the present bit.
+	 */
+	if ((mask & MMU_PTE_P_MASK) != 0) {
+		mask |= MMU_PTE_PAGE_MASK;
+	}
+
 	while (size != 0) {
+		x86_page_entry_data_t cur_flags = flags;
 
 		/* TODO we're not generating 2MB entries at the moment */
 		__ASSERT(X86_MMU_GET_PDE(pdpt, addr)->ps != 1, "2MB PDE found");
 		pte = X86_MMU_GET_PTE(pdpt, addr);
 
-		pte->value = (pte->value & ~mask) | flags;
+		/* If we're setting the present bit, restore the address
+		 * field. If we're clearing it, then the address field
+		 * will be zeroed instead, mapping the PTE to the NULL page.
+		 */
+		if (((mask & MMU_PTE_P_MASK) != 0) &&
+		    ((flags & MMU_ENTRY_PRESENT) != 0)) {
+			cur_flags |= addr;
+		}
+
+		pte->value = (pte->value & ~mask) | cur_flags;
 		tlb_flush_page((void *)addr);
 
 		size -= MMU_PAGE_SIZE;
@@ -218,6 +236,24 @@ void z_x86_reset_pages(void *start, size_t size)
 #endif /* CONFIG_X86_KPTI */
 }
 
+static inline void activate_partition(struct k_mem_partition *partition)
+{
+	/* Set the partition attributes */
+	u64_t attr, mask;
+
+#if CONFIG_X86_KPTI
+	attr = partition->attr | MMU_ENTRY_PRESENT;
+	mask = K_MEM_PARTITION_PERM_MASK | MMU_PTE_P_MASK;
+#else
+	attr = partition->attr;
+	mask = K_MEM_PARTITION_PERM_MASK;
+#endif /* CONFIG_X86_KPTI */
+
+	_x86_mmu_set_flags(&USER_PDPT,
+			   (void *)partition->start,
+			   partition->size, attr, mask);
+}
+
 /* Helper macros needed to be passed to x86_update_mem_domain_pages */
 #define X86_MEM_DOMAIN_SET_PAGES   (0U)
 #define X86_MEM_DOMAIN_RESET_PAGES (1U)
@@ -227,7 +263,7 @@ static inline void _x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
 {
 	u32_t partition_index;
 	u32_t total_partitions;
-	struct k_mem_partition partition;
+	struct k_mem_partition *partition;
 	u32_t partitions_count;
 
 	/* If mem_domain doesn't point to a valid location return.*/
@@ -248,32 +284,19 @@ static inline void _x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
 	     partition_index++) {
 
 		/* Get the partition info */
-		partition = mem_domain->partitions[partition_index];
-		if (partition.size == 0) {
+		partition = &mem_domain->partitions[partition_index];
+		if (partition->size == 0) {
 			continue;
 		}
 		partitions_count++;
 		if (page_conf == X86_MEM_DOMAIN_SET_PAGES) {
-			/* Set the partition attributes */
-			u64_t attr, mask;
-
-#if CONFIG_X86_KPTI
-			attr = partition.attr | MMU_ENTRY_PRESENT;
-			mask = K_MEM_PARTITION_PERM_MASK | MMU_PTE_P_MASK;
-#else
-			attr = partition.attr;
-			mask = K_MEM_PARTITION_PERM_MASK;
-#endif /* CONFIG_X86_KPTI */
-
-			_x86_mmu_set_flags(&USER_PDPT,
-					   (void *)partition.start,
-					   partition.size, attr, mask);
+			activate_partition(partition);
 		} else {
-			z_x86_reset_pages((void *)partition.start,
-					  partition.size);
+			z_x86_reset_pages((void *)partition->start,
+					  partition->size);
 		}
 	}
- out:
+out:
 	return;
 }
 
@@ -294,21 +317,30 @@ void _arch_mem_domain_destroy(struct k_mem_domain *domain)
 
 /* Reset/destroy one partition spcified in the argument of the API. */
 void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				       u32_t  partition_id)
+				       u32_t partition_id)
 {
-	struct k_mem_partition partition;
+	struct k_mem_partition *partition;
 
-	if (domain == NULL) {
-		goto out;
-	}
-
+	__ASSERT_NO_MSG(domain != NULL);
 	__ASSERT(partition_id <= domain->num_partitions,
 		 "invalid partitions");
 
-	partition = domain->partitions[partition_id];
-	z_x86_reset_pages((void *)partition.start, partition.size);
- out:
-	return;
+	partition = &domain->partitions[partition_id];
+	z_x86_reset_pages((void *)partition->start, partition->size);
+}
+
+/* Reset/destroy one partition spcified in the argument of the API. */
+void _arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				    u32_t partition_id)
+{
+	struct k_mem_partition *partition;
+
+	__ASSERT_NO_MSG(domain != NULL);
+	__ASSERT(partition_id <= domain->num_partitions,
+		 "invalid partitions");
+
+	partition = &domain->partitions[partition_id];
+	activate_partition(partition);
 }
 
 int _arch_mem_domain_max_partitions_get(void)

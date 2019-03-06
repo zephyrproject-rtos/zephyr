@@ -1,6 +1,6 @@
 .. _mec2016evb_assy6797:
 
-MEC2616EVB ASSY6797
+MEC2016EVB ASSY6797
 ###################
 
 Overview

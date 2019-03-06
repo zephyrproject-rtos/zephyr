@@ -273,7 +273,13 @@ static int cmd_read(const struct shell *shell, size_t argc, char **argv)
 	}
 
 	if (offset > 0) {
-		fs_seek(&file, offset, FS_SEEK_SET);
+		err = fs_seek(&file, offset, FS_SEEK_SET);
+		if (err) {
+			shell_error(shell, "Failed to seek %s (%d)",
+				    path, err);
+			fs_close(&file);
+			return -ENOEXEC;
+		}
 	}
 
 	while (count > 0) {

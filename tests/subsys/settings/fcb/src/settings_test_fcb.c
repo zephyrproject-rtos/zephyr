@@ -176,7 +176,7 @@ void config_wipe_fcb(struct flash_sector *fs, int cnt)
 	int rc;
 	int i;
 
-	rc = flash_area_open(CONFIG_SETTINGS_FCB_FLASH_AREA, &fap);
+	rc = flash_area_open(DT_FLASH_AREA_STORAGE_ID, &fap);
 
 	for (i = 0; i < cnt; i++) {
 		rc = flash_area_erase(fap, fs[i].fs_off, fs[i].fs_size);

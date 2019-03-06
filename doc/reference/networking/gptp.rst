@@ -3,6 +3,10 @@
 generic Precision Time Protocol (gPTP)
 ######################################
 
+.. contents::
+    :local:
+    :depth: 2
+
 Overview
 ********
 

@@ -18,8 +18,19 @@
 #include <init.h>
 #include <stdbool.h>
 #include <app_memory/app_memdomain.h>
+#include <misc/libc-hooks.h>
 
+#ifdef Z_LIBC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_libc_partition);
+#endif
+
+/* TODO: Find a better place to put this. Since we pull the entire
+ * libext__lib__crypto__mbedtls.a globals into app shared memory
+ * section, we can't put this in ext/lib/crypto/mbedtls/zephyr_init.c
+ */
+#ifdef CONFIG_MBEDTLS
+K_APPMEM_PARTITION_DEFINE(k_mbedtls_partition);
+#endif
 
 #define LOG_LEVEL CONFIG_KERNEL_LOG_LEVEL
 #include <logging/log.h>
@@ -734,7 +745,7 @@ out:
 extern char __app_shmem_regions_start[];
 extern char __app_shmem_regions_end[];
 
-static int app_shmem_bss_zero(struct device *unused)
+void z_app_shmem_bss_zero(void)
 {
 	struct z_app_region *region, *end;
 
@@ -744,11 +755,7 @@ static int app_shmem_bss_zero(struct device *unused)
 	for ( ; region < end; region++) {
 		(void)memset(region->bss_start, 0, region->bss_size);
 	}
-
-	return 0;
 }
-
-SYS_INIT(app_shmem_bss_zero, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 /*
  * Default handlers if otherwise unimplemented

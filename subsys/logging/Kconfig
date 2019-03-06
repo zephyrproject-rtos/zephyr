@@ -212,13 +212,14 @@ config LOG_IMMEDIATE
 	  flawlessly in that mode because one log operation can be interrupted
 	  by another one in the higher priority context.
 
-config LOG_DISABLE_FANCY_OUTPUT_FORMATTING
+config LOG_ENABLE_FANCY_OUTPUT_FORMATTING
 	depends on !NEWLIB_LIBC && !ARCH_POSIX
-	bool "Use vprintk() instead of minimal libc _prf()"
+	bool "Format strings with minimal libc _prf() instead of _vprintk()"
 	help
-	  Selecting this option will choose vprintk for handling format
-	  strings instead of the more robust _prf() function in minimal
-	  libc.  Choosing this option can save around ~3K flash.
+	  Selecting this option will choose more robust _prf() function from
+	  minimal libc for handling format strings instead of the _vprintk()
+	  function. Choosing this option adds around ~3K flash and ~250 bytes on
+	  stack.
 
 if !LOG_IMMEDIATE
 
@@ -438,6 +439,21 @@ config LOG_BACKEND_NATIVE_POSIX
 	help
 	  Enable backend in native_posix
 
+config LOG_BACKEND_XTENSA_SIM
+	bool "Enable xtensa simulator backend"
+	depends on SOC_XTENSA_SAMPLE_CONTROLLER
+	help
+	  Enable backend in xtensa simulator
+
+if LOG_BACKEND_XTENSA_SIM
+config LOG_BACKEND_XTENSA_OUTPUT_BUFFER_SIZE
+	int "Size of the output buffer"
+	default 16
+	help
+	  Buffer is used by log_output module for preparing output data (e.g.
+	  string formatting).
+endif
+
 config LOG_BACKEND_NET
 	bool "Enable networking backend"
 	depends on NETWORKING
@@ -488,7 +504,7 @@ endif # LOG_BACKEND_NET
 config LOG_BACKEND_SHOW_COLOR
 	bool "Enable colors in the backend"
 	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
-	           || LOG_BACKEND_SWO
+	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM
 	default y
 	help
 	  When enabled selected backend prints errors in red and warning in yellow.
@@ -496,7 +512,7 @@ config LOG_BACKEND_SHOW_COLOR
 config LOG_BACKEND_FORMAT_TIMESTAMP
 	bool "Enable timestamp formatting in the backend"
 	depends on LOG_BACKEND_UART || LOG_BACKEND_NATIVE_POSIX || LOG_BACKEND_RTT \
-	           || LOG_BACKEND_SWO
+	           || LOG_BACKEND_SWO || LOG_BACKEND_XTENSA_SIM
 	default y
 	help
 	  When enabled timestamp is formatted to hh:mm:ss:ms,us.

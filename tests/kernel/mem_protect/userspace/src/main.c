@@ -35,10 +35,10 @@ K_SEM_DEFINE(expect_fault_sem, 0, 1);
 
 /*
  * Create partitions. part0 is for all variables to run
- * ztest and this test suite. part1 and part2 are for
+ * ztest and this test suite. part1 is for
  * subsequent test specifically for this new implementation.
  */
-FOR_EACH(K_APPMEM_PARTITION_DEFINE, part0, part1, part2);
+FOR_EACH(K_APPMEM_PARTITION_DEFINE, part0, part1);
 
 /*
  * Create memory domains. dom0 is for the ztest and this
@@ -650,14 +650,13 @@ static void shared_mem_thread(void)
  */
 static void access_other_memdomain(void)
 {
-	struct k_mem_partition *parts[] = {&part0, &part2};
+	struct k_mem_partition *parts[] = {&part0};
 	/*
 	 * Following tests the ability for a thread to access data
 	 * in a domain that it is denied.
 	 */
 
-	/* initialize domain dom1 with partition part2 */
-	k_mem_domain_init(&dom1, 2, parts);
+	k_mem_domain_init(&dom1, ARRAY_SIZE(parts), parts);
 
 	/* remove current thread from domain dom0 and add to dom1 */
 	k_mem_domain_remove_thread(k_current_get());
@@ -677,6 +676,224 @@ static void access_other_memdomain(void)
 extern u8_t *_k_priv_stack_find(void *obj);
 extern k_thread_stack_t ztest_thread_stack[];
 #endif
+
+struct k_mem_domain add_thread_drop_dom;
+struct k_mem_domain add_part_drop_dom;
+struct k_mem_domain remove_thread_drop_dom;
+struct k_mem_domain remove_part_drop_dom;
+
+struct k_mem_domain add_thread_ctx_dom;
+struct k_mem_domain add_part_ctx_dom;
+struct k_mem_domain remove_thread_ctx_dom;
+struct k_mem_domain remove_part_ctx_dom;
+
+K_APPMEM_PARTITION_DEFINE(access_part);
+K_APP_BMEM(access_part) volatile bool test_bool;
+
+static void user_half(void *arg1, void *arg2, void *arg3)
+{
+	test_bool = 1;
+	if (!expect_fault) {
+		ztest_test_pass();
+	} else {
+		ztest_test_fail();
+	}
+}
+
+/**
+ * Show that changing between memory domains and dropping to user mode works
+ * as expected.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+static void domain_add_thread_drop_to_user(void)
+{
+	struct k_mem_partition *parts[] = {&part0, &access_part,
+					   &ztest_mem_partition};
+
+	expect_fault = false;
+	k_mem_domain_init(&add_thread_drop_dom, ARRAY_SIZE(parts), parts);
+	k_mem_domain_remove_thread(k_current_get());
+
+	k_sleep(1);
+	k_mem_domain_add_thread(&add_thread_drop_dom, k_current_get());
+
+	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
+}
+
+/* Show that adding a partition to a domain and then dropping to user mode
+ * works as expected.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+static void domain_add_part_drop_to_user(void)
+{
+	struct k_mem_partition *parts[] = {&part0, &ztest_mem_partition};
+
+	expect_fault = false;
+	k_mem_domain_init(&add_part_drop_dom, ARRAY_SIZE(parts), parts);
+	k_mem_domain_remove_thread(k_current_get());
+	k_mem_domain_add_thread(&add_part_drop_dom, k_current_get());
+
+	k_sleep(1);
+	k_mem_domain_add_partition(&add_part_drop_dom, &access_part);
+
+	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
+}
+
+/* Show that self-removing from a memory domain and then dropping to user
+ * mode faults as expected.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+static void domain_remove_thread_drop_to_user(void)
+{
+	struct k_mem_partition *parts[] = {&part0, &access_part,
+					   &ztest_mem_partition};
+
+	expect_fault = true;
+	expected_reason = REASON_HW_EXCEPTION;
+	k_mem_domain_init(&remove_thread_drop_dom, ARRAY_SIZE(parts), parts);
+	k_mem_domain_remove_thread(k_current_get());
+	k_mem_domain_add_thread(&remove_thread_drop_dom, k_current_get());
+
+	k_sleep(1);
+	k_mem_domain_remove_thread(k_current_get());
+
+	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
+}
+
+/**
+ * Show that self-removing a partition from a domain we are a membed of,
+ * and then dropping to user mode faults as expected.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+static void domain_remove_part_drop_to_user(void)
+{
+	struct k_mem_partition *parts[] = {&part0, &access_part,
+					   &ztest_mem_partition};
+
+	expect_fault = true;
+	expected_reason = REASON_HW_EXCEPTION;
+	k_mem_domain_init(&remove_part_drop_dom, ARRAY_SIZE(parts), parts);
+	k_mem_domain_remove_thread(k_current_get());
+	k_mem_domain_add_thread(&remove_part_drop_dom, k_current_get());
+
+	k_sleep(1);
+	k_mem_domain_remove_partition(&remove_part_drop_dom, &access_part);
+
+	k_thread_user_mode_enter(user_half, NULL, NULL, NULL);
+}
+
+static void user_ctx_switch_half(void *arg1, void *arg2, void *arg3)
+{
+	test_bool = 1;
+	k_sem_give(&uthread_end_sem);
+}
+
+static void spawn_user(void)
+{
+	k_sem_reset(&uthread_end_sem);
+	k_object_access_grant(&uthread_end_sem, k_current_get());
+
+	k_thread_create(&kthread_thread, kthread_stack, STACKSIZE,
+			user_ctx_switch_half, NULL, NULL, NULL,
+			K_PRIO_PREEMPT(1), K_INHERIT_PERMS | K_USER,
+			K_NO_WAIT);
+
+	k_sem_take(&uthread_end_sem, K_FOREVER);
+	if (expect_fault) {
+		ztest_test_fail();
+	}
+}
+
+/**
+ * Show that changing between memory domains and then switching to another
+ * thread in the same domain works as expected.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+static void domain_add_thread_context_switch(void)
+{
+	struct k_mem_partition *parts[] = {&part0, &access_part,
+					   &ztest_mem_partition};
+
+	expect_fault = false;
+	k_mem_domain_init(&add_thread_ctx_dom, ARRAY_SIZE(parts), parts);
+	k_mem_domain_remove_thread(k_current_get());
+
+	k_sleep(1);
+	k_mem_domain_add_thread(&add_thread_ctx_dom, k_current_get());
+
+	spawn_user();
+}
+
+/* Show that adding a partition to a domain and then switching to another
+ * user thread in the same domain works as expected.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+static void domain_add_part_context_switch(void)
+{
+	struct k_mem_partition *parts[] = {&part0, &ztest_mem_partition};
+
+	expect_fault = false;
+	k_mem_domain_init(&add_part_ctx_dom, ARRAY_SIZE(parts), parts);
+	k_mem_domain_remove_thread(k_current_get());
+	k_mem_domain_add_thread(&add_part_ctx_dom, k_current_get());
+
+	k_sleep(1);
+	k_mem_domain_add_partition(&add_part_ctx_dom, &access_part);
+
+	spawn_user();
+}
+
+/* Show that self-removing from a memory domain and then switching to another
+ * user thread in the same domain faults as expected.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+static void domain_remove_thread_context_switch(void)
+{
+	struct k_mem_partition *parts[] = {&part0, &access_part,
+					   &ztest_mem_partition};
+
+	expect_fault = true;
+	expected_reason = REASON_HW_EXCEPTION;
+	k_mem_domain_init(&remove_thread_ctx_dom, ARRAY_SIZE(parts), parts);
+	k_mem_domain_remove_thread(k_current_get());
+	k_mem_domain_add_thread(&remove_thread_ctx_dom, k_current_get());
+
+	k_sleep(1);
+	k_mem_domain_remove_thread(k_current_get());
+
+	spawn_user();
+}
+
+/**
+ * Show that self-removing a partition from a domain we are a member of,
+ * and then switching to another user thread in the same domain faults as
+ * expected.
+ *
+ * @ingroup kernel_memprotect_tests
+ */
+static void domain_remove_part_context_switch(void)
+{
+	struct k_mem_partition *parts[] = {&part0, &access_part,
+					   &ztest_mem_partition};
+
+	expect_fault = true;
+	expected_reason = REASON_HW_EXCEPTION;
+	k_mem_domain_init(&remove_part_ctx_dom, ARRAY_SIZE(parts), parts);
+	k_mem_domain_remove_thread(k_current_get());
+	k_mem_domain_add_thread(&remove_part_ctx_dom, k_current_get());
+
+	k_sleep(1);
+	k_mem_domain_remove_partition(&remove_part_ctx_dom, &access_part);
+
+	spawn_user();
+}
 
 void test_main(void)
 {
@@ -719,7 +936,15 @@ void test_main(void)
 			 ztest_unit_test(user_mode_enter),
 			 ztest_user_unit_test(write_kobject_user_pipe),
 			 ztest_user_unit_test(read_kobject_user_pipe),
-			 ztest_unit_test(access_other_memdomain)
+			 ztest_unit_test(access_other_memdomain),
+			 ztest_unit_test(domain_add_thread_drop_to_user),
+			 ztest_unit_test(domain_add_part_drop_to_user),
+			 ztest_unit_test(domain_remove_part_drop_to_user),
+			 ztest_unit_test(domain_remove_thread_drop_to_user),
+			 ztest_unit_test(domain_add_thread_context_switch),
+			 ztest_unit_test(domain_add_part_context_switch),
+			 ztest_unit_test(domain_remove_part_context_switch),
+			 ztest_unit_test(domain_remove_thread_context_switch)
 			 );
 	ztest_run_test_suite(userspace);
 }

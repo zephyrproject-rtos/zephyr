@@ -418,7 +418,8 @@ static void arp_gratuitous(struct net_if *iface,
 static void arp_update(struct net_if *iface,
 		       struct in_addr *src,
 		       struct net_eth_addr *hwaddr,
-		       bool gratuitous)
+		       bool gratuitous,
+		       bool force)
 {
 	struct arp_entry *entry;
 	struct net_pkt *pkt;
@@ -429,6 +430,17 @@ static void arp_update(struct net_if *iface,
 	if (!entry) {
 		if (IS_ENABLED(CONFIG_NET_ARP_GRATUITOUS) && gratuitous) {
 			arp_gratuitous(iface, src, hwaddr);
+		}
+
+		if (force) {
+			sys_snode_t *prev = NULL;
+			struct arp_entry *entry;
+
+			entry = arp_entry_find(&arp_table, iface, src, &prev);
+			if (entry) {
+				memcpy(&entry->eth, hwaddr,
+				       sizeof(struct net_eth_addr));
+			}
 		}
 
 		return;
@@ -548,7 +560,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 				arp_update(net_pkt_iface(pkt),
 					   &arp_hdr->src_ipaddr,
 					   &arp_hdr->src_hwaddr,
-					   true);
+					   true, false);
 				break;
 			}
 		}
@@ -578,6 +590,26 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 			log_strdup(net_sprint_ipv4_addr(
 					   &arp_hdr->dst_ipaddr)));
 
+		/* Update the ARP cache if the sender MAC address has
+		 * changed. In this case the target MAC address is all zeros
+		 * and the target IP address is our address.
+		 */
+		if (memcmp(&eth_hdr->src, &arp_hdr->src_hwaddr,
+			   sizeof(struct net_eth_addr)) == 0 &&
+		    net_eth_is_addr_unspecified(&arp_hdr->dst_hwaddr)) {
+			NET_DBG("Updating ARP cache for %s [%s]",
+				log_strdup(net_sprint_ipv4_addr(
+						 &arp_hdr->src_ipaddr)),
+				log_strdup(net_sprint_ll_addr(
+						 (u8_t *)&arp_hdr->src_hwaddr,
+						 arp_hdr->hwlen)));
+
+			arp_update(net_pkt_iface(pkt),
+				   &arp_hdr->src_ipaddr,
+				   &arp_hdr->src_hwaddr,
+				   false, true);
+		}
+
 		/* Send reply */
 		reply = arp_prepare_reply(net_pkt_iface(pkt), pkt, eth_hdr);
 		if (reply) {
@@ -592,7 +624,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 			arp_update(net_pkt_iface(pkt),
 				   &arp_hdr->src_ipaddr,
 				   &arp_hdr->src_hwaddr,
-				   false);
+				   false, false);
 		}
 
 		break;

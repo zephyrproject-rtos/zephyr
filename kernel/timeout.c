@@ -134,7 +134,7 @@ s32_t z_timeout_remaining(struct _timeout *timeout)
 		}
 	}
 
-	return ticks;
+	return ticks - elapsed();
 }
 
 s32_t _get_next_timeout_expiry(void)

@@ -12,7 +12,7 @@
 
 menuconfig PWM_PCA9685
 	bool "PCA9685 I2C-based PWM chip"
-	depends on PWM && I2C
+	depends on I2C
 	help
 	  Enable driver for PCA9685 I2C-based PWM chip.
 

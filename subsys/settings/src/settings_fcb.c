@@ -38,7 +38,7 @@ int settings_fcb_src(struct settings_fcb *cf)
 	cf->cf_fcb.f_scratch_cnt = 1;
 
 	while (1) {
-		rc = fcb_init(CONFIG_SETTINGS_FCB_FLASH_AREA, &cf->cf_fcb);
+		rc = fcb_init(DT_FLASH_AREA_STORAGE_ID, &cf->cf_fcb);
 		if (rc) {
 			return -EINVAL;
 		}

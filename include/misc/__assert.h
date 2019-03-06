@@ -81,7 +81,7 @@
 
 #if __ASSERT_ON
 #include <misc/printk.h>
-void assert_post_action(void);
+void assert_post_action(const char *file, unsigned int line);
 
 #define __ASSERT_LOC(test)                               \
 	printk("ASSERTION FAIL [%s] @ %s:%d\n",    \
@@ -93,7 +93,7 @@ void assert_post_action(void);
 	do {                                                             \
 		if (!(test)) {                                           \
 			__ASSERT_LOC(test);                              \
-			assert_post_action();                            \
+			assert_post_action(__FILE__, __LINE__);          \
 		}                                                        \
 	} while (false)
 
@@ -102,7 +102,7 @@ void assert_post_action(void);
 		if (!(test)) {                                           \
 			__ASSERT_LOC(test);                              \
 			printk("\t" fmt "\n", ##__VA_ARGS__);            \
-			assert_post_action();                            \
+			assert_post_action(__FILE__, __LINE__);          \
 		}                                                        \
 	} while (false)
 

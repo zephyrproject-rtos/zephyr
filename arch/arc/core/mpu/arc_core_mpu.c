@@ -143,6 +143,12 @@ void _arch_mem_domain_destroy(struct k_mem_domain *domain)
 	arc_core_mpu_enable();
 }
 
+void _arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				    u32_t partition_id)
+{
+	/* No-op on this architecture */
+}
+
 /*
  * Validate the given buffer is user accessible or not
  */

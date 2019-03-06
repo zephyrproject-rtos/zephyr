@@ -567,6 +567,9 @@ int _galileo_pinmux_set_pin(struct device *port, u8_t pin, u32_t func)
 		case NONE:
 			/* no need to do anything */
 			break;
+		default:
+			__ASSERT(false, "Invalid pinmux option");
+			break;
 		}
 	}
 

@@ -3,6 +3,10 @@
 Networking with QEMU Ethernet
 #############################
 
+.. contents::
+    :local:
+    :depth: 2
+
 This page describes how to set up a virtual network between a (Linux) host
 and a Zephyr application running in QEMU.
 

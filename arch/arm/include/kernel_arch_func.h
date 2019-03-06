@@ -73,7 +73,8 @@ _arch_switch_to_main_thread(struct k_thread *main_thread,
 	/* get high address of the stack, i.e. its start (stack grows down) */
 	char *start_of_main_stack;
 
-#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
+#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) && \
+	defined(CONFIG_USERSPACE)
 	start_of_main_stack =
 		K_THREAD_STACK_BUFFER(main_stack) + main_stack_size -
 		MPU_GUARD_ALIGN_AND_SIZE;

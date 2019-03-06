@@ -149,17 +149,10 @@ void NVSRAM_init()
  */
 int_fast16_t NVSRAM_lock(NVS_Handle handle, uint32_t timeout)
 {
-    switch (SemaphoreP_pend(writeSem, timeout)) {
-        case SemaphoreP_OK:
-            return (NVS_STATUS_SUCCESS);
-
-        case SemaphoreP_TIMEOUT:
-            return (NVS_STATUS_TIMEOUT);
-
-        case SemaphoreP_FAILURE:
-        default:
-            return (NVS_STATUS_ERROR);
+    if (SemaphoreP_pend(writeSem, timeout) != SemaphoreP_OK) {
+        return (NVS_STATUS_TIMEOUT);
     }
+    return (NVS_STATUS_SUCCESS);
 }
 
 /*
@@ -271,6 +264,7 @@ int_fast16_t NVSRAM_write(NVS_Handle handle, size_t offset, void *buffer,
     uint8_t              *dstBuf;
     uint8_t              *srcBuf;
     int_fast16_t          result;
+    size_t                size;
     NVSRAM_Object        *object = handle->object;
     NVSRAM_HWAttrs const *hwAttrs = handle->hwAttrs;
 
@@ -284,8 +278,12 @@ int_fast16_t NVSRAM_write(NVS_Handle handle, size_t offset, void *buffer,
 
     /* If erase is set, erase destination sector(s) first */
     if (flags & NVS_WRITE_ERASE) {
-        result = doErase(handle, offset & object->sectorBaseMask,
-            (bufferSize + hwAttrs->sectorSize) & object->sectorBaseMask);
+        size = bufferSize & object->sectorBaseMask;
+        if (bufferSize & (~object->sectorBaseMask)) {
+            size += hwAttrs->sectorSize;
+        }
+
+        result = doErase(handle, offset & object->sectorBaseMask, size);
         if (result != NVS_STATUS_SUCCESS) {
             SemaphoreP_post(writeSem);
 

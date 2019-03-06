@@ -28,27 +28,27 @@ const char *devices[] = {
 
 #ifdef CONFIG_COUNTER_TIMER0
 	/* Nordic TIMER0 may be reserved for Bluetooth */
-	CONFIG_COUNTER_TIMER0_NAME,
+	DT_NORDIC_NRF_TIMER_TIMER_0_LABEL,
 #endif
 #ifdef CONFIG_COUNTER_TIMER1
-	CONFIG_COUNTER_TIMER1_NAME,
+	DT_NORDIC_NRF_TIMER_TIMER_1_LABEL,
 #endif
 #ifdef CONFIG_COUNTER_TIMER2
-	CONFIG_COUNTER_TIMER2_NAME,
+	DT_NORDIC_NRF_TIMER_TIMER_2_LABEL,
 #endif
 #ifdef CONFIG_COUNTER_TIMER3
-	CONFIG_COUNTER_TIMER3_NAME,
+	DT_NORDIC_NRF_TIMER_TIMER_3_LABEL,
 #endif
 #ifdef CONFIG_COUNTER_TIMER4
-	CONFIG_COUNTER_TIMER4_NAME,
+	DT_NORDIC_NRF_TIMER_TIMER_4_LABEL,
 #endif
 #ifdef CONFIG_COUNTER_RTC0
 	/* Nordic RTC0 may be reserved for Bluetooth */
-	CONFIG_COUNTER_RTC0_NAME,
+	DT_NORDIC_NRF_RTC_RTC_0_LABEL,
 #endif
 	/* Nordic RTC1 is used for the system clock */
 #ifdef CONFIG_COUNTER_RTC2
-	CONFIG_COUNTER_RTC2_NAME,
+	DT_NORDIC_NRF_RTC_RTC_2_LABEL,
 #endif
 #ifdef CONFIG_COUNTER_IMX_EPIT_1
 	DT_COUNTER_IMX_EPIT_1_LABEL,
@@ -141,9 +141,9 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 
 	k_busy_wait(5.2*COUNTER_PERIOD_US);
 
-	zassert_true(top_cnt == 5,
+	zassert_true((u32_t)top_cnt == 5,
 			"Unexpected number of turnarounds (%d) (dev: %s).\n",
-			top_cnt, dev_name);
+			(u32_t)top_cnt, dev_name);
 }
 
 void test_set_top_value_with_alarm(void)
@@ -205,10 +205,10 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 	zassert_equal(0, err, "Counter set alarm failed\n");
 
 	k_busy_wait(1.5*counter_ticks_to_us(dev, ticks));
-	zassert_equal(1, alarm_cnt, "Expecting alarm callback\n");
+	zassert_equal(1, (u32_t)alarm_cnt, "Expecting alarm callback\n");
 
 	k_busy_wait(1.5*counter_ticks_to_us(dev, ticks));
-	zassert_equal(1, alarm_cnt, "Expecting alarm callback\n");
+	zassert_equal(1, (u32_t)alarm_cnt, "Expecting alarm callback\n");
 
 	err = counter_cancel_channel_alarm(dev, 0);
 	zassert_equal(0, err, "Counter disabling alarm failed\n");
@@ -302,7 +302,7 @@ void test_multiple_alarms_instance(const char *dev_name)
 	zassert_equal(0, err, "Counter set alarm failed\n");
 
 	k_busy_wait(1.2*counter_ticks_to_us(dev, 2*ticks));
-	zassert_equal(2, alarm_cnt, "Counter set alarm failed\n");
+	zassert_equal(2, (u32_t)alarm_cnt, "Counter set alarm failed\n");
 	zassert_equal(&alarm_cfg2, clbk_data[0],
 			"Expected different order or callbacks\n");
 	zassert_equal(&alarm_cfg, clbk_data[1],
@@ -355,7 +355,7 @@ void test_all_channels_instance(const char *str)
 	}
 
 	k_busy_wait(1.5*counter_ticks_to_us(dev, ticks));
-	zassert_equal(nchan, alarm_cnt, "Expecting alarm callback\n");
+	zassert_equal(nchan, (u32_t)alarm_cnt, "Expecting alarm callback\n");
 
 	for (int i = 0; i < nchan; i++) {
 		err = counter_cancel_channel_alarm(dev, i);

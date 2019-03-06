@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Texas Instruments Incorporated
+ * Copyright (c) 2017-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -577,6 +577,7 @@ void TimerCC32XX_stop(Timer_Handle handle)
     TimerCC32XX_Object        *object = handle->object;
     uint32_t                   interruptMask;
     uintptr_t                  key;
+    bool                       flag = false;
 
     interruptMask = object->timer & (TIMER_TIMB_TIMEOUT | TIMER_TIMA_TIMEOUT);
 
@@ -588,7 +589,7 @@ void TimerCC32XX_stop(Timer_Handle handle)
 
         /* Post the Semaphore when called from the Hwi */
         if (object->mode == Timer_ONESHOT_BLOCKING) {
-            SemaphoreP_post(object->timerSem);
+            flag = true;
         }
 
         TimerDisable(hwAttrs->baseAddress, object->timer);
@@ -597,4 +598,8 @@ void TimerCC32XX_stop(Timer_Handle handle)
     }
 
     HwiP_restore(key);
+
+    if (flag) {
+        SemaphoreP_post(object->timerSem);
+    }
 }

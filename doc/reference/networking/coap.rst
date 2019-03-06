@@ -3,6 +3,10 @@
 CoAP
 #####
 
+.. contents::
+    :local:
+    :depth: 2
+
 Overview
 ********
 

@@ -8,3 +8,4 @@ tests:
         nrf51_pca10028 nrf52840_pca10056
     tags: drivers pwm
     depends_on: pwm
+    harness: led

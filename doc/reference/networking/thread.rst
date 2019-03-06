@@ -3,6 +3,10 @@
 Thread protocol
 ###############
 
+.. contents::
+    :local:
+    :depth: 2
+
 Overview
 ********
 Thread is a low-power mesh networking technology, designed specifically for home

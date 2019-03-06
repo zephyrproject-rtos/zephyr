@@ -312,8 +312,8 @@ if(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT)
   endif()
 endif()
 
-separate_arguments(CONFIG_COMPILER_OPT_AS_LIST UNIX_COMMAND ${CONFIG_COMPILER_OPT})
-zephyr_compile_options(${CONFIG_COMPILER_OPT_AS_LIST})
+separate_arguments(COMPILER_OPT_AS_LIST UNIX_COMMAND ${CONFIG_COMPILER_OPT})
+zephyr_compile_options(${COMPILER_OPT_AS_LIST})
 
 # TODO: Include arch compiler options at this point.
 
@@ -568,7 +568,9 @@ add_subdirectory(subsys)
 add_subdirectory(drivers)
 
 # Add all zephyr modules subdirectories.
-message("Including module(s): ${ZEPHYR_MODULES_NAME}")
+if(ZEPHYR_MODULES_NAME)
+  message("Including module(s): ${ZEPHYR_MODULES_NAME}")
+endif()
 set(index 0)
 foreach(module_name ${ZEPHYR_MODULES_NAME})
   list(GET ZEPHYR_MODULES_DIR ${index} module_dir)
@@ -748,24 +750,6 @@ get_property(ZEPHYR_LIBS_PROPERTY GLOBAL PROPERTY ZEPHYR_LIBS)
 foreach(zephyr_lib ${ZEPHYR_LIBS_PROPERTY})
   # TODO: Could this become an INTERFACE property of zephyr_interface?
   add_dependencies(${zephyr_lib} ${OFFSETS_H_TARGET})
-
-  # Verify that all (non-imported) libraries have source
-  # files. Libraries without source files are not supported because
-  # they are an indication that something has been misconfigured.
-  get_target_property(lib_imported ${zephyr_lib} IMPORTED)
-  get_target_property(lib_sources  ${zephyr_lib} SOURCES)
-  if(lib_sources STREQUAL lib_sources-NOTFOUND
-      AND (NOT (${zephyr_lib} STREQUAL app))
-      AND (NOT lib_imported)
-      )
-    # app is not checked because it's sources are added to it after
-    # this CMakeLists.txt file has been processed
-    message(FATAL_ERROR "\
-The Zephyr library '${zephyr_lib}' was created without source files. \
-Empty (non-imported) libraries are not supported. \
-Either make sure that the library has the sources it should have, \
-or make sure it is not created when it has no source files.")
-  endif()
 endforeach()
 
 get_property(OUTPUT_FORMAT        GLOBAL PROPERTY PROPERTY_OUTPUT_FORMAT)
@@ -1165,13 +1149,17 @@ if(CONFIG_USERSPACE)
   if(CONFIG_NEWLIB_LIBC)
     set(NEWLIB_PART -l libc.a z_libc_partition)
   endif()
+  if(CONFIG_MBEDTLS)
+    set(MBEDTLS_PART -l libext__lib__crypto__mbedtls.a k_mbedtls_partition)
+  endif()
+
   add_custom_command(
     OUTPUT ${APP_SMEM_LD}
     COMMAND ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/gen_app_partitions.py
     -d ${OBJ_FILE_DIR}
     -o ${APP_SMEM_LD}
-    ${NEWLIB_PART}
+    ${NEWLIB_PART} ${MBEDTLS_PART}
     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
     DEPENDS
     kernel

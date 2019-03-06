@@ -314,6 +314,12 @@ void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 		&domain->partitions[partition_id], &reset_attr);
 }
 
+void _arch_mem_domain_partition_add(struct k_mem_domain *domain,
+				    u32_t partition_id)
+{
+	/* No-op on this architecture */
+}
+
 /*
  * Validate the given buffer is user accessible or not
  */

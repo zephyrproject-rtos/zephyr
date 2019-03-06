@@ -15,7 +15,7 @@ synchronous parallel NAND/NOR/PSRAM controller. The i.MX RT1064 runs on the
 Arm® Cortex-M7® core at 600 MHz.
 
 .. image:: ./mimxrt1064_evk.jpg
-   :width: 720px
+   :width: 600px
    :align: center
    :alt: MIMXRT1064-EVK
 

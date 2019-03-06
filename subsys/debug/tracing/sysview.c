@@ -55,6 +55,7 @@ static void send_task_list_cb(void)
 
 	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
 		char name[20];
+		const char *tname = k_thread_name_get(thread);
 
 		if (is_idle_thread(thread)) {
 			continue;
@@ -64,7 +65,7 @@ static void send_task_list_cb(void)
 			 (uintptr_t)&thread->entry);
 		SEGGER_SYSVIEW_SendTaskInfo(&(SEGGER_SYSVIEW_TASKINFO) {
 			.TaskID = (u32_t)(uintptr_t)thread,
-			.sName = name,
+		      .sName = tname?tname:name,
 			.StackSize = thread->stack_info.size,
 			.StackBase = thread->stack_info.start,
 			.Prio = thread->base.prio,

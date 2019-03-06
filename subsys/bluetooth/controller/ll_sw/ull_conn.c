@@ -1253,6 +1253,7 @@ static void ticker_op_update_cb(u32_t status, void *param)
 
 static void ticker_op_stop_cb(u32_t status, void *param)
 {
+	u32_t retval;
 	static memq_link_t link;
 	static struct mayfly mfy = {0, 0, &link, NULL, lll_conn_tx_flush};
 
@@ -1261,7 +1262,9 @@ static void ticker_op_stop_cb(u32_t status, void *param)
 	mfy.param = param;
 
 	/* Flush pending tx PDUs in LLL (using a mayfly) */
-	mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_LLL, 1, &mfy);
+	retval = mayfly_enqueue(TICKER_USER_ID_ULL_LOW, TICKER_USER_ID_LLL, 1,
+				&mfy);
+	LL_ASSERT(!retval);
 }
 
 static inline void disable(u16_t handle)
@@ -3111,6 +3114,13 @@ static inline bool ctrl_is_unexpected(struct ll_conn *conn, u8_t opcode)
 		  (opcode != PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND)))) ||
 	       (conn->lll.role &&
 		((!conn->refresh &&
+		  /* As a workaround to IOP with some old peer controllers that
+		   * respond with Unknown Rsp PDU to our local Slave Initiated
+		   * Feature request during Encryption Setup initiated by the
+		   * peer, we accept this Unknown Rsp PDU during the Encryption
+		   * setup procedure in progress.
+		   */
+		  (opcode != PDU_DATA_LLCTRL_TYPE_UNKNOWN_RSP) &&
 		  (opcode != PDU_DATA_LLCTRL_TYPE_TERMINATE_IND) &&
 		  (opcode != PDU_DATA_LLCTRL_TYPE_START_ENC_RSP) &&
 		  (opcode != PDU_DATA_LLCTRL_TYPE_REJECT_IND) &&

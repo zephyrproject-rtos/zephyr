@@ -3,6 +3,10 @@
 Ethernet Management
 ###################
 
+.. contents::
+    :local:
+    :depth: 2
+
 Overview
 ********
 

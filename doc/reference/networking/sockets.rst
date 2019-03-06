@@ -3,6 +3,10 @@
 BSD Sockets
 ###########
 
+.. contents::
+    :local:
+    :depth: 2
+
 Overview
 ********
 

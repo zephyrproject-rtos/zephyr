@@ -85,12 +85,27 @@ extern void _arch_mem_domain_configure(struct k_thread *thread);
  * A memory domain contains multiple partitions and this API provides the
  * freedom to remove a particular partition while keeping others intact.
  * This API will handle any arch/HW specific changes that needs to be done.
+ * Only called if the active thread's domain was modified.
  *
  * @param domain The memory domain structure
  * @param partition_id The partition that needs to be deleted
  */
 extern void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-					      u32_t  partition_id);
+					      u32_t partition_id);
+
+/**
+ * @brief Remove a partition from the memory domain
+ *
+ * A memory domain contains multiple partitions and this API provides the
+ * freedom to add an additional partition to a memory domain.
+ * This API will handle any arch/HW specific changes that needs to be done.
+ * Only called if the active thread's domain was modified.
+ *
+ * @param domain The memory domain structure
+ * @param partition_id The partition that needs to be added
+ */
+extern void _arch_mem_domain_partition_add(struct k_mem_domain *domain,
+					   u32_t partition_id);
 
 /**
  * @brief Remove the memory domain
@@ -102,9 +117,7 @@ extern void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
  * @param domain The memory domain structure which needs to be deleted.
  */
 extern void _arch_mem_domain_destroy(struct k_mem_domain *domain);
-#endif
 
-#ifdef CONFIG_USERSPACE
 /**
  * @brief Check memory region permissions
  *
@@ -172,6 +185,14 @@ extern FUNC_NORETURN void _arch_syscall_oops(void *ssf);
  * @return Length of the string, not counting NULL byte, up to maxsize
  */
 extern size_t z_arch_user_string_nlen(const char *s, size_t maxsize, int *err);
+
+/**
+ * @brief Zero out BSS sections for application shared memory
+ *
+ * This isn't handled by any platform bss zeroing, and is called from
+ * _Cstart() if userspace is enabled.
+ */
+extern void z_app_shmem_bss_zero(void);
 #endif /* CONFIG_USERSPACE */
 
 /**

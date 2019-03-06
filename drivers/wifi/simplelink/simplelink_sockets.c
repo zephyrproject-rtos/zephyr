@@ -14,14 +14,169 @@ LOG_MODULE_DECLARE(LOG_MODULE_NAME);
 /* Define sockaddr, etc, before simplelink.h */
 #include <net/socket_offload.h>
 
+#include <errno.h>
 #include <ti/drivers/net/wifi/simplelink.h>
 #include <ti/drivers/net/wifi/source/driver.h>
 #include "simplelink_support.h"
 
 #include "tls_internal.h"
 
+#define FAILED (-1)
+
 /* Mutex for getaddrinfo() calls: */
 K_MUTEX_DEFINE(ga_mutex);
+
+/*
+ * Convert SL error codes into BSD errno values
+ * note that we are handling the same set of values as in TI SlNetSock
+ * minus the ones that are not defined in ti/drivers/net/wifi/errors.h.
+ */
+static int setErrno(_i32 error)
+{
+	if (error >= 0) {
+		return error;
+	}
+	/* This switch case block is necessary for translating the NWP error
+	 * code to BSD ones. The #ifdef in each case are made in order to
+	 * reduce code footprint: These cases are compiled if and only if
+	 * there's a discrepancy between the BSD error number and the error
+	 * code returned by the NWP.
+	 */
+	switch (error) {
+#if EBADF != SL_ERROR_BSD_EBADF
+	case SL_ERROR_BSD_EBADF:
+		error = EBADF;
+		break;
+#endif
+#if ENSOCK !=  SL_ERROR_BSD_ENSOCK
+	case SL_ERROR_BSD_ENSOCK:
+		/* The limit on total # of open sockets has been reached */
+		error = ENSOCK;
+		break;
+#endif
+#if EAGAIN != SL_ERROR_BSD_EAGAIN
+	case SL_ERROR_BSD_EAGAIN:
+		error = EAGAIN;
+		break;
+#endif
+#if ENOMEM != SL_ERROR_BSD_ENOMEM
+	case SL_ERROR_BSD_ENOMEM:
+		error = ENOMEM;
+		break;
+#endif
+#if EACCES != SL_ERROR_BSD_EACCES
+	case SL_ERROR_BSD_EACCES:
+		error = EACCES;
+		break;
+#endif
+#if EFAULT != SL_ERROR_BSD_EFAULT
+	case SL_ERROR_BSD_EFAULT:
+		error = EFAULT;
+		break;
+#endif
+#if EINVAL != SL_ERROR_BSD_EINVAL
+	case SL_ERROR_BSD_EINVAL:
+		error = EINVAL;
+		break;
+#endif
+#if EDESTADDRREQ != SL_ERROR_BSD_EDESTADDRREQ
+	case SL_ERROR_BSD_EDESTADDRREQ:
+		error = EDESTADDRREQ;
+		break;
+#endif
+#if EPROTOTYPE != SL_ERROR_BSD_EPROTOTYPE
+	case SL_ERROR_BSD_EPROTOTYPE:
+		error = EPROTOTYPE;
+		break;
+#endif
+#if ENOPROTOOPT != SL_ERROR_BSD_ENOPROTOOPT
+	case SL_ERROR_BSD_ENOPROTOOPT:
+		error = ENOPROTOOPT;
+		break;
+#endif
+#if EPROTONOSUPPORT != SL_ERROR_BSD_EPROTONOSUPPORT
+	case SL_ERROR_BSD_EPROTONOSUPPORT:
+		error = EPROTONOSUPPORT;
+		break;
+#endif
+#if EOPNOTSUPP != SL_ERROR_BSD_EOPNOTSUPP
+	case SL_ERROR_BSD_EOPNOTSUPP:
+		error = EOPNOTSUPP;
+		break;
+#endif
+#if EAFNOSUPPORT != SL_ERROR_BSD_EAFNOSUPPORT
+	case SL_ERROR_BSD_EAFNOSUPPORT:
+		error = EAFNOSUPPORT;
+		break;
+#endif
+#if EADDRINUSE != SL_ERROR_BSD_EADDRINUSE
+	case SL_ERROR_BSD_EADDRINUSE:
+		error = EADDRINUSE;
+		break;
+#endif
+#if EADDRNOTAVAIL != SL_ERROR_BSD_EADDRNOTAVAIL
+	case SL_ERROR_BSD_EADDRNOTAVAIL:
+		error = EADDRNOTAVAIL;
+		break;
+#endif
+#if ENETUNREACH != SL_ERROR_BSD_ENETUNREACH
+	case SL_ERROR_BSD_ENETUNREACH:
+		error = ENETUNREACH;
+		break;
+#endif
+#if ENOBUFS != SL_ERROR_BSD_ENOBUFS
+	case SL_ERROR_BSD_ENOBUFS:
+		error = ENOBUFS;
+		break;
+#endif
+#if EISCONN != SL_ERROR_BSD_EISCONN
+	case SL_ERROR_BSD_EISCONN:
+		error = EISCONN;
+		break;
+#endif
+#if ENOTCONN != SL_ERROR_BSD_ENOTCONN
+	case SL_ERROR_BSD_ENOTCONN:
+		error = ENOTCONN;
+		break;
+#endif
+#if ETIMEDOUT != SL_ERROR_BSD_ETIMEDOUT
+	case SL_ERROR_BSD_ETIMEDOUT:
+		error = ETIMEDOUT;
+		break;
+#endif
+#if ECONNREFUSED != SL_ERROR_BSD_ECONNREFUSED
+	case SL_ERROR_BSD_ECONNREFUSED:
+		error = ECONNREFUSED;
+		break;
+#endif
+	/* The cases below are proprietary driver errors, which can
+	 * be returned by the SimpleLink Driver, in various cases of failure.
+	 * Each is mapped to the corresponding BSD error.
+	 */
+	case SL_POOL_IS_EMPTY:
+	case SL_RET_CODE_NO_FREE_ASYNC_BUFFERS_ERROR:
+	case SL_RET_CODE_MALLOC_ERROR:
+		error = ENOMEM;
+		break;
+	case SL_RET_CODE_INVALID_INPUT:
+	case SL_EZEROLEN:
+	case SL_ESMALLBUF:
+	case SL_INVALPARAM:
+		error = EINVAL;
+		break;
+	default:
+	/* Do nothing ..
+	 * If no case is true, that means that the BSD error
+	 * code and the code returned by the NWP are either identical,
+	 * or no proprietary error has occurred.
+	 */
+		break;
+	}
+
+	slcb_SetErrno(error);
+
+	return FAILED;
+}
 
 static int simplelink_socket(int family, int type, int proto)
 {
@@ -105,7 +260,7 @@ static int simplelink_socket(int family, int type, int proto)
 	retval = sd;
 
 exit:
-	return _SlDrvSetErrno(retval);
+	return setErrno(retval);
 }
 
 static int simplelink_close(int sd)
@@ -114,7 +269,7 @@ static int simplelink_close(int sd)
 
 	retval = sl_Close(sd);
 
-	return _SlDrvSetErrno(retval);
+	return setErrno(retval);
 }
 
 static SlSockAddr_t *translate_z_to_sl_addrlen(socklen_t addrlen,
@@ -242,7 +397,7 @@ static int simplelink_accept(int sd, struct sockaddr *addr, socklen_t *addrlen)
 	translate_sl_to_z_addr(sl_addr, sl_addrlen, addr, addrlen);
 
 exit:
-	return _SlDrvSetErrno(retval);
+	return setErrno(retval);
 }
 
 static int simplelink_bind(int sd, const struct sockaddr *addr,
@@ -271,7 +426,7 @@ static int simplelink_bind(int sd, const struct sockaddr *addr,
 	retval = sl_Bind(sd, sl_addr, sl_addrlen);
 
 exit:
-	return _SlDrvSetErrno(retval);
+	return setErrno(retval);
 }
 
 static int simplelink_listen(int sd, int backlog)
@@ -280,7 +435,7 @@ static int simplelink_listen(int sd, int backlog)
 
 	retval = (int)sl_Listen(sd, backlog);
 
-	return _SlDrvSetErrno(retval);
+	return setErrno(retval);
 }
 
 static int simplelink_connect(int sd, const struct sockaddr *addr,
@@ -327,7 +482,7 @@ static int simplelink_connect(int sd, const struct sockaddr *addr,
 	}
 
 exit:
-	return _SlDrvSetErrno(retval);
+	return setErrno(retval);
 }
 
 #define ONE_THOUSAND 1000
@@ -389,7 +544,7 @@ static int simplelink_poll(struct pollfd *fds, int nfds, int msecs)
 	}
 
 exit:
-	return _SlDrvSetErrno(retval);
+	return setErrno(retval);
 }
 
 #ifdef CONFIG_NET_SOCKETS_SOCKOPT_TLS
@@ -464,9 +619,7 @@ static int map_credentials(int sd, const void *optval, socklen_t optlen)
  *  Remove once Zephyr has POSIX socket options defined.
  */
 #define SO_BROADCAST  (200)
-#define SO_REUSEADDR  (201)
 #define SO_SNDBUF     (202)
-#define TCP_NODELAY   (203)
 
 /* Needed to keep line lengths < 80: */
 #define _SEC_DOMAIN_VERIF SL_SO_SECURE_DOMAIN_NAME_VERIFICATION
@@ -531,7 +684,7 @@ static int simplelink_setsockopt(int sd, int level, int optname,
 	}
 
 exit:
-	return _SlDrvSetErrno(retval);
+	return setErrno(retval);
 }
 
 static int simplelink_getsockopt(int sd, int level, int optname,
@@ -581,7 +734,7 @@ static int simplelink_getsockopt(int sd, int level, int optname,
 				       (SlSocklen_t *)optlen);
 	}
 exit:
-	return _SlDrvSetErrno(retval);
+	return setErrno(retval);
 }
 
 /* SimpleLink does not support flags in recv.
@@ -635,7 +788,7 @@ static ssize_t simplelink_recv(int sd, void *buf, size_t max_len, int flags)
 		handle_recv_flags(sd, flags, FALSE, &nb_enabled);
 	}
 
-	return (ssize_t)(_SlDrvSetErrno(retval));
+	return (ssize_t)(setErrno(retval));
 }
 
 static ssize_t simplelink_recvfrom(int sd, void *buf, short int len,
@@ -673,7 +826,7 @@ static ssize_t simplelink_recvfrom(int sd, void *buf, short int len,
 		}
 	}
 
-	return _SlDrvSetErrno(retval);
+	return setErrno(retval);
 }
 
 static ssize_t simplelink_send(int sd, const void *buf, size_t len,
@@ -683,7 +836,7 @@ static ssize_t simplelink_send(int sd, const void *buf, size_t len,
 
 	retval = (ssize_t)sl_Send(sd, buf, len, flags);
 
-	return _SlDrvSetErrno(retval);
+	return setErrno(retval);
 }
 
 static ssize_t simplelink_sendto(int sd, const void *buf, size_t len,
@@ -708,7 +861,7 @@ static ssize_t simplelink_sendto(int sd, const void *buf, size_t len,
 	retval = sl_SendTo(sd, buf, (u16_t)len, flags,
 				    sl_addr, sl_addrlen);
 exit:
-	return _SlDrvSetErrno(retval);
+	return setErrno(retval);
 }
 
 /*

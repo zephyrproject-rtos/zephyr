@@ -624,6 +624,9 @@ class DeviceHandler(Handler):
                 serial_line = ser.readline()
             except TypeError:
                 pass
+            except serial.serialutil.SerialException:
+                ser.close()
+                break
 
             # Just because ser_fileno has data doesn't mean an entire line
             # is available yet.
@@ -1811,17 +1814,17 @@ class TestInstance:
     def create_overlay(self, platform):
         file = os.path.join(self.outdir, "overlay.conf")
         os.makedirs(self.outdir, exist_ok=True)
-        f = open(file, "w")
-        content = ""
+        with open(file, "w") as f:
+            content = ""
 
-        if len(self.test.extra_configs) > 0:
-            content = "\n".join(self.test.extra_configs)
-        if options.enable_coverage:
-            if platform in options.coverage_platform:
-                content = content + "\nCONFIG_COVERAGE=y"
+            if len(self.test.extra_configs) > 0:
+                content = "\n".join(self.test.extra_configs)
 
-        f.write(content)
-        f.close()
+            if options.enable_coverage:
+                if platform in options.coverage_platform:
+                    content = content + "\nCONFIG_COVERAGE=y"
+
+            f.write(content)
 
     def calculate_sizes(self):
         """Get the RAM/ROM sizes of a test case.
@@ -1939,8 +1942,15 @@ class TestSuite:
 
         self.instances = {}
 
-    def get_last_failed(self):
+    def get_platform(self, name):
+        selected_platform = None
+        for platform in self.platforms:
+            if platform.name == name:
+                selected_platform = platform
+                break
+        return selected_platform
 
+    def get_last_failed(self):
         try:
             if not os.path.exists(LAST_SANITY):
                 raise SanityRuntimeError("Couldn't find last sanity run.")
@@ -1951,13 +1961,16 @@ class TestSuite:
         result = []
         with open(LAST_SANITY, "r") as fp:
             cr = csv.DictReader(fp)
+            instance_list = []
             for row in cr:
                 if row["passed"] == "True":
                     continue
                 test = row["test"]
-                platform = row["platform"]
-                result.append((test, platform))
-        return result
+                platform = self.get_platform(row["platform"])
+                instance = TestInstance(self.testcases[test], platform, self.outdir)
+                instance.create_overlay(platform.name)
+                instance_list.append(instance)
+            self.add_instances(instance_list)
 
     def load_from_file(self, file):
         try:
@@ -1973,14 +1986,9 @@ class TestSuite:
             instance_list = []
             for row in cr:
                 name = os.path.join(row[0], row[1])
-                platforms = self.arches[row[3]].platforms
-                myp = None
-                for platform in platforms:
-                    if platform.name == row[2]:
-                        selected_platform = platform
-                        break
-                instance = TestInstance(self.testcases[name], selected_platform, self.outdir)
-                instance.create_overlay(selected_platform.name)
+                platform = self.get_platform(row[2])
+                instance = TestInstance(self.testcases[name], platform, self.outdir)
+                instance.create_overlay(platform.name)
                 instance_list.append(instance)
             self.add_instances(instance_list)
 
@@ -2004,7 +2012,6 @@ class TestSuite:
         instances = []
         discards = {}
         platform_filter = options.platform
-        last_failed = options.only_failed
         testcase_filter = run_individual_tests
         arch_filter = options.arch
         tag_filter = options.tag
@@ -2018,9 +2025,6 @@ class TestSuite:
         verbose("     tag_filter: " + str(tag_filter))
         verbose("    exclude_tag: " + str(exclude_tag))
         verbose("  config_filter: " + str(config_filter))
-
-        if last_failed:
-            failed_tests = self.get_last_failed()
 
         default_platforms = False
 
@@ -2057,10 +2061,6 @@ class TestSuite:
                         continue
 
                     if testcase_filter and tc_name not in testcase_filter:
-                        continue
-
-                    if last_failed and (
-                            tc.name, plat.name) not in failed_tests:
                         continue
 
                     if arch_filter and arch_name not in arch_filter:
@@ -2209,11 +2209,6 @@ class TestSuite:
 
                     if testcase_filter and tc_name not in testcase_filter:
                         discards[instance] = "Testcase name filter"
-                        continue
-
-                    if last_failed and (
-                            tc.name, plat.name) not in failed_tests:
-                        discards[instance] = "Passed or skipped during last run"
                         continue
 
                     if arch_filter and arch_name not in arch_filter:
@@ -3237,6 +3232,8 @@ def main():
     discards = []
     if options.load_tests:
         ts.load_from_file(options.load_tests)
+    elif options.only_failed:
+        ts.get_last_failed()
     else:
         discards = ts.apply_filters()
 

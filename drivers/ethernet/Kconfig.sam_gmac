@@ -28,15 +28,6 @@ config ETH_SAM_GMAC_QUEUES
 	  Select the number of hardware queues used by the driver. Packets will be
 	  routed to appropriate queues based on their priority.
 
-config ETH_SAM_GMAC_TX_TIMEOUT_MSEC
-	int "TX timeout"
-	default 5000
-	range 1000 10000
-	help
-	  The maximum time in msec that the driver will wait for a TX interrupt
-	  after scheduling a packet to be sent. If no interrupt is reported during
-	  that period, all TX packets in the queue will be discarded.
-
 config ETH_SAM_GMAC_BUF_RX_COUNT
 	int "Network RX buffers preallocated by the SAM ETH driver"
 	default 12

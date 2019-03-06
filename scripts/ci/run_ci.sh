@@ -15,7 +15,7 @@
 # -r  the remote to rebase on
 #
 # The script can be run locally using for exmaple:
-# ./scripts/ci/run_ci.sh -b master -r origin  -l
+# ./scripts/ci/run_ci.sh -b master -r origin  -l -R <commit range>
 
 set -xe
 
@@ -30,7 +30,7 @@ WEST_COMMANDS_RESULTS_FILE="./pytest_out/west_commands.xml"
 MATRIX_BUILDS=1
 MATRIX=1
 
-while getopts ":p:m:b:r:M:cfsl" opt; do
+while getopts ":p:m:b:r:M:cfslR:" opt; do
 	case $opt in
 		c)
 			echo "Execute CI" >&2
@@ -69,6 +69,10 @@ while getopts ":p:m:b:r:M:cfsl" opt; do
 			echo "Remote: $OPTARG" >&2
 			REMOTE=$OPTARG
 			;;
+		R)
+			echo "Range: $OPTARG" >&2
+			RANGE=$OPTARG
+			;;
 		\?)
 			echo "Invalid option: -$OPTARG" >&2
 			;;
@@ -93,6 +97,9 @@ if [ -n "$MAIN_CI" ]; then
 	else
 		COMMIT_RANGE=$REMOTE/${BRANCH}..HEAD
 		echo "Commit range:" ${COMMIT_RANGE}
+	fi
+	if [ -n "$RANGE" ]; then
+		COMMIT_RANGE=$RANGE
 	fi
 	source zephyr-env.sh
 	SANITYCHECK="${ZEPHYR_BASE}/scripts/sanitycheck"

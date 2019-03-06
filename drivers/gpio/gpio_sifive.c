@@ -368,230 +368,109 @@ DEVICE_AND_API_INIT(gpio_sifive_0, CONFIG_GPIO_SIFIVE_GPIO_NAME,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sifive_driver);
 
+#define		IRQ_INIT(n)					\
+IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_##n,	\
+		CONFIG_GPIO_SIFIVE_##n##_PRIORITY,		\
+		gpio_sifive_irq_handler,			\
+		DEVICE_GET(gpio_sifive_0),			\
+		0);
+
 static void gpio_sifive_cfg_0(void)
 {
 #ifdef DT_SIFIVE_GPIO_0_IRQ_0
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_0,
-		    CONFIG_GPIO_SIFIVE_0_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(0);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_1
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_1,
-		    CONFIG_GPIO_SIFIVE_1_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(1);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_2
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_2,
-		    CONFIG_GPIO_SIFIVE_2_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(2);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_3
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_3,
-		    CONFIG_GPIO_SIFIVE_3_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(3);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_4
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_4,
-		    CONFIG_GPIO_SIFIVE_4_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(4);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_5
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_5,
-		    CONFIG_GPIO_SIFIVE_5_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(5);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_6
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_6,
-		    CONFIG_GPIO_SIFIVE_6_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(6);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_7
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_7,
-		    CONFIG_GPIO_SIFIVE_7_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(7);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_8
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_8,
-		    CONFIG_GPIO_SIFIVE_8_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(8);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_9
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_9,
-		    CONFIG_GPIO_SIFIVE_9_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(9);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_10
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_10,
-		    CONFIG_GPIO_SIFIVE_10_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(10);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_11
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_11,
-		    CONFIG_GPIO_SIFIVE_11_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(11);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_12
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_12,
-		    CONFIG_GPIO_SIFIVE_12_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(12);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_13
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_13,
-		    CONFIG_GPIO_SIFIVE_13_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(13);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_14
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_14,
-		    CONFIG_GPIO_SIFIVE_14_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(14);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_15
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_15,
-		    CONFIG_GPIO_SIFIVE_15_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(15);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_16
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_16,
-		    CONFIG_GPIO_SIFIVE_16_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(16);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_17
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_17,
-		    CONFIG_GPIO_SIFIVE_17_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(17);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_18
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_18,
-		    CONFIG_GPIO_SIFIVE_18_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(18);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_19
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_19,
-		    CONFIG_GPIO_SIFIVE_19_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(19);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_20
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_20,
-		    CONFIG_GPIO_SIFIVE_20_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(20);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_21
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_21,
-		    CONFIG_GPIO_SIFIVE_21_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(21);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_22
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_22,
-		    CONFIG_GPIO_SIFIVE_22_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(22);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_23
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_23,
-		    CONFIG_GPIO_SIFIVE_23_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(23);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_24
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_24,
-		    CONFIG_GPIO_SIFIVE_24_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(24);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_25
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_25,
-		    CONFIG_GPIO_SIFIVE_25_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(25);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_26
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_26,
-		    CONFIG_GPIO_SIFIVE_26_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(26);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_27
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_27,
-		    CONFIG_GPIO_SIFIVE_27_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(27);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_28
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_28,
-		    CONFIG_GPIO_SIFIVE_28_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(28);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_29
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_29,
-		    CONFIG_GPIO_SIFIVE_29_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(29);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_30
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_30,
-		    CONFIG_GPIO_SIFIVE_30_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(30);
 #endif
 #ifdef DT_SIFIVE_GPIO_0_IRQ_31
-	IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_31,
-		    CONFIG_GPIO_SIFIVE_31_PRIORITY,
-		    gpio_sifive_irq_handler,
-		    DEVICE_GET(gpio_sifive_0),
-		    0);
+	IRQ_INIT(31);
 #endif
 }

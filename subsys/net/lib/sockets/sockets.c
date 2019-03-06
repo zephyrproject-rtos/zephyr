@@ -111,6 +111,8 @@ int zsock_socket_internal(int family, int type, int proto)
 
 	z_finalize_fd(fd, ctx, (const struct fd_op_vtable *)&sock_fd_op_vtable);
 
+	NET_DBG("socket: ctx=%p, fd=%d", ctx, fd);
+
 	return fd;
 }
 
@@ -181,6 +183,8 @@ int _impl_zsock_close(int sock)
 	}
 
 	z_free_fd(sock);
+
+	NET_DBG("close: ctx=%p, fd=%d", ctx, sock);
 
 	return z_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_CLOSE);
 }
@@ -385,6 +389,8 @@ int zsock_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 			return -1;
 		}
 	}
+
+	NET_DBG("accept: ctx=%p, fd=%d", ctx, fd);
 
 	z_finalize_fd(fd, ctx, (const struct fd_op_vtable *)&sock_fd_op_vtable);
 

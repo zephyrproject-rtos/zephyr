@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2015-2017, Texas Instruments Incorporated
+ * Copyright (c) 2015-2018, Texas Instruments Incorporated
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,7 +29,7 @@
  * OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/** ============================================================================
+/*!****************************************************************************
  *  @file       PWM.h
  *  @brief      PWM driver interface
  *
@@ -67,6 +67,7 @@
  *  @code
  *    PWM_Handle pwm;
  *    PWM_Params pwmParams;
+ *    uint32_t   dutyValue;
  *
  *    // Initialize the PWM driver.
  *    PWM_init();
@@ -89,8 +90,8 @@
  *
  *    PWM_start(pwm);                          // start PWM with 0% duty cycle
  *
- *    PWM_setDuty(pwm,
- *         (PWM_DUTY_FRACTION_MAX / 2));       // set duty cycle to 50%
+ *    dutyValue = (uint32_t) (((uint64_t) PWM_DUTY_FRACTION_MAX * 37) / 100);
+ *    PWM_setDuty(pwm, dutyValue);  // set duty cycle to 37%
  *  @endcode
  *
  *  Details for the example code above are described in the following
@@ -185,8 +186,32 @@
  *  by the application will be #PWM_setDuty() to control the duty cycle of a
  *  PWM pin:
  *
+ *  Below demonstrates setting the duty cycle to 45%.
+ *
  *  @code
- *     PWM_setDuty(pwm, PWM_DUTY_FRACTION_MAX / 2); // Set 50% duty cycle
+ *     uint32_t dutyCycle;
+ *
+ *     dutyCycle = (uint32_t) (((uint64_t) PWM_DUTY_FRACTION_MAX * 45) / 100);
+ *     PWM_setDuty(pwm, dutyCycle);
+ *  @endcode
+ *
+ *  ### Setting Duty and Period on a Running Instance ###
+ *
+ *  If an application needs to modify the duty and period of a running timer,
+ *  an API is available to set both with as little interim time as possible.
+ *  This minimises the possibility that a timeout will occur between one set
+ *  call and the other. For low periods or for instances close to timeout, this
+ *  API will pause the instance output briefly and must only be called when the
+ *  PWM is already running.
+ *
+ *  Below demonstrates setting the duty cycle to 75% of the new period (100us).
+ *
+ *  @code
+ *     uint32_t dutyCycle;
+ *     uint32_t periodUs = 100;
+ *
+ *     dutyCycle = (uint32_t) (((uint64_t) PWM_DUTY_FRACTION_MAX * 75) / 100);
+ *     PWM_setDutyAndPeriod(pwm, dutyCycle, periodUs);
  *  @endcode
  *
  *  # Implementation #
@@ -210,7 +235,7 @@
  *    #include <ti/drivers/pwm/PWMTimerMSP432.h>
  *    @endcode
  *
- *  ============================================================================
+ *****************************************************************************
  */
 
 #ifndef ti_drivers_PWM__include
@@ -302,10 +327,10 @@ extern "C" {
  *  implementation if using PWM_PERIOD_COUNTS (raw PWM/Timer counts).
  */
 typedef enum PWM_Period_Units_ {
-    PWM_PERIOD_US,    /* Period in microseconds */
-    PWM_PERIOD_HZ,    /* Period in (reciprocal) Hertz
+    PWM_PERIOD_US,    /*!< Period in microseconds */
+    PWM_PERIOD_HZ,    /*!< Period in (reciprocal) Hertz
                          (for example 2MHz = 0.5us period) */
-    PWM_PERIOD_COUNTS /* Period in timer counts */
+    PWM_PERIOD_COUNTS /*!< Period in timer counts */
 } PWM_Period_Units;
 
 /*!
@@ -313,9 +338,12 @@ typedef enum PWM_Period_Units_ {
  *  implementation if using PWM_DUTY_COUNTS (raw PWM/Timer counts).
  */
 typedef enum PWM_Duty_Units_ {
-    PWM_DUTY_US,       /* Duty cycle in microseconds */
-    PWM_DUTY_FRACTION, /* Duty as a fractional part of PWM_DUTY_FRACTION_MAX */
-    PWM_DUTY_COUNTS    /* Duty in timer counts  */
+    PWM_DUTY_US,       /*!< Duty cycle in microseconds */
+    PWM_DUTY_FRACTION, /*!< Duty as a fractional part of #PWM_DUTY_FRACTION_MAX.
+                        *   A duty cycle value of 0 will yield a 0% duty cycle
+                        *   while a duty cycle value of #PWM_DUTY_FRACTION_MAX
+                        *   will yield a duty cycle value of 100%. */
+    PWM_DUTY_COUNTS    /*!< Duty in timer counts  */
 } PWM_Duty_Units;
 
 /*!
@@ -360,7 +388,7 @@ typedef void (*PWM_CloseFxn) (PWM_Handle handle);
  *              PWM_control().
  */
 typedef int_fast16_t (*PWM_ControlFxn) (PWM_Handle handle, uint_fast16_t cmd,
-    void *arg);
+                                        void *arg);
 /*!
  *  @brief      A function pointer to a driver specific implementation of
  *              PWM_init().
@@ -378,14 +406,21 @@ typedef PWM_Handle (*PWM_OpenFxn) (PWM_Handle handle, PWM_Params *params);
  *              PWM_setDuty().
  */
 typedef int_fast16_t (*PWM_SetDutyFxn) (PWM_Handle handle,
-    uint32_t duty);
+                                        uint32_t duty);
 
 /*!
  *  @brief      A function pointer to a driver specific implementation of
  *              PWM_setPeriod().
  */
 typedef int_fast16_t (*PWM_SetPeriodFxn) (PWM_Handle handle,
-    uint32_t period);
+        uint32_t period);
+
+/*!
+ *  @brief      A function pointer to a driver specific implementation of
+ *              PWM_setDutyAndPeriod().
+ */
+typedef int_fast16_t (*PWM_SetDutyAndPeriodFxn) (PWM_Handle handle,
+        uint32_t duty, uint32_t period);
 
 /*!
  *  @brief      A function pointer to a driver specific implementation of
@@ -417,6 +452,8 @@ typedef struct PWM_FxnTable_ {
     PWM_SetDutyFxn   setDutyFxn;
     /*! Function to set the period for a specific instance */
     PWM_SetPeriodFxn setPeriodFxn;
+    /*! Function to set the duty and the period for a specific instance */
+    PWM_SetDutyAndPeriodFxn setDutyAndPeriodFxn;
     /*! Function to start the PWM output for a specific instance */
     PWM_StartFxn     startFxn;
     /*! Function to stop the PWM output for a specific instance */
@@ -473,7 +510,7 @@ extern void PWM_close(PWM_Handle handle);
  *  @sa     PWM_open()
  */
 extern int_fast16_t PWM_control(PWM_Handle handle, uint_fast16_t cmd,
-    void *arg);
+                                void *arg);
 
 /*!
  *  @brief  This function initializes the PWM module.
@@ -559,6 +596,38 @@ extern int_fast16_t PWM_setDuty(PWM_Handle handle, uint32_t duty);
  *  @sa     PWM_open()
  */
 extern int_fast16_t PWM_setPeriod(PWM_Handle handle, uint32_t period);
+
+/*!
+ *  @brief  Function to set both the period and the duty cycle of the specified PWM handle.
+ *          This API must be called while the PWM is running & the period must always be
+ *          larger than the duty cycle.
+ *          If an error occurs while calling the function the period and duty
+ *          will remain unchanged.
+ *
+ *  @note   This API should only be called while the PWM is running.
+ *
+ *  @note   If the period is lower than a certain platform-specific amount, the output of the
+ *          PWM timer may be paused to set these values. Some implementations may also pause
+ *          the PWM if the remaining time before the next timeout is less than this value. This
+ *          is to guard against an edge case where a timeout happens in between setting period
+ *          and duty.
+ *
+ *  @pre    PWM_open() must have been called first.
+ *
+ *  @param  handle      A PWM handle returned from PWM_open().
+ *
+ *  @param  duty        Duty cycle in the units specified by the params used
+ *                      in PWM_open().
+ *
+ *  @param  period      Period in the units specified by the params used
+ *                      in PWM_open().
+ *
+ *  @return A PWM status describing an error or success state. Negative values
+ *          indicate an error.
+ *
+ *  @sa     PWM_open()
+ */
+extern int_fast16_t PWM_setDutyAndPeriod(PWM_Handle handle, uint32_t duty, uint32_t period);
 
 /*!
  *  @brief  Function to start the specified PWM handle with current settings.
