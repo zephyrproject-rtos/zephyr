@@ -115,6 +115,10 @@ SECTIONS {
 		*(".rodata.*")
 		*(.gnu.linkonce.r.*)
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-rodata.ld>
 #ifdef CONFIG_SOC_RODATA_LD
 #include <soc-rodata.ld>
 #endif
@@ -138,6 +142,11 @@ SECTIONS {
 	GROUP_START(RAMABLE_REGION)
 
 #include <app_data_alignment.ld>
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-ram-sections.ld>
 
 #if defined(CONFIG_USERSPACE)
 #define APP_SHARED_ALIGN MPU_MIN_SIZE_ALIGN
@@ -181,6 +190,10 @@ SECTIONS {
 		 *(".noinit.*")
 		 *(".kernel_noinit.*")
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-noinit.ld>
 #ifdef CONFIG_SOC_NOINIT_LD
 #include <soc-noinit.ld>
 #endif
@@ -195,6 +208,10 @@ SECTIONS {
 		*(".data.*")
 		*(".kernel.*")
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-rwdata.ld>
 #ifdef CONFIG_SOC_RWDATA_LD
 #include <soc-rwdata.ld>
 #endif
@@ -228,6 +245,10 @@ SECTIONS {
 /* Located in project source directory */
 #include <custom-sections.ld>
 #endif
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-sections.ld>
 
 #ifdef CONFIG_GEN_ISR_TABLES
 #include <linker/intlist.ld>

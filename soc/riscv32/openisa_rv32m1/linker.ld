@@ -113,6 +113,12 @@ SECTIONS
 	*(.rodata)
 	*(.rodata.*)
 	*(.gnu.linkonce.r.*)
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-rodata.ld>
+
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
     _image_rodata_end = .;
@@ -143,6 +149,12 @@ SECTIONS
 	/* https://groups.google.com/a/groups.riscv.org/d/msg/sw-dev/60IdaZj27dY/TKT3hbNlAgAJ */
 	*(.sdata .sdata.* .gnu.linkonce.s.*)
 	*(.sdata2 .sdata2.* .gnu.linkonce.s2.*)
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-rwdata.ld>
+
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #include <linker/common-ram.ld>
@@ -175,7 +187,18 @@ SECTIONS
 	 * will not be cleared during the boot process.
 	 */
 	 *(.noinit .noinit.*)
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-noinit.ld>
+
 	} GROUP_LINK_IN(RAMABLE_REGION)
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-ram-sections.ld>
 
      _image_ram_end = .;
      _end = .; /* end of image */
@@ -186,6 +209,10 @@ SECTIONS
 /* Located in project source directory */
 #include <custom-sections.ld>
 #endif
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-sections.ld>
 
 #ifdef CONFIG_GEN_ISR_TABLES
 /* Bogus section, post-processed during the build to initialize interrupts. */

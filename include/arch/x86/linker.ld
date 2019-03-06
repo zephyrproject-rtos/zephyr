@@ -152,6 +152,10 @@ SECTIONS
 #endif /* CONFIG_X86_FIXED_IRQ_MAPPING */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-rodata.ld>
 #ifdef CONFIG_SOC_RODATA_LD
 #include <soc-rodata.ld>
 #endif
@@ -207,6 +211,11 @@ SECTIONS
 	__gcov_bss_size = __gcov_bss_end - __gcov_bss_start;
 #endif /* CONFIG_COVERAGE_GCOV */
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-ram-sections.ld>
+
 #ifdef CONFIG_USERSPACE
 	/* APP SHARED MEMORY REGION */
 #define SMEM_PARTITION_ALIGN(size) MMU_PAGE_ALIGN
@@ -260,6 +269,10 @@ SECTIONS
 	*(".noinit.*")
 	*(".kernel_noinit.*")
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-noinit.ld>
 #ifdef CONFIG_SOC_NOINIT_LD
 #include <soc-noinit.ld>
 #endif
@@ -296,6 +309,10 @@ SECTIONS
 #endif /* LINKER_PASS2 */
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */
 
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-rwdata.ld>
 #ifdef CONFIG_SOC_RWDATA_LD
 #include <soc-rwdata.ld>
 #endif
@@ -446,6 +463,10 @@ SECTIONS
 /* Located in project source directory */
 #include <custom-sections.ld>
 #endif
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-sections.ld>
 
 #include <linker/debug-sections.ld>
 

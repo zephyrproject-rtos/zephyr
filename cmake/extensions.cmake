@@ -745,6 +745,101 @@ function(zephyr_check_compiler_flag lang option check)
   endif()
 endfunction()
 
+# zephyr_linker_sources(<location> <files>)
+#
+# <files> is one or more .ld formatted files whose contents will be
+#    copied/included verbatim into the given <location> in the global linker.ld.
+#    Preprocessor directives work inside <files>. Relative paths are resolved
+#    relative to the calling file, like zephyr_sources().
+# <location> is one of
+#    NOINIT       Inside the noinit output section.
+#    RWDATA       Inside the data output section.
+#    RODATA       Inside the rodata output section.
+#    RAM_SECTIONS Inside the RAMABLE_REGION GROUP.
+#    SECTIONS     Near the end of the file. Don't use this when linking into
+#                 RAMABLE_REGION, use RAM_SECTIONS instead.
+#
+# Use NOINIT, RWDATA, and RODATA unless they don't work for your use case.
+#
+# When placing into NOINIT, RWDATA, or RODATA, the contents of the files will be
+# placed inside an output section, so assume the section definition is already
+# present, e.g.:
+#    _mysection_start = .;
+#    KEEP(*(.mysection));
+#    _mysection_end = .;
+#    _mysection_size = ABSOLUTE(_mysection_end - _mysection_start);
+#
+# When placing into SECTIONS or RAM_SECTIONS, the files must instead define
+# their own output sections to acheive the same thing:
+#    SECTION_PROLOGUE(.mysection,,)
+#    {
+#        _mysection_start = .;
+#        KEEP(*(.mysection))
+#        _mysection_end = .;
+#    } GROUP_LINK_IN(ROMABLE_REGION)
+#    _mysection_size = _mysection_end - _mysection_start;
+#
+# Note about the above examples: If the first example was used with RODATA, and
+# the second with SECTIONS, the two examples do the same thing from a user
+# perspective.
+#
+# Friendly reminder: Beware of the different ways the location counter ('.')
+# behaves inside vs. outside section definitions.
+function(zephyr_linker_sources location)
+  # Set up the paths to the destination files. These files are #included inside
+  # the global linker.ld.
+  set(snippet_base      "${__build_dir}/include/generated")
+  set(sections_path     "${snippet_base}/snippets-sections.ld")
+  set(ram_sections_path "${snippet_base}/snippets-ram-sections.ld")
+  set(noinit_path       "${snippet_base}/snippets-noinit.ld")
+  set(rwdata_path       "${snippet_base}/snippets-rwdata.ld")
+  set(rodata_path       "${snippet_base}/snippets-rodata.ld")
+
+  # Clear destination files if this is the first time the function is called.
+  get_property(cleared GLOBAL PROPERTY snippet_files_cleared)
+  if (NOT DEFINED cleared)
+    file(WRITE ${sections_path} "")
+    file(WRITE ${ram_sections_path} "")
+    file(WRITE ${noinit_path} "")
+    file(WRITE ${rwdata_path} "")
+    file(WRITE ${rodata_path} "")
+    set_property(GLOBAL PROPERTY snippet_files_cleared true)
+  endif()
+
+  # Choose destination file, based on the <location> argument.
+  if ("${location}" STREQUAL "SECTIONS")
+    set(snippet_path "${sections_path}")
+  elseif("${location}" STREQUAL "RAM_SECTIONS")
+    set(snippet_path "${ram_sections_path}")
+  elseif("${location}" STREQUAL "NOINIT")
+    set(snippet_path "${noinit_path}")
+  elseif("${location}" STREQUAL "RWDATA")
+    set(snippet_path "${rwdata_path}")
+  elseif("${location}" STREQUAL "RODATA")
+    set(snippet_path "${rodata_path}")
+  else()
+    message(fatal_error "Must choose valid location for linker snippet.")
+  endif()
+
+  foreach(file IN ITEMS ${ARGN})
+    # Resolve path.
+    if(IS_ABSOLUTE ${file})
+      set(path ${file})
+    else()
+      set(path ${CMAKE_CURRENT_SOURCE_DIR}/${file})
+    endif()
+
+    if(IS_DIRECTORY ${path})
+      message(FATAL_ERROR "zephyr_linker_sources() was called on a directory")
+    endif()
+
+    # Append the file contents to the relevant destination file.
+    file(READ ${path} snippet)
+    file(APPEND ${snippet_path} "\n/* From ${path}: */\n" "${snippet}\n")
+  endforeach()
+endfunction(zephyr_linker_sources)
+
+
 # Helper function for CONFIG_CODE_DATA_RELOCATION
 # Call this function with 2 arguments file and then memory location
 function(zephyr_code_relocate file location)
@@ -1015,6 +1110,12 @@ endfunction()
 function(zephyr_library_link_libraries_ifdef feature_toggle item)
   if(${${feature_toggle}})
      zephyr_library_link_libraries(${item})
+  endif()
+endfunction()
+
+function(zephyr_linker_sources_ifdef feature_toggle)
+  if(${${feature_toggle}})
+    zephyr_linker_sources(${ARGN})
   endif()
 endfunction()
 
