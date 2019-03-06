@@ -38,6 +38,12 @@ config HAS_MCUX_ENET
 	help
 	  Set if the ethernet (ENET) module is present in the SoC.
 
+config HAS_MCUX_FTFX
+	bool
+	help
+	  Set if the flash memory (FTFA, FTFE, or FTFL) module is present in
+	  the SoC.
+
 config HAS_MCUX_FTM
 	bool
 	help

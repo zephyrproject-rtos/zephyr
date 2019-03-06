@@ -1,6 +1,6 @@
 config SOC_FLASH_MCUX
 	bool "MCUX flash shim driver"
-	depends on HAS_MCUX
+	depends on HAS_MCUX_FTFX
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
 	help
