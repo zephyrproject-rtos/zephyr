@@ -76,7 +76,7 @@
 	scl-pin = <22>;
 };
 
-&spi0 {
+&spi1 {
 	status = "ok";
 	sck-pin = <26>;
 	mosi-pin = <23>;
