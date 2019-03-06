@@ -51,6 +51,14 @@ config CDC_ACM_BULK_EP_MPS
 	help
 	  CDC ACM class bulk endpoints size
 
+config CDC_ACM_IAD
+	bool "Force using Interface Association Descriptor"
+	default n
+	help
+	  IAD should not be required for non-composite CDC ACM device,
+	  but Windows 7 fails to properly enumerate without it.
+	  Enable if you want CDC ACM to work with Windows 7.
+
 module = USB_CDC_ACM
 module-str = usb cdc acm
 source "subsys/logging/Kconfig.template.log_config"
