@@ -1,0 +1,10 @@
+#
+# Copyright (c) 2019 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config USB_DEVICE_PID
+	default USB_PID_HID_SAMPLE
+
+source "Kconfig.zephyr"

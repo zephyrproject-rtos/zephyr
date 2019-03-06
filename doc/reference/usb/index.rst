@@ -23,6 +23,22 @@ The USB maintainer, if one is assigned, or otherwise the Zephyr Technical
 Steering Committee, may allocate other USB Product IDs based on well-motivated
 and documented requests.
 
+Each USB sample has its own unique Product ID.
+When adding a new sample, add a new entry in :file:`samples/subsys/usb/usb_pid.Kconfig`
+and a Kconfig file inside your sample subdirectory.
+The following Product IDs are currently used:
+
+* :option:`CONFIG_USB_PID_CDC_ACM_SAMPLE`
+* :option:`CONFIG_USB_PID_CDC_ACM_COMPOSITE_SAMPLE`
+* :option:`CONFIG_USB_PID_HID_CDC_SAMPLE`
+* :option:`CONFIG_USB_PID_CONSOLE_SAMPLE`
+* :option:`CONFIG_USB_PID_DFU_SAMPLE`
+* :option:`CONFIG_USB_PID_HID_SAMPLE`
+* :option:`CONFIG_USB_PID_HID_MOUSE_SAMPLE`
+* :option:`CONFIG_USB_PID_MASS_SAMPLE`
+* :option:`CONFIG_USB_PID_TESTUSB_SAMPLE`
+* :option:`CONFIG_USB_PID_WEBUSB_SAMPLE`
+
 USB device controller drivers
 *****************************
 
