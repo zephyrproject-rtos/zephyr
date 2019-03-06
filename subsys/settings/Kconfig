@@ -15,6 +15,12 @@ menuconfig SETTINGS
 	  It supports several back-ends to store and load serialized data from
 	  and it can do so atomically for all involved modules.
 
+if SETTINGS
+module = SETTINGS
+module-str = settings
+source "subsys/logging/Kconfig.template.log_config"
+endif
+
 # Hidden option to enable encoding length into settings entry
 config SETTINGS_ENCODE_LEN
 	depends on SETTINGS

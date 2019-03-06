@@ -13,6 +13,9 @@
 #include "settings/settings_fcb.h"
 #include "settings_priv.h"
 
+#include <logging/log.h>
+LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
+
 #define SETTINGS_FCB_VERS		1
 
 struct settings_fcb_load_cb_arg {
@@ -211,11 +214,16 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 			continue;
 		}
 		rc = fcb_append_finish(&cf->cf_fcb, &loc2.loc);
-		__ASSERT(rc == 0, "Failed to finish fcb_append.\n");
+
+		if (rc != 0) {
+			LOG_ERR("Failed to finish fcb_append (%d)", rc);
+		}
 	}
 	rc = fcb_rotate(&cf->cf_fcb);
 
-	__ASSERT(rc == 0, "Failed to fcb rotate.\n");
+	if (rc != 0) {
+		LOG_ERR("Failed to fcb rotate (%d)", rc);
+	}
 }
 
 static size_t get_len_cb(void *ctx)
