@@ -234,7 +234,7 @@ static int _mpu_sram_partitioning(u8_t index,
  * sanity check of the memory regions to be programmed.
  */
 static int _mpu_configure_regions(const struct k_mem_partition
-	regions[], u8_t regions_num, u8_t start_reg_index,
+	*regions[], u8_t regions_num, u8_t start_reg_index,
 	bool do_sanity_check)
 {
 	int i;
@@ -291,7 +291,7 @@ static int _mpu_configure_regions(const struct k_mem_partition
  * performed, the error signal is propagated to the caller of the function.
  */
 static int _mpu_configure_static_mpu_regions(const struct k_mem_partition
-	static_regions[], const u8_t regions_num,
+	*static_regions[], const u8_t regions_num,
 	const u32_t background_area_base,
 	const u32_t background_area_end)
 {
@@ -320,7 +320,7 @@ static int _mpu_configure_static_mpu_regions(const struct k_mem_partition
  * performed, the error signal is propagated to the caller of the function.
  */
 static int _mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
-		dynamic_regions[], u8_t regions_num)
+	*dynamic_regions[], u8_t regions_num)
 {
 	/* Reset MPU regions inside which dynamic memory regions may
 	 * be programmed.
@@ -534,7 +534,7 @@ int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
  * @brief configure fixed (static) MPU regions.
  */
 void arm_core_mpu_configure_static_mpu_regions(const struct k_mem_partition
-	static_regions[], const u8_t regions_num,
+	*static_regions[], const u8_t regions_num,
 	const u32_t background_area_start, const u32_t background_area_end)
 {
 	if (_mpu_configure_static_mpu_regions(static_regions, regions_num,
@@ -549,7 +549,7 @@ void arm_core_mpu_configure_static_mpu_regions(const struct k_mem_partition
  * @brief configure dynamic MPU regions.
  */
 void arm_core_mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
-	dynamic_regions[], u8_t regions_num)
+	*dynamic_regions[], u8_t regions_num)
 {
 	if (_mpu_configure_dynamic_mpu_regions(dynamic_regions, regions_num)
 		== -EINVAL) {
