@@ -34,13 +34,19 @@ rsync -a ../CMakeLists.txt _build/rst/cmake/
 # rm -rf _build/rst/doc/{guides/,releases/,reference/kconfigxx/}
 # find _build -name '*.rst' | wc; exit 1
 
+BDIR=build-graphiz-sphinx-hack
 
 # cmake --graphviz
 ( cd ../samples/hello_world/
-  mkdir -p build && cd build
-  ZEPHYR_TOOLCHAIN_VARIANT=host cmake -DBOARD=qemu_x86 --graphviz=cmake.dot ..
+
+  rm -rf "${BDIR}"/
+
+  # --graphiz doesn't output in -B, always in cwd
+  mkdir "${BDIR}" && cd "${BDIR}"
+
+  cmake -DBOARD=qemu_x86 --graphviz=cmake.dot ..
 )
 
 mkdir -p _build/html # CMake creates this but later
-dot -Tsvg ../samples/hello_world/build/cmake.dot.zephyr_interface.dependers \
+dot -Tsvg ../samples/hello_world/"${BDIR}"/cmake.dot.zephyr_interface.dependers \
     > _build/html/zephyr_interface.svg
