@@ -137,6 +137,10 @@ static void unwind_stack(u32_t base_ptr, u16_t cs)
 FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
 {
+#ifdef CONFIG_THREAD_NAME
+	const char *thread_name = k_thread_name_get(k_current_get());
+#endif
+
 	LOG_PANIC();
 
 	z_debug_fatal_hook(pEsf);
@@ -184,7 +188,11 @@ FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 		break;
 	}
 
-	printk("Current thread ID = %p\n"
+	printk("Current thread ID = %p"
+#ifdef CONFIG_THREAD_NAME
+	       " (%s)"
+#endif
+	       "\n"
 	       "eax: 0x%08x, ebx: 0x%08x, ecx: 0x%08x, edx: 0x%08x\n"
 	       "esi: 0x%08x, edi: 0x%08x, ebp: 0x%08x, esp: 0x%08x\n"
 	       "eflags: 0x%08x cs: 0x%04x\n"
@@ -193,6 +201,9 @@ FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 #endif
 	       "eip: 0x%08x\n",
 	       k_current_get(),
+#ifdef CONFIG_THREAD_NAME
+	       thread_name ? thread_name : "unknown",
+#endif
 	       pEsf->eax, pEsf->ebx, pEsf->ecx, pEsf->edx,
 	       pEsf->esi, pEsf->edi, pEsf->ebp, pEsf->esp,
 	       pEsf->eflags, pEsf->cs & 0xFFFFU, pEsf->eip);
