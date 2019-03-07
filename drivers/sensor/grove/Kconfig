@@ -5,7 +5,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 #
-if SENSOR
+
 config GROVE_LIGHT_SENSOR
 	bool "Enable the Seeed Grove Light Sensor"
 	depends on ADC && NEWLIB_LIBC
@@ -81,7 +81,5 @@ config GROVE_TEMPERATURE_SENSOR_ADC_CHANNEL
 	help
 	  Specify the channel of the ADC to which the Grove Temperature Sensor
 	  is connected.
-
-endif
 
 endif
