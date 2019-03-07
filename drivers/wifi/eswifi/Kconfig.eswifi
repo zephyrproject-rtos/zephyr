@@ -8,7 +8,6 @@
 
 menuconfig WIFI_ESWIFI
 	bool "Inventek eS-WiFi support"
-	depends on WIFI
 	select NET_L2_WIFI_MGMT
 	select WIFI_OFFLOAD
 	select NET_OFFLOAD

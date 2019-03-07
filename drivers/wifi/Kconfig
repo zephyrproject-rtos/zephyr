@@ -19,7 +19,6 @@ source "subsys/net/Kconfig.template.log_config.net"
 
 config WIFI_INIT_PRIORITY
 	int "WiFi driver init priority"
-	depends on WIFI
 	default 80
 	help
 	  WiFi device driver initialization priority.
