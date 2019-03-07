@@ -45,7 +45,6 @@ config NET_ICMPV4_ACCEPT_BROADCAST
 
 config NET_DHCPV4
 	bool "Enable DHCPv4 client"
-	depends on NET_IPV4
 
 config NET_DHCPV4_INITIAL_DELAY_MAX
 	int "Maximum time out for initial discover request"
@@ -58,7 +57,7 @@ config NET_DHCPV4_INITIAL_DELAY_MAX
 
 config NET_IPV4_AUTO
 	bool "Enable IPv4 autoconfiguration [EXPERIMENTAL]"
-	depends on NET_IPV4 && NET_ARP
+	depends on NET_ARP
 	help
 	  Enables IPv4 auto IP address configuration (see RFC 3927)
 

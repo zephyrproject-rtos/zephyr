@@ -21,7 +21,6 @@ if NET_L2_OPENTHREAD
 
 config OPENTHREAD_PLAT
 	bool
-	depends on NET_L2_OPENTHREAD
 	help
 	  This option enables OpenThread platform
 

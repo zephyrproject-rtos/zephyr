@@ -6,7 +6,6 @@
 
 menuconfig LWM2M_IPSO_SUPPORT
 	bool "IPSO Alliance Smart Object Support"
-	depends on LWM2M
 	help
 	  This option adds general support for IPSO objects
 
