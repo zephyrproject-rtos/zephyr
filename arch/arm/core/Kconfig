@@ -166,9 +166,7 @@ endmenu
 
 source "arch/arm/core/cortex_m/Kconfig"
 
-if CPU_HAS_MPU
 source "arch/arm/core/cortex_m/mpu/Kconfig"
-endif
 
 if CPU_HAS_TEE
 source "arch/arm/core/cortex_m/tz/Kconfig"
