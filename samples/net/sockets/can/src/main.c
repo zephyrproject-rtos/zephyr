@@ -110,9 +110,9 @@ static int setup_socket(void)
 
 	fd = socket(AF_CAN, SOCK_RAW, CAN_RAW);
 	if (fd < 0) {
-		ret = errno;
-		LOG_ERR("Cannot create CAN socket (%d)", -ret);
-		return -ret;
+		ret = -errno;
+		LOG_ERR("Cannot create CAN socket (%d)", ret);
+		return ret;
 	}
 
 	can_addr.can_ifindex = net_if_get_by_iface(iface);
@@ -121,11 +121,16 @@ static int setup_socket(void)
 	ret = bind(fd, (struct sockaddr *)&can_addr, sizeof(can_addr));
 	if (ret < 0) {
 		ret = -errno;
-		LOG_ERR("Cannot bind CAN socket (%d)", -ret);
+		LOG_ERR("Cannot bind CAN socket (%d)", ret);
 		goto cleanup;
 	}
 
-	setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &filter, sizeof(filter));
+	ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &filter, sizeof(filter));
+	if (ret < 0) {
+		ret = -errno;
+		LOG_ERR("Cannot set CAN sockopt (%d)", ret);
+		goto cleanup;
+	}
 
 	/* Delay TX startup so that RX is ready to receive */
 	tx_tid = k_thread_create(&tx_data, tx_stack,
