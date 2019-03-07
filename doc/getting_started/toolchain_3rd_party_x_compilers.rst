@@ -16,7 +16,7 @@ GNU ARM Embedded
 
       Like the Zephyr repository, do not install the toolchain in a directory
       with spaces anywhere in the path. On Windows, we'll assume you install
-      into the directory :file:`C:\\gnu_arm_embedded`.
+      into the directory :file:`C:\\gnu-mcu-eclipse`.
 
 #. Configure the environment variables needed to inform the Zephyr build system
    to use this toolchain:
@@ -31,11 +31,17 @@ GNU ARM Embedded
 
       # Linux or macOS
       export ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
-      export GNUARMEMB_TOOLCHAIN_PATH="~/gnu_arm_embedded"
+      export GNUARMEMB_TOOLCHAIN_PATH="~/gnu-mcu-eclipse/arm-none-eabi-gcc/8.2.1-1.4-20190214-0604"
 
       # Windows in cmd.exe
       set ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
-      set GNUARMEMB_TOOLCHAIN_PATH=C:\gnu_arm_embedded
+      set GNUARMEMB_TOOLCHAIN_PATH=C:/gnu-mcu-eclipse/arm-none-eabi-gcc/8.2.1-1.4-20190214-0604
+
+   The "GNU MCU Eclipse ARM Embedded GCC" release is functionally
+   equivalent to the official GNU Arm Embedded Toolchain distribution,
+   by ARM. But the Eclipse release is recommended over the official
+   release because historically it has been swifter at releasing
+   bugfixes and also been built to compile faster.
 
 Intel ISSM
 **********
@@ -114,7 +120,7 @@ You can build toolchains from source code using crosstool-NG.
       export ZEPHYR_TOOLCHAIN_VARIANT=xtools
       export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNGNew/build/output/
 
-.. _GNU ARM Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm
+.. _GNU ARM Embedded: https://github.com/gnu-mcu-eclipse/arm-none-eabi-gcc/releases
 .. _ISSM Toolchain: https://software.intel.com/en-us/articles/issm-toolchain-only-download
 .. _Getting Started on Arduino 101 with ISSM: https://software.intel.com/en-us/articles/getting-started-arduino-101genuino-101-with-intel-system-studio-for-microcontrollers
 .. _crosstool-ng site: http://crosstool-ng.org
