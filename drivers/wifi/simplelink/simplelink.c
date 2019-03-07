@@ -24,6 +24,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define SCAN_RETRY_DELAY 2000  /* ms */
 #define FC_TIMEOUT K_SECONDS(CONFIG_WIFI_SIMPLELINK_FAST_CONNECT_TIMEOUT)
 
+#define SIMPLELINK_IPV4 0x1
+#define SIMPLELINK_IPV6 0x2
+
 struct simplelink_data {
 	struct net_if *iface;
 	unsigned char mac[6];
@@ -34,6 +37,7 @@ struct simplelink_data {
 	int num_results_or_err;
 	int scan_retries;
 	bool initialized;
+	uint8_t mask;
 };
 
 static struct simplelink_data simplelink_data;
@@ -64,7 +68,18 @@ static void simplelink_wifi_cb(uint32_t event, struct sl_connect_state *conn)
 		break;
 
 	case SIMPLELINK_WIFI_CB_IPACQUIRED:
-		if (!simplelink_data.initialized) {
+		simplelink_data.mask &= ~SIMPLELINK_IPV4;
+		if ((simplelink_data.mask == 0) &&
+			(!simplelink_data.initialized)) {
+			simplelink_data.initialized = true;
+			k_sem_give(&ip_acquired);
+		}
+		break;
+
+	case SIMPLELINK_WIFI_CB_IPV6ACQUIRED:
+		simplelink_data.mask &= ~SIMPLELINK_IPV6;
+		if ((simplelink_data.mask == 0) &&
+			(!simplelink_data.initialized)) {
 			simplelink_data.initialized = true;
 			k_sem_give(&ip_acquired);
 		}
@@ -202,6 +217,12 @@ static void simplelink_iface_init(struct net_if *iface)
 	int ret;
 
 	simplelink_data.iface = iface;
+	simplelink_data.mask = 0;
+
+	simplelink_data.mask |= IS_ENABLED(CONFIG_NET_IPV4) ?
+		SIMPLELINK_IPV4 : 0;
+	simplelink_data.mask |= IS_ENABLED(CONFIG_NET_IPV6) ?
+		SIMPLELINK_IPV6 : 0;
 
 	/* Direct socket offload used instead of net offload: */
 	iface->if_dev->offload = &simplelink_offload;
