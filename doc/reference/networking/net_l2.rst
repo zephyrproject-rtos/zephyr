@@ -12,7 +12,8 @@ Overview
 
 The L2 stack is designed to hide the whole networking link-layer part
 and the related device drivers from the upper network stack. This is made
-through a :c:type:`struct net_if` declared in :zephyr_file:`include/net/net_if.h`.
+through a :c:type:`struct net_if` declared in
+:zephyr_file:`include/net/net_if.h`.
 
 The upper layers are unaware of implementation details beyond the net_if
 object and the generic API provided by the L2 layer in
@@ -22,9 +23,11 @@ Only the L2 layer can talk to the device driver, linked to the net_if
 object. The L2 layer dictates the API provided by the device driver,
 specific for that device, and optimized for working together.
 
-Currently, there are L2 layers for Ethernet, IEEE 802.15.4 Soft-MAC,
-Bluetooth IPSP, CANBUS, OpenThread, WiFi and a dummy one, which is a generic
-layer example that can be used as a template for writing a new one.
+Currently, there are L2 layers for :ref:`Ethernet <ethernet_interface>`,
+:ref:`IEEE 802.15.4 Soft-MAC <ieee802154_interface>`,
+:ref:`Bluetooth IPSP <bluetooth-ipsp-sample>`, :ref:`CANBUS <can_interface>`,
+:ref:`OpenThread <thread_protocol_interface>`, WiFi, and a dummy layer
+example that can be used as a template for writing a new one.
 
 L2 layer API
 ************
@@ -42,8 +45,8 @@ more details. The generic L2 API has these functions:
   buffer along to the L2 stack's ``recv()`` function for handling.
   The L2 stack does what it needs to do with the packet, for example, parsing
   the link layer header, or handling link-layer only packets. The ``recv()``
-  function will return NET_DROP in case of an erroneous packet,
-  NET_OK if the packet was fully consumed by the L2, or NET_CONTINUE
+  function will return ``NET_DROP`` in case of an erroneous packet,
+  ``NET_OK`` if the packet was fully consumed by the L2, or ``NET_CONTINUE``
   if the network stack should then handle it.
 
 - ``send()``: Similar to receive function, the network stack will call this
@@ -53,7 +56,7 @@ more details. The generic L2 API has these functions:
   error code if there was a failure sending the network packet.
 
 - ``enable()``: This function is used to enable/disable traffic over a network
-  interface. The function returns <0 if error and >=0 if no error.
+  interface. The function returns ``<0`` if error and ``>=0`` if no error.
 
 - ``get_flags()``: This function will return the capabilities of an L2 driver,
   for example whether the L2 supports multicast or promiscuous mode.
@@ -66,8 +69,8 @@ basis. Please refer to :ref:`device_drivers`.
 
 There are, however, two differences:
 
-- the driver_api pointer must point to a valid :c:type:`struct
-  net_if_api` pointer.
+- The driver_api pointer must point to a valid :c:type:`struct net_if_api`
+  pointer.
 
 - The network device driver must use ``NET_DEVICE_INIT_INSTANCE()``
   or ``ETH_NET_DEVICE_INIT()`` for Ethernet devices. These
@@ -117,8 +120,8 @@ here as well.  There are two specific differences however:
   ieee802154_radio_api`, which overloads :c:type:`struct
   net_if_api`. This is because 802.15.4 L2 needs more from the device
   driver than just ``send()`` and ``recv()`` functions.  This dedicated API is
-  declared in :zephyr_file:`include/net/ieee802154_radio.h`. Each and every IEEE
-  802.15.4 device driver must provide a valid pointer on such
+  declared in :zephyr_file:`include/net/ieee802154_radio.h`. Each and every
+  IEEE 802.15.4 device driver must provide a valid pointer on such
   relevantly filled-in API structure.
 
 - Sending a packet is slightly different than in Ethernet. IEEE 802.15.4 sends
