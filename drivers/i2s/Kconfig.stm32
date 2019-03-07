@@ -7,7 +7,7 @@
 
 menuconfig I2S_STM32
 	bool "STM32 MCU I2S controller driver"
-	depends on I2S && SOC_SERIES_STM32F4X
+	depends on SOC_SERIES_STM32F4X
 	select DMA
 	help
 	  Enable I2S support on the STM32 family of processors.
