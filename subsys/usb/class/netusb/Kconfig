@@ -7,7 +7,6 @@
 #
 
 menu "USB Device Networking support"
-	depends on USB_DEVICE_STACK
 
 config USB_DEVICE_NETWORK
 	bool
