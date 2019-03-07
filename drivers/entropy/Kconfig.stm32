@@ -7,7 +7,6 @@
 menuconfig ENTROPY_STM32_RNG
 	bool "STM32 RNG driver"
 	depends on SOC_FAMILY_STM32
-	depends on ENTROPY_GENERATOR
 	select ENTROPY_HAS_DRIVER
 	select USE_STM32_LL_RNG
 	help
