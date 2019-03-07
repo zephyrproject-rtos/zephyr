@@ -8,7 +8,6 @@
 
 config I2C_EEPROM_SLAVE
 	bool "I2C Slave EEPROM driver"
-	depends on I2C_SLAVE
 	help
 	  Enable virtual I2C Slave EEPROM driver
 
