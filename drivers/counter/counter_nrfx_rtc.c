@@ -87,10 +87,15 @@ static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 		return -EBUSY;
 	}
 
-	cc_val = alarm_cfg->ticks + (alarm_cfg->absolute ?
-					0 : nrfx_rtc_counter_get(rtc));
-	cc_val = (cc_val > get_dev_data(dev)->top) ?
-			(cc_val - get_dev_data(dev)->top) : cc_val;
+	if (alarm_cfg->absolute) {
+		cc_val = alarm_cfg->ticks;
+	} else {
+		/* As RTC is 24 bit there is no risk of overflow. */
+		cc_val = alarm_cfg->ticks + nrfx_rtc_counter_get(rtc);
+		cc_val -= (cc_val > get_dev_data(dev)->top) ?
+				get_dev_data(dev)->top : 0;
+	}
+
 	nrfx_config->ch_data[chan_id].callback = alarm_cfg->callback;
 	nrfx_config->ch_data[chan_id].user_data = alarm_cfg->user_data;
 

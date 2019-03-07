@@ -69,10 +69,50 @@ static int counter_nrfx_stop(struct device *dev)
 	return 0;
 }
 
+static u32_t counter_nrfx_get_top_value(struct device *dev)
+{
+	return nrfx_timer_capture_get(&get_nrfx_config(dev)->timer, TOP_CH);
+}
+
+static u32_t counter_nrfx_get_max_relative_alarm(struct device *dev)
+{
+	return nrfx_timer_capture_get(&get_nrfx_config(dev)->timer, TOP_CH);
+}
+
 static u32_t counter_nrfx_read(struct device *dev)
 {
 	return nrfx_timer_capture(&get_nrfx_config(dev)->timer,
 				  COUNTER_READ_CC);
+}
+
+/** @brief Calculate compare value.
+ *
+ * If ticks are relative then compare value must take into consideration
+ * counter wrapping.
+ *
+ * @return Compare value to be used in TIMER channel.
+ */
+static inline u32_t counter_nrfx_get_cc_value(struct device *dev,
+				const struct counter_alarm_cfg *alarm_cfg)
+{
+	u32_t remainder;
+	u32_t cc_val;
+	u32_t ticks = alarm_cfg->ticks;
+
+	if (alarm_cfg->absolute) {
+		return ticks;
+	}
+
+	cc_val = counter_nrfx_read(dev);
+	remainder = counter_nrfx_get_top_value(dev) - cc_val;
+
+	if (remainder > ticks) {
+		cc_val += ticks;
+	} else {
+		cc_val = ticks - remainder;
+	}
+
+	return cc_val;
 }
 
 static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
@@ -90,8 +130,8 @@ static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 		return -EBUSY;
 	}
 
-	cc_val = alarm_cfg->ticks + (alarm_cfg->absolute ?
-				0 : nrfx_timer_capture(timer, COUNTER_READ_CC));
+	cc_val = counter_nrfx_get_cc_value(dev, alarm_cfg);
+
 	nrfx_config->ch_data[chan_id].callback = alarm_cfg->callback;
 	nrfx_config->ch_data[chan_id].user_data = alarm_cfg->user_data;
 
@@ -197,16 +237,6 @@ static int init_timer(struct device *dev, const nrfx_timer_config_t *config)
 	LOG_INST_DBG(nrfx_config->log, "Initialized");
 
 	return 0;
-}
-
-static u32_t counter_nrfx_get_top_value(struct device *dev)
-{
-	return nrfx_timer_capture_get(&get_nrfx_config(dev)->timer, TOP_CH);
-}
-
-static u32_t counter_nrfx_get_max_relative_alarm(struct device *dev)
-{
-	return nrfx_timer_capture_get(&get_nrfx_config(dev)->timer, TOP_CH);
 }
 
 static const struct counter_driver_api counter_nrfx_driver_api = {
