@@ -21,7 +21,6 @@ if IMG_MANAGER
 choice
 	prompt "Image manager"
 	default MCUBOOT_IMG_MANAGER
-	depends on IMG_MANAGER
 	help
 	  Choice support for managing DFU image.
 	  So far only mcuboot support is available.
@@ -31,6 +30,7 @@ config MCUBOOT_IMG_MANAGER
 	select FLASH_MAP
 	help
 	  Enable support for managing DFU image downloaded using mcuboot.
+
 endchoice
 
 config IMG_BLOCK_BUF_SIZE
