@@ -168,6 +168,4 @@ source "arch/arm/core/cortex_m/Kconfig"
 
 source "arch/arm/core/cortex_m/mpu/Kconfig"
 
-if CPU_HAS_TEE
 source "arch/arm/core/cortex_m/tz/Kconfig"
-endif
