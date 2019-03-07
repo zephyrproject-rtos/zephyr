@@ -21,7 +21,7 @@ if SPI_DW
 
 config SPI_DW_ARC_AUX_REGS
 	bool "Registers are part of ARC auxiliary registers"
-	depends on SPI_DW && ARC
+	depends on ARC
 	default y
 	help
 	  SPI IP block registers are part of user extended auxiliary
