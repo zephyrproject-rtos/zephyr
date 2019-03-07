@@ -14,6 +14,7 @@
 #include <misc/dlist.h>
 #include <misc/rb.h>
 #include <misc/util.h>
+#include <misc/slist.h>
 #include <string.h>
 #endif
 
@@ -162,7 +163,7 @@ struct z_kernel {
 #endif
 
 #if defined(CONFIG_THREAD_MONITOR)
-	struct k_thread *threads; /* singly linked list of ALL threads */
+	sys_slist_t threads_list; /* list of ALL threads */
 #endif
 
 	/* arch-specific part of _kernel */

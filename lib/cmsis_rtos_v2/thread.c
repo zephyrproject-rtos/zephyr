@@ -546,7 +546,8 @@ uint32_t osThreadGetCount(void)
 	u32_t count = 0;
 
 	__ASSERT(!k_is_in_isr(), "");
-	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&_kernel.threads_list, thread,
+				     threads_node) {
 		if (get_cmsis_thread_id(thread) && _is_thread_queued(thread)) {
 			count++;
 		}
@@ -568,7 +569,8 @@ uint32_t osThreadEnumerate(osThreadId_t *thread_array, uint32_t array_items)
 	__ASSERT(thread_array != NULL, "");
 	__ASSERT(array_items, "");
 
-	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&_kernel.threads_list, thread,
+				     threads_node) {
 		if (count == array_items) {
 			break;
 		}

@@ -38,15 +38,16 @@ K_WORK_DEFINE(zephyr_os_mgmt_reset_work, zephyr_os_mgmt_reset_work_handler);
 static const struct k_thread *
 zephyr_os_mgmt_task_at(int idx)
 {
-    const struct k_thread *thread;
+    struct k_thread *thread;
     int i;
 
-    thread = SYS_THREAD_MONITOR_HEAD;
+    thread = SYS_SLIST_PEEK_HEAD_CONTAINER(&_kernel.threads_list, thread,
+					   threads_node);
     for (i = 0; i < idx; i++) {
         if (thread == NULL) {
             break;
         }
-        thread = SYS_THREAD_MONITOR_NEXT(thread);
+	thread = SYS_SLIST_PEEK_NEXT_CONTAINER(thread, threads_node);
     }
 
     return thread;

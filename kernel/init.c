@@ -330,6 +330,16 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	sys_trace_thread_switched_in();
 #endif
 
+#ifdef CONFIG_THREAD_MONITOR
+	/*
+	 * This is not strictly necessary, as sys_slist_init() merely zeroes
+	 * threads_list, and _kernel is already zeroed. But, just to maintain
+	 * an opaque view of the slist stuff...
+	 */
+
+	sys_slist_init(&_kernel.threads_list);
+#endif
+
 	/*
 	 * Initialize the current execution thread to permit a level of
 	 * debugging output if an exception should happen during kernel

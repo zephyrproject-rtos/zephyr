@@ -23,6 +23,8 @@ enum {
 	OPENOCD_OFFSET_T_ARCH,
 	OPENOCD_OFFSET_T_PREEMPT_FLOAT,
 	OPENOCD_OFFSET_T_COOP_FLOAT,
+	OPENOCD_OFFSET_T_THREADS_LIST,
+	OPENOCD_OFFSET_T_THREADS_NODE
 };
 
 /* Forward-compatibility notes: 1) Only append items to this table; otherwise
@@ -30,16 +32,15 @@ enum {
  * 2) Avoid incompatible changes that affect the interpretation of existing
  * items. But if you have to do them, increment OPENOCD_OFFSET_VERSION
  * and submit a patch for OpenOCD to deal with both the old and new scheme.
- * Only version 1 is backward compatible to version 0.
  */
 __attribute__((used, section(".openocd_dbg")))
 size_t _kernel_openocd_offsets[] = {
 	/* Version 0 starts */
-	[OPENOCD_OFFSET_VERSION] = 1,
+	[OPENOCD_OFFSET_VERSION] = 2,
 	[OPENOCD_OFFSET_K_CURR_THREAD] = offsetof(struct z_kernel, current),
-	[OPENOCD_OFFSET_K_THREADS] = offsetof(struct z_kernel, threads),
+	[OPENOCD_OFFSET_K_THREADS] = OPENOCD_UNIMPLEMENTED,
 	[OPENOCD_OFFSET_T_ENTRY] = offsetof(struct k_thread, entry),
-	[OPENOCD_OFFSET_T_NEXT_THREAD] = offsetof(struct k_thread, next_thread),
+	[OPENOCD_OFFSET_T_NEXT_THREAD] = OPENOCD_UNIMPLEMENTED,
 	[OPENOCD_OFFSET_T_STATE] = offsetof(struct _thread_base, thread_state),
 	[OPENOCD_OFFSET_T_USER_OPTIONS] = offsetof(struct _thread_base,
 						   user_options),
@@ -66,8 +67,7 @@ size_t _kernel_openocd_offsets[] = {
 #warning Please define OPENOCD_OFFSET_T_STACK_PTR for this architecture
 	[OPENOCD_OFFSET_T_STACK_PTR] = OPENOCD_UNIMPLEMENTED,
 #endif
-	/* Version 0 ends */
-
+	/* Version 1 fields */
 	[OPENOCD_OFFSET_T_NAME] = offsetof(struct k_thread, name),
 	[OPENOCD_OFFSET_T_ARCH] = offsetof(struct k_thread, arch),
 #if defined(CONFIG_FLOAT) && defined(CONFIG_ARM)
@@ -83,9 +83,11 @@ size_t _kernel_openocd_offsets[] = {
 	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = OPENOCD_UNIMPLEMENTED,
 	[OPENOCD_OFFSET_T_COOP_FLOAT] = OPENOCD_UNIMPLEMENTED,
 #endif
-	/* Version is still 1, but existence of following elements must be
-	 * checked with _kernel_openocd_num_offsets.
-	 */
+	/* Version 2 fields */
+	[OPENOCD_OFFSET_T_THREADS_LIST] = offsetof(struct z_kernel,
+						   threads_list),
+	[OPENOCD_OFFSET_T_THREADS_NODE] = offsetof(struct k_thread,
+						   threads_node)
 };
 
 __attribute__((used, section(".openocd_dbg")))

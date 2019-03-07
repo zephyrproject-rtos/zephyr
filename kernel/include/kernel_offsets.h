@@ -28,7 +28,7 @@ GEN_OFFSET_SYM(_cpu_t, nested);
 GEN_OFFSET_SYM(_cpu_t, irq_stack);
 
 #if defined(CONFIG_THREAD_MONITOR)
-GEN_OFFSET_SYM(_kernel_t, threads);
+GEN_OFFSET_SYM(_kernel_t, threads_list);
 #endif
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
@@ -68,7 +68,7 @@ GEN_OFFSET_SYM(_thread_t, stack_info);
 #endif
 
 #if defined(CONFIG_THREAD_MONITOR)
-GEN_OFFSET_SYM(_thread_t, next_thread);
+GEN_OFFSET_SYM(_thread_t, threads_node);
 #endif
 
 #ifdef CONFIG_THREAD_CUSTOM_DATA

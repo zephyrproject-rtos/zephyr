@@ -531,8 +531,8 @@ struct k_thread {
 	/** thread entry and parameters description */
 	struct __thread_entry entry;
 
-	/** next item in list of all threads */
-	struct k_thread *next_thread;
+	/** node for _kernel.threads (all threads slist) */
+	sys_snode_t threads_node;
 #endif
 
 #if defined(CONFIG_THREAD_NAME)
@@ -606,16 +606,17 @@ typedef void (*k_thread_user_cb_t)(const struct k_thread *thread,
  * @brief Iterate over all the threads in the system.
  *
  * This routine iterates over all the threads in the system and
- * calls the user_cb function for each thread.
+ * calls the user_cb function for each thread. Threads that are
+ * started during iteration (either by the iterating thread, or
+ * otherwise) are not guaranteed to be visited; similarly, threads
+ * that are stopped during iteration might be visited even though
+ * they are no longer running. Callback function beware.
  *
  * @param user_cb Pointer to the user callback function.
  * @param user_data Pointer to user data.
  *
  * @note CONFIG_THREAD_MONITOR must be set for this function
- * to be effective. Also this API uses irq_lock to protect the
- * _kernel.threads list which means creation of new threads and
- * terminations of existing threads are blocked until this
- * API returns.
+ * to be effective.
  *
  * @return N/A
  */

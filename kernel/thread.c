@@ -46,19 +46,23 @@ void k_thread_foreach(k_thread_user_cb_t user_cb, void *user_data)
 {
 #if defined(CONFIG_THREAD_MONITOR)
 	struct k_thread *thread;
+	struct k_thread *tmp;
 	k_spinlock_key_t key;
 
 	__ASSERT(user_cb != NULL, "user_cb can not be NULL");
 
 	/*
-	 * Lock is needed to make sure that the _kernel.threads is not being
-	 * modified by the user_cb either directly or indirectly.
-	 * The indirect ways are through calling k_thread_create and
-	 * k_thread_abort from user_cb.
+	 * We hold the lock to synchronize access to the list, but
+	 * this makes no guarantees about the state of the threads
+	 * visited by the user-supplied callback function.
 	 */
+
 	key = k_spin_lock(&lock);
-	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&_kernel.threads_list, thread,
+					  tmp, threads_node) {
+		k_spin_unlock(&lock, key);
 		user_cb(thread, user_data);
+		key = k_spin_lock(&lock);
 	}
 	k_spin_unlock(&lock, key);
 #endif
@@ -153,21 +157,8 @@ void _thread_monitor_exit(struct k_thread *thread)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 
-	if (thread == _kernel.threads) {
-		_kernel.threads = _kernel.threads->next_thread;
-	} else {
-		struct k_thread *prev_thread;
-
-		prev_thread = _kernel.threads;
-		while ((prev_thread != NULL) &&
-			(thread != prev_thread->next_thread)) {
-			prev_thread = prev_thread->next_thread;
-		}
-		if (prev_thread != NULL) {
-			prev_thread->next_thread = thread->next_thread;
-		}
-	}
-
+	sys_slist_find_and_remove(&_kernel.threads_list,
+				  &thread->threads_node);
 	k_spin_unlock(&lock, key);
 }
 #endif
@@ -375,9 +366,7 @@ void _setup_new_thread(struct k_thread *new_thread,
 	new_thread->entry.parameter3 = p3;
 
 	k_spinlock_key_t key = k_spin_lock(&lock);
-
-	new_thread->next_thread = _kernel.threads;
-	_kernel.threads = new_thread;
+	sys_slist_prepend(&_kernel.threads_list, &new_thread->threads_node);
 	k_spin_unlock(&lock, key);
 #endif
 #ifdef CONFIG_THREAD_NAME
