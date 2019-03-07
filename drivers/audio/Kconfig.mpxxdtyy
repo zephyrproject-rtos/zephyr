@@ -6,7 +6,6 @@
 
 menuconfig AUDIO_MPXXDTYY
 	bool "ST Digital PDM microphone attached to I2S support"
-	depends on AUDIO_DMIC
 	depends on I2S
 	select HAS_STLIB
 	help
