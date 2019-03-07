@@ -19,7 +19,9 @@ extern "C" {
 
 /* Define ID for simplelink_wifi_cb to not conflict with WLAN event IDs: */
 #define SIMPLELINK_WIFI_CB_IPACQUIRED \
-		(SL_WLAN_EVENT_MAX + SL_DEVICE_EVENT_DROPPED_NETAPP_IPACQUIRED)
+		(SL_WLAN_EVENT_MAX + SL_NETAPP_EVENT_IPV4_ACQUIRED)
+#define SIMPLELINK_WIFI_CB_IPV6ACQUIRED \
+		(SL_WLAN_EVENT_MAX + SL_NETAPP_EVENT_IPV6_ACQUIRED)
 
 struct sl_connect_state {
 	uint32_t gateway_ip;
