@@ -8,7 +8,6 @@ menu "Link Layer Discovery Protocol (LLDP) options"
 
 config NET_LLDP
 	bool "Enable LLDP"
-	depends on NET_L2_ETHERNET
 	select NET_MGMT
 	select NET_MGMT_EVENT
 	help

@@ -6,7 +6,6 @@
 
 menuconfig ETH_SMSC911X
 	bool "SMSC911x/9220 Ethernet driver"
-	depends on NET_L2_ETHERNET
 	help
 	  Enable driver for SMSC/LAN911x/9220 family of chips.
 

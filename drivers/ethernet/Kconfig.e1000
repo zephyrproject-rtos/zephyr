@@ -8,7 +8,7 @@
 
 menuconfig ETH_E1000
 	bool "Intel(R) PRO/1000 Gigabit Ethernet driver"
-	depends on NET_L2_ETHERNET && PCI_ENUMERATION
+	depends on PCI_ENUMERATION
 	help
 	  Enable Intel(R) PRO/1000 Gigabit Ethernet driver.
 

@@ -21,35 +21,31 @@ config ETH_STM32_HAL_NAME
 
 config ETH_STM32_HAL_IRQ_PRI
 	int "Controller interrupt priority"
-	depends on ETH_STM32_HAL
 	default 0
 	help
 	  IRQ priority
 
 config ETH_STM32_HAL_RX_THREAD_STACK_SIZE
 	int "RX thread stack size"
-	depends on ETH_STM32_HAL
 	default 1500
 	help
 	  RX thread stack size
 
 config ETH_STM32_HAL_RX_THREAD_PRIO
 	int "RX thread priority"
-	depends on ETH_STM32_HAL
 	default 2
 	help
 	  RX thread priority
 
 config ETH_STM32_HAL_PHY_ADDRESS
 	int "Phy address"
-	depends on ETH_STM32_HAL
 	default 0
 	help
 	  The phy address to use.
 
 config ETH_STM32_HAL_RANDOM_MAC
 	bool "Random MAC address"
-	depends on ETH_STM32_HAL && ENTROPY_GENERATOR
+	depends on ENTROPY_GENERATOR
 	default y
 	help
 	  Generate a random MAC address dynamically.
@@ -76,13 +72,12 @@ config ETH_STM32_HAL_MAC5
 	range 0 0xff
 	help
 	  This is the byte 5 of the MAC address.
-endif
+
+endif # !ETH_STM32_HAL_RANDOM_MAC
 
 config ETH_STM32_HAL_MII
 	bool "Use MII interface"
-	depends on ETH_STM32_HAL
 	help
 	  Use the MII physical interface instead of RMII.
 
 endif # ETH_STM32_HAL
-
