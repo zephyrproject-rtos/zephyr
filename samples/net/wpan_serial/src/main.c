@@ -597,19 +597,6 @@ void main(void)
 
 	LOG_DBG("DTR set, continue");
 
-#if CONFIG_DCD_DSR
-	/* They are optional, we use them to test the interrupt endpoint */
-	ret = uart_line_ctrl_set(dev, LINE_CTRL_DCD, 1);
-	if (ret)
-		printk("Failed to set DCD, ret code %d\n", ret);
-
-	ret = uart_line_ctrl_set(dev, LINE_CTRL_DSR, 1);
-	if (ret)
-		printk("Failed to set DSR, ret code %d\n", ret);
-
-	/* Wait 1 sec for the host to do all settings */
-	sys_thread_busy_wait(1000000);
-#endif
 	ret = uart_line_ctrl_get(dev, LINE_CTRL_BAUD_RATE, &baudrate);
 	if (ret)
 		printk("Failed to get baudrate, ret code %d\n", ret);
