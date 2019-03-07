@@ -1477,6 +1477,22 @@ static int get_context_priority(struct net_context *context,
 #endif
 }
 
+static int get_context_timepstamp(struct net_context *context,
+				  void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+	*((bool *)value) = context->options.timestamp;
+
+	if (len) {
+		*len = sizeof(bool);
+	}
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 static int context_setup_udp_packet(struct net_context *context,
 				    struct net_pkt *pkt,
 				    const void *buf,
@@ -1670,6 +1686,19 @@ static int context_sendto_new(struct net_context *context,
 
 		get_context_priority(context, &priority, NULL);
 		net_pkt_set_priority(pkt, priority);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_TIMESTAMP)) {
+		bool timestamp;
+
+		get_context_timepstamp(context, &timestamp, NULL);
+		if (timestamp) {
+			struct net_ptp_time tp = {
+				.second = k_cycle_get_32(),
+			};
+
+			net_pkt_set_timestamp(pkt, &tp);
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_NET_UDP) &&
@@ -2092,6 +2121,22 @@ static int set_context_priority(struct net_context *context,
 #endif
 }
 
+static int set_context_timestamp(struct net_context *context,
+				 const void *value, size_t len)
+{
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+	if (len > sizeof(bool)) {
+		return -EINVAL;
+	}
+
+	context->options.timestamp = *((bool *)value);
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 int net_context_set_option(struct net_context *context,
 			   enum net_context_option option,
 			   const void *value, size_t len)
@@ -2109,6 +2154,9 @@ int net_context_set_option(struct net_context *context,
 	switch (option) {
 	case NET_OPT_PRIORITY:
 		ret = set_context_priority(context, value, len);
+		break;
+	case NET_OPT_TIMESTAMP:
+		ret = set_context_timestamp(context, value, len);
 		break;
 	}
 
@@ -2134,6 +2182,9 @@ int net_context_get_option(struct net_context *context,
 	switch (option) {
 	case NET_OPT_PRIORITY:
 		ret = get_context_priority(context, value, len);
+		break;
+	case NET_OPT_TIMESTAMP:
+		ret = get_context_timepstamp(context, value, len);
 		break;
 	}
 

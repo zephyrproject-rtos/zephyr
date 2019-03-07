@@ -283,6 +283,9 @@ struct net_context {
 		/** Priority of the network data sent via this net_context */
 		u8_t priority;
 #endif
+#if defined(CONFIG_NET_CONTEXT_TIMESTAMP)
+		bool timestamp;
+#endif
 	} options;
 
 	/** Protocol (UDP, TCP or IEEE 802.3 protocol value) */
@@ -963,7 +966,8 @@ int net_context_update_recv_wnd(struct net_context *context,
 				s32_t delta);
 
 enum net_context_option {
-	NET_OPT_PRIORITY = 1,
+	NET_OPT_PRIORITY	= 1,
+	NET_OPT_TIMESTAMP	= 2,
 };
 
 /**
