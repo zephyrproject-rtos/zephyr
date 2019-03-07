@@ -62,6 +62,11 @@ struct metal_io_ops {
 				 memory_order order,
 				 int len);
 	void		(*close)(struct metal_io_region *io);
+	metal_phys_addr_t
+			(*offset_to_phys)(struct metal_io_region *io,
+					  unsigned long offset);
+	unsigned long	(*phys_to_offset)(struct metal_io_region *io,
+					  metal_phys_addr_t phys);
 };
 
 /** Libmetal I/O region structure. */
@@ -126,7 +131,7 @@ static inline size_t metal_io_region_size(struct metal_io_region *io)
 static inline void *
 metal_io_virt(struct metal_io_region *io, unsigned long offset)
 {
-	return (io->virt != METAL_BAD_VA && offset <= io->size
+	return (io->virt != METAL_BAD_VA && offset < io->size
 		? (uint8_t *)io->virt + offset
 		: NULL);
 }
@@ -154,12 +159,16 @@ metal_io_virt_to_offset(struct metal_io_region *io, void *virt)
 static inline metal_phys_addr_t
 metal_io_phys(struct metal_io_region *io, unsigned long offset)
 {
-	unsigned long page = (io->page_shift >=
-			     sizeof(offset) * CHAR_BIT ?
-			     0 : offset >> io->page_shift);
-	return (io->physmap != NULL && offset <= io->size
-		? io->physmap[page] + (offset & io->page_mask)
-		: METAL_BAD_PHYS);
+	if (!io->ops.offset_to_phys) {
+		unsigned long page = (io->page_shift >=
+				     sizeof(offset) * CHAR_BIT ?
+				     0 : offset >> io->page_shift);
+		return (io->physmap != NULL && offset < io->size
+			? io->physmap[page] + (offset & io->page_mask)
+			: METAL_BAD_PHYS);
+	}
+
+	return io->ops.offset_to_phys(io, offset);
 }
 
 /**
@@ -171,15 +180,19 @@ metal_io_phys(struct metal_io_region *io, unsigned long offset)
 static inline unsigned long
 metal_io_phys_to_offset(struct metal_io_region *io, metal_phys_addr_t phys)
 {
-	unsigned long offset =
-		(io->page_mask == (metal_phys_addr_t)(-1) ?
-		phys - io->physmap[0] :  phys & io->page_mask);
-	do {
-		if (metal_io_phys(io, offset) == phys)
-			return offset;
-		offset += io->page_mask + 1;
-	} while (offset < io->size);
-	return METAL_BAD_OFFSET;
+	if (!io->ops.phys_to_offset) {
+		unsigned long offset =
+			(io->page_mask == (metal_phys_addr_t)(-1) ?
+			phys - io->physmap[0] :  phys & io->page_mask);
+		do {
+			if (metal_io_phys(io, offset) == phys)
+				return offset;
+			offset += io->page_mask + 1;
+		} while (offset < io->size);
+		return METAL_BAD_OFFSET;
+	}
+
+	return (*io->ops.phys_to_offset)(io, phys);
 }
 
 /**

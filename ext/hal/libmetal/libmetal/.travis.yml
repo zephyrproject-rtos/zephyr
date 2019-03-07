@@ -11,12 +11,14 @@ env:
     - ZEPHYR_TOOLCHAIN_VARIANT=zephyr
     - ZEPHYR_SDK_INSTALL_DIR=/opt/zephyr-sdk
     - ZEPHYR_BASE=$TRAVIS_BUILD_DIR/deps/zephyr
-    - ZEPHYR_SDK_VERSION=0.9.3
+    - ZEPHYR_SDK_VERSION=0.9.5
     - ZEPHYR_SDK_DOWNLOAD_FOLDER=https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/$ZEPHYR_SDK_VERSION
     - ZEPHYR_SDK_SETUP_BINARY=zephyr-sdk-$ZEPHYR_SDK_VERSION-setup.run
     - ZEPHYR_SDK_DOWNLOAD_URL=$ZEPHYR_SDK_DOWNLOAD_FOLDER/$ZEPHYR_SDK_SETUP_BINARY
     - FREERTOS_ZIP_URL=https://cfhcable.dl.sourceforge.net/project/freertos/FreeRTOS/V10.0.1/FreeRTOSv10.0.1.zip
     - GCC_ARM_COMPILER_PACKAGE=gcc-arm-embedded_7-2018q2-1~trusty1_amd64.deb
+    - CC=gcc-4.9
+    - CXX=g++-4.9
 
 matrix:
   fast_finish: true
@@ -34,8 +36,16 @@ cache:
   directories:
     - $ZEPHYR_SDK_INSTALL_DIR
     - /usr/local/bin
+    - $HOME/bin/cmake
 
 before_install:
+  - if [ ! -f $HOME/bin/cmake/cmake-3.13.1-Linux-x86_64/bin/cmake ]; then
+      mkdir -p $HOME/bin/cmake && cd $HOME/bin/cmake &&
+      wget https://github.com/Kitware/CMake/releases/download/v3.13.1/cmake-3.13.1-Linux-x86_64.sh &&
+      yes | sh cmake-3.13.1-Linux-x86_64.sh | cat &&
+      cd -;
+    fi &&
+    export PATH=$HOME/bin/cmake/cmake-3.13.1-Linux-x86_64/bin:$PATH
   - if [[ "$TARGET" == "zephyr" ]]; then
       sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test &&
       sudo apt-get update -qq &&
@@ -43,8 +53,9 @@ before_install:
       sudo pip3 install pyelftools;
     fi
   - if [[ "$TARGET" == "linux" ]]; then
+      sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test &&
       sudo apt-get update -qq &&
-      sudo apt-get install libsysfs-dev libhugetlbfs-dev make gcc;
+      sudo apt-get install libsysfs-dev libhugetlbfs-dev make gcc-4.9;
     fi
 # This is to kick start CI on generic platform. Will need to have a proper way to get the required packages
   - if [[ "$TARGET" == "generic" || "$TARGET" == "freertos" ]]; then
@@ -77,7 +88,7 @@ script:
   - if [[ "$TARGET" == "zephyr" ]]; then
        mkdir -p ../libmetal/build-zephyr &&
        cd ../libmetal/build-zephyr &&
-       cmake .. -DWITH_ZEPHYR=on -DBOARD=qemu_cortex_m3 -DWITH_TESTS=on &&
+       cmake .. -DWITH_ZEPHYR=on -DBOARD=qemu_cortex_m3 &&
        make VERBOSE=1;
     fi
   - if [[ "$TARGET" == "linux" ]]; then

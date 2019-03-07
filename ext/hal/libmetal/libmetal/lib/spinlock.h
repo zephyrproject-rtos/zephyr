@@ -22,11 +22,11 @@ extern "C" {
 /** \defgroup spinlock Spinlock Interfaces
  *  @{ */
 struct metal_spinlock {
-	atomic_int v;
+	atomic_flag v;
 };
 
 /** Static metal spinlock initialization. */
-#define METAL_SPINLOCK_INIT		{ATOMIC_VAR_INIT(0)}
+#define METAL_SPINLOCK_INIT		{ATOMIC_FLAG_INIT}
 
 /**
  * @brief	Initialize a libmetal spinlock.
@@ -34,7 +34,7 @@ struct metal_spinlock {
  */
 static inline void metal_spinlock_init(struct metal_spinlock *slock)
 {
-	atomic_store(&slock->v, 0);
+	atomic_flag_clear(&slock->v);
 }
 
 /**
