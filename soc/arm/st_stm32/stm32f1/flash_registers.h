@@ -37,15 +37,15 @@ union __ef_acr {
 
 /* 3.3.3 Embedded flash registers */
 struct stm32f10x_flash {
-	union __ef_acr acr;
-	u32_t keyr;
-	u32_t optkeyr;
-	u32_t sr;
-	u32_t cr;
-	u32_t ar;
-	u32_t rsvd;
-	u32_t obr;
-	u32_t wrpr;
+	volatile union __ef_acr acr;
+	volatile u32_t keyr;
+	volatile u32_t optkeyr;
+	volatile u32_t sr;
+	volatile u32_t cr;
+	volatile u32_t ar;
+	volatile u32_t rsvd;
+	volatile u32_t obr;
+	volatile u32_t wrpr;
 };
 
 #endif	/* _STM32F10X_FLASHREGISTERS_H_ */
