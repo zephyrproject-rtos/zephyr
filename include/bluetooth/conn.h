@@ -231,8 +231,9 @@ int bt_le_set_auto_conn(const bt_addr_le_t *addr,
  *  Allows initiating a new LE connection to remote peer with the remote
  *  acting in central role and the local device in peripheral role.
  *
- *  The advertising type must be either BT_LE_ADV_DIRECT_IND or
- *  BT_LE_ADV_DIRECT_IND_LOW_DUTY.
+ *  The advertising type will either be BT_LE_ADV_DIRECT_IND, or
+ *  BT_LE_ADV_DIRECT_IND_LOW_DUTY if the BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY
+ *  option was used as part of the advertising parameters.
  *
  *  In case of high duty cycle this will result in a callback with
  *  connected() with a new connection or with an error.
