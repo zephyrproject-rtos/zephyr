@@ -132,9 +132,8 @@ static void initialize_network(void)
 		panic("No default network interface");
 	}
 
-#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_DHCPV6)
 	/* TODO: IPV6 DHCP */
-#elif defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_DHCPV4)
 	net_dhcpv4_start(iface);
 
 	/* delay so DHCPv4 can assign IP */
@@ -171,7 +170,7 @@ static void initialize_network(void)
 			     &net_sin(&addr)->sin_addr,
 			     NET_ADDR_MANUAL, 0);
 #endif
-#endif /* CONFIG_NET_IPV6 && CONFIG_NET_DHCPV6 */
+#endif /* CONFIG_NET_IPV4 && CONFIG_NET_DHCPV4 */
 }
 
 static bool read_led(void)
@@ -266,9 +265,8 @@ static int connect(struct nats *nats, u16_t port)
 		return ret;
 	}
 
-#if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_DHCPV6)
 	/* TODO: IPV6 DHCP */
-#elif defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_DHCPV4)
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_DHCPV4)
 	iface = net_if_get_default();
 
 	net_ipaddr_copy(&net_sin(&src_addr)->sin_addr,
