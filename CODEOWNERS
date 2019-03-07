@@ -134,7 +134,9 @@
 /drivers/wifi/eswifi/                     @loicpoulain
 /dts/arm/st/                              @erwango
 /dts/arm/nordic/                          @ioannisg @carlescufi
+/dts/arm/nxp/                             @MaureenHelm
 /dts/bindings/can/                        @alexanderwachter
+/dts/bindings/*/nxp*                      @MaureenHelm
 /ext/fs/                                  @nashif @ramakrishnapallala
 /ext/hal/cmsis/                           @MaureenHelm @galak
 /ext/hal/nordic/                          @carlescufi @anangl
