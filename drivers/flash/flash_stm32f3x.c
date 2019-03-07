@@ -56,11 +56,6 @@ static int erase_page(struct device *dev, unsigned int page)
 	regs->cr |= FLASH_CR_PER;
 	/* Set page address */
 	regs->ar = page_address;
-	/* Give some time to write operation to complete */
-	rc = flash_stm32_wait_flash_idle(dev);
-	if (rc < 0) {
-		return rc;
-	}
 	/* Set the STRT bit */
 	regs->cr |= FLASH_CR_STRT;
 
