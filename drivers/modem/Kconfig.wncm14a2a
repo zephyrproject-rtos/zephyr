@@ -10,6 +10,7 @@ menuconfig MODEM_WNCM14A2A
 	bool "Enable Wistron LTE-M modem driver"
 	select MODEM_RECEIVER
 	select NET_OFFLOAD
+	imply GPIO
 	select UART_MCUX_2 if BOARD_FRDM_K64F
 	select GPIO_NRF_P1 if SOC_NRF52840
 	select UART_1_NRF_UARTE if SOC_NRF52840
