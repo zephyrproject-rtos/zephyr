@@ -1,0 +1,40 @@
+#
+# Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Atmel SAM0 series SERCOM I2C controller
+version: 0.1
+
+description: >
+    This is a representation of the Atmel SAM0 series SERCOM I2C nodes
+
+inherits:
+    !include i2c.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "atmel,sam0-i2c"
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: compound
+      category: required
+      description: required interrupts
+      generation: define
+
+    dma:
+      type: int
+      category: optional
+      description: DMA channel
+      generation: define
+...
