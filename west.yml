@@ -16,7 +16,7 @@
 
 west:
   url: https://github.com/zephyrproject-rtos/west
-  revision: master
+  revision: v0.5.6
 
 manifest:
   defaults:
