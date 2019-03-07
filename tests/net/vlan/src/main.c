@@ -113,7 +113,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 			  "Context pointers do not match (%p vs %p)",
 			  eth_vlan_context, context);
 
-	if (!pkt->frags) {
+	if (!pkt->buffer) {
 		DBG("No data to send!\n");
 		return -ENODATA;
 	}
@@ -421,7 +421,7 @@ static void test_vlan_tci(void)
 	u8_t priority;
 	bool dei;
 
-	pkt = net_pkt_get_reserve_tx(K_FOREVER);
+	pkt = net_pkt_alloc(K_FOREVER);
 
 	tag = NET_VLAN_TAG_UNSPEC;
 	net_pkt_set_vlan_tag(pkt, tag);
@@ -505,6 +505,8 @@ static void test_vlan_tci(void)
 	zassert_equal(tag, net_eth_vlan_get_vid(tci), "Invalid VLAN tag");
 	zassert_equal(priority, net_eth_vlan_get_pcp(tci),
 		      "Invalid VLAN priority");
+
+	net_pkt_unref(pkt);
 }
 
 /* Enable two VLAN tags and verity that proper interfaces are enabled.
@@ -710,9 +712,7 @@ static void test_vlan_send_data(void)
 	struct ethernet_context *eth_ctx; /* This is L2 context */
 	struct eth_context *ctx; /* This is interface context */
 	struct net_if *iface;
-	struct net_pkt *pkt;
-	struct net_buf *frag;
-	int ret, len;
+	int ret;
 	struct sockaddr_in6 dst_addr6 = {
 		.sin6_family = AF_INET6,
 		.sin6_port = htons(PORT),
@@ -750,29 +750,16 @@ static void test_vlan_send_data(void)
 	ret = net_eth_is_vlan_enabled(eth_ctx, iface);
 	zassert_equal(ret, true, "VLAN disabled for interface 1");
 
-	pkt = net_pkt_get_tx(udp_v6_ctx, K_FOREVER);
-	zassert_not_null(pkt, "Cannot get pkt");
-	frag = net_pkt_get_data(udp_v6_ctx, K_FOREVER);
-	zassert_not_null(frag, "Cannot get frag");
-	net_pkt_frag_add(pkt, frag);
-
-	/* VLAN tag will be automatically set by ethernet L2 driver
-	 * so we do not need to set it here.
-	 */
-
-	len = strlen(test_data);
-	memcpy(net_buf_add(frag, len), test_data, len);
-	net_pkt_set_appdatalen(pkt, len);
-
 	test_started = true;
 
 	ret = add_neighbor(iface, &dst_addr);
 	zassert_true(ret, "Cannot add neighbor");
 
-	ret = net_context_sendto(pkt, (struct sockaddr *)&dst_addr6,
-				 sizeof(struct sockaddr_in6),
-				 NULL, K_NO_WAIT, NULL, NULL);
-	zassert_equal(ret, 0, "Send UDP pkt failed");
+	ret = net_context_sendto_new(udp_v6_ctx, test_data, strlen(test_data),
+				     (struct sockaddr *)&dst_addr6,
+				     sizeof(struct sockaddr_in6),
+				     NULL, K_NO_WAIT, NULL, NULL);
+	zassert_true(ret > 0, "Send UDP pkt failed");
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
 		DBG("Timeout while waiting interface data\n");
