@@ -771,7 +771,7 @@ static void test_vlan_send_data(void)
 
 	ret = net_context_sendto(pkt, (struct sockaddr *)&dst_addr6,
 				 sizeof(struct sockaddr_in6),
-				 NULL, 0, NULL, NULL);
+				 NULL, K_NO_WAIT, NULL, NULL);
 	zassert_equal(ret, 0, "Send UDP pkt failed");
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
