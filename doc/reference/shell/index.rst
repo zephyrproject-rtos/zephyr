@@ -465,6 +465,14 @@ are :c:macro:`SHELL_DEFINE` arguments.
 	set too high, the logger thread could be blocked and impact other logger
 	backends.
 
+.. warning::
+	As the shell is a complex logger backend, it can not output logs if
+	the application crashes before the shell thread is running. In this
+	situation, you can enable one of the simple logging backends instead,
+	such as UART (:option:`CONFIG_LOG_BACKEND_UART`) or
+	RTT (:option:`CONFIG_LOG_BACKEND_RTT`), which are available earlier
+	during system initialization.
+
 API Reference
 *************
 
