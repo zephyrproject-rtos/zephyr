@@ -29,22 +29,23 @@ extern "C" {
 #endif
 
 struct metal_condition {
-	metal_mutex_t *m; /**< mutex.
-	                       The condition variable is attached to
-	                       this mutex when it is waiting.
-	                       It is also used to check correctness
-	                       in case there are multiple waiters. */
+	atomic_uintptr_t mptr; /**< mutex pointer.
+				    The condition variable is attached to
+				    this mutex when it is waiting.
+				    It is also used to check correctness
+				    in case there are multiple waiters. */
 
 	atomic_int waiters;    /**< number of waiters. */
 	atomic_int wakeups;    /**< number of wakeups. */
 };
 
 /** Static metal condition variable initialization. */
-#define METAL_CONDITION_INIT		{ NULL, ATOMIC_VAR_INIT(0), ATOMIC_VAR_INIT(0) }
+#define METAL_CONDITION_INIT	{ ATOMIC_VAR_INIT(0), ATOMIC_VAR_INIT(0), \
+				  ATOMIC_VAR_INIT(0) }
 
 static inline void metal_condition_init(struct metal_condition *cv)
 {
-	cv->m = NULL;
+	atomic_init(&cv->mptr, 0);
 	atomic_init(&cv->waiters, 0);
 	atomic_init(&cv->wakeups, 0);
 }
