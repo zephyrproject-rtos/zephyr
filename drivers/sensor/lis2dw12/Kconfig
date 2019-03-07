@@ -70,7 +70,6 @@ endif # LIS2DW12_TRIGGER
 
 choice
 	prompt "Accelerometer Full-scale range setting"
-	depends on LIS2DW12
 	default LIS2DW12_ACCEL_RANGE_RUNTIME
 
 config LIS2DW12_ACCEL_RANGE_RUNTIME
@@ -91,7 +90,6 @@ endchoice
 
 choice
 	prompt "Accelerometer sampling frequency (ODR)"
-	depends on LIS2DW12
 	default LIS2DW12_ODR_RUNTIME
 
 config LIS2DW12_ODR_RUNTIME
