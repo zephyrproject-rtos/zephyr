@@ -476,7 +476,7 @@ static struct net_pkt *send_some_data(struct net_if *iface, bool ref_pkt)
 
 	ret = net_context_sendto(pkt, (struct sockaddr *)&dst_addr6,
 				 sizeof(struct sockaddr_in6),
-				 NULL, 0, NULL, NULL);
+				 NULL, K_NO_WAIT, NULL, NULL);
 	zassert_equal(ret, 0, "Send UDP pkt failed\n");
 
 	net_context_unref(udp_v6_ctx);
