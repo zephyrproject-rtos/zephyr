@@ -7,7 +7,7 @@
 
 menuconfig GPIO_MCUX_LPC
 	bool "MCUX LPC GPIO driver"
-	depends on GPIO && HAS_MCUX
+	depends on HAS_MCUX
 	help
 	  Enable the MCUX LPC pinmux driver.
 
