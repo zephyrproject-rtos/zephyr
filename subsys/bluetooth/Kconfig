@@ -144,6 +144,7 @@ source "subsys/bluetooth/common/Kconfig"
 source "subsys/bluetooth/host/Kconfig"
 source "subsys/bluetooth/controller/Kconfig"
 source "subsys/bluetooth/shell/Kconfig"
+
 endif # BT_HCI
 
 endif # BT
