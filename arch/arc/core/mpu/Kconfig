@@ -15,7 +15,6 @@ config ARC_MPU_VER
 
 config ARC_CORE_MPU
 	bool "ARC Core MPU functionalities"
-	depends on CPU_HAS_MPU
 	help
 	  ARC core MPU functionalities
 
@@ -28,7 +27,6 @@ config MPU_STACK_GUARD
 
 config ARC_MPU
 	bool "ARC MPU Support"
-	depends on CPU_HAS_MPU
 	select ARC_CORE_MPU
 	select THREAD_STACK_INFO
 	select MEMORY_PROTECTION

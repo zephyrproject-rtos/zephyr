@@ -143,7 +143,6 @@ depends on CPU_HAS_MPU
 
 config ARC_MPU_ENABLE
 	bool "Enable MPU"
-	depends on CPU_HAS_MPU
 	select ARC_MPU
 	help
 	  Enable MPU
