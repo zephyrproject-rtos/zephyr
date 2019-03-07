@@ -19,6 +19,7 @@ extern "C" {
 /** \defgroup irq Interrupt Handling Interfaces
  *  @{ */
 
+#include <metal/list.h>
 #include <stdlib.h>
 
 /** IRQ handled status */
@@ -27,53 +28,39 @@ extern "C" {
 
 /**
  * @brief	type of interrupt handler
- * @param[in]   irq interrupt id
- * @param[in]	priv private data
- * @return      irq handled status
+ * @param[in]	irq interrupt id
+ * @param[in]	arg argument to pass to the handler
+ * @return	irq handled status
  */
-typedef int (*metal_irq_handler) (int irq, void *priv);
-
-struct metal_device;
+typedef int (*metal_irq_handler) (int irq, void *arg);
 
 /**
- * @brief      Register interrupt handler for driver ID/device.
+ * @brief      Register interrupt handler for interrupt.
+ *             Only allow single interrupt handler for a interrupt.
+ *
+ *             If irq_handler is NULL, it will unregister interrupt
+ *             handler from interrupt
  *
  * @param[in]  irq         interrupt id
  * @param[in]  irq_handler interrupt handler
- * @param[in]  dev         metal device this irq belongs to (can be NULL).
- * @param[in]  drv_id      driver id is a unique interrupt handler identifier.
- *                         It can also be used for driver data.
+ * @param[in]  arg         arg is the argument pointing to the data which
+ *                         will be passed to the interrupt handler.
  * @return     0 for success, non-zero on failure
  */
 int metal_irq_register(int irq,
 		       metal_irq_handler irq_handler,
-		       struct metal_device *dev,
-		       void *drv_id);
+		       void *arg);
 
 /**
- * @brief      Unregister interrupt handler for driver ID and/or device.
- *
- *             If interrupt handler (hd), driver ID (drv_id) and device (dev)
- *             are NULL, unregister all handlers for this interrupt.
- *
- *             If interrupt handler (hd), device (dev) or driver ID (drv_id),
- *             are not NULL, unregister handlers matching non NULL criterias.
- *             e.g: when call is made with drv_id and dev non NULL,
- *             all handlers matching both are unregistered.
- *
- *             If interrupt is not found, or other criterias not matching,
- *             return -ENOENT
+ * @brief      Unregister interrupt handler for interrupt.
  *
  * @param[in]  irq         interrupt id
- * @param[in]  irq_handler interrupt handler
- * @param[in]  dev         metal device this irq belongs to
- * @param[in]  drv_id      driver id. It can be used for driver data.
- * @return     0 for success, non-zero on failure
  */
-int metal_irq_unregister(int irq,
-			metal_irq_handler irq_handler,
-			struct metal_device *dev,
-			void *drv_id);
+static inline
+void metal_irq_unregister(int irq)
+{
+	metal_irq_register(irq, 0, NULL);
+}
 
 /**
  * @brief      disable interrupts

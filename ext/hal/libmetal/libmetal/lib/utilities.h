@@ -13,6 +13,7 @@
 #define __METAL_UTILITIES__H__
 
 #include <stdint.h>
+#include <limits.h>
 #include <metal/assert.h>
 
 #ifdef __cplusplus
@@ -69,7 +70,7 @@ extern "C" {
 #define metal_container_of(ptr, structure, member)	\
 	(void *)((uintptr_t)(ptr) - metal_offset_of(structure, member))
 
-#define METAL_BITS_PER_ULONG	(8 * sizeof(unsigned long))
+#define METAL_BITS_PER_ULONG	(CHAR_BIT * sizeof(unsigned long))
 
 #define metal_bit(bit)		(1UL << (bit))
 
@@ -83,8 +84,8 @@ static inline void metal_bitmap_set_bit(unsigned long *bitmap, int bit)
 
 static inline int metal_bitmap_is_bit_set(unsigned long *bitmap, int bit)
 {
-	return bitmap[bit / METAL_BITS_PER_ULONG] &
-		metal_bit(bit & (METAL_BITS_PER_ULONG - 1));
+	return ((bitmap[bit / METAL_BITS_PER_ULONG] &
+		metal_bit(bit & (METAL_BITS_PER_ULONG - 1))) == 0) ? 0 : 1;
 }
 
 static inline void metal_bitmap_clear_bit(unsigned long *bitmap, int bit)
@@ -113,7 +114,7 @@ metal_bitmap_next_set_bit(unsigned long *bitmap, unsigned int start,
 #define metal_bitmap_for_each_set_bit(bitmap, bit, max)			\
 	for ((bit) = metal_bitmap_next_set_bit((bitmap), 0, (max));	\
 	     (bit) < (max);						\
-	     (bit) = metal_bitmap_next_set_bit((bitmap), (bit), (max)))
+	     (bit) = metal_bitmap_next_set_bit((bitmap), (bit + 1), (max)))
 
 static inline unsigned int
 metal_bitmap_next_clear_bit(unsigned long *bitmap, unsigned int start,
@@ -130,7 +131,7 @@ metal_bitmap_next_clear_bit(unsigned long *bitmap, unsigned int start,
 #define metal_bitmap_for_each_clear_bit(bitmap, bit, max)		\
 	for ((bit) = metal_bitmap_next_clear_bit((bitmap), 0, (max));	\
 	     (bit) < (max);						\
-	     (bit) = metal_bitmap_next_clear_bit((bitmap), (bit), (max)))
+	     (bit) = metal_bitmap_next_clear_bit((bitmap), (bit + 1), (max)))
 
 static inline unsigned long metal_log2(unsigned long in)
 {
