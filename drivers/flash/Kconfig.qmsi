@@ -6,7 +6,7 @@
 
 menuconfig SOC_FLASH_QMSI
 	bool "QMSI flash driver"
-	depends on QMSI && FLASH
+	depends on QMSI
 	select FLASH_HAS_DRIVER_ENABLED
 	help
 	  Enable QMSI Quark flash driver.
