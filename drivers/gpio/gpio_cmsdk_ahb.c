@@ -38,7 +38,7 @@ struct gpio_cmsdk_ahb_dev_data {
 	sys_slist_t gpio_cb;
 };
 
-static void cmsdk_ahb_gpio_config(struct device *dev, u32_t mask, int flags)
+static int cmsdk_ahb_gpio_config(struct device *dev, u32_t mask, int flags)
 {
 	const struct gpio_cmsdk_ahb_cfg * const cfg = dev->config->config_info;
 
@@ -57,7 +57,7 @@ static void cmsdk_ahb_gpio_config(struct device *dev, u32_t mask, int flags)
 	/* Setup interrupt config */
 	if (flags & GPIO_INT) {
 		if (flags & GPIO_INT_DOUBLE_EDGE) {
-			/* FIXME: Not supported in this iteration */
+			return -ENOTSUP;
 		} else {
 			/*
 			 * Interrupt type:
@@ -83,6 +83,8 @@ static void cmsdk_ahb_gpio_config(struct device *dev, u32_t mask, int flags)
 	}
 
 	cfg->port->altfuncclr = mask;
+
+	return 0;
 }
 
 /**
@@ -98,18 +100,20 @@ static void cmsdk_ahb_gpio_config(struct device *dev, u32_t mask, int flags)
 static int gpio_cmsdk_ahb_config(struct device *dev, int access_op,
 				 u32_t pin, int flags)
 {
+	int ret = 0;
+
 	switch (access_op) {
 	case GPIO_ACCESS_BY_PIN:
-		cmsdk_ahb_gpio_config(dev, BIT(pin), flags);
+		ret = cmsdk_ahb_gpio_config(dev, BIT(pin), flags);
 		break;
 	case GPIO_ACCESS_BY_PORT:
-		cmsdk_ahb_gpio_config(dev, (0xFFFF), flags);
+		ret = cmsdk_ahb_gpio_config(dev, (0xFFFF), flags);
 		break;
 	default:
 		return -ENOTSUP;
 	}
 
-	return 0;
+	return ret;
 }
 
 /**
