@@ -1461,6 +1461,22 @@ int net_context_sendto(struct net_pkt *pkt,
 	return ret;
 }
 
+static int get_context_priority(struct net_context *context,
+				void *value, size_t *len)
+{
+#if defined(CONFIG_NET_CONTEXT_PRIORITY)
+	*((u8_t *)value) = context->options.priority;
+
+	if (len) {
+		*len = sizeof(u8_t);
+	}
+
+	return 0;
+#else
+	return -ENOTSUP;
+#endif
+}
+
 static int context_setup_udp_packet(struct net_context *context,
 				    struct net_pkt *pkt,
 				    const void *buf,
@@ -1648,6 +1664,13 @@ static int context_sendto_new(struct net_context *context,
 	context->send_cb = cb;
 	context->user_data = user_data;
 	net_pkt_set_token(pkt, token);
+
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_PRIORITY)) {
+		u8_t priority;
+
+		get_context_priority(context, &priority, NULL);
+		net_pkt_set_priority(pkt, priority);
+	}
 
 	if (IS_ENABLED(CONFIG_NET_UDP) &&
 	    net_context_get_ip_proto(context) == IPPROTO_UDP) {
@@ -2062,22 +2085,6 @@ static int set_context_priority(struct net_context *context,
 	}
 
 	context->options.priority = *((u8_t *)value);
-
-	return 0;
-#else
-	return -ENOTSUP;
-#endif
-}
-
-static int get_context_priority(struct net_context *context,
-				void *value, size_t *len)
-{
-#if defined(CONFIG_NET_CONTEXT_PRIORITY)
-	*((u8_t *)value) = context->options.priority;
-
-	if (len) {
-		*len = sizeof(u8_t);
-	}
 
 	return 0;
 #else
