@@ -145,6 +145,7 @@ zephyr_library_sources_ifdef(
   ll_sw/nordic/hal/nrf5/radio/radio.c
   ll_sw/nordic/hal/nrf5/mayfly.c
   ll_sw/nordic/hal/nrf5/ticker.c
+  hci/nordic/hal/nrf5/hci.c
   )
 
 zephyr_library_include_directories(
@@ -156,6 +157,8 @@ zephyr_library_include_directories(
 if(CONFIG_SOC_COMPATIBLE_NRF)
   zephyr_library_include_directories(
     ll_sw/nordic
+    hci/nordic
+    hci
     )
 endif()
 
