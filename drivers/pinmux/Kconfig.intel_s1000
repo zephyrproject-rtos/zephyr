@@ -6,6 +6,6 @@
 
 menuconfig PINMUX_INTEL_S1000
 	bool "Intel S1000 I/O multiplexer driver"
-	depends on PINMUX && SOC_INTEL_S1000
+	depends on SOC_INTEL_S1000
 	help
 	  Enable driver for Intel S1000 I/O multiplexer.

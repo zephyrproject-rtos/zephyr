@@ -16,7 +16,6 @@ if PINMUX
 
 config PINMUX_NAME
 	string "Pinmux driver name"
-	depends on PINMUX
 	default "PINMUX"
 	help
 	  The name of the pinmux driver.
@@ -24,7 +23,6 @@ config PINMUX_NAME
 config PINMUX_INIT_PRIORITY
 	int "Init priority"
 	default 45
-	depends on PINMUX
 	help
 	  Pinmux driver initialization priority.
 	  Pinmux driver almost certainly should be initialized before the
@@ -37,7 +35,7 @@ config PINMUX_INIT_PRIORITY
 
 config PINMUX_QMSI
 	bool "Enable QMSI pinmux dev driver"
-	depends on PINMUX && QMSI
+	depends on QMSI
 	help
 	  Enables the pinmux dev driver for QMSI supported boards.
 

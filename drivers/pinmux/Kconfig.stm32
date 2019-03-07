@@ -7,7 +7,7 @@
 
 config PINMUX_STM32
 	bool "Pinmux driver for STM32 MCUs"
-	depends on PINMUX && SOC_FAMILY_STM32
+	depends on SOC_FAMILY_STM32
 	help
 	 Enable pin multiplexer for STM32 MCUs
 
