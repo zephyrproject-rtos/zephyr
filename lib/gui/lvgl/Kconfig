@@ -366,11 +366,10 @@ rsource "Kconfig.objects"
 config APP_LINK_WITH_LVGL
 	bool "Link 'app' with LVGL"
 	default y
-	depends on LVGL
 	help
 	  Add LVGL header files to the 'app' include path. It may be
 	  disabled if the include paths for LVGL are causing aliasing
 	  issues for 'app'.
 
-endif
+endif # LVGL
 
