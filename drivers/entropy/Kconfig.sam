@@ -7,7 +7,6 @@
 menuconfig ENTROPY_SAM_RNG
 	bool "Atmel SAM MCU Family True Random Number Generator (TRNG) Driver"
 	depends on SOC_FAMILY_SAM
-	depends on ENTROPY_GENERATOR
 	select ENTROPY_HAS_DRIVER
 	select HAS_DTS_ENTROPY
 	help
