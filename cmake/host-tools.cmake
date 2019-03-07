@@ -10,7 +10,7 @@ if(${WEST} STREQUAL WEST-NOTFOUND)
 else()
   # If west is found, make sure its version matches the minimum
   # required one.
-  set(MIN_WEST_VERSION 0.5.4)
+  set(MIN_WEST_VERSION 0.5.6)
   execute_process(
     COMMAND
     ${WEST} --version
