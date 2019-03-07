@@ -101,12 +101,21 @@ int main(void)
 	};
 
 	serv4 = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+	if (serv4 < 0) {
+		printf("error: socket: %d\n", errno);
+		exit(1);
+	}
+
 	res = bind(serv4, (struct sockaddr *)&bind_addr4, sizeof(bind_addr4));
 	if (res == -1) {
 		printf("Cannot bind IPv4, errno: %d\n", errno);
 	}
 
 	serv6 = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+	if (serv6 < 0) {
+		printf("error: socket(AF_INET6): %d\n", errno);
+		exit(1);
+	}
 	#ifdef IPV6_V6ONLY
 	/* For Linux, we need to make socket IPv6-only to bind it to the
 	 * same port as IPv4 socket above.
