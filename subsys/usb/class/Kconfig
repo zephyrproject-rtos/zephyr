@@ -6,8 +6,6 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-if USB_DEVICE_STACK
-
 config USB_CDC_ACM
 	bool "USB CDC ACM Device Class Driver"
 	select SERIAL_HAS_DRIVER
@@ -147,5 +145,3 @@ config USB_DFU_DETACH_TIMEOUT
 	int
 	depends on USB_DFU_CLASS
 	default 1000
-
-endif # CONFIG_USB_DEVICE_STACK
