@@ -64,4 +64,4 @@ source "drivers/flash/Kconfig.sam"
 
 source "drivers/flash/Kconfig.w25qxxdv"
 
-endif
+endif # FLASH
