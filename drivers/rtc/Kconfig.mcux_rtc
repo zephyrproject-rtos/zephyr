@@ -7,6 +7,6 @@
 
 menuconfig RTC_MCUX
 	bool "MCUX RTC driver"
-	depends on RTC && HAS_MCUX_RTC
+	depends on HAS_MCUX_RTC
 	help
 	  Enable support for mcux rtc driver.
