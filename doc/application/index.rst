@@ -428,6 +428,8 @@ Run an Application
 
 An application image can be run on a real board or emulated hardware.
 
+.. _application_run_board:
+
 Running on a Board
 ==================
 
@@ -466,6 +468,7 @@ for additional information on how to flash your board.
           consult your board's documentation to see if this is
           necessary.
 
+.. _application_run_qemu:
 
 Running in an Emulator
 ======================
