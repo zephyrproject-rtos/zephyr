@@ -14,9 +14,15 @@ GNU ARM Embedded
 
    .. warning::
 
-      Like the Zephyr repository, do not install the toolchain in a directory
-      with spaces anywhere in the path. On Windows, we'll assume you install
-      into the directory :file:`C:\\gnu_arm_embedded`.
+      Do not install the toolchain into a path with spaces. On
+      Windows, we'll assume you install into the directory
+      :file:`C:\\gnu_arm_embedded`.
+
+   .. warning::
+
+	  The GNU ARM Embedded Toolchain for Windows, version **8-2018-q4-major**
+	  has a `critical bug <https://github.com/zephyrproject-rtos/zephyr/issues/12257>`_
+	  and should not be used. Toolchain version **7-2018-q2-update** is known to work.
 
 #. Configure the environment variables needed to inform the Zephyr build system
    to use this toolchain:
