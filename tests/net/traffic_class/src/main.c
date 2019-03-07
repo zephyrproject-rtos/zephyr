@@ -491,7 +491,7 @@ static void traffic_class_send_packets_with_prio(enum net_priority prio,
 	ret = net_context_sendto(pkt,
 				 (struct sockaddr *)&dst_addr6,
 				 sizeof(struct sockaddr_in6),
-				 NULL, 0, NULL, NULL);
+				 NULL, K_NO_WAIT, NULL, NULL);
 	zassert_equal(ret, 0, "Send UDP pkt failed");
 }
 
@@ -735,7 +735,8 @@ static void traffic_class_setup_recv(void)
 	recv_cb_called = false;
 
 	for (i = 0; i < NET_TC_RX_COUNT; i++) {
-		ret = net_context_recv(net_ctxs[i].ctx, recv_cb, 0, NULL);
+		ret = net_context_recv(net_ctxs[i].ctx, recv_cb,
+				       K_NO_WAIT, NULL);
 		zassert_equal(ret, 0,
 			      "[%d] Context recv UDP setup failed (%d)\n",
 			      i, ret);
@@ -797,7 +798,7 @@ static void traffic_class_recv_packets_with_prio(enum net_priority prio,
 	ret = net_context_sendto(pkt,
 				 (struct sockaddr *)&dst_addr6,
 				 sizeof(struct sockaddr_in6),
-				 NULL, 0, NULL, NULL);
+				 NULL, K_NO_WAIT, NULL, NULL);
 	zassert_equal(ret, 0, "Send UDP pkt failed");
 
 	/* Let the receiver to receive the packets */
