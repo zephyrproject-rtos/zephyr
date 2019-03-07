@@ -8,7 +8,7 @@
 
 menuconfig GPIO_QMSI
 	bool "QMSI GPIO driver"
-	depends on GPIO && QMSI
+	depends on QMSI
 	select HAS_DTS_GPIO
 	help
 	  Enable the GPIO driver found on Intel Microcontroller
@@ -16,7 +16,7 @@ menuconfig GPIO_QMSI
 
 menuconfig GPIO_QMSI_SS
 	bool "QMSI GPIO SS driver"
-	depends on GPIO && QMSI && ARC
+	depends on QMSI && ARC
 	select HAS_DTS_GPIO
 	help
 	  Enable the GPIO driver found on Intel Microcontroller
