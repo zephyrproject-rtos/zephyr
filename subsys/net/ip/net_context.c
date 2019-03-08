@@ -1564,6 +1564,43 @@ static void context_finalize_packet(struct net_context *context,
 	}
 }
 
+static struct net_pkt *context_alloc_pkt(struct net_context *context,
+					 size_t len, s32_t timeout)
+{
+	struct net_pkt *pkt;
+
+#if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
+	if (context->tx_slab) {
+		pkt = net_pkt_alloc_from_slab(context->tx_slab(), timeout);
+		if (!pkt) {
+			return NULL;
+		}
+
+		net_pkt_set_iface(pkt, net_context_get_iface(context));
+		net_pkt_set_family(pkt, net_context_get_family(context));
+		net_pkt_set_context(pkt, context);
+
+		if (net_pkt_alloc_buffer(pkt, len,
+					 net_context_get_ip_proto(context),
+					 timeout)) {
+			net_pkt_unref(pkt);
+			return NULL;
+		}
+
+		return pkt;
+	}
+#endif
+	pkt = net_pkt_alloc_with_buffer(net_context_get_iface(context), len,
+					net_context_get_family(context),
+					net_context_get_ip_proto(context),
+					timeout);
+
+	net_pkt_set_context(pkt, context);
+
+	return pkt;
+}
+
+
 static int context_sendto_new(struct net_context *context,
 			      const void *buf,
 			      size_t len,
@@ -1662,10 +1699,7 @@ static int context_sendto_new(struct net_context *context,
 		return -EINVAL;
 	}
 
-	pkt = net_pkt_alloc_with_buffer(net_context_get_iface(context), len,
-					net_context_get_family(context),
-					net_context_get_ip_proto(context),
-					PKT_WAIT_TIME);
+	pkt = context_alloc_pkt(context, len, PKT_WAIT_TIME);
 	if (!pkt) {
 		return -ENOMEM;
 	}
@@ -1676,7 +1710,6 @@ static int context_sendto_new(struct net_context *context,
 		len = tmp_len;
 	}
 
-	net_pkt_set_context(pkt, context);
 	context->send_cb = cb;
 	context->user_data = user_data;
 	net_pkt_set_token(pkt, token);
