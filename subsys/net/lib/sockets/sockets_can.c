@@ -363,6 +363,15 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 		struct net_if *iface;
 		struct device *dev;
 
+		/* The application must use can_filter and then we convert
+		 * it to zcan_filter as the CANBUS drivers expects that.
+		 */
+		if (optname == CAN_RAW_FILTER &&
+		    optlen != sizeof(struct can_filter)) {
+			errno = EINVAL;
+			return -1;
+		}
+
 		if (optval == NULL) {
 			errno = EINVAL;
 			return -1;
@@ -377,8 +386,18 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 			return -1;
 		}
 
-		return api->setsockopt(dev, obj, level, optname, optval,
-				       optlen);
+		if (optname == CAN_RAW_FILTER) {
+			struct zcan_filter zfilter;
+
+			can_copy_filter_to_zfilter((struct can_filter *)optval,
+						   &zfilter);
+
+			return api->setsockopt(dev, obj, level, optname,
+					       &zfilter, sizeof(zfilter));
+		}
+
+		return api->setsockopt(dev, obj, level, optname,
+				       optval, optlen);
 	}
 
 	return zcan_setsockopt_ctx(obj, level, optname, optval, optlen);
