@@ -2038,7 +2038,7 @@ struct net_pkt *net_pkt_rx_alloc_on_iface_debug(struct net_if *iface,
 						int line);
 #define net_pkt_rx_alloc_on_iface(_iface, _timeout)			\
 	net_pkt_rx_alloc_on_iface_debug(_iface, _timeout,		\
-					   __func__, __LINE__)
+					__func__, __LINE__)
 
 int net_pkt_alloc_buffer_debug(struct net_pkt *pkt,
 			       size_t size,
@@ -2047,7 +2047,7 @@ int net_pkt_alloc_buffer_debug(struct net_pkt *pkt,
 			       const char *caller, int line);
 #define net_pkt_alloc_buffer(_pkt, _size, _proto, _timeout)		\
 	net_pkt_alloc_buffer_debug(_pkt, _size, _proto, _timeout,	\
-				      __func__, __LINE__)
+				   __func__, __LINE__)
 
 struct net_pkt *net_pkt_alloc_with_buffer_debug(struct net_if *iface,
 						size_t size,
@@ -2058,9 +2058,9 @@ struct net_pkt *net_pkt_alloc_with_buffer_debug(struct net_if *iface,
 						int line);
 #define net_pkt_alloc_with_buffer(_iface, _size, _family,		\
 				  _proto, _timeout)			\
-	net_pkt_alloc_with_buffer_debug(_iface, _size, _family,	\
-					   _proto, _timeout,		\
-					   __func__, __LINE__)
+	net_pkt_alloc_with_buffer_debug(_iface, _size, _family,		\
+					_proto, _timeout,		\
+					__func__, __LINE__)
 
 struct net_pkt *net_pkt_rx_alloc_with_buffer_debug(struct net_if *iface,
 						   size_t size,
@@ -2072,9 +2072,9 @@ struct net_pkt *net_pkt_rx_alloc_with_buffer_debug(struct net_if *iface,
 #define net_pkt_rx_alloc_with_buffer(_iface, _size, _family,		\
 				     _proto, _timeout)			\
 	net_pkt_rx_alloc_with_buffer_debug(_iface, _size, _family,	\
-					      _proto, _timeout,		\
-					      __func__, __LINE__)
-#endif
+					   _proto, _timeout,		\
+					   __func__, __LINE__)
+#endif /* NET_PKT_DEBUG_ENABLED */
 /** @endcond */
 
 /**
@@ -2166,7 +2166,6 @@ struct net_pkt *net_pkt_rx_alloc_with_buffer(struct net_if *iface,
 					     sa_family_t family,
 					     enum net_ip_protocol proto,
 					     s32_t timeout);
-
 #endif
 
 /**
