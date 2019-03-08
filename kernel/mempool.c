@@ -124,7 +124,7 @@ void k_mem_pool_free_id(struct k_mem_block_id *id)
 
 	need_sched = z_unpend_all(&p->wait_q);
 
-	if (need_sched) {
+	if (need_sched != 0) {
 		z_reschedule(&lock, key);
 	} else {
 		k_spin_unlock(&lock, key);
