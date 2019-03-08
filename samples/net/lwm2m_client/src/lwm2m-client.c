@@ -11,6 +11,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
+#include <hwinfo.h>
 #include <zephyr.h>
 #include <drivers/gpio.h>
 #include <drivers/sensor.h>
@@ -412,7 +413,32 @@ void main(void)
 	client.tls_tag = TLS_TAG;
 #endif
 
+#if defined(CONFIG_HWINFO)
+	u8_t dev_id[16];
+	char dev_str[33];
+	ssize_t length;
+	int i;
+
+	(void)memset(dev_id, 0x0, sizeof(dev_id));
+
+	/* Obtain the device id */
+	length = hwinfo_get_device_id(dev_id, sizeof(dev_id));
+
+	/* If this fails for some reason, use all zeros instead */
+	if (length <= 0) {
+		length = sizeof(dev_id);
+	}
+
+	/* Render the obtained serial number in hexadecimal representation */
+	for (i = 0 ; i < length ; i++) {
+		sprintf(&dev_str[i*2], "%02x", dev_id[i]);
+	}
+
+	lwm2m_rd_client_start(&client, dev_str, rd_client_event);
+#else
 	/* client.sec_obj_inst is 0 as a starting point */
 	lwm2m_rd_client_start(&client, CONFIG_BOARD, rd_client_event);
+#endif
+
 	k_sem_take(&quit_lock, K_FOREVER);
 }
