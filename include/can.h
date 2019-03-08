@@ -124,6 +124,12 @@ struct can_frame {
 	/** The length of the message */
 	u8_t can_dlc;
 
+	/** @cond INTERNAL_HIDDEN */
+	u8_t pad;   /* padding */
+	u8_t res0;  /* reserved / padding */
+	u8_t res1;  /* reserved / padding */
+	/** @endcond */
+
 	/** The message data */
 	u8_t data[CAN_MAX_DLEN];
 };
