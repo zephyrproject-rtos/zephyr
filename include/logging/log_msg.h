@@ -68,7 +68,7 @@ extern "C" {
 #define LOG_MSG_HEXDUMP_LENGTH_BITS 14
 
 /** @brief Maximum length of log hexdump message. */
-#define LOG_MSG_HEXDUMP_MAX_LENGTH ((1 << LOG_MSG_HEXDUMP_LENGTH_BITS) - 1)
+#define LOG_MSG_HEXDUMP_MAX_LENGTH (BIT(LOG_MSG_HEXDUMP_LENGTH_BITS) - 1)
 
 /** @brief Part of log message header identifying source and level. */
 struct log_msg_ids {

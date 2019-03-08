@@ -54,8 +54,8 @@ struct posix_thread {
 
 /* Pthread cancellation */
 #define _PTHREAD_CANCEL_POS	0
-#define PTHREAD_CANCEL_ENABLE	(0 << _PTHREAD_CANCEL_POS)
-#define PTHREAD_CANCEL_DISABLE	(1 << _PTHREAD_CANCEL_POS)
+#define PTHREAD_CANCEL_ENABLE	(0U << _PTHREAD_CANCEL_POS)
+#define PTHREAD_CANCEL_DISABLE	BIT(_PTHREAD_CANCEL_POS)
 
 /* Passed to pthread_once */
 #define PTHREAD_ONCE_INIT 1

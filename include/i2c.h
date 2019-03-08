@@ -53,17 +53,17 @@ extern "C" {
 						>> I2C_SPEED_SHIFT)
 
 /** Use 10-bit addressing. DEPRECATED - Use I2C_MSG_ADDR_10_BITS instead. */
-#define I2C_ADDR_10_BITS		(1 << 0)
+#define I2C_ADDR_10_BITS		BIT(0)
 
 /** Controller to act as Master. */
-#define I2C_MODE_MASTER			(1 << 4)
+#define I2C_MODE_MASTER			BIT(4)
 
 /*
  * The following #defines are used to configure the I2C slave device
  */
 
 /** Slave device responds to 10-bit addressing. */
-#define I2C_SLAVE_FLAGS_ADDR_10_BITS	(1 << 0)
+#define I2C_SLAVE_FLAGS_ADDR_10_BITS	BIT(0)
 
 /*
  * I2C_MSG_* are I2C Message flags.
@@ -73,14 +73,14 @@ extern "C" {
 #define I2C_MSG_WRITE			(0 << 0)
 
 /** Read message from I2C bus. */
-#define I2C_MSG_READ			(1 << 0)
+#define I2C_MSG_READ			BIT(0)
 
 /** @cond INTERNAL_HIDDEN */
-#define I2C_MSG_RW_MASK			(1 << 0)
+#define I2C_MSG_RW_MASK			BIT(0)
 /** @endcond  */
 
 /** Send STOP after this message. */
-#define I2C_MSG_STOP			(1 << 1)
+#define I2C_MSG_STOP			BIT(1)
 
 /** RESTART I2C transaction for this message.
  *
@@ -89,12 +89,12 @@ extern "C" {
  * that follows a write, or vice-versa.  Some drivers will merge
  * adjacent fragments into a single transaction using this flag; some
  * will not. */
-#define I2C_MSG_RESTART			(1 << 2)
+#define I2C_MSG_RESTART			BIT(2)
 
 /** Use 10-bit addressing for this message.
  *
  * @note Not all SoC I2C implementations support this feature. */
-#define I2C_MSG_ADDR_10_BITS		(1 << 3)
+#define I2C_MSG_ADDR_10_BITS		BIT(3)
 
 /**
  * @brief One I2C Message.
