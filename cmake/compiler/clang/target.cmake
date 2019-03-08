@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# Configuration for host installed llvm
+# Configuration for host installed clang
 #
 
 set(NOSTDINC "")
