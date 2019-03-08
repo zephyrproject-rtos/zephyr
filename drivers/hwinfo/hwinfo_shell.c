@@ -30,7 +30,7 @@ static int cmd_get_device_id(const struct shell *shell, size_t argc, char **argv
 	shell_fprintf(shell, SHELL_NORMAL, "ID: 0x");
 
 	for (i = 0 ; i < length ; i++) {
-		shell_fprintf(shell, SHELL_NORMAL, "%x", dev_id[i]);
+		shell_fprintf(shell, SHELL_NORMAL, "%02x", dev_id[i]);
 	}
 
 	shell_fprintf(shell, SHELL_NORMAL, "\n");
