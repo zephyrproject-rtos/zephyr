@@ -118,8 +118,11 @@ void publish_handler(struct mqtt_client *const client,
 	while (payload_left > 0) {
 		wait(APP_SLEEP_MSECS);
 		rc = mqtt_read_publish_payload(client, buf, sizeof(buf));
-		if (rc <= 0 && rc != -EAGAIN) {
+		if (rc <= 0) {
 			TC_PRINT("Failed to receive payload, err: %d\n", -rc);
+			if (rc == -EAGAIN) {
+				continue;
+			}
 			goto error;
 		}
 
