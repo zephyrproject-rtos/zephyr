@@ -422,7 +422,7 @@ static inline int _impl_can_configure(struct device *dev, enum can_mode mode,
  * @param frame Pointer to can_frame struct.
  * @param zframe Pointer to zcan_frame struct.
  */
-static inline void can_copy_frame_to_zframe(struct can_frame *frame,
+static inline void can_copy_frame_to_zframe(const struct can_frame *frame,
 					    struct zcan_frame *zframe)
 {
 	zframe->id_type = (frame->can_id & BIT(31)) >> 31;
@@ -438,7 +438,7 @@ static inline void can_copy_frame_to_zframe(struct can_frame *frame,
  * @param zframe Pointer to zcan_frame struct.
  * @param frame Pointer to can_frame struct.
  */
-static inline void can_copy_zframe_to_frame(struct zcan_frame *zframe,
+static inline void can_copy_zframe_to_frame(const struct zcan_frame *zframe,
 					    struct can_frame *frame)
 {
 	frame->can_id = (zframe->id_type << 31) | (zframe->rtr << 30) |
@@ -455,7 +455,7 @@ static inline void can_copy_zframe_to_frame(struct zcan_frame *zframe,
  * @param zfilter Pointer to zcan_frame_filter struct.
  */
 static inline
-void can_copy_filter_to_zfilter(struct can_filter *filter,
+void can_copy_filter_to_zfilter(const struct can_filter *filter,
 				struct zcan_filter *zfilter)
 {
 	zfilter->id_type = (filter->can_id & BIT(31)) >> 31;
@@ -473,7 +473,7 @@ void can_copy_filter_to_zfilter(struct can_filter *filter,
  * @param filter Pointer to can_filter struct.
  */
 static inline
-void can_copy_zfilter_to_filter(struct zcan_filter *zfilter,
+void can_copy_zfilter_to_filter(const struct zcan_filter *zfilter,
 				struct can_filter *filter)
 {
 	filter->can_id = (zfilter->id_type << 31) |
