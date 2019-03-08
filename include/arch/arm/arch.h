@@ -224,17 +224,21 @@ extern "C" {
  * since the underlying implementation may actually create something larger
  * (for instance a guard area).
  *
+ * The value returned here is guaranteed to match the size of the stack that
+ * is available for the thread, i.e. excluding the size of areas that are not
+ * to be used (for instance the guard area).
+ *
  * The value returned here is NOT guaranteed to match the 'size' parameter
  * passed to K_THREAD_STACK_DEFINE and related macros.
  *
  * In the case of CONFIG_USERSPACE=y and
- * CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT, the size will be larger than the
- * requested size.
+ * CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT=y, the returned size will be
+ * smaller than the requested 'size'.
  *
  * In all other configurations, the size will be correct.
  *
  * @param sym Stack memory symbol
- * @return Size of the stack
+ * @return Actual size of the stack available for the thread
  */
 #define _ARCH_THREAD_STACK_SIZEOF(sym) (sizeof(sym) - MPU_GUARD_ALIGN_AND_SIZE)
 
