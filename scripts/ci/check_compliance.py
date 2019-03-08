@@ -280,11 +280,13 @@ class Codeowners(ComplianceTest):
                         if abs_path.endswith("/"):
                             abs_path = abs_path + "**"
                         elif os.path.isdir(abs_path):
-                            error("Wrong syntax: {}".format(abs_path))
+                            self.add_failure("Expected / after directory '{}' "
+                                             "in CODEOWNERS".format(path))
                             continue
                         g = glob.glob(abs_path, recursive=True)
                         if not g:
-                            error("Path does not exist: {}".format(path))
+                            self.add_failure("Path '{}' not found, in "
+                                             "CODEOWNERS".format(path))
                         else:
                             files = []
                             if not add_base:
