@@ -22,6 +22,8 @@
 
 #include "ipv4.h"
 
+#define NET_IPV4_IHL_MASK 0x0F
+
 /**
  * @brief Create IPv4 packet in provided net_pkt.
  *
