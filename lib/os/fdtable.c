@@ -17,6 +17,7 @@
 #include <fcntl.h>
 #include <kernel.h>
 #include <misc/fdtable.h>
+#include <misc/speculation.h>
 
 struct fd_entry {
 	void *obj;
@@ -64,7 +65,14 @@ static int _find_fd_entry(void)
 
 static int _check_fd(int fd)
 {
-	if (fd < 0 || fd >= ARRAY_SIZE(fdtable) || fdtable[fd].obj == NULL) {
+	if (fd < 0 || fd >= ARRAY_SIZE(fdtable)) {
+		errno = EBADF;
+		return -1;
+	}
+
+	fd = k_array_index_sanitize(fd, ARRAY_SIZE(fdtable));
+
+	if (fdtable[fd].obj == NULL) {
 		errno = EBADF;
 		return -1;
 	}
