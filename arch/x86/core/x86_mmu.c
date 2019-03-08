@@ -45,7 +45,7 @@ MMU_BOOT_REGION((u32_t)&__kernel_ram_start, (u32_t)&__kernel_ram_size,
 		MMU_ENTRY_EXECUTE_DISABLE);
 
 
-void _x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
+void z_x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
 			x86_page_entry_data_t *pde_flags,
 			x86_page_entry_data_t *pte_flags)
 {
@@ -63,7 +63,7 @@ void _x86_mmu_get_flags(struct x86_mmu_pdpt *pdpt, void *addr,
 }
 
 
-int _arch_buffer_validate(void *addr, size_t size, int write)
+int z_arch_buffer_validate(void *addr, size_t size, int write)
 {
 	u32_t start_pde_num;
 	u32_t end_pde_num;
@@ -180,7 +180,7 @@ static inline void tlb_flush_page(void *addr)
 }
 
 
-void _x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
+void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
 			size_t size,
 			x86_page_entry_data_t flags,
 			x86_page_entry_data_t mask)
@@ -231,12 +231,12 @@ void z_x86_reset_pages(void *start, size_t size)
 	/* Clear both present bit and access flags. Only applies
 	 * to threads running in user mode.
 	 */
-	_x86_mmu_set_flags(&z_x86_user_pdpt, start, size,
+	z_x86_mmu_set_flags(&z_x86_user_pdpt, start, size,
 			   MMU_ENTRY_NOT_PRESENT,
 			   K_MEM_PARTITION_PERM_MASK | MMU_PTE_P_MASK);
 #else
 	/* Mark as supervisor read-write, user mode no access */
-	_x86_mmu_set_flags(&z_x86_kernel_pdpt, start, size,
+	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, start, size,
 			   K_MEM_PARTITION_P_RW_U_NA,
 			   K_MEM_PARTITION_PERM_MASK);
 #endif /* CONFIG_X86_KPTI */
@@ -255,9 +255,9 @@ static inline void activate_partition(struct k_mem_partition *partition)
 	mask = K_MEM_PARTITION_PERM_MASK;
 #endif /* CONFIG_X86_KPTI */
 
-	_x86_mmu_set_flags(&USER_PDPT,
-			   (void *)partition->start,
-			   partition->size, attr, mask);
+	z_x86_mmu_set_flags(&USER_PDPT,
+			    (void *)partition->start,
+			    partition->size, attr, mask);
 }
 
 /* Helper macros needed to be passed to x86_update_mem_domain_pages */
@@ -307,7 +307,7 @@ out:
 }
 
 /* Load the partitions of the thread. */
-void _arch_mem_domain_configure(struct k_thread *thread)
+void z_arch_mem_domain_configure(struct k_thread *thread)
 {
 	_x86_mem_domain_pages_update(thread->mem_domain_info.mem_domain,
 				     X86_MEM_DOMAIN_SET_PAGES);
@@ -316,14 +316,14 @@ void _arch_mem_domain_configure(struct k_thread *thread)
 /* Destroy or reset the mmu page tables when necessary.
  * Needed when either swap takes place or k_mem_domain_destroy is called.
  */
-void _arch_mem_domain_destroy(struct k_mem_domain *domain)
+void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
 	_x86_mem_domain_pages_update(domain, X86_MEM_DOMAIN_RESET_PAGES);
 }
 
 /* Reset/destroy one partition spcified in the argument of the API. */
-void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
-				       u32_t partition_id)
+void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+					u32_t partition_id)
 {
 	struct k_mem_partition *partition;
 
@@ -349,7 +349,7 @@ void _arch_mem_domain_partition_add(struct k_mem_domain *domain,
 	activate_partition(partition);
 }
 
-int _arch_mem_domain_max_partitions_get(void)
+int z_arch_mem_domain_max_partitions_get(void)
 {
 	return CONFIG_MAX_DOMAIN_PARTITIONS;
 }

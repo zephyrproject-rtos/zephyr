@@ -21,16 +21,16 @@
 #include <kswap.h>
 #include <tracing.h>
 
-void _irq_spurious(void *unused)
+void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
 	printk("Spurious interrupt detected! ipending: %x\n",
 	       _nios2_creg_read(NIOS2_CR_IPENDING));
-	_NanoFatalErrorHandler(_NANO_ERR_SPURIOUS_INT, &_default_esf);
+	z_NanoFatalErrorHandler(_NANO_ERR_SPURIOUS_INT, &_default_esf);
 }
 
 
-void _arch_irq_enable(unsigned int irq)
+void z_arch_irq_enable(unsigned int irq)
 {
 	u32_t ienable;
 	unsigned int key;
@@ -46,7 +46,7 @@ void _arch_irq_enable(unsigned int irq)
 
 
 
-void _arch_irq_disable(unsigned int irq)
+void z_arch_irq_disable(unsigned int irq)
 {
 	u32_t ienable;
 	unsigned int key;
@@ -103,12 +103,12 @@ void _enter_irq(u32_t ipending)
 
 	_kernel.nested--;
 #ifdef CONFIG_STACK_SENTINEL
-	_check_stack_sentinel();
+	z_check_stack_sentinel();
 #endif
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			      void (*routine)(void *parameter), void *parameter,
 			      u32_t flags)
 {

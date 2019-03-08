@@ -82,7 +82,7 @@ static bool block_fits(struct sys_mem_pool_base *p, void *block, size_t bsz)
 	return ((u8_t *)block + bsz - 1 - (u8_t *)p->buf) < buf_size(p);
 }
 
-void _sys_mem_pool_base_init(struct sys_mem_pool_base *p)
+void z_sys_mem_pool_base_init(struct sys_mem_pool_base *p)
 {
 	int i;
 	size_t buflen = p->n_max * p->max_sz, sz = p->max_sz;
@@ -233,7 +233,7 @@ static void *block_break(struct sys_mem_pool_base *p, void *block, int l,
 	return block;
 }
 
-int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
+int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 			      u32_t *level_p, u32_t *block_p, void **data_p)
 {
 	int i, from_l, alloc_l = -1, free_l = -1;
@@ -306,13 +306,13 @@ int _sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 	return 0;
 }
 
-void _sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
+void z_sys_mem_pool_block_free(struct sys_mem_pool_base *p, u32_t level,
 			      u32_t block)
 {
 	size_t lsizes[LVL_ARRAY_SZ(p->n_levels)];
 	int i;
 
-	/* As in _sys_mem_pool_block_alloc(), we build a table of level sizes
+	/* As in z_sys_mem_pool_block_alloc(), we build a table of level sizes
 	 * to avoid having to store it in precious RAM bytes.
 	 * Overhead here is somewhat higher because block_free()
 	 * doesn't inherently need to traverse all the larger
@@ -339,7 +339,7 @@ void *sys_mem_pool_alloc(struct sys_mem_pool *p, size_t size)
 	k_mutex_lock(p->mutex, K_FOREVER);
 
 	size += sizeof(struct sys_mem_pool_block);
-	if (_sys_mem_pool_block_alloc(&p->base, size, &level, &block,
+	if (z_sys_mem_pool_block_alloc(&p->base, size, &level, &block,
 				      (void **)&ret)) {
 		ret = NULL;
 		goto out;
@@ -368,7 +368,7 @@ void sys_mem_pool_free(void *ptr)
 	p = blk->pool;
 
 	k_mutex_lock(p->mutex, K_FOREVER);
-	_sys_mem_pool_block_free(&p->base, blk->level, blk->block);
+	z_sys_mem_pool_block_free(&p->base, blk->level, blk->block);
 	k_mutex_unlock(p->mutex);
 }
 

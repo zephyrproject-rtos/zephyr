@@ -42,5 +42,5 @@ osStatus osKernelStart(void)
  */
 int32_t osKernelRunning(void)
 {
-	return _has_thread_started(_main_thread);
+	return z_has_thread_started(_main_thread);
 }

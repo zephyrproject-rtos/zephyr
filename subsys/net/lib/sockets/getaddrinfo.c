@@ -80,7 +80,7 @@ static void dns_resolve_cb(enum dns_resolve_status status,
 }
 
 
-int _impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
+int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 				       const struct zsock_addrinfo *hints,
 				       struct zsock_addrinfo *res)
 {
@@ -193,7 +193,7 @@ Z_SYSCALL_HANDLER(z_zsock_getaddrinfo_internal, host, service, hints, res)
 		}
 	}
 
-	ret = _impl_z_zsock_getaddrinfo_internal(host_copy, service_copy,
+	ret = z_impl_z_zsock_getaddrinfo_internal(host_copy, service_copy,
 						 hints ? &hints_copy : NULL,
 						 (struct zsock_addrinfo *)res);
 out:

@@ -63,7 +63,7 @@ subsystems = [
 
 
 header = """%compare-lengths
-%define lookup-function-name _k_object_lookup
+%define lookup-function-name z_object_lookup
 %language=ANSI-C
 %global-table
 %struct-type
@@ -83,12 +83,12 @@ struct _k_object;
 # turned into a string, we told gperf to expect binary strings that are not
 # NULL-terminated.
 footer = """%%
-struct _k_object *_k_object_gperf_find(void *obj)
+struct _k_object *z_object_gperf_find(void *obj)
 {
-    return _k_object_lookup((const char *)obj, sizeof(void *));
+    return z_object_lookup((const char *)obj, sizeof(void *));
 }
 
-void _k_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 {
     int i;
 
@@ -100,11 +100,11 @@ void _k_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 }
 
 #ifndef CONFIG_DYNAMIC_OBJECTS
-struct _k_object *_k_object_find(void *obj)
-	ALIAS_OF(_k_object_gperf_find);
+struct _k_object *z_object_find(void *obj)
+	ALIAS_OF(z_object_gperf_find);
 
-void _k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
-	ALIAS_OF(_k_object_gperf_wordlist_foreach);
+void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
+	ALIAS_OF(z_object_gperf_wordlist_foreach);
 #endif
 """
 

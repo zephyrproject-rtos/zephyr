@@ -56,7 +56,7 @@ typedef u64_t _timer_res_t;
 #if defined(CONFIG_ARCH_POSIX)
 #define _TIMESTAMP_READ()       (posix_get_hw_cycle())
 #else
-#define _TIMESTAMP_READ()       (_tsc_read())
+#define _TIMESTAMP_READ()       (z_tsc_read())
 #endif
 #define _TIMESTAMP_CLOSE()
 

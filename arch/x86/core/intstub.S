@@ -33,13 +33,13 @@
 	GTEXT(__swap)
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-	GTEXT(_sys_power_save_idle_exit)
+	GTEXT(z_sys_power_save_idle_exit)
 #endif
 
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	GTEXT(_int_latency_start)
-	GTEXT(_int_latency_stop)
+	GTEXT(z_int_latency_start)
+	GTEXT(z_int_latency_stop)
 #endif
 /**
  *
@@ -150,7 +150,7 @@ SECTION_FUNC(TEXT, _interrupt_enter)
 	 * interrupt.
 	 */
 
-	call	_int_latency_start
+	call	z_int_latency_start
 #endif
 
 	call	z_sys_trace_isr_enter
@@ -196,7 +196,7 @@ alreadyOnIntStack:
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
 	pushl	%eax
 	pushl	%edx
-	call	_int_latency_stop
+	call	z_int_latency_stop
 	popl	%edx
 	popl	%eax
 #endif
@@ -237,7 +237,7 @@ alreadyOnIntStack:
 	_irq_controller_eoi_macro
 
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_int_latency_start
+	call	z_int_latency_start
 #endif
 
 	/* determine whether exiting from a nested interrupt */
@@ -275,7 +275,7 @@ alreadyOnIntStack:
 	popl	%esp	/* switch back to outgoing thread's stack */
 
 #ifdef CONFIG_STACK_SENTINEL
-	call	_check_stack_sentinel
+	call	z_check_stack_sentinel
 #endif
 	pushfl			/* push KERNEL_LOCK_KEY argument */
 #ifdef CONFIG_X86_IAMCU
@@ -309,7 +309,7 @@ alreadyOnIntStack:
 
 	/* Restore volatile registers and return to the interrupted thread */
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_int_latency_stop
+	call	z_int_latency_stop
 #endif
 	popl	%edi
 	popl	%ecx
@@ -331,7 +331,7 @@ noReschedule:
 	popl	%esp		/* pop thread stack pointer */
 
 #ifdef CONFIG_STACK_SENTINEL
-	call	_check_stack_sentinel
+	call	z_check_stack_sentinel
 #endif
 
 	/* fall through to 'nestedInterrupt' */
@@ -345,7 +345,7 @@ noReschedule:
 
 nestedInterrupt:
 #ifdef CONFIG_INT_LATENCY_BENCHMARK
-	call	_int_latency_stop
+	call	z_int_latency_stop
 #endif
 
 	popl	%edi
@@ -360,7 +360,7 @@ nestedInterrupt:
 handle_idle:
 	pushl	%eax
 	pushl	%edx
-	/* Populate 'ticks' argument to _sys_power_save_idle_exit */
+	/* Populate 'ticks' argument to z_sys_power_save_idle_exit */
 #ifdef CONFIG_X86_IAMCU
 	movl	_kernel_offset_to_idle(%ecx), %eax
 #else
@@ -371,13 +371,13 @@ handle_idle:
 	movl	$0, _kernel_offset_to_idle(%ecx)
 
 	/*
-	 * Beware that a timer driver's _sys_power_save_idle_exit() implementation might
+	 * Beware that a timer driver's z_sys_power_save_idle_exit() implementation might
 	 * expect that interrupts are disabled when invoked.  This ensures that
 	 * the calculation and programming of the device for the next timer
 	 * deadline is not interrupted.
 	 */
 
-	call	_sys_power_save_idle_exit
+	call	z_sys_power_save_idle_exit
 #ifndef CONFIG_X86_IAMCU
 	/* SYS V: discard 'ticks' argument passed on the stack */
 	add	$0x4, %esp
@@ -457,7 +457,7 @@ SECTION_FUNC(TEXT, _SpuriousIntHandler)
 	movl	$_NANO_ERR_SPURIOUS_INT, %eax
 #endif
 	/* call the fatal error handler */
-	call	_NanoFatalErrorHandler
+	call	z_NanoFatalErrorHandler
 
 	/* handler doesn't  return */
 

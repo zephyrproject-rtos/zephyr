@@ -16,7 +16,7 @@
 #include <toolchain/gcc.h>
 #include <zephyr/types.h>
 
-extern void _Cstart(void);
+extern void z_cstart(void);
 
 /*
  * This is written in C rather than assembly since, during the port bring up,
@@ -70,7 +70,7 @@ void __attribute__((section(".iram1"))) __start(void)
 
 
 	/* Start Zephyr */
-	_Cstart();
+	z_cstart();
 
 	CODE_UNREACHABLE;
 }

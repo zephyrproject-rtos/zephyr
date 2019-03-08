@@ -71,38 +71,38 @@ static int _arc_v2_irq_unit_init(struct device *unused)
 	 * values in this loop.
 	 */
 	for (irq = 16; irq < CONFIG_NUM_IRQS; irq++) {
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
 #ifdef CONFIG_ARC_HAS_SECURE
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
 			 (CONFIG_NUM_IRQ_PRIO_LEVELS-1) |
 			 _ARC_V2_IRQ_PRIORITY_SECURE); /* lowest priority */
 #else
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
 			 (CONFIG_NUM_IRQ_PRIO_LEVELS-1)); /* lowest priority */
 #endif
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE, _ARC_V2_INT_DISABLE);
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, _ARC_V2_INT_LEVEL);
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE, _ARC_V2_INT_DISABLE);
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, _ARC_V2_INT_LEVEL);
 	}
 
 	return 0;
 }
 
-void _arc_v2_irq_unit_int_eoi(int irq)
+void z_arc_v2_irq_unit_int_eoi(int irq)
 {
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_PULSE_CANCEL, 1);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PULSE_CANCEL, 1);
 }
 
-void _arc_v2_irq_unit_trigger_set(int irq, unsigned int trigger)
+void z_arc_v2_irq_unit_trigger_set(int irq, unsigned int trigger)
 {
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, trigger);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER, trigger);
 }
 
-unsigned int _arc_v2_irq_unit_trigger_get(int irq)
+unsigned int z_arc_v2_irq_unit_trigger_get(int irq)
 {
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
-	return _arc_v2_aux_reg_read(_ARC_V2_IRQ_TRIGGER);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+	return z_arc_v2_aux_reg_read(_ARC_V2_IRQ_TRIGGER);
 }
 
 #ifdef CONFIG_DEVICE_POWER_MANAGEMENT
@@ -118,17 +118,17 @@ static int _arc_v2_irq_unit_suspend(struct device *dev)
 	 * values in this loop.
 	 */
 	for (irq = 16U; irq < CONFIG_NUM_IRQS; irq++) {
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
 		ctx.irq_config[irq - 16] =
-			_arc_v2_aux_reg_read(_ARC_V2_IRQ_PRIORITY) << 2;
+			z_arc_v2_aux_reg_read(_ARC_V2_IRQ_PRIORITY) << 2;
 		ctx.irq_config[irq - 16] |=
-			_arc_v2_aux_reg_read(_ARC_V2_IRQ_TRIGGER) << 1;
+			z_arc_v2_aux_reg_read(_ARC_V2_IRQ_TRIGGER) << 1;
 		ctx.irq_config[irq - 16] |=
-			_arc_v2_aux_reg_read(_ARC_V2_IRQ_ENABLE);
+			z_arc_v2_aux_reg_read(_ARC_V2_IRQ_ENABLE);
 	}
 
-	ctx.irq_ctrl = _arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_CTRL);
-	ctx.irq_vect_base = _arc_v2_aux_reg_read(_ARC_V2_IRQ_VECT_BASE);
+	ctx.irq_ctrl = z_arc_v2_aux_reg_read(_ARC_V2_AUX_IRQ_CTRL);
+	ctx.irq_vect_base = z_arc_v2_aux_reg_read(_ARC_V2_IRQ_VECT_BASE);
 
 	_arc_v2_irq_unit_device_power_state = DEVICE_PM_SUSPEND_STATE;
 
@@ -147,25 +147,25 @@ static int _arc_v2_irq_unit_resume(struct device *dev)
 	 * values in this loop.
 	 */
 	for (irq = 16U; irq < CONFIG_NUM_IRQS; irq++) {
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
 #ifdef CONFIG_ARC_HAS_SECURE
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
 				ctx.irq_config[irq - 16] >> 2 |
 				_ARC_V2_IRQ_PRIORITY_SECURE);
 #else
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_PRIORITY,
 				ctx.irq_config[irq - 16] >> 2);
 #endif
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER,
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_TRIGGER,
 				(ctx.irq_config[irq - 16] >> 1) & BIT(0));
-		_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE,
+		z_arc_v2_aux_reg_write(_ARC_V2_IRQ_ENABLE,
 				ctx.irq_config[irq - 16] & BIT(0));
 	}
 
-	_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_CTRL, ctx.irq_ctrl);
-	_arc_v2_aux_reg_write(_ARC_V2_IRQ_VECT_BASE, ctx.irq_vect_base);
+	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_CTRL, ctx.irq_ctrl);
+	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_VECT_BASE, ctx.irq_vect_base);
 
-	status32 = _arc_v2_aux_reg_read(_ARC_V2_STATUS32);
+	status32 = z_arc_v2_aux_reg_read(_ARC_V2_STATUS32);
 	status32 |= _ARC_V2_STATUS32_E(_ARC_V2_DEF_IRQ_LEVEL);
 
 	__builtin_arc_kflag(status32);

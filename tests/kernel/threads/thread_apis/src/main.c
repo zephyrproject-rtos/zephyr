@@ -168,7 +168,7 @@ static void umode_entry(void *thread_id, void *p2, void *p3)
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
-	if (!_is_thread_essential() &&
+	if (!z_is_thread_essential() &&
 	    (k_current_get() == (k_tid_t)thread_id)) {
 		ztest_test_pass();
 	} else {
@@ -185,9 +185,9 @@ static void umode_entry(void *thread_id, void *p2, void *p3)
  */
 void test_user_mode(void)
 {
-	_thread_essential_set();
+	z_thread_essential_set();
 
-	zassert_true(_is_thread_essential(), "Thread isn't set"
+	zassert_true(z_is_thread_essential(), "Thread isn't set"
 		     " as essential\n");
 
 	k_thread_user_mode_enter((k_thread_entry_t)umode_entry,

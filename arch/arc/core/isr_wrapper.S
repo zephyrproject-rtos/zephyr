@@ -45,7 +45,7 @@ SECTION_VAR(BSS, saved_sp)
 #endif
 
 #if defined(CONFIG_SYS_POWER_MANAGEMENT)
-GTEXT(_sys_power_save_idle_exit)
+GTEXT(z_sys_power_save_idle_exit)
 #endif
 
 /*
@@ -95,7 +95,7 @@ The context switch code adopts this standard so that it is easier to follow:
     transition from outgoing thread to incoming thread
 
 Not loading _kernel into r0 allows loading _kernel without stomping on
-the parameter in r0 in _Swap().
+the parameter in r0 in z_swap().
 
 
 ARCv2 processors have two kinds of interrupts: fast (FIRQ) and regular. The
@@ -195,7 +195,7 @@ From FIRQ:
 
   o to coop
 
-    The address of the returning instruction from _Swap() is loaded in ilink and
+    The address of the returning instruction from z_swap() is loaded in ilink and
     the saved status32 in status32_p0, taking care to adjust the interrupt lock
     state desired in status32_p0. The return value is put in r0.
 
@@ -359,7 +359,7 @@ GTEXT(z_sys_trace_isr_enter)
 
 	st 0, [r1, _kernel_offset_to_idle] /* zero idle duration */
 	push_s blink
-	jl _sys_power_save_idle_exit
+	jl z_sys_power_save_idle_exit
 	pop_s blink
 
 _skip_sys_power_save_idle_exit:

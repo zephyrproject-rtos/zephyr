@@ -190,7 +190,7 @@ static void appcpu_start(void)
 	smp_log("ESP32: APPCPU start sequence complete");
 }
 
-void _arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		     void (*fn)(int, void *), void *arg)
 {
 	volatile struct cpustart_rec sr;

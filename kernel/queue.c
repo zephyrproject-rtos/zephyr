@@ -82,17 +82,17 @@ SYS_INIT(init_queue_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_OBJECT_TRACING */
 
-void _impl_k_queue_init(struct k_queue *queue)
+void z_impl_k_queue_init(struct k_queue *queue)
 {
 	sys_sflist_init(&queue->data_q);
 	queue->lock = (struct k_spinlock) {};
-	_waitq_init(&queue->wait_q);
+	z_waitq_init(&queue->wait_q);
 #if defined(CONFIG_POLL)
 	sys_dlist_init(&queue->poll_events);
 #endif
 
 	SYS_TRACING_OBJ_INIT(k_queue, queue);
-	_k_object_init(queue);
+	z_object_init(queue);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -101,7 +101,7 @@ Z_SYSCALL_HANDLER(k_queue_init, queue_ptr)
 	struct k_queue *queue = (struct k_queue *)queue_ptr;
 
 	Z_OOPS(Z_SYSCALL_OBJ_NEVER_INIT(queue, K_OBJ_QUEUE));
-	_impl_k_queue_init(queue);
+	z_impl_k_queue_init(queue);
 	return 0;
 }
 #endif
@@ -109,25 +109,25 @@ Z_SYSCALL_HANDLER(k_queue_init, queue_ptr)
 #if !defined(CONFIG_POLL)
 static void prepare_thread_to_run(struct k_thread *thread, void *data)
 {
-	_ready_thread(thread);
-	_set_thread_return_value_with_data(thread, 0, data);
+	z_ready_thread(thread);
+	z_set_thread_return_value_with_data(thread, 0, data);
 }
 #endif /* CONFIG_POLL */
 
 #ifdef CONFIG_POLL
 static inline void handle_poll_events(struct k_queue *queue, u32_t state)
 {
-	_handle_obj_poll_events(&queue->poll_events, state);
+	z_handle_obj_poll_events(&queue->poll_events, state);
 }
 #endif
 
-void _impl_k_queue_cancel_wait(struct k_queue *queue)
+void z_impl_k_queue_cancel_wait(struct k_queue *queue)
 {
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 #if !defined(CONFIG_POLL)
 	struct k_thread *first_pending_thread;
 
-	first_pending_thread = _unpend_first_thread(&queue->wait_q);
+	first_pending_thread = z_unpend_first_thread(&queue->wait_q);
 
 	if (first_pending_thread != NULL) {
 		prepare_thread_to_run(first_pending_thread, NULL);
@@ -136,7 +136,7 @@ void _impl_k_queue_cancel_wait(struct k_queue *queue)
 	handle_poll_events(queue, K_POLL_STATE_CANCELLED);
 #endif /* !CONFIG_POLL */
 
-	_reschedule(&queue->lock, key);
+	z_reschedule(&queue->lock, key);
 }
 
 #ifdef CONFIG_USERSPACE
@@ -151,11 +151,11 @@ static s32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 #if !defined(CONFIG_POLL)
 	struct k_thread *first_pending_thread;
 
-	first_pending_thread = _unpend_first_thread(&queue->wait_q);
+	first_pending_thread = z_unpend_first_thread(&queue->wait_q);
 
 	if (first_pending_thread != NULL) {
 		prepare_thread_to_run(first_pending_thread, data);
-		_reschedule(&queue->lock, key);
+		z_reschedule(&queue->lock, key);
 		return 0;
 	}
 #endif /* !CONFIG_POLL */
@@ -181,7 +181,7 @@ static s32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 #endif /* CONFIG_POLL */
 
-	_reschedule(&queue->lock, key);
+	z_reschedule(&queue->lock, key);
 	return 0;
 }
 
@@ -201,7 +201,7 @@ void k_queue_prepend(struct k_queue *queue, void *data)
 	(void)queue_insert(queue, NULL, data, false);
 }
 
-s32_t _impl_k_queue_alloc_append(struct k_queue *queue, void *data)
+s32_t z_impl_k_queue_alloc_append(struct k_queue *queue, void *data)
 {
 	return queue_insert(queue, sys_sflist_peek_tail(&queue->data_q), data,
 			    true);
@@ -212,12 +212,12 @@ Z_SYSCALL_HANDLER(k_queue_alloc_append, queue, data)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
 
-	return _impl_k_queue_alloc_append((struct k_queue *)queue,
+	return z_impl_k_queue_alloc_append((struct k_queue *)queue,
 					  (void *)data);
 }
 #endif
 
-s32_t _impl_k_queue_alloc_prepend(struct k_queue *queue, void *data)
+s32_t z_impl_k_queue_alloc_prepend(struct k_queue *queue, void *data)
 {
 	return queue_insert(queue, NULL, data, true);
 }
@@ -227,7 +227,7 @@ Z_SYSCALL_HANDLER(k_queue_alloc_prepend, queue, data)
 {
 	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
 
-	return _impl_k_queue_alloc_prepend((struct k_queue *)queue,
+	return z_impl_k_queue_alloc_prepend((struct k_queue *)queue,
 					   (void *)data);
 }
 #endif
@@ -241,13 +241,13 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 	struct k_thread *thread = NULL;
 
 	if (head != NULL) {
-		thread = _unpend_first_thread(&queue->wait_q);
+		thread = z_unpend_first_thread(&queue->wait_q);
 	}
 
 	while ((head != NULL) && (thread != NULL)) {
 		prepare_thread_to_run(thread, head);
 		head = *(void **)head;
-		thread = _unpend_first_thread(&queue->wait_q);
+		thread = z_unpend_first_thread(&queue->wait_q);
 	}
 
 	if (head != NULL) {
@@ -259,7 +259,7 @@ void k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 	handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 #endif /* !CONFIG_POLL */
 
-	_reschedule(&queue->lock, key);
+	z_reschedule(&queue->lock, key);
 }
 
 void k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
@@ -318,7 +318,7 @@ static void *k_queue_poll(struct k_queue *queue, s32_t timeout)
 }
 #endif /* CONFIG_POLL */
 
-void *_impl_k_queue_get(struct k_queue *queue, s32_t timeout)
+void *z_impl_k_queue_get(struct k_queue *queue, s32_t timeout)
 {
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 	void *data;
@@ -343,7 +343,7 @@ void *_impl_k_queue_get(struct k_queue *queue, s32_t timeout)
 	return k_queue_poll(queue, timeout);
 
 #else
-	int ret = _pend_curr(&queue->lock, key, &queue->wait_q, timeout);
+	int ret = z_pend_curr(&queue->lock, key, &queue->wait_q, timeout);
 
 	return (ret != 0) ? NULL : _current->base.swap_data;
 #endif /* CONFIG_POLL */
@@ -356,7 +356,7 @@ Z_SYSCALL_HANDLER(k_queue_get, queue, timeout_p)
 
 	Z_OOPS(Z_SYSCALL_OBJ(queue, K_OBJ_QUEUE));
 
-	return (u32_t)_impl_k_queue_get((struct k_queue *)queue, timeout);
+	return (u32_t)z_impl_k_queue_get((struct k_queue *)queue, timeout);
 }
 
 Z_SYSCALL_HANDLER1_SIMPLE(k_queue_is_empty, K_OBJ_QUEUE, struct k_queue *);

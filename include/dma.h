@@ -239,7 +239,7 @@ static inline int dma_reload(struct device *dev, u32_t channel,
  */
 __syscall int dma_start(struct device *dev, u32_t channel);
 
-static inline int _impl_dma_start(struct device *dev, u32_t channel)
+static inline int z_impl_dma_start(struct device *dev, u32_t channel)
 {
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->driver_api;
@@ -262,7 +262,7 @@ static inline int _impl_dma_start(struct device *dev, u32_t channel)
  */
 __syscall int dma_stop(struct device *dev, u32_t channel);
 
-static inline int _impl_dma_stop(struct device *dev, u32_t channel)
+static inline int z_impl_dma_stop(struct device *dev, u32_t channel)
 {
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->driver_api;

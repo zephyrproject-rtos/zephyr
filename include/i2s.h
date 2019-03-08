@@ -349,7 +349,7 @@ struct i2s_driver_api {
 __syscall int i2s_configure(struct device *dev, enum i2s_dir dir,
 			    struct i2s_config *cfg);
 
-static inline int _impl_i2s_configure(struct device *dev, enum i2s_dir dir,
+static inline int z_impl_i2s_configure(struct device *dev, enum i2s_dir dir,
 				      struct i2s_config *cfg)
 {
 	const struct i2s_driver_api *api = dev->driver_api;
@@ -508,7 +508,7 @@ __syscall int i2s_buf_write(struct device *dev, void *buf, size_t size);
 __syscall int i2s_trigger(struct device *dev, enum i2s_dir dir,
 			  enum i2s_trigger_cmd cmd);
 
-static inline int _impl_i2s_trigger(struct device *dev, enum i2s_dir dir,
+static inline int z_impl_i2s_trigger(struct device *dev, enum i2s_dir dir,
 				    enum i2s_trigger_cmd cmd)
 {
 	const struct i2s_driver_api *api = dev->driver_api;

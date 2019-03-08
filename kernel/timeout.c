@@ -72,7 +72,7 @@ static s32_t next_timeout(void)
 	return ret;
 }
 
-void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
+void z_add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
 {
 	__ASSERT(!sys_dnode_is_linked(&to->node), "");
 	to->fn = fn;
@@ -103,7 +103,7 @@ void _add_timeout(struct _timeout *to, _timeout_func_t fn, s32_t ticks)
 	}
 }
 
-int _abort_timeout(struct _timeout *to)
+int z_abort_timeout(struct _timeout *to)
 {
 	int ret = -EINVAL;
 
@@ -121,7 +121,7 @@ s32_t z_timeout_remaining(struct _timeout *timeout)
 {
 	s32_t ticks = 0;
 
-	if (_is_inactive_timeout(timeout)) {
+	if (z_is_inactive_timeout(timeout)) {
 		return 0;
 	}
 
@@ -137,7 +137,7 @@ s32_t z_timeout_remaining(struct _timeout *timeout)
 	return ticks - elapsed();
 }
 
-s32_t _get_next_timeout_expiry(void)
+s32_t z_get_next_timeout_expiry(void)
 {
 	s32_t ret = K_FOREVER;
 
@@ -234,7 +234,7 @@ u32_t z_tick_get_32(void)
 #endif
 }
 
-u32_t _impl_k_uptime_get_32(void)
+u32_t z_impl_k_uptime_get_32(void)
 {
 	return __ticks_to_ms(z_tick_get_32());
 }
@@ -242,11 +242,11 @@ u32_t _impl_k_uptime_get_32(void)
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER(k_uptime_get_32)
 {
-	return _impl_k_uptime_get_32();
+	return z_impl_k_uptime_get_32();
 }
 #endif
 
-s64_t _impl_k_uptime_get(void)
+s64_t z_impl_k_uptime_get(void)
 {
 	return __ticks_to_ms(z_tick_get());
 }
@@ -257,7 +257,7 @@ Z_SYSCALL_HANDLER(k_uptime_get, ret_p)
 	u64_t *ret = (u64_t *)ret_p;
 
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(ret, sizeof(*ret)));
-	*ret = _impl_k_uptime_get();
+	*ret = z_impl_k_uptime_get();
 	return 0;
 }
 #endif

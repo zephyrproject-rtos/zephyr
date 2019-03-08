@@ -24,7 +24,7 @@
  * FUTURE IMPROVEMENTS
  * On architectures where the non-integer capabilities are provided in a
  *  hierarchy, for example on IA-32 the USE_FP and USE_SSE options are provided,
- * this test should be enhanced to ensure that the architectures' _Swap()
+ * this test should be enhanced to ensure that the architectures' z_swap()
  * routine doesn't context switch more registers that it needs to (which would
  * represent a performance issue).  For example, on the IA-32, the test should
  * issue a k_fp_disable() from main(), and then indicate that only x87 FPU

@@ -215,7 +215,7 @@ static inline u32_t counter_get_max_top_value(const struct device *dev)
  */
 __syscall int counter_start(struct device *dev);
 
-static inline int _impl_counter_start(struct device *dev)
+static inline int z_impl_counter_start(struct device *dev)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
@@ -233,7 +233,7 @@ static inline int _impl_counter_start(struct device *dev)
  */
 __syscall int counter_stop(struct device *dev);
 
-static inline int _impl_counter_stop(struct device *dev)
+static inline int z_impl_counter_stop(struct device *dev)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
@@ -248,7 +248,7 @@ static inline int _impl_counter_stop(struct device *dev)
  */
 __syscall u32_t counter_read(struct device *dev);
 
-static inline u32_t _impl_counter_read(struct device *dev)
+static inline u32_t z_impl_counter_read(struct device *dev)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
@@ -356,7 +356,7 @@ static inline int counter_set_top_value(struct device *dev, u32_t ticks,
  */
 __syscall int counter_get_pending_int(struct device *dev);
 
-static inline int _impl_counter_get_pending_int(struct device *dev)
+static inline int z_impl_counter_get_pending_int(struct device *dev)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
@@ -372,7 +372,7 @@ static inline int _impl_counter_get_pending_int(struct device *dev)
  */
 __syscall u32_t counter_get_top_value(struct device *dev);
 
-static inline u32_t _impl_counter_get_top_value(struct device *dev)
+static inline u32_t z_impl_counter_get_top_value(struct device *dev)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 
@@ -389,7 +389,7 @@ static inline u32_t _impl_counter_get_top_value(struct device *dev)
  */
 __syscall u32_t counter_get_max_relative_alarm(struct device *dev);
 
-static inline u32_t _impl_counter_get_max_relative_alarm(struct device *dev)
+static inline u32_t z_impl_counter_get_max_relative_alarm(struct device *dev)
 {
 	const struct counter_driver_api *api = dev->driver_api;
 

@@ -40,7 +40,7 @@ extern void _xt_coproc_init(void);
 
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
-static ALWAYS_INLINE _cpu_t *_arch_curr_cpu(void)
+static ALWAYS_INLINE _cpu_t *z_arch_curr_cpu(void)
 {
 #ifdef CONFIG_XTENSA_ASM2
 	void *val;
@@ -110,7 +110,7 @@ static ALWAYS_INLINE void kernel_arch_init(void)
  */
 #if !CONFIG_USE_SWITCH
 static ALWAYS_INLINE void
-_set_thread_return_value(struct k_thread *thread, unsigned int value)
+z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 {
 	thread->callee_saved.retval = value;
 }
@@ -124,7 +124,7 @@ extern void k_cpu_atomic_idle(unsigned int key);
 }
 #endif
 
-#define _is_in_isr() (_arch_curr_cpu()->nested != 0U)
+#define z_is_in_isr() (z_arch_curr_cpu()->nested != 0U)
 
 #endif /* _ASMLANGUAGE */
 

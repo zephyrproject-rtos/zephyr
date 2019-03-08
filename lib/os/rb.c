@@ -97,7 +97,7 @@ static int find_and_stack(struct rbtree *tree, struct rbnode *node,
 	return sz;
 }
 
-struct rbnode *_rb_get_minmax(struct rbtree *tree, int side)
+struct rbnode *z_rb_get_minmax(struct rbtree *tree, int side)
 {
 	struct rbnode *n;
 
@@ -491,22 +491,22 @@ void rb_remove(struct rbtree *tree, struct rbnode *node)
 }
 
 #ifndef CONFIG_MISRA_SANE
-void _rb_walk(struct rbnode *node, rb_visit_t visit_fn, void *cookie)
+void z_rb_walk(struct rbnode *node, rb_visit_t visit_fn, void *cookie)
 {
 	if (node != NULL) {
-		_rb_walk(get_child(node, 0), visit_fn, cookie);
+		z_rb_walk(get_child(node, 0), visit_fn, cookie);
 		visit_fn(node, cookie);
-		_rb_walk(get_child(node, 1), visit_fn, cookie);
+		z_rb_walk(get_child(node, 1), visit_fn, cookie);
 	}
 }
 #endif
 
-struct rbnode *_rb_child(struct rbnode *node, int side)
+struct rbnode *z_rb_child(struct rbnode *node, int side)
 {
 	return get_child(node, side);
 }
 
-int _rb_is_black(struct rbnode *node)
+int z_rb_is_black(struct rbnode *node)
 {
 	return is_black(node);
 }
@@ -551,7 +551,7 @@ static inline struct rbnode *stack_left_limb(struct rbnode *n,
  * case of top == -1 indicates that the stack is uninitialized and we
  * need to push an initial stack starting at the root.
  */
-struct rbnode *_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f)
+struct rbnode *z_rb_foreach_next(struct rbtree *tree, struct _rb_foreach *f)
 {
 	struct rbnode *n;
 

@@ -34,8 +34,8 @@ static void thread_tslice(void *p1, void *p2, void *p3)
 		expected_slice_max = HALF_SLICE_SIZE;
 	} else {
 		/*other threads are sliced with tick granulity*/
-		expected_slice_min = __ticks_to_ms(_ms_to_ticks(SLICE_SIZE));
-		expected_slice_max = __ticks_to_ms(_ms_to_ticks(SLICE_SIZE)+1);
+		expected_slice_min = __ticks_to_ms(z_ms_to_ticks(SLICE_SIZE));
+		expected_slice_max = __ticks_to_ms(z_ms_to_ticks(SLICE_SIZE)+1);
 	}
 
 	#ifdef CONFIG_DEBUG

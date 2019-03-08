@@ -178,7 +178,7 @@ static int test_multiple_threads_pending(struct timeout_order_data *test_data,
 				diff_ms = test_data[j].timeout - data->timeout;
 			}
 
-			if (_ms_to_ticks(diff_ms) == 1) {
+			if (z_ms_to_ticks(diff_ms) == 1) {
 				TC_PRINT(
 				" thread (q order: %d, t/o: %d, fifo %p)\n",
 				data->q_order, data->timeout, data->fifo);

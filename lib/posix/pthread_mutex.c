@@ -48,7 +48,7 @@ static int acquire_mutex(pthread_mutex_t *m, int timeout)
 		return EINVAL;
 	}
 
-	rc = _pend_curr_irqlock(key, &m->wait_q, timeout);
+	rc = z_pend_curr_irqlock(key, &m->wait_q, timeout);
 	if (rc != 0) {
 		rc = ETIMEDOUT;
 	}
@@ -95,7 +95,7 @@ int pthread_mutex_init(pthread_mutex_t *m,
 
 	m->type = mattr->type;
 
-	_waitq_init(&m->wait_q);
+	z_waitq_init(&m->wait_q);
 
 	return 0;
 }
@@ -135,13 +135,13 @@ int pthread_mutex_unlock(pthread_mutex_t *m)
 	m->lock_count--;
 
 	if (m->lock_count == 0) {
-		thread = _unpend_first_thread(&m->wait_q);
+		thread = z_unpend_first_thread(&m->wait_q);
 		if (thread) {
 			m->owner = (pthread_t)thread;
 			m->lock_count++;
-			_ready_thread(thread);
-			_set_thread_return_value(thread, 0);
-			_reschedule_irqlock(key);
+			z_ready_thread(thread);
+			z_set_thread_return_value(thread, 0);
+			z_reschedule_irqlock(key);
 			return 0;
 		}
 		m->owner = NULL;

@@ -77,9 +77,9 @@ typedef struct soc_esf soc_esf_t;
 #endif
 extern const NANO_ESF _default_esf;
 
-extern FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
+extern FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 						 const NANO_ESF *esf);
-extern void _SysFatalErrorHandler(unsigned int reason,
+extern void z_SysFatalErrorHandler(unsigned int reason,
 				  const NANO_ESF *esf);
 
 #endif /* _ASMLANGUAGE */

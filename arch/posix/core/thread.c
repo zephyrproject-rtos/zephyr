@@ -45,7 +45,7 @@
  * pthreads stack and therefore we ignore the stack size
  *
  */
-void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		size_t stack_size, k_thread_entry_t thread_func,
 		void *arg1, void *arg2, void *arg3,
 		int priority, unsigned int options)
@@ -53,7 +53,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	char *stack_memory = K_THREAD_STACK_BUFFER(stack);
 
-	_ASSERT_VALID_PRIO(priority, thread_func);
+	Z_ASSERT_VALID_PRIO(priority, thread_func);
 
 	posix_thread_status_t *thread_status;
 
@@ -66,7 +66,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		STACK_ROUND_DOWN(stack_memory + stack_size
 				- sizeof(*thread_status));
 
-	/* _thread_entry() arguments */
+	/* z_thread_entry() arguments */
 	thread_status->entry_point = thread_func;
 	thread_status->arg1 = arg1;
 	thread_status->arg2 = arg2;

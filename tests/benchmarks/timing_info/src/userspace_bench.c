@@ -32,7 +32,7 @@ K_THREAD_STACK_EXTERN(my_stack_area_0);
 
 /******************************************************************************/
 /* syscall needed to read timer value when in user space */
-u32_t _impl_userspace_read_timer_value(void)
+u32_t z_impl_userspace_read_timer_value(void)
 {
 	TIMING_INFO_PRE_READ();
 	return TIMING_INFO_GET_TIMER_VALUE();
@@ -158,7 +158,7 @@ void user_thread_creation(void)
 K_APP_BMEM(bench_ptn) u32_t syscall_overhead_start_time,
 	syscall_overhead_end_time;
 
-int _impl_k_dummy_syscall(void)
+int z_impl_k_dummy_syscall(void)
 {
 	return 0;
 }
@@ -210,7 +210,7 @@ u32_t validation_overhead_obj_init_end_time;
 u32_t validation_overhead_obj_start_time;
 u32_t validation_overhead_obj_end_time;
 
-int _impl_validation_overhead_syscall(void)
+int z_impl_validation_overhead_syscall(void)
 {
 	return 0;
 }

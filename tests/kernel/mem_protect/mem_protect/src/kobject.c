@@ -56,7 +56,7 @@ void kobject_user_tc1(void *p1, void *p2, void *p3)
 void test_kobject_access_grant(void *p1, void *p2, void *p3)
 {
 
-	_k_object_init(random_sem_type);
+	z_object_init(random_sem_type);
 	k_thread_access_grant(k_current_get(),
 			      &kobject_sem,
 			      &kobject_mutex,
@@ -425,7 +425,7 @@ void test_thread_has_residual_permissions(void *p1, void *p2, void *p3)
  * @ingroup kernel_memprotect_tests
  *
  * @see k_object_access_grant(), k_object_access_revoke(),
- * _k_object_find()
+ * z_object_find()
  */
 #define ERROR_STR_TEST_10 "Access granted/revoked to invalid thread k_object"
 void test_kobject_access_grant_to_invalid_thread(void *p1, void *p2, void *p3)

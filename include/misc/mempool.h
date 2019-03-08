@@ -47,17 +47,17 @@ struct sys_mem_pool_block {
  * @param section Destination binary section for pool data
  */
 #define SYS_MEM_POOL_DEFINE(name, kmutex, minsz, maxsz, nmax, align, section) \
-	char __aligned(align) _GENERIC_SECTION(section)			\
+	char __aligned(align) Z_GENERIC_SECTION(section)			\
 		_mpool_buf_##name[_ALIGN4(maxsz * nmax)			\
 				  + _MPOOL_BITS_SIZE(maxsz, minsz, nmax)]; \
-	struct sys_mem_pool_lvl _GENERIC_SECTION(section)		\
-		_mpool_lvls_##name[_MPOOL_LVLS(maxsz, minsz)];		\
-	_GENERIC_SECTION(section) struct sys_mem_pool name = {		\
+	struct sys_mem_pool_lvl Z_GENERIC_SECTION(section)		\
+		_mpool_lvls_##name[Z_MPOOL_LVLS(maxsz, minsz)];		\
+	Z_GENERIC_SECTION(section) struct sys_mem_pool name = {		\
 		.base = {						\
 			.buf = _mpool_buf_##name,			\
 			.max_sz = maxsz,				\
 			.n_max = nmax,					\
-			.n_levels = _MPOOL_LVLS(maxsz, minsz),		\
+			.n_levels = Z_MPOOL_LVLS(maxsz, minsz),		\
 			.levels = _mpool_lvls_##name,			\
 			.flags = SYS_MEM_POOL_USER			\
 		},							\
@@ -74,7 +74,7 @@ struct sys_mem_pool_block {
  */
 static inline void sys_mem_pool_init(struct sys_mem_pool *p)
 {
-	_sys_mem_pool_base_init(&p->base);
+	z_sys_mem_pool_base_init(&p->base);
 }
 
 /**

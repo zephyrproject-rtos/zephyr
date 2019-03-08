@@ -15,7 +15,7 @@ char kernel_string[BUF_SIZE];
 char kernel_buf[BUF_SIZE];
 ZTEST_BMEM char user_string[BUF_SIZE];
 
-size_t _impl_string_nlen(char *src, size_t maxlen, int *err)
+size_t z_impl_string_nlen(char *src, size_t maxlen, int *err)
 {
 	return z_user_string_nlen(src, maxlen, err);
 }
@@ -25,7 +25,7 @@ Z_SYSCALL_HANDLER(string_nlen, src, maxlen, err)
 	int err_copy;
 	size_t ret;
 
-	ret = _impl_string_nlen((char *)src, maxlen, &err_copy);
+	ret = z_impl_string_nlen((char *)src, maxlen, &err_copy);
 	if (!err_copy && Z_SYSCALL_MEMORY_READ(src, ret + 1)) {
 		err_copy = -1;
 	}
@@ -35,7 +35,7 @@ Z_SYSCALL_HANDLER(string_nlen, src, maxlen, err)
 	return ret;
 }
 
-int _impl_string_alloc_copy(char *src)
+int z_impl_string_alloc_copy(char *src)
 {
 	if (!strcmp(src, kernel_string)) {
 		return 0;
@@ -54,13 +54,13 @@ Z_SYSCALL_HANDLER(string_alloc_copy, src)
 		return -1;
 	}
 
-	ret = _impl_string_alloc_copy(src_copy);
+	ret = z_impl_string_alloc_copy(src_copy);
 	k_free(src_copy);
 
 	return ret;
 }
 
-int _impl_string_copy(char *src)
+int z_impl_string_copy(char *src)
 {
 	if (!strcmp(src, kernel_string)) {
 		return 0;
@@ -77,13 +77,13 @@ Z_SYSCALL_HANDLER(string_copy, src)
 		return ret;
 	}
 
-	return _impl_string_copy(kernel_buf);
+	return z_impl_string_copy(kernel_buf);
 }
 
 /* Not actually used, but will copy wrong string if called by mistake instead
  * of the handler
  */
-int _impl_to_copy(char *dest)
+int z_impl_to_copy(char *dest)
 {
 	memcpy(dest, kernel_string, BUF_SIZE);
 	return 0;
@@ -110,7 +110,7 @@ void test_string_nlen(void)
 	size_t ret;
 
 	ret = string_nlen(kernel_string, BUF_SIZE, &err);
-	if (_arch_is_user_context()) {
+	if (z_arch_is_user_context()) {
 		zassert_equal(err, -1,
 			      "kernel string did not fault on user access");
 	} else {

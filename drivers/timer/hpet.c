@@ -141,7 +141,7 @@ u32_t z_clock_elapsed(void)
 	return ret;
 }
 
-u32_t _timer_cycle_get_32(void)
+u32_t z_timer_cycle_get_32(void)
 {
 	return MAIN_COUNTER_REG;
 }

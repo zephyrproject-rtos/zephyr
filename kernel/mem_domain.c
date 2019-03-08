@@ -133,7 +133,7 @@ void k_mem_domain_destroy(struct k_mem_domain *domain)
 	 * only if it is the current thread.
 	 */
 	if (_current->mem_domain_info.mem_domain == domain) {
-		_arch_mem_domain_destroy(domain);
+		z_arch_mem_domain_destroy(domain);
 	}
 
 	SYS_DLIST_FOR_EACH_NODE_SAFE(&domain->mem_domain_q, node, next_node) {
@@ -217,7 +217,7 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 	 * only if it is the current thread.
 	 */
 	if (_current->mem_domain_info.mem_domain == domain) {
-		_arch_mem_domain_partition_remove(domain, p_idx);
+		z_arch_mem_domain_partition_remove(domain, p_idx);
 	}
 
 	/* A zero-sized partition denotes it's a free partition */
@@ -244,7 +244,7 @@ void k_mem_domain_add_thread(struct k_mem_domain *domain, k_tid_t thread)
 	thread->mem_domain_info.mem_domain = domain;
 
 	if (_current == thread) {
-		_arch_mem_domain_configure(thread);
+		z_arch_mem_domain_configure(thread);
 	}
 
 	k_spin_unlock(&lock, key);
@@ -259,7 +259,7 @@ void k_mem_domain_remove_thread(k_tid_t thread)
 
 	key = k_spin_lock(&lock);
 	if (_current == thread) {
-		_arch_mem_domain_destroy(thread->mem_domain_info.mem_domain);
+		z_arch_mem_domain_destroy(thread->mem_domain_info.mem_domain);
 	}
 
 	sys_dlist_remove(&thread->mem_domain_info.mem_domain_q_node);
@@ -272,7 +272,7 @@ static int init_mem_domain_module(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	max_partitions = _arch_mem_domain_max_partitions_get();
+	max_partitions = z_arch_mem_domain_max_partitions_get();
 	/*
 	 * max_partitions must be less than or equal to
 	 * CONFIG_MAX_DOMAIN_PARTITIONS, or would encounter array index

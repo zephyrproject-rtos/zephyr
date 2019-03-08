@@ -336,7 +336,7 @@ void vprintk(const char *fmt, va_list ap)
 }
 #endif
 
-void _impl_k_str_out(char *c, size_t n)
+void z_impl_k_str_out(char *c, size_t n)
 {
 	int i;
 
@@ -349,7 +349,7 @@ void _impl_k_str_out(char *c, size_t n)
 Z_SYSCALL_HANDLER(k_str_out, c, n)
 {
 	Z_OOPS(Z_SYSCALL_MEMORY_READ(c, n));
-	_impl_k_str_out((char *)c, n);
+	z_impl_k_str_out((char *)c, n);
 
 	return 0;
 }

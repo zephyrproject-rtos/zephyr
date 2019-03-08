@@ -55,7 +55,7 @@ struct _caller_saved {
 typedef struct _caller_saved _caller_saved_t;
 
 struct _thread_arch {
-	u32_t swap_return_value; /* Return value of _Swap() */
+	u32_t swap_return_value; /* Return value of z_swap() */
 };
 
 typedef struct _thread_arch _thread_arch_t;

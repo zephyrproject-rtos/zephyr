@@ -28,12 +28,12 @@ static int test_object(struct k_sem *sem, int retval)
 	int ret;
 
 	if (retval) {
-		/* Expected to fail; bypass _obj_validation_check() so we don't
+		/* Expected to fail; bypass z_obj_validation_check() so we don't
 		 * fill the logs with spam
 		 */
-		ret = _k_object_validate(_k_object_find(sem), K_OBJ_SEM, 0);
+		ret = z_object_validate(z_object_find(sem), K_OBJ_SEM, 0);
 	} else {
-		ret = _obj_validation_check(_k_object_find(sem), sem,
+		ret = z_obj_validation_check(z_object_find(sem), sem,
 					    K_OBJ_SEM, 0);
 	}
 

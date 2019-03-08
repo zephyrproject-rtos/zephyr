@@ -547,7 +547,7 @@ uint32_t osThreadGetCount(void)
 
 	__ASSERT(!k_is_in_isr(), "");
 	for (thread = _kernel.threads; thread; thread = thread->next_thread) {
-		if (get_cmsis_thread_id(thread) && _is_thread_queued(thread)) {
+		if (get_cmsis_thread_id(thread) && z_is_thread_queued(thread)) {
 			count++;
 		}
 	}

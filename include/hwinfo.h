@@ -43,7 +43,7 @@ extern "C" {
  */
 __syscall ssize_t hwinfo_get_device_id(u8_t *buffer, size_t length);
 
-ssize_t _impl_hwinfo_get_device_id(u8_t *buffer, size_t length);
+ssize_t z_impl_hwinfo_get_device_id(u8_t *buffer, size_t length);
 
 /**
  * @}

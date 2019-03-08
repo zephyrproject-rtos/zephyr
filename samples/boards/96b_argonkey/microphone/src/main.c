@@ -178,8 +178,8 @@ void main(void)
 			pcm_l = (char)(pcm_out[j] & 0xFF);
 			pcm_h = (char)((pcm_out[j] >> 8) & 0xFF);
 
-			_impl_k_str_out(&pcm_l, 1);
-			_impl_k_str_out(&pcm_h, 1);
+			z_impl_k_str_out(&pcm_l, 1);
+			z_impl_k_str_out(&pcm_h, 1);
 		}
 	}
 #endif

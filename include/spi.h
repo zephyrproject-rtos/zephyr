@@ -252,7 +252,7 @@ __syscall int spi_transceive(struct device *dev,
 			     const struct spi_buf_set *tx_bufs,
 			     const struct spi_buf_set *rx_bufs);
 
-static inline int _impl_spi_transceive(struct device *dev,
+static inline int z_impl_spi_transceive(struct device *dev,
 				       const struct spi_config *config,
 				       const struct spi_buf_set *tx_bufs,
 				       const struct spi_buf_set *rx_bufs)
@@ -403,7 +403,7 @@ static inline int spi_write_async(struct device *dev,
 __syscall int spi_release(struct device *dev,
 			  const struct spi_config *config);
 
-static inline int _impl_spi_release(struct device *dev,
+static inline int z_impl_spi_release(struct device *dev,
 				    const struct spi_config *config)
 {
 	const struct spi_driver_api *api =

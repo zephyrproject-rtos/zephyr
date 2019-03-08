@@ -11,7 +11,7 @@ Z_SYSCALL_HANDLER(can_configure, dev, mode, bitrate) {
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, configure));
 
-	return _impl_can_configure((struct device *)dev, (enum can_mode)mode,
+	return z_impl_can_configure((struct device *)dev, (enum can_mode)mode,
 				   (u32_t)bitrate);
 }
 
@@ -26,7 +26,7 @@ Z_SYSCALL_HANDLER(can_send, dev, msg, timeout, callback_isr) {
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(callback_isr == 0,
 				    "callbacks may not be set from user mode"));
 
-	return _impl_can_send((struct device *)dev,
+	return z_impl_can_send((struct device *)dev,
 			      (const struct zcan_frame *)msg,
 			      (s32_t)timeout, (can_tx_callback_t) callback_isr);
 }
@@ -39,7 +39,7 @@ Z_SYSCALL_HANDLER(can_attach_msgq, dev, msgq, filter) {
 				     sizeof(struct zcan_filter)));
 	Z_OOPS(Z_SYSCALL_OBJ(msgq, K_OBJ_MSGQ));
 
-	return _impl_can_attach_msgq((struct device *)dev,
+	return z_impl_can_attach_msgq((struct device *)dev,
 				     (struct k_msgq *)msgq,
 				     (const struct zcan_filter *) filter);
 }
@@ -48,7 +48,7 @@ Z_SYSCALL_HANDLER(can_detach, dev, filter_id) {
 
 	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, detach));
 
-	_impl_can_detach((struct device *)dev, (int)filter_id);
+	z_impl_can_detach((struct device *)dev, (int)filter_id);
 
 	return 0;
 }

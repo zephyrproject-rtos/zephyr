@@ -236,7 +236,7 @@ extern "C" {
 	 * The pc and status32 values will still be on the stack. We cannot
 	 * pop them yet because the callers of _pop_irq_stack_frame must reload
 	 * status32 differently depending on the execution context they are
-	 * running in (_Swap(), firq or exception).
+	 * running in (z_swap(), firq or exception).
 	 */
 	add_s sp, sp, ___isf_t_SIZEOF
 

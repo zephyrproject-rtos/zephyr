@@ -129,7 +129,7 @@ int z_clock_driver_init(struct device *unused)
 	return 0;
 }
 
-u32_t _timer_cycle_get_32(void)
+u32_t z_timer_cycle_get_32(void)
 {
 	return cycle_count + SYSTEM_TIMER_INSTANCE->CNR;
 }

@@ -35,7 +35,7 @@ Z_SYSCALL_HANDLER(i2s_configure, dev, dir, cfg_ptr)
 		goto out;
 	}
 
-	ret = _impl_i2s_configure((struct device *)dev, dir, &config);
+	ret = z_impl_i2s_configure((struct device *)dev, dir, &config);
 out:
 	return ret;
 }
@@ -110,5 +110,5 @@ Z_SYSCALL_HANDLER(i2s_trigger, dev, dir, cmd)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_I2S(dev, trigger));
 
-	return _impl_i2s_trigger((struct device *)dev, dir, cmd);
+	return z_impl_i2s_trigger((struct device *)dev, dir, cmd);
 }

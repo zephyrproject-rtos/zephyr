@@ -106,13 +106,13 @@ void cpu1_fn(int key, void *arg)
  *
  * @ingroup kernel_spinlock_tests
  *
- * @see _arch_start_cpu()
+ * @see z_arch_start_cpu()
  */
 void test_spinlock_bounce(void)
 {
 	int i;
 
-	_arch_start_cpu(1, cpu1_stack, CPU1_STACK_SIZE, cpu1_fn, 0);
+	z_arch_start_cpu(1, cpu1_stack, CPU1_STACK_SIZE, cpu1_fn, 0);
 
 	k_busy_wait(10);
 
