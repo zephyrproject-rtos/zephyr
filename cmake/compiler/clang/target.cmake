@@ -11,15 +11,22 @@ if(NOT DEFINED NOSYSDEF_CFLAG)
   set(NOSYSDEF_CFLAG -undef)
 endif()
 
-find_program(CMAKE_C_COMPILER    clang          PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-find_program(CMAKE_CXX_COMPILER  clang++        PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-find_program(CMAKE_AR            llvm-ar        PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-find_program(CMAKE_LINKER        llvm-link      PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-find_program(CMAKE_NM            llvm-nm        PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-find_program(CMAKE_OBJDUMP       llvm-objdump   PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-find_program(CMAKE_RANLIB        llvm-ranlib    PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
-find_program(CMAKE_OBJCOPY       objcopy        PATH ${TOOLCHAIN_HOME})
-find_program(CMAKE_READELF       readelf        PATH ${TOOLCHAIN_HOME})
+if(DEFINED TOOLCHAIN_HOME)
+  set(find_program_clang_args PATH ${TOOLCHAIN_HOME} NO_DEFAULT_PATH)
+  set(find_program_binutils_args PATH ${TOOLCHAIN_HOME})
+endif()
+
+
+find_program(CMAKE_C_COMPILER    clang          ${find_program_clang_args})
+find_program(CMAKE_CXX_COMPILER  clang++        ${find_program_clang_args})
+find_program(CMAKE_AR            llvm-ar        ${find_program_clang_args})
+find_program(CMAKE_LINKER        llvm-link      ${find_program_clang_args})
+find_program(CMAKE_NM            llvm-nm        ${find_program_clang_args})
+find_program(CMAKE_OBJDUMP       llvm-objdump   ${find_program_clang_args})
+find_program(CMAKE_RANLIB        llvm-ranlib    ${find_program_clang_args})
+
+find_program(CMAKE_OBJCOPY       objcopy        ${find_program_binutils_args})
+find_program(CMAKE_READELF       readelf        ${find_program_binutils_args})
 
 foreach(file_name include include-fixed)
   execute_process(
