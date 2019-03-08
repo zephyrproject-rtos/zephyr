@@ -56,22 +56,53 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		 int priority, unsigned int options)
 {
 	char *pStackMem = K_THREAD_STACK_BUFFER(stack);
+	char *stackEnd;
+	/* Offset between the top of stack and the high end of stack area. */
+	u32_t top_of_stack_offset = 0;
 
 	_ASSERT_VALID_PRIO(priority, pEntry);
 
+#if defined(CONFIG_USERSPACE)
+	/* Truncate the stack size to align with the MPU region granularity.
+	 * This is done proactively to account for the case when the thread
+	 * switches to user mode (thus, its stack area will need to be MPU-
+	 * programmed to be assigned unprivileged RW access permission).
+	 */
+	stackSize &= ~(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE - 1);
+
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
+	/* Reserve space on top of stack for local data. */
+	u32_t p_local_data = STACK_ROUND_DOWN(pStackMem + stackSize
+		- sizeof(*thread->userspace_local_data));
+
+	thread->userspace_local_data =
+		(struct _thread_userspace_local_data *)(p_local_data);
+
+	/* Top of actual stack must be moved below the user local data. */
+	top_of_stack_offset = (u32_t)
+		(pStackMem + stackSize - ((char *)p_local_data));
+
+#endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
+#endif /* CONFIG_USERSPACE */
+
 #if CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT && CONFIG_USERSPACE
-	char *stackEnd = pStackMem + stackSize - MPU_GUARD_ALIGN_AND_SIZE;
+	/* This is required to work-around the case where the thread
+	 * is created without using K_THREAD_STACK_SIZEOF() macro in
+	 * k_thread_create(). If K_THREAD_STACK_SIZEOF() is used, the
+	 * Guard size has already been take out of stackSize.
+	 */
+	stackEnd = pStackMem + stackSize - MPU_GUARD_ALIGN_AND_SIZE;
 #else
-	char *stackEnd = pStackMem + stackSize;
+	stackEnd = pStackMem + stackSize;
 #endif
 	struct __esf *pInitCtx;
 
-	_new_thread_init(thread, pStackMem, stackEnd - pStackMem, priority,
+	_new_thread_init(thread, pStackMem, stackSize, priority,
 			 options);
 
 	/* carve the thread entry struct from the "base" of the stack */
 	pInitCtx = (struct __esf *)(STACK_ROUND_DOWN(stackEnd -
-						     sizeof(struct __esf)));
+		(char *)top_of_stack_offset - sizeof(struct __esf)));
 
 #if CONFIG_USERSPACE
 	if ((options & K_USER) != 0) {
@@ -118,10 +149,6 @@ FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
 	/* Set up privileged stack before entering user mode */
 	_current->arch.priv_stack_start =
 		(u32_t)_k_priv_stack_find(_current->stack_obj);
-
-	/* Truncate the stack size with the MPU region granularity. */
-	_current->stack_info.size &=
-		~(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE - 1);
 
 	_arm_userspace_enter(user_entry, p1, p2, p3,
 			     (u32_t)_current->stack_info.start,
