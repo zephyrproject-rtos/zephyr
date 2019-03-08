@@ -142,7 +142,12 @@ class ComplianceTest:
 
 
 class EndTest(Exception):
-    "Raised by ComplianceTest.error()/skip() to end the test"
+    """
+    Raised by ComplianceTest.error()/skip() to end the test.
+
+    Tests can raise EndTest themselves to immediately end the test, e.g. from
+    within a nested function call.
+    """
 
 
 class CheckPatch(ComplianceTest):
@@ -185,6 +190,16 @@ class KconfigCheck(ComplianceTest):
     def run(self):
         self.prepare()
 
+        kconf = self.parse_kconfig()
+
+        self.check_no_undef_within_kconfig(kconf)
+        self.check_top_menu_not_too_long(kconf)
+
+    def parse_kconfig(self):
+        """
+        Returns a kconfiglib.Kconfig object for the Kconfig files. We reuse
+        this object for all tests to avoid having to reparse for each test.
+        """
         if not self.zephyr_base:
             self.skip("Not a Zephyr tree (ZEPHYR_BASE unset)")
 
@@ -216,15 +231,16 @@ class KconfigCheck(ComplianceTest):
         os.environ["KCONFIG_STRICT"] = "y"
 
         try:
-            kconf = kconfiglib.Kconfig()
+            return kconfiglib.Kconfig()
         except kconfiglib.KconfigError as e:
             self.add_failure(str(e))
-            return
+            raise EndTest
 
-        #
-        # Look for undefined symbols
-        #
-
+    def check_no_undef_within_kconfig(self, kconf):
+        """
+        Checks that there are no references to undefined Kconfig symbols within
+        the Kconfig files
+        """
         undef_ref_warnings = [warning for warning in kconf.warnings
                               if "undefined symbol" in warning]
 
@@ -232,10 +248,11 @@ class KconfigCheck(ComplianceTest):
             self.add_failure("Undefined Kconfig symbols:\n\n"
                              + "\n\n\n".join(undef_ref_warnings))
 
-        #
-        # Check for stuff being added to the top-level menu
-        #
-
+    def check_top_menu_not_too_long(self, kconf):
+        """
+        Checks that there aren't too many items in the top-level menu (which
+        might be a sign that stuff accidentally got added there)
+        """
         max_top_items = 50
 
         n_top_items = 0
