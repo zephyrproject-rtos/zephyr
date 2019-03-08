@@ -56,7 +56,7 @@ struct _isr_list {
 };
 
 /** This interrupt gets put directly in the vector table */
-#define ISR_FLAG_DIRECT (1 << 0)
+#define ISR_FLAG_DIRECT BIT(0)
 
 #define _MK_ISR_NAME(x, y) __isr_ ## x ## _irq_ ## y
 

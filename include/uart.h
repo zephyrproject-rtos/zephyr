@@ -31,10 +31,10 @@ extern "C" {
 
 /** @brief Line control signals. */
 enum uart_line_ctrl {
-	UART_LINE_CTRL_RTS = (1 << 1),
-	UART_LINE_CTRL_DTR = (1 << 2),
-	UART_LINE_CTRL_DCD = (1 << 3),
-	UART_LINE_CTRL_DSR = (1 << 4),
+	UART_LINE_CTRL_RTS = BIT(1),
+	UART_LINE_CTRL_DTR = BIT(2),
+	UART_LINE_CTRL_DCD = BIT(3),
+	UART_LINE_CTRL_DSR = BIT(4),
 };
 
 /**

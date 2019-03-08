@@ -54,7 +54,7 @@ extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
  * priority level (discarding what was supplied in the interrupt's priority
  * argument), and will run even if irq_lock() is active. Be careful!
  */
-#define IRQ_ZERO_LATENCY	(1 << 0)
+#define IRQ_ZERO_LATENCY	BIT(0)
 #endif
 
 

@@ -1515,9 +1515,9 @@ extern int pci_config_ext_cap_ptr_find(
 
 #define PCI_MSIX_FLAGS 2
 #define PCI_MSIX_FLAGS_QSIZE 0x7FF
-#define PCI_MSIX_FLAGS_ENABLE (1 << 15)
-#define PCI_MSIX_FLAGS_MASKALL (1 << 14)
-#define PCI_MSIX_FLAGS_BIRMASK (7 << 0)
+#define PCI_MSIX_FLAGS_ENABLE BIT(15)
+#define PCI_MSIX_FLAGS_MASKALL BIT(14)
+#define PCI_MSIX_FLAGS_BIRMASK BIT(0)
 #define PCI_MSIX_TABLE_OFFSET 0x4
 
 /* Macros to support Intel VT-d code */

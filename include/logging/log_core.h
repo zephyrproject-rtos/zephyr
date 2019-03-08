@@ -219,7 +219,7 @@ extern "C" {
 				.source_id = _id			    \
 			};						    \
 									    \
-			if ((1 << _level) & LOG_FUNCTION_PREFIX_MASK) {	    \
+			if (BIT(_level) & LOG_FUNCTION_PREFIX_MASK) {	\
 				__LOG_INTERNAL(src_level,		    \
 						Z_LOG_STR(__VA_ARGS__));	    \
 			} else {					    \
@@ -300,7 +300,7 @@ extern "C" {
 #define LOG_FILTERS_NUM_OF_SLOTS (32 / LOG_FILTER_SLOT_SIZE)
 
 /** @brief Slot mask. */
-#define LOG_FILTER_SLOT_MASK ((1 << LOG_FILTER_SLOT_SIZE) - 1)
+#define LOG_FILTER_SLOT_MASK (BIT(LOG_FILTER_SLOT_SIZE) - 1)
 
 /** @brief Bit offset of a slot.
  *
