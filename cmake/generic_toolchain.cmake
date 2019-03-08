@@ -41,6 +41,11 @@ if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "gccarmemb")
   set(ZEPHYR_TOOLCHAIN_VARIANT "gnuarmemb")
 endif()
 
+# Host-tools don't unconditionally set TOOLCHAIN_HOME anymore,
+# but in case Zephyr's SDK toolchain is used, set TOOLCHAIN_HOME
+if("${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "zephyr")
+  set(TOOLCHAIN_HOME ${HOST_TOOLS_HOME})
+endif()
 
 set(TOOLCHAIN_ROOT ${TOOLCHAIN_ROOT} CACHE STRING "Zephyr toolchain root")
 assert(TOOLCHAIN_ROOT "Zephyr toolchain root path invalid: please set the TOOLCHAIN_ROOT-variable")
