@@ -38,14 +38,14 @@ extern u8_t *_k_priv_stack_find(void *obj);
  *
  * <options> is currently unused.
  *
- * @param pStackMem the aligned stack memory
- * @param stackSize stack size in bytes
+ * @param stack      pointer to the aligned stack memory
+ * @param stackSize  size of the available stack memory in bytes
  * @param pEntry the entry point
  * @param parameter1 entry point to the first param
  * @param parameter2 entry point to the second param
  * @param parameter3 entry point to the third param
- * @param priority thread priority
- * @param options thread options: K_ESSENTIAL, K_FP_REGS
+ * @param priority   thread priority
+ * @param options    thread options: K_ESSENTIAL, K_FP_REGS
  *
  * @return N/A
  */
