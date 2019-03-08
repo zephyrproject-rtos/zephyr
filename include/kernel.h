@@ -2773,7 +2773,6 @@ extern void k_delayed_work_init(struct k_delayed_work *work,
  * @param delay Delay before submitting the work item (in milliseconds).
  *
  * @retval 0 Work item countdown started.
- * @retval -EINPROGRESS Work item is already pending.
  * @retval -EINVAL Work item is being processed or has completed its work.
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
  * @req K-DWORK-001
@@ -2794,7 +2793,6 @@ extern int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
  * @param work Address of delayed work item.
  *
  * @retval 0 Work item countdown canceled.
- * @retval -EINPROGRESS Work item is already pending.
  * @retval -EINVAL Work item is being processed or has completed its work.
  * @req K-DWORK-001
  */
@@ -2855,7 +2853,6 @@ static inline void k_work_submit(struct k_work *work)
  * @param delay Delay before submitting the work item (in milliseconds).
  *
  * @retval 0 Work item countdown started.
- * @retval -EINPROGRESS Work item is already pending.
  * @retval -EINVAL Work item is being processed or has completed its work.
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
  * @req K-DWORK-001
