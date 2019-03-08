@@ -17,7 +17,7 @@ See the `MQTT V3.1.1 spec`_ for more information.
 .. _MQTT V3.1.1 spec: http://docs.oasis-open.org/mqtt/mqtt/v3.1.1/mqtt-v3.1.1.html
 
 The source code of this sample application can be found at:
-:file:`samples/net/mqtt_publisher`.
+:zephyr_file:`samples/net/mqtt_publisher`.
 
 Requirements
 ************
@@ -94,7 +94,7 @@ following macros to specify those values:
 	#define BLUEMIX_FORMAT		"json"
 
 On your Linux host computer, open a terminal window, locate the source code
-of this sample application (i.e. :file:`samples/net/mqtt_publisher`) and type:
+of this sample application (i.e. :zephyr_file:`samples/net/mqtt_publisher`) and type:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/mqtt_publisher

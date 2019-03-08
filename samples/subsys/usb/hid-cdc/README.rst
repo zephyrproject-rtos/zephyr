@@ -8,7 +8,7 @@ Overview
 
 This sample app demonstrates use of multiple USB classes with multiple
 instances. It combines two HID instances and two CDC ACM instances.
-This sample can be found under :file:`samples/subsys/usb/hid-cdc` in the
+This sample can be found under :zephyr_file:`samples/subsys/usb/hid-cdc` in the
 Zephyr project tree.
 
 Requirements

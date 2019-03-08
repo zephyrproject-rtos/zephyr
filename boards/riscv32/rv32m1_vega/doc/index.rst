@@ -246,7 +246,7 @@ Additional Pins
 For an up-to-date description of additional pins (such as buttons,
 LEDs, etc.) supported by Zephyr, see the board DTS files in the Zephyr
 source code, i.e.
-:file:`boards/riscv32/rv32m1_vega/rv32m1_vega_ri5cy.dts` for RI5CY.
+:zephyr_file:`boards/riscv32/rv32m1_vega/rv32m1_vega_ri5cy.dts` for RI5CY.
 
 See the schematic in the documentation available from the `OpenISA
 GitHub releases`_ page for additional details.

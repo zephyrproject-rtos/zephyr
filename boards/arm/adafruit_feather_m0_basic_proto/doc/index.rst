@@ -57,7 +57,7 @@ following hardware features:
 Other hardware features are not currently supported by Zephyr.
 
 The default configuration can be found in the Kconfig file
-:file:`boards/arm/adafruit_feather_m0_basic_proto/adafruit_feather_m0_basic_proto_defconfig`.
+:zephyr_file:`boards/arm/adafruit_feather_m0_basic_proto/adafruit_feather_m0_basic_proto_defconfig`.
 
 Connections and IOs
 ===================

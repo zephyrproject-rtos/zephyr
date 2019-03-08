@@ -52,7 +52,7 @@ Build and sign a second application image e.g. :ref:`hello_world`,
 which will be used as an image for the update.
 Do not forget to enable the required MCUboot Kconfig option (as described
 in :ref:`mcuboot`) by adding the following line to
-:file:`samples/hello_world/prj.conf`:
+:zephyr_file:`samples/hello_world/prj.conf`:
 
 .. code-block:: console
 

@@ -13,7 +13,7 @@ integration testing, or for unit testing specific modules.
 Quick start - Integration testing
 *********************************
 
-A simple working base is located at :file:`samples/testing/integration`.  Just
+A simple working base is located at :zephyr_file:`samples/testing/integration`.  Just
 copy the files to ``tests/`` and edit them for your needs. The test will then
 be automatically built and run by the sanitycheck script. If you are testing
 the **bar** component of **foo**, you should copy the sample folder to

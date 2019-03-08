@@ -87,7 +87,7 @@ hardware features:
 Other hardware features are not yet supported on Zephyr porting.
 
 The default configuration can be found in the defconfig file
-:file:`boards/arm/stm32f411e_disco/stm32f411e_disco_defconfig`
+:zephyr_file:`boards/arm/stm32f411e_disco/stm32f411e_disco_defconfig`
 
 
 Pin Mapping

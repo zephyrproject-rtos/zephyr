@@ -303,7 +303,7 @@ outside the west repository. Some reasons this choice was made are:
 
 The extension commands are a thin wrapper around a package called
 ``runners`` (this package is also in the Zephyr tree, in
-:file:`scripts/west_commands/runners`).
+:zephyr_file:`scripts/west_commands/runners`).
 
 The central abstraction within this library is ``ZephyrBinaryRunner``,
 an abstract class which represents *runner* objects, which can flash
@@ -323,7 +323,7 @@ upstream Zephyr, the runner should be added into a new or existing
 
 .. note::
 
-   The test cases in :file:`scripts/west_commands/tests` add unit test
+   The test cases in :zephyr_file:`scripts/west_commands/tests` add unit test
    coverage for the runners package and individual runner classes.
 
    Please try to add tests when adding new runners. Note that if your

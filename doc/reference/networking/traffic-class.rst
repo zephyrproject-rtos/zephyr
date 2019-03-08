@@ -23,6 +23,6 @@ and chapter 34.5 table 34-1. Each traffic class is in turn mapped to a certain
 kernel work queue. The maximum number of traffic classes for both Rx and Tx
 is 8.
 
-See :file:`subsys/net/ip/net_tc.c` for details of how various mappings are done.
+See :zephyr_file:`subsys/net/ip/net_tc.c` for details of how various mappings are done.
 
 .. _IEEE 802.1Q spec: https://ieeexplore.ieee.org/document/6991462/

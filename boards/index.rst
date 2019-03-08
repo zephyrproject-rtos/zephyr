@@ -7,7 +7,7 @@ Zephyr project developers are continually adding board-specific support as
 documented below.
 
 To add support documentation for a new board, please use the template available
-under :file:`doc/templates/board.tmpl`
+under :zephyr_file:`doc/templates/board.tmpl`
 
 
 .. toctree::

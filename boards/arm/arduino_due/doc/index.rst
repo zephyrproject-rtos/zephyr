@@ -57,7 +57,7 @@ See `Arduino Due website`_ and `Atmel SAM3X8E Datasheet`_ for a complete
 list of Arduino Due board hardware features.
 
 The default configuration can be found in the Kconfig
-:file:`boards/arm/arduino_due/arduino_due_defconfig`.
+:zephyr_file:`boards/arm/arduino_due/arduino_due_defconfig`.
 
 .. note::
    For I2C, pull-up resistors are required for using SCL1 and SDA1 (near IO13).

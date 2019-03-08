@@ -175,7 +175,8 @@ the board are working properly with Zephyr:
 - :ref:`96b_carbon_multi_thread_blinky`
 
 You can build and flash the examples to make sure Zephyr is running correctly on
-your board. The button and LED definitions can be found in :file:`boards/arm/nrf52_adafruit_feather/board.h`.
+your board. The button and LED definitions can be found in
+:zephyr_file:`boards/arm/nrf52_adafruit_feather/board.h`.
 
 
 References

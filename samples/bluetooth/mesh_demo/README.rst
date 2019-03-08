@@ -38,7 +38,7 @@ Requirements
 Building and Running
 ********************
 
-This sample can be found under :file:`samples/bluetooth/mesh_demo` in
+This sample can be found under :zephyr_file:`samples/bluetooth/mesh_demo` in
 the Zephyr tree.
 
 See :ref:`bluetooth setup section <bluetooth_setup>` for details on how

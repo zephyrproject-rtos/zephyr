@@ -41,7 +41,7 @@ The ``net_if_get_default()`` returns a *default* network interface. What
 this default interface means can be configured via options like
 :option:`CONFIG_NET_DEFAULT_IF_FIRST` and
 :option:`CONFIG_NET_DEFAULT_IF_ETHERNET`.
-See Kconfig file :file:`subsys/net/ip/Kconfig` what options are available for
+See Kconfig file :zephyr_file:`subsys/net/ip/Kconfig` what options are available for
 selecting the default network interface.
 
 The transmitted and received network packets can be classified via a network

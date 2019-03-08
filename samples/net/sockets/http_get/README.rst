@@ -13,7 +13,7 @@ portable to both POSIX and Zephyr. As such, it is kept minimal and
 supports only IPv4.
 
 The source code for this sample application can be found at:
-:file:`samples/net/sockets/http_get`.
+:zephyr_file:`samples/net/sockets/http_get`.
 
 Requirements
 ************

@@ -16,7 +16,7 @@ currently is able to
 - Send/Receive keep alive / pings from cloud server
 
 The source code for this sample application can be found at:
-:file:`samples/net/google_iot_mqtt`.
+:zephyr_file:`samples/net/google_iot_mqtt`.
 
 Requirements
 ************

@@ -18,7 +18,7 @@ perform performance/regression testing using existing HTTP diagnostic
 tools.
 
 The source code for this sample application can be found at:
-:file:`samples/net/sockets/dumb_http_server`.
+:zephyr_file:`samples/net/sockets/dumb_http_server`.
 
 Requirements
 ************

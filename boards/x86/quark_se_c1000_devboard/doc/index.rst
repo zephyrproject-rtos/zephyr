@@ -69,7 +69,7 @@ Programming and Debugging
 *************************
 
 The board configuration details are found in the project's tree at
-:file:`boards/x86/quark_se_c1000_devboard`.
+:zephyr_file:`boards/x86/quark_se_c1000_devboard`.
 
 Applications for the ``quark_se_c1000_devboard`` board configuration can be built and
 flashed in the usual way (see :ref:`build_an_application` and

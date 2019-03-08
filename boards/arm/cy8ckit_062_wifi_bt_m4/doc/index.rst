@@ -19,4 +19,4 @@ In order to have CM4 core working FW for both cores should be written into
 Flash. CM0+ FW should starts the CM4 core at one point using
 Cy_SysEnableCM4(CM4_START_ADDRESS); call. CM4_START_ADDRESS is 0x10060000 in
 the current configuration. The CM0+/CM4 Flash/SRAM areas are defined in
-:file:'dts/arm/cypress/psoc6.dtsi'.
+:zephyr_file:`dts/arm/cypress/psoc6.dtsi`.
