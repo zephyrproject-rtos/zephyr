@@ -518,7 +518,7 @@ u16_t net_calc_chksum_ipv4(struct net_pkt *pkt)
 {
 	u16_t sum;
 
-	sum = calc_chksum(0, pkt->buffer->data, NET_IPV4H_LEN);
+	sum = calc_chksum(0, pkt->buffer->data, net_pkt_ip_hdr_len(pkt));
 
 	sum = (sum == 0) ? 0xffff : htons(sum);
 
