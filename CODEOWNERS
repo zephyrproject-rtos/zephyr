@@ -232,6 +232,7 @@
 /scripts/process_gperf.py                 @andrewboie
 /scripts/sanity_chk/                      @andrewboie @nashif
 /scripts/sanitycheck                      @andrewboie @nashif
+/scripts/series-push-hook.sh              @erwango
 /scripts/west_commands/                   @mbolivar
 /scripts/west-commands.yml                @mbolivar
 /subsys/bluetooth/                        @sjanc @jhedberg @Vudentz
