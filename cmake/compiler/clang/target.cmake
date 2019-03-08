@@ -62,6 +62,13 @@ set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
 # Load toolchain_cc-family macros
+
+macro(toolchain_cc_nostdinc)
+  if(NOT "${ARCH}" STREQUAL "posix")
+    zephyr_compile_options( -nostdinc)
+  endif()
+endmacro()
+
 # Clang and GCC are almost feature+flag compatible, so reuse freestanding gcc
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_canaries.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_optimizations.cmake)
