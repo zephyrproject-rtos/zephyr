@@ -139,7 +139,7 @@
  * mask  -- interrupt bitmask for this level
  */
     .extern _kernel
-    .extern _sys_power_save_idle_exit
+    .extern z_sys_power_save_idle_exit
 
     .macro  dispatch_c_isr    level  mask
 
@@ -203,14 +203,14 @@
     beqz    a2, 10f
     xor     a4, a2, a2
     s32i    a4, a3, _kernel_offset_to_idle
-    call0   _sys_power_save_idle_exit
+    call0   z_sys_power_save_idle_exit
     mov     a2, a12
 #else
     l32i    a6, a3, _kernel_offset_to_idle
     beqz    a6, 10f
     xor     a4, a6, a6
     s32i    a4, a3, _kernel_offset_to_idle
-    call4   _sys_power_save_idle_exit
+    call4   z_sys_power_save_idle_exit
 #endif /* __XTENSA_CALL0_ABI__ */
 10:
 #endif /* CONFIG_SYS_POWER_MANAGEMENT */

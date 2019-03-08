@@ -19,13 +19,13 @@ int pthread_barrier_wait(pthread_barrier_t *b)
 	if (b->count >= b->max) {
 		b->count = 0;
 
-		while (_waitq_head(&b->wait_q)) {
+		while (z_waitq_head(&b->wait_q)) {
 			_ready_one_thread(&b->wait_q);
 		}
-		_reschedule_irqlock(key);
+		z_reschedule_irqlock(key);
 		ret = PTHREAD_BARRIER_SERIAL_THREAD;
 	} else {
-		(void) _pend_curr_irqlock(key, &b->wait_q, K_FOREVER);
+		(void) z_pend_curr_irqlock(key, &b->wait_q, K_FOREVER);
 	}
 
 	return ret;

@@ -76,14 +76,14 @@ K_APP_BMEM(part0) static volatile unsigned int expected_reason;
 #define BARRIER() k_sem_give(&expect_fault_sem)
 
 /* ARM is a special case, in that k_thread_abort() does indeed return
- * instead of calling _Swap() directly. The PendSV exception is queued
+ * instead of calling z_swap() directly. The PendSV exception is queued
  * and immediately fires upon completing the exception path; the faulting
  * thread is never run again.
  */
 #if !(defined(CONFIG_ARM) || defined(CONFIG_ARC))
 FUNC_NORETURN
 #endif
-void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
+void z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 {
 	INFO("Caught system error -- reason %d\n", reason);
 	/*
@@ -271,7 +271,7 @@ static void write_kerntext(void)
 	expect_fault = true;
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
-	memset(&_is_thread_essential, 0, 4);
+	memset(&z_is_thread_essential, 0, 4);
 	zassert_unreachable("Write to kernel text did not fault");
 }
 

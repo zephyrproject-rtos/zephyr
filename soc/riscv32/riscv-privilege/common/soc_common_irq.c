@@ -11,7 +11,7 @@
  */
 #include <irq.h>
 
-void _arch_irq_enable(unsigned int irq)
+void z_arch_irq_enable(unsigned int irq)
 {
 	u32_t mie;
 
@@ -31,7 +31,7 @@ void _arch_irq_enable(unsigned int irq)
 			  : "r" (1 << irq));
 }
 
-void _arch_irq_disable(unsigned int irq)
+void z_arch_irq_disable(unsigned int irq)
 {
 	u32_t mie;
 
@@ -51,7 +51,7 @@ void _arch_irq_disable(unsigned int irq)
 			  : "r" (1 << irq));
 };
 
-int _arch_irq_is_enabled(unsigned int irq)
+int z_arch_irq_is_enabled(unsigned int irq)
 {
 	u32_t mie;
 

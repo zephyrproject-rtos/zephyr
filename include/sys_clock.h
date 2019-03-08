@@ -28,7 +28,7 @@ extern "C" {
 
 #ifdef CONFIG_TICKLESS_KERNEL
 extern int _sys_clock_always_on;
-extern void _enable_sys_clock(void);
+extern void z_enable_sys_clock(void);
 #endif
 
 static inline int sys_clock_hw_cycles_per_sec(void)
@@ -102,7 +102,7 @@ static inline int sys_clock_hw_cycles_per_tick(void)
 #endif
 #endif
 
-static ALWAYS_INLINE s32_t _ms_to_ticks(s32_t ms)
+static ALWAYS_INLINE s32_t z_ms_to_ticks(s32_t ms)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
 

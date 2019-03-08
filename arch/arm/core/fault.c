@@ -764,8 +764,8 @@ static void _SecureStackDump(const NANO_ESF *secure_esf)
  *   error handling policy allows the system to recover from the error),
  * - reporting the error information,
  * - determining the error reason to be provided as input to the user-
- *   provided routine, _NanoFatalErrorHandler().
- * The _NanoFatalErrorHandler() is invoked once the above operations are
+ *   provided routine, z_NanoFatalErrorHandler().
+ * The z_NanoFatalErrorHandler() is invoked once the above operations are
  * completed, and is responsible for implementing the error handling policy.
  *
  * The provided ESF pointer points to the exception stack frame of the current
@@ -869,7 +869,7 @@ void _Fault(NANO_ESF *esf, u32_t exc_return)
 	defined(CONFIG_ARM_NONSECURE_FIRMWARE)
 _exit_fatal:
 #endif
-	_NanoFatalErrorHandler(reason, esf);
+	z_NanoFatalErrorHandler(reason, esf);
 }
 
 /**

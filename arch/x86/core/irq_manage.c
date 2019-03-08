@@ -48,32 +48,32 @@ void *__attribute__((section(".spurNoErrIsr")))
  */
 
 #ifdef CONFIG_SYS_POWER_MANAGEMENT
-void _arch_irq_direct_pm(void)
+void z_arch_irq_direct_pm(void)
 {
 	if (_kernel.idle) {
 		s32_t idle_val = _kernel.idle;
 
 		_kernel.idle = 0;
-		_sys_power_save_idle_exit(idle_val);
+		z_sys_power_save_idle_exit(idle_val);
 	}
 }
 #endif
 
-void _arch_isr_direct_header(void)
+void z_arch_isr_direct_header(void)
 {
-	_int_latency_start();
+	z_int_latency_start();
 	z_sys_trace_isr_enter();
 
 	/* We're not going to unlock IRQs, but we still need to increment this
-	 * so that _is_in_isr() works
+	 * so that z_is_in_isr() works
 	 */
 	++_kernel.nested;
 }
 
-void _arch_isr_direct_footer(int swap)
+void z_arch_isr_direct_footer(int swap)
 {
 	_irq_controller_eoi();
-	_int_latency_stop();
+	z_int_latency_stop();
 	sys_trace_isr_exit();
 	--_kernel.nested;
 
@@ -87,7 +87,7 @@ void _arch_isr_direct_footer(int swap)
 	    _kernel.ready_q.cache != _current) {
 		unsigned int flags;
 
-		/* Fetch EFLAGS argument to _Swap() */
+		/* Fetch EFLAGS argument to z_swap() */
 		__asm__ volatile (
 			"pushfl\n\t"
 			"popl %0\n\t"
@@ -95,7 +95,7 @@ void _arch_isr_direct_footer(int swap)
 			:
 			: "memory"
 			);
-		(void)_Swap_irqlock(flags);
+		(void)z_swap_irqlock(flags);
 	}
 }
 
@@ -301,7 +301,7 @@ static void idt_vector_install(int vector, void *irq_handler)
  * the processor.
  */
 
-int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 		void (*routine)(void *parameter), void *parameter,
 		u32_t flags)
 {
@@ -310,7 +310,7 @@ int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	key = irq_lock();
 
 #ifdef CONFIG_X86_FIXED_IRQ_MAPPING
-	vector = _IRQ_TO_INTERRUPT_VECTOR(irq);
+	vector = Z_IRQ_TO_INTERRUPT_VECTOR(irq);
 #else
 	vector = priority_to_free_vector(priority);
 	/* 0 indicates not used, vectors for interrupts start at 32 */
@@ -318,7 +318,7 @@ int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 		 "IRQ %d already configured", irq);
 	_irq_to_interrupt_vector[irq] = vector;
 #endif
-	_irq_controller_irq_config(vector, irq, flags);
+	z_irq_controller_irq_config(vector, irq, flags);
 
 	stub_idx = next_irq_stub++;
 	__ASSERT(stub_idx < CONFIG_X86_DYNAMIC_IRQ_STUBS,

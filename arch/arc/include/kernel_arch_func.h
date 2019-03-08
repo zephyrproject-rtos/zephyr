@@ -37,7 +37,7 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 }
 
 static ALWAYS_INLINE void
-_set_thread_return_value(struct k_thread *thread, unsigned int value)
+z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 {
 	thread->arch.return_value = value;
 }
@@ -51,12 +51,12 @@ _set_thread_return_value(struct k_thread *thread, unsigned int value)
  */
 static ALWAYS_INLINE int _INTERRUPT_CAUSE(void)
 {
-	u32_t irq_num = _arc_v2_aux_reg_read(_ARC_V2_ICAUSE);
+	u32_t irq_num = z_arc_v2_aux_reg_read(_ARC_V2_ICAUSE);
 
 	return irq_num;
 }
 
-#define _is_in_isr	_arc_v2_irq_unit_is_in_isr
+#define z_is_in_isr	z_arc_v2_irq_unit_is_in_isr
 
 extern void _thread_entry_wrapper(void);
 extern void _user_thread_entry_wrapper(void);

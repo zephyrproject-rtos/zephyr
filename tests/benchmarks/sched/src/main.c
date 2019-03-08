@@ -13,14 +13,14 @@
  * of specific low level scheduling primitives independent of overhead
  * from application or API abstractions.  It works very simply: a main
  * thread creates a "partner" thread at a higher priority, the partner
- * then sleeps using _pend_curr_irqlock().  From this initial
+ * then sleeps using z_pend_curr_irqlock().  From this initial
  * state:
  *
- * 1. The main thread calls _unpend_first_thread()
- * 2. The main thread calls _ready_thread()
+ * 1. The main thread calls z_unpend_first_thread()
+ * 2. The main thread calls z_ready_thread()
  * 3. The main thread calls k_yield()
  *    (the kernel switches to the partner thread)
- * 4. The partner thread then runs and calls _pend_curr_irqlock() again
+ * 4. The partner thread then runs and calls z_pend_curr_irqlock() again
  *    (the kernel switches to the main thread)
  * 5. The main thread returns from k_yield()
  *
@@ -90,14 +90,14 @@ static void partner_fn(void *arg1, void *arg2, void *arg3)
 	while (true) {
 		unsigned int key = irq_lock();
 
-		_pend_curr_irqlock(key, &waitq, K_FOREVER);
+		z_pend_curr_irqlock(key, &waitq, K_FOREVER);
 		stamp(PARTNER_AWAKE_PENDING);
 	}
 }
 
 void main(void)
 {
-	_waitq_init(&waitq);
+	z_waitq_init(&waitq);
 
 	int main_prio = k_thread_priority_get(k_current_get());
 	int partner_prio = main_prio - 1;
@@ -115,12 +115,12 @@ void main(void)
 
 	for (int i = 0; i < N_RUNS + N_SETTLE; i++) {
 		stamp(UNPENDING);
-		_unpend_first_thread(&waitq);
+		z_unpend_first_thread(&waitq);
 		stamp(UNPENDED_READYING);
-		_ready_thread(th);
+		z_ready_thread(th);
 		stamp(READIED_YIELDING);
 
-		/* _ready_thread() does not reschedule, so this is
+		/* z_ready_thread() does not reschedule, so this is
 		 * guaranteed to be the point where we will yield to
 		 * the new thread, which (being higher priority) will
 		 * run immediately, and we'll wake up synchronously as

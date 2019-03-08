@@ -52,7 +52,7 @@ GTEXT(z_arch_user_string_nlen_fault_start)
 GTEXT(z_arch_user_string_nlen_fault_end)
 GTEXT(z_arch_user_string_nlen_fixup)
 /*
- * @brief Wrapper for _thread_entry in the case of user thread
+ * @brief Wrapper for z_thread_entry in the case of user thread
  * The init parameters are in privileged stack
  *
  * @return N/A

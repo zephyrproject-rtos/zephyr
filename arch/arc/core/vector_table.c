@@ -46,7 +46,7 @@ struct vector_table {
 	u32_t unused_2;
 };
 
-struct vector_table _VectorTable _GENERIC_SECTION(.exc_vector_table) = {
+struct vector_table _VectorTable Z_GENERIC_SECTION(.exc_vector_table) = {
 	(u32_t)__reset,
 	(u32_t)__memory_error,
 	(u32_t)__instruction_error,

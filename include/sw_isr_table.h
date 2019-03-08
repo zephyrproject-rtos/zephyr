@@ -64,8 +64,8 @@ struct _isr_list {
  * section. This gets consumed by gen_isr_tables.py which creates the vector
  * and/or SW ISR tables.
  */
-#define _ISR_DECLARE(irq, flags, func, param) \
-	static struct _isr_list _GENERIC_SECTION(.intList) __used \
+#define Z_ISR_DECLARE(irq, flags, func, param) \
+	static struct _isr_list Z_GENERIC_SECTION(.intList) __used \
 		_MK_ISR_NAME(func, __COUNTER__) = \
 			{irq, flags, &func, (void *)param}
 

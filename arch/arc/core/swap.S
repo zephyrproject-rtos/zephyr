@@ -51,7 +51,7 @@ GDATA(_kernel)
  * not has already been taken and a context switch must happen.
  *
  * @return may contain a return value setup by a call to
- * _set_thread_return_value()
+ * z_set_thread_return_value()
  *
  * C function prototype:
  *
@@ -89,7 +89,7 @@ SECTION_FUNC(TEXT, __swap)
          * Carve space for the return value. Setting it to a default of
          * -EAGAIN eliminates the need for the timeout code to set it.
          * If another value is ever needed, it can be modified with
-         * _set_thread_return_value().
+         * z_set_thread_return_value().
          */
 	ld r3, [_k_neg_eagain]
 	st_s r3, [r2, _thread_offset_to_return_value]

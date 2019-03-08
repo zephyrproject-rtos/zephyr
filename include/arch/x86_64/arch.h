@@ -13,8 +13,8 @@
 
 typedef struct NANO_ESF NANO_ESF;
 extern const NANO_ESF _default_esf;
-void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
-void _NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
+void z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
+void z_NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
 
 /* Existing code requires only these particular symbols be defined,
  * but doesn't put them in a global header.  Needs cleaner

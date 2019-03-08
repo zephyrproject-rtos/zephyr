@@ -104,7 +104,7 @@ SECTION_FUNC(TEXT, _rirq_exit)
 	st	r0, [r1]
 
 #ifdef CONFIG_STACK_SENTINEL
-	bl _check_stack_sentinel
+	bl z_check_stack_sentinel
 #endif
 
 #ifdef CONFIG_PREEMPT_ENABLED

@@ -221,7 +221,7 @@ static int run_test(struct unit_test *test)
 	 * another test case to be run after the current one finishes, the
 	 * thread_stack will be reused for that new test case while the current
 	 * test case has not finished running yet (it has given the semaphore,
-	 * but has _not_ gone back to _thread_entry() and completed it's "abort
+	 * but has _not_ gone back to z_thread_entry() and completed it's "abort
 	 * phase": this will corrupt the kernel ready queue.
 	 */
 	k_sem_take(&test_end_signal, K_FOREVER);

@@ -15,7 +15,7 @@ struct device;
 struct NANO_ESF {
 };
 
-void _new_thread(struct k_thread *t, k_thread_stack_t *stack,
+void z_new_thread(struct k_thread *t, k_thread_stack_t *stack,
 		 size_t sz, k_thread_entry_t entry,
 		 void *p1, void *p2, void *p3,
 		 int prio, unsigned int opts)
@@ -29,7 +29,7 @@ void _new_thread(struct k_thread *t, k_thread_stack_t *stack,
 	_new_thread_init(t, base, sz, prio, opts);
 
 	t->switch_handle = (void *)xuk_setup_stack((long) top,
-						   (void *)_thread_entry,
+						   (void *)z_thread_entry,
 						   eflags, (long *)args,
 						   nargs);
 }
@@ -53,18 +53,18 @@ void _unhandled_vector(int vector, int err, struct xuk_entry_frame *f)
 	printk("***  R8 0x%llx R9 0x%llx R10 0x%llx R11 0x%llx\n",
 	       f->r8, f->r9, f->r10, f->r11);
 
-	_NanoFatalErrorHandler(x86_64_except_reason, NULL);
+	z_NanoFatalErrorHandler(x86_64_except_reason, NULL);
 }
 
 void _isr_entry(void)
 {
-	_arch_curr_cpu()->nested++;
+	z_arch_curr_cpu()->nested++;
 }
 
 void *_isr_exit_restore_stack(void *interrupted)
 {
-	bool nested = (--_arch_curr_cpu()->nested) > 0;
-	void *next = _get_next_switch_handle(interrupted);
+	bool nested = (--z_arch_curr_cpu()->nested) > 0;
+	void *next = z_get_next_switch_handle(interrupted);
 
 	return (nested || next == interrupted) ? NULL : next;
 }
@@ -76,7 +76,7 @@ struct {
 } cpu_init[CONFIG_MP_NUM_CPUS];
 
 /* Called from Zephyr initialization */
-void _arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
+void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 		     void (*fn)(int, void *), void *arg)
 {
 	cpu_init[cpu_num].arg = arg;
@@ -130,18 +130,18 @@ void _cpu_start(int cpu)
 		/* The SMP CPU startup function pointers act as init
 		 * flags.  Zero them here because this code is running
 		 * BEFORE .bss is zeroed!  Should probably move that
-		 * out of _Cstart() for this architecture...
+		 * out of z_cstart() for this architecture...
 		 */
 		for (int i = 0; i < CONFIG_MP_NUM_CPUS; i++) {
 			cpu_init[i].fn = 0;
 		}
 
 		/* Enter Zephyr */
-		_Cstart();
+		z_cstart();
 
 	} else if (cpu < CONFIG_MP_NUM_CPUS) {
 		/* SMP initialization.  First spin, waiting for
-		 * _arch_start_cpu() to be called from the main CPU
+		 * z_arch_start_cpu() to be called from the main CPU
 		 */
 		while (!cpu_init[cpu].fn) {
 		}
@@ -157,14 +157,14 @@ void _cpu_start(int cpu)
 
 /* Returns the initial stack to use for CPU startup on auxiliary (not
  * cpu 0) processors to the xuk layer, which gets selected by the
- * non-arch Zephyr kernel and stashed by _arch_start_cpu()
+ * non-arch Zephyr kernel and stashed by z_arch_start_cpu()
  */
 unsigned int _init_cpu_stack(int cpu)
 {
 	return cpu_init[cpu].esp;
 }
 
-int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			      void (*routine)(void *parameter), void *parameter,
 			      u32_t flags)
 {
@@ -176,12 +176,12 @@ int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 	return 0;
 }
 
-void _arch_irq_disable(unsigned int irq)
+void z_arch_irq_disable(unsigned int irq)
 {
 	xuk_set_isr_mask(irq, 1);
 }
 
-void _arch_irq_enable(unsigned int irq)
+void z_arch_irq_enable(unsigned int irq)
 {
 	xuk_set_isr_mask(irq, 0);
 }
@@ -195,13 +195,13 @@ const NANO_ESF _default_esf;
 
 int x86_64_except_reason;
 
-void _NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *esf)
+void z_NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *esf)
 {
-	_SysFatalErrorHandler(reason, esf);
+	z_SysFatalErrorHandler(reason, esf);
 }
 
 /* App-overridable handler.  Does nothing here */
-void __weak _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf)
+void __weak z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf)
 {
 	ARG_UNUSED(reason);
 	ARG_UNUSED(esf);

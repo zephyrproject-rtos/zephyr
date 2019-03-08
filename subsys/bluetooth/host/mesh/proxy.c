@@ -91,7 +91,7 @@ static struct bt_mesh_proxy_client {
 } clients[CONFIG_BT_MAX_CONN] = {
 	[0 ... (CONFIG_BT_MAX_CONN - 1)] = {
 #if defined(CONFIG_BT_MESH_GATT_PROXY)
-		.send_beacons = _K_WORK_INITIALIZER(proxy_send_beacons),
+		.send_beacons = Z_WORK_INITIALIZER(proxy_send_beacons),
 #endif
 	},
 };

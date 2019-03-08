@@ -1151,7 +1151,7 @@ int ztls_socket(int family, int type, int proto)
 	/* Set net context object as initialized and grant access to the
 	 * calling thread (and only the calling thread)
 	 */
-	_k_object_recycle(ctx);
+	z_object_recycle(ctx);
 #endif
 
 	if (tls_proto != 0) {
@@ -1270,7 +1270,7 @@ int ztls_accept_ctx(struct net_context *parent, struct sockaddr *addr,
 	child = k_fifo_get(&parent->accept_q, K_FOREVER);
 
 	#ifdef CONFIG_USERSPACE
-		_k_object_recycle(child);
+		z_object_recycle(child);
 	#endif
 
 	if (addr != NULL && addrlen != NULL) {

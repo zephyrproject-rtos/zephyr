@@ -133,7 +133,7 @@ int _ioapic_init(struct device *unused)
  *
  * @return N/A
  */
-void _ioapic_irq_enable(unsigned int irq)
+void z_ioapic_irq_enable(unsigned int irq)
 {
 	_IoApicRedUpdateLo(irq, 0, IOAPIC_INT_MASK);
 }
@@ -147,7 +147,7 @@ void _ioapic_irq_enable(unsigned int irq)
  *
  * @return N/A
  */
-void _ioapic_irq_disable(unsigned int irq)
+void z_ioapic_irq_disable(unsigned int irq)
 {
 	_IoApicRedUpdateLo(irq, IOAPIC_INT_MASK, IOAPIC_INT_MASK);
 }
@@ -283,7 +283,7 @@ static int ioapic_device_ctrl(struct device *device, u32_t ctrl_command,
  *
  * @return N/A
  */
-void _ioapic_irq_set(unsigned int irq, unsigned int vector, u32_t flags)
+void z_ioapic_irq_set(unsigned int irq, unsigned int vector, u32_t flags)
 {
 	u32_t rteValue;   /* value to copy into redirection table entry */
 
@@ -304,7 +304,7 @@ void _ioapic_irq_set(unsigned int irq, unsigned int vector, u32_t flags)
  * @param vector Vector number
  * @return N/A
  */
-void _ioapic_int_vec_set(unsigned int irq, unsigned int vector)
+void z_ioapic_int_vec_set(unsigned int irq, unsigned int vector)
 {
 	_IoApicRedUpdateLo(irq, vector, IOAPIC_VEC_MASK);
 }

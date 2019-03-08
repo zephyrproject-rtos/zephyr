@@ -65,7 +65,7 @@ __syscall int entropy_get_entropy(struct device *dev,
 				  u8_t *buffer,
 				  u16_t length);
 
-static inline int _impl_entropy_get_entropy(struct device *dev,
+static inline int z_impl_entropy_get_entropy(struct device *dev,
 					    u8_t *buffer,
 					    u16_t length)
 {

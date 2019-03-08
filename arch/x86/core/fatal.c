@@ -8,7 +8,7 @@
  * @file
  * @brief Kernel fatal error handler
  *
- * This module provides the _NanoFatalErrorHandler() routine.
+ * This module provides the z_NanoFatalErrorHandler() routine.
  */
 
 #include <toolchain.h>
@@ -43,9 +43,9 @@ static bool check_stack_bounds(u32_t addr, size_t size, u16_t cs)
 {
 	u32_t start, end;
 
-	if (_is_in_isr()) {
+	if (z_is_in_isr()) {
 		/* We were servicing an interrupt */
-		start = (u32_t)_ARCH_THREAD_STACK_BUFFER(_interrupt_stack);
+		start = (u32_t)Z_ARCH_THREAD_STACK_BUFFER(_interrupt_stack);
 		end = start + CONFIG_ISR_STACK_SIZE;
 	} else if ((cs & 0x3) != 0 ||
 		   (_current->base.user_options & K_USER) == 0) {
@@ -134,7 +134,7 @@ static void unwind_stack(u32_t base_ptr, u16_t cs)
  *
  * @return This function does not return.
  */
-FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
+FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
 {
 	LOG_PANIC();
@@ -208,10 +208,10 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	 * fatal error handling policy defined for the platform.
 	 */
 
-	_SysFatalErrorHandler(reason, pEsf);
+	z_SysFatalErrorHandler(reason, pEsf);
 }
 
-FUNC_NORETURN void _arch_syscall_oops(void *ssf_ptr)
+FUNC_NORETURN void z_arch_syscall_oops(void *ssf_ptr)
 {
 	struct _x86_syscall_stack_frame *ssf =
 		(struct _x86_syscall_stack_frame *)ssf_ptr;
@@ -225,14 +225,14 @@ FUNC_NORETURN void _arch_syscall_oops(void *ssf_ptr)
 		oops.esp = ssf->esp;
 	}
 
-	_NanoFatalErrorHandler(_NANO_ERR_KERNEL_OOPS, &oops);
+	z_NanoFatalErrorHandler(_NANO_ERR_KERNEL_OOPS, &oops);
 }
 
 #ifdef CONFIG_X86_KERNEL_OOPS
 FUNC_NORETURN void _do_kernel_oops(const NANO_ESF *esf)
 {
 	u32_t *stack_ptr = (u32_t *)esf->esp;
-	_NanoFatalErrorHandler(*stack_ptr, esf);
+	z_NanoFatalErrorHandler(*stack_ptr, esf);
 }
 
 extern void (*_kernel_oops_handler)(void);
@@ -242,7 +242,7 @@ NANO_CPU_INT_REGISTER(_kernel_oops_handler, NANO_SOFT_IRQ,
 #endif
 
 /*
- * Define a default ESF for use with _NanoFatalErrorHandler() in the event
+ * Define a default ESF for use with z_NanoFatalErrorHandler() in the event
  * the caller does not have a NANO_ESF to pass
  */
 const NANO_ESF _default_esf = {
@@ -280,7 +280,7 @@ static FUNC_NORETURN void generic_exc_handle(unsigned int vector,
 	if ((BIT(vector) & _EXC_ERROR_CODE_FAULTS) != 0) {
 		printk("***** Exception code: 0x%x\n", pEsf->errorCode);
 	}
-	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, pEsf);
+	z_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, pEsf);
 }
 
 #define _EXC_FUNC(vector) \
@@ -351,7 +351,7 @@ static void dump_mmu_flags(struct x86_mmu_pdpt *pdpt, void *addr)
 {
 	x86_page_entry_data_t pde_flags, pte_flags;
 
-	_x86_mmu_get_flags(pdpt, addr, &pde_flags, &pte_flags);
+	z_x86_mmu_get_flags(pdpt, addr, &pde_flags, &pte_flags);
 
 	printk("PDE: ");
 	dump_entry_flags(pde_flags);
@@ -414,10 +414,10 @@ void page_fault_handler(NANO_ESF *esf)
 #endif
 #ifdef CONFIG_THREAD_STACK_INFO
 	if (check_stack_bounds(esf->esp, 0, esf->cs)) {
-		_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, esf);
+		z_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, esf);
 	}
 #endif
-	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
+	z_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
 	CODE_UNREACHABLE;
 }
 _EXCEPTION_CONNECT_CODE(page_fault_handler, IV_PAGE_FAULT);
@@ -437,7 +437,7 @@ static FUNC_NORETURN __used void _df_handler_top(void);
 extern char z_trampoline_stack_end[];
 #endif
 
-_GENERIC_SECTION(.tss)
+Z_GENERIC_SECTION(.tss)
 struct task_state_segment _main_tss = {
 	.ss0 = DATA_SEG,
 #ifdef CONFIG_X86_KPTI
@@ -450,7 +450,7 @@ struct task_state_segment _main_tss = {
 };
 
 /* Special TSS for handling double-faults with a known good stack */
-_GENERIC_SECTION(.tss)
+Z_GENERIC_SECTION(.tss)
 struct task_state_segment _df_tss = {
 	.esp = (u32_t)(_df_stack + sizeof(_df_stack)),
 	.cs = CODE_SEG,
@@ -476,7 +476,7 @@ static FUNC_NORETURN __used void _df_handler_bottom(void)
 		reason = _NANO_ERR_STACK_CHK_FAIL;
 	}
 #endif
-	_NanoFatalErrorHandler(reason, (NANO_ESF *)&_df_esf);
+	z_NanoFatalErrorHandler(reason, (NANO_ESF *)&_df_esf);
 }
 
 static FUNC_NORETURN __used void _df_handler_top(void)
@@ -499,7 +499,7 @@ static FUNC_NORETURN __used void _df_handler_top(void)
 	_df_esf.eflags = _main_tss.eflags;
 
 	/* Restore the main IA task to a runnable state */
-	_main_tss.esp = (u32_t)(_ARCH_THREAD_STACK_BUFFER(_interrupt_stack) +
+	_main_tss.esp = (u32_t)(Z_ARCH_THREAD_STACK_BUFFER(_interrupt_stack) +
 				CONFIG_ISR_STACK_SIZE);
 	_main_tss.cs = CODE_SEG;
 	_main_tss.ds = DATA_SEG;

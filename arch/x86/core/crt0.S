@@ -20,7 +20,7 @@
 	GTEXT(__start)
 
 	/* externs */
-	GTEXT(_Cstart)
+	GTEXT(z_cstart)
 
 	GDATA(_idt_base_address)
 	GDATA(_interrupt_stack)
@@ -247,7 +247,7 @@ __csSet:
 	/*
 	 * Set the stack pointer to the area used for the interrupt stack.
 	 * Note this stack is used during the execution of __start() and
-	 * _Cstart() until the multi-tasking kernel is initialized.  The
+	 * z_cstart() until the multi-tasking kernel is initialized.  The
 	 * dual-purposing of this area of memory is safe since
 	 * interrupts are disabled until the first context switch.
 	 *
@@ -377,7 +377,7 @@ __csSet:
 
 	/* Jump to C portion of kernel initialization and never return */
 
-	jmp	_Cstart
+	jmp	z_cstart
 
 
 _x86_bss_zero:

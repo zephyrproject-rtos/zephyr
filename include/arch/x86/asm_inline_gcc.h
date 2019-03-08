@@ -68,7 +68,7 @@ static ALWAYS_INLINE unsigned int _do_irq_lock(void)
  * @return N/A
  */
 
-static ALWAYS_INLINE void _do_irq_unlock(void)
+static ALWAYS_INLINE void z_do_irq_unlock(void)
 {
 	__asm__ volatile (
 		"sti;\n\t"
@@ -180,7 +180,7 @@ static ALWAYS_INLINE unsigned int find_msb_set(u32_t op)
  *  @brief read timestamp register ensuring serialization
  */
 
-static inline u64_t _tsc_read(void)
+static inline u64_t z_tsc_read(void)
 {
 	union {
 		struct  {

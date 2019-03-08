@@ -59,6 +59,6 @@ aa_loop:
 
 	/*
 	 * Jump into C domain. _PrepC zeroes BSS, copies rw data into RAM,
-	 * and then enters kernel _Cstart
+	 * and then enters kernel z_cstart
 	 */
 	call _PrepC

@@ -54,10 +54,10 @@ struct _callee_saved {
 	/* Stack pointer */
 	u32_t sp;
 
-	/* IRQ status before irq_lock() and call to _Swap() */
+	/* IRQ status before irq_lock() and call to z_swap() */
 	u32_t key;
 
-	/* Return value of _Swap() */
+	/* Return value of z_swap() */
 	u32_t retval;
 };
 

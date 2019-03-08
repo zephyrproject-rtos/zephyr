@@ -8,7 +8,7 @@
  * @file
  * @brief Kernel fatal error handler for ARM Cortex-M
  *
- * This module provides the _NanoFatalErrorHandler() routine for ARM Cortex-M.
+ * This module provides the z_NanoFatalErrorHandler() routine for ARM Cortex-M.
  */
 
 #include <toolchain.h>
@@ -26,14 +26,14 @@
  *
  * This routine is called when fatal error conditions are detected by software
  * and is responsible only for reporting the error. Once reported, it then
- * invokes the user provided routine _SysFatalErrorHandler() which is
+ * invokes the user provided routine z_SysFatalErrorHandler() which is
  * responsible for implementing the error handling policy.
  *
  * The caller is expected to always provide a usable ESF. In the event that the
  * fatal error does not have a hardware generated ESF, the caller should either
  * create its own or use a pointer to the global default ESF <_default_esf>.
  *
- * Unlike other arches, this function may return if _SysFatalErrorHandler
+ * Unlike other arches, this function may return if z_SysFatalErrorHandler
  * determines that only the current thread should be aborted and the CPU
  * was in handler mode. PendSV will be asserted in this case and the current
  * thread taken off the run queue. Leaving the exception will immediately
@@ -44,7 +44,7 @@
  *
  * @return This function does not return.
  */
-void _NanoFatalErrorHandler(unsigned int reason,
+void z_NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *pEsf)
 {
 	LOG_PANIC();
@@ -89,15 +89,15 @@ void _NanoFatalErrorHandler(unsigned int reason,
 	 * decide.
 	 */
 
-	_SysFatalErrorHandler(reason, pEsf);
+	z_SysFatalErrorHandler(reason, pEsf);
 }
 
 void _do_kernel_oops(const NANO_ESF *esf)
 {
-	_NanoFatalErrorHandler(esf->r0, esf);
+	z_NanoFatalErrorHandler(esf->r0, esf);
 }
 
-FUNC_NORETURN void _arch_syscall_oops(void *ssf_ptr)
+FUNC_NORETURN void z_arch_syscall_oops(void *ssf_ptr)
 {
 	u32_t *ssf_contents = ssf_ptr;
 	NANO_ESF oops_esf = { 0 };

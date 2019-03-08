@@ -151,7 +151,7 @@ static u32_t reg_timer_cfg_save;
 #endif
 
 #ifdef CONFIG_JAILHOUSE_X2APIC
-void _jailhouse_eoi(void)
+void z_jailhouse_eoi(void)
 {
 	write_x2apic(LOAPIC_EOI >> 4, 0);
 }
@@ -420,7 +420,7 @@ void _set_time(u32_t time)
 	initial_count_register_set(programmed_cycles);
 }
 
-void _enable_sys_clock(void)
+void z_enable_sys_clock(void)
 {
 	if (!programmed_full_ticks) {
 		program_max_cycles();
@@ -764,13 +764,13 @@ int z_clock_device_ctrl(struct device *port, u32_t ctrl_command,
  *
  * @return up counter of elapsed clock cycles
  */
-u32_t _timer_cycle_get_32(void)
+u32_t z_timer_cycle_get_32(void)
 {
 #if CONFIG_TSC_CYCLES_PER_SEC != 0
 	u64_t tsc;
 
 	/* 64-bit math to avoid overflows */
-	tsc = _tsc_read() * (u64_t)sys_clock_hw_cycles_per_sec() /
+	tsc = z_tsc_read() * (u64_t)sys_clock_hw_cycles_per_sec() /
 		(u64_t) CONFIG_TSC_CYCLES_PER_SEC;
 	return (u32_t)tsc;
 #else

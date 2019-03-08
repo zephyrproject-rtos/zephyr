@@ -187,7 +187,7 @@ _thread_irq_disabled:
     push {r2,lr}
     ldr r0, =_kernel
     ldr r0, [r0, #_kernel_offset_to_current]
-    bl _arch_configure_dynamic_mpu_regions
+    bl z_arch_configure_dynamic_mpu_regions
     pop {r2,lr}
 #endif
 

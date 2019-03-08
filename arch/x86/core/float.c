@@ -88,7 +88,7 @@ static inline void _FpCtxInit(struct k_thread *thread)
  * Enable preservation of floating point context information.
  *
  * The transition from "non-FP supporting" to "FP supporting" must be done
- * atomically to avoid confusing the floating point logic used by _Swap(), so
+ * atomically to avoid confusing the floating point logic used by z_swap(), so
  * this routine locks interrupts to ensure that a context switch does not occur.
  * The locking isn't really needed when the routine is called by a cooperative
  * thread (since context switching can't occur), but it is harmless.
@@ -167,7 +167,7 @@ void k_float_enable(struct k_thread *thread, unsigned int options)
 			 *
 			 * The saved FP context is needed in case the thread
 			 * we enabled FP support for is currently pre-empted,
-			 * since _Swap() uses it to restore FP context when
+			 * since z_swap() uses it to restore FP context when
 			 * the thread re-activates.
 			 *
 			 * Saving the FP context reinits the FPU, and thus
@@ -187,7 +187,7 @@ void k_float_enable(struct k_thread *thread, unsigned int options)
  * Disable preservation of floating point context information.
  *
  * The transition from "FP supporting" to "non-FP supporting" must be done
- * atomically to avoid confusing the floating point logic used by _Swap(), so
+ * atomically to avoid confusing the floating point logic used by z_swap(), so
  * this routine locks interrupts to ensure that a context switch does not occur.
  * The locking isn't really needed when the routine is called by a cooperative
  * thread (since context switching can't occur), but it is harmless.

@@ -41,7 +41,7 @@ _xt_vpri_mask:     .word   0xFFFFFFFF    /* Virtual priority mask */
 
 /*
 -------------------------------------------------------------------------------
-  unsigned int _xt_ints_on ( unsigned int mask )
+  unsigned int z_xt_ints_on ( unsigned int mask )
 
   Enables a set of interrupts. Does not simply set INTENABLE directly, but
   computes it as a function of the current virtual priority.
@@ -51,10 +51,10 @@ _xt_vpri_mask:     .word   0xFFFFFFFF    /* Virtual priority mask */
 
 	.text
 	.align  4
-	.global _xt_ints_on
-	.type   _xt_ints_on,@function
+	.global z_xt_ints_on
+	.type   z_xt_ints_on,@function
 
-_xt_ints_on:
+z_xt_ints_on:
 
 	ENTRY0
 #if XCHAL_HAVE_INTERRUPTS
@@ -74,12 +74,12 @@ _xt_ints_on:
 #endif
 	RET0
 
-	.size   _xt_ints_on, . - _xt_ints_on
+	.size   z_xt_ints_on, . - z_xt_ints_on
 
 
 /*
 -------------------------------------------------------------------------------
-  unsigned int _xt_ints_off ( unsigned int mask )
+  unsigned int z_xt_ints_off ( unsigned int mask )
 
   Disables a set of interrupts. Does not simply set INTENABLE directly,
   but computes it as a function of the current virtual priority.
@@ -89,10 +89,10 @@ _xt_ints_on:
 
 	.text
 	.align  4
-	.global _xt_ints_off
-	.type   _xt_ints_off,@function
+	.global z_xt_ints_off
+	.type   z_xt_ints_off,@function
 
-_xt_ints_off:
+z_xt_ints_off:
 
 	ENTRY0
 #if XCHAL_HAVE_INTERRUPTS
@@ -113,6 +113,6 @@ _xt_ints_off:
 #endif
 	RET0
 
-	.size   _xt_ints_off, . - _xt_ints_off
+	.size   z_xt_ints_off, . - z_xt_ints_off
 
 

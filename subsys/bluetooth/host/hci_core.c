@@ -63,7 +63,7 @@ static K_THREAD_STACK_DEFINE(tx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static void init_work(struct k_work *work);
 
 struct bt_dev bt_dev = {
-	.init          = _K_WORK_INITIALIZER(init_work),
+	.init          = Z_WORK_INITIALIZER(init_work),
 	/* Give cmd_sem allowing to send first HCI_Reset cmd, the only
 	 * exception is if the controller requests to wait for an
 	 * initial Command Complete for NOP.

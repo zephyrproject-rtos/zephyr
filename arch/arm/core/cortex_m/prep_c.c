@@ -10,7 +10,7 @@
  *
  *
  * Initialization of full C support: zero the .bss, copy the .data if XIP,
- * call _Cstart().
+ * call z_cstart().
  *
  * Stack is available in this module, but not the global data/bss until their
  * initialization is performed.
@@ -92,7 +92,7 @@ static inline void relocate_vector_table(void)
 #else
 
 #if defined(CONFIG_SW_VECTOR_RELAY)
-_GENERIC_SECTION(.vt_pointer_section) void *_vector_table_pointer;
+Z_GENERIC_SECTION(.vt_pointer_section) void *_vector_table_pointer;
 #endif
 
 #define VECTOR_ADDRESS 0
@@ -151,7 +151,7 @@ static inline void enable_floating_point(void)
 }
 #endif
 
-extern FUNC_NORETURN void _Cstart(void);
+extern FUNC_NORETURN void z_cstart(void);
 /**
  *
  * @brief Prepare to and run C code
@@ -178,12 +178,12 @@ void _PrepC(void)
 	set_and_switch_to_psp();
 	relocate_vector_table();
 	enable_floating_point();
-	_bss_zero();
-	_data_copy();
+	z_bss_zero();
+	z_data_copy();
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	__start_time_stamp = 0U;
 #endif
 	_IntLibInit();
-	_Cstart();
+	z_cstart();
 	CODE_UNREACHABLE;
 }

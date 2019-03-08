@@ -265,7 +265,7 @@ struct can_driver_api {
 __syscall int can_send(struct device *dev, const struct zcan_frame *msg,
 		       s32_t timeout, can_tx_callback_t callback_isr);
 
-static inline int _impl_can_send(struct device *dev,
+static inline int z_impl_can_send(struct device *dev,
 				 const struct zcan_frame *msg,
 				 s32_t timeout, can_tx_callback_t callback_isr)
 {
@@ -340,7 +340,7 @@ static inline int can_write(struct device *dev, const u8_t *data, u8_t length,
 __syscall int can_attach_msgq(struct device *dev, struct k_msgq *msg_q,
 			      const struct zcan_filter *filter);
 
-static inline int _impl_can_attach_msgq(struct device *dev,
+static inline int z_impl_can_attach_msgq(struct device *dev,
 					struct k_msgq *msg_q,
 					const struct zcan_filter *filter)
 {
@@ -389,7 +389,7 @@ static inline int can_attach_isr(struct device *dev,
  */
 __syscall void can_detach(struct device *dev, int filter_id);
 
-static inline void _impl_can_detach(struct device *dev, int filter_id)
+static inline void z_impl_can_detach(struct device *dev, int filter_id)
 {
 	const struct can_driver_api *api = dev->driver_api;
 
@@ -409,7 +409,7 @@ static inline void _impl_can_detach(struct device *dev, int filter_id)
 __syscall int can_configure(struct device *dev, enum can_mode mode,
 			    u32_t bitrate);
 
-static inline int _impl_can_configure(struct device *dev, enum can_mode mode,
+static inline int z_impl_can_configure(struct device *dev, enum can_mode mode,
 				      u32_t bitrate)
 {
 	const struct can_driver_api *api = dev->driver_api;

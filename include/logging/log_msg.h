@@ -332,7 +332,7 @@ static inline union log_msg_chunk *log_msg_chunk_alloc(void)
  *
  *  @return Allocated chunk of NULL.
  */
-static inline struct log_msg *_log_msg_std_alloc(void)
+static inline struct log_msg *z_log_msg_std_alloc(void)
 {
 	struct  log_msg *msg = (struct  log_msg *)log_msg_chunk_alloc();
 
@@ -356,7 +356,7 @@ static inline struct log_msg *_log_msg_std_alloc(void)
  */
 static inline struct log_msg *log_msg_create_0(const char *str)
 {
-	struct log_msg *msg = _log_msg_std_alloc();
+	struct log_msg *msg = z_log_msg_std_alloc();
 
 	if (msg != NULL) {
 		msg->str = str;
@@ -381,7 +381,7 @@ static inline struct log_msg *log_msg_create_0(const char *str)
 static inline struct log_msg *log_msg_create_1(const char *str,
 					       u32_t arg1)
 {
-	struct  log_msg *msg = _log_msg_std_alloc();
+	struct  log_msg *msg = z_log_msg_std_alloc();
 
 	if (msg != NULL) {
 		msg->str = str;
@@ -410,7 +410,7 @@ static inline struct log_msg *log_msg_create_2(const char *str,
 					       u32_t arg1,
 					       u32_t arg2)
 {
-	struct  log_msg *msg = _log_msg_std_alloc();
+	struct  log_msg *msg = z_log_msg_std_alloc();
 
 	if (msg != NULL) {
 		msg->str = str;
@@ -442,7 +442,7 @@ static inline struct log_msg *log_msg_create_3(const char *str,
 					       u32_t arg2,
 					       u32_t arg3)
 {
-	struct  log_msg *msg = _log_msg_std_alloc();
+	struct  log_msg *msg = z_log_msg_std_alloc();
 
 	if (msg != NULL) {
 		msg->str = str;

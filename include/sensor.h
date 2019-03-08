@@ -281,7 +281,7 @@ __syscall int sensor_attr_set(struct device *dev,
 			      enum sensor_attribute attr,
 			      const struct sensor_value *val);
 
-static inline int _impl_sensor_attr_set(struct device *dev,
+static inline int z_impl_sensor_attr_set(struct device *dev,
 					enum sensor_channel chan,
 					enum sensor_attribute attr,
 					const struct sensor_value *val)
@@ -343,7 +343,7 @@ static inline int sensor_trigger_set(struct device *dev,
  */
 __syscall int sensor_sample_fetch(struct device *dev);
 
-static inline int _impl_sensor_sample_fetch(struct device *dev)
+static inline int z_impl_sensor_sample_fetch(struct device *dev)
 {
 	const struct sensor_driver_api *api = dev->driver_api;
 
@@ -372,7 +372,7 @@ static inline int _impl_sensor_sample_fetch(struct device *dev)
 __syscall int sensor_sample_fetch_chan(struct device *dev,
 				       enum sensor_channel type);
 
-static inline int _impl_sensor_sample_fetch_chan(struct device *dev,
+static inline int z_impl_sensor_sample_fetch_chan(struct device *dev,
 						 enum sensor_channel type)
 {
 	const struct sensor_driver_api *api = dev->driver_api;
@@ -405,7 +405,7 @@ __syscall int sensor_channel_get(struct device *dev,
 				 enum sensor_channel chan,
 				 struct sensor_value *val);
 
-static inline int _impl_sensor_channel_get(struct device *dev,
+static inline int z_impl_sensor_channel_get(struct device *dev,
 					   enum sensor_channel chan,
 					   struct sensor_value *val)
 {

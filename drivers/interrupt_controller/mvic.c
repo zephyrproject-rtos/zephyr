@@ -154,7 +154,7 @@ static int _mvic_init(struct device *unused)
 SYS_INIT(_mvic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 
-void _arch_irq_enable(unsigned int irq)
+void z_arch_irq_enable(unsigned int irq)
 {
 	if (irq == CONFIG_MVIC_TIMER_IRQ) {
 		sys_write32(sys_read32(MVIC_LVTTIMER) & ~MVIC_LVTTIMER_MASK,
@@ -165,7 +165,7 @@ void _arch_irq_enable(unsigned int irq)
 }
 
 
-void _arch_irq_disable(unsigned int irq)
+void z_arch_irq_disable(unsigned int irq)
 {
 	if (irq == CONFIG_MVIC_TIMER_IRQ) {
 		sys_write32(sys_read32(MVIC_LVTTIMER) | MVIC_LVTTIMER_MASK,
