@@ -12,7 +12,7 @@ with non-blocking sockets and a ``select()`` call. This is a variant of
 the :ref:`async-sockets-echo-sample` sample.
 
 The source code for this sample application can be found at:
-:file:`samples/net/sockets/echo_async_select`.
+:zephyr_file:`samples/net/sockets/echo_async_select`.
 
 Requirements
 ************

@@ -10,7 +10,7 @@ This sample app demonstrates use of a USB Communication Device Class (CDC)
 Abstract Control Model (ACM) driver provided by the Zephyr project.
 Received data from the serial port is echoed back to the same port
 provided by this driver.
-This sample can be found under :file:`samples/subsys/usb/cdc_acm` in the
+This sample can be found under :zephyr_file:`samples/subsys/usb/cdc_acm` in the
 Zephyr project tree.
 
 Requirements

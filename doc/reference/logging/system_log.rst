@@ -25,14 +25,14 @@ There are two configuration categories: configurations per module and global
 configurations. When logging is enabled globally, it works for modules. However,
 modules can disable logging locally. Every module can specify its own logging
 level. The module must define the :c:macro:`SYS_LOG_LEVEL` macro before
-including the :file:`include/logging/sys_log.h` header file to do so. Unless a global
+including the :zephyr_file:`include/logging/sys_log.h` header file to do so. Unless a global
 override is set, the module logging level will be honored. The global override
 can only increase the logging level. It cannot be used to lower module logging
 levels that were previously set higher.
 
 You can set a local domain to differentiate messages. When no domain is set,
 then the ``[general]`` domain appears before the message. Define the
-:c:macro:`SYS_LOG_DOMAIN` macro before including the :file:`include/logging/sys_log.h`
+:c:macro:`SYS_LOG_DOMAIN` macro before including the :zephyr_file:`include/logging/sys_log.h`
 header file to set the domain.
 
 When several macros are active, the printed messages can be differentiated in
@@ -41,7 +41,7 @@ two ways: by a tag printed before the message or by ANSI colors. See the
 Kconfig options for more information.
 
 Define the :c:macro:`SYS_LOG_NO_NEWLINE` macro before including the
-:file:`include/logging/sys_log.h` header file to prevent macros appending a new line at the
+:zephyr_file:`include/logging/sys_log.h` header file to prevent macros appending a new line at the
 end of the logging message.
 
 .. _global_kconfig:
@@ -49,7 +49,7 @@ end of the logging message.
 Global Kconfig Options
 **********************
 
-These options can be found in the following path :file:`subsys/logging/Kconfig`.
+These options can be found in the following path :zephyr_file:`subsys/logging/Kconfig`.
 
 :option:`CONFIG_SYS_LOG`: Global switch, turns on/off all system logging.
 

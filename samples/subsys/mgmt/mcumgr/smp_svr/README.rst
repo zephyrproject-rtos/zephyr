@@ -185,10 +185,10 @@ swapped into slot-0 by MCUboot.
 Build a second sample
 ---------------------
 
-Perhaps the easiest sample to test with is the :file:`samples/hello_world`
+Perhaps the easiest sample to test with is the :zephyr_file:`samples/hello_world`
 sample provided by Zephyr, documented in the :ref:`hello_world` section.
 
-Edit :file:`samples/hello_world/prj.conf` and enable the required MCUboot
+Edit :zephyr_file:`samples/hello_world/prj.conf` and enable the required MCUboot
 Kconfig option as described in :ref:`mcuboot` by adding the following line to
 it:
 

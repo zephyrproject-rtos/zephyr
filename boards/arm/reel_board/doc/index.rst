@@ -82,7 +82,7 @@ The mode is controlled by MODE pin (P1.00).
 .. note::
    Actually there is no possibility to reduce energy consumption by the
    Low Power mode. Both voltages are always on, see:
-   :file:`boards/arm/reel_board/board.c`
+   :zephyr_file:`boards/arm/reel_board/board.c`
 
 Supported Features
 ==================

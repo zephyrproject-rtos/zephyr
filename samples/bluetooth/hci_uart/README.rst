@@ -26,7 +26,7 @@ By default the controller builds use the following settings:
 Building and Running
 ********************
 
-This sample can be found under :file:`samples/bluetooth/hci_uart` in the
+This sample can be found under :zephyr_file:`samples/bluetooth/hci_uart` in the
 Zephyr tree, and it is built as a standard Zephyr application.
 
 Using the controller with QEMU and BlueZ

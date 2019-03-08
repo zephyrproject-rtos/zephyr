@@ -28,7 +28,7 @@ setup the system:
    then the user can optionally configure static IP addresses to be set to the
    first network interface in the system. Typically setting static IP addresses
    is only usable in testing and should not be used in production code. See
-   the config library Kconfig file :file:`subsys/net/lib/config/Kconfig`
+   the config library Kconfig file :zephyr_file:`subsys/net/lib/config/Kconfig`
    for specific options to set the static IP addresses."
    ":option:`CONFIG_NET_CONFIG_AUTO_INIT`", "The networking system is
    automatically configured when the device is started."

@@ -12,7 +12,7 @@ show how it's possible to develop a sockets application portable to both
 POSIX and Zephyr. As such, it is kept minimal and supports only IPv4 and TCP.
 
 The source code for this sample application can be found at:
-:file:`samples/net/sockets/echo`.
+:zephyr_file:`samples/net/sockets/echo`.
 
 Requirements
 ************

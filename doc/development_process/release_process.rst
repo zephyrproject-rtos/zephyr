@@ -248,12 +248,12 @@ Tagging
 Every time a release candidate (or the final release) needs to be tagged, the
 following steps need to be followed:
 
-#. Update the :file:`VERSION` file in the root of the Git repository. If it's a
+#. Update the :zephyr_file:`VERSION` file in the root of the Git repository. If it's a
 release candidate, use `EXTRAVERSION` variable::
 
     EXTRAVERSION = rc1
 
-#. Commit the update to the :file:`VERSION` file, use `release:` as a commit
+#. Commit the update to the :zephyr_file:`VERSION` file, use `release:` as a commit
    tag.
 #. Check that CI has completed successfully before tagging.
 #. Tag and push the version, using annotated tags:

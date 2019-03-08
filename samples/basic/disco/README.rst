@@ -29,4 +29,4 @@ in an alternating pattern.
 This project does not output to the serial console, but instead causes two LEDs
 connected to the GPIO device to blink in an alternating pattern.
 
-The sample can be found here: :file:`samples/basic/disco`.
+The sample can be found here: :zephyr_file:`samples/basic/disco`.

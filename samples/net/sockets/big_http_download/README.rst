@@ -15,7 +15,7 @@ transferred. Thus, it can serve as a "load testing" application for
 the Zephyr IP stack.
 
 The source code for this sample application can be found at:
-:file:`samples/net/sockets/big_http_download`.
+:zephyr_file:`samples/net/sockets/big_http_download`.
 
 Requirements
 ************

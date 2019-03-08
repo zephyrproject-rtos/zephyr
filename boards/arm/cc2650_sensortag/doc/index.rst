@@ -81,7 +81,7 @@ Connections and IOs
 
 The SensorTag has one GPIO controller, along with a flexible pin
 multiplexer. In practice, the pins are routed as described in
-:file:`boards/arm/cc2650_sensortag/board.h`; the most commonly used being:
+:zephyr_file:`boards/arm/cc2650_sensortag/board.h`; the most commonly used being:
 
 +----------------+---------------+----------------------+
 | Physical pin # | Digital I/O # | Signal               |
@@ -135,7 +135,7 @@ CCFG ("Customer Configuration" area). A 32-bit word in this area,
 pass control to your program. You can find more information on the CCFG
 in the `CC2650 reference manual`_, section 9.1. The current CC2650 port
 for Zephyr already does this by default; if you wish to check or modify
-the CCFG content, see :file:`soc/arm/ti_simplelink/cc2650/soc.c`.
+the CCFG content, see :zephyr_file:`soc/arm/ti_simplelink/cc2650/soc.c`.
 
 Building
 ========

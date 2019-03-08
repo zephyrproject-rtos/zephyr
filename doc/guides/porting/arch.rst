@@ -143,7 +143,7 @@ parameter.
   and ARM architectures via the :option:`CONFIG_GEN_ISR_TABLES` implementation.
   You can find examples of the stubs by looking at :code:`_interrupt_enter()` in
   x86, :code:`_IntExit()` in ARM, :code:`_isr_wrapper()` in ARM, or the full
-  implementation description for ARC in :file:`arch/arc/core/isr_wrapper.S`.
+  implementation description for ARC in :zephyr_file:`arch/arc/core/isr_wrapper.S`.
 
 Each architecture also has to implement primitives for interrupt control:
 
@@ -163,7 +163,7 @@ we strongly suggest that handlers at least print some debug information. The
 information helps figuring out what went wrong when hitting an exception that
 is a fault, like divide-by-zero or invalid memory access, or an interrupt that
 is not expected (:dfn:`spurious interrupt`). See the ARM implementation in
-:file:`arch/arm/core/fault.c` for an example.
+:zephyr_file:`arch/arm/core/fault.c` for an example.
 
 Thread Context Switching
 ************************
@@ -302,7 +302,7 @@ gracefully exits its entry point function.
 This means implementing an architecture-specific version of
 :c:func:`k_thread_abort`, and setting the Kconfig option
 :option:`CONFIG_ARCH_HAS_THREAD_ABORT` as needed for the architecture (e.g. see
-:file:`arch/arm//core/cortex_m/Kconfig`).
+:zephyr_file:`arch/arm//core/cortex_m/Kconfig`).
 
 Device Drivers
 **************
@@ -457,7 +457,7 @@ Toolchain and Linking
 
 Toolchain support has to be added to the build system.
 
-Some architecture-specific definitions are needed in :file:`include/toolchain/gcc.h`.
+Some architecture-specific definitions are needed in :zephyr_file:`include/toolchain/gcc.h`.
 See what exists in that file for currently supported architectures.
 
 Each architecture also needs its own linker script, even if most sections can

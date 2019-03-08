@@ -39,7 +39,7 @@ time filtering is independent for each backend and each source of log messages.
 Source of log messages can be a module or specific instance of the module.
 
 There are four severity levels available in the system: error, warning, info
-and debug. For each severity level the logger API (:file:`include/logging/log.h`)
+and debug. For each severity level the logger API (:zephyr_file:`include/logging/log.h`)
 has set of dedicated macros. Logger API also has macros for logging data.
 
 For each level following set of macros are available:
@@ -82,7 +82,7 @@ arguments. Hexdump message contains copied data.
 Global Kconfig Options
 **********************
 
-These options can be found in the following path :file:`subsys/logging/Kconfig`.
+These options can be found in the following path :zephyr_file:`subsys/logging/Kconfig`.
 
 :option:`CONFIG_LOG`: Global switch, turns on/off the logger.
 
@@ -204,7 +204,7 @@ provided.
    	LOG_INF("foo");
    }
 
-Dedicated Kconfig template (:file:`subsys/logging/Kconfig.template.log_config`)
+Dedicated Kconfig template (:zephyr_file:`subsys/logging/Kconfig.template.log_config`)
 can be used to create local log level configuration.
 
 Example below presents usage of the template. As a result CONFIG_FOO_LOG_LEVEL
@@ -280,7 +280,7 @@ Controlling the logger
 ======================
 
 Logger can be controlled using API defined in
-:file:`include/logging/log_ctrl.h`. Logger must be initialized before it can be
+:zephyr_file:`include/logging/log_ctrl.h`. Logger must be initialized before it can be
 used. Optionally, user can provide function which returns timestamp value. If
 not provided, :c:macro:`k_cycle_get_32` is used for timestamping.
 :cpp:func:`log_process` function is used to trigger processing of one log
@@ -450,7 +450,7 @@ Once message is processed, backend puts back the message
 :cpp:func:`log_msg_put`, when reference counter reaches 0, message is returned
 to the pool. It is up to the backend how message is processed. If backend
 intends to format message into the string, helper function for that are
-available in :file:`include/logging/log_output.h`.
+available in :zephyr_file:`include/logging/log_output.h`.
 
 Example message formatted using :cpp:func:`log_output_msg_process`.
 

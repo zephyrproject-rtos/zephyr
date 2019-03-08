@@ -19,7 +19,7 @@ and establishes a connection to an LwM2M server using the
     http://www.openmobilealliance.org/release/LightweightM2M/V1_0-20170208-A/OMA-TS-LightweightM2M-V1_0-20170208-A.pdf
 
 The source code for this sample application can be found at:
-:file:`samples/net/lwm2m_client`.
+:zephyr_file:`samples/net/lwm2m_client`.
 
 Requirements
 ************

@@ -708,7 +708,7 @@ these additional steps must be followed:
 
 #. Complete a README for your code component and add it to your source
    code pull request (PR).  A recommended README template can be found in
-   :file:`doc/contribute/code_component_README` (and included
+   :zephyr_file:`doc/contribute/code_component_README` (and included
    `below`_ for reference)
 
 #. The Zephyr Technical Steering Committee (TSC) will evaluate the code

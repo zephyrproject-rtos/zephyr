@@ -12,11 +12,11 @@ Overview
 
 The L2 stack is designed to hide the whole networking link-layer part
 and the related device drivers from the upper network stack. This is made
-through a :c:type:`struct net_if` declared in :file:`include/net/net_if.h`.
+through a :c:type:`struct net_if` declared in :zephyr_file:`include/net/net_if.h`.
 
 The upper layers are unaware of implementation details beyond the net_if
 object and the generic API provided by the L2 layer in
-:file:`include/net/net_l2.h` as :c:type:`struct net_l2`.
+:zephyr_file:`include/net/net_l2.h` as :c:type:`struct net_l2`.
 
 Only the L2 layer can talk to the device driver, linked to the net_if
 object. The L2 layer dictates the API provided by the device driver,
@@ -117,7 +117,7 @@ here as well.  There are two specific differences however:
   ieee802154_radio_api`, which overloads :c:type:`struct
   net_if_api`. This is because 802.15.4 L2 needs more from the device
   driver than just ``send()`` and ``recv()`` functions.  This dedicated API is
-  declared in :file:`include/net/ieee802154_radio.h`. Each and every IEEE
+  declared in :zephyr_file:`include/net/ieee802154_radio.h`. Each and every IEEE
   802.15.4 device driver must provide a valid pointer on such
   relevantly filled-in API structure.
 

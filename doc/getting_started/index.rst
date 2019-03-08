@@ -294,13 +294,13 @@ build target from an initialized build directory to get a list.
       :board: reel_board
       :goals: build
 
-The main build products are in :file:`zephyr/samples/hello_world/build/zephyr`.
+The main build products are in :file:`samples/hello_world/build/zephyr`.
 The final application binary in ELF format is named :file:`zephyr.elf` by
 default. Other binary formats and byproducts such as disassembly and map files
 will be present depending on the target and build system configuration.
 
 Other sample projects demonstrating Zephyr's features are located in
-:file:`zephyr/samples` and are documented in :ref:`samples-and-demos`.
+:zephyr_file:`samples` and are documented in :ref:`samples-and-demos`.
 
 Run the Application by Flashing to a Board
 ==========================================

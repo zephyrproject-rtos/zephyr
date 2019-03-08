@@ -14,7 +14,7 @@ supporting both IPv4 and IPv6 with concurrent connections, limiting
 maximum number of simultaneous connections, and basic error handling.
 
 The source code for this sample application can be found at:
-:file:`samples/net/sockets/echo_async`.
+:zephyr_file:`samples/net/sockets/echo_async`.
 
 Requirements
 ************
