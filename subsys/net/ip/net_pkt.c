@@ -1861,6 +1861,7 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 #endif
 {
 	u32_t alloc_start = k_uptime_get_32();
+	struct net_buf_pool *pool = NULL;
 	size_t alloc_len = 0;
 	size_t hdr_len = 0;
 	struct net_buf *buf;
@@ -1890,6 +1891,14 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 	NET_DBG("Data allocation maximum size %zu (requested %zu)",
 		alloc_len, size);
 
+	if (pkt->context) {
+		pool = get_data_pool(pkt->context);
+	}
+
+	if (!pool) {
+		pool = pkt->slab == &tx_pkts ? &tx_bufs : &rx_bufs;
+	}
+
 	if (timeout != K_NO_WAIT && timeout != K_FOREVER) {
 		u32_t diff = k_uptime_get_32() - alloc_start;
 
@@ -1897,14 +1906,9 @@ int net_pkt_alloc_buffer(struct net_pkt *pkt,
 	}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	buf = pkt_alloc_buffer(pkt->slab == &tx_pkts ?
-			       &tx_bufs : &rx_bufs,
-			       alloc_len, timeout,
-			       caller, line);
+	buf = pkt_alloc_buffer(pool, alloc_len, timeout, caller, line);
 #else
-	buf = pkt_alloc_buffer(pkt->slab == &tx_pkts ?
-			       &tx_bufs : &rx_bufs,
-			       alloc_len, timeout);
+	buf = pkt_alloc_buffer(pool, alloc_len, timeout);
 #endif
 
 	if (!buf) {
@@ -1957,7 +1961,6 @@ static struct net_pkt *pkt_alloc(struct k_mem_slab *slab, s32_t timeout)
 	return pkt;
 }
 
-
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 struct net_pkt *net_pkt_alloc_debug(s32_t timeout,
 				    const char *caller, int line)
@@ -1969,6 +1972,26 @@ struct net_pkt *net_pkt_alloc(s32_t timeout)
 	return pkt_alloc(&tx_pkts, timeout, caller, line);
 #else
 	return pkt_alloc(&tx_pkts, timeout);
+#endif
+}
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+struct net_pkt *net_pkt_alloc_from_slab_debug(struct k_mem_slab *slab,
+					      s32_t timeout,
+					      const char *caller, int line)
+#else
+struct net_pkt *net_pkt_alloc_from_slab(struct k_mem_slab *slab,
+					s32_t timeout)
+#endif
+{
+	if (!slab) {
+		return NULL;
+	}
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+	return pkt_alloc(slab, timeout, caller, line);
+#else
+	return pkt_alloc(slab, timeout);
 #endif
 }
 
