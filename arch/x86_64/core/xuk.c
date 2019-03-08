@@ -108,7 +108,7 @@ __asm__(".align 16\n"
 	"    push %r11\n"
 	"    mov %rsp, %r8\n"
 	"    sub $48, %r8\n"
-#ifdef CONFIG_XUK_64_BIT_ABI
+#ifdef XUK_64_BIT_ABI
 	"    movq %r8, (%rdx)\n"
 #else
 	"    movl %r8d, (%rdx)\n"
