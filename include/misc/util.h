@@ -94,7 +94,7 @@ constexpr size_t ARRAY_SIZE(T(&)[N]) { return N; }
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #endif
 
-static inline int is_power_of_two(unsigned int x)
+static inline bool is_power_of_two(unsigned int x)
 {
 	return (x != 0) && !(x & (x - 1));
 }

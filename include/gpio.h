@@ -165,7 +165,7 @@ static inline int z_impl_gpio_enable_callback(struct device *port,
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
 
-	if (!api->enable_callback) {
+	if (api->enable_callback == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -181,7 +181,7 @@ static inline int z_impl_gpio_disable_callback(struct device *port,
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
 
-	if (!api->disable_callback) {
+	if (api->disable_callback == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -268,7 +268,7 @@ static inline int gpio_add_callback(struct device *port,
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
 
-	if (!api->manage_callback) {
+	if (api->manage_callback == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -297,7 +297,7 @@ static inline int gpio_remove_callback(struct device *port,
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)port->driver_api;
 
-	if (!api->manage_callback) {
+	if (api->manage_callback == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -428,7 +428,7 @@ static inline int z_impl_gpio_get_pending_int(struct device *dev)
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)dev->driver_api;
 
-	if (!api->get_pending_int) {
+	if (api->get_pending_int == NULL) {
 		return -ENOTSUP;
 	}
 

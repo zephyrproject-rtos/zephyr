@@ -101,7 +101,7 @@ __deprecated static inline int rtc_set_config(struct device *dev,
 	err = counter_set_top_value(dev, cfg->alarm_val,
 				    rtc_counter_top_callback, cfg->cb_fn);
 
-	if (!err && cfg->alarm_enable) {
+	if (err == 0 && cfg->alarm_enable != 0) {
 		err = counter_start(dev);
 	}
 

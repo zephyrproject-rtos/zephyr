@@ -219,13 +219,13 @@ extern "C" {
 				.source_id = _id			    \
 			};						    \
 									    \
-			if (BIT(_level) & LOG_FUNCTION_PREFIX_MASK) {	\
+			if ((BIT(_level) & LOG_FUNCTION_PREFIX_MASK) != 0) {\
 				__LOG_INTERNAL(src_level,		    \
 						Z_LOG_STR(__VA_ARGS__));	    \
 			} else {					    \
 				__LOG_INTERNAL(src_level, __VA_ARGS__);	    \
 			}						    \
-		} else if (0) {						    \
+		} else if (false) {					    \
 			/* Arguments checker present but never evaluated.*/ \
 			/* Placed here to ensure that __VA_ARGS__ are*/     \
 			/* evaluated once when log is enabled.*/	    \

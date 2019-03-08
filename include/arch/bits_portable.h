@@ -29,7 +29,7 @@
 
 static ALWAYS_INLINE unsigned int find_msb_set(u32_t op)
 {
-	if (!op) {
+	if (op == 0) {
 		return 0;
 	}
 
