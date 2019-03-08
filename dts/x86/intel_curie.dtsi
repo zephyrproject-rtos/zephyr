@@ -109,7 +109,7 @@
 
 		usb_cdc: virtualcom {
 			compatible = "intel,qmsi-usb";
-			label = "CDC_ACM";
+			label = "CDC_ACM_0";
 		};
 
 		i2c0: i2c@b0002800 {
