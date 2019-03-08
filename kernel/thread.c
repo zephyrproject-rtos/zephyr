@@ -338,6 +338,11 @@ static inline size_t adjust_stack_size(size_t stack_size)
 
 #endif /* CONFIG_STACK_POINTER_RANDOM */
 
+/*
+ * Note:
+ * The caller must guarantee that the stack_size passed here corresponds
+ * to the amount of stack memory available for the thread.
+ */
 void _setup_new_thread(struct k_thread *new_thread,
 		       k_thread_stack_t *stack, size_t stack_size,
 		       k_thread_entry_t entry,
