@@ -81,6 +81,7 @@ endforeach()
 
 # Load toolchain_cc-family macros
 # Significant overlap with freestanding gcc compiler so reuse it
+include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_freestanding.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_fortify.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_security_canaries.cmake)
 include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_optimizations.cmake)

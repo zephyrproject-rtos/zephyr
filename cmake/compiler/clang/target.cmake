@@ -79,3 +79,8 @@ include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_baremetal.cmake)
 macro(toolchain_cc_security_fortify)
   # No op, clang doesn't understand fortify at all
 endmacro()
+
+macro(toolchain_cc_no_freestanding_options)
+  # No op, this is used by the native_posix, clang has problems
+  # compiling the native_posix with -fno-freestanding.
+endmacro()
