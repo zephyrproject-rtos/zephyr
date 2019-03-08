@@ -85,10 +85,7 @@ static inline int socket_can_setsockopt(struct device *dev, void *obj,
 		return -1;
 	}
 
-	if (optlen != sizeof(struct can_filter)) {
-		errno = EINVAL;
-		return -1;
-	}
+	__ASSERT_NO_MSG(optlen == sizeof(struct zcan_filter));
 
 	ret = can_attach_msgq(socket_context->can_dev, socket_context->msgq,
 			      optval);
