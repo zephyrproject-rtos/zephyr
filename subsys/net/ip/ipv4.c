@@ -164,6 +164,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	union net_proto_header proto_hdr;
 	struct net_ipv4_hdr *hdr;
 	union net_ip_header ip;
+	u8_t hdr_len;
 	int pkt_len;
 
 	net_stats_update_ipv4_recv(net_pkt_iface(pkt));
@@ -173,6 +174,14 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		NET_DBG("DROP: no buffer");
 		goto drop;
 	}
+
+	hdr_len = (hdr->vhl & NET_IPV4_IHL_MASK) * 4;
+	if (hdr_len < sizeof(struct net_ipv4_hdr)) {
+		NET_DBG("DROP: Invalid hdr length");
+		goto drop;
+	}
+
+	net_pkt_set_ip_hdr_len(pkt, hdr_len);
 
 	pkt_len = ntohs(hdr->len);
 	if (real_len < pkt_len) {
@@ -210,16 +219,23 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		goto drop;
 	}
 
-	NET_DBG("IPv4 packet received from %s to %s",
-		log_strdup(net_sprint_ipv4_addr(&hdr->src)),
-		log_strdup(net_sprint_ipv4_addr(&hdr->dst)));
+	net_pkt_acknowledge_data(pkt, &ipv4_access);
 
-	net_pkt_set_ip_hdr_len(pkt, sizeof(struct net_ipv4_hdr));
+	if (hdr_len > sizeof(struct net_ipv4_hdr)) {
+		/* There are probably options, let's skip them */
+		if (net_pkt_skip(pkt, hdr_len - sizeof(struct net_ipv4_hdr))) {
+			NET_DBG("Header too big? %u", hdr_len);
+			goto drop;
+		}
+	}
+
 	net_pkt_set_ipv4_ttl(pkt, hdr->ttl);
 
 	net_pkt_set_family(pkt, PF_INET);
 
-	net_pkt_acknowledge_data(pkt, &ipv4_access);
+	NET_DBG("IPv4 packet received from %s to %s",
+		log_strdup(net_sprint_ipv4_addr(&hdr->src)),
+		log_strdup(net_sprint_ipv4_addr(&hdr->dst)));
 
 	switch (hdr->proto) {
 	case IPPROTO_ICMP:
