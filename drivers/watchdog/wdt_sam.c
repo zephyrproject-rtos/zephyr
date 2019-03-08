@@ -241,7 +241,7 @@ static void wdt_sam_irq_config(void)
 
 static int wdt_sam_init(struct device *dev)
 {
-#ifdef CONFIG_WDT_SAM_DISABLE_AT_BOOT
+#ifdef CONFIG_WDT_DISABLE_AT_BOOT
 	wdt_sam_disable(dev);
 #endif
 

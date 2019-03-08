@@ -12,10 +12,3 @@ menuconfig WDT_SAM
 	default y
 	help
 	  Enable WDT driver for Atmel SAM MCUs.
-
-config WDT_SAM_DISABLE_AT_BOOT
-	bool "Disable WDT during boot"
-	depends on WDT_SAM
-	default y
-	help
-	  Select this option to disable the WDT during boot.
