@@ -26,6 +26,7 @@
 #include <sys_io.h>
 #include <misc/__assert.h>
 #include <misc/slist.h>
+#include <misc/speculation.h>
 
 #include "gpio_utils.h"
 
@@ -204,6 +205,7 @@ static int gpio_intel_apl_config(struct device *dev, int access_op,
 	if (pin > cfg->num_pins) {
 		return -EINVAL;
 	}
+	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
@@ -294,6 +296,7 @@ static int gpio_intel_apl_write(struct device *dev, int access_op,
 	if (pin > cfg->num_pins) {
 		return -EINVAL;
 	}
+	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
@@ -329,6 +332,7 @@ static int gpio_intel_apl_read(struct device *dev, int access_op,
 	if (pin > cfg->num_pins) {
 		return -EINVAL;
 	}
+	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
@@ -372,6 +376,7 @@ static int gpio_intel_apl_enable_callback(struct device *dev,
 	if (pin > cfg->num_pins) {
 		return -EINVAL;
 	}
+	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
@@ -403,6 +408,7 @@ static int gpio_intel_apl_disable_callback(struct device *dev,
 	if (pin > cfg->num_pins) {
 		return -EINVAL;
 	}
+	pin = k_array_index_sanitize(pin, cfg->num_pins + 1);
 
 	raw_pin = cfg->pin_offset + pin;
 
