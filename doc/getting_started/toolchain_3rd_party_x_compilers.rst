@@ -40,7 +40,7 @@ GNU ARM Embedded
    The "GNU MCU Eclipse ARM Embedded GCC" release is functionally
    equivalent to the official GNU Arm Embedded Toolchain distribution,
    by ARM. But the Eclipse release is recommended over the official
-   release because historically it has been swifter at releasing
+   release because historically it has been faster releasing
    bugfixes and also been built to compile faster.
 
 Intel ISSM
