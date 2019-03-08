@@ -73,8 +73,8 @@ void sys_power_state_post_ops(enum power_states state)
 	case SYS_POWER_STATE_LOW_POWER_2:
 		{
 			/* Expire the timer as it is disabled in SS2. */
-			u32_t limit = _arc_v2_aux_reg_read(_ARC_V2_TMR0_LIMIT);
-			_arc_v2_aux_reg_write(_ARC_V2_TMR0_COUNT, limit - 1);
+			u32_t limit = z_arc_v2_aux_reg_read(_ARC_V2_TMR0_LIMIT);
+			z_arc_v2_aux_reg_write(_ARC_V2_TMR0_COUNT, limit - 1);
 		}
 	case SYS_POWER_STATE_LOW_POWER_1:
 		__builtin_arc_seti(0);

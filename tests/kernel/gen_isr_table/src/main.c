@@ -11,7 +11,7 @@
 
 extern u32_t _irq_vector_table[];
 
-#if defined(_ARCH_IRQ_DIRECT_CONNECT) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
+#if defined(Z_ARCH_IRQ_DIRECT_CONNECT) && defined(CONFIG_GEN_IRQ_VECTOR_TABLE)
 #define HAS_DIRECT_IRQS
 #endif
 
@@ -68,7 +68,7 @@ void trigger_irq(int irq)
 #elif defined(CONFIG_CPU_ARCV2)
 void trigger_irq(int irq)
 {
-	_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, irq);
+	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, irq);
 }
 #else
 /* So far, Nios II does not support this */

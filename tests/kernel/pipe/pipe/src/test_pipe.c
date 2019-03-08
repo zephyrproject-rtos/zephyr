@@ -675,7 +675,7 @@ void pipe_put_get_timeout(void)
 
 /******************************************************************************/
 ZTEST_BMEM bool valid_fault;
-void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
+void z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 {
 	printk("Caught system error -- reason %d\n", reason);
 	if (valid_fault) {

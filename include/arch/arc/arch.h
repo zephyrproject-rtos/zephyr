@@ -83,23 +83,23 @@ extern "C" {
 
 #if CONFIG_ARC_MPU_VER == 2
 
-#define _ARCH_THREAD_STACK_DEFINE(sym, size) \
+#define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit \
 		__aligned(POW2_CEIL(STACK_SIZE_ALIGN(size))) \
 		sym[POW2_CEIL(STACK_SIZE_ALIGN(size)) + \
 		+  STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE]
 
-#define _ARCH_THREAD_STACK_LEN(size) \
+#define Z_ARCH_THREAD_STACK_LEN(size) \
 	    (POW2_CEIL(STACK_SIZE_ALIGN(size)) + \
 	     MAX(POW2_CEIL(STACK_SIZE_ALIGN(size)), \
 		 POW2_CEIL(STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE)))
 
-#define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+#define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __noinit \
 		__aligned(POW2_CEIL(STACK_SIZE_ALIGN(size))) \
-		sym[nmemb][_ARCH_THREAD_STACK_LEN(size)]
+		sym[nmemb][Z_ARCH_THREAD_STACK_LEN(size)]
 
-#define _ARCH_THREAD_STACK_MEMBER(sym, size) \
+#define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element \
 		__aligned(POW2_CEIL(STACK_SIZE_ALIGN(size))) \
 		sym[POW2_CEIL(size) + \
@@ -107,50 +107,50 @@ extern "C" {
 
 #elif CONFIG_ARC_MPU_VER == 3
 
-#define _ARCH_THREAD_STACK_DEFINE(sym, size) \
+#define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
 		sym[size + \
 		+ STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE]
 
-#define _ARCH_THREAD_STACK_LEN(size) \
+#define Z_ARCH_THREAD_STACK_LEN(size) \
 		((size) + STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE)
 
-#define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+#define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
-		sym[nmemb][_ARCH_THREAD_STACK_LEN(size)]
+		sym[nmemb][Z_ARCH_THREAD_STACK_LEN(size)]
 
-#define _ARCH_THREAD_STACK_MEMBER(sym, size) \
+#define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element __aligned(STACK_ALIGN) \
 		sym[size + \
 		+ STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE]
 
 #endif /* CONFIG_ARC_MPU_VER */
 
-#define _ARCH_THREAD_STACK_SIZEOF(sym) \
+#define Z_ARCH_THREAD_STACK_SIZEOF(sym) \
 		(sizeof(sym) - CONFIG_PRIVILEGED_STACK_SIZE - STACK_GUARD_SIZE)
 
-#define _ARCH_THREAD_STACK_BUFFER(sym) \
+#define Z_ARCH_THREAD_STACK_BUFFER(sym) \
 		((char *)(sym))
 
 #else /* CONFIG_USERSPACE */
 
-#define _ARCH_THREAD_STACK_DEFINE(sym, size) \
+#define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
 		sym[size + STACK_GUARD_SIZE]
 
-#define _ARCH_THREAD_STACK_LEN(size) ((size) + STACK_GUARD_SIZE)
+#define Z_ARCH_THREAD_STACK_LEN(size) ((size) + STACK_GUARD_SIZE)
 
-#define _ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
+#define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
-		sym[nmemb][_ARCH_THREAD_STACK_LEN(size)]
+		sym[nmemb][Z_ARCH_THREAD_STACK_LEN(size)]
 
-#define _ARCH_THREAD_STACK_MEMBER(sym, size) \
+#define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element __aligned(STACK_ALIGN) \
 		sym[size + STACK_GUARD_SIZE]
 
-#define _ARCH_THREAD_STACK_SIZEOF(sym) (sizeof(sym) - STACK_GUARD_SIZE)
+#define Z_ARCH_THREAD_STACK_SIZEOF(sym) (sizeof(sym) - STACK_GUARD_SIZE)
 
-#define _ARCH_THREAD_STACK_BUFFER(sym) ((char *)(sym + STACK_GUARD_SIZE))
+#define Z_ARCH_THREAD_STACK_BUFFER(sym) ((char *)(sym + STACK_GUARD_SIZE))
 
 #endif /* CONFIG_USERSPACE */
 

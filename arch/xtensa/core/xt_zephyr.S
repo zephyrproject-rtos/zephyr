@@ -34,7 +34,7 @@ _zxt_dispatch:
 	bnez a2, .L_frxt_dispatch_stk
 
 .L_frxt_dispatch_sol:
-	/* Solicited stack frame. Restore retval from _Swap */
+	/* Solicited stack frame. Restore retval from z_swap */
 	l32i a2, a3, THREAD_OFFSET(retval)
 	l32i a3, sp, XT_SOL_ps
 
@@ -71,9 +71,9 @@ _zxt_dispatch:
 #endif
 #ifdef CONFIG_STACK_SENTINEL
 #ifdef __XTENSA_CALL0_ABI__
-	call0 _check_stack_sentinel
+	call0 z_check_stack_sentinel
 #else
-	call4 _check_stack_sentinel
+	call4 z_check_stack_sentinel
 #endif
 #endif
 	/*
@@ -341,10 +341,10 @@ _zxt_tick_timer_init:
 	*/
 #ifdef __XTENSA_CALL0_ABI__
 	movi a2, XT_TIMER_INTEN
-	call0  _xt_ints_on
+	call0  z_xt_ints_on
 #else
 	movi a6, XT_TIMER_INTEN
-	call4 _xt_ints_on
+	call4 z_xt_ints_on
 #endif
 
 #endif

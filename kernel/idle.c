@@ -61,7 +61,7 @@ static void set_kernel_idle_time_in_ticks(s32_t ticks)
 
 static void sys_power_save_idle(void)
 {
-	s32_t ticks = _get_next_timeout_expiry();
+	s32_t ticks = z_get_next_timeout_expiry();
 
 	/* The documented behavior of CONFIG_TICKLESS_IDLE_THRESH is
 	 * that the system should not enter a tickless idle for
@@ -102,7 +102,7 @@ static void sys_power_save_idle(void)
 }
 #endif
 
-void _sys_power_save_idle_exit(s32_t ticks)
+void z_sys_power_save_idle_exit(s32_t ticks)
 {
 #if defined(CONFIG_SYS_POWER_LOW_POWER_STATES)
 	/* Some CPU low power states require notification at the ISR

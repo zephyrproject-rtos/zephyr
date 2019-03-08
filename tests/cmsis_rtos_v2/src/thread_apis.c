@@ -254,7 +254,7 @@ void test_thread_prio(void)
 static void thread5(void *argument)
 {
 	printk(" * Thread B started.\n");
-	osDelay(_ms_to_ticks(DELAY_MS));
+	osDelay(z_ms_to_ticks(DELAY_MS));
 	printk(" * Thread B joining...\n");
 }
 
@@ -319,13 +319,13 @@ void test_thread_detached(void)
 	thread = osThreadNew(thread5, NULL, NULL); /* osThreadDetached */
 	zassert_not_null(thread, "Failed to create thread with osThreadNew!");
 
-	osDelay(_ms_to_ticks(DELAY_MS - DELTA_MS));
+	osDelay(z_ms_to_ticks(DELAY_MS - DELTA_MS));
 
 	status = osThreadJoin(thread);
 	zassert_equal(status, osErrorResource,
 		      "Incorrect status returned from osThreadJoin!");
 
-	osDelay(_ms_to_ticks(DELTA_MS));
+	osDelay(z_ms_to_ticks(DELTA_MS));
 }
 
 void thread6(void *argument)
@@ -352,12 +352,12 @@ void test_thread_joinable_detach(void)
 	tB = osThreadNew(thread6, tA, &attr);
 	zassert_not_null(tB, "Failed to create thread with osThreadNew!");
 
-	osDelay(_ms_to_ticks(DELAY_MS - DELTA_MS));
+	osDelay(z_ms_to_ticks(DELAY_MS - DELTA_MS));
 
 	status = osThreadDetach(tA);
 	zassert_equal(status, osOK, "osThreadDetach failed.");
 
-	osDelay(_ms_to_ticks(DELTA_MS));
+	osDelay(z_ms_to_ticks(DELTA_MS));
 }
 
 void test_thread_joinable_terminate(void)
@@ -374,10 +374,10 @@ void test_thread_joinable_terminate(void)
 	tB = osThreadNew(thread6, tA, &attr);
 	zassert_not_null(tB, "Failed to create thread with osThreadNew!");
 
-	osDelay(_ms_to_ticks(DELAY_MS - DELTA_MS));
+	osDelay(z_ms_to_ticks(DELAY_MS - DELTA_MS));
 
 	status = osThreadTerminate(tA);
 	zassert_equal(status, osOK, "osThreadTerminate failed.");
 
-	osDelay(_ms_to_ticks(DELTA_MS));
+	osDelay(z_ms_to_ticks(DELTA_MS));
 }

@@ -15,13 +15,13 @@ void _thread_entry_wrapper(k_thread_entry_t thread,
 			   void *arg2,
 			   void *arg3);
 
-void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		 size_t stack_size, k_thread_entry_t thread_func,
 		 void *arg1, void *arg2, void *arg3,
 		 int priority, unsigned int options)
 {
 	char *stack_memory = K_THREAD_STACK_BUFFER(stack);
-	_ASSERT_VALID_PRIO(priority, thread_func);
+	Z_ASSERT_VALID_PRIO(priority, thread_func);
 
 	struct __esf *stack_init;
 

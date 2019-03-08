@@ -8,7 +8,7 @@
 #include <spinlock.h>
 #include <arch/arm/cortex_m/cmsis.h>
 
-void _ExcExit(void);
+void z_ExcExit(void);
 
 /* Minimum cycles in the future to try to program. */
 #define MIN_DELAY 512
@@ -61,7 +61,7 @@ void z_clock_isr(void *arg)
 	ctrl_cache = 0U;
 
 	z_clock_announce(TICKLESS ? dticks : 1);
-	_ExcExit();
+	z_ExcExit();
 }
 
 int z_clock_driver_init(struct device *device)
@@ -127,7 +127,7 @@ u32_t z_clock_elapsed(void)
 	return cyc / CYC_PER_TICK;
 }
 
-u32_t _timer_cycle_get_32(void)
+u32_t z_timer_cycle_get_32(void)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t ret = elapsed() + cycle_count;

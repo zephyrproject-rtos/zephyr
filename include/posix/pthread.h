@@ -71,7 +71,7 @@ struct posix_thread {
  */
 #define PTHREAD_COND_DEFINE(name)					\
 	struct pthread_cond name = {					\
-		.wait_q = _WAIT_Q_INIT(&name.wait_q),			\
+		.wait_q = Z_WAIT_Q_INIT(&name.wait_q),			\
 	}
 
 /**
@@ -83,7 +83,7 @@ static inline int pthread_cond_init(pthread_cond_t *cv,
 				    const pthread_condattr_t *att)
 {
 	ARG_UNUSED(att);
-	_waitq_init(&cv->wait_q);
+	z_waitq_init(&cv->wait_q);
 	return 0;
 }
 
@@ -164,7 +164,7 @@ static inline int pthread_condattr_destroy(pthread_condattr_t *att)
 		__in_section(_k_mutex, static, name) = \
 	{ \
 		.lock_count = 0, \
-		.wait_q = _WAIT_Q_INIT(&name.wait_q),	\
+		.wait_q = Z_WAIT_Q_INIT(&name.wait_q),	\
 		.owner = NULL, \
 	}
 
@@ -330,7 +330,7 @@ static inline int pthread_mutexattr_destroy(pthread_mutexattr_t *m)
  */
 #define PTHREAD_BARRIER_DEFINE(name, count)			\
 	struct pthread_barrier name = {				\
-		.wait_q = _WAIT_Q_INIT(&name.wait_q),		\
+		.wait_q = Z_WAIT_Q_INIT(&name.wait_q),		\
 		.max = count,					\
 	}
 
@@ -356,7 +356,7 @@ static inline int pthread_barrier_init(pthread_barrier_t *b,
 
 	b->max = count;
 	b->count = 0;
-	_waitq_init(&b->wait_q);
+	z_waitq_init(&b->wait_q);
 
 	return 0;
 }

@@ -42,7 +42,7 @@
  * @param irq Interrupt line
  * @return Vector this interrupt has been assigned to
  */
-#define _IRQ_CONTROLLER_VECTOR_MAPPING(irq) \
+#define Z_IRQ_CONTROLLER_VECTOR_MAPPING(irq) \
 	__IRQ_CONTROLLER_VECTOR_MAPPING(irq)
 #endif
 
@@ -63,7 +63,7 @@
  *
  * @returns: N/A
  */
-static inline void _irq_controller_irq_config(unsigned int vector,
+static inline void z_irq_controller_irq_config(unsigned int vector,
 					      unsigned int irq, u32_t flags)
 {
 	__irq_controller_irq_config(vector, irq, flags);

@@ -30,8 +30,8 @@ extern "C" {
 extern void _FaultInit(void);
 extern void _CpuIdleInit(void);
 #ifdef CONFIG_ARM_MPU
-extern void _arch_configure_static_mpu_regions(void);
-extern void _arch_configure_dynamic_mpu_regions(struct k_thread *thread);
+extern void z_arch_configure_static_mpu_regions(void);
+extern void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread);
 #endif /* CONFIG_ARM_MPU */
 
 static ALWAYS_INLINE void kernel_arch_init(void)
@@ -56,7 +56,7 @@ static ALWAYS_INLINE void unlock_interrupts(void)
 }
 
 static ALWAYS_INLINE void
-_arch_switch_to_main_thread(struct k_thread *main_thread,
+z_arch_switch_to_main_thread(struct k_thread *main_thread,
 			    k_thread_stack_t *main_stack,
 			    size_t main_stack_size, k_thread_entry_t _main)
 {
@@ -67,7 +67,7 @@ _arch_switch_to_main_thread(struct k_thread *main_thread,
 	 *
 	 * This function is invoked once, upon system initialization.
 	 */
-	_arch_configure_static_mpu_regions();
+	z_arch_configure_static_mpu_regions();
 #endif
 
 	/* get high address of the stack, i.e. its start (stack grows down) */
@@ -110,21 +110,21 @@ _arch_switch_to_main_thread(struct k_thread *main_thread,
 	 * If stack protection is enabled, make sure to set it
 	 * before jumping to thread entry function
 	 */
-	_arch_configure_dynamic_mpu_regions(main_thread);
+	z_arch_configure_dynamic_mpu_regions(main_thread);
 #endif
-	_thread_entry(_main, 0, 0, 0);
+	z_thread_entry(_main, 0, 0, 0);
 	CODE_UNREACHABLE;
 }
 
 static ALWAYS_INLINE void
-_set_thread_return_value(struct k_thread *thread, unsigned int value)
+z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 {
 	thread->arch.swap_return_value = value;
 }
 
 extern void k_cpu_atomic_idle(unsigned int key);
 
-#define _is_in_isr() _IsInIsr()
+#define z_is_in_isr() _IsInIsr()
 
 extern FUNC_NORETURN void _arm_userspace_enter(k_thread_entry_t user_entry,
 					       void *p1, void *p2, void *p3,

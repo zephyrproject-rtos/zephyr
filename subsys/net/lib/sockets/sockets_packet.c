@@ -69,7 +69,7 @@ int zpacket_socket(int family, int type, int proto)
 	/* Set net context object as initialized and grant access to the
 	 * calling thread (and only the calling thread)
 	 */
-	_k_object_recycle(ctx);
+	z_object_recycle(ctx);
 #endif
 
 	z_finalize_fd(fd, ctx,

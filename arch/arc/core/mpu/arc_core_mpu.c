@@ -104,7 +104,7 @@ void configure_mpu_mem_domain(struct k_thread *thread)
 	arc_core_mpu_configure_mem_domain(thread);
 }
 
-int _arch_mem_domain_max_partitions_get(void)
+int z_arch_mem_domain_max_partitions_get(void)
 {
 	return arc_core_mpu_get_max_domain_partition_regions();
 }
@@ -112,7 +112,7 @@ int _arch_mem_domain_max_partitions_get(void)
 /*
  * Reset MPU region for a single memory partition
  */
-void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
+void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 				       u32_t partition_id)
 {
 	ARG_UNUSED(domain);
@@ -126,7 +126,7 @@ void _arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 /*
  * Configure MPU memory domain
  */
-void _arch_mem_domain_configure(struct k_thread *thread)
+void z_arch_mem_domain_configure(struct k_thread *thread)
 {
 	configure_mpu_mem_domain(thread);
 }
@@ -134,7 +134,7 @@ void _arch_mem_domain_configure(struct k_thread *thread)
 /*
  * Destroy MPU regions for the mem domain
  */
-void _arch_mem_domain_destroy(struct k_mem_domain *domain)
+void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
 	ARG_UNUSED(domain);
 
@@ -152,7 +152,7 @@ void _arch_mem_domain_partition_add(struct k_mem_domain *domain,
 /*
  * Validate the given buffer is user accessible or not
  */
-int _arch_buffer_validate(void *addr, size_t size, int write)
+int z_arch_buffer_validate(void *addr, size_t size, int write)
 {
 	return arc_core_mpu_buffer_validate(addr, size, write);
 }

@@ -10,36 +10,36 @@
 Z_SYSCALL_HANDLER(gpio_config, port, access_op, pin, flags)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, config));
-	return _impl_gpio_config((struct device *)port, access_op, pin, flags);
+	return z_impl_gpio_config((struct device *)port, access_op, pin, flags);
 }
 
 Z_SYSCALL_HANDLER(gpio_write, port, access_op, pin, value)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, write));
-	return _impl_gpio_write((struct device *)port, access_op, pin, value);
+	return z_impl_gpio_write((struct device *)port, access_op, pin, value);
 }
 
 Z_SYSCALL_HANDLER(gpio_read, port, access_op, pin, value)
 {
 	Z_OOPS(Z_SYSCALL_DRIVER_GPIO(port, read));
 	Z_OOPS(Z_SYSCALL_MEMORY_WRITE(value, sizeof(u32_t)));
-	return _impl_gpio_read((struct device *)port, access_op, pin,
+	return z_impl_gpio_read((struct device *)port, access_op, pin,
 			       (u32_t *)value);
 }
 
 Z_SYSCALL_HANDLER(gpio_enable_callback, port, access_op, pin)
 {
-	return _impl_gpio_enable_callback((struct device *)port, access_op,
+	return z_impl_gpio_enable_callback((struct device *)port, access_op,
 					  pin);
 }
 
 Z_SYSCALL_HANDLER(gpio_disable_callback, port, access_op, pin)
 {
-	return _impl_gpio_disable_callback((struct device *)port, access_op,
+	return z_impl_gpio_disable_callback((struct device *)port, access_op,
 					   pin);
 }
 
 Z_SYSCALL_HANDLER(gpio_get_pending_int, port)
 {
-	return _impl_gpio_get_pending_int((struct device *)port);
+	return z_impl_gpio_get_pending_int((struct device *)port);
 }

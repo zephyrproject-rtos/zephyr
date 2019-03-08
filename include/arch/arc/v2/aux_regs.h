@@ -154,12 +154,12 @@ extern "C" {
 #if defined(__GNUC__)
 
 #include <zephyr/types.h>
-#define _arc_v2_aux_reg_read(reg) __builtin_arc_lr((volatile u32_t)reg)
-#define _arc_v2_aux_reg_write(reg, val) __builtin_arc_sr((unsigned int)val, (volatile u32_t)reg)
+#define z_arc_v2_aux_reg_read(reg) __builtin_arc_lr((volatile u32_t)reg)
+#define z_arc_v2_aux_reg_write(reg, val) __builtin_arc_sr((unsigned int)val, (volatile u32_t)reg)
 
 #else /* ! __GNUC__ */
 
-#define _arc_v2_aux_reg_read(reg)                                \
+#define z_arc_v2_aux_reg_read(reg)                                \
 	({                                               \
 		unsigned int __ret;                      \
 		__asm__ __volatile__("       lr %0, [%1]" \
@@ -168,7 +168,7 @@ extern "C" {
 		__ret;                                   \
 	})
 
-#define _arc_v2_aux_reg_write(reg, val)                              \
+#define z_arc_v2_aux_reg_write(reg, val)                              \
 	({                                                   \
 		__asm__ __volatile__("       sr %0, [%1]"    \
 				     :                       \

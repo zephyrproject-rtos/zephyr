@@ -70,15 +70,17 @@ def gen_make_syscall(ret, argc, tabcount):
     # from gc-sections; these references will not consume space.
 
     sys.stdout.write(
-        "static _GENERIC_SECTION(hndlr_ref) __used void *href = (void *)&hdlr_##name; \\\n")
+        "static Z_GENERIC_SECTION(hndlr_ref) __used void *href = (void *)&hdlr_##name; \\\n")
     tabs(tabcount)
     if (ret != Retval.VOID):
         sys.stdout.write("return (ret)")
     else:
         sys.stdout.write("return (void)")
     if (argc <= 6 and ret != Retval.U64):
-        sys.stdout.write("_arch")
-    sys.stdout.write("_syscall%s_invoke%d(" %
+        sys.stdout.write("z_arch_syscall%s_invoke%d(" %
+                     (("_ret64" if ret == Retval.U64 else ""), argc))
+    else:
+        sys.stdout.write("z_syscall%s_invoke%d(" %
                      (("_ret64" if ret == Retval.U64 else ""), argc))
     for i in range(argc):
         sys.stdout.write("(u32_t)p%d, " % (i))
@@ -88,7 +90,7 @@ def gen_make_syscall(ret, argc, tabcount):
 def gen_call_impl(ret, argc):
     if (ret != Retval.VOID):
         sys.stdout.write("return ")
-    sys.stdout.write("_impl_##name(")
+    sys.stdout.write("z_impl_##name(")
     for i in range(argc):
         sys.stdout.write("p%d" % (i))
         if i != (argc - 1):
@@ -106,7 +108,7 @@ def gen_defines_inner(ret, argc, kernel_only=False, user_only=False):
     newline()
 
     if not user_only:
-        gen_fn(ret, argc, "_impl_##name", extern=True)
+        gen_fn(ret, argc, "z_impl_##name", extern=True)
         sys.stdout.write(";")
         newline()
 

@@ -131,7 +131,7 @@ struct ipm_driver_api {
 __syscall int ipm_send(struct device *ipmdev, int wait, u32_t id,
 		       const void *data, int size);
 
-static inline int _impl_ipm_send(struct device *ipmdev, int wait, u32_t id,
+static inline int z_impl_ipm_send(struct device *ipmdev, int wait, u32_t id,
 			   const void *data, int size)
 {
 	const struct ipm_driver_api *api = ipmdev->driver_api;
@@ -167,7 +167,7 @@ static inline void ipm_register_callback(struct device *ipmdev,
  */
 __syscall int ipm_max_data_size_get(struct device *ipmdev);
 
-static inline int _impl_ipm_max_data_size_get(struct device *ipmdev)
+static inline int z_impl_ipm_max_data_size_get(struct device *ipmdev)
 {
 	const struct ipm_driver_api *api = ipmdev->driver_api;
 
@@ -187,7 +187,7 @@ static inline int _impl_ipm_max_data_size_get(struct device *ipmdev)
  */
 __syscall u32_t ipm_max_id_val_get(struct device *ipmdev);
 
-static inline u32_t _impl_ipm_max_id_val_get(struct device *ipmdev)
+static inline u32_t z_impl_ipm_max_id_val_get(struct device *ipmdev)
 {
 	const struct ipm_driver_api *api = ipmdev->driver_api;
 
@@ -205,7 +205,7 @@ static inline u32_t _impl_ipm_max_id_val_get(struct device *ipmdev)
  */
 __syscall int ipm_set_enabled(struct device *ipmdev, int enable);
 
-static inline int _impl_ipm_set_enabled(struct device *ipmdev, int enable)
+static inline int z_impl_ipm_set_enabled(struct device *ipmdev, int enable)
 {
 	const struct ipm_driver_api *api = ipmdev->driver_api;
 

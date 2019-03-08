@@ -123,7 +123,7 @@ struct gpio_driver_api {
 __syscall int gpio_config(struct device *port, int access_op, u32_t pin,
 			  int flags);
 
-static inline int _impl_gpio_config(struct device *port, int access_op,
+static inline int z_impl_gpio_config(struct device *port, int access_op,
 				    u32_t pin, int flags)
 {
 	const struct gpio_driver_api *api =
@@ -135,7 +135,7 @@ static inline int _impl_gpio_config(struct device *port, int access_op,
 __syscall int gpio_write(struct device *port, int access_op, u32_t pin,
 			 u32_t value);
 
-static inline int _impl_gpio_write(struct device *port, int access_op,
+static inline int z_impl_gpio_write(struct device *port, int access_op,
 				   u32_t pin, u32_t value)
 {
 	const struct gpio_driver_api *api =
@@ -147,7 +147,7 @@ static inline int _impl_gpio_write(struct device *port, int access_op,
 __syscall int gpio_read(struct device *port, int access_op, u32_t pin,
 			u32_t *value);
 
-static inline int _impl_gpio_read(struct device *port, int access_op,
+static inline int z_impl_gpio_read(struct device *port, int access_op,
 				  u32_t pin, u32_t *value)
 {
 	const struct gpio_driver_api *api =
@@ -159,7 +159,7 @@ static inline int _impl_gpio_read(struct device *port, int access_op,
 __syscall int gpio_enable_callback(struct device *port, int access_op,
 				   u32_t pin);
 
-static inline int _impl_gpio_enable_callback(struct device *port,
+static inline int z_impl_gpio_enable_callback(struct device *port,
 					     int access_op, u32_t pin)
 {
 	const struct gpio_driver_api *api =
@@ -175,7 +175,7 @@ static inline int _impl_gpio_enable_callback(struct device *port,
 __syscall int gpio_disable_callback(struct device *port, int access_op,
 				    u32_t pin);
 
-static inline int _impl_gpio_disable_callback(struct device *port,
+static inline int z_impl_gpio_disable_callback(struct device *port,
 					      int access_op, u32_t pin)
 {
 	const struct gpio_driver_api *api =
@@ -423,7 +423,7 @@ __syscall int gpio_get_pending_int(struct device *dev);
 /**
  * @internal
  */
-static inline int _impl_gpio_get_pending_int(struct device *dev)
+static inline int z_impl_gpio_get_pending_int(struct device *dev)
 {
 	const struct gpio_driver_api *api =
 		(const struct gpio_driver_api *)dev->driver_api;

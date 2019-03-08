@@ -134,7 +134,7 @@ SECTION_FUNC(TEXT, _exception_enter)
 
 	/*
 	 * Set the _EXC_ACTIVE state bit of the current thread.
-	 * This enables _Swap() to preserve the thread's FP registers
+	 * This enables z_swap() to preserve the thread's FP registers
 	 * (where needed) if the exception handler causes a context switch.
 	 * It also indicates to debug tools that an exception is being
 	 * handled in the event of a context switch.

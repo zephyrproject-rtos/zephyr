@@ -40,7 +40,7 @@ volatile int rv;
 static volatile int crash_reason;
 
 /* On some architectures, k_thread_abort(_current) will return instead
- * of _Swap'ing away.
+ * of z_swap'ing away.
  *
  * On ARM the PendSV exception is queued and immediately fires upon
  * completing the exception path; the faulting thread is never run
@@ -51,7 +51,7 @@ static volatile int crash_reason;
  * interrupt exit code.
  *
  * In both cases the thread is guaranteed never to run again once we
- * return from the _SysFatalErrorHandler().
+ * return from the z_SysFatalErrorHandler().
  */
 #if !(defined(CONFIG_ARM) || defined(CONFIG_XTENSA_ASM2) \
 	|| defined(CONFIG_ARC) || defined(CONFIG_X86_64))
@@ -61,7 +61,7 @@ static volatile int crash_reason;
 #ifdef ERR_IS_NORETURN
 FUNC_NORETURN
 #endif
-void _SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
+void z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 {
 	TC_PRINT("Caught system error -- reason %d\n", reason);
 	crash_reason = reason;
@@ -155,7 +155,7 @@ void stack_sentinel_swap(void)
 	/* Test that stack overflow check due to swap works */
 	blow_up_stack();
 	TC_PRINT("swapping...\n");
-	_Swap_unlocked();
+	z_swap_unlocked();
 	TC_ERROR("should never see this\n");
 	rv = TC_FAIL;
 	irq_unlock(key);

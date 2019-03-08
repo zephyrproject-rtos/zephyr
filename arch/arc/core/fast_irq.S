@@ -145,7 +145,7 @@ SECTION_FUNC(TEXT, _firq_exit)
 	st	r0, [r1]
 
 #ifdef CONFIG_STACK_SENTINEL
-	bl _check_stack_sentinel
+	bl z_check_stack_sentinel
 #endif
 
 #ifdef CONFIG_PREEMPT_ENABLED
@@ -284,7 +284,7 @@ _firq_return_from_coop:
 	pop_s r0 /* status32 into r0 */
 	/*
 	 * There are only two interrupt lock states: locked and unlocked. When
-	 * entering _Swap(), they are always locked, so the IE bit is unset in
+	 * entering z_swap(), they are always locked, so the IE bit is unset in
 	 * status32. If the incoming thread had them locked recursively, it
 	 * means that the IE bit should stay unset. The only time the bit
 	 * has to change is if they were not locked recursively.

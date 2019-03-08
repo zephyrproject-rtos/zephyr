@@ -36,12 +36,12 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 }
 
 static ALWAYS_INLINE void
-_set_thread_return_value(struct k_thread *thread, unsigned int value)
+z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 {
 	thread->callee_saved.retval = value;
 }
 
-#define _is_in_isr() (_kernel.nested != 0U)
+#define z_is_in_isr() (_kernel.nested != 0U)
 
 #ifdef CONFIG_IRQ_OFFLOAD
 void _irq_do_offload(void);

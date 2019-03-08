@@ -55,7 +55,7 @@ LOG_MODULE_DECLARE(mpu);
  */
 static inline u8_t _get_num_regions(void)
 {
-	u32_t num = _arc_v2_aux_reg_read(_ARC_V2_MPU_BUILD);
+	u32_t num = z_arc_v2_aux_reg_read(_ARC_V2_MPU_BUILD);
 
 	num = (num & 0xFF00) >> 8;
 
@@ -107,8 +107,8 @@ static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
 		region_addr = 0U;
 	}
 
-	_arc_v2_aux_reg_write(_ARC_V2_MPU_RDP0 + index, region_attr);
-	_arc_v2_aux_reg_write(_ARC_V2_MPU_RDB0 + index, region_addr);
+	z_arc_v2_aux_reg_write(_ARC_V2_MPU_RDP0 + index, region_attr);
+	z_arc_v2_aux_reg_write(_ARC_V2_MPU_RDB0 + index, region_addr);
 
 #elif CONFIG_ARC_MPU_VER == 3
 #define AUX_MPU_RPER_SID1       0x10000
@@ -122,11 +122,11 @@ static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
 				 AUX_MPU_RPER_SID1);
 	}
 
-	_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, index);
-	_arc_v2_aux_reg_write(_ARC_V2_MPU_RSTART, region_addr);
-	_arc_v2_aux_reg_write(_ARC_V2_MPU_REND,
+	z_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, index);
+	z_arc_v2_aux_reg_write(_ARC_V2_MPU_RSTART, region_addr);
+	z_arc_v2_aux_reg_write(_ARC_V2_MPU_REND,
 			      CALC_REGION_END_ADDR(region_addr, size));
-	_arc_v2_aux_reg_write(_ARC_V2_MPU_RPER, region_attr);
+	z_arc_v2_aux_reg_write(_ARC_V2_MPU_RPER, region_attr);
 #endif
 }
 
@@ -135,8 +135,8 @@ static inline s32_t _mpu_probe(u32_t addr)
 {
 	u32_t val;
 
-	_arc_v2_aux_reg_write(_ARC_V2_MPU_PROBE, addr);
-	val = _arc_v2_aux_reg_read(_ARC_V2_MPU_INDEX);
+	z_arc_v2_aux_reg_write(_ARC_V2_MPU_PROBE, addr);
+	val = z_arc_v2_aux_reg_read(_ARC_V2_MPU_INDEX);
 
 	/* if no match or multiple regions match, return error */
 	if (val & 0xC0000000) {
@@ -215,11 +215,11 @@ static inline u32_t _get_region_index_by_type(u32_t type)
 static inline int _is_enabled_region(u32_t r_index)
 {
 #if CONFIG_ARC_MPU_VER == 2
-	return ((_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + 2 * r_index)
+	return ((z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + 2 * r_index)
 		 & AUX_MPU_RDB_VALID_MASK) == AUX_MPU_RDB_VALID_MASK);
 #elif CONFIG_ARC_MPU_VER == 3
-	_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, r_index);
-	return ((_arc_v2_aux_reg_read(_ARC_V2_MPU_RPER) &
+	z_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, r_index);
+	return ((z_arc_v2_aux_reg_read(_ARC_V2_MPU_RPER) &
 		 AUX_MPU_RDB_VALID_MASK) == AUX_MPU_RDB_VALID_MASK);
 #endif
 }
@@ -234,9 +234,9 @@ static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
 	u32_t r_addr_end;
 	u32_t r_size_lshift;
 
-	r_addr_start = _arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + 2 * r_index)
+	r_addr_start = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + 2 * r_index)
 		       & (~AUX_MPU_RDB_VALID_MASK);
-	r_size_lshift = _arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + 2 * r_index)
+	r_size_lshift = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + 2 * r_index)
 			& AUX_MPU_RDP_ATTR_MASK;
 	r_size_lshift = (r_size_lshift & 0x3) | ((r_size_lshift >> 7) & 0x1C);
 	r_addr_end = r_addr_start  + (1 << (r_size_lshift + 1));
@@ -264,10 +264,10 @@ static inline int _is_user_accessible_region(u32_t r_index, int write)
 	u32_t r_ap;
 
 #if CONFIG_ARC_MPU_VER == 2
-	r_ap = _arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + 2 * r_index);
+	r_ap = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + 2 * r_index);
 #elif CONFIG_ARC_MPU_VER == 3
-	_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, r_index);
-	r_ap = _arc_v2_aux_reg_read(_ARC_V2_MPU_RPER);
+	z_arc_v2_aux_reg_write(_ARC_V2_MPU_INDEX, r_index);
+	r_ap = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RPER);
 #endif
 	r_ap &= AUX_MPU_RDP_ATTR_MASK;
 
@@ -289,8 +289,8 @@ void arc_core_mpu_enable(void)
 {
 #if CONFIG_ARC_MPU_VER == 2
 	/* Enable MPU */
-	_arc_v2_aux_reg_write(_ARC_V2_MPU_EN,
-			      _arc_v2_aux_reg_read(_ARC_V2_MPU_EN) | AUX_MPU_EN_ENABLE);
+	z_arc_v2_aux_reg_write(_ARC_V2_MPU_EN,
+			      z_arc_v2_aux_reg_read(_ARC_V2_MPU_EN) | AUX_MPU_EN_ENABLE);
 
 	/* MPU is always enabled, use default region to
 	 * simulate MPU enable
@@ -308,8 +308,8 @@ void arc_core_mpu_disable(void)
 {
 #if CONFIG_ARC_MPU_VER == 2
 	/* Disable MPU */
-	_arc_v2_aux_reg_write(_ARC_V2_MPU_EN,
-			      _arc_v2_aux_reg_read(_ARC_V2_MPU_EN) & AUX_MPU_EN_DISABLE);
+	z_arc_v2_aux_reg_write(_ARC_V2_MPU_EN,
+			      z_arc_v2_aux_reg_read(_ARC_V2_MPU_EN) & AUX_MPU_EN_DISABLE);
 #elif CONFIG_ARC_MPU_VER == 3
 	/* MPU is always enabled, use default region to
 	 * simulate MPU disable
@@ -411,12 +411,12 @@ void arc_core_mpu_configure(u8_t type, u32_t base, u32_t size)
  */
 void arc_core_mpu_default(u32_t region_attr)
 {
-	u32_t val =  _arc_v2_aux_reg_read(_ARC_V2_MPU_EN) &
+	u32_t val =  z_arc_v2_aux_reg_read(_ARC_V2_MPU_EN) &
 		    (~AUX_MPU_RDP_ATTR_MASK);
 
 	region_attr &= AUX_MPU_RDP_ATTR_MASK;
 
-	_arc_v2_aux_reg_write(_ARC_V2_MPU_EN, region_attr | val);
+	z_arc_v2_aux_reg_write(_ARC_V2_MPU_EN, region_attr | val);
 }
 
 /**

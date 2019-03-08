@@ -48,7 +48,7 @@ const NANO_ESF _default_esf = {
  *
  * @return This function does not return.
  */
-FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
+FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 					  const NANO_ESF *esf)
 {
 	LOG_PANIC();
@@ -102,7 +102,7 @@ FUNC_NORETURN void _NanoFatalErrorHandler(unsigned int reason,
 	       esf->estatus);
 #endif
 
-	_SysFatalErrorHandler(reason, esf);
+	z_SysFatalErrorHandler(reason, esf);
 }
 
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(CONFIG_PRINTK) \
@@ -194,7 +194,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 #endif /* ALT_CPU_HAS_EXTRA_EXCEPTION_INFO */
 #endif /* CONFIG_PRINTK */
 
-	_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
+	z_NanoFatalErrorHandler(_NANO_ERR_CPU_EXCEPTION, esf);
 }
 
 
@@ -218,7 +218,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
  *
  * @return N/A
  */
-FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
+FUNC_NORETURN __weak void z_SysFatalErrorHandler(unsigned int reason,
 						const NANO_ESF *pEsf)
 {
 	ARG_UNUSED(pEsf);
@@ -232,7 +232,7 @@ FUNC_NORETURN __weak void _SysFatalErrorHandler(unsigned int reason,
 	if (reason == _NANO_ERR_KERNEL_PANIC) {
 		goto hang_system;
 	}
-	if (k_is_in_isr() || _is_thread_essential()) {
+	if (k_is_in_isr() || z_is_thread_essential()) {
 		printk("Fatal fault in %s! Spinning...\n",
 		       k_is_in_isr() ? "ISR" : "essential thread");
 		goto hang_system;

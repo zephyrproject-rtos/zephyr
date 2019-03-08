@@ -19,7 +19,7 @@ extern "C" {
 #endif
 
 /* for assembler, only works with constants */
-#define _EXC_PRIO(pri) (((pri) << (8 - DT_NUM_IRQ_PRIO_BITS)) & 0xff)
+#define Z_EXC_PRIO(pri) (((pri) << (8 - DT_NUM_IRQ_PRIO_BITS)) & 0xff)
 
 #if defined(CONFIG_CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS)
 #define _EXCEPTION_RESERVED_PRIO 1
@@ -37,10 +37,10 @@ extern "C" {
 #define _IRQ_PRIO_OFFSET (_EXCEPTION_RESERVED_PRIO)
 #endif
 
-#define _EXC_IRQ_DEFAULT_PRIO _EXC_PRIO(_IRQ_PRIO_OFFSET)
+#define _EXC_IRQ_DEFAULT_PRIO Z_EXC_PRIO(_IRQ_PRIO_OFFSET)
 
 #ifdef _ASMLANGUAGE
-GTEXT(_ExcExit);
+GTEXT(z_ExcExit);
 #else
 #include <zephyr/types.h>
 
@@ -62,7 +62,7 @@ struct __esf {
 
 typedef struct __esf NANO_ESF;
 
-extern void _ExcExit(void);
+extern void z_ExcExit(void);
 
 /**
  * @brief display the contents of a exception stack frame

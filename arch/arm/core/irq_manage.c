@@ -40,7 +40,7 @@ extern void __reserved(void);
  *
  * @return N/A
  */
-void _arch_irq_enable(unsigned int irq)
+void z_arch_irq_enable(unsigned int irq)
 {
 	NVIC_EnableIRQ((IRQn_Type)irq);
 }
@@ -54,7 +54,7 @@ void _arch_irq_enable(unsigned int irq)
  *
  * @return N/A
  */
-void _arch_irq_disable(unsigned int irq)
+void z_arch_irq_disable(unsigned int irq)
 {
 	NVIC_DisableIRQ((IRQn_Type)irq);
 }
@@ -65,7 +65,7 @@ void _arch_irq_disable(unsigned int irq)
  * @param irq IRQ line
  * @return interrupt enable state, true or false
  */
-int _arch_irq_is_enabled(unsigned int irq)
+int z_arch_irq_is_enabled(unsigned int irq)
 {
 	return NVIC->ISER[REG_FROM_IRQ(irq)] & (1 << BIT_FROM_IRQ(irq));
 }
@@ -81,7 +81,7 @@ int _arch_irq_is_enabled(unsigned int irq)
  *
  * @return N/A
  */
-void _irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
+void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 {
 	/* The kernel may reserve some of the highest priority levels.
 	 * So we offset the requested priority level with the number
@@ -126,7 +126,7 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
  *
  * @return N/A
  */
-void _irq_spurious(void *unused)
+void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
 	__reserved();
@@ -163,7 +163,7 @@ void _arch_isr_direct_pm(void)
 		s32_t idle_val = _kernel.idle;
 
 		_kernel.idle = 0;
-		_sys_power_save_idle_exit(idle_val);
+		z_sys_power_save_idle_exit(idle_val);
 	}
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
@@ -177,7 +177,7 @@ void _arch_isr_direct_pm(void)
 }
 #endif
 
-void _arch_isr_direct_header(void)
+void z_arch_isr_direct_header(void)
 {
 	z_sys_trace_isr_enter();
 }
@@ -239,12 +239,12 @@ int irq_target_state_is_secure(unsigned int irq)
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			      void (*routine)(void *parameter), void *parameter,
 			      u32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
-	_irq_priority_set(irq, priority, flags);
+	z_irq_priority_set(irq, priority, flags);
 	return irq;
 }
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */

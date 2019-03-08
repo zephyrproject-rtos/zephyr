@@ -42,11 +42,11 @@ static ALWAYS_INLINE void _icache_setup(void)
 	);
 	u32_t val;
 
-	val = _arc_v2_aux_reg_read(_ARC_V2_I_CACHE_BUILD);
+	val = z_arc_v2_aux_reg_read(_ARC_V2_I_CACHE_BUILD);
 	val &= 0xff;
 	if (val != 0) { /* is i-cache present? */
 		/* configure i-cache */
-		_arc_v2_aux_reg_write(_ARC_V2_IC_CTRL, icache_config);
+		z_arc_v2_aux_reg_write(_ARC_V2_IC_CTRL, icache_config);
 	}
 }
 

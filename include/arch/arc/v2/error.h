@@ -24,8 +24,8 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 #include <toolchain/gcc.h>
-extern void _NanoFatalErrorHandler(unsigned int, const NANO_ESF*);
-extern void _SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
+extern void z_NanoFatalErrorHandler(unsigned int, const NANO_ESF*);
+extern void z_SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
 #endif
 
 #define _NANO_ERR_HW_EXCEPTION (0)      /* MPU/Bus/Usage fault */
@@ -41,10 +41,10 @@ extern void _SysFatalErrorHandler(unsigned int cause, const NANO_ESF *esf);
  * a new exception; when the processor is in thread context, the exception
  * will be raised
  */
-#define _ARCH_EXCEPT(reason_p)	do { \
-	if (_arc_v2_irq_unit_is_in_isr()) { \
+#define Z_ARCH_EXCEPT(reason_p)	do { \
+	if (z_arc_v2_irq_unit_is_in_isr()) { \
 		printk("@ %s:%d:\n", __FILE__,  __LINE__); \
-		_NanoFatalErrorHandler(reason_p, 0); \
+		z_NanoFatalErrorHandler(reason_p, 0); \
 	} else {\
 		__asm__ volatile ( \
 		"mov r0, %[reason]\n\t" \

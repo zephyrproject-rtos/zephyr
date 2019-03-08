@@ -388,7 +388,7 @@ extern const struct pseudo_descriptor z_idt;
  * @param offset Offset within segment
  * @param segment_selector Segment selector
  */
-static inline void _sd_set_seg_offset(struct segment_descriptor *sd,
+static inline void z_sd_set_seg_offset(struct segment_descriptor *sd,
 				      u16_t segment_selector,
 				      u32_t offset)
 {
@@ -411,7 +411,7 @@ static inline void _init_irq_gate(struct segment_descriptor *sd,
 				  u16_t seg_selector, u32_t offset,
 				  u32_t dpl)
 {
-	_sd_set_seg_offset(sd, seg_selector, offset);
+	z_sd_set_seg_offset(sd, seg_selector, offset);
 	sd->dpl = dpl;
 	sd->descriptor_type = DT_TYPE_SYSTEM;
 	sd->present = 1;

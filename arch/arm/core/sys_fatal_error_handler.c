@@ -8,7 +8,7 @@
  * @file
  * @brief ARM Cortex-M system fatal error handler
  *
- * This module provides the _SysFatalErrorHandler() routine for Cortex-M
+ * This module provides the z_SysFatalErrorHandler() routine for Cortex-M
  * platforms.
  */
 
@@ -38,7 +38,7 @@
  *
  * @return This function does not return.
  */
-void __weak _SysFatalErrorHandler(unsigned int reason,
+void __weak z_SysFatalErrorHandler(unsigned int reason,
 					 const NANO_ESF *pEsf)
 {
 	ARG_UNUSED(pEsf);
@@ -52,7 +52,7 @@ void __weak _SysFatalErrorHandler(unsigned int reason,
 	if (reason == _NANO_ERR_KERNEL_PANIC) {
 		goto hang_system;
 	}
-	if (k_is_in_isr() || _is_thread_essential()) {
+	if (k_is_in_isr() || z_is_thread_essential()) {
 		printk("Fatal fault in %s! Spinning...\n",
 		       k_is_in_isr() ? "ISR" : "essential thread");
 		goto hang_system;

@@ -10,7 +10,7 @@
  *
  *
  * Initialization of full C support: zero the .bss, copy the .data if XIP,
- * call _Cstart().
+ * call z_cstart().
  *
  * Stack is available in this module, but not the global data/bss until their
  * initialization is performed.
@@ -33,9 +33,9 @@
 
 void _PrepC(void)
 {
-	_bss_zero();
+	z_bss_zero();
 #ifdef CONFIG_XIP
-	_data_copy();
+	z_data_copy();
 	/* In most XIP scenarios we copy the exception code into RAM, so need
 	 * to flush instruction cache.
 	 */
@@ -48,6 +48,6 @@ void _PrepC(void)
 	_nios2_dcache_flush_all();
 #endif
 #endif
-	_Cstart();
+	z_cstart();
 	CODE_UNREACHABLE;
 }

@@ -27,7 +27,7 @@ void irq_offload(irq_offload_routine_t routine, void *parameter)
 {
 	IRQ_CONNECT(CONFIG_IRQ_OFFLOAD_INTNUM, XCHAL_EXCM_LEVEL,
 		_irq_do_offload, NULL, 0);
-	_arch_irq_disable(CONFIG_IRQ_OFFLOAD_INTNUM);
+	z_arch_irq_disable(CONFIG_IRQ_OFFLOAD_INTNUM);
 	offload_routine = routine;
 	offload_param = parameter;
 	_xt_set_intset(1 << CONFIG_IRQ_OFFLOAD_INTNUM);
@@ -35,5 +35,5 @@ void irq_offload(irq_offload_routine_t routine, void *parameter)
 	 * Enable the software interrupt, in case it is disabled, so that IRQ
 	 * offload is serviced.
 	 */
-	_arch_irq_enable(CONFIG_IRQ_OFFLOAD_INTNUM);
+	z_arch_irq_enable(CONFIG_IRQ_OFFLOAD_INTNUM);
 }

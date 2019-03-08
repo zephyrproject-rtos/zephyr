@@ -19,7 +19,7 @@
 #include <sys_io.h>
 #include <interrupt_controller/ioapic_priv.h>
 
-void _lakemont_eoi(void)
+void z_lakemont_eoi(void)
 {
 	/* It is difficult to know whether the IRQ being serviced is
 	 * a level interrupt handled by the IOAPIC; the only information

@@ -39,7 +39,7 @@ static inline void kernel_arch_init(void)
 	_kernel.irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack) +
 				CONFIG_ISR_STACK_SIZE;
 #if CONFIG_X86_STACK_PROTECTION
-	_x86_mmu_set_flags(&z_x86_kernel_pdpt, _interrupt_stack, MMU_PAGE_SIZE,
+	z_x86_mmu_set_flags(&z_x86_kernel_pdpt, _interrupt_stack, MMU_PAGE_SIZE,
 			   MMU_ENTRY_NOT_PRESENT, MMU_PTE_P_MASK);
 #endif
 }
@@ -58,9 +58,9 @@ static inline void kernel_arch_init(void)
  * @return N/A
  */
 static ALWAYS_INLINE void
-_set_thread_return_value(struct k_thread *thread, unsigned int value)
+z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 {
-	/* write into 'eax' slot created in _Swap() entry */
+	/* write into 'eax' slot created in z_swap() entry */
 
 	*(unsigned int *)(thread->callee_saved.esp) = value;
 }
@@ -129,7 +129,7 @@ extern FUNC_NORETURN void _x86_userspace_enter(k_thread_entry_t user_entry,
 }
 #endif
 
-#define _is_in_isr() (_kernel.nested != 0U)
+#define z_is_in_isr() (_kernel.nested != 0U)
 
 #endif /* _ASMLANGUAGE */
 

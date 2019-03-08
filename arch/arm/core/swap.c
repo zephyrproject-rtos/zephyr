@@ -42,7 +42,7 @@ extern const int _k_neg_eagain;
  * as BASEPRI is not available.
  *
  * @return -EAGAIN, or a return value set by a call to
- * _set_thread_return_value()
+ * z_set_thread_return_value()
  *
  */
 int __swap(int key)

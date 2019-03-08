@@ -48,7 +48,7 @@ void ztest_test_fail(void);
  *
  * Normally a test passes just by returning without an assertion failure.
  * However, if the success case for your test involves a fatal fault,
- * you can call this function from _SysFatalErrorHandler to indicate that
+ * you can call this function from z_SysFatalErrorHandler to indicate that
  * the test passed before aborting the thread.
  */
 void ztest_test_pass(void);

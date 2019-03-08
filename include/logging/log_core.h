@@ -35,10 +35,10 @@ extern "C" {
  *
  * Check @ref IS_ENABLED macro for detailed explanation of the trick.
  */
-#define _LOG_RESOLVED_LEVEL(_level, _default) \
-	_LOG_RESOLVED_LEVEL1(_level, _default)
+#define Z_LOG_RESOLVED_LEVEL(_level, _default) \
+	Z_LOG_RESOLVED_LEVEL1(_level, _default)
 
-#define _LOG_RESOLVED_LEVEL1(_level, _default) \
+#define Z_LOG_RESOLVED_LEVEL1(_level, _default) \
 	__COND_CODE(_LOG_XXXX##_level, (_level), (_default))
 
 #define _LOG_XXXX0 _LOG_YYYY,
@@ -61,10 +61,10 @@ extern "C" {
  * @param _iffalse    Code that should be inserted when evaluated to false.
  *		      Note, that parameter must be provided in brackets.
  */
-#define _LOG_EVAL(_eval_level, _iftrue, _iffalse) \
-	_LOG_EVAL1(_eval_level, _iftrue, _iffalse)
+#define Z_LOG_EVAL(_eval_level, _iftrue, _iffalse) \
+	Z_LOG_EVAL1(_eval_level, _iftrue, _iffalse)
 
-#define _LOG_EVAL1(_eval_level, _iftrue, _iffalse) \
+#define Z_LOG_EVAL1(_eval_level, _iftrue, _iffalse) \
 	__COND_CODE(_LOG_ZZZZ##_eval_level, _iftrue, _iffalse)
 
 #define _LOG_ZZZZ1 _LOG_YYYY,
@@ -77,7 +77,7 @@ extern "C" {
  * It is evaluated to LOG_LEVEL if defined. Otherwise CONFIG_LOG_DEFAULT_LEVEL
  * is used.
  */
-#define _LOG_LEVEL() _LOG_RESOLVED_LEVEL(LOG_LEVEL, CONFIG_LOG_DEFAULT_LEVEL)
+#define _LOG_LEVEL() Z_LOG_RESOLVED_LEVEL(LOG_LEVEL, CONFIG_LOG_DEFAULT_LEVEL)
 
 /**
  *  @def LOG_CONST_ID_GET
@@ -86,7 +86,7 @@ extern "C" {
  *  @param _addr Address of the element.
  */
 #define LOG_CONST_ID_GET(_addr) \
-	_LOG_EVAL(\
+	Z_LOG_EVAL(\
 	  CONFIG_LOG,\
 	  (__log_level ? \
 	  log_const_source_id((const struct log_source_const_data *)_addr) : \
@@ -113,7 +113,7 @@ extern "C" {
  *  @param _addr Address of the element.
  */
 #define LOG_DYNAMIC_ID_GET(_addr) \
-	_LOG_EVAL(\
+	Z_LOG_EVAL(\
 	  CONFIG_LOG,\
 	  (__log_level ? \
 	  log_dynamic_source_id((struct log_source_dynamic_data *)_addr) : 0),\
@@ -131,7 +131,7 @@ extern "C" {
  *	  used.
  */
 
-#define _LOG_STR(...) "%s: " GET_ARG1(__VA_ARGS__), __func__\
+#define Z_LOG_STR(...) "%s: " GET_ARG1(__VA_ARGS__), __func__\
 		COND_CODE_0(NUM_VA_ARGS_LESS_1(__VA_ARGS__),\
 			    (),\
 			    (, GET_ARGS_LESS_1(__VA_ARGS__))\
@@ -141,7 +141,7 @@ extern "C" {
 /******************************************************************************/
 /****************** Internal macros for log frontend **************************/
 /******************************************************************************/
-/**@brief Second stage for _LOG_NARGS_POSTFIX */
+/**@brief Second stage for Z_LOG_NARGS_POSTFIX */
 #define _LOG_NARGS_POSTFIX_IMPL(				\
 	_ignored,						\
 	_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, _10,		\
@@ -155,18 +155,18 @@ extern "C" {
  *
  * @retval  Postfix, number of arguments or _LONG when more than 3 arguments.
  */
-#define _LOG_NARGS_POSTFIX(...) \
+#define Z_LOG_NARGS_POSTFIX(...) \
 	_LOG_NARGS_POSTFIX_IMPL(__VA_ARGS__, LONG, LONG, LONG, LONG, LONG, \
 			LONG, LONG, LONG, LONG, LONG, LONG, LONG, 3, 2, 1, 0, ~)
 
-#define _LOG_INTERNAL_X(N, ...)  UTIL_CAT(_LOG_INTERNAL_, N)(__VA_ARGS__)
+#define Z_LOG_INTERNAL_X(N, ...)  UTIL_CAT(_LOG_INTERNAL_, N)(__VA_ARGS__)
 
 #define __LOG_INTERNAL(_src_level, ...)					 \
 	do {								 \
 		if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {		 \
 			log_string_sync(_src_level, __VA_ARGS__);	 \
 		} else {						 \
-			_LOG_INTERNAL_X(_LOG_NARGS_POSTFIX(__VA_ARGS__), \
+			Z_LOG_INTERNAL_X(Z_LOG_NARGS_POSTFIX(__VA_ARGS__), \
 						_src_level, __VA_ARGS__);\
 		}							 \
 	} while (false)
@@ -193,13 +193,12 @@ extern "C" {
 		log_n(_str, args, ARRAY_SIZE(args), _src_level); \
 	} while (false)
 
-#define _LOG_LEVEL_CHECK(_level, _check_level, _default_level) \
-	(_level <= _LOG_RESOLVED_LEVEL(_check_level, _default_level))
+#define Z_LOG_LEVEL_CHECK(_level, _check_level, _default_level) \
+	(_level <= Z_LOG_RESOLVED_LEVEL(_check_level, _default_level))
 
-#define _LOG_CONST_LEVEL_CHECK(_level)					    \
+#define Z_LOG_CONST_LEVEL_CHECK(_level)					    \
 	(IS_ENABLED(CONFIG_LOG) &&					    \
-	(								    \
-	_LOG_LEVEL_CHECK(_level, CONFIG_LOG_OVERRIDE_LEVEL, LOG_LEVEL_NONE) \
+	(Z_LOG_LEVEL_CHECK(_level, CONFIG_LOG_OVERRIDE_LEVEL, LOG_LEVEL_NONE) \
 	||								    \
 	(!IS_ENABLED(CONFIG_LOG_OVERRIDE_LEVEL) &&			    \
 	(_level <= __log_level) &&					    \
@@ -212,7 +211,7 @@ extern "C" {
 /******************************************************************************/
 #define __LOG(_level, _id, _filter, ...)				    \
 	do {								    \
-		if (_LOG_CONST_LEVEL_CHECK(_level) &&			    \
+		if (Z_LOG_CONST_LEVEL_CHECK(_level) &&			    \
 		    (_level <= LOG_RUNTIME_FILTER(_filter))) {		    \
 			struct log_msg_ids src_level = {		    \
 				.level = _level,			    \
@@ -222,7 +221,7 @@ extern "C" {
 									    \
 			if ((1 << _level) & LOG_FUNCTION_PREFIX_MASK) {	    \
 				__LOG_INTERNAL(src_level,		    \
-						_LOG_STR(__VA_ARGS__));	    \
+						Z_LOG_STR(__VA_ARGS__));	    \
 			} else {					    \
 				__LOG_INTERNAL(src_level, __VA_ARGS__);	    \
 			}						    \
@@ -234,13 +233,13 @@ extern "C" {
 		}							    \
 	} while (false)
 
-#define _LOG(_level, ...)			       \
+#define Z_LOG(_level, ...)			       \
 	__LOG(_level,				       \
 	      (u16_t)LOG_CURRENT_MODULE_ID(),	       \
 	      LOG_CURRENT_DYNAMIC_DATA_ADDR(),	       \
 	      __VA_ARGS__)
 
-#define _LOG_INSTANCE(_level, _inst, ...)		 \
+#define Z_LOG_INSTANCE(_level, _inst, ...)		 \
 	__LOG(_level,					 \
 	      IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ? \
 	      LOG_DYNAMIC_ID_GET(_inst) :		 \
@@ -254,7 +253,7 @@ extern "C" {
 /******************************************************************************/
 #define __LOG_HEXDUMP(_level, _id, _filter, _data, _length, _str)	      \
 	do {								      \
-		if (_LOG_CONST_LEVEL_CHECK(_level) &&			      \
+		if (Z_LOG_CONST_LEVEL_CHECK(_level) &&			      \
 		    (_level <= LOG_RUNTIME_FILTER(_filter))) {		      \
 			struct log_msg_ids src_level = {		      \
 				.level = _level,			      \
@@ -271,13 +270,13 @@ extern "C" {
 		}							      \
 	} while (false)
 
-#define _LOG_HEXDUMP(_level, _data, _length, _str)	       \
+#define Z_LOG_HEXDUMP(_level, _data, _length, _str)	       \
 	__LOG_HEXDUMP(_level,				       \
 		      LOG_CURRENT_MODULE_ID(),		       \
 		      LOG_CURRENT_DYNAMIC_DATA_ADDR(),	       \
 		      _data, _length, _str)
 
-#define _LOG_HEXDUMP_INSTANCE(_level, _inst, _data, _length, _str) \
+#define Z_LOG_HEXDUMP_INSTANCE(_level, _inst, _data, _length, _str) \
 	__LOG_HEXDUMP(_level,					   \
 		      IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING) ?   \
 		      LOG_DYNAMIC_ID_GET(_inst) :		   \

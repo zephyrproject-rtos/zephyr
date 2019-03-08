@@ -362,7 +362,7 @@ SECTION_FUNC(TEXT, _x86_userspace_enter)
 	mov	%bx, %ds
 	mov	%bx, %es
 
-	/* Push arguments to _thread_entry() */
+	/* Push arguments to z_thread_entry() */
 	push	%esi	/* p3 */
 #ifndef CONFIG_X86_IAMCU
 	push	%ecx	/* p2 */
@@ -373,7 +373,7 @@ SECTION_FUNC(TEXT, _x86_userspace_enter)
 	push	$0
 
 	/* Save stack pointer at this position, this is where it will be
-	 * when we land in _thread_entry()
+	 * when we land in z_thread_entry()
 	 */
 	mov	%esp, %edi
 
@@ -385,7 +385,7 @@ SECTION_FUNC(TEXT, _x86_userspace_enter)
 	push	%edi		/* ESP */
 	pushfl			/* EFLAGS */
 	push	$USER_CODE_SEG	/* CS */
-	push	$_thread_entry	/* EIP */
+	push	$z_thread_entry	/* EIP */
 
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	/* Save the eax and edx registers before reading the time stamp
@@ -400,5 +400,5 @@ SECTION_FUNC(TEXT, _x86_userspace_enter)
 	pop %eax
 #endif
 
-	/* We will land in _thread_entry() in user mode after this */
+	/* We will land in z_thread_entry() in user mode after this */
 	KPTI_IRET_USER

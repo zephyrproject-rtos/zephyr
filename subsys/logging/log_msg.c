@@ -156,7 +156,7 @@ static struct log_msg *msg_alloc(u32_t nargs)
 {
 	struct log_msg_cont *cont;
 	struct log_msg_cont **next;
-	struct  log_msg *msg = _log_msg_std_alloc();
+	struct  log_msg *msg = z_log_msg_std_alloc();
 	int n = (int)nargs;
 
 	if ((msg == NULL) || nargs <= LOG_MSG_NARGS_SINGLE_CHUNK) {

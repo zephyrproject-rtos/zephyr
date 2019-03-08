@@ -225,7 +225,7 @@ def main():
     offset = intlist["offset"]
     prefix = endian_prefix()
 
-    spurious_handler = "&_irq_spurious"
+    spurious_handler = "&z_irq_spurious"
     sw_irq_handler   = "ISR_WRAPPER"
 
     debug('offset is ' + str(offset))

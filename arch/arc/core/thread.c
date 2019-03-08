@@ -46,7 +46,7 @@ struct init_stack_frame {
  * needed anymore.
  *
  * The initial context is a basic stack frame that contains arguments for
- * _thread_entry() return address, that points at _thread_entry()
+ * z_thread_entry() return address, that points at z_thread_entry()
  * and status register.
  *
  * <options> is currently unused.
@@ -62,13 +62,13 @@ struct init_stack_frame {
  *
  * @return N/A
  */
-void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		 size_t stackSize, k_thread_entry_t pEntry,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned int options)
 {
 	char *pStackMem = K_THREAD_STACK_BUFFER(stack);
-	_ASSERT_VALID_PRIO(priority, pEntry);
+	Z_ASSERT_VALID_PRIO(priority, pEntry);
 
 	char *stackEnd;
 	char *stackAdjEnd;
@@ -171,7 +171,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 
 #ifdef CONFIG_ARC_HAS_SECURE
-	pInitCtx->sec_stat = _arc_v2_aux_reg_read(_ARC_V2_SEC_STAT);
+	pInitCtx->sec_stat = z_arc_v2_aux_reg_read(_ARC_V2_SEC_STAT);
 #endif
 
 	pInitCtx->r0 = (u32_t)pEntry;
@@ -206,7 +206,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 #endif
 	/*
-	 * seti instruction in the end of the _Swap() will
+	 * seti instruction in the end of the z_swap() will
 	 * enable the interrupts based on intlock_key
 	 * value.
 	 *
@@ -226,7 +226,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #ifdef CONFIG_USERSPACE
 
-FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
+FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
 	void *p1, void *p2, void *p3)
 {
 

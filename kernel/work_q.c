@@ -44,7 +44,7 @@ static void work_timeout(struct _timeout *t)
 void k_delayed_work_init(struct k_delayed_work *work, k_work_handler_t handler)
 {
 	k_work_init(&work->work, handler);
-	_init_timeout(&work->timeout, work_timeout);
+	z_init_timeout(&work->timeout, work_timeout);
 	work->work_q = NULL;
 }
 
@@ -58,7 +58,7 @@ static int work_cancel(struct k_delayed_work *work)
 			return -EINVAL;
 		}
 	} else {
-		(void)_abort_timeout(&work->timeout);
+		(void)z_abort_timeout(&work->timeout);
 	}
 
 	/* Detach from workqueue */
@@ -103,8 +103,8 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 	}
 
 	/* Add timeout */
-	_add_timeout(&work->timeout, work_timeout,
-		     _TICK_ALIGN + _ms_to_ticks(delay));
+	z_add_timeout(&work->timeout, work_timeout,
+		     _TICK_ALIGN + z_ms_to_ticks(delay));
 
 done:
 	k_spin_unlock(&work_q->lock, key);

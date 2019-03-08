@@ -17,12 +17,12 @@
  *   __stack			from linker script (see LSP Ref Manual)
  *   _bss_table_start		from linker script (see LSP Ref Manual)
  *   _bss_table_end		from linker script (see LSP Ref Manual)
- *   _Cstart		Entry point into Zephyr C domain
+ *   z_cstart		Entry point into Zephyr C domain
  *   __stack		from linker script (see LSP Ref Manual)
  */
 
 .global __start
-.type	_Cstart, @function
+.type	z_cstart, @function
 
 
 /* Macros to abstract away ABI differences */
@@ -178,7 +178,7 @@ _start:
 #endif /* !XCHAL_HAVE_BOOTLOADER */
 
 	/* Enter C domain, never returns from here */
-	CALL	_Cstart
+	CALL	z_cstart
 
 	.size	_start, . - _start
 

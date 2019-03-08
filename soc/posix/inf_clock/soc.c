@@ -167,7 +167,7 @@ void posix_atomic_halt_cpu(unsigned int imask)
 
 
 /**
- * Just a wrapper function to call Zephyr's _Cstart()
+ * Just a wrapper function to call Zephyr's z_cstart()
  * called from posix_boot_cpu()
  */
 static void *zephyr_wrapper(void *a)
@@ -186,7 +186,7 @@ static void *zephyr_wrapper(void *a)
 	posix_init_multithreading();
 
 	/* Start Zephyr: */
-	_Cstart();
+	z_cstart();
 	CODE_UNREACHABLE;
 
 	return NULL;

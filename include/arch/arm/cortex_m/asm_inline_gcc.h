@@ -116,7 +116,7 @@ static ALWAYS_INLINE unsigned int find_lsb_set(u32_t op)
  * except NMI.
  */
 
-static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
+static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 {
 	unsigned int key;
 
@@ -163,7 +163,7 @@ static ALWAYS_INLINE unsigned int _arch_irq_lock(void)
  *
  */
 
-static ALWAYS_INLINE void _arch_irq_unlock(unsigned int key)
+static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	if (key) {

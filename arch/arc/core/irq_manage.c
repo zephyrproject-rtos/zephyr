@@ -36,7 +36,7 @@
  * @return N/A
  */
 
-void _arch_irq_enable(unsigned int irq)
+void z_arch_irq_enable(unsigned int irq)
 {
 	unsigned int key = irq_lock();
 
@@ -53,7 +53,7 @@ void _arch_irq_enable(unsigned int irq)
  * @return N/A
  */
 
-void _arch_irq_disable(unsigned int irq)
+void z_arch_irq_disable(unsigned int irq)
 {
 	unsigned int key = irq_lock();
 
@@ -75,7 +75,7 @@ void _arch_irq_disable(unsigned int irq)
  * @return N/A
  */
 
-void _irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
+void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 {
 	ARG_UNUSED(flags);
 
@@ -96,22 +96,22 @@ void _irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
  * @return N/A
  */
 
-void _irq_spurious(void *unused)
+void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
-	printk("_irq_spurious(). Spinning...\n");
+	printk("z_irq_spurious(). Spinning...\n");
 	for (;;) {
 		;
 	}
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			      void (*routine)(void *parameter), void *parameter,
 			      u32_t flags)
 {
 	z_isr_install(irq, routine, parameter);
-	_irq_priority_set(irq, priority, flags);
+	z_irq_priority_set(irq, priority, flags);
 	return irq;
 }
 #endif /* CONFIG_DYNAMIC_INTERRUPTS */

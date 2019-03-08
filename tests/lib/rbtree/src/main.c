@@ -91,10 +91,10 @@ static int last_black_height;
 
 void check_rbnode(struct rbnode *node, int blacks_above)
 {
-	int side, bheight = blacks_above + _rb_is_black(node);
+	int side, bheight = blacks_above + z_rb_is_black(node);
 
 	for (side = 0; side < 2; side++) {
-		struct rbnode *ch = _rb_child(node, side);
+		struct rbnode *ch = z_rb_child(node, side);
 
 		if (ch) {
 			/* Basic tree requirement */
@@ -105,7 +105,7 @@ void check_rbnode(struct rbnode *node, int blacks_above)
 			}
 
 			/* Can't have adjacent red nodes */
-			CHECK(_rb_is_black(node) || _rb_is_black(ch));
+			CHECK(z_rb_is_black(node) || z_rb_is_black(ch));
 
 			/* Recurse */
 			check_rbnode(ch, bheight);
@@ -124,7 +124,7 @@ void check_rb(void)
 	last_black_height = 0;
 
 	CHECK(tree.root);
-	CHECK(_rb_is_black(tree.root));
+	CHECK(z_rb_is_black(tree.root));
 
 	check_rbnode(tree.root, 0);
 }

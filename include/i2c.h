@@ -204,7 +204,7 @@ struct i2c_slave_driver_api {
  */
 __syscall int i2c_configure(struct device *dev, u32_t dev_config);
 
-static inline int _impl_i2c_configure(struct device *dev, u32_t dev_config)
+static inline int z_impl_i2c_configure(struct device *dev, u32_t dev_config)
 {
 	const struct i2c_driver_api *api =
 		(const struct i2c_driver_api *)dev->driver_api;
@@ -242,7 +242,7 @@ __syscall int i2c_transfer(struct device *dev,
 			   struct i2c_msg *msgs, u8_t num_msgs,
 			   u16_t addr);
 
-static inline int _impl_i2c_transfer(struct device *dev,
+static inline int z_impl_i2c_transfer(struct device *dev,
 				     struct i2c_msg *msgs, u8_t num_msgs,
 				     u16_t addr)
 {
@@ -278,7 +278,7 @@ static inline int _impl_i2c_transfer(struct device *dev,
 __syscall int i2c_slave_register(struct device *dev,
 				 struct i2c_slave_config *cfg);
 
-static inline int _impl_i2c_slave_register(struct device *dev,
+static inline int z_impl_i2c_slave_register(struct device *dev,
 					   struct i2c_slave_config *cfg)
 {
 	const struct i2c_driver_api *api =
@@ -309,7 +309,7 @@ static inline int _impl_i2c_slave_register(struct device *dev,
 __syscall int i2c_slave_unregister(struct device *dev,
 				   struct i2c_slave_config *cfg);
 
-static inline int _impl_i2c_slave_unregister(struct device *dev,
+static inline int z_impl_i2c_slave_unregister(struct device *dev,
 					     struct i2c_slave_config *cfg)
 {
 	const struct i2c_driver_api *api =
@@ -336,7 +336,7 @@ static inline int _impl_i2c_slave_unregister(struct device *dev,
  */
 __syscall int i2c_slave_driver_register(struct device *dev);
 
-static inline int _impl_i2c_slave_driver_register(struct device *dev)
+static inline int z_impl_i2c_slave_driver_register(struct device *dev)
 {
 	const struct i2c_slave_driver_api *api =
 		(const struct i2c_slave_driver_api *)dev->driver_api;
@@ -358,7 +358,7 @@ static inline int _impl_i2c_slave_driver_register(struct device *dev)
  */
 __syscall int i2c_slave_driver_unregister(struct device *dev);
 
-static inline int _impl_i2c_slave_driver_unregister(struct device *dev)
+static inline int z_impl_i2c_slave_driver_unregister(struct device *dev)
 {
 	const struct i2c_slave_driver_api *api =
 		(const struct i2c_slave_driver_api *)dev->driver_api;

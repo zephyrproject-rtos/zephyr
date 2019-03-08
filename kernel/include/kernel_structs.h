@@ -174,8 +174,8 @@ typedef struct z_kernel _kernel_t;
 extern struct z_kernel _kernel;
 
 #ifdef CONFIG_SMP
-#define _current_cpu (_arch_curr_cpu())
-#define _current (_arch_curr_cpu()->current)
+#define _current_cpu (z_arch_curr_cpu())
+#define _current (z_arch_curr_cpu()->current)
 #else
 #define _current_cpu (&_kernel.cpus[0])
 #define _current _kernel.current
@@ -187,25 +187,25 @@ extern struct z_kernel _kernel;
 
 #if CONFIG_USE_SWITCH
 /* This is a arch function traditionally, but when the switch-based
- * _Swap() is in use it's a simple inline provided by the kernel.
+ * z_swap() is in use it's a simple inline provided by the kernel.
  */
 static ALWAYS_INLINE void
-_set_thread_return_value(struct k_thread *thread, unsigned int value)
+z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 {
 	thread->swap_retval = value;
 }
 #endif
 
 static ALWAYS_INLINE void
-_set_thread_return_value_with_data(struct k_thread *thread,
+z_set_thread_return_value_with_data(struct k_thread *thread,
 				   unsigned int value,
 				   void *data)
 {
-	_set_thread_return_value(thread, value);
+	z_set_thread_return_value(thread, value);
 	thread->base.swap_data = data;
 }
 
-extern void _init_thread_base(struct _thread_base *thread_base,
+extern void z_init_thread_base(struct _thread_base *thread_base,
 			      int priority, u32_t initial_state,
 			      unsigned int options);
 
@@ -229,7 +229,7 @@ static ALWAYS_INLINE void _new_thread_init(struct k_thread *thread,
 	*((u32_t *)pStack) = STACK_SENTINEL;
 #endif /* CONFIG_STACK_SENTINEL */
 	/* Initialize various struct k_thread members */
-	_init_thread_base(&thread->base, prio, _THREAD_PRESTART, options);
+	z_init_thread_base(&thread->base, prio, _THREAD_PRESTART, options);
 
 	/* static threads overwrite it afterwards with real value */
 	thread->init_data = NULL;

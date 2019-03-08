@@ -50,7 +50,7 @@ extern u8_t *_k_priv_stack_find(void *obj);
  * @return N/A
  */
 
-void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		 size_t stackSize, k_thread_entry_t pEntry,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned int options)
@@ -60,7 +60,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* Offset between the top of stack and the high end of stack area. */
 	u32_t top_of_stack_offset = 0;
 
-	_ASSERT_VALID_PRIO(priority, pEntry);
+	Z_ASSERT_VALID_PRIO(priority, pEntry);
 
 #if defined(CONFIG_USERSPACE)
 	/* Truncate the stack size to align with the MPU region granularity.
@@ -106,12 +106,12 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #if CONFIG_USERSPACE
 	if ((options & K_USER) != 0) {
-		pInitCtx->pc = (u32_t)_arch_user_mode_enter;
+		pInitCtx->pc = (u32_t)z_arch_user_mode_enter;
 	} else {
-		pInitCtx->pc = (u32_t)_thread_entry;
+		pInitCtx->pc = (u32_t)z_thread_entry;
 	}
 #else
-	pInitCtx->pc = (u32_t)_thread_entry;
+	pInitCtx->pc = (u32_t)z_thread_entry;
 #endif
 
 	/* force ARM mode by clearing LSB of address */
@@ -142,7 +142,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #ifdef CONFIG_USERSPACE
 
-FUNC_NORETURN void _arch_user_mode_enter(k_thread_entry_t user_entry,
+FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
 	void *p1, void *p2, void *p3)
 {
 

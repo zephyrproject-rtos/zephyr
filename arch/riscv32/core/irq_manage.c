@@ -8,7 +8,7 @@
 #include <kernel_structs.h>
 #include <misc/printk.h>
 
-void _irq_spurious(void *unused)
+void z_irq_spurious(void *unused)
 {
 	u32_t mcause;
 
@@ -26,11 +26,11 @@ void _irq_spurious(void *unused)
 	}
 #endif
 
-	_NanoFatalErrorHandler(_NANO_ERR_SPURIOUS_INT, &_default_esf);
+	z_NanoFatalErrorHandler(_NANO_ERR_SPURIOUS_INT, &_default_esf);
 }
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
-int _arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			      void (*routine)(void *parameter), void *parameter,
 			      u32_t flags)
 {

@@ -42,7 +42,7 @@ static void lvgl_log(lv_log_level_t level, const char *file, uint32_t line,
 	ARG_UNUSED(file);
 	ARG_UNUSED(line);
 
-	_LOG(zephyr_level, "%s", dsc);
+	Z_LOG(zephyr_level, "%s", dsc);
 }
 #endif
 

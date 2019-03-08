@@ -25,7 +25,7 @@ extern void _xt_user_exit(void);
  * needed anymore.
  *
  * The initial context is a basic stack frame that contains arguments for
- * _thread_entry() return address, that points at _thread_entry()
+ * z_thread_entry() return address, that points at z_thread_entry()
  * and status register.
  *
  * <options> is currently unused.
@@ -43,7 +43,7 @@ extern void _xt_user_exit(void);
  * @return N/A
  */
 
-void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
+void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		size_t stackSize, k_thread_entry_t pEntry,
 		void *p1, void *p2, void *p3,
 		int priority, unsigned int options)
@@ -90,7 +90,7 @@ void _new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* Explicitly initialize certain saved registers */
 
 	 /* task entrypoint */
-	pInitCtx->pc   = (u32_t)_thread_entry;
+	pInitCtx->pc   = (u32_t)z_thread_entry;
 
 	/* physical top of stack frame */
 	pInitCtx->a1   = (u32_t)pInitCtx + XT_STK_FRMSZ;

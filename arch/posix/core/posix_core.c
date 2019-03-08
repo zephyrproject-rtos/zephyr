@@ -205,7 +205,7 @@ void posix_swap(int next_allowed_thread_nbr, int this_th_nbr)
 /**
  * Let the ready thread (main) run, and exit this thread (init)
  *
- * Called from _arch_switch_to_main_thread() which does the picking from the
+ * Called from z_arch_switch_to_main_thread() which does the picking from the
  * kernel structures
  *
  * Note that we could have just done a swap(), but that would have left the
@@ -298,7 +298,7 @@ static void *posix_thread_starter(void *arg)
 
 	posix_new_thread_pre_start();
 
-	_thread_entry(ptr->entry_point, ptr->arg1, ptr->arg2, ptr->arg3);
+	z_thread_entry(ptr->entry_point, ptr->arg1, ptr->arg2, ptr->arg3);
 
 	/*
 	 * We only reach this point if the thread actually returns which should
@@ -357,9 +357,9 @@ static int ttable_get_empty_slot(void)
 }
 
 /**
- * Called from _new_thread(),
+ * Called from z_new_thread(),
  * Create a new POSIX thread for the new Zephyr thread.
- * _new_thread() picks from the kernel structures what it is that we need to
+ * z_new_thread() picks from the kernel structures what it is that we need to
  * call with what parameters
  */
 void posix_new_thread(posix_thread_status_t *ptr)
@@ -472,9 +472,9 @@ void posix_abort_thread(int thread_idx)
 
 #if defined(CONFIG_ARCH_HAS_THREAD_ABORT)
 
-extern void _k_thread_single_abort(struct k_thread *thread);
+extern void z_thread_single_abort(struct k_thread *thread);
 
-void _impl_k_thread_abort(k_tid_t thread)
+void z_impl_k_thread_abort(k_tid_t thread)
 {
 	unsigned int key;
 	int thread_idx;
@@ -490,8 +490,8 @@ void _impl_k_thread_abort(k_tid_t thread)
 	__ASSERT(!(thread->base.user_options & K_ESSENTIAL),
 		 "essential thread aborted");
 
-	_k_thread_single_abort(thread);
-	_thread_monitor_exit(thread);
+	z_thread_single_abort(thread);
+	z_thread_monitor_exit(thread);
 
 	if (_current == thread) {
 		if (tstatus->aborted == 0) { /* LCOV_EXCL_BR_LINE */
@@ -510,7 +510,7 @@ void _impl_k_thread_abort(k_tid_t thread)
 			thread_idx,
 			__func__);
 
-		(void)_Swap_irqlock(key);
+		(void)z_swap_irqlock(key);
 		CODE_UNREACHABLE; /* LCOV_EXCL_LINE */
 	}
 
@@ -531,7 +531,7 @@ void _impl_k_thread_abort(k_tid_t thread)
 	}
 
 	/* The abort handler might have altered the ready queue. */
-	_reschedule_irqlock(key);
+	z_reschedule_irqlock(key);
 }
 #endif
 
