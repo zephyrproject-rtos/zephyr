@@ -1,13 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_compile_options(
-  -fno-freestanding
   -m32
   -MMD
   -MP
   ${ARCH_FLAG}
   -include ${ZEPHYR_BASE}/arch/posix/include/posix_cheats.h
   )
+
+# @Intent: Obtain compiler specific flags for no freestanding compilation
+toolchain_cc_no_freestanding_options()
 
 zephyr_include_directories(${BOARD_DIR})
 
