@@ -199,6 +199,10 @@ SECTION_FUNC(TEXT, _x86_syscall_entry_stub)
 	jae	_bad_syscall
 
 _id_ok:
+#ifdef CONFIG_BOUNDS_CHECK_BYPASS_MITIGATION
+	/* Prevent speculation with bogus system call IDs */
+	lfence
+#endif
 	/* Marshal arguments per calling convention to match what is expected
 	 * for _k_syscall_handler_t functions
 	 */

@@ -76,6 +76,7 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 	u32_t end_pdpte_num = MMU_PDPTE_NUM((char *)addr + size - 1);
 	u32_t pdpte;
 	struct x86_mmu_pt *pte_address;
+	int ret = -EPERM;
 
 	start_pde_num = MMU_PDE_NUM(addr);
 	end_pde_num = MMU_PDE_NUM((char *)addr + size - 1);
@@ -94,7 +95,7 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 
 		/* Ensure page directory pointer table entry is present */
 		if (X86_MMU_GET_PDPTE_INDEX(&USER_PDPT, pdpte)->p == 0) {
-			return -EPERM;
+			goto out;
 		}
 
 		struct x86_mmu_pd *pd_address =
@@ -111,7 +112,7 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 			if (!pde_value.p ||
 			    !pde_value.us ||
 			    (write && !pde_value.rw)) {
-				return -EPERM;
+				goto out;
 			}
 
 			pte_address = (struct x86_mmu_pt *)
@@ -155,12 +156,17 @@ int _arch_buffer_validate(void *addr, size_t size, int write)
 			if (!pte_value.p ||
 			    !pte_value.us ||
 			    (write && !pte_value.rw)) {
-				return -EPERM;
+				goto out;
 			}
 		}
 	}
+	ret = 0;
+out:
+#ifdef CONFIG_BOUNDS_CHECK_BYPASS_MITIGATION
+	__asm__ volatile ("lfence" : : : "memory");
+#endif
 
-	return 0;
+	return ret;
 }
 
 static inline void tlb_flush_page(void *addr)
