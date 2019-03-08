@@ -341,6 +341,10 @@ static int uart_stm32_configure(struct device *dev,
 	}
 
 	if (cfg->baudrate != data->baud_rate) {
+		if (IS_LPUART_INSTANCE(UartInstance) &&
+			(data->baud_rate > 9600)) {
+				return -ENOTSUP;
+			}
 		uart_stm32_set_baudrate(dev, cfg->baudrate);
 		data->baud_rate = cfg->baudrate;
 	}
@@ -628,6 +632,9 @@ static int uart_stm32_init(struct device *dev)
 				 LL_USART_STOPBITS_1);
 
 	/* Set the default baudrate */
+	if (IS_LPUART_INSTANCE(UartInstance) &&	(data->baud_rate > 9600)) {
+		return -ENOTSUP;
+	}
 	uart_stm32_set_baudrate(dev, data->baud_rate);
 
 	LL_USART_Enable(UartInstance);
