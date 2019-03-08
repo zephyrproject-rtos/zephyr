@@ -2020,6 +2020,12 @@ struct net_pkt *net_pkt_alloc_debug(s32_t timeout,
 #define net_pkt_alloc(_timeout)					\
 	net_pkt_alloc_debug(_timeout, __func__, __LINE__)
 
+struct net_pkt *net_pkt_alloc_from_slab_debug(struct k_mem_slab *slab,
+					      s32_t timeout,
+					      const char *caller, int line);
+#define net_pkt_alloc_from_slab(_slab, _timeout)			\
+	net_pkt_alloc_from_slab_debug(_slab, _timeout, __func__, __LINE__)
+
 struct net_pkt *net_pkt_rx_alloc_debug(s32_t timeout,
 				       const char *caller, int line);
 #define net_pkt_rx_alloc(_timeout)				\
@@ -2089,6 +2095,25 @@ struct net_pkt *net_pkt_rx_alloc_with_buffer_debug(struct net_if *iface,
  */
 #if !defined(NET_PKT_DEBUG_ENABLED)
 struct net_pkt *net_pkt_alloc(s32_t timeout);
+#endif
+
+/**
+ * @brief Allocate an initialized net_pkt from a specific slab
+ *
+ * @details unlike net_pkt_alloc() which uses core slabs, this one will use
+ *          an external slab (see NET_PKT_SLAB_DEFINE()).
+ *          Do _not_ use it unless you know what you are doing. Basically, only
+ *          net_context should be using this, in order to allocate packet and
+ *          then buffer on its local slab/pool (if any).
+ *
+ * @param slab    The slab to use for allocating the packet
+ * @param timeout Maximum time in milliseconds to wait for an allocation.
+ *
+ * @return a pointer to a newly allocated net_pkt on success, NULL otherwise.
+ */
+#if !defined(NET_PKT_DEBUG_ENABLED)
+struct net_pkt *net_pkt_alloc_from_slab(struct k_mem_slab *slab,
+					s32_t timeout);
 #endif
 
 /**
