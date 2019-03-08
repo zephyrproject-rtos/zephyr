@@ -50,7 +50,9 @@ assert(ZEPHYR_TOOLCHAIN_VARIANT "Zephyr toolchain variant invalid: please set th
 
 # Pick host system's toolchain if we are targeting posix
 if((${ARCH} STREQUAL "posix") OR (${ARCH} STREQUAL "x86_64"))
-  set(ZEPHYR_TOOLCHAIN_VARIANT "host")
+  if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "llvm")
+    set(ZEPHYR_TOOLCHAIN_VARIANT "host")
+  endif()
 endif()
 
 # Configure the toolchain based on what SDK/toolchain is in use.
