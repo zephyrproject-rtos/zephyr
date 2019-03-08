@@ -2649,6 +2649,8 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.fromfile_prefix_chars = "+"
 
+    case_select = parser.add_argument_group("Test case selection")
+
     parser.add_argument("--force-toolchain", action="store_true",
             help="Do not filter based on toolchain, use the set "
             " toolchain unconditionally")
@@ -2672,7 +2674,7 @@ def parse_arguments():
     parser.add_argument("-e", "--exclude-tag", action="append",
                         help="Specify tags of tests that should not run. "
                         "Default is to run all tests with all tags.")
-    parser.add_argument(
+    case_select.add_argument(
         "-f",
         "--only-failed",
         action="store_true",
@@ -2688,13 +2690,13 @@ def parse_arguments():
         "defconfig that have that value assigned to any value. "
         "Prepend a '!' to invert the match.")
 
-    parser.add_argument(
+    case_select.add_argument(
         "-s", "--test", action="append",
         help="Run only the specified test cases. These are named by "
         "<path to test project relative to "
         "--testcase-root>/<testcase.yaml section name>")
 
-    parser.add_argument(
+    case_select.add_argument(
         "--sub-test", action="append",
         help="Run only the specified sub-test cases and its parent. These are named by "
         "test case name appended by test function, i.e. kernel.mutex.mutex_lock_unlock."
@@ -2735,7 +2737,7 @@ def parse_arguments():
     parser.add_argument("--list-tags", action="store_true",
             help="list all tags in selected tests")
 
-    parser.add_argument("--list-tests", action="store_true",
+    case_select.add_argument("--list-tests", action="store_true",
             help="list all tests.")
 
     parser.add_argument("--export-tests", action="store",
@@ -2779,14 +2781,14 @@ def parse_arguments():
         action="store_true",
         help="do not update the results of the last run of the sanity "
         "checks")
-    parser.add_argument(
+    case_select.add_argument(
         "-F",
         "--load-tests",
         metavar="FILENAME",
         action="store",
         help="Load list of tests to be run from file.")
 
-    parser.add_argument(
+    case_select.add_argument(
         "-E",
         "--save-tests",
         metavar="FILENAME",
@@ -2836,7 +2838,7 @@ def parse_arguments():
         "-n", "--no-clean", action="store_true",
         help="Do not delete the outdir before building. Will result in "
         "faster compilation since builds will be incremental")
-    parser.add_argument(
+    case_select.add_argument(
         "-T", "--testcase-root", action="append", default=[],
         help="Base directory to recursively search for test cases. All "
         "testcase.yaml files under here will be processed. May be "
