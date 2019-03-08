@@ -1,0 +1,7 @@
+sample:
+  name: Camera Sample
+tests:
+  test:
+    build_only: true
+    platform_whitelist: nucleo_l496zg
+    tags: camera

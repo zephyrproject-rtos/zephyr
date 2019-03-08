@@ -10,6 +10,7 @@ Samples and Demos
 
    classic
    basic/*
+   camera/*
    userspace/*
    subsys/subsys.rst
    net/net.rst
