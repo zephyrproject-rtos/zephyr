@@ -217,7 +217,8 @@ void main(void)
 
 	ret = gpio_pin_configure(button_gpio_dev, CONFIG_PIN_USER_BUTTON,
 				    (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-				     GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE));
+				     GPIO_INT_ACTIVE_HIGH | GPIO_PUD_PULL_UP |
+				     GPIO_INT_DEBOUNCE));
 	if (ret) {
 		printk("Error configuring  button pin\n");
 	}
