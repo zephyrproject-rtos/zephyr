@@ -90,12 +90,12 @@ static inline bool z_is_thread_pending(struct k_thread *thread)
 	return !!(thread->base.thread_state & _THREAD_PENDING);
 }
 
-static inline int z_is_thread_prevented_from_running(struct k_thread *thread)
+static inline bool z_is_thread_prevented_from_running(struct k_thread *thread)
 {
 	u8_t state = thread->base.thread_state;
 
-	return state & (_THREAD_PENDING | _THREAD_PRESTART | _THREAD_DEAD |
-			_THREAD_DUMMY | _THREAD_SUSPENDED);
+	return (state & (_THREAD_PENDING | _THREAD_PRESTART | _THREAD_DEAD |
+			 _THREAD_DUMMY | _THREAD_SUSPENDED)) != 0;
 
 }
 
