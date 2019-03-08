@@ -41,7 +41,7 @@ GNU ARM Embedded
    equivalent to the official GNU Arm Embedded Toolchain distribution,
    by ARM. But the Eclipse release is recommended over the official
    release because historically it has been faster releasing
-   bugfixes and also been built to compile faster.
+   bugfixes and also compiles applications faster.
 
 Intel ISSM
 **********
