@@ -284,7 +284,7 @@ static inline int z_impl_i2c_slave_register(struct device *dev,
 	const struct i2c_driver_api *api =
 		(const struct i2c_driver_api *)dev->driver_api;
 
-	if (!api->slave_register) {
+	if (api->slave_register == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -315,7 +315,7 @@ static inline int z_impl_i2c_slave_unregister(struct device *dev,
 	const struct i2c_driver_api *api =
 		(const struct i2c_driver_api *)dev->driver_api;
 
-	if (!api->slave_unregister) {
+	if (api->slave_unregister == NULL) {
 		return -ENOTSUP;
 	}
 

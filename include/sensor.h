@@ -288,7 +288,7 @@ static inline int z_impl_sensor_attr_set(struct device *dev,
 {
 	const struct sensor_driver_api *api = dev->driver_api;
 
-	if (!api->attr_set) {
+	if (api->attr_set == NULL) {
 		return -ENOTSUP;
 	}
 
@@ -318,7 +318,7 @@ static inline int sensor_trigger_set(struct device *dev,
 {
 	const struct sensor_driver_api *api = dev->driver_api;
 
-	if (!api->trigger_set) {
+	if (api->trigger_set == NULL) {
 		return -ENOTSUP;
 	}
 

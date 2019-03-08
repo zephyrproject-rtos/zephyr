@@ -582,7 +582,7 @@ static inline int z_impl_uart_err_check(struct device *dev)
 	const struct uart_driver_api *api =
 		(const struct uart_driver_api *)dev->driver_api;
 
-	if (api->err_check) {
+	if (api->err_check != NULL) {
 		return api->err_check(dev);
 	}
 	return 0;
@@ -657,7 +657,7 @@ static inline int z_impl_uart_configure(struct device *dev,
 	const struct uart_driver_api *api =
 				(const struct uart_driver_api *)dev->driver_api;
 
-	if (api->configure) {
+	if (api->configure != NULL) {
 		return api->configure(dev, cfg);
 	}
 
@@ -684,7 +684,7 @@ static inline int z_impl_uart_config_get(struct device *dev,
 	const struct uart_driver_api *api =
 				(const struct uart_driver_api *)dev->driver_api;
 
-	if (api->config_get) {
+	if (api->config_get != NULL) {
 		return api->config_get(dev, cfg);
 	}
 

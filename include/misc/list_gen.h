@@ -58,7 +58,7 @@
 	static inline bool						\
 	sys_ ## __lname ## _is_empty(sys_ ## __lname ## _t *list)	\
 	{								\
-		return (!sys_ ## __lname ## _peek_head(list));		\
+		return (sys_ ## __lname ## _peek_head(list) == NULL);	\
 	}
 
 #define Z_GENLIST_PEEK_NEXT_NO_CHECK(__lname, __nname)			    \
@@ -145,7 +145,7 @@
 				   sys_ ## __nname ## _t *prev,		\
 				   sys_ ## __nname ## _t *node)		\
 	{								\
-		if (!prev) {						\
+		if (prev == NULL) {					\
 			sys_ ## __lname ## _prepend(list, node);	\
 		} else if (!z_ ## __nname ## _next_peek(prev)) {	\
 			sys_ ## __lname ## _append(list, node);		\
@@ -187,7 +187,7 @@
 				   sys_ ## __nname ## _t *prev_node,	      \
 				   sys_ ## __nname ## _t *node)		      \
 	{								      \
-		if (!prev_node) {					      \
+		if (prev_node == NULL) {				      \
 			z_ ## __lname ## _head_set(list,		      \
 				z_ ## __nname ## _next_peek(node));	      \
 									      \
