@@ -182,6 +182,10 @@ void configure_builtin_stack_guard(struct k_thread *thread)
 	u32_t guard_start = thread->arch.priv_stack_start ?
 			    (u32_t)thread->arch.priv_stack_start :
 			    (u32_t)thread->stack_obj;
+
+	__ASSERT(thread->stack_info.start == ((u32_t)thread->stack_obj),
+		"stack_info.start does not point to the start of the"
+		"thread allocated area.");
 #else
 	u32_t guard_start = thread->stack_info.start;
 #endif
