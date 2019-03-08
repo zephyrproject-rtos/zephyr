@@ -402,7 +402,8 @@ zephyr_ld_option_ifdef(
   )
 
 get_property(TOPT GLOBAL PROPERTY TOPT)
-set_ifndef(  TOPT -T)
+set_ifndef(  TOPT -Wl,-T) # clang doesn't pick -T for some reason and complains,
+                          # while -Wl,-T works for both, gcc and clang
 
 if(NOT CONFIG_NATIVE_APPLICATION)
   # Funny thing is if this is set to =error, some architectures will
