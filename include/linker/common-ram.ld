@@ -50,70 +50,70 @@
 	SECTION_DATA_PROLOGUE(_k_timer_area, (OPTIONAL), SUBALIGN(4))
 	{
 		_k_timer_list_start = .;
-		KEEP(*(SORT_BY_NAME("._k_timer.static.*")))
+		KEEP(*("._k_timer.static.*"))
 		_k_timer_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(_k_mem_slab_area, (OPTIONAL), SUBALIGN(4))
 	{
 		_k_mem_slab_list_start = .;
-		KEEP(*(SORT_BY_NAME("._k_mem_slab.static.*")))
+		KEEP(*("._k_mem_slab.static.*"))
 		_k_mem_slab_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(_k_mem_pool_area, (OPTIONAL), SUBALIGN(4))
 	{
 		_k_mem_pool_list_start = .;
-		KEEP(*(SORT_BY_NAME("._k_mem_pool.static.*")))
+		KEEP(*("._k_mem_pool.static.*"))
 		_k_mem_pool_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(_k_sem_area, (OPTIONAL), SUBALIGN(4))
 	{
 		_k_sem_list_start = .;
-		KEEP(*(SORT_BY_NAME("._k_sem.static.*")))
+		KEEP(*("._k_sem.static.*"))
 		_k_sem_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(_k_mutex_area, (OPTIONAL), SUBALIGN(4))
 	{
 		_k_mutex_list_start = .;
-		KEEP(*(SORT_BY_NAME("._k_mutex.static.*")))
+		KEEP(*("._k_mutex.static.*"))
 		_k_mutex_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(_k_queue_area, (OPTIONAL), SUBALIGN(4))
 	{
 		_k_queue_list_start = .;
-		KEEP(*(SORT_BY_NAME("._k_queue.static.*")))
+		KEEP(*("._k_queue.static.*"))
 		_k_queue_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(_k_stack_area, (OPTIONAL), SUBALIGN(4))
 	{
 		_k_stack_list_start = .;
-		KEEP(*(SORT_BY_NAME("._k_stack.static.*")))
+		KEEP(*("._k_stack.static.*"))
 		_k_stack_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(_k_msgq_area, (OPTIONAL), SUBALIGN(4))
 	{
 		_k_msgq_list_start = .;
-		KEEP(*(SORT_BY_NAME("._k_msgq.static.*")))
+		KEEP(*("._k_msgq.static.*"))
 		_k_msgq_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(_k_mbox_area, (OPTIONAL), SUBALIGN(4))
 	{
 		_k_mbox_list_start = .;
-		KEEP(*(SORT_BY_NAME("._k_mbox.static.*")))
+		KEEP(*("._k_mbox.static.*"))
 		_k_mbox_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(_k_pipe_area, (OPTIONAL), SUBALIGN(4))
 	{
 		_k_pipe_list_start = .;
-		KEEP(*(SORT_BY_NAME("._k_pipe.static.*")))
+		KEEP(*("._k_pipe.static.*"))
 		_k_pipe_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
