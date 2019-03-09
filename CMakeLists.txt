@@ -384,6 +384,13 @@ zephyr_ld_options(
   ${LINKERFLAGPREFIX},--build-id=none
   )
 
+# Sort the common symbols and each input section by alignment
+# in descending order to minimize padding between these symbols.
+zephyr_ld_options(
+  ${LINKERFLAGPREFIX},--sort-common=descending
+  ${LINKERFLAGPREFIX},--sort-section=alignment
+  )
+
 get_property(TOPT GLOBAL PROPERTY TOPT)
 set_ifndef(  TOPT -T)
 
