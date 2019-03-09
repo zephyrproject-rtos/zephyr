@@ -63,7 +63,6 @@
 
 	SECTION_DATA_PROLOGUE(_k_mem_pool_area, (OPTIONAL), SUBALIGN(4))
 	{
-		KEEP(*(SORT_BY_NAME("._k_memory_pool.struct*")))
 		_k_mem_pool_list_start = .;
 		KEEP(*(SORT_BY_NAME("._k_mem_pool.static.*")))
 		_k_mem_pool_list_end = .;
@@ -135,17 +134,6 @@
 		*(._k_event_list.event.*)
 		KEEP(*(SORT_BY_NAME("._k_event_list*")))
 		_k_event_list_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	SECTION_DATA_PROLOGUE(_k_memory_pool, (OPTIONAL), SUBALIGN(4))
-	{
-		*(._k_memory_pool.struct*)
-		KEEP(*(SORT_BY_NAME("._k_memory_pool.struct*")))
-
-		_k_mem_pool_start = .;
-		*(._k_memory_pool.*)
-		KEEP(*(SORT_BY_NAME("._k_memory_pool*")))
-		_k_mem_pool_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 	SECTION_DATA_PROLOGUE(_net_buf_pool_area, (OPTIONAL), SUBALIGN(4))
