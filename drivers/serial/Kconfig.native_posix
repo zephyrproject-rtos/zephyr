@@ -12,7 +12,6 @@ if UART_NATIVE_POSIX
 config UART_NATIVE_POSIX_PORT_0_NAME
 	string "Port 0 Device Name"
 	default "UART_0"
-	depends on UART_NATIVE_POSIX
 	help
 	  This is the device name for UART, and is included in the device
 	  struct.
@@ -56,4 +55,4 @@ config NATIVE_UART_AUTOATTACH_DEFAULT_CMD
 	  This is only applicable if a UART is configured to use its own PTY with
 	  NATIVE_UART_x_ON_OWN_PTY.
 
-endif #UART_NATIVE_POSIX
+endif # UART_NATIVE_POSIX
