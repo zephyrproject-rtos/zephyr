@@ -1,11 +1,9 @@
-
 if BOARD_NRF52_BSIM
 
 comment "NRF52_BSIM options"
 
 config PRINTK_HOOK_INIT_PRIORITY
 	int
-	depends on BOARD_NRF52_BSIM
 	default 50
 	help
 	  Just the driver init priority
