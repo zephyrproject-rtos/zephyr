@@ -183,6 +183,7 @@
 /ext/fs/                                  @nashif @wentongwu
 /ext/hal/atmel/asf/sam/include/same70*/   @aurel32
 /ext/hal/atmel/asf/sam0/include/samr21/   @benpicco
+/ext/hal/atmel/asf/sam0/include/sam*5*/   @benpicco
 /ext/hal/cmsis/                           @MaureenHelm @galak
 /ext/hal/libmetal/                        @galak
 /ext/hal/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
