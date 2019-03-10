@@ -45,7 +45,7 @@ fixed on some machines and configurable on other machines.
 
 
 ``select`` statements
-****************************************
+*********************
 
 The ``select`` statement is used to force one symbol to ``y`` whenever another
 symbol is ``y``. For example, the following code forces ``CONSOLE`` to ``y``
@@ -273,6 +273,55 @@ In summary, here are some recommended practices for ``select``:
 
 - Select simple helper symbols without prompts and dependencies however much
   you like. They're a great tool for simplifying Kconfig files.
+
+
+(Lack of) conditional includes
+******************************
+
+``if`` blocks add dependencies to each item within the ``if``, as if ``depends
+on`` was used.
+
+A common misunderstanding related to ``if`` is to think that this code
+conditionally includes the file :file:`Kconfig.other`:
+
+.. code-block:: none
+
+   if DEP
+   source "Kconfig.other"
+   endif
+
+In reality, there are no conditional includes in Kconfig. ``if`` has no special
+meaning around a ``source``.
+
+.. note::
+
+   Conditional includes would be impossible to implement, because ``if``
+   conditions may contain (either directly or indirectly) forward references to
+   symbols that haven't been defined yet.
+
+Say that :file:`Kconfig.other` above contains this definition:
+
+.. code-block:: none
+
+   config FOO
+   	bool "Support foo"
+
+In this case, ``FOO`` will end up with this definition:
+
+.. code-block:: none
+
+   config FOO
+   	bool "Support foo"
+   	depends on DEP
+
+Note that it is redundant to add ``depends on DEP`` to the definition of
+``FOO`` in :file:`Kconfig.other`, because the ``DEP`` dependency has already
+been added by ``if DEP``.
+
+In general, try to avoid adding redundant dependencies. They can make the
+structure of the Kconfig files harder to understand, and also make changes more
+error-prone, since it can be hard to spot that the same dependency is added
+twice.
 
 
 Style recommendations and shorthands
