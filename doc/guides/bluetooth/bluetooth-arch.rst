@@ -210,7 +210,199 @@ The stack is split up as follows in the source tree:
 Host
 ****
 
-<TBD jhe>
+The Bluetooth Host implements all the higher-level protocols and
+profiles, and most importantly, provides a high-level API for
+applications. The following diagram depicts the main protocol & profile
+layers of the host.
+
+.. figure:: img/ble_host_layers.png
+   :align: center
+   :alt: Bluetooth Host protocol & profile layers
+
+   Bluetooth Host protocol & profile layers.
+
+Lowest down in the host stack sits a so-called HCI driver, which is
+responsible for abstracting away the details of the HCI transport. It
+provides a basic API for delivering data from the controller to the
+host, and vice-versa.
+
+Perhaps the most important block above the HCI handling is the Generic
+Access Profile (GAP). GAP simplifies Bluetooth LE access by defining
+four distinct roles of BLE usage:
+
+* Connection-oriented roles
+
+  * Peripheral (e.g. a smart sensor, often with a limited user interface)
+
+  * Central (typically a mobile phone or a PC)
+
+* Connection-less roles
+
+  * Broadcaster (sending out BLE advertisements, e.g. a smart beacon)
+
+  * Observer (scanning for BLE advertisements)
+
+Each role comes with its own build-time configuration option:
+:option:`CONFIG_BT_PERIPHERAL`, :option:`CONFIG_BT_CENTRAL`,
+:option:`CONFIG_BT_BROADCASTER` & :option:`CONFIG_BT_OBSERVER`. Of the
+connection-oriented roles central implicitly enables observer role, and
+peripheral implicitly enables broadcaster role. Usually the first step
+when creating an application is to decide which roles are needed and go
+from there. Bluetooth Mesh is a slightly special case, requiring at
+least the observer and broadcaster roles, and possibly also the
+Peripheral role. This will be descibed in more detail in a later
+section.
+
+Peripheral role
+===============
+
+Most Zephyr-based BLE devices will most likely be peripheral-role
+devices. This means that they peform connectable advertising and expose
+one or more GATT services. After registering services using the
+:cpp:func:`bt_gatt_service_register` API the application will typically
+start connectable advertising using the :cpp:func:`bt_le_adv_start` API.
+
+There are several peripheral sample applications available in the tree,
+such as :zephyr_file:`samples/bluetooth/peripheral_hr`.
+
+Central role
+============
+
+Central role may not be as common for Zephyr-based devices as periphal
+role, but it is still a plausible one and equally well supported in
+Zephyr. Rather than accepting connections from other devices a central
+role device will scan for available peripheral device and choose one to
+connect to. Once connected, a central will typically act as a GATT
+client, first performing discovery of available services and then
+accessing one or more supported services.
+
+To initially discover a device to connect to the application will likely
+use the :cpp:func:`bt_le_scan_start` API, wait for an appropriate device
+to be found (using the scan callback), stop scanning using
+:cpp:func:`bt_le_scan_stop` and then connect to the device using
+:cpp:func:`bt_conn_create_le`. If the central wants to keep
+automatically reconnecting to the peripheral it should use the
+:cpp:func:`bt_le_set_auto_conn` API.
+
+There are some sample applications for the central role available in the
+tree, such as :zephyr_file:`samples/bluetooth/central_hr`.
+
+Observer role
+=============
+
+An observer role device will use the :cpp:func:`bt_le_scan_start` API to
+scan for device, but it will not connect to any of them. Instead it will
+simply utilize the advertising data of found devices, combining it
+optionally with the received signal strength (RSSI).
+
+Broadcaster role
+================
+
+A broadcaster role device will use the :cpp:func:`bt_le_adv_start` API to
+advertise specific advertising data, but the type of advertising will be
+non-connectable, i.e. other device will not be able to connect to it.
+
+Connections
+===========
+
+The Zephyr Bluetooth stack uses an abstraction called :c:type:`bt_conn`
+to represent connections to other devices. The internals of this struct
+are not exposed to the application, but a limited amount of information
+(such as the remote address) can be acquired using the
+:cpp:func:`bt_conn_get_info` API. Connection objects are reference
+counted, and the application is expected to use the
+:cpp:func:`bt_conn_ref` API whenever storing a connection pointer for a
+longer period of time, since this ensures that the object remains valid
+(even if the connection would get disconnected). Similarily the
+:cpp:func:`bt_conn_unref` API is to be used when releasing a reference
+to a connection.
+
+An application may track connections by registering a
+:c:type:`bt_conn_cb` struct using the :cpp:func:`bt_conn_cb_register`
+API.  This struct lets the application define callbacks for connection &
+disconnection events, as well as other events related to a connection
+such as a change in the security level or the connection parameters.
+When acting as a central the application will also get hold of the
+connection object through the return value of the
+:cpp:func:`bt_conn_create_le` API.
+
+Security
+========
+
+To acheive a secure relationship between two Bluetooth devices a process
+called pairing is used. This process can either be triggered implicitly
+through the security properties of GATT services, or explicitly using
+the :cpp:func:`bt_conn_security` API on a connection object.
+
+To acheive a higher security level, and protect against
+Man-In-The-Middle (MITM) attacks, it is recommended to use some
+out-of-band channel during the pairing. If the devices have a sufficient
+user interface this "channel" is the user itself. The capabilities of
+the device are registered using the :cpp:func:`bt_conn_auth_cb_register`
+API.  The :c:type:`bt_conn_auth_cb` struct that's passed to this API has
+a set of optional callbacks that can be used during the pairing - if the
+device lacks some feature the corresponding callback may be set to NULL.
+For example, if the device does not have an input method but does have a
+display, the ``passkey_entry`` and ``passkey_confirm`` callbacks would
+be set to NULL, but the ``passkey_display`` would be set to a callback
+capable of displaying a passkey to the user.
+
+Depending on the local and remote security requirements & capabilities,
+there are four possible security levels that can be reached:
+
+    :cpp:enumerator:`BT_SECURITY_LOW`
+        No encryption and no authentication.
+
+    :cpp:enumerator:`BT_SECURITY_MEDIUM`
+        Encryption but no authentication (no MITM protection).
+
+    :cpp:enumerator:`BT_SECURITY_HIGH`
+        Encryption and authentication using the legacy pairing method
+        from Bluetooth 4.0 and 4.1.
+
+    :cpp:enumerator:`BT_SECURITY_FIPS`
+        Encryption and authentication using the LE Secure Connections
+        feature available since Bluetooth 4.2.
+
+.. note::
+  Mesh has its own security solution through a process called
+  provisioning. It follows a similar procedure as pairing, but is done
+  using separate mesh-specific APIs.
+
+GATT
+====
+
+<TBD Luiz>
+
+Mesh
+====
+
+Mesh is a little bit special when it comes to the needed GAP roles. By
+default, mesh requires both observer and broadcaster role to be enabled.
+If the optional GATT Proxy feature is desired, then peripheral role
+should also be enabled.
+
+Peristent storage
+=================
+
+The Bluetooth host stack uses the settings subsystem to implement
+persistent storage to flash. This requires the presence of a flash
+driver and a designated "storage" partition on flash. A typical set of
+configuration options needed will look something like the following:
+
+  .. code-block:: none
+
+    CONFIG_BT_SETTINGS=y
+    CONFIG_FLASH=y
+    CONFIG_FLASH_PAGE_LAYOUT=y
+    CONFIG_FLASH_MAP=y
+    CONFIG_FCB=y
+    CONFIG_SETTINGS=y
+    CONFIG_SETTINGS_FCB=y
+
+Once enabled, it is the responsibility of the application to call
+settings_load() after having initialized Bluetooth (using the
+bt_enable() API).
 
 BLE Controller
 **************
