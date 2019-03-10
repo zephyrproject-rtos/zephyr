@@ -1133,7 +1133,7 @@ configure_file(
      ${PROJECT_BINARY_DIR}/include/generated/app_data_alignment.ld)
 
 configure_file(
-     $ENV{ZEPHYR_BASE}/include/arch/arm/cortex_m/scripts/app_smem.ld
+     $ENV{ZEPHYR_BASE}/include/linker/app_smem.ld
      ${PROJECT_BINARY_DIR}/include/generated/app_smem.ld)
 
 if(CONFIG_USERSPACE)
