@@ -37,9 +37,16 @@ import argparse
 import os
 import re
 import string
+import subprocess
+from collections import OrderedDict
 from elf_helper import ElfHelper
 from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
+from operator import itemgetter
 
+SZ = 'size'
+SRC = 'sources'
+LIB = 'libraries'
 
 # This script will create sections and linker variables to place the
 # application shared memory partitions.
@@ -91,7 +98,9 @@ size_cal_string = """
 
 section_regex = re.compile(r'data_smem_([A-Za-z0-9_]*)_(data|bss)')
 
-def find_partitions(filename, partitions, sources):
+elf_part_size_regex = re.compile(r'z_data_smem_(.*)_part_size')
+
+def find_obj_file_partitions(filename, partitions):
     with open(filename, 'rb') as f:
         full_lib = ELFFile( f)
         if (not full_lib):
@@ -106,23 +115,67 @@ def find_partitions(filename, partitions, sources):
 
             partition_name = m.groups()[0]
             if partition_name not in partitions:
-                partitions[partition_name] = []
-                if args.verbose:
-                    sources.update({partition_name: filename})
+                partitions[partition_name] = {SZ: section.header.sh_size}
 
-    return (partitions, sources)
+                if args.verbose:
+                    partitions[partition_name][SRC] = filename
+
+            else:
+                partitions[partition_name][SZ] += section.header.sh_size
+
+
+    return partitions
+
+
+def parse_obj_files(partitions):
+    # Iterate over all object files to find partitions
+    for dirpath, dirs, files in os.walk(args.directory):
+        for filename in files:
+            if re.match(".*\.obj$",filename):
+                fullname = os.path.join(dirpath, filename)
+                find_obj_file_partitions(fullname, partitions)
+
+
+def parse_elf_file(partitions):
+    with open(args.elf, 'rb') as f:
+        elffile = ELFFile(f)
+
+        symbol_tbls = [s for s in elffile.iter_sections()
+                       if isinstance(s, SymbolTableSection)]
+
+        for section in symbol_tbls:
+            for nsym, symbol in enumerate(section.iter_symbols()):
+                if symbol['st_shndx'] != "SHN_ABS":
+                    continue
+
+                x = elf_part_size_regex.match(symbol.name)
+                if not x:
+                    continue
+
+                partition_name = x.groups()[0]
+                size = symbol['st_value']
+                if partition_name not in partitions:
+                    partitions[partition_name] = {SZ: size}
+
+                    if args.verbose:
+                        partitions[partition_name][SRC] = args.elf
+
+                else:
+                    partitions[partition_name][SZ] += size
 
 
 def generate_final_linker(linker_file, partitions):
     string = linker_start_seq
     size_string = ''
-    for partition, libs in partitions.items():
+    for partition, item in partitions.items():
         string += data_template.format(partition)
-        for lib in libs:
-            string += library_data_template.format(lib)
+        if LIB in item:
+            for lib in item[LIB]:
+                string += library_data_template.format(lib)
         string += bss_template.format(partition)
-        for lib in libs:
-            string += library_bss_template.format(lib)
+        if LIB in item:
+            for lib in item[LIB]:
+                string += library_bss_template.format(lib)
         string += footer_template.format(partition)
         size_string += size_cal_string.format(partition)
 
@@ -137,8 +190,10 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("-d", "--directory", required=True,
+    parser.add_argument("-d", "--directory", required=False, default=None,
                         help="Root build directory")
+    parser.add_argument("-e", "--elf", required=False, default=None,
+                        help="ELF file")
     parser.add_argument("-o", "--output", required=False,
                         help="Output ld file")
     parser.add_argument("-v", "--verbose", action="count", default =0,
@@ -154,26 +209,34 @@ def main():
     parse_args()
     linker_file = args.output
     partitions = {}
-    sources = {}
 
-    for dirpath, dirs, files in os.walk(args.directory):
-        for filename in files:
-            if re.match(".*\.obj$",filename):
-                fullname = os.path.join(dirpath, filename)
-                find_partitions(fullname, partitions,
-                                sources)
+    if args.directory is not None:
+        parse_obj_files(partitions)
+    elif args.elf is not None:
+        parse_elf_file(partitions)
+    else:
+        return
 
     for lib, ptn in args.library:
         if ptn not in partitions:
-            partitions[ptn] = [lib]
-        else:
-            partitions[ptn].append(lib)
+            partitions[ptn] = {}
 
-    generate_final_linker(args.output, partitions)
+        if LIB not in partitions[ptn]:
+            partitions[ptn][LIB] = [lib]
+        else:
+            partitions[ptn][LIB].append(lib)
+
+    partsorted = OrderedDict(sorted(partitions.items(),
+                                     key=lambda x: x[1][SZ], reverse=True))
+
+    generate_final_linker(args.output, partsorted)
     if args.verbose:
         print("Partitions retrieved:")
-        for key in partitions:
-            print("    %s: %s\n", key, sources[key])
+        for key in partsorted:
+            print("    {0}: size {1}: {2}".format(key,
+                                                  partsorted[key][SZ],
+                                                  partsorted[key][SRC]))
+
 
 if __name__ == '__main__':
     main()
