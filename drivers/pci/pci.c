@@ -333,6 +333,7 @@ static int pci_dev_scan(union pci_addr_reg pci_ctrl_addr,
 				if (lookup.barofs >= max_bars) {
 					lookup.baridx = 0;
 					lookup.barofs = 0;
+					lookup.func++;
 				}
 
 				return 1;
@@ -406,7 +407,6 @@ int pci_bus_scan(struct pci_dev_info *dev_info)
 			pci_ctrl_addr.field.device = lookup.dev;
 
 			if (pci_dev_scan(pci_ctrl_addr, dev_info)) {
-				lookup.func++;
 				return 1;
 			}
 
