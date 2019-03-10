@@ -185,6 +185,7 @@
 /include/kernel_version.h                 @andrewboie @andyross
 /include/led.h                            @Mani-Sadhasivam
 /include/led_strip.h                      @mbolivar
+/include/linker/app_smem*.ld              @andrewboie
 /include/linker/linker-defs.h             @andrewboie @andyross
 /include/linker/linker-tool-gcc.h         @andrewboie @andyross
 /include/linker/linker-tool.h             @andrewboie @andyross
