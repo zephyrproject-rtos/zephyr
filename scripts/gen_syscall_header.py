@@ -4,6 +4,17 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+"""
+Generation script for syscall_macros.h
+
+The generation of macros for invoking system calls of various number
+of arguments, in different execution types (supervisor only, user only,
+mixed supervisor/user code) is tedious and repetitive. Rather than writing
+by hand, this script generates it.
+
+This script has no inputs, and emits the generated header to stdout.
+"""
+
 import sys
 from enum import Enum
 

@@ -4,6 +4,25 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+"""
+Script to generate system call invocation macros
+
+This script parses the system call metadata JSON file emitted by
+parse_syscalls.py to create several files:
+
+- A file containing weak aliases of any potentially unimplemented system calls,
+  as well as the system call dispatch table, which maps system call type IDs
+  to their handler functions.
+
+- A header file defing the system call type IDs, as well as function
+  prototypes for all system call handler functions.
+
+- A directory containing header files. Each header corresponds to a header
+  that was identified as containing system call declarations. These
+  generated headers contain the inline invocation functions for each system
+  call in that header.
+"""
+
 import sys
 import re
 import argparse
