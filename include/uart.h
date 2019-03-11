@@ -218,7 +218,7 @@ struct uart_event {
 /**
  * @typedef uart_callback_t
  * @brief Define the application callback function signature for
- * uart_set_callback() function.
+ * uart_callback_set() function.
  *
  * @param evt	    Pointer to uart_event structure.
  * @param user_data Pointer to data specified by user.
@@ -455,7 +455,7 @@ static inline int uart_callback_set(struct device *dev,
  * @brief Send given number of bytes from buffer through UART.
  *
  * Function returns immediately and event handler,
- * set using @ref uart_set_callback, is called after transfer is finished.
+ * set using @ref uart_callback_set, is called after transfer is finished.
  *
  * @param dev     UART device structure.
  * @param buf     Pointer to transmit buffer.
@@ -499,7 +499,7 @@ static inline int uart_tx_abort(struct device *dev)
  * @brief Start receiving data through UART.
  *
  * Function sets given buffer as first buffer for receiving and returns
- * immediately. After that event handler, set using @ref uart_set_callback,
+ * immediately. After that event handler, set using @ref uart_callback_set,
  * is called with UART_RX_RDY or UART_RX_BUF_REQUEST events.
  *
  * @param dev     UART device structure.
