@@ -21,10 +21,10 @@ extern "C" {
 /**
  * @brief ZIO device channel types.
  *
- * Each channel kind is associated with a specific SI unit type and scale,
+ * Each channel type is associated with a specific SI unit type and scale,
  * Expressed as the comments below.
  */
-typedef enum zio_dev_chan_kind {
+typedef enum zio_dev_chan_type {
 	/**
 	 * Raw data channel.
 	 *
@@ -383,7 +383,7 @@ typedef enum zio_dev_chan_kind {
 	 */
 	DEV_CHAN_USER_DEF,
 
-} zio_dev_chan_kind_t;
+} zio_dev_chan_type_t;
 
 /**
  * @}
