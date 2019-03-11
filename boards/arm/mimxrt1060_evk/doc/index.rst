@@ -188,43 +188,81 @@ remaining are not used.
 Programming and Debugging
 *************************
 
-The MIMXRT1060-EVK includes the :ref:`nxp_opensda` serial and debug adapter
-built into the board to provide debugging, flash programming, and serial
-communication over USB.
+Build and flash applications as usual (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
-To use the Segger J-Link tools with OpenSDA, follow the instructions in the
-:ref:`nxp_opensda_jlink` page using the `Segger J-Link OpenSDA V2.1 Firmware`_.
-The Segger J-Link tools are the default for this board, therefore it is not
-necessary to set ``OPENSDA_FW=jlink`` explicitly when you invoke ``make
-debug``.
+Configuring a Debug Probe
+=========================
 
-With these mechanisms, applications for the ``mimxrt1060_evk`` board
-configuration can be built and debugged in the usual way (see
-:ref:`build_an_application` and :ref:`application_run` for more details).
+A debug probe is used for both flashing and debugging the board. This board is
+configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
+however the :ref:`pyocd-debug-host-tools` do not yet support programming the
+external flashes on this board so you must reconfigure the board for one of the
+following debug probes instead.
 
-The pyOCD tools do not yet support this SoC.
+:ref:`jlink-external-debug-probe`
+---------------------------------
+
+Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
+path.
+
+Attach a J-Link 20-pin connector to J21. Check that jumpers J47 and J48 are
+**off** (they are on by default when boards ship from the factory) to ensure
+SWD signals are disconnected from the OpenSDA microcontroller.
+
+Configuring a Console
+=====================
+
+Regardless of your choice in debug probe, we will use the OpenSDA
+microcontroller as a usb-to-serial adapter for the serial console. Check that
+jumpers J45 and J46 are **on** (they are on by default when boards ship from
+the factory) to connect UART signals to the OpenSDA microcontroller.
+
+Connect a USB cable from your PC to J41.
+
+Use the following settings with your serial terminal of choice (minicom, putty,
+etc.):
+
+- Speed: 115200
+- Data: 8 bits
+- Parity: None
+- Stop bits: 1
 
 Flashing
 ========
 
-The Segger J-Link firmware does not support command line flashing, therefore
-the usual ``flash`` build system target is not supported.
-Instead, see the https://www.nxp.com/docs/en/application-note/AN12108.pdf for flashing instructions.
+Here is an example for the :ref:`hello_world` application.
 
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: mimxrt1060_evk
+   :goals: flash
+
+Open a serial terminal, reset the board (press the SW9 button), and you should
+see the following message in the terminal:
+
+.. code-block:: console
+
+   ***** Booting Zephyr OS v1.14.0-rc1 *****
+   Hello World! mimxrt1060_evk
 
 Debugging
 =========
 
-This example uses the :ref:`hello_world` sample with the
-:ref:`nxp_opensda_jlink` tools. Run the following to build your Zephyr
-application, invoke the J-Link GDB server, attach a GDB client, and program
-your Zephyr application to flash. It will leave you at a GDB prompt.
+Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: mimxrt1060_evk
    :goals: debug
 
+Open a serial terminal, step through the application in your debugger, and you
+should see the following message in the terminal:
+
+.. code-block:: console
+
+   ***** Booting Zephyr OS v1.14.0-rc1 *****
+   Hello World! mimxrt1060_evk
 
 .. _MIMXRT1060-EVK Website:
    https://www.nxp.com/support/developer-resources/software-development-tools/mcuxpresso-software-and-tools/mimxrt1060-evk-i.mx-rt1060-evaluation-kit:MIMXRT1060-EVK
@@ -243,6 +281,3 @@ your Zephyr application to flash. It will leave you at a GDB prompt.
 
 .. _i.MX RT1060 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=IMXRT1060RM
-
-.. _Segger J-Link OpenSDA V2.1 Firmware:
-   https://www.segger.com/downloads/jlink/OpenSDA_V2_1.bin
