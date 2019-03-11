@@ -5,4 +5,5 @@ arch: arm
 toolchain:
   - gnuarmemb
   - xtools
+  - zephyr
 ram: 64
