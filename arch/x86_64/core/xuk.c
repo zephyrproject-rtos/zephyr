@@ -199,7 +199,7 @@ long _isr_c_top(unsigned long vecret, unsigned long rsp,
 
 	/* Signal EOI if it's an APIC-managed interrupt */
 	if (vector > 0x1f) {
-		_apic.EOI = 0;
+		_apic.EOI = 0U;
 	}
 
 	/* Subtle: for the "interrupted context pointer", we pass in
@@ -257,9 +257,9 @@ void xuk_set_isr(int interrupt, int priority,
 		red.regvals[0] = ioapic_read(regidx);
 		red.regvals[1] = ioapic_read(regidx + 1);
 		red.vector = v;
-		red.logical = 0;
-		red.destination = 0xff;
-		red.masked = 1;
+		red.logical = 0U;
+		red.destination = 0xffU;
+		red.masked = 1U;
 		ioapic_write(regidx, red.regvals[0]);
 		ioapic_write(regidx + 1, red.regvals[1]);
 	}

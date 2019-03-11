@@ -109,9 +109,9 @@ int z_arch_buffer_validate(void *addr, size_t size, int write)
 			union x86_mmu_pde_pt pde_value =
 				pd_address->entry[pde].pt;
 
-			if (!pde_value.p ||
-			    !pde_value.us ||
-			    (write && !pde_value.rw)) {
+			if ((pde_value.p) == 0 ||
+			    (pde_value.us) == 0 ||
+			    ((write != 0) && (pde_value.rw == 0))) {
 				goto out;
 			}
 
@@ -140,7 +140,7 @@ int z_arch_buffer_validate(void *addr, size_t size, int write)
 				starting_pte_num = 0U;
 			}
 
-			pte_value.value = 0xFFFFFFFF;
+			pte_value.value = 0xFFFFFFFFU;
 
 			/* Bitwise AND all the pte values.
 			 * An optimization done to make sure a compare is
@@ -153,9 +153,9 @@ int z_arch_buffer_validate(void *addr, size_t size, int write)
 					pte_address->entry[pte].value;
 			}
 
-			if (!pte_value.p ||
-			    !pte_value.us ||
-			    (write && !pte_value.rw)) {
+			if ((pte_value.p) == 0 ||
+			    (pte_value.us) == 0 ||
+			    ((write != 0) && (pte_value.rw == 0))) {
 				goto out;
 			}
 		}
@@ -189,8 +189,8 @@ void z_x86_mmu_set_flags(struct x86_mmu_pdpt *pdpt, void *ptr,
 
 	u32_t addr = (u32_t)ptr;
 
-	__ASSERT(!(addr & MMU_PAGE_MASK), "unaligned address provided");
-	__ASSERT(!(size & MMU_PAGE_MASK), "unaligned size provided");
+	__ASSERT((addr & MMU_PAGE_MASK) == 0U, "unaligned address provided");
+	__ASSERT((size & MMU_PAGE_MASK) == 0U, "unaligned size provided");
 
 	/* L1TF mitigation: non-present PTEs will have address fields
 	 * zeroed. Expand the mask to include address bits if we are changing
