@@ -200,7 +200,7 @@ void cstart(unsigned int magic, unsigned int arg)
 	if (magic == BOOT_MAGIC_STUB16) {
 		cpu_id = _shared.num_active_cpus++;
 		init_stack = _shared.smpinit_stack;
-		_shared.smpinit_stack = 0;
+		_shared.smpinit_stack = 0U;
 		__asm__ volatile("movl $0, (%0)" : : "m"(_shared.smpinit_lock));
 	}
 

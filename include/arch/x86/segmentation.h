@@ -32,7 +32,7 @@ extern "C" {
  *    14      #PF         Page Fault
  *    17      #AC         Alignment Check
  */
-#define _EXC_ERROR_CODE_FAULTS	0x27d00
+#define _EXC_ERROR_CODE_FAULTS	0x27d00U
 
 
 /* NOTE: We currently do not have definitions for 16-bit segment, currently

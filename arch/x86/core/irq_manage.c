@@ -83,7 +83,7 @@ void z_arch_isr_direct_footer(int swap)
 	 * 2) We are not in a nested interrupt
 	 * 3) Next thread to run in the ready queue is not this thread
 	 */
-	if (swap && !_kernel.nested &&
+	if (swap != 0 && _kernel.nested == 0 &&
 	    _kernel.ready_q.cache != _current) {
 		unsigned int flags;
 
@@ -163,7 +163,7 @@ static unsigned int priority_to_free_vector(unsigned int requested_priority)
 	unsigned int vector_block;
 	unsigned int vector;
 
-	static unsigned int mask[2] = {0x0000ffff, 0xffff0000};
+	static unsigned int mask[2] = {0x0000ffffU, 0xffff0000U};
 
 	vector_block = requested_priority + 2;
 

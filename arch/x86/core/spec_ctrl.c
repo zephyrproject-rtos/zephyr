@@ -44,7 +44,7 @@ static int spec_ctrl_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	u32_t enable_bits = 0;
+	u32_t enable_bits = 0U;
 	u32_t cpuid7 = cpuid_extended_features();
 
 #ifdef CONFIG_DISABLE_SSBD

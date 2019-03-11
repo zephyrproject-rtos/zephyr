@@ -383,8 +383,8 @@
  *   All other "flags"          = Don't change state
  */
 
-#define EFLAGS_INITIAL 0x00000200
-#define EFLAGS_MASK 0x00003200
+#define EFLAGS_INITIAL 0x00000200LLU
+#define EFLAGS_MASK 0x00003200ULL
 
 /* Enable paging and write protection */
 #define CR0_PG_WP_ENABLE 0x80010000

@@ -47,7 +47,7 @@ static bool check_stack_bounds(u32_t addr, size_t size, u16_t cs)
 		/* We were servicing an interrupt */
 		start = (u32_t)Z_ARCH_THREAD_STACK_BUFFER(_interrupt_stack);
 		end = start + CONFIG_ISR_STACK_SIZE;
-	} else if ((cs & 0x3) != 0 ||
+	} else if ((cs & 0x3U) != 0 ||
 		   (_current->base.user_options & K_USER) == 0) {
 		/* Thread was in user mode, or is not a user mode thread.
 		 * The normal stack buffer is what we will check.
@@ -195,7 +195,7 @@ FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 	       k_current_get(),
 	       pEsf->eax, pEsf->ebx, pEsf->ecx, pEsf->edx,
 	       pEsf->esi, pEsf->edi, pEsf->ebp, pEsf->esp,
-	       pEsf->eflags, pEsf->cs & 0xFFFF, pEsf->eip);
+	       pEsf->eflags, pEsf->cs & 0xFFFFU, pEsf->eip);
 #ifdef CONFIG_EXCEPTION_STACK_TRACE
 	unwind_stack(pEsf->ebp, pEsf->cs);
 #endif
@@ -372,9 +372,9 @@ static void dump_page_fault(NANO_ESF *esf)
 	printk("***** CPU Page Fault (error code 0x%08x)\n", err);
 
 	printk("%s thread %s address 0x%08x\n",
-	       err & US ? "User" : "Supervisor",
-	       err & ID ? "executed" : (err & WR ? "wrote" : "read"),
-	       cr2);
+	       (err & US) != 0 ? "User" : "Supervisor",
+	       (err & ID) != 0 ? "executed" : ((err & WR) != 0 ? "wrote" :
+		       "read"), cr2);
 
 #ifdef CONFIG_X86_MMU
 #ifdef CONFIG_X86_KPTI
