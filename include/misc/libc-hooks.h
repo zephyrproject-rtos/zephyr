@@ -32,7 +32,7 @@ __syscall int z_zephyr_write_stdout(const void *buf, int nbytes);
 
 __syscall int _zephyr_fputc(int c, FILE *stream);
 
-__syscall size_t z_zephyr_fwrite(const void *_MLIBC_RESTRICT ptr, size_t size,
+__syscall size_t zephyr_fwrite(const void *_MLIBC_RESTRICT ptr, size_t size,
 				size_t nitems, FILE *_MLIBC_RESTRICT stream);
 #endif /* CONFIG_NEWLIB_LIBC */
 

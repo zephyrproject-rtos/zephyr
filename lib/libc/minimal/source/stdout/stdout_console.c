@@ -52,7 +52,7 @@ int fputs(const char *_MLIBC_RESTRICT string, FILE *_MLIBC_RESTRICT stream)
 	return len == ret ? 0 : EOF;
 }
 
-size_t z_impl__zephyr_fwrite(const void *_MLIBC_RESTRICT ptr, size_t size,
+size_t z_impl_zephyr_fwrite(const void *_MLIBC_RESTRICT ptr, size_t size,
 			    size_t nitems, FILE *_MLIBC_RESTRICT stream)
 {
 	size_t i;
@@ -82,11 +82,11 @@ done:
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(z_zephyr_fwrite, ptr, size, nitems, stream)
+Z_SYSCALL_HANDLER(zephyr_fwrite, ptr, size, nitems, stream)
 {
 
 	Z_OOPS(Z_SYSCALL_MEMORY_ARRAY_READ(ptr, nitems, size));
-	return z_impl__zephyr_fwrite((const void *_MLIBC_RESTRICT)ptr, size,
+	return z_impl_zephyr_fwrite((const void *_MLIBC_RESTRICT)ptr, size,
 				    nitems, (FILE *_MLIBC_RESTRICT)stream);
 }
 #endif
@@ -94,7 +94,7 @@ Z_SYSCALL_HANDLER(z_zephyr_fwrite, ptr, size, nitems, stream)
 size_t fwrite(const void *_MLIBC_RESTRICT ptr, size_t size, size_t nitems,
 			  FILE *_MLIBC_RESTRICT stream)
 {
-	return z_zephyr_fwrite(ptr, size, nitems, stream);
+	return zephyr_fwrite(ptr, size, nitems, stream);
 }
 
 
