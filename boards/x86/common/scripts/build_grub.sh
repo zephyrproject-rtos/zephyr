@@ -22,7 +22,11 @@ prepare() {
 
   pushd src
   git checkout grub-2.02
-  git cherry-pick c36c2a86404f373100775305f532c09d46f3c6ce
+  cat << EOF | awk ' { print $1 }' | git cherry-pick -x --stdin
+  grub-2.02-69-gc36c2a864  yylex: Explicilty cast fprintf to void.
+  grub-2.02-136-g563b1da6e Fix packed-not-aligned error on GCC 8
+  grub-2.02-100-g842c39046 x86-64: Treat R_X86_64_PLT32 as R_X86_64_PC32
+EOF
   git clean -fdx
   popd
 }
