@@ -150,7 +150,7 @@ void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread)
 	 */
 	struct k_mem_partition *dynamic_regions[_MAX_DYNAMIC_MPU_REGIONS_NUM];
 
-	u8_t region_num = 0;
+	u8_t region_num = 0U;
 
 #if defined(CONFIG_USERSPACE)
 	struct k_mem_partition thread_stack;
@@ -184,7 +184,7 @@ void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread)
 
 			region_num++;
 			num_partitions--;
-			if (num_partitions == 0) {
+			if (num_partitions == 0U) {
 				break;
 			}
 		}
@@ -300,7 +300,7 @@ void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 
 	for (i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS; i++) {
 		partition = domain->partitions[i];
-		if (partition.size == 0) {
+		if (partition.size == 0U) {
 			/* Zero size indicates a non-existing
 			 * memory partition.
 			 */
