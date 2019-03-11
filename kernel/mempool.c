@@ -179,7 +179,8 @@ void k_free(void *ptr)
  * that has the address of the associated memory pool struct.
  */
 
-K_MEM_POOL_DEFINE(_heap_mem_pool, 64, CONFIG_HEAP_MEM_POOL_SIZE, 1, 4);
+K_MEM_POOL_DEFINE(_heap_mem_pool, CONFIG_HEAP_MEM_POOL_MIN_SIZE,
+		  CONFIG_HEAP_MEM_POOL_SIZE, 1, 4);
 #define _HEAP_MEM_POOL (&_heap_mem_pool)
 
 void *k_malloc(size_t size)
