@@ -90,17 +90,20 @@ static void rx(int fd)
 
 static int setup_socket(void)
 {
-	const struct zcan_filter filter = {
+	const struct zcan_filter zfilter = {
 		.id_type = CAN_STANDARD_IDENTIFIER,
 		.rtr = CAN_DATAFRAME,
 		.std_id = 0x1,
 		.rtr_mask = 1,
 		.std_id_mask = CAN_STD_ID_MASK
 	};
+	struct can_filter filter;
 	struct sockaddr_can can_addr;
 	struct net_if *iface;
 	int fd;
 	int ret;
+
+	can_copy_zfilter_to_filter(&zfilter, &filter);
 
 	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(CANBUS));
 	if (!iface) {
@@ -125,7 +128,8 @@ static int setup_socket(void)
 		goto cleanup;
 	}
 
-	ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &filter, sizeof(filter));
+	ret = setsockopt(fd, SOL_CAN_RAW, CAN_RAW_FILTER, &filter,
+			 sizeof(filter));
 	if (ret < 0) {
 		ret = -errno;
 		LOG_ERR("Cannot set CAN sockopt (%d)", ret);
