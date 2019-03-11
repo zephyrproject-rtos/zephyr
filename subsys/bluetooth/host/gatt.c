@@ -2252,6 +2252,14 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 			continue;
 		}
 
+		/* Skip attributes that are not considered descriptors */
+		if (!bt_uuid_cmp(&u.uuid, BT_UUID_GATT_PRIMARY) ||
+		    !bt_uuid_cmp(&u.uuid, BT_UUID_GATT_SECONDARY) ||
+		    !bt_uuid_cmp(&u.uuid, BT_UUID_GATT_INCLUDE) ||
+		    !bt_uuid_cmp(&u.uuid, BT_UUID_GATT_CHRC)) {
+			continue;
+		}
+
 		attr = (&(struct bt_gatt_attr)
 			BT_GATT_DESCRIPTOR(&u.uuid, 0, NULL, NULL, NULL));
 		attr->handle = handle;
@@ -2320,6 +2328,13 @@ int bt_gatt_discover(struct bt_conn *conn,
 	case BT_GATT_DISCOVER_CHARACTERISTIC:
 		return gatt_read_type(conn, params);
 	case BT_GATT_DISCOVER_DESCRIPTOR:
+		/* Only descriptors can be filtered */
+		if (!bt_uuid_cmp(params->uuid, BT_UUID_GATT_PRIMARY) ||
+		    !bt_uuid_cmp(params->uuid, BT_UUID_GATT_SECONDARY) ||
+		    !bt_uuid_cmp(params->uuid, BT_UUID_GATT_INCLUDE) ||
+		    !bt_uuid_cmp(params->uuid, BT_UUID_GATT_CHRC)) {
+			return -EINVAL;
+		}
 		return gatt_find_info(conn, params);
 	default:
 		BT_ERR("Invalid discovery type: %u", params->type);
