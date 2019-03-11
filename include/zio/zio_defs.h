@@ -81,6 +81,21 @@ typedef enum zio_dev_chan_kind {
 	 */
 	DEV_CHAN_FREQUENCY,
 
+        /**
+	 * Amplitude.
+         *
+         * Note: While amplitude is a unitless value with a floating-point
+         * range of -1.0 .. 1.0, you can associate this with a range of integer
+         * values by means of the 'CHAN_ATTR_RAW_DATA' attribute. Normalised
+         * floating-point values should be assigned to 'CHAN_ATTR_SI_DATA',
+         * but the source integer values, such as 's16_t', can be provided
+         * as raw data to avoid expensive floating-point operations if
+         * desired.
+	 *
+	 * Expressed as a unitless value in the range of -1.0 to 1.0.
+	 */
+	DEV_CHAN_AMPLITUDE,
+
 	/**
 	 * Generic temperature.
 	 *
@@ -353,6 +368,20 @@ typedef enum zio_dev_chan_kind {
 	 * Expressed as parts per million (ppm).
 	 */
 	DEV_CHAN_PPM_VOC,
+
+        /**
+	 * User-defined channel. This can be used at the application level for
+         * whetever purpose the driver requires, provided it does not overlap
+         * with one of the existing standard channel definitions.
+         *
+         * If multiple user defined channels are present, they should be
+         * clearly distinguished by use of appropriate channel attributes.
+	 *
+	 * Expressed as a user-defined unit and scale. The exact unit type and
+         * scale should be clearly documented in the driver making use of this
+         * channel type.
+	 */
+	DEV_CHAN_USER_DEF,
 
 } zio_dev_chan_kind_t;
 
