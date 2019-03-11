@@ -422,7 +422,7 @@ static inline u32_t log_dynamic_source_id(struct log_source_dynamic_data *data)
 static inline __printf_like(1, 2)
 void log_printf_arg_checker(const char *fmt, ...)
 {
-
+	ARG_UNUSED(fmt);
 }
 
 /** @brief Standard log with no arguments.
