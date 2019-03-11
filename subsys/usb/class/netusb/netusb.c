@@ -10,20 +10,15 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_net);
 
-/* Enable verbose debug printing extra hexdumps */
-#define VERBOSE_DEBUG	0
-
-/* This enables basic hexdumps */
-#define NET_LOG_ENABLED	0
-#include <net_private.h>
-
 #include <init.h>
+
+#include <net/ethernet.h>
+#include <net_private.h>
 
 #include <usb_device.h>
 #include <usb_common.h>
-#include <net/ethernet.h>
-
 #include <usb_descriptor.h>
+
 #include "netusb.h"
 
 static struct __netusb {
@@ -131,54 +126,6 @@ void netusb_disable(void)
 bool netusb_enabled(void)
 {
 	return !!netusb.func;
-}
-
-int try_write(u8_t ep, u8_t *data, u16_t len)
-{
-	u8_t tries = 10U;
-	int ret = 0;
-
-	net_hexdump("USB <", data, len);
-
-	while (len) {
-		u32_t wrote;
-
-		ret = usb_write(ep, data, len, &wrote);
-
-		switch (ret) {
-		case -EAGAIN:
-			/*
-			 * In a case when host has not yet enabled endpoint
-			 * to get this message we might get No Space Available
-			 * error from the controller, try only several times.
-			 */
-			if (tries--) {
-				LOG_WRN("Error: EAGAIN. Another try");
-				continue;
-			}
-
-			return ret;
-		case 0:
-			/* Check wrote bytes */
-			break;
-		/* TODO: Handle other error codes */
-		default:
-			LOG_WRN("Error writing to ep 0x%x ret %d", ep, ret);
-			return ret;
-		}
-
-		len -= wrote;
-		data += wrote;
-#if VERBOSE_DEBUG
-		LOG_DBG("Wrote %u bytes, remaining %u", wrote, len);
-#endif
-
-		if (len) {
-			LOG_WRN("Remaining bytes %d wrote %d", len, wrote);
-		}
-	}
-
-	return ret;
 }
 
 static void netusb_init(struct net_if *iface)
