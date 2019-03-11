@@ -106,8 +106,8 @@ static int iwdg_stm32_install_timeout(struct device *dev,
 
 	iwdg_stm32_convert_timeout(timeout, &prescaler, &reload);
 
-	if (IS_IWDG_TIMEOUT(timeout) || IS_IWDG_PRESCALER(prescaler) ||
-	    IS_IWDG_RELOAD(reload)) {
+	if (!(IS_IWDG_TIMEOUT(timeout) && IS_IWDG_PRESCALER(prescaler) &&
+	    IS_IWDG_RELOAD(reload))) {
 		/* One of the parameters provided is invalid */
 		return -EINVAL;
 	}
