@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2019 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <mem.h>
+
+#define DT_FLASH_SIZE	DT_SIZE_K(8192)
+#define DT_SRAM_SIZE	DT_SIZE_K(8192)
+
+#include <ia32.dtsi>
+
+/ {
+	model = "ACRN";
+	compatible = "intel,ia32";
+
+	aliases {
+		uart-0 = &uart0;
+		uart-1 = &uart1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+};
+
+&uart1 {
+	status = "ok";
+	current-speed = <115200>;
+};
+
+&flash0 {
+	reg = <0x100000 DT_FLASH_SIZE>;
+};
+
+&sram0 {
+	reg = <0x400000 DT_SRAM_SIZE>;
+};

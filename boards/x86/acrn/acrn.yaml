@@ -1,0 +1,6 @@
+identifier: acrn
+name: ACRN
+type: mcu
+arch: x86
+toolchain:
+  - zephyr
