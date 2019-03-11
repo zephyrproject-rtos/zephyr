@@ -3,6 +3,50 @@
 # Copyright (c) 2017 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
+"""
+Script to generate gperf tables of kernel object metadata
+
+User mode threads making system calls reference kernel objects by memory
+address, as the kernel/driver APIs in Zephyr are the same for both user
+and supervisor contexts. It is necessary for the kernel to be able to
+validate accesses to kernel objects to make the following assertions:
+
+    - That the memory address points to a kernel object
+
+    - The kernel object is of the expected type for the API being invoked
+
+    - The kernel object is of the expected initialization state
+
+    - The calling thread has sufficient permissions on the object
+
+The zephyr build generates an intermediate ELF binary, zephyr_prebuilt.elf,
+which this script scans looking for kernel objects by examining the DWARF
+debug information to look for instances of data structures that are considered
+kernel objects. For device drivers, the API struct pointer populated at build
+time is also examined to disambiguate between various device driver instances
+since they are all 'struct device'.
+
+The result of this script is five generated files:
+
+    - A gperf script to generate the hash table mapping kernel object memory
+      addresses to kernel object metadata, used to track permissions,
+      object type, initialization state, and any object-specific data.
+
+    - A header file containing generated macros for validating driver instances
+      inside the system call handlers for the driver subsystem APIs.
+
+    - A header file defining enumerated types for all the different kernel
+      object types.
+
+    - A C code fragment, included by kernel/userspace.c, for printing
+      human-readable representations of kernel object types in the
+      otype_to_str() function.
+
+    - A C code fragment, included by kernel/userspace.c, for mapping
+      kernel object types to the sizes of those kernel objects, used for
+      allocating instances of them at runtime (CONFIG_DYNAMIC_OBJECTS)
+      in the obj_size_get() function.
+"""
 
 import sys
 import argparse
