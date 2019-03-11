@@ -105,6 +105,7 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 						   struct net_ipv4_hdr *ip_hdr)
 {
 	struct net_pkt *reply = NULL;
+	s16_t payload_len;
 
 	/* If interface can not select src address based on dst addr
 	 * and src address is unspecified, drop the echo request.
@@ -118,25 +119,24 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 		log_strdup(net_sprint_ipv4_addr(&ip_hdr->src)),
 		log_strdup(net_sprint_ipv4_addr(&ip_hdr->dst)));
 
-	net_pkt_cursor_init(pkt);
+	payload_len = net_pkt_get_len(pkt) -
+		net_pkt_ip_hdr_len(pkt) - NET_ICMPH_LEN;
+	if (payload_len < NET_ICMPV4_UNUSED_LEN) {
+		/* No identifier or sequence number present */
+		goto drop;
+	}
 
-	/* Cloning is faster here as echo request might come with data behind */
-	reply = net_pkt_clone(pkt, PKT_WAIT_TIME);
+	reply = net_pkt_alloc_with_buffer(net_pkt_iface(pkt), payload_len,
+					  AF_INET, IPPROTO_ICMP,
+					  PKT_WAIT_TIME);
 	if (!reply) {
 		NET_DBG("DROP: No buffer");
 		goto drop;
 	}
 
-	/* Do not use the same ttl as original packet, resetting it */
-	net_pkt_set_ipv4_ttl(reply, 0);
-
-	/* Let's keep the original data,
-	 * we will only overwrite what is relevant
-	 */
-	net_pkt_set_overwrite(reply, true);
-
 	if (net_ipv4_create_new(reply, &ip_hdr->dst, &ip_hdr->src) ||
-	    icmpv4_create(reply, NET_ICMPV4_ECHO_REPLY, 0)) {
+	    icmpv4_create(reply, NET_ICMPV4_ECHO_REPLY, 0) ||
+	    net_pkt_copy(reply, pkt, payload_len)) {
 		NET_DBG("DROP: wrong buffer");
 		goto drop;
 	}
