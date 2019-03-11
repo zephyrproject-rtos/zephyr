@@ -8,6 +8,11 @@ The first serial is used by Bluetooth Testing Protocol (BTP) to drive Bluetooth
 stack. BTP commands and events are received and buffered for further processing
 over the same serial.
 
+BTP specification can be found in auto-pts project repository:
+https://github.com/intel/auto-pts
+The auto-pts is an automation framework for PTS Bluetooth testing tool provided
+by Bluetooth SIG.
+
 --------------------------------------------------------------------------------
 
 Supported Profiles:
