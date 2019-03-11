@@ -174,9 +174,9 @@ Follow these steps to install the SDK on your Linux host system.
 
    .. code-block:: console
 
-      wget https://github.com/zephyrproject-rtos/meta-zephyr-sdk/releases/download/0.9.5/zephyr-sdk-0.9.5-setup.run
+      wget https://github.com/zephyrproject-rtos/sdk-ng/releases/download/v0.10.0/zephyr-sdk-0.10.0-setup.run
 
-   (You can change *0.9.5* to another version if needed; the `Zephyr
+   (You can change *0.10.0* to another version if needed; the `Zephyr
    Downloads`_ page contains all available SDK releases.)
 
 #. Run the installation binary:
@@ -184,7 +184,7 @@ Follow these steps to install the SDK on your Linux host system.
    .. code-block:: console
 
       cd <sdk download directory>
-      sh zephyr-sdk-0.9.5-setup.run
+      sh zephyr-sdk-0.10.0-setup.run
 
    .. important::
       If this fails, make sure Zephyr's dependencies were installed
