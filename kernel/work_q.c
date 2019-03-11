@@ -19,6 +19,8 @@
 
 #define WORKQUEUE_THREAD_NAME	"workqueue"
 
+static struct k_spinlock lock;
+
 extern void z_work_q_main(void *work_q_ptr, void *p2, void *p3);
 
 void k_work_q_start(struct k_work_q *work_q, k_thread_stack_t *stack,
@@ -73,7 +75,7 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 				   struct k_delayed_work *work,
 				   s32_t delay)
 {
-	k_spinlock_key_t key = k_spin_lock(&work_q->lock);
+	k_spinlock_key_t key = k_spin_lock(&lock);
 	int err = 0;
 
 	/* Work cannot be active in multiple queues */
@@ -97,7 +99,7 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 	 * blocking operation, so release the lock first.
 	 */
 	if (!delay) {
-		k_spin_unlock(&work_q->lock, key);
+		k_spin_unlock(&lock, key);
 		k_work_submit_to_queue(work_q, &work->work);
 		return 0;
 	}
@@ -107,7 +109,7 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 		     _TICK_ALIGN + z_ms_to_ticks(delay));
 
 done:
-	k_spin_unlock(&work_q->lock, key);
+	k_spin_unlock(&lock, key);
 	return err;
 }
 
@@ -117,11 +119,10 @@ int k_delayed_work_cancel(struct k_delayed_work *work)
 		return -EINVAL;
 	}
 
-	struct k_spinlock *lock = &work->work_q->lock;
-	k_spinlock_key_t key = k_spin_lock(lock);
+	k_spinlock_key_t key = k_spin_lock(&lock);
 	int ret = work_cancel(work);
 
-	k_spin_unlock(lock, key);
+	k_spin_unlock(&lock, key);
 	return ret;
 }
 
