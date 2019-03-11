@@ -22,13 +22,12 @@ static struct k_thread tx_data;
 
 static void tx(int *can_fd)
 {
-	static char data[] = { 0x11, 0x22, 0x33, 0x44,
-			       0x55, 0x66, 0x77, 0x88 };
 	int fd = POINTER_TO_INT(can_fd);
 	struct zcan_frame msg;
+	struct can_frame frame;
 	int ret, i;
 
-	msg.dlc = sizeof(data);
+	msg.dlc = 8;
 	msg.id_type = CAN_STANDARD_IDENTIFIER;
 	msg.std_id = 0x1;
 	msg.rtr = CAN_DATAFRAME;
@@ -37,10 +36,12 @@ static void tx(int *can_fd)
 		msg.data[i] = 0xF0 | i;
 	}
 
+	can_copy_zframe_to_frame(&msg, &frame);
+
 	LOG_DBG("Sending CAN data...");
 
 	while (1) {
-		ret = send(fd, &msg, sizeof(struct zcan_frame), K_FOREVER);
+		ret = send(fd, &frame, sizeof(frame), K_FOREVER);
 		if (ret < 0) {
 			LOG_ERR("Cannot send CAN message (%d)", -errno);
 		}
@@ -54,6 +55,7 @@ static void rx(int fd)
 	struct sockaddr_can can_addr;
 	socklen_t addr_len;
 	struct zcan_frame msg;
+	struct can_frame frame;
 	int ret;
 
 	LOG_DBG("Waiting CAN data...");
@@ -61,15 +63,17 @@ static void rx(int fd)
 	while (1) {
 		u8_t *data;
 
-		memset(&msg, 0, sizeof(msg));
+		memset(&frame, 0, sizeof(frame));
 		addr_len = sizeof(can_addr);
 
-		ret = recvfrom(fd, &msg, sizeof(struct zcan_frame),
+		ret = recvfrom(fd, &frame, sizeof(struct can_frame),
 			       0, (struct sockaddr *)&can_addr, &addr_len);
 		if (ret < 0) {
 			LOG_ERR("Cannot receive CAN message (%d)", ret);
 			continue;
 		}
+
+		can_copy_frame_to_zframe(&frame, &msg);
 
 		LOG_INF("CAN msg: type 0x%x RTR 0x%x EID 0x%x DLC 0x%x",
 			msg.id_type, msg.rtr, msg.std_id, msg.dlc);
