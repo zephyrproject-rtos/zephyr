@@ -33,5 +33,5 @@ else
 	fi
 
 	echo "Perform check patch"
-	/local/mcu/zephyr/zephyr-project/scripts/checkpatch.pl --git $range
+	${ZEPHYR_BASE}/scripts/checkpatch.pl --git $range
 fi
