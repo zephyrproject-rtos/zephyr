@@ -73,7 +73,7 @@ static void lis2mdl_handle_interrupt(void *arg)
 }
 
 static void lis2mdl_gpio_callback(struct device *dev,
-				    struct gpio_callback *cb, uint32_t pins)
+				    struct gpio_callback *cb, u32_t pins)
 {
 	struct lis2mdl_data *lis2mdl =
 		CONTAINER_OF(cb, struct lis2mdl_data, gpio_cb);
