@@ -77,7 +77,7 @@ static int start_packet_socket(void)
 		return -errno;
 	}
 
-	dst.sll_ifindex = 0;
+	dst.sll_ifindex = net_if_get_by_iface(net_if_get_default());
 	dst.sll_family = AF_PACKET;
 
 	ret = bind(packet.sock, (const struct sockaddr *)&dst,
@@ -102,7 +102,7 @@ static void send_packet(void)
 	u8_t send = 100;
 	int ret;
 
-	dst.sll_ifindex = 0;
+	dst.sll_ifindex = net_if_get_by_iface(net_if_get_default());
 
 	/* Sending dummy data */
 	ret = sendto(packet.sock, lorem_ipsum, send, 0,
