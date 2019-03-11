@@ -17,8 +17,17 @@ elseif(WEST)
     ${WEST} list --format={posixpath}
     OUTPUT_VARIABLE
     west_project_output
+    ERROR_VARIABLE
+    west_project_error
+    RESULT_VARIABLE
+    west_list_result
   )
-  string(REGEX REPLACE "[\r\n]+" ";" west_project_list "${west_project_output}")
+  if(NOT ${west_list_result})
+    string(REGEX REPLACE "[\r\n]+" ";" west_project_list "${west_project_output}")
+  elseif(NOT ("${west_project_error}" MATCHES
+              "^Error: .* is not in a west installation\..*"))
+    message(FATAL_ERROR "${west_project_error}")
+  endif()
 endif()
 
 if(ZEPHYR_EXTRA_MODULES)
