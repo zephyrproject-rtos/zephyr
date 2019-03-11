@@ -7,3 +7,7 @@ sed -i -e 's/[ \t\r]*$//g' MCHP_MEC1701_bit_fields.h, then file was renamed
 to MCHP_MEC1701.h
 
 Field EOF was renamed to PEOF as it was collapsing with EOF defined in stdio.h
+
+2019-03-11
+Add MEC1501 header files.
+
