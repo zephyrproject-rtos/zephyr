@@ -1191,11 +1191,18 @@ void ull_conn_tx_lll_enqueue(struct ll_conn *conn, u8_t count)
 	struct node_tx *tx;
 
 	tx = conn->tx_head;
+	while (tx &&
+	       ((
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-	while (tx && (!conn->pause_tx || (tx == conn->tx_ctrl)) && count--) {
-#else /* !CONFIG_BT_CTLR_LE_ENC */
-	while (tx && count--) {
-#endif /* !CONFIG_BT_CTLR_LE_ENC */
+		 !conn->pause_tx &&
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		 !conn->llcp_length.pause_tx &&
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_PHY)
+		 !conn->llcp_phy.pause_tx &&
+#endif /* CONFIG_BT_CTLR_PHY */
+		 1) || (tx == conn->tx_ctrl)) && count--) {
 		struct node_tx *tx_lll;
 		memq_link_t *link;
 
@@ -1412,11 +1419,15 @@ static void ctrl_tx_enqueue(struct ll_conn *conn, struct node_tx *tx)
 	    /* data/ctrl packet is in the head */
 	    conn->tx_head &&
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-	    /* data PDU tx is not paused */
-	    !conn->pause_tx) {
-#else /* !CONFIG_BT_CTLR_LE_ENC */
+	    !conn->pause_tx &&
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+	    !conn->llcp_length.pause_tx &&
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_PHY)
+	    !conn->llcp_phy.pause_tx &&
+#endif /* CONFIG_BT_CTLR_PHY */
 	    1) {
-#endif /* !CONFIG_BT_CTLR_LE_ENC */
 		/* data or ctrl may have been transmitted once, but not acked
 		 * by peer, hence place this new ctrl after head
 		 */
@@ -2621,6 +2632,9 @@ static inline void event_phy_req_prep(struct ll_conn *conn)
 		conn->phy_pref_rx = conn->llcp_phy.rx;
 		conn->phy_pref_flags = conn->llcp_phy.flags;
 
+		/* pause data packet tx */
+		conn->llcp_phy.pause_tx = 1;
+
 		/* place the phy req packet as next in tx queue */
 		pdu_ctrl_tx = (void *)tx->pdu;
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
@@ -3485,6 +3499,7 @@ static inline void reject_ind_phy_upd_recv(struct ll_conn *conn,
 		if (rej_ext_ind->error_code != BT_HCI_ERR_LL_PROC_COLLISION) {
 			/* Procedure complete */
 			conn->llcp_phy.ack = conn->llcp_phy.req;
+			conn->llcp_phy.pause_tx = 0U;
 
 			/* Reset packet timing restrictions */
 			conn->lll.phy_tx_time = conn->lll.phy_tx;
@@ -3703,6 +3718,11 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 
 		/* check if change in rx octets */
 		if (eff_rx_octets != conn->lll.max_rx_octets) {
+			/* FIXME: If we want to resize Rx Pool, decide to
+			 *        nack as required when implementing. Also,
+			 *        closing the current event may be needed.
+			 */
+
 			/* accept the effective tx */
 			conn->lll.max_tx_octets = eff_tx_octets;
 
@@ -3730,8 +3750,6 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 			(*rx)->hdr.link = link;
 			conn->llcp_rx = *rx;
 			*rx = NULL;
-
-			/* FIXME: Close current event */
 		} else {
 			/* Procedure complete */
 			conn->llcp_length.ack = conn->llcp_length.req;
@@ -3745,6 +3763,9 @@ static inline int length_req_rsp_recv(struct ll_conn *conn, memq_link_t *link,
 			    eff_rx_time == conn->lll.max_rx_time &&
 #endif /* CONFIG_BT_CTLR_PHY */
 			    (1)) {
+				/* Mark for buffer for release */
+				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
+
 				goto send_length_resp;
 			}
 
@@ -3863,6 +3884,9 @@ static int phy_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	conn->llcp_phy.tx &= p->rx_phys;
 	conn->llcp_phy.rx &= p->tx_phys;
 
+	/* pause data packet tx */
+	conn->llcp_phy.pause_tx = 1;
+
 	pdu_ctrl_tx = (void *)tx->pdu;
 	pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 	pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl, phy_rsp) +
@@ -3901,6 +3925,7 @@ static inline u8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 
 		/* Procedure complete */
 		conn->llcp_phy.ack = conn->llcp_phy.req;
+		conn->llcp_phy.pause_tx = 0U;
 		conn->procedure_expire = 0U;
 
 		/* Ignore event generation if not local cmd initiated */
@@ -3941,11 +3966,12 @@ static inline u8_t phy_upd_ind_recv(struct ll_conn *conn, memq_link_t *link,
 
 	if ((conn->llcp_phy.ack != conn->llcp_phy.req) &&
 	    (conn->llcp_phy.state == LLCP_PHY_STATE_RSP_WAIT)) {
-		conn->llcp_phy.ack = conn->llcp_phy.req;
-		conn->llcp.phy_upd_ind.cmd = conn->llcp_phy.cmd;
-
 		/* Procedure complete, just wait for instant */
+		conn->llcp_phy.ack = conn->llcp_phy.req;
+		conn->llcp_phy.pause_tx = 0U;
 		conn->procedure_expire = 0U;
+
+		conn->llcp.phy_upd_ind.cmd = conn->llcp_phy.cmd;
 	}
 
 	conn->llcp.phy_upd_ind.tx = ind->s_to_m_phy;
@@ -4082,10 +4108,15 @@ static inline void ctrl_tx_ack(struct ll_conn *conn, struct node_tx **tx,
 			phys = conn->llcp_phy.tx | lll->phy_tx;
 			lll->phy_tx_time = phy_tx_time[phys];
 		}
+
+		/* resume data packet tx */
+		conn->llcp_phy.pause_tx = 0;
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_PHY_UPD_IND:
 		conn->lll.phy_tx_time = conn->llcp.phy_upd_ind.tx;
+		/* resume data packet tx */
+		conn->llcp_phy.pause_tx = 0;
 		break;
 #endif /* CONFIG_BT_CTLR_PHY */
 
@@ -4873,6 +4904,7 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 			/* Procedure complete */
 			conn->llcp_phy.ack = conn->llcp_phy.req;
+			conn->llcp_phy.pause_tx = 0;
 
 			/* Reset packet timing restrictions */
 			lll->phy_tx_time = lll->phy_tx;
@@ -5006,6 +5038,9 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 				conn->llcp_phy.tx &= p->rx_phys;
 				conn->llcp_phy.rx &= p->tx_phys;
 
+				/* pause data packet tx */
+				conn->llcp_phy.pause_tx = 1;
+
 				/* Mark for buffer for release */
 				(*rx)->hdr.type = NODE_RX_TYPE_DC_PDU_RELEASE;
 			}
@@ -5030,6 +5065,9 @@ static inline int ctrl_rx(memq_link_t *link, struct node_rx_pdu **rx,
 
 			conn->llcp_phy.tx &= p->rx_phys;
 			conn->llcp_phy.rx &= p->tx_phys;
+
+			/* pause data packet tx */
+			conn->llcp_phy.pause_tx = 1;
 
 			/* Procedure timeout is stopped */
 			conn->procedure_expire = 0U;

@@ -181,6 +181,7 @@ struct ll_conn {
 #define LLCP_PHY_STATE_UPD      3
 		u8_t tx:3;
 		u8_t rx:3;
+		u8_t pause_tx:1;
 		u8_t flags:1;
 		u8_t cmd:1;
 	} llcp_phy;
