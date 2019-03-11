@@ -151,6 +151,7 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 			socklen_t addrlen)
 {
 	struct sockaddr_can can_addr;
+	struct zcan_frame zframe;
 	s32_t timeout = K_FOREVER;
 	int ret;
 
@@ -178,8 +179,13 @@ ssize_t zcan_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 		dest_addr = (struct sockaddr *)&can_addr;
 	}
 
-	ret = net_context_sendto_new(ctx, buf, len, dest_addr, addrlen, NULL,
-				     timeout, NULL, ctx->user_data);
+	NET_ASSERT(len == sizeof(struct can_frame));
+
+	can_copy_frame_to_zframe((struct can_frame *)buf, &zframe);
+
+	ret = net_context_sendto_new(ctx, (void *)&zframe, sizeof(zframe),
+				     dest_addr, addrlen, NULL, timeout, NULL,
+				     ctx->user_data);
 	if (ret < 0) {
 		errno = -ret;
 		return -1;
@@ -193,6 +199,7 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 				 struct sockaddr *src_addr,
 				 socklen_t *addrlen)
 {
+	struct zcan_frame zframe;
 	size_t recv_len = 0;
 	s32_t timeout = K_FOREVER;
 	struct net_pkt *pkt;
@@ -229,7 +236,7 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 		recv_len = max_len;
 	}
 
-	if (net_pkt_read_new(pkt, buf, recv_len)) {
+	if (net_pkt_read_new(pkt, (void *)&zframe, sizeof(zframe))) {
 		errno = EIO;
 		return -1;
 	}
@@ -239,6 +246,10 @@ static ssize_t zcan_recvfrom_ctx(struct net_context *ctx, void *buf,
 	} else {
 		net_pkt_cursor_init(pkt);
 	}
+
+	NET_ASSERT(recv_len == sizeof(struct can_frame));
+
+	can_copy_zframe_to_frame(&zframe, (struct can_frame *)buf);
 
 	return recv_len;
 }
