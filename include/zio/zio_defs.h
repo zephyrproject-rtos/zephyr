@@ -145,7 +145,7 @@ typedef enum zio_dev_chan_kind {
 	DEV_CHAN_GYRO_VECTOR,
 
 	/**
-	 * Irradiance, which is the measurement of radiant flux (analagous to
+	 * Irradiance, which is the measurement of radiant flux (analogous to
 	 * 'power' or 'intensity') received on given surface area.
 	 *
 	 * Expressed as watts per square meter (W/m^2).
@@ -188,11 +188,11 @@ typedef enum zio_dev_chan_kind {
 	 * W/m^2) to illuminance (a photometric unit expressed in lumen/m^2)
 	 * by means of a version of the CIE luminous efficiency function.
 	 *
-	 * ?PTE: More technically, this channel should probably be named
-	 *       `ILLUMINANCE`, but `LUX` is used as present since it is
+	 * NOTE: More technically, this channel should probably be named
+	 *       `ILLUMINANCE`, but `LUX` is used at present since it is
 	 *       a significantly more familiar concept to most people.
 	 *
-	 * Expressed as 'lux', or more precisely lumens per square meter.
+	 * Expressed as 'lux', which is lumens per square meter.
 	 */
 	DEV_CHAN_LIGHT_LUX,
 
@@ -305,7 +305,7 @@ typedef enum zio_dev_chan_kind {
 
 	/**
 	 * Pressure, which is a measurement of the force applied
-	 * perpendicularly to specific surface area.
+	 * perpendicularly to a specific surface area.
 	 *
 	 * Expressed in hectopascal (hPa)
 	 */
@@ -332,8 +332,8 @@ typedef enum zio_dev_chan_kind {
 	DEV_CHAN_PART_MAT,
 
 	/**
-	 * Generic particulate matter measurement. The exact type of matter
-	 * being measure should be indiciated with an appropriate channel
+	 * Generic parts per million measurement. The exact type of matter
+	 * being measured should be indicated with an appropriate channel
 	 * attribute.
 	 *
 	 * Expressed as parts per million (ppm).
