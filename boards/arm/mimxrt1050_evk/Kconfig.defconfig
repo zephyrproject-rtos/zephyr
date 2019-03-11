@@ -71,4 +71,30 @@ config ETH_MCUX_0
 
 endif # NETWORKING
 
+if LVGL
+
+config LVGL_DISPLAY_DEV_NAME
+	default "ELCDIF_1"
+
+config LVGL_HOR_RES
+	default 480
+
+config LVGL_VER_RES
+	default 272
+
+config LVGL_VDB_SIZE
+	default 16
+
+config LVGL_DPI
+	default 128
+
+config LVGL_BITS_PER_PIXEL
+	default 0
+
+choice LVGL_COLOR_DEPTH
+	default LVGL_COLOR_DEPTH_16
+endchoice
+
+endif # LVGL
+
 endif # BOARD_MIMXRT1050_EVK || BOARD_MIMXRT1050_EVK_QSPI
