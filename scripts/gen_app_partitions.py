@@ -4,6 +4,34 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+"""
+Script to generate a linker script organizing application memory partitions
+
+Applications may declare build-time memory domain partitions with
+K_APPMEM_PARTITION_DEFINE, and assign globals to them using K_APP_DMEM
+or K_APP_BMEM macros. For each of these partitions, we need to
+route all their data into appropriately-sized memory areas which meet the
+size/alignment constraints of the memory protection hardware.
+
+This linker script is created very early in the build process, before
+the build attempts to link the kernel binary, as the linker script this
+tool generates is a necessary pre-condition for kernel linking. We extract
+the set of memory partitions to generate by looking for variables which
+have been assigned to input sections that follow a defined naming convention.
+We also allow entire libraries to be pulled in to assign their globals
+to a particular memory partition via command line directives.
+
+This script takes as inputs:
+
+- The base directory to look for compiled objects
+- key/value pairs mapping static library files to what partitions their globals
+  should end up in.
+
+The output is a linker script fragment containing the definition of the
+app shared memory section, which is further divided, for each partition
+found, into data and BSS for each partition.
+"""
+
 import sys
 import argparse
 import os

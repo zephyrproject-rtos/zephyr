@@ -4,6 +4,23 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+"""
+Script to generate gperf tables mapping threads to their privileged mode stacks
+
+Some MPU devices require that memory region definitions be aligned to their
+own size, which must be a power of two. This introduces difficulties in
+reserving memory for the thread's supervisor mode stack inline with the
+K_THREAD_STACK_DEFINE() macro.
+
+Instead, the stack used when a user thread elevates privileges is allocated
+elsewhere in memory, and a gperf table is created to be able to quickly
+determine where the supervisor mode stack is in memory. This is accomplished
+by scanning the DWARF debug information in zephyr_prebuilt.elf, identifying
+instances of 'struct k_thread', and emitting a gperf configuration file which
+allocates memory for each thread's privileged stack and creates the table
+mapping thread addresses to these stacks.
+"""
+
 import sys
 import argparse
 import struct
