@@ -25,21 +25,21 @@ void __stdout_hook_install(int (*hook)(int))
 	_stdout_hook = hook;
 }
 
-int z_impl__zephyr_fputc(int c, FILE *stream)
+int z_impl_zephyr_fputc(int c, FILE *stream)
 {
 	return (stdout == stream) ? _stdout_hook(c) : EOF;
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(_zephyr_fputc, c, stream)
+Z_SYSCALL_HANDLER(zephyr_fputc, c, stream)
 {
-	return z_impl__zephyr_fputc(c, (FILE *)stream);
+	return z_impl_zephyr_fputc(c, (FILE *)stream);
 }
 #endif
 
 int fputc(int c, FILE *stream)
 {
-	return _zephyr_fputc(c, stream);
+	return zephyr_fputc(c, stream);
 }
 
 int fputs(const char *_MLIBC_RESTRICT string, FILE *_MLIBC_RESTRICT stream)
