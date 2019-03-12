@@ -9,21 +9,19 @@
 LOG_MODULE_REGISTER(usb_rndis);
 
 /* Enable verbose debug printing extra hexdumps */
-#define VERBOSE_DEBUG	0
+#define VERBOSE_DEBUG		0
 
-#include <net_private.h>
+/* Send media status */
+#define SEND_MEDIA_STATUS	0
 
-#include <zephyr.h>
 #include <init.h>
 
-#include <usb_device.h>
-#include <usb_common.h>
-
 #include <net/ethernet.h>
-#include <net/net_pkt.h>
+#include <net_private.h>
 
-#include <class/usb_cdc.h>
-
+#include <usb/usb_device.h>
+#include <usb/usb_common.h>
+#include <usb/class/usb_cdc.h>
 #include <os_desc.h>
 
 #include "netusb.h"
@@ -448,16 +446,7 @@ static void rndis_notify_cb(u8_t ep, int size, void *priv)
 
 static void rndis_queue_rsp(struct net_buf *rsp)
 {
-
 	if (!k_fifo_is_empty(&rndis_tx_queue)) {
-#if CLEAN_TX_QUEUE
-		struct net_buf *buf;
-
-		while ((buf = net_buf_get(&rndis_tx_queue, K_NO_WAIT))) {
-			LOG_ERR("Drop buffer %p", buf);
-			net_buf_unref(buf);
-		}
-#endif
 		LOG_WRN("Transmit response queue is not empty");
 	}
 
@@ -616,12 +605,6 @@ static int rndis_query_handle(u8_t *data, u32_t len)
 		break;
 
 		/* Statistics stuff */
-#if STATISTICS_ENABLED
-	case RNDIS_OBJECT_ID_GEN_TRANSMIT_OK:
-		LOG_DBG("RNDIS_OBJECT_ID_GEN_TRANSMIT_OK");
-		net_buf_add_le32(rndis.tx_pkts - rndis.tx_err);
-		break;
-#endif
 	case RNDIS_OBJECT_ID_GEN_TRANSMIT_ERROR:
 		LOG_DBG("RNDIS_OBJECT_ID_GEN_TRANSMIT_ERROR: %u", rndis.tx_err);
 		net_buf_add_le32(buf, rndis.tx_err);
@@ -884,7 +867,7 @@ static int handle_encapsulated_cmd(u8_t *data, u32_t len)
 	return 0;
 }
 
-#if SEND_MEDIA_STATUS
+#if IS_ENABLED(SEND_MEDIA_STATUS)
 static int rndis_send_media_status(u32_t media_status)
 {
 	struct rndis_media_status_indicate *ind;
@@ -1155,7 +1138,7 @@ static int rndis_connect_media(bool status)
 		rndis.media_status = RNDIS_OBJECT_ID_MEDIA_DISCONNECTED;
 	}
 
-#if SEND_MEDIA_STATUS
+#if IS_ENABLED(SEND_MEDIA_STATUS)
 	return rndis_send_media_status(status);
 #else
 	return 0;

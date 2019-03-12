@@ -8,15 +8,13 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(usb_eem);
 
-#include <net_private.h>
-#include <zephyr.h>
-#include <usb_device.h>
-#include <usb_common.h>
-
 #include <net/net_pkt.h>
+#include <net_private.h>
 
-#include <usb_descriptor.h>
-#include <class/usb_cdc.h>
+#include <usb/usb_device.h>
+#include <usb/usb_common.h>
+#include <usb/class/usb_cdc.h>
+
 #include "netusb.h"
 
 #define EEM_FRAME_SIZE 1522
@@ -51,8 +49,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_eem_config cdc_eem_cfg = {
 		.bEndpointAddress = CDC_EEM_IN_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_CDC_EEM_BULK_EP_MPS),
+			sys_cpu_to_le16(CONFIG_CDC_EEM_BULK_EP_MPS),
 		.bInterval = 0x00,
 	},
 
@@ -63,8 +60,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_eem_config cdc_eem_cfg = {
 		.bEndpointAddress = CDC_EEM_OUT_EP_ADDR,
 		.bmAttributes = USB_DC_EP_BULK,
 		.wMaxPacketSize =
-			sys_cpu_to_le16(
-			CONFIG_CDC_EEM_BULK_EP_MPS),
+			sys_cpu_to_le16(CONFIG_CDC_EEM_BULK_EP_MPS),
 		.bInterval = 0x00,
 	},
 };
