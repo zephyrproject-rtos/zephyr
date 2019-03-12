@@ -179,11 +179,7 @@ void cstart(unsigned int magic, unsigned int arg)
 	 * using BIOS e820 like Linux does.
 	 */
 	if (magic == BOOT_MAGIC_MULTIBOOT) {
-		printf("Hi there!\n");
-		printf("This is a second line!\n");
-		printf("And this line was generated from %s\n", "printf!");
-
-		printf("Magic: %p MBI Addr: %p\n", magic, arg);
+		printf("Magic: %p MBI Addr: %p\n", (void *)magic, (void *)arg);
 
 		int mem_lower = *(int *)(arg + 4);
 		int mem_upper = *(int *)(arg + 8);
