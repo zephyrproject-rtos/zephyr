@@ -278,7 +278,7 @@ static int stop(void)
 
 static int tx(struct net_pkt *pkt)
 {
-	struct net_buf *buf = net_buf_frag_last(pkt->frags);
+	struct net_buf *buf = net_buf_frag_last(pkt->buffer);
 	u8_t seq = net_buf_pull_u8(buf);
 	int retries = 3;
 	int ret;
@@ -308,29 +308,20 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 				  s32_t *len, u8_t **data)
 {
 	struct net_pkt *pkt;
-	struct net_buf *buf;
 
-	pkt = net_pkt_get_reserve_tx(K_NO_WAIT);
+	pkt = net_pkt_alloc_with_buffer(NULL, *len, AF_UNSPEC, 0, K_NO_WAIT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
 
-	buf = net_pkt_get_frag(pkt, K_NO_WAIT);
-	if (!buf) {
-		net_pkt_unref(pkt);
-		return -ENOMEM;
-	}
-
-	net_pkt_frag_insert(pkt, buf);
-
-	net_buf_add_u8(buf, setup->bRequest);
+	net_pkt_write_u8_new(pkt, setup->bRequest);
 
 	/* Add seq to TX */
 	if (setup->bRequest == TX) {
-		net_buf_add_u8(buf, setup->wIndex);
+		net_pkt_write_u8_new(pkt, setup->wIndex);
 	}
 
-	memcpy(net_buf_add(buf, *len), *data, *len);
+	net_pkt_write_new(pkt, *data, *len);
 
 	LOG_DBG("len %u seq %u", *len, setup->wIndex);
 
@@ -349,7 +340,7 @@ static void tx_thread(void)
 		struct net_buf *buf;
 
 		pkt = k_fifo_get(&tx_queue, K_FOREVER);
-		buf = net_buf_frag_last(pkt->frags);
+		buf = net_buf_frag_last(pkt->buffer);
 		cmd = net_buf_pull_u8(buf);
 
 		net_hexdump(">", buf->data, buf->len);
@@ -469,25 +460,25 @@ static void init_tx_queue(void)
  */
 int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct net_buf *frag;
+	struct net_buf *frame;
 
 	LOG_DBG("Got data, pkt %p, len %d", pkt, net_pkt_get_len(pkt));
 
-	frag = net_buf_frag_last(pkt->frags);
+	frame = net_buf_frag_last(pkt->buffer);
 
 	/**
 	 * Add length 1 byte, do not forget to reserve it
 	 */
-	net_buf_push_u8(frag, net_pkt_get_len(pkt));
+	net_buf_push_u8(frame, net_pkt_get_len(pkt));
 
 	/**
 	 * Add LQI at the end of the packet
 	 */
-	net_buf_add_u8(frag, net_pkt_ieee802154_lqi(pkt));
+	net_buf_add_u8(frame, net_pkt_ieee802154_lqi(pkt));
 
-	net_hexdump("<", frag->data, net_pkt_get_len(pkt));
+	net_hexdump("<", frame->data, net_pkt_get_len(pkt));
 
-	try_write(WPANUSB_ENDP_BULK_IN, frag->data, net_pkt_get_len(pkt));
+	try_write(WPANUSB_ENDP_BULK_IN, frame->data, net_pkt_get_len(pkt));
 
 	net_pkt_unref(pkt);
 
