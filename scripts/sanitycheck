@@ -2690,13 +2690,15 @@ def parse_arguments():
         "defconfig that have that value assigned to any value. "
         "Prepend a '!' to invert the match.")
 
-    case_select.add_argument(
+    test_xor_subtest = case_select.add_mutually_exclusive_group()
+
+    test_xor_subtest.add_argument(
         "-s", "--test", action="append",
         help="Run only the specified test cases. These are named by "
         "<path to test project relative to "
         "--testcase-root>/<testcase.yaml section name>")
 
-    case_select.add_argument(
+    test_xor_subtest.add_argument(
         "--sub-test", action="append",
         help="Run only the specified sub-test cases and its parent. These are named by "
         "test case name appended by test function, i.e. kernel.mutex.mutex_lock_unlock."
