@@ -11,23 +11,16 @@ LOG_MODULE_REGISTER(usb_ecm);
 /* Enable verbose debug printing extra hexdumps */
 #define VERBOSE_DEBUG	0
 
-/* This enables basic hexdumps */
-#define NET_LOG_ENABLED	0
-#include <net_private.h>
-
-#include <zephyr.h>
-
-#include <usb_device.h>
-#include <usb_common.h>
-
 #include <net/net_pkt.h>
 #include <net/ethernet.h>
+#include <net_private.h>
 
+#include <usb/usb_device.h>
+#include <usb/usb_common.h>
+#include <usb/class/usb_cdc.h>
 #include <usb_descriptor.h>
-#include <class/usb_cdc.h>
-#include "netusb.h"
 
-#define ECM_FRAME_SIZE 1522
+#include "netusb.h"
 
 #define USB_CDC_ECM_REQ_TYPE		0x21
 #define USB_CDC_SET_ETH_PKT_FILTER	0x43
@@ -35,6 +28,10 @@ LOG_MODULE_REGISTER(usb_ecm);
 #define ECM_INT_EP_IDX			0
 #define ECM_OUT_EP_IDX			1
 #define ECM_IN_EP_IDX			2
+
+#define ECM_FRAME_SIZE			1522
+
+static u8_t tx_buf[ECM_FRAME_SIZE], rx_buf[ECM_FRAME_SIZE];
 
 struct usb_cdc_ecm_config {
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
@@ -195,8 +192,6 @@ static struct usb_ep_cfg_data ecm_ep_data[] = {
 		.ep_addr = CDC_ECM_IN_EP_ADDR
 	},
 };
-
-static u8_t tx_buf[ECM_FRAME_SIZE], rx_buf[ECM_FRAME_SIZE];
 
 static int ecm_class_handler(struct usb_setup_packet *setup, s32_t *len,
 			     u8_t **data)
