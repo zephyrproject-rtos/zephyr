@@ -101,21 +101,21 @@ typedef enum zio_dev_chan_type {
 	/**
 	 * Generic temperature.
 	 *
-	 * Expressed as degrees celcius (C).
+	 * Expressed as degrees celsius (C).
 	 */
 	DEV_CHAN_TEMP,
 
 	/**
 	 * Ambient temperature.
 	 *
-	 * Expressed as degrees celcius (C).
+	 * Expressed as degrees celsius (C).
 	 */
 	DEV_CHAN_TEMP_AMBIENT,
 
 	/**
 	 * Die temperature.
 	 *
-	 * Expressed as degrees celcius (C).
+	 * Expressed as degrees celsius (C).
 	 */
 	DEV_CHAN_TEMP_DIE,
 
@@ -148,14 +148,14 @@ typedef enum zio_dev_chan_type {
 	DEV_CHAN_MAG_VECTOR,
 
 	/**
-	 * Single-axis angular momentum.
+	 * Single-axis angular velocity.
 	 *
 	 * Expressed as radians per second (rad/s).
 	 */
 	DEV_CHAN_GYRO,
 
 	/**
-	 * Three-axis (XYZ) angular momentum.
+	 * Three-axis (XYZ) angular velocity.
 	 *
 	 * Expressed as radians per second (rad/s).
 	 */
