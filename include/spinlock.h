@@ -58,10 +58,18 @@ struct k_spinlock {
 	 * ID in the bottom two bits.
 	 */
 	size_t thread_cpu;
+
+	/* Where the spinlock was taken */
+	int line;
+	char *file;
 #endif
 };
 
-static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
+static ALWAYS_INLINE k_spinlock_key_t z_spin_lock(struct k_spinlock *l
+#ifdef SPIN_VALIDATE
+						  , int line, char *file
+#endif
+						  )
 {
 	ARG_UNUSED(l);
 	k_spinlock_key_t k;
@@ -73,7 +81,9 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 	k.key = z_arch_irq_lock();
 
 #ifdef SPIN_VALIDATE
-	__ASSERT(z_spin_lock_valid(l), "Recursive spinlock");
+	__ASSERT(z_spin_lock_valid(l),
+		 "Recursive spinlock @%s:%d (taken at %s:%d)",
+		 file, line, l->file, l->line);
 #endif
 
 #ifdef CONFIG_SMP
@@ -81,15 +91,27 @@ static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
 	}
 #endif
 
+#ifdef SPIN_VALIDATE
+	l->line = line;
+	l->file = file;
+#endif
 	return k;
 }
 
-static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
-					k_spinlock_key_t key)
+static ALWAYS_INLINE void z_spin_unlock(struct k_spinlock *l,
+					k_spinlock_key_t key
+#ifdef SPIN_VALIDATE
+					, int line, char *file
+#endif
+					)
 {
 	ARG_UNUSED(l);
 #ifdef SPIN_VALIDATE
-	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock!");
+	__ASSERT(z_spin_unlock_valid(l),
+		 "Not my spinlock @%s:%d (taken at %s:%d)",
+		 file, line, l->file, l->line);
+	l->line = -1;
+	l->file = NULL;
 #endif
 
 #ifdef CONFIG_SMP
@@ -108,16 +130,33 @@ static ALWAYS_INLINE void k_spin_unlock(struct k_spinlock *l,
 /* Internal function: releases the lock, but leaves local interrupts
  * disabled
  */
-static ALWAYS_INLINE void k_spin_release(struct k_spinlock *l)
+static ALWAYS_INLINE void z_spin_release(struct k_spinlock *l
+#ifdef SPIN_VALIDATE
+					 , int line, char *file
+#endif
+					 )
 {
 	ARG_UNUSED(l);
 #ifdef SPIN_VALIDATE
-	__ASSERT(z_spin_unlock_valid(l), "Not my spinlock!");
+	__ASSERT(z_spin_unlock_valid(l),
+		 "Not my spinlock @%s:%d (taken at %s:%d)",
+		 file, line, l->file, l->line);
+	l->line = -1;
+	l->file = NULL;
 #endif
 #ifdef CONFIG_SMP
 	atomic_clear(&l->locked);
 #endif
 }
 
+#ifdef SPIN_VALIDATE
+#define k_spin_lock(l) z_spin_lock((l), __LINE__, __FILE__)
+#define k_spin_unlock(l, k) z_spin_unlock((l), (k), __LINE__, __FILE__)
+#define k_spin_release(l) z_spin_release((l), __LINE__, __FILE__)
+#else
+#define k_spin_lock(l) z_spin_lock(l)
+#define k_spin_unlock(l, k) z_spin_unlock((l), (k))
+#define k_spin_release(l) z_spin_release(l)
+#endif
 
 #endif /* ZEPHYR_INCLUDE_SPINLOCK_H_ */
