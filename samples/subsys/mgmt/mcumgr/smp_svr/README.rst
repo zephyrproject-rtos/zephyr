@@ -25,7 +25,7 @@ This sample application supports the following mcumgr transports by default:
 Caveats
 *******
 
-* The Zephyr port of `smp_svr` is configured to run on a Nordic nRF52x MCU. The
+* The Zephyr port of ``smp_svr`` is configured to run on a Nordic nRF52x MCU. The
   application should build and run for other platforms without modification, but
   the file system management commands will not work.  To enable file system
   management for a different platform, adjust the

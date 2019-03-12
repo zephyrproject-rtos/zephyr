@@ -300,7 +300,7 @@ mode if the thread triggered a fatal exception, but not if the thread
 gracefully exits its entry point function.
 
 This means implementing an architecture-specific version of
-:c:func:`k_thread_abort`, and setting the Kconfig option
+:cpp:func:`k_thread_abort`, and setting the Kconfig option
 :option:`CONFIG_ARCH_HAS_THREAD_ABORT` as needed for the architecture (e.g. see
 :zephyr_file:`arch/arm//core/cortex_m/Kconfig`).
 

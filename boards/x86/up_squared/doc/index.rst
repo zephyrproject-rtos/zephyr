@@ -326,13 +326,13 @@ Prepare Linux host
 #. Follow `Creating a GRUB2 Boot Loader Image from a Linux Host`_ steps
    to create grub binary.
 
-#. Install DHCP, TFTP servers. For example `dnsmasq`
+#. Install DHCP, TFTP servers. For example ``dnsmasq``
 
    .. code-block:: console
 
       $ sudo apt-get install dnsmasq
 
-#. Configure DHCP server. Configuration for `dnsmasq` is below:
+#. Configure DHCP server. Configuration for ``dnsmasq`` is below:
 
    .. code-block:: console
 
@@ -349,7 +349,7 @@ Prepare Linux host
       tftp-root=/srv/tftp
       dhcp-boot=grub_x86_64.efi
 
-   `grub_x86_64.efi` is a grub binary created above.
+   ``grub_x86_64.efi`` is a grub binary created above.
 
 #. Create the following directories inside TFTP root :file:`/srv/tftp`
 
@@ -391,7 +391,7 @@ Prepare Linux host
       └── kernel
           └── zephyr.strip
 
-#. Restart `dnsmasq` service:
+#. Restart ``dnsmasq`` service:
 
    .. code-block:: console
 

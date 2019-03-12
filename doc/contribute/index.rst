@@ -265,10 +265,10 @@ gitlint
 
 When you submit a pull request to the project, a series of checks are
 performed to verify your commit messages meet the requirements. The same step
-done during the CI process can be performed locally using the the `gitlint`
+done during the CI process can be performed locally using the the ``gitlint``
 command.
 
-Run `gitlint` locally in your tree and branch where your patches have been
+Run ``gitlint`` locally in your tree and branch where your patches have been
 committed:
 
 .. code-block:: console

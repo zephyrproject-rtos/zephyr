@@ -23,7 +23,7 @@ The user may select or unselect the sensors from
 :zephyr_file:`samples/boards/96b_argonkey/sensors/prj.conf`.
 
 Please note that all sensor related code is conditionally compiled
-using the `#ifdef` directive, so this sample is supposed to always
+using the ``#ifdef`` directive, so this sample is supposed to always
 build correctly. Example:
 
 .. code-block:: c

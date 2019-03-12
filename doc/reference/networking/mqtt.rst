@@ -92,7 +92,7 @@ used. An example configuration for TCP transport is shown below:
 
 After the configuration is set up, the MQTT client can connect to the MQTT broker.
 Call the ``mqtt_connect`` function, which will create the appropriate socket,
-establish a TCP/TLS connection, and send an `MQTT CONNECT` message.
+establish a TCP/TLS connection, and send an ``MQTT CONNECT`` message.
 When notified, the application should call the ``mqtt_input`` function to process
 the response received. Note, that ``mqtt_input`` is a non-blocking function,
 therefore the application should use socket ``poll`` to wait for the response.

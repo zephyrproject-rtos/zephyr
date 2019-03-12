@@ -23,7 +23,7 @@ the **bar** component of **foo**, you should copy the sample folder to
 
 
 In the example above ``tests/foo/bar`` signifies the path to the test and the
-``test-identifier`` references a test defined in the file::`testcase.yaml` file.
+``test-identifier`` references a test defined in the :file:`testcase.yaml` file.
 
 To run all tests defined in a test project, run::
 

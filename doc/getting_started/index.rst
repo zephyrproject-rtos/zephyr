@@ -51,7 +51,7 @@ shell or ``cmd.exe`` prompt:
 
 .. note::
    See :ref:`gs_python_deps` for additional clarfication on using the
-   `--user` switch.
+   ``--user`` switch.
 
 Additional information about west's structure can be found
 :ref:`in the relevant west documentation section <west-struct>`.

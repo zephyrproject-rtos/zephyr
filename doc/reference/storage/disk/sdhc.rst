@@ -24,8 +24,8 @@ MMC and SDSC (<= 2 GiB) cards are not supported and will be ignored.
 Enabling
 ********
 
-For example, this device tree fragment adds an SDHC card slot on `spi1`,
-uses `PA27` for chip select, and runs the SPI bus at 24 MHz once the
+For example, this device tree fragment adds an SDHC card slot on ``spi1``,
+uses ``PA27`` for chip select, and runs the SPI bus at 24 MHz once the
 SDHC card has been initialized:
 
 .. code-block:: none

@@ -367,7 +367,7 @@ Usage
 *****
 
 To create a new shell instance user needs to activate requested
-backend using `menuconfig`.
+backend using ``menuconfig``.
 
 The following code shows a simple use case of this library:
 

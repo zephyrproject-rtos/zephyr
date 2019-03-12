@@ -6,7 +6,7 @@ Testusb application sample
 The testusb sample implements a loopback function. This function can be used
 to test USB device drivers and the device stack connected to a Linux host
 and has a similar interface to "Gadget Zero" of the Linux kernel.
-The userspace tool `testusb` is needed to start the tests.
+The userspace tool ``testusb`` is needed to start the tests.
 
 Building and flashing
 *********************
@@ -18,13 +18,13 @@ Testing
 
 To run USB tests:
 
-#. Load the `usbtest` Linux kernel module on the Linux Host.
+#. Load the ``usbtest`` Linux kernel module on the Linux Host.
 
    .. code-block:: console
 
       $ sudo modprobe usbtest vendor=0x2fe3 product=0x0100
 
-   The `usbtest` module should claim the device:
+   The ``usbtest`` module should claim the device:
 
    .. code-block:: console
 
@@ -38,7 +38,7 @@ To run USB tests:
       [21746.306153] usbtest 9-1:1.0: Generic USB device
       [21746.306156] usbtest 9-1:1.0: full-speed {control} tests
 
-#. Use the `testusb` tool in `linux/tools/usb` inside Linux kernel source directory
+#. Use the ``testusb`` tool in ``linux/tools/usb`` inside Linux kernel source directory
    to start the tests.
 
    .. code-block:: console
@@ -49,16 +49,17 @@ To run USB tests:
       /dev/bus/usb/009/016 test 10,   11.990054 secs
 
 #. To run all the tests the Zephyr's VID / PID should be inserted to USB
-   driver id table. The method for loading the `usbtest` driver for our
+   driver id table. The method for loading the ``usbtest`` driver for our
    device is described here: https://lwn.net/Articles/160944/.
 
-   Since we use the "Gadget Zero" interface we specify reference device `0525:a4a0`.
+   Since we use the "Gadget Zero" interface we specify reference device
+   ``0525:a4a0``.
 
    .. code-block:: console
 
       $ sudo sh -c "echo 0x2fe3 0x0100 0 0x0525 0xa4a0 > /sys/bus/usb/drivers/usbtest/new_id"
 
-#. Use the `testusb` tool in `linux/tools/usb` inside Linux kernel source directory
+#. Use the ``testusb`` tool in ``linux/tools/usb`` inside Linux kernel source directory
    to start the tests.
 
    .. code-block:: console

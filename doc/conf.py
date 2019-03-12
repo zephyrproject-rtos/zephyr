@@ -143,7 +143,15 @@ else:
 
 # The reST default role (used for this markup: `text`) to use for all
 # documents.
-#default_role = None
+
+# This change will allow us to use bare back-tick notation to let
+# Sphinx hunt for a reference, starting with normal "document"
+# references such as :ref:, but also including :c: and :cpp: domains
+# (potentially) helping with API (doxygen) references simply by using
+# `name`
+
+default_role = 'any'
+# default_domain = 'cpp'
 
 # If true, '()' will be appended to :func: etc. cross-reference text.
 #add_function_parentheses = True
@@ -389,6 +397,13 @@ breathe_projects = {
     "doc-examples": "{}/doxygen/xml".format(ZEPHYR_BUILD)
 }
 breathe_default_project = "Zephyr"
+
+# Changing breathe configuration to force "c" domain doesn't work
+# see https://github.com/michaeljones/breathe/issues/282
+#breathe_domain_by_extension = {
+#    "h" : "c",
+#    "c" : "c",
+#    }
 
 # Qualifiers to a function are causing Sphihx/Breathe to warn about
 # Error when parsing function declaration and more.  This is a list
