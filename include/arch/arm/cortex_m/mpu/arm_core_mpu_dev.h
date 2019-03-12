@@ -262,6 +262,10 @@ int arm_core_mpu_get_max_available_dyn_regions(void);
 
 /**
  * @brief validate the given buffer is user accessible or not
+ *
+ * Note: Validation will always return failure, if the supplied buffer
+ *       spans multiple enabled MPU regions (even if these regions all
+ *       permit user access).
  */
 int arm_core_mpu_buffer_validate(void *addr, size_t size, int write);
 
