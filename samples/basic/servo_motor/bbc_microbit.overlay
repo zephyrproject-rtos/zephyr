@@ -1,0 +1,4 @@
+
+&sw_pwm {
+	clock-prescaler = <3>;
+};

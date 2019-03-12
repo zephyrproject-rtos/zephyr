@@ -212,6 +212,7 @@
 /lib/posix/                               @pfalcon
 /kernel/device.c                          @andrewboie @andyross @nashif
 /kernel/idle.c                            @andrewboie @andyross @nashif
+/samples/basic/servo_motor/*microbit*     @jhe
 /samples/bluetooth/                       @sjanc @jhedberg @Vudentz
 /samples/boards/intel_s1000_crb/          @sathishkuttan @rgundi @nashif
 /samples/display/                         @vanwinkeljan
