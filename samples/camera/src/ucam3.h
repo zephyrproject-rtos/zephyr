@@ -9,6 +9,10 @@
 
 #include <zephyr.h>
 
+#define STARTUP_DELAY 800       /* in milliseconds */
+#define FIRST_PHOTO_DELAY 2000  /* in milliseconds */
+#define SHUTTER_DELAY 200       /* in milliseconds */
+
 typedef enum {
 	FMT_8BIT_GRAY_SCALE             = 0x03,
 	FMT_16BIT_COLOUR_RAW_CRYCBY     = 0x08,

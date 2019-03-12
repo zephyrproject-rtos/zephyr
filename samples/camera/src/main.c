@@ -25,7 +25,7 @@ void main(void)
 	}
 
 	/* Minimal delay before synchronising */
-	k_sleep(800);
+	k_sleep(STARTUP_DELAY);
 
 	/* Synchronize with the camera */
 	ret = ucam3_sync();
@@ -61,7 +61,7 @@ void main(void)
 	/* 'First photo' delay: Time recommended for the camera to settle before the
 	 * first photo should be taken. Section 13. Specifications and Ratings
 	 */
-	k_sleep(2000);
+	k_sleep(FIRST_PHOTO_DELAY);
 
 	/* Get the snapshot */
 	ret = ucam3_get_picture(picture, &size);

@@ -15,24 +15,7 @@
 
 #define CONFIG_BUFFER_SER_UART_RX_SIZE 128
 #define IMAGE_DATA_START 4
-
-struct data {
-	u16_t package_size;
-	u8_t package_buf[512];
-};
-
-
-static struct data ucam3_data;
-
-static struct tty_serial cam;
-
-typedef enum {
-	ACK_INITIAL,
-	ACK_SNAPSHOT,
-	ACK_GET_PICTURE,
-	ACK_SET_PACKAGE_SIZE,
-	ACK_SYNC,
-} cmd_ack_t;
+#define MAX_PACKAGE_SIZE 512
 
 #define CMD_LEN 6
 
@@ -44,6 +27,22 @@ typedef enum {
 #define CMD_SYNC_ID 0x0D
 #define CMD_ACK_ID 0x0E
 
+static struct {
+	u16_t package_size;
+	u8_t package_buf[MAX_PACKAGE_SIZE];
+	u8_t resp[CMD_LEN];
+} cam_data;
+
+static struct tty_serial cam;
+
+typedef enum {
+	ACK_INITIAL,
+	ACK_SNAPSHOT,
+	ACK_GET_PICTURE,
+	ACK_SET_PACKAGE_SIZE,
+	ACK_SYNC,
+} cmd_ack_t;
+
 u8_t cmd_sync[CMD_LEN] = { 0xAA, CMD_SYNC_ID, 0x00, 0x00, 0x00, 0x00 };
 u8_t cmd_sync_ack[CMD_LEN] = { 0xAA, CMD_ACK_ID, CMD_SYNC_ID, 0x00, 0x00, 0x00 };
 u8_t cmd_initial[CMD_LEN] = { 0xAA, CMD_INITIAL_ID, 0x00, 0x00, 0x00, 0x00 };
@@ -54,8 +53,6 @@ u8_t cmd_ack[CMD_LEN] = { 0xAA, CMD_ACK_ID, 0x00, 0x00, 0x00, 0x00 };
 
 static struct tty_serial cam;
 static u8_t cam_rxbuf[64];
-
-static u8_t resp[CMD_LEN];
 
 static bool cam_check_ack(const uint8_t *buf, cmd_ack_t ack_type)
 {
@@ -128,8 +125,8 @@ int ucam3_sync(void)
 		ret = tty_write(&cam, cmd_sync, CMD_LEN);
 		if (ret == CMD_LEN) {
 			/* Read response from the camera */
-			ret = tty_read(&cam, resp, CMD_LEN);
-			if (ret == CMD_LEN && cam_check_ack(resp, ACK_SYNC)) {
+			ret = tty_read(&cam, cam_data.resp, CMD_LEN);
+			if (ret == CMD_LEN && cam_check_ack(cam_data.resp, ACK_SYNC)) {
 				/* Camera responded with ACK */
 				break;
 			}
@@ -146,13 +143,13 @@ int ucam3_sync(void)
 	}
 
 	/* Wait for the SYNC from the camera */
-	ret = tty_read(&cam, resp, CMD_LEN);
+	ret = tty_read(&cam, cam_data.resp, CMD_LEN);
 	if (ret != CMD_LEN) {
 		return -1;
 	}
 
 	/* Check if camera responded with SYNC */
-	if (memcmp(resp, cmd_sync, CMD_LEN)) {
+	if (memcmp(cam_data.resp, cmd_sync, CMD_LEN)) {
 		return -1;
 	}
 
@@ -229,8 +226,8 @@ int ucam3_initial(const image_config_t *image_config)
 	}
 
 	/* Read response from the camera */
-	ret = tty_read(&cam, resp, CMD_LEN);
-	if (ret == CMD_LEN && cam_check_ack(resp, ACK_INITIAL)) {
+	ret = tty_read(&cam, cam_data.resp, CMD_LEN);
+	if (ret == CMD_LEN && cam_check_ack(cam_data.resp, ACK_INITIAL)) {
 		/* Camera responded with ACK */
 		return 0;
 	}
@@ -284,10 +281,10 @@ int ucam3_set_package_size(u16_t size)
 	}
 
 	/* Read response from the camera */
-	ret = tty_read(&cam, resp, CMD_LEN);
-	if (ret == CMD_LEN && cam_check_ack(resp, ACK_SET_PACKAGE_SIZE)) {
+	ret = tty_read(&cam, cam_data.resp, CMD_LEN);
+	if (ret == CMD_LEN && cam_check_ack(cam_data.resp, ACK_SET_PACKAGE_SIZE)) {
 		/* Camera responded with ACK */
-		ucam3_data.package_size = size;
+		cam_data.package_size = size;
 		return 0;
 	}
 
@@ -358,8 +355,8 @@ int ucam3_snapshot(const image_config_t *image_config)
 	}
 
 	/* Read response from the camera */
-	ret = tty_read(&cam, resp, CMD_LEN);
-	if (ret == CMD_LEN && cam_check_ack(resp, ACK_SNAPSHOT)) {
+	ret = tty_read(&cam, cam_data.resp, CMD_LEN);
+	if (ret == CMD_LEN && cam_check_ack(cam_data.resp, ACK_SNAPSHOT)) {
 		/* Camera responded with ACK */
 		return 0;
 	}
@@ -439,31 +436,31 @@ int ucam3_get_picture(u8_t *data, u32_t *size)
 	}
 
 	/* Read response from the camera */
-	ret = tty_read(&cam, resp, CMD_LEN);
-	if (ret != CMD_LEN || !cam_check_ack(resp, ACK_GET_PICTURE)) {
+	ret = tty_read(&cam, cam_data.resp, CMD_LEN);
+	if (ret != CMD_LEN || !cam_check_ack(cam_data.resp, ACK_GET_PICTURE)) {
 		return -1;
 	}
 
 	/* 'Shutter' delay: Time after GET_PICTURE is sent to when image output
 	 * begins. Section 13. Specifications and Ratings
 	 */
-	k_sleep(200);
+	k_sleep(SHUTTER_DELAY);
 
 	/* Camera responded with ACK */
 	/* Wait for DATA command from the camera */
-	ret = tty_read(&cam, resp, CMD_LEN);
-	if (ret != CMD_LEN || memcmp(resp, cmd_data, 3)) {
+	ret = tty_read(&cam, cam_data.resp, CMD_LEN);
+	if (ret != CMD_LEN || memcmp(cam_data.resp, cmd_data, 3)) {
 		return -1;
 	}
 
 	/* Calculate the size of the image from the DATA packet */
 	image_size = 0;
-	image_size |= resp[3];
-	image_size |= resp[4] << 8;
-	image_size |= resp[5] << 16;
+	image_size |= cam_data.resp[3];
+	image_size |= cam_data.resp[4] << 8;
+	image_size |= cam_data.resp[5] << 16;
 
 	/* Get and construct the image from the packages */
-	num_of_packages = image_size / (ucam3_data.package_size - 6);
+	num_of_packages = image_size / (cam_data.package_size - 6);
 
 	offset = 0;
 	for (i = 0; i <= num_of_packages; i++) {
@@ -480,17 +477,17 @@ int ucam3_get_picture(u8_t *data, u32_t *size)
 		}
 
 		/* Wait for Image Data Package from the camera */
-		ret = tty_read(&cam, ucam3_data.package_buf, ucam3_data.package_size);
+		ret = tty_read(&cam, cam_data.package_buf, cam_data.package_size);
 
 		/* Verify package */
-		if (!verify_package(ucam3_data.package_buf, ucam3_data.package_size)) {
+		if (!verify_package(cam_data.package_buf, cam_data.package_size)) {
 			return -1;
 		}
 
 		/* Figure out data size in package and copy to data image */
 		data_size = 0;
-		data_size |= ucam3_data.package_buf[2];
-		data_size |= ucam3_data.package_buf[3] << 8;
+		data_size |= cam_data.package_buf[2];
+		data_size |= cam_data.package_buf[3] << 8;
 		memcpy(&data[offset], &cam_data.package_buf[IMAGE_DATA_START],
 		       data_size);
 		offset += data_size;
