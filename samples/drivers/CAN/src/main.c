@@ -199,6 +199,8 @@ void main(void)
 
 #ifdef CONFIG_LOOPBACK_MODE
 	can_configure(can_dev, CAN_LOOPBACK_MODE, 250000);
+#else
+	can_configure(can_dev, CAN_NORMAL_MODE, 250000);
 #endif
 
 	led_gpio_dev = device_get_binding(CONFIG_GPIO_LED_DEV);
