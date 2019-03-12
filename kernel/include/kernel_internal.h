@@ -125,6 +125,18 @@ extern void z_arch_mem_domain_destroy(struct k_mem_domain *domain);
  * configuration would allow a user thread to read/write that region. Used by
  * system calls to validate buffers coming in from userspace.
  *
+ * Notes:
+ * The function is guaranteed to never return validation success, if the entire
+ * buffer area is not user accessible.
+ *
+ * The function is guaranteed to correctly validate the permissions of the
+ * supplied buffer, if the user access permissions of the entire buffer are
+ * enforced by a single, enabled memory management region.
+ *
+ * In some architectures the validation will always return failure
+ * if the supplied memory buffer spans multiple enabled memory management
+ * regions (even if all such regions permit user access).
+ *
  * @param addr start address of the buffer
  * @param size the size of the buffer
  * @param write If nonzero, additionally check if the area is writable.
