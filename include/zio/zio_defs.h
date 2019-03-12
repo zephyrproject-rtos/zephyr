@@ -18,6 +18,8 @@
 extern "C" {
 #endif
 
+#define ZIO_CHAN_LIMIT (255)
+
 /**
  * @brief ZIO device channel types.
  *
@@ -381,8 +383,7 @@ typedef enum zio_dev_chan_type {
          * scale should be clearly documented in the driver making use of this
          * channel type.
 	 */
-	DEV_CHAN_USER_DEF,
-
+	DEV_CHAN_USER_DEF = ZIO_CHAN_LIMIT,
 } zio_dev_chan_type_t;
 
 /**
