@@ -103,7 +103,11 @@ void zperf_tcp_upload(const struct shell *shell,
 			time_elapsed = 1U;
 		}
 
+#if defined(CONFIG_ARCH_POSIX)
+		k_busy_wait(K_MSEC(100));
+#else
 		k_yield();
+#endif
 	} while (!finished);
 
 	end_time = k_cycle_get_32();
