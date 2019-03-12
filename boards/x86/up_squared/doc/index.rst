@@ -208,6 +208,7 @@ Build Zephyr application
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
+      :tool: all
       :board: up_squared
       :goals: build
 
