@@ -989,11 +989,22 @@ static int cmd_connectap(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+static bool tcp_running;
+
+void zperf_tcp_stopped(void)
+{
+	tcp_running = false;
+}
+
+void zperf_tcp_started(void)
+{
+	tcp_running = true;
+}
+
 static int cmd_tcp_download(const struct shell *shell, size_t argc,
 			    char *argv[])
 {
 	if (IS_ENABLED(CONFIG_NET_TCP)) {
-		static bool tcp_stopped = true;
 		int port;
 
 		do_init(shell);
@@ -1004,15 +1015,13 @@ static int cmd_tcp_download(const struct shell *shell, size_t argc,
 			port = DEF_PORT;
 		}
 
-		if (!tcp_stopped) {
+		if (tcp_running) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "TCP server already started!\n");
 			return -ENOEXEC;
 		}
 
 		zperf_tcp_receiver_init(shell, port);
-
-		tcp_stopped = false;
 
 		shell_fprintf(shell, SHELL_NORMAL,
 			      "TCP server started on port %u\n", port);
