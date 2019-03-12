@@ -30,9 +30,16 @@ port for a specific board. Most of the GPIOs on the STM32 SoC has been exposed
 in the external header with silk screen labels that match the SoC's pin names.
 
 Each board vendor has their own variations in pin mapping on their boards'
-external connectors and placement of components. Many vendors use port PB12 for
+external connectors and placement of components. Many vendors use port PC13 for
 connecting an LED, so only this device is supported by our Zephyr port.
 Additional device support is left for the user to implement.
+
+.. note::
+   Change the LED pin to PB12 in :zephyr_file:`boards/arm/stm32_min_dev/stm32_min_dev.dts`
+   if you have the `Black Pill Board`_. This can be done by replacing
+   ``gpios = <&gpioc 13 GPIO_INT_ACTIVE_HIGH>;`` with ``gpios = <&gpiob 12 GPIO_INT_ACTIVE_HIGH>;``
+   in the dts file.
+
 
 More information on hooking up peripherals and lengthy how to articles can be
 found at `EmbedJournal`_.
@@ -132,5 +139,7 @@ You can debug an application in the usual way.  Here is an example for the
 
 .. _STM32F103x8:
         http://www.st.com/resource/en/datasheet/stm32f103c8.pdf
+.. _Black Pill Board:
+        https://wiki.stm32duino.com/index.php?title=Black_Pill
 .. _EmbedJournal:
         https://embedjournal.com/tag/stm32-min-dev/
