@@ -5944,13 +5944,13 @@ int bt_br_oob_get_local(struct bt_br_oob *oob)
 
 int bt_le_oob_get_local(u8_t id, struct bt_le_oob *oob)
 {
+	int err;
+
 	if (id >= CONFIG_BT_ID_MAX) {
 		return -EINVAL;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PRIVACY)) {
-		int err;
-
 		/* Invalidate RPA so a new one is generated */
 		atomic_clear_bit(bt_dev.flags, BT_DEV_RPA_VALID);
 
@@ -5964,5 +5964,29 @@ int bt_le_oob_get_local(u8_t id, struct bt_le_oob *oob)
 		bt_addr_le_copy(&oob->addr, &bt_dev.id_addr[id]);
 	}
 
+
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
+		err = bt_smp_le_oob_generate_sc_data(&oob->le_sc_data);
+		if (err) {
+			return err;
+		}
+	}
+
 	return 0;
 }
+
+#if defined(CONFIG_BT_SMP)
+int bt_le_oob_set_sc_data(struct bt_conn *conn,
+			  const struct bt_le_oob_sc_data *oobd_local,
+			  const struct bt_le_oob_sc_data *oobd_remote)
+{
+	return bt_smp_le_oob_set_sc_data(conn, oobd_local, oobd_remote);
+}
+
+int bt_le_oob_get_sc_data(struct bt_conn *conn,
+			  const struct bt_le_oob_sc_data **oobd_local,
+			  const struct bt_le_oob_sc_data **oobd_remote)
+{
+	return bt_smp_le_oob_get_sc_data(conn, oobd_local, oobd_remote);
+}
+#endif
