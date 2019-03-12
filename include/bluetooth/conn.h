@@ -413,6 +413,59 @@ void bt_conn_cb_register(struct bt_conn_cb *cb);
  */
 void bt_set_bondable(bool enable);
 
+/** Allow/disallow remote OOB data to be used for pairing.
+ *
+ *  Set/clear the OOB data flag for SMP Pairing Request/Response data.
+ *  The initial value of this flag depends on BT_OOB_DATA_PRESENT Kconfig
+ *  setting.
+ *
+ *  @param enable Value allowing/disallowing remote OOB data.
+ */
+void bt_set_oob_data_flag(bool enable);
+
+/**
+ * @brief Set OOB data during LE SC pairing procedure
+ *
+ * This function allows to set OOB data during the LE SC pairing procedure. The
+ * function should only be called in response to the oob_data_request() callback
+ * provided that LE SC method is used for pairing.
+ *
+ * The user should submit OOB data according to the information received in the
+ * callback. This may yield three different configurations: with only local OOB
+ * data present, with only remote OOB data present or with both local and
+ * remote OOB data present.
+ *
+ * @param conn Connection object
+ * @param oobd_local Local OOB data or NULL if not present
+ * @param oobd_remote Remote OOB data or NULL if not present
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_le_oob_set_sc_data(struct bt_conn *conn,
+			  const struct bt_le_oob_sc_data *oobd_local,
+			  const struct bt_le_oob_sc_data *oobd_remote);
+
+/**
+ * @brief Get OOB data used for LE SC pairing procedure
+ *
+ * This function allows to get OOB data during the LE SC pairing procedure that
+ * were set by the bt_le_oob_set_sc_data() API.
+ *
+ *  Note: The OOB data will only be available as long as the connection object
+ *  associated with it is valid.
+ *
+ * @param conn Connection object
+ * @param oobd_local Local OOB data or NULL if not set
+ * @param oobd_remote Remote OOB data or NULL if not set
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
+ */
+int bt_le_oob_get_sc_data(struct bt_conn *conn,
+			  const struct bt_le_oob_sc_data **oobd_local,
+			  const struct bt_le_oob_sc_data **oobd_remote);
+
 /** @def BT_PASSKEY_INVALID
  *
  *  Special passkey value that can be used to disable a previously
@@ -434,6 +487,38 @@ void bt_set_bondable(bool enable);
  *  @return 0 on success or a negative error code on failure.
  */
 int bt_passkey_set(unsigned int passkey);
+
+/** Info Structure for OOB pairing */
+struct bt_conn_oob_info {
+	/** Type of OOB pairing method */
+	enum {
+		/** LE legacy pairing */
+		BT_CONN_OOB_LE_LEGACY,
+
+		/** LE SC pairing */
+		BT_CONN_OOB_LE_SC,
+	} type;
+
+	union {
+		/** LESC OOB pairing parameters */
+		struct {
+			/** OOB data configuration */
+			enum {
+				/** Local OOB data requested */
+				BT_CONN_OOB_LOCAL_ONLY,
+
+				/** Remote OOB data requested */
+				BT_CONN_OOB_REMOTE_ONLY,
+
+				/** Both local and remote OOB data requested */
+				BT_CONN_OOB_BOTH_PEERS,
+
+				/** No OOB data requested */
+				BT_CONN_OOB_NO_DATA,
+			} oob_config;
+		} lesc;
+	};
+};
 
 /** Authenticated pairing callback structure */
 struct bt_conn_auth_cb {
@@ -499,6 +584,24 @@ struct bt_conn_auth_cb {
 	 *  @param passkey Passkey to be confirmed.
 	 */
 	void (*passkey_confirm)(struct bt_conn *conn, unsigned int passkey);
+
+	/** @brief Request the user to provide OOB data.
+	 *
+	 *  When called the user is expected to provide OOB data. The required
+	 *  data are indicated by the information structure.
+	 *
+	 *  For LESC OOB pairing method, the user should provide local OOB data,
+	 *  remote OOB data or both depending on their availability. Their value
+	 *  should be given to the stack using the bt_le_oob_set_sc_data() API.
+	 *
+	 *  This callback must be set to non-NULL in order to support OOB
+	 *  pairing.
+	 *
+	 *  @param conn Connection where pairing is currently active.
+	 *  @param info OOB pairing information.
+	 */
+	void (*oob_data_request)(struct bt_conn *conn,
+				 struct bt_conn_oob_info *info);
 
 	/** @brief Cancel the ongoing user request.
 	 *

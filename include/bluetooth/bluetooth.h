@@ -497,11 +497,24 @@ void bt_data_parse(struct net_buf_simple *ad,
 		   bool (*func)(struct bt_data *data, void *user_data),
 		   void *user_data);
 
+/** OOB data that is specific for LE SC pairing method. */
+struct bt_le_oob_sc_data {
+	/** Random Number. */
+	u8_t r[16];
+
+	/** Confirm Value. */
+	u8_t c[16];
+};
+
+/** General OOB data. */
 struct bt_le_oob {
 	/** LE address. If local privacy is enabled this is Resolvable Private
 	 *  Address.
 	 */
 	bt_addr_le_t addr;
+
+	/** OOB data that are relevant for LESC pairing. */
+	struct bt_le_oob_sc_data le_sc_data;
 };
 
 /**
@@ -516,6 +529,9 @@ struct bt_le_oob {
  *
  * @param id  Local identity, in most cases BT_ID_DEFAULT.
  * @param oob LE related information
+ *
+ *  @return Zero on success or error code otherwise, positive in case
+ *  of protocol error or negative (POSIX) in case of stack internal error
  */
 int bt_le_oob_get_local(u8_t id, struct bt_le_oob *oob);
 
