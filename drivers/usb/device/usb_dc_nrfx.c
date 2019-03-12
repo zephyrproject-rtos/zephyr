@@ -1114,7 +1114,7 @@ static void usbd_event_transfer_data(nrfx_usbd_evt_t const *const p_event)
 static void usbd_event_handler(nrfx_usbd_evt_t const *const p_event)
 {
 	struct nrf_usbd_ep_ctx *ep_ctx;
-	struct usbd_event evt;
+	struct usbd_event evt = {0};
 	bool put_evt = false;
 
 	switch (p_event->type) {
