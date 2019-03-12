@@ -1,6 +1,7 @@
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
+#include "nrf5_common.dtsi"
 
 / {
 	cpus {
@@ -265,4 +266,12 @@
 
 &nvic {
 	arm,num-irq-priority-bits = <3>;
+};
+
+&sw_pwm {
+	timer-instance = <2>;
+	channel-count = <3>;
+	clock-prescaler = <0>;
+	ppi-base = <14>;
+	gpiote-base = <0>;
 };

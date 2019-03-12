@@ -1,0 +1,8 @@
+
+/ {
+	sw_pwm: sw-pwm {
+		compatible = "nordic,nrf-sw-pwm";
+		status = "disabled";
+		label = "SW_PWM";
+	};
+};
