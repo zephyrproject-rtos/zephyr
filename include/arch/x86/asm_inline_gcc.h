@@ -326,7 +326,7 @@ static ALWAYS_INLINE
 			 : "=a" (ret)
 			 : "Nd" (port), "Ir" (bit));
 
-	return (ret & 1);
+	return (ret & 1U);
 }
 
 static ALWAYS_INLINE
