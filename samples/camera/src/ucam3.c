@@ -18,12 +18,14 @@ static struct tty_serial cam;
 
 typedef enum {
 	ACK_INITIAL,
+	ACK_SNAPSHOT,
 	ACK_SYNC,
 } cmd_ack_t;
 
 #define CMD_LEN 6
 
 #define CMD_INITIAL_ID 0x01
+#define CMD_SNAPSHOT_ID 0x05
 #define CMD_SYNC_ID 0x0D
 #define CMD_ACK_ID 0x0E
 
@@ -53,6 +55,11 @@ static bool cam_check_ack(const uint8_t *buf, cmd_ack_t ack_type)
 		break;
 	case ACK_INITIAL:
 		if (buf[2] != CMD_INITIAL_ID) {
+			return false;
+		}
+		break;
+	case ACK_SNAPSHOT:
+		if (buf[2] != CMD_SNAPSHOT_ID) {
 			return false;
 		}
 		break;
@@ -196,6 +203,79 @@ int ucam3_initial(const image_config_t *image_config)
 	/* Read response from the camera */
 	ret = tty_read(&cam, resp, CMD_LEN);
 	if (ret == CMD_LEN && cam_check_ack(resp, ACK_INITIAL)) {
+		/* Camera responded with ACK */
+		return 0;
+	}
+
+	return -1;
+}
+
+/**
+ * @brief Construct SNAPSHOT command out of image_config_t
+ *
+ * @param[out] cmd The SNAPSHOT command
+ * @param[in] image_config The image settings
+ *
+ * @retval 0 on success, -1 otherwise
+ */
+static int get_snapshot_cmd(uint8_t *cmd, const image_config_t *image_config)
+{
+	bool is_raw;
+
+	if (!cmd || !image_config) {
+		return -1;
+	}
+
+	cmd[0] = 0xAA;                  /* Command */
+	cmd[1] = CMD_SNAPSHOT_ID;       /* ID Number */
+
+	switch (image_config->format) {
+	case FMT_8BIT_GRAY_SCALE:
+	case FMT_16BIT_COLOUR_RAW_CRYCBY:
+	case FMT_16BIT_COLOUR_RAW_RGB:
+		is_raw = true;
+		break;
+	case FMT_JPEG:
+		is_raw = false;
+		break;
+	default:
+		return -1;
+		break;
+	}
+
+	if (is_raw) {
+		cmd[2] = 0x01;  /* Parameter1: RAW Snapshot */
+	} else {
+		cmd[2] = 0x00;  /* Parameter1: RAW Snapshot */
+	}
+
+	cmd[3] = 0x00;          /* Parameter2: Skip Frame (Low Byte) */
+	cmd[4] = 0x00;          /* Parameter3: Skip Frame (High Byte) */
+	cmd[5] = 0x00;          /* Parameter4 */
+
+	return 0;
+}
+
+int ucam3_snapshot(const image_config_t *image_config)
+{
+	int ret;
+	static u8_t buf[CMD_LEN];
+
+	/* Construct SNAPSHOT command out of image_config */
+	ret = get_snapshot_cmd(buf, image_config);
+	if (ret) {
+		return -1;
+	}
+
+	/* Send SNAPSHOT to the camera */
+	ret = tty_write(&cam, buf, CMD_LEN);
+	if (ret != CMD_LEN) {
+		return -1;
+	}
+
+	/* Read response from the camera */
+	ret = tty_read(&cam, resp, CMD_LEN);
+	if (ret == CMD_LEN && cam_check_ack(resp, ACK_SNAPSHOT)) {
 		/* Camera responded with ACK */
 		return 0;
 	}

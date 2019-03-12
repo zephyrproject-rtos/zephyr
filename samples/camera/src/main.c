@@ -42,6 +42,15 @@ void main(void)
 		return;
 	}
 
+	/* Take a snapshot */
+	ret = ucam3_snapshot(&img_conf);
+	if (ret) {
+		printk("Error on camera snapshot\n");
+		return;
+	}
+
+	printk("Success\n");
+
 	while (1) {
 		continue;
 	}

@@ -81,6 +81,21 @@ extern int ucam3_sync(void);
 extern int ucam3_initial(const image_config_t *image_config);
 
 /**
+ * @brief Take a snapshot
+ *
+ * The uCAM-III will hold a single frame of still picture data in its buffer.
+ * This snapshot can then be retrieved from the buffer multiple times if
+ * required.
+ *
+ * @param[in] image_config Image settings
+ *
+ * @note See section 7.3. SNAPSHOT (AA05h) and 8.2. INITIAL, ... Commands
+ *
+ * @retval 0 on success, otherwise -1
+ */
+extern int ucam3_snapshot(const image_config_t *image_config);
+
+/**
  * @brief Reset the uCAM-III
  *
  * Initialize the serial interface with the camera module.
