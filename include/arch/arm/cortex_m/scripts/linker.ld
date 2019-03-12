@@ -375,20 +375,6 @@ SECTIONS
 	_nocache_ram_size = _nocache_ram_end - _nocache_ram_start;
 #endif /* CONFIG_NOCACHE_MEMORY */
 
-#if defined(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT)
-	SECTION_DATA_PROLOGUE(.ramfunc,,)
-	{
-		MPU_ALIGN(_ramfunc_ram_size);
-		_ramfunc_ram_start = .;
-		*(.ramfunc)
-		*(".ramfunc.*")
-		MPU_ALIGN(_ramfunc_ram_size);
-		_ramfunc_ram_end = .;
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-	_ramfunc_ram_size = _ramfunc_ram_end - _ramfunc_ram_start;
-	_ramfunc_rom_start = LOADADDR(.ramfunc);
-#endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
-
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
