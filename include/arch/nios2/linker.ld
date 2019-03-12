@@ -141,6 +141,8 @@ SECTIONS
 
     SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
         {
+        . = ALIGN(4);
+
         *(.rodata)
         *(".rodata.*")
         *(.gnu.linkonce.r.*)
@@ -154,6 +156,7 @@ SECTIONS
 #include <custom-rodata.ld>
 #endif
 
+        . = ALIGN(4);
         } GROUP_LINK_IN(ROMABLE_REGION)
 
     _image_rom_end = .;
