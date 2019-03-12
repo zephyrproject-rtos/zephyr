@@ -14,3 +14,9 @@ zephyr_sources_ifdef(
   CONFIG_EXECUTION_BENCHMARKING
   timing_info_bench.c
   )
+
+
+zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
+  RAM_SECTIONS
+  ramfunc.ld
+)
