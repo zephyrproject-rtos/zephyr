@@ -120,6 +120,13 @@ static int i2c_mcux_transfer(struct device *dev, struct i2c_msg *msgs,
 		transfer.data = msgs->buf;
 		transfer.dataSize = msgs->len;
 
+		/* Prevent the controller to send a start condition between
+		 * messages, except if explicitely requested.
+		 */
+		if (i != 0 && !(msgs->flags & I2C_MSG_RESTART)) {
+			transfer.flags |= kI2C_TransferNoStartFlag;
+		}
+
 		/* Start the transfer */
 		status = I2C_MasterTransferNonBlocking(base,
 				&data->handle, &transfer);
