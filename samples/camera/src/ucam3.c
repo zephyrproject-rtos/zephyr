@@ -54,7 +54,7 @@ u8_t cmd_ack[CMD_LEN] = { 0xAA, CMD_ACK_ID, 0x00, 0x00, 0x00, 0x00 };
 static struct tty_serial cam;
 static u8_t cam_rxbuf[64];
 
-static bool cam_check_ack(const uint8_t *buf, cmd_ack_t ack_type)
+static inline bool cam_check_ack(const uint8_t *buf, cmd_ack_t ack_type)
 {
 	/* Check the Command and ID Number */
 	if (buf[0] != 0xAA || buf[1] != CMD_ACK_ID) {
@@ -170,7 +170,7 @@ int ucam3_sync(void)
  *
  * @retval 0 on success, -1 otherwise
  */
-static int get_initial_cmd(uint8_t *cmd, const image_config_t *image_config)
+static inline int get_initial_cmd(uint8_t *cmd, const image_config_t *image_config)
 {
 	bool is_raw;
 
@@ -243,7 +243,7 @@ int ucam3_initial(const image_config_t *image_config)
  *
  * @retval 0 on success, -1 otherwise
  */
-static int get_set_package_size_cmd(uint8_t *cmd, u16_t size)
+static inline int get_set_package_size_cmd(uint8_t *cmd, u16_t size)
 {
 	if (!cmd) {
 		return -1;
@@ -299,7 +299,8 @@ int ucam3_set_package_size(u16_t size)
  *
  * @retval 0 on success, -1 otherwise
  */
-static int get_snapshot_cmd(uint8_t *cmd, const image_config_t *image_config)
+static inline int get_snapshot_cmd(uint8_t *cmd,
+				   const image_config_t *image_config)
 {
 	bool is_raw;
 
@@ -403,7 +404,7 @@ static inline bool verify_package(const u8_t *data, u16_t size)
  *
  * @retval 0 on success, -1 otherwise
  */
-static int get_data_ack_cmd(u8_t *cmd, u16_t package_id)
+static inline int get_data_ack_cmd(u8_t *cmd, u16_t package_id)
 {
 	if (!cmd) {
 		return -1;
