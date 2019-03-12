@@ -671,8 +671,30 @@ static int simplelink_setsockopt(int sd, int level, int optname,
 					       _SEC_DOMAIN_VERIF,
 					       (const char *)optval, optlen);
 			break;
-		case TLS_CIPHERSUITE_LIST:
 		case TLS_PEER_VERIFY:
+			if (optval) {
+				/*
+				 * Not currently supported. Verification
+				 * is automatically performed if a CA
+				 * certificate is set. We are returning
+				 * success here to allow
+				 * mqtt_client_tls_connect()
+				 * to proceed, given it requires
+				 * verification and it is indeed
+				 * performed when the cert is set.
+				 */
+				if (*(u32_t *)optval != 2) {
+					retval = slcb_SetErrno(ENOTSUP);
+					goto exit;
+				} else {
+					retval = 0;
+				}
+			} else {
+				retval = slcb_SetErrno(EINVAL);
+				goto exit;
+			}
+			break;
+		case TLS_CIPHERSUITE_LIST:
 		case TLS_DTLS_ROLE:
 			/* Not yet supported: */
 			retval = slcb_SetErrno(ENOTSUP);
