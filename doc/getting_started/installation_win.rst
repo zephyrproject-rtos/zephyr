@@ -59,6 +59,13 @@ dependencies manually, you can also download the required programs from their
 respective websites.
 
 .. note::
+   Chocolatey will properly set up your environment so tools can be
+   found on your PATH.  If you install programs manually, be sure to
+   verify the programs can also be found on your PATH.  For example,
+   you may need to add ``C:\\Program Files\Git\bin`` after manually
+   installing Git for Windows.
+
+.. note::
    There are multiple ``set`` statements in this tutorial. You can avoid
    typing them every time by placing them inside a ``.cmd`` file and
    running that every time you open a command prompt.
