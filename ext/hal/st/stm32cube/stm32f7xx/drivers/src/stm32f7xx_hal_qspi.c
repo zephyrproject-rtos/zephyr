@@ -284,7 +284,7 @@ HAL_StatusTypeDef HAL_QSPI_Init(QSPI_HandleTypeDef *hqspi)
     HAL_QSPI_MspInit(hqspi);
 
     /* Configure the default timeout for the QSPI memory access */
-    HAL_QSPI_SetTimeout(hqspi, HAL_QPSI_TIMEOUT_DEFAULT_VALUE);
+    HAL_QSPI_SetTimeout(hqspi, HAL_QSPI_TIMEOUT_DEFAULT_VALUE);
   }
 
   /* Configure QSPI FIFO Threshold */

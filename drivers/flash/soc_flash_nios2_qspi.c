@@ -406,7 +406,7 @@ static int flash_nios2_qspi_write_protection(struct device *dev, bool enable)
 		IORD_32DIRECT(qspi_dev->csr_base,
 				ALTERA_QSPI_CONTROLLER2_FLAG_STATUS_REG);
 
-		/* read QPSI status register */
+		/* read QSPI status register */
 		status = IORD_32DIRECT(qspi_dev->csr_base,
 				ALTERA_QSPI_CONTROLLER2_STATUS_REG);
 		if (((status >> STATUS_PROTECTION_POS) &

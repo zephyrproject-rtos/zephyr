@@ -416,7 +416,7 @@ typedef struct
 /** @defgroup QSPI_Timeout_definition QSPI Timeout definition
   * @{
   */
-#define HAL_QPSI_TIMEOUT_DEFAULT_VALUE 5000U /* 5 s */
+#define HAL_QSPI_TIMEOUT_DEFAULT_VALUE 5000U /* 5 s */
 /**
   * @}
   */
