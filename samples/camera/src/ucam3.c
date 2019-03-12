@@ -527,7 +527,7 @@ int ucam3_create(void)
 
 	tty_init(&cam, uart);
 	tty_set_rx_buf(&cam, cam_rxbuf, sizeof(cam_rxbuf));
-	tty_set_rx_timeout(&cam, 200);
+	tty_set_rx_timeout(&cam, 250);
 
 	return 0;
 }
