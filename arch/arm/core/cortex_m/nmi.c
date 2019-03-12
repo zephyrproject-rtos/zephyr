@@ -73,7 +73,7 @@ void z_NmiInit(void)
  * @return N/A
  */
 
-void _NmiHandlerSet(void (*pHandler)(void))
+void z_NmiHandlerSet(void (*pHandler)(void))
 {
 	handler = pHandler;
 }

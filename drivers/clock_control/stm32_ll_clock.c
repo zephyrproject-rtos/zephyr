@@ -14,22 +14,22 @@
 #include "stm32_ll_clock.h"
 
 /* Macros to fill up prescaler values */
-#define _ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
-#define ahb_prescaler(v) _ahb_prescaler(v)
+#define z_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
+#define ahb_prescaler(v) z_ahb_prescaler(v)
 
-#define _apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
-#define apb1_prescaler(v) _apb1_prescaler(v)
+#define z_apb1_prescaler(v) LL_RCC_APB1_DIV_ ## v
+#define apb1_prescaler(v) z_apb1_prescaler(v)
 
 #ifndef CONFIG_SOC_SERIES_STM32F0X
-#define _apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
-#define apb2_prescaler(v) _apb2_prescaler(v)
+#define z_apb2_prescaler(v) LL_RCC_APB2_DIV_ ## v
+#define apb2_prescaler(v) z_apb2_prescaler(v)
 #endif /* CONFIG_SOC_SERIES_STM32F0X  */
 
-#define _mco1_prescaler(v) LL_RCC_MCO1_DIV_ ## v
-#define mco1_prescaler(v) _mco1_prescaler(v)
+#define z_mco1_prescaler(v) LL_RCC_MCO1_DIV_ ## v
+#define mco1_prescaler(v) z_mco1_prescaler(v)
 
-#define _mco2_prescaler(v) LL_RCC_MCO2_DIV_ ## v
-#define mco2_prescaler(v) _mco2_prescaler(v)
+#define z_mco2_prescaler(v) LL_RCC_MCO2_DIV_ ## v
+#define mco2_prescaler(v) z_mco2_prescaler(v)
 
 /**
  * @brief fill in AHB/APB buses configuration structure

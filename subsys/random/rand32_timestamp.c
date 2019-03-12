@@ -31,5 +31,5 @@
 
 u32_t sys_rand32_get(void)
 {
-	return _do_read_cpu_timestamp32();
+	return z_do_read_cpu_timestamp32();
 }

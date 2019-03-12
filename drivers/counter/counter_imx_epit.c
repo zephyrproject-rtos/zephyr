@@ -152,7 +152,7 @@ static const struct counter_driver_api imx_epit_driver_api = {
 
 #define COUNTER_IMX_EPIT_DEVICE(idx)					       \
 static int imx_epit_config_func_##idx(struct device *dev);		       \
-static const struct imx_epit_config imx_epit_##idx##_config = {		       \
+static const struct imx_epit_config imx_epit_##idx##z_config = {		       \
 	.info = {							       \
 			.max_top_value = COUNTER_MAX_RELOAD,		       \
 			.freq = 1U,					       \
@@ -165,7 +165,7 @@ static const struct imx_epit_config imx_epit_##idx##_config = {		       \
 static struct imx_epit_data imx_epit_##idx##_data;			       \
 DEVICE_AND_API_INIT(epit_##idx, DT_COUNTER_IMX_EPIT_##idx##_LABEL,	       \
 		    &imx_epit_config_func_##idx,			       \
-		    &imx_epit_##idx##_data, &imx_epit_##idx##_config.info,     \
+		    &imx_epit_##idx##_data, &imx_epit_##idx##z_config.info,     \
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	       \
 		    &imx_epit_driver_api);				       \
 static int imx_epit_config_func_##idx(struct device *dev)		       \

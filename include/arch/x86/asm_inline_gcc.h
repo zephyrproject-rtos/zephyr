@@ -217,7 +217,7 @@ static inline u64_t z_tsc_read(void)
  */
 
 static ALWAYS_INLINE
-	u32_t _do_read_cpu_timestamp32(void)
+	u32_t z_do_read_cpu_timestamp32(void)
 {
 	u32_t rv;
 

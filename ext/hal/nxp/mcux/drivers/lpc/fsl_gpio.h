@@ -41,7 +41,7 @@ typedef enum _gpio_pin_direction
  * Every pin can only be configured as either output pin or input pin at a time.
  * If configured as a input pin, then leave the outputConfig unused.
  */
-typedef struct _gpio_pin_config
+typedef struct z_gpio_pin_config
 {
     gpio_pin_direction_t pinDirection; /*!< GPIO direction, input or output */
     /* Output configurations, please ignore if configured as a input one */

@@ -488,7 +488,7 @@ void SimpleLinkNetAppRequestMemFreeEventHandler(u8_t *buffer)
  * - Whether network hidden or visible
  * - Other types of security
  */
-void _simplelink_get_scan_result(int index,
+void z_simplelink_get_scan_result(int index,
 				 struct wifi_scan_result *scan_result)
 {
 	SlWlanNetworkEntry_t *net_entry;
@@ -515,7 +515,7 @@ void _simplelink_get_scan_result(int index,
 	scan_result->rssi = net_entry->Rssi;
 }
 
-int _simplelink_start_scan(void)
+int z_simplelink_start_scan(void)
 {
 	s32_t ret;
 
@@ -533,7 +533,7 @@ int _simplelink_start_scan(void)
 	return ret;
 }
 
-void _simplelink_get_mac(unsigned char *mac)
+void z_simplelink_get_mac(unsigned char *mac)
 {
 	u16_t mac_len = SL_MAC_ADDR_LEN;
 	u16_t config_opt = 0U;
@@ -542,7 +542,7 @@ void _simplelink_get_mac(unsigned char *mac)
 		     &mac_len, (u8_t *)mac);
 }
 
-int _simplelink_connect(struct wifi_connect_req_params *params)
+int z_simplelink_connect(struct wifi_connect_req_params *params)
 {
 	SlWlanSecParams_t secParams = { 0 };
 	long lretval;
@@ -565,7 +565,7 @@ int _simplelink_connect(struct wifi_connect_req_params *params)
 	return lretval;
 }
 
-int _simplelink_disconnect(void)
+int z_simplelink_disconnect(void)
 {
 	long lretval;
 
@@ -575,7 +575,7 @@ int _simplelink_disconnect(void)
 	return lretval;
 }
 
-int _simplelink_init(simplelink_wifi_cb_t wifi_cb)
+int z_simplelink_init(simplelink_wifi_cb_t wifi_cb)
 {
 	int retval;
 

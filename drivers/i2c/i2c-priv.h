@@ -15,7 +15,7 @@ extern "C" {
 #include <dt-bindings/i2c/i2c.h>
 #include <logging/log.h>
 
-static inline u32_t _i2c_map_dt_bitrate(u32_t bitrate)
+static inline u32_t i2c_map_dt_bitrate(u32_t bitrate)
 {
 	switch (bitrate) {
 	case I2C_BITRATE_STANDARD:

@@ -109,7 +109,7 @@ static int i2c_cc32xx_configure(struct device *dev, u32_t dev_config_raw)
 	return 0;
 }
 
-static void _i2c_cc32xx_prime_transfer(struct device *dev, struct i2c_msg *msg,
+static void i2c_cc32xx_prime_transfer(struct device *dev, struct i2c_msg *msg,
 				      u16_t addr)
 {
 	struct i2c_cc32xx_data *data = DEV_DATA(dev);
@@ -167,7 +167,7 @@ static int i2c_cc32xx_transfer(struct device *dev, struct i2c_msg *msgs,
 	for (int i = 0; i < num_msgs; i++) {
 
 		/* Begin the transfer */
-		_i2c_cc32xx_prime_transfer(dev, msgs, addr);
+		i2c_cc32xx_prime_transfer(dev, msgs, addr);
 
 		/* Wait for the transfer to complete */
 		k_sem_take(&data->transfer_complete, K_FOREVER);
@@ -188,7 +188,7 @@ static int i2c_cc32xx_transfer(struct device *dev, struct i2c_msg *msgs,
 	return retval;
 }
 
-static void _i2c_cc32xx_isr_handle_write(u32_t base,
+static void i2c_cc32xx_isr_handle_write(u32_t base,
 					 struct i2c_cc32xx_data *data)
 {
 	/* Decrement write Counter */
@@ -225,7 +225,7 @@ static void _i2c_cc32xx_isr_handle_write(u32_t base,
 	}
 }
 
-static void _i2c_cc32xx_isr_handle_read(u32_t base,
+static void i2c_cc32xx_isr_handle_read(u32_t base,
 					struct i2c_cc32xx_data *data)
 {
 
@@ -307,10 +307,10 @@ static void i2c_cc32xx_isr(void *arg)
 	/* Handle (read or write) transmit complete: */
 	} else if (int_status & (I2C_MASTER_INT_DATA | I2C_MASTER_INT_START)) {
 		if (data->state == I2C_CC32XX_WRITE_MODE) {
-			_i2c_cc32xx_isr_handle_write(base, data);
+			i2c_cc32xx_isr_handle_write(base, data);
 		}
 		if (data->state == I2C_CC32XX_READ_MODE) {
-			_i2c_cc32xx_isr_handle_read(base, data);
+			i2c_cc32xx_isr_handle_read(base, data);
 		}
 	/* Some unanticipated H/W state: */
 	} else {
@@ -347,7 +347,7 @@ static int i2c_cc32xx_init(struct device *dev)
 	HWREG(COMMON_REG_BASE) = regval;
 
 	/* Set to default configuration: */
-	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 	error = i2c_cc32xx_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (error) {
 		return error;

@@ -140,7 +140,7 @@ static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 	return 0;
 }
 
-static void _disable(struct device *dev, u8_t id)
+static void disable(struct device *dev, u8_t id)
 {
 	const struct counter_nrfx_config *config = get_nrfx_config(dev);
 
@@ -150,7 +150,7 @@ static void _disable(struct device *dev, u8_t id)
 
 static int counter_nrfx_cancel_alarm(struct device *dev, u8_t chan_id)
 {
-	_disable(dev, chan_id);
+	disable(dev, chan_id);
 
 	return 0;
 }
@@ -201,7 +201,7 @@ static void alarm_event_handler(struct device *dev, u32_t id)
 	}
 
 	cc_val = nrfx_timer_capture_get(&config->timer, ID_TO_CC(id));
-	_disable(dev, id);
+	disable(dev, id);
 	clbk(dev, id, cc_val, config->ch_data[id].user_data);
 }
 
@@ -271,7 +271,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	static struct counter_nrfx_ch_data				       \
 		counter##idx##_ch_data[CC_TO_ID(TIMER##idx##_CC_NUM)];	       \
 	LOG_INSTANCE_REGISTER(LOG_MODULE_NAME, idx, CONFIG_COUNTER_LOG_LEVEL); \
-	static const struct counter_nrfx_config nrfx_counter_##idx##_config = {\
+	static const struct counter_nrfx_config nrfx_counter_##idx##z_config = {\
 		.info = {						       \
 			.max_top_value = (TIMER##idx##_MAX_SIZE == 32) ?       \
 					0xffffffff : 0x0000ffff,	       \
@@ -288,7 +288,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 			    DT_NORDIC_NRF_TIMER_TIMER_##idx##_LABEL,	       \
 			    counter_##idx##_init,			       \
 			    &counter_##idx##_data,			       \
-			    &nrfx_counter_##idx##_config.info,		       \
+			    &nrfx_counter_##idx##z_config.info,		       \
 			    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,  \
 			    &counter_nrfx_driver_api)
 

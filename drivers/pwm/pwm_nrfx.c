@@ -360,7 +360,7 @@ static int pwm_nrfx_pm_control(struct device *dev,
 		.countertop = NRFX_PWM_DEFAULT_CONFIG_TOP_VALUE,	      \
 		.prescaler = NRFX_PWM_DEFAULT_CONFIG_BASE_CLOCK 	      \
 	};								      \
-	static const struct pwm_nrfx_config pwm_nrfx_##idx##_config = {	      \
+	static const struct pwm_nrfx_config pwm_nrfx_##idx##z_config = {	      \
 		.pwm = NRFX_PWM_INSTANCE(idx),				      \
 		.initial_config = {					      \
 			.output_pins = {				      \
@@ -383,7 +383,7 @@ static int pwm_nrfx_pm_control(struct device *dev,
 		      DT_NORDIC_NRF_PWM_PWM_##idx##_LABEL,		      \
 		      pwm_nrfx_init, pwm_##idx##_nrfx_pm_control,	      \
 		      &pwm_nrfx_##idx##_data,				      \
-		      &pwm_nrfx_##idx##_config,				      \
+		      &pwm_nrfx_##idx##z_config,				      \
 		      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,	      \
 		      &pwm_nrfx_drv_api_funcs)
 

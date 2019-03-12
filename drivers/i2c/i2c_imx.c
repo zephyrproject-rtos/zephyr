@@ -335,7 +335,7 @@ static int i2c_imx_init(struct device *dev)
 
 	k_sem_init(&data->device_sync_sem, 0, UINT_MAX);
 
-	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
 	error = i2c_imx_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (error) {

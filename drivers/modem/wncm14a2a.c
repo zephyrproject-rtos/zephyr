@@ -211,7 +211,7 @@ static void wncm14a2a_read_rx(struct net_buf **buf);
 
 /*** Verbose Debugging Functions ***/
 #if defined(ENABLE_VERBOSE_MODEM_RECV_HEXDUMP)
-static inline void _hexdump(const u8_t *packet, size_t length)
+static inline void hexdump(const u8_t *packet, size_t length)
 {
 	char output[sizeof("xxxxyyyy xxxxyyyy")];
 	int n = 0, k = 0;
@@ -261,7 +261,7 @@ static inline void _hexdump(const u8_t *packet, size_t length)
 	}
 }
 #else
-#define _hexdump(...)
+#define hexdump(...)
 #endif
 
 static struct wncm14a2a_socket *socket_get(void)
@@ -1058,7 +1058,7 @@ static void wncm14a2a_read_rx(struct net_buf **buf)
 			break;
 		}
 
-		_hexdump(uart_buffer, bytes_read);
+		hexdump(uart_buffer, bytes_read);
 
 		/* make sure we have storage */
 		if (!*buf) {

@@ -61,16 +61,16 @@ struct adc_context {
 
 #ifdef ADC_CONTEXT_USES_KERNEL_TIMER
 #define ADC_CONTEXT_INIT_TIMER(_data, _ctx_name) \
-	._ctx_name.timer = _K_TIMER_INITIALIZER(_data._ctx_name.timer, \
+	._ctx_name.timer = Z_TIMER_INITIALIZER(_data._ctx_name.timer, \
 						adc_context_on_timer_expired, \
 						NULL)
 #endif /* ADC_CONTEXT_USES_KERNEL_TIMER */
 
 #define ADC_CONTEXT_INIT_LOCK(_data, _ctx_name) \
-	._ctx_name.lock = _K_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
+	._ctx_name.lock = Z_SEM_INITIALIZER(_data._ctx_name.lock, 0, 1)
 
 #define ADC_CONTEXT_INIT_SYNC(_data, _ctx_name) \
-	._ctx_name.sync = _K_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
+	._ctx_name.sync = Z_SEM_INITIALIZER(_data._ctx_name.sync, 0, 1)
 
 
 static inline void adc_context_request_next_sampling(struct adc_context *ctx)

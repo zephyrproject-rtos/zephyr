@@ -69,13 +69,13 @@ struct bt_dev bt_dev = {
 	 * initial Command Complete for NOP.
 	 */
 #if !defined(CONFIG_BT_WAIT_NOP)
-	.ncmd_sem      = _K_SEM_INITIALIZER(bt_dev.ncmd_sem, 1, 1),
+	.ncmd_sem      = Z_SEM_INITIALIZER(bt_dev.ncmd_sem, 1, 1),
 #else
-	.ncmd_sem      = _K_SEM_INITIALIZER(bt_dev.ncmd_sem, 0, 1),
+	.ncmd_sem      = Z_SEM_INITIALIZER(bt_dev.ncmd_sem, 0, 1),
 #endif
-	.cmd_tx_queue  = _K_FIFO_INITIALIZER(bt_dev.cmd_tx_queue),
+	.cmd_tx_queue  = Z_FIFO_INITIALIZER(bt_dev.cmd_tx_queue),
 #if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
-	.rx_queue      = _K_FIFO_INITIALIZER(bt_dev.rx_queue),
+	.rx_queue      = Z_FIFO_INITIALIZER(bt_dev.rx_queue),
 #endif
 };
 

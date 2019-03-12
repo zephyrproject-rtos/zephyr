@@ -45,7 +45,7 @@ typedef enum _gpio_interrupt_mode
 } gpio_interrupt_mode_t;
 
 /*! @brief GPIO Init structure definition. */
-typedef struct _gpio_pin_config
+typedef struct z_gpio_pin_config
 {
     gpio_pin_direction_t direction; /*!< Specifies the pin direction. */
     uint8_t outputLogic;            /*!< Set a default output logic, which has no use in input */
