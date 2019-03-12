@@ -302,8 +302,8 @@ into a single application image that can be run on simulated hardware or real
 hardware.
 
 As described in :ref:`getting_started_cmake`, on Linux and macOS you can choose
-between the `make` and `ninja` generators, whereas on Windows you need to use
-`ninja`. For simplicity we will use `ninja` throughout this guide.
+between the ``make`` and ``ninja`` generators, whereas on Windows you need to use
+``ninja``. For simplicity we will use ``ninja`` throughout this guide.
 
 Basics
 ======

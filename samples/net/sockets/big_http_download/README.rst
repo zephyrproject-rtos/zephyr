@@ -8,7 +8,7 @@ Overview
 
 The sockets/big_http_download sample application for Zephyr implements
 a simple HTTP GET client using a BSD Sockets compatible API. Unlike
-the `sockets-http-get` sample application, it downloads a file of
+the :ref:`sockets-http-get` sample application, it downloads a file of
 several megabytes in size, and verifies its integrity using hashing. It
 also performs download repeatedly, tracking the total number of bytes
 transferred. Thus, it can serve as a "load testing" application for

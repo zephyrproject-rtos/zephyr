@@ -523,7 +523,7 @@ release:
 * :github:`8415` - [Coverity CID :186581] Memory - corruptions in /subsys/bluetooth/host/gatt.c
 * :github:`8414` - [Coverity CID :186582] Memory - corruptions in /subsys/bluetooth/host/gatt.c
 * :github:`8413` - [Coverity CID :186583] Error handling issues in /samples/net/sockets/dumb_http_server/src/socket_dumb_http.c
-* :github:`8393` - `CONFIG_MULTITHREADING=n` builds call `main()` with interrupts locked
+* :github:`8393` - ``CONFIG_MULTITHREADING=n`` builds call main() with interrupts locked
 * :github:`8391` - nrf52_blenano2 tmp112 sensor sample build failed.
 * :github:`8390` - bluetooth: request APIs to notify application that pairing is complete or not
 * :github:`8388` - Assigning to promptless symbols should have a better error message
@@ -535,7 +535,7 @@ release:
 * :github:`8367` - fs: nvs: auto restore FS on writing while power down error.
 * :github:`8366` - mcumgr: unable to perform 2nd update
 * :github:`8365` - mcumgr: improper response to "image list" command after update.
-* :github:`8361` - __ASSERT() triggers with `CONFIG_MULTITHREADING=n`
+* :github:`8361` - __ASSERT() triggers with ``CONFIG_MULTITHREADING=n``
 * :github:`8358` - Flashing Target Device FAIL
 * :github:`8357` - bluetooth: request the capability to change gap device name programmatically
 * :github:`8356` - Failed test: kernel.common.bitfield (tests/kernel/common) on Altera Max10

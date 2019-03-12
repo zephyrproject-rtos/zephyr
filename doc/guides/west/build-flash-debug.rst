@@ -33,7 +33,7 @@ The ``build`` command allows you to build any source tree from any directory
 in your file system, placing the build results in a folder of your choice.
 
 In its simplest form, the command can be run by navigating to the root folder
-(i.e. the folder containing a file:`CMakeLists.txt` file) of the Zephyr
+(i.e. the folder containing a :file:`CMakeLists.txt` file) of the Zephyr
 application of your choice and running::
 
   west build -b <BOARD>
@@ -49,8 +49,8 @@ To specify the build directory, use ``--build-dir`` (or ``-d``)::
   west build -b <BOARD> --build-dir path/to/build/directory
 
 Since the build directory defaults to :file:`build`, if you do not specify
-a build directory but a folder named file:`build` is present, that will be used,
-allowing you to incrementally build from outside the file:`build` folder with
+a build directory but a folder named :file:`build` is present, that will be used,
+allowing you to incrementally build from outside the :file:`build` folder with
 no additional parameters.
 
 .. note::
@@ -117,7 +117,7 @@ To specify the build directory, use ``--build-dir`` (or ``-d``)::
 
 Since the build directory defaults to :file:`build`, if you do not specify
 a build directory but a folder named :file:`build` is present, that will be
-used, allowing you to flash from outside the file:`build` folder with no
+used, allowing you to flash from outside the :file:`build` folder with no
 additional parameters.
 
 Choosing a Runner
@@ -213,7 +213,7 @@ To specify the build directory, use ``--build-dir`` (or ``-d``)::
 
 Since the build directory defaults to :file:`build`, if you do not specify
 a build directory but a folder named :file:`build` is present, that will be
-used, allowing you to debug from outside the file:`build` folder with no
+used, allowing you to debug from outside the :file:`build` folder with no
 additional parameters.
 
 Choosing a Runner

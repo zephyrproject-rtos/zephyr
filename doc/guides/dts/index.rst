@@ -375,7 +375,7 @@ extracted information should be formatted.
 
 A YAML description (called "YAML binding") must be provided for every device node
 that is a source of information for the system.  A YAML binding file
-is associated to each node `compatible` property.  Information within the YAML
+is associated to each node ``compatible`` property.  Information within the YAML
 file will instruct the python DTS parsing script (located in ``scripts/dts``) how
 each property of the node is expected to be generated, either the type of the
 value or the format of its name.  Node properties are generated as C-style

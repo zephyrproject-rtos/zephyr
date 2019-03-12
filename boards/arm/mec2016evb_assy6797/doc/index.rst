@@ -62,8 +62,7 @@ features:
 Other hardware features are not currently supported by Zephyr (at the moment)
 
 The default configuration can be found in the Kconfig file:
-
-        ``boards/arm/mec2016evb_assy6797/mec2016evb_assy6797_defconfig``
+``boards/arm/mec2016evb_assy6797/mec2016evb_assy6797_defconfig``
 
 
 Connections and IOs
@@ -178,7 +177,7 @@ Flashing
    - Stop bits: 1
 
 #. Connect the MEC2016EVB_ASSY_6797 board to your host computer using the
-   UART0 port. Then build :ref: `hello_world` application. It is important
+   UART0 port. Then build :ref:`hello_world` application. It is important
    to generate a binary with a new load address, for example do the following::
 
         ${OBJCOPY} --change-addresses -0xb0000 -O binary -S ${in_elf} ${out_bin}
