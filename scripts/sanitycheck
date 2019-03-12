@@ -2649,7 +2649,18 @@ def parse_arguments():
         formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.fromfile_prefix_chars = "+"
 
-    case_select = parser.add_argument_group("Test case selection")
+    case_select = parser.add_argument_group("Test case selection",
+                                            """
+Artificially long but functional example:
+    $ ./scripts/sanitycheck -v     \\
+      --testcase-root tests/     \\
+      --testcase-root mytests/   \\
+      --test      tests/ztest/base/testing.ztest.verbose_0  \\
+      --test      tests/kernel/fifo/fifo_api/kernel.fifo.poll
+
+   "kernel.fifo.poll" is one of the test section names in
+                                 __/fifo_api/testcase.yaml
+    """)
 
     parser.add_argument("--force-toolchain", action="store_true",
             help="Do not filter based on toolchain, use the set "
@@ -2695,14 +2706,16 @@ def parse_arguments():
     test_xor_subtest.add_argument(
         "-s", "--test", action="append",
         help="Run only the specified test cases. These are named by "
-        "<path to test project relative to "
-        "--testcase-root>/<testcase.yaml section name>")
+        "path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
 
     test_xor_subtest.add_argument(
         "--sub-test", action="append",
-        help="Run only the specified sub-test cases and its parent. These are named by "
-        "test case name appended by test function, i.e. kernel.mutex.mutex_lock_unlock."
-        )
+        help="""Recursively find sub-test functions and run the entire
+        test section where they were found, including all sibling test
+        functions. Sub-tests are named by:
+        section.name.in.testcase.yaml.function_name_without_test_prefix
+        Example: kernel.fifo.poll.fifo_loop
+        """)
 
     parser.add_argument(
         "-l", "--all", action="store_true",
@@ -2740,7 +2753,13 @@ def parse_arguments():
             help="list all tags in selected tests")
 
     case_select.add_argument("--list-tests", action="store_true",
-            help="list all tests.")
+        help="""List of all sub-test functions recursively found in
+        all --testcase-root arguments. Note different sub-tests can share
+        the same section name and come from different directories.
+        The output is flattened and reports --sub-test names only,
+        not their directories. For instance net.socket.getaddrinfo_ok
+        and net.socket.fd_set belong to different directories.
+        """)
 
     parser.add_argument("--export-tests", action="store",
             metavar="FILENAME",
@@ -2788,14 +2807,14 @@ def parse_arguments():
         "--load-tests",
         metavar="FILENAME",
         action="store",
-        help="Load list of tests to be run from file.")
+        help="Load list of tests and platforms to be run from file.")
 
     case_select.add_argument(
         "-E",
         "--save-tests",
         metavar="FILENAME",
         action="store",
-        help="Save list of tests to be run to file.")
+        help="Save list of tests and platforms to be run to file.")
 
     parser.add_argument(
         "-b", "--build-only", action="store_true",
@@ -2844,8 +2863,8 @@ def parse_arguments():
         "-T", "--testcase-root", action="append", default=[],
         help="Base directory to recursively search for test cases. All "
         "testcase.yaml files under here will be processed. May be "
-        "called multiple times. Defaults to the 'samples' and "
-        "'tests' directories in the Zephyr tree.")
+        "called multiple times. Defaults to the 'samples/' and "
+        "'tests/' directories at the base of the Zephyr tree.")
 
     board_root_list = ["%s/boards" % ZEPHYR_BASE,
                        "%s/scripts/sanity_chk/boards" % ZEPHYR_BASE]
