@@ -7,8 +7,12 @@ zephyr_library_sources(libc-hooks.c)
 # unable to, it will be up to the user to specify LIBC_*_DIR vars to
 # point to a newlib implementation.
 
+# We need to make sure this is included before the standard system
+# header include path's since we build with -ffreestanding and need
+# our libc headers to be picked instead of the toolchain's ffreestanding
+# headers.
 if(LIBC_INCLUDE_DIR)
-  zephyr_include_directories(${LIBC_INCLUDE_DIR})
+  zephyr_system_include_directories(${LIBC_INCLUDE_DIR})
 endif()
 
 if(LIBC_LIBRARY_DIR)

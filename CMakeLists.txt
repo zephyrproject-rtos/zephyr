@@ -348,8 +348,6 @@ endif()
 
 zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
 
-zephyr_system_include_directories(${NOSTDINC})
-
 # Force an error when things like SYS_INIT(foo, ...) occur with a missing header.
 zephyr_cc_option(-Werror=implicit-int)
 
