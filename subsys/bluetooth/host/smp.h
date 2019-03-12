@@ -34,6 +34,7 @@ struct bt_smp_hdr {
 #define BT_SMP_IO_NO_INPUT_OUTPUT		0x03
 #define BT_SMP_IO_KEYBOARD_DISPLAY		0x04
 
+#define BT_SMP_OOB_DATA_MASK			0x01
 #define BT_SMP_OOB_NOT_PRESENT			0x00
 #define BT_SMP_OOB_PRESENT			0x01
 
@@ -135,6 +136,14 @@ int bt_smp_auth_passkey_entry(struct bt_conn *conn, unsigned int passkey);
 int bt_smp_auth_passkey_confirm(struct bt_conn *conn);
 int bt_smp_auth_pairing_confirm(struct bt_conn *conn);
 int bt_smp_auth_cancel(struct bt_conn *conn);
+
+int bt_smp_le_oob_generate_sc_data(struct bt_le_oob_sc_data *le_sc_oob);
+int bt_smp_le_oob_set_sc_data(struct bt_conn *conn,
+			      const struct bt_le_oob_sc_data *oobd_local,
+			      const struct bt_le_oob_sc_data *oobd_remote);
+int bt_smp_le_oob_get_sc_data(struct bt_conn *conn,
+			      const struct bt_le_oob_sc_data **oobd_local,
+			      const struct bt_le_oob_sc_data **oobd_remote);
 
 /** brief Verify signed message
  *

@@ -311,6 +311,15 @@ config BT_BONDABLE
 	  Bonding flag in AuthReq of SMP Pairing Request/Response will be set
 	  indicating the support for this mode.
 
+config BT_OOB_DATA_FIXED
+	bool "Use a fixed random number for LESC OOB pairing"
+	depends on BT_TESTING
+	help
+	  With this option enabled, the application will be able to perform LESC
+	  pairing with OOB data that consists of fixed random number and confirm
+	  value. This option should only be enabled for debugging and should
+	  never be used in production.
+
 endif # BT_SMP
 
 config BT_L2CAP_DYNAMIC_CHANNEL
