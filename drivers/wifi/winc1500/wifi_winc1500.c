@@ -449,7 +449,6 @@ static int winc1500_accept(struct net_context *context,
 static int winc1500_send(struct net_pkt *pkt,
 			 net_context_send_cb_t cb,
 			 s32_t timeout,
-			 void *token,
 			 void *user_data)
 {
 	struct net_context *context = pkt->context;
@@ -493,7 +492,6 @@ static int winc1500_sendto(struct net_pkt *pkt,
 			   socklen_t addrlen,
 			   net_context_send_cb_t cb,
 			   s32_t timeout,
-			   void *token,
 			   void *user_data)
 {
 	struct net_context *context = pkt->context;

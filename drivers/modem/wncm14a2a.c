@@ -1662,7 +1662,6 @@ static int offload_sendto(struct net_pkt *pkt,
 			  socklen_t addrlen,
 			  net_context_send_cb_t cb,
 			  s32_t timeout,
-			  void *token,
 			  void *user_data)
 {
 	struct net_context *context = net_pkt_context(pkt);
@@ -1686,7 +1685,7 @@ static int offload_sendto(struct net_pkt *pkt,
 
 	net_pkt_unref(pkt);
 	if (cb) {
-		cb(context, ret, token, user_data);
+		cb(context, ret, user_data);
 	}
 
 	return ret;
@@ -1695,7 +1694,6 @@ static int offload_sendto(struct net_pkt *pkt,
 static int offload_send(struct net_pkt *pkt,
 			net_context_send_cb_t cb,
 			s32_t timeout,
-			void *token,
 			void *user_data)
 {
 	struct net_context *context = net_pkt_context(pkt);
@@ -1717,7 +1715,7 @@ static int offload_send(struct net_pkt *pkt,
 	}
 
 	return offload_sendto(pkt, &context->remote, addrlen, cb,
-			      timeout, token, user_data);
+			      timeout, user_data);
 }
 
 static int offload_recv(struct net_context *context,
