@@ -529,7 +529,7 @@ static const struct bt_hci_driver drv = {
 	.send		= bt_spi_send,
 };
 
-static int _bt_spi_init(struct device *unused)
+static int bt_spi_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -568,4 +568,4 @@ static int _bt_spi_init(struct device *unused)
 	return 0;
 }
 
-SYS_INIT(_bt_spi_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(bt_spi_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

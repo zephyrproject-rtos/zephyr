@@ -35,13 +35,13 @@ struct sl_connect_state {
 typedef void (*simplelink_wifi_cb_t)(u32_t mgmt_event,
 				     struct sl_connect_state *conn);
 
-extern int _simplelink_start_scan(void);
-extern void _simplelink_get_scan_result(int index,
+extern int z_simplelink_start_scan(void);
+extern void z_simplelink_get_scan_result(int index,
 					struct wifi_scan_result *scan_result);
-extern void _simplelink_get_mac(unsigned char *mac);
-extern int _simplelink_init(simplelink_wifi_cb_t wifi_cb);
-extern int _simplelink_connect(struct wifi_connect_req_params *params);
-extern int _simplelink_disconnect(void);
+extern void z_simplelink_get_mac(unsigned char *mac);
+extern int z_simplelink_init(simplelink_wifi_cb_t wifi_cb);
+extern int z_simplelink_connect(struct wifi_connect_req_params *params);
+extern int z_simplelink_disconnect(void);
 
 #ifdef __cplusplus
 }

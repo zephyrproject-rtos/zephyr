@@ -294,13 +294,13 @@ static int init_spi(struct device *dev, const nrfx_spi_config_t *config)
 		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
 		.busy = false,						       \
 	};								       \
-	static const struct spi_nrfx_config spi_##idx##_config = {	       \
+	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spi = NRFX_SPI_INSTANCE(idx),				       \
 	};								       \
 	DEVICE_AND_API_INIT(spi_##idx, DT_NORDIC_NRF_SPI_SPI_##idx##_LABEL,    \
 			    spi_##idx##_init,				       \
 			    &spi_##idx##_data,				       \
-			    &spi_##idx##_config,			       \
+			    &spi_##idx##z_config,			       \
 			    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,	       \
 			    &spi_nrfx_driver_api)
 

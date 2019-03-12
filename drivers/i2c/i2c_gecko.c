@@ -168,7 +168,7 @@ static int i2c_gecko_init(struct device *dev)
 
 	i2c_gecko_config_pins(dev, &config->pin_sda, &config->pin_scl);
 
-	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
 	error = i2c_gecko_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (error) {

@@ -17,11 +17,11 @@
 #ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
 
 /* Macros to fill up multiplication and division factors values */
-#define _pll_mul(v) LL_RCC_PLL_MUL_ ## v
-#define pll_mul(v) _pll_mul(v)
+#define z_pll_mul(v) LL_RCC_PLL_MUL_ ## v
+#define pll_mul(v) z_pll_mul(v)
 
-#define _pll_div(v) LL_RCC_PLL_DIV_ ## v
-#define pll_div(v) _pll_div(v)
+#define z_pll_div(v) LL_RCC_PLL_DIV_ ## v
+#define pll_div(v) z_pll_div(v)
 
 /**
  * @brief Fill PLL configuration structure

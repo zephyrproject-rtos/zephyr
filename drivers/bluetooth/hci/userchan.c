@@ -213,7 +213,7 @@ static const struct bt_hci_driver drv = {
 	.send		= uc_send,
 };
 
-static int _bt_uc_init(struct device *unused)
+static int bt_uc_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -222,7 +222,7 @@ static int _bt_uc_init(struct device *unused)
 	return 0;
 }
 
-SYS_INIT(_bt_uc_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(bt_uc_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
 
 static void cmd_bt_dev_found(char *argv, int offset)
 {

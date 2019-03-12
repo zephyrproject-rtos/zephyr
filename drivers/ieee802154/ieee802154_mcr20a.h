@@ -42,25 +42,25 @@ struct mcr20a_context {
 
 #include "ieee802154_mcr20a_regs.h"
 
-u8_t _mcr20a_read_reg(struct mcr20a_context *dev, bool dreg, u8_t addr);
-bool _mcr20a_write_reg(struct mcr20a_context *dev, bool dreg, u8_t addr,
+u8_t z_mcr20a_read_reg(struct mcr20a_context *dev, bool dreg, u8_t addr);
+bool z_mcr20a_write_reg(struct mcr20a_context *dev, bool dreg, u8_t addr,
 		       u8_t value);
-bool _mcr20a_write_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
+bool z_mcr20a_write_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
 			 u8_t *data_buf, u8_t len);
-bool _mcr20a_read_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
+bool z_mcr20a_read_burst(struct mcr20a_context *dev, bool dreg, u16_t addr,
 			u8_t *data_buf, u8_t len);
 
 #define DEFINE_REG_READ(__reg_name, __reg_addr, __dreg)			\
 	static inline u8_t read_reg_##__reg_name(struct mcr20a_context *dev) \
 	{								\
-		return _mcr20a_read_reg(dev, __dreg, __reg_addr);	\
+		return z_mcr20a_read_reg(dev, __dreg, __reg_addr);	\
 	}
 
 #define DEFINE_REG_WRITE(__reg_name, __reg_addr, __dreg)		\
 	static inline bool write_reg_##__reg_name(struct mcr20a_context *dev, \
 						  u8_t value)		\
 	{								\
-		return _mcr20a_write_reg(dev, __dreg, __reg_addr, value); \
+		return z_mcr20a_write_reg(dev, __dreg, __reg_addr, value); \
 	}
 
 #define DEFINE_DREG_READ(__reg_name, __reg_addr)	\
@@ -153,14 +153,14 @@ DEFINE_BITS_SET(clk_out_div, MCR20A_CLK_OUT, _DIV)
 	static inline bool write_burst_##__reg_addr(			\
 		struct mcr20a_context *dev, u8_t *buf)			\
 	{								\
-		return _mcr20a_write_burst(dev, __dreg, __addr, buf, __sz); \
+		return z_mcr20a_write_burst(dev, __dreg, __addr, buf, __sz); \
 	}
 
 #define DEFINE_BURST_READ(__reg_addr, __addr, __sz, __dreg)		    \
 	static inline bool read_burst_##__reg_addr(struct mcr20a_context *dev, \
 						   u8_t *buf)		\
 	{								    \
-		return _mcr20a_read_burst(dev, __dreg, __addr, buf, __sz);  \
+		return z_mcr20a_read_burst(dev, __dreg, __addr, buf, __sz);  \
 	}
 
 DEFINE_BURST_WRITE(t1cmp, MCR20A_T1CMP_LSB, 3, true)

@@ -145,7 +145,7 @@ static void ss_gpio_qmsi_callback(void *data, uint32_t status)
 	const u32_t enabled_mask = context->pin_callbacks & status;
 
 	if (enabled_mask) {
-		_gpio_fire_callbacks(&context->callbacks, port, enabled_mask);
+		gpio_fire_callbacks(&context->callbacks, port, enabled_mask);
 	}
 }
 
@@ -296,7 +296,7 @@ static inline int ss_gpio_qmsi_manage_callback(struct device *port,
 {
 	struct ss_gpio_qmsi_runtime *context = port->driver_data;
 
-	return _gpio_manage_callback(&context->callbacks, callback, set);
+	return gpio_manage_callback(&context->callbacks, callback, set);
 }
 
 static inline int ss_gpio_qmsi_enable_callback(struct device *port,

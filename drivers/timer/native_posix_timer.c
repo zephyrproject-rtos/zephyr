@@ -44,7 +44,7 @@ u32_t z_timer_cycle_get_32(void)
  * if sys_ticks is K_FOREVER (or another negative number),
  * we will effectively silence the tick interrupts forever
  */
-void _timer_idle_enter(s32_t sys_ticks)
+void z_timer_idle_enter(s32_t sys_ticks)
 {
 	if (silent_ticks > 0) { /* LCOV_EXCL_BR_LINE */
 		/* LCOV_EXCL_START */

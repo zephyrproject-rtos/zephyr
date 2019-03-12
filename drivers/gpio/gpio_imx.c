@@ -109,7 +109,7 @@ static int imx_gpio_manage_callback(struct device *dev,
 {
 	struct imx_gpio_data *data = dev->driver_data;
 
-	return _gpio_manage_callback(&data->callbacks, callback, set);
+	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
 static int imx_gpio_enable_callback(struct device *dev,
@@ -163,7 +163,7 @@ static void imx_gpio_port_isr(void *arg)
 	int_flags = GPIO_ISR_REG(config->base);
 	enabled_int = int_flags & data->pin_callback_enables;
 
-	_gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
+	gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
 
 	GPIO_ISR_REG(config->base) = enabled_int;
 }

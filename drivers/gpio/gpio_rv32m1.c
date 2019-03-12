@@ -179,7 +179,7 @@ static int gpio_rv32m1_manage_callback(struct device *dev,
 {
 	struct gpio_rv32m1_data *data = dev->driver_data;
 
-	_gpio_manage_callback(&data->callbacks, callback, set);
+	gpio_manage_callback(&data->callbacks, callback, set);
 
 	return 0;
 }
@@ -222,7 +222,7 @@ static void gpio_rv32m1_port_isr(void *arg)
 	int_status = config->port_base->ISFR;
 	enabled_int = int_status & data->pin_callback_enables;
 
-	_gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
+	gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
 
 	/* Clear the port interrupts */
 	config->port_base->ISFR = 0xFFFFFFFF;

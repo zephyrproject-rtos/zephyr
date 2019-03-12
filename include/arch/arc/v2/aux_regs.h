@@ -108,7 +108,7 @@ extern "C" {
 
 /* STATUS32/STATUS32_P0 bits */
 #define _ARC_V2_STATUS32_H (1 << 0)
-#define _ARC_V2_STATUS32_E(x) ((x) << 1)
+#define Z_ARC_V2_STATUS32_E(x) ((x) << 1)
 #define _ARC_V2_STATUS32_AE_BIT 5
 #define _ARC_V2_STATUS32_AE (1 << _ARC_V2_STATUS32_AE_BIT)
 #define _ARC_V2_STATUS32_DE (1 << 6)

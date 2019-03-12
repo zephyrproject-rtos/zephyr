@@ -149,7 +149,7 @@ extern "C" {
 	static struct device_pm _CONCAT(__pm_, dev_name) __used           \
 							= {               \
 		.usage = ATOMIC_INIT(0),                                  \
-		.lock = _K_SEM_INITIALIZER(                               \
+		.lock = Z_SEM_INITIALIZER(                               \
 				_CONCAT(__pm_, dev_name).lock, 1, 1),     \
 		.signal = K_POLL_SIGNAL_INITIALIZER(                      \
 				_CONCAT(__pm_, dev_name).signal),         \

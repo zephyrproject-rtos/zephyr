@@ -200,7 +200,7 @@ static void gpio_cc2650_isr(void *arg)
 
 	sys_write32(evflags | call_mask, evflags31_0);
 
-	_gpio_fire_callbacks(&data->callbacks, dev, call_mask);
+	gpio_fire_callbacks(&data->callbacks, dev, call_mask);
 }
 
 
@@ -297,7 +297,7 @@ static int gpio_cc2650_manage_callback(struct device *port,
 {
 	struct gpio_cc2650_data *data = port->driver_data;
 
-	return _gpio_manage_callback(&data->callbacks, callback, set);
+	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
 static int gpio_cc2650_enable_callback(struct device *port,

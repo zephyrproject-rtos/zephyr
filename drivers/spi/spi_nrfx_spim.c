@@ -331,7 +331,7 @@ static int init_spim(struct device *dev, const nrfx_spim_config_t *config)
 		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
 		.busy = false,						       \
 	};								       \
-	static const struct spi_nrfx_config spi_##idx##_config = {	       \
+	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spim = NRFX_SPIM_INSTANCE(idx),			       \
 		.max_chunk_len = (1 << SPIM##idx##_EASYDMA_MAXCNT_SIZE) - 1,   \
 	};								       \
@@ -339,7 +339,7 @@ static int init_spim(struct device *dev, const nrfx_spim_config_t *config)
 			    DT_NORDIC_NRF_SPI_SPI_##idx##_LABEL,	       \
 			    spi_##idx##_init,				       \
 			    &spi_##idx##_data,				       \
-			    &spi_##idx##_config,			       \
+			    &spi_##idx##z_config,			       \
 			    POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,	       \
 			    &spi_nrfx_driver_api)
 
