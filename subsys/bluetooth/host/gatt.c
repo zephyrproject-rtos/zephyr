@@ -2255,8 +2255,18 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 		/* Skip attributes that are not considered descriptors */
 		if (!bt_uuid_cmp(&u.uuid, BT_UUID_GATT_PRIMARY) ||
 		    !bt_uuid_cmp(&u.uuid, BT_UUID_GATT_SECONDARY) ||
-		    !bt_uuid_cmp(&u.uuid, BT_UUID_GATT_INCLUDE) ||
-		    !bt_uuid_cmp(&u.uuid, BT_UUID_GATT_CHRC)) {
+		    !bt_uuid_cmp(&u.uuid, BT_UUID_GATT_INCLUDE)) {
+			continue;
+		}
+
+		/* If Characteristic Declaration skip ahead as the next entry
+		 * must be its value.
+		 */
+		if (!bt_uuid_cmp(&u.uuid, bt_uuid_gatt_chrc)) {
+			if (length >= len) {
+				pdu = (const u8_t *)pdu + len;
+				length -= len;
+			}
 			continue;
 		}
 
