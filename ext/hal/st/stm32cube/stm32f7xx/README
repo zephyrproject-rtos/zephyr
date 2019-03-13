@@ -74,3 +74,9 @@ Patch List:
      Impacted files:
       drivers/include/stm32f7xx_ll_usb.c
      ST Bug tracker ID: 61327
+
+    *Fix typo QPSI instead of QSPI
+      QSPI was spelled wrong in some defines
+     Impacted files:
+      drivers/include/stm32f7xx_hal_qspi.h
+      drivers/src/stm32f7xx_hal_qspi.c
