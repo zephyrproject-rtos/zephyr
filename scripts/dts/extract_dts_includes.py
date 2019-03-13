@@ -338,7 +338,7 @@ def load_bindings(root, binding_dirs):
     compats = []
 
     # Add '!include foo.yaml' handling
-    yaml.add_constructor('!include', yaml_include)
+    yaml.Loader.add_constructor('!include', yaml_include)
 
     loaded_yamls = set()
 
@@ -367,7 +367,8 @@ def load_bindings(root, binding_dirs):
             compats.append(compat)
 
         with open(file, 'r', encoding='utf-8') as yf:
-            binding = merge_included_bindings(file, yaml.load(yf))
+            binding = merge_included_bindings(file,
+                                              yaml.load(yf, Loader=yaml.Loader))
 
             if 'parent' in binding:
                 bus_to_binding[binding['parent']['bus']][compat] = binding
@@ -429,7 +430,7 @@ def load_binding_file(fname):
                        "!include statement: {}".format(fname, filepaths))
 
     with open(filepaths[0], 'r', encoding='utf-8') as f:
-        return yaml.load(f)
+        return yaml.load(f, Loader=yaml.Loader)
 
 
 def yaml_inc_error(msg):
