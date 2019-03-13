@@ -9,6 +9,8 @@
 /.known-issues/                           @inakypg @nashif
 /arch/arc/                                @vonhust @ruuddw
 /arch/arm/                                @MaureenHelm @galak
+/arch/arm/core/cortex_m/cmse/             @ioannisg
+/arch/arm/include/cortex_m/cmse/          @ioannisg
 /soc/arm/                                 @MaureenHelm @galak
 /soc/arm/arm/mps2/                        @fvincenzo
 /soc/arm/atmel_sam/sam4s/                 @fallrisk
