@@ -217,6 +217,7 @@
 /samples/net/sockets/                     @jukkar @tbursztyka @pfalcon
 /samples/sensor/                          @bogdan-davidoaia
 /samples/subsys/usb/                      @jfischer-phytec-iot @finikorg
+/samples/subsys/power/                    @ramakrishnapallala @pizi-nordic
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
 /scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 /scripts/elf_helper.py                    @andrewboie
