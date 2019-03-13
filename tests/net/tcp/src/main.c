@@ -349,6 +349,9 @@ static struct net_pkt *setup_ipv6_tcp(struct net_if *iface,
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(data),
 					AF_INET6, IPPROTO_TCP, K_FOREVER);
+	if (!pkt) {
+		return NULL;
+	}
 
 	net_ipv6_create_new(pkt, remote_addr, local_addr);
 
@@ -375,6 +378,9 @@ static struct net_pkt *setup_ipv4_tcp(struct net_if *iface,
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(data),
 					AF_INET, IPPROTO_TCP, K_FOREVER);
+	if (!pkt) {
+		return NULL;
+	}
 
 	net_ipv4_create_new(pkt, remote_addr, local_addr);
 
@@ -429,6 +435,9 @@ static struct net_pkt *setup_ipv6_tcp_long(struct net_if *iface,
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_hop_by_hop_ext_hdr) +
 					sizeof(data),
 					AF_INET6, IPPROTO_TCP, K_FOREVER);
+	if (!pkt) {
+		return NULL;
+	}
 
 	net_pkt_set_ipv6_hop_limit(pkt, 255);
 	net_ipv6_create_new(pkt, remote_addr, local_addr);
