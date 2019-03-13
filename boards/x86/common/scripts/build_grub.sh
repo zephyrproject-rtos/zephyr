@@ -21,12 +21,7 @@ prepare() {
   fi
 
   pushd src
-  git checkout grub-2.02
-  cat << EOF | awk ' { print $1 }' | git cherry-pick -x --stdin
-  grub-2.02-69-gc36c2a864  yylex: Explicilty cast fprintf to void.
-  grub-2.02-136-g563b1da6e Fix packed-not-aligned error on GCC 8
-  grub-2.02-100-g842c39046 x86-64: Treat R_X86_64_PLT32 as R_X86_64_PC32
-EOF
+  git checkout grub-2.02-285-g5bc41db75
   git clean -fdx
   popd
 }
@@ -34,6 +29,7 @@ EOF
 build() {
   pushd src
 
+  ./bootstrap
   ./autogen.sh
   ./configure --with-platform=efi --target=${TARGET_ARCH}
 
