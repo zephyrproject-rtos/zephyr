@@ -4,4 +4,3 @@ menuconfig UART_ESP32
 	depends on SOC_ESP32
 	help
 	  Enable the ESP32 UART using ROM routines.
-

@@ -1,4 +1,3 @@
-
 if BOARD_EM_STARTERKIT
 
 config BOARD

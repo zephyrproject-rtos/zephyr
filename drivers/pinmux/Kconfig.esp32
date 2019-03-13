@@ -11,4 +11,3 @@ menuconfig PINMUX_ESP32
 	depends on SOC_ESP32
 	help
 	  Enable driver for ESP32 Pin multiplexer.
-

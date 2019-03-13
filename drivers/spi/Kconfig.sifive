@@ -26,4 +26,3 @@ config SIFIVE_SPI_0_ROM
 	  peripheral control the FE310 will crash on boot.
 
 endif # SPI_SIFIVE
-

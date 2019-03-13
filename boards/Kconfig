@@ -1,4 +1,3 @@
-
 config BOARD_DEPRECATED
 	string
 	help

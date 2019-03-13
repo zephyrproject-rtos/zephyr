@@ -1,4 +1,3 @@
-
 if BOARD_UP_SQUARED
 
 config BOARD

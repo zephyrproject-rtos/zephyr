@@ -1,5 +1,3 @@
-
-
 config SOC_ATOM
 	bool "Intel ATOM SoC"
 	select CPU_ATOM

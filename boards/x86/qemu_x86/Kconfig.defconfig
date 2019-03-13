@@ -1,4 +1,3 @@
-
 if BOARD_QEMU_X86
 
 
@@ -27,4 +26,3 @@ config X86_NO_SPECULATIVE_VULNERABILITIES
 	default y
 
 endif # BOARD_QEMU_X86_IAMCU
-

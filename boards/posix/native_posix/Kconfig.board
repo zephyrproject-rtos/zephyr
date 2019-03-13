@@ -1,4 +1,3 @@
-
 config BOARD_NATIVE_POSIX
 	bool "Native POSIX"
 	depends on SOC_POSIX

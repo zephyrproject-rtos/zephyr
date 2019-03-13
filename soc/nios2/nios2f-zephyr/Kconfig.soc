@@ -2,4 +2,3 @@ config SOC_NIOS2F_ZEPHYR
 	bool "Nios IIf - Zephyr Golden Configuration"
 	select HAS_MUL_INSTRUCTION
 	select HAS_DIV_INSTRUCTION
-

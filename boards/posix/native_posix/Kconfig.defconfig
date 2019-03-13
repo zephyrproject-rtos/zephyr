@@ -1,4 +1,3 @@
-
 if BOARD_NATIVE_POSIX
 
 config BUILD_OUTPUT_BIN

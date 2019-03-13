@@ -1,4 +1,3 @@
-
 config BOARD_X86_JAILHOUSE
 	bool "QEMU x86 (root cell)"
 	depends on SOC_IA32

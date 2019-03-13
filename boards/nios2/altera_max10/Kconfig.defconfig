@@ -40,4 +40,3 @@ endif # SOC_FLASH_NIOS2_QSPI
 endif # FLASH
 
 endif # BOARD_ALTERA_MAX10
-

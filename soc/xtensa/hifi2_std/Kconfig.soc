@@ -3,4 +3,3 @@
 
 config SOC_HIFI2_STD
 	bool "hifi2_std core"
-

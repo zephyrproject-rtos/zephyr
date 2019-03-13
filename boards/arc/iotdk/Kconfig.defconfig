@@ -1,4 +1,3 @@
-
 if BOARD_IOTDK
 
 config BOARD

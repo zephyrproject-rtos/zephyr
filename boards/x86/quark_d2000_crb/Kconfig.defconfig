@@ -1,5 +1,3 @@
-
-
 if BOARD_QUARK_D2000_CRB
 
 config BOARD

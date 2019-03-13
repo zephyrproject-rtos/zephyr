@@ -1,5 +1,3 @@
-
-
 config SOC_IA32
 	bool "Generic IA32 SoC"
 	select CPU_MINUTEIA

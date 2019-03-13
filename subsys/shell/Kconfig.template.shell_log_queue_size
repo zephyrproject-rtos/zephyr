@@ -7,4 +7,3 @@ config $(module)_LOG_MESSAGE_QUEUE_SIZE
 	  (see $(module)_LOG_MESSAGE_QUEUE_TIMEOUT). Too big queue on relatively
 	  slow shell transport may lead to situation where logs are dropped
 	  because all log messages are enqueued.
-

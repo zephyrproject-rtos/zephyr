@@ -48,4 +48,3 @@ config GPIO_STM32_PORTG
 endif # GPIO_STM32
 
 endif # SOC_STM32F103XE
-

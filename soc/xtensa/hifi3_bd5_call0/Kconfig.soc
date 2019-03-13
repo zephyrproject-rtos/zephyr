@@ -3,4 +3,3 @@
 
 config SOC_HIFI3_BD5_CALL0
 	bool "hifi3_bd5_call0 (hifi3_bd5 core with call0 ABI and 3 additional SW IRQs)"
-

@@ -14,4 +14,3 @@ menuconfig QMSI
 	depends on HAS_QMSI
 	help
 	  Enable QMSI driver support.
-
