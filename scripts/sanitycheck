@@ -1458,6 +1458,8 @@ class Platform:
         self.type = data.get('type', "na")
         self.simulation = data.get('simulation', "na")
         self.supported_toolchains = data.get("toolchain", [])
+        if self.arch == "arm":
+            self.supported_toolchains = ['zephyr', 'gnuarmemb', 'xtools', 'llvm']
         self.env = data.get("env", [])
         self.env_satisfied = True
         for env in self.env:
