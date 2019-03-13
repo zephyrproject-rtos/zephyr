@@ -121,7 +121,11 @@ int main(void)
 	 * same port as IPv4 socket above.
 	 */
 	int TRUE = 1;
-	setsockopt(serv6, IPPROTO_IPV6, IPV6_V6ONLY, &TRUE, sizeof(TRUE));
+	res = setsockopt(serv6, IPPROTO_IPV6, IPV6_V6ONLY, &TRUE, sizeof(TRUE));
+	if (res < 0) {
+		printf("error: setsockopt: %d\n", errno);
+		exit(1);
+	}
 	#endif
 	res = bind(serv6, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
 	if (res == -1) {
