@@ -327,6 +327,7 @@ static void send_query(struct net_if *iface)
 	/* router alert opt + icmpv6 reserved space + mldv2 mcast record */
 	pkt = net_pkt_alloc_with_buffer(iface, 144, AF_INET6,
 					IPPROTO_ICMPV6, K_FOREVER);
+	zassert_not_null(pkt, "Cannot allocate pkt");
 
 	net_pkt_set_ipv6_hop_limit(pkt, 1); /* RFC 3810 ch 7.4 */
 	net_ipv6_create_new(pkt, &peer_addr, &dst);
