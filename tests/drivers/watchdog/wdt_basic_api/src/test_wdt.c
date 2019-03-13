@@ -300,7 +300,7 @@ static int test_wdt_bad_window_max(void)
 
 void test_wdt(void)
 {
-	if (m_testcase_index != 1) {
+	if ((m_testcase_index != 1) && (m_testcase_index != 2)) {
 		zassert_true(test_wdt_no_callback() == TC_PASS, NULL);
 	}
 	if (m_testcase_index == 1) {
