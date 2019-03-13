@@ -515,6 +515,10 @@ int handle_usb_data(struct usbip_header *hdr)
 	LOG_DBG("ep_idx %u", ep_idx);
 
 	if (ntohl(hdr->common.direction) == USBIP_DIR_OUT) {
+		if (ep_idx >= USBIP_OUT_EP_NUM) {
+			return -EINVAL;
+		}
+
 		ep = ep_idx | USB_EP_DIR_OUT;
 		ep_cb = usbip_ctrl.out_ep_ctrl[ep_idx].cb;
 
@@ -523,6 +527,10 @@ int handle_usb_data(struct usbip_header *hdr)
 		/* Send ACK reply */
 		bytes = usbip_send_common(ep, 0);
 	} else {
+		if (ep_idx >= USBIP_IN_EP_NUM) {
+			return -EINVAL;
+		}
+
 		ep = ep_idx | USB_EP_DIR_IN;
 		ep_cb = usbip_ctrl.in_ep_ctrl[ep_idx].cb;
 
