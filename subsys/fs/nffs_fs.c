@@ -219,7 +219,10 @@ static int inode_to_dirent(struct nffs_inode_entry *inode,
 		entry->size = 0;
 	} else {
 		entry->type = FS_DIR_ENTRY_FILE;
-		nffs_inode_data_len(inode, &size);
+		rc = nffs_inode_data_len(inode, &size);
+		if (rc) {
+			return rc;
+		}
 		entry->size = size;
 	}
 
