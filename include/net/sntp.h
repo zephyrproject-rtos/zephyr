@@ -10,6 +10,13 @@
 
 #include <net/socket.h>
 
+/**
+ * @brief Simple Network Time Protocol API
+ * @defgroup sntp SNTP
+ * @ingroup networking
+ * @{
+ */
+
 /** SNTP context */
 struct sntp_ctx {
 	struct {
@@ -54,5 +61,9 @@ int sntp_request(struct sntp_ctx *ctx, u32_t timeout, u64_t *epoch_time);
  * @param ctx Address of sntp context.
  */
 void sntp_close(struct sntp_ctx *ctx);
+
+/**
+ * @}
+ */
 
 #endif
