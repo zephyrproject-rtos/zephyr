@@ -79,10 +79,10 @@ if(SUPPORTS_DTS)
     -nostdinc
     -isystem ${DTS_APP_INCLUDE}
     -isystem ${ZEPHYR_BASE}/include
+    -isystem ${ZEPHYR_BASE}/dts/common
     -isystem ${ZEPHYR_BASE}/dts/${ARCH}
     -isystem ${ZEPHYR_BASE}/dts
     ${DTC_INCLUDE_FLAG_FOR_DTS}  # include the DTS source and overlays
-    -I${ZEPHYR_BASE}/dts/common
     ${NOSYSDEF_CFLAG}
     -D__DTS__
     -P
