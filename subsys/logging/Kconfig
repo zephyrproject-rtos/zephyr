@@ -431,6 +431,17 @@ config LOG_BACKEND_RTT_BUFFER_SIZE
 	  Specify reserved size of up-buffer used for logger output.
 
 endif # LOG_BACKEND_RTT_BUFFER
+
+
+# Enable processing of printk calls using log if terminal buffer is used.
+# Same buffer is used by RTT console. If printk would go through RTT console
+# that will lead to corruption of RTT data which is not protected against being
+# interrupted by an interrupt.
+config LOG_BACKEND_RTT_FORCE_PRINTK
+	bool
+	default y if LOG_BACKEND_RTT_BUFFER = 0
+	select LOG_PRINTK
+
 endif # LOG_BACKEND_RTT
 
 config LOG_BACKEND_NATIVE_POSIX
