@@ -1051,6 +1051,9 @@ static struct net_pkt *setup_ipv6_udp(struct net_if *iface,
 
 	pkt = net_pkt_alloc_with_buffer(iface, strlen(payload),
 					AF_INET6, IPPROTO_UDP, K_FOREVER);
+	if (!pkt) {
+		return NULL;
+	}
 
 	NET_IPV6_HDR(pkt)->vtc = 0x60;
 	NET_IPV6_HDR(pkt)->tcflow = 0;
