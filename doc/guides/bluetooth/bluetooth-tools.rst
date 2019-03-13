@@ -80,8 +80,8 @@ Running on QEMU and Native POSIX
 ********************************
 
 It's possible to run Bluetooth applications using either the :ref:`QEMU
-emulator<application_run_qemu>` or the :ref:`Native POSIX <native_posix>`
-simulator. In order to do so, a Bluetooth controller needs to be exported from
+emulator<application_run_qemu>` or :ref:`Native POSIX <native_posix>`.
+In either case, a Bluetooth controller needs to be exported from
 the host OS (Linux) to the emulator. For this purpose you will need some tools
 described in the :ref:`bluetooth_bluez` section.
 
