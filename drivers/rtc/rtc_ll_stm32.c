@@ -69,7 +69,8 @@ static u32_t rtc_stm32_read(struct device *dev)
 	/* Convert calendar datetime to UNIX timestamp */
 	now.tm_year = 100 + __LL_RTC_CONVERT_BCD2BIN(
 					__LL_RTC_GET_YEAR(rtc_date));
-	now.tm_mon = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MONTH(rtc_date));
+	/* tm_mon starts from 0 */
+	now.tm_mon = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MONTH(rtc_date)) - 1;
 	now.tm_mday = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_DAY(rtc_date));
 
 	now.tm_hour = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_HOUR(rtc_time));
@@ -147,7 +148,8 @@ static int rtc_stm32_set_config(struct device *dev, struct rtc_config *cfg)
 	gmtime_r(&init_ts, &init_tm);
 
 	rtc_date.Year = init_tm.tm_year % 100;
-	rtc_date.Month = init_tm.tm_mon;
+	/* tm_mon starts from 0 */
+	rtc_date.Month = init_tm.tm_mon + 1;
 	rtc_date.Day = init_tm.tm_mday;
 	rtc_date.WeekDay = init_tm.tm_wday + 1;
 
