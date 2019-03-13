@@ -18,62 +18,43 @@ LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 #include "zperf.h"
 #include "zperf_internal.h"
 
-static u8_t sample_packet[PACKET_SIZE_MAX];
+static u8_t sample_packet[sizeof(struct zperf_udp_datagram) + PACKET_SIZE_MAX];
 
 static inline void zperf_upload_decode_stat(const struct shell *shell,
 					    struct net_pkt *pkt,
 					    struct zperf_results *results)
 {
-	struct net_buf *frag;
-	struct zperf_server_hdr hdr;
-	u16_t offset;
-	u16_t pos;
+	NET_PKT_DATA_ACCESS_DEFINE(zperf_udp, struct zperf_udp_datagram);
+	NET_PKT_DATA_ACCESS_DEFINE(zperf_stat, struct zperf_server_hdr);
+	struct zperf_udp_datagram *hdr;
+	struct zperf_server_hdr *stat;
 
-	if (!pkt) {
-		shell_fprintf(shell, SHELL_WARNING,
-			      "Failed to receive statistics\n");
-		return;
-	}
-
-	frag = net_frag_get_pos(pkt,
-				net_pkt_ip_hdr_len(pkt) +
-				net_pkt_ipv6_ext_len(pkt) +
-				sizeof(struct net_udp_hdr) +
-				sizeof(struct zperf_udp_datagram),
-				&offset);
-	if (!frag) {
+	hdr = (struct zperf_udp_datagram *)
+		net_pkt_get_data_new(pkt, &zperf_udp);
+	if (!hdr) {
 		shell_fprintf(shell, SHELL_WARNING,
 			      "Network packet too short\n");
 		return;
 	}
 
-	/* Decode stat */
-	if (net_pkt_appdatalen(pkt) <
-		   (sizeof(struct zperf_server_hdr) +
-		    sizeof(struct zperf_udp_datagram))) {
+	net_pkt_acknowledge_data(pkt, &zperf_udp);
+
+	stat = (struct zperf_server_hdr *)
+		net_pkt_get_data_new(pkt, &zperf_stat);
+	if (!stat) {
 		shell_fprintf(shell, SHELL_WARNING,
-			      "Statistics too small\n");
+			      "Network packet too short\n");
 		return;
 	}
 
-	frag = net_frag_read_be32(frag, offset, &pos, (u32_t *)&hdr.flags);
-	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.total_len1);
-	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.total_len2);
-	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.stop_sec);
-	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.stop_usec);
-	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.error_cnt);
-	frag = net_frag_read_be32(frag, pos, &pos,
-				  (u32_t *)&hdr.outorder_cnt);
-	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.datagrams);
-	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.jitter1);
-	frag = net_frag_read_be32(frag, pos, &pos, (u32_t *)&hdr.jitter2);
-
-	results->nb_packets_rcvd = hdr.datagrams;
-	results->nb_packets_lost = hdr.error_cnt;
-	results->nb_packets_outorder = hdr.outorder_cnt;
-	results->nb_bytes_sent = hdr.total_len2;
-	results->time_in_us = hdr.stop_usec + hdr.stop_sec * USEC_PER_SEC;
-	results->jitter_in_us = hdr.jitter2 + hdr.jitter1 * USEC_PER_SEC;
+	results->nb_packets_rcvd = ntohl(stat->datagrams);
+	results->nb_packets_lost = ntohl(stat->error_cnt);
+	results->nb_packets_outorder = ntohl(stat->outorder_cnt);
+	results->nb_bytes_sent = ntohl(stat->total_len2);
+	results->time_in_us = ntohl(stat->stop_usec) +
+		ntohl(stat->stop_sec) * USEC_PER_SEC;
+	results->jitter_in_us = ntohl(stat->jitter2) +
+		ntohl(stat->jitter1) * USEC_PER_SEC;
 }
 
 static void stat_received(struct net_context *context,
@@ -96,65 +77,27 @@ static inline void zperf_upload_fin(const struct shell *shell,
 				    struct zperf_results *results)
 {
 	struct net_pkt *stat = NULL;
-	struct zperf_udp_datagram datagram;
+	struct zperf_udp_datagram *datagram;
 	int loop = 2;
 	int ret;
 
 	while (!stat && loop-- > 0) {
-		struct net_pkt *pkt;
-		struct net_buf *frag;
-		bool status;
-
-		pkt = net_pkt_get_tx(context, K_FOREVER);
-		if (!pkt) {
-			shell_fprintf(shell, SHELL_WARNING,
-				      "Failed to retrieve a packet\n");
-			continue;
-		}
-
-		frag = net_pkt_get_data(context, K_FOREVER);
-		if (!frag) {
-			shell_fprintf(shell, SHELL_WARNING,
-				      "Failed to retrieve a fragment\n");
-			continue;
-		}
-
-		net_pkt_frag_add(pkt, frag);
+		datagram = (struct zperf_udp_datagram *)sample_packet;
 
 		/* Fill the packet header */
-		datagram.id = htonl(-nb_packets);
-		datagram.tv_sec = htonl(HW_CYCLES_TO_SEC(end_time));
-		datagram.tv_usec = htonl(HW_CYCLES_TO_USEC(end_time) %
-					 USEC_PER_SEC);
-
-		status = net_pkt_append_all(pkt, sizeof(datagram),
-					    (u8_t *)&datagram, K_FOREVER);
-		if (!status) {
-			shell_fprintf(shell, SHELL_WARNING,
-				      "Cannot append datagram data\n");
-			break;
-		}
-
-		/* Fill the remain part of the datagram */
-		if (packet_size > sizeof(struct zperf_udp_datagram)) {
-			int size = packet_size -
-				sizeof(struct zperf_udp_datagram);
-			u16_t pos;
-
-			frag = net_pkt_write(pkt, net_buf_frag_last(pkt->frags),
-					     sizeof(struct zperf_udp_datagram),
-					     &pos, size,
-					     (u8_t *)sample_packet,
-					     K_FOREVER);
-		}
+		datagram->id = htonl(-nb_packets);
+		datagram->tv_sec = htonl(HW_CYCLES_TO_SEC(end_time));
+		datagram->tv_usec = htonl(HW_CYCLES_TO_USEC(end_time) %
+					  USEC_PER_SEC);
 
 		/* Send the packet */
-		ret = net_context_send(pkt, NULL, K_NO_WAIT, NULL, NULL);
+		ret = net_context_send_new(context, sample_packet,
+					   packet_size, NULL,
+					   K_NO_WAIT, NULL, NULL);
 		if (ret < 0) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Failed to send the packet (%d)\n",
 				      ret);
-			net_pkt_unref(pkt);
 			continue;
 		}
 
@@ -230,12 +173,9 @@ void zperf_udp_upload(const struct shell *shell,
 	(void)memset(sample_packet, 'z', sizeof(sample_packet));
 
 	do {
-		struct zperf_udp_datagram datagram;
-		struct net_pkt *pkt;
-		struct net_buf *frag;
+		struct zperf_udp_datagram *datagram;
 		u32_t loop_time;
 		s32_t adjust;
-		bool status;
 		int ret;
 
 		/* Timestamp */
@@ -259,56 +199,22 @@ void zperf_udp_upload(const struct shell *shell,
 
 		last_loop_time = loop_time;
 
-		pkt = net_pkt_get_tx(context, K_FOREVER);
-		if (!pkt) {
-			shell_fprintf(shell, SHELL_WARNING,
-				      "Failed to retrieve a packet\n");
-			continue;
-		}
-
-		frag = net_pkt_get_data(context, K_FOREVER);
-		if (!frag) {
-			shell_fprintf(shell, SHELL_WARNING,
-				      "Failed to retrieve a frag\n");
-			continue;
-		}
-
-		net_pkt_frag_add(pkt, frag);
-
 		/* Fill the packet header */
-		datagram.id = htonl(nb_packets);
-		datagram.tv_sec = htonl(HW_CYCLES_TO_SEC(loop_time));
-		datagram.tv_usec =
+		datagram = (struct zperf_udp_datagram *)sample_packet;
+
+		datagram->id = htonl(nb_packets);
+		datagram->tv_sec = htonl(HW_CYCLES_TO_SEC(loop_time));
+		datagram->tv_usec =
 			htonl(HW_CYCLES_TO_USEC(loop_time) % USEC_PER_SEC);
 
-		status = net_pkt_append_all(pkt, sizeof(datagram),
-					(u8_t *)&datagram, K_FOREVER);
-		if (!status) {
-			shell_fprintf(shell, SHELL_WARNING,
-				      "Cannot append datagram data\n");
-			break;
-		}
-
-		/* Fill the remain part of the datagram */
-		if (packet_size > sizeof(struct zperf_udp_datagram)) {
-			int size = packet_size -
-				sizeof(struct zperf_udp_datagram);
-			u16_t pos;
-
-			frag = net_pkt_write(pkt, net_buf_frag_last(pkt->frags),
-					     sizeof(struct zperf_udp_datagram),
-					     &pos, size, sample_packet,
-					     K_FOREVER);
-		}
-
 		/* Send the packet */
-		ret = net_context_send(pkt, NULL, K_NO_WAIT, NULL, NULL);
+		ret = net_context_send_new(context, sample_packet,
+					   packet_size, NULL,
+					   K_NO_WAIT, NULL, NULL);
 		if (ret < 0) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Failed to send the packet (%d)\n",
 				      ret);
-
-			net_pkt_unref(pkt);
 			break;
 		} else {
 			nb_packets++;
