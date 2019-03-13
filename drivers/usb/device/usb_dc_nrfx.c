@@ -283,10 +283,19 @@ static struct nrf_usbd_ctx usbd_ctx = {
 	.ready = false,
 };
 
-
 static inline struct nrf_usbd_ctx *get_usbd_ctx(void)
 {
 	return &usbd_ctx;
+}
+
+static inline bool dev_attached(void)
+{
+	return get_usbd_ctx()->attached;
+}
+
+static inline bool dev_ready(void)
+{
+	return get_usbd_ctx()->ready;
 }
 
 static inline nrfx_usbd_ep_t ep_addr_to_nrfx(uint8_t ep)
@@ -750,16 +759,17 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 		nrfx_usbd_enable();
 		(void) hf_clock_enable(true, false);
 
-		if (ctx->status_cb) {
-			ctx->status_cb(USB_DC_CONNECTED, NULL);
-		}
+		/* No callback here.
+		 * Stack will be notified when the peripheral is ready.
+		 */
 		break;
 
 	case USBD_POWERED:
-		LOG_DBG("USB Powered");
 		usbd_enable_endpoints(ctx);
 		nrfx_usbd_start(true);
 		ctx->ready = true;
+
+		LOG_DBG("USB Powered");
 
 		if (ctx->status_cb) {
 			ctx->status_cb(USB_DC_CONNECTED, NULL);
@@ -767,10 +777,11 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 		break;
 
 	case USBD_DETACHED:
-		LOG_DBG("USB Removed");
 		ctx->ready = false;
 		nrfx_usbd_disable();
 		(void) hf_clock_enable(false, false);
+
+		LOG_DBG("USB Removed");
 
 		if (ctx->status_cb) {
 			ctx->status_cb(USB_DC_DISCONNECTED, NULL);
@@ -778,17 +789,18 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 		break;
 
 	case USBD_SUSPENDED:
-		LOG_DBG("USB Suspend state");
-		nrfx_usbd_suspend();
+		if (dev_ready()) {
+			nrfx_usbd_suspend();
+			LOG_DBG("USB Suspend state");
 
-		if (ctx->status_cb) {
-			ctx->status_cb(USB_DC_SUSPEND, NULL);
+			if (ctx->status_cb) {
+				ctx->status_cb(USB_DC_SUSPEND, NULL);
+			}
 		}
 		break;
 	case USBD_RESUMED:
-		LOG_DBG("USB resume");
-
-		if (ctx->status_cb) {
+		if (ctx->status_cb && dev_ready()) {
+			LOG_DBG("USB resume");
 			ctx->status_cb(USB_DC_RESUME, NULL);
 		}
 		break;
@@ -907,16 +919,6 @@ static inline void usbd_work_process_ep_events(struct usbd_ep_event *ep_evt)
 	default:
 		break;
 	}
-}
-
-static inline bool dev_attached(void)
-{
-	return get_usbd_ctx()->attached;
-}
-
-static inline bool dev_ready(void)
-{
-	return get_usbd_ctx()->ready;
 }
 
 static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
@@ -1235,6 +1237,10 @@ static void usbd_work_handler(struct k_work *item)
 	ctx = CONTAINER_OF(item, struct nrf_usbd_ctx, usb_work);
 
 	while ((ev = usbd_evt_get()) != NULL) {
+		if (!dev_ready() && ev->evt_type != USBD_EVT_POWER) {
+			/* Drop non-power events when cable is detached. */
+			continue;
+		}
 
 		switch (ev->evt_type) {
 		case USBD_EVT_EP:
