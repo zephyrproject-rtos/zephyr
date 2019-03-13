@@ -202,6 +202,9 @@ struct net_pkt *prepare_dhcp_offer(struct net_if *iface, u32_t xid)
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(offer), AF_INET,
 					IPPROTO_UDP, K_FOREVER);
+	if (!pkt) {
+		return NULL;
+	}
 
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 
@@ -240,6 +243,9 @@ struct net_pkt *prepare_dhcp_ack(struct net_if *iface, u32_t xid)
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(offer), AF_INET,
 					IPPROTO_UDP, K_FOREVER);
+	if (!pkt) {
+		return NULL;
+	}
 
 	net_pkt_set_ipv4_ttl(pkt, 0xFF);
 
