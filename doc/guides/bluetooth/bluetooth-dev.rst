@@ -25,7 +25,7 @@ There are 4 possible hardware setups to use with Zephyr and Bluetooth:
 #. Embedded
 #. QEMU with an external Controller
 #. Native POSIX with an external Controller
-#. Native POSIX with BabbleSim
+#. Simulated nRF52 with BabbleSim
 
 Embedded
 ========
@@ -68,12 +68,16 @@ Native POSIX with an external Controller
 .. note::
    This is currently only available on GNU/Linux
 
-The :ref:`Native POSIX <native_posix>` simulator allows Zephyr builds to run as
-a native POSIX applications. Just like with QEMU, you also need to use a
-combination of two devices:
+The :ref:`Native POSIX <native_posix>` target builds your Zephyr application
+with the Zephyr kernel, and some minimal HW emulation as a native Linux
+executable.
+This executable is a normal Linux program, which can be debugged and
+instrumented like any other.
 
-#. A :ref:`Host-only <bluetooth-build-types>` application running as a native
-   POSIX application
+Just like with QEMU, you also need to use a combination of two devices:
+
+#. A :ref:`Host-only <bluetooth-build-types>` application running in
+   native_posix as a Linux application
 #. A Controller, which can be one of two types:
 
    * A commercially available Controller
@@ -82,18 +86,32 @@ combination of two devices:
 Refer to :ref:`bluetooth_qemu_posix` for full instructions on how to build and
 run an application in this setup.
 
-Native POSIX with BabbleSim
-===========================
+Simulated nRF52 with BabbleSim
+==============================
 
 .. note::
    This is currently only available on GNU/Linux
 
-`BabbleSim`_ is a simulator of the physical layer of shared medium networks,
-and it can be used to develop BLE applications with Zephyr when combined with
-the Native POSIX target.
-When developing with BabbleSim, only :ref:`Combined builds
-<bluetooth-build-types>` are possible, since the whole Linux application is a
-single entity that communicates with the simulator.
+The :ref:`nrf52_bsim board <nrf52_bsim>`, is a simulated target board
+which emulates the necessary peripherals of a nrf52 SOC to be able to develop
+and test BLE applications.
+This board, uses:
+
+   * `BabbleSim`_ to simulate the nrf52 modem and the radio environment.
+   * The POSIX arch to emulate the processor.
+   * `Models of the nrf52 HW <https://github.com/BabbleSim/ext_NRF52_hw_models/>`_
+
+Just like with the ``native_posix`` target, the build result is a normal Linux
+executable.
+You can find more information on how to run simulations with one or several
+devices in
+:ref:`this board's documentation <nrf52bsim_build_and_run>`
+
+Currently, only :ref:`Combined builds
+<bluetooth-build-types>` are possible, as this board does not yet have
+any models of a UART, or USB which could be used for an HCI interface towards
+another real or simulated device.
+
 
 Initialization
 **************
