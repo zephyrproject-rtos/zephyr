@@ -21,10 +21,50 @@ extern "C" {
 #define ZIO_CHAN_LIMIT (255)
 
 /**
+ * ZIO devices are composed of
+ *
+ *    o Device attributes (zio_dev_attr)
+ *    o Channels (zio_dev_chan_type)
+ *    o Channel attributes (zio_chan_attr)
+ *
+ * These device components are organised in the following manner:
+ *
+ * ZIO Device----------------------------------------------------------------+
+ * |                                                                         |
+ * | Device Attributes-----------------------------------------------------+ |
+ * | | Device Attribute 0------------------------------------------------+ | |
+ * | | |                          DEV_ATTR_NAME                          | | |
+ * | | Device Attribute 1------------------------------------------------+ | |
+ * | | |                        DEV_ATTR_OP_MODE                         | | |
+ * | | +-----------------------------------------------------------------+ | |
+ * | +---------------------------------------------------------------------+ |
+ * |                                                                         |
+ * | +---------------------------------------------------------------------+ |
+ * | Channels--------------------------------------------------------------+ |
+ * | | Channel 0---------------------------------------------------------+ | |
+ * | | | Channel Attributes---------------------------------------------+| | |
+ * | | | | Channel Attribute 0----------------------------------------+ || | |
+ * | | | | |                   CHAN_ATTR_RAW_DATA                     | || | |
+ * | | | | Channel Attribute 1----------------------------------------+ || | |
+ * | | | | |                   CHAN_ATTR_SI_DATA                      | || | |
+ * | | | | Channel Attribute 2----------------------------------------+ || | |
+ * | | | | |                   CHAN_ATTR_SAMP_FREQ                    | || | |
+ * | | | | +----------------------------------------------------------+ || | |
+ * | | | +--------------------------------------------------------------+| | |
+ * | | +-----------------------------------------------------------------+ | |
+ * | | |Channel 1                                                        | | |
+ * | | +-----------------------------------------------------------------+ | |
+ * | | |Channel 2                                                        | | |
+ * | | +-----------------------------------------------------------------+ | |
+ * | +---------------------------------------------------------------------+ |
+ * +-------------------------------------------------------------------------+
+ */
+
+/**
  * @brief ZIO device channel types.
  *
- * Each channel type is associated with a specific SI unit type and scale,
- * Expressed as the comments below.
+ * Each channel type is associated with a specific SI unit type, described
+ * in the inline comments for each enum entry.
  */
 typedef enum zio_dev_chan_type {
 	/**
@@ -83,16 +123,16 @@ typedef enum zio_dev_chan_type {
 	 */
 	DEV_CHAN_FREQUENCY,
 
-        /**
+	/**
 	 * Amplitude.
-         *
-         * Note: While amplitude is a unitless value with a floating-point
-         * range of -1.0 .. 1.0, you can associate this with a range of integer
-         * values by means of the 'CHAN_ATTR_RAW_DATA' attribute. Normalised
-         * floating-point values should be assigned to 'CHAN_ATTR_SI_DATA',
-         * but the source integer values, such as 's16_t', can be provided
-         * as raw data to avoid expensive floating-point operations if
-         * desired.
+	 *
+	 * Note: While amplitude is a unitless value with a floating-point
+	 * range of -1.0 .. 1.0, you can associate this with a range of integer
+	 * values by means of the 'CHAN_ATTR_RAW_DATA' attribute. Normalised
+	 * floating-point values should be assigned to 'CHAN_ATTR_SI_DATA',
+	 * but the source integer values, such as 's16_t', can be provided
+	 * as raw data to avoid expensive floating-point operations if
+	 * desired.
 	 *
 	 * Expressed as a unitless value in the range of -1.0 to 1.0.
 	 */
@@ -371,20 +411,93 @@ typedef enum zio_dev_chan_type {
 	 */
 	DEV_CHAN_PPM_VOC,
 
-        /**
+	/**
 	 * User-defined channel. This can be used at the application level for
-         * whetever purpose the driver requires, provided it does not overlap
-         * with one of the existing standard channel definitions.
-         *
-         * If multiple user defined channels are present, they should be
-         * clearly distinguished by use of appropriate channel attributes.
+	 * whetever purpose the driver requires, provided it does not overlap
+	 * with one of the existing standard channel definitions.
+	 *
+	 * If multiple user defined channels are present, they should be
+	 * clearly distinguished by use of appropriate channel attributes.
 	 *
 	 * Expressed as a user-defined unit and scale. The exact unit type and
-         * scale should be clearly documented in the driver making use of this
-         * channel type.
+	 * scale should be clearly documented in the driver making use of this
+	 * channel type.
 	 */
 	DEV_CHAN_USER_DEF = ZIO_CHAN_LIMIT,
 } zio_dev_chan_type_t;
+
+/**
+ * @brief ZIO channel attribute types.
+ */
+typedef enum zio_chan_attr_type {
+	/** Raw data attribute. Mandatory with 'DEV_CHAN_RAW'. Read-only. */
+	CHAN_ATTR_RAW_DATA = 0,
+
+	/** SI data attribute. Read-only. */
+	CHAN_ATTR_SI_DATA,
+
+	/** Short presentation name. Read-only. */
+	CHAN_ATTR_NAME,
+
+	/** Current HW sampling frequency. Read/write. */
+	CHAN_ATTR_SAMP_FREQ,
+
+	/** Supported HW sample frequencies. Read-only. */
+	CHAN_ATTR_SAMP_FREQ_LIST,
+
+	/** Value offset. Read/write. */
+	CHAN_ATTR_OFFSET,
+
+	/** Raw value to SI scale factor. Read-only. */
+	CHAN_ATTR_SCALE,
+
+	/** Calibration bias. Read/write. */
+	CHAN_ATTR_CAL_BIAS,
+
+	/** Calibration scale factor. Read/write. */
+	CHAN_ATTR_CAL_SCALE,
+
+	/** Current read/event mode. Read/write. */
+	CHAN_ATTR_EVENT,
+
+	/** Supported read/event modes. Read-only. */
+	CHAN_ATTR_EVENT_LIST,
+
+	/** Current trigger. Read/write. */
+	CHAN_ATTR_TRIGGER,
+
+	/** Supported triggers. Read-only. */
+	CHAN_ATTR_TRIGGER_LIST,
+
+	/** Enable or disable the channel buffer. Read/write. */
+	CHAN_ATTR_BUF_ENABLED,
+
+	/** Indicate if channel data is available. Read-only. */
+	CHAN_ATTR_DATA_AVAIL,
+} zio_chan_attr_type_t;
+
+/**
+ * @brief ZIO device attribute types.
+ */
+typedef enum zio_dev_attr_type {
+	/** Short presentation name (<20 chars). Read-only. */
+	DEV_ATTR_NAME = 0,
+
+	/** Short device description string (<80 chars). Read-only. */
+	DEV_ATTR_DESC,
+
+	/** Public driver version string. Read-only. */
+	DEV_ATTR_DRIVER_VERSION,
+
+	/** Unique identifier for a device. Read/write. */
+	DEV_ATTR_UNIQUE_ID,
+
+	/** Current operating/power mode. Read/write. */
+	DEV_ATTR_OP_MODE,
+
+	/** Supported operating/power modes. Read-only. */
+	DEV_ATTR_OP_MODE_LIST,
+} zio_dev_attr_type_t;
 
 /**
  * @}
