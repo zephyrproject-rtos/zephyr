@@ -514,32 +514,32 @@ implemented, and the system must enable the :option:`CONFIG_ARCH_HAS_USERSPACE`
 option. Please see the documentation for each of these functions for more
 details:
 
-* :cpp:func:`_arch_buffer_validate()` to test whether the current thread has
+* :cpp:func:`z_arch_buffer_validate()` to test whether the current thread has
   access permissions to a particular memory region
 
-* :cpp:func:`_arch_user_mode_enter()` which will irreversibly drop a supervisor
+* :cpp:func:`z_arch_user_mode_enter()` which will irreversibly drop a supervisor
   thread to user mode privileges. The stack must be wiped.
 
-* :cpp:func:`_arch_syscall_oops()` which generates a kernel oops when system
+* :cpp:func:`z_arch_syscall_oops()` which generates a kernel oops when system
   call parameters can't be validated, in such a way that the oops appears to be
   generated from where the system call was invoked in the user thread
 
-* :cpp:func:`_arch_syscall_invoke0()` through
-  :cpp:func:`_arch_syscall_invoke6()` invoke a system call with the
+* :cpp:func:`z_arch_syscall_invoke0()` through
+  :cpp:func:`z_arch_syscall_invoke6()` invoke a system call with the
   appropriate number of arguments which must all be passed in during the
   privilege elevation via registers.
 
-* :cpp:func:`_arch_is_user_context()` return nonzero if the CPU is currently
+* :cpp:func:`z_arch_is_user_context()` return nonzero if the CPU is currently
   running in user mode
 
-* :cpp:func:`_arch_mem_domain_max_partitions_get()` which indicates the max
+* :cpp:func:`z_arch_mem_domain_max_partitions_get()` which indicates the max
   number of regions for a memory domain. MMU systems have an unlimited amount,
   MPU systems have constraints on this.
 
-* :cpp:func:`_arch_mem_domain_partition_remove()` Remove a partition from
+* :cpp:func:`z_arch_mem_domain_partition_remove()` Remove a partition from
   a memory domain if the currently executing thread was part of that domain.
 
-* :cpp:func:`_arch_mem_domain_destroy()` Reset the thread's memory domain
+* :cpp:func:`z_arch_mem_domain_destroy()` Reset the thread's memory domain
   configuration
 
 In addition to implementing these APIs, there are some other tasks as well:
