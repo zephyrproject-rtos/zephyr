@@ -58,7 +58,10 @@ struct session {
 	struct zperf_server_hdr stat;
 };
 
-struct session *get_session(struct net_pkt *pkt, enum session_proto proto);
+struct session *get_session(struct net_pkt *pkt,
+			    union net_ip_header *ip_hdr,
+			    union net_proto_header *proto_hdr,
+			    enum session_proto proto);
 struct session *get_tcp_session(struct net_context *ctx);
 void zperf_session_init(void);
 void zperf_reset_session_stats(struct session *session);

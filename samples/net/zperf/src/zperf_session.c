@@ -19,13 +19,16 @@ LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 static struct session sessions[SESSION_PROTO_END][SESSION_MAX];
 
 /* Get session from a given packet */
-struct session *get_session(struct net_pkt *pkt, enum session_proto proto)
+struct session *get_session(struct net_pkt *pkt,
+			    union net_ip_header *ip_hdr,
+			    union net_proto_header *proto_hdr,
+			    enum session_proto proto)
 {
 	struct session *active = NULL;
 	struct session *free = NULL;
 	struct in6_addr ipv6 = { };
 	struct in_addr ipv4 = { };
-	struct net_udp_hdr hdr, *udp_hdr;
+	struct net_udp_hdr *udp_hdr;
 	int i = 0;
 	u16_t port;
 
@@ -39,19 +42,15 @@ struct session *get_session(struct net_pkt *pkt, enum session_proto proto)
 		return NULL;
 	}
 
-	udp_hdr = net_udp_get_hdr(pkt, &hdr);
-	if (!udp_hdr) {
-		printk("Invalid UDP data\n");
-		return NULL;
-	}
+	udp_hdr = proto_hdr->udp;
 
 	/* Get tuple of the remote connection */
 	port = udp_hdr->src_port;
 
 	if (net_pkt_family(pkt) == AF_INET6) {
-		net_ipaddr_copy(&ipv6, &NET_IPV6_HDR(pkt)->src);
+		net_ipaddr_copy(&ipv6, &ip_hdr->ipv6->src);
 	} else if (net_pkt_family(pkt) == AF_INET) {
-		net_ipaddr_copy(&ipv4, &NET_IPV4_HDR(pkt)->src);
+		net_ipaddr_copy(&ipv4, &ip_hdr->ipv4->src);
 	} else {
 		printk("Error! unsupported protocol %d\n",
 		       net_pkt_family(pkt));

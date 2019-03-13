@@ -51,43 +51,19 @@ void zperf_tcp_upload(const struct shell *shell,
 
 	do {
 		int ret = 0;
-		struct net_pkt *pkt;
-		struct net_buf *frag;
 		u32_t loop_time;
 
 		/* Timestamps */
 		loop_time = k_cycle_get_32();
-		last_loop_time = loop_time;
-
-		pkt = net_pkt_get_tx(ctx, K_FOREVER);
-		if (!pkt) {
-			shell_fprintf(shell, SHELL_ERROR,
-				      "Failed to retrieve a packet\n");
-			break;
-		}
-
-		frag = net_pkt_get_data(ctx, K_FOREVER);
-		if (!frag) {
-			net_pkt_unref(pkt);
-			shell_fprintf(shell, SHELL_ERROR,
-				      "Failed to retrieve a fragment\n");
-			break;
-		}
-
-		net_pkt_frag_add(pkt, frag);
-
-		/* Fill in the TCP payload */
-		net_pkt_append(pkt, sizeof(sample_packet),
-			       sample_packet, K_FOREVER);
 
 		/* Send the packet */
-		ret = net_context_send(pkt, NULL, K_NO_WAIT, NULL, NULL);
+		ret = net_context_send_new(ctx, sample_packet,
+					   sizeof(sample_packet), NULL,
+					   K_NO_WAIT, NULL, NULL);
 		if (ret < 0) {
 			shell_fprintf(shell, SHELL_WARNING,
 				      "Failed to send the packet (%d)\n",
 				      ret);
-
-			net_pkt_unref(pkt);
 			nb_errors++;
 			break;
 		} else {

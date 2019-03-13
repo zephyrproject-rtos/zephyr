@@ -70,7 +70,7 @@ static void tcp_received(struct net_context *context,
 		session->counter++;
 
 		if (pkt) {
-			session->length += net_pkt_appdatalen(pkt);
+			session->length += net_pkt_remaining_data(pkt);
 		}
 
 		if (pkt == NULL && status == 0) { /* EOF */
