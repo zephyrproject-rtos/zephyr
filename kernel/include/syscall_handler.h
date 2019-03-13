@@ -295,6 +295,22 @@ extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
  */
 #define Z_SYSCALL_VERIFY(expr) Z_SYSCALL_VERIFY_MSG(expr, #expr)
 
+/**
+ * @brief Runtime check that a user thread has read and/or write permission to
+ *        a memory area
+ *
+ * Checks that the particular memory area is readable and/or writeable by the
+ * currently running thread if the CPU was in user mode, and generates a kernel
+ * oops if it wasn't. Prevents userspace from getting the kernel to read and/or
+ * modify memory the thread does not have access to, or passing in garbage
+ * pointers that would crash/pagefault the kernel if dereferenced.
+ *
+ * @param ptr Memory area to examine
+ * @param size Size of the memory area
+ * @param write If the thread should be able to write to this memory, not just
+ *		read it
+ * @return 0 on success, nonzero on failure
+ */
 #define Z_SYSCALL_MEMORY(ptr, size, write) \
 	Z_SYSCALL_VERIFY_MSG(z_arch_buffer_validate((void *)ptr, size, write) \
 			     == 0, \
@@ -313,8 +329,6 @@ extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
  *
  * @param ptr Memory area to examine
  * @param size Size of the memory area
- * @param write If the thread should be able to write to this memory, not just
- *		read it
  * @return 0 on success, nonzero on failure
  */
 #define Z_SYSCALL_MEMORY_READ(ptr, size) \
@@ -331,8 +345,6 @@ extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
  *
  * @param ptr Memory area to examine
  * @param size Size of the memory area
- * @param write If the thread should be able to write to this memory, not just
- *		read it
  * @param 0 on success, nonzero on failure
  */
 #define Z_SYSCALL_MEMORY_WRITE(ptr, size) \
