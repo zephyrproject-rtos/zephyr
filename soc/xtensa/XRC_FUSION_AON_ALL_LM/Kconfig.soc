@@ -3,4 +3,3 @@
 
 config SOC_XRC_FUSION_AON_ALL_LM
 	bool "XRC_FUSION_AON_ALL_LM core"
-

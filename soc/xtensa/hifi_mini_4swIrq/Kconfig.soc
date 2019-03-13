@@ -3,4 +3,3 @@
 
 config SOC_HIFI_MINI_4SWIRQ
 	bool "hifi_mini_4swIrq (hifi_mini core with 4 additional SW IRQs)"
-

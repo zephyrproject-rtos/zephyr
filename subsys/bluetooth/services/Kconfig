@@ -14,4 +14,3 @@ source "subsys/bluetooth/services/Kconfig.dis"
 endmenu
 
 endif # BT_CONN
-

@@ -6,4 +6,3 @@
 #
 
 source "soc/arm/nordic_nrf/*/Kconfig.series"
-

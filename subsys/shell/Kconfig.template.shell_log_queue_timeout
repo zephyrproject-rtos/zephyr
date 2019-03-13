@@ -7,4 +7,3 @@ config $(module)_LOG_MESSAGE_QUEUE_TIMEOUT
 	  dropped if queue is still full after requested time (-1 is forever).
 	  Logger thread is blocked for that period, thus long timeout impacts
 	  other logger  backends and must be used with care.
-

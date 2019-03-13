@@ -16,4 +16,3 @@ config SOC_QUARK_SE_CURIE
 
 endchoice
 
-

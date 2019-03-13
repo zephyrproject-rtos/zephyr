@@ -17,4 +17,3 @@ config NUM_IRQS
 	default 30
 
 endif # SOC_NRF52810_QFAA
-

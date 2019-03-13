@@ -1,4 +1,3 @@
-
 config BOARD_GALILEO
 	bool "Galileo Gen2"
 	depends on SOC_SERIES_QUARK_X1000

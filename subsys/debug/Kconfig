@@ -275,4 +275,3 @@ config TRACING_CTF_BOTTOM_POSIX
 source "subsys/debug/Kconfig.segger"
 
 endmenu
-

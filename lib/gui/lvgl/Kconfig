@@ -372,4 +372,3 @@ config APP_LINK_WITH_LVGL
 	  issues for 'app'.
 
 endif # LVGL
-

@@ -1,4 +1,3 @@
-
 config GROVE_LCD_RGB
 	bool "Enable the Seeed Grove LCD RGB Backlight"
 	help

@@ -1,4 +1,3 @@
-
 if BOARD_QEMU_CORTEX_M3
 
 config BUILD_OUTPUT_BIN

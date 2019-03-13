@@ -7,4 +7,3 @@ config BOARD
 	default "qemu_nios2"
 
 endif
-

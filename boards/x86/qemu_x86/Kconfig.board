@@ -1,4 +1,3 @@
-
 config BOARD_QEMU_X86
 	bool "QEMU x86"
 	depends on SOC_IA32
@@ -13,4 +12,3 @@ config BOARD_QEMU_X86_IAMCU
 	select QEMU_TARGET
 	select HAS_DTS_ETHERNET
 	select HAS_COVERAGE_SUPPORT
-

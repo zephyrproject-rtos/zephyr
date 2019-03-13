@@ -1,4 +1,3 @@
-
 if BOARD_ARDUINO_101_SSS
 
 config BOARD

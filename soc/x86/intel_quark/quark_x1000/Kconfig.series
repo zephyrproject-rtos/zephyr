@@ -1,4 +1,3 @@
-
 config SOC_SERIES_QUARK_X1000
 	bool "Intel Quark X1000 Series"
 	select CPU_MINUTEIA

@@ -1,4 +1,3 @@
-
 choice
 	prompt "SoC/CPU/Configuration Selection"
 

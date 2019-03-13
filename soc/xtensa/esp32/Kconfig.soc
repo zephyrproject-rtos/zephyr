@@ -3,4 +3,3 @@
 
 config SOC_ESP32
 	bool "ESP32"
-

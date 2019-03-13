@@ -1,4 +1,3 @@
-
 if BOARD_MINNOWBOARD
 
 config BOARD

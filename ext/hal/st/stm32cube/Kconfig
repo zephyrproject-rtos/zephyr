@@ -351,4 +351,3 @@ config USE_STM32_LL_UTILS
 	bool
 
 endif
-

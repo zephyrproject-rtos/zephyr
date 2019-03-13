@@ -147,7 +147,4 @@ config COUNTER_RTC2_PRESCALER
 	help
 	  Frequency = 32768 / (prescaler+1).
 
-endif #COUNTER_RTC2
-
-
-
+endif # COUNTER_RTC2

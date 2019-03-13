@@ -1,4 +1,3 @@
-
 if BOARD_NRF52_BSIM
 
 config BUILD_OUTPUT_BIN
@@ -39,4 +38,3 @@ config LOG_PROCESS_THREAD
 endif # LOG
 
 endif # BOARD_NRF52_BSIM
-
