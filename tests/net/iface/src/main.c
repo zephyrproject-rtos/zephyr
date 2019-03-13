@@ -422,6 +422,10 @@ static bool send_iface(struct net_if *iface, int val, bool expect_fail)
 
 	pkt = net_pkt_alloc_with_buffer(iface, sizeof(data),
 					AF_UNSPEC, 0, K_FOREVER);
+	if (!pkt) {
+		DBG("Cannot allocate pkt\n");
+		return false;
+	}
 
 	net_pkt_write_new(pkt, data, sizeof(data));
 	net_pkt_cursor_init(pkt);
