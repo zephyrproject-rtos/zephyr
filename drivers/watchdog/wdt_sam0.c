@@ -15,6 +15,16 @@ LOG_MODULE_REGISTER(wdt_sam0);
 
 #define WDT_REGS ((Wdt *)DT_ATMEL_SAM0_WATCHDOG_0_BASE_ADDRESS)
 
+#ifndef WDT_CONFIG_PER_8_Val
+#define WDT_CONFIG_PER_8_Val WDT_CONFIG_PER_CYC8_Val
+#endif
+#ifndef WDT_CONFIG_PER_8K_Val
+#define WDT_CONFIG_PER_8K_Val WDT_CONFIG_PER_CYC8192_Val
+#endif
+#ifndef WDT_CONFIG_PER_16K_Val
+#define WDT_CONFIG_PER_16K_Val WDT_CONFIG_PER_CYC16384_Val
+#endif
+
 struct wdt_sam0_dev_data {
 	wdt_callback_t cb;
 	bool timeout_valid;
@@ -26,20 +36,48 @@ static struct wdt_sam0_dev_data wdt_sam0_data = { 0 };
 
 static void wdt_sam0_wait_synchronization(void)
 {
+#ifdef WDT_STATUS_SYNCBUSY
 	while (WDT_REGS->STATUS.bit.SYNCBUSY) {
 	}
+#else
+	while (WDT_REGS->SYNCBUSY.reg) {
+	}
+#endif
+}
+
+static inline void wdt_sam0_set_enable(bool on)
+{
+#ifdef WDT_CTRLA_ENABLE
+	WDT_REGS->CTRLA.bit.ENABLE = on;
+#else
+	WDT_REGS->CTRL.bit.ENABLE = on;
+#endif
+}
+
+static inline bool wdt_sam0_is_enabled(void)
+{
+#ifdef WDT_CTRLA_ENABLE
+	return WDT_REGS->CTRLA.bit.ENABLE;
+#else
+	return WDT_REGS->CTRL.bit.ENABLE;
+#endif
 }
 
 static u32_t wdt_sam0_timeout_to_wdt_period(u32_t timeout_ms)
 {
-	struct device *clk;
 	u32_t next_pow2;
 	u32_t cycles;
 	u32_t clk_freq;
 
+#ifdef DT_ATMEL_SAM0_WATCHDOG_0_CLOCK_CONTROLLER
+	struct device *clk;
 	clk = device_get_binding(DT_ATMEL_SAM0_WATCHDOG_0_CLOCK_CONTROLLER);
 	clock_control_get_rate(clk, (clock_control_subsys_t)WDT_GCLK_ID,
 			       &clk_freq);
+#else
+	/* Watchdog is fed by 1.024 kHz OSCULP */
+	clk_freq = 1024;
+#endif
 
 	/* Calculate number of clock cycles */
 	cycles = (timeout_ms * clk_freq) / 1000;
@@ -67,7 +105,7 @@ static int wdt_sam0_setup(struct device *dev, u8_t options)
 {
 	struct wdt_sam0_dev_data *data = dev->driver_data;
 
-	if (WDT_REGS->CTRL.reg == WDT_CTRL_ENABLE) {
+	if (wdt_sam0_is_enabled()) {
 		LOG_ERR("Watchdog already setup");
 		return -EBUSY;
 	}
@@ -88,7 +126,7 @@ static int wdt_sam0_setup(struct device *dev, u8_t options)
 	}
 
 	/* Enable watchdog */
-	WDT_REGS->CTRL.bit.ENABLE = 1;
+	wdt_sam0_set_enable(1);
 	wdt_sam0_wait_synchronization();
 
 	return 0;
@@ -96,12 +134,12 @@ static int wdt_sam0_setup(struct device *dev, u8_t options)
 
 static int wdt_sam0_disable(struct device *dev)
 {
-	if (!WDT_REGS->CTRL.bit.ENABLE) {
+	if (!wdt_sam0_is_enabled()) {
 		LOG_ERR("Watchdog not enabled");
 		return -EFAULT;
 	}
 
-	WDT_REGS->CTRL.bit.ENABLE = 0;
+	wdt_sam0_set_enable(0);
 	wdt_sam0_wait_synchronization();
 
 	return 0;
@@ -114,7 +152,7 @@ static int wdt_sam0_install_timeout(struct device *dev,
 	u32_t window, per;
 
 	/* CONFIG is enable protected, error out if already enabled */
-	if (WDT_REGS->CTRL.bit.ENABLE) {
+	if (wdt_sam0_is_enabled()) {
 		LOG_ERR("Watchdog already setup");
 		return -EBUSY;
 	}
@@ -146,7 +184,11 @@ static int wdt_sam0_install_timeout(struct device *dev,
 			/* Ensure we have a window */
 			per = window + 1;
 		}
+#ifdef WDT_CTRLA_WEN
+		WDT_REGS->CTRLA.bit.WEN = 1;
+#else
 		WDT_REGS->CTRL.bit.WEN = 1;
+#endif
 		wdt_sam0_wait_synchronization();
 	} else {
 		/* Normal mode */
@@ -158,7 +200,11 @@ static int wdt_sam0_install_timeout(struct device *dev,
 			WDT_REGS->EWCTRL.bit.EWOFFSET = per - 1U;
 		}
 		window = WDT_CONFIG_PER_8_Val;
+#ifdef WDT_CTRLA_WEN
+		WDT_REGS->CTRLA.bit.WEN = 0;
+#else
 		WDT_REGS->CTRL.bit.WEN = 0;
+#endif
 		wdt_sam0_wait_synchronization();
 	}
 
@@ -208,22 +254,28 @@ static const struct wdt_driver_api wdt_sam0_api = {
 
 static int wdt_sam0_init(struct device *dev)
 {
-	struct device *clk;
 
 #ifdef CONFIG_WDT_DISABLE_AT_BOOT
 	/* Ignore any errors */
 	wdt_sam0_disable(dev);
 #endif
 
+	/* Enable APB clock */
+#ifdef MCLK
+	MCLK->APBAMASK.bit.WDT_ = 1;
+
+	/* watchdog clock is always fed by OSCULP32K */
+#else
+	struct device *clk;
 	clk = device_get_binding(DT_ATMEL_SAM0_WATCHDOG_0_CLOCK_CONTROLLER);
 	if (!clk) {
 		return -EINVAL;
 	}
 
-	/* Enable APB clock */
-	PM->APBAMASK.bit.WDT_ = 1;
-
 	clock_control_on(clk, (clock_control_subsys_t)WDT_GCLK_ID);
+
+	PM->APBAMASK.bit.WDT_ = 1;
+#endif
 
 	IRQ_CONNECT(DT_ATMEL_SAM0_WATCHDOG_0_IRQ_0,
 		    DT_ATMEL_SAM0_WATCHDOG_0_IRQ_0_PRIORITY, wdt_sam0_isr,
