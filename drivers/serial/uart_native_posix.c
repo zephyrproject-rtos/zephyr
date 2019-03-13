@@ -65,7 +65,7 @@ static void attach_to_tty(const char *slave_tty)
 	if (auto_attach_cmd == NULL) {
 		auto_attach_cmd = (char *)default_cmd;
 	}
-	char command[strlen(auto_attach_cmd) + strlen(slave_tty)];
+	char command[strlen(auto_attach_cmd) + strlen(slave_tty) + 1];
 
 	sprintf(command, auto_attach_cmd, slave_tty);
 
