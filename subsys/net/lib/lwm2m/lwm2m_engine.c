@@ -417,7 +417,7 @@ static int engine_add_observer(struct lwm2m_message *msg,
 	struct lwm2m_engine_obj_inst *obj_inst = NULL;
 	struct observe_node *obs;
 	struct notification_attrs attrs = {
-		.flags = BIT(LWM2M_ATTR_PMIN) || BIT(LWM2M_ATTR_PMAX),
+		.flags = BIT(LWM2M_ATTR_PMIN) | BIT(LWM2M_ATTR_PMAX),
 		.pmin  = DEFAULT_SERVER_PMIN,
 		.pmax  = DEFAULT_SERVER_PMAX,
 	};
