@@ -225,6 +225,25 @@ static inline int _is_enabled_region(u32_t index)
 /**
  * This internal function validates whether a given memory buffer
  * is user accessible or not.
+ *
+ * Note: [Doc. number: ARM-ECM-0359818]
+ * "Some SAU, IDAU, and MPU configurations block the efficient implementation
+ * of an address range check. The CMSE intrinsic operates under the assumption
+ * that the configuration of the SAU, IDAU, and MPU is constrained as follows:
+ * - An object is allocated in a single MPU/SAU/IDAU region.
+ * - A stack is allocated in a single region.
+ *
+ * These points imply that the memory buffer does not span across multiple MPU,
+ * SAU, or IDAU regions."
+ *
+ * MPU regions are configurable, however, some platforms might have fixed-size
+ * SAU or IDAU regions. So, even if a buffer is allocated inside a single MPU
+ * region, it might span across multiple SAU/IDAU regions, which will make the
+ * TT-based address range check fail.
+ *
+ * Therefore, the function performs a second check, which is based on MPU only,
+ * in case the fast address range check fails.
+ *
  */
 static inline int _mpu_buffer_validate(void *addr, size_t size, int write)
 {
