@@ -72,7 +72,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_ExcExit)
 
     ldr r1, [r0, #_kernel_offset_to_current]
 
-    ldr r0, [r0, _kernel_offset_to_ready_q_cache]
+    ldr r0, [r0, #_kernel_offset_to_ready_q_cache]
     cmp r0, r1
     beq _EXIT_EXC
 
