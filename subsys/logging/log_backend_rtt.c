@@ -51,8 +51,7 @@ static u8_t *line_pos;
 static u8_t char_buf[CHAR_BUF_SIZE];
 static int drop_cnt;
 static int drop_warn;
-static int panic_mode;
-
+static bool sync_mode;
 static bool host_present;
 
 static int data_out_block_mode(u8_t *data, size_t length, void *ctx);
@@ -66,7 +65,7 @@ static int data_out_drop_mode(u8_t *data, size_t length, void *ctx)
 	(void) ctx;
 	u8_t *pos;
 
-	if (panic_mode) {
+	if (sync_mode) {
 		return data_out_block_mode(data, length, ctx);
 	}
 
@@ -142,7 +141,7 @@ static void on_failed_write(int retry_cnt)
 {
 	if (retry_cnt == 0) {
 		host_present = false;
-	} else if (panic_mode) {
+	} else if (sync_mode) {
 		k_busy_wait(USEC_PER_MSEC * RETRY_DELAY_MS);
 	} else {
 		k_sleep(RETRY_DELAY_MS);
@@ -152,7 +151,7 @@ static void on_failed_write(int retry_cnt)
 static void on_write(int retry_cnt)
 {
 	host_present = true;
-	if (panic_mode) {
+	if (sync_mode) {
 		/* In panic mode block on each write until host reads it. This
 		 * way it is ensured that if system resets all messages are read
 		 * by the host. While pending on data being read by the host we
@@ -172,14 +171,14 @@ static int data_out_block_mode(u8_t *data, size_t length, void *ctx)
 	int retry_cnt = RETRY_CNT;
 
 	do {
-		if (!panic_mode) {
+		if (!sync_mode) {
 			RTT_LOCK();
 		}
 
 		ret = SEGGER_RTT_WriteSkipNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER,
 						 data, length);
 
-		if (!panic_mode) {
+		if (!sync_mode) {
 			RTT_UNLOCK();
 		}
 
@@ -232,14 +231,14 @@ static void log_backend_rtt_init(void)
 	}
 
 	host_present = true;
-	panic_mode = 0;
+	sync_mode = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? true : false;
 	line_pos = line_buf;
 }
 
 static void panic(struct log_backend const *const backend)
 {
 	log_output_flush(&log_output);
-	panic_mode = 1;
+	sync_mode = true;
 }
 
 static void dropped(const struct log_backend *const backend, u32_t cnt)
