@@ -92,6 +92,7 @@ static int open_tty(void)
 	struct winsize win;
 	int err_nbr;
 	int ret;
+	int flags;
 
 	win.ws_col = 80;
 	win.ws_row = 24;
@@ -120,7 +121,21 @@ static int open_tty(void)
 		ERROR("Error getting slave PTY device name (%i)\n", errno);
 	}
 	/* Set the master PTY as non blocking */
-	fcntl(master_pty, F_SETFL,  fcntl(master_pty, F_GETFL) | O_NONBLOCK);
+	flags = fcntl(master_pty, F_GETFL);
+	if (flags == -1) {
+		err_nbr = errno;
+		close(master_pty);
+		ERROR("Could not read the master PTY file status flags (%i)\n",
+			errno);
+	}
+
+	ret = fcntl(master_pty, F_SETFL, flags | O_NONBLOCK);
+	if (ret == -1) {
+		err_nbr = errno;
+		close(master_pty);
+		ERROR("Could not set the master PTY as non-blocking (%i)\n",
+			errno);
+	}
 
 	/*
 	 * Set terminal in "raw" mode:
