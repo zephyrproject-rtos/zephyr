@@ -98,7 +98,7 @@ static int out_func(int c, void *ctx)
 	out_ctx->buf[out_ctx->control_block->offset] = (u8_t)c;
 	out_ctx->control_block->offset++;
 
-	assert(out_ctx->control_block->offset <= out_ctx->size);
+	__ASSERT_NO_MSG(out_ctx->control_block->offset <= out_ctx->size);
 
 	if (out_ctx->control_block->offset == out_ctx->size) {
 		log_output_flush(out_ctx);
@@ -350,7 +350,7 @@ static void std_print(struct log_msg *msg,
 		break;
 	default:
 		/* Unsupported number of arguments. */
-		assert(true);
+		__ASSERT_NO_MSG(true);
 		break;
 	}
 }
@@ -414,7 +414,7 @@ static void hexdump_print(struct log_msg *msg,
 static void raw_string_print(struct log_msg *msg,
 			     const struct log_output *log_output)
 {
-	assert(log_output->size);
+	__ASSERT_NO_MSG(log_output->size);
 
 	size_t offset = 0;
 	size_t length;
