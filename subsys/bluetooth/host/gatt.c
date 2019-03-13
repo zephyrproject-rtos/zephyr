@@ -2252,22 +2252,26 @@ static void gatt_find_info_rsp(struct bt_conn *conn, u8_t err,
 			continue;
 		}
 
-		/* Skip attributes that are not considered descriptors */
-		if (!bt_uuid_cmp(&u.uuid, BT_UUID_GATT_PRIMARY) ||
-		    !bt_uuid_cmp(&u.uuid, BT_UUID_GATT_SECONDARY) ||
-		    !bt_uuid_cmp(&u.uuid, BT_UUID_GATT_INCLUDE)) {
-			continue;
-		}
-
-		/* If Characteristic Declaration skip ahead as the next entry
-		 * must be its value.
-		 */
-		if (!bt_uuid_cmp(&u.uuid, bt_uuid_gatt_chrc)) {
-			if (length >= len) {
-				pdu = (const u8_t *)pdu + len;
-				length -= len;
+		if (params->type == BT_GATT_DISCOVER_DESCRIPTOR) {
+			/* Skip attributes that are not considered
+			 * descriptors.
+			 */
+			if (!bt_uuid_cmp(&u.uuid, BT_UUID_GATT_PRIMARY) ||
+			    !bt_uuid_cmp(&u.uuid, BT_UUID_GATT_SECONDARY) ||
+			    !bt_uuid_cmp(&u.uuid, BT_UUID_GATT_INCLUDE)) {
+				continue;
 			}
-			continue;
+
+			/* If Characteristic Declaration skip ahead as the next
+			 * entry must be its value.
+			 */
+			if (!bt_uuid_cmp(&u.uuid, BT_UUID_GATT_CHRC)) {
+				if (length >= len) {
+					pdu = (const u8_t *)pdu + len;
+					length -= len;
+				}
+				continue;
+			}
 		}
 
 		attr = (&(struct bt_gatt_attr)
@@ -2345,6 +2349,8 @@ int bt_gatt_discover(struct bt_conn *conn,
 		    !bt_uuid_cmp(params->uuid, BT_UUID_GATT_CHRC)) {
 			return -EINVAL;
 		}
+	 /* Fallthrough. */
+	case BT_GATT_DISCOVER_ATTRIBUTE:
 		return gatt_find_info(conn, params);
 	default:
 		BT_ERR("Invalid discovery type: %u", params->type);

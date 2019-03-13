@@ -887,6 +887,15 @@ enum {
 	 *  as it may incur in extra round trips.
 	 */
 	BT_GATT_DISCOVER_DESCRIPTOR,
+	/** Discover Attributes.
+	 *
+	 *  Discover Attributes of any type.
+	 *
+	 *  Note: The use of this type of discover is not recommended for
+	 *  discovering in ranges across multiple services/characteristics as
+	 *  it may incur in more round trips.
+	 */
+	BT_GATT_DISCOVER_ATTRIBUTE,
 };
 
 /** @brief GATT Discover Attributes parameters */
