@@ -151,13 +151,19 @@ static inline bool bt_addr_le_is_identity(const bt_addr_le_t *addr)
 #define BT_DATA_NAME_SHORTENED          0x08 /* Shortened name */
 #define BT_DATA_NAME_COMPLETE           0x09 /* Complete name */
 #define BT_DATA_TX_POWER                0x0a /* Tx Power */
+#define BT_DATA_SM_TK_VALUE             0x10 /* Security Manager TK Value */
+#define BT_DATA_SM_OOB_FLAGS            0x11 /* Security Manager OOB Flags */
 #define BT_DATA_SOLICIT16               0x14 /* Solicit UUIDs, 16-bit */
 #define BT_DATA_SOLICIT128              0x15 /* Solicit UUIDs, 128-bit */
 #define BT_DATA_SVC_DATA16              0x16 /* Service data, 16-bit UUID */
 #define BT_DATA_GAP_APPEARANCE          0x19 /* GAP appearance */
+#define BT_DATA_LE_BT_DEVICE_ADDRESS    0x1b /* LE Bluetooth Device Address */
+#define BT_DATA_LE_ROLE                 0x1c /* LE Role */
 #define BT_DATA_SOLICIT32               0x1f /* Solicit UUIDs, 32-bit */
 #define BT_DATA_SVC_DATA32              0x20 /* Service data, 32-bit UUID */
 #define BT_DATA_SVC_DATA128             0x21 /* Service data, 128-bit UUID */
+#define BT_DATA_LE_SC_CONFIRM_VALUE     0x22 /* LE SC Confirmation Value */
+#define BT_DATA_LE_SC_RANDOM_VALUE      0x23 /* LE SC Random Value */
 #define BT_DATA_URI                     0x24 /* URI */
 #define BT_DATA_MESH_PROV               0x29 /* Mesh Provisioning PDU */
 #define BT_DATA_MESH_MESSAGE            0x2a /* Mesh Networking PDU */
