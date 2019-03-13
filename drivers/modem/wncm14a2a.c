@@ -30,11 +30,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 #include "ipv4.h"
 #endif
 #if defined(CONFIG_NET_UDP)
-#include <net/udp.h>
 #include "udp_internal.h"
-#endif
-#if defined(CONFIG_NET_TCP)
-#include <net/tcp.h>
 #endif
 
 #include <drivers/modem/modem_receiver.h>
