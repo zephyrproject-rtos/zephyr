@@ -151,22 +151,22 @@ void xuk_start_cpu(int cpu, unsigned int stack);
 /* OS CPU startup entry point, running on the stack returned by
  * init_cpu_stack()
  */
-void _cpu_start(int cpu);
+void z_cpu_start(int cpu);
 
 /* Called on receipt of an unregistered interrupt/exception.  Passes
  * the vector number and the CPU error code, if any.
  */
-void _unhandled_vector(int vector, int err, struct xuk_entry_frame *f);
+void z_unhandled_vector(int vector, int err, struct xuk_entry_frame *f);
 
 /* Called on ISR entry before nested interrupts are enabled so the OS
  * can arrange bookeeping.  Really should be exposed as an inline and
  * not a function call; cycles on interrupt entry are precious.
  */
-void _isr_entry(void);
+void z_isr_entry(void);
 
 /* Called on ISR exit to choose a next thread to run.  The argument is
  * a context pointer to the thread that was interrupted.
  */
-void *_isr_exit_restore_stack(void *interrupted);
+void *z_isr_exit_restore_stack(void *interrupted);
 
 #endif /* _XUK_H */

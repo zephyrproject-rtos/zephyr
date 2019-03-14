@@ -24,9 +24,9 @@ extern "C" {
  *
  * @return The key of the interrupt that is currently being processed.
  */
-int _sys_current_irq_key_get(void)
+int z_sys_current_irq_key_get(void)
 {
-	return _INTERRUPT_CAUSE();
+	return Z_INTERRUPT_CAUSE();
 }
 
 #ifdef __cplusplus

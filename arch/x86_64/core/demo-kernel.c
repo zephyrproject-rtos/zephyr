@@ -59,19 +59,19 @@ void handler_f3(void *arg, int err)
 	printf("end f3 handler\n");
 }
 
-void _unhandled_vector(int vector, int err, struct xuk_entry_frame *f)
+void z_unhandled_vector(int vector, int err, struct xuk_entry_frame *f)
 {
 	(void)f;
-	_putchar = putchar;
+	z_putchar = putchar;
 	printf("Unhandled vector %d (err %xh) on CPU%d\n",
 	       vector, err, (int)(long)xuk_get_f_ptr());
 }
 
-void _isr_entry(void)
+void z_isr_entry(void)
 {
 }
 
-void *_isr_exit_restore_stack(void *interrupted)
+void *z_isr_exit_restore_stack(void *interrupted)
 {
 	/* Somewhat hacky test of the ISR exit modes.  Two ways of
 	 * specifying "this stack", one of which does the full spill
@@ -129,9 +129,9 @@ void test_local_ipi(void)
 	};
 }
 
-void _cpu_start(int cpu)
+void z_cpu_start(int cpu)
 {
-	_putchar = putchar;
+	z_putchar = putchar;
 	printf("Entering demo kernel\n");
 
 	/* Make sure the FS/GS pointers work, then set F to store our

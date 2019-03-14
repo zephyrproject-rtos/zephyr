@@ -9,7 +9,7 @@
 
 #define _PORT 0x3f8
 
-static inline void _serout(int c)
+static inline void serout(int c)
 {
 	while (!(ioport_in8(_PORT + 5) & 0x20)) {
 	}
@@ -19,9 +19,9 @@ static inline void _serout(int c)
 static inline void serial_putc(int c)
 {
 	if (c == '\n') {
-		_serout('\r');
+		serout('\r');
 	}
-	_serout(c);
+	serout(c);
 }
 
 static inline void serial_puts(const char *s)

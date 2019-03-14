@@ -218,12 +218,12 @@ on_irq_stack:
 	beqz t1, call_irq
 
 	/*
-	 * Call _irq_do_offload to handle IRQ offloading.
+	 * Call z_irq_do_offload to handle IRQ offloading.
 	 * Set return address to on_thread_stack in order to jump there
-	 * upon returning from _irq_do_offload
+	 * upon returning from z_irq_do_offload
 	 */
 	la ra, on_thread_stack
-	tail _irq_do_offload
+	tail z_irq_do_offload
 
 call_irq:
 #ifdef CONFIG_TRACING

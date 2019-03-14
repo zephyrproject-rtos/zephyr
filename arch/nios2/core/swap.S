@@ -10,7 +10,7 @@
 
 /* exports */
 GTEXT(__swap)
-GTEXT(_thread_entry_wrapper)
+GTEXT(z_thread_entry_wrapper)
 
 /* imports */
 GTEXT(z_sys_trace_thread_switched_in)
@@ -171,9 +171,9 @@ no_unlock:
 	ret
 
 
-/* void _thread_entry_wrapper(void)
+/* void z_thread_entry_wrapper(void)
  */
-SECTION_FUNC(TEXT, _thread_entry_wrapper)
+SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 	/* This all corresponds to struct init_stack_frame defined in
 	 * thread.c. We need to take this stuff off the stack and put
 	 * it in the apporpriate registers

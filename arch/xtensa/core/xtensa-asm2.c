@@ -69,7 +69,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack, size_t sz,
 	/* Align downward.  The API as specified requires a runtime check. */
 	top = (char *)(((unsigned int)top) & ~3);
 
-	_new_thread_init(thread, base, sz, prio, opts);
+	z_new_thread_init(thread, base, sz, prio, opts);
 
 	thread->switch_handle = xtensa_init_stack((void *)top, entry,
 						  p1, p2, p3);

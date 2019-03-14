@@ -174,7 +174,7 @@ long _isr_c_top(unsigned long vecret, unsigned long rsp,
 	struct vhandler *h = &vector_handlers[vector];
 	struct xuk_entry_frame *frame = (void *)rsp;
 
-	_isr_entry();
+	z_isr_entry();
 
 	/* Set current priority in CR8 to the currently-serviced IRQ
 	 * and re-enable interrupts
@@ -189,7 +189,7 @@ long _isr_c_top(unsigned long vecret, unsigned long rsp,
 	if (h->fn) {
 		h->fn(h->arg, err);
 	} else {
-		_unhandled_vector(vector, err, frame);
+		z_unhandled_vector(vector, err, frame);
 	}
 
 	/* Mask interrupts to finish processing (they'll get restored
@@ -208,7 +208,7 @@ long _isr_c_top(unsigned long vecret, unsigned long rsp,
 	 * hook doesn't want to switch, it will return null and never
 	 * save the value of the pointer.
 	 */
-	return (long)_isr_exit_restore_stack((void *)(rsp - 48));
+	return (long)z_isr_exit_restore_stack((void *)(rsp - 48));
 }
 
 static long choose_isr_entry(int vector)
@@ -515,7 +515,7 @@ void _cstart64(int cpu_id)
 	}
 
 #ifdef CONFIG_XUK_DEBUG
-	_putchar = putchar;
+	z_putchar = putchar;
 #endif
 	printf("\n==\nHello from 64 bit C code on CPU%d (stack ~%xh)\n",
 	       cpu_id, (int)(long)&cpu_id);
@@ -587,8 +587,8 @@ void _cstart64(int cpu_id)
 		smp_init();
 	}
 
-	printf("Calling _cpu_start on CPU %d\n", cpu_id);
-	_cpu_start(cpu_id);
+	printf("Calling z_cpu_start on CPU %d\n", cpu_id);
+	z_cpu_start(cpu_id);
 }
 
 long xuk_setup_stack(long sp, void *fn, unsigned int eflags,

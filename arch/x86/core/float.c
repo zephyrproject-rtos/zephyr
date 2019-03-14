@@ -57,15 +57,15 @@ extern u32_t _sse_mxcsr_default_value;
  * specified thread control block. The SSE registers are saved only if the
  * thread is actually using them.
  */
-static void _FpCtxSave(struct k_thread *thread)
+static void FpCtxSave(struct k_thread *thread)
 {
 #ifdef CONFIG_SSE
 	if ((thread->base.user_options & K_SSE_REGS) != 0) {
-		_do_fp_and_sse_regs_save(&thread->arch.preempFloatReg);
+		z_do_fp_and_sse_regs_save(&thread->arch.preempFloatReg);
 		return;
 	}
 #endif
-	_do_fp_regs_save(&thread->arch.preempFloatReg);
+	z_do_fp_regs_save(&thread->arch.preempFloatReg);
 }
 
 /*
@@ -74,12 +74,12 @@ static void _FpCtxSave(struct k_thread *thread)
  * This routine initializes the system's "live" floating point context.
  * The SSE registers are initialized only if the thread is actually using them.
  */
-static inline void _FpCtxInit(struct k_thread *thread)
+static inline void FpCtxInit(struct k_thread *thread)
 {
-	_do_fp_regs_init();
+	z_do_fp_regs_init();
 #ifdef CONFIG_SSE
 	if ((thread->base.user_options & K_SSE_REGS) != 0) {
-		_do_sse_regs_init();
+		z_do_sse_regs_init();
 	}
 #endif
 }
@@ -123,13 +123,13 @@ void k_float_enable(struct k_thread *thread, unsigned int options)
 	fp_owner = _kernel.current_fp;
 	if (fp_owner != NULL) {
 		if ((fp_owner->base.thread_state & _INT_OR_EXC_MASK) != 0) {
-			_FpCtxSave(fp_owner);
+			FpCtxSave(fp_owner);
 		}
 	}
 
 	/* Now create a virgin FP context */
 
-	_FpCtxInit(thread);
+	FpCtxInit(thread);
 
 	/* Associate the new FP context with the specified thread */
 
@@ -157,7 +157,7 @@ void k_float_enable(struct k_thread *thread, unsigned int options)
 			 */
 
 			_kernel.current_fp = thread;
-			_FpAccessDisable();
+			z_FpAccessDisable();
 		} else {
 			/*
 			 * We are FP-capable (and thus had FPU ownership on
@@ -176,7 +176,7 @@ void k_float_enable(struct k_thread *thread, unsigned int options)
 			 * handling an interrupt or exception.)
 			 */
 
-			_FpCtxSave(thread);
+			FpCtxSave(thread);
 		}
 	}
 
@@ -205,7 +205,7 @@ void k_float_disable(struct k_thread *thread)
 	thread->base.user_options &= ~_FP_USER_MASK;
 
 	if (thread == _current) {
-		_FpAccessDisable();
+		z_FpAccessDisable();
 		_kernel.current_fp = (struct k_thread *)0;
 	} else {
 		if (_kernel.current_fp == thread) {

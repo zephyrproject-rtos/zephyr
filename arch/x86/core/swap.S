@@ -24,7 +24,7 @@
 	/* exports (internal APIs) */
 
 	GTEXT(__swap)
-	GTEXT(_x86_thread_entry_wrapper)
+	GTEXT(z_x86_thread_entry_wrapper)
 	GTEXT(_x86_user_thread_entry_wrapper)
 
 	/* externs */
@@ -479,7 +479,7 @@ time_read_not_needed:
  * @return this routine does NOT return.
  */
 
-SECTION_FUNC(TEXT, _x86_thread_entry_wrapper)
+SECTION_FUNC(TEXT, z_x86_thread_entry_wrapper)
 #ifdef CONFIG_X86_IAMCU
 	/* IAMCU calling convention has first 3 arguments supplied in
 	 * registers not the stack

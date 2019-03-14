@@ -26,11 +26,11 @@ extern "C" {
  *
  * @return The key of the interrupt that is currently being processed.
  */
-static inline int _sys_current_irq_key_get(void)
+static inline int z_sys_current_irq_key_get(void)
 {
 	u32_t ipending;
 
-	ipending = _nios2_creg_read(NIOS2_CR_IPENDING);
+	ipending = z_nios2_creg_read(NIOS2_CR_IPENDING);
 	return find_lsb_set(ipending) - 1;
 }
 

@@ -39,13 +39,13 @@ void _PrepC(void)
 	/* In most XIP scenarios we copy the exception code into RAM, so need
 	 * to flush instruction cache.
 	 */
-	_nios2_icache_flush_all();
+	z_nios2_icache_flush_all();
 #if ALT_CPU_ICACHE_SIZE > 0
 	/* Only need to flush the data cache here if there actually is an
 	 * instruction cache, so that the cached instruction data written is
 	 * actually committed.
 	 */
-	_nios2_dcache_flush_all();
+	z_nios2_dcache_flush_all();
 #endif
 #endif
 	z_cstart();

@@ -24,19 +24,19 @@
 #include <kswap.h>
 #include <arch/x86/segmentation.h>
 
-extern void _SpuriousIntHandler(void *handler);
-extern void _SpuriousIntNoErrCodeHandler(void *handler);
+extern void z_SpuriousIntHandler(void *handler);
+extern void z_SpuriousIntNoErrCodeHandler(void *handler);
 
 /*
  * Place the addresses of the spurious interrupt handlers into the intList
  * section. The genIdt tool can then populate any unused vectors with
  * these routines.
  */
-void *__attribute__((section(".spurIsr"))) MK_ISR_NAME(_SpuriousIntHandler) =
-	&_SpuriousIntHandler;
+void *__attribute__((section(".spurIsr"))) MK_ISR_NAME(z_SpuriousIntHandler) =
+	&z_SpuriousIntHandler;
 void *__attribute__((section(".spurNoErrIsr")))
-	MK_ISR_NAME(_SpuriousIntNoErrCodeHandler) =
-		&_SpuriousIntNoErrCodeHandler;
+	MK_ISR_NAME(z_SpuriousIntNoErrCodeHandler) =
+		&z_SpuriousIntNoErrCodeHandler;
 
 /* FIXME: IRQ direct inline functions have to be placed here and not in
  * arch/cpu.h as inline functions due to nasty circular dependency between
@@ -72,7 +72,7 @@ void z_arch_isr_direct_header(void)
 
 void z_arch_isr_direct_footer(int swap)
 {
-	_irq_controller_eoi();
+	z_irq_controller_eoi();
 	z_int_latency_stop();
 	sys_trace_isr_exit();
 	--_kernel.nested;
@@ -249,11 +249,11 @@ static void idt_vector_install(int vector, void *irq_handler)
 	int key;
 
 	key = irq_lock();
-	_init_irq_gate(&z_x86_idt.entries[vector], CODE_SEG,
+	z_init_irq_gate(&z_x86_idt.entries[vector], CODE_SEG,
 		       (u32_t)irq_handler, 0);
 #ifdef CONFIG_MVIC
 	/* MVIC requires IDT be reloaded if the entries table is ever changed */
-	_set_idt(&z_x86_idt);
+	z_set_idt(&z_x86_idt);
 #endif
 	irq_unlock(key);
 }
