@@ -11,10 +11,6 @@ config ARCH
 	string
 	default "nios2"
 
-config ARCH_DEFCONFIG
-	string
-	default "arch/nios2/defconfig"
-
 menu "Nios II Gen 2 Processor Options"
 
 config CPU_NIOS2_GEN2

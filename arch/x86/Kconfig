@@ -11,10 +11,6 @@ menu "X86 Architecture Options"
 config ARCH
 	default "x86"
 
-config ARCH_DEFCONFIG
-	string
-	default "arch/x86/defconfig"
-
 source "arch/x86/core/Kconfig"
 
 #

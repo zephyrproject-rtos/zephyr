@@ -11,10 +11,6 @@ config ARCH
 	string
 	default "riscv32"
 
-config ARCH_DEFCONFIG
-	string
-	default "arch/riscv32/defconfig"
-
 menu "RISCV32 Processor Options"
 
 config INCLUDE_RESET_VECTOR
