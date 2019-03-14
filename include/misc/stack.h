@@ -13,6 +13,7 @@
 #define ZEPHYR_INCLUDE_MISC_STACK_H_
 
 #include <logging/log.h>
+#include <stdbool.h>
 
 static inline size_t stack_unused_space_get(const char *stack, size_t size)
 {
@@ -86,6 +87,6 @@ static inline void stack_analyze(const char *name, const char *stack,
 		stack_analyze(name,				\
 			      K_THREAD_STACK_BUFFER(sym),	\
 			      K_THREAD_STACK_SIZEOF(sym));	\
-	} while (0)
+	} while (false)
 
 #endif /* ZEPHYR_INCLUDE_MISC_STACK_H_ */

@@ -496,7 +496,7 @@ static inline void sys_dlist_insert_at(sys_dlist_t *list, sys_dnode_t *node,
 	} else {
 		sys_dnode_t *pos = sys_dlist_peek_head(list);
 
-		while (pos && !cond(pos, data)) {
+		while ((pos != NULL) && (cond(pos, data) == 0)) {
 			pos = sys_dlist_peek_next(list, pos);
 		}
 		if (pos != NULL) {

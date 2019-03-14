@@ -98,7 +98,7 @@ extern "C" {
  * @def LOG_CURRENT_MODULE_ID
  * @brief Macro for getting ID of current module.
  */
-#define LOG_CURRENT_MODULE_ID() (__log_level ? \
+#define LOG_CURRENT_MODULE_ID() (__log_level != 0 ? \
 	log_const_source_id(__log_current_const_data) : 0)
 
 /**
@@ -200,7 +200,7 @@ extern "C" {
 	(IS_ENABLED(CONFIG_LOG) &&					    \
 	(Z_LOG_LEVEL_CHECK(_level, CONFIG_LOG_OVERRIDE_LEVEL, LOG_LEVEL_NONE) \
 	||								    \
-	(!IS_ENABLED(CONFIG_LOG_OVERRIDE_LEVEL) &&			    \
+	((IS_ENABLED(CONFIG_LOG_OVERRIDE_LEVEL) == false) &&		    \
 	(_level <= __log_level) &&					    \
 	(_level <= CONFIG_LOG_MAX_LEVEL)				    \
 	)								    \
