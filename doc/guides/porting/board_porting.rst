@@ -145,7 +145,7 @@ guidelines should be followed when porting a board:
   96board), configure pins to fit this connector.
 
 - Configure components that enable the use of these pins, such as
-  configuring and SPI instance for Arduino SPI.
+  configuring an SPI instance for Arduino SPI.
 
 - Configure an output for the console.
 
