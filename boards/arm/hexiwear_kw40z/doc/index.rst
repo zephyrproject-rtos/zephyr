@@ -73,74 +73,96 @@ with the on-chip FLL to generate a 40 MHz system clock.
 Serial Port
 ===========
 
-The KW40Z SoC has one UART, which is used for BT HCI. The console is available
-using `Segger RTT`_.
+The KW40Z SoC has one UART, which is used for BT HCI. There is no UART
+available for a console.
 
 Programming and Debugging
 *************************
 
-The Hexiwear docking station includes the :ref:`nxp_opensda` serial and debug
-adapter built into the board to provide debugging, flash programming, and
-serial communication over USB.
+Build and flash applications as usual (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
-To use the pyOCD tools with OpenSDA, follow the instructions in the
-:ref:`nxp_opensda_pyocd` page using the `DAPLink Hexiwear Firmware`_. The pyOCD
-tools are not the default for this board, therefore it is necessary to set
-``OPENSDA_FW=daplink`` explicitly in the environment when programming and
-debugging.
+Configuring a Debug Probe
+=========================
 
-To use the Segger J-Link tools with OpenSDA, follow the instructions in the
-:ref:`nxp_opensda_jlink` page using the `Segger J-Link OpenSDA V2.1 Firmware`_.
-The Segger J-Link tools are the default for this board, therefore it is not
-necessary to set ``OPENSDA_FW=jlink`` explicitly when using the usual
-programming and debugging mechanisms.
+A debug probe is used for both flashing and debugging the board. This board is
+configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
+but because Segger RTT is required for a console, you must reconfigure the
+board for one of the following debug probes instead.
 
-With these mechanisms, applications for the ``hexiwear_kw40z`` board
-configuration can be built and flashed in the usual way (see
-:ref:`build_an_application` and :ref:`application_run` for more
-details).
+:ref:`opensda-jlink-onboard-debug-probe`
+----------------------------------------
 
-Because `Segger RTT`_ is required for a console to KW40Z, the J-Link tools are
-recommended.
+Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
+path.
+
+Follow the instructions in :ref:`opensda-jlink-onboard-debug-probe` to program
+the `OpenSDA J-Link Generic Firmware for V2.1 Bootloader`_. Check that switches
+SW1 and SW2 are **off**, and SW3 and SW4 are **on**  to ensure KW40Z SWD signals
+are connected to the OpenSDA microcontroller.
+
+Configuring a Console
+=====================
+
+The console is available using `Segger RTT`_.
+
+Connect a USB cable from your PC to CN1.
+
+Once you have started a debug session, run telnet:
+
+.. code-block:: console
+
+    $ telnet localhost 19021
+    Trying 127.0.0.1...
+    Connected to localhost.
+    Escape character is '^]'.
+    SEGGER J-Link V6.44 - Real time terminal output
+    J-Link OpenSDA 2 compiled Feb 28 2017 19:27:57 V1.0, SN=621000000
+    Process: JLinkGDBServerCLExe
 
 Flashing
 ========
 
-The Segger J-Link firmware does not support command line flashing, therefore
-the usual ``flash`` build target is not supported.
+Here is an example for the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: hexiwear_kw40z
+   :goals: flash
+
+The Segger RTT console is only available during a debug session. Use ``attach``
+to start one:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: hexiwear_kw40z
+   :goals: attach
+
+Run telnet as shown earlier, and you should see the following message in the
+terminal:
+
+.. code-block:: console
+
+   ***** Booting Zephyr OS v1.14.0-rc1 *****
+   Hello World! hexiwear_kw40z
 
 Debugging
 =========
 
-This example uses the :ref:`hello_world` sample with the
-:ref:`nxp_opensda_jlink` tools. This builds the Zephyr application,
-invokes the J-Link GDB server, attaches a GDB client, and programs the
-application to flash. It will leave you at a gdb prompt.
+Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: hexiwear_kw40z
    :goals: debug
 
-In a second terminal, open telnet:
+Run telnet as shown earlier, step through the application in your debugger, and
+you should see the following message in the terminal:
 
-  .. code-block:: console
+.. code-block:: console
 
-     $ telnet localhost 19021
-     Trying 127.0.0.1...
-     Connected to localhost.
-     Escape character is '^]'.
-     SEGGER J-Link V6.14b - Real time terminal output
-     J-Link OpenSDA 2 compiled Feb 28 2017 19:27:57 V1.0, SN=621000000
-     Process: JLinkGDBServer
-
-Continue program execution in GDB, then in the telnet terminal you should see:
-
-  .. code-block:: console
-
-     ***** BOOTING ZEPHYR OS v1.7.99 - BUILD: Apr  6 2017 21:09:52 *****
-     Hello World! arm
-
+   ***** Booting Zephyr OS v1.14.0-rc1 *****
+   Hello World! hexiwear_kw40z
 
 .. _KW40Z Website:
    https://www.nxp.com/products/processors-and-microcontrollers/arm-based-processors-and-mcus/kinetis-cortex-m-mcus/w-serieswireless-conn.m0-plus-m4/kinetis-kw40z-2.4-ghz-dual-mode-ble-and-802.15.4-wireless-radio-microcontroller-mcu-based-on-arm-cortex-m0-plus-core:KW40Z
@@ -154,8 +176,5 @@ Continue program execution in GDB, then in the telnet terminal you should see:
 .. _Segger RTT:
    https://www.segger.com/products/debug-probes/j-link/technology/about-real-time-transfer/
 
-.. _DAPLink Hexiwear Firmware:
-   https://github.com/MikroElektronika/HEXIWEAR/blob/master/HW/HEXIWEAR_DockingStation/HEXIWEAR_DockingStation_DAPLINK_FW.bin
-
-.. _Segger J-Link OpenSDA V2.1 Firmware:
-   https://www.segger.com/downloads/jlink/OpenSDA_V2_1.bin
+.. _OpenSDA J-Link Generic Firmware for V2.1 Bootloader:
+   https://www.segger.com/downloads/jlink/OpenSDA_V2_1
