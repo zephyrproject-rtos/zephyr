@@ -85,7 +85,7 @@ SECTIONS
 	/* 16-bit sections */
 	. = PHYS_RAM_ADDR;
 
-	SECTION_PROLOGUE(boot, (OPTIONAL),)
+	SECTION_PROLOGUE(boot,,)
 	{
 	*(.boot)
 	. = ALIGN(16);
@@ -99,7 +99,7 @@ SECTIONS
 #else
 	_image_text_start = .;
 #endif
-	SECTION_PROLOGUE(_TEXT_SECTION_NAME, (OPTIONAL),)
+	SECTION_PROLOGUE(_TEXT_SECTION_NAME,,)
 	{
 	. = CONFIG_TEXT_SECTION_OFFSET;
 	*(.text_start)
@@ -126,7 +126,7 @@ SECTIONS
 
 #include <linker/common-rom.ld>
 
-	SECTION_PROLOGUE(_RODATA_SECTION_NAME, (OPTIONAL),)
+	SECTION_PROLOGUE(_RODATA_SECTION_NAME,,)
 	{
 	*(.rodata)
 	*(".rodata.*")
@@ -193,7 +193,7 @@ SECTIONS
 	GROUP_START(RAMABLE_REGION)
 
 #ifdef CONFIG_COVERAGE_GCOV
-	SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD OPTIONAL),)
+	SECTION_PROLOGUE(_GCOV_BSS_SECTION_NAME, (NOLOAD),)
 	{
 		MMU_PAGE_ALIGN
 		__gcov_bss_start = .;
@@ -221,7 +221,7 @@ SECTIONS
 	_app_smem_num_words = _app_smem_size >> 2;
 #endif /* CONFIG_USERSPACE */
 
-	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD OPTIONAL),)
+	SECTION_PROLOGUE(_BSS_SECTION_NAME, (NOLOAD),)
 	{
 	MMU_PAGE_ALIGN
 #if !defined(CONFIG_USERSPACE)
@@ -250,7 +250,7 @@ SECTIONS
 
 	__bss_num_words	= (__bss_end - __bss_start) >> 2;
 
-	SECTION_PROLOGUE(_NOINIT_SECTION_NAME, (NOLOAD OPTIONAL),)
+	SECTION_PROLOGUE(_NOINIT_SECTION_NAME, (NOLOAD),)
 	{
 	/*
 	 * This section is used for non-initialized objects that
@@ -268,7 +268,7 @@ SECTIONS
 
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
-	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE(_DATA_SECTION_NAME,,)
 	{
 
 	__data_ram_start = .;
@@ -372,7 +372,7 @@ SECTIONS
 	 * However, __mmu_tables_start *must* remain stable between builds,
 	 * we can't have anything shifting the memory map beforehand.
 	 */
-	SECTION_DATA_PROLOGUE(mmu_tables, (OPTIONAL),)
+	SECTION_DATA_PROLOGUE(mmu_tables,,)
 	{
 	/* Page Tables are located here if MMU is enabled.*/
 	MMU_PAGE_ALIGN
@@ -405,7 +405,7 @@ SECTIONS
 
 #ifndef LINKER_PASS2
 	/* static interrupts */
-	SECTION_PROLOGUE(intList, (OPTIONAL),)
+	SECTION_PROLOGUE(intList,,)
 	{
 	KEEP(*(.spurIsr))
 	KEEP(*(.spurNoErrIsr))
@@ -415,7 +415,7 @@ SECTIONS
 
 #ifdef CONFIG_X86_MMU
 	/* Memory management unit*/
-	SECTION_PROLOGUE(mmulist, (OPTIONAL),)
+	SECTION_PROLOGUE(mmulist,,)
 	{
 	/* get size of the mmu lists needed for gen_mmu_x86.py*/
 	LONG((__MMU_LIST_END__ - __MMU_LIST_START__) / __MMU_REGION_SIZEOF)

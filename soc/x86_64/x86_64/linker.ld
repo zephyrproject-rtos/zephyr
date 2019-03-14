@@ -15,7 +15,6 @@
  * and ELF segment definitions
  */
 #define SORT_BY_NAME(x) SORT(x)
-#define OPTIONAL
 #define SECTION_DATA_PROLOGUE(name, opts, align) name opts : align
 #define SECTION_PROLOGUE(name, opts, align)      name opts : align
 #define GROUP_DATA_LINK_IN(v, l) :ram
