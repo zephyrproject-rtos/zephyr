@@ -97,9 +97,8 @@ typedef void (*net_context_recv_cb_t)(struct net_context *context,
  * blocked while handling packets.
  *
  * @param context The context to use.
- * @param status Value is set to 0 if all data was sent ok, <0 if
- * there was an error sending data. >0 amount of data that was
- * sent when not all data was sent ok.
+ * @param status Value is set to >= 0: amount of data that was sent,
+ * < 0 there was an error sending data.
  * @param user_data The user data given in net_send() call.
  */
 typedef void (*net_context_send_cb_t)(struct net_context *context,
