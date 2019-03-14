@@ -355,8 +355,11 @@ static void thread_set(k_tid_t process_tid)
 {
 	proc_tid = process_tid;
 
-	if (!IS_ENABLED(CONFIG_LOG_IMMEDIATE) &&
-	    CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
+	if (IS_ENABLED(CONFIG_LOG_IMMEDIATE)) {
+		return;
+	}
+
+	if (CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD &&
 	    process_tid &&
 	    buffered_cnt >= CONFIG_LOG_PROCESS_TRIGGER_THRESHOLD) {
 		k_wakeup(proc_tid);
