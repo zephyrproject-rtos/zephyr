@@ -160,6 +160,7 @@
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 /drivers/wifi/eswifi/                     @loicpoulain
 /dts/arm/atmel/samr21.dtsi                @benpicco
+/dts/arm/atmel/sam*5*.dtsi                @benpicco
 /dts/arm/st/                              @erwango
 /dts/arm/ti/cc13?2*                       @bwitherspoon
 /dts/arm/ti/cc26?2*                       @bwitherspoon
