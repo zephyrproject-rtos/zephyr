@@ -62,3 +62,7 @@
 	dipo = <0>;
 	dopo = <2>;
 };
+
+&usb0 {
+	status = "ok";
+};
