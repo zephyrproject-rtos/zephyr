@@ -708,23 +708,23 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
  * them in spinlock.h is a giant header ordering headache.
  */
 #ifdef SPIN_VALIDATE
-int z_spin_lock_valid(struct k_spinlock *l)
+bool z_spin_lock_valid(struct k_spinlock *l)
 {
 	if (l->thread_cpu) {
 		if ((l->thread_cpu & 3) == _current_cpu->id) {
-			return 0;
+			return false;
 		}
 	}
-	return 1;
+	return true;
 }
 
-int z_spin_unlock_valid(struct k_spinlock *l)
+bool z_spin_unlock_valid(struct k_spinlock *l)
 {
 	if (l->thread_cpu != (_current_cpu->id | (u32_t)_current)) {
-		return 0;
+		return false;
 	}
 	l->thread_cpu = 0;
-	return 1;
+	return true;
 }
 
 void z_spin_lock_set_owner(struct k_spinlock *l)
