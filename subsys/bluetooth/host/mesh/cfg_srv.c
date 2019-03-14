@@ -1266,8 +1266,7 @@ static void mod_pub_va_set(struct bt_mesh_model *model,
 	retransmit = net_buf_simple_pull_u8(buf);
 	mod_id = buf->data;
 
-	BT_DBG("elem_addr 0x%04x pub_addr 0x%04x cred_flag %u",
-	       elem_addr, pub_addr, cred_flag);
+	BT_DBG("elem_addr 0x%04x cred_flag %u", elem_addr, cred_flag);
 	BT_DBG("pub_app_idx 0x%03x, pub_ttl %u pub_period 0x%02x",
 	       pub_app_idx, pub_ttl, pub_period);
 	BT_DBG("retransmit 0x%02x (count %u interval %ums)", retransmit,
