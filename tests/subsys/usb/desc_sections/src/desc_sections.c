@@ -32,6 +32,7 @@ struct usb_loopback_config {
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_out_ep;
 	struct usb_ep_descriptor if0_in_ep;
+	struct usb_ep_descriptor if0_in2_ep;
 } __packed;
 
 #define LOOPBACK_OUT_EP_ADDR		0x01
@@ -73,6 +74,9 @@ struct usb_loopback_config {
 	.if0_in_ep = INITIALIZER_IF_EP(LOOPBACK_IN_EP_ADDR,		\
 				       USB_DC_EP_BULK,			\
 				       LOOPBACK_BULK_EP_MPS),		\
+	.if0_in2_ep = INITIALIZER_IF_EP(LOOPBACK_IN_EP_ADDR,		\
+					USB_DC_EP_BULK,			\
+					LOOPBACK_BULK_EP_MPS),		\
 	};
 
 #define DEFINE_LOOPBACK_EP_CFG(x, _)				\
@@ -80,6 +84,10 @@ struct usb_loopback_config {
 		{						\
 			.ep_cb = NULL,				\
 			.ep_addr = LOOPBACK_OUT_EP_ADDR,	\
+		},						\
+		{						\
+			.ep_cb = NULL,				\
+			.ep_addr = LOOPBACK_IN_EP_ADDR,		\
 		},						\
 		{						\
 			.ep_cb = NULL,				\
@@ -214,7 +222,7 @@ static void test_desc_sections(void)
 	zassert_not_null(head, NULL);
 
 	zassert_equal((int)__usb_descriptor_end - (int)__usb_descriptor_start,
-		      119, NULL);
+		      133, NULL);
 
 	/* Calculate number of structures */
 	zassert_equal(__usb_data_end - __usb_data_start, NUM_INSTANCES, NULL);
