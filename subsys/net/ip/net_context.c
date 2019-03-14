@@ -916,20 +916,6 @@ int net_context_connect(struct net_context *context,
 		return -EOPNOTSUPP;
 	}
 
-#if defined(CONFIG_NET_OFFLOAD)
-	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
-		ret = net_offload_connect(
-			net_context_get_iface(context),
-			context,
-			addr,
-			addrlen,
-			cb,
-			timeout,
-			user_data);
-		goto unlock;
-	}
-#endif /* CONFIG_NET_OFFLOAD */
-
 	if (net_context_get_state(context) == NET_CONTEXT_LISTENING) {
 		ret = -EOPNOTSUPP;
 		goto unlock;
@@ -1041,6 +1027,20 @@ int net_context_connect(struct net_context *context,
 		ret = -EINVAL; /* Not IPv4 or IPv6 */
 		goto unlock;
 	}
+
+#if defined(CONFIG_NET_OFFLOAD)
+	if (net_if_is_ip_offloaded(net_context_get_iface(context))) {
+		ret = net_offload_connect(
+			net_context_get_iface(context),
+			context,
+			addr,
+			addrlen,
+			cb,
+			timeout,
+			user_data);
+		goto unlock;
+	}
+#endif /* CONFIG_NET_OFFLOAD */
 
 	switch (net_context_get_type(context)) {
 #if defined(CONFIG_NET_UDP)
