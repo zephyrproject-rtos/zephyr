@@ -33,8 +33,8 @@
  * @brief Designware ADC header file
  */
 
-#ifndef ZEPHYR_DRIVERS_ADC_ADC_DW_H_
-#define ZEPHYR_DRIVERS_ADC_ADC_DW_H_
+#ifndef ZEPHYR_DRIVERS_ADC_ADC_INTEL_QUARK_SE_C1000_SS_H_
+#define ZEPHYR_DRIVERS_ADC_ADC_INTEL_QUARK_SE_C1000_SS_H_
 
 #include <zephyr/types.h>
 #include <adc.h>
@@ -70,33 +70,36 @@ extern "C" {
 #define INT_SS_ADC_ERR_MASK             (0x400)
 #define INT_SS_ADC_IRQ_MASK             (0x404)
 
-/* ADC Specific macros */
-#define     ADC_POP_SAMPLE              (0x80000000)
-#define     ADC_FLUSH_RX                (0x40000000)
-#define     ADC_FTL_SET_MASK            (0x00ffffff)
-#define     ADC_SEQ_SIZE_SET_MASK       (0x3fc0ffff)
-#define     ADC_SEQ_MODE_SET_MASK       (0x3fffdfff)
-#define     ADC_CONFIG_SET_MASK         (0x3fffe000)
-#define     ADC_CLK_RATIO_MASK          (0x1fffff)
-#define     ADC_CLR_UNDRFLOW            (1 << 18)
-#define     ADC_CLR_OVERFLOW            (1 << 17)
-#define     ADC_CLR_DATA_A              (1 << 16)
-#define     ADC_SEQ_TABLE_RST           (0x0040)
-#define     ADC_SEQ_PTR_RST             (0x0020)
-#define     ADC_SEQ_START               (0x0010)
-#define     ADC_SEQ_STOP_MASK           (0x078ec)
-#define     ADC_INT_ENA_MASK            (0x001e)
-#define     ADC_INT_DSB                 (0x0F00)
-#define     ADC_INT_ENABLE              (0x0000)
-#define     ADC_CLK_ENABLE              (0x0004)
-#define     ADC_ENABLE                  (0x0002)
-#define     ADC_DISABLE                 (0x0)
-#define     ADC_RESET                   (0x1)
-#define     ADC_INT_DATA_A              (0x1)
-#define     ADC_INT_ERR                 (0x6)
-#define     ADC_NONE_CALIBRATION        (0x80)
-#define     ADC_NONE_DUMMY              (0x00)
-#define     ADC_DONE_DUMMY              (0x01)
+/* ADC_DIVSEQSTAT register */
+#define ADC_DIVSEQSTAT_CLK_RATIO_MASK	(0x1fffff)
+
+/* ADC_SET register */
+#define ADC_SET_POP_RX			BIT(31)
+#define ADC_SET_FLUSH_RX		BIT(30)
+#define ADC_SET_SEQ_MODE_MASK		BIT(13)
+#define ADC_SET_INPUT_MODE_MASK		BIT(5)
+#define ADC_SET_THRESHOLD_MASK		(0x3F000000)
+#define ADC_SET_THRESHOLD_POS		24
+#define ADC_SET_SEQ_ENTRIES_MASK	(0x003F0000)
+#define ADC_SET_SEQ_ENTRIES_POS		16
+
+/* ADC_CTRL register */
+#define ADC_CTRL_CLR_DATA_A		BIT(16)
+#define ADC_CTRL_SEQ_TABLE_RST		BIT(6)
+#define ADC_CTRL_SEQ_PTR_RST		BIT(5)
+#define ADC_CTRL_SEQ_START		BIT(4)
+#define ADC_CTRL_CLK_ENABLE		BIT(2)
+#define ADC_CTRL_INT_CLR_ALL		(0x000F0000)
+#define ADC_CTRL_INT_MASK_ALL		(0x00000F00)
+
+#define ADC_CTRL_ENABLE			BIT(1)
+#define ADC_CTRL_DISABLE		(0x0)
+
+/* ADC_INTSTAT register */
+#define ADC_INTSTAT_SEQERROR		BIT(3)
+#define ADC_INTSTAT_UNDERFLOW		BIT(2)
+#define ADC_INTSTAT_OVERFLOW		BIT(1)
+#define ADC_INTSTAT_DATA_A		BIT(0)
 
 #define ADC_STATE_CLOSED        0
 #define ADC_STATE_DISABLED      1
@@ -107,10 +110,6 @@ extern "C" {
 #define ADC_CMD_RESET_CALIBRATION 2
 #define ADC_CMD_START_CALIBRATION 3
 #define ADC_CMD_LOAD_CALIBRATION 4
-
-/* ADC control commands */
-#define IO_ADC0_FS (32)
-#define IO_ADC0_SE (32)
 
 #define IO_ADC_SET_CLK_DIVIDER          (0x20)
 #define IO_ADC_SET_CONFIG               (0x21)
@@ -130,10 +129,20 @@ extern "C" {
 #define IO_ADC_SEQ_MODE_REPETITIVE    1
 
 #define ENABLE_SSS_INTERRUPTS           ~(0x01 << 8)
-#define ENABLE_ADC (ADC_INT_ENABLE | ADC_CLK_ENABLE | ADC_SEQ_TABLE_RST)
-#define START_ADC_SEQ (ADC_SEQ_START | ADC_ENABLE | ADC_CLK_ENABLE)
-#define RESUME_ADC_CAPTURE (ADC_INT_DSB|ADC_CLK_ENABLE|ADC_SEQ_PTR_RST)
-#define FLUSH_ADC_ERRORS (ADC_INT_DSB|ADC_CLK_ENABLE|ADC_CLR_OVERFLOW|ADC_CLR_UNDRFLOW)
+
+#define ENABLE_ADC \
+	( \
+	 ADC_CTRL_CLK_ENABLE \
+	 | ADC_CTRL_SEQ_TABLE_RST \
+	 | ADC_CTRL_SEQ_PTR_RST \
+	)
+
+#define START_ADC_SEQ \
+	( \
+	   ADC_CTRL_SEQ_START \
+	 | ADC_CTRL_ENABLE \
+	 | ADC_CTRL_CLK_ENABLE \
+	)
 
 #define DW_CHANNEL_COUNT	19
 
@@ -155,7 +164,7 @@ extern "C" {
 #define ss_adc_data_to_mv(_data_, _resolution_) \
 	((_data_ * ADC_VREF) / (1 << _resolution_))
 
-typedef void (*adc_dw_config_t)(void);
+typedef void (*adc_intel_quark_se_c1000_ss_config_t)(void);
 /** @brief ADC configuration
  * This structure defines the ADC configuration values
  * that define the ADC hardware instance and configuration.
@@ -181,7 +190,7 @@ struct adc_config {
 	/**Clock ratio*/
 	u32_t clock_ratio;
 	/**Config handler*/
-	adc_dw_config_t config_func;
+	adc_intel_quark_se_c1000_ss_config_t config_func;
 };
 
 /**@brief ADC information and data.
@@ -203,28 +212,15 @@ struct adc_info {
 	u8_t  state;
 	/**Sequence size*/
 	u8_t seq_size;
-#ifdef CONFIG_ADC_DW_CALIBRATION
+#ifdef CONFIG_ADC_INTEL_QUARK_SE_C1000_SS_CALIBRATION
 	/**Calibration value*/
 	u8_t calibration_value;
 #endif
 
 };
 
-/**
- *
- * @brief ADC Initialization function.
- *
- * Inits device model for the ADC IP from Dataware.
- *
- * @param dev Pointer to the device structure descriptor that
- * will be initialized.
- *
- * @return Integer: 0 for success, error otherwise.
- */
-int adc_dw_init(struct device *dev);
-
 #ifdef __cplusplus
 }
 #endif
 
-#endif  /*  ZEPHYR_DRIVERS_ADC_ADC_DW_H_ */
+#endif  /*  ZEPHYR_DRIVERS_ADC_ADC_INTEL_QUARK_SE_C1000_SS_H_ */

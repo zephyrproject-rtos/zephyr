@@ -123,7 +123,7 @@ endif
 endif # I2C
 
 if ADC
-config ADC_DW
+config ADC_INTEL_QUARK_SE_C1000_SS
 	default y
 endif
 
