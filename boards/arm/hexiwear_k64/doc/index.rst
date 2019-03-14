@@ -152,91 +152,103 @@ HCI, and the remaining are not used.
 Programming and Debugging
 *************************
 
-The Hexiwear docking station includes the :ref:`nxp_opensda` serial and debug
-adapter built into the board to provide debugging, flash programming, and
-serial communication over USB.
+Build and flash applications as usual (see :ref:`build_an_application` and
+:ref:`application_run` for more details).
 
-To use the pyOCD tools with OpenSDA, follow the instructions in the
-:ref:`nxp_opensda_pyocd` page using the `DAPLink Hexiwear Firmware`_. The pyOCD
-tools are the default for this board, therefore it is not necessary to set
-``OPENSDA_FW=daplink`` explicitly when using the default flash and debug
-mechanisms.
+Configuring a Debug Probe
+=========================
 
-With these mechanisms, applications for the ``hexiwear_k64`` board
-configuration can be built and flashed in the usual way (see
-:ref:`build_an_application` and :ref:`application_run` for more
-details).
-
-To use the Segger J-Link tools with OpenSDA, follow the instructions in the
-:ref:`nxp_opensda_jlink` page using the `Segger J-Link OpenSDA V2.1 Firmware`_.
-The Segger J-Link tools are not the default for this board, therefore it is
-necessary to set ``OPENSDA_FW=jlink`` explicitly in the environment before
-programming and debugging.
+A debug probe is used for both flashing and debugging the board. This board is
+configured by default to use the :ref:`opensda-daplink-onboard-debug-probe`,
+but because Segger RTT is required for a console on KW40Z, we recommend that
+you reconfigure the board for the :ref:`opensda-jlink-onboard-debug-probe`.
 
 .. note::
-   The OpenSDA adapter is shared between the K64 and the KW40Z via switches,
-   therefore only one SoC can be flashed, debugged, or have an open console at
-   a time.
+   OpenSDA is shared between the K64 and the KW40Z via switches, therefore only
+   one SoC can be flashed, debugged, or have an open console at a time.
 
-Configure the docking station switches to route the desired SoC signals to the
-OpenSDA adapter:
+Option 1: :ref:`opensda-jlink-onboard-debug-probe` (Recommended)
+----------------------------------------------------------------
 
-+--------+-------------+-------+-----+
-| Switch | Signal      | KW40Z | K64 |
-+========+=============+=======+=====+
-| 1      | MK64 SWDIO  | OFF   | ON  |
-+--------+-------------+-------+-----+
-| 2      | MK64 RST    | OFF   | ON  |
-+--------+-------------+-------+-----+
-| 3      | MKW40 RST   | ON    | OFF |
-+--------+-------------+-------+-----+
-| 4      | MKW40 SWDIO | ON    | OFF |
-+--------+-------------+-------+-----+
-| 5      | OSDA        | ON    | ON  |
-+--------+-------------+-------+-----+
-| 6      | LED1        | OFF   | OFF |
-+--------+-------------+-------+-----+
-| 7      | LED2        | OFF   | OFF |
-+--------+-------------+-------+-----+
-| 8      | LED3        | OFF   | OFF |
-+--------+-------------+-------+-----+
+Install the :ref:`jlink-debug-host-tools` and make sure they are in your search
+path.
 
-Flashing
-========
+Follow the instructions in :ref:`opensda-jlink-onboard-debug-probe` to program
+the `OpenSDA J-Link Generic Firmware for V2.1 Bootloader`_. Check that switches
+SW1 and SW2 are **on**, and SW3 and SW4 are **off**  to ensure K64F SWD signals
+are connected to the OpenSDA microcontroller.
 
-This example uses the :ref:`hello_world` sample with the
-:ref:`nxp_opensda_pyocd` tools.
+Option 2: :ref:`opensda-daplink-onboard-debug-probe`
+----------------------------------------------------
+
+Install the :ref:`pyocd-debug-host-tools` and make sure they are in your search
+path.
+
+Follow the instructions in :ref:`opensda-daplink-onboard-debug-probe` to
+program the `OpenSDA DAPLink Hexiwear Firmware`_. Check that switches SW1 and
+SW2 are **on**, and SW3 and SW4 are **off**  to ensure K64F SWD signals are
+connected to the OpenSDA microcontroller.
+
+Add the argument ``-DOPENSDA_FW=daplink`` when you invoke ``cmake`` or ``west
+build`` to override the default runner from J-Link to pyOCD:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: hexiwear_k64
-   :goals: flash
+   :gen-args: -DOPENSDA_FW=daplink
+   :goals: build
 
-Open a serial terminal (minicom, putty, etc.) with the following settings:
+Configuring a Console
+=====================
+
+Regardless of your choice in debug probe, we will use the OpenSDA
+microcontroller as a usb-to-serial adapter for the serial console.
+
+Connect a USB cable from your PC to CN1.
+
+Use the following settings with your serial terminal of choice (minicom, putty,
+etc.):
 
 - Speed: 115200
 - Data: 8 bits
 - Parity: None
 - Stop bits: 1
 
-Reset the board and you should be able to see on the corresponding Serial Port
-the following message:
+Flashing
+========
 
-.. code-block:: console
-
-   Hello World! arm
-
-Debugging
-=========
-
-You can debug an application in the usual way.  Here is an example for the
-:ref:`hello_world` application.
+Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: hexiwear_k64
-   :maybe-skip-config:
+   :goals: flash
+
+Open a serial terminal, reset the board (press the T4 button), and you should
+see the following message in the terminal:
+
+.. code-block:: console
+
+   ***** Booting Zephyr OS v1.14.0-rc1 *****
+   Hello World! hexiwear_k64
+
+Debugging
+=========
+
+Here is an example for the :ref:`hello_world` application.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: hexiwear_k64
    :goals: debug
+
+Open a serial terminal, step through the application in your debugger, and you
+should see the following message in the terminal:
+
+.. code-block:: console
+
+   ***** Booting Zephyr OS v1.14.0-rc1 *****
+   Hello World! hexiwear_k64
 
 Using Bluetooth
 ***************
@@ -298,11 +310,11 @@ will then see a plot of the heart rate data that updates once per second.
 .. _K64F Reference Manual:
    https://www.nxp.com/docs/en/reference-manual/K64P144M120SF5RM.pdf
 
-.. _DAPLink Hexiwear Firmware:
-   https://github.com/MikroElektronika/HEXIWEAR/blob/master/HW/HEXIWEAR_DockingStation/HEXIWEAR_DockingStation_DAPLINK_FW.bin
+.. _OpenSDA J-Link Generic Firmware for V2.1 Bootloader:
+   https://www.segger.com/downloads/jlink/OpenSDA_V2_1
 
-.. _Segger J-Link OpenSDA V2.1 Firmware:
-   https://www.segger.com/downloads/jlink/OpenSDA_V2_1.bin
+.. _OpenSDA DAPLink Hexiwear Firmware:
+   https://github.com/MikroElektronika/HEXIWEAR/blob/master/HW/HEXIWEAR_DockingStation/HEXIWEAR_DockingStation_DAPLINK_FW.bin
 
 .. _KW40Z Connectivity Software:
    https://www.nxp.com/webapp/Download?colCode=KW40Z-CONNECTIVITY-SOFTWARE&appType=license&location=null&fpsp=1&WT_TYPE=Protocol%20Stacks&WT_VENDOR=FREESCALE&WT_FILE_FORMAT=exe&WT_ASSET=Downloads&fileExt=.exe&Parent_nodeId=1432854896956716810497&Parent_pageType=product
