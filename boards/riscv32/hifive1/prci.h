@@ -7,8 +7,8 @@
 #ifndef _SIFIVE_PRCI_H
 #define _SIFIVE_PRCI_H
 
-#define _REG32(p, i) (*(volatile uint32_t *) ((p) + (i)))
-#define PRCI_REG(offset) _REG32(PRCI_BASE_ADDR, offset)
+#define Z_REG32(p, i) (*(volatile uint32_t *) ((p) + (i)))
+#define PRCI_REG(offset) Z_REG32(PRCI_BASE_ADDR, offset)
 
 /* Register offsets */
 

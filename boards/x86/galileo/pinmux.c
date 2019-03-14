@@ -482,7 +482,7 @@ static struct mux_path _galileo_path[PINMUX_NUM_PINS * NUM_PIN_FUNCS] = {
 			     { NONE,  0, DONT_CARE, (GPIO_DIR_IN)  } } },
 };
 
-int _galileo_pinmux_set_pin(struct device *port, u8_t pin, u32_t func)
+int z_galileo_pinmux_set_pin(struct device *port, u8_t pin, u32_t func)
 {
 	struct galileo_data * const drv_data = port->driver_data;
 
@@ -576,7 +576,7 @@ int _galileo_pinmux_set_pin(struct device *port, u8_t pin, u32_t func)
 	return 0;
 }
 
-int _galileo_pinmux_get_pin(struct device *port, u32_t pin, u32_t *func)
+int z_galileo_pinmux_get_pin(struct device *port, u32_t pin, u32_t *func)
 {
 	struct galileo_data * const drv_data = port->driver_data;
 	struct pin_config *mux_config = drv_data->mux_config;
@@ -662,7 +662,7 @@ static int pinmux_set(struct device *dev,
 		return -EINVAL;
 	}
 
-	return _galileo_pinmux_set_pin(dev, pin, func);
+	return z_galileo_pinmux_set_pin(dev, pin, func);
 }
 
 static int pinmux_get(struct device *dev,
@@ -673,7 +673,7 @@ static int pinmux_get(struct device *dev,
 		return -EINVAL;
 	}
 
-	return _galileo_pinmux_get_pin(dev, pin, func);
+	return z_galileo_pinmux_get_pin(dev, pin, func);
 }
 
 static struct pinmux_driver_api api_funcs = {
@@ -733,7 +733,7 @@ static int pinmux_galileo_initialize(struct device *port)
 	 * from the above mapping as selected by the end user
 	 */
 	for (i = 0; i < PINMUX_NUM_PINS; i++) {
-		_galileo_pinmux_set_pin(port,
+		z_galileo_pinmux_set_pin(port,
 				 mux_config[i].pin_num,
 				 mux_config[i].mode);
 	}
