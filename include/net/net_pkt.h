@@ -99,7 +99,9 @@ struct net_pkt {
 	struct net_linkaddr lladdr_src;
 	struct net_linkaddr lladdr_dst;
 
-	u16_t data_len;         /* amount of payload data that can be added */
+#if defined(CONFIG_NET_TCP)
+	sys_snode_t sent_list;
+#endif
 
 	u8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
 
@@ -141,10 +143,6 @@ struct net_pkt {
 					     * AF_UNSPEC.
 					     */
 	};
-
-#if defined(CONFIG_NET_TCP)
-	sys_snode_t sent_list;
-#endif
 
 	union {
 		/* IPv6 hop limit or IPv4 ttl for this network packet.
