@@ -94,6 +94,14 @@ z_arch_switch_to_main_thread(struct k_thread *main_thread,
 
 	/* the ready queue cache already contains the main thread */
 
+#ifdef CONFIG_ARM_MPU
+	/*
+	 * If stack protection is enabled, make sure to set it
+	 * before jumping to thread entry function
+	 */
+	z_arch_configure_dynamic_mpu_regions(main_thread);
+#endif
+
 #if defined(CONFIG_BUILTIN_STACK_GUARD)
 	/* Set PSPLIM register for built-in stack guarding of main thread. */
 #if defined(CONFIG_CPU_CORTEX_M_HAS_SPLIM)
@@ -105,13 +113,6 @@ z_arch_switch_to_main_thread(struct k_thread *main_thread,
 
 	__set_PSP((u32_t)start_of_main_stack);
 	unlock_interrupts();
-#ifdef CONFIG_ARM_MPU
-	/*
-	 * If stack protection is enabled, make sure to set it
-	 * before jumping to thread entry function
-	 */
-	z_arch_configure_dynamic_mpu_regions(main_thread);
-#endif
 	z_thread_entry(_main, 0, 0, 0);
 	CODE_UNREACHABLE;
 }
