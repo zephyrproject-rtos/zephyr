@@ -406,10 +406,10 @@ static void _printk_hex_ulong(out_func_t out, void *ctx,
 	int remaining = 16; /* 16 digits max */
 	int digits = 0;
 
-	for (; size; size--) {
+	for (; size != 0; size--) {
 		char nibble = (num >> ((size - 1) << 2) & 0xf);
 
-		if (nibble || found_largest_digit || size == 1) {
+		if (nibble != 0 || found_largest_digit != 0 || size == 1) {
 			found_largest_digit = 1;
 			nibble += nibble > 9 ? 87 : 48;
 			out((int)nibble, ctx);
@@ -459,7 +459,7 @@ static void _printk_dec_ulong(out_func_t out, void *ctx,
 	}
 
 	while (pos >= 9) {
-		if (found_largest_digit || remainder > pos) {
+		if (found_largest_digit != 0 || remainder > pos) {
 			found_largest_digit = 1;
 			out((int)((remainder / (pos + 1)) + 48), ctx);
 			digits++;
@@ -490,7 +490,7 @@ struct str_context {
 
 static int str_out(int c, struct str_context *ctx)
 {
-	if (!ctx->str || ctx->count >= ctx->max) {
+	if (ctx->str == NULL || ctx->count >= ctx->max) {
 		ctx->count++;
 		return c;
 	}
