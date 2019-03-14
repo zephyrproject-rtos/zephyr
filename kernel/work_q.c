@@ -79,7 +79,7 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 	int err = 0;
 
 	/* Work cannot be active in multiple queues */
-	if (work->work_q && work->work_q != work_q) {
+	if (work->work_q != NULL && work->work_q != work_q) {
 		err = -EADDRINUSE;
 		goto done;
 	}
@@ -98,7 +98,7 @@ int k_delayed_work_submit_to_queue(struct k_work_q *work_q,
 	/* Submit work directly if no delay.  Note that this is a
 	 * blocking operation, so release the lock first.
 	 */
-	if (!delay) {
+	if (delay == 0) {
 		k_spin_unlock(&lock, key);
 		k_work_submit_to_queue(work_q, &work->work);
 		return 0;

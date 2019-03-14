@@ -101,7 +101,7 @@ Z_SYSCALL_HANDLER(k_msgq_alloc_init, q, msg_size, max_msgs)
 
 void k_msgq_cleanup(struct k_msgq *q)
 {
-	__ASSERT_NO_MSG(!z_waitq_head(&q->wait_q));
+	__ASSERT_NO_MSG(z_waitq_head(&q->wait_q) == NULL);
 
 	if ((q->flags & K_MSGQ_FLAG_ALLOC) != 0) {
 		k_free(q->buffer_start);
