@@ -46,7 +46,7 @@ extern void z_SysFatalErrorHandler(unsigned int reason, const NANO_ESF *esf);
 #define Z_ARCH_EXCEPT(reason_p) do { \
 	__asm__ volatile ( \
 		"cpsie i\n\t" \
-		"mov r0, %[reason]\n\t" \
+		"movs r0, %[reason]\n\t" \
 		"svc %[id]\n\t" \
 		: \
 		: [reason] "i" (reason_p), [id] "i" (_SVC_CALL_RUNTIME_EXCEPT) \
