@@ -42,19 +42,6 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 	_CpuIdleInit();
 }
 
-static ALWAYS_INLINE void unlock_interrupts(void)
-{
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	__enable_irq();
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-	__enable_irq();
-	__enable_fault_irq();
-	__set_BASEPRI(0);
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-}
-
 static ALWAYS_INLINE void
 z_arch_switch_to_main_thread(struct k_thread *main_thread,
 			    k_thread_stack_t *main_stack,
@@ -111,9 +98,31 @@ z_arch_switch_to_main_thread(struct k_thread *main_thread,
 #endif
 #endif /* CONFIG_BUILTIN_STACK_GUARD */
 
-	__set_PSP((u32_t)start_of_main_stack);
-	unlock_interrupts();
-	z_thread_entry(_main, 0, 0, 0);
+	/*
+	 * Set PSP to the highest address of the main stack
+	 * before enabling interrupts and jumping to main.
+	 */
+	__asm__ volatile (
+	"mov   r0,  %0     \n\t"   /* Store _main in R0 */
+	"msr   PSP, %1     \n\t"   /* __set_PSP(start_of_main_stack) */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+	"cpsie i           \n\t"   /* __enable_irq() */
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	"cpsie if          \n\t"   /* __enable_irq(); __enable_fault_irq() */
+	"mov   r1,  #0     \n\t"
+	"msr   BASEPRI, r1 \n\t"   /* __set_BASEPRI(0) */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+	"isb               \n\t"
+	"mov r1, #0        \n\t"
+	"mov r2, #0        \n\t"
+	"mov r3, #0        \n\t"
+	"bl z_thread_entry \n\t"   /* z_thread_entry(_main, 0, 0, 0); */
+	:
+	: "r" (_main), "r" (start_of_main_stack)
+	);
+
 	CODE_UNREACHABLE;
 }
 
