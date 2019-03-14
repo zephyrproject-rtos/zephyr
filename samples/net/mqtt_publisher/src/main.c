@@ -107,9 +107,12 @@ static void clear_fds(void)
 
 static void wait(int timeout)
 {
+	int err;
+
 	if (nfds > 0) {
-		if (poll(fds, nfds, timeout) < 0) {
-			printk("poll error: %d\n", errno);
+		err = poll(fds, nfds, timeout);
+		if (err < 0) {
+			printk("poll error: %d\n", err);
 		}
 	}
 }
