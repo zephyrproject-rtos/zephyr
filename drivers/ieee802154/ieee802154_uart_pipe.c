@@ -127,7 +127,7 @@ static u8_t *upipe_rx(u8_t *buf, size_t *off)
 	if (upipe->rx_len == upipe->rx_off) {
 		struct net_buf *frag;
 
-		pkt = net_pkt_get_reserve_rx(K_NO_WAIT);
+		pkt = net_pkt_rx_alloc(K_NO_WAIT);
 		if (!pkt) {
 			LOG_DBG("No pkt available");
 			goto flush;
