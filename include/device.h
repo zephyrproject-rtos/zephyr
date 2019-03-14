@@ -592,10 +592,10 @@ int device_pm_put_sync(struct device *dev);
 #else
 static inline void device_pm_enable(struct device *dev) { }
 static inline void device_pm_disable(struct device *dev) { }
-static inline int device_pm_get(struct device *dev) { return 0; }
-static inline int device_pm_get_sync(struct device *dev) { return 0; }
-static inline int device_pm_put(struct device *dev) { return 0; }
-static inline int device_pm_put_sync(struct device *dev) { return 0; }
+static inline int device_pm_get(struct device *dev) { return -ENOTSUP; }
+static inline int device_pm_get_sync(struct device *dev) { return -ENOTSUP; }
+static inline int device_pm_put(struct device *dev) { return -ENOTSUP; }
+static inline int device_pm_put_sync(struct device *dev) { return -ENOTSUP; }
 #endif
 
 #endif
