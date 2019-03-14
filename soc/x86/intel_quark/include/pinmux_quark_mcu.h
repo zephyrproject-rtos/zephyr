@@ -34,7 +34,7 @@
 #define PIN_CONFIG(A, _pin, _func) \
 	(A[((_pin) / 16)] |= ((0x3 & (_func)) << (((_pin) % 16) * 2)))
 
-static inline int _quark_mcu_set_mux(u32_t base, u32_t pin, u8_t func)
+static inline int z_quark_mcu_set_mux(u32_t base, u32_t pin, u8_t func)
 {
 	/*
 	 * the registers are 32-bit wide, but each pin requires 1 bit
