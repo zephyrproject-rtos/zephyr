@@ -291,3 +291,15 @@ DEVICE_AND_API_INIT(gpio_sam0_2, DT_ATMEL_SAM0_GPIO_PORT_C_LABEL,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sam0_api);
 #endif
+
+/* Port D */
+#ifdef DT_ATMEL_SAM0_GPIO_PORT_D_BASE_ADDRESS
+
+static const struct gpio_sam0_config gpio_sam0_config_3 = {
+	.regs = (PortGroup *)DT_ATMEL_SAM0_GPIO_PORT_D_BASE_ADDRESS,
+};
+
+DEVICE_AND_API_INIT(gpio_sam0_3, DT_ATMEL_SAM0_GPIO_PORT_D_LABEL, gpio_sam0_init,
+		    NULL, &gpio_sam0_config_3, POST_KERNEL,
+		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam0_api);
+#endif
