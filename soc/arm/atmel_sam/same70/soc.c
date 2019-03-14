@@ -234,7 +234,7 @@ static int atmel_same70_init(struct device *arg)
 	}
 
 	/* Clear all faults */
-	_ClearFaults();
+	z_clearfaults();
 
 	/*
 	 * Set FWS (Flash Wait State) value before increasing Master Clock

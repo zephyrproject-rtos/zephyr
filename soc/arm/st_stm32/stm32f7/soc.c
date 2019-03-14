@@ -37,7 +37,7 @@ static int st_stm32f7_init(struct device *arg)
 		SCB_EnableDCache();
 	}
 
-	_ClearFaults();
+	z_clearfaults();
 
 	/* Install default handler that simply resets the CPU
 	 * if configured in the kernel, NOP otherwise

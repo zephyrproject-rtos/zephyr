@@ -24,7 +24,7 @@ static int quark_se_arc_init(struct device *arg)
 {
 	ARG_UNUSED(arg);
 
-	_quark_se_ss_ready();
+	quark_se_ss_ready();
 
 	return 0;
 }

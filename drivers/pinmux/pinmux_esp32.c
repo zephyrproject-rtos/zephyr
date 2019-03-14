@@ -112,7 +112,7 @@ static int pinmux_pullup(struct device *dev, u32_t pin, u8_t func)
 	return -EINVAL;
 }
 
-#define CFG(id)   ((GPIO_ ## id ## _REG) & 0xff)
+#define CFG(id)   ((GPIO_ ## id ## Z_REG) & 0xff)
 static int pinmux_input(struct device *dev, u32_t pin, u8_t func)
 {
 	static const u8_t offs[2][3] = {

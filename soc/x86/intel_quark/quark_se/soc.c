@@ -62,7 +62,7 @@ MMU_BOOT_REGION(0xB0500000, 256*1024, MMU_ENTRY_WRITE);
  * @return N/A
  */
 /* This function is also called at deep sleep resume. */
-int _arc_init(struct device *arg)
+int z_arc_init(struct device *arg)
 {
 	u32_t *reset_vector;
 
@@ -108,7 +108,7 @@ skip_arc_init:
 	return 0;
 }
 
-SYS_INIT(_arc_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(z_arc_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 
 #endif /*CONFIG_ARC_INIT*/
 
