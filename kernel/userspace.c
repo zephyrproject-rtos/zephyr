@@ -558,19 +558,19 @@ int z_object_validate(struct _k_object *ko, enum k_objects otype,
 	/* Manipulation of any kernel objects by a user thread requires that
 	 * thread be granted access first, even for uninitialized objects
 	 */
-	if (unlikely(!thread_perms_test(ko))) {
+	if (unlikely(thread_perms_test(ko) == 0)) {
 		return -EPERM;
 	}
 
 	/* Initialization state checks. _OBJ_INIT_ANY, we don't care */
 	if (likely(init == _OBJ_INIT_TRUE)) {
 		/* Object MUST be intialized */
-		if (unlikely(!(ko->flags & K_OBJ_FLAG_INITIALIZED))) {
+		if (unlikely((ko->flags & K_OBJ_FLAG_INITIALIZED) == 0)) {
 			return -EINVAL;
 		}
 	} else if (init < _OBJ_INIT_TRUE) { /* _OBJ_INIT_FALSE case */
 		/* Object MUST NOT be initialized */
-		if (unlikely(ko->flags & K_OBJ_FLAG_INITIALIZED)) {
+		if (unlikely((ko->flags & K_OBJ_FLAG_INITIALIZED) != 0)) {
 			return -EADDRINUSE;
 		}
 	} else {
