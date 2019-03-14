@@ -880,13 +880,6 @@ static inline bool net_pkt_is_being_overwritten(struct net_pkt *pkt)
  * buffer usage.
  */
 
-struct net_pkt *net_pkt_get_reserve_debug(struct k_mem_slab *slab,
-					  s32_t timeout,
-					  const char *caller,
-					  int line);
-#define net_pkt_get_reserve(slab, timeout)				\
-	net_pkt_get_reserve_debug(slab, timeout, __func__, __LINE__)
-
 struct net_buf *net_pkt_get_reserve_data_debug(struct net_buf_pool *pool,
 					       s32_t timeout,
 					       const char *caller,
@@ -894,28 +887,6 @@ struct net_buf *net_pkt_get_reserve_data_debug(struct net_buf_pool *pool,
 
 #define net_pkt_get_reserve_data(pool, timeout)				\
 	net_pkt_get_reserve_data_debug(pool, timeout, __func__, __LINE__)
-
-struct net_pkt *net_pkt_get_rx_debug(struct net_context *context,
-				     s32_t timeout,
-				     const char *caller, int line);
-#define net_pkt_get_rx(context, timeout)				\
-	net_pkt_get_rx_debug(context, timeout, __func__, __LINE__)
-
-struct net_pkt *net_pkt_get_tx_debug(struct net_context *context,
-				     s32_t timeout,
-				     const char *caller, int line);
-#define net_pkt_get_tx(context, timeout)				\
-	net_pkt_get_tx_debug(context, timeout, __func__, __LINE__)
-
-struct net_pkt *net_pkt_get_reserve_rx_debug(s32_t timeout,
-					     const char *caller, int line);
-#define net_pkt_get_reserve_rx(timeout)					\
-	net_pkt_get_reserve_rx_debug(timeout, __func__, __LINE__)
-
-struct net_pkt *net_pkt_get_reserve_tx_debug(s32_t timeout,
-					     const char *caller, int line);
-#define net_pkt_get_reserve_tx(timeout)					\
-	net_pkt_get_reserve_tx_debug(timeout, __func__, __LINE__)
 
 struct net_buf *net_pkt_get_reserve_rx_data_debug(s32_t timeout,
 						  const char *caller,
@@ -983,97 +954,6 @@ void net_pkt_frag_insert_debug(struct net_pkt *pkt, struct net_buf *frag,
 void net_pkt_print_frags(struct net_pkt *pkt);
 #else
 #define net_pkt_print_frags(pkt)
-#endif
-
-/**
- * @brief Get packet from the given packet slab.
- *
- * @details Get network packet from the specific packet slab.
- *
- * @param slab Network packet slab.
- * @param timeout Affects the action taken should the net pkt slab be empty.
- *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
- *        wait as long as necessary. Otherwise, wait up to the specified
- *        number of milliseconds before timing out.
- *
- * @return Network packet if successful, NULL otherwise.
- */
-#if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
-				    s32_t timeout);
-#endif
-
-/**
- * @brief Get packet from the RX packet slab.
- *
- * @details Get network packet from RX packet slab. You must have
- * network context before able to use this function.
- *
- * @param context Network context that will be related to this packet.
- * @param timeout Affects the action taken should the net pkt slab be empty.
- *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
- *        wait as long as necessary. Otherwise, wait up to the specified
- *        number of milliseconds before timing out.
- *
- * @return Network packet if successful, NULL otherwise.
- */
-#if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_pkt *net_pkt_get_rx(struct net_context *context,
-			       s32_t timeout);
-#endif
-
-/**
- * @brief Get packet from the TX packets slab.
- *
- * @details Get network packet from TX packet slab. You must have
- * network context before able to use this function.
- *
- * @param context Network context that will be related to
- * this packet.
- * @param timeout Affects the action taken should the net pkt slab be empty.
- *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
- *        wait as long as necessary. Otherwise, wait up to the specified
- *        number of milliseconds before timing out.
- *
- * @return Network packet if successful, NULL otherwise.
- */
-#if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_pkt *net_pkt_get_tx(struct net_context *context,
-			       s32_t timeout);
-#endif
-
-/**
- * @brief Get RX packet from slab
- *
- * @details Normally this version is not useful for applications
- * but is mainly used by network fragmentation code.
- *
- * @param timeout Affects the action taken should the net pkt slab be empty.
- *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
- *        wait as long as necessary. Otherwise, wait up to the specified
- *        number of milliseconds before timing out.
- *
- * @return Network packet if successful, NULL otherwise.
- */
-#if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_pkt *net_pkt_get_reserve_rx(s32_t timeout);
-#endif
-
-/**
- * @brief Get TX packet from slab
- *
- * @details Normally this version is not useful for applications
- * but is mainly used by network fragmentation code.
- *
- * @param timeout Affects the action taken should the net pkt slab be empty.
- *        If K_NO_WAIT, then return immediately. If K_FOREVER, then
- *        wait as long as necessary. Otherwise, wait up to the specified
- *        number of milliseconds before timing out.
- *
- * @return Network packet if successful, NULL otherwise.
- */
-#if !defined(NET_PKT_DEBUG_ENABLED)
-struct net_pkt *net_pkt_get_reserve_tx(s32_t timeout);
 #endif
 
 /**

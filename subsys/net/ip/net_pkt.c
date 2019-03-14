@@ -359,52 +359,6 @@ void net_pkt_print_frags(struct net_pkt *pkt)
 #endif /* CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-
-struct net_pkt *net_pkt_get_reserve_debug(struct k_mem_slab *slab,
-					  s32_t timeout,
-					  const char *caller,
-					  int line)
-#else /* #if NET_LOG_LEVEL >= LOG_LEVEL_DBG */
-struct net_pkt *net_pkt_get_reserve(struct k_mem_slab *slab,
-				    s32_t timeout)
-#endif /* #if NET_LOG_LEVEL >= LOG_LEVEL_DBG */
-{
-	struct net_pkt *pkt;
-	int ret;
-
-	if (k_is_in_isr()) {
-		ret = k_mem_slab_alloc(slab, (void **)&pkt, K_NO_WAIT);
-	} else {
-		ret = k_mem_slab_alloc(slab, (void **)&pkt, timeout);
-	}
-
-	if (ret) {
-		return NULL;
-	}
-
-	(void)memset(pkt, 0, sizeof(struct net_pkt));
-
-	pkt->atomic_ref = ATOMIC_INIT(1);
-	pkt->slab = slab;
-
-	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		net_pkt_set_ipv6_next_hdr(pkt, 255);
-	}
-
-	net_pkt_set_priority(pkt, CONFIG_NET_TX_DEFAULT_PRIORITY);
-	net_pkt_set_vlan_tag(pkt, NET_VLAN_TAG_UNSPEC);
-
-	net_pkt_alloc_add(pkt, true, caller, line);
-
-#if CONFIG_NET_PKT_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_DBG("%s [%u] pkt %p ref %d (%s():%d)",
-		slab2str(slab), k_mem_slab_num_free_get(slab),
-		pkt, atomic_get(&pkt->atomic_ref), caller, line);
-#endif
-	return pkt;
-}
-
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 struct net_buf *net_pkt_get_reserve_data_debug(struct net_buf_pool *pool,
 					       s32_t timeout,
 					       const char *caller,
@@ -489,18 +443,6 @@ struct net_buf *net_pkt_get_frag(struct net_pkt *pkt,
 }
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-struct net_pkt *net_pkt_get_reserve_rx_debug(s32_t timeout,
-					     const char *caller, int line)
-{
-	return net_pkt_get_reserve_debug(&rx_pkts, timeout, caller, line);
-}
-
-struct net_pkt *net_pkt_get_reserve_tx_debug(s32_t timeout,
-					     const char *caller, int line)
-{
-	return net_pkt_get_reserve_debug(&tx_pkts, timeout, caller, line);
-}
-
 struct net_buf *net_pkt_get_reserve_rx_data_debug(s32_t timeout,
 						  const char *caller, int line)
 {
@@ -515,16 +457,6 @@ struct net_buf *net_pkt_get_reserve_tx_data_debug(s32_t timeout,
 
 #else /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 
-struct net_pkt *net_pkt_get_reserve_rx(s32_t timeout)
-{
-	return net_pkt_get_reserve(&rx_pkts, timeout);
-}
-
-struct net_pkt *net_pkt_get_reserve_tx(s32_t timeout)
-{
-	return net_pkt_get_reserve(&tx_pkts, timeout);
-}
-
 struct net_buf *net_pkt_get_reserve_rx_data(s32_t timeout)
 {
 	return net_pkt_get_reserve_data(&rx_bufs, timeout);
@@ -537,98 +469,6 @@ struct net_buf *net_pkt_get_reserve_tx_data(s32_t timeout)
 
 #endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 
-
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-static struct net_pkt *net_pkt_get_debug(struct k_mem_slab *slab,
-					 struct net_context *context,
-					 s32_t timeout,
-					 const char *caller, int line)
-#else
-static struct net_pkt *net_pkt_get(struct k_mem_slab *slab,
-				   struct net_context *context,
-				   s32_t timeout)
-#endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
-{
-	struct in6_addr *addr6 = NULL;
-	struct net_if *iface;
-	struct net_pkt *pkt;
-	sa_family_t family;
-
-	if (!context) {
-		return NULL;
-	}
-
-	iface = net_context_get_iface(context);
-	if (!iface) {
-		NET_ERR("Context has no interface");
-		return NULL;
-	}
-
-	if (net_context_get_family(context) == AF_INET6) {
-		addr6 = &((struct sockaddr_in6 *) &context->remote)->sin6_addr;
-	}
-
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	pkt = net_pkt_get_reserve_debug(slab, timeout, caller, line);
-#else
-	pkt = net_pkt_get_reserve(slab, timeout);
-#endif
-	if (!pkt) {
-		return NULL;
-	}
-
-	net_pkt_set_context(pkt, context);
-	net_pkt_set_iface(pkt, iface);
-	family = net_context_get_family(context);
-	net_pkt_set_family(pkt, family);
-
-#if defined(CONFIG_NET_CONTEXT_PRIORITY) && (NET_TC_COUNT > 1)
-	{
-		u8_t prio;
-
-		if (net_context_get_option(context, NET_OPT_PRIORITY, &prio,
-					   NULL) == 0) {
-			net_pkt_set_priority(pkt, prio);
-		}
-	}
-#endif /* CONFIG_NET_CONTEXT_PRIORITY */
-
-	if (slab != &rx_pkts) {
-		u16_t iface_len, data_len;
-		enum net_ip_protocol proto;
-
-		iface_len = data_len = net_if_get_mtu(iface);
-
-		if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
-			data_len = MAX(iface_len, NET_IPV6_MTU);
-			data_len -= NET_IPV6H_LEN;
-		}
-
-		if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
-			data_len = MAX(iface_len, NET_IPV4_MTU);
-			data_len -= NET_IPV4H_LEN;
-		}
-
-		proto = net_context_get_ip_proto(context);
-
-		if (IS_ENABLED(CONFIG_NET_TCP) && proto == IPPROTO_TCP) {
-			data_len -= NET_TCPH_LEN;
-			data_len -= NET_TCP_MAX_OPT_SIZE;
-		}
-
-		if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
-			data_len -= NET_UDPH_LEN;
-		}
-
-		if (proto == IPPROTO_ICMP || proto == IPPROTO_ICMPV6) {
-			data_len -= NET_ICMPH_LEN;
-		}
-
-		pkt->data_len = data_len;
-	}
-
-	return pkt;
-}
 
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 static inline struct k_mem_slab *get_tx_slab(struct net_context *context)
@@ -652,45 +492,6 @@ static inline struct net_buf_pool *get_data_pool(struct net_context *context)
 #define get_tx_slab(...) NULL
 #define get_data_pool(...) NULL
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
-
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-struct net_pkt *net_pkt_get_rx_debug(struct net_context *context,
-				     s32_t timeout,
-				     const char *caller, int line)
-{
-	return net_pkt_get_debug(&rx_pkts, context, timeout, caller, line);
-}
-
-struct net_pkt *net_pkt_get_tx_debug(struct net_context *context,
-				     s32_t timeout,
-				     const char *caller, int line)
-{
-	struct k_mem_slab *slab = get_tx_slab(context);
-
-	return net_pkt_get_debug(slab ? slab : &tx_pkts, context,
-				 timeout, caller, line);
-}
-
-#else /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
-
-struct net_pkt *net_pkt_get_rx(struct net_context *context, s32_t timeout)
-{
-	NET_ASSERT_INFO(context, "RX context not set");
-
-	return net_pkt_get(&rx_pkts, context, timeout);
-}
-
-struct net_pkt *net_pkt_get_tx(struct net_context *context, s32_t timeout)
-{
-	struct k_mem_slab *slab;
-
-	NET_ASSERT_INFO(context, "TX context not set");
-
-	slab = get_tx_slab(context);
-
-	return net_pkt_get(slab ? slab : &tx_pkts, context, timeout);
-}
-#endif /* NET_LOG_LEVEL >= LOG_LEVEL_DBG */
 
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
