@@ -235,7 +235,11 @@ void main(void)
 		printk("Error enabling callback!\n");
 	}
 
-	can_attach_isr(can_dev, rx_button_isr, &filter);
+	ret = can_attach_isr(can_dev, rx_button_isr, &filter);
+	if (ret == CAN_NO_FREE_FILTER) {
+		printk("Error, no filter available!\n");
+		return;
+	}
 
 	k_tid_t tx_tid = k_thread_create(&tx_thread_data, tx_thread_stack,
 					 K_THREAD_STACK_SIZEOF(tx_thread_stack),
