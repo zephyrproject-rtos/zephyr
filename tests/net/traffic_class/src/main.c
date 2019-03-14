@@ -267,7 +267,8 @@ static int eth_init(struct device *dev)
  */
 NET_DEVICE_INIT(eth_test, "eth_test", eth_init, &eth_context,
 		NULL, CONFIG_ETH_INIT_PRIORITY, &api_funcs,
-		DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2), 1500);
+		DUMMY_L2, NET_L2_GET_CTX_TYPE(DUMMY_L2),
+		NET_ETH_MTU);
 
 static void address_setup(void)
 {

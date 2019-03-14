@@ -142,8 +142,6 @@ struct eth_rx_desc {
 	u8_t *buf2_ptr;
 };
 
-#define ETH_DW_MTU 1500
-
 /* Driver metadata associated with each Ethernet device */
 struct eth_runtime {
 	u32_t base_addr;
@@ -156,7 +154,7 @@ struct eth_runtime {
 	/* Receive descriptor */
 	volatile struct eth_rx_desc rx_desc;
 	/* Receive DMA packet buffer */
-	volatile u8_t rx_buf[ETH_DW_MTU];
+	volatile u8_t rx_buf[NET_ETH_MTU];
 
 	union {
 		struct {

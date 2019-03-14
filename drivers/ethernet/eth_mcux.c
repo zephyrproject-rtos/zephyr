@@ -102,7 +102,7 @@ struct eth_context {
 	 * Note that we do not copy FCS into this buffer thus the
 	 * size is 1514 bytes.
 	 */
-	u8_t frame_buf[1500 + 14]; /* Max MTU + ethernet header size */
+	u8_t frame_buf[NET_ETH_MAX_FRAME_SIZE]; /* Max MTU + ethernet header */
 };
 
 static void eth_0_config_func(void);
@@ -1012,7 +1012,7 @@ static struct eth_context eth_0_context = {
 
 ETH_NET_DEVICE_INIT(eth_mcux_0, DT_ETH_MCUX_0_NAME, eth_0_init,
 		    &eth_0_context, NULL, CONFIG_ETH_INIT_PRIORITY,
-		    &api_funcs, 1500);
+		    &api_funcs, NET_ETH_MTU);
 
 static void eth_0_config_func(void)
 {
