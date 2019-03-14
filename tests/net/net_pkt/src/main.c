@@ -75,7 +75,8 @@ static const struct dummy_api fake_dev_api = {
 NET_DEVICE_INIT(fake_dev, "fake_dev",
 		fake_dev_init, NULL, NULL,
 		CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
-		&fake_dev_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE, 1500);
+		&fake_dev_api, _ETH_L2_LAYER, _ETH_L2_CTX_TYPE,
+		NET_ETH_MTU);
 
 /*********************\
  * UTILITY FUNCTIONS *

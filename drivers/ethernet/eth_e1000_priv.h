@@ -30,8 +30,6 @@ extern "C" {
 #define RDESC_STA_DD	     (1) /* Descriptor Done */
 #define TDESC_STA_DD	     (1) /* Descriptor Done */
 
-#define E1000_MTU 1500
-
 #define ETH_ALEN 6	/* TODO: Add a global reusable definition in OS */
 
 enum e1000_reg_t {
@@ -82,8 +80,8 @@ struct e1000_dev {
 	struct pci_dev_info pci;
 	struct net_if *iface;
 	u8_t mac[ETH_ALEN];
-	u8_t txb[E1000_MTU];
-	u8_t rxb[E1000_MTU];
+	u8_t txb[NET_ETH_MTU];
+	u8_t rxb[NET_ETH_MTU];
 };
 
 static const char *e1000_reg_to_string(enum e1000_reg_t r)

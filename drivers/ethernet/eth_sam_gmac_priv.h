@@ -19,7 +19,7 @@
  */
 #define GMAC_MULTIPLE_TX_PACKETS 0
 
-#define GMAC_MTU 1500
+#define GMAC_MTU NET_ETH_MTU
 #define GMAC_FRAME_SIZE_MAX (GMAC_MTU + 18)
 
 /** Cache alignment */

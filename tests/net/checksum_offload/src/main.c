@@ -291,13 +291,15 @@ ETH_NET_DEVICE_INIT(eth_offloading_disabled_test,
 		    "eth_offloading_disabled_test",
 		    eth_init, &eth_context_offloading_disabled,
 		    NULL, CONFIG_ETH_INIT_PRIORITY,
-		    &api_funcs_offloading_disabled, 1500);
+		    &api_funcs_offloading_disabled,
+		    NET_ETH_MTU);
 
 ETH_NET_DEVICE_INIT(eth_offloading_enabled_test,
 		    "eth_offloading_enabled_test",
 		    eth_init, &eth_context_offloading_enabled,
 		    NULL, CONFIG_ETH_INIT_PRIORITY,
-		    &api_funcs_offloading_enabled, 1500);
+		    &api_funcs_offloading_enabled,
+		    NET_ETH_MTU);
 
 struct user_data {
 	int eth_if_count;
