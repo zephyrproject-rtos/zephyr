@@ -1,10 +1,74 @@
 # Kconfig - ADC configuration options
 
 #
-# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2018-2019 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
 #
+
+menuconfig ADC_INTEL_QUARK_SE_C1000_SS
+	bool "ADC Driver for Intel Quark SE C1000 Sensor Subsystem"
+	depends on SOC_QUARK_SE_C1000_SS
+	select ADC_0
+	help
+	  Enable the ADC driver implementation of the Intel Quark SE C1000
+	  Sensor Subsystem.
+
+if ADC_INTEL_QUARK_SE_C1000_SS
+
+config ADC_INTEL_QUARK_SE_C1000_SS_CALIBRATION
+	bool "Enable Calibration"
+	default y
+	help
+	  Enables ADC to run with a calibrated output at the
+	  expense of execution speed when exiting low power states.
+	  If disabled, the ADC will require the application/system-integrator
+	  to provide a calibration method.
+
+choice
+	prompt "Output Mode"
+	default ADC_INTEL_QUARK_SE_C1000_SS_SERIAL
+	help
+	  ADC output mode: parallel or serial.
+
+config ADC_INTEL_QUARK_SE_C1000_SS_SERIAL
+	bool "Serial"
+
+config ADC_INTEL_QUARK_SE_C1000_SS_PARALLEL
+	bool "Parallel"
+
+endchoice
+
+choice
+	prompt "Capture Mode"
+	default ADC_INTEL_QUARK_SE_C1000_SS_RISING_EDGE
+	help
+	  ADC controller capture mode:
+	  by rising or falling edge of adc_clk
+
+config ADC_INTEL_QUARK_SE_C1000_SS_RISING_EDGE
+	bool "Rising Edge"
+
+config ADC_INTEL_QUARK_SE_C1000_SS_FALLING_EDGE
+	bool "Falling Edge"
+
+endchoice
+
+config ADC_INTEL_QUARK_SE_C1000_SS_SERIAL_DELAY
+	int "Serial Delay"
+	default 1
+	help
+	  Number of ADC clock ticks that the first bit of
+	  the serial output is delayed after the conversion
+	  has started.
+
+config ADC_INTEL_QUARK_SE_C1000_SS_CLOCK_RATIO
+	int "Clock Ratio"
+	default 1024
+	help
+	  ADC Clock Ratio
+
+endif # ADC_INTEL_QUARK_SE_C1000_SS
 
 menuconfig ADC_INTEL_QUARK_D2000
 	bool "ADC Driver for Intel Quark D2000"
