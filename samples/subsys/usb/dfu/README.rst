@@ -40,7 +40,7 @@ details.)
            --header-size 0x200 \
            --align 8 \
            --version 1.2 \
-           --included-header \
+           --slot-size 0x60000 \
            ./zephyr/zephyr.bin \
            signed-zephyr.bin
 
