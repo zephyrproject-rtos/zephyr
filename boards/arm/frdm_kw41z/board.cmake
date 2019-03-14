@@ -1,4 +1,4 @@
-set_ifndef(OPENSDA_FW jlink)
+set_ifndef(OPENSDA_FW daplink)
 
 if(OPENSDA_FW STREQUAL jlink)
   set_ifndef(BOARD_DEBUG_RUNNER jlink)
