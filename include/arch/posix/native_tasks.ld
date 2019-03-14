@@ -10,7 +10,7 @@
 		KEEP(*(SORT(.native_##level[1-9][0-9]_task)));		\
 		KEEP(*(SORT(.native_##level[1-9][0-9][0-9]_task)));	\
 
-SECTION_PROLOGUE (native_pre_tasks, (OPTIONAL),)
+SECTION_PROLOGUE (native_pre_tasks,,)
 {
 	__native_tasks_start = .;
 	NATIVE_INIT_LEVEL(PRE_BOOT_1)

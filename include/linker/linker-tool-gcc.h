@@ -122,7 +122,6 @@
 #endif
 
 #define SORT_BY_NAME(x) SORT(x)
-#define OPTIONAL
 
 #define COMMON_SYMBOLS *(COMMON)
 

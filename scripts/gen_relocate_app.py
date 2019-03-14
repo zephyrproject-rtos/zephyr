@@ -47,7 +47,7 @@ LINKER_SECTION_SEQ = """
 
 /* Linker section for memory region {2} for  {3} section  */
 
-	SECTION_PROLOGUE(_{2}_{3}_SECTION_NAME, (OPTIONAL),)
+	SECTION_PROLOGUE(_{2}_{3}_SECTION_NAME,,)
         {{
                 . = ALIGN(4);
                 {4}
