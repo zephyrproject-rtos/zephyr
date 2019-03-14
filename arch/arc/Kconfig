@@ -12,10 +12,6 @@ menu "ARC Options"
 config ARCH
 	default "arc"
 
-config ARCH_DEFCONFIG
-	string
-	default "arch/arc/defconfig"
-
 menu "ARC EM4 processor options"
 
 config	CPU_ARCEM4

@@ -15,8 +15,4 @@ source "arch/arm/core/Kconfig"
 config ARCH
 	default "arm"
 
-config ARCH_DEFCONFIG
-	string
-	default "arch/arm/defconfig"
-
 endmenu

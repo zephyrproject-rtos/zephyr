@@ -12,10 +12,6 @@ menu "POSIX (native) Options"
 config ARCH
 	default "posix"
 
-config ARCH_DEFCONFIG
-	string
-	default "arch/posix/defconfig"
-
 config ARCH_POSIX_RECOMMENDED_STACK_SIZE
 	int
 	default 24
