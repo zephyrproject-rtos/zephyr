@@ -29,7 +29,7 @@ void z_smp_release_global_lock(struct k_thread *thread);
 /* context switching and scheduling-related routines */
 #ifdef CONFIG_USE_SWITCH
 
-/* New style context switching.  _arch_switch() is a lower level
+/* New style context switching.  z_arch_switch() is a lower level
  * primitive that doesn't know about the scheduler or return value.
  * Needed for SMP, where the scheduler requires spinlocking that we
  * don't want to have to do in per-architecture assembly.
@@ -76,7 +76,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		}
 #endif
 		_current = new_thread;
-		_arch_switch(new_thread->switch_handle,
+		z_arch_switch(new_thread->switch_handle,
 			     &old_thread->switch_handle);
 	}
 

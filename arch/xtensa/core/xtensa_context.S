@@ -283,7 +283,7 @@ _xt_context_restore:
     ret
 
 
-/* _xt_coproc_init
+/* z_xt_coproc_init
  *
  * Initializes global co-processor management data, setting all co-processors
  * to "unowned". Leaves CPENABLE as it found it (does NOT clear it).
@@ -303,15 +303,15 @@ _xt_context_restore:
  *  None.
  *
  * Obeys ABI conventions per prototype:
- *  void _xt_coproc_init(void)
+ *  void z_xt_coproc_init(void)
  */
 
 #if XCHAL_CP_NUM > 0
 
-    .global _xt_coproc_init
-    .type   _xt_coproc_init,@function
+    .global z_xt_coproc_init
+    .type   z_xt_coproc_init,@function
     .align  4
-_xt_coproc_init:
+z_xt_coproc_init:
     ENTRY0
 
     /* Initialize thread co-processor ownerships to 0 (unowned). */

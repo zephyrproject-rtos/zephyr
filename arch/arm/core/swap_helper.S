@@ -22,8 +22,8 @@ _ASM_FILE_PROLOGUE
 
 GTEXT(__svc)
 GTEXT(__pendsv)
-GTEXT(_do_kernel_oops)
-GTEXT(_arm_do_syscall)
+GTEXT(z_do_kernel_oops)
+GTEXT(z_arm_do_syscall)
 GDATA(_k_neg_eagain)
 
 GDATA(_kernel)
@@ -303,7 +303,7 @@ _stack_frame_endif:
 
 #if CONFIG_IRQ_OFFLOAD
     push {r0, lr}
-    bl _irq_do_offload  /* call C routine which executes the offload */
+    bl z_irq_do_offload  /* call C routine which executes the offload */
     pop {r0, r1}
     mov lr, r1
 #endif /* CONFIG_IRQ_OFFLOAD */
@@ -313,7 +313,7 @@ _stack_frame_endif:
 
 _oops:
     push {r0, lr}
-    bl _do_kernel_oops
+    bl z_do_kernel_oops
     pop {r0, pc}
 
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
@@ -369,7 +369,7 @@ SECTION_FUNC(TEXT, __svc)
 
 #if CONFIG_IRQ_OFFLOAD
     push {r0, lr}
-    bl _irq_do_offload  /* call C routine which executes the offload */
+    bl z_irq_do_offload  /* call C routine which executes the offload */
     pop {r0, lr}
 
     /* exception return is done in _IntExit() */
@@ -378,7 +378,7 @@ SECTION_FUNC(TEXT, __svc)
 
 _oops:
     push {r0, lr}
-    bl _do_kernel_oops
+    bl z_do_kernel_oops
     pop {r0, pc}
 
 #if CONFIG_USERSPACE
@@ -405,8 +405,8 @@ _oops:
      */
 _do_syscall:
     ldr r8, [r0, #24]   /* grab address of PC from stack frame */
-    ldr r1, =_arm_do_syscall
-    str r1, [r0, #24]   /* overwrite the PC to point to _arm_do_syscall */
+    ldr r1, =z_arm_do_syscall
+    str r1, [r0, #24]   /* overwrite the PC to point to z_arm_do_syscall */
 
     /* validate syscall limit, only set priv mode if valid */
     ldr ip, =K_SYSCALL_LIMIT
@@ -437,7 +437,7 @@ valid_syscall_id:
     isb
     pop {r0, r1}
 
-    /* return from SVC to the modified LR - _arm_do_syscall */
+    /* return from SVC to the modified LR - z_arm_do_syscall */
     bx lr
 #endif
 

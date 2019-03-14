@@ -23,8 +23,8 @@
 	/* exports (internal APIs) */
 
 	GTEXT(_interrupt_enter)
-	GTEXT(_SpuriousIntNoErrCodeHandler)
-	GTEXT(_SpuriousIntHandler)
+	GTEXT(z_SpuriousIntNoErrCodeHandler)
+	GTEXT(z_SpuriousIntHandler)
 	GTEXT(_irq_sw_handler)
 	GTEXT(z_dynamic_stubs_begin)
 
@@ -389,11 +389,11 @@ handle_idle:
 
 /**
  *
- * _SpuriousIntHandler -
+ * z_SpuriousIntHandler -
  * @brief Spurious interrupt handler stubs
  *
  * Interrupt-gate descriptors are statically created for all slots in the IDT
- * that point to _SpuriousIntHandler() or _SpuriousIntNoErrCodeHandler().  The
+ * that point to z_SpuriousIntHandler() or z_SpuriousIntNoErrCodeHandler().  The
  * former stub is connected to exception vectors where the processor pushes an
  * error code onto the stack (or kernel stack) in addition to the EFLAGS/CS/EIP
  * records.
@@ -408,23 +408,23 @@ handle_idle:
  *
  * C function prototype:
  *
- * void _SpuriousIntHandler (void);
+ * void z_SpuriousIntHandler (void);
  *
  * INTERNAL
  * The gen_idt tool creates an interrupt-gate descriptor for all
  * connections.  The processor will automatically clear the IF bit
  * in the EFLAGS register upon execution of the handler,
- * thus _SpuriousIntNoErrCodeHandler()/_SpuriousIntHandler() shall be
+ * thus z_SpuriousIntNoErrCodeHandler()/z_SpuriousIntHandler() shall be
  * invoked with interrupts disabled.
  */
-SECTION_FUNC(TEXT, _SpuriousIntNoErrCodeHandler)
+SECTION_FUNC(TEXT, z_SpuriousIntNoErrCodeHandler)
 
 	pushl	$0			/* push dummy err code onto stk */
 
-	/* fall through to _SpuriousIntHandler */
+	/* fall through to z_SpuriousIntHandler */
 
 
-SECTION_FUNC(TEXT, _SpuriousIntHandler)
+SECTION_FUNC(TEXT, z_SpuriousIntHandler)
 
 	cld				/* Clear direction flag */
 
@@ -464,7 +464,7 @@ SECTION_FUNC(TEXT, _SpuriousIntHandler)
 #if CONFIG_IRQ_OFFLOAD
 SECTION_FUNC(TEXT, _irq_sw_handler)
 	push $0
-	push $_irq_do_offload
+	push $z_irq_do_offload
 	jmp _interrupt_enter
 
 #endif

@@ -26,9 +26,9 @@ extern "C" {
  *
  * @return The key of the interrupt that is currently being processed.
  */
-static inline int _sys_current_irq_key_get(void)
+static inline int z_sys_current_irq_key_get(void)
 {
-	return _irq_controller_isr_vector_get();
+	return z_irq_controller_isr_vector_get();
 }
 
 #ifdef __cplusplus

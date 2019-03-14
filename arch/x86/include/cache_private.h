@@ -13,9 +13,9 @@
 extern "C" {
 #endif
 
-extern int _is_clflush_available(void);
-extern void _cache_flush_wbinvd(vaddr_t addr, size_t len);
-extern size_t _cache_line_size_get(void);
+extern int z_is_clflush_available(void);
+extern void z_cache_flush_wbinvd(vaddr_t addr, size_t len);
+extern size_t z_cache_line_size_get(void);
 
 #ifdef __cplusplus
 }

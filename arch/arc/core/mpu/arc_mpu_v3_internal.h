@@ -148,7 +148,7 @@ static inline int _mpu_probe(u32_t addr)
  */
 static inline int _dynamic_region_allocate_index(void)
 {
-	if (dynamic_region_index >= _get_num_regions()) {
+	if (dynamic_region_index >= get_num_regions()) {
 		LOG_ERR("no enough mpu entries %d", dynamic_region_index);
 		return -EINVAL;
 	}
@@ -314,7 +314,7 @@ static int _dynamic_region_allocate_and_init(u32_t base, u32_t size,
 static void _mpu_reset_dynamic_regions(void)
 {
 	u32_t i;
-	u32_t num_regions = _get_num_regions();
+	u32_t num_regions = get_num_regions();
 
 	for (i = static_regions_num; i < num_regions; i++) {
 		_region_init(i, 0, 0, 0);
@@ -341,7 +341,7 @@ static void _mpu_reset_dynamic_regions(void)
  */
 static inline int _mpu_configure(u8_t type, u32_t base, u32_t size)
 {
-	u32_t region_attr = _get_region_attr_by_type(type);
+	u32_t region_attr = get_region_attr_by_type(type);
 
 	return _dynamic_region_allocate_and_init(base, size, region_attr);
 }
@@ -493,7 +493,7 @@ void arc_core_mpu_default(u32_t region_attr)
 int arc_core_mpu_region(u32_t index, u32_t base, u32_t size,
 			 u32_t region_attr)
 {
-	if (index >= _get_num_regions()) {
+	if (index >= get_num_regions()) {
 		return -EINVAL;
 	}
 
@@ -576,7 +576,7 @@ void arc_core_mpu_remove_mem_partition(struct k_mem_domain *domain,
 int arc_core_mpu_get_max_domain_partition_regions(void)
 {
 	/* consider the worst case: each partition requires split */
-	return (_get_num_regions() - MPU_REGION_NUM_FOR_THREAD) / 2;
+	return (get_num_regions() - MPU_REGION_NUM_FOR_THREAD) / 2;
 }
 
 /**
@@ -619,7 +619,7 @@ static int arc_mpu_init(struct device *arg)
 	u32_t num_regions;
 	u32_t i;
 
-	num_regions = _get_num_regions();
+	num_regions = get_num_regions();
 
 	/* ARC MPU supports up to 16 Regions */
 	if (mpu_config.num_regions > num_regions) {

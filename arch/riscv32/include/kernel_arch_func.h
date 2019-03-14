@@ -44,7 +44,7 @@ FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 #define z_is_in_isr() (_kernel.nested != 0U)
 
 #ifdef CONFIG_IRQ_OFFLOAD
-int _irq_do_offload(void);
+int z_irq_do_offload(void);
 #endif
 
 #endif /* _ASMLANGUAGE */

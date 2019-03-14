@@ -37,7 +37,7 @@ extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
  *
  * @return N/A
  */
-static ALWAYS_INLINE void _InterruptStackSetup(void)
+static ALWAYS_INLINE void z_InterruptStackSetup(void)
 {
 #if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) && \
 	defined(CONFIG_USERSPACE)

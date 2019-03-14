@@ -151,9 +151,9 @@ void _Fault(NANO_ESF *esf)
 	}
 #endif
 
-	vector = _ARC_V2_ECR_VECTOR(ecr);
-	code =  _ARC_V2_ECR_CODE(ecr);
-	parameter = _ARC_V2_ECR_PARAMETER(ecr);
+	vector = Z_ARC_V2_ECR_VECTOR(ecr);
+	code =  Z_ARC_V2_ECR_CODE(ecr);
+	parameter = Z_ARC_V2_ECR_PARAMETER(ecr);
 
 
 	/* exception raised by kernel */

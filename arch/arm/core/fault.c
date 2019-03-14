@@ -137,7 +137,7 @@
  */
 
 #if (CONFIG_FAULT_DUMP == 1)
-static void _FaultShow(const NANO_ESF *esf, int fault)
+static void FaultShow(const NANO_ESF *esf, int fault)
 {
 	PR_EXC("Fault! EXC #%d\n", fault);
 
@@ -156,7 +156,7 @@ static void _FaultShow(const NANO_ESF *esf, int fault)
  *
  * For Dump level 0, no information needs to be generated.
  */
-static void _FaultShow(const NANO_ESF *esf, int fault)
+static void FaultShow(const NANO_ESF *esf, int fault)
 {
 	(void)esf;
 	(void)fault;
@@ -176,7 +176,7 @@ static const struct z_exc_handle exceptions[] = {
  *
  * @return 1 if error is recoverable, otherwise return 0.
  */
-static int _MemoryFaultIsRecoverable(NANO_ESF *esf)
+static int MemoryFaultIsRecoverable(NANO_ESF *esf)
 {
 #ifdef CONFIG_USERSPACE
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
@@ -211,7 +211,7 @@ u32_t z_check_thread_stack_fail(const u32_t fault_addr,
  *
  * @return error code to identify the fatal error reason
  */
-static u32_t _MpuFault(NANO_ESF *esf, int fromHardFault)
+static u32_t MpuFault(NANO_ESF *esf, int fromHardFault)
 {
 	u32_t reason = _NANO_ERR_HW_EXCEPTION;
 	u32_t mmfar = -EINVAL;
@@ -321,7 +321,7 @@ static u32_t _MpuFault(NANO_ESF *esf, int fromHardFault)
 	SCB->CFSR |= SCB_CFSR_MEMFAULTSR_Msk;
 
 	/* Assess whether system shall ignore/recover from this MPU fault. */
-	if (_MemoryFaultIsRecoverable(esf)) {
+	if (MemoryFaultIsRecoverable(esf)) {
 		reason = _NANO_ERR_RECOVERABLE;
 	}
 
@@ -336,7 +336,7 @@ static u32_t _MpuFault(NANO_ESF *esf, int fromHardFault)
  *
  * @return N/A
  */
-static int _BusFault(NANO_ESF *esf, int fromHardFault)
+static int BusFault(NANO_ESF *esf, int fromHardFault)
 {
 	u32_t reason = _NANO_ERR_HW_EXCEPTION;
 
@@ -477,7 +477,7 @@ static int _BusFault(NANO_ESF *esf, int fromHardFault)
 	/* clear BFSR sticky bits */
 	SCB->CFSR |= SCB_CFSR_BUSFAULTSR_Msk;
 
-	if (_MemoryFaultIsRecoverable(esf)) {
+	if (MemoryFaultIsRecoverable(esf)) {
 		reason = _NANO_ERR_RECOVERABLE;
 	}
 
@@ -492,7 +492,7 @@ static int _BusFault(NANO_ESF *esf, int fromHardFault)
  *
  * @return error code to identify the fatal error reason
  */
-static u32_t _UsageFault(const NANO_ESF *esf)
+static u32_t UsageFault(const NANO_ESF *esf)
 {
 	u32_t reason = _NANO_ERR_HW_EXCEPTION;
 
@@ -548,7 +548,7 @@ static u32_t _UsageFault(const NANO_ESF *esf)
  *
  * @return N/A
  */
-static void _SecureFault(const NANO_ESF *esf)
+static void SecureFault(const NANO_ESF *esf)
 {
 	PR_FAULT_INFO("***** SECURE FAULT *****\n");
 
@@ -587,7 +587,7 @@ static void _SecureFault(const NANO_ESF *esf)
  *
  * @return N/A
  */
-static void _DebugMonitor(const NANO_ESF *esf)
+static void DebugMonitor(const NANO_ESF *esf)
 {
 	ARG_UNUSED(esf);
 
@@ -607,14 +607,14 @@ static void _DebugMonitor(const NANO_ESF *esf)
  *
  * @return error code to identify the fatal error reason
  */
-static u32_t _HardFault(NANO_ESF *esf)
+static u32_t HardFault(NANO_ESF *esf)
 {
 	u32_t reason = _NANO_ERR_HW_EXCEPTION;
 
 	PR_FAULT_INFO("***** HARD FAULT *****\n");
 
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-	if (_MemoryFaultIsRecoverable(esf) != 0) {
+	if (MemoryFaultIsRecoverable(esf) != 0) {
 		reason = _NANO_ERR_RECOVERABLE;
 	}
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
@@ -623,14 +623,14 @@ static u32_t _HardFault(NANO_ESF *esf)
 	} else if ((SCB->HFSR & SCB_HFSR_FORCED_Msk) != 0) {
 		PR_EXC("  Fault escalation (see below)\n");
 		if (SCB_MMFSR != 0) {
-			reason = _MpuFault(esf, 1);
+			reason = MpuFault(esf, 1);
 		} else if (SCB_BFSR != 0) {
-			reason = _BusFault(esf, 1);
+			reason = BusFault(esf, 1);
 		} else if (SCB_UFSR != 0) {
-			reason = _UsageFault(esf);
+			reason = UsageFault(esf);
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 		} else if (SAU->SFSR != 0) {
-			_SecureFault(esf);
+			SecureFault(esf);
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 		}
 	}
@@ -649,7 +649,7 @@ static u32_t _HardFault(NANO_ESF *esf)
  *
  * @return N/A
  */
-static void _ReservedException(const NANO_ESF *esf, int fault)
+static void ReservedException(const NANO_ESF *esf, int fault)
 {
 	ARG_UNUSED(esf);
 
@@ -659,45 +659,45 @@ static void _ReservedException(const NANO_ESF *esf, int fault)
 }
 
 /* Handler function for ARM fault conditions. */
-static u32_t _FaultHandle(NANO_ESF *esf, int fault)
+static u32_t FaultHandle(NANO_ESF *esf, int fault)
 {
 	u32_t reason = _NANO_ERR_HW_EXCEPTION;
 
 	switch (fault) {
 	case 3:
-		reason = _HardFault(esf);
+		reason = HardFault(esf);
 		break;
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 	/* HardFault is used for all fault conditions on ARMv6-M. */
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 	case 4:
-		reason = _MpuFault(esf, 0);
+		reason = MpuFault(esf, 0);
 		break;
 	case 5:
-		reason = _BusFault(esf, 0);
+		reason = BusFault(esf, 0);
 		break;
 	case 6:
-		reason = _UsageFault(esf);
+		reason = UsageFault(esf);
 		break;
 #if defined(CONFIG_ARM_SECURE_FIRMWARE)
 	case 7:
-		_SecureFault(esf);
+		SecureFault(esf);
 		break;
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 	case 12:
-		_DebugMonitor(esf);
+		DebugMonitor(esf);
 		break;
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 	default:
-		_ReservedException(esf, fault);
+		ReservedException(esf, fault);
 		break;
 	}
 
 	if (reason != _NANO_ERR_RECOVERABLE) {
 		/* Dump generic information about the fault. */
-		_FaultShow(esf, fault);
+		FaultShow(esf, fault);
 	}
 
 	return reason;
@@ -711,7 +711,7 @@ static u32_t _FaultHandle(NANO_ESF *esf, int fault)
  *
  * @param secure_esf Pointer to the secure stack frame.
  */
-static void _SecureStackDump(const NANO_ESF *secure_esf)
+static void SecureStackDump(const NANO_ESF *secure_esf)
 {
 	/*
 	 * In case a Non-Secure exception interrupted the Secure
@@ -747,7 +747,7 @@ static void _SecureStackDump(const NANO_ESF *secure_esf)
 	PR_FAULT_INFO("  S instruction address:  0x%x\n", sec_ret_addr);
 
 }
-#define SECURE_STACK_DUMP(esf) _SecureStackDump(esf)
+#define SECURE_STACK_DUMP(esf) SecureStackDump(esf)
 #else
 /* We do not dump the Secure stack information for lower dump levels. */
 #define SECURE_STACK_DUMP(esf)
@@ -859,7 +859,7 @@ void _Fault(NANO_ESF *esf, u32_t exc_return)
 	(void) exc_return;
 #endif /* CONFIG_ARM_SECURE_FIRMWARE */
 
-	reason = _FaultHandle(esf, fault);
+	reason = FaultHandle(esf, fault);
 
 	if (reason == _NANO_ERR_RECOVERABLE) {
 		return;
@@ -880,7 +880,7 @@ _exit_fatal:
  *
  * @return N/A
  */
-void _FaultInit(void)
+void z_FaultInit(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)

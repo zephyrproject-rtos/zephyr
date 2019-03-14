@@ -57,7 +57,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	posix_thread_status_t *thread_status;
 
-	_new_thread_init(thread, stack_memory, stack_size, priority, options);
+	z_new_thread_init(thread, stack_memory, stack_size, priority, options);
 
 	/* We store it in the same place where normal archs store the
 	 * "initial stack frame"

@@ -212,7 +212,7 @@ extern void z_init_thread_base(struct _thread_base *thread_base,
 			      int priority, u32_t initial_state,
 			      unsigned int options);
 
-static ALWAYS_INLINE void _new_thread_init(struct k_thread *thread,
+static ALWAYS_INLINE void z_new_thread_init(struct k_thread *thread,
 					    char *pStack, size_t stackSize,
 					    int prio, unsigned int options)
 {

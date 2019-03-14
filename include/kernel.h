@@ -576,7 +576,7 @@ struct k_thread {
 	/** z_swap() return value */
 	int swap_retval;
 
-	/** Context handle returned via _arch_switch() */
+	/** Context handle returned via z_arch_switch() */
 	void *switch_handle;
 #endif
 	/** resource pool */

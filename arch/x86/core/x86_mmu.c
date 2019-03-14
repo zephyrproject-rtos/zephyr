@@ -264,7 +264,7 @@ static inline void activate_partition(struct k_mem_partition *partition)
 #define X86_MEM_DOMAIN_SET_PAGES   (0U)
 #define X86_MEM_DOMAIN_RESET_PAGES (1U)
 /* Pass 1 to page_conf if reset of mem domain pages is needed else pass a 0*/
-static inline void _x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
+static inline void x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
 						u32_t page_conf)
 {
 	u32_t partition_index;
@@ -309,7 +309,7 @@ out:
 /* Load the partitions of the thread. */
 void z_arch_mem_domain_configure(struct k_thread *thread)
 {
-	_x86_mem_domain_pages_update(thread->mem_domain_info.mem_domain,
+	x86_mem_domain_pages_update(thread->mem_domain_info.mem_domain,
 				     X86_MEM_DOMAIN_SET_PAGES);
 }
 
@@ -318,7 +318,7 @@ void z_arch_mem_domain_configure(struct k_thread *thread)
  */
 void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 {
-	_x86_mem_domain_pages_update(domain, X86_MEM_DOMAIN_RESET_PAGES);
+	x86_mem_domain_pages_update(domain, X86_MEM_DOMAIN_RESET_PAGES);
 }
 
 /* Reset/destroy one partition spcified in the argument of the API. */

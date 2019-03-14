@@ -146,9 +146,9 @@ extern "C" {
 #define _ARC_V2_IRQ_PRIORITY_SECURE 0x100
 
 /* exception cause register masks */
-#define _ARC_V2_ECR_VECTOR(X) ((X & 0xff0000) >> 16)
-#define _ARC_V2_ECR_CODE(X) ((X & 0xff00) >> 8)
-#define _ARC_V2_ECR_PARAMETER(X) (X & 0xff)
+#define Z_ARC_V2_ECR_VECTOR(X) ((X & 0xff0000) >> 16)
+#define Z_ARC_V2_ECR_CODE(X) ((X & 0xff00) >> 8)
+#define Z_ARC_V2_ECR_PARAMETER(X) (X & 0xff)
 
 #ifndef _ASMLANGUAGE
 #if defined(__GNUC__)

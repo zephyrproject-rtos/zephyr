@@ -34,7 +34,7 @@ extern "C" {
  *
  * Enables the i-cache and sets it to direct access mode.
  */
-static ALWAYS_INLINE void _icache_setup(void)
+static ALWAYS_INLINE void z_icache_setup(void)
 {
 	u32_t icache_config = (
 		IC_CACHE_DIRECT | /* direct mapping (one-way assoc.) */

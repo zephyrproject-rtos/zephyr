@@ -36,7 +36,7 @@ extern void FatalErrorHandler(void);
 extern void ReservedInterruptHandler(unsigned int intNo);
 
 /* Defined in xtensa_context.S */
-extern void _xt_coproc_init(void);
+extern void z_xt_coproc_init(void);
 
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
@@ -86,7 +86,7 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 	/* Initialize co-processor management for threads.
 	 * Leave CPENABLE alone.
 	 */
-	_xt_coproc_init();
+	z_xt_coproc_init();
 #endif
 
 #ifdef CONFIG_INIT_STACKS

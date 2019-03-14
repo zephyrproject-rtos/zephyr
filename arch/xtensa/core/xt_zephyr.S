@@ -308,7 +308,7 @@ _zxt_timer_int:
  * _zxt_tick_timer_init
  * void _zxt_tick_timer_init(void)
  *
- * Initialize timer and timer interrupt handler (_xt_tick_divisor_init() has
+ * Initialize timer and timer interrupt handler (z_xt_tick_divisor_init() has
  * already been been called).
  * Callable from C (obeys ABI conventions on entry).
  *

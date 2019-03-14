@@ -26,7 +26,7 @@
 	GTEXT(_kernel_oops_handler)
 
 	/* externs (internal APIs) */
-	GTEXT(_do_kernel_oops)
+	GTEXT(z_do_kernel_oops)
 
 /**
  *
@@ -230,6 +230,6 @@ nestedException:
 #if CONFIG_X86_KERNEL_OOPS
 SECTION_FUNC(TEXT, _kernel_oops_handler)
 	push $0 /* dummy error code */
-	push $_do_kernel_oops
+	push $z_do_kernel_oops
 	jmp _exception_enter
 #endif

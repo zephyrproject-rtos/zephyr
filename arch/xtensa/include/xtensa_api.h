@@ -50,7 +50,7 @@ extern void z_xt_ints_off(unsigned int mask);
 /*
  * Call this function to set the specified (s/w) interrupt.
  */
-static inline void _xt_set_intset(unsigned int arg)
+static inline void z_xt_set_intset(unsigned int arg)
 {
 	xthal_set_intset(arg);
 }

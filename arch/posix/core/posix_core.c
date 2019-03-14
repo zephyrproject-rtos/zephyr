@@ -166,7 +166,7 @@ static void posix_let_run(int next_allowed_th)
 	 * Note that as we hold the mutex, they are going to be blocked until
 	 * we reach our own posix_wait_until_allowed() while loop
 	 */
-	_SAFE_CALL(pthread_cond_broadcast(&cond_threads));
+	PC_SAFE_CALL(pthread_cond_broadcast(&cond_threads));
 }
 
 
@@ -175,7 +175,7 @@ static void posix_preexit_cleanup(void)
 	/*
 	 * Release the mutex so the next allowed thread can run
 	 */
-	_SAFE_CALL(pthread_mutex_unlock(&mtx_threads));
+	PC_SAFE_CALL(pthread_mutex_unlock(&mtx_threads));
 
 	/* We detach ourselves so nobody needs to join to us */
 	pthread_detach(pthread_self());
@@ -246,7 +246,7 @@ static void posix_cleanup_handler(void *arg)
 #endif
 
 
-	_SAFE_CALL(pthread_mutex_unlock(&mtx_threads));
+	PC_SAFE_CALL(pthread_mutex_unlock(&mtx_threads));
 
 	/* We detach ourselves so nobody needs to join to us */
 	pthread_detach(pthread_self());
@@ -271,7 +271,7 @@ static void *posix_thread_starter(void *arg)
 	 * We block until all other running threads reach the while loop
 	 * in posix_wait_until_allowed() and they release the mutex
 	 */
-	_SAFE_CALL(pthread_mutex_lock(&mtx_threads));
+	PC_SAFE_CALL(pthread_mutex_lock(&mtx_threads));
 
 	/*
 	 * The program may have been finished before this thread ever got to run
@@ -372,7 +372,7 @@ void posix_new_thread(posix_thread_status_t *ptr)
 	threads_table[t_slot].thead_cnt = thread_create_count++;
 	ptr->thread_idx = t_slot;
 
-	_SAFE_CALL(pthread_create(&threads_table[t_slot].thread,
+	PC_SAFE_CALL(pthread_create(&threads_table[t_slot].thread,
 				  NULL,
 				  posix_thread_starter,
 				  (void *)ptr));
@@ -403,7 +403,7 @@ void posix_init_multithreading(void)
 	threads_table_size = PC_ALLOC_CHUNK_SIZE;
 
 
-	_SAFE_CALL(pthread_mutex_lock(&mtx_threads));
+	PC_SAFE_CALL(pthread_mutex_lock(&mtx_threads));
 }
 
 /**

@@ -56,7 +56,7 @@ typedef struct _kernel_arch _kernel_arch_t;
 
 #ifdef CONFIG_USE_SWITCH
 void xtensa_switch(void *switch_to, void **switched_from);
-#define _arch_switch xtensa_switch
+#define z_arch_switch xtensa_switch
 #endif
 
 /* stacks */

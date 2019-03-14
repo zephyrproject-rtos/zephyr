@@ -117,7 +117,7 @@ extern FUNC_NORETURN void z_cstart(void);
 
 void _PrepC(void)
 {
-	_icache_setup();
+	z_icache_setup();
 	adjust_vector_table_base();
 	z_bss_zero();
 	z_data_copy();

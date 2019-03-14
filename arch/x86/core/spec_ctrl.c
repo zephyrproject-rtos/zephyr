@@ -58,9 +58,9 @@ static int spec_ctrl_init(struct device *dev)
 	}
 #endif
 	if (enable_bits != 0U) {
-		u64_t cur = _x86_msr_read(IA32_SPEC_CTRL_MSR);
+		u64_t cur = z_x86_msr_read(IA32_SPEC_CTRL_MSR);
 
-		_x86_msr_write(IA32_SPEC_CTRL_MSR,
+		z_x86_msr_write(IA32_SPEC_CTRL_MSR,
 			       cur | enable_bits);
 	}
 
