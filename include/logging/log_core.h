@@ -10,6 +10,7 @@
 #include <logging/log_instance.h>
 #include <misc/util.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -26,10 +27,13 @@ extern "C" {
 #endif
 
 #define LOG_FUNCTION_PREFIX_MASK \
-	((IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_ERR) << LOG_LEVEL_ERR) | \
-	 (IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_WRN) << LOG_LEVEL_WRN) | \
-	 (IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_INF) << LOG_LEVEL_INF) | \
-	 (IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG) << LOG_LEVEL_DBG))
+	(((u32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_ERR) << \
+	  LOG_LEVEL_ERR) | \
+	 ((u32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_WRN) << \
+	  LOG_LEVEL_WRN) | \
+	 ((u32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_INF) << \
+	  LOG_LEVEL_INF) | \
+	 ((u32_t)IS_ENABLED(CONFIG_LOG_FUNC_NAME_PREFIX_DBG) << LOG_LEVEL_DBG))
 
 /** @brief Macro for returning local level value if defined or default.
  *
