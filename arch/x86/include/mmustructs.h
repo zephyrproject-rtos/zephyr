@@ -8,9 +8,9 @@
 #ifndef ZEPHYR_ARCH_X86_INCLUDE_MMUSTRUCTS_H_
 #define ZEPHYR_ARCH_X86_INCLUDE_MMUSTRUCTS_H_
 
-#define MMU_PAGE_SIZE 4096
-#define MMU_PAGE_MASK 0xfff
-#define MMU_PAGE_SHIFT 12
+#define MMU_PAGE_SIZE 4096U
+#define MMU_PAGE_MASK 0xfffU
+#define MMU_PAGE_SHIFT 12U
 #define PAGES(x) ((x) << (MMU_PAGE_SHIFT))
 #define MMU_ARE_IN_SAME_PAGE(a, b) \
 	(((u32_t)(a) & ~MMU_PAGE_MASK) == ((u32_t)(b) & ~MMU_PAGE_MASK))
