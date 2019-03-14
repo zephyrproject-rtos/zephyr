@@ -96,14 +96,14 @@ constexpr size_t ARRAY_SIZE(T(&)[N]) { return N; }
 
 static inline bool is_power_of_two(unsigned int x)
 {
-	return (x != 0) && !(x & (x - 1));
+	return (x != 0U) && ((x & (x - 1)) == 0U);
 }
 
 static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 {
 	s64_t sign_ext;
 
-	if (shift == 0) {
+	if (shift == 0U) {
 		return value;
 	}
 
