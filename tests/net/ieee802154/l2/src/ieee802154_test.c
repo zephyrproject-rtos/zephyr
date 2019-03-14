@@ -219,7 +219,7 @@ static bool test_ack_reply(struct ieee802154_pkt_test *t)
 
 	NET_INFO("- Sending ACK reply to a data packet\n");
 
-	pkt = net_pkt_get_reserve_rx(K_FOREVER);
+	pkt = net_pkt_rx_alloc(K_FOREVER);
 	frag = net_pkt_get_frag(pkt, K_FOREVER);
 
 	memcpy(frag->data, data_pkt, sizeof(data_pkt));
@@ -267,7 +267,7 @@ static bool initialize_test_environment(void)
 
 	k_sem_reset(&driver_lock);
 
-	current_pkt = net_pkt_get_reserve_rx(K_FOREVER);
+	current_pkt = net_pkt_rx_alloc(K_FOREVER);
 	if (!current_pkt) {
 		NET_ERR("*** No buffer to allocate\n");
 		return false;

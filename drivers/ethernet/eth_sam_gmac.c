@@ -1120,7 +1120,7 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 		return NULL;
 	}
 
-	rx_frame = net_pkt_get_reserve_rx(K_NO_WAIT);
+	rx_frame = net_pkt_rx_alloc(K_NO_WAIT);
 
 	/* Process a frame */
 	tail = rx_desc_list->tail;
