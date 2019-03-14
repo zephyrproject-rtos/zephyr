@@ -35,6 +35,9 @@ manifest:
   projects:
     - name: net-tools
       revision: 30b7efa827b04d2e47840716b0372737fe7d6c92
+    - name: tinycbor
+      path: modules/lib/tinycbor
+      revision: 111f7a215cc4efa49fd03a7835719adca83b4388
 
   self:
     path: zephyr
