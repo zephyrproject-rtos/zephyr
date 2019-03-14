@@ -11,11 +11,11 @@
 #ifdef CONFIG_SYS_POWER_DEEP_SLEEP_STATES
 GDATA(_pm_arc_context)
 
-GTEXT(_sys_resume_from_deep_sleep)
-GTEXT(_power_restore_cpu_context)
-GTEXT(_power_soc_sleep)
-GTEXT(_power_soc_deep_sleep)
-GTEXT(_power_soc_lpss_mode)
+GTEXT(sys_resume_from_deep_sleep)
+GTEXT(z_power_restore_cpu_context)
+GTEXT(z_power_soc_sleep)
+GTEXT(z_power_soc_deep_sleep)
+GTEXT(z_power_soc_lpss_mode)
 
 #define GPS0_REGISTER  0xb0800100
 #define GP0_REGISTER 0xb0800114
@@ -47,7 +47,7 @@ SECTION_FUNC(TEXT, save_cpu_context)
 
 	j_s [blink] /* Jump to context of BLINK register. */
 
-SECTION_FUNC(TEXT, _power_soc_sleep)
+SECTION_FUNC(TEXT, z_power_soc_sleep)
 	/*
 	 * Save the return address.
 	 * The restore function will pop this and jump
@@ -60,7 +60,7 @@ SECTION_FUNC(TEXT, _power_soc_sleep)
 	j @qm_power_soc_sleep
 	/* Does not return */
 
-SECTION_FUNC(TEXT, _power_soc_deep_sleep)
+SECTION_FUNC(TEXT, z_power_soc_deep_sleep)
 	/*
 	 * Save the return address.
 	 * The restore function will pop this and jump
@@ -73,7 +73,7 @@ SECTION_FUNC(TEXT, _power_soc_deep_sleep)
 	j @qm_power_soc_deep_sleep
 	/* Does not return */
 
-SECTION_FUNC(TEXT, _power_soc_lpss_mode)
+SECTION_FUNC(TEXT, z_power_soc_lpss_mode)
 	/*
 	 * Setup 'sleep' instruction operand.
 	 */

@@ -31,7 +31,7 @@ static int stm32l4_init(struct device *arg)
 
 	key = irq_lock();
 
-	_ClearFaults();
+	z_clearfaults();
 
 	/* Install default handler that simply resets the CPU
 	 * if configured in the kernel, NOP otherwise

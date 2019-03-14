@@ -210,7 +210,7 @@ static int imxrt_init(struct device *arg)
 		SCB_EnableDCache();
 	}
 
-	_ClearFaults();
+	z_clearfaults();
 
 	/* Initialize system clock */
 	clkInit();

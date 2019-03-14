@@ -144,7 +144,7 @@ static ALWAYS_INLINE void z_ExcSetup(void)
  *
  * @return N/A
  */
-static ALWAYS_INLINE void _ClearFaults(void)
+static ALWAYS_INLINE void z_clearfaults(void)
 {
 #if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)

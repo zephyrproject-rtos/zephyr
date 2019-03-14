@@ -21,15 +21,15 @@ u64_t _pm_save_gdtr;
 u64_t _pm_save_idtr;
 u32_t _pm_save_esp;
 
-extern void _power_soc_sleep(void);
-extern void _power_restore_cpu_context(void);
-extern void _power_soc_deep_sleep(void);
+extern void z_power_soc_sleep(void);
+extern void z_power_restore_cpu_context(void);
+extern void z_power_soc_deep_sleep(void);
 
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
 static u32_t  *__x86_restore_info =
 	(u32_t *)CONFIG_BSP_SHARED_RESTORE_INFO_RAM_ADDR;
 
-static void _deep_sleep(enum power_states state)
+static void deep_sleep(enum power_states state)
 {
 	/*
 	 * Setting resume vector inside the restore_cpu_context
@@ -39,17 +39,17 @@ static void _deep_sleep(enum power_states state)
 	 * can be done before cpu context is restored and control
 	 * transferred to _sys_suspend.
 	 */
-	qm_x86_set_resume_vector(_power_restore_cpu_context,
+	qm_x86_set_resume_vector(z_power_restore_cpu_context,
 				 *__x86_restore_info);
 
 	qm_power_soc_set_x86_restore_flag();
 
 	switch (state) {
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
-		_power_soc_sleep();
+		z_power_soc_sleep();
 		break;
 	case SYS_POWER_STATE_DEEP_SLEEP_2:
-		_power_soc_deep_sleep();
+		z_power_soc_deep_sleep();
 		break;
 	default:
 		break;
@@ -74,7 +74,7 @@ void sys_set_power_state(enum power_states state)
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
 	case SYS_POWER_STATE_DEEP_SLEEP_2:
-		_deep_sleep(state);
+		deep_sleep(state);
 		break;
 #endif
 	default:
@@ -96,7 +96,7 @@ void _sys_pm_power_state_exit_post_ops(enum power_states state)
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
 	case SYS_POWER_STATE_DEEP_SLEEP_2:
 #ifdef CONFIG_ARC_INIT
-		_arc_init(NULL);
+		z_arc_init(NULL);
 #endif /* CONFIG_ARC_INIT */
 		/* Fallthrough */
 	case SYS_POWER_STATE_DEEP_SLEEP_1:

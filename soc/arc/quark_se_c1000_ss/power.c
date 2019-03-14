@@ -18,20 +18,20 @@
 #include "vreg.h"
 
 #if (defined(CONFIG_SYS_POWER_DEEP_SLEEP_STATES))
-extern void _power_soc_sleep(void);
-extern void _power_soc_deep_sleep(void);
-extern void _power_soc_lpss_mode(void);
+extern void z_power_soc_sleep(void);
+extern void z_power_soc_deep_sleep(void);
+extern void z_power_soc_lpss_mode(void);
 
-static void _deep_sleep(enum power_states state)
+static void deep_sleep(enum power_states state)
 {
 	qm_power_soc_set_ss_restore_flag();
 
 	switch (state) {
 	case SYS_POWER_STATE_DEEP_SLEEP_2:
-		_power_soc_sleep();
+		z_power_soc_sleep();
 		break;
 	case SYS_POWER_STATE_DEEP_SLEEP_3:
-		_power_soc_deep_sleep();
+		z_power_soc_deep_sleep();
 		break;
 	default:
 		break;
@@ -54,11 +54,11 @@ void sys_set_power_state(enum power_states state)
 	case SYS_POWER_STATE_DEEP_SLEEP_1:
 		qm_ss_power_soc_lpss_enable();
 		qm_power_soc_set_ss_restore_flag();
-		_power_soc_lpss_mode();
+		z_power_soc_lpss_mode();
 		break;
 	case SYS_POWER_STATE_DEEP_SLEEP_2:
 	case SYS_POWER_STATE_DEEP_SLEEP_3:
-		_deep_sleep(state);
+		deep_sleep(state);
 		break;
 #endif
 	default:
@@ -90,7 +90,7 @@ void _sys_pm_power_state_exit_post_ops(enum power_states state)
 		 * its execution.
 		 */
 		if ((QM_SCSS_GP->gp0 & GP0_BIT_SLEEP_READY) == 0) {
-			_quark_se_ss_ready();
+			z_quark_se_ss_ready();
 			__builtin_arc_seti(0);
 		} else {
 			QM_SCSS_GP->gp0 &= ~GP0_BIT_SLEEP_READY;
