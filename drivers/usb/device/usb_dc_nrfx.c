@@ -982,7 +982,7 @@ static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 			if (!ev) {
 				return;
 			}
-			nrfx_err_t err_code;
+			nrfx_usbd_ep_status_t err_code;
 
 			ev->evt_type = USBD_EVT_EP;
 			ev->evt.ep_evt.evt_type = EP_EVT_RECV_COMPLETE;
@@ -991,8 +991,7 @@ static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 			err_code = nrfx_usbd_ep_status_get(
 				p_event->data.eptransfer.ep, &ep_ctx->buf.len);
 
-			if ((err_code != NRFX_SUCCESS) &&
-			    (err_code != (nrfx_err_t)NRFX_USBD_EP_OK)) {
+			if (err_code != NRFX_USBD_EP_OK) {
 				LOG_ERR("_ep_status_get failed! Code: %d.",
 					err_code);
 				__ASSERT_NO_MSG(0);
