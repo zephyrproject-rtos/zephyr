@@ -30,6 +30,7 @@ if(NOT "${ARCH}" STREQUAL "posix")
     list(APPEND TOOLCHAIN_LD_FLAGS
       -fshort-enums
       -Wno-typedef-redefinition # for Cypress
+      -Wno-attribute-packed-for-bitfield # for bluetooth packed bitfields
       )
 
     include(${ZEPHYR_BASE}/cmake/compiler/gcc/target_arm.cmake)
