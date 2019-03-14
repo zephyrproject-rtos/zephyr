@@ -9,6 +9,7 @@
 #define THREAD_NUM 4
 #define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define POOL_NUM 2
+#define LOOPS 10
 #define TIMEOUT 200
 #define BLK_SIZE_MIN 4
 #define BLK_SIZE_MAX 16
@@ -33,14 +34,17 @@ static void tmpool_api(void *p1, void *p2, void *p3)
 
 	(void)memset(block, 0, sizeof(block));
 
-	for (int i = 0; i < 4; i++) {
-		ret[i] = k_mem_pool_alloc(pool, &block[i], BLK_SIZE_MIN,
+	for (int loops = 0; loops < LOOPS; loops++) {
+		for (int i = 0; i < 4; i++) {
+			ret[i] = k_mem_pool_alloc(pool, &block[i],
+						  BLK_SIZE_MIN, TIMEOUT);
+		}
+		ret[4] = k_mem_pool_alloc(pool, &block[4], BLK_SIZE_MAX,
 					  TIMEOUT);
-	}
-	ret[4] = k_mem_pool_alloc(pool, &block[4], BLK_SIZE_MAX, TIMEOUT);
-	for (int i = 0; i < 5; i++) {
-		if (ret[i] == 0) {
-			k_mem_pool_free(&block[i]);
+		for (int i = 0; i < 5; i++) {
+			if (ret[i] == 0) {
+				k_mem_pool_free(&block[i]);
+			}
 		}
 	}
 
