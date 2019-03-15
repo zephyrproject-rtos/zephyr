@@ -53,17 +53,32 @@ LOG_MODULE_DECLARE(net_ipv6, CONFIG_NET_IPV6_LOG_LEVEL);
 #define MIN_IPV6_MTU NET_IPV6_MTU
 #define MAX_IPV6_MTU 0xffff
 
+#if defined(CONFIG_NET_IPV6_NBR_CACHE) || defined(CONFIG_NET_IPV6_ND)
+/* Global stale counter, whenever ipv6 neighbor enters into
+ * stale state, stale counter is incremented by one.
+ * When network stack tries to add new neighbor and if table
+ * is full, oldest (oldest stale counter) neighbor in stale
+ * state will be removed from the table and new entry will be
+ * added.
+ */
+static u32_t stale_counter;
+
+static struct k_sem nbr_lock;
+#endif
+
 #if defined(CONFIG_NET_IPV6_ND)
 static struct k_delayed_work ipv6_nd_reachable_timer;
 static void ipv6_nd_reachable_timeout(struct k_work *work);
+static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, s64_t time);
 #endif
 
 #if defined(CONFIG_NET_IPV6_NBR_CACHE)
 
+/* Protocol constants from RFC 4861 Chapter 10 */
 #define MAX_MULTICAST_SOLICIT 3
 #define MAX_UNICAST_SOLICIT   3
-#define DELAY_FIRST_PROBE_TIME K_SECONDS(5) /* RFC 4861 ch 10 */
-#define RETRANS_TIMER K_MSEC(1000) /* in ms, RFC 4861 ch 10 */
+#define DELAY_FIRST_PROBE_TIME K_SECONDS(5)
+#define RETRANS_TIMER K_MSEC(1000)
 
 extern void net_neighbor_data_remove(struct net_nbr *nbr);
 extern void net_neighbor_table_clear(struct net_nbr_table *table);
@@ -102,21 +117,6 @@ const char *net_ipv6_nbr_state2str(enum net_ipv6_nbr_state state)
 	return "<invalid state>";
 }
 
-static void ipv6_nbr_set_state(struct net_nbr *nbr,
-			       enum net_ipv6_nbr_state new_state)
-{
-	if (new_state == net_ipv6_nbr_data(nbr)->state ||
-	    net_ipv6_nbr_data(nbr)->state == NET_IPV6_NBR_STATE_STATIC) {
-		return;
-	}
-
-	NET_DBG("nbr %p %s -> %s", nbr,
-		net_ipv6_nbr_state2str(net_ipv6_nbr_data(nbr)->state),
-		net_ipv6_nbr_state2str(new_state));
-
-	net_ipv6_nbr_data(nbr)->state = new_state;
-}
-
 static inline struct net_nbr *get_nbr(int idx)
 {
 	return &net_neighbor_pool[idx].nbr;
@@ -135,6 +135,58 @@ static inline struct net_nbr *get_nbr_from_data(struct net_ipv6_nbr_data *data)
 	}
 
 	return NULL;
+}
+
+static void ipv6_nbr_set_state(struct net_nbr *nbr,
+			       enum net_ipv6_nbr_state new_state)
+{
+	if (new_state == net_ipv6_nbr_data(nbr)->state ||
+	    net_ipv6_nbr_data(nbr)->state == NET_IPV6_NBR_STATE_STATIC) {
+		return;
+	}
+
+	NET_DBG("nbr %p %s -> %s", nbr,
+		net_ipv6_nbr_state2str(net_ipv6_nbr_data(nbr)->state),
+		net_ipv6_nbr_state2str(new_state));
+
+	net_ipv6_nbr_data(nbr)->state = new_state;
+
+	if (net_ipv6_nbr_data(nbr)->state == NET_IPV6_NBR_STATE_STALE) {
+		if (stale_counter + 1 != UINT32_MAX) {
+			net_ipv6_nbr_data(nbr)->stale_counter = stale_counter++;
+		} else {
+			/* Global stale counter reached UINT32_MAX, reset it and
+			 * respective neighbors stale counter too.
+			 */
+			struct net_nbr *n = NULL;
+			struct net_ipv6_nbr_data *data = NULL;
+			int i;
+
+			k_sem_take(&nbr_lock, K_FOREVER);
+
+			stale_counter = 0;
+
+			for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+				n = get_nbr(i);
+				if (!n || !n->ref) {
+					continue;
+				}
+
+				data = net_ipv6_nbr_data(nbr);
+				if (!data) {
+					continue;
+				}
+
+				if (data->state != NET_IPV6_NBR_STATE_STALE) {
+					continue;
+				}
+
+				data->stale_counter = stale_counter++;
+			}
+
+			k_sem_give(&nbr_lock);
+		}
+	}
 }
 
 struct iface_cb_data {
@@ -377,7 +429,7 @@ static struct net_nbr *nbr_new(struct net_if *iface,
 		return NULL;
 	}
 
-	nbr_init(nbr, iface, addr, true, state);
+	nbr_init(nbr, iface, addr, is_router, state);
 
 	NET_DBG("nbr %p iface %p state %d IPv6 %s",
 		nbr, iface, state,
@@ -442,6 +494,85 @@ static void dbg_update_neighbor_lladdr_raw(u8_t *new_lladdr,
 #define dbg_addr_sent_tgt(pkt_str, src, dst, tgt)		\
 	dbg_addr_with_tgt("Sent", pkt_str, src, dst, tgt)
 
+static void ipv6_nd_remove_old_stale_nbr(void)
+{
+	struct net_nbr *nbr = NULL;
+	struct net_ipv6_nbr_data *data = NULL;
+	int nbr_idx = -1;
+	u32_t oldest;
+	int i;
+
+	k_sem_take(&nbr_lock, K_FOREVER);
+
+	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
+		nbr = get_nbr(i);
+		if (!nbr || !nbr->ref) {
+			continue;
+		}
+
+		data = net_ipv6_nbr_data(nbr);
+		if (!data || data->is_router ||
+		    data->state != NET_IPV6_NBR_STATE_STALE) {
+			continue;
+		}
+
+		if (nbr_idx == -1) {
+			nbr_idx = i;
+			oldest = data->stale_counter;
+			continue;
+		}
+
+		if (oldest == MIN(oldest, data->stale_counter)) {
+			continue;
+		}
+
+		nbr_idx = i;
+		oldest = data->stale_counter;
+	}
+
+	if (nbr_idx != -1) {
+		nbr = get_nbr(nbr_idx);
+		if (!nbr) {
+			return;
+		}
+
+		net_ipv6_nbr_rm(nbr->iface,
+				&net_ipv6_nbr_data(nbr)->addr);
+	}
+
+	k_sem_give(&nbr_lock);
+}
+
+static struct net_nbr *add_nbr(struct net_if *iface,
+			       struct in6_addr *addr,
+			       bool is_router,
+			       enum net_ipv6_nbr_state state)
+{
+	struct net_nbr *nbr;
+
+	nbr = nbr_lookup(&net_neighbor.table, iface, addr);
+	if (nbr) {
+		return nbr;
+	}
+
+	nbr = nbr_new(iface, addr, is_router, state);
+	if (nbr) {
+		return nbr;
+	}
+
+	/* Check if there are any stale neighbors, delete the oldest
+	 * one and try to add new neighbor.
+	 */
+	ipv6_nd_remove_old_stale_nbr();
+
+	nbr = nbr_new(iface, addr, is_router, state);
+	if (!nbr) {
+		return NULL;
+	}
+
+	return nbr;
+}
+
 struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 				 struct in6_addr *addr,
 				 struct net_linkaddr *lladdr,
@@ -454,16 +585,13 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 	struct net_event_ipv6_nbr info;
 #endif
 
-	nbr = nbr_lookup(&net_neighbor.table, iface, addr);
+	nbr = add_nbr(iface, addr, is_router, state);
 	if (!nbr) {
-		nbr = nbr_new(iface, addr, is_router, state);
-		if (!nbr) {
-			NET_ERR("Could not add router neighbor %s [%s]",
-				log_strdup(net_sprint_ipv6_addr(addr)),
-				log_strdup(net_sprint_ll_addr(lladdr->addr,
-							      lladdr->len)));
-			return NULL;
-		}
+		NET_ERR("Could not add router neighbor %s [%s]",
+			log_strdup(net_sprint_ipv6_addr(addr)),
+			log_strdup(net_sprint_ll_addr(lladdr->addr,
+						      lladdr->len)));
+		return NULL;
 	}
 
 	if (net_nbr_link(nbr, iface, lladdr) == -EALREADY &&
@@ -513,15 +641,6 @@ struct net_nbr *net_ipv6_nbr_add(struct net_if *iface,
 #endif
 
 	return nbr;
-}
-
-static inline struct net_nbr *nbr_add(struct net_pkt *pkt,
-				      struct net_linkaddr *lladdr,
-				      bool is_router,
-				      enum net_ipv6_nbr_state state)
-{
-	return net_ipv6_nbr_add(net_pkt_iface(pkt), &NET_IPV6_HDR(pkt)->src,
-				lladdr, is_router, state);
 }
 
 void net_neighbor_data_remove(struct net_nbr *nbr)
@@ -787,16 +906,8 @@ try_send:
 		if (net_ipv6_nbr_data(nbr)->state == NET_IPV6_NBR_STATE_STALE) {
 			ipv6_nbr_set_state(nbr, NET_IPV6_NBR_STATE_DELAY);
 
-			net_ipv6_nbr_data(nbr)->reachable = k_uptime_get();
-			net_ipv6_nbr_data(nbr)->reachable_timeout =
-							DELAY_FIRST_PROBE_TIME;
-
-			if (!k_delayed_work_remaining_get(
-						&ipv6_nd_reachable_timer)) {
-				k_delayed_work_submit(
-					&ipv6_nd_reachable_timer,
-					DELAY_FIRST_PROBE_TIME);
-			}
+			ipv6_nd_restart_reachable_timer(nbr,
+							DELAY_FIRST_PROBE_TIME);
 		}
 #endif
 		return NET_OK;
@@ -915,7 +1026,10 @@ static inline struct net_nbr *handle_ns_neighbor(struct net_pkt *pkt,
 		nbr_lladdr.len = net_pkt_lladdr_src(pkt)->len;
 	}
 
-	return nbr_add(pkt, &nbr_lladdr, false, NET_IPV6_NBR_STATE_INCOMPLETE);
+	return net_ipv6_nbr_add(net_pkt_iface(pkt),
+				&NET_IPV6_HDR(pkt)->src,
+				&nbr_lladdr, false,
+				NET_IPV6_NBR_STATE_INCOMPLETE);
 }
 
 int net_ipv6_send_na(struct net_if *iface, const struct in6_addr *src,
@@ -1251,6 +1365,21 @@ drop:
 #endif /* CONFIG_NET_IPV6_NBR_CACHE */
 
 #if defined(CONFIG_NET_IPV6_ND)
+static void ipv6_nd_restart_reachable_timer(struct net_nbr *nbr, s64_t time)
+{
+	s64_t remaining;
+
+	if (nbr) {
+		net_ipv6_nbr_data(nbr)->reachable = k_uptime_get();
+		net_ipv6_nbr_data(nbr)->reachable_timeout = time;
+	}
+
+	remaining = k_delayed_work_remaining_get(&ipv6_nd_reachable_timer);
+	if (!remaining || remaining > time) {
+		k_delayed_work_submit(&ipv6_nd_reachable_timer, time);
+	}
+}
+
 static void ipv6_nd_reachable_timeout(struct k_work *work)
 {
 	s64_t current = k_uptime_get();
@@ -1278,12 +1407,7 @@ static void ipv6_nd_reachable_timeout(struct k_work *work)
 
 		remaining = data->reachable + data->reachable_timeout - current;
 		if (remaining > 0) {
-			if (!k_delayed_work_remaining_get(
-						&ipv6_nd_reachable_timer)) {
-				k_delayed_work_submit(&ipv6_nd_reachable_timer,
-						      remaining);
-			}
-
+			ipv6_nd_restart_reachable_timer(NULL, remaining);
 			continue;
 		}
 
@@ -1296,7 +1420,7 @@ static void ipv6_nd_reachable_timeout(struct k_work *work)
 
 		case NET_IPV6_NBR_STATE_INCOMPLETE:
 			if (data->ns_count >= MAX_MULTICAST_SOLICIT) {
-				nbr_free(nbr);
+				net_ipv6_nbr_rm(nbr->iface, &data->addr);
 			} else {
 				data->ns_count++;
 
@@ -1325,7 +1449,7 @@ static void ipv6_nd_reachable_timeout(struct k_work *work)
 			NET_DBG("nbr %p removing stale address %s",
 				nbr,
 				log_strdup(net_sprint_ipv6_addr(&data->addr)));
-			nbr_free(nbr);
+			net_ipv6_nbr_rm(nbr->iface, &data->addr);
 			break;
 
 		case NET_IPV6_NBR_STATE_DELAY:
@@ -1341,21 +1465,7 @@ static void ipv6_nd_reachable_timeout(struct k_work *work)
 
 		case NET_IPV6_NBR_STATE_PROBE:
 			if (data->ns_count >= MAX_UNICAST_SOLICIT) {
-				struct net_if_router *router;
-
-				router = net_if_ipv6_router_lookup(nbr->iface,
-								   &data->addr);
-				if (router && !router->is_infinite) {
-					NET_DBG("nbr %p address %s PROBE ended (%d)",
-						nbr,
-						log_strdup(
-							net_sprint_ipv6_addr(
-								&data->addr)),
-						data->state);
-
-					net_if_ipv6_router_rm(router);
-					nbr_free(nbr);
-				}
+				net_ipv6_nbr_rm(nbr->iface, &data->addr);
 			} else {
 				data->ns_count++;
 
@@ -1369,17 +1479,8 @@ static void ipv6_nd_reachable_timeout(struct k_work *work)
 					NET_DBG("Cannot send NS (%d)", ret);
 				}
 
-				net_ipv6_nbr_data(nbr)->reachable =
-								k_uptime_get();
-				net_ipv6_nbr_data(nbr)->reachable_timeout =
-								RETRANS_TIMER;
-
-				if (!k_delayed_work_remaining_get(
-						&ipv6_nd_reachable_timer)) {
-					k_delayed_work_submit(
-						&ipv6_nd_reachable_timer,
-						RETRANS_TIMER);
-				}
+				ipv6_nd_restart_reachable_timer(nbr,
+								RETRANS_TIMER);
 			}
 			break;
 		}
@@ -1398,12 +1499,7 @@ void net_ipv6_nbr_set_reachable_timer(struct net_if *iface,
 	NET_DBG("Starting reachable timer nbr %p data %p time %d ms",
 		nbr, net_ipv6_nbr_data(nbr), time);
 
-	net_ipv6_nbr_data(nbr)->reachable = k_uptime_get();
-	net_ipv6_nbr_data(nbr)->reachable_timeout = time;
-
-	if (!k_delayed_work_remaining_get(&ipv6_nd_reachable_timer)) {
-		k_delayed_work_submit(&ipv6_nd_reachable_timer, time);
-	}
+	ipv6_nd_restart_reachable_timer(nbr, time);
 }
 #endif /* CONFIG_NET_IPV6_ND */
 
@@ -1771,17 +1867,12 @@ int net_ipv6_send_ns(struct net_if *iface,
 	net_pkt_cursor_init(pkt);
 	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
 
-	nbr = nbr_lookup(&net_neighbor.table, iface, &ns_hdr->tgt);
+	nbr = add_nbr(iface, &ns_hdr->tgt, false,
+		      NET_IPV6_NBR_STATE_INCOMPLETE);
 	if (!nbr) {
-		nbr_print();
-
-		nbr = nbr_new(iface, &ns_hdr->tgt, false,
-			      NET_IPV6_NBR_STATE_INCOMPLETE);
-		if (!nbr) {
-			NET_DBG("Could not create new neighbor %s",
-				log_strdup(net_sprint_ipv6_addr(&ns_hdr->tgt)));
-			goto drop;
-		}
+		NET_DBG("Could not create new neighbor %s",
+			log_strdup(net_sprint_ipv6_addr(&ns_hdr->tgt)));
+		goto drop;
 	}
 
 	if (pending) {
@@ -1929,7 +2020,10 @@ static inline struct net_nbr *handle_ra_neighbor(struct net_pkt *pkt, u8_t len)
 		}
 	}
 
-	return nbr_add(pkt, &lladdr, true, NET_IPV6_NBR_STATE_STALE);
+	return net_ipv6_nbr_add(net_pkt_iface(pkt),
+				&NET_IPV6_HDR(pkt)->src,
+				&lladdr, true,
+				NET_IPV6_NBR_STATE_STALE);
 }
 
 static inline void handle_prefix_onlink(struct net_pkt *pkt,
@@ -2378,5 +2472,6 @@ void net_ipv6_nbr_init(void)
 	net_icmpv6_register_handler(&ra_input_handler);
 	k_delayed_work_init(&ipv6_nd_reachable_timer,
 			    ipv6_nd_reachable_timeout);
+	k_sem_init(&nbr_lock, 1, UINT_MAX);
 #endif
 }

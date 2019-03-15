@@ -106,6 +106,13 @@ struct net_ipv6_nbr_data {
 
 	/** Is the neighbor a router */
 	bool is_router;
+
+#if defined(CONFIG_NET_IPV6_NBR_CACHE) || defined(CONFIG_NET_IPV6_ND)
+	/** Stale counter used to removed oldest nbr in STALE state,
+	 *  when table is full.
+	 */
+	u32_t stale_counter;
+#endif
 };
 
 static inline struct net_ipv6_nbr_data *net_ipv6_nbr_data(struct net_nbr *nbr)
