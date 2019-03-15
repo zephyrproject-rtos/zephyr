@@ -524,7 +524,7 @@ static inline int z_obj_validation_check(struct _k_object *ko,
  */
 
 #define Z__SYSCALL_HANDLER0(name_) \
-	u32_t hdlr_ ## name_(u32_t arg1 __unused, \
+	u32_t z_hdlr_ ## name_(u32_t arg1 __unused, \
 				 u32_t arg2 __unused, \
 				 u32_t arg3 __unused, \
 				 u32_t arg4 __unused, \
@@ -533,7 +533,7 @@ static inline int z_obj_validation_check(struct _k_object *ko,
 				 void *ssf)
 
 #define Z__SYSCALL_HANDLER1(name_, arg1_) \
-	u32_t hdlr_ ## name_(u32_t arg1_, \
+	u32_t z_hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2 __unused, \
 				 u32_t arg3 __unused, \
 				 u32_t arg4 __unused, \
@@ -542,7 +542,7 @@ static inline int z_obj_validation_check(struct _k_object *ko,
 				 void *ssf)
 
 #define Z__SYSCALL_HANDLER2(name_, arg1_, arg2_) \
-	u32_t hdlr_ ## name_(u32_t arg1_, \
+	u32_t z_hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3 __unused, \
 				 u32_t arg4 __unused, \
@@ -551,7 +551,7 @@ static inline int z_obj_validation_check(struct _k_object *ko,
 				 void *ssf)
 
 #define Z__SYSCALL_HANDLER3(name_, arg1_, arg2_, arg3_) \
-	u32_t hdlr_ ## name_(u32_t arg1_, \
+	u32_t z_hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3_, \
 				 u32_t arg4 __unused, \
@@ -560,7 +560,7 @@ static inline int z_obj_validation_check(struct _k_object *ko,
 				 void *ssf)
 
 #define Z__SYSCALL_HANDLER4(name_, arg1_, arg2_, arg3_, arg4_) \
-	u32_t hdlr_ ## name_(u32_t arg1_, \
+	u32_t z_hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3_, \
 				 u32_t arg4_, \
@@ -569,7 +569,7 @@ static inline int z_obj_validation_check(struct _k_object *ko,
 				 void *ssf)
 
 #define Z__SYSCALL_HANDLER5(name_, arg1_, arg2_, arg3_, arg4_, arg5_) \
-	u32_t hdlr_ ## name_(u32_t arg1_, \
+	u32_t z_hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3_, \
 				 u32_t arg4_, \
@@ -578,7 +578,7 @@ static inline int z_obj_validation_check(struct _k_object *ko,
 				 void *ssf)
 
 #define Z__SYSCALL_HANDLER6(name_, arg1_, arg2_, arg3_, arg4_, arg5_, arg6_) \
-	u32_t hdlr_ ## name_(u32_t arg1_, \
+	u32_t z_hdlr_ ## name_(u32_t arg1_, \
 				 u32_t arg2_, \
 				 u32_t arg3_, \
 				 u32_t arg4_, \

@@ -81,7 +81,7 @@ def gen_make_syscall(ret, argc, tabcount):
     # from gc-sections; these references will not consume space.
 
     sys.stdout.write(
-        "static Z_GENERIC_SECTION(hndlr_ref) __used void *href = (void *)&hdlr_##name; \\\n")
+        "static Z_GENERIC_SECTION(hndlr_ref) __used void *href = (void *)&z_hdlr_##name; \\\n")
     tabs(tabcount)
     if (ret != Retval.VOID):
         sys.stdout.write("return (ret)")
