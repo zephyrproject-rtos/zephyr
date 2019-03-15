@@ -10,6 +10,6 @@ board_finalize_runner_args(intel_s1000
   "--gdb-flash-file=load_elf.txt"
 )
 
-if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "xcc")
-  message(FATAL_ERROR "ZEPHYR_TOOLCHAIN_VARIANT != xcc. This requires xcc to build!")
+if(NOT "${ZEPHYR_TOOLCHAIN_VARIANT}" MATCHES "^(xcc|xtools)$")
+  message(FATAL_ERROR "Requires XCC or custom crosstools built toolchain!")
 endif()
