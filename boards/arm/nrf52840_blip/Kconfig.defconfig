@@ -29,4 +29,25 @@ endif # IEEE802154
 config BT_CTLR
 	default BT
 
+if PWM
+
+config PWM_0
+	default y
+
+endif # PWM
+
+if I2C
+
+config I2C_0
+	default y
+
+endif # I2C
+
+if SPI
+
+config SPI_1
+	default y
+
+endif # SPI
+
 endif # BOARD_NRF52840_BLIP
