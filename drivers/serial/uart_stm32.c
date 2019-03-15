@@ -7,7 +7,9 @@
 
 /**
  * @brief Driver for UART port on STM32 family processor.
- *
+ * @note  LPUART and U(S)ART have the same base and
+ *        majority of operations are performed the same way.
+ *        Please validate for newly added series.
  */
 
 #include <kernel.h>
@@ -178,6 +180,20 @@ static inline u32_t uart_stm32_get_databits(struct device *dev)
 #endif	/* CONFIG_LPUART_1 */
 }
 
+static inline void uart_stm32_set_hwctrl(struct device *dev, u32_t hwctrl)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+	LL_USART_SetHWFlowCtrl(UartInstance, hwctrl);
+}
+
+static inline u32_t uart_stm32_get_hwctrl(struct device *dev)
+{
+	USART_TypeDef *UartInstance = UART_STRUCT(dev);
+
+	return LL_USART_GetHWFlowCtrl(UartInstance);
+}
+
 static inline u32_t uart_stm32_cfg2ll_parity(enum uart_config_parity parity)
 {
 	switch (parity) {
@@ -274,6 +290,38 @@ static inline enum uart_config_data_bits uart_stm32_ll2cfg_databits(u32_t db)
 	}
 }
 
+/**
+ * @brief  Get LL hardware flow control define from
+ *         Zephyr hardware flow control option.
+ * @note   Supports only UART_CFG_FLOW_CTRL_RTS_CTS.
+ * @param  fc: Zephyr hardware flow control option.
+ * @retval LL_USART_HWCONTROL_RTS_CTS, or LL_USART_HWCONTROL_NONE.
+ */
+static inline u32_t uart_stm32_cfg2ll_hwctrl(enum uart_config_flow_control fc)
+{
+	if (fc == UART_CFG_FLOW_CTRL_RTS_CTS) {
+		return LL_USART_HWCONTROL_RTS_CTS;
+	}
+
+	return LL_USART_HWCONTROL_NONE;
+}
+
+/**
+ * @brief  Get Zephyr hardware frlow control option from
+ *         LL hardware flow control define.
+ * @note   Supports only LL_USART_HWCONTROL_RTS_CTS.
+ * @param  fc: LL hardware frlow control definition.
+ * @retval UART_CFG_FLOW_CTRL_RTS_CTS, or UART_CFG_PARITY_NONE.
+ */
+static inline enum uart_config_flow_control uart_stm32_ll2cfg_hwctrl(u32_t fc)
+{
+	if (fc == LL_USART_HWCONTROL_RTS_CTS) {
+		return UART_CFG_FLOW_CTRL_RTS_CTS;
+	}
+
+	return UART_CFG_PARITY_NONE;
+}
+
 static int uart_stm32_configure(struct device *dev,
 				const struct uart_config *cfg)
 {
@@ -282,6 +330,7 @@ static int uart_stm32_configure(struct device *dev,
 	const u32_t parity = uart_stm32_cfg2ll_parity(cfg->parity);
 	const u32_t stopbits = uart_stm32_cfg2ll_stopbits(cfg->stop_bits);
 	const u32_t databits = uart_stm32_cfg2ll_databits(cfg->data_bits);
+	const u32_t flowctrl = uart_stm32_cfg2ll_hwctrl(cfg->flow_ctrl);
 
 	/* Hardware doesn't support mark or space parity */
 	if ((UART_CFG_PARITY_MARK == cfg->parity) ||
@@ -321,9 +370,12 @@ static int uart_stm32_configure(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* Driver currently doesn't support line ctrl */
+	/* Driver supports only RTS CTS flow control */
 	if (UART_CFG_FLOW_CTRL_NONE != cfg->flow_ctrl) {
-		return -ENOTSUP;
+		if (!IS_UART_HWFLOW_INSTANCE(UartInstance) ||
+		    UART_CFG_FLOW_CTRL_RTS_CTS != cfg->flow_ctrl) {
+			return -ENOTSUP;
+		}
 	}
 
 	LL_USART_Disable(UartInstance);
@@ -338,6 +390,10 @@ static int uart_stm32_configure(struct device *dev,
 
 	if (databits != uart_stm32_get_databits(dev)) {
 		uart_stm32_set_databits(dev, databits);
+	}
+
+	if (flowctrl != uart_stm32_get_hwctrl(dev)) {
+		uart_stm32_set_hwctrl(dev, flowctrl);
 	}
 
 	if (cfg->baudrate != data->baud_rate) {
@@ -359,7 +415,8 @@ static int uart_stm32_config_get(struct device *dev, struct uart_config *cfg)
 		uart_stm32_get_stopbits(dev));
 	cfg->data_bits = uart_stm32_ll2cfg_databits(
 		uart_stm32_get_databits(dev));
-	cfg->flow_ctrl = UART_CFG_FLOW_CTRL_NONE;
+	cfg->flow_ctrl = uart_stm32_ll2cfg_hwctrl(
+		uart_stm32_get_hwctrl(dev));
 	return 0;
 }
 
