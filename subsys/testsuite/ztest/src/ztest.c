@@ -31,7 +31,7 @@ static int cleanup_test(struct unit_test *test)
 	int ret = TC_PASS;
 	int mock_status;
 
-	mock_status = _cleanup_mock();
+	mock_status = z_cleanup_mock();
 
 #ifdef KERNEL
 	/* we need to remove the ztest_thread information from the timeout_q.
@@ -138,7 +138,7 @@ static int run_test(struct unit_test *test)
 	run_test_functions(test);
 out:
 	ret |= cleanup_test(test);
-	_TC_END_RESULT(ret, test->name);
+	Z_TC_END_RESULT(ret, test->name);
 
 	return ret;
 }
@@ -234,9 +234,9 @@ static int run_test(struct unit_test *test)
 	}
 
 	if (test_result == -2) {
-		_TC_END_RESULT(TC_SKIP, test->name);
+		Z_TC_END_RESULT(TC_SKIP, test->name);
 	} else {
-		_TC_END_RESULT(ret, test->name);
+		Z_TC_END_RESULT(ret, test->name);
 	}
 
 	return ret;
@@ -244,7 +244,7 @@ static int run_test(struct unit_test *test)
 
 #endif /* !KERNEL */
 
-void _ztest_run_test_suite(const char *name, struct unit_test *suite)
+void z_ztest_run_test_suite(const char *name, struct unit_test *suite)
 {
 	int fail = 0;
 
@@ -290,7 +290,7 @@ K_APPMEM_PARTITION_DEFINE(ztest_mem_partition);
 #ifndef KERNEL
 int main(void)
 {
-	_init_mock();
+	z_init_mock();
 	test_main();
 	end_report();
 
@@ -320,7 +320,7 @@ void main(void)
 	k_mem_domain_add_thread(&ztest_mem_domain, k_current_get());
 #endif /* CONFIG_USERSPACE */
 
-	_init_mock();
+	z_init_mock();
 	test_main();
 	end_report();
 }

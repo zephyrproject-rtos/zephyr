@@ -46,8 +46,8 @@ static u32_t timestamp_div;
 
 typedef int (*out_func_t)(int c, void *ctx);
 
-extern int _prf(int (*func)(), void *dest, char *format, va_list vargs);
-extern void _vprintk(out_func_t out, void *log_output,
+extern int z_prf(int (*func)(), void *dest, char *format, va_list vargs);
+extern void z_vprintk(out_func_t out, void *log_output,
 		     const char *fmt, va_list ap);
 
 /* The RFC 5424 allows very flexible mapping and suggest the value 0 being the
@@ -116,9 +116,9 @@ static int print_formatted(const struct log_output *log_output,
 	va_start(args, fmt);
 #if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX) && \
     defined(CONFIG_LOG_ENABLE_FANCY_OUTPUT_FORMATTING)
-	length = _prf(out_func, (void *)log_output, (char *)fmt, args);
+	length = z_prf(out_func, (void *)log_output, (char *)fmt, args);
 #else
-	_vprintk(out_func, (void *)log_output, fmt, args);
+	z_vprintk(out_func, (void *)log_output, fmt, args);
 #endif
 	va_end(args);
 
@@ -554,9 +554,9 @@ void log_output_string(const struct log_output *log_output,
 
 #if !defined(CONFIG_NEWLIB_LIBC) && !defined(CONFIG_ARCH_POSIX) && \
     defined(CONFIG_LOG_ENABLE_FANCY_OUTPUT_FORMATTING)
-	length = _prf(out_func, (void *)log_output, (char *)fmt, ap);
+	length = z_prf(out_func, (void *)log_output, (char *)fmt, ap);
 #else
-	_vprintk(out_func, (void *)log_output, fmt, ap);
+	z_vprintk(out_func, (void *)log_output, fmt, ap);
 #endif
 
 	(void)length;
