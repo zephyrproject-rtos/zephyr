@@ -16,6 +16,8 @@
 	nsim_isa_bitscan_option=1
 	nsim_isa_mpy_option=8
 	nsim_isa_shift_option=3
+	nsim_isa_host_timer=1
+	nsim_isa_host_timer_mhz=10
 	mpu_regions=16
 	mpu_version=2
 	nsim_isa_dsp_option=2
