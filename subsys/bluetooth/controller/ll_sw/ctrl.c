@@ -7927,7 +7927,7 @@ static inline void event_ping_prep(struct connection *conn)
 #endif /* CONFIG_BT_CTLR_LE_PING */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-static inline void event_len_prep(struct connection *conn)
+static inline int event_len_prep(struct connection *conn)
 {
 	switch (conn->llcp_length.state) {
 	case LLCP_LENGTH_STATE_REQ:
@@ -7942,12 +7942,12 @@ static inline void event_len_prep(struct connection *conn)
 		LL_ASSERT(free_count_rx <= 0xFF);
 
 		if (_radio.packet_rx_data_count != free_count_rx) {
-			break;
+			return 0;
 		}
 
 		node_tx = mem_acquire(&_radio.pkt_tx_ctrl_free);
 		if (!node_tx) {
-			break;
+			return 0;
 		}
 
 		/* wait for resp before completing the procedure */
@@ -8007,10 +8007,12 @@ static inline void event_len_prep(struct connection *conn)
 		LL_ASSERT(free_count_rx <= 0xFF);
 
 		if (_radio.packet_rx_data_count != free_count_rx) {
-			/** TODO another role instance has obtained
-			 * memory from rx pool.
+			/* NOTE: Another role instance has obtained
+			 * memory from rx pool, skip this event and
+			 * check in the next event if resize can be
+			 * done.
 			 */
-			LL_ASSERT(0);
+			return -EAGAIN;
 		}
 
 		/* Procedure complete */
@@ -8144,6 +8146,8 @@ static inline void event_len_prep(struct connection *conn)
 		LL_ASSERT(0);
 		break;
 	}
+
+	return 0;
 }
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
@@ -8525,7 +8529,12 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 		event_stop(0, 0, 0, (void *)STATE_ABORT);
 
 		/* handle DLU state machine */
-		event_len_prep(conn);
+		if (event_len_prep(conn)) {
+			/* NOTE: rx pool could not be resized, lets skip this
+			 *       event and try in the next event.
+			 */
+			return;
+		}
 	}
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
