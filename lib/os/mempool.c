@@ -299,9 +299,14 @@ int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 	}
 	pool_irq_unlock(p, key);
 
+	*data_p = data;
+
+	if (data == NULL) {
+		return -ENOMEM;
+	}
+
 	*level_p = alloc_l;
 	*block_p = block_num(p, data, lsizes[alloc_l]);
-	*data_p = data;
 
 	return 0;
 }
