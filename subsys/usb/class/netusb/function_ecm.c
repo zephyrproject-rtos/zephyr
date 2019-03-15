@@ -255,6 +255,11 @@ static int ecm_send(struct net_pkt *pkt)
 
 	net_pkt_hexdump(pkt, "<");
 
+	if (len > sizeof(tx_buf)) {
+		LOG_WRN("Trying to send too large packet, drop");
+		return -ENOMEM;
+	}
+
 	if (net_pkt_read(pkt, tx_buf, len)) {
 		return -ENOBUFS;
 	}
