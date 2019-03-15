@@ -429,7 +429,7 @@ static int _atoi(char **sptr)
 	return i;
 }
 
-int _prf(int (*func)(), void *dest, char *format, va_list vargs)
+int z_prf(int (*func)(), void *dest, char *format, va_list vargs)
 {
 	/*
 	 * Due the fact that buffer is passed to functions in this file,

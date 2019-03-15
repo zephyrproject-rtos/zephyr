@@ -493,7 +493,6 @@ static inline struct net_buf_pool *get_data_pool(struct net_context *context)
 #define get_data_pool(...) NULL
 #endif /* CONFIG_NET_CONTEXT_NET_PKT_POOL */
 
-
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 void net_pkt_unref_debug(struct net_pkt *pkt, const char *caller, int line)
 {

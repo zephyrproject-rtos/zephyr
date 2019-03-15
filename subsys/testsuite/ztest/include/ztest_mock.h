@@ -34,7 +34,7 @@
  * @param value Value for @a param
  */
 #define ztest_expect_value(func, param, value) \
-	_ztest_expect_value(STRINGIFY(func), STRINGIFY(param), \
+	z_ztest_expect_value(STRINGIFY(func), STRINGIFY(param), \
 			    (uintptr_t)(value))
 
 /**
@@ -49,7 +49,7 @@
  * @param param Parameter to check
  */
 #define ztest_check_expected_value(param) \
-	_ztest_check_expected_value(__func__, STRINGIFY(param), \
+	z_ztest_check_expected_value(__func__, STRINGIFY(param), \
 				    (uintptr_t)(param))
 
 /**
@@ -59,7 +59,7 @@
  * @param value Value to return from @a func
  */
 #define ztest_returns_value(func, value) \
-	_ztest_returns_value(STRINGIFY(func), (uintptr_t)(value))
+	z_ztest_returns_value(STRINGIFY(func), (uintptr_t)(value))
 
 /**
  * @brief Get the return value for current function
@@ -70,7 +70,7 @@
  * @returns The value the current function should return
  */
 #define ztest_get_return_value() \
-	_ztest_get_return_value(__func__)
+	z_ztest_get_return_value(__func__)
 
 /**
  * @brief Get the return value as a pointer for current function
@@ -81,7 +81,7 @@
  * @returns The value the current function should return as a `void *`
  */
 #define ztest_get_return_value_ptr() \
-	((void *)_ztest_get_return_value(__func__))
+	((void *)z_ztest_get_return_value(__func__))
 
 /**
  * @}
@@ -91,20 +91,20 @@
 
 #include <zephyr/types.h>
 
-void _init_mock(void);
-int _cleanup_mock(void);
+void z_init_mock(void);
+int z_cleanup_mock(void);
 
-void _ztest_expect_value(const char *fn, const char *name, uintptr_t value);
-void _ztest_check_expected_value(const char *fn, const char *param,
+void z_ztest_expect_value(const char *fn, const char *name, uintptr_t value);
+void z_ztest_check_expected_value(const char *fn, const char *param,
 				 uintptr_t value);
 
-void _ztest_returns_value(const char *fn, uintptr_t value);
-uintptr_t _ztest_get_return_value(const char *fn);
+void z_ztest_returns_value(const char *fn, uintptr_t value);
+uintptr_t z_ztest_get_return_value(const char *fn);
 
 #else /* !CONFIG_ZTEST_MOCKING */
 
-#define _init_mock()
-#define _cleanup_mock() 0
+#define z_init_mock()
+#define z_cleanup_mock() 0
 
 #endif  /* CONFIG_ZTEST_MOCKING */
 
