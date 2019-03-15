@@ -22,7 +22,7 @@
 
 LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 
-#define T_TIME_OFFSET 2088656896
+#define T_TIME_OFFSET 2088656896 /* RTC Date reset value: Jan, 1st, xx00 */
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X)
 #define RTC_EXTI_LINE	LL_EXTI_LINE_18
@@ -87,8 +87,7 @@ static u32_t rtc_stm32_read(struct device *dev)
 	rtc_date = LL_RTC_DATE_Get(RTC);
 
 	/* Convert calendar datetime to UNIX timestamp */
-	now.tm_year = __LL_RTC_CONVERT_BCD2BIN(
-					__LL_RTC_GET_YEAR(rtc_date));
+	now.tm_year = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_YEAR(rtc_date));
 	now.tm_mon = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MONTH(rtc_date));
 	now.tm_mday = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_DAY(rtc_date));
 
@@ -101,7 +100,10 @@ static u32_t rtc_stm32_read(struct device *dev)
 	/* Return number of seconds since RTC init */
 	ts -= T_TIME_OFFSET;
 
-	ticks = counter_us_to_ticks(dev, (u64_t)(ts * USEC_PER_SEC));
+	__ASSERT(sizeof(time_t) == 8, "unexpected time_t definition");
+	/* Since SDK 0.10.0, newlib defines sizeof(time_t) = 8, */
+	/* so ts requires cast to u32_t before conversion from s to us. */
+	ticks = counter_us_to_ticks(dev, (u64_t)((u32_t)ts * USEC_PER_SEC));
 
 	return ticks;
 }
