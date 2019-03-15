@@ -109,6 +109,11 @@ static int eem_send(struct net_pkt *pkt)
 	 */
 	len = net_pkt_get_len(pkt) + sizeof(sentinel);
 
+	if (len + sizeof(u16_t) > sizeof(tx_buf)) {
+		LOG_WRN("Trying to send too large packet, drop");
+		return -ENOMEM;
+	}
+
 	/* Add EEM header */
 	*hdr = sys_cpu_to_le16(0x3FFF & len);
 	b_idx += sizeof(u16_t);
