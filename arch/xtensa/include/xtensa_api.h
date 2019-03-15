@@ -44,7 +44,11 @@ static inline void z_xt_ints_off(unsigned int mask)
  */
 static inline void z_xt_set_intset(unsigned int arg)
 {
-	xthal_set_intset(arg);
+#if XCHAL_HAVE_INTERRUPTS
+	__asm__ volatile("wsr.intset %0; rsync" : : "r"(arg));
+#else
+	ARG_UNUSED(arg);
+#endif
 }
 
 
@@ -53,7 +57,11 @@ static inline void z_xt_set_intset(unsigned int arg)
  */
 static inline void _xt_set_intclear(unsigned int arg)
 {
-	xthal_set_intclear(arg);
+#if XCHAL_HAVE_INTERRUPTS
+	__asm__ volatile("wsr.intclear %0; rsync" : : "r"(arg));
+#else
+	ARG_UNUSED(arg);
+#endif
 }
 
 #endif /* ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_API_H_ */
