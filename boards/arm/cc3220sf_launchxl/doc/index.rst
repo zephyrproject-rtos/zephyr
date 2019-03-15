@@ -271,6 +271,18 @@ example.
 See the document `Simplelink WiFi Certificates Handling`_ for details on
 using the TI UniFlash tool for certificate programming.
 
+Limitations
+***********
+The following features are not supported in Zephyr v1.14:
+
+- IPv6: While the hardware supports it, it has yet to be fully implemented
+  in the SimpleLink WiFi driver.
+- static IP address: It is not currently possible to set
+  :option:`CONFIG_NET_CONFIG_SETTINGS` to ``y`` and assign a static IP
+  address to the device via :option:`CONFIG_NET_CONFIG_MY_IPV4_ADDR`. DHCP
+  is automatically handled by the SimpleLink WiFi driver to obtain an
+  address dynamically.
+
 References
 **********
 
