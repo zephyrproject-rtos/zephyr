@@ -32,8 +32,6 @@
 #define BOOT_HEADER_SIZE_V1 32
 
 /* Trailer: */
-#define BOOT_MAX_ALIGN 8
-#define BOOT_MAGIC_SZ  16
 #define BOOT_FLAG_SET 0x01
 #define BOOT_FLAG_UNSET 0xff
 
