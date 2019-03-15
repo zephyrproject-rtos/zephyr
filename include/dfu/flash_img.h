@@ -19,6 +19,9 @@ struct flash_img_context {
 	const struct flash_area *flash_area;
 	size_t bytes_written;
 	u16_t buf_bytes;
+#ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
+	off_t off_last;
+#endif
 };
 
 /**

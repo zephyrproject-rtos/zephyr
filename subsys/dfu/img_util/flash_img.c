@@ -18,6 +18,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <dfu/flash_img.h>
 #include <inttypes.h>
 
+#ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
+#include <dfu/mcuboot.h>
+#include <flash.h>
+#endif
+
 BUILD_ASSERT_MSG((CONFIG_IMG_BLOCK_BUF_SIZE % DT_FLASH_WRITE_BLOCK_SIZE == 0),
 		 "CONFIG_IMG_BLOCK_BUF_SIZE is not a multiple of "
 		 "DT_FLASH_WRITE_BLOCK_SIZE");
@@ -52,6 +57,63 @@ static bool flash_verify(const struct flash_area *fa, off_t offset,
 	return (len == 0) ? true : false;
 }
 
+#ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
+
+static int flash_sector_from_off(struct flash_area const *fap, off_t off,
+				 struct flash_sector *sector)
+{
+	struct flash_pages_info page;
+	struct device *flash_dev;
+	int rc = -ENODEV;
+
+	flash_dev = flash_area_get_device(fap);
+	if (flash_dev) {
+		rc = flash_get_page_info_by_offs(flash_dev, off, &page);
+		if (rc == 0) {
+			sector->fs_off = page.start_offset;
+			sector->fs_size = page.size;
+		}
+	}
+
+	return rc;
+}
+
+/**
+ * Erase the image slot progressively
+ *
+ * This function erases a flash page to which offset belongs if only this page
+ * wasn't erased before.
+ *
+ * @param[in] ctx context of the image collection process.
+ * @param[in] off offset from the beginning of the image flash area beginning
+ *
+ * @return  0 on success, negative errno code on fail.
+ */
+static int flash_progressive_erase(struct flash_img_context *ctx, off_t off)
+{
+	struct flash_sector sector;
+	int rc;
+
+	rc = flash_sector_from_off(ctx->flash_area, off, &sector);
+	if (rc) {
+		LOG_ERR("Unable to determine flash sector size");
+	} else {
+		if (ctx->off_last != sector.fs_off) {
+			ctx->off_last = sector.fs_off;
+			LOG_INF("Erasing sector at offset 0x%x", sector.fs_off);
+			rc = flash_area_erase(ctx->flash_area, sector.fs_off,
+					      sector.fs_size);
+			if (rc) {
+				LOG_ERR("Error %d while erasing sector", rc);
+			}
+		}
+	}
+
+	return rc;
+}
+
+#endif /* CONFIG_IMG_ERASE_PROGRESSIVELY */
+
 static int flash_sync(struct flash_img_context *ctx)
 {
 	int rc = 0;
@@ -60,6 +122,11 @@ static int flash_sync(struct flash_img_context *ctx)
 		(void)memset(ctx->buf + ctx->buf_bytes, 0xFF,
 			     CONFIG_IMG_BLOCK_BUF_SIZE - ctx->buf_bytes);
 	}
+
+#ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
+	flash_progressive_erase(ctx, ctx->bytes_written +
+				CONFIG_IMG_BLOCK_BUF_SIZE);
+#endif
 
 	rc = flash_area_write(ctx->flash_area, ctx->bytes_written, ctx->buf,
 			      CONFIG_IMG_BLOCK_BUF_SIZE);
@@ -121,6 +188,11 @@ int flash_img_buffered_write(struct flash_img_context *ctx, u8_t *data,
 			return rc;
 		}
 	}
+#ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
+	/* erase the image trailer area if it was not erased */
+	flash_progressive_erase(ctx,
+				BOOT_TRAILER_IMG_STATUS_OFFS(ctx->flash_area));
+#endif
 
 	flash_area_close(ctx->flash_area);
 	ctx->flash_area = NULL;
@@ -137,6 +209,9 @@ int flash_img_init(struct flash_img_context *ctx)
 {
 	ctx->bytes_written = 0;
 	ctx->buf_bytes = 0U;
+#ifdef CONFIG_IMG_ERASE_PROGRESSIVELY
+	ctx->off_last = -1;
+#endif
 	return flash_area_open(DT_FLASH_AREA_IMAGE_1_ID,
 			       (const struct flash_area **)&(ctx->flash_area));
 }
