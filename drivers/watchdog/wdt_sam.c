@@ -10,11 +10,11 @@
  * Note:
  * - Once the watchdog disable bit is set, it cannot be cleared till next
  *   power reset, i.e, the watchdog cannot be started once stopped.
- * - Since the MCU boots with WDT enabled,the  CONFIG_WDT_SAM_DISABLE_AT_BOOT
+ * - Since the MCU boots with WDT enabled, the CONFIG_WDT_DISABLE_AT_BOOT
  *   is set default at boot and watchdog module is disabled in the MCU for
  *   systems that don't need watchdog functionality.
  * - If the application needs to use the watchdog in the system, then
- *   CONFIG_WDT_SAM_DISABLE_AT_BOOT must be unset in the app's config file
+ *   CONFIG_WDT_DISABLE_AT_BOOT must be unset in the app's config file
  */
 
 #include <watchdog.h>
