@@ -433,9 +433,9 @@ static int adxl362_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	z = (buf[1] << 8) + buf[0];
 
-	data->acc_x = (s32_t)x * (adxl362_data.selected_range / 2);
-	data->acc_y = (s32_t)y * (adxl362_data.selected_range / 2);
-	data->acc_z = (s32_t)z * (adxl362_data.selected_range / 2);
+	data->acc_x = (s32_t)x * (adxl362_data.selected_range);
+	data->acc_y = (s32_t)y * (adxl362_data.selected_range);
+	data->acc_z = (s32_t)z * (adxl362_data.selected_range);
 
 	ret = adxl362_read_temperature(dev, &data->temp);
 	if (ret) {
@@ -443,6 +443,14 @@ static int adxl362_sample_fetch(struct device *dev, enum sensor_channel chan)
 	}
 
 	return 0;
+}
+
+static void adxl362_accel_convert(struct sensor_value *val, s16_t value)
+{
+	s32_t micro_ms2 = value * (SENSOR_G / (16 * 1000));
+
+	val->val1 = micro_ms2 / 100000;
+	val->val2 = micro_ms2 % 100000;
 }
 
 static int adxl362_channel_get(struct device *dev,
@@ -453,16 +461,13 @@ static int adxl362_channel_get(struct device *dev,
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X: /* Acceleration on the X axis, in m/s^2. */
-		val->val1 = data->acc_x / 1000;
-		val->val2 = (data->acc_x % 1000) * 1000;
+		adxl362_accel_convert(val, data->acc_x);
 		break;
 	case SENSOR_CHAN_ACCEL_Y: /* Acceleration on the Y axis, in m/s^2. */
-		val->val1 = data->acc_y / 1000;
-		val->val2 = (data->acc_y % 1000) * 1000;
+		adxl362_accel_convert(val, data->acc_y);
 		break;
 	case SENSOR_CHAN_ACCEL_Z: /* Acceleration on the Z axis, in m/s^2. */
-		val->val1 = data->acc_z / 1000;
-		val->val2 = (data->acc_z % 1000) * 1000;
+		adxl362_accel_convert(val, data->acc_z);
 		break;
 	case SENSOR_CHAN_DIE_TEMP: /* Temperature in degrees Celsius. */
 		val->val1 = data->temp / 1000;
