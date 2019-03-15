@@ -1091,7 +1091,7 @@ static int instance_init(const struct shell *shell, const void *p_config,
 	}
 
 	flag_tx_rdy_set(shell, true);
-	flag_echo_set(shell, CONFIG_SHELL_ECHO_STATUS);
+	flag_echo_set(shell, IS_ENABLED(CONFIG_SHELL_ECHO_STATUS));
 	flag_mode_delete_set(shell,
 			     IS_ENABLED(CONFIG_SHELL_BACKSPACE_MODE_DELETE));
 	shell->ctx->state = SHELL_STATE_INITIALIZED;
