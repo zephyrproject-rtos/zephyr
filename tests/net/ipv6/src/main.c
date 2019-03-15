@@ -410,7 +410,40 @@ static void test_add_neighbor(void)
 			       false, NET_IPV6_NBR_STATE_REACHABLE);
 	zassert_not_null(nbr, "Cannot add peer %s to neighbor cache\n",
 			 net_sprint_ipv6_addr(&peer_addr));
+}
 
+/**
+ * @brief IPv6 add more than max neighbors
+ */
+static void test_add_max_neighbors(void)
+{
+	struct in6_addr dst_addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					 0, 0, 0, 0, 0, 0, 0, 0x3 } } };
+	struct net_nbr *nbr;
+	struct net_linkaddr_storage llstorage;
+	struct net_linkaddr lladdr;
+	u8_t i;
+
+	llstorage.addr[0] = 0x01;
+	llstorage.addr[1] = 0x02;
+	llstorage.addr[2] = 0x33;
+	llstorage.addr[3] = 0x44;
+	llstorage.addr[4] = 0x05;
+	llstorage.addr[5] = 0x07;
+
+	lladdr.len = 6;
+	lladdr.addr = llstorage.addr;
+	lladdr.type = NET_LINK_ETHERNET;
+
+	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS + 1; i++) {
+		llstorage.addr[5] += i;
+		dst_addr.s6_addr[15] += i;
+		nbr = net_ipv6_nbr_add(net_if_get_default(), &dst_addr,
+				       &lladdr, false,
+				       NET_IPV6_NBR_STATE_STALE);
+		zassert_not_null(nbr, "Cannot add peer %s to neighbor cache\n",
+				 net_sprint_ipv6_addr(&dst_addr));
+	}
 }
 
 /**
@@ -1324,6 +1357,7 @@ void test_main(void)
 			 ztest_unit_test(test_cmp_prefix),
 			 ztest_unit_test(test_nbr_lookup_fail),
 			 ztest_unit_test(test_add_neighbor),
+			 ztest_unit_test(test_add_max_neighbors),
 			 ztest_unit_test(test_nbr_lookup_ok),
 			 ztest_unit_test(test_send_ns_extra_options),
 			 ztest_unit_test(test_send_ns_no_options),
