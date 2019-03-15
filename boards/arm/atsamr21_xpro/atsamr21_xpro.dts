@@ -60,3 +60,7 @@
 &usb0 {
 	status = "ok";
 };
+
+&rtc {
+	status = "ok";
+};
