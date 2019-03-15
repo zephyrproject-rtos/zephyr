@@ -146,7 +146,7 @@ static uint32_t CSI_TransferGetQueueDelta(uint32_t startIdx, uint32_t endIdx)
     }
     else
     {
-        return startIdx + CSI_DRIVER_ACTUAL_QUEUE_SIZE - endIdx;
+        return endIdx + CSI_DRIVER_ACTUAL_QUEUE_SIZE - startIdx;
     }
 }
 
