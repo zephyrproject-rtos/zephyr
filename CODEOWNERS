@@ -104,6 +104,7 @@
 /drivers/*/*qmsi*                         @nashif
 /drivers/*/*stm32*                        @erwango
 /drivers/*/*native_posix*                 @aescolar
+/drivers/*/*uwp*                          @easonxiang
 /drivers/adc/                             @anangl
 /drivers/adc/adc_stm32.c                  @cybertale
 /drivers/bluetooth/                       @joerchan @jhedberg @Vudentz
@@ -167,6 +168,7 @@
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /dts/riscv32/rv32m1*                      @MaureenHelm
 /dts/riscv32/riscv32-litex-vexriscv.dtsi  @mateusz-holenko @kgugala @pgielda
+/dts/arm/unisoc/                          @easonxiang
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
 /dts/bindings/iio/adc/st*stm32-adc.yaml   @cybertale
@@ -179,6 +181,7 @@
 /dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda @nategraff-sifive
 /dts/bindings/*/litex*                    @mateusz-holenko @kgugala @pgielda
 /dts/bindings/*/vexriscv*                 @mateusz-holenko @kgugala @pgielda
+/dts/bindings/*/unisoc*                   @easonxiang
 /ext/fs/                                  @nashif @wentongwu
 /ext/hal/atmel/asf/sam/include/same70*/   @aurel32
 /ext/hal/atmel/asf/sam0/include/samr21/   @benpicco
@@ -188,6 +191,7 @@
 /ext/hal/nordic/                          @carlescufi @anangl
 /ext/hal/nxp/                             @MaureenHelm
 /ext/hal/st/                              @erwango
+/ext/hal/unisoc/                          @easonxiang
 /ext/hal/ti/simplelink/                   @vanti
 /ext/lib/crypto/mbedtls/                  @nashif
 /ext/lib/crypto/tinycrypt/                @ceolin
