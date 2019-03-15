@@ -16,11 +16,6 @@
 #define LVL_ARRAY_SZ(n) (n)
 #endif
 
-static bool level_empty(struct sys_mem_pool_base *p, int l)
-{
-	return sys_dlist_is_empty(&p->levels[l].free_list);
-}
-
 static void *block_ptr(struct sys_mem_pool_base *p, size_t lsz, int block)
 {
 	return (u8_t *)p->buf + lsz * block;
@@ -236,7 +231,7 @@ static void *block_break(struct sys_mem_pool_base *p, void *block, int l,
 int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 			      u32_t *level_p, u32_t *block_p, void **data_p)
 {
-	int i, from_l, alloc_l = -1, free_l = -1;
+	int i, from_l, alloc_l = -1;
 	unsigned int key;
 	void *data = NULL;
 	size_t lsizes[LVL_ARRAY_SZ(p->n_levels)];
@@ -258,12 +253,9 @@ int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 		}
 
 		alloc_l = i;
-		if (!level_empty(p, i)) {
-			free_l = i;
-		}
 	}
 
-	if (alloc_l < 0 || free_l < 0) {
+	if (alloc_l < 0) {
 		*data_p = NULL;
 		return -ENOMEM;
 	}
@@ -280,7 +272,7 @@ int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 	 * spurious -ENOMEM.
 	 */
 	key = pool_irq_lock(p);
-	for (i = free_l; i >= 0; i--) {
+	for (i = alloc_l; i >= 0; i--) {
 		data = block_alloc(p, i, lsizes[i]);
 
 		/* Found one.  Iteratively break it down to the size
@@ -290,9 +282,9 @@ int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 		 */
 		if (data != NULL) {
 			for (from_l = i; from_l < alloc_l; from_l++) {
-				data = block_break(p, data, from_l, lsizes);
 				pool_irq_unlock(p, key);
 				key = pool_irq_lock(p);
+				data = block_break(p, data, from_l, lsizes);
 			}
 			break;
 		}
