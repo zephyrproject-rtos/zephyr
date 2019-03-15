@@ -133,6 +133,9 @@ static void usb_sam0_load_padcal(void)
 	u32_t pad_transp;
 	u32_t pad_trim;
 
+#ifdef USB_FUSES_TRANSN_ADDR
+	pad_transn = *(uint32_t *)USB_FUSES_TRANSN_ADDR;
+#else
 	pad_transn = (*((uint32_t *)(NVMCTRL_OTP4) +
 			(NVM_USB_PAD_TRANSN_POS / 32)) >>
 		      (NVM_USB_PAD_TRANSN_POS % 32)) &
@@ -141,9 +144,13 @@ static void usb_sam0_load_padcal(void)
 	if (pad_transn == 0x1F) {
 		pad_transn = 5U;
 	}
+#endif
 
 	regs->PADCAL.bit.TRANSN = pad_transn;
 
+#ifdef USB_FUSES_TRANSP_ADDR
+	pad_transp = *(uint32_t *)USB_FUSES_TRANSP_ADDR;
+#else
 	pad_transp = (*((uint32_t *)(NVMCTRL_OTP4) +
 			(NVM_USB_PAD_TRANSP_POS / 32)) >>
 		      (NVM_USB_PAD_TRANSP_POS % 32)) &
@@ -152,9 +159,13 @@ static void usb_sam0_load_padcal(void)
 	if (pad_transp == 0x1F) {
 		pad_transp = 29U;
 	}
+#endif
 
 	regs->PADCAL.bit.TRANSP = pad_transp;
 
+#ifdef USB_FUSES_TRIM_ADDR
+	pad_trim = *(uint32_t *)USB_FUSES_TRIM_ADDR;
+#else
 	pad_trim = (*((uint32_t *)(NVMCTRL_OTP4) +
 		      (NVM_USB_PAD_TRIM_POS / 32)) >>
 		    (NVM_USB_PAD_TRIM_POS % 32)) &
@@ -163,9 +174,18 @@ static void usb_sam0_load_padcal(void)
 	if (pad_trim == 0x7) {
 		pad_trim = 3U;
 	}
+#endif
 
 	regs->PADCAL.bit.TRIM = pad_trim;
 }
+
+#define SAM0_USB_IRQ_CONNECT(n)					\
+	do {							\
+	IRQ_CONNECT(DT_ATMEL_SAM0_USB_0_IRQ_##n,		\
+		    DT_ATMEL_SAM0_USB_0_IRQ_##n##_PRIORITY,	\
+		    usb_sam0_isr, 0, 0);			\
+	irq_enable(DT_ATMEL_SAM0_USB_0_IRQ_##n);		\
+	} while (0)
 
 /* Attach by initializing the device */
 int usb_dc_attach(void)
@@ -179,8 +199,13 @@ int usb_dc_attach(void)
 		return -EINVAL;
 	}
 
+#ifdef MCLK
+	/* Enable the clock in MCLK */
+	MCLK->APBBMASK.bit.USB_ = 1;
+#else
 	/* Enable the clock in PM */
 	PM->APBBMASK.bit.USB_ = 1;
+#endif
 
 	clock_control_on(clk, (clock_control_subsys_t)USB_GCLK_ID);
 
@@ -205,10 +230,18 @@ int usb_dc_attach(void)
 	regs->INTENSET.reg = USB_DEVICE_INTENSET_EORST;
 
 	/* Connect and enable the interrupt */
-	IRQ_CONNECT(DT_ATMEL_SAM0_USB_0_IRQ_0,
-		    DT_ATMEL_SAM0_USB_0_IRQ_0_PRIORITY,
-		    usb_sam0_isr, 0, 0);
-	irq_enable(DT_ATMEL_SAM0_USB_0_IRQ_0);
+#ifdef DT_ATMEL_SAM0_USB_0_IRQ_0
+	SAM0_USB_IRQ_CONNECT(0);
+#endif
+#ifdef DT_ATMEL_SAM0_USB_0_IRQ_1
+	SAM0_USB_IRQ_CONNECT(1);
+#endif
+#ifdef DT_ATMEL_SAM0_USB_0_IRQ_2
+	SAM0_USB_IRQ_CONNECT(2);
+#endif
+#ifdef DT_ATMEL_SAM0_USB_0_IRQ_3
+	SAM0_USB_IRQ_CONNECT(3);
+#endif
 
 	/* Enable and attach */
 	regs->CTRLA.bit.ENABLE = 1;
