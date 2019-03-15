@@ -23,8 +23,9 @@ config MULTITHREADING
 	  since the main thread cannot pend, it being the only thread in the
 	  system.
 
-	  Many drivers and subsystems will not work with this option; use only
-	  when you REALLY know what you are doing.
+	  Many drivers and subsystems will not work with this option
+	  set to 'n'; disable only when you REALLY know what you are
+	  doing.
 
 config NUM_COOP_PRIORITIES
 	int "Number of coop priorities" if MULTITHREADING
