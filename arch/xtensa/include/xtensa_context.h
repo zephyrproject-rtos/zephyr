@@ -20,9 +20,6 @@
 #define ZEPHYR_ARCH_XTENSA_INCLUDE_XTENSA_CONTEXT_H_
 
 #include    <xtensa/config/tie.h>
-#include    <xtensa/corebits.h>
-#include    <xtensa/config/system.h>
-#include    <xtensa/xtruntime-frames.h>
 
 #ifdef __ASSEMBLER__
 #include    <xtensa/coreasm.h>
@@ -53,49 +50,51 @@ extern "C" {
  * temporary space to help manage the spilling of the register windows.
  */
 
-STRUCT_BEGIN
-STRUCT_FIELD(long, 4, XT_STK_,     exit) /* exit point for dispatch */
-STRUCT_FIELD(long, 4, XT_STK_,       pc)   /* return PC */
-STRUCT_FIELD(long, 4, XT_STK_,       ps)   /* return PS */
-STRUCT_FIELD(long, 4, XT_STK_,       a0)
-STRUCT_FIELD(long, 4, XT_STK_,       a1)   /* stack pointer before irq */
-STRUCT_FIELD(long, 4, XT_STK_,       a2)
-STRUCT_FIELD(long, 4, XT_STK_,       a3)
-STRUCT_FIELD(long, 4, XT_STK_,       a4)
-STRUCT_FIELD(long, 4, XT_STK_,       a5)
-STRUCT_FIELD(long, 4, XT_STK_,       a6)
-STRUCT_FIELD(long, 4, XT_STK_,       a7)
-STRUCT_FIELD(long, 4, XT_STK_,       a8)
-STRUCT_FIELD(long, 4, XT_STK_,       a9)
-STRUCT_FIELD(long, 4, XT_STK_,      a10)
-STRUCT_FIELD(long, 4, XT_STK_,      a11)
-STRUCT_FIELD(long, 4, XT_STK_,      a12)
-STRUCT_FIELD(long, 4, XT_STK_,      a13)
-STRUCT_FIELD(long, 4, XT_STK_,      a14)
-STRUCT_FIELD(long, 4, XT_STK_,      a15)
-STRUCT_FIELD(long, 4, XT_STK_,      sar)
-STRUCT_FIELD(long, 4, XT_STK_, exccause)
-STRUCT_FIELD(long, 4, XT_STK_, excvaddr)
+#if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
+typedef struct {
+	long exit;	/* exit point for dispatch */
+	long pc;	/* return PC */
+	long ps;	/* return PS */
+	long a0;
+	long a1;	/* stack pointer before irq */
+	long a2;
+	long a3;
+	long a4;
+	long a5;
+	long a6;
+	long a7;
+	long a8;
+	long a9;
+	long a10;
+	long a11;
+	long a12;
+	long a13;
+	long a14;
+	long a15;
+	long sar;
+	long exccause;
+	long excvaddr;
 #if XCHAL_HAVE_LOOPS
-STRUCT_FIELD(long, 4, XT_STK_,   lbeg)
-STRUCT_FIELD(long, 4, XT_STK_,   lend)
-STRUCT_FIELD(long, 4, XT_STK_, lcount)
+	long  lbeg;
+	long  lend;
+	long lcount;
 #endif
 #ifndef __XTENSA_CALL0_ABI__
 /* Temporary space for saving stuff during window spill */
-STRUCT_FIELD(long, 4, XT_STK_,   tmp0)
-STRUCT_FIELD(long, 4, XT_STK_,   tmp1)
-STRUCT_FIELD(long, 4, XT_STK_,   tmp2)
+	long  tmp0;
+	long  tmp1;
+	long  tmp2;
 #endif
 #ifdef XT_USE_SWPRI
 /* Storage for virtual priority mask */
-STRUCT_FIELD(long, 4, XT_STK_,   vpri)
+	long  vpri;
 #endif
 #ifdef XT_USE_OVLY
 /* Storage for overlay state */
-STRUCT_FIELD(long, 4, XT_STK_,   ovly)
+	long  ovly;
 #endif
-STRUCT_END(XtExcFrame)
+} XtExcFrame;
+#endif /* !_ASMLANGUAGE && !__ASSEMBLER__ */
 
 #if defined(_ASMLANGUAGE) || defined(__ASSEMBLER__)
 #define XT_STK_NEXT1      XtExcFrameSize
@@ -150,23 +149,25 @@ STRUCT_END(XtExcFrame)
  * to ignore this field if it has another way of distinguishing frames.
  */
 
-STRUCT_BEGIN
-STRUCT_FIELD(long, 4, XT_SOL_, exit)
-STRUCT_FIELD(long, 4, XT_SOL_,   pc)
-STRUCT_FIELD(long, 4, XT_SOL_,   ps)
-STRUCT_FIELD(long, 4, XT_SOL_, next)
+#if !defined(_ASMLANGUAGE) && !defined(__ASSEMBLER__)
+typedef struct {
+	long exit;
+	long pc;
+	long ps;
+	long next;
 #ifdef __XTENSA_CALL0_ABI__
-STRUCT_FIELD(long, 4, XT_SOL_,  a12)    /* should be on 16-byte alignment */
-STRUCT_FIELD(long, 4, XT_SOL_,  a13)
-STRUCT_FIELD(long, 4, XT_SOL_,  a14)
-STRUCT_FIELD(long, 4, XT_SOL_,  a15)
+	long a12;	/* should be on 16-byte alignment */
+	long a13;
+	long a14;
+	long a15;
 #else
-STRUCT_FIELD(long, 4, XT_SOL_,   a0)    /* should be on 16-byte alignment */
-STRUCT_FIELD(long, 4, XT_SOL_,   a1)
-STRUCT_FIELD(long, 4, XT_SOL_,   a2)
-STRUCT_FIELD(long, 4, XT_SOL_,   a3)
+	long a0;	/* should be on 16-byte alignment */
+	long a1;
+	long a2;
+	long a3;
 #endif
-STRUCT_END(XtSolFrame)
+} XtSolFrame;
+#endif /* !_ASMLANGUAGE && !__ASSEMBLER__ */
 
 /* Size of solicited stack frame */
 #define XT_SOL_FRMSZ            ALIGNUP(0x10, XtSolFrameSize)
