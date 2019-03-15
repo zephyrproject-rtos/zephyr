@@ -216,7 +216,8 @@ static struct __rndis {
 static u8_t manufacturer[] = CONFIG_USB_DEVICE_MANUFACTURER;
 static u32_t drv_version = 1U;
 
-static u8_t tx_buf[NETUSB_MTU + sizeof(struct rndis_payload_packet)];
+static u8_t tx_buf[NET_ETH_MAX_FRAME_SIZE +
+				sizeof(struct rndis_payload_packet)];
 
 static u32_t object_id_supported[] = {
 	RNDIS_OBJECT_ID_GEN_SUPP_LIST,
