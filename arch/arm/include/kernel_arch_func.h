@@ -115,9 +115,9 @@ z_arch_switch_to_main_thread(struct k_thread *main_thread,
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 	"isb               \n\t"
-	"mov r1, #0        \n\t"
-	"mov r2, #0        \n\t"
-	"mov r3, #0        \n\t"
+	"movs r1, #0       \n\t"
+	"movs r2, #0       \n\t"
+	"movs r3, #0       \n\t"
 	"bl z_thread_entry \n\t"   /* z_thread_entry(_main, 0, 0, 0); */
 	:
 	: "r" (_main), "r" (start_of_main_stack)
