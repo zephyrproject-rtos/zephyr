@@ -9,6 +9,7 @@
 LOG_MODULE_REGISTER(usb_eem);
 
 #include <net/net_pkt.h>
+#include <net/ethernet.h>
 #include <net_private.h>
 
 #include <usb/usb_device.h>
@@ -17,7 +18,10 @@ LOG_MODULE_REGISTER(usb_eem);
 
 #include "netusb.h"
 
-#define EEM_FRAME_SIZE 1522
+static u8_t sentinel[] = { 0xde, 0xad, 0xbe, 0xef };
+
+#define EEM_FRAME_SIZE (NET_ETH_MAX_FRAME_SIZE + sizeof(sentinel) + \
+			sizeof(u16_t)) /* EEM header */
 
 static u8_t tx_buf[EEM_FRAME_SIZE], rx_buf[EEM_FRAME_SIZE];
 
@@ -97,7 +101,6 @@ static inline u16_t eem_pkt_size(u16_t hdr)
 
 static int eem_send(struct net_pkt *pkt)
 {
-	u8_t sentinel[4] = { 0xde, 0xad, 0xbe, 0xef };
 	u16_t *hdr = (u16_t *)&tx_buf[0];
 	int ret, len, b_idx = 0;
 
@@ -170,15 +173,15 @@ static void eem_read_cb(u8_t ep, int size, void *priv)
 		}
 
 		pkt = net_pkt_alloc_with_buffer(netusb_net_iface(),
-						eem_size - 4, AF_UNSPEC, 0,
-						K_FOREVER);
+						eem_size - sizeof(sentinel),
+						AF_UNSPEC, 0, K_FOREVER);
 		if (!pkt) {
 			LOG_ERR("Unable to alloc pkt\n");
 			break;
 		}
 
 		/* copy payload and discard 32-bit sentinel */
-		if (net_pkt_write(pkt, ptr, eem_size - 4)) {
+		if (net_pkt_write(pkt, ptr, eem_size - sizeof(sentinel))) {
 			LOG_ERR("Unable to write into pkt\n");
 			net_pkt_unref(pkt);
 			break;
