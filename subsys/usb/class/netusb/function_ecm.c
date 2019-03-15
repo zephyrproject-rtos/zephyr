@@ -29,9 +29,8 @@ LOG_MODULE_REGISTER(usb_ecm);
 #define ECM_OUT_EP_IDX			1
 #define ECM_IN_EP_IDX			2
 
-#define ECM_FRAME_SIZE			1522
 
-static u8_t tx_buf[ECM_FRAME_SIZE], rx_buf[ECM_FRAME_SIZE];
+static u8_t tx_buf[NET_ETH_MAX_FRAME_SIZE], rx_buf[NET_ETH_MAX_FRAME_SIZE];
 
 struct usb_cdc_ecm_config {
 #ifdef CONFIG_USB_COMPOSITE_DEVICE
@@ -98,7 +97,7 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_cdc_ecm_config cdc_ecm_cfg = {
 		.bDescriptorSubtype = ETHERNET_FUNC_DESC,
 		.iMACAddress = 4,
 		.bmEthernetStatistics = sys_cpu_to_le32(0), /* None */
-		.wMaxSegmentSize = sys_cpu_to_le16(ECM_FRAME_SIZE),
+		.wMaxSegmentSize = sys_cpu_to_le16(NET_ETH_MAX_FRAME_SIZE),
 		.wNumberMCFilters = sys_cpu_to_le16(0), /* None */
 		.bNumberPowerFilters = 0, /* No wake up */
 	},
