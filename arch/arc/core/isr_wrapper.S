@@ -81,9 +81,6 @@ IRQ stack frame layout:
   low address
 
 Registers not taken into account in the current implementation.
-          jli_base
-          ldi_base
-          ei_base
           accl
           acch
 
@@ -240,40 +237,13 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #if CONFIG_RGF_NUM_BANKS == 1
 	bnz rirq_path
 	/* 1-register bank FIRQ handling must save registers on stack */
-	lr r0,[_ARC_V2_STATUS32_P0]
-	push_s r0
+	_create_irq_stack_frame
+	lr r0, [_ARC_V2_STATUS32_P0]
+	st_s r0, [sp, ___isf_t_status32_OFFSET]
 	mov r0,ilink
-	push_s r0
-#ifdef CONFIG_CODE_DENSITY
-	lr r0, [_ARC_V2_JLI_BASE]
-	push_s r0
-	lr r0, [_ARC_V2_LDI_BASE]
-	push_s r0
-	lr r0, [_ARC_V2_EI_BASE]
-	push_s r0
-#endif
-	mov r0,lp_count
-	push_s r0
-	lr r0, [_ARC_V2_LP_START]
-	push_s r0
-	lr r0, [_ARC_V2_LP_END]
-	push_s r0
-	push_s blink
-	push_s r13
-	push_s r12
-	push r11
-	push r10
-	push r9
-	push r8
-	push r7
-	push r6
-	push r5
-	push r4
-	push_s r3
-	push_s r2
-	push_s r1
+	st_s r0, [sp, ___isf_t_pc_OFFSET]
 	ld r0,[saved_r0]
-	push_s r0
+	st_s r0, [sp, ___isf_t_r0_OFFSET]
 	mov r3, _firq_exit
 	mov r2, _firq_enter
 	j_s [r2]
