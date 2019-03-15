@@ -267,7 +267,7 @@ u16_t board_set_target(void)
 	return target;
 }
 
-static struct k_sem tune_sem = _K_SEM_INITIALIZER(tune_sem, 0, 1);
+static K_SEM_DEFINE(tune_sem, 0, 1);
 static const char *tune_str;
 
 void board_play(const char *str)
