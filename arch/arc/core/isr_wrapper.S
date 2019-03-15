@@ -234,34 +234,6 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #if CONFIG_RGF_NUM_BANKS == 1
 	st r0,[saved_r0]
 #endif
-
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-#if CONFIG_RGF_NUM_BANKS !=1
-	lr r0, [_ARC_V2_STATUS32]
-	and r0, r0, ~_ARC_V2_STATUS32_RB(7)
-	kflag r0
-#endif
-/*
- * read_timer_start_of_isr just uses several
- * register now, no need to save all regs
- */
-	push_s r0
-	push_s r1
-	push_s blink
-
-	bl read_timer_start_of_isr
-
-	pop_s blink
-	pop_s r1
-	pop_s r0
-
-#if CONFIG_RGF_NUM_BANKS !=1
-	lr r0, [_ARC_V2_STATUS32]
-	or r0, r0, _ARC_V2_STATUS32_RB(1)
-	kflag r0
-#endif
-#endif
-
 	lr r0, [_ARC_V2_AUX_IRQ_ACT]
 	ffs r0, r0
 	cmp r0, 0
@@ -317,9 +289,6 @@ rirq_path:
 	j_s [r2]
 #endif
 #else
-#ifdef CONFIG_EXECUTION_BENCHMARKING
-	bl read_timer_start_of_isr
-#endif
 	mov r3, _rirq_exit
 	mov r2, _rirq_enter
 	j_s [r2]
@@ -367,6 +336,10 @@ _skip_sys_power_save_idle_exit:
 /* when getting here, r3 contains the interrupt exit stub to call */
 SECTION_FUNC(TEXT, _isr_demux)
 	push_s r3
+
+#ifdef CONFIG_EXECUTION_BENCHMARKING
+	bl read_timer_start_of_isr
+#endif
 	/* cannot be done before this point because we must be able to run C */
 	/* r0 is available to be stomped here, and exit_tickless_idle uses it */
 	exit_tickless_idle
