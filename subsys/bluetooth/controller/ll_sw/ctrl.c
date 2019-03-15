@@ -7467,11 +7467,11 @@ static inline void event_enc_prep(struct connection *conn)
 
 #if !defined(CONFIG_BT_CTLR_FAST_ENC)
 	} else {
-		start_enc_rsp_send(_radio.conn_curr, pdu_ctrl_tx);
+		start_enc_rsp_send(conn, pdu_ctrl_tx);
 
 		/* resume data packet rx and tx */
-		_radio.conn_curr->pause_rx = 0;
-		_radio.conn_curr->pause_tx = 0;
+		conn->pause_rx = 0;
+		conn->pause_tx = 0;
 #endif /* !CONFIG_BT_CTLR_FAST_ENC */
 
 	}
@@ -9961,10 +9961,10 @@ static u8_t feature_rsp_send(struct connection *conn,
 
 	/* AND the feature set to get Feature USED */
 	req = &pdu_data_rx->llctrl.feature_req;
-	_radio.conn_curr->llcp_features &= feat_get(&req->features[0]);
+	conn->llcp_features &= feat_get(&req->features[0]);
 
 	/* features exchanged */
-	_radio.conn_curr->common.fex_valid = 1U;
+	conn->common.fex_valid = 1U;
 
 	/* Enqueue feature response */
 	pdu_ctrl_tx = (void *)node_tx->pdu_data;
