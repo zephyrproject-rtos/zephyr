@@ -676,11 +676,11 @@ if the project contains the metadata required in a module.  If the project is
 identified to be a module then CMake will include it in the build.
 
 .. note::
-   Although the build system currently uses :ref:`west` to list the available
+   Although the build system normally uses :ref:`west` to list the available
    external projects for potential inclusion in the build, it is perfectly
-   possible to use any other script or tool instead by modifying the CMake
-   script. A future addition will make this possible even without any
-   modifications to the build scripts.
+   possible to use any other script or tool. By calling cmake as
+   ``cmake --DZEPHYR_MODULES=<oot-path-to-module>[;<additional-oot-module(s)>]``
+   , it will search in those paths instead of invoking ``west list``
 
 The code in :file:`CMakeLists.txt` retrieves the following information for
 each project using ``west list``:
