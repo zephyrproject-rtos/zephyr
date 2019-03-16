@@ -36,21 +36,21 @@ void sys_set_power_state(enum power_states state)
 
 	switch (state) {
 #ifdef CONFIG_SYS_POWER_SLEEP_STATES
-#ifdef CONFIG_HAS_STATE_SLEEP_1
+#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_1
 	case SYS_POWER_STATE_SLEEP_1:
 		EMU_EnterEM1();
 		break;
-#endif /* CONFIG_HAS_STATE_SLEEP_1 */
-#ifdef CONFIG_HAS_STATE_SLEEP_2
+#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_1 */
+#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_2
 	case SYS_POWER_STATE_SLEEP_2:
 		EMU_EnterEM2(true);
 		break;
-#endif /* CONFIG_HAS_STATE_SLEEP_2 */
-#ifdef CONFIG_HAS_STATE_SLEEP_3
+#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_2 */
+#ifdef CONFIG_HAS_SYS_POWER_STATE_SLEEP_3
 	case SYS_POWER_STATE_SLEEP_3:
 		EMU_EnterEM3(true);
 		break;
-#endif /* CONFIG_HAS_STATE_SLEEP_3 */
+#endif /* CONFIG_HAS_SYS_POWER_STATE_SLEEP_3 */
 #endif /* CONFIG_SYS_POWER_SLEEP_STATES */
 	default:
 		LOG_ERR("Unsupported power state %u", state);
