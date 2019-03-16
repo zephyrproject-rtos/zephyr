@@ -351,42 +351,42 @@ config ARCH_HAS_THREAD_ABORT
 # Hidden PM feature configs which are to be selected by
 # individual SoC.
 #
-config HAS_STATE_SLEEP_1
+config HAS_SYS_POWER_STATE_SLEEP_1
 	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_1
 	  configuration option.
 
-config HAS_STATE_SLEEP_2
+config HAS_SYS_POWER_STATE_SLEEP_2
 	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_2
 	  configuration option.
 
-config HAS_STATE_SLEEP_3
+config HAS_SYS_POWER_STATE_SLEEP_3
 	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_SLEEP_3
 	  configuration option.
 
-config HAS_STATE_DEEP_SLEEP_1
+config HAS_SYS_POWER_STATE_DEEP_SLEEP_1
 	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_1
 	  configuration option.
 
-config HAS_STATE_DEEP_SLEEP_2
+config HAS_SYS_POWER_STATE_DEEP_SLEEP_2
 	# Hidden
 	bool
 	help
 	  This option signifies that the target supports the SYS_POWER_STATE_DEEP_SLEEP_2
 	  configuration option.
 
-config HAS_STATE_DEEP_SLEEP_3
+config HAS_SYS_POWER_STATE_DEEP_SLEEP_3
 	# Hidden
 	bool
 	help
