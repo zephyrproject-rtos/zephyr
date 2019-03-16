@@ -260,6 +260,27 @@ static inline int _mpu_buffer_validate(void *addr, size_t size, int write)
 		}
 	}
 
+#if defined(CONFIG_CPU_HAS_TEE)
+	/*
+	 * Validation failure may be due to SAU/IDAU presence.
+	 * We re-check user accessibility based on MPU only.
+	 */
+	s32_t r_index_base = arm_cmse_mpu_region_get(_addr);
+	s32_t r_index_last = arm_cmse_mpu_region_get(_addr + _size - 1);
+
+	if ((r_index_base != -EINVAL) && (r_index_base == r_index_last)) {
+		/* Valid MPU region, check permissions on base address only. */
+		if (write) {
+			if (arm_cmse_addr_readwrite_ok(_addr, 1)) {
+				return 0;
+			}
+		} else {
+			if (arm_cmse_addr_read_ok(_addr, 1)) {
+				return 0;
+			}
+		}
+	}
+#endif /* CONFIG_CPU_HAS_TEE */
 	return -EPERM;
 }
 
