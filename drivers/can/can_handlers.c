@@ -36,7 +36,7 @@ Z_SYSCALL_HANDLER(can_send, dev, msg, timeout, callback_isr, callback_arg) {
 
 Z_SYSCALL_HANDLER(can_attach_msgq, dev, msgq, filter) {
 
-	Z_OOPS(Z_SYSCALL_DRIVER_CAN(dev, attach_msgq));
+	Z_OOPS(Z_SYSCALL_OBJ(dev, K_OBJ_DRIVER_CAN));
 
 	Z_OOPS(Z_SYSCALL_MEMORY_READ((struct zcan_filter *)filter,
 				     sizeof(struct zcan_filter)));
