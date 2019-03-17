@@ -245,7 +245,6 @@ struct can_driver_api {
 	can_configure_t configure;
 	can_send_t send;
 	can_attach_isr_t attach_isr;
-	can_attach_msgq_t attach_msgq;
 	can_detach_t detach;
 };
 
@@ -347,16 +346,6 @@ static inline int can_write(struct device *dev, const u8_t *data, u8_t length,
  */
 __syscall int can_attach_msgq(struct device *dev, struct k_msgq *msg_q,
 			      const struct zcan_filter *filter);
-
-static inline int z_impl_can_attach_msgq(struct device *dev,
-					struct k_msgq *msg_q,
-					const struct zcan_filter *filter)
-{
-	const struct can_driver_api *api =
-		(const struct can_driver_api *)dev->driver_api;
-
-	return api->attach_msgq(dev, msg_q, filter);
-}
 
 /**
  * @brief Attach an isr callback function to a single or group of identifiers.
