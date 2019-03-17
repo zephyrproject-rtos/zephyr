@@ -241,6 +241,28 @@ typedef int (*can_attach_isr_t)(struct device *dev, can_rx_callback_t isr,
 
 typedef void (*can_detach_t)(struct device *dev, int filter_id);
 
+#ifdef CONFIG_CAN_WORKQ_FRAMES_BUF_CNT
+#define CONFIG_CAN_WORKQ_FRAMES_BUF_CNT 4
+#endif
+struct can_frame_buffer {
+	struct zcan_frame buf[CONFIG_CAN_WORKQ_FRAMES_BUF_CNT];
+	u16_t head;
+	u16_t tail;
+};
+
+/**
+ * @brief CAN work structure
+ *
+ * Used to attach a work queue to a filter.
+ */
+struct zcan_work {
+	struct k_work work_item;
+	struct k_work_q *work_queue;
+	struct can_frame_buffer buf;
+	can_rx_callback_t cb;
+	void *cb_arg;
+};
+
 struct can_driver_api {
 	can_configure_t configure;
 	can_send_t send;
@@ -324,6 +346,34 @@ static inline int can_write(struct device *dev, const u8_t *data, u8_t length,
 
 	return can_send(dev, &msg, timeout, NULL, NULL);
 }
+
+/**
+ * @brief Attach a CAN work queue to a single or group of identifiers.
+ *
+ * This routine attaches a work queue to identifiers specified by a filter.
+ * Whenever the filter matches, the message is pushed to the buffer
+ * of the zcan_work structure and the work element is put to the workqueue.
+ * If a message passes more than one filter the priority of the match
+ * is hardware dependent.
+ * A CAN work queue can be attached to more than one filter.
+ * The work queue must be initialized before and the caller must have
+ * appropriate permissions on it.
+ *
+ * @param dev          Pointer to the device structure for the driver instance.
+ * @param work_q       Pointer to the already initialized work queue.
+ * @param work         Pointer to a zcan_work. The work will be initialized.
+ * @param callback     This function is called by workq whenever a message arrives.
+ * @param callback_arg Is passed to the callback when called.
+ * @param filter       Pointer to a zcan_filter structure defining the id
+ *                     filtering.
+ *
+ * @retval filter id on success.
+ * @retval CAN_NO_FREE_FILTER if there is no filter left.
+ */
+int can_attach_workq(struct device *dev, struct k_work_q  *work_q,
+		     struct zcan_work *work,
+		     can_rx_callback_t callback, void *callback_arg,
+		     const struct zcan_filter *filter);
 
 /**
  * @brief Attach a message queue to a single or group of identifiers.
