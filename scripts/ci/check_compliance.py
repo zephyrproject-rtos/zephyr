@@ -19,6 +19,7 @@ import json
 import tempfile
 from colorama import Fore, Back, Style
 import glob
+import yaml
 
 logger = None
 
@@ -46,6 +47,33 @@ def get_shas(refspec):
                       '--max-count={0}'.format(-1 if "." in refspec else 1),
                       refspec, **sh_special_args).split()
     return sha_list
+
+def get_modules(modules_file):
+    """
+    Get a list of modules and put them in a file that is parsed by Kconfig
+
+    This is needed to complete Kconfig sanity tests.
+
+    """
+    modules = sh.west("list", "--format={posixpath}", **sh_special_args)
+    with open(modules_file, 'w') as km:
+        for m in modules:
+            module_path = m.strip()
+            module_file = os.path.join(module_path, "zephyr", "module.yml")
+            kconfig_file = os.path.join(module_path, "zephyr", "Kconfig")
+            if os.path.exists(module_file):
+                with open(module_file, 'r') as f:
+                    y = yaml.load(f)
+                    build = y.get('build', None)
+                    if build:
+                        kconfig = build.get("kconfig", "Kconfig")
+                    else:
+                        kconfig = "Kconfig"
+                    kconfig_file = os.path.join(module_path, kconfig)
+                    if os.path.exists(kconfig_file):
+                        km.write("osource \"{}\"".format(kconfig_file))
+            elif os.path.exists(kconfig_file):
+                    km.write("osource \"{}\"".format(kconfig_file))
 
 
 class MyCase(TestCase):
@@ -224,7 +252,7 @@ class KconfigCheck(ComplianceTest):
         os.environ['GENERATED_DTS_BOARD_CONF'] = "dummy"
 
         # For multi repo support
-        open(os.path.join(tempfile.gettempdir(), "Kconfig.modules"), 'a').close()
+        get_modules(os.path.join(tempfile.gettempdir(), "Kconfig.modules"))
 
         # Enable strict Kconfig mode in Kconfiglib, which assumes there's just a
         # single Kconfig tree and warns for all references to undefined symbols
