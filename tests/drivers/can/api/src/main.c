@@ -40,6 +40,10 @@
 #define TEST_CAN_EXT_MASK_ID 0x1555555A
 #define TEST_CAN_EXT_MASK    0x1FFFFFF0
 
+#ifndef DT_CAN_1_NAME
+#define DT_CAN_1_NAME ""
+#endif
+
 CAN_DEFINE_MSGQ(can_msgq, 5);
 struct k_sem rx_isr_sem;
 
