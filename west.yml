@@ -41,6 +41,9 @@ manifest:
     - name: hal_qmsi
       revision: 3179a8e44912a5a05b1cb467870b7e91aedff8d6
       path: modules/hal/qmsi
+    - name: hal_st
+      revision: 2f4d2f73fc8d4a494ebd8a12312f7084d2c84ed4
+      path: modules/hal/st
 
   self:
     path: zephyr
