@@ -4,6 +4,7 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import collections
 import sys
 import subprocess
 import re
@@ -195,6 +196,7 @@ class KconfigCheck(ComplianceTest):
 
         self.check_no_undef_within_kconfig(kconf)
         self.check_top_menu_not_too_long(kconf)
+        self.check_no_undef_outside_kconfig(kconf)
 
     def get_modules(self, modules_file):
         """
@@ -294,6 +296,126 @@ Expected no more than {} potentially visible items (items with prompts) in the
 top-level Kconfig menu, found {} items. If you're deliberately adding new
 entries, then bump the 'max_top_items' variable in {}.
 """.format(max_top_items, n_top_items, __file__))
+
+    def check_no_undef_outside_kconfig(self, kconf):
+        """
+        Checks that there are no references to undefined Kconfig symbols
+        outside Kconfig files (any CONFIG_FOO where no FOO symbol exists)
+        """
+        # Grep for symbol references.
+        #
+        # Example output line for a reference to CONFIG_BAZ at line 17 of
+        # foo/bar.c:
+        #
+        #   foo/bar.c<null>17<null>CONFIG_BAZ
+        #
+        # Skip the samples/ and tests/ directories for now. They often contain
+        # Kconfig files that are not part of the main Kconfig tree, which will
+        # trigger false positives until we do something fancier. Skip
+        # doc/releases too, which often references removed symbols.
+        grep_cmd = "git grep --only-matching --line-number -I --null " \
+                   "--extended-regexp --word-regexp CONFIG_[A-Z0-9_]+ " \
+                   "-- :!samples :!tests :!doc/releases"
+
+        grep_process = subprocess.Popen(grep_cmd.split(),
+                                        stdout=subprocess.PIPE,
+                                        stderr=subprocess.PIPE,
+                                        cwd=self.zephyr_base)
+
+        grep_stdout, grep_stderr = grep_process.communicate()
+        # Fail if there's anything on stderr too, so that it doesn't get missed
+        if grep_process.returncode or grep_stderr:
+            self.error("'{}' failed with exit code {} (while searching for "
+                       "Kconfig symbol references)\n\nstdout:\n{}\n\n"
+                       "stderr:\n{}"
+                       .format(grep_cmd, grep_process.returncode, grep_stdout,
+                               grep_stderr))
+
+        defined_syms = set(sym.name for sym in kconf.unique_defined_syms)
+        undef_to_locs = collections.defaultdict(list)
+
+        # splitlines() supports various line terminators
+        for line in grep_stdout.decode("utf-8").splitlines():
+            path, lineno, sym_name = line.split("\0")
+
+            # [7:] removes the "CONFIG_" prefix
+            if sym_name[7:] not in defined_syms and \
+               sym_name not in UNDEF_KCONFIG_WHITELIST:
+
+               undef_to_locs[sym_name].append("{}:{}".format(path, lineno))
+
+        if not undef_to_locs:
+            return
+
+        # String that describes all referenced but undefined Kconfig symbols,
+        # in alphabetical order, along with the locations where they're
+        # referenced. Example:
+        #
+        #   CONFIG_ALSO_MISSING    arch/xtensa/core/fatal.c:273
+        #   CONFIG_MISSING         arch/xtensa/core/fatal.c:264, subsys/fb/cfb.c:20
+        undef_desc = "\n".join(
+            "{:35} {}".format(sym_name, ", ".join(locs))
+            for sym_name, locs in sorted(undef_to_locs.items()))
+
+        self.add_failure("""
+Found references to undefined Kconfig symbols. If any of these are false
+positives, then add them to UNDEF_KCONFIG_WHITELIST in {} in the ci-tools
+repo.\n\n{}""".format(__file__, undef_desc))
+
+
+# Many of these are either symbols used as examples or due to token pasting
+# (CONFIG_FOO_#x, etc.). Note that the list is sorted alphabetically.
+UNDEF_KCONFIG_WHITELIST = {
+    "CONFIG_2ND_LVL_INTR_",
+    "CONFIG_3RD_LVL_INTR_",
+    "CONFIG_APP_LINK_WITH_",
+    "CONFIG_CDC_ACM_PORT_NAME_",
+    "CONFIG_CLOCK_STM32_PLL_SRC_",
+    "CONFIG_CLOCK_STM32_SYSCLK_SRC_",
+    "CONFIG_CMU",
+    "CONFIG_COUNTER_RTC",
+    "CONFIG_COUNTER_RTC_STM32_CLOCK_SRC",
+    "CONFIG_COUNTER_TIMER",
+    "CONFIG_DEEP_SLEEP",  # #defined by RV32M1 in ext/
+    "CONFIG_DESCRIPTION",
+    "CONFIG_ERR",
+    "CONFIG_ESP_DIF_LIBRARY",  # Referenced in CMake comment
+    "CONFIG_EXPERIMENTAL",
+    "CONFIG_FFT",  # Used as an example in cmake/extensions.cmake
+    "CONFIG_FLAG",  # Used as an example
+    "CONFIG_FOO",
+    "CONFIG_FOO_LOG_LEVEL",
+    "CONFIG_FOO_SETTING_1",
+    "CONFIG_FOO_SETTING_2",
+    "CONFIG_GPIO_SIFIVE_",
+    "CONFIG_I2C_GPIO_",
+    "CONFIG_I2S_CAVS_",
+    "CONFIG_LIS2DW12_INT_PIN",
+    "CONFIG_MODULES",
+    "CONFIG_MYFEATURE",
+    "CONFIG_MY_DRIVER_0",
+    "CONFIG_NORMAL_SLEEP",  # #defined by RV32M1 in ext/
+    "CONFIG_OPT",
+    "CONFIG_OPT_0",
+    "CONFIG_PWM_",
+    "CONFIG_REG1",
+    "CONFIG_REG2",
+    "CONFIG_SEL",
+    "CONFIG_SOC_SERIES_",
+    "CONFIG_SOC_WATCH",  # Issue 13749
+    "CONFIG_SOME_BOOL",
+    "CONFIG_SOME_INT",
+    "CONFIG_SOME_OTHER_BOOL",
+    "CONFIG_SOME_STRING",
+    "CONFIG_SPI_",
+    "CONFIG_STD_CPP",  # Referenced in CMake comment
+    "CONFIG_TEST1",
+    "CONFIG_TYPE_BOOLEAN",
+    "CONFIG_UART_",
+    "CONFIG_USB_CONSOLE",
+    "CONFIG_USB_HID_DEVICE_NAME_",
+    "CONFIG_WHATEVER",
+}
 
 
 class Codeowners(ComplianceTest):
