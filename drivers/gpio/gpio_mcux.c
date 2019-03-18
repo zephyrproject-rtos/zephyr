@@ -11,8 +11,11 @@
 #include <soc.h>
 #include <fsl_common.h>
 #include <fsl_port.h>
+#include <logging/log.h>
 
 #include "gpio_utils.h"
+
+LOG_MODULE_REGISTER(gpio_mcux, CONFIG_GPIO_LOG_LEVEL);
 
 struct gpio_mcux_config {
 	GPIO_Type *gpio_base;
@@ -43,16 +46,19 @@ static int gpio_mcux_configure(struct device *dev,
 
 	/* Check for an invalid pin number */
 	if (pin >= ARRAY_SIZE(port_base->PCR)) {
+		LOG_ERR("Invalid pin number");
 		return -EINVAL;
 	}
 
 	/* Check for an invalid pin configuration */
 	if ((flags & GPIO_INT) && (flags & GPIO_DIR_OUT)) {
+		LOG_ERR("Invalid pin configuration");
 		return -EINVAL;
 	}
 
 	/* Check if GPIO port supports interrupts */
 	if ((flags & GPIO_INT) && ((config->flags & GPIO_INT) == 0)) {
+		LOG_ERR("Interrupts not supported on this port");
 		return -ENOTSUP;
 	}
 
@@ -222,6 +228,8 @@ static void gpio_mcux_port_isr(void *arg)
 
 	int_status = config->port_base->ISFR;
 	enabled_int = int_status & data->pin_callback_enables;
+
+	LOG_DBG("%s ISFR=0x%08x", dev->config->name, int_status);
 
 	_gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
 
