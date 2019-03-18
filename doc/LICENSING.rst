@@ -69,11 +69,3 @@ licensing in this document.
 
 .. _ext/hal/nxp/mcux source:
    https://github.com/zephyrproject-rtos/zephyr/blob/master/ext/hal/nxp/mcux/drivers/kinetis/fsl_rtc.h
-
-*ext/hal/qmsi/*
-  *Origin:* https://github.com/quark-mcu/qmsi/releases
-
-  *Licensing*: 3-clause BSD (see `ext/hal/qmsi source`_)
-
-.. _ext/hal/qmsi source:
-   https://github.com/zephyrproject-rtos/zephyr/blob/master/ext/hal/qmsi/include/qm_common.h
