@@ -90,7 +90,7 @@ config MAX_IRQ_PER_AGGREGATOR
 	default 32
 
 config 2ND_LEVEL_INTERRUPTS
-	def_bool y
+	default y
 
 config 2ND_LVL_ISR_TBL_OFFSET
 	int
@@ -140,41 +140,41 @@ config 2ND_LVL_INTR_07_OFFSET
 	default 31
 
 config RV32M1_INTMUX
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_0
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_1
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_2
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_3
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_4
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_5
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_6
-	def_bool y
+	default y
 
 config RV32M1_INTMUX_CHANNEL_7
-	def_bool y
+	default y
 
 endif # MULTI_LEVEL_INTERRUPTS
 
 config PINMUX_RV32M1
-	def_bool y
+	default y
 
 if GPIO
 
 config GPIO_RV32M1
-	def_bool y
+	default y
 
 endif # GPIO
 

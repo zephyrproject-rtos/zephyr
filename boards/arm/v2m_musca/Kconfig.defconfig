@@ -25,26 +25,26 @@ endif
 if SERIAL
 
 config UART_PL011
-	def_bool y
+	default y
 
 config UART_INTERRUPT_DRIVEN
-	def_bool y
+	default y
 
 config UART_PL011_PORT0
-	def_bool y
+	default y
 
 config UART_PL011_PORT1
-	def_bool y
+	default y
 
 endif # SERIAL
 
 if COUNTER
 
 config TIMER_TMR_CMSDK_APB
-	def_bool y
+	default y
 
 config TIMER_DTMR_CMSDK_APB
-	def_bool y
+	default y
 
 endif # COUNTER
 

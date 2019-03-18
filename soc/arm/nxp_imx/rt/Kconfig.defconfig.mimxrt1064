@@ -24,7 +24,7 @@ config IPG_DIV
 	default 3
 
 config GPIO
-	def_bool y
+	default y
 
 if NET_L2_ETHERNET
 

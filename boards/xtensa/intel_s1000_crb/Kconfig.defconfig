@@ -174,10 +174,10 @@ endif
 if FLASH
 
 config SPI
-	def_bool y
+	default y
 
 config SPI_NOR
-	def_bool y
+	default y
 
 config SPI_NOR_PAGE_SIZE
 	default 256
@@ -186,27 +186,27 @@ config SPI_NOR_SECTOR_SIZE
 	default 4096
 
 config FLASH_HAS_PAGE_LAYOUT
-	def_bool y
+	default y
 
 config FLASH_PAGE_LAYOUT
-	def_bool y
+	default y
 
 endif
 
 if SPI
 
 config SPI_DW
-	def_bool y
+	default y
 
 config SPI_0
-	def_bool y
+	default y
 
 endif
 
 if PINMUX
 
 config PINMUX_INTEL_S1000
-	def_bool y
+	default y
 
 endif
 

@@ -53,7 +53,7 @@ endif # I2C
 if NET_L2_ETHERNET
 
 config ETH_MCUX
-	def_bool y if HAS_MCUX_ENET
+	default y if HAS_MCUX_ENET
 
 endif # NET_L2_ETHERNET
 
