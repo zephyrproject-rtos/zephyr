@@ -48,14 +48,8 @@ def get_shas(refspec):
                       refspec, **sh_special_args).split()
     return sha_list
 
-def get_modules(modules_file):
-    """
-    Get a list of modules and put them in a file that is parsed by Kconfig
 
-    This is needed to complete Kconfig sanity tests.
-
-    """
-    modules = sh.west("list", "--format={posixpath}", **sh_special_args)
+def create_modules_file(modules, modules_file):
     with open(modules_file, 'w') as km:
         for m in modules:
             module_path = m.strip()
@@ -223,6 +217,23 @@ class KconfigCheck(ComplianceTest):
         self.check_no_undef_within_kconfig(kconf)
         self.check_top_menu_not_too_long(kconf)
 
+    def get_modules(self, modules_file):
+        """
+        Get a list of modules and put them in a file that is parsed by
+        Kconfig
+
+        This is needed to complete Kconfig sanity tests.
+
+        """
+        try:
+            modules = sh.west("list", "--format={posixpath}", **sh_special_args)
+        except sh.CommandNotFound as e:
+            self.skip("Command not found: " + str(e))
+        except sh.ErrorReturnCode as e:
+            self.skip(e)
+
+        create_modules_file(modules, modules_file)
+
     def parse_kconfig(self):
         """
         Returns a kconfiglib.Kconfig object for the Kconfig files. We reuse
@@ -252,7 +263,7 @@ class KconfigCheck(ComplianceTest):
         os.environ['GENERATED_DTS_BOARD_CONF'] = "dummy"
 
         # For multi repo support
-        get_modules(os.path.join(tempfile.gettempdir(), "Kconfig.modules"))
+        self.get_modules(os.path.join(tempfile.gettempdir(), "Kconfig.modules"))
 
         # Enable strict Kconfig mode in Kconfiglib, which assumes there's just a
         # single Kconfig tree and warns for all references to undefined symbols
