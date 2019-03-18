@@ -120,24 +120,23 @@ int net_ipv4_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 	ipv4_hdr->len   = htons(net_pkt_get_len(pkt));
 	ipv4_hdr->proto = next_header_proto;
 
-	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt)) ||
-	    next_header_proto == IPPROTO_ICMP) {
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
 		ipv4_hdr->chksum = net_calc_chksum_ipv4(pkt);
-
-		net_pkt_set_data(pkt, &ipv4_access);
-
-		if (IS_ENABLED(CONFIG_NET_UDP) &&
-		    next_header_proto == IPPROTO_UDP) {
-			return net_udp_finalize(pkt);
-		} else if (IS_ENABLED(CONFIG_NET_TCP) &&
-			   next_header_proto == IPPROTO_TCP) {
-			return net_tcp_finalize(pkt);
-		} else if (next_header_proto == IPPROTO_ICMP) {
-			return net_icmpv4_finalize(pkt);
-		}
 	}
 
-	return net_pkt_set_data(pkt, &ipv4_access);
+	net_pkt_set_data(pkt, &ipv4_access);
+
+	if (IS_ENABLED(CONFIG_NET_UDP) &&
+	    next_header_proto == IPPROTO_UDP) {
+		return net_udp_finalize(pkt);
+	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
+		   next_header_proto == IPPROTO_TCP) {
+		return net_tcp_finalize(pkt);
+	} else if (next_header_proto == IPPROTO_ICMP) {
+		return net_icmpv4_finalize(pkt);
+	}
+
+	return 0;
 }
 
 const struct in_addr *net_ipv4_unspecified_address(void)

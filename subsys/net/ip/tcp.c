@@ -1276,7 +1276,10 @@ int net_tcp_finalize(struct net_pkt *pkt)
 	}
 
 	tcp_hdr->chksum = 0;
-	tcp_hdr->chksum = net_calc_chksum_tcp(pkt);
+
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+		tcp_hdr->chksum = net_calc_chksum_tcp(pkt);
+	}
 
 	return net_pkt_set_data(pkt, &tcp_access);
 }
