@@ -63,7 +63,7 @@ def get_modules(modules_file):
             kconfig_file = os.path.join(module_path, "zephyr", "Kconfig")
             if os.path.exists(module_file):
                 with open(module_file, 'r') as f:
-                    y = yaml.load(f)
+                    y = yaml.load(f, Loader=yaml.Loader)
                     build = y.get('build', None)
                     if build:
                         kconfig = build.get("kconfig", "Kconfig")
