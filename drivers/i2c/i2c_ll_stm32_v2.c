@@ -475,28 +475,33 @@ static inline int check_errors(struct device *dev, const char *funcname)
 	if (LL_I2C_IsActiveFlag_NACK(i2c)) {
 		LL_I2C_ClearFlag_NACK(i2c);
 		LOG_DBG("%s: NACK", funcname);
-		return -EIO;
+		goto error;
 	}
 
 	if (LL_I2C_IsActiveFlag_ARLO(i2c)) {
 		LL_I2C_ClearFlag_ARLO(i2c);
 		LOG_DBG("%s: ARLO", funcname);
-		return -EIO;
+		goto error;
 	}
 
 	if (LL_I2C_IsActiveFlag_OVR(i2c)) {
 		LL_I2C_ClearFlag_OVR(i2c);
 		LOG_DBG("%s: OVR", funcname);
-		return -EIO;
+		goto error;
 	}
 
 	if (LL_I2C_IsActiveFlag_BERR(i2c)) {
 		LL_I2C_ClearFlag_BERR(i2c);
 		LOG_DBG("%s: BERR", funcname);
-		return -EIO;
+		goto error;
 	}
 
 	return 0;
+error:
+	if (LL_I2C_IsEnabledReloadMode(i2c)) {
+		LL_I2C_DisableReloadMode(i2c);
+	}
+	return -EIO;
 }
 
 static inline int msg_done(struct device *dev, unsigned int current_msg_flags)
