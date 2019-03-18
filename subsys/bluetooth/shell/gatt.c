@@ -478,19 +478,65 @@ static int cmd_unsubscribe(const struct shell *shell,
 }
 #endif /* CONFIG_BT_GATT_CLIENT */
 
+static struct db_stats {
+	u16_t svc_count;
+	u16_t attr_count;
+	u16_t chrc_count;
+	u16_t ccc_count;
+	size_t ccc_cfg;
+} stats;
+
 static u8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
 {
 	const struct shell *shell = user_data;
 
+	stats.attr_count++;
+
+	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_PRIMARY) ||
+	    !bt_uuid_cmp(attr->uuid, BT_UUID_GATT_SECONDARY)) {
+		stats.svc_count++;
+	}
+
+	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC)) {
+		stats.chrc_count++;
+	}
+
+	if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC) &&
+	    attr->write == bt_gatt_attr_write_ccc) {
+		struct _bt_gatt_ccc *cfg = attr->user_data;
+
+		stats.ccc_count++;
+		stats.ccc_cfg += cfg->cfg_len;
+	}
+
 	shell_print(shell, "attr %p handle 0x%04x uuid %s perm 0x%02x",
-	      attr, attr->handle, bt_uuid_str(attr->uuid), attr->perm);
+		    attr, attr->handle, bt_uuid_str(attr->uuid), attr->perm);
 
 	return BT_GATT_ITER_CONTINUE;
 }
 
 static int cmd_show_db(const struct shell *shell, size_t argc, char *argv[])
 {
+	size_t total_len;
+
+	memset(&stats, 0, sizeof(stats));
+
 	bt_gatt_foreach_attr(0x0001, 0xffff, print_attr, (void *)shell);
+
+	if (!stats.attr_count) {
+		return 0;
+	}
+
+	total_len = stats.svc_count * sizeof(struct bt_gatt_service);
+	total_len += stats.chrc_count * sizeof(struct bt_gatt_chrc);
+	total_len += stats.attr_count * sizeof(struct bt_gatt_attr);
+	total_len += stats.ccc_count * sizeof(struct _bt_gatt_ccc);
+	total_len += stats.ccc_cfg * sizeof(struct bt_gatt_ccc_cfg);
+
+	shell_print(shell, "=================================================");
+	shell_print(shell, "Total: %u services %u attributes (%u bytes)",
+		    stats.svc_count, stats.attr_count, total_len);
+
 	return 0;
 }
 
