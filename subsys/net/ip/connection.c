@@ -783,18 +783,7 @@ static bool is_invalid_packet(struct net_pkt *pkt,
 		}
 	}
 
-	/* For AF_PACKET family, we are not not parsing headers. */
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
-	    net_pkt_family(pkt) == AF_PACKET) {
-		return false;
-	}
-
-	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
-	    net_pkt_family(pkt) == AF_CAN) {
-		return false;
-	}
-
-	return true;
+	return false;
 }
 
 enum net_verdict net_conn_input(struct net_pkt *pkt,
