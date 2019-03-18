@@ -241,7 +241,7 @@ typedef int (*can_attach_isr_t)(struct device *dev, can_rx_callback_t isr,
 
 typedef void (*can_detach_t)(struct device *dev, int filter_id);
 
-#ifdef CONFIG_CAN_WORKQ_FRAMES_BUF_CNT
+#ifndef CONFIG_CAN_WORKQ_FRAMES_BUF_CNT
 #define CONFIG_CAN_WORKQ_FRAMES_BUF_CNT 4
 #endif
 struct can_frame_buffer {

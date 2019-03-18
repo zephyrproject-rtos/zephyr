@@ -1,0 +1,44 @@
+# Kconfig.loopback - CAN loopback device configuration options
+
+#
+# Copyright (c) 2019 Alexander Wachter
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config CAN_LOOPBACK
+	bool "Loopback CAN driver"
+	help
+	  This is a dummy driver that can only loopback messages.
+
+if CAN_LOOPBACK
+
+config CAN_LOOPBACK_DEV_NAME
+	string "CAN loopback device name"
+	default "CAN_LOOPBACK"
+	help
+	  "Device name for the loopback device"
+
+config CAN_MAX_FILTER
+	int "Maximum number of concurrent active filters"
+	default 5
+	range 1 1024
+	help
+	  Defines the array size of the filters.
+	  Must be at least the size of concurrent reads.
+
+config CAN_LOOPBACK_FRAME_BUF_SIZE
+	int "Frame buffer count"
+	range 1 65534
+	default 4
+	help
+	  Defines the number of frames that can be buffered for each filter.
+
+config CAN_RECEIVER_WORKQ_PRIO
+	int "Priority of the receiver workq"
+	default 2
+	help
+	  Specify the priority for the receiver workq. This workq calls the
+	  receiver callbacks.
+
+endif # CAN_LOOPBACK
