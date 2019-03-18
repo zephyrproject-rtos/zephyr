@@ -432,30 +432,8 @@ Connect to the debug server at the ARC core from a second console:
 Bluetooth Firmware
 ------------------
 
-You will only see normal log messages on the console, by default, without any
-way of accessing the HCI traffic between Zephyr and the nRF51 controller.
-However, there is a special Bluetooth logging mode that converts the console to
-use a binary protocol that interleaves both normal log messages as well as the
-HCI traffic. Set the following Kconfig options to enable this protocol before
-building your application:
-
-.. code-block:: console
-
-   CONFIG_BT_DEBUG_MONITOR=y
-   CONFIG_UART_CONSOLE=n
-
-The first item replaces the BT_DEBUG_LOG option, the second one
-disables the default printk/printf hooks, and the third one matches the console
-baudrate with what's used to communicate with the nRF51, in order not to create
-a bottleneck.
-
-To decode the binary protocol that will now be sent to the console UART you need
-to use the btmon tool from BlueZ 5.40 or later:
-
-
-.. code-block:: console
-
-   $ btmon --tty <console TTY> --tty-speed 1000000
+See :ref:`bluetooth-hci-tracing` to find out how to debug the Bluetooth
+firmware.
 
 Release Notes
 *************
