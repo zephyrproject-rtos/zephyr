@@ -18,10 +18,12 @@ struct gpio_mcux_config {
 	GPIO_Type *gpio_base;
 	PORT_Type *port_base;
 	int (*irq_config_func)(struct device *dev);
+	char *daisy_name;
 	unsigned int flags;
 };
 
 struct gpio_mcux_data {
+	struct device *daisy_dev;
 	/* port ISR callback routine address */
 	sys_slist_t callbacks;
 	/* pin callback routine enable flags, by pin number */
@@ -225,11 +227,20 @@ static void gpio_mcux_port_isr(void *arg)
 
 	/* Clear the port interrupts */
 	config->port_base->ISFR = 0xFFFFFFFF;
+
+	if (data->daisy_dev) {
+		gpio_mcux_port_isr(data->daisy_dev);
+	}
 }
 
 static int gpio_mcux_init(struct device *dev)
 {
 	const struct gpio_mcux_config *config = dev->config->config_info;
+	struct gpio_mcux_data *data = dev->driver_data;
+
+	if (config->daisy_name) {
+		data->daisy_dev = device_get_binding(config->daisy_name);
+	}
 
 	config->irq_config_func(dev);
 
@@ -256,6 +267,9 @@ static const struct gpio_mcux_config gpio_mcux_porta_config = {
 	.flags = GPIO_INT,
 #else
 	.flags = 0,
+#endif
+#ifdef DT_NXP_KINETIS_GPIO_GPIO_A_DAISY_GPIOS_CONTROLLER
+	.daisy_name = DT_NXP_KINETIS_GPIO_GPIO_A_DAISY_GPIOS_CONTROLLER,
 #endif
 };
 
@@ -291,6 +305,9 @@ static const struct gpio_mcux_config gpio_mcux_portb_config = {
 #else
 	.flags = 0,
 #endif
+#ifdef DT_NXP_KINETIS_GPIO_GPIO_B_DAISY_GPIOS_CONTROLLER
+	.daisy_name = DT_NXP_KINETIS_GPIO_GPIO_B_DAISY_GPIOS_CONTROLLER,
+#endif
 };
 
 static struct gpio_mcux_data gpio_mcux_portb_data;
@@ -324,6 +341,9 @@ static const struct gpio_mcux_config gpio_mcux_portc_config = {
 	.flags = GPIO_INT,
 #else
 	.flags = 0,
+#endif
+#ifdef DT_NXP_KINETIS_GPIO_GPIO_C_DAISY_GPIOS_CONTROLLER
+	.daisy_name = DT_NXP_KINETIS_GPIO_GPIO_C_DAISY_GPIOS_CONTROLLER,
 #endif
 };
 
@@ -359,6 +379,9 @@ static const struct gpio_mcux_config gpio_mcux_portd_config = {
 #else
 	.flags = 0,
 #endif
+#ifdef DT_NXP_KINETIS_GPIO_GPIO_D_DAISY_GPIOS_CONTROLLER
+	.daisy_name = DT_NXP_KINETIS_GPIO_GPIO_D_DAISY_GPIOS_CONTROLLER,
+#endif
 };
 
 static struct gpio_mcux_data gpio_mcux_portd_data;
@@ -392,6 +415,9 @@ static const struct gpio_mcux_config gpio_mcux_porte_config = {
 	.flags = GPIO_INT,
 #else
 	.flags = 0,
+#endif
+#ifdef DT_NXP_KINETIS_GPIO_GPIO_E_DAISY_GPIOS_CONTROLLER
+	.daisy_name = DT_NXP_KINETIS_GPIO_GPIO_E_DAISY_GPIOS_CONTROLLER,
 #endif
 };
 

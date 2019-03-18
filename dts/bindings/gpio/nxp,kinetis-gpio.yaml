@@ -25,6 +25,11 @@ properties:
       description: required interrupts
       generation: define
 
+    daisy-gpios:
+      type: compound
+      category: optional
+      generation: define, use-prop-name
+
     label:
       type: string
       category: required

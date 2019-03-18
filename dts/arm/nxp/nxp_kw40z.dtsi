@@ -170,7 +170,6 @@
 		gpiob: gpio@400ff040 {
 			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff040 0x40>;
-			interrupts = <31 2>;
 			label = "GPIO_2";
 			gpio-controller;
 			#gpio-cells = <2>;
@@ -180,6 +179,7 @@
 			compatible = "nxp,kinetis-gpio";
 			reg = <0x400ff080 0x40>;
 			interrupts = <31 2>;
+			daisy-gpios = <&gpiob 0 0>;
 			label = "GPIO_3";
 			gpio-controller;
 			#gpio-cells = <2>;
