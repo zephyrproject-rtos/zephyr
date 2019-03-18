@@ -1820,6 +1820,11 @@ static u8_t get_attr_val_rp(const struct bt_gatt_attr *attr, void *user_data)
 	do {
 		to_read = net_buf_simple_tailroom(buf);
 
+		if (!attr->read) {
+			rp->att_response = BT_ATT_ERR_READ_NOT_PERMITTED;
+			break;
+		}
+
 		read = attr->read(NULL, attr, buf->data + buf->len, to_read,
 				  rp->value_length);
 		if (read < 0) {
