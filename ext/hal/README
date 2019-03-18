@@ -41,15 +41,6 @@ pdl
 The Cypress Peripheral Driver Library (PDL) provides device header files and
 peripheral drivers for PSoC6 SoCs.
 
-qmsi
--------
-Intel® Quark™ Microcontroller Software Interface (QMSI) is a Hardware
-Abstraction Layer (HAL) for Intel® Quark™ Microcontroller products. It
-currently support the following SoCs:
-
-- Intel® Quark™ D2000 Microcontroller
-- Intel® Quark™ SE Microcontroller
-
 stm32cube
 ---------
 ST Microelectronics STM32Cube SDK
