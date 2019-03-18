@@ -265,12 +265,12 @@ class KconfigCheck(ComplianceTest):
         Checks that there are no references to undefined Kconfig symbols within
         the Kconfig files
         """
-        undef_ref_warnings = [warning for warning in kconf.warnings
-                              if "undefined symbol" in warning]
+        undef_ref_warnings = "\n\n\n".join(warning for warning in kconf.warnings
+                                           if "undefined symbol" in warning)
 
         if undef_ref_warnings:
             self.add_failure("Undefined Kconfig symbols:\n\n"
-                             + "\n\n\n".join(undef_ref_warnings))
+                             + undef_ref_warnings)
 
     def check_top_menu_not_too_long(self, kconf):
         """
