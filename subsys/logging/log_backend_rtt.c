@@ -10,39 +10,49 @@
 #include <logging/log_output.h>
 #include <SEGGER_RTT.h>
 
+#ifndef CONFIG_LOG_BACKEND_RTT_BUFFER_SIZE
+#define CONFIG_LOG_BACKEND_RTT_BUFFER_SIZE 0
+#endif
+
+#ifndef CONFIG_LOG_BACKEND_RTT_MESSAGE_SIZE
+#define CONFIG_LOG_BACKEND_RTT_MESSAGE_SIZE 0
+#endif
+
+#ifndef CONFIG_LOG_BACKEND_RTT_OUTPUT_BUFFER_SIZE
+#define CONFIG_LOG_BACKEND_RTT_OUTPUT_BUFFER_SIZE 0
+#endif
+
+#ifndef CONFIG_LOG_BACKEND_RTT_RETRY_DELAY_MS
+/* Long enough to detect host presence */
+#define CONFIG_LOG_BACKEND_RTT_RETRY_DELAY_MS 10
+#endif
+
+#ifndef CONFIG_LOG_BACKEND_RTT_RETRY_CNT
+/* Big enough to detect host presence */
+#define CONFIG_LOG_BACKEND_RTT_RETRY_CNT 10
+#endif
+
 #define DROP_MAX 99
 
-#if CONFIG_LOG_BACKEND_RTT_MODE_DROP
-
 #define DROP_MSG "\nmessages dropped:    \r"
+
 #define DROP_MSG_LEN (sizeof(DROP_MSG) - 1)
+
 #define MESSAGE_SIZE CONFIG_LOG_BACKEND_RTT_MESSAGE_SIZE
-#define CHAR_BUF_SIZE 1
-#define RETRY_DELAY_MS 10 /* Long enough to detect host presence */
-#define RETRY_CNT 10      /* Big enough to detect host presence */
-#else
 
-#define DROP_MSG NULL
-#define DROP_MSG_LEN 0
-#define MESSAGE_SIZE 0
-#define CHAR_BUF_SIZE CONFIG_LOG_BACKEND_RTT_OUTPUT_BUFFER_SIZE
-#define RETRY_DELAY_MS CONFIG_LOG_BACKEND_RTT_RETRY_DELAY_MS
-#define RETRY_CNT CONFIG_LOG_BACKEND_RTT_RETRY_CNT
-#endif /* CONFIG_LOG_BACKEND_RTT_MODE_DROP */
+#define CHAR_BUF_SIZE IS_ENABLED(CONFIG_LOG_BACKEND_RTT_MODE_BLOCK) ? \
+		CONFIG_LOG_BACKEND_RTT_OUTPUT_BUFFER_SIZE : 1
 
-#if CONFIG_LOG_BACKEND_RTT_BUFFER > 0
+#define RTT_LOCK() \
+	COND_CODE_0(CONFIG_LOG_BACKEND_RTT_BUFFER, (SEGGER_RTT_LOCK()), ())
 
-#define RTT_LOCK()
-#define RTT_UNLOCK()
-#define RTT_BUFFER_SIZE CONFIG_LOG_BACKEND_RTT_BUFFER_SIZE
+#define RTT_UNLOCK() \
+	COND_CODE_0(CONFIG_LOG_BACKEND_RTT_BUFFER, (SEGGER_RTT_UNLOCK()), ())
 
-#else
+#define RTT_BUFFER_SIZE \
+	COND_CODE_0(CONFIG_LOG_BACKEND_RTT_BUFFER, \
+		(0), (CONFIG_LOG_BACKEND_RTT_BUFFER_SIZE))
 
-#define RTT_LOCK() SEGGER_RTT_LOCK()
-#define RTT_UNLOCK() SEGGER_RTT_UNLOCK()
-#define RTT_BUFFER_SIZE 0
-
-#endif /* CONFIG_LOG_BACKEND_RTT_BUFFER > 0 */
 
 static const char *drop_msg = DROP_MSG;
 static u8_t rtt_buf[RTT_BUFFER_SIZE];
@@ -142,9 +152,10 @@ static void on_failed_write(int retry_cnt)
 	if (retry_cnt == 0) {
 		host_present = false;
 	} else if (sync_mode) {
-		k_busy_wait(USEC_PER_MSEC * RETRY_DELAY_MS);
+		k_busy_wait(USEC_PER_MSEC *
+				CONFIG_LOG_BACKEND_RTT_RETRY_DELAY_MS);
 	} else {
-		k_sleep(RETRY_DELAY_MS);
+		k_sleep(CONFIG_LOG_BACKEND_RTT_RETRY_DELAY_MS);
 	}
 }
 
@@ -168,7 +179,7 @@ static void on_write(int retry_cnt)
 static int data_out_block_mode(u8_t *data, size_t length, void *ctx)
 {
 	int ret;
-	int retry_cnt = RETRY_CNT;
+	int retry_cnt = CONFIG_LOG_BACKEND_RTT_RETRY_CNT;
 
 	do {
 		if (!sync_mode) {
