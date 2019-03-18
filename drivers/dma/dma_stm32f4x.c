@@ -417,6 +417,37 @@ static int dma_stm32_config(struct device *dev, u32_t id,
 	return ret;
 }
 
+static int dma_stm32_reload(struct device *dev, u32_t id,
+			    u32_t src, u32_t dst, size_t size)
+{
+	struct dma_stm32_device *ddata = dev->driver_data;
+	struct dma_stm32_stream_reg *regs = &ddata->stream[id].regs;
+	struct dma_stm32_stream *stream = &ddata->stream[id];
+
+	if (id >= DMA_STM32_MAX_STREAMS) {
+		return -EINVAL;
+	}
+
+	switch (stream->direction) {
+	case MEMORY_TO_PERIPHERAL:
+		regs->sm0ar = src;
+		regs->spar = dst;
+		break;
+
+	case MEMORY_TO_MEMORY:
+	case PERIPHERAL_TO_MEMORY:
+		regs->spar = src;
+		regs->sm0ar = dst;
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	regs->sndtr = size;
+	return 0;
+}
+
 static int dma_stm32_start(struct device *dev, u32_t id)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
@@ -521,6 +552,7 @@ static int dma_stm32_init(struct device *dev)
 }
 
 static const struct dma_driver_api dma_funcs = {
+	.reload		 = dma_stm32_reload,
 	.config		 = dma_stm32_config,
 	.start		 = dma_stm32_start,
 	.stop		 = dma_stm32_stop,
