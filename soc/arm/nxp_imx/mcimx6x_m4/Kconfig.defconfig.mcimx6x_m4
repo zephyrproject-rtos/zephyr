@@ -35,7 +35,7 @@ endif # SERIAL
 if IPM
 
 config IPM_IMX
-	def_bool y
+	default y
 
 endif # IPM
 

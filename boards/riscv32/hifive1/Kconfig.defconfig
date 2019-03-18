@@ -8,7 +8,7 @@ config BOARD
 if PWM
 
 config PWM_SIFIVE
-	def_bool y
+	default y
 
 endif
 

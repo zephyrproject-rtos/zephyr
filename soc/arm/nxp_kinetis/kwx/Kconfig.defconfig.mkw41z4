@@ -39,7 +39,7 @@ endif # CLOCK_CONTROL
 if COUNTER
 
 config COUNTER_MCUX_RTC
-	def_bool y
+	default y
 
 endif # COUNTER
 

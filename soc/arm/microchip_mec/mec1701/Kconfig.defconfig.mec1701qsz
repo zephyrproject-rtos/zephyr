@@ -18,7 +18,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 if SERIAL
 
 config UART_NS16550
-	def_bool y
+	default y
 
 endif # SERIAL
 
