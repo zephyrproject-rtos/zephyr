@@ -49,9 +49,11 @@ int net_udp_finalize(struct net_pkt *pkt)
 	length = net_pkt_get_len(pkt) -
 		net_pkt_ip_hdr_len(pkt) -
 		net_pkt_ipv6_ext_len(pkt);
+	udp_hdr->len = htons(length);
 
-	udp_hdr->len    = htons(length);
-	udp_hdr->chksum = net_calc_chksum_udp(pkt);
+	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
+		udp_hdr->chksum = net_calc_chksum_udp(pkt);
+	}
 
 	return net_pkt_set_data(pkt, &udp_access);
 }
