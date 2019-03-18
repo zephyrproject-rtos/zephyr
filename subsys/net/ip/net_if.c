@@ -2759,6 +2759,11 @@ enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt)
 			new_pkt = net_pkt_ref(pkt);
 		}
 
+		/* L2 has modified the buffer starting point, it is easier
+		 * to re-initialize the cursor rather than updating it.
+		 */
+		net_pkt_cursor_init(new_pkt);
+
 		if (net_promisc_mode_input(new_pkt) == NET_DROP) {
 			net_pkt_unref(new_pkt);
 		}
