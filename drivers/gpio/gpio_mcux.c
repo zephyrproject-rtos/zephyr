@@ -17,6 +17,7 @@
 struct gpio_mcux_config {
 	GPIO_Type *gpio_base;
 	PORT_Type *port_base;
+	int (*irq_config_func)(struct device *dev);
 	unsigned int flags;
 };
 
@@ -226,6 +227,14 @@ static void gpio_mcux_port_isr(void *arg)
 	config->port_base->ISFR = 0xFFFFFFFF;
 }
 
+static int gpio_mcux_init(struct device *dev)
+{
+	const struct gpio_mcux_config *config = dev->config->config_info;
+
+	config->irq_config_func(dev);
+
+	return 0;
+}
 
 static const struct gpio_driver_api gpio_mcux_driver_api = {
 	.config = gpio_mcux_configure,
@@ -242,6 +251,7 @@ static int gpio_mcux_porta_init(struct device *dev);
 static const struct gpio_mcux_config gpio_mcux_porta_config = {
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_A_BASE_ADDRESS,
 	.port_base = PORTA,
+	.irq_config_func = gpio_mcux_porta_init,
 #ifdef DT_NXP_KINETIS_GPIO_GPIO_A_IRQ
 	.flags = GPIO_INT,
 #else
@@ -252,7 +262,7 @@ static const struct gpio_mcux_config gpio_mcux_porta_config = {
 static struct gpio_mcux_data gpio_mcux_porta_data;
 
 DEVICE_AND_API_INIT(gpio_mcux_porta, DT_NXP_KINETIS_GPIO_GPIO_A_LABEL,
-		    gpio_mcux_porta_init,
+		    gpio_mcux_init,
 		    &gpio_mcux_porta_data, &gpio_mcux_porta_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_mcux_driver_api);
@@ -275,6 +285,7 @@ static int gpio_mcux_portb_init(struct device *dev);
 static const struct gpio_mcux_config gpio_mcux_portb_config = {
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_B_BASE_ADDRESS,
 	.port_base = PORTB,
+	.irq_config_func = gpio_mcux_portb_init,
 #ifdef DT_NXP_KINETIS_GPIO_GPIO_B_IRQ
 	.flags = GPIO_INT,
 #else
@@ -285,7 +296,7 @@ static const struct gpio_mcux_config gpio_mcux_portb_config = {
 static struct gpio_mcux_data gpio_mcux_portb_data;
 
 DEVICE_AND_API_INIT(gpio_mcux_portb, DT_NXP_KINETIS_GPIO_GPIO_B_LABEL,
-		    gpio_mcux_portb_init,
+		    gpio_mcux_init,
 		    &gpio_mcux_portb_data, &gpio_mcux_portb_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_mcux_driver_api);
@@ -308,6 +319,7 @@ static int gpio_mcux_portc_init(struct device *dev);
 static const struct gpio_mcux_config gpio_mcux_portc_config = {
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_C_BASE_ADDRESS,
 	.port_base = PORTC,
+	.irq_config_func = gpio_mcux_portc_init,
 #ifdef DT_NXP_KINETIS_GPIO_GPIO_C_IRQ
 	.flags = GPIO_INT,
 #else
@@ -318,7 +330,7 @@ static const struct gpio_mcux_config gpio_mcux_portc_config = {
 static struct gpio_mcux_data gpio_mcux_portc_data;
 
 DEVICE_AND_API_INIT(gpio_mcux_portc, DT_NXP_KINETIS_GPIO_GPIO_C_LABEL,
-		    gpio_mcux_portc_init,
+		    gpio_mcux_init,
 		    &gpio_mcux_portc_data, &gpio_mcux_portc_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_mcux_driver_api);
@@ -341,6 +353,7 @@ static int gpio_mcux_portd_init(struct device *dev);
 static const struct gpio_mcux_config gpio_mcux_portd_config = {
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_D_BASE_ADDRESS,
 	.port_base = PORTD,
+	.irq_config_func = gpio_mcux_portd_init,
 #ifdef DT_NXP_KINETIS_GPIO_GPIO_D_IRQ
 	.flags = GPIO_INT,
 #else
@@ -351,7 +364,7 @@ static const struct gpio_mcux_config gpio_mcux_portd_config = {
 static struct gpio_mcux_data gpio_mcux_portd_data;
 
 DEVICE_AND_API_INIT(gpio_mcux_portd, DT_NXP_KINETIS_GPIO_GPIO_D_LABEL,
-		    gpio_mcux_portd_init,
+		    gpio_mcux_init,
 		    &gpio_mcux_portd_data, &gpio_mcux_portd_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_mcux_driver_api);
@@ -374,6 +387,7 @@ static int gpio_mcux_porte_init(struct device *dev);
 static const struct gpio_mcux_config gpio_mcux_porte_config = {
 	.gpio_base = (GPIO_Type *) DT_NXP_KINETIS_GPIO_GPIO_E_BASE_ADDRESS,
 	.port_base = PORTE,
+	.irq_config_func = gpio_mcux_porte_init,
 #ifdef DT_NXP_KINETIS_GPIO_GPIO_E_IRQ
 	.flags = GPIO_INT,
 #else
@@ -384,7 +398,7 @@ static const struct gpio_mcux_config gpio_mcux_porte_config = {
 static struct gpio_mcux_data gpio_mcux_porte_data;
 
 DEVICE_AND_API_INIT(gpio_mcux_porte, DT_NXP_KINETIS_GPIO_GPIO_E_LABEL,
-		    gpio_mcux_porte_init,
+		    gpio_mcux_init,
 		    &gpio_mcux_porte_data, &gpio_mcux_porte_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_mcux_driver_api);
