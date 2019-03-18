@@ -137,7 +137,7 @@ void arm_core_mpu_mem_partition_config_update(
 	u8_t i;
 	u8_t reg_index = _get_num_regions();
 
-	for (i = static_regions_num; i < _get_num_regions(); i++) {
+	for (i = _get_dyn_region_min_index(); i < _get_num_regions(); i++) {
 		if (!_is_enabled_region(i)) {
 			continue;
 		}

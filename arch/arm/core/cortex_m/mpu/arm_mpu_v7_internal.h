@@ -109,6 +109,18 @@ static inline void _get_region_attr_from_k_mem_partition_info(
 #if defined(CONFIG_USERSPACE)
 
 /**
+ * This internal function returns the minimum HW MPU region index
+ * that may hold the configuration of a dynamic memory region.
+ *
+ * Trivial for ARMv7-M MPU, where dynamic memory areas are programmed
+ * in MPU regions indices right after the static regions.
+ */
+static inline int _get_dyn_region_min_index(void)
+{
+	return static_regions_num;
+}
+
+/**
  * This internal function converts the SIZE field value of MPU_RASR
  * to the region size (in bytes).
  */
