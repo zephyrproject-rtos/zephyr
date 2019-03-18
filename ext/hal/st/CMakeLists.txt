@@ -1,2 +1,0 @@
-add_subdirectory_ifdef(CONFIG_HAS_STM32CUBE stm32cube)
-add_subdirectory_ifdef(CONFIG_HAS_STLIB lib)
