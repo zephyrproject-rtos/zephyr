@@ -253,7 +253,9 @@ static int ecm_send(struct net_pkt *pkt)
 	size_t len = net_pkt_get_len(pkt);
 	int ret;
 
-	net_pkt_hexdump(pkt, "<");
+	if (IS_ENABLED(VERBOSE_DEBUG)) {
+		net_pkt_hexdump(pkt, "<");
+	}
 
 	if (len > sizeof(tx_buf)) {
 		LOG_WRN("Trying to send too large packet, drop");
@@ -306,6 +308,10 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 		LOG_ERR("Unable to write into pkt\n");
 		net_pkt_unref(pkt);
 		goto done;
+	}
+
+	if (IS_ENABLED(VERBOSE_DEBUG)) {
+		net_pkt_hexdump(pkt, ">");
 	}
 
 	netusb_recv(pkt);
