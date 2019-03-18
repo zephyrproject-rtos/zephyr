@@ -71,9 +71,9 @@ def get_modules(modules_file):
                         kconfig = "Kconfig"
                     kconfig_file = os.path.join(module_path, kconfig)
                     if os.path.exists(kconfig_file):
-                        km.write("osource \"{}\"".format(kconfig_file))
+                        km.write("osource \"{}\"\n".format(kconfig_file))
             elif os.path.exists(kconfig_file):
-                    km.write("osource \"{}\"".format(kconfig_file))
+                    km.write("osource \"{}\"\n".format(kconfig_file))
 
 
 class MyCase(TestCase):
