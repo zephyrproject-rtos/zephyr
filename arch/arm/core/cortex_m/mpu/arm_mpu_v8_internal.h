@@ -18,7 +18,7 @@
  *        is allowed.
  */
 struct dynamic_region_info {
-	u8_t index;
+	int index;
 	struct arm_mpu_region region_conf;
 };
 
