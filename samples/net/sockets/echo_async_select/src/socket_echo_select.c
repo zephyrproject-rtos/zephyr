@@ -116,17 +116,18 @@ int main(void)
 		printf("error: socket(AF_INET6): %d\n", errno);
 		exit(1);
 	}
-	#ifdef IPV6_V6ONLY
+#ifndef __ZEPHYR__
 	/* For Linux, we need to make socket IPv6-only to bind it to the
 	 * same port as IPv4 socket above.
 	 */
-	int TRUE = 1;
-	res = setsockopt(serv6, IPPROTO_IPV6, IPV6_V6ONLY, &TRUE, sizeof(TRUE));
+	int optval = 1;
+	res = setsockopt(serv6, IPPROTO_IPV6, IPV6_V6ONLY, &optval,
+				sizeof(optval));
 	if (res < 0) {
 		printf("error: setsockopt: %d\n", errno);
 		exit(1);
 	}
-	#endif
+#endif
 	res = bind(serv6, (struct sockaddr *)&bind_addr6, sizeof(bind_addr6));
 	if (res == -1) {
 		printf("Cannot bind IPv6, errno: %d\n", errno);
