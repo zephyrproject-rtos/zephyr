@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menu Testing
+menu "Testing"
 
 source "subsys/testsuite/ztest/Kconfig"
 
@@ -104,4 +104,5 @@ config TEST_FLASH_DRIVERS
 	help
 	  This option will help test the flash drivers. This should be enabled
 	  only when using qemu_x86.
+
 endmenu
