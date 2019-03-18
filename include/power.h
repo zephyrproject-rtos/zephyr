@@ -157,6 +157,14 @@ static inline void _sys_pm_idle_exit_notification_disable(void)
  */
 extern void sys_pm_force_power_state(enum power_states state);
 
+/**
+ * @brief Put processor into a power state.
+ *
+ * This function implements the SoC specific details necessary
+ * to put the processor into available power states.
+ */
+extern void sys_set_power_state(enum power_states state);
+
 #ifdef CONFIG_SYS_PM_DEBUG
 /**
  * @brief Dump Low Power states related debug info
@@ -217,24 +225,22 @@ extern bool sys_pm_ctrl_is_state_enabled(enum power_states state);
  */
 
 /**
- * @brief Hook function to notify exit from deep sleep
+ * @brief Restore context to the point where system entered the deep sleep
+ * state.
  *
- * The purpose of this function is to notify exit from
- * deep sleep. The implementation of this function can vary
- * depending on the soc specific boot flow.
+ * This function is optionally called when exiting from deep sleep if the SOC
+ * interface does not have bootloader support to handle resume from deep sleep.
+ * This function should restore context to the point where system entered
+ * the deep sleep state.
  *
- * This function would switch cpu context to the execution point at the time
- * system entered deep sleep power state. Some implementations may not require
- * use of this function e.g. the BSP or boot loader may do the context switch.
+ * If the function is called at cold boot it should return immediately.
  *
- * In boot flows where this function gets called even at cold boot, the
- * function should return immediately.
- *
+ * @note This function is not supported on all architectures.
  */
 void _sys_resume_from_deep_sleep(void);
 
 /**
- * @brief Hook function to notify exit from kernel idling after PM operations
+ * @brief Notify exit from kernel idling after PM operations
  *
  * This function would notify exit from kernel idling if a corresponding
  * _sys_suspend() notification was handled and did not return
@@ -251,43 +257,33 @@ void _sys_resume_from_deep_sleep(void);
  * can be ignored if no operation needs to be done at the wake event
  * notification. Alternatively _sys_pm_idle_exit_notification_disable() can
  * be called in _sys_suspend to disable this notification.
- *
  */
 void _sys_resume(void);
 
 /**
- * @brief Hook function to allow entry to power state
+ * @brief Allow entry to power state
  *
- * This function is called by the kernel when it is about to idle.
- * It is passed the number of clock ticks that the kernel calculated
- * as available time to idle.
+ * When the kernel is about to go idle, it calls this function to notify the
+ * power management subsystem, that the kernel is ready to enter the idle state.
  *
- * The implementation of this function is dependent on the soc specific
- * components and the various schemes they support. Some implementations
- * may choose to do device PM operations in this function, while others
- * would not need to, because they would have done it at other places.
+ * At this point, the kernel has disabled interrupts and computed the maximum
+ * time the system can remain idle. The function passes the time that the system
+ * can remain idle. The SOC interface performs power operations that can be done
+ * in the available time. The power management operations must halt execution of
+ * the CPU.
  *
- * Typically a wake event is set and the soc or cpu is put to any of the
- * supported power states. The wake event should be set to wake up
- * the soc or cpu before the available idle time expires to avoid disrupting
- * the kernel's scheduling.
+ * This function assumes that a wake up event has already been set up by the
+ * application.
  *
- * This function is entered with interrupts disabled. It should
- * re-enable interrupts if it had entered a power state.
+ * This function is entered with interrupts disabled. It should re-enable
+ * interrupts if it had entered a power state.
  *
- * @param ticks the upcoming kernel idle time
+ * @param ticks The upcoming kernel idle time.
  *
- * @return Power state which was selected and entered.
+ * @return Power state which was entered or SYS_POWER_STATE_ACTIVE if SoC was
+ *         kept in the active state.
  */
 extern enum power_states _sys_suspend(s32_t ticks);
-
-/**
- * @brief Put processor into power state
- *
- * This function implements the SoC specific details necessary
- * to put the processor into available power states.
- */
-extern void sys_set_power_state(enum power_states state);
 
 /**
  * @brief Do any SoC or architecture specific post ops after sleep state exits.
