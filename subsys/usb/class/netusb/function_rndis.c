@@ -11,9 +11,6 @@ LOG_MODULE_REGISTER(usb_rndis);
 /* Enable verbose debug printing extra hexdumps */
 #define VERBOSE_DEBUG		0
 
-/* Send media status */
-#define SEND_MEDIA_STATUS	0
-
 #include <init.h>
 
 #include <net/ethernet.h>
@@ -868,42 +865,6 @@ static int handle_encapsulated_cmd(u8_t *data, u32_t len)
 	return 0;
 }
 
-#if IS_ENABLED(SEND_MEDIA_STATUS)
-static int rndis_send_media_status(u32_t media_status)
-{
-	struct rndis_media_status_indicate *ind;
-	struct net_buf *buf;
-
-	LOG_DBG("status %u", media_status);
-
-	buf = net_buf_alloc(&rndis_tx_pool, K_NO_WAIT);
-	if (!buf) {
-		LOG_ERR("Cannot get free buffer");
-		return -ENOMEM;
-	}
-
-	ind = net_buf_add(buf, sizeof(*ind));
-	ind->type = sys_cpu_to_le32(RNDIS_CMD_INDICATE);
-	ind->len = sys_cpu_to_le32(sizeof(*ind));
-
-	if (media_status) {
-		ind->status = sys_cpu_to_le32(RNDIS_STATUS_CONNECT_MEDIA);
-	} else {
-		ind->status = sys_cpu_to_le32(RNDIS_STATUS_DISCONNECT_MEDIA);
-	}
-
-	ind->buf_len = 0U;
-	ind->buf_offset = 0U;
-
-	rndis_queue_rsp(buf);
-
-	/* Nofity about ready reply */
-	rndis_notify_rsp();
-
-	return 0;
-}
-#endif /* SEND_MEDIA_STATUS */
-
 static int handle_encapsulated_rsp(u8_t **data, u32_t *len)
 {
 	struct net_buf *buf;
@@ -1144,11 +1105,7 @@ static int rndis_connect_media(bool status)
 		rndis.media_status = RNDIS_OBJECT_ID_MEDIA_DISCONNECTED;
 	}
 
-#if IS_ENABLED(SEND_MEDIA_STATUS)
-	return rndis_send_media_status(status);
-#else
 	return 0;
-#endif
 }
 
 static struct netusb_function rndis_function = {
