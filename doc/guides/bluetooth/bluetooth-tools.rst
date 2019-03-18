@@ -162,6 +162,18 @@ transports when building a single-mode, Zephyr-based BLE Controller:
 * USB: Use the :ref:`hci_usb <bluetooth-hci-usb-sample>` sample and then
   treat it as a Host System Bluetooth Controller (see previous section)
 
+HCI Tracing
+===========
+
+When running the Host on a computer connected to an external Controller, it
+is very useful to be able to see the full log of exchanges between the two,
+in the format of a :ref:`bluetooth-hci` log.
+In order to see those logs, you can use the built-in ``btmon`` tool from BlueZ:
+
+.. code-block:: console
+
+   $ btmon
+
 .. _bluetooth_ctlr_bluez:
 
 Using Zephyr-based Controllers with BlueZ

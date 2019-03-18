@@ -42,6 +42,34 @@ To start developing using this setup follow the :ref:`Getting Started Guide
 boards that support Bluetooth and then :ref:`run the application
 <application_run_board>`).
 
+.. _bluetooth-hci-tracing:
+
+Embedded HCI tracing
+--------------------
+
+When running both Host and Controller in actual Integrated Circuits, you will
+only see normal log messages on the console by default, without any way of
+accessing the HCI traffic between the Host and the Controller.  However, there
+is a special Bluetooth logging mode that converts the console to use a binary
+protocol that interleaves both normal log messages as well as the HCI traffic.
+Set the following Kconfig options to enable this protocol before building your
+application:
+
+.. code-block:: console
+
+   CONFIG_BT_DEBUG_MONITOR=y
+   CONFIG_UART_CONSOLE=n
+
+Setting :option:`CONFIG_BT_DEBUG_MONITOR` to ``y`` replaces the
+:option:`CONFIG_BT_DEBUG_LOG` option, and setting :option:`CONFIG_UART_CONSOLE`
+to ``n`` disables the default ``printk``/``printf`` hooks.
+
+To decode the binary protocol that will now be sent to the console UART you need
+to use the btmon tool from :ref:`BlueZ <bluetooth_bluez>`:
+
+.. code-block:: console
+
+   $ btmon --tty <console TTY> --tty-speed 115200
 
 QEMU with an external Controller
 ================================
