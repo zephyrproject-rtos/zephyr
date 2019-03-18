@@ -203,6 +203,31 @@ static inline void _get_region_attr_from_k_mem_partition_info(
 
 #if defined(CONFIG_USERSPACE)
 
+/**
+ * This internal function returns the minimum HW MPU region index
+ * that may hold the configuration of a dynamic memory region.
+ *
+ * Browse through the memory areas marked for dynamic MPU programming,
+ * pick the one with the minimum MPU region index. Return that index.
+ *
+ * The function is optimized for the (most common) use-case of a single
+ * marked area for dynamic memory regions.
+ */
+static inline int _get_dyn_region_min_index(void)
+{
+	int dyn_reg_min_index = dyn_reg_info[0].index;
+#if MPU_DYNAMIC_REGION_AREAS_NUM > 1
+	for (int i = 1; i < MPU_DYNAMIC_REGION_AREAS_NUM; i++) {
+		if ((dyn_reg_info[i].index != -EINVAL) &&
+			(dyn_reg_info[i].index < dyn_reg_min_index)
+		) {
+			dyn_reg_min_index = dyn_reg_info[i].index;
+		}
+	}
+#endif
+	return dyn_reg_min_index;
+}
+
 static inline u32_t _mpu_region_get_size(u32_t index)
 {
 	return _mpu_region_get_last_addr(index) + 1
