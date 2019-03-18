@@ -380,8 +380,9 @@ The quality assurance part encompasses the following criteria:
    independent reviewer other than the author(s) of the code change.
    These reviews shall be performed by the subsystem maintainers and
    developers on a functional level and are to be distinguished from
-   security reviews as laid out in Chapter 4. Please refer to the
-   `development model documentation`_ on the Zephyr project Wiki.
+   security reviews as laid out in the `Secure Design`_ section.
+   Please refer to the `development model documentation`_ on the
+   Zephyr project Wiki.
 
 -  **Static Code Analysis** tools efficiently detect common coding
    mistakes in large code bases. All code shall be analyzed using an
