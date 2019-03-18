@@ -3173,8 +3173,8 @@ struct k_msgq {
 #define _K_MSGQ_INITIALIZER(obj, q_buffer, q_msg_size, q_max_msgs) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
-	.max_msgs = q_max_msgs, \
 	.msg_size = q_msg_size, \
+	.max_msgs = q_max_msgs, \
 	.buffer_start = q_buffer, \
 	.buffer_end = q_buffer + (q_max_msgs * q_msg_size), \
 	.read_ptr = q_buffer, \
