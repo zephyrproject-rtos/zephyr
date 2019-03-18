@@ -421,6 +421,23 @@ static const struct i2s_driver_api i2s_stm32_driver_api = {
 static struct device *active_dma_rx_channel[STM32_DMA_NUM_CHANNELS];
 static struct device *active_dma_tx_channel[STM32_DMA_NUM_CHANNELS];
 
+static int reload_dma(struct device *dev_dma, u32_t channel,
+		      struct dma_config *dcfg, void *src, void *dst,
+		      u32_t blk_size)
+{
+	int ret;
+
+	ret = dma_reload(dev_dma, channel, (u32_t)src, (u32_t)dst,
+			 blk_size / sizeof(u16_t));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = dma_start(dev_dma, channel);
+
+	return ret;
+}
+
 static int start_dma(struct device *dev_dma, u32_t channel,
 		     struct dma_config *dcfg, void *src, void *dst,
 		     u32_t blk_size)
@@ -483,7 +500,7 @@ static void dma_rx_callback(void *arg, u32_t channel, int status)
 		goto rx_disable;
 	}
 
-	ret = start_dma(dev_data->dev_dma, stream->dma_channel,
+	ret = reload_dma(dev_data->dev_dma, stream->dma_channel,
 			&stream->dma_cfg,
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
 			stream->mem_block,
@@ -566,7 +583,7 @@ static void dma_tx_callback(void *arg, u32_t channel, int status)
 	/* Assure cache coherency before DMA read operation */
 	DCACHE_CLEAN(stream->mem_block, mem_block_size);
 
-	ret = start_dma(dev_data->dev_dma, stream->dma_channel,
+	ret = reload_dma(dev_data->dev_dma, stream->dma_channel,
 			&stream->dma_cfg,
 			stream->mem_block,
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
