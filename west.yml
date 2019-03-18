@@ -38,6 +38,9 @@ manifest:
     - name: tinycbor
       path: modules/lib/tinycbor
       revision: 111f7a215cc4efa49fd03a7835719adca83b4388
+    - name: hal_qmsi
+      revision: 3179a8e44912a5a05b1cb467870b7e91aedff8d6
+      path: modules/hal/qmsi
 
   self:
     path: zephyr
