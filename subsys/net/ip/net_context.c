@@ -1229,32 +1229,37 @@ static struct net_pkt *context_alloc_pkt(struct net_context *context,
 					 size_t len, s32_t timeout)
 {
 	struct net_pkt *pkt;
+	struct net_if *interface = net_context_get_iface(context);
+	sa_family_t family = net_context_get_family(context);
+	u16_t ip_proto = net_context_get_ip_proto(context);
 
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 	if (context->tx_slab) {
-		pkt = net_pkt_alloc_from_slab(context->tx_slab(), timeout);
-		if (!pkt) {
-			return NULL;
+		struct k_mem_slab *slab = context->tx_slab();
+
+		k_mutex_unlock(&context->lock);
+		pkt = net_pkt_alloc_from_slab(slab, timeout);
+		if (pkt != NULL) {
+			net_pkt_set_iface(pkt, interface);
+			net_pkt_set_family(pkt, family);
+			net_pkt_set_context(pkt, context);
+
+			if (net_pkt_alloc_buffer(pkt, len,
+						 ip_proto,
+						 timeout) < 0) {
+				net_pkt_unref(pkt);
+				pkt = NULL;
+			}
 		}
 
-		net_pkt_set_iface(pkt, net_context_get_iface(context));
-		net_pkt_set_family(pkt, net_context_get_family(context));
-		net_pkt_set_context(pkt, context);
-
-		if (net_pkt_alloc_buffer(pkt, len,
-					 net_context_get_ip_proto(context),
-					 timeout)) {
-			net_pkt_unref(pkt);
-			return NULL;
-		}
-
+		k_mutex_lock(&context->lock, K_FOREVER);
 		return pkt;
 	}
 #endif
-	pkt = net_pkt_alloc_with_buffer(net_context_get_iface(context), len,
-					net_context_get_family(context),
-					net_context_get_ip_proto(context),
+	k_mutex_unlock(&context->lock);
+	pkt = net_pkt_alloc_with_buffer(interface, len, family, ip_proto,
 					timeout);
+	k_mutex_lock(&context->lock, K_FOREVER);
 	if (pkt) {
 		net_pkt_set_context(pkt, context);
 	}

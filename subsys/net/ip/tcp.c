@@ -396,16 +396,23 @@ static int prepare_segment(struct net_tcp *tcp,
 		pkt->buffer = NULL;
 		pkt_allocated = false;
 
+		k_mutex_unlock(&context->lock);
 		status = net_pkt_alloc_buffer(pkt, segment->optlen,
 					      IPPROTO_TCP, ALLOC_TIMEOUT);
+		k_mutex_lock(&context->lock, K_FOREVER);
 		if (status) {
 			goto fail;
 		}
 	} else {
-		pkt = net_pkt_alloc_with_buffer(net_context_get_iface(context),
+		struct net_if *interface = net_context_get_iface(context);
+		sa_family_t family = net_context_get_family(context);
+
+		k_mutex_unlock(&context->lock);
+		pkt = net_pkt_alloc_with_buffer(interface,
 						segment->optlen,
-						net_context_get_family(context),
+						family,
 						IPPROTO_TCP, ALLOC_TIMEOUT);
+		k_mutex_lock(&context->lock, K_FOREVER);
 		if (!pkt) {
 			return -ENOMEM;
 		}
@@ -1459,7 +1466,9 @@ static void backlog_ack_timeout(struct k_work *work)
 	 * RST packet might be invalid. Cache local address
 	 * and use it in RST message preparation.
 	 */
+	k_mutex_lock(&backlog->tcp->context->lock, K_FOREVER);
 	send_reset(backlog->tcp->context, NULL, &backlog->remote);
+	k_mutex_unlock(&backlog->tcp->context->lock);
 
 	(void)memset(backlog, 0, sizeof(struct tcp_backlog_entry));
 }
@@ -2099,7 +2108,9 @@ NET_CONN_CB(tcp_synack_received)
 	struct net_tcp_hdr *tcp_hdr = proto_hdr->tcp;
 	int ret;
 
-	NET_ASSERT(context && context->tcp);
+	NET_ASSERT(context);
+	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_ASSERT(context->tcp); /* protected by lock */
 
 	switch (net_tcp_get_state(context->tcp)) {
 	case NET_TCP_SYN_SENT:
@@ -2108,7 +2119,7 @@ NET_CONN_CB(tcp_synack_received)
 	default:
 		NET_DBG("Context %p in wrong state %d",
 			context, net_tcp_get_state(context->tcp));
-		return NET_DROP;
+		goto unlock;
 	}
 
 	net_pkt_set_context(pkt, context);
@@ -2119,7 +2130,7 @@ NET_CONN_CB(tcp_synack_received)
 		/* We only accept RST packet that has valid seq field. */
 		if (!net_tcp_validate_seq(context->tcp, tcp_hdr)) {
 			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
-			return NET_DROP;
+			goto unlock;
 		}
 
 		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
@@ -2131,7 +2142,7 @@ NET_CONN_CB(tcp_synack_received)
 					    context->user_data);
 		}
 
-		return NET_DROP;
+		goto unlock;
 	}
 
 	if (NET_TCP_FLAGS(tcp_hdr) & NET_TCP_SYN) {
@@ -2166,7 +2177,7 @@ NET_CONN_CB(tcp_synack_received)
 		if (ret < 0) {
 			NET_DBG("Cannot register TCP handler (%d)", ret);
 			send_reset(context, &local_addr, &remote_addr);
-			return NET_DROP;
+			goto unlock;
 		}
 
 		net_tcp_change_state(context->tcp, NET_TCP_ESTABLISHED);
@@ -2181,6 +2192,8 @@ NET_CONN_CB(tcp_synack_received)
 		}
 	}
 
+unlock:
+	k_mutex_unlock(&context->lock);
 	return NET_DROP;
 }
 
@@ -2239,8 +2252,11 @@ NET_CONN_CB(tcp_syn_rcvd)
 	struct sockaddr_ptr pkt_src_addr;
 	struct sockaddr local_addr;
 	struct sockaddr remote_addr;
+	enum net_verdict verdict = NET_DROP;
 
-	NET_ASSERT(context && context->tcp);
+	NET_ASSERT(context);
+	k_mutex_lock(&context->lock, K_FOREVER);
+	NET_ASSERT(context->tcp); /* protected by lock */
 
 	tcp = context->tcp;
 
@@ -2250,13 +2266,13 @@ NET_CONN_CB(tcp_syn_rcvd)
 		break;
 	case NET_TCP_SYN_RCVD:
 		if (net_pkt_iface(pkt) != net_context_get_iface(context)) {
-			return NET_DROP;
+			goto unlock;
 		}
 		break;
 	default:
 		NET_DBG("Context %p in wrong state %d",
 			context, tcp->state);
-		return NET_DROP;
+		goto unlock;
 	}
 
 	net_pkt_set_context(pkt, context);
@@ -2286,7 +2302,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 		 * so call unconditionally.
 		 */
 		if (net_tcp_parse_opts(pkt, opt_totlen, &tcp_opts) < 0) {
-			return NET_DROP;
+			goto unlock;
 		}
 
 		net_tcp_change_state(tcp, NET_TCP_SYN_RCVD);
@@ -2307,7 +2323,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 				NET_DBG("No free TCP backlog entries");
 			}
 
-			return NET_DROP;
+			goto unlock;
 		}
 
 		get_sockaddr_ptr(ip_hdr, tcp_hdr,
@@ -2315,7 +2331,8 @@ NET_CONN_CB(tcp_syn_rcvd)
 				 &pkt_src_addr);
 		send_syn_ack(context, &pkt_src_addr, &remote_addr);
 		net_pkt_unref(pkt);
-		return NET_OK;
+		verdict = NET_OK;
+		goto unlock;
 	}
 
 	/*
@@ -2326,14 +2343,14 @@ NET_CONN_CB(tcp_syn_rcvd)
 
 		if (tcp_backlog_rst(pkt, ip_hdr, tcp_hdr) < 0) {
 			net_stats_update_tcp_seg_rsterr(net_pkt_iface(pkt));
-			return NET_DROP;
+			goto unlock;
 		}
 
 		net_stats_update_tcp_seg_rst(net_pkt_iface(pkt));
 
 		net_tcp_print_recv_info("RST", pkt, tcp_hdr->src_port);
 
-		return NET_DROP;
+		goto unlock;
 	}
 
 	/*
@@ -2423,7 +2440,7 @@ NET_CONN_CB(tcp_syn_rcvd)
 			NET_ASSERT_INFO(false, "Invalid protocol family %d",
 					new_context->remote.sa_family);
 			net_context_unref(new_context);
-			return NET_DROP;
+			goto unlock;
 		}
 
 		context->tcp->accept_cb(new_context,
@@ -2432,10 +2449,10 @@ NET_CONN_CB(tcp_syn_rcvd)
 					0,
 					context->user_data);
 		net_pkt_unref(pkt);
-		return NET_OK;
+		verdict = NET_OK;
 	}
 
-	return NET_DROP;
+	goto unlock;
 
 conndrop:
 	net_stats_update_tcp_seg_conndrop(net_pkt_iface(pkt));
@@ -2443,7 +2460,9 @@ conndrop:
 reset:
 	send_reset(tcp->context, &local_addr, &remote_addr);
 
-	return NET_DROP;
+unlock:
+	k_mutex_unlock(&context->lock);
+	return verdict;
 }
 
 int net_tcp_accept(struct net_context *context,
@@ -2563,12 +2582,16 @@ int net_tcp_connect(struct net_context *context,
 
 	send_syn(context, addr);
 
+	k_mutex_unlock(&context->lock);
 	/* in tcp_synack_received() we give back this semaphore */
 	if (timeout != 0 && k_sem_take(&context->tcp->connect_wait, timeout)) {
-		return -ETIMEDOUT;
+		ret = -ETIMEDOUT;
+	} else {
+		ret = 0;
 	}
+	k_mutex_lock(&context->lock, K_FOREVER);
 
-	return 0;
+	return ret;
 }
 
 struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,

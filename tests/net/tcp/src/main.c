@@ -196,10 +196,12 @@ static void v6_send_syn_ack(struct net_pkt *req)
 	struct net_tcp_hdr *tcp_rsp, *tcp_req;
 	int ret;
 
+	k_mutex_lock(&reply_v6_ctx->lock, K_FOREVER);
 	ret = net_tcp_prepare_segment(reply_v6_ctx->tcp,
 				      NET_TCP_SYN | NET_TCP_ACK, NULL, 0,
 				      NULL, (struct sockaddr *)&my_v6_addr,
 				      &rsp);
+	k_mutex_unlock(&reply_v6_ctx->lock);
 	if (ret) {
 		DBG("TCP packet creation failed\n");
 		return;
@@ -964,8 +966,10 @@ static bool test_create_v6_reset_packet(void)
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
 
+	k_mutex_lock(&v6_ctx->lock, K_FOREVER);
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v6_addr, &pkt);
+	k_mutex_unlock(&v6_ctx->lock);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
 		return false;
@@ -1001,8 +1005,10 @@ static bool test_create_v4_reset_packet(void)
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
 
+	k_mutex_lock(&v4_ctx->lock, K_FOREVER);
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v4_addr, &pkt);
+	k_mutex_unlock(&v4_ctx->lock);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
 		return false;
@@ -1038,8 +1044,10 @@ static bool test_create_v6_syn_packet(void)
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
 
+	k_mutex_lock(&v6_ctx->lock, K_FOREVER);
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v6_addr, &pkt);
+	k_mutex_unlock(&v6_ctx->lock);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
 		return false;
@@ -1075,8 +1083,10 @@ static bool test_create_v4_syn_packet(void)
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
 
+	k_mutex_lock(&v4_ctx->lock, K_FOREVER);
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v4_addr, &pkt);
+	k_mutex_unlock(&v4_ctx->lock);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
 		return false;
@@ -1112,8 +1122,10 @@ static bool test_create_v6_synack_packet(void)
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
 
+	k_mutex_lock(&v6_ctx->lock, K_FOREVER);
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v6_addr, &pkt);
+	k_mutex_unlock(&v6_ctx->lock);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
 		return false;
@@ -1150,8 +1162,10 @@ static bool test_create_v4_synack_packet(void)
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
 
+	k_mutex_lock(&v4_ctx->lock, K_FOREVER);
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v4_addr, &pkt);
+	k_mutex_unlock(&v4_ctx->lock);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
 		return false;
@@ -1188,8 +1202,10 @@ static bool test_create_v6_fin_packet(void)
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
 
+	k_mutex_lock(&v6_ctx->lock, K_FOREVER);
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v6_addr, &pkt);
+	k_mutex_unlock(&v6_ctx->lock);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
 		return false;
@@ -1225,8 +1241,10 @@ static bool test_create_v4_fin_packet(void)
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
 
+	k_mutex_lock(&v4_ctx->lock, K_FOREVER);
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v4_addr, &pkt);
+	k_mutex_unlock(&v4_ctx->lock);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
 		return false;
@@ -1263,8 +1281,10 @@ static bool test_v6_seq_check(void)
 	u32_t seq;
 	int ret;
 
+	k_mutex_lock(&v6_ctx->lock, K_FOREVER);
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v6_addr, &pkt);
+	k_mutex_unlock(&v6_ctx->lock);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
 		return false;
@@ -1298,8 +1318,10 @@ static bool test_v4_seq_check(void)
 	u32_t seq;
 	int ret;
 
+	k_mutex_lock(&v4_ctx->lock, K_FOREVER);
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v4_addr, &pkt);
+	k_mutex_unlock(&v4_ctx->lock);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
 		return false;
@@ -1486,8 +1508,10 @@ static bool test_tcp_seq_validity(void)
 	struct net_tcp_hdr hdr, *tcp_hdr;
 	int ret;
 
+	k_mutex_lock(&v6_ctx->lock, K_FOREVER);
 	ret = net_tcp_prepare_segment(tcp, flags, NULL, 0, NULL,
 				      (struct sockaddr *)&peer_v6_addr, &pkt);
+	k_mutex_unlock(&v6_ctx->lock);
 	if (ret) {
 		DBG("Prepare segment failed (%d)\n", ret);
 		return false;
