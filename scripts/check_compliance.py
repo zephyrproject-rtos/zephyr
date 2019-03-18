@@ -250,9 +250,9 @@ class KconfigCheck(ComplianceTest):
         # For multi repo support
         self.get_modules(os.path.join(tempfile.gettempdir(), "Kconfig.modules"))
 
-        # Enable strict Kconfig mode in Kconfiglib, which assumes there's just a
-        # single Kconfig tree and warns for all references to undefined symbols
-        os.environ["KCONFIG_STRICT"] = "y"
+        # Tells Kconfiglib to generate warnings for all references to undefined
+        # symbols within Kconfig files
+        os.environ["KCONFIG_WARN_UNDEF"] = "y"
 
         try:
             return kconfiglib.Kconfig()
