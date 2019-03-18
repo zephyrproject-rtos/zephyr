@@ -194,8 +194,8 @@ class KconfigCheck(ComplianceTest):
 
         kconf = self.parse_kconfig()
 
-        self.check_no_undef_within_kconfig(kconf)
         self.check_top_menu_not_too_long(kconf)
+        self.check_no_undef_within_kconfig(kconf)
         self.check_no_undef_outside_kconfig(kconf)
 
     def get_modules(self, modules_file):
@@ -262,18 +262,6 @@ class KconfigCheck(ComplianceTest):
             self.add_failure(str(e))
             raise EndTest
 
-    def check_no_undef_within_kconfig(self, kconf):
-        """
-        Checks that there are no references to undefined Kconfig symbols within
-        the Kconfig files
-        """
-        undef_ref_warnings = "\n\n\n".join(warning for warning in kconf.warnings
-                                           if "undefined symbol" in warning)
-
-        if undef_ref_warnings:
-            self.add_failure("Undefined Kconfig symbols:\n\n"
-                             + undef_ref_warnings)
-
     def check_top_menu_not_too_long(self, kconf):
         """
         Checks that there aren't too many items in the top-level menu (which
@@ -296,6 +284,18 @@ Expected no more than {} potentially visible items (items with prompts) in the
 top-level Kconfig menu, found {} items. If you're deliberately adding new
 entries, then bump the 'max_top_items' variable in {}.
 """.format(max_top_items, n_top_items, __file__))
+
+    def check_no_undef_within_kconfig(self, kconf):
+        """
+        Checks that there are no references to undefined Kconfig symbols within
+        the Kconfig files
+        """
+        undef_ref_warnings = "\n\n\n".join(warning for warning in kconf.warnings
+                                           if "undefined symbol" in warning)
+
+        if undef_ref_warnings:
+            self.add_failure("Undefined Kconfig symbols:\n\n"
+                             + undef_ref_warnings)
 
     def check_no_undef_outside_kconfig(self, kconf):
         """
