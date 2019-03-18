@@ -70,7 +70,7 @@ To run:
 
 .. code-block:: console
 
-    $ ./socket_echo
+    $ ./socket_echo_select
 
 To test:
 
