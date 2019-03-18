@@ -82,9 +82,15 @@ config HAS_FLASH_LOAD_OFFSET
 	  This option is selected by targets having a FLASH_LOAD_OFFSET
 	  and FLASH_LOAD_SIZE.
 
+config USE_CODE_PARTITION
+	bool "link into code-partition"
+	depends on HAS_FLASH_LOAD_OFFSET
+	help
+	  When selected application will be linked into chosen code-partition.
+
 config FLASH_LOAD_OFFSET
 	hex "Kernel load offset"
-	default $(dt_hex_val,DT_CODE_PARTITION_OFFSET) if BOOTLOADER_MCUBOOT
+	default $(dt_hex_val,DT_CODE_PARTITION_OFFSET) if USE_CODE_PARTITION
 	default 0
 	depends on HAS_FLASH_LOAD_OFFSET
 	help
@@ -97,7 +103,7 @@ config FLASH_LOAD_OFFSET
 
 config FLASH_LOAD_SIZE
 	hex "Kernel load size"
-	default $(dt_hex_val,DT_CODE_PARTITION_SIZE) if BOOTLOADER_MCUBOOT
+	default $(dt_hex_val,DT_CODE_PARTITION_SIZE) if USE_CODE_PARTITION
 	default 0
 	depends on HAS_FLASH_LOAD_OFFSET
 	help
@@ -341,6 +347,7 @@ config BOOTLOADER_SRAM_SIZE
 
 config BOOTLOADER_MCUBOOT
 	bool "MCUboot bootloader support"
+	select USE_CODE_PARTITION
 	help
 	  This option signifies that the target uses MCUboot as a bootloader,
 	  or in other words that the image is to be chain-loaded by MCUboot.
