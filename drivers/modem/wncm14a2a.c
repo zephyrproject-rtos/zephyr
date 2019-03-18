@@ -1298,7 +1298,6 @@ static void wncm14a2a_rssi_query_work(struct k_work *work)
 	ret = send_at_cmd(NULL, "AT%MEAS=\"23\"", MDM_CMD_TIMEOUT);
 	if (ret < 0) {
 		LOG_ERR("AT%%MEAS ret:%d", ret);
-		return;
 	}
 
 	/* re-start RSSI query work */
