@@ -11346,7 +11346,12 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
+#if defined(CONFIG_BT_CTLR_PHY)
+	if ((conn->llcp_req != conn->llcp_ack) ||
+	    (conn->llcp_phy.req != conn->llcp_phy.ack)) {
+#else /* CONFIG_BT_CTLR_PHY */
 	if (conn->llcp_req != conn->llcp_ack) {
+#endif /* CONFIG_BT_CTLR_PHY */
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
