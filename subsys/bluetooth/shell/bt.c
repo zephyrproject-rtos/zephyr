@@ -336,34 +336,6 @@ static int cmd_init(const struct shell *shell, size_t argc, char *argv[])
 	return err;
 }
 
-#if defined(CONFIG_BT_HCI) || defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-void hexdump(const struct shell *shell, const u8_t *data, size_t len)
-{
-	int n = 0;
-
-	while (len--) {
-		if (n % 16 == 0) {
-			shell_print(shell, "%08X ", n);
-		}
-
-		shell_print(shell, "%02X ", *data++);
-
-		n++;
-		if (n % 8 == 0) {
-			if (n % 16 == 0) {
-				shell_print(shell, "");
-			} else {
-				shell_print(shell, " ");
-			}
-		}
-	}
-
-	if (n % 16) {
-		shell_print(shell, "");
-	}
-}
-#endif /* CONFIG_BT_HCI || CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
-
 #if defined(CONFIG_BT_HCI)
 static int cmd_hci_cmd(const struct shell *shell, size_t argc, char *argv[])
 {
@@ -390,7 +362,7 @@ static int cmd_hci_cmd(const struct shell *shell, size_t argc, char *argv[])
 		shell_error(shell, "HCI command failed (err %d)", err);
 		return err;
 	} else {
-		hexdump(shell, rsp->data, rsp->len);
+		shell_hexdump(shell, rsp->data, rsp->len);
 		net_buf_unref(rsp);
 	}
 

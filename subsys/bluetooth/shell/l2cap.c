@@ -98,7 +98,7 @@ static int l2cap_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		    buf->len);
 
 	if (buf->len) {
-		hexdump(ctx_shell, buf->data, buf->len);
+		shell_hexdump(ctx_shell, buf->data, buf->len);
 	}
 
 	if (l2cap_recv_delay) {
