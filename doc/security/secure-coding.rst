@@ -17,9 +17,7 @@ This document describes the requirements and process for ensuring
 security is addressed within the Zephyr project.  All code submitted
 should comply with these guidelines.
 
-Much of this document comes from the `CII best practices`_ document.
-
-.. _CII best practices: https://github.com/linuxfoundation/cii-best-practices-badge
+Much of this document comes from [CIIBPB]_.
 
 Introduction and Scope
 **********************
@@ -140,9 +138,7 @@ The Zephyr project must have at least one primary developer who knows
 how to design secure software.
 
 This requires understanding the following design principles,
-including the 8 principles from `Saltzer and Schroeder`_:
-
-.. _Saltzer and Schroeder: http://web.mit.edu/Saltzer/www/publications/protection/
+including the 8 principles from [SALT75]_:
 
 - economy of mechanism (keep the design as simple and small as
   practical, e.g., by adopting sweeping simplifications)
