@@ -389,9 +389,9 @@ The quality assurance part encompasses the following criteria:
    appropriate tool prior to merges into the main repository. This
    is not per individual commit, but is to be run on some interval
    on specific branches. It is mandatory to remove all findings or
-   waive potential false-positives before each release. To process
-   process documentation. Waivers shall be documented centrally and
-   in form of a comment inside the source code itself. The
+   waive potential false-positives before each release.
+   Waivers shall be documented centrally and
+   in the form of a comment inside the source code itself. The
    documentation shall include the employed tool and its version,
    the date of the analysis, the branch and parent revision number,
    the reason for the waiver, the author of the respective code, and
