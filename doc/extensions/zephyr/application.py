@@ -164,7 +164,6 @@ class ZephyrAppCommandsDirective(Directive):
                                                 if v != 'all']
         # Build the command content as a list, then convert to string.
         content = []
-        lit = []
         cd_to = zephyr_app or app
         tool_comment = None
         if len(tools) > 1:
@@ -336,7 +335,6 @@ class ZephyrAppCommandsDirective(Directive):
         zephyr_app = kwargs['zephyr_app']
         host_os = kwargs['host_os']
         build_dir = kwargs['build_dir']
-        source_dir = kwargs['source_dir']
         skip_config = kwargs['skip_config']
         compact = kwargs['compact']
         generator = kwargs['generator']

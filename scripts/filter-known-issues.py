@@ -89,7 +89,7 @@ def config_import_path(path):
     """
     file_regex = re.compile(".*\.conf$")
     try:
-        for dirpath, dirnames, filenames in os.walk(path):
+        for dirpath, _, filenames in os.walk(path):
             for _filename in sorted(filenames):
                 filename = os.path.join(dirpath, _filename)
                 if not file_regex.search(_filename):

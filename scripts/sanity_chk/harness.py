@@ -56,7 +56,7 @@ class Console(Harness):
                 if self.ordered:
                     ordered = True
                     pos = 0
-                    for k,v in self.matches.items():
+                    for k in self.matches:
                         if k != self.regex[pos]:
                             ordered = False
                         pos += 1

@@ -223,7 +223,6 @@ def main():
     intlist = read_intlist(args.intlist)
     nvec = intlist["num_vectors"]
     offset = intlist["offset"]
-    prefix = endian_prefix()
 
     spurious_handler = "&z_irq_spurious"
     sw_irq_handler   = "ISR_WRAPPER"
