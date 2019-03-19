@@ -70,14 +70,6 @@ config BT_HCI_TX_PRIO
 	int
 	default 7
 
-config BT_WAIT_NOP
-	bool "Wait for \"NOP\" Command Complete event during init"
-	help
-	  Some controllers emit a Command Complete event for the NOP
-	  opcode to indicate that they're ready to receive commands.
-	  This option should be selected if the controller used
-	  exhibits such behavior.
-
 config BT_HCI_RESERVE
 	int
 	default 0 if BT_H4

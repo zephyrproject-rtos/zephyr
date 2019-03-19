@@ -46,6 +46,13 @@ config BT_HCI_MESH_EXT
 	help
 	  Enable support for the Bluetooth Mesh HCI Commands.
 
+config BT_WAIT_NOP
+	bool "Wait for \"NOP\" Command Complete event during init"
+	help
+	  Emit a Command Complete event from the Controller (and wait for it
+	  from the Host) for the NOP opcode to indicate that the Controller is
+	  ready to receive commands.
+
 config BT_RPA
 	# Virtual/hidden option
 	bool
