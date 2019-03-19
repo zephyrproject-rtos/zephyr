@@ -12,7 +12,7 @@
 #include "updatehub_firmware.h"
 #include "updatehub_device.h"
 
-#if defined(CONFIG_UPDATEHUB_CE_SERVER)
+#if defined(CONFIG_UPDATEHUB_CE)
 #define UPDATEHUB_SERVER CONFIG_UPDATEHUB_SERVER
 #else
 #define UPDATEHUB_SERVER "coap.updatehub.io"

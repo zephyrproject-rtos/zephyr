@@ -11,3 +11,16 @@ include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
 project(NONE)
 
 target_sources(app PRIVATE src/main.c)
+
+if(CONFIG_UPDATEHUB_DTLS)
+    foreach(inc_file
+            servercert.der
+            privkey.der
+            )
+        generate_inc_file_for_target(
+            ${ZEPHYR_CURRENT_LIBRARY}
+            src/certificates/${inc_file}
+            ${gen_dir}/${inc_file}.inc
+            )
+    endforeach()
+endif()
