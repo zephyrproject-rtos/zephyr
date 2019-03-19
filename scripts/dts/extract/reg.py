@@ -23,8 +23,6 @@ class DTReg(DTDirective):
     #                  compatible definition.
     #
     def extract(self, node_path, names, def_label, div):
-        node = reduced[node_path]
-        node_compat = get_compat(node_path)
         binding = get_binding(node_path)
 
         reg = reduced[node_path]['props']['reg']

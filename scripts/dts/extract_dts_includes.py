@@ -8,13 +8,11 @@
 
 # vim: ai:ts=4:sw=4
 
-import sys
 import os, fnmatch
 import re
 import yaml
 import argparse
 from collections import defaultdict
-from collections.abc import Mapping
 
 from devicetree import parse_file
 from extract.globals import *
@@ -149,7 +147,7 @@ def generate_bus_defines(node_path):
     try:
         parent_binding = get_binding(parent_path)
         parent_bus = parent_binding['child']['bus']
-    except (KeyError, TypeError) as e:
+    except (KeyError, TypeError):
         raise Exception("{0} defines parent {1} as bus master, but {1} is not "
                         "configured as bus master in binding"
                         .format(node_path, parent_path))
@@ -202,7 +200,7 @@ def merge_properties(parent, fname, to_dict, from_dict):
     # implement !include. 'parent' is the current parent key being looked at.
     # 'fname' is the top-level .yaml file.
 
-    for k, v in from_dict.items():
+    for k in from_dict:
         if (k in to_dict and isinstance(to_dict[k], dict)
                          and isinstance(from_dict[k], dict)):
             merge_properties(k, fname, to_dict[k], from_dict[k])
@@ -392,7 +390,7 @@ def find_binding_files(binding_dirs):
     binding_files = []
 
     for binding_dir in binding_dirs:
-        for root, dirnames, filenames in os.walk(binding_dir):
+        for root, _, filenames in os.walk(binding_dir):
             for filename in fnmatch.filter(filenames, '*.yaml'):
                 binding_files.append(os.path.join(root, filename))
 

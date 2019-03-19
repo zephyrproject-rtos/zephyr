@@ -31,7 +31,7 @@ class DTCompatible(DTDirective):
         if not isinstance(compatible, list):
             compatible = [compatible, ]
 
-        for i, comp in enumerate(compatible):
+        for comp in compatible:
             # Generate #define
             insert_defs(node_path,
                         {'DT_COMPAT_' + str_to_label(comp): '1'},
