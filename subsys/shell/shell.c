@@ -1355,6 +1355,28 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 	k_mutex_unlock(&shell->ctx->wr_mtx);
 }
 
+void shell_hexdump(const struct shell *shell, const u8_t *data, size_t len)
+{
+	int n = 0;
+
+	while (len--) {
+		if (n % 16 == 0) {
+			shell_fprintf(shell, SHELL_NORMAL, "%08X: ", n);
+		}
+
+		shell_fprintf(shell, SHELL_NORMAL, "%02X ", *data++);
+
+		n++;
+		if (n % 16 == 0) {
+			shell_print(shell, "");
+		}
+	}
+
+	if (n % 16) {
+		shell_print(shell, "");
+	}
+}
+
 int shell_prompt_change(const struct shell *shell, const char *prompt)
 {
 	__ASSERT_NO_MSG(shell);

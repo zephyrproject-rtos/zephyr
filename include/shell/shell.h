@@ -625,6 +625,15 @@ void shell_fprintf(const struct shell *shell, enum shell_vt100_color color,
 		   const char *fmt, ...);
 
 /**
+ * @brief Print data in hexadecimal format.
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ * @param[in] data	Pointer to data.
+ * @param[in] len	Length of data.
+ */
+void shell_hexdump(const struct shell *shell, const u8_t *data, size_t len);
+
+/**
  * @brief Print info message to the shell.
  *
  * See @ref shell_fprintf.
