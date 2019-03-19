@@ -105,8 +105,8 @@ The three major security measures currently implemented are:
    requires all code to be reviewed before being committed to the
    common repository. Furthermore, the reuse of proven building
    blocks such as network stacks increases the overall quality level
-   and guarantees stable APIs. Static code analyses are planned for
-   the near future.
+   and guarantees stable APIs. Static code analyses are provided by
+   Coverity Scan.
 
 -  **Execution Protection** including thread separation, stack and
    memory protection is currently available in the upstream
