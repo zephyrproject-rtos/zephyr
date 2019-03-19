@@ -671,6 +671,52 @@ class GitLint(ComplianceTest):
             self.add_failure(msg.decode("utf-8"))
 
 
+class PyLint(ComplianceTest):
+    """
+    Runs pylint on all .py files, with a limited set of checks enabled. The
+    configuration is in the pylintrc file.
+    """
+    _name = "pylint"
+    _doc = "https://www.pylint.org/"
+
+    def run(self):
+        self.prepare(ZEPHYR_BASE)
+
+        # Path to pylint configuration file
+        pylintrc = os.path.join(os.path.dirname(__file__), "pylintrc")
+
+        # List of .py files added/modified by the commit(s).
+        #
+        # Skip create_board_img.py to work around a crash in pylint 2.2.2:
+        # https://github.com/PyCQA/pylint/issues/2906
+        py_files = git(
+            "diff", "--name-only", "--diff-filter=d", self.commit_range,
+            "--", "*.py",
+            ":!boards/xtensa/intel_s1000_crb/support/create_board_img.py") \
+            .splitlines()
+
+        if not py_files:
+            return
+
+        try:
+            # Run pylint on added/modified .py files
+            process = subprocess.Popen(
+                ["pylint", "--rcfile=" + pylintrc] + py_files,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                cwd=ZEPHYR_BASE)
+        except FileNotFoundError:
+            self.error("pylint not found. Check that the directory it's in is "
+                       "listed in the PATH environment variable.")
+        except OSError as e:
+            self.error("Failed to run pylint: " + str(e))
+
+        stdout, stderr = process.communicate()
+        if process.returncode or stderr:
+            # Issues found, or a problem with pylint itself
+            self.add_failure(stdout.decode("utf-8") + stderr.decode("utf-8"))
+
+
 class License(ComplianceTest):
     """
     Checks for licenses in new files added by the Pull request
