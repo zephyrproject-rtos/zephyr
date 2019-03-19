@@ -57,7 +57,7 @@ Nomenclature
 
 In this document, the keywords "MUST", "MUST NOT", "REQUIRED", "SHALL",
 "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and
-"OPTIONAL" are to be interpreted as described in `RFC2119`_.
+"OPTIONAL" are to be interpreted as described in [RFC2119]_.
 
 These words are used to define absolute requirements (or prohibitions),
 highly recommended requirements, and truly optional requirements. As
@@ -593,8 +593,7 @@ following is the current proposal:
 -  All security relevant issues shall trigger an automated notification
    on the Zephyr security mailing list
    (vulnerabilities@zephyrproject.org).  Any member of the security
-   board can then triage the severity of the issue according to the
-   `Common Vulnerability Scoring System v3.0 <CVSS_>`_
+   board can then triage the severity of the issue according to [CVSS]_.
 
 -  Depending on the resulting severity score of the issue, the issue is
    prioritized and assigned to the owner of the affected module.
@@ -626,15 +625,15 @@ and appropriate counter-measures are defined to mitigate the threat or
 limit the impact of exploits.
 
 In short, the threat modeling process can be separated into these steps
-(adapted from `Application Thread Modeling`_:
+(adapted from [OWASP]_):
 
 1. Definition of assets
 
 2. Application decomposition and creation of appropriate data flow
    diagrams (DFDs)
 
-3. Threat identification and categorization using the `STRIDE`_ and
-   `CVSS`_ approaches
+3. Threat identification and categorization using the [STRIDE09]_ and
+   [CVSS]_ approaches
 
 4. Determination of countermeasures and other mitigation approaches
 
@@ -779,13 +778,4 @@ include [GHS10]_
 These assumptions shall be part of the security claim and evaluation
 target documents.
 
-References
-**********
-
-See :ref:`security-citations`
-
-.. _`RFC2119`: https://www.ietf.org/rfc/rfc2119.txt
-.. _`Application Thread Modeling`: https://www.owasp.org/index.php/Application_Threat_Modeling
-.. _`STRIDE`: https://msdn.microsoft.com/en-us/library/ee823878%28v=cs.20%29.aspx
 .. _`development model documentation`: https://github.com/zephyrproject-rtos/zephyr/wiki/Development-Model
-.. _`CVSS`: https://www.first.org/cvss/specification-document
