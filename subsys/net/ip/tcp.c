@@ -1926,9 +1926,10 @@ NET_CONN_CB(tcp_established)
 		 * ack # value can/should be sent, so we just force resend.
 		 */
 resend_ack:
+		k_mutex_unlock(&context->lock);
 		send_ack(context, &conn->remote_addr, true);
-		ret = NET_DROP;
-		goto unlock;
+
+		return NET_DROP;
 	}
 
 	if (net_tcp_seq_cmp(sys_get_be32(tcp_hdr->seq),

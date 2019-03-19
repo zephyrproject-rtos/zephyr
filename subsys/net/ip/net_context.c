@@ -1573,11 +1573,18 @@ static struct net_pkt *context_alloc_pkt(struct net_context *context,
 {
 	struct net_pkt *pkt;
 
+	/* We reference it once again to make sure context is not going
+	 * to disappear while allocating a packet
+	 */
+	net_context_ref(context);
+
+	k_mutex_unlock(&context->lock);
+
 #if defined(CONFIG_NET_CONTEXT_NET_PKT_POOL)
 	if (context->tx_slab) {
 		pkt = net_pkt_alloc_from_slab(context->tx_slab(), timeout);
 		if (!pkt) {
-			return NULL;
+			goto out;
 		}
 
 		net_pkt_set_iface(pkt, net_context_get_iface(context));
@@ -1588,18 +1595,30 @@ static struct net_pkt *context_alloc_pkt(struct net_context *context,
 					 net_context_get_ip_proto(context),
 					 timeout)) {
 			net_pkt_unref(pkt);
-			return NULL;
+			pkt = NULL;
 		}
 
-		return pkt;
+		goto out;
 	}
 #endif
 	pkt = net_pkt_alloc_with_buffer(net_context_get_iface(context), len,
 					net_context_get_family(context),
 					net_context_get_ip_proto(context),
 					timeout);
+	if (!pkt) {
+		goto out;
+	}
 
 	net_pkt_set_context(pkt, context);
+out:
+	net_context_unref(context);
+
+	k_mutex_lock(&context->lock, K_FOREVER);
+
+	if (!net_context_is_used(context) && pkt) {
+		net_pkt_unref(pkt);
+		pkt = NULL;
+	}
 
 	return pkt;
 }
