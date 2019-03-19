@@ -4580,6 +4580,7 @@ extern void z_timer_expiration_handler(struct _timeout *t);
 #define K_THREAD_STACK_LEN(size) Z_ARCH_THREAD_STACK_LEN(size)
 #define K_THREAD_STACK_MEMBER(sym, size) Z_ARCH_THREAD_STACK_MEMBER(sym, size)
 #define K_THREAD_STACK_SIZEOF(sym) Z_ARCH_THREAD_STACK_SIZEOF(sym)
+#define K_THREAD_STACK_RESERVED Z_ARCH_THREAD_STACK_RESERVED
 static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return Z_ARCH_THREAD_STACK_BUFFER(sym);
@@ -4676,6 +4677,18 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  * @req K-TSTACK-001
  */
 #define K_THREAD_STACK_SIZEOF(sym) sizeof(sym)
+
+
+/**
+ * @brief Indicate how much additional memory is reserved for stack objects
+ *
+ * Any given stack declaration may have additional memory in it for guard
+ * areas or supervisor mode stacks. This macro indicates how much space
+ * is reserved for this. The memory reserved may not be contiguous within
+ * the stack object, and does not account for additional space used due to
+ * enforce alignment.
+ */
+#define K_THREAD_STACK_RESERVED		0
 
 /**
  * @brief Get a pointer to the physical stack buffer

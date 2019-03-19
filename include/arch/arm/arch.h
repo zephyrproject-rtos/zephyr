@@ -122,6 +122,16 @@ extern "C" {
 
 #if defined(CONFIG_USERSPACE) && \
 	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
+/* Guard is 'carved-out' of the thread stack region, and the supervisor
+ * mode stack is allocated elsewhere by gen_priv_stack.py
+ */
+#define Z_ARCH_THREAD_STACK_RESERVED 0
+#else
+#define Z_ARCH_THREAD_STACK_RESERVED MPU_GUARD_ALIGN_AND_SIZE
+#endif
+
+#if defined(CONFIG_USERSPACE) && \
+	defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
 #define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit \
 		__aligned(POW2_CEIL(size)) sym[POW2_CEIL(size)]
