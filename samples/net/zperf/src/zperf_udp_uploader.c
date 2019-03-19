@@ -18,7 +18,9 @@ LOG_MODULE_DECLARE(net_zperf_sample, LOG_LEVEL_DBG);
 #include "zperf.h"
 #include "zperf_internal.h"
 
-static u8_t sample_packet[sizeof(struct zperf_udp_datagram) + PACKET_SIZE_MAX];
+static u8_t sample_packet[sizeof(struct zperf_udp_datagram) +
+			  sizeof(struct zperf_client_hdr_v1) +
+			  PACKET_SIZE_MAX];
 
 static inline void zperf_upload_decode_stat(const struct shell *shell,
 					    struct net_pkt *pkt,
@@ -78,6 +80,7 @@ static inline void zperf_upload_fin(const struct shell *shell,
 {
 	struct net_pkt *stat = NULL;
 	struct zperf_udp_datagram *datagram;
+	struct zperf_client_hdr_v1 *hdr;
 	int loop = 2;
 	int ret;
 
@@ -89,6 +92,22 @@ static inline void zperf_upload_fin(const struct shell *shell,
 		datagram->tv_sec = htonl(HW_CYCLES_TO_SEC(end_time));
 		datagram->tv_usec = htonl(HW_CYCLES_TO_USEC(end_time) %
 					  USEC_PER_SEC);
+
+		hdr = (struct zperf_client_hdr_v1 *)(sample_packet +
+						     sizeof(*datagram));
+
+		/* According to iperf documentation (in include/Settings.hpp),
+		 * if the flags == 0, then the other values are ignored.
+		 * But even if the values in the header are ignored, try
+		 * to set there some meaningful values.
+		 */
+		hdr->flags = 0;
+		hdr->num_of_threads = htonl(1);
+		hdr->port = 0;
+		hdr->buffer_len = sizeof(sample_packet) -
+			sizeof(*datagram) - sizeof(*hdr);
+		hdr->bandwidth = 0;
+		hdr->num_of_bytes = htonl(packet_size);
 
 		/* Send the packet */
 		ret = net_context_send(context, sample_packet, packet_size,
@@ -138,6 +157,7 @@ static inline void zperf_upload_fin(const struct shell *shell,
 
 void zperf_udp_upload(const struct shell *shell,
 		      struct net_context *context,
+		      int port,
 		      unsigned int duration_in_ms,
 		      unsigned int packet_size,
 		      unsigned int rate_in_kbps,
@@ -173,6 +193,7 @@ void zperf_udp_upload(const struct shell *shell,
 
 	do {
 		struct zperf_udp_datagram *datagram;
+		struct zperf_client_hdr_v1 *hdr;
 		u32_t loop_time;
 		s32_t adjust;
 		int ret;
@@ -205,6 +226,16 @@ void zperf_udp_upload(const struct shell *shell,
 		datagram->tv_sec = htonl(HW_CYCLES_TO_SEC(loop_time));
 		datagram->tv_usec =
 			htonl(HW_CYCLES_TO_USEC(loop_time) % USEC_PER_SEC);
+
+		hdr = (struct zperf_client_hdr_v1 *)(sample_packet +
+						     sizeof(*datagram));
+		hdr->flags = 0;
+		hdr->num_of_threads = htonl(1);
+		hdr->port = htonl(port);
+		hdr->buffer_len = sizeof(sample_packet) -
+			sizeof(*datagram) - sizeof(*hdr);
+		hdr->bandwidth = htonl(rate_in_kbps);
+		hdr->num_of_bytes = htonl(packet_size);
 
 		/* Send the packet */
 		ret = net_context_send(context, sample_packet, packet_size,
