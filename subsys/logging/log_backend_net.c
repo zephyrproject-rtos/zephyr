@@ -177,11 +177,8 @@ static void send_output(const struct log_backend *const backend,
 		return;
 	}
 
-	if (!net_init_done) {
+	if (!net_init_done && do_net_init() == 0) {
 		net_init_done = true;
-		if (do_net_init() < 0) {
-			net_init_done = false;
-		}
 	}
 
 	log_msg_get(msg);
@@ -215,10 +212,34 @@ static void panic(struct log_backend const *const backend)
 	panic_mode = true;
 }
 
+static void sync_string(const struct log_backend *const backend,
+		     struct log_msg_ids src_level, u32_t timestamp,
+		     const char *fmt, va_list ap)
+{
+	u32_t flags = LOG_OUTPUT_FLAG_LEVEL | LOG_OUTPUT_FLAG_FORMAT_SYSLOG |
+		LOG_OUTPUT_FLAG_TIMESTAMP;
+	u32_t key;
+
+	if (!net_init_done && do_net_init() == 0) {
+		net_init_done = true;
+	}
+
+	key = irq_lock();
+	log_output_string(&log_output, src_level, timestamp, fmt, ap, flags);
+	irq_unlock(key);
+}
+
 const struct log_backend_api log_backend_net_api = {
-	.put = send_output,
 	.panic = panic,
 	.init = init_net,
+	.put = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ? NULL : send_output,
+	.put_sync_string = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
+							sync_string : NULL,
+	/* Currently we do not send hexdumps over network to remote server
+	 * in CONFIG_LOG_IMMEDIATE_MODE. This is just to save resources,
+	 * this can be revisited if needed.
+	 */
+	.put_sync_hexdump = NULL,
 };
 
 /* Note that the backend can be activated only after we have networking
