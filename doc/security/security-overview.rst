@@ -554,12 +554,12 @@ following is the current proposal:
 
    -  members of the Zephyr Security Subcommittee
 
-   -  other as proposed and ratified Zephyr Security Subcommittee, who will
-      also have the authority to remove others
+   -  others, as proposed and ratified by the Zephyr Security Subcommittee
 
    -  the reporter
 
-   -  Ability to add other users for individual issues
+-  Members of this Security Group have the authority to add or remove other
+   users for individual issues.
 
 -  Zephyr Security Subcommittee meetings have to review the embargoed bugs on
    every meeting with more than three people in attendance. Said
