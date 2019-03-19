@@ -208,8 +208,8 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		goto drop;
 	}
 
-	if (!net_ipv4_is_my_addr(&hdr->dst) &&
-	    !net_ipv4_is_addr_mcast(&hdr->dst) &&
+	if ((!net_ipv4_is_my_addr(&hdr->dst) &&
+	    !net_ipv4_is_addr_mcast(&hdr->dst)) ||
 	    ((hdr->proto == IPPROTO_UDP &&
 	      net_ipv4_addr_cmp(&hdr->dst, net_ipv4_broadcast_address()) &&
 	      !IS_ENABLED(CONFIG_NET_DHCPV4)) ||
