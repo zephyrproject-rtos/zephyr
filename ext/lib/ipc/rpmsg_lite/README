@@ -1,0 +1,32 @@
+RPMsg-Lite
+##########
+
+Origin:
+   https://github.com/NXPmicro/rpmsg-lite
+
+Status:
+   2.2.0
+
+Purpose:
+   Lightweight implementation of the Remote Processor Messaging (RPMsg) protocol
+
+Description:
+   Enables asymmetric multiprocessing (AMP) on memory constrained devices like the NXP LPC54114 multicore MCU. RPMsg-Lite is a lightweight implementation of the Remote Processor Messaging (RPMsg) protocol. The RPMsg protocol defines a standardized binary interface used to communicate between multiple cores in a heterogeneous multicore system.
+
+Dependencies:
+   None
+
+URL:
+   https://github.com/NXPmicro/rpmsg-lite
+
+commit:
+   adc38df11ac51952565682ebaaa029fb1af5e733
+
+Maintained-by:
+   External
+
+License:
+   SPDX-License-Identifier: BSD-3-Clause
+
+License Link:
+   https://github.com/NXPmicro/rpmsg-lite/blob/master/LICENSE

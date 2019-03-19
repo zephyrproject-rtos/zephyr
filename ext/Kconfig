@@ -18,6 +18,8 @@ source "ext/lib/fnmatch/Kconfig"
 
 source "ext/lib/ipc/open-amp/Kconfig"
 
+source "ext/lib/ipc/rpmsg_lite/Kconfig"
+
 source "ext/lib/mgmt/Kconfig"
 
 endmenu
