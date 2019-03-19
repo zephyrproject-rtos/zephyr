@@ -42,11 +42,9 @@ from reading their contents.
 import os
 import sys
 import struct
-import parser
 from collections import namedtuple
 import ctypes
 import argparse
-import re
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 

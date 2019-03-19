@@ -9,7 +9,6 @@ pairs to use within a CMake build file.
 '''
 
 import argparse
-import sys
 import yaml
 import pykwalify.core
 

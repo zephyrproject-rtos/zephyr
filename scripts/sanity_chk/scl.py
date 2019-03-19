@@ -6,7 +6,6 @@
 # Zephyr's sanity check testcases.
 
 import logging
-import os
 import yaml
 
 log = logging.getLogger("scl")
