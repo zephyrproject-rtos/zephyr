@@ -575,16 +575,17 @@ add_subdirectory(ext)
 add_subdirectory(subsys)
 add_subdirectory(drivers)
 
-# Add all zephyr modules subdirectories.
-if(ZEPHYR_MODULES_NAME)
-  message("Including module(s): ${ZEPHYR_MODULES_NAME}")
+# Include zephyr modules generated CMake file.
+if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
+  file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT)
+
+  foreach(module ${ZEPHYR_MODULES_TXT})
+    string(REGEX REPLACE "(.*):.*" "\\1" module_name ${module})
+    string(REGEX REPLACE ".*:(.*)" "\\1" module_path ${module})
+    message("Including module: ${module_name}")
+    add_subdirectory(${module_path} ${CMAKE_BINARY_DIR}/${module_name})
+  endforeach()
 endif()
-set(index 0)
-foreach(module_name ${ZEPHYR_MODULES_NAME})
-  list(GET ZEPHYR_MODULES_DIR ${index} module_dir)
-  math(EXPR index "${index} + 1")
-  add_subdirectory(${module_dir} ${CMAKE_BINARY_DIR}/${module_name})
-endforeach()
 
 set(syscall_macros_h ${ZEPHYR_BINARY_DIR}/include/generated/syscall_macros.h)
 
