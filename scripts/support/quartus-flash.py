@@ -6,7 +6,6 @@ import argparse
 import os
 import string
 import sys
-import shutil
 
 quartus_cpf_template = """<?xml version="1.0" encoding="US-ASCII" standalone="yes"?>
 <cof>

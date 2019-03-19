@@ -11,8 +11,8 @@ While every LineRule can be implemented as a CommitRule, it's usually easier and
 that fits your needs.
 """
 
-from gitlint.rules import CommitRule, RuleViolation, TitleRegexMatches, CommitMessageTitle, LineRule, CommitMessageBody
-from gitlint.options import IntOption, BoolOption, StrOption, ListOption
+from gitlint.rules import CommitRule, RuleViolation, CommitMessageTitle, LineRule, CommitMessageBody
+from gitlint.options import IntOption, StrOption
 import re
 
 class BodyMinLineCount(CommitRule):

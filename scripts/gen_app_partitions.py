@@ -36,13 +36,9 @@ import sys
 import argparse
 import os
 import re
-import string
-import subprocess
 from collections import OrderedDict
-from elf_helper import ElfHelper
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
-from operator import itemgetter
 
 SZ = 'size'
 SRC = 'sources'

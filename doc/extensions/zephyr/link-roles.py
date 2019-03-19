@@ -7,7 +7,6 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 import re
-import os
 from docutils import nodes
 from local_util import run_cmd_get_output
 

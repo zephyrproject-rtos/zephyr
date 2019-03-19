@@ -3,9 +3,7 @@
 # A script to generate a list of boards that have changed or added and create an
 # arguemnts file for sanitycheck to allow running more tests for those boards.
 
-import sys
 import re, os
-from email.utils import parseaddr
 import sh
 import logging
 import argparse

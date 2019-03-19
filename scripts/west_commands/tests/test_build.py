@@ -3,7 +3,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 from argparse import Namespace
-from unittest.mock import patch
 
 from build import Build
 import pytest

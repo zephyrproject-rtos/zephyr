@@ -4,10 +4,9 @@
 
 '''bossac-specific runner (flash only) for Atmel SAM microcontrollers.'''
 
-import os
 import platform
 
-from runners.core import ZephyrBinaryRunner, RunnerCaps, BuildConfiguration
+from runners.core import ZephyrBinaryRunner, RunnerCaps
 
 DEFAULT_BOSSAC_PORT = '/dev/ttyACM0'
 

@@ -1,4 +1,3 @@
-from graphviz import Digraph
 import argparse
 import os
 import pydot

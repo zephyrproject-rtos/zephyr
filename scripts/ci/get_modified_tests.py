@@ -3,9 +3,7 @@
 # A script to generate a list of tests that have changed or added and create an
 # arguemnts file for sanitycheck to allow running those tests with --all
 
-import sys
-import re, os
-from email.utils import parseaddr
+import os
 import sh
 import logging
 import argparse
