@@ -451,9 +451,7 @@ Z_SYSCALL_HANDLER(k_thread_create,
 	int prio;
 	u32_t options, delay;
 	u32_t total_size;
-#ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-	u32_t guard_size;
-#endif
+
 	struct _k_object *stack_object;
 	struct k_thread *new_thread = (struct k_thread *)new_thread_p;
 	volatile struct _syscall_10_args *margs =
@@ -468,23 +466,15 @@ Z_SYSCALL_HANDLER(k_thread_create,
 						_OBJ_INIT_FALSE) == 0,
 				    "bad stack object"));
 
-#ifndef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
 	/* Verify that the stack size passed in is OK by computing the total
 	 * size and comparing it with the size value in the object metadata
-	 *
-	 * We skip this check for SoCs which utilize MPUs with power of two
-	 * alignment requirements as the guard is allocated out of the stack
-	 * size and not allocated in addition to the stack size
 	 */
-	guard_size = (u32_t)K_THREAD_STACK_BUFFER(stack) - (u32_t)stack;
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!__builtin_uadd_overflow(guard_size,
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!__builtin_uadd_overflow(K_THREAD_STACK_RESERVED,
 							     stack_size,
 							     &total_size),
 				    "stack size overflow (%u+%u)", stack_size,
-				    guard_size));
-#else
-	total_size = stack_size;
-#endif
+				    K_THREAD_STACK_RESERVED));
+
 	/* They really ought to be equal, make this more strict? */
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(total_size <= stack_object->data,
 				    "stack size %u is too big, max is %u",
