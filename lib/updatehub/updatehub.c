@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 O.S.Systems
+ * Copyright (c) 2018, 2019 O.S.Systems
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,6 +26,11 @@ LOG_MODULE_REGISTER(updatehub);
 #include "updatehub_priv.h"
 #include "updatehub_firmware.h"
 #include "updatehub_device.h"
+
+#if defined(CONFIG_UPDATEHUB_DTLS)
+#define CA_CERTIFICATE_TAG 1
+#include <net/tls_credentials.h>
+#endif
 
 #define NETWORK_TIMEOUT K_SECONDS(2)
 #define UPDATEHUB_POLL_INTERVAL K_MINUTES(CONFIG_UPDATEHUB_POLL_INTERVAL)
@@ -127,8 +132,18 @@ static bool start_coap_client(void)
 	struct addrinfo *addr;
 	int resolve_attempts = 10;
 
+#if defined(CONFIG_UPDATEHUB_DTLS)
+	int verify = 0;
+	sec_tag_t sec_list[] = { CA_CERTIFICATE_TAG };
+	int protocol = IPPROTO_DTLS_1_2;
+	char port[] = "5684";
+#else
+	int protocol = IPPROTO_UDP;
+	char port[] = "5683";
+#endif
+
 	while (resolve_attempts--) {
-		if (getaddrinfo(UPDATEHUB_SERVER, "5683", &hints, &addr) == 0) {
+		if (getaddrinfo(UPDATEHUB_SERVER, port, &hints, &addr) == 0) {
 			break;
 		}
 		if (resolve_attempts-- == 0) {
@@ -137,11 +152,24 @@ static bool start_coap_client(void)
 		}
 	}
 
-	ctx.sock = socket(addr->ai_family, SOCK_DGRAM, IPPROTO_UDP);
+	ctx.sock = socket(addr->ai_family, SOCK_DGRAM, protocol);
 	if (ctx.sock < 0) {
 		LOG_ERR("Failed to create UDP socket");
 		return false;
 	}
+
+#if defined(CONFIG_UPDATEHUB_DTLS)
+	if (setsockopt(ctx.sock, SOL_TLS, TLS_SEC_TAG_LIST,
+		       sec_list, sizeof(sec_list)) < 0) {
+		LOG_ERR("Failed to set TLS_TAG option");
+		return false;
+	}
+
+	if (setsockopt(ctx.sock, SOL_TLS, TLS_PEER_VERIFY, &verify, sizeof(int)) < 0) {
+		LOG_ERR("Failed to set TLS_PEER_VERIFY option");
+		return false;
+	}
+#endif
 
 	if (connect(ctx.sock, addr->ai_addr, addr->ai_addrlen) < 0) {
 		LOG_ERR("Cannot connect to UDP remote");
@@ -161,6 +189,7 @@ static void cleanup_conection(void)
 
 	memset(&ctx.fds[1], 0, sizeof(ctx.fds[1]));
 	ctx.nfds = 0;
+	ctx.sock = 0;
 }
 
 static int send_request(enum coap_msgtype msgtype, enum coap_method method,

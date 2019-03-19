@@ -67,6 +67,25 @@ Step 3: Start the updatehub Community Edition
 By default, the updatehub application is set to start on the UpdateHub Cloud.
 For more details on how to use the UpdateHub Cloud please refer to the
 documentation on `updatehub.io`_.
+The UpdateHub Cloud has the option to use CoAPS/DTLS or not. If the user want
+to use the CoAPS/DTLS just need to add the ``overlay-dtls.conf`` at the build.
+You must use the certificate available just for test example. For you create a new certificates
+you can execute this following commands:
+
+.. code-block:: console
+
+    openssl genrsa -out privkey.pem 512
+
+    openssl req -new -x509 -key privkey.pem -out servercert.pem
+
+The cert and private key that is to be embedded into certificates.h in your application, can be generated like this:
+
+.. code-block:: console
+
+    openssl x509 -in servercert.pem -outform DER -out servercert.der
+
+    openssl pkcs8 -topk8 -inform PEM -outform DER -nocrypt -in privkey.pem \
+        -out privkey.der
 
 If you would like to use your own server, the steps below explain how
 updatehub works with updatehub-ce running, started by the
@@ -81,6 +100,7 @@ Using this server the user need create own ``overaly-prj.conf`` setting the opti
 :option:`CONFIG_UPDATEHUB_CE` with true. If the user will use polling mode on
 UpdateHub need too set the option :option:`CONFIG_UPDATEHUB_POLL_INTERVAL` with the period of
 your preference, remembering that the limit is between 0 minute until 43200 minutes(30 days).
+This server does not use DTLS, so you must not add ``overlay-dtls.config``.
 
 Step 4: Build UpdateHub
 =======================

@@ -10,6 +10,11 @@
 #include <misc/printk.h>
 #include <logging/log.h>
 
+#if defined(CONFIG_UPDATEHUB_DTLS)
+#include <net/tls_credentials.h>
+#include "c_certificates.h"
+#endif
+
 LOG_MODULE_REGISTER(main);
 
 int main(void)
@@ -17,6 +22,24 @@ int main(void)
 	int ret = -1;
 
 	LOG_INF("UpdateHub sample app started");
+
+#if defined(CONFIG_UPDATEHUB_DTLS)
+	if (tls_credential_add(CA_CERTIFICATE_TAG,
+			       TLS_CREDENTIAL_SERVER_CERTIFICATE,
+			       server_certificate,
+			       sizeof(server_certificate)) < 0) {
+		LOG_ERR("Failed to register server certificate");
+		return -1;
+	}
+
+	if (tls_credential_add(CA_CERTIFICATE_TAG,
+			       TLS_CREDENTIAL_PRIVATE_KEY,
+			       private_key,
+			       sizeof(private_key)) < 0) {
+		LOG_ERR("Failed to register private key");
+		return -1;
+	}
+#endif
 
 	/* The image of application needed be confirmed */
 	LOG_INF("Confirming the boot image");

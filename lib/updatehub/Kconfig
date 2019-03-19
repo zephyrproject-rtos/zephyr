@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2018 O.S.Systems
+# Copyright (c) 2018, 2019 O.S.Systems
 #
 # SPDX -License-Identifier: Apache-2.0
 #
@@ -78,6 +78,17 @@ config UPDATEHUB_SHELL
 	select KERNEL_SHELL
 	help
 	  Activate shell module that provides UpdateHub commands like
+
+config UPDATEHUB_DTLS
+	bool"Activite communication CoAPS/DTLS"
+	depends on UPDATEHUB
+	select MBEDTLS
+	select MBEDTLS_ENABLE_HEAP
+	select NET_SOCKETS_SOCKOPT_TLS
+	select NET_SOCKETS_ENABLE_DTLS
+	help
+	  Enables DTLS communication between the UpdateHub
+	  client and the server
 
 module = UPDATEHUB
 module-str = Log level for UpdateHub
