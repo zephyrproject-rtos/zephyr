@@ -49,7 +49,16 @@ SECTION_FUNC(TEXT,__start)
 	 */
 	mov r0, 0
 	kflag r0
-
+#if defined(CONFIG_BOOT_TIME_MEASUREMENT) && defined(CONFIG_ARCV2_TIMER)
+	/*
+	 * ARCV2 timer (timer0) is a free run timer, let it start to count
+	 * here.
+	 */
+	mov r0, 0xffffffff
+	sr r0, [_ARC_V2_TMR0_LIMIT]
+	mov r0, 0
+	sr r0, [_ARC_V2_TMR0_COUNT]
+#endif
 	/* interrupt related init */
 	sr r0, [_ARC_V2_AUX_IRQ_ACT]
 	sr r0, [_ARC_V2_AUX_IRQ_CTRL]
