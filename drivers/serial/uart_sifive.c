@@ -380,9 +380,9 @@ static void uart_sifive_irq_cfg_func_0(void);
 #endif
 
 static const struct uart_sifive_device_config uart_sifive_dev_cfg_0 = {
-	.port         = DT_SIFIVE_UART_0_BASE_ADDR,
-	.sys_clk_freq = DT_SIFIVE_UART_0_CLK_FREQ,
-	.baud_rate    = DT_SIFIVE_UART_0_CURRENT_SPEED,
+	.port         = DT_SIFIVE_UART0_0_BASE_ADDRESS,
+	.sys_clk_freq = DT_SIFIVE_UART0_0_CLOCK_FREQUENCY,
+	.baud_rate    = DT_SIFIVE_UART0_0_CURRENT_SPEED,
 	.rxcnt_irq    = CONFIG_UART_SIFIVE_PORT_0_RXCNT_IRQ,
 	.txcnt_irq    = CONFIG_UART_SIFIVE_PORT_0_TXCNT_IRQ,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -390,7 +390,7 @@ static const struct uart_sifive_device_config uart_sifive_dev_cfg_0 = {
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_sifive_0, DT_SIFIVE_UART_0_LABEL,
+DEVICE_AND_API_INIT(uart_sifive_0, DT_SIFIVE_UART0_0_LABEL,
 		    uart_sifive_init,
 		    &uart_sifive_data_0, &uart_sifive_dev_cfg_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
@@ -419,9 +419,9 @@ static void uart_sifive_irq_cfg_func_1(void);
 #endif
 
 static const struct uart_sifive_device_config uart_sifive_dev_cfg_1 = {
-	.port         = DT_SIFIVE_UART_1_BASE_ADDR,
-	.sys_clk_freq = DT_SIFIVE_UART_1_CLK_FREQ,
-	.baud_rate    = DT_SIFIVE_UART_1_CURRENT_SPEED,
+	.port         = DT_SIFIVE_UART0_1_BASE_ADDRESS,
+	.sys_clk_freq = DT_SIFIVE_UART0_1_CLOCK_FREQUENCY,
+	.baud_rate    = DT_SIFIVE_UART0_1_CURRENT_SPEED,
 	.rxcnt_irq    = CONFIG_UART_SIFIVE_PORT_1_RXCNT_IRQ,
 	.txcnt_irq    = CONFIG_UART_SIFIVE_PORT_1_TXCNT_IRQ,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
@@ -429,7 +429,7 @@ static const struct uart_sifive_device_config uart_sifive_dev_cfg_1 = {
 #endif
 };
 
-DEVICE_AND_API_INIT(uart_sifive_1, DT_SIFIVE_UART_1_LABEL,
+DEVICE_AND_API_INIT(uart_sifive_1, DT_SIFIVE_UART0_1_LABEL,
 		    uart_sifive_init,
 		    &uart_sifive_data_1, &uart_sifive_dev_cfg_1,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
