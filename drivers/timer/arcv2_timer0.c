@@ -167,6 +167,9 @@ int z_clock_driver_init(struct device *device)
 		    _timer_int_handler, NULL, 0);
 
 	timer0_limit_register_set(last_load - 1);
+#ifdef CONFIG_BOOT_TIME_MEASUREMENT
+	cycle_count = timer0_count_register_get();
+#endif
 	timer0_count_register_set(0);
 	timer0_control_register_set(_ARC_V2_TMR_CTRL_NH | _ARC_V2_TMR_CTRL_IE);
 
