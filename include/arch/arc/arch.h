@@ -81,6 +81,9 @@ extern "C" {
 
 #if defined(CONFIG_USERSPACE)
 
+#define Z_ARCH_THREAD_STACK_RESERVED \
+	(STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE)
+
 #if CONFIG_ARC_MPU_VER == 2
 
 #define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
@@ -133,6 +136,8 @@ extern "C" {
 		((char *)(sym))
 
 #else /* CONFIG_USERSPACE */
+
+#define Z_ARCH_THREAD_STACK_RESERVED STACK_GUARD_SIZE
 
 #define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \

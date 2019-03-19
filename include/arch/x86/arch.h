@@ -582,17 +582,17 @@ extern struct task_state_segment _main_tss;
  * to the top of it.
  * All context switches will save/restore the esp0 field in the TSS.
  */
-#define _STACK_GUARD_SIZE	(MMU_PAGE_SIZE * 2)
+#define Z_ARCH_THREAD_STACK_RESERVED	(MMU_PAGE_SIZE * 2)
 #define _STACK_BASE_ALIGN	MMU_PAGE_SIZE
 #elif defined(CONFIG_HW_STACK_PROTECTION) || defined(CONFIG_USERSPACE)
 /* If only one of HW stack protection or userspace is enabled, then the
  * stack will be preceded by one page which is a guard page or a kernel mode
  * stack, respectively.
  */
-#define _STACK_GUARD_SIZE	MMU_PAGE_SIZE
+#define Z_ARCH_THREAD_STACK_RESERVED	MMU_PAGE_SIZE
 #define _STACK_BASE_ALIGN	MMU_PAGE_SIZE
 #else /* Neither feature */
-#define _STACK_GUARD_SIZE	0
+#define Z_ARCH_THREAD_STACK_RESERVED	0
 #define _STACK_BASE_ALIGN	STACK_ALIGN
 #endif
 
@@ -609,12 +609,12 @@ extern struct task_state_segment _main_tss;
 #define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
 	struct _k_thread_stack_element __noinit \
 		__aligned(_STACK_BASE_ALIGN) \
-		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + _STACK_GUARD_SIZE]
+		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + Z_ARCH_THREAD_STACK_RESERVED]
 
 #define Z_ARCH_THREAD_STACK_LEN(size) \
 		(ROUND_UP((size), \
 			  MAX(_STACK_BASE_ALIGN, _STACK_SIZE_ALIGN)) + \
-		_STACK_GUARD_SIZE)
+		Z_ARCH_THREAD_STACK_RESERVED)
 
 #define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
 	struct _k_thread_stack_element __noinit \
@@ -623,13 +623,13 @@ extern struct task_state_segment _main_tss;
 
 #define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element __aligned(_STACK_BASE_ALIGN) \
-		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + _STACK_GUARD_SIZE]
+		sym[ROUND_UP((size), _STACK_SIZE_ALIGN) + Z_ARCH_THREAD_STACK_RESERVED]
 
 #define Z_ARCH_THREAD_STACK_SIZEOF(sym) \
-	(sizeof(sym) - _STACK_GUARD_SIZE)
+	(sizeof(sym) - Z_ARCH_THREAD_STACK_RESERVED)
 
 #define Z_ARCH_THREAD_STACK_BUFFER(sym) \
-	((char *)((sym) + _STACK_GUARD_SIZE))
+	((char *)((sym) + Z_ARCH_THREAD_STACK_RESERVED))
 
 #if CONFIG_X86_KERNEL_OOPS
 #define Z_ARCH_EXCEPT(reason_p) do { \
