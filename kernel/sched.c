@@ -1030,7 +1030,7 @@ void z_sched_abort(struct k_thread *thread)
 	while ((thread->base.thread_state & _THREAD_DEAD) == 0) {
 		LOCKED(&sched_spinlock) {
 			if (z_is_thread_queued(thread)) {
-				_current->base.thread_state |= _THREAD_DEAD;
+				thread->base.thread_state |= _THREAD_DEAD;
 				_priq_run_remove(&_kernel.ready_q.runq, thread);
 				z_mark_thread_as_not_queued(thread);
 			}
