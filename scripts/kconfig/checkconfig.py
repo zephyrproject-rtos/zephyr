@@ -104,7 +104,7 @@ def search_config_in_file(tree, items, completelog, exclude):
             fname.endswith(".S")):
                 with open(os.path.join(dirName, fname), "r", encoding="utf-8", errors="ignore") as f:
                     searchConf = f.readlines()
-                for i, line in enumerate(searchConf):
+                for line in searchConf:
                     if re.search('(^|[\s|(])CONFIG_([a-zA-Z0-9_]+)', line) :
                         configName = re.search('(^|[\s|(])'
                                                +'CONFIG_([a-zA-Z0-9_]+)', line)

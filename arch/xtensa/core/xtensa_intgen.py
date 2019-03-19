@@ -29,8 +29,7 @@ def cprint(s):
         return
     if s.find("}") >= 0:
         cindent -= 1
-    for xx in range(cindent):
-        s = "\t" + s
+    s = cindent*"\t" + s
     print(s)
     if s.find("{") >= 0:
         cindent += 1

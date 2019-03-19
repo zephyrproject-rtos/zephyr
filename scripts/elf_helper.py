@@ -385,7 +385,7 @@ class ElfHelper:
 
         # Step 1: collect all type information.
         for CU in di.iter_CUs():
-            for idx, die in enumerate(CU.iter_DIEs()):
+            for die in CU.iter_DIEs():
                 # Unions are disregarded, kernel objects should never be union
                 # members since the memory is not dedicated to that object and
                 # could be something else

@@ -129,7 +129,7 @@ def find_obj_file_partitions(filename, partitions):
 
 def parse_obj_files(partitions):
     # Iterate over all object files to find partitions
-    for dirpath, dirs, files in os.walk(args.directory):
+    for dirpath, _, files in os.walk(args.directory):
         for filename in files:
             if re.match(".*\.obj$",filename):
                 fullname = os.path.join(dirpath, filename)
@@ -144,7 +144,7 @@ def parse_elf_file(partitions):
                        if isinstance(s, SymbolTableSection)]
 
         for section in symbol_tbls:
-            for nsym, symbol in enumerate(section.iter_symbols()):
+            for symbol in section.iter_symbols():
                 if symbol['st_shndx'] != "SHN_ABS":
                     continue
 
@@ -207,7 +207,6 @@ def parse_args():
 
 def main():
     parse_args()
-    linker_file = args.output
     partitions = {}
 
     if args.directory is not None:
