@@ -536,6 +536,7 @@ static int execute_upload(const struct shell *shell,
 			  struct sockaddr_in6 *ipv6,
 			  struct sockaddr_in *ipv4,
 			  bool is_udp,
+			  int port,
 			  char *argv0,
 			  unsigned int duration_in_ms,
 			  unsigned int packet_size,
@@ -584,7 +585,7 @@ static int execute_upload(const struct shell *shell,
 				goto out;
 			}
 
-			zperf_udp_upload(shell, context6, duration_in_ms,
+			zperf_udp_upload(shell, context6, port, duration_in_ms,
 					 packet_size, rate_in_kbps, &results);
 			shell_udp_upload_print_stats(shell, &results);
 		}
@@ -603,7 +604,7 @@ static int execute_upload(const struct shell *shell,
 				goto out;
 			}
 
-			zperf_udp_upload(shell, context4, duration_in_ms,
+			zperf_udp_upload(shell, context4, port, duration_in_ms,
 					 packet_size, rate_in_kbps, &results);
 			shell_udp_upload_print_stats(shell, &results);
 		}
@@ -812,7 +813,7 @@ static int shell_cmd_upload(const struct shell *shell, size_t argc,
 	}
 
 	return execute_upload(shell, context6, context4, family, &ipv6, &ipv4,
-			      is_udp, argv[start], duration_in_ms,
+			      is_udp, port, argv[start], duration_in_ms,
 			      packet_size, rate_in_kbps);
 }
 
@@ -931,7 +932,7 @@ static int shell_cmd_upload2(const struct shell *shell, size_t argc,
 	}
 
 	return execute_upload(shell, context6, context4, family, &in6_addr_dst,
-			      &in4_addr_dst, is_udp, argv[start],
+			      &in4_addr_dst, is_udp, port, argv[start],
 			      duration_in_ms, packet_size, rate_in_kbps);
 }
 

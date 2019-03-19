@@ -69,6 +69,15 @@ struct zperf_udp_datagram {
 	u32_t tv_usec;
 };
 
+struct zperf_client_hdr_v1 {
+	s32_t flags;
+	s32_t num_of_threads;
+	s32_t port;
+	s32_t buffer_len;
+	s32_t bandwidth;
+	s32_t num_of_bytes;
+};
+
 struct zperf_server_hdr {
 	s32_t flags;
 	s32_t total_len1;
@@ -97,6 +106,7 @@ struct sockaddr_in *zperf_get_sin(void);
 
 extern void zperf_udp_upload(const struct shell *shell,
 			     struct net_context *context,
+			     int port,
 			     unsigned int duration_in_ms,
 			     unsigned int packet_size,
 			     unsigned int rate_in_kbps,
