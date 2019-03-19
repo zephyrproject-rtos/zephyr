@@ -375,6 +375,7 @@ config BT_CTLR_DATA_LENGTH_CLEAR
 	  251 byte cleartext payloads in the Controller. Encrypted connections
 	  are not supported.
 
+if BT_PHY_UPDATE
 config BT_CTLR_PHY_2M_NRF
 	bool "2Mbps Nordic Semiconductor PHY Support (Cleartext only)"
 	depends on SOC_SERIES_NRF51X
@@ -396,6 +397,7 @@ config BT_CTLR_PHY_CODED
 	default y
 	help
 	  Enable support for Bluetooth 5.0 Coded PHY in the Controller.
+endif # BT_PHY_UPDATE
 
 if BT_LL_SW
 
