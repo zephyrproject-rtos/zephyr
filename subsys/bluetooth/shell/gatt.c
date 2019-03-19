@@ -834,6 +834,41 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 	return err;
 }
 
+static u8_t get_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct shell *shell = user_data;
+	u8_t buf[256];
+	ssize_t ret;
+
+	shell_print(shell, "attr %p uuid %s perm 0x%02x", attr,
+		    bt_uuid_str(attr->uuid), attr->perm);
+
+	if (!attr->read) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	ret = attr->read(NULL, attr, (void *)buf, sizeof(buf), 0);
+	if (ret < 0) {
+		shell_print(shell, "Failed to read: %d", ret);
+		return BT_GATT_ITER_STOP;
+	}
+
+	shell_hexdump(shell, buf, ret);
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static int cmd_get(const struct shell *shell, size_t argc, char *argv[])
+{
+	u16_t handle;
+
+	handle = strtoul(argv[1], NULL, 16);
+
+	bt_gatt_foreach_attr(handle, handle, get_cb, (void *)shell);
+
+	return 0;
+}
+
 #define HELP_NONE "[none]"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
@@ -876,6 +911,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 	SHELL_CMD_ARG(unregister, NULL,
 		      "unregister pre-predefined test service",
 		      cmd_unregister_test_svc, 1, 0),
+	SHELL_CMD_ARG(get, NULL, "<handle>", cmd_get, 2, 0),
 	SHELL_SUBCMD_SET_END
 );
 
