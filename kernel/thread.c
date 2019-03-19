@@ -475,7 +475,9 @@ Z_SYSCALL_HANDLER(k_thread_create,
 				    "stack size overflow (%u+%u)", stack_size,
 				    K_THREAD_STACK_RESERVED));
 
-	/* They really ought to be equal, make this more strict? */
+	/* Testing less-than-or-equal since additional room may have been
+	 * allocated for alignment constraints
+	 */
 	Z_OOPS(Z_SYSCALL_VERIFY_MSG(total_size <= stack_object->data,
 				    "stack size %u is too big, max is %u",
 				    total_size, stack_object->data));
