@@ -8,6 +8,7 @@ toolchain:
   - xtools
 testing:
   ignore_tags:
+    - cmsis_rtos_v2
     - net
     - mpu
     - tinycrypt
