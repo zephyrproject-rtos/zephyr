@@ -8,7 +8,6 @@ from extract.globals import *
 from extract.directive import DTDirective
 
 from extract.default import default
-from extract.reg import reg
 
 ##
 # @brief Manage flash directives.
@@ -159,7 +158,6 @@ class DTFlash(DTDirective):
             node_path = get_parent_path(node_path)
             (nr_address_cells, nr_size_cells) = get_addr_size_cells(node_path)
 
-        node_compat = get_compat(node_path)
         reg = reduced[node_path]['props']['reg']
         if type(reg) is not list: reg = [ reg, ]
         props = list(reg)
