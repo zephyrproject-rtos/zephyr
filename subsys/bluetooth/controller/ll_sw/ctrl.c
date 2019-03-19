@@ -1917,6 +1917,9 @@ static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		_radio.conn_curr->pause_rx = 0U;
 		_radio.conn_curr->pause_tx = 0U;
 
+		/* reset workaround flag */
+		_radio.conn_curr->slave.enc_wa = 0U;
+
 		/* Procedure complete */
 		_radio.conn_curr->procedure_expire = 0U;
 		break;
@@ -2677,6 +2680,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 			/* resume data packet rx and tx */
 			_radio.conn_curr->pause_rx = 0U;
 			_radio.conn_curr->pause_tx = 0U;
+
+			/* reset workaround flag */
+			_radio.conn_curr->slave.enc_wa = 0U;
 #endif /* CONFIG_BT_CTLR_FAST_ENC */
 
 		} else {
@@ -2785,6 +2791,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 		/* resume data packet rx and tx */
 		_radio.conn_curr->pause_rx = 0U;
 		_radio.conn_curr->pause_tx = 0U;
+
+		/* reset workaround flag */
+		_radio.conn_curr->slave.enc_wa = 0U;
 
 		/* Procedure complete */
 		_radio.conn_curr->procedure_expire = 0U;
@@ -3548,9 +3557,13 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 			}
 
 			/* MIC Failure Check or data rx during pause */
-			if ((_radio.conn_curr->enc_rx &&
+			if (((!_radio.conn_curr->role ||
+			      !_radio.conn_curr->slave.enc_wa) &&
+			     _radio.conn_curr->enc_rx &&
 			     !radio_ccm_mic_is_valid()) ||
 			    (_radio.conn_curr->pause_rx &&
+			     (!_radio.conn_curr->enc_rx ||
+			      radio_ccm_mic_is_valid()) &&
 			     isr_rx_conn_enc_unexpected(_radio.conn_curr,
 							pdu_data_rx))) {
 				_radio.state = STATE_CLOSE;
@@ -7456,6 +7469,9 @@ static inline void event_enc_prep(struct connection *conn)
 			 */
 			conn->enc_rx = 1;
 
+			/* set workaround flag */
+			conn->slave.enc_wa = 1U;
+
 			/* prepare the start enc req */
 			pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
 			pdu_ctrl_tx->len = offsetof(struct pdu_data_llctrl,
@@ -7470,8 +7486,11 @@ static inline void event_enc_prep(struct connection *conn)
 		start_enc_rsp_send(conn, pdu_ctrl_tx);
 
 		/* resume data packet rx and tx */
-		conn->pause_rx = 0;
-		conn->pause_tx = 0;
+		conn->pause_rx = 0U;
+		conn->pause_tx = 0U;
+
+		/* reset workaround flag */
+		conn->slave.enc_wa = 0U;
 #endif /* !CONFIG_BT_CTLR_FAST_ENC */
 
 	}
@@ -10571,6 +10590,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		conn->common.fex_valid = 0U;
 		conn->slave.latency_enabled = 0U;
 		conn->slave.latency_cancel = 0U;
+		conn->slave.enc_wa = 0U;
 		conn->slave.window_widening_prepare_us = 0U;
 		conn->slave.window_widening_event_us = 0U;
 		conn->slave.ticks_to_offset = 0U;
