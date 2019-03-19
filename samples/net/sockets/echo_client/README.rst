@@ -110,6 +110,7 @@ Run echo-client application in QEMU:
    :zephyr-app: samples/net/sockets/echo_client
    :host-os: unix
    :board: qemu_x86
+   :conf: "prj.conf overlay-linux.conf"
    :goals: run
    :compact:
 
