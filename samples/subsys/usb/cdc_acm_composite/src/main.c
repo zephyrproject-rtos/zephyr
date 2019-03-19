@@ -30,15 +30,13 @@ static void interrupt_handler(void *user_data)
 	const struct serial_data *dev_data = user_data;
 	struct device *dev = dev_data->dev;
 
-	uart_irq_update(dev);
-
-	if (uart_irq_tx_ready(dev)) {
-		/* TODO */
-	}
-
-	if (uart_irq_rx_ready(dev)) {
+	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
 		struct device *peer = dev_data->peer;
 		u8_t byte;
+
+		if (!uart_irq_rx_ready(dev)) {
+			break;
+		}
 
 		uart_fifo_read(dev, &byte, sizeof(byte));
 		uart_poll_out(peer, byte);
