@@ -6,7 +6,7 @@ Zephyr Security Overview
 Introduction
 ************
 
-This document outlines the steps of the Zephyr Security board towards a
+This document outlines the steps of the Zephyr Security Subcommittee towards a
 defined security process that helps developers build more secure
 software while addressing security compliance requirements. It presents
 the key ideas of the security process and outlines which documents need
@@ -48,7 +48,7 @@ Intended Audience
 =================
 
 This document is a guideline for the development of a security process
-by the Zephyr Security Committee and the Zephyr Technical Steering
+by the Zephyr Security Subcommittee and the Zephyr Technical Steering
 Committee. It provides an overview of the Zephyr security process for
 (security) engineers and architects.
 
@@ -80,7 +80,7 @@ following process:
 1. Changes will be submitted from the interested party(ies) via pull
    requests to the Zephyr documentation repository.
 
-2. The security committee will review these changes and provide feedback
+2. The Zephyr Security Subcommittee will review these changes and provide feedback
    or acceptance of the changes.
 
 3. Once accepted, these changes will become part of the document.
@@ -551,27 +551,27 @@ following is the current proposal:
 -  Security sensitive bugs are only accessible (view/modify) to members
    of the Security Group; members of this Security Group are:
 
-   -  members of the Security Subcommittee
+   -  members of the Zephyr Security Subcommittee
 
-   -  other as proposed and ratified Security Subcommittee, who will
+   -  other as proposed and ratified Zephyr Security Subcommittee, who will
       also have the authority to remove others
 
    -  the reporter
 
    -  Ability to add other users for individual issues
 
--  Security Subcommittee meetings have to review the embargoed bugs on
+-  Zephyr Security Subcommittee meetings have to review the embargoed bugs on
    every meeting with more than three people in attendance. Said
    review process shall decide if new issues needs to be embargoed
    or not.
 
 -  Security sensitive bugs shall be made public (by removing the
    security sensitive indicator) after an embargo period of TBD
-   days. The Security Subcommittee is the only entity with authority
+   days. The Zephyr Security Subcommittee is the only entity with authority
    to extend the embargo period on a case by case basis; the JIRA
    entry should be updated with the rationale for the embargo
    extension so at some point said rationale will be made public.If
-   the Security Subcommittee does not act upon a security sensitive
+   the Zephyr Security Subcommittee does not act upon a security sensitive
    bug after its TBD days of embargo are over, it shall be
    automatically made public by removing the security sensitive
    setting.
@@ -583,8 +583,8 @@ following is the current proposal:
    contributors shall have only access to the tree for said fix, not
    to other security sensitive trees.
 
--  A CVE space shall be allocated to assign Zephyr issues when the SWG
-   decides such is needed.
+-  A CVE space shall be allocated to assign Zephyr issues when the
+   Zephyr Security Subcommittee decides such is needed.
 
 -  The severity of the issue with regard to security shall be entered by
    the reporter.
@@ -604,7 +604,7 @@ following is the current proposal:
    documented centrally, including the affected modules, software
    releases, and applicable workarounds for immediate mitigation. A
    list of known security issues per public release of the Zephyr
-   shall be published and maintained by the security board after a
+   shall be published and maintained by the Zephyr Security Subcommittee after a
    risk assessment.
 
 Threat Modeling and Mitigation
