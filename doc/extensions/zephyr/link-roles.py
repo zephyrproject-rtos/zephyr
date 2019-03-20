@@ -14,8 +14,8 @@ from local_util import run_cmd_get_output
 
 def get_github_rev():
     tag = run_cmd_get_output('git describe --exact-match')
-    if len(tag):
-        return(tag)
+    if tag:
+        return tag
     else:
         return 'master'
 

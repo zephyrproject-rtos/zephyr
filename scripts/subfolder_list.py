@@ -5,7 +5,7 @@ import argparse
 
 def touch(trigger):
     # If no trigger file is provided then do a return.
-    if(trigger is None):
+    if trigger is None:
         return
 
     if os.path.exists(trigger):
@@ -34,7 +34,7 @@ def main():
     args = parser.parse_args()
 
     dirlist = []
-    if(args.create_links is not None):
+    if args.create_links is not None:
         if not os.path.exists(args.create_links):
             os.makedirs(args.create_links)
         directory = args.directory
@@ -48,7 +48,7 @@ def main():
     for root, dirs, _ in os.walk(args.directory, topdown=True):
         dirs.sort()
         for subdir in dirs:
-            if(args.create_links is not None):
+            if args.create_links is not None:
                 directory = os.path.join(root, subdir)
                 symlink   = args.create_links + os.path.sep + directory.replace(os.path.sep, '_')
                 if not os.path.exists(symlink):

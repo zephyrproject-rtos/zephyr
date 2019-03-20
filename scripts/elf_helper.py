@@ -148,7 +148,7 @@ class AggregateTypeMember:
             if member_offset[0] == 0x23:
                 self.member_offset = member_offset[1] & 0x7f
                 for i in range(1, len(member_offset)-1):
-                    if (member_offset[i] & 0x80):
+                    if member_offset[i] & 0x80:
                         self.member_offset += (
                             member_offset[i+1] & 0x7f) << i*7
             else:
