@@ -407,12 +407,12 @@ The quality assurance part encompasses the following criteria:
    possible.
 
 -  **Automation:** the review process and checks for coding rule
-       adherence are a mandatory part of the precommit checks. To
-       ensure consistent application, they shall be automated as part of
-       the precommit procedure. Prior to merging large pieces of code
-       in from subsystems, in addition to review process and coding rule
-       adherence, all static code analysis must have been run and issues
-       resolved.
+   adherence are a mandatory part of the precommit checks. To
+   ensure consistent application, they shall be automated as part of
+   the precommit procedure. Prior to merging large pieces of code
+   in from subsystems, in addition to review process and coding rule
+   adherence, all static code analysis must have been run and issues
+   resolved.
 
 Release and Lifecycle Management
 ================================
