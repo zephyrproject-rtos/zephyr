@@ -17,6 +17,18 @@
 /* Advertisement channel maximum PDU size */
 #define PDU_AC_SIZE_MAX        (PDU_AC_LL_HEADER_SIZE + PDU_AC_PAYLOAD_SIZE_MAX)
 
+#define ACCESS_ADDR_SIZE        4
+#define ADVA_SIZE               6
+#define SCANA_SIZE              6
+#define INITA_SIZE              6
+#define TARGETA_SIZE            6
+#define LLDATA_SIZE             22
+#define CRC_SIZE                3
+#define PREAMBLE_SIZE(phy)      (phy&0x3)
+#define LL_HEADER_SIZE(phy)     (PREAMBLE_SIZE(phy) + PDU_AC_LL_HEADER_SIZE \
+				  + ACCESS_ADDR_SIZE + CRC_SIZE)
+#define BYTES2US(bytes, phy)    (((bytes)<<3)/BIT((phy&0x3)>>1))
+
 /* Data channel minimum payload */
 #define PDU_DC_PAYLOAD_SIZE_MIN 27
 /* Link Layer header size of Data PDU. Assumes pdu_data is packed */
@@ -24,6 +36,15 @@
 
 /* Max size of an empty PDU. TODO: Remove; only used in Nordic LLL */
 #define PDU_EM_SIZE_MAX        (PDU_DC_LL_HEADER_SIZE)
+
+/* Event interframe timings */
+#define EVENT_IFS_US            150
+/* Standard allows 2 us timing uncertainty inside the event */
+#define EVENT_IFS_MAX_US        (EVENT_IFS_US + 2)
+/* Controller will layout extended adv with minimum separation */
+#define EVENT_MAFS_US           300
+/* Standard allows 2 us timing uncertainty inside the event */
+#define EVENT_MAFS_MAX_US       (EVENT_MAFS_US + 2)
 
 /* Extra bytes for enqueued node_rx metadata: rssi (always), resolving
  * index, directed adv report, and mesh channel and instant.

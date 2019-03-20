@@ -429,10 +429,6 @@ u8_t ll_adv_enable(u8_t enable)
 	u32_t ticks_slot_offset;
 	struct ll_adv_set *adv;
 	struct lll_adv *lll;
-	u16_t interval;
-	u32_t slot_us;
-	u8_t chan_map;
-	u8_t chan_cnt;
 	u32_t ret;
 
 	if (!enable) {
@@ -678,25 +674,74 @@ u8_t ll_adv_enable(u8_t enable)
 	ARG_UNUSED(rl_idx);
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-	interval = adv->interval;
-	chan_map = lll->chan_map;
-	chan_cnt = util_ones_count_get(&chan_map, sizeof(chan_map));
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	const u8_t phy = lll->phy_p;
+#else
+	/* Legacy ADV only supports LE_1M PHY */
+	const u8_t phy = 1;
+#endif
 
-	/* TODO: use adv data len in slot duration calculation, instead of
-	 * hardcoded max. numbers used below.
-	 */
-	if (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) {
-		/* Max. chain is DIRECT_IND * channels + CONNECT_IND */
-		slot_us = ((EVENT_OVERHEAD_START_US + 176 + 152 + 40) *
-			   chan_cnt) - 40 + 352;
-	} else if (pdu_adv->type == PDU_ADV_TYPE_NONCONN_IND) {
-		slot_us = (EVENT_OVERHEAD_START_US + 376) * chan_cnt;
-	} else {
-		/* Max. chain is ADV/SCAN_IND + SCAN_REQ + SCAN_RESP */
-		slot_us = (EVENT_OVERHEAD_START_US + 376 + 152 + 176 +
-			   152 + 376) * chan_cnt;
+	/* For now we adv on all channels enabled in channel map */
+	u8_t ch_map = lll->chan_map;
+	const u8_t adv_chn_cnt = util_ones_count_get(&ch_map, sizeof(ch_map));
+	u32_t slot_us	= EVENT_OVERHEAD_START_US + EVENT_OVERHEAD_END_US;
+
+	if (adv_chn_cnt == 0) {
+		/* ADV needs at least one channel */
+		goto failure_cleanup;
 	}
 
+#if defined(CONFIG_BT_CTLR_ADV_EXT)
+	if (pdu_adv->type == PDU_ADV_TYPE_EXT_IND) {
+		/* TBD */
+	} else
+#endif
+	{
+		const u8_t adv_data_len = pdu_adv->len;
+		const u8_t rsp_data_len = pdu_scan->len;
+		const u8_t ll_hdr_size  = LL_HEADER_SIZE(phy);
+		u32_t adv_size		= ll_hdr_size + ADVA_SIZE;
+		const u8_t ll_hdr_us	= BYTES2US(ll_hdr_size, phy);
+		const u8_t rx_to_us	= EVENT_RX_TO_US(phy);
+		const u8_t rxtx_turn_us = EVENT_RX_TX_TURNARROUND(phy);
+		const u8_t conn_ind_us = ll_hdr_us +
+			BYTES2US(INITA_SIZE + ADVA_SIZE + LLDATA_SIZE, phy);
+		const u8_t scan_req_us  = ll_hdr_us +
+			BYTES2US(SCANA_SIZE + ADVA_SIZE, phy);
+		/* ll_header plus AdvA and scan response data */
+		const u8_t scan_rsp_us  = ll_hdr_us +
+			BYTES2US(ADVA_SIZE + rsp_data_len, phy);
+
+		if (phy != 0x01) {
+			/* Legacy ADV only supports LE_1M PHY */
+			goto failure_cleanup;
+		}
+
+		if (pdu_adv->type == PDU_ADV_TYPE_NONCONN_IND) {
+			adv_size += adv_data_len;
+			slot_us += BYTES2US(adv_size, phy) * adv_chn_cnt +
+				    EVENT_IFS_MAX_US * (adv_chn_cnt - 1);
+		} else {
+			if (pdu_adv->type == PDU_ADV_TYPE_DIRECT_IND) {
+				adv_size += TARGETA_SIZE;
+				slot_us += conn_ind_us;
+			} else if (pdu_adv->type == PDU_ADV_TYPE_ADV_IND) {
+				adv_size += adv_data_len;
+				slot_us += MAX(scan_req_us + EVENT_IFS_MAX_US +
+						scan_rsp_us, conn_ind_us);
+			} else if (pdu_adv->type == PDU_ADV_TYPE_SCAN_IND) {
+				adv_size += adv_data_len;
+				slot_us += scan_req_us + EVENT_IFS_MAX_US +
+					   scan_rsp_us;
+			}
+
+			slot_us += (BYTES2US(adv_size, phy) + EVENT_IFS_MAX_US
+				  + rx_to_us + rxtx_turn_us) * (adv_chn_cnt-1)
+				  + BYTES2US(adv_size, phy) + EVENT_IFS_MAX_US;
+		}
+	}
+
+	u16_t interval = adv->interval;
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	if (lll->is_mesh) {
 		u16_t interval_min_us;
