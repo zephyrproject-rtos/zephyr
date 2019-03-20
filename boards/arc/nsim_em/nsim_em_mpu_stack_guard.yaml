@@ -1,0 +1,11 @@
+identifier: nsim_em_mpu_stack_guard
+name: EM Nsim simulator
+type: mcu
+simulation: nsim
+arch: arc
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
