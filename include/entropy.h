@@ -20,12 +20,12 @@
  * @{
  */
 
+#include <zephyr/types.h>
+#include <device.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <zephyr/types.h>
-#include <device.h>
 
 /**
  * @typedef entropy_get_entropy_t
