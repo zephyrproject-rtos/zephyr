@@ -329,7 +329,7 @@ static int __eswifi_off_send_pkt(struct eswifi_dev *eswifi,
 	offset = strlen(eswifi->buf);
 
 	/* copy payload */
-	if (net_pkt_read_new(pkt, &eswifi->buf[offset], bytes)) {
+	if (net_pkt_read(pkt, &eswifi->buf[offset], bytes)) {
 		return -ENOBUFS;
 	}
 
