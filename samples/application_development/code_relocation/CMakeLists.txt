@@ -18,3 +18,5 @@ zephyr_code_relocate(src/test_file3.c SRAM_DATA)
 zephyr_code_relocate(src/test_file3.c SRAM2_BSS)
 
 zephyr_code_relocate(../../../kernel/sem.c SRAM)
+
+zephyr_linker_sources(SECTIONS custom-sections.ld)

@@ -150,20 +150,23 @@ config CUSTOM_LINKER_SCRIPT
 	  Zephyr.
 
 config CUSTOM_RODATA_LD
-	bool "Include custom-rodata.ld"
+	bool "(DEPRECATED) Include custom-rodata.ld"
 	help
+	  Note: This is deprecated, use Cmake function zephyr_linker_sources() instead.
 	  Include a customized linker script fragment for inserting additional
 	  data and linker directives into the rodata section.
 
 config CUSTOM_RWDATA_LD
-	bool "Include custom-rwdata.ld"
+	bool "(DEPRECATED) Include custom-rwdata.ld"
 	help
+	  Note: This is deprecated, use Cmake function zephyr_linker_sources() instead.
 	  Include a customized linker script fragment for inserting additional
 	  data and linker directives into the data section.
 
 config CUSTOM_SECTIONS_LD
-	bool "Include custom-sections.ld"
+	bool "(DEPRECATED) Include custom-sections.ld"
 	help
+	  Note: This is deprecated, use Cmake function zephyr_linker_sources() instead.
 	  Include a customized linker script fragment for inserting additional
 	  arbitrary sections.
 
