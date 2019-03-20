@@ -91,10 +91,10 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 * k_thread_create(). If K_THREAD_STACK_SIZEOF() is used, the
 	 * Guard size has already been take out of stackSize.
 	 */
-	stackEnd = pStackMem + stackSize - MPU_GUARD_ALIGN_AND_SIZE;
-#else
-	stackEnd = pStackMem + stackSize;
+	stackSize -= MPU_GUARD_ALIGN_AND_SIZE;
 #endif
+	stackEnd = pStackMem + stackSize;
+
 	struct __esf *pInitCtx;
 
 	_new_thread_init(thread, pStackMem, stackSize, priority,
