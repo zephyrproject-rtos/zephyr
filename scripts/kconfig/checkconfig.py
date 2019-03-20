@@ -70,8 +70,8 @@ def search_kconfig_items(items, name, completelog):
     findConfig = False
     for item in items:
         if item.is_symbol():
-            if (item.get_name() == name):
-                if (completelog == True):
+            if item.get_name() == name:
+                if completelog:
                     separate_location_lines(item.get_def_locations())
                 findConfig = True
                 break
@@ -85,9 +85,9 @@ def search_kconfig_items(items, name, completelog):
                 return True
 
         elif item.is_comment():
-            if (item.get_text() == name):
+            if item.get_text() == name:
                 print(completelog)
-                if (completelog == True):
+                if completelog:
                     separate_location_lines(item.get_location())
                 findConfig = True
                 break
@@ -109,19 +109,19 @@ def search_config_in_file(tree, items, completelog, exclude):
                         configName = re.search('(^|[\s|(])'
                                                +'CONFIG_([a-zA-Z0-9_]+)', line)
                         configs = configs + 1
-                        if (completelog == True):
+                        if completelog:
                             print('\n' + configName.group(2) + ' at '
                                    + os.path.join(dirName, fname))
                             print('line: ' + line.rstrip())
                         find = search_kconfig_items(items, configName.group(2),
                                                     completelog)
-                        if (find == False):
+                        if not find:
                             print('\n' + configName.group(2) + ' at '
                                    + os.path.join(dirName, fname)
                                    + ' IS NOT DEFINED')
                             print('line: ' + line.rstrip())
                             notdefConfig = notdefConfig + 1
-    if (completelog == True):
+    if completelog:
         print("\n{} Kconfigs evaluated".format(configs))
         print("{} Kconfigs not defined".format(notdefConfig))
 

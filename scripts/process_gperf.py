@@ -54,7 +54,7 @@ def reformat_str(match_obj):
     ctr = 3
     i = 0
 
-    while (True):
+    while True:
         if i >= len(addr_str):
             break
 

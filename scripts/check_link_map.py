@@ -45,7 +45,7 @@ for line in fileinput.input():
         vma = int(match.group(2), 16)
         size = int(match.group(3), 16)
 
-        if (sec == "bss"):
+        if sec == "bss":
             # Make sure we don't compare the last section of kernel data
             # with the first section of application data, the kernel's bss
             # and noinit are in between.

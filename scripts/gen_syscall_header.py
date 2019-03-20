@@ -34,7 +34,7 @@ def gen_macro(ret, argc):
         suffix = ""
 
     sys.stdout.write("K_SYSCALL_DECLARE%d%s(id, name" % (argc, suffix))
-    if (ret != Retval.VOID):
+    if ret != Retval.VOID:
         sys.stdout.write(", ret")
     for i in range(argc):
         sys.stdout.write(", t%d, p%d" % (i, i))
@@ -83,7 +83,7 @@ def gen_make_syscall(ret, argc, tabcount):
     sys.stdout.write(
         "static Z_GENERIC_SECTION(hndlr_ref) __used void *href = (void *)&z_hdlr_##name; \\\n")
     tabs(tabcount)
-    if (ret != Retval.VOID):
+    if ret != Retval.VOID:
         sys.stdout.write("return (ret)")
     else:
         sys.stdout.write("return (void)")
@@ -99,7 +99,7 @@ def gen_make_syscall(ret, argc, tabcount):
 
 
 def gen_call_impl(ret, argc):
-    if (ret != Retval.VOID):
+    if ret != Retval.VOID:
         sys.stdout.write("return ")
     sys.stdout.write("z_impl_##name(")
     for i in range(argc):

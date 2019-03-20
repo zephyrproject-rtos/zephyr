@@ -12,7 +12,7 @@ import os
 doc_mode = os.environ.get('KCONFIG_DOC_MODE') == "1"
 
 dt_defines = {}
-if (not doc_mode):
+if not doc_mode:
     # The env var 'GENERATED_DTS_BOARD_CONF' must be set unless we are in
     # doc mode
     GENERATED_DTS_BOARD_CONF = os.environ['GENERATED_DTS_BOARD_CONF']
