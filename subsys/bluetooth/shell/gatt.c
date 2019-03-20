@@ -869,6 +869,63 @@ static int cmd_get(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+struct set_data {
+	const struct shell *shell;
+	size_t argc;
+	char **argv;
+	int err;
+};
+
+static u8_t set_cb(const struct bt_gatt_attr *attr, void *user_data)
+{
+	struct set_data *data = user_data;
+	u8_t buf[256];
+	int i;
+	ssize_t ret;
+
+	if (!attr->write) {
+		shell_error(data->shell, "Write not supported");
+		data->err = -ENOENT;
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	for (i = 0; i < data->argc; i++) {
+		buf[i] = strtoul(data->argv[i], NULL, 16);
+	}
+
+	ret = attr->write(NULL, attr, (void *)buf, i, 0, 0);
+	if (ret < 0) {
+		data->err = ret;
+		shell_error(data->shell, "Failed to write: %d", ret);
+		return BT_GATT_ITER_STOP;
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static int cmd_set(const struct shell *shell, size_t argc, char *argv[])
+{
+	u16_t handle;
+	struct set_data data;
+
+	handle = strtoul(argv[1], NULL, 16);
+
+	data.shell = shell;
+	data.argc = argc - 2;
+	data.argv = argv + 2;
+	data.err = 0;
+
+	bt_gatt_foreach_attr(handle, handle, set_cb, &data);
+
+	if (data.err < 0) {
+		return -ENOEXEC;
+	}
+
+	bt_gatt_foreach_attr(handle, handle, get_cb, (void *)shell);
+
+	return 0;
+}
+
 #define HELP_NONE "[none]"
 
 SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
@@ -912,6 +969,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 		      "unregister pre-predefined test service",
 		      cmd_unregister_test_svc, 1, 0),
 	SHELL_CMD_ARG(get, NULL, "<handle>", cmd_get, 2, 0),
+	SHELL_CMD_ARG(set, NULL, "<handle> [data...]", cmd_set, 2, 255),
 	SHELL_SUBCMD_SET_END
 );
 
