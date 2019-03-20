@@ -567,13 +567,13 @@ following is the current proposal:
    or not.
 
 -  Security sensitive bugs shall be made public (by removing the
-   security sensitive indicator) after an embargo period of TBD
+   security sensitive indicator) after an embargo period of 60
    days. The Zephyr Security Subcommittee is the only entity with authority
    to extend the embargo period on a case by case basis; the JIRA
    entry should be updated with the rationale for the embargo
    extension so at some point said rationale will be made public.If
    the Zephyr Security Subcommittee does not act upon a security sensitive
-   bug after its TBD days of embargo are over, it shall be
+   bug after its 60 days of embargo are over, it shall be
    automatically made public by removing the security sensitive
    setting.
 
