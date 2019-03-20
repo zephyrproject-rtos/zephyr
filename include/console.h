@@ -120,7 +120,7 @@ char *console_getline(void);
  *         in the application code.
  *  @param completion callback for tab completion of entered commands
  */
-void console_register_line_input(struct k_fifo *avail_queue,
+__deprecated void console_register_line_input(struct k_fifo *avail_queue,
 				 struct k_fifo *out_queue,
 				 u8_t (*completion)(char *str, u8_t len));
 
