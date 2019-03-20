@@ -324,15 +324,6 @@ SECTIONS
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 #endif
 
-#if defined(CONFIG_SW_VECTOR_RELAY)
-	/* Reserved 4 bytes to save vector table base address */
-	SECTION_PROLOGUE(.vt_pointer,(NOLOAD),)
-	{
-		*(.vt_pointer_section)
-		*(".vt_pointer_section.*")
-	}
-#endif
-
 #ifdef CONFIG_COVERAGE_GCOV
     SECTION_DATA_PROLOGUE(_GCOV_BSS_SECTION_NAME,(NOLOAD),)
 	{
