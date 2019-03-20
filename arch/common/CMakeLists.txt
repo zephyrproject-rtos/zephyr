@@ -20,3 +20,8 @@ zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
   RAM_SECTIONS
   ramfunc.ld
 )
+
+zephyr_linker_sources_ifdef(CONFIG_NOCACHE_MEMORY
+  RAM_SECTIONS
+  nocache.ld
+)

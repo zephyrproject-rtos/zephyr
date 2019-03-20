@@ -361,20 +361,6 @@ SECTIONS
 
 #endif /* CONFIG_COVERAGE_GCOV */
 
-#if defined(CONFIG_NOCACHE_MEMORY)
-	/* Non-cached region of RAM */
-	SECTION_PROLOGUE(_NOCACHE_SECTION_NAME,(NOLOAD),)
-	{
-		MPU_ALIGN(_nocache_ram_size);
-		_nocache_ram_start = .;
-		*(.nocache)
-		*(".nocache.*")
-		MPU_ALIGN(_nocache_ram_size);
-		_nocache_ram_end = .;
-	} GROUP_LINK_IN(RAMABLE_REGION)
-	_nocache_ram_size = _nocache_ram_end - _nocache_ram_start;
-#endif /* CONFIG_NOCACHE_MEMORY */
-
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
  */
