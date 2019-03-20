@@ -3,8 +3,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-from gitlint.rules import CommitRule, RuleViolation, TitleRegexMatches, CommitMessageTitle, LineRule, CommitMessageBody
-from gitlint.options import IntOption, BoolOption, StrOption, ListOption
+from gitlint.rules import CommitRule, RuleViolation, CommitMessageTitle, LineRule, CommitMessageBody
+from gitlint.options import IntOption, StrOption
 import re
 
 """
