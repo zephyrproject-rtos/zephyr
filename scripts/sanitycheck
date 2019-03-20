@@ -2371,7 +2371,7 @@ class TestSuite:
 
         return self.goals
 
-    def run_report(self, filename):
+    def save_tests(self, filename):
         with open(filename, "at") as csvfile:
             fieldnames = ['path', 'test', 'platform', 'arch']
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
@@ -2816,7 +2816,7 @@ Artificially long but functional example:
         "--save-tests",
         metavar="FILENAME",
         action="store",
-        help="Save list of tests and platforms to be run to file.")
+        help="Append list of tests and platforms to be run to file.")
 
     parser.add_argument(
         "-b", "--build-only", action="store_true",
@@ -3302,7 +3302,7 @@ def main():
                                key=cmp_to_key(native_and_unit_first)))
 
     if options.save_tests:
-        ts.run_report(options.save_tests)
+        ts.save_tests(options.save_tests)
         return
 
     if options.subset:
