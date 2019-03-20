@@ -40,7 +40,7 @@ else:
             img_files.append(img_src_dir + "/" + f)
 
 if not img_files:
-    sys.exist("ERROR: no found image files.")
+    sys.exit("ERROR: no found image files.")
 
 oformat = args.outformat
 
