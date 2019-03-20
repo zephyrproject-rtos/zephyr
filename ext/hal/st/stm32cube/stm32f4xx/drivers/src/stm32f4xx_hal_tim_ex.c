@@ -386,11 +386,11 @@ HAL_StatusTypeDef HAL_TIMEx_HallSensor_Start_DMA(TIM_HandleTypeDef *htim, uint32
   /* Check the parameters */
   assert_param(IS_TIM_XOR_INSTANCE(htim->Instance));
 
-   if((htim->State == HAL_TIM_STATE_BUSY))
+   if(htim->State == HAL_TIM_STATE_BUSY)
   {
      return HAL_BUSY;
   }
-  else if((htim->State == HAL_TIM_STATE_READY))
+  else if(htim->State == HAL_TIM_STATE_READY)
   {
     if(((uint32_t)pData == 0U) && (Length > 0))
     {
@@ -688,11 +688,11 @@ HAL_StatusTypeDef HAL_TIMEx_OCN_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Chan
   /* Check the parameters */
   assert_param(IS_TIM_CCXN_INSTANCE(htim->Instance, Channel));
 
-  if((htim->State == HAL_TIM_STATE_BUSY))
+  if(htim->State == HAL_TIM_STATE_BUSY)
   {
      return HAL_BUSY;
   }
-  else if((htim->State == HAL_TIM_STATE_READY))
+  else if(htim->State == HAL_TIM_STATE_READY)
   {
     if(((uint32_t)pData == 0U) && (Length > 0))
     {
@@ -1100,11 +1100,11 @@ HAL_StatusTypeDef HAL_TIMEx_PWMN_Start_DMA(TIM_HandleTypeDef *htim, uint32_t Cha
   /* Check the parameters */
   assert_param(IS_TIM_CCXN_INSTANCE(htim->Instance, Channel));
 
-  if((htim->State == HAL_TIM_STATE_BUSY))
+  if(htim->State == HAL_TIM_STATE_BUSY)
   {
      return HAL_BUSY;
   }
-  else if((htim->State == HAL_TIM_STATE_READY))
+  else if(htim->State == HAL_TIM_STATE_READY)
   {
     if(((uint32_t)pData == 0U) && (Length > 0))
     {
