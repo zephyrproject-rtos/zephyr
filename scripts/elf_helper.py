@@ -533,8 +533,8 @@ class ElfHelper:
     def get_symbols(self):
         for section in self.elf.iter_sections():
             if isinstance(section, SymbolTableSection):
-                return {self.sym.name: self.sym.entry.st_value
-                        for self.sym in section.iter_symbols()}
+                return {sym.name: sym.entry.st_value
+                        for sym in section.iter_symbols()}
 
         raise LookupError("Could not find symbol table")
 
