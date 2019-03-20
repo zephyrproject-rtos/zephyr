@@ -30,6 +30,7 @@ These debug host tools are compatible with the following debug probes:
 - :ref:`lpclink2-jlink-onboard-debug-probe`
 - :ref:`opensda-jlink-onboard-debug-probe`
 - :ref:`jlink-external-debug-probe`
+- :ref:`stlink-v21-onboard-debug-probe`
 
 Check if your SoC is listed in `J-Link Supported Devices`_.
 
@@ -54,6 +55,7 @@ These debug host tools are compatible with the following debug probes:
 
 - :ref:`opensda-daplink-onboard-debug-probe`
 - :ref:`jlink-external-debug-probe`
+- :ref:`stlink-v21-onboard-debug-probe`
 
 Check if your SoC is listed in `OpenOCD Supported Devices`_.
 
@@ -70,6 +72,7 @@ Started Guide. pyOCD includes support for Zephyr RTOS-awareness.
 These debug host tools are compatible with the following debug probes:
 
 - :ref:`opensda-daplink-onboard-debug-probe`
+- :ref:`stlink-v21-onboard-debug-probe`
 
 Check if your SoC is listed in `pyOCD Supported Devices`_.
 
