@@ -355,21 +355,21 @@ static int gpio_sifive_init(struct device *dev)
 static void gpio_sifive_cfg_0(void);
 
 static const struct gpio_sifive_config gpio_sifive_config0 = {
-	.gpio_base_addr    = DT_SIFIVE_GPIO_0_BASE_ADDR,
-	.gpio_irq_base     = RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_0,
+	.gpio_base_addr    = DT_SIFIVE_GPIO0_0_BASE_ADDRESS,
+	.gpio_irq_base     = RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO0_0_IRQ_0,
 	.gpio_cfg_func     = gpio_sifive_cfg_0,
 };
 
 static struct gpio_sifive_data gpio_sifive_data0;
 
-DEVICE_AND_API_INIT(gpio_sifive_0, CONFIG_GPIO_SIFIVE_GPIO_NAME,
+DEVICE_AND_API_INIT(gpio_sifive_0, DT_SIFIVE_GPIO0_0_LABEL,
 		    gpio_sifive_init,
 		    &gpio_sifive_data0, &gpio_sifive_config0,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &gpio_sifive_driver);
 
 #define		IRQ_INIT(n)					\
-IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_##n,	\
+IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO0_0_IRQ_##n,	\
 		CONFIG_GPIO_SIFIVE_##n##_PRIORITY,		\
 		gpio_sifive_irq_handler,			\
 		DEVICE_GET(gpio_sifive_0),			\
@@ -377,100 +377,100 @@ IRQ_CONNECT(RISCV_MAX_GENERIC_IRQ + DT_SIFIVE_GPIO_0_IRQ_##n,	\
 
 static void gpio_sifive_cfg_0(void)
 {
-#ifdef DT_SIFIVE_GPIO_0_IRQ_0
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_0
 	IRQ_INIT(0);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_1
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_1
 	IRQ_INIT(1);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_2
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_2
 	IRQ_INIT(2);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_3
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_3
 	IRQ_INIT(3);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_4
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_4
 	IRQ_INIT(4);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_5
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_5
 	IRQ_INIT(5);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_6
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_6
 	IRQ_INIT(6);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_7
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_7
 	IRQ_INIT(7);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_8
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_8
 	IRQ_INIT(8);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_9
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_9
 	IRQ_INIT(9);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_10
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_10
 	IRQ_INIT(10);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_11
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_11
 	IRQ_INIT(11);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_12
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_12
 	IRQ_INIT(12);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_13
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_13
 	IRQ_INIT(13);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_14
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_14
 	IRQ_INIT(14);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_15
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_15
 	IRQ_INIT(15);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_16
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_16
 	IRQ_INIT(16);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_17
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_17
 	IRQ_INIT(17);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_18
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_18
 	IRQ_INIT(18);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_19
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_19
 	IRQ_INIT(19);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_20
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_20
 	IRQ_INIT(20);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_21
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_21
 	IRQ_INIT(21);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_22
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_22
 	IRQ_INIT(22);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_23
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_23
 	IRQ_INIT(23);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_24
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_24
 	IRQ_INIT(24);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_25
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_25
 	IRQ_INIT(25);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_26
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_26
 	IRQ_INIT(26);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_27
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_27
 	IRQ_INIT(27);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_28
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_28
 	IRQ_INIT(28);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_29
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_29
 	IRQ_INIT(29);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_30
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_30
 	IRQ_INIT(30);
 #endif
-#ifdef DT_SIFIVE_GPIO_0_IRQ_31
+#ifdef DT_SIFIVE_GPIO0_0_IRQ_31
 	IRQ_INIT(31);
 #endif
 }
