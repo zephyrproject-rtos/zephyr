@@ -484,7 +484,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 	SMSC9220->TX_DATA_PORT = txcmd_a;
 	SMSC9220->TX_DATA_PORT = txcmd_b;
 
-	if (net_pkt_read_new(pkt, tx_buf, total_len)) {
+	if (net_pkt_read(pkt, tx_buf, total_len)) {
 		goto error;
 	}
 
