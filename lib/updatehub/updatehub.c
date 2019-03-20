@@ -127,10 +127,18 @@ is_compatible_hardware(struct resp_probe_some_boards *metadata_some_boards)
 
 static bool start_coap_client(void)
 {
-	static struct addrinfo hints = { .ai_family = AF_INET,
-					 .ai_socktype = SOCK_STREAM };
 	struct addrinfo *addr;
+	struct addrinfo hints;
 	int resolve_attempts = 10;
+	int ret = -1;
+
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		hints.ai_family = AF_INET6;
+		hints.ai_socktype = SOCK_STREAM;
+	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
+	}
 
 #if defined(CONFIG_UPDATEHUB_DTLS)
 	int verify = 0;
@@ -143,13 +151,15 @@ static bool start_coap_client(void)
 #endif
 
 	while (resolve_attempts--) {
-		if (getaddrinfo(UPDATEHUB_SERVER, port, &hints, &addr) == 0) {
+		ret = getaddrinfo(UPDATEHUB_SERVER, port, &hints, &addr);
+		if (ret == 0) {
 			break;
 		}
-		if (resolve_attempts-- == 0) {
-			LOG_ERR("Could not resolve dns");
-			return false;
-		}
+		k_sleep(K_SECONDS(1));
+	}
+	if (ret < 0) {
+		LOG_ERR("Could not resolve dns");
+		return false;
 	}
 
 	ctx.sock = socket(addr->ai_family, SOCK_DGRAM, protocol);
