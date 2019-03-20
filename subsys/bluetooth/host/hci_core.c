@@ -1263,6 +1263,7 @@ static void le_conn_param_req(struct net_buf *buf)
 	if (!conn) {
 		BT_ERR("Unable to lookup conn for handle %u", handle);
 		le_conn_param_neg_reply(handle, BT_HCI_ERR_UNKNOWN_CONN_ID);
+		return;
 	}
 
 	if (!le_param_req(conn, &param)) {
