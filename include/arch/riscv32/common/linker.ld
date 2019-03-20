@@ -204,10 +204,6 @@ SECTIONS
  */
 #include <snippets-sections.ld>
 
-#ifdef CONFIG_GEN_ISR_TABLES
-#include <linker/intlist.ld>
-#endif
-
      GROUP_END(RAMABLE_REGION)
 
 #include <linker/debug-sections.ld>

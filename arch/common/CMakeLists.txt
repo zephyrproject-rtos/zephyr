@@ -15,6 +15,10 @@ zephyr_sources_ifdef(
   timing_info_bench.c
   )
 
+zephyr_linker_sources_ifdef(CONFIG_GEN_ISR_TABLES
+  SECTIONS
+  isr_tables.ld
+)
 
 zephyr_linker_sources_ifdef(CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
   RAM_SECTIONS
