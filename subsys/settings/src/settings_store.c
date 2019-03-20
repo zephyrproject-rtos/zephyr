@@ -54,10 +54,10 @@ static void settings_load_cb(char *name, void *val_read_cb_ctx, off_t off,
 
 	if (rc != 0) {
 		LOG_ERR("set-value failure. key: %s error(%d)",
-			name, rc);
+			log_strdup(name), rc);
 	} else {
 		LOG_DBG("set-value OK. key: %s",
-			name);
+			log_strdup(name));
 	}
 	(void)rc;
 }
