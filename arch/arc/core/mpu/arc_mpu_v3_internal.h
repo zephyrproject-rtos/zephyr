@@ -594,7 +594,7 @@ int arc_core_mpu_buffer_validate(void *addr, size_t size, int write)
 	 */
 	r_index = _mpu_probe((u32_t)addr);
 	/*  match and the area is in one region */
-	if (r_index >= 0 && r_index == _mpu_probe((u32_t)addr + size)) {
+	if (r_index >= 0 && r_index == _mpu_probe((u32_t)addr + (size - 1))) {
 		if (_is_user_accessible_region(r_index, write)) {
 			return 0;
 		} else {
