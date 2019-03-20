@@ -204,7 +204,7 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
 
 #if defined(CONFIG_MPU_STACK_GUARD)
 #if defined(CONFIG_USERSPACE)
-	if ((thread->thread_base.user_options & K_USER) != 0) {
+	if ((thread->base.user_options & K_USER) != 0) {
 		/* the areas before and after the user stack of thread is
 		 * kernel only. These area can be used as stack guard.
 		 * -----------------------
