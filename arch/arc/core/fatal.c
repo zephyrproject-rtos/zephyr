@@ -43,7 +43,7 @@ void z_NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 		break;
 
 #if defined(CONFIG_STACK_CANARIES) || defined(CONFIG_ARC_STACK_CHECKING) \
-	|| defined(CONFIG_STACK_SENTINEL)
+	|| defined(CONFIG_STACK_SENTINEL) || defined(CONFIG_MPU_STACK_GUARD)
 	case _NANO_ERR_STACK_CHK_FAIL:
 		printk("***** Stack Check Fail! *****\n");
 		break;
