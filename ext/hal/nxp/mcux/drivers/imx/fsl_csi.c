@@ -697,6 +697,14 @@ status_t CSI_TransferSubmitEmptyBuffer(CSI_Type *base, csi_handle_t *handle, uin
     handle->frameBufferQueue[handle->queueUserWriteIdx] = frameBuffer;
     handle->queueUserWriteIdx = CSI_TransferIncreaseQueueIdx(handle->queueUserWriteIdx);
 
+    /*
+     * If transfer is ongoing and an active slot is available, Load the buffer
+     * now to prevent buffer starvation during next TransferHandleIRQ event.
+     */
+    if (handle->transferOnGoing && handle->activeBufferNum < CSI_MAX_ACTIVE_FRAME_NUM) {
+        CSI_TransferLoadBufferToDevice(base, handle);
+    }
+
     base->CSICR1 = csicr1;
 
     if (handle->transferStarted)
