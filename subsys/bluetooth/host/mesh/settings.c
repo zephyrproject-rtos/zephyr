@@ -439,7 +439,6 @@ static int hb_pub_set(int argc, char **argv, void *val_ctx)
 	}
 
 	if (settings_val_get_len_cb(val_ctx) == 0) {
-		BT_DBG("val (null)");
 		pub->dst = BT_MESH_ADDR_UNASSIGNED;
 		pub->count = 0;
 		pub->ttl = 0;
@@ -483,7 +482,6 @@ static int cfg_set(int argc, char **argv, void *val_ctx)
 	}
 
 	if (settings_val_get_len_cb(val_ctx) == 0) {
-		BT_DBG("val (null)");
 		stored_cfg.valid = false;
 		BT_DBG("Cleared configuration state");
 		return 0;
@@ -512,7 +510,6 @@ static int mod_set_bind(struct bt_mesh_model *mod, void *val_ctx)
 	}
 
 	if (settings_val_get_len_cb(val_ctx) == 0) {
-		BT_DBG("val (null)");
 		BT_DBG("Cleared bindings for model");
 		return 0;
 	}
@@ -536,7 +533,6 @@ static int mod_set_sub(struct bt_mesh_model *mod, void *val_ctx)
 	(void)memset(mod->groups, 0, sizeof(mod->groups));
 
 	if (settings_val_get_len_cb(val_ctx) == 0) {
-		BT_DBG("val (null)");
 		BT_DBG("Cleared subscriptions for model");
 		return 0;
 	}
@@ -563,7 +559,6 @@ static int mod_set_pub(struct bt_mesh_model *mod, void *val_ctx)
 	}
 
 	if (settings_val_get_len_cb(val_ctx) == 0) {
-		BT_DBG("val (null)");
 		mod->pub->addr = BT_MESH_ADDR_UNASSIGNED;
 		mod->pub->key = 0;
 		mod->pub->cred = 0;
