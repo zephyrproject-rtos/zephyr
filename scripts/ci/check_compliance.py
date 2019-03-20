@@ -18,7 +18,7 @@ from github import Github
 from shutil import copyfile
 import json
 import tempfile
-from colorama import Fore, Back, Style
+from colorama import Fore, Style
 import glob
 import yaml
 
@@ -461,8 +461,6 @@ class Codeowners(ComplianceTest):
 
                             all_files += files
 
-                        maintainers = match.group(2).split(" ")
-
         files = []
         for f in all_files:
             if os.path.isfile(f):
@@ -480,7 +478,6 @@ class Codeowners(ComplianceTest):
         commit = sh.git("diff","--name-only", "--diff-filter=A", self.commit_range, **sh_special_args)
         new_files = commit.split("\n")
         files_in_tree = sh.git("ls-files",  **sh_special_args).split("\n")
-        git = set(files_in_tree)
         if new_files:
             owned = self.parse_codeowners(git_root, codeowners)
             new_not_owned = []
