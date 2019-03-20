@@ -1210,28 +1210,36 @@ static u8_t va_del(u8_t *label_uuid, u16_t *addr)
 	return STATUS_CANNOT_REMOVE;
 }
 
-static void mod_sub_list_clear(struct bt_mesh_model *mod)
+static size_t mod_sub_list_clear(struct bt_mesh_model *mod)
 {
 	u8_t *label_uuid;
+	size_t clear_count;
 	int i;
 
 	/* Unref stored labels related to this model */
-	for (i = 0; i < ARRAY_SIZE(mod->groups); i++) {
+	for (i = 0, clear_count = 0; i < ARRAY_SIZE(mod->groups); i++) {
 		if (!BT_MESH_ADDR_IS_VIRTUAL(mod->groups[i])) {
+			if (mod->groups[i] != BT_MESH_ADDR_UNASSIGNED) {
+				mod->groups[i] = BT_MESH_ADDR_UNASSIGNED;
+				clear_count++;
+			}
+
 			continue;
 		}
 
 		label_uuid = bt_mesh_label_uuid_get(mod->groups[i]);
-		if (!label_uuid) {
-			BT_ERR("Label UUID not found");
-			continue;
-		}
 
-		va_del(label_uuid, NULL);
+		mod->groups[i] = BT_MESH_ADDR_UNASSIGNED;
+		clear_count++;
+
+		if (label_uuid) {
+			va_del(label_uuid, NULL);
+		} else {
+			BT_ERR("Label UUID not found");
+		}
 	}
 
-	/* Clear all subscriptions (0x0000 is the unassigned address) */
-	(void)memset(mod->groups, 0, sizeof(mod->groups));
+	return clear_count;
 }
 
 static void mod_pub_va_set(struct bt_mesh_model *model,
@@ -1300,10 +1308,20 @@ send_status:
 			    status, mod_id);
 }
 #else
-static void mod_sub_list_clear(struct bt_mesh_model *mod)
+static size_t mod_sub_list_clear(struct bt_mesh_model *mod)
 {
-	/* Clear all subscriptions (0x0000 is the unassigned address) */
-	(void)memset(mod->groups, 0, sizeof(mod->groups));
+	size_t clear_count;
+	int i;
+
+	/* Unref stored labels related to this model */
+	for (i = 0, clear_count = 0; i < ARRAY_SIZE(mod->groups); i++) {
+		if (mod->groups[i] != BT_MESH_ADDR_UNASSIGNED) {
+			mod->groups[i] = BT_MESH_ADDR_UNASSIGNED;
+			clear_count++;
+		}
+	}
+
+	return clear_count;
 }
 
 static void mod_pub_va_set(struct bt_mesh_model *model,
@@ -3315,15 +3333,17 @@ int bt_mesh_cfg_srv_init(struct bt_mesh_model *model, bool primary)
 static void mod_reset(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 		      bool vnd, bool primary, void *user_data)
 {
+	size_t clear_count;
+
 	/* Clear model state that isn't otherwise cleared. E.g. AppKey
 	 * binding and model publication is cleared as a consequence
 	 * of removing all app keys, however model subscription clearing
 	 * must be taken care of here.
 	 */
 
-	mod_sub_list_clear(mod);
+	clear_count = mod_sub_list_clear(mod);
 
-	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) && clear_count) {
 		bt_mesh_store_mod_sub(mod);
 	}
 }
