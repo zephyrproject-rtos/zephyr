@@ -101,6 +101,8 @@ Using this server the user need create own ``overaly-prj.conf`` setting the opti
 UpdateHub need too set the option :option:`CONFIG_UPDATEHUB_POLL_INTERVAL` with the period of
 your preference, remembering that the limit is between 0 minute until 43200 minutes(30 days).
 This server does not use DTLS, so you must not add ``overlay-dtls.config``.
+This sample uses IPv4 by default, but if you would like use IPv6 is possible too, need just
+enable IPv6 and configure your IP address.
 
 Step 4: Build UpdateHub
 =======================
