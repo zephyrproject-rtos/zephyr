@@ -212,7 +212,7 @@ def parse_file(fd, ignore_dts_version=False):
                 'reg': [start, end],
                 'label': label,
                 'addr': start,
-                'name': build_node_name(name, start)
+                'name': '<memreserve>'
             }
         elif line.endswith('{'):
             if not has_v1_tag and not ignore_dts_version:
