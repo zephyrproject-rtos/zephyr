@@ -760,41 +760,40 @@ static inline void send_icmp_error(struct net_pkt *pkt)
 	}
 }
 
-static bool is_invalid_packet(struct net_pkt *pkt,
-			      union net_ip_header *ip_hdr,
-			      u16_t src_port,
-			      u16_t dst_port)
+static bool is_valid_packet(struct net_pkt *pkt,
+			    union net_ip_header *ip_hdr,
+			    u16_t src_port,
+			    u16_t dst_port)
 {
-	if (src_port != dst_port) {
-		return false;
-	}
-
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		if (net_ipv4_addr_cmp(&ip_hdr->ipv4->src, &ip_hdr->ipv4->dst) ||
-		    net_ipv4_is_my_addr(&ip_hdr->ipv4->src)) {
-			return true;
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
-		if (net_ipv6_addr_cmp(&ip_hdr->ipv6->src, &ip_hdr->ipv6->dst) ||
-		    net_ipv6_is_my_addr(&ip_hdr->ipv6->src)) {
-			return true;
-		}
-	}
+	bool my_src_addr = false;
 
 	/* For AF_PACKET family, we are not not parsing headers. */
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 	    net_pkt_family(pkt) == AF_PACKET) {
-		return false;
+		return true;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 	    net_pkt_family(pkt) == AF_CAN) {
-		return false;
+		return true;
 	}
 
-	return true;
+	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
+		if (net_ipv4_addr_cmp(&ip_hdr->ipv4->src,
+				      &ip_hdr->ipv4->dst) ||
+		    net_ipv4_is_my_addr(&ip_hdr->ipv4->src)) {
+			my_src_addr = true;
+		}
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		   net_pkt_family(pkt) == AF_INET6) {
+		if (net_ipv6_addr_cmp(&ip_hdr->ipv6->src,
+				      &ip_hdr->ipv6->dst) ||
+		    net_ipv6_is_my_addr(&ip_hdr->ipv6->src)) {
+			my_src_addr = true;
+		}
+	}
+
+	return !(my_src_addr && (src_port == dst_port));
 }
 
 enum net_verdict net_conn_input(struct net_pkt *pkt,
@@ -837,7 +836,7 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	if (is_invalid_packet(pkt, ip_hdr, src_port, dst_port)) {
+	if (!is_valid_packet(pkt, ip_hdr, src_port, dst_port)) {
 		NET_DBG("Dropping invalid packet");
 		return NET_DROP;
 	}
