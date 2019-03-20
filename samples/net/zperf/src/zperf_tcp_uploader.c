@@ -29,7 +29,7 @@ void zperf_tcp_upload(const struct shell *shell,
 {
 	u32_t duration = MSEC_TO_HW_CYCLES(duration_in_ms);
 	u32_t nb_packets = 0U, nb_errors = 0U;
-	u32_t start_time, last_print_time, last_loop_time, end_time;
+	u32_t start_time, last_print_time, end_time;
 	u8_t time_elapsed = 0U, finished = 0U;
 
 	if (packet_size > PACKET_SIZE_MAX) {
@@ -42,12 +42,17 @@ void zperf_tcp_upload(const struct shell *shell,
 	/* Start the loop */
 	start_time = k_cycle_get_32();
 	last_print_time = start_time;
-	last_loop_time = start_time;
 
 	shell_fprintf(shell, SHELL_NORMAL,
 		      "New session started\n");
 
 	(void)memset(sample_packet, 'z', sizeof(sample_packet));
+
+	/* Set the "flags" field in start of the packet to be 0.
+	 * As the protocol is not properly described anywhere, it is
+	 * not certain if this is a proper thing to do.
+	 */
+	(void)memset(sample_packet, 0, sizeof(uint32_t));
 
 	do {
 		int ret = 0;
@@ -58,7 +63,7 @@ void zperf_tcp_upload(const struct shell *shell,
 
 		/* Send the packet */
 		ret = net_context_send(ctx, sample_packet,
-				       sizeof(sample_packet), NULL,
+				       packet_size, NULL,
 				       K_NO_WAIT, NULL);
 		if (ret < 0) {
 			shell_fprintf(shell, SHELL_WARNING,
@@ -75,7 +80,7 @@ void zperf_tcp_upload(const struct shell *shell,
 		}
 
 		if (!time_elapsed && time_delta(start_time,
-						last_loop_time) > duration) {
+						loop_time) > duration) {
 			time_elapsed = 1U;
 		}
 
