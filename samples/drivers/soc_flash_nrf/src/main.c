@@ -189,4 +189,6 @@ void main(void)
 	printf("\nTest 8: Write block size API\n");
 	printf("   write-block-size = %u\n",
 	       flash_get_write_block_size(flash_dev));
+	printf("\nDone\n");
+
 }
