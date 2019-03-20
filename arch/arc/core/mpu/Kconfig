@@ -20,7 +20,7 @@ config ARC_CORE_MPU
 
 config MPU_STACK_GUARD
 	bool "Thread Stack Guards"
-	depends on ARC_CORE_MPU && !ARC_STACK_CHECKING
+	depends on ARC_CORE_MPU
 	help
 	  Enable thread stack guards via MPU. ARC supports built-in stack protection.
 	  If your core supports that, it is preferred over MPU stack guard
