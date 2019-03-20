@@ -39,8 +39,9 @@ GTEXT(_irq_do_offload);
 #endif
 
 GDATA(exc_nest_count)
+GDATA(arc_exc_saved_sWWp)
 
-SECTION_VAR(BSS, saved_value)
+SECTION_VAR(BSS, arc_exc_saved_sp)
 	.balign 4
 	.word 0
 
@@ -65,7 +66,7 @@ SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_dc_error)
 SECTION_SUBSEC_FUNC(TEXT,__fault,__ev_maligned)
 
 _exc_entry:
-	st sp, [saved_value]
+	st sp, [arc_exc_saved_sp]
 	/*
 	 * re-use the top part of interrupt stack as exception
 	 * stack. If this top part is used by interrupt handling,
@@ -145,7 +146,7 @@ _exc_return_from_exc:
 	sr r0, [_ARC_V2_ERET]
 
 	_pop_irq_stack_frame
-	ld sp, [saved_value]
+	ld sp, [arc_exc_saved_sp]
 	rtie
 
 
