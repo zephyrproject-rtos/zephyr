@@ -95,7 +95,7 @@ class ArrayType:
         self.offset = offset
 
     def __repr__(self):
-        return "<array of %d, size %d>" % (self.member_type, self.num_members)
+        return "<array of %d>" % self.member_type
 
     def has_kobject(self):
         if self.member_type not in type_env:
