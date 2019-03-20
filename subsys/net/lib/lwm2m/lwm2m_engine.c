@@ -3905,7 +3905,7 @@ static void socket_receive_loop(void)
 		 * FIXME: Currently we timeout and restart poll in case fds
 		 *        were modified.
 		 */
-		if (poll(sock_fds, sock_nfds, ENGINE_UPDATE_INTERVAL) < 0) {
+		if ((errno = poll(sock_fds, sock_nfds, ENGINE_UPDATE_INTERVAL)) < 0) {
 			LOG_ERR("Error in poll:%d", errno);
 			errno = 0;
 			k_sleep(ENGINE_UPDATE_INTERVAL);
