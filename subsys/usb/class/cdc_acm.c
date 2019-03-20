@@ -1043,7 +1043,8 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 #endif /* CONFIG_USB_COMPOSITE_DEVICE */
 
 #define DEFINE_CDC_ACM_DEV_DATA(x)					\
-	RING_BUF_DECLARE(rx_ringbuf_##x, 512);				\
+	RING_BUF_DECLARE(rx_ringbuf_##x,				\
+			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
 	static struct cdc_acm_dev_data_t cdc_acm_dev_data_##x = {	\
 		.usb_status = USB_DC_UNKNOWN,				\
 		.line_coding = CDC_ACM_DEFAUL_BAUDRATE,			\

@@ -16,6 +16,12 @@ config USB_CDC_ACM
 
 if USB_CDC_ACM
 
+config USB_CDC_ACM_RINGBUF_SIZE
+	int "USB CDC ACM ring buffer size"
+	default 1024
+	help
+	  USB CDC ACM ring buffer size
+
 config CDC_ACM_PORT_NAME_0
 	string "CDC ACM class device driver port name"
 	default "CDC_ACM_0"
