@@ -5316,7 +5316,8 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 			} else {
 				set_param.type = BT_LE_ADV_DIRECT_IND;
 			}
-			set_param.direct_addr = *peer;
+
+			bt_addr_le_copy(&set_param.direct_addr, peer);
 		} else {
 			set_param.type = BT_LE_ADV_IND;
 		}
