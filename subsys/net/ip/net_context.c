@@ -1598,8 +1598,9 @@ static struct net_pkt *context_alloc_pkt(struct net_context *context,
 					net_context_get_family(context),
 					net_context_get_ip_proto(context),
 					timeout);
-
-	net_pkt_set_context(pkt, context);
+	if (pkt) {
+		net_pkt_set_context(pkt, context);
+	}
 
 	return pkt;
 }
