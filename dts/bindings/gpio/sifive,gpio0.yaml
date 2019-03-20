@@ -24,6 +24,12 @@ properties:
       generation: define
       category: required
 
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
     interrupts:
       type: int
       generation: define

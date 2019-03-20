@@ -16,10 +16,6 @@ menuconfig GPIO_SIFIVE
 
 if GPIO_SIFIVE
 
-config GPIO_SIFIVE_GPIO_NAME
-	string "GPIO driver name"
-	default "gpio0"
-
 config GPIO_SIFIVE_0_PRIORITY
 	int "GPIO 0 interrupt priority"
 	default 1
