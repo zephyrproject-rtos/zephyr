@@ -263,7 +263,14 @@ def define_str(name, value, value_tabs, is_deprecated=False):
     line = "#define " + name
     if is_deprecated:
         line += " __DEPRECATED_MACRO "
-    return line + (value_tabs - len(line)//8)*'\t' + str(value) + '\n'
+
+    try:
+        int(str(value), 0)
+        str_val = '(' + str(value) + ')'
+    except ValueError:
+        str_val = str(value)
+
+    return line + (value_tabs - len(line)//8)*'\t' + str_val + '\n'
 
 
 def write_conf(f):
