@@ -748,7 +748,9 @@ static void dfu_work_handler(struct k_work *item)
 
 static int usb_dfu_init(struct device *dev)
 {
+#ifndef CONFIG_USB_COMPOSITE_DEVICE
 	int ret;
+#endif
 
 	ARG_UNUSED(dev);
 
