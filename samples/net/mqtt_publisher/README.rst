@@ -114,6 +114,36 @@ Open another terminal window and type:
 
 	$ mosquitto_sub -t sensors
 
+Connecting securely using TLS
+=============================
+
+While it is possible to set up a local secure MQTT server and update the
+sample to connect to it, it does require some work on the user's part to
+create the certificates and to set them up with the server.
+
+Alternatively, a `publicly available Mosquitto MQTT server/broker
+<https://test.mosquitto.org/>`_ is available to quickly and easily
+try this sample with TLS enabled, by following these steps:
+
+- Download the server's CA certificate file in DER format from
+  https://test.mosquitto.org
+- In :file:`src/test_certs.h`, set ``ca_certificate[]`` using the certificate
+  contents (or set it to its filename if the socket offloading feature is
+  enabled on your platform and :option:`CONFIG_TLS_CREDENTIAL_FILENAMES` is
+  set to ``y``).
+- In :file:`src/config.h`, set SERVER_ADDR to the IP address to connect to,
+  ie. the IP address of test.mosquitto.org ``"37.187.106.16"``
+- In :file:`src/main.c`, set TLS_SNI_HOSTNAME to ``"test.mosquitto.org"``
+  to match the Common Name (CN) in the downloaded certificate.
+- Build the sample by specifying ``-DOVERLAY_CONFIG=overlay-tls.conf``
+  when running cmake (or refer to the TLS offloading section below if
+  your platform uses the offloading feature).
+- Flash the binary onto the device to run the sample:
+
+.. code-block:: console
+
+        $ ninja flash
+
 TLS offloading
 ==============
 
