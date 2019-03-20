@@ -486,9 +486,21 @@ static struct db_stats {
 	size_t ccc_cfg;
 } stats;
 
+struct show_data {
+	const struct shell *shell;
+	struct bt_uuid_16 uuid;
+};
+
 static u8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
 {
-	const struct shell *shell = user_data;
+	struct show_data *data = user_data;
+
+	if (data->uuid.val) {
+		if (!bt_uuid_cmp(&data->uuid.uuid, attr->uuid)) {
+			goto print;
+		}
+		return BT_GATT_ITER_CONTINUE;
+	}
 
 	stats.attr_count++;
 
@@ -509,7 +521,8 @@ static u8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
 		stats.ccc_cfg += cfg->cfg_len;
 	}
 
-	shell_print(shell, "attr %p handle 0x%04x uuid %s perm 0x%02x",
+print:
+	shell_print(data->shell, "attr %p handle 0x%04x uuid %s perm 0x%02x",
 		    attr, attr->handle, bt_uuid_str(attr->uuid), attr->perm);
 
 	return BT_GATT_ITER_CONTINUE;
@@ -517,13 +530,24 @@ static u8_t print_attr(const struct bt_gatt_attr *attr, void *user_data)
 
 static int cmd_show_db(const struct shell *shell, size_t argc, char *argv[])
 {
+	struct show_data data;
 	size_t total_len;
 
 	memset(&stats, 0, sizeof(stats));
 
-	bt_gatt_foreach_attr(0x0001, 0xffff, print_attr, (void *)shell);
+	data.shell = shell;
+
+	if (argc > 1) {
+		data.uuid.uuid.type = BT_UUID_TYPE_16;
+		data.uuid.val = strtoul(argv[1], NULL, 16);
+	} else {
+		data.uuid.val = 0;
+	}
+
+	bt_gatt_foreach_attr(0x0001, 0xffff, print_attr, &data);
 
 	if (!stats.attr_count) {
+		shell_print(shell, "No attribute found");
 		return 0;
 	}
 
@@ -848,7 +872,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 	SHELL_CMD_ARG(register, NULL,
 		      "register pre-predefined test service",
 		      cmd_register_test_svc, 1, 0),
-	SHELL_CMD_ARG(show-db, NULL, HELP_NONE, cmd_show_db, 1, 0),
+	SHELL_CMD_ARG(show-db, NULL, "[uuid]", cmd_show_db, 1, 1),
 	SHELL_CMD_ARG(unregister, NULL,
 		      "unregister pre-predefined test service",
 		      cmd_unregister_test_svc, 1, 0),
