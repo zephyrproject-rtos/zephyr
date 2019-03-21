@@ -790,6 +790,7 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 	/* Active scanner */
 	} else if (((pdu_adv_rx->type == PDU_ADV_TYPE_ADV_IND) ||
 		    (pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_IND)) &&
+		   (pdu_adv_rx->len <= sizeof(struct pdu_adv_adv_ind)) &&
 		   lll->type &&
 #if defined(CONFIG_BT_CENTRAL)
 		   !lll->conn) {
@@ -867,18 +868,21 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		return 0;
 	}
 	/* Passive scanner or scan responses */
-	else if (((pdu_adv_rx->type == PDU_ADV_TYPE_ADV_IND) ||
+	else if (((((pdu_adv_rx->type == PDU_ADV_TYPE_ADV_IND) ||
+		    (pdu_adv_rx->type == PDU_ADV_TYPE_NONCONN_IND) ||
+		    (pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_IND)) &&
+		   (pdu_adv_rx->len <= sizeof(struct pdu_adv_adv_ind))) ||
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_DIRECT_IND) &&
+		   (pdu_adv_rx->len == sizeof(struct pdu_adv_direct_ind)) &&
 		   (/* allow directed adv packets addressed to this device */
 		    isr_scan_tgta_check(lll, false, pdu_adv_rx, rl_idx,
 					&dir_report))) ||
-		  (pdu_adv_rx->type == PDU_ADV_TYPE_NONCONN_IND) ||
-		  (pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_IND) ||
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_EXT_IND) &&
 		   (lll->phy)) ||
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 		  ((pdu_adv_rx->type == PDU_ADV_TYPE_SCAN_RSP) &&
+		   (pdu_adv_rx->len <= sizeof(struct pdu_adv_scan_rsp)) &&
 		   (lll->state != 0) &&
 		   isr_scan_rsp_adva_matches(pdu_adv_rx))) &&
 		 (pdu_adv_rx->len != 0) &&
@@ -912,8 +916,10 @@ static inline bool isr_scan_init_check(struct lll_scan *lll,
 {
 	return ((((lll->filter_policy & 0x01) != 0) ||
 		 isr_scan_init_adva_check(lll, pdu, rl_idx)) &&
-		((pdu->type == PDU_ADV_TYPE_ADV_IND) ||
+		(((pdu->type == PDU_ADV_TYPE_ADV_IND) &&
+		  (pdu->len <= sizeof(struct pdu_adv_adv_ind))) ||
 		 ((pdu->type == PDU_ADV_TYPE_DIRECT_IND) &&
+		  (pdu->len == sizeof(struct pdu_adv_direct_ind)) &&
 		  (/* allow directed adv packets addressed to this device */
 		   isr_scan_tgta_check(lll, true, pdu, rl_idx, NULL)))));
 }
