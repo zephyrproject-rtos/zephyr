@@ -397,8 +397,8 @@ function(zephyr_library_compile_options item)
   # zephyr_interface will be the first interface library that flags
   # are taken from.
 
-  string(RANDOM random)
-  set(lib_name options_interface_lib_${random})
+  string(MD5 uniqueness ${item})
+  set(lib_name options_interface_lib_${uniqueness})
 
   add_library(           ${lib_name} INTERFACE)
   target_compile_options(${lib_name} INTERFACE ${item} ${ARGN})
