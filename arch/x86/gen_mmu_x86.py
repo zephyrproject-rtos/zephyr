@@ -470,7 +470,7 @@ def read_mmu_list(mmu_list_data):
             sys.exit(2)
 
         if (size & 0xFFF) != 0:
-            print("Memory region %d size %zu is not page-aligned" %
+            print("Memory region %d size %d is not page-aligned" %
                     (region_index, size))
             sys.exit(2)
 
