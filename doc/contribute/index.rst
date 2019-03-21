@@ -331,6 +331,37 @@ following exceptions:
   comment, ``//``, is not allowed.
 * Use ``/**  */`` for doxygen comments that need to appear in the documentation.
 
+Identifier Naming
+=================
+
+* Names of macros defining constants and labels in enums are all capital
+  letters and underscores.
+* Functions,  and function-like macros use all lowercase, with underscores, of
+  a form "module_verb_noun", for example ``counter_get_frequency``, and
+  ``coap_make_response_code``
+* All other identifiers including variables and types use all lowercase and
+  underscores.
+* Do not use mixed-case CamelCaseNaming.
+
+The C standard (7.1.3 [ISO/IEC 9899:2011]) reserves all identifiers that begin
+with an underscore for implementation details.  As such, identifiers in Zephyr
+must not start with an underscore.  Instead, we address the traditional Linux
+kernel use of leading underscore for internal (private) names or low-level
+functions by using a leading ``z_``, for example:
+
+* ``_arch_`` becomes ``z_arch_``
+* ``_sys_`` becomes  ``z_sys_``
+* ``_k_`` becomes  ``z_``
+* ``_impl_`` becomes ``z_impl_``
+* ``_handler_`` becomes ``z_handl\_``
+* and other leading underscore uses become ``z_``
+
+.. note::
+   CamelCase should be avoided. e.g:
+   CSwap or alike should be replaced by z_cswap
+
+Coding style enforcement
+========================
 
 The Linux kernel GPL-licensed tool ``checkpatch`` is used to check
 coding style conformity.
