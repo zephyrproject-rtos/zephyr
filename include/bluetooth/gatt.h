@@ -107,6 +107,9 @@ struct bt_gatt_attr {
 
 	/** Attribute read callback
 	 *
+	 *  The callback can also be used locally to read the contents of the
+	 *  attribute in which case no connection will be set.
+	 *
 	 *  @param conn   The connection that is requesting to read
 	 *  @param attr   The attribute that's being read
 	 *  @param buf    Buffer to place the read result in
@@ -122,6 +125,9 @@ struct bt_gatt_attr {
 					u16_t offset);
 
 	/** Attribute write callback
+	 *
+	 *  The callback can also be used locally to read the contents of the
+	 *  attribute in which case no connection will be set.
 	 *
 	 *  @param conn   The connection that is requesting to write
 	 *  @param attr   The attribute that's being written
