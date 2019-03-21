@@ -31,24 +31,24 @@ extern "C" {
  */
 
 /** I2C Standard Speed */
-#define I2C_SPEED_STANDARD		(0x1)
+#define I2C_SPEED_STANDARD		(0x1U)
 
 /** I2C Fast Speed */
-#define I2C_SPEED_FAST			(0x2)
+#define I2C_SPEED_FAST			(0x2U)
 
 /** I2C Fast Plus Speed */
-#define I2C_SPEED_FAST_PLUS		(0x3)
+#define I2C_SPEED_FAST_PLUS		(0x3U)
 
 /** I2C High Speed */
-#define I2C_SPEED_HIGH			(0x4)
+#define I2C_SPEED_HIGH			(0x4U)
 
 /** I2C Ultra Fast Speed */
-#define I2C_SPEED_ULTRA			(0x5)
+#define I2C_SPEED_ULTRA			(0x5U)
 
-#define I2C_SPEED_SHIFT			(1)
+#define I2C_SPEED_SHIFT			(1U)
 #define I2C_SPEED_SET(speed)		(((speed) << I2C_SPEED_SHIFT) \
 						& I2C_SPEED_MASK)
-#define I2C_SPEED_MASK			(0x7 << I2C_SPEED_SHIFT) /* 3 bits */
+#define I2C_SPEED_MASK			(0x7U << I2C_SPEED_SHIFT) /* 3 bits */
 #define I2C_SPEED_GET(cfg) 		(((cfg) & I2C_SPEED_MASK) \
 						>> I2C_SPEED_SHIFT)
 
@@ -70,7 +70,7 @@ extern "C" {
  */
 
 /** Write message to I2C bus. */
-#define I2C_MSG_WRITE			(0 << 0)
+#define I2C_MSG_WRITE			(0U << 0U)
 
 /** Read message from I2C bus. */
 #define I2C_MSG_READ			BIT(0)
@@ -706,8 +706,8 @@ __deprecated static inline int i2c_reg_read16(struct device *dev,
 {
 	u8_t addr_buffer[2];
 
-	addr_buffer[1] = reg_addr & 0xFF;
-	addr_buffer[0] = reg_addr >> 8;
+	addr_buffer[1] = reg_addr & 0xFFU;
+	addr_buffer[0] = reg_addr >> 8U;
 	return i2c_write_read(dev, dev_addr,
 			      addr_buffer, sizeof(addr_buffer),
 			      value, sizeof(*value));
@@ -739,10 +739,10 @@ __deprecated static inline int i2c_reg_write16(struct device *dev,
 	u8_t addr_buffer[2];
 	struct i2c_msg msg[2];
 
-	addr_buffer[1] = reg_addr & 0xFF;
-	addr_buffer[0] = reg_addr >> 8;
+	addr_buffer[1] = reg_addr & 0xFFU;
+	addr_buffer[0] = reg_addr >> 8U;
 	msg[0].buf = addr_buffer;
-	msg[0].len = 2;
+	msg[0].len = 2UL;
 	msg[0].flags = I2C_MSG_WRITE;
 
 	msg[1].buf = (u8_t *)&value;
@@ -786,8 +786,8 @@ __deprecated static inline int i2c_reg_update16(struct device *dev,
 	u8_t old_value, new_value;
 	int rc;
 
-	addr_buffer[1] = reg_addr & 0xFF;
-	addr_buffer[0] = reg_addr >> 8;
+	addr_buffer[1] = reg_addr & 0xFFU;
+	addr_buffer[0] = reg_addr >> 8U;
 	rc = i2c_write_read(dev, dev_addr,
 			    addr_buffer, sizeof(addr_buffer),
 			    &old_value, sizeof(old_value));
@@ -801,7 +801,7 @@ __deprecated static inline int i2c_reg_update16(struct device *dev,
 	}
 
 	msg[0].buf = addr_buffer;
-	msg[0].len = 2;
+	msg[0].len = 2UL;
 	msg[0].flags = I2C_MSG_WRITE;
 
 	msg[1].buf = &new_value;
