@@ -130,7 +130,8 @@ struct dma_block_config {
  *
  * dma_callback is the callback function pointer. If enabled, callback function
  *              will be invoked at transfer completion or when error happens
- *              (error_code: zero-transfer success, non zero-error happens).
+ *              (ret_code: zero-transfer success, non zero-defined by specific driver,
+ *                         maybe meaning error happens).
  */
 struct dma_config {
 	u32_t  dma_slot :             6;
@@ -151,7 +152,7 @@ struct dma_config {
 	struct dma_block_config *head_block;
 	void *callback_arg;
 	void (*dma_callback)(void *callback_arg, u32_t channel,
-			     int error_code);
+			     int ret_code);
 };
 
 /**
