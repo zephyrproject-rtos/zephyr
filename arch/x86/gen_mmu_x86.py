@@ -199,7 +199,7 @@ class PageMode_PAE:
 
         # L1TF mitigation: map non-present pages to the NULL page
         if present:
-            binary_value |= page_table;
+            binary_value |= page_table
 
         return binary_value
 

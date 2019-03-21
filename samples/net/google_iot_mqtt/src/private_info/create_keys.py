@@ -97,7 +97,7 @@ def main():
         except subprocess.CalledProcessError as e:
             print(e.output)
 
-        der_fd = open(der_file, "r");
+        der_fd = open(der_file, "r")
         o = subprocess.Popen(["xxd", "-i"], stdin=der_fd, stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT)
 
@@ -112,7 +112,7 @@ def main():
     fd.write(output)
     fd.write("};\n\n")
 
-    fd.write("unsigned int zepfull_private_der_len = " + str(key_len) + ";\n");
+    fd.write("unsigned int zepfull_private_der_len = " + str(key_len) + ";\n")
 
 if __name__ == "__main__":
     main()

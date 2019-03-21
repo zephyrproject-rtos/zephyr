@@ -64,11 +64,11 @@ def set_partition_table_pointer(value):
     flash_content.append(value)
 
 def ipc_load_fw(fw_size, fw_offset):
-    dword_count = 3;
-    load_flags = 0;
-    clock_sel = 0;
+    dword_count = 3
+    load_flags = 0
+    clock_sel = 0
 
-    dword_count = 0x3ff & dword_count;
+    dword_count = 0x3ff & dword_count
 
     debug("Creating flash image with following options:")
 
