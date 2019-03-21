@@ -101,9 +101,7 @@ static u32_t rtc_stm32_read(struct device *dev)
 	ts -= T_TIME_OFFSET;
 
 	__ASSERT(sizeof(time_t) == 8, "unexpected time_t definition");
-	/* Since SDK 0.10.0, newlib defines sizeof(time_t) = 8, */
-	/* so ts requires cast to u32_t before conversion from s to us. */
-	ticks = counter_us_to_ticks(dev, (u64_t)((u32_t)ts * USEC_PER_SEC));
+	ticks = counter_us_to_ticks(dev, ts * USEC_PER_SEC);
 
 	return ticks;
 }
