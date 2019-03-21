@@ -14,3 +14,5 @@ set(source_file src/file.bin)
 
 generate_inc_file_for_target(app ${source_file} ${gen_dir}/file.bin.inc)
 generate_inc_file_for_target(app ${source_file} ${gen_dir}/file.bin.gz.inc --gzip)
+generate_inc_file_for_target(app ${source_file} ${gen_dir}/file.bin.mtime.gz.inc
+  --gzip --gzip-mtime=42)
