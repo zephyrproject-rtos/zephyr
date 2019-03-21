@@ -103,6 +103,9 @@ struct uarte_nrfx_data {
 #ifdef CONFIG_UART_ASYNC_API
 	struct uarte_async_cb *async;
 #endif
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	u32_t pm_state;
+#endif
 	u8_t rx_data;
 };
 
@@ -1134,6 +1137,10 @@ static int uarte_instance_init(struct device *dev,
 		return err;
 	}
 
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+	data->pm_state = DEVICE_PM_ACTIVE_STATE;
+#endif
+
 #ifdef UARTE_INTERRUPT_DRIVEN
 	if (interrupts_active) {
 		/* Set ENDTX event by requesting fake (zero-length) transfer.
@@ -1164,6 +1171,52 @@ static int uarte_instance_init(struct device *dev,
 
 	return 0;
 }
+
+#ifdef CONFIG_DEVICE_POWER_MANAGEMENT
+static void uarte_nrfx_set_power_state(struct device *dev, u32_t new_state)
+{
+	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+
+	if (new_state == DEVICE_PM_ACTIVE_STATE) {
+		nrf_uarte_enable(uarte);
+#ifdef CONFIG_UART_ASYNC_API
+		if (get_dev_data(dev)->async) {
+			return;
+		}
+#endif
+		nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STARTRX);
+	} else {
+		assert(new_state == DEVICE_PM_LOW_POWER_STATE ||
+		       new_state == DEVICE_PM_SUSPEND_STATE ||
+		       new_state == DEVICE_PM_OFF_STATE);
+		nrf_uarte_disable(uarte);
+	}
+}
+
+static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
+				 void *context, device_pm_cb cb, void *arg)
+{
+	struct uarte_nrfx_data *data = get_dev_data(dev);
+
+	if (ctrl_command == DEVICE_PM_SET_POWER_STATE) {
+		u32_t new_state = *((const u32_t *)context);
+
+		if (new_state != data->pm_state) {
+			uarte_nrfx_set_power_state(dev, new_state);
+			data->pm_state = new_state;
+		}
+	} else {
+		assert(ctrl_command == DEVICE_PM_GET_POWER_STATE);
+		*((u32_t *)context) = data->pm_state;
+	}
+
+	if (cb) {
+		cb(dev, 0, context, arg);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 #define UART_NRF_UARTE_DEVICE(idx)					       \
 	DEVICE_DECLARE(uart_nrfx_uarte##idx);				       \
@@ -1215,14 +1268,15 @@ static int uarte_instance_init(struct device *dev,
 			&init_config,					       \
 			IS_ENABLED(CONFIG_UART_##idx##_INTERRUPT_DRIVEN));     \
 	}								       \
-	DEVICE_AND_API_INIT(uart_nrfx_uarte##idx,			       \
-			    DT_NORDIC_NRF_UARTE_UART_##idx##_LABEL,	       \
-			    uarte_##idx##_init,				       \
-			    &uarte_##idx##_data,			       \
-			    &uarte_##idx##_config,			       \
-			    PRE_KERNEL_1,				       \
-			    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		       \
-			    &uart_nrfx_uarte_driver_api)
+	DEVICE_DEFINE(uart_nrfx_uarte##idx,				       \
+		      DT_NORDIC_NRF_UARTE_UART_##idx##_LABEL,		       \
+		      uarte_##idx##_init,				       \
+		      uarte_nrfx_pm_control,				       \
+		      &uarte_##idx##_data,				       \
+		      &uarte_##idx##_config,				       \
+		      PRE_KERNEL_1,					       \
+		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		       \
+		      &uart_nrfx_uarte_driver_api)
 
 #define UARTE_CONFIG(idx)						       \
 	.uart_config = {						       \
