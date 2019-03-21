@@ -81,6 +81,20 @@
 			#size-cells = <1>;
 		};
 
+		gpt1: gpt@401ec000 {
+			compatible = "nxp,imx-gpt";
+			reg = <0x401ec000 0x4000>;
+			interrupts = <100 0>;
+			label = "GPT1";
+		};
+
+		gpt2: gpt@401f0000 {
+			compatible = "nxp,imx-gpt";
+			reg = <0x401f0000 0x4000>;
+			interrupts = <101 0>;
+			label = "GPT2";
+		};
+
 		ccm: ccm@400fc000 {
 			compatible = "nxp,imx-ccm";
 			reg = <0x400fc000 0x4000>;
