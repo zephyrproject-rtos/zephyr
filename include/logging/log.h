@@ -415,7 +415,8 @@ char *log_strdup(const char *str);
  *
  */
 #define LOG_LEVEL_SET(level) \
-	static const u32_t __log_level __attribute__((unused)) = level
+	static const u32_t __log_level __attribute__((unused)) = \
+			_LOG_LEVEL_RESOLVE(level)
 
 /**
  * @}
