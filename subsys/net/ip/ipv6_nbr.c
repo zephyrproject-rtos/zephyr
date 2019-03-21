@@ -663,9 +663,11 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 	 * contain a proper value and we can skip other checks.
 	 */
 	if (net_pkt_ipv6_fragment_id(pkt) == 0) {
+		u16_t mtu = net_if_get_mtu(net_pkt_iface(pkt));
 		size_t pkt_len = net_pkt_get_len(pkt);
 
-		if (pkt_len > NET_IPV6_MTU) {
+		mtu = MAX(NET_IPV6_MTU, mtu);
+		if (mtu < pkt_len) {
 			ret = net_ipv6_send_fragmented_pkt(net_pkt_iface(pkt),
 							   pkt, pkt_len);
 			if (ret < 0) {
