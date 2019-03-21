@@ -731,11 +731,17 @@ static void dfu_work_handler(struct k_work *item)
 
 	switch (dfu_data_worker.worker_state) {
 	case dfuIDLE:
+/*
+ * If progressive erase is enabled, then erase take place while
+ * image collection, so not erase whole bank at DFU beginning
+ */
+#ifndef CONFIG_IMG_ERASE_PROGRESSIVELY
 		if (boot_erase_img_bank(DT_FLASH_AREA_IMAGE_1_ID)) {
 			dfu_data.state = dfuERROR;
 			dfu_data.status = errERASE;
 			break;
 		}
+#endif
 	case dfuDNLOAD_IDLE:
 		dfu_flash_write(dfu_data_worker.buf,
 				dfu_data_worker.worker_len);
