@@ -90,6 +90,11 @@ config HAS_MCUX_LPUART
 	help
 	  Set if the low power uart (LPUART) module is present in the SoC.
 
+config HAS_MCUX_GPT
+	bool
+	help
+	  Set if the general purpose timer (GPT) module is present in the SoC.
+
 config HAS_MCUX_RNGA
 	bool
 	help
