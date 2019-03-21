@@ -392,6 +392,9 @@ static inline s64_t arithmetic_shift_right(s64_t value, u8_t shift)
 
 #define UTIL_IF(c) UTIL_IIF(UTIL_BOOL(c))
 
+#define UTIL_IS_PARENTHESIZED(x) UTIL_CHECK(UTIL_IS_PARENTHESIZED_ x, 0)
+#define UTIL_IS_PARENTHESIZED_(...) 1, 1
+
 #define UTIL_EAT(...)
 #define UTIL_EXPAND(...) __VA_ARGS__
 #define UTIL_WHEN(c) UTIL_IF(c)(UTIL_EXPAND, UTIL_EAT)
