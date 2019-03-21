@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 zephyr_compile_options(
-  -fno-freestanding
   -m32
   -MMD
   -MP
