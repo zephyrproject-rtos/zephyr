@@ -105,9 +105,9 @@ def search_config_in_file(tree, items, completelog, exclude):
                 with open(os.path.join(dirName, fname), "r", encoding="utf-8", errors="ignore") as f:
                     searchConf = f.readlines()
                 for line in searchConf:
-                    if re.search('(^|[\s|(])CONFIG_([a-zA-Z0-9_]+)', line) :
-                        configName = re.search('(^|[\s|(])'
-                                               +'CONFIG_([a-zA-Z0-9_]+)', line)
+                    if re.search(r'(^|[\s|(])CONFIG_([a-zA-Z0-9_]+)', line) :
+                        configName = re.search(r'(^|[\s|(])'
+                                               + r'CONFIG_([a-zA-Z0-9_]+)', line)
                         configs = configs + 1
                         if completelog:
                             print('\n' + configName.group(2) + ' at '

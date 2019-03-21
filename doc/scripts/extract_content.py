@@ -81,7 +81,7 @@ def src_deps(zephyr_base, src_file, dest):
     # argument, which is a (relative) path to the additional
     # dependency file.
     directives = "|".join(DIRECTIVES)
-    pattern = re.compile("\.\.\s+(?P<directive>%s)::\s+(?P<dep_rel>.*)" %
+    pattern = re.compile(r"\.\.\s+(?P<directive>%s)::\s+(?P<dep_rel>.*)" %
                          directives)
     deps = []
     for l in content:

@@ -14,7 +14,7 @@ from docutils.parsers.rst import directives
 # This could be as simple as generating a couple of sets of instructions, one
 # for Unix environments, and another for Windows.
 class ZephyrAppCommandsDirective(Directive):
-    '''
+    r'''
     This is a Zephyr directive for generating consistent documentation
     of the shell commands needed to manage (build, flash, etc.) an application.
 
