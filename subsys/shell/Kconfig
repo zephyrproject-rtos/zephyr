@@ -12,7 +12,7 @@ menu "Shell Options"
 
 menuconfig SHELL
 	bool "Enable shell"
-	select LOG_RUNTIME_FILTERING
+	imply LOG_RUNTIME_FILTERING
 	select POLL
 
 if SHELL
