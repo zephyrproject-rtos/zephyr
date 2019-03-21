@@ -126,7 +126,7 @@ def parse_obj_files(partitions):
     # Iterate over all object files to find partitions
     for dirpath, _, files in os.walk(args.directory):
         for filename in files:
-            if re.match(".*\.obj$",filename):
+            if re.match(r".*\.obj$",filename):
                 fullname = os.path.join(dirpath, filename)
                 find_obj_file_partitions(fullname, partitions)
 
