@@ -397,8 +397,8 @@ function(zephyr_library_compile_options item)
   # zephyr_interface will be the first interface library that flags
   # are taken from.
 
-  string(RANDOM random)
-  set(lib_name options_interface_lib_${random})
+  string(MD5 uniqueness ${item})
+  set(lib_name options_interface_lib_${uniqueness})
 
   add_library(           ${lib_name} INTERFACE)
   target_compile_options(${lib_name} INTERFACE ${item} ${ARGN})
@@ -1219,7 +1219,7 @@ function(generate_unique_target_name_from_filename filename target_name)
   string(REPLACE "." "_" x ${basename})
   string(REPLACE "@" "_" x ${x})
 
-  string(RANDOM LENGTH 8 random_chars)
+  string(MD5 unique_chars ${filename})
 
-  set(${target_name} gen_${x}_${random_chars} PARENT_SCOPE)
+  set(${target_name} gen_${x}_${unique_chars} PARENT_SCOPE)
 endfunction()
