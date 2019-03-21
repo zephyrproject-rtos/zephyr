@@ -602,6 +602,8 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 		goto fail;
 	}
 
+	net_pkt_set_ipv6_next_hdr(frag_pkt, NET_IPV6_NEXTHDR_FRAG);
+
 	/* And we append the fragmentation header */
 	frag_hdr = (struct net_ipv6_frag_hdr *)net_pkt_get_data(frag_pkt,
 								&frag_access);
