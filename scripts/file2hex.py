@@ -41,8 +41,13 @@ def main():
     parse_args()
 
     if args.gzip:
-        with open(args.file, 'rb') as fg:
-            content = io.BytesIO(gzip.compress(fg.read(), compresslevel=9))
+        with io.BytesIO() as content:
+            with open(args.file, 'rb') as fg:
+                with gzip.GzipFile(fileobj=content, mode='w',
+                                   compresslevel=9) as gz_obj:
+                    gz_obj.write(fg.read())
+
+            content.seek(0)
             for chunk in iter(lambda: content.read(8), b''):
                 make_hex(chunk)
     else:
