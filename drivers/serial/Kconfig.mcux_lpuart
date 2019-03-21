@@ -35,4 +35,9 @@ menuconfig UART_MCUX_LPUART_3
 	help
 	  Enable UART 3.
 
+menuconfig UART_MCUX_LPUART_4
+	bool "UART 4"
+	help
+	  Enable UART 4.
+
 endif # UART_MCUX_LPUART
