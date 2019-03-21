@@ -90,17 +90,13 @@ static int rtc_qmsi_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-static int rtc_qmsi_set_top(struct device *dev, u32_t ticks,
-			     counter_top_callback_t callback,
-			     void *user_data)
+static int rtc_qmsi_set_top(struct device *dev,
+			    const struct counter_top_cfg *cfg)
 {
 	const struct counter_config_info *info = dev->config->config_info;
 
-	ARG_UNUSED(dev);
-	ARG_UNUSED(callback);
-	ARG_UNUSED(user_data);
-
-	if (ticks != info->max_top_value) {
+	if ((cfg->ticks != info->max_top_value) ||
+		!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
 		return -ENOTSUP;
 	} else {
 		return 0;

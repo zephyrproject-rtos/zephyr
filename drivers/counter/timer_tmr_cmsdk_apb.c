@@ -69,25 +69,28 @@ static u32_t tmr_cmsdk_apb_read(struct device *dev)
 }
 
 static int tmr_cmsdk_apb_set_top_value(struct device *dev,
-					      u32_t ticks,
-					      counter_top_callback_t callback,
-					      void *user_data)
+				       const struct counter_top_cfg *top_cfg)
 {
 	const struct tmr_cmsdk_apb_cfg * const cfg =
 						dev->config->config_info;
 	struct tmr_cmsdk_apb_dev_data *data = dev->driver_data;
 
-	data->top_callback = callback;
-	data->top_user_data = user_data;
+	/* Counter is always reset when top value is updated. */
+	if (top_cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
+		return -ENOTSUP;
+	}
+
+	data->top_callback = top_cfg->callback;
+	data->top_user_data = top_cfg->user_data;
 
 	/* Store the reload value */
-	data->load = ticks;
+	data->load = top_cfg->ticks;
 
 	/* Set value register to count */
-	cfg->timer->value = ticks;
+	cfg->timer->value = top_cfg->ticks;
 
 	/* Set the timer reload to count */
-	cfg->timer->reload = ticks;
+	cfg->timer->reload = top_cfg->ticks;
 
 	/* Enable IRQ */
 	cfg->timer->ctrl |= TIMER_CTRL_IRQ_EN;
