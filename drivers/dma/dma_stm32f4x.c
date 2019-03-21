@@ -235,6 +235,7 @@ static void dma_stm32_irq_handler(void *arg, u32_t id)
 	irqstatus = dma_stm32_irq_status(ddata, id);
 	config = dma_stm32_read(ddata, DMA_STM32_SCR(id));
 	sfcr = dma_stm32_read(ddata, DMA_STM32_SFCR(id));
+	int leftover_len = dma_stm32_read(ddata, DMA_STM32_SNDTR(id));
 
 	/* Silently ignore spurious transfer half complete IRQ */
 	if (irqstatus & DMA_STM32_HTI) {
@@ -247,7 +248,7 @@ static void dma_stm32_irq_handler(void *arg, u32_t id)
 	if ((irqstatus & DMA_STM32_TCI) && (config & DMA_STM32_SCR_TCIE)) {
 		dma_stm32_irq_clear(ddata, id, DMA_STM32_TCI);
 
-		stream->dma_callback(stream->callback_arg, id, 0);
+		stream->dma_callback(stream->callback_arg, id, leftover_len);
 	} else {
 		LOG_ERR("Internal error: IRQ status: 0x%x\n", irqstatus);
 		dma_stm32_irq_clear(ddata, id, irqstatus);
@@ -274,8 +275,9 @@ static int dma_stm32_disable_stream(struct dma_stm32_device *ddata,
 		dma_stm32_write(ddata, DMA_STM32_SCR(id),
 				config &= ~DMA_STM32_SCR_EN);
 
+		/* Wait 50ms */
+		k_sleep(K_MSEC(50));
 		/* After trying for 5 seconds, give up */
-		k_sleep(K_SECONDS(5));
 		if (count++ > (5 * 1000) / 50) {
 			LOG_ERR("DMA error: Stream in use\n");
 			return -EBUSY;
