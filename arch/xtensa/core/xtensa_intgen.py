@@ -139,4 +139,3 @@ for lvl in ints_by_lvl:
     cprint("return mask;")
     cprint("}")
     cprint("")
-

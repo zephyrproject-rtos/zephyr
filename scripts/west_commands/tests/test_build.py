@@ -56,4 +56,3 @@ def test_parse_remainder(test_case):
     b._parse_remainder(test_case['r'])
     assert b.args.source_dir == test_case['s']
     assert b.args.cmake_opts == test_case['c']
-
