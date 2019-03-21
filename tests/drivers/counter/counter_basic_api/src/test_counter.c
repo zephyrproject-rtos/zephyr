@@ -88,11 +88,16 @@ static void counter_tear_down_instance(const char *dev_name)
 {
 	int err;
 	struct device *dev;
+	struct counter_top_cfg top_cfg = {
+		.callback = NULL,
+		.user_data = NULL,
+		.flags = 0
+	};
 
 	dev = device_get_binding(dev_name);
 
-	err = counter_set_top_value(dev, counter_get_max_top_value(dev),
-				    NULL, NULL);
+	top_cfg.ticks = counter_get_max_top_value(dev);
+	err = counter_set_top_value(dev, &top_cfg);
 	zassert_equal(0, err, "Setting top value to default failed\n");
 
 	err = counter_stop(dev);
@@ -120,13 +125,17 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 	struct device *dev;
 	int err;
 	u32_t cnt;
-	u32_t ticks;
 	u32_t tmp_top_cnt;
+	struct counter_top_cfg top_cfg = {
+		.callback = top_handler,
+		.user_data = exp_user_data,
+		.flags = 0
+	};
 
 	top_cnt = 0U;
 
 	dev = device_get_binding(dev_name);
-	ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
+	top_cfg.ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
 
 	err = counter_start(dev);
 	zassert_equal(0, err, "Counter failed to start\n");
@@ -136,7 +145,7 @@ void test_set_top_value_with_alarm_instance(const char *dev_name)
 	cnt = counter_read(dev);
 	zassert_true(cnt > 0, "Counter should progress (dev:%s)\n", dev_name);
 
-	err = counter_set_top_value(dev, ticks, top_handler, exp_user_data);
+	err = counter_set_top_value(dev, &top_cfg);
 	zassert_equal(0, err, "Counter failed to set top value (dev:%s)\n",
 			dev_name);
 
@@ -171,9 +180,15 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 	int err;
 	u32_t ticks;
 	u32_t tmp_alarm_cnt;
+	struct counter_top_cfg top_cfg = {
+		.callback = top_handler,
+		.user_data = exp_user_data,
+		.flags = 0
+	};
 
 	dev = device_get_binding(dev_name);
 	ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
+	top_cfg.ticks = ticks;
 
 	alarm_cfg.absolute = false;
 	alarm_cfg.ticks = ticks;
@@ -191,8 +206,7 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 	zassert_equal(0, err, "Counter failed to start\n");
 
 	if (set_top) {
-		err = counter_set_top_value(dev, ticks, top_handler,
-					    exp_user_data);
+		err = counter_set_top_value(dev, &top_cfg);
 
 		zassert_equal(0, err, "Counter failed to set top value\n");
 
@@ -218,8 +232,10 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 	err = counter_cancel_channel_alarm(dev, 0);
 	zassert_equal(0, err, "Counter disabling alarm failed\n");
 
-	err = counter_set_top_value(dev, counter_get_max_top_value(dev),
-				    NULL, NULL);
+	top_cfg.ticks = counter_get_max_top_value(dev);
+	top_cfg.callback = NULL;
+	top_cfg.user_data = NULL;
+	err = counter_set_top_value(dev, &top_cfg);
 	zassert_equal(0, err, "Setting top value to default failed\n");
 
 	err = counter_stop(dev);
@@ -272,9 +288,15 @@ void test_multiple_alarms_instance(const char *dev_name)
 	int err;
 	u32_t ticks;
 	u32_t tmp_alarm_cnt;
+	struct counter_top_cfg top_cfg = {
+		.callback = top_handler,
+		.user_data = exp_user_data,
+		.flags = 0
+	};
 
 	dev = device_get_binding(dev_name);
 	ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
+	top_cfg.ticks = ticks;
 
 	alarm_cfg.absolute = true;
 	alarm_cfg.ticks = counter_us_to_ticks(dev, 2000);
@@ -296,7 +318,7 @@ void test_multiple_alarms_instance(const char *dev_name)
 	err = counter_start(dev);
 	zassert_equal(0, err, "Counter failed to start\n");
 
-	err = counter_set_top_value(dev, ticks, top_handler, exp_user_data);
+	err = counter_set_top_value(dev, &top_cfg);
 	zassert_equal(0, err, "Counter failed to set top value\n");
 
 	k_busy_wait(1.4*counter_ticks_to_us(dev, alarm_cfg.ticks));

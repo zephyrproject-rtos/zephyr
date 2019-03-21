@@ -137,9 +137,8 @@ static int counter_nrfx_cancel_alarm(struct device *dev, u8_t chan_id)
 	return 0;
 }
 
-static int counter_nrfx_set_top_value(struct device *dev, u32_t ticks,
-				      counter_top_callback_t callback,
-				      void *user_data)
+static int counter_nrfx_set_top_value(struct device *dev,
+				      const struct counter_top_cfg *cfg)
 {
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
 	const nrfx_rtc_t *rtc = &nrfx_config->rtc;
@@ -155,12 +154,14 @@ static int counter_nrfx_set_top_value(struct device *dev, u32_t ticks,
 	}
 
 	nrfx_rtc_cc_disable(rtc, TOP_CH);
-	nrfx_rtc_counter_clear(rtc);
+	if (!(cfg->flags & COUNTER_TOP_CFG_DONT_RESET)) {
+		nrfx_rtc_counter_clear(rtc);
+	}
 
-	dev_data->top_cb = callback;
-	dev_data->top_user_data = user_data;
-	dev_data->top = ticks;
-	nrfx_rtc_cc_set(rtc, TOP_CH, ticks, callback ? true : false);
+	dev_data->top_cb = cfg->callback;
+	dev_data->top_user_data = cfg->user_data;
+	dev_data->top = cfg->ticks;
+	nrfx_rtc_cc_set(rtc, TOP_CH, cfg->ticks, cfg->callback ? true : false);
 
 	return 0;
 }

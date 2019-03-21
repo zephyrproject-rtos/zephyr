@@ -39,6 +39,19 @@ extern "C" {
 
 /**@} */
 
+/**@defgroup COUNTER_TOP_FLAGS Flags used by @ref counter_top_cfg.
+ * @{ */
+
+/**
+ * @brief Flag preventing counter reset when top value is changed.
+ *
+ * If flags is set then counter is free running while top value is updated
+ * otherwise counter is reset.
+ */
+#define COUNTER_TOP_CFG_DONT_RESET BIT(0)
+
+/**@} */
+
 /** @brief Alarm callback
  *
  * @param dev       Pointer to the device structure for the driver instance.
@@ -80,6 +93,21 @@ struct counter_alarm_cfg {
  */
 typedef void (*counter_top_callback_t)(struct device *dev, void *user_data);
 
+/** @brief Top value configuration structure.
+ *
+ * @param ticks		Top value.
+ * @param callback	Callback function. Can be NULL.
+ * @param user_data	User data passed to callback function. Not valid if
+ *			callback is NULL.
+ * @param flags		Flags. See @ref COUNTER_TOP_FLAGS.
+ */
+struct counter_top_cfg {
+	u32_t ticks;
+	counter_top_callback_t callback;
+	void *user_data;
+	u32_t flags;
+};
+
 /** @brief Structure with generic counter features.
  *
  * @param max_top_value Maximal (default) top value on which counter is reset
@@ -103,9 +131,8 @@ typedef u32_t (*counter_api_read)(struct device *dev);
 typedef int (*counter_api_set_alarm)(struct device *dev, u8_t chan_id,
 				const struct counter_alarm_cfg *alarm_cfg);
 typedef int (*counter_api_cancel_alarm)(struct device *dev, u8_t chan_id);
-typedef int (*counter_api_set_top_value)(struct device *dev, u32_t ticks,
-				    counter_top_callback_t callback,
-				    void *user_data);
+typedef int (*counter_api_set_top_value)(struct device *dev,
+					 const struct counter_top_cfg *cfg);
 typedef u32_t (*counter_api_get_pending_int)(struct device *dev);
 typedef u32_t (*counter_api_get_top_value)(struct device *dev);
 typedef u32_t (*counter_api_get_max_relative_alarm)(struct device *dev);
@@ -332,34 +359,36 @@ static inline int counter_cancel_channel_alarm(struct device *dev,
 /**
  * @brief Set counter top value.
  *
- * Function sets top value and resets the counter to 0 or top value
+ * Function sets top value and optionally resets the counter to 0 or top value
  * depending on counter direction. On turnaround, counter is reset and optional
  * callback is periodically called. Top value can only be changed when there
  * is no active channel alarm.
  *
+ * @note If counter is not reset when updating top value (see @ref
+ *	 COUNTER_TOP_CFG_DONT_RESET) then there is a risk that counter will go
+ *	 out of bounds (e.g. decreasing top value when counting up). It is a
+ *	 user responsibility to protect against that.
+ *
  * @param dev		Pointer to the device structure for the driver instance.
- * @param ticks		Top value.
- * @param callback	Callback function. Can be NULL.
- * @param user_data	User data passed to callback function. Not valid if
- *			callback is NULL.
+ * @param cfg		Configuration. Cannot be NULL.
  *
  * @retval 0 If successful.
  * @retval -ENOTSUP if request is not supported (e.g. top value cannot be
- *		    changed).
+ *		    changed or counter cannot/must be reset during top value
+		    update).
  * @retval -EBUSY if any alarm is active.
  */
-static inline int counter_set_top_value(struct device *dev, u32_t ticks,
-					counter_top_callback_t callback,
-					void *user_data)
+static inline int counter_set_top_value(struct device *dev,
+					const struct counter_top_cfg *cfg)
 {
 	const struct counter_driver_api *api =
 				(struct counter_driver_api *)dev->driver_api;
 
-	if (ticks > counter_get_max_top_value(dev)) {
+	if (cfg->ticks > counter_get_max_top_value(dev)) {
 		return -EINVAL;
 	}
 
-	return api->set_top_value(dev, ticks, callback, user_data);
+	return api->set_top_value(dev, cfg);
 }
 
 /**
@@ -430,7 +459,14 @@ __deprecated static inline int counter_set_alarm(struct device *dev,
 						 counter_callback_t callback,
 						 u32_t count, void *user_data)
 {
-	return counter_set_top_value(dev, count, callback, user_data);
+	struct counter_top_cfg cfg = {
+		.ticks = count,
+		.callback = callback,
+		.user_data = user_data,
+		.flags = 0
+	};
+
+	return counter_set_top_value(dev, &cfg);
 }
 
 /**

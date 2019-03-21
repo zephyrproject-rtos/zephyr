@@ -39,9 +39,7 @@ static u32_t aon_counter_qmsi_read(struct device *dev)
 }
 
 static int aon_counter_qmsi_set_top(struct device *dev,
-				      u32_t ticks,
-				      counter_top_callback_t callback,
-				      void *user_data)
+				    const struct counter_top_cfg *cfg)
 
 {
 	return -ENODEV;

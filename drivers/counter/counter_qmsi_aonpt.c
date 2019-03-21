@@ -113,19 +113,22 @@ static u32_t aon_timer_qmsi_read(struct device *dev)
 }
 
 static int aon_timer_qmsi_set_top(struct device *dev,
-				    u32_t ticks,
-				    counter_top_callback_t callback,
-				    void *user_data)
+				  const struct counter_top_cfg *cfg)
 {
 	qm_aonpt_config_t qmsi_cfg;
 	int result = 0;
 
-	user_cb = callback;
+	/* Counter is always reset when top value is updated. */
+	if (cfg->flags & COUNTER_TOP_CFG_DONT_RESET) {
+		return -ENOTSUP;
+	}
+
+	user_cb = cfg->callback;
 
 	qmsi_cfg.callback = aonpt_int_callback;
 	qmsi_cfg.int_en = true;
-	qmsi_cfg.count = ticks;
-	qmsi_cfg.callback_data = user_data;
+	qmsi_cfg.count = cfg->ticks;
+	qmsi_cfg.callback_data = cfg->user_data;
 
 	if (IS_ENABLED(CONFIG_AON_API_REENTRANCY)) {
 		k_sem_take(RP_GET(dev), K_FOREVER);
