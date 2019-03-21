@@ -193,15 +193,9 @@ void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread)
 	LOG_DBG("configure user thread %p's context", thread);
 	if (thread->arch.priv_stack_start) {
 		u32_t base = (u32_t)thread->stack_obj;
-		u32_t size = thread->stack_info.size;
-#if !defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)
-		/* In user-mode the thread stack will include the (optional)
-		 * guard area. For MPUs with arbitrary base address and limit
-		 * it is essential to include this size increase, to avoid
-		 * MPU faults.
-		 */
-		size += thread->stack_info.start - base;
-#endif
+		u32_t size = thread->stack_info.size +
+			(thread->stack_info.start - base);
+
 		__ASSERT(region_num < _MAX_DYNAMIC_MPU_REGIONS_NUM,
 			"Out-of-bounds error for dynamic region map.");
 		thread_stack = (const struct k_mem_partition)
