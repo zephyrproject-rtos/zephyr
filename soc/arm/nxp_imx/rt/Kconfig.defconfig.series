@@ -64,6 +64,19 @@ config UART_MCUX_LPUART
 
 endif # SERIAL
 
+if COUNTER
+
+config COUNTER_MCUX_GPT
+	default y if HAS_MCUX_GPT
+
+config COUNTER_MCUX_GPT1
+	default y if HAS_MCUX_GPT
+
+config COUNTER_MCUX_GPT2
+	default y if HAS_MCUX_GPT
+
+endif # COUNTER
+
 if SPI
 
 config SPI_MCUX_LPSPI
