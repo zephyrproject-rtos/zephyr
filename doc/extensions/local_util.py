@@ -62,4 +62,3 @@ def copy_if_modified(src_path, dst_path):
             src_file_path = os.path.join(root, src_file_name)
             dst_file_path = os.path.join(dst_path + root[src_path_len:], src_file_name)
             copy_file_if_modified(src_file_path, dst_file_path)
-

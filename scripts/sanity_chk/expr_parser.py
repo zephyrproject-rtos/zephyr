@@ -246,7 +246,3 @@ if __name__ == "__main__":
         print(parser.parse(line))
 
         print(parse(line, local_env))
-
-
-
-
