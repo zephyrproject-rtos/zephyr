@@ -1,4 +1,4 @@
 tests:
   usb.desc_sections:
-    platform_whitelist: frdm_k64f native_posix
+    depends_on: usb_device
     tags: usb desc_sections

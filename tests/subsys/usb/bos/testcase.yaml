@@ -1,4 +1,4 @@
 tests:
   usb.bos:
-    platform_whitelist: native_posix frdm_k64f
+    depends_on: usb_device
     tags: usb bos
