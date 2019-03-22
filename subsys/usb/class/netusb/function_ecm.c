@@ -339,12 +339,17 @@ static struct netusb_function ecm_function = {
 	.send_pkt = ecm_send,
 };
 
-static inline void ecm_status_interface(const u8_t *iface)
+static inline void ecm_status_interface(const u8_t *desc)
 {
-	LOG_DBG("iface %u", *iface);
+	const struct usb_if_descriptor *if_desc = (void *)desc;
+	u8_t iface_num = if_desc->bInterfaceNumber;
+	u8_t alt_set = if_desc->bAlternateSetting;
+
+	LOG_DBG("iface %u alt_set %u", iface_num, if_desc->bAlternateSetting);
 
 	/* First interface is CDC Comm interface */
-	if (*iface != ecm_get_first_iface_number() + 1) {
+	if (iface_num != ecm_get_first_iface_number() + 1 || !alt_set) {
+		LOG_DBG("Skip iface_num %u alt_set %u", iface_num, alt_set);
 		return;
 	}
 
