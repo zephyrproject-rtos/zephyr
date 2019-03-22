@@ -167,7 +167,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 
 	printk("\r\nOpenAMP[master] demo started\r\n");
 
-	metal_init(&metal_params);
+	status = metal_init(&metal_params);
 	if (status != 0) {
 		printk("metal_init: failed - error code %d\n", status);
 		return;
