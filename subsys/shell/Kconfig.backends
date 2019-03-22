@@ -15,14 +15,20 @@ menuconfig SHELL_BACKENDS
 if SHELL_BACKENDS
 
 config SHELL_BACKEND_SERIAL
-	bool "Enable serial backends."
+	bool "Enable serial backend"
 	default y
 	select SERIAL
 	select RING_BUFFER
 	help
-	  Enable serial backends.
+	  Enable serial backend.
 
 if SHELL_BACKEND_SERIAL
+
+config SHELL_PROMPT_UART
+	string "Displayed prompt name"
+	default "uart:~$ "
+	help
+	  Displayed prompt name for UART backend.
 
 config UART_SHELL_ON_DEV_NAME
 	string "Device Name of UART Device for SHELL_BACKEND_SERIAL"
@@ -107,13 +113,19 @@ config SHELL_BACKEND_SERIAL_LOG_LEVEL
 endif #SHELL_BACKEND_SERIAL
 
 config SHELL_BACKEND_RTT
-	bool "Enable RTT backend."
+	bool "Enable RTT backend"
 	select USE_SEGGER_RTT
 	select RTT_CONSOLE
 	help
 	  Enable RTT backend.
 
 if SHELL_BACKEND_RTT
+
+config SHELL_PROMPT_RTT
+	string "Displayed prompt name"
+	default "rtt:~$ "
+	help
+	  Displayed prompt name for RTT backend.
 
 config SHELL_RTT_RX_POLL_PERIOD
 	int "RX polling period (in milliseconds)"
@@ -175,6 +187,12 @@ config SHELL_BACKEND_TELNET
 	  Enable TELNET backend.
 
 if SHELL_BACKEND_TELNET
+
+config SHELL_PROMPT_TELNET
+	string "Displayed prompt name"
+	default "~$ "
+	help
+	  Displayed prompt name for TELNET backend.
 
 config SHELL_TELNET_PORT
 	int "Telnet port number"
@@ -260,5 +278,12 @@ config SHELL_BACKEND_DUMMY
 	help
 	  Enable dummy backend which can be used to execute commands with no
 	  need for physical transport interface.
+
+config SHELL_PROMPT_DUMMY
+	string "Displayed prompt name"
+	depends on SHELL_BACKEND_DUMMY
+	default "~$ "
+	help
+	  Displayed prompt name for DUMMY backend.
 
 endif # SHELL_BACKENDS
