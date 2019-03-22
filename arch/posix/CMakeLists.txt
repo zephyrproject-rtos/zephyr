@@ -12,6 +12,7 @@ zephyr_include_directories(${BOARD_DIR})
 zephyr_compile_options_ifdef(CONFIG_COVERAGE
   -fprofile-arcs
   -ftest-coverage
+  -fno-inline
 )
 zephyr_link_libraries_ifdef(CONFIG_COVERAGE
 	-lgcov
