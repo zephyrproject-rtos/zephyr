@@ -40,8 +40,8 @@ GTEXT(_irq_do_offload);
 
 GDATA(exc_nest_count)
 
-	.balign 4
 SECTION_VAR(BSS, saved_value)
+	.balign 4
 	.word 0
 
 /* the necessary stack size for exception handling */
