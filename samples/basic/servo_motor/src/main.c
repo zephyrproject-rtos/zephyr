@@ -17,8 +17,12 @@
 
 #if defined(CONFIG_SOC_QUARK_SE_C1000) || defined(CONFIG_SOC_QUARK_D2000)
 #define PWM_DEV CONFIG_PWM_QMSI_DEV_NAME
-#elif defined(CONFIG_PWM_NRF5_SW)
+#elif defined(CONFIG_SOC_FAMILY_NRF)
+#if defined(CONFIG_PWM_NRF5_SW)
 #define PWM_DEV CONFIG_PWM_NRF5_SW_0_DEV_NAME
+#else
+#define PWM_DEV DT_NORDIC_NRF_PWM_PWM_0_LABEL
+#endif  /* CONFIG_PWM_NRF5_SW */
 #else
 #error "Choose supported board or add new board for the application"
 #endif
