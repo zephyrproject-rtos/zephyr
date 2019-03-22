@@ -5265,6 +5265,10 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 	bool dir_adv = (peer != NULL);
 	int err = 0;
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
+
 	if (!valid_adv_param(param, dir_adv)) {
 		return -EINVAL;
 	}
@@ -5456,6 +5460,10 @@ static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 {
 	int err;
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return -EAGAIN;
+	}
 
 	/* Check that the parameters have valid values */
 	if (!valid_le_scan_param(param)) {
