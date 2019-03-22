@@ -125,16 +125,13 @@ static void settings_dup_check_cb(char *name, void *val_read_cb_ctx, off_t off,
 	}
 
 	len_read = settings_line_val_get_len(off, val_read_cb_ctx);
-	if (len_read == 0) {
-		/* treat as an empty entry */
-		if (!cdca->val || cdca->val_len == 0) {
-			cdca->is_dup = 1;
-		} else {
-			cdca->is_dup = 0;
-		}
+	if (len_read != cdca->val_len) {
+		cdca->is_dup = 0;
+	} else if (len_read == 0) {
+		cdca->is_dup = 1;
 	} else {
-		if (cdca->val && !settings_cmp(cdca->val, cdca->val_len,
-					       val_read_cb_ctx, off)) {
+		if (!settings_cmp(cdca->val, cdca->val_len,
+				  val_read_cb_ctx, off)) {
 			cdca->is_dup = 1;
 		} else {
 			cdca->is_dup = 0;
