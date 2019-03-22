@@ -799,6 +799,11 @@ int usb_dc_ep_mps(const u8_t ep)
 {
 	u8_t ep_idx = EP_ADDR2IDX(ep);
 
+	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
+		LOG_ERR("Wrong endpoint index/address");
+		return -EINVAL;
+	}
+
 	if (ep & USB_EP_DIR_IN) {
 		return dev_data.ep_ctrl[ep_idx].mps_in;
 	} else {
