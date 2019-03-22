@@ -89,7 +89,20 @@
 /* force inlining a function */
 
 #if !defined(_ASMLANGUAGE)
-  #define ALWAYS_INLINE inline __attribute__((always_inline))
+  #ifdef CONFIG_COVERAGE
+    /*
+     * The always_inline attribute forces a function to be inlined,
+     * even ignoring -fno-inline. So for code coverage, do not
+     * inline these functions to keep their bodies around so their
+     * number of executions can be counted.
+     *
+     * The unused attribute is here to avoid the compiler complaining
+     * about these functions being unused.
+     */
+    #define ALWAYS_INLINE __attribute__((unused))
+  #else
+    #define ALWAYS_INLINE inline __attribute__((always_inline))
+  #endif
 #endif
 
 #define Z_STRINGIFY(x) #x
