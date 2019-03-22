@@ -33,14 +33,12 @@ config UART_ASYNC_API
 	help
 	  This option enables new asynchronous UART API.
 
-if UART_ASYNC_API=n
 config UART_INTERRUPT_DRIVEN
 	bool "Enable UART Interrupt support"
 	depends on SERIAL_SUPPORT_INTERRUPT
 	help
 	  This option enables interrupt support for UART allowing console
 	  input and other UART based drivers.
-endif
 
 config UART_LINE_CTRL
 	bool "Enable Serial Line Control API"

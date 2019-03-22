@@ -336,7 +336,7 @@ struct uart_device_config {
 	struct pci_dev_info  pci_dev;
 #endif /* CONFIG_PCI */
 
-#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+#if defined(CONFIG_UART_INTERRUPT_DRIVEN) || defined(CONFIG_UART_ASYNC_API)
 	uart_irq_config_func_t	irq_config_func;
 #endif
 };
