@@ -53,7 +53,7 @@ config UART_0_INTERRUPT_DRIVEN
 
 config UART_0_ASYNC
 	bool "Enable Asynchronous API support on port 0"
-	depends on UART_ASYNC_API
+	depends on UART_ASYNC_API && !UART_0_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART Asynchronous API support on port 0.
@@ -117,7 +117,7 @@ config UART_1_INTERRUPT_DRIVEN
 
 config UART_1_ASYNC
 	bool "Enable Asynchronous API support on port 1"
-	depends on UART_ASYNC_API
+	depends on UART_ASYNC_API && !UART_1_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART Asynchronous API support on port 1.
@@ -180,7 +180,7 @@ config UART_2_INTERRUPT_DRIVEN
 
 config UART_2_ASYNC
 	bool "Enable Asynchronous API support on port 2"
-	depends on UART_ASYNC_API
+	depends on UART_ASYNC_API && !UART_2_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART Asynchronous API support on port 2.
@@ -242,7 +242,7 @@ config UART_3_INTERRUPT_DRIVEN
 
 config UART_3_ASYNC
 	bool "Enable Asynchronous API support on port 3"
-	depends on UART_ASYNC_API
+	depends on UART_ASYNC_API && !UART_3_INTERRUPT_DRIVEN
 	default y
 	help
 	  This option enables UART Asynchronous API support on port 3.
