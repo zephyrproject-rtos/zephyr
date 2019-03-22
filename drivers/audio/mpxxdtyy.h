@@ -27,7 +27,7 @@ extern "C" {
 struct mpxxdtyy_data {
 	struct device		*comm_master;
 	enum dmic_state		state;
-	TPDMFilter_InitStruct	pdm_filter;
+	TPDMFilter_InitStruct	pdm_filter[2];
 	size_t			pcm_mem_size;
 	struct k_mem_slab	*pcm_mem_slab;
 };
