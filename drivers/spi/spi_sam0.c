@@ -408,9 +408,6 @@ static int spi_sam0_transceive_sync(struct device *dev,
 				    const struct spi_buf_set *tx_bufs,
 				    const struct spi_buf_set *rx_bufs)
 {
-	struct spi_sam0_data *data = dev->driver_data;
-
-	spi_context_lock(&data->ctx, false, NULL);
 	return spi_sam0_transceive(dev, config, tx_bufs, rx_bufs);
 }
 
@@ -421,9 +418,7 @@ static int spi_sam0_transceive_async(struct device *dev,
 				     const struct spi_buf_set *rx_bufs,
 				     struct k_poll_signal *async)
 {
-	struct spi_sam0_data *data = dev->driver_data;
-
-	spi_context_lock(&data->ctx, true, async);
+	/* TODO: actually implement asyc transceive */
 	return spi_sam0_transceive(dev, config, tx_bufs, rx_bufs);
 }
 #endif /* CONFIG_SPI_ASYNC */
