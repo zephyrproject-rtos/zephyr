@@ -1919,6 +1919,10 @@ struct bt_conn *bt_conn_create_le(const bt_addr_le_t *peer,
 {
 	struct bt_conn *conn;
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		return NULL;
+	}
+
 	if (!bt_le_conn_params_valid(param)) {
 		return NULL;
 	}
