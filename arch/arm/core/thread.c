@@ -123,6 +123,9 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->a4 = (u32_t)parameter3;
 	pInitCtx->xpsr =
 		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
+#ifdef CONFIG_FLOAT
+	pInitCtx->fpscr = (u32_t)0; /* clears FPU status/control register*/
+#endif
 
 	thread->callee_saved.psp = (u32_t)pInitCtx;
 	thread->arch.basepri = 0;
