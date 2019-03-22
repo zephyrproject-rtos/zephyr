@@ -16,7 +16,7 @@
 #include "shell_telnet_protocol.h"
 
 SHELL_TELNET_DEFINE(shell_transport_telnet);
-SHELL_DEFINE(shell_telnet, "~$ ", &shell_transport_telnet,
+SHELL_DEFINE(shell_telnet, CONFIG_SHELL_PROMPT_TELNET, &shell_transport_telnet,
 	     CONFIG_SHELL_TELNET_LOG_MESSAGE_QUEUE_SIZE,
 	     CONFIG_SHELL_TELNET_LOG_MESSAGE_QUEUE_TIMEOUT,
 	     SHELL_FLAG_OLF_CRLF);
