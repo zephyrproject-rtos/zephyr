@@ -1,4 +1,4 @@
 tests:
   usb.device:
-    platform_whitelist: native_posix
+    depends_on: usb_device
     tags: usb
