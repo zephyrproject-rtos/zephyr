@@ -52,10 +52,6 @@ static int spi_sam0_configure(struct device *dev,
 	SERCOM_SPI_CTRLB_Type ctrlb = {.reg = 0};
 	int div;
 
-	if (spi_context_configured(&data->ctx, config)) {
-		return 0;
-	}
-
 	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
 		/* Slave mode is not implemented. */
 		return -ENOTSUP;
@@ -111,9 +107,8 @@ static int spi_sam0_configure(struct device *dev,
 		wait_synchronization(regs);
 	}
 
-	spi_context_cs_configure(&data->ctx);
-
 	data->ctx.config = config;
+	spi_context_cs_configure(&data->ctx);
 
 	return 0;
 }
@@ -374,9 +369,11 @@ static int spi_sam0_transceive(struct device *dev,
 
 	spi_context_lock(&data->ctx, false, NULL);
 
-	err = spi_sam0_configure(dev, config);
-	if (err != 0) {
-		goto done;
+	if (!spi_context_configured(&data->ctx, config)) {
+		err = spi_sam0_configure(dev, config);
+		if (err != 0) {
+			goto done;
+		}
 	}
 
 	spi_context_cs_control(&data->ctx, true);
