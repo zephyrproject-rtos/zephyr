@@ -5,6 +5,7 @@
 
 menuconfig UART_SAM0
 	bool "Atmel SAM0 series SERCOM USART driver"
+	default y
 	depends on SOC_FAMILY_SAM0
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
