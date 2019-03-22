@@ -231,13 +231,15 @@ static int commit(void)
 		}
 	}
 
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_READY)) {
+		bt_finalize_init();
+	}
+
 	for (h = _bt_settings_start; h < _bt_settings_end; h++) {
 		if (h->commit) {
 			h->commit();
 		}
 	}
-
-	bt_dev_show_info();
 
 	return 0;
 }
