@@ -1185,8 +1185,6 @@ static void store_pending_mod_bind(struct bt_mesh_model *mod, bool vnd)
 	u16_t keys[CONFIG_BT_MESH_MODEL_KEY_COUNT];
 	char path[20];
 	int i, count, err;
-	size_t len;
-	void *val;
 
 	for (i = 0, count = 0; i < ARRAY_SIZE(mod->keys); i++) {
 		if (mod->keys[i] != BT_MESH_KEY_UNUSED) {
@@ -1195,17 +1193,14 @@ static void store_pending_mod_bind(struct bt_mesh_model *mod, bool vnd)
 		}
 	}
 
-	if (count) {
-		val = keys;
-		len = count * sizeof(keys[0]);
-	} else {
-		val = NULL;
-		len = 0;
-	}
-
 	encode_mod_path(mod, vnd, "bind", path, sizeof(path));
 
-	err = settings_save_one(path, val, len);
+	if (count) {
+		err = settings_save_one(path, keys, count * sizeof(keys[0]));
+	} else {
+		err = settings_delete(path);
+	}
+
 	if (err) {
 		BT_ERR("Failed to store %s value", log_strdup(path));
 	} else {
@@ -1218,8 +1213,6 @@ static void store_pending_mod_sub(struct bt_mesh_model *mod, bool vnd)
 	u16_t groups[CONFIG_BT_MESH_MODEL_GROUP_COUNT];
 	char path[20];
 	int i, count, err;
-	size_t len;
-	void *val;
 
 	for (i = 0, count = 0; i < ARRAY_SIZE(mod->groups); i++) {
 		if (mod->groups[i] != BT_MESH_ADDR_UNASSIGNED) {
@@ -1227,17 +1220,15 @@ static void store_pending_mod_sub(struct bt_mesh_model *mod, bool vnd)
 		}
 	}
 
-	if (count) {
-		val = groups;
-		len = count * sizeof(groups[0]);
-	} else {
-		val = NULL;
-		len = 0;
-	}
-
 	encode_mod_path(mod, vnd, "sub", path, sizeof(path));
 
-	err = settings_save_one(path, val, len);
+	if (count) {
+		err = settings_save_one(path, groups,
+					count * sizeof(groups[0]));
+	} else {
+		err = settings_delete(path);
+	}
+
 	if (err) {
 		BT_ERR("Failed to store %s value", log_strdup(path));
 	} else {
@@ -1249,13 +1240,12 @@ static void store_pending_mod_pub(struct bt_mesh_model *mod, bool vnd)
 {
 	struct mod_pub_val pub;
 	char path[20];
-	void *val;
 	int err;
-	size_t len;
+
+	encode_mod_path(mod, vnd, "pub", path, sizeof(path));
 
 	if (!mod->pub || mod->pub->addr == BT_MESH_ADDR_UNASSIGNED) {
-		val = NULL;
-		len = 0;
+		err = settings_delete(path);
 	} else {
 		pub.addr = mod->pub->addr;
 		pub.key = mod->pub->key;
@@ -1265,13 +1255,9 @@ static void store_pending_mod_pub(struct bt_mesh_model *mod, bool vnd)
 		pub.period_div = mod->pub->period_div;
 		pub.cred = mod->pub->cred;
 
-		val = &pub;
-		len = sizeof(pub);
+		err = settings_save_one(path, &pub, sizeof(pub));
 	}
 
-	encode_mod_path(mod, vnd, "pub", path, sizeof(path));
-
-	err = settings_save_one(path, val, len);
 	if (err) {
 		BT_ERR("Failed to store %s value", log_strdup(path));
 	} else {
