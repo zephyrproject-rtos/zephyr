@@ -261,7 +261,6 @@ void z_check_stack_sentinel(void)
 }
 #endif
 
-#ifdef CONFIG_MULTITHREADING
 void z_impl_k_thread_start(struct k_thread *thread)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock); /* protect kernel queues */
@@ -279,9 +278,7 @@ void z_impl_k_thread_start(struct k_thread *thread)
 #ifdef CONFIG_USERSPACE
 Z_SYSCALL_HANDLER1_SIMPLE_VOID(k_thread_start, K_OBJ_THREAD, struct k_thread *);
 #endif
-#endif
 
-#ifdef CONFIG_MULTITHREADING
 static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 {
 #ifdef CONFIG_SYS_CLOCK_EXISTS
@@ -297,7 +294,6 @@ static void schedule_new_thread(struct k_thread *thread, s32_t delay)
 	k_thread_start(thread);
 #endif
 }
-#endif
 
 #if !CONFIG_STACK_POINTER_RANDOM
 static inline size_t adjust_stack_size(size_t stack_size)
@@ -424,7 +420,6 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	sys_trace_thread_create(new_thread);
 }
 
-#ifdef CONFIG_MULTITHREADING
 k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			      k_thread_stack_t *stack,
 			      size_t stack_size, k_thread_entry_t entry,
@@ -518,7 +513,6 @@ Z_SYSCALL_HANDLER(k_thread_create,
 	return new_thread_p;
 }
 #endif /* CONFIG_USERSPACE */
-#endif /* CONFIG_MULTITHREADING */
 
 void z_thread_single_suspend(struct k_thread *thread)
 {
