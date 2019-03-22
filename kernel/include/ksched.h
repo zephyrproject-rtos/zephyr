@@ -12,13 +12,16 @@
 #include <tracing.h>
 #include <stdbool.h>
 
+BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO
+	     >= K_HIGHEST_APPLICATION_THREAD_PRIO);
+
 #ifdef CONFIG_MULTITHREADING
-#define Z_VALID_PRIO(prio, entry_point) \
+#define Z_VALID_PRIO(prio, entry_point)				     \
 	(((prio) == K_IDLE_PRIO && z_is_idle_thread(entry_point)) || \
-		 (z_is_prio_higher_or_equal((prio), \
-			K_LOWEST_APPLICATION_THREAD_PRIO) && \
-		  z_is_prio_lower_or_equal((prio), \
-			K_HIGHEST_APPLICATION_THREAD_PRIO)))
+	 ((K_LOWEST_APPLICATION_THREAD_PRIO			     \
+	   >= K_HIGHEST_APPLICATION_THREAD_PRIO)		     \
+	  && (prio) >= K_HIGHEST_APPLICATION_THREAD_PRIO	     \
+	  && (prio) <= K_LOWEST_APPLICATION_THREAD_PRIO))
 
 #define Z_ASSERT_VALID_PRIO(prio, entry_point) do { \
 	__ASSERT(Z_VALID_PRIO((prio), (entry_point)), \
