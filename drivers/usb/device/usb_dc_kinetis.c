@@ -256,6 +256,11 @@ int usb_dc_detach(void)
 int usb_dc_set_address(const u8_t addr)
 {
 	LOG_DBG("");
+
+	if (!dev_data.attached) {
+		return -EINVAL;
+	}
+
 	/*
 	 * The device stack tries to set the address before
 	 * sending the ACK with ZLP, which is totally stupid,
