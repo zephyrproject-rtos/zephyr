@@ -38,7 +38,7 @@ static void uart_rx_handle(const struct shell_uart *sh_uart)
 		len = ring_buf_put_claim(sh_uart->rx_ringbuf, &data,
 					 sh_uart->rx_ringbuf->size);
 
-		if (len) {
+		if (len > 0) {
 			rd_len = uart_fifo_read(sh_uart->ctrl_blk->dev,
 						data, len);
 #ifdef CONFIG_MCUMGR_SMP_SHELL
@@ -61,11 +61,14 @@ static void uart_rx_handle(const struct shell_uart *sh_uart)
 				}
 			}
 #else
-			if (rd_len) {
+			if (rd_len > 0) {
 				new_data = true;
 			}
 #endif /* CONFIG_MCUMGR_SMP_SHELL */
-			ring_buf_put_finish(sh_uart->rx_ringbuf, rd_len);
+			int err = ring_buf_put_finish(sh_uart->rx_ringbuf,
+						      rd_len);
+			(void)err;
+			__ASSERT_NO_MSG(err == 0);
 		} else {
 			u8_t dummy;
 
