@@ -477,7 +477,7 @@ static void dma_rx_callback(void *arg, u32_t channel, int status)
 	void *mblk_tmp;
 	int ret;
 
-	if (status != 0) {
+	if (status < 0) {
 		ret = -EIO;
 		stream->state = I2S_STATE_ERROR;
 		goto rx_disable;
@@ -543,7 +543,7 @@ static void dma_tx_callback(void *arg, u32_t channel, int status)
 	size_t mem_block_size;
 	int ret;
 
-	if (status != 0) {
+	if (status < 0) {
 		ret = -EIO;
 		stream->state = I2S_STATE_ERROR;
 		goto tx_disable;
