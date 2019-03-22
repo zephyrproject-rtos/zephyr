@@ -390,6 +390,11 @@ static void check_wokeup_threads(int tnum)
 {
 	int threads_woke_up = 0, i;
 
+	/* k_wakeup() isn't synchronous, give the other CPU time to
+	 * schedule them
+	 */
+	k_busy_wait(200000);
+
 	for (i = 0; i < tnum; i++) {
 		if (tinfo[i].executed == 1 && threads_woke_up <= tnum) {
 			threads_woke_up++;
