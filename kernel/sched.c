@@ -423,6 +423,7 @@ void z_thread_timeout(struct _timeout *to)
 		z_unpend_thread_no_timeout(th);
 	}
 	z_mark_thread_as_started(th);
+	z_mark_thread_as_not_suspended(th);
 	z_ready_thread(th);
 }
 #endif
@@ -944,8 +945,11 @@ s32_t z_impl_k_sleep(s32_t duration)
 #endif
 	z_remove_thread_from_ready_q(_current);
 	z_add_thread_timeout(_current, ticks);
+	z_mark_thread_as_suspended(_current);
 
 	(void)z_swap(&local_lock, key);
+
+	__ASSERT(!z_is_thread_state_set(_current, _THREAD_SUSPENDED), "");
 
 	ticks = expected_wakeup_time - z_tick_get_32();
 	if (ticks > 0) {
@@ -979,6 +983,7 @@ void z_impl_k_wakeup(k_tid_t thread)
 		return;
 	}
 
+	z_mark_thread_as_not_suspended(thread);
 	z_ready_thread(thread);
 
 	if (!z_is_in_isr()) {
