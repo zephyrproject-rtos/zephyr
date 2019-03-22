@@ -552,6 +552,11 @@ static void receive_cb(struct net_context *ctx,
 	}
 
 	tmp = pkt->cursor.buf;
+	if (!tmp) {
+		net_pkt_unref(pkt);
+		return;
+	}
+
 	pos = pkt->cursor.pos - tmp->data;
 
 	while (tmp) {
