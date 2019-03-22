@@ -4,3 +4,4 @@ tests:
   sample.usb.loopback:
     depends_on: usb_device
     tags: usb
+    harness: button
