@@ -155,6 +155,10 @@ int settings_save_one(const char *name, void *value, size_t val_len)
 		return -ENOENT;
 	}
 
+	if (val_len > 0 && value == NULL) {
+		return -EINVAL;
+	}
+
 	/*
 	 * Check if we're writing the same value again.
 	 */
