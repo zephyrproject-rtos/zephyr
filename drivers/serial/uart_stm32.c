@@ -265,11 +265,15 @@ static inline enum uart_config_stop_bits uart_stm32_ll2cfg_stopbits(u32_t sb)
 static inline u32_t uart_stm32_cfg2ll_databits(enum uart_config_data_bits db)
 {
 	switch (db) {
-/* Some MCU's don't support 7B datawidth */
+/* Some MCU's don't support 7B or 9B datawidth */
 #ifdef LL_USART_DATAWIDTH_7B
 	case UART_CFG_DATA_BITS_7:
 		return LL_USART_DATAWIDTH_7B;
 #endif	/* LL_USART_DATAWIDTH_7B */
+#ifdef LL_USART_DATAWIDTH_9B
+	case UART_CFG_DATA_BITS_9:
+		return LL_USART_DATAWIDTH_9B;
+#endif	/* LL_USART_DATAWIDTH_9B */
 	case UART_CFG_DATA_BITS_8:
 	default:
 		return LL_USART_DATAWIDTH_8B;
@@ -279,11 +283,15 @@ static inline u32_t uart_stm32_cfg2ll_databits(enum uart_config_data_bits db)
 static inline enum uart_config_data_bits uart_stm32_ll2cfg_databits(u32_t db)
 {
 	switch (db) {
-/* Some MCU's don't support 7B datawidth */
+/* Some MCU's don't support 7B or 9B datawidth */
 #ifdef LL_USART_DATAWIDTH_7B
 	case LL_USART_DATAWIDTH_7B:
 		return UART_CFG_DATA_BITS_7;
 #endif	/* LL_USART_DATAWIDTH_7B */
+#ifdef LL_USART_DATAWIDTH_9B
+	case LL_USART_DATAWIDTH_9B:
+		return UART_CFG_DATA_BITS_9;
+#endif	/* LL_USART_DATAWIDTH_9B */
 	case LL_USART_DATAWIDTH_8B:
 	default:
 		return UART_CFG_DATA_BITS_8;
@@ -360,12 +368,15 @@ static int uart_stm32_configure(struct device *dev,
 	}
 #endif
 
-	/* Driver doesn't support 5 or 6 databits and potentially 7 */
+	/* Driver doesn't support 5 or 6 databits and potentially 7 or 9 */
 	if ((UART_CFG_DATA_BITS_5 == cfg->data_bits) ||
 	    (UART_CFG_DATA_BITS_6 == cfg->data_bits)
 #ifndef LL_USART_DATAWIDTH_7B
 	    || (UART_CFG_DATA_BITS_7 == cfg->data_bits)
 #endif /* LL_USART_DATAWIDTH_7B */
+#ifndef LL_USART_DATAWIDTH_9B
+	    || (UART_CFG_DATA_BITS_9 == cfg->data_bits)
+#endif /* LL_USART_DATAWIDTH_9B */
 		) {
 		return -ENOTSUP;
 	}
