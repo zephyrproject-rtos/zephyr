@@ -71,7 +71,7 @@ class SignedOffBy(CommitRule):
         flags |= re.IGNORECASE
         for line in commit.message.body:
             if line.lower().startswith("signed-off-by"):
-                if not re.search('(^)Signed-off-by: ([-\'\w.]+) ([-\'\w.]+) (.*)', line, flags=flags):
+                if not re.search(r"(^)Signed-off-by: ([-'\w.]+) ([-'\w.]+) (.*)", line, flags=flags):
                     return [RuleViolation(self.id, "Signed-off-by: must have a full name", line_nr=1)]
                 else:
                     return
@@ -111,7 +111,7 @@ class MaxLineLengthExceptions(LineRule):
 
     def validate(self, line, _commit):
         max_length = self.options['line-length'].value
-        urls = re.findall('http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', line)
+        urls = re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', line)
         if line.startswith('Signed-off-by'):
             return
 
