@@ -5,6 +5,7 @@
 
 menuconfig SPI_SAM
 	bool "Atmel SAM series SPI driver"
+	default y
 	depends on SOC_FAMILY_SAM
 	help
 	  Enable support for the SAM SPI driver.

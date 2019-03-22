@@ -5,6 +5,7 @@
 
 menuconfig GPIO_SAM0
 	bool "Atmel SAM0 GPIO (PORT) driver"
+	default y
 	depends on SOC_FAMILY_SAM0
 	select HAS_DTS_GPIO
 	help
