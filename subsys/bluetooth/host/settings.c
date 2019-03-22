@@ -180,12 +180,6 @@ static int set(int argc, char **argv, void *value_ctx)
 	return 0;
 }
 
-#if defined(CONFIG_BT_PRIVACY)
-#define ID_SIZE_MAX sizeof(bt_dev.irk)
-#else
-#define ID_SIZE_MAX sizeof(bt_dev.id_addr)
-#endif
-
 #define ID_DATA_LEN(array) (bt_dev.id_count * sizeof(array[0]))
 
 static void save_id(struct k_work *work)
