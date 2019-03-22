@@ -318,15 +318,30 @@ int bt_mesh_scan_enable(void)
 			.filter_dup = BT_HCI_LE_SCAN_FILTER_DUP_DISABLE,
 			.interval   = MESH_SCAN_INTERVAL,
 			.window     = MESH_SCAN_WINDOW };
+	int err;
 
 	BT_DBG("");
 
-	return bt_le_scan_start(&scan_param, bt_mesh_scan_cb);
+	err = bt_le_scan_start(&scan_param, bt_mesh_scan_cb);
+	if (err && err != -EALREADY) {
+		BT_ERR("starting scan failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
 }
 
 int bt_mesh_scan_disable(void)
 {
+	int err;
+
 	BT_DBG("");
 
-	return bt_le_scan_stop();
+	err = bt_le_scan_stop();
+	if (err && err != -EALREADY) {
+		BT_ERR("stopping scan failed (err %d)", err);
+		return err;
+	}
+
+	return 0;
 }
