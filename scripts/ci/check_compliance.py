@@ -430,7 +430,7 @@ class Codeowners(ComplianceTest):
         with open(codeowners, "r") as codeo:
             for line in codeo.readlines():
                 if not line.startswith("#") and line != "\n":
-                    match = re.match("([^\s]+)\s+(.*)", line)
+                    match = re.match(r"([^\s]+)\s+(.*)", line)
                     if match:
                         add_base = False
                         path = match.group(1)
@@ -633,14 +633,14 @@ class Identity(ComplianceTest):
             sha = ""
             parsed_addr = None
             for line in commit.split("\n"):
-                match = re.search("^commit\s([^\s]*)", line)
+                match = re.search(r"^commit\s([^\s]*)", line)
                 if match:
                     sha = match.group(1)
-                match = re.search("^Author:\s(.*)", line)
+                match = re.search(r"^Author:\s(.*)", line)
                 if match:
                     author = match.group(1)
                     parsed_addr = parseaddr(author)
-                match = re.search("signed-off-by:\s(.*)", line, re.IGNORECASE)
+                match = re.search(r"signed-off-by:\s(.*)", line, re.IGNORECASE)
                 if match:
                     signed.append(match.group(1))
 
