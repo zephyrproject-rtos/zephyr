@@ -112,9 +112,8 @@ static int set(int argc, char **argv, void *value_ctx)
 			return 0;
 		}
 
-		len = sizeof(bt_dev.id_addr);
-
-		len = settings_val_read_cb(value_ctx, &bt_dev.id_addr, len);
+		len = settings_val_read_cb(value_ctx, &bt_dev.id_addr,
+					   sizeof(bt_dev.id_addr));
 
 		if (len < sizeof(bt_dev.id_addr[0])) {
 			if (len < 0) {
@@ -133,7 +132,7 @@ static int set(int argc, char **argv, void *value_ctx)
 
 			bt_dev.id_count = len / sizeof(bt_dev.id_addr[0]);
 			for (i = 0; i < bt_dev.id_count; i++) {
-				BT_DBG("ID Addr %d %s", i,
+				BT_DBG("ID[%d] %s", i,
 				       bt_addr_le_str(&bt_dev.id_addr[i]));
 			}
 		}
@@ -170,7 +169,13 @@ static int set(int argc, char **argv, void *value_ctx)
 				(void)memset(bt_dev.irk, 0, sizeof(bt_dev.irk));
 			}
 		} else {
-			BT_DBG("IRK set to %s", bt_hex(bt_dev.irk[0], 16));
+			int i, count;
+
+			count = len / sizeof(bt_dev.irk[0]);
+			for (i = 0; i < count; i++) {
+				BT_DBG("IRK[%d] %s", i,
+				       bt_hex(bt_dev.irk[i], 16));
+			}
 		}
 
 		return 0;
@@ -184,16 +189,19 @@ static int set(int argc, char **argv, void *value_ctx)
 
 static void save_id(struct k_work *work)
 {
-	BT_DBG("Saving ID addr");
-	BT_HEXDUMP_DBG(&bt_dev.id_addr, ID_DATA_LEN(bt_dev.id_addr),
-		       "ID addr");
-	settings_save_one("bt/id", &bt_dev.id_addr,
-			  ID_DATA_LEN(bt_dev.id_addr));
+	int err;
+
+	err = settings_save_one("bt/id", &bt_dev.id_addr,
+				ID_DATA_LEN(bt_dev.id_addr));
+	if (err) {
+		BT_ERR("Failed to save ID (err %d)", err);
+	}
 
 #if defined(CONFIG_BT_PRIVACY)
-	BT_DBG("Saving IRK");
-	BT_HEXDUMP_DBG(bt_dev.irk, ID_DATA_LEN(bt_dev.irk), "IRK");
-	settings_save_one("bt/irk", bt_dev.irk, ID_DATA_LEN(bt_dev.irk));
+	err = settings_save_one("bt/irk", bt_dev.irk, ID_DATA_LEN(bt_dev.irk));
+	if (err) {
+		BT_ERR("Failed to save IRK (err %d)", err);
+	}
 #endif
 }
 
