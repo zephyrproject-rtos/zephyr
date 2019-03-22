@@ -4309,7 +4309,7 @@ static const char *ver_str(u8_t ver)
 	return "unknown";
 }
 
-void bt_dev_show_info(void)
+static void bt_dev_show_info(void)
 {
 	int i;
 
@@ -4329,7 +4329,7 @@ void bt_dev_show_info(void)
 		bt_dev.lmp_subversion);
 }
 #else
-void bt_dev_show_info(void)
+static inline void bt_dev_show_info(void)
 {
 }
 #endif /* CONFIG_BT_DEBUG */
@@ -4493,8 +4493,6 @@ static int hci_init(void)
 			BT_ERR("Unable to set identity address");
 			return err;
 		}
-
-		bt_dev_show_info();
 	}
 
 	return 0;
@@ -4614,6 +4612,17 @@ static int irk_init(void)
 }
 #endif /* CONFIG_BT_PRIVACY */
 
+void bt_finalize_init(void)
+{
+	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+
+	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
+		bt_le_scan_update(false);
+	}
+
+	bt_dev_show_info();
+}
+
 static int bt_init(void)
 {
 	int err;
@@ -4639,18 +4648,16 @@ static int bt_init(void)
 	k_delayed_work_init(&bt_dev.rpa_update, rpa_timeout);
 #endif
 
-	bt_monitor_send(BT_MONITOR_OPEN_INDEX, NULL, 0);
-	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
-		bt_le_scan_update(false);
-	}
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		if (!bt_dev.id_count) {
+			BT_WARN("No ID address. App must call settings_load()");
+			return 0;
+		}
 
-	if (bt_dev.id_count > 0) {
 		atomic_set_bit(bt_dev.flags, BT_DEV_PRESET_ID);
-	} else if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		BT_WARN("No ID address. Expecting one to come from storage.");
 	}
 
+	bt_finalize_init();
 	return 0;
 }
 
@@ -4752,6 +4759,8 @@ int bt_enable(bt_ready_cb_t cb)
 		BT_ERR("HCI driver open failed (%d)", err);
 		return err;
 	}
+
+	bt_monitor_send(BT_MONITOR_OPEN_INDEX, NULL, 0);
 
 	if (!cb) {
 		return bt_init();
