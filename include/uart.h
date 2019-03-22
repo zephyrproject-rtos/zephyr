@@ -270,6 +270,7 @@ enum uart_config_data_bits {
 	UART_CFG_DATA_BITS_6,
 	UART_CFG_DATA_BITS_7,
 	UART_CFG_DATA_BITS_8,
+	UART_CFG_DATA_BITS_9,
 };
 
 /**
