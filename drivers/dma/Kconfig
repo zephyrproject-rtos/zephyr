@@ -63,4 +63,6 @@ source "drivers/dma/Kconfig.cavs"
 
 source "drivers/dma/Kconfig.nios2_msgdma"
 
+source "drivers/dma/Kconfig.sam0"
+
 endif # DMA

@@ -1,0 +1,33 @@
+---
+title: Atmel DMA binding
+version: 0.1
+
+description: >
+    Binding for the Atmel SAM0 DMA controller.
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "atmel,sam0-dma"
+      generation: define
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+...
