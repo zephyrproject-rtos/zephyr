@@ -320,6 +320,7 @@ static void send_query(struct net_if *iface)
 {
 	struct net_pkt *pkt;
 	struct in6_addr dst;
+	int ret;
 
 	/* Sent to all MLDv2-capable routers */
 	net_ipv6_addr_create(&dst, 0xff02, 0, 0, 0, 0, 0, 0, 0x0016);
@@ -330,42 +331,58 @@ static void send_query(struct net_if *iface)
 	zassert_not_null(pkt, "Cannot allocate pkt");
 
 	net_pkt_set_ipv6_hop_limit(pkt, 1); /* RFC 3810 ch 7.4 */
-	net_ipv6_create(pkt, &peer_addr, &dst);
+	ret = net_ipv6_create(pkt, &peer_addr, &dst);
+	zassert_false(ret, "Cannot create ipv6 pkt");
 
 	/* Add hop-by-hop option and router alert option, RFC 3810 ch 5. */
-	net_pkt_write_u8(pkt, IPPROTO_ICMPV6);
-	net_pkt_write_u8(pkt, 0); /* length (0 means 8 bytes) */
+	ret = net_pkt_write_u8(pkt, IPPROTO_ICMPV6);
+	zassert_false(ret, "Failed to write");
+	ret = net_pkt_write_u8(pkt, 0); /* length (0 means 8 bytes) */
+	zassert_false(ret, "Failed to write");
 
 #define ROUTER_ALERT_LEN 8
 
 	/* IPv6 router alert option is described in RFC 2711. */
-	net_pkt_write_be16(pkt, 0x0502); /* RFC 2711 ch 2.1 */
-	net_pkt_write_be16(pkt, 0); /* pkt contains MLD msg */
+	ret = net_pkt_write_be16(pkt, 0x0502); /* RFC 2711 ch 2.1 */
+	zassert_false(ret, "Failed to write");
+	ret = net_pkt_write_be16(pkt, 0); /* pkt contains MLD msg */
+	zassert_false(ret, "Failed to write");
 
-	net_pkt_write_u8(pkt, 1); /* padn */
-	net_pkt_write_u8(pkt, 0); /* padn len */
+	ret = net_pkt_write_u8(pkt, 1); /* padn */
+	zassert_false(ret, "Failed to write");
+	ret = net_pkt_write_u8(pkt, 0); /* padn len */
+	zassert_false(ret, "Failed to write");
 
 	net_pkt_set_ipv6_ext_len(pkt, ROUTER_ALERT_LEN);
 
 	/* ICMPv6 header */
-	net_icmpv6_create(pkt, NET_ICMPV6_MLD_QUERY, 0);
+	ret = net_icmpv6_create(pkt, NET_ICMPV6_MLD_QUERY, 0);
+	zassert_false(ret, "Cannot create icmpv6 pkt");
 
-	net_pkt_write_be16(pkt, 3); /* maximum response code */
-	net_pkt_write_be16(pkt, 0); /* reserved field */
+	ret = net_pkt_write_be16(pkt, 3); /* maximum response code */
+	zassert_false(ret, "Failed to write");
+	ret = net_pkt_write_be16(pkt, 0); /* reserved field */
+	zassert_false(ret, "Failed to write");
 
 	net_pkt_set_ipv6_next_hdr(pkt, NET_IPV6_NEXTHDR_HBHO);
 
-	net_pkt_write_be16(pkt, 0); /* Resv, S, QRV and QQIC */
-	net_pkt_write_be16(pkt, 0); /* number of addresses */
+	ret = net_pkt_write_be16(pkt, 0); /* Resv, S, QRV and QQIC */
+	zassert_false(ret, "Failed to write");
+	ret = net_pkt_write_be16(pkt, 0); /* number of addresses */
+	zassert_false(ret, "Failed to write");
 
-	net_pkt_write(pkt, net_ipv6_unspecified_address(),
-		      sizeof(struct in6_addr));
+	ret = net_pkt_write(pkt, net_ipv6_unspecified_address(),
+			    sizeof(struct in6_addr));
+	zassert_false(ret, "Failed to write");
 
 	net_pkt_cursor_init(pkt);
-	net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
+	ret = net_ipv6_finalize(pkt, IPPROTO_ICMPV6);
+	zassert_false(ret, "Failed to finalize ipv6 packet");
 
 	net_pkt_cursor_init(pkt);
-	net_recv_data(iface, pkt);
+
+	ret = net_recv_data(iface, pkt);
+	zassert_false(ret, "Failed to receive data");
 }
 
 /* We are not really interested to parse the query at this point */
