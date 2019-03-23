@@ -40,7 +40,7 @@ On the Zephyr Build System
 --------------------------
 
 #. The build process for the ACRN UOS target is similar to other boards. We
-will build the :ref:`hello_world` sample for ACRN with:
+   will build the :ref:`hello_world` sample for ACRN with:
 
    .. zephyr-app-commands::
       :zephyr-app: samples/hello_world
