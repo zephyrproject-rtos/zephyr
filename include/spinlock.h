@@ -32,6 +32,7 @@ static inline void z_arch_irq_unlock(int key)
  * fallback.  There is a DT_FLASH_SIZE parameter too, but that seems
  * even more poorly supported.
  */
+#ifndef CONFIG_SMP
 #if (CONFIG_FLASH_SIZE == 0) || (CONFIG_FLASH_SIZE > 32)
 #if defined(CONFIG_ASSERT) && (CONFIG_MP_NUM_CPUS < 4)
 #include <misc/__assert.h>
@@ -40,6 +41,7 @@ int z_spin_lock_valid(struct k_spinlock *l);
 int z_spin_unlock_valid(struct k_spinlock *l);
 void z_spin_lock_set_owner(struct k_spinlock *l);
 #define SPIN_VALIDATE
+#endif
 #endif
 #endif
 
