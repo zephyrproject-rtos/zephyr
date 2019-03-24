@@ -246,6 +246,7 @@
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
 /samples/display/                         @vanwinkeljan
 /samples/drivers/CAN/                     @alexanderwachter
+/samples/drivers/ht16k33/                 @henrikbrixandersen
 /samples/gui/                             @vanwinkeljan
 /samples/net/                             @jukkar @tbursztyka @pfalcon
 /samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
