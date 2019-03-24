@@ -9,5 +9,6 @@ menuconfig UART_SAM0
 	depends on SOC_FAMILY_SAM0
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select DMA if UART_ASYNC_API
 	help
 	  This option enables the SERCOMx USART driver for Atmel SAM0 MCUs.
