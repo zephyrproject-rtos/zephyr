@@ -144,12 +144,12 @@ building and running a sample:
      :zephyr-app: samples/bluetooth/<sample>
      :host-os: unix
      :board: native_posix
-     :goals: run
+     :goals: build
      :compact:
 
   And then run it with::
 
-     $ zephyr/zephyr.exe --bt-dev=hci0
+     $ sudo zephyr/zephyr.exe --bt-dev=hci0
 
 Using a Zephyr-based BLE Controller
 ===================================
