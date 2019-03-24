@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2019 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	ht16k33@70 {
+		compatible = "holtek,ht16k33";
+		reg = <0x70>;
+		label = "HT16K33";
+                /* Uncomment to use IRQ instead of polling: */
+		/* irq-gpios = <&gpio1 8 (GPIO_PUD_PULL_UP | GPIO_INT_ACTIVE_LOW)>; */
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		ks@0 {
+			compatible = "holtek,ht16k33-keyscan";
+			reg = <0x0>;
+			label = "KS0";
+		};
+		ks@1 {
+			compatible = "holtek,ht16k33-keyscan";
+			reg = <0x1>;
+			label = "KS1";
+		};
+		ks@2 {
+			compatible = "holtek,ht16k33-keyscan";
+			reg = <0x2>;
+			label = "KS2";
+		};
+	};
+};
