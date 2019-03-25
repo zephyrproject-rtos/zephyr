@@ -67,7 +67,7 @@ def create_modules_file(modules, modules_file):
                     if os.path.exists(kconfig_file):
                         km.write("osource \"{}\"\n".format(kconfig_file))
             elif os.path.exists(kconfig_file):
-                    km.write("osource \"{}\"\n".format(kconfig_file))
+                km.write("osource \"{}\"\n".format(kconfig_file))
 
 
 class MyCase(TestCase):
