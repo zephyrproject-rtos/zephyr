@@ -29,4 +29,10 @@ properties:
       category: required
       description: required interrupts
       generation: define
+
+    pcp:
+      type: int
+      category: optional
+      description: custom clock (PRV_CLOCK_PARAMS, if supported)
+      generation: define
 ...

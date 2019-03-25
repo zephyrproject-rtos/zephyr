@@ -40,6 +40,15 @@
 
 #include <drivers/serial/uart_ns16550.h>
 
+/* If PCP is set for any of the ports, enable support. */
+
+#if defined(DT_UART_NS16550_PORT_0_PCP) || \
+    defined(DT_UART_NS16550_PORT_1_PCP) || \
+    defined(DT_UART_NS16550_PORT_2_PCP) || \
+    defined(DT_UART_NS16550_PORT_3_PCP)
+#define UART_NS16550_PCP
+#endif
+
 /* register definitions */
 
 #define REG_THR 0x00  /* Transmitter holding reg.       */
@@ -227,7 +236,7 @@ struct uart_ns16550_device_config {
 	uart_irq_config_func_t	irq_config_func;
 #endif
 
-#ifdef CONFIG_UART_NS16550_PCP
+#ifdef UART_NS16550_PCP
 	u32_t pcp;
 #endif
 };
@@ -265,7 +274,7 @@ static inline void set_dlf(struct device *dev, u32_t val)
 }
 #endif
 
-#ifdef CONFIG_UART_NS16550_PCP
+#ifdef UART_NS16550_PCP
 static inline void set_pcp(struct device *dev)
 {
 	const struct uart_ns16550_device_config * const dev_cfg = DEV_CFG(dev);
@@ -368,7 +377,7 @@ static int uart_ns16550_init(struct device *dev)
 	set_dlf(dev, dev_data->dlf);
 #endif
 
-#ifdef CONFIG_UART_NS16550_PCP
+#ifdef UART_NS16550_PCP
 	set_pcp(dev);
 #endif
 
@@ -799,8 +808,8 @@ static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_0 = {
 	.irq_config_func = irq_config_func_0,
 #endif
 
-#ifdef CONFIG_UART_NS16550_PORT_0_PCP
-	.pcp = CONFIG_UART_NS16550_PORT_0_PCP
+#ifdef DT_UART_NS16550_PORT_0_PCP
+	.pcp = DT_UART_NS16550_PORT_0_PCP
 #endif
 };
 
@@ -857,8 +866,8 @@ static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_1 = {
 	.irq_config_func = irq_config_func_1,
 #endif
 
-#ifdef CONFIG_UART_NS16550_PORT_1_PCP
-	.pcp = CONFIG_UART_NS16550_PORT_1_PCP
+#ifdef DT_UART_NS16550_PORT_1_PCP
+	.pcp = DT_UART_NS16550_PORT_1_PCP
 #endif
 };
 
@@ -915,8 +924,8 @@ static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_2 = {
 	.irq_config_func = irq_config_func_2,
 #endif
 
-#ifdef CONFIG_UART_NS16550_PORT_2_PCP
-	.pcp = CONFIG_UART_NS16550_PORT_2_PCP
+#ifdef DT_UART_NS16550_PORT_2_PCP
+	.pcp = DT_UART_NS16550_PORT_2_PCP
 #endif
 };
 
@@ -973,8 +982,8 @@ static const struct uart_ns16550_device_config uart_ns16550_dev_cfg_3 = {
 	.irq_config_func = irq_config_func_3,
 #endif
 
-#ifdef CONFIG_UART_NS16550_PORT_3_PCP
-	.pcp = CONFIG_UART_NS16550_PORT_3_PCP
+#ifdef DT_UART_NS16550_PORT_3_PCP
+	.pcp = DT_UART_NS16550_PORT_3_PCP
 #endif
 };
 
