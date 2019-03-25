@@ -782,7 +782,14 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 			u32_t *read_bytes)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
-	u32_t read_count = ep_state->read_count;
+	u32_t read_count;
+
+	if (!ep_state) {
+		LOG_ERR("Invalid Endpoint %x", ep);
+		return -EINVAL;
+	}
+
+	read_count = ep_state->read_count;
 
 	LOG_DBG("ep 0x%02x, %u bytes, %u+%u, %p", ep, max_data_len,
 		ep_state->read_offset, read_count, data);
