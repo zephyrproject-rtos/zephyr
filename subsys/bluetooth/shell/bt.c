@@ -1340,7 +1340,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(bt_cmds,
 #if defined(CONFIG_BT_OBSERVER)
 	SHELL_CMD_ARG(scan, NULL,
 		      "<value: on, passive, off> <dup filter: dups, nodups>",
-		      cmd_scan, 3, 0),
+		      cmd_scan, 2, 1),
 #endif /* CONFIG_BT_OBSERVER */
 #if defined(CONFIG_BT_BROADCASTER)
 	SHELL_CMD_ARG(advertise, NULL,
