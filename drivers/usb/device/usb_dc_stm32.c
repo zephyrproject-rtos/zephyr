@@ -855,6 +855,20 @@ int usb_dc_ep_mps(const u8_t ep)
 	return ep_state->ep_mps;
 }
 
+int usb_dc_detach(void)
+{
+	LOG_ERR("Not implemented");
+
+	return 0;
+}
+
+int usb_dc_reset(void)
+{
+	LOG_ERR("Not implemented");
+
+	return 0;
+}
+
 /* Callbacks from the STM32 Cube HAL code */
 
 void HAL_PCD_ResetCallback(PCD_HandleTypeDef *hpcd)
