@@ -129,6 +129,14 @@
 			interrupts = <37 0>;
 			status = "disabled";
 			label = "UART_1";
+			dma = <&dma2 4 7 STM32_DMA_MEMORY_TO_PERIPH
+			       STM32_DMA_PRIORITY_LOW 0 0 4 4
+			       STM32_DMA_SRC_INCREMENT
+			       STM32_DMA_DST_NO_INCREMENT
+			       &dma2 4 5 STM32_DMA_PERIPH_TO_MEMORY
+			       STM32_DMA_PRIORITY_LOW 0 0 4 4
+			       STM32_DMA_SRC_NO_INCREMENT
+			       STM32_DMA_DST_INCREMENT>;
 		};
 
 		usart2: serial@40004400 {
@@ -138,6 +146,15 @@
 			interrupts = <38 0>;
 			status = "disabled";
 			label = "UART_2";
+			dma = <&dma1 4 6 STM32_DMA_MEMORY_TO_PERIPH
+			       STM32_DMA_PRIORITY_LOW 0 0 4 4
+			       STM32_DMA_SRC_INCREMENT
+			       STM32_DMA_DST_NO_INCREMENT
+			       &dma1 4 5 STM32_DMA_PERIPH_TO_MEMORY
+			       STM32_DMA_PRIORITY_LOW 0 0 4 4
+			       STM32_DMA_SRC_NO_INCREMENT
+			       STM32_DMA_DST_INCREMENT>;
+
 		};
 
 		usart6: serial@40011400 {
@@ -147,6 +164,14 @@
 			interrupts = <71 0>;
 			status = "disabled";
 			label = "UART_6";
+			dma = <&dma2 5 6 STM32_DMA_MEMORY_TO_PERIPH
+			       STM32_DMA_PRIORITY_LOW 0 0 4 4
+			       STM32_DMA_SRC_INCREMENT
+			       STM32_DMA_DST_NO_INCREMENT
+			       &dma2 5 2 STM32_DMA_PERIPH_TO_MEMORY
+			       STM32_DMA_PRIORITY_LOW 0 0 4 4
+			       STM32_DMA_SRC_NO_INCREMENT
+			       STM32_DMA_DST_INCREMENT>;
 		};
 
 		i2c1: i2c@40005400 {

@@ -23,4 +23,10 @@ properties:
       category: required
       description: required interrupts
       generation: define
+
+    dma:
+      type: array
+      category: optional
+      description: DMA config(slot, tx, rx)  for UART
+      generation: define
 ...

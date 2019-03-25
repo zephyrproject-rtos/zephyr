@@ -37,6 +37,7 @@
 			interrupts = <82 0>;
 			status = "disabled";
 			label = "UART_7";
+			dma-channels = <5 1 3>;
 		};
 
 		uart8: serial@40007c00 {
@@ -46,6 +47,7 @@
 			interrupts = <83 0>;
 			status = "disabled";
 			label = "UART_8";
+			dma-channels = <5 0 6>;
 		};
 
 		spi4: spi@40013400 {
