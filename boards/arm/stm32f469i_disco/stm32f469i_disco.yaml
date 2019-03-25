@@ -6,6 +6,8 @@ toolchain:
   - zephyr
   - gnuarmemb
   - xtools
+ram: 320
+flash: 2048
 supported:
   - arduino_i2c
   - rtc
