@@ -73,7 +73,7 @@ u8_t *_k_priv_stack_find(void *obj)
 """
 
 
-def write_gperf_table(fp, eh, objs, static_begin, static_end):
+def write_gperf_table(fp, eh, objs):
     fp.write(header)
 
     # priv stack declarations
@@ -134,8 +134,7 @@ def main():
         sys.exit(1)
 
     with open(args.output, "w") as fp:
-        write_gperf_table(fp, eh, objs, syms["_static_kernel_objects_begin"],
-                          syms["_static_kernel_objects_end"])
+        write_gperf_table(fp, eh, objs)
 
 
 if __name__ == "__main__":
