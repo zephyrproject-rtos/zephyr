@@ -416,7 +416,7 @@ static int spi_sam0_transceive_async(struct device *dev,
 				     struct k_poll_signal *async)
 {
 	/* TODO: actually implement asyc transceive */
-	return spi_sam0_transceive(dev, config, tx_bufs, rx_bufs);
+	return -ENOTSUP;
 }
 #endif /* CONFIG_SPI_ASYNC */
 
