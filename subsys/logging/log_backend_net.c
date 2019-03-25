@@ -236,7 +236,7 @@ const struct log_backend_api log_backend_net_api = {
 	.put_sync_string = IS_ENABLED(CONFIG_LOG_IMMEDIATE) ?
 							sync_string : NULL,
 	/* Currently we do not send hexdumps over network to remote server
-	 * in CONFIG_LOG_IMMEDIATE_MODE. This is just to save resources,
+	 * in CONFIG_LOG_IMMEDIATE mode. This is just to save resources,
 	 * this can be revisited if needed.
 	 */
 	.put_sync_hexdump = NULL,
