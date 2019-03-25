@@ -22,7 +22,7 @@
 
 LOG_MODULE_REGISTER(counter_rtc_stm32, CONFIG_COUNTER_LOG_LEVEL);
 
-#define T_TIME_OFFSET 2088656896 /* RTC Date reset value: Jan, 1st, xx00 */
+#define T_TIME_OFFSET 946684800
 
 #if defined(CONFIG_SOC_SERIES_STM32L4X)
 #define RTC_EXTI_LINE	LL_EXTI_LINE_18
@@ -87,8 +87,12 @@ static u32_t rtc_stm32_read(struct device *dev)
 	rtc_date = LL_RTC_DATE_Get(RTC);
 
 	/* Convert calendar datetime to UNIX timestamp */
-	now.tm_year = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_YEAR(rtc_date));
-	now.tm_mon = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MONTH(rtc_date));
+	/* RTC start time: 1st, Jan, 2000 */
+	/* time_t start:   1st, Jan, 1900 */
+	now.tm_year = 100 +
+			__LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_YEAR(rtc_date));
+	/* tm_mon allowed values are 0-11 */
+	now.tm_mon = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_MONTH(rtc_date)) - 1;
 	now.tm_mday = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_DAY(rtc_date));
 
 	now.tm_hour = __LL_RTC_CONVERT_BCD2BIN(__LL_RTC_GET_HOUR(rtc_time));
