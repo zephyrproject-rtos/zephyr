@@ -1427,4 +1427,4 @@ static int cmd_bt(const struct shell *shell, size_t argc, char **argv)
 	return -EINVAL;
 }
 
-SHELL_CMD_ARG_REGISTER(bt, &bt_cmds, "Bluetooth shell commands", cmd_bt, 1, 1);
+SHELL_CMD_REGISTER(bt, &bt_cmds, "Bluetooth shell commands", cmd_bt);
