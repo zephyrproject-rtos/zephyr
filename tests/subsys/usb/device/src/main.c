@@ -173,6 +173,16 @@ static void test_device_dc_api(void)
 		      "usb_dc_set_address(0x01) (not attached) failed");
 }
 
+static void test_device_dc_api_read(void)
+{
+	size_t read;
+	u8_t byte;
+
+	/* Read invalid EP */
+	zassert_not_equal(usb_read(0x20, &byte, sizeof(byte), &read),
+			  TC_PASS, "usb_read(INVALID)");
+}
+
 /*test case main entry*/
 void test_main(void)
 {
@@ -181,6 +191,7 @@ void test_main(void)
 			 ztest_unit_test(test_device_disable),
 			 ztest_unit_test(test_device_setup),
 			 ztest_unit_test(test_device_dc_api),
+			 ztest_unit_test(test_device_dc_api_read),
 			 ztest_unit_test(test_device_deconfig),
 			 ztest_unit_test(test_device_disable));
 
