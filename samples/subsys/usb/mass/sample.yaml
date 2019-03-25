@@ -13,6 +13,7 @@ tests:
       regex:
         - "The device is put in USB mass storage mode."
   sample.usb.mass_ram:
+    depends_on: usb_device gpio
     extra_args: OVERLAY_CONFIG="overlay-ram-disk.conf"
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
