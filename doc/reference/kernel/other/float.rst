@@ -8,7 +8,8 @@ configurations that support these registers.
 
 .. note::
     Floating point services are currently available only for boards
-    based on the ARM Cortex-M4 or the Intel x86 architectures. The
+    based on either ARM Cortex-M SoCs supporting the Floating Point Extension,
+    or the Intel x86 architecture. The
     services provided are architecture specific.
 
     The kernel does not support the use of floating point registers by ISRs.
@@ -45,8 +46,8 @@ by any thread. The floating point registers are left unchanged
 whenever a context switch occurs.
 
 .. note::
-    Incorrect operation may result if two or more threads use
-    floating point registers, as the kernel does not attempt to detect
+    The behavior is undefined, if two or more threads attempt to use
+    the floating point registers, as the kernel does not attempt to detect
     (or prevent) multiple threads from using these registers.
 
 Shared FP registers mode
@@ -68,7 +69,8 @@ by any thread, then saves and restores these registers during
 context switches to ensure the computations performed by each FPU user
 or SSE user are not impacted by the computations performed by the other users.
 
-On the ARM Cortex-M4 architecture the kernel treats *all* threads
+On the ARM Cortex-M architecture with the Floating Point Extension
+the kernel treats *all* threads
 as FPU users when shared FP registers mode is enabled. This means that the
 floating point registers are saved and restored during a context switch, even
 when the associated threads are not using them. Each thread must provide
