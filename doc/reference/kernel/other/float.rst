@@ -72,9 +72,12 @@ or SSE user are not impacted by the computations performed by the other users.
 On the ARM Cortex-M architecture with the Floating Point Extension
 the kernel treats *all* threads
 as FPU users when shared FP registers mode is enabled. This means that the
-floating point registers are saved and restored during a context switch, even
-when the associated threads are not using them. Each thread must provide
-an extra 132 bytes of stack space where these register values can be saved.
+floating point registers are saved and restored during each context switch,
+even when the associated threads are not using them. Each thread must provide
+an extra 72 bytes of stack space where these register values can be saved.
+Lazy Stacking is currently not supported in Zephyr applications on ARM
+Cortex-M architecture, and the feature is explicitly disabled during system
+boot.
 
 On the x86 architecture the kernel treats each thread as a non-user,
 FPU user or SSE user on a case-by-case basis. A "lazy save" algorithm is used
