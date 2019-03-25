@@ -263,7 +263,7 @@ class ZephyrAppCommandsDirective(Directive):
 
         return content
 
-    def _mkdir(self, mkdir, build_dir, host_os, skip_config, compact):
+    def _mkdir(self, mkdir, build_dir, host_os, skip_config):
         content = []
         if skip_config:
             content.append("# If you already made a build directory ({}) and ran cmake, just 'cd {}' instead.".format(build_dir, build_dir))  # noqa: E501
@@ -362,8 +362,7 @@ class ZephyrAppCommandsDirective(Directive):
                     prefix = '%ZEPHYR_BASE%\\' if zephyr_app else ''
                     backslashified = cd_to.replace('/', '\\')
                     content.append('cd {}{}'.format(prefix, backslashified))
-            content.extend(self._mkdir(mkdir, build_dir, host,
-                                       skip_config, compact))
+            content.extend(self._mkdir(mkdir, build_dir, host, skip_config))
             if not compact:
                 content.append('')
 
