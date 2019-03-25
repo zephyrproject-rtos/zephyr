@@ -121,9 +121,6 @@ Programming and Debugging
    Before using the kit the first time, you should update the J-Link firmware
    from `J-Link-Downloads`_
 
-Flashing
-========
-
 The EFR32-SLWSTK6061A includes an `J-Link`_ serial and debug adaptor built into the
 board. The adaptor provides:
 
@@ -132,27 +129,25 @@ board. The adaptor provides:
 - A physical UART connection which is relayed over interface USB Serial port.
 - An Ethernet connection to support remote debugging.
 
-Flashing an application to EFR32-SLWSTK6061A
---------------------------------------------
+It is compatible with the following host debug tools:
 
-The sample application :ref:`hello_world` is used for this example.
-Build the Zephyr kernel and application:
+- :ref:`openocd-debug-host-tools`
+- :ref:`jlink-debug-host-tools`
+
+OpenOCD is included in the Zephyr SDK. Refer to the links above for information
+on how to install required host debug tools if you are not using the Zephyr SDK.
+
+Flashing
+========
+
+Connect the EFR32-SLWSTK6061A board to your host computer using the USB port.
+
+Here is an example for the :ref:`hello_world` application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/hello_world
    :board: efr32_slwstk6061a
-   :goals: build
-
-Connect the EFR32-SLWSTK6061A to your host computer using the USB port and you
-should see a USB Serial Port. Use `J-Link`_ or Silicon Labs Simplicity Studio
-to flash the generated zephyr.bin. On a Linux host with Zephyr SDK installed you
-can run:
-
-.. code-block:: console
-
-   ninja flash
-
-The command is using `OpenOCD`_ runner.
+   :goals: flash
 
 Open a serial terminal (minicom, putty, etc.) with the following settings:
 
@@ -161,12 +156,11 @@ Open a serial terminal (minicom, putty, etc.) with the following settings:
 - Parity: None
 - Stop bits: 1
 
-Reset the board and you should be able to see on the corresponding Serial Port
-the following message:
+Reset the board and you should see the following message in the terminal:
 
 .. code-block:: console
 
-   Hello World! arm
+   Hello World! efr32_slwstk6061a
 
 
 .. _EFR32-SLWSTK6061A Website:
@@ -195,6 +189,3 @@ the following message:
 
 .. _J-Link-Downloads:
    https://www.segger.com/downloads/jlink
-
-.. _OpenOCD:
-   http://openocd.org/
