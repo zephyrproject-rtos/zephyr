@@ -6,7 +6,7 @@
 
 /**
  * @file
- * @brief Atmel SAMR21 MCU series initialization code
+ * @brief Atmel SAMD MCU series initialization code
  */
 
 #include <arch/cpu.h>
@@ -55,8 +55,13 @@ static void xosc32k_init(void)
 
 static void osc32k_init(void)
 {
+#ifdef FUSES_OSC32K_CAL_ADDR
 	u32_t fuse = *(u32_t *)FUSES_OSC32K_CAL_ADDR;
 	u32_t calib = (fuse & FUSES_OSC32K_CAL_Msk) >> FUSES_OSC32K_CAL_Pos;
+#else
+	u32_t fuse = *(u32_t *)FUSES_OSC32KCAL_ADDR;
+	u32_t calib = (fuse & FUSES_OSC32KCAL_Msk) >> FUSES_OSC32KCAL_Pos;
+#endif
 
 	SYSCTRL->OSC32K.reg = SYSCTRL_OSC32K_CALIB(calib) |
 			      SYSCTRL_OSC32K_STARTUP(0x6u) |
@@ -108,7 +113,9 @@ static void dfll_init(void)
 	}
 
 	SYSCTRL->DFLLCTRL.reg |= SYSCTRL_DFLLCTRL_MODE |
+#ifdef SYSCTRL_DFLLCTRL_WAITLOCK
 				 SYSCTRL_DFLLCTRL_WAITLOCK |
+#endif
 				 SYSCTRL_DFLLCTRL_QLDIS;
 	while (!SYSCTRL->PCLKSR.bit.DFLLRDY) {
 	}
@@ -126,7 +133,7 @@ static void dfll_init(void)
 static void osc8m_init(void)
 {
 	/* Turn off the prescaler */
-	SYSCTRL->OSC8M.bit.PRESC = SYSCTRL_OSC8M_PRESC_0_Val;
+	SYSCTRL->OSC8M.bit.PRESC = SYSCTRL_OSC8M_PRESC(0);
 	SYSCTRL->OSC8M.bit.ONDEMAND = 0;
 }
 
@@ -165,7 +172,7 @@ static void dividers_init(void)
 	/* TODO(mlhx): enable clock failure detection? */
 }
 
-static int atmel_samr_init(struct device *arg)
+static int atmel_samd_init(struct device *arg)
 {
 	u32_t key;
 
@@ -173,7 +180,7 @@ static int atmel_samr_init(struct device *arg)
 
 	key = irq_lock();
 
-	_ClearFaults();
+	z_clearfaults();
 
 	flash_waitstates_init();
 	osc8m_init();
@@ -194,4 +201,4 @@ static int atmel_samr_init(struct device *arg)
 	return 0;
 }
 
-SYS_INIT(atmel_samr_init, PRE_KERNEL_1, 0);
+SYS_INIT(atmel_samd_init, PRE_KERNEL_1, 0);
