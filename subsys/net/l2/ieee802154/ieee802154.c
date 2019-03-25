@@ -218,7 +218,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface,
 	pkt_hexdump(RX_PKT_TITLE " (with ll)", pkt, true);
 
 	hdr_len = (u8_t *)mpdu.payload - net_pkt_data(pkt);
-	net_buf_pull(pkt->buffer, hdr_len);
+	net_pkt_pull(pkt, hdr_len);
 
 	return ieee802154_manage_recv_packet(iface, pkt, hdr_len);
 

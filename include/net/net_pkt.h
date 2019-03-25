@@ -110,6 +110,8 @@ struct net_pkt {
 	sys_snode_t sent_list;
 #endif
 
+	u16_t length; /* length of data stored in buffer */
+
 	u8_t ip_hdr_len;	/* pre-filled in order to avoid func call */
 
 	u8_t overwrite  : 1;	/* Is packet content being overwritten? */
@@ -701,7 +703,7 @@ static inline void net_pkt_set_timestamp(struct net_pkt *pkt,
 
 static inline size_t net_pkt_get_len(struct net_pkt *pkt)
 {
-	return net_buf_frags_len(pkt->frags);
+	return pkt->length;
 }
 
 static inline u8_t *net_pkt_data(struct net_pkt *pkt)

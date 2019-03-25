@@ -200,7 +200,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 #endif
 	case NET_ETH_PTYPE_LLDP:
 #if defined(CONFIG_NET_LLDP)
-		net_buf_pull(pkt->frags, hdr_len);
+		net_pkt_pull(pkt, hdr_len);
 		return net_lldp_recv(iface, pkt);
 #else
 		NET_DBG("LLDP Rx agent not enabled");
@@ -257,7 +257,7 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 		goto drop;
 	}
 
-	net_buf_pull(pkt->frags, hdr_len);
+	net_pkt_pull(pkt, hdr_len);
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) && type == NET_ETH_PTYPE_IP &&
 	    ethernet_check_ipv4_bcast_addr(pkt, hdr) == NET_DROP) {

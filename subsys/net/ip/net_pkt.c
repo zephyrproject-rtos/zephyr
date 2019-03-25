@@ -1414,6 +1414,8 @@ void net_pkt_append_buffer(struct net_pkt *pkt, struct net_buf *buffer)
 	} else {
 		net_buf_frag_insert(net_buf_frag_last(pkt->buffer), buffer);
 	}
+
+	pkt->length += net_buf_frags_len(buffer);
 }
 
 void net_pkt_cursor_init(struct net_pkt *pkt)
@@ -1525,6 +1527,7 @@ static int net_pkt_cursor_operate(struct net_pkt *pkt,
 
 		if (write && !net_pkt_is_being_overwritten(pkt)) {
 			net_buf_add(c_op->buf, len);
+			pkt->length += len;
 		}
 
 		pkt_cursor_update(pkt, len, write);
@@ -1637,6 +1640,7 @@ int net_pkt_copy(struct net_pkt *pkt_dst,
 
 		if (!net_pkt_is_being_overwritten(pkt_dst)) {
 			net_buf_add(c_dst->buf, len);
+			pkt_dst->length += len;
 		}
 
 		pkt_cursor_update(pkt_dst, len, true);
@@ -1735,28 +1739,36 @@ size_t net_pkt_remaining_data(struct net_pkt *pkt)
 
 int net_pkt_update_length(struct net_pkt *pkt, size_t length)
 {
+	size_t len = length;
 	struct net_buf *buf;
 
 	for (buf = pkt->buffer; buf; buf = buf->frags) {
-		if (buf->len < length) {
-			length -= buf->len;
+		if (buf->len < len) {
+			len -= buf->len;
 		} else {
-			buf->len = length;
-			length = 0;
+			buf->len = len;
+			len = 0;
 		}
 	}
 
-	return !length ? 0 : -EINVAL;
+	if (len) {
+		return -EINVAL;
+	}
+
+	pkt->length -= length;
+
+	return 0;
 }
 
 int net_pkt_remove(struct net_pkt *pkt, size_t length)
 {
 	struct net_pkt_cursor *c_op = &pkt->cursor;
 	struct net_pkt_cursor backup;
+	size_t len = length;
 
 	net_pkt_cursor_backup(pkt, &backup);
 
-	while (length) {
+	while (len) {
 		u8_t left, rem;
 
 		pkt_cursor_advance(pkt, false);
@@ -1767,8 +1779,8 @@ int net_pkt_remove(struct net_pkt *pkt, size_t length)
 		}
 
 		rem = left;
-		if (rem > length) {
-			rem = length;
+		if (rem > len) {
+			rem = len;
 		}
 
 		c_op->buf->len -= rem;
@@ -1784,15 +1796,17 @@ int net_pkt_remove(struct net_pkt *pkt, size_t length)
 		 * that much sense. Let's see in future if it's worth do to it.
 		 */
 
-		length -= rem;
+		len -= rem;
 	}
 
 	net_pkt_cursor_restore(pkt, &backup);
 
-	if (length) {
-		NET_DBG("Still some length to go %zu", length);
+	if (len) {
+		NET_DBG("Still some length to go %zu", len);
 		return -ENOBUFS;
 	}
+
+	pkt->length -= length;
 
 	return 0;
 }
@@ -1801,6 +1815,9 @@ int net_pkt_pull(struct net_pkt *pkt, size_t length)
 {
 	if (pkt->buffer) {
 		net_buf_pull(pkt->buffer, length);
+
+		pkt->length -= length;
+
 		net_pkt_cursor_init(pkt);
 	}
 
