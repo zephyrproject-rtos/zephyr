@@ -622,8 +622,7 @@ static int cmd_scan(const struct shell *shell, size_t argc, char *argv[])
 			dups = BT_HCI_LE_SCAN_FILTER_DUP_ENABLE;
 		} else {
 			shell_help(shell);
-			/* shell returns 1 when help is printed */
-			return 1;
+			return SHELL_CMD_HELP_PRINTED;
 		}
 	}
 
@@ -636,8 +635,7 @@ static int cmd_scan(const struct shell *shell, size_t argc, char *argv[])
 		return cmd_passive_scan_on(shell, dups);
 	} else {
 		shell_help(shell);
-		/* shell returns 1 when help is printed */
-		return 1;
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	return 0;
@@ -809,8 +807,7 @@ static int cmd_auto_conn(const struct shell *shell, size_t argc, char *argv[])
 		return bt_le_set_auto_conn(&addr, NULL);
 	} else {
 		shell_help(shell);
-		/* shell returns 1 when help is printed */
-		return 1;
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	return 0;
@@ -829,8 +826,7 @@ static int cmd_disconnect(const struct shell *shell, size_t argc, char *argv[])
 
 		if (argc < 3) {
 			shell_help(shell);
-			/* shell returns 1 when help is printed */
-			return 1;
+			return SHELL_CMD_HELP_PRINTED;
 		}
 
 		err = str2bt_addr_le(argv[1], argv[2], &addr);
@@ -1030,8 +1026,7 @@ static int cmd_bondable(const struct shell *shell, size_t argc, char *argv[])
 		bt_set_bondable(false);
 	} else {
 		shell_help(shell);
-		/* shell returns 1 when help is printed */
-		return 1;
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	return 0;
@@ -1224,8 +1219,7 @@ static int cmd_auth(const struct shell *shell, size_t argc, char *argv[])
 		bt_conn_auth_cb_register(NULL);
 	} else {
 		shell_help(shell);
-		/* shell returns 1 when help is printed */
-		return 1;
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	return 0;
@@ -1425,8 +1419,7 @@ static int cmd_bt(const struct shell *shell, size_t argc, char **argv)
 {
 	if (argc == 1) {
 		shell_help(shell);
-		/* shell returns 1 when help is printed */
-		return 1;
+		return SHELL_CMD_HELP_PRINTED;
 	}
 
 	shell_error(shell, "%s unknown parameter: %s", argv[0], argv[1]);
