@@ -157,8 +157,8 @@ static void test_device_deconfig(void)
 
 static void test_device_dc_api(void)
 {
-	zassert_equal(usb_dc_ep_mps(0x20), -EINVAL,
-		      "Invalid test usb_dc_ep_mps(INVALID) failed");
+	zassert_not_equal(usb_dc_ep_mps(0x20), TC_PASS,
+			  "Invalid test usb_dc_ep_mps(INVALID) failed");
 
 	zassert_equal(usb_dc_ep_mps(0x0), 64,
 		      "usb_dc_ep_mps(0x00) failed");
@@ -170,7 +170,7 @@ static void test_device_dc_api(void)
 		      "usb_dc_ep_mps(ENDP_BULK_IN) failed");
 
 	zassert_equal(usb_dc_set_address(0x01), TC_PASS,
-		      "usb_dc_set_address(0x01) failed");
+		      "usb_dc_set_address(0x01) (not attached) failed");
 }
 
 /*test case main entry*/
