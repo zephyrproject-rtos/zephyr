@@ -1316,6 +1316,10 @@ int usb_dc_attach(void)
 		usbd_work_schedule();
 	}
 
+	if (nrf_power_usbregstatus_vbusdet_get()) {
+		usb_dc_nrfx_power_event_callback(NRF_POWER_EVENT_USBDETECTED);
+	}
+
 	return ret;
 }
 
