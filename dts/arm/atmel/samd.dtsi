@@ -38,6 +38,13 @@
 		pinmux-b = &pinmux_b;
 		port-a = &porta;
 		port-b = &portb;
+
+		sercom-0 = &sercom0;
+		sercom-1 = &sercom1;
+		sercom-2 = &sercom2;
+		sercom-3 = &sercom3;
+		sercom-4 = &sercom4;
+		sercom-5 = &sercom5;
 	};
 
 	soc {
