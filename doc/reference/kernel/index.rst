@@ -27,7 +27,6 @@ include: fitness wearables, smart watches, and IoT wireless gateways.
 
    threads/index.rst
    other/interrupts.rst
-   usermode/usermode.rst
    synchronization/semaphores.rst
    synchronization/mutexes.rst
    data_passing/fifos.rst
