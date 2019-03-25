@@ -1,7 +1,3 @@
-from gitlint.rules import CommitRule, RuleViolation, TitleRegexMatches, CommitMessageTitle, LineRule, CommitMessageBody
-from gitlint.options import IntOption, BoolOption, StrOption, ListOption
-import re
-
 """
 The classes below are examples of user-defined CommitRules. Commit rules are gitlint rules that
 act on the entire commit at once. Once the rules are discovered, gitlint will automatically take care of applying them
@@ -14,6 +10,10 @@ that should only be done once per gitlint run.
 While every LineRule can be implemented as a CommitRule, it's usually easier and more concise to go with a LineRule if
 that fits your needs.
 """
+
+from gitlint.rules import CommitRule, RuleViolation, TitleRegexMatches, CommitMessageTitle, LineRule, CommitMessageBody
+from gitlint.options import IntOption, BoolOption, StrOption, ListOption
+import re
 
 class BodyMinLineCount(CommitRule):
     # A rule MUST have a human friendly name
