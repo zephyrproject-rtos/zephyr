@@ -111,9 +111,8 @@ static int spi_sam0_configure(struct device *dev,
 		wait_synchronization(regs);
 	}
 
-	spi_context_cs_configure(&data->ctx);
-
 	data->ctx.config = config;
+	spi_context_cs_configure(&data->ctx);
 
 	return 0;
 }

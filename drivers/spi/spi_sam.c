@@ -100,9 +100,8 @@ static int spi_sam_configure(struct device *dev,
 	regs->SPI_CSR[config->slave] = spi_csr;
 	regs->SPI_CR = SPI_CR_SPIEN; /* Enable SPI */
 
-	spi_context_cs_configure(&data->ctx);
-
 	data->ctx.config = config;
+	spi_context_cs_configure(&data->ctx);
 
 	return 0;
 }
