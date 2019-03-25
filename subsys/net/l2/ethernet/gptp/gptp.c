@@ -638,7 +638,15 @@ void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
 		} else {
 			interval->high =
 				interval->low >> (64 - log_msg_interval);
-			interval->low <<= log_msg_interval;
+
+			/* << operator is undefined if the shift value is equal
+			 * to the number of bits in the left expression’s type
+			 */
+			if (log_msg_interval == 64) {
+				interval->low = 0;
+			} else {
+				interval->low <<= log_msg_interval;
+			}
 		}
 	}
 }
