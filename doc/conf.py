@@ -112,7 +112,7 @@ try:
 except:
     pass
 finally:
-    if version_major and version_minor and patchlevel and extraversion is not None :
+    if version_major and version_minor and patchlevel and extraversion is not None:
         version = release = version_major + '.' + version_minor + '.' + patchlevel
         if extraversion != '':
             version = release = version + '-' + extraversion
@@ -411,7 +411,7 @@ breathe_default_project = "Zephyr"
 # attributes.
 cpp_id_attributes = ['__syscall', '__syscall_inline', '__deprecated',
     '__may_alias', '__used', '__unused', '__weak',
-    '__DEPRECATED_MACRO', 'FUNC_NORETURN' ]
+    '__DEPRECATED_MACRO', 'FUNC_NORETURN']
 
 # docs_title is used in the breadcrumb title in the zephyr docs theme
 html_context = {
