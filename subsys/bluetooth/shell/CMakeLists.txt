@@ -24,3 +24,7 @@ zephyr_library_sources_ifdef(
   ll.c
   ticker.c
   )
+zephyr_include_directories_ifdef(
+	CONFIG_BT_CTLR
+	${ZEPHYR_BASE}/subsys/bluetooth/controller/ll_sw/nordic
+	)
