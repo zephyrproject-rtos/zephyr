@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr.h>
-#include <ztest.h>
 
 /* The only point to CONFIG_MULTITHREADING=n is to use Zephyr's
  * multiplatform toolchain, linkage and boostrap integration to arrive
@@ -15,6 +14,5 @@
  */
 void test_main(void)
 {
-	TC_PRINT("It works\n");
-	TC_END_REPORT(TC_PASS);
+	printk("It works\n");
 }
