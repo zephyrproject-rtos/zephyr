@@ -74,8 +74,10 @@ void _Fault(NANO_ESF *esf)
 #ifdef CONFIG_ARC_STACK_CHECKING
 	/* Vector 6 = EV_ProV. Regardless of code, parameter 2 means stack
 	 * check violation
+	 * stack check and mpu violation can come out together, then
+	 * parameter = 0x2 | [0x4 | 0x8 | 0x1]
 	 */
-	if (vector == 6 && parameter == 2) {
+	if (vector == 6 && parameter & 0x2) {
 		z_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, esf);
 		return;
 	}

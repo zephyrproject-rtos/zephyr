@@ -279,13 +279,11 @@ void test_fatal(void)
 
 #ifdef CONFIG_USERSPACE
 
-#if !defined(CONFIG_ARC) /* FIXME #13341 */
 	TC_PRINT("test stack HW-based overflow - user 1\n");
 	check_stack_overflow(stack_hw_overflow, K_USER);
 
 	TC_PRINT("test stack HW-based overflow - user 2\n");
 	check_stack_overflow(stack_hw_overflow, K_USER);
-#endif
 #endif /* CONFIG_USERSPACE */
 
 #endif /* !CONFIG_ARCH_POSIX */
