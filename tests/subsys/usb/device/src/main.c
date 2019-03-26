@@ -232,14 +232,18 @@ static void test_usb_dc_api_invalid(void)
 			  "usb_dc_ep_mps(INVALID_EP)");
 }
 
-static void test_usb_dc_api_read(void)
+static void test_usb_dc_api_read_write(void)
 {
-	size_t read;
+	size_t size;
 	u8_t byte;
 
 	/* Read invalid EP */
-	zassert_not_equal(usb_read(0x20, &byte, sizeof(byte), &read),
-			  TC_PASS, "usb_read(INVALID)");
+	zassert_not_equal(usb_read(INVALID_EP, &byte, sizeof(byte), &size),
+			  TC_PASS, "usb_read(INVALID_EP)");
+
+	/* Write to invalid EP */
+	zassert_not_equal(usb_write(INVALID_EP, &byte, sizeof(byte), &size),
+			  TC_PASS, "usb_write(INVALID_EP)");
 }
 
 /*test case main entry*/
@@ -251,7 +255,7 @@ void test_main(void)
 			 ztest_unit_test(test_usb_disable),
 			 ztest_unit_test(test_usb_setup),
 			 ztest_unit_test(test_usb_dc_api),
-			 ztest_unit_test(test_usb_dc_api_read),
+			 ztest_unit_test(test_usb_dc_api_read_write),
 			 ztest_unit_test(test_usb_dc_api_invalid),
 			 ztest_unit_test(test_usb_deconfig),
 			 ztest_unit_test(test_usb_disable));
