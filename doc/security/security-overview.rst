@@ -381,8 +381,7 @@ The quality assurance part encompasses the following criteria:
    These reviews shall be performed by the subsystem maintainers and
    developers on a functional level and are to be distinguished from
    security reviews as laid out in the `Secure Design`_ section.
-   Please refer to the `development model documentation`_ on the
-   Zephyr project Wiki.
+   Refer to the :ref:`development_model` documentation for more information.
 
 -  **Static Code Analysis** tools efficiently detect common coding
    mistakes in large code bases. All code shall be analyzed using an
@@ -398,8 +397,9 @@ The quality assurance part encompasses the following criteria:
    the approver(s) of the waiver. This shall as a minimum run on the
    main release branch and on the security branch. It shall be
    ensured that each release has zero issues with regard to static
-   code analysis (including waivers). Please refer to the
-   `development model documentation`_ on the Zephyr project Wiki.
+   code analysis (including waivers).
+   Refer to the :ref:`development_model` documentation for more information.
+
 
 -  **Complexity Analyses** shall be performed as part of the development
    process and metrics such as cyclomatic complexity shall be
@@ -777,5 +777,3 @@ include [GHS10]_
 
 These assumptions shall be part of the security claim and evaluation
 target documents.
-
-.. _`development model documentation`: https://github.com/zephyrproject-rtos/zephyr/wiki/Development-Model
