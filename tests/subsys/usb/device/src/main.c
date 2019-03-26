@@ -17,6 +17,8 @@
 
 #define ENDP_BULK_IN		0x81
 
+#define INVALID_EP		0x20
+
 static const struct dev_common_descriptor {
 	struct usb_device_descriptor device_descriptor;
 	struct usb_cfg_descriptor configuration_descr;
@@ -154,8 +156,8 @@ static void test_device_deconfig(void)
 
 static void test_device_dc_api(void)
 {
-	zassert_not_equal(usb_dc_ep_mps(0x20), TC_PASS,
-			  "Invalid test usb_dc_ep_mps(INVALID) failed");
+	zassert_not_equal(usb_dc_ep_mps(INVALID_EP), TC_PASS,
+			  "Invalid test usb_dc_ep_mps(INVALID_EP) failed");
 
 	zassert_equal(usb_dc_ep_mps(0x0), 64,
 		      "usb_dc_ep_mps(0x00) failed");
@@ -170,14 +172,22 @@ static void test_device_dc_api(void)
 		      "usb_dc_set_address(0x01) (not attached) failed");
 }
 
-static void test_device_dc_api_read(void)
+static void test_device_dc_api_invalid(void)
 {
-	size_t read;
+	size_t size;
 	u8_t byte;
 
+	/* Set callback to invalid EP */
+	zassert_not_equal(usb_dc_ep_set_callback(INVALID_EP, NULL), TC_PASS,
+			  "usb_dc_ep_set_callback(INVALID_EP, NULL)");
+
 	/* Read invalid EP */
-	zassert_not_equal(usb_read(0x20, &byte, sizeof(byte), &read),
-			  TC_PASS, "usb_read(INVALID)");
+	zassert_not_equal(usb_read(INVALID_EP, &byte, sizeof(byte), &size),
+			  TC_PASS, "usb_read(INVALID_EP)");
+
+	/* Write to invalid EP */
+	zassert_not_equal(usb_write(INVALID_EP, &byte, sizeof(byte), &size),
+			  TC_PASS, "usb_write(INVALID_EP)");
 }
 
 /*test case main entry*/
@@ -188,7 +198,7 @@ void test_main(void)
 			 ztest_unit_test(test_device_disable),
 			 ztest_unit_test(test_device_setup),
 			 ztest_unit_test(test_device_dc_api),
-			 ztest_unit_test(test_device_dc_api_read),
+			 ztest_unit_test(test_device_dc_api_invalid),
 			 ztest_unit_test(test_device_deconfig),
 			 ztest_unit_test(test_device_disable));
 
