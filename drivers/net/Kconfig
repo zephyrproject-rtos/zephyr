@@ -1,5 +1,72 @@
 # Kconfig - Misc network drivers configuration options
 # SPDX-License-Identifier: Apache-2.0
+
+#
+# PPP options
+#
+menuconfig NET_PPP
+	bool "Point-to-point (PPP) UART based driver"
+	depends on NET_L2_PPP
+	select UART_PIPE
+	select UART_INTERRUPT_DRIVEN
+
+if NET_PPP
+
+config NET_PPP_DRV_NAME
+	string "PPP Driver name"
+	default "ppp"
+	help
+	  This option sets the driver name
+
+config NET_PPP_UART_PIPE_BUF_LEN
+	int "Buffer length when reading from UART"
+	default 8
+	help
+	  This options sets the size of the UART pipe buffer where data
+	  is being read to.
+
+config NET_PPP_MTU
+	int "PPP MTU"
+	default 1500
+	range 80 1500
+	help
+	  This option sets the MTU for the PPP connection.
+	  The value is only used when fragmenting the network
+	  data into net_buf's.
+
+config NET_PPP_VERIFY_FCS
+	bool "Verify that received FCS is valid"
+	default y
+	help
+	  If you have a reliable link, then it might make sense
+	  to disable this as it takes some time to verify the received
+	  packet.
+
+config NET_PPP_CALC_FCS
+	bool "Calculate FCS for the sent packet"
+	default y
+	help
+	  If you have a reliable link, then it might make sense
+	  to disable this as it takes some time to calculate the FCS for
+	  the sent packet.
+
+config	PPP_MAC_ADDR
+	string "MAC address for the interface"
+	help
+	  Specify a MAC address for the PPP interface in the form of
+	  six hex 8-bit chars separated by colons (e.g.:
+	  aa:33:cc:22:e2:c0).  The default is an empty string, which
+	  means the code will make 00:00:5E:00:53:XX, where XX will be
+	  random.
+
+module = NET_PPP
+module-dep = LOG
+module-str = Log level for ppp driver
+module-help = Sets log level for ppp driver.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_PPP
+
 #
 # SLIP options
 #
