@@ -71,6 +71,8 @@ config NET_L2_BT_SHELL
 
 source "subsys/net/l2/ethernet/Kconfig"
 
+source "subsys/net/l2/ppp/Kconfig"
+
 source "subsys/net/l2/ieee802154/Kconfig"
 
 source "subsys/net/l2/openthread/Kconfig"

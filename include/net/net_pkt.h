@@ -158,6 +158,7 @@ struct net_pkt {
 					     * Note: family needs to be
 					     * AF_UNSPEC.
 					     */
+		u8_t ppp_msg           : 1; /* This is a PPP message */
 	};
 
 	union {
@@ -847,6 +848,33 @@ static inline void net_pkt_set_lldp(struct net_pkt *pkt, bool is_lldp)
 	ARG_UNUSED(is_lldp);
 }
 #endif /* CONFIG_NET_LLDP */
+
+#if defined(CONFIG_NET_PPP)
+static inline bool net_pkt_is_ppp(struct net_pkt *pkt)
+{
+	return pkt->ppp_msg;
+}
+
+static inline void net_pkt_set_ppp(struct net_pkt *pkt,
+				   bool is_ppp_msg)
+{
+	pkt->ppp_msg = is_ppp_msg;
+}
+#else /* CONFIG_NET_PPP */
+static inline bool net_pkt_is_ppp(struct net_pkt *pkt)
+{
+	ARG_UNUSED(pkt);
+
+	return false;
+}
+
+static inline void net_pkt_set_ppp(struct net_pkt *pkt,
+				   bool is_ppp_msg)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(is_ppp_msg);
+}
+#endif /* CONFIG_NET_PPP */
 
 #define NET_IPV6_HDR(pkt) ((struct net_ipv6_hdr *)net_pkt_ip_data(pkt))
 #define NET_IPV4_HDR(pkt) ((struct net_ipv4_hdr *)net_pkt_ip_data(pkt))

@@ -922,7 +922,7 @@ class SizeCalculator:
                    "rodata", "devconfig", "net_l2", "vector", "sw_isr_table",
                    "_settings_handlers_area", "_bt_channels_area",
                    "_bt_br_channels_area", "_bt_services_area",
-                   "vectors", "net_socket_register"]
+                   "vectors", "net_socket_register", "net_ppp_proto"]
 
     def __init__(self, filename, extra_sections):
         """Constructor

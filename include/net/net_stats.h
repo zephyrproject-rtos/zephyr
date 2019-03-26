@@ -376,6 +376,20 @@ struct net_stats_eth {
 #endif
 };
 
+/**
+ * @brief All PPP specific statistics
+ */
+struct net_stats_ppp {
+	struct net_stats_bytes bytes;
+	struct net_stats_pkts pkts;
+
+	/** Number of received and dropped PPP frames. */
+	net_stats_t drop;
+
+	/** Number of received PPP frames with a bad checksum. */
+	net_stats_t chkerr;
+};
+
 #if defined(CONFIG_NET_STATISTICS_USER_API)
 /* Management part definitions */
 
@@ -398,6 +412,7 @@ enum net_request_stats_cmd {
 	NET_REQUEST_STATS_CMD_GET_UDP,
 	NET_REQUEST_STATS_CMD_GET_TCP,
 	NET_REQUEST_STATS_CMD_GET_ETHERNET,
+	NET_REQUEST_STATS_CMD_GET_PPP,
 };
 
 #define NET_REQUEST_STATS_GET_ALL				\
@@ -468,6 +483,13 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_TCP);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_ETHERNET);
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
+
+#if defined(CONFIG_NET_STATISTICS_PPP)
+#define NET_REQUEST_STATS_GET_PPP				\
+	(_NET_STATS_BASE | NET_REQUEST_STATS_CMD_GET_PPP)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_STATS_GET_PPP);
+#endif /* CONFIG_NET_STATISTICS_PPP */
 
 #endif /* CONFIG_NET_STATISTICS_USER_API */
 
