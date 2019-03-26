@@ -1,0 +1,21 @@
+---
+title: Atmel Device ID (Serial Number) binding
+version: 0.1
+
+description: >
+    Binding for locating the Device ID (serial number) on Atmel SAM0 devices.
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "atmel,sam0-id"
+      generation: define
+
+    reg:
+      type: array
+      category: required
+      description: Location of Device ID words in memory
+      generation: define
+...
