@@ -128,21 +128,18 @@ static int device_init(void)
 
 	/* Initialize the USB driver with the right configuration */
 	ret = usb_set_config(&device_config);
-	zassert_equal(ret, 0, "usb_set_config() failed");
+	zassert_equal(ret, TC_PASS, "usb_set_config() failed");
 
 	/* Enable USB driver */
 	ret = usb_enable(&device_config);
-	zassert_equal(ret, 0, "usb_enable() failed");
+	zassert_equal(ret, TC_PASS, "usb_enable() failed");
 
-	return 0;
+	return ret;
 }
 
 static void test_device_setup(void)
 {
-	int ret;
-
-	ret = device_init();
-	zassert_equal(ret, 0, "init failed");
+	zassert_equal(device_init(), TC_PASS, "init failed");
 }
 
 static void test_device_disable(void)
