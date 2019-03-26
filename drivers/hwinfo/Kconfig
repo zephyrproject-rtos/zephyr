@@ -55,4 +55,11 @@ config HWINFO_SAM
 	help
 	  Enable Atmel SAM hwinfo driver.
 
+config HWINFO_SAM0
+	bool "Atmel SAM0 device ID"
+	default y
+	depends on SOC_FAMILY_SAM0
+	help
+	  Enable Atmel SAM0 hwinfo driver.
+
 endif

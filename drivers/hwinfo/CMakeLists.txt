@@ -8,5 +8,6 @@ zephyr_sources_ifdef(CONFIG_HWINFO_NRF        hwinfo_nrf.c)
 zephyr_sources_ifdef(CONFIG_HWINFO_MCUX_SIM   hwinfo_mcux_sim.c)
 zephyr_sources_ifdef(CONFIG_HWINFO_IMXRT      hwinfo_imxrt.c)
 zephyr_sources_ifdef(CONFIG_HWINFO_SAM        hwinfo_sam.c)
+zephyr_sources_ifdef(CONFIG_HWINFO_SAM0       hwinfo_sam0.c)
 
 zephyr_sources_ifdef(CONFIG_HWINFO_SHELL hwinfo_shell.c)
