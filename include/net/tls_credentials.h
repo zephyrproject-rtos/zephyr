@@ -26,11 +26,33 @@ extern "C" {
 
 /** TLS credential types */
 enum tls_credential_type {
+	/** Unspecified credential. */
 	TLS_CREDENTIAL_NONE,
+
+	/** A trusted CA certificate. Use this to authenticate remote servers.
+	 *  Used with certificate-based ciphersuites.
+	 */
 	TLS_CREDENTIAL_CA_CERTIFICATE,
+
+	/** A public server certificate. Use this to register your own server
+	 *  certificate. Should be registered together with a corresponding
+	 *  private key. Used with certificate-based ciphersuites.
+	 */
 	TLS_CREDENTIAL_SERVER_CERTIFICATE,
+
+	/** Private key. Should be registered together with a corresponding
+	 *  public certificate. Used with certificate-based ciphersuites.
+	 */
 	TLS_CREDENTIAL_PRIVATE_KEY,
+
+	/** Pre-shared key. Should be registered together with a corresponding
+	 *  PSK identity. Used with PSK-based ciphersuites.
+	 */
 	TLS_CREDENTIAL_PSK,
+
+	/** Pre-shared key identity. Should be registered together with a
+	 *  corresponding PSK. Used with PSK-based ciphersuites.
+	 */
 	TLS_CREDENTIAL_PSK_ID
 };
 
