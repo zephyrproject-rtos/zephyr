@@ -1133,6 +1133,16 @@ int zsock_setsockopt_ctx(struct net_context *ctx, int level, int optname,
 			return 0;
 		}
 		break;
+
+	case IPPROTO_IPV6:
+		switch (optname) {
+		case IPV6_V6ONLY:
+			/* Ignore for now. Provided to let port
+			 * existing apps.
+			 */
+			return 0;
+		}
+		break;
 	}
 
 	errno = ENOPROTOOPT;
