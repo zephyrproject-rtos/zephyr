@@ -37,6 +37,11 @@ enum net_l2_flags {
 
 	/** Is promiscuous mode supported */
 	NET_L2_PROMISC_MODE			= BIT(2),
+
+	/** Is this L2 point-to-point with tunneling so no need to have
+	 * IP address etc to network interface.
+	 */
+	NET_L2_POINT_TO_POINT			= BIT(3),
 } __packed;
 
 /**
@@ -87,6 +92,11 @@ NET_L2_DECLARE_PUBLIC(DUMMY_L2);
 #define ETHERNET_L2		ETHERNET
 NET_L2_DECLARE_PUBLIC(ETHERNET_L2);
 #endif /* CONFIG_NET_L2_ETHERNET */
+
+#ifdef CONFIG_NET_L2_PPP
+#define PPP_L2			PPP
+NET_L2_DECLARE_PUBLIC(PPP_L2);
+#endif /* CONFIG_NET_L2_PPP */
 
 #ifdef CONFIG_NET_L2_IEEE802154
 #define IEEE802154_L2		IEEE802154

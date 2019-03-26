@@ -82,6 +82,16 @@
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
 
+#if defined(CONFIG_NET_L2_PPP)
+	SECTION_PROLOGUE(net_ppp_proto,,)
+	{
+		__net_ppp_proto_start = .;
+		*(".net_ppp_proto.*")
+		KEEP(*(SORT_BY_NAME(".net_ppp_proto.*")))
+		__net_ppp_proto_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+#endif
+
 	SECTION_DATA_PROLOGUE(_bt_channels_area,,SUBALIGN(4))
 	{
 		_bt_l2cap_fixed_chan_list_start = .;

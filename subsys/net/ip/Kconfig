@@ -22,6 +22,7 @@ if !NET_RAW_MODE
 
 choice
 	prompt "Qemu networking"
+	default NET_QEMU_PPP if NET_PPP
 	default NET_QEMU_SLIP
 	depends on QEMU_TARGET
 	help
@@ -33,6 +34,11 @@ config NET_QEMU_SLIP
 	bool "SLIP"
 	help
 	  Connect to host or to another Qemu via SLIP.
+
+config NET_QEMU_PPP
+	bool "PPP"
+	help
+	  Connect to host via PPP.
 
 config NET_QEMU_ETHERNET
 	bool "Ethernet"

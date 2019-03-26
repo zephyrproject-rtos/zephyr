@@ -12,6 +12,10 @@ if(CONFIG_NET_L2_ETHERNET)
   add_subdirectory(ethernet)
 endif()
 
+if(CONFIG_NET_L2_PPP)
+  add_subdirectory(ppp)
+endif()
+
 if(CONFIG_NET_L2_IEEE802154)
   add_subdirectory(ieee802154)
 endif()
