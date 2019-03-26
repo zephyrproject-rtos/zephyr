@@ -41,7 +41,8 @@
 LOG_MODULE_REGISTER(kernel);
 
 /* boot banner items */
-#if defined(CONFIG_BOOT_DELAY) && CONFIG_BOOT_DELAY > 0
+#if defined(CONFIG_MULTITHREADING) && defined(CONFIG_BOOT_DELAY) \
+	&& CONFIG_BOOT_DELAY > 0
 #define BOOT_DELAY_BANNER " (delayed boot "	\
 	STRINGIFY(CONFIG_BOOT_DELAY) "ms)"
 #else
@@ -242,7 +243,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #if CONFIG_STACK_POINTER_RANDOM
 	z_stack_adjust_initialized = 1;
 #endif
-	if (boot_delay > 0) {
+	if (boot_delay > 0 && IS_ENABLED(CONFIG_MULTITHREADING)) {
 		printk("***** delaying boot " STRINGIFY(CONFIG_BOOT_DELAY)
 		       "ms (per build configuration) *****\n");
 		k_busy_wait(CONFIG_BOOT_DELAY * USEC_PER_MSEC);
