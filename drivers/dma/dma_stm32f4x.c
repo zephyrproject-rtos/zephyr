@@ -523,6 +523,22 @@ static int dma_stm32_stop(struct device *dev, u32_t id)
 	return 0;
 }
 
+static int dma_stm32_get_status(struct device *dev, u32_t id,
+				struct dma_status *stat)
+{
+	struct dma_stm32_device *ddata = dev->driver_data;
+
+	if (id >= DMA_STM32_MAX_STREAMS || stat == NULL) {
+		return -EINVAL;
+	}
+
+	stat->dir = ddata->stream[id].direction;
+	stat->busy = ddata->stream[id].busy;
+	stat->pending_length = dma_stm32_read(ddata, DMA_STM32_SNDTR(id));
+
+	return 0;
+}
+
 static int dma_stm32_init(struct device *dev)
 {
 	struct dma_stm32_device *ddata = dev->driver_data;
@@ -556,6 +572,7 @@ static const struct dma_driver_api dma_funcs = {
 	.config		 = dma_stm32_config,
 	.start		 = dma_stm32_start,
 	.stop		 = dma_stm32_stop,
+	.get_status 	 = dma_stm32_get_status,
 };
 
 const struct dma_stm32_config dma_stm32_1_cdata = {
