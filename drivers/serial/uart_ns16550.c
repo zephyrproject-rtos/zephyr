@@ -40,13 +40,20 @@
 
 #include <drivers/serial/uart_ns16550.h>
 
-/* If PCP is set for any of the ports, enable support. */
+/* If PCP is set for any of the ports, enable support. Ditto for DLF. */
 
 #if defined(DT_UART_NS16550_PORT_0_PCP) || \
     defined(DT_UART_NS16550_PORT_1_PCP) || \
     defined(DT_UART_NS16550_PORT_2_PCP) || \
     defined(DT_UART_NS16550_PORT_3_PCP)
 #define UART_NS16550_PCP
+#endif
+
+#if defined(DT_UART_NS16550_PORT_0_DLF) || \
+    defined(DT_UART_NS16550_PORT_1_DLF) || \
+    defined(DT_UART_NS16550_PORT_2_DLF) || \
+    defined(DT_UART_NS16550_PORT_3_DLF)
+#define UART_NS16550_DLF
 #endif
 
 /* register definitions */
@@ -257,14 +264,14 @@ struct uart_ns16550_dev_data_t {
 	void *cb_data;	/**< Callback function arg */
 #endif
 
-#ifdef CONFIG_UART_NS16550_DLF
+#ifdef UART_NS16550_DLF
 	u8_t dlf;		/**< DLF value */
 #endif
 };
 
 static const struct uart_driver_api uart_ns16550_driver_api;
 
-#ifdef CONFIG_UART_NS16550_DLF
+#ifdef UART_NS16550_DLF
 static inline void set_dlf(struct device *dev, u32_t val)
 {
 	struct uart_ns16550_dev_data_t * const dev_data = DEV_DATA(dev);
@@ -373,7 +380,7 @@ static int uart_ns16550_init(struct device *dev)
 
 	old_level = irq_lock();
 
-#ifdef CONFIG_UART_NS16550_DLF
+#ifdef UART_NS16550_DLF
 	set_dlf(dev, dev_data->dlf);
 #endif
 
@@ -749,7 +756,7 @@ static int uart_ns16550_drv_cmd(struct device *dev, u32_t cmd, u32_t p)
 {
 	switch (cmd) {
 
-#ifdef CONFIG_UART_NS16550_DLF
+#ifdef UART_NS16550_DLF
 	case CMD_SET_DLF:
 		set_dlf(dev, p);
 		return 0;
@@ -828,8 +835,8 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_0 = {
 	.baud_rate = DT_UART_NS16550_PORT_0_BAUD_RATE,
 	.options = CONFIG_UART_NS16550_PORT_0_OPTIONS,
 
-#ifdef CONFIG_UART_NS16550_PORT_0_DLF
-	.dlf = CONFIG_UART_NS16550_PORT_0_DLF,
+#ifdef DT_UART_NS16550_PORT_0_DLF
+	.dlf = DT_UART_NS16550_PORT_0_DLF,
 #endif
 };
 
@@ -886,8 +893,8 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_1 = {
 	.baud_rate = DT_UART_NS16550_PORT_1_BAUD_RATE,
 	.options = CONFIG_UART_NS16550_PORT_1_OPTIONS,
 
-#ifdef CONFIG_UART_NS16550_PORT_1_DLF
-	.dlf = CONFIG_UART_NS16550_PORT_1_DLF,
+#ifdef DT_UART_NS16550_PORT_1_DLF
+	.dlf = DT_UART_NS16550_PORT_1_DLF,
 #endif
 };
 
@@ -944,8 +951,8 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_2 = {
 	.baud_rate = DT_UART_NS16550_PORT_2_BAUD_RATE,
 	.options = CONFIG_UART_NS16550_PORT_2_OPTIONS,
 
-#ifdef CONFIG_UART_NS16550_PORT_2_DLF
-	.dlf = CONFIG_UART_NS16550_PORT_2_DLF,
+#ifdef DT_UART_NS16550_PORT_2_DLF
+	.dlf = DT_UART_NS16550_PORT_2_DLF,
 #endif
 };
 
@@ -1002,8 +1009,8 @@ static struct uart_ns16550_dev_data_t uart_ns16550_dev_data_3 = {
 	.baud_rate = DT_UART_NS16550_PORT_3_BAUD_RATE,
 	.options = CONFIG_UART_NS16550_PORT_3_OPTIONS,
 
-#ifdef CONFIG_UART_NS16550_PORT_3_DLF
-	.dlf = CONFIG_UART_NS16550_PORT_3_DLF,
+#ifdef DT_UART_NS16550_PORT_3_DLF
+	.dlf = DT_UART_NS16550_PORT_3_DLF,
 #endif
 };
 

@@ -65,6 +65,7 @@
 			label = "UART_0";
 			interrupts = <86 0>;
 			interrupt-parent = <&intc>;
+			dlf = <0x01>;
 		};
 
 		uart1: uart@80014100 {

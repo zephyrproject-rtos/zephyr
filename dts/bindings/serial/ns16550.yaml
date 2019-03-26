@@ -35,4 +35,10 @@ properties:
       category: optional
       description: custom clock (PRV_CLOCK_PARAMS, if supported)
       generation: define
+
+    dlf:
+      type: int
+      category: optional
+      description: divisor latch fraction (DLF, if supported)
+      generation: define
 ...
