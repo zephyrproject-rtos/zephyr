@@ -50,7 +50,11 @@ extern "C" {
  * @param length Data length.
  * @param ctx  User context.
  *
- * @return Number of bytes processed.
+ * @return Number of bytes processed, dropped or discarded.
+ *
+ * @note If the log output function cannot process all of the data, it is
+ *       its responsibility to mark them as dropped or discarded by returning
+ *       the corresponding number of bytes dropped or discarded to the caller.
  */
 typedef int (*log_output_func_t)(u8_t *buf, size_t size, void *ctx);
 
