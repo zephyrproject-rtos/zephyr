@@ -25,7 +25,7 @@ config RGF_NUM_BANKS
 	default 2
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
-	default 10000000
+	default 5000000
 
 config HARVARD
 	default y
