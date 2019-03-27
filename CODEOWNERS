@@ -159,7 +159,7 @@
 /ext/hal/nordic/                          @carlescufi @anangl
 /ext/hal/nxp/                             @MaureenHelm
 /ext/hal/qmsi/                            @nashif
-/ext/hal/st/stm32cube/                    @erwango
+/ext/hal/st/                              @erwango
 /ext/hal/ti/simplelink/                   @vanti
 /ext/lib/crypto/mbedtls/                  @nashif
 /ext/lib/crypto/tinycrypt/                @ceolin
