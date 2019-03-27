@@ -793,6 +793,11 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 {
 	u8_t ep_idx = EP_ADDR2IDX(ep);
 
+	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
+		LOG_ERR("Wrong endpoint index/address");
+		return -EINVAL;
+	}
+
 	if (!dev_data.attached) {
 		return -EINVAL;
 	}
