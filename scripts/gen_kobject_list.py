@@ -183,10 +183,10 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
             fp.write(val)
 
         fp.write(
-            "\",{},%s,%s,%d\n" %
+            "\",{},%s,%s,%s\n" %
             (obj_type,
              "K_OBJ_FLAG_INITIALIZED" if initialized else "0",
-             ko.data))
+             str(ko.data)))
 
         if obj_type == "K_OBJ_THREAD":
             idx = math.floor(ko.data / 8)
