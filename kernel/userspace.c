@@ -52,13 +52,6 @@ static struct k_spinlock obj_lock;         /* kobj struct data */
 static struct k_spinlock ucopy_lock;       /* copy to/from userspace */
 static struct k_spinlock ucopy_outer_lock; /* code that calls copies */
 
-#if defined(CONFIG_NETWORKING) && defined (CONFIG_DYNAMIC_OBJECTS)
-/* Used by auto-generated obj_size_get() switch body, as we need to
- * know the size of struct net_context
- */
-#include <net/net_context.h>
-#endif
-
 #define MAX_THREAD_BITS		(CONFIG_MAX_THREAD_BYTES * 8)
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
