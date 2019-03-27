@@ -152,7 +152,8 @@ class AggregateTypeMember:
                         self.member_offset += (
                             member_offset[i+1] & 0x7f) << i*7
             else:
-                self.debug_die("not yet supported location operation")
+                raise Exception("not yet supported location operation (%s:%d:%d)" %
+                        (self.member_name, self.member_type, member_offset[0]))
         else:
             self.member_offset = member_offset
 
