@@ -17,7 +17,7 @@
 
 	flash-controller@4001E000 {
 			compatible = "nordic,nrf52-flash-controller";
-			reg = <0x4001E000 0x550>;
+			reg = <0x4001E000 0x1000>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
