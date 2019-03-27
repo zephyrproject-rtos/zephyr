@@ -13,6 +13,11 @@ void main(void)
 {
 	struct device *dev = device_get_binding("BME280");
 
+	if (dev == NULL) {
+		printf("Could not get BME280 device\n");
+		return;
+	}
+
 	printf("dev %p name %s\n", dev, dev->config->name);
 
 	while (1) {
