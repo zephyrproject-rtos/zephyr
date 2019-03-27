@@ -16,9 +16,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(webusb);
 
-#include <zephyr.h>
-#include <init.h>
-#include <string.h>
 #include <misc/byteorder.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>

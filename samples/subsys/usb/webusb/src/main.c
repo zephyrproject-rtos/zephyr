@@ -17,10 +17,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(main);
 
-#include <stdio.h>
-#include <string.h>
-#include <device.h>
-#include <zephyr.h>
 #include <misc/byteorder.h>
 #include <usb/usb_common.h>
 #include <usb/usb_device.h>
