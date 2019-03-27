@@ -104,7 +104,6 @@
 
 enum {
 	REMOTE_PUB_KEY,        /* Remote key has been received */
-	LOCAL_PUB_KEY,         /* Local public key is available */
 	LINK_ACTIVE,           /* Link has been opened */
 	HAVE_DHKEY,            /* DHKey has been calcualted */
 	SEND_CONFIRM,          /* Waiting to send Confirm value */
@@ -217,10 +216,6 @@ static void reset_state(void)
 #else
 	(void)memset(&link, 0, sizeof(link));
 #endif /* PB_ADV */
-
-	if (bt_pub_key_get()) {
-		atomic_set_bit(link.flags, LOCAL_PUB_KEY);
-	}
 }
 
 #if defined(CONFIG_BT_MESH_PB_ADV)
@@ -917,7 +912,7 @@ static void prov_pub_key(const u8_t *data)
 
 	memcpy(&link.conf_inputs[17], data, 64);
 
-	if (!atomic_test_bit(link.flags, LOCAL_PUB_KEY)) {
+	if (!bt_pub_key_get()) {
 		/* Clear retransmit timer */
 #if defined(CONFIG_BT_MESH_PB_ADV)
 		prov_clear_tx();
@@ -938,8 +933,6 @@ static void pub_key_ready(const u8_t *pkey)
 	}
 
 	BT_DBG("Local public key ready");
-
-	atomic_set_bit(link.flags, LOCAL_PUB_KEY);
 
 	if (atomic_test_and_clear_bit(link.flags, REMOTE_PUB_KEY)) {
 		send_pub_key();
