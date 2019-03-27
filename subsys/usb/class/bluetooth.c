@@ -35,10 +35,18 @@ static K_FIFO_DEFINE(tx_queue);
 NET_BUF_POOL_DEFINE(tx_pool, CONFIG_BT_HCI_CMD_COUNT, CMD_BUF_SIZE,
 		    sizeof(u8_t), NULL);
 
+/* ACL data TX buffers */
+#if defined(CONFIG_BT_CTLR_TX_BUFFERS)
+#define ACL_BUF_COUNT CONFIG_BT_CTLR_TX_BUFFERS
+#else
+#define ACL_BUF_COUNT 4
+#endif
+
 #define BT_L2CAP_MTU 64
 /* Data size needed for ACL buffers */
 #define BT_BUF_ACL_SIZE BT_L2CAP_BUF_SIZE(BT_L2CAP_MTU)
-NET_BUF_POOL_DEFINE(acl_tx_pool, 2, BT_BUF_ACL_SIZE, sizeof(u8_t), NULL);
+NET_BUF_POOL_DEFINE(acl_tx_pool, ACL_BUF_COUNT, BT_BUF_ACL_SIZE,
+		    sizeof(u8_t), NULL);
 
 #define BLUETOOTH_INT_EP_ADDR		0x81
 #define BLUETOOTH_OUT_EP_ADDR		0x02
@@ -188,11 +196,9 @@ static void acl_read_cb(u8_t ep, int size, void *priv)
 		net_buf_unref(buf);
 	}
 
-	buf = net_buf_alloc(&acl_tx_pool, K_NO_WAIT);
-	if (!buf) {
-		LOG_ERR("Cannot get free buffer\n");
-		return;
-	}
+	buf = net_buf_alloc(&acl_tx_pool, K_FOREVER);
+	__ASSERT_NO_MSG(buf);
+
 	net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
 
 	/* Start a new read transfer */
