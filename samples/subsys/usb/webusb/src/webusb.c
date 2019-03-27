@@ -44,12 +44,12 @@ LOG_MODULE_DECLARE(main);
 
 #include <zephyr.h>
 #include <init.h>
-#include <uart.h>
 #include <string.h>
 #include <misc/byteorder.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
-#include "webusb_serial.h"
+
+#include "webusb.h"
 
 /* Max packet size for Bulk endpoints */
 #define CDC_BULK_EP_MPS			64
@@ -100,7 +100,7 @@ struct dev_common_descriptor {
 	struct usb_desc_header term_descr;
 } __packed;
 
-static struct dev_common_descriptor webusb_serial_usb_description = {
+static struct dev_common_descriptor webusb_usb_description = {
 	/* Device descriptor */
 	.device_descriptor = {
 		.bLength = sizeof(struct usb_device_descriptor),
@@ -208,8 +208,8 @@ static struct dev_common_descriptor webusb_serial_usb_description = {
  *
  * @return  0 on success, negative errno code on fail.
  */
-int webusb_serial_custom_handle_req(struct usb_setup_packet *pSetup,
-		s32_t *len, u8_t **data)
+int webusb_custom_handle_req(struct usb_setup_packet *pSetup,
+			     s32_t *len, u8_t **data)
 {
 	LOG_DBG("");
 
@@ -230,8 +230,8 @@ int webusb_serial_custom_handle_req(struct usb_setup_packet *pSetup,
  *
  * @return  0 on success, negative errno code on fail.
  */
-int webusb_serial_vendor_handle_req(struct usb_setup_packet *pSetup,
-		s32_t *len, u8_t **data)
+int webusb_vendor_handle_req(struct usb_setup_packet *pSetup,
+			     s32_t *len, u8_t **data)
 {
 	/* Call the callback */
 	if ((req_handlers && req_handlers->vendor_handler) &&
@@ -283,9 +283,9 @@ done:
  *
  * @return  N/A.
  */
-static void webusb_serial_dev_status_cb(struct usb_cfg_data *cfg,
-					enum usb_dc_status_code status,
-					const u8_t *param)
+static void webusb_dev_status_cb(struct usb_cfg_data *cfg,
+				 enum usb_dc_status_code status,
+				 const u8_t *param)
 {
 	ARG_UNUSED(param);
 	ARG_UNUSED(cfg);
@@ -322,7 +322,7 @@ static void webusb_serial_dev_status_cb(struct usb_cfg_data *cfg,
 }
 
 /* Describe EndPoints configuration */
-static struct usb_ep_cfg_data webusb_serial_ep_data[] = {
+static struct usb_ep_cfg_data webusb_ep_data[] = {
 	{
 		.ep_cb	= usb_transfer_ep_callback,
 		.ep_addr = WEBUSB_ENDP_OUT
@@ -334,36 +334,36 @@ static struct usb_ep_cfg_data webusb_serial_ep_data[] = {
 };
 
 /* Configuration of the CDC-ACM Device send to the USB Driver */
-static struct usb_cfg_data webusb_serial_config = {
-	.usb_device_description = (u8_t *)&webusb_serial_usb_description,
-	.cb_usb_status = webusb_serial_dev_status_cb,
+static struct usb_cfg_data webusb_config = {
+	.usb_device_description = (u8_t *)&webusb_usb_description,
+	.cb_usb_status = webusb_dev_status_cb,
 	.interface = {
 		.class_handler = NULL,
-		.custom_handler = webusb_serial_custom_handle_req,
-		.vendor_handler = webusb_serial_vendor_handle_req,
+		.custom_handler = webusb_custom_handle_req,
+		.vendor_handler = webusb_vendor_handle_req,
 		.payload_data = NULL,
 	},
-	.num_endpoints = ARRAY_SIZE(webusb_serial_ep_data),
-	.endpoint = webusb_serial_ep_data
+	.num_endpoints = ARRAY_SIZE(webusb_ep_data),
+	.endpoint = webusb_ep_data
 };
 
-int webusb_serial_init(void)
+int webusb_init(void)
 {
 	int ret;
 
 	LOG_DBG("");
 
-	webusb_serial_config.interface.payload_data = interface_data;
+	webusb_config.interface.payload_data = interface_data;
 
 	/* Initialize the WebUSB driver with the right configuration */
-	ret = usb_set_config(&webusb_serial_config);
+	ret = usb_set_config(&webusb_config);
 	if (ret < 0) {
 		LOG_ERR("Failed to config USB");
 		return ret;
 	}
 
 	/* Enable WebUSB driver */
-	ret = usb_enable(&webusb_serial_config);
+	ret = usb_enable(&webusb_config);
 	if (ret < 0) {
 		LOG_ERR("Failed to enable USB");
 		return ret;

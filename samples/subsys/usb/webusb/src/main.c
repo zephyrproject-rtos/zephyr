@@ -20,14 +20,13 @@ LOG_MODULE_REGISTER(main);
 #include <stdio.h>
 #include <string.h>
 #include <device.h>
-#include <uart.h>
 #include <zephyr.h>
 #include <misc/byteorder.h>
 #include <usb/usb_common.h>
 #include <usb/usb_device.h>
 #include <usb/bos.h>
 
-#include "webusb_serial.h"
+#include "webusb.h"
 
 /* Predefined response to control commands related to MS OS 2.0 descriptors */
 static const u8_t msos2_descriptor[] = {
@@ -285,5 +284,5 @@ void main(void)
 	usb_bos_register_cap((void *)&bos_cap_webusb);
 	usb_bos_register_cap((void *)&bos_cap_msosv2);
 
-	webusb_serial_init();
+	webusb_init();
 }
