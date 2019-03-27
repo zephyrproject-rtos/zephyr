@@ -155,6 +155,7 @@
 /dts/bindings/serial/ns16550.yaml         @gnuless
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
+/dts/bindings/*/st,stm32*                 @erwango
 /dts/bindings/sensor/ams,ens210.yaml      @alexanderwachter
 /dts/bindings/sensor/ams,iaqcore.yaml     @alexanderwachter
 /ext/fs/                                  @nashif @wentongwu
