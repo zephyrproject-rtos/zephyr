@@ -1412,9 +1412,9 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 }
 
 static const struct {
-	void (*const func)(struct prov_rx *rx, struct net_buf_simple *buf);
-	const u8_t require_link;
-	const u8_t min_len;
+	void (*func)(struct prov_rx *rx, struct net_buf_simple *buf);
+	bool require_link;
+	u8_t min_len;
 } gen_prov[] = {
 	{ gen_prov_start, true, 3 },
 	{ gen_prov_ack, true, 0 },
