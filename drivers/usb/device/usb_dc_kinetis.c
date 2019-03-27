@@ -281,7 +281,7 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 		return -1;
 	}
 
-	if (ep_idx > NUM_OF_EP_MAX) {
+	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		LOG_ERR("endpoint index/address out of range");
 		return -1;
 	}
