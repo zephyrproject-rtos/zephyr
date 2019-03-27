@@ -73,7 +73,7 @@ int mdm_receiver_send(struct mdm_receiver_context *ctx,
 /**
  * @brief  Registers receiver context.
  *
- * @note   Aquires receivers device, and prepares the context to be used.
+ * @note   Acquires receivers device, and prepares the context to be used.
  *
  * @param  *ctx: receiver context to register.
  * @param  *uart_dev_name: communication device for the receiver context.

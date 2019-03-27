@@ -8,7 +8,7 @@ Code Review
 
 GitHub is intended to provide a framework for reviewing every commit before it
 is accepted into the code base. Changes, in the form of Pull Requests (PR) are
-uploaded to GitHub but don’t actually become a part of the project until they’ve
+uploaded to GitHub but don't actually become a part of the project until they've
 been reviewed, passed a series of checks (CI), and are approved by maintainers.
 GitHub is used to support the standard open source practice of submitting
 patches, which are then reviewed by the project members before being applied to
@@ -31,7 +31,7 @@ changes are proposed using pull request, we need to allow for a minimal review
 time to give developers and contributors the opportunity to review and comment
 on changes. There are different categories of changes and we know that some
 changes do require reviews by subject matter experts and owners of the subsystem
-being changed. Many changes fall under the “trivial” category that can be
+being changed. Many changes fall under the "trivial" category that can be
 addressed with general reviews and do not need to be queued for a maintainer or
 code-owner review. Additionally, some changes might require further discussions
 and a decision by the TSC or the Security working group. To summarize the above,
@@ -134,7 +134,7 @@ Developers and contributors should always seek review, however there are cases
 when reviewers are not available and there is a need to get a code change into
 the tree as soon as possible.
 
-Reviewers shall not ‘Request Changes’ without comments or justification
+Reviewers shall not 'Request Changes' without comments or justification
 =======================================================================
 
 Any change requests (-1) on a pull request have to be justified. A reviewer

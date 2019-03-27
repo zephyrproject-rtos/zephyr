@@ -31,10 +31,10 @@ a multi-repo installation. When using upstream Zephyr, it looks like this:
 
    └── zephyrproject/
        ├── .west/
-       │   ├── config
-       │   └── west/
+       │   ├── config
+       │   └── west/
        ├── zephyr/
-       │   └── west.yml
+       │   └── west.yml
        ├── a-project
        └── ...
 
@@ -108,7 +108,7 @@ Rationale for a custom tool
 During the different stages of design and development for west, using already
 established and proven multi-repo technologies was considered multiple times.
 After careful analysis, no existing tool or mechanism was found suitable for
-Zephyr’s use case set and requirements. The following two tools were examined
+Zephyr's use case set and requirements. The following two tools were examined
 in detail:
 
 * Google repo
@@ -277,7 +277,7 @@ installation:
   to the revisions present in the manifest file.
 
 West's view of multirepo history looks like this example (though some parts of
-the example are specific to upstream Zephyr’s use of west):
+the example are specific to upstream Zephyr's use of west):
 
 .. figure:: west-mr-model.png
     :align: center
@@ -312,7 +312,7 @@ Notice a few important details about the above picture:
 - Two zephyr commits can have the same external commits (like ``F`` and ``G``).
 - Not all commits in some projects are associated with a zephyr commit (``P3``
   "jumps" multiple commits in its history between zephyr commits ``B → C``).
-- Every zephyr commit’s manifest refers to exactly one version in each of the
+- Every zephyr commit's manifest refers to exactly one version in each of the
   other projects it cares about.
 
 The ``manifest-rev`` branch

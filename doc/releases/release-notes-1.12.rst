@@ -788,7 +788,7 @@ These GitHub issues were closed since the previous 1.11.0 tagged release:
 * :github:`8150` - Doc: Update Zephyr security overview
 * :github:`8171` - Tests failing with a stacking error on frdm_k64f
 * :github:`8172` - Networking tests failing with an assertion on frdm_k64f
-* :github:`8180` - objcopy bug？
+* :github:`8180` - objcopy bug
 * :github:`8182` - Problem with obtaining hop_limit from a received packet
 * :github:`8189` - lwm2m: Quickly running out of resources when using observe
 * :github:`8192` - MPU Fault on some platforms after THREAD_MONITOR "fix"

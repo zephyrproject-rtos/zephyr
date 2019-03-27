@@ -100,7 +100,7 @@ Here is the description of the various moderation levels:
 
   - Bug Fixes, all priorities
   - Enhancements
-  - Minor “self-contained” New Features
+  - Minor "self-contained" New Features
 - High:
 
   - Bug Fixes: P1 and P2

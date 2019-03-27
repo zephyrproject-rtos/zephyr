@@ -14,7 +14,7 @@
  * Spectre V1 vulnerability.
  *
  * CPUs with speculative execution may speculate past any size checks and
- * leak confidential data due to analyzsis of micro-architectural properties.
+ * leak confidential data due to analysis of micro-architectural properties.
  * This will unconditionally truncate any out-of-bounds indexes to
  * zero in the speculative execution path using bit twiddling instead of
  * any branch instructions.

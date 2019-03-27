@@ -22,7 +22,7 @@ is implemented using plain buffers. Users of the API create sockets
 for communication and pass the buffer to the library for parsing and other
 purposes. The library itself doesn't create any sockets for users.
 
-On top of CoAP, Zephyr has support for LWM2M “Lightweight Machine 2 Machine”
+On top of CoAP, Zephyr has support for LWM2M "Lightweight Machine 2 Machine"
 protocol, a simple, low-cost remote management and service enablement mechanism.
 See :ref:`lwm2m_interface` for more information.
 

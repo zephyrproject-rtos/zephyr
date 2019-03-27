@@ -261,7 +261,7 @@ int lwm2m_device_add_err(u8_t error_code);
 
 
 /**
- * @brief LWM2M Firemware Update object states
+ * @brief LWM2M Firmware Update object states
  *
  * An LwM2M client or the LwM2M Firmware Update object use the following codes
  * to represent the LwM2M Firmware Update state (5/0/3).
@@ -272,7 +272,7 @@ int lwm2m_device_add_err(u8_t error_code);
 #define STATE_UPDATING		3
 
 /**
- * @brief LWM2M Firemware Update object result codes
+ * @brief LWM2M Firmware Update object result codes
  *
  * After processing a firmware update, the client sets the result via one of
  * the following codes via lwm2m_engine_set_u8("5/0/5", [result code])
@@ -311,7 +311,7 @@ lwm2m_engine_set_data_cb_t lwm2m_firmware_get_write_cb(void);
  * @brief Set data callback to handle firmware update execute events.
  *
  * LwM2M clients use this function to register a callback for receiving the
- * update resource "execute" operation on the LwM2M Firmware Update oject.
+ * update resource "execute" operation on the LwM2M Firmware Update object.
  *
  * @param[in] cb A callback function to receive the execute event.
  */
@@ -655,7 +655,7 @@ int lwm2m_engine_register_read_callback(char *path,
  *
  * This callback is triggered before setting the value of a resource.  It
  * can pass a special data buffer to the engine so that the actual resource
- * value can be calulated later, etc.
+ * value can be calculated later, etc.
  *
  * @param[in] path LwM2M resource path string (obj/obj-instance/resource)
  * @param[in] cb Pre-write resource callback
