@@ -436,7 +436,7 @@ static void tx_thread(void)
 		hexdump("SLIP <", buf->data, buf->len);
 
 		/* remove FCS 2 bytes */
-		buf->len -= 2;
+		buf->len -= 2U;
 
 		/* SLIP encode and send */
 		len = slip_buffer(slip_buf, buf);

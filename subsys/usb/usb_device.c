@@ -427,7 +427,7 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 	p = (u8_t *)usb_dev.descriptors;
 	cur_index = 0;
 
-	while (p[DESC_bLength] != 0) {
+	while (p[DESC_bLength] != 0U) {
 		if (p[DESC_bDescriptorType] == type) {
 			if (cur_index == index) {
 				found = true;
@@ -479,7 +479,7 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 	u8_t cur_config = 0U;
 	u8_t cur_alt_setting = 0U;
 
-	if (config_index == 0) {
+	if (config_index == 0U) {
 		/* unconfigure device */
 		LOG_DBG("Device not configured - invalid configuration "
 			"offset");
@@ -491,7 +491,7 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 	cur_config = 0xFF;
 	cur_alt_setting = 0xFF;
 
-	while (p[DESC_bLength] != 0) {
+	while (p[DESC_bLength] != 0U) {
 		switch (p[DESC_bDescriptorType]) {
 		case DESC_CONFIGURATION:
 			/* remember current configuration index */
@@ -555,7 +555,7 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 
 	LOG_DBG("iface %u alt_setting %u", iface, alt_setting);
 
-	while (p[DESC_bLength] != 0) {
+	while (p[DESC_bLength] != 0U) {
 		switch (p[DESC_bDescriptorType]) {
 		case DESC_INTERFACE:
 			/* remember current alternate setting */

@@ -142,7 +142,7 @@ static int pci_bar_config_get(union pci_addr_reg pci_ctrl_addr, u32_t *config)
 		  sizeof(old_value), old_value);
 
 	/* check if this BAR is implemented */
-	if (*config != 0xffffffff && *config != 0) {
+	if (*config != 0xffffffff && *config != 0U) {
 		return 0;
 	}
 
@@ -201,7 +201,7 @@ static int pci_bar_params_get(union pci_addr_reg pci_ctrl_addr,
 	dev_info->addr = bar_value & mask;
 
 	addr = bar_config & mask;
-	if (addr != 0) {
+	if (addr != 0U) {
 		/* calculate the size of the BAR memory required */
 		dev_info->size = 1 << (find_lsb_set(addr) - 1);
 	}

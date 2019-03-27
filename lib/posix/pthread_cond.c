@@ -11,11 +11,11 @@
 
 static int cond_wait(pthread_cond_t *cv, pthread_mutex_t *mut, int timeout)
 {
-	__ASSERT(mut->lock_count == 1, "");
+	__ASSERT(mut->lock_count == 1U, "");
 
 	int ret, key = irq_lock();
 
-	mut->lock_count = 0;
+	mut->lock_count = 0U;
 	mut->owner = NULL;
 	_ready_one_thread(&mut->wait_q);
 	ret = z_pend_curr_irqlock(key, &cv->wait_q, timeout);

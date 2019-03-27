@@ -40,12 +40,12 @@ void test_config_save_one_file(void)
 
 	rc = settings_load();
 	zassert_true(rc == 0, "fs redout error");
-	zassert_true(val8 == 42, "bad value read");
+	zassert_true(val8 == 42U, "bad value read");
 
 	rc = test_config_save_one_byte_value("myfoo/mybar", 44);
 	zassert_true(rc == 0, "fs one item write error");
 
 	rc = settings_load();
 	zassert_true(rc == 0, "fs redout error");
-	zassert_true(val8 == 44, "bad value read");
+	zassert_true(val8 == 44U, "bad value read");
 }

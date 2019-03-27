@@ -15,7 +15,7 @@ static int pinmux_sam0_set(struct device *dev, u32_t pin, u32_t func)
 {
 	const struct pinmux_sam0_config *cfg = dev->config->config_info;
 	bool odd_pin = pin & 1;
-	int idx = pin / 2;
+	int idx = pin / 2U;
 
 	/* Each pinmux register holds the config for two pins.  The
 	 * even numbered pin goes in the bits 0..3 and the odd
@@ -35,7 +35,7 @@ static int pinmux_sam0_get(struct device *dev, u32_t pin, u32_t *func)
 {
 	const struct pinmux_sam0_config *cfg = dev->config->config_info;
 	bool odd_pin = pin & 1;
-	int idx = pin / 2;
+	int idx = pin / 2U;
 
 	if (odd_pin) {
 		*func = cfg->regs->PMUX[idx].bit.PMUXO;

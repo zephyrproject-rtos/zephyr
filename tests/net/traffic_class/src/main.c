@@ -351,7 +351,7 @@ static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
 	llstorage.addr[4] = 0x05;
 	llstorage.addr[5] = 0x06;
 
-	lladdr.len = 6;
+	lladdr.len = 6U;
 	lladdr.addr = llstorage.addr;
 	lladdr.type = NET_LINK_ETHERNET;
 

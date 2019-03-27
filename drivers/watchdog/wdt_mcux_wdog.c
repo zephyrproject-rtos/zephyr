@@ -40,10 +40,10 @@ static int mcux_wdog_setup(struct device *dev, u8_t options)
 	}
 
 	data->wdog_config.workMode.enableStop =
-		(options & WDT_OPT_PAUSE_IN_SLEEP) == 0;
+		(options & WDT_OPT_PAUSE_IN_SLEEP) == 0U;
 
 	data->wdog_config.workMode.enableDebug =
-		(options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0;
+		(options & WDT_OPT_PAUSE_HALTED_BY_DBG) == 0U;
 
 	WDOG_Init(base, &data->wdog_config);
 	LOG_DBG("Setup the watchdog");
@@ -89,12 +89,12 @@ static int mcux_wdog_install_timeout(struct device *dev,
 
 	WDOG_GetDefaultConfig(&data->wdog_config);
 
-	data->wdog_config.timeoutValue = clock_freq * cfg->window.max / 1000;
+	data->wdog_config.timeoutValue = clock_freq * cfg->window.max / 1000U;
 
 	if (cfg->window.min) {
 		data->wdog_config.enableWindowMode = true;
 		data->wdog_config.windowValue =
-			clock_freq * cfg->window.min / 1000;
+			clock_freq * cfg->window.min / 1000U;
 	} else {
 		data->wdog_config.enableWindowMode = false;
 		data->wdog_config.windowValue = 0;

@@ -37,9 +37,9 @@ void test_config_save_fcb_unaligned(void)
 
 	rc = settings_load();
 	zassert_true(rc == 0, "fcb redout error");
-	zassert_true(val8_un == 33, "bad value read");
+	zassert_true(val8_un == 33U, "bad value read");
 
-	val8_un = 15;
+	val8_un = 15U;
 	rc = settings_save();
 	zassert_true(rc == 0, "fcb write error");
 }

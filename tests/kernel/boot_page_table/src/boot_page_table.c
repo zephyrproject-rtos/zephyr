@@ -47,7 +47,7 @@ static void starting_addr_range(u32_t start_addr_range)
 	     addr_range += 0x1000) {
 		value = X86_MMU_GET_PTE(&z_x86_kernel_pdpt, addr_range);
 		status &= check_param(value, REGION_PERM);
-		zassert_false((status == 0), "error at %d permissions %d\n",
+		zassert_false((status == 0U), "error at %d permissions %d\n",
 			      addr_range, REGION_PERM);
 	}
 }
@@ -63,7 +63,7 @@ static void before_start_addr_range(u32_t start_addr_range)
 		value = X86_MMU_GET_PTE(&z_x86_kernel_pdpt, addr_range);
 		status &= check_param_nonset_region(value, REGION_PERM);
 
-		zassert_false((status == 0), "error at %d permissions %d\n",
+		zassert_false((status == 0U), "error at %d permissions %d\n",
 			      addr_range, REGION_PERM);
 	}
 }
@@ -78,7 +78,7 @@ static void ending_start_addr_range(u32_t start_addr_range)
 	     addr_range += 0x1000) {
 		value = X86_MMU_GET_PTE(&z_x86_kernel_pdpt, addr_range);
 		status &= check_param_nonset_region(value, REGION_PERM);
-		zassert_false((status == 0), "error at %d permissions %d\n",
+		zassert_false((status == 0U), "error at %d permissions %d\n",
 			      addr_range, REGION_PERM);
 	}
 }

@@ -320,7 +320,7 @@ int do_read_op_plain_text(struct lwm2m_engine_obj *obj,
 			  struct lwm2m_message *msg, int content_format)
 {
 	/* Plain text can only return single resource */
-	if (msg->path.level != 3) {
+	if (msg->path.level != 3U) {
 		return -EPERM; /* NOT_ALLOWED */
 	}
 
@@ -350,7 +350,7 @@ int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 		return -EPERM;
 	}
 
-	if (!obj_inst->resources || obj_inst->resource_count == 0) {
+	if (!obj_inst->resources || obj_inst->resource_count == 0U) {
 		return -EINVAL;
 	}
 
@@ -365,6 +365,6 @@ int do_write_op_plain_text(struct lwm2m_engine_obj *obj,
 		return -ENOENT;
 	}
 
-	msg->path.level = 3;
+	msg->path.level = 3U;
 	return lwm2m_write_handler(obj_inst, res, obj_field, msg);
 }

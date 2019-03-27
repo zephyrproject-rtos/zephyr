@@ -37,7 +37,7 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 	struct mcux_ftm_data *data = dev->driver_data;
 	u8_t duty_cycle;
 
-	if ((period_cycles == 0) || (pulse_cycles > period_cycles)) {
+	if ((period_cycles == 0U) || (pulse_cycles > period_cycles)) {
 		LOG_ERR("Invalid combination: period_cycles=%d, "
 			    "pulse_cycles=%d", period_cycles, pulse_cycles);
 		return -EINVAL;
@@ -71,7 +71,7 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 
 		LOG_DBG("pwm_freq=%d, clock_freq=%d", pwm_freq, clock_freq);
 
-		if (pwm_freq == 0) {
+		if (pwm_freq == 0U) {
 			LOG_ERR("Could not set up pwm_freq=%d", pwm_freq);
 			return -EINVAL;
 		}

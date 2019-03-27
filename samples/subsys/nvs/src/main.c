@@ -80,7 +80,7 @@ void main(void)
 		printk("Unable to get page info");
 	}
 	fs.sector_size = info.size;
-	fs.sector_count = 3;
+	fs.sector_count = 3U;
 
 	rc = nvs_init(&fs, DT_FLASH_DEV_NAME);
 	if (rc) {
@@ -144,12 +144,12 @@ void main(void)
 		printk("Id: %d, Data: %s\n",
 			STRING_ID, buf);
 		/* remove the item if reboot_counter = 10 */
-		if (reboot_counter == 10) {
+		if (reboot_counter == 10U) {
 			nvs_delete(&fs, STRING_ID);
 		}
 	} else   {
 		/* entry was not found, add it if reboot_counter = 0*/
-		if (reboot_counter == 0) {
+		if (reboot_counter == 0U) {
 			printk("Id: %d not found, adding it\n",
 			STRING_ID);
 			strcpy(buf, "DATA");
@@ -170,7 +170,7 @@ void main(void)
 		printk("\n");
 	} else   {
 		/* entry was not found, add it if reboot_counter = 0*/
-		if (reboot_counter == 0) {
+		if (reboot_counter == 0U) {
 			printk("Longarray not found, adding it as id %d\n",
 			       LONG_ID);
 			for (int n = 0; n < sizeof(longarray); n++) {
@@ -226,7 +226,7 @@ void main(void)
 		} else {
 			printk("Reboot counter reached max value.\n");
 			printk("Reset to 0 and exit test.\n");
-			reboot_counter = 0;
+			reboot_counter = 0U;
 			nvs_write(&fs, RBT_CNT_ID, &reboot_counter,
 			  sizeof(reboot_counter));
 			break;

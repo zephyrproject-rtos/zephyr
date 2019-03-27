@@ -519,7 +519,7 @@ static void sw_switch(u8_t dir, u8_t phy_curr, u8_t flags_curr, u8_t phy_next,
 	radio_tmr_end_capture();
 #endif /* CONFIG_BT_CTLR_SW_SWITCH_SINGLE_TIMER */
 
-	sw_tifs_toggle += 1;
+	sw_tifs_toggle += 1U;
 	sw_tifs_toggle &= 1;
 }
 #endif /* CONFIG_BT_CTLR_TIFS_HW */

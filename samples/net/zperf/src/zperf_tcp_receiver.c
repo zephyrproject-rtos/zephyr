@@ -81,12 +81,12 @@ static void tcp_received(struct net_context *context,
 			session->state = STATE_COMPLETED;
 
 			/* Compute baud rate */
-			if (duration != 0) {
+			if (duration != 0U) {
 				rate_in_kbps = (u32_t)
 					(((u64_t)session->length *
 					  (u64_t)8 *
 					  (u64_t)USEC_PER_SEC) /
-					 ((u64_t)duration * 1024));
+					 ((u64_t)duration * 1024U));
 			} else {
 				rate_in_kbps = 0U;
 			}

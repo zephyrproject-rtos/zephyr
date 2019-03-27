@@ -951,7 +951,7 @@ static u8_t *net_iface_get_mac(struct device *dev)
 	}
 
 	data->ll_addr.addr = data->mac_addr;
-	data->ll_addr.len = 6;
+	data->ll_addr.len = 6U;
 
 	return data->mac_addr;
 }
@@ -1001,22 +1001,22 @@ small:
 
 		ipv6_first_frag[4] = total_len / 256;
 		ipv6_first_frag[5] = total_len -
-			ipv6_first_frag[4] * 256;
+			ipv6_first_frag[4] * 256U;
 
 		if ((total_len / 256) != pkt->buffer->data[4]) {
 			DBG("Invalid length, 1st byte\n");
 			return -EINVAL;
 		}
 
-		if ((total_len - pkt->buffer->data[4] * 256) !=
+		if ((total_len - pkt->buffer->data[4] * 256U) !=
 		    pkt->buffer->data[5]) {
 			DBG("Invalid length, 2nd byte\n");
 			return -EINVAL;
 		}
 
-		offset = pkt->buffer->data[6 * 8 + 2] * 256 +
+		offset = pkt->buffer->data[6 * 8 + 2] * 256U +
 			(pkt->buffer->data[6 * 8 + 3] & 0xfe);
-		if (offset != 0) {
+		if (offset != 0U) {
 			DBG("Invalid offset %d\n", offset);
 			return -EINVAL;
 		}
@@ -1052,20 +1052,20 @@ small:
 
 		ipv6_second_frag[4] = total_len / 256;
 		ipv6_second_frag[5] = total_len -
-			ipv6_second_frag[4] * 256;
+			ipv6_second_frag[4] * 256U;
 
 		if ((total_len / 256) != pkt->buffer->data[4]) {
 			DBG("Invalid length, 1st byte\n");
 			return -EINVAL;
 		}
 
-		if ((total_len - pkt->buffer->data[4] * 256) !=
+		if ((total_len - pkt->buffer->data[4] * 256U) !=
 		    pkt->buffer->data[5]) {
 			DBG("Invalid length, 2nd byte\n");
 			return -EINVAL;
 		}
 
-		offset = pkt->buffer->data[6 * 8 + 2] * 256 +
+		offset = pkt->buffer->data[6 * 8 + 2] * 256U +
 			(pkt->buffer->data[6 * 8 + 3] & 0xfe);
 
 		if (offset != pkt_recv_data_len) {
@@ -1075,7 +1075,7 @@ small:
 		}
 
 		/* Make sure the MORE flag is set correctly */
-		if ((pkt->buffer->data[6 * 8 + 3] & 0x01) != 0) {
+		if ((pkt->buffer->data[6 * 8 + 3] & 0x01) != 0U) {
 			DBG("Invalid MORE flag for second fragment\n");
 			return -EINVAL;
 		}
@@ -1140,13 +1140,13 @@ large:
 			return -EINVAL;
 		}
 
-		if ((frag_offset & 0xfff8) != 0) {
+		if ((frag_offset & 0xfff8) != 0U) {
 			DBG("Invalid fragment offset %d\n",
 			    frag_offset & 0xfff8);
 			return -EINVAL;
 		}
 
-		if ((frag_offset & 0x0001) != 1) {
+		if ((frag_offset & 0x0001) != 1U) {
 			DBG("Fragment More flag should be set\n");
 			return -EINVAL;
 		}
@@ -1180,13 +1180,13 @@ large:
 			return -EINVAL;
 		}
 
-		if ((frag_offset & 0xfff8) != 200) {
+		if ((frag_offset & 0xfff8) != 200U) {
 			DBG("Invalid fragment offset %d\n",
 			    frag_offset & 0xfff8);
 			return -EINVAL;
 		}
 
-		if ((frag_offset & 0x0001) != 1) {
+		if ((frag_offset & 0x0001) != 1U) {
 			DBG("Fragment More flag should be set\n");
 			return -EINVAL;
 		}
@@ -1220,13 +1220,13 @@ large:
 			return -EINVAL;
 		}
 
-		if ((frag_offset & 0xfff8) != 400) {
+		if ((frag_offset & 0xfff8) != 400U) {
 			DBG("Invalid fragment offset %d\n",
 			    frag_offset & 0xfff8);
 			return -EINVAL;
 		}
 
-		if ((frag_offset & 0x0001) != 0) {
+		if ((frag_offset & 0x0001) != 0U) {
 			DBG("Fragment More flag should be unset\n");
 			return -EINVAL;
 		}

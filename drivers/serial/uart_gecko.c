@@ -134,7 +134,7 @@ static int uart_gecko_irq_tx_complete(struct device *dev)
 
 	USART_IntClear(config->base, USART_IF_TXC);
 
-	return (flags & USART_IF_TXC) != 0;
+	return (flags & USART_IF_TXC) != 0U;
 }
 
 static int uart_gecko_irq_tx_ready(struct device *dev)
@@ -142,7 +142,7 @@ static int uart_gecko_irq_tx_ready(struct device *dev)
 	const struct uart_gecko_config *config = dev->config->config_info;
 	u32_t flags = USART_IntGet(config->base);
 
-	return (flags & USART_IF_TXBL) != 0;
+	return (flags & USART_IF_TXBL) != 0U;
 }
 
 static void uart_gecko_irq_rx_enable(struct device *dev)
@@ -166,7 +166,7 @@ static int uart_gecko_irq_rx_full(struct device *dev)
 	const struct uart_gecko_config *config = dev->config->config_info;
 	u32_t flags = USART_IntGet(config->base);
 
-	return (flags & USART_IF_RXDATAV) != 0;
+	return (flags & USART_IF_RXDATAV) != 0U;
 }
 
 static int uart_gecko_irq_rx_ready(struct device *dev)

@@ -31,7 +31,7 @@
 static void exchange_func(struct bt_conn *conn, u8_t err,
 			  struct bt_gatt_exchange_params *params)
 {
-	shell_print(ctx_shell, "Exchange %s", err == 0 ? "successful" :
+	shell_print(ctx_shell, "Exchange %s", err == 0U ? "successful" :
 		    "failed");
 }
 
@@ -228,7 +228,7 @@ static int cmd_read(const struct shell *shell, size_t argc, char *argv[])
 	read_params.func = read_func;
 	read_params.handle_count = 1;
 	read_params.single.handle = strtoul(argv[1], NULL, 16);
-	read_params.single.offset = 0;
+	read_params.single.offset = 0U;
 
 	if (argc > 2) {
 		read_params.single.offset = strtoul(argv[2], NULL, 16);
@@ -309,7 +309,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 
 	gatt_write_buf[0] = strtoul(argv[3], NULL, 16);
 	write_params.data = gatt_write_buf;
-	write_params.length = 1;
+	write_params.length = 1U;
 	write_params.handle = handle;
 	write_params.offset = offset;
 	write_params.func = write_func;
@@ -409,7 +409,7 @@ static u8_t notify_func(struct bt_conn *conn,
 {
 	if (!data) {
 		shell_print(ctx_shell, "Unsubscribed");
-		params->value_handle = 0;
+		params->value_handle = 0U;
 		return BT_GATT_ITER_STOP;
 	}
 
@@ -711,7 +711,7 @@ static ssize_t write_met(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	} else {
 		write_count++;
 		write_len += len;
-		write_rate = ((u64_t)write_len << 3) * 1000000000 / delta;
+		write_rate = ((u64_t)write_len << 3) * 1000000000U / delta;
 	}
 
 	return len;

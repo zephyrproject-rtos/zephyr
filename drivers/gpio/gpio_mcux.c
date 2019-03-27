@@ -49,7 +49,7 @@ static int gpio_mcux_configure(struct device *dev,
 	}
 
 	/* Check if GPIO port supports interrupts */
-	if ((flags & GPIO_INT) && ((config->flags & GPIO_INT) == 0)) {
+	if ((flags & GPIO_INT) && ((config->flags & GPIO_INT) == 0U)) {
 		return -ENOTSUP;
 	}
 

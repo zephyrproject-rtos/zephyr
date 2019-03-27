@@ -11,12 +11,12 @@ static inline struct pdu_adv *lll_adv_pdu_latest_get(struct lll_adv_pdu *pdu,
 
 	first = pdu->first;
 	if (first != pdu->last) {
-		first += 1;
+		first += 1U;
 		if (first == DOUBLE_BUFFER_SIZE) {
-			first = 0;
+			first = 0U;
 		}
 		pdu->first = first;
-		*is_modified = 1;
+		*is_modified = 1U;
 	}
 
 	return (void *)pdu->pdu[first];

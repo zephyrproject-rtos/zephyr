@@ -332,8 +332,8 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	(void)memset(&bdt[idx_even], 0, sizeof(struct buf_descriptor));
 	(void)memset(&bdt[idx_odd], 0, sizeof(struct buf_descriptor));
 
-	if (k_mem_pool_alloc(&ep_buf_pool, block, cfg->ep_mps * 2, 10) == 0) {
-		(void)memset(block->data, 0, cfg->ep_mps * 2);
+	if (k_mem_pool_alloc(&ep_buf_pool, block, cfg->ep_mps * 2U, 10) == 0) {
+		(void)memset(block->data, 0, cfg->ep_mps * 2U);
 	} else {
 		LOG_ERR("Memory allocation time-out");
 		return -ENOMEM;
@@ -442,7 +442,7 @@ int usb_dc_ep_clear_stall(const u8_t ep)
 	}
 
 	/* Resume TX token processing, see USBx_CTL field descriptions */
-	if (ep == 0) {
+	if (ep == 0U) {
 		USB0->CTL &= ~USB_CTL_TXSUSPENDTOKENBUSY_MASK;
 	}
 
@@ -730,7 +730,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 	}
 
 	/* Resume TX token processing, see USBx_CTL field descriptions */
-	if (ep_idx == 0) {
+	if (ep_idx == 0U) {
 		USB0->CTL &= ~USB_CTL_TXSUSPENDTOKENBUSY_MASK;
 	}
 

@@ -67,7 +67,7 @@ static inline void stack_analyze(const char *name, const char *stack,
 		LOG_MODULE_DECLARE(kernel, CONFIG_KERNEL_LOG_LEVEL);
 
 		unsigned int unused = stack_unused_space_get(stack, size);
-		unsigned int pcnt = ((size - unused) * 100) / size;
+		unsigned int pcnt = ((size - unused) * 100U) / size;
 
 		LOG_INF("%s :\tunused %u\tusage %u / %u (%u %%)",
 			name, unused, size - unused, size, pcnt);

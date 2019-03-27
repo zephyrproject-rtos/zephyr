@@ -223,7 +223,7 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 			ctx->ops.cbc_crypt_hndlr = do_cbc_encrypt;
 			break;
 		case CRYPTO_CIPHER_MODE_CTR:
-			if (ctx->mode_params.ctr_info.ctr_len != 32) {
+			if (ctx->mode_params.ctr_info.ctr_len != 32U) {
 				LOG_ERR("Tinycrypt supports only 32 bit "
 					    "counter");
 				return -EINVAL;
@@ -244,7 +244,7 @@ static int tc_session_setup(struct device *dev, struct cipher_ctx *ctx,
 			break;
 		case CRYPTO_CIPHER_MODE_CTR:
 			/* Maybe validate CTR length */
-			if (ctx->mode_params.ctr_info.ctr_len != 32) {
+			if (ctx->mode_params.ctr_info.ctr_len != 32U) {
 				LOG_ERR("Tinycrypt supports only 32 bit "
 					    "counter");
 				return -EINVAL;

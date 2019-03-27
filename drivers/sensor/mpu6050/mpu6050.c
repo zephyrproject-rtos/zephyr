@@ -177,7 +177,7 @@ int mpu6050_init(struct device *dev)
 		}
 	}
 
-	if (i == 4) {
+	if (i == 4U) {
 		LOG_ERR("Invalid value for accel full-scale range.");
 		return -EINVAL;
 	}
@@ -198,7 +198,7 @@ int mpu6050_init(struct device *dev)
 		}
 	}
 
-	if (i == 4) {
+	if (i == 4U) {
 		LOG_ERR("Invalid value for gyro full-scale range.");
 		return -EINVAL;
 	}

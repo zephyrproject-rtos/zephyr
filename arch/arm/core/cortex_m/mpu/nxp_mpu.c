@@ -54,14 +54,14 @@ static int _mpu_partition_is_valid(const struct k_mem_partition *part)
 	 * minimum MPU region size.
 	 */
 	int partition_is_valid =
-		(part->size != 0)
+		(part->size != 0U)
 		&&
 		((part->size &
 			(~(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE - 1)))
 			== part->size)
 		&&
 		((part->start &
-			(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE - 1)) == 0);
+			(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE - 1)) == 0U);
 
 	return partition_is_valid;
 }
@@ -78,7 +78,7 @@ static void _region_init(const u32_t index,
 	u32_t region_end = region_conf->end;
 	u32_t region_attr = region_conf->attr.attr;
 
-	if (index == 0) {
+	if (index == 0U) {
 		/* The MPU does not allow writes from the core to affect the
 		 * RGD0 start or end addresses nor the permissions associated
 		 * with the debugger; it can only write the permission fields
@@ -241,7 +241,7 @@ static int _mpu_configure_regions(const struct k_mem_partition
 	int reg_index = start_reg_index;
 
 	for (i = 0; i < regions_num; i++) {
-		if (regions[i]->size == 0) {
+		if (regions[i]->size == 0U) {
 			continue;
 		}
 		/* Non-empty region. */

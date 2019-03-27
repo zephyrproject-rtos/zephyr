@@ -244,11 +244,11 @@ static int tester_send(struct device *dev, struct net_pkt *pkt)
 	}
 
 	if (icmp->type == NET_ICMPV6_NS) {
-		if (dad_time[0] == 0) {
+		if (dad_time[0] == 0U) {
 			dad_time[0] = k_uptime_get_32();
-		} else if (dad_time[1] == 0) {
+		} else if (dad_time[1] == 0U) {
 			dad_time[1] = k_uptime_get_32();
-		} else if (dad_time[2] == 0) {
+		} else if (dad_time[2] == 0U) {
 			dad_time[2] = k_uptime_get_32();
 		}
 
@@ -402,7 +402,7 @@ static void test_add_neighbor(void)
 	llstorage.addr[4] = 0x05;
 	llstorage.addr[5] = 0x06;
 
-	lladdr.len = 6;
+	lladdr.len = 6U;
 	lladdr.addr = llstorage.addr;
 	lladdr.type = NET_LINK_ETHERNET;
 
@@ -431,11 +431,11 @@ static void test_add_max_neighbors(void)
 	llstorage.addr[4] = 0x05;
 	llstorage.addr[5] = 0x07;
 
-	lladdr.len = 6;
+	lladdr.len = 6U;
 	lladdr.addr = llstorage.addr;
 	lladdr.type = NET_LINK_ETHERNET;
 
-	for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS + 1; i++) {
+	for (i = 0U; i < CONFIG_NET_IPV6_MAX_NEIGHBORS + 1; i++) {
 		llstorage.addr[5] += i;
 		dst_addr.s6_addr[15] += i;
 		nbr = net_ipv6_nbr_add(net_if_get_default(), &dst_addr,
@@ -536,7 +536,7 @@ static void test_prefix_timeout(void)
 	net_if_ipv6_prefix_set_lf(prefix, false);
 	net_if_ipv6_prefix_set_timer(prefix, lifetime);
 
-	k_sleep((lifetime * 2) * MSEC_PER_SEC);
+	k_sleep((lifetime * 2U) * MSEC_PER_SEC);
 
 	prefix = net_if_ipv6_prefix_lookup(net_if_get_default(),
 					   &addr, len);
@@ -686,7 +686,7 @@ static void test_hbho_message_1(void)
 		      "Data receive for HBHO failed.");
 
 	/* Verify IPv6 Ext hdr length */
-	zassert_false(net_pkt_ipv6_ext_len(pkt) == 72,
+	zassert_false(net_pkt_ipv6_ext_len(pkt) == 72U,
 		      "IPv6 mismatch ext hdr length");
 }
 
@@ -746,7 +746,7 @@ static void test_hbho_message_2(void)
 		      "Data receive for HBHO failed.");
 
 	/* Verify IPv6 Ext hdr length */
-	zassert_false(net_pkt_ipv6_ext_len(pkt) == 104,
+	zassert_false(net_pkt_ipv6_ext_len(pkt) == 104U,
 		      "IPv6 mismatch ext hdr length");
 }
 
@@ -908,7 +908,7 @@ static void test_hbho_message_3(void)
 		      "Data receive for HBHO failed.");
 
 	/* Verify IPv6 Ext hdr length */
-	zassert_false(net_pkt_ipv6_ext_len(pkt) == 920,
+	zassert_false(net_pkt_ipv6_ext_len(pkt) == 920U,
 		      "IPv6 mismatch ext hdr length");
 }
 
@@ -1043,7 +1043,7 @@ static void test_dad_timeout(void)
 
 	struct net_if_addr *ifaddr;
 
-	dad_time[0] = dad_time[1] = dad_time[2] = 0;
+	dad_time[0] = dad_time[1] = dad_time[2] = 0U;
 
 	ifaddr = net_if_ipv6_addr_add(iface, &addr1, NET_ADDR_AUTOCONF, 0xffff);
 	zassert_not_null(ifaddr, "Address 1 cannot be added");
@@ -1089,12 +1089,12 @@ static struct net_pkt *setup_ipv6_udp(struct net_if *iface,
 	}
 
 	NET_IPV6_HDR(pkt)->vtc = 0x60;
-	NET_IPV6_HDR(pkt)->tcflow = 0;
-	NET_IPV6_HDR(pkt)->flow = 0;
+	NET_IPV6_HDR(pkt)->tcflow = 0U;
+	NET_IPV6_HDR(pkt)->flow = 0U;
 	NET_IPV6_HDR(pkt)->len = htons(NET_UDPH_LEN + strlen(payload));
 
 	NET_IPV6_HDR(pkt)->nexthdr = IPPROTO_UDP;
-	NET_IPV6_HDR(pkt)->hop_limit = 255;
+	NET_IPV6_HDR(pkt)->hop_limit = 255U;
 
 	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->src, local_addr);
 	net_ipaddr_copy(&NET_IPV6_HDR(pkt)->dst, remote_addr);

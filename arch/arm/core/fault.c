@@ -389,7 +389,7 @@ static int _BusFault(NANO_ESF *esf, int fromHardFault)
 
 	if (sperr) {
 		for (i = 0; i < SYSMPU_EAR_COUNT; i++, mask >>= 1) {
-			if ((sperr & mask) == 0) {
+			if ((sperr & mask) == 0U) {
 				continue;
 			}
 			STORE_xFAR(edr, SYSMPU->SP[i].EDR);
@@ -796,7 +796,7 @@ void _Fault(NANO_ESF *esf, u32_t exc_return)
 		/* Invalid EXC_RETURN value */
 		goto _exit_fatal;
 	}
-	if ((exc_return & EXC_RETURN_EXCEPTION_SECURE_Secure) == 0) {
+	if ((exc_return & EXC_RETURN_EXCEPTION_SECURE_Secure) == 0U) {
 		/* Secure Firmware shall only handle Secure Exceptions.
 		 * This is a fatal error.
 		 */

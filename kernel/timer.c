@@ -62,7 +62,7 @@ void z_timer_expiration_handler(struct _timeout *t)
 	}
 
 	/* update timer's status */
-	timer->status += 1;
+	timer->status += 1U;
 
 	/* invoke timer expiry function */
 	if (timer->expiry_fn != NULL) {
@@ -97,7 +97,7 @@ void k_timer_init(struct k_timer *timer,
 {
 	timer->expiry_fn = expiry_fn;
 	timer->stop_fn = stop_fn;
-	timer->status = 0;
+	timer->status = 0U;
 
 	z_waitq_init(&timer->wait_q);
 	z_init_timeout(&timer->timeout, z_timer_expiration_handler);
@@ -121,7 +121,7 @@ void z_impl_k_timer_start(struct k_timer *timer, s32_t duration, s32_t period)
 
 	(void)z_abort_timeout(&timer->timeout);
 	timer->period = period_in_ticks;
-	timer->status = 0;
+	timer->status = 0U;
 	z_add_timeout(&timer->timeout, z_timer_expiration_handler,
 		     duration_in_ticks);
 }
@@ -171,7 +171,7 @@ u32_t z_impl_k_timer_status_get(struct k_timer *timer)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t result = timer->status;
 
-	timer->status = 0;
+	timer->status = 0U;
 	k_spin_unlock(&lock, key);
 
 	return result;
@@ -188,7 +188,7 @@ u32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	u32_t result = timer->status;
 
-	if (result == 0) {
+	if (result == 0U) {
 		if (!z_is_inactive_timeout(&timer->timeout)) {
 			/* wait for timer to expire or stop */
 			(void)z_pend_curr(&lock, key, &timer->wait_q, K_FOREVER);
@@ -203,7 +203,7 @@ u32_t z_impl_k_timer_status_sync(struct k_timer *timer)
 		/* timer has already expired at least once */
 	}
 
-	timer->status = 0;
+	timer->status = 0U;
 	k_spin_unlock(&lock, key);
 
 	return result;

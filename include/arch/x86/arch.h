@@ -444,7 +444,7 @@ static ALWAYS_INLINE unsigned int z_arch_irq_lock(void)
 
 static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 {
-	if ((key & 0x200U) == 0) {
+	if ((key & 0x200U) == 0U) {
 		return;
 	}
 

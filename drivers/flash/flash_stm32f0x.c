@@ -24,7 +24,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 bool flash_stm32_valid_range(struct device *dev, off_t offset, u32_t len,
 			     bool write)
 {
-	return (!write || (offset % 2 == 0 && len % 2 == 0)) &&
+	return (!write || (offset % 2 == 0 && len % 2 == 0U)) &&
 		flash_stm32_range_exists(dev, offset, len);
 }
 
@@ -134,7 +134,7 @@ int flash_stm32_write_range(struct device *dev, unsigned int offset,
 {
 	int i, rc = 0;
 
-	for (i = 0; i < len; i += 2, offset += 2) {
+	for (i = 0; i < len; i += 2, offset += 2U) {
 		rc = write_hword(dev, offset, ((const u16_t *) data)[i>>1]);
 		if (rc < 0) {
 			return rc;

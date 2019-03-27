@@ -377,7 +377,7 @@ static inline sa_family_t net_context_get_family(struct net_context *context)
 static inline void net_context_set_family(struct net_context *context,
 					  sa_family_t family)
 {
-	u8_t flag = 0;
+	u8_t flag = 0U;
 
 	NET_ASSERT(context);
 
@@ -420,7 +420,7 @@ enum net_sock_type net_context_get_type(struct net_context *context)
 static inline void net_context_set_type(struct net_context *context,
 					enum net_sock_type type)
 {
-	u16_t flag = 0;
+	u16_t flag = 0U;
 
 	NET_ASSERT(context);
 

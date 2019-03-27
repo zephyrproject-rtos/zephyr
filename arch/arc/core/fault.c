@@ -77,7 +77,7 @@ void _Fault(NANO_ESF *esf)
 	 * stack check and mpu violation can come out together, then
 	 * parameter = 0x2 | [0x4 | 0x8 | 0x1]
 	 */
-	if (vector == 6 && parameter & 0x2) {
+	if (vector == 6U && parameter & 0x2) {
 		z_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, esf);
 		return;
 	}

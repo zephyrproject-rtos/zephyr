@@ -176,7 +176,7 @@ static int bmi160_freq_to_odr_val(u16_t freq_int, u16_t freq_milli)
 	size_t i;
 
 	/* An ODR of 0 Hz is not allowed */
-	if (freq_int == 0 && freq_milli == 0) {
+	if (freq_int == 0U && freq_milli == 0U) {
 		return -EINVAL;
 	}
 
@@ -633,7 +633,7 @@ static int bmi160_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	bmi160->sample.raw[0] = 0U;
 
-	while ((bmi160->sample.raw[0] & BMI160_DATA_READY_BIT_MASK) == 0) {
+	while ((bmi160->sample.raw[0] & BMI160_DATA_READY_BIT_MASK) == 0U) {
 		if (bmi160_transceive(dev, BMI160_REG_STATUS | (1 << 7), false,
 				      bmi160->sample.raw, 1) < 0) {
 			return -EIO;
@@ -733,7 +733,7 @@ static int bmi160_temp_channel_get(struct device *dev, struct sensor_value *val)
 	s32_t temp_micro = 0;
 	struct bmi160_device_data *bmi160 = dev->driver_data;
 
-	if (bmi160->pmu_sts.raw == 0) {
+	if (bmi160->pmu_sts.raw == 0U) {
 		return -EINVAL;
 	}
 

@@ -150,7 +150,7 @@ static inline void lsm6dsl_shub_wait_completed(struct lsm6dsl_data *data)
 {
 	u16_t freq;
 
-	freq = (data->accel_freq == 0) ? 26 : data->accel_freq;
+	freq = (data->accel_freq == 0U) ? 26 : data->accel_freq;
 	k_sleep((2000U / freq) + 1);
 }
 
@@ -387,7 +387,7 @@ int lsm6dsl_shub_init_external_chip(struct device *dev)
 	for (i = 0U; i < ARRAY_SIZE(lsm6dsl_shub_sens_list[0].i2c_addr); i++) {
 		slv_i2c_addr = lsm6dsl_shub_sens_list[0].i2c_addr[i];
 
-		if (slv_i2c_addr == 0) {
+		if (slv_i2c_addr == 0U) {
 			continue;
 		}
 

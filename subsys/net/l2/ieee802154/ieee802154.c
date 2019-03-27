@@ -110,7 +110,7 @@ static inline void set_pkt_ll_addr(struct net_linkaddr *addr, bool comp,
 		}
 	} else {
 		/* ToDo: Handle short address (lookup known nbr, ...) */
-		addr->len = 0;
+		addr->len = 0U;
 		addr->addr = NULL;
 	}
 
@@ -250,7 +250,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	ieee802154_fragment_ctx_init(&f_ctx, pkt, len, true);
 
 	len = 0;
-	frame_buf.len = 0;
+	frame_buf.len = 0U;
 	buf = pkt->buffer;
 
 	while (buf) {
@@ -288,7 +288,7 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 		len += frame_buf.len;
 
 		/* Reinitializing frame_buf */
-		frame_buf.len = 0;
+		frame_buf.len = 0U;
 	}
 
 	net_pkt_unref(pkt);

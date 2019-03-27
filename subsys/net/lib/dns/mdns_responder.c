@@ -323,7 +323,7 @@ static int dns_read(struct net_context *ctx,
 		u8_t *lquery;
 
 		(void)memset(result->data, 0, net_buf_tailroom(result));
-		result->len = 0;
+		result->len = 0U;
 
 		ret = dns_unpack_query(&dns_msg, result, &qtype, &qclass);
 		if (ret < 0) {

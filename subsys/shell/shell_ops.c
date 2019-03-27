@@ -31,14 +31,14 @@ void shell_op_cursor_horiz_move(const struct shell *shell, s32_t delta)
 static inline bool full_line_cmd(const struct shell *shell)
 {
 	return ((shell->ctx->cmd_buff_len + shell_strlen(shell->ctx->prompt))
-			% shell->ctx->vt100_ctx.cons.terminal_wid == 0);
+			% shell->ctx->vt100_ctx.cons.terminal_wid == 0U);
 }
 
 /* Function returns true if cursor is at beginning of an empty line. */
 bool shell_cursor_in_empty_line(const struct shell *shell)
 {
 	return ((shell->ctx->cmd_buff_pos + shell_strlen(shell->ctx->prompt))
-			% shell->ctx->vt100_ctx.cons.terminal_wid == 0);
+			% shell->ctx->vt100_ctx.cons.terminal_wid == 0U);
 }
 
 void shell_op_cond_next_line(const struct shell *shell)
@@ -101,12 +101,12 @@ void shell_op_cursor_move(const struct shell *shell, s16_t val)
 static u16_t shift_calc(const char *str, u16_t pos, u16_t len, s16_t sign)
 {
 	bool found = false;
-	u16_t ret = 0;
+	u16_t ret = 0U;
 	u16_t idx;
 
 	while (1) {
 		idx = pos + ret * sign;
-		if (((idx == 0) && (sign < 0)) ||
+		if (((idx == 0U) && (sign < 0)) ||
 		    ((idx == len) && (sign > 0))) {
 			break;
 		}
@@ -298,7 +298,7 @@ void shell_op_char_delete(const struct shell *shell)
 	u16_t diff = shell->ctx->cmd_buff_len - shell->ctx->cmd_buff_pos;
 	char *str = &shell->ctx->cmd_buff[shell->ctx->cmd_buff_pos];
 
-	if (diff == 0) {
+	if (diff == 0U) {
 		return;
 	}
 

@@ -328,7 +328,7 @@ void ll_reset(void)
 			scan = ull_scan_is_enabled_get(0);
 			LL_ASSERT(scan);
 
-			scan->is_enabled = 0;
+			scan->is_enabled = 0U;
 			scan->lll.conn = NULL;
 		}
 
@@ -372,7 +372,7 @@ u8_t ll_rx_get(void **node_rx, u16_t *handle)
 {
 	struct node_rx_hdr *rx;
 	memq_link_t *link;
-	u8_t cmplt = 0;
+	u8_t cmplt = 0U;
 
 #if defined(CONFIG_BT_CONN)
 ll_rx_get_again:
@@ -386,13 +386,13 @@ ll_rx_get_again:
 			u8_t f, cmplt_prev, cmplt_curr;
 			u16_t h;
 
-			cmplt_curr = 0;
+			cmplt_curr = 0U;
 			f = mfifo_tx_ack.f;
 			do {
 				cmplt_prev = cmplt_curr;
 				cmplt_curr = tx_cmplt_get(&h, &f,
 							  mfifo_tx_ack.l);
-			} while ((cmplt_prev != 0) ||
+			} while ((cmplt_prev != 0U) ||
 				 (cmplt_prev != cmplt_curr));
 
 			/* Do not send up buffers to Host thread that are
@@ -597,14 +597,14 @@ void ll_rx_dequeue(void)
 				}
 			}
 
-			adv->is_enabled = 0;
+			adv->is_enabled = 0U;
 #endif /* CONFIG_BT_PERIPHERAL */
 #if defined(CONFIG_BT_CENTRAL)
 		} else {
 			struct lll_scan *lll = ftr->param;
 			struct ll_scan_set *scan = (void *)HDR_LLL2EVT(lll);
 
-			scan->is_enabled = 0;
+			scan->is_enabled = 0U;
 #endif /* CONFIG_BT_CENTRAL */
 		}
 
@@ -627,12 +627,12 @@ void ll_rx_dequeue(void)
 
 		adv = ull_adv_is_enabled_get(0);
 		LL_ASSERT(adv);
-		adv->is_enabled = 0;
+		adv->is_enabled = 0U;
 
 		scan = ull_scan_is_enabled_get(0);
 		LL_ASSERT(scan);
 
-		scan->is_enabled = 0;
+		scan->is_enabled = 0U;
 
 		ll_adv_scan_state_cb(0);
 #endif /* CONFIG_BT_HCI_MESH_EXT */
@@ -679,7 +679,7 @@ void ll_rx_mem_release(void **node_rx)
 				conn = (void *)HDR_LLL2EVT(conn_lll);
 				ll_conn_release(conn);
 
-				scan->is_enabled = 0;
+				scan->is_enabled = 0U;
 
 				scan->lll.conn = NULL;
 
@@ -1016,7 +1016,7 @@ int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 	e->abort_cb = abort_cb;
 	e->prio = prio;
 	e->is_resume = is_resume;
-	e->is_aborted = 0;
+	e->is_aborted = 0U;
 
 	MFIFO_ENQUEUE(prep, idx);
 
@@ -1240,7 +1240,7 @@ static u8_t tx_cmplt_get(u16_t *handle, u8_t *first, u8_t last)
 	}
 
 	*handle = tx->handle;
-	cmplt = 0;
+	cmplt = 0U;
 	do {
 		struct node_tx *node_tx;
 		struct pdu_data *p;
@@ -1480,7 +1480,7 @@ static inline void rx_demux_event_done(memq_link_t *link,
 	}
 
 	/* release done */
-	done->extra.type = 0;
+	done->extra.type = 0U;
 	done_release(link, done);
 
 	/* dequeue prepare pipeline */

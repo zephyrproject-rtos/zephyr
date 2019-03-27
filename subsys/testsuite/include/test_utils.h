@@ -40,7 +40,7 @@ static inline void show_str(const char *label, const u8_t *s, size_t len)
 	u32_t i;
 
 	TC_PRINT("%s = ", label);
-	for (i = 0; i < (u32_t)len; ++i) {
+	for (i = 0U; i < (u32_t)len; ++i) {
 		TC_PRINT("%02x", s[i]);
 	}
 	TC_PRINT("\n");

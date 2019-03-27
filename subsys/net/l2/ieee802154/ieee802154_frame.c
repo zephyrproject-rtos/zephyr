@@ -346,7 +346,7 @@ validate_payload_and_mfr(struct ieee802154_mpdu *mpdu,
 		}
 	} else if (type == IEEE802154_FRAME_TYPE_DATA) {
 		 /** A data frame embeds a payload */
-		if (payload_length == 0) {
+		if (payload_length == 0U) {
 			return false;
 		}
 
@@ -695,7 +695,7 @@ bool ieee802154_create_data_frame(struct ieee802154_context *ctx,
 
 		level = ctx->sec_ctx.level;
 		if (level >= IEEE802154_SECURITY_LEVEL_ENC) {
-			level -= 4;
+			level -= 4U;
 		}
 
 		/* p_buf should point to the right place */
@@ -794,13 +794,13 @@ static inline u8_t mac_command_length(enum ieee802154_cfi cfi)
 	case IEEE802154_CFI_ASSOCIATION_REQUEST:
 	case IEEE802154_CFI_DISASSOCIATION_NOTIFICATION:
 	case IEEE802154_CFI_GTS_REQUEST:
-		length += 1;
+		length += 1U;
 		break;
 	case IEEE802154_CFI_ASSOCIATION_RESPONSE:
-		length += 3;
+		length += 3U;
 		break;
 	case IEEE802154_CFI_COORDINATOR_REALIGNEMENT:
-		length += 8;
+		length += 8U;
 		break;
 	default:
 		break;
@@ -927,7 +927,7 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 
 	level = ctx->sec_ctx.level;
 	if (level >= IEEE802154_SECURITY_LEVEL_ENC) {
-		level -= 4;
+		level -= 4U;
 	}
 
 	/* We remove tag size from buf's length, it is now useless */

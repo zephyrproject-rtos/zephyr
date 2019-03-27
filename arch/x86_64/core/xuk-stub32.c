@@ -106,7 +106,7 @@ void *init_page_tables(void)
 
 		/* Each PDE filled with 2M supervisor pages */
 		for (int i = 0; i < 512; i++) {
-			if (!(gb == 0 && i == 0)) {
+			if (!(gb == 0U && i == 0)) {
 				pde[i].addr = (gb << 30) | (i << 21);
 				pde[i].present = 1;
 				pde[i].writable = 1;

@@ -87,7 +87,7 @@ static int gpio_sam0_write(struct device *dev, int access_op, u32_t pin,
 		return -ENOTSUP;
 	}
 
-	if (value != 0) {
+	if (value != 0U) {
 		config->regs->OUTSET.bit.OUTSET = mask;
 	} else {
 		config->regs->OUTCLR.bit.OUTCLR = mask;

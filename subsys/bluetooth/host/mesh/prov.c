@@ -385,7 +385,7 @@ static u8_t last_seg(u8_t len)
 
 static inline u8_t next_transaction_id(void)
 {
-	if (link.tx.id != 0 && link.tx.id != 0xFF) {
+	if (link.tx.id != 0U && link.tx.id != 0xFF) {
 		return ++link.tx.id;
 	}
 
@@ -1329,7 +1329,7 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 	} else if (seg == link.rx.last_seg) {
 		u8_t expect_len;
 
-		expect_len = (link.rx.buf->len - 20 -
+		expect_len = (link.rx.buf->len - 20U -
 			      (23 * (link.rx.last_seg - 1)));
 		if (expect_len != buf->len) {
 			BT_ERR("Incorrect last seg len: %u != %u",
@@ -1398,7 +1398,7 @@ static void gen_prov_start(struct prov_rx *rx, struct net_buf_simple *buf)
 		return;
 	}
 
-	if (START_LAST_SEG(rx->gpc) > 0 && link.rx.buf->len <= 20) {
+	if (START_LAST_SEG(rx->gpc) > 0 && link.rx.buf->len <= 20U) {
 		BT_ERR("Too small total length for multi-segment PDU");
 		close_link(PROV_ERR_NVAL_FMT, CLOSE_REASON_FAILED);
 		return;

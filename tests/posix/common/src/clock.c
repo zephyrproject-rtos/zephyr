@@ -69,7 +69,7 @@ void test_posix_realtime(void)
 	 */
 	struct timespec nts;
 	nts.tv_sec = 1514821501;
-	nts.tv_nsec = NSEC_PER_SEC / 2;
+	nts.tv_nsec = NSEC_PER_SEC / 2U;
 
 	/* TESTPOINT: Pass invalid clock type */
 	zassert_equal(clock_settime(CLOCK_INVALID, &nts), -1,
@@ -100,7 +100,7 @@ void test_posix_realtime(void)
 			((s64_t)rts.tv_nsec - (s64_t)nts.tv_nsec);
 
 		/* Make the delta 10ths of a second. */
-		delta /= (NSEC_PER_SEC / 1000);
+		delta /= (NSEC_PER_SEC / 1000U);
 
 		zassert_true(delta > last_delta, "Clock moved backward");
 		s64_t error = delta - last_delta;

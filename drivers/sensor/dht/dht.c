@@ -138,7 +138,7 @@ static int dht_sample_fetch(struct device *dev, enum sensor_channel chan)
 			buf[j] = buf[j] << 1;
 		}
 
-		if (i % 8 == 7) {
+		if (i % 8 == 7U) {
 			j++;
 		}
 	}

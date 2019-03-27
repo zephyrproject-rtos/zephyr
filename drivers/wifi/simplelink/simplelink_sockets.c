@@ -684,7 +684,7 @@ static int simplelink_setsockopt(int sd, int level, int optname,
 				 * verification and it is indeed
 				 * performed when the cert is set.
 				 */
-				if (*(u32_t *)optval != 2) {
+				if (*(u32_t *)optval != 2U) {
 					retval = slcb_SetErrno(ENOTSUP);
 					goto exit;
 				} else {

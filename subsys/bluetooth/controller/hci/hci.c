@@ -120,7 +120,7 @@ static void *cmd_complete(struct net_buf **buf, u8_t plen)
 	evt_create(*buf, BT_HCI_EVT_CMD_COMPLETE, sizeof(*cc) + plen);
 
 	cc = net_buf_add(*buf, sizeof(*cc));
-	cc->ncmd = 1;
+	cc->ncmd = 1U;
 	cc->opcode = sys_cpu_to_le16(_opcode);
 
 	return net_buf_add(*buf, plen);
@@ -137,7 +137,7 @@ static struct net_buf *cmd_status(u8_t status)
 
 	cs = net_buf_add(buf, sizeof(*cs));
 	cs->status = status;
-	cs->ncmd = 1;
+	cs->ncmd = 1U;
 	cs->opcode = sys_cpu_to_le16(_opcode);
 
 	return buf;
@@ -244,7 +244,7 @@ static void reset(struct net_buf *buf, struct net_buf **evt)
 	int i;
 
 	for (i = 0; i < ARRAY_SIZE(scan_filters); i++) {
-		scan_filters[i].count = 0;
+		scan_filters[i].count = 0U;
 	}
 	sf_curr = 0xFF;
 #endif
@@ -1384,7 +1384,7 @@ static void le_set_phy(struct net_buf *buf, struct net_buf **evt)
 	}
 
 	if (phy_opts & 0x03) {
-		phy_opts -= 1;
+		phy_opts -= 1U;
 		phy_opts &= 1;
 	} else {
 		phy_opts = 0U;
@@ -1813,7 +1813,7 @@ static void vs_read_version_info(struct net_buf *buf, struct net_buf **evt)
 	rp->hw_platform = sys_cpu_to_le16(BT_HCI_VS_HW_PLAT);
 	rp->hw_variant = sys_cpu_to_le16(BT_HCI_VS_HW_VAR);
 
-	rp->fw_variant = 0;
+	rp->fw_variant = 0U;
 	rp->fw_version = (KERNEL_VERSION_MAJOR & 0xff);
 	rp->fw_revision = sys_cpu_to_le16(KERNEL_VERSION_MINOR);
 	rp->fw_build = sys_cpu_to_le32(KERNEL_PATCHLEVEL & 0xffff);
@@ -1900,7 +1900,7 @@ static void vs_read_static_addrs(struct net_buf *buf, struct net_buf **evt)
 
 		rp = cmd_complete(evt, sizeof(*rp) + sizeof(*addr));
 		rp->status = 0x00;
-		rp->num_addrs = 1;
+		rp->num_addrs = 1U;
 
 		addr = &rp->a[0];
 		sys_put_le32(NRF_FICR->DEVICEADDR[0], &addr->bdaddr.val[0]);
@@ -1920,7 +1920,7 @@ static void vs_read_static_addrs(struct net_buf *buf, struct net_buf **evt)
 
 	rp = cmd_complete(evt, sizeof(*rp));
 	rp->status = 0x00;
-	rp->num_addrs = 0;
+	rp->num_addrs = 0U;
 }
 
 static void vs_read_key_hierarchy_roots(struct net_buf *buf,
@@ -1988,7 +1988,7 @@ static void mesh_get_opts(struct net_buf *buf, struct net_buf **evt)
 	rp->max_tx_power = 4;
 	rp->max_scan_filter = CONFIG_BT_CTLR_MESH_SCAN_FILTERS;
 	rp->max_filter_pattern = CONFIG_BT_CTLR_MESH_SF_PATTERNS;
-	rp->max_adv_slot = 1;
+	rp->max_adv_slot = 1U;
 	rp->evt_prefix_len = 0x01;
 	rp->evt_prefix = BT_HCI_MESH_EVT_PREFIX;
 }
@@ -2020,7 +2020,7 @@ static void mesh_set_scan_filter(struct net_buf *buf, struct net_buf **evt)
 	}
 
 	f = &scan_filters[filter];
-	for (i = 0; i < cmd->num_patterns; i++) {
+	for (i = 0U; i < cmd->num_patterns; i++) {
 		if (!cmd->patterns[i].pattern_len ||
 		    cmd->patterns[i].pattern_len >
 		    BT_HCI_MESH_PATTERN_LEN_MAX) {
@@ -2391,7 +2391,7 @@ static inline void le_dir_adv_report(struct pdu_adv *adv, struct net_buf *buf,
 	drp = meta_evt(buf, BT_HCI_EVT_LE_DIRECT_ADV_REPORT,
 		       sizeof(*drp) + sizeof(*dir_info));
 
-	drp->num_reports = 1;
+	drp->num_reports = 1U;
 	dir_info = (void *)(((u8_t *)drp) + sizeof(*drp));
 
 	/* Directed Advertising */
@@ -2403,7 +2403,7 @@ static inline void le_dir_adv_report(struct pdu_adv *adv, struct net_buf *buf,
 		ll_rl_id_addr_get(rl_idx, &dir_info->addr.type,
 				  &dir_info->addr.a.val[0]);
 		/* Mark it as identity address from RPA (0x02, 0x03) */
-		dir_info->addr.type += 2;
+		dir_info->addr.type += 2U;
 	} else {
 #else
 	if (1) {
@@ -2465,7 +2465,7 @@ static inline void le_mesh_scan_report(struct pdu_adv *adv, struct net_buf *buf,
 	mep = mesh_evt(buf, BT_HCI_EVT_MESH_SCANNING_REPORT,
 			    sizeof(*mep) + sizeof(*sr));
 
-	mep->num_reports = 1;
+	mep->num_reports = 1U;
 	sr = (void *)(((u8_t *)mep) + sizeof(*mep));
 	sr->addr.type = adv->tx_addr;
 	memcpy(&sr->addr.a.val[0], &adv->adv_ind.addr[0], sizeof(bt_addr_t));
@@ -2549,14 +2549,14 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	if (adv->type != PDU_ADV_TYPE_DIRECT_IND) {
 		data_len = (adv->len - BDADDR_SIZE);
 	} else {
-		data_len = 0;
+		data_len = 0U;
 	}
 	info_len = sizeof(struct bt_hci_evt_le_advertising_info) + data_len +
 		   sizeof(*prssi);
 	sep = meta_evt(buf, BT_HCI_EVT_LE_ADVERTISING_REPORT,
 		       sizeof(*sep) + info_len);
 
-	sep->num_reports = 1;
+	sep->num_reports = 1U;
 	adv_info = (void *)(((u8_t *)sep) + sizeof(*sep));
 
 	adv_info->evt_type = c_adv_type[adv->type];
@@ -2567,7 +2567,7 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 		ll_rl_id_addr_get(rl_idx, &adv_info->addr.type,
 				  &adv_info->addr.a.val[0]);
 		/* Mark it as identity address from RPA (0x02, 0x03) */
-		adv_info->addr.type += 2;
+		adv_info->addr.type += 2U;
 	} else {
 #else
 	if (1) {
@@ -2675,7 +2675,7 @@ static void le_scan_req_received(struct pdu_data *pdu_data, u8_t *b,
 		u8_t handle;
 		s8_t rssi;
 
-		handle = 0;
+		handle = 0U;
 		addr.type = adv->tx_addr;
 		memcpy(&addr.a.val[0], &adv->scan_req.scan_addr[0],
 		       sizeof(bt_addr_t));
@@ -2692,7 +2692,7 @@ static void le_scan_req_received(struct pdu_data *pdu_data, u8_t *b,
 	}
 
 	sep = meta_evt(buf, BT_HCI_EVT_LE_SCAN_REQ_RECEIVED, sizeof(*sep));
-	sep->handle = 0;
+	sep->handle = 0U;
 	sep->addr.type = adv->tx_addr;
 	memcpy(&sep->addr.a.val[0], &adv->scan_req.scan_addr[0],
 	       sizeof(bt_addr_t));

@@ -286,7 +286,7 @@ static void set_baud_rate(struct device *dev, u32_t baud_rate)
 	u32_t divisor; /* baud rate divisor */
 	u8_t lcr_cache;
 
-	if ((baud_rate != 0) && (dev_cfg->sys_clk_freq != 0)) {
+	if ((baud_rate != 0U) && (dev_cfg->sys_clk_freq != 0U)) {
 		/*
 		 * calculate baud rate divisor. a variant of
 		 * (u32_t)(dev_cfg->sys_clk_freq / (16.0 * baud_rate) + 0.5)

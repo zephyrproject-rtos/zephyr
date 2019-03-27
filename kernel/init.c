@@ -295,7 +295,7 @@ void __weak main(void)
 static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
 {
 #ifdef CONFIG_SMP
-	thr->base.is_idle = 1;
+	thr->base.is_idle = 1U;
 #endif
 
 	z_setup_new_thread(thr, stack,
@@ -341,8 +341,8 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	dummy_thread->base.user_options = K_ESSENTIAL;
 	dummy_thread->base.thread_state = _THREAD_DUMMY;
 #ifdef CONFIG_THREAD_STACK_INFO
-	dummy_thread->stack_info.start = 0;
-	dummy_thread->stack_info.size = 0;
+	dummy_thread->stack_info.start = 0U;
+	dummy_thread->stack_info.size = 0U;
 #endif
 #ifdef CONFIG_USERSPACE
 	dummy_thread->mem_domain_info.mem_domain = 0;

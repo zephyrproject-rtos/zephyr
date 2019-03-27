@@ -103,7 +103,7 @@ volatile u32_t unsigned_int = 0xffffff00;
 
 void test_stdint(void)
 {
-	zassert_true((unsigned_int + unsigned_byte + 1u == 0), NULL);
+	zassert_true((unsigned_int + unsigned_byte + 1u == 0U), NULL);
 
 }
 

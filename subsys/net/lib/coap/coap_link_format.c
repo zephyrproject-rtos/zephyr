@@ -78,7 +78,7 @@ static bool match_path_uri(const char * const *path,
 		return false;
 	}
 
-	if (len <= 1 || uri[0] != '/') {
+	if (len <= 1U || uri[0] != '/') {
 		return false;
 	}
 

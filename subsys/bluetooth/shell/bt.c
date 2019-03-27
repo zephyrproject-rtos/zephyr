@@ -250,7 +250,7 @@ static int hexstr2array(const char *str, u8_t *array, u8_t size)
 	int i, j;
 	u8_t tmp;
 
-	if (strlen(str) != ((size * 2) + (size - 1))) {
+	if (strlen(str) != ((size * 2U) + (size - 1))) {
 		return -EINVAL;
 	}
 
@@ -675,7 +675,7 @@ static int cmd_advertise(const struct shell *shell, size_t argc, char *argv[])
 	} else if (!strcmp(argv[1], "scan")) {
 		param.options = BT_LE_ADV_OPT_USE_NAME;
 	} else if (!strcmp(argv[1], "nconn")) {
-		param.options = 0;
+		param.options = 0U;
 	} else {
 		goto fail;
 	}

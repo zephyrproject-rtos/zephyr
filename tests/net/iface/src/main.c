@@ -94,7 +94,7 @@ static u8_t *net_iface_get_mac(struct device *dev)
 	}
 
 	data->ll_addr.addr = data->mac_addr;
-	data->ll_addr.len = 6;
+	data->ll_addr.len = 6U;
 
 	return data->mac_addr;
 }
@@ -552,7 +552,7 @@ static void select_src_iface(void)
 
 	net_ipaddr_copy(&ipv4.sin_addr, &dst_addr_2);
 	ipv4.sin_family = AF_INET;
-	ipv4.sin_port = 0;
+	ipv4.sin_port = 0U;
 
 	iface = net_if_select_src_iface((struct sockaddr *)&ipv4);
 	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",
@@ -560,7 +560,7 @@ static void select_src_iface(void)
 
 	net_ipaddr_copy(&ipv6.sin6_addr, &dst_addr1);
 	ipv6.sin6_family = AF_INET6;
-	ipv6.sin6_port = 0;
+	ipv6.sin6_port = 0U;
 
 	iface = net_if_select_src_iface((struct sockaddr *)&ipv6);
 	zassert_equal_ptr(iface, iface1, "Invalid interface %p vs %p selected",

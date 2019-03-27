@@ -112,7 +112,7 @@ static u8_t *net_route_get_mac(struct device *dev)
 	}
 
 	route->ll_addr.addr = route->mac_addr;
-	route->ll_addr.len = 6;
+	route->ll_addr.len = 6U;
 
 	return route->mac_addr;
 }

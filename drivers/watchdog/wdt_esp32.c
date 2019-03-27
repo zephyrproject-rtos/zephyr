@@ -181,7 +181,7 @@ static int wdt_esp32_install_timeout(struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (cfg->window.min != 0 || cfg->window.max == 0) {
+	if (cfg->window.min != 0U || cfg->window.max == 0U) {
 		return -EINVAL;
 	}
 

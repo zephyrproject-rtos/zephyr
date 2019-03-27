@@ -69,14 +69,14 @@ int net_ipv6_create(struct net_pkt *pkt,
 	}
 
 	ipv6_hdr->vtc     = 0x60;
-	ipv6_hdr->tcflow  = 0;
-	ipv6_hdr->flow    = 0;
-	ipv6_hdr->len     = 0;
-	ipv6_hdr->nexthdr = 0;
+	ipv6_hdr->tcflow  = 0U;
+	ipv6_hdr->flow    = 0U;
+	ipv6_hdr->len     = 0U;
+	ipv6_hdr->nexthdr = 0U;
 
 	/* User can tweak the default hop limit if needed */
 	ipv6_hdr->hop_limit = net_pkt_ipv6_hop_limit(pkt);
-	if (ipv6_hdr->hop_limit == 0) {
+	if (ipv6_hdr->hop_limit == 0U) {
 		ipv6_hdr->hop_limit =
 			net_if_ipv6_get_hop_limit(net_pkt_iface(pkt));
 	}
@@ -105,7 +105,7 @@ int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 	ipv6_hdr->len = htons(net_pkt_get_len(pkt) -
 			      sizeof(struct net_ipv6_hdr));
 
-	if (net_pkt_ipv6_next_hdr(pkt) != 255) {
+	if (net_pkt_ipv6_next_hdr(pkt) != 255U) {
 		ipv6_hdr->nexthdr = net_pkt_ipv6_next_hdr(pkt);
 	} else {
 		ipv6_hdr->nexthdr = next_header_proto;
@@ -113,7 +113,7 @@ int net_ipv6_finalize(struct net_pkt *pkt, u8_t next_header_proto)
 
 	net_pkt_set_data(pkt, &ipv6_access);
 
-	if (net_pkt_ipv6_next_hdr(pkt) != 255 &&
+	if (net_pkt_ipv6_next_hdr(pkt) != 255U &&
 	    net_pkt_skip(pkt, net_pkt_ipv6_ext_len(pkt))) {
 		return -ENOBUFS;
 	}
@@ -185,14 +185,14 @@ static inline int ipv6_handle_ext_hdr_options(struct net_pkt *pkt,
 		return -ENOBUFS;
 	}
 
-	exthdr_len = exthdr_len * 8 + 8;
+	exthdr_len = exthdr_len * 8U + 8;
 	if (exthdr_len > pkt_len) {
 		NET_DBG("Corrupted packet, extension header %d too long "
 			"(max %d bytes)", exthdr_len, pkt_len);
 		return -EINVAL;
 	}
 
-	length += 2;
+	length += 2U;
 
 	while (length < exthdr_len) {
 		u8_t opt_type, opt_len;

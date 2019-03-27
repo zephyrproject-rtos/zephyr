@@ -1060,7 +1060,7 @@ static int send_notification_packet(const struct sockaddr *addr,
 		goto end;
 	}
 
-	if (age >= 2) {
+	if (age >= 2U) {
 		r = coap_append_option_int(&response, COAP_OPTION_OBSERVE, age);
 		if (r < 0) {
 			goto end;

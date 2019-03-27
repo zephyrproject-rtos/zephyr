@@ -20,7 +20,7 @@ static u16_t sht3xd_temp_processed_to_raw(const struct sensor_value *val)
 	u64_t uval;
 
 	/* ret = (val + 45) * (2^16 - 1) / 175 */
-	uval = (u64_t)(val->val1 + 45) * 1000000 + val->val2;
+	uval = (u64_t)(val->val1 + 45) * 1000000U + val->val2;
 	return ((uval * 0xFFFF) / 175) / 1000000;
 }
 
@@ -29,7 +29,7 @@ static int sht3xd_rh_processed_to_raw(const struct sensor_value *val)
 	u64_t uval;
 
 	/* ret = val * (2^16 -1) / 100 */
-	uval = (u64_t)val->val1 * 1000000 + val->val2;
+	uval = (u64_t)val->val1 * 1000000U + val->val2;
 	return ((uval * 0xFFFF) / 100) / 1000000;
 }
 

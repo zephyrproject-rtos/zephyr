@@ -38,7 +38,7 @@ static void *thread_top(void *p1)
 
 	printk("Thread %d acquiring WR lock\n", (s32_t) p1);
 	ret = pthread_rwlock_trywrlock(&rwlock);
-	if (ret != 0) {
+	if (ret != 0U) {
 		zassert_false(pthread_rwlock_wrlock(&rwlock),
 			      "Failed to acquire WR lock");
 	}

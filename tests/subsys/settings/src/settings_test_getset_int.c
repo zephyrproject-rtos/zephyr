@@ -14,7 +14,7 @@ void test_config_getset_int(void)
 	int rc;
 	u8_t small_value;
 
-	small_value = 42;
+	small_value = 42U;
 	strcpy(name, "myfoo/mybar");
 	rc = settings_set_value(name, &small_value, sizeof(small_value));
 	zassert_true(rc == 0, "can not set key value");

@@ -104,7 +104,7 @@ void mem_domain_for_user(void *tc_number, void *p2, void *p3)
 
 void mem_domain_test_1(void *tc_number, void *p2, void *p3)
 {
-	if ((u32_t)tc_number == 1) {
+	if ((u32_t)tc_number == 1U) {
 		mem_domain_buf[0] = 10U;
 		k_mem_domain_remove_thread(k_current_get());
 		k_mem_domain_add_thread(&mem_domain_mem_domain,

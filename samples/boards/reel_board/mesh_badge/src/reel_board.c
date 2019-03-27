@@ -90,7 +90,7 @@ static size_t print_line(enum font_size font_size, int row, const char *text,
 	line[len] = '\0';
 
 	if (center) {
-		pad = (fonts[font_size].columns - len) / 2;
+		pad = (fonts[font_size].columns - len) / 2U;
 	} else {
 		pad = 0;
 	}
@@ -486,7 +486,7 @@ static void button_interrupt(struct device *dev, struct gpio_callback *cb,
 			if (uptime - press_ts < 500) {
 				bad_count++;
 			} else {
-				bad_count = 0;
+				bad_count = 0U;
 			}
 
 			press_ts = uptime;
@@ -494,7 +494,7 @@ static void button_interrupt(struct device *dev, struct gpio_callback *cb,
 			if (bad_count) {
 				if (bad_count > 5) {
 					mesh_send_baduser();
-					bad_count = 0;
+					bad_count = 0U;
 				} else {
 					printk("Ignoring press\n");
 				}

@@ -322,7 +322,7 @@ static ssize_t write_lock(struct bt_conn *conn,
 	}
 
 	/* Write 1 byte to lock or 17 bytes to transition to a new lock state */
-	if (len != 1) {
+	if (len != 1U) {
 		/* TODO: Allow setting new lock code, using AES-128-ECB to
 		 * decrypt with the existing lock code and set the unencrypted
 		 * value as the new code.

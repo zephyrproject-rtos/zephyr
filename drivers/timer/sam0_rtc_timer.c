@@ -164,7 +164,7 @@ int z_clock_driver_init(struct device *device)
 	/* Reset module to hardware defaults. */
 	rtc_reset();
 
-	rtc_last = 0;
+	rtc_last = 0U;
 
 	/* Configure RTC with 32-bit mode, configured prescaler and MATCHCLR. */
 	u16_t ctrl = RTC_MODE0_CTRL_MODE(0) | RTC_MODE0_CTRL_PRESCALER(0);
@@ -182,8 +182,8 @@ int z_clock_driver_init(struct device *device)
 	rtc_sync();
 	RTC0->COMP[0].reg = CYCLES_PER_TICK;
 	RTC0->INTENSET.reg = RTC_MODE0_INTENSET_OVF;
-	rtc_counter = 0;
-	rtc_timeout = 0;
+	rtc_counter = 0U;
+	rtc_timeout = 0U;
 #endif
 
 	/* Enable RTC module. */

@@ -87,13 +87,13 @@ static int do_net_init(void)
 	if (IS_ENABLED(CONFIG_NET_IPV4) && server_addr.sa_family == AF_INET) {
 		local_addr = (struct sockaddr *)&local_addr4;
 		server_addr_len = sizeof(struct sockaddr_in);
-		local_addr4.sin_port = 0;
+		local_addr4.sin_port = 0U;
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV6) && server_addr.sa_family == AF_INET6) {
 		local_addr = (struct sockaddr *)&local_addr6;
 		server_addr_len = sizeof(struct sockaddr_in6);
-		local_addr6.sin6_port = 0;
+		local_addr6.sin6_port = 0U;
 	}
 
 	if (local_addr == NULL) {

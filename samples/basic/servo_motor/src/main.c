@@ -27,7 +27,7 @@
  * Unlike pulse width, period is not a critical parameter for
  * motor control. 20ms is commonly used.
  */
-#define PERIOD (USEC_PER_SEC / 50)
+#define PERIOD (USEC_PER_SEC / 50U)
 
 /* all in micro second */
 #define STEPSIZE 100

@@ -187,8 +187,8 @@ int ieee802154_security_init(struct ieee802154_security_ctx *sec_ctx)
 	sec_ctx->enc.flags = cipher_query_hwcaps(dev);
 	sec_ctx->dec.flags = cipher_query_hwcaps(dev);
 
-	sec_ctx->enc.mode_params.ccm_info.nonce_len = 13;
-	sec_ctx->dec.mode_params.ccm_info.nonce_len = 13;
+	sec_ctx->enc.mode_params.ccm_info.nonce_len = 13U;
+	sec_ctx->dec.mode_params.ccm_info.nonce_len = 13U;
 
 	sec_ctx->enc.device = dev;
 	sec_ctx->dec.device = dev;

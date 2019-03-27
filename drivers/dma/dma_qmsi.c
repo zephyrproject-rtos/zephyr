@@ -136,7 +136,7 @@ static int dma_qmsi_chan_config(struct device *dev, u32_t channel,
 	u32_t temp = 0U;
 	int ret = 0;
 
-	if (config->block_count != 1) {
+	if (config->block_count != 1U) {
 		return -ENOTSUP;
 	}
 

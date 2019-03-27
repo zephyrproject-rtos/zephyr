@@ -795,8 +795,8 @@ static int cdc_acm_send_notification(struct device *dev, u16_t serial_state)
 
 	notification.bmRequestType = 0xA1;
 	notification.bNotificationType = 0x20;
-	notification.wValue = 0;
-	notification.wIndex = 0;
+	notification.wValue = 0U;
+	notification.wIndex = 0U;
 	notification.wLength = sys_cpu_to_le16(sizeof(serial_state));
 	notification.data = sys_cpu_to_le16(serial_state);
 

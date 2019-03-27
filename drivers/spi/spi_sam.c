@@ -76,11 +76,11 @@ static int spi_sam_configure(struct device *dev,
 	spi_mr |= (SPI_MR_MSTR | SPI_MR_MODFDIS);
 	spi_mr |= SPI_MR_PCS(spi_slave_to_mr_pcs(config->slave));
 
-	if ((config->operation & SPI_MODE_CPOL) != 0) {
+	if ((config->operation & SPI_MODE_CPOL) != 0U) {
 		spi_csr |= SPI_CSR_CPOL;
 	}
 
-	if ((config->operation & SPI_MODE_CPHA) == 0) {
+	if ((config->operation & SPI_MODE_CPHA) == 0U) {
 		spi_csr |= SPI_CSR_NCPHA;
 	}
 

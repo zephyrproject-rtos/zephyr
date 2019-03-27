@@ -386,7 +386,7 @@ struct net_buf *net_pkt_get_reserve_data(struct net_buf_pool *pool,
 	}
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	NET_FRAG_CHECK_IF_NOT_IN_USE(frag, frag->ref + 1);
+	NET_FRAG_CHECK_IF_NOT_IN_USE(frag, frag->ref + 1U);
 #endif
 
 	net_pkt_alloc_add(frag, false, caller, line);
@@ -550,7 +550,7 @@ void net_pkt_unref(struct net_pkt *pkt)
 			pool2str(net_buf_pool_get(frag->pool_id)),
 			get_name(net_buf_pool_get(frag->pool_id)),
 			get_frees(net_buf_pool_get(frag->pool_id)), frag,
-			frag->ref - 1, frag->frags, caller, line);
+			frag->ref - 1U, frag->frags, caller, line);
 #endif
 
 		if (!frag->ref) {
@@ -644,7 +644,7 @@ struct net_buf *net_pkt_frag_ref(struct net_buf *frag)
 		pool2str(net_buf_pool_get(frag->pool_id)),
 		get_name(net_buf_pool_get(frag->pool_id)),
 		get_frees(net_buf_pool_get(frag->pool_id)),
-		frag, frag->ref + 1, caller, line);
+		frag, frag->ref + 1U, caller, line);
 #endif
 
 	return net_buf_ref(frag);
@@ -670,10 +670,10 @@ void net_pkt_frag_unref(struct net_buf *frag)
 		pool2str(net_buf_pool_get(frag->pool_id)),
 		get_name(net_buf_pool_get(frag->pool_id)),
 		get_frees(net_buf_pool_get(frag->pool_id)),
-		frag, frag->ref - 1, caller, line);
+		frag, frag->ref - 1U, caller, line);
 #endif
 
-	if (frag->ref == 1) {
+	if (frag->ref == 1U) {
 		net_pkt_alloc_del(frag, caller, line);
 	}
 
@@ -699,7 +699,7 @@ struct net_buf *net_pkt_frag_del(struct net_pkt *pkt,
 	if (pkt->frags == frag && !parent) {
 		struct net_buf *tmp;
 
-		if (frag->ref == 1) {
+		if (frag->ref == 1U) {
 			net_pkt_alloc_del(frag, caller, line);
 		}
 
@@ -709,7 +709,7 @@ struct net_buf *net_pkt_frag_del(struct net_pkt *pkt,
 		return tmp;
 	}
 
-	if (frag->ref == 1) {
+	if (frag->ref == 1U) {
 		net_pkt_alloc_del(frag, caller, line);
 	}
 
@@ -1807,7 +1807,7 @@ u16_t net_pkt_get_current_offset(struct net_pkt *pkt)
 		return 0;
 	}
 
-	offset = 0;
+	offset = 0U;
 
 	while (buf != pkt->cursor.buf) {
 		offset += buf->len;

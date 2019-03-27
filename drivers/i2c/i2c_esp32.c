@@ -139,14 +139,14 @@ static int i2c_esp32_configure_speed(const struct i2c_esp32_config *config,
 		return -ENOTSUP;
 	}
 
-	period = (APB_CLK_FREQ / freq_hz) / 2;
+	period = (APB_CLK_FREQ / freq_hz) / 2U;
 
 	esp32_set_mask32(period << I2C_SCL_LOW_PERIOD_S,
 		   I2C_SCL_LOW_PERIOD_REG(config->index));
 	esp32_set_mask32(period << I2C_SCL_HIGH_PERIOD_S,
 		   I2C_SCL_HIGH_PERIOD_REG(config->index));
 
-	period /= 2; /* Set hold and setup times to 1/2th of period */
+	period /= 2U; /* Set hold and setup times to 1/2th of period */
 	esp32_set_mask32(period << I2C_SCL_START_HOLD_TIME_S,
 		   I2C_SCL_START_HOLD_REG(config->index));
 	esp32_set_mask32(period << I2C_SCL_RSTART_SETUP_TIME_S,
@@ -156,7 +156,7 @@ static int i2c_esp32_configure_speed(const struct i2c_esp32_config *config,
 	esp32_set_mask32(period << I2C_SCL_STOP_SETUP_TIME_S,
 		   I2C_SCL_STOP_SETUP_REG(config->index));
 
-	period /= 2; /* Set sample and hold times to 1/4th of period */
+	period /= 2U; /* Set sample and hold times to 1/4th of period */
 	esp32_set_mask32(period << I2C_SDA_HOLD_TIME_S,
 		   I2C_SDA_HOLD_REG(config->index));
 	esp32_set_mask32(period << I2C_SDA_SAMPLE_TIME_S,
@@ -404,7 +404,7 @@ static int i2c_esp32_read_msg(struct device *dev, u16_t addr,
 		 * slave device.  Divide the read command in two segments as
 		 * recommended by the ESP32 Technical Reference Manual.
 		 */
-		if (msg.len - to_read <= 1) {
+		if (msg.len - to_read <= 1U) {
 			/* Read the last byte and explicitly ask for an
 			 * acknowledgment.
 			 */

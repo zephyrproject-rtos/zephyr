@@ -78,7 +78,7 @@ static void vnd_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t value)
 static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			u8_t err)
 {
-	printk("Indication %s\n", err != 0 ? "fail" : "success");
+	printk("Indication %s\n", err != 0U ? "fail" : "success");
 	indicating = 0U;
 }
 

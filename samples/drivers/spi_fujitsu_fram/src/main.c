@@ -150,7 +150,7 @@ void main(void)
 	}
 
 	spi_cfg.operation = SPI_WORD_SET(8);
-	spi_cfg.frequency = 256000;
+	spi_cfg.frequency = 256000U;
 
 
 	err = mb85rs64v_read_id(spi, &spi_cfg);

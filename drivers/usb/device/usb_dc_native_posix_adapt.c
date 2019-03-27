@@ -100,7 +100,7 @@ static int send_interfaces(const u8_t *descriptors, int connfd)
 			iface.bInterfaceClass = desc->bInterfaceClass;
 			iface.bInterfaceSubClass = desc->bInterfaceSubClass;
 			iface.bInterfaceProtocol = desc->bInterfaceProtocol;
-			iface.padding = 0;
+			iface.padding = 0U;
 
 			if (send(connfd, &iface, sizeof(iface), 0) !=
 			    sizeof(iface)) {
@@ -332,7 +332,7 @@ void usbip_start(void)
 		LOG_DBG("Connection: %s", inet_ntoa(client_addr.sin_addr));
 
 		/* Set attached 0 */
-		attached = 0;
+		attached = 0U;
 
 		while (true) {
 			struct usbip_header cmd;
@@ -371,7 +371,7 @@ void usbip_start(void)
 					break;
 				case OP_REQ_IMPORT:
 					if (!handle_import(desc, connfd)) {
-						attached = 1;
+						attached = 1U;
 					}
 					break;
 				default:

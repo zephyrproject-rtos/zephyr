@@ -209,12 +209,12 @@ static int hid_on_set_idle(struct hid_device_info *dev_data,
 
 	dev_data->idle_rate[report_id] = rate;
 
-	if (rate == 0) {
+	if (rate == 0U) {
 		/* Clear idle */
 		bool clear = true;
 
 		for (u16_t i = 1; i <= CONFIG_USB_HID_REPORTS; i++) {
-			if (dev_data->idle_rate[i] != 0) {
+			if (dev_data->idle_rate[i] != 0U) {
 				/* Report with non-zero id has idle rate. */
 				clear = false;
 				break;
@@ -224,7 +224,7 @@ static int hid_on_set_idle(struct hid_device_info *dev_data,
 			dev_data->idle_id_report = false;
 			LOG_DBG("Non-zero report idle rate OFF.");
 
-			if (dev_data->idle_rate[0] == 0) {
+			if (dev_data->idle_rate[0] == 0U) {
 				dev_data->idle_on = false;
 				LOG_DBG("Idle rate OFF.");
 			}
@@ -233,7 +233,7 @@ static int hid_on_set_idle(struct hid_device_info *dev_data,
 		/* Set idle */
 		dev_data->idle_on = true;
 		LOG_DBG("Idle rate ON.");
-		if (report_id != 0) {
+		if (report_id != 0U) {
 			/* Report with non-zero id has idle rate set now. */
 			dev_data->idle_id_report = true;
 			LOG_DBG("Non-zero report idle rate ON.");
@@ -302,8 +302,8 @@ void hid_clear_idle_ctx(struct hid_device_info *dev_data)
 	dev_data->idle_on = false;
 	dev_data->idle_id_report = false;
 	for (u16_t i = 0; i <= CONFIG_USB_HID_REPORTS; i++) {
-		dev_data->sof_cnt[i] = 0;
-		dev_data->idle_rate[i] = 0;
+		dev_data->sof_cnt[i] = 0U;
+		dev_data->idle_rate[i] = 0U;
 	}
 }
 
@@ -314,11 +314,11 @@ void hid_sof_handler(struct hid_device_info *dev_data)
 			dev_data->sof_cnt[i]++;
 		}
 
-		u32_t diff = abs((dev_data->idle_rate[i] * 4)
+		u32_t diff = abs((dev_data->idle_rate[i] * 4U)
 				 - dev_data->sof_cnt[i]);
 
-		if (diff < (2 + (dev_data->idle_rate[i] / 10))) {
-			dev_data->sof_cnt[i] = 0;
+		if (diff < (2 + (dev_data->idle_rate[i] / 10U))) {
+			dev_data->sof_cnt[i] = 0U;
 			if (dev_data->ops && dev_data->ops->on_idle) {
 				dev_data->ops->on_idle(i);
 			}

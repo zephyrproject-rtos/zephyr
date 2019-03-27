@@ -183,10 +183,10 @@ static int mcux_elcdif_init(struct device *dev)
 
 	elcdif_rgb_mode_config_t rgb_mode = config->rgb_mode;
 
-	data->pixel_bytes = config->bits_per_pixel / 8;
+	data->pixel_bytes = config->bits_per_pixel / 8U;
 	data->fb_bytes = data->pixel_bytes *
 			 rgb_mode.panelWidth * rgb_mode.panelHeight;
-	data->write_idx = 1;
+	data->write_idx = 1U;
 
 	for (i = 0; i < ARRAY_SIZE(data->fb); i++) {
 		if (k_mem_pool_alloc(&mcux_elcdif_pool, &data->fb[i],

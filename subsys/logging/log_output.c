@@ -68,22 +68,22 @@ static int level_to_rfc5424_severity(u32_t level)
 
 	switch (level) {
 	case LOG_LEVEL_NONE:
-		ret = 7;
+		ret = 7U;
 		break;
 	case LOG_LEVEL_ERR:
-		ret =  3;
+		ret =  3U;
 		break;
 	case LOG_LEVEL_WRN:
-		ret =  4;
+		ret =  4U;
 		break;
 	case LOG_LEVEL_INF:
-		ret =  6;
+		ret =  6U;
 		break;
 	case LOG_LEVEL_DBG:
-		ret = 7;
+		ret = 7U;
 		break;
 	default:
-		ret = 7;
+		ret = 7U;
 		break;
 	}
 
@@ -157,7 +157,7 @@ static int timestamp_print(const struct log_output *log_output,
 
 	if (!format) {
 		length = print_formatted(log_output, "[%08lu] ", timestamp);
-	} else if (freq != 0) {
+	} else if (freq != 0U) {
 		u32_t remainder;
 		u32_t seconds;
 		u32_t hours;
@@ -167,13 +167,13 @@ static int timestamp_print(const struct log_output *log_output,
 
 		timestamp /= timestamp_div;
 		seconds = timestamp / freq;
-		hours = seconds / 3600;
-		seconds -= hours * 3600;
-		mins = seconds / 60;
-		seconds -= mins * 60;
+		hours = seconds / 3600U;
+		seconds -= hours * 3600U;
+		mins = seconds / 60U;
+		seconds -= mins * 60U;
 
 		remainder = timestamp % freq;
-		ms = (remainder * 1000) / freq;
+		ms = (remainder * 1000U) / freq;
 		us = (1000 * (1000 * remainder - (ms * freq))) / freq;
 
 		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
@@ -189,11 +189,11 @@ static int timestamp_print(const struct log_output *log_output,
 			strftime(time_str, sizeof(time_str), "%FT%T", tm);
 
 			length = print_formatted(log_output, "%s.%06dZ ",
-						 time_str, ms * 1000 + us);
+						 time_str, ms * 1000U + us);
 #else
 			length = print_formatted(log_output,
 					"1970-01-01T%02d:%02d:%02d.%06dZ ",
-					hours, mins, seconds, ms * 1000 + us);
+					hours, mins, seconds, ms * 1000U + us);
 #endif
 		} else {
 			length = print_formatted(log_output,
@@ -255,11 +255,11 @@ static void newline_print(const struct log_output *ctx, u32_t flags)
 		return;
 	}
 
-	if ((flags & LOG_OUTPUT_FLAG_CRLF_NONE) != 0) {
+	if ((flags & LOG_OUTPUT_FLAG_CRLF_NONE) != 0U) {
 		return;
 	}
 
-	if ((flags & LOG_OUTPUT_FLAG_CRLF_LFONLY) != 0) {
+	if ((flags & LOG_OUTPUT_FLAG_CRLF_LFONLY) != 0U) {
 		print_formatted(ctx, "\n");
 	} else {
 		print_formatted(ctx, "\r\n");
@@ -443,7 +443,7 @@ static u32_t prefix_print(const struct log_output *log_output,
 			 u32_t flags, bool func_on, u32_t timestamp, u8_t level,
 			 u8_t domain_id, u16_t source_id)
 {
-	u32_t length = 0;
+	u32_t length = 0U;
 
 	bool stamp = flags & LOG_OUTPUT_FLAG_TIMESTAMP;
 	bool colors_on = flags & LOG_OUTPUT_FLAG_COLORS;
@@ -629,8 +629,8 @@ void log_output_timestamp_freq_set(u32_t frequency)
 	 * printed) and too high frequency leads to overflows in calculations.
 	 */
 	while (frequency > 1000000) {
-		frequency /= 2;
-		timestamp_div *= 2;
+		frequency /= 2U;
+		timestamp_div *= 2U;
 	}
 
 	freq = frequency;

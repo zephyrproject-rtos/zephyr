@@ -450,7 +450,7 @@ static void verify_send_report(void)
 }
 
 /* This value should be longer that the one in net_if.c when DAD timeouts */
-#define DAD_TIMEOUT (MSEC_PER_SEC / 5)
+#define DAD_TIMEOUT (MSEC_PER_SEC / 5U)
 
 static void test_allnodes(void)
 {

@@ -19,7 +19,7 @@ static void fxas21002_gpio_callback(struct device *dev,
 	struct fxas21002_data *data =
 		CONTAINER_OF(cb, struct fxas21002_data, gpio_cb);
 
-	if ((pin_mask & BIT(data->gpio_pin)) == 0) {
+	if ((pin_mask & BIT(data->gpio_pin)) == 0U) {
 		return;
 	}
 

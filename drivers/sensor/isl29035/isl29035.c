@@ -51,7 +51,7 @@ static int isl29035_channel_get(struct device *dev,
 	/* val = sample_val * lux_range / (2 ^ adc_data_bits) */
 	tmp = (u64_t)drv_data->data_sample * ISL29035_LUX_RANGE;
 	val->val1 = tmp >> ISL29035_ADC_DATA_BITS;
-	tmp = (tmp & ISL29035_ADC_DATA_MASK) * 1000000;
+	tmp = (tmp & ISL29035_ADC_DATA_MASK) * 1000000U;
 	val->val2 = tmp >> ISL29035_ADC_DATA_BITS;
 #elif CONFIG_ISL29035_MODE_IR
 	ARG_UNUSED(tmp);

@@ -138,8 +138,8 @@ static bool ds_test(struct device *dev)
 	dec.keylen = sizeof(key);
 
 	/* Setup CCM parameters */
-	enc.mode_params.ccm_info.nonce_len = 13;
-	dec.mode_params.ccm_info.nonce_len = 13;
+	enc.mode_params.ccm_info.nonce_len = 13U;
+	dec.mode_params.ccm_info.nonce_len = 13U;
 
 	enc.flags = CAP_RAW_KEY | CAP_INPLACE_OPS | CAP_SYNC_OPS;
 	dec.flags = CAP_RAW_KEY | CAP_INPLACE_OPS | CAP_SYNC_OPS;
@@ -174,7 +174,7 @@ static bool ds_test(struct device *dev)
 	apkt.ad = buf;
 	apkt.ad_len = sizeof(auth_data);
 
-	enc.mode_params.ccm_info.tag_len = 8;
+	enc.mode_params.ccm_info.tag_len = 8U;
 	pkt.ctx = &enc;
 
 	ret = cipher_ccm_op(&enc, &apkt, auth_nonce);
@@ -189,7 +189,7 @@ static bool ds_test(struct device *dev)
 		goto enc;
 	}
 
-	dec.mode_params.ccm_info.tag_len = 8;
+	dec.mode_params.ccm_info.tag_len = 8U;
 	pkt.ctx = &dec;
 
 	ret = cipher_ccm_op(&dec, &apkt, auth_nonce);
@@ -213,7 +213,7 @@ enc:
 	apkt.tag = NULL;
 
 	/* No tag = no MIC, thus no auth */
-	enc.mode_params.ccm_info.tag_len = 0;
+	enc.mode_params.ccm_info.tag_len = 0U;
 	pkt.ctx = &enc;
 
 	ret = cipher_ccm_op(&enc, &apkt, enc_dec_nonce);
@@ -228,7 +228,7 @@ enc:
 		goto both;
 	}
 
-	dec.mode_params.ccm_info.tag_len = 0;
+	dec.mode_params.ccm_info.tag_len = 0U;
 	pkt.ctx = &dec;
 
 	ret = cipher_ccm_op(&dec, &apkt, enc_dec_nonce);
@@ -256,7 +256,7 @@ both:
 	apkt.ad_len = sizeof(both_op_data) - 1;
 	apkt.tag = NULL;
 
-	enc.mode_params.ccm_info.tag_len = 8;
+	enc.mode_params.ccm_info.tag_len = 8U;
 	pkt.ctx = &enc;
 
 	ret = cipher_ccm_op(&enc, &apkt, both_op_nonce);
@@ -272,7 +272,7 @@ both:
 	}
 
 	pkt.in_len = 1 + 8;
-	dec.mode_params.ccm_info.tag_len = 8;
+	dec.mode_params.ccm_info.tag_len = 8U;
 	pkt.ctx = &dec;
 
 	ret = cipher_ccm_op(&dec, &apkt, both_op_nonce);

@@ -137,7 +137,7 @@ static inline void net_buf_simple_init(struct net_buf_simple *buf,
 	}
 
 	buf->data = buf->__buf + reserve_head;
-	buf->len = 0;
+	buf->len = 0U;
 }
 
 /**
@@ -149,7 +149,7 @@ static inline void net_buf_simple_init(struct net_buf_simple *buf,
  */
 static inline void net_buf_simple_reset(struct net_buf_simple *buf)
 {
-	buf->len  = 0;
+	buf->len  = 0U;
 	buf->data = buf->__buf;
 }
 

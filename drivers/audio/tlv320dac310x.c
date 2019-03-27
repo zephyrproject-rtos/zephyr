@@ -340,10 +340,10 @@ static int codec_configure_clocks(struct device *dev,
 	LOG_DBG("NDAC: %u MDAC: %u OSR: %u", ndac, mdac, osr);
 
 	if (i2s->options & I2S_OPT_BIT_CLK_MASTER) {
-		bclk_div = osr * mdac / (i2s->word_size * 2); /* stereo */
+		bclk_div = osr * mdac / (i2s->word_size * 2U); /* stereo */
 		if ((bclk_div * i2s->word_size * 2) != (osr * mdac)) {
 			LOG_ERR("Unable to generate BCLK %u from MCLK %u",
-				i2s->frame_clk_freq * i2s->word_size * 2,
+				i2s->frame_clk_freq * i2s->word_size * 2U,
 				cfg->mclk_freq);
 			return -EINVAL;
 		}
@@ -366,7 +366,7 @@ static int codec_configure_clocks(struct device *dev,
 	}
 
 	/* calculate MCLK divider to get ~1MHz */
-	mclk_div = (cfg->mclk_freq + 1000000 - 1) / 1000000;
+	mclk_div = (cfg->mclk_freq + 1000000 - 1) / 1000000U;
 	/* setup timer clock to be MCLK divided */
 	codec_write_reg(dev, TIMER_MCLK_DIV_ADDR,
 			TIMER_MCLK_DIV_EN_EXT | TIMER_MCLK_DIV_VAL(mclk_div));

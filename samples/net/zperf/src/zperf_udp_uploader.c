@@ -164,8 +164,8 @@ void zperf_udp_upload(const struct shell *shell,
 		      struct zperf_results *results)
 {
 	u32_t packet_duration = (u32_t)(((u64_t) packet_size *
-					       SEC_TO_HW_CYCLES(1) * 8) /
-					      (u64_t)(rate_in_kbps * 1024));
+					       SEC_TO_HW_CYCLES(1) * 8U) /
+					      (u64_t)(rate_in_kbps * 1024U));
 	u32_t duration = MSEC_TO_HW_CYCLES(duration_in_ms);
 	u32_t print_interval = SEC_TO_HW_CYCLES(1);
 	u32_t delay = packet_duration;

@@ -228,7 +228,7 @@ int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 		return -1;
 	}
 
-	if (buf == NULL || desc->buf_size == 0) {
+	if (buf == NULL || desc->buf_size == 0U) {
 		LOG_ERR("Display buffer is not available");
 		return -1;
 	}
@@ -238,7 +238,7 @@ int ssd1306_write(const struct device *dev, const u16_t x, const u16_t y,
 		return -1;
 	}
 
-	if (x != 0 && y != 0) {
+	if (x != 0U && y != 0U) {
 		LOG_ERR("Unsupported origin");
 		return -1;
 	}

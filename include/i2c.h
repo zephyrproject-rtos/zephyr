@@ -511,7 +511,7 @@ static inline int i2c_burst_write(struct device *dev,
 	struct i2c_msg msg[2];
 
 	msg[0].buf = &start_addr;
-	msg[0].len = 1;
+	msg[0].len = 1U;
 	msg[0].flags = I2C_MSG_WRITE;
 
 	msg[1].buf = (u8_t *)buf;
@@ -673,7 +673,7 @@ __deprecated static inline int i2c_burst_write16(struct device *dev,
 	addr_buffer[1] = start_addr & 0xFF;
 	addr_buffer[0] = start_addr >> 8;
 	msg[0].buf = addr_buffer;
-	msg[0].len = 2;
+	msg[0].len = 2U;
 	msg[0].flags = I2C_MSG_WRITE;
 
 	msg[1].buf = (u8_t *)buf;

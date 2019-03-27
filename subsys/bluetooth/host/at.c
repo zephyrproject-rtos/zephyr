@@ -52,10 +52,10 @@ int at_get_number(struct at_client *at, u32_t *val)
 	for (i = 0U, *val = 0U;
 	     isdigit((unsigned char)at->buf[at->pos]);
 	     at->pos++, i++) {
-		*val = *val * 10 + at->buf[at->pos] - '0';
+		*val = *val * 10U + at->buf[at->pos] - '0';
 	}
 
-	if (i == 0) {
+	if (i == 0U) {
 		return -ENODATA;
 	}
 

@@ -142,7 +142,7 @@ bool z_arc_v2_irq_unit_is_in_isr(void)
 		return true;
 	}
 
-	return ((act & 0xffff) != 0);
+	return ((act & 0xffff) != 0U);
 }
 
 /*

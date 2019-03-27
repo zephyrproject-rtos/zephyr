@@ -21,10 +21,10 @@ LOG_MODULE_REGISTER(fs_nvs, CONFIG_NVS_LOG_LEVEL);
 /* _nvs_al_size returns size aligned to fs->write_block_size */
 static inline size_t _nvs_al_size(struct nvs_fs *fs, size_t len)
 {
-	if (fs->write_block_size <= 1) {
+	if (fs->write_block_size <= 1U) {
 		return len;
 	}
-	return (len + (fs->write_block_size - 1)) & ~(fs->write_block_size - 1);
+	return (len + (fs->write_block_size - 1U)) & ~(fs->write_block_size - 1U);
 }
 /* end basic routines */
 
@@ -53,7 +53,7 @@ static int _nvs_flash_al_wrt(struct nvs_fs *fs, u32_t addr, const void *data,
 		/* flash protection set error */
 		return rc;
 	}
-	blen = len & ~(fs->write_block_size - 1);
+	blen = len & ~(fs->write_block_size - 1U);
 	if (blen > 0) {
 		rc = flash_write(fs->flash_device, offset, data8, blen);
 		if (rc) {
@@ -142,7 +142,7 @@ static int _nvs_flash_block_cmp(struct nvs_fs *fs, u32_t addr, const void *data,
 	size_t bytes_to_cmp, block_size;
 	u8_t buf[NVS_BLOCK_SIZE];
 
-	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1);
+	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1U);
 	while (len) {
 		bytes_to_cmp = MIN(block_size, len);
 		rc = _nvs_flash_rd(fs, addr, buf, bytes_to_cmp);
@@ -171,7 +171,7 @@ static int _nvs_flash_cmp_const(struct nvs_fs *fs, u32_t addr, u8_t value,
 	size_t bytes_to_cmp, block_size;
 	u8_t cmp[NVS_BLOCK_SIZE];
 
-	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1);
+	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1U);
 	(void)memset(cmp, value, block_size);
 	while (len) {
 		bytes_to_cmp = MIN(block_size, len);
@@ -194,7 +194,7 @@ static int _nvs_flash_block_move(struct nvs_fs *fs, u32_t addr, size_t len)
 	size_t bytes_to_copy, block_size;
 	u8_t buf[NVS_BLOCK_SIZE];
 
-	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1);
+	block_size = NVS_BLOCK_SIZE & ~(fs->write_block_size - 1U);
 
 	while (len) {
 		bytes_to_copy = MIN(block_size, len);
@@ -340,7 +340,7 @@ static int _nvs_prev_ate(struct nvs_fs *fs, u32_t *addr, struct nvs_ate *ate)
 	}
 
 	/* last ate in sector, do jump to previous sector */
-	if (((*addr) >> ADDR_SECT_SHIFT) == 0) {
+	if (((*addr) >> ADDR_SECT_SHIFT) == 0U) {
 		*addr += ((fs->sector_count - 1) << ADDR_SECT_SHIFT);
 	} else {
 		*addr -= (1 << ADDR_SECT_SHIFT);
@@ -410,7 +410,7 @@ static int _nvs_sector_close(struct nvs_fs *fs)
 	ate_size = _nvs_al_size(fs, sizeof(struct nvs_ate));
 
 	close_ate.id = 0xFFFF;
-	close_ate.len = 0;
+	close_ate.len = 0U;
 	close_ate.offset = (u16_t)((fs->ate_wra + ate_size) & ADDR_OFFS_MASK);
 
 	fs->ate_wra &= ADDR_SECT_MASK;
@@ -767,7 +767,7 @@ ssize_t nvs_write(struct nvs_fs *fs, u16_t id, const void *data, size_t len)
 
 		if (len == 0) {
 			/* do not try to compare with empty data */
-			if (wlk_ate.len == 0) {
+			if (wlk_ate.len == 0U) {
 				return 0;
 			}
 		} else {
@@ -865,7 +865,7 @@ ssize_t nvs_read_hist(struct nvs_fs *fs, u16_t id, void *data, size_t len,
 	}
 
 	if (((wlk_addr == fs->ate_wra) && (wlk_ate.id != id)) ||
-	    (wlk_ate.len == 0) || (cnt_his < cnt)) {
+	    (wlk_ate.len == 0U) || (cnt_his < cnt)) {
 		return -ENOENT;
 	}
 

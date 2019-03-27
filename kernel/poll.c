@@ -48,7 +48,7 @@ void k_poll_event_init(struct k_poll_event *event, u32_t type,
 	event->type = type;
 	event->state = K_POLL_STATE_NOT_READY;
 	event->mode = mode;
-	event->unused = 0;
+	event->unused = 0U;
 	event->obj = obj;
 }
 
@@ -69,7 +69,7 @@ static inline bool is_condition_met(struct k_poll_event *event, u32_t *state)
 		}
 		break;
 	case K_POLL_TYPE_SIGNAL:
-		if (event->signal->signaled != 0) {
+		if (event->signal->signaled != 0U) {
 			*state = K_POLL_STATE_SIGNALED;
 			return true;
 		}
@@ -384,7 +384,7 @@ void z_handle_obj_poll_events(sys_dlist_t *events, u32_t state)
 void z_impl_k_poll_signal_init(struct k_poll_signal *signal)
 {
 	sys_dlist_init(&signal->poll_events);
-	signal->signaled = 0;
+	signal->signaled = 0U;
 	/* signal->result is left unitialized */
 	z_object_init(signal);
 }
@@ -424,7 +424,7 @@ int z_impl_k_poll_signal_raise(struct k_poll_signal *signal, int result)
 	struct k_poll_event *poll_event;
 
 	signal->result = result;
-	signal->signaled = 1;
+	signal->signaled = 1U;
 
 	poll_event = (struct k_poll_event *)sys_dlist_get(&signal->poll_events);
 	if (poll_event == NULL) {

@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(LOG_DOMAIN);
 bool flash_stm32_valid_range(struct device *dev, off_t offset, u32_t len,
 			     bool write)
 {
-	return (!write || (offset % 8 == 0 && len % 8 == 0)) &&
+	return (!write || (offset % 8 == 0 && len % 8 == 0U)) &&
 		flash_stm32_range_exists(dev, offset, len);
 }
 
@@ -132,7 +132,7 @@ static int erase_page(struct device *dev, unsigned int page)
 #ifdef FLASH_CR_BKER
 	regs->cr &= ~FLASH_CR_BKER_Msk;
 	/* Select bank, only for DUALBANK devices */
-	if (page >= 256)
+	if (page >= 256U)
 		regs->cr |= FLASH_CR_BKER;
 #endif
 	regs->cr &= ~FLASH_CR_PNB_Msk;
@@ -173,7 +173,7 @@ int flash_stm32_write_range(struct device *dev, unsigned int offset,
 {
 	int i, rc = 0;
 
-	for (i = 0; i < len; i += 8, offset += 8) {
+	for (i = 0; i < len; i += 8, offset += 8U) {
 		rc = write_dword(dev, offset,
 				UNALIGNED_GET((const u64_t *) data + (i >> 3)));
 		if (rc < 0) {

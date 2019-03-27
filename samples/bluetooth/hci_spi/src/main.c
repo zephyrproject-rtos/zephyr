@@ -318,7 +318,7 @@ void main(void)
 	bt_buf_set_type(buf, BT_BUF_EVT);
 	evt_hdr = net_buf_add(buf, sizeof(*evt_hdr));
 	evt_hdr->evt = BT_HCI_EVT_VENDOR;
-	evt_hdr->len = 2;
+	evt_hdr->len = 2U;
 	net_buf_add_le16(buf, EVT_BLUE_INITIALIZED);
 	err = spi_send(buf);
 	if (err) {

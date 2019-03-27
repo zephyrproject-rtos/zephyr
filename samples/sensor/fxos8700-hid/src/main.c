@@ -185,7 +185,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *tr)
 void main(void)
 {
 	u8_t report[4] = { 0x00 };
-	u8_t toggle = 0;
+	u8_t toggle = 0U;
 	struct device *led_dev, *accel_dev, *hid_dev;
 
 	led_dev = device_get_binding(LED_PORT);
@@ -252,9 +252,9 @@ void main(void)
 
 		report[MOUSE_BTN_REPORT_POS] = status[MOUSE_BTN_REPORT_POS];
 		report[MOUSE_X_REPORT_POS] = status[MOUSE_X_REPORT_POS];
-		status[MOUSE_X_REPORT_POS] = 0;
+		status[MOUSE_X_REPORT_POS] = 0U;
 		report[MOUSE_Y_REPORT_POS] = status[MOUSE_Y_REPORT_POS];
-		status[MOUSE_Y_REPORT_POS] = 0;
+		status[MOUSE_Y_REPORT_POS] = 0U;
 		hid_int_ep_write(hid_dev, report, sizeof(report), NULL);
 
 		/* Toggle LED on sent report */

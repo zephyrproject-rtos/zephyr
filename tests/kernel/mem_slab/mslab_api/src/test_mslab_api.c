@@ -51,7 +51,7 @@ static void tmslab_alloc_align(void *data)
 		 * TESTPOINT: To ensure that each memory block is similarly
 		 * aligned to this boundary
 		 */
-		zassert_true((u32_t)block[i] % BLK_ALIGN == 0, NULL);
+		zassert_true((u32_t)block[i] % BLK_ALIGN == 0U, NULL);
 	}
 	for (int i = 0; i < BLK_NUM; i++) {
 		k_mem_slab_free(pslab, &block[i]);

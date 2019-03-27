@@ -41,19 +41,19 @@ int net_ipv4_create(struct net_pkt *pkt,
 
 	ipv4_hdr->vhl       = 0x45;
 	ipv4_hdr->tos       = 0x00;
-	ipv4_hdr->len       = 0;
-	ipv4_hdr->id[0]     = 0;
-	ipv4_hdr->id[1]     = 0;
-	ipv4_hdr->offset[0] = 0;
-	ipv4_hdr->offset[1] = 0;
+	ipv4_hdr->len       = 0U;
+	ipv4_hdr->id[0]     = 0U;
+	ipv4_hdr->id[1]     = 0U;
+	ipv4_hdr->offset[0] = 0U;
+	ipv4_hdr->offset[1] = 0U;
 
 	ipv4_hdr->ttl       = net_pkt_ipv4_ttl(pkt);
-	if (ipv4_hdr->ttl == 0) {
+	if (ipv4_hdr->ttl == 0U) {
 		ipv4_hdr->ttl = net_if_ipv4_get_ttl(net_pkt_iface(pkt));
 	}
 
-	ipv4_hdr->proto     = 0;
-	ipv4_hdr->chksum    = 0;
+	ipv4_hdr->proto     = 0U;
+	ipv4_hdr->chksum    = 0U;
 
 	net_ipaddr_copy(&ipv4_hdr->dst, dst);
 	net_ipaddr_copy(&ipv4_hdr->src, src);
@@ -132,7 +132,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		goto drop;
 	}
 
-	hdr_len = (hdr->vhl & NET_IPV4_IHL_MASK) * 4;
+	hdr_len = (hdr->vhl & NET_IPV4_IHL_MASK) * 4U;
 	if (hdr_len < sizeof(struct net_ipv4_hdr)) {
 		NET_DBG("DROP: Invalid hdr length");
 		goto drop;
@@ -160,7 +160,7 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 	}
 
 	if (net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
-	    net_calc_chksum_ipv4(pkt) != 0) {
+	    net_calc_chksum_ipv4(pkt) != 0U) {
 		NET_DBG("DROP: invalid chksum");
 		goto drop;
 	}

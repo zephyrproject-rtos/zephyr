@@ -236,7 +236,7 @@ static void send_receive(const struct zcan_filter *filter, struct zcan_frame *ms
 	struct device *can_dev;
 	int ret, filter_id;
 	struct zcan_frame msg_buffer;
-	u32_t mask = 0;
+	u32_t mask = 0U;
 
 	can_dev = device_get_binding(DT_CAN_1_NAME);
 	zassert_not_null(can_dev, "Device not not found");

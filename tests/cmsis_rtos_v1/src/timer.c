@@ -64,8 +64,8 @@ void test_timer(void)
 	 * mode. Wait for 3 times the one-shot time to see
 	 * if it fires more than once.
 	 */
-	osDelay(timerDelay*3 + 100);
-	zassert_true(num_oneshots_executed == 1,
+	osDelay(timerDelay*3U + 100);
+	zassert_true(num_oneshots_executed == 1U,
 			"error setting up one-shot timer");
 
 	status = osTimerStop(id1);

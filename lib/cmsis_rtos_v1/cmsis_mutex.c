@@ -54,7 +54,7 @@ osStatus osMutexWait(osMutexId mutex_id, uint32_t timeout)
 
 	if (timeout == osWaitForever) {
 		status = k_mutex_lock(mutex, K_FOREVER);
-	} else if (timeout == 0) {
+	} else if (timeout == 0U) {
 		status = k_mutex_lock(mutex, K_NO_WAIT);
 	} else {
 		status = k_mutex_lock(mutex, timeout);

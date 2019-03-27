@@ -388,7 +388,7 @@ static u8_t get_ipaddr_diff(const u8_t *src, const u8_t *dst, int addr_len)
 
 	for (j = 0U; j < addr_len; j++) {
 		if (src[j] == dst[j]) {
-			len += 8;
+			len += 8U;
 		} else {
 			xor = src[j] ^ dst[j];
 			for (k = 0U; k < 8; k++) {
@@ -562,7 +562,7 @@ static void net_if_ipv6_start_dad(struct net_if *iface,
 			log_strdup(net_sprint_ipv6_addr(
 					   &ifaddr->address.in6_addr)));
 
-		ifaddr->dad_count = 1;
+		ifaddr->dad_count = 1U;
 
 		if (!net_ipv6_start_dad(iface, ifaddr)) {
 			k_delayed_work_submit(&ifaddr->dad_timer, DAD_TIMEOUT);

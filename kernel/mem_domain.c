@@ -86,15 +86,15 @@ void k_mem_domain_init(struct k_mem_domain *domain, u8_t num_parts,
 	k_spinlock_key_t key;
 
 	__ASSERT(domain != NULL, "");
-	__ASSERT(num_parts == 0 || parts != NULL, "");
+	__ASSERT(num_parts == 0U || parts != NULL, "");
 	__ASSERT(num_parts <= max_partitions, "");
 
 	key = k_spin_lock(&lock);
 
-	domain->num_partitions = 0;
+	domain->num_partitions = 0U;
 	(void)memset(domain->partitions, 0, sizeof(domain->partitions));
 
-	if (num_parts != 0) {
+	if (num_parts != 0U) {
 		u32_t i;
 
 		for (i = 0U; i < num_parts; i++) {
@@ -167,7 +167,7 @@ void k_mem_domain_add_partition(struct k_mem_domain *domain,
 
 	for (p_idx = 0; p_idx < max_partitions; p_idx++) {
 		/* A zero-sized partition denotes it's a free partition */
-		if (domain->partitions[p_idx].size == 0) {
+		if (domain->partitions[p_idx].size == 0U) {
 			break;
 		}
 	}
@@ -221,7 +221,7 @@ void k_mem_domain_remove_partition(struct k_mem_domain *domain,
 	}
 
 	/* A zero-sized partition denotes it's a free partition */
-	domain->partitions[p_idx].size = 0;
+	domain->partitions[p_idx].size = 0U;
 
 	domain->num_partitions--;
 

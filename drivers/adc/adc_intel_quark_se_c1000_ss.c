@@ -94,7 +94,7 @@ static inline void wait_slv0_bit_set(u32_t bit_mask)
 
 	do {
 		reg_value = sys_in32(PERIPH_ADDR_BASE_CREG_SLV0);
-	} while ((reg_value & bit_mask) == 0);
+	} while ((reg_value & bit_mask) == 0U);
 }
 
 static void set_power_mode_inner(u32_t mode)
@@ -182,7 +182,7 @@ static void dummy_conversion(struct device *dev)
 	/* Wait for data available */
 	do {
 		reg_value = sys_in32(adc_base + ADC_INTSTAT);
-	} while ((reg_value & ADC_INTSTAT_DATA_A) == 0);
+	} while ((reg_value & ADC_INTSTAT_DATA_A) == 0U);
 
 	/* Flush FIFO */
 	reg_value = sys_in32(adc_base + ADC_SET);
@@ -364,7 +364,7 @@ static int adc_quark_se_ss_read_request(struct device *dev,
 		 * System clock is 32MHz, which means 1us == 32 cycles
 		 * if divider is 1.
 		 */
-		interval = seq_tbl->options->interval_us * 32 /
+		interval = seq_tbl->options->interval_us * 32U /
 			   CONFIG_ADC_INTEL_QUARK_SE_C1000_SS_CLOCK_RATIO;
 
 		if (interval < (seq_tbl->resolution + 2)) {

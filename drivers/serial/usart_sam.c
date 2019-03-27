@@ -178,10 +178,10 @@ static int baudrate_set(Usart *const usart, u32_t baudrate,
 
 	__ASSERT(baudrate,
 		 "baud rate has to be bigger than 0");
-	__ASSERT(mck_freq_hz/16 >= baudrate,
+	__ASSERT(mck_freq_hz/16U >= baudrate,
 		 "MCK frequency is too small to set required baud rate");
 
-	divisor = mck_freq_hz / 16 / baudrate;
+	divisor = mck_freq_hz / 16U / baudrate;
 
 	if (divisor > 0xFFFF) {
 		return -EINVAL;

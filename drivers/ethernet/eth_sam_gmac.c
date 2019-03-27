@@ -250,11 +250,11 @@ static int rx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 			 "Incorrect length of RX data buffer");
 		/* Give ownership to GMAC and remove the wrap bit */
 		rx_desc_list->buf[i].w0 = (u32_t)rx_buf_addr & GMAC_RXW0_ADDR;
-		rx_desc_list->buf[i].w1 = 0;
+		rx_desc_list->buf[i].w1 = 0U;
 	}
 
 	/* Set the wrap bit on the last descriptor */
-	rx_desc_list->buf[rx_desc_list->len - 1].w0 |= GMAC_RXW0_WRAP;
+	rx_desc_list->buf[rx_desc_list->len - 1U].w0 |= GMAC_RXW0_WRAP;
 
 	return 0;
 }
@@ -270,12 +270,12 @@ static void tx_descriptors_init(Gmac *gmac, struct gmac_queue *queue)
 	tx_desc_list->tail = 0U;
 
 	for (int i = 0; i < tx_desc_list->len; i++) {
-		tx_desc_list->buf[i].w0 = 0;
+		tx_desc_list->buf[i].w0 = 0U;
 		tx_desc_list->buf[i].w1 = GMAC_TXW1_USED;
 	}
 
 	/* Set the wrap bit on the last descriptor */
-	tx_desc_list->buf[tx_desc_list->len - 1].w1 |= GMAC_TXW1_WRAP;
+	tx_desc_list->buf[tx_desc_list->len - 1U].w1 |= GMAC_TXW1_WRAP;
 
 #if GMAC_MULTIPLE_TX_PACKETS == 1
 	/* Reset TX frame list */
@@ -608,7 +608,7 @@ static void rx_error_handler(Gmac *gmac, struct gmac_queue *queue)
 	queue->rx_desc_list.tail = 0U;
 
 	for (int i = 0; i < queue->rx_desc_list.len; i++) {
-		queue->rx_desc_list.buf[i].w1 = 0;
+		queue->rx_desc_list.buf[i].w1 = 0U;
 		queue->rx_desc_list.buf[i].w0 &= ~GMAC_RXW0_OWNERSHIP;
 	}
 
@@ -633,17 +633,17 @@ static int get_mck_clock_divisor(u32_t mck)
 {
 	u32_t mck_divisor;
 
-	if (mck <= 20000000) {
+	if (mck <= 20000000U) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK_8;
-	} else if (mck <= 40000000) {
+	} else if (mck <= 40000000U) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK_16;
-	} else if (mck <= 80000000) {
+	} else if (mck <= 80000000U) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK_32;
-	} else if (mck <= 120000000) {
+	} else if (mck <= 120000000U) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK_48;
-	} else if (mck <= 160000000) {
+	} else if (mck <= 160000000U) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK_64;
-	} else if (mck <= 240000000) {
+	} else if (mck <= 240000000U) {
 		mck_divisor = GMAC_NCFGR_CLK_MCK_96;
 	} else {
 		LOG_ERR("No valid MDC clock");
@@ -754,7 +754,7 @@ static int eth_sam_gmac_get_qav_idle_slope(Gmac *gmac, int queue_id,
 	}
 
 	/* Convert to bps as expected by upper layer */
-	*idle_slope *= 8;
+	*idle_slope *= 8U;
 
 	return 0;
 }
@@ -772,7 +772,7 @@ static int eth_sam_gmac_get_qav_delta_bandwidth(Gmac *gmac, int queue_id,
 	}
 
 	/* Calculate in Bps */
-	idle_slope /= 8;
+	idle_slope /= 8U;
 
 	/* Get bandwidth and convert to bps */
 	bandwidth = eth_sam_gmac_get_bandwidth(gmac);
@@ -781,7 +781,7 @@ static int eth_sam_gmac_get_qav_delta_bandwidth(Gmac *gmac, int queue_id,
 	 * divide bandwidth - these numbers are so large that it should not
 	 * influence the outcome and saves us from employing larger data types.
 	 */
-	*delta_bandwidth = idle_slope / (bandwidth / 100);
+	*delta_bandwidth = idle_slope / (bandwidth / 100U);
 
 	return 0;
 }
@@ -799,7 +799,7 @@ static int eth_sam_gmac_setup_qav_delta_bandwidth(Gmac *gmac, int queue_id,
 
 	bandwidth = eth_sam_gmac_get_bandwidth(gmac);
 
-	idle_slope = (bandwidth * queue_share) / 100;
+	idle_slope = (bandwidth * queue_share) / 100U;
 
 	return eth_sam_gmac_setup_qav_idle_slope(gmac, queue_id, idle_slope);
 }
@@ -1052,16 +1052,16 @@ static int priority_queue_init_as_idle(Gmac *gmac, struct gmac_queue *queue)
 		 "RX descriptors have to be word aligned");
 	__ASSERT(!((u32_t)tx_desc_list->buf & ~GMAC_TBQB_ADDR_Msk),
 		 "TX descriptors have to be word aligned");
-	__ASSERT((rx_desc_list->len == 1) && (tx_desc_list->len == 1),
+	__ASSERT((rx_desc_list->len == 1U) && (tx_desc_list->len == 1U),
 		 "Priority queues are currently not supported, descriptor "
 		 "list has to have a single entry");
 
 	/* Setup RX descriptor lists */
 	/* Take ownership from GMAC and set the wrap bit */
 	rx_desc_list->buf[0].w0 = GMAC_RXW0_WRAP;
-	rx_desc_list->buf[0].w1 = 0;
+	rx_desc_list->buf[0].w1 = 0U;
 	/* Setup TX descriptor lists */
-	tx_desc_list->buf[0].w0 = 0;
+	tx_desc_list->buf[0].w0 = 0U;
 	/* Take ownership from GMAC and set the wrap bit */
 	tx_desc_list->buf[0].w1 = GMAC_TXW1_USED | GMAC_TXW1_WRAP;
 
@@ -1179,13 +1179,13 @@ static struct net_pkt *frame_get(struct gmac_queue *queue)
 		}
 
 		/* Update buffer descriptor status word */
-		rx_desc->w1 = 0;
+		rx_desc->w1 = 0U;
 		/* Guarantee that status word is written before the address
 		 * word to avoid race condition.
 		 */
 		__DMB();  /* data memory barrier */
 		/* Update buffer descriptor address word */
-		wrap = (tail == rx_desc_list->len-1 ? GMAC_RXW0_WRAP : 0);
+		wrap = (tail == rx_desc_list->len-1U ? GMAC_RXW0_WRAP : 0);
 		rx_desc->w0 = ((u32_t)frag->data & GMAC_RXW0_ADDR) | wrap;
 
 		MODULO_INC(tail, rx_desc_list->len);
@@ -1379,7 +1379,7 @@ static int eth_tx(struct device *dev, struct net_pkt *pkt)
 		 */
 		tx_desc->w1 = (frag_len & GMAC_TXW1_LEN)
 			    | (!frag->frags ? GMAC_TXW1_LASTBUFFER : 0)
-			    | (tx_desc_list->head == tx_desc_list->len - 1
+			    | (tx_desc_list->head == tx_desc_list->len - 1U
 			       ? GMAC_TXW1_WRAP : 0)
 			    | (tx_desc == tx_first_desc ? GMAC_TXW1_USED : 0);
 
@@ -1814,7 +1814,7 @@ static int eth_sam_gmac_set_qav_param(struct device *dev,
 		idle_slope = config->qav_param.idle_slope;
 
 		/* The standard uses bps, SAM GMAC uses Bps - convert now */
-		idle_slope /= 8;
+		idle_slope /= 8U;
 
 		return eth_sam_gmac_setup_qav_idle_slope(gmac, queue_id,
 							 idle_slope);

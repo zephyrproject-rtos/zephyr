@@ -101,7 +101,7 @@ static int _mpu_partition_is_valid(const struct k_mem_partition *part)
 			== part->size)
 		&&
 		((part->start &
-			(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE - 1)) == 0);
+			(CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE - 1)) == 0U);
 
 	return partition_is_valid;
 }
@@ -330,7 +330,7 @@ static int _mpu_configure_regions(const struct k_mem_partition
 	int reg_index = start_reg_index;
 
 	for (i = 0; i < regions_num; i++) {
-		if (regions[i]->size == 0) {
+		if (regions[i]->size == 0U) {
 			continue;
 		}
 		/* Non-empty region. */
@@ -493,7 +493,7 @@ static int _mpu_mark_areas_for_dynamic_regions(
 	 * which dynamic memory regions may be programmed at run-time.
 	 */
 	for (int i = 0; i < dyn_region_areas_num; i++) {
-		if (dyn_region_areas[i].size == 0) {
+		if (dyn_region_areas[i].size == 0U) {
 			continue;
 		}
 		/* Non-empty area */

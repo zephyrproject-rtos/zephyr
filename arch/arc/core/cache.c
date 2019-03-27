@@ -91,7 +91,7 @@ static void dcache_flush_mlines(u32_t start_addr, u32_t size)
 	u32_t end_addr;
 	unsigned int key;
 
-	if (!dcache_available() || (size == 0)) {
+	if (!dcache_available() || (size == 0U)) {
 		return;
 	}
 
@@ -150,9 +150,9 @@ static void init_dcache_line_size(void)
 	u32_t val;
 
 	val = z_arc_v2_aux_reg_read(_ARC_V2_D_CACHE_BUILD);
-	__ASSERT((val&0xff) != 0, "d-cache is not present");
+	__ASSERT((val&0xff) != 0U, "d-cache is not present");
 	val = ((val>>16) & 0xf) + 1;
-	val *= 16;
+	val *= 16U;
 	sys_cache_line_size = (size_t) val;
 }
 #endif

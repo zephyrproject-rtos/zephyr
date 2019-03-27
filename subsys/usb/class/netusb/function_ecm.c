@@ -290,7 +290,7 @@ static void ecm_read_cb(u8_t ep, int size, void *priv)
 	 * a short packet containing a null byte. Handle by checking the IP
 	 * header length and dropping the extra byte.
 	 */
-	if (rx_buf[size - 1] == 0) { /* last byte is null */
+	if (rx_buf[size - 1] == 0U) { /* last byte is null */
 		if (ecm_eth_size(rx_buf, size) == (size - 1)) {
 			/* last byte has been appended as delimiter, drop it */
 			size--;

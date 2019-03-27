@@ -789,7 +789,7 @@ static int hci_le_set_phy(struct bt_conn *conn)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	cp->handle = sys_cpu_to_le16(conn->handle);
-	cp->all_phys = 0;
+	cp->all_phys = 0U;
 	cp->tx_phys = BT_HCI_LE_PHY_PREFER_2M;
 	cp->rx_phys = BT_HCI_LE_PHY_PREFER_2M;
 	cp->phy_opts = BT_HCI_LE_PHY_CODED_ANY;
@@ -1976,7 +1976,7 @@ static void io_capa_req(struct net_buf *buf)
 	bt_addr_copy(&cp->bdaddr, &evt->bdaddr);
 	cp->capability = bt_conn_get_io_capa();
 	cp->authentication = auth;
-	cp->oob_data = 0;
+	cp->oob_data = 0U;
 	bt_hci_cmd_send_sync(BT_HCI_OP_IO_CAPABILITY_REPLY, resp_buf, NULL);
 	bt_conn_unref(conn);
 }
@@ -2956,7 +2956,7 @@ static void le_ltk_request(struct net_buf *buf)
 	 *
 	 * Both legacy STK and LE SC LTK have rand and ediv equal to zero.
 	 */
-	if (evt->rand == 0 && evt->ediv == 0 && bt_smp_get_tk(conn, tk)) {
+	if (evt->rand == 0U && evt->ediv == 0U && bt_smp_get_tk(conn, tk)) {
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
 					sizeof(*cp));
 		if (!buf) {
@@ -2982,7 +2982,7 @@ static void le_ltk_request(struct net_buf *buf)
 	}
 
 	if (conn->le.keys && (conn->le.keys->keys & BT_KEYS_LTK_P256) &&
-	    evt->rand == 0 && evt->ediv == 0) {
+	    evt->rand == 0U && evt->ediv == 0U) {
 		buf = bt_hci_cmd_create(BT_HCI_OP_LE_LTK_REQ_REPLY,
 					sizeof(*cp));
 		if (!buf) {
@@ -3290,7 +3290,7 @@ void bt_data_parse(struct net_buf_simple *ad,
 		u8_t len;
 
 		len = net_buf_simple_pull_u8(ad);
-		if (len == 0) {
+		if (len == 0U) {
 			/* Early termination */
 			return;
 		}
@@ -5593,7 +5593,7 @@ struct net_buf *bt_buf_get_cmd_complete(s32_t timeout)
 
 	if (buf) {
 		bt_buf_set_type(buf, BT_BUF_EVT);
-		buf->len = 0;
+		buf->len = 0U;
 		net_buf_reserve(buf, CONFIG_BT_HCI_RESERVE);
 
 		return buf;

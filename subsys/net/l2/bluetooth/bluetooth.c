@@ -354,7 +354,7 @@ static bool eir_found(u8_t type, const u8_t *data, u8_t data_len,
 		return false;
 	}
 
-	if (data_len % sizeof(u16_t) != 0) {
+	if (data_len % sizeof(u16_t) != 0U) {
 		NET_ERR("AD malformed\n");
 		return false;
 	}
@@ -397,7 +397,7 @@ static bool ad_parse(struct net_buf_simple *ad,
 		u8_t type;
 
 		/* Check for early termination */
-		if (len == 0) {
+		if (len == 0U) {
 			return false;
 		}
 

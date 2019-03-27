@@ -47,14 +47,14 @@ static u32_t pwm_period_check(struct pwm_data *data, u8_t map_size,
 	u8_t i;
 
 	/* allow 0% and 100% duty cycle, as it does not use PWM. */
-	if ((pulse_cycles == 0) || (pulse_cycles == period_cycles)) {
+	if ((pulse_cycles == 0U) || (pulse_cycles == period_cycles)) {
 		return 0;
 	}
 
 	/* fail if requested period does not match already running period */
 	for (i = 0U; i < map_size; i++) {
 		if ((data->map[i].pwm != pwm) &&
-		    (data->map[i].pulse_cycles != 0) &&
+		    (data->map[i].pulse_cycles != 0U) &&
 		    (period_cycles != data->period_cycles)) {
 			return -EINVAL;
 		}
@@ -78,7 +78,7 @@ static u8_t pwm_channel_map(struct pwm_data *data, u8_t map_size,
 	/* find a free entry */
 	i = map_size;
 	while (i--) {
-		if (data->map[i].pulse_cycles == 0) {
+		if (data->map[i].pulse_cycles == 0U) {
 			break;
 		}
 	}
@@ -130,7 +130,7 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 
 	/* configure GPIO pin as output */
 	NRF_GPIO->DIRSET = BIT(pwm);
-	if (pulse_cycles == 0) {
+	if (pulse_cycles == 0U) {
 		/* 0% duty cycle, keep pin low */
 		NRF_GPIO->OUTCLR = BIT(pwm);
 

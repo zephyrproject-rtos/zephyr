@@ -71,7 +71,7 @@ void hrs_notify(void)
 	}
 
 	heartrate++;
-	if (heartrate == 160) {
+	if (heartrate == 160U) {
 		heartrate = 90U;
 	}
 

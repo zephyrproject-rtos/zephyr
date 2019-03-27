@@ -103,7 +103,8 @@ static void test_early_sleep(void)
 	k_thread_priority_set(k_current_get(), 0);
 
 	TC_PRINT("msec per tick: %lld.%03lld, ticks to sleep: %d\n",
-			__ticks_to_ms(1000) / 1000, __ticks_to_ms(1000) % 1000,
+			__ticks_to_ms(1000) / 1000U,
+			__ticks_to_ms(1000) % 1000,
 			TEST_TICKS_TO_SLEEP);
 
 	/* Create a lower priority thread */

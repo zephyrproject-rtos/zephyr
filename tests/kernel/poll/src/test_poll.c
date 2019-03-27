@@ -208,7 +208,7 @@ void test_poll_wait(void)
 	wait_events[1].state = K_POLL_STATE_NOT_READY;
 	wait_events[2].state = K_POLL_STATE_NOT_READY;
 	wait_events[3].state = K_POLL_STATE_NOT_READY;
-	wait_signal.signaled = 0;
+	wait_signal.signaled = 0U;
 
 	zassert_equal(k_poll(wait_events, ARRAY_SIZE(wait_events),
 			     K_SECONDS(1)), -EAGAIN, "");
@@ -262,7 +262,7 @@ void test_poll_wait(void)
 	wait_events[0].state = K_POLL_STATE_NOT_READY;
 	wait_events[1].state = K_POLL_STATE_NOT_READY;
 	wait_events[2].state = K_POLL_STATE_NOT_READY;
-	wait_signal.signaled = 0;
+	wait_signal.signaled = 0U;
 
 	k_thread_create(&poll_wait_helper_thread, poll_wait_helper_stack,
 			K_THREAD_STACK_SIZEOF(poll_wait_helper_stack),
@@ -329,7 +329,7 @@ void test_poll_wait(void)
 	zassert_equal(wait_events[2].tag, TAG_2, "");
 
 	wait_events[2].state = K_POLL_STATE_NOT_READY;
-	wait_signal.signaled = 0;
+	wait_signal.signaled = 0U;
 }
 
 /* verify k_poll() that waits on object which gets cancellation */

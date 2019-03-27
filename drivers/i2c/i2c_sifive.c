@@ -77,7 +77,7 @@ static int i2c_sifive_send_addr(struct device *dev,
 				u16_t rw_flag)
 {
 	const struct i2c_sifive_cfg *config = dev->config->config_info;
-	u8_t command = 0;
+	u8_t command = 0U;
 
 	/* Wait for a previous transfer to complete */
 	while (i2c_sifive_busy(dev))
@@ -109,7 +109,7 @@ static int i2c_sifive_write_msg(struct device *dev,
 {
 	const struct i2c_sifive_cfg *config = dev->config->config_info;
 	int rc = 0;
-	u8_t command = 0;
+	u8_t command = 0U;
 
 	rc = i2c_sifive_send_addr(dev, addr, SF_TX_WRITE);
 	if (rc != 0) {
@@ -157,7 +157,7 @@ static int i2c_sifive_read_msg(struct device *dev,
 			       u16_t addr)
 {
 	const struct i2c_sifive_cfg *config = dev->config->config_info;
-	u8_t command = 0;
+	u8_t command = 0U;
 
 	i2c_sifive_send_addr(dev, addr, SF_TX_READ);
 
@@ -198,8 +198,8 @@ static int i2c_sifive_read_msg(struct device *dev,
 static int i2c_sifive_configure(struct device *dev, u32_t dev_config)
 {
 	const struct i2c_sifive_cfg *config = NULL;
-	u32_t i2c_speed = 0;
-	u16_t prescale = 0;
+	u32_t i2c_speed = 0U;
+	u16_t prescale = 0U;
 
 	/* Check for NULL pointers */
 	if (dev == NULL) {
@@ -223,10 +223,10 @@ static int i2c_sifive_configure(struct device *dev, u32_t dev_config)
 	/* Configure bus frequency */
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
-		i2c_speed = 100000; /* 100 KHz */
+		i2c_speed = 100000U; /* 100 KHz */
 		break;
 	case I2C_SPEED_FAST:
-		i2c_speed = 400000; /* 400 KHz */
+		i2c_speed = 400000U; /* 400 KHz */
 		break;
 	case I2C_SPEED_FAST_PLUS:
 	case I2C_SPEED_HIGH:
@@ -308,7 +308,7 @@ static int i2c_sifive_transfer(struct device *dev,
 static int i2c_sifive_init(struct device *dev)
 {
 	const struct i2c_sifive_cfg *config = dev->config->config_info;
-	u32_t dev_config = 0;
+	u32_t dev_config = 0U;
 	int rc = 0;
 
 	dev_config = (I2C_MODE_MASTER | _i2c_map_dt_bitrate(config->f_bus));

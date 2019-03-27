@@ -271,8 +271,8 @@ static int mass_storage_class_handle_req(struct usb_setup_packet *pSetup,
 
 static void testUnitReady(void)
 {
-	if (cbw.DataLength != 0) {
-		if ((cbw.Flags & 0x80) != 0) {
+	if (cbw.DataLength != 0U) {
+		if ((cbw.Flags & 0x80) != 0U) {
 			LOG_WRN("Stall IN endpoint");
 			usb_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
 		} else {
@@ -461,7 +461,7 @@ static bool infoTransfer(void)
 	}
 
 	if (cbw.DataLength != length) {
-		if ((cbw.Flags & 0x80) != 0) {
+		if ((cbw.Flags & 0x80) != 0U) {
 			LOG_WRN("Stall IN endpoint");
 			usb_ep_set_stall(mass_ep_data[MSD_IN_EP_IDX].ep_addr);
 		} else {
@@ -499,7 +499,7 @@ static void CBWDecode(u8_t *buf, u16_t size)
 	csw.Tag = cbw.Tag;
 	csw.DataResidue = cbw.DataLength;
 
-	if ((cbw.CBLength <  1) || (cbw.CBLength > 16) || (cbw.LUN != 0)) {
+	if ((cbw.CBLength <  1) || (cbw.CBLength > 16) || (cbw.LUN != 0U)) {
 		LOG_WRN("cbw.CBLength %d", cbw.CBLength);
 		fail();
 	} else {

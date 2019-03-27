@@ -156,7 +156,7 @@ void update_light_state(void)
 
 static void short_time_multireset_bt_mesh_unprovisioning(void)
 {
-	if (reset_counter >= 4) {
+	if (reset_counter >= 4U) {
 		reset_counter = 0U;
 		printk("BT Mesh reset\n");
 		bt_mesh_reset();

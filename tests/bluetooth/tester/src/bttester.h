@@ -567,14 +567,14 @@ struct gatt_attr_value_changed_ev {
 
 static inline void tester_set_bit(u8_t *addr, unsigned int bit)
 {
-	u8_t *p = addr + (bit / 8);
+	u8_t *p = addr + (bit / 8U);
 
 	*p |= BIT(bit % 8);
 }
 
 static inline u8_t tester_test_bit(const u8_t *addr, unsigned int bit)
 {
-	const u8_t *p = addr + (bit / 8);
+	const u8_t *p = addr + (bit / 8U);
 
 	return *p & BIT(bit % 8);
 }

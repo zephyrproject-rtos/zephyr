@@ -112,7 +112,7 @@ int mpxxdtyy_i2s_configure(struct device *dev, struct dmic_cfg *cfg)
 	}
 
 	factor = sw_filter_lib_init(dev, cfg);
-	if (factor == 0) {
+	if (factor == 0U) {
 		return -EINVAL;
 	}
 

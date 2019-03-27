@@ -248,10 +248,10 @@ static int adc_quark_d2000_read_request(struct device *dev,
 	case 8:
 	case 10:
 	case 12:
-		info->resolution = (seq_tbl->resolution / 2) - 3;
+		info->resolution = (seq_tbl->resolution / 2U) - 3;
 
 		/* sampling window is (resolution + 2) cycles */
-		info->sample_window = seq_tbl->resolution + 2;
+		info->sample_window = seq_tbl->resolution + 2U;
 		break;
 	default:
 		return -EINVAL;
@@ -267,7 +267,7 @@ static int adc_quark_d2000_read_request(struct device *dev,
 		 * System clock is 32MHz, which means 1us == 32 cycles
 		 * if divider is 1.
 		 */
-		interval = seq_tbl->options->interval_us * 32 /
+		interval = seq_tbl->options->interval_us * 32U /
 			   CONFIG_ADC_INTEL_QUARK_D2000_CLOCK_RATIO;
 
 		if (interval < info->sample_window) {

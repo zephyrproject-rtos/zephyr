@@ -34,7 +34,7 @@
  */
 static inline unsigned int rv32m1_irq_level(unsigned int irq)
 {
-	return ((irq >> 8) & 0xff) == 0 ? 1 : 2;
+	return ((irq >> 8) & 0xff) == 0U ? 1 : 2;
 }
 
 /**

@@ -80,7 +80,7 @@ u64_t __common_var_swap_end_time;
 
 void read_timer_start_of_swap(void)
 {
-	if (__read_swap_end_time_value == 1) {
+	if (__read_swap_end_time_value == 1U) {
 		TIMING_INFO_PRE_READ();
 		__start_swap_time = (u32_t) TIMING_INFO_OS_GET_TIME();
 	}
@@ -88,7 +88,7 @@ void read_timer_start_of_swap(void)
 
 void read_timer_end_of_swap(void)
 {
-	if (__read_swap_end_time_value == 1) {
+	if (__read_swap_end_time_value == 1U) {
 		TIMING_INFO_PRE_READ();
 		__read_swap_end_time_value = 2U;
 		__common_var_swap_end_time = (u64_t)TIMING_INFO_OS_GET_TIME();

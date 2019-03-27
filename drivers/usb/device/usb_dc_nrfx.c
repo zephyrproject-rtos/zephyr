@@ -851,7 +851,7 @@ static inline void usbd_work_process_setup(struct nrf_usbd_ep_ctx *ep_ctx)
 		ctx->ctrl_read_len -= usbd_setup->wLength;
 		nrfx_usbd_setup_data_clear();
 	} else {
-		ctx->ctrl_read_len = 0;
+		ctx->ctrl_read_len = 0U;
 	}
 }
 
@@ -1002,7 +1002,7 @@ static void usbd_event_transfer_ctrl(nrfx_usbd_evt_t const *const p_event)
 				ctx->ctrl_read_len -= ep_ctx->buf.len;
 				nrfx_usbd_setup_data_clear();
 			} else {
-				ctx->ctrl_read_len = 0;
+				ctx->ctrl_read_len = 0U;
 			}
 
 			usbd_evt_put(ev);
@@ -1441,7 +1441,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data *const ep_cfg)
 	ep_ctx->cfg.type = ep_cfg->ep_type;
 	ep_ctx->cfg.max_sz = ep_cfg->ep_mps;
 
-	if ((ep_cfg->ep_mps & (ep_cfg->ep_mps - 1)) != 0) {
+	if ((ep_cfg->ep_mps & (ep_cfg->ep_mps - 1)) != 0U) {
 		LOG_ERR("EP max packet size must be a power of 2.");
 		return -EINVAL;
 	}

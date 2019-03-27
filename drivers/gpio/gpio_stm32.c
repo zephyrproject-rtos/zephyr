@@ -307,7 +307,7 @@ static int gpio_stm32_write(struct device *dev, int access_op,
 	}
 
 	pin = stm32_pinval_get(pin);
-	if (value != 0) {
+	if (value != 0U) {
 		LL_GPIO_SetOutputPin(gpio, pin);
 	} else {
 		LL_GPIO_ResetOutputPin(gpio, pin);

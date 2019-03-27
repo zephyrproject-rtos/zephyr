@@ -395,7 +395,7 @@ static inline void z_sd_set_seg_offset(struct segment_descriptor *sd,
 	sd->offset_low = offset & 0xFFFFU;
 	sd->offset_hi = offset >> 16U;
 	sd->segment_selector = segment_selector;
-	sd->always_0_0 = 0;
+	sd->always_0_0 = 0U;
 }
 
 
@@ -414,7 +414,7 @@ static inline void _init_irq_gate(struct segment_descriptor *sd,
 	z_sd_set_seg_offset(sd, seg_selector, offset);
 	sd->dpl = dpl;
 	sd->descriptor_type = DT_TYPE_SYSTEM;
-	sd->present = 1;
+	sd->present = 1U;
 	sd->type = SEG_TYPE_IRQ_GATE;
 }
 
@@ -522,7 +522,7 @@ static inline void _set_idt(const struct pseudo_descriptor *idt)
  */
 static inline u16_t _get_cs(void)
 {
-	u16_t cs = 0;
+	u16_t cs = 0U;
 
 	__asm__ __volatile__ ("mov %%cs, %0" : "=r" (cs));
 	return cs;
@@ -536,7 +536,7 @@ static inline u16_t _get_cs(void)
  */
 static inline u16_t _get_ds(void)
 {
-	u16_t ds = 0;
+	u16_t ds = 0U;
 
 	__asm__ __volatile__ ("mov %%ds, %0" : "=r" (ds));
 	return ds;

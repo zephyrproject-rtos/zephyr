@@ -198,7 +198,7 @@ void ieee802154_fragment(struct ieee802154_fragment_ctx *ctx,
 			max -= ctx->hdr_diff;
 		} else {
 			/* Adding IPv6 dispatch header */
-			max += 1;
+			max += 1U;
 		}
 	}
 

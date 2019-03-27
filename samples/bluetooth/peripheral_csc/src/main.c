@@ -312,13 +312,13 @@ static void csc_simulation(void)
 	/* Measurements don't have to be updated every second */
 	if (!(i % 2)) {
 		lwet += 1050 + rand % 50;
-		cwr += 2;
+		cwr += 2U;
 		nfy_wheel = true;
 	}
 
 	if (!(i % 3)) {
 		lcet += 1000 + rand % 50;
-		ccr += 1;
+		ccr += 1U;
 		nfy_crank = true;
 	}
 

@@ -49,7 +49,7 @@ void usb_bos_register_cap(struct usb_bos_platform_descriptor *desc)
 	/* Has effect only on first register */
 	hdr->wTotalLength = usb_bos_get_length();
 
-	hdr->bNumDeviceCaps += 1;
+	hdr->bNumDeviceCaps += 1U;
 }
 
 int usb_handle_bos(struct usb_setup_packet *setup,

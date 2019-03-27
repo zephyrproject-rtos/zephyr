@@ -440,10 +440,10 @@ static int hb_pub_set(int argc, char **argv, void *val_ctx)
 
 	if (settings_val_get_len_cb(val_ctx) == 0) {
 		pub->dst = BT_MESH_ADDR_UNASSIGNED;
-		pub->count = 0;
-		pub->ttl = 0;
-		pub->period = 0;
-		pub->feat = 0;
+		pub->count = 0U;
+		pub->ttl = 0U;
+		pub->period = 0U;
+		pub->feat = 0U;
 
 		BT_DBG("Cleared heartbeat publication");
 		return 0;
@@ -464,7 +464,7 @@ static int hb_pub_set(int argc, char **argv, void *val_ctx)
 	if (hb_val.indefinite) {
 		pub->count = 0xffff;
 	} else {
-		pub->count = 0;
+		pub->count = 0U;
 	}
 
 	BT_DBG("Restored heartbeat publication");
@@ -560,12 +560,12 @@ static int mod_set_pub(struct bt_mesh_model *mod, void *val_ctx)
 
 	if (settings_val_get_len_cb(val_ctx) == 0) {
 		mod->pub->addr = BT_MESH_ADDR_UNASSIGNED;
-		mod->pub->key = 0;
-		mod->pub->cred = 0;
-		mod->pub->ttl = 0;
-		mod->pub->period = 0;
-		mod->pub->retransmit = 0;
-		mod->pub->count = 0;
+		mod->pub->key = 0U;
+		mod->pub->cred = 0U;
+		mod->pub->ttl = 0U;
+		mod->pub->period = 0U;
+		mod->pub->retransmit = 0U;
+		mod->pub->count = 0U;
 
 		BT_DBG("Cleared publication for model");
 		return 0;
@@ -583,7 +583,7 @@ static int mod_set_pub(struct bt_mesh_model *mod, void *val_ctx)
 	mod->pub->ttl = pub.ttl;
 	mod->pub->period = pub.period;
 	mod->pub->retransmit = pub.retransmit;
-	mod->pub->count = 0;
+	mod->pub->count = 0U;
 
 	BT_DBG("Restored model publication, dst 0x%04x app_idx 0x%03x",
 	       pub.addr, pub.key);

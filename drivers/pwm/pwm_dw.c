@@ -105,7 +105,7 @@ static int __set_one_port(struct device *dev, u32_t pwm,
 	/* Disable timer to prevent any output */
 	sys_write32(TIMER_INIT_CTRL, (reg_addr + REG_TMR_CTRL));
 
-	if ((off == 0) || (on == 0)) {
+	if ((off == 0U) || (on == 0U)) {
 		/* stop PWM if so specified */
 		return 0;
 	}
@@ -151,13 +151,13 @@ static int pwm_dw_pin_set_cycles(struct device *dev,
 		return -EIO;
 	}
 
-	if (period_cycles == 0 || pulse_cycles > period_cycles) {
+	if (period_cycles == 0U || pulse_cycles > period_cycles) {
 		return -EINVAL;
 	}
 	on = pulse_cycles;
 	off = period_cycles - pulse_cycles;
 
-	if (off == 0) {
+	if (off == 0U) {
 		on--;
 		off++;
 	}

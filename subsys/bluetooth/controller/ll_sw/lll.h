@@ -245,7 +245,7 @@ static inline void lll_hdr_init(void *lll, void *parent)
 	struct lll_hdr *hdr = lll;
 
 	hdr->parent = parent;
-	hdr->is_stop = 0;
+	hdr->is_stop = 0U;
 }
 
 static inline int lll_stop(void *lll)
@@ -253,7 +253,7 @@ static inline int lll_stop(void *lll)
 	struct lll_hdr *hdr = lll;
 	int ret = !!hdr->is_stop;
 
-	hdr->is_stop = 1;
+	hdr->is_stop = 1U;
 
 	return ret;
 }

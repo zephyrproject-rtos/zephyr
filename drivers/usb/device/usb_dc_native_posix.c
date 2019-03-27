@@ -119,7 +119,7 @@ int usb_dc_attach(void)
 			thread_main, NULL, NULL, NULL,
 			K_PRIO_COOP(2), 0, K_NO_WAIT);
 
-	usbip_ctrl.attached = 1;
+	usbip_ctrl.attached = 1U;
 
 	return 0;
 }
@@ -132,7 +132,7 @@ int usb_dc_detach(void)
 		return 0;
 	}
 
-	usbip_ctrl.attached = 0;
+	usbip_ctrl.attached = 0U;
 
 	return 0;
 }
@@ -284,9 +284,9 @@ int usb_dc_ep_enable(const u8_t ep)
 
 	/* Enable Ep */
 	if (USBIP_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
-		usbip_ctrl.out_ep_ctrl[ep_idx].ep_ena = 1;
+		usbip_ctrl.out_ep_ctrl[ep_idx].ep_ena = 1U;
 	} else {
-		usbip_ctrl.in_ep_ctrl[ep_idx].ep_ena = 1;
+		usbip_ctrl.in_ep_ctrl[ep_idx].ep_ena = 1U;
 	}
 
 	return 0;

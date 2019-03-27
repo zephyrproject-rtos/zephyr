@@ -22,9 +22,9 @@ static void client_reset(struct mqtt_client *client)
 {
 	MQTT_STATE_INIT(client);
 
-	client->internal.last_activity = 0;
-	client->internal.rx_buf_datalen = 0;
-	client->internal.remaining_payload = 0;
+	client->internal.last_activity = 0U;
+	client->internal.rx_buf_datalen = 0U;
+	client->internal.remaining_payload = 0U;
 }
 
 /** @brief Initialize tx buffer. */
@@ -167,7 +167,7 @@ void mqtt_client_init(struct mqtt_client *client)
 	mqtt_mutex_init(client);
 
 	client->protocol_version = MQTT_VERSION_3_1_1;
-	client->clean_session = 1;
+	client->clean_session = 1U;
 }
 
 int mqtt_connect(struct mqtt_client *client)
@@ -605,7 +605,7 @@ int mqtt_read_publish_payload(struct mqtt_client *client, void *buffer,
 
 	mqtt_mutex_lock(client);
 
-	if (client->internal.remaining_payload == 0) {
+	if (client->internal.remaining_payload == 0U) {
 		ret = 0;
 		goto exit;
 	}

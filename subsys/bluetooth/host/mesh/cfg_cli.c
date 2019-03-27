@@ -245,7 +245,7 @@ static void mod_app_status(struct bt_mesh_model *model,
 	elem_addr = net_buf_simple_pull_le16(buf);
 	mod_app_idx = net_buf_simple_pull_le16(buf);
 
-	if (buf->len >= 4) {
+	if (buf->len >= 4U) {
 		cid = net_buf_simple_pull_le16(buf);
 	} else {
 		cid = CID_NVAL;
@@ -373,7 +373,7 @@ static void mod_sub_status(struct bt_mesh_model *model,
 	elem_addr = net_buf_simple_pull_le16(buf);
 	sub_addr = net_buf_simple_pull_le16(buf);
 
-	if (buf->len >= 4) {
+	if (buf->len >= 4U) {
 		cid = net_buf_simple_pull_le16(buf);
 	} else {
 		cid = CID_NVAL;
@@ -507,7 +507,7 @@ static int cli_prepare(void *param, u32_t op)
 
 static void cli_reset(void)
 {
-	cli->op_pending = 0;
+	cli->op_pending = 0U;
 	cli->op_param = NULL;
 }
 

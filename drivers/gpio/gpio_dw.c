@@ -139,7 +139,7 @@ static inline int dw_base_to_block_base(u32_t base_addr)
 }
 static inline int dw_derive_port_from_base(u32_t base_addr)
 {
-	u32_t port = (base_addr & 0x3f) / 12;
+	u32_t port = (base_addr & 0x3f) / 12U;
 	return port;
 }
 static inline int dw_interrupt_support(const struct gpio_dw_config *config)

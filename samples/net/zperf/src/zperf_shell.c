@@ -362,21 +362,21 @@ static void shell_udp_upload_print_stats(const struct shell *shell,
 
 		shell_fprintf(shell, SHELL_NORMAL, "-\nUpload completed!\n");
 
-		if (results->time_in_us != 0) {
+		if (results->time_in_us != 0U) {
 			rate_in_kbps = (u32_t)
 				(((u64_t)results->nb_bytes_sent *
 				  (u64_t)8 * (u64_t)USEC_PER_SEC) /
-				 ((u64_t)results->time_in_us * 1024));
+				 ((u64_t)results->time_in_us * 1024U));
 		} else {
 			rate_in_kbps = 0U;
 		}
 
-		if (results->client_time_in_us != 0) {
+		if (results->client_time_in_us != 0U) {
 			client_rate_in_kbps = (u32_t)
 				(((u64_t)results->nb_packets_sent *
 				  (u64_t)results->packet_size * (u64_t)8 *
 				  (u64_t)USEC_PER_SEC) /
-				 ((u64_t)results->client_time_in_us * 1024));
+				 ((u64_t)results->client_time_in_us * 1024U));
 		} else {
 			client_rate_in_kbps = 0U;
 		}
@@ -427,12 +427,12 @@ static void shell_tcp_upload_print_stats(const struct shell *shell,
 
 		shell_fprintf(shell, SHELL_NORMAL, "-\nUpload completed!\n");
 
-		if (results->client_time_in_us != 0) {
+		if (results->client_time_in_us != 0U) {
 			client_rate_in_kbps = (u32_t)
 				(((u64_t)results->nb_packets_sent *
 				  (u64_t)results->packet_size * (u64_t)8 *
 				  (u64_t)USEC_PER_SEC) /
-				 ((u64_t)results->client_time_in_us * 1024));
+				 ((u64_t)results->client_time_in_us * 1024U));
 		} else {
 			client_rate_in_kbps = 0U;
 		}

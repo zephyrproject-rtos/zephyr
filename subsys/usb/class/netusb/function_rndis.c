@@ -349,7 +349,7 @@ static void rndis_bulk_out(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	/* We already use frame keeping with len, warn here about
 	 * receiving frame delimeter
 	 */
-	if (len == 1 && !buffer[0]) {
+	if (len == 1U && !buffer[0]) {
 		LOG_DBG("Got frame delimeter, skip");
 		return;
 	}

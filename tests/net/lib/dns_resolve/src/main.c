@@ -96,7 +96,7 @@ static u8_t *net_iface_get_mac(struct device *dev)
 	}
 
 	data->ll_addr.addr = data->mac_addr;
-	data->ll_addr.len = 6;
+	data->ll_addr.len = 6U;
 
 	return data->mac_addr;
 }

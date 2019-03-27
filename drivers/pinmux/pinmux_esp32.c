@@ -132,7 +132,7 @@ static int pinmux_input(struct device *dev, u32_t pin, u8_t func)
 	if (func == PINMUX_INPUT_ENABLED) {
 		reg = (u32_t *)(DR_REG_GPIO_BASE + line[0]);
 	} else if (func == PINMUX_OUTPUT_ENABLED) {
-		if (pin >= 34 && pin <= 39) {
+		if (pin >= 34U && pin <= 39U) {
 			/* These pins are input only */
 			return -EINVAL;
 		}

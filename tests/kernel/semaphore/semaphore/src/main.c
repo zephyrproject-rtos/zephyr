@@ -221,7 +221,7 @@ void test_sem_take_no_wait_fails(void)
 			     "k_sem_take returned when not possible");
 
 		signal_count = k_sem_count_get(&simple_sem);
-		zassert_true(signal_count == 0,
+		zassert_true(signal_count == 0U,
 			     "signal count missmatch Expected 0, got %d\n",
 			     signal_count);
 	}
@@ -376,15 +376,15 @@ void test_sem_take_multiple(void)
 	k_sleep(K_MSEC(200));
 	/* check which threads completed. */
 	signal_count = k_sem_count_get(&high_prio_sem);
-	zassert_true(signal_count == 1,
+	zassert_true(signal_count == 1U,
 		     "Higher priority threads didn't execute");
 
 	signal_count = k_sem_count_get(&mid_prio_sem);
-	zassert_true(signal_count == 0,
+	zassert_true(signal_count == 0U,
 		     "Medium priority threads shouldn't have executed");
 
 	signal_count = k_sem_count_get(&low_prio_sem);
-	zassert_true(signal_count == 0,
+	zassert_true(signal_count == 0U,
 		     "low priority threads shouldn't have executed");
 
 	/* enable the Medium priority thread to run. */
@@ -392,15 +392,15 @@ void test_sem_take_multiple(void)
 	k_sleep(K_MSEC(200));
 	/* check which threads completed. */
 	signal_count = k_sem_count_get(&high_prio_sem);
-	zassert_true(signal_count == 1,
+	zassert_true(signal_count == 1U,
 		     "Higher priority thread executed again");
 
 	signal_count = k_sem_count_get(&mid_prio_sem);
-	zassert_true(signal_count == 1,
+	zassert_true(signal_count == 1U,
 		     "Medium priority thread didn't get executed");
 
 	signal_count = k_sem_count_get(&low_prio_sem);
-	zassert_true(signal_count == 0,
+	zassert_true(signal_count == 0U,
 		     "low priority thread shouldn't have executed");
 
 	/* enable the low priority thread to run. */
@@ -408,15 +408,15 @@ void test_sem_take_multiple(void)
 	k_sleep(K_MSEC(200));
 	/* check which threads completed. */
 	signal_count = k_sem_count_get(&high_prio_sem);
-	zassert_true(signal_count == 1,
+	zassert_true(signal_count == 1U,
 		     "Higher priority thread executed again");
 
 	signal_count = k_sem_count_get(&mid_prio_sem);
-	zassert_true(signal_count == 1,
+	zassert_true(signal_count == 1U,
 		     "Medium priority thread executed again");
 
 	signal_count = k_sem_count_get(&low_prio_sem);
-	zassert_true(signal_count == 1,
+	zassert_true(signal_count == 1U,
 		     "low priority thread didn't get executed");
 
 }
@@ -511,12 +511,12 @@ void test_sem_multiple_threads_wait(void)
 		}
 
 		signal_count = k_sem_count_get(&simple_sem);
-		zassert_true(signal_count == 0,
+		zassert_true(signal_count == 0U,
 			     "signal count missmatch Expected 0, got %d\n",
 			     signal_count);
 
 		signal_count = k_sem_count_get(&multiple_thread_sem);
-		zassert_true(signal_count == 0,
+		zassert_true(signal_count == 0U,
 			     "signal count missmatch Expected 0, got %d\n",
 			     signal_count);
 

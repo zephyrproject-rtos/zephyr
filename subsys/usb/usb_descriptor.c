@@ -191,7 +191,7 @@ int usb_get_str_descriptor_idx(void *ptr)
 	struct usb_string_descriptor *str = ptr;
 	int str_descr_idx = 0;
 
-	while (head->bLength != 0) {
+	while (head->bLength != 0U) {
 		switch (head->bDescriptorType) {
 		case USB_STRING_DESC:
 			if (head == (struct usb_desc_header *)str) {
@@ -341,7 +341,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 	u8_t str_descr_idx = 0U;
 	u32_t requested_ep = BIT(16) | BIT(0);
 
-	while (head->bLength != 0) {
+	while (head->bLength != 0U) {
 		switch (head->bDescriptorType) {
 		case USB_CONFIGURATION_DESC:
 			cfg_descr = (struct usb_cfg_descriptor *)head;
@@ -358,7 +358,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 				break;
 			}
 
-			if (if_descr->bInterfaceNumber == 0) {
+			if (if_descr->bInterfaceNumber == 0U) {
 				cfg_data = usb_get_cfg_data(if_descr);
 				if (!cfg_data) {
 					LOG_ERR("There is no usb_cfg_data "
@@ -414,7 +414,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 				cfg_descr->bNumInterfaces = numof_ifaces;
 			}
 
-			str_descr_idx += 1;
+			str_descr_idx += 1U;
 
 			break;
 		default:

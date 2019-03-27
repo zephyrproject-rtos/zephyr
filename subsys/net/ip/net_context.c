@@ -100,7 +100,7 @@ static u16_t find_available_port(struct net_context *context,
 
 	do {
 		local_port = sys_rand32_get() | 0x8000;
-		if (local_port <= 1023) {
+		if (local_port <= 1023U) {
 			/* 0 - 1023 ports are reserved */
 			continue;
 		}
@@ -242,7 +242,7 @@ int net_context_get(sa_family_t family,
 		}
 
 		contexts[i].iface = -1;
-		contexts[i].flags = 0;
+		contexts[i].flags = 0U;
 		atomic_set(&contexts[i].refcount, 1);
 
 		net_context_set_family(&contexts[i], family);
@@ -1162,7 +1162,7 @@ static int context_setup_udp_packet(struct net_context *context,
 				    socklen_t addrlen)
 {
 	int ret = -EINVAL;
-	u16_t dst_port = 0;
+	u16_t dst_port = 0U;
 
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
 	    net_context_get_family(context) == AF_INET) {

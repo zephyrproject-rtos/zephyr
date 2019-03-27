@@ -89,7 +89,7 @@ static int pwm_pca9685_pin_set_cycles(struct device *dev, u32_t pwm,
 		buf[2] = (1 << 4);
 		buf[3] = 0x0;
 		buf[4] = 0x0;
-	} else if (pulse_count == 0) {
+	} else if (pulse_count == 0U) {
 		buf[1] = 0x0;
 		buf[2] = 0x0;
 		buf[3] = 0x0;

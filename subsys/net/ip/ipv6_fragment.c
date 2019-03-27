@@ -88,7 +88,7 @@ int net_ipv6_find_last_ext_hdr(struct net_pkt *pkt, u16_t *next_hdr_off,
 				goto fail;
 			}
 
-			length = length * 8 + 8 - 2;
+			length = length * 8U + 8 - 2;
 
 			if (net_pkt_skip(pkt, length)) {
 				goto fail;
@@ -381,7 +381,7 @@ static bool fragment_verify(struct net_ipv6_reassembly *reass)
 
 	NET_DBG("pkt %p offset %u", reass->pkt[0], offset);
 
-	if (offset != 0) {
+	if (offset != 0U) {
 		return false;
 	}
 
@@ -610,9 +610,9 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 	}
 
 	frag_hdr->nexthdr = next_hdr;
-	frag_hdr->reserved = 0;
+	frag_hdr->reserved = 0U;
 	frag_hdr->id = net_pkt_ipv6_fragment_id(pkt);
-	frag_hdr->offset = htons(((frag_offset / 8) << 3) | !final);
+	frag_hdr->offset = htons(((frag_offset / 8U) << 3) | !final);
 
 	if (net_pkt_set_data(frag_pkt, &frag_access)) {
 		goto fail;

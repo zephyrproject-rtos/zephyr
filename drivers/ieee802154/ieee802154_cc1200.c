@@ -282,7 +282,7 @@ static u32_t rf_evaluate_freq_setting(struct cc1200_context *ctx, u32_t chan)
 	u32_t rf, lo_div;
 
 	rf = ctx->rf_settings->chan_center_freq0 +
-		((chan * (u32_t)ctx->rf_settings->channel_spacing) / 10);
+		((chan * (u32_t)ctx->rf_settings->channel_spacing) / 10U);
 	lo_div = get_lo_divider(ctx);
 
 	LOG_DBG("Calculating freq for %u KHz RF (%u)", rf, lo_div);
@@ -298,23 +298,23 @@ static u32_t rf_evaluate_freq_setting(struct cc1200_context *ctx, u32_t chan)
 		}
 
 		if (hz < 1000) {
-			freq_tmp = (hz * lo_div * 65536) / xtal;
+			freq_tmp = (hz * lo_div * 65536U) / xtal;
 		} else {
-			freq_tmp = ((hz * lo_div) / xtal) * 65536;
+			freq_tmp = ((hz * lo_div) / xtal) * 65536U;
 		}
 
 		rst = freq_tmp % factor;
 		freq_tmp /= factor;
 
-		if (factor > 1 && (rst/(factor/10)) > 5) {
+		if (factor > 1 && (rst/(factor/10U)) > 5) {
 			freq_tmp++;
 		}
 
 		freq += freq_tmp;
 
-		factor *= 10;
-		mult_10 /= 10;
-		xtal /= 10;
+		factor *= 10U;
+		mult_10 /= 10U;
+		xtal /= 10U;
 		rf -= hz;
 	}
 
@@ -751,7 +751,7 @@ static int configure_spi(struct device *dev)
 		}
 
 		cs_ctrl.gpio_pin = DT_IEEE802154_CC1200_GPIO_SPI_CS_PIN;
-		cs_ctrl.delay = 0;
+		cs_ctrl.delay = 0U;
 
 		cc1200->spi_cfg.cs = &cs_ctrl;
 

@@ -272,7 +272,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 			/* Signal an error if a selected channel has not been
 			 * configured yet.
 			 */
-			if (m_data.positive_inputs[channel_id] == 0) {
+			if (m_data.positive_inputs[channel_id] == 0U) {
 				LOG_ERR("Channel %u not configured",
 					    channel_id);
 				return -EINVAL;
@@ -287,7 +287,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 			 * possible), the burst mode have to be deactivated.
 			 */
 			nrf_saadc_burst_set(channel_id,
-				(sequence->oversampling != 0 ?
+				(sequence->oversampling != 0U ?
 					NRF_SAADC_BURST_ENABLED :
 					NRF_SAADC_BURST_DISABLED));
 			nrf_saadc_channel_pos_input_set(

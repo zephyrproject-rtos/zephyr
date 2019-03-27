@@ -646,7 +646,7 @@ static void print_array(const u8_t *a, u16_t size)
 	TC_PRINT("\n");
 	for (i = 0U; i < size; i++) {
 		TC_PRINT("%x ", a[i]);
-		if ((i+1) % 8 == 0) {
+		if ((i+1) % 8 == 0U) {
 			TC_PRINT("\n");
 		}
 	}

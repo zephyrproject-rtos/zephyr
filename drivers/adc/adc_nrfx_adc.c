@@ -152,7 +152,7 @@ static int start_read(struct device *dev, const struct adc_sequence *sequence)
 		return -EINVAL;
 	}
 
-	if (sequence->oversampling != 0) {
+	if (sequence->oversampling != 0U) {
 		LOG_ERR("Oversampling is not supported");
 		return -EINVAL;
 	}

@@ -164,7 +164,7 @@ static void ipv6_nbr_set_state(struct net_nbr *nbr,
 
 			k_sem_take(&nbr_lock, K_FOREVER);
 
-			stale_counter = 0;
+			stale_counter = 0U;
 
 			for (i = 0; i < CONFIG_NET_IPV6_MAX_NEIGHBORS; i++) {
 				n = get_nbr(i);
@@ -781,7 +781,7 @@ enum net_verdict net_ipv6_prepare_for_send(struct net_pkt *pkt)
 	/* If we have already fragmented the packet, the fragment id will
 	 * contain a proper value and we can skip other checks.
 	 */
-	if (net_pkt_ipv6_fragment_id(pkt) == 0) {
+	if (net_pkt_ipv6_fragment_id(pkt) == 0U) {
 		u16_t mtu = net_if_get_mtu(net_pkt_iface(pkt));
 		size_t pkt_len = net_pkt_get_len(pkt);
 
@@ -972,9 +972,9 @@ struct net_nbr *net_ipv6_get_nbr(struct net_if *iface, u8_t idx)
 
 static inline u8_t get_llao_len(struct net_if *iface)
 {
-	if (net_if_get_link_addr(iface)->len == 6) {
+	if (net_if_get_link_addr(iface)->len == 6U) {
 		return 8;
-	} else if (net_if_get_link_addr(iface)->len == 8) {
+	} else if (net_if_get_link_addr(iface)->len == 8U) {
 		return 16;
 	}
 
@@ -1159,7 +1159,7 @@ static enum net_verdict handle_ns_input(struct net_pkt *pkt,
 			  sizeof(struct net_icmp_hdr) +
 			  sizeof(struct net_icmpv6_ns_hdr))) ||
 	    (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT)) &&
-	    (net_ipv6_is_addr_mcast(&ns_hdr->tgt) && icmp_hdr->code != 0)) {
+	    (net_ipv6_is_addr_mcast(&ns_hdr->tgt) && icmp_hdr->code != 0U)) {
 		goto drop;
 	}
 
@@ -1714,7 +1714,7 @@ static enum net_verdict handle_na_input(struct net_pkt *pkt,
 	     net_ipv6_is_addr_mcast(&na_hdr->tgt) ||
 	     (na_hdr->flags & NET_ICMPV6_NA_FLAG_SOLICITED &&
 	      net_ipv6_is_addr_mcast(&ip_hdr->dst))) &&
-	    (icmp_hdr->code != 0)) {
+	    (icmp_hdr->code != 0U)) {
 		goto drop;
 	}
 
@@ -1816,7 +1816,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 
 	if (is_my_address) {
 		src = net_ipv6_unspecified_address();
-		llao_len = 0;
+		llao_len = 0U;
 	} else {
 		if (!src) {
 			src = net_if_ipv6_select_src_addr(iface, dst);
@@ -1852,7 +1852,7 @@ int net_ipv6_send_ns(struct net_if *iface,
 		goto drop;
 	}
 
-	ns_hdr->reserved = 0;
+	ns_hdr->reserved = 0U;
 	net_ipaddr_copy(&ns_hdr->tgt, tgt);
 
 	if (net_pkt_set_data(pkt, &ns_access)) {
@@ -2015,7 +2015,7 @@ static inline struct net_nbr *handle_ra_neighbor(struct net_pkt *pkt, u8_t len)
 		return NULL;
 	}
 
-	padding = len * 8 - 2 - lladdr.len;
+	padding = len * 8U - 2 - lladdr.len;
 	if (padding) {
 		if (net_pkt_skip(pkt, padding)) {
 			return NULL;
@@ -2228,12 +2228,12 @@ static inline bool handle_ra_6co(struct net_pkt *pkt, u8_t len)
 	 * bits in the Context Prefix field that are valid.  The value ranges
 	 * from 0 to 128.  If it is more than 64, then the Length MUST be 3.
 	 */
-	if ((context->context_len > 64 && len != 3) ||
-	    (context->context_len <= 64 && len != 2)) {
+	if ((context->context_len > 64 && len != 3U) ||
+	    (context->context_len <= 64U && len != 2U)) {
 		return false;
 	}
 
-	context->context_len = context->context_len / 8;
+	context->context_len = context->context_len / 8U;
 
 	/* context_len: The number of leading bits in the Context Prefix
 	 * field that are valid. Rest must be set to 0 by the sender and
@@ -2280,7 +2280,8 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 			sizeof(struct net_icmpv6_ra_hdr) +
 			sizeof(struct net_icmpv6_nd_opt_hdr))) ||
 	     (ip_hdr->hop_limit != NET_IPV6_ND_HOP_LIMIT) ||
-	     !net_ipv6_is_ll_addr(&ip_hdr->src)) && icmp_hdr->code != 0) {
+	     !net_ipv6_is_ll_addr(&ip_hdr->src)) &&
+		icmp_hdr->code != 0U) {
 		goto drop;
 	}
 
@@ -2354,7 +2355,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 #if defined(CONFIG_NET_6LO_CONTEXT)
 		case NET_ICMPV6_ND_OPT_6CO:
 			/* RFC 6775, 4.2 (Length)*/
-			if (!(nd_opt_hdr->len == 2 || nd_opt_hdr->len == 3)) {
+			if (!(nd_opt_hdr->len == 2U || nd_opt_hdr->len == 3U)) {
 				NET_ERR("DROP: Invalid 6CO length %d",
 					nd_opt_hdr->len);
 				goto drop;
@@ -2383,7 +2384,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 		default:
 			NET_DBG("Unknown ND option 0x%x", nd_opt_hdr->type);
 		skip:
-			if (net_pkt_skip(pkt, nd_opt_hdr->len * 8 - 2)) {
+			if (net_pkt_skip(pkt, nd_opt_hdr->len * 8U - 2)) {
 				goto drop;
 			}
 

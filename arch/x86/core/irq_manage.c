@@ -198,7 +198,7 @@ static unsigned int priority_to_free_vector(unsigned int requested_priority)
 			z_interrupt_vectors_allocated[entry];
 	fsb = find_lsb_set(search_set);
 
-	__ASSERT(fsb != 0, "No remaning vectors for priority level %d",
+	__ASSERT(fsb != 0U, "No remaning vectors for priority level %d",
 		 requested_priority);
 
 	/*
@@ -314,7 +314,7 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 #else
 	vector = priority_to_free_vector(priority);
 	/* 0 indicates not used, vectors for interrupts start at 32 */
-	__ASSERT(_irq_to_interrupt_vector[irq] == 0,
+	__ASSERT(_irq_to_interrupt_vector[irq] == 0U,
 		 "IRQ %d already configured", irq);
 	_irq_to_interrupt_vector[irq] = vector;
 #endif

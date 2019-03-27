@@ -264,7 +264,7 @@ static int mqtt_message_id_only_enc(u8_t message_type, u16_t message_id,
 	u8_t *start;
 
 	/* Message id zero is not permitted by spec. */
-	if (message_id == 0) {
+	if (message_id == 0U) {
 		return -EINVAL;
 	}
 
@@ -409,7 +409,7 @@ int publish_encode(const struct mqtt_publish_param *param, struct buf_ctx *buf)
 	u8_t *start;
 
 	/* Message id zero is not permitted by spec. */
-	if ((param->message.topic.qos) && (param->message_id == 0)) {
+	if ((param->message.topic.qos) && (param->message_id == 0U)) {
 		return -EINVAL;
 	}
 
@@ -501,7 +501,7 @@ int subscribe_encode(const struct mqtt_subscription_list *param,
 	u8_t *start;
 
 	/* Message id zero is not permitted by spec. */
-	if (param->message_id == 0) {
+	if (param->message_id == 0U) {
 		return -EINVAL;
 	}
 

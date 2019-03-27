@@ -96,9 +96,9 @@ u32_t lll_conn_ppm_get(u8_t sca)
 
 void lll_conn_prepare_reset(void)
 {
-	trx_cnt = 0;
-	crc_expire = 0;
-	crc_valid = 0;
+	trx_cnt = 0U;
+	crc_expire = 0U;
+	crc_valid = 0U;
 
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	mic_state = LLL_CONN_MIC_NONE;
@@ -143,9 +143,9 @@ void lll_conn_isr_rx(void *param)
 	struct pdu_data *pdu_data_tx;
 	struct node_rx_pdu *node_rx;
 	u8_t is_empty_pdu_tx_retry;
-	u8_t is_crc_backoff = 0;
-	u8_t is_rx_enqueue = 0;
-	u8_t is_ull_rx = 0;
+	u8_t is_crc_backoff = 0U;
+	u8_t is_rx_enqueue = 0U;
+	u8_t is_ull_rx = 0U;
 	u8_t rssi_ready;
 	u8_t trx_done;
 	u8_t is_done;
@@ -161,7 +161,7 @@ void lll_conn_isr_rx(void *param)
 		crc_ok = radio_crc_is_valid();
 		rssi_ready = radio_rssi_is_ready();
 	} else {
-		crc_ok = rssi_ready = 0;
+		crc_ok = rssi_ready = 0U;
 	}
 
 	/* Clear radio status and events */
@@ -197,19 +197,19 @@ void lll_conn_isr_rx(void *param)
 		}
 
 		/* Reset CRC expiry counter */
-		crc_expire = 0;
+		crc_expire = 0U;
 
 		/* CRC valid flag used to detect supervision timeout */
-		crc_valid = 1;
+		crc_valid = 1U;
 	} else {
 		/* Start CRC error countdown, if not already started */
-		if (crc_expire == 0) {
-			crc_expire = 2;
+		if (crc_expire == 0U) {
+			crc_expire = 2U;
 		}
 
 		/* CRC error countdown */
 		crc_expire--;
-		is_crc_backoff = (crc_expire == 0);
+		is_crc_backoff = (crc_expire == 0U);
 	}
 
 	/* prepare tx packet */
@@ -315,7 +315,7 @@ lll_conn_isr_rx_exit:
 
 		MFIFO_ENQUEUE(conn_ack, idx);
 
-		is_ull_rx = 1;
+		is_ull_rx = 1U;
 	}
 
 	if (is_rx_enqueue) {
@@ -327,7 +327,7 @@ lll_conn_isr_rx_exit:
 		node_rx->hdr.handle = lll->handle;
 
 		ull_rx_put(node_rx->hdr.link, node_rx);
-		is_ull_rx = 1;
+		is_ull_rx = 1U;
 	}
 
 	if (is_ull_rx) {
@@ -453,7 +453,7 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 #if defined(CONFIG_BT_CTLR_PHY)
 	phy = lll->phy_rx;
 #else /* !CONFIG_BT_CTLR_PHY */
-	phy = 0;
+	phy = 0U;
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	radio_phy_set(phy, 0);
@@ -488,8 +488,8 @@ void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx)
 	phy = lll->phy_tx;
 	flags = lll->phy_flags;
 #else /* !CONFIG_BT_CTLR_PHY */
-	phy = 0;
-	flags = 0;
+	phy = 0U;
+	flags = 0U;
 #endif /* !CONFIG_BT_CTLR_PHY */
 
 	radio_phy_set(phy, flags);
@@ -497,7 +497,8 @@ void lll_conn_tx_pkt_set(struct lll_conn *lll, struct pdu_data *pdu_data_tx)
 	if (0) {
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	} else if (lll->enc_tx) {
-		radio_pkt_configure(8, (max_tx_octets + 4), (phy << 1) | 0x01);
+		radio_pkt_configure(8, (max_tx_octets + 4U),
+				    (phy << 1) | 0x01);
 
 		radio_pkt_tx_set(radio_ccm_tx_pkt_set(&lll->ccm_tx,
 						      pdu_data_tx));
@@ -589,7 +590,7 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 		if (lll->enc_tx) {
 			/* deduct the MIC */
-			max_tx_octets -= 4;
+			max_tx_octets -= 4U;
 		}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
@@ -801,7 +802,7 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 
 			pdu_data_tx_len = pdu_data_tx->len;
 #if defined(CONFIG_BT_CTLR_LE_ENC)
-			if (pdu_data_tx_len != 0) {
+			if (pdu_data_tx_len != 0U) {
 				/* if encrypted increment tx counter */
 				if (lll->enc_tx) {
 					lll->ccm_tx.counter++;
@@ -863,7 +864,7 @@ static int isr_rx_pdu(struct lll_conn *lll, struct pdu_data *pdu_data_rx,
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
 			/* Enqueue non-empty PDU */
-			*is_rx_enqueue = 1;
+			*is_rx_enqueue = 1U;
 		}
 	}
 

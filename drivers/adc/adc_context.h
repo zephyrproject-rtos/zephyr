@@ -187,7 +187,7 @@ static inline void adc_context_start_read(struct adc_context *ctx,
 	if (ctx->sequence->options) {
 		ctx->sampling_index = 0U;
 
-		if (ctx->sequence->options->interval_us != 0) {
+		if (ctx->sequence->options->interval_us != 0U) {
 			atomic_set(&ctx->sampling_requested, 0);
 			adc_context_enable_timer(ctx);
 			return;
@@ -244,7 +244,7 @@ static inline void adc_context_on_sampling_done(struct adc_context *ctx,
 			 * a zero interval or if the timer expired again while
 			 * the current sampling was in progress.
 			 */
-			if (ctx->sequence->options->interval_us == 0) {
+			if (ctx->sequence->options->interval_us == 0U) {
 				adc_context_start_sampling(ctx);
 			} else if (atomic_dec(&ctx->sampling_requested) > 1) {
 				adc_context_start_sampling(ctx);
@@ -253,7 +253,7 @@ static inline void adc_context_on_sampling_done(struct adc_context *ctx,
 			return;
 		}
 
-		if (ctx->sequence->options->interval_us != 0) {
+		if (ctx->sequence->options->interval_us != 0U) {
 			adc_context_disable_timer(ctx);
 		}
 	}

@@ -291,7 +291,7 @@ static inline void _x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
 
 		/* Get the partition info */
 		partition = &mem_domain->partitions[partition_index];
-		if (partition->size == 0) {
+		if (partition->size == 0U) {
 			continue;
 		}
 		partitions_count++;

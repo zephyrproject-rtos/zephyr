@@ -18,7 +18,7 @@ u16_t sw_filter_lib_init(struct device *dev, struct dmic_cfg *cfg)
 	u32_t audio_freq = cfg->streams->pcm_rate;
 
 	/* calculate oversampling factor based on pdm clock */
-	for (factor = 64; factor <= 128; factor += 64) {
+	for (factor = 64U; factor <= 128U; factor += 64U) {
 		u32_t pdm_bit_clk = (audio_freq * factor *
 				     cfg->channel.req_num_chan);
 
@@ -28,12 +28,12 @@ u16_t sw_filter_lib_init(struct device *dev, struct dmic_cfg *cfg)
 		}
 	}
 
-	if (factor != 64 && factor != 128) {
+	if (factor != 64U && factor != 128U) {
 		return 0;
 	}
 
 	/* init the filter lib */
-	pdm_filter->LP_HZ = audio_freq / 2;
+	pdm_filter->LP_HZ = audio_freq / 2U;
 	pdm_filter->HP_HZ = 10;
 	pdm_filter->Fs = audio_freq;
 	pdm_filter->Out_MicChannels = 1;

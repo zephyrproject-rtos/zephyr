@@ -147,7 +147,7 @@ static void timer_handler(struct k_timer *timer)
 	const struct shell_uart *sh_uart = k_timer_user_data_get(timer);
 
 	while (uart_poll_in(sh_uart->ctrl_blk->dev, &c) == 0) {
-		if (ring_buf_put(sh_uart->rx_ringbuf, &c, 1) == 0) {
+		if (ring_buf_put(sh_uart->rx_ringbuf, &c, 1) == 0U) {
 			/* ring buffer full. */
 			LOG_WRN("RX ring buffer full.");
 		}

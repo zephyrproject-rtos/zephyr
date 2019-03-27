@@ -1132,7 +1132,7 @@ static void rfcomm_handle_rpn(struct bt_rfcomm_session *session,
 		return;
 	}
 
-	if (value_len != 1) {
+	if (value_len != 1U) {
 		return;
 	}
 

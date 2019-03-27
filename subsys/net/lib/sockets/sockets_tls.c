@@ -213,7 +213,7 @@ static void dtls_timing_set_delay(void *data, uint32_t int_ms, uint32_t fin_ms)
 	ctx->int_ms = int_ms;
 	ctx->fin_ms = fin_ms;
 
-	if (fin_ms != 0) {
+	if (fin_ms != 0U) {
 		ctx->snapshot = k_uptime_get_32();
 	}
 }
@@ -232,7 +232,7 @@ static int dtls_timing_get_delay(void *data)
 
 	NET_ASSERT(timing);
 
-	if (timing->fin_ms == 0) {
+	if (timing->fin_ms == 0U) {
 		return -1;
 	}
 
@@ -480,7 +480,7 @@ static int dtls_rx(void *ctx, unsigned char *buf, size_t len, uint32_t timeout)
 	struct net_context *net_ctx = ctx;
 	bool is_block = !((net_ctx->tls->flags & ZSOCK_MSG_DONTWAIT) ||
 			  sock_is_nonblock(net_ctx));
-	int remaining_time = (timeout == 0) ? K_FOREVER : timeout;
+	int remaining_time = (timeout == 0U) ? K_FOREVER : timeout;
 	u32_t entry_time = k_uptime_get_32();
 	socklen_t addrlen = sizeof(struct sockaddr);
 	struct sockaddr addr;

@@ -138,7 +138,7 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 		return -EINVAL;
 	}
 
-	if (ctx->keylen != 16) {
+	if (ctx->keylen != 16U) {
 		LOG_ERR("%u key size is not supported", ctx->keylen);
 		return -EINVAL;
 	}
@@ -154,7 +154,7 @@ static int mtls_session_setup(struct device *dev, struct cipher_ctx *ctx,
 	mbedtls_ccm_init(mtls_ctx);
 
 	ret = mbedtls_ccm_setkey(mtls_ctx, MBEDTLS_CIPHER_ID_AES,
-				 ctx->key.bit_stream, ctx->keylen * 8);
+				 ctx->key.bit_stream, ctx->keylen * 8U);
 	if (ret) {
 		LOG_ERR("Could not setup the key (%d)", ret);
 		mtls_sessions[ctx_idx].in_use = false;

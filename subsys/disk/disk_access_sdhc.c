@@ -194,7 +194,7 @@ static int sdhc_map_flags(const struct sdhc_flag_map *map, int flags)
 		return flags;
 	}
 
-	for (; map->mask != 0; map++) {
+	for (; map->mask != 0U; map++) {
 		if ((flags & map->mask) == map->mask) {
 			return -map->err;
 		}
@@ -253,7 +253,7 @@ static bool sdhc_retry_ok(struct sdhc_retry *retry)
 
 	if (retry->tries < SDHC_MIN_TRIES) {
 		retry->tries++;
-		if (retry->sleep != 0) {
+		if (retry->sleep != 0U) {
 			k_sleep(retry->sleep);
 		}
 
@@ -746,7 +746,7 @@ static int sdhc_detect(struct sdhc_data *data)
 		return err;
 	}
 
-	if ((ocr & SDHC_CCS) == 0) {
+	if ((ocr & SDHC_CCS) == 0U) {
 		/* A 'SDSC' card */
 		return -ENOTSUP;
 	}
@@ -824,7 +824,7 @@ static int sdhc_read(struct sdhc_data *data, u8_t *buf, u32_t sector,
 	}
 
 	/* Read the sectors */
-	for (; count != 0; count--) {
+	for (; count != 0U; count--) {
 		err = sdhc_rx_block(data, buf, SDHC_SECTOR_SIZE);
 		if (err != 0) {
 			goto error;
@@ -858,7 +858,7 @@ static int sdhc_write(struct sdhc_data *data, const u8_t *buf, u32_t sector,
 	sdhc_set_cs(data, 0);
 
 	/* Write the blocks one-by-one */
-	for (; count != 0; count--) {
+	for (; count != 0U; count--) {
 		err = sdhc_cmd_r1(data, SDHC_WRITE_BLOCK, sector);
 		if (err < 0) {
 			goto error;
