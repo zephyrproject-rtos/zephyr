@@ -37,6 +37,7 @@ DW_OP_addr = 0x3
 DW_OP_fbreg = 0x91
 STACK_TYPE = "_k_thread_stack_element"
 thread_counter = 0
+sys_mutex_counter = 0
 
 # Global type environment. Populated by pass 1.
 type_env = {}
@@ -54,6 +55,7 @@ scr = os.path.basename(sys.argv[0])
 class KobjectInstance:
     def __init__(self, type_obj, addr):
         global thread_counter
+        global sys_mutex_counter
 
         self.addr = addr
         self.type_obj = type_obj
@@ -67,6 +69,9 @@ class KobjectInstance:
             # permissions to other kernel objects
             self.data = thread_counter
             thread_counter = thread_counter + 1
+        elif self.type_obj.name == "sys_mutex":
+            self.data = "(u32_t)(&kernel_mutexes[%d])" % sys_mutex_counter
+            sys_mutex_counter += 1
         else:
             self.data = 0
 
@@ -558,3 +563,6 @@ class ElfHelper:
 
     def get_thread_counter(self):
         return thread_counter
+
+    def get_sys_mutex_counter(self):
+        return sys_mutex_counter
