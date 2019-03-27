@@ -7,8 +7,8 @@
 #include <zephyr.h>
 #include <device.h>
 #include <sensor.h>
+#include <stdio.h>
 #include <misc/printk.h>
-
 #ifdef CONFIG_SX9500_TRIGGER
 
 static void sensor_trigger_handler(struct device *dev, struct sensor_trigger *trig)
@@ -76,6 +76,12 @@ void main(void)
 	struct device *dev;
 
 	dev = device_get_binding("SX9500");
+
+	if (dev == NULL) {
+		printk("Could not get SX9500 device\n");
+		return;
+	}
+
 	printk("device is %p, name is %s\n", dev, dev->config->name);
 
 	do_main(dev);
