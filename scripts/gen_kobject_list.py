@@ -82,7 +82,6 @@ kobjects = OrderedDict ([
     ("k_thread", (None, False)),
     ("k_timer", (None, False)),
     ("_k_thread_stack_element", (None, False)),
-    ("net_context", ("CONFIG_NETWORKING", False)),
     ("device", (None, False)),
 ])
 
