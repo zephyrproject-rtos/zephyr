@@ -2531,12 +2531,15 @@ static inline bool pdu_len_cmp(u8_t opcode, u8_t len)
 }
 
 static inline u8_t
-isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
+isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
+		     struct pdu_data *pdu_data_rx, u8_t *rx_enqueue)
 {
-	struct pdu_data *pdu_data_rx;
 	u8_t nack = 0U;
 
-	pdu_data_rx = (void *)node_rx->pdu_data;
+	if (!pdu_data_rx) {
+		pdu_data_rx = (void *)node_rx->pdu_data;
+	}
+
 	switch (pdu_data_rx->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
 	{
@@ -3155,7 +3158,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 			node_rx->hdr.type = NODE_RX_TYPE_CONN_UPDATE;
 
 			/* prepare connection update complete structure */
-			cp = (void *)pdu_data_rx;
+			cp = (void *)node_rx->pdu_data;
 			cp->status = BT_HCI_ERR_UNSUPP_REMOTE_FEATURE;
 			cp->interval = conn->conn_interval;
 			cp->latency = conn->latency;
@@ -3197,7 +3200,7 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx, u8_t *rx_enqueue)
 				/* generate phy update complete event */
 				node_rx->hdr.type = NODE_RX_TYPE_PHY_UPDATE;
 
-				p = (void *)pdu_data_rx;
+				p = (void *)node_rx->pdu_data;
 				p->status = 0U;
 				p->tx = _radio.conn_curr->phy_tx;
 				p->rx = _radio.conn_curr->phy_rx;
@@ -3542,6 +3545,9 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 		u8_t nack = 0U;
 
 		if (pdu_data_rx->len != 0) {
+			bool mic_failure = false;
+			struct pdu_data *unknown_rsp = NULL;
+
 			/* If required, wait for CCM to finish
 			 */
 			if (_radio.conn_curr->enc_rx) {
@@ -3550,12 +3556,27 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 				done = radio_ccm_is_done();
 				LL_ASSERT(done);
 
-				ccm_rx_increment = 1U;
+				mic_failure = !radio_ccm_mic_is_valid();
+
+				if (mic_failure &&
+				    _radio.conn_curr->pause_rx &&
+				    (pdu_data_rx->ll_id ==
+				     PDU_DATA_LLID_CTRL)) {
+					/* Received an LL control packet in the
+					 * middle of the LL encryption procedure
+					 * with MIC failure.
+					 * This could be an unencrypted packet
+					 */
+					pdu_data_rx = radio_pkt_scratch_get();
+					unknown_rsp = pdu_data_rx;
+					mic_failure = false;
+				} else {
+					ccm_rx_increment = 1U;
+				}
 			}
 
 			/* MIC Failure Check or data rx during pause */
-			if ((_radio.conn_curr->enc_rx &&
-			     !radio_ccm_mic_is_valid()) ||
+			if (mic_failure ||
 			    (_radio.conn_curr->pause_rx &&
 			     isr_rx_conn_enc_unexpected(_radio.conn_curr,
 							pdu_data_rx))) {
@@ -3590,6 +3611,7 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 
 			case PDU_DATA_LLID_CTRL:
 				nack = isr_rx_conn_pkt_ctrl(node_rx,
+							    unknown_rsp,
 							    rx_enqueue);
 				break;
 			case PDU_DATA_LLID_RESV:
