@@ -26,9 +26,9 @@ import argparse
 import struct
 from elf_helper import ElfHelper
 
-kobjects = [
-        "_k_thread_stack_element",
-        ]
+kobjects = {
+        "_k_thread_stack_element": (None, False)
+}
 
 
 header = """%compare-lengths

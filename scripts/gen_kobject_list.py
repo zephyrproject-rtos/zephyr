@@ -58,27 +58,32 @@ from elf_helper import ElfHelper, kobject_to_enum
 from collections import OrderedDict
 
 # Keys in this dictionary are structs which should be recognized as kernel
-# objects. Values should either be None, or the name of a Kconfig that
-# indicates the presence of this object's definition in case it is not
-# available in all configurations.
+# objects. Values are a tuple:
+#
+#  - The first item is None, or the name of a Kconfig that
+#    indicates the presence of this object's definition in case it is not
+#    available in all configurations.
+#
+#  - The second item is a boolean indicating whether it is permissible for
+#    the object to be located in user-accessible memory.
 
 # Regular dictionaries are ordered only with Python 3.6 and
 # above. Good summary and pointers to official documents at:
 # https://stackoverflow.com/questions/39980323/are-dictionaries-ordered-in-python-3-6
 kobjects = OrderedDict ([
-    ("k_mem_slab", None),
-    ("k_msgq", None),
-    ("k_mutex", None),
-    ("k_pipe", None),
-    ("k_queue", None),
-    ("k_poll_signal", None),
-    ("k_sem", None),
-    ("k_stack", None),
-    ("k_thread", None),
-    ("k_timer", None),
-    ("_k_thread_stack_element", None),
-    ("net_context", "CONFIG_NETWORKING"),
-    ("device", None),
+    ("k_mem_slab", (None, False)),
+    ("k_msgq", (None, False)),
+    ("k_mutex", (None, False)),
+    ("k_pipe", (None, False)),
+    ("k_queue", (None, False)),
+    ("k_poll_signal", (None, False)),
+    ("k_sem", (None, False)),
+    ("k_stack", (None, False)),
+    ("k_thread", (None, False)),
+    ("k_timer", (None, False)),
+    ("_k_thread_stack_element", (None, False)),
+    ("net_context", ("CONFIG_NETWORKING", False)),
+    ("device", (None, False)),
 ])
 
 
@@ -227,7 +232,8 @@ def write_validation_output(fp):
 
 def write_kobj_types_output(fp):
     fp.write("/* Core kernel objects */\n")
-    for kobj, dep in kobjects.items():
+    for kobj, obj_info in kobjects.items():
+        dep, _ = obj_info
         if kobj == "device":
             continue
 
@@ -247,7 +253,8 @@ def write_kobj_types_output(fp):
 
 def write_kobj_otype_output(fp):
     fp.write("/* Core kernel objects */\n")
-    for kobj, dep in kobjects.items():
+    for kobj, obj_info in kobjects.items():
+        dep, _ = obj_info
         if kobj == "device":
             continue
 
@@ -270,7 +277,8 @@ def write_kobj_otype_output(fp):
 
 def write_kobj_size_output(fp):
     fp.write("/* Non device/stack objects */\n")
-    for kobj, dep in kobjects.items():
+    for kobj, obj_info in kobjects.items():
+        dep, _ = obj_info
         # device handled by default case. Stacks are not currently handled,
         # if they eventually are it will be a special case.
         if kobj == "device" or kobj == "_k_thread_stack_element":
