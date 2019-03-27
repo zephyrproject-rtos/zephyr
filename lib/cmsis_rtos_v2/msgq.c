@@ -97,7 +97,7 @@ osStatus_t osMessageQueuePut(osMessageQueueId_t msgq_id, const void *msg_ptr,
 		return osErrorParameter;
 	}
 
-	if (timeout == 0) {
+	if (timeout == 0U) {
 		retval = k_msgq_put(&msgq->z_msgq, (void *)msg_ptr, K_NO_WAIT);
 	} else if (timeout == osWaitForever) {
 		retval = k_msgq_put(&msgq->z_msgq, (void *)msg_ptr, K_FOREVER);
@@ -135,7 +135,7 @@ osStatus_t osMessageQueueGet(osMessageQueueId_t msgq_id, void *msg_ptr,
 		return osErrorParameter;
 	}
 
-	if (timeout == 0) {
+	if (timeout == 0U) {
 		retval = k_msgq_get(&msgq->z_msgq, msg_ptr, K_NO_WAIT);
 	} else if (timeout == osWaitForever) {
 		retval = k_msgq_get(&msgq->z_msgq, msg_ptr, K_FOREVER);

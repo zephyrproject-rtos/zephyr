@@ -74,7 +74,7 @@ int socks5_client_tcp_connect(const struct sockaddr *proxy,
 	mthd_req.r.ver = SOCKS5_PKT_MAGIC;
 
 	/* We only support NOAUTH at the moment */
-	mthd_req.r.nmethods = 1;
+	mthd_req.r.nmethods = 1U;
 	mthd_req.methods[0] = SOCKS5_AUTH_METHOD_NOAUTH;
 
 	/* size + 1 because just one method is supported */

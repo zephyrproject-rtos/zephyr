@@ -49,7 +49,7 @@ int pkt_list_add(struct openthread_context *context, struct net_pkt *pkt)
 	}
 
 	if (i_idx == context->pkt_list_out_idx) {
-		context->pkt_list_full = 1;
+		context->pkt_list_full = 1U;
 	}
 
 	context->pkt_list[context->pkt_list_in_idx].pkt = pkt;
@@ -78,10 +78,10 @@ void pkt_list_remove_last(struct openthread_context *context)
 
 	context->pkt_list_out_idx++;
 	if (context->pkt_list_out_idx == CONFIG_OPENTHREAD_PKT_LIST_SIZE) {
-		context->pkt_list_out_idx = 0;
+		context->pkt_list_out_idx = 0U;
 	}
 
-	context->pkt_list_full = 0;
+	context->pkt_list_full = 0U;
 }
 
 void add_ipv6_addr_to_zephyr(struct openthread_context *context)

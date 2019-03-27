@@ -281,7 +281,7 @@ static int ascii_to_hid(u8_t ascii)
 		}
 	} else if (ascii < 58) {
 		/* Numbers */
-		if (ascii == 48) {
+		if (ascii == 48U) {
 			return HID_KEY_0;
 		} else {
 			return ascii - 19;
@@ -308,7 +308,7 @@ static int ascii_to_hid(u8_t ascii)
 		}
 	} else if (ascii < 91) {
 		/* Uppercase characters */
-		return ascii - 61;
+		return ascii - 61U;
 	} else if (ascii < 97) {
 		/* Special characters #3 */
 		switch (ascii) {
@@ -353,19 +353,19 @@ static int ascii_to_hid(u8_t ascii)
 
 static bool needs_shift(u8_t ascii)
 {
-	if ((ascii < 33) || (ascii == 39)) {
+	if ((ascii < 33) || (ascii == 39U)) {
 		return false;
-	} else if ((ascii >= 33) && (ascii < 44)) {
+	} else if ((ascii >= 33U) && (ascii < 44)) {
 		return true;
-	} else if ((ascii >= 44) && (ascii < 58)) {
+	} else if ((ascii >= 44U) && (ascii < 58)) {
 		return false;
-	} else if ((ascii == 59) || (ascii == 61)) {
+	} else if ((ascii == 59U) || (ascii == 61U)) {
 		return false;
-	} else if ((ascii >= 58) && (ascii < 91)) {
+	} else if ((ascii >= 58U) && (ascii < 91)) {
 		return true;
-	} else if ((ascii >= 91) && (ascii < 94)) {
+	} else if ((ascii >= 91U) && (ascii < 94)) {
 		return false;
-	} else if ((ascii == 94) || (ascii == 95)) {
+	} else if ((ascii == 94U) || (ascii == 95U)) {
 		return true;
 	} else if ((ascii > 95) && (ascii < 123)) {
 		return false;
@@ -383,13 +383,13 @@ static volatile bool data_arrived;
 
 static void flush_buffer_mouse(void)
 {
-	chr_ptr_mouse = 0;
+	chr_ptr_mouse = 0U;
 	memset(data_buf_mouse, 0, sizeof(data_buf_mouse));
 }
 
 static void flush_buffer_kbd(void)
 {
-	chr_ptr_kbd = 0;
+	chr_ptr_kbd = 0U;
 	memset(data_buf_kbd, 0, sizeof(data_buf_kbd));
 }
 
@@ -695,7 +695,7 @@ void main(void)
 
 					ev->event_type = HID_KBD_STRING,
 					app_evt_put(ev);
-					str_pointer = 0;
+					str_pointer = 0U;
 					k_sem_give(&evt_sem);
 				}
 				break;

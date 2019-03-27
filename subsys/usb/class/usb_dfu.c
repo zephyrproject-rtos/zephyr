@@ -462,7 +462,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			dfu_data.state = dfuDNBUSY;
 			dfu_data_worker.worker_state = dfuDNLOAD_IDLE;
 			dfu_data_worker.worker_len  = pSetup->wLength;
-			if (dfu_data_worker.worker_len == 0) {
+			if (dfu_data_worker.worker_len == 0U) {
 				dfu_data.state = dfuMANIFEST_SYNC;
 				k_poll_signal_raise(&dfu_signal, 0);
 			}

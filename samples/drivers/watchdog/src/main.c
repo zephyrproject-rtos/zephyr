@@ -47,8 +47,8 @@ void main(void)
 	wdt_config.flags = WDT_FLAG_RESET_SOC;
 
 	/* Expire watchdog after 5000 milliseconds. */
-	wdt_config.window.min = 0;
-	wdt_config.window.max = 5000;
+	wdt_config.window.min = 0U;
+	wdt_config.window.max = 5000U;
 
 	/* Set up watchdog callback. Jump into it when watchdog expired. */
 	wdt_config.callback = wdt_callback;

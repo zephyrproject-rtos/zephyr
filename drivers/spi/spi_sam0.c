@@ -63,21 +63,21 @@ static int spi_sam0_configure(struct device *dev,
 
 	ctrla.bit.MODE = SERCOM_SPI_CTRLA_MODE_SPI_MASTER_Val;
 
-	if ((config->operation & SPI_TRANSFER_LSB) != 0) {
+	if ((config->operation & SPI_TRANSFER_LSB) != 0U) {
 		ctrla.bit.DORD = 1;
 	}
 
-	if ((config->operation & SPI_MODE_CPOL) != 0) {
+	if ((config->operation & SPI_MODE_CPOL) != 0U) {
 		ctrla.bit.CPOL = 1;
 	}
 
-	if ((config->operation & SPI_MODE_CPHA) != 0) {
+	if ((config->operation & SPI_MODE_CPHA) != 0U) {
 		ctrla.bit.CPHA = 1;
 	}
 
 	ctrla.reg |= cfg->pads;
 
-	if ((config->operation & SPI_MODE_LOOP) != 0) {
+	if ((config->operation & SPI_MODE_LOOP) != 0U) {
 		/* Put MISO and MOSI on the same pad */
 		ctrla.bit.DOPO = 0;
 		ctrla.bit.DIPO = 0;
@@ -94,7 +94,7 @@ static int spi_sam0_configure(struct device *dev,
 	ctrlb.bit.CHSIZE = 0;
 
 	/* Use the requested or next higest possible frequency */
-	div = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / config->frequency) / 2 - 1;
+	div = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / config->frequency) / 2U - 1;
 	div = MAX(0, MIN(UINT8_MAX, div));
 
 	/* Update the configuration only if it has changed */

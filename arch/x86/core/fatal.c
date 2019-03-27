@@ -47,7 +47,7 @@ static bool check_stack_bounds(u32_t addr, size_t size, u16_t cs)
 		/* We were servicing an interrupt */
 		start = (u32_t)Z_ARCH_THREAD_STACK_BUFFER(_interrupt_stack);
 		end = start + CONFIG_ISR_STACK_SIZE;
-	} else if ((cs & 0x3U) != 0 ||
+	} else if ((cs & 0x3U) != 0U ||
 		   (_current->base.user_options & K_USER) == 0) {
 		/* Thread was in user mode, or is not a user mode thread.
 		 * The normal stack buffer is what we will check.
@@ -79,13 +79,13 @@ static void unwind_stack(u32_t base_ptr, u16_t cs)
 	struct stack_frame *frame;
 	int i;
 
-	if (base_ptr == 0) {
+	if (base_ptr == 0U) {
 		printk("NULL base ptr\n");
 		return;
 	}
 
 	for (i = 0; i < MAX_STACK_FRAMES; i++) {
-		if (base_ptr % sizeof(base_ptr) != 0) {
+		if (base_ptr % sizeof(base_ptr) != 0U) {
 			printk("unaligned frame ptr\n");
 			return;
 		}
@@ -105,7 +105,7 @@ static void unwind_stack(u32_t base_ptr, u16_t cs)
 		}
 #endif
 
-		if (frame->ret_addr == 0) {
+		if (frame->ret_addr == 0U) {
 			break;
 		}
 #ifdef CONFIG_X86_IAMCU
@@ -372,9 +372,9 @@ static void dump_page_fault(NANO_ESF *esf)
 	printk("***** CPU Page Fault (error code 0x%08x)\n", err);
 
 	printk("%s thread %s address 0x%08x\n",
-	       (err & US) != 0 ? "User" : "Supervisor",
-	       (err & ID) != 0 ? "executed" : ((err & WR) != 0 ? "wrote" :
-		       "read"), cr2);
+	       (err & US) != 0U ? "User" : "Supervisor",
+	       (err & ID) != 0U ? "executed" : ((err & WR) != 0U ? "wrote" :
+						"read"), cr2);
 
 #ifdef CONFIG_X86_MMU
 #ifdef CONFIG_X86_KPTI
@@ -507,7 +507,7 @@ static FUNC_NORETURN __used void _df_handler_top(void)
 	_main_tss.ss = DATA_SEG;
 	_main_tss.eip = (u32_t)_df_handler_bottom;
 	_main_tss.cr3 = (u32_t)&z_x86_kernel_pdpt;
-	_main_tss.eflags = 0;
+	_main_tss.eflags = 0U;
 
 	/* NT bit is set in EFLAGS so we will task switch back to _main_tss
 	 * and run _df_handler_bottom

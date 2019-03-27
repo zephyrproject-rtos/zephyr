@@ -330,7 +330,7 @@ static void recv_thread(void *p1, void *p2, void *p3)
 		err = k_poll(events, 2, K_FOREVER);
 		LL_ASSERT(err == 0);
 		if (events[0].state == K_POLL_STATE_SIGNALED) {
-			events[0].signal->signaled = 0;
+			events[0].signal->signaled = 0U;
 		} else if (events[1].state ==
 			   K_POLL_STATE_FIFO_DATA_AVAILABLE) {
 			node_rx = k_fifo_get(events[1].fifo, 0);

@@ -59,7 +59,7 @@ static void print_info(struct net_pkt *pkt)
 {
 	char src_addr_buf[NET_IPV6_ADDR_LEN], *src_addr;
 	char dst_addr_buf[NET_IPV6_ADDR_LEN], *dst_addr;
-	u16_t dst_port = 0, src_port = 0;
+	u16_t dst_port = 0U, src_port = 0U;
 	sa_family_t family = AF_UNSPEC;
 	void *dst, *src;
 	u8_t next_hdr;

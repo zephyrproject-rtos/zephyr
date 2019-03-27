@@ -323,12 +323,12 @@ void ble_cancel_connect(void)
 
 static bool pong_uuid_match(const u8_t *data, u8_t len)
 {
-	while (len >= 16) {
+	while (len >= 16U) {
 		if (!memcmp(data, pong_svc_uuid.val, 16)) {
 			return true;
 		}
 
-		len -= 16;
+		len -= 16U;
 		data += 16;
 	}
 
@@ -365,7 +365,7 @@ static void device_found(const bt_addr_le_t *addr, s8_t rssi, u8_t type,
 		u8_t type;
 
 		/* Check for early termination */
-		if (len == 0) {
+		if (len == 0U) {
 			return;
 		}
 

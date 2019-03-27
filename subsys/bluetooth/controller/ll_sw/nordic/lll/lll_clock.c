@@ -24,7 +24,7 @@ void lll_clock_wait(void)
 	if (!is_k32src_stable) {
 		struct device *clk_k32;
 
-		is_k32src_stable = 1;
+		is_k32src_stable = 1U;
 
 		clk_k32 = device_get_binding(DRV_NAME);
 		LL_ASSERT(clk_k32);

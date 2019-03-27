@@ -158,7 +158,7 @@ static int gpio_intel_apl_isr(struct device *dev)
 	reg = cfg->reg_base + REG_GPI_INT_STS_BASE
 		+ ((cfg->pin_offset >> 5) << 2);
 	int_sts = sys_read32(reg);
-	acc_mask = 0;
+	acc_mask = 0U;
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&data->cb, cb, tmp, node) {
 		cur_mask = int_sts & cb->pin_mask;
@@ -220,7 +220,7 @@ static int gpio_intel_apl_config(struct device *dev, int access_op,
 	}
 
 	/* read in pad configuration register */
-	reg = cfg->reg_base + data->pad_base + (raw_pin * 8);
+	reg = cfg->reg_base + data->pad_base + (raw_pin * 8U);
 	cfg0 = sys_read32(reg);
 	cfg1 = sys_read32(reg + 4);
 
@@ -304,7 +304,7 @@ static int gpio_intel_apl_write(struct device *dev, int access_op,
 		return -EPERM;
 	}
 
-	reg = cfg->reg_base + data->pad_base + (raw_pin * 8);
+	reg = cfg->reg_base + data->pad_base + (raw_pin * 8U);
 	val = sys_read32(reg);
 
 	if (value) {
@@ -340,7 +340,7 @@ static int gpio_intel_apl_read(struct device *dev, int access_op,
 		return -EPERM;
 	}
 
-	reg = cfg->reg_base + data->pad_base + (raw_pin * 8);
+	reg = cfg->reg_base + data->pad_base + (raw_pin * 8U);
 	val = sys_read32(reg);
 
 	if (!(val & PAD_CFG0_TXDIS)) {

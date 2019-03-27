@@ -82,7 +82,7 @@ void k_mem_slab_init(struct k_mem_slab *slab, void *buffer,
 	slab->num_blocks = num_blocks;
 	slab->block_size = block_size;
 	slab->buffer = buffer;
-	slab->num_used = 0;
+	slab->num_used = 0U;
 	create_free_list(slab);
 	z_waitq_init(&slab->wait_q);
 	SYS_TRACING_OBJ_INIT(k_mem_slab, slab);

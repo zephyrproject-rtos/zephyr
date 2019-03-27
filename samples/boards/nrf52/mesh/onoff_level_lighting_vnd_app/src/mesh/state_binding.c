@@ -108,7 +108,7 @@ static s16_t light_ctl_temp_to_level(u16_t temp)
 
 	/* Mesh Model Specification 6.1.3.1.1 2nd formula start */
 
-	tmp = (temp - light_ctl_srv_user_data.temp_range_min) * 65535;
+	tmp = (temp - light_ctl_srv_user_data.temp_range_min) * 65535U;
 
 	tmp = tmp / (light_ctl_srv_user_data.temp_range_max -
 		     light_ctl_srv_user_data.temp_range_min);
@@ -137,7 +137,7 @@ static u16_t level_to_light_ctl_temp(s16_t level)
 
 void readjust_lightness(void)
 {
-	if (lightness != 0) {
+	if (lightness != 0U) {
 		light_lightness_srv_user_data.last = lightness;
 	}
 
@@ -190,7 +190,7 @@ void state_binding(u8_t light, u8_t temp)
 		if (gen_onoff_srv_root_user_data.onoff == STATE_OFF) {
 			lightness = 0U;
 		} else if (gen_onoff_srv_root_user_data.onoff == STATE_ON) {
-			if (light_lightness_srv_user_data.def == 0) {
+			if (light_lightness_srv_user_data.def == 0U) {
 				lightness = light_lightness_srv_user_data.last;
 			} else {
 				lightness = light_lightness_srv_user_data.def;
@@ -230,10 +230,10 @@ void calculate_lightness_target_values(u8_t type)
 
 	switch (type) {
 	case ONOFF:
-		if (gen_onoff_srv_root_user_data.target_onoff == 0) {
+		if (gen_onoff_srv_root_user_data.target_onoff == 0U) {
 			tmp = 0U;
 		} else {
-			if (light_lightness_srv_user_data.def == 0) {
+			if (light_lightness_srv_user_data.def == 0U) {
 				tmp = light_lightness_srv_user_data.last;
 			} else {
 				tmp = light_lightness_srv_user_data.def;

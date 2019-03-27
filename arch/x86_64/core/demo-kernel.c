@@ -150,7 +150,7 @@ void _cpu_start(int cpu)
 	 * "timer" API
 	 */
 	xuk_set_isr(INT_APIC_LVT_TIMER, 10, handler_timer, 0);
-	_apic.INIT_COUNT = 5000000;
+	_apic.INIT_COUNT = 5000000U;
 	test_timers();
 
 	if (cpu == 0) {

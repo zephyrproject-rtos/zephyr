@@ -29,8 +29,8 @@ int net_udp_create(struct net_pkt *pkt, u16_t src_port, u16_t dst_port)
 
 	udp_hdr->src_port = src_port;
 	udp_hdr->dst_port = dst_port;
-	udp_hdr->len      = 0;
-	udp_hdr->chksum   = 0;
+	udp_hdr->len      = 0U;
+	udp_hdr->chksum   = 0U;
 
 	return net_pkt_set_data(pkt, &udp_access);
 }
@@ -150,7 +150,7 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 
 	if (IS_ENABLED(CONFIG_NET_UDP_CHECKSUM) &&
 	    net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
-	    net_calc_chksum_udp(pkt) != 0) {
+	    net_calc_chksum_udp(pkt) != 0U) {
 		NET_DBG("DROP: checksum mismatch");
 		goto drop;
 	}

@@ -370,12 +370,12 @@ static void unref_check(struct _k_object *ko, int index)
 	struct dyn_obj *dyn_obj =
 			CONTAINER_OF(ko, struct dyn_obj, kobj);
 
-	if ((ko->flags & K_OBJ_FLAG_ALLOC) == 0) {
+	if ((ko->flags & K_OBJ_FLAG_ALLOC) == 0U) {
 		goto out;
 	}
 
 	for (int i = 0; i < CONFIG_MAX_THREAD_BYTES; i++) {
-		if (ko->perms[i] != 0) {
+		if (ko->perms[i] != 0U) {
 			goto out;
 		}
 	}
@@ -470,7 +470,7 @@ static int thread_perms_test(struct _k_object *ko)
 {
 	int index;
 
-	if ((ko->flags & K_OBJ_FLAG_PUBLIC) != 0) {
+	if ((ko->flags & K_OBJ_FLAG_PUBLIC) != 0U) {
 		return 1;
 	}
 

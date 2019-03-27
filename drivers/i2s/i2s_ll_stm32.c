@@ -33,7 +33,7 @@ LOG_MODULE_REGISTER(i2s_ll_stm32);
 
 static unsigned int div_round_closest(u32_t dividend, u32_t divisor)
 {
-	return (dividend + (divisor / 2)) / divisor;
+	return (dividend + (divisor / 2U)) / divisor;
 }
 
 /*
@@ -204,7 +204,7 @@ static int i2s_stm32_configure(struct device *dev, enum i2s_dir dir,
 		stream->master = false;
 	}
 
-	if (i2s_cfg->frame_clk_freq == 0) {
+	if (i2s_cfg->frame_clk_freq == 0U) {
 		stream->queue_drop(stream);
 		memset(&stream->cfg, 0, sizeof(struct i2s_config));
 		stream->state = I2S_STATE_NOT_READY;
@@ -223,11 +223,11 @@ static int i2s_stm32_configure(struct device *dev, enum i2s_dir dir,
 	}
 
 	/* set I2S Data Format */
-	if (i2s_cfg->word_size == 16) {
+	if (i2s_cfg->word_size == 16U) {
 		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_16B);
-	} else if (i2s_cfg->word_size == 24) {
+	} else if (i2s_cfg->word_size == 24U) {
 		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_24B);
-	} else if (i2s_cfg->word_size == 32) {
+	} else if (i2s_cfg->word_size == 32U) {
 		LL_I2S_SetDataFormat(cfg->i2s, LL_I2S_DATAFORMAT_32B);
 	} else {
 		LOG_ERR("invalid word size");

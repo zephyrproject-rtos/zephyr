@@ -196,7 +196,7 @@ static void eth_dw_isr(struct device *dev)
 	 * by the shared IRQ driver. So check here if the interrupt
 	 * is coming from the GPIO controller (or somewhere else).
 	 */
-	if ((int_status & STATUS_RX_INT) == 0) {
+	if ((int_status & STATUS_RX_INT) == 0U) {
 		return;
 	}
 #endif

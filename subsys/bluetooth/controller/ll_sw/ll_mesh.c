@@ -27,7 +27,7 @@ u8_t ll_mesh_advertise(u8_t handle, u8_t own_addr_type,
 	u8_t err;
 
 	/* convert to 625 us units for internal use */
-	interval = ((u32_t)interval + 1) * 10000 / 625;
+	interval = ((u32_t)interval + 1) * 10000U / 625;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	/* Non-conn Non-Scan advertising */
@@ -58,7 +58,7 @@ u8_t ll_mesh_advertise(u8_t handle, u8_t own_addr_type,
 
 	/* TODO: calculate random tx delay */
 	ticks_anchor = ticker_ticks_now_get();
-	ticks_anchor += HAL_TICKER_US_TO_TICKS(min_tx_delay * 10000);
+	ticks_anchor += HAL_TICKER_US_TO_TICKS(min_tx_delay * 10000U);
 
 	/* Enable advertising instance */
 	err = ll_adv_enable(handle, 1,

@@ -475,7 +475,7 @@ static bool test_fragment(struct net_fragment_data *data)
 	}
 
 	ieee802154_fragment_ctx_init(&ctx, pkt, hdr_diff, data->iphc);
-	frame_buf.len = 0;
+	frame_buf.len = 0U;
 
 	buf = pkt->buffer;
 	while (buf) {
@@ -492,7 +492,7 @@ static bool test_fragment(struct net_fragment_data *data)
 
 		net_pkt_frag_add(f_pkt, dfrag);
 
-		frame_buf.len = 0;
+		frame_buf.len = 0U;
 	}
 
 	net_pkt_unref(pkt);

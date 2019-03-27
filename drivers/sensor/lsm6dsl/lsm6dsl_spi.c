@@ -157,7 +157,7 @@ int lsm6dsl_spi_init(struct device *dev)
 	}
 
 	lsm6dsl_cs_ctrl.gpio_pin = DT_ST_LSM6DSL_0_CS_GPIO_PIN;
-	lsm6dsl_cs_ctrl.delay = 0;
+	lsm6dsl_cs_ctrl.delay = 0U;
 
 	lsm6dsl_spi_conf.cs = &lsm6dsl_cs_ctrl;
 

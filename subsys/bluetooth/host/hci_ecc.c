@@ -92,7 +92,7 @@ static void send_cmd_status(u16_t opcode, u8_t status)
 	hdr->len = sizeof(*evt);
 
 	evt = net_buf_add(buf, sizeof(*evt));
-	evt->ncmd = 1;
+	evt->ncmd = 1U;
 	evt->opcode = sys_cpu_to_le16(opcode);
 	evt->status = status;
 
@@ -192,7 +192,7 @@ static void emulate_le_generate_dhkey(void)
 		evt->status = BT_HCI_ERR_UNSPECIFIED;
 		(void)memset(evt->dhkey, 0, sizeof(evt->dhkey));
 	} else {
-		evt->status = 0;
+		evt->status = 0U;
 		/* Convert from big-endian (provided by crypto API) to
 		 * little-endian HCI.
 		 */

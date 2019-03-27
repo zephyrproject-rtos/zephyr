@@ -393,7 +393,7 @@ static int cmd_static_oob(const struct shell *shell, size_t argc, char *argv[])
 {
 	if (argc < 2) {
 		prov.static_val = NULL;
-		prov.static_val_len = 0;
+		prov.static_val_len = 0U;
 	} else {
 		prov.static_val_len = hex2bin(argv[1], static_val, 16);
 		if (prov.static_val_len) {
@@ -620,7 +620,7 @@ static int cmd_get_comp(const struct shell *shell, size_t argc, char *argv[])
 
 		shell_print(shell, "\tElement @ 0x%04x:", loc);
 
-		if (comp.len < ((sig * 2) + (vnd * 4))) {
+		if (comp.len < ((sig * 2U) + (vnd * 4U))) {
 			shell_print(shell, "\t\t...truncated data!");
 			break;
 		}

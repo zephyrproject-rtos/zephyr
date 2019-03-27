@@ -413,7 +413,7 @@ void z_setup_new_thread(struct k_thread *new_thread,
 					new_thread);
 	}
 
-	if ((options & K_INHERIT_PERMS) != 0) {
+	if ((options & K_INHERIT_PERMS) != 0U) {
 		z_thread_perms_inherit(_current, new_thread);
 	}
 #endif
@@ -678,7 +678,7 @@ void z_init_thread_base(struct _thread_base *thread_base, int priority,
 
 	thread_base->prio = priority;
 
-	thread_base->sched_locked = 0;
+	thread_base->sched_locked = 0U;
 
 	/* swap_data does not need to be initialized */
 

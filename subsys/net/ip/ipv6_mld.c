@@ -52,7 +52,7 @@ static int mld_create(struct net_pkt *pkt,
 	}
 
 	mld->record_type = record_type;
-	mld->aux_data_len = 0;
+	mld->aux_data_len = 0U;
 	mld->num_sources = htons(num_sources);
 
 	net_ipaddr_copy(&mld->mcast_address, addr);
@@ -317,7 +317,7 @@ static enum net_verdict handle_mld_query(struct net_pkt *pkt,
 		sizeof(struct in6_addr) * mld_query->num_sources;
 
 	if (length < pkt_len || pkt_len > NET_IPV6_MTU ||
-	    ip_hdr->hop_limit != 1 || icmp_hdr->code != 0) {
+	    ip_hdr->hop_limit != 1U || icmp_hdr->code != 0U) {
 		goto drop;
 	}
 

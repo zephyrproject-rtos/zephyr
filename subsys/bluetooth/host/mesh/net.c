@@ -881,7 +881,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 	 * GATT bearers shall drop all messages with TTL value set to 1."
 	 */
 	if (IS_ENABLED(CONFIG_BT_MESH_GATT_PROXY) &&
-	    tx->ctx->send_ttl != 1) {
+	    tx->ctx->send_ttl != 1U) {
 		if (bt_mesh_proxy_relay(&buf->b, tx->ctx->addr) &&
 		    BT_MESH_ADDR_IS_UNICAST(tx->ctx->addr)) {
 			/* Notify completion if this only went
@@ -913,7 +913,7 @@ int bt_mesh_net_send(struct bt_mesh_net_tx *tx, struct net_buf *buf,
 			cb->end(0, cb_data);
 		}
 		k_work_submit(&bt_mesh.local_work);
-	} else if (tx->ctx->send_ttl != 1) {
+	} else if (tx->ctx->send_ttl != 1U) {
 		/* Deliver to to the advertising network interface. Mesh spec
 		 * 3.4.5.2: "The output filter of the interface connected to
 		 * advertising or GATT bearers shall drop all messages with
@@ -1141,11 +1141,11 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 		 * advertising or GATT bearers shall drop all messages with
 		 * TTL value set to 1."
 		 */
-		if (rx->ctx.recv_ttl == 1) {
+		if (rx->ctx.recv_ttl == 1U) {
 			return;
 		}
 	} else {
-		if (rx->ctx.recv_ttl <= 1) {
+		if (rx->ctx.recv_ttl <= 1U) {
 			return;
 		}
 	}
@@ -1179,7 +1179,7 @@ static void bt_mesh_net_relay(struct net_buf_simple *sbuf,
 	if (rx->net_if != BT_MESH_NET_IF_LOCAL) {
 		/* Leave CTL bit intact */
 		sbuf->data[1] &= 0x80;
-		sbuf->data[1] |= rx->ctx.recv_ttl - 1;
+		sbuf->data[1] |= rx->ctx.recv_ttl - 1U;
 	}
 
 	net_buf_add_mem(buf, sbuf->data, sbuf->len);
@@ -1258,8 +1258,8 @@ int bt_mesh_net_decode(struct net_buf_simple *data, enum bt_mesh_net_if net_if,
 	rx->ctx.recv_ttl = TTL(buf->data);
 
 	/* Default to responding with TTL 0 for non-routed messages */
-	if (rx->ctx.recv_ttl == 0) {
-		rx->ctx.send_ttl = 0;
+	if (rx->ctx.recv_ttl == 0U) {
+		rx->ctx.send_ttl = 0U;
 	} else {
 		rx->ctx.send_ttl = BT_MESH_TTL_DEFAULT;
 	}
@@ -1340,7 +1340,7 @@ static void ivu_refresh(struct k_work *work)
 	BT_DBG("%s for %u hour%s",
 	       atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS) ?
 	       "IVU in Progress" : "IVU Normal mode",
-	       bt_mesh.ivu_duration, bt_mesh.ivu_duration == 1 ? "" : "s");
+	       bt_mesh.ivu_duration, bt_mesh.ivu_duration == 1U ? "" : "s");
 
 	if (bt_mesh.ivu_duration < BT_MESH_IVU_MIN_HOURS) {
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {

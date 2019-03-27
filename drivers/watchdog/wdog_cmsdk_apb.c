@@ -151,7 +151,7 @@ static int wdog_cmsdk_apb_has_fired(void)
 {
 	volatile struct wdog_cmsdk_apb *wdog = WDOG_STRUCT;
 
-	return (wdog->maskintstat & CMSDK_APB_WDOG_MASKINTSTAT) != 0;
+	return (wdog->maskintstat & CMSDK_APB_WDOG_MASKINTSTAT) != 0U;
 }
 
 static void wdog_cmsdk_apb_isr(void)

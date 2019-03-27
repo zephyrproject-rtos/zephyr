@@ -273,7 +273,7 @@ int mqtt_handle_rx(struct mqtt_client *client)
 		return err_code;
 	}
 
-	client->internal.rx_buf_datalen = 0;
+	client->internal.rx_buf_datalen = 0U;
 
 	return 0;
 }

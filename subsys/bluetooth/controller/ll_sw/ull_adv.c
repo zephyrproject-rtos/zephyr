@@ -350,12 +350,12 @@ u8_t ll_adv_data_set(u8_t len, u8_t const *const data)
 	/* update adv pdu fields. */
 	pdu = lll_adv_data_alloc(&adv->lll, &idx);
 	pdu->type = prev->type;
-	pdu->rfu = 0;
+	pdu->rfu = 0U;
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 		pdu->chan_sel = prev->chan_sel;
 	} else {
-		pdu->chan_sel = 0;
+		pdu->chan_sel = 0U;
 	}
 
 	pdu->tx_addr = prev->tx_addr;
@@ -827,7 +827,7 @@ int ull_adv_reset(void)
 	u16_t handle;
 	int err;
 
-	for (handle = 0; handle < BT_CTLR_ADV_MAX; handle++) {
+	for (handle = 0U; handle < BT_CTLR_ADV_MAX; handle++) {
 		(void)disable(handle);
 	}
 
@@ -947,13 +947,13 @@ static void ticker_cb(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 
 		ull_entropy_get(sizeof(random_delay), &random_delay);
 		random_delay %= 10;
-		random_delay += 1;
+		random_delay += 1U;
 
 		ret = ticker_update(TICKER_INSTANCE_ID_CTLR,
 				    TICKER_USER_ID_ULL_HIGH,
 				    (TICKER_ID_ADV_BASE +
 				     ull_adv_handle_get(adv)),
-				    HAL_TICKER_US_TO_TICKS(random_delay * 1000),
+				    HAL_TICKER_US_TO_TICKS(random_delay * 1000U),
 				    0, 0, 0, 0, 0,
 				    ticker_op_update_cb, adv);
 		LL_ASSERT((ret == TICKER_STATUS_SUCCESS) ||
@@ -1129,7 +1129,7 @@ static inline u8_t disable(u16_t handle)
 	}
 #endif /* CONFIG_BT_PERIPHERAL */
 
-	adv->is_enabled = 0;
+	adv->is_enabled = 0U;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (!ull_scan_is_enabled_get(0)) {

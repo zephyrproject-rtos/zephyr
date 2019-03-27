@@ -29,10 +29,10 @@ int fcb_get_len(u8_t *buf, u16_t *len);
 
 static inline int fcb_len_in_flash(struct fcb *fcb, u16_t len)
 {
-	if (fcb->f_align <= 1) {
+	if (fcb->f_align <= 1U) {
 		return len;
 	}
-	return (len + (fcb->f_align - 1)) & ~(fcb->f_align - 1);
+	return (len + (fcb->f_align - 1U)) & ~(fcb->f_align - 1U);
 }
 
 const struct flash_area *fcb_open_flash(const struct fcb *fcb);

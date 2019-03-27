@@ -442,7 +442,7 @@ static int loapic_suspend(struct device *port)
 			 */
 			lvt = LOAPIC_READ(LOAPIC_TIMER + (loapic_irq * 0x10));
 
-			if ((lvt & LOAPIC_LVT_MASKED) == 0) {
+			if ((lvt & LOAPIC_LVT_MASKED) == 0U) {
 				sys_bitfield_set_bit((mem_addr_t)loapic_suspend_buf,
 					loapic_irq);
 			}

@@ -142,7 +142,7 @@ static int leuart_gecko_irq_tx_complete(struct device *dev)
 	LEUART_TypeDef *base = DEV_BASE(dev);
 	u32_t flags = LEUART_IntGet(base);
 
-	return (flags & LEUART_IF_TXC) != 0;
+	return (flags & LEUART_IF_TXC) != 0U;
 }
 
 static int leuart_gecko_irq_tx_ready(struct device *dev)
@@ -150,7 +150,7 @@ static int leuart_gecko_irq_tx_ready(struct device *dev)
 	LEUART_TypeDef *base = DEV_BASE(dev);
 	u32_t flags = LEUART_IntGet(base);
 
-	return (flags & LEUART_IF_TXBL) != 0;
+	return (flags & LEUART_IF_TXBL) != 0U;
 }
 
 static void leuart_gecko_irq_rx_enable(struct device *dev)
@@ -174,7 +174,7 @@ static int leuart_gecko_irq_rx_full(struct device *dev)
 	LEUART_TypeDef *base = DEV_BASE(dev);
 	u32_t flags = LEUART_IntGet(base);
 
-	return (flags & LEUART_IF_RXDATAV) != 0;
+	return (flags & LEUART_IF_RXDATAV) != 0U;
 }
 
 static int leuart_gecko_irq_rx_ready(struct device *dev)

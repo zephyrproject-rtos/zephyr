@@ -235,7 +235,7 @@ static int entropy_nrf5_get_entropy(struct device *device, u8_t *buf, u16_t len)
 				     buf, len);
 		k_sem_give(&entropy_nrf5_data.sem_lock);
 
-		if (bytes == 0) {
+		if (bytes == 0U) {
 			/* Pool is empty: Sleep until next interrupt. */
 			k_sem_take(&entropy_nrf5_data.sem_sync, K_FOREVER);
 			continue;
@@ -256,7 +256,7 @@ static int entropy_nrf5_get_entropy_isr(struct device *dev, u8_t *buf, u16_t len
 	/* Check if this API is called on correct driver instance. */
 	__ASSERT_NO_MSG(&entropy_nrf5_data == DEV_DATA(dev));
 
-	if (likely((flags & ENTROPY_BUSYWAIT) == 0)) {
+	if (likely((flags & ENTROPY_BUSYWAIT) == 0U)) {
 		return rng_pool_get((struct rng_pool *)(entropy_nrf5_data.isr),
 				    buf, len);
 	}

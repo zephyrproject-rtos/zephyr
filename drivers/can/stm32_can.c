@@ -227,7 +227,7 @@ int can_stm32_runtime_configure(struct device *dev, enum can_mode mode,
 	}
 
 	prescaler = clock_rate / (BIT_SEG_LENGTH(cfg) * bitrate);
-	if (prescaler == 0 || prescaler > 1024) {
+	if (prescaler == 0U || prescaler > 1024) {
 		LOG_ERR("HAL_CAN_Init failed: prescaler > max (%d > 1024)",
 					prescaler);
 		return -EINVAL;
@@ -346,7 +346,7 @@ int can_stm32_send(struct device *dev, const struct zcan_frame *msg,
 		    "standard" : "extended"
 		    , msg->rtr == CAN_DATAFRAME ? "no" : "yes");
 
-	__ASSERT(msg->dlc == 0 || msg->data != NULL, "Dataptr is null");
+	__ASSERT(msg->dlc == 0U || msg->data != NULL, "Dataptr is null");
 	__ASSERT(msg->dlc <= CAN_MAX_DLC, "DLC > 8");
 
 	if (can->ESR & CAN_ESR_BOFF) {

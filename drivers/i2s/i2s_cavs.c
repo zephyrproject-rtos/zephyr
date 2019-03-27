@@ -339,7 +339,7 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 		return -EINVAL;
 	}
 
-	if (i2s_cfg->frame_clk_freq == 0) {
+	if (i2s_cfg->frame_clk_freq == 0U) {
 		LOG_ERR("Invalid frame_clk_freq %u",
 				i2s_cfg->frame_clk_freq);
 		return -EINVAL;
@@ -444,8 +444,8 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 		 * In addition, double M so that it can be later divided by 2
 		 * to get an approximately 50% duty cycle clock
 		 */
-		i2s_m = (bit_clk_freq << 1) / 100;
-		i2s_n = mclk / 100;
+		i2s_m = (bit_clk_freq << 1) / 100U;
+		i2s_n = mclk / 100U;
 
 		/* set divider value of 1 which divides the clock by 2 */
 		mdiv = 1U;
@@ -521,7 +521,7 @@ static int i2s_cavs_configure(struct device *dev, enum i2s_dir dir,
 	mn_div->nval = I2S_MNVAL(i2s_n);
 
 	/* Set up DMA channel parameters */
-	word_size_bytes = (word_size_bits + 7) / 8;
+	word_size_bytes = (word_size_bits + 7) / 8U;
 	dev_data->tx.dma_cfg.source_data_size = word_size_bytes;
 	dev_data->tx.dma_cfg.dest_data_size = word_size_bytes;
 	dev_data->rx.dma_cfg.source_data_size = word_size_bytes;

@@ -25,9 +25,9 @@ static char *us_time_to_str(char *dest, u64_t time)
 		unsigned int second;
 		unsigned int us;
 
-		hour   = (time / 3600 / 1000000) % 24;
-		minute = (time / 60 / 1000000) % 60;
-		second = (time / 1000000) % 60;
+		hour   = (time / 3600U / 1000000U) % 24;
+		minute = (time / 60U / 1000000U) % 60;
+		second = (time / 1000000U) % 60;
 		us     = time % 1000000;
 
 		sprintf(dest, "%02u:%02u:%02u.%06u", hour, minute, second, us);

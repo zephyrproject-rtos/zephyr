@@ -75,7 +75,7 @@ void test_single_read(void)
 u8_t chained_read_buf0[10];
 u8_t chained_read_buf1[20];
 u8_t chained_read_buf2[30];
-u8_t buf_num = 1;
+u8_t buf_num = 1U;
 u8_t *read_ptr;
 
 void test_chained_read_callback(struct uart_event *evt, void *user_data)
@@ -91,16 +91,16 @@ void test_chained_read_callback(struct uart_event *evt, void *user_data)
 		k_sem_give(&rx_rdy);
 		break;
 	case UART_RX_BUF_REQUEST:
-		if (buf_num == 1) {
+		if (buf_num == 1U) {
 			uart_rx_buf_rsp(uart_dev,
 					chained_read_buf1,
 					sizeof(chained_read_buf1));
-			buf_num = 2;
-		} else if (buf_num == 2) {
+			buf_num = 2U;
+		} else if (buf_num == 2U) {
 			uart_rx_buf_rsp(uart_dev,
 					chained_read_buf2,
 					sizeof(chained_read_buf2));
-			buf_num = 0;
+			buf_num = 0U;
 		}
 		break;
 	case UART_RX_DISABLED:

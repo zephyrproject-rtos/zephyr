@@ -55,7 +55,7 @@ static void double_interval_timeout(struct k_work *work)
 	u32_t rand_time;
 	u32_t last_end = get_end(trickle);
 
-	trickle->c = 0;
+	trickle->c = 0U;
 
 	NET_DBG("now %u (was at %u)", k_uptime_get_32(), last_end);
 
@@ -126,7 +126,7 @@ static void setup_new_interval(struct net_trickle *trickle)
 {
 	u32_t t;
 
-	trickle->c = 0;
+	trickle->c = 0U;
 
 	t = get_t(trickle->I);
 
@@ -197,7 +197,7 @@ int net_trickle_stop(struct net_trickle *trickle)
 
 	k_delayed_work_cancel(&trickle->timer);
 
-	trickle->I = 0;
+	trickle->I = 0U;
 
 	return 0;
 }

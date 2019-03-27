@@ -75,7 +75,7 @@ static int flash_sync(struct flash_img_context *ctx)
 	}
 
 	ctx->bytes_written += ctx->buf_bytes;
-	ctx->buf_bytes = 0;
+	ctx->buf_bytes = 0U;
 
 	return rc;
 }
@@ -136,7 +136,7 @@ size_t flash_img_bytes_written(struct flash_img_context *ctx)
 int flash_img_init(struct flash_img_context *ctx)
 {
 	ctx->bytes_written = 0;
-	ctx->buf_bytes = 0;
+	ctx->buf_bytes = 0U;
 	return flash_area_open(DT_FLASH_AREA_IMAGE_1_ID,
 			       (const struct flash_area **)&(ctx->flash_area));
 }

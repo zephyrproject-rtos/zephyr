@@ -140,7 +140,7 @@ static inline bool sys_pm_is_deep_sleep_state(enum power_states state)
  */
 static inline void _sys_pm_idle_exit_notification_disable(void)
 {
-	sys_pm_idle_exit_notify = 0;
+	sys_pm_idle_exit_notify = 0U;
 }
 
 /**

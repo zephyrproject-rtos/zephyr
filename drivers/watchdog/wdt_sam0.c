@@ -35,10 +35,10 @@ static u32_t wdt_sam0_timeout_to_wdt_period(u32_t timeout_ms)
 	u32_t cycles;
 
 	/* Calculate number of clock cycles @ 1.024 kHz input clock */
-	cycles = (timeout_ms * 1024) / 1000;
+	cycles = (timeout_ms * 1024U) / 1000;
 
 	/* Minimum wdt period is 8 clock cycles (register value 0) */
-	if (cycles <= 8)
+	if (cycles <= 8U)
 		return 0;
 
 	/* Round up to next pow2 and calculate the register value */
@@ -141,9 +141,9 @@ static int wdt_sam0_install_timeout(struct device *dev,
 		if (cfg->callback) {
 			if (per == WDT_CONFIG_PER_8_Val) {
 				/* Ensure we have time for the early warning */
-				per += 1;
+				per += 1U;
 			}
-			WDT_REGS->EWCTRL.bit.EWOFFSET = per - 1;
+			WDT_REGS->EWCTRL.bit.EWOFFSET = per - 1U;
 		}
 		window = WDT_CONFIG_PER_8_Val;
 		WDT_REGS->CTRL.bit.WEN = 0;

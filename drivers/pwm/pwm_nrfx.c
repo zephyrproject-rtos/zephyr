@@ -85,7 +85,7 @@ static u32_t pwm_period_check_and_set(const struct pwm_nrfx_config *config,
 		/* If period_cycles fit with standard prescaler,
 		 * set it directly
 		 */
-		data->prescaler = 1;
+		data->prescaler = 1U;
 		data->countertop = period_cycles;
 		data->period_cycles = period_cycles;
 	}
@@ -104,7 +104,7 @@ static u8_t pwm_channel_map(const uint8_t *output_pins, u32_t pwm)
 	u8_t i;
 
 	/* Find pin, return channel number */
-	for (i = 0; i < NRF_PWM_CHANNEL_COUNT; i++) {
+	for (i = 0U; i < NRF_PWM_CHANNEL_COUNT; i++) {
 		if (output_pins[i] != NRFX_PWM_PIN_NOT_USED
 		    && (pwm == (output_pins[i] & PWM_NRFX_CH_PIN_MASK))) {
 			return i;
@@ -119,7 +119,7 @@ static bool any_channel_active(const struct pwm_nrfx_data *data)
 {
 	u8_t channel;
 
-	for (channel = 0; channel < NRF_PWM_CHANNEL_COUNT; channel++) {
+	for (channel = 0U; channel < NRF_PWM_CHANNEL_COUNT; channel++) {
 		u16_t channel_pulse_cycle =
 			data->current[channel]
 			& PWM_NRFX_CH_PULSE_CYCLES_MASK;
@@ -182,7 +182,7 @@ static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
 	 * since this will the setting if we in the future disable the
 	 * peripheral when no channels are active.
 	 */
-	if (pulse_cycles == 0 || pulse_cycles == period_cycles) {
+	if (pulse_cycles == 0U || pulse_cycles == period_cycles) {
 		/* If pulse 0% and pin not inverted, set LOW.
 		 * If pulse 100% and pin inverted, set LOW.
 		 * If pulse 0% and pin inverted, set HIGH.
@@ -193,7 +193,7 @@ static int pwm_nrfx_pin_set(struct device *dev, u32_t pwm,
 			& NRFX_PWM_PIN_INVERTED;
 
 		bool pulse_0_and_not_inverted =
-			(pulse_cycles == 0)
+			(pulse_cycles == 0U)
 			&& !channel_inverted_state;
 		bool pulse_100_and_inverted =
 			(pulse_cycles == period_cycles)

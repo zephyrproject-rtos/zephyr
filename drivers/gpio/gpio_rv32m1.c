@@ -35,8 +35,8 @@ static int gpio_rv32m1_configure(struct device *dev,
 	GPIO_Type *gpio_base = config->gpio_base;
 	PORT_Type *port_base = config->port_base;
 	port_interrupt_t port_interrupt = 0;
-	u32_t mask = 0;
-	u32_t pcr = 0;
+	u32_t mask = 0U;
+	u32_t pcr = 0U;
 	u8_t i;
 
 	/* Check for an invalid pin configuration */
@@ -45,7 +45,7 @@ static int gpio_rv32m1_configure(struct device *dev,
 	}
 
 	/* Check if GPIO port supports interrupts */
-	if ((flags & GPIO_INT) && ((config->flags & GPIO_INT) == 0)) {
+	if ((flags & GPIO_INT) && ((config->flags & GPIO_INT) == 0U)) {
 		return -EINVAL;
 	}
 
@@ -120,7 +120,7 @@ static int gpio_rv32m1_configure(struct device *dev,
 		port_base->PCR[pin] = (port_base->PCR[pin] & ~mask) | pcr |
 				      PORT_PCR_MUX(kPORT_MuxAsGpio);
 	} else {  /* GPIO_ACCESS_BY_PORT */
-		for (i = 0; i < ARRAY_SIZE(port_base->PCR); i++) {
+		for (i = 0U; i < ARRAY_SIZE(port_base->PCR); i++) {
 			port_base->PCR[i] = (port_base->PCR[pin] & ~mask) | pcr
 					     | PORT_PCR_MUX(kPORT_MuxAsGpio);
 		}
@@ -206,7 +206,7 @@ static int gpio_rv32m1_disable_callback(struct device *dev,
 	if (access_op == GPIO_ACCESS_BY_PIN) {
 		data->pin_callback_enables &= ~BIT(pin);
 	} else {
-		data->pin_callback_enables = 0;
+		data->pin_callback_enables = 0U;
 	}
 
 	return 0;

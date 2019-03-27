@@ -22,7 +22,7 @@ static int acquire_mutex(pthread_mutex_t *m, int timeout)
 {
 	int rc = 0, key = irq_lock();
 
-	if (m->lock_count == 0 && m->owner == NULL) {
+	if (m->lock_count == 0U && m->owner == NULL) {
 		m->lock_count++;
 		m->owner = pthread_self();
 
@@ -89,7 +89,7 @@ int pthread_mutex_init(pthread_mutex_t *m,
 	const pthread_mutexattr_t *mattr;
 
 	m->owner = NULL;
-	m->lock_count = 0;
+	m->lock_count = 0U;
 
 	mattr = (attr == NULL) ? &def_attr : attr;
 
@@ -127,14 +127,14 @@ int pthread_mutex_unlock(pthread_mutex_t *m)
 		return EPERM;
 	}
 
-	if (m->lock_count == 0) {
+	if (m->lock_count == 0U) {
 		irq_unlock(key);
 		return EINVAL;
 	}
 
 	m->lock_count--;
 
-	if (m->lock_count == 0) {
+	if (m->lock_count == 0U) {
 		thread = z_unpend_first_thread(&m->wait_q);
 		if (thread) {
 			m->owner = (pthread_t)thread;

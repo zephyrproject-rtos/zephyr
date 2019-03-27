@@ -373,7 +373,7 @@ static enum adc_action repeated_samplings_callback(
 {
 	++m_samplings_done;
 	TC_PRINT("%s: done %d\n", __func__, m_samplings_done);
-	if (m_samplings_done == 1) {
+	if (m_samplings_done == 1U) {
 		#if defined(ADC_2ND_CHANNEL_ID)
 			check_samples(2);
 		#else

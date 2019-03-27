@@ -55,21 +55,21 @@ static void usb_sam0_ep_isr(u8_t ep)
 
 	endpoint->EPINTFLAG.reg = intflag;
 
-	if ((intflag & USB_DEVICE_EPINTFLAG_RXSTP) != 0) {
+	if ((intflag & USB_DEVICE_EPINTFLAG_RXSTP) != 0U) {
 		/* Setup */
 		data->ep_cb[0][ep](ep, USB_DC_EP_SETUP);
 	}
 
-	if ((intflag & USB_DEVICE_EPINTFLAG_TRCPT0) != 0) {
+	if ((intflag & USB_DEVICE_EPINTFLAG_TRCPT0) != 0U) {
 		/* Out (to device) data received */
 		data->ep_cb[0][ep](ep, USB_DC_EP_DATA_OUT);
 	}
 
-	if ((intflag & USB_DEVICE_EPINTFLAG_TRCPT1) != 0) {
+	if ((intflag & USB_DEVICE_EPINTFLAG_TRCPT1) != 0U) {
 		/* In (to host) transmit complete */
 		data->ep_cb[1][ep](ep | USB_SAM0_IN_EP, USB_DC_EP_DATA_IN);
 
-		if (data->addr != 0) {
+		if (data->addr != 0U) {
 			/* Commit the pending address update.  This
 			 * must be done after the ack to the host
 			 * completes else the ack will get dropped.
@@ -92,7 +92,7 @@ static void usb_sam0_isr(void)
 	/* Acknowledge all interrupts */
 	regs->INTFLAG.reg = intflag;
 
-	if ((intflag & USB_DEVICE_INTFLAG_EORST) != 0) {
+	if ((intflag & USB_DEVICE_INTFLAG_EORST) != 0U) {
 		UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[0];
 
 		/* The device clears some of the configuration of EP0
@@ -106,9 +106,9 @@ static void usb_sam0_isr(void)
 	}
 
 	/* Dispatch the endpoint interrupts */
-	for (ep = 0U; epint != 0; epint >>= 1) {
+	for (ep = 0U; epint != 0U; epint >>= 1) {
 		/* Scan bit-by-bit as the Cortex-M0 doesn't have ffs */
-		if ((epint & 1) != 0) {
+		if ((epint & 1) != 0U) {
 			usb_sam0_ep_isr(ep);
 		}
 		ep++;

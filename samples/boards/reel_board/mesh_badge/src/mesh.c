@@ -377,7 +377,7 @@ static void vnd_heartbeat(struct bt_mesh_model *model,
 	hops = init_ttl - ctx->recv_ttl + 1;
 
 	printk("Heartbeat from 0x%04x over %u hop%s\n", ctx->addr,
-	       hops, hops == 1 ? "" : "s");
+	       hops, hops == 1U ? "" : "s");
 
 	board_add_heartbeat(ctx->addr, hops);
 }

@@ -414,7 +414,7 @@ static int pipe_return_code(size_t min_xfer, size_t bytes_remaining,
 static void pipe_thread_ready(struct k_thread *thread)
 {
 #if (CONFIG_NUM_PIPE_ASYNC_MSGS > 0)
-	if ((thread->base.thread_state & _THREAD_DUMMY) != 0) {
+	if ((thread->base.thread_state & _THREAD_DUMMY) != 0U) {
 		pipe_async_finish((struct k_pipe_async *)thread);
 		return;
 	}

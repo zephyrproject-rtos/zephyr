@@ -72,7 +72,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	_new_thread_init(thread, stack_buf, stack_size, priority, options);
 
 #if CONFIG_X86_USERSPACE
-	if ((options & K_USER) == 0) {
+	if ((options & K_USER) == 0U) {
 		/* Running in kernel mode, kernel stack region is also a guard
 		 * page */
 		z_x86_mmu_set_flags(&z_x86_kernel_pdpt,
@@ -100,7 +100,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* initial EFLAGS; only modify IF and IOPL bits */
 	initial_frame->eflags = (EflagsGet() & ~EFLAGS_MASK) | EFLAGS_INITIAL;
 #ifdef CONFIG_X86_USERSPACE
-	if ((options & K_USER) != 0) {
+	if ((options & K_USER) != 0U) {
 #ifdef _THREAD_WRAPPER_REQUIRED
 		initial_frame->edi = (u32_t)z_arch_user_mode_enter;
 		initial_frame->thread_entry = _x86_thread_entry_wrapper;

@@ -82,7 +82,7 @@ void delay_until(void *param)
 {
 
 	tick = osKernelGetTickCount();
-	tick += 50;
+	tick += 50U;
 
 	status_val = osDelayUntil(tick);
 }

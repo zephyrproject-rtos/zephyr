@@ -180,7 +180,7 @@ static int i2c_virtual_transfer(struct device *dev, struct i2c_msg *msg,
 		}
 
 		/* Stop condition is required for the last message */
-		if ((num_msgs == 1) && !(current->flags & I2C_MSG_STOP)) {
+		if ((num_msgs == 1U) && !(current->flags & I2C_MSG_STOP)) {
 			ret = -EINVAL;
 			break;
 		}

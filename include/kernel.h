@@ -3098,7 +3098,7 @@ __syscall void k_sem_reset(struct k_sem *sem);
  */
 static inline void z_impl_k_sem_reset(struct k_sem *sem)
 {
-	sem->count = 0;
+	sem->count = 0U;
 }
 
 /**
@@ -4397,7 +4397,7 @@ __syscall void k_poll_signal_reset(struct k_poll_signal *signal);
 
 static inline void z_impl_k_poll_signal_reset(struct k_poll_signal *signal)
 {
-	signal->signaled = 0;
+	signal->signaled = 0U;
 }
 
 /**

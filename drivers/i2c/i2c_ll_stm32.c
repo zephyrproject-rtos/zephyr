@@ -133,7 +133,7 @@ static int i2c_stm32_transfer(struct device *dev, struct i2c_msg *msg,
 							*next_msg_flags : 0;
 
 			if (current->len > 255) {
-				current->len = 255;
+				current->len = 255U;
 				current->flags &= ~I2C_MSG_STOP;
 				if (next_msg_flags) {
 					*next_msg_flags = current->flags &

@@ -24,7 +24,7 @@ static u16_t isl29035_lux_processed_to_raw(struct sensor_value const *val)
 
 	/* raw_val = val * (2 ^ adc_data_bits) / lux_range */
 	raw_val = (((u64_t)val->val1) << ISL29035_ADC_DATA_BITS) +
-		  (((u64_t)val->val2) << ISL29035_ADC_DATA_BITS) / 1000000;
+		  (((u64_t)val->val2) << ISL29035_ADC_DATA_BITS) / 1000000U;
 
 	return raw_val / ISL29035_LUX_RANGE;
 }

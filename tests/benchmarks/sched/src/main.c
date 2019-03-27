@@ -110,8 +110,8 @@ void main(void)
 	/* Let it start running and pend */
 	k_sleep(100);
 
-	u64_t tot = 0;
-	u32_t runs = 0;
+	u64_t tot = 0U;
+	u32_t runs = 0U;
 
 	for (int i = 0; i < N_RUNS + N_SETTLE; i++) {
 		stamp(UNPENDING);
@@ -140,8 +140,8 @@ void main(void)
 			tot += whole;
 			avg = tot / (runs - 10);
 		} else {
-			tot = 0;
-			avg = 0;
+			tot = 0U;
+			avg = 0U;
 		}
 
 		/* For reference, an unmodified HEAD on qemu_x86 with

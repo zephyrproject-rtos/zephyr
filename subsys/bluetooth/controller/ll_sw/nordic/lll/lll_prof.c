@@ -60,7 +60,7 @@ void lll_prof_cputime_capture(void)
 void lll_prof_send(void)
 {
 	u8_t latency, cputime, prev;
-	u8_t chg = 0;
+	u8_t chg = 0U;
 
 	/* calculate the elapsed time in us since on-air radio packet end
 	 * to ISR entry
@@ -74,18 +74,18 @@ void lll_prof_send(void)
 	/* check changes in min, avg and max of latency */
 	if (latency > latency_max) {
 		latency_max = latency;
-		chg = 1;
+		chg = 1U;
 	}
 	if (latency < latency_min) {
 		latency_min = latency;
-		chg = 1;
+		chg = 1U;
 	}
 
 	/* check for +/- 1us change */
 	prev = ((u16_t)latency_prev + latency) >> 1;
 	if (prev != latency_prev) {
 		latency_prev = latency;
-		chg = 1;
+		chg = 1U;
 	}
 
 	/* calculate the elapsed time in us since ISR entry */
@@ -94,19 +94,19 @@ void lll_prof_send(void)
 	/* check changes in min, avg and max */
 	if (cputime > cputime_max) {
 		cputime_max = cputime;
-		chg = 1;
+		chg = 1U;
 	}
 
 	if (cputime < cputime_min) {
 		cputime_min = cputime;
-		chg = 1;
+		chg = 1U;
 	}
 
 	/* check for +/- 1us change */
 	prev = ((u16_t)cputime_prev + cputime) >> 1;
 	if (prev != cputime_prev) {
 		cputime_prev = cputime;
-		chg = 1;
+		chg = 1U;
 	}
 
 	/* generate event if any change */

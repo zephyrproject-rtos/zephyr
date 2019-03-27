@@ -445,7 +445,7 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 		return;
 	}
 
-	if (button_press_cnt == 0) {
+	if (button_press_cnt == 0U) {
 		k_timer_start(&sw.button_timer, K_SECONDS(1), 0);
 	}
 
@@ -468,7 +468,7 @@ static void button_cnt_timer(struct k_timer *work)
 {
 	struct sw *button_sw = CONTAINER_OF(work, struct sw, button_timer);
 
-	button_sw->onoff_state = button_press_cnt == 1 ? 1 : 0;
+	button_sw->onoff_state = button_press_cnt == 1U ? 1 : 0;
 	printk("button_press_cnt 0x%02x onoff_state 0x%02x\n",
 	       button_press_cnt, button_sw->onoff_state);
 	button_press_cnt = 0U;

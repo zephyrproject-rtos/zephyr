@@ -213,9 +213,9 @@ static int bme280_channel_get(struct device *dev,
 		 * fractional.  Output value of 24674867 represents
 		 * 24674867/256 = 96386.2 Pa = 963.862 hPa
 		 */
-		val->val1 = (data->comp_press >> 8) / 1000;
-		val->val2 = (data->comp_press >> 8) % 1000 * 1000 +
-			(((data->comp_press & 0xff) * 1000) >> 8);
+		val->val1 = (data->comp_press >> 8) / 1000U;
+		val->val2 = (data->comp_press >> 8) % 1000 * 1000U +
+			(((data->comp_press & 0xff) * 1000U) >> 8);
 		break;
 	case SENSOR_CHAN_HUMIDITY:
 		/*
@@ -224,7 +224,7 @@ static int bme280_channel_get(struct device *dev,
 		 * 47445/1024 = 46.333 %RH
 		 */
 		val->val1 = (data->comp_humidity >> 10);
-		val->val2 = (((data->comp_humidity & 0x3ff) * 1000 * 1000) >> 10);
+		val->val2 = (((data->comp_humidity & 0x3ff) * 1000U * 1000U) >> 10);
 		break;
 	default:
 		return -EINVAL;

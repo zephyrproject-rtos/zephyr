@@ -25,7 +25,7 @@ static u8_t small_buffer[512];
 
 static void fake_dev_iface_init(struct net_if *iface)
 {
-	if (mac_addr[2] == 0) {
+	if (mac_addr[2] == 0U) {
 		/* 00-00-5E-00-53-xx Documentation RFC 7042 */
 		mac_addr[0] = 0x00;
 		mac_addr[1] = 0x00;
@@ -431,7 +431,7 @@ void test_net_pkt_advanced_basics(void)
 	{
 		u32_t *val = (u32_t *)net_pkt_cursor_get_pos(pkt);
 
-		*val = 0;
+		*val = 0U;
 		/* etc... */
 	}
 

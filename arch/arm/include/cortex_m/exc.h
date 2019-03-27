@@ -63,7 +63,7 @@ static ALWAYS_INLINE bool _IsInIsr(void)
 		/* On ARMv6-M there is no nested execution bit, so we check
 		 * exception 3, hard fault, to a detect a nested exception.
 		 */
-		|| (vector == 3)
+		|| (vector == 3U)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 		/* If not in thread mode, and if RETTOBASE bit in ICSR is 0,
 		 * then there are preempted active exceptions to execute.

@@ -78,12 +78,12 @@ void test_intmath(void)
 	a = 30000U;
 	b = 5872U;
 	num = a * b;
-	zassert_true((num == 176160000), "32-bit multiplication failed");
+	zassert_true((num == 176160000U), "32-bit multiplication failed");
 
 	a = 234424432U;
 	b = 98982U;
 	num = a / b;
-	zassert_true((num == 2368), "32-bit division failed");
+	zassert_true((num == 2368U), "32-bit division failed");
 }
 /**
  * @}

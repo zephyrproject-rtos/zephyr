@@ -2948,7 +2948,7 @@ static u8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		case PASSKEY_DISPLAY:
 		case PASSKEY_INPUT:
 			smp->passkey_round++;
-			if (smp->passkey_round == 20) {
+			if (smp->passkey_round == 20U) {
 				break;
 			}
 
@@ -2999,7 +2999,7 @@ static u8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		smp_send_pairing_random(smp);
 
 		smp->passkey_round++;
-		if (smp->passkey_round == 20) {
+		if (smp->passkey_round == 20U) {
 			atomic_set_bit(&smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
 			atomic_set_bit(smp->flags, SMP_FLAG_DHCHECK_WAIT);
 			return 0;

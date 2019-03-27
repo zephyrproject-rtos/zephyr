@@ -159,7 +159,7 @@ static inline int _mpu_configure(u8_t type, u32_t base, u32_t size)
 
 	LOG_DBG("Region info: 0x%x 0x%x", base, size);
 
-	if (region_attr == 0 || region_index < 0) {
+	if (region_attr == 0U || region_index < 0) {
 		return -EINVAL;
 	}
 

@@ -74,7 +74,7 @@ SYS_INIT(init_mutex_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 void z_impl_k_mutex_init(struct k_mutex *mutex)
 {
 	mutex->owner = NULL;
-	mutex->lock_count = 0;
+	mutex->lock_count = 0U;
 
 	sys_trace_void(SYS_TRACE_ID_MUTEX_INIT);
 
@@ -247,7 +247,7 @@ void z_impl_k_mutex_unlock(struct k_mutex *mutex)
 		 */
 		mutex->owner_orig_prio = new_owner->base.prio;
 	} else {
-		mutex->lock_count = 0;
+		mutex->lock_count = 0U;
 		k_spin_unlock(&lock, key);
 	}
 

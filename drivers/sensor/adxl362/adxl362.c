@@ -130,7 +130,7 @@ static int adxl362_freq_to_odr_val(u16_t freq_int, u16_t freq_milli)
 	size_t i;
 
 	/* An ODR of 0 Hz is not allowed */
-	if (freq_int == 0 && freq_milli == 0) {
+	if (freq_int == 0U && freq_milli == 0U) {
 		return -EINVAL;
 	}
 
@@ -600,7 +600,7 @@ static int adxl362_init(struct device *dev)
 	}
 
 	data->adxl362_cs_ctrl.gpio_pin = config->cs_gpio;
-	data->adxl362_cs_ctrl.delay = 0;
+	data->adxl362_cs_ctrl.delay = 0U;
 
 	data->spi_cfg.cs = &data->adxl362_cs_ctrl;
 #endif

@@ -398,7 +398,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 
 	key = irq_lock();
 
-	avail_space *= 4;
+	avail_space *= 4U;
 	if (!avail_space) {
 		LOG_ERR("USB IN EP%d no space available, DTXFSTS %x", ep_idx,
 			USB_DW->in_ep_reg[ep_idx].dtxfsts);
@@ -416,7 +416,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 		data_len = avail_space;
 	}
 
-	if (data_len != 0) {
+	if (data_len != 0U) {
 		/* Get max packet size and packet count for ep */
 		if (ep_idx == USB_DW_IN_EP_0) {
 			max_pkt_cnt =
@@ -478,7 +478,7 @@ static int usb_dw_tx(u8_t ep, const u8_t *const data,
 	 * to access a FIFO, the application must complete the transaction
 	 * before accessing the register."
 	 */
-	for (i = 0U; i < data_len; i += 4) {
+	for (i = 0U; i < data_len; i += 4U) {
 		u32_t val = data[i];
 
 		if (i + 1 < data_len) {
@@ -1119,7 +1119,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 		bytes_to_copy);
 
 	/* Data in the FIFOs is always stored per 32-bit words */
-	for (i = 0U; i < (bytes_to_copy & ~0x3); i += 4) {
+	for (i = 0U; i < (bytes_to_copy & ~0x3); i += 4U) {
 		*(u32_t *)(data + i) = USB_DW_EP_FIFO(ep_idx);
 	}
 	if (bytes_to_copy & 0x3) {

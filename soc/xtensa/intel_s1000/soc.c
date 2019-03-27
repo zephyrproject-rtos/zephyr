@@ -201,7 +201,7 @@ static inline void soc_set_dmic_power(void)
 	/* enable power */
 	dmic_shim_regs->dmiclctl |= SOC_DMIC_SHIM_DMICLCTL_SPA;
 
-	while ((dmic_shim_regs->dmiclctl & SOC_DMIC_SHIM_DMICLCTL_CPA) == 0) {
+	while ((dmic_shim_regs->dmiclctl & SOC_DMIC_SHIM_DMICLCTL_CPA) == 0U) {
 		/* wait for power status */
 	}
 #endif
@@ -215,7 +215,7 @@ static inline void soc_set_gna_power(void)
 
 	/* power on GNA block */
 	regs->gna_power_control |= SOC_GNA_POWER_CONTROL_SPA;
-	while ((regs->gna_power_control & SOC_GNA_POWER_CONTROL_CPA) == 0) {
+	while ((regs->gna_power_control & SOC_GNA_POWER_CONTROL_CPA) == 0U) {
 		/* wait for power status */
 	}
 

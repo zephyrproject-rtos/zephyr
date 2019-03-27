@@ -133,7 +133,7 @@ static bool write_range_is_valid(off_t offset, u32_t size)
 {
 	return read_range_is_valid(offset, size)
 		&& (offset % sizeof(u32_t) == 0)
-		&& (size % 4 == 0);
+		&& (size % 4 == 0U);
 }
 
 static bool read_range_is_valid(off_t offset, u32_t size)

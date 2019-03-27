@@ -175,9 +175,9 @@ u32_t fxas21002_get_transition_time(enum fxas21002_power start,
 	transition_time = sample_period[dr];
 
 	if (start == FXAS21002_POWER_READY) {
-		transition_time += 5000;
+		transition_time += 5000U;
 	} else {
-		transition_time += 60000;
+		transition_time += 60000U;
 	}
 
 	return transition_time;

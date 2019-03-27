@@ -287,7 +287,7 @@ u64_t gptp_get_current_time_nanosecond(int port)
 
 		ptp_clock_get(clk, &tm);
 
-		if (tm.second == 0 && tm.nanosecond == 0) {
+		if (tm.second == 0U && tm.nanosecond == 0U) {
 			goto use_uptime;
 		}
 
@@ -855,7 +855,7 @@ static inline void gptp_mi_setup_sync_send_time(void)
 
 	/* Check for overflow */
 	if (state->sync_send_time.low < time_helper) {
-		state->sync_send_time.high += 1;
+		state->sync_send_time.high += 1U;
 		state->sync_send_time.low =
 			UINT64_MAX - state->sync_send_time.low;
 	}
@@ -873,7 +873,7 @@ static void gptp_mi_set_ps_sync_cmss(void)
 
 	sync_info = &state->pss_snd.sync_info;
 
-	state->pss_snd.local_port_number = 0;
+	state->pss_snd.local_port_number = 0U;
 
 	current_time = gptp_get_current_master_time_nanosecond();
 
@@ -891,7 +891,7 @@ static void gptp_mi_set_ps_sync_cmss(void)
 	       GPTP_DEFAULT_DS()->clk_id,
 	       GPTP_CLOCK_ID_LEN);
 
-	sync_info->src_port_id.port_number = 0;
+	sync_info->src_port_id.port_number = 0U;
 	sync_info->log_msg_interval = CONFIG_NET_GPTP_INIT_LOG_SYNC_ITV;
 	sync_info->upstream_tx_time = global_ds->local_time.low;
 
@@ -980,8 +980,8 @@ static void gptp_compute_gm_rate_ratio(void)
 	memcpy(&local_time_n, &global_ds->local_time,
 	       sizeof(struct gptp_uscaled_ns));
 
-	if ((src_time_0.second == 0 && src_time_0.fract_nsecond == 0)
-	    || (local_time_0.high == 0 && local_time_0.low == 0)) {
+	if ((src_time_0.second == 0U && src_time_0.fract_nsecond == 0U)
+	    || (local_time_0.high == 0U && local_time_0.low == 0U)) {
 		memcpy(&src_time_0, &src_time_n,
 		       sizeof(struct net_ptp_extended_time));
 
@@ -1030,7 +1030,7 @@ static void gptp_compute_gm_rate_ratio(void)
 	if (src_time_n.fract_nsecond >= src_time_0.fract_nsecond) {
 		src_time_n.fract_nsecond -= src_time_0.fract_nsecond;
 	} else {
-		src_time_n.second -= 1;
+		src_time_n.second -= 1U;
 		src_time_n.fract_nsecond = (NSEC_PER_SEC * GPTP_POW2_16)
 			- src_time_0.fract_nsecond;
 	}
@@ -1041,7 +1041,7 @@ static void gptp_compute_gm_rate_ratio(void)
 	if (local_time_n.low >= local_time_0.low) {
 		local_time_n.low -= local_time_0.low;
 	} else {
-		local_time_n.high -= 1;
+		local_time_n.high -= 1U;
 		local_time_n.low = UINT64_MAX - local_time_0.low;
 	}
 
@@ -1091,7 +1091,7 @@ static void gptp_mi_clk_master_sync_rcv_state_machine(void)
 		break;
 
 	case GPTP_CMS_RCV_SOURCE_TIME:
-		global_ds->local_time.high = 0;
+		global_ds->local_time.high = 0U;
 		global_ds->local_time.low =
 			gptp_get_current_master_time_nanosecond();
 
@@ -1162,7 +1162,7 @@ static bool gptp_mi_qualify_announce(int port, struct net_pkt *announce_msg)
 	}
 
 	len = ntohs(announce->steps_removed);
-	if (len >= 255) {
+	if (len >= 255U) {
 		return false;
 	}
 
@@ -1770,7 +1770,7 @@ static void gptp_updt_roles_tree(void)
 
 	/* Update gmPresent. */
 	global_ds->gm_present =
-		(gm_prio->root_system_id.grand_master_prio1 == 255) ?
+		(gm_prio->root_system_id.grand_master_prio1 == 255U) ?
 		false : true;
 
 	/* Assign the port role for port 0. */

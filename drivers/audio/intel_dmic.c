@@ -238,7 +238,7 @@ static void find_modes(struct decim_modes *modes,
 	/* The FIFO is not requested if sample rate is set to zero. Just
 	 * return in such case with num_of_modes as zero.
 	 */
-	if (fs == 0) {
+	if (fs == 0U) {
 		return;
 	}
 
@@ -677,7 +677,7 @@ static int source_ipm_helper(struct pdm_chan_cfg *config, u32_t *source_mask,
 			continue;
 		}
 
-		if ((*controller_mask & BIT(pdm_ix)) == 0) {
+		if ((*controller_mask & BIT(pdm_ix)) == 0U) {
 			*controller_mask |= BIT(pdm_ix);
 			*source_mask |= pdm_ix << (ipm << 2);
 			ipm++;
@@ -696,7 +696,7 @@ static int source_ipm_helper(struct pdm_chan_cfg *config, u32_t *source_mask,
 		 * if R channel mic was requested first
 		 * set the controller to swap the channels
 		 */
-		if ((pdm_lr_mask & BIT(PDM_CHAN_LEFT + (pdm_ix << 1))) == 0) {
+		if ((pdm_lr_mask & BIT(PDM_CHAN_LEFT + (pdm_ix << 1))) == 0U) {
 			*swap_mask |= BIT(pdm_ix);
 		}
 	}
@@ -749,9 +749,9 @@ static int configure_registers(struct device *dev,
 	u32_t source_mask;
 
 	/* OUTCONTROL0 and OUTCONTROL1 */
-	of0 = (config->streams[0].pcm_width == 32) ? 2 : 0;
+	of0 = (config->streams[0].pcm_width == 32U) ? 2 : 0;
 	if (config->channel.req_num_streams > 1) {
-		of1 = (config->streams[1].pcm_width == 32) ? 2 : 0;
+		of1 = (config->streams[1].pcm_width == 32U) ? 2 : 0;
 	} else {
 		of1 = 0;
 	}
@@ -792,7 +792,7 @@ static int configure_registers(struct device *dev,
 	 * for starting correct parts of the HW.
 	 */
 	for (i = 0; i < DMIC_HW_CONTROLLERS; i++) {
-		if ((controller_mask & BIT(i)) == 0) {
+		if ((controller_mask & BIT(i)) == 0U) {
 			/* controller is not enabled */
 			continue;
 		}
@@ -802,7 +802,7 @@ static int configure_registers(struct device *dev,
 				BIT(PDM_CHAN_RIGHT)) << (i << 1);
 		} else {
 			dmic_private.mic_en_mask |=
-				((swap_mask & BIT(i)) == 0) ?
+				((swap_mask & BIT(i)) == 0U) ?
 				BIT(PDM_CHAN_LEFT) << (i << 1) :
 				BIT(PDM_CHAN_RIGHT) << (i << 1);
 		}
@@ -1014,7 +1014,7 @@ static int dmic_set_config(struct device *dev, struct dmic_cfg *config)
 	LOG_DBG("num_chan %u", config->channel.req_num_chan);
 	LOG_DBG("req_num_streams %u", config->channel.req_num_streams);
 
-	if (config->channel.req_num_streams == 0) {
+	if (config->channel.req_num_streams == 0U) {
 		LOG_ERR("req_num_streams is 0");
 		return -EINVAL;
 	}
@@ -1281,7 +1281,7 @@ static int dmic_trigger_device(struct device *dev, enum dmic_trigger cmd)
 
 static inline u8_t dmic_parse_clk_skew_map(u32_t skew_map, u8_t pdm)
 {
-	return (u8_t)((skew_map >> ((pdm & BIT_MASK(3)) * 4)) & BIT_MASK(4));
+	return (u8_t)((skew_map >> ((pdm & BIT_MASK(3)) * 4U)) & BIT_MASK(4));
 }
 
 static int dmic_initialize_device(struct device *dev)
@@ -1391,7 +1391,7 @@ int dmic_configure_dma(struct pcm_stream_cfg *config, u8_t num_streams)
 
 		dma_block.source_address = (u32_t)NULL;
 		dma_block.dest_address = (u32_t)NULL;
-		dma_block.block_size = 0;
+		dma_block.block_size = 0U;
 		dma_block.next_block = NULL;
 
 		ret = dma_config(dmic_private.dma_dev, channel, &dma_cfg);

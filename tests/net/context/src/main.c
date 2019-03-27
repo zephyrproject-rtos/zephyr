@@ -724,7 +724,7 @@ static void net_ctx_recv_v6_timeout(void)
 	tid = start_timeout_v6_thread(WAIT_TIME_LONG);
 
 	k_sem_reset(&wait_data);
-	k_sem_take(&wait_data, WAIT_TIME_LONG * 2);
+	k_sem_take(&wait_data, WAIT_TIME_LONG * 2U);
 
 	net_ctx_send_v6();
 
@@ -752,7 +752,7 @@ static void net_ctx_recv_v4_timeout(void)
 	tid = start_timeout_v4_thread(WAIT_TIME_LONG);
 
 	k_sem_reset(&wait_data);
-	k_sem_take(&wait_data, WAIT_TIME_LONG * 2);
+	k_sem_take(&wait_data, WAIT_TIME_LONG * 2U);
 
 	net_ctx_send_v4();
 

@@ -43,7 +43,7 @@ static int send_tcp_data(struct data *data)
 
 	do {
 		data->tcp.expecting = sys_rand32_get() % ipsum_len;
-	} while (data->tcp.expecting == 0);
+	} while (data->tcp.expecting == 0U);
 
 	data->tcp.received = 0U;
 
@@ -160,7 +160,7 @@ static int process_tcp_proto(struct data *data)
 			data->proto, data->tcp.received);
 
 
-		if (++data->tcp.counter % 1000 == 0) {
+		if (++data->tcp.counter % 1000 == 0U) {
 			LOG_INF("%s TCP: Exchanged %u packets", data->proto,
 				data->tcp.counter);
 		}

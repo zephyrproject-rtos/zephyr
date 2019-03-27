@@ -97,7 +97,7 @@ int net_icmpv6_create(struct net_pkt *pkt, u8_t icmp_type, u8_t icmp_code)
 
 	icmp_hdr->type   = icmp_type;
 	icmp_hdr->code   = icmp_code;
-	icmp_hdr->chksum = 0;
+	icmp_hdr->chksum = 0U;
 
 	return net_pkt_set_data(pkt, &icmp_access);
 }
@@ -369,7 +369,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 		return NET_DROP;
 	}
 
-	if (net_calc_chksum_icmpv6(pkt) != 0) {
+	if (net_calc_chksum_icmpv6(pkt) != 0U) {
 		NET_DBG("DROP: invalid checksum");
 		goto drop;
 	}
@@ -384,7 +384,7 @@ enum net_verdict net_icmpv6_input(struct net_pkt *pkt,
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&handlers, cb, node) {
 		if (cb->type == icmp_hdr->type &&
-		    (cb->code == icmp_hdr->code || cb->code == 0)) {
+		    (cb->code == icmp_hdr->code || cb->code == 0U)) {
 			return cb->handler(pkt, ip_hdr, icmp_hdr);
 		}
 	}

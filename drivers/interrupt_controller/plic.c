@@ -160,7 +160,7 @@ static void plic_irq_handler(void *arg)
 	 * If the IRQ is out of range, call z_irq_spurious.
 	 * A call to z_irq_spurious will not return.
 	 */
-	if (irq == 0 || irq >= PLIC_IRQS)
+	if (irq == 0U || irq >= PLIC_IRQS)
 		z_irq_spurious(NULL);
 
 	irq += RISCV_MAX_GENERIC_IRQ;

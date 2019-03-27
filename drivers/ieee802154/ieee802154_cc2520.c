@@ -574,12 +574,12 @@ static inline void insert_radio_noise_details(struct net_pkt *pkt, u8_t *buf)
 	 * lqi = (lqi - 50) * 4
 	 */
 	lqi = buf[1] & CC2520_FCS_CORRELATION;
-	if (lqi <= 50) {
+	if (lqi <= 50U) {
 		lqi = 0U;
-	} else if (lqi >= 110) {
+	} else if (lqi >= 110U) {
 		lqi = 255U;
 	} else {
-		lqi = (lqi - 50) << 2;
+		lqi = (lqi - 50U) << 2;
 	}
 
 	net_pkt_set_ieee802154_lqi(pkt, lqi);
@@ -645,7 +645,7 @@ static void cc2520_rx(int arg)
 		}
 
 		if (!IS_ENABLED(CONFIG_IEEE802154_RAW_MODE)) {
-			pkt_len -= 2;
+			pkt_len -= 2U;
 		}
 
 		if (!read_rxfifo_content(cc2520, pkt->buffer, pkt_len)) {
@@ -992,7 +992,7 @@ static inline int configure_spi(struct device *dev)
 	}
 
 	cs_ctrl.gpio_pin = DT_TI_CC2520_0_CS_GPIO_PIN;
-	cs_ctrl.delay = 0;
+	cs_ctrl.delay = 0U;
 
 	cc2520->spi_cfg.cs = &cs_ctrl;
 
@@ -1375,7 +1375,7 @@ static int cc2520_crypto_begin_session(struct device *dev,
 		return -EINVAL;
 	}
 
-	if (ctx->mode_params.ccm_info.nonce_len != 13) {
+	if (ctx->mode_params.ccm_info.nonce_len != 13U) {
 		LOG_ERR("Nonce length erroneous (%u)",
 			    ctx->mode_params.ccm_info.nonce_len);
 		return -EINVAL;

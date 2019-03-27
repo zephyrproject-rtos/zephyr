@@ -471,9 +471,9 @@ static int prepare_segment(struct net_tcp *tcp,
 	tcp_hdr->offset   = (NET_TCPH_LEN + optlen) << 2;
 	tcp_hdr->flags    = segment->flags;
 	sys_put_be16(segment->wnd, tcp_hdr->wnd);
-	tcp_hdr->chksum   = 0;
-	tcp_hdr->urg[0]   = 0;
-	tcp_hdr->urg[1]   = 0;
+	tcp_hdr->chksum   = 0U;
+	tcp_hdr->urg[0]   = 0U;
+	tcp_hdr->urg[1]   = 0U;
 
 	net_pkt_set_data(pkt, &tcp_access);
 
@@ -888,7 +888,7 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 
 	if (sys_get_be32(tcp_hdr->ack) != ctx->tcp->send_ack) {
 		sys_put_be32(ctx->tcp->send_ack, tcp_hdr->ack);
-		tcp_hdr->chksum = 0;
+		tcp_hdr->chksum = 0U;
 		calc_chksum = true;
 	}
 
@@ -898,9 +898,9 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 	 * anyway if we know we need it just to sanify edge cases.
 	 */
 	if (ctx->tcp->sent_ack != ctx->tcp->send_ack &&
-		(tcp_hdr->flags & NET_TCP_ACK) == 0) {
+		(tcp_hdr->flags & NET_TCP_ACK) == 0U) {
 		tcp_hdr->flags |= NET_TCP_ACK;
-		tcp_hdr->chksum = 0;
+		tcp_hdr->chksum = 0U;
 		calc_chksum = true;
 	}
 
@@ -920,7 +920,7 @@ int net_tcp_send_pkt(struct net_pkt *pkt)
 	}
 
 	if (tcp_hdr->flags & NET_TCP_FIN) {
-		ctx->tcp->fin_sent = 1;
+		ctx->tcp->fin_sent = 1U;
 	}
 
 	ctx->tcp->sent_ack = ctx->tcp->send_ack;
@@ -1099,10 +1099,10 @@ bool net_tcp_ack_received(struct net_context *ctx, u32_t ack)
 		 * as one sequence number.
 		 */
 		if (tcp_hdr->flags & NET_TCP_SYN) {
-			seq_len += 1;
+			seq_len += 1U;
 		}
 		if (tcp_hdr->flags & NET_TCP_FIN) {
-			seq_len += 1;
+			seq_len += 1U;
 		}
 
 		/* Last sequence number in this packet. */
@@ -1280,7 +1280,7 @@ int net_tcp_finalize(struct net_pkt *pkt)
 		return -ENOBUFS;
 	}
 
-	tcp_hdr->chksum = 0;
+	tcp_hdr->chksum = 0U;
 
 	if (net_if_need_calc_tx_checksum(net_pkt_iface(pkt))) {
 		tcp_hdr->chksum = net_calc_chksum_tcp(pkt);
@@ -1328,14 +1328,14 @@ int net_tcp_parse_opts(struct net_pkt *pkt, int opt_totlen,
 		/* Subtract opt/optlen size now to avoid doing this
 		 * repeatedly.
 		 */
-		optlen -= 2;
+		optlen -= 2U;
 		if (opt_totlen < optlen) {
 			goto error;
 		}
 
 		switch (opt) {
 		case NET_TCP_MSS_OPT:
-			if (optlen != 2) {
+			if (optlen != 2U) {
 				goto error;
 			}
 
@@ -1770,7 +1770,7 @@ static void print_send_info(struct net_pkt *pkt,
 			    const char *msg, const struct sockaddr *remote)
 {
 	if (CONFIG_NET_TCP_LOG_LEVEL >= LOG_LEVEL_DBG) {
-		u16_t port = 0;
+		u16_t port = 0U;
 
 		if (IS_ENABLED(CONFIG_NET_IPV4) &&
 		    net_pkt_family(pkt) == AF_INET) {
@@ -2022,7 +2022,7 @@ resend_ack:
 			net_tcp_change_state(context->tcp, NET_TCP_TIME_WAIT);
 		}
 
-		context->tcp->fin_rcvd = 1;
+		context->tcp->fin_rcvd = 1U;
 	}
 
 	data_len = net_pkt_remaining_data(pkt);
@@ -2035,7 +2035,7 @@ resend_ack:
 		 * then net_tcp_get_recv_wnd(context->tcp) can be only 0
 		 * here.
 		 */
-		if (data_len == 1) {
+		if (data_len == 1U) {
 			goto resend_ack;
 		}
 
@@ -2052,14 +2052,14 @@ resend_ack:
 	if (data_len > 0) {
 		ret = net_context_packet_received(conn, pkt, ip_hdr, proto_hdr,
 						  context->tcp->recv_user_data);
-	} else if (data_len == 0) {
+	} else if (data_len == 0U) {
 		net_pkt_unref(pkt);
 	}
 
 	/* Increment the ack */
 	context->tcp->send_ack += data_len;
 	if (tcp_flags & NET_TCP_FIN) {
-		context->tcp->send_ack += 1;
+		context->tcp->send_ack += 1U;
 	}
 
 	send_ack(context, &conn->remote_addr, false);
@@ -2578,7 +2578,7 @@ struct net_tcp_hdr *net_tcp_input(struct net_pkt *pkt,
 
 	if (IS_ENABLED(CONFIG_NET_TCP_CHECKSUM) &&
 	    net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
-	    net_calc_chksum_tcp(pkt) != 0) {
+	    net_calc_chksum_tcp(pkt) != 0U) {
 		NET_DBG("DROP: checksum mismatch");
 		goto drop;
 	}

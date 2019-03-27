@@ -136,7 +136,7 @@ void app_task(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 	int status = 0;
-	unsigned int message = 0;
+	unsigned int message = 0U;
 	struct metal_device *device;
 	struct rpmsg_device *rdev;
 	struct metal_init_params metal_params = METAL_INIT_DEFAULTS;

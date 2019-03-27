@@ -60,7 +60,7 @@ static inline u8_t *get_glyph_ptr(const struct cfb_font *fptr, char c)
 	if (fptr->caps & CFB_FONT_MONO_VPACKED) {
 		return (u8_t *)fptr->data +
 		       (c - fptr->first_char) *
-		       (fptr->width * fptr->height / 8);
+		       (fptr->width * fptr->height / 8U);
 	}
 
 	return NULL;
@@ -86,16 +86,16 @@ static u8_t draw_char_vtmono(const struct char_framebuffer *fb,
 	}
 
 	for (size_t g_x = 0; g_x < fptr->width; g_x++) {
-		u32_t y_segment = y / 8;
+		u32_t y_segment = y / 8U;
 
-		for (size_t g_y = 0; g_y < fptr->height / 8; g_y++) {
+		for (size_t g_y = 0; g_y < fptr->height / 8U; g_y++) {
 			u32_t fb_y = (y_segment + g_y) * fb->x_res;
 
 			if ((fb_y + x + g_x) >= fb->size) {
 				return 0;
 			}
 			fb->buf[fb_y + x + g_x] =
-				glyph_ptr[g_x * (fptr->height / 8) + g_y];
+				glyph_ptr[g_x * (fptr->height / 8U) + g_y];
 		}
 
 	}
@@ -139,7 +139,7 @@ static int cfb_reverse_bytes(const struct char_framebuffer *fb)
 		return -1;
 	}
 
-	for (size_t i = 0; i < fb->x_res * fb->y_res / 8; i++) {
+	for (size_t i = 0; i < fb->x_res * fb->y_res / 8U; i++) {
 		fb->buf[i] = (fb->buf[i] & 0xf0) >> 4 |
 			      (fb->buf[i] & 0x0f) << 4;
 		fb->buf[i] = (fb->buf[i] & 0xcc) >> 2 |
@@ -153,7 +153,7 @@ static int cfb_reverse_bytes(const struct char_framebuffer *fb)
 
 static int cfb_invert(const struct char_framebuffer *fb)
 {
-	for (size_t i = 0; i < fb->x_res * fb->y_res / 8; i++) {
+	for (size_t i = 0; i < fb->x_res * fb->y_res / 8U; i++) {
 		fb->buf[i] = ~fb->buf[i];
 	}
 

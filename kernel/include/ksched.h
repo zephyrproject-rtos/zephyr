@@ -95,7 +95,7 @@ static inline bool z_is_thread_prevented_from_running(struct k_thread *thread)
 	u8_t state = thread->base.thread_state;
 
 	return (state & (_THREAD_PENDING | _THREAD_PRESTART | _THREAD_DEAD |
-			 _THREAD_DUMMY | _THREAD_SUSPENDED)) != 0;
+			 _THREAD_DUMMY | _THREAD_SUSPENDED)) != 0U;
 
 }
 
@@ -112,7 +112,7 @@ static inline bool z_is_thread_ready(struct k_thread *thread)
 
 static inline bool z_has_thread_started(struct k_thread *thread)
 {
-	return (thread->base.thread_state & _THREAD_PRESTART) == 0;
+	return (thread->base.thread_state & _THREAD_PRESTART) == 0U;
 }
 
 static inline bool z_is_thread_state_set(struct k_thread *thread, u32_t state)

@@ -636,7 +636,7 @@ int stm32_i2c_configure_timing(struct device *dev, u32_t clock)
 		break;
 	} while (presc < 16);
 
-	if (presc >= 16) {
+	if (presc >= 16U) {
 		LOG_DBG("I2C:failed to find prescaler value");
 		return -EINVAL;
 	}

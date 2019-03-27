@@ -920,7 +920,7 @@ static int mcr20a_set_channel(struct device *dev, u16_t channel)
 	}
 
 	LOG_DBG("%u", channel);
-	channel -= 11;
+	channel -= 11U;
 	buf[0] = set_bits_pll_int0_val(pll_int_lt[channel]);
 	buf[1] = (u8_t)pll_frac_lt[channel];
 	buf[2] = (u8_t)(pll_frac_lt[channel] >> 8);
@@ -1387,7 +1387,7 @@ static inline int configure_spi(struct device *dev)
 	}
 
 	mcr20a->cs_ctrl.gpio_pin = DT_NXP_MCR20A_0_CS_GPIO_PIN;
-	mcr20a->cs_ctrl.delay = 0;
+	mcr20a->cs_ctrl.delay = 0U;
 
 	mcr20a->spi_cfg.cs = &mcr20a->cs_ctrl;
 

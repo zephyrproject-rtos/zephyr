@@ -152,7 +152,7 @@ static inline void ring_buf_init(struct ring_buf *buf, u32_t size, void *data)
 	if (is_power_of_two(size)) {
 		buf->mask = size - 1;
 	} else {
-		buf->mask = 0;
+		buf->mask = 0U;
 	}
 }
 

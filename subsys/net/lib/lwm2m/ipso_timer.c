@@ -140,7 +140,7 @@ static int start_timer(struct ipso_timer_data *timer)
 	/* TODO: check delay_duration > 0 ? other modes can it be 0? */
 
 	timer->trigger_offset = k_uptime_get();
-	timer->trigger_counter += 1;
+	timer->trigger_counter += 1U;
 
 	snprintk(path, MAX_RESOURCE_LEN, "%d/%u/%d", IPSO_OBJECT_TIMER_ID,
 		 timer->obj_inst_id, TIMER_DIGITAL_STATE_ID);

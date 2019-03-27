@@ -504,7 +504,7 @@ bool ctrl_rl_addr_resolve(u8_t id_addr_type, u8_t *id_addr, u8_t rl_idx)
 		return false;
 	}
 
-	if ((id_addr_type != 0) && ((id_addr[5] & 0xc0) == 0x40)) {
+	if ((id_addr_type != 0U) && ((id_addr[5] & 0xc0) == 0x40)) {
 		return bt_rpa_irk_matches(rl[rl_idx].local_irk,
 					  (bt_addr_t *)id_addr);
 	}
@@ -892,7 +892,7 @@ u8_t ll_rl_enable(u8_t enable)
 
 void ll_rl_timeout_set(u16_t timeout)
 {
-	rpa_timeout_ms = timeout * 1000;
+	rpa_timeout_ms = timeout * 1000U;
 }
 
 u8_t ll_priv_mode_set(bt_addr_le_t *id_addr, u8_t mode)

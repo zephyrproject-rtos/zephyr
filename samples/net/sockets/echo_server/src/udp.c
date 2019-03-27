@@ -115,7 +115,7 @@ static int process_udp(struct data *data)
 			break;
 		}
 
-		if (++data->udp.counter % 1000 == 0) {
+		if (++data->udp.counter % 1000 == 0U) {
 			NET_INFO("%s UDP: Sent %u packets", data->proto,
 				 data->udp.counter);
 		}

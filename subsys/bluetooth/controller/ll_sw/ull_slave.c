@@ -83,21 +83,21 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	lll->latency = sys_le16_to_cpu(pdu_adv->connect_ind.latency);
 
 	win_offset = sys_le16_to_cpu(pdu_adv->connect_ind.win_offset);
-	conn_interval_us = interval * 1250;
+	conn_interval_us = interval * 1250U;
 
 	/* calculate the window widening */
 	lll->slave.sca = pdu_adv->connect_ind.sca;
 	lll->slave.window_widening_periodic_us =
 		(((lll_conn_ppm_local_get() +
 		   lll_conn_ppm_get(lll->slave.sca)) *
-		  conn_interval_us) + (1000000 - 1)) / 1000000;
+		  conn_interval_us) + (1000000 - 1)) / 1000000U;
 	lll->slave.window_widening_max_us = (conn_interval_us >> 1) - TIFS_US;
-	lll->slave.window_size_event_us = pdu_adv->connect_ind.win_size * 1250;
+	lll->slave.window_size_event_us = pdu_adv->connect_ind.win_size * 1250U;
 
 	/* procedure timeouts */
 	timeout = sys_le16_to_cpu(pdu_adv->connect_ind.timeout);
 	conn->supervision_reload =
-		RADIO_CONN_EVENTS((timeout * 10 * 1000), conn_interval_us);
+		RADIO_CONN_EVENTS((timeout * 10U * 1000U), conn_interval_us);
 	conn->procedure_reload =
 		RADIO_CONN_EVENTS((40 * 1000 * 1000), conn_interval_us);
 
@@ -125,8 +125,8 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	memcpy(peer_addr, pdu_adv->connect_ind.init_addr, BDADDR_SIZE);
 
 	cc = (void *)pdu_adv;
-	cc->status = 0;
-	cc->role = 1;
+	cc->status = 0U;
+	cc->role = 1U;
 	cc->peer_addr_type = peer_addr_type;
 	memcpy(cc->peer_addr, peer_addr, BDADDR_SIZE);
 	cc->interval = lll->interval;
@@ -263,7 +263,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 #endif
 
 	/* TODO: active_to_start feature port */
-	conn->evt.ticks_active_to_start = 0;
+	conn->evt.ticks_active_to_start = 0U;
 	conn->evt.ticks_xtal_to_start =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_XTAL_US);
 	conn->evt.ticks_preempt_to_start =
@@ -279,13 +279,13 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	if (IS_ENABLED(CONFIG_BT_CTLR_LOW_LAT)) {
 		ticks_slot_overhead = ticks_slot_offset;
 	} else {
-		ticks_slot_overhead = 0;
+		ticks_slot_overhead = 0U;
 	}
 
 	conn_interval_us -= lll->slave.window_widening_periodic_us;
 
 	conn_offset_us = ftr->us_radio_end;
-	conn_offset_us += ((u64_t)win_offset + 1) * 1250;
+	conn_offset_us += ((u64_t)win_offset + 1) * 1250U;
 	conn_offset_us -= EVENT_OVERHEAD_START_US;
 	conn_offset_us -= EVENT_JITTER_US << 1;
 	conn_offset_us -= EVENT_JITTER_US;
@@ -438,14 +438,14 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 	}
 
 	if (error_code) {
-		if (conn->refresh == 0) {
+		if (conn->refresh == 0U) {
 			ret = ull_conn_allowed_check(conn);
 			if (ret) {
 				return ret;
 			}
 
 			conn->llcp.encryption.error_code = error_code;
-			conn->llcp.encryption.initiate = 0;
+			conn->llcp.encryption.initiate = 0U;
 
 			conn->llcp_type = LLCP_ENCRYPTION;
 			conn->llcp_req++;
@@ -468,8 +468,8 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 			return ret;
 		}
 
-		conn->llcp.encryption.error_code = 0;
-		conn->llcp.encryption.initiate = 0;
+		conn->llcp.encryption.error_code = 0U;
+		conn->llcp.encryption.initiate = 0U;
 
 		conn->llcp_type = LLCP_ENCRYPTION;
 		conn->llcp_req++;

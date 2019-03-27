@@ -30,7 +30,7 @@ int bma280_attr_set(struct device *dev,
 
 	if (attr == SENSOR_ATTR_SLOPE_TH) {
 		/* slope_th = (val * 10^6 * 2^10) / BMA280_PMU_FULL_RAGE */
-		slope_th = (u64_t)val->val1 * 1000000 + (u64_t)val->val2;
+		slope_th = (u64_t)val->val1 * 1000000U + (u64_t)val->val2;
 		slope_th = (slope_th * (1 << 10)) / BMA280_PMU_FULL_RANGE;
 		if (i2c_reg_write_byte(drv_data->i2c, BMA280_I2C_ADDRESS,
 				       BMA280_REG_SLOPE_TH, (u8_t)slope_th)

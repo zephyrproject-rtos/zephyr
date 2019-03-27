@@ -226,12 +226,12 @@ int fifo_test(void)
 	t = BENCH_START();
 
 	k_thread_create(&thread_data1, thread_stack1, STACK_SIZE, fifo_thread1,
-			 NULL, (void *) (number_of_loops / 2), NULL,
+			 NULL, (void *) (number_of_loops / 2U), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 	k_thread_create(&thread_data2, thread_stack2, STACK_SIZE, fifo_thread1,
-			 NULL, (void *) (number_of_loops / 2), NULL,
+			 NULL, (void *) (number_of_loops / 2U), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
-	for (i = 0; i < number_of_loops / 2; i++) {
+	for (i = 0; i < number_of_loops / 2U; i++) {
 		int element[2];
 		int *pelement;
 

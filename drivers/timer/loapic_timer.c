@@ -387,7 +387,7 @@ u32_t _get_program_time(void)
 
 u32_t _get_remaining_program_time(void)
 {
-	if (programmed_full_ticks == 0) {
+	if (programmed_full_ticks == 0U) {
 		return 0;
 	}
 
@@ -396,7 +396,7 @@ u32_t _get_remaining_program_time(void)
 
 u32_t _get_elapsed_program_time(void)
 {
-	if (programmed_full_ticks == 0) {
+	if (programmed_full_ticks == 0U) {
 		return 0;
 	}
 
@@ -573,7 +573,7 @@ void z_clock_idle_exit(void)
 
 	remaining_cycles = current_count_register_get();
 
-	if ((remaining_cycles == 0) ||
+	if ((remaining_cycles == 0U) ||
 		(remaining_cycles >= programmed_cycles)) {
 		/*
 		 * The timer has expired. The handler _timer_int_handler() is

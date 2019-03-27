@@ -241,7 +241,7 @@ int vendor_handle_req(struct usb_setup_packet *pSetup,
 		/* Get URL request */
 		u8_t index = GET_DESC_INDEX(pSetup->wValue);
 
-		if (index == 0 || index > NUMBER_OF_ALLOWED_ORIGINS)
+		if (index == 0U || index > NUMBER_OF_ALLOWED_ORIGINS)
 			return -ENOTSUP;
 
 		*data = (u8_t *)(&webusb_origin_url);

@@ -339,7 +339,7 @@ static inline struct log_msg *z_log_msg_std_alloc(void)
 	if (msg != NULL) {
 		/* all fields reset to 0, reference counter to 1 */
 		msg->hdr.ref_cnt = 1;
-		msg->hdr.params.raw = 0;
+		msg->hdr.params.raw = 0U;
 		msg->hdr.params.std.type = LOG_MSG_TYPE_STD;
 	}
 
@@ -385,7 +385,7 @@ static inline struct log_msg *log_msg_create_1(const char *str,
 
 	if (msg != NULL) {
 		msg->str = str;
-		msg->hdr.params.std.nargs = 1;
+		msg->hdr.params.std.nargs = 1U;
 		msg->payload.single.args[0] = arg1;
 	}
 
@@ -414,7 +414,7 @@ static inline struct log_msg *log_msg_create_2(const char *str,
 
 	if (msg != NULL) {
 		msg->str = str;
-		msg->hdr.params.std.nargs = 2;
+		msg->hdr.params.std.nargs = 2U;
 		msg->payload.single.args[0] = arg1;
 		msg->payload.single.args[1] = arg2;
 	}
@@ -446,7 +446,7 @@ static inline struct log_msg *log_msg_create_3(const char *str,
 
 	if (msg != NULL) {
 		msg->str = str;
-		msg->hdr.params.std.nargs = 3;
+		msg->hdr.params.std.nargs = 3U;
 		msg->payload.single.args[0] = arg1;
 		msg->payload.single.args[1] = arg2;
 		msg->payload.single.args[2] = arg3;

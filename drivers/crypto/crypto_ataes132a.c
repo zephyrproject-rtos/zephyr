@@ -223,7 +223,7 @@ int ataes132a_aes_ccm_decrypt(struct device *dev,
 		return -EINVAL;
 	}
 
-	if (in_buf_len != 16 && in_buf_len != 32) {
+	if (in_buf_len != 16U && in_buf_len != 32U) {
 		LOG_ERR("ccm mode only accepts input blocks of 16"
 			    " and 32 bytes");
 		return -EINVAL;
@@ -279,14 +279,14 @@ int ataes132a_aes_ccm_decrypt(struct device *dev,
 						     0x0, param_buffer, 16,
 						     param_buffer, &out_len);
 
-		if (return_code != 0) {
+		if (return_code != 0U) {
 			LOG_ERR("nonce command ended with code %d",
 				    return_code);
 			k_sem_give(&data->device_sem);
 			return -EINVAL;
 		}
 
-		if (param_buffer[0] != 0) {
+		if (param_buffer[0] != 0U) {
 			LOG_ERR("nonce command failed with error"
 				    " code %d", param_buffer[0]);
 			k_sem_give(&data->device_sem);
@@ -354,7 +354,7 @@ int ataes132a_aes_ccm_decrypt(struct device *dev,
 					     in_buf_len + 4, param_buffer,
 					     &out_len);
 
-	if (return_code != 0) {
+	if (return_code != 0U) {
 		LOG_ERR("decrypt command ended with code %d", return_code);
 		k_sem_give(&data->device_sem);
 		return -EINVAL;
@@ -367,7 +367,7 @@ int ataes132a_aes_ccm_decrypt(struct device *dev,
 		return -EINVAL;
 	}
 
-	if (param_buffer[0] != 0) {
+	if (param_buffer[0] != 0U) {
 		LOG_ERR("legacy command failed with error"
 			    " code %d", param_buffer[0]);
 		k_sem_give(&data->device_sem);
@@ -470,14 +470,14 @@ int ataes132a_aes_ccm_encrypt(struct device *dev,
 						     0x0, param_buffer, 16,
 						     param_buffer, &out_len);
 
-		if (return_code != 0) {
+		if (return_code != 0U) {
 			LOG_ERR("nonce command ended with code %d",
 				    return_code);
 			k_sem_give(&data->device_sem);
 			return -EINVAL;
 		}
 
-		if (param_buffer[0] != 0) {
+		if (param_buffer[0] != 0U) {
 			LOG_ERR("nonce command failed with error"
 				    " code %d", param_buffer[0]);
 			k_sem_give(&data->device_sem);
@@ -526,7 +526,7 @@ int ataes132a_aes_ccm_encrypt(struct device *dev,
 					     buf_len + 2, param_buffer,
 					     &out_len);
 
-	if (return_code != 0) {
+	if (return_code != 0U) {
 		LOG_ERR("encrypt command ended with code %d", return_code);
 		k_sem_give(&data->device_sem);
 		return -EINVAL;
@@ -539,7 +539,7 @@ int ataes132a_aes_ccm_encrypt(struct device *dev,
 		return -EINVAL;
 	}
 
-	if (param_buffer[0] != 0) {
+	if (param_buffer[0] != 0U) {
 		LOG_ERR("encrypt command failed with error"
 			    " code %d", param_buffer[0]);
 		k_sem_give(&data->device_sem);
@@ -549,7 +549,7 @@ int ataes132a_aes_ccm_encrypt(struct device *dev,
 	if (aead_op->tag) {
 		memcpy(aead_op->tag, param_buffer + 1, 16);
 	}
-	memcpy(aead_op->pkt->out_buf, param_buffer + 17, out_len - 17);
+	memcpy(aead_op->pkt->out_buf, param_buffer + 17, out_len - 17U);
 
 	if (mac_mode) {
 		if (mac_mode->include_counter) {
@@ -560,7 +560,7 @@ int ataes132a_aes_ccm_encrypt(struct device *dev,
 			ataes132a_send_command(dev, ATAES_INFO_OP, 0x0,
 					       param_buffer,	4,
 					       param_buffer, &out_len);
-			if (param_buffer[0] != 0) {
+			if (param_buffer[0] != 0U) {
 				LOG_ERR("info command failed with error"
 					    " code %d", param_buffer[0]);
 				k_sem_give(&data->device_sem);
@@ -639,19 +639,19 @@ int ataes132a_aes_ecb_block(struct device *dev,
 					     param_buffer, buf_len + 3,
 					     param_buffer, &out_len);
 
-	if (return_code != 0) {
+	if (return_code != 0U) {
 		LOG_ERR("legacy command ended with code %d", return_code);
 		k_sem_give(&data->device_sem);
 		return -EINVAL;
 	}
 
-	if (out_len != 17) {
+	if (out_len != 17U) {
 		LOG_ERR("legacy command response has invalid"
 			    " size %d", out_len);
 		k_sem_give(&data->device_sem);
 		return -EINVAL;
 	}
-	if (param_buffer[0] != 0) {
+	if (param_buffer[0] != 0U) {
 		LOG_ERR("legacy command failed with error"
 			    " code %d", param_buffer[0]);
 		k_sem_give(&data->device_sem);
@@ -703,7 +703,7 @@ static int do_ccm_encrypt_mac(struct cipher_ctx *ctx,
 		aead_op->pkt->out_len = 32;
 	}
 
-	if (aead_op->ad != NULL || aead_op->ad_len != 0) {
+	if (aead_op->ad != NULL || aead_op->ad_len != 0U) {
 		LOG_ERR("Associated data is not supported.");
 		return -EINVAL;
 	}
@@ -748,7 +748,7 @@ static int do_ccm_decrypt_auth(struct cipher_ctx *ctx,
 
 	aead_op->pkt->ctx = ctx;
 
-	if (aead_op->ad != NULL || aead_op->ad_len != 0) {
+	if (aead_op->ad != NULL || aead_op->ad_len != 0U) {
 		LOG_ERR("Associated data is not supported.");
 		return -EINVAL;
 	}
@@ -806,12 +806,12 @@ static int ataes132a_session_setup(struct device *dev, struct cipher_ctx *ctx,
 		return -EINVAL;
 	}
 	if (mode == CRYPTO_CIPHER_MODE_CCM &&
-	    ctx->mode_params.ccm_info.tag_len != 16) {
+	    ctx->mode_params.ccm_info.tag_len != 16U) {
 		LOG_ERR("ATAES132A support 16 byte tag only.");
 		return -EINVAL;
 	}
 	if (mode == CRYPTO_CIPHER_MODE_CCM &&
-	    ctx->mode_params.ccm_info.nonce_len != 12) {
+	    ctx->mode_params.ccm_info.nonce_len != 12U) {
 		LOG_ERR("ATAES132A support 12 byte nonce only.");
 		return -EINVAL;
 	}

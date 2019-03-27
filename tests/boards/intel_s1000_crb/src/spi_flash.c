@@ -37,7 +37,7 @@ int flash_region_is_empty(u32_t off, void *dst, u32_t len)
 		return -1;
 	}
 
-	for (i = 0, u8dst = (uint8_t *)dst; i < len; i++) {
+	for (i = 0U, u8dst = (uint8_t *)dst; i < len; i++) {
 		if (u8dst[i] != 0xFF) {
 			flash_area_close(fap);
 			return 0;

@@ -728,7 +728,7 @@ struct bt_gatt_indicate_params indicate_params;
 static void indicate_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			u8_t err)
 {
-	if (err != 0) {
+	if (err != 0U) {
 		LOG_ERR("Indication fail");
 	} else {
 		LOG_DBG("Indication success");
@@ -1502,7 +1502,7 @@ static void write(u8_t *data, u16_t len)
 
 	write_params.handle = sys_le16_to_cpu(cmd->handle);
 	write_params.func = write_rsp;
-	write_params.offset = 0;
+	write_params.offset = 0U;
 	write_params.data = cmd->data;
 	write_params.length = sys_le16_to_cpu(cmd->data_length);
 
@@ -1667,7 +1667,7 @@ static int disable_subscription(struct bt_conn *conn, u16_t ccc_handle)
 		return -EBUSY;
 	}
 
-	subscribe_params.ccc_handle = 0;
+	subscribe_params.ccc_handle = 0U;
 
 	return 0;
 }

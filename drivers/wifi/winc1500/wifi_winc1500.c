@@ -331,7 +331,7 @@ static int winc1500_bind(struct net_context *context,
 	int ret;
 
 	/* FIXME atmel winc1500 don't support bind on null port */
-	if (net_sin(addr)->sin_port == 0) {
+	if (net_sin(addr)->sin_port == 0U) {
 		return 0;
 	}
 

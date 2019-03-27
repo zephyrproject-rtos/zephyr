@@ -125,7 +125,7 @@ void glcd_cursor_pos_set(struct device *port, u8_t col, u8_t row)
 
 	unsigned char data[2];
 
-	if (row == 0) {
+	if (row == 0U) {
 		col |= 0x80;
 	} else {
 		col |= 0xC0;

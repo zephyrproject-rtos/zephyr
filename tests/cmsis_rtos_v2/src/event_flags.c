@@ -104,7 +104,7 @@ void test_event_flags_no_wait_timeout(void)
 	zassert_equal(flags & FLAG1, FLAG1, "");
 
 	flags = osEventFlagsGet(dummy_id);
-	zassert_true(flags == 0,
+	zassert_true(flags == 0U,
 		     "Invalid event Flags ID is unexpectedly working!");
 	/* Clear the Flag explicitly */
 	flags = osEventFlagsClear(evt_id, FLAG1);

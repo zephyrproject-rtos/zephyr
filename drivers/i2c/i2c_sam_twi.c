@@ -83,7 +83,7 @@ static int i2c_clk_set(Twi *const twi, u32_t speed)
 		cl_div =   ((SOC_ATMEL_SAM_MCK_FREQ_HZ / (2 * speed)) - 4)
 			 / (1 << ck_div);
 
-		if (cl_div <= 255) {
+		if (cl_div <= 255U) {
 			div_completed = true;
 		} else {
 			ck_div++;
@@ -168,7 +168,7 @@ static void read_msg_start(Twi *const twi, struct twi_msg *msg, u8_t daddr)
 	twi->TWI_MMR = TWI_MMR_MREAD | TWI_MMR_DADR(daddr);
 
 	/* In single data byte read the START and STOP must both be set */
-	twi_cr_stop = (msg->len == 1) ? TWI_CR_STOP : 0;
+	twi_cr_stop = (msg->len == 1U) ? TWI_CR_STOP : 0;
 	/* Start the transfer by sending START condition */
 	twi->TWI_CR = TWI_CR_START | twi_cr_stop;
 
@@ -255,7 +255,7 @@ static void i2c_sam_twi_isr(void *arg)
 
 		msg->buf[msg->idx++] = twi->TWI_RHR;
 
-		if (msg->idx == msg->len - 1) {
+		if (msg->idx == msg->len - 1U) {
 			/* Send a STOP condition on the TWI */
 			twi->TWI_CR = TWI_CR_STOP;
 		}

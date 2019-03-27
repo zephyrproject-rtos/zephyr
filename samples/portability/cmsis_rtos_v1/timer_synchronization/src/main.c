@@ -30,11 +30,11 @@ osMessageQId message_id;
 void read_msg_callback(void const *arg)
 {
 	osEvent evt;
-	u32_t read_msg = 0;
+	u32_t read_msg = 0U;
 
 	evt = osMessageGet(message_id, 0);
 	read_msg = evt.value.v;
-	if (read_msg == 0) {
+	if (read_msg == 0U) {
 		printk("\n**Error reading message from message queue**\n");
 	} else {
 		printk("Read from message queue: %d\n\n", read_msg);
@@ -57,7 +57,7 @@ int send_msg_thread(void)
 void main(void)
 {
 	osTimerId timer_id;
-	u32_t counter = 10;
+	u32_t counter = 10U;
 
 	data = INITIAL_DATA_VALUE;
 	timer_id = osTimerCreate(osTimer(myTimer), osTimerPeriodic, NULL);
@@ -85,7 +85,7 @@ void main(void)
 exit:
 	osTimerDelete(timer_id);
 
-	if (counter == 0) {
+	if (counter == 0U) {
 		printk("Sample execution successful\n");
 	} else {
 		printk("Error in execution\n");

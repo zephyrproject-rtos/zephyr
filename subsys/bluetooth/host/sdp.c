@@ -358,19 +358,19 @@ static u32_t search_uuid(struct bt_sdp_data_elem *elem, struct bt_uuid *uuid,
 	cur_elem = elem->data;
 
 	if ((elem->type & BT_SDP_TYPE_DESC_MASK) == BT_SDP_UUID_UNSPEC) {
-		if (seq_size == 2) {
+		if (seq_size == 2U) {
 			u.uuid.type = BT_UUID_TYPE_16;
 			u.u16.val = *((u16_t *)cur_elem);
 			if (!bt_uuid_cmp(&u.uuid, uuid)) {
 				*found = true;
 			}
-		} else if (seq_size == 4) {
+		} else if (seq_size == 4U) {
 			u.uuid.type = BT_UUID_TYPE_32;
 			u.u32.val = *((u32_t *)cur_elem);
 			if (!bt_uuid_cmp(&u.uuid, uuid)) {
 				*found = true;
 			}
-		} else if (seq_size == 16) {
+		} else if (seq_size == 16U) {
 			u.uuid.type = BT_UUID_TYPE_128;
 			memcpy(u.u128.val, cur_elem, seq_size);
 			if (!bt_uuid_cmp(&u.uuid, uuid)) {
@@ -506,13 +506,13 @@ static u16_t find_services(struct net_buf *buf,
 			return BT_SDP_INVALID_SYNTAX;
 		}
 
-		if (data_elem.data_size == 2) {
+		if (data_elem.data_size == 2U) {
 			u.uuid.type = BT_UUID_TYPE_16;
 			u.u16.val = net_buf_pull_be16(buf);
-		} else if (data_elem.data_size == 4) {
+		} else if (data_elem.data_size == 4U) {
 			u.uuid.type = BT_UUID_TYPE_32;
 			u.u32.val = net_buf_pull_be32(buf);
-		} else if (data_elem.data_size == 16) {
+		} else if (data_elem.data_size == 16U) {
 			u.uuid.type = BT_UUID_TYPE_128;
 			sys_memcpy_swap(u.u128.val, buf->data,
 					data_elem.data_size);
@@ -723,7 +723,7 @@ static u32_t copy_attribute(struct bt_sdp_data_elem *elem,
 	/* Copy the header */
 	net_buf_add_u8(buf, elem->type);
 
-	switch (total_size - (seq_size + 1)) {
+	switch (total_size - (seq_size + 1U)) {
 	case 1:
 		net_buf_add_u8(buf, elem->data_size);
 		break;
@@ -749,11 +749,11 @@ static u32_t copy_attribute(struct bt_sdp_data_elem *elem,
 	} else if ((elem->type & BT_SDP_TYPE_DESC_MASK) == BT_SDP_UINT8 ||
 		   (elem->type & BT_SDP_TYPE_DESC_MASK) == BT_SDP_INT8 ||
 		   (elem->type & BT_SDP_TYPE_DESC_MASK) == BT_SDP_UUID_UNSPEC) {
-		if (seq_size == 1) {
+		if (seq_size == 1U) {
 			net_buf_add_u8(buf, *((u8_t *)elem->data));
-		} else if (seq_size == 2) {
+		} else if (seq_size == 2U) {
 			net_buf_add_be16(buf, *((u16_t *)elem->data));
-		} else if (seq_size == 4) {
+		} else if (seq_size == 4U) {
 			net_buf_add_be32(buf, *((u32_t *)elem->data));
 		} else {
 			/* TODO: Convert 32bit and 128bit values to big-endian*/
@@ -1010,13 +1010,13 @@ static u16_t get_att_search_list(struct net_buf *buf, u32_t *filter,
 		}
 
 		/* This is an attribute ID */
-		if (data_elem.data_size == 2) {
+		if (data_elem.data_size == 2U) {
 			filter[(*num_filters)++] = 0xffff0000 |
 							net_buf_pull_be16(buf);
 		}
 
 		/* This is an attribute ID range */
-		if (data_elem.data_size == 4) {
+		if (data_elem.data_size == 4U) {
 			filter[(*num_filters)++] = net_buf_pull_be32(buf);
 		}
 
@@ -1541,7 +1541,7 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session)
 	 * server so far, otherwise use the original state taken from remote's
 	 * last response PDU that is cached by SDP client context.
 	 */
-	if (session->cstate.length == 0) {
+	if (session->cstate.length == 0U) {
 		net_buf_add_u8(buf, 0x00);
 	} else {
 		net_buf_add_u8(buf, session->cstate.length);
@@ -1604,17 +1604,17 @@ static u16_t sdp_client_get_total(struct bt_sdp_client *session,
 	 * was sent. For subsequent calls related to the same SSA request input
 	 * buf and in/out function parameters stays neutral.
 	 */
-	if (session->cstate.length == 0) {
+	if (session->cstate.length == 0U) {
 		seq = net_buf_pull_u8(buf);
 		pulled = 1U;
 		switch (seq) {
 		case BT_SDP_SEQ8:
 			*total = net_buf_pull_u8(buf);
-			pulled += 1;
+			pulled += 1U;
 			break;
 		case BT_SDP_SEQ16:
 			*total = net_buf_pull_be16(buf);
-			pulled += 2;
+			pulled += 2U;
 			break;
 		default:
 			BT_WARN("Sequence type 0x%02x not handled", seq);
@@ -1786,8 +1786,8 @@ static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 		 * current response frame has Continuation State shortest and
 		 * valid and this is the first response frame as well.
 		 */
-		if (frame_len == 2 && cstate->length == 0 &&
-		    session->cstate.length == 0) {
+		if (frame_len == 2U && cstate->length == 0U &&
+		    session->cstate.length == 0U) {
 			BT_DBG("record for UUID 0x%s not found",
 				bt_uuid_str(session->param->uuid));
 			/* Call user UUID handler */

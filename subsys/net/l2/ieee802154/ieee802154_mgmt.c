@@ -127,7 +127,7 @@ static int ieee802154_scan(u32_t mgmt_request, struct net_if *iface,
 
 	/* ToDo: For now, we assume we are on 2.4Ghz
 	 * (device will have to export capabilities) */
-	for (channel = 11U; channel <= 26; channel++) {
+	for (channel = 11U; channel <= 26U; channel++) {
 		if (IEEE802154_IS_CHAN_UNSCANNED(scan->channel_set, channel)) {
 			continue;
 		}

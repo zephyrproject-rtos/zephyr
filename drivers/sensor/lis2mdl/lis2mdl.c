@@ -62,7 +62,7 @@ static int lis2mdl_set_odr(struct device *dev, u16_t odr)
 	struct lis2mdl_data *lis2mdl = dev->driver_data;
 
 	/* check if power off */
-	if (odr == 0) {
+	if (odr == 0U) {
 		/* power off mag */
 		return i2c_reg_update_byte(lis2mdl->i2c,
 					   lis2mdl->i2c_addr,

@@ -176,7 +176,7 @@ void int_latency_show(void)
 {
 	u32_t intHandlerLatency = 0U;
 
-	if (int_latency_bench_ready == 0) {
+	if (int_latency_bench_ready == 0U) {
 		printk("error: int_latency_init() has not been invoked\n");
 		return;
 	}

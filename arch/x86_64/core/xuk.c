@@ -481,7 +481,7 @@ static void smp_init(void)
 	 * the page we allocated.
 	 */
 	_shared.smpinit_lock = 0;
-	_shared.smpinit_stack = 0;
+	_shared.smpinit_stack = 0U;
 	_shared.num_active_cpus = 1;
 
 	printf("Sending SIPI IPI\n");

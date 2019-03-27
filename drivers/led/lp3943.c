@@ -76,7 +76,7 @@ static int lp3943_get_led_reg(u32_t *led, u8_t *reg)
 		/* Fall through */
 	case 7:
 		*reg = LP3943_LS1;
-		*led -= 4;
+		*led -= 4U;
 		break;
 	case 8:
 	case 9:
@@ -84,7 +84,7 @@ static int lp3943_get_led_reg(u32_t *led, u8_t *reg)
 		/* Fall through */
 	case 11:
 		*reg = LP3943_LS2;
-		*led -= 8;
+		*led -= 8U;
 		break;
 	case 12:
 	case 13:
@@ -92,7 +92,7 @@ static int lp3943_get_led_reg(u32_t *led, u8_t *reg)
 		/* Fall through */
 	case 15:
 		*reg = LP3943_LS3;
-		*led -= 12;
+		*led -= 12U;
 		break;
 	default:
 		LOG_ERR("Invalid LED specified");
@@ -151,7 +151,7 @@ static int lp3943_led_blink(struct device *dev, u32_t led,
 		reg = LP3943_PSC1;
 	}
 
-	val = (period * 255) / dev_data->max_period;
+	val = (period * 255U) / dev_data->max_period;
 	if (i2c_reg_write_byte(data->i2c, CONFIG_LP3943_I2C_ADDRESS,
 			       reg, val)) {
 		LOG_ERR("LED write failed");
@@ -192,7 +192,7 @@ static int lp3943_led_set_brightness(struct device *dev, u32_t led,
 		reg = LP3943_PWM1;
 	}
 
-	val = (value * 255) / dev_data->max_brightness;
+	val = (value * 255U) / dev_data->max_brightness;
 	if (i2c_reg_write_byte(data->i2c, CONFIG_LP3943_I2C_ADDRESS,
 			       reg, val)) {
 		LOG_ERR("LED write failed");

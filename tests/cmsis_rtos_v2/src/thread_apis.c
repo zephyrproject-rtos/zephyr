@@ -67,7 +67,7 @@ static void thread1(void *argument)
 
 static void thread2(void *argument)
 {
-	u32_t i, num_threads, max_num_threads = 5;
+	u32_t i, num_threads, max_num_threads = 5U;
 	osThreadId_t *thread_array;
 	int *yield_check = (int *)argument;
 
@@ -82,7 +82,7 @@ static void thread2(void *argument)
 	zassert_equal(num_threads, 2,
 		      "Incorrect number of cmsis rtos v2 threads");
 
-	for (i = 0; i < num_threads; i++) {
+	for (i = 0U; i < num_threads; i++) {
 		zassert_true(
 			osThreadGetStackSize(thread_array[i]) <= STACKSZ,
 			"stack size allocated is not what is expected");

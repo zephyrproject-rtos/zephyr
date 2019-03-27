@@ -119,7 +119,7 @@ static inline void adv_send(struct net_buf *buf)
 	if (IS_ENABLED(CONFIG_BT_MESH_DEBUG_USE_ID_ADDR)) {
 		param.options = BT_LE_ADV_OPT_USE_IDENTITY;
 	} else {
-		param.options = 0;
+		param.options = 0U;
 	}
 
 	param.id = BT_ID_DEFAULT;
@@ -267,7 +267,7 @@ static void bt_mesh_scan_cb(const bt_addr_le_t *addr, s8_t rssi,
 
 		len = net_buf_simple_pull_u8(buf);
 		/* Check for early termination */
-		if (len == 0) {
+		if (len == 0U) {
 			return;
 		}
 

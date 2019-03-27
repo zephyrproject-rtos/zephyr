@@ -108,7 +108,7 @@ u32_t do_test(const u8_t *key,
 						dlen + mlen, &c);
 
 	/**TESTPOINT: Check decryption*/
-	if (result == 0) {
+	if (result == 0U) {
 		show_str("\t\tExpected", data, dlen);
 		show_str("\t\tComputed", decrypted, sizeof(decrypted));
 
@@ -398,7 +398,7 @@ void test_ccm_vector_7(void)
 						hdr, 0, ciphertext,
 						sizeof(data) + mlen, &c);
 
-	if (result == 0) {
+	if (result == 0U) {
 		TC_ERROR("ccm_decrypt failed in %s.\n", __func__);
 		show_str("\t\tExpected", data, sizeof(data));
 		show_str("\t\tComputed", decrypted, sizeof(decrypted));
@@ -455,7 +455,7 @@ void test_ccm_vector_8(void)
 						hdr, sizeof(hdr),
 						ciphertext, mlen, &c);
 	/**TESTPOINT: Check CCM decryption*/
-	if (result == 0) {
+	if (result == 0U) {
 		show_str("\t\tExpected", data, sizeof(data));
 		show_str("\t\tComputed", decrypted, sizeof(decrypted));
 

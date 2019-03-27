@@ -52,11 +52,11 @@ static int _mpu_partition_is_valid(const struct k_mem_partition *part)
 	 * partition must align with size.
 	 */
 	int partition_is_valid =
-		((part->size & (part->size - 1)) == 0)
+		((part->size & (part->size - 1)) == 0U)
 		&&
 		(part->size >= CONFIG_ARM_MPU_REGION_MIN_ALIGN_AND_SIZE)
 		&&
-		((part->start & (part->size - 1)) == 0);
+		((part->start & (part->size - 1)) == 0U);
 
 	return partition_is_valid;
 }
@@ -72,7 +72,7 @@ static int _mpu_partition_is_valid(const struct k_mem_partition *part)
 static inline u32_t _size_to_mpu_rasr_size(u32_t size)
 {
 	/* The minimal supported region size is 32 bytes */
-	if (size <= 32) {
+	if (size <= 32U) {
 		return REGION_32B;
 	}
 
@@ -264,7 +264,7 @@ static int _mpu_configure_regions(const struct k_mem_partition
 	int reg_index = start_reg_index;
 
 	for (i = 0; i < regions_num; i++) {
-		if (regions[i]->size == 0) {
+		if (regions[i]->size == 0U) {
 			continue;
 		}
 		/* Non-empty region. */

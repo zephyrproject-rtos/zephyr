@@ -218,7 +218,7 @@ static u8_t *net_iface_get_mac(struct device *dev)
 	}
 
 	data->ll_addr.addr = data->mac_addr;
-	data->ll_addr.len = 6;
+	data->ll_addr.len = 6U;
 
 	return data->mac_addr;
 }
@@ -693,7 +693,7 @@ static bool add_neighbor(struct net_if *iface, struct in6_addr *addr)
 	llstorage.addr[4] = 0x05;
 	llstorage.addr[5] = 0x06;
 
-	lladdr.len = 6;
+	lladdr.len = 6U;
 	lladdr.addr = llstorage.addr;
 	lladdr.type = NET_LINK_ETHERNET;
 

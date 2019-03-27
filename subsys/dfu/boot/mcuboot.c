@@ -339,7 +339,7 @@ int boot_read_bank_header(u8_t area_id,
 	 * - image_flags:        skip (all unsupported or not relevant)
 	 * - version:            include
 	 */
-	header->mcuboot_version = 1;
+	header->mcuboot_version = 1U;
 	header->h.v1.image_size = v1_raw.image_size;
 	sem_ver = &header->h.v1.sem_ver;
 	sem_ver->major = v1_raw.version.major;
@@ -437,15 +437,15 @@ int mcuboot_swap_type(void)
 	for (i = 0; i < BOOT_SWAP_TABLES_COUNT; i++) {
 		table = boot_swap_tables + i;
 
-		if ((table->magic_slot0     == 0    ||
+		if ((table->magic_slot0     == 0U    ||
 		     table->magic_slot0     == state_slot0.magic)           &&
-		    (table->magic_slot1     == 0    ||
+		    (table->magic_slot1     == 0U    ||
 		     table->magic_slot1     == state_slot1.magic)           &&
-		    (table->image_ok_slot0  == 0    ||
+		    (table->image_ok_slot0  == 0U    ||
 		     table->image_ok_slot0  == state_slot0.image_ok)        &&
-		    (table->image_ok_slot1  == 0    ||
+		    (table->image_ok_slot1  == 0U    ||
 		     table->image_ok_slot1  == state_slot1.image_ok)        &&
-		    (table->copy_done_slot0 == 0    ||
+		    (table->copy_done_slot0 == 0U    ||
 		     table->copy_done_slot0 == state_slot0.copy_done)) {
 
 			assert(table->swap_type == BOOT_SWAP_TYPE_TEST ||

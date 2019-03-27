@@ -92,7 +92,7 @@ static int mcux_rtc_set_alarm(struct device *dev, u8_t chan_id,
 
 	LOG_DBG("Current time is %d ticks", current);
 
-	if (chan_id != 0) {
+	if (chan_id != 0U) {
 		LOG_ERR("Invalid channel id");
 		return -EINVAL;
 	}
@@ -123,7 +123,7 @@ static int mcux_rtc_cancel_alarm(struct device *dev, u8_t chan_id)
 {
 	struct mcux_rtc_data *data = dev->driver_data;
 
-	if (chan_id != 0) {
+	if (chan_id != 0U) {
 		LOG_ERR("Invalid channel id");
 		return -EINVAL;
 	}

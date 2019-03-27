@@ -145,7 +145,7 @@ void _cpu_start(int cpu)
 
 	/* Set up the timer ISR, but ensure the timer is disabled */
 	xuk_set_isr(INT_APIC_LVT_TIMER, 13, x86_apic_timer_isr, 0);
-	_apic.INIT_COUNT = 0;
+	_apic.INIT_COUNT = 0U;
 
 	xuk_set_isr(XUK_INT_RAW_VECTOR(SCHED_IPI_VECTOR),
 		    -1, sched_ipi_handler, 0);
@@ -189,7 +189,7 @@ int z_arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
 			       u32_t flags)
 {
 	ARG_UNUSED(flags);
-	__ASSERT(priority >= 2 && priority <= 15,
+	__ASSERT(priority >= 2U && priority <= 15U,
 		 "APIC interrupt priority must be 2-15");
 
 	xuk_set_isr(irq, priority, (void *)routine, parameter);

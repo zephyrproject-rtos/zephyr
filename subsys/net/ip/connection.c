@@ -823,14 +823,14 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			return NET_DROP;
 		}
 
-		src_port = dst_port = 0;
+		src_port = dst_port = 0U;
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN) &&
 		   net_pkt_family(pkt) == AF_CAN) {
 		if (proto != CAN_RAW) {
 			return NET_DROP;
 		}
 
-		src_port = dst_port = 0;
+		src_port = dst_port = 0U;
 	} else {
 		NET_DBG("No suitable protocol handler configured");
 		return NET_DROP;

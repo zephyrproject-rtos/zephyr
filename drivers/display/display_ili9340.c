@@ -55,7 +55,7 @@ static int ili9340_init(struct device *dev)
 	data->cs_ctrl.gpio_dev =
 		device_get_binding(DT_ILITEK_ILI9340_0_CS_GPIO_CONTROLLER);
 	data->cs_ctrl.gpio_pin = DT_ILITEK_ILI9340_0_CS_GPIO_PIN;
-	data->cs_ctrl.delay = 0;
+	data->cs_ctrl.delay = 0U;
 	data->spi_config.cs = &(data->cs_ctrl);
 #else
 	data->spi_config.cs = NULL;
@@ -229,8 +229,8 @@ static void ili9340_get_capabilities(const struct device *dev,
 				     struct display_capabilities *capabilities)
 {
 	memset(capabilities, 0, sizeof(struct display_capabilities));
-	capabilities->x_resolution = 320;
-	capabilities->y_resolution = 240;
+	capabilities->x_resolution = 320U;
+	capabilities->y_resolution = 240U;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_888;
 	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_888;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;

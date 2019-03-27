@@ -231,15 +231,15 @@ static ssize_t cf_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 static bool cf_set_value(struct gatt_cf_cfg *cfg, const u8_t *value, u16_t len)
 {
 	u16_t i;
-	u8_t last_byte = 1;
-	u8_t last_bit = 1;
+	u8_t last_byte = 1U;
+	u8_t last_bit = 1U;
 
 	/* Validate the bits */
-	for (i = 0; i < len && i < last_byte; i++) {
+	for (i = 0U; i < len && i < last_byte; i++) {
 		u8_t chg_bits = value[i] ^ cfg->data[i];
 		u8_t bit;
 
-		for (bit = 0; bit < last_bit; bit++) {
+		for (bit = 0U; bit < last_bit; bit++) {
 			/* A client shall never clear a bit it has set */
 			if ((BIT(bit) & chg_bits) &&
 			    (BIT(bit) & cfg->data[i])) {
@@ -249,7 +249,7 @@ static bool cf_set_value(struct gatt_cf_cfg *cfg, const u8_t *value, u16_t len)
 	}
 
 	/* Set the bits for each octect */
-	for (i = 0; i < len && i < last_byte; i++) {
+	for (i = 0U; i < len && i < last_byte; i++) {
 		cfg->data[i] |= value[i] & ((1 << last_bit) - 1);
 		BT_DBG("byte %u: data 0x%02x value 0x%02x", i, cfg->data[i],
 		       value[i]);
@@ -906,10 +906,10 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 
 	if (chrc->uuid->type == BT_UUID_TYPE_16) {
 		pdu.uuid16 = sys_cpu_to_le16(BT_UUID_16(chrc->uuid)->val);
-		value_len += 2;
+		value_len += 2U;
 	} else {
 		memcpy(pdu.uuid, BT_UUID_128(chrc->uuid)->val, 16);
-		value_len += 16;
+		value_len += 16U;
 	}
 
 	return bt_gatt_attr_read(conn, attr, buf, len, offset, &pdu, value_len);
@@ -1086,7 +1086,7 @@ ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 	/* Disabled CCC is the same as no configured CCC, so clear the entry */
 	if (!value) {
 		bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
-		cfg->value = 0;
+		cfg->value = 0U;
 	}
 
 	return len;
@@ -1229,7 +1229,7 @@ static int gatt_indicate(struct bt_conn *conn,
 			return -EINVAL;
 		}
 
-		value_handle += 1;
+		value_handle += 1U;
 	}
 
 	buf = bt_att_create_pdu(conn, BT_ATT_OP_INDICATE,
@@ -1513,7 +1513,7 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 			/* Clear value if not paired */
 			if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst)) {
 				bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
-				cfg->value = 0;
+				cfg->value = 0U;
 			} else {
 				/* Update address in case it has changed */
 				bt_addr_le_copy(&cfg->peer, &conn->le.dst);
@@ -1523,7 +1523,7 @@ static u8_t disconnected_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 	/* If all values are now disabled, reset value while disconnected */
 	if (!value_used) {
-		ccc->value = 0;
+		ccc->value = 0U;
 		if (ccc->cfg_changed) {
 			ccc->cfg_changed(attr, ccc->value);
 		}
@@ -1590,7 +1590,7 @@ static void remove_subscriptions(struct bt_conn *conn)
 		if (!bt_addr_le_is_bonded(conn->id, &conn->le.dst) ||
 		    (params->flags & BT_GATT_SUBSCRIBE_FLAG_VOLATILE)) {
 			/* Remove subscription */
-			params->value = 0;
+			params->value = 0U;
 			gatt_subscription_remove(conn, prev, params);
 		} else {
 			update_subscription(conn, params);
@@ -1778,7 +1778,7 @@ static void read_included_uuid_cb(struct bt_conn *conn, u8_t err,
 		struct bt_uuid_128 u128;
 	} u;
 
-	if (length != 16) {
+	if (length != 16U) {
 		BT_ERR("Invalid data len %u", length);
 		params->func(conn, NULL, params);
 		return;
@@ -1915,7 +1915,7 @@ static u16_t parse_include(struct bt_conn *conn, const void *pdu,
 	}
 
 	/* Whole PDU read without error */
-	if (length == 0 && handle) {
+	if (length == 0U && handle) {
 		return handle;
 	}
 
@@ -1995,7 +1995,7 @@ static u16_t parse_characteristic(struct bt_conn *conn, const void *pdu,
 	}
 
 	/* Whole PDU read without error */
-	if (length == 0 && handle) {
+	if (length == 0U && handle) {
 		return handle;
 	}
 
@@ -2131,7 +2131,7 @@ static u16_t parse_service(struct bt_conn *conn, const void *pdu,
 	}
 
 	/* Whole PDU read without error */
-	if (length == 0 && end_handle) {
+	if (length == 0U && end_handle) {
 		return end_handle;
 	}
 
@@ -3124,7 +3124,7 @@ static void ccc_clear(struct _bt_gatt_ccc *ccc, bt_addr_le_t *addr)
 	}
 
 	bt_addr_le_copy(&cfg->peer, BT_ADDR_LE_ANY);
-	cfg->value = 0;
+	cfg->value = 0U;
 }
 
 struct ccc_load {

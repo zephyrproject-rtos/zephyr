@@ -50,7 +50,7 @@ static inline void _i2c_dw_data_ask(struct device *dev)
 		(struct i2c_dw_registers *)dw->base_address;
 
 	/* No more bytes to request, so command queue is no longer needed */
-	if (dw->request_bytes == 0) {
+	if (dw->request_bytes == 0U) {
 		regs->ic_intr_mask.bits.tx_empty = 0U;
 		return;
 	}
@@ -84,7 +84,7 @@ static inline void _i2c_dw_data_ask(struct device *dev)
 
 		/* After receiving the last byte, send STOP if needed */
 		if ((dw->xfr_flags & I2C_MSG_STOP)
-		    && (dw->request_bytes == 1)) {
+		    && (dw->request_bytes == 1U)) {
 			data |= IC_DATA_CMD_STOP;
 		}
 
@@ -110,13 +110,13 @@ static void _i2c_dw_data_read(struct device *dev)
 		dw->xfr_len--;
 		dw->rx_pending--;
 
-		if (dw->xfr_len == 0) {
+		if (dw->xfr_len == 0U) {
 			break;
 		}
 	}
 
 	/* Nothing to receive anymore */
-	if (dw->xfr_len == 0) {
+	if (dw->xfr_len == 0U) {
 		dw->state &= ~I2C_DW_CMD_RECV;
 		return;
 	}
@@ -132,7 +132,7 @@ static int _i2c_dw_data_send(struct device *dev)
 		(struct i2c_dw_registers *)dw->base_address;
 
 	/* Nothing to send anymore, mask the interrupt */
-	if (dw->xfr_len == 0) {
+	if (dw->xfr_len == 0U) {
 		regs->ic_intr_mask.bits.tx_empty = 0U;
 
 		dw->state &= ~I2C_DW_CMD_SEND;
@@ -151,7 +151,7 @@ static int _i2c_dw_data_send(struct device *dev)
 		}
 
 		/* Send STOP if needed */
-		if ((dw->xfr_len == 1) && (dw->xfr_flags & I2C_MSG_STOP)) {
+		if ((dw->xfr_len == 1U) && (dw->xfr_flags & I2C_MSG_STOP)) {
 			data |= IC_DATA_CMD_STOP;
 		}
 
@@ -253,7 +253,7 @@ static void i2c_dw_isr(void *arg)
 			/* If STOP is not expected, finish processing this
 			 * message if there is nothing left to do anymore.
 			 */
-			if (((dw->xfr_len == 0)
+			if (((dw->xfr_len == 0U)
 			     && !(dw->xfr_flags & I2C_MSG_STOP))
 			    || (ret != 0)) {
 				goto done;
@@ -461,7 +461,7 @@ static int i2c_dw_transfer(struct device *dev,
 		}
 
 		/* Send STOP if this is the last message */
-		if (msg_left == 1) {
+		if (msg_left == 1U) {
 			dw->xfr_flags |= I2C_MSG_STOP;
 		}
 

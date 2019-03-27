@@ -389,7 +389,7 @@ static void gptp_init_clock_ds(void)
 	default_ds->priority2 = GPTP_PRIORITY2_DEFAULT;
 
 	default_ds->cur_utc_offset = 37U; /* Current leap seconds TAI - UTC */
-	default_ds->flags.all = 0;
+	default_ds->flags.all = 0U;
 	default_ds->flags.octets[1] = GPTP_FLAG_TIME_TRACEABLE;
 	default_ds->time_source = GPTP_TS_INTERNAL_OSCILLATOR;
 
@@ -402,7 +402,7 @@ static void gptp_init_clock_ds(void)
 	memcpy(parent_ds->port_id.clk_id, default_ds->clk_id,
 	       GPTP_CLOCK_ID_LEN);
 	memcpy(parent_ds->gm_id, default_ds->clk_id, GPTP_CLOCK_ID_LEN);
-	parent_ds->port_id.port_number = 0;
+	parent_ds->port_id.port_number = 0U;
 
 	/* TODO: Check correct value for below field. */
 	parent_ds->cumulative_rate_ratio = 0;
@@ -597,9 +597,9 @@ void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
 {
 	int i;
 
-	if (seconds == 0) {
-		interval->low = 0;
-		interval->high = 0;
+	if (seconds == 0U) {
+		interval->low = 0U;
+		interval->high = 0U;
 		return;
 	} else if (log_msg_interval >= 96) {
 		/* Overflow, set maximum. */
@@ -609,8 +609,8 @@ void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
 		return;
 	} else if (log_msg_interval <= -64) {
 		/* Underflow, set to 0. */
-		interval->low = 0;
-		interval->high = 0;
+		interval->low = 0U;
+		interval->high = 0U;
 		return;
 	}
 
@@ -622,7 +622,7 @@ void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
 
 	if (log_msg_interval <= 0) {
 		interval->low >>= -log_msg_interval;
-		interval->high = 0;
+		interval->high = 0U;
 	} else {
 		/* Find highest bit set. */
 		for (i = 63; i >= 0; i--) {
@@ -643,7 +643,7 @@ void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
 			 * to the number of bits in the left expression’s type
 			 */
 			if (log_msg_interval == 64) {
-				interval->low = 0;
+				interval->low = 0U;
 			} else {
 				interval->low <<= log_msg_interval;
 			}
@@ -661,7 +661,7 @@ s32_t gptp_uscaled_ns_to_timer_ms(struct gptp_uscaled_ns *usns)
 	}
 
 	tmp = (usns->low >> 16) / USEC_PER_SEC;
-	if (tmp == 0) {
+	if (tmp == 0U) {
 		/* Timer must be started with a minimum value of 1. */
 		return 1;
 	}
@@ -762,12 +762,12 @@ void gptp_update_sync_interval(int port, s8_t log_val)
 	/* Get the time spent from the start of the timer. */
 	time_spent = old_itv;
 	if (state_pss_send->half_sync_itv_timer_expired) {
-		time_spent *= 2;
+		time_spent *= 2U;
 	}
 	time_spent -= remaining;
 
 	/* Calculate remaining time and if half timer has expired. */
-	if ((time_spent / 2) > new_itv) {
+	if ((time_spent / 2U) > new_itv) {
 		state_pss_send->sync_itv_timer_expired = true;
 		state_pss_send->half_sync_itv_timer_expired = true;
 		new_itv = 1;

@@ -472,7 +472,7 @@ static int dns_read(struct net_context *ctx,
 		enum dns_class qclass;
 
 		(void)memset(result->data, 0, result->size);
-		result->len = 0;
+		result->len = 0U;
 
 		ret = dns_unpack_query(&dns_msg, result, &qtype, &qclass);
 		if (ret < 0) {

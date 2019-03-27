@@ -83,7 +83,7 @@ static bool server_is_mdns(sa_family_t family, struct sockaddr *addr)
 {
 	if (family == AF_INET) {
 		if (net_ipv4_is_addr_mcast(&net_sin(addr)->sin_addr) &&
-		    net_sin(addr)->sin_addr.s4_addr[3] == 251) {
+		    net_sin(addr)->sin_addr.s4_addr[3] == 251U) {
 			return true;
 		}
 
@@ -106,7 +106,7 @@ static bool server_is_llmnr(sa_family_t family, struct sockaddr *addr)
 {
 	if (family == AF_INET) {
 		if (net_ipv4_is_addr_mcast(&net_sin(addr)->sin_addr) &&
-		    net_sin(addr)->sin_addr.s4_addr[3] == 252) {
+		    net_sin(addr)->sin_addr.s4_addr[3] == 252U) {
 			return true;
 		}
 
@@ -136,7 +136,7 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 				server_is_llmnr(AF_INET, addr);
 		}
 
-		if (net_sin(addr)->sin_port == 0) {
+		if (net_sin(addr)->sin_port == 0U) {
 			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
 			    ctx->servers[idx].is_mdns) {
 				/* We only use 5353 as a default port
@@ -164,7 +164,7 @@ static void dns_postprocess_server(struct dns_resolve_context *ctx, int idx)
 				server_is_llmnr(AF_INET6, addr);
 		}
 
-		if (net_sin6(addr)->sin6_port == 0) {
+		if (net_sin6(addr)->sin6_port == 0U) {
 			if (IS_ENABLED(CONFIG_MDNS_RESOLVER) &&
 			    ctx->servers[idx].is_mdns) {
 				net_sin6(addr)->sin6_port = htons(5353);

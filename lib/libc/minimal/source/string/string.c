@@ -240,7 +240,7 @@ void *memcpy(void *_MLIBC_RESTRICT d, const void *_MLIBC_RESTRICT s, size_t n)
 	unsigned char *d_byte = (unsigned char *)d;
 	const unsigned char *s_byte = (const unsigned char *)s;
 
-	if ((((unsigned int)d ^ (unsigned int)s_byte) & 0x3) == 0) {
+	if ((((unsigned int)d ^ (unsigned int)s_byte) & 0x3) == 0U) {
 
 		/* do byte-sized copying until word-aligned or finished */
 

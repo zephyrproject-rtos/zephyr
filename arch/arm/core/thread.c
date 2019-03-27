@@ -58,7 +58,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	char *pStackMem = K_THREAD_STACK_BUFFER(stack);
 	char *stackEnd;
 	/* Offset between the top of stack and the high end of stack area. */
-	u32_t top_of_stack_offset = 0;
+	u32_t top_of_stack_offset = 0U;
 
 	Z_ASSERT_VALID_PRIO(priority, pEntry);
 

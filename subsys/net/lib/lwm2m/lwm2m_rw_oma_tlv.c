@@ -174,7 +174,7 @@ static size_t oma_tlv_put(const struct oma_tlv *tlv,
 	tmp = (tlv->type << 6) |
 	      (tlv->id > 255 ? (1 << 5) : 0) |
 	      (len_type << 3) |
-	      (len_type == 0 ? tlv->length : 0);
+	      (len_type == 0U ? tlv->length : 0);
 
 	ret = oma_tlv_put_u8(out, tmp, insert);
 	if (ret < 0) {
@@ -246,7 +246,7 @@ static size_t oma_tlv_get(struct oma_tlv *tlv,
 
 	tlv->type = (buf[0] >> 6) & 3;
 	len_type = (buf[0] >> 3) & 3;
-	len_pos = 1 + (((buf[0] & (1 << 5)) != 0) ? 2 : 1);
+	len_pos = 1 + (((buf[0] & (1 << 5)) != 0U) ? 2 : 1);
 
 	if (buf_read_u8(&buf[1], CPKT_BUF_READ(in->in_cpkt), &tmp_offset) < 0) {
 		return 0;
@@ -264,7 +264,7 @@ static size_t oma_tlv_get(struct oma_tlv *tlv,
 		tlv->id = (tlv->id << 8) + buf[1];
 	}
 
-	if (len_type == 0) {
+	if (len_type == 0U) {
 		tlv_len = buf[0] & 7;
 	} else {
 		/* read the length */
@@ -654,7 +654,7 @@ static size_t get_float32fix(struct lwm2m_input_context *in,
 	int ret;
 
 	if (size > 0) {
-		if (tlv.length != 4) {
+		if (tlv.length != 4U) {
 			LOG_ERR("Invalid float32 length: %d", tlv.length);
 
 			/* dummy read */
@@ -695,7 +695,7 @@ static size_t get_float64fix(struct lwm2m_input_context *in,
 	int ret;
 
 	if (size > 0) {
-		if (tlv.length != 8) {
+		if (tlv.length != 8U) {
 			LOG_ERR("invalid float64 length: %d", tlv.length);
 
 			/* dummy read */
@@ -830,7 +830,7 @@ static int do_write_op_tlv_item(struct lwm2m_message *msg)
 		goto error;
 	}
 
-	if (!obj_inst->resources || obj_inst->resource_count == 0) {
+	if (!obj_inst->resources || obj_inst->resource_count == 0U) {
 		ret = -EINVAL;
 		goto error;
 	}
@@ -893,7 +893,7 @@ int do_write_op_tlv(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
 
 			oma_tlv_get(&tlv, &msg->in, false);
 			msg->path.obj_inst_id = tlv.id;
-			if (tlv.length == 0) {
+			if (tlv.length == 0U) {
 				/* Create only - no data */
 				ret = lwm2m_create_obj_inst(
 						msg->path.obj_id,
@@ -918,7 +918,7 @@ int do_write_op_tlv(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
 				}
 
 				msg->path.res_id = tlv2.id;
-				msg->path.level = 3;
+				msg->path.level = 3U;
 				ret = do_write_op_tlv_item(msg);
 				/*
 				 * ignore errors for CREATE op
@@ -936,7 +936,7 @@ int do_write_op_tlv(struct lwm2m_engine_obj *obj, struct lwm2m_message *msg)
 			}
 		} else if (tlv.type == OMA_TLV_TYPE_RESOURCE) {
 			msg->path.res_id = tlv.id;
-			msg->path.level = 3;
+			msg->path.level = 3U;
 			ret = do_write_op_tlv_item(msg);
 			/*
 			 * ignore errors for CREATE op

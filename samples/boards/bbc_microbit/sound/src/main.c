@@ -34,7 +34,7 @@ static void beep(struct k_work *work)
 	/* The "period / 2" pulse duration gives 50% duty cycle, which
 	 * should result in the maximum sound volume.
 	 */
-	pwm_pin_set_usec(pwm, BUZZER_PIN, period, period / 2);
+	pwm_pin_set_usec(pwm, BUZZER_PIN, period, period / 2U);
 	k_sleep(BEEP_DURATION);
 
 	/* Disable the PWM */
@@ -60,12 +60,12 @@ static void button_pressed(struct device *dev, struct gpio_callback *cb,
 	if (pins & BIT(SW0_GPIO_PIN)) {
 		printk("A pressed\n");
 		if (period < PERIOD_MAX) {
-			period += 50;
+			period += 50U;
 		}
 	} else {
 		printk("B pressed\n");
 		if (period > PERIOD_MIN) {
-			period -= 50;
+			period -= 50U;
 		}
 	}
 

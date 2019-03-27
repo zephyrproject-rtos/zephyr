@@ -97,10 +97,10 @@ static int cursor_position_get(const struct shell *shell, u16_t *x, u16_t *y)
 				/* Index start position in the buffer where 'y'
 				 * is stored.
 				 */
-				buff_idx = 2;
+				buff_idx = 2U;
 
 				while (shell->ctx->temp_buff[buff_idx] != ';') {
-					*y = *y * 10 +
+					*y = *y * 10U +
 					(shell->ctx->temp_buff[buff_idx++] -
 									  '0');
 					if (buff_idx >=
@@ -115,7 +115,7 @@ static int cursor_position_get(const struct shell *shell, u16_t *x, u16_t *y)
 
 				while (shell->ctx->temp_buff[buff_idx]
 							     != '\0') {
-					*x = *x * 10 +
+					*x = *x * 10U +
 					(shell->ctx->temp_buff[buff_idx++] -
 									   '0');
 

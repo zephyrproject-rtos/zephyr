@@ -78,7 +78,7 @@ int32_t arc_iot_pll_fout_config(uint32_t freq)
 		sysconf_reg_ptr->CLKSEL = CLKSEL_EXT_16M;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(pll_configuration); i++) {
+	for (i = 0U; i < ARRAY_SIZE(pll_configuration); i++) {
 		if (pll_configuration[i].fout == freq) {
 			break;
 		}

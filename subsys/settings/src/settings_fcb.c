@@ -156,7 +156,7 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 	loc1.fap = cf->cf_fcb.fap;
 
 	loc1.loc.fe_sector = NULL;
-	loc1.loc.fe_elem_off = 0;
+	loc1.loc.fe_elem_off = 0U;
 
 	while (fcb_getnext(&cf->cf_fcb, &loc1.loc) == 0) {
 		if (loc1.loc.fe_sector != cf->cf_fcb.f_oldest) {

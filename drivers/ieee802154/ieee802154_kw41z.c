@@ -465,7 +465,7 @@ static int kw41z_stop(struct device *dev)
 
 static u8_t kw41z_convert_lqi(u8_t hw_lqi)
 {
-	if (hw_lqi >= 220) {
+	if (hw_lqi >= 220U) {
 		return 255;
 	} else {
 		return (51 * hw_lqi) / 44;
@@ -502,8 +502,8 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 #if CONFIG_SOC_MKW41Z4
 	/* PKT_BUFFER_RX needs to be accessed aligned to 16 bits */
 	for (u16_t reg_val = 0, i = 0; i < pkt_len; i++) {
-		if (i % 2 == 0) {
-			reg_val = ZLL->PKT_BUFFER_RX[i/2];
+		if (i % 2 == 0U) {
+			reg_val = ZLL->PKT_BUFFER_RX[i/2U];
 			buf->data[i] = reg_val & 0xFF;
 		} else {
 			buf->data[i] = reg_val >> 8;
@@ -514,7 +514,7 @@ static inline void kw41z_rx(struct kw41z_context *kw41z, u8_t len)
 	for (u32_t reg_val = 0, i = 0; i < pkt_len; i++) {
 		switch (i % 4) {
 		case 0:
-			reg_val = ZLL->PKT_BUFFER[i/4];
+			reg_val = ZLL->PKT_BUFFER[i/4U];
 			buf->data[i] = reg_val & 0xFF;
 			break;
 		case 1:
@@ -704,7 +704,7 @@ static void kw41z_isr(int unused)
 			 * frame, 1 frame length, 2 frame control,
 			 * 1 sequence, 2 FCS. Times two to convert to symbols.
 			 */
-			rx_len = rx_len * 2 + 12 + 22 + 2;
+			rx_len = rx_len * 2U + 12 + 22 + 2;
 			kw41z_tmr3_set_timeout(rx_len);
 		}
 		restart_rx = 0U;
@@ -765,7 +765,7 @@ static void kw41z_isr(int unused)
 					  ZLL_IRQSTS_RX_FRAME_LENGTH_SHIFT;
 
 				if (irqsts & ZLL_IRQSTS_RXIRQ_MASK) {
-					if (rx_len != 0) {
+					if (rx_len != 0U) {
 						kw41z_rx(&kw41z_context_data,
 							rx_len);
 					}

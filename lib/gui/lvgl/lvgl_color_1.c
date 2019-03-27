@@ -20,7 +20,7 @@ static void zephyr_disp_flush(s32_t x1, s32_t y1, s32_t x2, s32_t y2,
 
 	display_get_capabilities(lvgl_display_dev, &cap);
 
-	desc.buf_size = (w * h)/8;
+	desc.buf_size = (w * h)/8U;
 	desc.width = w;
 	desc.pitch = w;
 	desc.height = h;

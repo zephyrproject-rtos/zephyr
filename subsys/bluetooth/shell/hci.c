@@ -41,19 +41,19 @@ int cmd_mesh_adv(const struct shell *shell, size_t argc, char *argv[])
 
 		/* TODO: fetch and fill cmdline params */
 		cp = net_buf_add(buf, sizeof(*cp));
-		cp->adv_slot = 0;
+		cp->adv_slot = 0U;
 		cp->own_addr_type = 0x01;
 		memset(&cp->random_addr, 0, sizeof(bt_addr_t));
 		cp->ch_map = 0x07;
 		cp->tx_power = 0;
-		cp->min_tx_delay = 0;
+		cp->min_tx_delay = 0U;
 		cp->max_tx_delay = 0x32;
 		cp->retx_count = 0x07;
 		cp->retx_interval = 0x00;
 		cp->scan_delay = 0x0a;
 		cp->scan_duration = sys_cpu_to_le16(0x0064);
 		cp->scan_filter = 0x00;
-		cp->data_len = 0;
+		cp->data_len = 0U;
 		memset(cp->data, 0, sizeof(cp->data));
 	} else if (!strcmp(argv[1], "off")) {
 		struct bt_hci_cp_mesh_advertise_cancel *cp;
@@ -68,7 +68,7 @@ int cmd_mesh_adv(const struct shell *shell, size_t argc, char *argv[])
 		net_buf_add_u8(buf, BT_HCI_OC_MESH_ADVERTISE_CANCEL);
 
 		cp = net_buf_add(buf, sizeof(*cp));
-		cp->adv_slot = 0;
+		cp->adv_slot = 0U;
 	} else {
 		return -EINVAL;
 	}

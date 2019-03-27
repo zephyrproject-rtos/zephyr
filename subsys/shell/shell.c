@@ -109,7 +109,7 @@ static void tab_item_print(const struct shell *shell, const char *option,
 			- shell_strlen(tab)) / longest_option;
 	diff = longest_option - shell_strlen(option);
 
-	if (shell->ctx->vt100_ctx.printed_cmd++ % columns == 0) {
+	if (shell->ctx->vt100_ctx.printed_cmd++ % columns == 0U) {
 		shell_internal_fprintf(shell, SHELL_OPTION, "\n%s%s", tab,
 				       option);
 	} else {
@@ -280,7 +280,7 @@ static bool tab_prepare(const struct shell *shell,
 	u16_t compl_space = completion_space_get(shell);
 	size_t search_argc;
 
-	if (compl_space == 0) {
+	if (compl_space == 0U) {
 		return false;
 	}
 
@@ -837,7 +837,7 @@ static bool process_nl(const struct shell *shell, u8_t data)
 		return false;
 	}
 
-	if ((flag_last_nl_get(shell) == 0) ||
+	if ((flag_last_nl_get(shell) == 0U) ||
 	    (data == flag_last_nl_get(shell))) {
 		flag_last_nl_set(shell, data);
 		return true;
@@ -1298,8 +1298,8 @@ void shell_process(const struct shell *shell)
 
 	union shell_internal internal;
 
-	internal.value = 0;
-	internal.flags.processing = 1;
+	internal.value = 0U;
+	internal.flags.processing = 1U;
 
 	(void)atomic_or((atomic_t *)&shell->ctx->internal.value,
 			internal.value);
@@ -1318,7 +1318,7 @@ void shell_process(const struct shell *shell)
 	}
 
 	internal.value = 0xFFFFFFFF;
-	internal.flags.processing = 0;
+	internal.flags.processing = 0U;
 	(void)atomic_and((atomic_t *)&shell->ctx->internal.value,
 			 internal.value);
 }

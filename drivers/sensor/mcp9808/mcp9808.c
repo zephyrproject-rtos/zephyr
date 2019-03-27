@@ -64,7 +64,7 @@ static int mcp9808_channel_get(struct device *dev,
 
 	val->val1 = (data->reg_val & MCP9808_TEMP_INT_MASK) >>
 		     MCP9808_TEMP_INT_SHIFT;
-	val->val2 = (data->reg_val & MCP9808_TEMP_FRAC_MASK) * 62500;
+	val->val2 = (data->reg_val & MCP9808_TEMP_FRAC_MASK) * 62500U;
 
 	if (data->reg_val & MCP9808_SIGN_BIT) {
 		val->val1 -= 256;

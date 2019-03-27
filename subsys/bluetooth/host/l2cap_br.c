@@ -664,7 +664,7 @@ static int l2cap_br_conn_req_reply(struct bt_l2cap_chan *chan, u16_t result)
 
 	l2cap_br_send_conn_rsp(chan->conn, BR_CHAN(chan)->tx.cid,
 			       BR_CHAN(chan)->rx.cid, chan->ident, result);
-	chan->ident = 0;
+	chan->ident = 0U;
 
 	return 0;
 }
@@ -1310,7 +1310,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, u8_t ident,
 
 	switch (result) {
 	case BT_L2CAP_BR_SUCCESS:
-		chan->ident = 0;
+		chan->ident = 0U;
 		BR_CHAN(chan)->tx.cid = dcid;
 		l2cap_br_conf(chan);
 		bt_l2cap_chan_set_state(chan, BT_L2CAP_CONFIG);

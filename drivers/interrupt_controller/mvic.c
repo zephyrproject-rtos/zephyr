@@ -188,7 +188,7 @@ void __irq_controller_irq_config(unsigned int vector, unsigned int irq,
 	if (irq != CONFIG_MVIC_TIMER_IRQ) {
 		_mvic_rte_set(irq, MVIC_IOWIN_MASK | flags);
 	} else {
-		__ASSERT(flags == 0,
+		__ASSERT(flags == 0U,
 			 "Timer interrupt cannot have triggering flags set");
 	}
 }

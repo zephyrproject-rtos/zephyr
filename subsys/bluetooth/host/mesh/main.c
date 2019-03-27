@@ -194,7 +194,7 @@ static void model_suspend(struct bt_mesh_model *mod, struct bt_mesh_elem *elem,
 			  bool vnd, bool primary, void *user_data)
 {
 	if (mod->pub && mod->pub->update) {
-		mod->pub->count = 0;
+		mod->pub->count = 0U;
 		k_delayed_work_cancel(&mod->pub->timer);
 	}
 }

@@ -67,7 +67,7 @@ void main(void)
 {
 	osTimerId_t timer_id;
 	osStatus_t status;
-	u32_t counter = 10;
+	u32_t counter = 10U;
 
 	data = INITIAL_DATA_VALUE;
 
@@ -100,7 +100,7 @@ void main(void)
 	osTimerDelete(timer_id);
 
 exit:
-	if (counter == 0) {
+	if (counter == 0U) {
 		printk("Sample execution successful\n");
 	} else {
 		printk("Error in execution! \n");

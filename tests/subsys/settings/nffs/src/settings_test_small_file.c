@@ -40,7 +40,7 @@ void test_config_small_file(void)
 
 	settings_load();
 	zassert_true(test_set_called, "the SET handler wasn't called");
-	zassert_true(val8 == 1,
+	zassert_true(val8 == 1U,
 		     "SET handler: was called with wrong parameters");
 
 	ctest_clear_call_state();
@@ -51,7 +51,7 @@ void test_config_small_file(void)
 
 	settings_load();
 	zassert_true(test_set_called, "the SET handler wasn't called");
-	zassert_true(val8 == 8,
+	zassert_true(val8 == 8U,
 		     "SET handler: was called with wrong parameters");
 
 	ctest_clear_call_state();

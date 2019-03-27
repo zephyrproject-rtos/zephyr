@@ -177,7 +177,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 	exc_reg = _nios2_creg_read(NIOS2_CR_EXCEPTION);
 
 	/* Bit 31 indicates potentially fatal ECC error */
-	eccftl = (exc_reg & NIOS2_EXCEPTION_REG_ECCFTL_MASK) != 0;
+	eccftl = (exc_reg & NIOS2_EXCEPTION_REG_ECCFTL_MASK) != 0U;
 
 	/* Bits 2-6 contain the cause code */
 	cause = (exc_reg & NIOS2_EXCEPTION_REG_CAUSE_MASK)
