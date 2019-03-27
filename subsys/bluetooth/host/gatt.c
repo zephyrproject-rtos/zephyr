@@ -307,7 +307,7 @@ static u8_t gen_hash_m(const struct bt_gatt_attr *attr, void *user_data)
 	struct gen_hash_state *state = user_data;
 	struct bt_uuid_16 *u16;
 	u8_t data[16];
-	size_t len;
+	ssize_t len;
 	u16_t value;
 
 	if (attr->uuid->type != BT_UUID_TYPE_16)
