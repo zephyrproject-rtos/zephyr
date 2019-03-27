@@ -83,6 +83,7 @@ kobjects = OrderedDict ([
     ("k_timer", (None, False)),
     ("_k_thread_stack_element", (None, False)),
     ("device", (None, False)),
+    ("sys_mutex", (None, True))
 ])
 
 
@@ -122,9 +123,7 @@ header = """%compare-lengths
 #include <string.h>
 %}
 struct _k_object;
-%%
 """
-
 
 # Different versions of gperf have different prototypes for the lookup
 # function, best to implement the wrapper here. The pointer value itself is
@@ -159,7 +158,16 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 
 def write_gperf_table(fp, eh, objs, static_begin, static_end):
     fp.write(header)
+    num_mutexes = eh.get_sys_mutex_counter()
+    if (num_mutexes != 0):
+        fp.write("static struct k_mutex kernel_mutexes[%d] = {\n" % num_mutexes)
+        for i in range(num_mutexes):
+            fp.write("_K_MUTEX_INITIALIZER(kernel_mutexes[%d])" % i)
+            if (i != num_mutexes - 1):
+                fp.write(", ")
+        fp.write("};\n")
 
+    fp.write("%%\n")
     # Setup variables for mapping thread indexes
     syms = eh.get_symbols()
     thread_max_bytes = syms["CONFIG_MAX_THREAD_BYTES"]
