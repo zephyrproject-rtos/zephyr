@@ -990,6 +990,11 @@ int usb_dc_ep_disable(const u8_t ep)
 {
 	u8_t ep_idx = USB_DW_EP_ADDR2IDX(ep);
 
+	if (!usb_dw_ctrl.attached || !usb_dw_ep_is_valid(ep)) {
+		LOG_ERR("Not attached / Invalid endpoint: EP 0x%x", ep);
+		return -EINVAL;
+	}
+
 	/* Disable EP interrupts */
 	if (USB_DW_EP_ADDR2DIR(ep) == USB_EP_DIR_OUT) {
 		USB_DW->daintmsk &= ~USB_DW_DAINT_OUT_EP_INT(ep_idx);
