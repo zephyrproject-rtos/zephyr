@@ -34,6 +34,8 @@ struct flash_stm32_priv {
 	struct stm32l4x_flash *regs;
 	/* clock subsystem driving this peripheral */
 	struct stm32_pclken pclken;
+#elif defined(CONFIG_SOC_SERIES_STM32WBX)
+	struct stm32wbx_flash *regs;
 #endif
 	struct k_sem sem;
 };
@@ -63,6 +65,10 @@ int flash_stm32_block_erase_loop(struct device *dev, unsigned int offset,
 				 unsigned int len);
 
 int flash_stm32_wait_flash_idle(struct device *dev);
+
+#ifdef CONFIG_SOC_SERIES_STM32WBX
+int flash_stm32_check_status(struct device *dev);
+#endif /* CONFIG_SOC_SERIES_STM32WBX */
 
 #ifdef CONFIG_FLASH_PAGE_LAYOUT
 void flash_stm32_page_layout(struct device *dev,
