@@ -812,25 +812,63 @@ static int cdc_acm_line_ctrl_set(struct device *dev,
 	struct cdc_acm_dev_data_t * const dev_data = DEV_DATA(dev);
 
 	switch (ctrl) {
-	case LINE_CTRL_BAUD_RATE:
+	case USB_CDC_LINE_CTRL_BAUD_RATE:
 		cdc_acm_baudrate_set(dev, val);
 		return 0;
-	case LINE_CTRL_DCD:
+	case USB_CDC_LINE_CTRL_DCD:
 		dev_data->serial_state &= ~SERIAL_STATE_RX_CARRIER;
 
 		if (val) {
 			dev_data->serial_state |= SERIAL_STATE_RX_CARRIER;
 		}
-
 		cdc_acm_send_notification(dev, SERIAL_STATE_RX_CARRIER);
 		return 0;
-	case LINE_CTRL_DSR:
+	case USB_CDC_LINE_CTRL_DSR:
 		dev_data->serial_state &= ~SERIAL_STATE_TX_CARRIER;
 
 		if (val) {
 			dev_data->serial_state |= SERIAL_STATE_TX_CARRIER;
 		}
+		cdc_acm_send_notification(dev, dev_data->serial_state);
+		return 0;
+	case USB_CDC_LINE_CTRL_BREAK:
+		dev_data->serial_state &= ~SERIAL_STATE_BREAK;
 
+		if (val) {
+			dev_data->serial_state |= SERIAL_STATE_BREAK;
+		}
+		cdc_acm_send_notification(dev, dev_data->serial_state);
+		return 0;
+	case USB_CDC_LINE_CTRL_RING_SIGNAL:
+		dev_data->serial_state &= ~SERIAL_STATE_RING_SIGNAL;
+
+		if (val) {
+			dev_data->serial_state |= SERIAL_STATE_RING_SIGNAL;
+		}
+		cdc_acm_send_notification(dev, dev_data->serial_state);
+		return 0;
+	case USB_CDC_LINE_CTRL_FRAMING:
+		dev_data->serial_state &= ~SERIAL_STATE_FRAMING;
+
+		if (val) {
+			dev_data->serial_state |= SERIAL_STATE_FRAMING;
+		}
+		cdc_acm_send_notification(dev, dev_data->serial_state);
+		return 0;
+	case USB_CDC_LINE_CTRL_PARITY:
+		dev_data->serial_state &= ~SERIAL_STATE_PARITY;
+
+		if (val) {
+			dev_data->serial_state |= SERIAL_STATE_PARITY;
+		}
+		cdc_acm_send_notification(dev, dev_data->serial_state);
+		return 0;
+	case USB_CDC_LINE_CTRL_OVER_RUN:
+		dev_data->serial_state &= ~SERIAL_STATE_OVER_RUN;
+
+		if (val) {
+			dev_data->serial_state |= SERIAL_STATE_OVER_RUN;
+		}
 		cdc_acm_send_notification(dev, dev_data->serial_state);
 		return 0;
 	default:
