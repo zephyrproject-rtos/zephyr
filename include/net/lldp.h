@@ -123,29 +123,29 @@ enum net_lldp_tlv_type {
 /** Chassis ID TLV, see chapter 8.5.2 in IEEE 802.1AB */
 struct net_lldp_chassis_tlv {
 	/** 7 bits for type, 9 bits for length */
-	uint16_t type_length;
+	u16_t type_length;
 	/** ID subtype */
-	uint8_t subtype;
+	u8_t subtype;
 	/** Chassis ID value */
-	uint8_t value[NET_LLDP_CHASSIS_ID_VALUE_LEN];
+	u8_t value[NET_LLDP_CHASSIS_ID_VALUE_LEN];
 } __packed;
 
 /** Port ID TLV, see chapter 8.5.3 in IEEE 802.1AB */
 struct net_lldp_port_tlv {
 	/** 7 bits for type, 9 bits for length */
-	uint16_t type_length;
+	u16_t type_length;
 	/** ID subtype */
-	uint8_t subtype;
+	u8_t subtype;
 	/** Port ID value */
-	uint8_t value[NET_LLDP_PORT_ID_VALUE_LEN];
+	u8_t value[NET_LLDP_PORT_ID_VALUE_LEN];
 } __packed;
 
 /** Time To Live TLV, see chapter 8.5.4 in IEEE 802.1AB */
 struct net_lldp_time_to_live_tlv {
 	/** 7 bits for type, 9 bits for length */
-	uint16_t type_length;
+	u16_t type_length;
 	/** Time To Live (TTL) value */
-	uint16_t ttl;
+	u16_t ttl;
 } __packed;
 
 /**
