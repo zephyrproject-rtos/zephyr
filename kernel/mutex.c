@@ -38,10 +38,6 @@
 #include <syscall_handler.h>
 #include <tracing.h>
 
-#define RECORD_STATE_CHANGE(mutex) do { } while (false)
-#define RECORD_CONFLICT(mutex) do { } while (false)
-
-
 extern struct k_mutex _k_mutex_list_start[];
 extern struct k_mutex _k_mutex_list_end[];
 
@@ -131,8 +127,6 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 
 	if (likely((mutex->lock_count == 0U) || (mutex->owner == _current))) {
 
-		RECORD_STATE_CHANGE();
-
 		mutex->owner_orig_prio = (mutex->lock_count == 0U) ?
 					_current->base.prio :
 					mutex->owner_orig_prio;
@@ -149,8 +143,6 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 
 		return 0;
 	}
-
-	RECORD_CONFLICT();
 
 	if (unlikely(timeout == (s32_t)K_NO_WAIT)) {
 		k_sched_unlock();
@@ -222,9 +214,6 @@ void z_impl_k_mutex_unlock(struct k_mutex *mutex)
 
 	sys_trace_void(SYS_TRACE_ID_MUTEX_UNLOCK);
 	z_sched_lock();
-
-	RECORD_STATE_CHANGE();
-
 
 	K_DEBUG("mutex %p lock_count: %d\n", mutex, mutex->lock_count);
 
