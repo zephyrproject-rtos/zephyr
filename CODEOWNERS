@@ -105,7 +105,7 @@
 /drivers/bluetooth/                       @sjanc @jhedberg @Vudentz
 /drivers/can/                             @alexanderwachter
 /drivers/clock_control/*stm32f4*          @rsalveti @idlethread
-/drivers/counter/                         @anangl
+/drivers/counter/                         @nordic-krch
 /drivers/display/                         @vanwinkeljan
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 /drivers/flash/                           @nashif
@@ -170,7 +170,7 @@
 /include/bluetooth/                       @sjanc @jhedberg @Vudentz
 /include/cache.h                          @andrewboie @andyross
 /include/can.h                            @alexanderwachter
-/include/counter.h                        @anangl
+/include/counter.h                        @nordic-krch
 /include/device.h                         @ramakrishnapallala @nashif
 /include/display.h                        @vanwinkeljan
 /include/display/                         @vanwinkeljan
