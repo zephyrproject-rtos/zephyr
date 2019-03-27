@@ -739,7 +739,7 @@ static int mesh_commit(void)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_MESH_PB_GATT)) {
-		bt_mesh_proxy_prov_disable();
+		bt_mesh_proxy_prov_disable(true);
 	}
 
 	for (i = 0; i < ARRAY_SIZE(bt_mesh.sub); i++) {
