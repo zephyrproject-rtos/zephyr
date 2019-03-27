@@ -129,6 +129,7 @@
 /drivers/ps2/                             @albertofloyd @franciscomunoz @scottwcpg
 /drivers/kscan/                           @albertofloyd @franciscomunoz @scottwcpg
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
+/drivers/entropy/*sam0*                   @benpicco
 /drivers/flash/                           @nashif @nvlsianpu
 /drivers/flash/*native_posix*             @vanwinkeljan @aescolar
 /drivers/flash/*nrf*                      @nvlsianpu
