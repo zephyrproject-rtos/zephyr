@@ -4,6 +4,7 @@
 # https://github.com/otcshare/contiki-x86
 
 set -e
+unset CFLAGS
 
 JOBS=5
 SCRIPT_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
