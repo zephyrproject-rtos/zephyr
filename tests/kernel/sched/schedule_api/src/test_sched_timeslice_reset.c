@@ -7,6 +7,8 @@
 #include <ztest.h>
 #include "test_sched.h"
 
+#ifdef CONFIG_TIMESLICING
+
 #define NUM_THREAD 3
 
 BUILD_ASSERT(NUM_THREAD <= MAX_NUM_THREAD);
@@ -118,3 +120,10 @@ void test_slice_reset(void)
 	}
 	k_thread_priority_set(k_current_get(), old_prio);
 }
+
+#else /* CONFIG_TIMESLICING */
+void test_slice_reset(void)
+{
+	ztest_test_skip();
+}
+#endif /* CONFIG_TIMESLICING */
