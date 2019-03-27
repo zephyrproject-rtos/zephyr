@@ -25,6 +25,7 @@
 #define OP_VND_HEARTBEAT  BT_MESH_MODEL_OP_3(OP_HEARTBEAT, BT_COMP_ID_LF)
 #define OP_VND_BADUSER    BT_MESH_MODEL_OP_3(OP_BADUSER, BT_COMP_ID_LF)
 
+#define IV_INDEX          0
 #define DEFAULT_TTL       31
 #define GROUP_ADDR        0xc123
 #define NET_IDX           0x000
@@ -497,7 +498,6 @@ static int provision_and_configure(void)
 		0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
 		0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa, 0xaa,
 	};
-	static const u16_t iv_index;
 	struct bt_mesh_cfg_mod_pub pub = {
 		.addr = GROUP_ADDR,
 		.app_idx = APP_IDX,
@@ -523,7 +523,7 @@ static int provision_and_configure(void)
 	/* Make sure it's a unicast address (highest bit unset) */
 	addr &= ~0x8000;
 
-	err = bt_mesh_provision(net_key, NET_IDX, FLAGS, iv_index, addr,
+	err = bt_mesh_provision(net_key, NET_IDX, FLAGS, IV_INDEX, addr,
 				dev_key);
 	if (err) {
 		return err;
