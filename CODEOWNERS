@@ -115,6 +115,7 @@
 /drivers/display/                         @vanwinkeljan
 /drivers/dma/*sam0*                       @Sizurka
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
+/drivers/entropy/*sam0*                   @benpicco
 /drivers/flash/                           @nashif
 /drivers/flash/*stm32*                    @superna9999
 /drivers/gpio/*ht16k33*                   @henrikbrixandersen
