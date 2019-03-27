@@ -631,6 +631,16 @@ static void dfu_status_cb(enum usb_dc_status_code status, const u8_t *param)
 	}
 }
 
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+static void dfu_status_composite_cb(struct usb_cfg_data *cfg,
+				    enum usb_dc_status_code status,
+				    const u8_t *param)
+{
+	ARG_UNUSED(cfg);
+	dfu_status_cb(status, param);
+}
+#endif
+
 /**
  * @brief Custom handler for standard ('chapter 9') requests
  *        in order to catch the SET_INTERFACE request and
@@ -699,6 +709,9 @@ USBD_CFG_DATA_DEFINE(dfu) struct usb_cfg_data dfu_config = {
 	.usb_device_description = NULL,
 	.interface_config = dfu_interface_config,
 	.interface_descriptor = &dfu_cfg.if0,
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+	.cb_usb_status_composite = dfu_status_composite_cb,
+#endif
 	.cb_usb_status = dfu_status_cb,
 	.interface = {
 		.class_handler = dfu_class_handle_req,
