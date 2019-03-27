@@ -153,6 +153,7 @@
 /dts/bindings/serial/ns16550.yaml         @gnuless
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
+/dts/bindings/*/st,stm32*                 @erwango
 /ext/fs/                                  @nashif @wentongwu
 /ext/hal/cmsis/                           @MaureenHelm @galak
 /ext/hal/libmetal/                        @galak
