@@ -12,9 +12,9 @@
  * to support the WebUSB.
  */
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <logging/log.h>
-LOG_MODULE_DECLARE(main);
+LOG_MODULE_REGISTER(webusb);
 
 #include <zephyr.h>
 #include <init.h>

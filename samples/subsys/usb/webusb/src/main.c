@@ -13,7 +13,7 @@
  * the browser at host.
  */
 
-#define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
+#define LOG_LEVEL CONFIG_USB_DEVICE_LOG_LEVEL
 #include <logging/log.h>
 LOG_MODULE_REGISTER(main);
 
