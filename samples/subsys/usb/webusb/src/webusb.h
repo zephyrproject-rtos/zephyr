@@ -14,9 +14,6 @@
 #ifndef __WEBUSB_SERIAL_H__
 #define __WEBUSB_SERIAL_H__
 
-#include <device.h>
-#include <usb/usb_device.h>
-
 /**
  * WebUSB request handlers
  */
