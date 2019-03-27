@@ -324,15 +324,19 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 
 int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 {
-	u8_t idx_even = get_bdt_idx(cfg->ep_addr, 0);
-	u8_t idx_odd = get_bdt_idx(cfg->ep_addr, 1);
 	u8_t ep_idx = EP_ADDR2IDX(cfg->ep_addr);
+	struct usb_ep_ctrl_data *ep_ctrl;
 	struct k_mem_block *block;
-	struct usb_ep_ctrl_data *ep_ctrl = &dev_data.ep_ctrl[ep_idx];
+	u8_t idx_even;
+	u8_t idx_odd;
 
 	if (usb_dc_ep_check_cap(cfg)) {
 		return -EINVAL;
 	}
+
+	idx_even = get_bdt_idx(cfg->ep_addr, 0);
+	idx_odd = get_bdt_idx(cfg->ep_addr, 1);
+	ep_ctrl = &dev_data.ep_ctrl[ep_idx];
 
 	if (ep_idx && (dev_data.ep_ctrl[ep_idx].status.in_enabled ||
 	    dev_data.ep_ctrl[ep_idx].status.out_enabled)) {
@@ -512,14 +516,17 @@ int usb_dc_ep_halt(const u8_t ep)
 
 int usb_dc_ep_enable(const u8_t ep)
 {
-	u8_t idx_even = get_bdt_idx(ep, 0);
-	u8_t idx_odd = get_bdt_idx(ep, 1);
 	u8_t ep_idx = EP_ADDR2IDX(ep);
+	u8_t idx_even;
+	u8_t idx_odd;
 
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
+
+	idx_even = get_bdt_idx(ep, 0);
+	idx_odd = get_bdt_idx(ep, 1);
 
 	if (ep_idx && (dev_data.ep_ctrl[ep_idx].status.in_enabled ||
 	    dev_data.ep_ctrl[ep_idx].status.out_enabled)) {
@@ -550,14 +557,17 @@ int usb_dc_ep_enable(const u8_t ep)
 
 int usb_dc_ep_disable(const u8_t ep)
 {
-	u8_t idx_even = get_bdt_idx(ep, 0);
-	u8_t idx_odd = get_bdt_idx(ep, 1);
 	u8_t ep_idx = EP_ADDR2IDX(ep);
+	u8_t idx_even;
+	u8_t idx_odd;
 
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
+
+	idx_even = get_bdt_idx(ep, 0);
+	idx_odd = get_bdt_idx(ep, 1);
 
 	LOG_INF("ep %x, idx %d", ep_idx, ep);
 
@@ -590,15 +600,19 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		    const u32_t data_len, u32_t * const ret_bytes)
 {
 	u8_t ep_idx = EP_ADDR2IDX(ep);
-	u8_t odd = dev_data.ep_ctrl[ep_idx].status.in_odd;
-	u8_t bd_idx = get_bdt_idx(ep, odd);
-	u8_t *bufp = (u8_t *)bdt[bd_idx].buf_addr;
 	u32_t len_to_send = data_len;
+	u8_t odd;
+	u8_t bd_idx;
+	u8_t *bufp;
 
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
+
+	odd = dev_data.ep_ctrl[ep_idx].status.in_odd;
+	bd_idx = get_bdt_idx(ep, odd);
+	bufp = (u8_t *)bdt[bd_idx].buf_addr;
 
 	if (EP_ADDR2DIR(ep) != USB_EP_DIR_IN) {
 		LOG_ERR("Wrong endpoint direction");
@@ -652,15 +666,18 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 			u32_t *read_bytes)
 {
 	u8_t ep_idx = EP_ADDR2IDX(ep);
-	/* select the index of active endpoint buffer */
-	u8_t bd_idx = get_bdt_idx(ep, dev_data.ep_ctrl[ep_idx].status.out_odd);
-	u8_t *bufp = (u8_t *)bdt[bd_idx].buf_addr;
 	u32_t data_len;
+	u8_t bd_idx;
+	u8_t *bufp;
 
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
+
+	/* select the index of active endpoint buffer */
+	bd_idx = get_bdt_idx(ep, dev_data.ep_ctrl[ep_idx].status.out_odd);
+	bufp = (u8_t *)bdt[bd_idx].buf_addr;
 
 	if (EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
 		LOG_ERR("Wrong endpoint direction");
@@ -721,12 +738,14 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 int usb_dc_ep_read_continue(u8_t ep)
 {
 	u8_t ep_idx = EP_ADDR2IDX(ep);
-	u8_t bd_idx = get_bdt_idx(ep, dev_data.ep_ctrl[ep_idx].status.out_odd);
+	u8_t bd_idx;
 
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		LOG_ERR("Wrong endpoint index/address");
 		return -EINVAL;
 	}
+
+	bd_idx = get_bdt_idx(ep, dev_data.ep_ctrl[ep_idx].status.out_odd);
 
 	if (EP_ADDR2DIR(ep) != USB_EP_DIR_OUT) {
 		LOG_ERR("Wrong endpoint direction");
