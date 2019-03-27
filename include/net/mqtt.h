@@ -27,6 +27,7 @@
 #include <zephyr.h>
 #include <zephyr/types.h>
 #include <net/tls_credentials.h>
+#include <misc/mutex.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -404,7 +405,7 @@ struct mqtt_transport {
 /** @brief MQTT internal state. */
 struct mqtt_internal {
 	/** Internal. Mutex to protect access to the client instance. */
-	struct k_mutex mutex;
+	struct sys_mutex mutex;
 
 	/** Internal. Wall clock value (in milliseconds) of the last activity
 	 *  that occurred. Needed for periodic PING.
