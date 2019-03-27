@@ -348,7 +348,7 @@ release:
 * :github:`9574` - tests/cmsis_rtos_v1 - test_mutex_lock_timeout results in Assertion failure on all targets with PR#9569
 * :github:`9561` - Question: Does it support passing the bootloader(mcuboot) parameter to the kernel(zephyr)?
 * :github:`9558` - DTC 1.4.7 breaks at least FRDM_K64F builds
-* :github:`9537` - ENC28J60 can‘t receive packets properly
+* :github:`9537` - ENC28J60 can't receive packets properly
 * :github:`9536` - console: missing kernel.h include in header
 * :github:`9535` - broken callback handling in nrfx gpio driver
 * :github:`9530` - Bluetooth/gatt: bt_gatt_notify never return -ENOMEM, undocumented return value.
@@ -582,7 +582,7 @@ release:
 * :github:`8039` - tests/shell failing on Arduino 101 / Quark SE arc
 * :github:`8026` - Verify TLS server side operation
 * :github:`8019` - ARP: should drop any packet pended when timeout
-* :github:`8013` - Open-AMP：power on can not communicate
+* :github:`8013` - Open-AMP power on can not communicate
 * :github:`7999` - HCI UART with Linux host cannot connect to nrf52 6lowpan peripheral
 * :github:`7978` - SSE and SSE_FP_MATH are set on frdm_k64f, which doesn't have it, triggering Kconfig warnings
 * :github:`7977` - ARC_INIT is set on boards that don't have it, triggering Kconfig warnings

@@ -94,7 +94,7 @@ following macros to specify those values:
 	#define BLUEMIX_FORMAT		"json"
 
 On your Linux host computer, open a terminal window, locate the source code
-of this sample application (i.e. :zephyr_file:`samples/net/mqtt_publisher`) and type:
+of this sample application (i.e., :zephyr_file:`samples/net/mqtt_publisher`) and type:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/net/mqtt_publisher
@@ -132,7 +132,7 @@ try this sample with TLS enabled, by following these steps:
   enabled on your platform and :option:`CONFIG_TLS_CREDENTIAL_FILENAMES` is
   set to ``y``).
 - In :file:`src/config.h`, set SERVER_ADDR to the IP address to connect to,
-  ie. the IP address of test.mosquitto.org ``"37.187.106.16"``
+  i.e., the IP address of test.mosquitto.org ``"37.187.106.16"``
 - In :file:`src/main.c`, set TLS_SNI_HOSTNAME to ``"test.mosquitto.org"``
   to match the Common Name (CN) in the downloaded certificate.
 - Build the sample by specifying ``-DOVERLAY_CONFIG=overlay-tls.conf``

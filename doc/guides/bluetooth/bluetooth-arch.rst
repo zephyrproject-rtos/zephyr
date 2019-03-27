@@ -20,7 +20,7 @@ stack.
 BLE Layers
 ==========
 
-There are 3 main layers that together constitute a full Bluetooth Low Enery
+There are 3 main layers that together constitute a full Bluetooth Low Energy
 protocol stack:
 
 * **Host**: This layer sits right below the application, and is comprised of
@@ -75,12 +75,12 @@ following configurations are commonly used:
   configuration. This configuration allows for a wider variety of combinations of
   Hosts when using the Zephyr OS as a Controller. Since HCI ensures
   interoperability among Host and Controller implementations, including of course
-  Zephyr’s very own BLE Host and Controller, users of the Zephyr Controller can
+  Zephyr's very own BLE Host and Controller, users of the Zephyr Controller can
   choose to use whatever Host running on any platform they prefer. For example,
   the host can be the Linux BLE Host stack (BlueZ) running on any processor
   capable of supporting Linux. The Host processor may of course also run Zephyr
   and the Zephyr OS BLE Host. Conversely, combining an IC running the Zephyr
-  Host with an external Controller that does not run Zephyr is alos supported.
+  Host with an external Controller that does not run Zephyr is also supported.
 
 .. _bluetooth-build-types:
 
@@ -90,7 +90,7 @@ Build Types
 The Zephyr software stack as an RTOS is highly configurable, and in particular,
 the BLE subsystem can be configured in multiple ways during the build process to
 include only the features and layers that are required to reduce RAM and ROM
-footprint as well as power consumption. Here’s a short list of the different
+footprint as well as power consumption. Here's a short list of the different
 BLE-enabled builds that can be produced from the Zephyr project codebase:
 
 * **Controller-only build**: When built as a BLE Controller, Zephyr includes
@@ -166,7 +166,7 @@ the BLE Controller.
 
 This configuration is not limited to using a Zephyr OS Host, as the right side
 of the image shows. One can indeed take one of the many existing GNU/Linux
-distributions, most of which include Linux’s own BLE Host (BlueZ), to connect it
+distributions, most of which include Linux's own BLE Host (BlueZ), to connect it
 via UART or USB to one or more instances of the Zephyr OS Controller build.
 BlueZ as a Host supports multiple Controllers simultaneously for applications
 that require more than one BLE radio operating at the same time but sharing the
@@ -250,14 +250,14 @@ peripheral implicitly enables broadcaster role. Usually the first step
 when creating an application is to decide which roles are needed and go
 from there. Bluetooth Mesh is a slightly special case, requiring at
 least the observer and broadcaster roles, and possibly also the
-Peripheral role. This will be descibed in more detail in a later
+Peripheral role. This will be described in more detail in a later
 section.
 
 Peripheral role
 ===============
 
 Most Zephyr-based BLE devices will most likely be peripheral-role
-devices. This means that they peform connectable advertising and expose
+devices. This means that they perform connectable advertising and expose
 one or more GATT services. After registering services using the
 :cpp:func:`bt_gatt_service_register` API the application will typically
 start connectable advertising using the :cpp:func:`bt_le_adv_start` API.
@@ -268,7 +268,7 @@ such as :zephyr_file:`samples/bluetooth/peripheral_hr`.
 Central role
 ============
 
-Central role may not be as common for Zephyr-based devices as periphal
+Central role may not be as common for Zephyr-based devices as peripheral
 role, but it is still a plausible one and equally well supported in
 Zephyr. Rather than accepting connections from other devices a central
 role device will scan for available peripheral device and choose one to
@@ -313,7 +313,7 @@ are not exposed to the application, but a limited amount of information
 counted, and the application is expected to use the
 :cpp:func:`bt_conn_ref` API whenever storing a connection pointer for a
 longer period of time, since this ensures that the object remains valid
-(even if the connection would get disconnected). Similarily the
+(even if the connection would get disconnected). Similarly the
 :cpp:func:`bt_conn_unref` API is to be used when releasing a reference
 to a connection.
 
@@ -329,12 +329,12 @@ connection object through the return value of the
 Security
 ========
 
-To acheive a secure relationship between two Bluetooth devices a process
+To achieve a secure relationship between two Bluetooth devices a process
 called pairing is used. This process can either be triggered implicitly
 through the security properties of GATT services, or explicitly using
 the :cpp:func:`bt_conn_security` API on a connection object.
 
-To acheive a higher security level, and protect against
+To achieve a higher security level, and protect against
 Man-In-The-Middle (MITM) attacks, it is recommended to use some
 out-of-band channel during the pairing. If the devices have a sufficient
 user interface this "channel" is the user itself. The capabilities of
@@ -377,7 +377,7 @@ configuration option: :option:`CONFIG_BT_L2CAP_DYNAMIC_CHANNEL`. This channels
 support segmentation and reassembly transparently, they also support credit
 based flow control making it suitable for data streams.
 
-Channels instaces are represented by the :cpp:class:`bt_l2cap_chan` struct which
+Channels instances are represented by the :cpp:class:`bt_l2cap_chan` struct which
 contains the callbacks in the :cpp:class:`bt_l2cap_chan_ops` struct to inform
 when the channel has been connected, disconnected or when the encryption has
 changed.
@@ -467,7 +467,7 @@ Discover procedures can be initiated with the use of
 :cpp:func:`bt_gatt_discover` API which takes the
 :cpp:class:`bt_gatt_dicover_params` struct which describes the type of
 discovery. The parameters also serves as a filter when setting the ``uuid``
-field only attributes which matches will be discovered, in contranst setting it
+field only attributes which matches will be discovered, in contrast setting it
 to NULL allows all attributes to be discovered.
 
 .. note::
@@ -503,8 +503,8 @@ default, mesh requires both observer and broadcaster role to be enabled.
 If the optional GATT Proxy feature is desired, then peripheral role
 should also be enabled.
 
-Peristent storage
-=================
+Persistent storage
+==================
 
 The Bluetooth host stack uses the settings subsystem to implement
 persistent storage to flash. This requires the presence of a flash

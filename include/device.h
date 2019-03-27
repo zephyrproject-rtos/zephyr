@@ -539,7 +539,7 @@ void device_pm_disable(struct device *dev);
  * the caller is interested in.
  * @retval 0 If successfully queued the Async request. If queued,
  * the caller need to wait on the poll event linked to device
- * pm signal mechanism to know the comepletion of resume operation.
+ * pm signal mechanism to know the completion of resume operation.
  * @retval Errno Negative errno code if failure.
  */
 int device_pm_get(struct device *dev);
@@ -570,7 +570,7 @@ int device_pm_get_sync(struct device *dev);
  * the caller is interested in.
  * @retval 0 If successfully queued the Async request. If queued,
  * the caller need to wait on the poll event linked to device pm
- * signal mechanism to know the comepletion of suspend operation.
+ * signal mechanism to know the completion of suspend operation.
  * @retval Errno Negative errno code if failure.
  */
 int device_pm_put(struct device *dev);
