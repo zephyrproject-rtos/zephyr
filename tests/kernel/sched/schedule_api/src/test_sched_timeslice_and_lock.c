@@ -239,6 +239,7 @@ void test_pending_thread_wakeup(void)
  */
 void test_time_slicing_preemptible(void)
 {
+#ifdef CONFIG_TIMESLICING
 	/* set current thread to a preemptible priority */
 	init_prio = 0;
 	setup_threads();
@@ -257,6 +258,9 @@ void test_time_slicing_preemptible(void)
 	/* restore environment */
 	k_sched_time_slice_set(0, 0); /* disable time slice */
 	teardown_threads();
+#else /* CONFIG_TIMESLICING */
+	ztest_test_skip();
+#endif /* CONFIG_TIMESLICING */
 }
 
 /**
@@ -274,6 +278,7 @@ void test_time_slicing_preemptible(void)
  */
 void test_time_slicing_disable_preemptible(void)
 {
+#ifdef CONFIG_TIMESLICING
 	/* set current thread to a preemptible priority */
 	init_prio = 0;
 	setup_threads();
@@ -289,6 +294,9 @@ void test_time_slicing_disable_preemptible(void)
 	}
 	/* restore environment */
 	teardown_threads();
+#else /* CONFIG_TIMESLICING */
+	ztest_test_skip();
+#endif /* CONFIG_TIMESLICING */
 }
 
 /**

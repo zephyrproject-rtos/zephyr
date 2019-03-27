@@ -1,8 +1,23 @@
 tests:
   kernel.sched:
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+    min_ram: 32
+    tags: kernel threads sched
+  kernel.sched_no_timeslicing:
+    extra_configs:
+      - CONFIG_TIMESLICING=n
     min_ram: 32
     tags: kernel threads sched
   kernel.sched.native_posix:
     extra_args: CONF_FILE=prj_native_posix.conf
+    extra_configs:
+      - CONFIG_TIMESLICING=y
+    platform_whitelist: native_posix
+    tags: kernel threads sched
+  kernel.sched.native_posix_no_timeslicing:
+    extra_args: CONF_FILE=prj_native_posix.conf
+    extra_configs:
+      - CONFIG_TIMESLICING=n
     platform_whitelist: native_posix
     tags: kernel threads sched
