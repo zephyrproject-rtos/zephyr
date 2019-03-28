@@ -12,7 +12,7 @@ tests:
     harness: keyboard
     extra_args: CONF_FILE="prj_minimal.conf"
   test_minimal_rtt:
-    filter: ( CONFIG_RTT_CONSOLE and CONFIG_HAS_SEGGER_RTT and CONFIG_USE_SEGGER_RTT)
+    filter: CONFIG_HAS_SEGGER_RTT
     tags: shell
     harness: keyboard
     extra_args: CONF_FILE="prj_minimal_rtt.conf"
