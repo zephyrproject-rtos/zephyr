@@ -3838,7 +3838,7 @@ static int le_set_event_mask(void)
 	mask |= BT_EVT_MASK_LE_ADVERTISING_REPORT;
 
 	if (IS_ENABLED(CONFIG_BT_CONN)) {
-		if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
+		if (IS_ENABLED(CONFIG_BT_SMP) &&
 		    BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
 			mask |= BT_EVT_MASK_LE_ENH_CONN_COMPLETE;
 		} else {
@@ -3982,8 +3982,7 @@ static int le_init(void)
 	}
 
 #if defined(CONFIG_BT_SMP)
-	if (IS_ENABLED(CONFIG_BT_PRIVACY) &&
-	    BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
+	if (BT_FEAT_LE_PRIVACY(bt_dev.le.features)) {
 		struct bt_hci_rp_le_read_rl_size *rp;
 
 		err = bt_hci_cmd_send_sync(BT_HCI_OP_LE_READ_RL_SIZE, NULL,
@@ -5345,6 +5344,17 @@ int bt_le_adv_start_internal(const struct bt_le_adv_param *param,
 			}
 
 			bt_addr_le_copy(&set_param.direct_addr, peer);
+
+			if (IS_ENABLED(CONFIG_BT_SMP) &&
+			    !IS_ENABLED(CONFIG_BT_PRIVACY) &&
+			    BT_FEAT_LE_PRIVACY(bt_dev.le.features) &&
+			    (param->options & BT_LE_ADV_OPT_DIR_ADDR_RPA)) {
+				/* This will not use RPA for our own address
+				 * since we have set zeroed out the local IRK.
+				 */
+				set_param.own_addr_type |=
+					BT_HCI_OWN_ADDR_RPA_MASK;
+			}
 		} else {
 			set_param.type = BT_LE_ADV_IND;
 		}
