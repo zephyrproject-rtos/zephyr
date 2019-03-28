@@ -126,7 +126,7 @@
 #endif
 
 #define BUFFER_SIZE  6
-static s16_t m_sample_buffer[BUFFER_SIZE];
+static ZTEST_BMEM s16_t m_sample_buffer[BUFFER_SIZE];
 
 static const struct adc_channel_cfg m_1st_channel_cfg = {
 	.gain             = ADC_GAIN,
@@ -148,6 +148,11 @@ static const struct adc_channel_cfg m_2nd_channel_cfg = {
 #endif
 };
 #endif /* defined(ADC_2ND_CHANNEL_ID) */
+
+struct device *get_adc_device(void)
+{
+	return device_get_binding(ADC_DEVICE_NAME);
+}
 
 static struct device *init_adc(void)
 {
@@ -288,7 +293,6 @@ static int test_task_asynchronous_call(void)
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
 					 K_POLL_MODE_NOTIFY_ONLY,
 					 &async_sig);
-
 	struct device *adc_dev = init_adc();
 
 	if (!adc_dev) {
@@ -472,7 +476,7 @@ static int test_task_invalid_request(void)
 	ret = adc_read(adc_dev, &sequence);
 	zassert_not_equal(ret, 0, "adc_read() unexpectedly succeeded");
 
-#if defined(CONFIG_ADC_ASYNC)
+#if defined(CONFIG_ADC_ASYNC) && !defined(CONFIG_USERSPACE)
 	ret = adc_read_async(adc_dev, &sequence, &async_sig);
 	zassert_not_equal(ret, 0, "adc_read_async() unexpectedly succeeded");
 #endif
