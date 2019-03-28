@@ -136,6 +136,14 @@ config RV32M1_LPTMR_TIMER
 	  peripheral as the system clock. It provides the standard "system clock
 	  driver" interfaces.
 
+config LITEX_TIMER
+	bool "LiteX Timer"
+	default y
+	depends on !TICKLESS_IDLE
+	depends on SOC_RISCV32_LITEX_VEXRISCV
+	help
+	  This module implements a kernel device driver for LiteX Timer.
+
 config NATIVE_POSIX_TIMER
 	bool "(POSIX) native_posix timer driver"
 	default y
