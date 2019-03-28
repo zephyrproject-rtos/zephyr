@@ -570,8 +570,6 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 	LOG_DBG("iface %u alt_setting %u", iface, alt_setting);
 
 	while (p[DESC_bLength] != 0U) {
-		struct usb_dc_ep_cfg_data ep_cfg;
-
 		switch (p[DESC_bDescriptorType]) {
 		case DESC_INTERFACE:
 			/* remember current alternate setting */
@@ -583,8 +581,7 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 				if_desc = (void *)p;
 			}
 
-			LOG_DBG("iface_num %u alt_set %u",
-				cur_iface, cur_alt_setting);
+			LOG_DBG("iface_num %u alt_set %u", iface, alt_setting);
 			break;
 		case DESC_ENDPOINT:
 			if ((cur_iface != iface) ||
@@ -592,18 +589,7 @@ static bool usb_set_interface(u8_t iface, u8_t alt_setting)
 				break;
 			}
 
-			/* Endpoint is found for desired interface and
-			 * alternate setting
-			 */
-			ep_cfg.ep_type = p[ENDP_DESC_bmAttributes];
-			ep_cfg.ep_mps = (p[ENDP_DESC_wMaxPacketSize]) |
-				(p[ENDP_DESC_wMaxPacketSize + 1] << 8);
-			ep_cfg.ep_addr = p[ENDP_DESC_bEndpointAddress];
-			usb_dc_ep_configure(&ep_cfg);
-			usb_dc_ep_enable(ep_cfg.ep_addr);
-
-			found = true;
-			LOG_DBG("Found: ep_addr 0x%x", ep_cfg.ep_addr);
+			found = set_endpoint((struct usb_ep_descriptor *)p);
 			break;
 		default:
 			break;
