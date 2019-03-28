@@ -207,6 +207,8 @@ int custom_handle_req(struct usb_setup_packet *pSetup,
 		*data = (u8_t *)(&msos1_string_descriptor);
 		*len = sizeof(msos1_string_descriptor);
 
+		LOG_DBG("Get MS OS Descriptor v1 string");
+
 		return 0;
 	}
 
@@ -224,12 +226,14 @@ int custom_handle_req(struct usb_setup_packet *pSetup,
  * @return  0 on success, negative errno code on fail.
  */
 int vendor_handle_req(struct usb_setup_packet *pSetup,
-		s32_t *len, u8_t **data)
+		      s32_t *len, u8_t **data)
 {
 	/* Get Allowed origins request */
 	if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x01) {
 		*data = (u8_t *)(&webusb_allowed_origins);
 		*len = sizeof(webusb_allowed_origins);
+
+		LOG_DBG("Get webusb_allowed_origins");
 
 		return 0;
 	} else if (pSetup->bRequest == 0x01 && pSetup->wIndex == 0x02) {
@@ -242,12 +246,16 @@ int vendor_handle_req(struct usb_setup_packet *pSetup,
 		*data = (u8_t *)(&webusb_origin_url);
 		*len = sizeof(webusb_origin_url);
 
+		LOG_DBG("Get webusb_origin_url");
+
 		return 0;
 	} else if (pSetup->bRequest == 0x02 && pSetup->wIndex == 0x07) {
 		/* Get MS OS 2.0 Descriptors request */
 		/* 0x07 means "MS_OS_20_DESCRIPTOR_INDEX" */
 		*data = (u8_t *)(&msos2_descriptor);
 		*len = sizeof(msos2_descriptor);
+
+		LOG_DBG("Get MS OS Descriptors v2");
 
 		return 0;
 	} else if (pSetup->bRequest == 0x03 && pSetup->wIndex == 0x04) {
@@ -257,6 +265,8 @@ int vendor_handle_req(struct usb_setup_packet *pSetup,
 		 */
 		*data = (u8_t *)(&msos1_compatid_descriptor);
 		*len = sizeof(msos1_compatid_descriptor);
+
+		LOG_DBG("Get MS OS Descriptors CompatibeID");
 
 		return 0;
 	}
