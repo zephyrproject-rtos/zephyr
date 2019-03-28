@@ -100,9 +100,8 @@ identifier r_rewrite.z;
 - C
 + z
 |
-  v *
-- C
-+ z
+- v * C
++ v * z
 |
   v /
 - C
