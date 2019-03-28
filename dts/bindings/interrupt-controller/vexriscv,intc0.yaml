@@ -1,0 +1,36 @@
+#
+# Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: LiteX VexRiscV Interrupt Controller
+version: 0.1
+
+description: >
+    This binding describes LiteX VexRiscV Interrupt Controller
+
+properties:
+  compatible:
+      category: required
+      type: string
+      description: compatible strings
+      constraint: "vexriscv,intc0"
+      generation: define
+
+  reg:
+      category: required
+      type: int
+      description: mmio register space
+      generation: define
+
+  riscv,max-priority:
+      type: int
+      description: maximum interrupt priority
+      category: required
+      generation: define
+
+"#cells":
+  - irq
+  - priority
+...
