@@ -12,6 +12,7 @@
 
 #define DUMMY_PORT_1    "dummy"
 #define DUMMY_PORT_2    "dummy_driver"
+#define BAD_DRIVER	"bad_driver"
 
 /**
  * @brief Test cases to verify device objects
@@ -46,6 +47,12 @@ void test_dummy_device(void)
 
 	device_busy_set(dev);
 	device_busy_clear(dev);
+
+	/* device_get_binding() returns false for device object
+	 * with failed init.
+	 */
+	dev = device_get_binding(BAD_DRIVER);
+	zassert_true((dev == NULL), NULL);
 }
 
 /**
