@@ -1,5 +1,3 @@
-:orphan:
-
 .. _flash_partitions:
 
 Flash Partitions
