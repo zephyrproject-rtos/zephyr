@@ -72,7 +72,10 @@ extern "C" {
  *  USB configuration
  **************************************************************************/
 
-#define MAX_PACKET_SIZE0    64        /**< maximum packet size for EP 0 */
+#define MAX_PACKET_SIZE0	64        /**< maximum packet size for EP 0 */
+
+#define USB_MAX_BULK_MPS	64
+#define USB_MAX_INT_MPS		64
 
 /*************************************************************************
  *  USB application interface
