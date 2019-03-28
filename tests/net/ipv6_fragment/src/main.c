@@ -31,12 +31,6 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_IPV6_LOG_LEVEL);
 #include "ipv6.h"
 #include "udp_internal.h"
 
-#if defined(CONFIG_NET_IPV6_LOG_LEVEL_DBG)
-#define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
-#else
-#define DBG(fmt, ...)
-#endif
-
 /* Interface 1 addresses */
 static struct in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
 					0, 0, 0, 0, 0, 0, 0, 0x1 } } };
@@ -977,7 +971,7 @@ static int verify_fragment(struct net_pkt *pkt)
 
 	frag_count++;
 
-	DBG("test_type %d, frag count %d\n", test_type, frag_count);
+	NET_DBG("test_type %d, frag count %d", test_type, frag_count);
 
 	switch (test_type) {
 	case IPV6_SMALL_HBHO_FRAG:
@@ -1004,25 +998,26 @@ small:
 			ipv6_first_frag[4] * 256U;
 
 		if ((total_len / 256) != pkt->buffer->data[4]) {
-			DBG("Invalid length, 1st byte\n");
+			NET_DBG("Invalid length, 1st byte");
 			return -EINVAL;
 		}
 
 		if ((total_len - pkt->buffer->data[4] * 256U) !=
 		    pkt->buffer->data[5]) {
-			DBG("Invalid length, 2nd byte\n");
+			NET_DBG("Invalid length, 2nd byte");
 			return -EINVAL;
 		}
 
 		offset = pkt->buffer->data[6 * 8 + 2] * 256U +
 			(pkt->buffer->data[6 * 8 + 3] & 0xfe);
+
 		if (offset != 0U) {
-			DBG("Invalid offset %d\n", offset);
+			NET_DBG("Invalid offset %d", offset);
 			return -EINVAL;
 		}
 
 		if ((ipv6_first_frag[6 * 8 + 3] & 0x01) != 1) {
-			DBG("Invalid MORE flag for first fragment\n");
+			NET_DBG("Invalid MORE flag for first fragment");
 			return -EINVAL;
 		}
 
@@ -1037,7 +1032,7 @@ small:
 
 		if (memcmp(pkt->buffer->data, ipv6_first_frag, 7 * 8) != 0) {
 			net_hexdump("received", pkt->buffer->data, 7 * 8);
-			DBG("\n");
+			NET_DBG("");
 			net_hexdump("expected", ipv6_first_frag, 7 * 8);
 
 			return -EINVAL;
@@ -1055,13 +1050,13 @@ small:
 			ipv6_second_frag[4] * 256U;
 
 		if ((total_len / 256) != pkt->buffer->data[4]) {
-			DBG("Invalid length, 1st byte\n");
+			NET_DBG("Invalid length, 1st byte");
 			return -EINVAL;
 		}
 
 		if ((total_len - pkt->buffer->data[4] * 256U) !=
 		    pkt->buffer->data[5]) {
-			DBG("Invalid length, 2nd byte\n");
+			NET_DBG("Invalid length, 2nd byte");
 			return -EINVAL;
 		}
 
@@ -1069,14 +1064,14 @@ small:
 			(pkt->buffer->data[6 * 8 + 3] & 0xfe);
 
 		if (offset != pkt_recv_data_len) {
-			DBG("Invalid offset %d received %d\n",
-			    offset, pkt_recv_data_len);
+			NET_DBG("Invalid offset %d received %d",
+				offset, pkt_recv_data_len);
 			return -EINVAL;
 		}
 
 		/* Make sure the MORE flag is set correctly */
 		if ((pkt->buffer->data[6 * 8 + 3] & 0x01) != 0U) {
-			DBG("Invalid MORE flag for second fragment\n");
+			NET_DBG("Invalid MORE flag for second fragment");
 			return -EINVAL;
 		}
 
@@ -1094,15 +1089,15 @@ small:
 
 		if (memcmp(pkt->buffer->data, ipv6_second_frag, 7 * 8) != 0) {
 			net_hexdump("received 2", pkt->buffer->data, 7 * 8);
-			DBG("\n");
+			NET_DBG("");
 			net_hexdump("expected 2", ipv6_second_frag, 7 * 8);
 
 			return -EINVAL;
 		}
 
 		if (pkt_data_len != pkt_recv_data_len) {
-			DBG("Invalid amount of data received (%d vs %d)\n",
-			    pkt_data_len, pkt_recv_data_len);
+			NET_DBG("Invalid amount of data received (%d vs %d)",
+				pkt_data_len, pkt_recv_data_len);
 			return -EINVAL;
 		}
 	}
@@ -1121,17 +1116,17 @@ large:
 
 		recv_ext_len = net_pkt_ipv6_ext_len(pkt);
 		if (recv_ext_len != exp_ext_len) {
-			DBG("Expected amount of Ext headers len is %d,"
-			    "but received %d\n", exp_ext_len, recv_ext_len);
+			NET_DBG("Expected amount of Ext headers len is %d,"
+				"but received %d", exp_ext_len, recv_ext_len);
 			return -EINVAL;
 		}
 
 		/* IPv6 + HBHO + FRAG */
 		recv_payload_len = net_pkt_get_len(pkt) - 40 - 1032 - 8;
 		if (recv_payload_len != exp_payload_len) {
-			DBG("Expected amount of payload len is %d,"
-			    "but received %d\n", exp_payload_len,
-			    recv_payload_len);
+			NET_DBG("Expected amount of payload len is %d,"
+				"but received %d", exp_payload_len,
+				recv_payload_len);
 			return -EINVAL;
 		}
 
@@ -1141,13 +1136,13 @@ large:
 		}
 
 		if ((frag_offset & 0xfff8) != 0U) {
-			DBG("Invalid fragment offset %d\n",
-			    frag_offset & 0xfff8);
+			NET_DBG("Invalid fragment offset %d",
+				frag_offset & 0xfff8);
 			return -EINVAL;
 		}
 
 		if ((frag_offset & 0x0001) != 1U) {
-			DBG("Fragment More flag should be set\n");
+			NET_DBG("Fragment More flag should be set");
 			return -EINVAL;
 		}
 	}
@@ -1161,17 +1156,17 @@ large:
 
 		recv_ext_len = net_pkt_ipv6_ext_len(pkt);
 		if (recv_ext_len != exp_ext_len) {
-			DBG("Expected amount of Ext headers len is %d,"
-			    "but received %d\n", exp_ext_len, recv_ext_len);
+			NET_DBG("Expected amount of Ext headers len is %d,"
+				"but received %d", exp_ext_len, recv_ext_len);
 			return -EINVAL;
 		}
 
 		/* IPv6 + HBHO + FRAG */
 		recv_payload_len = net_pkt_get_len(pkt) - 40 - 1032 - 8;
 		if (recv_payload_len != exp_payload_len) {
-			DBG("Expected amount of payload len is %d,"
-			    "but received %d\n", exp_payload_len,
-			    recv_payload_len);
+			NET_DBG("Expected amount of payload len is %d,"
+				"but received %d", exp_payload_len,
+				recv_payload_len);
 			return -EINVAL;
 		}
 
@@ -1181,13 +1176,13 @@ large:
 		}
 
 		if ((frag_offset & 0xfff8) != 200U) {
-			DBG("Invalid fragment offset %d\n",
-			    frag_offset & 0xfff8);
+			NET_DBG("Invalid fragment offset %d",
+				frag_offset & 0xfff8);
 			return -EINVAL;
 		}
 
 		if ((frag_offset & 0x0001) != 1U) {
-			DBG("Fragment More flag should be set\n");
+			NET_DBG("Fragment More flag should be set");
 			return -EINVAL;
 		}
 	}
@@ -1201,17 +1196,17 @@ large:
 
 		recv_ext_len = net_pkt_ipv6_ext_len(pkt);
 		if (recv_ext_len != exp_ext_len) {
-			DBG("Expected amount of Ext headers len is %d,"
-			    "but received %d\n", exp_ext_len, recv_ext_len);
+			NET_DBG("Expected amount of Ext headers len is %d,"
+				"but received %d", exp_ext_len, recv_ext_len);
 			return -EINVAL;
 		}
 
 		/* IPv6 + HBHO + FRAG */
 		recv_payload_len = net_pkt_get_len(pkt) - 40 - 1032 - 8;
 		if (recv_payload_len != exp_payload_len) {
-			DBG("Expected amount of payload len is %d,"
-			    "but received %d\n", exp_payload_len,
-			    recv_payload_len);
+			NET_DBG("Expected amount of payload len is %d,"
+				"but received %d", exp_payload_len,
+				recv_payload_len);
 			return -EINVAL;
 		}
 
@@ -1221,13 +1216,13 @@ large:
 		}
 
 		if ((frag_offset & 0xfff8) != 400U) {
-			DBG("Invalid fragment offset %d\n",
-			    frag_offset & 0xfff8);
+			NET_DBG("Invalid fragment offset %d",
+				frag_offset & 0xfff8);
 			return -EINVAL;
 		}
 
 		if ((frag_offset & 0x0001) != 0U) {
-			DBG("Fragment More flag should be unset\n");
+			NET_DBG("Fragment More flag should be unset");
 			return -EINVAL;
 		}
 	}
@@ -1246,23 +1241,23 @@ without:
 
 		recv_ext_len = net_pkt_ipv6_ext_len(pkt);
 		if (recv_ext_len != exp_ext_len) {
-			DBG("Expected amount of Ext headers len is %d,"
-			    "but received %d\n", exp_ext_len, recv_ext_len);
+			NET_DBG("Expected amount of Ext headers len is %d,"
+				"but received %d", exp_ext_len, recv_ext_len);
 			return -EINVAL;
 		}
 
 		/* IPv6 + FRAG */
 		recv_payload_len = net_pkt_get_len(pkt) - 40 - 8;
 		if (recv_payload_len != exp_payload_len) {
-			DBG("Expected amount of payload len is %d,"
-			    "but received %d\n", exp_payload_len,
-			    recv_payload_len);
+			NET_DBG("Expected amount of payload len is %d,"
+				"but received %d", exp_payload_len,
+				recv_payload_len);
 			return -EINVAL;
 		}
 
 		if (pkt->buffer->data[6] != NET_IPV6_NEXTHDR_FRAG) {
-			DBG("Invalid IPv6 next header %d\n",
-			    pkt->buffer->data[6]);
+			NET_DBG("Invalid IPv6 next header %d",
+				pkt->buffer->data[6]);
 			return -EINVAL;
 		}
 
@@ -1272,13 +1267,13 @@ without:
 		}
 
 		if ((frag_offset & 0xfff8) != 0U) {
-			DBG("Invalid fragment offset %d\n",
-			    frag_offset & 0xfff8);
+			NET_DBG("Invalid fragment offset %d",
+				frag_offset & 0xfff8);
 			return -EINVAL;
 		}
 
 		if ((frag_offset & 0x0001) != 1U) {
-			DBG("Fragment More flag should be set\n");
+			NET_DBG("Fragment More flag should be set");
 			return -EINVAL;
 		}
 	}
@@ -1292,23 +1287,23 @@ without:
 
 		recv_ext_len = net_pkt_ipv6_ext_len(pkt);
 		if (recv_ext_len != exp_ext_len) {
-			DBG("Expected amount of Ext headers len is %d,"
-			    "but received %d\n", exp_ext_len, recv_ext_len);
+			NET_DBG("Expected amount of Ext headers len is %d,"
+				"but received %d", exp_ext_len, recv_ext_len);
 			return -EINVAL;
 		}
 
 		if (pkt->buffer->data[6] != NET_IPV6_NEXTHDR_FRAG) {
-			DBG("Invalid IPv6 next header %d\n",
-			    pkt->buffer->data[6]);
+			NET_DBG("Invalid IPv6 next header %d",
+				pkt->buffer->data[6]);
 			return -EINVAL;
 		}
 
 		/* IPv6 + FRAG */
 		recv_payload_len = net_pkt_get_len(pkt) - 40 - 8;
 		if (recv_payload_len != exp_payload_len) {
-			DBG("Expected amount of payload len is %d,"
-			    "but received %d\n", exp_payload_len,
-			    recv_payload_len);
+			NET_DBG("Expected amount of payload len is %d,"
+				"but received %d", exp_payload_len,
+				recv_payload_len);
 			return -EINVAL;
 		}
 
@@ -1318,13 +1313,13 @@ without:
 		}
 
 		if ((frag_offset & 0xfff8) != 1232U) {
-			DBG("Invalid fragment offset %d\n",
-			    frag_offset & 0xfff8);
+			NET_DBG("Invalid fragment offset %d",
+				frag_offset & 0xfff8);
 			return -EINVAL;
 		}
 
 		if ((frag_offset & 0x0001) != 0U) {
-			DBG("Fragment More flag should be unset\n");
+			NET_DBG("Fragment More flag should be unset");
 			return -EINVAL;
 		}
 	}
@@ -1335,14 +1330,14 @@ without:
 static int sender_iface(struct device *dev, struct net_pkt *pkt)
 {
 	if (!pkt->buffer) {
-		DBG("No data to send!\n");
+		NET_DBG("No data to send!");
 		return -ENODATA;
 	}
 
 	if (test_started) {
 		/* Verify the fragments */
 		if (verify_fragment(pkt) < 0) {
-			DBG("Fragments cannot be verified\n");
+			NET_DBG("Fragments cannot be verified");
 			test_failed = true;
 		} else {
 			k_sem_give(&wait_data);
@@ -1407,7 +1402,7 @@ static enum net_verdict udp_data_received(struct net_conn *conn,
 					  union net_proto_header *proto_hdr,
 					  void *user_data)
 {
-	DBG("Data %p received\n", pkt);
+	NET_DBG("Data %p received", pkt);
 
 	net_pkt_unref(pkt);
 
@@ -1464,16 +1459,16 @@ static void test_setup(void)
 	ifaddr = net_if_ipv6_addr_add(iface1, &my_addr1,
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		DBG("Cannot add IPv6 address %s\n",
-		       net_sprint_ipv6_addr(&my_addr1));
+		NET_DBG("Cannot add IPv6 address %s",
+			net_sprint_ipv6_addr(&my_addr1));
 		zassert_not_null(ifaddr, "addr1");
 	}
 
 	ifaddr = net_if_ipv6_addr_add(iface1, &ll_addr,
 				      NET_ADDR_MANUAL, 0);
 	if (!ifaddr) {
-		DBG("Cannot add IPv6 address %s\n",
-		       net_sprint_ipv6_addr(&ll_addr));
+		NET_DBG("Cannot add IPv6 address %s",
+			net_sprint_ipv6_addr(&ll_addr));
 		zassert_not_null(ifaddr, "ll_addr");
 	} else {
 		/* we need to set the adddresses preferred */
@@ -1815,8 +1810,8 @@ static void test_send_ipv6_fragment(void)
 
 	total_len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr);
 
-	DBG("Sending %zd bytes of which ext %d and data %d bytes\n",
-	    total_len, net_pkt_ipv6_ext_len(pkt), pkt_data_len);
+	NET_DBG("Sending %zd bytes of which ext %d and data %d bytes",
+		total_len, net_pkt_ipv6_ext_len(pkt), pkt_data_len);
 
 	zassert_equal(total_len - net_pkt_ipv6_ext_len(pkt) - 8, pkt_data_len,
 		      "Packet size invalid");
@@ -1833,12 +1828,12 @@ static void test_send_ipv6_fragment(void)
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
-		DBG("Cannot send test packet (%d)\n", ret);
+		NET_DBG("Cannot send test packet (%d)", ret);
 		zassert_equal(ret, 0, "Cannot send");
 	}
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		DBG("Timeout while waiting interface data\n");
+		NET_DBG("Timeout while waiting interface data");
 		zassert_equal(ret, 0, "Timeout");
 	}
 }
@@ -1868,19 +1863,19 @@ static void test_send_ipv6_fragment_large_hbho(void)
 
 	total_len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr);
 
-	DBG("Sending %zd bytes of which ext %d and data %d bytes\n",
-	    total_len, net_pkt_ipv6_ext_len(pkt), pkt_data_len);
+	NET_DBG("Sending %zd bytes of which ext %d and data %d bytes",
+		total_len, net_pkt_ipv6_ext_len(pkt), pkt_data_len);
 
 	test_failed = false;
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
-		DBG("Cannot send test packet (%d)\n", ret);
+		NET_DBG("Cannot send test packet (%d)", ret);
 		zassert_equal(ret, 0, "Cannot send");
 	}
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		DBG("Timeout while waiting interface data\n");
+		NET_DBG("Timeout while waiting interface data");
 		zassert_equal(ret, 0, "Timeout");
 	}
 }
@@ -1914,19 +1909,19 @@ static void test_send_ipv6_fragment_without_hbho(void)
 	total_len = net_pkt_get_len(pkt) - sizeof(struct net_ipv6_hdr) -
 		    NET_IPV6_FRAGH_LEN;
 
-	DBG("Sending %zd bytes of which ext %d and data %d bytes\n",
-	    total_len, net_pkt_ipv6_ext_len(pkt), pkt_data_len);
+	NET_DBG("Sending %zd bytes of which ext %d and data %d bytes",
+		total_len, net_pkt_ipv6_ext_len(pkt), pkt_data_len);
 
 	test_failed = false;
 
 	ret = net_send_data(pkt);
 	if (ret < 0) {
-		DBG("Cannot send test packet (%d)\n", ret);
+		NET_DBG("Cannot send test packet (%d)", ret);
 		zassert_equal(ret, 0, "Cannot send");
 	}
 
 	if (k_sem_take(&wait_data, WAIT_TIME)) {
-		DBG("Timeout while waiting interface data\n");
+		NET_DBG("Timeout while waiting interface data");
 		zassert_equal(ret, 0, "Timeout");
 	}
 }
