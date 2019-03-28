@@ -81,9 +81,4 @@ static int nordicsemi_nrf52_init(struct device *arg)
 	return 0;
 }
 
-void z_arch_busy_wait(u32_t time_us)
-{
-	nrfx_coredep_delay_us(time_us);
-}
-
 SYS_INIT(nordicsemi_nrf52_init, PRE_KERNEL_1, 0);
