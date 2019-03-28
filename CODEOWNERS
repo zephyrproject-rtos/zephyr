@@ -139,6 +139,7 @@
 /dts/arm/st/                              @erwango
 /dts/arm/nordic/                          @ioannisg @carlescufi
 /dts/arm/nxp/                             @MaureenHelm
+/dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
