@@ -27,8 +27,13 @@ void ili9340_lcd_init(struct ili9340_data *data)
 	    ILI9340_DATA_MEM_ACCESS_CTRL_MV | ILI9340_DATA_MEM_ACCESS_CTRL_BGR;
 	ili9340_transmit(data, ILI9340_CMD_MEM_ACCESS_CTRL, tx_data, 1);
 
+#ifdef CONFIG_ILI9340_RGB565
+	tx_data[0] = ILI9340_DATA_PIXEL_FORMAT_MCU_16_BIT |
+		     ILI9340_DATA_PIXEL_FORMAT_RGB_16_BIT;
+#else
 	tx_data[0] = ILI9340_DATA_PIXEL_FORMAT_MCU_18_BIT |
 		     ILI9340_DATA_PIXEL_FORMAT_RGB_18_BIT;
+#endif
 	ili9340_transmit(data, ILI9340_CMD_PIXEL_FORMAT_SET, tx_data, 1);
 
 	tx_data[0] = 0x00;
