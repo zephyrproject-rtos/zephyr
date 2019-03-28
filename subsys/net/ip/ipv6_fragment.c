@@ -206,18 +206,10 @@ static bool reassembly_cancel(u32_t id,
 
 static void reassembly_info(char *str, struct net_ipv6_reassembly *reass)
 {
-	int i, len;
-
-	for (i = 0, len = 0; i < NET_IPV6_FRAGMENTS_MAX_PKT; i++) {
-		if (reass->pkt[i]) {
-			len += net_pkt_get_len(reass->pkt[i]);
-		}
-	}
-
-	NET_DBG("%s id 0x%x src %s dst %s remain %d ms len %d", str, reass->id,
+	NET_DBG("%s id 0x%x src %s dst %s remain %d ms", str, reass->id,
 		log_strdup(net_sprint_ipv6_addr(&reass->src)),
 		log_strdup(net_sprint_ipv6_addr(&reass->dst)),
-		k_delayed_work_remaining_get(&reass->timer), len);
+		k_delayed_work_remaining_get(&reass->timer));
 }
 
 static void reassembly_timeout(struct k_work *work)
@@ -340,7 +332,8 @@ static void reassemble_packet(struct net_ipv6_reassembly *reass)
 
 	net_pkt_set_data(pkt, &ipv6_access);
 
-	NET_DBG("New pkt %p IPv6 len is %d bytes", pkt, len);
+	NET_DBG("New pkt %p IPv6 len is %d bytes", pkt,
+		len + NET_IPV6H_LEN);
 
 	/* We need to use the queue when feeding the packet back into the
 	 * IP stack as we might run out of stack if we call processing_data()
@@ -475,7 +468,7 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 	net_pkt_set_ipv6_fragment_offset(pkt, flag & 0xfff8);
 
 	if (!reass->pkt[0]) {
-		NET_DBG("Storing pkt %p to slot %d offset 0x%x",
+		NET_DBG("Storing pkt %p to slot %d offset %d",
 			pkt, 0, net_pkt_ipv6_fragment_offset(pkt));
 		reass->pkt[0] = pkt;
 
@@ -503,7 +496,7 @@ enum net_verdict net_ipv6_handle_fragment_hdr(struct net_pkt *pkt,
 			}
 		}
 
-		NET_DBG("Storing pkt %p to slot %d offset 0x%x",
+		NET_DBG("Storing pkt %p to slot %d offset %d",
 			pkt, i, net_pkt_ipv6_fragment_offset(pkt));
 		reass->pkt[i] = pkt;
 		found = true;
