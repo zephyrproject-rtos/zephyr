@@ -248,6 +248,12 @@ Tagging
 Every time a release candidate (or the final release) needs to be tagged, the
 following steps need to be followed:
 
+.. note::
+
+    Tagging needs to be done via explicit git commands and not via GitHub's release
+    interface.  The GitHub release interface does not generate annotated tags (it
+    generates 'lightweight' tags regardless of release or pre-release).
+
 #. Update the :zephyr_file:`VERSION` file in the root of the Git repository. If it's a
 release candidate, use ``EXTRAVERSION`` variable::
 
