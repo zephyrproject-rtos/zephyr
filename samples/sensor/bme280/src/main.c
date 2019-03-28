@@ -7,18 +7,17 @@
 #include <zephyr.h>
 #include <device.h>
 #include <sensor.h>
-#include <stdio.h>
 
 void main(void)
 {
 	struct device *dev = device_get_binding("BME280");
 
 	if (dev == NULL) {
-		printf("Could not get BME280 device\n");
+		printk("Could not get BME280 device\n");
 		return;
 	}
 
-	printf("dev %p name %s\n", dev, dev->config->name);
+	printk("dev %p name %s\n", dev, dev->config->name);
 
 	while (1) {
 		struct sensor_value temp, press, humidity;
@@ -28,7 +27,7 @@ void main(void)
 		sensor_channel_get(dev, SENSOR_CHAN_PRESS, &press);
 		sensor_channel_get(dev, SENSOR_CHAN_HUMIDITY, &humidity);
 
-		printf("temp: %d.%06d; press: %d.%06d; humidity: %d.%06d\n",
+		printk("temp: %d.%06d; press: %d.%06d; humidity: %d.%06d\n",
 		      temp.val1, temp.val2, press.val1, press.val2,
 		      humidity.val1, humidity.val2);
 
