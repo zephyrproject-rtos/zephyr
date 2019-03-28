@@ -100,10 +100,6 @@ static int iwdg_stm32_install_timeout(struct device *dev,
 	u32_t reload = 0U;
 	u32_t tickstart;
 
-	if (config->callback != NULL) {
-		return -ENOTSUP;
-	}
-
 	iwdg_stm32_convert_timeout(timeout, &prescaler, &reload);
 
 	if (!(IS_IWDG_TIMEOUT(timeout) && IS_IWDG_PRESCALER(prescaler) &&
