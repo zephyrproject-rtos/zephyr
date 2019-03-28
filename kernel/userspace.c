@@ -632,7 +632,7 @@ void z_object_uninit(void *obj)
 /*
  * Copy to/from helper functions used in syscall handlers
  */
-void *z_user_alloc_from_copy(void *src, size_t size)
+void *z_user_alloc_from_copy(const void *src, size_t size)
 {
 	void *dst = NULL;
 	k_spinlock_key_t key = k_spin_lock(&ucopy_lock);
@@ -654,7 +654,7 @@ out_err:
 	return dst;
 }
 
-static int user_copy(void *dst, void *src, size_t size, bool to_user)
+static int user_copy(void *dst, const void *src, size_t size, bool to_user)
 {
 	int ret = EFAULT;
 	k_spinlock_key_t key = k_spin_lock(&ucopy_lock);
@@ -672,17 +672,17 @@ out_err:
 	return ret;
 }
 
-int z_user_from_copy(void *dst, void *src, size_t size)
+int z_user_from_copy(void *dst, const void *src, size_t size)
 {
 	return user_copy(dst, src, size, false);
 }
 
-int z_user_to_copy(void *dst, void *src, size_t size)
+int z_user_to_copy(void *dst, const void *src, size_t size)
 {
 	return user_copy(dst, src, size, true);
 }
 
-char *z_user_string_alloc_copy(char *src, size_t maxlen)
+char *z_user_string_alloc_copy(const char *src, size_t maxlen)
 {
 	unsigned long actual_len;
 	int err;
@@ -709,7 +709,7 @@ out:
 	return ret;
 }
 
-int z_user_string_copy(char *dst, char *src, size_t maxlen)
+int z_user_string_copy(char *dst, const char *src, size_t maxlen)
 {
 	unsigned long actual_len;
 	int ret, err;
