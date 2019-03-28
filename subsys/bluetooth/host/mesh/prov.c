@@ -1330,7 +1330,7 @@ static void gen_prov_cont(struct prov_rx *rx, struct net_buf_simple *buf)
 		u8_t expect_len;
 
 		expect_len = (link.rx.buf->len - 20U -
-			      (23 * (link.rx.last_seg - 1)));
+			      ((link.rx.last_seg - 1) * 23U));
 		if (expect_len != buf->len) {
 			BT_ERR("Incorrect last seg len: %u != %u",
 			       expect_len, buf->len);

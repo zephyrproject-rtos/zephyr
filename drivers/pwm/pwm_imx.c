@@ -71,7 +71,7 @@ static int imx_pwm_pin_set(struct device *dev, u32_t pwm,
 
 	LOG_DBG("enabled=%d, pulse_cycles=%d, period_cycles=%d,"
 		    " duty_cycle=%d\n", enabled, pulse_cycles, period_cycles,
-		    (100 * pulse_cycles / period_cycles));
+		    (pulse_cycles * 100U / period_cycles));
 
 	/*
 	 * i.MX PWMv2 has a 4-word sample FIFO.

@@ -913,7 +913,7 @@ static inline s32_t ack_timeout(struct seg_rx *rx)
 	/* The acknowledgment timer shall be set to a minimum of
 	 * 150 + 50 * TTL milliseconds.
 	 */
-	to = K_MSEC(150 + (50 * ttl));
+	to = K_MSEC(150 + (ttl * 50U));
 
 	/* 100 ms for every not yet received segment */
 	to += K_MSEC(((rx->seg_n + 1) - popcount(rx->block)) * 100U);

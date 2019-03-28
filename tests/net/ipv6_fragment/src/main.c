@@ -1271,13 +1271,13 @@ without:
 			return -EINVAL;
 		}
 
-		if ((frag_offset & 0xfff8) != 0) {
+		if ((frag_offset & 0xfff8) != 0U) {
 			DBG("Invalid fragment offset %d\n",
 			    frag_offset & 0xfff8);
 			return -EINVAL;
 		}
 
-		if ((frag_offset & 0x0001) != 1) {
+		if ((frag_offset & 0x0001) != 1U) {
 			DBG("Fragment More flag should be set\n");
 			return -EINVAL;
 		}
@@ -1317,13 +1317,13 @@ without:
 			return -EINVAL;
 		}
 
-		if ((frag_offset & 0xfff8) != 1232) {
+		if ((frag_offset & 0xfff8) != 1232U) {
 			DBG("Invalid fragment offset %d\n",
 			    frag_offset & 0xfff8);
 			return -EINVAL;
 		}
 
-		if ((frag_offset & 0x0001) != 0) {
+		if ((frag_offset & 0x0001) != 0U) {
 			DBG("Fragment More flag should be unset\n");
 			return -EINVAL;
 		}

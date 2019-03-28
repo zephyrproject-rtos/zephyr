@@ -353,7 +353,7 @@ static int rf_calibrate(struct cc1200_context *ctx)
 		return -EIO;
 	}
 
-	k_busy_wait(5 * USEC_PER_MSEC);
+	k_busy_wait(USEC_PER_MSEC * 5U);
 
 	/* We need to re-enable RX as SCAL shuts off the freq synth */
 	if (!instruct_sidle(ctx) ||
@@ -363,7 +363,7 @@ static int rf_calibrate(struct cc1200_context *ctx)
 		return -EIO;
 	}
 
-	k_busy_wait(10 * USEC_PER_MSEC);
+	k_busy_wait(USEC_PER_MSEC * 10U);
 
 	_cc1200_print_status(get_status(ctx));
 

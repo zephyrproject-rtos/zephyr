@@ -129,16 +129,16 @@ int hex2bin(uint8_t *buf, const size_t buflen, const char *hex,
 void string2scalar(unsigned int *scalar, unsigned int num_word32, char *str)
 {
 
-	unsigned int num_bytes = 4 * num_word32;
+	unsigned int num_bytes = num_word32 * 4U;
 	uint8_t tmp[num_bytes];
 	size_t hexlen = strlen(str);
 
 	int padding;
 
-	padding = 2 * num_bytes - strlen(str);
+	padding = num_bytes * 2U - strlen(str);
 	if (0 > padding) {
 		printf("Error: 2 * num_bytes(%d) < strlen(hex) (%zu)\n",
-		       2 * num_bytes, strlen(str));
+		       num_bytes * 2U, strlen(str));
 		k_panic();
 	}
 
@@ -182,7 +182,7 @@ int check_ecc_result(const int num, const char *name,
 		     const unsigned int *computed,
 		     const unsigned int num_word32, const bool verbose)
 {
-	uint32_t num_bytes = 4 * num_word32;
+	uint32_t num_bytes = num_word32 * 4U;
 
 	if (memcmp(computed, expected, num_bytes)) {
 		TC_PRINT("\n  Vector #%02d check %s - FAILURE:\n\n", num, name);

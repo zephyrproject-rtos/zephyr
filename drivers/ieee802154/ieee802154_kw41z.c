@@ -468,7 +468,7 @@ static u8_t kw41z_convert_lqi(u8_t hw_lqi)
 	if (hw_lqi >= 220U) {
 		return 255;
 	} else {
-		return (51 * hw_lqi) / 44;
+		return (hw_lqi * 51U) / 44;
 	}
 }
 

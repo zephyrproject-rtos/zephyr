@@ -1209,7 +1209,7 @@ bool bt_le_conn_params_valid(const struct bt_le_conn_param *param)
 	}
 
 	if (param->timeout < 10 || param->timeout > 3200 ||
-	    ((4 * param->timeout) <=
+	    ((param->timeout * 4U) <=
 	     ((1 + param->latency) * param->interval_max))) {
 		return false;
 	}

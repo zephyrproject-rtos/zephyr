@@ -223,7 +223,7 @@ extern "C" {
 				.source_id = _id			    \
 			};						    \
 									    \
-			if ((BIT(_level) & LOG_FUNCTION_PREFIX_MASK) != 0) {\
+			if ((BIT(_level) & LOG_FUNCTION_PREFIX_MASK) != 0U) {\
 				__LOG_INTERNAL(src_level,		    \
 						Z_LOG_STR(__VA_ARGS__));	    \
 			} else {					    \

@@ -126,7 +126,7 @@ static int ili9340_write(const struct device *dev, const u16_t x,
 	u16_t write_h;
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
-	__ASSERT((3 * desc->pitch * desc->height) <= desc->bu_size,
+	__ASSERT((desc->pitch * 3U * desc->height) <= desc->bu_size,
 			"Input buffer to small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height,
@@ -142,17 +142,18 @@ static int ili9340_write(const struct device *dev, const u16_t x,
 	}
 
 	ili9340_transmit(data, ILI9340_CMD_MEM_WRITE,
-			 (void *) write_data_start, 3 * desc->width * write_h);
+			 (void *) write_data_start,
+			 desc->width * 3U * write_h);
 
 	tx_bufs.buffers = &tx_buf;
 	tx_bufs.count = 1;
 
-	write_data_start += (3 * desc->pitch);
+	write_data_start += (desc->pitch * 3U);
 	for (write_cnt = 1U; write_cnt < nbr_of_writes; ++write_cnt) {
 		tx_buf.buf = (void *)write_data_start;
-		tx_buf.len = 3 * desc->width * write_h;
+		tx_buf.len = desc->width * 3U * write_h;
 		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
-		write_data_start += (3 * desc->pitch);
+		write_data_start += (desc->pitch * 3U);
 	}
 
 	return 0;

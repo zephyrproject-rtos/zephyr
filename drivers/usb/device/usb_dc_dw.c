@@ -1128,7 +1128,7 @@ int usb_dc_ep_read_wait(u8_t ep, u8_t *data, u32_t max_data_len,
 
 		for (j = 0U; j < (bytes_to_copy & 0x3); j++) {
 			*(data + i + j) =
-				(sys_cpu_to_le32(last_dw) >> (8 * j)) & 0xFF;
+				(sys_cpu_to_le32(last_dw) >> (j * 8U)) & 0xFF;
 			}
 	}
 

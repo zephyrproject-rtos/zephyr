@@ -80,7 +80,7 @@ static int i2c_clk_set(Twihs *const twihs, u32_t speed)
 	 *  T_low = ( ( CLDIV × 2^CKDIV ) + 3 ) × T_MCK
 	 */
 	while (!div_completed) {
-		cl_div =   ((SOC_ATMEL_SAM_MCK_FREQ_HZ / (2 * speed)) - 3)
+		cl_div =   ((SOC_ATMEL_SAM_MCK_FREQ_HZ / (speed * 2U)) - 3)
 			 / (1 << ck_div);
 
 		if (cl_div <= 255U) {

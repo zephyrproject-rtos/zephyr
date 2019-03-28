@@ -538,7 +538,7 @@ static int write_op(void *context)
 			ticks_diff =
 				ticker_ticks_diff_get(ticker_ticks_now_get(),
 						      ticks_begin);
-			if (2 * ticks_diff >
+			if (ticks_diff * 2U >
 			    HAL_TICKER_US_TO_TICKS(w_ctx->slot)) {
 				nvmc_wait_ready();
 				return FLASH_OP_ONGOING;

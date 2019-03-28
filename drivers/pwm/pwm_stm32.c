@@ -50,7 +50,7 @@ static u32_t __get_tim_clk(u32_t bus_clk,
 	if (apb_psc == 1U) {
 		tim_clk = bus_clk;
 	} else	{
-		tim_clk = 2 * bus_clk;
+		tim_clk = bus_clk * 2U;
 	}
 
 	return tim_clk;

@@ -165,7 +165,7 @@ static void baudrate_set(struct device *dev,
 
 	/* upon reset, the system clock uses the intenal OSC @ 12MHz */
 
-	div = (16 * baudrate);
+	div = (baudrate * 16U);
 	rem = sys_clk_freq_hz % div;
 
 	/*

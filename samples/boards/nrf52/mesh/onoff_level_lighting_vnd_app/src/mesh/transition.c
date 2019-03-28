@@ -616,7 +616,7 @@ void onoff_handler(struct generic_onoff_state *state)
 	k_timer_init(ptr_timer, onoff_tt_handler, NULL);
 
 	k_timer_start(ptr_timer,
-		      K_MSEC(5 * state->transition->delay),
+		      K_MSEC(state->transition->delay * 5U),
 		      K_MSEC(state->transition->quo_tt));
 }
 
@@ -627,7 +627,7 @@ void level_lightness_handler(struct generic_level_state *state)
 	k_timer_init(ptr_timer, level_lightness_tt_handler, NULL);
 
 	k_timer_start(ptr_timer,
-		      K_MSEC(5 * state->transition->delay),
+		      K_MSEC(state->transition->delay * 5U),
 		      K_MSEC(state->transition->quo_tt));
 }
 
@@ -638,7 +638,7 @@ void level_temp_handler(struct generic_level_state *state)
 	k_timer_init(ptr_timer, level_temp_tt_handler, NULL);
 
 	k_timer_start(ptr_timer,
-		      K_MSEC(5 * state->transition->delay),
+		      K_MSEC(state->transition->delay * 5U),
 		      K_MSEC(state->transition->quo_tt));
 }
 
@@ -649,7 +649,7 @@ void light_lightness_actual_handler(struct light_lightness_state *state)
 	k_timer_init(ptr_timer, light_lightness_actual_tt_handler, NULL);
 
 	k_timer_start(ptr_timer,
-		      K_MSEC(5 * state->transition->delay),
+		      K_MSEC(state->transition->delay * 5U),
 		      K_MSEC(state->transition->quo_tt));
 }
 
@@ -660,7 +660,7 @@ void light_lightness_linear_handler(struct light_lightness_state *state)
 	k_timer_init(ptr_timer, light_lightness_linear_tt_handler, NULL);
 
 	k_timer_start(ptr_timer,
-		      K_MSEC(5 * state->transition->delay),
+		      K_MSEC(state->transition->delay * 5U),
 		      K_MSEC(state->transition->quo_tt));
 }
 
@@ -671,7 +671,7 @@ void light_ctl_handler(struct light_ctl_state *state)
 	k_timer_init(ptr_timer, light_ctl_tt_handler, NULL);
 
 	k_timer_start(ptr_timer,
-		      K_MSEC(5 * state->transition->delay),
+		      K_MSEC(state->transition->delay * 5U),
 		      K_MSEC(state->transition->quo_tt));
 }
 
@@ -682,7 +682,7 @@ void light_ctl_temp_handler(struct light_ctl_state *state)
 	k_timer_init(ptr_timer, light_ctl_temp_tt_handler, NULL);
 
 	k_timer_start(ptr_timer,
-		      K_MSEC(5 * state->transition->delay),
+		      K_MSEC(state->transition->delay * 5U),
 		      K_MSEC(state->transition->quo_tt));
 }
 /* Messages handlers (End) */

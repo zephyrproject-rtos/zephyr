@@ -31,7 +31,7 @@ static inline void _region_init(u32_t index, u32_t region_addr, u32_t size,
 {
 	u8_t bits = find_msb_set(size) - 1;
 
-	index = 2 * index;
+	index = index * 2U;
 
 	if (bits < ARC_FEATURE_MPU_ALIGNMENT_BITS) {
 		bits = ARC_FEATURE_MPU_ALIGNMENT_BITS;
@@ -98,7 +98,7 @@ static inline int _get_region_index_by_type(u32_t type)
  */
 static inline bool _is_enabled_region(u32_t r_index)
 {
-	return ((z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + 2 * r_index)
+	return ((z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + r_index * 2U)
 		 & AUX_MPU_RDB_VALID_MASK) == AUX_MPU_RDB_VALID_MASK);
 }
 
@@ -111,9 +111,9 @@ static inline bool _is_in_region(u32_t r_index, u32_t start, u32_t size)
 	u32_t r_addr_end;
 	u32_t r_size_lshift;
 
-	r_addr_start = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + 2 * r_index)
+	r_addr_start = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDB0 + r_index * 2U)
 		       & (~AUX_MPU_RDB_VALID_MASK);
-	r_size_lshift = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + 2 * r_index)
+	r_size_lshift = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + r_index * 2U)
 			& AUX_MPU_RDP_SIZE_MASK;
 	r_size_lshift = (r_size_lshift & 0x3) | ((r_size_lshift >> 7) & 0x1C);
 	r_addr_end = r_addr_start  + (1 << (r_size_lshift + 1));
@@ -132,7 +132,7 @@ static inline bool _is_user_accessible_region(u32_t r_index, int write)
 {
 	u32_t r_ap;
 
-	r_ap = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + 2 * r_index);
+	r_ap = z_arc_v2_aux_reg_read(_ARC_V2_MPU_RDP0 + r_index * 2U);
 
 	r_ap &= AUX_MPU_RDP_ATTR_MASK;
 

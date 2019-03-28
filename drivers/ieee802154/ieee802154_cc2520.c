@@ -719,7 +719,7 @@ static int cc2520_set_channel(struct device *dev, u16_t channel)
 	}
 
 	/* See chapter 16 */
-	channel = 11 + 5 * (channel - 11);
+	channel = 11 + (channel - 11) * 5U;
 
 	if (!write_reg_freqctrl(cc2520, FREQCTRL_FREQ(channel))) {
 		LOG_ERR("Failed");

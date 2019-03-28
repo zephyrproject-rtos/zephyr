@@ -1515,7 +1515,7 @@ static bool test_tcp_seq_validity(void)
 	}
 
 	tcp->send_ack = sys_get_be32(tcp_hdr->seq) +
-		2 * get_recv_wnd(tcp);
+		get_recv_wnd(tcp) * 2U;
 	if (net_tcp_validate_seq(tcp, tcp_hdr)) {
 		DBG("3) Sequence validation failed (send_ack %u vs seq %u)\n",
 		    tcp->send_ack, sys_get_be32(tcp_hdr->seq));
@@ -1523,7 +1523,7 @@ static bool test_tcp_seq_validity(void)
 	}
 
 	tcp->send_ack = sys_get_be32(tcp_hdr->seq) -
-		2 * get_recv_wnd(tcp);
+		get_recv_wnd(tcp) * 2U;
 	if (net_tcp_validate_seq(tcp, tcp_hdr)) {
 		DBG("4) Sequence validation failed (send_ack %u vs seq %u)\n",
 		    tcp->send_ack, sys_get_be32(tcp_hdr->seq));

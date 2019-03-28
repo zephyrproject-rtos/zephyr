@@ -196,9 +196,9 @@ void ticklessTestThread(void)
 	 * calibrated TSC diff and measured result
 	 */
 	if (diff_tsc > cal_tsc) {
-		diff_per = (100 * (diff_tsc - cal_tsc)) / cal_tsc;
+		diff_per = ((diff_tsc - cal_tsc) * 100U) / cal_tsc;
 	} else {
-		diff_per = (100 * (cal_tsc - diff_tsc)) / cal_tsc;
+		diff_per = ((cal_tsc - diff_tsc) * 100U) / cal_tsc;
 	}
 
 	printk("variance in time stamp diff: %d percent\n", (s32_t)diff_per);

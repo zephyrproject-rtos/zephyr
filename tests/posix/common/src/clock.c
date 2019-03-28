@@ -90,7 +90,7 @@ void test_posix_realtime(void)
 	 */
 	s64_t last_delta = 0;
 	for (int i = 1; i <= 20; i++) {
-		usleep(90 * USEC_PER_MSEC);
+		usleep(USEC_PER_MSEC * 90U);
 		ret = clock_gettime(CLOCK_REALTIME, &rts);
 		zassert_equal(ret, 0, "Fail to read realitime clock");
 
