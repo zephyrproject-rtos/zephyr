@@ -122,6 +122,7 @@
 /drivers/i2s/i2s_ll_stm32*                @avisconti
 /drivers/ieee802154/                      @jukkar @tbursztyka
 /drivers/interrupt_controller/            @andrewboie
+/drivers/*/vexriscv_litex.c               @mateusz-holenko @kgugala @pgielda
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar
 /drivers/modem/                           @mike-scott
@@ -174,6 +175,7 @@
 /dts/bindings/sensor/ams*                 @alexanderwachter
 /dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda @nategraff-sifive
 /dts/bindings/*/litex*                    @mateusz-holenko @kgugala @pgielda
+/dts/bindings/*/vexriscv*                 @mateusz-holenko @kgugala @pgielda
 /ext/fs/                                  @nashif @wentongwu
 /ext/hal/atmel/asf/sam/include/same70*/   @aurel32
 /ext/hal/atmel/asf/sam0/include/samr21/   @benpicco
