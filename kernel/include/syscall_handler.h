@@ -189,7 +189,7 @@ static inline size_t z_user_string_nlen(const char *src, size_t maxlen,
  * @return An allocated buffer with the data copied within it, or NULL
  *	if some error condition occurred
  */
-extern void *z_user_alloc_from_copy(void *src, size_t size);
+extern void *z_user_alloc_from_copy(const void *src, size_t size);
 
 /**
  * @brief Copy data from user mode
@@ -204,7 +204,7 @@ extern void *z_user_alloc_from_copy(void *src, size_t size);
  * @retval 0 On success
  * @retval EFAULT On memory access error
  */
-extern int z_user_from_copy(void *dst, void *src, size_t size);
+extern int z_user_from_copy(void *dst, const void *src, size_t size);
 
 /**
  * @brief Copy data to user mode
@@ -219,7 +219,7 @@ extern int z_user_from_copy(void *dst, void *src, size_t size);
  * @retval 0 On success
  * @retval EFAULT On memory access error
  */
-extern int z_user_to_copy(void *dst, void *src, size_t size);
+extern int z_user_to_copy(void *dst, const void *src, size_t size);
 
 /**
  * @brief Copy a C string from userspace into a resource pool allocation
@@ -235,7 +235,7 @@ extern int z_user_to_copy(void *dst, void *src, size_t size);
  * @param maxlen Maximum size of the string including trailing NULL
  * @return The duplicated string, or NULL if an error occurred.
  */
-extern char *z_user_string_alloc_copy(char *src, size_t maxlen);
+extern char *z_user_string_alloc_copy(const char *src, size_t maxlen);
 
 /**
  * @brief Copy a C string from userspace into a provided buffer
@@ -253,7 +253,7 @@ extern char *z_user_string_alloc_copy(char *src, size_t maxlen);
  *	to maxlen
  * @retval EFAULT On memory access error
  */
-extern int z_user_string_copy(char *dst, char *src, size_t maxlen);
+extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 
 #define Z_OOPS(expr) \
 	do { \
