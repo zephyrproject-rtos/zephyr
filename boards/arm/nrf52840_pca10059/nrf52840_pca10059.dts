@@ -20,7 +20,7 @@
 		zephyr,bt-mon-uart = &uart0;
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
-		zephyr,code-partition = &slot0_partition;
+		zephyr,code-partition = &boot_partition;
 	};
 
 	leds {
@@ -124,7 +124,7 @@
  * fstab-stock		-compatible with Nordic nRF5 bootloader, default
  * fstab-debugger	-to use an external debugger, w/o the nRF5 bootloader
  */
-#include "fstab-stock.dts"
+#include "fstab-debugger.dts"
 
 &usbd {
 	compatible = "nordic,nrf-usbd";
