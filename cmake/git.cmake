@@ -4,7 +4,7 @@
 find_package(Git QUIET)
 if(GIT_FOUND)
   execute_process(
-    COMMAND ${GIT_EXECUTABLE} describe --abbrev=12
+    COMMAND ${GIT_EXECUTABLE} describe --abbrev=12 --tags
     WORKING_DIRECTORY                ${ZEPHYR_BASE}
     OUTPUT_VARIABLE                  BUILD_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE
