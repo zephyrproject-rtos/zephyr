@@ -11,4 +11,5 @@ tests:
             - "Watchdog sample application"
             - "Feeding watchdog..."
             - "Waiting for reset..."
+            - "Watchdog sample application"
     depends_on: watchdog
