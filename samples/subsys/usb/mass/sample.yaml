@@ -23,3 +23,13 @@ tests:
       type: one_line
       regex:
         - "The device is put in USB mass storage mode."
+  test_mass_nrf52840_pca10056:
+    extra_configs:
+        - CONFIG_LOG_DEFAULT_LEVEL=3
+    platform_whitelist: nrf52840_pca10056
+    tags: msd usb
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "The device is put in USB mass storage mode."
