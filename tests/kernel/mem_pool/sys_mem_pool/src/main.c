@@ -19,9 +19,7 @@
 #define BLK_SIZE_EXCLUDE_DESC (BLK_SIZE_MIN - 16)
 #define BLK_ALIGN BLK_SIZE_MIN
 
-K_MUTEX_DEFINE(pool_mutex);
-
-SYS_MEM_POOL_DEFINE(pool, &pool_mutex, BLK_SIZE_MIN, BLK_SIZE_MAX,
+SYS_MEM_POOL_DEFINE(pool, NULL, BLK_SIZE_MIN, BLK_SIZE_MAX,
 		    BLK_NUM_MAX, BLK_ALIGN, ZTEST_SECTION);
 
 /**
@@ -126,7 +124,6 @@ void test_sys_mem_pool_min_block_size(void)
 /*test case main entry*/
 void test_main(void)
 {
-	k_thread_access_grant(k_current_get(), &pool_mutex);
 	sys_mem_pool_init(&pool);
 
 	ztest_test_suite(test_sys_mem_pool_api,
