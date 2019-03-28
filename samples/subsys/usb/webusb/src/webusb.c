@@ -312,7 +312,8 @@ static struct usb_cfg_data webusb_config = {
 		.class_handler = NULL,
 		.custom_handler = webusb_custom_handle_req,
 		.vendor_handler = webusb_vendor_handle_req,
-		.payload_data = NULL,
+		.vendor_data = interface_data,
+		.payload_data = interface_data,
 	},
 	.num_endpoints = ARRAY_SIZE(webusb_ep_data),
 	.endpoint = webusb_ep_data
@@ -323,8 +324,6 @@ int webusb_init(void)
 	int ret;
 
 	LOG_DBG("");
-
-	webusb_config.interface.payload_data = interface_data;
 
 	/* Initialize the WebUSB driver with the right configuration */
 	ret = usb_set_config(&webusb_config);
