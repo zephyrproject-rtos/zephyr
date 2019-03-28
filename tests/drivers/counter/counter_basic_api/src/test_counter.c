@@ -16,7 +16,7 @@ static void top_handler(struct device *dev, void *user_data);
 void *exp_user_data = (void *)199;
 
 #if defined(CONFIG_COUNTER_MCUX_RTC) || defined(CONFIG_COUNTER_RTC_STM32)
-#define COUNTER_PERIOD_US (2*USEC_PER_SEC)
+#define COUNTER_PERIOD_US (USEC_PER_SEC * 2U)
 #else
 #define COUNTER_PERIOD_US 20000
 #endif
@@ -307,7 +307,7 @@ void test_multiple_alarms_instance(const char *dev_name)
 	err = counter_set_channel_alarm(dev, 1, &alarm_cfg2);
 	zassert_equal(0, err, "Counter set alarm failed\n");
 
-	k_busy_wait(1.2*counter_ticks_to_us(dev, 2*ticks));
+	k_busy_wait(1.2*counter_ticks_to_us(dev, ticks * 2U));
 	tmp_alarm_cnt = alarm_cnt; /* to avoid passing volatile to the macro */
 	zassert_equal(2, tmp_alarm_cnt, "Counter set alarm failed\n");
 	zassert_equal(&alarm_cfg2, clbk_data[0],

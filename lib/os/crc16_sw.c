@@ -26,7 +26,7 @@ u16_t crc16(const u8_t *src, size_t len, u16_t polynomial,
 				crc |= !!(src[i] & (0x80U >> b));
 			}
 
-			if (divide != 0) {
+			if (divide != 0U) {
 				crc = crc ^ polynomial;
 			}
 		}

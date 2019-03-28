@@ -38,9 +38,9 @@ void lll_chan_set(u32_t chan)
 
 	default:
 		if (chan < 11) {
-			radio_freq_chan_set(4 + (2 * chan));
+			radio_freq_chan_set(4 + (chan * 2U));
 		} else if (chan < 40) {
-			radio_freq_chan_set(28 + (2 * (chan - 11)));
+			radio_freq_chan_set(28 + ((chan - 11) * 2U));
 		} else {
 			LL_ASSERT(0);
 		}

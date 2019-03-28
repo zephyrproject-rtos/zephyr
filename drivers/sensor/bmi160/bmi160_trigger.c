@@ -217,7 +217,7 @@ int bmi160_acc_slope_config(struct device *dev, enum sensor_attribute attr,
 			return -EINVAL;
 		}
 
-		reg_val = 512 * (slope_th_ums2 - 1) / (acc_range_g * SENSOR_G);
+		reg_val = (slope_th_ums2 - 1) * 512U / (acc_range_g * SENSOR_G);
 
 		if (bmi160_byte_write(dev, BMI160_REG_INT_MOTION1,
 				      reg_val) < 0) {

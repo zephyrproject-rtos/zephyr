@@ -1010,7 +1010,7 @@ static inline struct net_nbr *handle_ns_neighbor(struct net_pkt *pkt,
 	struct net_linkaddr_storage lladdr;
 	struct net_linkaddr nbr_lladdr;
 
-	lladdr.len = 8 * ll_len - 2;
+	lladdr.len = ll_len * 8U - 2;
 
 	if (net_pkt_read(pkt, lladdr.addr, lladdr.len)) {
 		return NULL;

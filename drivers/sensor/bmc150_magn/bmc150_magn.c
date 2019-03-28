@@ -63,7 +63,7 @@ static int bmc150_magn_set_power_mode(struct device *dev,
 					!state) < 0) {
 			return -EIO;
 		}
-		k_busy_wait(5 * USEC_PER_MSEC);
+		k_busy_wait(USEC_PER_MSEC * 5U);
 
 		return 0;
 	case BMC150_MAGN_POWER_MODE_SLEEP:

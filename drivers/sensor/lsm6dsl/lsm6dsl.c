@@ -98,7 +98,7 @@ static inline int lsm6dsl_reboot(struct device *dev)
 	}
 
 	/* Wait sensor turn-on time as per datasheet */
-	k_busy_wait(35 * USEC_PER_MSEC);
+	k_busy_wait(USEC_PER_MSEC * 35U);
 
 	return 0;
 }

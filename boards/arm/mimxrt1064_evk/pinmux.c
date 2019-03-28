@@ -156,7 +156,7 @@ static int mimxrt1064_evk_init(struct device *dev)
 static int mimxrt1064_evk_phy_reset(struct device *dev)
 {
 	/* RESET PHY chip. */
-	k_busy_wait(10*USEC_PER_MSEC);
+	k_busy_wait(USEC_PER_MSEC * 10U);
 	GPIO_WritePinOutput(GPIO1, 9, 1);
 
 	return 0;

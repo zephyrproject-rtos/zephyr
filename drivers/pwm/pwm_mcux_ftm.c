@@ -48,7 +48,7 @@ static int mcux_ftm_pin_set(struct device *dev, u32_t pwm,
 		return -ENOTSUP;
 	}
 
-	duty_cycle = 100 * pulse_cycles / period_cycles;
+	duty_cycle = pulse_cycles * 100U / period_cycles;
 	data->channel[pwm].dutyCyclePercent = duty_cycle;
 
 	LOG_DBG("pulse_cycles=%d, period_cycles=%d, duty_cycle=%d",

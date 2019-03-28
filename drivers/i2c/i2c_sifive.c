@@ -237,7 +237,7 @@ static int i2c_sifive_configure(struct device *dev, u32_t dev_config)
 	}
 
 	/* Calculate prescale value */
-	prescale = (config->f_sys / (5 * i2c_speed)) - 1;
+	prescale = (config->f_sys / (i2c_speed * 5U)) - 1;
 
 	/* Configure peripheral with calculated prescale */
 	sys_write8((u8_t) (0xFF & prescale), I2C_REG(config, REG_PRESCALE_LOW));

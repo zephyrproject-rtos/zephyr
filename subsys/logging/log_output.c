@@ -174,7 +174,7 @@ static int timestamp_print(const struct log_output *log_output,
 
 		remainder = timestamp % freq;
 		ms = (remainder * 1000U) / freq;
-		us = (1000 * (1000 * remainder - (ms * freq))) / freq;
+		us = (1000 * (remainder * 1000U - (ms * freq))) / freq;
 
 		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) &&
 		    flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {

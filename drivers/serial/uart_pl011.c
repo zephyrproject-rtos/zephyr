@@ -172,7 +172,7 @@ static int pl011_set_baudrate(struct device *dev,
 {
 	/* Avoiding float calculations, bauddiv is left shifted by 6 */
 	u64_t bauddiv = (((u64_t)clk) << PL011_FBRD_WIDTH)
-				/ (16 * baudrate);
+				/ (baudrate * 16U);
 
 	/* Valid bauddiv value
 	 * uart_clk (min) >= 16 x baud_rate (max)

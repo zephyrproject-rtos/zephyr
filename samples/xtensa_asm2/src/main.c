@@ -426,7 +426,7 @@ int interrupt_test(void)
 		 */
 		const int max_reps = 8;
 		int wh = white[i % ARRAY_SIZE(white)];
-		int delay = 2*spill_time
+		int delay = spill_time * 2U
 			+ ((wh * (i+1)) % (spill_time * (max_reps - 2)));
 
 		int alarm = ccount() + delay;

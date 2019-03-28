@@ -38,7 +38,7 @@ int spi_config(struct device *dev, u32_t frequency, u16_t operation)
 	}
 
 	/* Set the SPI frequency */
-	div = (SPI_CFG(dev)->f_sys / (2 * frequency)) - 1;
+	div = (SPI_CFG(dev)->f_sys / (frequency * 2U)) - 1;
 	sys_write32((SF_SCKDIV_DIV_MASK & div), SPI_REG(dev, REG_SCKDIV));
 
 	/* Set the polarity */

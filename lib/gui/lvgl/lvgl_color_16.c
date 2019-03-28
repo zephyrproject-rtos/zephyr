@@ -17,7 +17,7 @@ static void zephyr_disp_flush(s32_t x1, s32_t y1, s32_t x2, s32_t y2,
 	u16_t h = y2 - y1 + 1;
 	struct display_buffer_descriptor desc;
 
-	desc.buf_size = 2 * w * h;
+	desc.buf_size = w * 2U * h;
 	desc.width = w;
 	desc.pitch = w;
 	desc.height = h;

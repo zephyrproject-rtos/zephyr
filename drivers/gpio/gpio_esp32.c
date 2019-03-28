@@ -109,7 +109,7 @@ static int config_interrupt(u32_t pin, int flags)
 
 static void config_polarity(u32_t pin, int flags)
 {
-	volatile u32_t *reg = (u32_t *)(GPIO_FUNC0_IN_SEL_CFG_REG + 4 * pin);
+	volatile u32_t *reg = (u32_t *)(GPIO_FUNC0_IN_SEL_CFG_REG + pin * 4U);
 
 	if (flags & GPIO_POL_INV) {
 		*reg |= BIT(GPIO_FUNC0_IN_INV_SEL_S);
