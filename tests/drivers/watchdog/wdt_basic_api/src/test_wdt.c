@@ -78,6 +78,11 @@
 #define TIMEOUTS                   2
 #elif defined(CONFIG_IWDG_STM32)
 #define TIMEOUTS                   0
+#elif defined(CONFIG_WDT_SAM)
+#ifdef CONFIG_SOC_SERIES_SAME70
+#error SAME70 series chip NOT supports this test.
+#endif
+#define TIMEOUTS                   0
 #else
 #define TIMEOUTS                   1
 #endif
