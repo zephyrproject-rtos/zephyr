@@ -137,6 +137,8 @@
 /drivers/sensor/lsm*/                     @avisconti
 /drivers/serial/uart_altera_jtag_hal.c    @wentongwu
 /drivers/serial/*ns16550*                 @gnuless
+/drivers/serial/Kconfig.litex             @mateusz-holenko @kgugala @pgielda
+/drivers/serial/uart_liteuart.c           @mateusz-holenko @kgugala @pgielda
 /drivers/net/                             @jukkar @tbursztyka
 /drivers/ptp_clock/                       @jukkar
 /drivers/spi/                             @tbursztyka
@@ -170,6 +172,7 @@
 /dts/bindings/*/st*                       @erwango
 /dts/bindings/sensor/ams*                 @alexanderwachter
 /dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda @nategraff-sifive
+/dts/bindings/*/litex*                    @mateusz-holenko @kgugala @pgielda
 /ext/fs/                                  @nashif @wentongwu
 /ext/hal/atmel/asf/sam/include/same70*/   @aurel32
 /ext/hal/atmel/asf/sam0/include/samr21/   @benpicco
