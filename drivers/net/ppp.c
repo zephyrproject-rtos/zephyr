@@ -367,6 +367,41 @@ static u8_t *ppp_recv_cb(u8_t *buf, size_t *off)
 	return buf;
 }
 
+#if defined(CONFIG_NET_TEST)
+void ppp_driver_feed_data(u8_t *data, int data_len)
+{
+	struct ppp_driver_context *ppp = &ppp_driver_context_data;
+	size_t recv_off = 0;
+
+	/* We are expecting that the tests are feeding data in large
+	 * chunks so we can reset the uart buffer here.
+	 */
+	memset(ppp->buf, 0, UART_BUF_LEN);
+
+	ppp_change_state(ppp, STATE_HDLC_FRAME_START);
+
+	while (data_len > 0) {
+		int data_to_copy = MIN(data_len, UART_BUF_LEN);
+		int remaining;
+
+		LOG_DBG("Feeding %d bytes", data_to_copy);
+
+		memcpy(ppp->buf, data, data_to_copy);
+
+		recv_off = data_to_copy;
+
+		(void)ppp_recv_cb(ppp->buf, &recv_off);
+
+		remaining = data_to_copy - recv_off;
+
+		LOG_DBG("We copied %d bytes", remaining);
+
+		data_len -= remaining;
+		data += remaining;
+	}
+}
+#endif
+
 static bool calc_fcs(struct net_pkt *pkt, u16_t *fcs, u16_t protocol)
 {
 	struct net_buf *buf;
@@ -445,6 +480,10 @@ static int ppp_send(struct device *dev, struct net_pkt *pkt)
 	u16_t fcs, escaped;
 	u8_t byte;
 	int i, offset;
+
+#if defined(CONFIG_NET_TEST)
+	return 0;
+#endif
 
 	ARG_UNUSED(dev);
 
