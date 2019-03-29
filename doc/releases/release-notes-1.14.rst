@@ -13,6 +13,40 @@ Major enhancements with this release include:
 
 The following sections provide detailed lists of changes by component.
 
+Security Vulnerability Related
+******************************
+
+The following security vulnerabilities (CVEs) were addressed in this release:
+
+* Tinycrypt HMAC-PRNG implementation doesn't take the HMAC state
+  clearing into account as it performs the HMAC operations, thereby using a
+  incorrect HMAC key for some of the HMAC operations.
+  CVE-2017-14200
+
+* The shell DNS command can cause unpredictable results due to misuse of stack
+  variables.
+  CVE-2017-14201
+
+* The shell implementation does not protect against buffer overruns resulting
+  in unpredictable behavior.
+  CVE-2017-14202
+
+* We introduced Kernel Page Table Isolation, a technique for
+  mitigating the Meltdown security vulnerability on x86 systems. This
+  technique helps isolate user and kernel space memory by ensuring
+  non-essential kernel pages are unmapped in the page tables when the CPU
+  is running in the least privileged user mode, Ring 3. This is the
+  fix for Rogue Data Cache Load (CVE-2017-5754).
+
+* We also addressed these CVEs for the x86 port:
+
+  - Bounds Check Bypass (CVE-2017-5753)
+  - Branch Target Injection (CVE-2017-5715)
+  - Rogue Data Cache Load (CVE-2017-5754)
+  - Speculative Store Bypass (CVE-2018-3639)
+  - L1 Terminal Fault (CVE-2018-3620)
+  - Lazy FP State Restore (CVE-2018-3665)
+
 Kernel
 ******
 
