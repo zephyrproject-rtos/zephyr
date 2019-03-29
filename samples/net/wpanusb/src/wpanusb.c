@@ -312,7 +312,9 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 {
 	struct net_pkt *pkt;
 
-	pkt = net_pkt_alloc_with_buffer(NULL, *len, AF_UNSPEC, 0, K_NO_WAIT);
+	/* Maximum 2 bytes are added to the len */
+	pkt = net_pkt_alloc_with_buffer(NULL, *len + 2, AF_UNSPEC, 0,
+					K_NO_WAIT);
 	if (!pkt) {
 		return -ENOMEM;
 	}
