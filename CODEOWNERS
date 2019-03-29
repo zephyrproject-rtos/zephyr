@@ -263,6 +263,7 @@
 /samples/subsys/shell/                    @jarz-nordic @nordic-krch
 /samples/subsys/usb/                      @jfischer-phytec-iot @finikorg
 /samples/subsys/power/                    @wentongwu @pizi-nordic
+/samples/wifi/                            @kelvincheung
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
 /scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 /scripts/elf_helper.py                    @andrewboie
@@ -305,6 +306,7 @@
 /subsys/shell/                            @jarz-nordic @nordic-krch
 /subsys/storage/                          @nvlsianpu
 /subsys/usb/                              @jfischer-phytec-iot @finikorg
+/subsys/wifi/                             @kelvincheung
 /tests/                                   @nashif
 /tests/boards/native_posix/               @aescolar
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
