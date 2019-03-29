@@ -1639,6 +1639,14 @@ static inline int net_pkt_write_le32(struct net_pkt *pkt, u32_t data)
 	return net_pkt_write(pkt, &data_le32, sizeof(u32_t));
 }
 
+/* Write u16_t little endian data into a net_pkt. */
+static inline int net_pkt_write_le16(struct net_pkt *pkt, u16_t data)
+{
+	u16_t data_le16 = sys_cpu_to_le16(data);
+
+	return net_pkt_write(pkt, &data_le16, sizeof(u16_t));
+}
+
 /**
  * @brief Get the amount of data which can be read from current cursor position
  *
