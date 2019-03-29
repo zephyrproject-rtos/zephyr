@@ -298,5 +298,4 @@ config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
-source "drivers/console/Kconfig.telnet"
 endif
