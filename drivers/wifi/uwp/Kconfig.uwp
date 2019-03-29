@@ -1,0 +1,62 @@
+#
+# Copyright (c) 2018, UNISOC Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+
+menuconfig WIFI_UWP
+	bool "Unisoc uwp wifi driver support"
+	default n
+	depends on WIFI
+	select NETWORKING
+	select NET_BUF
+	select NET_L2_ETHERNET
+	select NET_IPV4
+
+if WIFI_UWP
+
+config WIFI_STA_DRV_NAME
+	string "STA driver name"
+	default "WIFI_STA"
+
+config WIFI_AP_DRV_NAME
+	string "SoftAP driver name"
+	default "WIFI_AP"
+
+config WIFI_UWP_MAX_RX_ADDR_COUNT
+	int "Max rx addr count each time"
+	default 32
+	help
+	  Max count CP can receive each time.
+
+config WIFI_UWP_NET_BUF_START_ADDR
+	hex "Net buffer start address"
+	default 0x1A0000
+	help
+	  Share buffer start address. Be careful to tweak this value.
+	  This address can't cover Zephyr's ram.
+
+config WIFI_UWP_TX_BUF_COUNT
+	int "TX buffer count"
+	default 30
+	range 10 30
+	help
+	  TX buffer count. Be careful to tweak this value.
+
+config WIFI_UWP_RX_BUF_COUNT
+	int "RX buffer count"
+	default 70
+	range 10 70
+	help
+	  RX buffer count. Be careful to tweak this value.
+
+config WIFI_UWP_NET_BUF_SIZE
+	int "Net buffer size"
+	default 1800
+	range 1700 1800
+	help
+	  Do not tweak this value if you are not sure how many
+	  bytes TX/RX buffer needs.
+
+endif
