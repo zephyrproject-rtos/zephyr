@@ -587,6 +587,8 @@ void *z_get_next_switch_handle(void *interrupted)
 {
 	_current->switch_handle = interrupted;
 
+	z_check_stack_sentinel();
+
 #ifdef CONFIG_SMP
 	LOCKED(&sched_spinlock) {
 		struct k_thread *th = next_up();
@@ -617,9 +619,6 @@ void *z_get_next_switch_handle(void *interrupted)
 	    !IS_ENABLED(CONFIG_SCHED_IPI_SUPPORTED)) {
 		z_sched_ipi();
 	}
-
-	z_check_stack_sentinel();
-
 	return _current->switch_handle;
 }
 #endif
