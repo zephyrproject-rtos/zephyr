@@ -59,6 +59,15 @@ These debug host tools are compatible with the following debug probes:
 
 Check if your SoC is listed in `OpenOCD Supported Devices`_.
 
+.. note:: On Linux, openocd is available though the `Zephyr SDK
+   <https://www.zephyrproject.org/developers/#downloads>`_.
+   Windows users should use the following steps to install
+   openocd:
+
+   - Download openocd for Windows from here: `OpenOCD Windows`_
+   - Copy bin and share dirs to ``C:\Program Files\OpenOCD\``
+   - Add ``C:\Program Files\OpenOCD\bin`` to 'Path'
+
 .. _pyocd-debug-host-tools:
 
 pyOCD Debug Host Tools
@@ -90,3 +99,6 @@ Check if your SoC is listed in `pyOCD Supported Devices`_.
 
 .. _pyOCD Supported Devices:
    https://github.com/mbedmicro/pyOCD/tree/master/pyocd/target/builtin
+
+.. _OpenOCD Windows:
+    http://gnutoolchains.com/arm-eabi/openocd/
