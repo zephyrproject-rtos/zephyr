@@ -21,7 +21,7 @@
 #include <exc_handle.h>
 #include <logging/log_ctrl.h>
 
-extern u32_t arc_exc_saved_sp;
+u32_t arc_exc_saved_sp;
 
 #ifdef CONFIG_USERSPACE
 Z_EXC_DECLARE(z_arch_user_string_nlen);
