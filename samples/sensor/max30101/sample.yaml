@@ -2,7 +2,7 @@ sample:
   description: TBD
   name: TBD
 tests:
-  test:
+  sample.sensor.max30101:
     harness: sensor
     tags: sensors
     platform_whitelist: hexiwear_k64

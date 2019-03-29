@@ -1,7 +1,7 @@
 sample:
   name: BMC150 Magnetometer Sample
 tests:
-  test:
+  sample.sensor.magn_polling:
     harness: sensor
     tags: sensors
     depends_on: i2c gpio

@@ -6,5 +6,5 @@ sample:
   description: Test IPv4 autoconf functionality
   name: IPv4 autoconf sample app
 tests:
-  test:
+  sample.net.ipv4_autoconf:
     depends_on: netif

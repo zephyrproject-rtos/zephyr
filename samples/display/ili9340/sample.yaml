@@ -2,7 +2,7 @@ sample:
   description: TBD
   name: TBD
 tests:
-  test:
+  sample.display.ili9340:
     build_only: true
     platform_whitelist: nucleo_l476rg
     tags: display

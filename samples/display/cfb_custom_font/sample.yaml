@@ -5,5 +5,5 @@ sample:
   description: Custom character framebuffer font example
   name: cfb custom font sample
 tests:
-  test_ssd1673:
+  sample.display.cfb_custom_font.ssd1673:
     platform_whitelist: reel_board

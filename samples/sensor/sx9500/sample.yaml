@@ -1,7 +1,7 @@
 sample:
   name: SX9500 Sensor Sample
 tests:
-  test:
+  sample.sensor.sx9500:
     harness: sensor
     tags: sensors
     depends_on: i2c gpio

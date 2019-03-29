@@ -1,7 +1,7 @@
 sample:
   name: TH02 Temperature and Humidity Monitor
 tests:
-  test:
+  sample.sensor.th02:
     harness: sensor
     tags: sensors
     depends_on: i2c

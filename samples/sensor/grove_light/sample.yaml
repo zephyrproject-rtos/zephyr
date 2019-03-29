@@ -1,7 +1,7 @@
 sample:
   name: Grove Light Sensor
 tests:
-  test:
+  sample.sensor.grove_light:
     platform_whitelist: arduino_101_sss quark_d2000_crb
       arduino_due
     tags: drivers sensor grove light

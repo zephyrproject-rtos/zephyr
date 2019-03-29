@@ -1,7 +1,7 @@
 sample:
   name: echo Sample
 tests:
-  test:
+  sample.subsys.console.echo:
     filter: CONFIG_UART_CONSOLE and CONFIG_SERIAL_SUPPORT_INTERRUPT
     tags: console
     harness: keyboard

@@ -1,12 +1,12 @@
 sample:
   name: ADXL372 High-g Accelerometer Sensor
 tests:
-  test:
+  sample.sensor.adxl372:
     harness: sensor
     tags: sensors
     depends_on: spi
     platform_whitelist: nrf52_pca10040
-  test_i2c:
+  sample.sensor.adxl372.i2c:
     harness: sensor
     tags: sensors
     depends_on: i2c

@@ -1,7 +1,7 @@
 sample:
   name: NATS Client
 tests:
-  test:
+  sample.net.nats:
     harness: net
     depends_on: netif
     tags: net nats

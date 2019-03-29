@@ -1,7 +1,7 @@
 sample:
   name: Syncronisation (C++)
 tests:
-  test:
+  sample.cpp_syncronisation:
     tags: cpp
     toolchain_exclude: issm
     arch_exclude: posix

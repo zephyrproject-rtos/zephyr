@@ -2,7 +2,7 @@ sample:
   description: Sample that uses an out-of-tree board
   name: Out-of-tree board
 tests:
-  boards.out_of_tree:
+  sample.app_dev.out_of_tree:
     tags: out_of_tree
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040
     harness: console

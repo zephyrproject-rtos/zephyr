@@ -1,7 +1,7 @@
 sample:
   name: LSM6DSL accelerometer and gyrometer sensor
 tests:
-  test:
+  sample.sensor.lsm6dsl:
     harness: console
     tags: sensors
     depends_on: lsm6dsl

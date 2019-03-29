@@ -1,6 +1,6 @@
 sample:
   name: SoC Flash on NRF52
 tests:
-  test:
+  sample.driver.soc_flash_nrf:
     platform_whitelist: nrf52_pca10040
     tags: flash nrf52

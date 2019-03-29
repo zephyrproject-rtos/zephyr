@@ -1,7 +1,7 @@
 sample:
   name: Sample for the entropy gathering driver
 tests:
-  test:
+  sample.driver.entropy:
     tags: crypto
     filter: CONFIG_ENTROPY_HAS_DRIVER
     harness: console

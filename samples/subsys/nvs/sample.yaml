@@ -2,6 +2,6 @@ sample:
   name: NVS Sample
 
 tests:
-  test:
+  sample.subsys.nvs:
     tags: settings
     depends_on: nvs

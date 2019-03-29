@@ -1,7 +1,7 @@
 sample:
   name: Button Sample
 tests:
-  test:
+  sample.button:
     tags: button gpio
     filter: DT_GPIO_KEYS_SW0_GPIO_CONTROLLER
     depends_on: gpio

@@ -1,7 +1,7 @@
 sample:
   name: BMG160 Sensor Sample
 tests:
-  test:
+  sample.sensor.bmg160:
     harness: sensor
     tags: sensors
     depends_on: i2c gpio

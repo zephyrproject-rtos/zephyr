@@ -1,7 +1,7 @@
 sample:
   name: APDS9960 sample
 tests:
-  test:
+  sample.sensor.apds9960:
     harness: console
     platform_whitelist: reel_board
     tags: sensors

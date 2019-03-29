@@ -1,7 +1,7 @@
 sample:
   name: FXOS8700 Accelerometer/Magnetometer Sensor
 tests:
-  test:
+  sample.sensor.fxos8700:
     harness: sensor
     platform_whitelist: frdm_k64f hexiwear_k64 warp7_m4 bbc_microbit
                         frdm_kl25z frdm_kw41z reel_board

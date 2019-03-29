@@ -1,7 +1,7 @@
 sample:
   name: Web USB
 tests:
-  test_x86:
+  sample.usb.webusb:
     depends_on: usb_device
     platform_whitelist: quark_se_c1000_devboard
     tags: usb

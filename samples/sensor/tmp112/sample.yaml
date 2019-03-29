@@ -1,7 +1,7 @@
 sample:
   name: TMP112 Sensor Sample
 tests:
-  test:
+  sample.sensor.tmp112:
     harness: console
     tags: sensors
     depends_on: i2c

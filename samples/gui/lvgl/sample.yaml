@@ -2,7 +2,7 @@ sample:
   description: LVGL sample application
   name: lvgl
 tests:
-  test:
+  sample.gui.lvgl:
     harness: display
     platform_whitelist: nrf52840_pca10056 reel_board mimxrt1050_evk mimxrt1060_evk
     tags: samples display gui

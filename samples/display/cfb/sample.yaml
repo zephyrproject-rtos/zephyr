@@ -5,7 +5,7 @@ sample:
   description: Character framebuffer test
   name: cfb sample
 tests:
-  test_ssd1306:
+  sample.display.cfb.ssd1306:
     platform_whitelist: frdm_k64f
-  test_ssd1673:
+  sample.display.cfb.ssd1673:
     platform_whitelist: reel_board

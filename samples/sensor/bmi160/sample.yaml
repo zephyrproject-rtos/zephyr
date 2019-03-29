@@ -1,7 +1,7 @@
 sample:
   name: BMI160 Sensor Sample
 tests:
-  test:
+  sample.sensor.bmi160:
     harness: sensor
     platform_whitelist: arduino_101_sss
     tags: sensors

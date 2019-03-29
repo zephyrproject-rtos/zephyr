@@ -5,5 +5,5 @@ sample:
   description: Test BSD sockets CAN support
   name: Socket CAN example
 tests:
-  test:
+  sample.net.sockets.can:
     platform_whitelist: stm32f072b_disco nucleo_l432kc
