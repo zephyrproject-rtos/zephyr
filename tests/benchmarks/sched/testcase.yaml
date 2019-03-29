@@ -1,4 +1,4 @@
 tests:
-  sched_bench:
+  benchmark.scheduler:
     tags: benchmark
     slow: true
