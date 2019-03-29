@@ -11,10 +11,3 @@ config SOC_STM32MP15_M4
 	bool "STM32MP15_M4"
 
 endchoice
-
-config RPROC_RSC_TABLE
-	bool "coprocessor resource table"
-	default y if RAM_CONSOLE || OPENAMP
-	help
-	  add the resource table in the generated binary. This table is
-	  compatible with linux remote proc framework and OpenAMP library.
