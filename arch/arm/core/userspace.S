@@ -142,8 +142,16 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
 #endif /* CONFIG_EXECUTION_BENCHMARKING */
 
     /* change processor mode to unprivileged */
+    push {r0, r1}
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+    ldr r1, [r0, #_thread_offset_to_mode]
+    orrs r1, r1, #1
     mrs ip, CONTROL
     orrs ip, ip, #1
+    /* Store (unprivileged) mode in thread's mode state variable */
+    str r1, [r0, #_thread_offset_to_mode]
+    dsb
     msr CONTROL, ip
 
     /* ISB is not strictly necessary here (stack pointer is not being
@@ -151,6 +159,7 @@ SECTION_FUNC(TEXT,_arm_userspace_enter)
      * instructions with the previous privilege.
      */
     isb
+    pop {r0, r1}
 
     /* jump to z_thread_entry entry */
     ldr ip, =z_thread_entry
