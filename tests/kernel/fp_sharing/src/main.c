@@ -222,7 +222,7 @@ void load_store_low(void)
 			return;
 		}
 
-#if defined(CONFIG_ISA_IA32)
+#if defined(CONFIG_ISA_IA32) && defined(CONFIG_LAZY_FP_SHARING)
 		/*
 		 * After every 1000 iterations (arbitrarily chosen), explicitly
 		 * disable floating point operations for the task. The
