@@ -1,7 +1,7 @@
 sample:
   name: Fat filesystem sample
 tests:
-  test:
+  sample.subsys.fs:
     build_only: true
     platform_whitelist: nrf52840_blip olimexino_stm32
     tags: filesystem

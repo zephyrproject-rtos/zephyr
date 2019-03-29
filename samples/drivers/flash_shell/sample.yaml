@@ -3,7 +3,7 @@ sample:
     behavior
   name: Flash shell
 tests:
-  test:
+  sample.driver.flash_shell:
     platform_whitelist: 96b_carbon frdm_k64f frdm_kw41z frdm_kl25z nucleo_f746zg
     tags: flash shell
     harness: keyboard

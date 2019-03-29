@@ -2,7 +2,7 @@ sample:
   description: AMG88XX sensor sample
   name: AMG88XX sample
 tests:
-  test:
+  sample.sensor.amg88xx:
     build_only: true
     depends_on: i2c
     tags: sensors

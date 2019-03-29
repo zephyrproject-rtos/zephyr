@@ -1,7 +1,7 @@
 sample:
   name: CMSIS_RTOS_V2 Syncronization
 tests:
-  test:
+  sample.portability.cmsis_rtos_v2.timer_synchronization:
     tags: cmsis_rtos_v2_syncronization
     min_ram: 32
     min_flash: 34

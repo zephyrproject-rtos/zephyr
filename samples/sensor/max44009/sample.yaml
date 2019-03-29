@@ -1,7 +1,7 @@
 sample:
   name: MAX44009 light sensor
 tests:
-  test:
+  sample.sensor.max44009:
     tags: sensors
     harness: console
     depends_on: i2c

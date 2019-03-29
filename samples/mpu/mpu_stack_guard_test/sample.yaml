@@ -1,7 +1,7 @@
 sample:
   name: MPU Stack Guard
 tests:
-  test:
+  sample.mpu:
     tags: mpu stackguard
     harness: console
     # We do not handle segfaults here
@@ -14,7 +14,7 @@ tests:
         - "Fatal fault in .*thread"
         - "STACK_ALIGN.*"
         - "Canary Initial Value = 0x[0-9a-f]+ threads 0x[0-9a-f]+"
-  test_stack_guard:
+  sample.mpu.stack_guard:
     arch_whitelist: arm
     extra_args: CONF_FILE=prj_stack_guard.conf
     filter: CONFIG_MPU_STACK_GUARD

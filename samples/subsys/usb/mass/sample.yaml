@@ -1,7 +1,7 @@
 sample:
   name: Mass Storage
 tests:
-  test_mass_flash:
+  sample.usb.mass_flash:
     extra_args: OVERLAY_CONFIG="overlay-flash-disk.conf"
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3
@@ -12,7 +12,7 @@ tests:
       type: one_line
       regex:
         - "The device is put in USB mass storage mode."
-  test_mass_ram:
+  sample.usb.mass_ram:
     extra_args: OVERLAY_CONFIG="overlay-ram-disk.conf"
     extra_configs:
         - CONFIG_LOG_DEFAULT_LEVEL=3

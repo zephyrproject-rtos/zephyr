@@ -1,7 +1,7 @@
 sample:
   name: Console over USB
 tests:
-  test:
+  sample.subsys.usb.console:
     depends_on: usb_device
     platform_whitelist: arduino_101
     tags: usb

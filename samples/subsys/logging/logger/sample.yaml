@@ -17,7 +17,7 @@ tests:
         - Logging performance showcase
         - Logs from external logging system showcase
 
-  test_rtt:
+  samples.logger.rtt:
     tags: logging
     filter: CONFIG_HAS_SEGGER_RTT
     harness: keyboard

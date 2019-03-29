@@ -2,7 +2,7 @@ sample:
   description: BSD Sockets API dumb HTTP server example
   name: socket_dumb_http_server
 tests:
-  test:
+  sample.net.sockets.dumb_http_server:
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     harness: net
     min_ram: 32

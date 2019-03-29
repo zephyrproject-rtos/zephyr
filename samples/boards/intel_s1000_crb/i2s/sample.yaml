@@ -1,6 +1,6 @@
 sample:
   name: I2S Audio Sample
 tests:
-  test:
+  sample.board.intel_s1000_crb.i2s:
     platform_whitelist: intel_s1000_crb
     tags: i2s

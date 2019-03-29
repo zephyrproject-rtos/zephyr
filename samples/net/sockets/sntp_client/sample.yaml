@@ -2,7 +2,7 @@ sample:
   description: SNTP client sample
   name: sntp_client
 tests:
-  test:
+  sample.net.sockets.sntp_client:
     harness: net
     platform_whitelist: qemu_x86
     tags: net

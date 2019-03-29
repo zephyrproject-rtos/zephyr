@@ -2,7 +2,7 @@ sample:
   description: TBD
   name: TBD
 tests:
-  test:
+  sample.sensor.ms5837:
     build_only: true
     platform_whitelist: nrf52840_pca10056
     tags: sensors
