@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2018 Vaishali Pathak vaishali@electronut.in
+#
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config LTR329ALS01
+	bool "LTR329ALS01 Digital Ambient Light Sensor"
+	depends on (I2C && HAS_DTS_I2C)
+	help
+	  Enable I2C-based driver for LTR329ALS01 light sensor.

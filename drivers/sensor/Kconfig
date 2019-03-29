@@ -75,6 +75,8 @@ source "drivers/sensor/isl29035/Kconfig"
 
 source "drivers/sensor/lis2dh/Kconfig"
 
+source "drivers/sensor/ltr329als01/Kconfig"
+
 source "drivers/sensor/lis2ds12/Kconfig"
 
 source "drivers/sensor/lis2dw12/Kconfig"
