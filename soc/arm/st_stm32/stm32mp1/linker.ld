@@ -13,7 +13,7 @@ SECTIONS
     {
 
 #include <linker/rel-sections.ld>
-#ifdef CONFIG_RPROC_RSC_TABLE
+#ifdef CONFIG_OPENAMP_RSC_TABLE
 
 	SECTION_PROLOGUE(.resource_table,, SUBALIGN(4))
 	{
