@@ -217,6 +217,10 @@ static void udp_received(struct net_context *context,
 	set_dst_addr(family, pkt, ip_hdr->ipv6, proto_hdr->udp, &dst_addr);
 
 	ret = build_reply(dbg, pkt, buf_tx);
+	if (ret < 0) {
+		LOG_ERR("Cannot send data to peer (%d)", ret);
+		return;
+	}
 
 	net_pkt_unref(pkt);
 
@@ -262,6 +266,10 @@ static void tcp_received(struct net_context *context,
 		 family == AF_INET6 ? '6' : '4');
 
 	ret = build_reply(dbg, pkt, buf_tx);
+	if (ret < 0) {
+		LOG_ERR("Cannot send data to peer (%d)", ret);
+		return;
+	}
 
 	net_pkt_unref(pkt);
 
