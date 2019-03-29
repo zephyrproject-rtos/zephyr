@@ -103,9 +103,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	cycle_count += elapsed();
 
 	/* Round delay up to next tick boundary */
-	delay = delay + (cycle_count - announced_cycles);
-	delay = ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
-	last_load = delay - (cycle_count - announced_cycles);
+	last_load = ((delay + CYC_PER_TICK - 1) / CYC_PER_TICK) * CYC_PER_TICK;
 
 	SysTick->LOAD = last_load;
 	SysTick->VAL = 0; /* resets timer to last_load */
