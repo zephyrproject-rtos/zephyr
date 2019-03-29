@@ -1,9 +1,6 @@
 common:
   harness: crypto
   tags: crypto
-sample:
-  description: mbed TLS benchmark application
-  name: mbedTLS Benchmark
 tests:
-  test:
+  benchmark.mbedtls:
     platform_whitelist: qemu_x86 frdm_k64f sam_e70_xplained nrf52840_pca10056
