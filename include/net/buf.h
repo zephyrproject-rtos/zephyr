@@ -115,7 +115,7 @@ struct net_buf_simple {
 #define NET_BUF_SIMPLE(_size)                        \
 	((struct net_buf_simple *)(&(struct {        \
 		struct net_buf_simple buf;           \
-		u8_t data[_size] __net_buf_align;    \
+		u8_t data[_size];                    \
 	}) {                                         \
 		.buf.size = _size,                   \
 	}))
