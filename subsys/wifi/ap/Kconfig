@@ -1,0 +1,24 @@
+# Kconfig - WiFi SoftAP configuration options
+#
+# Copyright (c) 2018 UNISOC Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config WIFIMGR_AP
+	bool "Enable AP mode"
+	default n
+	help
+	  Enable AP mode.
+
+if WIFIMGR_AP
+
+config WIFIMGR_LED_AP
+	int "AP LED"
+	default 3
+	depends on WIFIMGR_LED
+	help
+	  Specify the AP LED.
+
+endif # WIFIMGR_AP
+

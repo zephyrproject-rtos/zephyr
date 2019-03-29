@@ -1,0 +1,34 @@
+# Kconfig - WiFi common configuration options
+#
+# Copyright (c) 2018 UNISOC Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config WIFIMGR_CONFIG_SAVING
+	bool "Enable Saving Config"
+	select FCB
+	select SETTINGS
+	help
+	  Enable Saving & Cleaning WiFi Configuration.
+
+config WIFIMGR_PSK
+	bool "Enable PSK calculation"
+	depends on MBEDTLS
+	depends on MBEDTLS_BUILTIN
+	help
+	  Enable PSK calculation.
+
+config WIFIMGR_LED
+	bool "Enable LED indiction"
+	depends on LED
+	help
+	  Enable LED indiction of WiFi manger.
+
+config WIFIMGR_LED_NAME
+	string "LED device name"
+	default "led"
+	depends on WIFIMGR_LED
+	help
+	  Specify the LED device name.
+

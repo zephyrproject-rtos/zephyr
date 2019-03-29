@@ -1,0 +1,16 @@
+# Kconfig - WiFi shell configuration options
+#
+# Copyright (c) 2018 UNISOC Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config WIFIMGR_SHELL
+	bool "WiFi Manager SHELL"
+	select SHELL
+	select NEWLIB_LIBC
+	default n
+	help
+	  A shell module that can interact with WiFi manger,
+	  which provides corresponding commands to the console.
+

@@ -1,0 +1,41 @@
+# Kconfig - WiFi configuration options
+#
+# Copyright (c) 2018 UNISOC Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menu "WiFi"
+
+config WIFIMGR
+	bool "WiFi Manager"
+	select WIFI
+	select POSIX_API
+	select PTHREAD_IPC
+	select POSIX_MQUEUE
+	help
+	  Enable the WiFi Manager.
+	  By default, WiFi manger is build as only a library.
+
+if WIFIMGR
+
+source "subsys/wifi/common/Kconfig"
+source "subsys/wifi/ap/Kconfig"
+source "subsys/wifi/sta/Kconfig"
+source "subsys/wifi/shell/Kconfig"
+
+config WIFIMGR_AUTORUN
+	bool "WiFi Manager Autorun"
+	select SHELL
+	select NEWLIB_LIBC
+	default n
+	help
+	  A example program that can autorun WiFi manger.
+
+module = WIFIMGR
+module-str = Log for wifi manager
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # WIFIMGR
+
+endmenu

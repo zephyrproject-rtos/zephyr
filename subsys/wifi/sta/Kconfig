@@ -1,0 +1,32 @@
+# Kconfig - WiFi Station configuration options
+#
+# Copyright (c) 2018 UNISOC Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config WIFIMGR_STA
+	bool "Enable STA mode"
+	default n
+	help
+	  Enable STA mode.
+
+if WIFIMGR_STA
+
+config WIFIMGR_LED_STA
+	int "STA LED"
+	default 2
+	depends on WIFIMGR_LED
+	help
+	  Specify the STA LED.
+
+config WIFIMGR_DHCPC
+	bool "Enable DHCP client"
+	select NETWORKING
+	select NET_IPV4
+	select NET_DHCPV4
+	help
+	  Start DHCP client by WiFi manger.
+
+endif # WIFIMGR_STA
+
