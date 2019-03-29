@@ -237,7 +237,7 @@ void load_store_low(void)
 		if ((load_store_low_count % 1000) == 0U) {
 			k_float_disable(k_current_get());
 		}
-#elif defined(CONFIG_CPU_CORTEX_M4)
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_FP)
 		/*
 		 * The routine k_float_disable() allows for thread-level
 		 * granularity for disabling floating point. Furthermore, it
