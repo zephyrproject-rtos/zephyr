@@ -95,6 +95,15 @@ void native_add_testargs_option(void)
 	native_add_command_line_opts(testargs_options);
 }
 
+static void print_invalid_opt_error(char *argv)
+{
+	posix_print_error_and_exit("Incorrect option '%s'. Did you misspell it?"
+				   " Is that feature supported in this build?"
+				   "\n",
+				   argv);
+
+}
+
 /**
  * Handle possible command line arguments.
  *
@@ -122,8 +131,7 @@ void native_handle_cmd_line(int argc, char *argv[])
 
 		if (!cmd_parse_one_arg(argv[i], args_struct)) {
 			cmd_print_switches_help(args_struct);
-			posix_print_error_and_exit("Incorrect option '%s'\n",
-						   argv[i]);
+			print_invalid_opt_error(argv[i]);
 		}
 	}
 }

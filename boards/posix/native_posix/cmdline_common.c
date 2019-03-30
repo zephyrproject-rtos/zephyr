@@ -350,6 +350,8 @@ void cmd_print_long_help(struct args_struct_t args_struct[])
 		count++;
 	}
 	fprintf(stdout, "\n");
+	fprintf(stdout, "Note that which options are available depends on the "
+		"enabled features/drivers\n\n");
 }
 
 /*
