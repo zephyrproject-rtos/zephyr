@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <device.h>
+#include <init.h>
+#include <kernel.h>
+
+#include "soc.h"
+
+#define UART_GPIO_CFG \
+	(MEC_GPIO_CTRL_PUD_NONE + MEC_GPIO_CTRL_PWRG_VTR_IO +\
+		MEC_GPIO_CTRL_IDET_DISABLE + MEC_GPIO_CTRL_BUFT_PUSHPULL +\
+		MEC_GPIO_CTRL_DIR_INPUT + MEC_GPIO_CTRL_AOD_DIS +\
+		MEC_GPIO_CTRL_POL_NON_INVERT)
+
+#define GPIO_CFG_OUT \
+	(MEC_GPIO_CTRL_PUD_NONE + MEC_GPIO_CTRL_PWRG_VTR_IO +\
+		MEC_GPIO_CTRL_IDET_DISABLE + MEC_GPIO_CTRL_BUFT_PUSHPULL +\
+		MEC_GPIO_CTRL_DIR_OUTPUT + MEC_GPIO_CTRL_AOD_DIS +\
+		MEC_GPIO_CTRL_POL_NON_INVERT)
+
+static int board_pinmux_init(struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	/* See table 2-4 from the Data sheet*/
+#ifdef CONFIG_UART_NS16550_PORT_0
+	/* Set muxing, for UART 0 and power up */
+	mec_pcr_periph_slp_ctrl(PCR_UART0 , MEC_PCR_SLEEP_DIS);
+
+	UART0_REGS->CFG_SEL = (UART_LD_CFG_INTCLK +
+		UART_LD_CFG_RESET_SYS + UART_LD_CFG_NO_INVERT);
+	UART0_REGS->ACTV = 1;
+
+	GPIO_CTRL_REGS->CTRL_0104 = UART_GPIO_CFG + MEC_GPIO_CTRL_MUX_F1;
+	GPIO_CTRL_REGS->CTRL_0105 = UART_GPIO_CFG + MEC_GPIO_CTRL_MUX_F1;
+#endif
+
+#ifdef CONFIG_UART_NS16550_PORT_1
+	/* Set muxing, for UART 1 and power up */
+	mec_pcr_periph_slp_ctrl(PCR_UART1 , MEC_PCR_SLEEP_DIS);
+
+	UART1_REGS->CFG_SEL = (UART_LD_CFG_INTCLK +
+		UART_LD_CFG_RESET_SYS + UART_LD_CFG_NO_INVERT);
+	UART1_REGS->ACTV = 1;
+
+	GPIO_CTRL_REGS->CTRL_0170 = UART_GPIO_CFG + MEC_GPIO_CTRL_MUX_F2;
+	GPIO_CTRL_REGS->CTRL_0171 = UART_GPIO_CFG + MEC_GPIO_CTRL_MUX_F2;
+
+	GPIO_CTRL_REGS->CTRL_0113 = GPIO_CFG_OUT;
+#endif
+	return 0;
+}
+
+SYS_INIT(board_pinmux_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
