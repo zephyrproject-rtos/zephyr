@@ -15,6 +15,7 @@ Development Model
    api_lifecycle
    communication
    documentation
+   gh_labels
 
 Terminology
 ***********
