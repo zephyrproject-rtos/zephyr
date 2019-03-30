@@ -229,17 +229,10 @@ static void tcp_retry_expired(struct k_work *work)
 		pkt = CONTAINER_OF(sys_slist_peek_head(&tcp->sent_list),
 				   struct net_pkt, sent_list);
 
-		/* In the retry case, the original ref (when the packet
-		 * was created) is set to 1. That original ref was
-		 * decremented when the packet was sent by the driver.
-		 * We need to restore that original ref so that the
-		 * device driver will not remove the retry packet that
-		 * we just sent. Earlier we also checked net_pkt_sent(pkt)
-		 * here but that is not correct as then the packet that was
-		 * sent first time, was removed by the driver and we got
-		 * access to memory already freed.
-		 */
-		do_ref_if_needed(tcp, pkt);
+		if (net_pkt_sent(pkt)) {
+			do_ref_if_needed(tcp, pkt);
+			net_pkt_set_sent(pkt, false);
+		}
 
 		net_pkt_set_queued(pkt, true);
 
