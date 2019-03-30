@@ -165,11 +165,6 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	}
 
 	if (status < 0) {
-		if (IS_ENABLED(CONFIG_NET_TCP)
-		    && net_pkt_family(pkt) != AF_UNSPEC) {
-			net_pkt_set_sent(pkt, false);
-		}
-
 		net_pkt_unref(pkt);
 	} else {
 		net_stats_update_bytes_sent(iface, status);
