@@ -16,6 +16,8 @@ if(ZEPHYR_EXTRA_MODULES)
   set(ZEPHYR_EXTRA_MODULES_ARG "--extra-modules" ${ZEPHYR_EXTRA_MODULES})
 endif()
 
+set(KCONFIG_MODULES_FILE ${CMAKE_BINARY_DIR}/Kconfig.modules)
+
 if(WEST OR ZEPHYR_MODULES)
   # Zephyr module uses west, so only call it if west is installed or
   # ZEPHYR_MODULES was provided as argument to CMake.
@@ -24,7 +26,7 @@ if(WEST OR ZEPHYR_MODULES)
     ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/zephyr_module.py
     ${ZEPHYR_MODULES_ARG}
     ${ZEPHYR_EXTRA_MODULES_ARG}
-    --kconfig-out ${CMAKE_BINARY_DIR}/Kconfig.modules
+    --kconfig-out ${KCONFIG_MODULES_FILE}
     --cmake-out ${CMAKE_BINARY_DIR}/zephyr_modules.txt
     ERROR_VARIABLE
     zephyr_module_error_text
@@ -35,4 +37,11 @@ if(WEST OR ZEPHYR_MODULES)
  if(${zephyr_module_return})
       message(FATAL_ERROR "${zephyr_module_error_text}")
   endif()
+
+else()
+
+  file(WRITE ${KCONFIG_MODULES_FILE}
+    "# No west and no modules\n"
+    )
+
 endif()
