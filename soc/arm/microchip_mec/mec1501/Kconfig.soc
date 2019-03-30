@@ -1,0 +1,65 @@
+# Kconfig - Microchip MEC1501 MCU core series
+
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+choice
+prompt "MEC1501 Selection"
+depends on SOC_SERIES_MEC1501X
+
+config SOC_MEC1501_HSZ
+	bool "MEC1501_HSZ"
+	select HAS_MEC_HAL
+
+endchoice
+
+config SOC_MEC1501_PROC_CLK_DIV
+	int "PROC_CLK_DIV"
+	default 1
+	range 1 48
+	help
+	  This divisor defines a ratio between processor clock (HCLK)
+	  and master clock (MCK):
+	  HCLK = MCK / PROC_CLK_DIV
+	  Allowed divider values: 1, 3, 4, 16, and 48.
+
+config SOC_MEC1501_EXT_32K
+	bool "Use external 32KHz clock source"
+	default n
+	help
+	  Use an external 32768 Hz clock source for PLL reference
+	  clock.
+
+	  Say y if you want to use an external source for the PLL
+	  32KHz reference clock.
+
+	  Say n to use the +/-2% internal silicon oscillator.
+
+config SOC_MEC1501_EXT_32K_CRYSTAL
+	bool "External 32KHz is a crystal"
+	depends on SOC_MEC1501_EXT_32K
+	default y
+	help
+	  Choose a crystal as the external 32KHz source.
+
+	  Say y if you wish to use a crystal as the external
+	  32KHz clock source.
+
+	  Saying n will select the 32KHZ_IN pin as the external
+	  32KHz clock source.
+
+config SOC_MEC1501_EXT_32K_PARALLEL_CRYSTAL
+	bool "Use parallel connected 32KHz crystal"
+	depends on SOC_MEC1501_EXT_32K_CRYSTAL
+	default y
+	help
+	  Choose external 32KHz crystal connection.
+
+	  Say y if the crystal is connected parallel between
+	  the XTAL1 and XTAL pins.
+
+	  Say n if the crystal is connected single ended to
+	  the XTAL2 pin or a 32KHz square wave is on XTAL2.
