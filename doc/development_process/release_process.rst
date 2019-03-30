@@ -80,14 +80,6 @@ considered to be sufficiently stable and the final 0.4.x release is made.
 
 At that point, the whole process starts over again.
 
-.. figure:: merge_window.png
-    :align: center
-    :alt: Merge Window
-    :figclass: align-center
-    :width: 80%
-
-    Merge Window
-
 Here is the description of the various moderation levels:
 
 - Low:
