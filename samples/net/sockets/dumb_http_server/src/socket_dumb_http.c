@@ -20,7 +20,7 @@
 #include <net/socket.h>
 #include <kernel.h>
 
-#include <net/buf.h>
+#include <net/net_pkt.h>
 
 #endif
 
