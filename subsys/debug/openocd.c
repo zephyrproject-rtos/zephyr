@@ -77,8 +77,7 @@ size_t _kernel_openocd_offsets[] = {
 #elif defined(CONFIG_FLOAT) && defined(CONFIG_X86)
 	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = offsetof(struct _thread_arch,
 						    preempFloatReg),
-	[OPENOCD_OFFSET_T_COOP_FLOAT] = offsetof(struct _thread_arch,
-						 coopFloatReg),
+	[OPENOCD_OFFSET_T_COOP_FLOAT] = OPENOCD_UNIMPLEMENTED,
 #else
 	[OPENOCD_OFFSET_T_PREEMPT_FLOAT] = OPENOCD_UNIMPLEMENTED,
 	[OPENOCD_OFFSET_T_COOP_FLOAT] = OPENOCD_UNIMPLEMENTED,
