@@ -441,7 +441,7 @@ static void adc_quark_se_ss_start_conversion(struct device *dev)
 {
 	struct adc_info *info = dev->driver_data;
 	const struct adc_config *config = info->dev->config->config_info;
-	const struct adc_sequence *entry = info->ctx.sequence;
+	const struct adc_sequence *entry = &info->ctx.sequence;
 	u32_t adc_base = config->reg_base;
 	u32_t ctrl, tmp_val, sample_window;
 
@@ -492,7 +492,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct adc_info *info = CONTAINER_OF(ctx, struct adc_info, ctx);
 
-	info->channels = ctx->sequence->channels;
+	info->channels = ctx->sequence.channels;
 
 	adc_quark_se_ss_start_conversion(info->dev);
 }
@@ -501,7 +501,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 					      bool repeat)
 {
 	struct adc_info *info = CONTAINER_OF(ctx, struct adc_info, ctx);
-	const struct adc_sequence *entry = ctx->sequence;
+	const struct adc_sequence *entry = &ctx->sequence;
 
 	if (repeat) {
 		info->buffer = (u16_t *)entry->buffer;
@@ -556,7 +556,7 @@ static void adc_quark_se_ss_rx_isr(void *arg)
 	struct device *dev = (struct device *)arg;
 	struct adc_info *info = dev->driver_data;
 	const struct adc_config *config = dev->config->config_info;
-	const struct adc_sequence *seq = info->ctx.sequence;
+	struct adc_sequence *seq = &info->ctx.sequence;
 	u32_t adc_base = config->reg_base;
 	u32_t reg_val;
 

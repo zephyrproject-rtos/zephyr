@@ -183,7 +183,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	struct mcux_adc16_data *data =
 		CONTAINER_OF(ctx, struct mcux_adc16_data, ctx);
 
-	data->channels = ctx->sequence->channels;
+	data->channels = ctx->sequence.channels;
 	data->repeat_buffer = data->buffer;
 
 	mcux_adc16_start_channel(data->dev);
