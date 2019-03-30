@@ -1,4 +1,3 @@
-
 .. _bug_reporting:
 
 Bug Reporting

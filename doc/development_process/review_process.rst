@@ -14,6 +14,10 @@ GitHub is used to support the standard open source practice of submitting
 patches, which are then reviewed by the project members before being applied to
 the code base.
 
+Pull requests should be appropriately :ref:`labeled<gh_labels>`,
+and linked to any relevant :ref:`bug or feature tracking issues<bug_reporting>`
+.
+
 The Zephyr project uses GitHub for code reviews and Git tree management. When
 submitting a change or an enhancement to any Zephyr component, a developer
 should use GitHub. GitHub automatically assigns a responsible reviewer on a
@@ -21,6 +25,7 @@ component basis, as defined in the :zephyr_file:`CODEOWNERS` file stored with th
 tree in the Zephyr project repository. A limited set of release managers are
 allowed to merge a pull request into the master branch once reviews are complete.
 
+.. _review_time:
 
 Give reviewers time to review before code merge
 ================================================
