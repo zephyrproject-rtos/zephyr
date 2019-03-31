@@ -41,6 +41,7 @@ class Harness:
 class Console(Harness):
 
     def handle(self, line):
+
         if self.type == "one_line":
             pattern = re.compile(self.regex[0])
             if pattern.search(line):
@@ -77,6 +78,11 @@ class Console(Harness):
             self.capture_coverage = True
         elif self.GCOV_END in line:
             self.capture_coverage = False
+
+        if self.state == "passed":
+            self.tests[self.id] = "PASS"
+        else:
+            self.tests[self.id] = "FAIL"
 
 class Test(Harness):
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
