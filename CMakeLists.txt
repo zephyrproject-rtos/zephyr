@@ -580,9 +580,12 @@ if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
   file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT)
 
   foreach(module ${ZEPHYR_MODULES_TXT})
-    string(REGEX REPLACE "(.*):.*" "\\1" module_name ${module})
-    string(REGEX REPLACE ".*:(.*)" "\\1" module_path ${module})
-    message("Including module: ${module_name}")
+    # Match "<name>":"<path>" for each line of file, each corresponding to
+    # one module. The use of quotes is required due to CMake not supporting
+    # lazy regexes (it supports greedy only).
+    string(REGEX REPLACE "\"(.*)\":\".*\"" "\\1" module_name ${module})
+    string(REGEX REPLACE "\".*\":\"(.*)\"" "\\1" module_path ${module})
+    message("Including module: ${module_name} in path: ${module_path}")
     add_subdirectory(${module_path} ${CMAKE_BINARY_DIR}/${module_name})
   endforeach()
 endif()
