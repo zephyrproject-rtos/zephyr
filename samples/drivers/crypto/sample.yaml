@@ -8,7 +8,7 @@ common:
   min_ram: 20
   arch_exclude: xtensa x86_64
 tests:
-  test-mbedtls:
+  sample.driver.crypto.mbedtls:
     min_flash: 34
     extra_args: CONF_FILE=prj_mtls_shim.conf
     harness_config:
@@ -18,7 +18,7 @@ tests:
         - ".*main: CBC Mode"
         - ".*main: CTR Mode"
         - ".*main: CCM Mode"
-  test-micro:
+  sample.driver.crypto.mbedtls.micro:
     tags: crypto
     harness_config:
       type: multi_line

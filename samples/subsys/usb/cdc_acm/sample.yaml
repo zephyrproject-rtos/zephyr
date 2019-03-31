@@ -1,7 +1,7 @@
 sample:
   name: CDC ACM USB
 tests:
-  usb.cdc-acm:
+  sample.usb.cdc-acm:
     depends_on: usb_device
     tags: usb
     harness: console
@@ -9,7 +9,7 @@ tests:
       type: one_line
       regex:
         - "Wait for DTR"
-  usb.cdc-acm_comp:
+  sample.usb.cdc-acm.comp:
     depends_on: usb_device
     tags: usb
     extra_args: "-DOVERLAY_CONFIG=overlay-composite-cdc-msc.conf"

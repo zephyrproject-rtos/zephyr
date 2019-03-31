@@ -10,5 +10,5 @@ common:
       regex:
         - "MSG"
 tests:
-  kernel.memory_protection.userspace:
+  sample.kernel.memory_protection.shared_mem:
     filter: CONFIG_ARCH_HAS_USERSPACE
