@@ -62,12 +62,6 @@ config CAN_MCP2515_INT_THREAD_PRIO
 	  Priority level of the internal thread which is ran for
 	  interrupt handling and incoming packets.
 
-config CAN_MCP2515_GPIO_SPI_CS
-	bool "Manage SPI CS through a GPIO pin"
-	help
-	  This option is useful if one needs to manage SPI CS through a GPIO
-	  pin to by-pass the SPI controller's CS logic.
-
 config CAN_MCP2515_MAX_FILTER
 	int "Maximum number of concurrent active filters"
 	default 5

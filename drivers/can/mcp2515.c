@@ -131,7 +131,7 @@ static void mcp2515_convert_zcanframe_to_mcp2515frame(const struct zcan_frame
 }
 
 static void mcp2515_convert_mcp2515frame_to_zcanframe(const u8_t *source,
-						     struct zcan_frame *target)
+						      struct zcan_frame *target)
 {
 	u8_t data_idx = 0U;
 
@@ -220,6 +220,10 @@ static int mcp2515_configure(struct device *dev, enum can_mode mode,
 	/* CNF3, CNF2, CNF1, CANINTE */
 	u8_t config_buf[4];
 
+	if (bitrate == 0) {
+		bitrate = dev_cfg->bus_speed;
+	}
+
 	const u8_t bit_length = 1 + dev_cfg->tq_prop + dev_cfg->tq_bs1 +
 				dev_cfg->tq_bs2;
 
@@ -257,13 +261,17 @@ static int mcp2515_configure(struct device *dev, enum can_mode mode,
 	const u8_t rx0_ctrl = BIT(6) | BIT(5) | BIT(2);
 	const u8_t rx1_ctrl = BIT(6) | BIT(5);
 
-	__ASSERT((cfg->tq_sjw >= 1) && (cfg->tq_sjw <= 4), "1 <= SJW <= 4");
-	__ASSERT((cfg->tq_prop >= 1) && (cfg->tq_prop <= 8), "1 <= PROP <= 8");
-	__ASSERT((cfg->tq_bs1 >= 1) && (cfg->tq_bs1 <= 8), "1 <= BS1 <= 8");
-	__ASSERT((cfg->tq_bs2 >= 2) && (cfg->tq_bs2 <= 8), "2 <= BS2 <= 8");
-	__ASSERT(cfg->tq_prop + cfg->tq_bs1 >= cfg->tq_bs2,
+	__ASSERT((dev_cfg->tq_sjw >= 1) && (dev_cfg->tq_sjw <= 4),
+		 "1 <= SJW <= 4");
+	__ASSERT((dev_cfg->tq_prop >= 1) && (dev_cfg->tq_prop <= 8),
+		 "1 <= PROP <= 8");
+	__ASSERT((dev_cfg->tq_bs1 >= 1) && (dev_cfg->tq_bs1 <= 8),
+		 "1 <= BS1 <= 8");
+	__ASSERT((dev_cfg->tq_bs2 >= 2) && (dev_cfg->tq_bs2 <= 8),
+		 "2 <= BS2 <= 8");
+	__ASSERT(dev_cfg->tq_prop + dev_cfg->tq_bs1 >= dev_cfg->tq_bs2,
 		 "PROP + BS1 >= BS2");
-	__ASSERT(cfg->tq_bs2 > cfg->tq_sjw, "BS2 > SJW");
+	__ASSERT(dev_cfg->tq_bs2 > dev_cfg->tq_sjw, "BS2 > SJW");
 
 	if (CONFIG_CAN_MCP2515_OSC_FREQ % (bit_length * bitrate * 2)) {
 		LOG_ERR("Prescaler is not a natural number! "
@@ -292,8 +300,8 @@ static int mcp2515_configure(struct device *dev, enum can_mode mode,
 				mcp2515_convert_canmode_to_mcp2515mode(mode));
 }
 
-int mcp2515_send(struct device *dev, struct zcan_frame *msg, s32_t timeout,
-		 can_tx_callback_t callback)
+int mcp2515_send(struct device *dev, const struct zcan_frame *msg,
+		 s32_t timeout, can_tx_callback_t callback)
 {
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
 	u8_t tx_idx = 0U;
@@ -519,6 +527,7 @@ static int mcp2515_init(struct device *dev)
 {
 	const struct mcp2515_config *dev_cfg = DEV_CFG(dev);
 	struct mcp2515_data *dev_data = DEV_DATA(dev);
+	int ret;
 
 	k_sem_init(&dev_data->int_sem, 0, UINT_MAX);
 	k_mutex_init(&dev_data->tx_mutex);
@@ -539,7 +548,7 @@ static int mcp2515_init(struct device *dev)
 		return -EINVAL;
 	}
 
-#ifdef CONFIG_CAN_MCP2515_GPIO_SPI_CS
+#ifdef DT_MICROCHIP_MCP2515_0_CS_GPIO_PIN
 	dev_data->spi_cs_ctrl.gpio_dev =
 		device_get_binding(dev_cfg->spi_cs_port);
 	if (!dev_data->spi_cs_ctrl.gpio_dev) {
@@ -553,7 +562,7 @@ static int mcp2515_init(struct device *dev)
 	dev_data->spi_cfg.cs = &dev_data->spi_cs_ctrl;
 #else
 	dev_data->spi_cfg.cs = NULL;
-#endif  /* CAN_MCP2515_GPIO_SPI_CS */
+#endif  /* DT_MICROCHIP_MCP2515_0_CS_GPIO_PIN */
 
 	/* Reset MCP2515 */
 	if (mcp2515_cmd_soft_reset(dev)) {
@@ -596,7 +605,9 @@ static int mcp2515_init(struct device *dev)
 		     sizeof(dev_data->filter_response));
 	(void)memset(dev_data->filter, 0, sizeof(dev_data->filter));
 
-	return 0;
+	ret = mcp2515_configure(dev, CAN_NORMAL_MODE, dev_cfg->bus_speed);
+
+	return ret;
 }
 
 #ifdef CONFIG_CAN_1
@@ -622,14 +633,15 @@ static const struct mcp2515_config mcp2515_config_1 = {
 	.int_port = DT_MICROCHIP_MCP2515_0_INT_GPIOS_CONTROLLER,
 	.int_thread_stack_size = CONFIG_CAN_MCP2515_INT_THREAD_STACK_SIZE,
 	.int_thread_priority = CONFIG_CAN_MCP2515_INT_THREAD_PRIO,
-#ifdef CONFIG_CAN_MCP2515_GPIO_SPI_CS
-	.spi_cs_pin = DT_MICROCHIP_MCP2515_0_CS_GPIOS_PIN,
-	.spi_cs_port = DT_MICROCHIP_MCP2515_0_CS_GPIOS_CONTROLLER,
-#endif  /* CAN_MCP2515_GPIO_SPI_CS */
+#ifdef DT_MICROCHIP_MCP2515_0_CS_GPIO_PIN
+	.spi_cs_pin = DT_MICROCHIP_MCP2515_0_CS_GPIO_PIN,
+	.spi_cs_port = DT_MICROCHIP_MCP2515_0_CS_GPIO_CONTROLLER,
+#endif  /* DT_MICROCHIP_MCP2515_0_CS_GPIO_PIN */
 	.tq_sjw = CONFIG_CAN_SJW,
 	.tq_prop = CONFIG_CAN_PROP_SEG,
 	.tq_bs1 = CONFIG_CAN_PHASE_SEG1,
 	.tq_bs2 = CONFIG_CAN_PHASE_SEG2,
+	.bus_speed = DT_MICROCHIP_MCP2515_0_BUS_SPEED,
 };
 
 DEVICE_AND_API_INIT(can_mcp2515_1, DT_MICROCHIP_MCP2515_0_LABEL, &mcp2515_init,
