@@ -29,6 +29,9 @@ config NRFX_NFCT
 	bool
 	select NRFX_TIMER4
 
+config NRFX_NVMC
+	bool
+
 config NRFX_PPI
 	bool
 
