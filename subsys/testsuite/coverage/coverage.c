@@ -42,6 +42,11 @@ void __gcov_merge_add(gcov_type *counters, unsigned int n_counters)
 	/* Unused. */
 }
 
+void __gcov_exit(void)
+{
+	/* Unused. */
+}
+
 /**
  * buff_write_u64 - Store 64 bit data on a buffer and return the size
  */
