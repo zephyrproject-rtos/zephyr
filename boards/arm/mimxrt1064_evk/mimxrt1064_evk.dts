@@ -62,6 +62,8 @@
 	};
 };
 
+arduino_serial: &uart3 {};
+
 &lcdif1 {
 	status = "ok";
 	port {
