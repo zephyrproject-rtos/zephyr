@@ -271,6 +271,7 @@ int lll_prepare(lll_is_abort_cb_t is_abort_cb, lll_abort_cb_t abort_cb,
 		struct lll_prepare_param *prepare_param);
 void lll_resume(void *param);
 void lll_disable(void *param);
+u32_t lll_radio_is_idle(void);
 
 int ull_prepare_enqueue(lll_is_abort_cb_t is_abort_cb,
 			       lll_abort_cb_t abort_cb,
