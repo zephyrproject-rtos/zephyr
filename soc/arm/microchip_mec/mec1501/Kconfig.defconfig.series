@@ -1,0 +1,22 @@
+# Kconfig - Microchip MEC MCU series configuration options
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_SERIES_MEC1501X
+
+config SOC_SERIES
+	string
+	default "mec1501"
+
+config NUM_IRQS
+	int
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	# All NVIC external sources.
+	default 174
+
+source "soc/arm/microchip_mec/mec1501/Kconfig.defconfig.mec1501*"
+endif # SOC_SERIES_MEC1501X
