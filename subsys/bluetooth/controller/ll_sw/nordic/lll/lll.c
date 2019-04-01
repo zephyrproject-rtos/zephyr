@@ -342,6 +342,11 @@ u32_t lll_preempt_calc(struct evt_hdr *evt, u8_t ticker_id,
 	return 0;
 }
 
+u32_t lll_radio_is_idle(void)
+{
+	return radio_is_idle();
+}
+
 static int init_reset(void)
 {
 	return 0;
