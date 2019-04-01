@@ -442,7 +442,10 @@ static int apds9960_init(struct device *dev)
 	(void)memset(data->sample_crgb, 0, sizeof(data->sample_crgb));
 	data->pdata = 0U;
 
-	apds9960_sensor_setup(dev);
+	if (apds9960_sensor_setup(dev) < 0) {
+		LOG_ERR("Failed to setup device!");
+		return -EIO;
+	}
 
 	if (apds9960_init_interrupt(dev) < 0) {
 		LOG_ERR("Failed to initialize interrupt!");
