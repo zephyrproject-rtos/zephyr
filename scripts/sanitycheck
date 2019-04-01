@@ -2451,12 +2451,6 @@ class TestSuite:
                                 lower_better))
         return results
 
-
-
-    def encode_for_xml(self, unicode_data, encoding='ascii'):
-        unicode_data = unicode_data.replace('\x00', '')
-        return unicode_data
-
     def testcase_target_report(self, report_file):
 
         run = "Sanitycheck"
@@ -2512,12 +2506,13 @@ class TestSuite:
                             type="failure",
                             message="failed")
                     p = os.path.join(options.outdir, ti.platform.name, ti.test.name)
-                    bl = os.path.join(p, "handler.log")
+                    log_file = os.path.join(p, "handler.log")
 
-                    if os.path.exists(bl):
-                        with open(bl, "rb") as f:
+                    if os.path.exists(log_file):
+                        with open(log_file, "rb") as f:
                             log = f.read().decode("utf-8")
-                            el.text = self.encode_for_xml(log)
+                            filtered_string = ''.join(filter(lambda x: x in string.printable, log))
+                            el.text = filtered_string
 
                 elif ti.results[k] == 'SKIP':
                     el = ET.SubElement(
