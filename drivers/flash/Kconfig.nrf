@@ -14,6 +14,7 @@ config SOC_FLASH_NRF
 	depends on SOC_FAMILY_NRF
 	select FLASH_HAS_PAGE_LAYOUT
 	select FLASH_HAS_DRIVER_ENABLED
+	select NRFX_NVMC
 	default y
 	help
 	  Enables Nordic Semiconductor nRF flash driver.
@@ -27,7 +28,7 @@ config SOC_FLASH_NRF_RADIO_SYNC
 
 config SOC_FLASH_NRF_UICR
 	bool "Access to UICR"
-	depends on SOC_FLASH_NRF
+	depends on SOC_FLASH_NRF && !TRUSTED_EXECUTION_NONSECURE
 	help
 	  Enable operations on UICR. Once enabled UICR are written or read as
 	  ordinary flash memory. Erase is possible for whole UICR at once.
