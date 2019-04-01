@@ -358,8 +358,6 @@ static inline int z_impl_adc_read(struct device *dev,
  *
  * @param dev       Pointer to the device structure for the driver instance.
  * @param sequence  Structure specifying requested sequence of samplings.
- *                  Caller should ensure lifetime of this structure spans
- *                  until asynchronous read is finished.
  * @param async     Pointer to a valid and ready to be signaled struct
  *                  k_poll_signal. (Note: if NULL this function will not notify
  *                  the end of the transaction, and whether it went successfully
