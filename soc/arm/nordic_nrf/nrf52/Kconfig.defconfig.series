@@ -22,7 +22,4 @@ config ARCH_HAS_CUSTOM_BUSY_WAIT
 config SYS_POWER_MANAGEMENT
 	default y
 
-config TEMP_NRF5
-	default SENSOR
-
 endif # SOC_SERIES_NRF52X
