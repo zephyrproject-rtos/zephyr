@@ -874,6 +874,7 @@ if(CONFIG_USERSPACE)
   zephyr_get_compile_options_for_lang_as_string(C compiler_flags_priv)
   string(REPLACE "-ftest-coverage" "" NO_COVERAGE_FLAGS "${compiler_flags_priv}")
   string(REPLACE "-fprofile-arcs" "" NO_COVERAGE_FLAGS "${NO_COVERAGE_FLAGS}")
+  string(REPLACE "-fno-inline" "" NO_COVERAGE_FLAGS "${NO_COVERAGE_FLAGS}")
 
   get_property(include_dir_in_interface TARGET zephyr_interface
     PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
