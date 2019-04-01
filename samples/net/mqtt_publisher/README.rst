@@ -35,9 +35,9 @@ Build and Running
 Currently, this sample application only supports static IP addresses.
 Open the :file:`src/config.h` file and set the IP addresses according
 to the LAN environment.
-Alternatively, set the IP addresses in the :file:`prj_frdm_k64f.conf` file.
+Alternatively, set the IP addresses in the :file:`prj.conf` file.
 
-This file :file:`src/config.h` also contains some variables that may be changed:
+The file :file:`src/config.h` also contains some variables that may be changed:
 
 MQTT broker TCP port:
 
