@@ -8,8 +8,10 @@ zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_QUARK_SE            quark_se_clock_con
 zephyr_sources_ifdef(CONFIG_CLOCK_CONTROL_RV32M1_PCC          clock_control_rv32m1_pcc.c)
 
 if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
+if(CONFIG_SOC_SERIES_STM32MP1X)
+  zephyr_sources(clock_stm32_ll_mp1x.c)
+else()
   zephyr_sources(clock_stm32_ll_common.c)
-
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32F0X clock_stm32f0x.c)
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32F1X clock_stm32f1x.c)
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32F2X clock_stm32f2x.c)
@@ -20,4 +22,5 @@ if(CONFIG_CLOCK_CONTROL_STM32_CUBE)
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32L1X clock_stm32l1x.c)
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32L4X clock_stm32l4x.c)
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_STM32WBX clock_stm32wbx.c)
+endif()
 endif()
