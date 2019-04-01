@@ -13,3 +13,4 @@ int lll_clk_off(void);
 u32_t lll_evt_offset_get(struct evt_hdr *evt);
 u32_t lll_preempt_calc(struct evt_hdr *evt, u8_t ticker_id,
 		u32_t ticks_at_event);
+void lll_chan_set(u32_t chan);
