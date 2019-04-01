@@ -79,8 +79,7 @@ This debug probe is compatible with the following debug host tools:
 This probe is realized by programming the OpenSDA microcontroller with DAPLink
 OpenSDA firmware. NXP provides `OpenSDA DAPLink Board-Specific Firmwares`_.
 
-Before you program the firmware, make sure to install the debug host tools
-first.
+Install the debug host tools before you program the firmware.
 
 As with all OpenSDA debug probes, the steps for programming the firmware are:
 
@@ -118,8 +117,7 @@ recommended when available. Board-specific firmwares are required for i.MX RT
 boards to support their external flash memories, whereas generic firmwares are
 compatible with all Kinetis boards.
 
-Before you program the firmware, make sure to install the debug host tools
-first.
+Install the debug host tools before you program the firmware.
 
 As with all OpenSDA debug probes, the steps for programming the firmware are:
 
@@ -151,8 +149,7 @@ This debug probe is compatible with the following debug host tools:
 - :ref:`jlink-debug-host-tools`
 - :ref:`openocd-debug-host-tools`
 
-Before you use this debug probe, make sure to install the debug host tools
-first.
+Install the debug host tools before you program the firmware.
 
 .. _LPCScrypt:
    https://www.nxp.com/lpcscrypt
