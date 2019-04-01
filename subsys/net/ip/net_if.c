@@ -424,6 +424,17 @@ struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
 	return NULL;
 }
 
+static enum net_l2_flags l2_flags_get(struct net_if *iface)
+{
+	enum net_l2_flags flags = 0;
+
+	if (net_if_l2(iface)->get_flags) {
+		flags = net_if_l2(iface)->get_flags(iface);
+	}
+
+	return flags;
+}
+
 #if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
 /* Return how many bits are shared between two IP addresses */
 static u8_t get_ipaddr_diff(const u8_t *src, const u8_t *dst, int addr_len)
@@ -1375,17 +1386,22 @@ struct net_if_addr *net_if_ipv6_addr_add(struct net_if *iface,
 			iface, log_strdup(net_sprint_ipv6_addr(addr)),
 			net_addr_type2str(addr_type));
 
-		/* RFC 4862 5.4.2
-		 * "Before sending a Neighbor Solicitation, an interface
-		 * MUST join the all-nodes multicast address and the
-		 * solicited-node multicast address of the tentative address."
-		 */
-		/* The allnodes multicast group is only joined once as
-		 * net_ipv6_mcast_join() checks if we have already joined.
-		 */
-		join_mcast_nodes(iface, &ipv6->unicast[i].address.in6_addr);
+		if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
+			/* RFC 4862 5.4.2
+			 * Before sending a Neighbor Solicitation, an interface
+			 * MUST join the all-nodes multicast address and the
+			 * solicited-node multicast address of the tentative
+			 * address.
+			 */
+			/* The allnodes multicast group is only joined once as
+			 * net_ipv6_mcast_join() checks if we have already
+			 * joined.
+			 */
+			join_mcast_nodes(iface,
+					 &ipv6->unicast[i].address.in6_addr);
 
-		net_if_ipv6_start_dad(iface, &ipv6->unicast[i]);
+			net_if_ipv6_start_dad(iface, &ipv6->unicast[i]);
+		}
 
 		net_mgmt_event_notify_with_info(
 			NET_EVENT_IPV6_ADDR_ADD, iface,
@@ -3344,9 +3360,14 @@ done:
 
 	net_if_flag_set(iface, NET_IF_UP);
 
-	iface_ipv6_start(iface);
+	/* If the interface is only having point-to-point traffic then we do
+	 * not need to run DAD etc for it.
+	 */
+	if (!(l2_flags_get(iface) & NET_L2_POINT_TO_POINT)) {
+		iface_ipv6_start(iface);
 
-	net_ipv4_autoconf_start(iface);
+		net_ipv4_autoconf_start(iface);
+	}
 
 exit:
 	net_mgmt_event_notify(NET_EVENT_IF_UP, iface);
