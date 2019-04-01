@@ -6,6 +6,8 @@ toolchain:
   - zephyr
   - gccarmemb
   - xtools
+supported:
+  - gpio
 testing:
   ignore_tags:
     - cmsis_rtos_v2
@@ -17,7 +19,6 @@ testing:
     - cmm
     - shell
     - LED
-    - gpio
     - nfc
 ram: 256
 flash: 64
