@@ -242,6 +242,14 @@ dispatch_syscall:
     ldr ip, [sp,#8]
     msr PSP, ip
 
+    push {r0, r1}
+    ldr r0, =_kernel
+    ldr r0, [r0, #_kernel_offset_to_current]
+    ldr r1, [r0, #_thread_offset_to_mode]
+    orrs r1, r1, #1
+    /* Store (unprivileged) mode in thread's mode state variable */
+    str r1, [r0, #_thread_offset_to_mode]
+    dsb
     /* drop privileges by setting bit 0 in CONTROL */
     mrs ip, CONTROL
     orrs ip, ip, #1
@@ -252,6 +260,7 @@ dispatch_syscall:
      * instructions with the previous privilege.
      */
     isb
+    pop {r0, r1}
 
     /* Zero out volatile (caller-saved) registers so as to not leak state from
      * kernel mode. The C calling convention for the syscall handler will
