@@ -226,7 +226,11 @@ static inline void init_iface(struct net_if *iface)
 
 	NET_DBG("On iface %p", iface);
 
-	api->init(iface);
+	if (api && api->init) {
+		api->init(iface);
+	} else {
+		NET_ERR("init func NULL on iface %p", iface);
+	}
 }
 
 enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
