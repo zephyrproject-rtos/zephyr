@@ -1,0 +1,15 @@
+# Kconfig - Microchip MEC1501 MCU core series
+#
+# Copyright (c) 2018 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_MEC1501X
+	bool "Microchip MEC1501X Series"
+	select CPU_CORTEX_M
+	select CPU_CORTEX_M4
+	select SOC_FAMILY_MEC
+	select CPU_CORTEX_M_HAS_SYSTICK
+	help
+	  Enable support for Microchip MEC Cortex-M4 MCU series
