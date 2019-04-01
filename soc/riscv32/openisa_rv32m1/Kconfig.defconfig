@@ -185,4 +185,11 @@ config UART_RV32M1_LPUART
 
 endif # SERIAL
 
+if I2C
+
+config I2C_RV32M1_LPI2C
+	def_bool y
+
+endif # I2C
+
 endif # SOC_OPENISA_RV32M1_RISCV32

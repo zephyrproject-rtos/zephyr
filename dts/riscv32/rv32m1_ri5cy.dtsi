@@ -5,6 +5,7 @@
 
 #include <dt-bindings/interrupt-controller/openisa-intmux.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/i2c/i2c.h>
 
 / {
 	#address-cells = <1>;
@@ -29,6 +30,10 @@
 		uart-1 = &uart1;
 		uart-2 = &uart2;
 		uart-3 = &uart3;
+		i2c-0 = &i2c0;
+		i2c-1 = &i2c1;
+		i2c-2 = &i2c2;
+		i2c-3 = &i2c3;
 	};
 
 	cpus {
@@ -242,6 +247,58 @@
 			interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH1, 26)>;
 			clocks = <&pcc0 0xd8>;
 			label = "UART_3";
+			status = "disabled";
+		};
+
+		i2c0: lpi2c@4003a000 {
+			compatible = "openisa,rv32m1-lpi2c";
+			reg = <0x4003a000 0x170>;
+			interrupt-parent = <&event>;
+			interrupts = <15>;
+			clocks = <&pcc0 0xe8>;
+			label = "I2C_0";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c1: lpi2c@4003b000 {
+			compatible = "openisa,rv32m1-lpi2c";
+			reg = <0x4003b000 0x170>;
+			interrupt-parent = <&event>;
+			interrupts = <16>;
+			clocks = <&pcc0 0xec>;
+			label = "I2C_1";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c2: lpi2c@4003c000 {
+			compatible = "openisa,rv32m1-lpi2c";
+			reg = <0x4003c000 0x170>;
+			interrupt-parent = <&intmux>;
+			interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH1, 11)>;
+			clocks = <&pcc0 0xf0>;
+			label = "I2C_2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		i2c3: lpi2c@4102e000 {
+			compatible = "openisa,rv32m1-lpi2c";
+			reg = <0x4102e000 0x170>;
+			interrupt-parent = <&intmux>;
+			interrupts = <INTMUX_LEVEL2_IRQ(INTMUX_CH1, 24)>;
+			clocks = <&pcc1 0xb8>;
+			label = "I2C_3";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 	};

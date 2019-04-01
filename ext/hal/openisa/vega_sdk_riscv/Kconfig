@@ -10,3 +10,8 @@ config HAS_RV32M1_LPUART
 	bool
 	help
 	  Set if the low power uart (LPUART) module is present in the SoC.
+
+config HAS_RV32M1_LPI2C
+	bool
+	help
+	  Set if the low power i2c (LPI2C) module is present in the SoC.
