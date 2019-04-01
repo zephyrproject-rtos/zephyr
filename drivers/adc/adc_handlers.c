@@ -62,3 +62,24 @@ Z_SYSCALL_HANDLER(adc_read, dev, user_sequence)
 
 	return z_impl_adc_read((struct device *)dev, &sequence);
 }
+
+#ifdef CONFIG_ADC_ASYNC
+Z_SYSCALL_HANDLER(adc_read_async, dev, user_sequence, async)
+{
+	struct adc_sequence sequence;
+	struct adc_sequence_options options;
+
+	Z_OOPS(Z_SYSCALL_DRIVER_ADC(dev, read_async));
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(copy_sequence(&sequence, &options,
+					(struct adc_sequence *)user_sequence),
+				    "invalid ADC sequence"));
+	if (sequence.options != NULL) {
+		Z_OOPS(Z_SYSCALL_VERIFY_MSG(sequence.options->callback == NULL,
+			    "ADC sequence callbacks forbidden from user mode"));
+	}
+	Z_OOPS(Z_SYSCALL_OBJ(async, K_OBJ_POLL_SIGNAL));
+
+	return z_impl_adc_read_async((struct device *)dev, &sequence,
+				     (struct k_poll_signal *)async);
+}
+#endif /* CONFIG_ADC_ASYNC */

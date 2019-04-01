@@ -362,9 +362,14 @@ static inline int z_impl_adc_read(struct device *dev,
  * @returns 0 on success, negative error code otherwise.
  *
  */
-static inline int adc_read_async(struct device *dev,
-				 const struct adc_sequence *sequence,
-				 struct k_poll_signal *async)
+__syscall int adc_read_async(struct device *dev,
+			     const struct adc_sequence *sequence,
+			     struct k_poll_signal *async);
+
+
+static inline int z_impl_adc_read_async(struct device *dev,
+					const struct adc_sequence *sequence,
+					struct k_poll_signal *async)
 {
 	const struct adc_driver_api *api = dev->driver_api;
 
