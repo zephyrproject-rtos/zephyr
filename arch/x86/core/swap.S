@@ -413,6 +413,8 @@ skipIntLatencyStop:
 	jne time_read_not_needed
 	movw $0x2,__read_swap_end_time_value
 	read_tsc __common_var_swap_end_time
+	pushl __start_swap_time
+	popl __temp_start_swap_time
 time_read_not_needed:
 #endif
 	ret

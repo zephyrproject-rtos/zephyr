@@ -39,7 +39,7 @@ k_tid_t yield1_tid;
 void yield_bench(void)
 {
 	/* Thread yield*/
-
+	k_sleep(10);
 	yield0_tid = k_thread_create(&my_thread, my_stack_area,
 				     STACK_SIZE,
 				     thread_yield0_test,
