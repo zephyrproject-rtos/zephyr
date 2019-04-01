@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2016 Intel Corporation
+ * Copyright (c) 2016-2019 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,16 +8,13 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(wpanusb);
 
-#include <net_private.h>
-
-#include <device.h>
-
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 
 #include <net/buf.h>
 #include <net/ieee802154_radio.h>
 #include <ieee802154/ieee802154_frame.h>
+#include <net_private.h>
 
 #include "wpanusb.h"
 
@@ -27,12 +24,10 @@ LOG_MODULE_REGISTER(wpanusb);
 /* Max packet size for endpoints */
 #define WPANUSB_BULK_EP_MPS		64
 
-/* Max Bluetooth command data size */
+/* Max wpanusb command data size */
 #define WPANUSB_CLASS_MAX_DATA_SIZE	100
 
 #define WPANUSB_ENDP_BULK_IN		0x81
-
-static struct device *wpanusb_dev;
 
 static struct ieee802154_radio_api *radio_api;
 static struct device *ieee802154_dev;
@@ -42,21 +37,13 @@ static struct k_fifo tx_queue;
 /* IEEE802.15.4 frame + 1 byte len + 1 byte LQI */
 u8_t tx_buf[IEEE802154_MTU + 1 + 1];
 
+u8_t interface_data[WPANUSB_CLASS_MAX_DATA_SIZE];
+
 /**
  * Stack for the tx thread.
  */
 static K_THREAD_STACK_DEFINE(tx_stack, 1024);
 static struct k_thread tx_thread_data;
-
-#define DEV_DATA(dev) \
-	((struct wpanusb_dev_data_t * const)(dev)->driver_data)
-
-/* Device data structure */
-struct wpanusb_dev_data_t {
-	/* USB device status code */
-	enum usb_dc_status_code usb_status;
-	u8_t interface_data[WPANUSB_CLASS_MAX_DATA_SIZE];
-};
 
 static const struct dev_common_descriptor {
 	struct usb_device_descriptor device_descriptor;
@@ -139,13 +126,8 @@ static void wpanusb_status_cb(struct usb_cfg_data *cfg,
 			      enum usb_dc_status_code status,
 			      const u8_t *param)
 {
-	struct wpanusb_dev_data_t * const dev_data = DEV_DATA(wpanusb_dev);
-
 	ARG_UNUSED(param);
 	ARG_UNUSED(cfg);
-
-	/* Store the new status */
-	dev_data->usb_status = status;
 
 	/* Check the USB status and do needed action if required */
 	switch (status) {
@@ -386,6 +368,7 @@ static struct usb_cfg_data wpanusb_config = {
 	.interface = {
 		.vendor_handler = wpanusb_vendor_handler,
 		.vendor_data = buffer,
+		.payload_data = interface_data,
 		.class_handler = NULL,
 		.custom_handler = NULL,
 	},
@@ -393,15 +376,11 @@ static struct usb_cfg_data wpanusb_config = {
 	.endpoint = wpanusb_ep,
 };
 
-static int wpanusb_init(struct device *dev)
+static int wpanusb_init(void)
 {
-	struct wpanusb_dev_data_t * const dev_data = DEV_DATA(dev);
 	int ret;
 
 	LOG_DBG("");
-
-	wpanusb_config.interface.payload_data = dev_data->interface_data;
-	wpanusb_dev = dev;
 
 	/* Initialize the USB driver with the right configuration */
 	ret = usb_set_config(&wpanusb_config);
@@ -419,25 +398,6 @@ static int wpanusb_init(struct device *dev)
 
 	return 0;
 }
-
-static struct wpanusb_dev_data_t wpanusb_dev_data = {
-	.usb_status = USB_DC_UNKNOWN,
-};
-
-#if BOOT_INITIALIZED
-DEVICE_INIT(wpanusb, "wpanusb", &wpanusb_init,
-	    &wpanusb_dev_data, NULL,
-	    APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-#define wpanusb_start(dev)
-#else
-static struct device __dev = {
-	.driver_data = &wpanusb_dev_data,
-};
-static void wpanusb_start(struct device *dev)
-{
-	wpanusb_init(dev);
-}
-#endif
 
 static void init_tx_queue(void)
 {
@@ -506,9 +466,12 @@ out:
 
 void main(void)
 {
-	wpanusb_start(&__dev);
+	LOG_INF("Starting wpanusb");
 
-	LOG_INF("Start");
+	if (wpanusb_init() < 0) {
+		LOG_ERR("Initialization failed");
+		return;
+	}
 
 	ieee802154_dev = device_get_binding(CONFIG_NET_CONFIG_IEEE802154_DEV_NAME);
 	if (!ieee802154_dev) {
