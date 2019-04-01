@@ -48,7 +48,7 @@ extern "C" {
 
 /**
  * @brief LPCOMP event handler function type.
- * @param[in] event  LPCOMP event.
+ * @param[in] event LPCOMP event.
  */
 typedef void (* nrfx_lpcomp_event_handler_t)(nrf_lpcomp_event_t event);
 
@@ -60,24 +60,24 @@ typedef struct
     uint8_t             interrupt_priority; /**< LPCOMP interrupt priority. */
 } nrfx_lpcomp_config_t;
 
-/** @brief LPCOMP driver default configuration including the LPCOMP HAL configuration. */
+/** @brief LPCOMP driver default configuration, including the LPCOMP HAL configuration. */
 #ifdef NRF52_SERIES
-#define NRFX_LPCOMP_DEFAULT_CONFIG                                      \
-    {                                                                   \
-        .hal    = { (nrf_lpcomp_ref_t)NRFX_LPCOMP_CONFIG_REFERENCE ,    \
-                    (nrf_lpcomp_detect_t)NRFX_LPCOMP_CONFIG_DETECTION,  \
-                    (nrf_lpcomp_hysteresis_t)NRFX_LPCOMP_CONFIG_HYST }, \
-        .input  = (nrf_lpcomp_input_t)NRFX_LPCOMP_CONFIG_INPUT,         \
-        .interrupt_priority = NRFX_LPCOMP_CONFIG_IRQ_PRIORITY           \
-    }
+#define NRFX_LPCOMP_DEFAULT_CONFIG                                  \
+{                                                                   \
+    .hal    = { (nrf_lpcomp_ref_t)NRFX_LPCOMP_CONFIG_REFERENCE ,    \
+                (nrf_lpcomp_detect_t)NRFX_LPCOMP_CONFIG_DETECTION,  \
+                (nrf_lpcomp_hysteresis_t)NRFX_LPCOMP_CONFIG_HYST }, \
+    .input  = (nrf_lpcomp_input_t)NRFX_LPCOMP_CONFIG_INPUT,         \
+    .interrupt_priority = NRFX_LPCOMP_CONFIG_IRQ_PRIORITY           \
+}
 #else
-#define NRFX_LPCOMP_DEFAULT_CONFIG                                       \
-    {                                                                    \
-        .hal    = { (nrf_lpcomp_ref_t)NRFX_LPCOMP_CONFIG_REFERENCE ,     \
-                    (nrf_lpcomp_detect_t)NRFX_LPCOMP_CONFIG_DETECTION }, \
-        .input  = (nrf_lpcomp_input_t)NRFX_LPCOMP_CONFIG_INPUT,          \
-        .interrupt_priority = NRFX_LPCOMP_CONFIG_IRQ_PRIORITY            \
-    }
+#define NRFX_LPCOMP_DEFAULT_CONFIG                                   \
+{                                                                    \
+    .hal    = { (nrf_lpcomp_ref_t)NRFX_LPCOMP_CONFIG_REFERENCE ,     \
+                (nrf_lpcomp_detect_t)NRFX_LPCOMP_CONFIG_DETECTION }, \
+    .input  = (nrf_lpcomp_input_t)NRFX_LPCOMP_CONFIG_INPUT,          \
+    .interrupt_priority = NRFX_LPCOMP_CONFIG_IRQ_PRIORITY            \
+}
 #endif
 
 /**
@@ -86,13 +86,13 @@ typedef struct
  * This function initializes the LPCOMP driver, but does not enable the peripheral or any interrupts.
  * To start the driver, call the function nrfx_lpcomp_enable() after initialization.
  *
- * @param[in] p_config      Pointer to the structure with initial configuration.
+ * @param[in] p_config      Pointer to the structure with the initial configuration.
  * @param[in] event_handler Event handler provided by the user.
  *                          Must not be NULL.
  *
- * @retval NRFX_SUCCESS             If initialization was successful.
- * @retval NRFX_ERROR_INVALID_STATE If the driver has already been initialized.
- * @retval NRFX_ERROR_BUSY          If the COMP peripheral is already in use.
+ * @retval NRFX_SUCCESS             Initialization was successful.
+ * @retval NRFX_ERROR_INVALID_STATE The driver has already been initialized.
+ * @retval NRFX_ERROR_BUSY          The COMP peripheral is already in use.
  *                                  This is possible only if @ref nrfx_prs module
  *                                  is enabled.
  */
@@ -100,39 +100,42 @@ nrfx_err_t nrfx_lpcomp_init(nrfx_lpcomp_config_t const * p_config,
                             nrfx_lpcomp_event_handler_t  event_handler);
 
 /**
- *  @brief Function for uninitializing the LCOMP driver.
+ * @brief Function for uninitializing the LCOMP driver.
  *
- *  This function uninitializes the LPCOMP driver. The LPCOMP peripheral and
- *  its interrupts are disabled, and local variables are cleaned. After this call, you must
- *  initialize the driver again by calling nrfx_lpcomp_init() if you want to use it.
+ * This function uninitializes the LPCOMP driver. The LPCOMP peripheral and
+ * its interrupts are disabled, and local variables are cleaned. After this call, you must
+ * initialize the driver again by calling nrfx_lpcomp_init() if you want to use it.
  *
- *  @sa nrfx_lpcomp_disable()
- *  @sa nrfx_lpcomp_init()
+ * @sa nrfx_lpcomp_disable
+ * @sa nrfx_lpcomp_init
  */
 void  nrfx_lpcomp_uninit(void);
 
-/**@brief Function for enabling the LPCOMP peripheral and interrupts.
+/**
+ * @brief Function for enabling the LPCOMP peripheral and interrupts.
  *
  * Before calling this function, the driver must be initialized. This function
  * enables the LPCOMP peripheral and its interrupts.
  *
- * @sa nrfx_lpcomp_disable()
+ * @sa nrfx_lpcomp_disable
  */
 void nrfx_lpcomp_enable(void);
 
-/**@brief Function for disabling the LPCOMP peripheral.
+/**
+ * @brief Function for disabling the LPCOMP peripheral.
  *
  * Before calling this function, the driver must be initialized. This function disables the LPCOMP
  * peripheral and its interrupts.
  *
- * @sa nrfx_lpcomp_enable()
+ * @sa nrfx_lpcomp_enable
  */
 void nrfx_lpcomp_disable(void);
+
+/** @} */
 
 
 void nrfx_lpcomp_irq_handler(void);
 
-/** @} **/
 
 #ifdef __cplusplus
 }

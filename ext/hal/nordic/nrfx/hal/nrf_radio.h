@@ -45,12 +45,9 @@ extern "C" {
  * @brief   Hardware access layer for managing the RADIO peripheral.
  */
 
-/**
- * @brief RADIO tasks.
- */
+/** @brief RADIO tasks. */
 typedef enum
 {
-    /*lint -save -e30*/
     NRF_RADIO_TASK_TXEN      = offsetof(NRF_RADIO_Type, TASKS_TXEN),      /**< Enable RADIO in TX mode. */
     NRF_RADIO_TASK_RXEN      = offsetof(NRF_RADIO_Type, TASKS_RXEN),      /**< Enable RADIO in RX mode. */
     NRF_RADIO_TASK_START     = offsetof(NRF_RADIO_Type, TASKS_START),     /**< Start RADIO. */
@@ -72,15 +69,11 @@ typedef enum
 #if defined(RADIO_TASKS_CCASTOP_TASKS_CCASTOP_Msk) || defined(__NRFX_DOXYGEN__)
     NRF_RADIO_TASK_CCASTOP   = offsetof(NRF_RADIO_Type, TASKS_CCASTOP),   /**< Stop the Clear Channel Assessment. */
 #endif
-    /*lint -restore*/
 } nrf_radio_task_t;
 
-/**
- * @brief RADIO events.
- */
+/** @brief RADIO events. */
 typedef enum
 {
-    /*lint -save -e30*/
     NRF_RADIO_EVENT_READY      = offsetof(NRF_RADIO_Type, EVENTS_READY),      /**< Radio has ramped up and is ready to be started. */
     NRF_RADIO_EVENT_ADDRESS    = offsetof(NRF_RADIO_Type, EVENTS_ADDRESS),    /**< Address sent or received. */
     NRF_RADIO_EVENT_PAYLOAD    = offsetof(NRF_RADIO_Type, EVENTS_PAYLOAD),    /**< Packet payload sent or received. */
@@ -131,12 +124,9 @@ typedef enum
                                                                                    and BleIeee802154_250Kbit modes when last
                                                                                    bit is sent on the air. */
 #endif
-    /*lint -restore*/
 } nrf_radio_event_t;
 
-/**
- * @brief RADIO interrupts.
- */
+/** @brief RADIO interrupts. */
 typedef enum
 {
     NRF_RADIO_INT_READY_MASK      = RADIO_INTENSET_READY_Msk,      /**< Interrupt on READY event.  */
@@ -189,9 +179,7 @@ typedef enum
 #endif
 } nrf_radio_int_mask_t;
 
-/**
- * @brief RADIO shortcuts.
- */
+/** @brief RADIO shortcuts. */
 typedef enum
 {
     NRF_RADIO_SHORT_READY_START_MASK        = RADIO_SHORTS_READY_START_Msk,        /**< Shortcut between READY event and START task. */
@@ -238,9 +226,7 @@ typedef enum
 } nrf_radio_short_mask_t;
 
 #if defined(RADIO_CCACTRL_CCAMODE_Msk) || defined(__NRFX_DOXYGEN__)
-/**
- * @brief RADIO Clear Channel Assessment modes.
- */
+/** @brief RADIO Clear Channel Assessment modes. */
 typedef enum
 {
     NRF_RADIO_CCA_MODE_ED             = RADIO_CCACTRL_CCAMODE_EdMode,           /**< Energy Above Threshold. Will report busy whenever energy is detected above set threshold. */
@@ -251,9 +237,7 @@ typedef enum
 } nrf_radio_cca_mode_t;
 #endif // defined(RADIO_CCACTRL_CCAMODE_Msk) || defined(__NRFX_DOXYGEN__)
 
-/**
- * @brief Types of RADIO States.
- */
+/** @brief Types of RADIO states. */
 typedef enum
 {
     NRF_RADIO_STATE_DISABLED  = RADIO_STATE_STATE_Disabled,  /**< No operations are going on inside the radio and the power consumption is at a minimum. */
@@ -267,9 +251,7 @@ typedef enum
     NRF_RADIO_STATE_TXDISABLE = RADIO_STATE_STATE_TxDisable, /**< The radio is disabling the transmitter. */
 } nrf_radio_state_t;
 
-/**
- * @brief Types of RADIO TX power.
- */
+/** @brief Types of RADIO TX power. */
 typedef enum
 {
 #if defined(RADIO_TXPOWER_TXPOWER_Pos8dBm) || defined(__NRFX_DOXYGEN__)
@@ -303,9 +285,7 @@ typedef enum
 #endif
 } nrf_radio_txpower_t;
 
-/**
- * @brief Types of RADIO modes (data rate and modulation).
- */
+/** @brief Types of RADIO modes (data rate and modulation). */
 typedef enum
 {
     NRF_RADIO_MODE_NRF_1MBIT          = RADIO_MODE_MODE_Nrf_1Mbit,          /**< 1Mbit/s Nordic proprietary radio mode. */
@@ -329,9 +309,7 @@ typedef enum
 } nrf_radio_mode_t;
 
 #if defined(RADIO_PCNF0_PLEN_Msk) || defined(__NRFX_DOXYGEN__)
-/**
- * @brief Types of preamble length.
- */
+/** @brief Types of preamble length. */
 typedef enum
 {
     NRF_RADIO_PREAMBLE_LENGTH_8BIT       = RADIO_PCNF0_PLEN_8bit,      /**< 8-bit preamble. */
@@ -345,9 +323,7 @@ typedef enum
 } nrf_radio_preamble_length_t;
 #endif // defined(RADIO_PCNF0_PLEN_Msk) || defined(__NRFX_DOXYGEN__)
 
-/**
- * @brief Types of CRC calculatons regarding address.
- */
+/** @brief Types of CRC calculatons regarding address. */
 typedef enum
 {
     NRF_RADIO_CRC_ADDR_INCLUDE    = RADIO_CRCCNF_SKIPADDR_Include,    /**< CRC calculation includes address field. */
@@ -357,9 +333,7 @@ typedef enum
 #endif
 } nrf_radio_crc_addr_t;
 
-/**
- * @brief Packet configuration.
- */
+/** @brief Packet configuration. */
 typedef struct
 {
     uint8_t lflen;                    /**< Length on air of LENGTH field in number of bits. */
@@ -390,70 +364,69 @@ typedef struct
 /**
  * @brief Function for activating a specific RADIO task.
  *
- * @param[in] radio_task Task to activate.
+ * @param[in] task Task to be activated.
  */
-__STATIC_INLINE void nrf_radio_task_trigger(nrf_radio_task_t radio_task);
+__STATIC_INLINE void nrf_radio_task_trigger(nrf_radio_task_t task);
 
 /**
  * @brief Function for getting the address of a specific RADIO task register.
  *
  * This function can be used by the PPI module.
  *
- * @param[in] radio_task Requested task.
+ * @param[in] task Requested task.
  *
  * @return Address of the specified task register.
  */
-__STATIC_INLINE uint32_t nrf_radio_task_address_get(nrf_radio_task_t radio_task);
+__STATIC_INLINE uint32_t nrf_radio_task_address_get(nrf_radio_task_t task);
 
 /**
  * @brief Function for clearing a specific RADIO event.
  *
- * @param[in] radio_event Event to clean.
+ * @param[in] event Event to clean.
  */
-__STATIC_INLINE void nrf_radio_event_clear(nrf_radio_event_t radio_event);
+__STATIC_INLINE void nrf_radio_event_clear(nrf_radio_event_t event);
 
 /**
- * @brief Function for checking the state of a specific RADIO event.
+ * @brief Function for retrieving the state of the RADIO event.
  *
- * @param[in] radio_event Event to check.
+ * @param[in] event Event to be checked.
  *
- * @retval true  If the event is set.
- * @retval false If the event is not set.
+ * @retval true  The event has been generated.
+ * @retval false The event has not been generated.
  */
-__STATIC_INLINE bool nrf_radio_event_check(nrf_radio_event_t radio_event);
+__STATIC_INLINE bool nrf_radio_event_check(nrf_radio_event_t event);
 
 /**
  * @brief Function for getting the address of a specific RADIO event register.
  *
  * This function can be used by the PPI module.
  *
- * @param[in] radio_event Requested Event.
+ * @param[in] event Requested Event.
  *
  * @return Address of the specified event register.
  */
-__STATIC_INLINE uint32_t nrf_radio_event_address_get(nrf_radio_event_t radio_event);
+__STATIC_INLINE uint32_t nrf_radio_event_address_get(nrf_radio_event_t event);
 
 /**
  * @brief Function for enabling specified RADIO shortcuts.
  *
- * @param[in] radio_shorts_mask Mask of shortcuts.
- *
+ * @param[in] shorts_mask Mask of shortcuts.
  */
-__STATIC_INLINE void nrf_radio_shorts_enable(uint32_t radio_shorts_mask);
+__STATIC_INLINE void nrf_radio_shorts_enable(uint32_t shorts_mask);
 
 /**
  * @brief Function for disabling specified RADIO shortcuts.
  *
- * @param[in] radio_shorts_mask Mask of shortcuts.
+ * @param[in] shorts_mask Mask of shortcuts.
  */
-__STATIC_INLINE void nrf_radio_shorts_disable(uint32_t radio_shorts_mask);
+__STATIC_INLINE void nrf_radio_shorts_disable(uint32_t shorts_mask);
 
 /**
  * @brief Function for setting the configuration of RADIO shortcuts.
  *
- * @param[in] radio_shorts_mask Shortcuts configuration to set.
+ * @param[in] shorts_mask Shortcuts configuration to set.
  */
-__STATIC_INLINE void nrf_radio_shorts_set(uint32_t radio_shorts_mask);
+__STATIC_INLINE void nrf_radio_shorts_set(uint32_t shorts_mask);
 
 /**
  * @brief Function for getting the configuration of RADIO shortcuts.
@@ -465,32 +438,32 @@ __STATIC_INLINE uint32_t nrf_radio_shorts_get(void);
 /**
  * @brief Function for enabling specified RADIO interrupts.
  *
- * @param[in] radio_int_mask Mask of interrupts.
+ * @param[in] int_mask Mask of interrupts.
  */
-__STATIC_INLINE void nrf_radio_int_enable(uint32_t radio_int_mask);
+__STATIC_INLINE void nrf_radio_int_enable(uint32_t int_mask);
 
 /**
  * @brief Function for disabling specified RADIO interrupts.
  *
- * @param[in] radio_int_mask Mask of interrupts.
+ * @param[in] int_mask Mask of interrupts.
  */
-__STATIC_INLINE void nrf_radio_int_disable(uint32_t radio_int_mask);
+__STATIC_INLINE void nrf_radio_int_disable(uint32_t int_mask);
 
 /**
  * @brief Function for getting the state of a specific interrupt.
  *
- * @param[in] radio_int_mask Interrupt to check.
+ * @param[in] int_mask Interrupt to be checked.
  *
- * @retval true  If the interrupt is enabled.
- * @retval false If the interrupt is not enabled.
+ * @retval true  The interrupt is enabled.
+ * @retval false The interrupt is not enabled.
  */
-__STATIC_INLINE bool nrf_radio_int_enable_check(nrf_radio_int_mask_t radio_int_mask);
+__STATIC_INLINE bool nrf_radio_int_enable_check(nrf_radio_int_mask_t int_mask);
 
 /**
  * @brief Function for getting CRC status of last received packet.
  *
- * @retval true  If the packet was received without CRC error .
- * @retval false If the packet was received with CRC error.
+ * @retval true  The packet was received without CRC error.
+ * @retval false The packet was received with CRC error.
  */
 __STATIC_INLINE bool nrf_radio_crc_status_check(void);
 
@@ -519,16 +492,16 @@ __STATIC_INLINE uint8_t nrf_radio_dai_get(void);
 /**
  * @brief Function for getting status on payload length.
  *
- * @retval 0 If the payload is lesser than PCNF1.MAXLEN.
- * @retval 1 If the payload is greater than PCNF1.MAXLEN.
+ * @retval 0 The payload is lesser than PCNF1.MAXLEN.
+ * @retval 1 The payload is greater than PCNF1.MAXLEN.
  */
 __STATIC_INLINE uint8_t nrf_radio_pdustat_get(void);
 
 /**
  * @brief Function for getting status on what rate packet is received with in Long Range.
  *
- * @retval 0 If the frame is received at 125kbps.
- * @retval 1 If the frame is received at 500kbps.
+ * @retval 0 The frame is received at 125kbps.
+ * @retval 1 The frame is received at 500kbps.
  */
 __STATIC_INLINE uint8_t nrf_radio_cistat_get(void);
 #endif // defined(RADIO_PDUSTAT_PDUSTAT_Msk) || defined(__NRFX_DOXYGEN__)
@@ -940,48 +913,48 @@ __STATIC_INLINE void nrf_radio_power_set(bool radio_power);
 
 #ifndef SUPPRESS_INLINE_IMPLEMENTATION
 
-__STATIC_INLINE void nrf_radio_task_trigger(nrf_radio_task_t radio_task)
+__STATIC_INLINE void nrf_radio_task_trigger(nrf_radio_task_t task)
 {
-    *((volatile uint32_t *)((uint8_t *)NRF_RADIO + radio_task)) = 0x1UL;
+    *((volatile uint32_t *)((uint8_t *)NRF_RADIO + (uint32_t)task)) = 0x1UL;
 }
 
-__STATIC_INLINE uint32_t nrf_radio_task_address_get(nrf_radio_task_t radio_task)
+__STATIC_INLINE uint32_t nrf_radio_task_address_get(nrf_radio_task_t task)
 {
-    return ((uint32_t)NRF_RADIO + (uint32_t)radio_task);
+    return ((uint32_t)NRF_RADIO + (uint32_t)task);
 }
 
-__STATIC_INLINE void nrf_radio_event_clear(nrf_radio_event_t radio_event)
+__STATIC_INLINE void nrf_radio_event_clear(nrf_radio_event_t event)
 {
-    *((volatile uint32_t *)((uint8_t *)NRF_RADIO + radio_event)) = 0x0UL;
+    *((volatile uint32_t *)((uint8_t *)NRF_RADIO + (uint32_t)event)) = 0x0UL;
 #if __CORTEX_M == 0x04
-    volatile uint32_t dummy = *((volatile uint32_t *)((uint8_t *)NRF_RADIO + radio_event));
+    volatile uint32_t dummy = *((volatile uint32_t *)((uint8_t *)NRF_RADIO + (uint32_t)event));
     (void)dummy;
 #endif
 }
 
-__STATIC_INLINE bool nrf_radio_event_check(nrf_radio_event_t radio_event)
+__STATIC_INLINE bool nrf_radio_event_check(nrf_radio_event_t event)
 {
-    return (bool) *((volatile uint32_t *)((uint8_t *)NRF_RADIO + radio_event));
+    return (bool) *((volatile uint32_t *)((uint8_t *)NRF_RADIO + (uint32_t)event));
 }
 
-__STATIC_INLINE uint32_t nrf_radio_event_address_get(nrf_radio_event_t radio_event)
+__STATIC_INLINE uint32_t nrf_radio_event_address_get(nrf_radio_event_t event)
 {
-    return ((uint32_t)NRF_RADIO + (uint32_t)radio_event);
+    return ((uint32_t)NRF_RADIO + (uint32_t)event);
 }
 
-__STATIC_INLINE void nrf_radio_shorts_enable(uint32_t radio_shorts_mask)
+__STATIC_INLINE void nrf_radio_shorts_enable(uint32_t shorts_mask)
 {
-    NRF_RADIO->SHORTS |= radio_shorts_mask;
+    NRF_RADIO->SHORTS |= shorts_mask;
 }
 
-__STATIC_INLINE void nrf_radio_shorts_disable(uint32_t radio_shorts_mask)
+__STATIC_INLINE void nrf_radio_shorts_disable(uint32_t shorts_mask)
 {
-    NRF_RADIO->SHORTS &= ~radio_shorts_mask;
+    NRF_RADIO->SHORTS &= ~shorts_mask;
 }
 
-__STATIC_INLINE void nrf_radio_shorts_set(uint32_t radio_shorts_mask)
+__STATIC_INLINE void nrf_radio_shorts_set(uint32_t shorts_mask)
 {
-    NRF_RADIO->SHORTS = radio_shorts_mask;
+    NRF_RADIO->SHORTS = shorts_mask;
 }
 
 __STATIC_INLINE uint32_t nrf_radio_shorts_get(void)
@@ -989,19 +962,19 @@ __STATIC_INLINE uint32_t nrf_radio_shorts_get(void)
     return NRF_RADIO->SHORTS;
 }
 
-__STATIC_INLINE void nrf_radio_int_enable(uint32_t radio_int_mask)
+__STATIC_INLINE void nrf_radio_int_enable(uint32_t int_mask)
 {
-    NRF_RADIO->INTENSET = radio_int_mask;
+    NRF_RADIO->INTENSET = int_mask;
 }
 
-__STATIC_INLINE void nrf_radio_int_disable(uint32_t radio_int_mask)
+__STATIC_INLINE void nrf_radio_int_disable(uint32_t int_mask)
 {
-    NRF_RADIO->INTENCLR = radio_int_mask;
+    NRF_RADIO->INTENCLR = int_mask;
 }
 
-__STATIC_INLINE bool nrf_radio_int_enable_check(nrf_radio_int_mask_t radio_int_mask)
+__STATIC_INLINE bool nrf_radio_int_enable_check(nrf_radio_int_mask_t int_mask)
 {
-    return (bool)(NRF_RADIO->INTENSET & radio_int_mask);
+    return (bool)(NRF_RADIO->INTENSET & int_mask);
 }
 
 __STATIC_INLINE bool nrf_radio_crc_status_check(void)

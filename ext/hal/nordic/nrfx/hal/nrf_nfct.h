@@ -49,10 +49,8 @@ extern "C" {
 #define NRF_NFCT_CRC_SIZE 2                 /**< CRC size in bytes. */
 #define NRF_NFCT_DISABLE_ALL_INT 0xFFFFFFFF /**< Value to disable all interrupts. */
 
-/**
- * @brief NFCT tasks
- */
-typedef enum /*lint -save -e30 */
+/** @brief NFCT tasks. */
+typedef enum
 {
     NRF_NFCT_TASK_ACTIVATE     = offsetof(NRF_NFCT_Type, TASKS_ACTIVATE),     /**< Activate the NFCT peripheral for the incoming and outgoing frames, change state to activated. */
     NRF_NFCT_TASK_DISABLE      = offsetof(NRF_NFCT_Type, TASKS_DISABLE),      /**< Disable the NFCT peripheral. */
@@ -61,12 +59,10 @@ typedef enum /*lint -save -e30 */
     NRF_NFCT_TASK_ENABLERXDATA = offsetof(NRF_NFCT_Type, TASKS_ENABLERXDATA), /**< Initialize EasyDMA for receive. */
     NRF_NFCT_TASK_GOIDLE       = offsetof(NRF_NFCT_Type, TASKS_GOIDLE),       /**< Force state machine to the IDLE state. */
     NRF_NFCT_TASK_GOSLEEP      = offsetof(NRF_NFCT_Type, TASKS_GOSLEEP),      /**< Force state machine to the SLEEP_A state. */
-} nrf_nfct_task_t; /*lint -restore */
+} nrf_nfct_task_t;
 
-/**
- * @brief NFCT events
- */
-typedef enum /*lint -save -e30 */
+/** @brief NFCT events. */
+typedef enum
 {
     NRF_NFCT_EVENT_READY             = offsetof(NRF_NFCT_Type, EVENTS_READY),             /**< The NFCT peripheral is ready to receive and send frames. */
     NRF_NFCT_EVENT_FIELDDETECTED     = offsetof(NRF_NFCT_Type, EVENTS_FIELDDETECTED),     /**< Remote NFC field is detected. */
@@ -83,11 +79,9 @@ typedef enum /*lint -save -e30 */
     NRF_NFCT_EVENT_COLLISION         = offsetof(NRF_NFCT_Type, EVENTS_COLLISION),         /**< NFC auto collision resolution error reported. */
     NRF_NFCT_EVENT_SELECTED          = offsetof(NRF_NFCT_Type, EVENTS_SELECTED),          /**< NFC auto collision resolution successfully completed. */
     NRF_NFCT_EVENT_STARTED           = offsetof(NRF_NFCT_Type, EVENTS_STARTED),           /**< EasyDMA is ready to receive or send frames. */
-} nrf_nfct_event_t; /*lint -restore */
+} nrf_nfct_event_t;
 
-/**
- * @brief NFCT shorts
- */
+/** @brief NFCT shortcuts. */
 typedef enum
 {
     NRF_NFCT_SHORT_FIELDDETECTED_ACTIVATE_MASK  = NFCT_SHORTS_FIELDDETECTED_ACTIVATE_Msk,  /**< Shortcut between the FIELDDETECTED event and the ACTIVATE task. */
@@ -97,9 +91,7 @@ typedef enum
 #endif // defined(NFCT_SHORTS_TXFRAMEEND_ENABLERXDATA_Msk) || defined(__NRFX_DOXYGEN__)
 } nrf_nfct_short_mask_t;
 
-/**
- * @brief NFCT interrupts
- */
+/** @brief NFCT interrupts. */
 typedef enum
 {
     NRF_NFCT_INT_READY_MASK             = NFCT_INTEN_READY_Msk,             /**< Interrupt on READY event. */
@@ -119,9 +111,7 @@ typedef enum
     NRF_NFCT_INT_STARTED_MASK           = NFCT_INTEN_STARTED_Msk,           /**< Interrupt on STARTED event. */
 } nrf_nfct_int_mask_t;
 
-/**
- * @brief NFC error status bit masks.
- */
+/** @brief NFC error status bit masks. */
 typedef enum
 {
     NRF_NFCT_ERROR_FRAMEDELAYTIMEOUT_MASK = NFCT_ERRORSTATUS_FRAMEDELAYTIMEOUT_Msk, /**< Timeout of the Frame Delay Timer (no frame transmission started in the FDT window). */
@@ -133,9 +123,7 @@ typedef enum
 #endif // defined(NFCT_ERRORSTATUS_NFCFIELDTOOWEAK_Msk) || defined(__NRFX_DOXYGEN__)
 } nrf_nfct_error_status_t;
 
-/**
- * @brief NFC received frame status bit masks.
- */
+/** @brief NFC received frame status bit masks. */
 typedef enum
 {
     NRF_NFCT_RX_FRAME_STATUS_CRC_MASK     = NFCT_FRAMESTATUS_RX_CRCERROR_Msk,     /**< CRC status mask. */
@@ -144,9 +132,7 @@ typedef enum
 } nrf_nfct_rx_frame_status_t;
 
 #if defined(NFCT_NFCTAGSTATE_NFCTAGSTATE_Msk) || defined(__NRFX_DOXYGEN__)
-/**
- * @brief NFC tag state.
- */
+/** @brief NFC tag state. */
 typedef enum
 {
     NRF_NFCT_TAG_STATE_DISABLED    = NFCT_NFCTAGSTATE_NFCTAGSTATE_Disabled,   /**< Disabled or sensing NFC field. */
@@ -172,18 +158,14 @@ typedef enum
 } nrf_nfct_sleep_state_t;
 #endif // defined (NFCT_SLEEPSTATE_SLEEPSTATE_Msk) || defined(__NRFX_DOXYGEN__)
 
-/**
- * @brief NFC field state bit masks.
- */
+/** @brief NFC field state bit masks. */
 typedef enum
 {
     NRF_NFCT_FIELD_STATE_PRESENT_MASK = NFCT_FIELDPRESENT_FIELDPRESENT_Msk, /**< Field presence mask. */
     NRF_NFCT_FIELD_STATE_LOCK_MASK    = NFCT_FIELDPRESENT_LOCKDETECT_Msk    /**< Field lock mask. */
 } nrf_nfct_field_state_t;
 
-/**
- * @brief NFC frame delay mode for data transmission.
- */
+/** @brief NFC frame delay mode for data transmission. */
 typedef enum
 {
     NRF_NFCT_FRAME_DELAY_MODE_FREERUN    = NFCT_FRAMEDELAYMODE_FRAMEDELAYMODE_FreeRun,   /**< Frame transmission starts when @ref NRF_NFCT_TASK_STARTTX is set (delay timer is not used). */
@@ -192,9 +174,7 @@ typedef enum
     NRF_NFCT_FRAME_DELAY_MODE_WINDOWGRID = NFCT_FRAMEDELAYMODE_FRAMEDELAYMODE_WindowGrid /**< Frame transmission starts in a bit grid between FRAMEDELAYMIN and FRAMEDELAYMAX. */
 } nrf_nfct_frame_delay_mode_t;
 
-/**
- * @brief Bit masks for NFC transmission frame configuration.
- */
+/** @brief Bit masks for NFC transmission frame configuration. */
 typedef enum
 {
     NRF_NFCT_TX_FRAME_CONFIG_PARITY        = NFCT_TXD_FRAMECONFIG_PARITY_Msk,      /**< Indicates whether parity is added in the transmitted frames. */
@@ -203,9 +183,7 @@ typedef enum
     NRF_NFCT_TX_FRAME_CONFIG_CRC16         = NFCT_TXD_FRAMECONFIG_CRCMODETX_Msk    /**< Indicates whether CRC is added in the transmitted frames. */
 } nrf_nfct_tx_frame_config_t;
 
-/**
- * @brief Bit masks for NFC reception frame configuration.
- */
+/** @brief Bit masks for NFC reception frame configuration. */
 typedef enum
 {
     NRF_NFCT_RX_FRAME_CONFIG_PARITY = NFCT_RXD_FRAMECONFIG_PARITY_Msk,   /**< Indicates whether parity is expected in the received frames. */
@@ -214,7 +192,8 @@ typedef enum
 } nrf_nfct_rx_frame_config_t;
 
 /**
- * @brief 'NFCI1 size' NFC field configuration for the SENS_RES frame according to the NFC Forum Digital Protocol Technical Specification.
+ * @brief 'NFCI1 size' NFC field configuration for the SENS_RES frame according to the NFC Forum
+ *        Digital Protocol Technical Specification.
  */
 typedef enum
 {
@@ -229,7 +208,8 @@ typedef enum
 } nrf_nfct_sensres_nfcid1_size_t;
 
 /**
- * @brief 'Bit frame SDD' NFC field configuration for the SENS_RES frame according to the NFC Forum Digital Protocol Technical Specification.
+ * @brief 'Bit frame SDD' NFC field configuration for the SENS_RES frame according to the NFC
+ *         Forum Digital Protocol Technical Specification.
  */
 typedef enum
 {
@@ -248,7 +228,8 @@ typedef enum
 } nrf_nfct_sensres_bit_frame_sdd_t;
 
 /**
- * @brief 'Platofrm Config' NFC field configuration for the SENS_RES frame according to the NFC Forum Digital Protocol Technical Specification.
+ * @brief 'Platofrm Config' NFC field configuration for the SENS_RES frame according to the NFC
+ *        Forum Digital Protocol Technical Specification.
  */
 typedef enum
 {
@@ -258,9 +239,7 @@ typedef enum
     NRF_NFCT_SENSRES_PLATFORM_CONFIG_OTHER = 0 << NFCT_SENSRES_PLATFCONFIG_Pos
 } nrf_nfct_sensres_platform_config_t;
 
-/**
- * @brief Bit masks for SEL_RES NFC frame configuration.
- */
+/** @brief Bit masks for SEL_RES NFC frame configuration. */
 typedef enum
 {
     NRF_NFCT_SELRES_CASCADE_MASK  = NFCT_SELRES_CASCADE_Msk,  /**< SEL_RES Cascade field bit mask. */
@@ -268,7 +247,8 @@ typedef enum
 } nrf_nfct_selres_t;
 
 /**
- * @brief Protocol NFC field (bits b7 and b6) configuration for the SEL_RES frame according to the NFC Forum Digital Protocol Technical Specification.
+ * @brief Protocol NFC field (bits b7 and b6) configuration for the SEL_RES frame according to
+ *        the NFC Forum Digital Protocol Technical Specification.
  */
 typedef enum
 {
@@ -281,7 +261,7 @@ typedef enum
 /**
  * @brief Function for activating a specific NFCT task.
  *
- * @param[in] task Task.
+ * @param[in] task Task to be activated.
  */
 __STATIC_INLINE void nrf_nfct_task_trigger(nrf_nfct_task_t task);
 
@@ -302,12 +282,12 @@ __STATIC_INLINE uint32_t nrf_nfct_task_address_get(nrf_nfct_task_t task);
 __STATIC_INLINE void nrf_nfct_event_clear(nrf_nfct_event_t event);
 
 /**
- * @brief Function for returning the state of a specific event.
+ * @brief Function for retrieving the state of the NFCT event.
  *
- * @param[in] event Event.
+ * @param[in] event Event to be checked.
  *
- * @retval true If the event is set.
- * @retval false If the event is not set.
+ * @retval true  The event has been generated.
+ * @retval false The event has not been generated.
  */
 __STATIC_INLINE bool nrf_nfct_event_check(nrf_nfct_event_t event);
 
@@ -323,14 +303,14 @@ __STATIC_INLINE uint32_t nrf_nfct_event_address_get(nrf_nfct_event_t event);
 /**
  * @brief Function for enabling selected shortcuts.
  *
- * @param[in] short_mask Shortcut mask.
+ * @param[in] short_mask Mask of shortcuts.
  */
 __STATIC_INLINE void nrf_nfct_shorts_enable(uint32_t short_mask);
 
 /**
  * @brief Function for disabling selected shortcuts.
  *
- * @param[in] short_mask Shortcut mask.
+ * @param[in] short_mask Mask of shortcuts.
  */
 __STATIC_INLINE void nrf_nfct_shorts_disable(uint32_t short_mask);
 
@@ -360,8 +340,8 @@ __STATIC_INLINE void nrf_nfct_int_enable(uint32_t int_mask);
  *
  * @param[in] int_mask Interrupt mask.
  *
- * @retval true If any of the selected interrupts is enabled.
- * @retval false If none of the selected interrupts is enabled.
+ * @retval true  Any of the selected interrupts is enabled.
+ * @retval false None of the selected interrupts is enabled.
  */
 __STATIC_INLINE bool nrf_nfct_int_enable_check(uint32_t int_mask);
 
@@ -403,7 +383,8 @@ __STATIC_INLINE uint32_t nrf_nfct_rx_frame_status_get(void);
 /**
  * @brief Function for clearing the NFC frame reception status.
  *
- * @param[in] framestatus_flags Status flags to be cleared, defined in @ref nrf_nfct_rx_frame_status_t.
+ * @param[in] framestatus_flags Status flags to be cleared, defined in
+ *                              @ref nrf_nfct_rx_frame_status_t.
  */
 __STATIC_INLINE void nrf_nfct_rx_frame_status_clear(uint32_t framestatus_flags);
 
@@ -428,8 +409,10 @@ __STATIC_INLINE nrf_nfct_tag_state_t nrf_nfct_tag_state_get(void);
  *
  * @details The returned value is the last state before the autimatic collision resolution started.
  *
- * @retval NRF_NFCT_SLEEP_STATE_IDLE    NFC tag was in IDLE state before the automatic collision resolution started.
- * @retval NRF_NFCT_SLEEP_STATE_SLEEP_A NFC tag was in SLEEP_A state before the automatic collision resolution started.
+ * @retval NRF_NFCT_SLEEP_STATE_IDLE    NFC tag was in IDLE state before the automatic
+ *                                      collision resolution started.
+ * @retval NRF_NFCT_SLEEP_STATE_SLEEP_A NFC tag was in SLEEP_A state before the automatic
+ *                                      collision resolution started.
  */
 __STATIC_INLINE nrf_nfct_sleep_state_t nrf_nfct_sleep_state_get(void);
 #endif // defined (NFCT_SLEEPSTATE_SLEEPSTATE_Msk) || defined(__NRFX_DOXYGEN__)
@@ -437,7 +420,8 @@ __STATIC_INLINE nrf_nfct_sleep_state_t nrf_nfct_sleep_state_get(void);
 /**
  * @brief Function for getting the status of the external NFC field detection.
  *
- * @return The NFC field detection status. Status bits can be checked by using @ref nrf_nfct_field_state_t.
+ * @return The NFC field detection status. Status bits can be checked by using
+ *         @ref nrf_nfct_field_state_t.
  */
 __STATIC_INLINE uint8_t nrf_nfct_field_status_get(void);
 
@@ -445,8 +429,8 @@ __STATIC_INLINE uint8_t nrf_nfct_field_status_get(void);
  * @brief Function for getting the minimum Frame Delay Time value.
  *
  * @details This is the minimum value for Frame Delay Timer. It controls the shortest time between
- *          the last symbol of the last received frame and the start of the transmission of a new TX frame.
- *
+ *          the last symbol of the last received frame and the start of the transmission of a new
+ *          TX frame.
  *
  * @return The minimum Frame Delay Time value in 13.56-MHz clock ticks.
  */
@@ -456,7 +440,8 @@ __STATIC_INLINE uint16_t nrf_nfct_frame_delay_min_get(void);
  * @brief Function for setting the minimum Frame Delay Time value.
  *
  * @details This is the minimum value for Frame Delay Timer. It controls the shortest time between
- *          the last symbol of the last received frame and the start of the transmission of a new TX frame.
+ *          the last symbol of the last received frame and the start of the transmission of a new
+ *          TX frame.
  *
  * @param[in] frame_delay_min Minimum Frame Delay Time value in 13.56-MHz clock ticks.
  */
@@ -466,8 +451,8 @@ __STATIC_INLINE void nrf_nfct_frame_delay_min_set(uint16_t frame_delay_min);
  * @brief Function for getting the maximum Frame Delay Time value.
  *
  * @details This is the maximum value for Frame Delay Timer. It controls the longest time between
- *          the last symbol of the last received frame and the start of the transmission of a new TX frame.
- *          If no transmission starts before the Frame Delay Timer timeout,
+ *          the last symbol of the last received frame and the start of the transmission of a new
+ *          TX frame. If no transmission starts before the Frame Delay Timer timeout,
  *          @ref NRF_NFCT_ERROR_FRAMEDELAYTIMEOUT_MASK is set.
  *
  * @return The maximum Frame Delay Time value in 13.56-MHz clock ticks.
@@ -478,8 +463,8 @@ __STATIC_INLINE uint32_t nrf_nfct_frame_delay_max_get(void);
  * @brief Function for setting the maximum Frame Delay Time value.
  *
  * @details This is the maximum value for Frame Delay Timer. It controls the longest time between
- *          the last symbol of the last received frame and the start of the transmission of a new TX frame.
- *          If no transmission starts before the Frame Delay Timer timeout,
+ *          the last symbol of the last received frame and the start of the transmission of a new
+ *          TX frame. If no transmission starts before the Frame Delay Timer timeout,
  *          @ref NRF_NFCT_ERROR_FRAMEDELAYTIMEOUT_MASK is set.
  *
  * @param[in] frame_delay_max Maximum Frame Delay Time value in 13.56-MHz clock ticks.
@@ -513,7 +498,8 @@ __STATIC_INLINE uint8_t * nrf_nfct_rxtx_buffer_get(void);
  * @note Buffer for the NFC RX/TX data is used by EasyDMA and must be located in RAM.
  *
  * @param[in] p_rxtx_buf   Pointer to the receive or transmit buffer.
- * @param[in] max_txrx_len Maximum receive or transmit length in bytes (size of the RAM buffer for EasyDMA).
+ * @param[in] max_txrx_len Maximum receive or transmit length in bytes (size of the RAM
+ *                         buffer for EasyDMA).
  */
 __STATIC_INLINE void nrf_nfct_rxtx_buffer_set(uint8_t * p_rxtx_buf,
                                               uint16_t  max_txrx_len);
@@ -521,29 +507,32 @@ __STATIC_INLINE void nrf_nfct_rxtx_buffer_set(uint8_t * p_rxtx_buf,
 /**
  * @brief Function for getting the NFCT RX/TX maximum buffer length.
  *
- * @return The configured maximum receive or transmit length in bytes (size of the RX/TX buffer for EasyDMA).
+ * @return The configured maximum receive or transmit length in bytes (size of the RX/TX
+ *         buffer for EasyDMA).
  */
 __STATIC_INLINE uint16_t nrf_nfct_max_rxtx_length_get(void);
 
 /**
  * @brief Function for getting the flags for NFC frame transmission configuration.
  *
- * @return The flags of the NFCT frame transmission configuration, defined in @ref nrf_nfct_tx_frame_config_t.
+ * @return The flags of the NFCT frame transmission configuration, defined in
+ *         @ref nrf_nfct_tx_frame_config_t.
  */
 __STATIC_INLINE uint8_t nrf_nfct_tx_frame_config_get(void);
 
 /**
  * @brief Function for setting up the flags of the NFC frame transmission configuration.
  *
- * @param[in] flags Flags for NFCT TX configuration. Use @ref nrf_nfct_tx_frame_config_t for setting.
+ * @param[in] flags Flags for NFCT TX configuration. Use @ref nrf_nfct_tx_frame_config_t for
+ *                  setting.
  */
 __STATIC_INLINE void nrf_nfct_tx_frame_config_set(uint8_t flags);
 
 /**
  * @brief Function for getting the length of the configured transmission frame.
  *
- * @note NFC frames do not have to consist of full bytes only, therefore data amount for transmission
- *       is configured in number of bits.
+ * @note NFC frames do not have to consist of full bytes only, therefore data amount
+ *       for transmission is configured in number of bits.
  *
  * @return Number of bits to be sent excluding CRC, parity, SoF, and EoF.
  */
@@ -555,8 +544,8 @@ __STATIC_INLINE uint16_t nrf_nfct_tx_bits_get(void);
  * @details Set the number of TX bits excluding CRC, parity, SoF, and EoF.
  *
  * @note Source of data for transmission is set by using @ref nrf_nfct_rxtx_buffer_set.
- * @note NFC frames do not have to consist of full bytes only, therefore data amount for transmission
- *       is configured in number of bits.
+ * @note NFC frames do not have to consist of full bytes only, therefore data amount
+ *       for transmission is configured in number of bits.
  *
  * @param[in] tx_bits Overall number of bits to be sent.
  */
@@ -565,7 +554,8 @@ __STATIC_INLINE void nrf_nfct_tx_bits_set(uint16_t tx_bits);
 /**
  * @brief Function for getting the flags of the NFC frame reception configuration.
  *
- * @return The flags for NFCT frame reception configuration, defined in @ref nrf_nfct_rx_frame_config_t.
+ * @return The flags for NFCT frame reception configuration, defined in
+ *         @ref nrf_nfct_rx_frame_config_t.
  */
 __STATIC_INLINE uint8_t nrf_nfct_rx_frame_config_get(void);
 
@@ -584,19 +574,21 @@ __STATIC_INLINE void nrf_nfct_rx_frame_config_set(uint8_t flags);
  *
  * @param[in] crc_excluded Flag for excluding CRC size from calculation.
  *
- * @return Number of received bits including or excluding CRC, and excluding parity and SoF/EoF framing.
+ * @return Number of received bits including or excluding CRC, and excluding parity
+ *         and SoF/EoF framing.
  */
 __STATIC_INLINE uint16_t nrf_nfct_rx_bits_get(bool crc_excluded);
 
 /**
  * @brief Function for getting the NFCID1 (NFC tag identifier).
  *
- * @note This function always returns the full configuration of the NFCID1 setting (10 bytes), regardless
- *       of the NFCID1 size. The NFCID1 size can be configured using @ref nrf_nfct_sensres_nfcid1_size_set or
- *       @ref nrf_nfct_nfcid1_set.
+ * @note This function always returns the full configuration of the NFCID1 setting (10 bytes),
+ *       regardless of the NFCID1 size. The NFCID1 size can be configured using
+ *       @ref nrf_nfct_sensres_nfcid1_size_set or @ref nrf_nfct_nfcid1_set.
  *
- * @param[out] p_nfcid1_buf Pointer to a buffer for the NDFCID1 parameter. The NFCID1 values are in
- *                          little endian order, that is: |NFCID1_3RD_LAST|NFCID1_2ND_LAST|NFCID1_LAST|.
+ * @param[out] p_nfcid1_buf Pointer to a buffer for the NDFCID1 parameter.
+ *                          The NFCID1 values are in little endian order,
+ *                          that is: |NFCID1_3RD_LAST|NFCID1_2ND_LAST|NFCID1_LAST|.
  *
  * @return Configured NFCID1 length
  */
@@ -605,7 +597,8 @@ __STATIC_INLINE nrf_nfct_sensres_nfcid1_size_t nrf_nfct_nfcid1_get(uint8_t * p_n
 /**
  * @brief Function for setting the NFCID1 (NFC tag identifier).
  *
- * @note This function also configures the NFCIDSIZE field in the SENSRES register of the NRF_NFCT peripheral.
+ * @note This function also configures the NFCIDSIZE field in the SENSRES
+ *       register of the NRF_NFCT peripheral.
  *
  * @param[in] p_nfcid1_buf Pointer to the buffer with NDFCID1 bytes.
  * @param[in] nfcid1_size  Size of the NFCID1 in bytes.
@@ -1001,7 +994,7 @@ __STATIC_INLINE bool nrf_nfct_autocolres_is_enabled(void)
 
 __STATIC_INLINE void nrf_nfct_autocolres_enable(void)
 {
-    NRF_NFCT->AUTOCOLRESCONFIG = 
+    NRF_NFCT->AUTOCOLRESCONFIG =
         (NRF_NFCT->AUTOCOLRESCONFIG & ~NFCT_AUTOCOLRESCONFIG_MODE_Msk) |
         (NFCT_AUTOCOLRESCONFIG_MODE_Enabled << NFCT_AUTOCOLRESCONFIG_MODE_Pos);
 }

@@ -52,13 +52,11 @@ extern "C" {
 typedef struct
 {
     NRF_TIMER_Type * p_reg;            ///< Pointer to the structure with TIMER peripheral instance registers.
-    uint8_t          instance_id;      ///< Driver instance index.
+    uint8_t          instance_id;      ///< Index of the driver instance. For internal use only.
     uint8_t          cc_channel_count; ///< Number of capture/compare channels.
 } nrfx_timer_t;
 
-/**
- * @brief Macro for creating a timer driver instance.
- */
+/** @brief Macro for creating a timer driver instance. */
 #define NRFX_TIMER_INSTANCE(id)                                   \
 {                                                                 \
     .p_reg            = NRFX_CONCAT_2(NRF_TIMER, id),             \
@@ -66,6 +64,7 @@ typedef struct
     .cc_channel_count = NRF_TIMER_CC_CHANNEL_COUNT(id),           \
 }
 
+#ifndef __NRFX_DOXYGEN__
 enum {
 #if NRFX_CHECK(NRFX_TIMER0_ENABLED)
     NRFX_TIMER0_INST_IDX,
@@ -84,10 +83,9 @@ enum {
 #endif
     NRFX_TIMER_ENABLED_COUNT
 };
+#endif
 
-/**
- * @brief Timer driver instance configuration structure.
- */
+/** @brief The configuration structure of the timer driver instance. */
 typedef struct
 {
     nrf_timer_frequency_t frequency;          ///< Frequency.
@@ -97,9 +95,7 @@ typedef struct
     void *                p_context;          ///< Context passed to interrupt handler.
 } nrfx_timer_config_t;
 
-/**
- * @brief Timer driver instance default configuration.
- */
+/** @brief Timer driver instance default configuration. */
 #define NRFX_TIMER_DEFAULT_CONFIG                                                    \
 {                                                                                    \
     .frequency          = (nrf_timer_frequency_t)NRFX_TIMER_DEFAULT_CONFIG_FREQUENCY,\
@@ -125,12 +121,12 @@ typedef void (* nrfx_timer_event_handler_t)(nrf_timer_event_t event_type,
  * @brief Function for initializing the timer.
  *
  * @param[in] p_instance          Pointer to the driver instance structure.
- * @param[in] p_config            Pointer to the structure with initial configuration.
+ * @param[in] p_config            Pointer to the structure with the initial configuration.
  * @param[in] timer_event_handler Event handler provided by the user.
  *                                Must not be NULL.
  *
- * @retval NRFX_SUCCESS             If initialization was successful.
- * @retval NRFX_ERROR_INVALID_STATE If the instance is already initialized.
+ * @retval NRFX_SUCCESS             Initialization was successful.
+ * @retval NRFX_ERROR_INVALID_STATE The instance is already initialized.
  */
 nrfx_err_t nrfx_timer_init(nrfx_timer_t const * const  p_instance,
                            nrfx_timer_config_t const * p_config,
@@ -153,7 +149,7 @@ void nrfx_timer_enable(nrfx_timer_t const * const p_instance);
 /**
  * @brief Function for turning off the timer.
  *
- * Note that the timer will allow to enter the lowest possible SYSTEM_ON state
+ * The timer will allow to enter the lowest possible SYSTEM_ON state
  * only after this function is called.
  *
  * @param[in] p_instance Pointer to the driver instance structure.
@@ -165,7 +161,8 @@ void nrfx_timer_disable(nrfx_timer_t const * const p_instance);
  *
  * @param[in] p_instance Pointer to the driver instance structure.
  *
- * @return True if timer is enabled, false otherwise.
+ * @retval true  Timer is enabled.
+ * @retval false Timer is not enabled.
  */
 bool nrfx_timer_is_enabled(nrfx_timer_t const * const p_instance);
 
@@ -198,7 +195,7 @@ void nrfx_timer_clear(nrfx_timer_t const * const p_instance);
 void nrfx_timer_increment(nrfx_timer_t const * const p_instance);
 
 /**
- * @brief Function for returning the address of a specific timer task.
+ * @brief Function for returning the address of the specified timer task.
  *
  * @param[in] p_instance Pointer to the driver instance structure.
  * @param[in] timer_task Timer task.
@@ -209,7 +206,7 @@ __STATIC_INLINE uint32_t nrfx_timer_task_address_get(nrfx_timer_t const * const 
                                                      nrf_timer_task_t           timer_task);
 
 /**
- * @brief Function for returning the address of a specific timer capture task.
+ * @brief Function for returning the address of the specified timer capture task.
  *
  * @param[in] p_instance Pointer to the driver instance structure.
  * @param[in] channel    Capture channel number.
@@ -220,7 +217,7 @@ __STATIC_INLINE uint32_t nrfx_timer_capture_task_address_get(nrfx_timer_t const 
                                                              uint32_t                   channel);
 
 /**
- * @brief Function for returning the address of a specific timer event.
+ * @brief Function for returning the address of the specified timer event.
  *
  * @param[in] p_instance  Pointer to the driver instance structure.
  * @param[in] timer_event Timer event.
@@ -231,7 +228,7 @@ __STATIC_INLINE uint32_t nrfx_timer_event_address_get(nrfx_timer_t const * const
                                                       nrf_timer_event_t          timer_event);
 
 /**
- * @brief Function for returning the address of a specific timer compare event.
+ * @brief Function for returning the address of the specified timer compare event.
  *
  * @param[in] p_instance Pointer to the driver instance structure.
  * @param[in] channel    Compare channel number.
@@ -253,7 +250,7 @@ uint32_t nrfx_timer_capture(nrfx_timer_t const * const p_instance,
                             nrf_timer_cc_channel_t     cc_channel);
 
 /**
- * @brief Function for returning the capture value from a specific channel.
+ * @brief Function for returning the capture value from the specified channel.
  *
  * Use this function to read channel values when PPI is used for capturing.
  *
@@ -279,15 +276,14 @@ void nrfx_timer_compare(nrfx_timer_t const * const p_instance,
                         bool                       enable_int);
 
 /**
- * @brief Function for setting the timer channel in extended compare mode.
+ * @brief Function for setting the timer channel in the extended compare mode.
  *
  * @param[in] p_instance       Pointer to the driver instance structure.
  * @param[in] cc_channel       Compare channel number.
  * @param[in] cc_value         Compare value.
  * @param[in] timer_short_mask Shortcut between the compare event on the channel
  *                             and the timer task (STOP or CLEAR).
- * @param[in] enable_int       Enable or disable the interrupt for the compare
- *                             channel.
+ * @param[in] enable_int       Enable or disable the interrupt for the compare channel.
  */
 void nrfx_timer_extended_compare(nrfx_timer_t const * const p_instance,
                                  nrf_timer_cc_channel_t     cc_channel,
@@ -386,6 +382,8 @@ __STATIC_INLINE uint32_t nrfx_timer_ms_to_ticks(nrfx_timer_t const * const p_ins
 
 #endif // SUPPRESS_INLINE_IMPLEMENTATION
 
+/** @} */
+
 
 void nrfx_timer_0_irq_handler(void);
 void nrfx_timer_1_irq_handler(void);
@@ -393,8 +391,6 @@ void nrfx_timer_2_irq_handler(void);
 void nrfx_timer_3_irq_handler(void);
 void nrfx_timer_4_irq_handler(void);
 
-
-/** @} */
 
 #ifdef __cplusplus
 }

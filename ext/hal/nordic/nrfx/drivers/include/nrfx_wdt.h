@@ -47,9 +47,7 @@ extern "C" {
  */
 
 #if !NRFX_CHECK(NRFX_WDT_CONFIG_NO_IRQ) || defined(__NRFX_DOXYGEN__)
-/**
- * @brief WDT instance interrupt priority configuration.
- */
+/** @brief WDT instance interrupt priority configuration. */
     #define NRFX_WDT_IRQ_CONFIG .interrupt_priority = NRFX_WDT_CONFIG_IRQ_PRIORITY
 #else
     #define NRFX_WDT_IRQ_CONFIG
@@ -65,12 +63,13 @@ typedef struct
 #endif
 } nrfx_wdt_config_t;
 
-/**@brief WDT event handler function type. */
+/** @brief WDT event handler function type. */
 typedef void (*nrfx_wdt_event_handler_t)(void);
 
-/**@brief WDT channel id type. */
+/** @brief WDT channel ID type. */
 typedef nrf_wdt_rr_register_t nrfx_wdt_channel_id;
 
+/** @brief WDT driver default configuration. */
 #define NRFX_WDT_DEAFULT_CONFIG                                               \
     {                                                                         \
         .behaviour          = (nrf_wdt_behaviour_t)NRFX_WDT_CONFIG_BEHAVIOUR, \
@@ -78,79 +77,79 @@ typedef nrf_wdt_rr_register_t nrfx_wdt_channel_id;
         NRFX_WDT_IRQ_CONFIG                                                   \
     }
 /**
- * @brief This function initializes watchdog.
+ * @brief This function initializes the watchdog.
  *
- * @param[in] p_config          Pointer to the structure with initial configuration.
+ * @param[in] p_config          Pointer to the structure with the initial configuration.
  * @param[in] wdt_event_handler Event handler provided by the user. Ignored when
  *                              @ref NRFX_WDT_CONFIG_NO_IRQ option is enabled.
  *
- * @return    NRFX_SUCCESS on success, otherwise an error code.
+ * @return NRFX_SUCCESS on success, otherwise an error code.
  */
 nrfx_err_t nrfx_wdt_init(nrfx_wdt_config_t const * p_config,
                          nrfx_wdt_event_handler_t  wdt_event_handler);
 
 /**
- * @brief This function allocate watchdog channel.
+ * @brief Function for allocating a watchdog channel.
  *
  * @note This function can not be called after nrfx_wdt_start(void).
  *
- * @param[out] p_channel_id      ID of granted channel.
+ * @param[out] p_channel_id ID of granted channel.
  *
- * @return    NRFX_SUCCESS on success, otherwise an error code.
+ * @return NRFX_SUCCESS on success, otherwise an error code.
  */
 nrfx_err_t nrfx_wdt_channel_alloc(nrfx_wdt_channel_id * p_channel_id);
 
 /**
- * @brief This function starts watchdog.
+ * @brief Function for starting the watchdog.
  *
  * @note After calling this function the watchdog is started, so the user needs to feed all allocated
- *       watchdog channels to avoid reset. At least one watchdog channel has to be allocated.
+ *       watchdog channels to avoid reset. At least one watchdog channel must be allocated.
  */
 void nrfx_wdt_enable(void);
 
 /**
- * @brief This function feeds the watchdog.
+ * @brief Function for feeding the watchdog.
  *
  * @details Function feeds all allocated watchdog channels.
  */
 void nrfx_wdt_feed(void);
 
 /**
- * @brief This function feeds the invidual watchdog channel.
+ * @brief Function for feeding an invidual watchdog channel.
  *
- * @param[in] channel_id      ID of watchdog channel.
+ * @param[in] channel_id ID of watchdog channel.
  */
 void nrfx_wdt_channel_feed(nrfx_wdt_channel_id channel_id);
 
-/**@brief Function for returning a requested task address for the wdt driver module.
+/**
+ * @brief Function for returning a requested task address for the WDT driver module.
  *
- * @param[in]  task                One of the peripheral tasks.
+ * @param[in] task One of the peripheral tasks.
  *
- * @retval     Task address.
+ * @return Task address.
  */
 __STATIC_INLINE uint32_t nrfx_wdt_ppi_task_addr(nrf_wdt_task_t task)
 {
     return nrf_wdt_task_address_get(task);
 }
 
-/**@brief Function for returning a requested event address for the wdt driver module.
+/**
+ * @brief Function for returning a requested event address for the wdt driver module.
  *
- * @param[in]  event               One of the peripheral events.
+ * @param[in] event One of the peripheral events.
  *
- * @retval     Event address
+ * @return Event address.
  */
 __STATIC_INLINE uint32_t nrfx_wdt_ppi_event_addr(nrf_wdt_event_t event)
 {
     return nrf_wdt_event_address_get(event);
 }
 
-
-#if !NRFX_CHECK(NRFX_WDT_CONFIG_NO_IRQ)
-void nrfx_wdt_irq_handler(void);
-#endif
-
-
 /** @} */
+
+
+void nrfx_wdt_irq_handler(void);
+
 
 #ifdef __cplusplus
 }

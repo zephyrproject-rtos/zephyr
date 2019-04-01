@@ -45,14 +45,17 @@ extern "C" {
  * @brief   Bitmask managing module.
  */
 
+/** @brief Macro for getting index of byte in byte stream where @c abs_bit is put. */
 #define BITMASK_BYTE_GET(abs_bit) ((abs_bit)/8)
+
+/** @brief Macro for getting relative index of bit in byte. */
 #define BITMASK_RELBIT_GET(abs_bit) ((abs_bit) & 0x00000007)
 
 /**
- * Function for checking if bit in the multi-byte bit mask is set.
+ * @brief Function for checking if bit in the multi-byte bit mask is set.
  *
- * @param bit    Bit index.
- * @param p_mask A pointer to mask with bit fields.
+ * @param[in] bit    Bit index.
+ * @param[in] p_mask Pointer to mask with bit fields.
  *
  * @return 0 if bit is not set, positive value otherwise.
  */
@@ -65,10 +68,10 @@ __STATIC_INLINE uint32_t nrf_bitmask_bit_is_set(uint32_t bit, void const * p_mas
 }
 
 /**
- * Function for setting a bit in the multi-byte bit mask.
+ * @brief Function for setting a bit in the multi-byte bit mask.
  *
- * @param bit    Bit index.
- * @param p_mask A pointer to mask with bit fields.
+ * @param[in] bit    Bit index.
+ * @param[in] p_mask Pointer to mask with bit fields.
  */
 __STATIC_INLINE void nrf_bitmask_bit_set(uint32_t bit, void * p_mask)
 {
@@ -79,10 +82,10 @@ __STATIC_INLINE void nrf_bitmask_bit_set(uint32_t bit, void * p_mask)
 }
 
 /**
- * Function for clearing a bit in the multi-byte bit mask.
+ * @brief Function for clearing a bit in the multi-byte bit mask.
  *
- * @param bit    Bit index.
- * @param p_mask A pointer to mask with bit fields.
+ * @param[in] bit    Bit index.
+ * @param[in] p_mask Pointer to mask with bit fields.
  */
 __STATIC_INLINE void nrf_bitmask_bit_clear(uint32_t bit, void * p_mask)
 {
@@ -93,12 +96,12 @@ __STATIC_INLINE void nrf_bitmask_bit_clear(uint32_t bit, void * p_mask)
 }
 
 /**
- * Function for performing bitwise OR operation on two multi-byte bit masks.
+ * @brief Function for performing bitwise OR operation on two multi-byte bit masks.
  *
- * @param p_mask1    A pointer to the first bit mask.
- * @param p_mask2    A pointer to the second bit mask.
- * @param p_out_mask A pointer to the output bit mask.
- * @param length     Length of output mask in bytes.
+ * @param[in] p_mask1    Pointer to the first bit mask.
+ * @param[in] p_mask2    Pointer to the second bit mask.
+ * @param[in] p_out_mask Pointer to the output bit mask.
+ * @param[in] length     Length of output mask in bytes.
  */
 __STATIC_INLINE void nrf_bitmask_masks_or(void const *   p_mask1,
                                           void const *   p_mask2,
@@ -116,12 +119,12 @@ __STATIC_INLINE void nrf_bitmask_masks_or(void const *   p_mask1,
 }
 
 /**
- * Function for performing bitwise AND operation on two multi-byte bit masks.
+ * @brief Function for performing bitwise AND operation on two multi-byte bit masks.
  *
- * @param p_mask1    A pointer to the first bit mask.
- * @param p_mask2    A pointer to the second bit mask.
- * @param p_out_mask A pointer to the output bit mask.
- * @param length     Length of output mask in bytes.
+ * @param[in] p_mask1    Pointer to the first bit mask.
+ * @param[in] p_mask2    Pointer to the second bit mask.
+ * @param[in] p_out_mask Pointer to the output bit mask.
+ * @param[in] length     Length of output mask in bytes.
  */
 __STATIC_INLINE void nrf_bitmask_masks_and(void const *   p_mask1,
                                            void const *   p_mask2,

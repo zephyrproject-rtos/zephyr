@@ -48,7 +48,7 @@ extern "C" {
 /**
  * @brief Function for enabling or disabling DCDC converter.
  *
- * @param[in] p_reg  Pointer to the peripheral registers structure.
+ * @param[in] p_reg  Pointer to the structure of registers of the peripheral.
  * @param[in] enable Set true to enable or false to disable DCDC converter.
  */
 __STATIC_INLINE void nrf_regulators_dcdcen_set(NRF_REGULATORS_Type * p_reg, bool enable);
@@ -61,7 +61,7 @@ __STATIC_INLINE void nrf_regulators_dcdcen_set(NRF_REGULATORS_Type * p_reg, bool
  *
  * @note This function never returns.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
  */
 __STATIC_INLINE void nrf_regulators_system_off(NRF_REGULATORS_Type * p_reg);
 

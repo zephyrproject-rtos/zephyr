@@ -468,7 +468,7 @@
 // <8=> 512x
 
 #ifndef NRFX_I2S_CONFIG_RATIO
-#define NRFX_I2S_CONFIG_RATIO 2000
+#define NRFX_I2S_CONFIG_RATIO 5
 #endif
 
 // <o> NRFX_I2S_CONFIG_IRQ_PRIORITY  - Interrupt priority
@@ -738,6 +738,14 @@
 #endif
 
 // </e>
+
+// </e>
+
+// <e> NRFX_NVMC_ENABLED - nrfx_nvmc - NVMC peripheral driver
+//==========================================================
+#ifndef NRFX_NVMC_ENABLED
+#define NRFX_NVMC_ENABLED 0
+#endif
 
 // </e>
 
@@ -2255,17 +2263,40 @@
 // </e>
 
 // <q> NRFX_SYSTICK_ENABLED  - nrfx_systick - ARM(R) SysTick driver
-//==========================================================
+
+
 #ifdef CONFIG_NRFX_SYSTICK
 #define NRFX_SYSTICK_ENABLED 1
 #endif
+
+// <e> NRFX_TEMP_ENABLED - nrfx_temp - TEMP peripheral driver
+//==========================================================
+#ifndef NRFX_TEMP_ENABLED
+#define NRFX_TEMP_ENABLED 0
+#endif
+
+// <o> NRFX_TEMP_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
+
+// <0=> 0 (highest)
+// <1=> 1
+// <2=> 2
+// <3=> 3
+// <4=> 4
+// <5=> 5
+// <6=> 6
+// <7=> 7
+
+#ifndef NRFX_TEMP_DEFAULT_CONFIG_IRQ_PRIORITY
+#define NRFX_TEMP_DEFAULT_CONFIG_IRQ_PRIORITY 7
+#endif
+
+// </e>
 
 // <e> NRFX_TIMER_ENABLED - nrfx_timer - TIMER periperal driver
 //==========================================================
 #ifdef CONFIG_NRFX_TIMER
 #define NRFX_TIMER_ENABLED 1
 #endif
-
 // <q> NRFX_TIMER0_ENABLED  - Enable TIMER0 instance
 
 

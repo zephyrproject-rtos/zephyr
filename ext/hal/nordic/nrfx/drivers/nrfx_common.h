@@ -55,7 +55,7 @@ extern "C" {
  *        a non-zero value.
  *
  * Normally, preprocessors treat all undefined identifiers as having the value
- * zero. However, some tools, like static code analyzers, may issue a warning
+ * zero. However, some tools, like static code analyzers, can issue a warning
  * when such identifier is evaluated. This macro gives the possibility to suppress
  * such warnings only in places where this macro is used for evaluation, not in
  * the whole analyzed code.
@@ -68,8 +68,8 @@ extern "C" {
  * @note This macro is expanded in two steps so that tokens given as macros
  *       themselves are fully expanded before they are merged.
  *
- * @param p1  First token.
- * @param p2  Second token.
+ * @param[in] p1 First token.
+ * @param[in] p2 Second token.
  *
  * @return The two tokens merged into one, unless they cannot together form
  *         a valid token (in such case, the preprocessor issues a warning and
@@ -78,10 +78,8 @@ extern "C" {
  * @sa NRFX_CONCAT_3
  */
 #define NRFX_CONCAT_2(p1, p2)       NRFX_CONCAT_2_(p1, p2)
-/**
- * @brief Internal macro used by @ref NRFX_CONCAT_2 to perform the expansion
- *        in two steps.
- */
+
+/** @brief Internal macro used by @ref NRFX_CONCAT_2 to perform the expansion in two steps. */
 #define NRFX_CONCAT_2_(p1, p2)      p1 ## p2
 
 /**
@@ -90,9 +88,9 @@ extern "C" {
  * @note This macro is expanded in two steps so that tokens given as macros
  *       themselves are fully expanded before they are merged.
  *
- * @param p1  First token.
- * @param p2  Second token.
- * @param p3  Third token.
+ * @param[in] p1 First token.
+ * @param[in] p2 Second token.
+ * @param[in] p3 Third token.
  *
  * @return The three tokens merged into one, unless they cannot together form
  *         a valid token (in such case, the preprocessor issues a warning and
@@ -101,29 +99,29 @@ extern "C" {
  * @sa NRFX_CONCAT_2
  */
 #define NRFX_CONCAT_3(p1, p2, p3)   NRFX_CONCAT_3_(p1, p2, p3)
-/**
- * @brief Internal macro used by @ref NRFX_CONCAT_3 to perform the expansion
- *        in two steps.
- */
+
+/** @brief Internal macro used by @ref NRFX_CONCAT_3 to perform the expansion in two steps. */
 #define NRFX_CONCAT_3_(p1, p2, p3)  p1 ## p2 ## p3
 
-/**@brief Macro for performing rounded integer division (as opposed to
+/**
+ * @brief Macro for performing rounded integer division (as opposed to
  *        truncating the result).
  *
- * @param a  Numerator.
- * @param b  Denominator.
+ * @param[in] a Numerator.
+ * @param[in] b Denominator.
  *
  * @return Rounded (integer) result of dividing @c a by @c b.
  */
 #define NRFX_ROUNDED_DIV(a, b)  (((a) + ((b) / 2)) / (b))
 
-/**@brief Macro for performing integer division, making sure the result is rounded up.
+/**
+ * @brief Macro for performing integer division, making sure the result is rounded up.
  *
- * @details A typical use case for this macro is to compute the number of objects 
+ * @details A typical use case for this macro is to compute the number of objects
  *          with size @c b required to hold @c a number of bytes.
  *
- * @param a  Numerator.
- * @param b  Denominator.
+ * @param[in] a Numerator.
+ * @param[in] b Denominator.
  *
  * @return Integer result of dividing @c a by @c b, rounded up.
  */
@@ -132,7 +130,7 @@ extern "C" {
 /**
  * @brief Macro for getting the number of elements in an array.
  *
- * @param array  Name of the array.
+ * @param[in] array Name of the array.
  *
  * @return Array element count.
  */
@@ -141,17 +139,19 @@ extern "C" {
 /**@brief Macro for checking if given lengths of EasyDMA transfers do not exceed
  *        the limit of the specified peripheral.
  *
- * @param peripheral Peripheral to check the lengths against.
- * @param length1    First length to be checked.
- * @param length2    Second length to be checked (pass 0 if not needed).
+ * @param[in] peripheral Peripheral to check the lengths against.
+ * @param[in] length1    First length to be checked.
+ * @param[in] length2    Second length to be checked (pass 0 if not needed).
  *
- * @return
+ * @retval true  The length of buffers does not exceed the limit of the specified peripheral.
+ * @retval false The length of buffers exceeds the limit of the specified peripheral.
  */
 #define NRFX_EASYDMA_LENGTH_VALIDATE(peripheral, length1, length2)            \
     (((length1) < (1U << NRFX_CONCAT_2(peripheral, _EASYDMA_MAXCNT_SIZE))) && \
      ((length2) < (1U << NRFX_CONCAT_2(peripheral, _EASYDMA_MAXCNT_SIZE))))
 
-/**@brief Macro for waiting until condition is met.
+/**
+ * @brief Macro for waiting until condition is met.
  *
  * @param[in]  condition Condition to meet.
  * @param[in]  attempts  Maximum number of condition checks. Must not be 0.
@@ -180,7 +180,7 @@ do {                                                         \
  * ID numbers and their base addresses. See the chapter "Peripheral interface"
  * (section "Peripheral ID") in the Product Specification.
  *
- * @param[in] base_addr  Peripheral base address or pointer.
+ * @param[in] base_addr Peripheral base address or pointer.
  *
  * @return ID number associated with the specified peripheral.
  */
@@ -194,20 +194,16 @@ do {                                                         \
  * equal to its ID number. See the chapter "Peripheral interface" (sections
  * "Peripheral ID" and "Interrupts") in the Product Specification.
  *
- * @param[in] base_addr  Peripheral base address or pointer.
+ * @param[in] base_addr Peripheral base address or pointer.
  *
  * @return Interrupt number associated with the specified peripheral.
  */
 #define NRFX_IRQ_NUMBER_GET(base_addr)  NRFX_PERIPHERAL_ID_GET(base_addr)
 
-/**
- * @brief IRQ handler type.
- */
+/** @brief IRQ handler type. */
 typedef void (* nrfx_irq_handler_t)(void);
 
-/**
- * @brief Driver state.
- */
+/** @brief Driver state. */
 typedef enum
 {
     NRFX_DRV_STATE_UNINITIALIZED, ///< Uninitialized.
@@ -223,13 +219,12 @@ typedef enum
  * to be placed in the Data RAM region. This function can be used to check if
  * this condition is met.
  *
- * @param[in] p_object  Pointer to an object whose location is to be checked.
+ * @param[in] p_object Pointer to an object whose location is to be checked.
  *
- * @retval true  If the pointed object is located in the Data RAM region.
- * @retval false Otherwise.
+ * @retval true  The pointed object is located in the Data RAM region.
+ * @retval false The pointed object is not located in the Data RAM region.
  */
 __STATIC_INLINE bool nrfx_is_in_ram(void const * p_object);
-
 
 /**
  * @brief Function for checking if an object is aligned to a 32-bit word
@@ -240,16 +235,15 @@ __STATIC_INLINE bool nrfx_is_in_ram(void const * p_object);
  *
  * @param[in] p_object  Pointer to an object whose location is to be checked.
  *
- * @retval true  if the pointed object is aligned to a 32-bit word.
- * @retval false otherwise.
+ * @retval true  The pointed object is aligned to a 32-bit word.
+ * @retval false The pointed object is not aligned to a 32-bit word.
  */
 __STATIC_INLINE bool nrfx_is_word_aligned(void const * p_object);
 
-
 /**
- * @brief Function for getting the interrupt number for a specific peripheral.
+ * @brief Function for getting the interrupt number for the specified peripheral.
  *
- * @param[in] p_reg  Peripheral base pointer.
+ * @param[in] p_reg Peripheral base pointer.
  *
  * @return Interrupt number associated with the pointed peripheral.
  */
@@ -262,8 +256,8 @@ __STATIC_INLINE IRQn_Type nrfx_get_irq_number(void const * p_reg);
  * The event identifier is the offset between the event register address and
  * the peripheral base address, and is equal (thus, can be directly cast) to
  * the corresponding value of the enumerated type from HAL (nrf_*_event_t).
-
- * @param bit  INTEN register bit position.
+ *
+ * @param[in] bit INTEN register bit position.
  *
  * @return Event identifier.
  *
@@ -279,7 +273,7 @@ __STATIC_INLINE uint32_t nrfx_bitpos_to_event(uint32_t bit);
  * the peripheral base address, and is equal (thus, can be directly cast) to
  * the corresponding value of the enumerated type from HAL (nrf_*_event_t).
  *
- * @param event  Event identifier.
+ * @param[in] event Event identifier.
  *
  * @return INTEN register bit position.
  *

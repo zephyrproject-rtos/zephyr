@@ -78,7 +78,7 @@ typedef enum
  * @brief Function for activating a DPPI task.
  *
  * @param[in] p_reg     Pointer to the structure of registers of the peripheral.
- * @param[in] dppi_task Task to activate.
+ * @param[in] dppi_task Task to be activated.
  */
 __STATIC_INLINE void nrf_dppi_task_trigger(NRF_DPPIC_Type * p_reg, nrf_dppi_task_t dppi_task);
 
@@ -86,10 +86,10 @@ __STATIC_INLINE void nrf_dppi_task_trigger(NRF_DPPIC_Type * p_reg, nrf_dppi_task
  * @brief Function for checking the state of a specific DPPI channel.
  *
  * @param[in] p_reg   Pointer to the structure of registers of the peripheral.
- * @param[in] channel Channel to check.
+ * @param[in] channel Channel to be checked.
  *
- * @retval true  If the channel is enabled.
- * @retval false If the channel is not enabled.
+ * @retval true  The channel is enabled.
+ * @retval false The channel is not enabled.
  */
 __STATIC_INLINE bool nrf_dppi_channel_check(NRF_DPPIC_Type const * p_reg, uint8_t channel);
 

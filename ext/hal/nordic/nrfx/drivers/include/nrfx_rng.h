@@ -45,13 +45,11 @@ extern "C" {
  * @brief   Random Number Generator (RNG) peripheral driver.
  */
 
-/**
- * @brief Struct for RNG configuration.
- */
+/** @brief Struct for RNG configuration. */
 typedef struct
 {
     bool     error_correction : 1;  /**< Error correction flag. */
-    uint8_t  interrupt_priority;    /**< interrupt priority */
+    uint8_t  interrupt_priority;    /**< Interrupt priority. */
 } nrfx_rng_config_t;
 
 /**
@@ -63,52 +61,48 @@ typedef struct
  *            { ...
  *        @endcode
  */
-#define NRFX_RNG_DEFAULT_CONFIG                                 \
-    {                                                           \
-        .error_correction   = NRFX_RNG_CONFIG_ERROR_CORRECTION, \
-        .interrupt_priority = NRFX_RNG_CONFIG_IRQ_PRIORITY,     \
-    }
+#define NRFX_RNG_DEFAULT_CONFIG                             \
+{                                                           \
+    .error_correction   = NRFX_RNG_CONFIG_ERROR_CORRECTION, \
+    .interrupt_priority = NRFX_RNG_CONFIG_IRQ_PRIORITY,     \
+}
 
-/**
- * @brief RNG driver event handler type.
- */
+/** @brief RNG driver event handler type. */
 typedef void (* nrfx_rng_evt_handler_t)(uint8_t rng_data);
 
 /**
  * @brief Function for initializing the nrfx_rng module.
  *
- * @param[in]  p_config Pointer to the structure with initial configuration.
- * @param[in]  handler  Event handler provided by the user. Must not be NULL.
+ * @param[in] p_config Pointer to the structure with the initial configuration.
+ * @param[in] handler  Event handler provided by the user. Must not be NULL.
  *
- * @retval  NRFX_SUCCESS                   Driver was successfully initialized.
- * @retval  NRFX_ERROR_ALREADY_INITIALIZED Driver was already initialized.
+ * @retval NRFX_SUCCESS                   Driver was successfully initialized.
+ * @retval NRFX_ERROR_ALREADY_INITIALIZED Driver was already initialized.
  */
 nrfx_err_t nrfx_rng_init(nrfx_rng_config_t const * p_config, nrfx_rng_evt_handler_t handler);
 
 /**
- * @brief Function for starting the random value generation.
+ * @brief Function for starting the generation of random values.
  *
- * Function enables interrupts in perihperal and start them.
+ * New data should be handled by handler passed to the @ref nrfx_rng_init() function.
  */
 void nrfx_rng_start(void);
 
 /**
- * @brief Function for stoping the random value generation.
+ * @brief Function for stopping the generation of random values.
  *
- * Function disables interrupts in perihperal and stop generation of new random values.
+ * Function disables interrupts in peripheral and stops the generation of new random values.
  */
 void nrfx_rng_stop(void);
 
-/**
- * @brief Function for uninitializing the nrfx_rng module.
- */
+/** @brief Function for uninitializing the nrfx_rng module. */
 void nrfx_rng_uninit(void);
+
+/** @} */
 
 
 void nrfx_rng_irq_handler(void);
 
-
-/** @} */
 
 #ifdef __cplusplus
 }

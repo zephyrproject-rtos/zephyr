@@ -1155,6 +1155,25 @@ static void usbd_ep_data_handler(nrfx_usbd_ep_t ep, uint8_t bitpos)
     if (NRF_USBD_EPIN_CHECK(ep))
     {
         /* IN endpoint (Device -> Host) */
+
+        /* Secure against the race condition that occurs when an IN transfer is interrupted
+         * by an OUT transaction, which in turn is interrupted by a process with higher priority.
+         * If the IN events ENDEPIN and EPDATA arrive during that high priority process,
+         * the OUT handler might call usbd_ep_data_handler without calling 
+         * nrf_usbd_epin_dma_handler (or nrf_usbd_ep0in_dma_handler) for the IN transaction.
+         */
+        if (nrf_usbd_event_get_and_clear(nrfx_usbd_ep_to_endevent(ep)))
+        {
+            if (ep != NRFX_USBD_EPIN0)
+            {
+                nrf_usbd_epin_dma_handler(ep);
+            }
+            else
+            {
+                nrf_usbd_ep0in_dma_handler();
+            }
+        }
+
         if (0 == (m_ep_dma_waiting & (1U << bitpos)))
         {
             NRFX_LOG_DEBUG("USBD event: EndpointData: In finished");
