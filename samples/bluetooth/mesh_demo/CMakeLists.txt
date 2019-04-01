@@ -11,6 +11,8 @@ target_sources_ifdef(CONFIG_BOARD_BBC_MICROBIT app PRIVATE src/microbit.c)
 zephyr_include_directories_ifdef(CONFIG_BOARD_BBC_MICROBIT
 				 $ENV{ZEPHYR_BASE}/boards/arm/bbc_microbit)
 
+target_sources_ifdef(CONFIG_LVGL app PRIVATE src/lvgl.c)
+
 if(NODE_ADDR)
   zephyr_compile_definitions(NODE_ADDR=${NODE_ADDR})
 endif()

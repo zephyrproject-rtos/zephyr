@@ -14,7 +14,7 @@ void board_button_1_pressed(void);
 u16_t board_set_target(void);
 void board_play(const char *str);
 
-#if defined(CONFIG_BOARD_BBC_MICROBIT)
+#if defined(CONFIG_BOARD_BBC_MICROBIT) || defined(CONFIG_LVGL)
 void board_init(u16_t *addr);
 void board_play_tune(const char *str);
 void board_heartbeat(u8_t hops, u16_t feat);

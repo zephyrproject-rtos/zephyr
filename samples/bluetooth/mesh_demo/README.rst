@@ -44,6 +44,16 @@ the Zephyr tree.
 See :ref:`bluetooth samples section <bluetooth-samples>` for details on how
 to run the sample inside QEMU.
 
+For mimxrt10xx_evk boards with an LCD and a frdm_kw41z shield, build and flash
+the application as follows:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/bluetooth/mesh_demo
+   :board: mimxrt1050_evk
+   :shield: frdm_kw41z
+   :goals: flash
+   :compact:
+
 For other boards, build and flash the application as follows:
 
 .. zephyr-app-commands::

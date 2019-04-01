@@ -5,3 +5,8 @@ tests:
     harness: bluetooth
     platform_whitelist: bbc_microbit nrf51_blenano qemu_x86
     tags: bluetooth
+  sample.bluetooth.mesh_demo.frdm_kw41z_shield:
+    harness: bluetooth
+    platform_whitelist: mimxrt1050_evk mimxrt1060_evk mimxrt1064_evk
+    tags: bluetooth
+    extra_args: SHIELD=frdm_kw41z
