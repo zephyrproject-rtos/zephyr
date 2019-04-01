@@ -92,7 +92,7 @@
 		 *
 		 * The system timer (assumed at LPTMR0) is placed on channel 0,
 		 * and peripherals are in channel 1. This can be overridden with
-		 * overlays, e.g. to manage IRQ priorities, and it'll will Just
+		 * overlays, e.g. to manage IRQ priorities, and it will Just
 		 * Work, but using fewer channels here allows disabling unused
 		 * ones in Kconfig, making the binary smaller.
 		 *
