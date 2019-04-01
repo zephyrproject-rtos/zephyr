@@ -77,6 +77,7 @@ static struct k_sem sem_lock;
 #define SYNC_LOCK()
 #define SYNC_UNLOCK()
 #endif
+
 static bool write_protect;
 
 static int write(off_t addr, const void *data, size_t len);
@@ -89,10 +90,12 @@ static inline bool is_aligned_32(u32_t data)
 
 static inline bool is_regular_addr_valid(off_t addr, size_t len)
 {
-	if (addr >= NRF_FICR->CODEPAGESIZE * NRF_FICR->CODESIZE ||
+	size_t flash_size = nrfx_nvmc_flash_size_get();
+
+	if (addr >= flash_size ||
 	    addr < 0 ||
-	    len > NRF_FICR->CODEPAGESIZE * NRF_FICR->CODESIZE ||
-	    addr + len > NRF_FICR->CODEPAGESIZE * NRF_FICR->CODESIZE) {
+	    len > flash_size ||
+	    addr + len > flash_size) {
 		return false;
 	}
 
@@ -180,7 +183,7 @@ static int flash_nrf_write(struct device *dev, off_t addr,
 
 static int flash_nrf_erase(struct device *dev, off_t addr, size_t size)
 {
-	u32_t pg_size = NRF_FICR->CODEPAGESIZE;
+	u32_t pg_size = nrfx_nvmc_flash_page_size_get();
 	u32_t n_pages = size / pg_size;
 	int ret;
 
@@ -263,8 +266,8 @@ static int nrf_flash_init(struct device *dev)
 #endif /* CONFIG_SOC_FLASH_NRF_RADIO_SYNC */
 
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
-	dev_layout.pages_count = NRF_FICR->CODESIZE;
-	dev_layout.pages_size = NRF_FICR->CODEPAGESIZE;
+	dev_layout.pages_count = nrfx_nvmc_flash_page_count_get();
+	dev_layout.pages_size = nrfx_nvmc_flash_page_size_get();
 #endif
 	write_protect = true;
 
@@ -435,7 +438,7 @@ static int write_in_timeslice(off_t addr, const void *data, size_t len)
 
 static int erase_op(void *context)
 {
-	u32_t pg_size = NRF_FICR->CODEPAGESIZE;
+	u32_t pg_size = nrfx_nvmc_flash_page_size_get();
 	struct flash_context *e_ctx = context;
 
 #if defined(CONFIG_SOC_FLASH_NRF_RADIO_SYNC)
