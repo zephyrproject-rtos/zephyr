@@ -161,6 +161,7 @@ def parse_args():
     args = parser.parse_args()
 
 def main():
+    global flash_content, write_buf
     parse_args()
 
     in_file_size = os.path.getsize(args.in_file)
