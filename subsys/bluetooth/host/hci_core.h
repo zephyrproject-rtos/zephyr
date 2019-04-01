@@ -172,7 +172,7 @@ struct bt_dev {
 
 	/* Local Name */
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
-	char			name[CONFIG_BT_DEVICE_NAME_MAX];
+	char			name[CONFIG_BT_DEVICE_NAME_MAX + 1];
 #endif
 };
 
