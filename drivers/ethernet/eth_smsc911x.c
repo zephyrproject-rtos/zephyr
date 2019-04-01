@@ -314,7 +314,7 @@ void smsc_establish_link(void)
 	SMSC9220->HW_CFG = hw_cfg;
 }
 
-inline void smsc_enable_xmit(void)
+static inline void smsc_enable_xmit(void)
 {
 	SMSC9220->TX_CFG = 0x2 /*TX_CFG_TX_ON*/;
 }
