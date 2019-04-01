@@ -1812,9 +1812,10 @@ extern void k_queue_append(struct k_queue *queue, void *data);
 /**
  * @brief Append an element to a queue.
  *
- * This routine appends a data item to @a queue. There is an implicit
- * memory allocation from the calling thread's resource pool, which is
- * automatically freed when the item is removed from the queue.
+ * This routine appends a data item to @a queue. There is an implicit memory
+ * allocation to create an additional temporary bookkeeping data structure from
+ * the calling thread's resource pool, which is automatically freed when the
+ * item is removed. The data itself is not copied.
  *
  * @note Can be called by ISRs.
  *
@@ -1845,9 +1846,10 @@ extern void k_queue_prepend(struct k_queue *queue, void *data);
 /**
  * @brief Prepend an element to a queue.
  *
- * This routine prepends a data item to @a queue. There is an implicit
- * memory allocation from the calling thread's resource pool, which is
- * automatically freed when the item is removed from the queue.
+ * This routine prepends a data item to @a queue. There is an implicit memory
+ * allocation to create an additional temporary bookkeeping data structure from
+ * the calling thread's resource pool, which is automatically freed when the
+ * item is removed. The data itself is not copied.
  *
  * @note Can be called by ISRs.
  *
@@ -2117,9 +2119,10 @@ struct k_fifo {
 /**
  * @brief Add an element to a FIFO queue.
  *
- * This routine adds a data item to @a fifo. There is an implicit
- * memory allocation from the calling thread's resource pool, which is
- * automatically freed when the item is removed.
+ * This routine adds a data item to @a fifo. There is an implicit memory
+ * allocation to create an additional temporary bookkeeping data structure from
+ * the calling thread's resource pool, which is automatically freed when the
+ * item is removed. The data itself is not copied.
  *
  * @note Can be called by ISRs.
  *
@@ -2316,9 +2319,10 @@ struct k_lifo {
 /**
  * @brief Add an element to a LIFO queue.
  *
- * This routine adds a data item to @a lifo. There is an implicit
- * memory allocation from the calling thread's resource pool, which is
- * automatically freed when the item is removed.
+ * This routine adds a data item to @a lifo. There is an implicit memory
+ * allocation to create an additional temporary bookkeeping data structure from
+ * the calling thread's resource pool, which is automatically freed when the
+ * item is removed. The data itself is not copied.
  *
  * @note Can be called by ISRs.
  *
