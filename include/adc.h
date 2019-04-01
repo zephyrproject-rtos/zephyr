@@ -323,6 +323,9 @@ static inline int z_impl_adc_channel_setup(struct device *dev,
  * @param dev       Pointer to the device structure for the driver instance.
  * @param sequence  Structure specifying requested sequence of samplings.
  *
+ * If invoked from user mode, any sequence struct options for callback must
+ * be NULL.
+ *
  * @retval 0        On success.
  * @retval -EINVAL  If a parameter with an invalid value has been provided.
  * @retval -ENOMEM  If the provided buffer is to small to hold the results
@@ -349,6 +352,9 @@ static inline int z_impl_adc_read(struct device *dev,
 #ifdef CONFIG_ADC_ASYNC
 /**
  * @brief Set an asynchronous read request.
+ *
+ * If invoked from user mode, any sequence struct options for callback must
+ * be NULL.
  *
  * @param dev       Pointer to the device structure for the driver instance.
  * @param sequence  Structure specifying requested sequence of samplings.
