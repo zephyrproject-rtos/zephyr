@@ -1685,7 +1685,7 @@ static void eth0_iface_init(struct net_if *iface)
 
 	generate_mac(dev_data->mac_addr);
 
-	LOG_INF("MAC: %x:%x:%x:%x:%x:%x",
+	LOG_INF("MAC: %02x:%02x:%02x:%02x:%02x:%02x",
 		dev_data->mac_addr[0], dev_data->mac_addr[1],
 		dev_data->mac_addr[2], dev_data->mac_addr[3],
 		dev_data->mac_addr[4], dev_data->mac_addr[5]);
