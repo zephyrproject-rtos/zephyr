@@ -33,9 +33,9 @@
 	soc {
 		rcc: rcc@50000000 {
 			compatible = "st,stm32-rcc";
-			clocks-controller;
-			#clocks-cells = <2>;
 			reg = <0x50000000 0x1000>;
+			clocks-controller;
+			#clock-cells = <2>;
 			label = "STM32_CLK_RCC";
 		};
 
