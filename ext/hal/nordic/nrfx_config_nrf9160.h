@@ -202,12 +202,12 @@
 
 // <h> nRF_Drivers
 
-// <e> NRFX_CLOCK_ENABLED - nrfx_clock - CLOCK peripheral driver
+// <e> NRFX_CLOCK_ENABLED - nrfx_clock - CLOCK peripheral driver.
 //==========================================================
 #ifdef CONFIG_NRFX_CLOCK
 #define NRFX_CLOCK_ENABLED 1
 #endif
-// <o> NRFX_CLOCK_CONFIG_LF_SRC  - LF Clock Source
+// <o> NRFX_CLOCK_CONFIG_LF_SRC  - LF clock source.
 
 // <0=> RC
 // <1=> XTAL
@@ -219,7 +219,7 @@
 #define NRFX_CLOCK_CONFIG_LF_SRC 1
 #endif
 
-// <o> NRFX_CLOCK_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_CLOCK_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -239,7 +239,7 @@
 #ifndef NRFX_CLOCK_CONFIG_LOG_ENABLED
 #define NRFX_CLOCK_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_CLOCK_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_CLOCK_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -345,17 +345,17 @@
 
 // </e>
 
-// <e> NRFX_GPIOTE_ENABLED - nrfx_gpiote - GPIOTE peripheral driver
+// <e> NRFX_GPIOTE_ENABLED - nrfx_gpiote - GPIOTE peripheral driver.
 //==========================================================
 #ifdef CONFIG_NRFX_GPIOTE
 #define NRFX_GPIOTE_ENABLED 1
 #endif
-// <o> NRFX_GPIOTE_CONFIG_NUM_OF_LOW_POWER_EVENTS - Number of lower power input pins
+// <o> NRFX_GPIOTE_CONFIG_NUM_OF_LOW_POWER_EVENTS - Number of lower power input pins.
 #ifndef NRFX_GPIOTE_CONFIG_NUM_OF_LOW_POWER_EVENTS
 #define NRFX_GPIOTE_CONFIG_NUM_OF_LOW_POWER_EVENTS 1
 #endif
 
-// <o> NRFX_GPIOTE_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_GPIOTE_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -375,7 +375,7 @@
 #ifndef NRFX_GPIOTE_CONFIG_LOG_ENABLED
 #define NRFX_GPIOTE_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_GPIOTE_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_GPIOTE_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -423,7 +423,7 @@
 
 // </e>
 
-// <e> NRFX_I2S_ENABLED - nrfx_i2s - I2S peripheral driver
+// <e> NRFX_I2S_ENABLED - nrfx_i2s - I2S peripheral driver.
 //==========================================================
 #ifndef NRFX_I2S_ENABLED
 #define NRFX_I2S_ENABLED 0
@@ -442,7 +442,7 @@
 #define NRFX_I2S_CONFIG_LRCK_PIN 30
 #endif
 
-// <o> NRFX_I2S_CONFIG_MCK_PIN - MCK pin
+// <o> NRFX_I2S_CONFIG_MCK_PIN - MCK pin.
 #ifndef NRFX_I2S_CONFIG_MCK_PIN
 #define NRFX_I2S_CONFIG_MCK_PIN 255
 #endif
@@ -461,7 +461,7 @@
 #define NRFX_I2S_CONFIG_SDIN_PIN 28
 #endif
 
-// <o> NRFX_I2S_CONFIG_MASTER  - Mode
+// <o> NRFX_I2S_CONFIG_MASTER  - Mode.
 
 // <0=> Master
 // <1=> Slave
@@ -470,7 +470,7 @@
 #define NRFX_I2S_CONFIG_MASTER 0
 #endif
 
-// <o> NRFX_I2S_CONFIG_FORMAT  - Format
+// <o> NRFX_I2S_CONFIG_FORMAT  - Format.
 
 // <0=> I2S
 // <1=> Aligned
@@ -479,7 +479,7 @@
 #define NRFX_I2S_CONFIG_FORMAT 0
 #endif
 
-// <o> NRFX_I2S_CONFIG_ALIGN  - Alignment
+// <o> NRFX_I2S_CONFIG_ALIGN  - Alignment.
 
 // <0=> Left
 // <1=> Right
@@ -488,7 +488,7 @@
 #define NRFX_I2S_CONFIG_ALIGN 0
 #endif
 
-// <o> NRFX_I2S_CONFIG_SWIDTH  - Sample width (bits)
+// <o> NRFX_I2S_CONFIG_SWIDTH  - Sample width (bits).
 
 // <0=> 8
 // <1=> 16
@@ -498,7 +498,7 @@
 #define NRFX_I2S_CONFIG_SWIDTH 1
 #endif
 
-// <o> NRFX_I2S_CONFIG_CHANNELS  - Channels
+// <o> NRFX_I2S_CONFIG_CHANNELS  - Channels.
 
 // <0=> Stereo
 // <1=> Left
@@ -508,7 +508,7 @@
 #define NRFX_I2S_CONFIG_CHANNELS 1
 #endif
 
-// <o> NRFX_I2S_CONFIG_MCK_SETUP  - MCK behavior
+// <o> NRFX_I2S_CONFIG_MCK_SETUP  - MCK behavior.
 
 // <0=> Disabled
 // <536870912=> 32MHz/8
@@ -529,7 +529,7 @@
 #define NRFX_I2S_CONFIG_MCK_SETUP 536870912
 #endif
 
-// <o> NRFX_I2S_CONFIG_RATIO  - MCK/LRCK ratio
+// <o> NRFX_I2S_CONFIG_RATIO  - MCK/LRCK ratio.
 
 // <0=> 32x
 // <1=> 48x
@@ -545,7 +545,7 @@
 #define NRFX_I2S_CONFIG_RATIO 5
 #endif
 
-// <o> NRFX_I2S_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_I2S_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -565,7 +565,7 @@
 #ifndef NRFX_I2S_CONFIG_LOG_ENABLED
 #define NRFX_I2S_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_I2S_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_I2S_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -613,12 +613,20 @@
 
 // </e>
 
-// <e> NRFX_PDM_ENABLED - nrfx_pdm - PDM peripheral driver
+// <e> NRFX_NVMC_ENABLED - nrfx_nvmc - NVMC peripheral driver
+//==========================================================
+#ifndef NRFX_NVMC_ENABLED
+#define NRFX_NVMC_ENABLED 0
+#endif
+
+// </e>
+
+// <e> NRFX_PDM_ENABLED - nrfx_pdm - PDM peripheral driver.
 //==========================================================
 #ifndef NRFX_PDM_ENABLED
 #define NRFX_PDM_ENABLED 0
 #endif
-// <o> NRFX_PDM_CONFIG_MODE  - Mode
+// <o> NRFX_PDM_CONFIG_MODE  - Mode.
 
 // <0=> Stereo
 // <1=> Mono
@@ -627,7 +635,7 @@
 #define NRFX_PDM_CONFIG_MODE 1
 #endif
 
-// <o> NRFX_PDM_CONFIG_EDGE  - Edge
+// <o> NRFX_PDM_CONFIG_EDGE  - Edge.
 
 // <0=> Left falling
 // <1=> Left rising
@@ -636,7 +644,7 @@
 #define NRFX_PDM_CONFIG_EDGE 0
 #endif
 
-// <o> NRFX_PDM_CONFIG_CLOCK_FREQ  - Clock frequency
+// <o> NRFX_PDM_CONFIG_CLOCK_FREQ  - Clock frequency.
 
 // <134217728=> 1000k
 // <138412032=> 1032k (default)
@@ -646,7 +654,7 @@
 #define NRFX_PDM_CONFIG_CLOCK_FREQ 138412032
 #endif
 
-// <o> NRFX_PDM_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_PDM_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -666,7 +674,7 @@
 #ifndef NRFX_PDM_CONFIG_LOG_ENABLED
 #define NRFX_PDM_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_PDM_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_PDM_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -714,12 +722,12 @@
 
 // </e>
 
-// <e> NRFX_POWER_ENABLED - nrfx_power - POWER peripheral driver
+// <e> NRFX_POWER_ENABLED - nrfx_power - POWER peripheral driver.
 //==========================================================
 #ifndef NRFX_POWER_ENABLED
 #define NRFX_POWER_ENABLED 0
 #endif
-// <o> NRFX_POWER_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_POWER_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -734,7 +742,7 @@
 #define NRFX_POWER_CONFIG_IRQ_PRIORITY 7
 #endif
 
-// <q> NRFX_POWER_CONFIG_DEFAULT_DCDCEN  - The default configuration of main DCDC regulator
+// <q> NRFX_POWER_CONFIG_DEFAULT_DCDCEN  - The default configuration of the main DCDC regulator.
 
 
 // <i> This settings means only that components for DCDC regulator are installed and it can be enabled.
@@ -745,7 +753,7 @@
 
 // </e>
 
-// <e> NRFX_PRS_ENABLED - nrfx_prs - Peripheral Resource Sharing module
+// <e> NRFX_PRS_ENABLED - nrfx_prs - Peripheral Resource Sharing (PRS) module.
 //==========================================================
 #ifndef NRFX_PRS_ENABLED
 #define NRFX_PRS_ENABLED 0
@@ -783,7 +791,7 @@
 #ifndef NRFX_PRS_CONFIG_LOG_ENABLED
 #define NRFX_PRS_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_PRS_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_PRS_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -831,68 +839,68 @@
 
 // </e>
 
-// <e> NRFX_PWM_ENABLED - nrfx_pwm - PWM peripheral driver
+// <e> NRFX_PWM_ENABLED - nrfx_pwm - PWM peripheral driver.
 //==========================================================
 #ifdef CONFIG_NRFX_PWM
 #define NRFX_PWM_ENABLED 1
 #endif
-// <q> NRFX_PWM0_ENABLED  - Enable PWM0 instance
+// <q> NRFX_PWM0_ENABLED  - Enables PWM0 instance.
 
 
 #ifdef CONFIG_PWM_0
 #define NRFX_PWM0_ENABLED 1
 #endif
 
-// <q> NRFX_PWM1_ENABLED  - Enable PWM1 instance
+// <q> NRFX_PWM1_ENABLED  - Enables PWM1 instance.
 
 
 #ifdef CONFIG_PWM_1
 #define NRFX_PWM1_ENABLED 1
 #endif
 
-// <q> NRFX_PWM2_ENABLED  - Enable PWM2 instance
+// <q> NRFX_PWM2_ENABLED  - Enables PWM2 instance.
 
 
 #ifdef CONFIG_PWM_2
 #define NRFX_PWM2_ENABLED 1
 #endif
 
-// <q> NRFX_PWM3_ENABLED  - Enable PWM3 instance
+// <q> NRFX_PWM3_ENABLED  - Enables PWM3 instance.
 
 
 #ifdef CONFIG_PWM_3
 #define NRFX_PWM3_ENABLED 1
 #endif
 
-// <o> NRFX_PWM_DEFAULT_CONFIG_OUT0_PIN - Out0 pin  <0-31>
+// <o> NRFX_PWM_DEFAULT_CONFIG_OUT0_PIN - Out0 pin <0-31>
 
 
 #ifndef NRFX_PWM_DEFAULT_CONFIG_OUT0_PIN
 #define NRFX_PWM_DEFAULT_CONFIG_OUT0_PIN 31
 #endif
 
-// <o> NRFX_PWM_DEFAULT_CONFIG_OUT1_PIN - Out1 pin  <0-31>
+// <o> NRFX_PWM_DEFAULT_CONFIG_OUT1_PIN - Out1 pin <0-31>
 
 
 #ifndef NRFX_PWM_DEFAULT_CONFIG_OUT1_PIN
 #define NRFX_PWM_DEFAULT_CONFIG_OUT1_PIN 31
 #endif
 
-// <o> NRFX_PWM_DEFAULT_CONFIG_OUT2_PIN - Out2 pin  <0-31>
+// <o> NRFX_PWM_DEFAULT_CONFIG_OUT2_PIN - Out2 pin <0-31>
 
 
 #ifndef NRFX_PWM_DEFAULT_CONFIG_OUT2_PIN
 #define NRFX_PWM_DEFAULT_CONFIG_OUT2_PIN 31
 #endif
 
-// <o> NRFX_PWM_DEFAULT_CONFIG_OUT3_PIN - Out3 pin  <0-31>
+// <o> NRFX_PWM_DEFAULT_CONFIG_OUT3_PIN - Out3 pin <0-31>
 
 
 #ifndef NRFX_PWM_DEFAULT_CONFIG_OUT3_PIN
 #define NRFX_PWM_DEFAULT_CONFIG_OUT3_PIN 31
 #endif
 
-// <o> NRFX_PWM_DEFAULT_CONFIG_BASE_CLOCK  - Base clock
+// <o> NRFX_PWM_DEFAULT_CONFIG_BASE_CLOCK  - Base clock.
 
 // <0=> 16 MHz
 // <1=> 8 MHz
@@ -907,7 +915,7 @@
 #define NRFX_PWM_DEFAULT_CONFIG_BASE_CLOCK 4
 #endif
 
-// <o> NRFX_PWM_DEFAULT_CONFIG_COUNT_MODE  - Count mode
+// <o> NRFX_PWM_DEFAULT_CONFIG_COUNT_MODE  - Count mode.
 
 // <0=> Up
 // <1=> Up and Down
@@ -916,12 +924,12 @@
 #define NRFX_PWM_DEFAULT_CONFIG_COUNT_MODE 0
 #endif
 
-// <o> NRFX_PWM_DEFAULT_CONFIG_TOP_VALUE - Top value
+// <o> NRFX_PWM_DEFAULT_CONFIG_TOP_VALUE - Top value.
 #ifndef NRFX_PWM_DEFAULT_CONFIG_TOP_VALUE
 #define NRFX_PWM_DEFAULT_CONFIG_TOP_VALUE 1000
 #endif
 
-// <o> NRFX_PWM_DEFAULT_CONFIG_LOAD_MODE  - Load mode
+// <o> NRFX_PWM_DEFAULT_CONFIG_LOAD_MODE  - Load mode.
 
 // <0=> Common
 // <1=> Grouped
@@ -932,7 +940,7 @@
 #define NRFX_PWM_DEFAULT_CONFIG_LOAD_MODE 0
 #endif
 
-// <o> NRFX_PWM_DEFAULT_CONFIG_STEP_MODE  - Step mode
+// <o> NRFX_PWM_DEFAULT_CONFIG_STEP_MODE  - Step mode.
 
 // <0=> Auto
 // <1=> Triggered
@@ -941,7 +949,7 @@
 #define NRFX_PWM_DEFAULT_CONFIG_STEP_MODE 0
 #endif
 
-// <o> NRFX_PWM_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_PWM_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -961,7 +969,7 @@
 #ifndef NRFX_PWM_CONFIG_LOG_ENABLED
 #define NRFX_PWM_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_PWM_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_PWM_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -1009,45 +1017,45 @@
 
 // </e>
 
-// <e> NRFX_RTC_ENABLED - nrfx_rtc - RTC peripheral driver
+// <e> NRFX_RTC_ENABLED - nrfx_rtc - RTC peripheral driver.
 //==========================================================
 #ifdef CONFIG_NRFX_RTC
 #define NRFX_RTC_ENABLED 1
 #endif
-// <q> NRFX_RTC0_ENABLED  - Enable RTC0 instance
+// <q> NRFX_RTC0_ENABLED  - Enables RTC0 instance.
 
 
 #ifdef CONFIG_NRFX_RTC0
 #define NRFX_RTC0_ENABLED 1
 #endif
 
-// <q> NRFX_RTC1_ENABLED  - Enable RTC1 instance
+// <q> NRFX_RTC1_ENABLED  - Enables RTC1 instance.
 
 
 #ifdef CONFIG_NRFX_RTC1
 #define NRFX_RTC1_ENABLED 1
 #endif
 
-// <o> NRFX_RTC_MAXIMUM_LATENCY_US - Maximum possible time[us] in highest priority interrupt
+// <o> NRFX_RTC_MAXIMUM_LATENCY_US - Maximum possible time in highest priority interrupt, in microseconds.
 #ifndef NRFX_RTC_MAXIMUM_LATENCY_US
 #define NRFX_RTC_MAXIMUM_LATENCY_US 2000
 #endif
 
-// <o> NRFX_RTC_DEFAULT_CONFIG_FREQUENCY - Frequency  <16-32768>
+// <o> NRFX_RTC_DEFAULT_CONFIG_FREQUENCY - Frequency <16-32768>
 
 
 #ifndef NRFX_RTC_DEFAULT_CONFIG_FREQUENCY
 #define NRFX_RTC_DEFAULT_CONFIG_FREQUENCY 32768
 #endif
 
-// <q> NRFX_RTC_DEFAULT_CONFIG_RELIABLE  - Ensures safe compare event triggering
+// <q> NRFX_RTC_DEFAULT_CONFIG_RELIABLE  - Ensures safe compare event triggering.
 
 
 #ifndef NRFX_RTC_DEFAULT_CONFIG_RELIABLE
 #define NRFX_RTC_DEFAULT_CONFIG_RELIABLE 0
 #endif
 
-// <o> NRFX_RTC_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_RTC_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -1067,7 +1075,7 @@
 #ifndef NRFX_RTC_CONFIG_LOG_ENABLED
 #define NRFX_RTC_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_RTC_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_RTC_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -1115,12 +1123,12 @@
 
 // </e>
 
-// <e> NRFX_SAADC_ENABLED - nrfx_saadc - SAADC peripheral driver
+// <e> NRFX_SAADC_ENABLED - nrfx_saadc - SAADC peripheral driver.
 //==========================================================
 #ifdef CONFIG_NRFX_SAADC
 #define NRFX_SAADC_ENABLED 1
 #endif
-// <o> NRFX_SAADC_CONFIG_RESOLUTION  - Resolution
+// <o> NRFX_SAADC_CONFIG_RESOLUTION  - Resolution.
 
 // <0=> 8 bit
 // <1=> 10 bit
@@ -1131,7 +1139,7 @@
 #define NRFX_SAADC_CONFIG_RESOLUTION 1
 #endif
 
-// <o> NRFX_SAADC_CONFIG_OVERSAMPLE  - Sample period
+// <o> NRFX_SAADC_CONFIG_OVERSAMPLE  - Sample period.
 
 // <0=> Disabled
 // <1=> 2x
@@ -1147,14 +1155,14 @@
 #define NRFX_SAADC_CONFIG_OVERSAMPLE 0
 #endif
 
-// <q> NRFX_SAADC_CONFIG_LP_MODE  - Enabling low power mode
+// <q> NRFX_SAADC_CONFIG_LP_MODE  - Enables low power mode.
 
 
 #ifndef NRFX_SAADC_CONFIG_LP_MODE
 #define NRFX_SAADC_CONFIG_LP_MODE 0
 #endif
 
-// <o> NRFX_SAADC_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_SAADC_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -1174,7 +1182,7 @@
 #ifndef NRFX_SAADC_CONFIG_LOG_ENABLED
 #define NRFX_SAADC_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_SAADC_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_SAADC_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -1222,39 +1230,38 @@
 
 // </e>
 
-// <e> NRFX_SPIM_ENABLED - nrfx_spim - SPIM peripheral driver
+// <e> NRFX_SPIM_ENABLED - nrfx_spim - SPIM peripheral driver.
 //==========================================================
 #ifdef CONFIG_NRFX_SPIM
 #define NRFX_SPIM_ENABLED 1
 #endif
-// <q> NRFX_SPIM0_ENABLED  - Enable SPIM0 instance
+// <q> NRFX_SPIM0_ENABLED  - Enables SPIM0 instance.
 
 
 #ifdef CONFIG_SPI_0_NRF_SPIM
 #define NRFX_SPIM0_ENABLED 1
 #endif
 
-// <q> NRFX_SPIM1_ENABLED  - Enable SPIM1 instance
+// <q> NRFX_SPIM1_ENABLED  - Enables SPIM1 instance.
 
 
 #ifdef CONFIG_SPI_1_NRF_SPIM
 #define NRFX_SPIM1_ENABLED 1
 #endif
 
-// <q> NRFX_SPIM2_ENABLED  - Enable SPIM2 instance
+// <q> NRFX_SPIM2_ENABLED  - Enables SPIM2 instance.
 
 
 #ifdef CONFIG_SPI_2_NRF_SPIM
 #define NRFX_SPIM2_ENABLED 1
 #endif
 
-// <q> NRFX_SPIM3_ENABLED  - Enable SPIM3 instance
+// <q> NRFX_SPIM3_ENABLED  - Enables SPIM3 instance.
 
 
 #ifdef CONFIG_SPI_3_NRF_SPIM
 #define NRFX_SPIM3_ENABLED 1
 #endif
-
 
 // <o> NRFX_SPIM_MISO_PULL_CFG  - MISO pin pull configuration.
 
@@ -1266,7 +1273,7 @@
 #define NRFX_SPIM_MISO_PULL_CFG 1
 #endif
 
-// <o> NRFX_SPIM_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_SPIM_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -1286,7 +1293,7 @@
 #ifndef NRFX_SPIM_CONFIG_LOG_ENABLED
 #define NRFX_SPIM_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_SPIM_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_SPIM_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -1334,26 +1341,26 @@
 
 // </e>
 
-// <e> NRFX_SPIS_ENABLED - nrfx_spis - SPIS peripheral driver
+// <e> NRFX_SPIS_ENABLED - nrfx_spis - SPIS peripheral driver.
 //==========================================================
 #ifdef CONFIG_NRFX_SPIS
 #define NRFX_SPIS_ENABLED 1
 #endif
-// <q> NRFX_SPIS0_ENABLED  - Enable SPIS0 instance
+// <q> NRFX_SPIS0_ENABLED  - Enables SPIS0 instance.
 
 
 #ifdef CONFIG_SPI_0_NRF_SPIS
 #define NRFX_SPIS0_ENABLED 1
 #endif
 
-// <q> NRFX_SPIS1_ENABLED  - Enable SPIS1 instance
+// <q> NRFX_SPIS1_ENABLED  - Enables SPIS1 instance.
 
 
 #ifdef CONFIG_SPI_1_NRF_SPIS
 #define NRFX_SPIS1_ENABLED 1
 #endif
 
-// <q> NRFX_SPIS2_ENABLED  - Enable SPIS2 instance
+// <q> NRFX_SPIS2_ENABLED  - Enables SPIS2 instance.
 
 
 #ifdef CONFIG_SPI_2_NRF_SPIS
@@ -1367,7 +1374,7 @@
 #define NRFX_SPIS3_ENABLED 1
 #endif
 
-// <o> NRFX_SPIS_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_SPIS_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -1382,14 +1389,14 @@
 #define NRFX_SPIS_DEFAULT_CONFIG_IRQ_PRIORITY 7
 #endif
 
-// <o> NRFX_SPIS_DEFAULT_DEF - SPIS default DEF character  <0-255>
+// <o> NRFX_SPIS_DEFAULT_DEF - SPIS default DEF character <0-255>
 
 
 #ifndef NRFX_SPIS_DEFAULT_DEF
 #define NRFX_SPIS_DEFAULT_DEF 255
 #endif
 
-// <o> NRFX_SPIS_DEFAULT_ORC - SPIS default ORC character  <0-255>
+// <o> NRFX_SPIS_DEFAULT_ORC - SPIS default ORC character <0-255>
 
 
 #ifndef NRFX_SPIS_DEFAULT_ORC
@@ -1401,7 +1408,7 @@
 #ifndef NRFX_SPIS_CONFIG_LOG_ENABLED
 #define NRFX_SPIS_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_SPIS_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_SPIS_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -1449,54 +1456,54 @@
 
 // </e>
 
-// <e> NRFX_SWI_ENABLED - nrfx_swi - SWI/EGU peripheral allocator
+// <e> NRFX_SWI_ENABLED - nrfx_swi - SWI/EGU peripheral allocator.
 //==========================================================
 #ifndef NRFX_SWI_ENABLED
 #define NRFX_SWI_ENABLED 0
 #endif
-// <q> NRFX_EGU_ENABLED  - Enable EGU support
+// <q> NRFX_EGU_ENABLED  - Enables EGU support.
 
 
 #ifndef NRFX_EGU_ENABLED
 #define NRFX_EGU_ENABLED 0
 #endif
 
-// <q> NRFX_SWI0_DISABLED  - Exclude SWI0 from being utilized by the driver
+// <q> NRFX_SWI0_DISABLED  - Excludes SWI0 from being utilized by the driver.
 
 
 #ifndef NRFX_SWI0_DISABLED
 #define NRFX_SWI0_DISABLED 0
 #endif
 
-// <q> NRFX_SWI1_DISABLED  - Exclude SWI1 from being utilized by the driver
+// <q> NRFX_SWI1_DISABLED  - Excludes SWI1 from being utilized by the driver.
 
 
 #ifndef NRFX_SWI1_DISABLED
 #define NRFX_SWI1_DISABLED 0
 #endif
 
-// <q> NRFX_SWI2_DISABLED  - Exclude SWI2 from being utilized by the driver
+// <q> NRFX_SWI2_DISABLED  - Excludes SWI2 from being utilized by the driver.
 
 
 #ifndef NRFX_SWI2_DISABLED
 #define NRFX_SWI2_DISABLED 0
 #endif
 
-// <q> NRFX_SWI3_DISABLED  - Exclude SWI3 from being utilized by the driver
+// <q> NRFX_SWI3_DISABLED  - Excludes SWI3 from being utilized by the driver.
 
 
 #ifndef NRFX_SWI3_DISABLED
 #define NRFX_SWI3_DISABLED 0
 #endif
 
-// <q> NRFX_SWI4_DISABLED  - Exclude SWI4 from being utilized by the driver
+// <q> NRFX_SWI4_DISABLED  - Excludes SWI4 from being utilized by the driver.
 
 
 #ifndef NRFX_SWI4_DISABLED
 #define NRFX_SWI4_DISABLED 0
 #endif
 
-// <q> NRFX_SWI5_DISABLED  - Exclude SWI5 from being utilized by the driver
+// <q> NRFX_SWI5_DISABLED  - Excludes SWI5 from being utilized by the driver.
 
 
 #ifndef NRFX_SWI5_DISABLED
@@ -1508,7 +1515,7 @@
 #ifndef NRFX_SWI_CONFIG_LOG_ENABLED
 #define NRFX_SWI_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_SWI_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_SWI_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -1556,40 +1563,40 @@
 
 // </e>
 
-// <q> NRFX_SYSTICK_ENABLED  - nrfx_systick - ARM(R) SysTick driver
+// <q> NRFX_SYSTICK_ENABLED  - nrfx_systick - ARM(R) SysTick driver.
 
 
 #ifndef NRFX_SYSTICK_ENABLED
 #define NRFX_SYSTICK_ENABLED 0
 #endif
 
-// <e> NRFX_TIMER_ENABLED - nrfx_timer - TIMER periperal driver
+// <e> NRFX_TIMER_ENABLED - nrfx_timer - TIMER periperal driver.
 //==========================================================
 #ifdef CONFIG_NRFX_TIMER
 #define NRFX_TIMER_ENABLED 1
 #endif
-// <q> NRFX_TIMER0_ENABLED  - Enable TIMER0 instance
+// <q> NRFX_TIMER0_ENABLED  - Enables TIMER0 instance.
 
 
 #ifdef CONFIG_NRFX_TIMER0
 #define NRFX_TIMER0_ENABLED 1
 #endif
 
-// <q> NRFX_TIMER1_ENABLED  - Enable TIMER1 instance
+// <q> NRFX_TIMER1_ENABLED  - Enables TIMER1 instance.
 
 
 #ifdef CONFIG_NRFX_TIMER1
 #define NRFX_TIMER1_ENABLED 1
 #endif
 
-// <q> NRFX_TIMER2_ENABLED  - Enable TIMER2 instance
+// <q> NRFX_TIMER2_ENABLED  - Enables TIMER2 instance.
 
 
 #ifdef CONFIG_NRFX_TIMER2
 #define NRFX_TIMER2_ENABLED 1
 #endif
 
-// <o> NRFX_TIMER_DEFAULT_CONFIG_FREQUENCY  - Timer frequency if in Timer mode
+// <o> NRFX_TIMER_DEFAULT_CONFIG_FREQUENCY  - Timer frequency if in Timer mode.
 
 // <0=> 16 MHz
 // <1=> 8 MHz
@@ -1606,7 +1613,7 @@
 #define NRFX_TIMER_DEFAULT_CONFIG_FREQUENCY 0
 #endif
 
-// <o> NRFX_TIMER_DEFAULT_CONFIG_MODE  - Timer mode or operation
+// <o> NRFX_TIMER_DEFAULT_CONFIG_MODE  - Timer mode or operation.
 
 // <0=> Timer
 // <1=> Counter
@@ -1615,7 +1622,7 @@
 #define NRFX_TIMER_DEFAULT_CONFIG_MODE 0
 #endif
 
-// <o> NRFX_TIMER_DEFAULT_CONFIG_BIT_WIDTH  - Timer counter bit width
+// <o> NRFX_TIMER_DEFAULT_CONFIG_BIT_WIDTH  - Timer counter bit width.
 
 // <0=> 16 bit
 // <1=> 8 bit
@@ -1626,7 +1633,7 @@
 #define NRFX_TIMER_DEFAULT_CONFIG_BIT_WIDTH 0
 #endif
 
-// <o> NRFX_TIMER_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_TIMER_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -1646,7 +1653,7 @@
 #ifndef NRFX_TIMER_CONFIG_LOG_ENABLED
 #define NRFX_TIMER_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_TIMER_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_TIMER_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -1694,40 +1701,40 @@
 
 // </e>
 
-// <e> NRFX_TWIM_ENABLED - nrfx_twim - TWIM peripheral driver
+// <e> NRFX_TWIM_ENABLED - nrfx_twim - TWIM peripheral driver.
 //==========================================================
 #ifdef CONFIG_NRFX_TWIM
 #define NRFX_TWIM_ENABLED 1
 #endif
-// <q> NRFX_TWIM0_ENABLED  - Enable TWIM0 instance
+// <q> NRFX_TWIM0_ENABLED  - Enables TWIM0 instance.
 
 
 #ifdef CONFIG_I2C_0_NRF_TWIM
 #define NRFX_TWIM0_ENABLED 1
 #endif
 
-// <q> NRFX_TWIM1_ENABLED  - Enable TWIM1 instance
+// <q> NRFX_TWIM1_ENABLED  - Enables TWIM1 instance.
 
 
 #ifdef CONFIG_I2C_1_NRF_TWIM
 #define NRFX_TWIM1_ENABLED 1
 #endif
 
-// <q> NRFX_TWIM2_ENABLED  - Enable TWIM2 instance
+// <q> NRFX_TWIM2_ENABLED  - Enables TWIM2 instance.
 
 
 #ifdef CONFIG_I2C_2_NRF_TWIM
 #define NRFX_TWIM2_ENABLED 1
 #endif
 
-// <q> NRFX_TWIM3_ENABLED  - Enable TWIM3 instance
+// <q> NRFX_TWIM3_ENABLED  - Enables TWIM3 instance.
 
 
 #ifdef CONFIG_I2C_3_NRF_TWIM
 #define NRFX_TWIM3_ENABLED 1
 #endif
 
-// <o> NRFX_TWIM_DEFAULT_CONFIG_FREQUENCY  - Frequency
+// <o> NRFX_TWIM_DEFAULT_CONFIG_FREQUENCY  - Frequency.
 
 // <26738688=> 100k
 // <67108864=> 250k
@@ -1737,14 +1744,14 @@
 #define NRFX_TWIM_DEFAULT_CONFIG_FREQUENCY 26738688
 #endif
 
-// <q> NRFX_TWIM_DEFAULT_CONFIG_HOLD_BUS_UNINIT  - Enables bus holding after uninit
+// <q> NRFX_TWIM_DEFAULT_CONFIG_HOLD_BUS_UNINIT  - Enables bus holding after uninit.
 
 
 #ifndef NRFX_TWIM_DEFAULT_CONFIG_HOLD_BUS_UNINIT
 #define NRFX_TWIM_DEFAULT_CONFIG_HOLD_BUS_UNINIT 0
 #endif
 
-// <o> NRFX_TWIM_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_TWIM_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -1764,7 +1771,7 @@
 #ifndef NRFX_TWIM_CONFIG_LOG_ENABLED
 #define NRFX_TWIM_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_TWIM_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_TWIM_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -1812,19 +1819,19 @@
 
 // </e>
 
-// <e> NRFX_TWIS_ENABLED - nrfx_twis - TWIS peripheral driver
+// <e> NRFX_TWIS_ENABLED - nrfx_twis - TWIS peripheral driver.
 //==========================================================
 #ifndef NRFX_TWIS_ENABLED
 #define NRFX_TWIS_ENABLED 0
 #endif
-// <q> NRFX_TWIS0_ENABLED  - Enable TWIS0 instance
+// <q> NRFX_TWIS0_ENABLED  - Enables TWIS0 instance.
 
 
 #ifndef NRFX_TWIS0_ENABLED
 #define NRFX_TWIS0_ENABLED 0
 #endif
 
-// <q> NRFX_TWIS1_ENABLED  - Enable TWIS1 instance
+// <q> NRFX_TWIS1_ENABLED  - Enables TWIS1 instance.
 
 
 #ifndef NRFX_TWIS1_ENABLED
@@ -1845,7 +1852,7 @@
 #define NRFX_TWIS3_ENABLED 0
 #endif
 
-// <q> NRFX_TWIS_ASSUME_INIT_AFTER_RESET_ONLY  - Assume that any instance would be initialized only once
+// <q> NRFX_TWIS_ASSUME_INIT_AFTER_RESET_ONLY  - Assumes that any instance would be initialized only once.
 
 
 // <i> Optimization flag. Registers used by TWIS are shared by other peripherals. Normally, during initialization driver tries to clear all registers to known state before doing the initialization itself. This gives initialization safe procedure, no matter when it would be called. If you activate TWIS only once and do never uninitialize it - set this flag to 1 what gives more optimal code.
@@ -1854,7 +1861,7 @@
 #define NRFX_TWIS_ASSUME_INIT_AFTER_RESET_ONLY 0
 #endif
 
-// <q> NRFX_TWIS_NO_SYNC_MODE  - Remove support for synchronous mode
+// <q> NRFX_TWIS_NO_SYNC_MODE  - Removes support for synchronous mode.
 
 
 // <i> Synchronous mode would be used in specific situations. And it uses some additional code and data memory to safely process state machine by polling it in status functions. If this functionality is not required it may be disabled to free some resources.
@@ -1863,17 +1870,17 @@
 #define NRFX_TWIS_NO_SYNC_MODE 0
 #endif
 
-// <o> NRFX_TWIS_DEFAULT_CONFIG_ADDR0 - Address0
+// <o> NRFX_TWIS_DEFAULT_CONFIG_ADDR0 - Address0.
 #ifndef NRFX_TWIS_DEFAULT_CONFIG_ADDR0
 #define NRFX_TWIS_DEFAULT_CONFIG_ADDR0 0
 #endif
 
-// <o> NRFX_TWIS_DEFAULT_CONFIG_ADDR1 - Address1
+// <o> NRFX_TWIS_DEFAULT_CONFIG_ADDR1 - Address1.
 #ifndef NRFX_TWIS_DEFAULT_CONFIG_ADDR1
 #define NRFX_TWIS_DEFAULT_CONFIG_ADDR1 0
 #endif
 
-// <o> NRFX_TWIS_DEFAULT_CONFIG_SCL_PULL  - SCL pin pull configuration
+// <o> NRFX_TWIS_DEFAULT_CONFIG_SCL_PULL  - SCL pin pull configuration.
 
 // <0=> Disabled
 // <1=> Pull down
@@ -1883,7 +1890,7 @@
 #define NRFX_TWIS_DEFAULT_CONFIG_SCL_PULL 0
 #endif
 
-// <o> NRFX_TWIS_DEFAULT_CONFIG_SDA_PULL  - SDA pin pull configuration
+// <o> NRFX_TWIS_DEFAULT_CONFIG_SDA_PULL  - SDA pin pull configuration.
 
 // <0=> Disabled
 // <1=> Pull down
@@ -1893,7 +1900,7 @@
 #define NRFX_TWIS_DEFAULT_CONFIG_SDA_PULL 0
 #endif
 
-// <o> NRFX_TWIS_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_TWIS_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -1913,7 +1920,7 @@
 #ifndef NRFX_TWIS_CONFIG_LOG_ENABLED
 #define NRFX_TWIS_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_TWIS_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_TWIS_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -1961,17 +1968,17 @@
 
 // </e>
 
-// <e> NRFX_UARTE_ENABLED - nrfx_uarte - UARTE peripheral driver
+// <e> NRFX_UARTE_ENABLED - nrfx_uarte - UARTE peripheral driver.
 //==========================================================
 #ifdef CONFIG_NRFX_UARTE
 #define NRFX_UARTE_ENABLED 1
 #endif
-// <o> NRFX_UARTE0_ENABLED - Enable UARTE0 instance
+// <o> NRFX_UARTE0_ENABLED - Enables UARTE0 instance.
 #ifdef CONFIG_NRFX_UARTE0
 #define NRFX_UARTE0_ENABLED 1
 #endif
 
-// <o> NRFX_UARTE1_ENABLED - Enable UARTE1 instance
+// <o> NRFX_UARTE1_ENABLED - Enables UARTE1 instance.
 #ifdef CONFIG_NRFX_UARTE1
 #define NRFX_UARTE1_ENABLED 1
 #endif
@@ -1986,7 +1993,7 @@
 #define NRFX_UARTE3_ENABLED 1
 #endif
 
-// <o> NRFX_UARTE_DEFAULT_CONFIG_HWFC  - Hardware Flow Control
+// <o> NRFX_UARTE_DEFAULT_CONFIG_HWFC  - Hardware Flow Control.
 
 // <0=> Disabled
 // <1=> Enabled
@@ -1995,7 +2002,7 @@
 #define NRFX_UARTE_DEFAULT_CONFIG_HWFC 0
 #endif
 
-// <o> NRFX_UARTE_DEFAULT_CONFIG_PARITY  - Parity
+// <o> NRFX_UARTE_DEFAULT_CONFIG_PARITY  - Parity.
 
 // <0=> Excluded
 // <14=> Included
@@ -2004,7 +2011,7 @@
 #define NRFX_UARTE_DEFAULT_CONFIG_PARITY 0
 #endif
 
-// <o> NRFX_UARTE_DEFAULT_CONFIG_BAUDRATE  - Default Baudrate
+// <o> NRFX_UARTE_DEFAULT_CONFIG_BAUDRATE  - Default baud rate.
 
 // <323584=> 1200 baud
 // <643072=> 2400 baud
@@ -2029,7 +2036,7 @@
 #define NRFX_UARTE_DEFAULT_CONFIG_BAUDRATE 30801920
 #endif
 
-// <o> NRFX_UARTE_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_UARTE_DEFAULT_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -2049,7 +2056,7 @@
 #ifndef NRFX_UARTE_CONFIG_LOG_ENABLED
 #define NRFX_UARTE_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_UARTE_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_UARTE_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error
@@ -2097,12 +2104,12 @@
 
 // </e>
 
-// <e> NRFX_WDT_ENABLED - nrfx_wdt - WDT peripheral driver
+// <e> NRFX_WDT_ENABLED - nrfx_wdt - WDT peripheral driver.
 //==========================================================
 #ifdef CONFIG_NRFX_WDT
 #define NRFX_WDT_ENABLED 1
 #endif
-// <o> NRFX_WDT_CONFIG_BEHAVIOUR  - WDT behavior in CPU SLEEP or HALT mode
+// <o> NRFX_WDT_CONFIG_BEHAVIOUR  - WDT behavior in CPU SLEEP or HALT mode.
 
 // <1=> Run in SLEEP, Pause in HALT
 // <8=> Pause in SLEEP, Run in HALT
@@ -2113,7 +2120,7 @@
 #define NRFX_WDT_CONFIG_BEHAVIOUR 1
 #endif
 
-// <o> NRFX_WDT_CONFIG_RELOAD_VALUE - Reload value  <15-4294967295>
+// <o> NRFX_WDT_CONFIG_RELOAD_VALUE - Reload value <15-4294967295>
 
 
 #ifndef NRFX_WDT_CONFIG_RELOAD_VALUE
@@ -2129,7 +2136,7 @@
 #define NRFX_WDT_CONFIG_NO_IRQ 0
 #endif
 
-// <o> NRFX_WDT_CONFIG_IRQ_PRIORITY  - Interrupt priority
+// <o> NRFX_WDT_CONFIG_IRQ_PRIORITY  - Interrupt priority.
 
 // <0=> 0 (highest)
 // <1=> 1
@@ -2149,7 +2156,7 @@
 #ifndef NRFX_WDT_CONFIG_LOG_ENABLED
 #define NRFX_WDT_CONFIG_LOG_ENABLED 0
 #endif
-// <o> NRFX_WDT_CONFIG_LOG_LEVEL  - Default Severity level
+// <o> NRFX_WDT_CONFIG_LOG_LEVEL  - Default severity level.
 
 // <0=> Off
 // <1=> Error

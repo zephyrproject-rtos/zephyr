@@ -730,7 +730,7 @@ nrfx_err_t nrfx_twis_tx_prepare(nrfx_twis_t const * p_instance,
 
     nrf_twis_tx_prepare(p_instance->p_reg,
                         (uint8_t const *)p_buf,
-                        (nrf_twis_amount_t)size);
+                        size);
     err_code = NRFX_SUCCESS;
     NRFX_LOG_INFO("Function: %s, error code: %s.", __func__, NRFX_LOG_ERROR_STRING_GET(err_code));
     return err_code;
@@ -774,7 +774,7 @@ nrfx_err_t nrfx_twis_rx_prepare(nrfx_twis_t const * p_instance,
 
     nrf_twis_rx_prepare(p_instance->p_reg,
                         (uint8_t *)p_buf,
-                        (nrf_twis_amount_t)size);
+                        size);
     err_code = NRFX_SUCCESS;
     NRFX_LOG_INFO("Function: %s, error code: %s.", __func__, NRFX_LOG_ERROR_STRING_GET(err_code));
     return err_code;

@@ -86,20 +86,20 @@ typedef enum
 /**
  * @brief Function for clearing a specific SPU event.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
  * @param[in] event Event to clear.
  */
 __STATIC_INLINE void nrf_spu_event_clear(NRF_SPU_Type *  p_reg,
                                          nrf_spu_event_t event);
 
 /**
- * @brief Function for checking the state of a specific SPU event.
+ * @brief Function for retrieving the state of the SPU event.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
- * @param[in] event Event to check.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] event Event to be checked.
  *
- * @retval true  If the event is set.
- * @retval false If the event is not set.
+ * @retval true  The event has been generated.
+ * @retval false The event has not been generated.
  */
 __STATIC_INLINE bool nrf_spu_event_check(NRF_SPU_Type const * p_reg,
                                          nrf_spu_event_t      event);
@@ -107,8 +107,8 @@ __STATIC_INLINE bool nrf_spu_event_check(NRF_SPU_Type const * p_reg,
 /**
  * @brief Function for enabling specified interrupts.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
- * @param[in] mask  Interrupts to enable.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] mask  Interrupts to be enabled.
  */
 __STATIC_INLINE void nrf_spu_int_enable(NRF_SPU_Type * p_reg,
                                         uint32_t       mask);
@@ -116,8 +116,8 @@ __STATIC_INLINE void nrf_spu_int_enable(NRF_SPU_Type * p_reg,
 /**
  * @brief Function for disabling specified interrupts.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
- * @param[in] mask  Interrupts to disable.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] mask  Interrupts to be disabled.
  */
 __STATIC_INLINE void nrf_spu_int_disable(NRF_SPU_Type * p_reg,
                                          uint32_t       mask);
@@ -125,11 +125,11 @@ __STATIC_INLINE void nrf_spu_int_disable(NRF_SPU_Type * p_reg,
 /**
  * @brief Function for retrieving the state of a given interrupt.
  *
- * @param[in] p_reg   Pointer to the peripheral registers structure.
- * @param[in] spu_int Interrupt to check.
+ * @param[in] p_reg   Pointer to the structure of registers of the peripheral.
+ * @param[in] spu_int Interrupt to be checked.
  *
- * @retval true  If the interrupt is enabled.
- * @retval false If the interrupt is not enabled.
+ * @retval true  The interrupt is enabled.
+ * @retval false The interrupt is not enabled.
  */
 __STATIC_INLINE bool nrf_spu_int_enable_check(NRF_SPU_Type const * p_reg,
                                               uint32_t             spu_int);
@@ -137,7 +137,7 @@ __STATIC_INLINE bool nrf_spu_int_enable_check(NRF_SPU_Type const * p_reg,
 /**
  * @brief Function for setting up publication configuration of a given SPU event.
  *
- * @param[in] p_reg   Pointer to the peripheral registers structure.
+ * @param[in] p_reg   Pointer to the structure of registers of the peripheral.
  * @param[in] event   Event to configure.
  * @param[in] channel Channel to connect with published event.
  */
@@ -148,7 +148,7 @@ __STATIC_INLINE void nrf_spu_publish_set(NRF_SPU_Type *  p_reg,
 /**
  * @brief Function for clearing publication configuration of a given SPU event.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
  * @param[in] event Event to clear.
  */
 __STATIC_INLINE void nrf_spu_publish_clear(NRF_SPU_Type *  p_reg,
@@ -157,10 +157,10 @@ __STATIC_INLINE void nrf_spu_publish_clear(NRF_SPU_Type *  p_reg,
 /**
  * @brief Function for retrieving the capabilities of the current device.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
  *
- * @retval true  If ARM TrustZone support is available.
- * @retval false If ARM TrustZone support is not available.
+ * @retval true  ARM TrustZone support is available.
+ * @retval false ARM TrustZone support is not available.
  */
 __STATIC_INLINE bool nrf_spu_tz_is_available(NRF_SPU_Type const * p_reg);
 
@@ -170,7 +170,7 @@ __STATIC_INLINE bool nrf_spu_tz_is_available(NRF_SPU_Type const * p_reg);
  * Channels are configured as bitmask. Set one in bitmask to make channels available only in secure
  * domain. Set zero to make it available in secure and non-secure domains.
  *
- * @param[in] p_reg         Pointer to the peripheral registers structure.
+ * @param[in] p_reg         Pointer to the structure of registers of the peripheral.
  * @param[in] dppi_id       DPPI peripheral id.
  * @param[in] channels_mask Bitmask with channels configuration.
  * @param[in] lock_conf     Lock configuration until next SoC reset.
@@ -186,7 +186,7 @@ __STATIC_INLINE void nrf_spu_dppi_config_set(NRF_SPU_Type * p_reg,
  * GPIO pins are configured as bitmask. Set one in bitmask to make particular pin available only
  * in secure domain. Set zero to make it available in secure and non-secure domains.
  *
- * @param[in] p_reg     Pointer to the peripheral registers structure.
+ * @param[in] p_reg     Pointer to the structure of registers of the peripheral.
  * @param[in] gpio_port Port number.
  * @param[in] gpio_mask Bitmask with gpio configuration.
  * @param[in] lock_conf Lock configuration until next SoC reset.
@@ -199,7 +199,7 @@ __STATIC_INLINE void nrf_spu_gpio_config_set(NRF_SPU_Type * p_reg,
 /**
  * @brief Function for configuring non-secure callable flash region.
  *
- * @param[in] p_reg          Pointer to the peripheral registers structure.
+ * @param[in] p_reg          Pointer to the structure of registers of the peripheral.
  * @param[in] flash_nsc_id   Non-secure callable flash region ID.
  * @param[in] flash_nsc_size Non-secure callable flash region size.
  * @param[in] region_number  Flash region number.
@@ -214,7 +214,7 @@ __STATIC_INLINE void nrf_spu_flashnsc_set(NRF_SPU_Type *     p_reg,
 /**
  * @brief Function for configuring non-secure callable RAM region.
  *
- * @param[in] p_reg         Pointer to the peripheral registers structure.
+ * @param[in] p_reg         Pointer to the structure of registers of the peripheral.
  * @param[in] ram_nsc_id    Non-secure callable RAM region ID.
  * @param[in] ram_nsc_size  Non-secure callable RAM region size.
  * @param[in] region_number RAM region number.
@@ -231,7 +231,7 @@ __STATIC_INLINE void nrf_spu_ramnsc_set(NRF_SPU_Type *     p_reg,
  *
  * Permissions parameter must be set by using the logical OR on the @ref nrf_spu_mem_perm_t values.
  *
- * @param[in] p_reg       Pointer to the peripheral registers structure.
+ * @param[in] p_reg       Pointer to the structure of registers of the peripheral.
  * @param[in] region_id   Flash region index.
  * @param[in] secure_attr Set region attribute to secure.
  * @param[in] permissions Flash region permissions.
@@ -248,7 +248,7 @@ __STATIC_INLINE void nrf_spu_flashregion_set(NRF_SPU_Type * p_reg,
  *
  * Permissions parameter must be set by using the logical OR on the @ref nrf_spu_mem_perm_t values.
  *
- * @param[in] p_reg       Pointer to the peripheral registers structure.
+ * @param[in] p_reg       Pointer to the structure of registers of the peripheral.
  * @param[in] region_id   RAM region index.
  * @param[in] secure_attr Set region attribute to secure.
  * @param[in] permissions RAM region permissions.
@@ -263,7 +263,7 @@ __STATIC_INLINE void nrf_spu_ramregion_set(NRF_SPU_Type * p_reg,
 /**
  * @brief Function for configuring access permissions of the peripheral.
  *
- * @param[in] p_reg         Pointer to the peripheral registers structure.
+ * @param[in] p_reg         Pointer to the structure of registers of the peripheral.
  * @param[in] peripheral_id ID number of a particular peripheral.
  * @param[in] secure_attr   Peripheral registers accessible only from secure domain.
  * @param[in] secure_dma    DMA transfers possible only from RAM memory in secure domain.

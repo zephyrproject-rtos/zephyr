@@ -42,18 +42,18 @@ extern "C" {
  * @defgroup nrf_systick_hal SYSTICK HAL
  * @{
  * @ingroup nrf_systick
- * @brief   Hardware access layer for managing the SYSTICK peripheral.
+ * @brief   Hardware access layer (HAL) for managing the SYSTICK peripheral.
  *
- * SYSTICK is ARM peripheral, not Nordic design.
- * It means that it has no Nordic-typical interface with Tasks and Events.
+ * SYSTICK is a peripheral designed by ARM.
+ * This means that it does not feature the typical Nordic interface with Tasks and Events.
  *
- * Its usage is limited here to implement simple delays.
- * Also keep in mind that this timer would be stopped when CPU is sleeping
+ * Its usage is limited here to the implementation of simple delays.
+ * Moreover, keep in mind that this timer will be stopped when CPU is sleeping
  * (WFE/WFI instruction is successfully executed).
  */
 
 /**
- * @brief Mask of usable bits in the SysTick value
+ * @brief Mask of usable bits in the SysTick value.
  */
 #define NRF_SYSTICK_VAL_MASK SysTick_VAL_CURRENT_Msk
 
@@ -80,36 +80,36 @@ typedef enum {
 } nrf_systick_csr_flags_t;
 
 /**
- * @brief Get Configuration and Status Register
+ * @brief Function for getting Configuration and Status Register.
  *
- * @return Values composed by @ref nrf_systick_csr_flags_t.
  * @note The @ref NRF_SYSTICK_CSR_COUNTFLAG_MASK value is cleared when CSR register is read.
+ * @return Values composed by @ref nrf_systick_csr_flags_t.
  */
 __STATIC_INLINE uint32_t nrf_systick_csr_get(void);
 
 /**
- * @brief Set Configuration and Status Register
+ * @brief Function for setting Configuration and Status Register.
  *
  * @param[in] val The value composed from @ref nrf_systick_csr_flags_t.
  */
 __STATIC_INLINE void nrf_systick_csr_set(uint32_t val);
 
 /**
- * @brief Get the current reload value.
+ * @brief Function for getting the current reload value.
  *
  * @return The reload register value.
  */
 __STATIC_INLINE uint32_t nrf_systick_load_get(void);
 
 /**
- * @brief Configure the reload value.
+ * @brief Function for configuring the reload value.
  *
- * @param[in] val The value to set in the reload register.
+ * @param[in] val The value to be set in the reload register.
  */
 __STATIC_INLINE void nrf_systick_load_set(uint32_t val);
 
 /**
- * @brief Read the SysTick current value
+ * @brief Function for reading the SysTick current value.
  *
  * @return The current SysTick value
  * @sa NRF_SYSTICK_VAL_MASK
@@ -117,7 +117,7 @@ __STATIC_INLINE void nrf_systick_load_set(uint32_t val);
 __STATIC_INLINE uint32_t nrf_systick_val_get(void);
 
 /**
- * @brief Clear the SysTick current value
+ * @brief Function for clearing the SysTick current value.
  *
  * @note The SysTick does not allow setting current value.
  *       Any write to VAL register would clear the timer.
@@ -125,12 +125,11 @@ __STATIC_INLINE uint32_t nrf_systick_val_get(void);
 __STATIC_INLINE void nrf_systick_val_clear(void);
 
 /**
- * @brief Read the calibration register
+ * @brief Function for reading the calibration register.
  *
- * @return The calibration register value
+ * @return The calibration register value.
  */
 __STATIC_INLINE uint32_t nrf_systick_calib_get(void);
-
 
 
 #ifndef SUPPRESS_INLINE_IMPLEMENTATION

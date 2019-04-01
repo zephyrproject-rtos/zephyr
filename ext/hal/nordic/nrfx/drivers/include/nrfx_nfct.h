@@ -52,9 +52,7 @@ extern "C" {
 
 #define NRFX_NFCT_NFCID1_DEFAULT_LEN NRFX_NFCT_NFCID1_DOUBLE_SIZE ///< Default length of NFC ID. */
 
-/**
- * @brief NFCT hardware states.
- */
+/** @brief NFCT hardware states. */
 typedef enum
 {
     NRFX_NFCT_STATE_DISABLED  = NRF_NFCT_TASK_DISABLE,  ///< NFC Tag is disabled (no sensing of an external NFC field).
@@ -74,7 +72,7 @@ typedef enum
     NRFX_NFCT_ACTIVE_STATE_DEFAULT,                       ///< NFC Tag is either sleeping or idle, depending on the previous state before being selected by a poller.
 } nrfx_nfct_active_state_t;
 
-/** 
+/**
  * @brief NFCT driver event types, passed to the upper-layer callback function
  *        provided during the initialization.
  */
@@ -90,18 +88,14 @@ typedef enum
     NRFX_NFCT_EVT_ERROR          = NRF_NFCT_INT_ERROR_MASK,         ///< Error occurred in an NFC communication.
 } nrfx_nfct_evt_id_t;
 
-/**
- * @brief NFCT timing-related error types.
- */
+/** @brief NFCT timing-related error types. */
 typedef enum
 {
     NRFX_NFCT_ERROR_FRAMEDELAYTIMEOUT, ///< No response frame was transmitted to the poller in the transmit window.
     NRFX_NFCT_ERROR_NUM,               ///< Total number of possible errors.
 } nrfx_nfct_error_t;
 
-/**
- * @brief NFCT driver parameter types.
- */
+/** @brief NFCT driver parameter types. */
 typedef enum
 {
     NRFX_NFCT_PARAM_ID_FDT,     ///< NFC-A Frame Delay Time parameter.
@@ -109,18 +103,14 @@ typedef enum
     NRFX_NFCT_PARAM_ID_NFCID1,  ///< NFC-A NFCID1 setting (NFC tag identifier).
 } nrfx_nfct_param_id_t;
 
-/**
- * @brief NFCID1 descriptor.
- */
+/** @brief NFCID1 descriptor. */
 typedef struct
 {
     uint8_t const * p_id;    ///< NFCID1 data.
     uint8_t         id_size; ///< NFCID1 size.
 } nrfx_nfct_nfcid1_t;
 
-/**
- * @brief NFCT driver parameter descriptor.
- */
+/** @brief NFCT driver parameter descriptor. */
 typedef struct
 {
     nrfx_nfct_param_id_t   id;               ///< Type of parameter.
@@ -129,46 +119,36 @@ typedef struct
         uint32_t           fdt;              ///< NFC-A Frame Delay Time. Filled when nrfx_nfct_param_t::id is @ref NRFX_NFCT_PARAM_ID_FDT.
         uint8_t            sel_res_protocol; ///< NFC-A value of the 'Protocol' field in the SEL_RES frame. Filled when nrfx_nfct_param_t::id is @ref NRFX_NFCT_PARAM_ID_SEL_RES.
         nrfx_nfct_nfcid1_t nfcid1;           ///< NFC-A NFCID1 value (tag identifier). Filled when nrfx_nfct_param_t::id is @ref NRFX_NFCT_PARAM_ID_NFCID1.
-    } data;
+    } data;                                  ///< Union to store parameter data.
 } nrfx_nfct_param_t;
 
-/**
- * @brief NFCT driver RX/TX buffer descriptor.
- */
+/** @brief NFCT driver RX/TX buffer descriptor. */
 typedef struct
 {
     uint32_t        data_size; ///< RX/TX buffer size.
     uint8_t const * p_data;    ///< RX/TX buffer.
 } nrfx_nfct_data_desc_t;
 
-/**
- * @brief Structure used to describe the @ref NRFX_NFCT_EVT_RX_FRAMEEND event type.
- */
+/** @brief Structure used to describe the @ref NRFX_NFCT_EVT_RX_FRAMEEND event type. */
 typedef struct
 {
     uint32_t              rx_status; ///< RX error status.
     nrfx_nfct_data_desc_t rx_data;   ///< RX buffer.
 } nrfx_nfct_evt_rx_frameend_t;
 
-/**
- * @brief Structure used to describe the @ref NRFX_NFCT_EVT_TX_FRAMESTART event type.
- */
+/** @brief Structure used to describe the @ref NRFX_NFCT_EVT_TX_FRAMESTART event type. */
 typedef struct
 {
     nrfx_nfct_data_desc_t tx_data; ///< TX buffer.
 } nrfx_nfct_evt_tx_framestart_t;
 
-/**
- * @brief Structure used to describe the @ref NRFX_NFCT_EVT_ERROR event type.
- */
+/** @brief Structure used to describe the @ref NRFX_NFCT_EVT_ERROR event type. */
 typedef struct
 {
     nrfx_nfct_error_t reason; ///< Reason for error.
 } nrfx_nfct_evt_error_t;
 
-/**
- * @brief NFCT driver event.
- */
+/** @brief NFCT driver event. */
 typedef struct
 {
     nrfx_nfct_evt_id_t evt_id;                       ///< Type of event.
@@ -177,32 +157,30 @@ typedef struct
         nrfx_nfct_evt_rx_frameend_t   rx_frameend;   ///< End of the RX frame data. Filled when nrfx_nfct_evt_t::evt_id is @ref NRFX_NFCT_EVT_RX_FRAMEEND.
         nrfx_nfct_evt_tx_framestart_t tx_framestart; ///< Start of the TX frame data. Filled when nrfx_nfct_evt_t::evt_id is @ref NRFX_NFCT_EVT_TX_FRAMESTART.
         nrfx_nfct_evt_error_t         error;         ///< Error data. Filled when nrfx_nfct_evt_t::evt_id is @ref NRFX_NFCT_EVT_ERROR.
-    } params;
+    } params;                                        ///< Union to store event data.
 } nrfx_nfct_evt_t;
 
-/** 
+/**
  * @brief Callback descriptor to pass events from the NFCT driver to the upper layer.
  *
  * @param[in] p_event Pointer to the event descriptor.
  */
 typedef void (*nrfx_nfct_handler_t)(nrfx_nfct_evt_t const * p_event);
 
-/** 
- * @brief NFCT driver configuration structure.
- */
+/** @brief NFCT driver configuration structure. */
 typedef struct
 {
     uint32_t            rxtx_int_mask; ///< Mask for enabling RX/TX events. Indicate which events must be forwarded to the upper layer by using @ref nrfx_nfct_evt_id_t. By default, no events are enabled. */
     nrfx_nfct_handler_t cb;            ///< Callback.
 } nrfx_nfct_config_t;
 
-/** 
+/**
  * @brief Function for initializing the NFCT driver.
  *
  * @param[in] p_config  Pointer to the NFCT driver configuration structure.
  *
- * @retval NRFX_SUCCESS             If the NFCT driver was initialized successfully.
- * @retval NRFX_ERROR_INVALID_STATE If the NFCT driver is already initialized.
+ * @retval NRFX_SUCCESS             The NFCT driver was initialized successfully.
+ * @retval NRFX_ERROR_INVALID_STATE The NFCT driver is already initialized.
  */
 nrfx_err_t nrfx_nfct_init(nrfx_nfct_config_t const * p_config);
 
@@ -231,26 +209,26 @@ void nrfx_nfct_disable(void);
 /**
  * @brief Function for checking whether the external NFC field is present in the range of the tag.
  *
- * @retval true  If the NFC field is present.
- * @retval false If no NFC field is present.
+ * @retval true  The NFC field is present.
+ * @retval false No NFC field is present.
  */
 bool nrfx_nfct_field_check(void);
 
-/** 
+/**
  * @brief Function for preparing the NFCT driver for receiving an NFC frame.
  *
  * @param[in] p_rx_data  Pointer to the RX buffer.
  */
 void nrfx_nfct_rx(nrfx_nfct_data_desc_t const * p_rx_data);
 
-/** 
+/**
  * @brief Function for transmitting an NFC frame.
  *
  * @param[in] p_tx_data   Pointer to the TX buffer.
  * @param[in] delay_mode  Delay mode of the NFCT frame timer.
  *
- * @retval NRFX_SUCCESS              If the operation was successful.
- * @retval NRFX_ERROR_INVALID_LENGTH If the TX buffer size is invalid.
+ * @retval NRFX_SUCCESS              The operation was successful.
+ * @retval NRFX_ERROR_INVALID_LENGTH The TX buffer size is invalid.
  */
 nrfx_err_t nrfx_nfct_tx(nrfx_nfct_data_desc_t const * p_tx_data,
                         nrf_nfct_frame_delay_mode_t   delay_mode);
@@ -265,7 +243,7 @@ nrfx_err_t nrfx_nfct_tx(nrfx_nfct_data_desc_t const * p_tx_data,
  */
 void nrfx_nfct_state_force(nrfx_nfct_state_t state);
 
-/** 
+/**
  * @brief Function for moving the NFCT to a new initial substate within @ref NRFX_NFCT_STATE_ACTIVATED.
  *
  * @param[in] sub_state  The required substate.
@@ -279,12 +257,12 @@ void nrfx_nfct_init_substate_force(nrfx_nfct_active_state_t sub_state);
  *
  * @param[in] p_param  Pointer to parameter descriptor.
  *
- * @retval NRFX_SUCCESS             If the operation was successful.
- * @retval NRFX_ERROR_INVALID_PARAM If the parameter data is invalid.
+ * @retval NRFX_SUCCESS             The operation was successful.
+ * @retval NRFX_ERROR_INVALID_PARAM The parameter data is invalid.
  */
 nrfx_err_t nrfx_nfct_parameter_set(nrfx_nfct_param_t const * p_param);
 
-/** 
+/**
  * @brief Function for getting default bytes for NFCID1.
  *
  * @param[in,out] p_nfcid1_buff    In:  empty buffer for data;
@@ -292,8 +270,8 @@ nrfx_err_t nrfx_nfct_parameter_set(nrfx_nfct_param_t const * p_param);
  *                                      can be used to fill the Type 2 Tag Internal Bytes.
  * @param[in]     nfcid1_buff_len  Length of the NFCID1 buffer.
  *
- * @retval NRFX_SUCCESS              If the operation was successful.
- * @retval NRFX_ERROR_INVALID_LENGTH If length of the NFCID buffer is different than
+ * @retval NRFX_SUCCESS              The operation was successful.
+ * @retval NRFX_ERROR_INVALID_LENGTH Length of the NFCID buffer is different than
  *                                   @ref NRFX_NFCT_NFCID1_SINGLE_SIZE,
  *                                   @ref NRFX_NFCT_NFCID1_DOUBLE_SIZE, or
  *                                   @ref NRFX_NFCT_NFCID1_TRIPLE_SIZE.
@@ -301,7 +279,7 @@ nrfx_err_t nrfx_nfct_parameter_set(nrfx_nfct_param_t const * p_param);
 nrfx_err_t nrfx_nfct_nfcid1_default_bytes_get(uint8_t * const p_nfcid1_buff,
                                               uint32_t        nfcid1_buff_len);
 
-/** 
+/**
  * @brief Function for enabling the automatic collision resolution.
  *
  * @details As defined by the NFC Forum Digital Protocol Technical Specification (and ISO 14443-3),
@@ -310,18 +288,18 @@ nrfx_err_t nrfx_nfct_nfcid1_default_bytes_get(uint8_t * const p_nfcid1_buff,
  */
 void nrfx_nfct_autocolres_enable(void);
 
-/** 
+/**
  * @brief Function for disabling the automatic collision resolution.
  *
  * @details See also details in @ref nrfx_nfct_autocolres_enable.
  */
 void nrfx_nfct_autocolres_disable(void);
 
+/** @} */
+
 
 void nrfx_nfct_irq_handler(void);
 
-
-/** @} */
 
 #ifdef __cplusplus
 }
@@ -338,7 +316,7 @@ void nrfx_nfct_irq_handler(void);
  * - 79. NFCT: A false EVENTS_FIELDDETECTED event occurs after the field is lost.
  * - 116. NFCT does not release HFCLK when switching from ACTIVATED to SENSE mode.
  * To implement the first workaround, an instance of NRF_TIMER is used. After the NFC field is detected,
- * the timing module periodically polls its state to determine when the field is turned off. 
+ * the timing module periodically polls its state to determine when the field is turned off.
  * To implement the second workaround, power reset is used to release the clock acquired by NFCT
  * after the field is turned off. Note that the NFCT register configuration is restored to defaults.
  *
@@ -358,7 +336,7 @@ void nrfx_nfct_irq_handler(void);
  * The application of the implemented workarounds for the nRF52840 chip is determined at runtime and depends
  * on the chip variant.
  *
- * The current code contains a patch for the anomaly 25 (NFCT: Reset value of 
+ * The current code contains a patch for the anomaly 25 (NFCT: Reset value of
  * SENSRES register is incorrect), so that the module now works on Windows Phone.
  * @}
  */

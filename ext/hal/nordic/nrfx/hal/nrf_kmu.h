@@ -78,15 +78,15 @@ typedef enum
 /**
  * @brief Function for activating a specific KMU task.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
- * @param[in] task  Task to activate.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] task  Task to be activated.
  */
 __STATIC_INLINE void nrf_kmu_task_trigger(NRF_KMU_Type * p_reg, nrf_kmu_task_t task);
 
 /**
  * @brief Function for getting the address of a specific KMU task register.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
  * @param[in] task  Requested task.
  *
  * @return Address of the specified task register.
@@ -96,26 +96,26 @@ __STATIC_INLINE uint32_t nrf_kmu_task_address_get(NRF_KMU_Type const * p_reg, nr
 /**
  * @brief Function for clearing a specific KMU event.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
  * @param[in] event Event to clear.
  */
 __STATIC_INLINE void nrf_kmu_event_clear(NRF_KMU_Type * p_reg, nrf_kmu_event_t event);
 
 /**
- * @brief Function for checking the state of a specific KMU event.
+ * @brief Function for retrieving the state of the KMU event.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
- * @param[in] event Event to check.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] event Event to be checked.
  *
- * @retval true  If the event is set.
- * @retval false If the event is not set.
+ * @retval true  The event has been generated.
+ * @retval false The event has not been generated.
  */
 __STATIC_INLINE bool nrf_kmu_event_check(NRF_KMU_Type const * p_reg, nrf_kmu_event_t event);
 
 /**
  * @brief Function for getting the address of a specific KMU event register.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
  * @param[in] event Requested event.
  *
  * @return Address of the specified event register.
@@ -126,27 +126,27 @@ __STATIC_INLINE uint32_t nrf_kmu_event_address_get(NRF_KMU_Type const * p_reg,
 /**
  * @brief Function for enabling specified interrupts.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
- * @param[in] mask  Interrupts to enable.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] mask  Interrupts to be enabled.
  */
 __STATIC_INLINE void nrf_kmu_int_enable(NRF_KMU_Type * p_reg, uint32_t mask);
 
 /**
  * @brief Function for disabling specified interrupts.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
- * @param[in] mask  Interrupts to disable.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
+ * @param[in] mask  Interrupts to be disabled.
  */
 __STATIC_INLINE void nrf_kmu_int_disable(NRF_KMU_Type * p_reg, uint32_t mask);
 
 /**
  * @brief Function for retrieving the state of a given interrupt.
  *
- * @param[in] p_reg   Pointer to the peripheral registers structure.
- * @param[in] kmu_int Interrupt to check.
+ * @param[in] p_reg   Pointer to the structure of registers of the peripheral.
+ * @param[in] kmu_int Interrupt to be checked.
  *
- * @retval true  If the interrupt is enabled.
- * @retval false If the interrupt is not enabled.
+ * @retval true  The interrupt is enabled.
+ * @retval false The interrupt is not enabled.
  */
 __STATIC_INLINE bool nrf_kmu_int_enable_check(NRF_KMU_Type const * p_reg,
                                               nrf_kmu_int_mask_t   kmu_int);
@@ -156,7 +156,7 @@ __STATIC_INLINE bool nrf_kmu_int_enable_check(NRF_KMU_Type const * p_reg,
  *
  * Function returns bitmask. Please use @ref nrf_kmu_int_mask_t to check interrupts status.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
  *
  * @return Bitmask with pending interrupts bits.
  */
@@ -167,7 +167,7 @@ __STATIC_INLINE uint32_t nrf_kmu_intpend_get(NRF_KMU_Type const * p_reg);
  *
  * Function returns bitmask. Please use @ref nrf_kmu_status_t to check operations status.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
  *
  * @return Bitmask with operation status bits.
  */
@@ -176,7 +176,7 @@ __STATIC_INLINE uint32_t nrf_kmu_status_get(NRF_KMU_Type const * p_reg);
 /**
  * @brief Function for selecting the key slot ID.
  *
- * @param[in] p_reg      Pointer to the peripheral registers structure.
+ * @param[in] p_reg      Pointer to the structure of registers of the peripheral.
  * @param[in] keyslot_id Key slot ID to be read over AHB or pushed over
  *                       secure APB when TASKS_PUSH_KEYSLOT is started.
  */
@@ -185,7 +185,7 @@ __STATIC_INLINE void nrf_kmu_keyslot_set(NRF_KMU_Type * p_reg, uint8_t keyslot_i
 /**
  * @brief Function for getting the key slot ID.
  *
- * @param[in] p_reg Pointer to the peripheral registers structure.
+ * @param[in] p_reg Pointer to the structure of registers of the peripheral.
  *
  * @return Key slot ID.
  */

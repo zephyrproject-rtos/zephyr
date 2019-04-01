@@ -47,38 +47,28 @@ extern "C" {
 
 /**
  * @brief This value can be provided as a parameter for the @ref nrf_i2s_pins_set
- *        function call to specify that a given I2S signal (SDOUT, SDIN, or MCK)
+ *        function call to specify that the given I2S signal (SDOUT, SDIN, or MCK)
  *        shall not be connected to a physical pin.
  */
 #define NRF_I2S_PIN_NOT_CONNECTED  0xFFFFFFFF
 
 
-/**
- * @brief I2S tasks.
- */
+/** @brief I2S tasks. */
 typedef enum
 {
-    /*lint -save -e30*/
     NRF_I2S_TASK_START = offsetof(NRF_I2S_Type, TASKS_START), ///< Starts continuous I2S transfer. Also starts the MCK generator if this is enabled.
     NRF_I2S_TASK_STOP  = offsetof(NRF_I2S_Type, TASKS_STOP)   ///< Stops I2S transfer. Also stops the MCK generator.
-    /*lint -restore*/
 } nrf_i2s_task_t;
 
-/**
- * @brief I2S events.
- */
+/** @brief I2S events. */
 typedef enum
 {
-    /*lint -save -e30*/
-    NRF_I2S_EVENT_RXPTRUPD = offsetof(NRF_I2S_Type, EVENTS_RXPTRUPD), ///< The RXD.PTR register has been copied to internal double-buffers.
-    NRF_I2S_EVENT_TXPTRUPD = offsetof(NRF_I2S_Type, EVENTS_TXPTRUPD), ///< The TXD.PTR register has been copied to internal double-buffers.
+    NRF_I2S_EVENT_RXPTRUPD = offsetof(NRF_I2S_Type, EVENTS_RXPTRUPD), ///< The RXD.PTR register has been copied to internal double buffers.
+    NRF_I2S_EVENT_TXPTRUPD = offsetof(NRF_I2S_Type, EVENTS_TXPTRUPD), ///< The TXD.PTR register has been copied to internal double buffers.
     NRF_I2S_EVENT_STOPPED  = offsetof(NRF_I2S_Type, EVENTS_STOPPED)   ///< I2S transfer stopped.
-    /*lint -restore*/
 } nrf_i2s_event_t;
 
-/**
- * @brief I2S interrupts.
- */
+/** @brief I2S interrupts. */
 typedef enum
 {
     NRF_I2S_INT_RXPTRUPD_MASK = I2S_INTENSET_RXPTRUPD_Msk, ///< Interrupt on RXPTRUPD event.
@@ -86,18 +76,14 @@ typedef enum
     NRF_I2S_INT_STOPPED_MASK  = I2S_INTENSET_STOPPED_Msk   ///< Interrupt on STOPPED event.
 } nrf_i2s_int_mask_t;
 
-/**
- * @brief I2S modes of operation.
- */
+/** @brief I2S modes of operation. */
 typedef enum
 {
     NRF_I2S_MODE_MASTER = I2S_CONFIG_MODE_MODE_Master, ///< Master mode.
     NRF_I2S_MODE_SLAVE  = I2S_CONFIG_MODE_MODE_Slave   ///< Slave mode.
 } nrf_i2s_mode_t;
 
-/**
- * @brief I2S master clock generator settings.
- */
+/** @brief I2S master clock generator settings. */
 typedef enum
 {
     NRF_I2S_MCK_DISABLED  = 0,                                       ///< MCK disabled.
@@ -131,9 +117,7 @@ typedef enum
     NRF_I2S_MCK_32MDIV125 = I2S_CONFIG_MCKFREQ_MCKFREQ_32MDIV125     ///< 32 MHz / 125 = 0.256 MHz.
 } nrf_i2s_mck_t;
 
-/**
- * @brief I2S MCK/LRCK ratios.
- */
+/** @brief I2S MCK/LRCK ratios. */
 typedef enum
 {
     NRF_I2S_RATIO_32X  = I2S_CONFIG_RATIO_RATIO_32X,  ///< LRCK = MCK / 32.
@@ -147,9 +131,7 @@ typedef enum
     NRF_I2S_RATIO_512X = I2S_CONFIG_RATIO_RATIO_512X  ///< LRCK = MCK / 512.
 } nrf_i2s_ratio_t;
 
-/**
- * @brief I2S sample widths.
- */
+/** @brief I2S sample widths. */
 typedef enum
 {
     NRF_I2S_SWIDTH_8BIT  = I2S_CONFIG_SWIDTH_SWIDTH_8Bit,  ///< 8 bit.
@@ -157,27 +139,21 @@ typedef enum
     NRF_I2S_SWIDTH_24BIT = I2S_CONFIG_SWIDTH_SWIDTH_24Bit  ///< 24 bit.
 } nrf_i2s_swidth_t;
 
-/**
- * @brief I2S alignments of sample within a frame.
- */
+/** @brief I2S alignments of sample within a frame. */
 typedef enum
 {
     NRF_I2S_ALIGN_LEFT  = I2S_CONFIG_ALIGN_ALIGN_Left, ///< Left-aligned.
     NRF_I2S_ALIGN_RIGHT = I2S_CONFIG_ALIGN_ALIGN_Right ///< Right-aligned.
 } nrf_i2s_align_t;
 
-/**
- * @brief I2S frame formats.
- */
+/** @brief I2S frame formats. */
 typedef enum
 {
     NRF_I2S_FORMAT_I2S     = I2S_CONFIG_FORMAT_FORMAT_I2S,    ///< Original I2S format.
-    NRF_I2S_FORMAT_ALIGNED = I2S_CONFIG_FORMAT_FORMAT_Aligned ///< Alternate (left- or right-aligned) format.
+    NRF_I2S_FORMAT_ALIGNED = I2S_CONFIG_FORMAT_FORMAT_Aligned ///< Alternate (left-aligned or right-aligned) format.
 } nrf_i2s_format_t;
 
-/**
- * @brief I2S enabled channels.
- */
+/** @brief I2S enabled channels. */
 typedef enum
 {
     NRF_I2S_CHANNELS_STEREO = I2S_CONFIG_CHANNELS_CHANNELS_Stereo, ///< Stereo.
@@ -187,19 +163,19 @@ typedef enum
 
 
 /**
- * @brief Function for activating a specific I2S task.
+ * @brief Function for activating the specified I2S task.
  *
  * @param[in] p_reg Pointer to the structure of registers of the peripheral.
- * @param[in] task  Task to activate.
+ * @param[in] task  Task to be activated.
  */
 __STATIC_INLINE void nrf_i2s_task_trigger(NRF_I2S_Type * p_reg,
                                           nrf_i2s_task_t task);
 
 /**
- * @brief Function for getting the address of a specific I2S task register.
+ * @brief Function for getting the address of the specified I2S task register.
  *
  * @param[in] p_reg Pointer to the structure of registers of the peripheral.
- * @param[in] task  Requested task.
+ * @param[in] task  Specified task.
  *
  * @return Address of the specified task register.
  */
@@ -207,31 +183,31 @@ __STATIC_INLINE uint32_t nrf_i2s_task_address_get(NRF_I2S_Type const * p_reg,
                                                   nrf_i2s_task_t       task);
 
 /**
- * @brief Function for clearing a specific I2S event.
+ * @brief Function for clearing the specified I2S event.
  *
  * @param[in] p_reg Pointer to the structure of registers of the peripheral.
  * @param[in] event Event to clear.
  */
-__STATIC_INLINE void nrf_i2s_event_clear(NRF_I2S_Type * p_reg,
+__STATIC_INLINE void nrf_i2s_event_clear(NRF_I2S_Type *  p_reg,
                                          nrf_i2s_event_t event);
 
 /**
- * @brief Function for checking the state of a specific I2S event.
+ * @brief Function for retrieving the state of the I2S event.
  *
  * @param[in] p_reg Pointer to the structure of registers of the peripheral.
- * @param[in] event Event to check.
+ * @param[in] event Event to be checked.
  *
- * @retval true  If the event is set.
- * @retval false If the event is not set.
+ * @retval true  The event has been generated.
+ * @retval false The event has not been generated.
  */
 __STATIC_INLINE bool nrf_i2s_event_check(NRF_I2S_Type const * p_reg,
                                          nrf_i2s_event_t      event);
 
 /**
- * @brief Function for getting the address of a specific I2S event register.
+ * @brief Function for getting the address of the specified I2S event register.
  *
  * @param[in] p_reg Pointer to the structure of registers of the peripheral.
- * @param[in] event Requested event.
+ * @param[in] event Specified event.
  *
  * @return Address of the specified event register.
  */
@@ -242,7 +218,7 @@ __STATIC_INLINE uint32_t nrf_i2s_event_address_get(NRF_I2S_Type const * p_reg,
  * @brief Function for enabling specified interrupts.
  *
  * @param[in] p_reg Pointer to the structure of registers of the peripheral.
- * @param[in] mask  Interrupts to enable.
+ * @param[in] mask  Mask of interrupts to be enabled.
  */
 __STATIC_INLINE void nrf_i2s_int_enable(NRF_I2S_Type * p_reg, uint32_t mask);
 
@@ -250,18 +226,18 @@ __STATIC_INLINE void nrf_i2s_int_enable(NRF_I2S_Type * p_reg, uint32_t mask);
  * @brief Function for disabling specified interrupts.
  *
  * @param[in] p_reg Pointer to the structure of registers of the peripheral.
- * @param[in] mask  Interrupts to disable.
+ * @param[in] mask  Mask of interrupts to be disabled.
  */
 __STATIC_INLINE void nrf_i2s_int_disable(NRF_I2S_Type * p_reg, uint32_t mask);
 
 /**
  * @brief Function for retrieving the state of a given interrupt.
  *
- * @param[in] p_reg Pointer to the structure of registers of the peripheral.
- * @param[in] i2s_int Interrupt to check.
+ * @param[in] p_reg   Pointer to the structure of registers of the peripheral.
+ * @param[in] i2s_int Interrupt to be checked.
  *
- * @retval true  If the interrupt is enabled.
- * @retval false If the interrupt is not enabled.
+ * @retval true  The interrupt is enabled.
+ * @retval false The interrupt is not enabled.
  */
 __STATIC_INLINE bool nrf_i2s_int_enable_check(NRF_I2S_Type const * p_reg,
                                               nrf_i2s_int_mask_t   i2s_int);
@@ -359,8 +335,8 @@ __STATIC_INLINE void nrf_i2s_pins_set(NRF_I2S_Type * p_reg,
  * @param[in] mck_setup    Master clock generator setup.
  * @param[in] ratio        MCK/LRCK ratio.
  *
- * @retval true  If the configuration has been set successfully.
- * @retval false If the requested configuration is not allowed.
+ * @retval true  The configuration has been set successfully.
+ * @retval false The specified configuration is not allowed.
  */
 __STATIC_INLINE bool nrf_i2s_configure(NRF_I2S_Type *     p_reg,
                                        nrf_i2s_mode_t     mode,
@@ -374,8 +350,8 @@ __STATIC_INLINE bool nrf_i2s_configure(NRF_I2S_Type *     p_reg,
 /**
  * @brief Function for setting up the I2S transfer.
  *
- * This function sets up the RX and TX buffers and enables reception and/or
- * transmission accordingly. If the transfer in a given direction is not
+ * This function sets up the RX and TX buffers and enables reception or
+ * transmission (or both) accordingly. If the transfer in a given direction is not
  * required, pass NULL instead of the pointer to the corresponding buffer.
  *
  * @param[in] p_reg       Pointer to the structure of registers of the peripheral.
@@ -550,7 +526,7 @@ __STATIC_INLINE bool nrf_i2s_configure(NRF_I2S_Type *     p_reg,
 {
     if (mode == NRF_I2S_MODE_MASTER)
     {
-        // The MCK/LRCK ratio shall be a multiple of 2 * sample width.
+        // The MCK/LRCK ratio must be a multiple of 2 * sample width.
         if (((sample_width == NRF_I2S_SWIDTH_16BIT) &&
                  (ratio == NRF_I2S_RATIO_48X))
             ||
