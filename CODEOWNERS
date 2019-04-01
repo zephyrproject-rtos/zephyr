@@ -151,6 +151,7 @@
 /dts/arm/st/                              @erwango
 /dts/arm/nordic/                          @ioannisg @carlescufi
 /dts/arm/nxp/                             @MaureenHelm
+/dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
 /dts/bindings/serial/ns16550.yaml         @gnuless
