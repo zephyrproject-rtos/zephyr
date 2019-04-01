@@ -24,11 +24,7 @@ config NUM_IRQS
 	int
 	default 26
 
-if SENSOR
-
 config TEMP_NRF5
-	default y
-
-endif # SENSOR
+	default SENSOR
 
 endif # SOC_SERIES_NRF51X
