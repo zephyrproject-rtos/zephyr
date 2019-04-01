@@ -23,6 +23,20 @@ properties:
     description: JEDEC ID as manufacturer ID, memory type, memory density
     generation: define
 
+  erase-block-size:
+   type: int
+   description: address alignment required by flash erase operations
+   generation: define
+   category: optional
+   label: alignment
+
+  write-block-size:
+   type: int
+   description: address alignment required by flash write operations
+   generation: define
+   category: optional
+   label: alignment
+
   size:
     type: int
     category: optional
