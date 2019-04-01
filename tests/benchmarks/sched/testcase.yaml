@@ -2,3 +2,4 @@ tests:
   benchmark.scheduler:
     tags: benchmark
     slow: true
+    build_only: true
