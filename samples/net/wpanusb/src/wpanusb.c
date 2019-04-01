@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(wpanusb);
 
 #include <net/buf.h>
 #include <net/ieee802154_radio.h>
+#include <ieee802154/ieee802154_frame.h>
 
 #include "wpanusb.h"
 
@@ -37,6 +38,9 @@ static struct ieee802154_radio_api *radio_api;
 static struct device *ieee802154_dev;
 
 static struct k_fifo tx_queue;
+
+/* IEEE802.15.4 frame + 1 byte len + 1 byte LQI */
+u8_t tx_buf[IEEE802154_MTU + 1 + 1];
 
 /**
  * Stack for the tx thread.
@@ -123,15 +127,10 @@ static const struct dev_common_descriptor {
 	},
 };
 
-/* EP Bulk IN handler, used to send data to the Host */
-static void wpanusb_bulk_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
-{
-}
-
 /* Describe EndPoints configuration */
 static struct usb_ep_cfg_data wpanusb_ep[] = {
 	{
-		.ep_cb = wpanusb_bulk_in,
+		.ep_cb = usb_transfer_ep_callback,
 		.ep_addr = WPANUSB_ENDP_BULK_IN
 	},
 };
@@ -176,21 +175,6 @@ static void wpanusb_status_cb(struct usb_cfg_data *cfg,
 		LOG_DBG("USB unknown state");
 		break;
 		}
-}
-
-static int try_write(u8_t ep, u8_t *data, u16_t len)
-{
-	while (1) {
-		int ret = usb_write(ep, data, len, NULL);
-
-		switch (ret) {
-		case -EAGAIN:
-			break;
-		/* TODO: Handle other error codes */
-		default:
-			return ret;
-		}
-	}
 }
 
 /* Decode wpanusb commands */
@@ -298,7 +282,14 @@ static int tx(struct net_pkt *pkt)
 		seq = 0U;
 	}
 
-	try_write(WPANUSB_ENDP_BULK_IN, &seq, sizeof(seq));
+	ret = usb_transfer_sync(WPANUSB_ENDP_BULK_IN, &seq, sizeof(seq),
+				USB_TRANS_WRITE);
+	if (ret != sizeof(seq)) {
+		LOG_ERR("Error sending seq");
+		ret = -EINVAL;
+	} else {
+		ret = 0;
+	}
 
 	return ret;
 }
@@ -328,7 +319,7 @@ static int wpanusb_vendor_handler(struct usb_setup_packet *setup,
 
 	net_pkt_write(pkt, *data, *len);
 
-	LOG_DBG("len %u seq %u", *len, setup->wIndex);
+	LOG_DBG("pkt %p len %u seq %u", pkt, *len, setup->wIndex);
 
 	k_fifo_put(&tx_queue, pkt);
 
@@ -348,7 +339,7 @@ static void tx_thread(void)
 		buf = net_buf_frag_last(pkt->buffer);
 		cmd = net_buf_pull_u8(buf);
 
-		net_hexdump(">", buf->data, buf->len);
+		net_pkt_hexdump(pkt, ">");
 
 		switch (cmd) {
 		case RESET:
@@ -465,29 +456,52 @@ static void init_tx_queue(void)
  */
 int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct net_buf *frame;
+	size_t len = net_pkt_get_len(pkt);
+	u8_t *p = tx_buf;
+	int ret;
 
-	LOG_DBG("Got data, pkt %p, len %d", pkt, net_pkt_get_len(pkt));
+	LOG_DBG("Got data, pkt %p, len %d", pkt, len);
 
-	frame = net_buf_frag_last(pkt->buffer);
+	net_pkt_hexdump(pkt, "<");
+
+	if (len > (sizeof(tx_buf) - 2)) {
+		LOG_ERR("Too large packet");
+		ret = -ENOMEM;
+		goto out;
+	}
 
 	/**
-	 * Add length 1 byte, do not forget to reserve it
+	 * Add length 1 byte
 	 */
-	net_buf_push_u8(frame, net_pkt_get_len(pkt));
+	*p++ = (u8_t)len;
+
+	/* This is needed to work with pkt */
+	net_pkt_cursor_init(pkt);
+
+	ret = net_pkt_read(pkt, p, len);
+	if (ret < 0) {
+		LOG_ERR("Cannot read pkt");
+		goto out;
+	}
+
+	p += len;
 
 	/**
 	 * Add LQI at the end of the packet
 	 */
-	net_buf_add_u8(frame, net_pkt_ieee802154_lqi(pkt));
+	*p = net_pkt_ieee802154_lqi(pkt);
 
-	net_hexdump("<", frame->data, net_pkt_get_len(pkt));
+	ret = usb_transfer_sync(WPANUSB_ENDP_BULK_IN, tx_buf, len + 2,
+				USB_TRANS_WRITE | USB_TRANS_NO_ZLP);
+	if (ret != len + 2) {
+		LOG_ERR("Transfer failure");
+		ret = -EINVAL;
+	}
 
-	try_write(WPANUSB_ENDP_BULK_IN, frame->data, net_pkt_get_len(pkt));
-
+out:
 	net_pkt_unref(pkt);
 
-	return 0;
+	return ret;
 }
 
 void main(void)
