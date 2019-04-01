@@ -881,7 +881,7 @@ void ll_radio_state_abort(void)
 
 u32_t ll_radio_state_is_idle(void)
 {
-	return radio_is_idle();
+	return lll_radio_is_idle();
 }
 
 void ull_ticker_status_give(u32_t status, void *param)
