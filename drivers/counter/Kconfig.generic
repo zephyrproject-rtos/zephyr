@@ -1,0 +1,26 @@
+# Copyright (c) 2019, Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config COUNTER_GENERIC
+	bool "Generic counter driver"
+	default n
+	help
+	  Generic counter driver provides a generic 32-bit counter
+	  (counting up) with at least one compare channel using selected
+	  counter as a backend.
+	  This driver could be used to provide a counter of known capabilities
+	  on a platforms with limited hardware.
+
+if COUNTER_GENERIC
+
+config COUNTER_GENERIC_TEST_MODE
+	bool "Enable test mode"
+	default n
+	help
+	  Test mode enables custom configuration (like suboptimal top value)
+	  which allows testing of corner cases.
+
+endif # COUNTER_GENERIC
+

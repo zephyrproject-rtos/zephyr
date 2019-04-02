@@ -1,0 +1,25 @@
+#
+# Copyright (c) 2018 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Generic counter
+version: 0.1
+
+description: >
+    This is a representation of the generic Counter (32bit, up)
+
+parent:
+    bus: counter
+
+properties:
+    compatible:
+      constraint: "counter,generic"
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+...

@@ -10,6 +10,9 @@ version: 0.1
 description: >
     This is a representation of the Nordic nRF timer node
 
+child:
+    bus: counter
+
 properties:
     compatible:
       type: string

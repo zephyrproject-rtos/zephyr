@@ -20,6 +20,8 @@ config COUNTER_LOG_LEVEL
 	help
 	  Counter logging level.
 
+source "drivers/counter/Kconfig.generic"
+
 source "drivers/counter/Kconfig.qmsi"
 
 source "drivers/counter/Kconfig.tmr_cmsdk_apb"
