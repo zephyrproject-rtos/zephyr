@@ -49,27 +49,6 @@ def get_shas(refspec):
     return sha_list
 
 
-def create_modules_file(modules, modules_file):
-    with open(modules_file, 'w') as km:
-        for m in modules:
-            module_path = m.strip()
-            module_file = os.path.join(module_path, "zephyr", "module.yml")
-            kconfig_file = os.path.join(module_path, "zephyr", "Kconfig")
-            if os.path.exists(module_file):
-                with open(module_file, 'r') as f:
-                    y = yaml.load(f, Loader=yaml.Loader)
-                    build = y.get('build', None)
-                    if build:
-                        kconfig = build.get("kconfig", "Kconfig")
-                    else:
-                        kconfig = "Kconfig"
-                    kconfig_file = os.path.join(module_path, kconfig)
-                    if os.path.exists(kconfig_file):
-                        km.write("osource \"{}\"\n".format(kconfig_file))
-            elif os.path.exists(kconfig_file):
-                km.write("osource \"{}\"\n".format(kconfig_file))
-
-
 class MyCase(TestCase):
     """
     Implementation of TestCase specific to our tests.
@@ -225,14 +204,20 @@ class KconfigCheck(ComplianceTest):
         This is needed to complete Kconfig sanity tests.
 
         """
+        # Invoke the script directly using the Python executable since this is
+        # not a module nor a pip-installed Python utility
+        zephyr_module_path = os.path.join(self.zephyr_base, "scripts",
+                                          "zephyr_module.py")
+        cmd = [sys.executable, zephyr_module_path,
+               '--kconfig-out', modules_file]
         try:
-            modules = sh.west("list", "--format={posixpath}", **sh_special_args)
-        except sh.CommandNotFound as e:
+            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            p.communicate()
+        except subprocess.CalledProcessError as ex:
             self.skip("Command not found: " + str(e))
         except sh.ErrorReturnCode as e:
             self.skip(e)
-
-        create_modules_file(modules, modules_file)
 
     def parse_kconfig(self):
         """
