@@ -69,6 +69,10 @@
 	interrupts = <14 0>;
 };
 
+&tc4 {
+	interrupts = <19 0>;
+};
+
 &adc {
 	interrupts = <23 0>;
 };
