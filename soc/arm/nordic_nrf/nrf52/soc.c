@@ -29,6 +29,8 @@ extern void z_NmiInit(void);
 
 #if defined(CONFIG_SOC_NRF52810)
 #include <system_nrf52810.h>
+#elif defined(CONFIG_SOC_NRF52811)
+#include <system_nrf52811.h>
 #elif defined(CONFIG_SOC_NRF52832)
 #include <system_nrf52.h>
 #elif defined(CONFIG_SOC_NRF52840)
