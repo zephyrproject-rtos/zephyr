@@ -32,6 +32,7 @@ zephyr_library_sources(
 zephyr_library_sources_if_kconfig(			irq_offload.c)
 zephyr_library_sources_if_kconfig(			x86_mmu.c)
 zephyr_library_sources_if_kconfig(			reboot_rst_cnt.c)
+zephyr_library_sources_if_kconfig(			pcie.c)
 zephyr_library_sources_ifdef(CONFIG_LAZY_FP_SHARING	float.c)
 zephyr_library_sources_ifdef(CONFIG_X86_USERSPACE	userspace.S)
 

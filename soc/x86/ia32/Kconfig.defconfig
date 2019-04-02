@@ -20,9 +20,6 @@ config CLFLUSH_DETECT
 
 if UART_NS16550
 
-config UART_NS16550_PCI
-	default n
-
 config UART_NS16550_PORT_0
 	default y
 
