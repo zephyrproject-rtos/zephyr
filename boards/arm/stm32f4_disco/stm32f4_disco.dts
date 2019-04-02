@@ -49,6 +49,9 @@
 
 	aliases {
 		led0 = &green_led_4;
+		led1 = &orange_led_3;
+		led2 = &red_led_5;
+		led3 = &blue_led_6;
 		sw0 = &user_button;
 	};
 };
