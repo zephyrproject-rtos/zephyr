@@ -226,6 +226,8 @@ important to understand.
   By default, ``west update`` also updates the west repository in the
   installation. To prevent this, use ``--exclude-west``.
 
+.. _west-multi-repo-misc:
+
 Miscellaneous Commands
 ======================
 
