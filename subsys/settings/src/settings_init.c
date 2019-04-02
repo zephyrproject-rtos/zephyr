@@ -17,6 +17,8 @@
 
 void settings_init(void);
 
+int settings_backend_init(void);
+
 #ifdef CONFIG_SETTINGS_FS
 #include <fs.h>
 
@@ -25,7 +27,7 @@ static struct settings_file config_init_settings_file = {
 	.cf_maxlines = CONFIG_SETTINGS_FS_MAX_LINES
 };
 
-static void settings_init_fs(void)
+int settings_backend_init(void)
 {
 	int rc;
 
@@ -40,6 +42,20 @@ static void settings_init_fs(void)
 	}
 
 	settings_mount_fs_backend(&config_init_settings_file);
+
+	/*
+	 * Must be called after root FS has been initialized.
+	 */
+	rc = fs_mkdir(CONFIG_SETTINGS_FS_DIR);
+
+	/*
+	 * The following lines mask the file exist error.
+	 */
+	if (rc == -EEXIST) {
+		rc = 0;
+	}
+
+	return rc;
 }
 
 #elif defined(CONFIG_SETTINGS_FCB)
@@ -53,7 +69,7 @@ static struct settings_fcb config_init_settings_fcb = {
 	.cf_fcb.f_sectors = settings_fcb_area,
 };
 
-static void settings_init_fcb(void)
+int settings_backend_init(void)
 {
 	u32_t cnt = CONFIG_SETTINGS_FCB_NUM_AREAS + 1;
 	int rc;
@@ -95,14 +111,20 @@ static void settings_init_fcb(void)
 	}
 
 	settings_mount_fcb_backend(&config_init_settings_fcb);
-}
 
+	return rc;
+}
+#elif defined(CONFIG_SETTINGS_NONE)
+int settings_backend_init(void)
+{
+	return 0;
+}
 #endif
 
 int settings_subsys_init(void)
 {
 	static bool settings_initialized;
-	int err;
+	int err = 0;
 
 	if (settings_initialized) {
 		return 0;
@@ -110,23 +132,7 @@ int settings_subsys_init(void)
 
 	settings_init();
 
-#ifdef CONFIG_SETTINGS_FS
-	settings_init_fs(); /* func rises kernel panic once error */
-
-	/*
-	 * Must be called after root FS has been initialized.
-	 */
-	err = fs_mkdir(CONFIG_SETTINGS_FS_DIR);
-	/*
-	 * The following lines mask the file exist error.
-	 */
-	if (err == -EEXIST) {
-		err = 0;
-	}
-#elif defined(CONFIG_SETTINGS_FCB)
-	settings_init_fcb(); /* func rises kernel panic once error */
-	err = 0;
-#endif
+	err = settings_backend_init(); /* func rises kernel panic once error */
 
 	if (!err) {
 		settings_initialized = true;

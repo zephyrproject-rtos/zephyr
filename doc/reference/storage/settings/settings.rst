@@ -21,13 +21,13 @@ Settings handlers for subtree implement a set of handler functions.
 These are registered using a call to ``settings_register()``.
 
 **h_get**
-    This gets called when asking for a settings element value
-    by its name using ``settings_get_value()``.
+    This gets called when asking for a settings element value by its name using
+    ``settings_runtime_get()`` from the runtime backend.
 
 **h_set**
-    This gets called when the value is being set using ``settings_set_value()``,
-    and also when setting is loaded from persisted storage with
-    ``settings_load()``.
+    This gets called when the value is loaded from persisted storage with
+    ``settings_load()``, or when using ``settings_runtime_set()`` from the
+    runtime backend.
 
 **h_commit**
     This gets called after the settings have been loaded in full.
@@ -40,11 +40,38 @@ These are registered using a call to ``settings_register()``.
     when ``settings_save()`` tries to save the settings or transfer to any
     user-implemented back-end.
 
-Persistence
-***********
+Backends
+********
 
-Backend storage for the settings can be a Flash Circular Buffer (FCB)
-or a file in the filesystem.
+Backends are meant to load and save data to/from setting handlers, and
+implement a set of handler functions. These are registered using a call to
+``settings_src_register()`` for backends that can load data, and/or
+``settings_dst_register()`` for backends that can save data. The current
+implementation allows for multiple source backends but only a single destination
+backend.
+
+**csi_load**
+    This gets called when loading values from persistent storage using
+    ``settings_load()``.
+
+**csi_save**
+    This gets called when a saving a single setting to persistent storage using
+    ``settings_save_one()``.
+
+**csi_save_start**
+    This gets called when starting a save of all current settings using
+    ``settings_save()``.
+
+**csi_save_end**
+    This gets called after having saved of all current settings using
+    ``settings_save()``.
+
+Zephyr Storage Backends
+***********************
+
+Zephyr has two existing backend storages which can be a Flash Circular Buffer
+(:option:`CONFIG_SETTINGS_FCB`) or a file in the filesystem
+(:option:`CONFIG_SETTINGS_FS`).
 
 You can declare multiple sources for settings; settings from
 all of these are restored when ``settings_load()`` is called.
@@ -89,12 +116,12 @@ export functionality, for example, writing to the shell console).
         .h_export = foo_settings_export
     };
 
-    static int foo_settings_set(int argc, char **argv, void *value_ctx)
+    static int foo_settings_set(int argc, char **argv, settings_read_cb read_cb,
+                                void *cb_arg)
     {
         if (argc == 1) {
             if (!strcmp(argv[0], "bar")) {
-                return settings_val_read_cb(value_ctx, &foo_val,
-                                            sizeof(foo_val));
+                return read_cb(cb_arg, &foo_val, sizeof(foo_val));
             }
         }
 
@@ -129,12 +156,12 @@ up from where it was before restart.
         .h_set = foo_settings_set
     };
 
-    static int foo_settings_set(int argc, char **argv, void *value_ctx)
+    static int foo_settings_set(int argc, char **argv, settings_read_cb read_cb,
+                                void *cb_arg)
     {
         if (argc == 1) {
             if (!strcmp(argv[0], "bar")) {
-                return settings_val_read_cb(value_ctx, &foo_val,
-                                            sizeof(foo_val));
+                return read_cb(cb_arg, &foo_val, sizeof(foo_val));
             }
         }
 
@@ -150,6 +177,37 @@ up from where it was before restart.
 
         k_sleep(1000);
         sys_reboot(SYS_REBOOT_COLD);
+    }
+
+Example: Custom Backend Implementation
+**************************************
+
+This is a simple example showing how to register a simple custom backend
+handler (:option:`CONFIG_SETTINGS_CUSTOM`).
+
+.. code-block:: c
+
+    static int settings_custom_load(struct settings_store *cs)
+    {
+        //...
+    }
+
+    static int settings_custom_save(struct settings_store *cs, const char *name,
+                                    const char *value, size_t val_len)
+    {
+        //...
+    }
+
+    static struct settings_store_itf settings_custom_itf = {
+        .csi_load = settings_custom_load,
+        .csi_save = settings_custom_save,
+    };
+
+    int settings_backend_init(void)
+    {
+        settings_dst_register(&settings_custom_itf);
+        settings_src_register(&settings_custom_itf);
+        return 0;
     }
 
 API Reference
