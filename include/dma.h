@@ -128,9 +128,14 @@ struct dma_block_config {
  *
  *     callback_arg  private argument from DMA client.
  *
- * dma_callback is the callback function pointer. If enabled, callback function
- *              will be invoked at transfer completion or when error happens
- *              (error_code: zero-transfer success, non zero-error happens).
+ * dma_ht_callback is the callback function pointer of half transfer complete
+ *                 event. If enabled, callback function will be invoked when
+ *                 half of the transfer is completed.
+ *
+ * dma_callback is the main callback function pointer. If enabled, callback
+ *              function will be invoked at transfer completion or when error
+ *              happens (error_code: zero-transfer success, non-zero error
+ *              happens).
  */
 struct dma_config {
 	u32_t  dma_slot :             6;
@@ -150,6 +155,7 @@ struct dma_config {
 	u32_t block_count;
 	struct dma_block_config *head_block;
 	void *callback_arg;
+	void (*dma_ht_callback)(void *callback_arg, u32_t channel);
 	void (*dma_callback)(void *callback_arg, u32_t channel,
 			     int error_code);
 };
