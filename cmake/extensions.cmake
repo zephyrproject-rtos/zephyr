@@ -679,10 +679,30 @@ function(zephyr_check_compiler_flag lang option check)
 
   # Populate the cache
   if(NOT (EXISTS ${key_path}))
+
+    # This is racy. As often with race conditions, this one can easily be
+    # made worse and demonstrated with a simple delay:
+    #    execute_process(COMMAND "sleep" "5")
+    # Delete the cache, add the sleep above and run sanitycheck with a
+    # large number of JOBS. Once it's done look at the log.txt file
+    # below and you will see that concurrent cmake processes created the
+    # same files multiple times.
+
+    # While there are a number of reasons why this race seems both very
+    # unlikely and harmless, let's play it safe anyway and write to a
+    # private, temporary file first. All modern filesystems seem to
+    # support at least one atomic rename API and cmake's file(RENAME
+    # ...) officially leverages that.
+    string(RANDOM LENGTH 8 tempsuffix)
+
     file(
       WRITE
-      ${key_path}
+      "${key_path}_tmp_${tempsuffix}"
       ${inner_check}
+      )
+    file(
+      RENAME
+      "${key_path}_tmp_${tempsuffix}" "${key_path}"
       )
 
     # Populate a metadata file (only intended for trouble shooting)
