@@ -83,13 +83,11 @@ static void thread2(void *argument)
 		      "Incorrect number of cmsis rtos v2 threads");
 
 	for (i = 0U; i < num_threads; i++) {
-		zassert_true(
-			osThreadGetStackSize(thread_array[i]) <= STACKSZ,
-			"stack size allocated is not what is expected");
+		u32_t size = osThreadGetStackSize(thread_array[i]);
+		u32_t space = osThreadGetStackSpace(thread_array[i]);
 
-		zassert_true(
-			osThreadGetStackSpace(thread_array[i]) <= STACKSZ - 4,
-			"stack size remaining is not what is expected");
+		zassert_true(space < size,
+			     "stack size remaining is not what is expected");
 	}
 
 	zassert_equal(osThreadGetState(thread_array[1]), osThreadReady,
