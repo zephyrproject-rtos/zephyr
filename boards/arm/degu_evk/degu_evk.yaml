@@ -1,0 +1,11 @@
+identifier: degu_evk
+name: Degu Evaluation Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - i2c
+  - adc
+  - usb_device
+  - ieee802154
