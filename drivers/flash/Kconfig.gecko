@@ -8,6 +8,7 @@ config SOC_FLASH_GECKO
 	bool "Silicon Labs Gecko flash driver"
 	depends on SOC_FAMILY_EXX32
 	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
 	select SOC_GECKO_MSC
 	help
 	  Enable Silicon Labs Gecko series internal flash driver.
