@@ -146,6 +146,69 @@
 				label = "GPIOK";
 			};
 		};
+
+		usart2: serial@4000e000 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x4000e000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00004000>;
+			interrupts = <38 0>;
+			status = "disabled";
+			label = "UART_2";
+		};
+
+		usart3: serial@4000f000 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x4000f000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00008000>;
+			interrupts = <39 0>;
+			status = "disabled";
+			label = "UART_3";
+		};
+
+		uart4: serial@40010000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40010000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00010000>;
+			interrupts = <52 0>;
+			status = "disabled";
+			label = "UART_4";
+		};
+
+		uart5: serial@40011000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40011000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00020000>;
+			interrupts = <53 0>;
+			status = "disabled";
+			label = "UART_5";
+		};
+
+		usart6: serial@44003000 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x44003000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
+			interrupts = <71 0>;
+			status = "disabled";
+			label = "UART_6";
+		};
+
+		uart7: serial@40018000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40018000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00040000>;
+			interrupts = <82 0>;
+			status = "disabled";
+			label = "UART_7";
+		};
+
+		uart8: serial@40019000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40019000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x00080000>;
+			interrupts = <83 0>;
+			status = "disabled";
+			label = "UART_8";
+		};
 	};
 };
 

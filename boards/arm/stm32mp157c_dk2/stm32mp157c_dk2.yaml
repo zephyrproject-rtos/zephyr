@@ -8,6 +8,7 @@ toolchain:
   - xtools
 supported:
   - gpio
+  - shell
 testing:
   ignore_tags:
     - cmsis_rtos_v2
@@ -17,7 +18,6 @@ testing:
     - crypto
     - aes
     - cmm
-    - shell
     - LED
     - nfc
 ram: 256
