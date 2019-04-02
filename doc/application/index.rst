@@ -253,17 +253,16 @@ section describes the most important ones that every Zephyr developer
 should know about.
 
 .. note::
-   All variables listed in this section can be supplied to the build system
-   in 3 ways (in order of precedence):
+
+   The variables :makevar:`BOARD`, :makevar:`CONF_FILE`, and
+   :makevar:`DTC_OVERLAY_FILE` can be supplied to the build system in
+   3 ways (in order of precedence):
 
    * As a parameter to the ``cmake`` invocation via the ``-D`` command-line
      switch
    * As an environment variables (``export`` on Linux/macOS and ``set`` on
      Windows)
-   * As a ``set(<VARIABLE>, <VALUE>)`` statement in your :file:`CMakeLists.txt`
-
-   The exception is :makevar:`ZEPHYR_BASE`, which **must** be exported as an
-   environment variable.
+   * As a ``set(<VARIABLE> <VALUE>)`` statement in your :file:`CMakeLists.txt`
 
 * :makevar:`ZEPHYR_BASE`: Sets the path to the directory containing Zephyr,
   which is needed by the build system's boilerplate file.  This is an
@@ -273,24 +272,24 @@ should know about.
   :makevar:`ZEPHYR_BASE` explicitly, but then you won't get the other features
   provided by those scripts.
 
-* :makevar:`BOARD`: Selects the board that the application's build will use for
-  the default configuration. This can be defined in the environment, in your
-  application's :file:`CMakeLists.txt` file, or in the ``cmake`` command line.
-  See :ref:`boards` for built-in boards, and :ref:`board_porting_guide` for
-  information on adding board support.
+* :makevar:`BOARD`: Selects the board that the application's build
+  will use for the default configuration.  See :ref:`boards` for
+  built-in boards, and :ref:`board_porting_guide` for information on
+  adding board support.
 
 * :makevar:`CONF_FILE`: Indicates the name of one or more configuration
-  fragment files.  Multiple filenames can either be separated by a single space
-  or a single semicolon.  Each file includes Kconfig configuration values that
-  override the default configuration values.  Like :makevar:`BOARD`, this can
-  also be defined in the environment, in your application's
-  :file:`CMakeLists.txt` file, or in the ``cmake`` command line.
+  fragment files. Multiple filenames can be separated with either spaces or
+  semicolons. Each file includes Kconfig configuration values that override
+  the default configuration values.
 
 * :makevar:`DTC_OVERLAY_FILE`: Indicates the name of one or more Device Tree
-  overlay files.  Each file includes Device Tree values that
-  override the default DT values.  Like :makevar:`CONF_FILE`, this
-  can also be defined in the environment, in your application's
-  :file:`CMakeLists.txt` file, or in the ``cmake`` command line.
+  overlay files. Multiple filenames can be separated with either spaces or
+  semicolons. Each file includes Device Tree values that override the default
+  DT values.
+
+* :makevar:`ZEPHYR_MODULES`: A CMake list containing absolute paths of
+  additional directories with source code, Kconfig, etc. that should be used in
+  the application build. See :ref:`ext-projs` below for details.
 
 .. _build_an_application:
 
@@ -653,73 +652,125 @@ Modules (External projects)
 Zephyr relies on the source code of several externally maintained projects in
 order to avoid reinventing the wheel and to reuse as much well-established,
 mature code as possible when it makes sense. In the context of Zephyr's build
-system those are called *modules*.
+system those are called *modules*. These modules must be integrated with the
+Zephyr build system, which is described in more detail in other sections on
+this page.
+
 There are several categories of external projects that Zephyr depends on,
 including:
 
 - Debugger integration
-- Silicon Vendor Hardware Abstraction Layers (HALs)
+- Silicon vendor Hardware Abstraction Layers (HALs)
 - Cryptography libraries
 - Filesystems
-- Inter-Process Communication (IPC)
+- Inter-Process Communication (IPC) libraries
 
-These modules (external projects) must be integrated with the Zephyr
-build system, which is based around Kconfig and CMake (see
-:ref:`application` for more information about Zephyr's build system).
+The build system variable :makevar:`ZEPHYR_MODULES` is a `CMake list`_ of
+absolute paths to the directories containing Zephyr modules. These modules
+contain :file:`CMakeLists.txt` and :file:`Kconfig` files describing how to
+build and configure them, respectively. Module :file:`CMakeLists.txt` files are
+added to the build using CMake's `add_subdirectory()`_ command, and the
+:file:`Kconfig` files are included in the build's Kconfig menu tree.
 
-The way that the build system discovers and includes external projects when
-building an application is based around the :ref:`west` tool's ``west list``
-command. The main CMake script in Zephyr (the :file:`CMakeLists.txt` located
-in the zephyr repository root folder) invokes ``west list`` to obtain a list of
-projects managed by west. For each project then, the CMake scripts will verify
-if the project contains the metadata required in a module.  If the project is
-identified to be a module then CMake will include it in the build.
+If you have :ref:`west <west>` installed, you don't need to worry about how
+this variable is defined unless you are adding a new module. The build system
+knows how to use west to set :makevar:`ZEPHYR_MODULES`. You can add additional
+modules to this list by setting the :makevar:`ZEPHYR_EXTRA_MODULES` CMake
+variable. This can be useful if you want to keep the list of modules found with
+west and also add your own.
 
-.. note::
-   Although the build system normally uses :ref:`west` to list the available
-   external projects for potential inclusion in the build, it is perfectly
-   possible to use any other script or tool. By calling cmake as
-   ``cmake --DZEPHYR_MODULES=<oot-path-to-module>[;<additional-oot-module(s)>]``
-   , it will search in those paths instead of invoking ``west list``
+Finally, you can also specify the list of modules yourself in various ways, or
+not use modules at all if your application doesn't need them.
 
-The code in :file:`CMakeLists.txt` retrieves the following information for
-each project using ``west list``:
+Module Initialization Using West
+================================
 
-- name: The name of the project as specified in the manifest file
-- path: The path of the project within the west installation
+If west is installed and :makevar:`ZEPHYR_MODULES` is not already set, the
+build system finds all the modules in your :term:`west installation` and uses
+those. It does this by running :ref:`west list <west-multi-repo-misc>` to get
+the paths of all the projects in the installation, then filters the results to
+just those projects which have the necessary module metadata files.
 
-Once it has collected the list, the CMake script performs the following
-operations on each project to determine if it is a module to be included in
-the build:
+Each project in the ``west list`` output is tested like this:
 
-- If a matching (see below) :file:`CMakeLists.txt` is located, it will process
-  it directly by using the CMake ``add_subdirectory`` command
-- If a matching (see below) :file:`Kconfig` is located, it will instruct
-  Kconfig to source it (i.e. process it)
+- If the project contains a file named :file:`zephyr/module.yml`, then
+  its contents should look like this:
 
-The way that the script determines if a matching :file:`CMakeLists.txt` and
-:file:`Kconfig` are present is the following (in order of precedence):
+  .. code-block:: yaml
 
-- If the project contains a file named :file:`<path>/zephyr/module.yml` then
-  its contents are parsed:
+     build:
+       cmake: <cmake-directory>
+       kconfig: <directory>/Kconfig
 
-  - If a ``cmake: <folder>`` field is present then the build system will match
-    the :file:`CMakeLists.txt` in ``<folder>``
-  - If a ``kconfig: <folder>/<kconfig-file>`` field is present then the build
-    system will match the setting.
-- If the project contains a file named exactly
-  :file:`<path>/zephyr/CMakeLists.txt` the build system will match it
-- If the project contains a file named :file:`<path>/zephyr/Kconfig` the build
-  system will match it
+  The ``cmake: <cmake-directory>`` part specifies that
+  :file:`<cmake-directory>` contains the :file:`CMakeLists.txt` to use. The
+  ``kconfig: <directory>/Kconfig`` part specifies the Kconfig file to use.
+  Neither is required: ``cmake`` defaults to ``zephyr``, and ``kconfig``
+  defaults to ``zephyr/Kconfig``.
 
-Example of a :file:`<path>/zephyr/module.yml` file referring to
-:file:`CMakeLists.txt` and :file:`Kconfig` files at the root of the module:
+  Here is an example :file:`module.yml` file referring to
+  :file:`CMakeLists.txt` and :file:`Kconfig` files in the root directory of the
+  module:
 
-.. code-block:: console
+  .. code-block:: yaml
 
-	build:
-          cmake: .
-          kconfig: Kconfig
+     build:
+       cmake: .
+       kconfig: Kconfig
+
+- Otherwise (i.e. if the project has no :file:`zephyr/module.yml`), then the
+  build system looks for :file:`zephyr/CMakeLists.txt` and
+  :file:`zephyr/Kconfig` files in the project. If both are present, the project
+  is considered a module, and those files will be added to the build.
+
+- If neither of those checks succeed, the project is not considered a module,
+  and is not added to :makevar:`ZEPHYR_MODULES`.
+
+Module Initialization Without West
+==================================
+
+If you don't have west installed or don't want the build system to use it to
+find Zephyr modules, you can set :makevar:`ZEPHYR_MODULES` yourself using one
+of the following options. Each of the directories in the list must contain
+either a :file:`zephyr/module.yml` file or the files
+:file:`zephyr/CMakeLists.txt` and :file:`Kconfig`, as described in the previous
+section.
+
+#. At the CMake command line, like this:
+
+   .. code-block:: console
+
+      cmake -DZEPHYR_MODULES=<path-to-module1>[;<path-to-module2>[...]] ...
+
+#. At the top of your application's top level :file:`CMakeLists.txt`, like this:
+
+   .. code-block:: cmake
+
+      set(ZEPHYR_MODULES <path-to-module1> <path-to-module2> [...])
+      include($ENV{ZEPHYR_BASE}/cmake/app/boilerplate.cmake NO_POLICY_SCOPE)
+
+   If you choose this option, make sure to set the variable **before** including
+   the boilerplate file, as shown above.
+
+#. In a separate CMake script which is pre-loaded to populate the CMake cache,
+   like this:
+
+   .. code-block:: cmake
+
+      # Put this in a file with a name like "zephyr-modules.cmake"
+      set(ZEPHYR_MODULES <path-to-module1> <path-to-module2>
+        CACHE STRING "pre-cached modules")
+
+   You can tell the build system to use this file by adding ``-C
+   zephyr-modules.cmake`` to your CMake command line.
+
+Not Using Modules
+=================
+
+If you don't have west installed and don't specify :makevar:`ZEPHYR_MODULES`
+yourself, then no additional modules are added to the build. You will still be
+able to build any applications that don't require code or Kconfig options
+defined in an external repository.
 
 Application Debugging
 *********************
@@ -1489,4 +1540,5 @@ project that demonstrates some of these features.
 .. _Eclipse IDE for C/C++ Developers: https://www.eclipse.org/downloads/packages/eclipse-ide-cc-developers/oxygen2
 .. _GNU MCU Eclipse plug-ins: https://gnu-mcu-eclipse.github.io/plugins/install/
 .. _pyOCD v0.11.0: https://github.com/mbedmicro/pyOCD/releases/tag/v0.11.0
-
+.. _CMake list: https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#lists
+.. _add_subdirectory(): https://cmake.org/cmake/help/latest/command/add_subdirectory.html
