@@ -29,6 +29,7 @@
 /arch/x86/                                @andrewboie @ramakrishnapallala
 /arch/x86/core/                           @andrewboie
 /arch/x86/core/crt0.S                     @ramakrishnapallala @nashif
+/arch/x86/core/pcie.c                     @gnuless
 /soc/x86/                                 @andrewboie @ramakrishnapallala
 /soc/x86/intel_quark/quark_d2000/         @nashif
 /soc/x86/intel_quark/quark_se/            @nashif
@@ -119,6 +120,7 @@
 /drivers/led_strip/                       @mbolivar
 /drivers/modem/                           @mike-scott
 /drivers/pci/                             @gnuless
+/drivers/pcie/                            @gnuless
 /drivers/pinmux/stm32/                    @rsalveti @idlethread
 /drivers/sensor/                          @bogdan-davidoaia @MaureenHelm
 /drivers/sensor/hts*/                     @avisconti
@@ -126,6 +128,7 @@
 /drivers/sensor/lps*/                     @avisconti
 /drivers/sensor/lsm*/                     @avisconti
 /drivers/serial/uart_altera_jtag_hal.c    @ramakrishnapallala
+/drivers/serial/*ns16550*                 @gnuless
 /drivers/net/slip.c                       @jukkar @tbursztyka
 /drivers/spi/                             @tbursztyka
 /drivers/spi/spi_ll_stm32.*               @superna9999
@@ -141,6 +144,7 @@
 /dts/arm/nxp/                             @MaureenHelm
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
+/dts/bindings/serial/ns16550.yaml         @gnuless
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
 /ext/fs/                                  @nashif @ramakrishnapallala
@@ -180,6 +184,9 @@
 /include/drivers/ioapic.h                 @andrewboie
 /include/drivers/loapic.h                 @andrewboie
 /include/drivers/mvic.h                   @andrewboie
+/include/drivers/pcie/                    @gnuless
+/include/drivers/serial/uart_ns16550.h    @gnuless
+/include/dt-bindings/pcie/                @gnuless
 /include/fs.h                             @nashif @ramakrishnapallala
 /include/fs/                              @nashif @ramakrishnapallala
 /include/hwinfo.h                         @alexanderwachter

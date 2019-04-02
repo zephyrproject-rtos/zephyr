@@ -133,9 +133,6 @@ endif # SPI
 
 if UART_NS16550
 
-config UART_NS16550_PCI
-	default y if PCI
-
 config UART_NS16550_PORT_0
 	default y
 
@@ -143,9 +140,6 @@ if UART_NS16550_PORT_0
 
 config UART_NS16550_PORT_0_OPTIONS
 	default 0
-
-config UART_NS16550_PORT_0_PCI
-	default y if UART_NS16550_PCI
 
 endif # UART_NS16550_PORT_0
 
@@ -156,9 +150,6 @@ if UART_NS16550_PORT_1
 
 config UART_NS16550_PORT_1_OPTIONS
 	default 0
-
-config UART_NS16550_PORT_1_PCI
-	default y if UART_NS16550_PCI
 
 endif # UART_NS16550_PORT_1
 
