@@ -24,16 +24,19 @@ int test_export_block;
 int c2_var_count = 1;
 
 int c1_handle_get(int argc, char **argv, char *val, int val_len_max);
-int c1_handle_set(int argc, char **argv, void *value_ctx);
+int c1_handle_set(int argc, char **argv, size_t len, settings_read_cb read_cb,
+		  void *cb_arg);
 int c1_handle_commit(void);
 int c1_handle_export(int (*cb)(const char *name, void *value, size_t val_len));
 
 int c2_handle_get(int argc, char **argv, char *val, int val_len_max);
-int c2_handle_set(int argc, char **argv, void *value_ctx);
+int c2_handle_set(int argc, char **argv, size_t len, settings_read_cb read_cb,
+		  void *cb_arg);
 int c2_handle_export(int (*cb)(const char *name, void *value, size_t val_len));
 
 int c3_handle_get(int argc, char **argv, char *val, int val_len_max);
-int c3_handle_set(int argc, char **argv, void *value_ctx);
+int c3_handle_set(int argc, char **argv, size_t len, settings_read_cb read_cb,
+		  void *cb_arg);
 int c3_handle_export(int (*cb)(const char *name,  void *value, size_t val_len));
 
 struct settings_handler c_test_handlers[] = {
@@ -82,29 +85,30 @@ int c1_handle_get(int argc, char **argv, char *val, int val_len_max)
 	return -ENOENT;
 }
 
-int c1_handle_set(int argc, char **argv, void *value_ctx)
+int c1_handle_set(int argc, char **argv, size_t len, settings_read_cb read_cb,
+		  void *cb_arg)
 {
 	size_t val_len;
 	int rc;
 
 	test_set_called = 1;
 	if (argc == 1 && !strcmp(argv[0], "mybar")) {
-		rc = settings_val_read_cb(value_ctx, &val8, sizeof(val8));
+		rc = read_cb(cb_arg, &val8, sizeof(val8));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
-	if (argc == 1 && !strcmp(argv[0], "mybar64"))	 {
-		rc = settings_val_read_cb(value_ctx, &val64, sizeof(val64));
+	if (argc == 1 && !strcmp(argv[0], "mybar64")) {
+		rc = read_cb(cb_arg, &val64, sizeof(val64));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
 
 	if (argc == 1 && !strcmp(argv[0], "unaligned")) {
-		val_len = settings_val_get_len_cb(value_ctx);
+		val_len = len;
 		zassert_equal(val_len, sizeof(val8_un),
 			      "value length: %d, ought equal 1", val_len);
-		rc = settings_val_read_cb(value_ctx, &val8_un, sizeof(val8_un));
+		rc = read_cb(cb_arg, &val8_un, sizeof(val8_un));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}
@@ -241,7 +245,8 @@ int c2_handle_get(int argc, char **argv, char *val, int val_len_max)
 	return -ENOENT;
 }
 
-int c2_handle_set(int argc, char **argv, void *value_ctx)
+int c2_handle_set(int argc, char **argv, size_t len, settings_read_cb read_cb,
+		  void *cb_arg)
 {
 	char *valptr;
 	int rc;
@@ -252,12 +257,11 @@ int c2_handle_set(int argc, char **argv, void *value_ctx)
 			return -ENOENT;
 		}
 
-			rc = settings_val_read_cb(value_ctx, valptr,
-						  sizeof(val_string[0]));
-			zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
-			if (rc == 0) {
-				(void)memset(valptr, 0, sizeof(val_string[0]));
-			}
+		rc = read_cb(cb_arg, valptr, sizeof(val_string[0]));
+		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
+		if (rc == 0) {
+			(void)memset(valptr, 0, sizeof(val_string[0]));
+		}
 
 		return 0;
 	}
@@ -288,16 +292,17 @@ int c3_handle_get(int argc, char **argv, char *val, int val_len_max)
 	return -EINVAL;
 }
 
-int c3_handle_set(int argc, char **argv, void *value_ctx)
+int c3_handle_set(int argc, char **argv, size_t len, settings_read_cb read_cb,
+		  void *cb_arg)
 {
 	int rc;
 	size_t val_len;
 
 	if (argc == 1 && !strcmp(argv[0], "v")) {
-		val_len = settings_val_get_len_cb(value_ctx);
+		val_len = len;
 		zassert_true(val_len == 4, "bad set-value size");
 
-		rc = settings_val_read_cb(value_ctx, &val32, sizeof(val32));
+		rc = read_cb(cb_arg, &val32, sizeof(val32));
 		zassert_true(rc >= 0, "SETTINGS_VALUE_SET callback");
 		return 0;
 	}

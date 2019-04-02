@@ -19,12 +19,11 @@ LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 #define SETTINGS_FCB_VERS		1
 
 struct settings_fcb_load_cb_arg {
-	load_cb cb;
+	line_load_cb cb;
 	void *cb_arg;
 };
 
-static int settings_fcb_load(struct settings_store *cs, load_cb cb,
-			     void *cb_arg);
+static int settings_fcb_load(struct settings_store *cs);
 static int settings_fcb_save(struct settings_store *cs, const char *name,
 			     const char *value, size_t val_len);
 
@@ -102,8 +101,8 @@ static int settings_fcb_load_cb(struct fcb_entry_ctx *entry_ctx, void *arg)
 	return 0;
 }
 
-static int settings_fcb_load(struct settings_store *cs, load_cb cb,
-			     void *cb_arg)
+static int settings_fcb_load_priv(struct settings_store *cs, line_load_cb cb,
+				  void *cb_arg)
 {
 	struct settings_fcb *cf = (struct settings_fcb *)cs;
 	struct settings_fcb_load_cb_arg arg;
@@ -117,6 +116,12 @@ static int settings_fcb_load(struct settings_store *cs, load_cb cb,
 	}
 	return 0;
 }
+
+static int settings_fcb_load(struct settings_store *cs)
+{
+	return settings_fcb_load_priv(cs, settings_line_load_cb, NULL);
+}
+
 
 static int read_handler(void *ctx, off_t off, char *buf, size_t *len)
 {
@@ -208,8 +213,8 @@ static void settings_fcb_compress(struct settings_fcb *cf)
 			continue;
 		}
 
-		rc = settings_entry_copy(&loc2, 0, &loc1, 0,
-					 loc1.loc.fe_data_len);
+		rc = settings_line_entry_copy(&loc2, 0, &loc1, 0,
+					      loc1.loc.fe_data_len);
 		if (rc) {
 			continue;
 		}
@@ -243,8 +248,8 @@ static int write_handler(void *ctx, off_t off, char const *buf, size_t len)
 }
 
 /* ::csi_save implementation */
-static int settings_fcb_save(struct settings_store *cs, const char *name,
-			     const char *value, size_t val_len)
+static int settings_fcb_save_priv(struct settings_store *cs, const char *name,
+				  const char *value, size_t val_len)
 {
 	struct settings_fcb *cf = (struct settings_fcb *)cs;
 	struct fcb_entry_ctx loc;
@@ -282,6 +287,29 @@ static int settings_fcb_save(struct settings_store *cs, const char *name,
 		}
 	}
 	return rc;
+}
+
+static int settings_fcb_save(struct settings_store *cs, const char *name,
+			     const char *value, size_t val_len)
+{
+	struct settings_line_dup_check_arg cdca;
+
+	if (val_len > 0 && value == NULL) {
+		return -EINVAL;
+	}
+
+	/*
+	 * Check if we're writing the same value again.
+	 */
+	cdca.name = name;
+	cdca.val = (char *)value;
+	cdca.is_dup = 0;
+	cdca.val_len = val_len;
+	settings_fcb_load_priv(cs, settings_line_dup_check_cb, &cdca);
+	if (cdca.is_dup == 1) {
+		return 0;
+	}
+	return settings_fcb_save_priv(cs, name, (char *)value, val_len);
 }
 
 void settings_mount_fcb_backend(struct settings_fcb *cf)

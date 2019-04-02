@@ -19,14 +19,7 @@
 #include <logging/log.h>
 LOG_MODULE_DECLARE(settings, CONFIG_SETTINGS_LOG_LEVEL);
 
-struct settings_dup_check_arg {
-	const char *name;
-	const char *val;
-	size_t val_len;
-	int is_dup;
-};
-
-sys_slist_t  settings_load_srcs;
+sys_slist_t settings_load_srcs;
 struct settings_store *settings_save_dst;
 
 void settings_src_register(struct settings_store *cs)
@@ -47,21 +40,6 @@ void settings_dst_register(struct settings_store *cs)
 	settings_save_dst = cs;
 }
 
-static void settings_load_cb(char *name, void *val_read_cb_ctx, off_t off,
-			     void *cb_arg)
-{
-	int rc = settings_set_value_priv(name, val_read_cb_ctx, off, 0);
-
-	if (rc != 0) {
-		LOG_ERR("set-value failure. key: %s error(%d)",
-			log_strdup(name), rc);
-	} else {
-		LOG_DBG("set-value OK. key: %s",
-			log_strdup(name));
-	}
-	(void)rc;
-}
-
 int settings_load(void)
 {
 	struct settings_store *cs;
@@ -74,69 +52,9 @@ int settings_load(void)
 	 */
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
-		cs->cs_itf->csi_load(cs, settings_load_cb, NULL);
+		cs->cs_itf->csi_load(cs);
 	}
-	return settings_commit(NULL);
-}
-
-/* val_off - offset of value-string within line entries */
-static int settings_cmp(char const *val, size_t val_len, void *val_read_cb_ctx,
-		 off_t val_off)
-{
-	size_t len_read, exp_len;
-	size_t rem;
-	char buf[16];
-	int rc;
-	off_t off = 0;
-
-	for (rem = val_len; rem > 0; rem -= len_read) {
-		len_read = exp_len = MIN(sizeof(buf), rem);
-		rc = settings_line_val_read(val_off, off, buf, len_read,
-			   &len_read, val_read_cb_ctx);
-		if (rc) {
-			break;
-		}
-
-		if (len_read != exp_len) {
-			rc = 1;
-			break;
-		}
-
-		rc = memcmp(val, buf, len_read);
-		if (rc) {
-			break;
-		}
-		val += len_read;
-		off += len_read;
-	}
-
-	return rc;
-}
-
-static void settings_dup_check_cb(char *name, void *val_read_cb_ctx, off_t off,
-				  void *cb_arg)
-{
-	struct settings_dup_check_arg *cdca = (struct settings_dup_check_arg *)
-					      cb_arg;
-	size_t len_read;
-
-	if (strcmp(name, cdca->name)) {
-		return;
-	}
-
-	len_read = settings_line_val_get_len(off, val_read_cb_ctx);
-	if (len_read != cdca->val_len) {
-		cdca->is_dup = 0;
-	} else if (len_read == 0) {
-		cdca->is_dup = 1;
-	} else {
-		if (!settings_cmp(cdca->val, cdca->val_len,
-				  val_read_cb_ctx, off)) {
-			cdca->is_dup = 1;
-		} else {
-			cdca->is_dup = 0;
-		}
-	}
+	return settings_commit();
 }
 
 /*
@@ -145,28 +63,12 @@ static void settings_dup_check_cb(char *name, void *val_read_cb_ctx, off_t off,
 int settings_save_one(const char *name, void *value, size_t val_len)
 {
 	struct settings_store *cs;
-	struct settings_dup_check_arg cdca;
 
 	cs = settings_save_dst;
 	if (!cs) {
 		return -ENOENT;
 	}
 
-	if (val_len > 0 && value == NULL) {
-		return -EINVAL;
-	}
-
-	/*
-	 * Check if we're writing the same value again.
-	 */
-	cdca.name = name;
-	cdca.val = (char *)value;
-	cdca.is_dup = 0;
-	cdca.val_len = val_len;
-	cs->cs_itf->csi_load(cs, settings_dup_check_cb, &cdca);
-	if (cdca.is_dup == 1) {
-		return 0;
-	}
 	return cs->cs_itf->csi_save(cs, name, (char *)value, val_len);
 }
 
