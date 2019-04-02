@@ -1,0 +1,38 @@
+# Copyright (c) 2019 Derek Hageman <hageman@inthat.cloud>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+
+choice
+	bool "Timer $(index) prescaler"
+
+	config COUNTER_SAM0_TC32_$(index)_PRESCALER_1
+		bool "clock / 1"
+	config COUNTER_SAM0_TC32_$(index)_PRESCALER_2
+		bool "clock / 2"
+	config COUNTER_SAM0_TC32_$(index)_PRESCALER_4
+		bool "clock / 4"
+	config COUNTER_SAM0_TC32_$(index)_PRESCALER_8
+		bool "clock / 8"
+	config COUNTER_SAM0_TC32_$(index)_PRESCALER_16
+		bool "clock / 16"
+	config COUNTER_SAM0_TC32_$(index)_PRESCALER_64
+		bool "clock / 64"
+	config COUNTER_SAM0_TC32_$(index)_PRESCALER_256
+		bool "clock / 256"
+	config COUNTER_SAM0_TC32_$(index)_PRESCALER_1024
+		bool "clock / 1024"
+
+endchoice
+
+config COUNTER_SAM0_TC32_$(index)_DIVISOR
+	int
+	default 1 if COUNTER_SAM0_TC32_$(index)_PRESCALER_1
+	default 2 if COUNTER_SAM0_TC32_$(index)_PRESCALER_2
+	default 4 if COUNTER_SAM0_TC32_$(index)_PRESCALER_4
+	default 8 if COUNTER_SAM0_TC32_$(index)_PRESCALER_8
+	default 16 if COUNTER_SAM0_TC32_$(index)_PRESCALER_16
+	default 64 if COUNTER_SAM0_TC32_$(index)_PRESCALER_64
+	default 256 if COUNTER_SAM0_TC32_$(index)_PRESCALER_256
+	default 1024 if COUNTER_SAM0_TC32_$(index)_PRESCALER_1024
