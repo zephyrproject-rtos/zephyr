@@ -933,6 +933,15 @@ void bt_gatt_foreach_attr(u16_t start_handle, u16_t end_handle,
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&db, svc, node) {
 		int i;
+		struct bt_gatt_service *next;
+
+		next = SYS_SLIST_PEEK_NEXT_CONTAINER(svc, node);
+		if (next) {
+			/* Skip ahead if start is not within service handles */
+			if (next->attrs[0].handle <= start_handle) {
+				continue;
+			}
+		}
 
 		for (i = 0; i < svc->attr_count; i++) {
 			struct bt_gatt_attr *attr = &svc->attrs[i];
