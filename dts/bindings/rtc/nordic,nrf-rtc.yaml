@@ -13,6 +13,9 @@ description: >
 inherits:
     !include rtc.yaml
 
+child:
+    bus: counter
+
 properties:
     compatible:
       constraint: "nordic,nrf-rtc"
