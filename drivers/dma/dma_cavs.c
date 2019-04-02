@@ -127,6 +127,11 @@ static int dw_dma_config(struct device *dev, u32_t channel,
 		return -EINVAL;
 	}
 
+	if (cfg->dma_ht_callback) {
+		LOG_ERR("Half transfer event is not supported");
+		return -ENOTSUP;
+	}
+
 	__ASSERT_NO_MSG(cfg->source_data_size == cfg->dest_data_size);
 	__ASSERT_NO_MSG(cfg->source_burst_length == cfg->dest_burst_length);
 

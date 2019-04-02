@@ -79,6 +79,11 @@ static int nios2_msgdma_config(struct device *dev, u32_t channel,
 		return -EINVAL;
 	}
 
+	if (cfg->dma_ht_callback) {
+		LOG_ERR("Half transfer event is not supported");
+		return -ENOTSUP;
+	}
+
 #if MSGDMA_0_CSR_PREFETCHER_ENABLE
 	if (cfg->block_count > 1) {
 		LOG_ERR("driver yet add support multiple descriptors");

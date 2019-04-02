@@ -50,6 +50,7 @@ struct dma_stm32_stream {
 	struct dma_stm32_stream_reg regs;
 	bool busy;
 	void *callback_arg;
+	void (*dma_ht_callback)(void *arg, u32_t id);
 	void (*dma_callback)(void *arg, u32_t id,
 			     int error_code);
 };
@@ -236,18 +237,19 @@ static void dma_stm32_irq_handler(void *arg, u32_t id)
 	config = dma_stm32_read(ddata, DMA_STM32_SCR(id));
 	sfcr = dma_stm32_read(ddata, DMA_STM32_SFCR(id));
 
-	/* Silently ignore spurious transfer half complete IRQ */
-	if (irqstatus & DMA_STM32_HTI) {
-		dma_stm32_irq_clear(ddata, id, DMA_STM32_HTI);
-		return;
-	}
-
 	stream->busy = false;
 
 	if ((irqstatus & DMA_STM32_TCI) && (config & DMA_STM32_SCR_TCIE)) {
 		dma_stm32_irq_clear(ddata, id, DMA_STM32_TCI);
 
 		stream->dma_callback(stream->callback_arg, id, 0);
+	} else if ((irqstatus & DMA_STM32_HTI) &&
+			(config & DMA_STM32_SCR_HTIE)) {
+		dma_stm32_irq_clear(ddata, id, DMA_STM32_HTI);
+
+		if (stream->dma_ht_callback) {
+			stream->dma_ht_callback(stream->dma_ht_callback, id);
+		}
 	} else {
 		LOG_ERR("Internal error: IRQ status: 0x%x\n", irqstatus);
 		dma_stm32_irq_clear(ddata, id, irqstatus);
@@ -394,6 +396,7 @@ static int dma_stm32_config(struct device *dev, u32_t id,
 	}
 
 	stream->busy		= true;
+	stream->dma_ht_callback = config->dma_ht_callback;
 	stream->dma_callback	= config->dma_callback;
 	stream->direction	= config->channel_direction;
 	stream->callback_arg    = config->callback_arg;

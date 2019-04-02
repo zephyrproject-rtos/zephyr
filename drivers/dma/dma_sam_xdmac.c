@@ -191,6 +191,11 @@ static int sam_xdmac_config(struct device *dev, u32_t channel,
 	__ASSERT_NO_MSG(cfg->source_data_size == cfg->dest_data_size);
 	__ASSERT_NO_MSG(cfg->source_burst_length == cfg->dest_burst_length);
 
+	if (cfg->dma_ht_callback) {
+		LOG_ERR("Half transfer event is not supported");
+		return -ENOTSUP;
+	}
+
 	if (cfg->source_data_size != 1U && cfg->source_data_size != 2U &&
 	    cfg->source_data_size != 4U) {
 		LOG_ERR("Invalid 'source_data_size' value");
