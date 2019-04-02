@@ -46,6 +46,7 @@ void main(void)
 	}
 
 	printf("\nTest 1: Flash erase page at 0x%x\n", FLASH_TEST_OFFSET);
+	flash_write_protection_set(flash_dev, false);
 	if (flash_erase(flash_dev, FLASH_TEST_OFFSET, FLASH_PAGE_SIZE) != 0) {
 		printf("   Flash erase failed!\n");
 	} else {
@@ -76,7 +77,6 @@ void main(void)
 			printf("   Data read does not match data written!\n");
 		}
 	}
-	flash_write_protection_set(flash_dev, true);
 
 	offset = FLASH_TEST_OFFSET - FLASH_PAGE_SIZE * 2;
 	printf("\nTest 3: Flash erase (4 pages at 0x%x)\n", offset);
@@ -110,7 +110,6 @@ void main(void)
 			printf("   Data read does not match data written!\n");
 		}
 	}
-	flash_write_protection_set(flash_dev, true);
 
 	printf("\nTest 5: Flash erase page at 0x%x\n", FLASH_TEST_OFFSET);
 	if (flash_erase(flash_dev, FLASH_TEST_OFFSET, FLASH_PAGE_SIZE) != 0) {
