@@ -6,9 +6,6 @@
 
 menuconfig SETTINGS
 	bool "Enable settings subsystem with non-volatile storage"
-	# Only NFFS is currently supported as FS.
-	# The reason in that FatFs doesn't implement the fs_rename() API
-	depends on (FILE_SYSTEM && FILE_SYSTEM_NFFS) || (FCB && FLASH_PAGE_LAYOUT)
 	help
 	  The settings subsystem allows its users to serialize and
 	  deserialize state in memory into and from non-volatile memory.
@@ -20,6 +17,12 @@ module = SETTINGS
 module-str = settings
 source "subsys/logging/Kconfig.template.log_config"
 endif
+
+config SETTINGS_RUNTIME
+	bool "runtime storage back-end"
+	depends on SETTINGS
+	help
+	  Enables runtime storage back-end.
 
 # Hidden option to enable encoding length into settings entry
 config SETTINGS_ENCODE_LEN
@@ -35,7 +38,9 @@ config SETTINGS_USE_BASE64
 
 choice
 	prompt "Storage back-end"
+	optional
 	default SETTINGS_FCB if FCB
+	default SETTINGS_NONE
 	depends on SETTINGS
 	help
 	  Storage back-end to be used by the settings subsystem.
@@ -52,6 +57,16 @@ config SETTINGS_FS
 	select SETTINGS_ENCODE_LEN
 	help
 	  Use a file system as a settings storage back-end.
+
+config SETTINGS_CUSTOM
+	bool "CUSTOM"
+	help
+	  Use a custom settings storage back-end.
+
+config SETTINGS_NONE
+	bool "NONE"
+	help
+	  No storage back-end.
 endchoice
 
 config SETTINGS_FCB_NUM_AREAS

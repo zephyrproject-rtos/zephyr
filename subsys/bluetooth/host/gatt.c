@@ -3332,7 +3332,8 @@ next:
 	return load->count ? BT_GATT_ITER_CONTINUE : BT_GATT_ITER_STOP;
 }
 
-static int ccc_set(int argc, char **argv, void *val_ctx)
+static int ccc_set(int argc, char **argv, size_t len_rd,
+		   settings_read_cb read_cb, void *cb_arg)
 {
 	struct ccc_store ccc_store[CCC_STORE_MAX];
 	struct ccc_load load;
@@ -3356,9 +3357,8 @@ static int ccc_set(int argc, char **argv, void *val_ctx)
 
 	load.addr_with_id.addr = &addr;
 
-	if (settings_val_get_len_cb(val_ctx)) {
-		len = settings_val_read_cb(val_ctx, ccc_store,
-					   sizeof(ccc_store));
+	if (len_rd) {
+		len = read_cb(cb_arg, ccc_store, sizeof(ccc_store));
 
 		if (len < 0) {
 			BT_ERR("Failed to decode value (err %d)", len);
@@ -3388,7 +3388,8 @@ static int ccc_set(int argc, char **argv, void *val_ctx)
 BT_SETTINGS_DEFINE(ccc, ccc_set, NULL, NULL);
 
 #if defined(CONFIG_BT_GATT_CACHING)
-static int cf_set(int argc, char **argv, void *val_ctx)
+static int cf_set(int argc, char **argv, size_t len_rd,
+		  settings_read_cb read_cb, void *cb_arg)
 {
 	struct gatt_cf_cfg *cfg;
 	bt_addr_le_t addr;
@@ -3414,9 +3415,8 @@ static int cf_set(int argc, char **argv, void *val_ctx)
 		}
 	}
 
-	if (settings_val_get_len_cb(val_ctx)) {
-		len = settings_val_read_cb(val_ctx, cfg->data,
-					   sizeof(cfg->data));
+	if (len_rd) {
+		len = read_cb(cb_arg, cfg->data, sizeof(cfg->data));
 		if (len < 0) {
 			BT_ERR("Failed to decode value (err %d)", len);
 			return len;
@@ -3436,11 +3436,12 @@ BT_SETTINGS_DEFINE(cf, cf_set, NULL, NULL);
 
 static u8_t stored_hash[16];
 
-static int db_hash_set(int argc, char **argv, void *val_ctx)
+static int db_hash_set(int argc, char **argv, size_t len_rd,
+		       settings_read_cb read_cb, void *cb_arg)
 {
 	int len;
 
-	len = settings_val_read_cb(val_ctx, stored_hash, sizeof(stored_hash));
+	len = read_cb(cb_arg, stored_hash, sizeof(stored_hash));
 	if (len < 0) {
 		BT_ERR("Failed to decode value (err %d)", len);
 		return len;

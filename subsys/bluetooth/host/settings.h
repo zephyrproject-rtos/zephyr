@@ -6,7 +6,8 @@
 
 struct bt_settings_handler {
 	const char *name;
-	int (*set)(int argc, char **argv, void *value_ctx);
+	int (*set)(int argc, char **argv, size_t len, settings_read_cb read_cb,
+		   void *cb_arg);
 	int (*commit)(void);
 	int (*export)(int (*func)(const char *name, void *val,
 				  size_t val_len));
