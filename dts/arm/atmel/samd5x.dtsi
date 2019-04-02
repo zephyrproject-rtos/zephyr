@@ -212,6 +212,11 @@
 		sercom-5 = &sercom5;
 		sercom-6 = &sercom6;
 		sercom-7 = &sercom7;
+
+		tc-0 = &tc0;
+		tc-2 = &tc2;
+		tc-4 = &tc4;
+		tc-6 = &tc6;
 	};
 
 	soc {
@@ -432,6 +437,34 @@
 			 */
 			clocks = <&gclk3>;
 			clock-frequency = <16000000>;
+		};
+
+		tc0: tc@40003800 {
+			compatible = "atmel,sam0-tc32";
+			reg = <0x40003800 0x34>;
+			interrupts = <107 0>;
+			label = "TIMER_0";
+		};
+
+		tc2: tc@4101A000 {
+			compatible = "atmel,sam0-tc32";
+			reg = <0x4101A000 0x34>;
+			interrupts = <109 0>;
+			label = "TIMER_2";
+		};
+
+		tc4: tc@42001400 {
+			compatible = "atmel,sam0-tc32";
+			reg = <0x42001400 0x34>;
+			interrupts = <111 0>;
+			label = "TIMER_4";
+		};
+
+		tc6: tc@43001400 {
+			compatible = "atmel,sam0-tc32";
+			reg = <0x43001400 0x34>;
+			interrupts = <113 0>;
+			label = "TIMER_6";
 		};
 	};
 };
