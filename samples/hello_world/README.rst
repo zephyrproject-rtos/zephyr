@@ -24,17 +24,6 @@ on QEMU as follows:
    :goals: run
    :compact:
 
-To build the single thread version, use the supplied configuration file for
-single thread: :file:`prj_single.conf`:
-
-.. zephyr-app-commands::
-   :zephyr-app: samples/hello_world
-   :host-os: unix
-   :board: qemu_x86
-   :conf: prj_single.conf
-   :goals: run
-   :compact:
-
 Sample Output
 =============
 
