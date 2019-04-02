@@ -379,8 +379,16 @@ zephyr_ld_options(
   )
 endif()
 
+if(CONFIG_RETAIN_UNUSED_SECTIONS)
+  # For special circumstances
+  set(gc_sections_flag --no-gc-sections)
+else()
+  # The default
+  set(gc_sections_flag --gc-sections)
+endif()
+
 zephyr_ld_options(
-  ${LINKERFLAGPREFIX},--gc-sections
+  ${LINKERFLAGPREFIX},${gc_sections_flag}
   ${LINKERFLAGPREFIX},--build-id=none
   )
 

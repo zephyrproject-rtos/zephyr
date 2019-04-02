@@ -67,6 +67,20 @@ config LINKER_ORPHAN_SECTION_ERROR
 
 endchoice
 
+config RETAIN_UNUSED_SECTIONS
+	bool "Retain unused sections"
+	help
+	  Instruct the linker to retain unused sections.
+
+	  Note that usually each piece of code and data is given it's own
+	  section so this in effect retains all unused functions and
+	  variables.
+
+	  Note also that enabling this incurs a significant size increase
+	  and should therefore only be done when it is impractical to
+	  explicitly retain the specific functions and variables that
+	  actually need to be retained.
+
 config CODE_DATA_RELOCATION
        bool "Relocate code/data sections"
        depends on ARM
