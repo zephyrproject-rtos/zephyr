@@ -77,6 +77,14 @@ extern "C" {
 #define USB_MAX_BULK_MPS	64
 #define USB_MAX_INT_MPS		64
 
+#define USB_MPS_MAX_CTRL	64        /**< maximum packet size for EP 0 */
+#define USB_MPS_MAX_FS_BULK	64
+#define USB_MPS_MAX_HS_BULK	512
+#define USB_MPS_MAX_FS_INT	64
+#define USB_MPS_MAX_HS_INT	1024
+#define USB_MPS_MAX_FS_ISO	1023
+#define USB_MPS_MAX_HS_ISO	1024
+
 /*************************************************************************
  *  USB application interface
  **************************************************************************/
