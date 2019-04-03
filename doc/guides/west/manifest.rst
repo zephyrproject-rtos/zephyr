@@ -3,10 +3,10 @@
 West Manifests
 ##############
 
-This page contains detailed information about west's multiple repository model
-and manifest files. For API documentation on the ``west.manifest`` module, see
-:ref:`west-apis-manifest`. For a more general introduction and command
-overview, see :ref:`west-multi-repo`.
+This page contains detailed information about west's multiple repository model,
+manifest files, and the ``west manifest`` command. For API documentation on the
+``west.manifest`` module, see :ref:`west-apis-manifest`. For a more general
+introduction and command overview, see :ref:`west-multi-repo`.
 
 .. _west-mr-model:
 
@@ -271,3 +271,29 @@ repository root.
 
 The pykwalify schema :file:`manifest-schema.yml` in the west source code
 repository is used to validate the manifest section.
+
+.. _west-manifest-cmd:
+
+Manifest Command
+****************
+
+The ``west manifest`` command can be used to manipulate manifest files.
+It takes an action, and action-specific arguments.
+
+The following sections describe each action and provides a basic signature for
+simple uses. Run ``west manifest --help`` for full details on all options.
+
+Freezing Manifests
+==================
+
+The ``--freeze`` action outputs a frozen manifest:
+
+.. code-block:: none
+
+   west manifest --freeze [-o outfile]
+
+A "frozen" manifest is a manifest file where every project's revision is a SHA.
+You can use ``--freeze`` to produce a frozen manifest that's equivalent to your
+current manifest file. The ``-o`` option specifies an output file; if not
+given, standard output is used.
+
