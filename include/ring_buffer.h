@@ -25,8 +25,8 @@ extern "C" {
  * @brief A structure to represent a ring buffer
  */
 struct ring_buf {
-	u32_t head;	 /**< Index in buf for the head element */
-	u32_t tail;	 /**< Index in buf for the tail element */
+	volatile u32_t head;	 /**< Index in buf for the head element */
+	volatile u32_t tail;	 /**< Index in buf for the tail element */
 	union ring_buf_misc {
 		struct ring_buf_misc_item_mode {
 			u32_t dropped_put_count; /**< Running tally of the
@@ -39,7 +39,7 @@ struct ring_buf {
 			u32_t tmp_head;
 		} byte_mode;
 	} misc;
-	u32_t size;   /**< Size of buf in 32-bit chunks */
+	volatile u32_t size;   /**< Size of buf in 32-bit chunks */
 
 	union ring_buf_buffer {
 		u32_t *buf32;	 /**< Memory region for stored entries */

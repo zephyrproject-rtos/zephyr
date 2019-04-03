@@ -69,13 +69,8 @@ static int ipm_dummy_send(struct device *d, int wait, u32_t id,
 	driver_data->regs.id = id;
 	driver_data->regs.busy = 1U;
 
-	irq_offload(ipm_dummy_isr, d);
+	ipm_dummy_isr(d);
 
-	if (wait) {
-		while (driver_data->regs.busy) {
-			/* busy-wait */
-		}
-	}
 	return 0;
 }
 

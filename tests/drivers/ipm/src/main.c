@@ -10,6 +10,7 @@
 #include <device.h>
 #include <init.h>
 #include <stdio.h>
+#include <atomic.h>
 
 #include <tc_util.h>
 #include "ipm_dummy.h"
@@ -54,6 +55,7 @@ DEVICE_INIT(ipm_console_send0, "ipm_send0", ipm_console_sender_init,
 static u32_t ring_buf_data[RING_BUF_SIZE32];
 static K_THREAD_STACK_DEFINE(thread_stack, IPM_CONSOLE_STACK_SIZE);
 static char line_buf[LINE_BUF_SIZE];
+static atomic_t target;
 
 /* Dump incoming messages to printk() */
 static struct ipm_console_receiver_config_info receiver_config = {
@@ -63,7 +65,8 @@ static struct ipm_console_receiver_config_info receiver_config = {
 	.rb_size32 = RING_BUF_SIZE32,
 	.line_buf = line_buf,
 	.lb_size = LINE_BUF_SIZE,
-	.flags = DEST
+	.flags = DEST,
+	.print_num = &target
 };
 
 struct ipm_console_receiver_runtime_data receiver_data;
@@ -78,16 +81,19 @@ void main(void)
 	int rv, i;
 	struct device *ipm;
 
+	target = 0;
 	TC_START("Test IPM");
 	ipm = device_get_binding("ipm_dummy0");
 
 	/* Try sending a raw string to the IPM device to show that the
 	 * receiver works
 	 */
+	atomic_inc(&target);
 	for (i = 0; i < strlen(thestr); i++) {
 		ipm_send(ipm, 1, thestr[i], NULL, 0);
 	}
 
+	atomic_inc(&target);
 	/* Now do this through printf() to exercise the sender */
 	printf("Lorem ipsum dolor sit amet, consectetur adipiscing elit, "
 	       "sed do eiusmod tempor incididunt ut labore et dolore magna "
@@ -101,6 +107,9 @@ void main(void)
 	/* XXX how to tell if something was actually printed out for
 	 * automation purposes?
 	 */
+
+	while (atomic_get(&target) != 0) {
+	}
 
 	rv = TC_PASS;
 	TC_END_RESULT(rv);

@@ -12,6 +12,8 @@
 #include <kernel.h>
 #include <device.h>
 #include <ring_buffer.h>
+#include <spinlock.h>
+#include <atomic.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,6 +63,8 @@ struct ipm_console_receiver_config_info {
 	 * IPM_CONSOLE_STDOUT or IPM_CONSOLE_PRINTK
 	 */
 	unsigned int flags;
+
+	atomic_t *print_num;
 };
 
 struct ipm_console_receiver_runtime_data {
@@ -80,6 +84,11 @@ struct ipm_console_receiver_runtime_data {
 
 	/** Receiver worker thread */
 	struct k_thread rx_thread;
+
+	/**
+	 * Ring buffer spinlock
+	 */
+	struct k_spinlock rb_spinlock;
 };
 
 struct ipm_console_sender_config_info {

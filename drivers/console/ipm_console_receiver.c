@@ -15,16 +15,19 @@
 #include <ipm.h>
 #include <console/ipm_console.h>
 #include <misc/__assert.h>
+#include <atomic.h>
 
 static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 {
 	u8_t size32;
 	u16_t type;
-	int ret, key;
+	int ret;
+	k_spinlock_key_t key;
 	struct device *d;
 	const struct ipm_console_receiver_config_info *config_info;
 	struct ipm_console_receiver_runtime_data *driver_data;
-	int pos;
+	int pos, end;
+	atomic_t *target;
 
 	d = (struct device *)arg1;
 	driver_data = d->driver_data;
@@ -32,13 +35,16 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 	ARG_UNUSED(arg2);
 	size32 = 0U;
 	pos = 0;
+	target = config_info->print_num;
 
 	while (1) {
 		k_sem_take(&driver_data->sem, K_FOREVER);
 
+		key = k_spin_lock(&driver_data->rb_spinlock);
 		ret = ring_buf_item_get(&driver_data->rb, &type,
 					(u8_t *)&config_info->line_buf[pos],
 					NULL, &size32);
+		k_spin_unlock(&driver_data->rb_spinlock, key);
 		if (ret) {
 			/* Shouldn't ever happen... */
 			printk("ipm console ring buffer error: %d\n", ret);
@@ -46,10 +52,12 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 			continue;
 		}
 
+		end = 0;
 		if (config_info->line_buf[pos] == '\n' ||
 		    pos == config_info->lb_size - 2) {
 			if (pos != config_info->lb_size - 2) {
 				config_info->line_buf[pos] = '\0';
+				end = 1;
 			} else {
 				config_info->line_buf[pos + 1] = '\0';
 			}
@@ -61,26 +69,14 @@ static void ipm_console_thread(void *arg1, void *arg2, void *arg3)
 				printf("%s: '%s'\n", d->config->name,
 				       config_info->line_buf);
 			}
+			if (end == 1) {
+				atomic_dec(target);
+			}
 			pos = 0;
 		} else {
 			++pos;
 		}
 
-		/* ISR may have disabled the channel due to full buffer at
-		 * some point. If that happened and there is now room,
-		 * re-enable it.
-		 *
-		 * Lock interrupts to avoid pathological scenario where
-		 * the buffer fills up in between enabling the channel and
-		 * clearing the channel_disabled flag.
-		 */
-		if (driver_data->channel_disabled &&
-		    ring_buf_space_get(&driver_data->rb)) {
-			key = irq_lock();
-			ipm_set_enabled(driver_data->ipm_device, 1);
-			driver_data->channel_disabled = 0;
-			irq_unlock(key);
-		}
 	}
 }
 
@@ -90,27 +86,20 @@ static void ipm_console_receive_callback(void *context, u32_t id,
 	struct device *d;
 	struct ipm_console_receiver_runtime_data *driver_data;
 	int ret;
+	k_spinlock_key_t key;
 
 	ARG_UNUSED(data);
 	d = context;
 	driver_data = d->driver_data;
 
+	key = k_spin_lock(&driver_data->rb_spinlock);
 	/* Should always be at least one free buffer slot */
 	ret = ring_buf_item_put(&driver_data->rb, 0, id, NULL, 0);
+	k_spin_unlock(&driver_data->rb_spinlock, key);
 	__ASSERT(ret == 0, "Failed to insert data into ring buffer");
 	k_sem_give(&driver_data->sem);
 
-	/* If the buffer is now full, disable future interrupts for this channel
-	 * until the thread has a chance to consume characters.
-	 *
-	 * This works without losing data if the sending side tries to send
-	 * more characters because the sending side is making an ipm_send()
-	 * call with the wait flag enabled.  It blocks until the receiver side
-	 * re-enables the channel and consumes the data.
-	 */
-	if (ring_buf_space_get(&driver_data->rb) == 0) {
-		ipm_set_enabled(driver_data->ipm_device, 0);
-		driver_data->channel_disabled = 1;
+	while (ring_buf_space_get(&driver_data->rb) == 0) {
 	}
 }
 
