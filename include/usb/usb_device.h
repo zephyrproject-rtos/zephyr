@@ -36,6 +36,7 @@
 #ifndef ZEPHYR_INCLUDE_USB_USB_DEVICE_H_
 #define ZEPHYR_INCLUDE_USB_USB_DEVICE_H_
 
+#include <dt-bindings/usb/usb.h>
 #include <drivers/usb/usb_dc.h>
 #include <usb/usbstruct.h>
 #include <logging/log.h>
@@ -72,10 +73,25 @@ extern "C" {
  *  USB configuration
  **************************************************************************/
 
-#define USB_MAX_CTRL_MPS	64   /**< maximum packet size (MPS) for EP 0 */
-#define USB_MAX_FS_BULK_MPS	64   /**< full speed MPS for bulk EP */
-#define USB_MAX_FS_INT_MPS	64   /**< full speed MPS for interrupt EP */
-#define USB_MAX_FS_ISO_MPS	1023 /**< full speed MPS for isochronous EP */
+#define USB_MAX_CTRL_MPS	64	/**< MPS for EP 0 */
+#define USB_MAX_FS_BULK_MPS	64	/**< Full Speed MPS for Bulk EP */
+#define USB_MAX_FS_INT_MPS	64	/**< Full Speed MPS for Interrupt EP */
+#define USB_MAX_FS_ISO_MPS	1023	/**< Full Speed MPS for ISO EP */
+
+#define USB_MAX_HS_BULK_MPS	512	/**< High Speed MPS for Bulk EP */
+#define USB_MAX_HS_INT_MPS	1024	/**< High Speed MPS for Interrupt EP */
+#define USB_MAX_HS_ISO_MPS	1024	/**< High Speed MPS for ISO EP */
+
+#if defined(DT_USB_MAXIMUM_SPEED_ENUM) && \
+	(DT_USB_MAXIMUM_SPEED_ENUM == DT_USB_MAXIMUM_SPEED_HIGH_SPEED)
+#define USB_MAX_BULK_MPS	USB_MAX_HS_BULK_MPS
+#define USB_MAX_INT_MPS		USB_MAX_HS_INT_MPS
+#define USB_MAX_ISO_MPS		USB_MAX_HS_ISO_MPS
+#else /* For every other configuartions for now */
+#define USB_MAX_BULK_MPS	USB_MAX_FS_BULK_MPS
+#define USB_MAX_INT_MPS		USB_MAX_FS_INT_MPS
+#define USB_MAX_ISO_MPS		USB_MAX_FS_ISO_MPS
+#endif
 
 /*************************************************************************
  *  USB application interface
