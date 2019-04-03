@@ -123,6 +123,249 @@ static u32_t z_check_thread_stack_fail(const u32_t fault_addr, u32_t sp)
 
 #endif
 
+#ifdef CONFIG_ARC_EXCEPTION_DEBUG
+/* For EV_ProtV, the numbering/semantics of the parameter are consistent across
+ * several codes, although not all combination will be reported.
+ *
+ * These codes and parameters do not have associated* names in
+ * the technical manual, just switch on the values in Table 6-5
+ */
+static void dump_protv_access_err(u32_t parameter)
+{
+	switch (parameter) {
+	case 0x1:
+		printk("code protection scheme");
+		break;
+	case 0x2:
+		printk("stack checking scheme");
+		break;
+	case 0x4:
+		printk("MPU");
+		break;
+	case 0x8:
+		printk("MMU");
+		break;
+	case 0x10:
+		printk("NVM");
+		break;
+	case 0x24:
+		printk("Secure MPU");
+		break;
+	case 0x44:
+		printk("Secure MPU with SID mismatch");
+		break;
+	default:
+		printk("unknown");
+		break;
+	}
+}
+
+static void dump_protv_exception(u32_t cause, u32_t parameter)
+{
+	switch (cause) {
+	case 0x0:
+		printk("Instruction fetch violation: ");
+		dump_protv_access_err(parameter);
+		break;
+	case 0x1:
+		printk("Memory read protection violation: ");
+		dump_protv_access_err(parameter);
+		break;
+	case 0x2:
+		printk("Memory write protection violation: ");
+		dump_protv_access_err(parameter);
+		break;
+	case 0x3:
+		printk("Memory read-modify-write violation: ");
+		dump_protv_access_err(parameter);
+		break;
+	case 0x10:
+		printk("Normal vector table in secure memory");
+		break;
+	case 0x11:
+		printk("NS handler code located in S memory");
+		break;
+	case 0x12:
+		printk("NSC Table Range Violation");
+		break;
+	default:
+		printk("unknown");
+		break;
+	}
+}
+
+static void dump_machine_check_exception(u32_t cause, u32_t parameter)
+{
+	switch (cause) {
+	case 0x0:
+		printk("double fault");
+		break;
+	case 0x1:
+		printk("overlapping TLB entries");
+		break;
+	case 0x2:
+		printk("fatal TLB error");
+		break;
+	case 0x3:
+		printk("fatal cache error");
+		break;
+	case 0x4:
+		printk("internal memory error on instruction fetch");
+		break;
+	case 0x5:
+		printk("internal memory error on data fetch");
+		break;
+	case 0x6:
+		printk("illegal overlapping MPU entries");
+		if (parameter == 0x1) {
+			printk(" (jump and branch target)");
+		}
+		break;
+	case 0x10:
+		printk("secure vector table not located in secure memory");
+		break;
+	case 0x11:
+		printk("NSC jump table not located in secure memory");
+		break;
+	case 0x12:
+		printk("secure handler code not located in secure memory");
+		break;
+	case 0x13:
+		printk("NSC target address not located in secure memory");
+		break;
+	case 0x80:
+		printk("uncorrectable ECC or parity error in vector memory");
+		break;
+	default:
+		printk("unknown");
+		break;
+	}
+}
+
+static void dump_privilege_exception(u32_t cause, u32_t parameter)
+{
+	switch (cause) {
+	case 0x0:
+		printk("Privilege violation");
+		break;
+	case 0x1:
+		printk("disabled extension");
+		break;
+	case 0x2:
+		printk("action point hit");
+		break;
+	case 0x10:
+		switch (parameter) {
+		case 0x1:
+			printk("N to S return using incorrect return mechanism");
+			break;
+		case 0x2:
+			printk("N to S return with incorrect operating mode");
+			break;
+		case 0x3:
+			printk("IRQ/exception return fetch from wrong mode");
+			break;
+		case 0x4:
+			printk("attempt to halt secure processor in NS mode");
+			break;
+		case 0x20:
+			printk("attempt to access secure resource from normal mode");
+			break;
+		case 0x40:
+			printk("SID violation on resource access (APEX/UAUX/key NVM)");
+			break;
+		default:
+			printk("unknown");
+			break;
+		}
+		break;
+	case 0x13:
+		switch (parameter) {
+		case 0x20:
+			printk("attempt to access secure APEX feature from NS mode");
+			break;
+		case 0x40:
+			printk("SID violation on access to APEX feature");
+			break;
+		default:
+			printk("unknown");
+			break;
+		}
+		break;
+	default:
+		printk("unknown");
+		break;
+	}
+}
+
+static void dump_exception_info(u32_t vector, u32_t cause, u32_t parameter)
+{
+	if (vector >= 0x10 && vector <= 0xFF) {
+		printk("interrupt %u\n", vector);
+		return;
+	}
+
+	/* Names are exactly as they appear in Designware ARCv2 ISA
+	 * Programmer's reference manual for easy searching
+	 */
+	switch (vector) {
+	case ARC_EV_RESET:
+		printk("Reset");
+		break;
+	case ARC_EV_MEM_ERROR:
+		printk("Memory Error");
+		break;
+	case ARC_EV_INS_ERROR:
+		printk("Instruction Error");
+		break;
+	case ARC_EV_MACHINE_CHECK:
+		printk("EV_MachineCheck: ");
+		dump_machine_check_exception(cause, parameter);
+		break;
+	case ARC_EV_TLB_MISS_I:
+		printk("EV_TLBMissI");
+		break;
+	case ARC_EV_TLB_MISS_D:
+		printk("EV_TLBMissD");
+		break;
+	case ARC_EV_PROT_V:
+		printk("EV_ProtV: ");
+		dump_protv_exception(cause, parameter);
+		break;
+	case ARC_EV_PRIVILEGE_V:
+		printk("EV_PrivilegeV: ");
+		dump_privilege_exception(cause, parameter);
+		break;
+	case ARC_EV_SWI:
+		printk("EV_SWI");
+		break;
+	case ARC_EV_TRAP:
+		printk("EV_Trap");
+		break;
+	case ARC_EV_EXTENSION:
+		printk("EV_Extension");
+		break;
+	case ARC_EV_DIV_ZERO:
+		printk("EV_DivZero");
+		break;
+	case ARC_EV_DC_ERROR:
+		printk("EV_DCError");
+		break;
+	case ARC_EV_MISALIGNED:
+		printk("EV_Misaligned");
+		break;
+	case ARC_EV_VEC_UNIT:
+		printk("EV_VecUnit");
+		break;
+	default:
+		printk("unknown");
+		break;
+	}
+
+	printk("\n");
+}
+#endif /* CONFIG_ARC_EXCEPTION_DEBUG */
+
 /*
  * @brief Fault handler
  *
@@ -133,11 +376,9 @@ static u32_t z_check_thread_stack_fail(const u32_t fault_addr, u32_t sp)
  */
 void _Fault(NANO_ESF *esf)
 {
-	u32_t vector, code, parameter;
+	u32_t vector, cause, parameter;
 	u32_t exc_addr = z_arc_v2_aux_reg_read(_ARC_V2_EFA);
 	u32_t ecr = z_arc_v2_aux_reg_read(_ARC_V2_ECR);
-
-	LOG_PANIC();
 
 #ifdef CONFIG_USERSPACE
 	for (int i = 0; i < ARRAY_SIZE(exceptions); i++) {
@@ -150,35 +391,40 @@ void _Fault(NANO_ESF *esf)
 		}
 	}
 #endif
+	LOG_PANIC();
 
 	vector = Z_ARC_V2_ECR_VECTOR(ecr);
-	code =  Z_ARC_V2_ECR_CODE(ecr);
+	cause =  Z_ARC_V2_ECR_CODE(ecr);
 	parameter = Z_ARC_V2_ECR_PARAMETER(ecr);
 
-
 	/* exception raised by kernel */
-	if (vector == 0x9 && parameter == _TRAP_S_CALL_RUNTIME_EXCEPT) {
+	if (vector == ARC_EV_TRAP && parameter == _TRAP_S_CALL_RUNTIME_EXCEPT) {
 		z_NanoFatalErrorHandler(esf->r0, esf);
 		return;
 	}
 
-	printk("Exception vector: 0x%x, cause code: 0x%x, parameter 0x%x\n",
-	       vector, code, parameter);
+	printk("***** Exception vector: 0x%x, cause code: 0x%x, parameter 0x%x\n",
+	       vector, cause, parameter);
 	printk("Address 0x%x\n", exc_addr);
+#ifdef CONFIG_ARC_EXCEPTION_DEBUG
+	dump_exception_info(vector, cause, parameter);
+#endif
+
 #ifdef CONFIG_ARC_STACK_CHECKING
-	/* Vector 6 = EV_ProV. Regardless of code, parameter 2 means stack
+	/* Vector 6 = EV_ProV. Regardless of cause, parameter 2 means stack
 	 * check violation
 	 * stack check and mpu violation can come out together, then
 	 * parameter = 0x2 | [0x4 | 0x8 | 0x1]
 	 */
-	if (vector == 6U && parameter & 0x2) {
+	if (vector == ARC_EV_PROT_V && parameter & 0x2) {
 		z_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, esf);
 		return;
 	}
 #endif
 
 #ifdef CONFIG_MPU_STACK_GUARD
-	if (vector == 0x6 && ((parameter == 0x4) || (parameter == 0x24))) {
+	if (vector == ARC_EV_PROT_V && ((parameter == 0x4) ||
+					(parameter == 0x24))) {
 		if (z_check_thread_stack_fail(exc_addr, arc_exc_saved_sp)) {
 			z_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, esf);
 			return;

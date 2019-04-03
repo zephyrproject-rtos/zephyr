@@ -199,4 +199,13 @@ config CACHE_FLUSHING
 
 endmenu
 
+config ARC_EXCEPTION_DEBUG
+	bool "Unhandled exception debugging information"
+	default n
+	depends on PRINTK
+	help
+	  Print human-readable information about exception vectors, cause codes,
+	  and parameters, at a cost of code/data size for the human-readable
+	  strings.
+
 endmenu
