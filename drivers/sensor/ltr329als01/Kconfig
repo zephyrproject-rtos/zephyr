@@ -1,8 +1,8 @@
 
 
 menuconfig LTR329ALS01
-	bool "LTR-329ALS-01 DIGITAL AMBIENT LIGHT SENSOR"
+	bool "LTR329ALS01 Digital Ambient Light Sensor"
 	depends on (I2C && HAS_DTS_I2C) 
 	help
-	  Enable I2C-based driver for LTR-329ALS-01 light sensor.
+	  Enable I2C-based driver for LTR329ALS01 light sensor.
 
