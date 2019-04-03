@@ -854,6 +854,17 @@ int usb_dc_ep_read(const u8_t ep, u8_t *const data, const u32_t max_data_len,
 	return 0;
 }
 
+int usb_dc_ep_halt(const u8_t ep)
+{
+	return usb_dc_ep_set_stall(ep);
+}
+
+int usb_dc_ep_flush(const u8_t ep)
+{
+	LOG_ERR("Not implemented");
+
+	return 0;
+}
 
 int usb_dc_ep_mps(const u8_t ep)
 {
