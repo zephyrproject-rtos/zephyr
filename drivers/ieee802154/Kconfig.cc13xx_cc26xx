@@ -1,0 +1,31 @@
+# Kconfig.cc13xx_cc26xx - TI CC13xx / CC26xx IEEE 802.15.4 configuration options
+#
+# Copyright (c) 2019 Brett Witherspoon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig IEEE802154_CC13XX_CC26XX
+	bool "TI CC13xx / CC26xx IEEE 802.15.4 driver support"
+
+if IEEE802154_CC13XX_CC26XX
+
+config IEEE802154_CC13XX_CC26XX_DRV_NAME
+	string "TI CC13xx / CC26xx IEEE 802.15.4 driver's name"
+	default "IEEE802154_0"
+	help
+	  This option sets the driver name.
+
+config IEEE802154_CC13XX_CC26XX_INIT_PRIO
+	int "TI CC13xx / CC26xx IEEE 802.15.4 initialization priority"
+	default 80
+	help
+	  Set the initialization priority number.
+
+config IEEE802154_CC13XX_CC26XX_RX_STACK_SIZE
+	int "TI CC13xx / CC26xx IEEE 802.15.4 driver's RX thread stack size"
+	default 800
+	help
+	  This option sets the driver's stack size for its internal RX thread.
+
+endif # IEEE802154_CC13XX_CC26XX
