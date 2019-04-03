@@ -27,11 +27,11 @@ extern "C" {
 
 /**
  *
- * Provides abstraction of flash regions for type of use.
- * I.e. dude where's my image?
+ * Provides abstraction of flash regions for type of use,
+ * for example,  where's my image?
  *
  * System will contain a map which contains flash areas. Every
- * region will contain flash identifier, offset within flash and length.
+ * region will contain flash identifier, offset within flash, and length.
  *
  * 1. This system map could be in a file within filesystem (Initializer
  * must know/figure out where the filesystem is at).
@@ -67,8 +67,8 @@ struct flash_area {
 /**
  * @brief Structure for transfer flash sector boundaries
  *
- * This temlate is use for presentation of flash memory structure. It consume
- * much less RAM than @ref flash_area
+ * This template is used for presentation of flash memory structure. It
+ * consumes much less RAM than @ref flash_area
  */
 struct flash_sector {
 	off_t fs_off; /** flash sector offset */
@@ -81,7 +81,7 @@ struct flash_sector {
  * Function Retrieves flash_area form flash_map for given partition.
  *
  * @param[in]  id ID of the flash partition.
- * @param[out] fa Pointer which has to refernce flash_area. If
+ * @param[out] fa Pointer which has to reference flash_area. If
  * @p ID is unknown, it will be NULL on output.
  */
 int flash_area_open(u8_t id, const struct flash_area **fa);
@@ -148,7 +148,7 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len);
 /**
  * @brief Get write block size of the flash area
  *
- * Currently write block size might be treated as read block size, altought
+ * Currently write block size might be treated as read block size, although
  * most of drivers supports unaligned readout.
  *
  * @param[in] fa Flash area
