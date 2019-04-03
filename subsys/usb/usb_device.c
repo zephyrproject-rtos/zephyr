@@ -461,9 +461,24 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 	return found;
 }
 
+#define USB_MAXIMUM_SPEED_LOW_SPEED	0
+#define USB_MAXIMUM_SPEED_FULL_SPEED	1
+#define USB_MAXIMUM_SPEED_HIGH_SPEED	2
+#define USB_MAXIMUM_SPEED_SUPER_SPEED	3
+
 static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 {
 	struct usb_dc_ep_cfg_data ep_cfg;
+	size_t mps = 0;
+	int speed = USB_MAXIMUM_SPEED_FULL_SPEED;
+
+#ifdef DT_USBHS_MAXIMUM_SPEED
+	if (!strncmp(DT_USBHS_MAXIMUM_SPEED, "high-speed", 10)) {
+		speed = USB_MAXIMUM_SPEED_HIGH_SPEED;
+	} else if (!strncmp(DT_USBHS_MAXIMUM_SPEED, "low-speed", 9)) {
+		speed = USB_MAXIMUM_SPEED_LOW_SPEED;
+	}
+#endif
 
 	ep_cfg.ep_addr = ep_desc->bEndpointAddress;
 	ep_cfg.ep_mps = sys_le16_to_cpu(ep_desc->wMaxPacketSize);
@@ -476,19 +491,54 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 
 	switch (ep_cfg.ep_type) {
 	case USB_DC_EP_BULK:
-		if (ep_cfg.ep_mps > USB_MAX_BULK_MPS) {
-			return false;
+		switch (speed) {
+		case USB_MAXIMUM_SPEED_HIGH_SPEED:
+			mps = USB_MPS_MAX_HS_BULK;
+			break;
+		case USB_MAXIMUM_SPEED_LOW_SPEED:
+			LOG_WRN("Low speed unsupported!");
+		case USB_MAXIMUM_SPEED_FULL_SPEED:
+		default:
+			mps = USB_MPS_MAX_FS_BULK;
+			break;
 		}
-	case USB_DC_EP_CONTROL:
-		if (ep_cfg.ep_mps > MAX_PACKET_SIZE0) {
-			return false;
-		}
-	case USB_DC_EP_INTERRUPT:
-		if (ep_cfg.ep_mps > USB_MAX_INT_MPS) {
-			return false;
-		}
-	default:
 		break;
+	case USB_DC_EP_CONTROL:
+		mps = USB_MPS_MAX_CTRL;
+		break;
+	case USB_DC_EP_INTERRUPT:
+		switch (speed) {
+		case USB_MAXIMUM_SPEED_HIGH_SPEED:
+			mps = USB_MPS_MAX_HS_INT;
+			break;
+		case USB_MAXIMUM_SPEED_LOW_SPEED:
+			LOG_WRN("Low speed unsupported!");
+		case USB_MAXIMUM_SPEED_FULL_SPEED:
+		default:
+			mps = USB_MPS_MAX_FS_INT;
+			break;
+		}
+		break;
+	case USB_DC_EP_ISOCHRONOUS:
+		switch (speed) {
+		case USB_MAXIMUM_SPEED_HIGH_SPEED:
+			mps = USB_MPS_MAX_HS_ISO;
+			break;
+		case USB_MAXIMUM_SPEED_LOW_SPEED:
+			LOG_WRN("Low speed unsupported!");
+		case USB_MAXIMUM_SPEED_FULL_SPEED:
+		default:
+			mps = USB_MPS_MAX_FS_ISO;
+			break;
+		}
+		break;
+	default:
+		LOG_ERR("Unknown endpoint type!");
+		break;
+	}
+
+	if (ep_cfg.ep_mps > mps) {
+		return false;
 	}
 
 	LOG_DBG("Configure endpoint 0x%x type %u MPS %u",
