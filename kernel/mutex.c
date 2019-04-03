@@ -123,10 +123,9 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 	k_spinlock_key_t key;
 
 	sys_trace_void(SYS_TRACE_ID_MUTEX_LOCK);
-	z_sched_lock();
+	key = k_spin_lock(&lock);
 
 	if (likely((mutex->lock_count == 0U) || (mutex->owner == _current))) {
-
 		mutex->owner_orig_prio = (mutex->lock_count == 0U) ?
 					_current->base.prio :
 					mutex->owner_orig_prio;
@@ -138,22 +137,20 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 			_current, mutex, mutex->lock_count,
 			mutex->owner_orig_prio);
 
-		k_sched_unlock();
+		k_spin_unlock(&lock, key);
 		sys_trace_end_call(SYS_TRACE_ID_MUTEX_LOCK);
 
 		return 0;
 	}
 
 	if (unlikely(timeout == (s32_t)K_NO_WAIT)) {
-		k_sched_unlock();
+		k_spin_unlock(&lock, key);
 		sys_trace_end_call(SYS_TRACE_ID_MUTEX_LOCK);
 		return -EBUSY;
 	}
 
 	new_prio = new_prio_for_inheritance(_current->base.prio,
 					    mutex->owner->base.prio);
-
-	key = k_spin_lock(&lock);
 
 	K_DEBUG("adjusting prio up on mutex %p\n", mutex);
 
@@ -163,13 +160,15 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 
 	int got_mutex = z_pend_curr(&lock, key, &mutex->wait_q, timeout);
 
+	key = k_spin_lock(&lock);
+
 	K_DEBUG("on mutex %p got_mutex value: %d\n", mutex, got_mutex);
 
 	K_DEBUG("%p got mutex %p (y/n): %c\n", _current, mutex,
 		got_mutex ? 'y' : 'n');
 
 	if (got_mutex == 0) {
-		k_sched_unlock();
+		k_spin_unlock(&lock, key);
 		sys_trace_end_call(SYS_TRACE_ID_MUTEX_LOCK);
 		return 0;
 	}
@@ -187,11 +186,9 @@ int z_impl_k_mutex_lock(struct k_mutex *mutex, s32_t timeout)
 
 	K_DEBUG("adjusting prio down on mutex %p\n", mutex);
 
-	key = k_spin_lock(&lock);
 	adjust_owner_prio(mutex, new_prio);
-	k_spin_unlock(&lock, key);
 
-	k_sched_unlock();
+	k_spin_unlock(&lock, key);
 
 	sys_trace_end_call(SYS_TRACE_ID_MUTEX_LOCK);
 	return -EAGAIN;
@@ -212,17 +209,16 @@ void z_impl_k_mutex_unlock(struct k_mutex *mutex)
 	__ASSERT(mutex->lock_count > 0U, "");
 	__ASSERT(mutex->owner == _current, "");
 
+
 	sys_trace_void(SYS_TRACE_ID_MUTEX_UNLOCK);
-	z_sched_lock();
+	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	K_DEBUG("mutex %p lock_count: %d\n", mutex, mutex->lock_count);
 
 	if (mutex->lock_count - 1U != 0U) {
 		mutex->lock_count--;
-		goto k_mutex_unlock_return;
+		goto done;
 	}
-
-	k_spinlock_key_t key = k_spin_lock(&lock);
 
 	adjust_owner_prio(mutex, mutex->owner_orig_prio);
 
@@ -235,9 +231,6 @@ void z_impl_k_mutex_unlock(struct k_mutex *mutex)
 
 	if (new_owner != NULL) {
 		z_ready_thread(new_owner);
-
-		k_spin_unlock(&lock, key);
-
 		z_set_thread_return_value(new_owner, 0);
 
 		/*
@@ -248,12 +241,10 @@ void z_impl_k_mutex_unlock(struct k_mutex *mutex)
 		mutex->owner_orig_prio = new_owner->base.prio;
 	} else {
 		mutex->lock_count = 0U;
-		k_spin_unlock(&lock, key);
 	}
 
-
-k_mutex_unlock_return:
-	k_sched_unlock();
+ done:
+	k_spin_unlock(&lock, key);
 }
 
 #ifdef CONFIG_USERSPACE
