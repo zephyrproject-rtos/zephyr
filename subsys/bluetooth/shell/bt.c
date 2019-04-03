@@ -903,6 +903,7 @@ static int cmd_conn_update(const struct shell *shell,
 	return err;
 }
 
+#if defined(CONFIG_BT_CENTRAL)
 static int cmd_chan_map(const struct shell *shell, size_t argc, char *argv[])
 {
 	u8_t chan_map[5] = {};
@@ -923,6 +924,7 @@ static int cmd_chan_map(const struct shell *shell, size_t argc, char *argv[])
 
 	return err;
 }
+#endif /* CONFIG_BT_CENTRAL */
 
 static int cmd_oob(const struct shell *shell, size_t argc, char *argv[])
 {
