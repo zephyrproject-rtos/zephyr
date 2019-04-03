@@ -1584,6 +1584,18 @@ int net_pkt_read_be16(struct net_pkt *pkt, u16_t *data)
 	return ret;
 }
 
+int net_pkt_read_le16(struct net_pkt *pkt, u16_t *data)
+{
+	u8_t d16[2];
+	int ret;
+
+	ret = net_pkt_read(pkt, d16, sizeof(u16_t));
+
+	*data = d16[1] << 8 | d16[0];
+
+	return ret;
+}
+
 int net_pkt_read_be32(struct net_pkt *pkt, u32_t *data)
 {
 	u8_t d32[4];

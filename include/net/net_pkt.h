@@ -1581,6 +1581,20 @@ static inline int net_pkt_read_u8(struct net_pkt *pkt, u8_t *data)
 int net_pkt_read_be16(struct net_pkt *pkt, u16_t *data);
 
 /**
+ * @brief Read u16_t little endian data from a net_pkt
+ *
+ * @details net_pkt's cursor should be properly initialized and,
+ *          if needed, positioned using net_pkt_skip.
+ *          Cursor position will be updated after the operation.
+ *
+ * @param pkt  The network packet from where to read
+ * @param data The destination u16_t where to copy the data
+ *
+ * @return 0 on success, negative errno code otherwise.
+ */
+int net_pkt_read_le16(struct net_pkt *pkt, u16_t *data);
+
+/**
  * @brief Read u32_t big endian data from a net_pkt
  *
  * @details net_pkt's cursor should be properly initialized and,
