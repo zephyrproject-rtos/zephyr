@@ -5,3 +5,5 @@ arch: riscv32
 toolchain:
   - cross-compile
   - zephyr
+supported:
+  - i2c

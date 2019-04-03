@@ -45,6 +45,23 @@ static int rv32m1_vega_pinmux_init(struct device *dev)
 	pinmux_pin_set(portc, 30, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
+#if CONFIG_I2C_0
+	/* LPI2C0 SCL, SDA - Arduino header */
+	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt4));
+	pinmux_pin_set(portc, 9, PORT_PCR_MUX(kPORT_MuxAlt4));
+#endif
+
+#if CONFIG_I2C_3
+	/* LPI2C3 SCL, SDA - FXOS8700 */
+	pinmux_pin_set(porte, 30, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(porte, 29, PORT_PCR_MUX(kPORT_MuxAlt3));
+#endif
+
+	/* FXOS8700 INT1, INT2, RST */
+	pinmux_pin_set(porte, 1, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(porte, 22, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(porte, 27, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
 	return 0;
 }
 

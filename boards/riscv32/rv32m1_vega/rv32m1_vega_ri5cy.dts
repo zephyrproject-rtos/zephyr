@@ -73,3 +73,20 @@
 	current-speed = <115200>;
 	status = "ok";
 };
+
+arduino_i2c: &i2c0 {
+	status = "ok";
+};
+
+&i2c3 {
+	status = "ok";
+
+	fxos8700@1e {
+		compatible = "nxp,fxos8700";
+		reg = <0x1e>;
+		label = "FXOS8700";
+		reset-gpios = <&gpioe 27 0>;
+		int1-gpios = <&gpioe 1 0>;
+		int2-gpios = <&gpioe 22 0>;
+	};
+};
