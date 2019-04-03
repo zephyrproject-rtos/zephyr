@@ -291,6 +291,7 @@ foreach(root ${BOARD_ROOT})
 
   if(DEFINED SHIELD)
     foreach(s ${SHIELD_AS_LIST})
+      list(REMOVE_ITEM SHIELD ${s})
       list(FIND SHIELD_LIST ${s} _idx)
       if (NOT _idx EQUAL -1)
         list(GET shields_refs_list ${_idx} s_path)
