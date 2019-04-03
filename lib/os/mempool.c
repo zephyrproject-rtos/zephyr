@@ -282,9 +282,9 @@ int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 		 */
 		if (data != NULL) {
 			for (from_l = i; from_l < alloc_l; from_l++) {
+				data = block_break(p, data, from_l, lsizes);
 				pool_irq_unlock(p, key);
 				key = pool_irq_lock(p);
-				data = block_break(p, data, from_l, lsizes);
 			}
 			break;
 		}
