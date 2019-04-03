@@ -12,9 +12,6 @@
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
 
-/* Max packet size for endpoints */
-#define BULK_EP_MPS		64
-
 #define ENDP_BULK_IN		0x81
 
 #define VALID_EP		ENDP_BULK_IN
@@ -83,7 +80,7 @@ static const struct dev_common_descriptor {
 			.bDescriptorType = USB_ENDPOINT_DESC,
 			.bEndpointAddress = ENDP_BULK_IN,
 			.bmAttributes = USB_DC_EP_BULK,
-			.wMaxPacketSize = sys_cpu_to_le16(BULK_EP_MPS),
+			.wMaxPacketSize = sys_cpu_to_le16(USB_MAX_BULK_MPS),
 			.bInterval = 0x00,
 		},
 	},
