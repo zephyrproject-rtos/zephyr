@@ -118,7 +118,7 @@ static inline bool _is_in_region(u32_t r_index, u32_t start, u32_t size)
 	r_size_lshift = (r_size_lshift & 0x3) | ((r_size_lshift >> 7) & 0x1C);
 	r_addr_end = r_addr_start  + (1 << (r_size_lshift + 1));
 
-	if (start >= r_addr_start && (start + size) < r_addr_end) {
+	if (start >= r_addr_start && (start + size) <= r_addr_end) {
 		return 1;
 	}
 
