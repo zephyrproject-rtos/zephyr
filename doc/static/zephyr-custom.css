@@ -23,13 +23,11 @@
 }
 */
 
-/* tweak doc version selection
+/* tweak doc version selection */
 .rst-versions {
-   position: static;
-   border-top: none;
-   padding: 0px;
+   position: static !important;
 }
-*/
+
 
 .rst-versions .rst-current-version {
    padding: 5px;
@@ -135,7 +133,7 @@ th,td {
 }
 
 /* doxygenXX item color tweaks, light blue background with dark blue top border */
-.rst-content dl:not(.docutils) dl dt, dl:not(.docutils) dt {
+.rst-content dl:not(.docutils) dl dt, dl:not(.docutils,.rst-other-versions) dt {
   background: #e7f2fa !important;
   border-top: none !important;
   border-left: none !important; */
