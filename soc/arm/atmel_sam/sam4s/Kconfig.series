@@ -10,7 +10,6 @@ config SOC_SERIES_SAM4S
 	bool "Atmel SAM4S MCU"
 	select CPU_CORTEX_M4
 	select SOC_FAMILY_SAM
-	select CPU_HAS_SYSTICK
 	select ASF
 	help
 	  Enable support for Atmel SAM4S Cortex-M4 microcontrollers.
