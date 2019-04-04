@@ -41,12 +41,19 @@ Some additional notes follow. See ``west sign -h`` for detailed help.
   .. code-block:: console
 
      west sign -t imgtool -B my-signed.bin -H my-signed.hex [...]
-- For reference, here is an example for how to build :ref:`hello_world` for
-  MCUboot using ``west build``:
 
-  .. code-block:: console
+Example build flow
+******************
+For reference, here is an example showing how to build :ref:`hello_world` for
+MCUboot using ``west``:
 
-     west build -b YOUR_BOARD zephyr/samples/hello_world -- -DCONFIG_BOOTLOADER_MCUBOOT=y
+.. code-block:: console
+
+   west build -b YOUR_BOARD samples/hello_world -- -DCONFIG_BOOTLOADER_MCUBOOT=y
+   west sign -t imgtool -- --key YOUR_SIGNING_KEY.pem
+   west flash --hex-file zephyr.signed.hex
+
+Availability of a hex file depends on your build configuration.
 
 .. _MCUboot:
    https://mcuboot.com/
