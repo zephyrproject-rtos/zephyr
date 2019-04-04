@@ -76,7 +76,7 @@ struct timeout_order_data timeout_order_data_mult_fifo[] = {
 };
 
 #define TIMEOUT_ORDER_NUM_THREADS	ARRAY_SIZE(timeout_order_data_mult_fifo)
-#define TSTACK_SIZE			1024
+#define TSTACK_SIZE			(1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define FIFO_THREAD_PRIO		-5
 
 static K_THREAD_STACK_ARRAY_DEFINE(ttstack,

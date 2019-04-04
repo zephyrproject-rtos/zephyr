@@ -35,7 +35,7 @@
 #include <ztest.h>
 #include <irq_offload.h>
 
-#define TSTACK_SIZE     512
+#define TSTACK_SIZE     (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define STACK_LEN       4
 
 /* stack objects used in this test */
