@@ -207,6 +207,7 @@ config ARMV7_M_ARMV8_M_MAINLINE
 	select CPU_CORTEX_M_HAS_BASEPRI
 	select CPU_CORTEX_M_HAS_VTOR
 	select CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
+	select CPU_HAS_SYSTICK
 	help
 	  This option signifies the use of an ARMv7-M processor
 	  implementation, or the use of a backwards-compatible

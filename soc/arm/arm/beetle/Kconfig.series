@@ -11,7 +11,6 @@ config SOC_SERIES_BEETLE
 	depends on ARM
 	select CPU_CORTEX_M3
 	select SOC_FAMILY_ARM
-	select CPU_HAS_SYSTICK
 	select CPU_HAS_ARM_MPU
 	help
 	 Enable support for Beetle MCU Series
