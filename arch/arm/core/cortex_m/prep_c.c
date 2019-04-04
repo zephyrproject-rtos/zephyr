@@ -132,10 +132,34 @@ static inline void enable_floating_point(void)
 	/*
 	 * Upon reset, the FPU Context Control Register is 0xC0000000
 	 * (both Automatic and Lazy state preservation is enabled).
+	 */
+#if !defined(CONFIG_FP_SHARING)
+	/* Default mode is Unshared FP registers mode. We disable the
+	 * automatic stacking of FP registers (automatic setting of
+	 * FPCA bit in the CONTROL register), upon exception entries,
+	 * as the FP registers are to be used by a single context (and
+	 * the use of FP registers in ISRs is not supported). This
+	 * configuration improves interrupt latency and decreases the
+	 * stack memory requirement for the (single) thread that makes
+	 * use of the FP co-processor.
+	 */
+	FPU->FPCCR &= (~(FPU_FPCCR_ASPEN_Msk | FPU_FPCCR_LSPEN_Msk));
+#else
+	/*
 	 * Disable lazy state preservation so the volatile FP registers are
 	 * always saved on exception.
 	 */
 	FPU->FPCCR = FPU_FPCCR_ASPEN_Msk; /* FPU_FPCCR_LSPEN = 0 */
+#endif /* CONFIG_FP_SHARING */
+
+	/* Make the side-effects of modifying the FPCCR be realized
+	 * immediately.
+	 */
+	__DSB();
+	__ISB();
+
+	/* Initialize the Floating Point Status and Control Register. */
+	__set_FPSCR(0);
 
 	/*
 	 * Although automatic state preservation is enabled, the processor
