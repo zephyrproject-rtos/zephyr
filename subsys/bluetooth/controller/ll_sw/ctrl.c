@@ -8513,6 +8513,24 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 			/* handle PHY Upd state machine */
 			event_phy_req_prep(conn);
 #endif /* CONFIG_BT_CTLR_PHY */
+
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+			/* check if procedure is requested */
+		} else if (conn->llcp_length.ack != conn->llcp_length.req) {
+			/* Stop previous event, to avoid Radio DMA corrupting
+			 * the rx queue
+			 */
+			event_stop(0, 0, 0, (void *)STATE_ABORT);
+
+			/* handle DLU state machine */
+			if (event_len_prep(conn)) {
+				/* NOTE: rx pool could not be resized,
+				 * lets skip this event and try in the next
+				 * event.
+				 */
+				return;
+			}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		}
 	}
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ || CONFIG_BT_CTLR_PHY */
@@ -8610,23 +8628,6 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 		}
 	}
 
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-	/* check if procedure is requested */
-	if (conn->llcp_length.ack != conn->llcp_length.req) {
-		/* Stop previous event, to avoid Radio DMA corrupting the
-		 * rx queue
-		 */
-		event_stop(0, 0, 0, (void *)STATE_ABORT);
-
-		/* handle DLU state machine */
-		if (event_len_prep(conn)) {
-			/* NOTE: rx pool could not be resized, lets skip this
-			 *       event and try in the next event.
-			 */
-			return;
-		}
-	}
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 
 	/* Setup XTAL startup and radio active events */
 	event_common_prepare(ticks_at_expire, remainder,
