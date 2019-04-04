@@ -41,8 +41,9 @@ Unshared FP registers mode
 This mode is used when the application has only a single thread
 that uses floating point registers.
 
-The kernel initializes the floating point registers so they can be used
-by any thread. The floating point registers are left unchanged
+On x86 platforms, the kernel initializes the floating point registers so they can
+be used by any thread (initialization in skipped on ARM Cortex-M platforms).
+The floating point registers are left unchanged
 whenever a context switch occurs.
 
 .. note::

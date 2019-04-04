@@ -162,19 +162,11 @@ static inline void enable_floating_point(void)
 	__set_FPSCR(0);
 
 	/*
-	 * Although automatic state preservation is enabled, the processor
-	 * does not automatically save the volatile FP registers until they
-	 * have first been touched. Perform a dummy move operation so that
-	 * the stack frames are created as expected before any thread
-	 * context switching can occur. It has to be surrounded by instruction
-	 * synchronization barriers to ensure that the whole sequence is
-	 * serialized.
+	 * Note:
+	 * The use of the FP register bank is enabled, however the FP context
+	 * will be activated (FPCA bit on the CONTROL register) in the presence
+	 * of floating point instructions.
 	 */
-	__asm__ volatile(
-		"isb;\n\t"
-		"vmov s0, s0;\n\t"
-		"isb;\n\t"
-		);
 }
 #else
 static inline void enable_floating_point(void)
