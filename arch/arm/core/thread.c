@@ -123,7 +123,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->a4 = (u32_t)parameter3;
 	pInitCtx->xpsr =
 		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
-#ifdef CONFIG_FLOAT
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 	pInitCtx->fpscr = (u32_t)0; /* clears FPU status/control register*/
 #endif
 
