@@ -63,7 +63,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack, size_t sz,
 		 k_thread_entry_t entry, void *p1, void *p2, void *p3,
 		 int prio, unsigned int opts)
 {
-	char *base = K_THREAD_STACK_BUFFER(stack);
+	char *base = Z_THREAD_STACK_BUFFER(stack);
 	char *top = base + sz;
 
 	/* Align downward.  The API as specified requires a runtime check. */

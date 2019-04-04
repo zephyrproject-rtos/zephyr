@@ -68,7 +68,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	struct _x86_initial_frame *initial_frame;
 
 	Z_ASSERT_VALID_PRIO(priority, entry);
-	stack_buf = K_THREAD_STACK_BUFFER(stack);
+	stack_buf = Z_THREAD_STACK_BUFFER(stack);
 	z_new_thread_init(thread, stack_buf, stack_size, priority, options);
 
 #if CONFIG_X86_USERSPACE

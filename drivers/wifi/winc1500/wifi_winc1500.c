@@ -163,7 +163,7 @@ static struct winc1500_data w1500_data;
 static void stack_stats(void)
 {
 	net_analyze_stack("WINC1500 stack",
-			  K_THREAD_STACK_BUFFER(winc1500_stack),
+			  Z_THREAD_STACK_BUFFER(winc1500_stack),
 			  K_THREAD_STACK_SIZEOF(winc1500_stack));
 }
 

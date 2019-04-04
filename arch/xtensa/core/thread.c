@@ -48,7 +48,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		void *p1, void *p2, void *p3,
 		int priority, unsigned int options)
 {
-	char *pStack = K_THREAD_STACK_BUFFER(stack);
+	char *pStack = Z_THREAD_STACK_BUFFER(stack);
 
 	/* Align stack end to maximum alignment requirement. */
 	char *stackEnd = (char *)ROUND_DOWN(pStack + stackSize, 16);

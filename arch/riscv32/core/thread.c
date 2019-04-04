@@ -20,7 +20,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		 void *arg1, void *arg2, void *arg3,
 		 int priority, unsigned int options)
 {
-	char *stack_memory = K_THREAD_STACK_BUFFER(stack);
+	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);
 	Z_ASSERT_VALID_PRIO(priority, thread_func);
 
 	struct __esf *stack_init;

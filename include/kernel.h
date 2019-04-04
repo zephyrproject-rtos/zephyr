@@ -342,7 +342,7 @@ static inline void k_obj_free(void *obj)
 /** @} */
 
 /* Using typedef deliberately here, this is quite intended to be an opaque
- * type. K_THREAD_STACK_BUFFER() should be used to access the data within.
+ * type.
  *
  * The purpose of this data type is to clearly distinguish between the
  * declared symbol for a stack (of type k_thread_stack_t) and the underlying
@@ -474,8 +474,8 @@ typedef struct _thread_base _thread_base_t;
 #if defined(CONFIG_THREAD_STACK_INFO)
 /* Contains the stack information of a thread */
 struct _thread_stack_info {
-	/* Stack Start - Identical to K_THREAD_STACK_BUFFER() on the stack
-	 * object. Represents thread-writable stack area without any extras.
+	/* Stack start - Represents the start address of the thread-writable
+	 * stack area.
 	 */
 	u32_t start;
 
@@ -4585,7 +4585,7 @@ extern void z_timer_expiration_handler(struct _timeout *t);
 #define K_THREAD_STACK_MEMBER(sym, size) Z_ARCH_THREAD_STACK_MEMBER(sym, size)
 #define K_THREAD_STACK_SIZEOF(sym) Z_ARCH_THREAD_STACK_SIZEOF(sym)
 #define K_THREAD_STACK_RESERVED Z_ARCH_THREAD_STACK_RESERVED
-static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
+static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return Z_ARCH_THREAD_STACK_BUFFER(sym);
 }
@@ -4600,7 +4600,8 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  *
  * The declared symbol will always be a k_thread_stack_t which can be passed to
  * k_thread_create(), but should otherwise not be manipulated. If the buffer
- * inside needs to be examined, use K_THREAD_STACK_BUFFER().
+ * inside needs to be examined, examine thread->stack_info for the associated
+ * thread object to obtain the boundaries.
  *
  * It is legal to precede this definition with the 'static' keyword.
  *
@@ -4697,16 +4698,14 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 /**
  * @brief Get a pointer to the physical stack buffer
  *
- * Convenience macro to get at the real underlying stack buffer used by
- * the CPU. Guaranteed to be a character pointer of size K_THREAD_STACK_SIZEOF.
- * This is really only intended for diagnostic tools which want to examine
- * stack memory contents.
+ * This macro is deprecated. If a stack buffer needs to be examined, the
+ * bounds should be obtained from the associated thread's stack_info struct.
  *
  * @param sym Declared stack symbol name
  * @return The buffer itself, a char *
  * @req K-TSTACK-001
  */
-static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
+static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return (char *)sym;
 }

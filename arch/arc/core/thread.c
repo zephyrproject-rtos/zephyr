@@ -67,7 +67,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned int options)
 {
-	char *pStackMem = K_THREAD_STACK_BUFFER(stack);
+	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
 	Z_ASSERT_VALID_PRIO(priority, pEntry);
 
 	char *stackEnd;
