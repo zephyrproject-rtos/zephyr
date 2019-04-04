@@ -47,7 +47,7 @@ GEN_OFFSET_SYM(_esf_t, lr);
 GEN_OFFSET_SYM(_esf_t, pc);
 GEN_OFFSET_SYM(_esf_t, xpsr);
 
-#ifdef CONFIG_FLOAT
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 GEN_OFFSET_SYM(_esf_t, s);
 GEN_OFFSET_SYM(_esf_t, fpscr);
 #endif

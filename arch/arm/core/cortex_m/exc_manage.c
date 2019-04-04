@@ -23,7 +23,7 @@ void sys_exc_esf_dump(NANO_ESF *esf)
 	printk("r14/lr: %x\n", esf->lr);
 	printk("r15/pc: %x  ", esf->pc);
 	printk("xpsr:   %x\n", esf->xpsr);
-#ifdef CONFIG_FLOAT
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 	for (int i = 0; i < 16; i += 4) {
 		printk("s[%d]:  %x  s[%d]:  %x  s[%d]:  %x  s[%d]:  %x\n",
 		       i, (u32_t)esf->s[i],
