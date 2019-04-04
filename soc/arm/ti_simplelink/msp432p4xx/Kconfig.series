@@ -10,6 +10,5 @@ config SOC_SERIES_MSP432P4XX
 	select CPU_CORTEX_M4
 	select SOC_FAMILY_TISIMPLELINK
 	select CPU_HAS_FPU
-	select CPU_HAS_SYSTICK
 	help
 	  Enable support for TI SimpleLink MSP432P4XX.
