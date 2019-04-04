@@ -119,9 +119,16 @@ static inline void enable_floating_point(void)
 {
 	/*
 	 * Upon reset, the Co-Processor Access Control Register is 0x00000000.
-	 * Enable CP10 and CP11 co-processors to enable floating point.
+	 * Enable CP10 and CP11 Co-Processors to enable access to floating
+	 * point registers.
 	 */
+#if defined(CONFIG_USERSPACE)
+	/* Full access */
 	SCB->CPACR |= CPACR_CP10_FULL_ACCESS | CPACR_CP11_FULL_ACCESS;
+#else
+	/* Privileged access only */
+	SCB->CPACR |= CPACR_CP10_PRIV_ACCESS | CPACR_CP11_PRIV_ACCESS;
+#endif /* CONFIG_USERSPACE */
 	/*
 	 * Upon reset, the FPU Context Control Register is 0xC0000000
 	 * (both Automatic and Lazy state preservation is enabled).
