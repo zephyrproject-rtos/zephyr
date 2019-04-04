@@ -106,7 +106,7 @@
 			};
 		};
 
-		idwg: watchdog@40003000 {
+		iwdg: watchdog@40003000 {
 			compatible = "st,stm32-watchdog";
 			reg = <0x40003000 0x400>;
 			label = "IWDG";

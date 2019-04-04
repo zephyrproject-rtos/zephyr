@@ -83,6 +83,6 @@
 	status = "ok";
 };
 
-&idwg {
+&iwdg {
 	status = "ok";
 };
