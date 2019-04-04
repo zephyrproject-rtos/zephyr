@@ -13,6 +13,7 @@ void test_config_save_fcb_unaligned(void)
 	struct settings_fcb cf;
 
 	config_wipe_srcs();
+	config_wipe_fcb(fcb_sectors, ARRAY_SIZE(fcb_sectors));
 
 	cf.cf_fcb.f_magic = CONFIG_SETTINGS_FCB_MAGIC;
 	cf.cf_fcb.f_sectors = fcb_sectors;
