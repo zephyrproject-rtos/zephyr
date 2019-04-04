@@ -73,6 +73,6 @@ arduino_spi: &spi1 {
 };
 
 
-&idwg {
+&iwdg {
 	status = "ok";
 };
