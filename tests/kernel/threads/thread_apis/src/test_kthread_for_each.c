@@ -11,7 +11,8 @@
 #define SLEEP_MS 100
 #define TEST_STRING "TEST"
 
-#define STACKSIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACKSIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
+
 K_THREAD_STACK_EXTERN(tstack);
 extern struct k_thread tdata;
 

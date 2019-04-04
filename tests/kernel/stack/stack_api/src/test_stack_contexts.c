@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 #include <irq_offload.h>
-#define STACK_SIZE 512
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define STACK_LEN 4
 
 /**TESTPOINT: init via K_STACK_DEFINE*/

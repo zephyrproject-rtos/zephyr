@@ -6,7 +6,7 @@
 
 #include <ztest.h>
 
-#define STACK_SIZE	1024
+#define STACK_SIZE	(1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define PIPE_LEN	16
 #define BYTES_TO_WRITE	4
 #define BYTES_TO_READ BYTES_TO_WRITE

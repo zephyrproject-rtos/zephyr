@@ -114,7 +114,8 @@ static struct k_poll_signal wait_signal =
 struct fifo_msg wait_msg = { NULL, FIFO_MSG_VALUE };
 
 static struct k_thread poll_wait_helper_thread;
-static K_THREAD_STACK_DEFINE(poll_wait_helper_stack, KB(1));
+static K_THREAD_STACK_DEFINE(poll_wait_helper_stack,
+			KB(1) + CONFIG_TEST_EXTRA_STACKSIZE);
 
 #define TAG_0 10
 #define TAG_1 11
@@ -429,7 +430,8 @@ void test_poll_cancel_main_high_prio(void)
 static K_SEM_DEFINE(multi_sem, 0, 1);
 
 static struct k_thread multi_thread_lowprio;
-static K_THREAD_STACK_DEFINE(multi_stack_lowprio, KB(1));
+static K_THREAD_STACK_DEFINE(multi_stack_lowprio,
+		KB(1) + CONFIG_TEST_EXTRA_STACKSIZE);
 
 static void multi_lowprio(void *p1, void *p2, void *p3)
 {
@@ -449,7 +451,7 @@ static void multi_lowprio(void *p1, void *p2, void *p3)
 static K_SEM_DEFINE(multi_reply, 0, 1);
 
 static struct k_thread multi_thread;
-static K_THREAD_STACK_DEFINE(multi_stack, KB(1));
+static K_THREAD_STACK_DEFINE(multi_stack, KB(1) + CONFIG_TEST_EXTRA_STACKSIZE);
 
 static void multi(void *p1, void *p2, void *p3)
 {
@@ -526,7 +528,7 @@ void test_poll_multi(void)
 }
 
 static struct k_thread signal_thread;
-static K_THREAD_STACK_DEFINE(signal_stack, KB(1));
+static K_THREAD_STACK_DEFINE(signal_stack, KB(1) + CONFIG_TEST_EXTRA_STACKSIZE);
 static struct k_poll_signal signal;
 
 static void threadstate(void *p1, void *p2, void *p3)

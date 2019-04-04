@@ -10,7 +10,7 @@
 
 extern void test_obj_tracing(void);
 
-#define STSIZE 1024
+#define STSIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 #define N_PHILOSOPHERS  5
 
 #define TOTAL_TEST_NUMBER 2
