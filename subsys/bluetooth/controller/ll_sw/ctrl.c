@@ -2646,9 +2646,12 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_REQ:
-		LL_ASSERT((_radio.conn_curr->llcp_req ==
+		if (!((_radio.conn_curr->llcp_req ==
 			   _radio.conn_curr->llcp_ack) ||
-			  (_radio.conn_curr->llcp_type == LLCP_ENCRYPTION));
+			  (_radio.conn_curr->llcp_type == LLCP_ENCRYPTION))) {
+			goto isr_rx_conn_unknown_rsp_send;
+		}
+
 
 		if (_radio.conn_curr->role ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_START_ENC_REQ,
@@ -2670,10 +2673,12 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 
 		if (_radio.role == ROLE_SLAVE) {
 #if !defined(CONFIG_BT_CTLR_FAST_ENC)
-			LL_ASSERT((_radio.conn_curr->llcp_req ==
+			if (!((_radio.conn_curr->llcp_req ==
 				   _radio.conn_curr->llcp_ack) ||
 				  (_radio.conn_curr->llcp_type ==
-				   LLCP_ENCRYPTION));
+				   LLCP_ENCRYPTION))) {
+				goto isr_rx_conn_unknown_rsp_send;
+			}
 
 			/* start enc rsp to be scheduled in slave  prepare */
 			_radio.conn_curr->llcp_encryption.initiate = 0U;
