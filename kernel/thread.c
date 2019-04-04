@@ -369,7 +369,7 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	 */
 	new_thread->userspace_local_data =
 		(struct _thread_userspace_local_data *)
-		(K_THREAD_STACK_BUFFER(stack) + stack_size);
+		(Z_THREAD_STACK_BUFFER(stack) + stack_size);
 #endif
 #endif
 

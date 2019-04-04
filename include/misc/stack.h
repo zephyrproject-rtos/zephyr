@@ -85,7 +85,7 @@ static inline void stack_analyze(const char *name, const char *stack,
 #define STACK_ANALYZE(name, sym)				\
 	do {							\
 		stack_analyze(name,				\
-			      K_THREAD_STACK_BUFFER(sym),	\
+			      Z_THREAD_STACK_BUFFER(sym),	\
 			      K_THREAD_STACK_SIZEOF(sym));	\
 	} while (false)
 

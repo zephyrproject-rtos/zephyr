@@ -671,7 +671,7 @@ static void cc2520_rx(int arg)
 		}
 
 		net_analyze_stack("CC2520 Rx Fiber stack",
-				K_THREAD_STACK_BUFFER(cc2520->cc2520_rx_stack),
+				Z_THREAD_STACK_BUFFER(cc2520->cc2520_rx_stack),
 				K_THREAD_STACK_SIZEOF(cc2520->cc2520_rx_stack));
 		continue;
 flush:

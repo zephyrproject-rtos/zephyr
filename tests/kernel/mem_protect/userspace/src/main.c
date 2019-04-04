@@ -473,7 +473,7 @@ static void read_other_stack(void)
 	k_sem_take(&uthread_start_sem, K_FOREVER);
 
 	/* Try to directly read the stack of the other thread. */
-	ptr = (unsigned int *)K_THREAD_STACK_BUFFER(uthread_stack);
+	ptr = (unsigned int *)Z_THREAD_STACK_BUFFER(uthread_stack);
 	expect_fault = true;
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
@@ -506,7 +506,7 @@ static void write_other_stack(void)
 	k_sem_take(&uthread_start_sem, K_FOREVER);
 
 	/* Try to directly write the stack of the other thread. */
-	ptr = (unsigned int *) K_THREAD_STACK_BUFFER(uthread_stack);
+	ptr = (unsigned int *) Z_THREAD_STACK_BUFFER(uthread_stack);
 	expect_fault = true;
 	expected_reason = REASON_HW_EXCEPTION;
 	BARRIER();
@@ -1017,9 +1017,9 @@ void stack_buffer_scenarios(k_thread_stack_t *stack_obj, size_t obj_size)
 
 
 	/* This API is being removed just whine about it for now */
-	if (K_THREAD_STACK_BUFFER(stack_obj) != stack_start) {
-		printk("WARNING: K_THREAD_STACK_BUFFER() reports %p\n",
-		       K_THREAD_STACK_BUFFER(stack_obj));
+	if (Z_THREAD_STACK_BUFFER(stack_obj) != stack_start) {
+		printk("WARNING: Z_THREAD_STACK_BUFFER() reports %p\n",
+		       Z_THREAD_STACK_BUFFER(stack_obj));
 	}
 
 	if (z_arch_is_user_context()) {

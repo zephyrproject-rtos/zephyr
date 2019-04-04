@@ -29,7 +29,7 @@ void z_new_thread(struct k_thread *t, k_thread_stack_t *stack,
 	void *args[] = { entry, p1, p2, p3 };
 	int nargs = 4;
 	int eflags = 0x200;
-	char *base = K_THREAD_STACK_BUFFER(stack);
+	char *base = Z_THREAD_STACK_BUFFER(stack);
 	char *top = base + sz;
 
 	z_new_thread_init(t, base, sz, prio, opts);

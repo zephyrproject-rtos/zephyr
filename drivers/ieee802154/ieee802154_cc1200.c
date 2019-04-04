@@ -502,7 +502,7 @@ static void cc1200_rx(struct device *dev)
 		}
 
 		net_analyze_stack("CC1200 Rx Fiber stack",
-				  K_THREAD_STACK_BUFFER(cc1200->rx_stack),
+				  Z_THREAD_STACK_BUFFER(cc1200->rx_stack),
 				  K_THREAD_STACK_SIZEOF(cc1200->rx_stack));
 		continue;
 flush:

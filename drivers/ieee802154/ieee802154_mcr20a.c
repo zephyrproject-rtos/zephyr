@@ -579,7 +579,7 @@ static inline void mcr20a_rx(struct mcr20a_context *mcr20a, u8_t len)
 	}
 
 	net_analyze_stack("MCR20A Rx Fiber stack",
-			  K_THREAD_STACK_BUFFER(mcr20a->mcr20a_rx_stack),
+			  Z_THREAD_STACK_BUFFER(mcr20a->mcr20a_rx_stack),
 			  K_THREAD_STACK_SIZEOF(mcr20a->mcr20a_rx_stack));
 	return;
 out:

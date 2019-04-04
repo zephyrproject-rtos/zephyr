@@ -63,11 +63,11 @@ z_arch_switch_to_main_thread(struct k_thread *main_thread,
 #if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) && \
 	defined(CONFIG_USERSPACE)
 	start_of_main_stack =
-		K_THREAD_STACK_BUFFER(main_stack) + main_stack_size -
+		Z_THREAD_STACK_BUFFER(main_stack) + main_stack_size -
 		MPU_GUARD_ALIGN_AND_SIZE;
 #else
 	start_of_main_stack =
-		K_THREAD_STACK_BUFFER(main_stack) + main_stack_size;
+		Z_THREAD_STACK_BUFFER(main_stack) + main_stack_size;
 #endif
 	start_of_main_stack = (void *)STACK_ROUND_DOWN(start_of_main_stack);
 

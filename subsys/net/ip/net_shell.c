@@ -2882,7 +2882,7 @@ static int cmd_net_stacks(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argv);
 
 	for (info = __net_stack_start; info != __net_stack_end; info++) {
-		net_analyze_stack_get_values(K_THREAD_STACK_BUFFER(info->stack),
+		net_analyze_stack_get_values(Z_THREAD_STACK_BUFFER(info->stack),
 					     info->size, &pcnt, &unused);
 
 #if defined(CONFIG_INIT_STACKS)
@@ -2910,7 +2910,7 @@ static int cmd_net_stacks(const struct shell *shell, size_t argc,
 	}
 
 #if defined(CONFIG_INIT_STACKS)
-	net_analyze_stack_get_values(K_THREAD_STACK_BUFFER(_main_stack),
+	net_analyze_stack_get_values(Z_THREAD_STACK_BUFFER(_main_stack),
 				     K_THREAD_STACK_SIZEOF(_main_stack),
 				     &pcnt, &unused);
 	PR("%s [%s] stack size %d/%d bytes unused %u usage %d/%d (%u %%)\n",
@@ -2918,7 +2918,7 @@ static int cmd_net_stacks(const struct shell *shell, size_t argc,
 	   CONFIG_MAIN_STACK_SIZE, unused,
 	   CONFIG_MAIN_STACK_SIZE - unused, CONFIG_MAIN_STACK_SIZE, pcnt);
 
-	net_analyze_stack_get_values(K_THREAD_STACK_BUFFER(_interrupt_stack),
+	net_analyze_stack_get_values(Z_THREAD_STACK_BUFFER(_interrupt_stack),
 				     K_THREAD_STACK_SIZEOF(_interrupt_stack),
 				     &pcnt, &unused);
 	PR("%s [%s] stack size %d/%d bytes unused %u usage %d/%d (%u %%)\n",
@@ -2926,7 +2926,7 @@ static int cmd_net_stacks(const struct shell *shell, size_t argc,
 	   CONFIG_ISR_STACK_SIZE, unused,
 	   CONFIG_ISR_STACK_SIZE - unused, CONFIG_ISR_STACK_SIZE, pcnt);
 
-	net_analyze_stack_get_values(K_THREAD_STACK_BUFFER(sys_work_q_stack),
+	net_analyze_stack_get_values(Z_THREAD_STACK_BUFFER(sys_work_q_stack),
 				     K_THREAD_STACK_SIZEOF(sys_work_q_stack),
 				     &pcnt, &unused);
 	PR("%s [%s] stack size %d/%d bytes unused %u usage %d/%d (%u %%)\n",
