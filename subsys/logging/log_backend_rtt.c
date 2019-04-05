@@ -34,7 +34,7 @@
 
 #define DROP_MAX 99
 
-#define DROP_MSG "\nmessages dropped:    \r"
+#define DROP_MSG "messages dropped:    \r\n"
 
 #define DROP_MSG_LEN (sizeof(DROP_MSG) - 1)
 
@@ -90,15 +90,15 @@ static int data_out_drop_mode(u8_t *data, size_t length, void *ctx)
 
 static int char_out_drop_mode(u8_t data)
 {
-	if (data == '\r') {
+	if (data == '\n') {
 		if (line_out_drop_mode()) {
 			return 1;
 		}
-		line_pos = drop_cnt > 0 ? line_buf + DROP_MSG_LEN : line_buf;
+		line_pos = line_buf;
 		return 0;
 	}
 
-	if (line_pos < line_buf + sizeof(line_buf) - 1) {
+	if (line_pos < line_buf + MESSAGE_SIZE - 1) {
 		*line_pos++ = data;
 	}
 
@@ -108,18 +108,27 @@ static int char_out_drop_mode(u8_t data)
 
 static int line_out_drop_mode(void)
 {
-	*line_pos = '\r';
+	/* line cannot be empty */
+	__ASSERT_NO_MSG(line_pos > line_buf);
+
+	/* Handle the case if line contains only '\n' */
+	if (line_pos - line_buf == 1) {
+		line_pos++;
+	}
+
+	*(line_pos - 1) = '\r';
+	*line_pos++ = '\n';
 
 	if (drop_cnt > 0 && !drop_warn) {
-		memmove(line_buf + DROP_MSG_LEN, line_buf,
-			line_pos - line_buf);
+		int cnt = MIN(drop_cnt, DROP_MAX);
+
+		__ASSERT_NO_MSG(line_pos - line_buf <= MESSAGE_SIZE);
+
+		memmove(line_buf + DROP_MSG_LEN, line_buf, line_pos - line_buf);
 		(void)memcpy(line_buf, drop_msg, DROP_MSG_LEN);
 		line_pos += DROP_MSG_LEN;
 		drop_warn = 1;
-	}
 
-	if (drop_warn) {
-		int cnt = MIN(drop_cnt, DROP_MAX);
 
 		if (cnt < 10) {
 			line_buf[DROP_MSG_LEN - 2] = ' ';
@@ -134,16 +143,16 @@ static int line_out_drop_mode(void)
 
 	RTT_LOCK();
 	int ret = SEGGER_RTT_WriteSkipNoLock(CONFIG_LOG_BACKEND_RTT_BUFFER,
-					     line_buf, line_pos - line_buf + 1);
+					     line_buf, line_pos - line_buf);
 	RTT_UNLOCK();
 
 	if (ret == 0) {
 		drop_cnt++;
-		return 0;
+	} else {
+		drop_cnt = 0;
+		drop_warn = 0;
 	}
 
-	drop_cnt = 0;
-	drop_warn = 0;
 	return 0;
 }
 
