@@ -192,7 +192,9 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	u8_t ep = cfg->ep_addr;
 	u8_t ep_idx = USBIP_EP_ADDR2IDX(ep);
 
-	LOG_DBG("ep %x, mps %d, type %d", ep, ep_mps, cfg->ep_type);
+	if (usb_dc_ep_check_cap(cfg)) {
+		return -EINVAL;
+	}
 
 	if (!usbip_ctrl.attached && !usbip_ep_is_valid(ep)) {
 		return -EINVAL;
