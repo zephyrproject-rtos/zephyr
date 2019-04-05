@@ -111,8 +111,9 @@ static int line_out_drop_mode(void)
 	*line_pos = '\r';
 
 	if (drop_cnt > 0 && !drop_warn) {
-		memmove(line_buf + DROP_MSG_LEN, line_buf,
-			line_pos - line_buf);
+		u32_t len = MIN(line_pos - line_buf, MESSAGE_SIZE);
+
+		memmove(line_buf + DROP_MSG_LEN, line_buf, len);
 		(void)memcpy(line_buf, drop_msg, DROP_MSG_LEN);
 		line_pos += DROP_MSG_LEN;
 		drop_warn = 1;
