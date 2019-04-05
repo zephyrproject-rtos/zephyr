@@ -474,21 +474,8 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 
 	ep_cfg.ep_type = ep_desc->bmAttributes;
 
-	switch (ep_cfg.ep_type) {
-	case USB_DC_EP_BULK:
-		if (ep_cfg.ep_mps > USB_MAX_BULK_MPS) {
-			return false;
-		}
-	case USB_DC_EP_CONTROL:
-		if (ep_cfg.ep_mps > MAX_PACKET_SIZE0) {
-			return false;
-		}
-	case USB_DC_EP_INTERRUPT:
-		if (ep_cfg.ep_mps > USB_MAX_INT_MPS) {
-			return false;
-		}
-	default:
-		break;
+	if (usb_dc_ep_check_cap(&ep_cfg) < 0) {
+		return false;
 	}
 
 	LOG_DBG("Configure endpoint 0x%x type %u MPS %u",
