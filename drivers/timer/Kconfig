@@ -91,7 +91,6 @@ config ARCV2_TIMER_IRQ_PRIORITY
 
 config CORTEX_M_SYSTICK
 	bool "Cortex-M SYSTICK timer"
-	default y
 	depends on CPU_CORTEX_M_HAS_SYSTICK
 	select TICKLESS_CAPABLE
 	help
@@ -110,7 +109,6 @@ config ALTERA_AVALON_TIMER
 
 config NRF_RTC_TIMER
 	bool "nRF Real Time Counter (NRF_RTC1) Timer"
-	default y
 	depends on CLOCK_CONTROL
 	depends on SOC_COMPATIBLE_NRF
 	select TICKLESS_CAPABLE
