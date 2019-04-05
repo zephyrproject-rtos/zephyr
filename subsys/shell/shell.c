@@ -882,7 +882,7 @@ static void state_collect(const struct shell *shell)
 				 * on received NL.
 				 */
 				state_set(shell, SHELL_STATE_ACTIVE);
-				return;
+				continue;
 			}
 
 			switch (data) {
@@ -950,7 +950,7 @@ static void state_collect(const struct shell *shell)
 			receive_state_change(shell, SHELL_RECEIVE_DEFAULT);
 
 			if (!flag_echo_get(shell)) {
-				return;
+				continue;
 			}
 
 			switch (data) {
