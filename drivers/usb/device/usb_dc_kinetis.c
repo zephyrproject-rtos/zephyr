@@ -276,14 +276,35 @@ int usb_dc_ep_check_cap(const struct usb_dc_ep_cfg_data * const cfg)
 {
 	u8_t ep_idx = EP_ADDR2IDX(cfg->ep_addr);
 
-	if ((cfg->ep_type == USB_DC_EP_CONTROL) && ep_idx) {
-		LOG_ERR("invalid endpoint configuration");
-		return -1;
-	}
-
 	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
 		LOG_ERR("endpoint index/address out of range");
-		return -1;
+		return -EINVAL;
+	}
+
+	switch (cfg->ep_type) {
+	case USB_DC_EP_CONTROL:
+		if (cfg->ep_mps > USB_MAX_CTRL_MPS) {
+			return -EINVAL;
+		}
+		return 0;
+	case USB_DC_EP_BULK:
+		if (cfg->ep_mps > USB_MAX_FS_BULK_MPS) {
+			return -EINVAL;
+		}
+		break;
+	case USB_DC_EP_INTERRUPT:
+		if (cfg->ep_mps > USB_MAX_FS_INT_MPS) {
+			return -EINVAL;
+		}
+		break;
+	case USB_DC_EP_ISOCHRONOUS:
+		if (cfg->ep_mps > USB_MAX_FS_ISO_MPS) {
+			return -EINVAL;
+		}
+		break;
+	default:
+		LOG_ERR("Unknown endpoint type!");
+		return -EINVAL;
 	}
 
 	if (ep_idx & BIT(0)) {
@@ -309,8 +330,7 @@ int usb_dc_ep_configure(const struct usb_dc_ep_cfg_data * const cfg)
 	struct k_mem_block *block;
 	struct usb_ep_ctrl_data *ep_ctrl = &dev_data.ep_ctrl[ep_idx];
 
-	if (ep_idx > (NUM_OF_EP_MAX - 1)) {
-		LOG_ERR("Wrong endpoint index/address");
+	if (usb_dc_ep_check_cap(cfg)) {
 		return -EINVAL;
 	}
 
