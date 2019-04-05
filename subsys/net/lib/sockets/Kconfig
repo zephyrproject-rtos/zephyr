@@ -29,6 +29,16 @@ config NET_SOCKETS_POLL_MAX
 	help
 	  Maximum number of entries supported for poll() call.
 
+config NET_SOCKETS_DNS_TIMEOUT
+	int "Timeout value in milliseconds for DNS queries"
+	default 2000
+	range 1000 300000
+	depends on DNS_RESOLVER
+	help
+	  This variable specifies time in milliseconds after which DNS
+	  query is considered timeout. Minimum timeout is 1 second and
+	  maximum timeout is 5 min.
+
 config NET_SOCKETS_SOCKOPT_TLS
 	bool "Enable TCP TLS socket option support [EXPERIMENTAL]"
 	select TLS_CREDENTIALS

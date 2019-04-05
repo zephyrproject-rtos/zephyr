@@ -79,6 +79,19 @@ static void dns_resolve_cb(enum dns_resolve_status status,
 	state->idx++;
 }
 
+static int exec_query(const char *host, int family,
+		      struct getaddrinfo_state *ai_state)
+{
+	enum dns_query_type qtype = DNS_QUERY_TYPE_A;
+
+	if (IS_ENABLED(CONFIG_NET_IPV6) && family != AF_INET) {
+		qtype = DNS_QUERY_TYPE_AAAA;
+	}
+
+	return dns_get_addr_info(host, qtype, NULL,
+				 dns_resolve_cb, ai_state,
+				 CONFIG_NET_SOCKETS_DNS_TIMEOUT);
+}
 
 int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 				       const struct zsock_addrinfo *hints,
@@ -111,43 +124,31 @@ int z_impl_z_zsock_getaddrinfo_internal(const char *host, const char *service,
 	/* Link entries in advance */
 	ai_state.ai_arr[0].ai_next = &ai_state.ai_arr[1];
 
-	/* Execute if AF_UNSPEC or AF_INET4 */
-	if (family != AF_INET6) {
-		ret = dns_get_addr_info(host, DNS_QUERY_TYPE_A, NULL,
-					dns_resolve_cb, &ai_state, 1000);
-		if (ret == 0) {
-			k_sem_take(&ai_state.sem, K_FOREVER);
-			st1 = ai_state.status;
-		} else {
-			errno = -ret;
-			st1 = DNS_EAI_SYSTEM;
+	ret = exec_query(host, family, &ai_state);
+	if (ret == 0) {
+		/* If the DNS query for reason fails so that the
+		 * dns_resolve_cb() would not be called, then we want the
+		 * semaphore to timeout so that we will not hang forever.
+		 * So make the sem timeout longer than the DNS timeout so that
+		 * we do not need to start to cancel any pending DNS queries.
+		 */
+		int ret = k_sem_take(&ai_state.sem,
+				     CONFIG_NET_SOCKETS_DNS_TIMEOUT +
+				     K_MSEC(100));
+		if (ret == -EAGAIN) {
+			return DNS_EAI_AGAIN;
 		}
 
-		if (ai_state.idx > 0) {
-			ai_addr = &ai_state.ai_arr[ai_state.idx - 1]._ai_addr;
-			net_sin(ai_addr)->sin_port = htons(port);
-		}
+		st1 = ai_state.status;
+	} else {
+		errno = -ret;
+		st1 = DNS_EAI_SYSTEM;
 	}
 
-#if defined(CONFIG_NET_IPV6)
-	/* Execute if AF_UNSPEC or AF_INET6 */
-	if (family != AF_INET) {
-		ret = dns_get_addr_info(host, DNS_QUERY_TYPE_AAAA, NULL,
-					dns_resolve_cb, &ai_state, 1000);
-		if (ret == 0) {
-			k_sem_take(&ai_state.sem, K_FOREVER);
-			st2 = ai_state.status;
-		} else {
-			errno = -ret;
-			st2 = DNS_EAI_SYSTEM;
-		}
-
-		if (ai_state.idx > 0) {
-			ai_addr = &ai_state.ai_arr[ai_state.idx - 1]._ai_addr;
-			net_sin6(ai_addr)->sin6_port = htons(port);
-		}
+	if (ai_state.idx > 0) {
+		ai_addr = &ai_state.ai_arr[ai_state.idx - 1]._ai_addr;
+		net_sin(ai_addr)->sin_port = htons(port);
 	}
-#endif
 
 	/* If both attempts failed, it's error */
 	if (st1 && st2) {
