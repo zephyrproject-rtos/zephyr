@@ -21,11 +21,6 @@ gecko
 The Silicon Labs Gecko SDK provides device header files and peripheral drivers
 for all Silicon Labs Gecko devices: EFM32, EZR32 and EFR32.
 
-mcux
--------
-The NXP MCUXpresso Software Development Kit (MCUX) provides device header files
-and peripheral drivers for Kinetis, LPC, and i.MX SoCs.
-
 nordic
 -------
 The Nordic Semiconductor Microcontroller Development Kit (MDK) provides device

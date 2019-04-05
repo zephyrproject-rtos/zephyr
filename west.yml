@@ -44,6 +44,9 @@ manifest:
     - name: hal_st
       revision: 2f4d2f73fc8d4a494ebd8a12312f7084d2c84ed4
       path: modules/hal/st
+    - name: hal_nxp
+      revision: 8e4d884d60da14e7d28857d3af37d25de727b171
+      path: modules/hal/nxp
 
   self:
     path: zephyr
