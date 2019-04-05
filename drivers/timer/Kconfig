@@ -92,7 +92,7 @@ config ARCV2_TIMER_IRQ_PRIORITY
 config CORTEX_M_SYSTICK
 	bool "Cortex-M SYSTICK timer"
 	default y
-	depends on CPU_HAS_SYSTICK
+	depends on CPU_CORTEX_M_HAS_SYSTICK
 	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the Cortex-M processor

@@ -28,12 +28,6 @@ config CPU_CORTEX_M
 	help
 	  This option signifies the use of a CPU of the Cortex-M family.
 
-config CPU_HAS_SYSTICK
-	bool
-	# Omit prompt to signify "hidden" option
-	help
-	  This option is enabled when the CPU has systick timer implemented.
-
 config BUILTIN_STACK_GUARD
 	bool "Thread Stack Guards based on built-in ARM stack limit checking"
 	depends on CPU_CORTEX_M_HAS_SPLIM
