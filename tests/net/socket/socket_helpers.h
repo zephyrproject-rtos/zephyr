@@ -10,6 +10,44 @@
 
 #define clear_buf(buf) memset(buf, 0, sizeof(buf))
 
+static inline int prepare_listen_sock_udp_v4(struct sockaddr_in *addr)
+{
+	int ret, sock;
+
+	zassert_not_null(addr, "null sockaddr");
+
+	ret = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(ret >= 0, "socket open failed");
+
+	sock = ret;
+
+	zassert_equal(addr->sin_family, AF_INET, "Invalid family");
+
+	ret = bind(sock, (struct sockaddr *)addr, sizeof(*addr));
+	zassert_equal(ret, 0, "bind failed (%d/%d)", ret, errno);
+
+	return sock;
+}
+
+static inline int prepare_listen_sock_udp_v6(struct sockaddr_in6 *addr)
+{
+	int ret, sock;
+
+	zassert_not_null(addr, "null sockaddr");
+
+	ret = socket(AF_INET6, SOCK_DGRAM, IPPROTO_UDP);
+	zassert_true(ret >= 0, "socket open failed");
+
+	sock = ret;
+
+	zassert_equal(addr->sin6_family, AF_INET6, "Invalid family");
+
+	ret = bind(sock, (struct sockaddr *)addr, sizeof(*addr));
+	zassert_equal(ret, 0, "bind failed (%d/%d)", ret, errno);
+
+	return sock;
+}
+
 static inline void prepare_sock_udp_v4(const char *addr, u16_t port,
 				       int *sock, struct sockaddr_in *sockaddr)
 {
