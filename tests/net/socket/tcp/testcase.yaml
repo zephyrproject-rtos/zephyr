@@ -1,7 +1,7 @@
 common:
   depends_on: netif
-  platform_whitelist: native_posix qemu_x86 qemu_cortex_m3
+  platform_whitelist: native_posix qemu_x86 mps2_an385
 tests:
   net.socket.tcp:
     min_ram: 32
-    tags: net socket
+    tags: net socket userspace
