@@ -642,14 +642,6 @@ static int hci_le_create_conn(const struct bt_conn *conn)
 }
 #endif /* CONFIG_BT_CENTRAL */
 
-static void hci_stack_dump(const struct k_thread *thread, void *user_data)
-{
-#if defined(CONFIG_THREAD_STACK_INFO)
-	stack_analyze((char *)user_data, (char *)thread->stack_info.start,
-						thread->stack_info.size);
-#endif
-}
-
 static void hci_disconn_complete(struct net_buf *buf)
 {
 	struct bt_hci_evt_disconn_complete *evt = (void *)buf->data;
@@ -671,8 +663,7 @@ static void hci_disconn_complete(struct net_buf *buf)
 
 	conn->err = evt->reason;
 
-	/* Check stacks usage (no-ops if not enabled) */
-	k_thread_foreach(hci_stack_dump, "HCI");
+	/* Check stacks usage */
 #if !defined(CONFIG_BT_RECV_IS_RX_THREAD)
 	STACK_ANALYZE("rx stack", rx_thread_stack);
 #endif
