@@ -500,7 +500,7 @@ static void dma_rx_callback(void *arg, u32_t channel, int status)
 		goto rx_disable;
 	}
 
-	ret = reload_dma(dev_data->dev_dma, stream->dma_channel,
+	ret = reload_dma(dev_data->dev_dma_rx, stream->dma_channel,
 			&stream->dma_cfg,
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
 			stream->mem_block,
@@ -583,7 +583,7 @@ static void dma_tx_callback(void *arg, u32_t channel, int status)
 	/* Assure cache coherency before DMA read operation */
 	DCACHE_CLEAN(stream->mem_block, mem_block_size);
 
-	ret = reload_dma(dev_data->dev_dma, stream->dma_channel,
+	ret = reload_dma(dev_data->dev_dma_tx, stream->dma_channel,
 			&stream->dma_cfg,
 			stream->mem_block,
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
@@ -646,9 +646,14 @@ static int i2s_stm32_initialize(struct device *dev)
 	}
 
 	/* Get the binding to the DMA device */
-	dev_data->dev_dma = device_get_binding(dev_data->dma_name);
-	if (!dev_data->dev_dma) {
-		LOG_ERR("%s device not found", dev_data->dma_name);
+	dev_data->dev_dma_tx = device_get_binding(dev_data->tx.dma_name);
+	if (!dev_data->dev_dma_tx) {
+		LOG_ERR("%s device not found", dev_data->dma_name_tx);
+		return -ENODEV;
+	}
+	dev_data->dev_dma_rx = device_get_binding(dev_data->rx.dma_name);
+	if (!dev_data->dev_dma_rx) {
+		LOG_ERR("%s device not found", dev_data->dma_name_rx);
 		return -ENODEV;
 	}
 
@@ -678,7 +683,7 @@ static int rx_stream_start(struct stream *stream, struct device *dev)
 	/* remember active RX DMA channel (used in callback) */
 	active_dma_rx_channel[stream->dma_channel] = dev;
 
-	ret = start_dma(dev_data->dev_dma, stream->dma_channel,
+	ret = start_dma(dev_data->dev_dma_rx, stream->dma_channel,
 			&stream->dma_cfg,
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
 			stream->mem_block,
@@ -722,7 +727,7 @@ static int tx_stream_start(struct stream *stream, struct device *dev)
 	/* remember active TX DMA channel (used in callback) */
 	active_dma_tx_channel[stream->dma_channel] = dev;
 
-	ret = start_dma(dev_data->dev_dma, stream->dma_channel,
+	ret = start_dma(dev_data->dev_dma_tx, stream->dma_channel,
 			&stream->dma_cfg,
 			stream->mem_block,
 			(void *)LL_SPI_DMA_GetRegAddr(cfg->i2s),
@@ -744,7 +749,7 @@ static void rx_stream_disable(struct stream *stream, struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
-	struct device *dev_dma = dev_data->dev_dma;
+	struct device *dev_dma = dev_data->dev_dma_rx;
 
 	LL_I2S_DisableDMAReq_RX(cfg->i2s);
 	LL_I2S_DisableIT_ERR(cfg->i2s);
@@ -764,7 +769,7 @@ static void tx_stream_disable(struct stream *stream, struct device *dev)
 {
 	const struct i2s_stm32_cfg *cfg = DEV_CFG(dev);
 	struct i2s_stm32_data *const dev_data = DEV_DATA(dev);
-	struct device *dev_dma = dev_data->dev_dma;
+	struct device *dev_dma = dev_data->dev_dma_tx;
 
 	LL_I2S_DisableDMAReq_TX(cfg->i2s);
 	LL_I2S_DisableIT_ERR(cfg->i2s);
@@ -837,12 +842,12 @@ struct queue_item rx_1_ring_buf[CONFIG_I2S_STM32_RX_BLOCK_COUNT + 1];
 struct queue_item tx_1_ring_buf[CONFIG_I2S_STM32_TX_BLOCK_COUNT + 1];
 
 static struct i2s_stm32_data i2s_stm32_data_1 = {
-	.dma_name = I2S1_DMA_NAME,
 	.rx = {
-		.dma_channel = I2S1_DMA_CHAN_RX,
+		.dma_name = DT_I2S_1_DMA_CONTROLLER_RX,
+		.dma_channel = DT_I2S_1_DMA_CHANNEL_RX,
 		.dma_cfg = {
 			.block_count = 1,
-			.dma_slot = I2S1_DMA_SLOT_RX,
+			.dma_slot = DT_I2S_1_DMA_SLOT_RX,
 			.channel_direction = PERIPHERAL_TO_MEMORY,
 			.source_data_size = 1,  /* 16bit default */
 			.dest_data_size = 1,    /* 16bit default */
@@ -857,10 +862,11 @@ static struct i2s_stm32_data i2s_stm32_data_1 = {
 		.mem_block_queue.len = ARRAY_SIZE(rx_1_ring_buf),
 	},
 	.tx = {
-		.dma_channel = I2S1_DMA_CHAN_TX,
+		.dma_name = DT_I2S_1_DMA_CONTROLLER_TX,
+		.dma_channel = DT_I2S_1_DMA_CHANNEL_TX,
 		.dma_cfg = {
 			.block_count = 1,
-			.dma_slot = I2S1_DMA_SLOT_TX,
+			.dma_slot = DT_I2S_1_DMA_SLOT_TX,
 			.channel_direction = MEMORY_TO_PERIPHERAL,
 			.source_data_size = 1,  /* 16bit default */
 			.dest_data_size = 1,    /* 16bit default */
@@ -907,12 +913,12 @@ struct queue_item rx_2_ring_buf[CONFIG_I2S_STM32_RX_BLOCK_COUNT + 1];
 struct queue_item tx_2_ring_buf[CONFIG_I2S_STM32_TX_BLOCK_COUNT + 1];
 
 static struct i2s_stm32_data i2s_stm32_data_2 = {
-	.dma_name = I2S2_DMA_NAME,
 	.rx = {
-		.dma_channel = I2S2_DMA_CHAN_RX,
+		.dma_name = DT_I2S_2_DMA_CONTROLLER_RX,
+		.dma_channel = DT_I2S_2_DMA_CHANNEL_RX,
 		.dma_cfg = {
 			.block_count = 1,
-			.dma_slot = I2S2_DMA_SLOT_RX,
+			.dma_slot = DT_I2S_2_DMA_SLOT_RX,
 			.channel_direction = PERIPHERAL_TO_MEMORY,
 			.source_data_size = 1,  /* 16bit default */
 			.dest_data_size = 1,    /* 16bit default */
@@ -927,10 +933,11 @@ static struct i2s_stm32_data i2s_stm32_data_2 = {
 		.mem_block_queue.len = ARRAY_SIZE(rx_2_ring_buf),
 	},
 	.tx = {
-		.dma_channel = I2S2_DMA_CHAN_TX,
+		.dma_name = DT_I2S_2_DMA_CONTROLLER_TX,
+		.dma_channel = DT_I2S_2_DMA_CHANNEL_TX,
 		.dma_cfg = {
 			.block_count = 1,
-			.dma_slot = I2S2_DMA_SLOT_TX,
+			.dma_slot = DT_I2S_2_DMA_SLOT_TX,
 			.channel_direction = MEMORY_TO_PERIPHERAL,
 			.source_data_size = 1,  /* 16bit default */
 			.dest_data_size = 1,    /* 16bit default */
@@ -977,12 +984,12 @@ struct queue_item rx_3_ring_buf[CONFIG_I2S_STM32_RX_BLOCK_COUNT + 1];
 struct queue_item tx_3_ring_buf[CONFIG_I2S_STM32_TX_BLOCK_COUNT + 1];
 
 static struct i2s_stm32_data i2s_stm32_data_3 = {
-	.dma_name = I2S3_DMA_NAME,
 	.rx = {
-		.dma_channel = I2S3_DMA_CHAN_RX,
+		.dma_name = DT_I2S_3_DMA_CONTROLLER_RX,
+		.dma_channel = DT_I2S_3_DMA_CHANNEL_RX,
 		.dma_cfg = {
 			.block_count = 1,
-			.dma_slot = I2S3_DMA_SLOT_RX,
+			.dma_slot = DT_I2S_3_DMA_SLOT_RX,
 			.channel_direction = PERIPHERAL_TO_MEMORY,
 			.source_data_size = 1,  /* 16bit default */
 			.dest_data_size = 1,    /* 16bit default */
@@ -997,10 +1004,11 @@ static struct i2s_stm32_data i2s_stm32_data_3 = {
 		.mem_block_queue.len = ARRAY_SIZE(rx_3_ring_buf),
 	},
 	.tx = {
-		.dma_channel = I2S3_DMA_CHAN_TX,
+		.dma_name = DT_I2S_3_DMA_CONTROLLER_TX,
+		.dma_channel = DT_I2S_3_DMA_CHANNEL_TX,
 		.dma_cfg = {
 			.block_count = 1,
-			.dma_slot = I2S3_DMA_SLOT_TX,
+			.dma_slot = DT_I2S_3_DMA_SLOT_TX,
 			.channel_direction = MEMORY_TO_PERIPHERAL,
 			.source_data_size = 1,  /* 16bit default */
 			.dest_data_size = 1,    /* 16bit default */
@@ -1047,12 +1055,12 @@ struct queue_item rx_4_ring_buf[CONFIG_I2S_STM32_RX_BLOCK_COUNT + 1];
 struct queue_item tx_4_ring_buf[CONFIG_I2S_STM32_TX_BLOCK_COUNT + 1];
 
 static struct i2s_stm32_data i2s_stm32_data_4 = {
-	.dma_name = I2S4_DMA_NAME,
 	.rx = {
-		.dma_channel = I2S4_DMA_CHAN_RX,
+		.dma_name = DT_I2S_4_DMA_CONTROLLER_RX,
+		.dma_channel = DT_I2S_4_DMA_CHANNEL_RX,
 		.dma_cfg = {
 			.block_count = 1,
-			.dma_slot = I2S4_DMA_SLOT_RX,
+			.dma_slot = DT_I2S_4_DMA_SLOT_RX,
 			.channel_direction = PERIPHERAL_TO_MEMORY,
 			.source_data_size = 1,  /* 16bit default */
 			.dest_data_size = 1,    /* 16bit default */
@@ -1067,10 +1075,11 @@ static struct i2s_stm32_data i2s_stm32_data_4 = {
 		.mem_block_queue.len = ARRAY_SIZE(rx_4_ring_buf),
 	},
 	.tx = {
-		.dma_channel = I2S4_DMA_CHAN_TX,
+		.dma_name = DT_I2S_4_DMA_CONTROLLER_TX,
+		.dma_channel = DT_I2S_4_DMA_CHANNEL_TX,
 		.dma_cfg = {
 			.block_count = 1,
-			.dma_slot = I2S4_DMA_SLOT_TX,
+			.dma_slot = DT_I2S_4_DMA_SLOT_TX,
 			.channel_direction = MEMORY_TO_PERIPHERAL,
 			.source_data_size = 1,  /* 16bit default */
 			.dest_data_size = 1,    /* 16bit default */
@@ -1117,12 +1126,12 @@ struct queue_item rx_5_ring_buf[CONFIG_I2S_STM32_RX_BLOCK_COUNT + 1];
 struct queue_item tx_5_ring_buf[CONFIG_I2S_STM32_TX_BLOCK_COUNT + 1];
 
 static struct i2s_stm32_data i2s_stm32_data_5 = {
-	.dma_name = I2S5_DMA_NAME,
 	.rx = {
-		.dma_channel = I2S5_DMA_CHAN_RX,
+		.dma_name = DT_I2S_5_DMA_CONTROLLER_RX,
+		.dma_channel = DT_I2S_5_DMA_CHANNEL_RX,
 		.dma_cfg = {
 			.block_count = 1,
-			.dma_slot = I2S5_DMA_SLOT_RX,
+			.dma_slot = DT_I2S_5_DMA_SLOT_RX,
 			.channel_direction = PERIPHERAL_TO_MEMORY,
 			.source_data_size = 1,  /* 16bit default */
 			.dest_data_size = 1,    /* 16bit default */
@@ -1137,10 +1146,11 @@ static struct i2s_stm32_data i2s_stm32_data_5 = {
 		.mem_block_queue.len = ARRAY_SIZE(rx_5_ring_buf),
 	},
 	.tx = {
-		.dma_channel = I2S5_DMA_CHAN_TX,
+		.dma_name = DT_I2S_5_DMA_CONTROLLER_RX,
+		.dma_channel = DT_I2S_5_DMA_CHANNEL_RX,
 		.dma_cfg = {
 			.block_count = 1,
-			.dma_slot = I2S5_DMA_SLOT_TX,
+			.dma_slot = DT_I2S_5_DMA_SLOT_TX,
 			.channel_direction = MEMORY_TO_PERIPHERAL,
 			.source_data_size = 1,  /* 16bit default */
 			.dest_data_size = 1,    /* 16bit default */
