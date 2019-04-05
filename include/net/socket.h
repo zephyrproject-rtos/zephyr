@@ -382,7 +382,7 @@ int zsock_setsockopt(int sock, int level, int optname,
  * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
  * @endrststar
  */
-int zsock_gethostname(char *buf, size_t len);
+__syscall int zsock_gethostname(char *buf, size_t len);
 
 /**
  * @brief Convert network address from internal to numeric ASCII form
