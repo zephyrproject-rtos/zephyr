@@ -334,6 +334,7 @@ int net_send_data(struct net_pkt *pkt)
 
 static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 {
+	bool is_loopback = false;
 	size_t pkt_len;
 
 	pkt_len = net_pkt_get_len(pkt);
@@ -342,7 +343,15 @@ static void net_rx(struct net_if *iface, struct net_pkt *pkt)
 
 	net_stats_update_bytes_recv(iface, pkt_len);
 
-	processing_data(pkt, false);
+	if (IS_ENABLED(CONFIG_NET_LOOPBACK)) {
+#ifdef CONFIG_NET_L2_DUMMY
+		if (net_if_l2(iface) == &NET_L2_GET_NAME(DUMMY)) {
+			is_loopback = true;
+		}
+#endif
+	}
+
+	processing_data(pkt, is_loopback);
 
 	net_print_statistics();
 	net_pkt_print();
