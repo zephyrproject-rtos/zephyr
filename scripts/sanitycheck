@@ -1804,6 +1804,9 @@ class TestInstance:
                 or self.check_dependency()
         self.results = {}
 
+    def __lt__(self, other):
+        return self.name < other.name
+
     def check_dependency(self):
         build_only = False
         if self.test.harness == 'console':
@@ -2401,7 +2404,7 @@ class TestSuite:
             fieldnames = ["test", "arch", "platform", "reason"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
-            for instance, reason in self.discards.items():
+            for instance, reason in sorted(self.discards.items()):
                 rowdict = {"test": instance.test.name,
                            "arch": instance.platform.arch,
                            "platform": instance.platform.name,
@@ -2624,7 +2627,7 @@ class TestSuite:
                           "rom_size"]
             cw = csv.DictWriter(csvfile, fieldnames, lineterminator=os.linesep)
             cw.writeheader()
-            for name, goal in self.goals.items():
+            for name, goal in sorted(self.goals.items()):
                 i = self.instances[name]
                 rowdict = {"test": i.test.name,
                            "arch": i.platform.arch,
