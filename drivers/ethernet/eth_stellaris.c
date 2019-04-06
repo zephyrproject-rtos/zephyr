@@ -65,10 +65,11 @@ static int eth_stellaris_send(struct device *dev, struct net_pkt *pkt)
 	u16_t i, data_len;
 
 	/* Frame transmission
-	 * First two bytes are data_len for frame,
-	 * Initially send the data_len
+	 *
+	 * First two bytes is the length of the frame, exclusive of
+	 * the header length.
 	 */
-	data_len = net_pkt_get_len(pkt);
+	data_len = net_pkt_get_len(pkt) - sizeof(struct net_eth_hdr);
 	eth_stellaris_send_byte(dev, data_len & 0xff);
 	eth_stellaris_send_byte(dev, (data_len & 0xff00) >> 8);
 
