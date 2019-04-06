@@ -1,13 +1,6 @@
 Bluetooth Mesh implementation tasks
 ===================================
 
- * Persistent storage support
+ * Ability to act as provisioner
 
- * Configuration & Health Clients (Configuration is partially done)
-
- * Provisioner support
-
- * Any generally useful models from the Model Specification
-
- * Find a way to overlay provisioning memory with network memory
-   (linker magic?)
+ * More generally useful models from the Model Specification
