@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # cmake: Eclipse CDT4 generator amendment
 #
 #1. The generator handles just the COMPILE_DEFINITIONS.

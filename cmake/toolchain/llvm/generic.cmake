@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set(CLANG_ROOT $ENV{CLANG_ROOT_DIR})
 set_ifndef(CLANG_ROOT /usr)
 

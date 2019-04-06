@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # NB: This could be dangerous to execute, it is assuming the user is
 # checking that the build is out-of-source with code like this:
 #

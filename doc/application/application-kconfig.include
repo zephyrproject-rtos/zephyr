@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 mainmenu "Your Application Name"
 
 # Your application configuration options go here

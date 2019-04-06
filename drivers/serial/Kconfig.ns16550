@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 menuconfig UART_NS16550
 	bool "NS16550 serial driver"
 	select SERIAL_HAS_DRIVER

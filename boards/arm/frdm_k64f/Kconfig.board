@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config BOARD_FRDM_K64F
 	bool "Freescale FRDM-K64F"
 	depends on SOC_SERIES_KINETIS_K6X

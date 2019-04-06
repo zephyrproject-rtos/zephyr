@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 zephyr_sources_ifdef(CONFIG_IEEE802154_CC2520 ieee802154_cc2520.c)
 zephyr_sources_ifdef(CONFIG_IEEE802154_KW41Z ieee802154_kw41z.c)
 zephyr_sources_ifdef(CONFIG_IEEE802154_UPIPE ieee802154_uart_pipe.c)

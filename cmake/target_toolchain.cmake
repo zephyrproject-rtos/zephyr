@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # No official documentation exists for the "Generic" value, except their wiki.
 #
 # https://gitlab.kitware.com/cmake/community/wikis/doc/cmake/CrossCompiling:

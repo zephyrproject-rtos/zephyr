@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set_ifndef(STLINK_FW stlink)
 
 if(STLINK_FW STREQUAL jlink)

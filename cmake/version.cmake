@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 include(${ZEPHYR_BASE}/cmake/hex.cmake)
 file(READ ${ZEPHYR_BASE}/VERSION ver)
 

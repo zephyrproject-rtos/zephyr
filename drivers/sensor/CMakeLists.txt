@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 add_subdirectory_ifdef(CONFIG_ADT7420		adt7420)
 add_subdirectory_ifdef(CONFIG_ADXL362		adxl362)
 add_subdirectory_ifdef(CONFIG_ADXL372		adxl372)

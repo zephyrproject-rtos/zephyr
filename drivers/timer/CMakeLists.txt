@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 zephyr_sources(                         sys_clock_init.c)
 zephyr_sources_ifdef(CONFIG_HPET_TIMER  hpet.c)
 zephyr_sources_ifdef(CONFIG_ARCV2_TIMER arcv2_timer0.c)

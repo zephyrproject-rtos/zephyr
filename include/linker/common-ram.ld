@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 	SECTION_DATA_PROLOGUE(initlevel,,)
 	{
 		DEVICE_INIT_SECTIONS()

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /*
  * Common Device Tree source, used for pulling in features and
  * additions by the build system.

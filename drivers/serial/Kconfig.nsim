@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config UART_NSIM
 	bool "UART driver for MetaWare nSim"
 	select SERIAL_HAS_DRIVER

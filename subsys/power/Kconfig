@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config SYS_PM_STATE_LOCK
 	bool "Enable Power State locking capability"
 	help

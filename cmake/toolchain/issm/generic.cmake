@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 #
 # The ISSM standalone toolchain provides both the x86 IAMCU and elf32 ARC
 # toolchains. Currently supported version is '2016-05-12':

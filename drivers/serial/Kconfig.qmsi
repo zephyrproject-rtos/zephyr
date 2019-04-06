@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 menuconfig UART_QMSI
 	depends on QMSI
 	bool "QMSI UART driver"

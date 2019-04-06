@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 zephyr_sources_if_kconfig(base64.c)
 
 zephyr_sources(

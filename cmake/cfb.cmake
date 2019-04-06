@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # These functions can be used to generate a CFB font include file from
 # a TrueType/OpenType font file or an image file.
 function(generate_cfb_font

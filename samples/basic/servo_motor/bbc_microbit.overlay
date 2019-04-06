@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 
 &sw_pwm {
 	clock-prescaler = <3>;

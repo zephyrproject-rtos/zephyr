@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 #ifdef CONFIG_USERSPACE
 	/* We need to reserve room for the gperf generated hash functions.
 	 * Fortunately, unlike the data tables, the size of the code is

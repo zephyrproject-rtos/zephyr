@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Any linux host toolchain should work as a default
 CC ?= gcc
 OBJCOPY ?= objcopy

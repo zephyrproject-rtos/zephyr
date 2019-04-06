@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Use git if it is installed, to set BUILD_VERSION
 
 # https://cmake.org/cmake/help/latest/module/FindGit.html

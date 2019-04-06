@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 string(REPLACE ";" " " BOARD_ROOT_SPACE_SEPARATED "${BOARD_ROOT}")
 string(REPLACE ";" " " SHIELD_LIST_SPACE_SEPARATED "${SHIELD_LIST}")
 

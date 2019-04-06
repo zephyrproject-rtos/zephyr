@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if(DEFINED ENV{ZEPHYR_FLASH_OVER_DFU})
   set(BOARD_FLASH_RUNNER dfu-util)
 endif()

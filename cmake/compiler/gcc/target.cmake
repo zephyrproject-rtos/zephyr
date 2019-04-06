@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set_ifndef(C++ g++)
 
 # Configures CMake for using GCC, this script is re-used by several

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Merges a list of files into a destination file.
 # Usage: list of files as arguments, first argument is the destination file
 

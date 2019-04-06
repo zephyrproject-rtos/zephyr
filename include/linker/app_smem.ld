@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /*
  * This hackish way of including files is due to CMake issues:
  *   https://gitlab.kitware.com/cmake/cmake/issues/11985

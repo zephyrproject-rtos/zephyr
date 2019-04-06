@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 CONFIG_XTENSA=y
 CONFIG_XTENSA_RESET_VECTOR=n
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set_ifndef(BOARD_FLASH_RUNNER openocd)
 set_ifndef(BOARD_DEBUG_RUNNER openocd)
 

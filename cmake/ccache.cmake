@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Use ccache if it is installed, unless the user explicitly disables
 # it by setting USE_CCACHE=0.
 

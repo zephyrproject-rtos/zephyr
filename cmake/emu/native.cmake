@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 add_custom_target(run
   COMMAND
   ${APPLICATION_BINARY_DIR}/zephyr/${KERNEL_EXE_NAME}

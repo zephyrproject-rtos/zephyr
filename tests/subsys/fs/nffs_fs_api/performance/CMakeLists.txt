@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 cmake_minimum_required(VERSION 3.13.1)
 if(BOARD STREQUAL nrf52840_pca10056)
     set(CONF_FILE nrf5x.conf)

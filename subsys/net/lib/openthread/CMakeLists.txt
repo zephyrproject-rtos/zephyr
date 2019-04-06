@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Invoke OpenThread's external autoconf-based build system.
 include(ExternalProject)
 

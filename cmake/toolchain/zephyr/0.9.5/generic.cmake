@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set(COMPILER gcc)
 
 set(CROSS_COMPILE_TARGET i586-${TOOLCHAIN_VENDOR}-elf)

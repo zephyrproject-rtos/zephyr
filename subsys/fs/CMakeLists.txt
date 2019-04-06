@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if(CONFIG_FILE_SYSTEM)
   zephyr_interface_library_named(FS)
   zephyr_link_interface_ifdef(CONFIG_FAT_FILESYSTEM_ELM ELMFAT)

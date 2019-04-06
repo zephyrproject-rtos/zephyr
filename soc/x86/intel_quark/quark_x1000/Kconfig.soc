@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config SOC_QUARK_X1000
 	bool "Quark X1000"
 	select CPU_MINUTEIA

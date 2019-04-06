@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # CROSS_COMPILE is a KBuild mechanism for specifying an external
 # toolchain with a single environment variable.
 #

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 #if defined(CONFIG_GEN_ISR_TABLES) && !defined(CONFIG_DYNAMIC_INTERRUPTS)
 	SECTION_PROLOGUE(sw_isr_table,,)
 	{

@@ -1,5 +1,6 @@
 #! /usr/bin/python
 #
+# SPDX-License-Identifier: Apache-2.0
 # Zephyr's Sanity Check library
 #
 # Set of code that other projects can also import to do things on

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 function(gen_kobj gen_dir_out)
   if (PROJECT_BINARY_DIR)
     set(gen_dir ${PROJECT_BINARY_DIR}/include/generated)

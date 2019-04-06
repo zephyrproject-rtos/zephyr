@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
 
 # NOTE: This script has not been updated for Kconfiglib 2 and will not run
 
