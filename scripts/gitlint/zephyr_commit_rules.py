@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 """
 The classes below are examples of user-defined CommitRules. Commit rules are gitlint rules that
 act on the entire commit at once. Once the rules are discovered, gitlint will automatically take care of applying them

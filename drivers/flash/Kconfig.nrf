@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config FLASH_NRF_FORCE_ALT
 	bool
 	depends on SOC_COMPATIBLE_NRF

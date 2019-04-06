@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config SOC_FLASH_MCUX
 	bool "MCUX flash shim driver"
 	depends on HAS_MCUX_FTFX

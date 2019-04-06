@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 #if defined(CONFIG_HAS_DTS_I2C)
 
 #ifndef DT_ADI_ADT7420_0_LABEL

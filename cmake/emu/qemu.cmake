@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if("${ARCH}" STREQUAL "x86")
   set_ifndef(QEMU_binary_suffix i386)
 else()

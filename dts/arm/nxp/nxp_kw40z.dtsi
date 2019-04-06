@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 #include "armv6-m.dtsi"
 #include <dt-bindings/clock/kinetis_sim.h>
 #include <dt-bindings/gpio/gpio.h>

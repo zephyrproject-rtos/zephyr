@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Until we completely deprecate it
 if(NOT DEFINED ENV{GNUARMEMB_TOOLCHAIN_PATH})
   if(DEFINED ENV{GCCARMEMB_TOOLCHAIN_PATH})

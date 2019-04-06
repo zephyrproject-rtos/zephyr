@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if(CONFIG_WIFI_SIMPLELINK)
   zephyr_include_directories(
     .

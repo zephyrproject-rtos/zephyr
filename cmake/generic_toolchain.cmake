@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if(NOT TOOLCHAIN_ROOT)
   if(DEFINED ENV{TOOLCHAIN_ROOT})
     # Support for out-of-tree toolchain

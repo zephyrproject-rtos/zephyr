@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if SOC_SERIES_SAMD20 || SOC_SERIES_SAMD21
 
 config SOC_ATMEL_SAMD_XOSC32K

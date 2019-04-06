@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config $(module)_LOG_MESSAGE_QUEUE_SIZE
 	int "Log message queue size"
 	default $(default-size)

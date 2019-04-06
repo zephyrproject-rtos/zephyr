@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+# SPDX-License-Identifier: Apache-2.0
 import ConfigParser, os
 import yaml
 import sys

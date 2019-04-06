@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if(NOT CONFIG_NATIVE_APPLICATION)
 add_subdirectory(libc)
 endif()

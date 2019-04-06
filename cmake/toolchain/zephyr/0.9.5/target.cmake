@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # These defaults work for some targets like RISC-V
 set(CROSS_COMPILE_TARGET ${ARCH}-${TOOLCHAIN_VENDOR}-elf)
 set(SYSROOT_TARGET       ${ARCH}-${TOOLCHAIN_VENDOR}-elf)

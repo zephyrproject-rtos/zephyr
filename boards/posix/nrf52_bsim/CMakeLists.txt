@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if (NOT DEFINED ENV{BSIM_COMPONENTS_PATH})
 	message(FATAL_ERROR "This board requires the BabbleSim simulator. Please set\
  the  enviroment variable BSIM_COMPONENTS_PATH to point to its components \

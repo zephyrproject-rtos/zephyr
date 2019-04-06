@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set(flag_for_ram_report -r)
 set(flag_for_rom_report -F)
 

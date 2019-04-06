@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # TODO: Set to make when make is used as a generator
 set(CMAKE_MAKE_PROGRAM ninja)
 get_filename_component(generator ${CMAKE_MAKE_PROGRAM} NAME)

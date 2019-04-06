@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 choice
 	prompt "Idle State Power Management Policy"
 	help

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 zephyr_library()
 
 if (CMAKE_C_COMPILER_ID STREQUAL "Clang")

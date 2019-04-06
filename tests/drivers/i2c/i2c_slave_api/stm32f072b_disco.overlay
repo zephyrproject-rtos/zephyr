@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 &i2c1 {
 	eeprom@54 {
 		compatible = "atmel,at24";

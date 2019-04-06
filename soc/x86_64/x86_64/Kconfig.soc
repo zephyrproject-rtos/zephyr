@@ -1,2 +1,4 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config SOC_X86_64
 	bool "Generic x86_64 PC"

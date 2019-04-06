@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# SPDX-License-Identifier: Apache-2.0
 
 # A script to generate a list of boards that have changed or added and create an
 # arguemnts file for sanitycheck to allow running more tests for those boards.

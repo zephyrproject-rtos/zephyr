@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if BOARD_GALILEO
 
 config BUILD_OUTPUT_STRIPPED

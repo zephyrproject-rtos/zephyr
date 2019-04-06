@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Parameter names identical to the execute_process() CMake command, and
 # "ARGS" for the process command-line arguments.
 # Use set(ARGS ...) to build the ARGS list and then quote the list

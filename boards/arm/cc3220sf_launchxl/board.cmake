@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Use the TI OpenOCD (by default in /usr/local/openocd)
 # See the Zephyr project CC3220SF_LAUNCHXL documentation on
 # flashing prerequisites.

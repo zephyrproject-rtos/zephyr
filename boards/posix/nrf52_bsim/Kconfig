@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if BOARD_NRF52_BSIM
 
 comment "NRF52_BSIM options"

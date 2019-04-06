@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Lots of duplications here.
 # FIXME: maintain this only in one place.
 

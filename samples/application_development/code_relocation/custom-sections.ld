@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
     SECTION_DATA_PROLOGUE(_CUSTOM_SECTION_NAME2,,)
         {
 		KEEP(*(".custom_section.*"));

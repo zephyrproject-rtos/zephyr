@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config BOARD_NRF52_BSIM
 	bool "NRF52 simulation model"
 	select SOC_SERIES_BSIM_NRFXX

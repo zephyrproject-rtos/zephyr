@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 
 macro(toolchain_cc_nostdinc)
 

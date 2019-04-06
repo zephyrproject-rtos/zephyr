@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set(CONFIGS_C ${CMAKE_CURRENT_BINARY_DIR}/misc/generated/configs.c)
 
 file(STRINGS

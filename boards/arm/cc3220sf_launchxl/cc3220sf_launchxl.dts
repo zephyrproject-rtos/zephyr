@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /dts-v1/;
 
 #include <ti/cc3220sf.dtsi>

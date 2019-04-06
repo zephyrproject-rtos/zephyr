@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 
 /* PLIC */
 #define DT_PLIC_MAX_PRIORITY		\

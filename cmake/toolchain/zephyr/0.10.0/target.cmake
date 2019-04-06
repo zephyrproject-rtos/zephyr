@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Determine if we have an IAMCU toolchain or not.
 if(CONFIG_X86_IAMCU)
   set(CROSS_COMPILE_TARGET_x86  i586-zephyr-elfiamcu)

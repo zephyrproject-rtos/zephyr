@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /* SoC level DTS fixup file */
 
 #define DT_UART_QMSI_0_BAUDRATE	DT_INTEL_QMSI_UART_B0002000_CURRENT_SPEED

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 	/*
 	 * .rel.* are for relocation.
 	 * These are being produced by compiler/linker.

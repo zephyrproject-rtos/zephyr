@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config $(module)_LOG_MESSAGE_QUEUE_TIMEOUT
 	int "Log message drop timeout (in milliseconds)"
 	default $(default-timeout)

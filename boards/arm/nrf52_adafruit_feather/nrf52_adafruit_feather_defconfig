@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 CONFIG_ARM=y
 CONFIG_SOC_FAMILY_NRF=y
 CONFIG_SOC_SERIES_NRF52X=y

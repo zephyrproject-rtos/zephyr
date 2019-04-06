@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 if(MINGW)
   set(TOOLCHAIN_HOME ${ZEPHYR_SDK_INSTALL_DIR}/sysroots/i686-pokysdk-mingw32)
 else()

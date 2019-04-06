@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # Put functions and data in their own binary sections so that ld can
 # garbage collect them
 zephyr_cc_option(-ffunction-sections -fdata-sections)

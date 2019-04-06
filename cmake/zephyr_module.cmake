@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 # This cmake file provides functionality to import additional out-of-tree, OoT
 # CMakeLists.txt and Kconfig files into Zephyr build system.
 # It uses -DZEPHYR_MODULES=<oot-path-to-module>[;<additional-oot-module(s)>]

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 .. _kconfig_tips_and_tricks:
 
 Kconfig - Tips and Best Practices

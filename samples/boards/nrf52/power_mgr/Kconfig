@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config NRF5_POWER_MGMT_EXAMPLE
 	bool
 	default y

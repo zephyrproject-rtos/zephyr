@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 config SOC_QUARK_SE_C1000_SS
 	bool "Intel Quark SE C1000- Sensor Sub System"
 	select HAS_SYS_POWER_STATE_SLEEP_1

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /* SoC level DTS fixup file */
 
 #define DT_FLASH_DEV_BASE_ADDRESS		DT_ATMEL_SAM0_NVMCTRL_41004000_BASE_ADDRESS

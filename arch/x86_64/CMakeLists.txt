@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set(X86_64_BASE_CFLAGS
     -ffreestanding
     -fno-pic

@@ -1,3 +1,5 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
 /* Board level DTS fixup file */
 
 #define DT_ETH_E1000_BASE_ADDRESS	DT_INTEL_E1000_FEBC0000_BASE_ADDRESS

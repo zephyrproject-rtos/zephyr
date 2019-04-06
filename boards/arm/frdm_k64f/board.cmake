@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: Apache-2.0
+
 set_ifndef(OPENSDA_FW daplink)
 
 if(OPENSDA_FW STREQUAL jlink)
