@@ -41,6 +41,9 @@ manifest:
     - name: hal_qmsi
       revision: 3179a8e44912a5a05b1cb467870b7e91aedff8d6
       path: modules/hal/qmsi
+    - name: esp-idf
+      revision: 6835bfc741bf15e98fb7971293913f770df6081f
+      path: modules/hal/esp-idf
 
   self:
     path: zephyr
