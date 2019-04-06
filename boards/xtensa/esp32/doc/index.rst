@@ -64,27 +64,13 @@ Set up build environment
 
 With both the toolchain and SDK installed, the Zephyr build system must be
 instructed to use this particular variant by setting the
-``ZEPHYR_TOOLCHAIN_VARIANT`` shell variable.  Two other environment variables
-should also be set, pointing to, respectively, the path where ESP-IDF can be
-located, and where the toolchain has been installed:
+``ZEPHYR_TOOLCHAIN_VARIANT`` shell variable.  One more other environment variables
+should also be set, pointing to where the toolchain has been installed:
 
 .. code-block:: console
 
    export ZEPHYR_TOOLCHAIN_VARIANT="espressif"
-   export ESP_IDF_PATH="/path/to/esp-idf"
    export ESPRESSIF_TOOLCHAIN_PATH="/path/to/xtensa-esp32-elf/"
-
-Since ESP-IDF is an external project in constant development, it's possible
-that files that Zephyr depends on will be moved, removed, or renamed.  Those
-files are mostly header files containing hardware definitions, which are
-unlikely to change and require fixes from the vendor.  In addition to
-setting the environment variables above, also check out an earlier version
-of ESP-IDF:
-
-.. code-block:: console
-
-   cd ${ESP_IDF_PATH}
-   git checkout b2ff235bd00
 
 Flashing
 ========
