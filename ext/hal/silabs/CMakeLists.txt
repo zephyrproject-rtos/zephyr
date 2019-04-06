@@ -1,1 +1,0 @@
-add_subdirectory_ifdef(CONFIG_HAS_SILABS_GECKO gecko)
