@@ -170,8 +170,8 @@ Pin   Port/bit   Function
 12    B/4        SPI0_SCK
 14    -          GND
 16    -          AREF
-18    C/9        I2C2_SDA
-20    C/10       I2C2_SCL
+18    C/9        I2C0_SDA
+20    C/10       I2C0_SCL
 ===   ========   =================
 
 **Bottom left expansion header (J3)**
@@ -236,8 +236,8 @@ Pin   Port/bit   Function
 4     C/12       ADC0_SE7
 6     B/9        ADC0_SE3
 8     E/4        ADC0_SE21
-10    E/10       ADC0_SE19 (and E/10, I2C_SDA via 0 Ohm DNP)
-12    E/11       ADC0_SE20 (and E/11, I2C_SCL via 0 Ohm DNP)
+10    E/10       ADC0_SE19 (and E/10, I2C3_SDA via 0 Ohm DNP)
+12    E/11       ADC0_SE20 (and E/11, I2C3_SCL via 0 Ohm DNP)
 ===   ========   ===========================================
 
 Additional Pins
