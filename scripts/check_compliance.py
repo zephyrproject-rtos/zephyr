@@ -578,33 +578,51 @@ class License(ComplianceTest):
 
         report = ""
 
-        whitelist_extensions =  ['.yaml', '.html']
-        whitelist_languages = ['CMake', 'HTML']
+        never_check_ext =  ['.yaml', '.html', '.rst', '.conf', '.cfg']
+        never_check_langs = ['HTML']
+        check_langs = ['CMake']
         with open('scancode.json', 'r') as json_fp:
             scancode_results = json.load(json_fp)
             for file in scancode_results['files']:
                 if file['type'] == 'directory':
                     continue
 
-                original_fp = str(file['path']).replace('scancode-files/', '')
+                orig_path = str(file['path']).replace('scancode-files/', '')
                 licenses = file['licenses']
-                if (file['is_script'] or file['is_source']) and (file['programming_language'] not in whitelist_languages) and (file['extension'] not in whitelist_extensions):
-                    if not file['licenses']:
-                        report += ("* {} missing license.\n".format(original_fp))
+                file_type = file.get("file_type")
+                kconfig = "Kconfig" in orig_path and file_type in ['ASCII text']
+                check = False
+
+                if file.get("extension") in never_check_ext:
+                    check = False
+                elif file.get("programming_language") in never_check_langs:
+                    check = False
+                elif kconfig:
+                    check = True
+                elif file.get("programming_language") in check_langs:
+                    check = True
+                elif file.get("is_script"):
+                    check = True
+                elif file.get("is_source"):
+                    check = True
+
+                if check:
+                    if not licenses:
+                        report += ("* {} missing license.\n".format(orig_path))
                     else:
                         for lic in licenses:
                             if lic['key'] != "apache-2.0":
                                 report += ("* {} is not apache-2.0 licensed: {}\n".format(
-                                    original_fp, lic['key']))
+                                    orig_path, lic['key']))
                             if lic['category'] != 'Permissive':
                                 report += ("* {} has non-permissive license: {}\n".format(
-                                    original_fp, lic['key']))
+                                    orig_path, lic['key']))
                             if lic['key'] == 'unknown-spdx':
                                 report += ("* {} has unknown SPDX: {}\n".format(
-                                    original_fp, lic['key']))
+                                    orig_path, lic['key']))
 
                     if not file['copyrights']:
-                        report += ("* {} missing copyright.\n".format(original_fp))
+                        report += ("* {} missing copyright.\n".format(orig_path))
 
         if report != "":
             self.add_failure("""
