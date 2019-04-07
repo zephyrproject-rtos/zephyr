@@ -165,6 +165,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 */
 	pInitCtx->status32 |= _ARC_V2_STATUS32_US;
 #else /* For no USERSPACE feature */
+	pStackMem += STACK_GUARD_SIZE;
 	stackEnd = pStackMem + stackSize;
 
 	z_new_thread_init(thread, pStackMem, stackSize, priority, options);
