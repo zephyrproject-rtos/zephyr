@@ -68,8 +68,9 @@ extern "C" {
 	#define STACK_GUARD_SIZE 0
 #endif /* CONFIG_MPU_STACK_GUARD */
 
-#define STACK_SIZE_ALIGN(x)	MAX(STACK_ALIGN, x)
 
+#define STACK_SIZE_ALIGN(x) \
+	(((x + STACK_ALIGN - 1) / (STACK_ALIGN)) * (STACK_ALIGN))
 
 /**
  * @brief Calculate power of two ceiling for a buffer size input
@@ -79,86 +80,69 @@ extern "C" {
 		1 << (31 - __builtin_clz(x) + 1) : \
 		1 << (31 - __builtin_clz(x)))
 
-#if defined(CONFIG_USERSPACE)
 
+#if defined(CONFIG_USERSPACE)
 #define Z_ARCH_THREAD_STACK_RESERVED \
 	(STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE)
+#else
+#define Z_ARCH_THREAD_STACK_RESERVED (STACK_GUARD_SIZE)
+#endif
 
-#if CONFIG_ARC_MPU_VER == 2
+
+/* MPUv2 requires size must be power of 2 and >= 2048 */
+#define Z_ARCH_THREAD_STACK_SIZE(size) POW2_CEIL(STACK_SIZE_ALIGN(size))
+
+#if  defined(CONFIG_USERSPACE) && CONFIG_ARC_MPU_VER == 2
+#define Z_ARCH_THREAD_STACK_ALIGN(size)	Z_ARCH_THREAD_STACK_SIZE(size)
+#define Z_ARCH_THREAD_STACK_LEN(size) \
+		(Z_ARCH_THREAD_STACK_SIZE(size) + Z_ARCH_THREAD_STACK_RESERVED)
+/*
+ * for stack arrary, it has more strict requirement on
+ * size and address alignment which is decided by MPUv2
+ */
+#define Z_ARCH_THREAD_STACK_ARRAY_LEN(size) \
+		(Z_ARCH_THREAD_STACK_SIZE(size) + \
+		MAX(Z_ARCH_THREAD_STACK_SIZE(size), \
+		POW2_CEIL(Z_ARCH_THREAD_STACK_RESERVED)))
+#elif defined(CONFIG_MPU_STACK_GUARD) && CONFIG_ARC_MPU_VER == 2
+#define Z_ARCH_THREAD_STACK_ALIGN(size)	(STACK_ALIGN)
+#define Z_ARCH_THREAD_STACK_LEN(size) \
+		(size + Z_ARCH_THREAD_STACK_RESERVED)
+#define Z_ARCH_THREAD_STACK_ARRAY_LEN(size) \
+		(Z_ARCH_THREAD_STACK_SIZE(size) + \
+		Z_ARCH_THREAD_STACK_RESERVED)
+
+#else /* CONFIG_ARC_MPU_VER  */
+/* MPUv3, no-mpu and no USERSPACE & MPU_STACK_GUARD are the same case */
+#define Z_ARCH_THREAD_STACK_ALIGN(size)	(STACK_ALIGN)
+#define Z_ARCH_THREAD_STACK_LEN(size) \
+		(STACK_SIZE_ALIGN(size) + Z_ARCH_THREAD_STACK_RESERVED)
+#define Z_ARCH_THREAD_STACK_ARRAY_LEN(size) \
+		Z_ARCH_THREAD_STACK_LEN(size)
+
+#endif
+
 
 #define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __noinit \
-		__aligned(POW2_CEIL(STACK_SIZE_ALIGN(size))) \
-		sym[POW2_CEIL(STACK_SIZE_ALIGN(size)) + \
-		+  STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE]
-
-#define Z_ARCH_THREAD_STACK_LEN(size) \
-	    (POW2_CEIL(STACK_SIZE_ALIGN(size)) + \
-	     MAX(POW2_CEIL(STACK_SIZE_ALIGN(size)), \
-		 POW2_CEIL(STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE)))
+		struct _k_thread_stack_element __noinit \
+		__aligned(Z_ARCH_THREAD_STACK_ALIGN(size)) \
+		sym[Z_ARCH_THREAD_STACK_LEN(size)]
 
 #define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __noinit \
-		__aligned(POW2_CEIL(STACK_SIZE_ALIGN(size))) \
-		sym[nmemb][Z_ARCH_THREAD_STACK_LEN(size)]
+		struct _k_thread_stack_element __noinit \
+		__aligned(Z_ARCH_THREAD_STACK_ALIGN(size)) \
+		sym[nmemb][Z_ARCH_THREAD_STACK_ARRAY_LEN(size)]
 
 #define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
-	struct _k_thread_stack_element \
-		__aligned(POW2_CEIL(STACK_SIZE_ALIGN(size))) \
-		sym[POW2_CEIL(STACK_SIZE_ALIGN(size)) + \
-		+ STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE]
-
-#elif CONFIG_ARC_MPU_VER == 3
-
-#define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
-		sym[size + \
-		+ STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE]
-
-#define Z_ARCH_THREAD_STACK_LEN(size) \
-		((size) + STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE)
-
-#define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
-		sym[nmemb][Z_ARCH_THREAD_STACK_LEN(size)]
-
-#define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
-	struct _k_thread_stack_element __aligned(STACK_ALIGN) \
-		sym[size + \
-		+ STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE]
-
-#endif /* CONFIG_ARC_MPU_VER */
+		struct _k_thread_stack_element \
+		__aligned(Z_ARCH_THREAD_STACK_ALIGN(size)) \
+		sym[Z_ARCH_THREAD_STACK_LEN(size)]
 
 #define Z_ARCH_THREAD_STACK_SIZEOF(sym) \
-		(sizeof(sym) - CONFIG_PRIVILEGED_STACK_SIZE - STACK_GUARD_SIZE)
+		(sizeof(sym) - Z_ARCH_THREAD_STACK_RESERVED)
 
 #define Z_ARCH_THREAD_STACK_BUFFER(sym) \
 		((char *)(sym))
-
-#else /* CONFIG_USERSPACE */
-
-#define Z_ARCH_THREAD_STACK_RESERVED STACK_GUARD_SIZE
-
-#define Z_ARCH_THREAD_STACK_DEFINE(sym, size) \
-	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
-		sym[size + STACK_GUARD_SIZE]
-
-#define Z_ARCH_THREAD_STACK_LEN(size) ((size) + STACK_GUARD_SIZE)
-
-#define Z_ARCH_THREAD_STACK_ARRAY_DEFINE(sym, nmemb, size) \
-	struct _k_thread_stack_element __noinit __aligned(STACK_ALIGN) \
-		sym[nmemb][Z_ARCH_THREAD_STACK_LEN(size)]
-
-#define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
-	struct _k_thread_stack_element __aligned(STACK_ALIGN) \
-		sym[size + STACK_GUARD_SIZE]
-
-#define Z_ARCH_THREAD_STACK_SIZEOF(sym) (sizeof(sym) - STACK_GUARD_SIZE)
-
-#define Z_ARCH_THREAD_STACK_BUFFER(sym) ((char *)(sym + STACK_GUARD_SIZE))
-
-#endif /* CONFIG_USERSPACE */
-
 
 #ifdef CONFIG_ARC_MPU
 #ifndef _ASMLANGUAGE
