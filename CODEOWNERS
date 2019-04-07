@@ -80,6 +80,7 @@
 /boards/arm/stm32*_eval/                  @erwango
 /boards/nios2/                            @wentongwu
 /boards/nios2/altera_max10/               @wentongwu
+/boards/arm/stm32_min_dev/                @cbsiddharth
 /boards/posix/                            @aescolar
 /boards/riscv32/                          @kgugala @pgielda @nategraff-sifive
 /boards/shields/                          @erwango
