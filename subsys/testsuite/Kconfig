@@ -84,7 +84,7 @@ config TEST_ENABLE_USERSPACE
 	  This hidden option will help test the userspace mode. This will be
 	  enabled only when CONFIG_ARCH_HAS_USERSPACE is set, and that the test
 	  case itself indicates that it exercises user mode via
-	  CONFIG_TEST_HAS_USERSPACE.
+	  CONFIG_TEST_USERSPACE.
 
 config TEST_HW_STACK_PROTECTION
 	bool "Enable hardware-based stack overflow detection if available"
