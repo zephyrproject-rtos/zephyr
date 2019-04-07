@@ -1,0 +1,35 @@
+# Kconfig.ICM20498 - ICM20498 ICM-20498 I2C-based or SPI-based IMU
+
+#
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+menuconfig ICM20948
+	bool "ICM20498 sensor"
+	depends on I2C || SPI
+	default	n
+	help
+	 Enable driver for ICM-20498 I2C-based or SPI-based IMU.
+
+if ICM20948
+
+config ICM20948_NAME
+	string "Driver name"
+	default "ICM20498"
+	help
+	  Device name with which the ICM20498 sensor is identified.
+
+config ICM20948_I2C_MASTER_DEV_NAME
+	string "I2C Master"
+	default "I2C_0"
+	help
+	  The device name of the I2C master device to which the ISL29035
+	  chip is connected.
+
+config ICM20948_THREAD_PRIORITY
+	int "Thread priority"
+	default 10
+	help
+	  Priority of thread used to handle the timer and threshold triggers.
+
+endif # ICM20948
