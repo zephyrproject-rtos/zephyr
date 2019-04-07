@@ -1,6 +1,0 @@
-#
-# This TC will force a fatal fault, as it is testing it. Don't error
-# if we find it (cancel out the default setting in root's defaults.tc
-# that will consider a testcase toast if a fatal fault is found
-#
-# ^eval console-rx   %(console)s::pass [Ff]atal fault in
