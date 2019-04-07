@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, embedjournal.com
+ * Copyright (c) 2019, embedjournal.com
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,7 +9,7 @@
 
 / {
 	model = "STM32 Minimum Development Board";
-	compatible = "st,stm32_min_dev", "st,stm32f103c8";
+	compatible = "st,stm32f103c8";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -21,7 +21,7 @@
 	leds {
 		compatible = "gpio-leds";
 		led: led {
-			gpios = <&gpioc 13 GPIO_INT_ACTIVE_HIGH>;
+			gpios = <&gpiob 12 GPIO_INT_ACTIVE_HIGH>;
 			label = "LD";
 		};
 	};
@@ -69,8 +69,4 @@
 	pwm {
 		status = "ok";
 	};
-};
-
-&usb {
-	status = "ok";
 };
