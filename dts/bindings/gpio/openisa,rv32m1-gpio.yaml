@@ -31,6 +31,12 @@ properties:
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
 
+    clocks:
+      type: array
+      category: optional
+      description: Clock gate control information
+      generation: define
+
 "#cells":
   - pin
   - flags

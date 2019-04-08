@@ -12,6 +12,7 @@
 #include <soc.h>
 #include <fsl_common.h>
 #include <fsl_port.h>
+#include <clock_control.h>
 
 #include "gpio_utils.h"
 
@@ -19,6 +20,9 @@ struct gpio_rv32m1_config {
 	GPIO_Type *gpio_base;
 	PORT_Type *port_base;
 	unsigned int flags;
+	char *clock_controller;
+	clock_control_subsys_t clock_subsys;
+	int (*irq_config_func)(struct device *dev);
 };
 
 struct gpio_rv32m1_data {
@@ -228,6 +232,27 @@ static void gpio_rv32m1_port_isr(void *arg)
 	config->port_base->ISFR = 0xFFFFFFFF;
 }
 
+static int gpio_rv32m1_init(struct device *dev)
+{
+	const struct gpio_rv32m1_config *config = dev->config->config_info;
+	struct device *clk;
+	int ret;
+
+	if (config->clock_controller) {
+		clk = device_get_binding(config->clock_controller);
+		if (!clk) {
+			return -ENODEV;
+		}
+
+		ret = clock_control_on(clk, config->clock_subsys);
+
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	return config->irq_config_func(dev);
+}
 
 static const struct gpio_driver_api gpio_rv32m1_driver_api = {
 	.config = gpio_rv32m1_configure,
@@ -249,12 +274,20 @@ static const struct gpio_rv32m1_config gpio_rv32m1_porta_config = {
 #else
 	.flags = 0,
 #endif
+	.irq_config_func = gpio_rv32m1_porta_init,
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_A_CLOCK_CONTROLLER
+	.clock_controller = DT_OPENISA_RV32M1_GPIO_GPIO_A_CLOCK_CONTROLLER,
+	.clock_subsys = (clock_control_subsys_t)
+			DT_OPENISA_RV32M1_GPIO_GPIO_A_CLOCK_NAME,
+#else
+	.clock_controller = NULL,
+#endif
 };
 
 static struct gpio_rv32m1_data gpio_rv32m1_porta_data;
 
 DEVICE_AND_API_INIT(gpio_rv32m1_porta, DT_OPENISA_RV32M1_GPIO_GPIO_A_LABEL,
-		    gpio_rv32m1_porta_init,
+		    gpio_rv32m1_init,
 		    &gpio_rv32m1_porta_data, &gpio_rv32m1_porta_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_rv32m1_driver_api);
@@ -286,12 +319,20 @@ static const struct gpio_rv32m1_config gpio_rv32m1_portb_config = {
 #else
 	.flags = 0,
 #endif
+	.irq_config_func = gpio_rv32m1_portb_init,
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_B_CLOCK_CONTROLLER
+	.clock_controller = DT_OPENISA_RV32M1_GPIO_GPIO_B_CLOCK_CONTROLLER,
+	.clock_subsys = (clock_control_subsys_t)
+			DT_OPENISA_RV32M1_GPIO_GPIO_B_CLOCK_NAME,
+#else
+	.clock_controller = NULL,
+#endif
 };
 
 static struct gpio_rv32m1_data gpio_rv32m1_portb_data;
 
 DEVICE_AND_API_INIT(gpio_rv32m1_portb, DT_OPENISA_RV32M1_GPIO_GPIO_B_LABEL,
-		    gpio_rv32m1_portb_init,
+		    gpio_rv32m1_init,
 		    &gpio_rv32m1_portb_data, &gpio_rv32m1_portb_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_rv32m1_driver_api);
@@ -323,12 +364,21 @@ static const struct gpio_rv32m1_config gpio_rv32m1_portc_config = {
 #else
 	.flags = 0,
 #endif
+	.irq_config_func = gpio_rv32m1_portc_init,
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_C_CLOCK_CONTROLLER
+	.clock_controller = DT_OPENISA_RV32M1_GPIO_GPIO_C_CLOCK_CONTROLLER,
+	.clock_subsys = (clock_control_subsys_t)
+			DT_OPENISA_RV32M1_GPIO_GPIO_C_CLOCK_NAME,
+#else
+	.clock_controller = NULL,
+#endif
+
 };
 
 static struct gpio_rv32m1_data gpio_rv32m1_portc_data;
 
 DEVICE_AND_API_INIT(gpio_rv32m1_portc, DT_OPENISA_RV32M1_GPIO_GPIO_C_LABEL,
-		    gpio_rv32m1_portc_init,
+		    gpio_rv32m1_init,
 		    &gpio_rv32m1_portc_data, &gpio_rv32m1_portc_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_rv32m1_driver_api);
@@ -360,12 +410,20 @@ static const struct gpio_rv32m1_config gpio_rv32m1_portd_config = {
 #else
 	.flags = 0,
 #endif
+	.irq_config_func = gpio_rv32m1_portd_init,
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_D_CLOCK_CONTROLLER
+	.clock_controller = DT_OPENISA_RV32M1_GPIO_GPIO_D_CLOCK_CONTROLLER,
+	.clock_subsys = (clock_control_subsys_t)
+			DT_OPENISA_RV32M1_GPIO_GPIO_D_CLOCK_NAME,
+#else
+	.clock_controller = NULL,
+#endif
 };
 
 static struct gpio_rv32m1_data gpio_rv32m1_portd_data;
 
 DEVICE_AND_API_INIT(gpio_rv32m1_portd, DT_OPENISA_RV32M1_GPIO_GPIO_D_LABEL,
-		    gpio_rv32m1_portd_init,
+		    gpio_rv32m1_init,
 		    &gpio_rv32m1_portd_data, &gpio_rv32m1_portd_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_rv32m1_driver_api);
@@ -397,12 +455,20 @@ static const struct gpio_rv32m1_config gpio_rv32m1_porte_config = {
 #else
 	.flags = 0,
 #endif
+	.irq_config_func = gpio_rv32m1_porte_init,
+#ifdef DT_OPENISA_RV32M1_GPIO_GPIO_E_CLOCK_CONTROLLER
+	.clock_controller = DT_OPENISA_RV32M1_GPIO_GPIO_E_CLOCK_CONTROLLER,
+	.clock_subsys = (clock_control_subsys_t)
+			DT_OPENISA_RV32M1_GPIO_GPIO_E_CLOCK_NAME,
+#else
+	.clock_controller = NULL,
+#endif
 };
 
 static struct gpio_rv32m1_data gpio_rv32m1_porte_data;
 
 DEVICE_AND_API_INIT(gpio_rv32m1_porte, DT_OPENISA_RV32M1_GPIO_GPIO_E_LABEL,
-		    gpio_rv32m1_porte_init,
+		    gpio_rv32m1_init,
 		    &gpio_rv32m1_porte_data, &gpio_rv32m1_porte_config,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &gpio_rv32m1_driver_api);
