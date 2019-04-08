@@ -33,5 +33,11 @@ properties:
       type: stringlist
       category: optional
       description: readable string describing the interrupts
+    
+    dma:
+      type: array
+      category: optional
+      description: asdsda
+      generation: define
 
 ...

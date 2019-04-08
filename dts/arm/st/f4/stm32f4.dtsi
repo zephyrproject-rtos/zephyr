@@ -9,6 +9,7 @@
 #include <dt-bindings/clock/stm32_clock.h>
 #include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/dma/stm32_dma.h>
 
 / {
 	cpus {
@@ -205,6 +206,14 @@
 			reg = <0x40013000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>;
 			interrupts = <35 5>;
+			dma = <&dma2 3 3 STM32_DMA_MEMORY_TO_PERIPH
+			       STM32_DMA_PRIORITY_LOW 2 2 4 1
+			       STM32_DMA_SRC_INCREMENT
+			       STM32_DMA_DST_NO_INCREMENT
+			       &dma2 2 3 STM32_DMA_PERIPH_TO_MEMORY
+			       STM32_DMA_PRIORITY_LOW 2 2 1 4
+			       STM32_DMA_SRC_NO_INCREMENT
+			       STM32_DMA_DST_INCREMENT>;
 			status = "disabled";
 			label = "I2S_1";
 		};

@@ -65,6 +65,14 @@
 			reg = <0x40013400 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00002000>;
 			interrupts = <84 5>;
+			dma = <&dma2 1 4 STM32_DMA_MEMORY_TO_PERIPH
+			       STM32_DMA_PRIORITY_LOW 2 2 4 1
+			       STM32_DMA_SRC_INCREMENT
+			       STM32_DMA_DST_NO_INCREMENT
+			       &dma2 0 4 STM32_DMA_PERIPH_TO_MEMORY
+			       STM32_DMA_PRIORITY_LOW 2 2 1 4
+			       STM32_DMA_SRC_NO_INCREMENT
+			       STM32_DMA_DST_INCREMENT>;
 			status = "disabled";
 			label = "I2S_4";
 		};
@@ -89,6 +97,14 @@
 			reg = <0x40015000 0x400>;
 			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00100000>;
 			interrupts = <85 5>;
+			dma = <&dma2 6 7 STM32_DMA_MEMORY_TO_PERIPH
+			       STM32_DMA_PRIORITY_LOW 2 2 4 1
+			       STM32_DMA_SRC_INCREMENT
+			       STM32_DMA_DST_NO_INCREMENT
+			       &dma2 5 7 STM32_DMA_PERIPH_TO_MEMORY
+			       STM32_DMA_PRIORITY_LOW 2 2 1 4
+			       STM32_DMA_SRC_NO_INCREMENT
+			       STM32_DMA_DST_INCREMENT>;
 			status = "disabled";
 			label = "I2S_5";
 		};
