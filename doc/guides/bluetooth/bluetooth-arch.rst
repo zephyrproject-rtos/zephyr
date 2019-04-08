@@ -485,6 +485,9 @@ default, mesh requires both observer and broadcaster role to be enabled.
 If the optional GATT Proxy feature is desired, then peripheral role
 should also be enabled.
 
+The API reference for Mesh can be found in the
+:ref:`Mesh API reference section <bluetooth_mesh>`.
+
 Persistent storage
 ==================
 
