@@ -268,7 +268,7 @@ such as :zephyr_file:`samples/bluetooth/peripheral_hr`.
 Central role
 ============
 
-Central role may not be as common for Zephyr-based devices as peripheral
+Central role may not be as common for Zephyr-based devices as peripheral
 role, but it is still a plausible one and equally well supported in
 Zephyr. Rather than accepting connections from other devices a central
 role device will scan for available peripheral device and choose one to
