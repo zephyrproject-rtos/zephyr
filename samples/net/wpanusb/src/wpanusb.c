@@ -64,7 +64,7 @@ static const struct dev_common_descriptor {
 		.bDeviceClass = CUSTOM_CLASS,
 		.bDeviceSubClass = 0,
 		.bDeviceProtocol = 0,
-		.bMaxPacketSize0 = MAX_PACKET_SIZE0,
+		.bMaxPacketSize0 = USB_MAX_CTRL_MPS,
 		.idVendor = sys_cpu_to_le16((u16_t)CONFIG_USB_DEVICE_VID),
 		.idProduct = sys_cpu_to_le16((u16_t)CONFIG_USB_DEVICE_PID),
 		.bcdDevice = sys_cpu_to_le16(BCDDEVICE_RELNUM),
