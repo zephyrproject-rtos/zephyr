@@ -20,7 +20,7 @@ if not doc_mode:
         with open(GENERATED_DTS_BOARD_CONF, 'r', encoding='utf-8') as fd:
             for line in fd:
                 if '=' in line:
-                    define, val = line.split('=')
+                    define, val = line.split('=', 1)
                     dt_defines[define] = val.strip()
 
 def _dt_units_to_scale(unit):
