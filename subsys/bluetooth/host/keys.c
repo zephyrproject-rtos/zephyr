@@ -324,7 +324,8 @@ static int keys_set(int argc, char **argv, void *value_ctx)
 	}
 
 	if (settings_val_get_len_cb(value_ctx) != BT_KEYS_STORAGE_LEN) {
-		BT_ERR("Invalid key length %d != %d", len, BT_KEYS_STORAGE_LEN);
+		BT_ERR("Invalid key length %d != %zu", len,
+			BT_KEYS_STORAGE_LEN);
 		bt_keys_clear(keys);
 		return -EINVAL;
 	} else {

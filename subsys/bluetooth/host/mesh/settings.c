@@ -521,7 +521,7 @@ static int mod_set_bind(struct bt_mesh_model *mod, void *val_ctx)
 	}
 
 
-	BT_DBG("Decoded %u bound keys for model", len / sizeof(mod->keys[0]));
+	BT_DBG("Decoded %zu bound keys for model", len / sizeof(mod->keys[0]));
 	return 0;
 }
 
@@ -543,7 +543,7 @@ static int mod_set_sub(struct bt_mesh_model *mod, void *val_ctx)
 		return len;
 	}
 
-	BT_DBG("Decoded %u subscribed group addresses for model",
+	BT_DBG("Decoded %zu subscribed group addresses for model",
 	       len / sizeof(mod->groups[0]));
 	return 0;
 }
