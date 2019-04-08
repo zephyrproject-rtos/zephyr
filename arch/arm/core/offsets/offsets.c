@@ -34,7 +34,7 @@ GEN_OFFSET_SYM(_thread_arch_t, mode);
 GEN_OFFSET_SYM(_thread_arch_t, priv_stack_start);
 #endif
 
-#ifdef CONFIG_FLOAT
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 GEN_OFFSET_SYM(_thread_arch_t, preempt_float);
 #endif
 
@@ -73,7 +73,7 @@ GEN_ABSOLUTE_SYM(___callee_saved_t_SIZEOF, sizeof(struct _callee_saved));
  * point registers.
  */
 
-#ifdef CONFIG_FLOAT
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF, sizeof(struct k_thread) -
 					    sizeof(struct _preempt_float));
 #else
