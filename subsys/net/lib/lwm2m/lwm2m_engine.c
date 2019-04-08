@@ -3804,7 +3804,7 @@ static int lwm2m_engine_service(void)
 		service_due_timestamp = srv->last_timestamp +
 					K_MSEC(srv->min_call_period);
 		/* service is due */
-		if (timestamp > service_due_timestamp) {
+		if (timestamp >= service_due_timestamp) {
 			srv->last_timestamp = k_uptime_get();
 			srv->service_work(NULL);
 		}
