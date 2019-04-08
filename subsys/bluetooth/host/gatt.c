@@ -946,9 +946,13 @@ void bt_gatt_foreach_attr(u16_t start_handle, u16_t end_handle,
 		for (i = 0; i < svc->attr_count; i++) {
 			struct bt_gatt_attr *attr = &svc->attrs[i];
 
+			/* Stop if over the requested range */
+			if (attr->handle > end_handle) {
+				return;
+			}
+
 			/* Check if attribute handle is within range */
-			if (attr->handle < start_handle ||
-			    attr->handle > end_handle) {
+			if (attr->handle < start_handle) {
 				continue;
 			}
 
