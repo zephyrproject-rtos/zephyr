@@ -1,0 +1,33 @@
+# Kconfig - DMA configuration options
+#
+#
+# Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2019 Song Qiang <songqiang1304521@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig DMA_STM32
+	bool "Enable STM32 DMA driver"
+	select DYNAMIC_INTERRUPTS
+	depends on SOC_FAMILY_STM32
+	depends on HEAP_MEM_POOL_SIZE != 0
+	help
+	  DMA driver for STM32 series SoCs.
+
+if DMA_STM32
+
+config DMA_1
+	bool "Enable STM32 DMA Controller 1"
+	default y
+	help
+	  Enable support for DMA1 in the driver.
+	  Say y here if you want to use DMA1 device.
+
+config DMA_2
+	bool "Enable STM32 DMA Controller 2"
+	help
+	  Enable support for DMA2 in the driver.
+	  Say y here if you want to use DMA2 device.
+
+endif # DMA_STM32

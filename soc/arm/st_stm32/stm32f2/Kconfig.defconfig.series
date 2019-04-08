@@ -38,4 +38,11 @@ config GPIO_STM32_PORTI
 
 endif # GPIO_STM32
 
+if DMA
+
+config DMA_STM32
+	default y
+
+endif # DMA
+
 endif # SOC_SERIES_STM32F2X
