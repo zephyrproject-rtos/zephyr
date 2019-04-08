@@ -20,6 +20,7 @@ import extract.globals
 
 from extract.clocks import clocks
 from extract.compatible import compatible
+from extract.dma import dma
 from extract.interrupts import interrupts
 from extract.reg import reg
 from extract.flash import flash
@@ -89,6 +90,8 @@ def generate_prop_defines(node_path, prop):
                            def_label, generic)
         extract_cells(node_path, prop, prop_values,
                       names, 0, def_label, generic)
+    elif 'dma' in prop:
+        dma.extract(node_path, prop, def_label)
     else:
         default.extract(node_path, prop,
                         binding['properties'][prop]['type'],
