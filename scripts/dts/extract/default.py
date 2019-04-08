@@ -64,6 +64,13 @@ class DTDefault(DTDirective):
 
         insert_defs(node_path, prop_def, prop_alias)
 
+        # Generate together with string parameters like SPEED="high_speed" also
+        # definition SPEED_HIGH_SPEED=1 which can be used in preprocessor logic
+        # where we do not have strcmp()
+        if prop_type == 'string':
+            prop_val = label + '_' + str_to_label(prop_def[label]).strip('"')
+            insert_defs(node_path, {prop_val: '1'}, {})
+
 ##
 # @brief Management information for directives handled by default.
 default = DTDefault()
