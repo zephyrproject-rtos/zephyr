@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#define TIFS_US 150
-
 /* Range Delay
  * Refer to BT Spec v5.1 Vol.6, Part B, Section 4.2.3 Range Delay
  * "4 / 1000" is an approximation of the propagation time in us of the
