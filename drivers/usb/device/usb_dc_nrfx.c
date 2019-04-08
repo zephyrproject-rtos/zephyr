@@ -557,6 +557,13 @@ static int hf_clock_enable(bool on, bool blocking)
 			return 0;
 		}
 		ret = clock_control_off(clock, (void *)blocking);
+		if (ret == -EBUSY) {
+			/* This is an expected behaviour.
+			 * -EBUSY means that some other module has also
+			 * requested the clock to run.
+			 */
+			ret = 0;
+		}
 	}
 
 	if (ret && (blocking || (ret != -EINPROGRESS))) {
