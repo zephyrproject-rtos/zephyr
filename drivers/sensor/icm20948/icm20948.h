@@ -61,10 +61,17 @@
 #define ICM20948_REG_ACCEL_YOUT_L_SH            ICM20948_BANK_REG(ICM20948_BANK_0,0x30)
 #define ICM20948_REG_ACCEL_ZOUT_H_SH            ICM20948_BANK_REG(ICM20948_BANK_0,0x31)
 #define ICM20948_REG_ACCEL_ZOUT_L_SH            ICM20948_BANK_REG(ICM20948_BANK_0,0x32)
+#define ICM20948_REG_GYRO_XOUT_H_SH             ICM20948_BANK_REG(ICM20948_BANK_0,0x33)
+#define ICM20948_REG_GYRO_XOUT_L_SH             ICM20948_BANK_REG(ICM20948_BANK_0,0x34)
+#define ICM20948_REG_GYRO_YOUT_H_SH             ICM20948_BANK_REG(ICM20948_BANK_0,0x35)
+#define ICM20948_REG_GYRO_YOUT_L_SH             ICM20948_BANK_REG(ICM20948_BANK_0,0x36)
+#define ICM20948_REG_GYRO_ZOUT_H_SH             ICM20948_BANK_REG(ICM20948_BANK_0,0x37)
+#define ICM20948_REG_GYRO_ZOUT_L_SH             ICM20948_BANK_REG(ICM20948_BANK_0,0x38)
+#define ICM20948_REG_TEMP_OUT_H_SH              ICM20948_BANK_REG(ICM20948_BANK_0,0x39)
+#define ICM20948_REG_TEMP_OUT_L_SH              ICM20948_BANK_REG(ICM20948_BANK_0,0x3A)
 #define ICM20948_REG_MEM_START_ADDR             ICM20948_BANK_REG(ICM20948_BANK_0,0x7C)
 #define ICM20948_REG_MEM_R_W                    ICM20948_BANK_REG(ICM20948_BANK_0,0x7D)
 #define ICM20948_REG_MEM_BANK_SEL               ICM20948_BANK_REG(ICM20948_BANK_0,0x7E)
-
 #define ICM20948_REG_XA_OFFS_H                  ICM20948_BANK_REG(ICM20948_BANK_1,0x14)
 #define ICM20948_REG_YA_OFFS_H                  ICM20948_BANK_REG(ICM20948_BANK_1,0x17)
 #define ICM20948_REG_ZA_OFFS_H                  ICM20948_BANK_REG(ICM20948_BANK_1,0x1A)
@@ -76,7 +83,6 @@
 #define ICM20948_REG_SELF_TEST4                 ICM20948_BANK_REG(ICM20948_BANK_1,0x0E)
 #define ICM20948_REG_SELF_TEST5                 ICM20948_BANK_REG(ICM20948_BANK_1,0x0F)
 #define ICM20948_REG_SELF_TEST6                 ICM20948_BANK_REG(ICM20948_BANK_1,0x10)
-
 #define ICM20948_REG_GYRO_SMPLRT_DIV            ICM20948_BANK_REG(ICM20948_BANK_2,0x00)
 #define ICM20948_REG_GYRO_CONFIG_1              ICM20948_BANK_REG(ICM20948_BANK_2,0x01)
 #define ICM20948_REG_GYRO_CONFIG_2              ICM20948_BANK_REG(ICM20948_BANK_2,0x02)
@@ -90,7 +96,6 @@
 #define ICM20948_REG_PRS_ODR_CONFIG             ICM20948_BANK_REG(ICM20948_BANK_2,0x20)
 #define ICM20948_REG_PRGM_START_ADDRH           ICM20948_BANK_REG(ICM20948_BANK_2,0x50)
 #define ICM20948_REG_MOD_CTRL_USR               ICM20948_BANK_REG(ICM20948_BANK_2,0x54)
-
 #define ICM20948_REG_I2C_MST_ODR_CONFIG         ICM20948_BANK_REG(ICM20948_BANK_3,0x0)
 #define ICM20948_REG_I2C_MST_CTRL               ICM20948_BANK_REG(ICM20948_BANK_3,0x01)
 #define ICM20948_REG_I2C_MST_DELAY_CTRL         ICM20948_BANK_REG(ICM20948_BANK_3,0x02)
@@ -149,38 +154,13 @@ enum icm20948_gyro_fs {
     #define ICM20948_GYRO_FS_DEFAULT ICM20948_GYRO_FS_2000_VAL
 #endif
 
-/* ICM20498_REG_WHO_AM_I */
-
-
-struct icm20948_tf {
-	int (*read_data)(struct lis2dw12_data *data, u16_t reg_bank_addr,
-			 u8_t *value, u8_t len);
-	int (*write_data)(struct lis2dw12_data *data, u16_t reg_bank_addr,
-			 u8_t *value, u8_t len);
-	int (*read_reg)(struct lis2dw12_data *data, u16_t reg_bank_addr,
-			u8_t *value);
-	int (*write_reg)(struct lis2dw12_data *data, u16_t reg_bank_addr,
-			 u8_t value);
-	int (*update_reg)(struct lis2dw12_data *data, u16_t reg_bank_addr,
-			  u8_t mask, u8_t value);
-};
-
-struct icm20948_device_config {
-	const* char bus_name;
-	enum
-}
-
-int icm20948_i2c_init(struct device *dev);
-int icm20948_spi_init(struct device *dev);
-
 struct icm20948_data
 {
     struct device * bus;
     const icm20948_tf *hw_tf;
 
-    s16_t x_sample;
-    s16_t y_sample;
-    s16_t z_sample;
+    s16_t acc[3];
+    s16_t gyro[3];
 
     enum icm20948_gyro_fs gyro_fs; //gyro range
     enum icm20948_accel_fs accel_fs; //accel range
@@ -192,5 +172,27 @@ struct icm20948_data
     u8_t bank; // bank
 
 };
+
+struct icm20948_tf {
+	int (*read_data)(struct icm20948_data *data, u16_t reg_bank_addr,
+			 u8_t *value, u8_t len);
+	int (*write_data)(struct icm20948_data *data, u16_t reg_bank_addr,
+			 u8_t *value, u8_t len);
+	int (*read_reg)(struct icm20948_data *data, u16_t reg_bank_addr,
+			u8_t *value);
+	int (*write_reg)(struct icm20948_data *data, u16_t reg_bank_addr,
+			 u8_t value);
+	int (*update_reg)(struct icm20948_data *data, u16_t reg_bank_addr,
+			  u8_t mask, u8_t value);
+};
+
+struct icm20948_device_config {
+	const* char bus_name;
+	enum
+}
+
+int icm20948_i2c_init(struct device *dev);
+int icm20948_spi_init(struct device *dev);
+
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_BME280_BME280_H_ */
