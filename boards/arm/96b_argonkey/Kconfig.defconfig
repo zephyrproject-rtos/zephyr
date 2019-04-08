@@ -71,7 +71,7 @@ endif # I2S
 
 if DMA
 
-config DMA_STM32F4X
+config DMA_STM32
 	default y
 
 endif # DMA

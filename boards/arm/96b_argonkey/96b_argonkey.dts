@@ -69,6 +69,10 @@
 	};
 };
 
+&dma2 {
+	status = "ok";
+};
+
 &i2s5 {
 	status = "ok";
 
