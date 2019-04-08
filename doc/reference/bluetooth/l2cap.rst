@@ -19,7 +19,7 @@ marked as processed by returning 0 or using
 
 .. note::
   The ``recv`` callback is called directly from RX Thread thus it is not
-  allowed to block.
+  recommended to block for long periods of time.
 
 For sending data the :cpp:func:`bt_l2cap_chan_send` API can be used noting that
 it may block if no credits are available, and resuming as soon as more credits
