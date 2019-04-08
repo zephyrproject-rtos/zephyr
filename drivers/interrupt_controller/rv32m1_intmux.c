@@ -194,4 +194,4 @@ static int rv32m1_intmux_init(struct device *dev)
 DEVICE_AND_API_INIT(intmux, DT_OPENISA_RV32M1_INTMUX_INTMUX_LABEL,
 		    &rv32m1_intmux_init, NULL,
 		    &rv32m1_intmux_cfg, PRE_KERNEL_1,
-		    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &rv32m1_intmux_apis);
+		    CONFIG_RV32M1_INTMUX_INIT_PRIORITY, &rv32m1_intmux_apis);
