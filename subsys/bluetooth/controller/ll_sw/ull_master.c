@@ -492,7 +492,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_PREEMPT_MIN_US);
 	conn->evt.ticks_slot =
 		HAL_TICKER_US_TO_TICKS(EVENT_OVERHEAD_START_US +
-				       ftr->us_radio_rdy + 328 + TIFS_US +
+				       ftr->us_radio_rdy + 328 + EVENT_IFS_US +
 				       328);
 
 	ticks_slot_offset = MAX(conn->evt.ticks_active_to_start,

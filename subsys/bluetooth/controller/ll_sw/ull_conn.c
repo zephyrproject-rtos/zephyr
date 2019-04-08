@@ -1742,7 +1742,7 @@ static inline int event_conn_upd_prep(struct ll_conn *conn,
 				   lll_conn_ppm_get(lll->slave.sca)) *
 				  conn_interval_us) + (1000000 - 1)) / 1000000U;
 			lll->slave.window_widening_max_us =
-				(conn_interval_us >> 1) - TIFS_US;
+				(conn_interval_us >> 1) - EVENT_IFS_US;
 			lll->slave.window_size_prepare_us =
 				conn->llcp.conn_upd.win_size * 1250U;
 			conn->slave.ticks_to_offset = 0U;
