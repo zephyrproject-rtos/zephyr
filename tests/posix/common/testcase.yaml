@@ -2,11 +2,27 @@ common:
   tags: posix
   min_ram: 64
   arch_exclude: posix
+
 tests:
   portability.posix:
+    platform_exclude: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
     extra_configs:
       - CONFIG_NEWLIB_LIBC=n
   portability.posix.newlib:
+    platform_exclude: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
     filter: TOOLCHAIN_HAS_NEWLIB == 1
     extra_configs:
       - CONFIG_NEWLIB_LIBC=y
+  portability.posix.nsim:
+    platform_whitelist: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=n
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_TEST_HW_STACK_PROTECTION=n
+  portability.posix.newlib.nsim:
+    platform_whitelist: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
+    filter: TOOLCHAIN_HAS_NEWLIB == 1
+    extra_configs:
+      - CONFIG_NEWLIB_LIBC=y
+      - CONFIG_TEST_USERSPACE=n
+      - CONFIG_TEST_HW_STACK_PROTECTION=n
