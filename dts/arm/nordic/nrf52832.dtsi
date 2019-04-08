@@ -294,4 +294,5 @@
 	channel-count = <3>;
 	ppi-base = <14>;
 	gpiote-base = <0>;
+	status = "ok";
 };

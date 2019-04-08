@@ -278,6 +278,7 @@
 /kernel/device.c                          @andrewboie @andyross @nashif
 /kernel/idle.c                            @andrewboie @andyross @nashif
 /samples/                                 @nashif
+/samples/basic/blink_led/boards/nrf*      @anangl
 /samples/basic/minimal/                   @carlescufi
 /samples/bluetooth/                       @joerchan @jhedberg @Vudentz
 /lib/updatehub/                           @chtavares592 @otavio
