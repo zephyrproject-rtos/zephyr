@@ -747,8 +747,8 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 		irq_disable(DT_USB_IRQ);
 	}
 
-	if (ep == EP0_IN && len > MAX_PACKET_SIZE0) {
-		len = MAX_PACKET_SIZE0;
+	if (ep == EP0_IN && len > USB_MAX_CTRL_MPS) {
+		len = USB_MAX_CTRL_MPS;
 	}
 
 	status = HAL_PCD_EP_Transmit(&usb_dc_stm32_state.pcd, ep,

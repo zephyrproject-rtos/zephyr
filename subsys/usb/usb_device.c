@@ -1059,7 +1059,7 @@ int usb_enable(struct usb_cfg_data *config)
 		return ret;
 
 	/* Configure control EP */
-	ep0_cfg.ep_mps = MAX_PACKET_SIZE0;
+	ep0_cfg.ep_mps = USB_MAX_CTRL_MPS;
 	ep0_cfg.ep_type = USB_DC_EP_CONTROL;
 
 	ep0_cfg.ep_addr = USB_CONTROL_OUT_EP0;
@@ -1587,7 +1587,7 @@ static int usb_composite_init(struct device *dev)
 	}
 
 	/* Configure control EP */
-	ep0_cfg.ep_mps = MAX_PACKET_SIZE0;
+	ep0_cfg.ep_mps = USB_MAX_CTRL_MPS;
 	ep0_cfg.ep_type = USB_DC_EP_CONTROL;
 
 	ep0_cfg.ep_addr = USB_CONTROL_OUT_EP0;
