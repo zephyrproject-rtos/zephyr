@@ -81,9 +81,9 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 /* adjust stack and stack size */
 #if CONFIG_ARC_MPU_VER == 2
-	stackAdjSize = POW2_CEIL(STACK_SIZE_ALIGN(stackSize));
+	stackAdjSize = Z_ARC_MPUV2_SIZE_ALIGN(stackSize);
 #elif CONFIG_ARC_MPU_VER == 3
-	stackAdjSize = ROUND_UP(stackSize, STACK_ALIGN);
+	stackAdjSize = STACK_SIZE_ALIGN(stackSize);
 #endif
 	stackEnd = pStackMem + stackAdjSize;
 
@@ -95,8 +95,8 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		thread->arch.priv_stack_start =
 			(u32_t)(stackEnd + STACK_GUARD_SIZE);
 
-		stackAdjEnd = (char *)STACK_ROUND_DOWN(stackEnd + STACK_GUARD_SIZE +
-					CONFIG_PRIVILEGED_STACK_SIZE);
+		stackAdjEnd = (char *)STACK_ROUND_DOWN(stackEnd +
+				Z_ARCH_THREAD_STACK_RESERVED);
 
 		/* reserve 4 bytes for the start of user sp */
 		stackAdjEnd -= 4;
@@ -126,7 +126,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 */
 		pStackMem += STACK_GUARD_SIZE;
 		stackAdjSize = stackAdjSize + CONFIG_PRIVILEGED_STACK_SIZE;
-		stackEnd += CONFIG_PRIVILEGED_STACK_SIZE + STACK_GUARD_SIZE;
+		stackEnd += Z_ARCH_THREAD_STACK_RESERVED;
 
 		thread->arch.priv_stack_start = 0;
 
@@ -165,7 +165,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	 */
 	pInitCtx->status32 |= _ARC_V2_STATUS32_US;
 #else /* For no USERSPACE feature */
-	pStackMem += STACK_GUARD_SIZE;
+	pStackMem += Z_ARCH_THREAD_STACK_RESERVED;
 	stackEnd = pStackMem + stackSize;
 
 	z_new_thread_init(thread, pStackMem, stackSize, priority, options);
@@ -203,7 +203,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		thread->arch.k_stack_top =
 			 (u32_t)(stackEnd + STACK_GUARD_SIZE);
 		thread->arch.k_stack_base = (u32_t)
-		(stackEnd + STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE);
+		(stackEnd + Z_ARCH_THREAD_STACK_RESERVED);
 	} else {
 		thread->arch.k_stack_top = (u32_t)pStackMem;
 		thread->arch.k_stack_base = (u32_t)stackEnd;
