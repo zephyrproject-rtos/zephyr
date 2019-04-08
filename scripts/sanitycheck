@@ -3,6 +3,8 @@
 # SPDX-License-Identifier: Apache-2.0
 """Zephyr Sanity Tests
 
+Also check the "User and Developer Guides" at https://docs.zephyrproject.org/
+
 This script scans for the set of unit test applications in the git
 repository and attempts to execute them. By default, it tries to
 build each test case on one platform per architecture, using a precedence
@@ -42,8 +44,8 @@ pairs:
     when building or running the test case.
 
   build_only: <True|False> (default False)
-    If true, don't try to run the test under QEMU even if the
-    selected platform supports it.
+    If true, don't try to run the test even if the selected platform
+    supports it.
 
   build_on_all: <True|False> (default False)
     If true, attempt to build test on all available platforms.
@@ -2654,8 +2656,8 @@ def parse_arguments():
                                             """
 Artificially long but functional example:
     $ ./scripts/sanitycheck -v     \\
-      --testcase-root tests/     \\
-      --testcase-root mytests/   \\
+      --testcase-root tests/ztest/base    \\
+      --testcase-root tests/kernel   \\
       --test      tests/ztest/base/testing.ztest.verbose_0  \\
       --test      tests/kernel/fifo/fifo_api/kernel.fifo.poll
 
@@ -2707,7 +2709,7 @@ Artificially long but functional example:
     test_xor_subtest.add_argument(
         "-s", "--test", action="append",
         help="Run only the specified test cases. These are named by "
-        "path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
+        "<path/relative/to/Zephyr/base/section.name.in.testcase.yaml>")
 
     test_xor_subtest.add_argument(
         "--sub-test", action="append",
@@ -2725,7 +2727,9 @@ Artificially long but functional example:
 
     parser.add_argument(
         "-o", "--testcase-report",
-        help="Output a CSV spreadsheet containing results of the test run")
+        help="""Output a CSV spreadsheet containing results of the test run.
+        The handler_time column is left blank for tests that were only
+        compiled and not run.""")
     parser.add_argument(
         "-d", "--discard-report",
         help="Output a CSV spreadsheet showing tests that were skipped "
@@ -2769,7 +2773,11 @@ Artificially long but functional example:
     parser.add_argument("--detailed-report",
             action="store",
             metavar="FILENAME",
-            help="Generate a junit report with detailed testcase results.")
+            help="""Generate a junit report with detailed testcase results.
+            Unlike the CSV file produced by --testcase-report, this XML
+            report includes only tests which have run and none which were
+            merely built. If an image with multiple tests crashes early then
+            later tests are not accounted for either.""")
 
     parser.add_argument(
         "-r", "--release", action="store_true",
