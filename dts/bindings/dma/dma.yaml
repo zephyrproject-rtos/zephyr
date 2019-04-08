@@ -1,0 +1,35 @@
+#
+# Copyright (c) 2019, Song Qiang <songqiang1304521@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: DMA Base Structure
+version: 0.1
+
+description: >
+    This binding gives the base structures for all DMA devices
+
+child:
+    bus: dma
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+    clocks:
+      type: array
+      category: optional
+      description: Clock gate information
+      generation: define
+
+...

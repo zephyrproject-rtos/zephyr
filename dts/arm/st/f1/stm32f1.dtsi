@@ -227,6 +227,16 @@
 				#pwm-cells = <2>;
 			};
 		};
+
+		dma1: dma@40020000 {
+			compatible = "st,stm32-dma";
+			#dma-cells = <10>;
+			reg = <0x40020000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x1>;
+			support-m2m = <1>;
+			status = "disabled";
+			label = "DMA_1";
+		};
 	};
 };
 

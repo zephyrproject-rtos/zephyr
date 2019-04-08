@@ -79,6 +79,10 @@
 			prop_seg_phase_seg1 = <5>;
 			phase_seg2 = <6>;
 		};
+
+		dma1: dma@40020000 {
+			interrupts = <9 0 10 0 10 0 11 0 11 0 11 0 11 0>;
+		};
 	};
 
 	usb_fs_phy: usbphy {

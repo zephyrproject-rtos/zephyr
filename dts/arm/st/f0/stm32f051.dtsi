@@ -13,5 +13,9 @@
 				erase-block-size = <1024>;
 			};
 		};
+
+		dma1: dma@40020000 {
+			interrupts = <9 0 10 0 10 0 11 0 11 0>;
+		};
 	};
 };
