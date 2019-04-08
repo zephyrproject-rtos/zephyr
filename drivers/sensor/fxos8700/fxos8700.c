@@ -372,6 +372,7 @@ static int fxos8700_init(struct device *dev)
 	const struct fxos8700_config *config = dev->config->config_info;
 	struct fxos8700_data *data = dev->driver_data;
 	struct sensor_value odr = {.val1 = 6, .val2 = 250000};
+	struct device *rst;
 
 	/* Get the I2C device */
 	data->i2c = device_get_binding(config->i2c_name);
@@ -379,6 +380,42 @@ static int fxos8700_init(struct device *dev)
 		LOG_ERR("Could not find I2C device");
 		return -EINVAL;
 	}
+
+	if (config->reset_name) {
+		/* Pulse RST pin high to perform a hardware reset of
+		 * the sensor.
+		 */
+		rst = device_get_binding(config->reset_name);
+		if (!rst) {
+			LOG_ERR("Could not find reset GPIO device");
+			return -EINVAL;
+		}
+
+		gpio_pin_configure(rst, config->reset_pin, GPIO_DIR_OUT);
+		gpio_pin_write(rst, config->reset_pin, 1);
+		/* The datasheet does not mention how long to pulse
+		 * the RST pin high in order to reset. Stay on the
+		 * safe side and pulse for 1 millisecond.
+		 */
+		k_busy_wait(USEC_PER_MSEC);
+		gpio_pin_write(rst, config->reset_pin, 0);
+	} else {
+		/* Software reset the sensor. Upon issuing a software
+		 * reset command over the I2C interface, the sensor
+		 * immediately resets and does not send any
+		 * acknowledgment (ACK) of the written byte to the
+		 * master. Therefore, do not check the return code of
+		 * the I2C transaction.
+		 */
+		i2c_reg_write_byte(data->i2c, config->i2c_address,
+				   FXOS8700_REG_CTRLREG2,
+				   FXOS8700_CTRLREG2_RST_MASK);
+	}
+
+	/* The sensor requires us to wait 1 ms after a reset before
+	 * attempting further communications.
+	 */
+	k_busy_wait(USEC_PER_MSEC);
 
 	/*
 	 * Read the WHOAMI register to make sure we are talking to FXOS8700 or
@@ -409,19 +446,6 @@ static int fxos8700_init(struct device *dev)
 		LOG_ERR("Unknown Device ID 0x%x", data->whoami);
 		return -EIO;
 	}
-
-	/* Reset the sensor. Upon issuing a software reset command over the I2C
-	 * interface, the sensor immediately resets and does not send any
-	 * acknowledgment (ACK) of the written byte to the master. Therefore,
-	 * do not check the return code of the I2C transaction.
-	 */
-	i2c_reg_write_byte(data->i2c, config->i2c_address,
-			   FXOS8700_REG_CTRLREG2, FXOS8700_CTRLREG2_RST_MASK);
-
-	/* The sensor requires us to wait 1 ms after a software reset before
-	 * attempting further communications.
-	 */
-	k_busy_wait(USEC_PER_MSEC);
 
 	if (fxos8700_set_odr(dev, &odr)) {
 		LOG_ERR("Could not set default data rate");
@@ -498,6 +522,13 @@ static const struct sensor_driver_api fxos8700_driver_api = {
 static const struct fxos8700_config fxos8700_config = {
 	.i2c_name = DT_NXP_FXOS8700_0_BUS_NAME,
 	.i2c_address = DT_NXP_FXOS8700_0_BASE_ADDRESS,
+#ifdef DT_NXP_FXOS8700_0_RESET_GPIOS_CONTROLLER
+	.reset_name = DT_NXP_FXOS8700_0_RESET_GPIOS_CONTROLLER,
+	.reset_pin = DT_NXP_FXOS8700_0_RESET_GPIOS_PIN,
+#else
+	.reset_name = NULL,
+	.reset_pin = 0,
+#endif
 #ifdef CONFIG_FXOS8700_MODE_ACCEL
 	.mode = FXOS8700_MODE_ACCEL,
 	.start_addr = FXOS8700_REG_OUTXMSB,
