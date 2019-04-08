@@ -49,7 +49,7 @@ respective operations.
 
 .. note::
   Attribute ``read`` and ``write`` callbacks are called directly from RX Thread
-  thus they are not allowed to block.
+  thus it is not recommended to block for long periods of time in them.
 
 Attribute value changes can be notified using :cpp:func:`bt_gatt_notify` API,
 alternatively there is :cpp:func:`bt_gatt_notify_cb` where is is possible to
