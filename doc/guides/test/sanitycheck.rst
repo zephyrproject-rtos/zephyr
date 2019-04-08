@@ -19,6 +19,21 @@ environment, but it does sufficient testing by building samples and
 tests for different boards and different configurations to help keep the
 full code tree buildable.
 
+When using (at least) one ``-v`` option, sanitycheck's console output
+shows for every test how the test is run (qemu, native_posix, etc.) or
+whether the image is just built.  There are a few reasons why sanitycheck
+only builds a test and doesn't run it:
+
+- The test is marked as ``build_only: true`` in its ``.yaml``
+  configuration file.
+- The test configuration has defined a ``harness`` but you don't have
+  it or haven't set it up.
+- You or some higher level automation invoked sanitycheck with
+  ``--build-only``.
+
+These also affect the outputs of ``--testcase-report`` and
+``--detailed-report``, see their respective ``--help`` sections.
+
 To run the script in the local tree, follow the steps below:
 
 ::
@@ -38,7 +53,8 @@ a simulated (QEMU) environment.
 
 The sanitycheck script accepts the following optional arguments:
 
-  -h, --help            show this help message and exit
+  -h, --help            Show the complete and most up-to-date help message
+                        and exit.
   -p PLATFORM, --platform PLATFORM
                         Platform filter for testing. This option may be used
                         multiple times. Testcases will only be built/run on
@@ -349,7 +365,7 @@ extra_configs: <list of extra configurations>
 
 
 build_only: <True|False> (default False)
-    If true, don't try to run the test under QEMU even if the
+    If true, don't try to run the test even if the
     selected platform supports it.
 
 build_on_all: <True|False> (default False)
