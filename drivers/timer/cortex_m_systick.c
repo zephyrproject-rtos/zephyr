@@ -102,7 +102,7 @@ void z_clock_isr(void *arg)
 int z_clock_driver_init(struct device *device)
 {
 	NVIC_SetPriority(SysTick_IRQn, _IRQ_PRIO_OFFSET);
-	last_load = CYC_PER_TICK;
+	last_load = CYC_PER_TICK - 1;
 	overflow_cyc = 0U;
 	SysTick->LOAD = last_load;
 	SysTick->VAL = 0; /* resets timer to last_load */
