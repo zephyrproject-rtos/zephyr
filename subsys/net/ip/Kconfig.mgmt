@@ -25,7 +25,7 @@ if NET_MGMT_EVENT
 
 config NET_MGMT_EVENT_STACK_SIZE
 	int "Stack size for the inner thread handling event callbacks"
-	default 512
+	default 768
 	help
 	  Set the internal stack size for NM to run registered callbacks
 	  on events.
