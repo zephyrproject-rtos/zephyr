@@ -140,9 +140,14 @@ SECTION_FUNC(TEXT, _firq_exit)
 	mov	r1, exc_nest_count
 	ld	r0, [r1]
 	sub	r0, r0, 1
-	cmp	r0, 0
-	bne.d	_firq_no_reschedule
 	st	r0, [r1]
+/* see comments in _rirq_exit */
+	lr 	r0, [_ARC_V2_AUX_IRQ_ACT]
+	and 	r0, r0, 0xffff
+	ffs	r1, r0
+	fls	r2, r0
+	cmp 	r1, r2
+	jne	_firq_no_reschedule
 
 #ifdef CONFIG_STACK_SENTINEL
 	bl z_check_stack_sentinel
