@@ -1,0 +1,27 @@
+# Kconfig.nrf_sw - Nordic Semiconductor nRF s/w PWM configuration options
+#
+#
+# Copyright (c) 2017 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig PWM_NRF_SW
+	bool "Nordic Semiconductor nRF family S/W PWM"
+	default y if !PWM_NRFX
+	depends on SOC_FAMILY_NRF
+	help
+	  Enable driver to utilize PWM on the Nordic Semiconductor nRF SoCs.
+	  This implementation provides up to 5 pins using one HF timer, two PPI
+	  or one DPPI channel per pin and one GPIOTE channel per pin.
+
+if PWM_NRF_SW
+
+config PWM_NRF_SW_0_DEV_NAME
+	string "Nordic Semiconductor nRF family S/W PWM Device Name"
+	default "PWM_0"
+	help
+	  Specify the device name for the Nordic Semiconductor nRF family S/W
+	  PWM driver.
+
+endif # PWM_NRF_SW

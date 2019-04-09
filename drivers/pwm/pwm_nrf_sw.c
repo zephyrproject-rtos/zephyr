@@ -8,10 +8,14 @@
 #include <nrf_timer.h>
 #include <nrf_gpio.h>
 #include <nrf_gpiote.h>
+#if defined(PPI_PRESENT)
 #include <nrf_ppi.h>
+#else
+#include <nrf_dppi.h>
+#endif
 #include <logging/log.h>
 
-LOG_MODULE_REGISTER(pwm_nrf5_sw, CONFIG_PWM_LOG_LEVEL);
+LOG_MODULE_REGISTER(pwm_nrf_sw, CONFIG_PWM_LOG_LEVEL);
 
 #define TIMER_INSTANCE \
 	_CONCAT(TIMER, DT_INST_0_NORDIC_NRF_SW_PWM_TIMER_INSTANCE)
@@ -67,8 +71,8 @@ static u8_t pwm_find_prescaler(u32_t period_cycles)
 	return prescaler;
 }
 
-static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pin,
-			       u32_t period_cycles, u32_t pulse_cycles)
+static int pwm_nrf_sw_pin_set(struct device *dev, u32_t pin,
+			      u32_t period_cycles, u32_t pulse_cycles)
 {
 	struct pwm_data *data = dev->driver_data;
 	u8_t i;
@@ -187,8 +191,8 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pin,
 	return 0;
 }
 
-static int pwm_nrf5_sw_get_cycles_per_sec(struct device *dev, u32_t pwm,
-					  u64_t *cycles)
+static int pwm_nrf_sw_get_cycles_per_sec(struct device *dev, u32_t pwm,
+					 u64_t *cycles)
 {
 	/* Since this function might be removed (see issue #6958), the maximum
 	 * supported frequency (16 MHz) is always returned here, and dynamically
@@ -199,19 +203,18 @@ static int pwm_nrf5_sw_get_cycles_per_sec(struct device *dev, u32_t pwm,
 	return 0;
 }
 
-static const struct pwm_driver_api pwm_nrf5_sw_drv_api_funcs = {
-	.pin_set = pwm_nrf5_sw_pin_set,
-	.get_cycles_per_sec = pwm_nrf5_sw_get_cycles_per_sec,
+static const struct pwm_driver_api pwm_nrf_sw_drv_api_funcs = {
+	.pin_set = pwm_nrf_sw_pin_set,
+	.get_cycles_per_sec = pwm_nrf_sw_get_cycles_per_sec,
 };
 
-static int pwm_nrf5_sw_init(struct device *dev)
+static int pwm_nrf_sw_init(struct device *dev)
 {
 	u8_t channel;
 	u8_t gpiote_index = DT_INST_0_NORDIC_NRF_SW_PWM_GPIOTE_BASE;
 	u8_t ppi_index    = DT_INST_0_NORDIC_NRF_SW_PWM_PPI_BASE;
-	u32_t period_event_address = (u32_t)
-		nrf_timer_event_address_get(TIMER_REGS,
-			nrf_timer_compare_event_get(PWM_PERIOD_TIMER_CHANNEL));
+	nrf_timer_event_t period_event =
+		nrf_timer_compare_event_get(PWM_PERIOD_TIMER_CHANNEL);
 
 	/* Setup the timer used for generating signal phase switching events. */
 	nrf_timer_mode_set(TIMER_REGS, NRF_TIMER_MODE_TIMER);
@@ -225,9 +228,10 @@ static int pwm_nrf5_sw_init(struct device *dev)
 	nrf_timer_shorts_enable(TIMER_REGS, PWM_PERIOD_TIMER_SHORT);
 
 	for (channel = 0; channel < PWM_MAP_SIZE; ++channel) {
-		u32_t channel_event_address = (u32_t)
-			nrf_timer_event_address_get(TIMER_REGS,
-				nrf_timer_compare_event_get(channel));
+		nrf_timer_event_t channel_event =
+			nrf_timer_compare_event_get(channel);
+
+#if defined(PPI_PRESENT)
 		u32_t gpiote_task_address =
 			/* TODO - replace with a proper function from the GPIOTE
 			 * 	  HAL when such function becomes available.
@@ -236,14 +240,28 @@ static int pwm_nrf5_sw_init(struct device *dev)
 
 		nrf_ppi_channel_endpoint_setup(
 			ppi_index,
-			channel_event_address,
+			(u32_t)nrf_timer_event_address_get(TIMER_REGS,
+							   channel_event),
 			gpiote_task_address);
 		nrf_ppi_channel_endpoint_setup(
 			ppi_index + 1,
-			period_event_address,
+			(u32_t)nrf_timer_event_address_get(TIMER_REGS,
+							   period_event),
 			gpiote_task_address);
 		nrf_ppi_channels_enable(BIT(ppi_index) | BIT(ppi_index + 1));
 		ppi_index += 2;
+#else
+		nrf_timer_publish_set(TIMER_REGS, channel_event, ppi_index);
+		nrf_timer_publish_set(TIMER_REGS, period_event, ppi_index);
+		nrf_gpiote_subscribe_set(
+			/* TODO - replace with a proper function from the GPIOTE
+			* 	  HAL when such function becomes available.
+			*/
+			offsetof(NRF_GPIOTE_Type, TASKS_OUT[gpiote_index]),
+			ppi_index);
+		nrf_dppi_channels_enable(NRF_DPPIC, BIT(ppi_index));
+		ppi_index += 1;
+#endif /* defined(PPI_PRESENT) */
 
 		gpiote_index += 1;
 	}
@@ -251,13 +269,13 @@ static int pwm_nrf5_sw_init(struct device *dev)
 	return 0;
 }
 
-static struct pwm_data pwm_nrf5_sw_0_data;
+static struct pwm_data pwm_nrf_sw_0_data;
 
-DEVICE_AND_API_INIT(pwm_nrf5_sw_0,
-		    CONFIG_PWM_NRF5_SW_0_DEV_NAME,
-		    pwm_nrf5_sw_init,
-		    &pwm_nrf5_sw_0_data,
+DEVICE_AND_API_INIT(pwm_nrf_sw_0,
+		    CONFIG_PWM_NRF_SW_0_DEV_NAME,
+		    pwm_nrf_sw_init,
+		    &pwm_nrf_sw_0_data,
 		    NULL,
 		    POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
-		    &pwm_nrf5_sw_drv_api_funcs);
+		    &pwm_nrf_sw_drv_api_funcs);

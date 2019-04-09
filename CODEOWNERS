@@ -142,6 +142,8 @@
 /drivers/pci/                             @gnuless
 /drivers/pcie/                            @gnuless
 /drivers/pinmux/stm32/                    @rsalveti @idlethread
+/drivers/pwm/Kconfig.nrf_sw               @anangl
+/drivers/pwm/pwm_nrf_sw.c                 @anangl
 /drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
