@@ -19,7 +19,7 @@ import yaml
 import pykwalify.core
 import subprocess
 import re
-
+from pathlib import PurePath
 
 METADATA_SCHEMA = '''
 ## A pykwalify schema for basic validation of the structure of a
@@ -91,12 +91,13 @@ def process_module(module, cmake_out=None, kconfig_out=None):
     cmake_file = os.path.join(cmake_path, 'CMakeLists.txt')
     if os.path.isfile(cmake_file) and cmake_out is not None:
         cmake_out.write('\"{}\":\"{}\"\n'.format(os.path.basename(module),
-                                         os.path.abspath(cmake_path)))
+                                                 os.path.abspath(cmake_path)))
 
     kconfig_file = os.path.join(module, kconfig_setting or 'zephyr/Kconfig')
     if os.path.isfile(kconfig_file) and kconfig_out is not None:
         kconfig_out.write('osource "{}"\n\n'
-                          .format(os.path.abspath(kconfig_file)))
+                          .format(PurePath(
+                              os.path.abspath(kconfig_file)).as_posix()))
 
 
 def main():
