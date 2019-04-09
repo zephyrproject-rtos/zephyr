@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <soc.h>
-
 #include <drivers/pwm.h>
-#include <nrf_peripherals.h>
+#include <nrf_timer.h>
+#include <nrf_gpio.h>
+#include <nrf_gpiote.h>
+#include <nrf_ppi.h>
 
 #define LOG_LEVEL CONFIG_PWM_LOG_LEVEL
 #include <logging/log.h>
@@ -31,6 +32,15 @@ LOG_MODULE_REGISTER(pwm_nrf5_sw);
 /* Nordic TIMERs can be 16- or 32-bit wide. */
 #define MAX_TIMER_VALUE  (GET_TIMER_CAPABILITY(MAX_SIZE) == 32 ? UINT32_MAX \
 							       : UINT16_MAX)
+
+#if (GET_TIMER_CAPABILITY(CC_NUM) == 6)
+#define PWM_PERIOD_TIMER_CHANNEL  5
+#else
+#define PWM_PERIOD_TIMER_CHANNEL  3
+#endif
+#define PWM_PERIOD_TIMER_SHORT  _CONCAT(_CONCAT(NRF_TIMER_SHORT_COMPARE, \
+						PWM_PERIOD_TIMER_CHANNEL), \
+					_CLEAR_MASK)
 
 struct chan_map {
 	u32_t pwm;
@@ -139,27 +149,27 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 
 	/* clear GPIOTE config */
 	gpiote_index = DT_INST_0_NORDIC_NRF_SW_PWM_GPIOTE_BASE + channel;
-	NRF_GPIOTE->CONFIG[gpiote_index] = 0;
+	nrf_gpiote_te_default(gpiote_index);
 
 	/* clear PPI used */
 	ppi_index = DT_INST_0_NORDIC_NRF_SW_PWM_PPI_BASE + (channel << 1);
-	NRF_PPI->CHENCLR = BIT(ppi_index) | BIT(ppi_index + 1);
+	nrf_ppi_channels_disable(BIT(ppi_index) | BIT(ppi_index + 1));
 
 	/* configure GPIO pin as output */
-	NRF_GPIO->DIRSET = BIT(pwm);
+	nrf_gpio_cfg_output(pwm);
 	if (pulse_cycles == 0U) {
 		/* 0% duty cycle, keep pin low */
-		NRF_GPIO->OUTCLR = BIT(pwm);
+		nrf_gpio_pin_clear(pwm);
 
 		goto pin_set_pwm_off;
 	} else if (pulse_cycles == period_cycles) {
 		/* 100% duty cycle, keep pin high */
-		NRF_GPIO->OUTSET = BIT(pwm);
+		nrf_gpio_pin_set(pwm);
 
 		goto pin_set_pwm_off;
 	} else {
 		/* x% duty cycle, start PWM with pin low */
-		NRF_GPIO->OUTCLR = BIT(pwm);
+		nrf_gpio_pin_clear(pwm);
 	}
 
 
@@ -168,30 +178,41 @@ static int pwm_nrf5_sw_pin_set(struct device *dev, u32_t pwm,
 	 * before the pulse compare event, since the GPIO is toggled on both
 	 * these events, and not set on the period one and reset on the other.
 	 */
-	TIMER_REGS->TASKS_STOP = 1;
+	nrf_timer_task_trigger(TIMER_REGS, NRF_TIMER_TASK_STOP)
 
-	TIMER_REGS->PRESCALER = prescaler;
-	TIMER_REGS->CC[channel] = pulse_cycles >> prescaler;
-	TIMER_REGS->CC[PWM_MAP_SIZE] = period_cycles >> prescaler;
-	TIMER_REGS->TASKS_CLEAR = 1;
+	nrf_timer_frequency_set(TIMER_REGS, (nrf_timer_frequency_t)prescaler);
+	nrf_timer_cc_write(TIMER_REGS, channel, pulse_cycles >> prescaler);
+	nrf_timer_cc_write(TIMER_REGS, PWM_MAP_SIZE,
+		period_cycles >> prescaler);
+	nrf_timer_task_trigger(TIMER_REGS, NRF_TIMER_TASK_CLEAR);
 
-	/* configure GPIOTE, toggle with initialise output high */
-	NRF_GPIOTE->CONFIG[gpiote_index] = 0x00130003 | (pwm << 8);
+	nrf_gpiote_task_configure(gpiote_index, pwm,
+		NRF_GPIOTE_POLARITY_TOGGLE, NRF_GPIOTE_INITIAL_VALUE_HIGH);
+	nrf_gpiote_task_enable(gpiote_index);
 
 	/* setup PPI */
-	NRF_PPI->CH[ppi_index].EEP = (u32_t)
-				     &(TIMER_REGS->EVENTS_COMPARE[channel]);
-	NRF_PPI->CH[ppi_index].TEP = (u32_t)
-				     &(NRF_GPIOTE->TASKS_OUT[gpiote_index]);
-	NRF_PPI->CH[ppi_index + 1].EEP = (u32_t)
-					 &(TIMER_REGS->EVENTS_COMPARE[
-							 PWM_MAP_SIZE]);
-	NRF_PPI->CH[ppi_index + 1].TEP = (u32_t)
-					 &(NRF_GPIOTE->TASKS_OUT[gpiote_index]);
-	NRF_PPI->CHENSET = BIT(ppi_index) | BIT(ppi_index + 1);
+	{
+		nrf_timer_event_t channel_event =
+			nrf_timer_compare_event_get(channel);
+		nrf_timer_event_t period_event =
+			nrf_timer_compare_event_get(PWM_PERIOD_TIMER_CHANNEL);
+		u32_t gpiote_task_address =
+			(u32_t)&(NRF_GPIOTE->TASKS_OUT[gpiote_index]);
+		nrf_ppi_channel_endpoint_setup(
+			ppi_index,
+			(u32_t)nrf_timer_event_address_get(TIMER_REGS,
+							   channel_event),
+			gpiote_task_address);
+		nrf_ppi_channel_endpoint_setup(
+			ppi_index + 1,
+			(u32_t)nrf_timer_event_address_get(TIMER_REGS,
+							   period_event),
+			gpiote_task_address);
+		nrf_ppi_channels_enable(BIT(ppi_index) | BIT(ppi_index + 1));
+	}
 
 	/* start timer, hence PWM */
-	TIMER_REGS->TASKS_START = 1;
+	nrf_timer_task_trigger(TIMER_REGS, NRF_TIMER_TASK_START);
 
 	/* store the pwm/pin and its param */
 	data->period_cycles = period_cycles;
@@ -214,7 +235,7 @@ pin_set_pwm_off:
 
 	if (!pwm_active) {
 		/* No active PWM, stop timer */
-		TIMER_REGS->TASKS_STOP = 1;
+		nrf_timer_task_trigger(TIMER_REGS, NRF_TIMER_TASK_STOP);
 	}
 
 	return 0;
@@ -240,15 +261,16 @@ static const struct pwm_driver_api pwm_nrf5_sw_drv_api_funcs = {
 static int pwm_nrf5_sw_init(struct device *dev)
 {
 	/* setup HF timer */
-	TIMER_REGS->MODE = TIMER_MODE_MODE_Timer;
-	TIMER_REGS->BITMODE = GET_TIMER_CAPABILITY(MAX_SIZE) == 32
-			      ? TIMER_BITMODE_BITMODE_32Bit
-			      : TIMER_BITMODE_BITMODE_16Bit;
+	nrf_timer_mode_set(TIMER_REGS, NRF_TIMER_MODE_TIMER);
+	nrf_timer_bit_width_set(TIMER_REGS,
+		GET_TIMER_CAPABILITY(MAX_SIZE) == 32 ? NRF_TIMER_BIT_WIDTH_32
+						     : NRF_TIMER_BIT_WIDTH_16);
 
-	/* TODO: set shorts according to map_size if not 3, i.e. if NRF_TIMER
-	 * supports more than 4 compares, then more channels can be supported.
+	/* The last compare channel is used for setting the PWM period.
+	 * Enable the shortcut that will clear the timer on the compare event
+	 * on this channel.
 	 */
-	TIMER_REGS->SHORTS = TIMER_SHORTS_COMPARE3_CLEAR_Msk;
+	nrf_timer_shorts_enable(TIMER_REGS, PWM_PERIOD_TIMER_SHORT);
 
 	return 0;
 }
