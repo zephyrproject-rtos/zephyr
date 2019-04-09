@@ -187,7 +187,7 @@ class KconfigCheck(ComplianceTest):
     for example using undefiend Kconfig variables.
     """
     _name = "Kconfig"
-    _doc = "https://docs.zephyrproject.org/latest/application/kconfig-tips.html"
+    _doc = "https://docs.zephyrproject.org/latest/tools/kconfig/index.html"
 
     def run(self):
         self.prepare()
