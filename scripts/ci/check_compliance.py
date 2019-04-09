@@ -359,8 +359,8 @@ entries, then bump the 'max_top_items' variable in {}.
 
         self.add_failure("""
 Found references to undefined Kconfig symbols. If any of these are false
-positives, then add them to UNDEF_KCONFIG_WHITELIST in {} in the ci-tools
-repo.\n\n{}""".format(__file__, undef_desc))
+positives, then add them to UNDEF_KCONFIG_WHITELIST in {} in the
+ci-tools repo.\n\n{}""".format(os.path.basename(__file__), undef_desc))
 
 
 # Many of these are either symbols used as examples or due to token pasting
