@@ -5,7 +5,29 @@ SimpleLink SoCs.
 For an explanation of the SimpleLink family SDK directory structure, see:
 http://dev.ti.com/tirex/content/simplelink_cc32xx_sdk_2_40_01_01/docs/simplelink_mcu_sdk/Users_Guide.html#directory-structure
 
-1. CC32xx SDK
+1. CC13x2/26x2 SDK
+
+The current version supported in Zephyr is the SimpleLink CC13x2 and CC26x2 SDK
+3.10.00.53, downloaded from:
+
+  http://www.ti.com/tool/simplelink-cc13x2-26x2-sdk
+
+The driver library source is copied from the SDK, as follows:
+
+  EXT_DIR=$ZEPHYR_BASE/ext/hal/ti/simplelink/source/ti
+  pushd simplelink_cc13x2_26x2_sdk_3_10_00_53/source/ti
+  find devices/cc13x2_cc26x2/{driverlib,inc,rf_patches} -depth -name '*.[c|h]' -print0 | cpio --null -pvdm $EXT_DIR
+  find devices/cc13x2_cc26x2/startup_files -depth -name ccfg.c -print0 | cpio --null -pvd $EXT_DIR
+  find $EXT_DIR/devices/cc13x2_cc26x2 -name '*.[c|h]' -exec dos2unix {} \;
+  popd
+
+TI provides the driver library functions burned into ROM at the factory,
+or updated via a service pack patch, thus saving application code space.
+
+After setting CONFIG_HAS_CC13X2_CC26X2_SDK=y in Kconfig, most of the
+peripheral driver library functions will be accessible from ROM.
+
+2. CC32xx SDK
 
 The current version supported in Zephyr is the SimpleLink CC32xx SDK
 2.40.01.01, downloaded from:

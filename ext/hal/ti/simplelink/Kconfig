@@ -23,3 +23,8 @@ config SIMPLELINK_HOST_DRIVER
 config HAS_MSP432P4XXSDK
         bool
         select HAS_CMSIS
+
+# Kconfig - CC13X2 / CC26X2 SDK HAL configuration
+
+config HAS_CC13X2_CC26X2_SDK
+	bool
