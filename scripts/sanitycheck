@@ -2133,6 +2133,7 @@ class TestSuite:
         info("Building testcase defconfigs...")
         results = mg.execute(defconfig_cb)
 
+        info("Filtering test cases...")
         for name, goal in results.items():
             try:
                 if goal.failed:
