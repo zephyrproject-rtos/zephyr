@@ -13,20 +13,13 @@
  */
 
 #include <logging/log.h>
-LOG_MODULE_REGISTER(net_wpan_serial_sample, LOG_LEVEL_DBG);
+LOG_MODULE_REGISTER(wpan_serial, CONFIG_USB_DEVICE_LOG_LEVEL);
 
-#include <string.h>
-#include <device.h>
-#include <drivers/uart.h>
+#include <uart.h>
 #include <zephyr.h>
-#include <stdio.h>
-
-#include <sys/printk.h>
 
 #include <net/buf.h>
-
 #include <net_private.h>
-
 #include <net/ieee802154_radio.h>
 
 #define SLIP_END     0300
@@ -46,7 +39,6 @@ static K_THREAD_STACK_DEFINE(rx_stack, 1024);
 static struct k_thread rx_thread_data;
 
 /* TX queue */
-static struct k_sem tx_sem;
 static struct k_fifo tx_queue;
 static K_THREAD_STACK_DEFINE(tx_stack, 1024);
 static struct k_thread tx_thread_data;
@@ -136,41 +128,29 @@ static int slip_process_byte(unsigned char c)
 static void interrupt_handler(struct device *dev)
 {
 	while (uart_irq_update(dev) && uart_irq_is_pending(dev)) {
-#ifdef VERBOSE_DEBUG
-		LOG_DBG("");
-#endif
-		if (uart_irq_tx_ready(dev)) {
-#ifdef VERBOSE_DEBUG
-			LOG_DBG("TX ready interrupt");
-#endif
+		unsigned char byte;
 
-			k_sem_give(&tx_sem);
+		if (!uart_irq_rx_ready(dev)) {
+			continue;
 		}
 
-		if (uart_irq_rx_ready(dev)) {
-			unsigned char byte;
-
-#ifdef VERBOSE_DEBUG
-			LOG_DBG("RX ready interrupt");
-#endif
-
-			while (uart_fifo_read(dev, &byte, sizeof(byte))) {
-				if (slip_process_byte(byte)) {
-					/**
-					 * slip_process_byte() returns 1 on
-					 * SLIP_END, even after receiving full
-					 * packet
-					 */
-					if (!pkt_curr) {
-						LOG_DBG("Skip SLIP_END");
-						continue;
-					}
-
-					LOG_DBG("Full packet %p", pkt_curr);
-
-					k_fifo_put(&rx_queue, pkt_curr);
-					pkt_curr = NULL;
+		while (uart_fifo_read(dev, &byte, sizeof(byte))) {
+			if (slip_process_byte(byte)) {
+				/**
+				 * slip_process_byte() returns 1 on
+				 * SLIP_END, even after receiving full
+				 * packet
+				 */
+				if (!pkt_curr) {
+					LOG_DBG("Skip SLIP_END");
+					continue;
 				}
+
+				LOG_DBG("Full packet %p, len %u", pkt_curr,
+					net_pkt_get_len(pkt_curr));
+
+				k_fifo_put(&rx_queue, pkt_curr);
+				pkt_curr = NULL;
 			}
 		}
 	}
@@ -282,7 +262,7 @@ static void process_data(struct net_pkt *pkt)
 
 static void set_channel(u8_t chan)
 {
-	LOG_DBG("Set channel %c", chan);
+	LOG_DBG("Set channel %u", chan);
 
 	radio_api->set_channel(ieee802154_dev, chan);
 }
@@ -308,9 +288,9 @@ static void process_config(struct net_pkt *pkt)
 
 static void rx_thread(void)
 {
-	LOG_INF("RX thread started");
+	LOG_DBG("RX thread started");
 
-	while (1) {
+	while (true) {
 		struct net_pkt *pkt;
 		struct net_buf *buf;
 		u8_t specifier;
@@ -318,7 +298,7 @@ static void rx_thread(void)
 		pkt = k_fifo_get(&rx_queue, K_FOREVER);
 		buf = net_buf_frag_last(pkt->buffer);
 
-		LOG_DBG("Got pkt %p buf %p", pkt, buf);
+		LOG_DBG("rx_queue pkt %p buf %p", pkt, buf);
 
 		LOG_HEXDUMP_DBG(buf->data, buf->len, "SLIP >");
 
@@ -337,8 +317,6 @@ static void rx_thread(void)
 		}
 
 		net_pkt_unref(pkt);
-
-		k_yield();
 	}
 }
 
@@ -399,15 +377,10 @@ static void tx_thread(void)
 {
 	LOG_DBG("TX thread started");
 
-	/* Allow to send one TX */
-	k_sem_give(&tx_sem);
-
-	while (1) {
+	while (true) {
 		struct net_pkt *pkt;
 		struct net_buf *buf;
 		size_t len;
-
-		k_sem_take(&tx_sem, K_FOREVER);
 
 		pkt = k_fifo_get(&tx_queue, K_FOREVER);
 		buf = net_buf_frag_last(pkt->buffer);
@@ -426,10 +399,6 @@ static void tx_thread(void)
 		try_write(slip_buf, len);
 
 		net_pkt_unref(pkt);
-
-#if 0
-		k_yield();
-#endif
 	}
 }
 
@@ -445,7 +414,6 @@ static void init_rx_queue(void)
 
 static void init_tx_queue(void)
 {
-	k_sem_init(&tx_sem, 0, UINT_MAX);
 	k_fifo_init(&tx_queue);
 
 	k_thread_create(&tx_thread_data, tx_stack,
@@ -521,7 +489,7 @@ static bool init_ieee802154(void)
 	}
 
 #ifdef CONFIG_NET_CONFIG_SETTINGS
-	LOG_INF("Set channel %x", CONFIG_NET_CONFIG_IEEE802154_CHANNEL);
+	LOG_INF("Set channel %u", CONFIG_NET_CONFIG_IEEE802154_CHANNEL);
 	radio_api->set_channel(ieee802154_dev,
 			       CONFIG_NET_CONFIG_IEEE802154_CHANNEL);
 #endif /* CONFIG_NET_CONFIG_SETTINGS */
@@ -534,8 +502,7 @@ static bool init_ieee802154(void)
 
 int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
-	LOG_DBG("Got data, pkt %p, frags->len %d",
-		    pkt, net_pkt_get_len(pkt));
+	LOG_DBG("Received pkt %p, len %d", pkt, net_pkt_get_len(pkt));
 
 	k_fifo_put(&tx_queue, pkt);
 
@@ -547,6 +514,8 @@ void main(void)
 	struct device *dev;
 	u32_t baudrate, dtr = 0U;
 	int ret;
+
+	LOG_INF("Starting wpan_serial application");
 
 	dev = device_get_binding("CDC_ACM_0");
 	if (!dev) {
@@ -569,9 +538,9 @@ void main(void)
 
 	ret = uart_line_ctrl_get(dev, UART_LINE_CTRL_BAUD_RATE, &baudrate);
 	if (ret) {
-		printk("Failed to get baudrate, ret code %d\n", ret);
+		LOG_WRN("Failed to get baudrate, ret code %d", ret);
 	} else {
-		printk("Baudrate detected: %d\n", baudrate);
+		LOG_DBG("Baudrate detected: %d", baudrate);
 	}
 
 	LOG_INF("USB serial initialized");
@@ -595,7 +564,4 @@ void main(void)
 
 	/* Enable rx interrupts */
 	uart_irq_rx_enable(dev);
-
-	/* Enable tx interrupts */
-	uart_irq_tx_enable(dev);
 }
