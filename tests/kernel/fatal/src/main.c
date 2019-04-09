@@ -14,7 +14,7 @@
 #if defined(CONFIG_X86) && defined(CONFIG_X86_MMU)
 #define STACKSIZE (8192)
 #else
-#define  STACKSIZE (2048)
+#define  STACKSIZE (2048 + CONFIG_TEST_EXTRA_STACKSIZE)
 #endif
 #define MAIN_PRIORITY 7
 #define PRIORITY 5
