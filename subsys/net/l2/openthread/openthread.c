@@ -36,6 +36,23 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define OT_STACK_SIZE (CONFIG_OPENTHREAD_THREAD_STACK_SIZE)
 #define OT_PRIORITY K_PRIO_COOP(CONFIG_OPENTHREAD_THREAD_PRIORITY)
 
+#define OT_NETWORK_NAME CONFIG_OPENTHREAD_NETWORK_NAME
+#define OT_CHANNEL CONFIG_OPENTHREAD_CHANNEL
+#define OT_PANID CONFIG_OPENTHREAD_PANID
+#define OT_XPANID CONFIG_OPENTHREAD_XPANID
+
+#if defined(CONFIG_OPENTHREAD_JOINER_PSKD)
+#define OT_JOINER_PSKD CONFIG_OPENTHREAD_JOINER_PSKD
+#else
+#define OT_JOINER_PSKD ""
+#endif
+
+#if defined(CONFIG_OPENTHREAD_PLATFORM_INFO)
+#define OT_PLATFORM_INFO CONFIG_OPENTHREAD_PLATFORM_INFO
+#else
+#define OT_PLATFORM_INFO ""
+#endif
+
 extern void platformShellInit(otInstance *aInstance);
 
 K_SEM_DEFINE(ot_sem, 0, 1);
@@ -297,34 +314,57 @@ enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
 	return NET_CONTINUE;
 }
 
-#if defined(CONFIG_OPENTHREAD_JOINER_AUTOSTART)
-void openthread_joiner_autostart(struct net_if *iface)
+static void openthread_start(struct openthread_context *ot_context)
 {
-	struct openthread_context *ot_context = net_if_l2_data(iface);
+	otInstance *ot_instance = ot_context->instance;
 	otError error;
 
-	if (!otDatasetIsCommissioned(ot_context->instance)) {
-		error = otJoinerStart(ot_context->instance,
-				CONFIG_OPENTHREAD_JOINER_PSKD, NULL,
-				PACKAGE_NAME, CONFIG_OPENTHREAD_PLATFORM_INFO,
-				PACKAGE_VERSION, NULL,
-				&ot_joiner_start_handler, ot_context);
+	if (otDatasetIsCommissioned(ot_instance)) {
+		/* OpenThread already has dataset stored - skip the
+		 * configuration.
+		 */
+		NET_DBG("OpenThread already commissioned.");
+	} else if (IS_ENABLED(CONFIG_OPENTHREAD_JOINER_AUTOSTART)) {
+		/* No dataset - initiate network join procedure. */
+		NET_DBG("Starting OpenThread join procedure.");
+
+		error = otJoinerStart(ot_instance, OT_JOINER_PSKD, NULL,
+				      PACKAGE_NAME, OT_PLATFORM_INFO,
+				      PACKAGE_VERSION, NULL,
+				      &ot_joiner_start_handler, ot_context);
 
 		if (error != OT_ERROR_NONE) {
 			NET_ERR("Failed to start joiner [%d]", error);
 		}
+
+		return;
 	} else {
-		otThreadSetEnabled(ot_context->instance, true);
+		/* No dataset - load the default configuration. */
+		NET_DBG("Loading OpenThread default configuration.");
+
+		otExtendedPanId xpanid;
+
+		otThreadSetNetworkName(ot_instance, OT_NETWORK_NAME);
+		otLinkSetChannel(ot_instance, OT_CHANNEL);
+		otLinkSetPanId(ot_instance, OT_PANID);
+		net_bytes_from_str(xpanid.m8, 8, (char *)OT_XPANID);
+		otThreadSetExtendedPanId(ot_instance, &xpanid);
+	}
+
+	NET_INFO("OpenThread version: %s", otGetVersionString());
+	NET_INFO("Network name: %s",
+		 log_strdup(otThreadGetNetworkName(ot_instance)));
+
+	/* Start the network. */
+	error = otThreadSetEnabled(ot_instance, true);
+	if (error != OT_ERROR_NONE) {
+		NET_ERR("Failed to start the OpenThread network [%d]", error);
 	}
 }
-#endif
 
 static int openthread_init(struct net_if *iface)
 {
 	struct openthread_context *ot_context = net_if_l2_data(iface);
-	otExtendedPanId xpanid;
-
-	net_bytes_from_str(xpanid.m8, 8, (char *)CONFIG_OPENTHREAD_XPANID);
 
 	NET_DBG("openthread_init");
 
@@ -339,18 +379,6 @@ static int openthread_init(struct net_if *iface)
 	platformShellInit(ot_context->instance);
 #endif
 
-	NET_INFO("OpenThread version: %s",
-		    otGetVersionString());
-
-#if !defined(CONFIG_OPENTHREAD_JOINER_AUTOSTART)
-	otThreadSetNetworkName(ot_context->instance, CONFIG_OPENTHREAD_NETWORK_NAME);
-	NET_INFO("Network name:   %s",
-		 log_strdup(otThreadGetNetworkName(ot_context->instance)));
-
-	otLinkSetChannel(ot_context->instance, CONFIG_OPENTHREAD_CHANNEL);
-	otLinkSetPanId(ot_context->instance, CONFIG_OPENTHREAD_PANID);
-	otThreadSetExtendedPanId(ot_context->instance, &xpanid);
-#endif
 
 	otIp6SetEnabled(ot_context->instance, true);
 
@@ -374,11 +402,7 @@ static int openthread_init(struct net_if *iface)
 				 OT_PRIORITY, 0, K_NO_WAIT);
 	k_thread_name_set(&ot_thread_data, "openthread");
 
-#if !defined(CONFIG_OPENTHREAD_JOINER_AUTOSTART)
-	otThreadSetEnabled(ot_context->instance, true);
-#else
-	openthread_joiner_autostart(iface);
-#endif
+	openthread_start(ot_context);
 
 	return 0;
 }
