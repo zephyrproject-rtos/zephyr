@@ -56,7 +56,7 @@ void test_ring_buffer_main(void)
 	u8_t getsize, getval;
 	u16_t gettype;
 	int dsize = INITIAL_SIZE;
-	char rb_data[] = "ABCDEFGHIJKLMNOPQRSTUVWX";
+	__aligned(sizeof(u32_t)) char rb_data[] = "ABCDEFGHIJKLMNOPQRSTUVWX";
 	put_count = 0;
 
 	while (1) {
