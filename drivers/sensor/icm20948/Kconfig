@@ -1,15 +1,11 @@
 # Kconfig.ICM20498 - ICM20498 ICM-20498 I2C-based or SPI-based IMU
-
-#
-#
 # SPDX-License-Identifier: Apache-2.0
-#
+
 menuconfig ICM20948
 	bool "ICM20498 sensor"
 	depends on I2C || SPI
-	default	n
 	help
-	 Enable driver for ICM-20498 I2C-based or SPI-based IMU.
+      Enable driver for ICM-20498 I2C-based or SPI-based IMU.
 
 if ICM20948
 
@@ -17,74 +13,75 @@ config ICM20948_NAME
 	string "Driver name"
 	default "ICM20498"
 	help
-	  Device name with which the ICM20498 sensor is identified.
+      Device name with which the ICM20498 sensor is identified.
 
 config ICM20948_I2C_MASTER_DEV_NAME
 	string "I2C Master"
 	default "I2C_0"
 	help
-	  The device name of the I2C master device to which the ISL29035
-	  chip is connected.
+      The device name of the I2C master device to which the ISL29035
+      chip is connected.
 
 config ICM20948_THREAD_PRIORITY
 	int "Thread priority"
 	default 10
 	help
-	  Priority of thread used to handle the timer and threshold triggers.
+      Priority of thread used to handle the timer and threshold triggers.
 
 
 config ICM20948_DMP
     bool "DMP"
     default y
     help
-        in this mode, the IMU offloads processing from the host to the processor
+      in this mode, the IMU offloads processing from the host to the processor
 
 choice
 	prompt "Accelerometer full-scale range"
 	default ICM20948_ACCEL_RANGE_RUNTIME
 
-	config ICM20948_ACCEL_RANGE_RUNTIME
-    	bool "Set at runtime (Default 2G)"
+config ICM20948_ACCEL_RANGE_RUNTIME
+    bool "Set at runtime (Default 2G)"
 
-	config ICM20948_ACCEL_RANGE_2G
-    	bool "2G"
+config ICM20948_ACCEL_RANGE_2G
+    bool "2G"
 
-	config ICM20948_ACCEL_RANGE_4G
-    	bool "4G"
+config ICM20948_ACCEL_RANGE_4G
+    bool "4G"
 
-	config ICM20948_ACCEL_RANGE_8G
-    	bool "8G"
+config ICM20948_ACCEL_RANGE_8G
+    bool "8G"
 
-	config ICM20948_ACCEL_RANGE_16G
-    	bool "16G"
+config ICM20948_ACCEL_RANGE_16G
+    bool "16G"
+
 endchoice
 
 
 choice
-	prompt "Gyro full-scale range"
-	default ICM20948_GYRO_RANGE_RUNTIME
+    prompt "Gyro full-scale range"
+    default ICM20948_GYRO_RANGE_RUNTIME
 
-	config ICM20948_GYRO_RANGE_RUNTIME
-    	bool "Set at runtime (Default +-250 dps)"
+config ICM20948_GYRO_RANGE_RUNTIME
+    bool "Set at runtime (Default +-250 dps)"
 
-	config ICM20948_GYRO_RANGE_250
-    	bool "+-250 dps"
+config ICM20948_GYRO_RANGE_250
+    bool "+-250 dps"
 
-	config ICM20948_GYRO_RANGE_500
-    	bool "+-500 dps"
+config ICM20948_GYRO_RANGE_500
+    bool "+-500 dps"
 
-	config ICM20948_GYRO_RANGE_1000
-    	bool "+-1000 dps"
+config ICM20948_GYRO_RANGE_1000
+    bool "+-1000 dps"
 
-	config ICM20948_GYRO_RANGE_2000
-    	bool "+-2000 dps"
+config ICM20948_GYRO_RANGE_2000
+    bool "+-2000 dps"
 endchoice
 
 config ICM20948_I2C_AD0
 	bool "AD0"
 	default y
 	help
-	    The AD0 will determine the slave address of the device in i2C mode.
-	    AD0 high will yield 0x69 and AD0 low will yield 0x68
+      The AD0 will determine the slave address of the device in i2C mode.
+      AD0 high will yield 0x69 and AD0 low will yield 0x68
 
 endif # ICM20948

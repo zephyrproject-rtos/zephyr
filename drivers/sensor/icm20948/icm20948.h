@@ -21,7 +21,7 @@
 #define ICM20948_BANK_2    2
 #define ICM20948_BANK_3    3
 
-#define ICM20948_BANK_REG(BANK,REG) = ((BANK << 7) | REG)
+#define ICM20948_BANK_REG(BANK,REG) ((BANK << 7) | REG)
 /* registers */
 #define ICM20948_REG_BANK_SEL                   0x7F
 
@@ -154,10 +154,26 @@ enum icm20948_gyro_fs {
     #define ICM20948_GYRO_FS_DEFAULT ICM20948_GYRO_FS_2000_VAL
 #endif
 
+/* sensor data forward declaration (member definition is below) */
+struct icm20948_data;
+
+struct icm20948_tf {
+    int (*read_data)(struct icm20948_data *data, u16_t reg_bank_addr,
+                     u8_t *value, u8_t len);
+    int (*write_data)(struct icm20948_data *data, u16_t reg_bank_addr,
+                      u8_t *value, u8_t len);
+    int (*read_reg)(struct icm20948_data *data, u16_t reg_bank_addr,
+                    u8_t *value);
+    int (*write_reg)(struct icm20948_data *data, u16_t reg_bank_addr,
+                     u8_t value);
+    int (*update_reg)(struct icm20948_data *data, u16_t reg_bank_addr,
+                      u8_t mask, u8_t value);
+};
+
 struct icm20948_data
 {
-    struct device * bus;
-    const icm20948_tf *hw_tf;
+    struct device *bus;
+    const struct icm20948_tf *hw_tf;
 
     s16_t acc[3];
     s16_t gyro[3];
@@ -168,28 +184,8 @@ struct icm20948_data
 #if defined(DT_TDK_ICM20948_0_CS_GPIO_CONTROLLER)
 	struct spi_cs_control cs_ctrl;
 #endif
-
     u8_t bank; // bank
-
 };
-
-struct icm20948_tf {
-	int (*read_data)(struct icm20948_data *data, u16_t reg_bank_addr,
-			 u8_t *value, u8_t len);
-	int (*write_data)(struct icm20948_data *data, u16_t reg_bank_addr,
-			 u8_t *value, u8_t len);
-	int (*read_reg)(struct icm20948_data *data, u16_t reg_bank_addr,
-			u8_t *value);
-	int (*write_reg)(struct icm20948_data *data, u16_t reg_bank_addr,
-			 u8_t value);
-	int (*update_reg)(struct icm20948_data *data, u16_t reg_bank_addr,
-			  u8_t mask, u8_t value);
-};
-
-struct icm20948_device_config {
-	const* char bus_name;
-	enum
-}
 
 int icm20948_i2c_init(struct device *dev);
 int icm20948_spi_init(struct device *dev);
