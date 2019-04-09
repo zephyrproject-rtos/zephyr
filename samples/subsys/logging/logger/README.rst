@@ -29,43 +29,41 @@ Sample Output
 
 .. code-block:: console
 
-         Module logging showcase.
-         [00:00:00.000,122] <info> foo: log in test_module 11
-         Disabling logging in the foo module
-         Function called again but with logging disabled.
-         Instance level logging showcase.
-         [00:00:00.000,274] <info> sample_instance.inst1: counter_value: 0
-         [00:00:00.000,274] <warn> sample_instance.inst1: Example of hexdump:
-         [00:00:00.000,305] <warn> sample_instance.inst1:  01 02 03 04            |....
-         [00:00:00.000,305] <info> sample_instance.inst2: counter_value: 0
-         [00:00:00.000,305] <warn> sample_instance.inst2: Example of hexdump:
-         [00:00:00.000,305] <warn> sample_instance.inst2:  01 02 03 04            |....
-         Changing filter to warning on sample_instance.inst1 instance.
-         [00:00:00.000,396] <warn> sample_instance.inst1: Example of hexdump:
-         [00:00:00.000,427] <warn> sample_instance.inst1:  01 02 03 04            |....
-         [00:00:00.000,427] <info> sample_instance.inst2: counter_value: 1
-         [00:00:00.000,427] <warn> sample_instance.inst2: Example of hexdump:
-         [00:00:00.000,427] <warn> sample_instance.inst2:  01 02 03 04            |....
-         Disabling logging on both instances.
-         Function call on both instances with logging disabled.
-         Severity levels showcase.
-         [00:00:00.000,610] <err> main: Error message example.
-         [00:00:00.000,610] <warn> main: Warning message example.
-         [00:00:00.000,610] <info> main: Info message example.
-         Logging performance showcase.
-         [00:00:00.134,887] <info> main: performance test - log message 0
-         [00:00:00.134,887] <info> main: performance test - log message 1
-         [00:00:00.134,887] <info> main: performance test - log message 2
-         [00:00:00.134,887] <info> main: performance test - log message 3
-         [00:00:00.134,887] <info> main: performance test - log message 4
-         [00:00:00.134,887] <info> main: performance test - log message 5
-         [00:00:00.134,887] <info> main: performance test - log message 6
-         [00:00:00.134,918] <info> main: performance test - log message 7
-         [00:00:00.134,918] <info> main: performance test - log message 8
-         [00:00:00.134,918] <info> main: performance test - log message 9
-         [00:00:00.134,918] <info> main: performance test - log message 10
-         [00:00:00.134,918] <info> main: performance test - log message 11
-         [00:00:00.134,918] <info> main: performance test - log message 12
-         [00:00:00.134,918] <info> main: performance test - log message 13
-         [00:00:00.134,948] <info> main: performance test - log message 14
-         Estimated logging capabilities: 245760 messages/second
+        Module logging showcase.
+        [00:00:00.106,051] <inf> sample_module: log in test_module 11
+        [00:00:00.106,054] <inf> sample_module: Inline function.
+        Disabling logging in the sample_module module
+        Function called again but with logging disabled.
+        Instance level logging showcase.
+        [00:00:00.106,200] <inf> sample_instance.inst1: Inline call.
+        [00:00:00.106,204] <inf> sample_instance.inst1: counter_value: 0
+        [00:00:00.106,209] <wrn> sample_instance.inst1: Example of hexdump:
+        01 02 03 04             |....
+        [00:00:00.106,214] <inf> sample_instance.inst2: Inline call.
+        [00:00:00.106,218] <inf> sample_instance.inst2: counter_value: 0
+        [00:00:00.106,223] <wrn> sample_instance.inst2: Example of hexdump:
+        01 02 03 04             |....
+        Changing filter to warning on sample_instance.inst1 instance.
+        [00:00:00.106,297] <wrn> sample_instance.inst1: Example of hexdump:
+        01 02 03 04             |....
+        [00:00:00.106,302] <inf> sample_instance.inst2: Inline call.
+        [00:00:00.106,307] <inf> sample_instance.inst2: counter_value: 1
+        [00:00:00.106,311] <wrn> sample_instance.inst2: Example of hexdump:
+        01 02 03 04             |....
+        Disabling logging on both instances.
+        Function call on both instances with logging disabled.
+        String logging showcase.
+        [00:00:01.122,316] <inf> main: Logging transient string:transient_string
+        Severity levels showcase.
+        [00:00:01.122,348] <err> main: Error message example.
+        [00:00:01.122,352] <wrn> main: Warning message example.
+        [00:00:01.122,355] <inf> main: Info message example.
+        Logging performance showcase.
+        [00:00:02.151,602] <inf> main: performance test - log message 0
+        Estimated logging capabilities: 42000000 messages/second
+        Logs from external logging system showcase.
+        [00:00:03.165,977] <err> ext_log_system: critical level log
+        [00:00:03.165,991] <err> ext_log_system: error level log, 1 arguments: 1
+        [00:00:03.166,006] <wrn> ext_log_system: warning level log, 2 arguments: 12
+        [00:00:03.166,025] <inf> ext_log_system: notice level log, 3 arguments: 105
+        [00:00:03.166,044] <inf> ext_log_system: info level log, 4 arguments : 1 24
