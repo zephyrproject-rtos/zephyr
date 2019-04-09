@@ -262,8 +262,6 @@ void log_demo_thread(void *dummy1, void *dummy2, void *dummy3)
 
 	wait_on_log_flushed();
 
-	severity_levels_showcase();
-
 	log_strdup_showcase();
 
 	severity_levels_showcase();
