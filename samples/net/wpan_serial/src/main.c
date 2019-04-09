@@ -69,41 +69,6 @@ static struct net_pkt *pkt_curr;
 
 /* General helpers */
 
-#ifdef VERBOSE_DEBUG
-static void hexdump(const char *str, const u8_t *packet, size_t length)
-{
-	int n = 0;
-
-	if (!length) {
-		printk("%s zero-length signal packet\n", str);
-		return;
-	}
-
-	while (length--) {
-		if (n % 16 == 0) {
-			printk("%s %08X ", str, n);
-		}
-
-		printk("%02X ", *packet++);
-
-		n++;
-		if (n % 8 == 0) {
-			if (n % 16 == 0) {
-				printk("\n");
-			} else {
-				printk(" ");
-			}
-		}
-	}
-
-	if (n % 16) {
-		printk("\n");
-	}
-}
-#else
-#define hexdump(...)
-#endif
-
 static int slip_process_byte(unsigned char c)
 {
 	struct net_buf *buf;
@@ -355,7 +320,7 @@ static void rx_thread(void)
 
 		LOG_DBG("Got pkt %p buf %p", pkt, buf);
 
-		hexdump("SLIP >", buf->data, buf->len);
+		LOG_HEXDUMP_DBG(buf->data, buf->len, "SLIP >");
 
 		/* TODO: process */
 		specifier = net_buf_pull_u8(buf);
@@ -450,7 +415,7 @@ static void tx_thread(void)
 
 		LOG_DBG("Send pkt %p buf %p len %d", pkt, buf, len);
 
-		hexdump("SLIP <", buf->data, buf->len);
+		LOG_HEXDUMP_DBG(buf->data, buf->len, "SLIP <");
 
 		/* remove FCS 2 bytes */
 		buf->len -= 2U;
