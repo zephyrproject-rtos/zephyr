@@ -67,7 +67,8 @@ hang_system:
 #endif
 
 	for (;;) {
-		k_cpu_idle();
+		/* Don't do k_cpu_idle here because it will stop the watchdog
+		 * from triggering when option WDT_OPT_PAUSE_IN_SLEEP is set. */
 	}
 	CODE_UNREACHABLE;
 }
