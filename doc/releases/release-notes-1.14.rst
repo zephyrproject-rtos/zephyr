@@ -42,7 +42,6 @@ The following security vulnerabilities (CVEs) were addressed in this release:
 
   - Bounds Check Bypass (CVE-2017-5753)
   - Branch Target Injection (CVE-2017-5715)
-  - Rogue Data Cache Load (CVE-2017-5754)
   - Speculative Store Bypass (CVE-2018-3639)
   - L1 Terminal Fault (CVE-2018-3620)
   - Lazy FP State Restore (CVE-2018-3665)
@@ -72,41 +71,41 @@ Networking
 
 * The :ref:`BSD socket API <bsd_sockets_interface>` should be used by
   applications for any network connectivity needs.
-* Majority of the network sample applications are converted to use
+* Majority of the network sample applications were converted to use
   the BSD socket API.
-* New BSD socket based APIs created for these components and protocols:
+* New BSD socket based APIs were created for these components and protocols:
 
   - :ref:`MQTT <mqtt_socket_interface>`
   - :ref:`CoAP <coap_sock_interface>`
   - :ref:`LWM2M <lwm2m_interface>`
   - :ref:`SNTP <sntp_interface>`
-* net-app client and server APIs are removed. This also requires removal of
-  following net-app based legacy APIs:
+* net-app client and server APIs were removed. This also required removal of
+  the following net-app based legacy APIs:
 
   - MQTT
   - CoAP
   - SNTP
   - LWM2M
-  - HTTP client & server
+  - HTTP client and server
   - Websocket
 * Network packet (:ref:`net-pkt <net_pkt_interface>`) API overhaul. The new
   net-pkt API uses less memory and is more streamlined than the old one.
 * Implement following BSD socket APIs: ``freeaddrinfo()``, ``gethostname()``,
   ``getnameinfo()``, ``getsockopt()``, ``select()``, ``setsockopt()``,
   ``shutdown()``
-* Convert BSD socket code to use global file descriptor numbers.
+* Converted BSD socket code to use global file descriptor numbers.
 * Network subsystem converted to use new :ref:`logging system <logger>`.
-* Add support for disabling IPv4, IPv6, UDP, and TCP simultaneously.
-* Add support for :ref:`BSD socket offloading <net_socket_offloading>`.
-* Add support for long lifetime IPv6 prefixes.
-* Add enhancements to IPv6 multicast address checking.
-* Add support for IPv6 Destination Options Header extension.
-* Add support for packet socket (AF_PACKET).
-* Add support for socket CAN (AF_CAN).
-* Add support for SOCKS5 proxy in MQTT client.
-* Add support for IPSO Timer object in LWM2M.
-* Add support for receiving gratuitous ARP request.
-* Add :ref:`sample application <google-iot-mqtt-sample>` for Google IoT Cloud.
+* Added support for disabling IPv4, IPv6, UDP, and TCP simultaneously.
+* Added support for :ref:`BSD socket offloading <net_socket_offloading>`.
+* Added support for long lifetime IPv6 prefixes.
+* Added enhancements to IPv6 multicast address checking.
+* Added support for IPv6 Destination Options Header extension.
+* Added support for packet socket (AF_PACKET).
+* Added support for socket CAN (AF_CAN).
+* Added support for SOCKS5 proxy in MQTT client.
+* Added support for IPSO Timer object in LWM2M.
+* Added support for receiving gratuitous ARP request.
+* Added :ref:`sample application <google-iot-mqtt-sample>` for Google IoT Cloud.
 * :ref:`Network interface <net_if_interface>` numbering starts now from 1 for
   POSIX compatibility.
 * :ref:`OpenThread <thread_protocol_interface>` enhancements.
@@ -114,15 +113,15 @@ Networking
 * :ref:`LLDP <lldp_interface>` (Link Layer Discovery Protocol) enhancements.
 * ARP cache update fix.
 * gPTP link delay calculation fixes.
-* Change how network data is passed from
+* Changed how network data is passed from
   :ref:`L2 to network device driver <network_stack_architecture>`.
-* Remove RPL (Ripple) IPv6 mesh routing support.
+* Removed RPL (Ripple) IPv6 mesh routing support.
 * Network device driver additions and enhancements:
 
-  - Add Intel PRO/1000 Ethernet driver (e1000).
-  - Add SMSC9118/LAN9118 Ethernet driver (smsc911x).
-  - Add Inventek es-WiFi driver for disco_l475_iot1 board.
-  - Add support for automatically enabling QEMU based Ethernet drivers.
+  - Added Intel PRO/1000 Ethernet driver (e1000).
+  - Added SMSC9118/LAN9118 Ethernet driver (smsc911x).
+  - Added Inventek es-WiFi driver for disco_l475_iot1 board.
+  - Added support for automatically enabling QEMU based Ethernet drivers.
   - SAM-E70 gmac Ethernet driver Qav fixes.
   - enc28j60 Ethernet driver fixes and enhancements.
 
@@ -149,7 +148,41 @@ HALs
 Documentation
 *************
 
-* TBD
+* Reorganized subsystem documentation into more meaningful collections
+  and added or improved introductory material for each subsystem.
+* Overhauled  Bluetooth documentation to split it into
+  manageable units and included additional information, such as
+  architecture and tooling.
+* Added to and improved documentation on many minor subsystems and APIs
+  including socket offloading, Ethernet management, LLDP networking,
+  network architecture and overview, net shell, CoAP, network interface,
+  network configuration library, DNS resolver, DHCPv4, DTS, and more.
+* Introduced a new debugging guide that documents all the different
+  variations of debug probes and host tools in
+  one place, including which combinations are valid.
+* Clarified and improved information about the west tool and its use.
+* Improved development process documentation including how new features
+  are proposed and tracked, and clarifying API lifecycle, issue and PR
+  tagging requirements, contributing guidelines, doc guidelines,
+  release process, and PR review process.
+* Introduced a developer "fast" doc build option to eliminate
+  the time needed to create the full kconfig option docs from a local
+  doc build, saving five minutes for a full doc build.
+* Made dramatic improvements to the doc build processing, bringing
+  iterative local doc generation down from over two minutes to only a
+  few seconds. This makes it much faster for doc developers to iteratively
+  edit and test doc changes locally before submitting a PR.
+* Added a new ``zephyr-file`` directive to link directly to files in the
+  Git tree.
+* Introduced simplified linking to doxygen-generated API reference
+  material.
+* Made board documentation consistent, enabling a board-image carousel
+  on the zephyrproject.org home page.
+* Reduced unnecessarily large images to improve page load times.
+* Added CSS changes to improve API docs appearance and usability
+* Made doc version selector more obvious, making it easier to select
+  documentation for a specific release
+* Added a friendlier and more graphic home page.
 
 Tests and Samples
 *****************
