@@ -177,22 +177,15 @@ Pull Requests and Issues
 
 .. _Zephyr devel mailing list: https://lists.zephyrproject.org/g/devel
 
+.. _Zephyr Slack channel: https://zephyrproject.slack.com
+
 Before starting on a patch, first check in our issues `Zephyr Project Issues`_
 system to see what's been reported on the issue you'd like to address.  Have a
-conversation on the `Zephyr devel mailing list`_ (or the #zephyrproject IRC
-channel on freenode.net) to see what others think of your issue (and proposed
-solution).  You may find others that have encountered the issue you're
-finding, or that have similar ideas for changes or additions.  Send a message
-to the `Zephyr devel mailing list`_ to introduce and discuss your idea with
-the development community.
-
-Please note that it's common practice on IRC to be away from the
-channel, but still have a client logged in to receive traffic. If you
-ask a question to a particular person and they don't answer, **try
-to stay signed in to the channel** if you can, so they have time to
-respond to you. This is especially important given the many different
-timezones Zephyr developers live in. If you don't get a timely
-response on IRC, try sending a message to the mailing list instead.
+conversation on the `Zephyr devel mailing list`_ (or the the `Zephyr Slack channel`_)
+to see what others think of your issue (and proposed solution).  You may find
+others that have encountered the issue you're finding, or that have similar
+ideas for changes or additions.  Send a message to the `Zephyr devel mailing list`_
+to introduce and discuss your idea with the development community.
 
 It's always a good practice to search for existing or related issues before
 submitting your own. When you submit an issue (bug or feature request), the
