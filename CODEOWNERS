@@ -129,6 +129,7 @@
 /drivers/net/slip.c                       @jukkar @tbursztyka
 /drivers/spi/                             @tbursztyka
 /drivers/spi/spi_ll_stm32.*               @superna9999
+/drivers/timer/cortex_m_systick.c         @ioannisg
 /drivers/timer/altera_avalon_timer_hal.c  @ramakrishnapallala
 /drivers/timer/riscv_machine_timer.c      @nategraff-sifive @kgugala @pgielda
 /drivers/usb/                             @jfischer-phytec-iot @finikorg
