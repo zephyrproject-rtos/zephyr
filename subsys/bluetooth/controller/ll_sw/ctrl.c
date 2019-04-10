@@ -2821,7 +2821,8 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		rsp = &pdu_data_rx->llctrl.feature_rsp;
 
 		/* AND the feature set to get Feature USED */
-		_radio.conn_curr->llcp_features &= feat_get(&rsp->features[0]);
+		_radio.conn_curr->llcp_feature.features &=
+			feat_get(&rsp->features[0]);
 
 		/* features exchanged */
 		_radio.conn_curr->common.fex_valid = 1U;
@@ -2830,6 +2831,8 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		*rx_enqueue = 1U;
 
 		/* Procedure complete */
+		_radio.conn_curr->llcp_feature.ack =
+			_radio.conn_curr->llcp_feature.req;
 		_radio.conn_curr->procedure_expire = 0U;
 	}
 	break;
@@ -7579,7 +7582,7 @@ static inline void event_enc_reject_prep(struct connection *conn,
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 
 	if (conn->common.fex_valid &&
-	    (conn->llcp_features & BIT(BT_LE_FEAT_BIT_EXT_REJ_IND))) {
+	    (conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_EXT_REJ_IND))) {
 		struct pdu_data_llctrl_reject_ext_ind *p;
 
 		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
@@ -7744,12 +7747,17 @@ static inline void event_fex_prep(struct connection *conn)
 {
 	struct radio_pdu_node_tx *node_tx;
 
+	/* If waiting for response, do nothing */
+	if (!((conn->llcp_feature.ack - conn->llcp_feature.req) & 0x01)) {
+		return;
+	}
+
 	if (conn->common.fex_valid) {
 		struct radio_pdu_node_rx *node_rx;
 		struct pdu_data *pdu_ctrl_rx;
 
 		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		conn->llcp_feature.ack = conn->llcp_feature.req;
 
 		/* Prepare the rx packet structure */
 		node_rx = packet_rx_reserve_get(2);
@@ -7768,11 +7776,11 @@ static inline void event_fex_prep(struct connection *conn)
 		(void)memset(&pdu_ctrl_rx->llctrl.feature_rsp.features[0], 0x00,
 			     sizeof(pdu_ctrl_rx->llctrl.feature_rsp.features));
 		pdu_ctrl_rx->llctrl.feature_req.features[0] =
-			conn->llcp_features & 0xFF;
+			conn->llcp_feature.features & 0xFF;
 		pdu_ctrl_rx->llctrl.feature_req.features[1] =
-			(conn->llcp_features >> 8) & 0xFF;
+			(conn->llcp_feature.features >> 8) & 0xFF;
 		pdu_ctrl_rx->llctrl.feature_req.features[2] =
-			(conn->llcp_features >> 16) & 0xFF;
+			(conn->llcp_feature.features >> 16) & 0xFF;
 
 		/* enqueue feature rsp structure into rx queue */
 		packet_rx_enqueue();
@@ -7784,11 +7792,11 @@ static inline void event_fex_prep(struct connection *conn)
 	if (node_tx) {
 		struct pdu_data *pdu_ctrl_tx = (void *)node_tx->pdu_data;
 
-		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		/* procedure request acked, move to waiting state  */
+		conn->llcp_feature.ack--;
 
 		/* use initial feature bitmap */
-		conn->llcp_features = LL_FEAT;
+		conn->llcp_feature.features = LL_FEAT;
 
 		/* place the feature exchange req packet as next in tx queue */
 		pdu_ctrl_tx->ll_id = PDU_DATA_LLID_CTRL;
@@ -7803,11 +7811,11 @@ static inline void event_fex_prep(struct connection *conn)
 			     0x00,
 			     sizeof(pdu_ctrl_tx->llctrl.feature_req.features));
 		pdu_ctrl_tx->llctrl.feature_req.features[0] =
-			conn->llcp_features & 0xFF;
+			conn->llcp_feature.features & 0xFF;
 		pdu_ctrl_tx->llctrl.feature_req.features[1] =
-			(conn->llcp_features >> 8) & 0xFF;
+			(conn->llcp_feature.features >> 8) & 0xFF;
 		pdu_ctrl_tx->llctrl.feature_req.features[2] =
-			(conn->llcp_features >> 16) & 0xFF;
+			(conn->llcp_feature.features >> 16) & 0xFF;
 
 		ctrl_tx_enqueue(conn, node_tx);
 
@@ -7821,6 +7829,10 @@ static inline void event_fex_prep(struct connection *conn)
 
 static inline void event_vex_prep(struct connection *conn)
 {
+	/* If waiting for response, do nothing */
+	if (!((conn->llcp_version.ack - conn->llcp_version.req) & 0x01)) {
+		return;
+	}
 
 	if (conn->llcp_version.tx == 0) {
 		struct radio_pdu_node_tx *node_tx;
@@ -7830,8 +7842,8 @@ static inline void event_vex_prep(struct connection *conn)
 			struct pdu_data *pdu_ctrl_tx = (void *)
 						       node_tx->pdu_data;
 
-			/* procedure request acked */
-			conn->llcp_ack = conn->llcp_req;
+			/* procedure request acked, move to waiting state  */
+			conn->llcp_version.ack--;
 
 			/* set version ind tx-ed flag */
 			conn->llcp_version.tx = 1U;
@@ -7862,7 +7874,7 @@ static inline void event_vex_prep(struct connection *conn)
 		struct pdu_data *pdu_ctrl_rx;
 
 		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		conn->llcp_version.ack = conn->llcp_version.req;
 
 		/* Prepare the rx packet structure */
 		node_rx = packet_rx_reserve_get(2);
@@ -8769,12 +8781,26 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 	/* calc current event counter value */
 	event_counter = conn->event_counter + conn->latency_prepare;
 
-#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ) || defined(CONFIG_BT_CTLR_PHY)
 	/* Check if no other procedure with instant is requested and not in
 	 * Encryption setup.
 	 */
 	if ((conn->llcp_ack == conn->llcp_req) && !conn->pause_rx) {
-		if (0) {
+		if (conn->llcp_feature.ack != conn->llcp_feature.req) {
+			/* Stop previous event, to avoid Radio DMA corrupting
+			 * the rx queue.
+			 */
+			event_stop(0, 0, 0, (void *)STATE_ABORT);
+
+			event_fex_prep(conn);
+
+		} else if (conn->llcp_version.ack != conn->llcp_version.req) {
+			/* Stop previous event, to avoid Radio DMA corrupting
+			 * the rx queue.
+			 */
+			event_stop(0, 0, 0, (void *)STATE_ABORT);
+
+			event_vex_prep(conn);
+
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		/* check if CPR procedure is requested */
 		} else if (conn->llcp_conn_param.ack !=
@@ -8789,6 +8815,25 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 					      ticks_at_expire);
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		/* check if DLE procedure is requested */
+		} else if (conn->llcp_length.ack != conn->llcp_length.req) {
+			/* Stop previous event, to avoid Radio DMA corrupting
+			 * the rx queue
+			 */
+			event_stop(0, 0, 0, (void *)STATE_ABORT);
+
+			/* handle DLU state machine */
+			if (event_len_prep(conn)) {
+				/* NOTE: rx pool could not be resized, lets
+				 * skip this event and try in the next event.
+				 */
+				_radio.ticker_id_prepare = 0U;
+
+				goto event_connection_prepare_skip;
+			}
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+
 #if defined(CONFIG_BT_CTLR_PHY)
 		/* check if PHY Req procedure is requested */
 		} else if (conn->llcp_phy.ack != conn->llcp_phy.req) {
@@ -8800,29 +8845,8 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 			/* handle PHY Upd state machine */
 			event_phy_req_prep(conn);
 #endif /* CONFIG_BT_CTLR_PHY */
-
-#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-			/* check if procedure is requested */
-		} else if (conn->llcp_length.ack != conn->llcp_length.req) {
-			/* Stop previous event, to avoid Radio DMA corrupting
-			 * the rx queue
-			 */
-			event_stop(0, 0, 0, (void *)STATE_ABORT);
-
-			/* handle DLU state machine */
-			if (event_len_prep(conn)) {
-				/* NOTE: rx pool could not be resized,
-				 * lets skip this event and try in the next
-				 * event.
-				 */
-				_radio.ticker_id_prepare = 0U;
-
-				goto event_connection_prepare_skip;
-			}
-#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
 		}
 	}
-#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ || CONFIG_BT_CTLR_PHY */
 
 	/* check if procedure is requested */
 	if (conn->llcp_ack != conn->llcp_req) {
@@ -8847,14 +8871,6 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 			event_enc_prep(conn);
 			break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
-
-		case LLCP_FEATURE_EXCHANGE:
-			event_fex_prep(conn);
-			break;
-
-		case LLCP_VERSION_EXCHANGE:
-			event_vex_prep(conn);
-			break;
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 		case LLCP_PING:
@@ -8916,7 +8932,6 @@ static void event_connection_prepare(u32_t ticks_at_expire,
 			}
 		}
 	}
-
 
 	/* Setup XTAL startup and radio active events */
 	event_common_prepare(ticks_at_expire, remainder,
@@ -9718,6 +9733,8 @@ static bool is_enc_req_pause_tx(struct connection *conn)
 	if ((pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) &&
 	    (pdu_data_tx->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
 		if ((conn->llcp_req != conn->llcp_ack) ||
+		    (conn->llcp_feature.ack != conn->llcp_feature.req) ||
+		    (conn->llcp_version.ack != conn->llcp_version.req) ||
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		    (conn->llcp_conn_param.ack != conn->llcp_conn_param.req) ||
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
@@ -10186,7 +10203,7 @@ static u32_t conn_update_req(struct connection *conn)
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	} else if (!conn->llcp_conn_param.disabled &&
 		   (!conn->common.fex_valid ||
-		    (conn->llcp_features &
+		    (conn->llcp_feature.features &
 		     BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ)))) {
 		/** Perform slave intiated conn param req */
 		conn->llcp_conn_param.status = 0U;
@@ -10511,7 +10528,7 @@ static u8_t feature_rsp_send(struct connection *conn,
 
 	/* AND the feature set to get Feature USED */
 	req = &pdu_data_rx->llctrl.feature_req;
-	conn->llcp_features &= feat_get(&req->features[0]);
+	conn->llcp_feature.features &= feat_get(&req->features[0]);
 
 	/* features exchanged */
 	conn->common.fex_valid = 1U;
@@ -10525,11 +10542,11 @@ static u8_t feature_rsp_send(struct connection *conn,
 	(void)memset(&pdu_ctrl_tx->llctrl.feature_rsp.features[0], 0x00,
 		     sizeof(pdu_ctrl_tx->llctrl.feature_rsp.features));
 	pdu_ctrl_tx->llctrl.feature_req.features[0] =
-		conn->llcp_features & 0xFF;
+		conn->llcp_feature.features & 0xFF;
 	pdu_ctrl_tx->llctrl.feature_req.features[1] =
-		(conn->llcp_features >> 8) & 0xFF;
+		(conn->llcp_feature.features >> 8) & 0xFF;
 	pdu_ctrl_tx->llctrl.feature_req.features[2] =
-		(conn->llcp_features >> 16) & 0xFF;
+		(conn->llcp_feature.features >> 16) & 0xFF;
 
 	ctrl_tx_sec_enqueue(conn, node_tx);
 
@@ -10568,7 +10585,10 @@ static u8_t version_ind_send(struct connection *conn,
 		empty_tx_enqueue(conn);
 
 	} else if (!conn->llcp_version.rx) {
+		LL_ASSERT(conn->llcp_version.ack != conn->llcp_version.req);
+
 		/* Procedure complete */
+		conn->llcp_version.ack = conn->llcp_version.req;
 		conn->procedure_expire = 0U;
 
 		/* enqueue the version ind */
@@ -11128,7 +11148,7 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		}
 
 		conn->handle = 0xFFFF;
-		conn->llcp_features = LL_FEAT;
+		conn->llcp_feature.features = LL_FEAT;
 		conn->data_chan_sel = 0U;
 		conn->data_chan_use = 0U;
 		conn->event_counter = 0U;
@@ -11177,6 +11197,10 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 
 		conn->llcp_req = 0U;
 		conn->llcp_ack = 0U;
+		conn->llcp_feature.req = 0U;
+		conn->llcp_feature.ack = 0U;
+		conn->llcp_version.req = 0U;
+		conn->llcp_version.ack = 0U;
 		conn->llcp_version.tx = 0U;
 		conn->llcp_version.rx = 0U;
 		conn->llcp_terminate.req = 0U;
@@ -11648,7 +11672,7 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 		328 + RADIO_TIFS + 328);
 
 	conn->handle = 0xFFFF;
-	conn->llcp_features = LL_FEAT;
+	conn->llcp_feature.features = LL_FEAT;
 	access_addr = access_addr_get();
 	memcpy(&conn->access_addr[0], &access_addr, sizeof(conn->access_addr));
 	bt_rand(&conn->crc_init[0], 3);
@@ -11717,6 +11741,10 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 
 	conn->llcp_req = 0U;
 	conn->llcp_ack = 0U;
+	conn->llcp_feature.req = 0U;
+	conn->llcp_feature.ack = 0U;
+	conn->llcp_version.req = 0U;
+	conn->llcp_version.ack = 0U;
 	conn->llcp_version.tx = 0U;
 	conn->llcp_version.rx = 0U;
 	conn->llcp_terminate.req = 0U;
@@ -11820,7 +11848,7 @@ u8_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		if (!conn->llcp_conn_param.disabled &&
 		    (!conn->common.fex_valid ||
-		     (conn->llcp_features &
+		     (conn->llcp_feature.features &
 		      BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ)))) {
 			cmd++;
 		} else if (conn->role) {
@@ -12074,12 +12102,11 @@ u8_t ll_feature_req_send(u16_t handle)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (conn->llcp_req != conn->llcp_ack) {
+	if (conn->llcp_feature.req != conn->llcp_feature.ack) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	conn->llcp_type = LLCP_FEATURE_EXCHANGE;
-	conn->llcp_req++;
+	conn->llcp_feature.req++;
 
 	return 0;
 }
@@ -12093,12 +12120,11 @@ u8_t ll_version_ind_send(u16_t handle)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if (conn->llcp_req != conn->llcp_ack) {
+	if (conn->llcp_version.req != conn->llcp_version.ack) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	conn->llcp_type = LLCP_VERSION_EXCHANGE;
-	conn->llcp_req++;
+	conn->llcp_version.req++;
 
 	return 0;
 }
@@ -12199,8 +12225,7 @@ u32_t ll_length_req_send(u16_t handle, u16_t tx_octets, u16_t tx_time)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if ((conn->llcp_req != conn->llcp_ack) ||
-	    (conn->llcp_length.req != conn->llcp_length.ack)) {
+	if (conn->llcp_length.req != conn->llcp_length.ack) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -12280,8 +12305,7 @@ u8_t ll_phy_req_send(u16_t handle, u8_t tx, u8_t flags, u8_t rx)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-	if ((conn->llcp_req != conn->llcp_ack) ||
-	    (conn->llcp_phy.req != conn->llcp_phy.ack)) {
+	if (conn->llcp_phy.req != conn->llcp_phy.ack) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 

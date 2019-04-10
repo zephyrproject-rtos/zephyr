@@ -10,13 +10,16 @@ enum llcp {
 	LLCP_CONN_UPD,
 	LLCP_CHAN_MAP,
 
+	/*
+	 * LLCP_TERMINATE,
+	 * LLCP_FEATURE_EXCHANGE,
+	 * LLCP_VERSION_EXCHANGE,
+	 */
+
 #if defined(CONFIG_BT_CTLR_LE_ENC)
 	LLCP_ENCRYPTION,
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-	LLCP_FEATURE_EXCHANGE,
-	LLCP_VERSION_EXCHANGE,
-	/* LLCP_TERMINATE, */
 	LLCP_CONNECTION_PARAM_REQ,
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
@@ -148,6 +151,7 @@ struct connection {
 			u16_t *pdu_win_offset;
 			u32_t ticks_anchor;
 		} conn_upd;
+
 		struct {
 			u8_t  initiate;
 			u8_t  chm[5];
@@ -173,9 +177,15 @@ struct connection {
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 	} llcp;
 
-	u32_t llcp_features;
+	struct {
+		u8_t  req;
+		u8_t  ack;
+		u32_t features;
+	} llcp_feature;
 
 	struct {
+		u8_t  req;
+		u8_t  ack;
 		u8_t  tx:1;
 		u8_t  rx:1;
 		u8_t  version_number;
