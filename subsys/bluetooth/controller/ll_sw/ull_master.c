@@ -187,7 +187,9 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 
 	conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0U;
 	conn->llcp_rx = NULL;
-	conn->llcp_features = LL_FEAT;
+	conn->llcp_feature.req = conn->llcp_feature.ack = 0;
+	conn->llcp_feature.features = LL_FEAT;
+	conn->llcp_version.req = conn->llcp_version.ack = 0;
 	conn->llcp_version.tx = conn->llcp_version.rx = 0U;
 	conn->llcp_terminate.reason_peer = 0U;
 	/* NOTE: use allocated link for generating dedicated

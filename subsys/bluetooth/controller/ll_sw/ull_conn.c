@@ -244,7 +244,7 @@ u8_t ll_conn_update(u16_t handle, u8_t cmd, u8_t status, u16_t interval_min,
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		if (!conn->llcp_conn_param.disabled &&
 		    (!conn->common.fex_valid ||
-		     (conn->llcp_features &
+		     (conn->llcp_feature.features &
 		      BIT(BT_LE_FEAT_BIT_CONN_PARAM_REQ)))) {
 			cmd++;
 		} else if (conn->lll.role) {
@@ -355,20 +355,17 @@ u8_t ll_terminate_ind_send(u16_t handle, u8_t reason)
 u8_t ll_feature_req_send(u16_t handle)
 {
 	struct ll_conn *conn;
-	u8_t ret;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	ret = ull_conn_llcp_req(conn);
-	if (ret) {
-		return ret;
+	if (conn->llcp_feature.req != conn->llcp_feature.ack) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	conn->llcp_type = LLCP_FEATURE_EXCHANGE;
-	conn->llcp_req++;
+	conn->llcp_feature.req++;
 
 	return 0;
 }
@@ -376,20 +373,17 @@ u8_t ll_feature_req_send(u16_t handle)
 u8_t ll_version_ind_send(u16_t handle)
 {
 	struct ll_conn *conn;
-	u8_t ret;
 
 	conn = ll_connected_get(handle);
 	if (!conn) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	ret = ull_conn_llcp_req(conn);
-	if (ret) {
-		return ret;
+	if (conn->llcp_version.req != conn->llcp_version.ack) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	conn->llcp_type = LLCP_VERSION_EXCHANGE;
-	conn->llcp_req++;
+	conn->llcp_version.req++;
 
 	return 0;
 }
@@ -745,7 +739,21 @@ int ull_conn_llcp(struct ll_conn *conn, u32_t ticks_at_expire, u16_t lazy)
 #else /* !CONFIG_BT_CTLR_LE_ENC */
 	    1) {
 #endif /* !CONFIG_BT_CTLR_LE_ENC */
+
+		/* TODO: Optimize the checks below, maybe have common flag */
+
 		if (0) {
+
+		/* check if feature exchange procedure is requested */
+		} else if (conn->llcp_feature.ack != conn->llcp_feature.req) {
+			/* handle feature exchange state machine */
+			event_fex_prep(conn);
+
+		/* check if version info procedure is requested */
+		} else if (conn->llcp_version.ack != conn->llcp_version.req) {
+			/* handle version info state machine */
+			event_vex_prep(conn);
+
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		/* check if CPR procedure is requested */
 		} else if (conn->llcp_conn_param.ack !=
@@ -763,7 +771,7 @@ int ull_conn_llcp(struct ll_conn *conn, u32_t ticks_at_expire, u16_t lazy)
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
 
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
-		/* check if procedure is requested */
+		/* check if DLE procedure is requested */
 		} else if (conn->llcp_length.ack != conn->llcp_length.req) {
 			/* handle DLU state machine */
 			event_len_prep(conn);
@@ -809,14 +817,6 @@ int ull_conn_llcp(struct ll_conn *conn, u32_t ticks_at_expire, u16_t lazy)
 			event_enc_prep(conn);
 			break;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
-
-		case LLCP_FEATURE_EXCHANGE:
-			event_fex_prep(conn);
-			break;
-
-		case LLCP_VERSION_EXCHANGE:
-			event_vex_prep(conn);
-			break;
 
 #if defined(CONFIG_BT_CTLR_LE_PING)
 		case LLCP_PING:
@@ -1836,6 +1836,8 @@ static bool is_enc_req_pause_tx(struct ll_conn *conn)
 	if ((pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) &&
 	    (pdu_data_tx->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
 		if ((conn->llcp_req != conn->llcp_ack) ||
+		    (conn->llcp_feature.ack != conn->llcp_feature.req) ||
+		    (conn->llcp_version.ack != conn->llcp_version.req) ||
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		    (conn->llcp_conn_param.ack != conn->llcp_conn_param.req) ||
 #endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
@@ -2335,7 +2337,7 @@ static inline void event_enc_reject_prep(struct ll_conn *conn,
 	pdu->ll_id = PDU_DATA_LLID_CTRL;
 
 	if (conn->common.fex_valid &&
-	    (conn->llcp_features & BIT(BT_LE_FEAT_BIT_EXT_REJ_IND))) {
+	    (conn->llcp_feature.features & BIT(BT_LE_FEAT_BIT_EXT_REJ_IND))) {
 		struct pdu_data_llctrl_reject_ext_ind *p;
 
 		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_REJECT_EXT_IND;
@@ -2508,12 +2510,17 @@ static inline void event_fex_prep(struct ll_conn *conn)
 {
 	struct node_tx *tx;
 
+	/* If waiting for response, do nothing */
+	if (!((conn->llcp_feature.ack - conn->llcp_feature.req) & 0x01)) {
+		return;
+	}
+
 	if (conn->common.fex_valid) {
 		struct node_rx_pdu *rx;
 		struct pdu_data *pdu;
 
 		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		conn->llcp_feature.ack = conn->llcp_feature.req;
 
 		/* get a rx node for ULL->LL */
 		rx = ll_pdu_rx_alloc();
@@ -2533,11 +2540,11 @@ static inline void event_fex_prep(struct ll_conn *conn)
 		(void)memset(&pdu->llctrl.feature_rsp.features[0], 0x00,
 			sizeof(pdu->llctrl.feature_rsp.features));
 		pdu->llctrl.feature_req.features[0] =
-			conn->llcp_features & 0xFF;
+			conn->llcp_feature.features & 0xFF;
 		pdu->llctrl.feature_req.features[1] =
-			(conn->llcp_features >> 8) & 0xFF;
+			(conn->llcp_feature.features >> 8) & 0xFF;
 		pdu->llctrl.feature_req.features[2] =
-			(conn->llcp_features >> 16) & 0xFF;
+			(conn->llcp_feature.features >> 16) & 0xFF;
 
 		/* enqueue feature rsp structure into rx queue */
 		ll_rx_put(rx->hdr.link, rx);
@@ -2550,11 +2557,11 @@ static inline void event_fex_prep(struct ll_conn *conn)
 	if (tx) {
 		struct pdu_data *pdu = (void *)tx->pdu;
 
-		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		/* procedure request acked, move to waiting state */
+		conn->llcp_feature.ack--;
 
 		/* use initial feature bitmap */
-		conn->llcp_features = LL_FEAT;
+		conn->llcp_feature.features = LL_FEAT;
 
 		/* place the feature exchange req packet as next in tx queue */
 		pdu->ll_id = PDU_DATA_LLID_CTRL;
@@ -2567,11 +2574,11 @@ static inline void event_fex_prep(struct ll_conn *conn)
 			     0x00,
 			     sizeof(pdu->llctrl.feature_req.features));
 		pdu->llctrl.feature_req.features[0] =
-			conn->llcp_features & 0xFF;
+			conn->llcp_feature.features & 0xFF;
 		pdu->llctrl.feature_req.features[1] =
-			(conn->llcp_features >> 8) & 0xFF;
+			(conn->llcp_feature.features >> 8) & 0xFF;
 		pdu->llctrl.feature_req.features[2] =
-			(conn->llcp_features >> 16) & 0xFF;
+			(conn->llcp_feature.features >> 16) & 0xFF;
 
 		ctrl_tx_enqueue(conn, tx);
 
@@ -2585,6 +2592,11 @@ static inline void event_fex_prep(struct ll_conn *conn)
 
 static inline void event_vex_prep(struct ll_conn *conn)
 {
+	/* If waiting for response, do nothing */
+	if (!((conn->llcp_version.ack - conn->llcp_version.req) & 0x01)) {
+		return;
+	}
+
 	if (conn->llcp_version.tx == 0U) {
 		struct node_tx *tx;
 
@@ -2594,8 +2606,8 @@ static inline void event_vex_prep(struct ll_conn *conn)
 			u16_t cid;
 			u16_t svn;
 
-			/* procedure request acked */
-			conn->llcp_ack = conn->llcp_req;
+			/* procedure request acked, move to waiting state  */
+			conn->llcp_version.ack--;
 
 			/* set version ind tx-ed flag */
 			conn->llcp_version.tx = 1U;
@@ -2632,7 +2644,7 @@ static inline void event_vex_prep(struct ll_conn *conn)
 		};
 
 		/* procedure request acked */
-		conn->llcp_ack = conn->llcp_req;
+		conn->llcp_version.ack = conn->llcp_version.req;
 
 		rx->hdr.handle = conn->lll.handle;
 		rx->hdr.type = NODE_RX_TYPE_DC_PDU;
@@ -3745,7 +3757,7 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 
 	/* AND the feature set to get Feature USED */
 	req = &pdu_rx->llctrl.feature_req;
-	conn->llcp_features &= feat_get(&req->features[0]);
+	conn->llcp_feature.features &= feat_get(&req->features[0]);
 
 	/* features exchanged */
 	conn->common.fex_valid = 1U;
@@ -3759,11 +3771,11 @@ static int feature_rsp_send(struct ll_conn *conn, struct node_rx_pdu *rx,
 	(void)memset(&pdu_tx->llctrl.feature_rsp.features[0], 0x00,
 		     sizeof(pdu_tx->llctrl.feature_rsp.features));
 	pdu_tx->llctrl.feature_req.features[0] =
-		conn->llcp_features & 0xFF;
+		conn->llcp_feature.features & 0xFF;
 	pdu_tx->llctrl.feature_req.features[1] =
-		(conn->llcp_features >> 8) & 0xFF;
+		(conn->llcp_feature.features >> 8) & 0xFF;
 	pdu_tx->llctrl.feature_req.features[2] =
-		(conn->llcp_features >> 16) & 0xFF;
+		(conn->llcp_feature.features >> 16) & 0xFF;
 
 	ctrl_tx_sec_enqueue(conn, tx);
 
@@ -3780,12 +3792,13 @@ static void feature_rsp_recv(struct ll_conn *conn, struct pdu_data *pdu_rx)
 	rsp = &pdu_rx->llctrl.feature_rsp;
 
 	/* AND the feature set to get Feature USED */
-	conn->llcp_features &= feat_get(&rsp->features[0]);
+	conn->llcp_feature.features &= feat_get(&rsp->features[0]);
 
 	/* features exchanged */
 	conn->common.fex_valid = 1U;
 
 	/* Procedure complete */
+	conn->llcp_feature.ack = conn->llcp_feature.req;
 	conn->procedure_expire = 0U;
 }
 

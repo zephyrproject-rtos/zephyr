@@ -622,7 +622,9 @@ u8_t ll_adv_enable(u8_t enable)
 
 		conn->llcp_req = conn->llcp_ack = conn->llcp_type = 0;
 		conn->llcp_rx = NULL;
-		conn->llcp_features = LL_FEAT;
+		conn->llcp_feature.req = conn->llcp_feature.ack = 0;
+		conn->llcp_feature.features = LL_FEAT;
+		conn->llcp_version.req = conn->llcp_version.ack = 0;
 		conn->llcp_version.tx = conn->llcp_version.rx = 0;
 		conn->llcp_terminate.reason_peer = 0;
 		/* NOTE: use allocated link for generating dedicated

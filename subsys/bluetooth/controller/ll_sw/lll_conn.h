@@ -28,29 +28,6 @@ struct node_tx {
 	u8_t pdu[];
 };
 
-enum llcp {
-	LLCP_NONE,
-	LLCP_CONN_UPD,
-	LLCP_CHAN_MAP,
-
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-	LLCP_ENCRYPTION,
-#endif /* CONFIG_BT_CTLR_LE_ENC */
-
-	LLCP_FEATURE_EXCHANGE,
-	LLCP_VERSION_EXCHANGE,
-	/* LLCP_TERMINATE, */
-	LLCP_CONNECTION_PARAM_REQ,
-
-#if defined(CONFIG_BT_CTLR_LE_PING)
-	LLCP_PING,
-#endif /* CONFIG_BT_CTLR_LE_PING */
-
-#if defined(CONFIG_BT_CTLR_PHY)
-	LLCP_PHY_UPD,
-#endif /* CONFIG_BT_CTLR_PHY */
-};
-
 struct lll_conn {
 	struct lll_hdr hdr;
 

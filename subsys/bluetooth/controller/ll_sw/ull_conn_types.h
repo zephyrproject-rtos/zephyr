@@ -4,6 +4,32 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+enum llcp {
+	LLCP_NONE,
+	LLCP_CONN_UPD,
+	LLCP_CHAN_MAP,
+
+	/*
+	 * LLCP_TERMINATE,
+	 * LLCP_FEATURE_EXCHANGE,
+	 * LLCP_VERSION_EXCHANGE,
+	 */
+
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	LLCP_ENCRYPTION,
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
+	LLCP_CONNECTION_PARAM_REQ,
+
+#if defined(CONFIG_BT_CTLR_LE_PING)
+	LLCP_PING,
+#endif /* CONFIG_BT_CTLR_LE_PING */
+
+#if defined(CONFIG_BT_CTLR_PHY)
+	LLCP_PHY_UPD,
+#endif /* CONFIG_BT_CTLR_PHY */
+};
+
 struct ll_conn {
 	struct evt_hdr  evt;
 	struct ull_hdr  ull;
@@ -102,9 +128,15 @@ struct ll_conn {
 
 	struct node_rx_pdu *llcp_rx;
 
-	u32_t llcp_features;
+	struct {
+		u8_t  req;
+		u8_t  ack;
+		u32_t features;
+	} llcp_feature;
 
 	struct {
+		u8_t  req;
+		u8_t  ack;
 		u8_t  tx:1;
 		u8_t  rx:1;
 		u8_t  version_number;
