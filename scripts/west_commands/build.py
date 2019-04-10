@@ -250,13 +250,13 @@ class Build(Forceable):
         if self.args.source_dir:
             source_dir = self.args.source_dir
         elif self.cmake_cache:
-            source_dir = self.cmake_cache.get('APPLICATION_SOURCE_DIR')
+            source_dir = self.cmake_cache.get('CMAKE_HOME_DIRECTORY')
             if not source_dir:
-                # Maybe Zephyr changed the key? Give the user a way
-                # to retry, at least.
-                log.die("can't determine application from build directory "
-                        "{}, please specify an application to build".
-                        format(self.build_dir))
+                # This really ought to be there. The build directory
+                # must be corrupted somehow. Let's see what we can do.
+                log.die('build directory', self.build_dir,
+                        'CMake cache has no CMAKE_HOME_DIRECTORY;',
+                        'please give a source_dir')
         else:
             source_dir = os.getcwd()
         self.source_dir = os.path.abspath(source_dir)
