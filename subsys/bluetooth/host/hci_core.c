@@ -1479,7 +1479,7 @@ int bt_unpair(u8_t id, const bt_addr_le_t *addr)
 	}
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-		bt_gatt_clear_ccc(id, addr);
+		bt_gatt_clear(id, addr);
 	}
 
 	return 0;
