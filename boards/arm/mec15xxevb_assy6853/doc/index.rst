@@ -57,6 +57,8 @@ features:
 +-----------+------------+-------------------------------------+
 | UART      | on-chip    | serial port                         |
 +-----------+------------+-------------------------------------+
+| GPIO      | on-chip    | gpio                                |
++-----------+------------+-------------------------------------+
 
 Other hardware features are not currently supported by Zephyr (at the moment)
 
