@@ -152,3 +152,21 @@ config USB_DFU_DETACH_TIMEOUT
 	int
 	depends on USB_DFU_CLASS
 	default 1000
+
+config USB_DFU_DEFAULT_POLLTIMEOUT
+	prompt "Default value for bwPollTimeout"
+	int
+	depends on USB_DFU_CLASS
+	default 256
+	range 0 1000
+	help
+	  Default value for bwPollTimeout (in ms)
+
+config USB_DFU_DNLOAD_POLLTIMEOUT
+	prompt "Value of bwPollTimeout during DNLOAD stage"
+	int
+	depends on USB_DFU_CLASS
+	default 10000
+	range 0 65535
+	help
+	  Value of bwPollTimeout (in ms) during DNLOAD stage

@@ -300,6 +300,7 @@ struct dfu_data_t {
 	enum dfu_state state;              /* State of the DFU device */
 	enum dfu_status status;            /* Status of the DFU device */
 	u16_t block_nr;                 /* DFU block number */
+	u16_t bwPollTimeout;
 };
 
 static struct dfu_data_t dfu_data = {
@@ -307,6 +308,7 @@ static struct dfu_data_t dfu_data = {
 	.status = statusOK,
 	.flash_area_id = DT_FLASH_AREA_IMAGE_1_ID,
 	.alt_setting = 0,
+	.bwPollTimeout = CONFIG_USB_DFU_DEFAULT_POLLTIMEOUT,
 };
 
 /**
@@ -392,13 +394,19 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			dfu_data.state = dfuIDLE;
 		}
 
+		/* bStatus */
 		(*data)[0] = dfu_data.status;
-		(*data)[1] = 0U;
-		(*data)[2] = 1U;
+		/* bwPollTimeout */
+		sys_put_le16(dfu_data.bwPollTimeout, &(*data)[1]);
 		(*data)[3] = 0U;
+		/* bState */
 		(*data)[4] = dfu_data.state;
+		/* iString */
 		(*data)[5] = 0U;
 		*data_len = 6;
+		if (dfu_data.state == dfuDNBUSY) {
+			k_work_submit(&dfu_work);
+		}
 		break;
 
 	case DFU_GETSTATE:
@@ -441,6 +449,8 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 		switch (dfu_data.state) {
 		case dfuIDLE:
 			LOG_DBG("DFU_DNLOAD start");
+			dfu_data.bwPollTimeout =
+				CONFIG_USB_DFU_DNLOAD_POLLTIMEOUT;
 			dfu_reset_counters();
 			k_poll_signal_reset(&dfu_signal);
 
@@ -456,13 +466,15 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 			dfu_data_worker.worker_state = dfuIDLE;
 			dfu_data_worker.worker_len  = pSetup->wLength;
 			memcpy(dfu_data_worker.buf, *data, pSetup->wLength);
-			k_work_submit(&dfu_work);
+			/* do not submit dfu_work now, wait for DFU_GETSTATUS */
 			break;
 		case dfuDNLOAD_IDLE:
 			dfu_data.state = dfuDNBUSY;
 			dfu_data_worker.worker_state = dfuDNLOAD_IDLE;
 			dfu_data_worker.worker_len  = pSetup->wLength;
 			if (dfu_data_worker.worker_len == 0U) {
+				dfu_data.bwPollTimeout =
+					CONFIG_USB_DFU_DEFAULT_POLLTIMEOUT;
 				dfu_data.state = dfuMANIFEST_SYNC;
 				k_poll_signal_raise(&dfu_signal, 0);
 			}
