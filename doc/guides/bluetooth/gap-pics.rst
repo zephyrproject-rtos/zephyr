@@ -1,3 +1,5 @@
+.. _gap-pics:
+
 GAP PICS
 ********
 
