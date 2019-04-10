@@ -14,6 +14,8 @@
 #include "MEC1501hsz.h"
 #include "regaccess.h"
 
+#include "../common/soc_gpio.h"
+#include "../common/soc_pins.h"
 
 #endif
 
