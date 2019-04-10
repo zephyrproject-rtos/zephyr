@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+ * Copyright (c) 2019 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -26,10 +27,16 @@ void main(void)
 	struct display_capabilities capabilities;
 	struct display_buffer_descriptor buf_desc;
 
+#ifdef CONFIG_ILI9340_RGB565
+	const size_t rgb_size = 2;
+#else
+	const size_t rgb_size = 3;
+#endif
+
 	/* size of the rectangle */
 	const size_t w = 40;
 	const size_t h = 20;
-	const size_t buf_size = 3 * w * h;
+	const size_t buf_size = rgb_size * w * h;
 	u8_t *buf;
 
 	/* xy coordinates where to place rectangles*/
@@ -90,10 +97,28 @@ void main(void)
 		/* Update the color of the rectangle buffer and write the buffer
 		 * to  one of the corners
 		 */
+#ifdef CONFIG_ILI9340_RGB565
+		/* RGB565 format */
+		uint16_t color_r;
+		uint16_t color_g;
+		uint16_t color_b;
+		uint16_t color_rgb;
+		color_r = (color == 0) ? 0xF800U : 0U;
+		color_g = (color == 1) ? 0x07E0U : 0U;
+		color_b = (color == 2) ? 0x001FU : 0U;
+		color_rgb = color_r + color_g + color_b;
+
+		for (size_t idx = 0; idx < buf_size; idx += rgb_size) {
+			*(buf + idx + 0) = (color_rgb >> 8) & 0xFFU;
+			*(buf + idx + 1) = (color_rgb >> 0) & 0xFFU;
+		}
+#else
+		/* RGB888 format */
 		(void)memset(buf, 0, buf_size);
-		for (size_t idx = color; idx < buf_size; idx += 3) {
+		for (size_t idx = color; idx < buf_size; idx += rgb_size) {
 			*(buf + idx) = 255U;
 		}
+#endif
 		switch (cnt % 4) {
 		case 0:
 			display_write(dev, x0, y0, &buf_desc, buf);
