@@ -62,10 +62,28 @@ Boards & SoC Support
 
 * TBD
 
+* Added the all new :ref:`NRF52 simulated board <nrf52_bsim>`:
+  It models some of the HW in an NRF52832 SOC, to enable running
+  full system, multinode simulations, without the need of real HW.
+  Enabling fast, reproducible tests, development and debugging of the
+  application, BT stack and kernel. It relies on `BabbleSim`_
+  to simulate the radio physical layer.
+
+.. _BabbleSim:
+   https://BabbleSim.github.io
+
 Drivers and Sensors
 *******************
 
 * TBD
+
+* Added new drivers and backends for :ref:`native_posix <native_posix>`:
+
+  - An UART driver which maps the Zephyr UART to a new host PTY
+  - A USB driver which can expose a host connected USB device
+  - A display driver which will render to a dedicated window using the SDL
+    library
+  - A dedicated backend for the new logger subsystem
 
 Networking
 **********
@@ -130,11 +148,14 @@ Bluetooth
 *********
 
 * TBD
+* Done several fixes for big endian architectures
 
 Build and Infrastructure
 ************************
 
 * TBD
+* Added support for out of tree architectures
+* `BabbleSim`_ has been integrated in Zephyr's CI system.
 
 Libraries / Subsystems
 ***********************
@@ -155,6 +176,8 @@ Tests and Samples
 *****************
 
 * TBD
+* A new set of, multinode, full system tests of the BT stack,
+  based on `BabbleSim`_ have been added.
 
 Issue Related Items
 *******************
