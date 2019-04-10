@@ -1,4 +1,4 @@
-:orphan:
+.. _cryptography:
 
 Cryptography
 ############
@@ -11,6 +11,6 @@ The following crypto libraries have been included:
 
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    tinycrypt.rst
