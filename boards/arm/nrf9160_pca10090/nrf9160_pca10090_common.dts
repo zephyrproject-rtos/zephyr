@@ -107,7 +107,6 @@
 &pwm0 {
 	status = "ok";
 	ch0-pin = <2>;
-	ch0-inverted;
 };
 
 &spi3 {
