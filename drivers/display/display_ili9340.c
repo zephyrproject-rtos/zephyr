@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2017 Jan Van Winkel <jan.van_winkel@dxplore.eu>
+ * Copyright (c) 2019 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,6 +31,13 @@ struct ili9340_data {
 
 #define ILI9340_CMD_DATA_PIN_COMMAND 0
 #define ILI9340_CMD_DATA_PIN_DATA 1
+
+/* The number of bytes taken by a RGB pixel */
+#ifdef CONFIG_ILI9340_RGB565
+#define ILI9340_RGB_SIZE 2U
+#else
+#define ILI9340_RGB_SIZE 3U
+#endif
 
 static void ili9340_exit_sleep(struct ili9340_data *data)
 {
@@ -132,7 +140,7 @@ static int ili9340_write(const struct device *dev, const u16_t x,
 	u16_t write_h;
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller then width");
-	__ASSERT((desc->pitch * 3U * desc->height) <= desc->bu_size,
+	__ASSERT((desc->pitch * ILI9340_RGB_SIZE * desc->height) <= desc->bu_size,
 			"Input buffer to small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)", desc->width, desc->height,
@@ -149,17 +157,17 @@ static int ili9340_write(const struct device *dev, const u16_t x,
 
 	ili9340_transmit(data, ILI9340_CMD_MEM_WRITE,
 			 (void *) write_data_start,
-			 desc->width * 3U * write_h);
+			 desc->width * ILI9340_RGB_SIZE * write_h);
 
 	tx_bufs.buffers = &tx_buf;
 	tx_bufs.count = 1;
 
-	write_data_start += (desc->pitch * 3U);
+	write_data_start += (desc->pitch * ILI9340_RGB_SIZE);
 	for (write_cnt = 1U; write_cnt < nbr_of_writes; ++write_cnt) {
 		tx_buf.buf = (void *)write_data_start;
-		tx_buf.len = desc->width * 3U * write_h;
+		tx_buf.len = desc->width * ILI9340_RGB_SIZE * write_h;
 		spi_write(data->spi_dev, &data->spi_config, &tx_bufs);
-		write_data_start += (desc->pitch * 3U);
+		write_data_start += (desc->pitch * ILI9340_RGB_SIZE);
 	}
 
 	return 0;
@@ -215,7 +223,11 @@ static int ili9340_set_pixel_format(const struct device *dev,
 				    const enum display_pixel_format
 				    pixel_format)
 {
+#ifdef CONFIG_ILI9340_RGB565
+	if (pixel_format == PIXEL_FORMAT_RGB_565) {
+#else
 	if (pixel_format == PIXEL_FORMAT_RGB_888) {
+#endif
 		return 0;
 	}
 	LOG_ERR("Pixel format change not implemented");
@@ -238,8 +250,13 @@ static void ili9340_get_capabilities(const struct device *dev,
 	memset(capabilities, 0, sizeof(struct display_capabilities));
 	capabilities->x_resolution = 320U;
 	capabilities->y_resolution = 240U;
+#ifdef CONFIG_ILI9340_RGB565
+	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_565;
+	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_565;
+#else
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_RGB_888;
 	capabilities->current_pixel_format = PIXEL_FORMAT_RGB_888;
+#endif
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 

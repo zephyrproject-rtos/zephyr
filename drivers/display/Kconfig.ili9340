@@ -25,4 +25,17 @@ config ILI9340_LCD_ADAFRUIT_1480
 
 endchoice
 
+choice
+	prompt "Color pixel format"
+	help
+	Specify the color pixel format of the ILI9340 display controller.
+
+config ILI9340_RGB888
+	bool "RGB888"
+
+config ILI9340_RGB565
+	bool "RGB565"
+
+endchoice
+
 endif #ILI9340
