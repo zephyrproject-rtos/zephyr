@@ -1,6 +1,8 @@
 ..
     Zephyr Project documentation master file
 
+.. _zephyr-home:
+
 Zephyr Project Documentation
 ############################
 

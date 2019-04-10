@@ -1,3 +1,5 @@
+.. _l2cap-pics:
+
 L2CAP PICS
 ==========
 

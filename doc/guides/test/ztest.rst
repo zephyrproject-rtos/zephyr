@@ -1,4 +1,4 @@
-.. _testing:
+.. _test-framework:
 
 Test Framework
 ###############

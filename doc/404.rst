@@ -1,5 +1,7 @@
 :orphan:
 
+.. _page-not-found:
+
 Sorry, Page Not Found
 #####################
 

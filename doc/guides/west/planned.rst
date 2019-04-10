@@ -1,3 +1,5 @@
+.. _west-planned-features:
+
 Planned Features
 ================
 

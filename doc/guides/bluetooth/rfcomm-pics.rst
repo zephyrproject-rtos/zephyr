@@ -1,3 +1,5 @@
+.. _rfcomm-pics:
+
 RFCOMM PICS
 ***********
 
