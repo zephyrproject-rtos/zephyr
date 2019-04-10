@@ -3103,7 +3103,7 @@ static u8_t remove_peer_from_attr(const struct bt_gatt_attr *attr,
 	return BT_GATT_ITER_CONTINUE;
 }
 
-int bt_gatt_clear_ccc(u8_t id, const bt_addr_le_t *addr)
+static int bt_gatt_clear_ccc(u8_t id, const bt_addr_le_t *addr)
 {
 	char key[BT_SETTINGS_KEY_MAX];
 
@@ -3122,6 +3122,60 @@ int bt_gatt_clear_ccc(u8_t id, const bt_addr_le_t *addr)
 			     (void *)addr);
 
 	return settings_delete(key);
+}
+
+#if defined(CONFIG_BT_GATT_CACHING)
+static struct gatt_cf_cfg *find_cf_cfg_by_addr(const bt_addr_le_t *addr)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
+		if (!bt_addr_le_cmp(addr, &cf_cfg[i].peer)) {
+			return &cf_cfg[i];
+		}
+	}
+
+	return NULL;
+}
+#endif /* CONFIG_BT_GATT_CACHING */
+
+static int bt_gatt_clear_cf(u8_t id, const bt_addr_le_t *addr)
+{
+#if defined(CONFIG_BT_GATT_CACHING)
+	char key[BT_SETTINGS_KEY_MAX];
+	struct gatt_cf_cfg *cfg;
+
+	if (id) {
+		char id_str[4];
+
+		snprintk(id_str, sizeof(id_str), "%u", id);
+		bt_settings_encode_key(key, sizeof(key), "cf",
+				       (bt_addr_le_t *)addr, id_str);
+	} else {
+		bt_settings_encode_key(key, sizeof(key), "cf",
+				       (bt_addr_le_t *)addr, NULL);
+	}
+
+	cfg = find_cf_cfg_by_addr(addr);
+	if (cfg) {
+		clear_cf_cfg(cfg);
+	}
+
+	return settings_delete(key);
+#endif /* CONFIG_BT_GATT_CACHING */
+	return 0;
+}
+
+int bt_gatt_clear(u8_t id, const bt_addr_le_t *addr)
+{
+	int err;
+
+	err = bt_gatt_clear_ccc(id, addr);
+	if (err < 0) {
+		return err;
+	}
+
+	return bt_gatt_clear_cf(id, addr);
 }
 
 static void ccc_clear(struct _bt_gatt_ccc *ccc, bt_addr_le_t *addr)
@@ -3254,19 +3308,6 @@ static int ccc_set(int argc, char **argv, void *val_ctx)
 BT_SETTINGS_DEFINE(ccc, ccc_set, NULL, NULL);
 
 #if defined(CONFIG_BT_GATT_CACHING)
-static struct gatt_cf_cfg *find_cf_cfg_by_addr(const bt_addr_le_t *addr)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
-		if (!bt_addr_le_cmp(addr, &cf_cfg[i].peer)) {
-			return &cf_cfg[i];
-		}
-	}
-
-	return NULL;
-}
-
 static int cf_set(int argc, char **argv, void *val_ctx)
 {
 	struct gatt_cf_cfg *cfg;

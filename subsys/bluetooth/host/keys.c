@@ -231,7 +231,7 @@ static void keys_clear_id(struct bt_keys *keys, void *data)
 
 	if (*id == keys->id) {
 		if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
-			bt_gatt_clear_ccc(*id, &keys->addr);
+			bt_gatt_clear(*id, &keys->addr);
 		}
 
 		bt_keys_clear(keys);
