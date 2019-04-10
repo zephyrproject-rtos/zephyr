@@ -53,6 +53,12 @@ LOG_MODULE_REGISTER(net_l2_openthread, CONFIG_OPENTHREAD_L2_LOG_LEVEL);
 #define OT_PLATFORM_INFO ""
 #endif
 
+#if defined(CONFIG_OPENTHREAD_POLL_PERIOD)
+#define OT_POLL_PERIOD CONFIG_OPENTHREAD_POLL_PERIOD
+#else
+#define OT_POLL_PERIOD 0
+#endif
+
 extern void platformShellInit(otInstance *aInstance);
 
 K_SEM_DEFINE(ot_sem, 0, 1);
@@ -317,6 +323,19 @@ static void openthread_start(struct openthread_context *ot_context)
 {
 	otInstance *ot_instance = ot_context->instance;
 	otError error;
+
+	/* Sleepy End Device specific configuration. */
+	if (IS_ENABLED(CONFIG_OPENTHREAD_MTD_SED)) {
+		otLinkModeConfig ot_mode = otThreadGetLinkMode(ot_instance);
+
+		/* A SED should always attach the network as a SED to indicate
+		 * increased buffer requirement to a parent.
+		 */
+		ot_mode.mRxOnWhenIdle = false;
+
+		otThreadSetLinkMode(ot_context->instance, ot_mode);
+		otLinkSetPollPeriod(ot_context->instance, OT_POLL_PERIOD);
+	}
 
 	if (otDatasetIsCommissioned(ot_instance)) {
 		/* OpenThread already has dataset stored - skip the
