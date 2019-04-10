@@ -1876,6 +1876,9 @@ static inline u32_t isr_rx_conn_pkt_ack(struct pdu_data *pdu_data_tx,
 		 */
 		_radio.conn_curr->procedure_expire =
 			_radio.conn_curr->procedure_reload;
+
+		/* Reset enc req queued state */
+		_radio.conn_curr->llcp_enc.ack = _radio.conn_curr->llcp_enc.req;
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_ENC_RSP:
@@ -2643,14 +2646,10 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 		break;
 
 	case PDU_DATA_LLCTRL_TYPE_START_ENC_REQ:
-		if (!((_radio.conn_curr->llcp_req ==
-			   _radio.conn_curr->llcp_ack) ||
-			  (_radio.conn_curr->llcp_type == LLCP_ENCRYPTION))) {
-			goto isr_rx_conn_unknown_rsp_send;
-		}
-
-
 		if (_radio.conn_curr->role ||
+		    ((_radio.conn_curr->llcp_req !=
+		      _radio.conn_curr->llcp_ack) &&
+		     (_radio.conn_curr->llcp_type != LLCP_ENCRYPTION)) ||
 		    !pdu_len_cmp(PDU_DATA_LLCTRL_TYPE_START_ENC_REQ,
 				 pdu_data_rx->len)) {
 			goto isr_rx_conn_unknown_rsp_send;
@@ -2670,10 +2669,9 @@ isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
 
 		if (_radio.role == ROLE_SLAVE) {
 #if !defined(CONFIG_BT_CTLR_FAST_ENC)
-			if (!((_radio.conn_curr->llcp_req ==
-				   _radio.conn_curr->llcp_ack) ||
-				  (_radio.conn_curr->llcp_type ==
-				   LLCP_ENCRYPTION))) {
+			if ((_radio.conn_curr->llcp_req !=
+			     _radio.conn_curr->llcp_ack) &&
+			    (_radio.conn_curr->llcp_type != LLCP_ENCRYPTION)) {
 				goto isr_rx_conn_unknown_rsp_send;
 			}
 
@@ -7407,7 +7405,7 @@ static inline void event_enc_prep(struct connection *conn)
 	/* master sends encrypted enc start rsp in control priority */
 	if (!conn->role) {
 		/* calc the Session Key */
-		ecb_encrypt(&conn->llcp.encryption.ltk[0],
+		ecb_encrypt(&conn->llcp_enc.ltk[0],
 			    &conn->llcp.encryption.skd[0],
 			    NULL, &conn->ccm_rx.key[0]);
 
@@ -7467,7 +7465,7 @@ static inline void event_enc_prep(struct connection *conn)
 #endif /* !CONFIG_BT_CTLR_FAST_ENC */
 
 			/* calc the Session Key */
-			ecb_encrypt(&conn->llcp.encryption.ltk[0],
+			ecb_encrypt(&conn->llcp_enc.ltk[0],
 				    &conn->llcp.encryption.skd[0], NULL,
 				    &conn->ccm_rx.key[0]);
 
@@ -9262,6 +9260,55 @@ static struct pdu_data *empty_tx_enqueue(struct connection *conn)
 	return pdu_data_tx;
 }
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+static bool is_enc_req_pause_tx(struct connection *conn)
+{
+	struct pdu_data *pdu_data_tx;
+
+	pdu_data_tx = (void *)conn->pkt_tx_head->pdu_data;
+	if ((pdu_data_tx->ll_id == PDU_DATA_LLID_CTRL) &&
+	    (pdu_data_tx->llctrl.opcode == PDU_DATA_LLCTRL_TYPE_ENC_REQ)) {
+		if ((conn->llcp_req != conn->llcp_ack) ||
+#if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
+		    (conn->llcp_conn_param.ack != conn->llcp_conn_param.req) ||
+#endif /* CONFIG_BT_CTLR_CONN_PARAM_REQ */
+#if defined(CONFIG_BT_CTLR_DATA_LENGTH)
+		    (conn->llcp_length.ack != conn->llcp_length.req) ||
+#endif /* CONFIG_BT_CTLR_DATA_LENGTH */
+#if defined(CONFIG_BT_CTLR_PHY)
+		    (conn->llcp_phy.ack != conn->llcp_phy.req) ||
+#endif /* CONFIG_BT_CTLR_PHY */
+		    0) {
+			struct radio_pdu_node_tx *node_tx;
+
+			/* if we have control packets enqueued after this PDU
+			 * bring it ahead, and move the enc_req to last of
+			 * ctrl queue.
+			 */
+			node_tx = conn->pkt_tx_head;
+			if ((node_tx->next != NULL) &&
+			    (node_tx->next == conn->pkt_tx_ctrl)) {
+				conn->pkt_tx_head = node_tx->next;
+				node_tx->next = conn->pkt_tx_ctrl_last->next;
+				conn->pkt_tx_ctrl_last->next = node_tx;
+				conn->pkt_tx_data = node_tx;
+				if (!conn->pkt_tx_last) {
+					conn->pkt_tx_last = node_tx;
+				}
+			}
+			return true;
+		}
+
+		conn->llcp.encryption.initiate = 1U;
+
+		conn->llcp_type = LLCP_ENCRYPTION;
+		conn->llcp_ack--;
+	}
+
+	return false;
+}
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 static void prepare_pdu_data_tx(struct connection *conn,
 				struct pdu_data **pdu_data_tx)
 {
@@ -9272,7 +9319,11 @@ static void prepare_pdu_data_tx(struct connection *conn,
 	    /* no ctrl or data packet */
 	    !conn->pkt_tx_head ||
 	    /* data tx paused, only control packets allowed */
-	    ((conn->pause_tx ||
+	    ((
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	      conn->pause_tx ||
+	      is_enc_req_pause_tx(conn) ||
+#endif /* CONFIG_BT_CTLR_LE_ENC */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	      conn->llcp_length.pause_tx ||
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
@@ -9821,12 +9872,12 @@ static void enc_req_reused_send(struct connection *conn,
 			   sizeof(struct pdu_data_llctrl_enc_req);
 	pdu_ctrl_tx->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_ENC_REQ;
 	memcpy(&pdu_ctrl_tx->llctrl.enc_req.rand[0],
-	       &conn->llcp.encryption.rand[0],
+	       &conn->llcp_enc.rand[0],
 	       sizeof(pdu_ctrl_tx->llctrl.enc_req.rand));
 	pdu_ctrl_tx->llctrl.enc_req.ediv[0] =
-		conn->llcp.encryption.ediv[0];
+		conn->llcp_enc.ediv[0];
 	pdu_ctrl_tx->llctrl.enc_req.ediv[1] =
-		conn->llcp.encryption.ediv[1];
+		conn->llcp_enc.ediv[1];
 
 	/*
 	 * Take advantage of the fact that ivm and skdm fields, which both have
@@ -10632,6 +10683,11 @@ u32_t radio_adv_enable(u16_t interval, u8_t chan_map, u8_t filter_policy,
 		conn->llcp_terminate.reason_peer = 0U;
 		conn->llcp_terminate.radio_pdu_node_rx.hdr.link = link;
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+		conn->llcp_enc.req = 0U;
+		conn->llcp_enc.ack = 0U;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 		conn->llcp_conn_param.req = 0U;
 		conn->llcp_conn_param.ack = 0U;
@@ -11164,6 +11220,11 @@ u32_t radio_connect_enable(u8_t adv_addr_type, u8_t *adv_addr, u16_t interval,
 	conn->llcp_terminate.reason_peer = 0U;
 	conn->llcp_terminate.radio_pdu_node_rx.hdr.link = link;
 
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	conn->llcp_enc.req = 0U;
+	conn->llcp_enc.ack = 0U;
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+
 #if defined(CONFIG_BT_CTLR_CONN_PARAM_REQ)
 	conn->llcp_conn_param.req = 0U;
 	conn->llcp_conn_param.ack = 0U;
@@ -11387,12 +11448,7 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 		return BT_HCI_ERR_UNKNOWN_CONN_ID;
 	}
 
-#if defined(CONFIG_BT_CTLR_PHY)
-	if ((conn->llcp_req != conn->llcp_ack) ||
-	    (conn->llcp_phy.req != conn->llcp_phy.ack)) {
-#else /* CONFIG_BT_CTLR_PHY */
-	if (conn->llcp_req != conn->llcp_ack) {
-#endif /* CONFIG_BT_CTLR_PHY */
+	if (conn->llcp_enc.req != conn->llcp_enc.ack) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
@@ -11402,8 +11458,7 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 
 		pdu_data_tx = (void *)node_tx->pdu_data;
 
-		memcpy(&conn->llcp.encryption.ltk[0], ltk,
-		       sizeof(conn->llcp.encryption.ltk));
+		memcpy(&conn->llcp_enc.ltk[0], ltk, sizeof(conn->llcp_enc.ltk));
 
 		if ((conn->enc_rx == 0) && (conn->enc_tx == 0)) {
 			struct pdu_data_llctrl_enc_req *enc_req;
@@ -11422,11 +11477,11 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 			bt_rand(enc_req->skdm, sizeof(enc_req->skdm));
 			bt_rand(enc_req->ivm, sizeof(enc_req->ivm));
 		} else if ((conn->enc_rx != 0) && (conn->enc_tx != 0)) {
-			memcpy(&conn->llcp.encryption.rand[0], rand,
-			       sizeof(conn->llcp.encryption.rand));
+			memcpy(&conn->llcp_enc.rand[0], rand,
+			       sizeof(conn->llcp_enc.rand));
 
-			conn->llcp.encryption.ediv[0] = ediv[0];
-			conn->llcp.encryption.ediv[1] = ediv[1];
+			conn->llcp_enc.ediv[0] = ediv[0];
+			conn->llcp_enc.ediv[1] = ediv[1];
 
 			pdu_data_tx->ll_id = PDU_DATA_LLID_CTRL;
 			pdu_data_tx->len = offsetof(struct pdu_data_llctrl,
@@ -11445,10 +11500,7 @@ u8_t ll_enc_req_send(u16_t handle, u8_t *rand, u8_t *ediv, u8_t *ltk)
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
 
-		conn->llcp.encryption.initiate = 1U;
-
-		conn->llcp_type = LLCP_ENCRYPTION;
-		conn->llcp_req++;
+		conn->llcp_enc.req++;
 
 		return 0;
 	}
@@ -11488,12 +11540,12 @@ u8_t ll_start_enc_req_send(u16_t handle, u8_t error_code,
 			conn->llcp_terminate.req++;
 		}
 	} else {
-		memcpy(&conn->llcp.encryption.ltk[0], ltk,
-		       sizeof(conn->llcp.encryption.ltk));
-
 		if (conn->llcp_req != conn->llcp_ack) {
 			return BT_HCI_ERR_CMD_DISALLOWED;
 		}
+
+		memcpy(&conn->llcp_enc.ltk[0], ltk,
+		       sizeof(conn->llcp_enc.ltk));
 
 		conn->llcp.encryption.error_code = 0U;
 		conn->llcp.encryption.initiate = 0U;
