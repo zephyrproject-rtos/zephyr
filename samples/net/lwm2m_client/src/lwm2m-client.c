@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr.h>
 #include <gpio.h>
+#include <sensor.h>
 #include <net/lwm2m.h>
 
 #define APP_BANNER "Run LWM2M client"
@@ -177,6 +178,32 @@ static int firmware_update_cb(u16_t obj_inst_id)
 }
 #endif
 
+
+static void *temperature_get_buf(u16_t obj_inst_id, size_t *data_len)
+{
+	/* Last read temperature value, will use 25.5C if no sensor available */
+	static struct float32_value v = { 25, 500000 };
+	struct device *dev = NULL;
+
+#if defined(CONFIG_FXOS8700_TEMP)
+	dev = device_get_binding(DT_NXP_FXOS8700_0_LABEL);
+#endif
+
+	if (dev != NULL) {
+		if (sensor_sample_fetch(dev)) {
+			LOG_ERR("temperature data update failed");
+		}
+
+		sensor_channel_get(dev, SENSOR_CHAN_DIE_TEMP,
+				  (struct sensor_value *) &v);
+		LOG_DBG("LWM2M temperature set to %d.%d", v.val1, v.val2);
+	}
+
+	*data_len = sizeof(v);
+	return &v;
+}
+
+
 #if defined(CONFIG_LWM2M_FIRMWARE_UPDATE_OBJ_SUPPORT)
 static void *firmware_get_buf(u16_t obj_inst_id, size_t *data_len)
 {
@@ -211,7 +238,6 @@ static int timer_digital_state_cb(u16_t obj_inst_id,
 
 static int lwm2m_setup(void)
 {
-	struct float32_value float_value;
 	int ret;
 	char *server_url;
 	u16_t server_url_len;
@@ -300,12 +326,8 @@ static int lwm2m_setup(void)
 #endif
 
 	/* setup TEMP SENSOR object */
-
 	lwm2m_engine_create_obj_inst("3303/0");
-	/* dummy temp data in C: 25.5*/
-	float_value.val1 = 25;
-	float_value.val2 = 500000;
-	lwm2m_engine_set_float32("3303/0/5700", &float_value);
+	lwm2m_engine_register_read_callback("3303/0/5700", temperature_get_buf);
 
 	/* IPSO: Light Control object */
 	if (init_led_device() == 0) {
