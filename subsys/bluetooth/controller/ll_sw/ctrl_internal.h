@@ -164,17 +164,15 @@ struct connection {
 		} phy_upd_ind;
 #endif /* CONFIG_BT_CTLR_PHY */
 
+		struct {
+			u8_t  initiate;
+			u8_t  error_code;
+			u8_t  rand[8];
+			u8_t  ediv[2];
+			u8_t  ltk[16];
+			u8_t  skd[16];
+		} encryption;
 	} llcp;
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-	struct {
-		u8_t  initiate;
-		u8_t  error_code;
-		u8_t  rand[8];
-		u8_t  ediv[2];
-		u8_t  ltk[16];
-		u8_t  skd[16];
-	} llcp_encryption;
-#endif /* CONFIG_BT_CTLR_LE_ENC */
 
 	u32_t llcp_features;
 
