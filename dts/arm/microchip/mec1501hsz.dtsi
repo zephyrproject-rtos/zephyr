@@ -6,6 +6,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/i2c/i2c.h>
+#include <dt-bindings/gpio/gpio.h>
 
 / {
 	cpus {
@@ -52,6 +53,54 @@
 			current-speed = <38400>;
 			label = "UART_2";
 			reg-shift = <0>;
+		};
+		gpioa: gpio@40081000 {
+			compatible = "microchip,xec-gpio";
+			reg = <0x40081000 0x80>;
+			interrupts = <3 2>;
+			gpio-controller;
+			label="GPIO000_036";
+			#gpio-cells=<2>;
+		};
+		gpiob: gpio@40081080 {
+			compatible = "microchip,xec-gpio";
+			reg = <0x40081080 0x80>;
+			interrupts = <2 2>;
+			gpio-controller;
+			label="GPIO040_076";
+			#gpio-cells=<2>;
+		};
+		gpioc: gpio@40081100 {
+			compatible = "microchip,xec-gpio";
+			reg = <0x40081100 0x80>;
+			gpio-controller;
+			interrupts = <1 2>;
+			label="GPIO100_136";
+			#gpio-cells=<2>;
+		};
+		gpiod: gpio@40081180 {
+			compatible = "microchip,xec-gpio";
+			reg = <0x40081180 0x80>;
+			gpio-controller;
+			interrupts = <0 2>;
+			label="GPIO140_176";
+			#gpio-cells=<2>;
+		};
+		gpioe: gpio@40081200 {
+			compatible = "microchip,xec-gpio";
+			reg = <0x40081200 0x80>;
+			gpio-controller;
+			interrupts = <4 2>;
+			label="GPIO200_236";
+			#gpio-cells=<2>;
+		};
+		gpiof: gpio@40081280 {
+			compatible = "microchip,xec-gpio";
+			reg = <0x40081280 0x80>;
+			gpio-controller;
+			interrupts = <17 2>;
+			label="GPIO240_276";
+			#gpio-cells=<2>;
 		};
 		i2c0: i2c@40004000 {
 			compatible = "microchip,xec-i2c";
