@@ -208,7 +208,7 @@ struct soc_global_regs {
 #define SOC_DCACHE_FLUSH(addr, size)		\
 	xthal_dcache_region_writeback((addr), (size))
 #define SOC_DCACHE_INVALIDATE(addr, size)	\
-	xthal_dcache_region_invalidate((addr), (size))
+	xthal_dcache_region_writeback_inv((addr), (size))
 
 extern void z_soc_irq_enable(u32_t irq);
 extern void z_soc_irq_disable(u32_t irq);
