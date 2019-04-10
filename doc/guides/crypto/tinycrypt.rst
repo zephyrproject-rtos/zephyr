@@ -2,7 +2,6 @@
 
 TinyCrypt Cryptographic Library
 ###############################
-Copyright (C) 2015 by Intel Corporation, All Rights Reserved.
 
 Overview
 ********
