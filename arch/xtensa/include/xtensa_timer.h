@@ -115,7 +115,7 @@
  * anyway!).
  */
 #if defined(XT_SIMULATOR) && !defined(XT_CLOCK_FREQ)
-#define XT_CLOCK_FREQ       CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+#define XT_CLOCK_FREQ	DT_CPU_CLOCK_FREQUENCY
 #endif
 
 #if !defined(XT_CLOCK_FREQ) && !defined(XT_BOARD)

@@ -15,3 +15,7 @@
 		zephyr,sram = &sram0;
 	};
 };
+
+&cpu0 {
+	clock-frequency = <10000000>;
+};
