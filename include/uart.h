@@ -729,6 +729,9 @@ static inline int uart_fifo_fill(struct device *dev, const u8_t *tx_data,
  * available data in the FIFO (i.e. until it returns less data
  * than was requested).
  *
+ * Note that the calling context only applies to physical UARTs and
+ * no to the virtual ones found in USB CDC ACM code.
+ *
  * @param dev UART device structure.
  * @param rx_data Data container.
  * @param size Container size.
