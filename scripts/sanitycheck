@@ -182,6 +182,7 @@ import shutil
 import signal
 import threading
 import time
+import datetime
 import csv
 import glob
 import serial
@@ -418,9 +419,11 @@ class ExecutionError(MakeError):
 
 log_file = None
 
-
 # Debug Functions
-def info(what):
+def info(what, show_time=True):
+    if options.timestamps and show_time:
+        date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        what = "{}: {}".format(date, what)
     sys.stdout.write(what + "\n")
     sys.stdout.flush()
     if log_file:
@@ -429,6 +432,9 @@ def info(what):
 
 
 def error(what):
+    if options.timestamps:
+        date = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        what = "{}: {}".format(date, what)
     sys.stderr.write(COLOR_RED + what + COLOR_NORMAL + "\n")
     if log_file:
         log_file(what + "\n")
@@ -2775,6 +2781,10 @@ Artificially long but functional example:
             metavar="FILENAME",
             help="Generate a junit report with detailed testcase results.")
 
+    parser.add_argument("--timestamps",
+            action="store_true",
+            help="Print all messages with time stamps")
+
     parser.add_argument(
         "-r", "--release", action="store_true",
         help="Update the benchmark database with the results of this test "
@@ -2971,9 +2981,9 @@ def terse_test_cb(instances, goals, goal):
                 i.test.name,
                 COLOR_RED,
                 COLOR_NORMAL,
-                goal.reason))
+                goal.reason), False)
         log_info(goal.get_error_log())
-        info("")
+        info("", False)
 
     sys.stdout.write(
         "\rtotal complete: %s%4d/%4d%s  %2d%%  failed: %s%4d%s" %
@@ -3336,7 +3346,7 @@ def main():
         goals = ts.execute(
             terse_test_cb,
             ts.instances)
-        info("")
+        info("", False)
 
     if options.detailed_report:
         ts.testcase_target_report(options.detailed_report)
