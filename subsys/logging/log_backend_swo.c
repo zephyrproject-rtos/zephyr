@@ -18,8 +18,8 @@
  * this frequency should much the one set by the SWO viewer program.
  *
  * The initialization code assumes that SWO core frequency is equal to HCLK
- * as defined by SYS_CLOCK_HW_CYCLES_PER_SEC Kconfig option. This may require
- * additional, vendor specific configuration.
+ * as defined by DT_CPU_CLOCK_FREQUENCY. This may require additional,
+ * vendor specific configuration.
  */
 
 #include <logging/log_backend.h>
@@ -35,13 +35,12 @@
 #if CONFIG_LOG_BACKEND_SWO_FREQ_HZ == 0
 #define SWO_FREQ_DIV  1
 #else
-#define SWO_FREQ (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC \
-		  + (CONFIG_LOG_BACKEND_SWO_FREQ_HZ / 2))
+#define SWO_FREQ (DT_CPU_CLOCK_FREQUENCY + (CONFIG_LOG_BACKEND_SWO_FREQ_HZ / 2))
 #define SWO_FREQ_DIV  (SWO_FREQ / CONFIG_LOG_BACKEND_SWO_FREQ_HZ)
 #if SWO_FREQ_DIV > 0xFFFF
 #error CONFIG_LOG_BACKEND_SWO_FREQ_HZ is too low. SWO clock divider is 16-bit. \
 	Minimum supported SWO clock frequency is \
-	CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC/2^16.
+	[CPU Clock Frequency]/2^16.
 #endif
 #endif
 

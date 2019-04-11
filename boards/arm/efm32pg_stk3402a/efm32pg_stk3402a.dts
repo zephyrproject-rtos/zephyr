@@ -53,6 +53,10 @@
 	};
 };
 
+&cpu0 {
+	clock-frequency = <40000000>;
+};
+
 &usart0 {
 	current-speed = <115200>;
 	location-rx = <GECKO_LOCATION(0) GECKO_PORT_A GECKO_PIN(1)>;
