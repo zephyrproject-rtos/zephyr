@@ -356,6 +356,14 @@ zephyr_cc_option(-Werror=implicit-int)
 # Prohibit void pointer arithmetic. Illegal in C99
 zephyr_cc_option(-Wpointer-arith)
 
+# If the compiler supports it, strip the ${ZEPHYR_BASE} prefix from the
+# __FILE__ macro used in __ASSERT*, in the
+# .noinit."/home/joe/zephyr/fu/bar.c" section names and in any
+# application code. This saves some memory, stops leaking user locations
+# in binaries, makes failure logs more deterministic and most
+# importantly makes builds more deterministic
+zephyr_cc_option(-fmacro-prefix-map=${ZEPHYR_BASE}=.)
+
 # Prohibit date/time macros, which would make the build non-deterministic
 # cc-option(-Werror=date-time)
 
