@@ -14,3 +14,9 @@ properties:
 
     reg:
       category: required
+
+    clocks:
+      type: array
+      category: required
+      description: Clock gate control information
+      generation: structures

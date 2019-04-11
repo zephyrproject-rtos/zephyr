@@ -108,6 +108,7 @@
 
 		wdog0: wdog@40008000 {
 			compatible = "arm,cmsdk-watchdog";
+			clocks = <&sysclk>;
 			reg = <0x40008000 0x1000>;
 		};
 

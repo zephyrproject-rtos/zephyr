@@ -110,7 +110,8 @@ static int wdog_cmsdk_apb_install_timeout(struct device *dev,
 	ARG_UNUSED(dev);
 
 	/* Reload value */
-	reload_s = config->window.max * CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
+	reload_s = config->window.max *
+			   DT_INST_0_ARM_CMSDK_WATCHDOG_CLOCKS_CLOCK_FREQUENCY;
 	flags = config->flags;
 
 	wdog->load = reload_s;
