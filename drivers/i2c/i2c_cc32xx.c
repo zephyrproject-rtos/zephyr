@@ -103,7 +103,7 @@ static int i2c_cc32xx_configure(struct device *dev, u32_t dev_config_raw)
 		return -EINVAL;
 	}
 
-	MAP_I2CMasterInitExpClk(base, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	MAP_I2CMasterInitExpClk(base, DT_I2C_0_CLOCK_FREQUENCY,
 				bitrate_id);
 
 	return 0;
