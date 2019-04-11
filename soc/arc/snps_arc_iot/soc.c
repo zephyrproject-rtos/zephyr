@@ -19,7 +19,7 @@ static int arc_iot_init(struct device *dev)
 	ARG_UNUSED(dev);
 
 	if (arc_iot_pll_fout_config(
-			CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000000) < 0) {
+			     DT_SNPS_ARCEM_0_CLOCK_FREQUENCY / 1000000) < 0) {
 		return -1;
 	}
 
