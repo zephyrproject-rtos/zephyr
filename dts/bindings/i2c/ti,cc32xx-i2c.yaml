@@ -18,6 +18,12 @@ properties:
       generation: define
       category: required
 
+    "cc32xx,clock-frequency" :
+      type: int
+      category: required
+      description: Clock frequency the SPI peripheral is being driven at
+      generation: define
+
     interrupts:
       type: compound
       category: required
