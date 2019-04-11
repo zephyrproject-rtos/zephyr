@@ -49,6 +49,12 @@
 		reg = <0x30000000 0x20000>;
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <50000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		peripheral@50000000 {
 			#address-cells = <1>;

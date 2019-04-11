@@ -49,6 +49,11 @@
 		reg = <0x30000000 0x80000>;
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <40000000>;
+		#clock-cells = <0>;
+	};
 
 	scc@5010b000 {
 		compatible = "arm,scc";
