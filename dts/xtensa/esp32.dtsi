@@ -13,12 +13,14 @@
 		cpu@0 {
 			device_type = "cpu";
 			compatible = "LX6";
+			clock-frequency = <40000000>;
 			reg = <0>;
 		};
 
 		cpu@1 {
 			device_type = "cpu";
 			compatible = "LX6";
+			clock-frequency = <40000000>;
 			reg = <1>;
 		};
 
