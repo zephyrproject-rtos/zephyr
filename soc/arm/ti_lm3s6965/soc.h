@@ -75,13 +75,6 @@ extern "C" {
 #include <sys/util.h>
 #include <random/rand32.h>
 
-/* uart configuration settings */
-#if defined(CONFIG_UART_STELLARIS)
-
-#define DT_UART_STELLARIS_CLK_FREQ		SYSCLK_DEFAULT_IOSC_HZ
-
-#endif /* CONFIG_UART_STELLARIS */
-
 #endif /* !_ASMLANGUAGE */
 
 #ifdef __cplusplus
