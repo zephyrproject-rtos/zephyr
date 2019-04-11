@@ -70,6 +70,7 @@
 			reg = <0xb0002000 0x400>;
 			interrupts = <41 0>;
 			interrupt-parent = <&core_intc>;
+			clocks = <&sysclk>;
 			label = "UART_0";
 
 			status = "disabled";
@@ -80,6 +81,7 @@
 			reg = <0xb0002400 0x400>;
 			interrupts = <42 0>;
 			interrupt-parent = <&core_intc>;
+			clocks = <&sysclk>;
 			label = "UART_1";
 
 			status = "disabled";
