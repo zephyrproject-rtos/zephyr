@@ -11,7 +11,7 @@
 #include <clock_control.h>
 #include <misc/util.h>
 #include <clock_control/stm32_clock_control.h>
-#include "stm32_ll_clock.h"
+#include "clock_stm32_ll_common.h"
 
 /* Macros to fill up prescaler values */
 #define z_ahb_prescaler(v) LL_RCC_SYSCLK_DIV_ ## v
