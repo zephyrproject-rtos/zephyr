@@ -14,10 +14,10 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		cpu@0 {
+		cpu0: cpu@0 {
 			device_type = "cpu";
 			compatible = "snps,arcem";
-			reg = <1>;
+			reg = <0>;
 		};
 
 		intc: arcv2-intc {
