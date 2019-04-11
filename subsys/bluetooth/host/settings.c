@@ -89,20 +89,15 @@ int bt_settings_decode_key(char *key, bt_addr_le_t *addr)
 static int set(int argc, char **argv, void *value_ctx)
 {
 	int len;
+	const struct bt_settings_handler *h;
 
-	if (argc > 1) {
-		const struct bt_settings_handler *h;
+	for (h = _bt_settings_start; h < _bt_settings_end; h++) {
+		if (!strcmp(argv[0], h->name)) {
+			argc--;
+			argv++;
 
-		for (h = _bt_settings_start; h < _bt_settings_end; h++) {
-			if (!strcmp(argv[0], h->name)) {
-				argc--;
-				argv++;
-
-				return h->set(argc, argv, value_ctx);
-			}
+			return h->set(argc, argv, value_ctx);
 		}
-
-		return -ENOENT;
 	}
 
 	if (!strcmp(argv[0], "id")) {
@@ -182,7 +177,7 @@ static int set(int argc, char **argv, void *value_ctx)
 	}
 #endif /* CONFIG_BT_PRIVACY */
 
-	return 0;
+	return -ENOENT;
 }
 
 #define ID_DATA_LEN(array) (bt_dev.id_count * sizeof(array[0]))
