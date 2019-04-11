@@ -140,9 +140,15 @@ struct dev_dfu_mode_descriptor dfu_mode_desc = {
 		.bLength = sizeof(struct usb_device_descriptor),
 		.bDescriptorType = USB_DEVICE_DESC,
 		.bcdUSB = sys_cpu_to_le16(USB_2_0),
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+		.bDeviceClass = MISC_CLASS,
+		.bDeviceSubClass = 0x02,
+		.bDeviceProtocol = 0x01,
+#else
 		.bDeviceClass = 0,
 		.bDeviceSubClass = 0,
 		.bDeviceProtocol = 0,
+#endif
 		.bMaxPacketSize0 = MAX_PACKET_SIZE0,
 		.idVendor = sys_cpu_to_le16((u16_t)CONFIG_USB_DEVICE_VID),
 		.idProduct = sys_cpu_to_le16((u16_t)CONFIG_USB_DEVICE_PID),
