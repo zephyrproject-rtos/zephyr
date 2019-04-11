@@ -84,6 +84,8 @@ Drivers and Sensors
     library
   - A dedicated backend for the new logger subsystem
 
+* nRF5 flash driver support UICR operations
+
 Networking
 **********
 
