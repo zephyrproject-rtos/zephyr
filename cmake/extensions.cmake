@@ -42,6 +42,25 @@
 #   ${CMAKE_CURRENT_SOURCE_DIR}/random_esp32.c
 #   ${CMAKE_CURRENT_SOURCE_DIR}/utils.c
 # )
+#
+# As a very high-level introduction here are two call graphs that are
+# purposely minimalistic and incomplete.
+#
+#  zephyr_library_cc_option()
+#           |
+#           v
+#  zephyr_library_compile_options()  -->  target_compile_options()
+#
+#
+#  zephyr_cc_option()           --->  target_cc_option()
+#                                          |
+#                                          v
+#  zephyr_cc_option_fallback()  --->  target_cc_option_fallback()
+#                                          |
+#                                          v
+#  zephyr_compile_options()     --->  target_compile_options()
+#
+
 
 # https://cmake.org/cmake/help/latest/command/target_sources.html
 function(zephyr_sources)
