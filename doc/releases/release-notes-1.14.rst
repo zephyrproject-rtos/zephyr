@@ -188,7 +188,8 @@ Documentation
 * Added to and improved documentation on many minor subsystems and APIs
   including socket offloading, Ethernet management, LLDP networking,
   network architecture and overview, net shell, CoAP, network interface,
-  network configuration library, DNS resolver, DHCPv4, DTS, and more.
+  network configuration library, DNS resolver, DHCPv4, DTS, flash_area,
+  flash_mpa, NVS , settings and more.
 * Introduced a new debugging guide that documents all the different
   variations of debug probes and host tools in
   one place, including which combinations are valid.
