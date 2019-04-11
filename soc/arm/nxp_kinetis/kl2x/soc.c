@@ -100,7 +100,7 @@ static ALWAYS_INLINE void clkInit(void)
 #endif
 #if CONFIG_USB_KINETIS
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0,
-				CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+				DT_ARM_CORTEX_M0PLUS_0_CLOCK_FREQUENCY);
 #endif
 }
 
