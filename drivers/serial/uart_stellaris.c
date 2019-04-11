@@ -634,7 +634,7 @@ static void irq_config_func_0(struct device *port);
 
 static const struct uart_device_config uart_stellaris_dev_cfg_0 = {
 	.base = (u8_t *)DT_TI_STELLARIS_UART_4000C000_BASE_ADDRESS,
-	.sys_clk_freq = DT_UART_STELLARIS_CLK_FREQ,
+	.sys_clk_freq = DT_TI_STELLARIS_UART_4000C000_CLOCKS_CLOCK_FREQUENCY,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_0,
@@ -672,7 +672,7 @@ static void irq_config_func_1(struct device *port);
 
 static struct uart_device_config uart_stellaris_dev_cfg_1 = {
 	.base = (u8_t *)DT_TI_STELLARIS_UART_4000D000_BASE_ADDRESS,
-	.sys_clk_freq = DT_UART_STELLARIS_CLK_FREQ,
+	.sys_clk_freq = DT_TI_STELLARIS_UART_4000D000_CLOCKS_CLOCK_FREQUENCY,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_1,
@@ -710,7 +710,7 @@ static void irq_config_func_2(struct device *port);
 
 static const struct uart_device_config uart_stellaris_dev_cfg_2 = {
 	.base = (u8_t *)DT_TI_STELLARIS_UART_4000E000_BASE_ADDRESS,
-	.sys_clk_freq = DT_UART_STELLARIS_CLK_FREQ,
+	.sys_clk_freq = DT_TI_STELLARIS_UART_4000E000_CLOCKS_CLOCK_FREQUENCY,
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = irq_config_func_2,
