@@ -143,8 +143,22 @@ Drivers and Sensors
   - A display driver which will render to a dedicated window using the SDL
     library
   - A dedicated backend for the new logger subsystem
-
 * nRF5 flash driver support UICR operations
+* Counter
+
+  - Refactored API
+  - Ported exisitng counter and rtc drivers to the new API
+  - Deprecated legacy API
+
+* RTC
+
+  - Deprecated RTC API. The Counter API should be used instead
+
+* UART
+
+  - Added asynchronous API.
+  - Added implementation of the new asynchronous API for nRF series (UART and
+    UARTE).
 
 * adc: Overhauled adc_dw and renamed it to adc_intel_quark_se_c1000_ss
 * can: Add socket CAN support
@@ -316,7 +330,43 @@ Libraries / Subsystems
   - always use the storage partition for FCB
   - fixes for FCB backend and common bugs
 
-* TBD
+* Logging:
+
+  - Removed sys_log which has been replaced by the new logging subsystem
+    introduced in v1.13
+  - Refactored log modules registration macros
+  - Improved synchronous operation (see :option:`CONFIG_LOG_IMMEDIATE`)
+  - Added commands to control the logger using shell
+  - Added :c:macro:`LOG_PANIC()` call to the fault handlers to ensure that logs
+    are output on fault
+  - Added mechanism for handling logging of transient strings. See
+    :cpp:func:`log_strdup`
+  - Added support for up to 15 arguments in the log message
+  - Added optional function name prefix in the log message
+  - Changed logging thread priority to the lowest application priority
+  - Added notification about dropped log messages due to insufficent logger
+    buffer size
+  - Added log backends:
+    - RTT
+    - native_posix
+    - net
+    - SWO
+    - Xtensa Sim
+  - Changed default timestamp source function to :cpp:func:`k_uptime_get_32`
+
+* Shell:
+
+  - Added new implementation replacing existing one. See :ref:`shell_label`
+  - Added shell backends:
+    - UART
+    - RTT
+    - telnet
+
+* Ring buffer:
+
+  - Added byte mode
+  - Added API to work directly on ring buffer memory to reduce memory copying
+  - Removed ``sys_`` prefix from API functions
 
 HALs
 ****
