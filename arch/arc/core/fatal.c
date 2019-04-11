@@ -66,7 +66,10 @@ void z_NanoFatalErrorHandler(unsigned int reason, const NANO_ESF *pEsf)
 		break;
 	}
 
-	printk("Current thread ID = %p\n",  k_current_get());
+	printk("Current thread ID = %p (%s)\n",
+	       k_current_get(),
+	       IS_ENABLED(CONFIG_THREAD_NAME) ?
+				k_thread_name_get(k_current_get()) : "?");
 
 	if (reason == _NANO_ERR_HW_EXCEPTION) {
 		printk("Faulting instruction address = 0x%lx\n",

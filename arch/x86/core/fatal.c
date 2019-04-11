@@ -184,7 +184,7 @@ FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 		break;
 	}
 
-	printk("Current thread ID = %p\n"
+	printk("Current thread ID = %p (%s)\n"
 	       "eax: 0x%08x, ebx: 0x%08x, ecx: 0x%08x, edx: 0x%08x\n"
 	       "esi: 0x%08x, edi: 0x%08x, ebp: 0x%08x, esp: 0x%08x\n"
 	       "eflags: 0x%08x cs: 0x%04x\n"
@@ -193,6 +193,8 @@ FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 #endif
 	       "eip: 0x%08x\n",
 	       k_current_get(),
+	       IS_ENABLED(CONFIG_THREAD_NAME) ?
+				k_thread_name_get(k_current_get()) : "?",
 	       pEsf->eax, pEsf->ebx, pEsf->ecx, pEsf->edx,
 	       pEsf->esi, pEsf->edi, pEsf->ebp, pEsf->esp,
 	       pEsf->eflags, pEsf->cs & 0xFFFFU, pEsf->eip);

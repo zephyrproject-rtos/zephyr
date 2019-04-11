@@ -88,13 +88,16 @@ FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 	 * We may want to introduce a config option to save and dump all
 	 * registers, at the expense of some stack space.
 	 */
-	printk("Current thread ID: %p\n"
+	printk("Current thread ID: %p (%s)\n"
 	       "Faulting instruction: 0x%x\n"
 	       "  r1: 0x%x  r2: 0x%x  r3: 0x%x  r4: 0x%x\n"
 	       "  r5: 0x%x  r6: 0x%x  r7: 0x%x  r8: 0x%x\n"
 	       "  r9: 0x%x r10: 0x%x r11: 0x%x r12: 0x%x\n"
 	       " r13: 0x%x r14: 0x%x r15: 0x%x  ra: 0x%x\n"
-	       "estatus: %x\n", k_current_get(), esf->instr - 4,
+	       "estatus: %x\n", k_current_get(),
+	       IS_ENABLED(CONFIG_THREAD_NAME) ?
+				k_thread_name_get(k_current_get()) : "?",
+	       esf->instr - 4,
 	       esf->r1, esf->r2, esf->r3, esf->r4,
 	       esf->r5, esf->r6, esf->r7, esf->r8,
 	       esf->r9, esf->r10, esf->r11, esf->r12,

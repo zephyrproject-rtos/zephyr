@@ -77,9 +77,12 @@ void z_NanoFatalErrorHandler(unsigned int reason,
 		printk("**** Unknown Fatal Error %d! ****\n", reason);
 		break;
 	}
-	printk("Current thread ID = %p\n"
+	printk("Current thread ID = %p (%s)\n"
 	       "Faulting instruction address = 0x%x\n",
-	       k_current_get(), pEsf->pc);
+	       k_current_get(),
+	       IS_ENABLED(CONFIG_THREAD_NAME) ?
+				k_thread_name_get(k_current_get()) : "?",
+	       pEsf->pc);
 
 	/*
 	 * Now that the error has been reported, call the user implemented

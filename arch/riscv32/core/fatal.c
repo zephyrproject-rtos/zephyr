@@ -88,7 +88,7 @@ FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 		break;
 	}
 
-	printk("Current thread ID = %p\n"
+	printk("Current thread ID = %p (%s)\n"
 	       "Faulting instruction address = 0x%x\n"
 	       "  ra: 0x%x  gp: 0x%x  tp: 0x%x  t0: 0x%x\n"
 	       "  t1: 0x%x  t2: 0x%x  t3: 0x%x  t4: 0x%x\n"
@@ -96,6 +96,8 @@ FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 	       "  a2: 0x%x  a3: 0x%x  a4: 0x%x  a5: 0x%x\n"
 	       "  a6: 0x%x  a7: 0x%x\n",
 	       k_current_get(),
+	       IS_ENABLED(CONFIG_THREAD_NAME) ?
+				k_thread_name_get(k_current_get()) : "?",
 	       (esf->mepc == 0xdeadbaad) ? 0xdeadbaad : esf->mepc,
 	       esf->ra, esf->gp, esf->tp, esf->t0,
 	       esf->t1, esf->t2, esf->t3, esf->t4,
