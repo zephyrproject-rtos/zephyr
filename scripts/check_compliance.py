@@ -213,13 +213,9 @@ class KconfigCheck(ComplianceTest):
         cmd = [sys.executable, zephyr_module_path,
                '--kconfig-out', modules_file]
         try:
-            p = subprocess.Popen(cmd, stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            p.communicate()
+            _ = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
         except subprocess.CalledProcessError as ex:
-            self.skip("Command not found: " + str(e))
-        except sh.ErrorReturnCode as e:
-            self.skip(e)
+            self.error(ex.output)
 
     def parse_kconfig(self):
         """
