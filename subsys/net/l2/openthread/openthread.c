@@ -313,16 +313,6 @@ exit:
 	return len;
 }
 
-enum net_verdict ieee802154_radio_handle_ack(struct net_if *iface,
-					     struct net_buf *buf)
-{
-	ARG_UNUSED(iface);
-	ARG_UNUSED(buf);
-	NET_DBG("");
-
-	return NET_CONTINUE;
-}
-
 static void openthread_start(struct openthread_context *ot_context)
 {
 	otInstance *ot_instance = ot_context->instance;
