@@ -98,7 +98,11 @@ s32_t bt_mesh_model_pub_period_get(struct bt_mesh_model *mod)
 		CODE_UNREACHABLE;
 	}
 
-	return period >> mod->pub->period_div;
+	if (mod->pub->fast_period) {
+		return period >> mod->pub->period_div;
+	} else {
+		return period;
+	}
 }
 
 static s32_t next_period(struct bt_mesh_model *mod)

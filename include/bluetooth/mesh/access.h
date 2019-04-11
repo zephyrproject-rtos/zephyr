@@ -280,6 +280,7 @@ struct bt_mesh_model_pub {
 	u8_t  period;       /**< Publish Period. */
 	u8_t  period_div:4, /**< Divisor for the Period. */
 	      cred:1,       /**< Friendship Credentials Flag. */
+	      fast_period:1,/**< Use FastPeriodDivisor */
 	      count:3;      /**< Retransmissions left. */
 
 	u32_t period_start; /**< Start of the current period. */

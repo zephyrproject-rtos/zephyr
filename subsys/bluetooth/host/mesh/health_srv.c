@@ -342,8 +342,10 @@ static int health_pub_update(struct bt_mesh_model *mod)
 	BT_DBG("");
 
 	count = health_get_current(mod, pub->msg);
-	if (!count) {
-		pub->period_div = 0U;
+	if (count) {
+		pub->fast_period = 1U;
+	} else {
+		pub->fast_period = 0U;
 	}
 
 	return 0;
@@ -356,6 +358,13 @@ int bt_mesh_fault_update(struct bt_mesh_elem *elem)
 	mod = bt_mesh_model_find(elem, BT_MESH_MODEL_ID_HEALTH_SRV);
 	if (!mod) {
 		return -EINVAL;
+	}
+
+	/* Let periodic publishing, if enabled, take care of sending the
+	 * Health Current Status.
+	 */
+	if (bt_mesh_model_pub_period_get(mod)) {
+		return 0;
 	}
 
 	health_pub_update(mod);
