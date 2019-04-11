@@ -146,8 +146,19 @@ Networking
 Bluetooth
 *********
 
-* TBD
-* Done several fixes for big endian architectures
+* Host: GATT: Added support for Robust Caching
+* Host: GATT: L2CAP: User driven flow control
+* Host: Many fixes to Mesh
+* Host: Fixed & improved persistent storage handling
+* Host: Fixed direct advertising support
+* Host: Fixed security level 4 handling
+* Host: Add option to configure peripheral connection parameters
+* Host: Added support for updating advertising data without having to
+  restart advertising
+* Host: Added API to iterate through existing bonds
+* Host: Added support for setting channel map
+
+* Several fixes for big endian architectures
 
 * New BLE split software Controller (experimental):
 
