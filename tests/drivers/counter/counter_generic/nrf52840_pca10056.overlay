@@ -1,0 +1,21 @@
+&rtc2 {
+	ppi-wrap;
+	guard-period = <3>;
+
+	counter-generic@0 {
+		compatible = "counter,generic";
+		label = "Counter-generic-0";
+		reg = <0>;
+	};
+};
+
+&timer3 {
+	prescaler = <4>;
+	guard-period = <3>;
+
+	counter-generic@1 {
+		compatible = "counter,generic";
+		label = "Counter-generic-1";
+		reg = <1>;
+	};
+};
