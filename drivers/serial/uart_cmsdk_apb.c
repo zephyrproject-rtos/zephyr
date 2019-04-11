@@ -464,7 +464,7 @@ static void uart_cmsdk_apb_irq_config_func_0(struct device *dev);
 
 static const struct uart_device_config uart_cmsdk_apb_dev_cfg_0 = {
 	.base = (u8_t *)DT_INST_0_ARM_CMSDK_UART_BASE_ADDRESS,
-	.sys_clk_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	.sys_clk_freq = DT_INST_0_ARM_CMSDK_UART_CLOCKS_CLOCK_FREQUENCY,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_0,
 #endif
@@ -529,7 +529,7 @@ static void uart_cmsdk_apb_irq_config_func_1(struct device *dev);
 
 static const struct uart_device_config uart_cmsdk_apb_dev_cfg_1 = {
 	.base = (u8_t *)DT_INST_1_ARM_CMSDK_UART_BASE_ADDRESS,
-	.sys_clk_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	.sys_clk_freq = DT_INST_1_ARM_CMSDK_UART_CLOCKS_CLOCK_FREQUENCY,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_1,
 #endif
@@ -594,7 +594,7 @@ static void uart_cmsdk_apb_irq_config_func_2(struct device *dev);
 
 static const struct uart_device_config uart_cmsdk_apb_dev_cfg_2 = {
 	.base = (u8_t *)DT_INST_2_ARM_CMSDK_UART_BASE_ADDRESS,
-	.sys_clk_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	.sys_clk_freq = DT_INST_2_ARM_CMSDK_UART_CLOCKS_CLOCK_FREQUENCY,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_2,
 #endif
@@ -659,7 +659,7 @@ static void uart_cmsdk_apb_irq_config_func_3(struct device *dev);
 
 static const struct uart_device_config uart_cmsdk_apb_dev_cfg_3 = {
 	.base = (u8_t *)DT_INST_3_ARM_CMSDK_UART_BASE_ADDRESS,
-	.sys_clk_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	.sys_clk_freq = DT_INST_3_ARM_CMSDK_UART_CLOCKS_CLOCK_FREQUENCY,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_3,
 #endif
@@ -724,7 +724,7 @@ static void uart_cmsdk_apb_irq_config_func_4(struct device *dev);
 
 static const struct uart_device_config uart_cmsdk_apb_dev_cfg_4 = {
 	.base = (u8_t *)DT_INST_4_ARM_CMSDK_UART_BASE_ADDRESS,
-	.sys_clk_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	.sys_clk_freq = DT_INST_4_ARM_CMSDK_UART_CLOCKS_CLOCK_FREQUENCY,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = uart_cmsdk_apb_irq_config_func_4,
 #endif
