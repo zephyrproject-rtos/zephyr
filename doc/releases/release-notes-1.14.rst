@@ -163,6 +163,11 @@ Libraries / Subsystems
   - API extension
   - Automatic generation of the list of flash areas
 
+* settings:
+  - enable logging instead of ASSERTs
+  - always use the storage partition for FCB
+  - fixes for FCB backend and common bugs
+
 * TBD
 
 HALs
