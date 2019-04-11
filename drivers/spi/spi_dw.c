@@ -252,7 +252,8 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 
 	if (!spi_dw_is_slave(spi)) {
 		/* Baud rate and Slave select, for master only */
-		write_baudr(SPI_DW_CLK_DIVIDER(config->frequency), info->regs);
+		write_baudr(SPI_DW_CLK_DIVIDER(info->clock_frequency,
+					       config->frequency), info->regs);
 		write_ser(1 << config->slave, info->regs);
 	}
 
@@ -273,7 +274,8 @@ static int spi_dw_configure(const struct spi_dw_config *info,
 		LOG_DBG("Installed master config %p: freq %uHz (div = %u),"
 			    " ws/dfs %u/%u, mode %u/%u/%u, slave %u",
 			    config, config->frequency,
-			    SPI_DW_CLK_DIVIDER(config->frequency),
+			    SPI_DW_CLK_DIVIDER(info->clock_frequency,
+					       config->frequency),
 			    SPI_WORD_SIZE_GET(config->operation), spi->dfs,
 			    (SPI_MODE_GET(config->operation) &
 			     SPI_MODE_CPOL) ? 1 : 0,
@@ -535,6 +537,7 @@ struct spi_dw_data spi_dw_data_port_0 = {
 
 const struct spi_dw_config spi_dw_config_0 = {
 	.regs = DT_SPI_0_BASE_ADDRESS,
+	.clock_frequency = DT_SPI_0_CLOCK_FREQUENCY,
 #ifdef CONFIG_SPI_DW_PORT_0_CLOCK_GATE
 	.clock_name = CONFIG_SPI_DW_PORT_1_CLOCK_GATE_DRV_NAME,
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_0_CLOCK_GATE_SUBSYS),
@@ -583,6 +586,7 @@ struct spi_dw_data spi_dw_data_port_1 = {
 
 static const struct spi_dw_config spi_dw_config_1 = {
 	.regs = DT_SPI_1_BASE_ADDRESS,
+	.clock_frequency = DT_SPI_1_CLOCK_FREQUENCY,
 #ifdef CONFIG_SPI_DW_PORT_1_CLOCK_GATE
 	.clock_name = CONFIG_SPI_DW_PORT_1_CLOCK_GATE_DRV_NAME,
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_1_CLOCK_GATE_SUBSYS),
@@ -631,6 +635,7 @@ struct spi_dw_data spi_dw_data_port_2 = {
 
 static const struct spi_dw_config spi_dw_config_2 = {
 	.regs = DT_SPI_2_BASE_ADDRESS,
+	.clock_frequency = DT_SPI_2_CLOCK_FREQUENCY,
 #ifdef CONFIG_SPI_DW_PORT_2_CLOCK_GATE
 	.clock_name = CONFIG_SPI_DW_PORT_2_CLOCK_GATE_DRV_NAME,
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_2_CLOCK_GATE_SUBSYS),
@@ -679,6 +684,7 @@ struct spi_dw_data spi_dw_data_port_3 = {
 
 static const struct spi_dw_config spi_dw_config_3 = {
 	.regs = DT_SPI_3_BASE_ADDRESS,
+	.clock_frequency = DT_SPI_3_CLOCK_FREQUENCY,
 #ifdef CONFIG_SPI_DW_PORT_3_CLOCK_GATE
 	.clock_name = CONFIG_SPI_DW_PORT_3_CLOCK_GATE_DRV_NAME,
 	.clock_data = UINT_TO_POINTER(CONFIG_SPI_DW_PORT_3_CLOCK_GATE_SUBSYS),
