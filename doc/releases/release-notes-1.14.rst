@@ -56,6 +56,24 @@ Architectures
 
 * TBD
 
+* arch:high-level Kconfig symbol structure for Trusted Execution
+
+* arch: arm: re-architect Memory Protection code for ARM and NXP
+* arch: arm: fully support application user mode in ARMv8m
+* arch: arm: fully support application memory partitions in ARMv8m
+* arch: arm: fully support HW stack protection in ARMv8m
+* arch: arm: support built-in stack overflow protection in user mode in ARMv8m
+* arch: arm: fix stack overflow error reporting
+* arch: arm: support executing from SRAM in XIP builds
+* arch: arm: support non-cacheable memory sections
+* arch: arm: remove power-of-two align and size requirement for ARMv8-m
+* arch: arm: introduce sync barriers in arm-specific IRQ lock/unlock functions
+* arch: arm: enforce double-word stack alignment on exception entry
+* arch: arm: API to allow Non-Secure FPU Access (ARMv8-M)
+* arch: arm: various enhancements in ARM system boot code
+* arch: arm: indicate Secure domain fault in Non-Secure fault exception
+* arch: arm: update ARM CMSIS headers to version 5.4.0
+
 Boards & SoC Support
 ********************
 
