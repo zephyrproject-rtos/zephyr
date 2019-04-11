@@ -68,6 +68,15 @@ Boards & SoC Support
   application, BT stack and kernel. It relies on `BabbleSim`_
   to simulate the radio physical layer.
 
+* arm: add SoC configuration for nRF9160 Arm Cortex-M33 CPU
+* arm: add SoC configuration for Musca Arm Cortex-M33 CPU
+
+* Added support for the following Arm boards:
+
+  * v2m_musca
+  * nrf9160_pca10090
+  * nrf52840_pca10090
+
 .. _BabbleSim:
    https://BabbleSim.github.io
 
