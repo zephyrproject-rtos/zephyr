@@ -18,4 +18,10 @@ properties:
       description: mmio register space
       generation: define
       category: required
+
+    clock-frequency:
+      type: int
+      category: optional
+      description: Clock frequency the Watchdog peripheral is being driven at
+      generation: define
 ...

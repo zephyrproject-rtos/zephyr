@@ -27,6 +27,7 @@ dtimer0: dtimer@2000 {
 
 wdog0: wdog@81000 {
 	compatible = "arm,cmsdk-watchdog";
+	clock-frequency = <50000000>;
 	reg = <0x81000 0x1000>;
 };
 
