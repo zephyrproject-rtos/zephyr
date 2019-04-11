@@ -146,6 +146,56 @@ Drivers and Sensors
 
 * nRF5 flash driver support UICR operations
 
+* adc: Overhauled adc_dw and renamed it to adc_intel_quark_se_c1000_ss
+* can: Add socket CAN support
+* clock_control: Added RV32M1 driver
+* console: Removed telnet driver
+* counter: Converted rtc drivers to new counter API
+* display: Introduced mcux elcdif shim driver
+* display: Added support for ssd16xx monochrome controllers
+* display: Added support for ssd1608, gde029a1, and hink e0154a05
+* display: Added SDL based display emulation driver
+* display: Added SSD1673 EPD controller driver
+* display: Added SSD1306 display controller driver
+* entropy: Added Atmel SAM entropy generator driver
+* flash: Added driver for STM32F7x series
+* flash: Added flash driver support for Atmel SAM E70
+* flash: Added a generic spi nor flash driver
+* flash: Added flash driver for SiLabs Gecko SoCs
+* ethernet: Extended mcux driver for i.mx rt socs
+* ethernet: Added driver for Intel PRO/1000 Ethernet controller
+* gpio: Added RV32M1 driver
+* hwinfo: Added new hwinfo API and drivers
+* i2c: Added mcux lpi2c shim driver
+* i2c: Removed deprecated i2c_atmel_sam3 driver
+* i2c: Introduced Silabs i2c shim driver
+* i2s: Added support for I2S stm32
+* ipm: Added IMX IPM driver for i.MX socs
+* interrupt_controller: Added RV32M1 driver
+* interrupt_controller: Add support for STM32F302x8 EXTI_LINES
+* neural_net: Added Intel GNA driver
+* pinmux: Added RV32M1 driver
+* pinmux: add pinmux driver for Intel S1000
+* pinmux: Add support for STM32F302x8
+* pwm: Added SiFive PWM driver
+* pwm: Added Atmel SAM PWM driver
+* sensor: Added lis2ds12, lis2dw12, lis2mdl, and lsm303dlhc drivers
+* sensor: Added ms5837 driver
+* sensor: Added support for Nordic QDEC
+* sensor: Converted drivers to use device tree
+* serial: Added RV32M1 driver
+* serial: Add new asynchronous UART API
+* serial: Added support for ARM PL011 UART
+* serial: Introduced Silabs leuart shim serial driver
+* serial: Adapted gecko uart driver for Silabs EFM32HG
+* timer: Added/reworked Xtensa, RISV-V, NRF, HPET, and Arm systick drivers
+* usb: Added native_posix USB driver
+* usb: Added usb device driver for Atmel SAM E70 family
+* usb: Added nRF52840 USBD driver
+* watchdog: Converted drivers to new API
+* wifi: simplelink: Implemented setsockopt() for TLS offload
+* wifi: Added inventek es-WiFi driver
+
 Networking
 **********
 
