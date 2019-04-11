@@ -178,6 +178,31 @@ Bluetooth
 * TBD
 * Done several fixes for big endian architectures
 
+* New BLE split software Controller (experimental):
+
+  - Split design with Upper Link Layer and Lower Link Layer
+  - Enabled with :option:`CONFIG_BT_LL_SW_SPLIT` (disabled by default)
+  - Support for multiple BLE radio hardware architectures
+  - Asynchronous handling of procedures in the ULL
+  - Enhanced radio utilization (99% on continous 100ms scan)
+  - Latency resilience: Approx 100uS vs 10uS, 10x improvement
+  - CPU and power usage: About 20% improvement
+  - Multiple advertiser and scanner instances
+  - Support for both Big and Little-Endian architectures
+
+* Controller: Added support for setting the public address
+* Controller: Multiple control procedures fixes and improvements
+* Controller: Advertising random delay fixes
+* Controller: Fix a serious memory corruption issue during scanning
+* Controller: Fixes to RSSI measurement
+* Controller: Fixes to Connection Failed to be Established sequence
+* Controller: Transitioned to the new logging subsystem from syslog
+* Controller: Switched from -Ofast to -O2 in time-critical sections
+* Controller: Reworked the RNG/entropy driver to make it available to apps
+* Controller: Multiple size optimizations to make it fit in smaller devices
+* Controller: nRF: Rework the PPI channel assignment to use pre-assigned ones
+* Controller: Add extensive documentation to the shared primitives
+
 Build and Infrastructure
 ************************
 
