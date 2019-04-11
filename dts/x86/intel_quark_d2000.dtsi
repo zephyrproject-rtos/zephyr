@@ -115,6 +115,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xb0001000 0x400>;
+			clock-frequency = <32000000>;
 			interrupts = <2 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			label = "SPI_0";

@@ -182,6 +182,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010000 0x400>;
+			clock-frequency = <32000000>;
 			interrupts = <30 2>, <31 2>, <32 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&core_intc>;
@@ -194,6 +195,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010100 0x400>;
+			clock-frequency = <32000000>;
 			interrupts = <33 2>, <34 2>, <35 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&core_intc>;

@@ -136,6 +136,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x0000E000 0x400>;
+			clock-frequency = <400000000>;
 			interrupts = <IRQ_DW(7) 0 0>;
 			interrupt-parent = <&dw_intc>;
 			label = "SPI_0";

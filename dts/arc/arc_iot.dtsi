@@ -223,6 +223,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010000 0x100>;
+			clock-frequency = <144000000>;
 			interrupts = <70 2>, <71 2>, <72 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&intc>;
@@ -235,6 +236,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010100 0x100>;
+			clock-frequency = <144000000>;
 			interrupts = <74 2>, <75 2>, <76 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&intc>;
@@ -247,6 +249,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010100 0x100>;
+			clock-frequency = <144000000>;
 			interrupts = <78 2>, <79 2>, <80 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&intc>;
