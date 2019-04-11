@@ -14,4 +14,9 @@
 /* pin used to detect V_INT (buffer power) */
 #define V_INT_DETECT_GPIO_PIN		2
 
+/* SKYWORKS SKY13351 antenna selection settings (only use vctl1) */
+#define ANT_SEL_GPIO_NAME	DT_SKYWORKS_SKY13351_0_VCTL1_GPIOS_CONTROLLER
+#define ANT_SEL_GPIO_FLAGS	DT_SKYWORKS_SKY13351_0_VCTL1_GPIOS_FLAGS
+#define ANT_SEL_GPIO_PIN	DT_SKYWORKS_SKY13351_0_VCTL1_GPIOS_PIN
+
 #endif /* __INC_BOARD_H */
