@@ -353,18 +353,8 @@ def kconfig_definition_rst(sc):
     def menu_path(node):
         path = ""
 
-        while True:
-            # This excludes indented submenus created in the menuconfig
-            # interface when items depend on the preceding symbol.
-            # is_menuconfig means anything that would be shown as a separate
-            # menu (not indented): proper 'menu's, menuconfig symbols, and
-            # choices.
+        while node.parent is not node.kconfig.top_node:
             node = node.parent
-            while not node.is_menuconfig:
-                node = node.parent
-
-            if node is node.kconfig.top_node:
-                break
 
             # Promptless choices can show up as parents, e.g. when people
             # define choices in multiple locations to add symbols. Use
