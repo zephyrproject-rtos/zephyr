@@ -361,8 +361,8 @@ static int pl011_init(struct device *dev)
 	pl011_disable_fifo(dev);
 
 	/* Set baud rate */
-	ret = pl011_set_baudrate(dev, CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
-					DEV_DATA(dev)->baud_rate);
+	ret = pl011_set_baudrate(dev, DEV_CFG(dev)->sys_clk_freq,
+				      DEV_DATA(dev)->baud_rate);
 	if (ret != 0) {
 		return ret;
 	}
@@ -414,7 +414,7 @@ static void pl011_irq_config_func_0(struct device *dev);
 
 static struct uart_device_config pl011_cfg_port_0 = {
 	.base = (u8_t *)DT_PL011_PORT0_BASE_ADDRESS,
-	.sys_clk_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	.sys_clk_freq = DT_PL011_PORT0_CLOCK_FREQUENCY,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = pl011_irq_config_func_0,
 #endif
@@ -468,7 +468,7 @@ static void pl011_irq_config_func_1(struct device *dev);
 
 static struct uart_device_config pl011_cfg_port_1 = {
 	.base = (u8_t *)DT_PL011_PORT1_BASE_ADDRESS,
-	.sys_clk_freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	.sys_clk_freq = DT_PL011_PORT1_CLOCK_FREQUENCY,
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	.irq_config_func = pl011_irq_config_func_1,
 #endif
