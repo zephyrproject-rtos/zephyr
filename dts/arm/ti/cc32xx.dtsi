@@ -45,6 +45,7 @@
 			compatible = "ti,cc32xx-uart";
 			reg = <0x4000c000 0x4c>;
 			interrupts = <EXP_UARTA0 3>;
+			clock-frequency = <80000000>;
 			status = "disabled";
 			label = "UART_0";
 		};
@@ -53,6 +54,7 @@
 			compatible = "ti,cc32xx-uart";
 			reg = <0x4000d000 0x4c>;
 			interrupts = <EXP_UARTA1 3>;
+			clock-frequency = <80000000>;
 			status = "disabled";
 			label = "UART_1";
 		};
