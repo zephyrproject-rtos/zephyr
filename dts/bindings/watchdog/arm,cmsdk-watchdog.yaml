@@ -18,4 +18,10 @@ properties:
       description: mmio register space
       generation: define
       category: required
+
+    clocks:
+      type: array
+      category: required
+      description: Clock gate control information
+      generation: structures
 ...

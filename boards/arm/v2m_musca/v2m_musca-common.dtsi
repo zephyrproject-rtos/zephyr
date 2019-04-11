@@ -41,6 +41,7 @@ mhu1: mhu@4000 {
 
 wdog0: wdog@81000 {
 	compatible = "arm,cmsdk-watchdog";
+	clocks = <&sysclk>;
 	reg = <0x81000 0x1000>;
 };
 
