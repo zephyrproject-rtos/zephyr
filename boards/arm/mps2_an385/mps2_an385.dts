@@ -65,6 +65,7 @@
 			reg = <0x40004000 0x1000>;
 			interrupts = <1 3 0 3>;
 			interrupt-names = "tx", "rx";
+			clock-frequency = <25000000>;
 			current-speed = <115200>;
 			label = "UART_0";
 		};
@@ -74,6 +75,7 @@
 			reg = <0x40005000 0x1000>;
 			interrupts = <3 3 2 3>;
 			interrupt-names = "tx", "rx";
+			clock-frequency = <25000000>;
 			current-speed = <115200>;
 			label = "UART_1";
 		};
@@ -83,6 +85,7 @@
 			reg = <0x40006000 0x1000>;
 			interrupts = <5 3 4 3>;
 			interrupt-names = "tx", "rx";
+			clock-frequency = <25000000>;
 			current-speed = <115200>;
 			label = "UART_2";
 		};
@@ -92,6 +95,7 @@
 			reg = <0x40007000 0x1000>;
 			interrupts = <19 3 18 3>;
 			interrupt-names = "tx", "rx";
+			clock-frequency = <25000000>;
 			current-speed = <115200>;
 			label = "UART_3";
 		};
@@ -106,6 +110,7 @@
 			reg = <0x40009000 0x1000>;
 			interrupts = <21 3 20 3>;
 			interrupt-names = "tx", "rx";
+			clock-frequency = <25000000>;
 			current-speed = <115200>;
 			label = "UART_4";
 		};

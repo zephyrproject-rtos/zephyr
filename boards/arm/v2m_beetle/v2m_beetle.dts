@@ -62,6 +62,7 @@
 			compatible = "arm,cmsdk-uart";
 			reg = <0x40004000 0x1000>;
 			interrupts = <0 3>;
+			clock-frequency = <24000000>;
 			current-speed = <115200>;
 			label = "UART_0";
 		};
@@ -70,6 +71,7 @@
 			compatible = "arm,cmsdk-uart";
 			reg = <0x40005000 0x1000>;
 			interrupts = <2 3>;
+			clock-frequency = <24000000>;
 			current-speed = <115200>;
 			label = "UART_1";
 		};
