@@ -51,6 +51,12 @@
 		reg = <0x0 0x40000>;
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <144000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -223,6 +229,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010000 0x100>;
+			clocks = <&sysclk>;
 			interrupts = <70 2>, <71 2>, <72 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&intc>;
@@ -235,6 +242,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010100 0x100>;
+			clocks = <&sysclk>;
 			interrupts = <74 2>, <75 2>, <76 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&intc>;
@@ -247,6 +255,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x80010200 0x100>;
+			clocks = <&sysclk>;
 			interrupts = <78 2>, <79 2>, <80 2>;
 			interrupt-names = "err-int", "rx-avail", "tx-req";
 			interrupt-parent = <&intc>;

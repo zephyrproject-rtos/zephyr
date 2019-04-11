@@ -45,6 +45,12 @@
 		reg = <0xbe800000 DT_SIZE_K(64)>;
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <400000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -143,6 +149,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0x0000E000 0x400>;
+			clocks = <&sysclk>;
 			interrupts = <IRQ_DW(7) 0 0>;
 			interrupt-parent = <&dw_intc>;
 			label = "SPI_0";
