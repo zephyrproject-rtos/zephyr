@@ -1,6 +1,5 @@
 /*
- *
- * Copyright (c) 2018 Ilya Tagunov
+ * Copyright (c) 2019 Linaro Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,17 +10,17 @@
 #include <clock_control.h>
 #include <misc/util.h>
 #include <clock_control/stm32_clock_control.h>
-#include "stm32_ll_clock.h"
+#include "clock_stm32_ll_common.h"
 
 
 #ifdef CONFIG_CLOCK_STM32_SYSCLK_SRC_PLL
 
 /* Macros to fill up multiplication and division factors values */
-#define z_pll_mul(v) LL_RCC_PLL_MUL_ ## v
-#define pll_mul(v) z_pll_mul(v)
+#define _pll_mul(v) LL_RCC_PLL_MUL_ ## v
+#define pll_mul(v) _pll_mul(v)
 
-#define z_pll_div(v) LL_RCC_PLL_DIV_ ## v
-#define pll_div(v) z_pll_div(v)
+#define _pll_div(v) LL_RCC_PLL_DIV_ ## v
+#define pll_div(v) _pll_div(v)
 
 /**
  * @brief Fill PLL configuration structure
@@ -39,8 +38,5 @@ void config_pll_init(LL_UTILS_PLLInitTypeDef *pllinit)
  */
 void config_enable_default_clocks(void)
 {
-#if defined(CONFIG_EXTI_STM32) || defined(CONFIG_USB_DC_STM32)
-	/* Enable System Configuration Controller clock. */
-	LL_APB2_GRP1_EnableClock(LL_APB2_GRP1_PERIPH_SYSCFG);
-#endif
+	/* Nothing for now */
 }
