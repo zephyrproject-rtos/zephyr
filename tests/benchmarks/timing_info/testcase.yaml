@@ -1,3 +1,41 @@
+common:
+    tags: benchmark
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "starting test - Time Measurement"
+        - "Timing Results: Clock Frequency(.*)"
+        - "Context switch"
+        - "Interrupt latency"
+        - "Tick overhead"
+        - "Thread Creation"
+        - "Thread cancel"
+        - "Thread abort"
+        - "Thread Suspend"
+        - "Thread Resume"
+        - "Thread Yield"
+        - "Thread Sleep"
+        - "Heap Malloc"
+        - "Heap Free"
+        - "Semaphore Take with context switch"
+        - "Semaphore Give with context switch"
+        - "Semaphore Take without context switch"
+        - "Semaphore Give without context switch"
+        - "Mutex lock"
+        - "Mutex unlock"
+        - "Message Queue Put with context switch"
+        - "Message Queue Put without context switch"
+        - "Message Queue get with context switch"
+        - "Message Queue get without context switch"
+        - "MailBox synchronous put"
+        - "MailBox synchronous get"
+        - "MailBox asynchronous put"
+        - "MailBox get without context switch"
+        - "Timing Measurement  finished"
+        - "PASS - main"
+        - "(=+)"
+        - "PROJECT EXECUTION SUCCESSFUL"
 tests:
   benchmark.timing.default_kernel:
     arch_exclude: posix
