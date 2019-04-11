@@ -40,6 +40,12 @@
 		compatible = "serial-flash";
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <80000000>;
+		#clock-cells = <0>;
+	};
+
 	soc {
 		uart0: uart@4000c000 {
 			compatible = "ti,cc32xx-uart";
@@ -59,6 +65,7 @@
 
 		i2c0: i2c@40020000 {
 			compatible = "ti,cc32xx-i2c";
+			clocks = <&sysclk>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
