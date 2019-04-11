@@ -387,7 +387,19 @@ static u8_t gen_hash_m(const struct bt_gatt_attr *attr, void *user_data)
 	return BT_GATT_ITER_CONTINUE;
 }
 
-static void db_hash_gen(void)
+static void db_hash_store(void)
+{
+	int err;
+
+	err = settings_save_one("bt/hash", &db_hash, sizeof(db_hash));
+	if (err) {
+		BT_ERR("Failed to save Database Hash (err %d)", err);
+	}
+
+	BT_DBG("Database Hash stored");
+}
+
+static void db_hash_gen(bool store)
 {
 	u8_t key[16] = {};
 	struct tc_aes_key_sched_struct sched;
@@ -406,11 +418,15 @@ static void db_hash_gen(void)
 	}
 
 	BT_HEXDUMP_DBG(db_hash, sizeof(db_hash), "Hash: ");
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS) && store) {
+		db_hash_store();
+	}
 }
 
 static void db_hash_process(struct k_work *work)
 {
-	db_hash_gen();
+	db_hash_gen(true);
 }
 
 static ssize_t db_hash_read(struct bt_conn *conn,
@@ -422,7 +438,7 @@ static ssize_t db_hash_read(struct bt_conn *conn,
 	 */
 	if (k_delayed_work_remaining_get(&db_hash_work)) {
 		k_delayed_work_cancel(&db_hash_work);
-		db_hash_gen();
+		db_hash_gen(true);
 	}
 
 	/* BLUETOOTH CORE SPECIFICATION Version 5.1 | Vol 3, Part G page 2347:
@@ -675,7 +691,7 @@ void bt_gatt_init(void)
 
 #if defined(CONFIG_BT_GATT_CACHING)
 	k_delayed_work_init(&db_hash_work, db_hash_process);
-	db_hash_gen();
+	db_hash_gen(false);
 #endif /* COFNIG_BT_GATT_CACHING */
 
 	k_delayed_work_init(&gatt_sc.work, sc_process);
@@ -3367,5 +3383,47 @@ static int cf_set(int argc, char **argv, void *val_ctx)
 }
 
 BT_SETTINGS_DEFINE(cf, cf_set, NULL, NULL);
+
+static u8_t stored_hash[16];
+
+static int db_hash_set(int argc, char **argv, void *val_ctx)
+{
+	int len;
+
+	len = settings_val_read_cb(val_ctx, stored_hash, sizeof(stored_hash));
+	if (len < 0) {
+		BT_ERR("Failed to decode value (err %d)", len);
+		return len;
+	}
+
+	BT_HEXDUMP_DBG(stored_hash, sizeof(stored_hash), "Stored Hash: ");
+
+	return 0;
+}
+
+static int db_hash_commit(void)
+{
+	/* Stop work and generate the hash */
+	if (k_delayed_work_remaining_get(&db_hash_work)) {
+		k_delayed_work_cancel(&db_hash_work);
+		db_hash_gen(false);
+	}
+
+	/* Check if hash matches then skip SC update */
+	if (!memcmp(stored_hash, db_hash, sizeof(stored_hash))) {
+		BT_DBG("Database Hash matches");
+		k_delayed_work_cancel(&gatt_sc.work);
+		return 0;
+	}
+
+	BT_HEXDUMP_DBG(db_hash, sizeof(db_hash), "New Hash: ");
+
+	/* Hash did not match overwrite with current hash */
+	db_hash_store();
+
+	return 0;
+}
+
+BT_SETTINGS_DEFINE(hash, db_hash_set, db_hash_commit, NULL);
 #endif /*CONFIG_BT_GATT_CACHING */
 #endif /* CONFIG_BT_SETTINGS */
