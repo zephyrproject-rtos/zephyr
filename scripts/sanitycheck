@@ -808,14 +808,16 @@ class QEMUHandler(Handler):
         log_out_fp.close()
         out_fp.close()
         in_fp.close()
+        if os.path.exists(pid_fn):
+            pid = int(open(pid_fn).read())
+            os.unlink(pid_fn)
 
-        pid = int(open(pid_fn).read())
-        os.unlink(pid_fn)
-        try:
-            os.kill(pid, signal.SIGTERM)
-        except ProcessLookupError:
-            # Oh well, as long as it's dead! User probably sent Ctrl-C
-            pass
+            try:
+                if pid:
+                    os.kill(pid, signal.SIGTERM)
+            except ProcessLookupError:
+                # Oh well, as long as it's dead! User probably sent Ctrl-C
+                pass
 
         os.unlink(fifo_in)
         os.unlink(fifo_out)
