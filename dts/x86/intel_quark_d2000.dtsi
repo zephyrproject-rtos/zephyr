@@ -65,6 +65,7 @@
 			label = "UART_0";
 			interrupts = <8 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
+			clocks = <&sysclk>;
 
 			status = "disabled";
 		};
@@ -75,6 +76,7 @@
 			label = "UART_1";
 			interrupts = <6 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
+			clocks = <&sysclk>;
 
 			status = "disabled";
 		};
