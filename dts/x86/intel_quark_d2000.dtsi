@@ -38,6 +38,11 @@
 		reg = <0x00280000 DT_SRAM_SIZE>;
 	};
 
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <32000000>;
+		#clock-cells = <0>;
+	};
 
 	soc {
 		#address-cells = <1>;
@@ -115,6 +120,7 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			reg = <0xb0001000 0x400>;
+			clocks = <&sysclk>;
 			interrupts = <2 IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
 			label = "SPI_0";

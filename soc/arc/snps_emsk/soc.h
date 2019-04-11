@@ -82,8 +82,6 @@
 #define GPIO_DW_PORT_3_INT_MASK			0 /* n/a */
 
 /* SPI */
-#define DT_SPI_DW_SPI_CLOCK			SYSCLK_DEFAULT_IOSC_HZ
-
 #define DT_SPI_DW_IRQ_FLAGS			0
 
 /*
