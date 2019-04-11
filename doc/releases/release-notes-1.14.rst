@@ -91,9 +91,42 @@ Boards & SoC Support
 
 * Added support for the following Arm boards:
 
-  * v2m_musca
-  * nrf9160_pca10090
+  * 96b_stm32_sensor_mez
+  * b_l072z_lrwan1
+  * bl652_dvk
+  * bl654_dvk
+  * cy8ckit_062_wifi_bt_m0
+  * cy8ckit_062_wifi_bt_m4
+  * efm32hg_slstk3400a
+  * efm32pg_stk3402a
+  * efr32mg_sltb004a
+  * mimxrt1020_evk
+  * mimxrt1060_evk
+  * mimxrt1064_evk
+  * nrf52832_mdk
+  * nrf52840_blip
+  * nrf52840_mdk
+  * nrf52840_papyr
   * nrf52840_pca10090
+  * nrf9160_pca10090
+  * nucleo_f302r8
+  * nucleo_f746zg
+  * nucleo_f756zg
+  * nucleo_l496zg
+  * nucleo_l4r5zi
+  * particle_argon
+  * particle_xenon
+  * v2m_musca
+
+* Added support for the following RISC-V boards:
+
+  * rv32m1_vega
+
+* Added support for the following shield boards:
+
+  * frdm_kw41z
+  * x_nucleo_iks01a1
+  * x_nucleo_iks01a2
 
 .. _BabbleSim:
    https://BabbleSim.github.io
