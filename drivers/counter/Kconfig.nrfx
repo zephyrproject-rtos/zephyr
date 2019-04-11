@@ -112,6 +112,16 @@ config COUNTER_RTC0_PRESCALER
 	help
 	  Frequency = 32768 / (prescaler+1).
 
+config COUNTER_RTC0_PPI_WRAP
+	bool "Enable PPI wrapping in RTC0"
+	select NRFX_PPI if HAS_HW_NRF_PPI
+	select NRFX_DPPI if HAS_HW_NRF_DPPIC
+	help
+	  If enabled, overflow different than full range (24 bits) is handled
+	  through PPI channel which ensures precise timing. If disabled then
+	  counter is cleared in the interrupt which results in accumulative
+	  error of counter period if top value is different than maximal.
+
 endif #COUNTER_RTC0
 
 config COUNTER_RTC1
@@ -130,6 +140,16 @@ config COUNTER_RTC1_PRESCALER
 	help
 	  Frequency = 32768 / (prescaler+1).
 
+config COUNTER_RTC1_PPI_WRAP
+	bool "Enable PPI wrapping in RTC1"
+	select NRFX_PPI if HAS_HW_NRF_PPI
+	select NRFX_DPPI if HAS_HW_NRF_DPPIC
+	help
+	  If enabled, overflow different than full range (24 bits) is handled
+	  through PPI channel which ensures precise timing. If disabled then
+	  counter is cleared in the interrupt which results in accumulative
+	  error of counter period if top value is different than maximal.
+
 endif #COUNTER_RTC1
 
 config COUNTER_RTC2
@@ -146,5 +166,15 @@ config COUNTER_RTC2_PRESCALER
 	range 0 2047
 	help
 	  Frequency = 32768 / (prescaler+1).
+
+config COUNTER_RTC2_PPI_WRAP
+	bool "Enable PPI wrapping in RTC2"
+	select NRFX_PPI if HAS_HW_NRF_PPI
+	select NRFX_DPPI if HAS_HW_NRF_DPPIC
+	help
+	  If enabled, overflow different than full range (24 bits) is handled
+	  through PPI channel which ensures precise timing. If disabled then
+	  counter is cleared in the interrupt which results in accumulative
+	  error of counter period if top value is different than maximal.
 
 endif # COUNTER_RTC2
