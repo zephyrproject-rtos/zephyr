@@ -96,3 +96,11 @@ arduino_serial: &usart6 {};
 &idwg {
 	status = "ok";
 };
+
+&dma1 {
+       status = "ok";
+};
+
+&dma2 {
+       status = "ok";
+};

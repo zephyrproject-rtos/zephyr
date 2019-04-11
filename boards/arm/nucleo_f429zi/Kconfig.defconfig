@@ -55,4 +55,11 @@ config PWM_STM32_1
 
 endif # PWM
 
+if DMA
+
+config DMA_STM32
+	default y
+
+endif #DMA
+
 endif # BOARD_NUCLEO_F429ZI
