@@ -26,6 +26,7 @@
 			compatible = "ti,msp432p4xx-uart";
 			reg = <0x40001000 0x400>;
 			interrupts = <32 0>;
+			clock-frequency = <48000000>;
 			status = "disabled";
 			label = "UART_0";
 		};
