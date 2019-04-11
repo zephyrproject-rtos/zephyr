@@ -159,6 +159,10 @@ Build and Infrastructure
 Libraries / Subsystems
 ***********************
 
+* flash_map:
+  - API extension
+  - Automatic generation of the list of flash areas
+
 * TBD
 
 HALs
