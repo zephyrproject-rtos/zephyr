@@ -253,6 +253,10 @@ class KconfigCheck(ComplianceTest):
         os.environ["KCONFIG_WARN_UNDEF"] = "y"
 
         try:
+            # Note this will both print warnings to stderr _and_ return
+            # them: so some warnings might get printed
+            # twice. "warn_to_stderr=False" could unfortunately cause
+            # some (other) warnings to never be printed.
             return kconfiglib.Kconfig()
         except kconfiglib.KconfigError as e:
             self.add_failure(str(e))
