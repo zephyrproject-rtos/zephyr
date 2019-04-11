@@ -1362,10 +1362,13 @@ class MakeGenerator:
                     # will cause the 'make run' invocation to exit with
                     # nonzero status.
                     # Need to distinguish this case from a compilation failure.
-                    if goal.handler:
+                    if goal.make_state == "building":
+                        goal.fail("build_error")
+                    elif goal.handler:
                         goal.fail("handler_crash")
                     else:
-                        goal.fail("build_error")
+                        goal.fail("unknown_error")
+
                 else:
                     goal = self.goals[name]
                     goal.make_state = state
