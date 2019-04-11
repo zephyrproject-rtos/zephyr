@@ -13,6 +13,12 @@
 	model = "Particle Argon";
 	compatible = "particle,argon", "particle,feather",
 		"nordic,nrf52840-qiaa", "nordic,nrf52840";
+
+	sky13351 {
+		compatible = "skyworks,sky13351";
+		vctl1-gpios = <&gpio0 25 0>;
+		vctl2-gpios = <&gpio0 2 0>;
+	};
 };
 
 &uart1 { /* ESP32 */

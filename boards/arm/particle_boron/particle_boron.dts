@@ -13,6 +13,15 @@
 	model = "Particle Boron";
 	compatible = "particle,boron", "particle,feather",
 		"nordic,nrf52840-qiaa", "nordic,nrf52840";
+
+	sky13351 {
+		compatible = "skyworks,sky13351";
+		vctl1-gpios = <&gpio0 7 0>;
+		/* on Boron VCTL2 is inverted VCTL1 signal via SN74LVC1G04
+		 * single inverter gate -- requires a definition below,
+		 * but is not used in board.c */
+		vctl2-gpios = <&gpio0 7 0>;
+	};
 };
 
 &i2c1 { /* power monitoring */
