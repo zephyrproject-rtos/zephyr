@@ -144,7 +144,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	last_load = delay - (cycle_count - announced_cycles);
 
 	overflow_cyc = 0U;
-	SysTick->LOAD = last_load;
+	SysTick->LOAD = last_load - 1;
 	SysTick->VAL = 0; /* resets timer to last_load */
 
 	k_spin_unlock(&lock, key);
