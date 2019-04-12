@@ -38,7 +38,8 @@ static void telnet_end_client_connection(void)
 {
 	struct net_pkt *pkt;
 
-	net_context_put(sh_telnet->client_ctx);
+	(void)net_context_put(sh_telnet->client_ctx);
+
 	sh_telnet->client_ctx = NULL;
 	sh_telnet->output_lock = false;
 
@@ -280,7 +281,7 @@ error:
 		family == AF_INET ? "" : "6");
 
 	if (*ctx) {
-		net_context_put(*ctx);
+		(void)net_context_put(*ctx);
 		*ctx = NULL;
 	}
 }
@@ -455,7 +456,12 @@ static int read(const struct shell_transport *transport,
 	}
 
 	*cnt = read_len;
-	net_pkt_read(pkt, data, read_len);
+	if (net_pkt_read(pkt, data, read_len) < 0) {
+		/* Failed to read, get rid of the faulty packet. */
+		LOG_ERR("Failed to read net packet.");
+		*cnt = 0;
+		flush = true;
+	}
 
 	if (flush) {
 		(void)k_fifo_get(&sh_telnet->rx_fifo, K_NO_WAIT);
@@ -485,9 +491,7 @@ static int enable_shell_telnet(struct device *arg)
 	u32_t level = (CONFIG_SHELL_TELNET_INIT_LOG_LEVEL > LOG_LEVEL_DBG) ?
 		      CONFIG_LOG_MAX_LEVEL : CONFIG_SHELL_TELNET_INIT_LOG_LEVEL;
 
-	shell_init(&shell_telnet, NULL, true, log_backend, level);
-
-	return 0;
+	return shell_init(&shell_telnet, NULL, true, log_backend, level);
 }
 
 SYS_INIT(enable_shell_telnet, APPLICATION, 0);
