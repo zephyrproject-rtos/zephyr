@@ -37,11 +37,11 @@ extern "C" {
  * All system calls require a handler function and an implementation function.
  * These must follow a naming convention. For a system call named k_foo():
  *
- * - The handler function will be named _handler_k_foo(). Handler functions
+ * - The handler function will be named z_hdlr_k_foo(). Handler functions
  *   are always of type _k_syscall_handler_t, verify arguments passed up
  *   from userspace, and call the implementation function. See
  *   documentation for that typedef for more information.
- * - The implementation function will be named _impl_k_foo(). This is the
+ * - The implementation function will be named z_impl_k_foo(). This is the
  *   actual implementation of the system call.
  *
  * The basic declartion macros are as follows. System calls with 0 to 10
