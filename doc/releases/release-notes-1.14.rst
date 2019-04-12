@@ -169,6 +169,7 @@ Drivers and Sensors
 
 * arcv2 timer driver: refactoring and accuracy improvements (boot time measurements)
 * adc: Overhauled adc_dw and renamed it to adc_intel_quark_se_c1000_ss
+* adc: Fixed handling of invalid sampling requests
 * can: Add socket CAN support
 * clock_control: Added RV32M1 driver
 * console: Removed telnet driver
@@ -201,6 +202,7 @@ Drivers and Sensors
 * pinmux: Add support for STM32F302x8
 * pwm: Added SiFive PWM driver
 * pwm: Added Atmel SAM PWM driver
+* pwm: Converted nRF drivers to use device tree
 * sensor: Added lis2ds12, lis2dw12, lis2mdl, and lsm303dlhc drivers
 * sensor: Added ms5837 driver
 * sensor: Added support for Nordic QDEC
@@ -210,6 +212,7 @@ Drivers and Sensors
 * serial: Added support for ARM PL011 UART
 * serial: Introduced Silabs leuart shim serial driver
 * serial: Adapted gecko uart driver for Silabs EFM32HG
+* spi: Converted nRF drivers to use device tree
 * timer: Added/reworked Xtensa, RISV-V, NRF, HPET, and Arm systick drivers
 * usb: Added native_posix USB driver
 * usb: Added usb device driver for Atmel SAM E70 family
@@ -292,6 +295,7 @@ Bluetooth
   * Added support for updating advertising data without having to restart advertising
   * Added API to iterate through existing bonds
   * Added support for setting channel map
+  * Converted SPI HCI driver to use device tree
 
 * Several fixes for big endian architectures
 * New BLE split software Controller (experimental):
@@ -326,6 +330,9 @@ Build and Infrastructure
 
 * Added support for out of tree architectures
 * `BabbleSim`_ has been integrated in Zephyr's CI system.
+* Introduced ``DT_`` prefix for all labels generated for information extracted from
+  device tree (with a few exceptions, like labels for LEDs and buttons, kept
+  for backward compatibility with existing applications).
 
 Libraries / Subsystems
 ***********************
@@ -381,7 +388,7 @@ Libraries / Subsystems
 HALs
 ****
 
-* TBD
+* ext/hal/nordic: Updated nrfx to version 1.6.2
 
 Documentation
 *************
