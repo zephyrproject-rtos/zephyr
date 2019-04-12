@@ -387,6 +387,9 @@ Build and Infrastructure
   to be configured based on DeviceTree information.
 * Automatically change the KCONFIG_ROOT when the application directory
   has a Kconfig file.
+* Added :ref:`west <west>` tool for multiple repository management
+* Added support for :ref:`Zephyr modules <ext-projs>`
+* Build system ``flash`` and ``debug`` targets now require west
 
 Libraries / Subsystems
 ***********************
