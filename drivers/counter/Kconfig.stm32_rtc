@@ -36,7 +36,7 @@ if !SOC_SERIES_STM32F4X
 
 choice COUNTER_RTC_STM32_LSE_DRIVE
 	prompt "LSE oscillator drive capability"
-	depends on RTC_STM32_CLOCK_LSE
+	depends on COUNTER_RTC_STM32_CLOCK_LSE
 
 config COUNTER_RTC_STM32_LSE_DRIVE_LOW
 	bool "Low"
