@@ -293,10 +293,6 @@ static bool ethernet_fill_in_dst_on_ipv4_mcast(struct net_pkt *pkt,
 static struct net_pkt *ethernet_ll_prepare_on_ipv4(struct net_if *iface,
 						   struct net_pkt *pkt)
 {
-	if (net_pkt_ipv4_auto(pkt)) {
-		return pkt;
-	}
-
 	if (ethernet_ipv4_dst_is_broadcast_or_mcast(pkt)) {
 		return pkt;
 	}
@@ -520,19 +516,23 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	    net_pkt_family(pkt) == AF_INET) {
 		struct net_pkt *tmp;
 
-		tmp = ethernet_ll_prepare_on_ipv4(iface, pkt);
-		if (!tmp) {
-			ret = -ENOMEM;
-			goto error;
-		} else if (IS_ENABLED(CONFIG_NET_ARP) && tmp != pkt) {
-			/* Original pkt got queued and is replaced
-			 * by an ARP request packet.
-			 */
-			pkt = tmp;
+		if (net_pkt_ipv4_auto(pkt)) {
 			ptype = htons(NET_ETH_PTYPE_ARP);
-			net_pkt_set_family(pkt, AF_INET);
 		} else {
-			ptype = htons(NET_ETH_PTYPE_IP);
+			tmp = ethernet_ll_prepare_on_ipv4(iface, pkt);
+			if (!tmp) {
+				ret = -ENOMEM;
+				goto error;
+			} else if (IS_ENABLED(CONFIG_NET_ARP) && tmp != pkt) {
+				/* Original pkt got queued and is replaced
+				 * by an ARP request packet.
+				 */
+				pkt = tmp;
+				ptype = htons(NET_ETH_PTYPE_ARP);
+				net_pkt_set_family(pkt, AF_INET);
+			} else {
+				ptype = htons(NET_ETH_PTYPE_IP);
+			}
 		}
 	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
 		   net_pkt_family(pkt) == AF_INET6) {
