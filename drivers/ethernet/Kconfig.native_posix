@@ -94,6 +94,14 @@ config ETH_NATIVE_POSIX_RANDOM_MAC
 	help
 	  Generate a random MAC address dynamically.
 
+config ETH_NATIVE_POSIX_VLAN_TAG_STRIP
+	bool "Strip VLAN tag from Rx frames"
+	depends on NET_VLAN
+	help
+	  Native posix ethernet driver will strip of VLAN tag from
+	  Rx Ethernet frames and sets tag information in net packet
+	  metadata.
+
 if ! ETH_NATIVE_POSIX_RANDOM_MAC
 
 config	ETH_NATIVE_POSIX_MAC_ADDR
