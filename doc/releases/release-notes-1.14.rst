@@ -389,6 +389,7 @@ HALs
 ****
 
 * ext/hal/nordic: Updated nrfx to version 1.6.2
+* ext/hal/nordic: Updated nrf ieee802154 radio driver to version 1.2.3
 
 Documentation
 *************
