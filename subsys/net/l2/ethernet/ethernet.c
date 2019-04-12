@@ -68,7 +68,7 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 	}
 
 #ifdef CONFIG_NET_VLAN
-#define print_vlan_ll_addrs(pkt, type, tci, len, src, dst)		   \
+#define print_vlan_ll_addrs(pkt, type, tci, len, src, dst, tagstrip)       \
 	if (CONFIG_NET_L2_ETHERNET_LOG_LEVEL >= LOG_LEVEL_DBG) {	   \
 		char out[sizeof("xx:xx:xx:xx:xx:xx")];			   \
 									   \
@@ -76,12 +76,13 @@ void net_eth_ipv6_mcast_to_mac_addr(const struct in6_addr *ipv6_addr,
 			 net_sprint_ll_addr((src)->addr,		   \
 					    sizeof(struct net_eth_addr))); \
 									   \
-		NET_DBG("iface %p src %s dst %s type 0x%x tag %d pri %d "  \
-			"len %zu",					   \
+		NET_DBG("iface %p src %s dst %s type 0x%x "		   \
+			"tag %d %spri %d len %zu",			   \
 			net_pkt_iface(pkt), log_strdup(out),		   \
 			log_strdup(net_sprint_ll_addr((dst)->addr,	   \
-					    sizeof(struct net_eth_addr))), \
+				   sizeof(struct net_eth_addr))),	   \
 			type, net_eth_vlan_get_vid(tci),		   \
+			tagstrip ? "(stripped) " : "",			   \
 			net_eth_vlan_get_pcp(tci), (size_t)len);	   \
 	}
 #else
@@ -136,6 +137,14 @@ static void ethernet_update_rx_stats(struct net_if *iface,
 #endif /* CONFIG_NET_STATISTICS_ETHERNET */
 }
 
+static inline bool eth_is_vlan_tag_stripped(struct net_if *iface)
+{
+	struct device *dev = net_if_get_device(iface);
+	const struct ethernet_api *api = dev->driver_api;
+
+	return (api->get_capabilities(dev) & ETHERNET_HW_VLAN_TAG_STRIP);
+}
+
 static enum net_verdict ethernet_recv(struct net_if *iface,
 				      struct net_pkt *pkt)
 {
@@ -147,7 +156,8 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	sa_family_t family;
 
 	if (net_eth_is_vlan_enabled(ctx, iface) &&
-	    type == NET_ETH_PTYPE_VLAN) {
+	    type == NET_ETH_PTYPE_VLAN &&
+	    !eth_is_vlan_tag_stripped(iface)) {
 		struct net_eth_vlan_hdr *hdr_vlan =
 			(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
 
@@ -196,13 +206,19 @@ static enum net_verdict ethernet_recv(struct net_if *iface,
 	lladdr->type = NET_LINK_ETHERNET;
 
 	if (net_eth_is_vlan_enabled(ctx, iface)) {
-		struct net_eth_vlan_hdr *hdr_vlan __unused =
-			(struct net_eth_vlan_hdr *)NET_ETH_HDR(pkt);
-
-		print_vlan_ll_addrs(pkt, type, ntohs(hdr_vlan->vlan.tci),
-				    net_pkt_get_len(pkt),
-				    net_pkt_lladdr_src(pkt),
-				    net_pkt_lladdr_dst(pkt));
+		if (type == NET_ETH_PTYPE_VLAN ||
+		    (eth_is_vlan_tag_stripped(iface) &&
+		     net_pkt_vlan_tci(pkt))) {
+			print_vlan_ll_addrs(pkt, type, net_pkt_vlan_tci(pkt),
+					    net_pkt_get_len(pkt),
+					    net_pkt_lladdr_src(pkt),
+					    net_pkt_lladdr_dst(pkt),
+					    eth_is_vlan_tag_stripped(iface));
+		} else {
+			print_ll_addrs(pkt, type, net_pkt_get_len(pkt),
+				       net_pkt_lladdr_src(pkt),
+				       net_pkt_lladdr_dst(pkt));
+		}
 	} else {
 		print_ll_addrs(pkt, type, net_pkt_get_len(pkt),
 			       net_pkt_lladdr_src(pkt),
@@ -452,7 +468,7 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 		print_vlan_ll_addrs(pkt, ntohs(hdr_vlan->type),
 				    net_pkt_vlan_tci(pkt),
 				    hdr_frag->len,
-				    &hdr_vlan->src, &hdr_vlan->dst);
+				    &hdr_vlan->src, &hdr_vlan->dst, false);
 	} else {
 		hdr = (struct net_eth_hdr *)(hdr_frag->data);
 
