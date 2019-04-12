@@ -173,6 +173,8 @@ features:
 | UART      | on-chip    | serial port-polling;                |
 |           |            | serial port-interrupt               |
 +-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/stm32mp157c_dk2/stm32mp157c_dk2_defconfig``
