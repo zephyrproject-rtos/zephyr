@@ -75,6 +75,8 @@ struct net_eth_addr {
 #define NET_ETH_MTU			1500
 #define NET_ETH_MAX_FRAME_SIZE	(NET_ETH_MTU + sizeof(struct net_eth_hdr))
 
+#define NET_ETH_VLAN_HDR_SIZE	4
+
 /** @endcond */
 
 /** Ethernet hardware capabilities */
