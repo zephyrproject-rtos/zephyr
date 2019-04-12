@@ -207,7 +207,9 @@ static void test_net_pkt_allocate_with_buffer(void)
 
 static void test_net_pkt_basics_of_rw(void)
 {
+	struct net_pkt_cursor backup;
 	struct net_pkt *pkt;
+	u16_t value16;
 	int ret;
 
 	pkt = net_pkt_alloc_with_buffer(eth_if, 512,
@@ -238,6 +240,31 @@ static void test_net_pkt_basics_of_rw(void)
 
 	/* Length should be 3 now */
 	zassert_true(net_pkt_get_len(pkt) == 3, "Pkt length mismatch");
+
+	/* Verify that the data is properly written to net_buf */
+	net_pkt_cursor_backup(pkt, &backup);
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_skip(pkt, 1);
+	net_pkt_read_be16(pkt, &value16);
+	zassert_equal(value16, 0, "Invalid value %d read, expected %d",
+		      value16, 0);
+
+	/* Then write new value, overwriting the old one */
+	net_pkt_cursor_init(pkt);
+	net_pkt_skip(pkt, 1);
+	ret = net_pkt_write_be16(pkt, 42);
+	zassert_true(ret == 0, "Pkt write failed");
+
+	/* And re-read the value again */
+	net_pkt_cursor_init(pkt);
+	net_pkt_skip(pkt, 1);
+	net_pkt_read_be16(pkt, &value16);
+	zassert_equal(value16, 42, "Invalid value %d read, expected %d",
+		      value16, 42);
+
+	net_pkt_set_overwrite(pkt, false);
+	net_pkt_cursor_restore(pkt, &backup);
 
 	ret = net_pkt_write_be32(pkt, 0);
 	zassert_true(ret == 0, "Pkt write failed");
