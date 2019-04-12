@@ -24,6 +24,13 @@ config I2C_0
 
 endif # I2C
 
+if SPI
+
+config SPI_2
+       default y
+
+endif # SPI
+
 if USB
 
 config USB_NRF52840
