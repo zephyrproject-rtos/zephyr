@@ -48,4 +48,6 @@ config MODEM_SHELL
 
 source "drivers/modem/Kconfig.wncm14a2a"
 
+source "drivers/modem/Kconfig.ehs6"
+
 endif # MODEM

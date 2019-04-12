@@ -18,4 +18,10 @@
 		mdm-shld-trans-ena-gpios = <&gpioc 4 0>;
 		status = "ok";
 	};
+
+	ehs6 {
+		compatible = "gemalto,ehs6";
+		label = "EHS6";
+		status = "ok";
+	};
 };

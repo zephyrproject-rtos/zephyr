@@ -1,0 +1,60 @@
+# Kconfig - Gemalto EHS6 driver options
+
+#
+# Copyright (c) 2018 Song Qiang <songqiang1304521@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig MODEM_EHS6
+	bool "Enable Gemalto EHS6 modem driver"
+	depends on MODEM
+	select MODEM_RECEIVER
+	select NET_OFFLOAD
+	select NET_SOCKETS_OFFLOAD
+	help
+	  Choose this setting to enable Gemalto EHS6 modem driver.
+
+if MODEM_EHS6
+
+config MODEM_EHS6_RX_STACK_SIZE
+	int "Size of the stack for the EHS6 modem driver RX thread"
+	depends on MODEM_EHS6
+	default 1028
+	help
+	  This stack is used by the EHS6 RX thread.
+
+config MODEM_EHS6_APN_NAME
+	string "APN name for establishing network connection"
+	depends on MODEM_EHS6
+	default "bjlenovo07.xfdz.njm2mapn"
+	help
+	  This setting is used in the AT^SICS=<n> command to set the APN name
+	  for the network connection context. This value is provided by your
+	  network provider.
+
+config MODEM_EHS6_INIT_PRIORITY
+	int "EHS6 driver init priority"
+	depends on MODEM_EHS6
+	default 80
+	help
+	  EHS6 device driver initialization priority.
+	  Do not mess with it unless you know what you are doing.
+	  Note that the priority needs to be lower than the net stack
+	  so that it can start before the networking sub-system.
+
+config MODEM_EHS6_TIMEOUT_TIME
+	string "EHS6 driver init priority"
+	depends on MODEM_EHS6
+	default "80"
+	help
+	  Inactivity timeout value in seconds.
+
+config MODEM_EHS6_DNS_SERVER_ADDRESS
+	string "DNS Server address"
+	depends on MODEM_EHS6
+	default "8.8.8.8"
+	  help
+	  Primary DNS server address, supports IPv4 Only.
+
+endif
