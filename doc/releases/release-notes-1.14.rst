@@ -54,30 +54,35 @@ Kernel
 Architectures
 *************
 
-* TBD
+* High-level Kconfig symbol structure for Trusted Execution
 
-* arch:high-level Kconfig symbol structure for Trusted Execution
+* ARM
 
-* arch: arm: re-architect Memory Protection code for ARM and NXP
-* arch: arm: fully support application user mode in ARMv8m
-* arch: arm: fully support application memory partitions in ARMv8m
-* arch: arm: fully support HW stack protection in ARMv8m
-* arch: arm: support built-in stack overflow protection in user mode in ARMv8m
-* arch: arm: fix stack overflow error reporting
-* arch: arm: support executing from SRAM in XIP builds
-* arch: arm: support non-cacheable memory sections
-* arch: arm: remove power-of-two align and size requirement for ARMv8-m
-* arch: arm: introduce sync barriers in arm-specific IRQ lock/unlock functions
-* arch: arm: enforce double-word stack alignment on exception entry
-* arch: arm: API to allow Non-Secure FPU Access (ARMv8-M)
-* arch: arm: various enhancements in ARM system boot code
-* arch: arm: indicate Secure domain fault in Non-Secure fault exception
-* arch: arm: update ARM CMSIS headers to version 5.4.0
+  * Re-architect Memory Protection code for ARM and NXP
+  * Fully support application user mode in ARMv8m
+  * Fully support application memory partitions in ARMv8m
+  * Fully support HW stack protection in ARMv8m
+  * Support built-in stack overflow protection in user mode in ARMv8m
+  * Fix stack overflow error reporting
+  * Support executing from SRAM in XIP builds
+  * Support non-cacheable memory sections
+  * Remove power-of-two align and size requirement for ARMv8-m
+  * Introduce sync barriers in arm-specific IRQ lock/unlock functions
+  * Enforce double-word stack alignment on exception entry
+  * API to allow Non-Secure FPU Access (ARMv8-M)
+  * Various enhancements in ARM system boot code
+  * Indicate Secure domain fault in Non-Secure fault exception
+  * Update ARM CMSIS headers to version 5.4.0
+* ARC:
+
+  * Userspace and MPU driver improvements
+  * Optimization of the thread stack definition macros
+  * Bug fixes: handling of lp_xxx registers in _rirq_return_from_coop, nested
+    interrupt handling, hardware stack bounds checking, execution benchmarking
+
 
 Boards & SoC Support
 ********************
-
-* TBD
 
 * Added the all new :ref:`NRF52 simulated board <nrf52_bsim>`:
   It models some of the HW in an NRF52832 SOC, to enable running
@@ -86,8 +91,8 @@ Boards & SoC Support
   application, BT stack and kernel. It relies on `BabbleSim`_
   to simulate the radio physical layer.
 
-* arm: add SoC configuration for nRF9160 Arm Cortex-M33 CPU
-* arm: add SoC configuration for Musca Arm Cortex-M33 CPU
+* Added SoC configuration for nRF9160 Arm Cortex-M33 CPU
+* Added SoC configuration for Musca Arm Cortex-M33 CPU
 
 * Added support for the following Arm boards:
 
@@ -122,6 +127,10 @@ Boards & SoC Support
 
   * rv32m1_vega
 
+* Added support for the following ARC boards:
+  * Synopsys ARC IoT DevKit
+  * Several ARC simulation targets (ARC nSIM EM/SEM; with and without MPU stack guards)
+
 * Added support for the following shield boards:
 
   * frdm_kw41z
@@ -133,8 +142,6 @@ Boards & SoC Support
 
 Drivers and Sensors
 *******************
-
-* TBD
 
 * Added new drivers and backends for :ref:`native_posix <native_posix>`:
 
@@ -160,6 +167,7 @@ Drivers and Sensors
   - Added implementation of the new asynchronous API for nRF series (UART and
     UARTE).
 
+* arcv2 timer driver: refactoring and accuracy improvements (boot time measurements)
 * adc: Overhauled adc_dw and renamed it to adc_intel_quark_se_c1000_ss
 * can: Add socket CAN support
 * clock_control: Added RV32M1 driver
@@ -272,20 +280,20 @@ Networking
 Bluetooth
 *********
 
-* Host: GATT: Added support for Robust Caching
-* Host: GATT: L2CAP: User driven flow control
-* Host: Many fixes to Mesh
-* Host: Fixed & improved persistent storage handling
-* Host: Fixed direct advertising support
-* Host: Fixed security level 4 handling
-* Host: Add option to configure peripheral connection parameters
-* Host: Added support for updating advertising data without having to
-  restart advertising
-* Host: Added API to iterate through existing bonds
-* Host: Added support for setting channel map
+* Host:
+
+  * GATT: Added support for Robust Caching
+  * GATT: L2CAP: User driven flow control
+  * Many fixes to Mesh
+  * Fixed & improved persistent storage handling
+  * Fixed direct advertising support
+  * Fixed security level 4 handling
+  * Add option to configure peripheral connection parameters
+  * Added support for updating advertising data without having to restart advertising
+  * Added API to iterate through existing bonds
+  * Added support for setting channel map
 
 * Several fixes for big endian architectures
-
 * New BLE split software Controller (experimental):
 
   - Split design with Upper Link Layer and Lower Link Layer
@@ -298,37 +306,38 @@ Bluetooth
   - Multiple advertiser and scanner instances
   - Support for both Big and Little-Endian architectures
 
-* Controller: Added support for setting the public address
-* Controller: Multiple control procedures fixes and improvements
-* Controller: Advertising random delay fixes
-* Controller: Fix a serious memory corruption issue during scanning
-* Controller: Fixes to RSSI measurement
-* Controller: Fixes to Connection Failed to be Established sequence
-* Controller: Transitioned to the new logging subsystem from syslog
-* Controller: Switched from -Ofast to -O2 in time-critical sections
-* Controller: Reworked the RNG/entropy driver to make it available to apps
-* Controller: Multiple size optimizations to make it fit in smaller devices
-* Controller: nRF: Rework the PPI channel assignment to use pre-assigned ones
-* Controller: Add extensive documentation to the shared primitives
+* Controller:
+
+  * Added support for setting the public address
+  * Multiple control procedures fixes and improvements
+  * Advertising random delay fixes
+  * Fix a serious memory corruption issue during scanning
+  * Fixes to RSSI measurement
+  * Fixes to Connection Failed to be Established sequence
+  * Transitioned to the new logging subsystem from syslog
+  * Switched from -Ofast to -O2 in time-critical sections
+  * Reworked the RNG/entropy driver to make it available to apps
+  * Multiple size optimizations to make it fit in smaller devices
+  * nRF: Rework the PPI channel assignment to use pre-assigned ones
+  * Add extensive documentation to the shared primitives
 
 Build and Infrastructure
 ************************
 
-* TBD
 * Added support for out of tree architectures
 * `BabbleSim`_ has been integrated in Zephyr's CI system.
 
 Libraries / Subsystems
 ***********************
 
-* flash_map:
+* Flash Maps:
   - API extension
   - Automatic generation of the list of flash areas
 
-* settings:
-  - enable logging instead of ASSERTs
-  - always use the storage partition for FCB
-  - fixes for FCB backend and common bugs
+* Settings:
+  - Enabled logging instead of ASSERTs
+  - Always use the storage partition for FCB
+  - fixed FCB backend and common bugs
 
 * Logging:
 
@@ -347,6 +356,7 @@ Libraries / Subsystems
   - Added notification about dropped log messages due to insufficent logger
     buffer size
   - Added log backends:
+
     - RTT
     - native_posix
     - net
@@ -356,7 +366,7 @@ Libraries / Subsystems
 
 * Shell:
 
-  - Added new implementation replacing existing one. See :ref:`shell_label`
+  - Added new implementation of the shell sub-system. See :ref:`shell_label`
   - Added shell backends:
     - UART
     - RTT
