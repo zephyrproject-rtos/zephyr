@@ -294,7 +294,8 @@ Issue priority labels
 =============  ===============================================================
 Labels         ``priority:{high|medium|low}``
 Applicable to  Issues only
-Description    To classify the impact and importance of a bug or feature
+Description    To classify the impact and importance of a bug or
+               :ref:`feature <feature-tracking>`
 =============  ===============================================================
 
 Note: Issue priorities are generally set or changed during the bug-triage or TSC
@@ -347,9 +348,10 @@ Issue only labels
 ``Regression``       Something, which was working, but does not anymore
                      (bug subtype)
 ``Question``         This issue is a question to the Zephyr developers
-``Enhancement``      Changes/Updates/Additions to existing features
-``Feature request``  A request for a new feature
-``Feature``          A planned feature with a milestone
+``Enhancement``      Changes/Updates/Additions to existing
+                     :ref:`features <feature-tracking>`
+``Feature request``  A request for a new :ref:`feature <feature-tracking>`
+``Feature``          A :ref:`planned feature<feature-tracking>` with a milestone
 ``Duplicate``        This issue is a duplicate of another issue
                      (please specify)
 ``Good first issue`` Good for a first time contributor to take
@@ -357,5 +359,7 @@ Issue only labels
                      issues with additional information
 ==================== ===========================================================
 
-Any issue must be clasified and labeled as either ``Bug``, ``Question``,
-``Enhancement``, ``Feature``, or ``Feature Request``.
+Any issue must be classified and labeled as either ``Bug``, ``Question``,
+``Enhancement``, ``Feature``, or ``Feature Request``. More information on how
+feature requests are handled and become features can be found in
+:ref:`Feature Tracking<feature-tracking>`.
