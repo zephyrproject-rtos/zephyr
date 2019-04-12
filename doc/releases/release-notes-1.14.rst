@@ -328,11 +328,17 @@ Bluetooth
 Build and Infrastructure
 ************************
 
-* Added support for out of tree architectures
+* Added support for out-of-tree architectures.
+* Added support for out-of-tree implementations of in-tree drivers.
 * `BabbleSim`_ has been integrated in Zephyr's CI system.
 * Introduced ``DT_`` prefix for all labels generated for information extracted from
   device tree (with a few exceptions, like labels for LEDs and buttons, kept
   for backward compatibility with existing applications).
+* Introduce CMake variables for DT symbols just as we have for CONFIG symbols.
+* Move DeviceTree processing before Kconfig. Thereby allowing software
+  to be configured based on DeviceTree information.
+* Automatically change the KCONFIG_ROOT when the application directory
+  has a Kconfig file.
 
 Libraries / Subsystems
 ***********************
