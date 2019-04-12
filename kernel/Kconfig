@@ -150,7 +150,7 @@ config MAIN_STACK_SIZE
 	default 640 if RISCV32
 	default 2048 if COVERAGE_GCOV
 	default 1024 if X86
-	default 512 if ZTEST
+	default 640 if ZTEST
 	default 1024
 	help
 	  When the initialization is complete, the thread executing it then
