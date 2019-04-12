@@ -719,6 +719,7 @@ add_custom_command(
   ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
   --validation-output ${DRV_VALIDATION}
   $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
+  DEPENDS ${ZEPHYR_BASE}/scripts/gen_kobject_list.py
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
 add_custom_target(${DRIVER_VALIDATION_H_TARGET} DEPENDS ${DRV_VALIDATION})
