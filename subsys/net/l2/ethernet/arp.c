@@ -297,10 +297,10 @@ static inline struct net_pkt *arp_prepare(struct net_if *iface,
 	memcpy(hdr->src_hwaddr.addr, net_pkt_lladdr_src(pkt)->addr,
 	       sizeof(struct net_eth_addr));
 
-	if (entry) {
-		my_addr = if_get_addr(entry->iface, current_ip);
-	} else {
+	if (!entry || (pkt != NULL && net_pkt_ipv4_auto(pkt))) {
 		my_addr = current_ip;
+	} else {
+		my_addr = if_get_addr(entry->iface, current_ip);
 	}
 
 	if (my_addr) {
