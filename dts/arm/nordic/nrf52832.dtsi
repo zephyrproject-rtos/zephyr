@@ -292,7 +292,6 @@
 &sw_pwm {
 	timer-instance = <2>;
 	channel-count = <3>;
-	clock-prescaler = <0>;
 	ppi-base = <14>;
 	gpiote-base = <0>;
 };

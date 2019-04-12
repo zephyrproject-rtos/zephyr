@@ -25,11 +25,6 @@ properties:
       description: Number of PWM channels. Limited by timer instance compare registers minus 1.
       category: required
 
-    clock-prescaler:
-      type: int
-      description: Clock prescaler for timer used for generating the PWM output signals with frequency = 16 MHz / 2^prescaler
-      category: required
-
     ppi-base:
       type: int
       description: PPI base used for PPI index calculation used for PWM output generation

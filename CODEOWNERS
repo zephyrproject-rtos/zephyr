@@ -279,7 +279,6 @@
 /kernel/idle.c                            @andrewboie @andyross @nashif
 /samples/                                 @nashif
 /samples/basic/minimal/                   @carlescufi
-/samples/basic/servo_motor/*microbit*     @jhe
 /samples/bluetooth/                       @joerchan @jhedberg @Vudentz
 /lib/updatehub/                           @chtavares592 @otavio
 /samples/bluetooth/                       @sjanc @jhedberg @Vudentz
