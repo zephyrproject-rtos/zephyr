@@ -5,4 +5,4 @@ tests:
   net.build:
     build_only: true
     min_ram: 32
-    tags: net
+    tags: net net-all
