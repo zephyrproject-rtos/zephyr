@@ -49,7 +49,25 @@ The following security vulnerabilities (CVEs) were addressed in this release:
 Kernel
 ******
 
-* TBD
+* K_THREAD_STACK_BUFFER() has been demoted to a private API and will be removed
+  in a future Zephyr release.
+* A new API sys_mutex has been introduced. It has the same semantics
+  as a k_mutex, but the memory for it can reside in user memory and there is
+  no explicit permission management required.
+* sys_mem_pool() now uses a sys_mutex() for concurrency control.
+* Memory protection:
+
+  - CONFIG_APPLICATION_MEMORY has been removed from Zephyr. All test cases
+    have been appropriately converted to use memory domains.
+  - The build time memory domain partition generation mechanism, formerly
+    an optional feature under CONFIG_APP_SHARED_MEM, has been overhauled
+    and is now a core part of memory protection.
+  - Userspace is no longer enabled by default for tests. Tests that are
+    written to execute wholly or in part in user mode will need to enable
+    CONFIG_TEST_USERSPACE in the test's project configuration. There are
+    assertions in place to enforce that this is done.
+  - The default stack size for handling system calls has been increased to
+    1024 bytes.
 
 Architectures
 *************
@@ -73,12 +91,25 @@ Architectures
   * Various enhancements in ARM system boot code
   * Indicate Secure domain fault in Non-Secure fault exception
   * Update ARM CMSIS headers to version 5.4.0
+
 * ARC:
 
   * Userspace and MPU driver improvements
   * Optimization of the thread stack definition macros
   * Bug fixes: handling of lp_xxx registers in _rirq_return_from_coop, nested
     interrupt handling, hardware stack bounds checking, execution benchmarking
+  * Atomic operations are now usable from user mode on all ARC CPUs
+
+* x86:
+
+  - Support for non-PAE page tables has been dropped.
+  - Various security CVEs related to micro-arch side effects of speculative
+    execution fixed as detailed in the security notes.
+  - Added robustness when reporting exceptions generated due to stack
+    overflows or were induced in user mode
+  - Pages containing read-only data no longer have the execute disable (XD)
+    bit un-set.
+  - Fix potential IRQ stack corruption when handling double faults
 
 
 Boards & SoC Support
@@ -166,7 +197,7 @@ Drivers and Sensors
   - Added asynchronous API.
   - Added implementation of the new asynchronous API for nRF series (UART and
     UARTE).
-
+* ADC driver APIs are now available to threads running in user mode.
 * arcv2 timer driver: refactoring and accuracy improvements (boot time measurements)
 * adc: Overhauled adc_dw and renamed it to adc_intel_quark_se_c1000_ss
 * adc: Fixed handling of invalid sampling requests
@@ -271,6 +302,7 @@ Networking
 * Changed how network data is passed from
   :ref:`L2 to network device driver <network_stack_architecture>`.
 * Removed RPL (Ripple) IPv6 mesh routing support.
+* MQTT is now available to threads running in user mode.
 * Network device driver additions and enhancements:
 
   - Added Intel PRO/1000 Ethernet driver (e1000).
@@ -390,6 +422,8 @@ Libraries / Subsystems
   - Added byte mode
   - Added API to work directly on ring buffer memory to reduce memory copying
   - Removed ``sys_`` prefix from API functions
+
+* MBEDTLS APIs may now be used from user mode.
 
 HALs
 ****
