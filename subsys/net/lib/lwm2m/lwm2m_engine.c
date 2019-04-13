@@ -3795,7 +3795,7 @@ static int lwm2m_engine_service(void)
 		 * - current timestamp > last_timestamp + max_period_sec
 		 */
 		} else if (timestamp > obs->last_timestamp +
-				K_SECONDS(obs->min_period_sec)) {
+				K_SECONDS(obs->max_period_sec)) {
 			obs->last_timestamp = k_uptime_get();
 			generate_notify_message(obs, false);
 		}
