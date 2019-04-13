@@ -9,7 +9,42 @@ We are pleased to announce the release of Zephyr kernel version 1.14.0.
 
 Major enhancements with this release include:
 
-* TBD
+* The Zephyr project now supports over 160 different board configurations
+  spanning 8 architectures. All architectures are rigorously tested and
+  validated using one of the many simulation platforms supported by the project.
+  (QEMU, Renode, ARC Simulator and the native POSIX configuration).
+
+* Overhaul of Network packet (:ref:`net-pkt <net_pkt_interface>`) API and move
+  majority of components and protocols to the :ref:`BSD socket API
+  <bsd_sockets_interface>` including MQTT, CoAP, LWM2M and SNTP.
+
+* Enhanced the native POSIX port adding UART, USB and display
+  drivers. Based on this port we added a simulated NRF52832 SoC which enables
+  running full system, multi-node simulations, without the need of real hardware.
+
+* Added an experimental BLE split software Controller with ith Upper Link Layer
+  and Lower Link Layer for supporting multiple BLE radio hardware architectures.
+
+* Power management, device idle power management
+
+* In this release we introduced major updates and an overhaul to both the
+  logging and the shell subsystems supporting multiple back-ends, integration of
+  logging into the shell and delayed log processing.
+
+* Introduced the ``west`` tool for management of multiple repositories and
+  enhanced support for flashing and debugging.
+
+* Enabled tickless kernel by default and reworked all timer driver to support
+  the new mode.
+
+* Added support for application user mode, application memory partitions and
+  hardware stack protection in ARMv8m
+
+* Applied MISRA-C code guideline on kernel and core components of Zephyr.
+  MISRA-C is a well established code guideline focused on embedded systems and
+  aims to improve code safety, security and portability.
+
+
 
 The following sections provide detailed lists of changes by component.
 
@@ -73,21 +108,22 @@ Kernel
   Zephyr's kernel. MISRA-C is a well established code guideline focused on
   embedded systems and aims to improve code safety, security and portability.
   This initial effort was narrowed to Zephyr's kernel and architecture code and
-  was concentrated only in mandatory and required rules. Between these rules,
-  we can mention changes to:
+  was concentrated only in mandatory and required rules. The following rules
+  have been addressed:
 
-  - Namespace changes.
-  - Normalize switch() operators.
-  - Avoid implicit conversion to boolean types.
-  - Fix and normalize headers guard.
-  - Make if() evaluate boolean operands.
-  - Remove all VLAs (variable length array).
-  - Avoid undefined and implementation defined behavior with shift operator.
+  - Namespace changes
+  - Normalize switch() operators
+  - Avoid implicit conversion to boolean types
+  - Fix and normalize headers guard
+  - Make if() evaluate boolean operands
+  - Remove all VLAs (variable length array)
+  - Avoid undefined and implementation defined behavior with shift operator
   - Remove recursions
 
 Architectures
 *************
 
+* Introduced X86_64 (64 bit) architecture support with SMP features
 * High-level Kconfig symbol structure for Trusted Execution
 
 * ARM
@@ -95,7 +131,7 @@ Architectures
   * Re-architect Memory Protection code for ARM and NXP
   * Fully support application user mode in ARMv8m
   * Fully support application memory partitions in ARMv8m
-  * Fully support HW stack protection in ARMv8m
+  * Fully support hardware stack protection in ARMv8m
   * Support built-in stack overflow protection in user mode in ARMv8m
   * Fix stack overflow error reporting
   * Support executing from SRAM in XIP builds
@@ -132,8 +168,8 @@ Boards & SoC Support
 ********************
 
 * Added the all new :ref:`NRF52 simulated board <nrf52_bsim>`:
-  It models some of the HW in an NRF52832 SOC, to enable running
-  full system, multinode simulations, without the need of real HW.
+  It models some of the hardware in an NRF52832 SOC, to enable running
+  full system, multi-node simulations, without the need of real hardware.
   Enabling fast, reproducible tests, development and debugging of the
   application, BT stack and kernel. It relies on `BabbleSim`_
   to simulate the radio physical layer.
@@ -192,17 +228,17 @@ Drivers and Sensors
 
 * Added new drivers and backends for :ref:`native_posix <native_posix>`:
 
-  - An UART driver which maps the Zephyr UART to a new host PTY
-  - A USB driver which can expose a host connected USB device
-  - A display driver which will render to a dedicated window using the SDL
+  * An UART driver which maps the Zephyr UART to a new host PTY
+  * A USB driver which can expose a host connected USB device
+  * A display driver which will render to a dedicated window using the SDL
     library
-  - A dedicated backend for the new logger subsystem
-* nRF5 flash driver support UICR operations
+  * A dedicated backend for the new logger subsystem
+
 * Counter
 
-  - Refactored API
-  - Ported exisitng counter and rtc drivers to the new API
-  - Deprecated legacy API
+  * Refactored API
+  * Ported existing counter and rtc drivers to the new API
+  * Deprecated legacy API
 
 * RTC
 
@@ -210,63 +246,100 @@ Drivers and Sensors
 
 * UART
 
-  - Added asynchronous API.
-  - Added implementation of the new asynchronous API for nRF series (UART and
+  * Added asynchronous API.
+  * Added implementation of the new asynchronous API for nRF series (UART and
     UARTE).
-* ADC driver APIs are now available to threads running in user mode.
-* arcv2 timer driver: refactoring and accuracy improvements (boot time measurements)
-* adc: Overhauled adc_dw and renamed it to adc_intel_quark_se_c1000_ss
-* adc: Fixed handling of invalid sampling requests
-* can: Add socket CAN support
-* clock_control: Added RV32M1 driver
-* console: Removed telnet driver
-* counter: Converted rtc drivers to new counter API
-* display: Introduced mcux elcdif shim driver
-* display: Added support for ssd16xx monochrome controllers
-* display: Added support for ssd1608, gde029a1, and hink e0154a05
-* display: Added SDL based display emulation driver
-* display: Added SSD1673 EPD controller driver
-* display: Added SSD1306 display controller driver
-* entropy: Added Atmel SAM entropy generator driver
-* flash: Added driver for STM32F7x series
-* flash: Added flash driver support for Atmel SAM E70
-* flash: Added a generic spi nor flash driver
-* flash: Added flash driver for SiLabs Gecko SoCs
-* ethernet: Extended mcux driver for i.mx rt socs
-* ethernet: Added driver for Intel PRO/1000 Ethernet controller
-* gpio: Added RV32M1 driver
-* hwinfo: Added new hwinfo API and drivers
-* i2c: Added mcux lpi2c shim driver
-* i2c: Removed deprecated i2c_atmel_sam3 driver
-* i2c: Introduced Silabs i2c shim driver
-* i2s: Added support for I2S stm32
-* ipm: Added IMX IPM driver for i.MX socs
-* interrupt_controller: Added RV32M1 driver
-* interrupt_controller: Add support for STM32F302x8 EXTI_LINES
-* neural_net: Added Intel GNA driver
-* pinmux: Added RV32M1 driver
-* pinmux: add pinmux driver for Intel S1000
-* pinmux: Add support for STM32F302x8
-* pwm: Added SiFive PWM driver
-* pwm: Added Atmel SAM PWM driver
-* pwm: Converted nRF drivers to use device tree
-* sensor: Added lis2ds12, lis2dw12, lis2mdl, and lsm303dlhc drivers
-* sensor: Added ms5837 driver
-* sensor: Added support for Nordic QDEC
-* sensor: Converted drivers to use device tree
-* serial: Added RV32M1 driver
-* serial: Add new asynchronous UART API
-* serial: Added support for ARM PL011 UART
-* serial: Introduced Silabs leuart shim serial driver
-* serial: Adapted gecko uart driver for Silabs EFM32HG
-* spi: Converted nRF drivers to use device tree
-* timer: Added/reworked Xtensa, RISV-V, NRF, HPET, and Arm systick drivers
-* usb: Added native_posix USB driver
-* usb: Added usb device driver for Atmel SAM E70 family
-* usb: Added nRF52840 USBD driver
-* watchdog: Converted drivers to new API
-* wifi: simplelink: Implemented setsockopt() for TLS offload
-* wifi: Added inventek es-WiFi driver
+
+* ADC
+
+  * ADC driver APIs are now available to threads running in user mode.
+  * Overhauled adc_dw and renamed it to adc_intel_quark_se_c1000_ss
+  * Fixed handling of invalid sampling requests
+
+* Display
+
+  * Introduced mcux elcdif shim driver
+  * Added support for ssd16xx monochrome controllers
+  * Added support for ssd1608, gde029a1, and hink e0154a05
+  * Added SDL based display emulation driver
+  * Added SSD1673 EPD controller driver
+  * Added SSD1306 display controller driver
+
+
+* Flash:
+
+  * nRF5 flash driver support UICR operations
+  * Added driver for STM32F7x series
+  * Added flash driver support for Atmel SAM E70
+  * Added a generic spi nor flash driver
+  * Added flash driver for SiLabs Gecko SoCs
+
+* Ethernet:
+
+  * Extended mcux driver for i.mx rt socs
+  * Added driver for Intel PRO/1000 Ethernet controller
+
+* I2C
+
+  * Added mcux lpi2c shim driver
+  * Removed deprecated i2c_atmel_sam3 driver
+  * Introduced Silabs i2c shim driver
+  * Added support for I2S stm32
+
+* Pinmux
+
+  * Added RV32M1 driver
+  * Added pinmux driver for Intel S1000
+  * Added support for STM32F302x8
+
+* PWM
+
+  * Added SiFive PWM driver
+  * Added Atmel SAM PWM driver
+  * Converted nRF drivers to use device tree
+
+* Sensor
+
+  * Added lis2ds12, lis2dw12, lis2mdl, and lsm303dlhc drivers
+  * Added ms5837 driver
+  * Added support for Nordic QDEC
+  * Converted drivers to use device tree
+
+* Serial
+
+  * Added RV32M1 driver
+  * Added new asynchronous UART API
+  * Added support for ARM PL011 UART
+  * Introduced Silabs leuart shim serial driver
+  * Adapted gecko uart driver for Silabs EFM32HG
+
+* USB
+
+  * Added native_posix USB driver
+  * Added usb device driver for Atmel SAM E70 family
+  * Added nRF52840 USBD driver
+
+
+* Other Drivers
+
+  * clock_control: Added RV32M1 driver
+  * console: Removed telnet driver
+  * entropy: Added Atmel SAM entropy generator driver
+  * spi: Converted nRF drivers to use device tree
+  * watchdog: Converted drivers to new API
+  * wifi: simplelink: Implemented setsockopt() for TLS offload
+  * wifi: Added inventek es-WiFi driver
+  * timer: Refactored and accuracy improvements of the arcv2 timer driver (boot
+    time measurements)
+  * timer: Added/reworked Xtensa, RISV-V, NRF, HPET, and Arm systick drivers
+  * gpio: Added RV32M1 driver
+  * hwinfo: Added new hwinfo API and drivers
+  * ipm: Added IMX IPM driver for i.MX socs
+  * interrupt_controller: Added RV32M1 driver
+  * interrupt_controller: Added support for STM32F302x8 EXTI_LINES
+  * neural_net: Added Intel GNA driver
+  * can: Added socket CAN support
+
 
 Networking
 **********
@@ -345,7 +418,6 @@ Bluetooth
   * Added support for setting channel map
   * Converted SPI HCI driver to use device tree
 
-* Several fixes for big endian architectures
 * New BLE split software Controller (experimental):
 
   - Split design with Upper Link Layer and Lower Link Layer
@@ -373,6 +445,8 @@ Bluetooth
   * nRF: Rework the PPI channel assignment to use pre-assigned ones
   * Add extensive documentation to the shared primitives
 
+* Several fixes for big endian architectures
+
 Build and Infrastructure
 ************************
 
@@ -394,6 +468,10 @@ Build and Infrastructure
 Libraries / Subsystems
 ***********************
 
+* Added a new display API and subsystem
+* Added support for CTF Tracing
+* Added support for JWT (JSON Web Tockens)
+*
 * Flash Maps:
   - API extension
   - Automatic generation of the list of flash areas
@@ -444,11 +522,18 @@ Libraries / Subsystems
 
 * MBEDTLS APIs may now be used from user mode.
 
+
 HALs
 ****
 
-* ext/hal/nordic: Updated nrfx to version 1.6.2
-* ext/hal/nordic: Updated nrf ieee802154 radio driver to version 1.2.3
+* Updated Nordic nrfx to version 1.6.2
+* Updated Nordic nrf ieee802154 radio driver to version 1.2.3
+* Updated SimpleLink to TI CC32XX SDK 2.40.01.01
+* Added Microchip MEC1701 Support
+* Added Cypress PDL for PSoC6 SoC Support
+* Updates to stm32cube, Silabs Gecko SDK, Atmel.
+* Update ARM CMSIS headers to version 5.4.0
+
 
 Documentation
 *************
@@ -493,9 +578,17 @@ Documentation
 Tests and Samples
 *****************
 
-* TBD
 * A new set of, multinode, full system tests of the BT stack,
   based on `BabbleSim`_ have been added.
+* Added unique identifiers to all tests and samples.
+* Removed old footprint benchmarks
+* Added tests for CMSIS RTOS API v2, BSD Sockets, CANBus, Settings, USB, Misc.
+  drivers.
+* Added benchmark applications for the scheduler and mbedTLS
+* Added samples for the display subsystem, LVGL, Goofle IOT, Sockets, CMSIS RTOS
+  API v2, Wifi, Shields, IPC subsystem and USB CDC ACM and USB HID.
+* Add support for testing with Renode using sanitycheck
+
 
 Issue Related Items
 *******************
