@@ -69,6 +69,22 @@ Kernel
   - The default stack size for handling system calls has been increased to
     1024 bytes.
 
+* We start applying MISRA-C (https://www.misra.org.uk/) code guideline on
+  Zephyr's kernel. MISRA-C is a well established code guideline focused on
+  embedded systems and aims to improve code safety, security and portability.
+  This initial effort was narrowed to Zephyr's kernel and architecture code and
+  was concentrated only in mandatory and required rules. Between these rules,
+  we can mention changes to:
+
+  - Namespace changes.
+  - Normalize switch() operators.
+  - Avoid implicit conversion to boolean types.
+  - Fix and normalize headers guard.
+  - Make if() evaluate boolean operands.
+  - Remove all VLAs (variable length array).
+  - Avoid undefined and implementation defined behavior with shift operator.
+  - Remove recursions
+
 Architectures
 *************
 
