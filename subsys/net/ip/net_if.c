@@ -540,6 +540,8 @@ static void dad_timeout(struct k_work *work)
 		 * in this case as the address is our own one.
 		 */
 		net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);
+
+		net_conn_mgr_connect(iface, AF_INET6);
 	}
 }
 
@@ -2529,6 +2531,8 @@ struct net_if_addr *net_if_ipv4_addr_add(struct net_if *iface,
 
 		net_mgmt_event_notify(NET_EVENT_IPV4_ADDR_ADD, iface);
 
+		net_conn_mgr_connect(iface, AF_INET);
+
 		return ifaddr;
 	}
 #endif
@@ -2901,6 +2905,7 @@ void net_if_carrier_down(struct net_if *iface)
 #endif
 
 	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
+	net_conn_mgr_disconnect(iface, AF_UNSPEC);
 }
 
 int net_if_down(struct net_if *iface)
@@ -2932,6 +2937,7 @@ done:
 	net_if_flag_clear(iface, NET_IF_UP);
 
 	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
+	net_conn_mgr_disconnect(iface, AF_UNSPEC);
 
 	return 0;
 }

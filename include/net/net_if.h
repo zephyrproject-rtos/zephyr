@@ -187,6 +187,11 @@ enum net_if_flag {
 	 */
 	NET_IF_NO_AUTO_START,
 
+	/** Interface is connected. Typically this means that interface can be
+	 * used to transfer data with other network elements.
+	 */
+	NET_IF_CONNECTED,
+
 /** @cond INTERNAL_HIDDEN */
 	/* Total number of flags - must be at the end of the enum */
 	NET_IF_NUM_FLAGS

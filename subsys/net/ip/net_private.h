@@ -76,6 +76,25 @@ enum net_verdict net_gptp_recv(struct net_if *iface, struct net_pkt *pkt);
 #define net_gptp_recv(iface, pkt)
 #endif /* CONFIG_NET_GPTP */
 
+#if defined(CONFIG_NET_CONNECTION_MANAGER)
+void net_conn_mgr_connect(struct net_if *iface, sa_family_t family);
+void net_conn_mgr_disconnect(struct net_if *iface, sa_family_t family);
+#else
+static inline void net_conn_mgr_connect(struct net_if *iface,
+					sa_family_t family)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(family);
+}
+
+static inline void net_conn_mgr_disconnect(struct net_if *iface,
+					   sa_family_t family)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(family);
+}
+#endif
+
 #if defined(CONFIG_NET_IPV6_FRAGMENT)
 int net_ipv6_send_fragmented_pkt(struct net_if *iface, struct net_pkt *pkt,
 				 u16_t pkt_len);

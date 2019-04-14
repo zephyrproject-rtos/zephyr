@@ -90,4 +90,10 @@ module-str = Log level for route management
 module-help = Enables routing engine debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
+module = NET_CONNECTION_MANAGER
+module-dep = NET_LOG
+module-str = Log level for connection manager
+module-help = Enables connection manager code to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
 endif # NET_RAW_MODE

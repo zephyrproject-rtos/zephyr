@@ -49,6 +49,18 @@ config NET_INIT_PRIO
 	  Network initialization priority level. This number tells how
 	  early in the boot the network stack is initialized.
 
+config NET_CONNECTION_MANAGER
+	bool "Enable connection manager [EXPERIMENTAL]"
+	select NET_MGMT
+	select NET_MGMT_EVENT
+	select NET_MGMT_EVENT_INFO
+	default y
+	help
+	  If enabled, then connection manager will start to monitor network
+	  connectivity and send CONNECTED / DISCONNECTED network management
+	  events whenever the network connection is established or when it
+	  is disconnected.
+
 source "subsys/net/ip/Kconfig.ipv6"
 
 source "subsys/net/ip/Kconfig.ipv4"

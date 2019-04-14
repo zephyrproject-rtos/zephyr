@@ -32,6 +32,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_UDP          connection.c udp.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_PACKET  connection.c packet_socket.c)
 zephyr_library_sources_ifdef(CONFIG_NET_SOCKETS_CAN  connection.c canbus_socket.c)
 zephyr_library_sources_ifdef(CONFIG_NET_PROMISCUOUS_MODE promiscuous.c)
+zephyr_library_sources_ifdef(CONFIG_NET_CONNECTION_MANAGER connection_mgr.c)
 
 if(CONFIG_NET_SHELL)
 zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/l2)
