@@ -27,6 +27,9 @@ LOG_MODULE_REGISTER(net_echo_client_sample, LOG_LEVEL_DBG);
 #include <net/socket.h>
 #include <net/tls_credentials.h>
 
+#include <net/net_mgmt.h>
+#include <net/net_event.h>
+
 #include "common.h"
 #include "ca_certificate.h"
 
@@ -77,6 +80,8 @@ struct configs conf = {
 struct pollfd fds[4];
 int nfds;
 
+static struct net_mgmt_event_callback mgmt_cb;
+
 static void prepare_fds(void)
 {
 	if (conf.ipv4.udp.sock >= 0) {
@@ -114,8 +119,93 @@ static void wait(void)
 	}
 }
 
+static void start_udp_and_tcp(struct k_work *work)
+{
+	int ret;
+
+	LOG_INF("Starting...");
+
+	if (IS_ENABLED(CONFIG_NET_TCP)) {
+		ret = start_tcp();
+		if (ret < 0) {
+			return;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NET_UDP)) {
+		ret = start_udp();
+		if (ret < 0) {
+			return;
+		}
+	}
+
+	prepare_fds();
+
+	while (true) {
+		if (IS_ENABLED(CONFIG_NET_TCP)) {
+			ret = process_tcp();
+			if (ret < 0) {
+				break;
+			}
+		}
+
+		if (IS_ENABLED(CONFIG_NET_UDP)) {
+			ret = process_udp();
+			if (ret < 0) {
+				break;
+			}
+		}
+
+		wait();
+	}
+}
+
+static void stop_udp_and_tcp(struct k_work *work)
+{
+	LOG_INF("Stopping...");
+
+	if (IS_ENABLED(CONFIG_NET_UDP)) {
+		stop_udp();
+	}
+
+	if (IS_ENABLED(CONFIG_NET_TCP)) {
+		stop_tcp();
+	}
+}
+
+static void do_service(k_work_handler_t handler)
+{
+	static struct k_work work;
+
+	k_work_init(&work, handler);
+
+	k_work_submit(&work);
+}
+
+static void event_handler(struct net_mgmt_event_callback *cb,
+			  u32_t mgmt_event, struct net_if *iface)
+{
+	if (mgmt_event == NET_EVENT_L4_CONNECTED) {
+		LOG_INF("Network connected");
+
+		do_service(start_udp_and_tcp);
+
+		return;
+	}
+
+	if (mgmt_event == NET_EVENT_L4_DISCONNECTED) {
+		LOG_INF("Network disconnected");
+
+		do_service(stop_udp_and_tcp);
+
+		return;
+	}
+}
+
 static void init_app(void)
 {
+	u32_t event_mask;
+
 	LOG_INF(APP_BANNER);
 
 #if defined(CONFIG_NET_SOCKETS_SOCKOPT_TLS)
@@ -128,57 +218,23 @@ static void init_app(void)
 	}
 #endif
 
+	event_mask = NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED;
+
+	net_mgmt_init_event_callback(&mgmt_cb, event_handler, event_mask);
+	net_mgmt_add_event_callback(&mgmt_cb);
+
 	init_vlan();
 }
 
 void main(void)
 {
-	int ret;
-
 	init_app();
 
-	if (IS_ENABLED(CONFIG_NET_TCP)) {
-		ret = start_tcp();
-		if (ret < 0) {
-			goto quit;
-		}
-	}
-
-	if (IS_ENABLED(CONFIG_NET_UDP)) {
-		ret = start_udp();
-		if (ret < 0) {
-			goto quit;
-		}
-	}
-
-	prepare_fds();
-
-	while (true) {
-		if (IS_ENABLED(CONFIG_NET_TCP)) {
-			ret = process_tcp();
-			if (ret < 0) {
-				goto quit;
-			}
-		}
-
-		if (IS_ENABLED(CONFIG_NET_UDP)) {
-			ret = process_udp();
-			if (ret < 0) {
-				goto quit;
-			}
-		}
-
-		wait();
-	}
-
-quit:
-	LOG_INF("Stopping...");
-
-	if (IS_ENABLED(CONFIG_NET_UDP)) {
-		stop_udp();
-	}
-
-	if (IS_ENABLED(CONFIG_NET_TCP)) {
-		stop_tcp();
+	if (IS_ENABLED(CONFIG_NET_CONFIG_NEED_IP_CONNECTIVITY)) {
+		/* If the config library has been configured to start the
+		 * app only after we have a connection, then we can start
+		 * it right away.
+		 */
+		do_service(start_udp_and_tcp);
 	}
 }
