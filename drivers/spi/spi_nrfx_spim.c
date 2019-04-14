@@ -178,12 +178,22 @@ static void transfer_next_chunk(struct device *dev)
 		xfer.tx_length   = spi_context_tx_buf_on(ctx) ? chunk_len : 0;
 		xfer.p_rx_buffer = ctx->rx_buf;
 		xfer.rx_length   = spi_context_rx_buf_on(ctx) ? chunk_len : 0;
-		result = nrfx_spim_xfer(&dev_config->spim, &xfer, 0);
-		if (result == NRFX_SUCCESS) {
-			return;
+
+		/* This SPIM driver is only used by the NRF52832 if
+		   SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58 is enabled */
+		if (IS_ENABLED(CONFIG_SOC_NRF52832) &&
+		   (xfer.rx_length == 1 && xfer.tx_length <= 1)) {
+			LOG_WRN("Transaction aborted since it would trigger nRF52832 PAN 58");
+			error = -EIO;
 		}
 
-		error = -EIO;
+		if (!error) {
+			result = nrfx_spim_xfer(&dev_config->spim, &xfer, 0);
+			if (result == NRFX_SUCCESS) {
+				return;
+			}
+			error = -EIO;
+		}
 	}
 
 	spi_context_cs_control(ctx, false);
