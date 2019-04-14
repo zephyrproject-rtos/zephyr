@@ -14,6 +14,19 @@ menuconfig SPI_NRFX
 
 if SPI_NRFX
 
+config SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58
+	depends on SOC_NRF52832
+	bool "Allow enabling the SPIM driver despite PAN 58"
+	help
+	  Allow enabling the nRF SPI Master with EasyDMA, despite
+	  Product Anomaly Notice 58 (SPIM: An additional byte is
+	  clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1).
+	  Without this override, the SPI Master is only available
+	  without EasyDMA. Note that the 'SPIM' and 'SPIS' drivers
+	  use EasyDMA, while the 'SPI' driver does not. Use this
+	  option ONLY if you are certain that transactions with
+	  RXD.MAXCNT == 1 and TXD.MAXCNT <= 1 will NOT be executed.
+
 # In most Nordic SoCs, SPI and TWI peripherals with the same instance number
 # share certain resources and therefore cannot be used at the same time
 # (in nRF91 Series this limitation concerns UART peripherals as well).
@@ -34,9 +47,10 @@ config SPI_0_NRF_SPI
 
 config SPI_0_NRF_SPIM
 	bool "nRF SPIM 0"
-	# This driver is not available for nRF52832 because of the anomaly 58
-	# (SPIM: An additional byte is clocked out when RXD.MAXCNT = 1).
-	depends on HAS_HW_NRF_SPIM0 && !SOC_NRF52832
+	# This driver is not available for nRF52832 because of Product Anomaly 58
+	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
+	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
+	depends on HAS_HW_NRF_SPIM0 && (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
 	select NRFX_SPIM
 	help
 	  Enable nRF SPI Master with EasyDMA on port 0.
@@ -84,9 +98,10 @@ config SPI_1_NRF_SPI
 
 config SPI_1_NRF_SPIM
 	bool "nRF SPIM 1"
-	# This driver is not available for nRF52832 because of the anomaly 58
-	# (SPIM: An additional byte is clocked out when RXD.MAXCNT = 1).
-	depends on HAS_HW_NRF_SPIM1 && !SOC_NRF52832
+	# This driver is not available for nRF52832 because of Product Anomaly 58
+	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
+	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
+	depends on HAS_HW_NRF_SPIM1 && (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
 	select NRFX_SPIM
 	help
 	  Enable nRF SPI Master with EasyDMA on port 1.
@@ -134,9 +149,10 @@ config SPI_2_NRF_SPI
 
 config SPI_2_NRF_SPIM
 	bool "nRF SPIM 2"
-	# This driver is not available for nRF52832 because of the anomaly 58
-	# (SPIM: An additional byte is clocked out when RXD.MAXCNT = 1).
-	depends on HAS_HW_NRF_SPIM2 && !SOC_NRF52832
+	# This driver is not available for nRF52832 because of Product Anomaly 58
+	# (SPIM: An additional byte is clocked out when RXD.MAXCNT == 1 and TXD.MAXCNT <= 1)
+	# Allow the 'EasyDMA' driver only if this automatic safety-disable is overridden
+	depends on HAS_HW_NRF_SPIM2 && (!SOC_NRF52832 || SOC_NRF52832_ALLOW_SPIM_DESPITE_PAN_58)
 	select NRFX_SPIM
 	help
 	  Enable nRF SPI Master with EasyDMA on port 2.
