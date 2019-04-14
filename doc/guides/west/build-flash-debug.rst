@@ -73,6 +73,18 @@ Additionally you can specify the build system target using the ``--target``
 You can list all targets with ``ninja help`` (or ``west build -t help``) inside
 the build folder.
 
+A clean build can be triggered by using the ``--pristine`` (or ``-p``) option.
+This is particularly handy if you want to switch source dirs or boards without
+using a different build dir::
+
+  west build -b qemu_x86 samples/philosophers
+  west build -p -b reel_board samples/hello_world
+
+If you are unsure about whether the command-line parameters you supply to
+``west build`` require a clean build you can let west decide for you by using
+the ``auto`` setting in the ``--pristine`` option::
+
+  west build -p auto -b reel_board samples/hello_world
 
 Finally, you can add additional arguments to the CMake invocation performed by
 ``west build`` by supplying additional parameters (after a ``--``) to the
