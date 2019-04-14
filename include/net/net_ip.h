@@ -1320,6 +1320,16 @@ static inline u8_t net_priority2vlan(enum net_priority priority)
 	return (u8_t)net_vlan2priority(priority);
 }
 
+/**
+ * @brief Return network address family value as a string. This is only usable
+ * for debugging.
+ *
+ * @param family Network address family code
+ *
+ * @return Network address family as a string, or NULL if family is unknown.
+ */
+const char *net_family2str(sa_family_t family);
+
 #ifdef __cplusplus
 }
 #endif
