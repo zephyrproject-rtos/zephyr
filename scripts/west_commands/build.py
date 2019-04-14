@@ -298,17 +298,14 @@ class Build(Forceable):
             log.dbg('not running cmake; build system is present')
             return
 
-        # It's unfortunate to have to use the undocumented -B and -H
-        # options to set the source and binary directories.
-        #
-        # However, it's the only known way to set that directory and
-        # run CMake from the current working directory. This is
-        # important because users expect invocations like this to Just
-        # Work:
+        # Invoke CMake from the current working directory using the
+        # -S and -B options (officially introduced in CMake 3.13.0).
+        # This is important because users expect invocations like this
+        # to Just Work:
         #
         # west build -- -DOVERLAY_CONFIG=relative-path.conf
         final_cmake_args = ['-B{}'.format(self.build_dir),
-                            '-H{}'.format(self.source_dir),
+                            '-S{}'.format(self.source_dir),
                             '-G{}'.format(DEFAULT_CMAKE_GENERATOR)]
         if self.args.board:
             final_cmake_args.append('-DBOARD={}'.format(self.args.board))
