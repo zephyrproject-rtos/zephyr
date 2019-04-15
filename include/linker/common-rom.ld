@@ -6,7 +6,6 @@
 		*(SW_ISR_TABLE)
 	} GROUP_LINK_IN(ROMABLE_REGION)
 #endif
-#ifdef CONFIG_CPLUSPLUS
 	SECTION_PROLOGUE(_CTOR_SECTION_NAME,,)
 	{
 		/*
@@ -31,7 +30,6 @@
 		KEEP(*(SORT_BY_NAME(".init_array*")))
 		__init_array_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
-#endif
 #ifdef CONFIG_USERSPACE
 	/* Build-time assignment of permissions to kernel objects to
 	 * threads declared with K_THREAD_DEFINE()

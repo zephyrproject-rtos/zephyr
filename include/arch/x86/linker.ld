@@ -71,11 +71,6 @@ SECTIONS
 
     /DISCARD/ :
 	{
-	*(.plt)
-	}
-
-    /DISCARD/ :
-	{
 	*(.iplt)
 	}
 
@@ -183,12 +178,6 @@ SECTIONS
 	/*
 	 * Needed for dynamic linking which we do not have, do discard
 	 */
-	/DISCARD/ : {
-		*(.got.plt)
-		*(.igot.plt)
-		*(.got)
-		*(.igot)
-	}
 	/* RAMABLE_REGION */
 	GROUP_START(RAMABLE_REGION)
 
