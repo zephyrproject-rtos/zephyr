@@ -536,8 +536,13 @@ The following peripherals are currently provided with this board:
 UART
 *****
 
-This driver can be configured to either create and link the UART to a new
-pseudoterminal (i.e. ``/dev/pts<nbr>``), or to map the UART input and
+This driver can be configured with :option:`CONFIG_UART_NATIVE_POSIX`
+to instantiate up to two UARTs. By default only one UART is enabled.
+With :option:`CONFIG_UART_NATIVE_POSIX_PORT_1_ENABLE`
+you can enable the second one.
+
+For the first UART, it can link it to a new
+pseudoterminal (i.e. ``/dev/pts<nbr>``), or map the UART input and
 output to the executable's ``stdin`` and ``stdout``.
 This is chosen by selecting either
 :option:`CONFIG_NATIVE_UART_0_ON_OWN_PTY` or
@@ -557,8 +562,8 @@ to it. This can be done, for example with the command::
 
 where ``/dev/<ttyn>`` should be replaced with the actual TTY device.
 
-You may also chose to automatically attach a terminal emulator to it by
-passing the command line option ``-attach_uart`` to the executable.
+You may also chose to automatically attach a terminal emulator to the first UART
+by passing the command line option ``-attach_uart`` to the executable.
 The command used for attaching to the new shell can be set with the command line
 option ``-attach_uart_cmd=<"cmd">``. Where the default command is given by
 :option:`CONFIG_NATIVE_UART_AUTOATTACH_DEFAULT_CMD`.
