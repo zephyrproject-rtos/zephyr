@@ -3,13 +3,14 @@
 # Configures CMake for using GCC
 
 find_program(CMAKE_C_COMPILER   icc    )
+find_program(CMAKE_ASM_COMPILER   icc    )
 find_program(CMAKE_OBJCOPY      objcopy)
 find_program(CMAKE_OBJDUMP      objdump)
-#find_program(CMAKE_LINKER      ld     ) # Not in use yet
-find_program(CMAKE_AR           ar     )
-find_program(CMAKE_RANLILB      ranlib )
-find_program(CMAKE_READELF      readelf)
-find_program(CMAKE_GDB          gdb    )
+find_program(CMAKE_LINKER       xild     ) # Not in use yet
+find_program(CMAKE_AR           xiar     )
+find_program(CMAKE_GDB          gdb-ia    )
+
+set(CMAKE_ASM_SOURCE_FILE_EXTENSIONS asm )
 
 # -march={pentium,lakemont,...} do not automagically imply -m32, so
 # adding it here.
@@ -19,10 +20,10 @@ find_program(CMAKE_GDB          gdb    )
 # Maybe the -m32/-miamcu FLAGS should all be next to -march= in the
 # longer term?
 if(NOT CONFIG_X86_64)
-  string(PREPEND CMAKE_ASM_FLAGS             "-m32 ")
-  string(PREPEND CMAKE_C_FLAGS               "-m32 ")
-  string(PREPEND CMAKE_CXX_FLAGS             "-m32 ")
-  string(PREPEND CMAKE_SHARED_LINKER_FLAGS   "-m32 ") # unused?
+  string(PREPEND CMAKE_ASM_FLAGS             "-mia32 -masm=intel")
+  string(PREPEND CMAKE_C_FLAGS               "-mia32 ")
+  string(PREPEND CMAKE_CXX_FLAGS             "-mia32 ")
+  string(PREPEND CMAKE_SHARED_LINKER_FLAGS   "-mia32 ") # unused?
 endif()
 
 if(CONFIG_CPLUSPLUS)

@@ -46,7 +46,7 @@ menu "Linker Options"
 
 choice
 	prompt "Linker Orphan Section Handling"
-	default LINKER_ORPHAN_SECTION_WARN
+	default LINKER_ORPHAN_SECTION_PLACE
 
 config LINKER_ORPHAN_SECTION_PLACE
 	bool "Place"

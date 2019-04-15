@@ -58,7 +58,6 @@ add_library(zephyr_interface INTERFACE)
 # built purely with the include paths, defines, and other compiler
 # flags that come with zephyr_interface.
 zephyr_library_named(zephyr)
-
 zephyr_include_directories(
   kernel/include
   ${ARCH_DIR}/${ARCH}/include
@@ -202,7 +201,6 @@ zephyr_compile_options(
   -Wall
   -Wformat
   -Wformat-security
-  #-Wno-format-zero-length
   -imacros ${AUTOCONF_H}
   -ffreestanding
   -Wno-main
