@@ -1,0 +1,22 @@
+identifier: stm32mp157c_dk2
+name: STM32MP157C_DK2
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gccarmemb
+  - xtools
+testing:
+  ignore_tags:
+    - net
+    - mpu
+    - tinycrypt
+    - crypto
+    - aes
+    - cmm
+    - shell
+    - LED
+    - gpio
+    - nfc
+ram: 256
+flash: 64
