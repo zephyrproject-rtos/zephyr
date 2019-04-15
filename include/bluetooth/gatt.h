@@ -153,6 +153,14 @@ struct bt_gatt_attr {
 };
 
 /** @brief GATT Service structure */
+struct bt_gatt_service_static {
+	/** Service Attributes */
+	const struct bt_gatt_attr *attrs;
+	/** Service Attribute count */
+	size_t			attr_count;
+};
+
+/** @brief GATT Service structure */
 struct bt_gatt_service {
 	/** Service Attributes */
 	struct bt_gatt_attr	*attrs;
@@ -390,6 +398,19 @@ ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 ssize_t bt_gatt_attr_read_service(struct bt_conn *conn,
 				  const struct bt_gatt_attr *attr,
 				  void *buf, u16_t len, u16_t offset);
+
+/** @def BT_GATT_SERVICE_DEFINE
+ *  @brief Statically define and register a service.
+ *
+ *  Helper macro to statically define and register a service.
+ *
+ *  @param _name Service name.
+ */
+#define BT_GATT_SERVICE_DEFINE(_name, ...)				\
+	const struct bt_gatt_attr attr_##_name[] = { __VA_ARGS__ };	\
+	const struct bt_gatt_service_static _name __aligned(4)		\
+			__in_section(_bt_services, static, _name) =	\
+						BT_GATT_SERVICE(attr_##_name)
 
 /** @def BT_GATT_SERVICE
  *  @brief Service Structure Declaration Macro.
