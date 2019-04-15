@@ -84,6 +84,18 @@ static const struct pin_config pins_on_p1[] = {
 	{ SWITCH1_U9,     IS_ENABLED(CONFIG_BOARD_PCA10090_SWITCH0_PHY) },
 };
 
+static void chip_reset(struct device *dev, struct gpio_callback *cb, u32_t pin)
+{
+	const u32_t stamp = k_cycle_get_32();
+
+	printk("GPIO reset line asserted, device reset.\n");
+	printk("Bye @ cycle32 %u\n", stamp);
+
+	k_sleep(1);
+
+	NVIC_SystemReset();
+}
+
 static void config_print(void)
 {
 	/* Interface pins 0-2 */
@@ -198,6 +210,70 @@ static int configure_pins(struct device *port, const struct pin_config cfg[],
 	return 0;
 }
 
+static int configure_reset_pin(struct device *p0, struct device *p1)
+{
+	int err;
+	u8_t pin;
+	struct device *port = NULL;
+
+	static struct gpio_callback gpio_ctx;
+
+	/* MCU interface pins 0-2 */
+	if (IS_ENABLED(CONFIG_BOARD_PCA10090_NRF52840_RESET_P0_17)) {
+		port = p0;
+		pin = 17;
+	}
+	if (IS_ENABLED(CONFIG_BOARD_PCA10090_NRF52840_RESET_P0_20)) {
+		port = p0;
+		pin = 20;
+	}
+	if (IS_ENABLED(CONFIG_BOARD_PCA10090_NRF52840_RESET_P0_15)) {
+		port = p0;
+		pin = 15;
+	}
+	/* MCU interface pins 3-6 */
+	if (IS_ENABLED(CONFIG_BOARD_PCA10090_NRF52840_RESET_P0_22)) {
+		port = p0;
+		pin = 22;
+	}
+	if (IS_ENABLED(CONFIG_BOARD_PCA10090_NRF52840_RESET_P1_04)) {
+		port = p1;
+		pin = 4;
+	}
+	if (IS_ENABLED(CONFIG_BOARD_PCA10090_NRF52840_RESET_P1_02)) {
+		port = p1;
+		pin = 2;
+	}
+
+	if (port == NULL) {
+		return -EINVAL;
+	}
+
+	err = gpio_pin_configure(port, pin,
+				 GPIO_DIR_IN | GPIO_INT | GPIO_PUD_PULL_DOWN |
+				 GPIO_INT_ACTIVE_HIGH | GPIO_INT_EDGE);
+	if (err) {
+		return err;
+	}
+
+	gpio_init_callback(&gpio_ctx, chip_reset, BIT(pin));
+
+	err = gpio_add_callback(port, &gpio_ctx);
+	if (err) {
+		return err;
+	}
+
+	err = gpio_pin_enable_callback(port, pin);
+	if (err) {
+		return err;
+	}
+
+	LOG_INF("GPIO reset line enabled on pin %s.%02u",
+		port == p0 ? "P0" : "P1", pin);
+
+	return 0;
+}
+
 static int init(struct device *dev)
 {
 	int rc;
@@ -226,6 +302,14 @@ static int init(struct device *dev)
 	if (rc) {
 		LOG_ERR("Error while configuring pin P1.%02d", rc);
 		return -EIO;
+	}
+
+	if (IS_ENABLED(CONFIG_BOARD_PCA10090_NRF52840_RESET)) {
+		rc = configure_reset_pin(p0, p1);
+		if (rc) {
+			LOG_ERR("Unable to configure reset pin");
+			return -EIO;
+		}
 	}
 
 	config_print();
