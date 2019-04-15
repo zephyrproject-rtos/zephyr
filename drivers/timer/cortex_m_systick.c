@@ -147,22 +147,6 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 	SysTick->LOAD = last_load - 1;
 	SysTick->VAL = 0; /* resets timer to last_load */
 
-	/*
-	 * In the unlucky scenario of a SysTick event (wrap) occurring
-	 * while we re-program the last_load value, the SysTick ISR
-	 * will run immediately after we unlock interrupts. In that
-	 * case the timeout we have just configured will expire
-	 * instantaneously, leading to operations being executed
-	 * much earlier than expected. Avoid this by clearing possibly
-	 * pending SysTick exceptions (writing 1 to ICSR.PENDSTCLR).
-	 *
-	 * Side effect: any operations that were scheduled to execute
-	 * upon the expiration of the timeout we may be canceling (by
-	 * writing PENDSTCLR to 1) will be postponed, until the new
-	 * timeout (i.e. the one we are programming now) expires.
-	 */
-	SCB->ICSR |= SCB_ICSR_PENDSTCLR_Msk;
-
 	k_spin_unlock(&lock, key);
 #endif
 }
