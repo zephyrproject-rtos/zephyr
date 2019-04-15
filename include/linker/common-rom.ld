@@ -67,6 +67,13 @@
 		__net_l2_end = .;
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
+	SECTION_DATA_PROLOGUE(_bt_services_area,,SUBALIGN(4))
+	{
+		_bt_services_start = .;
+		KEEP(*(SORT_BY_NAME("._bt_services.static.*")))
+		_bt_services_end = .;
+	} GROUP_LINK_IN(ROMABLE_REGION)
+
 #if defined(CONFIG_BT_SETTINGS)
 	SECTION_DATA_PROLOGUE(_bt_settings_area,,SUBALIGN(4))
 	{
