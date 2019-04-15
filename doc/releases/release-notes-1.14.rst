@@ -14,6 +14,20 @@ Major enhancements with this release include:
   validated using one of the many simulation platforms supported by the project.
   (QEMU, Renode, ARC Simulator and the native POSIX configuration).
 
+* The timing subsystem has been reworked and mostly replaced greatly
+  simplifying the resulting drivers and removing thousands of lines
+  of code and reducing a typical kernel build by hundreds of bytes.
+  TICKLESS_KERNEL mode is now default on all architectures.
+
+* The SMP subsystem continues to evolve with a  new CPU affinity API available
+  to "pin" threads to specific cores or sets of cores. The core kernel is now
+  100% free of use of the global irq_lock on SMP systems and uses the spinlock
+  API (which on uniprocessor systems reduces to the same code) exclusively.
+
+* Zephyr now has support for the x86_64 architecture. It is implemented only
+  for Qemu targets at the moment and supports arbitrary numbers of CPUs in SMP
+  and runs in SMP mode by default, our first platform to do so.
+
 * Overhaul of Network packet (:ref:`net-pkt <net_pkt_interface>`) API and move
   majority of components and protocols to the :ref:`BSD socket API
   <bsd_sockets_interface>` including MQTT, CoAP, LWM2M and SNTP.
@@ -25,7 +39,9 @@ Major enhancements with this release include:
 * Added an experimental BLE split software Controller with ith Upper Link Layer
   and Lower Link Layer for supporting multiple BLE radio hardware architectures.
 
-* Power management, device idle power management
+* The power management subsystem has been overhauled to support device idle
+  power management and move most of the power management logic from the
+  application back to the BSP.
 
 * In this release we introduced major updates and an overhaul to both the
   logging and the shell subsystems supporting multiple back-ends, integration of
@@ -34,17 +50,12 @@ Major enhancements with this release include:
 * Introduced the ``west`` tool for management of multiple repositories and
   enhanced support for flashing and debugging.
 
-* Enabled tickless kernel by default and reworked all timer driver to support
-  the new mode.
-
 * Added support for application user mode, application memory partitions and
   hardware stack protection in ARMv8m
 
 * Applied MISRA-C code guideline on kernel and core components of Zephyr.
   MISRA-C is a well established code guideline focused on embedded systems and
   aims to improve code safety, security and portability.
-
-
 
 The following sections provide detailed lists of changes by component.
 
