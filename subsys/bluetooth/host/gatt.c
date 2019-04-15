@@ -17,11 +17,13 @@
 
 #include <settings/settings.h>
 
+#if defined(CONFIG_BT_GATT_DB)
 #include <tinycrypt/constants.h>
 #include <tinycrypt/utils.h>
 #include <tinycrypt/aes.h>
 #include <tinycrypt/cmac_mode.h>
 #include <tinycrypt/ccm_mode.h>
+#endif /* CONFIG_BT_GATT_DB */
 
 #include <bluetooth/hci.h>
 #include <bluetooth/bluetooth.h>
@@ -181,6 +183,7 @@ BT_GATT_SERVICE_DEFINE(_2_gap_svc,
 #endif
 );
 
+#if defined(CONFIG_BT_GATT_DB)
 static struct bt_gatt_ccc_cfg sc_ccc_cfg[BT_GATT_CCC_MAX] = {};
 
 static void sc_ccc_cfg_changed(const struct bt_gatt_attr *attr,
@@ -486,9 +489,11 @@ static void remove_cf_cfg(struct bt_conn *conn)
 	}
 }
 #endif /* CONFIG_BT_GATT_CACHING */
+#endif /* CONFIG_BT_GATT_DB */
 
 BT_GATT_SERVICE_DEFINE(_1_gatt_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_GATT),
+#if defined(CONFIG_BT_GATT_DB)
 	/* Bluetooth 5.0, Vol3 Part G:
 	 * The Service Changed characteristic Attribute Handle on the server
 	 * shall not change if the server has a trusted relationship with any
@@ -506,8 +511,10 @@ BT_GATT_SERVICE_DEFINE(_1_gatt_svc,
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
 			       db_hash_read, NULL, NULL),
 #endif /* COFNIG_BT_GATT_CACHING */
+#endif /* CONFIG_BT_GATT_DB */
 );
 
+#if defined(CONFIG_BT_GATT_DB)
 static int gatt_register(struct bt_gatt_service *svc)
 {
 	struct bt_gatt_service *last;
@@ -625,6 +632,7 @@ static void sc_process(struct k_work *work)
 
 	atomic_set_bit(sc->flags, SC_INDICATE_PENDING);
 }
+#endif /* CONFIG_BT_GATT_DB */
 
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
 static struct gatt_ccc_store {
@@ -691,17 +699,20 @@ void bt_gatt_init(void)
 		last_static_handle += svc->attr_count;
 	}
 
+#if defined(CONFIG_BT_GATT_DB)
 #if defined(CONFIG_BT_GATT_CACHING)
 	k_delayed_work_init(&db_hash_work, db_hash_process);
 	db_hash_gen(false);
 #endif /* COFNIG_BT_GATT_CACHING */
 
 	k_delayed_work_init(&gatt_sc.work, sc_process);
+#endif /* CONFIG_BT_GATT_DB */
 #if defined(CONFIG_BT_SETTINGS_CCC_STORE_ON_WRITE)
 	k_delayed_work_init(&gatt_ccc_store.work, ccc_delayed_store);
 #endif
 }
 
+#if defined(CONFIG_BT_GATT_DB)
 static bool update_range(u16_t *start, u16_t *end, u16_t new_start,
 			 u16_t new_end)
 {
@@ -768,9 +779,11 @@ static void db_changed(void)
 	}
 #endif
 }
+#endif /* CONFIG_BT_GATT_DB */
 
 int bt_gatt_service_register(struct bt_gatt_service *svc)
 {
+#if defined(CONFIG_BT_GATT_DB)
 	int err;
 
 	__ASSERT(svc, "invalid parameters\n");
@@ -795,12 +808,16 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 		    svc->attrs[svc->attr_count - 1].handle);
 
 	db_changed();
+#else
+	__ASSERT(false, "not supported\n");
+#endif /* CONFIG_BT_GATT_DB */
 
 	return 0;
 }
 
 int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 {
+#if defined(CONFIG_BT_GATT_DB)
 	__ASSERT(svc, "invalid parameters\n");
 
 	if (!sys_slist_find_and_remove(&db, &svc->node)) {
@@ -811,7 +828,9 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 		    svc->attrs[svc->attr_count - 1].handle);
 
 	db_changed();
-
+#else
+	__ASSERT(false, "not supported\n");
+#endif /* CONFIG_BT_GATT_DB */
 	return 0;
 }
 
@@ -1352,6 +1371,7 @@ static int gatt_indicate(struct bt_conn *conn, u16_t handle,
 	return gatt_send(conn, buf, gatt_indicate_rsp, params, NULL);
 }
 
+#if defined(CONFIG_BT_GATT_DB)
 struct sc_data {
 	u16_t start;
 	u16_t end;
@@ -1384,6 +1404,7 @@ done:
 	BT_DBG("peer %s start 0x%04x end 0x%04x", bt_addr_le_str(&cfg->peer),
 	       stored->start, stored->end);
 }
+#endif /* CONFIG_BT_GATT_DB */
 
 static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
@@ -1421,9 +1442,11 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 		conn = bt_conn_lookup_addr_le(cfg->id, &cfg->peer);
 		if (!conn) {
+#if defined(CONFIG_BT_GATT_DB)
 			if (ccc->cfg == sc_ccc_cfg) {
 				sc_save(cfg, data->params);
 			}
+#endif /* CONFIG_BT_GATT_DB */
 			continue;
 		}
 
@@ -1530,6 +1553,7 @@ u16_t bt_gatt_get_mtu(struct bt_conn *conn)
 	return bt_att_get_mtu(conn);
 }
 
+#if defined(CONFIG_BT_GATT_DB)
 static void sc_restore(struct bt_gatt_ccc_cfg *cfg)
 {
 	struct sc_data *data = (struct sc_data *)cfg->data;
@@ -1546,6 +1570,7 @@ static void sc_restore(struct bt_gatt_ccc_cfg *cfg)
 	/* Reset config data */
 	(void)memset(cfg->data, 0, sizeof(cfg->data));
 }
+#endif /* CONFIG_BT_GATT_DB */
 
 static u8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
@@ -1568,9 +1593,11 @@ static u8_t connected_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 		if (ccc->cfg[i].value) {
 			gatt_ccc_changed(attr, ccc);
+#if defined(CONFIG_BT_GATT_DB)
 			if (ccc->cfg == sc_ccc_cfg) {
 				sc_restore(&ccc->cfg[i]);
 			}
+#endif /* CONFIG_BT_GATT_DB */
 			return BT_GATT_ITER_CONTINUE;
 		}
 	}

@@ -351,9 +351,16 @@ config BT_ATT_TX_MAX
 	  amount the calls will block until an existing queued PDU gets
 	  sent.
 
+config BT_GATT_DB
+	bool "GATT dynamic database support"
+	default y
+	help
+	  This option enables registering/unregistering services at runtime.
+
 config BT_GATT_CACHING
 	bool "GATT Caching support"
 	default y
+	depends on BT_GATT_DB
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
