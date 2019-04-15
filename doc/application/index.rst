@@ -1227,7 +1227,7 @@ configuration settings from three sources:
    :file:`boards/ARCHITECTURE/BOARD/BOARD_defconfig` in the Zephyr base
    directory.
 
-2. Any CMakeCache entries entries that are prefixed with :makevar:`CONFIG_`.
+2. Any CMakeCache entries that are prefixed with :makevar:`CONFIG_`.
 
 3. One or more application-specific configuration files.
 
