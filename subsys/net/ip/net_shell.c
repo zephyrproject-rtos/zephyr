@@ -209,6 +209,7 @@ static struct ethernet_capabilities eth_hw_caps[] = {
 	EC(ETHERNET_HW_TX_CHKSUM_OFFLOAD, "TX checksum offload"),
 	EC(ETHERNET_HW_RX_CHKSUM_OFFLOAD, "RX checksum offload"),
 	EC(ETHERNET_HW_VLAN,              "Virtual LAN"),
+	EC(ETHERNET_HW_VLAN_TAG_STRIP,    "VLAN Tag stripping"),
 	EC(ETHERNET_AUTO_NEGOTIATION_SET, "Auto negotiation"),
 	EC(ETHERNET_LINK_10BASE_T,        "10 Mbits"),
 	EC(ETHERNET_LINK_100BASE_T,       "100 Mbits"),
