@@ -1374,6 +1374,49 @@ fail_conn:
 		   BTP_STATUS_FAILED);
 }
 
+static void read_uuid(u8_t *data, u16_t len)
+{
+	const struct gatt_read_uuid_cmd *cmd = (void *) data;
+	struct bt_conn *conn;
+
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, (bt_addr_le_t *)data);
+	if (!conn) {
+		goto fail_conn;
+	}
+
+	if (btp2bt_uuid(cmd->uuid, cmd->uuid_length, &uuid.uuid)) {
+		goto fail;
+	}
+
+	if (!gatt_buf_reserve(sizeof(struct gatt_read_rp))) {
+		goto fail;
+	}
+
+	read_params.by_uuid.uuid = &uuid.uuid;
+	read_params.handle_count = 0;
+	read_params.by_uuid.start_handle = sys_le16_to_cpu(cmd->start_handle);
+	read_params.by_uuid.end_handle = sys_le16_to_cpu(cmd->end_handle);
+	read_params.func = read_cb;
+
+	btp_opcode = GATT_READ_UUID;
+
+	if (bt_gatt_read(conn, &read_params) < 0) {
+		read_destroy(&read_params);
+
+		goto fail;
+	}
+
+	bt_conn_unref(conn);
+
+	return;
+fail:
+	bt_conn_unref(conn);
+
+fail_conn:
+	tester_rsp(BTP_SERVICE_ID_GATT, GATT_READ_UUID, CONTROLLER_INDEX,
+		   BTP_STATUS_FAILED);
+}
+
 static void read_long(u8_t *data, u16_t len)
 {
 	const struct gatt_read_long_cmd *cmd = (void *) data;
@@ -1907,6 +1950,9 @@ void tester_handle_gatt(u8_t opcode, u8_t index, u8_t *data,
 		return;
 	case GATT_READ:
 		read(data, len);
+		return;
+	case GATT_READ_UUID:
+		read_uuid(data, len);
 		return;
 	case GATT_READ_LONG:
 		read_long(data, len);
