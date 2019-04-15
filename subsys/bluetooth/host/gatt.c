@@ -2430,6 +2430,34 @@ static int gatt_read_blob(struct bt_conn *conn,
 	return gatt_send(conn, buf, gatt_read_rsp, params, NULL);
 }
 
+static int gatt_read_uuid(struct bt_conn *conn,
+			  struct bt_gatt_read_params *params)
+{
+	struct net_buf *buf;
+	struct bt_att_read_type_req *req;
+
+	buf = bt_att_create_pdu(conn, BT_ATT_OP_READ_TYPE_REQ, sizeof(*req));
+	if (!buf) {
+		return -ENOMEM;
+	}
+
+	req = net_buf_add(buf, sizeof(*req));
+	req->start_handle = sys_cpu_to_le16(params->by_uuid.start_handle);
+	req->end_handle = sys_cpu_to_le16(params->by_uuid.end_handle);
+
+	if (params->by_uuid.uuid->type == BT_UUID_TYPE_16) {
+		net_buf_add_le16(buf, BT_UUID_16(params->by_uuid.uuid)->val);
+	} else {
+		net_buf_add_mem(buf, BT_UUID_128(params->by_uuid.uuid)->val, 16);
+	}
+
+	BT_DBG("start_handle 0x%04x end_handle 0x%04x uuid %s",
+		params->by_uuid.start_handle, params->by_uuid.end_handle,
+		bt_uuid_str(params->by_uuid.uuid));
+
+	return gatt_send(conn, buf, gatt_read_rsp, params, NULL);
+}
+
 #if defined(CONFIG_BT_GATT_READ_MULTIPLE)
 static void gatt_read_multiple_rsp(struct bt_conn *conn, u8_t err,
 				   const void *pdu, u16_t length,
@@ -2483,10 +2511,13 @@ int bt_gatt_read(struct bt_conn *conn, struct bt_gatt_read_params *params)
 
 	__ASSERT(conn, "invalid parameters\n");
 	__ASSERT(params && params->func, "invalid parameters\n");
-	__ASSERT(params->handle_count, "invalid parameters\n");
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		return -ENOTCONN;
+	}
+
+	if (params->handle_count == 0) {
+		return gatt_read_uuid(conn, params);
 	}
 
 	if (params->handle_count > 1) {
