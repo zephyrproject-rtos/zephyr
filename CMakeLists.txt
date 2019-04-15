@@ -202,7 +202,7 @@ zephyr_compile_options(
   -Wall
   -Wformat
   -Wformat-security
-  -Wno-format-zero-length
+  #-Wno-format-zero-length
   -imacros ${AUTOCONF_H}
   -ffreestanding
   -Wno-main
