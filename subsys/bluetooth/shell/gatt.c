@@ -277,6 +277,45 @@ static int cmd_mread(const struct shell *shell, size_t argc, char *argv[])
 	return err;
 }
 
+static int cmd_read_uuid(const struct shell *shell, size_t argc, char *argv[])
+{
+	int err;
+
+	if (!default_conn) {
+		shell_error(shell, "Not connected");
+		return -ENOEXEC;
+	}
+
+	read_params.func = read_func;
+	read_params.handle_count = 0;
+	read_params.by_uuid.start_handle = 0x0001;
+	read_params.by_uuid.end_handle = 0xffff;
+
+	if (argc > 1) {
+		uuid.val = strtoul(argv[1], NULL, 16);
+		if (uuid.val) {
+			read_params.by_uuid.uuid = &uuid.uuid;
+		}
+	}
+
+	if (argc > 2) {
+		read_params.by_uuid.start_handle = strtoul(argv[2], NULL, 16);
+		if (argc > 3) {
+			read_params.by_uuid.end_handle = strtoul(argv[3],
+								 NULL, 16);
+		}
+	}
+
+	err = bt_gatt_read(default_conn, &read_params);
+	if (err) {
+		shell_error(shell, "Read failed (err %d)", err);
+	} else {
+		shell_print(shell, "Read pending");
+	}
+
+	return err;
+}
+
 static struct bt_gatt_write_params write_params;
 static u8_t gatt_write_buf[CHAR_SIZE_MAX];
 
@@ -942,6 +981,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 		      "[UUID] [start handle] [end handle]", cmd_discover, 1, 3),
 	SHELL_CMD_ARG(exchange-mtu, NULL, HELP_NONE, cmd_exchange_mtu, 1, 0),
 	SHELL_CMD_ARG(read, NULL, "<handle> [offset]", cmd_read, 2, 1),
+	SHELL_CMD_ARG(read-uuid, NULL, "<UUID> [start handle] [end handle]",
+		      cmd_read_uuid, 2, 2),
 	SHELL_CMD_ARG(read-multiple, NULL, "<handle 1> <handle 2> ...",
 		      cmd_mread, 2, -1),
 	SHELL_CMD_ARG(signed-write, NULL, "<handle> <data> [length] [repeat]",
