@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2019 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/mp1/stm32mp157.dtsi>
+
+/ {
+	model = "STMicroelectronics STM32MP157-DK2  board";
+	compatible = "st,stm32mp157c-dk2", "st,stm32mp15";
+	chosen {
+		zephyr,flash = &retram;
+		zephyr,sram = &mcusram;
+	};
+};
