@@ -254,14 +254,17 @@ static int mpu_configure_regions(const struct k_mem_partition
 
 #if defined(CONFIG_MPU_STACK_GUARD)
 		if (regions[i]->attr.ap_attr == MPU_REGION_SU_RX) {
+			unsigned int key;
 
 			/* Attempt to configure an MPU Stack Guard region; this
 			 * will require splitting of the underlying SRAM region
 			 * into two SRAM regions, leaving out the guard area to
 			 * be programmed afterwards.
 			 */
+			key = irq_lock();
 			reg_index =
 				mpu_sram_partitioning(reg_index, regions[i]);
+			irq_unlock(key);
 		}
 #endif /* CONFIG_MPU_STACK_GUARD */
 
@@ -322,6 +325,8 @@ static int mpu_configure_static_mpu_regions(const struct k_mem_partition
 static int mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
 	*dynamic_regions[], u8_t regions_num)
 {
+	unsigned int key;
+
 	/* Reset MPU regions inside which dynamic memory regions may
 	 * be programmed.
 	 *
@@ -330,10 +335,10 @@ static int mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
 	 * This might trigger memory faults if ISRs occurring during
 	 * re-programming perform access in those areas.
 	 */
-	arm_core_mpu_disable();
+	key = irq_lock();
 	region_init(mpu_config.sram_region, (const struct nxp_mpu_region *)
 		&mpu_config.mpu_regions[mpu_config.sram_region]);
-	arm_core_mpu_enable();
+	irq_unlock(key);
 
 	int mpu_reg_index = static_regions_num;
 
