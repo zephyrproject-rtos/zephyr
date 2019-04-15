@@ -84,6 +84,40 @@ The following security vulnerabilities (CVEs) were addressed in this release:
 Kernel
 ******
 
+* The timing subsystem has been reworked and mostly replaced
+
+   - The timer driver API has been extensively reworked, greatly
+     simplifying the resulting drivers and removing thousands of lines
+     of code and reducing a typical kernel build by hundreds of bytes.
+
+   - TICKLESS_KERNEL mode is now default on all architectures.  Many
+     bugs were fixed in this support.
+
+* Lots of work on the rapidly-evolving SMP subsystem
+
+  - There is a new CPU affinity API available to "pin" threads to
+    specific cores or sets of cores.
+
+  - The core kernel is now 100% free of use of the global irq_lock on
+    SMP systems and uses the spinlock API (which on uniprocessor
+    systems reduces to the same code) exclusively.
+
+  - Zephyr now has a simple interprocessor interrupt framework for
+    applications like the scheduler to use to synchronously notify
+    other processors of state changes.  It's currently implemented
+    only on x86_64 and used only for thread abort.
+
+* Zephyr now has support for the x86_64 architecture.  It is
+  implemented only for Qemu targets at the moment.
+
+  - It supports arbitrary numbers of CPUs in SMP and runs in SMP mode
+    by default, our first platform to do so.
+
+  - For now, it runs code built for the "x32" ABI, which is a native
+    64 bit hardware state but where pointers are 32 bit in memory.
+    Zephyr still has some lurking word size bugs that will need to be
+    fixed to turn on native 64 bit code generation.
+
 * K_THREAD_STACK_BUFFER() has been demoted to a private API and will be removed
   in a future Zephyr release.
 * A new API sys_mutex has been introduced. It has the same semantics
