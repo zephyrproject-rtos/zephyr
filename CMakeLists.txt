@@ -22,6 +22,7 @@ CMAKE_CACHEFILE_DIR: ${CMAKE_CACHEFILE_DIR}
 endif()
 
 project(Zephyr-Kernel VERSION ${PROJECT_VERSION})
+set(CMAKE_ASM_SOURCE_FILE_EXTENSIONS s;S)
 enable_language(C CXX ASM)
 
 # Verify that the toolchain can compile a dummy file, if it is not we
