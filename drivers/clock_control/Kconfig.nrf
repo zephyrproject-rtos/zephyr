@@ -33,6 +33,10 @@ config CLOCK_CONTROL_NRF_K32SRC_RC
 config CLOCK_CONTROL_NRF_K32SRC_XTAL
 	bool "Crystal Oscillator"
 
+config CLOCK_CONTROL_NRF_K32SRC_SYNTH
+	depends on !SOC_SERIES_NRF91X
+	bool "Synthesized from HFCLK"
+
 endchoice
 
 config CLOCK_CONTROL_NRF_K32SRC_BLOCKING
