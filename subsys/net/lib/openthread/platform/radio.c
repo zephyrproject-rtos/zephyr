@@ -73,6 +73,9 @@ void platformRadioInit(void)
 	__ASSERT_NO_MSG(radio_dev != NULL);
 
 	radio_api = (struct ieee802154_radio_api *)radio_dev->driver_api;
+	if (!radio_api) {
+		return;
+	}
 
 	__ASSERT(radio_api->get_capabilities(radio_dev)
 		 & IEEE802154_HW_TX_RX_ACK,

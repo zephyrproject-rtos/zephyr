@@ -354,7 +354,7 @@ static int can_sock_getsockopt_vmeth(void *obj, int level, int optname,
 		dev = net_if_get_device(iface);
 		api = dev->driver_api;
 
-		if (!api->getsockopt) {
+		if (!api || !api->getsockopt) {
 			errno = ENOTSUP;
 			return -1;
 		}
@@ -392,7 +392,7 @@ static int can_sock_setsockopt_vmeth(void *obj, int level, int optname,
 		dev = net_if_get_device(iface);
 		api = dev->driver_api;
 
-		if (!api->setsockopt) {
+		if (!api || !api->setsockopt) {
 			errno = ENOTSUP;
 			return -1;
 		}
