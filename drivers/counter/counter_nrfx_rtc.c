@@ -99,6 +99,15 @@ static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 	nrfx_config->ch_data[chan_id].callback = alarm_cfg->callback;
 	nrfx_config->ch_data[chan_id].user_data = alarm_cfg->user_data;
 
+	if ((cc_val == 0) &&
+	    (get_dev_data(dev)->top != counter_get_max_top_value(dev))) {
+		/* From Product Specification: If a CC register value is 0 when
+		 * a CLEAR task is set, this will not trigger a COMPARE event.
+		 */
+		LOG_INST_INF(nrfx_config->log,
+				"Attempt to set CC to 0, delayed to 1.");
+		cc_val++;
+	}
 	nrfx_rtc_cc_set(rtc, ID_TO_CC(chan_id), cc_val, true);
 
 	return 0;
