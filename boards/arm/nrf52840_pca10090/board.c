@@ -53,12 +53,18 @@ LOG_MODULE_REGISTER(board_control, CONFIG_BOARD_PCA10090_LOG_LEVEL);
  * | COEX2   | -- MCU Interface Pin 8 -- | P1.15    | COEX2_PH   |
  */
 
-/* The following tables specify the -default- values for each pin.
- * Thus, when configuring the pins if there is a one in this table,
- * pull the pin to zero instead.
+__packed struct pin_config {
+	u8_t pin;
+	u8_t val;
+};
+
+/* The following tables specify the default configuration of each pin.
+ * The switches have active-low logic, so when a pin is set to 1 in
+ * these tables, pull it low to leave it set to its default.
+ * When it is set to 0, pull it high to activate the non-default setting.
  */
 
-static const u8_t pins_on_p0[][2] = {
+static const struct pin_config pins_on_p0[] = {
 	{ INTERFACE0_U5, IS_ENABLED(CONFIG_BOARD_PCA10090_INTERFACE0_ARDUINO) },
 	{ INTERFACE1_U6, IS_ENABLED(CONFIG_BOARD_PCA10090_INTERFACE1_TRACE) },
 	{ UART1_VCOM_U7, IS_ENABLED(CONFIG_BOARD_PCA10090_UART1_ARDUINO) },
@@ -67,7 +73,7 @@ static const u8_t pins_on_p0[][2] = {
 	{ SWITCH2_U9,    IS_ENABLED(CONFIG_BOARD_PCA10090_SWITCH1_PHY) },
 };
 
-static const u8_t pins_on_p1[][2] = {
+static const struct pin_config pins_on_p1[] = {
 	{ INTERFACE2_U21, IS_ENABLED(CONFIG_BOARD_PCA10090_INTERFACE2_COEX) },
 	{ UART0_VCOM_U14, IS_ENABLED(CONFIG_BOARD_PCA10090_UART0_VCOM) },
 	{ UART1_VCOM_U7,  IS_ENABLED(CONFIG_BOARD_PCA10090_UART1_ARDUINO) },
@@ -163,37 +169,64 @@ static void config_print(void)
 		IS_ENABLED(CONFIG_BOARD_PCA10090_SWITCH1_ARDUINO));
 }
 
-static void configure_pins(struct device *port, const u8_t pins[][2],
-			   size_t size)
+static int configure_pins(struct device *port, const struct pin_config cfg[],
+			  size_t size)
 {
 	int err;
 
 	for (size_t i = 0; i < size; i++) {
-		err = gpio_pin_configure(port, pins[i][0], GPIO_DIR_OUT);
-		__ASSERT(err == 0, "Unable to configure pin %u", pins[i][0]);
+		err = gpio_pin_configure(port, cfg[i].pin, GPIO_DIR_OUT);
+		if (err) {
+			return cfg[i].pin;
+		}
 
-		/* The pin tables contain the default values for each pin.
-		 * Thus, if there is a one in the table, pull the pin to zero.
+		/* The tables specify the default configuration of each pin.
+		 * The switches have active-low logic, so when a pin is
+		 * set to 1 in these tables, we pull it to low to leave
+		 * it set to its default. If it's set to 0, we to set it
+		 * to high to activate the non-default setting.
 		 */
-		err = gpio_pin_write(port, pins[i][0], !pins[i][1]);
-		__ASSERT(err == 0, "Unable to set pin %u to %u", pins[i][0],
-			 !pins[i][1]);
+		err = gpio_pin_write(port, cfg[i].pin, !cfg[i].val);
+		if (err) {
+			return cfg[i].pin;
+		}
+
+		LOG_DBG("port %p, pin %u -> %u",
+			port, cfg[i].pin, !cfg[i].val);
 	}
+
+	return 0;
 }
 
 static int init(struct device *dev)
 {
+	int rc;
 	struct device *p0;
 	struct device *p1;
 
 	p0 = device_get_binding(DT_GPIO_P0_DEV_NAME);
-	__ASSERT(p0, "Unable to find GPIO %s", DT_GPIO_P0_DEV_NAME);
+	if (!p0) {
+		LOG_ERR("GPIO device " DT_GPIO_P0_DEV_NAME "not found!");
+		return -EIO;
+	}
 
 	p1 = device_get_binding(DT_GPIO_P1_DEV_NAME);
-	__ASSERT(p1, "Unable to find GPIO %s", DT_GPIO_P1_DEV_NAME);
+	if (!p1) {
+		LOG_ERR("GPIO device " DT_GPIO_P1_DEV_NAME " not found!");
+		return -EIO;
+	}
 
-	configure_pins(p0, pins_on_p0, ARRAY_SIZE(pins_on_p0));
-	configure_pins(p1, pins_on_p1, ARRAY_SIZE(pins_on_p1));
+	rc = configure_pins(p0, pins_on_p0, ARRAY_SIZE(pins_on_p0));
+	if (rc) {
+		LOG_ERR("Error while configuring pin P0.%02d", rc);
+		return -EIO;
+	}
+
+	rc = configure_pins(p1, pins_on_p1, ARRAY_SIZE(pins_on_p1));
+	if (rc) {
+		LOG_ERR("Error while configuring pin P1.%02d", rc);
+		return -EIO;
+	}
 
 	config_print();
 
