@@ -217,7 +217,10 @@ static inline void init_iface(struct net_if *iface)
 {
 	const struct net_if_api *api = net_if_get_device(iface)->driver_api;
 
-	NET_ASSERT(api && api->init);
+	if (!api || !api->init) {
+		NET_ERR("Iface %p driver API init NULL", iface);
+		return;
+	}
 
 	NET_DBG("On iface %p", iface);
 

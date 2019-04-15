@@ -516,6 +516,11 @@ static int ethernet_send(struct net_if *iface, struct net_pkt *pkt)
 	u16_t ptype;
 	int ret;
 
+	if (!api) {
+		ret = -ENOENT;
+		goto error;
+	}
+
 	if (IS_ENABLED(CONFIG_NET_IPV4) &&
 	    net_pkt_family(pkt) == AF_INET) {
 		struct net_pkt *tmp;
@@ -604,6 +609,10 @@ static inline int ethernet_enable(struct net_if *iface, bool state)
 {
 	const struct ethernet_api *eth =
 		net_if_get_device(iface)->driver_api;
+
+	if (!eth) {
+		return -ENOENT;
+	}
 
 	if (!state) {
 		net_arp_clear_cache(iface);
@@ -765,6 +774,10 @@ int net_eth_vlan_enable(struct net_if *iface, u16_t tag)
 	struct ethernet_vlan *vlan;
 	int i;
 
+	if (!eth) {
+		return -ENOENT;
+	}
+
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return -EINVAL;
 	}
@@ -821,6 +834,10 @@ int net_eth_vlan_disable(struct net_if *iface, u16_t tag)
 	const struct ethernet_api *eth =
 		net_if_get_device(iface)->driver_api;
 	struct ethernet_vlan *vlan;
+
+	if (!eth) {
+		return -ENOENT;
+	}
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return -EINVAL;
@@ -915,6 +932,10 @@ struct device *net_eth_get_ptp_clock(struct net_if *iface)
 #if defined(CONFIG_PTP_CLOCK)
 	struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api = dev->driver_api;
+
+	if (!api) {
+		return NULL;
+	}
 
 	if (net_if_l2(iface) != &NET_L2_GET_NAME(ETHERNET)) {
 		return NULL;

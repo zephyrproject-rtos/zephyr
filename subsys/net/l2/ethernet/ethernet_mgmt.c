@@ -18,6 +18,10 @@ static inline bool is_hw_caps_supported(struct device *dev,
 {
 	const struct ethernet_api *api = dev->driver_api;
 
+	if (!api) {
+		return false;
+	}
+
 	return !!(api->get_capabilities(dev) & caps);
 }
 
@@ -30,6 +34,10 @@ static int ethernet_set_config(u32_t mgmt_request,
 	const struct ethernet_api *api = dev->driver_api;
 	struct ethernet_config config = { 0 };
 	enum ethernet_config_type type;
+
+	if (!api) {
+		return -ENOENT;
+	}
 
 	if (!api->set_config) {
 		return -ENOTSUP;
@@ -173,6 +181,10 @@ static int ethernet_get_config(u32_t mgmt_request,
 	struct ethernet_config config = { 0 };
 	int ret = 0;
 	enum ethernet_config_type type;
+
+	if (!api) {
+		return -ENOENT;
+	}
 
 	if (!api->get_config) {
 		return -ENOTSUP;
