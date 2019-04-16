@@ -3154,6 +3154,8 @@ void net_if_post_init(void)
 
 	/* After TX is running, attempt to bring the interface up */
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
-		net_if_up(iface);
+		if (!net_if_flag_is_set(iface, NET_IF_NO_AUTO_START)) {
+			net_if_up(iface);
+		}
 	}
 }
