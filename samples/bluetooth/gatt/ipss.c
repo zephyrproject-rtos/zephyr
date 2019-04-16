@@ -24,12 +24,10 @@
 
 #define UNKNOWN_APPEARANCE	0x0000
 
-static struct bt_gatt_attr attrs[] = {
+BT_GATT_SERVICE_DEFINE(ipss_svc,
 	/* IP Support Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_IPSS),
-};
-
-static struct bt_gatt_service ipss_svc = BT_GATT_SERVICE(attrs);
+);
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -57,8 +55,6 @@ static struct bt_conn_cb conn_callbacks = {
 
 void ipss_init(void)
 {
-	bt_gatt_service_register(&ipss_svc);
-
 	bt_conn_cb_register(&conn_callbacks);
 }
 

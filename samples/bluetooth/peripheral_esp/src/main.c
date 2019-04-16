@@ -284,7 +284,7 @@ static void update_temperature(struct bt_conn *conn,
 	}
 }
 
-static struct bt_gatt_attr ess_attrs[] = {
+BT_GATT_SERVICE_DEFINE(ess_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_ESS),
 
 	/* Temperature Sensor 1 */
@@ -324,9 +324,7 @@ static struct bt_gatt_attr ess_attrs[] = {
 	BT_GATT_CUD(SENSOR_3_NAME, BT_GATT_PERM_READ),
 	BT_GATT_DESCRIPTOR(BT_UUID_ES_MEASUREMENT, BT_GATT_PERM_READ,
 			   read_es_measurement, NULL, &sensor_3.meas),
-};
-
-static struct bt_gatt_service ess_svc = BT_GATT_SERVICE(ess_attrs);
+);
 
 static void ess_simulate(void)
 {
@@ -335,12 +333,12 @@ static void ess_simulate(void)
 
 	if (!(i % SENSOR_1_UPDATE_IVAL)) {
 		val = 1200 + i;
-		update_temperature(NULL, &ess_attrs[2], val, &sensor_1);
+		update_temperature(NULL, &ess_svc.attrs[2], val, &sensor_1);
 	}
 
 	if (!(i % SENSOR_2_UPDATE_IVAL)) {
 		val = 1800 + i;
-		update_temperature(NULL, &ess_attrs[9], val, &sensor_2);
+		update_temperature(NULL, &ess_svc.attrs[9], val, &sensor_2);
 	}
 
 	if (!(i % SENSOR_3_UPDATE_IVAL)) {
@@ -389,7 +387,6 @@ static void bt_ready(int err)
 
 	printk("Bluetooth initialized\n");
 
-	bt_gatt_service_register(&ess_svc);
 	bas_init();
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);

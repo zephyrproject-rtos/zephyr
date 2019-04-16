@@ -46,7 +46,7 @@ static ssize_t read_u32(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 				 sizeof(value));
 }
 
-static struct bt_gatt_attr attrs[] = {
+BT_GATT_SERVICE_DEFINE(env_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_ESS),
 
 	BT_GATT_CHARACTERISTIC(BT_UUID_TEMPERATURE, BT_GATT_CHRC_READ,
@@ -62,9 +62,7 @@ static struct bt_gatt_attr attrs[] = {
 			       BT_GATT_PERM_READ, read_u32, NULL,
 			       &pressure_value),
 	BT_GATT_CUD(PRESSURE_CUD, BT_GATT_PERM_READ),
-};
-
-static struct bt_gatt_service env_svc = BT_GATT_SERVICE(attrs);
+);
 
 static const struct bt_data ad[] = {
 	BT_DATA_BYTES(BT_DATA_FLAGS, (BT_LE_AD_GENERAL | BT_LE_AD_NO_BREDR)),
@@ -76,8 +74,6 @@ static void bt_ready(int err)
 		printk("Bluetooth init failed (err %d)\n", err);
 		return;
 	}
-
-	bt_gatt_service_register(&env_svc);
 
 	err = bt_le_adv_start(BT_LE_ADV_CONN_NAME, ad, ARRAY_SIZE(ad), NULL, 0);
 	if (err) {
