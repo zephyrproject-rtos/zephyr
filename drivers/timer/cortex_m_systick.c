@@ -68,7 +68,7 @@ static u32_t elapsed(void)
 	 * VAL was "about to overflow".
 	 */
 	ctrl1 = SysTick->CTRL;
-	val = SysTick->VAL & COUNTER_MAX;
+	val = SysTick->VAL;
 	ctrl2 = SysTick->CTRL;
 
 	overflow_cyc += (ctrl1 & SysTick_CTRL_COUNTFLAG_Msk) ? last_load : 0;
