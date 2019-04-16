@@ -41,12 +41,53 @@ static struct k_spinlock lock;
 
 static u32_t last_load;
 
+/*
+ * This local variable holds the amount of SysTick HW cycles elapsed
+ * and it is updated in z_clock_isr() and z_clock_set_timeout().
+ *
+ * Note:
+ *  At an arbitrary point in time the "current" value of the SysTick
+ *  HW timer is calculated as:
+ *
+ * t = cycle_counter + elapsed();
+ */
 static u32_t cycle_count;
 
+/*
+ * This local variable holds the amount of elapsed SysTick HW cycles
+ * that have been announced to the kernel.
+ */
 static u32_t announced_cycles;
 
+/*
+ * This local variable holds the amount of elapsed HW cycles due to
+ * SysTick timer wraps ('overflows') and is used in the calculation
+ * in elapsed() function, as well as in the updates to cycle_count.
+ *
+ * Note:
+ * Each time cycle_count is updated with the value from overflow_cyc,
+ * the overflow_cyc must be reset to zero.
+ */
 static volatile u32_t overflow_cyc;
 
+/* This internal function calculates the amount of HW cycles that have
+ * elapsed since the last time the absolute HW cycles counter has been
+ * updated. 'cycle_count' may be updated either by the ISR, or when we
+ * re-program the SysTick.LOAD register, in z_clock_set_timeout().
+ *
+ * Additionally, the function updates the 'overflow_cyc' counter, that
+ * holds the amount of elapsed HW cycles due to (possibly) multiple
+ * timer wraps (overflows).
+ *
+ * Prerequisites:
+ * - reprogramming of SysTick.LOAD must be clearing the SysTick.COUNTER
+ *   register and the 'overflow_cyc' counter.
+ * - ISR must be clearing the 'overflow_cyc' counter.
+ * - no more than one counter-wrap has occurred between
+ *     - the timer reset or the last time the function was called
+ *     - and until the current call of the function is completed.
+ * - the function is invoked with interrupts disabled.
+ */
 static u32_t elapsed(void)
 {
 	u32_t val, ctrl1, ctrl2;
@@ -71,6 +112,11 @@ static u32_t elapsed(void)
 	val = SysTick->VAL;
 	ctrl2 = SysTick->CTRL;
 
+	/* overflow_cyc is reset to zero by
+	 * - _init()
+	 * - _isr()
+	 * - _set_timeout()
+	 */
 	overflow_cyc += (ctrl1 & SysTick_CTRL_COUNTFLAG_Msk) ? last_load : 0;
 	if (val > VAL_ABOUT_TO_WRAP) {
 		int wrap = ctrl2 & SysTick_CTRL_COUNTFLAG_Msk;
