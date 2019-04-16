@@ -57,7 +57,7 @@ static ssize_t read_pnp_id(struct bt_conn *conn,
 #endif
 
 /* Device Information Service Declaration */
-static struct bt_gatt_attr attrs[] = {
+BT_GATT_SERVICE_DEFINE(dis_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_DIS),
 	BT_GATT_CHARACTERISTIC(BT_UUID_DIS_MODEL_NUMBER,
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
@@ -70,15 +70,4 @@ static struct bt_gatt_attr attrs[] = {
 			       BT_GATT_CHRC_READ, BT_GATT_PERM_READ,
 			       read_pnp_id, NULL, &dis_pnp_id),
 #endif
-};
-
-static struct bt_gatt_service dis_svc = BT_GATT_SERVICE(attrs);
-
-static int dis_init(struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return bt_gatt_service_register(&dis_svc);
-}
-
-SYS_INIT(dis_init, APPLICATION, CONFIG_APPLICATION_INIT_PRIORITY);
+);

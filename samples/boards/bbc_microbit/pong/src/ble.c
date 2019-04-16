@@ -509,15 +509,13 @@ static void pong_ccc_cfg_changed(const struct bt_gatt_attr *attr, u16_t val)
 	}
 }
 
-static struct bt_gatt_attr pong_attrs[] = {
+BT_GATT_SERVICE_DEFINE(pong_svc,
 	/* Vendor Primary Service Declaration */
 	BT_GATT_PRIMARY_SERVICE(&pong_svc_uuid.uuid),
 	BT_GATT_CHARACTERISTIC(&pong_chr_uuid.uuid, BT_GATT_CHRC_NOTIFY,
 			       BT_GATT_PERM_NONE, NULL, NULL, NULL),
 	BT_GATT_CCC(pong_ccc_cfg, pong_ccc_cfg_changed),
-};
-
-static struct bt_gatt_service pong_svc = BT_GATT_SERVICE(pong_attrs);
+);
 
 void ble_init(void)
 {
@@ -533,7 +531,5 @@ void ble_init(void)
 
 	bt_conn_cb_register(&conn_callbacks);
 
-
-	local_attr = &pong_attrs[1];
-	bt_gatt_service_register(&pong_svc);
+	local_attr = &pong_svc.attrs[1];
 }

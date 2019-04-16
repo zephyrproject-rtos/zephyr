@@ -57,16 +57,14 @@ static ssize_t write_ct(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 }
 
 /* Current Time Service Declaration */
-static struct bt_gatt_attr attrs[] = {
+BT_GATT_SERVICE_DEFINE(cts_cvs,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_CTS),
 	BT_GATT_CHARACTERISTIC(BT_UUID_CTS_CURRENT_TIME, BT_GATT_CHRC_READ |
 			       BT_GATT_CHRC_NOTIFY | BT_GATT_CHRC_WRITE,
 			       BT_GATT_PERM_READ | BT_GATT_PERM_WRITE,
 			       read_ct, write_ct, ct),
 	BT_GATT_CCC(ct_ccc_cfg, ct_ccc_cfg_changed),
-};
-
-static struct bt_gatt_service cts_svc = BT_GATT_SERVICE(attrs);
+);
 
 static void generate_current_time(u8_t *buf)
 {
@@ -99,8 +97,6 @@ void cts_init(void)
 {
 	/* Simulate current time for Current Time Service */
 	generate_current_time(ct);
-
-	bt_gatt_service_register(&cts_svc);
 }
 
 void cts_notify(void)
@@ -110,5 +106,5 @@ void cts_notify(void)
 	}
 
 	ct_update = 0U;
-	bt_gatt_notify(NULL, &attrs[1], &ct, sizeof(ct));
+	bt_gatt_notify(NULL, &cts_cvs.attrs[1], &ct, sizeof(ct));
 }

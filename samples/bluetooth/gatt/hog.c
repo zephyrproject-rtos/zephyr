@@ -141,7 +141,7 @@ static ssize_t write_ctrl_point(struct bt_conn *conn,
 }
 
 /* HID Service Declaration */
-static struct bt_gatt_attr attrs[] = {
+BT_GATT_SERVICE_DEFINE(hog_svc,
 	BT_GATT_PRIMARY_SERVICE(BT_UUID_HIDS),
 	BT_GATT_CHARACTERISTIC(BT_UUID_HIDS_INFO, BT_GATT_CHRC_READ,
 			       BT_GATT_PERM_READ, read_info, NULL, &info),
@@ -158,11 +158,8 @@ static struct bt_gatt_attr attrs[] = {
 			       BT_GATT_CHRC_WRITE_WITHOUT_RESP,
 			       BT_GATT_PERM_WRITE,
 			       NULL, write_ctrl_point, &ctrl_point),
-};
-
-static struct bt_gatt_service hog_svc = BT_GATT_SERVICE(attrs);
+);
 
 void hog_init(void)
 {
-	bt_gatt_service_register(&hog_svc);
 }
