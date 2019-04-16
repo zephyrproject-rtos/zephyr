@@ -342,17 +342,19 @@ static int spi_flash_wb_erase(struct device *dev, off_t offset, size_t size)
 			break;
 		}
 
-		if (size_remaining >= W25QXXDV_BLOCK_SIZE) {
+		if ((size_remaining >= W25QXXDV_BLOCK_SIZE) &&
+			((new_offset & (W25QXXDV_BLOCK_SIZE - 1)) == 0)) {
 			ret = spi_flash_wb_erase_internal(dev, new_offset,
-							  W25QXXDV_BLOCK_SIZE);
+							W25QXXDV_BLOCK_SIZE);
 			new_offset += W25QXXDV_BLOCK_SIZE;
 			size_remaining -= W25QXXDV_BLOCK_SIZE;
 			continue;
 		}
 
-		if (size_remaining >= W25QXXDV_BLOCK32K_SIZE) {
+		if ((size_remaining >= W25QXXDV_BLOCK32K_SIZE) &&
+			((new_offset & (W25QXXDV_BLOCK32K_SIZE - 1)) == 0)) {
 			ret = spi_flash_wb_erase_internal(dev, new_offset,
-							  W25QXXDV_BLOCK32K_SIZE);
+							W25QXXDV_BLOCK32K_SIZE);
 			new_offset += W25QXXDV_BLOCK32K_SIZE;
 			size_remaining -= W25QXXDV_BLOCK32K_SIZE;
 			continue;
@@ -360,7 +362,7 @@ static int spi_flash_wb_erase(struct device *dev, off_t offset, size_t size)
 
 		if (size_remaining >= W25QXXDV_SECTOR_SIZE) {
 			ret = spi_flash_wb_erase_internal(dev, new_offset,
-							  W25QXXDV_SECTOR_SIZE);
+							W25QXXDV_SECTOR_SIZE);
 			new_offset += W25QXXDV_SECTOR_SIZE;
 			size_remaining -= W25QXXDV_SECTOR_SIZE;
 			continue;
