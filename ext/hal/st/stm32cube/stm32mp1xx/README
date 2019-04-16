@@ -46,3 +46,11 @@ Patch List:
       ext/hal/st/stm32cube/stm32mp1xx/drivers/include/stm32mp1xx_ll_exti.h
       ext/hal/st/stm32cube/stm32mp1xx/drivers/src/stm32mp1xx_ll_exti.c
     ST Bug tracker ID: None
+
+    * Fix LL RCC definition
+    The CONFIG_ prefix is reserved in Zephyr, rename CONFIG_SHIFT and
+    associated constants by adding a RCC_ prefix
+    Impacted files:
+      ext/hal/st/stm32cube/stm32mp1xx/README
+      ext/hal/st/stm32cube/stm32mp1xx/drivers/include/stm32mp1xx_ll_rcc.h
+    ST Bug tracker ID: BZ65410
