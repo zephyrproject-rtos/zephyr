@@ -52,11 +52,11 @@ zephyr_compile_definitions(
 
   # Number of slots containing short addresses of nodes for which
   # pending data is stored.
-  NRF_802154_PENDING_SHORT_ADDRESSES=1
+  NRF_802154_PENDING_SHORT_ADDRESSES=16
 
   # Number of slots containing extended addresses of nodes for which
   # pending data is stored.
-  NRF_802154_PENDING_EXTENDED_ADDRESSES=1
+  NRF_802154_PENDING_EXTENDED_ADDRESSES=16
 
   # Number of buffers in receive queue.
   NRF_802154_RX_BUFFERS=8
