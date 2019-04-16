@@ -437,8 +437,30 @@ def yaml_inc_error(msg):
     raise yaml.constructor.ConstructorError(None, None, msg)
 
 
+def extract_cpu_clock_frequencies():
+    for node_path, node in reduced.items():
+        prop = 'clock-frequency'
+        if '/cpus/cpu' in node_path and prop in node['props']:
+            prop_value = node['props'][prop]
+
+            # According to the devicetree specification, the 'reg' property
+            # may contain a single CPU/thread id or a list of them.
+            cpu_ids = node['props']['reg']
+            if not isinstance(cpu_ids, list):
+                cpu_ids = [cpu_ids]
+
+            label = 'DT' + str_to_label(node_path.split('@')[0]) + \
+                    '_{}_' + str_to_label(prop)
+            for id in cpu_ids:
+                insert_defs(node_path,
+                            {label.format(id): prop_value},
+                            {})
+
+
 def generate_defines():
     # Generates #defines (and .conf file values) from DTS
+
+    extract_cpu_clock_frequencies()
 
     # sorted() otherwise Python < 3.6 randomizes the order of the flash
     # partition table
