@@ -19,6 +19,8 @@ validate accesses to kernel objects to make the following assertions:
 
     - The calling thread has sufficient permissions on the object
 
+For more details see the "Kernel Objects" section in the documentation.
+
 The zephyr build generates an intermediate ELF binary, zephyr_prebuilt.elf,
 which this script scans looking for kernel objects by examining the DWARF
 debug information to look for instances of data structures that are considered
@@ -26,7 +28,7 @@ kernel objects. For device drivers, the API struct pointer populated at build
 time is also examined to disambiguate between various device driver instances
 since they are all 'struct device'.
 
-The result of this script is five generated files:
+This script can generate five different output files:
 
     - A gperf script to generate the hash table mapping kernel object memory
       addresses to kernel object metadata, used to track permissions,
@@ -35,17 +37,18 @@ The result of this script is five generated files:
     - A header file containing generated macros for validating driver instances
       inside the system call handlers for the driver subsystem APIs.
 
-    - A header file defining enumerated types for all the different kernel
-      object types.
+    - A code fragment included by kernel.h with one enum constant for
+      each kernel object type and each driver instance.
 
-    - A C code fragment, included by kernel/userspace.c, for printing
-      human-readable representations of kernel object types in the
+    - The inner cases of a switch/case C statement, included by
+      kernel/userspace.c, mapping the kernel object types and driver
+      instances to their human-readable representation in the
       otype_to_str() function.
 
-    - A C code fragment, included by kernel/userspace.c, for mapping
-      kernel object types to the sizes of those kernel objects, used for
-      allocating instances of them at runtime (CONFIG_DYNAMIC_OBJECTS)
-      in the obj_size_get() function.
+    - The inner cases of a switch/case C statement, included by
+      kernel/userspace.c, mapping kernel object types to their sizes.
+      This is used for allocating instances of them at runtime
+      (CONFIG_DYNAMIC_OBJECTS) in the obj_size_get() function.
 """
 
 import sys
@@ -317,7 +320,7 @@ def parse_args():
         help="Output driver validation macros")
     parser.add_argument(
         "-K", "--kobj-types-output", required=False,
-        help="Output k_object enum values")
+        help="Output k_object enum constants")
     parser.add_argument(
         "-S", "--kobj-otype-output", required=False,
         help="Output case statements for otype_to_str()")
