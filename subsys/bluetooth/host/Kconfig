@@ -353,7 +353,7 @@ config BT_ATT_TX_MAX
 
 config BT_GATT_DB
 	bool "GATT dynamic database support"
-	default y
+	default n
 	help
 	  This option enables registering/unregistering services at runtime.
 

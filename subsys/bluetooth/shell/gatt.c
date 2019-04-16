@@ -603,6 +603,7 @@ static int cmd_show_db(const struct shell *shell, size_t argc, char *argv[])
 	return 0;
 }
 
+#if defined(CONFIG_BT_GATT_DB)
 /* Custom Service Variables */
 static struct bt_uuid_128 vnd_uuid = BT_UUID_INIT_128(
 	0xf0, 0xde, 0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12,
@@ -872,6 +873,7 @@ static int cmd_metrics(const struct shell *shell, size_t argc, char *argv[])
 
 	return err;
 }
+#endif /* CONFIG_BT_GATT_DB */
 
 static u8_t get_cb(const struct bt_gatt_attr *attr, void *user_data)
 {
@@ -999,18 +1001,24 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 		      cmd_write_without_rsp, 3, 2),
 	SHELL_CMD_ARG(unsubscribe, NULL, HELP_NONE, cmd_unsubscribe, 1, 0),
 #endif /* CONFIG_BT_GATT_CLIENT */
+	SHELL_CMD_ARG(get, NULL, "<handle>", cmd_get, 2, 0),
+	SHELL_CMD_ARG(set, NULL, "<handle> [data...]", cmd_set, 2, 255),
+	SHELL_CMD_ARG(show-db, NULL, "[uuid]", cmd_show_db, 1, 1),
+#if defined(CONFIG_BT_GATT_DB)
 	SHELL_CMD_ARG(metrics, NULL,
 		      "register vendr char and measure rx <value: on, off>",
 		      cmd_metrics, 2, 0),
 	SHELL_CMD_ARG(register, NULL,
 		      "register pre-predefined test service",
 		      cmd_register_test_svc, 1, 0),
-	SHELL_CMD_ARG(show-db, NULL, "[uuid]", cmd_show_db, 1, 1),
 	SHELL_CMD_ARG(unregister, NULL,
 		      "unregister pre-predefined test service",
 		      cmd_unregister_test_svc, 1, 0),
-	SHELL_CMD_ARG(get, NULL, "<handle>", cmd_get, 2, 0),
-	SHELL_CMD_ARG(set, NULL, "<handle> [data...]", cmd_set, 2, 255),
+
+	SHELL_CMD_ARG(unregister, NULL,
+		      "unregister pre-predefined test service",
+		      cmd_unregister_test_svc, 1, 0),
+#endif /* CONFIG_BT_GATT_DB */
 	SHELL_SUBCMD_SET_END
 );
 
