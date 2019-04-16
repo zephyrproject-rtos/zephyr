@@ -841,8 +841,8 @@ ignore_frag_error:
 	    /* Workaround Linux bug, see:
 	     * https://github.com/zephyrproject-rtos/zephyr/issues/3111
 	     */
-	    atomic_test_bit(net_pkt_iface(pkt)->if_dev->flags,
-			    NET_IF_POINTOPOINT)) {
+	    net_if_flag_is_set(net_pkt_iface(pkt),
+			       NET_IF_POINTOPOINT)) {
 		return NET_OK;
 	}
 

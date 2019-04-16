@@ -313,7 +313,7 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	 * immediately. If the interface is not ethernet one, then
 	 * lldp_start() will return immediately.
 	 */
-	if (atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
+	if (net_if_flag_is_set(iface, NET_IF_UP)) {
 		lldp_start(iface, NET_EVENT_IF_UP);
 	}
 }

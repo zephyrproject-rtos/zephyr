@@ -169,7 +169,7 @@ struct net_if_router {
  */
 #define __net_if_align __aligned(32)
 
-enum {
+enum net_if_flag {
 	/** Interface is up/ready to receive and transmit */
 	NET_IF_UP,
 
@@ -453,6 +453,66 @@ struct net_if {
 } __net_if_align;
 
 /**
+ * @brief Set a value in network interface flags
+ *
+ * @param iface Pointer to network interface
+ * @param value Flag value
+ */
+static inline void net_if_flag_set(struct net_if *iface,
+				   enum net_if_flag value)
+{
+	NET_ASSERT(iface);
+
+	atomic_set_bit(iface->if_dev->flags, value);
+}
+
+/**
+ * @brief Test and set a value in network interface flags
+ *
+ * @param iface Pointer to network interface
+ * @param value Flag value
+ *
+ * @return true if the bit was set, false if it wasn't.
+ */
+static inline bool net_if_flag_test_and_set(struct net_if *iface,
+					    enum net_if_flag value)
+{
+	NET_ASSERT(iface);
+
+	return atomic_test_and_set_bit(iface->if_dev->flags, value);
+}
+
+/**
+ * @brief Clear a value in network interface flags
+ *
+ * @param iface Pointer to network interface
+ * @param value Flag value
+ */
+static inline void net_if_flag_clear(struct net_if *iface,
+				     enum net_if_flag value)
+{
+	NET_ASSERT(iface);
+
+	atomic_clear_bit(iface->if_dev->flags, value);
+}
+
+/**
+ * @brief Check if a value in network interface flags is set
+ *
+ * @param iface Pointer to network interface
+ * @param value Flag value
+ *
+ * @return True if the value is set, false otherwise
+ */
+static inline bool net_if_flag_is_set(struct net_if *iface,
+				      enum net_if_flag value)
+{
+	NET_ASSERT(iface);
+
+	return atomic_test_bit(iface->if_dev->flags, value);
+}
+
+/**
  * @brief Send a packet through a net iface
  *
  * @param iface Pointer to a network interface structure
@@ -607,7 +667,7 @@ static inline int net_if_set_link_addr(struct net_if *iface,
 				       u8_t *addr, u8_t len,
 				       enum net_link_type type)
 {
-	if (atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
+	if (net_if_flag_is_set(iface, NET_IF_UP)) {
 		return -EPERM;
 	}
 
@@ -1684,7 +1744,7 @@ static inline bool net_if_is_up(struct net_if *iface)
 {
 	NET_ASSERT(iface);
 
-	return atomic_test_bit(iface->if_dev->flags, NET_IF_UP);
+	return net_if_flag_is_set(iface, NET_IF_UP);
 }
 
 /**
