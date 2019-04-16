@@ -25,6 +25,7 @@ endif # HAS_DTS_WDT
 
 config WDT_DISABLE_AT_BOOT
 	bool "Disable at boot"
+	default y
 	help
 	  Disable watchdog at Zephyr system startup.
 
