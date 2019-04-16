@@ -779,11 +779,9 @@ static void db_changed(void)
 	}
 #endif
 }
-#endif /* CONFIG_BT_GATT_DB */
 
 int bt_gatt_service_register(struct bt_gatt_service *svc)
 {
-#if defined(CONFIG_BT_GATT_DB)
 	int err;
 
 	__ASSERT(svc, "invalid parameters\n");
@@ -808,16 +806,12 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 		    svc->attrs[svc->attr_count - 1].handle);
 
 	db_changed();
-#else
-	__ASSERT(false, "not supported\n");
-#endif /* CONFIG_BT_GATT_DB */
 
 	return 0;
 }
 
 int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 {
-#if defined(CONFIG_BT_GATT_DB)
 	__ASSERT(svc, "invalid parameters\n");
 
 	if (!sys_slist_find_and_remove(&db, &svc->node)) {
@@ -828,11 +822,10 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 		    svc->attrs[svc->attr_count - 1].handle);
 
 	db_changed();
-#else
-	__ASSERT(false, "not supported\n");
-#endif /* CONFIG_BT_GATT_DB */
+
 	return 0;
 }
+#endif /* CONFIG_BT_GATT_DB */
 
 ssize_t bt_gatt_attr_read(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			  void *buf, u16_t buf_len, u16_t offset,
