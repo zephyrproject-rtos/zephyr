@@ -173,7 +173,7 @@ A thread's initial priority value can be altered up or down after the thread
 has been started. Thus it is possible for a preemptible thread to become
 a cooperative thread, and vice versa, by changing its priority.
 
-The kernel supports a virtually unlimited number of thread priority levels.
+The kernel supports up to 256 thread priority levels.
 The configuration options :option:`CONFIG_NUM_COOP_PRIORITIES` and
 :option:`CONFIG_NUM_PREEMPT_PRIORITIES` specify the number of priority
 levels for each class of thread, resulting in the following usable priority
@@ -182,12 +182,26 @@ ranges:
 * cooperative threads: (-:option:`CONFIG_NUM_COOP_PRIORITIES`) to -1
 * preemptive threads: 0 to (:option:`CONFIG_NUM_PREEMPT_PRIORITIES` - 1)
 
+where the resulting priority for the cooperative threads must be in
+the range of -128 to -1, and for the preemptive threads must be in the
+range of 0 to 127.
+
 .. image:: priorities.svg
    :align: center
 
 For example, configuring 5 cooperative priorities and 10 preemptive priorities
 results in the ranges -5 to -1 and 0 to 9, respectively.
 
+.. note::
+    :option:`CONFIG_NUM_COOP_PRIORITIES` and
+    `CONFIG_NUM_PREEMPT_PRIORITIES` defines the total number of
+    priorities in the whole system. The kernel reserves the lowest
+    priority number for the system. Thus, applications can only use
+    (:option:`CONFIG_NUM_PREEMPT_PRIORITIES` - 1) number of priorities
+    for preemptible threads. There is no such limit for cooperative
+    threads. Please check
+    :c:macro:`K_HIGHEST_APPLICATION_THREAD_PRIO` and
+    :c:macro:`K_LOWEST_APPLICATION_THREAD_PRIO`.
 
 .. _thread_options_v2:
 
