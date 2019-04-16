@@ -86,9 +86,9 @@ extern "C" {
 #define RCC_OFFSET_LPTIM23CKSELR   0x870UL
 #define RCC_OFFSET_LPTIM1CKSELR    0x874UL
 
-#define CONFIG_SHIFT  0U
-#define MASK_SHIFT    8U
-#define REG_SHIFT     16U
+#define RCC_CONFIG_SHIFT  0U
+#define RCC_MASK_SHIFT    8U
+#define RCC_REG_SHIFT     16U
 
 
 /* Define all reset flags mask */
@@ -110,18 +110,18 @@ extern "C" {
    --------------------------------------------------------*/
 
 #define LL_CLKSOURCE_MASK(__CLKSOURCE__) \
-          (((__CLKSOURCE__) >> MASK_SHIFT  ) & 0xFFUL)
+          (((__CLKSOURCE__) >> RCC_MASK_SHIFT  ) & 0xFFUL)
 
 #define LL_CLKSOURCE_CONFIG(__CLKSOURCE__) \
-          (((__CLKSOURCE__) >> CONFIG_SHIFT) & 0xFFUL)
+          (((__CLKSOURCE__) >> RCC_CONFIG_SHIFT) & 0xFFUL)
 
 #define LL_CLKSOURCE_REG(__CLKSOURCE__) \
-          (((__CLKSOURCE__) >> REG_SHIFT   ) & 0xFFFUL)
+          (((__CLKSOURCE__) >> RCC_REG_SHIFT   ) & 0xFFFUL)
 
 #define LL_CLKSOURCE(__REG__, __MSK__, __CLK__)      \
-          ((uint32_t)((((__REG__) ) << REG_SHIFT)  | \
-          (( __MSK__              ) << MASK_SHIFT) | \
-          (( __CLK__              ) << CONFIG_SHIFT)))
+          ((uint32_t)((((__REG__) ) << RCC_REG_SHIFT)  | \
+          (( __MSK__              ) << RCC_MASK_SHIFT) | \
+          (( __CLK__              ) << RCC_CONFIG_SHIFT)))
 
 /**
   * @}
@@ -3031,7 +3031,7 @@ __STATIC_INLINE uint32_t LL_RCC_GetClockSource(uint32_t Periph)
 {
   __IO const uint32_t *pReg = (uint32_t *)((uint32_t)((uint32_t)(&RCC->I2C46CKSELR) + LL_CLKSOURCE_REG(Periph)));
 
-  return (uint32_t)(Periph | ((READ_BIT(*pReg, LL_CLKSOURCE_MASK(Periph))) << CONFIG_SHIFT));
+  return (uint32_t)(Periph | ((READ_BIT(*pReg, LL_CLKSOURCE_MASK(Periph))) << RCC_CONFIG_SHIFT));
 }
 
 /**
