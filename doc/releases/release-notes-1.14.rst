@@ -503,7 +503,8 @@ Build and Infrastructure
 * `BabbleSim`_ has been integrated in Zephyr's CI system.
 * Introduced ``DT_`` prefix for all labels generated for information extracted
   from device tree (with a few exceptions, such as labels for LEDs and buttons,
-  kept for backward compatibility with existing applications).
+  kept for backward compatibility with existing applications).  Deprecated all
+  other defines that are generated.
 * Introduce CMake variables for DT symbols, just as we have for CONFIG symbols.
 * Move DeviceTree processing before Kconfig. Thereby allowing software
   to be configured based on DeviceTree information.
@@ -512,6 +513,9 @@ Build and Infrastructure
 * Added :ref:`west <west>` tool for multiple repository management
 * Added support for :ref:`Zephyr modules <ext-projs>`
 * Build system ``flash`` and ``debug`` targets now require west
+* Added generation of DT_<COMPAT>_<INSTANCE>_<PROP> defines which allowed
+  sensor or other drivers on buses like I2C or SPI to not require dts fixup.
+* Added proper support for device tree boolean properties
 
 Libraries / Subsystems
 ***********************
