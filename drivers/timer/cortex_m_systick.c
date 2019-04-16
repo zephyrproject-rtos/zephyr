@@ -120,14 +120,34 @@ void z_clock_isr(void *arg)
 	ARG_UNUSED(arg);
 	u32_t dticks;
 
-	cycle_count += last_load;
-	dticks = (cycle_count - announced_cycles) / CYC_PER_TICK;
-	announced_cycles += dticks * CYC_PER_TICK;
+	/* Update overflow_cyc and clear COUNTFLAG by invoking elapsed() */
+	elapsed();
 
-	overflow_cyc = SysTick->CTRL; /* Reset overflow flag */
-	overflow_cyc = 0U;
+	/* Increment the amount of HW cycles elapsed (complete counter
+	 * cycles) and announce the progress to the kernel.
+	 */
+	cycle_count += overflow_cyc;
+	overflow_cyc = 0;
 
-	z_clock_announce(TICKLESS ? dticks : 1);
+	if (TICKLESS) {
+		/* In TICKLESS mode, the SysTick.LOAD is re-programmed
+		 * in z_clock_set_timeout(), followed by resetting of
+		 * the counter (VAL = 0).
+		 *
+		 * If a timer wrap occurs right when we re-program LOAD,
+		 * the ISR is triggered immediately after z_clock_set_timeout()
+		 * returns; in that case we shall not increment the cycle_count
+		 * because the value has been updated before LOAD re-program.
+		 *
+		 * We can assess if this is the case by inspecting COUNTFLAG.
+		 */
+
+		dticks = (cycle_count - announced_cycles) / CYC_PER_TICK;
+		announced_cycles += dticks * CYC_PER_TICK;
+		z_clock_announce(dticks);
+	} else {
+		z_clock_announce(1);
+	}
 	z_arm_exc_exit();
 }
 
