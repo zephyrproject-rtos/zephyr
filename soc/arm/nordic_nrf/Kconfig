@@ -18,4 +18,24 @@ config SOC_FAMILY
 source "soc/arm/nordic_nrf/Kconfig.peripherals"
 source "soc/arm/nordic_nrf/*/Kconfig.soc"
 
+config NRF_HAS_SYSTICK
+	bool
+	# omit prompt to signify a "hidden" option
+
+choice
+prompt "Timer Source Selection"
+default RTC_AS_TIMER
+
+config RTC_AS_TIMER
+	bool "nRF Real Time Counter (NRF_RTC1)"
+	select NRF_RTC_TIMER
+
+config SYSTICK_AS_TIMER
+	bool "Cortex-M SYSTICK timer"
+	depends on NRF_HAS_SYSTICK
+	select CPU_HAS_SYSTICK
+	select CORTEX_M_SYSTICK
+
+endchoice
+
 endif # SOC_FAMILY_NRF

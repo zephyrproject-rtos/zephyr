@@ -14,7 +14,8 @@ config SOC_SERIES
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
-	default 32768
+	default 32768 if RTC_AS_TIMER
+	default 64000000 if SYSTICK_AS_TIMER
 
 config SYS_POWER_MANAGEMENT
 	default y

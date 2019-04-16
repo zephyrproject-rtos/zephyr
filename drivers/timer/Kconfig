@@ -113,6 +113,7 @@ config NRF_RTC_TIMER
 	default y
 	depends on CLOCK_CONTROL
 	depends on SOC_COMPATIBLE_NRF
+	depends on RTC_AS_TIMER
 	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the nRF Real Time
