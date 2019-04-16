@@ -138,7 +138,9 @@ static void notify_connected(struct bt_conn *conn)
 		}
 	}
 
-	bt_gatt_connected(conn);
+	if (!conn->err) {
+		bt_gatt_connected(conn);
+	}
 }
 
 static void notify_disconnected(struct bt_conn *conn)
