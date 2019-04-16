@@ -33,7 +33,7 @@ tests:
     extra_args: "-DFORKS=LIFOS"
   sample.kernel.philosopher.preempt_only:
     extra_configs:
-      - CONFIG_NUM_PREEMPT_PRIORITIES=6
+      - CONFIG_NUM_PREEMPT_PRIORITIES=7
       - CONFIG_NUM_COOP_PRIORITIES=0
       - CONFIG_BT=n
       - CONFIG_NETWORKING=n
