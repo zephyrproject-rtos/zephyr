@@ -1310,7 +1310,7 @@ static void wncm14a2a_modem_reset(void)
 	int ret = 0, retry_count = 0, counter = 0;
 
 	/* bring down network interface */
-	atomic_clear_bit(ictx.iface->if_dev->flags, NET_IF_UP);
+	net_if_flag_clear(ictx.iface, NET_IF_UP);
 
 restart:
 	/* stop RSSI delay work */

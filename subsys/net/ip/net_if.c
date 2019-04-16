@@ -150,7 +150,7 @@ static bool net_if_tx(struct net_if *iface, struct net_pkt *pkt)
 	dst = net_pkt_lladdr_dst(pkt);
 	context = net_pkt_context(pkt);
 
-	if (atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
+	if (net_if_flag_is_set(iface, NET_IF_UP)) {
 		if (IS_ENABLED(CONFIG_NET_TCP) &&
 		    net_pkt_family(pkt) != AF_UNSPEC) {
 			net_pkt_set_sent(pkt, true);
@@ -231,7 +231,7 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	enum net_verdict verdict = NET_OK;
 	int status = -EIO;
 
-	if (!atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
+	if (!net_if_flag_is_set(iface, NET_IF_UP)) {
 		/* Drop packet if interface is not up */
 		NET_WARN("iface %p is down", iface);
 		verdict = NET_DROP;
@@ -244,7 +244,7 @@ enum net_verdict net_if_send_data(struct net_if *iface, struct net_pkt *pkt)
 	 * Workaround Linux bug, see:
 	 * https://github.com/zephyrproject-rtos/zephyr/issues/3111
 	 */
-	if (!atomic_test_bit(iface->if_dev->flags, NET_IF_POINTOPOINT) &&
+	if (!net_if_flag_is_set(iface, NET_IF_POINTOPOINT) &&
 	    !net_pkt_lladdr_src(pkt)->addr) {
 		net_pkt_lladdr_src(pkt)->addr = net_pkt_lladdr_if(pkt)->addr;
 		net_pkt_lladdr_src(pkt)->len = net_pkt_lladdr_if(pkt)->len;
@@ -2839,7 +2839,7 @@ int net_if_up(struct net_if *iface)
 
 	NET_DBG("iface %p", iface);
 
-	if (atomic_test_bit(iface->if_dev->flags, NET_IF_UP)) {
+	if (net_if_flag_is_set(iface, NET_IF_UP)) {
 		return 0;
 	}
 
@@ -2866,7 +2866,7 @@ done:
 	 */
 	NET_ASSERT(net_if_get_link_addr(iface)->addr != NULL);
 
-	atomic_set_bit(iface->if_dev->flags, NET_IF_UP);
+	net_if_flag_set(iface, NET_IF_UP);
 
 #if defined(CONFIG_NET_IPV6_DAD)
 	NET_DBG("Starting DAD for iface %p", iface);
@@ -2894,7 +2894,7 @@ void net_if_carrier_down(struct net_if *iface)
 {
 	NET_DBG("iface %p", iface);
 
-	atomic_clear_bit(iface->if_dev->flags, NET_IF_UP);
+	net_if_flag_clear(iface, NET_IF_UP);
 
 #if defined(CONFIG_NET_IPV4_AUTO)
 	net_ipv4_autoconf_reset(iface);
@@ -2929,7 +2929,7 @@ int net_if_down(struct net_if *iface)
 	}
 
 done:
-	atomic_clear_bit(iface->if_dev->flags, NET_IF_UP);
+	net_if_flag_clear(iface, NET_IF_UP);
 
 	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
 
@@ -2974,7 +2974,7 @@ int net_if_set_promisc(struct net_if *iface)
 		return ret;
 	}
 
-	ret = atomic_test_and_set_bit(iface->if_dev->flags, NET_IF_PROMISC);
+	ret = net_if_flag_test_and_set(iface, NET_IF_PROMISC);
 	if (ret) {
 		return -EALREADY;
 	}
@@ -2991,14 +2991,14 @@ void net_if_unset_promisc(struct net_if *iface)
 		return;
 	}
 
-	atomic_clear_bit(iface->if_dev->flags, NET_IF_PROMISC);
+	net_if_flag_clear(iface, NET_IF_PROMISC);
 }
 
 bool net_if_is_promisc(struct net_if *iface)
 {
 	NET_ASSERT(iface);
 
-	return atomic_test_bit(iface->if_dev->flags, NET_IF_PROMISC);
+	return net_if_flag_is_set(iface, NET_IF_PROMISC);
 }
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP)
