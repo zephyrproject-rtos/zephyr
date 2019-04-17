@@ -6,6 +6,10 @@ Getting Started Guide
 Follow this guide to set up a :ref:`Zephyr <introducing_zephyr>` development
 environment on your system, and then build and run a sample application.
 
+.. tip::
+
+   Need help with something? See :ref:`help`.
+
 .. _host_setup:
 
 Set Up a Development System
