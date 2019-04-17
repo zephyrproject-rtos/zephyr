@@ -321,7 +321,7 @@ void test_multiple_alarms_instance(const char *dev_name)
 	err = counter_set_top_value(dev, &top_cfg);
 	zassert_equal(0, err, "Counter failed to set top value\n");
 
-	k_busy_wait(1.4*counter_ticks_to_us(dev, alarm_cfg.ticks));
+	k_busy_wait(3*(u32_t)counter_ticks_to_us(dev, alarm_cfg.ticks));
 
 	err = counter_set_channel_alarm(dev, 0, &alarm_cfg);
 	zassert_equal(0, err, "Counter set alarm failed\n");

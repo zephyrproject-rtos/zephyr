@@ -157,6 +157,7 @@
 			status = "ok";
 			clock-frequency = <32768>;
 			prescaler = <1>;
+			guard-period = <1000>;
 			label = "RTC_0";
 		};
 
@@ -167,6 +168,7 @@
 			status = "ok";
 			clock-frequency = <32768>;
 			prescaler = <1>;
+			guard-period = <1000>;
 			label = "RTC_1";
 		};
 
