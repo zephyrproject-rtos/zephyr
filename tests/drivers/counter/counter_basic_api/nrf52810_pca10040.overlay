@@ -12,3 +12,8 @@
 	prescaler = <4>;
 	guard-period = <1>;
 };
+
+&rtc0 {
+	guard-period = <1>;
+};
+

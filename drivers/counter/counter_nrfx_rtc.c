@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #define TOP_CH 0
 #define COUNTER_TOP_INT NRFX_RTC_INT_COMPARE0
 
+#define MS2TICKS(ms, prescaler, freq) (((ms) * freq/((prescaler) + 1)) / 1000)
+
 struct counter_nrfx_data {
 	counter_top_callback_t top_cb;
 	void *top_user_data;
@@ -44,6 +46,7 @@ struct counter_nrfx_config {
 	struct counter_config_info info;
 	struct counter_nrfx_ch_data *ch_data;
 	nrfx_rtc_t rtc;
+	u32_t guard_window;
 #if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
 	bool use_ppi;
 #endif
@@ -71,6 +74,7 @@ static int counter_nrfx_start(struct device *dev)
 
 static int counter_nrfx_stop(struct device *dev)
 {
+	nrfx_rtc_counter_clear(&get_nrfx_config(dev)->rtc);
 	nrfx_rtc_disable(&get_nrfx_config(dev)->rtc);
 
 	return 0;
@@ -81,18 +85,137 @@ static u32_t counter_nrfx_read(struct device *dev)
 	return nrfx_rtc_counter_get(&get_nrfx_config(dev)->rtc);
 }
 
+/* Function calculates distance between to values assuming that one first
+ * argument is in front and that values wrap.
+ */
+static u32_t tick_diff(u32_t val, u32_t old, u32_t top)
+{
+	if (top & (top + 1)) {
+		/* if top is not 2^n-1 */
+		u32_t diff;
+
+		diff = (val > old) ? (val - old) : val + top + 1 - old;
+
+		return diff;
+	}
+
+	return (val - old) & top;
+}
+
+/*
+ * @brief Set COMPARE value with too late setting detection.
+ *
+ * Setting CC algorithm takes into account:
+ * - Procedure can be interrupted at any moment for multiple RTC ticks
+ * - Current COMPARE value written to the register may be close to the current
+ *   COUNTER value thus COMPARE event may be generated at any moment
+ * - Next COMPARE value may be soon in the future. Taking into account potential
+ *   preemption COMPARE value may be set too late.
+ * - RTC registers are clocked with LF clock (32kHz)
+ * - Setting COMPARE register to COUNTER+1 does not generate COMPARE event
+ *
+ * Algorithm assumes that:
+ * - COMPARE interrupt is disabled
+ * - new value that is set is taking into account guard period. It means that
+ *   it won't be further in future than <top> - <guard_period> from now.
+ *
+ * Algorithm steps:
+ * - Read previous COMPARE value then write new value
+ * - Check if new COMPARE value is next tick from now. If yes then increment
+ *   new value before setting COMPARE register. Then check if counter got
+ *   incremented during that operation. If yes then it means that 1 tick
+ *   elapsed thus return with error indicating that event expired.
+ * - If new COMPARE value is not next tick then set it in COMPARE register.
+ * - Check if previous COMPARE value was located in near future
+ *   (between <COUNTER value> and <COUNTER value + guard period>. If yes, clear
+ *   COMPARE event. Note that new COMPARE value is already written so it may be
+ *   that COMPARE event for new value is cleared.
+ * - Check the relation between COUNTER value and COMPARE value. If COMPARE
+ *   value is in window between <COUNTER value - guard period> and <current
+ *   COUNTER value + 1> and COMPARE event is not set then assume that COMPARE
+ *   register was set too late (e.g. due to preemption). Otherwise enable
+ *   COMPARE interrupt
+ *
+ * @param dev	Device.
+ * @param chan	COMPARE channel.
+ * @param val	Absolute value to be set in COMPARE register.
+ *
+ * @retval 0 if COMPARE value was set on time and COMPARE interrupt is expect to
+ *	   occur.
+ * @retval -1 if COMAPRE value was set too late and COMPARE interrupt is not
+ *	   enabled.
+ *
+ */
+static int set_cc(struct device *dev, u8_t chan, u32_t val)
+{
+	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
+	const nrfx_rtc_t *rtc = &nrfx_config->rtc;
+	NRF_RTC_Type  *reg = rtc->p_reg;
+	nrf_rtc_event_t evt;
+	u32_t prev_val;
+	u32_t top;
+	u32_t now;
+	u32_t diff;
+
+	/* todo Change to use nrfx API when added (it's coming). */
+	evt = (nrf_rtc_event_t)(offsetof(NRF_RTC_Type, EVENTS_COMPARE[chan]));
+
+	nrf_rtc_event_clear(reg, evt);
+	top = counter_get_top_value(dev);
+	now = nrf_rtc_counter_get(reg);
+	prev_val = nrf_rtc_cc_get(reg, chan);
+
+	/* Special handling required if value is next tick as that will not
+	 * generate event. Set COMPARE to <now> + 2. If meanwhile RTC counter
+	 * got incremented it means it's too late.
+	 */
+	if (tick_diff(val, now, top) == 1) {
+		nrf_rtc_cc_set(reg, chan, val + 1);
+		if (nrf_rtc_counter_get(reg) != now) {
+			return -1;
+		}
+	} else {
+		nrf_rtc_cc_set(reg, chan, val);
+	}
+
+	diff = tick_diff(prev_val, now, top);
+
+	/* if previous CC was in short the future we need to take into account
+	 * that it may expire at any moment (given that current context can be
+	 * preempted at any instruction).
+	 */
+	if (diff < nrfx_config->guard_window) {
+		nrf_rtc_event_clear(reg, evt);
+	}
+
+	now = nrf_rtc_counter_get(reg);
+	diff = tick_diff(val, now, top);
+	if (((diff - 1) > (top - nrfx_config->guard_window)) &&
+			!nrf_rtc_event_pending(reg, evt)) {
+		/* if diff (decreased by 2 to cover diff==0|1) indicates that
+		 * set value is in the past return immediately.
+		 */
+		return -1;
+	}
+
+	nrf_rtc_int_enable(reg, RTC_CHANNEL_INT_MASK(chan));
+
+	return 0;
+}
+
 static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 				  const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
 	const nrfx_rtc_t *rtc = &nrfx_config->rtc;
+	struct counter_nrfx_ch_data *chdata = &nrfx_config->ch_data[chan_id];
 	u32_t cc_val;
 
 	if (alarm_cfg->ticks > get_dev_data(dev)->top) {
 		return -EINVAL;
 	}
 
-	if (nrfx_config->ch_data[chan_id].callback) {
+	if (chdata->callback) {
 		return -EBUSY;
 	}
 
@@ -105,8 +228,8 @@ static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 				get_dev_data(dev)->top : 0;
 	}
 
-	nrfx_config->ch_data[chan_id].callback = alarm_cfg->callback;
-	nrfx_config->ch_data[chan_id].user_data = alarm_cfg->user_data;
+	chdata->callback = alarm_cfg->callback;
+	chdata->user_data = alarm_cfg->user_data;
 
 	if ((cc_val == 0) &&
 	    (get_dev_data(dev)->top != counter_get_max_top_value(dev))) {
@@ -117,7 +240,13 @@ static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 				"Attempt to set CC to 0, delayed to 1.");
 		cc_val++;
 	}
-	nrfx_rtc_cc_set(rtc, ID_TO_CC(chan_id), cc_val, true);
+
+	if (set_cc(dev, ID_TO_CC(chan_id), cc_val) != 0) {
+		counter_alarm_callback_t clbk = chdata->callback;
+
+		chdata->callback = NULL;
+		clbk(dev, chan_id, cc_val, chdata->user_data);
+	}
 
 	return 0;
 }
@@ -300,8 +429,7 @@ static u32_t counter_nrfx_get_top_value(struct device *dev)
 
 static u32_t counter_nrfx_get_max_relative_alarm(struct device *dev)
 {
-	/* Maybe decreased. */
-	return get_dev_data(dev)->top;
+	return get_dev_data(dev)->top - get_nrfx_config(dev)->guard_window;
 }
 
 static const struct counter_driver_api counter_nrfx_driver_api = {
@@ -352,6 +480,10 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		.rtc = NRFX_RTC_INSTANCE(idx),				       \
 		COND_CODE_1(DT_NORDIC_NRF_RTC_RTC_##idx##_PPI_WRAP,	       \
 			    (.use_ppi = true,), ())			       \
+		.guard_window = MS2TICKS(				       \
+				DT_NORDIC_NRF_RTC_RTC_##idx##_GUARD_PERIOD,    \
+				DT_NORDIC_NRF_RTC_RTC_##idx##_PRESCALER,       \
+				DT_NORDIC_NRF_RTC_RTC_##idx##_CLOCK_FREQUENCY),\
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
 	DEVICE_AND_API_INIT(rtc_##idx,					       \

@@ -23,6 +23,20 @@ properties:
       generation: define
       category: required
 
+    # Guard period should be set to the maximal latency that can occur when
+    # controlling the counter (e.g. for how long operation may be
+    # interrupted). Guard period limits maximal alarm value that can be set
+    # to <top value> - <guard period in ticks> from now. Limitation applies
+    # to relative and absolute alarms. Longer alarm values will be
+    # interpretted as set too late and will expire immediately. If instance
+    # is used only from interrupt context value probably can be decreased.
+    # However, if used from low priority thread it may need to be increased.
+    guard-period:
+      type: int
+      description: Guard window in milliseconds
+      generation: define
+      category: required
+
     #If enabled, overflow different than full range (24 bits) is handled
     #through PPI channel which ensures precise timing. If disabled then
     #counter is cleared in the interrupt which results in accumulative
