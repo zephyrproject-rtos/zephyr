@@ -9,7 +9,7 @@
 #include <gpio.h>
 #include <logging/log.h>
 
-LOG_MODULE_REGISTER(board_control_pca10090);
+LOG_MODULE_REGISTER(board_control, CONFIG_BOARD_PCA10090_LOG_LEVEL);
 
 /* The following pins on the nRF52840 control the routing of certain
  * components/lines on the nRF9160 DK. They are specified as follows:
@@ -81,82 +81,82 @@ static const u8_t pins_on_p1[][2] = {
 static void config_print(void)
 {
 	/* Interface pins 0-2 */
-	LOG_DBG("Routing interface pins 0-2 to %s (pin -> %d)",
+	LOG_INF("Routing interface pins 0-2 to %s (pin -> %d)",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_INTERFACE0_MCU) ?
 			"nRF52840" :
 			"Arduino headers",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_INTERFACE0_MCU));
 
 	/* Interface pins 3-5 */
-	LOG_DBG("Routing interface pins 3-5 to %s (pin -> %d)",
+	LOG_INF("Routing interface pins 3-5 to %s (pin -> %d)",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_INTERFACE1_MCU) ?
 			"nRF52840" :
 			"TRACE header",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_INTERFACE1_MCU));
 
 	/* Interface pins 6-8 */
-	LOG_DBG("Routing interface pins 6-8 to %s (pin -> %d)",
+	LOG_INF("Routing interface pins 6-8 to %s (pin -> %d)",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_INTERFACE2_MCU) ?
 			"nRF52840" :
 			"COEX header",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_INTERFACE2_MCU));
 
-	LOG_DBG("Routing nRF9160 UART0 to %s (pin -> %d)",
+	LOG_INF("Routing nRF9160 UART0 to %s (pin -> %d)",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_UART0_ARDUINO) ?
 			"Arduino pin headers" :
 			"VCOM0",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_UART0_ARDUINO));
 
-	LOG_DBG("Routing nRF9160 UART1 to %s (pin -> %d)",
+	LOG_INF("Routing nRF9160 UART1 to %s (pin -> %d)",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_UART1_ARDUINO) ?
 			"Arduino pin headers" :
 			"VCOM2",
 		/* defaults to arduino pins */
 		IS_ENABLED(CONFIG_BOARD_PCA10090_UART1_VCOM));
 
-	LOG_DBG("Routing nRF9160 LED 1 to %s (pin -> %d)",
+	LOG_INF("Routing nRF9160 LED 1 to %s (pin -> %d)",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_LED0_ARDUINO) ?
 			"Arduino pin headers" :
 			"physical LED",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_LED0_ARDUINO));
 
-	LOG_DBG("Routing nRF9160 LED 2 to %s (pin -> %d)",
+	LOG_INF("Routing nRF9160 LED 2 to %s (pin -> %d)",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_LED1_ARDUINO) ?
 			"Arduino pin headers" :
 			"physical LED",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_LED1_ARDUINO));
 
-	LOG_DBG("Routing nRF9160 LED 3 to %s (pin -> %d)",
+	LOG_INF("Routing nRF9160 LED 3 to %s (pin -> %d)",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_LED2_ARDUINO) ?
 			"Arduino pin headers" :
 			"physical LED",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_LED2_ARDUINO));
 
-	LOG_DBG("Routing nRF9160 LED 4 to %s (pin -> %d)",
+	LOG_INF("Routing nRF9160 LED 4 to %s (pin -> %d)",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_LED3_ARDUINO) ?
 			"Arduino pin headers" :
 			"physical LED",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_LED3_ARDUINO));
 
-	LOG_DBG("Routing nRF9160 button 1 to %s (pin -> %d)",
+	LOG_INF("Routing nRF9160 button 1 to %s (pin -> %d)",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_BUTTON0_ARDUINO) ?
 			"Arduino pin headers" :
 			"physical button",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_BUTTON0_ARDUINO));
 
-	LOG_DBG("Routing nRF9160 button 2 to %s (pin -> %d)",
+	LOG_INF("Routing nRF9160 button 2 to %s (pin -> %d)",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_BUTTON1_ARDUINO) ?
 			"Arduino pin headers" :
 			"physical button",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_BUTTON1_ARDUINO));
 
-	LOG_DBG("Routing nRF9160 switch 1 to %s (pin -> %d)",
+	LOG_INF("Routing nRF9160 switch 1 to %s (pin -> %d)",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_SWITCH0_ARDUINO) ?
 			"Arduino pin headers" :
 			"physical switch",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_SWITCH0_ARDUINO));
 
-	LOG_DBG("Routing nRF9160 switch 2 to %s (pin -> %d)",
+	LOG_INF("Routing nRF9160 switch 2 to %s (pin -> %d)",
 		IS_ENABLED(CONFIG_BOARD_PCA10090_SWITCH1_ARDUINO) ?
 			"Arduino pin headers" :
 			"physical switch",
