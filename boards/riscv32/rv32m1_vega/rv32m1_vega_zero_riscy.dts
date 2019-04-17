@@ -5,11 +5,11 @@
 
 /dts-v1/;
 
-#include "rv32m1_ri5cy.dtsi"
+#include "rv32m1_zero_riscy.dtsi"
 #include "rv32m1_vega.dtsi"
 
 / {
-	model = "OpenISA RV32M1 Vega RI5CY";
+	model = "OpenISA RV32M1 Vega Zero RISCY";
 	compatible = "openisa,rv32m1";
 
 	chosen {
