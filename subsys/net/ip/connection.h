@@ -47,6 +47,9 @@ typedef enum net_verdict (*net_conn_cb_t)(struct net_conn *conn,
  *
  */
 struct net_conn {
+	/** Internal slist node */
+	sys_snode_t node;
+
 	/** Remote IP address */
 	struct sockaddr remote_addr;
 

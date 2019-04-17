@@ -47,6 +47,37 @@ LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 
 static struct net_conn conns[CONFIG_NET_MAX_CONN];
 
+static sys_slist_t conn_unused;
+static sys_slist_t conn_used;
+
+static struct net_conn *conn_get_unused(void)
+{
+	sys_snode_t *node;
+
+	node = sys_slist_peek_head(&conn_unused);
+	if (!node) {
+		return NULL;
+	}
+
+	sys_slist_remove(&conn_unused, NULL, node);
+
+	return CONTAINER_OF(node, struct net_conn, node);
+}
+
+static void conn_set_used(struct net_conn *conn)
+{
+	conn->flags |= NET_CONN_IN_USE;
+
+	sys_slist_prepend(&conn_used, &conn->node);
+}
+
+static void conn_set_unused(struct net_conn *conn)
+{
+	(void)memset(conn, 0, sizeof(*conn));
+
+	sys_slist_prepend(&conn_unused, &conn->node);
+}
+
 int net_conn_unregister(struct net_conn_handle *handle)
 {
 	struct net_conn *conn = (struct net_conn *)handle;
@@ -59,10 +90,11 @@ int net_conn_unregister(struct net_conn_handle *handle)
 		return -ENOENT;
 	}
 
-	NET_DBG("[%zu] connection handler %p removed",
-		conn - conns, conn);
+	NET_DBG("Connection handler %p removed", conn);
 
-	(void)memset(conn, 0, sizeof(*conn));
+	sys_slist_find_and_remove(&conn_used, &conn->node);
+
+	conn_set_unused(conn);
 
 	return 0;
 }
@@ -141,109 +173,101 @@ void prepare_register_debug_print(char *dst, int dst_len,
 }
 
 /* Check if we already have identical connection handler installed. */
-static int find_conn_handler(u16_t proto, u8_t family,
-			     const struct sockaddr *remote_addr,
-			     const struct sockaddr *local_addr,
-			     u16_t remote_port,
-			     u16_t local_port)
+static struct net_conn *find_conn_handler(u16_t proto, u8_t family,
+					  const struct sockaddr *remote_addr,
+					  const struct sockaddr *local_addr,
+					  u16_t remote_port,
+					  u16_t local_port)
 {
-	int i;
+	struct net_conn *conn;
 
-	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
-		if (!(conns[i].flags & NET_CONN_IN_USE)) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
+		if (conn->proto != proto) {
 			continue;
 		}
 
-		if (conns[i].proto != proto) {
-			continue;
-		}
-
-		if (conns[i].family != family) {
+		if (conn->family != family) {
 			continue;
 		}
 
 		if (remote_addr) {
-			if (!(conns[i].flags & NET_CONN_REMOTE_ADDR_SET)) {
+			if (!(conn->flags & NET_CONN_REMOTE_ADDR_SET)) {
 				continue;
 			}
 
 			if (IS_ENABLED(CONFIG_NET_IPV6) &&
 			    remote_addr->sa_family == AF_INET6 &&
 			    remote_addr->sa_family ==
-			    conns[i].remote_addr.sa_family) {
+			    conn->remote_addr.sa_family) {
 				if (!net_ipv6_addr_cmp(
 					    &net_sin6(remote_addr)->sin6_addr,
-					    &net_sin6(&conns[i].remote_addr)->
+					    &net_sin6(&conn->remote_addr)->
 								sin6_addr)) {
 					continue;
 				}
 			} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 				   remote_addr->sa_family == AF_INET &&
 				   remote_addr->sa_family ==
-				   conns[i].remote_addr.sa_family) {
+				   conn->remote_addr.sa_family) {
 				if (!net_ipv4_addr_cmp(
 					    &net_sin(remote_addr)->sin_addr,
-					    &net_sin(&conns[i].remote_addr)->
+					    &net_sin(&conn->remote_addr)->
 								sin_addr)) {
 					continue;
 				}
 			} else {
 				continue;
 			}
-		} else {
-			if (conns[i].flags & NET_CONN_REMOTE_ADDR_SET) {
-				continue;
-			}
+		} else if (conn->flags & NET_CONN_REMOTE_ADDR_SET) {
+			continue;
 		}
 
 		if (local_addr) {
-			if (!(conns[i].flags & NET_CONN_LOCAL_ADDR_SET)) {
+			if (!(conn->flags & NET_CONN_LOCAL_ADDR_SET)) {
 				continue;
 			}
 
 			if (IS_ENABLED(CONFIG_NET_IPV6) &&
 			    local_addr->sa_family == AF_INET6 &&
 			    local_addr->sa_family ==
-			    conns[i].local_addr.sa_family) {
+			    conn->local_addr.sa_family) {
 				if (!net_ipv6_addr_cmp(
 					    &net_sin6(local_addr)->sin6_addr,
-					    &net_sin6(&conns[i].local_addr)->
+					    &net_sin6(&conn->local_addr)->
 								sin6_addr)) {
 					continue;
 				}
 			} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
 				   local_addr->sa_family == AF_INET &&
 				   local_addr->sa_family ==
-				   conns[i].local_addr.sa_family) {
+				   conn->local_addr.sa_family) {
 				if (!net_ipv4_addr_cmp(
 					    &net_sin(local_addr)->sin_addr,
-					    &net_sin(&conns[i].local_addr)->
+					    &net_sin(&conn->local_addr)->
 								sin_addr)) {
 					continue;
 				}
 			} else {
 				continue;
 			}
-		} else {
-			if (conns[i].flags & NET_CONN_LOCAL_ADDR_SET) {
-				continue;
-			}
+		} else if (conn->flags & NET_CONN_LOCAL_ADDR_SET) {
+			continue;
 		}
 
-		if (net_sin(&conns[i].remote_addr)->sin_port !=
+		if (net_sin(&conn->remote_addr)->sin_port !=
 		    htons(remote_port)) {
 			continue;
 		}
 
-		if (net_sin(&conns[i].local_addr)->sin_port !=
+		if (net_sin(&conn->local_addr)->sin_port !=
 		    htons(local_port)) {
 			continue;
 		}
 
-		return i;
+		return conn;
 	}
 
-	return -ENOENT;
+	return NULL;
 }
 
 int net_conn_register(u16_t proto, u8_t family,
@@ -255,137 +279,137 @@ int net_conn_register(u16_t proto, u8_t family,
 		      void *user_data,
 		      struct net_conn_handle **handle)
 {
-	int i;
+	struct net_conn *conn;
 	u8_t rank = 0U;
 
-	i = find_conn_handler(proto, family, remote_addr, local_addr,
-			      remote_port, local_port);
-	if (i != -ENOENT) {
-		NET_ERR("Identical connection handler %p already found.",
-			&conns[i]);
+	conn = find_conn_handler(proto, family, remote_addr, local_addr,
+				 remote_port, local_port);
+	if (conn) {
+		NET_ERR("Identical connection handler %p already found.", conn);
 		return -EALREADY;
 	}
 
-	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
-		if (conns[i].flags & NET_CONN_IN_USE) {
-			continue;
-		}
-
-		if (remote_addr) {
-			if (IS_ENABLED(CONFIG_NET_IPV6) &&
-			    remote_addr->sa_family == AF_INET6) {
-				memcpy(&conns[i].remote_addr, remote_addr,
-				       sizeof(struct sockaddr_in6));
-
-				if (net_ipv6_is_addr_unspecified(
-					    &net_sin6(remote_addr)->
-							sin6_addr)) {
-					rank |= NET_RANK_REMOTE_UNSPEC_ADDR;
-				} else {
-					rank |= NET_RANK_REMOTE_SPEC_ADDR;
-				}
-			} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-				   remote_addr->sa_family == AF_INET) {
-				memcpy(&conns[i].remote_addr, remote_addr,
-				       sizeof(struct sockaddr_in));
-
-				if (!net_sin(remote_addr)->
-							sin_addr.s_addr) {
-					rank |= NET_RANK_REMOTE_UNSPEC_ADDR;
-				} else {
-					rank |= NET_RANK_REMOTE_SPEC_ADDR;
-				}
-			} else {
-				NET_ERR("Remote address family not set");
-				return -EINVAL;
-			}
-
-			conns[i].flags |= NET_CONN_REMOTE_ADDR_SET;
-		}
-
-		if (local_addr) {
-			if (IS_ENABLED(CONFIG_NET_IPV6) &&
-			    local_addr->sa_family == AF_INET6) {
-				memcpy(&conns[i].local_addr, local_addr,
-				       sizeof(struct sockaddr_in6));
-
-				if (net_ipv6_is_addr_unspecified(
-					    &net_sin6(local_addr)->
-							sin6_addr)) {
-					rank |= NET_RANK_LOCAL_UNSPEC_ADDR;
-				} else {
-					rank |= NET_RANK_LOCAL_SPEC_ADDR;
-				}
-			} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
-				   local_addr->sa_family == AF_INET) {
-				memcpy(&conns[i].local_addr, local_addr,
-				       sizeof(struct sockaddr_in));
-
-				if (!net_sin(local_addr)->sin_addr.s_addr) {
-					rank |= NET_RANK_LOCAL_UNSPEC_ADDR;
-				} else {
-					rank |= NET_RANK_LOCAL_SPEC_ADDR;
-				}
-			} else {
-				NET_ERR("Local address family not set");
-				return -EINVAL;
-			}
-
-			conns[i].flags |= NET_CONN_LOCAL_ADDR_SET;
-		}
-
-		if (remote_addr && local_addr) {
-			if (remote_addr->sa_family != local_addr->sa_family) {
-				NET_ERR("Address families different");
-				return -EINVAL;
-			}
-		}
-
-		if (remote_port) {
-			rank |= NET_RANK_REMOTE_PORT;
-			net_sin(&conns[i].remote_addr)->sin_port =
-				htons(remote_port);
-		}
-
-		if (local_port) {
-			rank |= NET_RANK_LOCAL_PORT;
-			net_sin(&conns[i].local_addr)->sin_port =
-				htons(local_port);
-		}
-
-		conns[i].flags |= NET_CONN_IN_USE;
-		conns[i].cb = cb;
-		conns[i].user_data = user_data;
-		conns[i].rank = rank;
-		conns[i].proto = proto;
-		conns[i].family = family;
-
-		if (CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG) {
-			char dst[NET_IPV6_ADDR_LEN];
-			char src[NET_IPV6_ADDR_LEN];
-
-			prepare_register_debug_print(dst, sizeof(dst),
-						     src, sizeof(src),
-						     remote_addr,
-						     local_addr);
-
-			NET_DBG("[%d/%d/%u/%u/0x%02x] remote %p/%s/%u ", i,
-				local_addr ? local_addr->sa_family : AF_UNSPEC,
-				proto, family, rank, remote_addr,
-				log_strdup(dst), remote_port);
-			NET_DBG("  local %p/%s/%u cb %p ud %p",
-				local_addr, log_strdup(src), local_port,
-				cb, user_data);
-		}
-
-		if (handle) {
-			*handle = (struct net_conn_handle *)&conns[i];
-		}
-
-		return 0;
+	conn = conn_get_unused();
+	if (!conn) {
+		return -ENOENT;
 	}
 
-	return -ENOENT;
+	if (remote_addr) {
+		if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		    remote_addr->sa_family == AF_INET6) {
+			memcpy(&conn->remote_addr, remote_addr,
+			       sizeof(struct sockaddr_in6));
+
+			if (net_ipv6_is_addr_unspecified(
+				    &net_sin6(remote_addr)->
+				    sin6_addr)) {
+				rank |= NET_RANK_REMOTE_UNSPEC_ADDR;
+			} else {
+				rank |= NET_RANK_REMOTE_SPEC_ADDR;
+			}
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+			   remote_addr->sa_family == AF_INET) {
+			memcpy(&conn->remote_addr, remote_addr,
+			       sizeof(struct sockaddr_in));
+
+			if (!net_sin(remote_addr)->
+			    sin_addr.s_addr) {
+				rank |= NET_RANK_REMOTE_UNSPEC_ADDR;
+			} else {
+				rank |= NET_RANK_REMOTE_SPEC_ADDR;
+			}
+		} else {
+			NET_ERR("Remote address family not set");
+			goto error;
+		}
+
+		conn->flags |= NET_CONN_REMOTE_ADDR_SET;
+	}
+
+	if (local_addr) {
+		if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		    local_addr->sa_family == AF_INET6) {
+			memcpy(&conn->local_addr, local_addr,
+			       sizeof(struct sockaddr_in6));
+
+			if (net_ipv6_is_addr_unspecified(
+				    &net_sin6(local_addr)->
+				    sin6_addr)) {
+				rank |= NET_RANK_LOCAL_UNSPEC_ADDR;
+			} else {
+				rank |= NET_RANK_LOCAL_SPEC_ADDR;
+			}
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+			   local_addr->sa_family == AF_INET) {
+			memcpy(&conn->local_addr, local_addr,
+			       sizeof(struct sockaddr_in));
+
+			if (!net_sin(local_addr)->sin_addr.s_addr) {
+				rank |= NET_RANK_LOCAL_UNSPEC_ADDR;
+			} else {
+				rank |= NET_RANK_LOCAL_SPEC_ADDR;
+			}
+		} else {
+			NET_ERR("Local address family not set");
+			goto error;
+		}
+
+		conn->flags |= NET_CONN_LOCAL_ADDR_SET;
+	}
+
+	if (remote_addr && local_addr) {
+		if (remote_addr->sa_family != local_addr->sa_family) {
+			NET_ERR("Address families different");
+			goto error;
+		}
+	}
+
+	if (remote_port) {
+		rank |= NET_RANK_REMOTE_PORT;
+		net_sin(&conn->remote_addr)->sin_port =
+			htons(remote_port);
+	}
+
+	if (local_port) {
+		rank |= NET_RANK_LOCAL_PORT;
+		net_sin(&conn->local_addr)->sin_port =
+			htons(local_port);
+	}
+
+	conn->cb = cb;
+	conn->user_data = user_data;
+	conn->rank = rank;
+	conn->proto = proto;
+	conn->family = family;
+
+	if (CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		char dst[NET_IPV6_ADDR_LEN];
+		char src[NET_IPV6_ADDR_LEN];
+
+		prepare_register_debug_print(dst, sizeof(dst),
+					     src, sizeof(src),
+					     remote_addr,
+					     local_addr);
+
+		NET_DBG("[%p/%d/%u/%u/0x%02x] remote %p/%s/%u ", conn,
+			local_addr ? local_addr->sa_family : AF_UNSPEC,
+			proto, family, rank, remote_addr,
+			log_strdup(dst), remote_port);
+		NET_DBG("  local %p/%s/%u cb %p ud %p",
+			local_addr, log_strdup(src), local_port,
+			cb, user_data);
+	}
+
+	if (handle) {
+		*handle = (struct net_conn_handle *)conn;
+	}
+
+	conn_set_used(conn);
+
+	return 0;
+error:
+	conn_set_unused(conn);
+	return -EINVAL;
 }
 
 static bool check_addr(struct net_pkt *pkt,
@@ -493,8 +517,9 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 				union net_proto_header *proto_hdr)
 {
 	struct net_if *pkt_iface = net_pkt_iface(pkt);
-	int i, best_match = -1;
+	struct net_conn *best_match = NULL;
 	s16_t best_rank = -1;
+	struct net_conn *conn;
 	u16_t src_port;
 	u16_t dst_port;
 
@@ -535,47 +560,43 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 		" family %d", net_proto2str(net_pkt_family(pkt), proto), pkt,
 		ntohs(src_port), ntohs(dst_port), net_pkt_family(pkt));
 
-	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
-		if (!(conns[i].flags & NET_CONN_IN_USE)) {
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
+		if (conn->proto != proto) {
 			continue;
 		}
 
-		if (conns[i].proto != proto) {
-			continue;
-		}
-
-		if (conns[i].family != AF_UNSPEC &&
-		    conns[i].family != net_pkt_family(pkt)) {
+		if (conn->family != AF_UNSPEC &&
+		    conn->family != net_pkt_family(pkt)) {
 			continue;
 		}
 
 		if (IS_ENABLED(CONFIG_NET_UDP) ||
 		    IS_ENABLED(CONFIG_NET_TCP)) {
-			if (net_sin(&conns[i].remote_addr)->sin_port) {
-				if (net_sin(&conns[i].remote_addr)->sin_port !=
+			if (net_sin(&conn->remote_addr)->sin_port) {
+				if (net_sin(&conn->remote_addr)->sin_port !=
 				    src_port) {
 					continue;
 				}
 			}
 
-			if (net_sin(&conns[i].local_addr)->sin_port) {
-				if (net_sin(&conns[i].local_addr)->sin_port !=
+			if (net_sin(&conn->local_addr)->sin_port) {
+				if (net_sin(&conn->local_addr)->sin_port !=
 				    dst_port) {
 					continue;
 				}
 			}
 
-			if (conns[i].flags & NET_CONN_REMOTE_ADDR_SET) {
+			if (conn->flags & NET_CONN_REMOTE_ADDR_SET) {
 				if (!check_addr(pkt, ip_hdr,
-						&conns[i].remote_addr,
+						&conn->remote_addr,
 						true)) {
 					continue;
 				}
 			}
 
-			if (conns[i].flags & NET_CONN_LOCAL_ADDR_SET) {
+			if (conn->flags & NET_CONN_LOCAL_ADDR_SET) {
 				if (!check_addr(pkt, ip_hdr,
-						&conns[i].local_addr,
+						&conn->local_addr,
 						false)) {
 					continue;
 				}
@@ -585,33 +606,29 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 			 * specifies a remote port, then we've matched to a
 			 * LISTENING connection that should not override.
 			 */
-			if (best_match >= 0 &&
-			    net_sin(&conns[best_match].remote_addr)->sin_port) {
+			if (best_match != NULL &&
+			    net_sin(&best_match->remote_addr)->sin_port) {
 				continue;
 			}
 
-			if (best_rank < conns[i].rank) {
-				best_rank = conns[i].rank;
-				best_match = i;
+			if (best_rank < conn->rank) {
+				best_rank = conn->rank;
+				best_match = conn;
 			}
-		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET)) {
+		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) ||
+			   IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
 			best_rank = 0;
-			best_match = i;
-		} else if (IS_ENABLED(CONFIG_NET_SOCKETS_CAN)) {
-			best_rank = 0;
-			best_match = i;
+			best_match = conn;
 		}
 	}
 
-	if (best_match >= 0) {
-		NET_DBG("[%d] match found cb %p ud %p rank 0x%02x",
-			best_match,
-			conns[best_match].cb,
-			conns[best_match].user_data,
-			conns[best_match].rank);
+	conn = best_match;
+	if (conn) {
+		NET_DBG("[%p] match found cb %p ud %p rank 0x%02x",
+			conn, conn->cb, conn->user_data, conn->rank);
 
-		if (conns[best_match].cb(&conns[best_match], pkt, ip_hdr,
-			proto_hdr, conns[best_match].user_data) == NET_DROP) {
+		if (conn->cb(conn, pkt, ip_hdr, proto_hdr,
+			     conn->user_data) == NET_DROP) {
 			goto drop;
 		}
 
@@ -652,17 +669,21 @@ drop:
 
 void net_conn_foreach(net_conn_foreach_cb_t cb, void *user_data)
 {
-	int i;
+	struct net_conn *conn;
 
-	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
-		if (!(conns[i].flags & NET_CONN_IN_USE)) {
-			continue;
-		}
-
-		cb(&conns[i], user_data);
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
+		cb(conn, user_data);
 	}
 }
 
 void net_conn_init(void)
 {
+	int i;
+
+	sys_slist_init(&conn_unused);
+	sys_slist_init(&conn_used);
+
+	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
+		sys_slist_prepend(&conn_unused, &conns[i].node);
+	}
 }
