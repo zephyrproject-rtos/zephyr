@@ -89,7 +89,6 @@ int z_clock_driver_init(struct device *device)
 	/* TODO: replace with counter driver to access RTC */
 	nrf_rtc_prescaler_set(RTC, 0);
 	nrf_rtc_cc_set(RTC, 0, CYC_PER_TICK);
-	nrf_rtc_event_enable(RTC, RTC_EVTENSET_COMPARE0_Msk);
 	nrf_rtc_int_enable(RTC, RTC_INTENSET_COMPARE0_Msk);
 
 	/* Clear the event flag and possible pending interrupt */
