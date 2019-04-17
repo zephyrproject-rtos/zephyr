@@ -6,6 +6,7 @@ User and Developer Guides
 .. toctree::
    :maxdepth: 1
 
+   getting-help.rst
    bluetooth/index.rst
    c_library
    ../README.rst
