@@ -142,6 +142,7 @@
 /drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 /drivers/wifi/eswifi/                     @loicpoulain
+/drivers/wifi/uwp/                        @bublover
 /dts/arm/st/                              @erwango
 /dts/arm/nordic/                          @ioannisg @carlescufi
 /dts/arm/nxp/                             @MaureenHelm
