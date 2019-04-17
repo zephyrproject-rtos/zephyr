@@ -445,13 +445,13 @@ static int kw41z_filter(struct device *dev,
 static int kw41z_set_txpower(struct device *dev, s16_t dbm)
 {
 	if (dbm < KW41Z_OUTPUT_POWER_MIN) {
-		SYS_LOG_INF("TX-power %d dBm below min of %d dBm, using %d dBm",
+		LOG_INF("TX-power %d dBm below min of %d dBm, using %d dBm",
 			    dbm,
 			    KW41Z_OUTPUT_POWER_MIN,
 			    KW41Z_OUTPUT_POWER_MIN);
 		dbm = KW41Z_OUTPUT_POWER_MIN;
 	} else if (dbm > KW41Z_OUTPUT_POWER_MAX) {
-		SYS_LOG_INF("TX-power %d dBm above max of %d dBm, using %d dBm",
+		LOG_INF("TX-power %d dBm above max of %d dBm, using %d dBm",
 			    dbm,
 			    KW41Z_OUTPUT_POWER_MAX,
 			    KW41Z_OUTPUT_POWER_MAX);
