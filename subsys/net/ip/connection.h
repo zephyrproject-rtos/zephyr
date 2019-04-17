@@ -70,18 +70,6 @@ struct net_conn {
 
 	/** Flags for the connection */
 	u8_t flags;
-
-	/** Rank of this connection. Higher rank means more specific
-	 * connection.
-	 * Value is constructed like this:
-	 *   bit 0  local port, bit set if specific value
-	 *   bit 1  remote port, bit set if specific value
-	 *   bit 2  local address, bit set if unspecified address
-	 *   bit 3  remote address, bit set if unspecified address
-	 *   bit 4  local address, bit set if specific address
-	 *   bit 5  remote address, bit set if specific address
-	 */
-	u8_t rank;
 };
 
 /**
