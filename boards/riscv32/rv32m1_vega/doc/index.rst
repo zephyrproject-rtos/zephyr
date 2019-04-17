@@ -457,13 +457,13 @@ first make sure you're booting the right core.
 
 1. In one terminal, use OpenOCD to connect to the board::
 
-     ~/rv32m1-openocd -f boards/riscv32/rv32m1_vega/support/openocd.cfg
+     ~/rv32m1-openocd -f boards/riscv32/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg
 
    The output should look like this:
 
    .. code-block:: none
 
-      $ ~/rv32m1-openocd -f boards/riscv32/rv32m1_vega/support/openocd.cfg
+      $ ~/rv32m1-openocd -f boards/riscv32/rv32m1_vega/support/openocd_rv32m1_vega_ri5cy.cfg
       Open On-Chip Debugger 0.10.0+dev-00431-ge1ec3c7d (2018-10-31-07:29)
       [...]
       Info : Listening on port 3333 for gdb connections
@@ -501,7 +501,7 @@ first make sure you're booting the right core.
 
 In one cmd.exe prompt in the Zephyr directory::
 
- C:\rv32m1-openocd\bin\openocd.exe rv32m1-openocd -f boards\riscv32\rv32m1_vega\support\openocd.cfg
+ C:\rv32m1-openocd\bin\openocd.exe rv32m1-openocd -f boards\riscv32\rv32m1_vega\support\openocd_rv32m1_vega_ri5cy.cfg
 
 In a telnet program of your choice:
 
