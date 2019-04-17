@@ -167,8 +167,8 @@ static int find_conn_handler(u16_t proto, u8_t family,
 				continue;
 			}
 
-#if defined(CONFIG_NET_IPV6)
-			if (remote_addr->sa_family == AF_INET6 &&
+			if (IS_ENABLED(CONFIG_NET_IPV6) &&
+			    remote_addr->sa_family == AF_INET6 &&
 			    remote_addr->sa_family ==
 			    conns[i].remote_addr.sa_family) {
 				if (!net_ipv6_addr_cmp(
@@ -177,21 +177,17 @@ static int find_conn_handler(u16_t proto, u8_t family,
 								sin6_addr)) {
 					continue;
 				}
-			} else
-#endif
-#if defined(CONFIG_NET_IPV4)
-			if (remote_addr->sa_family == AF_INET &&
-			    remote_addr->sa_family ==
-			    conns[i].remote_addr.sa_family) {
+			} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+				   remote_addr->sa_family == AF_INET &&
+				   remote_addr->sa_family ==
+				   conns[i].remote_addr.sa_family) {
 				if (!net_ipv4_addr_cmp(
 					    &net_sin(remote_addr)->sin_addr,
 					    &net_sin(&conns[i].remote_addr)->
 								sin_addr)) {
 					continue;
 				}
-			} else
-#endif
-			{
+			} else {
 				continue;
 			}
 		} else {
@@ -205,8 +201,8 @@ static int find_conn_handler(u16_t proto, u8_t family,
 				continue;
 			}
 
-#if defined(CONFIG_NET_IPV6)
-			if (local_addr->sa_family == AF_INET6 &&
+			if (IS_ENABLED(CONFIG_NET_IPV6) &&
+			    local_addr->sa_family == AF_INET6 &&
 			    local_addr->sa_family ==
 			    conns[i].local_addr.sa_family) {
 				if (!net_ipv6_addr_cmp(
@@ -215,21 +211,17 @@ static int find_conn_handler(u16_t proto, u8_t family,
 								sin6_addr)) {
 					continue;
 				}
-			} else
-#endif
-#if defined(CONFIG_NET_IPV4)
-			if (local_addr->sa_family == AF_INET &&
-			    local_addr->sa_family ==
-			    conns[i].local_addr.sa_family) {
+			} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+				   local_addr->sa_family == AF_INET &&
+				   local_addr->sa_family ==
+				   conns[i].local_addr.sa_family) {
 				if (!net_ipv4_addr_cmp(
 					    &net_sin(local_addr)->sin_addr,
 					    &net_sin(&conns[i].local_addr)->
 								sin_addr)) {
 					continue;
 				}
-			} else
-#endif
-			{
+			} else {
 				continue;
 			}
 		} else {
@@ -280,8 +272,8 @@ int net_conn_register(u16_t proto, u8_t family,
 		}
 
 		if (remote_addr) {
-#if defined(CONFIG_NET_IPV6)
-			if (remote_addr->sa_family == AF_INET6) {
+			if (IS_ENABLED(CONFIG_NET_IPV6) &&
+			    remote_addr->sa_family == AF_INET6) {
 				memcpy(&conns[i].remote_addr, remote_addr,
 				       sizeof(struct sockaddr_in6));
 
@@ -292,11 +284,8 @@ int net_conn_register(u16_t proto, u8_t family,
 				} else {
 					rank |= NET_RANK_REMOTE_SPEC_ADDR;
 				}
-			} else
-#endif
-
-#if defined(CONFIG_NET_IPV4)
-			if (remote_addr->sa_family == AF_INET) {
+			} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+				   remote_addr->sa_family == AF_INET) {
 				memcpy(&conns[i].remote_addr, remote_addr,
 				       sizeof(struct sockaddr_in));
 
@@ -306,9 +295,7 @@ int net_conn_register(u16_t proto, u8_t family,
 				} else {
 					rank |= NET_RANK_REMOTE_SPEC_ADDR;
 				}
-			} else
-#endif
-			{
+			} else {
 				NET_ERR("Remote address family not set");
 				return -EINVAL;
 			}
@@ -317,8 +304,8 @@ int net_conn_register(u16_t proto, u8_t family,
 		}
 
 		if (local_addr) {
-#if defined(CONFIG_NET_IPV6)
-			if (local_addr->sa_family == AF_INET6) {
+			if (IS_ENABLED(CONFIG_NET_IPV6) &&
+			    local_addr->sa_family == AF_INET6) {
 				memcpy(&conns[i].local_addr, local_addr,
 				       sizeof(struct sockaddr_in6));
 
@@ -329,11 +316,8 @@ int net_conn_register(u16_t proto, u8_t family,
 				} else {
 					rank |= NET_RANK_LOCAL_SPEC_ADDR;
 				}
-			} else
-#endif
-
-#if defined(CONFIG_NET_IPV4)
-			if (local_addr->sa_family == AF_INET) {
+			} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+				   local_addr->sa_family == AF_INET) {
 				memcpy(&conns[i].local_addr, local_addr,
 				       sizeof(struct sockaddr_in));
 
@@ -342,9 +326,7 @@ int net_conn_register(u16_t proto, u8_t family,
 				} else {
 					rank |= NET_RANK_LOCAL_SPEC_ADDR;
 				}
-			} else
-#endif
-			{
+			} else {
 				NET_ERR("Local address family not set");
 				return -EINVAL;
 			}
@@ -415,8 +397,9 @@ static bool check_addr(struct net_pkt *pkt,
 		return false;
 	}
 
-#if defined(CONFIG_NET_IPV6)
-	if (net_pkt_family(pkt) == AF_INET6 && addr->sa_family == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    net_pkt_family(pkt) == AF_INET6 &&
+	    addr->sa_family == AF_INET6) {
 		struct in6_addr *addr6;
 
 		if (is_remote) {
@@ -434,11 +417,9 @@ static bool check_addr(struct net_pkt *pkt,
 		}
 
 		return true;
-	}
-#endif /* CONFIG_NET_IPV6 */
-
-#if defined(CONFIG_NET_IPV4)
-	if (net_pkt_family(pkt) == AF_INET && addr->sa_family == AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		   net_pkt_family(pkt) == AF_INET &&
+		   addr->sa_family == AF_INET) {
 		struct in_addr *addr4;
 
 		if (is_remote) {
@@ -454,25 +435,19 @@ static bool check_addr(struct net_pkt *pkt,
 			}
 		}
 	}
-#endif /* CONFIG_NET_IPV4 */
 
 	return true;
 }
 
 static inline void send_icmp_error(struct net_pkt *pkt)
 {
-	if (net_pkt_family(pkt) == AF_INET6) {
-#if defined(CONFIG_NET_IPV6)
+	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
 		net_icmpv6_send_error(pkt, NET_ICMPV6_DST_UNREACH,
 				      NET_ICMPV6_DST_UNREACH_NO_PORT, 0);
-#endif /* CONFIG_NET_IPV6 */
 
-	} else {
-
-#if defined(CONFIG_NET_IPV4)
+	} else if (IS_ENABLED(CONFIG_NET_IPV4)) {
 		net_icmpv4_send_error(pkt, NET_ICMPV4_DST_UNREACH,
 				      NET_ICMPV4_DST_UNREACH_NO_PORT);
-#endif /* CONFIG_NET_IPV4 */
 	}
 }
 
