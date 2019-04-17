@@ -6,4 +6,23 @@
 
 if BOARD_NRF9160_PCA10090 || BOARD_NRF9160_PCA10090NS
 
+config BOARD_NRF52840_GPIO_RESET
+        bool "Use nRF52840 PCA10090 GPIO reset pin"
+	default y if BT_H4
+        help
+          Use a GPIO pin to reset the nRF52840 controller and let it wait
+          until all bytes traveling to the H4 device have been received
+          and drained, thus ensuring communication can begin correctly.
+
+if BOARD_NRF52840_GPIO_RESET
+
+config BOARD_NRF52840_GPIO_RESET_PIN
+        int "Reset pin"
+        range 17 23
+        default 23
+        help
+          GPIO pin on the nRF9160 used to reset the nRF52840.
+
+endif
+
 endif # BOARD_NRF9160_PCA10090 || BOARD_NRF9160_PCA10090NS
