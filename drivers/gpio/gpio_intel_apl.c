@@ -345,10 +345,10 @@ static int gpio_intel_apl_read(struct device *dev, int access_op,
 
 	if (!(val & PAD_CFG0_TXDIS)) {
 		/* If TX is not disabled, return TX_STATE */
-		*value = val & PAD_CFG0_TXSTATE;
+		*value = (val & PAD_CFG0_TXSTATE) >> PAD_CFG0_TXSTATE_POS;
 	} else {
 		/* else just return RX_STATE */
-		*value = val & PAD_CFG0_RXSTATE;
+		*value = (val & PAD_CFG0_RXSTATE) >> PAD_CFG0_RXSTATE_POS;
 	}
 
 	return 0;
