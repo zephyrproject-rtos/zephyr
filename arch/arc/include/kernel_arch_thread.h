@@ -12,7 +12,6 @@
  *
  *  struct _thread_arch
  *  struct _callee_saved
- *  struct _caller_saved
  *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -31,15 +30,6 @@
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
-
-struct _caller_saved {
-	/*
-	 * Saved on the stack as part of handling a regular IRQ or by the
-	 * kernel when calling the FIRQ return code.
-	 */
-};
-
-typedef struct _caller_saved _caller_saved_t;
 
 struct _callee_saved {
 	u32_t sp; /* r28 */

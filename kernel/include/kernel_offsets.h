@@ -55,7 +55,6 @@ GEN_OFFSET_SYM(_thread_base_t, preempt);
 GEN_OFFSET_SYM(_thread_base_t, swap_data);
 
 GEN_OFFSET_SYM(_thread_t, base);
-GEN_OFFSET_SYM(_thread_t, caller_saved);
 GEN_OFFSET_SYM(_thread_t, callee_saved);
 GEN_OFFSET_SYM(_thread_t, arch);
 

@@ -12,8 +12,7 @@
  *
  *  struct _thread_arch
  *  struct _callee_saved
- *  struct _caller_saved
- *
+  *
  * necessary to instantiate instances of struct k_thread.
  */
 
@@ -22,26 +21,6 @@
 
 #ifndef _ASMLANGUAGE
 #include <zephyr/types.h>
-
-struct _caller_saved {
-	/*
-	 * Unused for Cortex-M, which automatically saves the necessary
-	 * registers in its exception stack frame.
-	 *
-	 * For Cortex-A, this may be:
-	 *
-	 * u32_t a1;       r0
-	 * u32_t a2;       r1
-	 * u32_t a3;       r2
-	 * u32_t a4;       r3
-	 * u32_t ip;       r12
-	 * u32_t lr;       r14
-	 * u32_t pc;       r15
-	 * u32_t xpsr;
-	 */
-};
-
-typedef struct _caller_saved _caller_saved_t;
 
 struct _callee_saved {
 	u32_t v1;  /* r4 */

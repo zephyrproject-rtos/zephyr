@@ -11,7 +11,6 @@
  * Zephyr thread struct.  But we don't need that for this arch.
  */
 
-struct _caller_saved { };
 struct _callee_saved { };
 struct _thread_arch { };
 
