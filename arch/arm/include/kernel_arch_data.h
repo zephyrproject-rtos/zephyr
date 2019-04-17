@@ -55,12 +55,6 @@ typedef struct __esf _esf_t;
 
 #ifndef _ASMLANGUAGE
 
-struct _kernel_arch {
-	/* empty */
-};
-
-typedef struct _kernel_arch _kernel_arch_t;
-
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

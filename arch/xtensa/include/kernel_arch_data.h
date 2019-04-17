@@ -47,11 +47,6 @@ extern "C" {
 
 typedef struct __esf __esf_t;
 
-struct _kernel_arch {
-};
-
-typedef struct _kernel_arch _kernel_arch_t;
-
 #endif /*! _ASMLANGUAGE && ! __ASSEMBLER__ */
 
 #ifdef CONFIG_USE_SWITCH
