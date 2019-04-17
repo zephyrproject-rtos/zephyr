@@ -1194,6 +1194,17 @@ static struct usb_transfer_data *usb_ep_get_transfer(u8_t ep)
 	return NULL;
 }
 
+bool usb_transfer_is_busy(u8_t ep)
+{
+	struct usb_transfer_data *trans = usb_ep_get_transfer(ep);
+
+	if (trans && trans->status == -EBUSY) {
+		return true;
+	}
+
+	return false;
+}
+
 static void usb_transfer_work(struct k_work *item)
 {
 	struct usb_transfer_data *trans;

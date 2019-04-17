@@ -419,6 +419,16 @@ int usb_transfer_sync(u8_t ep, u8_t *data, size_t dlen, unsigned int flags);
 void usb_cancel_transfer(u8_t ep);
 
 /**
+ * @brief Check that transfer is ongoing for the endpoint
+ *
+ * @param[in]  ep           Endpoint address corresponding to the one
+ *                          listed in the device configuration table
+ *
+ * @return true if transfer is ongoing, false otherwise.
+ */
+bool usb_transfer_is_busy(u8_t ep);
+
+/**
  * @brief Start the USB remote wakeup procedure
  *
  * Function to request a remote wakeup.
