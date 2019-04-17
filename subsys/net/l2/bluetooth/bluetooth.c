@@ -492,6 +492,12 @@ static int bt_disconnect(u32_t mgmt_request, struct net_if *iface,
 	return bt_l2cap_chan_disconnect(&ctxt->ipsp_chan.chan);
 }
 
+/* Can be implemented in user application */
+void __weak connected_hook(struct bt_conn *conn, u8_t err)
+{
+
+}
+
 static void connected(struct bt_conn *conn, u8_t err)
 {
 	if (err) {
@@ -514,7 +520,15 @@ static void connected(struct bt_conn *conn, u8_t err)
 
 	bt_l2cap_chan_connect(conn, &bt_context_data.ipsp_chan.chan,
 			      L2CAP_IPSP_PSM);
+	connected_hook(conn, err);
 }
+
+/* Can be implemented in user application */
+void __weak disconnected_hook(struct bt_conn *conn, u8_t reason)
+{
+
+}
+
 
 static void disconnected(struct bt_conn *conn, u8_t reason)
 {
@@ -533,6 +547,7 @@ static void disconnected(struct bt_conn *conn, u8_t reason)
 
 	bt_conn_unref(default_conn);
 	default_conn = NULL;
+	disconnected_hook(conn, reason);
 }
 
 static struct bt_conn_cb conn_callbacks = {
