@@ -167,9 +167,6 @@ struct z_kernel {
 #if defined(CONFIG_THREAD_MONITOR)
 	struct k_thread *threads; /* singly linked list of ALL threads */
 #endif
-
-	/* arch-specific part of _kernel */
-	struct _kernel_arch arch;
 };
 
 typedef struct z_kernel _kernel_t;

@@ -162,19 +162,6 @@ struct _callee_saved_stack {
 
 typedef struct _callee_saved_stack _callee_saved_stack_t;
 
-struct _kernel_arch {
-
-	char *rirq_sp; /* regular IRQ stack pointer base */
-
-	/*
-	 * FIRQ stack pointer is installed once in the second bank's SP, so
-	 * there is no need to track it in _kernel.
-	 */
-
-};
-
-typedef struct _kernel_arch _kernel_arch_t;
-
 #endif /* _ASMLANGUAGE */
 
 /* stacks */

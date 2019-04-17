@@ -413,12 +413,6 @@ extern void z_x86_thread_entry_wrapper(k_thread_entry_t entry,
 extern "C" {
 #endif
 
-
-struct _kernel_arch {
-};
-
-typedef struct _kernel_arch _kernel_arch_t;
-
 #ifdef __cplusplus
 }
 #endif
