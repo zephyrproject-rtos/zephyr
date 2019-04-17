@@ -123,10 +123,10 @@ static ssize_t read_ppcp(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, u16_t len, u16_t offset)
 {
 	struct __packed {
-		uint16_t min_int;
-		uint16_t max_int;
-		uint16_t latency;
-		uint16_t timeout;
+		u16_t min_int;
+		u16_t max_int;
+		u16_t latency;
+		u16_t timeout;
 	} ppcp;
 
 	ppcp.min_int = sys_cpu_to_le16(CONFIG_BT_PERIPHERAL_PREF_MIN_INT);
@@ -723,7 +723,7 @@ static bool update_range(u16_t *start, u16_t *end, u16_t new_start,
 	return true;
 }
 
-static void sc_indicate(struct gatt_sc *sc, uint16_t start, uint16_t end)
+static void sc_indicate(struct gatt_sc *sc, u16_t start, u16_t end)
 {
 	if (!atomic_test_and_set_bit(sc->flags, SC_RANGE_CHANGED)) {
 		sc->start = start;
