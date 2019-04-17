@@ -2043,6 +2043,7 @@ struct bt_conn *bt_conn_create_slave_le(const bt_addr_le_t *peer,
 			if (err && (err != -EALREADY)) {
 				BT_WARN("Directed advertising could not be"
 					" started: %d", err);
+				bt_conn_unref(conn);
 				return NULL;
 			}
 
