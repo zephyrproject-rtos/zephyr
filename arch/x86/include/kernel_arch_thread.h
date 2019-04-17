@@ -12,7 +12,6 @@
  *
  *  struct _thread_arch
  *  struct _callee_saved
- *  struct _caller_saved
  *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -36,32 +35,6 @@
 
 #ifndef _ASMLANGUAGE
 #include <stdint.h>
-
-/*
- * The following structure defines the set of 'volatile' integer registers.
- * These registers need not be preserved by a called C function.  Given that
- * they are not preserved across function calls, they must be save/restored
- * (along with the struct _caller_saved) when a preemptive context switch
- * occurs.
- */
-
-struct _caller_saved {
-
-	/*
-	 * The volatile registers 'eax', 'ecx' and 'edx' area not included in
-	 * the definition of 'tPreempReg' since the interrupt and exception
-	 * handling routunes use the stack to save and restore the values of
-	 * these registers in order to support interrupt nesting.  The stubs
-	 * do _not_ copy the saved values from the stack into the TCS.
-	 *
-	 * unsigned long eax;
-	 * unsigned long ecx;
-	 * unsigned long edx;
-	 */
-
-};
-
-typedef struct _caller_saved _caller_saved_t;
 
 /*
  * The following structure defines the set of 'non-volatile' integer registers.

@@ -12,7 +12,6 @@
  *
  *  struct _thread_arch
  *  struct _callee_saved
- *  struct _caller_saved
  *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -44,15 +43,6 @@ struct _callee_saved {
 	u32_t s11;      /* saved register */
 };
 typedef struct _callee_saved _callee_saved_t;
-
-struct _caller_saved {
-	/*
-	 * Nothing here, the exception code puts all the caller-saved
-	 * registers onto the stack.
-	 */
-};
-
-typedef struct _caller_saved _caller_saved_t;
 
 struct _thread_arch {
 	u32_t swap_return_value; /* Return value of z_swap() */

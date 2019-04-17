@@ -12,7 +12,6 @@
  *
  *  struct _thread_arch
  *  struct _callee_saved
- *  struct _caller_saved
  *
  * necessary to instantiate instances of struct k_thread.
  */
@@ -22,11 +21,6 @@
 #define _kernel_arch_thread__h_
 
 #ifndef _ASMLANGUAGE
-
-struct _caller_saved {
-};
-
-typedef struct _caller_saved _caller_saved_t;
 
 struct _callee_saved {
 };
