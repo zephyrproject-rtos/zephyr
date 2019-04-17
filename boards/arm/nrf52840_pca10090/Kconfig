@@ -192,4 +192,9 @@ config BOARD_PCA10090_INTERFACE2_MCU
 
 endchoice
 
+
+module = BOARD_PCA10090
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"
+
 endif # BOARD_NRF52840_PCA10090
