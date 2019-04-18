@@ -1,0 +1,32 @@
+#
+# Copyright (c) 2019 Brett Witherspoon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: TI SimpleLink CC13xx / CC26xx Pinmux
+version: 0.1
+
+description: >
+    This is a representation of the TI SimpleLink CC13xx / CC26xx pinmux node
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "ti,cc13xx-cc26xx-pinmux"
+      generation: define
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+...

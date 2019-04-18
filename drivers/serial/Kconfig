@@ -92,6 +92,8 @@ source "drivers/serial/Kconfig.nrfx"
 
 source "drivers/serial/Kconfig.altera_jtag"
 
+source "drivers/serial/Kconfig.cc13xx_cc26xx"
+
 source "drivers/serial/Kconfig.cc32xx"
 
 source "drivers/serial/Kconfig.cmsdk_apb"
