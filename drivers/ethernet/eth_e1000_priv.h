@@ -77,7 +77,7 @@ struct e1000_rx {
 struct e1000_dev {
 	volatile struct e1000_tx tx __aligned(16);
 	volatile struct e1000_rx rx __aligned(16);
-	struct pci_dev_info pci;
+	u32_t address;
 	struct net_if *iface;
 	u8_t mac[ETH_ALEN];
 	u8_t txb[NET_ETH_MTU];
@@ -88,13 +88,13 @@ static const char *e1000_reg_to_string(enum e1000_reg_t r)
 	__attribute__((unused));
 
 #define iow32(_dev, _reg, _val) do {					\
-	LOG_DBG("iow32 %s 0x%08x", e1000_reg_to_string(_reg), _val); 	\
-	sys_write32(_val, (_dev)->pci.addr + _reg);			\
+	LOG_DBG("iow32 %s 0x%08x", e1000_reg_to_string(_reg), (_val)); 	\
+	sys_write32(_val, (_dev)->address + (_reg));			\
 } while (0)
 
 #define ior32(_dev, _reg)						\
 ({									\
-	u32_t val = sys_read32((_dev)->pci.addr + (_reg));		\
+	u32_t val = sys_read32((_dev)->address + (_reg));		\
 	LOG_DBG("ior32 %s 0x%08x", e1000_reg_to_string(_reg), val); 	\
 	val;								\
 })
