@@ -28,6 +28,7 @@
 /arch/riscv32/                            @kgugala @pgielda @nategraff-sifive
 /soc/posix/                               @aescolar
 /soc/riscv32/                             @kgugala @pgielda @nategraff-sifive
+/soc/riscv32/openisa*/                    @MaureenHelm
 /arch/x86/                                @andrewboie @wentongwu
 /arch/x86/core/                           @andrewboie
 /arch/x86/core/crt0.S                     @wentongwu @nashif
@@ -78,6 +79,7 @@
 /boards/arm/stm32_min_dev/                @cbsiddharth
 /boards/posix/                            @aescolar
 /boards/riscv32/                          @kgugala @pgielda @nategraff-sifive
+/boards/riscv32/rv32m1_vega/              @MaureenHelm
 /boards/shields/                          @erwango
 /boards/x86/                              @andrewboie @nashif
 /boards/x86/up_squared/                   @gnuless
@@ -148,11 +150,13 @@
 /dts/arm/nordic/                          @ioannisg @carlescufi
 /dts/arm/nxp/                             @MaureenHelm
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
+/dts/riscv32/rv32m1*                      @MaureenHelm
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
 /dts/bindings/serial/ns16550.yaml         @gnuless
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
+/dts/bindings/*/openisa*                  @MaureenHelm
 /dts/bindings/*/st*                       @erwango
 /dts/bindings/sensor/ams*                 @alexanderwachter
 /ext/fs/                                  @nashif @wentongwu
