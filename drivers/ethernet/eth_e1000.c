@@ -12,7 +12,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr.h>
 #include <net/ethernet.h>
 #include <ethernet/eth_stats.h>
-#include <pci/pci.h>
+#include <drivers/pcie/pcie.h>
 #include "eth_e1000_priv.h"
 
 static const char *e1000_reg_to_string(enum e1000_reg_t r)
@@ -132,24 +132,24 @@ static void e1000_isr(struct device *device)
 	}
 }
 
+#define PCI_VENDOR_ID_INTEL	0x8086
+#define PCI_DEVICE_ID_I82540EM	0x100e
+
 int e1000_probe(struct device *device)
 {
+	const pcie_bdf_t bdf = PCIE_BDF(0, 3, 0);
 	struct e1000_dev *dev = device->driver_data;
+	int retval = -ENODEV;
 
-	pci_bus_scan_init();
-
-	if (pci_bus_scan(&dev->pci)) {
-
-		pci_enable_regs(&dev->pci);
-
-		pci_enable_bus_master(&dev->pci);
-
-		pci_show(&dev->pci);
-
-		return 0;
+	if (pcie_probe(bdf, PCIE_ID(PCI_VENDOR_ID_INTEL,
+			    PCI_DEVICE_ID_I82540EM))) {
+		dev->address = pcie_get_mbar(bdf, 0);
+		pcie_set_cmd(bdf, PCIE_CONF_CMDSTAT_MEM |
+				  PCIE_CONF_CMDSTAT_MASTER, true);
+		retval = 0;
 	}
 
-	return -ENODEV;
+	return retval;
 }
 
 static struct device DEVICE_NAME_GET(eth_e1000);
@@ -210,13 +210,7 @@ static void e1000_init(struct net_if *iface)
 	LOG_DBG("done");
 }
 
-#define PCI_VENDOR_ID_INTEL	0x8086
-#define PCI_DEVICE_ID_I82540EM	0x100e
-
-static struct e1000_dev e1000_dev = {
-	.pci.vendor_id = PCI_VENDOR_ID_INTEL,
-	.pci.device_id = PCI_DEVICE_ID_I82540EM,
-};
+static struct e1000_dev e1000_dev;
 
 static const struct ethernet_api e1000_api = {
 	.iface_api.init		= e1000_init,
