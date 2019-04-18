@@ -97,6 +97,28 @@ After all data is loaded, the ``h_commit`` handler is issued,
 signalling the application that the settings were successfully
 retrieved.
 
+Storing data to persistent storage
+**********************************
+
+A call to ``settings_save_one()`` uses a backend implementation to store
+settings data to the storage medium. A call to ``settings_save()`` uses an
+``h_export`` implementation to store different data in one operation using
+``settings_save_one()``.
+A key need to be covered by a ``h_export`` only if it is supposed to be stored
+by ``settings_save()`` call.
+
+For both FCB and filesystem back-end only storage requests with data which
+changes most actual key's value are stored, therefore there is no need to check
+whether a value changed by the application. Such a storage mechanism implies
+that storage can contain multiple value assignments for a key , while only the
+last is the current value for the key.
+
+Garbage collection
+==================
+When storage becomes full (FCB) or consumes too much space (file system),
+the backend removes non-recent key-value pairs records and unnecessary
+key-delete records.
+
 Example: Device Configuration
 *****************************
 
@@ -217,4 +239,3 @@ The Settings subsystem APIs are provided by ``settings.h``:
 
 .. doxygengroup:: settings
    :project: Zephyr
-
