@@ -63,6 +63,7 @@ config SPARC
 	select BIG_ENDIAN
 	select USE_SWITCH_SUPPORTED
 	select USE_SWITCH
+	select ATOMIC_OPERATIONS_C
 	help
 	   SPARC architecture
 
