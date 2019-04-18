@@ -26,10 +26,10 @@ Bootloaders
 MCUboot
 =======
 
-Zephyr is directly compatible with the open source, cross-RTOS `MCUboot`_ boot
-loader. It interfaces with MCUboot and is aware of the image format required
-by it, so that Device Firmware Upgrade is available when MCUboot is the boot
-loader used with Zephyr. The source code itself is hosted in the
+Zephyr is directly compatible with the open source, cross-RTOS
+`MCUboot boot loader`_. It interfaces with MCUboot and is aware of the image
+format required by it, so that Device Firmware Upgrade is available when MCUboot
+is the boot loader used with Zephyr. The source code itself is hosted in the
 `MCUboot GitHub Project`_ page.
 
 In order to use MCUboot with Zephyr you need to take the following into account:
@@ -47,5 +47,6 @@ In order to use MCUboot with Zephyr you need to take the following into account:
 More detailed information regarding the use of MCUboot with Zephyr  can be found
 in the `MCUboot with Zephyr`_ documentation page on the MCUboot website.
 
+.. _MCUboot boot loader: https://mcuboot.com/
 .. _MCUboot with Zephyr: https://mcuboot.com/mcuboot/readme-zephyr.html
 .. _MCUboot GitHub Project: https://github.com/runtimeco/mcuboot
