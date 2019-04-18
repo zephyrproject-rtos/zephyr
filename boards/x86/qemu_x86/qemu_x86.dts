@@ -13,6 +13,7 @@
 #endif
 
 #include <ia32.dtsi>
+#include "../../../dts/common/sim-flash.dtsi"
 
 / {
 	model = "QEMU X86";
