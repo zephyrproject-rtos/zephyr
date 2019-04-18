@@ -30,20 +30,4 @@ config XIP
 	bool
 	default y
 
-config RISCV_ROM_BASE_ADDR
-	hex
-	default 0x20400000
-
-config RISCV_ROM_SIZE
-	hex
-	default 0xC00000
-
-config RISCV_RAM_BASE_ADDR
-	hex
-	default	0x80000000
-
-config RISCV_RAM_SIZE
-	hex
-	default 0x4000
-
 endif # SOC_SERIES_RISCV32_SIFIVE_FREEDOM
