@@ -22,6 +22,9 @@
 #define FLASH_SIZE                                                             \
 	(CONFIG_FLASH_SIMULATOR_FLASH_SIZE * CONFIG_FLASH_SIMULATOR_ERASE_UNIT)
 
+/* maximum number of pages that can be tracked by the stats module */
+#define STATS_PAGE_COUNT_THRESHOLD 40
+
 #define STATS_SECT_EC(N, _) STATS_SECT_ENTRY32(erase_cycles_unit##N)
 #define STATS_NAME_EC(N, _) STATS_NAME(flash_sim_stats, erase_cycles_unit##N)
 
@@ -29,10 +32,24 @@
 #define STATS_NAME_DIRTYR(N, _) STATS_NAME(flash_sim_stats, dirty_read_unit##N)
 
 /* increment a unit erase cycles counter */
-#define ERASE_CYCLES_INC(U) (*(&flash_sim_stats.erase_cycles_unit0 + (U)) += 1)
+#define ERASE_CYCLES_INC(U)						     \
+	do {								     \
+		if (U < STATS_PAGE_COUNT_THRESHOLD) {			     \
+			(*(&flash_sim_stats.erase_cycles_unit0 + (U)) += 1); \
+		}							     \
+	} while (0)
+
+#if (defined(CONFIG_STATS) && \
+     (CONFIG_FLASH_SIMULATOR_FLASH_SIZE > STATS_PAGE_COUNT_THRESHOLD))
+       /* Limitation above is caused by used UTIL_REPEAT                    */
+       /* Using FLASH_SIMULATOR_FLASH_PAGE_COUNT allows to avoid terrible   */
+       /* error logg at the output and work with the stats module partially */
+       #define FLASH_SIMULATOR_FLASH_PAGE_COUNT STATS_PAGE_COUNT_THRESHOLD
+#else
+#define FLASH_SIMULATOR_FLASH_PAGE_COUNT CONFIG_FLASH_SIMULATOR_FLASH_SIZE
+#endif
 
 /* simulator statistcs */
-
 STATS_SECT_START(flash_sim_stats)
 STATS_SECT_ENTRY32(bytes_read)		/* total bytes read */
 STATS_SECT_ENTRY32(bytes_written)       /* total bytes written */
@@ -45,9 +62,9 @@ STATS_SECT_ENTRY32(flash_erase_calls)   /* calls to flash_erase() */
 STATS_SECT_ENTRY32(flash_erase_time_us) /* time spent in flash_erase() */
 /* -- per-unit statistics -- */
 /* erase cycle count for unit */
-UTIL_EVAL(UTIL_REPEAT(CONFIG_FLASH_SIMULATOR_FLASH_SIZE, STATS_SECT_EC))
+UTIL_EVAL(UTIL_REPEAT(FLASH_SIMULATOR_FLASH_PAGE_COUNT, STATS_SECT_EC))
 /* number of read operations on worn out erase units */
-UTIL_EVAL(UTIL_REPEAT(CONFIG_FLASH_SIMULATOR_FLASH_SIZE, STATS_SECT_DIRTYR))
+UTIL_EVAL(UTIL_REPEAT(FLASH_SIMULATOR_FLASH_PAGE_COUNT, STATS_SECT_DIRTYR))
 STATS_SECT_END;
 
 STATS_SECT_DECL(flash_sim_stats) flash_sim_stats;
@@ -61,8 +78,8 @@ STATS_NAME(flash_sim_stats, flash_write_calls)
 STATS_NAME(flash_sim_stats, flash_write_time_us)
 STATS_NAME(flash_sim_stats, flash_erase_calls)
 STATS_NAME(flash_sim_stats, flash_erase_time_us)
-UTIL_EVAL(UTIL_REPEAT(CONFIG_FLASH_SIMULATOR_FLASH_SIZE, STATS_NAME_EC))
-UTIL_EVAL(UTIL_REPEAT(CONFIG_FLASH_SIMULATOR_FLASH_SIZE, STATS_NAME_DIRTYR))
+UTIL_EVAL(UTIL_REPEAT(FLASH_SIMULATOR_FLASH_PAGE_COUNT, STATS_NAME_EC))
+UTIL_EVAL(UTIL_REPEAT(FLASH_SIMULATOR_FLASH_PAGE_COUNT, STATS_NAME_DIRTYR))
 STATS_NAME_END(flash_sim_stats);
 
 static u8_t mock_flash[FLASH_SIZE];
