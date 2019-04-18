@@ -4,6 +4,8 @@
 
 import argparse
 import os
+import shutil
+import subprocess
 
 from west import log
 from west import cmake
@@ -113,11 +115,11 @@ class Build(Forceable):
                             'clean', 'pristine', etc.)''')
         parser.add_argument('-p', '--pristine', choices=['auto', 'always',
                             'never'], action=AlwaysIfMissing, nargs='?',
-                            help='''Control whether the pristine target is run
-                            before building if a build system is present in the
-                            build dir. --pristine is the same as
-                            --pristine=always. If set to auto, the pristine
-                            target will be run only if required based on the
+                            help='''Control whether the build folder is made
+                            pristine before building if a build system is
+                            present in the build dir. --pristine is the same as
+                            --pristine=always. If set to auto, the build folder
+                            will be made pristine only if required based on the
                             existing build system and the options provided.
                             This allows for reusing a build folder even if it
                             contains build files for a different board or
@@ -159,8 +161,7 @@ class Build(Forceable):
                                                         self.auto_pristine))
         if is_zephyr_build(self.build_dir):
             if pristine == 'always':
-                log.inf('Making build dir {} pristine'.format(self.build_dir))
-                self._run_build('pristine')
+                self._run_pristine()
                 self.run_cmake = True
             else:
                 self._update_cache()
@@ -338,8 +339,7 @@ class Build(Forceable):
             format(self.build_dir, cached_board, self.args.board))
 
         if self.auto_pristine and (apps_mismatched or boards_mismatched):
-            log.inf('Making build dir {} pristine'.format(self.build_dir))
-            self._run_build('pristine')
+            self._run_pristine()
             self.cmake_cache = None
             log.dbg('run_cmake:', True, level=log.VERBOSE_EXTREME)
             self.run_cmake = True
@@ -372,6 +372,26 @@ class Build(Forceable):
         if cmake_opts:
             final_cmake_args.extend(cmake_opts)
         cmake.run_cmake(final_cmake_args)
+
+    def _run_pristine(self):
+        log.inf('Making build dir {} pristine'.format(self.build_dir))
+
+        zb = os.environ.get('ZEPHYR_BASE')
+        if not zb:
+            log.die('Internal error: ZEPHYR_BASE not set in the environment, '
+                    'and should have been by the main script')
+
+        if not is_zephyr_build(self.build_dir):
+            log.die('Refusing to run pristine on a folder that is not a Zephyr '
+                    'build system')
+
+        cmake_args = ['-P', '{}/cmake/pristine.cmake'.format(zb)]
+        cmake = shutil.which('cmake')
+        if cmake is None:
+            log.die('CMake is not installed or cannot be found; cannot make '
+                    'the build folder pristine')
+        cmd = [cmake] + cmake_args
+        subprocess.check_call(cmd, cwd=self.build_dir)
 
     def _run_build(self, target):
         extra_args = ['--target', target] if target else []
