@@ -165,14 +165,15 @@ extension commands (found in :file:`scripts/west_commands`).
    * - Option
      - Description
    * - ``build.pristine``
-     - String. Controls the way in which ``west build`` may run the ``pristine``
-       target before building. Can take the following values:
+     - String. Controls the way in which ``west build`` may clean the build
+       folder before building. Can take the following values:
 
-         - ``never`` (default): Never automatically run the ``pristine`` target.
-         - ``auto``:  ``west build`` will automatically run the ``pristine``
-           target before building, if a build system is present and the build
-           will fail otherwise (e.g. the user has specified a different board or
-           application from the one previously used to make the build
+         - ``never`` (default): Never automatically make the build folder
+           pristine.
+         - ``auto``:  ``west build`` will automatically make the build folder
+           pristine before building, if a build system is present and the build
+           would fail otherwise (e.g. the user has specified a different board
+           or application from the one previously used to make the build
            directory).
-         - ``always``: Always run the ``pristine`` target before building, if
+         - ``always``: Always make the build folder pristine before building, if
            a build system is present.
