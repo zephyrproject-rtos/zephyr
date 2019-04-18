@@ -1,0 +1,27 @@
+#
+# Copyright (c) 2019 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: Data Tightly-Integrated Memory
+version: 0.1
+
+description: >
+    This bindings describes the SiFive Data Tightly-Integrated Memory
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "sifive,dtim0"
+      generation: define
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+...

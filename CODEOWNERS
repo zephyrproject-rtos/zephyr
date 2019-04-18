@@ -164,6 +164,7 @@
 /dts/bindings/*/openisa*                  @MaureenHelm
 /dts/bindings/*/st*                       @erwango
 /dts/bindings/sensor/ams*                 @alexanderwachter
+/dts/bindings/*/sifive*                   @mateusz-holenko @kgugala @pgielda @nategraff-sifive
 /ext/fs/                                  @nashif @wentongwu
 /ext/hal/atmel/asf/sam/include/same70*/   @aurel32
 /ext/hal/atmel/asf/sam0/include/samr21/   @benpicco
