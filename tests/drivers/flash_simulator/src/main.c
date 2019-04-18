@@ -58,7 +58,7 @@ static void test_int(void)
 	int rc;
 	off_t i;
 
-	flash_dev = device_get_binding(DT_SIM_FLASH_DEV_NAME);
+	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
 
 	zassert_true(flash_dev != NULL,
 		     "Simulated flash driver was not found!");
