@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2018 Nordic Semiconductor ASA.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Basic Device Tree file for simulated flash entry declaration.
+ */
+
+/ {
+	sim_flash: sim-flash {
+		compatible = "sim-flash";
+
+		label = "FLASH_SIMULATOR";
+	};
+};
