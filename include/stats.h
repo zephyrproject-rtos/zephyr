@@ -66,8 +66,8 @@ struct stats_name_map {
 struct stats_hdr {
 	const char *s_name;
 	u8_t s_size;
-	u8_t s_cnt;
-	u16_t s_pad1;
+	u16_t s_cnt;
+	u8_t s_pad1;
 #ifdef CONFIG_STATS_NAMES
 	const struct stats_name_map *s_map;
 	int s_map_cnt;
@@ -214,8 +214,8 @@ struct stats_hdr {
  * @param group__               The group containing the entry to clear.
  * @param var__                 The statistic entry to clear.
  */
-void stats_init(struct stats_hdr *shdr, uint8_t size, uint8_t cnt,
-		const struct stats_name_map *map, uint8_t map_cnt);
+void stats_init(struct stats_hdr *shdr, uint8_t size, uint16_t cnt,
+		const struct stats_name_map *map, uint16_t map_cnt);
 
 /**
  * @brief Registers a statistics group to be managed.
@@ -255,8 +255,8 @@ int stats_register(const char *name, struct stats_hdr *shdr);
  *
  * @see STATS_INIT_AND_REG
  */
-int stats_init_and_reg(struct stats_hdr *hdr, uint8_t size, uint8_t cnt,
-		       const struct stats_name_map *map, uint8_t map_cnt,
+int stats_init_and_reg(struct stats_hdr *hdr, uint8_t size, uint16_t cnt,
+		       const struct stats_name_map *map, uint16_t map_cnt,
 		       const char *name);
 
 /**
