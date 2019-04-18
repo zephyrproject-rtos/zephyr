@@ -46,6 +46,8 @@ source "drivers/gpio/Kconfig.nrfx"
 
 source "drivers/gpio/Kconfig.cmsdk_ahb"
 
+source "drivers/gpio/Kconfig.cc13xx_cc26xx"
+
 source "drivers/gpio/Kconfig.cc32xx"
 
 source "drivers/gpio/Kconfig.sifive"

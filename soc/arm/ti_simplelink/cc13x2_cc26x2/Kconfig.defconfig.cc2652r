@@ -1,0 +1,14 @@
+# Kconfig.defconfig.cc2652r - Texas Instruments SimpleLink CC2652R
+#
+# Copyright (c) 2019 Brett Witherspoon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_CC2652R
+
+config SOC
+	string
+	default "cc2652r"
+
+endif # SOC_CC2652R

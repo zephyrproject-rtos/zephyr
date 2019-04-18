@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2019 Brett Witherspoon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <ti/cc13x2_cc26x2.dtsi>
+
+/ {
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(80)>;
+	};
+
+	flash0: serial-flash@0 {
+		reg = <0x0 DT_SIZE_K(352)>;
+	};
+};
