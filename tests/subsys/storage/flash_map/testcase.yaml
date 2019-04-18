@@ -1,5 +1,5 @@
 tests:
   storage.flash_map:
     platform_whitelist: nrf52840_pca10056 nrf52_pca10040 nrf51_pca10028
-        frdm_k64f hexiwear_k64
+        frdm_k64f hexiwear_k64 qemu_x86
     tags: flash_map
