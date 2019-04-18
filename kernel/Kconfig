@@ -457,6 +457,14 @@ endmenu
 
 menu "Other Kernel Object Options"
 
+config ALARM
+	bool "Kernel alarm infrastructure"
+	default n
+	help
+	  This feature enables the k_alarm infrastructure, which
+	  provides schedulable callbacks at the resolution of the system
+	  clock, unmediated by any tick concept.
+
 config NUM_MBOX_ASYNC_MSGS
 	int "Maximum number of in-flight asynchronous mailbox messages"
 	default 10

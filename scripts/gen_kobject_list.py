@@ -84,6 +84,7 @@ kobjects = OrderedDict ([
     ("k_stack", (None, False)),
     ("k_thread", (None, False)),
     ("k_timer", (None, False)),
+    ("k_alarm", ("CONFIG_ALARM", False)),
     ("_k_thread_stack_element", (None, False)),
     ("device", (None, False)),
     ("sys_mutex", (None, True))

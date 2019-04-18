@@ -56,6 +56,15 @@
 		_k_timer_list_end = .;
 	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
+#ifdef CONFIG_ALARM
+	SECTION_DATA_PROLOGUE(_k_alarm_area,,SUBALIGN(4))
+	{
+		_k_alarm_list_start = .;
+		KEEP(*("._k_alarm.static.*"))
+		_k_alarm_list_end = .;
+	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
+#endif /* CONFIG_ALARM */
+
 	SECTION_DATA_PROLOGUE(_k_mem_slab_area,,SUBALIGN(4))
 	{
 		_k_mem_slab_list_start = .;

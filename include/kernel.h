@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2016, Wind River Systems, Inc.
+ * Copyright (c) 2019, Peter Bigot Consulting, LLC
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -125,6 +126,9 @@ struct k_stack;
 struct k_mem_slab;
 struct k_mem_pool;
 struct k_timer;
+#if CONFIG_ALARM
+struct k_alarm;
+#endif /* CONFIG_ALARM */
 struct k_poll_event;
 struct k_poll_signal;
 struct k_mem_domain;
@@ -1416,6 +1420,309 @@ struct k_timer {
 	}
 
 #define K_TIMER_INITIALIZER DEPRECATED_MACRO Z_TIMER_INITIALIZER
+
+#if CONFIG_ALARM
+
+enum k_alarm_state {
+	/*
+	 * Initial and idle state of an alarm.
+	 *
+	 * Transitions to:
+	 * * SCHEDULED on k_alarm_schedule();
+	 * * READY on k_alarm_schedule().
+	 */
+	K_ALARM_UNSCHEDULED,
+
+	/*
+	 * State of an alarm that had not yet reached its deadline the
+	 * last time it was inspected.
+	 *
+	 * Transitions to:
+	 * * READY when system clock determines the alarm deadline has
+	 *   been reached;
+	 * * CANCELLED on k_alarm_cancel().
+	 */
+	K_ALARM_SCHEDULED,
+
+	/*
+	 * State of an alarm that has reached its deadline, but has
+	 * not yet had its handler callback invoked.
+	 *
+	 * Transitions to:
+	 * * ACTIVE when system alarm infrastructure is processing the
+	 *   alarm;
+	 * * CANCELLED on k_alarm_cancel().
+	 */
+	K_ALARM_READY,
+
+	/*
+	 * State the alarm is placed in just before the system alarm
+	 * infrastructure invokes its handler_fn.
+	 *
+	 * The alarm is in this state when its handler_fn is invoked.
+	 *
+	 * Transitions to:
+	 * * UNSCHEDULED if its state is still ACTIVE when the
+	 *   handler() function returns;
+	 * * Other states if the handler() function invokes
+	 *   k_alarm_schedule().
+	 */
+	K_ALARM_ACTIVE,
+
+	/*
+	 * State the alarm is placed in just before k_alarm_cancel()
+	 * invokes its cancel_fn.
+	 *
+	 * The alarm is in this state when its cancel_fn is invoked.
+	 *
+	 * Transitions to:
+	 * * Unscheduled if its state is still CANCELLED when the
+	 *   cancel_fn returns;
+	 * * Other states if the cancel function invokes
+	 *   k_alarm_schedule().
+	 */
+	K_ALARM_CANCELLED,
+};
+
+/** Treat late-to-set as an error in  k_alarm_schedule().
+ *
+ * Normally late-to-set alarms are scheduled to fire as soon as
+ * possible.  When this flag is included such an alarm will not be
+ * scheduled; instead the `k_alarm_schedule()` will fail with
+ * `-EINVAL`.
+ */
+#define K_ALARM_FLAG_ERROR_IF_LATE 0x01
+
+/** Override an existing scheduled alarm.
+ *
+ * This flag overrides the behavior of `k_alarm_schedule()` when
+ * invoked with an already-scheduled alarm that has not fired; it has
+ * no effect in other alarm states.
+ *
+ * If the flag is present the alarm will be rescheduled to the new
+ * deadline.  `K_ALARM_FLAG_ERROR_IF_LATE` applies to the attempt to
+ * reschedule.
+ *
+ * This flag supersedes `K_ALARM_FLAG_IF_SOONER`.
+ */
+#define K_ALARM_FLAG_REPLACE 0x02
+
+/** Override an existing scheduled alarm if the new deadline is closer.
+ *
+ * This flag overrides the behavior of `k_alarm_schedule()` when
+ * invoked with an already-scheduled alarm that has not fired; it has
+ * no effect in other alarm states.
+ *
+ * If the flag is present the alarm will be rescheduled to the new
+ * deadline only if that is sooner than the existing deadline;
+ * otherwise the existing deadline will be left unchanged.
+ *
+ * `K_ALARM_ERROR_IF_LATE` applies if the alarm is rescheduled.
+ *
+ * This flag is superseded by `K_ALARM_FLAG_REPLACE`.
+ */
+#define K_ALARM_FLAG_IF_SOONER 0x04
+
+typedef void (*k_alarm_handler_t)(struct k_alarm *alarm,
+				  void *ud);
+
+typedef void (*k_alarm_cancel_t)(struct k_alarm *alarm,
+				 void *ud);
+
+struct k_alarm {
+	/* links the alarm into the scheduled and ready queues. */
+	sys_dnode_t node;
+
+	/* Low 32-bits of system clock at which the alarm should fire. */
+	u32_t deadline;
+
+	/* runs in ISR context */
+	k_alarm_handler_t handler_fn;
+
+	/* runs in the context of the thread that calls k_alarm_cancel() */
+	k_alarm_cancel_t cancel_fn;
+
+	/* user-specific data passed to handler and cancel functions. */
+	void *user_data;
+
+	/* the state of the alarm. */
+	enum k_alarm_state state;
+};
+
+#define Z_ALARM_INITIALIZER(handler, cancel, ud) (struct k_alarm) \
+	{ \
+	.node = {},\
+	.deadline = 0, \
+	.handler_fn = handler, \
+	.cancel_fn = cancel, \
+	.user_data = ud, \
+	.state = K_ALARM_UNSCHEDULED, \
+	}
+
+#define K_ALARM_DEFINE(name, handler, cancel, user_data)	\
+	struct k_alarm name					\
+	__in_section(_k_alarm, static, name) =			\
+		Z_ALARM_INITIALIZER(handler, cancel, user_data)
+
+/** Ensure the RTC driving the system clock is configured to generate
+ * an interrupt for the next scheduled deadline.
+ *
+ * This is invoked by the alarm infrastructure whenever the head of
+ * the scheduled alarm list changes.  The implementation should be
+ * provided by the platform-specific system timer module.
+ *
+ * @note This is not user API.
+ */
+void z_alarm_update_deadline(void);
+
+/** Determine how long until alarm processing is required.
+ *
+ * @note This is not user API.
+ *
+ * @param deadlinep pointer to a location to store the absolute
+ * deadline of the first scheduled alarm.  The referenced object is
+ * only modified if this function returns a positive value.
+ *
+ * @retval negative if no alarms are ready or scheduled.
+ *
+ * @retval 0 if at least one alarm is in the ready queue.
+ *
+ * @retval positive if there is a scheduled alarm.  *deadlinep will
+ * contain the corresponding deadline, which may be in the past.
+ */
+int k_alarm_next_deadline_(u32_t *deadlinep);
+
+/** Move all scheduled alarms that are due at or before now to the end
+ * of the ready list.
+ *
+ * This is invoked from the platform-specific timer module interrupt
+ * handler when the system cycle counter reaches a value relevant to
+ * the alarm infrastructure.
+ *
+ * @note This is not user API.
+ *
+ * @retval negative if a non-empty ready list was left unchanged.
+ *
+ * @retval zero if there are no ready alarms.
+ *
+ * @retval postive the number of alarms added to the ready list.
+ */
+int k_alarm_split_(u32_t now);
+
+/** Walk the set of ready alarms invoking each one's handler.
+ *
+ * This is invoked from the platform-specific timer module interrupt
+ * handler after the system clocks have been updated and after any
+ * k_timer processing has completed.  It iteratively invokes the
+ * handlers for each ready alarm in order of scheduling within
+ * deadline.
+ *
+ * @note This is not user API.
+ */
+void k_alarm_process_ready_(void);
+
+/** Schedule the alarm to fire at the corresponding deadline.
+ *
+ * Normally an alarm can be scheduled only when its state is
+ * #K_ALARM_UNSCHEDULED, #K_ALARM_ACTIVE, or #K_ALARM_CANCELLED.  The
+ * @p flags parameter can be used to allow scheduling when in state
+ * #K_ALARM_SCHEDULED under certain circumstances.
+ *
+ * @param alarm the alarm to be scheduled.  This must be in
+ *  state.
+ *
+ * @param deadline the low 32 bits of the system clock time at which
+ * the alarm should be scheduled.  If this is not less than 2^31 ticks
+ * in the future the deadline will be interpreted to have passed, and
+ * the alarm will immediately transition to the READY state.
+ *
+ * @param flags options that affect the scheduling behavior, including
+ * `K_ALARM_FLAG_ERROR_IF_LATE`, `K_ALARM_FLAG_REPLACE`, and
+ * `K_ALARM_FLAG_IF_SOONER`.
+ *
+ * @retval positive if the alarm has been scheduled to fire in the future.
+ *
+ * @retval zero if the alarm has been added to the ready list.
+ *
+ * @retval -EINVAL if @p alarm is null.
+ *
+ * @retval -EINVAL if the alarm state is corrupted.
+ *
+ * @retval -EBUSY if the alarm is not in UNSCHEDULED, ACTIVE, or
+ * CANCELLED state.
+ */
+__syscall int k_alarm_schedule(struct k_alarm *alarm,
+			       u32_t deadline,
+			       u32_t flags);
+
+int z_impl_k_alarm_schedule(struct k_alarm *alarm,
+			    u32_t deadline,
+			    u32_t flags);
+
+/** Cancel a scheduled or ready alarm.
+ *
+ * If a non-error result is returned the registered cancel handler
+ * will have been invoked, and if it did not reschedule the alarm the
+ * alarm is left unscheduled.
+ *
+ * @retval positive if the alarm was scheduled but had not reached its
+ * deadline at the point the cancellation was requested.
+ *
+ * @retval 0 if the alarm had reached its deadline but the callback
+ * had not been invoked at the point where the cancellation was requested.
+ *
+ * @retval -EINVAL if the alarm was in any other state than SCHEDULED
+ * or READY when the cancellation was requested.
+ */
+__syscall int k_alarm_cancel(struct k_alarm *alarm);
+
+int z_impl_k_alarm_cancel(struct k_alarm *alarm);
+
+/** Retrieve the user data pointer associated with the alarm. */
+__syscall void *k_alarm_get_user_data(struct k_alarm *alarm);
+
+static inline void *z_impl_k_alarm_get_user_data(struct k_alarm *alarm)
+{
+	return alarm->user_data;
+}
+
+/** Associate user data with the alarm.
+ *
+ * This data is passed along with the alarm to the alarm handler and
+ * cancel callbacks.
+ */
+__syscall void k_alarm_set_user_data(struct k_alarm *alarm,
+				     void *user_data);
+
+static inline void z_impl_k_alarm_set_user_data(struct k_alarm *alarm,
+						void *user_data)
+{
+	alarm->user_data = user_data;
+}
+
+/** Initialize a dynamically allocated alarm.
+ *
+ * @warning This must not be invoked if the alarm is not in an
+ * unscheduled (or uninitialized) state.
+ *
+ * @param alarm pointer to the alarm structure to initialize.
+ *
+ * @param handler the handler to be invoked when the alarm deadline is
+ * reached.  (A null pointer may be passed if you don't want the alarm
+ * to have any useful effect.)
+ *
+ * @param cancel the handler to be invoked if the alarm is cancelled.
+ * Pass a null pointer if no special handling is required at
+ * cancellation.
+ *
+ * @param user_data initializes the alarm callback @c ud parameter.
+ */
+void k_alarm_init(struct k_alarm *alarm,
+		  k_alarm_handler_t handler,
+		  k_alarm_cancel_t cancel,
+		  void *user_data);
+
+#endif /* CONFIG_ALARM */
 
 /**
  * INTERNAL_HIDDEN @endcond
