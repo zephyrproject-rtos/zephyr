@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <net/buf.h>
 #include <bluetooth/buf.h>
+#include <device.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -166,6 +167,19 @@ struct bt_hci_driver {
  * @return 0 on success or negative error number on failure.
  */
 int bt_hci_driver_register(const struct bt_hci_driver *drv);
+
+/**
+ * @brief Setup the HCI transport, which usually means to reset the
+ * Bluetooth IC.
+ *
+ * @note A weak version of this function is included in the H4 driver, so
+ *       defining it is optional per board.
+ *
+ * @param dev The device structure for the bus connecting to the IC
+ *
+ * @return 0 on success, negative error value on failure
+ */
+int bt_hci_transport_setup(struct device *dev);
 
 #ifdef __cplusplus
 }
