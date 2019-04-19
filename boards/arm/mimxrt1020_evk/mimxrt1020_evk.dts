@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/nxp_rt.dtsi>
+#include <nxp/nxp_rt1020.dtsi>
 
 / {
 	model = "NXP MIMXRT1020-EVK board";
