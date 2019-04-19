@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2019, Linaro
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/nxp_rt.dtsi>
+
+/* i.MX rt1015 default FlexRAM partition:
+ * ITCM: 32KB
+ * DTCM: 32KB
+ * OCRAM: 64KB
+ */
+&itcm0 {
+	reg = <0x00000000 0x8000>;
+};
+
+&dtcm0 {
+	reg = <0x20000000 0x8000>;
+};
+
+&ocram0 {
+	reg = <0x20200000 0x10000>;
+};
