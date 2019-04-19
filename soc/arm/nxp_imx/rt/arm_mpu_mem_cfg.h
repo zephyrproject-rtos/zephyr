@@ -10,7 +10,9 @@
 #include <arch/arm/cortex_m/mpu/arm_mpu.h>
 
 /* Flash Region Definitions */
-#if CONFIG_FLASH_SIZE == 64
+#if CONFIG_FLASH_SIZE == 32
+#define REGION_FLASH_SIZE REGION_32K
+#elif CONFIG_FLASH_SIZE == 64
 #define REGION_FLASH_SIZE REGION_64K
 #elif CONFIG_FLASH_SIZE == 128
 #define REGION_FLASH_SIZE REGION_128K
