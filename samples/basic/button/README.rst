@@ -15,14 +15,8 @@ The demo assumes that a push button is connected to one of GPIO lines. The
 sample code is configured to work on boards with user defined buttons and that
 have defined the SW0_* variables.
 
-To use this sample, you will require a board that defines the user switch in its
-header file. The :file:`board.h` must define the following variables:
-
-- SW0_GPIO_NAME (or DT_ALIAS_SW0_GPIOS_CONTROLLER)
-- DT_ALIAS_SW0_GPIOS_PIN
-
-Alternatively, this could also be done by defining 'sw0' alias in the board
-device tree description file.
+This is done by defining 'sw0' alias in the board device tree
+description file.
 
 
 Building and Running
