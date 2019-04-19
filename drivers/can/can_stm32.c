@@ -13,7 +13,7 @@
 #include <errno.h>
 #include <stdbool.h>
 #include <can.h>
-#include "stm32_can.h"
+#include "can_stm32.h"
 
 #include <logging/log.h>
 LOG_MODULE_DECLARE(can_driver, CONFIG_CAN_LOG_LEVEL);
