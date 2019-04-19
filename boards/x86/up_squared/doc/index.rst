@@ -56,7 +56,7 @@ This board supports the following hardware features:
 
 * Advanced Programmed Interrupt Controller (APIC)
 
-* Serial Ports in Polling and Interrupt Driven Modes
+* Serial Ports in Polling and Interrupt Driven Modes, High-Speed
 
 * GPIO
 
@@ -79,16 +79,51 @@ This board supports the following hardware features:
 
 The Zephyr kernel currently does not support other hardware features.
 
-Serial Port Polling Mode Support
---------------------------------
+Serial Port Support
+-------------------
 
-The polling mode serial port allows debug output to be printed.
+Serial port I/O is supported in both polling and interrupt-driven modes.
 
-Serial Port Interrupt Mode Support
-----------------------------------
+Baud rates beyond 115.2kbps (up to 3.6864Mbps) are supported, with additional
+configuration. The UARTs are fed a master clock which is fed into a PLL which
+in turn outputs the baud master clock. The PLL is controlled by a per-UART
+32-bit register called ``PRV_CLOCK_PARAMS`` (aka the ``PCP``), the format of
+which is:
 
-The interrupt mode serial port provides general serial communication
-and external communication.
++--------+---------+--------+--------+
+| [31]   | [30:16] | [15:1] | [0]    |
++========+=========+========+========+
+| enable | ``m``   | ``n``  | toggle |
++--------+---------+--------+--------+
+
+The resulting baud master clock frequency is ``(n/m)`` * master.
+
+On the UP^2, the master clock is 100MHz, and the firmware by default sets
+the ``PCP`` to ``0x3d090240``, i.e., ``n = 288``, ``m =  15625``, which
+results in the de-facto standard 1.8432MHz master clock and a max baud rate
+of 115.2k.  Higher baud rates are enabled by changing the PCP and telling
+Zephyr what the resulting master clock is.
+
+Use devicetree to set the value of the ``PRV_CLOCK_PARAMS`` register in
+the UART block of interest. Typically an overlay ``up_squared.overlay``
+would be present in the application directory, and would look something
+like this:
+
+   .. code-block:: console
+
+    / {
+        soc {
+            uart@0 {
+                pcp = <0x3d090900>;
+                clock-frequency = <7372800>;
+                current-speed = <230400>;
+            };
+        };
+    };
+
+The relevant variables are ``pcp`` (the value to use for ``PRV_CLOCK_PARAMS``),
+and ``clock-frequency`` (the resulting baud master clock). The meaning of
+``current-speed`` is unchanged, and as usual indicates the initial baud rate.
 
 Interrupt Controller
 --------------------
