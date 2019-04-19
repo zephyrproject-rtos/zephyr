@@ -1,6 +1,10 @@
 # Kconfig - STLIB config
-
-# Copyright (c) 2017 STMicroelectronics
+#
+# Copyright (c) 2019 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
 
 config HAS_STLIB
     bool
+    imply NEWLIB_LIBC
+    imply NEWLIB_LIBC_FLOAT_PRINTF
