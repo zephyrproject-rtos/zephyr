@@ -13,7 +13,7 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(mcp2515_can);
 
-#include "mcp2515.h"
+#include "can_mcp2515.h"
 
 static int mcp2515_cmd_soft_reset(struct device *dev)
 {
