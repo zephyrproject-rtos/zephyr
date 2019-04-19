@@ -102,6 +102,10 @@ void *realloc(void *ptr, size_t requested_size)
 	size_t block_size, total_requested_size;
 	void *new_ptr;
 
+	if (ptr == NULL) {
+		return malloc(requested_size);
+	}
+
 	if (requested_size == 0) {
 		return NULL;
 	}
