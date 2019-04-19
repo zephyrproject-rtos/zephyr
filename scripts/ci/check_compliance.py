@@ -621,7 +621,7 @@ class License(ComplianceTest):
                                 report += ("* {} has unknown SPDX: {}\n".format(
                                     orig_path, lic['key']))
 
-                    if not file['copyrights']:
+                    if not file['copyrights'] and file.get("programming_language") != 'CMake':
                         report += ("* {} missing copyright.\n".format(orig_path))
 
         if report != "":
