@@ -225,10 +225,6 @@ struct uart_event {
  */
 typedef void (*uart_callback_t)(struct uart_event *evt, void *user_data);
 
-#ifdef CONFIG_PCI
-#include <drivers/pci/pci.h>
-#include <drivers/pci/pci_mgr.h>
-#endif
 /**
  * @brief Options for @a UART initialization.
  */
@@ -331,10 +327,6 @@ struct uart_device_config {
 	};
 
 	u32_t sys_clk_freq;
-
-#ifdef CONFIG_PCI
-	struct pci_dev_info  pci_dev;
-#endif /* CONFIG_PCI */
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uart_irq_config_func_t	irq_config_func;
