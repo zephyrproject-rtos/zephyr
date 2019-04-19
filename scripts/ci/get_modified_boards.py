@@ -8,6 +8,7 @@ import re, os
 import sh
 import logging
 import argparse
+import glob
 
 if "ZEPHYR_BASE" not in os.environ:
     logging.error("$ZEPHYR_BASE environment variable undefined.\n")
@@ -50,6 +51,7 @@ def parse_args():
 
 def main():
     boards = set()
+    all_boards = set()
 
     args = parse_args()
     if not args.commits:
@@ -65,8 +67,15 @@ def main():
         if p and p.groups():
             boards.add(p.group(1))
 
-    if boards:
-        print("-p\n%s" %("\n-p\n".join(boards)))
+    for b in boards:
+        suboards = glob.glob("boards/*/%s/*.yaml" %(b))
+        for subboard in suboards:
+            name = os.path.splitext(os.path.basename(subboard))[0]
+            if name:
+                all_boards.add(name)
+
+    if all_boards:
+        print("-p\n%s" %("\n-p\n".join(all_boards)))
 
 
 
