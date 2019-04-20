@@ -52,7 +52,7 @@
 
 			label = "UART_1";
 			clock-frequency = <1843200>;
-			interrupts = <3 IRQ_TYPE_LEVEL_LOW 3>;
+			interrupts = <5 IRQ_TYPE_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
 
 			status = "ok";
