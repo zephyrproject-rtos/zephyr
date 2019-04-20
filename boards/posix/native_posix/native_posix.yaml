@@ -4,6 +4,7 @@ type: native
 arch: posix
 toolchain:
   - zephyr
+  - llvm
 supported:
   - netif:eth
   - usb_device
