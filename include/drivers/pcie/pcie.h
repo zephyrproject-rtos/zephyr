@@ -103,6 +103,21 @@ extern u32_t pcie_get_iobar(pcie_bdf_t bdf, unsigned int index);
  */
 extern void pcie_set_cmd(pcie_bdf_t bdf, u32_t bits, bool on);
 
+/**
+ * @brief Enable the PCI(e) endpoint to generate the specified IRQ.
+ *
+ * @param bdf the PCI(e) endpoint
+ * @param irq the IRQ to generate
+ * @return true if successful, false otherwise
+ *
+ * If MSI is enabled and the endpoint supports it, the endpoint will
+ * be configured to generate the specified IRQ via MSI. Otherwise, the
+ * endpoint configuration space is queried to ensure that its wired
+ * IRQ has been routed by the boot firmware to the specified IRQ, and
+ * and the IRQ is enabled (at the I/O APIC, or wherever appropriate).
+ */
+extern bool pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq);
+
 /*
  * Configuration word 0 aligns directly with pcie_id_t.
  */
@@ -160,6 +175,18 @@ extern void pcie_set_cmd(pcie_bdf_t bdf, u32_t bits, bool on);
 #define PCIE_CONF_BAR_64(w)		(((w) & 0x00000006U) == 0x00000004U)
 #define PCIE_CONF_BAR_ADDR(w)		((w) & 0xFFFFFFF0U)
 #define PCIE_CONF_BAR_NONE		0U
+
+/*
+ * Word 15 contains information related to interrupts.
+ *
+ * We're only interested in the low byte, which is [supposed to be] set by
+ * the firmware to indicate which wire IRQ the device interrupt is routed to.
+ */
+
+#define PCIE_CONF_INTR		15U
+
+#define PCIE_CONF_INTR_IRQ(w)	((w) & 0xFFU)
+#define PCIE_CONF_INTR_IRQ_NONE	0xFFU  /* no interrupt routed */
 
 #ifdef __cplusplus
 }

@@ -88,6 +88,12 @@ static void show(const struct shell *shell, pcie_bdf_t bdf)
 		shell_fprintf(shell, SHELL_NORMAL, "\n");
 		show_bars(shell, bdf);
 		show_msi(shell, bdf);
+		data = pcie_conf_read(bdf, PCIE_CONF_INTR);
+		if (PCIE_CONF_INTR_IRQ(data) != PCIE_CONF_INTR_IRQ_NONE) {
+			shell_fprintf(shell, SHELL_NORMAL,
+				      "    wired interrupt on IRQ %d\n",
+				      PCIE_CONF_INTR_IRQ(data));
+		}
 	}
 }
 

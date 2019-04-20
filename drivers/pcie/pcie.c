@@ -4,8 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <kernel.h>
 #include <stdbool.h>
 #include <drivers/pcie/pcie.h>
+
+#if CONFIG_PCIE_MSI
+#include <drivers/pcie/msi.h>
+#endif
 
 /* functions documented in drivers/pcie/pcie.h */
 
@@ -77,4 +82,22 @@ u32_t pcie_get_mbar(pcie_bdf_t bdf, unsigned int index)
 u32_t pcie_get_iobar(pcie_bdf_t bdf, unsigned int index)
 {
 	return pcie_get_bar(bdf, index, true);
+}
+
+bool pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)
+{
+#if CONFIG_PCIE_MSI
+	if (pcie_set_msi(bdf, irq))
+		return true;
+#endif
+
+	u32_t data;
+
+	data = pcie_conf_read(bdf, PCIE_CONF_INTR);
+	if (PCIE_CONF_INTR_IRQ(data) == irq) {
+		irq_enable(irq);
+		return true;
+	}
+
+	return false;
 }
