@@ -49,9 +49,9 @@ int sntp_init(struct sntp_ctx *ctx, struct sockaddr *addr,
  *
  * @param ctx Address of sntp context.
  * @param timeout Timeout of waiting for sntp response (in milliseconds).
- * @param epoch_time Seconds since 1 January 1970.
+ * @param epoch_time Seconds since 1 January 1970 (output).
  *
- * @return 0 if ok, <0 if error.
+ * @return 0 if ok, <0 if error (-ETIMEDOUT if timeout).
  */
 int sntp_request(struct sntp_ctx *ctx, u32_t timeout, u64_t *epoch_time);
 
