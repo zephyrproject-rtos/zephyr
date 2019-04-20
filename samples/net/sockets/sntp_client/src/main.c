@@ -33,17 +33,20 @@ void main(void)
 	rv = sntp_init(&ctx, (struct sockaddr *) &addr,
 		       sizeof(struct sockaddr_in));
 	if (rv < 0) {
-		LOG_ERR("Failed to init sntp ctx: %d", rv);
+		LOG_ERR("Failed to init SNTP IPv4 ctx: %d", rv);
 		goto end;
 	}
 
-	rv = sntp_request(&ctx, K_FOREVER, &epoch_time);
+	LOG_INF("Sending SNTP IPv4 request...");
+	rv = sntp_request(&ctx, K_SECONDS(4), &epoch_time);
 	if (rv < 0) {
-		LOG_ERR("Failed to send sntp request: %d", rv);
+		LOG_ERR("SNTP IPv4 request failed: %d", rv);
 		goto end;
 	}
-	LOG_DBG("time: %lld", epoch_time);
-	LOG_DBG("status: %d", rv);
+
+	LOG_INF("status: %d", rv);
+	LOG_INF("time since Epoch: high word: %u, low word: %u",
+		(u32_t)(epoch_time >> 32), (u32_t)epoch_time);
 
 #if defined(CONFIG_NET_IPV6)
 	sntp_close(&ctx);
@@ -57,18 +60,21 @@ void main(void)
 	rv = sntp_init(&ctx, (struct sockaddr *) &addr6,
 		       sizeof(struct sockaddr_in6));
 	if (rv < 0) {
-		LOG_ERR("Failed to init sntp ctx: %d", rv);
+		LOG_ERR("Failed to init SNTP IPv6 ctx: %d", rv);
 		goto end;
 	}
 
+	LOG_INF("Sending SNTP IPv6 request...");
+	/* With such a timeout, this is expected to fail. */
 	rv = sntp_request(&ctx, K_NO_WAIT, &epoch_time);
 	if (rv < 0) {
-		LOG_ERR("Failed to send sntp request: %d", rv);
+		LOG_ERR("SNTP IPv6 request: %d", rv);
 		goto end;
 	}
 
-	LOG_DBG("time: %lld", epoch_time);
-	LOG_DBG("status: %d", rv);
+	LOG_INF("status: %d", rv);
+	LOG_INF("time since Epoch: high word: %u, low word: %u",
+		(u32_t)(epoch_time >> 32), (u32_t)epoch_time);
 #endif
 
 end:
