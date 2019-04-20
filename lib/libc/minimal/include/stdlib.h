@@ -24,6 +24,10 @@ void *calloc(size_t nmemb, size_t size);
 void *realloc(void *ptr, size_t size);
 void *reallocarray(void *ptr, size_t nmemb, size_t size);
 
+void *bsearch(const void *key, const void *array,
+	      size_t count, size_t size,
+	      int (*cmp)(const void *key, const void *element));
+
 int rand(void);
 
 #define abs(x) ((x) < 0 ? -(x) : (x))
