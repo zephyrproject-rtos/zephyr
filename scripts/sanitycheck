@@ -1779,7 +1779,7 @@ class TestCase:
                 if _subcases:
                     subcases += _subcases
             except ValueError as e:
-                error("%s: can't find: %s", filename, e)
+                error("%s: can't find: %s" % (filename, e))
         return subcases
 
 
