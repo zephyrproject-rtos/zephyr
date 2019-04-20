@@ -28,38 +28,42 @@ find_program(CMAKE_RANLIB        llvm-ranlib    ${find_program_clang_args})
 find_program(CMAKE_OBJCOPY       objcopy        ${find_program_binutils_args})
 find_program(CMAKE_READELF       readelf        ${find_program_binutils_args})
 
-foreach(file_name include include-fixed)
+if(NOT "${ARCH}" STREQUAL "posix")
+
+  foreach(file_name include include-fixed)
+    execute_process(
+      COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
+      OUTPUT_VARIABLE _OUTPUT
+      )
+    string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
+
+    list(APPEND NOSTDINC ${_OUTPUT})
+  endforeach()
+
+  foreach(isystem_include_dir ${NOSTDINC})
+    list(APPEND isystem_include_flags -isystem ${isystem_include_dir})
+  endforeach()
+
+  # This libgcc code is partially duplicated in compiler/*/target.cmake
   execute_process(
-    COMMAND ${CMAKE_C_COMPILER} --print-file-name=${file_name}
-    OUTPUT_VARIABLE _OUTPUT
+    COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
+    OUTPUT_VARIABLE LIBGCC_FILE_NAME
+    OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-  string(REGEX REPLACE "\n" "" _OUTPUT ${_OUTPUT})
 
-  list(APPEND NOSTDINC ${_OUTPUT})
-endforeach()
+  assert_exists(LIBGCC_FILE_NAME)
 
-foreach(isystem_include_dir ${NOSTDINC})
-  list(APPEND isystem_include_flags -isystem ${isystem_include_dir})
-endforeach()
+  get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
 
-# This libgcc code is partially duplicated in compiler/*/target.cmake
-execute_process(
-  COMMAND ${CMAKE_C_COMPILER} ${TOOLCHAIN_C_FLAGS} --print-libgcc-file-name
-  OUTPUT_VARIABLE LIBGCC_FILE_NAME
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  )
+  assert_exists(LIBGCC_DIR)
 
-assert_exists(LIBGCC_FILE_NAME)
+  list(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
+  list(APPEND TOOLCHAIN_LIBS gcc)
 
-get_filename_component(LIBGCC_DIR ${LIBGCC_FILE_NAME} DIRECTORY)
+  set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)
+  string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
-assert_exists(LIBGCC_DIR)
-
-list(APPEND LIB_INCLUDE_DIR "-L\"${LIBGCC_DIR}\"")
-list(APPEND TOOLCHAIN_LIBS gcc)
-
-set(CMAKE_REQUIRED_FLAGS -nostartfiles -nostdlib ${isystem_include_flags} -Wl,--unresolved-symbols=ignore-in-object-files)
-string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
+endif()
 
 # Load toolchain_cc-family macros
 
