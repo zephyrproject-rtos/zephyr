@@ -105,9 +105,14 @@ static int sntp_recv_response(struct sntp_ctx *sntp, u32_t timeout,
 	int status;
 	int rcvd;
 
-	if (poll(sntp->sock.fds, sntp->sock.nfds, timeout) < 0) {
+	status = poll(sntp->sock.fds, sntp->sock.nfds, timeout);
+	if (status < 0) {
 		NET_ERR("Error in poll:%d", errno);
 		return -errno;
+	}
+
+	if (status == 0) {
+		return -ETIMEDOUT;
 	}
 
 	rcvd = recv(sntp->sock.fd, (u8_t *)&buf, sizeof(buf), 0);
