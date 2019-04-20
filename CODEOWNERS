@@ -237,6 +237,7 @@
 /lib/gui/                                 @vanwinkeljan
 /lib/os/                                  @andrewboie @andyross
 /lib/posix/                               @pfalcon
+/lib/libc/minimal/source/stdlib/bsearch.c @balajikulkarni
 /kernel/device.c                          @andrewboie @andyross @nashif
 /kernel/idle.c                            @andrewboie @andyross @nashif
 /samples/basic/servo_motor/*microbit*     @jhe
