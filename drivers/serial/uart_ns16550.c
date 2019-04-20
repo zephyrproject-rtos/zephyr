@@ -827,12 +827,16 @@ static void irq_config_func_0(struct device *dev)
 		    DT_UART_NS16550_PORT_0_IRQ_PRI,
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_0),
 		    DT_UART_NS16550_PORT_0_IRQ_FLAGS);
-	irq_enable(DT_UART_NS16550_PORT_0_IRQ);
-#if defined(UART_NS16550_PCIE_ENABLED) && CONFIG_PCIE_MSI
+
+#ifdef UART_NS16550_PCIE_ENABLED
 	if (DEV_CFG(dev)->pcie) {
-		pcie_set_msi(DT_UART_NS16550_PORT_0_BASE_ADDR,
-			     DT_UART_NS16550_PORT_0_IRQ);
+		pcie_irq_enable(DT_UART_NS16550_PORT_0_BASE_ADDR,
+				DT_UART_NS16550_PORT_0_IRQ);
+	} else {
+		irq_enable(DT_UART_NS16550_PORT_0_IRQ);
 	}
+#else
+	irq_enable(DT_UART_NS16550_PORT_0_IRQ);
 #endif
 }
 #endif
@@ -887,12 +891,16 @@ static void irq_config_func_1(struct device *dev)
 		    DT_UART_NS16550_PORT_1_IRQ_PRI,
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_1),
 		    DT_UART_NS16550_PORT_1_IRQ_FLAGS);
-	irq_enable(DT_UART_NS16550_PORT_1_IRQ);
-#if defined(UART_NS16550_PCIE_ENABLED) && CONFIG_PCIE_MSI
+
+#ifdef UART_NS16550_PCIE_ENABLED
 	if (DEV_CFG(dev)->pcie) {
-		pcie_set_msi(DT_UART_NS16550_PORT_1_BASE_ADDR,
-			     DT_UART_NS16550_PORT_1_IRQ);
+		pcie_irq_enable(DT_UART_NS16550_PORT_1_BASE_ADDR,
+				DT_UART_NS16550_PORT_1_IRQ);
+	} else {
+		irq_enable(DT_UART_NS16550_PORT_1_IRQ);
 	}
+#else
+	irq_enable(DT_UART_NS16550_PORT_1_IRQ);
 #endif
 }
 #endif
@@ -948,12 +956,15 @@ static void irq_config_func_2(struct device *dev)
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_2),
 		    DT_UART_NS16550_PORT_2_IRQ_FLAGS);
 
-	irq_enable(DT_UART_NS16550_PORT_2_IRQ);
-#if defined(UART_NS16550_PCIE_ENABLED) && CONFIG_PCIE_MSI
+#ifdef UART_NS16550_PCIE_ENABLED
 	if (DEV_CFG(dev)->pcie) {
-		pcie_set_msi(DT_UART_NS16550_PORT_2_BASE_ADDR,
-			     DT_UART_NS16550_PORT_2_IRQ);
+		pcie_irq_enable(DT_UART_NS16550_PORT_2_BASE_ADDR,
+				DT_UART_NS16550_PORT_2_IRQ);
+	} else {
+		irq_enable(DT_UART_NS16550_PORT_2_IRQ);
 	}
+#else
+	irq_enable(DT_UART_NS16550_PORT_2_IRQ);
 #endif
 }
 #endif
@@ -1008,12 +1019,16 @@ static void irq_config_func_3(struct device *dev)
 		    DT_UART_NS16550_PORT_3_IRQ_PRI,
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_3),
 		    DT_UART_NS16550_PORT_3_IRQ_FLAGS);
-	irq_enable(DT_UART_NS16550_PORT_3_IRQ);
-#if defined(UART_NS16550_PCIE_ENABLED) && CONFIG_PCIE_MSI
+
+#ifdef UART_NS16550_PCIE_ENABLED
 	if (DEV_CFG(dev)->pcie) {
-		pcie_set_msi(DT_UART_NS16550_PORT_3_BASE_ADDR,
-			     DT_UART_NS16550_PORT_3_IRQ);
+		pcie_irq_enable(DT_UART_NS16550_PORT_3_BASE_ADDR,
+				DT_UART_NS16550_PORT_3_IRQ);
+	} else {
+		irq_enable(DT_UART_NS16550_PORT_3_IRQ);
 	}
+#else
+	irq_enable(DT_UART_NS16550_PORT_3_IRQ);
 #endif
 }
 #endif
