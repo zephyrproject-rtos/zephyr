@@ -1,9 +1,9 @@
 /*********************************************************************
-*                SEGGER Microcontroller GmbH & Co. KG                *
+*                    SEGGER Microcontroller GmbH                     *
 *                        The Embedded Experts                        *
 **********************************************************************
 *                                                                    *
-*       (c) 2015 - 2017  SEGGER Microcontroller GmbH & Co. KG        *
+*            (c) 1995 - 2019 SEGGER Microcontroller GmbH             *
 *                                                                    *
 *       www.segger.com     Support: support@segger.com               *
 *                                                                    *
@@ -31,7 +31,7 @@
 *   disclaimer in the documentation and/or other materials provided  *
 *   with the distribution.                                           *
 *                                                                    *
-* o Neither the name of SEGGER Microcontroller GmbH & Co. KG         *
+* o Neither the name of SEGGER Microcontroller GmbH         *
 *   nor the names of its contributors may be used to endorse or      *
 *   promote products derived from this software without specific     *
 *   prior written permission.                                        *
@@ -52,14 +52,14 @@
 *                                                                    *
 **********************************************************************
 *                                                                    *
-*       SystemView version: V2.42                                    *
+*       SystemView version: V2.52h                                    *
 *                                                                    *
 **********************************************************************
 -------------------------- END-OF-HEADER -----------------------------
 
 File    : SEGGER_SYSVIEW.c
 Purpose : System visualization API implementation.
-Revision: $Rev: 5927 $
+Revision: $Rev: 13432 $
 
 Additional information:
   Packet format:
@@ -593,8 +593,9 @@ static void _SendSyncInfo(void) {
   SEGGER_SYSVIEW_RecordSystime();
   SEGGER_SYSVIEW_SendTaskList();
   if (_NumModules > 0) {
+    int n;
     SEGGER_SYSVIEW_SendNumModules();
-    for (int n = 0; n < _NumModules; n++) {
+    for (n = 0; n < _NumModules; n++) {
       SEGGER_SYSVIEW_SendModule(n);
     }
     SEGGER_SYSVIEW_SendModuleDescription();
@@ -750,61 +751,83 @@ SendDone:
 #ifndef SEGGER_SYSVIEW_EXCLUDE_PRINTF // Define in project to avoid warnings about variable parameter list
 /*********************************************************************
 *
-*       _APrintHost()
-*
-*  Function description
-*    Prepares a string and its parameters to be formatted on the host.
-*
-*  Parameters
-*    s            Pointer to format string.
-*    Options      Options to be sent to the host.
-*    pArguments   Pointer to array of arguments for the format string.
-*    NumArguments Number of arguments in the array.
-*/
-static void _APrintHost(const char* s, U32 Options, U32* pArguments, U32 NumArguments) {
-  U8* pPayload;
-  U8* pPayloadStart;
-
-  RECORD_START(SEGGER_SYSVIEW_INFO_SIZE + SEGGER_SYSVIEW_MAX_STRING_LEN + 2 * SEGGER_SYSVIEW_QUANTA_U32 + SEGGER_SYSVIEW_MAX_ARGUMENTS * SEGGER_SYSVIEW_QUANTA_U32);
-  pPayload = _EncodeStr(pPayloadStart, s, SEGGER_SYSVIEW_MAX_STRING_LEN);
-  ENCODE_U32(pPayload, Options);
-  ENCODE_U32(pPayload, NumArguments);
-  while (NumArguments--) {
-    ENCODE_U32(pPayload, (*pArguments++));
-  }
-  _SendPacket(pPayloadStart, pPayload, SYSVIEW_EVTID_PRINT_FORMATTED);
-  RECORD_END();
-}
-
-/*********************************************************************
-*
 *       _VPrintHost()
 *
 *  Function description
-*    Prepares a string and its parameters to be formatted on the host.
+*    Send a format string and its parameters to the host.
 *
 *  Parameters
 *    s            Pointer to format string.
 *    Options      Options to be sent to the host.
 *    pParamList   Pointer to the list of arguments for the format string.
 */
-static void _VPrintHost(const char* s, U32 Options, va_list* pParamList) {
-  U32 aParas[SEGGER_SYSVIEW_MAX_ARGUMENTS];
-  U32 NumArguments;
+static int _VPrintHost(const char* s, U32 Options, va_list* pParamList) {
+  U32         aParas[SEGGER_SYSVIEW_MAX_ARGUMENTS];
+  U32*        pParas;
+  U32         NumArguments;
   const char* p;
+  char        c;
+  U8*         pPayload;
+  U8*         pPayloadStart;
+#if SEGGER_SYSVIEW_PRINTF_IMPLICIT_FORMAT
+  U8 HasNonScalar;
   
+  HasNonScalar = 0;
+#endif  
+  //
+  // Count number of arguments by counting '%' characters in string.
+  // If enabled, check for non-scalar modifier flags to format string on the target.
+  //
   p = s;
   NumArguments = 0;
-  while (*p) {
-    if (*p == '%') {
+  for (;;) {
+    c = *p++;
+    if (c == 0) {
+      break;
+    }
+    if (c == '%') {
+      c = *p;
+#if SEGGER_SYSVIEW_PRINTF_IMPLICIT_FORMAT == 0
       aParas[NumArguments++] = va_arg(*pParamList, int);
       if (NumArguments == SEGGER_SYSVIEW_MAX_ARGUMENTS) {
         break;
       }
+#else
+      if (c == 's') {
+        HasNonScalar = 1;
+        break;
+      } else {
+        aParas[NumArguments++] = va_arg(*pParamList, int);
+        if (NumArguments == SEGGER_SYSVIEW_MAX_ARGUMENTS) {
+          break;
+        }
+      }
+#endif
     }
-    p++;
   }
-  _APrintHost(s, Options, aParas, NumArguments);
+
+#if SEGGER_SYSVIEW_PRINTF_IMPLICIT_FORMAT
+  if (HasNonScalar) {
+    return -1;
+  }
+#endif
+  //
+  // Send string and parameters to host
+  //
+  {
+    RECORD_START(SEGGER_SYSVIEW_INFO_SIZE + SEGGER_SYSVIEW_MAX_STRING_LEN + 2 * SEGGER_SYSVIEW_QUANTA_U32 + SEGGER_SYSVIEW_MAX_ARGUMENTS * SEGGER_SYSVIEW_QUANTA_U32);
+    pPayload = _EncodeStr(pPayloadStart, s, SEGGER_SYSVIEW_MAX_STRING_LEN);
+    ENCODE_U32(pPayload, Options);
+    ENCODE_U32(pPayload, NumArguments);
+    pParas = aParas;
+    while (NumArguments--) {
+      ENCODE_U32(pPayload, (*pParas));
+      pParas++;
+    }
+    _SendPacket(pPayloadStart, pPayload, SYSVIEW_EVTID_PRINT_FORMATTED);
+    RECORD_END();
+  }
+  return 0;
 }
 
 /*********************************************************************
@@ -1173,7 +1196,7 @@ static void _VPrintTarget(const char* sFormat, U32 Options, va_list* pParamList)
 
 /*********************************************************************
 *
-*       Public functions
+*       Public code
 *
 **********************************************************************
 */
@@ -2516,10 +2539,23 @@ void SEGGER_SYSVIEW_SendNumModules(void) {
 */
 void SEGGER_SYSVIEW_PrintfHostEx(const char* s, U32 Options, ...) {
   va_list ParamList;
+#if SEGGER_SYSVIEW_PRINTF_IMPLICIT_FORMAT
+  int r;
 
+  va_start(ParamList, Options);
+  r = _VPrintHost(s, Options, &ParamList);
+  va_end(ParamList);
+
+  if (r == -1) {
+    va_start(ParamList, Options);
+    _VPrintTarget(s, Options, &ParamList);
+    va_end(ParamList);
+  }
+#else
   va_start(ParamList, Options);
   _VPrintHost(s, Options, &ParamList);
   va_end(ParamList);
+#endif
 }
 
 /*********************************************************************
@@ -2537,10 +2573,23 @@ void SEGGER_SYSVIEW_PrintfHostEx(const char* s, U32 Options, ...) {
 */
 void SEGGER_SYSVIEW_PrintfHost(const char* s, ...) {
   va_list ParamList;
+#if SEGGER_SYSVIEW_PRINTF_IMPLICIT_FORMAT
+  int r;
 
+  va_start(ParamList, s);
+  r = _VPrintHost(s, SEGGER_SYSVIEW_LOG, &ParamList);
+  va_end(ParamList);
+
+  if (r == -1) {
+    va_start(ParamList, s);
+    _VPrintTarget(s, SEGGER_SYSVIEW_LOG, &ParamList);
+    va_end(ParamList);
+  }
+#else
   va_start(ParamList, s);
   _VPrintHost(s, SEGGER_SYSVIEW_LOG, &ParamList);
   va_end(ParamList);
+#endif
 }
 
 /*********************************************************************
@@ -2559,10 +2608,23 @@ void SEGGER_SYSVIEW_PrintfHost(const char* s, ...) {
 */
 void SEGGER_SYSVIEW_WarnfHost(const char* s, ...) {
   va_list ParamList;
+#if SEGGER_SYSVIEW_PRINTF_IMPLICIT_FORMAT
+  int r;
 
+  va_start(ParamList, s);
+  r = _VPrintHost(s, SEGGER_SYSVIEW_WARNING, &ParamList);
+  va_end(ParamList);
+
+  if (r == -1) {
+    va_start(ParamList, s);
+    _VPrintTarget(s, SEGGER_SYSVIEW_WARNING, &ParamList);
+    va_end(ParamList);
+  }
+#else
   va_start(ParamList, s);
   _VPrintHost(s, SEGGER_SYSVIEW_WARNING, &ParamList);
   va_end(ParamList);
+#endif
 }
 
 /*********************************************************************
@@ -2581,10 +2643,23 @@ void SEGGER_SYSVIEW_WarnfHost(const char* s, ...) {
 */
 void SEGGER_SYSVIEW_ErrorfHost(const char* s, ...) {
   va_list ParamList;
+#if SEGGER_SYSVIEW_PRINTF_IMPLICIT_FORMAT
+  int r;
 
+  va_start(ParamList, s);
+  r = _VPrintHost(s, SEGGER_SYSVIEW_ERROR, &ParamList);
+  va_end(ParamList);
+
+  if (r == -1) {
+    va_start(ParamList, s);
+    _VPrintTarget(s, SEGGER_SYSVIEW_ERROR, &ParamList);
+    va_end(ParamList);
+  }
+#else
   va_start(ParamList, s);
   _VPrintHost(s, SEGGER_SYSVIEW_ERROR, &ParamList);
   va_end(ParamList);
+#endif
 }
 
 /*********************************************************************
@@ -2757,6 +2832,33 @@ void SEGGER_SYSVIEW_EnableEvents(U32 EnableMask) {
 */
 void SEGGER_SYSVIEW_DisableEvents(U32 DisableMask) {
   _SYSVIEW_Globals.DisabledEvents |= DisableMask;
+}
+
+/*********************************************************************
+*
+*       SEGGER_SYSVIEW_IsStarted()
+*
+*  Function description
+*    Handle incoming packets if any and check if recording is started.
+*
+*  Return value
+*      0: Recording not started.
+*    > 0: Recording started.
+*/
+int SEGGER_SYSVIEW_IsStarted(void) {
+#if (SEGGER_SYSVIEW_POST_MORTEM_MODE != 1)
+  //
+  // Check if host is sending data which needs to be processed.
+  //
+  if (SEGGER_RTT_HASDATA(CHANNEL_ID_DOWN)) {
+    if (_SYSVIEW_Globals.RecursionCnt == 0) {   // Avoid uncontrolled nesting. This way, this routine can call itself once, but no more often than that.
+      _SYSVIEW_Globals.RecursionCnt = 1;
+      _HandleIncomingPacket();
+      _SYSVIEW_Globals.RecursionCnt = 0;
+    }
+  }
+#endif
+  return _SYSVIEW_Globals.EnableState;
 }
 
 
