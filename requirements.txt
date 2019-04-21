@@ -14,6 +14,6 @@ python-dateutil==2.7.5
 requests==2.20.1
 sh==1.11
 six==1.11.0
-urllib3==1.24.1
+urllib3>=1.24.2
 wrapt==1.10.11
 colorama==0.4.1
