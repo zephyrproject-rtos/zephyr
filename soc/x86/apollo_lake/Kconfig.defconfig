@@ -62,15 +62,6 @@ if GPIO
 config GPIO_INTEL_APL
 	default y
 
-config SHARED_IRQ
-	default y if GPIO_INTEL_APL
-
-config SHARED_IRQ_0
-	default y if SHARED_IRQ
-
-config SHARED_IRQ_NUM_CLIENTS
-	default 10 if SHARED_IRQ
-
 endif # GPIO
 
 endif # SOC_APOLLO_LAKE
