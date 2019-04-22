@@ -47,6 +47,7 @@
 /boards/arm/96b_nitrogen/                 @idlethread
 /boards/arm/96b_neonkey/                  @Mani-Sadhasivam
 /boards/arm/96b_stm32_sensor_mez/         @Mani-Sadhasivam
+/boards/arm/96b_wistrio/                  @Mani-Sadhasivam
 /boards/arm/arduino_due/                  @ioannisg
 /boards/arm/cc3220sf_launchxl/            @vanti
 /boards/arm/curie_ble/                    @jhedberg
