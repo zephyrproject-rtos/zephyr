@@ -1,31 +1,9 @@
 /*
  * Copyright (c) 2015, Freescale Semiconductor, Inc.
  * Copyright 2016-2017 NXP
+ * All rights reserved.
  *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted provided that the following conditions are met:
- *
- * o Redistributions of source code must retain the above copyright notice, this list
- *   of conditions and the following disclaimer.
- *
- * o Redistributions in binary form must reproduce the above copyright notice, this
- *   list of conditions and the following disclaimer in the documentation and/or
- *   other materials provided with the distribution.
- *
- * o Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from this
- *   software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
- * ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
- * ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * SPDX-License-Identifier: BSD-3-Clause
  */
 
 #include "fsl_lpuart_edma.h"
@@ -33,6 +11,11 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
+
+/* Component ID definition, used by tools. */
+#ifndef FSL_COMPONENT_ID
+#define FSL_COMPONENT_ID "platform.drivers.lpuart_edma"
+#endif
 
 /*<! Structure definition for lpuart_edma_private_handle_t. The structure is private. */
 typedef struct _lpuart_edma_private_handle
@@ -51,7 +34,7 @@ enum _lpuart_edma_tansfer_states
 };
 
 /*******************************************************************************
- * Definitions
+ * Variables
  ******************************************************************************/
 
 /* Array of LPUART handle. */
@@ -122,14 +105,6 @@ static void LPUART_SendEDMACallback(edma_handle_t *handle, void *param, bool tra
  */
 static void LPUART_ReceiveEDMACallback(edma_handle_t *handle, void *param, bool transferDone, uint32_t tcds);
 
-/*!
- * @brief Get the LPUART instance from peripheral base address.
- *
- * @param base LPUART peripheral base address.
- * @return LPUART instance.
- */
-extern uint32_t LPUART_GetInstance(LPUART_Type *base);
-
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -179,6 +154,15 @@ static void LPUART_ReceiveEDMACallback(edma_handle_t *handle, void *param, bool 
     }
 }
 
+/*!
+ * brief Initializes the LPUART handle which is used in transactional functions.
+ * param base LPUART peripheral base address.
+ * param handle Pointer to lpuart_edma_handle_t structure.
+ * param callback Callback function.
+ * param userData User data.
+ * param txEdmaHandle User requested DMA handle for TX DMA transfer.
+ * param rxEdmaHandle User requested DMA handle for RX DMA transfer.
+ */
 void LPUART_TransferCreateHandleEDMA(LPUART_Type *base,
                                      lpuart_edma_handle_t *handle,
                                      lpuart_edma_transfer_callback_t callback,
@@ -232,6 +216,19 @@ void LPUART_TransferCreateHandleEDMA(LPUART_Type *base,
     }
 }
 
+/*!
+ * brief Sends data using eDMA.
+ *
+ * This function sends data using eDMA. This is a non-blocking function, which returns
+ * right away. When all data is sent, the send callback function is called.
+ *
+ * param base LPUART peripheral base address.
+ * param handle LPUART handle pointer.
+ * param xfer LPUART eDMA transfer structure. See #lpuart_transfer_t.
+ * retval kStatus_Success if succeed, others failed.
+ * retval kStatus_LPUART_TxBusy Previous transfer on going.
+ * retval kStatus_InvalidArgument Invalid argument.
+ */
 status_t LPUART_SendEDMA(LPUART_Type *base, lpuart_edma_handle_t *handle, lpuart_transfer_t *xfer)
 {
     assert(handle);
@@ -273,6 +270,19 @@ status_t LPUART_SendEDMA(LPUART_Type *base, lpuart_edma_handle_t *handle, lpuart
     return status;
 }
 
+/*!
+ * brief Receives data using eDMA.
+ *
+ * This function receives data using eDMA. This is non-blocking function, which returns
+ * right away. When all data is received, the receive callback function is called.
+ *
+ * param base LPUART peripheral base address.
+ * param handle Pointer to lpuart_edma_handle_t structure.
+ * param xfer LPUART eDMA transfer structure, see #lpuart_transfer_t.
+ * retval kStatus_Success if succeed, others fail.
+ * retval kStatus_LPUART_RxBusy Previous transfer ongoing.
+ * retval kStatus_InvalidArgument Invalid argument.
+ */
 status_t LPUART_ReceiveEDMA(LPUART_Type *base, lpuart_edma_handle_t *handle, lpuart_transfer_t *xfer)
 {
     assert(handle);
@@ -314,6 +324,14 @@ status_t LPUART_ReceiveEDMA(LPUART_Type *base, lpuart_edma_handle_t *handle, lpu
     return status;
 }
 
+/*!
+ * brief Aborts the sent data using eDMA.
+ *
+ * This function aborts the sent data using eDMA.
+ *
+ * param base LPUART peripheral base address.
+ * param handle Pointer to lpuart_edma_handle_t structure.
+ */
 void LPUART_TransferAbortSendEDMA(LPUART_Type *base, lpuart_edma_handle_t *handle)
 {
     assert(handle);
@@ -328,6 +346,14 @@ void LPUART_TransferAbortSendEDMA(LPUART_Type *base, lpuart_edma_handle_t *handl
     handle->txState = kLPUART_TxIdle;
 }
 
+/*!
+ * brief Aborts the received data using eDMA.
+ *
+ * This function aborts the received data using eDMA.
+ *
+ * param base LPUART peripheral base address.
+ * param handle Pointer to lpuart_edma_handle_t structure.
+ */
 void LPUART_TransferAbortReceiveEDMA(LPUART_Type *base, lpuart_edma_handle_t *handle)
 {
     assert(handle);
@@ -342,6 +368,18 @@ void LPUART_TransferAbortReceiveEDMA(LPUART_Type *base, lpuart_edma_handle_t *ha
     handle->rxState = kLPUART_RxIdle;
 }
 
+/*!
+ * brief Gets the number of received bytes.
+ *
+ * This function gets the number of received bytes.
+ *
+ * param base LPUART peripheral base address.
+ * param handle LPUART handle pointer.
+ * param count Receive bytes count.
+ * retval kStatus_NoTransferInProgress No receive in progress.
+ * retval kStatus_InvalidArgument Parameter is invalid.
+ * retval kStatus_Success Get successfully through the parameter \p count;
+ */
 status_t LPUART_TransferGetReceiveCountEDMA(LPUART_Type *base, lpuart_edma_handle_t *handle, uint32_t *count)
 {
     assert(handle);
@@ -360,6 +398,19 @@ status_t LPUART_TransferGetReceiveCountEDMA(LPUART_Type *base, lpuart_edma_handl
     return kStatus_Success;
 }
 
+/*!
+ * brief Gets the number of bytes written to the LPUART TX register.
+ *
+ * This function gets the number of bytes written to the LPUART TX
+ * register by DMA.
+ *
+ * param base LPUART peripheral base address.
+ * param handle LPUART handle pointer.
+ * param count Send bytes count.
+ * retval kStatus_NoTransferInProgress No send in progress.
+ * retval kStatus_InvalidArgument Parameter is invalid.
+ * retval kStatus_Success Get successfully through the parameter \p count;
+ */
 status_t LPUART_TransferGetSendCountEDMA(LPUART_Type *base, lpuart_edma_handle_t *handle, uint32_t *count)
 {
     assert(handle);
