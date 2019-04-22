@@ -101,9 +101,14 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	z_new_thread_init(thread, pStackMem, stackSize, priority,
 			 options);
 
-	/* carve the thread entry struct from the "base" of the stack */
+	/* Carve the thread entry struct from the "base" of the stack
+	 *
+	 * The initial carved stack frame only needs to contain the basic
+	 * stack frame (state context), because no FP operations have been
+	 * performed yet for this thread.
+	 */
 	pInitCtx = (struct __esf *)(STACK_ROUND_DOWN(stackEnd -
-		(char *)top_of_stack_offset - sizeof(struct __esf)));
+		(char *)top_of_stack_offset - sizeof(struct __basic_sf)));
 
 #if defined(CONFIG_USERSPACE)
 	if ((options & K_USER) != 0) {
@@ -124,9 +129,6 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	pInitCtx->basic.a4 = (u32_t)parameter3;
 	pInitCtx->basic.xpsr =
 		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
-#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
-	pInitCtx->fpscr = (u32_t)0; /* clears FPU status/control register*/
-#endif
 
 	thread->callee_saved.psp = (u32_t)pInitCtx;
 	thread->arch.basepri = 0;
