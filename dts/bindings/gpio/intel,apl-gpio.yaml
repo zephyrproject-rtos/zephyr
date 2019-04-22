@@ -30,6 +30,11 @@ properties:
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
 
+    interrupts:
+      type: int
+      generation: define
+      category: required
+
 cell_string: GPIO
 
 "#cells":
