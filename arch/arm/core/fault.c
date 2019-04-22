@@ -184,8 +184,8 @@ static int MemoryFaultIsRecoverable(NANO_ESF *esf)
 		u32_t start = (u32_t)exceptions[i].start & ~0x1;
 		u32_t end = (u32_t)exceptions[i].end & ~0x1;
 
-		if (esf->pc >= start && esf->pc < end) {
-			esf->pc = (u32_t)(exceptions[i].fixup);
+		if (esf->basic.pc >= start && esf->basic.pc < end) {
+			esf->basic.pc = (u32_t)(exceptions[i].fixup);
 			return 1;
 		}
 	}
