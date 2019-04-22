@@ -51,7 +51,7 @@
 /* 0 <= n < MCHP_I2C_SMB_MAX_INSTANCES */
 #define MCHP_I2C_SMB_BASE_ADDR(n) \
 	((MCHP_I2C_SMB0_BASE_ADDR) +\
-	(uint32_t)(n) << (MCHP_I2C_SMB_INST_SPACING_P2))
+	((uint32_t)(n) << (MCHP_I2C_SMB_INST_SPACING_P2)))
 
 /*
  * Offset 0x00
