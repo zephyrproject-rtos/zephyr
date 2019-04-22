@@ -2,4 +2,5 @@
 
 zephyr_sources(
   sntp.c
+  sntp_simple.c
 )
