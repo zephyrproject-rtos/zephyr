@@ -1,0 +1,36 @@
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: MICROCHIP I2C
+version: 0.1
+
+description: >
+    This binding gives a base representation for I2C/SMB controller for Microchip
+
+inherits:
+    !include i2c.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "microchip,xec-i2c"
+      generation: define
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    port_sel:
+      type: int
+      description: soc block mapping to pin
+      generation: define
+      category: define
+
+...
