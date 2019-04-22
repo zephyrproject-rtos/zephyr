@@ -1,0 +1,77 @@
+# Kconfig.xec - Microchip XEC pinmux configuration options
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig PINMUX_XEC
+	bool "XEC Microchip Pinmux driver"
+	depends on SOC_FAMILY_MEC
+	help
+	Enable the Microchip XEC pinmux driver.
+
+if PINMUX_XEC
+
+config PINMUX_XEC_GPIO000_036
+	bool "Pinmux 000-036"
+	help
+	Enable Port 000-036 or what would be equivalent to Port A.
+
+config PINMUX_XEC_GPIO000_036_NAME
+	string "Pinmux Port 000_036 driver name"
+	depends on PINMUX_XEC_GPIO000_036
+	default "port000_036"
+
+config PINMUX_XEC_GPIO040_076
+	bool "Pinmux 040-036"
+	help
+	Enable Port 040-076 or what would be equivalent to Port B
+
+config PINMUX_XEC_GPIO040_076_NAME
+	string "Pinmux Port 040_076 driver name"
+	depends on PINMUX_XEC_GPIO040_076
+	default "port040_076"
+
+config PINMUX_XEC_GPIO100_136
+	bool "Pinmux 100-136"
+	help
+	Enable Port 100-136 or what would be equivalent to Port C
+
+config PINMUX_XEC_GPIO100_136_NAME
+	string "Pinmux Port 100_136 driver name"
+	depends on PINMUX_XEC_GPIO100_136
+	default "port100_136"
+
+config PINMUX_XEC_GPIO140_176
+	bool "Pinmux 140-176"
+	help
+	Enable Port 140-176 or what would be equivalent to Port C
+
+config PINMUX_XEC_GPIO140_176_NAME
+	string "Pinmux Port 140_176 driver name"
+	depends on PINMUX_XEC_GPIO140_176
+	default "port140_176"
+
+config PINMUX_XEC_GPIO200_236
+	bool "Pinmux 200-236"
+	help
+	Enable Port 200-236 or what would be equivalent to Port D
+
+config PINMUX_XEC_GPIO200_236_NAME
+	string "Pinmux Port 200_236 driver name"
+	depends on PINMUX_XEC_GPIO200_236
+	default "port200_236"
+
+config PINMUX_XEC_GPIO240_276
+	bool "Pinmux 240-276"
+	help
+	Enable Port 240-276 or what would be equivalent to Port E
+
+config PINMUX_XEC_GPIO240_276_NAME
+	string "Pinmux Port 200_276 driver name"
+	depends on PINMUX_XEC_GPIO240_276
+	default "port200_276"
+
+endif # PINMUX_XEC
+
