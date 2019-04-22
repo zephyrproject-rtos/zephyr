@@ -33,7 +33,7 @@
 
 	flash0: flash@30400 {
 		/* QSPI flash */
-		reg = <0x00030400 0x8000>;
+		reg = <0x00030400 0x1fcfc00>;
 	};
 
 	sram0: memory@20070000 {
