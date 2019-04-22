@@ -106,22 +106,22 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 #if CONFIG_USERSPACE
 	if ((options & K_USER) != 0) {
-		pInitCtx->pc = (u32_t)z_arch_user_mode_enter;
+		pInitCtx->basic.pc = (u32_t)z_arch_user_mode_enter;
 	} else {
-		pInitCtx->pc = (u32_t)z_thread_entry;
+		pInitCtx->basic.pc = (u32_t)z_thread_entry;
 	}
 #else
-	pInitCtx->pc = (u32_t)z_thread_entry;
+	pInitCtx->basic.pc = (u32_t)z_thread_entry;
 #endif
 
 	/* force ARM mode by clearing LSB of address */
-	pInitCtx->pc &= 0xfffffffe;
+	pInitCtx->basic.pc &= 0xfffffffe;
 
-	pInitCtx->a1 = (u32_t)pEntry;
-	pInitCtx->a2 = (u32_t)parameter1;
-	pInitCtx->a3 = (u32_t)parameter2;
-	pInitCtx->a4 = (u32_t)parameter3;
-	pInitCtx->xpsr =
+	pInitCtx->basic.a1 = (u32_t)pEntry;
+	pInitCtx->basic.a2 = (u32_t)parameter1;
+	pInitCtx->basic.a3 = (u32_t)parameter2;
+	pInitCtx->basic.a4 = (u32_t)parameter3;
+	pInitCtx->basic.xpsr =
 		0x01000000UL; /* clear all, thumb bit is 1, even if RO */
 #if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 	pInitCtx->fpscr = (u32_t)0; /* clears FPU status/control register*/
