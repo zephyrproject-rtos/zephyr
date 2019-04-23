@@ -17,8 +17,8 @@ static void cbSendSystemDesc(void)
 
 void SEGGER_SYSVIEW_Conf(void)
 {
-	SEGGER_SYSVIEW_Init(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
-			    CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC,
+	SEGGER_SYSVIEW_Init(sys_clock_hw_cycles_per_sec(),
+			    sys_clock_hw_cycles_per_sec(),
 			    &SYSVIEW_X_OS_TraceAPI, cbSendSystemDesc);
 
 #if defined(DT_PHYS_RAM_ADDR)       /* x86 */
