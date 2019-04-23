@@ -277,6 +277,7 @@ SECTIONS
 #endif /* CONFIG_ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS */
 
 	_image_rodata_end = .;
+	MPU_ALIGN(_image_rodata_end -_image_rom_start);
 	_image_rom_end = .;
 
     GROUP_END(ROMABLE_REGION)

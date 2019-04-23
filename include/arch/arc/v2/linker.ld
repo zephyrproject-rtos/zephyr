@@ -51,6 +51,7 @@
 	#endif
 #else
 	#define MPU_MIN_SIZE_ALIGN
+	#define MPU_ALIGN(region_size) . = ALIGN(4)
 #endif
 
 #if defined(CONFIG_XIP)
@@ -128,7 +129,7 @@ SECTIONS {
 	} GROUP_LINK_IN(ROMABLE_REGION)
 
 	_image_rodata_end = .;
-	MPU_MIN_SIZE_ALIGN
+	MPU_ALIGN(_image_rodata_end - _image_rom_start);
 	_image_rom_end = .;
 	_image_rom_size = _image_rom_end - _image_rom_start;
 
