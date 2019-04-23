@@ -5,6 +5,7 @@
  */
 #include <ztest.h>
 #include <posix/time.h>
+#include <posix/sys/time.h>
 #include <posix/unistd.h>
 
 #define SLEEP_SECONDS 1
