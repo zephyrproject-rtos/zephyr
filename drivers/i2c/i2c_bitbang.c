@@ -37,17 +37,7 @@
 #define T_BUF		T_LOW
 
 #define NS_TO_SYS_CLOCK_HW_CYCLES(ns) \
-	((u64_t)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC * (ns) / NSEC_PER_SEC + 1)
-
-static const u32_t delays_fast[] = {
-	[T_LOW] = NS_TO_SYS_CLOCK_HW_CYCLES(1300),
-	[T_HIGH] = NS_TO_SYS_CLOCK_HW_CYCLES(600),
-};
-
-static const u32_t delays_standard[] = {
-	[T_LOW] = NS_TO_SYS_CLOCK_HW_CYCLES(4700),
-	[T_HIGH] = NS_TO_SYS_CLOCK_HW_CYCLES(4000),
-};
+	((u64_t)sys_clock_hw_cycles_per_sec() * (ns) / NSEC_PER_SEC + 1)
 
 int i2c_bitbang_configure(struct i2c_bitbang *context, u32_t dev_config)
 {
@@ -59,10 +49,12 @@ int i2c_bitbang_configure(struct i2c_bitbang *context, u32_t dev_config)
 	/* Setup speed to use */
 	switch (I2C_SPEED_GET(dev_config)) {
 	case I2C_SPEED_STANDARD:
-		context->delays = delays_standard;
+		context->delays[T_LOW]  = NS_TO_SYS_CLOCK_HW_CYCLES(4700);
+		context->delays[T_HIGH] = NS_TO_SYS_CLOCK_HW_CYCLES(4000);
 		break;
 	case I2C_SPEED_FAST:
-		context->delays = delays_fast;
+		context->delays[T_LOW]  = NS_TO_SYS_CLOCK_HW_CYCLES(1300);
+		context->delays[T_HIGH] = NS_TO_SYS_CLOCK_HW_CYCLES(600);
 		break;
 	default:
 		return -ENOTSUP;
