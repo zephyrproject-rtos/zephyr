@@ -43,7 +43,7 @@ void main(void)
 	 */
 	k_sleep(1);
 
-	int freq = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / 1000000;
+	int freq = sys_clock_hw_cycles_per_sec() / 1000000;
 
 	_start_us  =  __start_time_stamp / freq;
 	s_main_time_stamp =  __main_time_stamp - __start_time_stamp;
