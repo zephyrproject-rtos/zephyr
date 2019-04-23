@@ -53,4 +53,11 @@ config UART_CC13XX_CC26XX
 
 endif # SERIAL
 
+if I2C
+
+config I2C_CC13XX_CC26XX
+	default y
+
+endif # I2C
+
 endif # SOC_SERIES_CC13X2_CC26X2
