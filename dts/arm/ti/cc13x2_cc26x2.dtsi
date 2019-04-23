@@ -5,6 +5,7 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <dt-bindings/i2c/i2c.h>
 #include <dt-bindings/gpio/gpio.h>
 
 / {
@@ -66,6 +67,17 @@
 			interrupts = <36 0>;
 			status = "disabled";
 			label = "UART_1";
+		};
+
+		i2c0: i2c@40002000 {
+			compatible = "ti,cc13xx-cc26xx-i2c";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40002000 0x1000>;
+			interrupts = <1 0>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			status = "disabled";
+			label = "I2C_0";
 		};
 	};
 };

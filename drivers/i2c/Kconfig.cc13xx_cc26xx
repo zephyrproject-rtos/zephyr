@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2019 Brett Witherspoon
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config I2C_CC13XX_CC26XX
+	bool "TI SimpleLink CC13xx / CC26xx I2C driver"
+	depends on SOC_SERIES_CC13X2_CC26X2
+	select HAS_DTS_I2C
+	help
+	  Enable support for I2C on the TI SimpleLink CC13xx / CC26xx series.
