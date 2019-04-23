@@ -40,4 +40,7 @@ typedef int off_t;
 
 #endif
 
+typedef long long time_t;
+typedef long suseconds_t;
+
 #endif /* ZEPHYR_LIB_LIBC_MINIMAL_INCLUDE_SYS_TYPES_H_ */
