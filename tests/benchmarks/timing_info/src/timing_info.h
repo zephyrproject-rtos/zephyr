@@ -138,7 +138,7 @@ static inline void benchmark_timer_start(void) {       }
 /* Get Core Frequency in MHz */
 static inline u32_t get_core_freq_MHz(void)
 {
-	return  (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC/1000000);
+	return  (sys_clock_hw_cycles_per_sec() / 1000000);
 }
 
 #define PRINT_STATS(x, y, z)   PRINT_F(x, y, z)
