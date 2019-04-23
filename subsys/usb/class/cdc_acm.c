@@ -370,6 +370,20 @@ static void cdc_acm_int_in(u8_t ep, enum usb_dc_ep_cb_status_code ep_status)
 	LOG_DBG("CDC_IntIN EP[%x]\r", ep);
 }
 
+static void cdc_acm_reset_port(struct cdc_acm_dev_data_t *dev_data)
+{
+	k_sem_give(&poll_wait_sem);
+	dev_data->rx_ready = false;
+	dev_data->tx_ready = false;
+	dev_data->tx_irq_ena = false;
+	dev_data->rx_irq_ena = false;
+	dev_data->line_coding = (struct cdc_acm_line_coding)
+				CDC_ACM_DEFAULT_BAUDRATE;
+	dev_data->serial_state = 0;
+	dev_data->line_state = 0;
+	memset(&dev_data->rx_buf, 0, CDC_ACM_BUFFER_SIZE);
+}
+
 static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 			  enum usb_dc_status_code status,
 			  const u8_t *param)
@@ -389,6 +403,7 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 		break;
 	case USB_DC_RESET:
 		LOG_DBG("USB device reset detected");
+		cdc_acm_reset_port(dev_data);
 		break;
 	case USB_DC_CONNECTED:
 		LOG_DBG("USB device connected");
@@ -397,10 +412,13 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 		cdc_acm_read_cb(cfg->endpoint[ACM_OUT_EP_IDX].ep_addr, 0,
 				dev_data);
 		dev_data->tx_ready = true;
+		dev_data->tx_irq_ena = true;
+		dev_data->rx_irq_ena = true;
 		LOG_DBG("USB device configured");
 		break;
 	case USB_DC_DISCONNECTED:
 		LOG_DBG("USB device disconnected");
+		cdc_acm_reset_port(dev_data);
 		break;
 	case USB_DC_SUSPEND:
 		LOG_DBG("USB device suspended");
