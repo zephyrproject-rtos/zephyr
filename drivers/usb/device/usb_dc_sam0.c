@@ -362,6 +362,11 @@ int usb_dc_ep_set_stall(const u8_t ep)
 	u8_t ep_num = ep & ~USB_EP_DIR_MASK;
 	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_num];
 
+	if (ep_num >= USB_NUM_ENDPOINTS) {
+		LOG_ERR("endpoint index/address out of range");
+		return -1;
+	}
+
 	if (for_in) {
 		endpoint->EPSTATUSSET.bit.STALLRQ1 = 1;
 	} else {
@@ -377,6 +382,11 @@ int usb_dc_ep_clear_stall(const u8_t ep)
 	u8_t for_in = ep & USB_EP_DIR_MASK;
 	u8_t ep_num = ep & ~USB_EP_DIR_MASK;
 	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_num];
+
+	if (ep_num >= USB_NUM_ENDPOINTS) {
+		LOG_ERR("endpoint index/address out of range");
+		return -1;
+	}
 
 	if (for_in) {
 		endpoint->EPSTATUSCLR.bit.STALLRQ1 = 1;
@@ -394,6 +404,16 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *stalled)
 	u8_t ep_num = ep & ~USB_EP_DIR_MASK;
 	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_num];
 
+	if (ep_num >= USB_NUM_ENDPOINTS) {
+		LOG_ERR("endpoint index/address out of range");
+		return -1;
+	}
+
+	if (stalled == NULL) {
+		LOG_ERR("parameter must not be NULL");
+		return -1;
+	}
+
 	if (for_in) {
 		*stalled = endpoint->EPSTATUS.bit.STALLRQ1;
 	} else {
@@ -410,6 +430,11 @@ int usb_dc_ep_enable(const u8_t ep)
 	u8_t for_in = ep & USB_EP_DIR_MASK;
 	u8_t ep_num = ep & ~USB_EP_DIR_MASK;
 	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_num];
+
+	if (ep_num >= USB_NUM_ENDPOINTS) {
+		LOG_ERR("endpoint index/address out of range");
+		return -1;
+	}
 
 	if (for_in) {
 		endpoint->EPSTATUSCLR.bit.BK1RDY = 1;
@@ -433,6 +458,11 @@ int usb_dc_ep_write(u8_t ep, const u8_t *buf, u32_t len, u32_t *ret_bytes)
 	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_num];
 	UsbDeviceDescriptor *desc = &data->descriptors[ep_num];
 	u32_t addr = desc->DeviceDescBank[1].ADDR.reg;
+
+	if (ep_num >= USB_NUM_ENDPOINTS) {
+		LOG_ERR("endpoint index/address out of range");
+		return -1;
+	}
 
 	if (endpoint->EPSTATUS.bit.BK1RDY) {
 		/* Write in progress, drop */
@@ -468,6 +498,11 @@ int usb_dc_ep_read_ex(u8_t ep, u8_t *buf, u32_t max_data_len,
 	u32_t bytes = desc->DeviceDescBank[0].PCKSIZE.bit.BYTE_COUNT;
 	u32_t take;
 	int remain;
+
+	if (ep_num >= USB_NUM_ENDPOINTS) {
+		LOG_ERR("endpoint index/address out of range");
+		return -1;
+	}
 
 	if (!endpoint->EPSTATUS.bit.BK0RDY) {
 		return -EAGAIN;
@@ -527,6 +562,11 @@ int usb_dc_ep_read_continue(u8_t ep)
 	u8_t ep_num = ep & ~USB_EP_DIR_MASK;
 	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_num];
 
+	if (ep_num >= USB_NUM_ENDPOINTS) {
+		LOG_ERR("endpoint index/address out of range");
+		return -1;
+	}
+
 	endpoint->EPSTATUSCLR.bit.BK0RDY = 1;
 	data->out_at = 0U;
 
@@ -539,6 +579,11 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 	u8_t for_in = ep & USB_EP_DIR_MASK;
 	u8_t ep_num = ep & ~USB_EP_DIR_MASK;
 
+	if (ep_num >= USB_NUM_ENDPOINTS) {
+		LOG_ERR("endpoint index/address out of range");
+		return -1;
+	}
+
 	data->ep_cb[for_in ? 1 : 0][ep_num] = cb;
 
 	return 0;
@@ -547,14 +592,33 @@ int usb_dc_ep_set_callback(const u8_t ep, const usb_dc_ep_callback cb)
 int usb_dc_ep_mps(const u8_t ep)
 {
 	struct usb_sam0_data *data = usb_sam0_get_data();
+	UsbDevice *regs = &REGS->DEVICE;
 	u8_t for_in = ep & USB_EP_DIR_MASK;
 	u8_t ep_num = ep & ~USB_EP_DIR_MASK;
 	UsbDeviceDescriptor *desc = &data->descriptors[ep_num];
+	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep];
 	int size;
 
+	if (ep_num >= USB_NUM_ENDPOINTS) {
+		LOG_ERR("endpoint index/address out of range");
+		return -1;
+	}
+
 	if (for_in) {
+
+		/* if endpoint is not configured, this should return 0 */
+		if (endpoint->EPCFG.bit.EPTYPE1 == 0) {
+			return 0;
+		}
+
 		size = desc->DeviceDescBank[1].PCKSIZE.bit.SIZE;
 	} else {
+
+		/* if endpoint is not configured, this should return 0 */
+		if (endpoint->EPCFG.bit.EPTYPE0 == 0) {
+			return 0;
+		}
+
 		size = desc->DeviceDescBank[0].PCKSIZE.bit.SIZE;
 	}
 
