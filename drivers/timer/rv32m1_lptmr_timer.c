@@ -19,14 +19,15 @@
  * - no tickless
  */
 
-#define CYCLES_PER_SEC  CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+#define CYCLES_PER_SEC  sys_clock_hw_cycles_per_sec()
 #define CYCLES_PER_TICK (CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
 /*
  * As a simplifying assumption, we only support a clock ticking at the
  * SIRC reset rate of 8MHz.
  */
-#if MHZ(8) != CYCLES_PER_SEC
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
+    (MHZ(8) != CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC)
 #error "system timer misconfiguration; unsupported clock rate"
 #endif
 
