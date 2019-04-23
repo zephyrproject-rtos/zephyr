@@ -8,7 +8,7 @@
 #include <spinlock.h>
 #include <soc.h>
 
-#define CYC_PER_TICK ((u32_t)((u64_t)CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC	\
+#define CYC_PER_TICK ((u32_t)((u64_t)sys_clock_hw_cycles_per_sec()	\
 			      / (u64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 #define MAX_TICKS ((0xffffffffu - CYC_PER_TICK) / CYC_PER_TICK)
 #define MIN_DELAY 1000
