@@ -423,6 +423,28 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *stalled)
 	return 0;
 }
 
+/* Halt the selected endpoint */
+int usb_dc_ep_halt(u8_t ep)
+{
+	return usb_dc_ep_set_stall(ep);
+}
+
+/* Flush the selected endpoint */
+int usb_dc_ep_flush(u8_t ep)
+{
+	u8_t ep_num = ep & ~USB_EP_DIR_MASK;
+
+	if (ep_num >= USB_NUM_ENDPOINTS) {
+		LOG_ERR("endpoint index/address out of range");
+		return -1;
+	}
+
+	/* TODO */
+	LOG_WRN("flush not implemented");
+
+	return 0;
+}
+
 /* Enable an endpoint and the endpoint interrupts */
 int usb_dc_ep_enable(const u8_t ep)
 {
@@ -445,6 +467,25 @@ int usb_dc_ep_enable(const u8_t ep)
 	endpoint->EPINTENSET.reg = USB_DEVICE_EPINTENSET_TRCPT0 |
 				   USB_DEVICE_EPINTENSET_TRCPT1 |
 				   USB_DEVICE_EPINTENSET_RXSTP;
+
+	return 0;
+}
+
+/* Disable the selected endpoint */
+int usb_dc_ep_disable(u8_t ep)
+{
+	UsbDevice *regs = &REGS->DEVICE;
+	u8_t ep_num = ep & ~USB_EP_DIR_MASK;
+	UsbDeviceEndpoint *endpoint = &regs->DeviceEndpoint[ep_num];
+
+	if (ep_num >= USB_NUM_ENDPOINTS) {
+		LOG_ERR("endpoint index/address out of range");
+		return -1;
+	}
+
+	endpoint->EPINTENCLR.reg = USB_DEVICE_EPINTENCLR_TRCPT0
+				 | USB_DEVICE_EPINTENCLR_TRCPT1
+				 | USB_DEVICE_EPINTENCLR_RXSTP;
 
 	return 0;
 }
