@@ -112,8 +112,10 @@ subsystems = [
     "uart_driver_api",
     "can_driver_api",
     "ptp_clock_driver_api",
-]
 
+    # Fake 'sample driver' subsystem, used by tests/samples
+    "sample_driver_api"
+]
 
 header = """%compare-lengths
 %define lookup-function-name z_object_lookup
