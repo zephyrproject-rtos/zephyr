@@ -17,39 +17,6 @@ menuconfig FLASH_SIMULATOR
 
 if FLASH_SIMULATOR
 
-config FLASH_SIMULATOR_BASE_OFFSET
-	int
-	prompt "Base offset of the flash"
-	default 0
-	help
-	 The base offset of the flash.
-	 The address space of the simulated flash ranges from this value
-	 to this value plus FLASH_SIMULATOR_ERASE_UNIT * FLASH_SIMULATOR_FLASH_SIZE.
-
-config FLASH_SIMULATOR_ERASE_UNIT
-	int
-	prompt "Erase unit size in bytes"
-	default 4096
-	range 1 65536
-	help
-	 The smallest area of flash memory that can be indipendently erased.
-
-config FLASH_SIMULATOR_PROG_UNIT
-	int
-	prompt "Program unit size in bytes"
-	default 4
-	range 1 4096
-	help
-	 The smallest area of flash memory that can be indipendently programmed.
-
-config FLASH_SIMULATOR_FLASH_SIZE
-	int
-	prompt "Flash size in erase units"
-	default 4
-	range 1 65536
-	help
-	 The size of the simulated flash area expressed in erase units.
-
 config FLASH_SIMULATOR_DOUBLE_WRITES
 	bool
 	prompt "Allow program units to be programmed more than once"
