@@ -10,3 +10,4 @@ toolchain:
   - xtools
 supported:
   - gpio
+  - i2c
