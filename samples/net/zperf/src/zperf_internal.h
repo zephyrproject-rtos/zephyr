@@ -67,7 +67,7 @@ struct zperf_udp_datagram {
 	s32_t id;
 	u32_t tv_sec;
 	u32_t tv_usec;
-};
+} __packed;
 
 struct zperf_client_hdr_v1 {
 	s32_t flags;
