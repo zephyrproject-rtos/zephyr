@@ -28,7 +28,7 @@ struct i2c_bitbang_io {
 struct i2c_bitbang {
 	const struct i2c_bitbang_io	*io;
 	void				*io_context;
-	const u32_t			*delays;
+	u32_t				delays[2];
 };
 
 /**
