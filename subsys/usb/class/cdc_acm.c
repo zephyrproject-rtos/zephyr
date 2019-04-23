@@ -62,7 +62,7 @@ LOG_MODULE_REGISTER(usb_cdc_acm);
 	((struct cdc_acm_dev_data_t * const)(dev)->driver_data)
 
 /* 115200bps, no parity, 1 stop bit, 8bit char */
-#define CDC_ACM_DEFAUL_BAUDRATE {sys_cpu_to_le32(115200), 0, 0, 8}
+#define CDC_ACM_DEFAULT_BAUDRATE {sys_cpu_to_le32(115200), 0, 0, 8}
 
 /* Size of the internal buffer used for storing received data */
 #define CDC_ACM_BUFFER_SIZE (2 * CONFIG_CDC_ACM_BULK_EP_MPS)
@@ -1045,7 +1045,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 			 CONFIG_USB_CDC_ACM_RINGBUF_SIZE);		\
 	static struct cdc_acm_dev_data_t cdc_acm_dev_data_##x = {	\
 		.usb_status = USB_DC_UNKNOWN,				\
-		.line_coding = CDC_ACM_DEFAUL_BAUDRATE,			\
+		.line_coding = CDC_ACM_DEFAULT_BAUDRATE,		\
 		.rx_ringbuf = &rx_ringbuf_##x,				\
 }
 
