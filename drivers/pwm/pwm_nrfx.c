@@ -57,10 +57,11 @@ static u32_t pwm_period_check_and_set(const struct pwm_nrfx_config *config,
 		/* See if there is a prescaler that will make it work: */
 		bool matching_prescaler_found = false;
 
-		/* Go through all available prescaler values on device.
+		/* Go through all available prescaler values on device (skip 0
+		 * here as it is used in the 'else' block).
 		 * nRF52832 has 0-7 (Div1 - Div128)
 		 */
-		for (u8_t prescaler = 0;
+		for (u8_t prescaler = 1;
 		     prescaler <= PWM_PRESCALER_PRESCALER_Msk;
 		     prescaler++) {
 			u32_t new_countertop = period_cycles >> prescaler;
@@ -82,10 +83,10 @@ static u32_t pwm_period_check_and_set(const struct pwm_nrfx_config *config,
 			return -EINVAL;
 		}
 	} else {
-		/* If period_cycles fit with standard prescaler,
-		 * set it directly
+		/* If period_cycles fit the PWM counter without dividing
+		 * the PWM clock, use the zero prescaler.
 		 */
-		data->prescaler = 1U;
+		data->prescaler = 0U;
 		data->countertop = period_cycles;
 		data->period_cycles = period_cycles;
 	}
