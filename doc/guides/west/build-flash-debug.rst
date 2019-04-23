@@ -3,9 +3,9 @@
 Building, Flashing and Debugging
 ################################
 
-West provides 5 commands for building, flashing, and interacting with Zephyr
-programs running on a board: ``build``, ``flash``, ``debug``, ``debugserver``
-and ``attach``.
+Zephyr provides several :ref:`west extension commands <west-extensions>` for
+building, flashing, and interacting with Zephyr programs running on a board:
+``build``, ``flash``, ``debug``, ``debugserver`` and ``attach``.
 
 These use information stored in the CMake cache [#cmakecache]_ to
 flash or attach a debugger to a board supported by Zephyr. The exception is
@@ -60,6 +60,10 @@ no additional parameters.
   parameters) without having to specify the board again. If you're unsure
   whether ``-b`` is required, just try leaving it out. West will print an
   error if the option is required and was not given.
+
+.. tip::
+  You can use the :ref:`west boards <west-boards>` command to list all
+  supported boards.
 
 Specify the source directory path as the first positional argument::
 
