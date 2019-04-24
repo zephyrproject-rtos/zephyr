@@ -148,7 +148,7 @@ static inline void ring_buf_init(struct ring_buf *buf, u32_t size, void *data)
 {
 	memset(buf, 0, sizeof(struct ring_buf));
 	buf->size = size;
-	buf->buf.buf32 = data;
+	buf->buf.buf32 = (u32_t *)data;
 	if (is_power_of_two(size)) {
 		buf->mask = size - 1;
 	} else {
