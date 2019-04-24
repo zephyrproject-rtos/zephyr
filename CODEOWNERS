@@ -471,6 +471,7 @@
 /tests/crypto/                            @ceolin
 /tests/crypto/mbedtls/                    @nashif @ceolin
 /tests/drivers/can/                       @alexanderwachter
+/tests/drivers/counter/                   @nordic-krch
 /tests/drivers/flash_simulator/           @nvlsianpu
 /tests/drivers/gpio/                      @mnkp @pabigot
 /tests/drivers/hwinfo/                    @alexanderwachter
