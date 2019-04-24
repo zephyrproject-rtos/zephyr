@@ -16,6 +16,11 @@ properties:
     label:
       category: required
 
+    center-aligned:
+      type: boolean
+      description: Use center-aligned (up and down) counter mode
+      category: optional
+
     ch0-pin:
       type: int
       description: Channel 0 pin
