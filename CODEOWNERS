@@ -352,6 +352,6 @@
 /tests/net/socket/                        @jukkar @tbursztyka @pfalcon
 /tests/subsys/fs/                         @nashif @wentongwu
 /tests/subsys/settings/                   @nvlsianpu
-
+/tests/subsys/shell/                      @jarz-nordic @nordic-krch
 # Get all docs reviewed
 *.rst                                     @dbkinder
