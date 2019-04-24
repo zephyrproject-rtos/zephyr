@@ -259,7 +259,7 @@
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
 /scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 /scripts/elf_helper.py                    @andrewboie
-/scripts/sanity_chk/expr_parser.py        @andrewboie @nashif
+/scripts/sanity_chk/expr_parser.py        @nashif
 /scripts/gen_app_partitions.py            @andrewboie
 /arch/x86/gen_gdt.py                      @andrewboie
 /arch/x86/gen_idt.py                      @andrewboie
@@ -269,8 +269,8 @@
 /scripts/gen_syscall_header.py            @andrewboie
 /scripts/gen_syscalls.py                  @andrewboie
 /scripts/process_gperf.py                 @andrewboie
-/scripts/sanity_chk/                      @andrewboie @nashif
-/scripts/sanitycheck                      @andrewboie @nashif
+/scripts/sanity_chk/                      @nashif
+/scripts/sanitycheck                      @nashif
 /scripts/series-push-hook.sh              @erwango
 /scripts/west_commands/                   @mbolivar
 /scripts/west-commands.yml                @mbolivar
