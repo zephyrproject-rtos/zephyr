@@ -20,6 +20,12 @@ module = CAN
 module-str = CAN
 source "subsys/logging/Kconfig.template.log_config"
 
+config CAN_SHELL
+	bool "Enable CAN Shell"
+	depends on SHELL
+	help
+	  Enable CAN Shell for testing.
+
 config CAN_INIT_PRIORITY
 	int "CAN driver init priority"
 	default 80
