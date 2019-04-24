@@ -22,6 +22,10 @@
 #define SET_LED 0
 #define RESET_LED 1
 
+#if defined(SW0_GPIO_CONTROLLER) && defined(LED0_GPIO_CONTROLLER)
+#else
+#error This sample relies on SW0 and LED0 from the board dts file
+#endif
 
 #define NUM_LEDS_STR STRINGIFY(NUM_LEDS)
 
@@ -61,7 +65,7 @@ void send_string(char *string, struct device *can_dev)
 	msg.dlc = 0U;
 	msg.rtr = CAN_DATAFRAME;
 
-	for (str_len = strlen(string); str_len; ) {
+	for (str_len = strlen(string); str_len;) {
 		msg.dlc = str_len >= 8 ? 8 : str_len;
 		str_len -= msg.dlc;
 		memcpy(msg.data, string, msg.dlc);
@@ -147,8 +151,8 @@ void led_thread(void *msgq, void *can_dev_param, void *gpio_dev_param)
 	int ret;
 	int filter_id;
 
-	ret = gpio_pin_configure(gpio_dev, CONFIG_PIN_LED_1, GPIO_DIR_OUT);
-	gpio_pin_write(gpio_dev, CONFIG_PIN_LED_1, 0);
+	ret = gpio_pin_configure(gpio_dev, LED0_GPIO_PIN, GPIO_DIR_OUT);
+	gpio_pin_write(gpio_dev, LED0_GPIO_PIN, 0);
 
 	if (ret) {
 		printk("ERROR configure pins\n");
@@ -167,11 +171,11 @@ void led_thread(void *msgq, void *can_dev_param, void *gpio_dev_param)
 
 		switch (msg.data[0]) {
 		case SET_LED:
-			gpio_pin_write(gpio_dev, CONFIG_PIN_LED_1, 1);
+			gpio_pin_write(gpio_dev, LED0_GPIO_PIN, 1);
 
 			break;
 		case RESET_LED:
-			gpio_pin_write(gpio_dev, CONFIG_PIN_LED_1, 0);
+			gpio_pin_write(gpio_dev, LED0_GPIO_PIN, 0);
 			break;
 		}
 	}
@@ -208,7 +212,7 @@ void main(void)
 	can_configure(can_dev, CAN_LOOPBACK_MODE, 250000);
 #endif
 
-	led_gpio_dev = device_get_binding(CONFIG_GPIO_LED_DEV);
+	led_gpio_dev = device_get_binding(LED0_GPIO_CONTROLLER);
 	if (!led_gpio_dev) {
 		printk("LED: Device driver not found.\n");
 		return;
@@ -216,28 +220,29 @@ void main(void)
 
 	k_sem_init(&tx_sem, 0, INT_MAX);
 
-	button_gpio_dev = device_get_binding(CONFIG_GPIO_BUTTON_DEV);
+	button_gpio_dev = device_get_binding(SW0_GPIO_CONTROLLER);
 	if (!button_gpio_dev) {
 		printk("Button: Device driver not found.\n");
 		return;
 	}
 
-	ret = gpio_pin_configure(button_gpio_dev, CONFIG_PIN_USER_BUTTON,
-				    (GPIO_DIR_IN | GPIO_INT | GPIO_INT_EDGE |
-				     GPIO_INT_ACTIVE_HIGH | GPIO_INT_DEBOUNCE));
+	ret = gpio_pin_configure(button_gpio_dev, SW0_GPIO_PIN,
+				 (SW0_GPIO_FLAGS | GPIO_DIR_IN | GPIO_INT |
+				  GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH |
+				  GPIO_INT_DEBOUNCE));
 	if (ret) {
 		printk("Error configuring  button pin\n");
 	}
 
 	gpio_init_callback(&gpio_cb, button_callback,
-			   BIT(CONFIG_PIN_USER_BUTTON));
+			   BIT(SW0_GPIO_PIN));
 
 	ret = gpio_add_callback(button_gpio_dev, &gpio_cb);
 	if (ret) {
 		printk("Cannot setup callback!\n");
 	}
 
-	ret = gpio_pin_enable_callback(button_gpio_dev, CONFIG_PIN_USER_BUTTON);
+	ret = gpio_pin_enable_callback(button_gpio_dev, SW0_GPIO_PIN);
 	if (ret) {
 		printk("Error enabling callback!\n");
 	}

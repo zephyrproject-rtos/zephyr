@@ -19,7 +19,6 @@ In loopback mode, the board receives its own messages. This could be used for
 standalone testing.
 
 The sample can be built and executed on boards supporting CAN.
-The output ports and pins of the LEDs can be configured by Kconfig.
 
 Sample output
 =============
