@@ -30,8 +30,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_pkt.h>
 #include <net/net_if.h>
 #include <net/net_core.h>
+#include <net/dummy.h>
 #include <console/uart_pipe.h>
-#include <net/ethernet.h>
 
 #define SLIP_END     0300
 #define SLIP_ESC     0333
@@ -394,7 +394,9 @@ static void slip_iface_init(struct net_if *iface)
 	struct slip_context *slip = net_if_get_device(iface)->driver_data;
 	struct net_linkaddr *ll_addr;
 
+#if defined(CONFIG_NET_L2_ETHERNET)
 	ethernet_init(iface);
+#endif
 
 #if defined(CONFIG_NET_LLDP)
 	net_lldp_set_lldpdu(iface);
@@ -430,6 +432,7 @@ use_random_mac:
 
 static struct slip_context slip_context_data;
 
+#if defined(CONFIG_SLIP_TAP)
 static enum ethernet_hw_caps eth_capabilities(struct device *dev)
 {
 	ARG_UNUSED(dev);
@@ -441,7 +444,6 @@ static enum ethernet_hw_caps eth_capabilities(struct device *dev)
 		;
 }
 
-#if defined(CONFIG_SLIP_TAP) && defined(CONFIG_NET_L2_ETHERNET)
 static const struct ethernet_api slip_if_api = {
 	.iface_api.init = slip_iface_init,
 
@@ -459,7 +461,7 @@ ETH_NET_DEVICE_INIT(slip, CONFIG_SLIP_DRV_NAME, slip_init, &slip_context_data,
 #else
 
 static const struct dummy_api slip_if_api = {
-	.iface_init.init = slip_iface_init,
+	.iface_api.init = slip_iface_init,
 
 	.send = slip_send,
 };
