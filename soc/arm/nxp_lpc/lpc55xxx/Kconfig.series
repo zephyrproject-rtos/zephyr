@@ -1,0 +1,14 @@
+# Kconfig - LPC LPC55XXX Series
+#
+# Copyright (c) 2019, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_SERIES_LPC55XXX
+	bool "LPC5500 Series Family MCU"
+	select HAS_MCUX
+	select SOC_FAMILY_LPC
+	select CPU_CORTEX_M_HAS_SYSTICK
+	help
+	  Enable support for LPC5500 Series MCU series
