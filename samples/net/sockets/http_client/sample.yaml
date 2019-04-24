@@ -1,0 +1,15 @@
+sample:
+  description: UWP5661 Http Demo
+    application
+  name: demo_http
+  platforms: UWP5661
+common:
+    tags: samples
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Unisoc UWP5661 Demo(.*)"
+tests:
+  sample.http_demo:
+    tags: samples

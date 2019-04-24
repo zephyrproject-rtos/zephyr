@@ -1,0 +1,13 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "http Demo"
+
+module = demo
+module-dep = LOG
+module-str = Log level for demo
+module-help = Sets log level for http demo
+source "subsys/net/Kconfig.template.log_config.net"
+
+source "Kconfig.zephyr"
