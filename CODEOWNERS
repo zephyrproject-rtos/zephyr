@@ -135,7 +135,8 @@
 /drivers/sensor/lsm*/                     @avisconti
 /drivers/serial/uart_altera_jtag_hal.c    @wentongwu
 /drivers/serial/*ns16550*                 @gnuless
-/drivers/net/slip.c                       @jukkar @tbursztyka
+/drivers/net/                             @jukkar @tbursztyka
+/drivers/ptp_clock/                       @jukkar
 /drivers/spi/                             @tbursztyka
 /drivers/spi/spi_ll_stm32.*               @superna9999
 /drivers/timer/cortex_m_systick.c         @ioannisg
@@ -220,6 +221,7 @@
 /include/net/buf.h                        @jukkar @jhedberg @tbursztyka @pfalcon
 /include/posix/                           @pfalcon
 /include/power.h                          @wentongwu @nashif
+/include/ptp_clock.h                      @jukkar
 /include/sensor.h                         @bogdan-davidoaia
 /include/shared_irq.h                     @andrewboie @andyross
 /include/shell/                           @jarz-nordic @nordic-krch
@@ -283,11 +285,14 @@
 /subsys/net/ip/                           @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/                          @jukkar @tbursztyka @pfalcon
 /subsys/net/lib/dns/                      @jukkar @tbursztyka @pfalcon
-/subsys/net/lib/http/                     @jukkar @tbursztyka
 /subsys/net/lib/lwm2m/                    @mike-scott
-/subsys/net/lib/mqtt/                     @jukkar @tbursztyka
+/subsys/net/lib/config/                   @jukkar @tbursztyka
+/subsys/net/lib/mqtt/                     @jukkar @tbursztyka @rlubos
+/subsys/net/lib/openthread/               @rlubos
 /subsys/net/lib/coap/                     @rveerama1
 /subsys/net/lib/sockets/                  @jukkar @tbursztyka @pfalcon
+/subsys/net/lib/tls_credentials/          @rlubos
+/subsys/net/l2/                           @jukkar @tbursztyka
 /subsys/power/                            @wentongwu @pizi-nordic
 /subsys/settings/                         @nvlsianpu
 /subsys/shell/                            @jarz-nordic @nordic-krch
