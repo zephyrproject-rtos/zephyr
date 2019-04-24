@@ -32,7 +32,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <net/net_core.h>
 #include <console/uart_pipe.h>
 #include <net/ethernet.h>
-#include <net/lldp.h>
 
 #define SLIP_END     0300
 #define SLIP_ESC     0333
@@ -397,7 +396,9 @@ static void slip_iface_init(struct net_if *iface)
 
 	ethernet_init(iface);
 
+#if defined(CONFIG_NET_LLDP)
 	net_lldp_set_lldpdu(iface);
+#endif
 
 	if (slip->init_done) {
 		return;
