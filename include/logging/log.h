@@ -276,6 +276,10 @@ int log_printk(const char *fmt, va_list ap);
  */
 char *log_strdup(const char *str);
 
+#ifdef __cplusplus
+}
+#define LOG_IN_CPLUSPLUS 1
+#endif
 /* Macro expects that optionally on second argument local log level is provided.
  * If provided it is returned, otherwise default log level is returned or
  * LOG_LEVEL, if it was locally defined.
@@ -292,8 +296,8 @@ char *log_strdup(const char *str);
 /* Return first argument */
 #define _LOG_ARG1(arg1, ...) arg1
 
-
 #define _LOG_MODULE_CONST_DATA_CREATE(_name, _level)			     \
+	COND_CODE_1(LOG_IN_CPLUSPLUS, (extern), ())			     \
 	const struct log_source_const_data LOG_ITEM_CONST_DATA(_name)	     \
 	__attribute__ ((section("." STRINGIFY(LOG_ITEM_CONST_DATA(_name))))) \
 	__attribute__((used)) = {					     \
@@ -309,8 +313,8 @@ char *log_strdup(const char *str);
 	__attribute__((used))
 
 #define _LOG_MODULE_DYNAMIC_DATA_COND_CREATE(_name)		\
-	Z_LOG_EVAL(						\
-		IS_ENABLED(CONFIG_LOG_RUNTIME_FILTERING),	\
+	COND_CODE_1(						\
+		CONFIG_LOG_RUNTIME_FILTERING,			\
 		(_LOG_MODULE_DYNAMIC_DATA_CREATE(_name);),	\
 		()						\
 		)
@@ -350,7 +354,6 @@ char *log_strdup(const char *str);
  *       In other cases, this macro has no effect.
  * @see LOG_MODULE_DECLARE
  */
-
 
 #define LOG_MODULE_REGISTER(...)					\
 	Z_LOG_EVAL(							\
@@ -421,10 +424,5 @@ char *log_strdup(const char *str);
 /**
  * @}
  */
-
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* ZEPHYR_INCLUDE_LOGGING_LOG_H_ */
