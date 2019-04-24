@@ -1,4 +1,5 @@
 # Copyright (c) 2016 Intel Corporation
+# Copyright (c) 2019 Unisoc Technologies INC.
 #
 # SPDX-License-Identifier: Apache-2.0
 #
@@ -23,3 +24,22 @@ config HTTP_PARSER_STRICT
 	depends on (HTTP_PARSER || HTTP_PARSER_URL)
 	help
 	  This option enables the strict parsing option
+
+config HTTP_CLIENT
+	bool "HTTP CLIENT support"
+	select HTTP_PARSER
+	help
+	  This option enables the http client module.
+
+config HTTPS
+	bool "HTTPS support"
+	help
+	  Theis option enables the https connection.
+
+if HTTP_CLIENT
+	module=HTTP_CLIENT
+	module-dep=NET_LOG
+	module-str=Log level for HTTP_CLIENT
+	module-help=Enables http client debug messages.
+	source "subsys/net/Kconfig.template.log_config.net"
+endif #HTTP_CLIENT

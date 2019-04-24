@@ -1,0 +1,32 @@
+HTTP Client Support in Zephyr
+-----------------------------
+
+The HTTP client is based BSD socket API, it implement the request method of
+GET and POST, and processed with synchronization only.
+Besides, the api of http client is simple and easy use.
+
+1. Usage
+ <1> At first, call http_client_init function to get host ip and create socket
+ connection, the http_ctx will save the socket id.
+
+ <2> The sencond, call http_client_get or http_client_post to request. User
+ can set the input parameter keep_alive when need keep the connection alive.
+ Otherwise, user can call the http_add_header_field function to set callback
+ when it need processing special feature, such as add  Range/Content-Type
+ to request header, or process the response body would call the
+ http_set_resp_callback function.
+
+ if user need repeat to request, then just call http_client_get or
+ http_client_post again.
+
+ <3> Finally, close the http connection when call http_client_close.
+
+
+ 2. trouble shoot
+  <1> call http_client_init return error.
+  error code [-101]: it means system intenal error, maybe DHCP can not
+  successful, user need check local networking was normal or not.
+
+  <2> call http_client_get or http_client_post return error.
+  error code [-1]: it means connection is cutoff, user need excute
+  http_client_close to close http connect and reconnect by http_client_init.
