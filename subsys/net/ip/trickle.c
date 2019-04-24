@@ -77,7 +77,7 @@ static void double_interval_timeout(struct k_work *work)
 	NET_DBG("doubling time %u", rand_time);
 
 	trickle->Istart = k_uptime_get_32() + rand_time;
-
+	k_delayed_work_init(&trickle->timer, trickle_timeout);
 	k_delayed_work_submit(&trickle->timer, rand_time);
 
 	NET_DBG("last end %u new end %u for %u I %u",
