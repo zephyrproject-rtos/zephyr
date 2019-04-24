@@ -229,6 +229,11 @@ what build or test failed click on the row that contains the failed (i.e.
 non-green) build and then click on the "Tests" tab to see the console output
 messages indicating the failure.
 
+The `builds@lists.zephyrproject.org mailing list
+<https://lists.zephyrproject.org/g/builds>`_
+archives the CI (shippable) nightly build results.
+
+
  .. _Contribution Tools:
 
 Contribution Tools and Git Setup

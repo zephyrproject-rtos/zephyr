@@ -38,8 +38,6 @@ and the documentation's `Getting Started Guide`_ to start developing.
 Community Support
 *****************
 
-.. TODO: add link to Asking for Help doc here when the latest page has it
-
 Community support is provided via mailing lists and Slack; see the Resources
 below for details.
 
@@ -48,20 +46,23 @@ Resources
 
 Here's a quick summary of resources to help you find your way around:
 
+* **Help**: `Asking for Help Tips`_
 * **Documentation**: http://docs.zephyrproject.org (`Getting Started Guide`_)
 * **Source Code**: https://github.com/zephyrproject-rtos/zephyr is the main
   repository; https://elixir.bootlin.com/zephyr/latest/source contains a
   searchable index
-* **Releases**: https://zephyrproject.org/developers/#downloads.
+* **Releases**: https://zephyrproject.org/developers/#downloads
 * **Samples and example code**: see `Sample and Demo Code Examples`_
 * **Mailing Lists**: users@lists.zephyrproject.org and
   devel@lists.zephyrproject.org are the main user and developer mailing lists,
   respectively. You can join the developer's list and search its archives at
   `Zephyr Development mailing list`_. The other `Zephyr mailing list
   subgroups`_ have their own archives and sign-up pages.
+* **Nightly CI Build Status**: https://lists.zephyrproject.org/g/builds
+  The builds@lists.zephyrproject.org mailing list archives the CI
+  (shippable) nightly build results.
 * **Chat**: Zephyr's Slack workspace is https://zephyrproject.slack.com.  Use
-  this `Slack Invite`_ to register. There is also an IRC channel,
-  ``#zephyrproject``, on `freenode`_.
+  this `Slack Invite`_ to register.
 * **Contributing**: see the `Contribution Guide`_
 * **Wiki**: `Zephyr GitHub wiki`_
 * **Issues**: https://github.com/zephyrproject-rtos/zephyr/issues
@@ -81,4 +82,4 @@ Here's a quick summary of resources to help you find your way around:
 .. _Zephyr mailing list subgroups: https://lists.zephyrproject.org/g/main/subgroups
 .. _Sample and Demo Code Examples: http://docs.zephyrproject.org/latest/samples/index.html
 .. _Security: http://docs.zephyrproject.org/latest/security/index.html
-.. _freenode: https://freenode.net/
+.. _Asking for Help Tips: https://docs.zephyrproject.org/latest/guides/getting-help.html
