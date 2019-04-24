@@ -737,8 +737,8 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 
 	ret = k_sem_take(&ep_state->write_sem, K_NO_WAIT);
 	if (ret) {
-		LOG_ERR("Unable to write ep 0x%02x (%d)", ep, ret);
-		return ret;
+		LOG_ERR("Unable to get write lock (%d)", ret);
+		return -EAGAIN;
 	}
 
 	if (!k_is_in_isr()) {
