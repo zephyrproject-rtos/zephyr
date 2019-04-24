@@ -5049,7 +5049,6 @@ static void mayfly_xtal_retain(u8_t caller_id, u8_t retain)
 	}
 }
 
-#if defined(CONFIG_BT_CONN)
 static void prepare_reduced(u32_t status, void *op_context)
 {
 	/* It is acceptable that ticker_update will fail, if ticker is stopped;
@@ -5062,7 +5061,6 @@ static void prepare_reduced(u32_t status, void *op_context)
 		hdr->ticks_xtal_to_start |= XON_BITMASK;
 	}
 }
-#endif /* CONFIG_BT_CONN */
 
 static void prepare_normal(u32_t status, void *op_context)
 {
@@ -5153,21 +5151,19 @@ static inline struct shdr *hdr_conn_get(u8_t ticker_id,
  */
 static void mayfly_xtal_stop_calc(void *params)
 {
-	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
-	u32_t ticks_to_expire;
-	u8_t ticker_id_next;
-	u32_t ticks_current;
-	u32_t ret;
-
-#if defined(CONFIG_BT_CONN)
 	u8_t ticker_id_curr = ((u32_t)params & 0xff);
+	u32_t volatile ret_cb = TICKER_STATUS_BUSY;
 	struct connection *conn_curr = NULL;
 	struct connection *conn_next = NULL;
 	u32_t ticks_prepare_to_start_next;
 	struct shdr *hdr_curr = NULL;
 	struct shdr *hdr_next = NULL;
+	u32_t ticks_to_expire;
 	u32_t ticks_slot_abs;
-#endif /* CONFIG_BT_CONN */
+	u32_t ticks_current;
+	u8_t ticker_id_next;
+	u32_t ret;
+
 
 	ticker_id_next = 0xff;
 	ticks_to_expire = 0U;
@@ -5199,7 +5195,6 @@ static void mayfly_xtal_stop_calc(void *params)
 		return;
 	}
 
-#if defined(CONFIG_BT_CONN)
 	/* Select the current role's scheduling header */
 	hdr_curr = hdr_conn_get(ticker_id_curr, &conn_curr);
 	LL_ASSERT(hdr_curr);
@@ -5315,7 +5310,6 @@ static void mayfly_xtal_stop_calc(void *params)
 		}
 #endif /* CONFIG_BT_CONN && CONFIG_BT_CTLR_SCHED_ADVANCED */
 	}
-#endif /* CONFIG_BT_CONN */
 }
 #endif /* CONFIG_BT_CTLR_XTAL_ADVANCED */
 
