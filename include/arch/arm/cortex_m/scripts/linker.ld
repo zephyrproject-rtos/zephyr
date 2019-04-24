@@ -102,7 +102,10 @@ MEMORY
     CCM                   (rw) : ORIGIN = DT_CCM_BASE_ADDRESS, LENGTH = DT_CCM_SIZE * 1K
 #endif
     SRAM                  (wx) : ORIGIN = RAM_ADDR, LENGTH = RAM_SIZE
-
+#ifdef CONFIG_BT_STM32_IPM
+    SRAM1                 (rw) : ORIGIN = RAM1_ADDR, LENGTH = RAM1_SIZE
+    SRAM2                 (rw) : ORIGIN = RAM2_ADDR, LENGTH = RAM2_SIZE
+#endif
     /* Used by and documented in include/linker/intlist.ld */
     IDT_LIST  (wx)      : ORIGIN = (RAM_ADDR + RAM_SIZE), LENGTH = 2K
     }
