@@ -28,7 +28,7 @@
 #define FLASH_SIZE (FLASH_SIMULATOR_FLASH_SIZE * FLASH_SIMULATOR_ERASE_UNIT)
 
 /* maximum number of pages that can be tracked by the stats module */
-#define STATS_PAGE_COUNT_THRESHOLD 40
+#define STATS_PAGE_COUNT_THRESHOLD 256
 
 #define STATS_SECT_EC(N, _) STATS_SECT_ENTRY32(erase_cycles_unit##N)
 #define STATS_NAME_EC(N, _) STATS_NAME(flash_sim_stats, erase_cycles_unit##N)
