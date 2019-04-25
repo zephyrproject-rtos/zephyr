@@ -69,7 +69,7 @@ z_arch_switch_to_main_thread(struct k_thread *main_thread,
 	start_of_main_stack =
 		Z_THREAD_STACK_BUFFER(main_stack) + main_stack_size;
 #endif
-	start_of_main_stack = (void *)STACK_ROUND_DOWN(start_of_main_stack);
+	start_of_main_stack = (char *)STACK_ROUND_DOWN(start_of_main_stack);
 
 #ifdef CONFIG_TRACING
 	z_sys_trace_thread_switched_out();
