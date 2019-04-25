@@ -1,4 +1,4 @@
-# Kconfig - CC3220 SDK HAL configuration
+# Kconfig - CC3220/CC32XX SDK HAL configuration
 
 config HAS_CC3220SDK
 	bool
