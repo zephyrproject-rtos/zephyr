@@ -6,6 +6,7 @@ set_ifndef(CLANG_ROOT /usr)
 set(TOOLCHAIN_HOME ${CLANG_ROOT}/bin/)
 
 set(COMPILER clang)
+set(LINKER ld) # TODO: Use lld eventually rather than GNU ld
 
 if("${ARCH}" STREQUAL "arm")
   set(triple arm-none-eabi)

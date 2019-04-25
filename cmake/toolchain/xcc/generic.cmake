@@ -11,6 +11,7 @@ endif()
 set(TOOLCHAIN_HOME ${XTENSA_TOOLCHAIN_PATH}/XtDevTools/install/tools/$ENV{TOOLCHAIN_VER}/XtensaTools)
 
 set(COMPILER xcc)
+set(LINKER ld)
 
 set(CROSS_COMPILE_TARGET xt)
 set(SYSROOT_TARGET       xtensa-elf)
