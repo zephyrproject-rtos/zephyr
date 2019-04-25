@@ -379,8 +379,6 @@ if(CONFIG_USERSPACE)
   endif()
 endif()
 
-set_ifndef(LINKERFLAGPREFIX -Wl)
-
 if(NOT CONFIG_NATIVE_APPLICATION)
 zephyr_ld_options(
   ${LINKERFLAGPREFIX},-X
