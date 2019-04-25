@@ -221,9 +221,8 @@ zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:ASM>:-D_ASMLANGUAGE>
 )
 
-zephyr_ld_options(
-  ${TOOLCHAIN_LD_FLAGS}
-)
+# @Intent: Set fundamental linker specific flags
+toolchain_ld_base()
 
 if(NOT CONFIG_NATIVE_APPLICATION)
 zephyr_ld_options(
