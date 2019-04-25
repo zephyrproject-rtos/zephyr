@@ -37,7 +37,7 @@ config BT_ATT_TX_MAX
 	  amount the calls will block until an existing queued PDU gets
 	  sent.
 
-config BT_GATT_DB
+config BT_GATT_DYNAMIC_DB
 	bool "GATT dynamic database support"
 	default n
 	help
@@ -46,7 +46,7 @@ config BT_GATT_DB
 config BT_GATT_CACHING
 	bool "GATT Caching support"
 	default y
-	depends on BT_GATT_DB
+	depends on BT_GATT_DYNAMIC_DB
 	select TINYCRYPT
 	select TINYCRYPT_AES
 	select TINYCRYPT_AES_CMAC
