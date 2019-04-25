@@ -19,6 +19,7 @@ endif()
 set(TOOLCHAIN_HOME ${GNUARMEMB_TOOLCHAIN_PATH})
 
 set(COMPILER gcc)
+set(LINKER ld)
 
 set(CROSS_COMPILE_TARGET arm-none-eabi)
 set(SYSROOT_TARGET       arm-none-eabi)
