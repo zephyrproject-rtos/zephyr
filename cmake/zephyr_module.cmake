@@ -20,12 +20,17 @@ endif()
 
 set(KCONFIG_MODULES_FILE ${CMAKE_BINARY_DIR}/Kconfig.modules)
 
+if(WEST)
+  set(WEST_ARG "--west-path" ${WEST})
+endif()
+
 if(WEST OR ZEPHYR_MODULES)
   # Zephyr module uses west, so only call it if west is installed or
   # ZEPHYR_MODULES was provided as argument to CMake.
   execute_process(
     COMMAND
     ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/zephyr_module.py
+    ${WEST_ARG}
     ${ZEPHYR_MODULES_ARG}
     ${ZEPHYR_EXTRA_MODULES_ARG}
     --kconfig-out ${KCONFIG_MODULES_FILE}
