@@ -376,11 +376,6 @@ if(CONFIG_USERSPACE)
   endif()
 endif()
 
-zephyr_ld_options(
-  ${LINKERFLAGPREFIX},--gc-sections
-  ${LINKERFLAGPREFIX},--build-id=none
-  )
-
 # Sort the common symbols and each input section by alignment
 # in descending order to minimize padding between these symbols.
 zephyr_ld_option_ifdef(
