@@ -53,6 +53,10 @@
 	};
 };
 
+&trng {
+	status = "ok";
+};
+
 &gpio0 {
 	status = "ok";
 };
