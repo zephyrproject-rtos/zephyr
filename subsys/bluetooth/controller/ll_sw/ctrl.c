@@ -1957,29 +1957,26 @@ isr_rx_conn_pkt_ctrl_rej_conn_upd(struct radio_pdu_node_rx *node_rx,
 
 		return;
 	}
-	/* Same Procedure or Different Procedure Collision */
-
-	/* If not same procedure, stop procedure timeout, else
-	 * continue timer until phy upd ind is received.
-	 */
+	/* FIXME: handle unsupported LL parameters error */
 	else if (rej_ext_ind->error_code != BT_HCI_ERR_LL_PROC_COLLISION) {
+		/* update to next ticks offsets */
+		if (conn->role) {
+			conn->slave.ticks_to_offset =
+			    conn->llcp_conn_param.ticks_to_offset_next;
+		}
+	}
+
+	if (conn->llcp_conn_param.state == LLCP_CPR_STATE_RSP_WAIT) {
 		LL_ASSERT(_radio.conn_upd == conn);
 
 		/* reset mutex */
 		_radio.conn_upd = NULL;
 
 		/* Procedure complete */
-		conn->llcp_conn_param.ack =
-			conn->llcp_conn_param.req;
+		conn->llcp_conn_param.ack = conn->llcp_conn_param.req;
 
 		/* Stop procedure timeout */
 		conn->procedure_expire = 0;
-
-		/* update to next ticks offsets */
-		if (conn->role) {
-			conn->slave.ticks_to_offset =
-			    conn->llcp_conn_param.ticks_to_offset_next;
-		}
 	}
 
 	/* skip event generation if not cmd initiated */
