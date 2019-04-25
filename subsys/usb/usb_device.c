@@ -233,14 +233,28 @@ static bool usb_handle_request(struct usb_setup_packet *setup,
  *
  * @return N/A
  */
-static void usb_data_to_host(void)
+static void usb_data_to_host(u16_t len)
 {
 	u32_t chunk = usb_dev.data_buf_residue;
 
 	/*Always EP0 for control*/
-	usb_dc_ep_write(0x80, usb_dev.data_buf, chunk, &chunk);
+	usb_dc_ep_write(USB_CONTROL_IN_EP0, usb_dev.data_buf, chunk, &chunk);
 	usb_dev.data_buf += chunk;
 	usb_dev.data_buf_residue -= chunk;
+
+	/*
+	 * Send ZLP when host asks for a bigger length and the last chunk
+	 * is wMaxPacketSize long, to indicate the last packet.
+	 */
+	if (!usb_dev.data_buf_residue && chunk == USB_MAX_CTRL_MPS
+	    && len > chunk) {
+		int ret;
+
+		do {
+			ret = usb_dc_ep_write(USB_CONTROL_IN_EP0, NULL, 0,
+					      NULL);
+		} while (ret == -EAGAIN);
+	}
 }
 
 /*
@@ -307,7 +321,7 @@ static void usb_handle_control_transfer(u8_t ep,
 		/* Send smallest of requested and offered length */
 		usb_dev.data_buf_residue = MIN(usb_dev.data_buf_len, length);
 		/* Send first part (possibly a zero-length status message) */
-		usb_data_to_host();
+		usb_data_to_host(length);
 	} else if (ep == USB_CONTROL_OUT_EP0) {
 		/* OUT transfer, data or status packets */
 		if (usb_dev.data_buf_residue <= 0) {
@@ -345,12 +359,12 @@ static void usb_handle_control_transfer(u8_t ep,
 
 			/*Send status to host*/
 			LOG_DBG(">> usb_data_to_host(2)");
-			usb_data_to_host();
+			usb_data_to_host(sys_le16_to_cpu(setup->wLength));
 		}
 	} else if (ep == USB_CONTROL_IN_EP0) {
 		/* Send more data if available */
 		if (usb_dev.data_buf_residue != 0) {
-			usb_data_to_host();
+			usb_data_to_host(sys_le16_to_cpu(setup->wLength));
 		}
 	} else {
 		__ASSERT_NO_MSG(false);
