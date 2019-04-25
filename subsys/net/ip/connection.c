@@ -47,285 +47,6 @@ LOG_MODULE_REGISTER(net_conn, CONFIG_NET_CONN_LOG_LEVEL);
 
 static struct net_conn conns[CONFIG_NET_MAX_CONN];
 
-#if defined(CONFIG_NET_CONN_CACHE)
-
-/* Cache the connection so that we do not have to go
- * through the full list of connections when receiving
- * a network packet. The cache contains an index to
- * corresponding entry in conns array.
- *
- * Hash value is constructed like this:
- *
- *   bit      description
- *   0  - 3   bits from remote port
- *   4  - 7   bits from local port
- *   8  - 18  bits from remote address
- *   19 - 29  bits from local address
- *   30       family
- *   31       protocol
- */
-struct conn_hash {
-	u32_t value;
-	s32_t idx;
-};
-
-struct conn_hash_neg {
-	u32_t value;
-};
-
-/** Connection cache */
-static struct conn_hash conn_cache[CONFIG_NET_MAX_CONN];
-
-/** Negative cache, we definitely do not have a connection
- * to these hosts.
- */
-static struct conn_hash_neg conn_cache_neg[CONFIG_NET_MAX_CONN];
-
-#define TAKE_BIT(val, bit, max, used)				\
-	(((val & BIT(bit)) >> bit) << (max - used))
-
-static inline u8_t ports_to_hash(u16_t remote_port,
-				    u16_t local_port)
-{
-	/* Note that we do not convert port value to network byte order */
-	return (remote_port & BIT(0)) |
-		((remote_port & BIT(4)) >> 3) |
-		((remote_port & BIT(8)) >> 6) |
-		((remote_port & BIT(15)) >> 12) |
-		(((local_port & BIT(0)) |
-		  ((local_port & BIT(4)) >> 3) |
-		  ((local_port & BIT(8)) >> 6) |
-		  ((local_port & BIT(15)) >> 12)) << 4);
-}
-
-static inline u16_t ipv6_to_hash(struct in6_addr *addr)
-{
-	/* There is 11 bits available for IPv6 address */
-	/* Use more bits from the lower part of address space */
-	return
-		/* Take 3 bits from higher values */
-		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[0]), 31, 11, 1) |
-		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[0]), 15, 11, 2) |
-		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[0]), 7, 11, 3) |
-
-		/* Take 2 bits from higher middle values */
-		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[1]), 31, 11, 4) |
-		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[1]), 15, 11, 5) |
-
-		/* Take 2 bits from lower middle values */
-		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[2]), 31, 11, 6) |
-		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[2]), 15, 11, 7) |
-
-		/* Take 4 bits from lower values */
-		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[3]), 31, 11, 8) |
-		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[3]), 15, 11, 9) |
-		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[3]), 7, 11, 10) |
-		TAKE_BIT(UNALIGNED_GET(&addr->s6_addr32[3]), 0, 11, 11);
-}
-
-static inline u16_t ipv4_to_hash(struct in_addr *addr)
-{
-	/* There is 11 bits available for IPv4 address */
-	/* Use more bits from the lower part of address space */
-	return
-		TAKE_BIT(addr->s_addr, 31, 11, 1) |
-		TAKE_BIT(addr->s_addr, 27, 11, 2) |
-		TAKE_BIT(addr->s_addr, 21, 11, 3) |
-		TAKE_BIT(addr->s_addr, 17, 11, 4) |
-		TAKE_BIT(addr->s_addr, 14, 11, 5) |
-		TAKE_BIT(addr->s_addr, 11, 11, 6) |
-		TAKE_BIT(addr->s_addr, 8, 11, 7) |
-		TAKE_BIT(addr->s_addr, 5, 11, 8) |
-		TAKE_BIT(addr->s_addr, 3, 11, 9) |
-		TAKE_BIT(addr->s_addr, 2, 11, 10) |
-		TAKE_BIT(addr->s_addr, 0, 11, 11);
-}
-
-/* Return either the first free position in the cache (idx < 0) or
- * the existing cached position (idx >= 0)
- */
-static s32_t check_hash(enum net_ip_protocol proto,
-			  sa_family_t family,
-			  void *remote_addr,
-			  void *local_addr,
-			  u16_t remote_port,
-			  u16_t local_port,
-			  u32_t *cache_value)
-{
-	int i, free_pos = -1;
-	u32_t value = 0U;
-
-	value = ports_to_hash(remote_port, local_port);
-
-#if defined(CONFIG_NET_UDP)
-	if (proto == IPPROTO_UDP) {
-		value |= BIT(31);
-	}
-#endif
-
-#if defined(CONFIG_NET_TCP)
-	if (proto == IPPROTO_TCP) {
-		value &= ~BIT(31);
-	}
-#endif
-
-#if defined(CONFIG_NET_IPV6)
-	if (family == AF_INET6) {
-		value |= BIT(30);
-		value |= ipv6_to_hash((struct in6_addr *)remote_addr) << 8;
-		value |= ipv6_to_hash((struct in6_addr *)local_addr) << 19;
-	}
-#endif
-
-#if defined(CONFIG_NET_IPV4)
-	if (family == AF_INET) {
-		value &= ~BIT(30);
-		value |= ipv4_to_hash((struct in_addr *)remote_addr) << 8;
-		value |= ipv4_to_hash((struct in_addr *)local_addr) << 19;
-	}
-#endif
-
-	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
-		if (conn_cache[i].value == value) {
-			return i;
-		}
-
-		if (conn_cache[i].idx < 0 && free_pos < 0) {
-			free_pos = i;
-		}
-	}
-
-	if (free_pos >= 0) {
-		conn_cache[free_pos].value = value;
-		return free_pos;
-	}
-
-	*cache_value = value;
-
-	return -ENOENT;
-}
-
-static inline s32_t get_conn(struct net_pkt *pkt,
-			     union net_ip_header *ip_hdr,
-			     enum net_ip_protocol proto,
-			     u16_t src_port,
-			     u16_t dst_port,
-			     u32_t *cache_value)
-{
-	if (IS_ENABLED(CONFIG_NET_IPV4) && net_pkt_family(pkt) == AF_INET) {
-		return check_hash(proto, net_pkt_family(pkt),
-				  &ip_hdr->ipv4->src, &ip_hdr->ipv4->dst,
-				  src_port, dst_port, cache_value);
-	}
-
-	if (IS_ENABLED(CONFIG_NET_IPV6) && net_pkt_family(pkt) == AF_INET6) {
-		return check_hash(proto, net_pkt_family(pkt),
-				  &ip_hdr->ipv6->src, &ip_hdr->ipv6->dst,
-				  src_port, dst_port, cache_value);
-	}
-
-	return -1;
-}
-
-static inline void cache_add_neg(u32_t cache_value)
-{
-	int i;
-
-	for (i = 0; i < CONFIG_NET_MAX_CONN && cache_value > 0; i++) {
-		if (conn_cache_neg[i].value) {
-			continue;
-		}
-
-		NET_DBG("Add to neg cache value 0x%x", cache_value);
-
-		conn_cache_neg[i].value = cache_value;
-		break;
-	}
-}
-
-static inline bool cache_check_neg(u32_t cache_value)
-{
-	int i;
-
-	for (i = 0; i < CONFIG_NET_MAX_CONN && cache_value > 0; i++) {
-		if (conn_cache_neg[i].value == cache_value) {
-			NET_DBG("Cache neg [%d] value 0x%x found",
-				i, cache_value);
-			return true;
-		}
-	}
-
-	return false;
-}
-
-static void cache_clear(void)
-{
-	int i;
-
-	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
-		conn_cache[i].idx = -1;
-		conn_cache_neg[i].value = 0U;
-	}
-}
-
-static inline enum net_verdict cache_check(struct net_pkt *pkt,
-					   union net_ip_header *ip_hdr,
-					   union net_proto_header *proto_hdr,
-					   enum net_ip_protocol proto,
-					   u16_t src_port,
-					   u16_t dst_port,
-					   u32_t *cache_value,
-					   s32_t *pos)
-{
-	*pos = get_conn(pkt, ip_hdr, proto, src_port, dst_port, cache_value);
-	if (*pos >= 0) {
-		if (conn_cache[*pos].idx >= 0) {
-			/* Connection is in the cache */
-			struct net_conn *conn = &conns[conn_cache[*pos].idx];
-
-			NET_DBG("Cache %s listener for pkt %p src port %u "
-				"dst port %u family %d cache[%d] 0x%x",
-				net_proto2str(net_pkt_family(pkt), proto), pkt,
-				src_port, dst_port,
-				net_pkt_family(pkt), *pos,
-				conn_cache[*pos].value);
-
-			return conn->cb(conn, pkt,
-					ip_hdr, proto_hdr, conn->user_data);
-		}
-	} else if (*cache_value > 0) {
-		if (cache_check_neg(*cache_value)) {
-			NET_DBG("Drop by cache");
-			return NET_DROP;
-		}
-	}
-
-	return NET_CONTINUE;
-}
-
-static inline void cache_remove(struct net_conn *conn)
-{
-	int i;
-
-	for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
-		if (conn_cache[i].idx < 0 ||
-		    conn_cache[i].idx >= CONFIG_NET_MAX_CONN) {
-			continue;
-		}
-
-		if (&conns[conn_cache[i].idx] == conn) {
-			conn_cache[i].idx = -1;
-			break;
-		}
-	}
-}
-#else
-#define cache_clear(...)
-#define cache_add_neg(...)
-#define cache_check(...) NET_CONTINUE
-#define cache_remove(...)
-#endif /* CONFIG_NET_CONN_CACHE */
-
 int net_conn_unregister(struct net_conn_handle *handle)
 {
 	struct net_conn *conn = (struct net_conn *)handle;
@@ -337,8 +58,6 @@ int net_conn_unregister(struct net_conn_handle *handle)
 	if (!(conn->flags & NET_CONN_IN_USE)) {
 		return -ENOENT;
 	}
-
-	cache_remove(conn);
 
 	NET_DBG("[%zu] connection handler %p removed",
 		conn - conns, conn);
@@ -659,9 +378,6 @@ int net_conn_register(u16_t proto, u8_t family,
 		conns[i].proto = proto;
 		conns[i].family = family;
 
-		/* Cache needs to be cleared if new entries are added. */
-		cache_clear();
-
 		if (CONFIG_NET_CONN_LOG_LEVEL >= LOG_LEVEL_DBG) {
 			char dst[NET_IPV6_ADDR_LEN];
 			char src[NET_IPV6_ADDR_LEN];
@@ -806,11 +522,6 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	s16_t best_rank = -1;
 	u16_t src_port;
 	u16_t dst_port;
-#if defined(CONFIG_NET_CONN_CACHE)
-	enum net_verdict verdict;
-	u32_t cache_value = 0U;
-	s32_t pos;
-#endif
 
 	if (IS_ENABLED(CONFIG_NET_UDP) && proto == IPPROTO_UDP) {
 		src_port = proto_hdr->udp->src_port;
@@ -845,15 +556,6 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	 * UDP, TCP, IPv4 or IPv6. So that we can add new features with
 	 * less cross-module changes.
 	 */
-#if defined(CONFIG_NET_CONN_CACHE) && \
-	(defined(CONFIG_NET_UDP) || defined(CONFIG_NET_TCP))
-	verdict = cache_check(pkt, ip_hdr, proto_hdr, proto, src_port, dst_port,
-			      &cache_value, &pos);
-	if (verdict != NET_CONTINUE) {
-		return verdict;
-	}
-#endif
-
 	NET_DBG("Check %s listener for pkt %p src port %u dst port %u"
 		" family %d", net_proto2str(net_pkt_family(pkt), proto), pkt,
 		ntohs(src_port), ntohs(dst_port), net_pkt_family(pkt));
@@ -927,24 +629,11 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	}
 
 	if (best_match >= 0) {
-#if defined(CONFIG_NET_CONN_CACHE)
-		NET_DBG("[%d] match found cb %p ud %p rank 0x%02x cache 0x%x",
-			best_match,
-			conns[best_match].cb,
-			conns[best_match].user_data,
-			conns[best_match].rank,
-			pos < 0 ? 0 : conn_cache[pos].value);
-
-		if (pos >= 0) {
-			conn_cache[pos].idx = best_match;
-		}
-#else
 		NET_DBG("[%d] match found cb %p ud %p rank 0x%02x",
 			best_match,
 			conns[best_match].cb,
 			conns[best_match].user_data,
 			conns[best_match].rank);
-#endif /* CONFIG_NET_CONN_CACHE */
 
 		if (conns[best_match].cb(&conns[best_match], pkt, ip_hdr,
 			proto_hdr, conns[best_match].user_data) == NET_DROP) {
@@ -957,8 +646,6 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	}
 
 	NET_DBG("No match found.");
-
-	cache_add_neg(cache_value);
 
 	/* If the destination address is multicast address,
 	 * we will not send an ICMP error as that makes no sense.
@@ -1003,13 +690,4 @@ void net_conn_foreach(net_conn_foreach_cb_t cb, void *user_data)
 
 void net_conn_init(void)
 {
-#if defined(CONFIG_NET_CONN_CACHE)
-	do {
-		int i;
-
-		for (i = 0; i < CONFIG_NET_MAX_CONN; i++) {
-			conn_cache[i].idx = -1;
-		}
-	} while (0);
-#endif /* CONFIG_NET_CONN_CACHE */
 }
