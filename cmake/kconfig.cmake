@@ -104,6 +104,38 @@ if(EXTRA_KCONFIG_OPTIONS)
     )
 endif()
 
+# Set overlay config files list using a list of directories where the
+# overlay files could be found.
+if(DEFINED ENV{OVERLAY_CONFIG_DIRS})
+  set(OVERLAY_CONFIG_DIRS $ENV{OVERLAY_CONFIG_DIRS})
+
+  # We add current directory first so that it is seached first
+  set(overlay_config_dir_list ".:${OVERLAY_CONFIG_DIRS}")
+  string(REPLACE ":" ";" overlay_config_dirs "${overlay_config_dir_list}")
+
+  foreach(f IN ITEMS ${OVERLAY_CONFIG_AS_LIST})
+    if(IS_ABSOLUTE ${f})
+      list(APPEND overlay_config_files ${f})
+    else()
+      set(found 0)
+      foreach(d ${overlay_config_dirs})
+        if(EXISTS ${d}/${f} AND NOT IS_DIRECTORY ${d}/${f})
+          message(STATUS "Overlaying ${d}/${f}")
+          list(APPEND overlay_config_files ${d}/${f})
+          set(found 1)
+          break()
+        endif()
+      endforeach()
+      if(NOT found)
+        # Let the file checker below to report error
+        list(APPEND overlay_config_files ${f})
+      endif()
+    endif()
+  endforeach()
+else()
+  set(overlay_config_files ${OVERLAY_CONFIG_AS_LIST})
+endif()
+
 # Bring in extra configuration files dropped in by the user or anyone else;
 # make sure they are set at the end so we can override any other setting
 file(GLOB config_files ${APPLICATION_BINARY_DIR}/*.conf)
@@ -112,7 +144,7 @@ set(
   merge_config_files
   ${BOARD_DEFCONFIG}
   ${CONF_FILE_AS_LIST}
-  ${OVERLAY_CONFIG_AS_LIST}
+  ${overlay_config_files}
   ${EXTRA_KCONFIG_OPTIONS_FILE}
   ${config_files}
 )
