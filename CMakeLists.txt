@@ -194,7 +194,7 @@ if(CONFIG_MISRA_SANE)
   zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror=vla>)
 endif()
 
-# @Intent: Obtain compiler specific flags for standard C includes
+# @Intent: Set compiler specific flags for standard C includes
 toolchain_cc_nostdinc()
 
 zephyr_compile_options(
