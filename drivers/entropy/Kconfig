@@ -13,6 +13,7 @@ menuconfig ENTROPY_GENERATOR
 
 if ENTROPY_GENERATOR
 
+source "drivers/entropy/Kconfig.cc13xx_cc26xx"
 source "drivers/entropy/Kconfig.mcux"
 source "drivers/entropy/Kconfig.stm32"
 source "drivers/entropy/Kconfig.esp32"
