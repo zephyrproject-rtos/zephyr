@@ -1,0 +1,20 @@
+# Copyright (c) 2019, Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Kconfig - TI CC3235SF LaunchXL board configuration
+#
+
+if BOARD_CC3235SF_LAUNCHXL
+
+config BOARD
+	default "cc3235sf_launchxl"
+
+if I2C
+
+config I2C_CC32XX
+	default y
+
+endif # I2C
+
+endif # BOARD_CC3235SF_LAUNCHXL
