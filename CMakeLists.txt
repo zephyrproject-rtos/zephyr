@@ -225,11 +225,8 @@ zephyr_compile_options(
 toolchain_ld_base()
 
 if(NOT CONFIG_NATIVE_APPLICATION)
-zephyr_ld_options(
-  -nostdlib
-  -static
-  -no-pie
-)
+  # @Intent: Set linker specific flags for bare metal target
+  toolchain_ld_baremetal()
 endif()
 
 if(CONFIG_LIB_CPLUSPLUS)
@@ -377,13 +374,6 @@ if(CONFIG_USERSPACE)
   if(CONFIG_ARM)
     set(PRIV_STACK_DEP priv_stacks_prebuilt)
   endif()
-endif()
-
-if(NOT CONFIG_NATIVE_APPLICATION)
-zephyr_ld_options(
-  ${LINKERFLAGPREFIX},-X
-  ${LINKERFLAGPREFIX},-N
-  )
 endif()
 
 zephyr_ld_options(
