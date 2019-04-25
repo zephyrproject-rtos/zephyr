@@ -1203,7 +1203,3 @@ SHELL_STATIC_SUBCMD_SET_CREATE(zperf_commands,
 );
 
 SHELL_CMD_REGISTER(zperf, &zperf_commands, "Zperf commands", NULL);
-
-void main(void)
-{
-}
