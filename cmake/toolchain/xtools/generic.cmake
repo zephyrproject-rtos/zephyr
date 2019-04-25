@@ -7,6 +7,7 @@ assert(    XTOOLS_TOOLCHAIN_PATH      "XTOOLS_TOOLCHAIN_PATH is not set")
 set(TOOLCHAIN_HOME ${XTOOLS_TOOLCHAIN_PATH})
 
 set(COMPILER gcc)
+set(LINKER ld)
 
 # Choose one of the toolchains in 'TOOLCHAIN_HOME' at random to use as
 # a 'generic' toolchain until we know for sure which toolchain we
