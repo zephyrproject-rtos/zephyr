@@ -42,9 +42,12 @@ endif()
 unset(CMAKE_C_COMPILER)
 unset(CMAKE_C_COMPILER CACHE)
 
-# Configure the toolchain based on what toolchain technology is used
-# (gcc, host-gcc etc.)
+# A toolchain consist of a compiler and a linker.
+# In Zephyr, toolchains require a port under cmake/toolchain/.
+# Each toolchain port must set COMPILER and LINKER.
+# E.g. toolchain/llvm may pick {clang, ld} or {clang, lld}.
 include(${ZEPHYR_BASE}/cmake/compiler/${COMPILER}/target.cmake OPTIONAL)
+include(${ZEPHYR_BASE}/cmake/linker/${LINKER}/target.cmake OPTIONAL)
 
 # Uniquely identify the toolchain wrt. it's capabilities.
 #
