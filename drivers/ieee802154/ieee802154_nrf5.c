@@ -340,7 +340,7 @@ static void nrf5_radio_irq(void *arg)
 	nrf_802154_radio_irq_handler();
 }
 
-static void nrf5_config(struct device *dev)
+static void nrf5_irq_config(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -454,7 +454,7 @@ void nrf_802154_cca_failed(nrf_802154_cca_error_t error)
 }
 
 static const struct nrf5_802154_config nrf5_radio_cfg = {
-	.irq_config_func = nrf5_config,
+	.irq_config_func = nrf5_irq_config,
 };
 
 static struct ieee802154_radio_api nrf5_radio_api = {
