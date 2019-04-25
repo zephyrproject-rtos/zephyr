@@ -134,6 +134,7 @@ def main():
             # outside a west managed project.
             projects = []
         else:
+            print(err.decode(sys.getdefaultencoding()))
             # A real error occurred, raise an exception
             raise subprocess.CalledProcessError(cmd=p.args,
                                                 returncode=p.returncode)
