@@ -1,0 +1,8 @@
+sample:
+  description: Wi-Fi Repeater demo
+  name: repeater
+tests:
+  test:
+    harness: wifi
+    platform_whitelist: 96b_ivy5661
+    tags: wifi
