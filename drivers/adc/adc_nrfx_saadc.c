@@ -385,6 +385,10 @@ static int init_saadc(struct device *dev)
 	return 0;
 }
 
+static const struct adc_config_info adc_nrfx_config_info = {
+	.internal_ref_mV = 600,
+};
+
 static const struct adc_driver_api adc_nrfx_driver_api = {
 	.channel_setup = adc_nrfx_channel_setup,
 	.read          = adc_nrfx_read,
@@ -395,7 +399,7 @@ static const struct adc_driver_api adc_nrfx_driver_api = {
 
 #ifdef CONFIG_ADC_0
 DEVICE_AND_API_INIT(adc_0, DT_NORDIC_NRF_SAADC_ADC_0_LABEL,
-		    init_saadc, NULL, NULL,
+		    init_saadc, NULL, &adc_nrfx_config_info,
 		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &adc_nrfx_driver_api);
 #endif /* CONFIG_ADC_0 */

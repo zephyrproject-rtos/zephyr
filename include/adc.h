@@ -282,6 +282,21 @@ typedef int (*adc_api_read_async)(struct device *dev,
 #endif
 
 /**
+ * @brief ADC driver basic information
+ *
+ * Fixed information relevant to any driver, accessed through the
+ * config_info field of the driver config structure.
+ */
+struct adc_config_info {
+	/** Internal reference voltage in mV.
+	 *
+	 * Store -ENOTSUP if the device does not support a reference
+	 * voltage source.
+	 */
+	int internal_ref_mV;
+};
+
+/**
  * @brief ADC driver API
  *
  * This is the mandatory API any ADC driver needs to expose.
@@ -293,6 +308,26 @@ struct adc_driver_api {
 	adc_api_read_async    read_async;
 #endif
 };
+
+/**
+ * @brief Retrieve the internal reference voltage
+ *
+ * @param dev Pointer to the device structure for the driver instance.
+ *
+ * @return The internal reference, in millivolts, or a negative error
+ * code such as `-ENOTSUP` where the reference is not supported.
+ */
+static inline int adc_ref_internal(struct device *dev)
+{
+	int rv = -ENOTSUP;
+
+	const struct adc_config_info *cip
+		= (const struct adc_config_info *)dev->config->config_info;
+	if (cip) {
+		rv = cip->internal_ref_mV;
+	}
+	return rv;
+}
 
 /**
  * @brief Configure an ADC channel.
