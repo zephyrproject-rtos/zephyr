@@ -130,12 +130,14 @@ static int adc_nrfx_channel_setup(struct device *dev,
 
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
-	ARG_UNUSED(ctx);
-
 	nrf_saadc_enable();
 
-	nrf_saadc_task_trigger(NRF_SAADC_TASK_START);
-	nrf_saadc_task_trigger(NRF_SAADC_TASK_SAMPLE);
+	if (ctx->sequence.calibrate) {
+		nrf_saadc_task_trigger(NRF_SAADC_TASK_CALIBRATEOFFSET);
+	} else {
+		nrf_saadc_task_trigger(NRF_SAADC_TASK_START);
+		nrf_saadc_task_trigger(NRF_SAADC_TASK_SAMPLE);
+	}
 }
 
 static void adc_context_update_buffer_pointer(struct adc_context *ctx,
@@ -358,6 +360,22 @@ static void saadc_irq_handler(void *param)
 {
 	struct device *dev = (struct device *)param;
 
+	if (nrf_saadc_event_check(NRF_SAADC_EVENT_CALIBRATEDONE)) {
+		nrf_saadc_event_clear(NRF_SAADC_EVENT_CALIBRATEDONE);
+
+		/* PAN-86 and PAN-178 require explicit STOP before START */
+		nrf_saadc_event_clear(NRF_SAADC_EVENT_STOPPED);
+		nrf_saadc_task_trigger(NRF_SAADC_TASK_STOP);
+		while (!nrf_saadc_event_check(NRF_SAADC_EVENT_STOPPED)) {
+			__WFE();
+			__SEV();
+			__WFE();
+		}
+
+		nrf_saadc_event_clear(NRF_SAADC_EVENT_END);
+		nrf_saadc_task_trigger(NRF_SAADC_TASK_START);
+		nrf_saadc_task_trigger(NRF_SAADC_TASK_SAMPLE);
+	}
 	if (nrf_saadc_event_check(NRF_SAADC_EVENT_END)) {
 		nrf_saadc_event_clear(NRF_SAADC_EVENT_END);
 
@@ -373,7 +391,9 @@ DEVICE_DECLARE(adc_0);
 static int init_saadc(struct device *dev)
 {
 	nrf_saadc_event_clear(NRF_SAADC_EVENT_END);
-	nrf_saadc_int_enable(NRF_SAADC_INT_END);
+	nrf_saadc_event_clear(NRF_SAADC_EVENT_CALIBRATEDONE);
+	nrf_saadc_int_enable(NRF_SAADC_INT_END
+			     | NRF_SAADC_INT_CALIBRATEDONE);
 	NRFX_IRQ_ENABLE(DT_NORDIC_NRF_SAADC_ADC_0_IRQ);
 
 	IRQ_CONNECT(DT_NORDIC_NRF_SAADC_ADC_0_IRQ,

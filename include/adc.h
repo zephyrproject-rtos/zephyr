@@ -253,6 +253,16 @@ struct adc_sequence {
 	 * a specific mode (e.g. when sampling multiple channels).
 	 */
 	u8_t oversampling;
+
+	/**
+	 * Optionally perform calibration before the reading is taken.
+	 *
+	 * The impact of channel configuration on the calibration
+	 * process is specific to the underlying hardware.  ADC
+	 * implementations that do not support calibration may ignore
+	 * this flag.
+	 */
+	bool calibrate;
 };
 
 
