@@ -74,9 +74,11 @@ struct _thread_arch {
 	struct _preempt_float  preempt_float;
 #endif
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_FP_SHARING)
 	u32_t mode;
+#if defined(CONFIG_USERSPACE)
 	u32_t priv_stack_start;
+#endif
 #endif
 };
 

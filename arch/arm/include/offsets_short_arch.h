@@ -26,12 +26,14 @@
 #define _thread_offset_to_preempt_float \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_preempt_float_OFFSET)
 
-#ifdef CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_FP_SHARING)
 #define _thread_offset_to_mode \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_mode_OFFSET)
 
+#ifdef CONFIG_USERSPACE
 #define _thread_offset_to_priv_stack_start \
 	(___thread_t_arch_OFFSET + ___thread_arch_t_priv_stack_start_OFFSET)
+#endif
 #endif
 
 /* end - threads */
