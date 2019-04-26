@@ -80,8 +80,24 @@ SECTION_FUNC(TEXT, __pendsv)
 #elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
     stmia r0, {v1-v8, ip}
 #ifdef CONFIG_FP_SHARING
+    /* Assess whether switched-out thread had been using the FP registers. */
+    ldr r0, =0x10 /* EXC_RETURN.F_Type Mask */
+    tst lr, r0    /* EXC_RETURN & EXC_RETURN.F_Type_Msk */
+    beq out_fp_active
+    /* FP context inactive: clear FP state */
+    ldr r0, [r2, #_thread_offset_to_mode]
+    bic r0, #0x4 /* _current->arch.mode &= ~(CONTROL_FPCA_Msk) */
+    b out_fp_endif
+
+out_fp_active:
+    /* FP context active: set FP state and store callee-saved registers */
     add r0, r2, #_thread_offset_to_preempt_float
     vstmia r0, {s16-s31}
+    ldr r0, [r2, #_thread_offset_to_mode]
+    orrs r0, r0, #0x4 /* _current->arch.mode |= CONTROL_FPCA_Msk */
+
+out_fp_endif:
+    str r0, [r2, #_thread_offset_to_mode]
 #endif /* CONFIG_FP_SHARING */
 #else
 #error Unknown ARM architecture
@@ -179,8 +195,35 @@ _thread_irq_disabled:
     msr BASEPRI, r0
 
 #ifdef CONFIG_FP_SHARING
+    /* Assess whether switched-in thread had been using the FP registers. */
+    ldr r0, [r2, #_thread_offset_to_mode]
+    tst r0, #0x04 /* thread.arch.mode & CONTROL.FPCA Msk */
+    bne in_fp_active
+    /* FP context inactive for swapped-in thread:
+     * - reset FPSCR to 0
+     * - set EXC_RETURN.F_Type (prevents FP frame un-stacking when returning
+     *   from pendSV)
+     */
+    movs.n r3, #0
+    vmsr fpscr, r3
+    orrs lr, lr, #0x10 /* EXC_RETURN & EXC_RETURN.F_Type_Msk */
+    b in_fp_endif
+
+in_fp_active:
+    /* FP context active:
+     * - clear EXC_RETURN.F_Type
+     * - FPSCR and caller-saved registers will be restored automatically
+     * - restore callee-saved FP registers
+     */
+    bic lr, #0x10 /* EXC_RETURN | (~EXC_RETURN.F_Type_Msk) */
     add r0, r2, #_thread_offset_to_preempt_float
     vldmia r0, {s16-s31}
+in_fp_endif:
+    /* Clear CONTROL.FPCA that may have been set by FP instructions */
+    mrs r3, CONTROL
+    bic r3, #0x4 /* CONTROL.FPCA Msk */
+    msr CONTROL, r3
+    isb
 #endif
 
 #if defined (CONFIG_ARM_MPU)
