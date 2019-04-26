@@ -8,11 +8,11 @@ import shutil
 import subprocess
 
 from west import log
-from west import cmake
 from west.configuration import config
-from west.build import DEFAULT_CMAKE_GENERATOR, is_zephyr_build
+from cmake import DEFAULT_CMAKE_GENERATOR, run_cmake, run_build, CMakeCache
+from build_helpers import is_zephyr_build, find_build_dir, BUILD_DIR_DESCRIPTION
 
-from zephyr_ext_common import find_build_dir, Forceable, BUILD_DIR_DESCRIPTION
+from zephyr_ext_common import Forceable
 
 _ARG_SEPARATOR = '--'
 
@@ -221,7 +221,7 @@ class Build(Forceable):
 
     def _update_cache(self):
         try:
-            self.cmake_cache = cmake.CMakeCache.from_build_dir(self.build_dir)
+            self.cmake_cache = CMakeCache.from_build_dir(self.build_dir)
         except FileNotFoundError:
             pass
 
@@ -371,7 +371,7 @@ class Build(Forceable):
             final_cmake_args.append('-DBOARD={}'.format(self.args.board))
         if cmake_opts:
             final_cmake_args.extend(cmake_opts)
-        cmake.run_cmake(final_cmake_args)
+        run_cmake(final_cmake_args)
 
     def _run_pristine(self):
         log.inf('Making build dir {} pristine'.format(self.build_dir))
@@ -386,13 +386,8 @@ class Build(Forceable):
                     'build system')
 
         cmake_args = ['-P', '{}/cmake/pristine.cmake'.format(zb)]
-        cmake = shutil.which('cmake')
-        if cmake is None:
-            log.die('CMake is not installed or cannot be found; cannot make '
-                    'the build folder pristine')
-        cmd = [cmake] + cmake_args
-        subprocess.check_call(cmd, cwd=self.build_dir)
+        run_cmake(cmake_args, cwd=self.build_dir)
 
     def _run_build(self, target):
         extra_args = ['--target', target] if target else []
-        cmake.run_build(self.build_dir, extra_args=extra_args)
+        run_build(self.build_dir, extra_args=extra_args)
