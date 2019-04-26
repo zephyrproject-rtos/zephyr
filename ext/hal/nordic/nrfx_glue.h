@@ -239,7 +239,15 @@ extern "C" {
 #define NRFX_DPPI_GROUPS_USED   0
 
 /** @brief Bitmask that defines PPI channels that are reserved for use outside of the nrfx library. */
-#define NRFX_PPI_CHANNELS_USED  NRFX_PPI_CHANNELS_USED_BY_PWM_SW
+#define NRFX_PPI_CHANNELS_USED  (NRFX_PPI_CHANNELS_USED_BY_BT_CTLR | \
+                                 NRFX_PPI_CHANNELS_USED_BY_PWM_SW)
+
+#if IS_ENABLED(CONFIG_BT_CTLR)
+extern const u32_t z_bt_ctlr_used_nrf_ppi_channels;
+#define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR   z_bt_ctlr_used_nrf_ppi_channels
+#else
+#define NRFX_PPI_CHANNELS_USED_BY_BT_CTLR   0
+#endif
 
 #if IS_ENABLED(CONFIG_PWM_NRF5_SW)
 #define NRFX_PPI_CHANNELS_USED_BY_PWM_SW \
@@ -250,7 +258,14 @@ extern "C" {
 #endif
 
 /** @brief Bitmask that defines PPI groups that are reserved for use outside of the nrfx library. */
-#define NRFX_PPI_GROUPS_USED    0
+#define NRFX_PPI_GROUPS_USED    NRFX_PPI_GROUPS_USED_BY_BT_CTLR
+
+#if IS_ENABLED(CONFIG_BT_CTLR)
+extern const u32_t z_bt_ctlr_used_nrf_ppi_groups;
+#define NRFX_PPI_GROUPS_USED_BY_BT_CTLR     z_bt_ctlr_used_nrf_ppi_groups
+#else
+#define NRFX_PPI_GROUPS_USED_BY_BT_CTLR     0
+#endif
 
 /** @brief Bitmask that defines SWI instances that are reserved for use outside of the nrfx library. */
 #define NRFX_SWI_USED           0

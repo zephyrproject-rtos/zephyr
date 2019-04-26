@@ -29,6 +29,12 @@
 #error "Platform not defined."
 #endif
 
+/* The following two constants are used in nrfx_glue.h for marking these PPI
+ * channels and groups as occupied and thus unavailable to other modules.
+ */
+const u32_t z_bt_ctlr_used_nrf_ppi_channels = HAL_USED_PPI_CHANNELS;
+const u32_t z_bt_ctlr_used_nrf_ppi_groups   = HAL_USED_PPI_GROUPS;
+
 static radio_isr_cb_t isr_cb;
 static void           *isr_cb_param;
 
