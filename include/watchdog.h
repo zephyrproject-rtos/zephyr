@@ -57,9 +57,6 @@ struct wdt_config {
 	u32_t timeout;
 	void (*interrupt_fn)(struct device *dev);
 };
-/**
- * @}
- */
 
 
 /**
