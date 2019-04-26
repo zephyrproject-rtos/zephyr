@@ -9,4 +9,11 @@ if BOARD_CC1352R1_LAUNCHXL
 config BOARD
 	default "cc1352r1_launchxl"
 
+if SPI
+
+config SPI_0
+	default y
+
+endif # SPI
+
 endif # BOARD_CC1352R1_LAUNCHXL
