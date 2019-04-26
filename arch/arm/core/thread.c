@@ -133,9 +133,11 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	thread->callee_saved.psp = (u32_t)pInitCtx;
 	thread->arch.basepri = 0;
 
-#if defined(CONFIG_USERSPACE)
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_FP_SHARING)
 	thread->arch.mode = 0;
+#if defined(CONFIG_USERSPACE)
 	thread->arch.priv_stack_start = 0;
+#endif
 #endif
 
 	/* swap_return_value can contain garbage */
