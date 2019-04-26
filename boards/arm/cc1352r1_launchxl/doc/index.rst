@@ -48,6 +48,8 @@ features:
 +-----------+------------+----------------------+
 | UART      | on-chip    | serial               |
 +-----------+------------+----------------------+
+| I2C       | on-chip    | i2c                  |
++-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
 
