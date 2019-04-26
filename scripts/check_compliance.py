@@ -19,8 +19,7 @@ from shutil import copyfile
 import json
 import tempfile
 from colorama import Fore, Style
-import glob
-import yaml
+from pathlib import Path
 
 logger = None
 
@@ -36,6 +35,8 @@ sh_special_args = {
     '_cwd': os.getcwd()
 }
 
+# The absolute path of the top-level git directory
+git_top = sh.git("rev-parse", "--show-toplevel").strip()
 
 def get_shas(refspec):
     """
@@ -73,7 +74,6 @@ class ComplianceTest:
         self.case = None
         self.suite = suite
         self.commit_range = commit_range
-        self.repo_path = os.getcwd()
         # get() defaults to None if not present
         self.zephyr_base = os.environ.get('ZEPHYR_BASE')
 
@@ -163,7 +163,7 @@ class CheckPatch(ComplianceTest):
     def run(self):
         self.prepare()
         # Default to Zephyr's checkpatch if ZEPHYR_BASE is set
-        checkpatch = os.path.join(self.zephyr_base or self.repo_path, 'scripts',
+        checkpatch = os.path.join(self.zephyr_base or git_top, 'scripts',
                                   'checkpatch.pl')
         if not os.path.exists(checkpatch):
             self.skip(checkpatch + " not found")
@@ -173,7 +173,8 @@ class CheckPatch(ComplianceTest):
         try:
             subprocess.check_output((checkpatch, '--mailback', '--no-tree', '-'),
                                     stdin=diff.stdout,
-                                    stderr=subprocess.STDOUT, shell=True)
+                                    stderr=subprocess.STDOUT,
+                                    shell=True, cwd=git_top)
 
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
@@ -429,73 +430,119 @@ class Codeowners(ComplianceTest):
     _name = "Codeowners"
     _doc  = "https://help.github.com/articles/about-code-owners/"
 
-    def parse_codeowners(self, git_root, codeowners):
-        all_files = []
+    def ls_owned_files(self, codeowners):
+        """Returns an OrderedDict mapping git patterns from the CODEOWNERS file
+        to the corresponding list of files found on the filesystem.  It
+        unfortunately does not seem possible to invoke git and re-use
+        how 'git ignore' and/or 'git attributes' already implement this,
+        we must re-invent it.
+        """
+
+        # TODO: filter out files not in "git ls-files" (e.g.,
+        # sanity-out) _if_ the overhead isn't too high for a clean tree.
+        #
+        # pathlib.match() doesn't support **, so it looks like we can't
+        # recursively glob the output of ls-files directly, only real
+        # files :-(
+
+        pattern2files = collections.OrderedDict()
+        top_path = Path(git_top)
+
         with open(codeowners, "r") as codeo:
-            for line in codeo.readlines():
-                if not line.startswith("#") and line != "\n":
-                    match = re.match(r"([^\s]+)\s+(.*)", line)
-                    if match:
-                        add_base = False
-                        path = match.group(1)
-                        if path.startswith("/"):
-                            abs_path = git_root + path
-                        else:
-                            abs_path = "**/{}".format(path)
-                            add_base = True
+            for lineno, line in enumerate(codeo, start=1):
 
-                        if abs_path.endswith("/"):
-                            abs_path = abs_path + "**"
-                        elif os.path.isdir(abs_path):
-                            self.add_failure("Expected / after directory '{}' "
-                                             "in CODEOWNERS".format(path))
-                            continue
-                        g = glob.glob(abs_path, recursive=True)
-                        if not g:
-                            self.add_failure("Path '{}' not found, in "
-                                             "CODEOWNERS".format(path))
-                        else:
-                            files = []
-                            if not add_base:
-                                for f in g:
-                                    l = f.replace(git_root + "/", "")
-                                    files.append(l)
-                            else:
-                                files = g
+                if line.startswith("#") or not line.strip():
+                    continue
 
-                            all_files += files
+                match = re.match(r"^([^\s]+)\s+[^\s]+", line)
+                if not match:
+                    self.add_failure(
+                        "Invalid CODEOWNERS line %d\n\t%s" %
+                        (lineno, line))
+                    continue
 
-        files = []
-        for f in all_files:
-            if os.path.isfile(f):
-                files.append(f)
+                git_patrn = match.group(1)
+                glob = self.git_pattern_to_glob(git_patrn)
+                files = []
+                for abs_path in top_path.glob(glob):
+                    # comparing strings is much faster later
+                    files.append(str(abs_path.relative_to(top_path)))
 
-        return set(files)
+                if not files:
+                    self.add_failure("Path '{}' not found, in "
+                                     "CODEOWNERS".format(git_patrn))
+
+                pattern2files[git_patrn] = files
+
+        return pattern2files
+
+    def git_pattern_to_glob(self, git_pattern):
+        """Appends and prepends '**[/*]' when needed. Result has neither a
+        leading nor a trailing slash.
+        """
+
+        if git_pattern.startswith("/"):
+            ret = git_pattern[1:]
+        else:
+            ret = "**/" + git_pattern
+
+        if git_pattern.endswith("/"):
+            ret = ret + "**/*"
+        elif os.path.isdir(os.path.join(git_top, ret)):
+            self.add_failure("Expected '/' after directory '{}' "
+                             "in CODEOWNERS".format(ret))
+
+        return ret
 
     def run(self):
         self.prepare()
-        git_root = sh.git("rev-parse", "--show-toplevel").strip()
-        codeowners = os.path.join(git_root, "CODEOWNERS")
+        # TODO: testing an old self.commit range that doesn't end
+        # with HEAD is most likely a mistake. Should warn, see
+        # https://github.com/zephyrproject-rtos/ci-tools/pull/24
+        codeowners = os.path.join(git_top, "CODEOWNERS")
         if not os.path.exists(codeowners):
             self.skip("CODEOWNERS not available in this repo")
 
         commit = sh.git("diff","--name-only", "--diff-filter=A", self.commit_range, **sh_special_args)
-        new_files = commit.split("\n")
-        files_in_tree = sh.git("ls-files",  **sh_special_args).split("\n")
-        if new_files:
-            owned = self.parse_codeowners(git_root, codeowners)
-            new_not_owned = []
-            for f in new_files:
-                if not f:
-                    continue
-                if f not in owned:
-                    new_not_owned.append(f)
+        new_files = commit.splitlines()
+        logging.debug("New files %s", new_files)
 
-            if new_not_owned:
-                self.add_failure("New files added that are not covered in "
-                                 "CODEOWNERS:\n\n" + "\n".join(new_not_owned) +
-                                 "\n\nPlease add one or more entries in the "
-                                 "CODEOWNERS file to cover those files")
+        if not new_files:
+            # TODO: parse CODEOWNERS to report errors in it *without*
+            # scanning the tree to keep this case very fast.
+            return
+
+        # Convert to pathlib.Path string representation (e.g.,
+        # backslashes 'dir1\dir2\' on Windows) to be consistent
+        # with self.ls_owned_files()
+        new_files = [str(Path(f)) for f in new_files]
+
+        logging.info("If this takes too long then cleanup and try again")
+        patrn2files = self.ls_owned_files(codeowners)
+
+        new_not_owned = []
+        for newf in new_files:
+            f_is_owned = False
+
+            for git_pat, owned in patrn2files.items():
+                logging.debug("Scanning %s for %s", git_pat, newf)
+
+                if newf in owned:
+                    logging.info("%s matches new file %s", git_pat, newf)
+                    f_is_owned = True
+                    # Unlike github, we don't care about finding any
+                    # more specific owner.
+                    break
+
+            if not f_is_owned:
+                new_not_owned.append(newf)
+
+        if new_not_owned:
+            self.add_failure("New files added that are not covered in "
+                             "CODEOWNERS:\n\n" + "\n".join(new_not_owned) +
+                             "\n\nPlease add one or more entries in the "
+                             "CODEOWNERS file to cover those files")
+
 
 class Documentation(ComplianceTest):
     """
