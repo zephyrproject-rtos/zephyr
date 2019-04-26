@@ -9,6 +9,13 @@ config BUILD_OUTPUT_BIN
 config BOARD
 	default "qemu_x86"
 
+if FLASH
+
+config FLASH_SIMULATOR
+	default y
+
+endif
+
 endif # BOARD_QEMU_X86
 
 if BOARD_QEMU_X86_IAMCU
