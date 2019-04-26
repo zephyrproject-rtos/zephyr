@@ -6,7 +6,6 @@
 menuconfig FLASH_SIMULATOR
 	bool
 	prompt "Flash simulator"
-	default y if BOARD_QEMU_X86
 	depends on FLASH
 	select STATS
 	select STATS_NAMES
