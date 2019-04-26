@@ -159,7 +159,6 @@
 /dts/bindings/*/st,stm32*                 @erwango
 /dts/bindings/sensor/ams,ens210.yaml      @alexanderwachter
 /dts/bindings/sensor/ams,iaqcore.yaml     @alexanderwachter
-/dts/common/sim-flash.dtsi                @nvlsianpu
 /ext/fs/                                  @nashif @wentongwu
 /ext/hal/cmsis/                           @MaureenHelm @galak
 /ext/hal/libmetal/                        @galak
