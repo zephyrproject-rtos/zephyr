@@ -11,6 +11,14 @@
 	model = "Adafruit Trinket M0";
 	compatible = "adafruit,trinket-m0", "atmel,samd21e18a", "atmel,samd21";
 
+	soc {
+		nvmctrl: nvmctrl@41004000  {
+			flash0: flash@0 {
+				reg = <0x2000 0x3E000>;
+			};
+		};
+	};
+
 	chosen {
 		zephyr,console = &sercom0;
 		zephyr,shell-uart = &sercom0;
