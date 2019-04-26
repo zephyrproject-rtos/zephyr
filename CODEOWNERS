@@ -331,6 +331,7 @@
 /tests/drivers/spi/                       @tbursztyka
 /tests/drivers/uart/uart_async_api/       @Mierunski
 /tests/kernel/                            @andrewboie @andyross @nashif
+/tests/lib/                               @nashif
 /tests/net/                               @jukkar @tbursztyka @pfalcon
 /tests/net/buf/                           @jukkar @jhedberg @tbursztyka @pfalcon
 /tests/net/lib/                           @jukkar @tbursztyka @pfalcon
