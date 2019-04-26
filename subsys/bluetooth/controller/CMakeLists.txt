@@ -158,6 +158,7 @@ zephyr_library_include_directories(
 if(CONFIG_SOC_COMPATIBLE_NRF)
   zephyr_library_include_directories(
     ll_sw/nordic
+    hci/nordic
     )
 endif()
 
