@@ -11,7 +11,7 @@ properties:
       type: string
       category: required
       description: compatible strings
-      constraint: "sim-flash"
+      constraint: "zephyr,sim-flash"
 
     label:
       type: string
