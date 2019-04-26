@@ -87,6 +87,16 @@ UTIL_EVAL(UTIL_REPEAT(FLASH_SIMULATOR_FLASH_PAGE_COUNT, STATS_NAME_EC))
 UTIL_EVAL(UTIL_REPEAT(FLASH_SIMULATOR_FLASH_PAGE_COUNT, STATS_NAME_DIRTYR))
 STATS_NAME_END(flash_sim_stats);
 
+/* simulator dynamic thresholds */
+STATS_SECT_START(flash_sim_thresholds)
+STATS_SECT_ENTRY32(max_write_calls)
+STATS_SECT_END;
+
+STATS_SECT_DECL(flash_sim_thresholds) flash_sim_thresholds;
+STATS_NAME_START(flash_sim_thresholds)
+STATS_NAME(flash_sim_thresholds, max_write_calls)
+STATS_NAME_END(flash_sim_thresholds);
+
 static u8_t mock_flash[FLASH_SIZE];
 static bool write_protection;
 
@@ -176,6 +186,12 @@ static int flash_sim_write(struct device *dev, const off_t offset,
 			return -EIO;
 #endif
 		}
+	}
+
+	if ((flash_sim_thresholds.max_write_calls != 0) &&
+	    (flash_sim_stats.flash_write_calls >
+		flash_sim_thresholds.max_write_calls)){
+		return 0;
 	}
 
 	for (u32_t i = 0; i < len; i++) {
@@ -279,6 +295,8 @@ static const struct flash_driver_api flash_sim_api = {
 static int flash_init(struct device *dev)
 {
 	STATS_INIT_AND_REG(flash_sim_stats, STATS_SIZE_32, "flash_sim_stats");
+	STATS_INIT_AND_REG(flash_sim_thresholds, STATS_SIZE_32,
+			   "flash_sim_thresholds");
 	memset(mock_flash, 0xFF, ARRAY_SIZE(mock_flash));
 
 	return 0;
