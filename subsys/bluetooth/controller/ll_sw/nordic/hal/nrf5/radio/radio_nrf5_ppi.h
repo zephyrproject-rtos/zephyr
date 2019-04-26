@@ -434,4 +434,74 @@ static inline void hal_radio_rxen_on_sw_switch(u8_t ppi)
 
 #endif /* CONFIG_SOC_NRF52840 */
 #endif /* !CONFIG_BT_CTLR_TIFS_HW */
+
+/******************************************************************************/
+
+#define HAL_USED_PPI_CHANNELS \
+	(BIT(HAL_RADIO_ENABLE_TX_ON_TICK_PPI) | \
+	 BIT(HAL_RADIO_ENABLE_RX_ON_TICK_PPI) | \
+	 BIT(HAL_RADIO_RECV_TIMEOUT_CANCEL_PPI) | \
+	 BIT(HAL_RADIO_DISABLE_ON_HCTO_PPI) | \
+	 BIT(HAL_RADIO_END_TIME_CAPTURE_PPI) | \
+	 BIT(HAL_EVENT_TIMER_START_PPI) | \
+	 BIT(HAL_RADIO_READY_TIME_CAPTURE_PPI) | \
+	 BIT(HAL_TRIGGER_CRYPT_PPI) | \
+	 BIT(HAL_TRIGGER_AAR_PPI) | \
+	 HAL_USED_PPI_CHANNELS_2 | HAL_USED_PPI_CHANNELS_3 | \
+	 HAL_USED_PPI_CHANNELS_4 | HAL_USED_PPI_CHANNELS_5)
+
+#if defined(HAL_TRIGGER_RATEOVERRIDE_PPI)
+#define HAL_USED_PPI_CHANNELS_2 \
+	BIT(HAL_TRIGGER_RATEOVERRIDE_PPI)
+#else
+#define HAL_USED_PPI_CHANNELS_2 0
+#endif
+
+#if defined(HAL_ENABLE_PALNA_PPI)
+#define HAL_USED_PPI_CHANNELS_3 \
+	(BIT(HAL_ENABLE_PALNA_PPI) | \
+	 BIT(HAL_DISABLE_PALNA_PPI))
+#else
+#define HAL_USED_PPI_CHANNELS_3 0
+#endif
+
+#if defined(HAL_SW_SWITCH_TIMER_CLEAR_PPI)
+#define HAL_USED_PPI_CHANNELS_4 \
+	(BIT(HAL_SW_SWITCH_TIMER_CLEAR_PPI) | \
+	 BIT(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE) | \
+	 BIT(HAL_SW_SWITCH_GROUP_TASK_DISABLE_PPI_BASE+1) | \
+	 BIT(HAL_SW_SWITCH_GROUP_TASK_ENABLE_PPI) | \
+	 BIT(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE) | \
+	 BIT(HAL_SW_SWITCH_RADIO_ENABLE_PPI_BASE+1))
+#else
+#define HAL_USED_PPI_CHANNELS_4 0
+#endif
+
+#if defined(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI)
+#define HAL_USED_PPI_CHANNELS_5 \
+	(BIT(HAL_SW_SWITCH_RADIO_ENABLE_S2_PPI) | \
+	 BIT(HAL_SW_SWITCH_TIMER_S8_DISABLE_PPI))
+#else
+#define HAL_USED_PPI_CHANNELS_5 0
+#endif
+
+#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
+/* When the build is targeting an NRF board simulated with BabbleSim,
+ * nrfx_glue.h is not processed and the following symbol is not defined.
+ */
+#define NRFX_PPI_CHANNELS_USED_BY_PWM_SW  0
+#endif
+BUILD_ASSERT_MSG(
+	(HAL_USED_PPI_CHANNELS & NRFX_PPI_CHANNELS_USED_BY_PWM_SW) == 0,
+	"PPI channels used by the Bluetooth controller overlap with those "
+	"assigned to the pwm_nrf5_sw driver.");
+
+#if defined(SW_SWITCH_TIMER_TASK_GROUP_BASE)
+#define HAL_USED_PPI_GROUPS \
+	(BIT(SW_SWITCH_TIMER_TASK_GROUP_BASE) | \
+	 BIT(SW_SWITCH_TIMER_TASK_GROUP_BASE+1))
+#else
+#define HAL_USED_PPI_GROUPS 0
+#endif
+
 #endif /* CONFIG_SOC_SERIES_NRF51X || CONFIG_SOC_SERIES_NRF52X */
