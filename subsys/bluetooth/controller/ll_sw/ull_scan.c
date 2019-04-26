@@ -163,6 +163,7 @@ u8_t ull_scan_enable(struct ll_scan_set *scan)
 	}
 #endif
 
+	lll->chan = 0;
 	lll->init_addr_type = scan->own_addr_type;
 	ll_addr_get(lll->init_addr_type, lll->init_addr);
 

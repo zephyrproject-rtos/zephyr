@@ -377,6 +377,8 @@ u8_t ll_rx_get(void **node_rx, u16_t *handle)
 ll_rx_get_again:
 #endif /* CONFIG_BT_CONN */
 
+	*node_rx = NULL;
+
 	link = memq_peek(memq_ll_rx.head, memq_ll_rx.tail, (void **)&rx);
 	if (link) {
 #if defined(CONFIG_BT_CONN)
@@ -416,14 +418,10 @@ ll_rx_get_again:
 			*node_rx = rx;
 
 #if defined(CONFIG_BT_CONN)
-		} else {
-			*node_rx = NULL;
 		}
 	} else {
 		cmplt = tx_cmplt_get(handle, &mfifo_tx_ack.f, mfifo_tx_ack.l);
-		*node_rx = NULL;
 #endif /* CONFIG_BT_CONN */
-
 	}
 
 	return cmplt;
