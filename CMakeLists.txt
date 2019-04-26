@@ -230,9 +230,8 @@ if(NOT CONFIG_NATIVE_APPLICATION)
 endif()
 
 if(CONFIG_LIB_CPLUSPLUS)
-zephyr_ld_options(
-  -lstdc++
-)
+  # @Intent: Set linker specific flags for C++
+  toolchain_ld_cpp()
 endif()
 
 # ==========================================================================
