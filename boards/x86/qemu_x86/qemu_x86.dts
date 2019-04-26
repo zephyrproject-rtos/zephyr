@@ -13,7 +13,6 @@
 #endif
 
 #include <ia32.dtsi>
-#include "../../../dts/common/sim-flash.dtsi"
 
 / {
 	model = "QEMU X86";
@@ -44,6 +43,22 @@
 			interrupt-parent = <&intc>;
 
 			status = "ok";
+		};
+	};
+
+	sim_flash {
+		compatible = "zephyr,sim-flash";
+		label = "FLASH_SIMULATOR";
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash_sim0: flash_sim@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x00000000 DT_FLASH_SIZE>;
+
+			erase-block-size = <1024>;
+			write-block-size = <4>;
 		};
 	};
 };
