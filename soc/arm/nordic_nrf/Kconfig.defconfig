@@ -17,6 +17,9 @@ config SYS_CLOCK_TICKS_PER_SEC
 	int
 	default 128
 
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	default y
+
 config BUILD_OUTPUT_HEX
 	default y
 
