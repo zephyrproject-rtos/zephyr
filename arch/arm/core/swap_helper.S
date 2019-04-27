@@ -55,17 +55,6 @@ SECTION_FUNC(TEXT, __pendsv)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 #endif /* CONFIG_TRACING */
 
-    /* protect the kernel state while we play with the thread lists */
-#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
-    cpsid i
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
-    movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
-    msr BASEPRI, r0
-    isb /* Make the effect of disabling interrupts be realized immediately */
-#else
-#error Unknown ARM architecture
-#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
-
     /* load _kernel into r1 and current k_thread into r2 */
     ldr r1, =_kernel
     ldr r2, [r1, #_kernel_offset_to_current]
@@ -94,6 +83,17 @@ SECTION_FUNC(TEXT, __pendsv)
     add r0, r2, #_thread_offset_to_preempt_float
     vstmia r0, {s16-s31}
 #endif /* CONFIG_FP_SHARING */
+#else
+#error Unknown ARM architecture
+#endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
+
+    /* Protect the kernel state while we play with the thread lists */
+#if defined(CONFIG_ARMV6_M_ARMV8_M_BASELINE)
+    cpsid i
+#elif defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+    movs.n r0, #_EXC_IRQ_DEFAULT_PRIO
+    msr BASEPRI, r0
+    isb /* Make the effect of disabling interrupts be realized immediately */
 #else
 #error Unknown ARM architecture
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
