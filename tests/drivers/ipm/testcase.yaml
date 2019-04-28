@@ -2,4 +2,5 @@ tests:
   peripheral.mailbox:
     filter: not CONFIG_SOC_QUARK_SE_C1000_SS
     arch_exclude: posix xtensa
+    platform_exclude: qemu_x86_64 # see issue #12478
     tags: drivers ipc
