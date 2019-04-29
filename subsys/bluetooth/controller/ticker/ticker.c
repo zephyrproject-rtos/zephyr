@@ -7,7 +7,6 @@
 
 #include <stdbool.h>
 #include <zephyr/types.h>
-#include <stdbool.h>
 #include <soc.h>
 
 #include "hal/cntr.h"
@@ -110,7 +109,7 @@ struct ticker_user_op_update {
 };
 
 /* User operation data structure for slot_get opcode. Used for passing request
- * to get next ticker with slot ticks via ticker_job. Only used by legacy stack
+ * to get next ticker with slot ticks via ticker_job
  */
 struct ticker_user_op_slot_get {
 	u8_t  *ticker_id;
@@ -209,6 +208,23 @@ static struct ticker_instance _instance[TICKER_INSTANCE_MAX];
 /*****************************************************************************
  * Static Functions
  ****************************************************************************/
+
+/**
+ * @brief Update elapsed index
+ *
+ * @param ticks_elapsed_index Pointer to current index
+ *
+ * @internal
+ */
+static inline void ticker_next_elapsed(u8_t *ticks_elapsed_index)
+{
+	u8_t idx = *ticks_elapsed_index + 1;
+
+	if (idx == DOUBLE_BUFFER_SIZE) {
+		idx = 0U;
+	}
+	*ticks_elapsed_index = idx;
+}
 
 /**
  * @brief Get ticker expiring in a specific slot
@@ -568,13 +584,7 @@ void ticker_worker(void *param)
 
 	/* Queue the elapsed ticks */
 	if (instance->ticks_elapsed_first == instance->ticks_elapsed_last) {
-		u8_t last;
-
-		last = instance->ticks_elapsed_last + 1;
-		if (last == DOUBLE_BUFFER_SIZE) {
-			last = 0U;
-		}
-		instance->ticks_elapsed_last = last;
+		ticker_next_elapsed(&instance->ticks_elapsed_last);
 	}
 	instance->ticks_elapsed[instance->ticks_elapsed_last] = ticks_expired;
 
@@ -1311,7 +1321,6 @@ static inline void ticker_job_op_inquire(struct ticker_instance *instance,
 					uop->params.slot_get.ticks_current,
 					uop->params.slot_get.ticks_to_expire);
 		/* Fall-through */
-
 	case TICKER_USER_OP_TYPE_IDLE_GET:
 		uop->status = TICKER_STATUS_SUCCESS;
 		fp_op_func = uop->fp_op_func;
@@ -1478,13 +1487,7 @@ void ticker_job(void *param)
 
 	/* Update current tick with the elapsed value from queue, and dequeue */
 	if (instance->ticks_elapsed_first != instance->ticks_elapsed_last) {
-		u8_t first;
-
-		first = instance->ticks_elapsed_first + 1;
-		if (first == DOUBLE_BUFFER_SIZE) {
-			first = 0U;
-		}
-		instance->ticks_elapsed_first = first;
+		ticker_next_elapsed(&instance->ticks_elapsed_first);
 
 		ticks_elapsed =
 		    instance->ticks_elapsed[instance->ticks_elapsed_first];
