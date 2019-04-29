@@ -733,4 +733,12 @@ config BT_CTLR_DEBUG_PINS
 	  when debugging with a logic analyzer or profiling certain sections of
 	  the code.
 
+config BT_MAYFLY_YIELD_AFTER_CALL
+	bool "Yield from mayfly thread after first call"
+	default y
+	help
+	  Only process one mayfly callback per invocation (legacy behavior).
+	  If set to 'n', all pending mayflies for callee are executed before
+	  yielding
+
 endif # BT_CTLR

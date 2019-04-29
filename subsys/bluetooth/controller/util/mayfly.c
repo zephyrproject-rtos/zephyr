@@ -215,6 +215,17 @@ void mayfly_run(u8_t callee_id)
 					 mft[callee_id][caller_id].tail,
 					 (void **)&m);
 
+/**
+ * When using cooperative thread implementation, an issue has been seen where
+ * pended mayflies are never executed in certain scenarios.
+ * This happens when mayflies with higher caller_id are constantly pended, in
+ * which case lower value caller ids never get to be executed.
+ * By allowing complete traversal of mayfly queues for all caller_ids, this
+ * does not happen, however this means that more than one mayfly function is
+ * potentially executed in a mayfly_run(), with added execution time as
+ * consequence.
+ */
+#if defined(CONFIG_BT_MAYFLY_YIELD_AFTER_CALL)
 			/* yield out of mayfly_run if a mayfly function was
 			 * called.
 			 */
@@ -229,6 +240,7 @@ void mayfly_run(u8_t callee_id)
 					return;
 				}
 			}
+#endif
 		}
 
 		if (mft[callee_id][caller_id].disable_req !=
