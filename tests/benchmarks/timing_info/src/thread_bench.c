@@ -144,8 +144,13 @@ void system_thread_bench(void)
 	k_sleep(1);
 	thread_abort_end_time = (__common_var_swap_end_time);
 	__end_swap_time = __common_var_swap_end_time;
+#if defined(CONFIG_X86) || defined(CONFIG_X86_64)
 	__start_swap_time = __temp_start_swap_time;
-
+	/* In the rest of ARCHes read_timer_start_of_swap() has already
+	 * registered the time-stamp of the start of context-switch in
+	 * __start_swap_time.
+	 */
+#endif
 	u32_t total_swap_cycles = __end_swap_time - __start_swap_time;
 
 	/* Interrupt latency*/
