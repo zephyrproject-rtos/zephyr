@@ -571,15 +571,15 @@ static void can_stm32_set_filter_bank(int filter_nr,
 
 static inline void can_stm32_set_mode_scale(enum can_filter_type filter_type,
 					    u32_t *mode_reg, u32_t *scale_reg,
-					    int  filter_nr)
+					    int  bank_nr)
 {
-	u32_t mode_reg_bit  = (filter_type & 0x01) << filter_nr;
-	u32_t scale_reg_bit = (filter_type >>   1) << filter_nr;
+	u32_t mode_reg_bit  = (filter_type & 0x01) << bank_nr;
+	u32_t scale_reg_bit = (filter_type >>   1) << bank_nr;
 
-	*mode_reg &= ~(1 << filter_nr);
+	*mode_reg &= ~(1 << bank_nr);
 	*mode_reg |= mode_reg_bit;
 
-	*scale_reg &= ~(1 << filter_nr);
+	*scale_reg &= ~(1 << bank_nr);
 	*scale_reg |= scale_reg_bit;
 }
 
@@ -699,7 +699,7 @@ static inline int can_stm32_set_filter(const struct zcan_filter *filter,
 		u32_t scale_reg = can->FS1R;
 
 		can_stm32_set_mode_scale(filter_type, &mode_reg, &scale_reg,
-					 filter_nr);
+					 bank_nr);
 
 		shift_width = filter_in_bank[filter_type] - filter_in_bank[bank_mode];
 
