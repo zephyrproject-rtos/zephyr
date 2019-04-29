@@ -408,14 +408,13 @@ endif()
 
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
-# Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_output_name}.cmd
-macro(configure_linker_script linker_output_name)
+# Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_script_gen}
+macro(configure_linker_script linker_script_gen)
   set(extra_dependencies ${ARGN})
-  set(linker_cmd_file_name ${linker_output_name}.cmd)
 
-  if (${linker_output_name} MATCHES "^linker_pass_final$")
+  if (${linker_script_gen} MATCHES "^linker_pass_final.cmd$")
     set(linker_pass_define -DLINKER_PASS2)
-  elseif (${linker_output_name} MATCHES "^linker_app_smem_unaligned$")
+  elseif (${linker_script_gen} MATCHES "^linker_app_smem_unaligned.cmd$")
     set(linker_pass_define -DLINKER_APP_SMEM_UNALIGNED)
   else()
     set(linker_pass_define "")
@@ -428,7 +427,7 @@ macro(configure_linker_script linker_output_name)
     set(linker_script_dep IMPLICIT_DEPENDS C ${LINKER_SCRIPT})
   elseif(CMAKE_GENERATOR STREQUAL "Ninja")
     # Using DEPFILE with other generators than Ninja is an error.
-    set(linker_script_dep DEPFILE ${PROJECT_BINARY_DIR}/${linker_cmd_file_name}.dep)
+    set(linker_script_dep DEPFILE ${PROJECT_BINARY_DIR}/${linker_script_gen}.dep)
   else()
     # TODO: How would the linker script dependencies work for non-linker
     # script generators.
@@ -442,7 +441,7 @@ macro(configure_linker_script linker_output_name)
   get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
 
   add_custom_command(
-    OUTPUT ${linker_cmd_file_name}
+    OUTPUT ${linker_script_gen}
     DEPENDS
     ${LINKER_SCRIPT}
     ${extra_dependencies}
@@ -451,13 +450,13 @@ macro(configure_linker_script linker_output_name)
     COMMAND ${CMAKE_C_COMPILER}
     -x assembler-with-cpp
     ${NOSYSDEF_CFLAG}
-    -MD -MF ${linker_cmd_file_name}.dep -MT ${base_name}/${linker_cmd_file_name}
+    -MD -MF ${linker_script_gen}.dep -MT ${base_name}/${linker_script_gen}
     ${current_includes}
     ${current_defines}
     ${linker_pass_define}
     -E ${LINKER_SCRIPT}
     -P # Prevent generation of debug `#line' directives.
-    -o ${linker_cmd_file_name}
+    -o ${linker_script_gen}
     VERBATIM
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
   )
@@ -731,7 +730,7 @@ if (CONFIG_CODE_DATA_RELOCATION)
 endif() # CONFIG_CODE_DATA_RELOCATION
 
 configure_linker_script(
-  linker
+  linker.cmd
   ${PRIV_STACK_DEP}
   ${APP_SMEM_ALIGNED_DEP}
   ${CODE_RELOCATION_DEP}
@@ -1159,7 +1158,7 @@ if(CONFIG_USERSPACE)
     )
 
   configure_linker_script(
-    linker_app_smem_unaligned
+    linker_app_smem_unaligned.cmd
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_UNALIGNED_DEP}
     ${APP_SMEM_UNALIGNED_LD}
@@ -1203,7 +1202,7 @@ endif()
 
 if(CONFIG_USERSPACE AND CONFIG_ARM)
   configure_linker_script(
-    linker_priv_stacks
+    linker_priv_stacks.cmd
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_ALIGNED_DEP}
     ${APP_SMEM_ALIGNED_LD}
@@ -1249,7 +1248,7 @@ else()
   # first pass (LINKER_SCRIPT), but this time with a different output
   # file and preprocessed with the define LINKER_PASS2.
   configure_linker_script(
-    linker_pass_final
+    linker_pass_final.cmd
     ${PRIV_STACK_DEP}
     ${CODE_RELOCATION_DEP}
     ${ZEPHYR_PREBUILT_EXECUTABLE}
