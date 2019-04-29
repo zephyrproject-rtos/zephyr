@@ -32,6 +32,7 @@ assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMa
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
 set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_prebuilt)
 
+# Set some phony targets to collect dependencies
 set(OFFSETS_H_TARGET           offsets_h)
 set(SYSCALL_MACROS_H_TARGET    syscall_macros_h_target)
 set(SYSCALL_LIST_H_TARGET      syscall_list_h_target)
@@ -407,7 +408,7 @@ endif()
 
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
-function(construct_add_custom_command_for_linker_pass linker_output_name output_variable)
+macro(construct_add_custom_command_for_linker_pass linker_output_name)
   set(extra_dependencies ${ARGN})
   set(linker_cmd_file_name ${linker_output_name}.cmd)
 
@@ -439,7 +440,9 @@ function(construct_add_custom_command_for_linker_pass linker_output_name output_
   get_filename_component(base_name ${CMAKE_CURRENT_BINARY_DIR} NAME)
   get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
 
-  set(${output_variable}
+  # Run $LINKER_SCRIPT through the C preprocessor, producing $linker_cmd_file_name
+
+  add_custom_command(
     OUTPUT ${linker_cmd_file_name}
     DEPENDS
     ${LINKER_SCRIPT}
@@ -458,10 +461,8 @@ function(construct_add_custom_command_for_linker_pass linker_output_name output_
     -o ${linker_cmd_file_name}
     VERBATIM
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-
-    PARENT_SCOPE
-    )
-endfunction()
+  )
+endmacro()
 
 # Error-out when the deprecated naming convention is found (until
 # after 1.14.0 has been released)
@@ -732,15 +733,11 @@ endif() # CONFIG_CODE_DATA_RELOCATION
 
 construct_add_custom_command_for_linker_pass(
   linker
-  custom_command
   ${PRIV_STACK_DEP}
   ${APP_SMEM_ALIGNED_DEP}
   ${CODE_RELOCATION_DEP}
   ${OFFSETS_H_TARGET}
   )
-add_custom_command(
-  ${custom_command}
-)
 
 add_custom_target(
   ${LINKER_SCRIPT_TARGET}
@@ -1164,14 +1161,10 @@ if(CONFIG_USERSPACE)
 
   construct_add_custom_command_for_linker_pass(
     linker_app_smem_unaligned
-    custom_command
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_UNALIGNED_DEP}
     ${APP_SMEM_UNALIGNED_LD}
     ${OFFSETS_H_TARGET}
-    )
-  add_custom_command(
-    ${custom_command}
     )
 
   add_custom_target(
@@ -1212,14 +1205,10 @@ endif()
 if(CONFIG_USERSPACE AND CONFIG_ARM)
   construct_add_custom_command_for_linker_pass(
     linker_priv_stacks
-    custom_command
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_ALIGNED_DEP}
     ${APP_SMEM_ALIGNED_LD}
     ${OFFSETS_H_TARGET}
-    )
-  add_custom_command(
-    ${custom_command}
     )
 
   add_custom_target(
@@ -1262,14 +1251,10 @@ else()
   # file and preprocessed with the define LINKER_PASS2.
   construct_add_custom_command_for_linker_pass(
     linker_pass_final
-    custom_command
     ${PRIV_STACK_DEP}
     ${CODE_RELOCATION_DEP}
     ${ZEPHYR_PREBUILT_EXECUTABLE}
     ${OFFSETS_H_TARGET}
-    )
-  add_custom_command(
-    ${custom_command}
     )
 
   set(LINKER_PASS_FINAL_SCRIPT_TARGET linker_pass_final_script_target)
