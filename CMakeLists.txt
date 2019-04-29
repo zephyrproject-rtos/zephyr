@@ -733,7 +733,6 @@ endif() # CONFIG_CODE_DATA_RELOCATION
 construct_add_custom_command_for_linker_pass(
   linker
   custom_command
-  ${ALIGN_SIZING_DEP}
   ${PRIV_STACK_DEP}
   ${APP_SMEM_ALIGNED_DEP}
   ${CODE_RELOCATION_DEP}
@@ -1166,7 +1165,6 @@ if(CONFIG_USERSPACE)
   construct_add_custom_command_for_linker_pass(
     linker_app_smem_unaligned
     custom_command
-    ${ALIGN_SIZING_DEP}
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_UNALIGNED_DEP}
     ${APP_SMEM_UNALIGNED_LD}
@@ -1192,7 +1190,7 @@ if(CONFIG_USERSPACE)
   add_executable(       app_smem_unaligned_prebuilt misc/empty_file.c)
   target_link_libraries(app_smem_unaligned_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_app_smem_unaligned.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
   set_property(TARGET   app_smem_unaligned_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_app_smem_unaligned.cmd)
-  add_dependencies(     app_smem_unaligned_prebuilt ${ALIGN_SIZING_DEP} linker_app_smem_unaligned_script ${OFFSETS_LIB})
+  add_dependencies(     app_smem_unaligned_prebuilt linker_app_smem_unaligned_script ${OFFSETS_LIB})
 
   add_custom_command(
     OUTPUT ${APP_SMEM_ALIGNED_LD}
@@ -1215,7 +1213,6 @@ if(CONFIG_USERSPACE AND CONFIG_ARM)
   construct_add_custom_command_for_linker_pass(
     linker_priv_stacks
     custom_command
-    ${ALIGN_SIZING_DEP}
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_ALIGNED_DEP}
     ${APP_SMEM_ALIGNED_LD}
@@ -1241,14 +1238,14 @@ if(CONFIG_USERSPACE AND CONFIG_ARM)
   add_executable(       priv_stacks_prebuilt misc/empty_file.c)
   target_link_libraries(priv_stacks_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
   set_property(TARGET   priv_stacks_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd)
-  add_dependencies(     priv_stacks_prebuilt ${ALIGN_SIZING_DEP} linker_priv_stacks_script ${OFFSETS_LIB})
+  add_dependencies(     priv_stacks_prebuilt linker_priv_stacks_script ${OFFSETS_LIB})
 endif()
 
 # FIXME: Is there any way to get rid of empty_file.c?
 add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} misc/empty_file.c)
 target_link_libraries(${ZEPHYR_PREBUILT_EXECUTABLE} ${TOPT} ${PROJECT_BINARY_DIR}/linker.cmd ${PRIV_STACK_LIB} ${zephyr_lnk} ${CODE_RELOCATION_DEP})
 set_property(TARGET   ${ZEPHYR_PREBUILT_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
-add_dependencies(     ${ZEPHYR_PREBUILT_EXECUTABLE} ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} ${LINKER_SCRIPT_TARGET} ${OFFSETS_LIB})
+add_dependencies(     ${ZEPHYR_PREBUILT_EXECUTABLE} ${PRIV_STACK_DEP} ${LINKER_SCRIPT_TARGET} ${OFFSETS_LIB})
 
 
 set(generated_kernel_files ${GKSF} ${GKOF})
@@ -1266,7 +1263,6 @@ else()
   construct_add_custom_command_for_linker_pass(
     linker_pass_final
     custom_command
-    ${ALIGN_SIZING_DEP}
     ${PRIV_STACK_DEP}
     ${CODE_RELOCATION_DEP}
     ${ZEPHYR_PREBUILT_EXECUTABLE}
@@ -1291,7 +1287,7 @@ else()
   add_executable(       ${KERNEL_ELF} misc/empty_file.c ${GKSF})
   target_link_libraries(${KERNEL_ELF} ${GKOF} ${TOPT} ${PROJECT_BINARY_DIR}/linker_pass_final.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
   set_property(TARGET   ${KERNEL_ELF} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass_final.cmd)
-  add_dependencies(     ${KERNEL_ELF} ${ALIGN_SIZING_DEP} ${PRIV_STACK_DEP} ${LINKER_PASS_FINAL_SCRIPT_TARGET})
+  add_dependencies(     ${KERNEL_ELF} ${PRIV_STACK_DEP} ${LINKER_PASS_FINAL_SCRIPT_TARGET})
 endif()
 
 # Export the variable to the application's scope to allow the
