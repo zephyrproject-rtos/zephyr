@@ -113,6 +113,7 @@
 /drivers/clock_control/*stm32f4*          @rsalveti @idlethread
 /drivers/counter/                         @nordic-krch
 /drivers/display/                         @vanwinkeljan
+/drivers/dma/*sam0*                       @Sizurka
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 /drivers/flash/                           @nashif
 /drivers/flash/*stm32*                    @superna9999
