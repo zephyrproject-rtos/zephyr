@@ -408,7 +408,8 @@ endif()
 
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
-macro(construct_add_custom_command_for_linker_pass linker_output_name)
+# Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_output_name}.cmd
+macro(configure_linker_script linker_output_name)
   set(extra_dependencies ${ARGN})
   set(linker_cmd_file_name ${linker_output_name}.cmd)
 
@@ -439,8 +440,6 @@ macro(construct_add_custom_command_for_linker_pass linker_output_name)
   zephyr_get_include_directories_for_lang(C current_includes)
   get_filename_component(base_name ${CMAKE_CURRENT_BINARY_DIR} NAME)
   get_property(current_defines GLOBAL PROPERTY PROPERTY_LINKER_SCRIPT_DEFINES)
-
-  # Run $LINKER_SCRIPT through the C preprocessor, producing $linker_cmd_file_name
 
   add_custom_command(
     OUTPUT ${linker_cmd_file_name}
@@ -731,7 +730,7 @@ if (CONFIG_CODE_DATA_RELOCATION)
   set(CODE_RELOCATION_DEP code_relocation_source_lib)
 endif() # CONFIG_CODE_DATA_RELOCATION
 
-construct_add_custom_command_for_linker_pass(
+configure_linker_script(
   linker
   ${PRIV_STACK_DEP}
   ${APP_SMEM_ALIGNED_DEP}
@@ -1159,7 +1158,7 @@ if(CONFIG_USERSPACE)
     COMMENT "Generating app_smem_unaligned linker section"
     )
 
-  construct_add_custom_command_for_linker_pass(
+  configure_linker_script(
     linker_app_smem_unaligned
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_UNALIGNED_DEP}
@@ -1203,7 +1202,7 @@ if(CONFIG_USERSPACE)
 endif()
 
 if(CONFIG_USERSPACE AND CONFIG_ARM)
-  construct_add_custom_command_for_linker_pass(
+  configure_linker_script(
     linker_priv_stacks
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_ALIGNED_DEP}
@@ -1249,7 +1248,7 @@ else()
   # The second linker pass uses the same source linker script of the
   # first pass (LINKER_SCRIPT), but this time with a different output
   # file and preprocessed with the define LINKER_PASS2.
-  construct_add_custom_command_for_linker_pass(
+  configure_linker_script(
     linker_pass_final
     ${PRIV_STACK_DEP}
     ${CODE_RELOCATION_DEP}
