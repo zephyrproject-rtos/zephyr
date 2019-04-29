@@ -25,18 +25,22 @@ static int lis2dw12_enable_int(struct device *dev, int enable)
 {
 	const struct lis2dw12_device_config *cfg = dev->config->config_info;
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
+	lis2dw12_reg_t int_route;
 
 	/* set interrupt */
-	if (cfg->int_pin == 1U)
-		return lis2dw12->hw_tf->update_reg(lis2dw12,
-			 LIS2DW12_CTRL4_ADDR,
-			 LIS2DW12_INT1_DRDY,
-			 enable);
+	if (cfg->int_pin == 1U) {
+		lis2dw12_pin_int1_route_get(lis2dw12->ctx,
+					    &int_route.ctrl4_int1_pad_ctrl);
+		int_route.ctrl4_int1_pad_ctrl.int1_drdy = enable;
+		return lis2dw12_pin_int1_route_set(lis2dw12->ctx,
+					    &int_route.ctrl4_int1_pad_ctrl);
+	}
 
-	return lis2dw12->hw_tf->update_reg(lis2dw12,
-		 LIS2DW12_CTRL5_ADDR,
-		 LIS2DW12_INT2_DRDY,
-		 enable);
+	lis2dw12_pin_int2_route_get(lis2dw12->ctx,
+				    &int_route.ctrl5_int2_pad_ctrl);
+	int_route.ctrl5_int2_pad_ctrl.int2_drdy = enable;
+	return lis2dw12_pin_int2_route_set(lis2dw12->ctx,
+				    &int_route.ctrl5_int2_pad_ctrl);
 }
 
 /**
@@ -47,18 +51,16 @@ int lis2dw12_trigger_set(struct device *dev,
 			  sensor_trigger_handler_t handler)
 {
 	struct lis2dw12_data *lis2dw12 = dev->driver_data;
-	u8_t raw[6];
+	axis3bit16_t raw;
 
 	if (trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
 		lis2dw12->handler_drdy = handler;
 		if (handler) {
 			/* dummy read: re-trigger interrupt */
-			lis2dw12->hw_tf->read_data(lis2dw12,
-					    LIS2DW12_OUT_X_L_ADDR, raw,
-					    sizeof(raw));
-			return lis2dw12_enable_int(dev, LIS2DW12_EN_BIT);
+			lis2dw12_acceleration_raw_get(lis2dw12->ctx, raw.u8bit);
+			return lis2dw12_enable_int(dev, PROPERTY_ENABLE);
 		} else {
-			return lis2dw12_enable_int(dev, LIS2DW12_DIS_BIT);
+			return lis2dw12_enable_int(dev, PROPERTY_DISABLE);
 		}
 	}
 
@@ -173,8 +175,7 @@ int lis2dw12_init_interrupt(struct device *dev)
 	}
 
 	/* enable interrupt on int1/int2 in pulse mode */
-	if (lis2dw12->hw_tf->update_reg(lis2dw12, LIS2DW12_CTRL3_ADDR,
-					LIS2DW12_LIR_MASK, LIS2DW12_DIS_BIT)) {
+	if (lis2dw12_int_notification_set(lis2dw12->ctx, LIS2DW12_INT_PULSED)) {
 		return -EIO;
 	}
 
