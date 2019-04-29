@@ -1,0 +1,3 @@
+tests:
+  filesystem.nvs:
+    platform_whitelist: qemu_x86
