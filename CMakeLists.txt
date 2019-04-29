@@ -552,7 +552,7 @@ endif()
 set(syscall_macros_h ${ZEPHYR_BINARY_DIR}/include/generated/syscall_macros.h)
 
 add_custom_target(${SYSCALL_MACROS_H_TARGET} DEPENDS ${syscall_macros_h})
-add_custom_command(                       OUTPUT  ${syscall_macros_h}
+add_custom_command(                          OUTPUT  ${syscall_macros_h}
   COMMAND
   ${PYTHON_EXECUTABLE}
   ${ZEPHYR_BASE}/scripts/gen_syscall_header.py
