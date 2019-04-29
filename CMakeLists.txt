@@ -409,16 +409,8 @@ endif()
 configure_file(version.h.in ${PROJECT_BINARY_DIR}/include/generated/version.h)
 
 # Run $LINKER_SCRIPT file through the C preprocessor, producing ${linker_script_gen}
-macro(configure_linker_script linker_script_gen)
+macro(configure_linker_script linker_script_gen linker_pass_define)
   set(extra_dependencies ${ARGN})
-
-  if (${linker_script_gen} MATCHES "^linker_pass_final.cmd$")
-    set(linker_pass_define -DLINKER_PASS2)
-  elseif (${linker_script_gen} MATCHES "^linker_app_smem_unaligned.cmd$")
-    set(linker_pass_define -DLINKER_APP_SMEM_UNALIGNED)
-  else()
-    set(linker_pass_define "")
-  endif()
 
   # Different generators deal with depfiles differently.
   if(CMAKE_GENERATOR STREQUAL "Unix Makefiles")
@@ -731,6 +723,7 @@ endif() # CONFIG_CODE_DATA_RELOCATION
 
 configure_linker_script(
   linker.cmd
+  ""
   ${PRIV_STACK_DEP}
   ${APP_SMEM_ALIGNED_DEP}
   ${CODE_RELOCATION_DEP}
@@ -1159,6 +1152,7 @@ if(CONFIG_USERSPACE)
 
   configure_linker_script(
     linker_app_smem_unaligned.cmd
+    "-DLINKER_APP_SMEM_UNALIGNED"
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_UNALIGNED_DEP}
     ${APP_SMEM_UNALIGNED_LD}
@@ -1203,6 +1197,7 @@ endif()
 if(CONFIG_USERSPACE AND CONFIG_ARM)
   configure_linker_script(
     linker_priv_stacks.cmd
+    ""
     ${CODE_RELOCATION_DEP}
     ${APP_SMEM_ALIGNED_DEP}
     ${APP_SMEM_ALIGNED_LD}
@@ -1249,6 +1244,7 @@ else()
   # file and preprocessed with the define LINKER_PASS2.
   configure_linker_script(
     linker_pass_final.cmd
+    "-DLINKER_PASS2"
     ${PRIV_STACK_DEP}
     ${CODE_RELOCATION_DEP}
     ${ZEPHYR_PREBUILT_EXECUTABLE}
