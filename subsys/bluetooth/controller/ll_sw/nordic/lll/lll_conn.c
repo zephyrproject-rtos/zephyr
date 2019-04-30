@@ -50,9 +50,6 @@ static u16_t trx_cnt;
 static u8_t mic_state;
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
-static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx),
-		    CONFIG_BT_CTLR_TX_BUFFERS);
-
 int lll_conn_init(void)
 {
 	int err;
@@ -68,8 +65,6 @@ int lll_conn_init(void)
 int lll_conn_reset(void)
 {
 	int err;
-
-	MFIFO_INIT(conn_ack);
 
 	err = init_reset();
 	if (err) {
@@ -302,18 +297,9 @@ lll_conn_isr_rx_exit:
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
 	if (tx_release) {
-		struct lll_tx *tx;
-		u8_t idx;
-
 		LL_ASSERT(lll->handle != 0xFFFF);
 
-		idx = MFIFO_ENQUEUE_GET(conn_ack, (void **)&tx);
-		LL_ASSERT(tx);
-
-		tx->handle = lll->handle;
-		tx->node = tx_release;
-
-		MFIFO_ENQUEUE(conn_ack, idx);
+		ull_conn_lll_ack_enqueue(lll->handle, tx_release);
 
 		is_ull_rx = 1U;
 	}
@@ -621,81 +607,6 @@ void lll_conn_pdu_tx_prep(struct lll_conn *lll, struct pdu_data **pdu_data_tx)
 #endif /* !CONFIG_BT_CTLR_DATA_LENGTH_CLEAR */
 
 	*pdu_data_tx = p;
-}
-
-u8_t lll_conn_ack_last_idx_get(void)
-{
-	return mfifo_conn_ack.l;
-}
-
-memq_link_t *lll_conn_ack_peek(u8_t *ack_last, u16_t *handle,
-			       struct node_tx **node_tx)
-{
-	struct lll_tx *tx;
-
-	tx = MFIFO_DEQUEUE_GET(conn_ack);
-	if (!tx) {
-		return NULL;
-	}
-
-	*ack_last = mfifo_conn_ack.l;
-
-	*handle = tx->handle;
-	*node_tx = tx->node;
-
-	return (*node_tx)->link;
-}
-
-memq_link_t *lll_conn_ack_by_last_peek(u8_t last, u16_t *handle,
-				      struct node_tx **node_tx)
-{
-	struct lll_tx *tx;
-
-	tx = mfifo_dequeue_get(mfifo_conn_ack.m, mfifo_conn_ack.s,
-			       mfifo_conn_ack.f, last);
-	if (!tx) {
-		return NULL;
-	}
-
-	*handle = tx->handle;
-	*node_tx = tx->node;
-
-	return (*node_tx)->link;
-}
-
-void *lll_conn_ack_dequeue(void)
-{
-	return MFIFO_DEQUEUE(conn_ack);
-}
-
-void lll_conn_tx_flush(void *param)
-{
-	struct lll_conn *lll = param;
-	struct node_tx *node_tx;
-	memq_link_t *link;
-
-	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
-			    (void **)&node_tx);
-	while (link) {
-		struct pdu_data *p;
-		struct lll_tx *tx;
-		u8_t idx;
-
-		idx = MFIFO_ENQUEUE_GET(conn_ack, (void **)&tx);
-		LL_ASSERT(tx);
-
-		tx->handle = 0xFFFF;
-		tx->node = node_tx;
-		link->next = node_tx->next;
-		node_tx->link = link;
-		p = (void *)node_tx->pdu;
-		p->ll_id = PDU_DATA_LLID_RESV;
-
-		MFIFO_ENQUEUE(conn_ack, idx);
-
-		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
-				    (void **)&node_tx);
-	}
 }
 
 static int init_reset(void)

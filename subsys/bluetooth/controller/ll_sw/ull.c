@@ -977,7 +977,7 @@ void ull_rx_put(memq_link_t *link, void *rx)
 	 * last element index in Tx ack FIFO.
 	 */
 #if defined(CONFIG_BT_CONN)
-	rx_hdr->ack_last = lll_conn_ack_last_idx_get();
+	rx_hdr->ack_last = ull_conn_ack_last_idx_get();
 #else
 	ARG_UNUSED(rx_hdr);
 #endif
@@ -1278,7 +1278,7 @@ static inline void rx_demux_conn_tx_ack(u8_t ack_last, u16_t handle,
 	do {
 #endif /* CONFIG_BT_CTLR_LOW_LAT_ULL */
 		/* Dequeue node */
-		lll_conn_ack_dequeue();
+		ull_conn_ack_dequeue();
 
 		if (handle != 0xFFFF) {
 			struct ll_conn *conn;
@@ -1308,7 +1308,7 @@ static inline void rx_demux_conn_tx_ack(u8_t ack_last, u16_t handle,
 			ull_conn_tx_demux(1);
 		}
 
-		link = lll_conn_ack_by_last_peek(ack_last, &handle, &node_tx);
+		link = ull_conn_ack_by_last_peek(ack_last, &handle, &node_tx);
 
 #if defined(CONFIG_BT_CTLR_LOW_LAT_ULL)
 		if (!link)
@@ -1345,7 +1345,7 @@ static void rx_demux(void *param)
 			LL_ASSERT(rx);
 
 #if defined(CONFIG_BT_CONN)
-			link_tx = lll_conn_ack_by_last_peek(rx->ack_last,
+			link_tx = ull_conn_ack_by_last_peek(rx->ack_last,
 							    &handle, &node_tx);
 			if (link_tx) {
 				rx_demux_conn_tx_ack(rx->ack_last, handle,
@@ -1372,7 +1372,7 @@ static void rx_demux(void *param)
 			u8_t ack_last;
 			u16_t handle;
 
-			link = lll_conn_ack_peek(&ack_last, &handle, &node_tx);
+			link = ull_conn_ack_peek(&ack_last, &handle, &node_tx);
 			if (link) {
 				rx_demux_conn_tx_ack(ack_last, handle,
 						      link, node_tx);
