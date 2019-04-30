@@ -9,6 +9,7 @@
 menuconfig PCIE
 	bool "Enable new PCI/PCIe support"
 	depends on X86
+	select DYNAMIC_INTERRUPTS
 	help
 	  This option enables support for new PCI(e) drivers.
 

@@ -89,6 +89,7 @@
 /boards/x86/galileo/                      @nashif
 /boards/x86/quark_d2000_crb/              @nashif
 /boards/x86/quark_se_c1000_devboard/      @nashif
+/boards/x86/up_squared/                   @gnuless
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
 # All cmake related files

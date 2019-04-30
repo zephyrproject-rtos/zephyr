@@ -6,6 +6,7 @@
 
 #include "skeleton.dtsi"
 #include <dt-bindings/interrupt-controller/intel-ioapic.h>
+#include <dt-bindings/pcie/pcie.h>
 
 / {
 	cpus {
@@ -43,6 +44,54 @@
 		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+
+		uart0: uart@0 {
+			compatible = "ns16550";
+
+			pcie; reg = <PCIE_BDF(0,0x18,0) PCIE_ID(0x8086,0x5abc)>;
+			label = "UART_0";
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			current-speed = <115200>;
+		};
+
+		uart1: uart@1 {
+			compatible = "ns16550";
+
+			pcie; reg = <PCIE_BDF(0,0x18,1) PCIE_ID(0x8086,0x5abe)>;
+			label = "UART_1";
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			current-speed = <115200>;
+		};
+
+		uart2: uart@2 {
+			compatible = "ns16550";
+
+			pcie; reg = <PCIE_BDF(0,0x18,2) PCIE_ID(0x8086,0x5ac0)>;
+			label = "UART_2";
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			current-speed = <115200>;
+		};
+
+		uart3: uart@3 {
+			compatible = "ns16550";
+
+			pcie; reg = <PCIE_BDF(0,0x18,3) PCIE_ID(0x8086,0x5aee)>;
+			label = "UART_3";
+			clock-frequency = <1843200>;
+			interrupts = <PCIE_IRQ_DETECT IRQ_TYPE_LEVEL_LOW 3>;
+			interrupt-parent = <&intc>;
+			status = "disabled";
+			current-speed = <115200>;
+		};
 
 		gpio: gpio@d0c50000 {
 			compatible = "intel,apl-gpio";
