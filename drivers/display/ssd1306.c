@@ -32,7 +32,7 @@ LOG_MODULE_REGISTER(ssd1306);
 #define SSD1306_PANEL_NUMOF_PAGES	(DT_SOLOMON_SSD1306FB_0_HEIGHT / 8)
 #define SSD1306_CLOCK_DIV_RATIO		0x0
 #define SSD1306_CLOCK_FREQUENCY		0x8
-#define SSD1306_PANEL_MUX_RATIO		63
+#define SSD1306_PANEL_MUX_RATIO		(DT_SOLOMON_SSD1306FB_0_HEIGHT-1)
 #define SSD1306_PANEL_VCOM_DESEL_LEVEL	0x20
 #define SSD1306_PANEL_PUMP_VOLTAGE	SSD1306_SET_PUMP_VOLTAGE_90
 
@@ -117,6 +117,13 @@ static inline int ssd1306_set_timing_setting(struct device *dev)
 static inline int ssd1306_set_hardware_config(struct device *dev)
 {
 	struct ssd1306_data *driver = dev->driver_data;
+	u8_t comPins;
+
+	if (DT_SOLOMON_SSD1306FB_0_HEIGHT == 32)
+		comPins = SSD1306_SET_PADS_HW_SEQUENTIAL;
+	else
+		comPins = SSD1306_SET_PADS_HW_ALTERNATIVE;
+
 	u8_t cmd_buf[] = {
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_START_LINE,
@@ -127,7 +134,7 @@ static inline int ssd1306_set_hardware_config(struct device *dev)
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_PADS_HW_CONFIG,
 		SSD1306_CONTROL_BYTE_CMD,
-		SSD1306_SET_PADS_HW_ALTERNATIVE,
+		comPins,
 		SSD1306_CONTROL_BYTE_CMD,
 		SSD1306_SET_MULTIPLEX_RATIO,
 		SSD1306_CONTROL_LAST_BYTE_CMD,
