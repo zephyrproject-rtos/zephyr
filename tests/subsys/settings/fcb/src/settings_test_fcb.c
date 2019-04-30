@@ -207,7 +207,7 @@ test_config_fill_area(char test_value[SETTINGS_TEST_FCB_VAL_STR_CNT]
 	}
 }
 
-char *c2_var_find(char *name)
+char *c2_var_find(const char *name)
 {
 	int idx = 0;
 	int len;
