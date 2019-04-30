@@ -4429,6 +4429,10 @@ __syscall void k_poll_signal_check(struct k_poll_signal *signal,
  * passed again to k_poll() or k_poll() will consider it being signaled, and
  * will return immediately.
  *
+ * @note The result is stored and the 'signaled' field is set even if
+ * this function returns an error indicating that an expiring poll was
+ * not notified.  The next k_poll() will detect the missed raise.
+ *
  * @param signal A poll signal.
  * @param result The value to store in the result field of the signal.
  *
