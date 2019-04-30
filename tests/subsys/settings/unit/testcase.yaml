@@ -1,0 +1,5 @@
+tests:
+  test:
+    tags: settings
+    timeout: 5
+    type: unit

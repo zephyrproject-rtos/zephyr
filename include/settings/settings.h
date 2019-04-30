@@ -26,7 +26,7 @@ extern "C" {
 #define SETTINGS_MAX_DIR_DEPTH	8	/* max depth of settings tree */
 #define SETTINGS_MAX_NAME_LEN	(8 * SETTINGS_MAX_DIR_DEPTH)
 #define SETTINGS_MAX_VAL_LEN	256
-#define SETTINGS_NAME_SEPARATOR	"/"
+#define SETTINGS_NAME_SEPARATOR	'/'
 
 /* pleace for settings additions:
  * up to 7 separators, '=', '\0'
@@ -47,23 +47,24 @@ struct settings_handler {
 	char *name;
 	/**< Name of subtree. */
 
-	int (*h_get)(int argc, char **argv, char *val, int val_len_max);
+	int (*h_get)(const char *key, char *val, int val_len_max);
 	/**< Get values handler of settings items identified by keyword names.
 	 *
 	 * Parameters:
-	 *  - argc - count of item in argv.
-	 *  - argv - array of pointers to keyword names.
+	 *  - key - the name with skipped first element that was used
+	 *          in component registration.
 	 *  - val - buffer for a value.
 	 *  - val_len_max - size of that buffer.
 	 */
 
-	int (*h_set)(int argc, char **argv, size_t len,
+	int (*h_set)(const char *key, size_t len,
 		     settings_read_cb read_cb, void *cb_arg);
+
 	/**< Set value handler of settings items identified by keyword names.
 	 *
 	 * Parameters:
-	 *  - argc - count of item in argv.
-	 *  - argv - array of pointers to keyword names.
+	 *  - key - the name with skipped first element that was used
+	 *          in component registration.
 	 *  - len - the size of the data found in the backend.
 	 *  - read_cb - function provided to read the data from the backend.
 	 *  - cb_arg - arguments for the read function provided by the backend.
@@ -246,16 +247,131 @@ void settings_dst_register(struct settings_store *cs);
  */
 
 /**
+ * @brief Splits given name to given pattern and next part
+ *
+ * This function checks if in the beginning of the provided name the
+ * given key may be found. The key is considered equal only if it ends with '\0'
+ * character or @ref SETTINGS_NAME_SEPARATOR.
+ *
+ * It means this would match:
+ * @code
+   settings_key_cmp("my_key/other/stuff", "my_key", NULL);
+   settings_key_cmp("my_key", "my_key", NULL);
+ * @endcode
+ *
+ * And below would not match:
+ * @code
+   settings_name_split("my_key/other/stuff", "my", NULL);
+   settings_name_split("my_key/other/stuff", "other", NULL);
+   settings_name_split("my_key/other/stuff", "my_keys", NULL);
+ * @endcode
+ *
+ * It is also possible to match bigger part of the patch:
+ * @code
+   settings_name_split("my_key/other/stuff", "my_key/other", NULL);
+   settings_name_split("my_key/other/stuff", "my_key/other/stuff", NULL);
+ * @endcode
+ *
+ * @param[in]  name The name to compare in a form of setting path
+ * @param[in]  key  The keyword to search for
+ * @param[out] next The beginning of the next name part to search
+ *                  or NULL if there is nothing more to search.
+ *                  Effectively it would point to the character after
+ *                  the @ref SETTINGS_NAME_SEPARATOR following the key found.
+ *
+ * @retval true  The comparison matched.
+ * @retval false The comparison does not matched.
+ */
+bool settings_name_split(const char *name, const char *key, const char **next);
+
+/**
+ * @brief Skip single name patch element
+ *
+ * Function skips single element.
+ * For "a/b/c" the pointer to "b/c" string would be returned.
+ *
+ * @param name The base name
+ *
+ * @retval NULL if there is no elements to be skipped in the given patch.
+ * @retval !NULL the pointer to the name part after the separator.
+ */
+const char *settings_name_skip(const char *name);
+
+/**
+ * @brief Get the length of the first element in patch
+ *
+ * @param name The patch
+ *
+ * @return The length of the first element in patch.
+ */
+size_t settings_name_elen(const char *name);
+
+/**
+ * @brief Check if the key matches the expression
+ *
+ * Simple expression is supported where single asterisk ('*') replaces
+ * any single name element between @ref SETTINGS_NAME_SEPARATOR.
+ * Double asterisk ('**') can replace one or more elements.
+ *
+ * The examples of matched patterns using single asterisk:
+ * @code
+   settings_name_cmp("my_key/other/stuff", "my_key/&ast;/stuff");
+   settings_name_cmp("my_key/other/stuff", "&ast;/other/stuff");
+   settings_name_cmp("my_key/other/stuff", "my_key/other/&ast;");
+ * @endcode
+ *
+ * The examples of matched patterns using double asterisk:
+ * @code
+   settings_name_cmp("my_key/other/stuff", "**");
+   settings_name_cmp("my_key/other/stuff", "&ast;&ast;/other/stuff");
+   settings_name_cmp("my_key/other/stuff", "&ast;&ast;/stuff");
+   settings_name_cmp("my_key/other/stuff", "my_key/&ast;&ast;");
+ * @endcode
+ *
+ * Note: single asterisk always means to skip one patch element.
+ * Note: double asterisk means to skip any number of elements, also 0.
+ *
+ * It means that the first line below would fail while in the second
+ * true would be returned.
+ * @code
+   settings_name_cmp("it/is/going", "it/&ast;/is/going");
+   settings_name_cmp("it/is/going", "it/&ast;&ast;/is/going");
+ * @endcode
+ *
+ * Some useful patterns:
+ *
+ * Check if there is exactly one element in given name:
+ * @code
+   settings_name_cmp("element", "&ast;"); // true
+   settings_name_cmp("element/other", "&ast;"); // false
+   settings_name_cmp("", "&ast;"); // false
+ * @endcode
+ *
+ * Check if there is at least one element in given name:
+ * @code
+   settings_name_cmp("element", "&ast;/&ast;&ast;"); // true
+   settings_name_cmp("element/other", ""&ast;/&ast;&ast;"); // true
+   settings_name_cmp("", "ast;/&ast;&ast;"); // false
+ * @endcode
+ *
+ * @param name The name to compare in a form of setting path
+ * @param patt The comparison pattern
+ *
+ * @retval true  The comparison matched.
+ * @retval false The comparison does not matched.
+ */
+bool settings_name_cmp(const char *name, const char *patt);
+
+/**
  * Parses a key to an array of elements and locate corresponding module handler.
  *
  * @param name Key in string format
- * @param name_argc Parsed number of elements.
- * @param name_argv Parsed array of elements.
+ * @param key  Key after first name to be used in the returned settings handler.
  *
  * @return settings_handler node on success, NULL on failure.
  */
-struct settings_handler *settings_parse_and_lookup(char *name, int *name_argc,
-						   char *name_argv[]);
+struct settings_handler *settings_parse_and_lookup(const char *name,
+						   const char **key);
 
 
 /*
