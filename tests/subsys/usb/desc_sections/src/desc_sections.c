@@ -138,13 +138,19 @@ static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
 }
 
 static bool find_cfg_data_ep(const struct usb_ep_descriptor * const ep_descr,
-			     const struct usb_cfg_data * const cfg_data)
+			     const struct usb_cfg_data * const cfg_data,
+			     u8_t ep_count)
 {
 	for (int i = 0; i < cfg_data->num_endpoints; i++) {
 		if (cfg_data->endpoint[i].ep_addr ==
 				ep_descr->bEndpointAddress) {
 			LOG_DBG("found ep[%d] %x", i,
 				ep_descr->bEndpointAddress);
+
+			if (ep_count != i) {
+				LOG_ERR("EPs are assigned in wrong order");
+				return false;
+			}
 
 			return true;
 		}
@@ -157,10 +163,13 @@ static void check_endpoint_allocation(struct usb_desc_header *head)
 {
 	struct usb_cfg_data *cfg_data = NULL;
 	static u8_t interfaces;
+	u8_t ep_count = 0;
 
 	while (head->bLength != 0) {
 		if (head->bDescriptorType == USB_INTERFACE_DESC) {
 			struct usb_if_descriptor *if_descr = (void *)head;
+
+			ep_count = 0;
 
 			LOG_DBG("iface %u", if_descr->bInterfaceNumber);
 
@@ -179,7 +188,8 @@ static void check_endpoint_allocation(struct usb_desc_header *head)
 			/* Check that we get iface desc before */
 			zassert_not_null(cfg_data, "Check available cfg data");
 
-			zassert_true(find_cfg_data_ep(ep_descr, cfg_data),
+			zassert_true(find_cfg_data_ep(ep_descr, cfg_data,
+						      ep_count++),
 				     "Check endpoint config in cfg_data");
 		}
 
