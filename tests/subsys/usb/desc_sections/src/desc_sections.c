@@ -11,6 +11,7 @@
 #include <misc/byteorder.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
+#include <usb_descriptor.h>
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <logging/log.h>
@@ -31,12 +32,9 @@ u8_t *usb_get_device_descriptor(void);
 struct usb_loopback_config {
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_out_ep;
-	struct usb_ep_descriptor if0_in_ep;
+	struct usb_ep_descriptor if0_in1_ep;
 	struct usb_ep_descriptor if0_in2_ep;
 } __packed;
-
-#define LOOPBACK_OUT_EP_ADDR		0x01
-#define LOOPBACK_IN_EP_ADDR		0x81
 
 #define LOOPBACK_BULK_EP_MPS		64
 
@@ -68,31 +66,28 @@ struct usb_loopback_config {
 	USBD_CLASS_DESCR_DEFINE(primary, x)				\
 	struct usb_loopback_config loopback_cfg_##x = {			\
 	.if0 = INITIALIZER_IF,						\
-	.if0_out_ep = INITIALIZER_IF_EP(LOOPBACK_OUT_EP_ADDR,		\
+	.if0_out_ep = INITIALIZER_IF_EP(AUTO_EP_OUT,			\
 					USB_DC_EP_BULK,			\
 					LOOPBACK_BULK_EP_MPS),		\
-	.if0_in_ep = INITIALIZER_IF_EP(LOOPBACK_IN_EP_ADDR,		\
-				       USB_DC_EP_BULK,			\
-				       LOOPBACK_BULK_EP_MPS),		\
-	.if0_in2_ep = INITIALIZER_IF_EP(LOOPBACK_IN_EP_ADDR,		\
+	.if0_in1_ep = INITIALIZER_IF_EP(AUTO_EP_IN,			\
+					USB_DC_EP_BULK,			\
+					LOOPBACK_BULK_EP_MPS),		\
+	.if0_in2_ep = INITIALIZER_IF_EP(AUTO_EP_IN,			\
 					USB_DC_EP_BULK,			\
 					LOOPBACK_BULK_EP_MPS),		\
 	};
 
+#define INITIALIZER_EP_DATA(cb, addr)					\
+	{								\
+		.ep_cb = cb,						\
+		.ep_addr = addr,					\
+	}
+
 #define DEFINE_LOOPBACK_EP_CFG(x, _)				\
 	static struct usb_ep_cfg_data ep_cfg_##x[] = {		\
-		{						\
-			.ep_cb = NULL,				\
-			.ep_addr = LOOPBACK_OUT_EP_ADDR,	\
-		},						\
-		{						\
-			.ep_cb = NULL,				\
-			.ep_addr = LOOPBACK_IN_EP_ADDR,		\
-		},						\
-		{						\
-			.ep_cb = NULL,				\
-			.ep_addr = LOOPBACK_IN_EP_ADDR,		\
-		},						\
+		INITIALIZER_EP_DATA(NULL, AUTO_EP_OUT),		\
+		INITIALIZER_EP_DATA(NULL, AUTO_EP_IN),		\
+		INITIALIZER_EP_DATA(NULL, AUTO_EP_IN),		\
 	};
 
 #define DEFINE_LOOPBACK_CFG_DATA(x, _)				\
