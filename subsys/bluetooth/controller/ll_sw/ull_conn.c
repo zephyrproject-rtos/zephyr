@@ -101,6 +101,8 @@ static void ticker_op_cb(u32_t status, void *params);
 			       CONN_TX_CTRL_BUFFERS)
 
 static MFIFO_DEFINE(conn_tx, sizeof(struct lll_tx), CONFIG_BT_CTLR_TX_BUFFERS);
+static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx), CONFIG_BT_CTLR_TX_BUFFERS);
+
 
 static struct {
 	void *free;
@@ -568,6 +570,9 @@ int ull_conn_reset(void)
 
 	/* Re-initialize the Tx mfifo */
 	MFIFO_INIT(conn_tx);
+
+	/* Re-initialize the Tx Ack mfifo */
+	MFIFO_INIT(conn_ack);
 
 	/* Reset the current conn update conn context pointer */
 	conn_upd_curr = NULL;
@@ -1238,6 +1243,95 @@ void ull_conn_link_tx_release(void *link)
 	mem_release(link, &mem_link_tx.free);
 }
 
+u8_t ull_conn_ack_last_idx_get(void)
+{
+	return mfifo_conn_ack.l;
+}
+
+memq_link_t *ull_conn_ack_peek(u8_t *ack_last, u16_t *handle,
+			       struct node_tx **tx)
+{
+	struct lll_tx *lll_tx;
+
+	lll_tx = MFIFO_DEQUEUE_GET(conn_ack);
+	if (!lll_tx) {
+		return NULL;
+	}
+
+	*ack_last = mfifo_conn_ack.l;
+
+	*handle = lll_tx->handle;
+	*tx = lll_tx->node;
+
+	return (*tx)->link;
+}
+
+memq_link_t *ull_conn_ack_by_last_peek(u8_t last, u16_t *handle,
+				       struct node_tx **tx)
+{
+	struct lll_tx *lll_tx;
+
+	lll_tx = mfifo_dequeue_get(mfifo_conn_ack.m, mfifo_conn_ack.s,
+				   mfifo_conn_ack.f, last);
+	if (!lll_tx) {
+		return NULL;
+	}
+
+	*handle = lll_tx->handle;
+	*tx = lll_tx->node;
+
+	return (*tx)->link;
+}
+
+void *ull_conn_ack_dequeue(void)
+{
+	return MFIFO_DEQUEUE(conn_ack);
+}
+
+void ull_conn_lll_ack_enqueue(u16_t handle, struct node_tx *tx)
+{
+	struct lll_tx *lll_tx;
+	u8_t idx;
+
+	idx = MFIFO_ENQUEUE_GET(conn_ack, (void **)&lll_tx);
+	LL_ASSERT(lll_tx);
+
+	lll_tx->handle = handle;
+	lll_tx->node = tx;
+
+	MFIFO_ENQUEUE(conn_ack, idx);
+}
+
+void ull_conn_lll_tx_flush(void *param)
+{
+	struct lll_conn *lll = param;
+	struct node_tx *tx;
+	memq_link_t *link;
+
+	link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
+			    (void **)&tx);
+	while (link) {
+		struct pdu_data *p;
+		struct lll_tx *lll_tx;
+		u8_t idx;
+
+		idx = MFIFO_ENQUEUE_GET(conn_ack, (void **)&lll_tx);
+		LL_ASSERT(lll_tx);
+
+		lll_tx->handle = 0xFFFF;
+		lll_tx->node = tx;
+		link->next = tx->next;
+		tx->link = link;
+		p = (void *)tx->pdu;
+		p->ll_id = PDU_DATA_LLID_RESV;
+
+		MFIFO_ENQUEUE(conn_ack, idx);
+
+		link = memq_dequeue(lll->memq_tx.tail, &lll->memq_tx.head,
+				    (void **)&tx);
+	}
+}
+
 void ull_conn_tx_ack(struct ll_conn *conn, memq_link_t *link,
 		     struct node_tx *tx)
 {
@@ -1331,7 +1425,7 @@ static void ticker_op_stop_cb(u32_t status, void *param)
 {
 	u32_t retval;
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, lll_conn_tx_flush};
+	static struct mayfly mfy = {0, 0, &link, NULL, ull_conn_lll_tx_flush};
 
 	LL_ASSERT(status == TICKER_STATUS_SUCCESS);
 

@@ -38,6 +38,13 @@ void ull_conn_done(struct node_rx_event_done *done);
 void ull_conn_tx_demux(u8_t count);
 void ull_conn_tx_lll_enqueue(struct ll_conn *conn, u8_t count);
 void ull_conn_link_tx_release(void *link);
+u8_t ull_conn_ack_last_idx_get(void);
+memq_link_t *ull_conn_ack_peek(u8_t *ack_last, u16_t *handle,
+			       struct node_tx **tx);
+memq_link_t *ull_conn_ack_by_last_peek(u8_t last, u16_t *handle,
+				       struct node_tx **tx);
+void *ull_conn_ack_dequeue(void);
+void ull_conn_lll_tx_flush(void *param);
 void ull_conn_tx_ack(struct ll_conn *conn, memq_link_t *link,
 		     struct node_tx *tx);
 u8_t ull_conn_llcp_req(void *conn);
