@@ -268,13 +268,21 @@ To be discussed in a meeting
 ============================
 
 =============  ===============================================================
-Labels         ``API``, ``dev-review``, ``TSC``
-Applicable to  PRs  and issues
+Labels         ``meeting: {API|dev-review}``
+Applicable to  PRs and issues
 Description    The issue is to be discussed in the following
-               `API/dev-review/TSC meeting`_ if time permits
+               `API/dev-review meeting`_ if time permits
 =============  ===============================================================
 
-.. _`API/dev-review/TSC meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings
+Normally, PRs and issues are discussed and resolved directly in GitHub.
+In some cases, further discussion may be needed in one of the
+periodic `project meetings`_. One of these labels should be added
+to the PR or issue by the author or a maintainer to bring it to the
+attention of that forum. The author is expected to attend that
+meeting to participate in the discussion.
+
+.. _`project meetings`:
+.. _`API/dev-review meeting`: https://github.com/zephyrproject-rtos/zephyr/wiki/Zephyr-Committee-and-Working-Group-Meetings
 
 Minimum PR review time
 ======================
