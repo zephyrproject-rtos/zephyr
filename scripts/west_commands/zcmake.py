@@ -24,12 +24,22 @@ DEFAULT_CACHE = 'CMakeCache.txt'
 DEFAULT_CMAKE_GENERATOR = 'Ninja'
 '''Name of the default CMake generator.'''
 
-def run_cmake(args, cwd=None, capture_output=False):
-    '''Run cmake to (re)generate a build system.
+
+def run_cmake(args, cwd=None, capture_output=False, dry_run=False):
+    '''Run cmake to (re)generate a build system, a script, etc.
+
+    :param args: arguments to pass to CMake
+    :param cwd: directory to run CMake in, cwd is default
+    :param capture_output: if True, the output is returned instead of being
+                           displayed (None is returned by default, or if
+                           dry_run is also True)
+    :param dry_run: don't actually execute the command, just print what
+                    would have been run
+
     If capture_output is set to True, returns the output of the command instead
     of displaying it on stdout/stderr..'''
     cmake = shutil.which('cmake')
-    if cmake is None:
+    if cmake is None and not dry_run:
         log.die('CMake is not installed or cannot be found; cannot build.')
     cmd = [cmake] + args
     kwargs = dict()
@@ -39,6 +49,12 @@ def run_cmake(args, cwd=None, capture_output=False):
         kwargs['stderr'] = subprocess.STDOUT
     if cwd:
         kwargs['cwd'] = cwd
+
+    if dry_run:
+        in_cwd = ' (in {})'.format(cwd) if cwd else ''
+        log.inf('Dry run{}:'.format(in_cwd), quote_sh_list(cmd))
+        return None
+
     log.dbg('Running CMake:', quote_sh_list(cmd), level=log.VERBOSE_NORMAL)
     p = subprocess.Popen(cmd, **kwargs)
     out, err = p.communicate()
@@ -52,10 +68,18 @@ def run_cmake(args, cwd=None, capture_output=False):
         raise subprocess.CalledProcessError(p.returncode, p.args)
 
 
-def run_build(build_directory, extra_args=(), cwd=None, capture_output=False):
-    '''Run cmake in build tool mode in `build_directory`'''
-    run_cmake(['--build', build_directory] + list(extra_args),
-              capture_output=capture_output)
+def run_build(build_directory, **kwargs):
+    '''Run cmake in build tool mode.
+
+    :param build_directory: runs "cmake --build build_directory"
+    :param extra_args: optional kwarg. List of additional CMake arguments;
+                       these come after "--build <build_directory>"
+                       on the command line.
+
+    Any additional keyword arguments are passed as-is to run_cmake().
+    '''
+    extra_args = kwargs.pop('extra_args', [])
+    return run_cmake(['--build', build_directory] + extra_args, **kwargs)
 
 
 def make_c_identifier(string):

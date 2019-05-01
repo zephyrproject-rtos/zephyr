@@ -18,7 +18,7 @@ _ARG_SEPARATOR = '--'
 BUILD_USAGE = '''\
 west build [-h] [-b BOARD] [-d BUILD_DIR]
            [-t TARGET] [-p {auto, always, never}] [-c] [--cmake-only]
-           [-f] [source_dir] -- [cmake_opt [cmake_opt ...]]
+           [-n] [-f] [source_dir] -- [cmake_opt [cmake_opt ...]]
 '''
 
 BUILD_DESCRIPTION = '''\
@@ -139,6 +139,10 @@ class Build(Forceable):
                             help='Force CMake to run')
         parser.add_argument('--cmake-only', action='store_true',
                             help="Just run CMake; don't build. Implies -c.")
+        parser.add_argument('-n', '--just-print', '--dry-run', '--recon',
+                            dest='dry_run', action='store_true',
+                            help='''Just print the build commands which would
+                            have run, without actually running them.''')
         self.add_force_arg(parser)
         return parser
 
@@ -409,7 +413,7 @@ class Build(Forceable):
                                                      DEFAULT_CMAKE_GENERATOR))]
         if cmake_opts:
             final_cmake_args.extend(cmake_opts)
-        run_cmake(final_cmake_args)
+        run_cmake(final_cmake_args, dry_run=self.args.dry_run)
 
     def _run_pristine(self):
         log.inf('Making build dir {} pristine'.format(self.build_dir))
@@ -424,8 +428,9 @@ class Build(Forceable):
                     'Zephyr build system')
 
         cmake_args = ['-P', '{}/cmake/pristine.cmake'.format(zb)]
-        run_cmake(cmake_args, cwd=self.build_dir)
+        run_cmake(cmake_args, cwd=self.build_dir, dry_run=self.args.dry_run)
 
     def _run_build(self, target):
         extra_args = ['--target', target] if target else []
-        run_build(self.build_dir, extra_args=extra_args)
+        run_build(self.build_dir, extra_args=extra_args,
+                  dry_run=self.args.dry_run)
