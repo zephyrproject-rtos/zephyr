@@ -60,9 +60,6 @@
 BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "NS16550(s) in DT need CONFIG_PCIE");
 #define UART_NS16550_PCIE_ENABLED
 #include <drivers/pcie/pcie.h>
-#ifdef CONFIG_PCIE_MSI
-#include <drivers/pcie/msi.h>
-#endif
 #endif
 
 /* register definitions */
