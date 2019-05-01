@@ -310,15 +310,22 @@ entries, then bump the 'max_top_items' variable in {}.
         #
         #   foo/bar.c<null>17<null>CONFIG_BAZ
         #
+        # The regular expression in use here uses zero length word boundary
+        # assertions (\b) to isolate the reference then a negative lookahead
+        # to ensure that it is not followed by a token paste operation (##).
+        # So this excludes the root of any references used as part of token
+        # pasting, since they would always need to be whitelisted anyway.
+        #
         # Skip the samples/ and tests/ directories for now. They often contain
         # Kconfig files that are not part of the main Kconfig tree, which will
         # trigger false positives until we do something fancier. Skip
         # doc/releases too, which often references removed symbols.
-        grep_cmd = "git grep --only-matching --line-number -I --null " \
-                   "--extended-regexp --word-regexp CONFIG_[A-Z0-9_]+ " \
-                   "-- :!samples :!tests :!doc/releases"
+        grep_cmd = ["git", "grep", "--only-matching", "--line-number", "-I",
+                    "--null", "--perl-regexp",
+                    r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##)",
+                    "--", ":!samples", ":!tests", ":!doc/releases"]
 
-        grep_process = subprocess.Popen(grep_cmd.split(),
+        grep_process = subprocess.Popen(grep_cmd,
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE,
                                         cwd=self.zephyr_base)
@@ -329,8 +336,8 @@ entries, then bump the 'max_top_items' variable in {}.
             self.error("'{}' failed with exit code {} (while searching for "
                        "Kconfig symbol references)\n\nstdout:\n{}\n\n"
                        "stderr:\n{}"
-                       .format(grep_cmd, grep_process.returncode, grep_stdout,
-                               grep_stderr))
+                       .format(" ".join(grep_cmd), grep_process.returncode,
+                               grep_stdout, grep_stderr))
 
         defined_syms = set(sym.name for sym in kconf.unique_defined_syms)
         undef_to_locs = collections.defaultdict(list)
@@ -364,8 +371,8 @@ positives, then add them to UNDEF_KCONFIG_WHITELIST in {} in the
 ci-tools repo.\n\n{}""".format(os.path.basename(__file__), undef_desc))
 
 
-# Many of these are either symbols used as examples or due to token pasting
-# (CONFIG_FOO_#x, etc.). Note that the list is sorted alphabetically.
+# Many of these are symbols used as examples.
+# Note that the list is sorted alphabetically.
 UNDEF_KCONFIG_WHITELIST = {
     "CONFIG_2ND_LVL_INTR_",
     "CONFIG_3RD_LVL_INTR_",
@@ -374,9 +381,7 @@ UNDEF_KCONFIG_WHITELIST = {
     "CONFIG_CLOCK_STM32_PLL_SRC_",
     "CONFIG_CLOCK_STM32_SYSCLK_SRC_",
     "CONFIG_CMU",
-    "CONFIG_COUNTER_RTC",
     "CONFIG_COUNTER_RTC_STM32_CLOCK_SRC",
-    "CONFIG_COUNTER_TIMER",
     "CONFIG_DEEP_SLEEP",  # #defined by RV32M1 in ext/
     "CONFIG_DESCRIPTION",
     "CONFIG_ERR",
@@ -388,9 +393,6 @@ UNDEF_KCONFIG_WHITELIST = {
     "CONFIG_FOO_LOG_LEVEL",
     "CONFIG_FOO_SETTING_1",
     "CONFIG_FOO_SETTING_2",
-    "CONFIG_GPIO_SIFIVE_",
-    "CONFIG_I2C_GPIO_",
-    "CONFIG_I2S_CAVS_",
     "CONFIG_LIS2DW12_INT_PIN",
     "CONFIG_LSM6DSO_INT_PIN",
     "CONFIG_MODULES",
@@ -411,11 +413,9 @@ UNDEF_KCONFIG_WHITELIST = {
     "CONFIG_SOME_INT",
     "CONFIG_SOME_OTHER_BOOL",
     "CONFIG_SOME_STRING",
-    "CONFIG_SPI_",
     "CONFIG_STD_CPP",  # Referenced in CMake comment
     "CONFIG_TEST1",
     "CONFIG_TYPE_BOOLEAN",
-    "CONFIG_UART_",
     "CONFIG_USB_CONSOLE",
     "CONFIG_USB_HID_DEVICE_NAME_",
     "CONFIG_USE_STDC_",
