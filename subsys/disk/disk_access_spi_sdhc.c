@@ -249,7 +249,11 @@ static int sdhc_spi_cmd_r1_raw(struct sdhc_spi_data *data,
 	err = sdhc_spi_skip_until_start(data);
 
 	/* Ensure there's a idle byte between commands */
-	sdhc_spi_rx_u8(data);
+	if (cmd != SDHC_SEND_CSD && cmd != SDHC_SEND_CID &&
+	    cmd != SDHC_READ_SINGLE_BLOCK && cmd != SDHC_READ_MULTIPLE_BLOCK &&
+	    cmd != SDHC_WRITE_BLOCK && cmd != SDHC_WRITE_MULTIPLE_BLOCK) {
+		sdhc_spi_rx_u8(data);
+	}
 
 	return err;
 }
