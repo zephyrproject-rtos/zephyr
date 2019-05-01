@@ -16,12 +16,20 @@ if BT_CTLR
 
 choice BT_LL_CHOICE
 	prompt "Bluetooth Link Layer Selection"
-	default BT_LL_SW
 	help
 	  Select the Bluetooth Link Layer to compile.
 
-config BT_LL_SW_LEGACY
+config BT_LL_SW_SPLIT
 	bool "Software-based BLE Link Layer"
+	select BT_RECV_IS_RX_THREAD
+	select ENTROPY_GENERATOR
+	help
+	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
+
+config BT_LL_SW_LEGACY
+	# NOTE: This OLD architecture implementation will be deprecated, with
+	#       no further new feature development.
+	bool "Software-based BLE Link Layer (deprecated)"
 	select BT_RECV_IS_RX_THREAD
 	select BT_HAS_HCI_VS
 	select ENTROPY_GENERATOR
@@ -29,13 +37,6 @@ config BT_LL_SW_LEGACY
 	select ENTROPY_NRF5_BIAS_CORRECTION if SOC_COMPATIBLE_NRF
 	help
 	  Use Zephyr software BLE Link Layer implementation.
-
-config BT_LL_SW_SPLIT
-	bool "Software-based BLE Link Layer (ULL/LLL split)"
-	select BT_RECV_IS_RX_THREAD
-	select ENTROPY_GENERATOR
-	help
-	  Use Zephyr software BLE Link Layer ULL LLL split implementation.
 
 endchoice
 
