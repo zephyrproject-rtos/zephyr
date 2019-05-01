@@ -150,8 +150,7 @@ static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 #endif
 
 #define NODE_RX_HEADER_SIZE      (offsetof(struct node_rx_pdu, pdu))
-#define NODE_RX_FOOTER_SIZE      (sizeof(struct node_rx_ftr))
-#define NODE_RX_STRUCT_OVERHEAD  (NODE_RX_HEADER_SIZE + NODE_RX_FOOTER_SIZE)
+#define NODE_RX_STRUCT_OVERHEAD  (NODE_RX_HEADER_SIZE)
 
 #define PDU_ADVERTIZE_SIZE       (PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA)
 #define PDU_DATA_SIZE            (PDU_DC_LL_HEADER_SIZE  + PDU_RX_OCTETS_MAX)
@@ -557,9 +556,7 @@ void ll_rx_dequeue(void)
 	} else if (rx->type == NODE_RX_TYPE_CONNECTION) {
 		struct node_rx_ftr *ftr;
 
-		ftr = (void *)((u8_t *)((struct node_rx_pdu *)rx)->pdu +
-			       (offsetof(struct pdu_adv, connect_ind) +
-			       sizeof(struct pdu_adv_connect_ind)));
+		ftr = &(rx->rx_ftr);
 
 		if (0) {
 #if defined(CONFIG_BT_PERIPHERAL)

@@ -768,10 +768,7 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 		rx->hdr.handle = 0xffff;
 
-		ftr = (void *)((u8_t *)rx->pdu +
-			       (offsetof(struct pdu_adv, connect_ind) +
-			       sizeof(struct pdu_adv_connect_ind)));
-
+		ftr = &(rx->hdr.rx_ftr);
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->us_radio_end = conn_space_us -
@@ -1035,8 +1032,8 @@ static u32_t isr_rx_scan_report(struct lll_scan *lll, u8_t rssi_ready,
 	}
 
 	pdu_adv_rx = (void *)node_rx->pdu;
-	extra = &((u8_t *)pdu_adv_rx)[offsetof(struct pdu_adv, payload) +
-				      pdu_adv_rx->len];
+	extra = (u8_t *)&(node_rx->hdr.rx_ftr.param);
+
 	/* save the RSSI value */
 	*extra = (rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
 	extra += PDU_AC_SIZE_RSSI;

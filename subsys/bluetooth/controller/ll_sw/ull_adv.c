@@ -1138,10 +1138,7 @@ static void disabled_cb(void *param)
 	memset(cc, 0x00, sizeof(struct node_rx_cc));
 	cc->status = 0x3c;
 
-	ftr = (void *)((u8_t *)rx->pdu +
-		       (offsetof(struct pdu_adv, connect_ind) +
-		       sizeof(struct pdu_adv_connect_ind)));
-
+	ftr = &(rx->hdr.rx_ftr);
 	ftr->param = param;
 
 	ll_rx_put(link, rx);
