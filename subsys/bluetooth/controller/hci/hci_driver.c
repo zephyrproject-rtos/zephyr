@@ -59,6 +59,10 @@ struct k_thread recv_thread_data;
 static K_THREAD_STACK_DEFINE(recv_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 
 #if defined(CONFIG_INIT_STACKS)
+extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
+extern K_THREAD_STACK_DEFINE(_main_stack, CONFIG_MAIN_STACK_SIZE);
+extern K_THREAD_STACK_DEFINE(sys_work_q_stack,
+			     CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE);
 static u32_t prio_ts;
 static u32_t rx_ts;
 #endif
@@ -126,6 +130,9 @@ static void prio_recv_thread(void *p1, void *p2, void *p3)
 
 #if defined(CONFIG_INIT_STACKS)
 		if (k_uptime_get_32() - prio_ts > K_SECONDS(5)) {
+			STACK_ANALYZE("interrupt stack", _interrupt_stack);
+			STACK_ANALYZE("main stack", _main_stack);
+			STACK_ANALYZE("sys work q stack", sys_work_q_stack);
 			STACK_ANALYZE("prio recv thread stack",
 				      prio_recv_thread_stack);
 			prio_ts = k_uptime_get_32();
