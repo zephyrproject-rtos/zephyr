@@ -15,6 +15,12 @@ from zephyr_ext_common import Forceable
 
 _ARG_SEPARATOR = '--'
 
+BUILD_USAGE = '''\
+west build [-h] [-b BOARD] [-d BUILD_DIR]
+           [-t TARGET] [-p {auto, always, never}] [-c] [--cmake-only]
+           [-f] [source_dir] -- [cmake_opt [cmake_opt ...]]
+'''
+
 BUILD_DESCRIPTION = '''\
 Convenience wrapper for building Zephyr applications.
 
@@ -104,9 +110,7 @@ class Build(Forceable):
             help=self.help,
             formatter_class=argparse.RawDescriptionHelpFormatter,
             description=self.description,
-            usage='''west build [-h] [-b BOARD] [-d BUILD_DIR]
-                  [-t TARGET] [-p {auto, always, never}] [-c] [-f] [source_dir]
-                  -- [cmake_opt [cmake_opt ...]]''')
+            usage=BUILD_USAGE)
 
         # Remember to update scripts/west-completion.bash if you add or remove
         # flags
@@ -133,6 +137,8 @@ class Build(Forceable):
                             application.''')
         parser.add_argument('-c', '--cmake', action='store_true',
                             help='Force CMake to run')
+        parser.add_argument('--cmake-only', action='store_true',
+                            help="Just run CMake; don't build. Implies -c.")
         self.add_force_arg(parser)
         return parser
 
@@ -173,7 +179,8 @@ class Build(Forceable):
                 self.run_cmake = True
             else:
                 self._update_cache()
-                if self.args.cmake or self.args.cmake_opts:
+                if (self.args.cmake or self.args.cmake_opts or
+                        self.args.cmake_only):
                     self.run_cmake = True
         else:
             self.run_cmake = True
@@ -182,6 +189,9 @@ class Build(Forceable):
 
         board, origin = self._find_board()
         self._run_cmake(board, origin, self.args.cmake_opts)
+        if args.cmake_only:
+            return
+
         self._sanity_check()
         self._update_cache()
 
