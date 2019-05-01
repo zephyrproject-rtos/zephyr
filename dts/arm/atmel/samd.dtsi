@@ -36,6 +36,8 @@
 	aliases {
 		pinmux-a = &pinmux_a;
 		pinmux-b = &pinmux_b;
+		port-a = &porta;
+		port-b = &portb;
 	};
 
 	soc {
