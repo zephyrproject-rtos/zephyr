@@ -109,6 +109,8 @@ To let west decide for you if a pristine build is needed, use ``-p auto``::
    You can run ``west config build.pristine auto`` to make this setting
    permanent.
 
+.. _west-building-generator:
+
 To add additional arguments to the CMake invocation performed by ``west
 build``, pass them after a ``--`` at the end of the command line.
 
@@ -160,6 +162,10 @@ You can :ref:`configure <west-config-cmd>` ``west build`` using these options.
    * - ``build.board_warn``
      - Boolean, default ``true``. If ``false``, disables warnings when
        ``west build`` can't figure out the target board.
+   * - ``build.generator``
+     - String, default ``Ninja``. The `CMake Generator`_ to use to create a
+       build system. (To set a generator for a single build, see the
+       :ref:`above example <west-building-generator>`)
    * - ``build.pristine``
      - String. Controls the way in which ``west build`` may clean the build
        folder before building. Can take the following values:
@@ -443,3 +449,6 @@ commands do it).
 
 .. _CMAKE_VERBOSE_MAKEFILE:
    https://cmake.org/cmake/help/latest/variable/CMAKE_VERBOSE_MAKEFILE.html
+
+.. _CMake Generator:
+   https://cmake.org/cmake/help/latest/manual/cmake-generators.7.html
