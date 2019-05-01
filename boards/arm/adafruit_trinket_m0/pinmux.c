@@ -9,7 +9,7 @@
 
 static int board_pinmux_init(struct device *dev)
 {
-	struct device *muxa = device_get_binding(DT_PINMUX_SAM0_A_LABEL);
+	struct device *muxa = device_get_binding(DT_ATMEL_SAM0_PINMUX_PINMUX_A_LABEL);
 
 	ARG_UNUSED(dev);
 

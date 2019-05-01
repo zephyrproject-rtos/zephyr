@@ -69,34 +69,34 @@ const struct pinmux_driver_api pinmux_sam0_api = {
 	.input = pinmux_sam0_input,
 };
 
-#if DT_PINMUX_SAM0_A_BASE_ADDRESS
+#if DT_ATMEL_SAM0_PINMUX_PINMUX_A_BASE_ADDRESS
 static const struct pinmux_sam0_config pinmux_sam0_config_0 = {
-	.regs = (PortGroup *)DT_PINMUX_SAM0_A_BASE_ADDRESS,
+	.regs = (PortGroup *)DT_ATMEL_SAM0_PINMUX_PINMUX_A_BASE_ADDRESS,
 };
 
-DEVICE_AND_API_INIT(pinmux_sam0_0, DT_PINMUX_SAM0_A_LABEL,
+DEVICE_AND_API_INIT(pinmux_sam0_0, DT_ATMEL_SAM0_PINMUX_PINMUX_A_LABEL,
 		    pinmux_sam0_init, NULL, &pinmux_sam0_config_0,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
 		    &pinmux_sam0_api);
 #endif
 
-#if DT_PINMUX_SAM0_B_BASE_ADDRESS
+#if DT_ATMEL_SAM0_PINMUX_PINMUX_B_BASE_ADDRESS
 static const struct pinmux_sam0_config pinmux_sam0_config_1 = {
-	.regs = (PortGroup *)DT_PINMUX_SAM0_B_BASE_ADDRESS,
+	.regs = (PortGroup *)DT_ATMEL_SAM0_PINMUX_PINMUX_B_BASE_ADDRESS,
 };
 
-DEVICE_AND_API_INIT(pinmux_sam0_1, DT_PINMUX_SAM0_B_LABEL,
+DEVICE_AND_API_INIT(pinmux_sam0_1, DT_ATMEL_SAM0_PINMUX_PINMUX_B_LABEL,
 		    pinmux_sam0_init, NULL, &pinmux_sam0_config_1,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
 		    &pinmux_sam0_api);
 #endif
 
-#if DT_PINMUX_SAM0_C_BASE_ADDRESS
+#if DT_ATMEL_SAM0_PINMUX_PINMUX_C_BASE_ADDRESS
 static const struct pinmux_sam0_config pinmux_sam0_config_2 = {
-	.regs = (PortGroup *)DT_PINMUX_SAM0_C_BASE_ADDRESS,
+	.regs = (PortGroup *)DT_ATMEL_SAM0_PINMUX_PINMUX_C_BASE_ADDRESS,
 };
 
-DEVICE_AND_API_INIT(pinmux_sam0_2, DT_PINMUX_SAM0_C_LABEL,
+DEVICE_AND_API_INIT(pinmux_sam0_2, DT_ATMEL_SAM0_PINMUX_PINMUX_C_LABEL,
 		    pinmux_sam0_init, NULL, &pinmux_sam0_config_2,
 		    PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY,
 		    &pinmux_sam0_api);
