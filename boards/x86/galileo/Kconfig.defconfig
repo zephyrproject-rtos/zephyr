@@ -23,9 +23,6 @@ config SPI
 config SHARED_IRQ
 	default y
 
-config PCI_ENUMERATION
-	default y
-
 if GPIO && I2C
 
 config GPIO_PCAL9535A
