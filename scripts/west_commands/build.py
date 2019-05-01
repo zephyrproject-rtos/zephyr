@@ -403,7 +403,8 @@ class Build(Forceable):
         # west build -- -DOVERLAY_CONFIG=relative-path.conf
         final_cmake_args = ['-B{}'.format(self.build_dir),
                             '-S{}'.format(self.source_dir),
-                            '-G{}'.format(DEFAULT_CMAKE_GENERATOR)]
+                            '-G{}'.format(config_get('generator',
+                                                     DEFAULT_CMAKE_GENERATOR))]
         if cmake_opts:
             final_cmake_args.extend(cmake_opts)
         run_cmake(final_cmake_args)
