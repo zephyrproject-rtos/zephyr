@@ -77,6 +77,7 @@
 /boards/riscv32/                          @kgugala @pgielda @nategraff-sifive
 /boards/shields/                          @erwango
 /boards/x86/                              @andrewboie @nashif
+/boards/x86/up_squared/                   @gnuless
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
 # All cmake related files
