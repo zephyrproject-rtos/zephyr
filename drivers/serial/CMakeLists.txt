@@ -17,7 +17,6 @@ zephyr_library_sources_if_kconfig(uart_miv.c)
 zephyr_library_sources_if_kconfig(uart_msp432p4xx.c)
 zephyr_library_sources_ifdef(CONFIG_NRF_UART_PERIPHERAL uart_nrfx_uart.c)
 zephyr_library_sources_ifdef(CONFIG_NRF_UARTE_PERIPHERAL uart_nrfx_uarte.c)
-zephyr_library_sources_if_kconfig(uart_ns16550.c)
 zephyr_library_sources_if_kconfig(uart_nsim.c)
 zephyr_library_sources_if_kconfig(uart_qmsi.c)
 zephyr_library_sources_if_kconfig(uart_sam.c)
@@ -31,6 +30,19 @@ zephyr_library_sources_if_kconfig(uart_pl011.c)
 zephyr_library_sources_if_kconfig(uart_rv32m1_lpuart.c)
 
 zephyr_library_sources_ifdef(CONFIG_USERSPACE   uart_handlers.c)
+
+if(CONFIG_UART_NS16550)
+  zephyr_library_sources(uart_ns16550.c)
+  foreach(NUM RANGE 0 3)
+    if (CONFIG_UART_NS16550_PORT_${NUM})
+      configure_file(
+        uart_ns16550_port_x.h
+        ${PROJECT_BINARY_DIR}/include/generated/uart_ns16550_port_${NUM}.h
+        @ONLY
+        )
+    endif()
+  endforeach(NUM)
+endif()
 
 if(CONFIG_UART_NATIVE_POSIX)
   zephyr_library_compile_definitions(NO_POSIX_CHEATS)
