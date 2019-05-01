@@ -564,7 +564,9 @@ void ll_reset(void)
 	_radio.fc_ack = _radio.fc_req;
 
 	/* reset whitelist and resolving list */
-	ll_filter_reset(false);
+	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER)) {
+		ll_filter_reset(false);
+	}
 
 	/* memory allocations */
 	common_init();
@@ -6497,18 +6499,16 @@ static void event_adv(u32_t ticks_at_expire, u32_t remainder,
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
 
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (ctrl_rl_enabled()) {
+	/* Setup Radio Filter */
+	if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) && ctrl_rl_enabled()) {
 		struct ll_filter *filter =
 			ctrl_filter_get(!!(_radio.advertiser.filter_policy));
 
 		radio_filter_configure(filter->enable_bitmask,
 				       filter->addr_type_bitmask,
 				       (u8_t *)filter->bdaddr);
-	} else
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-	/* Setup Radio Filter */
-	if (_radio.advertiser.filter_policy) {
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_FILTER) &&
+		   _radio.advertiser.filter_policy) {
 
 		struct ll_filter *wl = ctrl_filter_get(true);
 
@@ -6870,8 +6870,8 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 	radio_pkt_rx_set(_radio.packet_rx[_radio.packet_rx_last]->pdu_data);
 	radio_rssi_measure();
 
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (ctrl_rl_enabled()) {
+	/* Setup Radio Filter */
+	if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY) && ctrl_rl_enabled()) {
 		struct ll_filter *filter =
 			ctrl_filter_get(!!(_radio.scanner.filter_policy & 0x1));
 		u8_t count, *irks = ctrl_irks_get(&count);
@@ -6881,11 +6881,8 @@ static void event_scan(u32_t ticks_at_expire, u32_t remainder, u16_t lazy,
 				       (u8_t *)filter->bdaddr);
 
 		radio_ar_configure(count, irks);
-	} else
-#endif /* CONFIG_BT_CTLR_PRIVACY */
-	/* Setup Radio Filter */
-	if (_radio.scanner.filter_policy) {
-
+	} else if (IS_ENABLED(CONFIG_BT_CTLR_FILTER) &&
+		   _radio.scanner.filter_policy) {
 		struct ll_filter *wl = ctrl_filter_get(true);
 
 		radio_filter_configure(wl->enable_bitmask,
