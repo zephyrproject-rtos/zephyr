@@ -57,8 +57,6 @@ extern void *_heap_sentry;
 #define MAX_HEAP_SIZE ((KB(CONFIG_SRAM_SIZE)) - USED_RAM_SIZE)
 #endif
 
-static unsigned char *heap_base = UINT_TO_POINTER(USED_RAM_END_ADDR);
-
 #ifdef CONFIG_USERSPACE
 struct k_mem_partition z_malloc_partition;
 
@@ -66,7 +64,11 @@ static int malloc_prepare(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
+#if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 	z_malloc_partition.start = (u32_t)heap_base;
+#else
+	z_malloc_partition.start = USED_RAM_END_ADDR;
+#endif
 	z_malloc_partition.size = MAX_HEAP_SIZE;
 	z_malloc_partition.attr = K_MEM_PARTITION_P_RW_U_RW;
 	return 0;
@@ -222,7 +224,11 @@ void _exit(int status)
 
 void *_sbrk(int count)
 {
+#if CONFIG_NEWLIB_LIBC_ALIGNED_HEAP_SIZE
 	void *ptr = heap_base + heap_sz;
+#else
+	void *ptr = _end + heap_sz;
+#endif
 
 	if ((heap_sz + count) < MAX_HEAP_SIZE) {
 		heap_sz += count;
