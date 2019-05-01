@@ -78,14 +78,14 @@ class ComplianceTest:
         self.commit_range = commit_range
         # get() defaults to None if not present
 
-    def prepare(self):
+    def prepare(self, where):
         """
         Prepare test case
         :return:
         """
         self.case = MyCase(self._name)
         self.case.classname = "Guidelines"
-        print("Running {} tests...".format(self._name))
+        print("Running {:16} tests in {} ...".format(self._name, where))
 
     def run(self):
         """
@@ -162,13 +162,14 @@ class CheckPatch(ComplianceTest):
     _doc = "https://docs.zephyrproject.org/latest/contribute/#coding-style"
 
     def run(self):
-        self.prepare()
+        self.prepare(GIT_TOP)
         # Default to Zephyr's checkpatch if ZEPHYR_BASE is set
         checkpatch = os.path.join(ZEPHYR_BASE or GIT_TOP, 'scripts',
                                   'checkpatch.pl')
         if not os.path.exists(checkpatch):
             self.skip(checkpatch + " not found")
 
+        # git diff's output doesn't depend on the current (sub)directory
         diff = subprocess.Popen(('git', 'diff', '%s' % (self.commit_range)),
                                 stdout=subprocess.PIPE)
         try:
@@ -192,7 +193,7 @@ class KconfigCheck(ComplianceTest):
     _doc = "https://docs.zephyrproject.org/latest/tools/kconfig/index.html"
 
     def run(self):
-        self.prepare()
+        self.prepare(ZEPHYR_BASE)
 
         kconf = self.parse_kconfig()
 
@@ -558,7 +559,7 @@ class Documentation(ComplianceTest):
     DOCS_WARNING_FILE = "doc.warnings"
 
     def run(self):
-        self.prepare()
+        self.prepare(os.getcwd())
 
         if os.path.exists(self.DOCS_WARNING_FILE) and os.path.getsize(self.DOCS_WARNING_FILE) > 0:
             with open(self.DOCS_WARNING_FILE, "rb") as docs_warning:
@@ -574,7 +575,7 @@ class GitLint(ComplianceTest):
     _doc = "https://docs.zephyrproject.org/latest/contribute/#commit-guidelines"
 
     def run(self):
-        self.prepare()
+        self.prepare(os.path.join(os.getcwd(), '[.gitlint]'))
 
         proc = subprocess.Popen('gitlint --commits %s' % (self.commit_range),
                                 shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -596,13 +597,15 @@ class License(ComplianceTest):
     _doc = "https://docs.zephyrproject.org/latest/contribute/#licensing"
 
     def run(self):
-        self.prepare()
+        # copyfile() below likely requires that getcwd()==GIT_TOP
+        self.prepare(os.getcwd())
 
         scancode = "/opt/scancode-toolkit/scancode"
         if not os.path.exists(scancode):
             self.skip("scancode-toolkit not installed")
 
         os.makedirs("scancode-files", exist_ok=True)
+        # git diff's output doesn't depend on the current (sub)directory
         new_files = sh.git("diff", "--name-only", "--diff-filter=A",
                            self.commit_range, **sh_special_args)
 
@@ -695,11 +698,13 @@ class Identity(ComplianceTest):
     _doc = "https://docs.zephyrproject.org/latest/contribute/#commit-guidelines"
 
     def run(self):
-        self.prepare()
+        # git rev-list and git log don't depend on the current
+        # (sub)directory unless explicited.
+        self.prepare(GIT_TOP)
 
-        for file in get_shas(self.commit_range):
+        for shaidx in get_shas(self.commit_range):
             commit = sh.git("log", "--decorate=short",
-                            "-n 1", file, **sh_special_args)
+                            "-n 1", shaidx, **sh_special_args)
             signed = []
             author = ""
             sha = ""
