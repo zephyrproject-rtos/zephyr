@@ -117,7 +117,7 @@ void save_on_flash(u8_t id)
 static int ps_set(int argc, char **argv, size_t len_rd,
 		  settings_read_cb read_cb, void *cb_arg)
 {
-	size_t len = 0;
+	ssize_t len = 0;
 
 	if (argc == 1) {
 		if (!strcmp(argv[0], "rc")) {

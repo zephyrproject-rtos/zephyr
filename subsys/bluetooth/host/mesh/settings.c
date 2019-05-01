@@ -128,10 +128,9 @@ static struct {
 static inline int mesh_x_set(settings_read_cb read_cb, void *cb_arg, void *out,
 			     size_t read_len)
 {
-	size_t len;
+	ssize_t len;
 
 	len = read_cb(cb_arg, out, read_len);
-
 	if (len < 0) {
 		BT_ERR("Failed to read value (err %zu)", len);
 		return len;
@@ -513,7 +512,7 @@ static int cfg_set(int argc, char **argv, size_t len_rd,
 static int mod_set_bind(struct bt_mesh_model *mod, size_t len_rd,
 			settings_read_cb read_cb, void *cb_arg)
 {
-	size_t len;
+	ssize_t len;
 	int i;
 
 	/* Start with empty array regardless of cleared or set value */
@@ -540,7 +539,7 @@ static int mod_set_bind(struct bt_mesh_model *mod, size_t len_rd,
 static int mod_set_sub(struct bt_mesh_model *mod, size_t len_rd,
 		       settings_read_cb read_cb, void *cb_arg)
 {
-	size_t len;
+	ssize_t len;
 
 	/* Start with empty array regardless of cleared or set value */
 	(void)memset(mod->groups, 0, sizeof(mod->groups));
