@@ -78,6 +78,13 @@ static s32_t configure_simplelink(void)
 	u8_t config_opt;
 	u8_t power;
 
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
+	struct in_addr addr4;
+	SlNetCfgIpV4Args_t ipV4;
+
+	memset(&ipV4, 0, sizeof(ipV4));
+#endif
+
 	/* Turn on NWP */
 	mode = sl_Start(0, 0, 0);
 	ASSERT_ON_ERROR(mode, DEVICE_ERROR);
@@ -115,10 +122,56 @@ static s32_t configure_simplelink(void)
 	retval = sl_WlanProfileDel(0xFF);
 	ASSERT_ON_ERROR(retval, WLAN_ERROR);
 
+#if defined(CONFIG_NET_IPV4) && defined(CONFIG_NET_CONFIG_MY_IPV4_ADDR)
+	if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_ADDR, &addr4)
+			< 0) {
+		LOG_ERR("Invalid CONFIG_NET_CONFIG_MY_IPV4_ADDR");
+		return -1;
+	}
+	ipV4.Ip = (_u32)SL_IPV4_VAL(addr4.s4_addr[0],
+				    addr4.s4_addr[1],
+				    addr4.s4_addr[2],
+				    addr4.s4_addr[3]);
+
+#if defined(CONFIG_NET_CONFIG_MY_IPV4_GW)
+	if (strcmp(CONFIG_NET_CONFIG_MY_IPV4_GW, "") != 0) {
+		if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_GW,
+				  &addr4) < 0) {
+			LOG_ERR("Invalid CONFIG_NET_CONFIG_MY_IPV4_GW");
+			return -1;
+		}
+		ipV4.IpGateway = (_u32)SL_IPV4_VAL(addr4.s4_addr[0],
+						   addr4.s4_addr[1],
+						   addr4.s4_addr[2],
+						   addr4.s4_addr[3]);
+	}
+#endif
+
+#if defined(CONFIG_NET_CONFIG_MY_IPV4_NETMASK)
+	if (strcmp(CONFIG_NET_CONFIG_MY_IPV4_NETMASK, "") != 0) {
+		if (net_addr_pton(AF_INET, CONFIG_NET_CONFIG_MY_IPV4_NETMASK,
+				  &addr4) < 0) {
+			LOG_ERR("Invalid CONFIG_NET_CONFIG_MY_IPV4_NETMASK");
+			return -1;
+		}
+		ipV4.IpMask = (_u32)SL_IPV4_VAL(addr4.s4_addr[0],
+						addr4.s4_addr[1],
+						addr4.s4_addr[2],
+						addr4.s4_addr[3]);
+	}
+#endif
+
+	retval = sl_NetCfgSet(SL_NETCFG_IPV4_STA_ADDR_MODE,
+			      SL_NETCFG_ADDR_STATIC,
+			      sizeof(SlNetCfgIpV4Args_t), (_u8 *)&ipV4);
+	ASSERT_ON_ERROR(retval, NETAPP_ERROR);
+#else
 	/* enable DHCP client */
 	retval = sl_NetCfgSet(SL_NETCFG_IPV4_STA_ADDR_MODE,
 			      SL_NETCFG_ADDR_DHCP, 0, 0);
 	ASSERT_ON_ERROR(retval, NETAPP_ERROR);
+#endif
+
 
 #if !defined(CONFIG_NET_IPV6)
 	/* Disable ipv6 */
