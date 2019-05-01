@@ -33,6 +33,11 @@
 			<0x0080A048 0x4>;
 	};
 
+	aliases {
+		pinmux-a = &pinmux_a;
+		pinmux-b = &pinmux_b;
+	};
+
 	soc {
 		nvmctrl: nvmctrl@41004000  {
 			compatible = "atmel,sam0-nvmctrl";

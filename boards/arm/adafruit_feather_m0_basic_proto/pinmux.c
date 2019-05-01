@@ -9,9 +9,9 @@
 
 static int board_pinmux_init(struct device *dev)
 {
-	struct device *muxa = device_get_binding(DT_PINMUX_SAM0_A_LABEL);
+	struct device *muxa = device_get_binding(DT_ATMEL_SAM0_PINMUX_PINMUX_A_LABEL);
 #if DT_SPI_SAM0_SERCOM4_BASE_ADDRESS
-	struct device *muxb = device_get_binding(DT_PINMUX_SAM0_B_LABEL);
+	struct device *muxb = device_get_binding(DT_ATMEL_SAM0_PINMUX_PINMUX_B_LABEL);
 #endif
 	ARG_UNUSED(dev);
 
