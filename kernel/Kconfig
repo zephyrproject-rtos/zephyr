@@ -366,6 +366,7 @@ endmenu
 menu "Work Queue Options"
 config SYSTEM_WORKQUEUE_STACK_SIZE
 	int "System workqueue stack size"
+	default 4096 if COVERAGE
 	default 1024
 
 config SYSTEM_WORKQUEUE_PRIORITY
@@ -380,6 +381,7 @@ config SYSTEM_WORKQUEUE_PRIORITY
 
 config OFFLOAD_WORKQUEUE_STACK_SIZE
 	int "Workqueue stack size for thread offload requests"
+	default 4096 if COVERAGE
 	default 1024
 
 config OFFLOAD_WORKQUEUE_PRIORITY
