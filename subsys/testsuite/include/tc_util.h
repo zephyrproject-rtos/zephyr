@@ -58,13 +58,19 @@
 #define TC_FAIL 1
 #define TC_SKIP 2
 
-static __unused const char *TC_RESULT_STR[] = {
-	[TC_PASS] = "PASS",
-	[TC_FAIL] = "FAIL",
-	[TC_SKIP] = "SKIP",
-};
-
-#define TC_RESULT_TO_STR(result) TC_RESULT_STR[result]
+static inline const char *TC_RESULT_TO_STR(int result)
+{
+	switch (result) {
+	case TC_PASS:
+		return "PASS";
+	case TC_FAIL:
+		return "FAIL";
+	case TC_SKIP:
+		return "SKIP";
+	default:
+		return "?";
+	}
+}
 
 #define TC_ERROR(fmt, ...)                               \
 	do {                                                 \
