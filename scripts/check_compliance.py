@@ -35,8 +35,10 @@ sh_special_args = {
     '_cwd': os.getcwd()
 }
 
+ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
 # The absolute path of the top-level git directory
-git_top = sh.git("rev-parse", "--show-toplevel").strip()
+GIT_TOP = sh.git("rev-parse", "--show-toplevel").strip()
+
 
 def get_shas(refspec):
     """
@@ -75,7 +77,6 @@ class ComplianceTest:
         self.suite = suite
         self.commit_range = commit_range
         # get() defaults to None if not present
-        self.zephyr_base = os.environ.get('ZEPHYR_BASE')
 
     def prepare(self):
         """
@@ -163,7 +164,7 @@ class CheckPatch(ComplianceTest):
     def run(self):
         self.prepare()
         # Default to Zephyr's checkpatch if ZEPHYR_BASE is set
-        checkpatch = os.path.join(self.zephyr_base or git_top, 'scripts',
+        checkpatch = os.path.join(ZEPHYR_BASE or GIT_TOP, 'scripts',
                                   'checkpatch.pl')
         if not os.path.exists(checkpatch):
             self.skip(checkpatch + " not found")
@@ -174,7 +175,7 @@ class CheckPatch(ComplianceTest):
             subprocess.check_output((checkpatch, '--mailback', '--no-tree', '-'),
                                     stdin=diff.stdout,
                                     stderr=subprocess.STDOUT,
-                                    shell=True, cwd=git_top)
+                                    shell=True, cwd=GIT_TOP)
 
         except subprocess.CalledProcessError as ex:
             output = ex.output.decode("utf-8")
@@ -209,7 +210,7 @@ class KconfigCheck(ComplianceTest):
         """
         # Invoke the script directly using the Python executable since this is
         # not a module nor a pip-installed Python utility
-        zephyr_module_path = os.path.join(self.zephyr_base, "scripts",
+        zephyr_module_path = os.path.join(ZEPHYR_BASE, "scripts",
                                           "zephyr_module.py")
         cmd = [sys.executable, zephyr_module_path,
                '--kconfig-out', modules_file]
@@ -223,12 +224,12 @@ class KconfigCheck(ComplianceTest):
         Returns a kconfiglib.Kconfig object for the Kconfig files. We reuse
         this object for all tests to avoid having to reparse for each test.
         """
-        if not self.zephyr_base:
+        if not ZEPHYR_BASE:
             self.skip("Not a Zephyr tree (ZEPHYR_BASE unset)")
 
         # Put the Kconfiglib path first to make sure no local Kconfiglib version is
         # used
-        kconfig_path = os.path.join(self.zephyr_base, "scripts", "kconfig")
+        kconfig_path = os.path.join(ZEPHYR_BASE, "scripts", "kconfig")
         if not os.path.exists(kconfig_path):
             self.error(kconfig_path + " not found")
 
@@ -236,7 +237,7 @@ class KconfigCheck(ComplianceTest):
         import kconfiglib
 
         # Look up Kconfig files relative to ZEPHYR_BASE
-        os.environ["srctree"] = self.zephyr_base
+        os.environ["srctree"] = ZEPHYR_BASE
 
         # Parse the entire Kconfig tree, to make sure we see all symbols
         os.environ["SOC_DIR"] = "soc/"
@@ -328,7 +329,7 @@ entries, then bump the 'max_top_items' variable in {}.
         grep_process = subprocess.Popen(grep_cmd,
                                         stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE,
-                                        cwd=self.zephyr_base)
+                                        cwd=ZEPHYR_BASE)
 
         grep_stdout, grep_stderr = grep_process.communicate()
         # Fail if there's anything on stderr too, so that it doesn't get missed
@@ -448,7 +449,7 @@ class Codeowners(ComplianceTest):
         # files :-(
 
         pattern2files = collections.OrderedDict()
-        top_path = Path(git_top)
+        top_path = Path(GIT_TOP)
 
         with open(codeowners, "r") as codeo:
             for lineno, line in enumerate(codeo, start=1):
@@ -490,18 +491,18 @@ class Codeowners(ComplianceTest):
 
         if git_pattern.endswith("/"):
             ret = ret + "**/*"
-        elif os.path.isdir(os.path.join(git_top, ret)):
+        elif os.path.isdir(os.path.join(GIT_TOP, ret)):
             self.add_failure("Expected '/' after directory '{}' "
                              "in CODEOWNERS".format(ret))
 
         return ret
 
     def run(self):
-        self.prepare()
+        self.prepare(GIT_TOP)
         # TODO: testing an old self.commit range that doesn't end
         # with HEAD is most likely a mistake. Should warn, see
         # https://github.com/zephyrproject-rtos/ci-tools/pull/24
-        codeowners = os.path.join(git_top, "CODEOWNERS")
+        codeowners = os.path.join(GIT_TOP, "CODEOWNERS")
         if not os.path.exists(codeowners):
             self.skip("CODEOWNERS not available in this repo")
 
