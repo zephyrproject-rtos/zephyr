@@ -79,6 +79,13 @@ u32_t pcie_get_mbar(pcie_bdf_t bdf, unsigned int index)
 	return pcie_get_bar(bdf, index, false);
 }
 
+unsigned int pcie_wired_irq(pcie_bdf_t bdf)
+{
+	u32_t data = pcie_conf_read(bdf, PCIE_CONF_INTR);
+
+	return PCIE_CONF_INTR_IRQ(data);
+}
+
 u32_t pcie_get_iobar(pcie_bdf_t bdf, unsigned int index)
 {
 	return pcie_get_bar(bdf, index, true);
