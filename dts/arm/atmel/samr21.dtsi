@@ -9,6 +9,7 @@
 / {
 	aliases {
 		pinmux-c = &pinmux_c;
+		port-c = &portc;
 	};
 
 	soc {
