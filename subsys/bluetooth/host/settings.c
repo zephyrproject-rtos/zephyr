@@ -89,7 +89,7 @@ int bt_settings_decode_key(char *key, bt_addr_le_t *addr)
 static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
 	       void *cb_arg)
 {
-	size_t len;
+	ssize_t len;
 
 	const struct bt_settings_handler *h;
 
@@ -111,7 +111,6 @@ static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
 		}
 
 		len = read_cb(cb_arg, &bt_dev.id_addr, sizeof(bt_dev.id_addr));
-
 		if (len < sizeof(bt_dev.id_addr[0])) {
 			if (len < 0) {
 				BT_ERR("Failed to read ID address from storage"
