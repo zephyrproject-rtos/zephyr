@@ -418,7 +418,7 @@ static u8_t disable(u16_t handle)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-#if defined(CONFIG_BT_CONN)
+#if defined(CONFIG_BT_CENTRAL)
 	if (scan->lll.conn) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
