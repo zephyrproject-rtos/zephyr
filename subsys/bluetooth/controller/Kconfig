@@ -263,7 +263,7 @@ config BT_CTLR_LE_PING
 
 config BT_CTLR_PRIVACY
 	bool "LE Controller-based Privacy"
-	depends on !SOC_SERIES_NRF51X
+	depends on !SOC_SERIES_NRF51X && BT_LL_SW
 	default y
 	select BT_CTLR_FILTER
 	select BT_RPA
