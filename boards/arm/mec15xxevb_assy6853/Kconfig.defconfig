@@ -15,4 +15,19 @@ config UART_NS16550_PORT_0
 
 endif
 
-endif #BOARD_MEC15XXEVB_ASSY6853
+
+if I2C_XEC
+
+config I2C_XEC_0
+	default y
+
+config I2C_XEC_1
+	default y
+
+config I2C_XEC_2
+	default y
+
+endif # I2C
+
+
+endif #BOARD_MEC2016EVB_ASSY6797
