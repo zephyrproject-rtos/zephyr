@@ -144,8 +144,8 @@ class Build(Forceable):
 
     def do_run(self, args, remainder):
         self.args = args        # Avoid having to pass them around
-        log.dbg('args: {} remainder: {}'.format(args, remainder,
-                                                level=log.VERBOSE_EXTREME))
+        log.dbg('args: {} remainder: {}'.format(args, remainder),
+                level=log.VERBOSE_EXTREME)
         # Store legacy -s option locally
         source_dir = self.args.source_dir
         self._parse_remainder(remainder)
@@ -155,7 +155,8 @@ class Build(Forceable):
                                             source_dir, self.args.source_dir))
             self.args.source_dir = source_dir
         log.dbg('source_dir: {} cmake_opts: {}'.format(self.args.source_dir,
-                                                       self.args.cmake_opts))
+                                                       self.args.cmake_opts),
+                level=log.VERBOSE_EXTREME)
         self._sanity_precheck()
         self._setup_build_dir()
 
@@ -172,7 +173,8 @@ class Build(Forceable):
         self.auto_pristine = (pristine == 'auto')
 
         log.dbg('pristine: {} auto_pristine: {}'.format(pristine,
-                                                        self.auto_pristine))
+                                                        self.auto_pristine),
+                level=log.VERBOSE_VERY)
         if is_zephyr_build(self.build_dir):
             if pristine == 'always':
                 self._run_pristine()
@@ -385,7 +387,7 @@ class Build(Forceable):
                     "'west config build.board_warn false'")
 
         if not self.run_cmake:
-            log.dbg('not running cmake; build system is present')
+            log.dbg('Not generating a build system; one is present.')
             return
 
         if board is not None and origin != 'CMakeCache.txt':
