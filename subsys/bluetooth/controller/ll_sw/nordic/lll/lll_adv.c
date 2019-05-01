@@ -710,10 +710,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 		memcpy(rx->pdu, pdu_rx, (offsetof(struct pdu_adv, connect_ind) +
 					 sizeof(struct pdu_adv_connect_ind)));
 
-		ftr = (void *)((u8_t *)rx->pdu +
-			       (offsetof(struct pdu_adv, connect_ind) +
-			       sizeof(struct pdu_adv_connect_ind)));
-
+		ftr = &(rx->hdr.rx_ftr);
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->us_radio_end = radio_tmr_end_get() -

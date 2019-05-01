@@ -629,9 +629,7 @@ void ull_conn_setup(memq_link_t *link, struct node_rx_hdr *rx)
 	struct node_rx_ftr *ftr;
 	struct lll_conn *lll;
 
-	ftr = (void *)((u8_t *)((struct node_rx_pdu *)rx)->pdu +
-		       (offsetof(struct pdu_adv, connect_ind) +
-		       sizeof(struct pdu_adv_connect_ind)));
+	ftr = &(rx->rx_ftr);
 
 	lll = *((struct lll_conn **)((u8_t *)ftr->param +
 				     sizeof(struct lll_hdr)));
