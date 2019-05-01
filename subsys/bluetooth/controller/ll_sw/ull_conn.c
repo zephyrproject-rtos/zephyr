@@ -95,10 +95,9 @@ static void ticker_op_cb(u32_t status, void *params);
 				CONFIG_BT_CTLR_TX_BUFFER_SIZE)
 
 #define CONN_TX_CTRL_BUFFERS 2
-#define CONN_TX_CTRL_BUF_SIZE (MROUND(offsetof(struct node_tx, pdu) + \
-				      offsetof(struct pdu_data, llctrl) + \
-				      sizeof(struct pdu_data_llctrl)) * \
-			       CONN_TX_CTRL_BUFFERS)
+#define CONN_TX_CTRL_BUF_SIZE MROUND(offsetof(struct node_tx, pdu) + \
+				     offsetof(struct pdu_data, llctrl) + \
+				     sizeof(struct pdu_data_llctrl))
 
 static MFIFO_DEFINE(conn_tx, sizeof(struct lll_tx), CONFIG_BT_CTLR_TX_BUFFERS);
 static MFIFO_DEFINE(conn_ack, sizeof(struct lll_tx), CONFIG_BT_CTLR_TX_BUFFERS);
