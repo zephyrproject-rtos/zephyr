@@ -104,6 +104,14 @@ extern u32_t pcie_get_iobar(pcie_bdf_t bdf, unsigned int index);
 extern void pcie_set_cmd(pcie_bdf_t bdf, u32_t bits, bool on);
 
 /**
+ * @brief Return the IRQ assigned by the firmware/board to an endpoint.
+ *
+ * @param bdf the PCI(e) endpoint
+ * @return the IRQ number, or PCIE_CONF_INTR_IRQ_NONE if unknown.
+ */
+extern unsigned int pcie_wired_irq(pcie_bdf_t bdf);
+
+/**
  * @brief Enable the PCI(e) endpoint to generate the specified IRQ.
  *
  * @param bdf the PCI(e) endpoint
