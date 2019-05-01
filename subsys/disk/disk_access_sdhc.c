@@ -455,7 +455,11 @@ static int sdhc_cmd_r1_raw(struct sdhc_data *data, u8_t cmd, u32_t payload)
 	err = sdhc_skip_until_start(data);
 
 	/* Ensure there's a idle byte between commands */
-	sdhc_rx_u8(data);
+	if (cmd != SDHC_SEND_CSD && cmd != SDHC_SEND_CID &&
+	    cmd != SDHC_READ_SINGLE_BLOCK && cmd != SDHC_READ_MULTIPLE_BLOCK &&
+	    cmd != SDHC_WRITE_BLOCK && cmd != SDHC_WRITE_MULTIPLE_BLOCK) {
+		sdhc_rx_u8(data);
+	}
 
 	return err;
 }
