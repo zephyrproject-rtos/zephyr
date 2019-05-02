@@ -270,7 +270,6 @@ static void usb_handle_control_transfer(u8_t ep,
 					enum usb_dc_ep_cb_status_code ep_status)
 {
 	u32_t chunk = 0U;
-	u32_t type = 0U;
 	struct usb_setup_packet *setup = &usb_dev.setup;
 
 	LOG_DBG("ep %x, status %x", ep, ep_status);
@@ -290,9 +289,6 @@ static void usb_handle_control_transfer(u8_t ep,
 		}
 
 		length = sys_le16_to_cpu(setup->wLength);
-
-		/* Defaults for data pointer and residue */
-		type = REQTYPE_GET_TYPE(setup->bmRequestType);
 
 		usb_dev.data_buf = usb_dev.req_data;
 		usb_dev.data_buf_residue = length;
@@ -342,7 +338,6 @@ static void usb_handle_control_transfer(u8_t ep,
 		usb_dev.data_buf_residue -= chunk;
 		if (usb_dev.data_buf_residue == 0) {
 			/* Received all, send data to handler */
-			type = REQTYPE_GET_TYPE(setup->bmRequestType);
 			usb_dev.data_buf = usb_dev.req_data;
 			if (!usb_handle_request(setup,
 						&usb_dev.data_buf_len,
