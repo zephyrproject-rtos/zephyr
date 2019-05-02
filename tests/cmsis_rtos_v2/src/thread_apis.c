@@ -8,7 +8,7 @@
 #include <kernel.h>
 #include <cmsis_os2.h>
 
-#define STACKSZ         512
+#define STACKSZ         CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
 
 /* This is used to check the thread yield functionality between 2 threads */
 static int thread_yield_check;
