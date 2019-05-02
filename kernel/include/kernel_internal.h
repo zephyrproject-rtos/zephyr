@@ -94,7 +94,7 @@ extern void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 					       u32_t partition_id);
 
 /**
- * @brief Remove a partition from the memory domain
+ * @brief Add a partition to the memory domain
  *
  * A memory domain contains multiple partitions and this API provides the
  * freedom to add an additional partition to a memory domain.
@@ -104,7 +104,7 @@ extern void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
  * @param domain The memory domain structure
  * @param partition_id The partition that needs to be added
  */
-extern void _arch_mem_domain_partition_add(struct k_mem_domain *domain,
+extern void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
 					    u32_t partition_id);
 
 /**
