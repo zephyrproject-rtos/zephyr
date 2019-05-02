@@ -335,8 +335,8 @@ void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	z_x86_reset_pages((void *)partition->start, partition->size);
 }
 
-/* Reset/destroy one partition specified in the argument of the API. */
-void _arch_mem_domain_partition_add(struct k_mem_domain *domain,
+/* Add one partition specified in the argument of the API. */
+void z_arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				    u32_t partition_id)
 {
 	struct k_mem_partition *partition;
