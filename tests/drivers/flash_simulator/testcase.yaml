@@ -1,4 +1,4 @@
 tests:
   peripheral.flash_simulator:
-    platform_whitelist: qemu_x86
+    platform_whitelist: qemu_x86 mps2_an385
     tags: driver

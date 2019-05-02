@@ -16,6 +16,34 @@ menuconfig FLASH_SIMULATOR
 
 if FLASH_SIMULATOR
 
+config FLASH_SIMULATOR_BASE_ADDRESS
+	hex
+	prompt "Base address of simulated flash"
+	default 0x0
+	help
+	  Simulated base address of flash area
+
+config FLASH_SIMULATOR_ERASE_BLOCK_SIZE
+	int
+	prompt "Simulated flash erase block size"
+	default 1024
+	help
+	  Simulated erase block size
+
+config FLASH_SIMULATOR_WRITE_BLOCK_SIZE
+	int
+	prompt "Simulated flash write block size"
+	default 4
+	help
+	  Simulated write block size
+
+config FLASH_SIMULATOR_FLASH_SIZE
+	int
+	prompt "Simulated flash area size"
+	default 1024
+	help
+	  Size of simulated flash area in kilobytes
+
 config FLASH_SIMULATOR_DOUBLE_WRITES
 	bool
 	prompt "Allow program units to be programmed more than once"

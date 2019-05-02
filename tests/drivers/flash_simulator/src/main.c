@@ -8,11 +8,10 @@
 #include <flash.h>
 #include <device.h>
 
-/* configuration derived from DT */
-#define FLASH_SIMULATOR_BASE_OFFSET DT_FLASH_BASE_ADDRESS
-#define FLASH_SIMULATOR_ERASE_UNIT DT_FLASH_ERASE_BLOCK_SIZE
-#define FLASH_SIMULATOR_PROG_UNIT DT_FLASH_WRITE_BLOCK_SIZE
-#define FLASH_SIMULATOR_FLASH_SIZE DT_FLASH_SIZE
+#define FLASH_SIMULATOR_BASE_OFFSET CONFIG_FLASH_SIMULATOR_BASE_ADDRESS
+#define FLASH_SIMULATOR_ERASE_UNIT CONFIG_FLASH_SIMULATOR_ERASE_BLOCK_SIZE
+#define FLASH_SIMULATOR_PROG_UNIT CONFIG_FLASH_SIMULATOR_WRITE_BLOCK_SIZE
+#define FLASH_SIMULATOR_FLASH_SIZE CONFIG_FLASH_SIMULATOR_FLASH_SIZE
 
 /* Offset between pages */
 #define TEST_SIM_FLASH_SIZE (FLASH_SIMULATOR_ERASE_UNIT *\
@@ -64,7 +63,7 @@ static void test_int(void)
 	int rc;
 	off_t i;
 
-	flash_dev = device_get_binding(DT_FLASH_DEV_NAME);
+	flash_dev = device_get_binding("FLASH_SIMULATOR");
 
 	zassert_true(flash_dev != NULL,
 		     "Simulated flash driver was not found!");
