@@ -1,0 +1,13 @@
+identifier: qemu_x86_coverage
+name: QEMU Emulation for X86 (Code coverage enabled)
+type: qemu
+arch: x86
+simulation: qemu
+toolchain:
+  - zephyr
+  - xtools
+testing:
+  default: true
+  ignore_tags:
+     - net
+     - bluetooth
