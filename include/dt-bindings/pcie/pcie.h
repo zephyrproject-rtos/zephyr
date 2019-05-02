@@ -8,6 +8,15 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_PCIE_PCIE_H_
 
 /*
+ * Set the device's IRQ (in devicetree, or whatever) to PCIE_IRQ_DETECT
+ * if the device doesn't support MSI and we don't/can't know the wired IRQ
+ * allocated by the firmware ahead of time. Use of this functionality will
+ * generally also require CONFIG_DYNAMIC_INTERRUPTS.
+ */
+
+#define PCIE_IRQ_DETECT		0xFFFFFFFU
+
+/*
  * We represent a PCI device ID as [31:16] device ID, [15:0] vendor ID. Not
  * coincidentally, this is same representation used in PCI configuration space.
  */
