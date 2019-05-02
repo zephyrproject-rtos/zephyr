@@ -18,7 +18,7 @@ struct sample_data {
 #define MESSAGE2        123456
 #define TIMEOUT_TICKS   50
 #define Q_LEN           5
-#define STACKSZ         512
+#define STACKSZ         CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
 
 osMessageQueueId_t message_id;
 
