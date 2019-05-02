@@ -121,7 +121,7 @@ int z_arch_buffer_validate(void *addr, size_t size, int write)
 			/* loop over all the possible page tables for the
 			 * required size. If the pde is not the last one
 			 * then the last pte would be 511. So each pde
-			 * will be using all the page table entires except
+			 * will be using all the page table entries except
 			 * for the last pde. For the last pde, pte is
 			 * calculated using the last memory address
 			 * of the buffer.
@@ -281,7 +281,7 @@ static inline void x86_mem_domain_pages_update(struct k_mem_domain *mem_domain,
 	total_partitions = mem_domain->num_partitions;
 
 	/* Iterate over all the partitions for the given mem_domain
-	 * For x86: interate over all the partitions and set the
+	 * For x86: iterate over all the partitions and set the
 	 * required flags in the correct MMU page tables.
 	 */
 	partitions_count = 0U;
@@ -321,7 +321,7 @@ void z_arch_mem_domain_destroy(struct k_mem_domain *domain)
 	x86_mem_domain_pages_update(domain, X86_MEM_DOMAIN_RESET_PAGES);
 }
 
-/* Reset/destroy one partition spcified in the argument of the API. */
+/* Reset/destroy one partition specified in the argument of the API. */
 void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 					u32_t partition_id)
 {
@@ -335,7 +335,7 @@ void z_arch_mem_domain_partition_remove(struct k_mem_domain *domain,
 	z_x86_reset_pages((void *)partition->start, partition->size);
 }
 
-/* Reset/destroy one partition spcified in the argument of the API. */
+/* Reset/destroy one partition specified in the argument of the API. */
 void _arch_mem_domain_partition_add(struct k_mem_domain *domain,
 				    u32_t partition_id)
 {
