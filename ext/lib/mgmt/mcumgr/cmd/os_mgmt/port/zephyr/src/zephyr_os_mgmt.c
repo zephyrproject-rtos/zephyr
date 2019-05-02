@@ -21,6 +21,7 @@
 #include <misc/reboot.h>
 #include <debug/object_tracing.h>
 #include <kernel_structs.h>
+#include <misc/stack.h>
 #include <mgmt/mgmt.h>
 #include <util/mcumgr_util.h>
 #include <os_mgmt/os_mgmt.h>
@@ -63,12 +64,21 @@ os_mgmt_impl_task_info(int idx, struct os_mgmt_task_info *out_info)
     }
 
     *out_info = (struct os_mgmt_task_info){ 0 };
+
+#ifdef CONFIG_THREAD_NAME
+    strncpy(out_info->oti_name, thread->name, sizeof out_info->oti_name);
+#else
     ll_to_s(thread->base.prio, sizeof out_info->oti_name, out_info->oti_name);
+#endif
+
     out_info->oti_prio = thread->base.prio;
     out_info->oti_taskid = idx;
     out_info->oti_state = thread->base.thread_state;
-#ifdef THREAD_STACK_INFO
+#ifdef CONFIG_THREAD_STACK_INFO
     out_info->oti_stksize = thread->stack_info.size / 4;
+#ifdef CONFIG_INIT_STACKS
+    out_info->oti_stkusage = stack_unused_space_get((char *)thread->stack_info.start, thread->stack_info.size)/4;
+#endif
 #endif
 
     return 0;
