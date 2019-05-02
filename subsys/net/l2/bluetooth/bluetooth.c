@@ -292,6 +292,8 @@ static void bt_iface_init(struct net_if *iface)
 
 	conn->iface = iface;
 
+	net_if_flag_set(iface, NET_IF_NO_AUTO_START);
+
 #if defined(CONFIG_NET_L2_BT_ZEP1656)
 	/* Workaround Linux bug, see:
 	 * https://github.com/zephyrproject-rtos/zephyr/issues/3111
