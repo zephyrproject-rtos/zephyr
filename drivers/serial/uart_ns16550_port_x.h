@@ -50,20 +50,51 @@ static void irq_config_func_@NUM@(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
+#if DT_UART_NS16550_PORT_@NUM@_PCIE
+#if DT_UART_NS16550_PORT_@NUM@_IRQ == PCIE_IRQ_DETECT
+
+	/* PCI(e) with auto IRQ detection */
+
+	BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_DYNAMIC_INTERRUPTS),
+		"NS16550 PCI auto-IRQ needs CONFIG_DYNAMIC_INTERRUPTS");
+
+	unsigned int irq;
+
+	irq = pcie_wired_irq(DT_UART_NS16550_PORT_@NUM@_BASE_ADDR);
+	if (irq == PCIE_CONF_INTR_IRQ_NONE) return;
+
+	irq_connect_dynamic(irq,
+			    DT_UART_NS16550_PORT_@NUM@_IRQ_PRI,
+			    uart_ns16550_isr,
+			    DEVICE_GET(uart_ns16550_@NUM@),
+			    DT_UART_NS16550_PORT_@NUM@_IRQ_FLAGS);
+
+	pcie_irq_enable(DT_UART_NS16550_PORT_@NUM@_BASE_ADDR, irq);
+
+#else
+
+	/* PCI(e) with fixed or MSI IRQ */
+
 	IRQ_CONNECT(DT_UART_NS16550_PORT_@NUM@_IRQ,
 		    DT_UART_NS16550_PORT_@NUM@_IRQ_PRI,
 		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_@NUM@),
 		    DT_UART_NS16550_PORT_@NUM@_IRQ_FLAGS);
 
-#ifdef UART_NS16550_PCIE_ENABLED
-	if (DEV_CFG(dev)->pcie) {
-		pcie_irq_enable(DT_UART_NS16550_PORT_@NUM@_BASE_ADDR,
-				DT_UART_NS16550_PORT_@NUM@_IRQ);
-	} else {
-		irq_enable(DT_UART_NS16550_PORT_@NUM@_IRQ);
-	}
+	pcie_irq_enable(DT_UART_NS16550_PORT_@NUM@_BASE_ADDR,
+		        DT_UART_NS16550_PORT_@NUM@_IRQ);
+
+#endif
 #else
+
+	/* not PCI(e) */
+
+	IRQ_CONNECT(DT_UART_NS16550_PORT_@NUM@_IRQ,
+		    DT_UART_NS16550_PORT_@NUM@_IRQ_PRI,
+		    uart_ns16550_isr, DEVICE_GET(uart_ns16550_@NUM@),
+		    DT_UART_NS16550_PORT_@NUM@_IRQ_FLAGS);
+
 	irq_enable(DT_UART_NS16550_PORT_@NUM@_IRQ);
+
 #endif
 }
 #endif
