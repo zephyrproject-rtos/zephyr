@@ -144,6 +144,7 @@
 /drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
 /drivers/i2c/i2c_rv32m1_lpi2c*            @henrikbrixandersen
 /drivers/i2c/*sam0*                       @Sizurka
+/drivers/*/*xec*                          @franciscomunoz @albertofloyd @scottwcpg
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 /drivers/wifi/eswifi/                     @loicpoulain
 /dts/arm/atmel/samr21.dtsi                @benpicco
