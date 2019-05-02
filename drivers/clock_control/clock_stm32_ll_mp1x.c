@@ -274,6 +274,7 @@ static int stm32_clock_control_get_subsys_rate(struct device *clock,
 		case LL_APB5_GRP1_PERIPH_I2C4:
 		case LL_APB5_GRP1_PERIPH_I2C6:
 			*rate = LL_RCC_GetI2CClockFreq(LL_RCC_I2C46_CLKSOURCE);
+			break;
 		case LL_APB5_GRP1_PERIPH_USART1:
 			*rate = LL_RCC_GetUARTClockFreq(
 					LL_RCC_USART1_CLKSOURCE);
