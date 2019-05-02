@@ -16,7 +16,7 @@
 #define FLAG2           (0x00000004)
 #define FLAG            (FLAG1 | FLAG2)
 #define ISR_FLAG        (0x50)
-#define STACKSZ         (512)
+#define STACKSZ         CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
 
 static void thread1(void *arg)
 {

@@ -9,7 +9,7 @@
 #include <cmsis_os2.h>
 
 #define TIMEOUT_TICKS   10
-#define STACKSZ         512
+#define STACKSZ         CONFIG_CMSIS_V2_THREAD_MAX_STACK_SIZE
 
 int max_mtx_cnt = CONFIG_CMSIS_V2_MUTEX_MAX_COUNT;
 const osMutexAttr_t mutex_attr = {
