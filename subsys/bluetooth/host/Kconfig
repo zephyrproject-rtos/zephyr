@@ -511,8 +511,15 @@ config BT_DEBUG_SDP
 	bool "Bluetooth Service Discovery Protocol (SDP) debug"
 	depends on BT_BREDR
 	help
-		This option enables debug support for the Bluetooth
-		Service Discovery Protocol (SDP).
+	  This option enables debug support for the Bluetooth
+	  Service Discovery Protocol (SDP).
+
+config BT_DEBUG_SERVICE
+	bool "Bluetooth Services debug"
+	depends on BT_CONN
+	help
+	  This option enables debug support for the Bluetooth
+	  Services.
 
 endif # BT_DEBUG
 
