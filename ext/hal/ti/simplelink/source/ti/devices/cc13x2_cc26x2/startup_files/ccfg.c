@@ -46,6 +46,9 @@
 #include "../inc/hw_ccfg.h"
 #include "../inc/hw_ccfg_simple_struct.h"
 
+/* Required for Zephyr __ti_ccfg_section macro */
+#include <linker/sections.h>
+
 //*****************************************************************************
 //
 // Introduction
@@ -502,7 +505,8 @@ __root const ccfg_t __ccfg @ ".ccfg" =
 #pragma RETAIN(__ccfg)
 const ccfg_t __ccfg =
 #else
-const ccfg_t __ccfg __attribute__((section(".ccfg"))) __attribute__((used)) =
+/* Modified for Zephyr to use __ti_ccfg_section */
+const ccfg_t __ti_ccfg_section __ccfg =
 #endif
 {                                     // Mapped to address
     DEFAULT_CCFG_EXT_LF_CLK         , // 0x50003FA8 (0x50003xxx maps to last
