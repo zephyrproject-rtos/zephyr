@@ -47,6 +47,14 @@ z_arch_switch_to_main_thread(struct k_thread *main_thread,
 			    k_thread_stack_t *main_stack,
 			    size_t main_stack_size, k_thread_entry_t _main)
 {
+#if defined(CONFIG_FLOAT) && !defined(CONFIG_FP_SHARING)
+	/* Initialize the Floating Point Status and Control Register when in
+	 * Unshared FP Registers mode (In Shared FP Registers mode, FPSCR is
+	 * initialized at thread creation for threads that make use of the FP).
+	 */
+	__set_FPSCR(0);
+#endif
+
 #ifdef CONFIG_ARM_MPU
 	/* Configure static memory map. This will program MPU regions,
 	 * to set up access permissions for fixed memory sections, such
