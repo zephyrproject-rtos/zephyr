@@ -34,4 +34,4 @@ void *ull_disable_mark(void *param);
 void *ull_disable_unmark(void *param);
 void *ull_disable_mark_get(void);
 int ull_disable(void *param);
-u8_t ull_entropy_get(u8_t len, u8_t *rand);
+u8_t ull_entropy_get(u8_t len, void *rand);

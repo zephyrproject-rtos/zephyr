@@ -1073,7 +1073,7 @@ void *ull_event_done(void *param)
 	return evdone;
 }
 
-u8_t ull_entropy_get(u8_t len, u8_t *rand)
+u8_t ull_entropy_get(u8_t len, void *rand)
 {
 	return entropy_get_entropy_isr(dev_entropy, rand, len, 0);
 }
