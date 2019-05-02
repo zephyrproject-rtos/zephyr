@@ -89,4 +89,6 @@ source "drivers/neural_net/Kconfig"
 
 source "drivers/hwinfo/Kconfig"
 
+source "drivers/espi/Kconfig"
+
 endmenu
