@@ -29,30 +29,6 @@
 	};
 
 	soc {
-		uart0: uart@81434000 {
-			compatible = "ns16550";
-			reg = <0x81434000 0x1000>;
-			label = "UART_0";
-			clock-frequency = <1843200>;
-			interrupts = <4 IRQ_TYPE_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-
-			status = "ok";
-			current-speed = <115200>;
-		};
-
-		uart1: uart@81432000 {
-			compatible = "ns16550";
-			reg = <0x81432000 0x1000>;
-			label = "UART_1";
-			clock-frequency = <1843200>;
-			interrupts = <5 IRQ_TYPE_LEVEL_LOW 3>;
-			interrupt-parent = <&intc>;
-
-			status = "ok";
-			current-speed = <115200>;
-		};
-
 		i2c0: i2c@81444000 {
 			compatible = "snps,designware-i2c";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
@@ -157,6 +133,14 @@
 			status = "ok";
 		};
 	};
+};
+
+&uart0 {
+	status = "ok";
+};
+
+&uart1 {
+	status = "ok";
 };
 
 &gpio {
