@@ -1123,22 +1123,22 @@ static int context_setup_udp_packet(struct net_context *context,
 	int ret = -EINVAL;
 	u16_t dst_port = 0U;
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) &&
-	    net_context_get_family(context) == AF_INET) {
-		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
-
-		dst_port = addr4->sin_port;
-
-		ret = net_context_create_ipv4_new(context, pkt,
-						  NULL, &addr4->sin_addr);
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		   net_context_get_family(context) == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    net_context_get_family(context) == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
 		dst_port = addr6->sin6_port;
 
 		ret = net_context_create_ipv6_new(context, pkt,
 						  NULL, &addr6->sin6_addr);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		   net_context_get_family(context) == AF_INET) {
+		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
+
+		dst_port = addr4->sin_port;
+
+		ret = net_context_create_ipv4_new(context, pkt,
+						  NULL, &addr4->sin_addr);
 	}
 
 	if (ret < 0) {
@@ -1175,12 +1175,12 @@ static void context_finalize_packet(struct net_context *context,
 
 	net_pkt_cursor_init(pkt);
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) &&
-	    net_context_get_family(context) == AF_INET) {
-		net_ipv4_finalize(pkt, net_context_get_ip_proto(context));
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		   net_context_get_family(context) == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    net_context_get_family(context) == AF_INET6) {
 		net_ipv6_finalize(pkt, net_context_get_ip_proto(context));
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		   net_context_get_family(context) == AF_INET) {
+		net_ipv4_finalize(pkt, net_context_get_ip_proto(context));
 	}
 }
 
@@ -1248,19 +1248,8 @@ static int context_sendto(struct net_context *context,
 		return -EDESTADDRREQ;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) &&
-	    net_context_get_family(context) == AF_INET) {
-		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
-
-		if (addrlen < sizeof(struct sockaddr_in)) {
-			return -EINVAL;
-		}
-
-		if (!addr4->sin_addr.s_addr) {
-			return -EDESTADDRREQ;
-		}
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		   net_context_get_family(context) == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    net_context_get_family(context) == AF_INET6) {
 		struct sockaddr_in6 *addr6 = (struct sockaddr_in6 *)dst_addr;
 
 		if (addrlen < sizeof(struct sockaddr_in6)) {
@@ -1268,6 +1257,17 @@ static int context_sendto(struct net_context *context,
 		}
 
 		if (net_ipv6_is_addr_unspecified(&addr6->sin6_addr)) {
+			return -EDESTADDRREQ;
+		}
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		   net_context_get_family(context) == AF_INET) {
+		struct sockaddr_in *addr4 = (struct sockaddr_in *)dst_addr;
+
+		if (addrlen < sizeof(struct sockaddr_in)) {
+			return -EINVAL;
+		}
+
+		if (!addr4->sin_addr.s_addr) {
 			return -EDESTADDRREQ;
 		}
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
@@ -1452,12 +1452,12 @@ int net_context_send(struct net_context *context,
 		goto unlock;
 	}
 
-	if (IS_ENABLED(CONFIG_NET_IPV4) &&
-	    net_context_get_family(context) == AF_INET) {
-		addrlen = sizeof(struct sockaddr_in);
-	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
-		   net_context_get_family(context) == AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    net_context_get_family(context) == AF_INET6) {
 		addrlen = sizeof(struct sockaddr_in6);
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		   net_context_get_family(context) == AF_INET) {
+		addrlen = sizeof(struct sockaddr_in);
 	} else if (IS_ENABLED(CONFIG_NET_SOCKETS_PACKET) &&
 		   net_context_get_family(context) == AF_PACKET) {
 		ret = -EOPNOTSUPP;
