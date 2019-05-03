@@ -12,6 +12,7 @@
 #include <wait_q.h>
 #include <power.h>
 #include <stdbool.h>
+#include <misc/stack.h>
 
 #ifdef CONFIG_TICKLESS_IDLE_THRESH
 #define IDLE_THRESH CONFIG_TICKLESS_IDLE_THRESH
@@ -120,6 +121,31 @@ void z_sys_power_save_idle_exit(s32_t ticks)
 }
 
 
+#if defined(CONFIG_INIT_STACKS)
+extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
+extern K_THREAD_STACK_DEFINE(sys_work_q_stack,
+			     CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE);
+extern K_THREAD_STACK_DEFINE(_main_stack, CONFIG_MAIN_STACK_SIZE);
+extern K_THREAD_STACK_DEFINE(_idle_stack, CONFIG_IDLE_STACK_SIZE);
+static u32_t idle_ts;
+
+static void stack_dump(const struct k_thread *thread, void *user_data)
+{
+	LOG_MODULE_DECLARE(kernel, CONFIG_KERNEL_LOG_LEVEL);
+
+	const char *name = k_thread_name_get((struct k_thread *)thread);
+	unsigned int size = thread->stack_info.size;
+	unsigned int pcnt, unused;
+
+	unused = stack_unused_space_get((char *)thread->stack_info.start,
+					size);
+	pcnt = ((size - unused) * 100U) / size;
+
+	LOG_INF("%s :\tunused %u\tusage %u / %u (%u %%)",
+		name, unused, size - unused, size, pcnt);
+}
+#endif
+
 #if K_IDLE_PRIO < 0
 #define IDLE_YIELD_IF_COOP() k_yield()
 #else
@@ -151,6 +177,18 @@ void idle(void *unused1, void *unused2, void *unused3)
 	}
 #else
 	for (;;) {
+#if defined(CONFIG_INIT_STACKS)
+		if (k_uptime_get_32() - idle_ts > K_SECONDS(5)) {
+			STACK_ANALYZE("interrupt stack", _interrupt_stack);
+			STACK_ANALYZE("sys work q stack", sys_work_q_stack);
+			STACK_ANALYZE("main stack", _main_stack);
+			STACK_ANALYZE("idle stack", _idle_stack);
+
+			k_thread_foreach(stack_dump, NULL);
+
+			idle_ts = k_uptime_get_32();
+		}
+#endif
 		(void)irq_lock();
 		sys_power_save_idle();
 
