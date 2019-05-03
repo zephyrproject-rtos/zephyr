@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2019, Aaron Tsui <aaron.tsui@outlook.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: STMicroelectronics MEMS sensors VL53L1X
+version: 0.1
+
+description: >
+    This binding gives a base representation of VL53L1X Time Of Flight sensor
+
+inherits:
+    !include i2c-device.yaml
+
+properties:
+    compatible:
+      constraint: "st,vl53l1x"
+
+    drdy-gpios:
+      type: compound
+      category: optional
+      description: DRDY pin
+      generation: define, use-prop-name
+
+...

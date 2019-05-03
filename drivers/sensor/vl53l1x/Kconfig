@@ -1,0 +1,81 @@
+#
+# Copyright (c) 2019 Aaron Tsui <aaron.tsui@outlook.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig VL53L1X
+	bool "VL53L1X time of flight sensor"
+	depends on I2C && HAS_DTS_I2C
+	select HAS_STLIB
+	help
+	  Enable driver for VL53L1X I2C-based time of flight sensor.
+
+if VL53L1X
+
+choice VL53L1X_TRIGGER_MODE
+	prompt "Trigger mode"
+	default VL53L1X_TRIGGER_NONE
+	help
+	  Specify the type of triggering to be used by the driver.
+
+config VL53L1X_TRIGGER_NONE
+	bool "No trigger"
+
+config VL53L1X_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	depends on GPIO
+	select VL53L1X_TRIGGER
+
+config VL53L1X_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	depends on GPIO
+	select VL53L1X_TRIGGER
+
+endchoice # VL53L1X_TRIGGER_MODE
+
+config VL53L1X_TRIGGER
+	bool
+
+config VL53L1X_THREAD_PRIORITY
+	int "Thread priority"
+	depends on VL53L1X_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Priority of thread used by the driver to handle interrupts.
+
+config VL53L1X_THREAD_STACK_SIZE
+	int "Thread stack size"
+	depends on VL53L1X_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size of thread used by the driver to handle interrupts.
+
+config VL53L1X_XSHUT_CONTROL_ENABLE
+	bool "Enable XSHUT pin control"
+	help
+	    Enable it if XSHUT pin is controlled by host.
+
+config VL53L1X_XSHUT_GPIO_DEV_NAME
+	string "GPIO device"
+	default "GPIOC"
+	depends on VL53L1X_XSHUT_CONTROL_ENABLE
+	help
+	  The device name of the GPIO device to which the VL53L1X xshut pin
+	  is connected.
+
+config VL53L1X_XSHUT_GPIO_PIN_NUM
+	int "Interrupt GPIO pin number"
+	default 6
+	depends on VL53L1X_XSHUT_CONTROL_ENABLE
+	help
+	  The number of the GPIO on which the xshut signal from the VL53L1X
+	  is connected.
+
+config VL53L1X_PROXIMITY_THRESHOLD
+	int "Proximity threshold in millimeters"
+	default 100
+	help
+	  Threshold used for proximity detection when sensor is used with SENSOR_CHAN_PROX.
+
+endif # VL53L1X
