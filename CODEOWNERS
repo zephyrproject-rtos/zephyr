@@ -30,7 +30,6 @@
 /arch/x86/                                @andrewboie @wentongwu
 /arch/x86/core/                           @andrewboie
 /arch/x86/core/crt0.S                     @wentongwu @nashif
-/arch/x86/core/pcie.c                     @gnuless
 /soc/x86/                                 @andrewboie @wentongwu
 /soc/x86/intel_quark/quark_d2000/         @nashif
 /soc/x86/intel_quark/quark_se/            @nashif
@@ -125,8 +124,6 @@
 /drivers/led/                             @Mani-Sadhasivam
 /drivers/led_strip/                       @mbolivar
 /drivers/modem/                           @mike-scott
-/drivers/pci/                             @gnuless
-/drivers/pcie/                            @gnuless
 /drivers/pinmux/stm32/                    @rsalveti @idlethread
 /drivers/sensor/                          @bogdan-davidoaia @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
@@ -136,7 +133,6 @@
 /drivers/sensor/lps*/                     @avisconti
 /drivers/sensor/lsm*/                     @avisconti
 /drivers/serial/uart_altera_jtag_hal.c    @wentongwu
-/drivers/serial/*ns16550*                 @gnuless
 /drivers/net/                             @jukkar @tbursztyka
 /drivers/ptp_clock/                       @jukkar
 /drivers/spi/                             @tbursztyka
@@ -157,7 +153,6 @@
 /dts/arm/microchip/                       @franciscomunoz @albertofloyd @scottwcpg
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
-/dts/bindings/serial/ns16550.yaml         @gnuless
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
 /dts/bindings/*/st,stm32*                 @erwango
@@ -202,9 +197,6 @@
 /include/drivers/ioapic.h                 @andrewboie
 /include/drivers/loapic.h                 @andrewboie
 /include/drivers/mvic.h                   @andrewboie
-/include/drivers/pcie/                    @gnuless
-/include/drivers/serial/uart_ns16550.h    @gnuless
-/include/dt-bindings/pcie/                @gnuless
 /include/fs.h                             @nashif @wentongwu
 /include/fs/                              @nashif @wentongwu
 /include/hwinfo.h                         @alexanderwachter
