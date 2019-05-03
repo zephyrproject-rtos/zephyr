@@ -61,7 +61,10 @@ static void irq_config_func_@NUM@(struct device *dev)
 	unsigned int irq;
 
 	irq = pcie_wired_irq(DT_UART_NS16550_PORT_@NUM@_BASE_ADDR);
-	if (irq == PCIE_CONF_INTR_IRQ_NONE) return;
+
+	if (irq == PCIE_CONF_INTR_IRQ_NONE) {
+		return;
+	}
 
 	irq_connect_dynamic(irq,
 			    DT_UART_NS16550_PORT_@NUM@_IRQ_PRI,
@@ -81,7 +84,7 @@ static void irq_config_func_@NUM@(struct device *dev)
 		    DT_UART_NS16550_PORT_@NUM@_IRQ_FLAGS);
 
 	pcie_irq_enable(DT_UART_NS16550_PORT_@NUM@_BASE_ADDR,
-		        DT_UART_NS16550_PORT_@NUM@_IRQ);
+			DT_UART_NS16550_PORT_@NUM@_IRQ);
 
 #endif
 #else
