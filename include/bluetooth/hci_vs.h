@@ -300,6 +300,35 @@ struct bt_hci_evt_mesh_scanning_report {
 	struct bt_hci_evt_mesh_scan_report reports[0];
 } __packed;
 
+/* HCI Proprietary vendor events */
+#define BT_HCI_PROP_EVT_PREFIX                 0xFF
+
+struct bt_hci_evt_prop {
+	u8_t  prefix;
+} __packed;
+
+struct bt_hci_evt_prop_report {
+	u8_t  data_len;
+	u8_t  data[0];
+} __packed;
+
+
+#if defined(CONFIG_BT_HCI_PROP_EXT)
+/** @typedef bt_hci_prop_cb_t
+ *  @brief Callback type for proprietary vendor specific events
+ */
+typedef void bt_hci_prop_cb_t(u8_t *data, size_t data_len);
+
+/**
+ * @brief Register a proprietary vendor-specific callback
+ * @details The callback is an app-level catch-all for events
+ *  autonomously generated from the BT controller
+ *
+ * @param cb  Callback to execute. Executes from Host thread context
+ */
+int bt_hci_prop_register_cb(bt_hci_prop_cb_t cb);
+#endif /* CONFIG_BT_HCI_PROP_EXT */
+
 #ifdef __cplusplus
 }
 #endif

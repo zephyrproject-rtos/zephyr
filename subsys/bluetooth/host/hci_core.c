@@ -83,6 +83,9 @@ static bt_ready_cb_t ready_cb;
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
+#if defined(CONFIG_BT_HCI_PROP_EXT)
+static bt_hci_prop_cb_t *prop_cb;
+#endif /* CONFIG_BT_HCI_PROP_EXT */
 #if defined(CONFIG_BT_ECC)
 static u8_t pub_key[64];
 static struct bt_pub_key_cb *pub_key_cb;
@@ -3088,6 +3091,9 @@ static void hci_reset_complete(struct net_buf *buf)
 	}
 
 	scan_dev_found_cb = NULL;
+#if defined(CONFIG_BT_HCI_PROP_EXT)
+	prop_cb = NULL;
+#endif /* CONFIG_BT_HCI_PROP_EXT */
 #if defined(CONFIG_BT_BREDR)
 	discovery_cb = NULL;
 	discovery_results = NULL;
@@ -3370,8 +3376,29 @@ static void le_adv_report(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_HCI_PROP_EXT)
+int bt_hci_prop_register_cb(bt_hci_prop_cb_t cb)
+{
+	prop_cb = cb;
+	return 0;
+}
+
+static void prop_report(struct net_buf *buf)
+{
+	struct bt_hci_evt_prop_report *evt = (void *)buf->data;
+
+	if (prop_cb) {
+		prop_cb(evt->data, evt->data_len);
+	}
+}
+#endif /* CONFIG_BT_HCI_PROP_EXT */
+
 #if defined(CONFIG_BT_HCI_VS)
 static const struct event_handler vs_events[] = {
+#if defined(CONFIG_BT_HCI_PROP_EXT)
+	EVENT_HANDLER(BT_HCI_PROP_EVT_PREFIX, prop_report,
+		      sizeof(struct bt_hci_evt_prop_report)),
+#endif /* CONFIG_BT_HCI_PROP_EXT */
 };
 
 static void hci_vendor_event(struct net_buf *buf)

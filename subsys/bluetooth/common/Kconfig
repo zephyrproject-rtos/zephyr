@@ -46,6 +46,12 @@ config BT_HCI_MESH_EXT
 	help
 	  Enable support for the Bluetooth Mesh HCI Commands.
 
+config BT_HCI_PROP_EXT
+	bool "Proprietary HCI Event support"
+	depends on BT_HCI_VS
+	help
+	  Enable support for the Proprietary HCI Event.
+
 config BT_WAIT_NOP
 	bool "Wait for \"NOP\" Command Complete event during init"
 	help
