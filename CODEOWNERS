@@ -136,7 +136,7 @@
 /drivers/sensor/lps*/                     @avisconti
 /drivers/sensor/lsm*/                     @avisconti
 /drivers/serial/uart_altera_jtag_hal.c    @wentongwu
-/drivers/serial/*ns16550*                 @gnuless
+#/drivers/serial/*ns16550*                 @gnuless
 /drivers/net/                             @jukkar @tbursztyka
 /drivers/ptp_clock/                       @jukkar
 /drivers/spi/                             @tbursztyka
