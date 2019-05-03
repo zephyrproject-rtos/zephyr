@@ -119,23 +119,8 @@ void main(void)
 	LOG_DBG("Starting application");
 
 	k_delayed_work_init(&delayed_report_send, send_report);
-
-#ifndef CONFIG_USB_COMPOSITE_DEVICE
-	hdev = device_get_binding("HID_0");
-	if (hdev == NULL) {
-		LOG_ERR("Cannot get USB HID Device");
-		return;
-	}
-
-	LOG_DBG("HID Device: dev %p", hdev);
-
-	usb_hid_register_device(hdev, hid_report_desc, sizeof(hid_report_desc),
-				&ops);
-	usb_hid_init(hdev);
-#endif
 }
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
 static int composite_pre_init(struct device *dev)
 {
 	hdev = device_get_binding("HID_0");
@@ -153,4 +138,3 @@ static int composite_pre_init(struct device *dev)
 }
 
 SYS_INIT(composite_pre_init, APPLICATION, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
-#endif

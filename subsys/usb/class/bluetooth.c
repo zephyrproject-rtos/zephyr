@@ -313,24 +313,6 @@ static int bluetooth_init(struct device *dev)
 		return ret;
 	}
 
-#ifndef CONFIG_USB_COMPOSITE_DEVICE
-	bluetooth_config.usb_device_description =
-		usb_get_device_descriptor();
-	/* Initialize the USB driver with the right configuration */
-	ret = usb_set_config(&bluetooth_config);
-	if (ret < 0) {
-		LOG_ERR("Failed to config USB");
-		return ret;
-	}
-
-	/* Enable USB driver */
-	ret = usb_enable(&bluetooth_config);
-	if (ret < 0) {
-		LOG_ERR("Failed to enable USB");
-		return ret;
-	}
-#endif
-
 	k_thread_create(&rx_thread_data, rx_thread_stack,
 			K_THREAD_STACK_SIZEOF(rx_thread_stack),
 			(k_thread_entry_t)hci_rx_thread, NULL, NULL, NULL,

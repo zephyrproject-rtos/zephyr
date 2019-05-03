@@ -657,26 +657,6 @@ int usb_hid_init(const struct device *dev)
 	 */
 	usb_set_hid_report_size(cfg, dev_data->report_size);
 
-#ifndef CONFIG_USB_COMPOSITE_DEVICE
-	int ret;
-
-	cfg->usb_device_description = usb_get_device_descriptor();
-
-	/* Initialize the USB driver with the right configuration */
-	ret = usb_set_config(cfg);
-	if (ret < 0) {
-		LOG_ERR("Failed to config USB");
-		return ret;
-	}
-
-	/* Enable USB driver */
-	ret = usb_enable(cfg);
-	if (ret < 0) {
-		LOG_ERR("Failed to enable USB");
-		return ret;
-	}
-#endif
-
 	return 0;
 }
 

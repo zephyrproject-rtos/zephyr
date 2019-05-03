@@ -201,11 +201,11 @@ struct usb_cfg_data {
  * Function to configure USB controller.
  * Configuration parameters must be valid or an error is returned
  *
- * @param[in] config Pointer to configuration structure
+ * @param[in] usb_descriptor USB descriptor table
  *
  * @return 0 on success, negative errno code on fail
  */
-int usb_set_config(struct usb_cfg_data *config);
+int usb_set_config(const u8_t *usb_descriptor);
 
 /**
  * @brief Deconfigure USB controller
@@ -224,11 +224,9 @@ int usb_deconfig(void);
  * it is now capable of transmitting and receiving on the USB bus and
  * of generating interrupts.
  *
- * @param[in] config Pointer to configuration structure
- *
  * @return 0 on success, negative errno code on fail.
  */
-int usb_enable(struct usb_cfg_data *config);
+int usb_enable(void);
 
 /**
  * @brief Disable the USB device

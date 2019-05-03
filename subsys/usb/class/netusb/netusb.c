@@ -137,34 +137,6 @@ static void netusb_init(struct net_if *iface)
 
 	net_if_down(iface);
 
-#ifndef CONFIG_USB_COMPOSITE_DEVICE
-	/* Linker-defined symbols bound the USB descriptor structs */
-	extern struct usb_cfg_data __usb_data_start[];
-	extern struct usb_cfg_data __usb_data_end[];
-	size_t size = (__usb_data_end - __usb_data_start);
-
-	for (size_t i = 0; i < size; i++) {
-		struct usb_cfg_data *cfg = &(__usb_data_start[i]);
-		int ret;
-
-		LOG_DBG("Registering function %u", i);
-
-		cfg->usb_device_description = usb_get_device_descriptor();
-
-		ret = usb_set_config(cfg);
-		if (ret < 0) {
-			LOG_ERR("Failed to configure USB device");
-			return;
-		}
-
-		ret = usb_enable(cfg);
-		if (ret < 0) {
-			LOG_ERR("Failed to enable USB");
-			return;
-		}
-	}
-#endif /* CONFIG_USB_COMPOSITE_DEVICE */
-
 	LOG_INF("netusb initialized");
 }
 
