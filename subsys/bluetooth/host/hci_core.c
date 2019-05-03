@@ -3370,6 +3370,22 @@ static void le_adv_report(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_HCI_VS)
+static const struct event_handler vs_events[] = {
+};
+
+static void hci_vendor_event(struct net_buf *buf)
+{
+	struct bt_hci_evt_vs *evt;
+
+	evt = net_buf_pull_mem(buf, sizeof(*evt));
+
+	BT_DBG("subevent 0x%02x", evt->subevent);
+
+	handle_event(evt->subevent, buf, vs_events, ARRAY_SIZE(vs_events));
+}
+#endif /* CONFIG_BT_HCI_VS */
+
 static const struct event_handler meta_events[] = {
 #if defined(CONFIG_BT_OBSERVER)
 	EVENT_HANDLER(BT_HCI_EVT_LE_ADVERTISING_REPORT, le_adv_report,
@@ -3422,6 +3438,10 @@ static void hci_le_meta_event(struct net_buf *buf)
 }
 
 static const struct event_handler normal_events[] = {
+#if defined(CONFIG_BT_HCI_VS)
+	EVENT_HANDLER(BT_HCI_EVT_VENDOR, hci_vendor_event,
+		      sizeof(struct bt_hci_evt_vs)),
+#endif /* CONFIG_BT_HCI_VS */
 	EVENT_HANDLER(BT_HCI_EVT_LE_META_EVENT, hci_le_meta_event,
 		      sizeof(struct bt_hci_evt_le_meta_event)),
 #if defined(CONFIG_BT_BREDR)
