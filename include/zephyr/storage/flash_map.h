@@ -273,6 +273,10 @@ const char *flash_area_label(const struct flash_area *fa);
  */
 uint8_t flash_area_erased_val(const struct flash_area *fa);
 
+#if USE_PARTITION_MANAGER
+#include <flash_map_pm.h>
+#else
+
 /**
  * Returns non-0 value if fixed-partition of given DTS node label exists.
  *
@@ -329,6 +333,8 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  */
 #define FIXED_PARTITION_DEVICE(label) \
 	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(label)))
+
+#endif /* USE_PARTITION_MANAGER */
 
 #ifdef __cplusplus
 }
