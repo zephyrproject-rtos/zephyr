@@ -949,25 +949,6 @@ static int mass_storage_init(struct device *dev)
 	msd_state_machine_reset();
 	msd_init();
 
-#ifndef CONFIG_USB_COMPOSITE_DEVICE
-	int ret;
-
-	mass_storage_config.usb_device_description =
-		usb_get_device_descriptor();
-	/* Initialize the USB driver with the right configuration */
-	ret = usb_set_config(&mass_storage_config);
-	if (ret < 0) {
-		LOG_ERR("Failed to config USB");
-		return ret;
-	}
-
-	/* Enable USB driver */
-	ret = usb_enable(&mass_storage_config);
-	if (ret < 0) {
-		LOG_ERR("Failed to enable USB");
-		return ret;
-	}
-#endif
 	k_sem_init(&disk_wait_sem, 0, 1);
 
 	/* Start a thread to offload disk ops */
