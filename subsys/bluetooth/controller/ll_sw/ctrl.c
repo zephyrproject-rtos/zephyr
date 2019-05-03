@@ -4618,6 +4618,7 @@ static inline void isr_close_conn(void)
 static inline void isr_radio_state_close(void)
 {
 	u32_t dont_close = 0U;
+	int err;
 
 	switch (_radio.role) {
 	case ROLE_ADV:
@@ -4671,7 +4672,10 @@ static inline void isr_radio_state_close(void)
 
 	event_inactive(0, 0, 0, NULL);
 
-	clock_control_off(_radio.hf_clock, NULL);
+	err = clock_control_off(_radio.hf_clock, NULL);
+	if (!err) {
+		DEBUG_RADIO_XTAL(0);
+	}
 
 	mayfly_enable(RADIO_TICKER_USER_ID_WORKER, RADIO_TICKER_USER_ID_JOB, 1);
 
@@ -4940,10 +4944,15 @@ static void event_inactive(u32_t ticks_at_expire, u32_t remainder,
 
 static void mayfly_xtal_start(void *params)
 {
+	int err;
+
 	ARG_UNUSED(params);
 
 	/* turn on 16MHz clock, non-blocking mode. */
-	clock_control_on(_radio.hf_clock, NULL);
+	err = clock_control_on(_radio.hf_clock, NULL);
+	LL_ASSERT(!err || (err == -EINPROGRESS));
+
+	DEBUG_RADIO_XTAL(1);
 }
 
 static void event_xtal(u32_t ticks_at_expire, u32_t remainder,
@@ -4967,9 +4976,14 @@ static void event_xtal(u32_t ticks_at_expire, u32_t remainder,
 
 static void mayfly_xtal_stop(void *params)
 {
+	int err;
+
 	ARG_UNUSED(params);
 
-	clock_control_off(_radio.hf_clock, NULL);
+	err = clock_control_off(_radio.hf_clock, NULL);
+	if (!err) {
+		DEBUG_RADIO_XTAL(0);
+	}
 
 	DEBUG_RADIO_CLOSE(0);
 }
