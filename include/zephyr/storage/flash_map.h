@@ -271,6 +271,10 @@ const char *flash_area_label(const struct flash_area *fa);
  */
 uint8_t flash_area_erased_val(const struct flash_area *fa);
 
+#if USE_PARTITION_MANAGER
+#include <flash_map_pm.h>
+#else
+
 #define FLASH_AREA_LABEL_EXISTS(label) __DEPRECATED_MACRO \
 	DT_HAS_FIXED_PARTITION_LABEL(label)
 
@@ -342,6 +346,8 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
  */
 #define FIXED_PARTITION_DEVICE(label) \
 	DEVICE_DT_GET(DT_MTD_FROM_FIXED_PARTITION(DT_NODELABEL(label)))
+
+#endif /* USE_PARTITION_MANAGER */
 
 #ifdef __cplusplus
 }
