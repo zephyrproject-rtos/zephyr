@@ -29,14 +29,14 @@ extern struct usb_cfg_data __usb_data_end[];
 
 u8_t *usb_get_device_descriptor(void);
 
-struct usb_loopback_config {
+struct usb_test_config {
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_out_ep;
 	struct usb_ep_descriptor if0_in1_ep;
 	struct usb_ep_descriptor if0_in2_ep;
 } __packed;
 
-#define LOOPBACK_BULK_EP_MPS		64
+#define TEST_BULK_EP_MPS		64
 
 #define INITIALIZER_IF							\
 	{								\
@@ -44,7 +44,7 @@ struct usb_loopback_config {
 		.bDescriptorType = USB_INTERFACE_DESC,			\
 		.bInterfaceNumber = 0,					\
 		.bAlternateSetting = 0,					\
-		.bNumEndpoints = 2,					\
+		.bNumEndpoints = 3,					\
 		.bInterfaceClass = CUSTOM_CLASS,			\
 		.bInterfaceSubClass = 0,				\
 		.bInterfaceProtocol = 0,				\
@@ -62,19 +62,19 @@ struct usb_loopback_config {
 	}
 
 
-#define DEFINE_LOOPBACK_DESC(x, _)					\
+#define DEFINE_TEST_DESC(x, _)						\
 	USBD_CLASS_DESCR_DEFINE(primary, x)				\
-	struct usb_loopback_config loopback_cfg_##x = {			\
+	struct usb_test_config test_cfg_##x = {				\
 	.if0 = INITIALIZER_IF,						\
 	.if0_out_ep = INITIALIZER_IF_EP(AUTO_EP_OUT,			\
 					USB_DC_EP_BULK,			\
-					LOOPBACK_BULK_EP_MPS),		\
+					TEST_BULK_EP_MPS),		\
 	.if0_in1_ep = INITIALIZER_IF_EP(AUTO_EP_IN,			\
 					USB_DC_EP_BULK,			\
-					LOOPBACK_BULK_EP_MPS),		\
+					TEST_BULK_EP_MPS),		\
 	.if0_in2_ep = INITIALIZER_IF_EP(AUTO_EP_IN,			\
 					USB_DC_EP_BULK,			\
-					LOOPBACK_BULK_EP_MPS),		\
+					TEST_BULK_EP_MPS),		\
 	};
 
 #define INITIALIZER_EP_DATA(cb, addr)					\
@@ -83,19 +83,19 @@ struct usb_loopback_config {
 		.ep_addr = addr,					\
 	}
 
-#define DEFINE_LOOPBACK_EP_CFG(x, _)				\
+#define DEFINE_TEST_EP_CFG(x, _)				\
 	static struct usb_ep_cfg_data ep_cfg_##x[] = {		\
 		INITIALIZER_EP_DATA(NULL, AUTO_EP_OUT),		\
 		INITIALIZER_EP_DATA(NULL, AUTO_EP_IN),		\
 		INITIALIZER_EP_DATA(NULL, AUTO_EP_IN),		\
 	};
 
-#define DEFINE_LOOPBACK_CFG_DATA(x, _)				\
-	USBD_CFG_DATA_DEFINE(loopback_##x)			\
-	struct usb_cfg_data loopback_config_##x = {		\
+#define DEFINE_TEST_CFG_DATA(x, _)				\
+	USBD_CFG_DATA_DEFINE(test_##x)				\
+	struct usb_cfg_data test_config_##x = {			\
 	.usb_device_description = NULL,				\
 	.interface_config = interface_config,			\
-	.interface_descriptor = &loopback_cfg_##x.if0,		\
+	.interface_descriptor = &test_cfg_##x.if0,		\
 	.cb_usb_status = NULL,					\
 	.interface = {						\
 		.class_handler = NULL,				\
@@ -120,9 +120,9 @@ static void interface_config(struct usb_desc_header *head,
 	if_desc->bInterfaceNumber = iface_num;
 }
 
-UTIL_LISTIFY(NUM_INSTANCES, DEFINE_LOOPBACK_DESC, _)
-UTIL_LISTIFY(NUM_INSTANCES, DEFINE_LOOPBACK_EP_CFG, _)
-UTIL_LISTIFY(NUM_INSTANCES, DEFINE_LOOPBACK_CFG_DATA, _)
+UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_DESC, _)
+UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_EP_CFG, _)
+UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_CFG_DATA, _)
 
 static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
 {
