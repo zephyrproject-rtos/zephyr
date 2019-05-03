@@ -15,6 +15,7 @@
  * operations, the same number of 'take' operations can be performed without
  * the calling thread having to pend on the semaphore, or the calling task
  * having to poll.
+ *
  */
 
 #include <kernel.h>
