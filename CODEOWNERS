@@ -129,8 +129,6 @@
 /drivers/pcie/                            @gnuless
 /drivers/pinmux/stm32/                    @rsalveti @idlethread
 /drivers/sensor/                          @bogdan-davidoaia @MaureenHelm
-/drivers/sensor/ams_iAQcore/              @alexanderwachter
-/drivers/sensor/ens210/                   @alexanderwachter
 /drivers/sensor/hts*/                     @avisconti
 /drivers/sensor/lis*/                     @avisconti
 /drivers/sensor/lps*/                     @avisconti
@@ -161,8 +159,6 @@
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
 /dts/bindings/*/st,stm32*                 @erwango
-/dts/bindings/sensor/ams,ens210.yaml      @alexanderwachter
-/dts/bindings/sensor/ams,iaqcore.yaml     @alexanderwachter
 /ext/fs/                                  @nashif @wentongwu
 /ext/hal/atmel/asf/sam0/include/samr21/   @benpicco
 /ext/hal/cmsis/                           @MaureenHelm @galak
@@ -308,24 +304,6 @@
 /tests/boards/native_posix/               @aescolar
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
 /tests/bluetooth/                         @sjanc @jhedberg @Vudentz
-/tests/posix/                             @pfalcon
-/tests/crypto/                            @ceolin
-/tests/crypto/mbedtls/                    @nashif @ceolin
-/tests/drivers/can/                       @alexanderwachter
-/tests/drivers/flash_simulator/           @nvlsianpu
-/tests/drivers/hwinfo/                    @alexanderwachter
-/tests/drivers/spi/                       @tbursztyka
-/tests/drivers/uart/uart_async_api/       @Mierunski
-/tests/kernel/                            @andrewboie @andyross @nashif
-/tests/net/                               @jukkar @tbursztyka @pfalcon
-/tests/net/buf/                           @jukkar @jhedberg @tbursztyka @pfalcon
-/tests/net/lib/                           @jukkar @tbursztyka @pfalcon
-/tests/net/lib/http_header_fields/        @jukkar @tbursztyka
-/tests/net/lib/mqtt_packet/               @jukkar @tbursztyka
-/tests/net/lib/coap/                      @rveerama1
-/tests/net/socket/                        @jukkar @tbursztyka @pfalcon
-/tests/subsys/fs/                         @nashif @wentongwu
-/tests/subsys/settings/                   @nvlsianpu
 
 # Get all docs reviewed
 *.rst                                     @dbkinder
