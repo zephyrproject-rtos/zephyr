@@ -34,6 +34,39 @@
 #define ROMSTART_REGION ROMABLE_REGION
 #endif
 
+#if USE_PARTITION_MANAGER
+
+#include <pm_config.h>
+
+#if CONFIG_NCS_IS_VARIANT_IMAGE && defined(PM_S0_ID)
+/* We are linking against S1, create symbol containing the flash ID of S0.
+ * This is used when writing code operating on the "other" slot.
+ */
+_image_1_primary_slot_id = PM_S0_ID;
+
+#else /* ! CONFIG_NCS_IS_VARIANT_IMAGE */
+
+#ifdef PM_S1_ID
+/* We are linking against S0, create symbol containing the flash ID of S1.
+ * This is used when writing code operating on the "other" slot.
+ */
+_image_1_primary_slot_id = PM_S1_ID;
+#endif /* PM_S1_ID */
+
+#endif /* CONFIG_NCS_IS_VARIANT_IMAGE */
+
+#define ROM_ADDR PM_ADDRESS
+#define ROM_SIZE PM_SIZE
+
+#if defined(CONFIG_PM_USE_CONFIG_SRAM_SIZE)
+#define RAM_SIZE CONFIG_PM_SRAM_SIZE
+#else
+#define RAM_SIZE PM_SRAM_SIZE
+#endif
+#define RAM_ADDR PM_SRAM_ADDRESS
+
+#else /* ! USE_PARTITION_MANAGER */
+
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
 #define ROM_ADDR RAM_ADDR
 #else
@@ -54,6 +87,23 @@
 
 #define RAM_SIZE (CONFIG_SRAM_SIZE * 1K)
 #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
+
+#endif /* USE_PARTITION_MANAGER */
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
+#define CCM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_ccm))
+#define CCM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_ccm))
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
+#define ITCM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_itcm))
+#define ITCM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_itcm))
+#endif
+
+#if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_dtcm), okay)
+#define DTCM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_dtcm))
+#define DTCM_ADDR DT_REG_ADDR(DT_CHOSEN(zephyr_dtcm))
+#endif
 
 #if defined(CONFIG_CUSTOM_SECTION_ALIGN)
 _region_min_align = CONFIG_CUSTOM_SECTION_MIN_ALIGN_SIZE;
