@@ -1032,21 +1032,8 @@ zephyr_compile_options(
   $<$<COMPILE_LANGUAGE:C>:-std=${CSTD}>
 )
 
-configure_file(
-     $ENV{ZEPHYR_BASE}/include/arch/common/app_data_alignment.ld
-     ${PROJECT_BINARY_DIR}/include/generated/app_data_alignment.ld)
-
-configure_file(
-     $ENV{ZEPHYR_BASE}/include/linker/app_smem.ld
-     ${PROJECT_BINARY_DIR}/include/generated/app_smem.ld)
-
-configure_file(
-     $ENV{ZEPHYR_BASE}/include/linker/app_smem_aligned.ld
-     ${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.ld)
-
-configure_file(
-     $ENV{ZEPHYR_BASE}/include/linker/app_smem_unaligned.ld
-     ${PROJECT_BINARY_DIR}/include/generated/app_smem_unaligned.ld)
+# @Intent: Configure linker scripts, i.e. generate linker scripts with variables substituted
+toolchain_ld_configure_files()
 
 if(CONFIG_USERSPACE)
   set(APP_SMEM_ALIGNED_LD "${PROJECT_BINARY_DIR}/include/generated/app_smem_aligned.ld")
