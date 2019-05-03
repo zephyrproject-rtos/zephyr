@@ -12,9 +12,6 @@
 #include <bluetooth/bluetooth.h>
 #include <bluetooth/hci.h>
 
-#define DEVICE_NAME CONFIG_BT_DEVICE_NAME
-#define DEVICE_NAME_LEN (sizeof(DEVICE_NAME) - 1)
-
 #ifndef IBEACON_RSSI
 #define IBEACON_RSSI 0xc8
 #endif
@@ -43,11 +40,6 @@ static const struct bt_data ad[] = {
 		      IBEACON_RSSI) /* Calibrated RSSI @ 1m */
 };
 
-/* Set Scan Response data */
-static const struct bt_data sd[] = {
-	BT_DATA(BT_DATA_NAME_COMPLETE, DEVICE_NAME, DEVICE_NAME_LEN),
-};
-
 static void bt_ready(int err)
 {
 	if (err) {
@@ -59,7 +51,7 @@ static void bt_ready(int err)
 
 	/* Start advertising */
 	err = bt_le_adv_start(BT_LE_ADV_NCONN, ad, ARRAY_SIZE(ad),
-			      sd, ARRAY_SIZE(sd));
+			      NULL, 0);
 	if (err) {
 		printk("Advertising failed to start (err %d)\n", err);
 		return;
