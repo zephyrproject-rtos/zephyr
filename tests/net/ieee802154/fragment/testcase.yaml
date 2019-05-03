@@ -1,6 +1,7 @@
 common:
   depends_on: ieee802154
   platform_whitelist: native_posix qemu_x86 qemu_cortex_m3
+  min_ram: 48
 tests:
   net.ieee802154.fragment:
     tags: net ieee802154 fragment
