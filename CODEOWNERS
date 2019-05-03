@@ -39,7 +39,6 @@
 /soc/xtensa/                              @andrewboie @dcpleung @andyross
 /boards/arc/                              @vonhust @ruuddw
 /boards/arc/arduino_101_sss/              @nashif
-/boards/arc/em_starterkit/                @vonhust
 /boards/arc/quark_se_c1000_ss_devboard/   @nashif
 /boards/arm/                              @MaureenHelm @galak
 /boards/arm/96b_argonkey/                 @avisconti
@@ -62,14 +61,7 @@
 /boards/arm/mimxrt*/doc/                  @MaureenHelm @MeganHansen
 /boards/arm/mps2_an385/                   @fvincenzo
 /boards/arm/msp_exp432p401r_launchxl/     @Mani-Sadhasivam
-/boards/arm/nrf51_blenano/                @rsalveti
-/boards/arm/nrf51_pca10028/               @carlescufi
-/boards/arm/nrf52_pca10040/               @carlescufi
-/boards/arm/nrf52_pca20020/               @tkln
-/boards/arm/nrf52810_pca10040/            @carlescufi
-/boards/arm/nrf52840_pca10056/            @carlescufi
-/boards/arm/nrf52840_pca10059/            @lemrey
-/boards/arm/nrf9160_pca10090/             @ioannisg
+/boards/arm/nrf*/                         @carlescufi @lemrey @ioannisg
 /boards/arm/nucleo*/                      @erwango
 /boards/arm/nucleo_f401re/                @rsalveti @idlethread
 /boards/arm/sam4s_xplained/               @fallrisk
@@ -85,16 +77,10 @@
 /boards/riscv32/                          @kgugala @pgielda @nategraff-sifive
 /boards/shields/                          @erwango
 /boards/x86/                              @andrewboie @nashif
-/boards/x86/arduino_101/                  @nashif
-/boards/x86/galileo/                      @nashif
-/boards/x86/quark_d2000_crb/              @nashif
-/boards/x86/quark_se_c1000_devboard/      @nashif
 /boards/xtensa/                           @nashif @dcpleung
 /boards/xtensa/intel_s1000_crb/           @sathishkuttan @dcpleung
 # All cmake related files
 /cmake/                                   @SebastianBoe @nashif
-/cmake/compiler/xcc/                      @nashif
-/cmake/toolchain/xcc/                     @nashif
 /CMakeLists.txt                           @SebastianBoe @nashif
 /doc/                                     @dbkinder
 /doc/guides/coccinelle.rst                @himanshujha199640 @JuliaLawall
@@ -128,7 +114,7 @@
 /drivers/pci/                             @gnuless
 /drivers/pcie/                            @gnuless
 /drivers/pinmux/stm32/                    @rsalveti @idlethread
-/drivers/sensor/                          @bogdan-davidoaia @MaureenHelm
+/drivers/sensor/                          @MaureenHelm
 /drivers/sensor/ams_iAQcore/              @alexanderwachter
 /drivers/sensor/ens210/                   @alexanderwachter
 /drivers/sensor/hts*/                     @avisconti
@@ -216,11 +202,7 @@
 /include/led.h                            @Mani-Sadhasivam
 /include/led_strip.h                      @mbolivar
 /include/linker/app_smem*.ld              @andrewboie
-/include/linker/linker-defs.h             @andrewboie @andyross
-/include/linker/linker-tool-gcc.h         @andrewboie @andyross
-/include/linker/linker-tool.h             @andrewboie @andyross
-/include/linker/section_tags.h            @andrewboie @andyross
-/include/linker/sections.h                @andrewboie @andyross
+/include/linker/                          @andrewboie @andyross
 /include/logging/                         @nordic-krch
 /include/misc/                            @andrewboie @andyross
 /include/net/                             @jukkar @tbursztyka @pfalcon
@@ -228,7 +210,7 @@
 /include/posix/                           @pfalcon
 /include/power.h                          @wentongwu @nashif
 /include/ptp_clock.h                      @jukkar
-/include/sensor.h                         @bogdan-davidoaia
+/include/sensor.h                         @MaureenHelm
 /include/shared_irq.h                     @andrewboie @andyross
 /include/shell/                           @jarz-nordic @nordic-krch
 /include/spi.h                            @tbursztyka
@@ -245,6 +227,7 @@
 /lib/libc/minimal/source/stdlib/bsearch.c @balajikulkarni
 /kernel/device.c                          @andrewboie @andyross @nashif
 /kernel/idle.c                            @andrewboie @andyross @nashif
+/samples/                                 @nashif
 /samples/basic/servo_motor/*microbit*     @jhe
 /samples/bluetooth/                       @sjanc @jhedberg @Vudentz
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
@@ -255,10 +238,9 @@
 /samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
 /samples/net/lwm2m_client/                @mike-scott
 /samples/net/mqtt_publisher/              @jukkar @tbursztyka
-/samples/net/sockets/coap_client/         @rveerama1
-/samples/net/sockets/coap_server/         @rveerama1
+/samples/net/sockets/coap_*/              @rveerama1
 /samples/net/sockets/                     @jukkar @tbursztyka @pfalcon
-/samples/sensor/                          @bogdan-davidoaia
+/samples/sensor/                          @MaureenHelm
 /samples/subsys/logging/                  @nordic-krch @jarz-nordic
 /samples/subsys/shell/                    @jarz-nordic @nordic-krch
 /samples/subsys/usb/                      @jfischer-phytec-iot @finikorg
@@ -305,6 +287,7 @@
 /subsys/shell/                            @jarz-nordic @nordic-krch
 /subsys/storage/                          @nvlsianpu
 /subsys/usb/                              @jfischer-phytec-iot @finikorg
+/tests/                                   @nashif
 /tests/boards/native_posix/               @aescolar
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
 /tests/bluetooth/                         @sjanc @jhedberg @Vudentz
