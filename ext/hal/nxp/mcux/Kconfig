@@ -27,6 +27,12 @@ config HAS_MCUX_CCM
 	help
 	  Set if the clock control module (CCM) module is present in the SoC.
 
+config HAS_MCUX_PCC
+	bool
+	help
+	  Set if the peripheral clock controller module (PCC) module is
+	  present in the SoC.
+
 config HAS_MCUX_ELCDIF
 	bool
 	help
