@@ -3099,7 +3099,9 @@ def chatty_test_cb(instances, goals, goal):
 
     info("{:>{}}/{} {:<25} {:<50} {} ({})".format(
         total_done, total_tests_width, total_tests, i.platform.name,
-        i.test.name, status, handler_type))
+        i.test.id, status, handler_type))
+    local_path = "/".join(i.test.name.split("/")[0:-1])
+    info("{:>{}} {}".format(" ", 27 + 2 *total_tests_width, local_path))
     if goal.failed:
         log_info(goal.get_error_log())
 
