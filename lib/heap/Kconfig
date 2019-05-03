@@ -81,7 +81,7 @@ config HEAP_LISTENER
 choice
 	prompt "Supported heap sizes"
 	depends on !64BIT
-	default SYS_HEAP_SMALL_ONLY if (SRAM_SIZE <= 256)
+	default SYS_HEAP_SMALL_ONLY if (SRAM_SIZE <= 256) && !PARTITION_MANAGER_ENABLED
 	default SYS_HEAP_AUTO
 	help
 	  Heaps using reduced-size chunk headers can accommodate so called

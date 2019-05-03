@@ -1100,7 +1100,12 @@ struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = { \
 	.type = FS_LITTLEFS, \
 	.mnt_point = DT_INST_PROP(inst, mount_point), \
 	.fs_data = &fs_data_##inst, \
-	.storage_dev = (void *)DT_FIXED_PARTITION_ID(FS_PARTITION(inst)), \
+	.storage_dev = (void *) \
+		COND_CODE_1(USE_PARTITION_MANAGER, \
+			    (COND_CODE_1(FIXED_PARTITION_EXISTS(littlefs_storage), \
+					 (FIXED_PARTITION_ID(littlefs_storage)), \
+					 (FIXED_PARTITION_ID(storage)))), \
+			    (DT_FIXED_PARTITION_ID(FS_PARTITION(inst)))), \
 	.flags = FSTAB_ENTRY_DT_MOUNT_FLAGS(DT_DRV_INST(inst)), \
 };
 

@@ -20,6 +20,16 @@
 #endif
 #endif
 
+#if USE_PARTITION_MANAGER
+#include <flash_map_pm.h>
+
+#ifdef CONFIG_NCS_IS_VARIANT_IMAGE
+#define ACTIVE_IMAGE_ID PM_MCUBOOT_SECONDARY_ID
+#else
+#define ACTIVE_IMAGE_ID PM_MCUBOOT_PRIMARY_ID
+#endif
+#endif
+
 struct area_desc {
 	const char *name;
 	unsigned int id;
@@ -93,6 +103,35 @@ static int cmd_mcuboot_erase(const struct shell *sh, size_t argc,
 	id = strtoul(argv[1], NULL, 0);
 
 	/* Check if this is the parent (MCUboot) or own slot and if so, deny the request */
+#if USE_PARTITION_MANAGER
+#ifdef PM_MCUBOOT_ID
+	if (id == PM_MCUBOOT_ID || id == PM_MCUBOOT_PAD_ID) {
+		shell_error(sh, "Cannot erase boot partition");
+		return -EACCES;
+	}
+#endif
+
+#ifdef PM_APP_ID
+	if (id == PM_APP_ID) {
+		shell_error(sh, "Cannot erase this area");
+		return -EACCES;
+	}
+#endif
+
+#ifdef PM_MCUBOOT_PRIMARY_APP_ID
+	if (id == PM_MCUBOOT_PRIMARY_APP_ID) {
+		shell_error(sh, "Cannot erase this area");
+		return -EACCES;
+	}
+#endif
+
+#ifdef ACTIVE_IMAGE_ID
+	if (id == ACTIVE_IMAGE_ID) {
+		shell_error(sh, "Cannot erase active partitions");
+		return -EACCES;
+	}
+#endif
+#else
 #if FIXED_PARTITION_EXISTS(boot_partition)
 	if (id == FIXED_PARTITION_ID(boot_partition)) {
 		shell_error(sh, "Cannot erase boot partition");
@@ -105,6 +144,7 @@ static int cmd_mcuboot_erase(const struct shell *sh, size_t argc,
 		shell_error(sh, "Cannot erase active partitions");
 		return -EACCES;
 	}
+#endif
 #endif
 
 	err = boot_erase_img_bank(id);

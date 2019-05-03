@@ -254,3 +254,7 @@ if("${CMAKE_EXTRA_GENERATOR}" STREQUAL "Eclipse CDT4")
   include(${ZEPHYR_BASE}/cmake/ide/eclipse_cdt4_generator_amendment.cmake)
   eclipse_cdt4_generator_amendment(1)
 endif()
+
+if(ZEPHYR_NRF_MODULE_DIR)
+  include(${ZEPHYR_NRF_MODULE_DIR}/cmake/partition_manager.cmake)
+endif()
