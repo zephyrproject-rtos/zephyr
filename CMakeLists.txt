@@ -750,25 +750,8 @@ if(CONFIG_GEN_ISR_TABLES)
 endif()
 
 if(CONFIG_CODE_DATA_RELOCATION)
-   set(MEM_RELOCATAION_LD "${PROJECT_BINARY_DIR}/include/generated/linker_relocate.ld")
-   set(MEM_RELOCATAION_CODE "${PROJECT_BINARY_DIR}/code_relocation.c")
-
-   add_custom_command(
-     OUTPUT ${MEM_RELOCATAION_CODE} ${MEM_RELOCATAION_LD}
-     COMMAND
-     ${PYTHON_EXECUTABLE}
-     ${ZEPHYR_BASE}/scripts/gen_relocate_app.py
-     $<$<BOOL:${CMAKE_VERBOSE_MAKEFILE}>:--verbose>
-     -d ${APPLICATION_BINARY_DIR}
-     -i '$<TARGET_PROPERTY:code_data_relocation_target,COMPILE_DEFINITIONS>'
-     -o ${MEM_RELOCATAION_LD}
-     -c ${MEM_RELOCATAION_CODE}
-     DEPENDS app kernel ${ZEPHYR_LIBS_PROPERTY}
-     )
-
-   add_library(code_relocation_source_lib  STATIC ${MEM_RELOCATAION_CODE})
-   target_link_libraries(code_relocation_source_lib zephyr_interface)
-
+  # @Intent: Linker script to relocate .text, data and .bss sections
+  toolchain_ld_relocation()
 endif()
 
 if(CONFIG_USERSPACE)
