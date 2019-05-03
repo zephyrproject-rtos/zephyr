@@ -256,6 +256,10 @@ const struct device *flash_area_get_device(const struct flash_area *fa);
  */
 uint8_t flash_area_erased_val(const struct flash_area *fa);
 
+#if USE_PARTITION_MANAGER
+#include <flash_map_pm.h>
+#else
+
 #define FLASH_AREA_LABEL_EXISTS(label) \
 	DT_HAS_FIXED_PARTITION_LABEL(label)
 
@@ -270,6 +274,8 @@ uint8_t flash_area_erased_val(const struct flash_area *fa);
 
 #define FLASH_AREA_SIZE(label) \
 	DT_REG_SIZE(DT_NODE_BY_FIXED_PARTITION_LABEL(label))
+
+#endif /* USE_PARTITION_MANAGER */
 
 #ifdef __cplusplus
 }
