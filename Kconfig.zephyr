@@ -119,9 +119,7 @@ config FLASH_LOAD_SIZE
 endif # HAS_FLASH_LOAD_OFFSET
 
 config ROM_START_OFFSET
-	hex
-	prompt "ROM start offset" if !BOOTLOADER_MCUBOOT
-	default 0x200 if BOOTLOADER_MCUBOOT
+	hex "ROM start offset"
 	default 0
 	help
 	  If the application is built for chain-loading by a bootloader this
