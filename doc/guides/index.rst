@@ -25,3 +25,4 @@ User and Developer Guides
    test/index
    tracing/index
    west/index
+   optimizations/index
