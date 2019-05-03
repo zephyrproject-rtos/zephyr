@@ -41,6 +41,11 @@ enum dma_addr_adj {
 	DMA_ADDR_ADJ_NO_CHANGE,
 };
 
+enum dma_buf_cfg {
+	DMA_BUF_CFG_NORMAL,
+	DMA_BUF_CFG_CIRCULAR,
+};
+
 /**
  * @brief DMA block configuration structure.
  *
@@ -142,7 +147,8 @@ struct dma_config {
 	u32_t  channel_priority :     4;
 	u32_t  source_chaining_en :   1;
 	u32_t  dest_chaining_en :     1;
-	u32_t  reserved :            13;
+	u32_t  buf_cfg :	      2;
+	u32_t  reserved :            11;
 	u32_t  source_data_size :    16;
 	u32_t  dest_data_size :      16;
 	u32_t  source_burst_length : 16;
