@@ -119,9 +119,7 @@ config FLASH_LOAD_SIZE
 endif # HAS_FLASH_LOAD_OFFSET
 
 config TEXT_SECTION_OFFSET
-	hex
-	prompt "TEXT section offset" if !BOOTLOADER_MCUBOOT
-	default 0x200 if BOOTLOADER_MCUBOOT
+	hex "TEXT section offset"
 	default 0
 	help
 	  If the application is built for chain-loading by a bootloader this

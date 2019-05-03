@@ -10,6 +10,35 @@
 #include <zephyr.h>
 #include <storage/flash_map.h>
 
+#if USE_PARTITION_MANAGER
+
+/**
+ * Have flash_map_default use Partition Manager information instead of
+ * DeviceTree information when we are using the Partition Manager.
+ */
+
+#include <pm_config.h>
+#include <sys/util.h>
+
+#define FLASH_MAP_OFFSET(i) UTIL_CAT(PM_, UTIL_CAT(PM_##i##_LABEL, _ADDRESS))
+#define FLASH_MAP_DEV(i)    UTIL_CAT(PM_, UTIL_CAT(PM_##i##_LABEL, _DEV_NAME))
+#define FLASH_MAP_SIZE(i)   UTIL_CAT(PM_, UTIL_CAT(PM_##i##_LABEL, _SIZE))
+#define FLASH_MAP_NUM       PM_NUM
+
+#define FLASH_AREA_FOO(i, _)                \
+	{                                       \
+		.fa_id       = i,                   \
+		.fa_off      = FLASH_MAP_OFFSET(i), \
+		.fa_dev_name = FLASH_MAP_DEV(i),    \
+		.fa_size     = FLASH_MAP_SIZE(i)    \
+	},
+
+const struct flash_area default_flash_map[] = {
+	UTIL_LISTIFY(FLASH_MAP_NUM, FLASH_AREA_FOO, ~)
+};
+
+#else
+
 /* Get the grand parent of a node */
 #define GPARENT(node_id) DT_PARENT(DT_PARENT(node_id))
 
@@ -49,6 +78,8 @@
 const struct flash_area default_flash_map[] = {
 	DT_INST_FOREACH_STATUS_OKAY(FOREACH_PARTION)
 };
+
+#endif /* USE_PARTITION_MANAGER */
 
 const int flash_map_entries = ARRAY_SIZE(default_flash_map);
 const struct flash_area *flash_map = default_flash_map;
