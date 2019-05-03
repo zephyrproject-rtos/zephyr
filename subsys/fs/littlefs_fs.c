@@ -775,6 +775,12 @@ static const struct fs_file_system_t littlefs_fs = {
 	.statvfs = littlefs_statvfs,
 };
 
+#ifdef USE_PARTITION_MANAGER
+#define _LFS_USE_NCS_PM 1
+#else
+#define _LFS_USE_NCS_PM 0
+#endif
+
 #define DT_DRV_COMPAT zephyr_fstab_littlefs
 #define FS_PARTITION(inst) DT_PHANDLE_BY_IDX(DT_DRV_INST(inst), partition, 0)
 
@@ -809,7 +815,11 @@ struct fs_mount_t FS_FSTAB_ENTRY(DT_DRV_INST(inst)) = { \
 	.type = FS_LITTLEFS, \
 	.mnt_point = DT_INST_PROP(inst, mount_point), \
 	.fs_data = &fs_data_##inst, \
-	.storage_dev = (void *)DT_FIXED_PARTITION_ID(FS_PARTITION(inst)), \
+	.storage_dev = (void *) (_LFS_USE_NCS_PM ?\
+	  COND_CODE_1(FLASH_AREA_LABEL_EXISTS(littlefs_storage), \
+		      (FLASH_AREA_ID(littlefs_storage)), \
+		      (FLASH_AREA_ID(storage))) :\
+	  DT_FIXED_PARTITION_ID(FS_PARTITION(inst))), \
 	.flags = FSTAB_ENTRY_DT_MOUNT_FLAGS(DT_DRV_INST(inst)), \
 };
 
