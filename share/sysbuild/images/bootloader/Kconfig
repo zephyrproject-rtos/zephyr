@@ -153,6 +153,7 @@ endchoice
 config MCUBOOT_DIRECT_XIP_GENERATE_VARIANT
 	bool "Generate slot 1 variant image [EXPERIMENTAL]"
 	depends on MCUBOOT_MODE_DIRECT_XIP || MCUBOOT_MODE_DIRECT_XIP_WITH_REVERT
+	depends on !PARTITION_MANAGER
 	select EXPERIMENTAL
 	default y
 	help
