@@ -2169,6 +2169,44 @@ static inline void event_fex_prep(struct ll_conn *conn)
 {
 	struct node_tx *tx;
 
+	if (conn->common.fex_valid) {
+		struct node_rx_pdu *rx;
+		struct pdu_data *pdu;
+
+		/* procedure request acked */
+		conn->llcp_ack = conn->llcp_req;
+
+		/* get a rx node for ULL->LL */
+		rx = ll_pdu_rx_alloc();
+		if (!rx) {
+			return;
+		}
+
+		rx->hdr.handle = conn->lll.handle;
+		rx->hdr.type = NODE_RX_TYPE_DC_PDU;
+
+		/* prepare feature rsp structure */
+		pdu = (void *)rx->pdu;
+		pdu->ll_id = PDU_DATA_LLID_CTRL;
+		pdu->len = offsetof(struct pdu_data_llctrl, feature_rsp) +
+			   sizeof(struct pdu_data_llctrl_feature_rsp);
+		pdu->llctrl.opcode = PDU_DATA_LLCTRL_TYPE_FEATURE_RSP;
+		(void)memset(&pdu->llctrl.feature_rsp.features[0], 0x00,
+			sizeof(pdu->llctrl.feature_rsp.features));
+		pdu->llctrl.feature_req.features[0] =
+			conn->llcp_features & 0xFF;
+		pdu->llctrl.feature_req.features[1] =
+			(conn->llcp_features >> 8) & 0xFF;
+		pdu->llctrl.feature_req.features[2] =
+			(conn->llcp_features >> 16) & 0xFF;
+
+		/* enqueue feature rsp structure into rx queue */
+		ll_rx_put(rx->hdr.link, rx);
+		ll_rx_sched();
+
+		return;
+	}
+
 	tx = mem_acquire(&mem_conn_tx_ctrl.free);
 	if (tx) {
 		struct pdu_data *pdu = (void *)tx->pdu;
