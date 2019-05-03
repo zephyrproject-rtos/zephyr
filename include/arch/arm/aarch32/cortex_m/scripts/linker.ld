@@ -33,6 +33,36 @@
 #define _DATA_IN_ROM
 #endif
 
+#if USE_PARTITION_MANAGER
+
+#include <pm_config.h>
+
+#ifdef LINK_INTO_s1
+/* We are linking against S1, create symbol containing the flash ID of S0.
+ * This is used when writing code operating on the "other" slot.
+ */
+_image_1_primary_slot_id = PM_S0_ID;
+
+#define ROM_ADDR PM_ADDRESS + PM_S1_ADDRESS - PM_S0_ADDRESS
+
+#else /* ! LINK_INTO_s1 */
+
+#ifdef PM_S1_ID
+/* We are linking against S0, create symbol containing the flash ID of S1.
+ * This is used when writing code operating on the "other" slot.
+ */
+_image_1_primary_slot_id = PM_S1_ID;
+#endif /* PM_S1_ID */
+
+#define ROM_ADDR PM_ADDRESS
+#endif /* LINK_MCUBOOT_INTO_s1 */
+#define ROM_SIZE PM_SIZE
+
+#define RAM_SIZE PM_SRAM_SIZE
+#define RAM_ADDR PM_SRAM_ADDRESS
+
+#else /* ! USE_PARTITION_MANAGER */
+
 #if !defined(CONFIG_XIP) && (CONFIG_FLASH_SIZE == 0)
 #define ROM_ADDR RAM_ADDR
 #else
@@ -49,8 +79,8 @@
 #define ROM_SIZE CONFIG_FLASH_LOAD_SIZE
 #else
 #define ROM_SIZE (CONFIG_FLASH_SIZE*1K - CONFIG_FLASH_LOAD_OFFSET)
-#endif
-#endif
+#endif /* CONFIG_FLASH_LOAD_SIZE > 0 */
+#endif /* CONFIG_HAS_TI_CCFG */
 
 #if defined(CONFIG_XIP)
 #if defined(CONFIG_IS_BOOTLOADER)
@@ -65,6 +95,8 @@
 #define RAM_SIZE (CONFIG_SRAM_SIZE * 1K - CONFIG_BOOTLOADER_SRAM_SIZE * 1K)
 #define RAM_ADDR CONFIG_SRAM_BASE_ADDRESS
 #endif
+
+#endif /* USE_PARTITION_MANAGER */
 
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_ccm), okay)
 #define CCM_SIZE DT_REG_SIZE(DT_CHOSEN(zephyr_ccm))

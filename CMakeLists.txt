@@ -1071,6 +1071,10 @@ set(logical_target_for_zephyr_elf ${logical_target_for_zephyr_elf} PARENT_SCOPE)
 # 2. it can be defined in Kconfig
 set_target_properties(${logical_target_for_zephyr_elf} PROPERTIES OUTPUT_NAME ${KERNEL_NAME})
 
+if (ZEPHYR_NRF_MODULE_DIR)
+  include(${ZEPHYR_NRF_MODULE_DIR}/cmake/s1.cmake)
+endif()
+
 set(post_build_commands "")
 set(post_build_byproducts "")
 
