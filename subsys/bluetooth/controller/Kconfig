@@ -58,9 +58,8 @@ config BT_CTLR_CRYPTO
 	  provided by the controller.
 
 config BT_CTLR_RX_PRIO_STACK_SIZE
-	# Hidden option for Controller's Co-Operative high priority Rx thread
-	# stack size.
-	int
+	# Controller's Co-Operative high priority Rx thread stack size.
+	int "High priority Rx thread stack size" if !SOC_COMPATIBLE_NRF
 	default 448
 
 config BT_CTLR_RX_PRIO
