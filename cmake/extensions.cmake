@@ -914,9 +914,12 @@ endfunction()
 
 # 2.2 Misc
 #
+# import_kconfig(<prefix> <kconfig_fragment> [<keys>])
+#
 # Parse a KConfig fragment (typically with extension .config) and
 # introduce all the symbols that are prefixed with 'prefix' into the
-# CMake namespace
+# CMake namespace. List all created variable names in the 'keys'
+# output variable if present.
 function(import_kconfig prefix kconfig_fragment)
   # Parse the lines prefixed with 'prefix' in ${kconfig_fragment}
   file(
@@ -944,6 +947,11 @@ function(import_kconfig prefix kconfig_fragment)
     endif()
 
     set("${CONF_VARIABLE_NAME}" "${CONF_VARIABLE_VALUE}" PARENT_SCOPE)
+    list(APPEND keys "${CONF_VARIABLE_NAME}")
+  endforeach()
+
+  foreach(outvar ${ARGN})
+    set(${outvar} "${keys}" PARENT_SCOPE)
   endforeach()
 endfunction()
 
