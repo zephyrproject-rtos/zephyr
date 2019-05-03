@@ -5,12 +5,7 @@
 #include <mem.h>
 
 #define DT_FLASH_SIZE		DT_SIZE_K(1024)
-
-#if XIP
-	#define DT_SRAM_SIZE		DT_SIZE_K(4096)
-#else
-	#define DT_SRAM_SIZE		DT_SIZE_K(8188)
-#endif
+#define DT_SRAM_SIZE		DT_SIZE_K(4096)
 
 #include <ia32.dtsi>
 
