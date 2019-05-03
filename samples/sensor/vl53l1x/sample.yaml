@@ -1,0 +1,7 @@
+sample:
+  name: Sample for MEMS sensors VL53L1X
+tests:
+  sample.sensor.vl53l1x:
+    build_only: true
+    depends_on: i2c vl53l1x
+    tags: sensors
