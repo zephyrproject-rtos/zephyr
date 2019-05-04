@@ -17,7 +17,7 @@ u8_t transition_type, default_tt;
 u32_t *ptr_counter;
 struct k_timer *ptr_timer = &dummy_timer;
 
-struct transition lightness_transition, temp_transition;
+struct transition transition;
 
 /* Function to calculate Remaining Time (Start) */
 
@@ -61,29 +61,6 @@ void calculate_rt(struct transition *transition)
 
 /* Function to calculate Remaining Time (End) */
 
-static void bound_states_transition_type_reassignment(u8_t type)
-{
-	switch (type) {
-	case ONOFF:
-	case LEVEL:
-	case ACTUAL:
-	case LINEAR:
-		light_ctl_srv_user_data.transition = &lightness_transition;
-		break;
-	case CTL:
-		light_ctl_srv_user_data.transition = &lightness_transition;
-		gen_level_srv_s0_user_data.transition = &lightness_transition;
-		break;
-	case LEVEL_TEMP:
-	case CTL_TEMP:
-		gen_level_srv_s0_user_data.transition = &temp_transition;
-		light_ctl_srv_user_data.transition = &temp_transition;
-		break;
-	default:
-		break;
-	}
-}
-
 static bool tt_values_calculator(struct transition *transition)
 {
 	u8_t steps_multiplier, resolution;
@@ -119,12 +96,9 @@ static bool tt_values_calculator(struct transition *transition)
 	return true;
 }
 
-void onoff_tt_values(struct generic_onoff_state *state, u8_t tt, u8_t delay)
+void onoff_tt_values(struct generic_onoff_state *state)
 {
-	bound_states_transition_type_reassignment(ONOFF);
 	calculate_lightness_target_values(ONOFF);
-	state->transition->tt = tt;
-	state->transition->delay = delay;
 
 	if (!tt_values_calculator(state->transition)) {
 		return;
@@ -137,17 +111,13 @@ void onoff_tt_values(struct generic_onoff_state *state, u8_t tt, u8_t delay)
 			   state->transition->counter);
 }
 
-void level_tt_values(struct generic_level_state *state, u8_t tt, u8_t delay)
+void level_tt_values(struct generic_level_state *state)
 {
 	if (state == &gen_level_srv_root_user_data) {
-		bound_states_transition_type_reassignment(LEVEL);
 		calculate_lightness_target_values(LEVEL);
 	} else if (state == &gen_level_srv_s0_user_data) {
-		bound_states_transition_type_reassignment(LEVEL_TEMP);
 		calculate_temp_target_values(LEVEL_TEMP);
 	}
-	state->transition->tt = tt;
-	state->transition->delay = delay;
 
 	if (!tt_values_calculator(state->transition)) {
 		return;
@@ -160,13 +130,9 @@ void level_tt_values(struct generic_level_state *state, u8_t tt, u8_t delay)
 			   state->transition->counter);
 }
 
-void light_lightness_actual_tt_values(struct light_lightness_state *state,
-				      u8_t tt, u8_t delay)
+void light_lightness_actual_tt_values(struct light_lightness_state *state)
 {
-	bound_states_transition_type_reassignment(ACTUAL);
 	calculate_lightness_target_values(ACTUAL);
-	state->transition->tt = tt;
-	state->transition->delay = delay;
 
 	if (!tt_values_calculator(state->transition)) {
 		return;
@@ -180,13 +146,9 @@ void light_lightness_actual_tt_values(struct light_lightness_state *state,
 		 state->transition->counter);
 }
 
-void light_lightness_linear_tt_values(struct light_lightness_state *state,
-				      u8_t tt, u8_t delay)
+void light_lightness_linear_tt_values(struct light_lightness_state *state)
 {
-	bound_states_transition_type_reassignment(LINEAR);
 	calculate_lightness_target_values(LINEAR);
-	state->transition->tt = tt;
-	state->transition->delay = delay;
 
 	if (!tt_values_calculator(state->transition)) {
 		return;
@@ -200,12 +162,9 @@ void light_lightness_linear_tt_values(struct light_lightness_state *state,
 		 state->transition->counter);
 }
 
-void light_ctl_tt_values(struct light_ctl_state *state, u8_t tt, u8_t delay)
+void light_ctl_tt_values(struct light_ctl_state *state)
 {
-	bound_states_transition_type_reassignment(CTL);
 	calculate_lightness_target_values(CTL);
-	state->transition->tt = tt;
-	state->transition->delay = delay;
 
 	if (!tt_values_calculator(state->transition)) {
 		return;
@@ -227,13 +186,9 @@ void light_ctl_tt_values(struct light_ctl_state *state, u8_t tt, u8_t delay)
 		 state->transition->counter);
 }
 
-void light_ctl_temp_tt_values(struct light_ctl_state *state,
-			      u8_t tt, u8_t delay)
+void light_ctl_temp_tt_values(struct light_ctl_state *state)
 {
-	bound_states_transition_type_reassignment(CTL_TEMP);
 	calculate_temp_target_values(CTL_TEMP);
-	state->transition->tt = tt;
-	state->transition->delay = delay;
 
 	if (!tt_values_calculator(state->transition)) {
 		return;
