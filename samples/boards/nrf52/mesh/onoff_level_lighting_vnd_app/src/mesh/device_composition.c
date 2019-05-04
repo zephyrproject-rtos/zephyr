@@ -213,8 +213,13 @@ static void gen_onoff_set_unack(struct bt_mesh_model *model,
 	if (state->target_onoff != state->onoff) {
 		onoff_tt_values(state);
 	} else {
-		gen_onoff_publish(model);
-		return;
+		if (lightness != light_lightness_srv_user_data.def &&
+		    state->onoff == STATE_ON) {
+			onoff_tt_values(state);
+		} else {
+			gen_onoff_publish(model);
+			return;
+		}
 	}
 
 	/* For Instantaneous Transition */
@@ -282,9 +287,14 @@ static void gen_onoff_set(struct bt_mesh_model *model,
 	if (state->target_onoff != state->onoff) {
 		onoff_tt_values(state);
 	} else {
-		gen_onoff_get(model, ctx, buf);
-		gen_onoff_publish(model);
-		return;
+		if (lightness != light_lightness_srv_user_data.def &&
+		    state->onoff == STATE_ON) {
+			onoff_tt_values(state);
+		} else {
+			gen_onoff_get(model, ctx, buf);
+			gen_onoff_publish(model);
+			return;
+		}
 	}
 
 	/* For Instantaneous Transition */
@@ -2148,6 +2158,8 @@ static bool light_ctl_default_setunack(struct bt_mesh_model *model,
 		state->lightness_def = lightness;
 		state->temp_def = temp;
 		state->delta_uv_def = delta_uv;
+
+		light_lightness_srv_user_data.def = lightness;
 
 		save_on_flash(LIGHTNESS_TEMP_DEF_STATE);
 	}
