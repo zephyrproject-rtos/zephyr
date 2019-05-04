@@ -49,8 +49,7 @@ def run_cmake(args, cwd=None, capture_output=False):
             return None
     else:
         # A real error occurred, raise an exception
-        raise subprocess.CalledProcessError(cmd=p.args,
-                                            returncode=p.returncode)
+        raise subprocess.CalledProcessError(p.returncode, p.args)
 
 
 def run_build(build_directory, extra_args=(), cwd=None, capture_output=False):
