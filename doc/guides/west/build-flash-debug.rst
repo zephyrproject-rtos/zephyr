@@ -27,16 +27,31 @@ directly delegate to West.
 Building: ``west build``
 ************************
 
-.. tip:: Run ``west build -h`` for additional help.
+.. tip:: Run ``west build -h`` for a quick overview.
 
 The ``build`` command helps you build Zephyr applications from source. You can
 use :ref:`west config <west-config-cmd>` to configure its behavior.
 
+This command attempts to "do what you mean" when run from a Zephyr application
+source or build directory:
+
+- When you run ``west build`` in an existing build directory, the board, source
+  directory, etc. are obtained from the CMake cache, and that build directory
+  is re-compiled.
+
+- The same is true if a Zephyr build directory named :file:`build` exists in
+  your current working directory.
+
+- Otherwise, the source directory defaults to the current working directory, so
+  running ``west build`` from a Zephyr application's source directory compiles
+  it.
+
 Basics
 ======
 
-The easiest way to use it is to go to an application's root directory (i.e. the
-folder containing its :file:`CMakeLists.txt`) and then run::
+The easiest way to use ``west build`` is to go to an application's root
+directory (i.e. the folder containing the application's :file:`CMakeLists.txt`)
+and then run::
 
   west build -b <BOARD>
 
@@ -52,12 +67,13 @@ exactly the same name you would supply to CMake if you were to invoke it with:
 A build directory named :file:`build` will be created, and the application will
 be compiled there after ``west build`` runs CMake to create a build system in
 that directory. If you run ``west build`` with an existing build directory, the
-application is incrementally re-compiled without re-running CMake.
+application is incrementally re-compiled without re-running CMake (you can
+force CMake to run again with ``--cmake``).
 
-You don't need to give ``-b`` if you've already got an existing build
-directory; ``west build`` can figure out the board from the CMake cache. For
-new builds, the :envvar:`BOARD` environment variable and ``build.board``
-configuration option can also be used to set the board.
+You don't need to use the ``--board`` option if you've already got an existing
+build directory; ``west build`` can figure out the board from the CMake cache.
+For new builds, the ``--board`` option, :envvar:`BOARD` environment variable,
+or ``build.board`` configuration option are checked (in that order).
 
 To configure ``west build`` to build for the ``reel_board`` by default::
 
@@ -108,6 +124,7 @@ To let west decide for you if a pristine build is needed, use ``-p auto``::
 
    You can run ``west config build.pristine auto`` to make this setting
    permanent.
+
 
 .. _west-building-generator:
 
