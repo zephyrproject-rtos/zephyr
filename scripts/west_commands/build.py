@@ -18,7 +18,8 @@ _ARG_SEPARATOR = '--'
 BUILD_USAGE = '''\
 west build [-h] [-b BOARD] [-d BUILD_DIR]
            [-t TARGET] [-p {auto, always, never}] [-c] [--cmake-only]
-           [-n] [-f] [source_dir] -- [cmake_opt [cmake_opt ...]]
+           [-n] [-o BUILD_OPT] [-f]
+           [source_dir] -- [cmake_opt [cmake_opt ...]]
 '''
 
 BUILD_DESCRIPTION = '''\
@@ -143,6 +144,10 @@ class Build(Forceable):
                             dest='dry_run', action='store_true',
                             help='''Just print the build commands which would
                             have run, without actually running them.''')
+        parser.add_argument('-o', '--build-opt', default=[], action='append',
+                            help='''Options to pass to the build tool.
+                            May be given more than once to append multiple
+                            values.''')
         self.add_force_arg(parser)
         return parser
 
@@ -432,5 +437,8 @@ class Build(Forceable):
 
     def _run_build(self, target):
         extra_args = ['--target', target] if target else []
+        if self.args.build_opt:
+            extra_args.append('--')
+            extra_args.extend(self.args.build_opt)
         run_build(self.build_dir, extra_args=extra_args,
                   dry_run=self.args.dry_run)
