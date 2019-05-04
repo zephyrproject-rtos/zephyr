@@ -248,6 +248,8 @@ int adxl362_trigger_set(struct device *dev,
 int adxl362_init_interrupt(struct device *dev);
 
 int adxl362_set_interrupt_mode(struct device *dev, u8_t mode);
+
+int adxl362_clear_data_ready(struct device *dev);
 #endif /* CONFIG_ADT7420_TRIGGER */
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADXL362_ADXL362_H_ */

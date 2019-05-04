@@ -129,7 +129,13 @@ int adxl362_trigger_set(struct device *dev,
 		return -EFAULT;
 	}
 
+	/* Clear activity and inactivity interrupts */
 	ret = adxl362_get_status(dev, &status_buf);
+	if (ret) {
+		goto out;
+	}
+
+	ret = adxl362_clear_data_ready(dev);
 
 out:
 	gpio_pin_enable_callback(drv_data->gpio, cfg->int_gpio);

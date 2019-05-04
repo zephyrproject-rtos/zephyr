@@ -136,6 +136,12 @@ int adxl362_get_status(struct device *dev, u8_t *status)
 {
 	return adxl362_get_reg(dev, status, ADXL362_REG_STATUS, 1);
 }
+
+int adxl362_clear_data_ready(struct device *dev)
+{
+	u8_t buf;
+	return adxl362_get_reg(dev, &buf, ADXL362_REG_XDATA, 1);
+}
 #endif
 
 static int adxl362_software_reset(struct device *dev)
