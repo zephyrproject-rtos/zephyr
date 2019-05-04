@@ -10,7 +10,6 @@
 #include <sensor.h>
 #include <init.h>
 #include <gpio.h>
-#include <misc/printk.h>
 #include <misc/byteorder.h>
 #include <misc/__assert.h>
 #include <spi.h>
@@ -509,12 +508,12 @@ int adxl362_set_interrupt_mode(struct device *dev, u8_t mode)
 	u8_t new_act_inact_reg;
 	int ret;
 
-	printk("Mode: %d \n", mode);
+	LOG_DBG("Mode: %d", mode);
 
 	if (mode != ADXL362_MODE_DEFAULT &&
 	    mode != ADXL362_MODE_LINK &&
 	    mode != ADXL362_MODE_LOOP) {
-		    printk("Wrong mode \n");
+		    LOG_ERR("Wrong mode");
 		    return -EINVAL;
 	}
 
