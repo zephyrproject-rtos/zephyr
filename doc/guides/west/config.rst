@@ -156,6 +156,7 @@ Zephyr Extension Commands Configuration Options
 
 The following table documents configuration options supported by zephyr's
 extension commands (found in :file:`scripts/west_commands`).
+
 .. NOTE: docs authors: keep this table sorted by section, then option.
 
 .. list-table::
@@ -164,6 +165,13 @@ extension commands (found in :file:`scripts/west_commands`).
 
    * - Option
      - Description
+   * - ``build.board``
+     - String. If given, this the board used by :ref:`west build
+       <west-building>` when ``--board`` is not given and :envvar:`BOARD`
+       is unset in the environment.
+   * - ``build.board_warn``
+     - Boolean, default ``true``. If ``false``, disables warnings when
+       ``west build`` can't figure out the target board.
    * - ``build.pristine``
      - String. Controls the way in which ``west build`` may clean the build
        folder before building. Can take the following values:

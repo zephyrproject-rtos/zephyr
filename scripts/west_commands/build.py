@@ -34,6 +34,10 @@ The source and build directories can be explicitly set with the
 'build' if it is not auto-detected. The build directory is always
 created if it does not exist.
 
+The board to build for is taken from the CACHED_BOARD CMake cache
+variable, --board option, BOARD environment variable, or build.board
+configuration option, in decreasing order of precedence.
+
 This command runs CMake to generate a build system if one is not
 present in the build directory, then builds the application.
 Subsequent builds try to avoid re-running CMake; you can force it
@@ -107,9 +111,7 @@ class Build(Forceable):
         # Remember to update scripts/west-completion.bash if you add or remove
         # flags
 
-        parser.add_argument('-b', '--board',
-                            help='''Board to build for (must be given for the
-                            first build, can be omitted later)''')
+        parser.add_argument('-b', '--board', help='Board to build for')
         # Hidden option for backwards compatibility
         parser.add_argument('-s', '--source-dir', help=argparse.SUPPRESS)
         parser.add_argument('-d', '--build-dir',
@@ -178,25 +180,26 @@ class Build(Forceable):
         self._setup_source_dir()
         self._sanity_check()
 
-        log.inf('source directory: {}'.format(self.source_dir), colorize=True)
-        log.inf('build directory: {}{}'.
-                format(self.build_dir,
-                       (' (created)' if self.created_build_dir
-                        else '')),
-                colorize=True)
-        if self.cmake_cache:
-            board = self.cmake_cache.get('CACHED_BOARD')
-        elif self.args.board:
-            board = self.args.board
-        else:
-            board = 'UNKNOWN'   # shouldn't happen
-        log.inf('BOARD:', board, colorize=True)
-
-        self._run_cmake(self.args.cmake_opts)
+        board, origin = self._find_board()
+        self._run_cmake(board, origin, self.args.cmake_opts)
         self._sanity_check()
         self._update_cache()
 
         self._run_build(args.target)
+
+    def _find_board(self):
+        board, origin = None, None
+        config_board = config_get('board', None)
+        if self.cmake_cache:
+            board, origin = (self.cmake_cache.get('CACHED_BOARD'),
+                             'CMakeCache.txt')
+        elif self.args.board:
+            board, origin = self.args.board, 'command line'
+        elif 'BOARD' in os.environ:
+            board, origin = os.environ['BOARD'], 'env'
+        elif config_board is not None:
+            board, origin = config_board, 'configfile'
+        return board, origin
 
     def _parse_remainder(self, remainder):
         self.args.source_dir = None
@@ -294,10 +297,6 @@ class Build(Forceable):
         log.dbg('sanity checking the build', level=log.VERBOSE_EXTREME)
         self._sanity_check_source_dir()
 
-        self.check_force(
-            is_zephyr_build(self.build_dir) or self.args.board,
-            'this looks like a new or clean build, please provide --board')
-
         if not self.cmake_cache:
             return          # That's all we can check without a cache.
 
@@ -358,10 +357,33 @@ class Build(Forceable):
                 self._setup_source_dir()
                 self._sanity_check_source_dir()
 
-    def _run_cmake(self, cmake_opts):
+    def _run_cmake(self, board, origin, cmake_opts):
+        log.inf('source directory: {}'.format(self.source_dir), colorize=True)
+        log.inf('build directory: {}{}'.
+                format(self.build_dir,
+                       ' (created)' if self.created_build_dir else ''),
+                colorize=True)
+        log.inf('BOARD:', ('{} (origin: {})'.format(board, origin) if board
+                           else 'UNKNOWN'),
+                colorize=True)
+
+        if board is None and config_getboolean('board_warn', True):
+            log.wrn('This looks like a fresh build and BOARD is unknown;',
+                    "so it probably won't work. To fix, use",
+                    '--board=<your-board>.')
+            log.inf('Note: to silence the above message, run',
+                    "'west config build.board_warn false'")
+
         if not self.run_cmake:
             log.dbg('not running cmake; build system is present')
             return
+
+        if board is not None and origin != 'CMakeCache.txt':
+            cmake_opts = ['-DBOARD={}'.format(board)]
+        else:
+            cmake_opts = []
+        if self.args.cmake_opts:
+            cmake_opts.extend(self.args.cmake_opts)
 
         # Invoke CMake from the current working directory using the
         # -S and -B options (officially introduced in CMake 3.13.0).
@@ -372,8 +394,6 @@ class Build(Forceable):
         final_cmake_args = ['-B{}'.format(self.build_dir),
                             '-S{}'.format(self.source_dir),
                             '-G{}'.format(DEFAULT_CMAKE_GENERATOR)]
-        if self.args.board:
-            final_cmake_args.append('-DBOARD={}'.format(self.args.board))
         if cmake_opts:
             final_cmake_args.extend(cmake_opts)
         run_cmake(final_cmake_args)
