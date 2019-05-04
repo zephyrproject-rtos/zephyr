@@ -3443,10 +3443,12 @@ struct k_sem {
  * @param initial_count Initial semaphore count.
  * @param limit Maximum permitted semaphore count.
  *
- * @return N/A
+ * @retval 0 Semaphore created successfully
+ * @retval -EINVAL Invalid values
+ *
  * @req K-SEM-001
  */
-__syscall void k_sem_init(struct k_sem *sem, unsigned int initial_count,
+__syscall int k_sem_init(struct k_sem *sem, unsigned int initial_count,
 			  unsigned int limit);
 
 /**
