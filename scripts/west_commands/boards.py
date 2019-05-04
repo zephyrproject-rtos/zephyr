@@ -10,7 +10,7 @@ import textwrap
 
 from west import log
 from west.commands import WestCommand
-from cmake import run_cmake
+from zcmake import run_cmake
 
 class Boards(WestCommand):
 
