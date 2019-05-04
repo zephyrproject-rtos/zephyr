@@ -54,6 +54,12 @@ positional arguments:
   cmake_opt             Extra options to pass to CMake; implies -c
 '''
 
+def config_get(option, fallback):
+    return config.get('build', option, fallback=fallback)
+
+def config_getboolean(option, fallback):
+    return config.getboolean('build', option, fallback=fallback)
+
 class AlwaysIfMissing(argparse.Action):
 
     def __call__(self, parser, namespace, values, option_string=None):
@@ -149,7 +155,7 @@ class Build(Forceable):
             pristine = args.pristine
         else:
             # Load the pristine={auto, always, never} configuration value
-            pristine = config.get('build', 'pristine', fallback='never')
+            pristine = config_get('pristine', 'never')
             if pristine not in ['auto', 'always', 'never']:
                 log.wrn(
                     'treating unknown build.pristine value "{}" as "never"'.
