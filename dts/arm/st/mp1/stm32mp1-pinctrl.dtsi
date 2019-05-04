@@ -1,0 +1,34 @@
+/*
+ * Copyright (c) 2019 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <dt-bindings/pinctrl/stm32-pinctrl.h>
+
+/ {
+	soc {
+		pinctrl: pin-controller@50002000 {
+			usart3_pins_a: usart3_a {
+				rx_tx {
+					rx = <STM32_PIN_PB12
+						(STM32_PINMUX_ALT_FUNC_8 |
+						STM32_PUPDR_PULL_DOWN)>;
+					tx = <STM32_PIN_PB10
+						(STM32_PINMUX_ALT_FUNC_7 |
+						STM32_PUSHPULL_PULLUP)>;
+				};
+			};
+			uart7_pins_a: uart7_a {
+				rx_tx {
+					rx = <STM32_PIN_PE7
+						(STM32_PINMUX_ALT_FUNC_7 |
+						STM32_PUPDR_PULL_DOWN)>;
+					tx = <STM32_PIN_PE8
+						(STM32_PINMUX_ALT_FUNC_7 |
+						STM32_PUSHPULL_PULLUP)>;
+				};
+			};
+		};
+	};
+};

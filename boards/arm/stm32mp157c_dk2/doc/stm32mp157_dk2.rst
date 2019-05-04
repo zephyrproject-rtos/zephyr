@@ -170,6 +170,11 @@ features:
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
 +-----------+------------+-------------------------------------+
+| UART      | on-chip    | serial port-polling;                |
+|           |            | serial port-interrupt               |
++-----------+------------+-------------------------------------+
+| PINMUX    | on-chip    | pinmux                              |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/stm32mp157c_dk2/stm32mp157c_dk2_defconfig``
@@ -182,6 +187,12 @@ STM32MP157C-DK2 Discovery Board schematic is available here:
 `STM32MP157C Discovery board schematics`_.
 
 
+Default Zephyr Peripheral Mapping:
+----------------------------------
+
+- USART_3 TX/RX : PB10/PB12 (UART console)
+- UART_7 TX/RX : PE8/PE7 (Arduino Serial)
+
 System Clock
 ------------
 
@@ -191,9 +202,13 @@ Serial Port
 -----------
 
 The STM32MP157C-DK2 Discovery board has 8 U(S)ARTs.
-The Zephyr console output is assigned by default to the ram console to be dumped
-by the Linux Remoteproc Framework on Cortex®-A7 core. The UART 4 can enabled as
-Cortex®-M4 console.
+The Zephyr console output is assigned by default to the RAM console to be dumped
+by the Linux Remoteproc Framework on Cortex®-A7 core. In order to keep the UART7
+free for future serial interactions with Arduino shield, the Zephyr UART console
+output is USART3 and is disabled by default. UART console can be enable through
+board's device tree and stm32mp157c_dk2_defconfig board file (or prj.conf
+project files), and will disable existing RAM console output. Default UART
+console settings are 115200 8N1.
 
 Programming and Debugging
 *************************

@@ -36,7 +36,7 @@ struct _callee_saved {
 
 typedef struct _callee_saved _callee_saved_t;
 
-#ifdef CONFIG_FLOAT
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 struct _preempt_float {
 	float  s16;
 	float  s17;
@@ -65,7 +65,7 @@ struct _thread_arch {
 	/* r0 in stack frame cannot be written to reliably */
 	u32_t swap_return_value;
 
-#ifdef CONFIG_FLOAT
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
 	/*
 	 * No cooperative floating point register set structure exists for
 	 * the Cortex-M as it automatically saves the necessary registers

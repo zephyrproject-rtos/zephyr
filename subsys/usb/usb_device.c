@@ -519,6 +519,10 @@ static bool usb_set_configuration(u8_t config_index, u8_t alt_setting)
 		case DESC_CONFIGURATION:
 			/* remember current configuration index */
 			cur_config = p[CONF_DESC_bConfigurationValue];
+			if (cur_config == config_index) {
+				found = true;
+			}
+
 			break;
 
 		case DESC_INTERFACE:

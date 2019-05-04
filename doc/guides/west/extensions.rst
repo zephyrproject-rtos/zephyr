@@ -11,12 +11,14 @@ information on west extension commands, and has a tutorial for writing your
 own.
 
 Some commands you can run when using west with Zephyr, like the ones used to
-:ref:`build, flash, and debug <west-build-flash-debug>`, are extensions. That's
-why help for them shows up like this in ``west --help``:
+:ref:`build, flash, and debug <west-build-flash-debug>` and the
+:ref:`ones described here <west-zephyr-ext-cmds>` , are extensions. That's why
+help for them shows up like this in ``west --help``:
 
 .. code-block:: none
 
    commands from project at "zephyr":
+     boards:               display information about supported boards
      build:                compile a Zephyr application
      sign:                 sign a Zephyr binary for bootloader chain-loading
      flash:                flash and run a binary on a board

@@ -23,7 +23,12 @@
 
 #include "pinmux.h"
 
+#ifdef CONFIG_SOC_SERIES_STM32MP1X
+#define GPIO_REG_SIZE         0x1000
+/* 0x1000 between each port, 0x400 gpio registry 0xC00 reserved */
+#else
 #define GPIO_REG_SIZE         0x400
+#endif /* CONFIG_SOC_SERIES_STM32MP1X */
 /* base address for where GPIO registers start */
 #define GPIO_PORTS_BASE       (GPIOA_BASE)
 

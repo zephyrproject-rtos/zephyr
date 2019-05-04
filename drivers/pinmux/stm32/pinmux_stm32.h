@@ -32,13 +32,13 @@ typedef int stm32_pin_func_t;
  * in @funcs array
  */
 struct stm32_pinmux_conf {
-	u32_t pin;		 /* pin ID */
-	const stm32_pin_func_t *funcs; /* functions array, indexed with
-					* (stm32_pin_alt_func - 1)
-					*/
-	const size_t nfuncs;	 /* number of alternate functions, not
-				  * counting GPIO
-				  */
+	u32_t pin;                      /* pin ID */
+	const stm32_pin_func_t *funcs;  /* functions array, indexed with
+					 * (stm32_pin_alt_func - 1)
+					 */
+	const size_t nfuncs;            /* number of alternate functions, not
+					 * counting GPIO
+					 */
 };
 
 /**
@@ -117,8 +117,10 @@ void stm32_setup_pins(const struct pin_config *pinconf,
 #include "pinmux_stm32l1x.h"
 #elif CONFIG_SOC_SERIES_STM32L4X
 #include "pinmux_stm32l4x.h"
+#elif CONFIG_SOC_SERIES_STM32MP1X
+#include "pinmux_stm32mp1x.h"
 #elif CONFIG_SOC_SERIES_STM32WBX
 #include "pinmux_stm32wbx.h"
 #endif
 
-#endif	/* ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32_H_ */
+#endif  /* ZEPHYR_DRIVERS_PINMUX_STM32_PINMUX_STM32_H_ */

@@ -38,6 +38,7 @@ context about the tool.
    config.rst
    extensions.rst
    build-flash-debug.rst
+   zephyr-cmds.rst
    sign.rst
    why.rst
    without-west.rst
