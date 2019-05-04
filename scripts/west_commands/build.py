@@ -25,43 +25,8 @@ west build [-h] [-b BOARD] [-d BUILD_DIR]
 BUILD_DESCRIPTION = '''\
 Convenience wrapper for building Zephyr applications.
 
-This command attempts to do what you mean when run from a Zephyr
-application source or a pre-existing build directory:
-
-- When the build directory ('./build' by default, see below) exists and is
-  already a Zephyr build directory, the source directory is obtained from the
-  CMake cache, and that build directory is re-compiled.
-
-- Otherwise, the source directory defaults to the current working
-  directory, so running "west build" from a Zephyr application's
-  source directory compiles it.
-
-The source and build directories can be explicitly set with the
---source-dir and --build-dir options. The build directory defaults to
-'build' if it is not auto-detected. The build directory is always
-created if it does not exist.
-
-The board to build for is taken from the CACHED_BOARD CMake cache
-variable, --board option, BOARD environment variable, or build.board
-configuration option, in decreasing order of precedence.
-
-This command runs CMake to generate a build system if one is not
-present in the build directory, then builds the application.
-Subsequent builds try to avoid re-running CMake; you can force it
-to run by setting --cmake.
-
-To pass additional options to CMake, give them as extra arguments
-after a '--'. For example, this sets an overlay config file:
-
-west build [...] -- -DOVERLAY_CONFIG=some.conf
-
-(Doing this forces a CMake run.)
-
 positional arguments:
-  source_dir            Explicitly set the source directory. If not given and
-                        rebuilding an existing Zephyr build directory, this is
-                        taken from the CMake cache. Otherwise, the current
-                        directory is assumed.
+  source_dir            Use this path as the source directory
   cmake_opt             Extra options to pass to CMake; implies -c
 '''
 
@@ -121,29 +86,23 @@ class Build(Forceable):
         parser.add_argument('-s', '--source-dir', help=argparse.SUPPRESS)
         parser.add_argument('-d', '--build-dir',
                             help=BUILD_DIR_DESCRIPTION +
-                            "The directory is created if it doesn't exist.")
+                            " Always created if it doesn't exist.")
         parser.add_argument('-t', '--target',
-                            help='''Override the build system target (e.g.
-                            'clean', 'pristine', etc.)''')
+                            help='''Build system target to run''')
         parser.add_argument('-p', '--pristine', choices=['auto', 'always',
                             'never'], action=AlwaysIfMissing, nargs='?',
                             help='''Control whether the build folder is made
-                            pristine before building if a build system is
-                            present in the build dir. --pristine is the same as
-                            --pristine=always. If set to auto, the build folder
-                            will be made pristine only if required based on the
-                            existing build system and the options provided.
-                            This allows for reusing a build folder even if it
-                            contains build files for a different board or
-                            application.''')
+                            pristine before running CMake. --pristine is the
+                            same as --pristine=always. If 'auto', it will
+                            be made pristine only if needed.''')
         parser.add_argument('-c', '--cmake', action='store_true',
                             help='Force CMake to run')
         parser.add_argument('--cmake-only', action='store_true',
                             help="Just run CMake; don't build. Implies -c.")
         parser.add_argument('-n', '--just-print', '--dry-run', '--recon',
                             dest='dry_run', action='store_true',
-                            help='''Just print the build commands which would
-                            have run, without actually running them.''')
+                            help='''Just print the build commands; don't run
+                            them''')
         parser.add_argument('-o', '--build-opt', default=[], action='append',
                             help='''Options to pass to the build tool.
                             May be given more than once to append multiple

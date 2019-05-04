@@ -21,9 +21,9 @@ DEFAULT_CMAKE_GENERATOR = 'Ninja'
 '''Name of the default CMake generator.'''
 
 BUILD_DIR_DESCRIPTION = '''\
-Explicitly sets the build directory.  If not given and the current
-directory is a Zephyr build directory, it will be used; otherwise,
-"{}" is assumed.'''.format(DEFAULT_BUILD_DIR)
+Build directory. If missing and run in a Zephyr build directory, it is
+used; otherwise, it's "{}".'''.format(
+    DEFAULT_BUILD_DIR)
 
 
 def find_build_dir(dir):
