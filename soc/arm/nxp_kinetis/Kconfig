@@ -22,6 +22,7 @@ config SOC_PART_NUMBER
 	default SOC_PART_NUMBER_KINETIS_K6X if SOC_SERIES_KINETIS_K6X
 	default SOC_PART_NUMBER_KINETIS_KWX if SOC_SERIES_KINETIS_KWX
 	default SOC_PART_NUMBER_KINETIS_KL2X if SOC_SERIES_KINETIS_KL2X
+	default SOC_PART_NUMBER_KINETIS_KE1XF if SOC_SERIES_KINETIS_KE1XF
 	help
 	  This string holds the full part number of the SoC. It is a hidden option
 	  that you should not set directly. The part number selection choice defines
