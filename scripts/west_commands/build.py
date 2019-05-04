@@ -9,7 +9,7 @@ import subprocess
 
 from west import log
 from west.configuration import config
-from cmake import DEFAULT_CMAKE_GENERATOR, run_cmake, run_build, CMakeCache
+from zcmake import DEFAULT_CMAKE_GENERATOR, run_cmake, run_build, CMakeCache
 from build_helpers import is_zephyr_build, find_build_dir, BUILD_DIR_DESCRIPTION
 
 from zephyr_ext_common import Forceable

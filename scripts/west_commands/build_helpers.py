@@ -10,7 +10,7 @@ building Zephyr applications needed by multiple commands.
 See build.py for the build command itself.
 '''
 
-import cmake
+import zcmake
 import os
 from west import log
 
@@ -51,7 +51,7 @@ def is_zephyr_build(path):
     cache with a 'ZEPHYR_TOOLCHAIN_VARIANT' key.
     '''
     try:
-        cache = cmake.CMakeCache.from_build_dir(path)
+        cache = zcmake.CMakeCache.from_build_dir(path)
     except FileNotFoundError:
         cache = {}
 
