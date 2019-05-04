@@ -28,6 +28,7 @@
 #include <init.h>
 #include <syscall_handler.h>
 #include <debug/tracing.h>
+#include <sys/check.h>
 
 /* We use a system-wide lock to synchronize semaphores, which has
  * unfortunate performance impact vs. using a per-object lock
@@ -59,11 +60,16 @@ SYS_INIT(init_sem_module, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_OBJECTS);
 
 #endif /* CONFIG_OBJECT_TRACING */
 
-void z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
+int z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		      unsigned int limit)
 {
-	__ASSERT(limit != 0U, "limit cannot be zero");
-	__ASSERT(initial_count <= limit, "count cannot be greater than limit");
+	/*
+	 * Limit cannot be zero and count cannot be greater than limit
+	 */
+	CHECKIF(limit == 0U || initial_count > limit) {
+		return -EINVAL;
+	}
+
 
 	sys_trace_void(SYS_TRACE_ID_SEMA_INIT);
 	sem->count = initial_count;
@@ -77,15 +83,16 @@ void z_impl_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 
 	z_object_init(sem);
 	sys_trace_end_call(SYS_TRACE_ID_SEMA_INIT);
+
+	return 0;
 }
 
 #ifdef CONFIG_USERSPACE
-void z_vrfy_k_sem_init(struct k_sem *sem, unsigned int initial_count,
+int z_vrfy_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 		      unsigned int limit)
 {
 	Z_OOPS(Z_SYSCALL_OBJ_INIT(sem, K_OBJ_SEM));
-	Z_OOPS(Z_SYSCALL_VERIFY(limit != 0 && initial_count <= limit));
-	z_impl_k_sem_init(sem, initial_count, limit);
+	return z_impl_k_sem_init(sem, initial_count, limit);
 }
 #include <syscalls/k_sem_init_mrsh.c>
 #endif
