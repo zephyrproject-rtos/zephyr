@@ -61,7 +61,7 @@ exactly the same name you would supply to CMake if you were to invoke it with:
 
 .. tip::
 
-   You can use the :ref:```west boards`` <west-boards>` command to list all
+   You can use the :ref:`west boards <west-boards>` command to list all
    supported boards.
 
 A build directory named :file:`build` will be created, and the application will
