@@ -204,8 +204,8 @@ struct adxl362_data {
 	struct k_thread thread;
 #elif defined(CONFIG_ADXL362_TRIGGER_GLOBAL_THREAD)
 	struct k_work work;
-	struct device *dev;
 #endif
+	struct device *dev;
 #endif /* CONFIG_ADXL362_TRIGGER */
 };
 

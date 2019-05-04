@@ -51,7 +51,7 @@ static void adxl362_gpio_callback(struct device *dev,
 {
 	struct adxl362_data *drv_data =
 		CONTAINER_OF(cb, struct adxl362_data, gpio_cb);
-	const struct adxl362_config *cfg = dev->config->config_info;
+	const struct adxl362_config *cfg = drv_data->dev->config->config_info;
 
 	gpio_pin_disable_callback(dev, cfg->int_gpio);
 
@@ -182,8 +182,8 @@ int adxl362_init_interrupt(struct device *dev)
 			0, 0);
 #elif defined(CONFIG_ADXL362_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = adxl362_work_cb;
-	drv_data->dev = dev;
 #endif
+	drv_data->dev = dev;
 
 	return 0;
 }
