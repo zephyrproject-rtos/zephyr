@@ -4,13 +4,12 @@
 
 import argparse
 import os
-import shutil
-import subprocess
 
 from west import log
 from west.configuration import config
 from zcmake import DEFAULT_CMAKE_GENERATOR, run_cmake, run_build, CMakeCache
-from build_helpers import is_zephyr_build, find_build_dir, BUILD_DIR_DESCRIPTION
+from build_helpers import is_zephyr_build, find_build_dir, \
+    BUILD_DIR_DESCRIPTION
 
 from zephyr_ext_common import Forceable
 
@@ -57,8 +56,8 @@ positional arguments:
 
 class AlwaysIfMissing(argparse.Action):
 
-        def __call__(self, parser, namespace, values, option_string=None):
-                    setattr(namespace, self.dest, values or 'always')
+    def __call__(self, parser, namespace, values, option_string=None):
+        setattr(namespace, self.dest, values or 'always')
 
 class Build(Forceable):
 
@@ -152,8 +151,9 @@ class Build(Forceable):
             # Load the pristine={auto, always, never} configuration value
             pristine = config.get('build', 'pristine', fallback='never')
             if pristine not in ['auto', 'always', 'never']:
-                log.wrn('treating unknown build.pristine value "{}" as "never"'.
-                        format(pristine))
+                log.wrn(
+                    'treating unknown build.pristine value "{}" as "never"'.
+                    format(pristine))
                 pristine = 'never'
         self.auto_pristine = (pristine == 'auto')
 
@@ -348,10 +348,9 @@ class Build(Forceable):
             # there was one in the CMake cache. Since this is going to be
             # invalidated, reset to CWD and re-run the basic tests.
             if ((boards_mismatched and not apps_mismatched) and
-                (not source_abs and cached_abs)):
+                    (not source_abs and cached_abs)):
                 self._setup_source_dir()
                 self._sanity_check_source_dir()
-
 
     def _run_cmake(self, cmake_opts):
         if not self.run_cmake:
@@ -382,8 +381,8 @@ class Build(Forceable):
                     'and should have been by the main script')
 
         if not is_zephyr_build(self.build_dir):
-            log.die('Refusing to run pristine on a folder that is not a Zephyr '
-                    'build system')
+            log.die('Refusing to run pristine on a folder that is not a '
+                    'Zephyr build system')
 
         cmake_args = ['-P', '{}/cmake/pristine.cmake'.format(zb)]
         run_cmake(cmake_args, cwd=self.build_dir)
