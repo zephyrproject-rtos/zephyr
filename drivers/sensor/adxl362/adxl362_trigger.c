@@ -20,7 +20,6 @@ static void adxl362_thread_cb(void *arg)
 {
 	struct device *dev = arg;
 	struct adxl362_data *drv_data = dev->driver_data;
-	const struct adxl362_config *cfg = dev->config->config_info;
 	u8_t status_buf;
 	int ret;
 
@@ -42,8 +41,6 @@ static void adxl362_thread_cb(void *arg)
 		drv_data->drdy_handler(dev, &drv_data->drdy_trigger);
 	}
 	k_mutex_unlock(&drv_data->trigger_mutex);
-
-	gpio_pin_enable_callback(drv_data->gpio, cfg->int_gpio);
 }
 
 static void adxl362_gpio_callback(struct device *dev,
@@ -51,9 +48,6 @@ static void adxl362_gpio_callback(struct device *dev,
 {
 	struct adxl362_data *drv_data =
 		CONTAINER_OF(cb, struct adxl362_data, gpio_cb);
-	const struct adxl362_config *cfg = dev->config->config_info;
-
-	gpio_pin_disable_callback(dev, cfg->int_gpio);
 
 #if defined(CONFIG_ADXL362_TRIGGER_OWN_THREAD)
 	k_sem_give(&drv_data->gpio_sem);
@@ -90,11 +84,8 @@ int adxl362_trigger_set(struct device *dev,
 			sensor_trigger_handler_t handler)
 {
 	struct adxl362_data *drv_data = dev->driver_data;
-	const struct adxl362_config *cfg = dev->config->config_info;
 	u8_t int_mask, int_en, status_buf;
 	int ret;
-
-	gpio_pin_disable_callback(drv_data->gpio, cfg->int_gpio);
 
 	switch (trig->type) {
 	case SENSOR_TRIG_THRESHOLD:
@@ -114,8 +105,7 @@ int adxl362_trigger_set(struct device *dev,
 		break;
 	default:
 		LOG_ERR("Unsupported sensor trigger");
-		ret = -ENOTSUP;
-		goto out;
+		return -ENOTSUP;
 	}
 
 	if (handler) {
@@ -132,9 +122,6 @@ int adxl362_trigger_set(struct device *dev,
 	}
 
 	ret = adxl362_get_status(dev, &status_buf);
-
-out:
-	gpio_pin_enable_callback(drv_data->gpio, cfg->int_gpio);
 
 	return ret;
 }
@@ -185,6 +172,8 @@ int adxl362_init_interrupt(struct device *dev)
 	drv_data->work.handler = adxl362_work_cb;
 	drv_data->dev = dev;
 #endif
+
+	gpio_pin_enable_callback(drv_data->gpio, cfg->int_gpio);
 
 	return 0;
 }
