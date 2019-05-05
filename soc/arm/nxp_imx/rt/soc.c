@@ -13,6 +13,10 @@
 #include <arch/cpu.h>
 #include <cortex_m/exc.h>
 #include <fsl_flexspi_nor_boot.h>
+#if CONFIG_USB_DC_NXP_EHCI
+#include "usb_phy.h"
+#include "usb_dc_mcux.h"
+#endif
 
 #ifdef CONFIG_INIT_ARM_PLL
 /* ARM PLL configuration for RUN mode */
@@ -35,6 +39,13 @@ const clock_usb_pll_config_t usb1PllConfig = {
 };
 #endif
 
+#if CONFIG_USB_DC_NXP_EHCI
+/* USB PHY condfiguration */
+#define BOARD_USB_PHY_D_CAL (0x0CU)
+#define BOARD_USB_PHY_TXCAL45DP (0x06U)
+#define BOARD_USB_PHY_TXCAL45DM (0x06U)
+#endif
+
 #ifdef CONFIG_INIT_ENET_PLL
 /* ENET PLL configuration for RUN mode */
 const clock_enet_pll_config_t ethPllConfig = {
@@ -47,6 +58,12 @@ const clock_enet_pll_config_t ethPllConfig = {
 	.enableClkOutput25M = false,
 	.loopDivider = 1,
 };
+#endif
+
+#if CONFIG_USB_DC_NXP_EHCI
+	usb_phy_config_struct_t usbPhyConfig = {
+		BOARD_USB_PHY_D_CAL, BOARD_USB_PHY_TXCAL45DP, BOARD_USB_PHY_TXCAL45DM,
+	};
 #endif
 
 #ifdef CONFIG_INIT_VIDEO_PLL
@@ -158,6 +175,14 @@ static ALWAYS_INLINE void clkInit(void)
 	CLOCK_SetMux(kCLOCK_LcdifPreMux, 2);
 	CLOCK_SetDiv(kCLOCK_LcdifPreDiv, 4);
 	CLOCK_SetDiv(kCLOCK_LcdifDiv, 1);
+#endif
+
+#if CONFIG_USB_DC_NXP_EHCI
+	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usb480M,
+				CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
+				CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
+	USB_EhciPhyInit(kUSB_ControllerEhci0, CPU_XTAL_CLK_HZ, &usbPhyConfig);
 #endif
 
 	/* Keep the system clock running so SYSTICK can wake up the system from
