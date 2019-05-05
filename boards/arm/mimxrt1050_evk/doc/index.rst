@@ -112,6 +112,8 @@ features:
 +-----------+------------+-------------------------------------+
 | ENET      | on-chip    | ethernet                            |
 +-----------+------------+-------------------------------------+
+| USB       | on-chip    | USB device                          |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 
@@ -232,6 +234,13 @@ Serial Port
 The MIMXRT1050 SoC has eight UARTs. ``LPUART1`` is configured for the console,
 ``LPUART3`` for the Bluetooth Host Controller Interface (BT HCI), and the
 remaining are not used.
+
+USB
+===
+
+The RT1050 SoC has two USB OTG (USBOTG) controllers that supports both
+device and host functions through its micro USB connectors.
+Only USB device function is supported in Zephyr at the moment.
 
 Programming and Debugging
 *************************
