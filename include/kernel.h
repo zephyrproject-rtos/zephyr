@@ -4844,6 +4844,12 @@ extern void k_mem_domain_remove_thread(k_tid_t thread);
  */
 __syscall void k_str_out(char *c, size_t n);
 
+enum futex_op {
+	FUTEX_WAIT,
+	FUTEX_WAKE
+};
+
+__syscall int k_futex(atomic_t *addr, int op, int val, s32_t timeout);
 /**
  * @brief Start a numbered CPU on a MP-capable system
 

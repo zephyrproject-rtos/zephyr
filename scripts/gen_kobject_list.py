@@ -86,7 +86,8 @@ kobjects = OrderedDict ([
     ("k_timer", (None, False)),
     ("_k_thread_stack_element", (None, False)),
     ("device", (None, False)),
-    ("sys_mutex", (None, True))
+    ("sys_mutex", (None, True)),
+    ("sys_sem", (None, True))
 ])
 
 
@@ -124,6 +125,7 @@ header = """%compare-lengths
 #include <toolchain.h>
 #include <syscall_handler.h>
 #include <string.h>
+#include <wait_q.h>
 %}
 struct _k_object;
 """
@@ -158,7 +160,6 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 #endif
 """
 
-
 def write_gperf_table(fp, eh, objs, static_begin, static_end):
     fp.write(header)
     num_mutexes = eh.get_sys_mutex_counter()
@@ -167,6 +168,15 @@ def write_gperf_table(fp, eh, objs, static_begin, static_end):
         for i in range(num_mutexes):
             fp.write("_K_MUTEX_INITIALIZER(kernel_mutexes[%d])" % i)
             if (i != num_mutexes - 1):
+                fp.write(", ")
+        fp.write("};\n")
+
+    num_sem = eh.get_sys_sem_counter()
+    if (num_sem != 0):
+        fp.write("static _wait_q_t sys_sem_wait_q[%d] = {\n" % num_sem)
+        for i in range(num_sem):
+            fp.write("Z_WAIT_Q_INIT(&sys_sem_wait_q[%d])" % i)
+            if (i != num_sem - 1):
                 fp.write(", ")
         fp.write("};\n")
 

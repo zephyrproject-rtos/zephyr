@@ -12,6 +12,7 @@ zephyr_sources(
   rb.c
   thread_entry.c
   work_q.c
+  sem.c
   )
 
 zephyr_sources_ifdef(CONFIG_JSON_LIBRARY json.c)

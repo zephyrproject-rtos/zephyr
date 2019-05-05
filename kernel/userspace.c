@@ -20,6 +20,7 @@
 #include <app_memory/app_memdomain.h>
 #include <misc/libc-hooks.h>
 #include <misc/mutex.h>
+#include <misc/sem.h>
 
 #ifdef Z_LIBC_PARTITION_EXISTS
 K_APPMEM_PARTITION_DEFINE(z_libc_partition);

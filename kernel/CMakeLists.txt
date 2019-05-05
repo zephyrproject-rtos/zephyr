@@ -50,6 +50,7 @@ target_sources_ifdef(
   mem_domain.c
   userspace_handler.c
   userspace.c
+  futex.c
   )
 
 
