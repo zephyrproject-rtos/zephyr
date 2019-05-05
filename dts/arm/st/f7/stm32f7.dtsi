@@ -30,11 +30,6 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		device_type = "memory";
-		compatible = "mmio-sram";
-	};
-
 	soc {
 		flash-controller@40023c00 {
 			compatible = "st,stm32f7-flash-controller";

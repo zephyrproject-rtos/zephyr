@@ -7,6 +7,14 @@
 #include <st/f7/stm32f7.dtsi>
 
 / {
+	/* 64KB DTCM @ 20000000, 240KB SRAM1 @ 20010000, 16KB SRAM2 @ 2004C000 */
+
+	sram0: memory@20010000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x20010000 DT_SIZE_K(256)>;
+	};
+
 	soc {
 		pinctrl: pin-controller@40020000 {
 			reg = <0x40020000 0x2C00>;

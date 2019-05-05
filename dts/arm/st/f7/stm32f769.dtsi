@@ -1,7 +1,54 @@
 /*
- * Copyright (c)  2018 Yong Jin
+ * Copyright (c) 2018 Yurii Hamann
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <st/f7/stm32f746.dtsi>
+#include <st/f7/stm32f7.dtsi>
+
+/ {
+	/* 128KB DTCM @ 20000000, 368KB SRAM1 @ 20020000, 16KB SRAM2 @ 2007C000 */
+
+	sram0: memory@20020000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x20020000 DT_SIZE_K(384)>;
+	};
+
+	soc {
+		pinctrl: pin-controller@40020000 {
+			reg = <0x40020000 0x2C00>;
+
+			gpioj: gpio@40022400 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40022400 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000200>;
+				label = "GPIOJ";
+			};
+
+			gpiok: gpio@40022800 {
+				compatible = "st,stm32-gpio";
+				gpio-controller;
+				#gpio-cells = <2>;
+				reg = <0x40022800 0x400>;
+				clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x00000400>;
+				label = "GPIOK";
+			};
+		};
+
+		i2c4: i2c@40006000 {
+			compatible = "st,stm32-i2c-v2";
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40006000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_APB1 0x01000000>;
+			interrupts = <95 0>, <96 0>;
+			interrupt-names = "event", "error";
+			status = "disabled";
+			label = "I2C_4";
+		};
+	};
+};
