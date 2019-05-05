@@ -157,6 +157,7 @@
 #define ADXL362_RESET_KEY               0x52
 
 /* ADXL362 Status check */
+#define ADXL362_STATUS_CHECK_DATA_READY(x)	(((x) >> 0) & 0x1)
 #define ADXL362_STATUS_CHECK_INACT(x)		(((x) >> 5) & 0x1)
 #define ADXL362_STATUS_CHECK_ACTIVITY(x)	(((x) >> 4) & 0x1)
 
