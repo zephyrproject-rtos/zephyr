@@ -85,3 +85,5 @@ Patch List:
 
    * Automatically enable ENET_ENHANCEDBUFFERDESCRIPTOR_MODE in HAL if gPTP
      support is enabled.
+
+   * Add USB device controller drivers, the drivers are based on MCUXpresso SDK release tag REL_2.5.0_REL9_RFP_RC3_7_1.

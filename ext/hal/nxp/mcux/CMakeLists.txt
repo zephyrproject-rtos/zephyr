@@ -33,6 +33,11 @@ add_subdirectory(components)
 add_subdirectory(drivers)
 
 add_subdirectory_ifdef(
+  CONFIG_USB
+  middleware/usb
+  )
+
+add_subdirectory_ifdef(
   CONFIG_IEEE802154_KW41Z
   middleware/wireless/framework_5.3.3
   )
