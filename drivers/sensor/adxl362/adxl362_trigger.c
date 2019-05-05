@@ -96,17 +96,20 @@ int adxl362_trigger_set(struct device *dev,
 
 	gpio_pin_disable_callback(drv_data->gpio, cfg->int_gpio);
 
-	k_mutex_lock(&drv_data->trigger_mutex, K_FOREVER);
 	switch (trig->type) {
 	case SENSOR_TRIG_THRESHOLD:
+		k_mutex_lock(&drv_data->trigger_mutex, K_FOREVER);
 		drv_data->th_handler = handler;
 		drv_data->th_trigger = *trig;
+		k_mutex_unlock(&drv_data->trigger_mutex);
 		int_mask = ADXL362_INTMAP1_ACT |
 			   ADXL362_INTMAP1_INACT;
 		break;
 	case SENSOR_TRIG_DATA_READY:
+		k_mutex_lock(&drv_data->trigger_mutex, K_FOREVER);
 		drv_data->drdy_handler = handler;
 		drv_data->drdy_trigger = *trig;
+		k_mutex_unlock(&drv_data->trigger_mutex);
 		int_mask = ADXL362_INTMAP1_DATA_READY;
 		break;
 	default:
@@ -114,7 +117,6 @@ int adxl362_trigger_set(struct device *dev,
 		ret = -ENOTSUP;
 		goto out;
 	}
-	k_mutex_unlock(&drv_data->trigger_mutex);
 
 	if (handler) {
 		int_en = int_mask;
