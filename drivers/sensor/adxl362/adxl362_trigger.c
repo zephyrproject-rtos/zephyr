@@ -21,23 +21,23 @@ static void adxl362_thread_cb(void *arg)
 	struct device *dev = arg;
 	struct adxl362_data *drv_data = dev->driver_data;
 	u8_t status_buf;
-	int ret;
+
+	/* Clears activity and inactivity interrupt */
+	if (adxl362_get_status(dev, &status_buf)) {
+		LOG_ERR("Unable to get status.");
+		return;
+	}
 
 	k_mutex_lock(&drv_data->trigger_mutex, K_FOREVER);
 	if (drv_data->th_handler != NULL) {
-		ret = adxl362_get_status(dev, &status_buf);
-
-		if (ret) {
-			LOG_ERR("Unable to get status from ADXL362.\n");
-		}
-
 		if (ADXL362_STATUS_CHECK_INACT(status_buf) ||
 		    ADXL362_STATUS_CHECK_ACTIVITY(status_buf)) {
 			drv_data->th_handler(dev, &drv_data->th_trigger);
 		}
 	}
 
-	if (drv_data->drdy_handler != NULL) {
+	if (drv_data->drdy_handler != NULL &&
+	    ADXL362_STATUS_CHECK_DATA_READY(status_buf)) {
 		drv_data->drdy_handler(dev, &drv_data->drdy_trigger);
 	}
 	k_mutex_unlock(&drv_data->trigger_mutex);
