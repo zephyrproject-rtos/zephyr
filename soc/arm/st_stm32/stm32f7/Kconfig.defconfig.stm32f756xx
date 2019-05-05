@@ -13,12 +13,6 @@ config SOC
 
 if GPIO_STM32
 
-config GPIO_STM32_PORTF
-	default y
-
-config GPIO_STM32_PORTG
-	default y
-
 config GPIO_STM32_PORTJ
 	default y
 
