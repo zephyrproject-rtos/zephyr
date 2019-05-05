@@ -127,7 +127,7 @@ int adxl362_trigger_set(struct device *dev,
 				     int_mask, int_en);
 
 	if (ret) {
-		return -EFAULT;
+		goto out;
 	}
 
 	ret = adxl362_get_status(dev, &status_buf);
