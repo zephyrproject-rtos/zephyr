@@ -121,6 +121,13 @@ config SRAM_BASE_ADDRESS
 
 endif # DATA_SEMC
 
+if USB
+
+config USB_DC_NXP_EHCI
+	default y
+
+endif # USB
+
 source "soc/arm/nxp_imx/rt/Kconfig.defconfig.mimxrt*"
 
 endif # SOC_SERIES_IMX_RT
