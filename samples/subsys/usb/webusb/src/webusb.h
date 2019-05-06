@@ -40,6 +40,4 @@ struct webusb_req_handlers {
  */
 void webusb_register_request_handlers(struct webusb_req_handlers *handlers);
 
-int webusb_init(void);
-
 #endif /* __WEBUSB_SERIAL_H__ */

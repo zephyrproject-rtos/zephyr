@@ -23,7 +23,7 @@ LOG_MODULE_REGISTER(webusb);
 #include "webusb.h"
 
 /* Max packet size for Bulk endpoints */
-#define CDC_BULK_EP_MPS			64
+#define WEBUSB_BULK_EP_MPS		64
 /* Number of interfaces */
 #define WEBUSB_NUM_ITF			0x01
 /* Number of Endpoints in the custom interface */
@@ -35,133 +35,39 @@ static struct webusb_req_handlers *req_handlers;
 
 u8_t rx_buf[64];
 
-/* Structure representing the global USB description */
-struct dev_common_descriptor {
-	struct usb_device_descriptor device_descriptor;
-	struct usb_cfg_descriptor cfg_descr;
-	struct usb_cdc_acm_config {
-		struct usb_if_descriptor if0;
-		struct usb_ep_descriptor if0_in_ep;
-		struct usb_ep_descriptor if0_out_ep;
-	} __packed cdc_acm_cfg;
-	struct usb_string_desription {
-		struct usb_string_descriptor lang_descr;
-		struct usb_mfr_descriptor {
-			u8_t bLength;
-			u8_t bDescriptorType;
-			u8_t bString[0x0C - 2];
-		} __packed utf16le_mfr;
+#define INITIALIZER_IF(num_ep, iface_class)				\
+	{								\
+		.bLength = sizeof(struct usb_if_descriptor),		\
+		.bDescriptorType = USB_INTERFACE_DESC,			\
+		.bInterfaceNumber = 0,					\
+		.bAlternateSetting = 0,					\
+		.bNumEndpoints = num_ep,				\
+		.bInterfaceClass = iface_class,				\
+		.bInterfaceSubClass = 0,				\
+		.bInterfaceProtocol = 0,				\
+		.iInterface = 0,					\
+	}
 
-		struct usb_product_descriptor {
-			u8_t bLength;
-			u8_t bDescriptorType;
-			u8_t bString[0x0E - 2];
-		} __packed utf16le_product;
+#define INITIALIZER_IF_EP(addr, attr, mps, interval)			\
+	{								\
+		.bLength = sizeof(struct usb_ep_descriptor),		\
+		.bDescriptorType = USB_ENDPOINT_DESC,			\
+		.bEndpointAddress = addr,				\
+		.bmAttributes = attr,					\
+		.wMaxPacketSize = sys_cpu_to_le16(mps),			\
+		.bInterval = interval,					\
+	}
 
-		struct usb_sn_descriptor {
-			u8_t bLength;
-			u8_t bDescriptorType;
-			u8_t bString[0x0C - 2];
-		} __packed utf16le_sn;
-	} __packed string_descr;
-	struct usb_desc_header term_descr;
-} __packed;
-
-static struct dev_common_descriptor webusb_usb_description = {
-	/* Device descriptor */
-	.device_descriptor = {
-		.bLength = sizeof(struct usb_device_descriptor),
-		.bDescriptorType = USB_DEVICE_DESC,
-		.bcdUSB = sys_cpu_to_le16(USB_2_1),
-		.bDeviceClass = 0,
-		.bDeviceSubClass = 0,
-		.bDeviceProtocol = 0,
-		.bMaxPacketSize0 = USB_MAX_CTRL_MPS,
-		.idVendor = sys_cpu_to_le16((u16_t)CONFIG_USB_DEVICE_VID),
-		.idProduct = sys_cpu_to_le16((u16_t)CONFIG_USB_DEVICE_PID),
-		.bcdDevice = sys_cpu_to_le16(BCDDEVICE_RELNUM),
-		.iManufacturer = 1,
-		.iProduct = 2,
-		.iSerialNumber = 3,
-		.bNumConfigurations = 1,
-	},
-	/* Configuration descriptor */
-	.cfg_descr = {
-		.bLength = sizeof(struct usb_cfg_descriptor),
-		.bDescriptorType = USB_CONFIGURATION_DESC,
-		.wTotalLength = sizeof(struct dev_common_descriptor)
-			      - sizeof(struct usb_device_descriptor)
-			      - sizeof(struct usb_string_desription)
-			      - sizeof(struct usb_desc_header),
-		.bNumInterfaces = WEBUSB_NUM_ITF,
-		.bConfigurationValue = 1,
-		.iConfiguration = 0,
-		.bmAttributes = USB_CONFIGURATION_ATTRIBUTES,
-		.bMaxPower = MAX_LOW_POWER,
-	},
-	.cdc_acm_cfg = {
-		/* Interface descriptor */
-		.if0 = {
-			.bLength = sizeof(struct usb_if_descriptor),
-			.bDescriptorType = USB_INTERFACE_DESC,
-			.bInterfaceNumber = 0,
-			.bAlternateSetting = 0,
-			.bNumEndpoints = WEBUSB_NUM_EP,
-			.bInterfaceClass = CUSTOM_CLASS,
-			.bInterfaceSubClass = 0,
-			.bInterfaceProtocol = 0,
-			.iInterface = 0,
-		},
-		/* First Endpoint IN */
-		.if0_in_ep = {
-			.bLength = sizeof(struct usb_ep_descriptor),
-			.bDescriptorType = USB_ENDPOINT_DESC,
-			.bEndpointAddress = WEBUSB_ENDP_IN,
-			.bmAttributes = USB_DC_EP_BULK,
-			.wMaxPacketSize = sys_cpu_to_le16(CDC_BULK_EP_MPS),
-			.bInterval = 0x00,
-		},
-		/* Second Endpoint OUT */
-		.if0_out_ep = {
-			.bLength = sizeof(struct usb_ep_descriptor),
-			.bDescriptorType = USB_ENDPOINT_DESC,
-			.bEndpointAddress = WEBUSB_ENDP_OUT,
-			.bmAttributes = USB_DC_EP_BULK,
-			.wMaxPacketSize = sys_cpu_to_le16(CDC_BULK_EP_MPS),
-			.bInterval = 0x00,
-		},
-	},
-	.string_descr = {
-		.lang_descr = {
-			.bLength = sizeof(struct usb_string_descriptor),
-			.bDescriptorType = USB_STRING_DESC,
-			.bString = sys_cpu_to_le16(0x0409),
-		},
-		/* Manufacturer String Descriptor */
-		.utf16le_mfr = {
-			.bLength = 0x0C,
-			.bDescriptorType = USB_STRING_DESC,
-			.bString = {'I', 0, 'n', 0, 't', 0, 'e', 0, 'l', 0,},
-		},
-		/* Product String Descriptor */
-		.utf16le_product = {
-			.bLength = 0x0E,
-			.bDescriptorType = USB_STRING_DESC,
-			.bString = {'W', 0, 'e', 0, 'b', 0, 'U', 0, 'S', 0,
-				    'B', 0,},
-		},
-		/* Serial Number String Descriptor */
-		.utf16le_sn = {
-			.bLength = 0x0C,
-			.bDescriptorType = USB_STRING_DESC,
-			.bString = {'0', 0, '0', 0, '.', 0, '0', 0, '1', 0,},
-		},
-	},
-
-	.term_descr = {
-		.bLength = 0,
-		.bDescriptorType = 0,
-	},
+USBD_CLASS_DESCR_DEFINE(primary, 0) struct {
+	struct usb_if_descriptor if0;
+	struct usb_ep_descriptor if0_in_ep;
+	struct usb_ep_descriptor if0_out_ep;
+} __packed webusb_desc = {
+	.if0 = INITIALIZER_IF(WEBUSB_NUM_EP, CUSTOM_CLASS),
+	.if0_in_ep = INITIALIZER_IF_EP(WEBUSB_ENDP_IN, USB_DC_EP_BULK,
+				       WEBUSB_BULK_EP_MPS, 0),
+	.if0_out_ep = INITIALIZER_IF_EP(WEBUSB_ENDP_OUT, USB_DC_EP_BULK,
+					WEBUSB_BULK_EP_MPS, 0),
 };
 
 /**
@@ -300,9 +206,9 @@ static struct usb_ep_cfg_data webusb_ep_data[] = {
 	}
 };
 
-/* Configuration of the CDC-ACM Device send to the USB Driver */
 USBD_CFG_DATA_DEFINE(webusb) struct usb_cfg_data webusb_config = {
-	.usb_device_description = (u8_t *)&webusb_usb_description,
+	.usb_device_description = NULL,
+	.interface_descriptor = &webusb_desc.if0,
 	.cb_usb_status = webusb_dev_status_cb,
 	.interface = {
 		.class_handler = NULL,
@@ -312,26 +218,3 @@ USBD_CFG_DATA_DEFINE(webusb) struct usb_cfg_data webusb_config = {
 	.num_endpoints = ARRAY_SIZE(webusb_ep_data),
 	.endpoint = webusb_ep_data
 };
-
-int webusb_init(void)
-{
-	int ret;
-
-	LOG_DBG("");
-
-	/* Initialize the WebUSB driver with the right configuration */
-	ret = usb_set_config(&webusb_config);
-	if (ret < 0) {
-		LOG_ERR("Failed to config USB");
-		return ret;
-	}
-
-	/* Enable WebUSB driver */
-	ret = usb_enable(&webusb_config);
-	if (ret < 0) {
-		LOG_ERR("Failed to enable USB");
-		return ret;
-	}
-
-	return 0;
-}
