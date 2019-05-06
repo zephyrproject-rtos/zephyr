@@ -16,6 +16,29 @@
 	};
 };
 
+&m4_flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* This configuration assumes the Arm cores are disabled, as
+		 * these base addresses contain the Arm core vector tables if
+		 * they are used.
+		 */
+
+		ri5cy_code_partition: partition@0 {
+			label = "ri5cy-code";
+			reg = <0x00000000 0x000fff00>;
+		};
+
+		ri5cy_vector_partition: partition@fff00 {
+			label = "ri5cy-vector";
+			reg = <0x000fff00 0x100>;
+		};
+	};
+};
+
 /*
  * INTMUX channels below are somewhat arbitrary.
  *

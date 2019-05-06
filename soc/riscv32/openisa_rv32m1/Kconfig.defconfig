@@ -49,19 +49,6 @@ config RISCV_SOC_INTERRUPT_INIT
 config WDOG_INIT
 	def_bool y
 
-# Built-in flash allocated to each chip. This configuration
-# assumes the Arm cores are disabled, as these base addresses
-# contain the Arm core vector tables if they are used.
-config RISCV32_RV32M1_ROM_BASE_ADDR
-	hex
-	default 0x00000000 if SOC_OPENISA_RV32M1_RI5CY
-	default 0x01000000 if SOC_OPENISA_RV32M1_ZERO_RISCY
-
-config RISCV32_RV32M1_ROM_SIZE
-	hex
-	default 0x000FFF00 if SOC_OPENISA_RV32M1_RI5CY
-	default 0x0003FF00 if SOC_OPENISA_RV32M1_ZERO_RISCY
-
 # The event unit looks for vector tables at the end of each core's
 # flash space. These vector tables are not relocatable.
 config RISCV32_RV32M1_VECTOR_BASE_ADDR
