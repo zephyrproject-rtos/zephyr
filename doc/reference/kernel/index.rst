@@ -17,7 +17,7 @@ Examples of such systems include: embedded sensor hubs, environmental sensors,
 simple LED wearable, and store inventory tags.
 
 Applications requiring more memory (50 to 900 KB), multiple communication
-devices (like WiFi and Bluetooth Low Energy), and complex multi-threading,
+devices (like Wi-Fi and Bluetooth Low Energy), and complex multi-threading,
 can also be developed using the Zephyr kernel. Examples of such systems
 include: fitness wearables, smart watches, and IoT wireless gateways.
 

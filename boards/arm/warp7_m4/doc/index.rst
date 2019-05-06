@@ -58,7 +58,7 @@ WaRP7 CPU Board
 
   - Board to board connector (34 configurable pins)
   - Micro USB 2.0 OTG connector (USB_OTG1 interface)
-  - Murata Type 1DX Wifi IEEE 802.11b/g/n and Bluetooth 4.1 plus EDR
+  - Murata Type 1DX Wi-Fi IEEE 802.11b/g/n and Bluetooth 4.1 plus EDR
     (SD1, UART3 SAI2 interfaces)
 - Li-ion/Li-polymer Battery Charger: NXP BC3770 (I2C1 interface)
 - Power management integrated circuit (PMIC): NXP PF3000 (I2C1 interface)

@@ -139,7 +139,7 @@ guidelines should be followed when porting a board:
 
 - Provide pin and driver configuration that matches the board's valuable
   components such as sensors, buttons or LEDs, and communication interfaces
-  such as USB, Ethernet connector, or Bluetooth/WiFi chip.
+  such as USB, Ethernet connector, or Bluetooth/Wi-Fi chip.
 
 - When a well-known connector is present (such as used on an Arduino or
   96board), configure pins to fit this connector.
