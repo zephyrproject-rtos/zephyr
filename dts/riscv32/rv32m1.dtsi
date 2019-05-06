@@ -280,5 +280,30 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+
+		flash-controller@40023000 {
+			compatible = "nxp,kinetis-ftfe";
+			label = "FLASH_CTRL";
+			reg = <0x40023000 0x18>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			m4_flash: flash@0 {
+				compatible = "soc-nv-flash";
+				label = "M4_FLASH";
+				reg = <0 0x100000>;
+				erase-block-size = <4096>;
+				write-block-size = <8>;
+			};
+
+			m0_flash: flash@1000000 {
+				compatible = "soc-nv-flash";
+				label = "M0_FLASH";
+				reg = <0x01000000 0x40000>;
+				erase-block-size = <4096>;
+				write-block-size = <8>;
+			};
+		};
 	};
 };
