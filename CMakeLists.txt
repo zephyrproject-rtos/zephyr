@@ -240,52 +240,17 @@ endif()
 # W=2 - warnings that occur quite often but may still be relevant
 # W=3 - the more obscure warnings, can most likely be ignored
 # ==========================================================================
+# @Intent Add cmake -DW toolchain supported warnings, if any
 if(W MATCHES "1")
-  zephyr_compile_options(
-    -Wextra
-    -Wunused
-    -Wno-unused-parameter
-    -Wmissing-declarations
-    -Wmissing-format-attribute
-    -Wold-style-definition
-    )
-  zephyr_cc_option(
-    -Wmissing-prototypes
-    -Wmissing-include-dirs
-    -Wunused-but-set-variable
-    -Wno-missing-field-initializers
-    )
+  toolchain_cc_warning_dw_1()
 endif()
 
 if(W MATCHES "2")
-  zephyr_compile_options(
-    -Waggregate-return
-    -Wcast-align
-    -Wdisabled-optimization
-    -Wnested-externs
-    -Wshadow
-    )
-  zephyr_cc_option(
-    -Wlogical-op
-    -Wmissing-field-initializers
-    )
+  toolchain_cc_warning_dw_2()
 endif()
 
 if(W MATCHES "3")
-  zephyr_compile_options(
-    -Wbad-function-cast
-    -Wcast-qual
-    -Wconversion
-    -Wpacked
-    -Wpadded
-    -Wpointer-arith
-    -Wredundant-decls
-    -Wswitch-default
-    )
-  zephyr_cc_option(
-    -Wpacked-bitfield-compat
-    -Wvla
-    )
+  toolchain_cc_warning_dw_3()
 endif()
 
 
