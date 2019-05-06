@@ -53,14 +53,14 @@ static u16_t actual_to_linear(u16_t val)
 {
 	float tmp;
 
-	tmp = ((float) val / 65535);
+	tmp = ((float) val / LEVEL_U100);
 
-	return (u16_t) ceiling(65535 * tmp * tmp);
+	return (u16_t) ceiling(LEVEL_U100 * tmp * tmp);
 }
 
 static u16_t linear_to_actual(u16_t val)
 {
-	return (u16_t) (65535 * sqrt(((float) val / 65535)));
+	return (u16_t) (LEVEL_U100 * sqrt(((float) val / LEVEL_U100)));
 }
 
 static void constrain_lightness(u16_t var)
@@ -108,12 +108,12 @@ static s16_t light_ctl_temp_to_level(u16_t temp)
 
 	/* Mesh Model Specification 6.1.3.1.1 2nd formula start */
 
-	tmp = (temp - light_ctl_srv_user_data.temp_range_min) * 65535U;
+	tmp = (temp - light_ctl_srv_user_data.temp_range_min) * LEVEL_U100;
 
 	tmp = tmp / (light_ctl_srv_user_data.temp_range_max -
 		     light_ctl_srv_user_data.temp_range_min);
 
-	return (s16_t) (tmp - 32768);
+	return (s16_t) (tmp - LEVEL_U50);
 
 	/* 6.1.3.1.1 2nd formula end */
 }
@@ -125,10 +125,10 @@ static u16_t level_to_light_ctl_temp(s16_t level)
 
 	/* Mesh Model Specification 6.1.3.1.1 1st formula start */
 	diff = (float) (light_ctl_srv_user_data.temp_range_max -
-			light_ctl_srv_user_data.temp_range_min) / 65535;
+			light_ctl_srv_user_data.temp_range_min) / LEVEL_U100;
 
 
-	tmp = (u16_t) ((level + 32768) * diff);
+	tmp = (u16_t) ((level + LEVEL_U50) * diff);
 
 	return (light_ctl_srv_user_data.temp_range_min + tmp);
 
@@ -147,7 +147,7 @@ void readjust_lightness(void)
 		gen_onoff_srv_root_user_data.onoff = STATE_OFF;
 	}
 
-	gen_level_srv_root_user_data.level = lightness - 32768;
+	gen_level_srv_root_user_data.level = lightness - LEVEL_U50;
 	light_lightness_srv_user_data.actual = lightness;
 	light_lightness_srv_user_data.linear = actual_to_linear(lightness);
 	light_ctl_srv_user_data.lightness = lightness;
@@ -198,10 +198,10 @@ void state_binding(u8_t light, u8_t temp)
 		}
 		break;
 	case LEVEL:
-		lightness = gen_level_srv_root_user_data.level + 32768;
+		lightness = gen_level_srv_root_user_data.level + LEVEL_U50;
 		break;
 	case DELTA_LEVEL:
-		lightness = gen_level_srv_root_user_data.level + 32768;
+		lightness = gen_level_srv_root_user_data.level + LEVEL_U50;
 		constrain_lightness2(lightness);
 		goto jump;
 	case ACTUAL:
@@ -241,7 +241,7 @@ void calculate_lightness_target_values(u8_t type)
 		}
 		break;
 	case LEVEL:
-		tmp = gen_level_srv_root_user_data.target_level + 32768;
+		tmp = gen_level_srv_root_user_data.target_level + LEVEL_U50;
 		break;
 	case ACTUAL:
 		tmp = light_lightness_srv_user_data.target_actual;
@@ -267,7 +267,7 @@ void calculate_lightness_target_values(u8_t type)
 		gen_onoff_srv_root_user_data.target_onoff = STATE_OFF;
 	}
 
-	gen_level_srv_root_user_data.target_level = target_lightness - 32768;
+	gen_level_srv_root_user_data.target_level = target_lightness - LEVEL_U50;
 
 	light_lightness_srv_user_data.target_actual = target_lightness;
 
