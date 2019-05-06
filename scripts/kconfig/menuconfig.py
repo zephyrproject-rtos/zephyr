@@ -20,13 +20,13 @@ inspired by Vi:
   G/End   : Jump to end of list
   g/Home  : Jump to beginning of list
 
+[Space] toggles values if possible, and enters menus otherwise. [Enter] works
+the other way around.
+
 The mconf feature where pressing a key jumps to a menu entry with that
 character in it in the current menu isn't supported. A jump-to feature for
 jumping directly to any symbol (including invisible symbols), choice, menu or
 comment (as in a Kconfig 'comment "Foo"') is available instead.
-
-Space and Enter are "smart" and try to do what you'd expect for the given menu
-entry.
 
 A few different modes are available:
 
@@ -54,6 +54,9 @@ as a command-line argument. With no argument, it defaults to "Kconfig".
 
 The KCONFIG_CONFIG environment variable specifies the .config file to load (if
 it exists) and save. If KCONFIG_CONFIG is unset, ".config" is used.
+
+When overwriting a configuration file, the old version is saved to
+<filename>.old (e.g. .config.old).
 
 $srctree is supported through Kconfiglib.
 
@@ -96,7 +99,7 @@ The color definition is a comma separated list of attributes:
 
     - fg:COLOR      Set the foreground/background colors. COLOR can be one of
       * or *        the basic 16 colors (black, red, green, yellow, blue,
-    - bg:COLOR      magenta,cyan, white and brighter versions, for example,
+    - bg:COLOR      magenta, cyan, white and brighter versions, for example,
                     brightred). On terminals that support more than 8 colors,
                     you can also directly put in a color number, e.g. fg:123
                     (hexadecimal and octal constants are accepted as well).
@@ -193,7 +196,7 @@ import sys
 import textwrap
 
 from kconfiglib import Symbol, Choice, MENU, COMMENT, MenuNode, \
-                       BOOL, TRISTATE, STRING, INT, HEX, UNKNOWN, \
+                       BOOL, TRISTATE, STRING, INT, HEX, \
                        AND, OR, \
                        expr_str, expr_value, split_expr, \
                        standard_sc_expr_str, \
@@ -244,7 +247,7 @@ _MAIN_HELP_LINES = """
 
 # Lines of help text shown at the bottom of the information dialog
 _INFO_HELP_LINES = """
-[ESC/q] Return to menu       [/] Jump to symbol
+[ESC/q] Return to menu      [/] Jump to symbol
 """[1:-1].split("\n")
 
 # Lines of help text shown at the bottom of the search dialog
@@ -628,7 +631,6 @@ def _style_attr(fg_color, bg_color, attribs, color_attribs={}):
 #
 
 
-# Used as the entry point in setup.py
 def _main():
     menuconfig(standard_kconfig())
 
@@ -728,7 +730,7 @@ def _needs_save():
             if sym.config_string:
                 # Unwritten symbol
                 return True
-        elif sym.type in (BOOL, TRISTATE):
+        elif sym.orig_type in (BOOL, TRISTATE):
             if sym.tri_value != sym.user_value:
                 # Written bool/tristate symbol, new value
                 return True
@@ -769,7 +771,7 @@ def _needs_save():
 #     If True, the corresponding mode is on. See the module docstring.
 #
 #   _conf_filename:
-#     .config file to save the configuration to
+#     File to save the configuration to
 #
 #   _minconf_filename:
 #     File to save minimal configurations to
@@ -828,26 +830,17 @@ def _menuconfig(stdscr):
         elif c in (curses.KEY_HOME, "g"):
             _select_first_menu_entry()
 
-        elif c in (curses.KEY_RIGHT, " ", "\n", "l", "L"):
-            # Do appropriate node action. Only Space is treated specially,
-            # preferring to toggle nodes rather than enter menus.
-
+        elif c == " ":
+            # Toggle the node if possible
             sel_node = _shown[_sel_node_i]
-
-            if sel_node.is_menuconfig and not \
-               (c == " " and _prefer_toggle(sel_node.item)):
-
+            if not _change_node(sel_node):
                 _enter_menu(sel_node)
 
-            else:
+        elif c in (curses.KEY_RIGHT, "\n", "l", "L"):
+            # Enter the node if possible
+            sel_node = _shown[_sel_node_i]
+            if not _enter_menu(sel_node):
                 _change_node(sel_node)
-                if _is_y_mode_choice_sym(sel_node.item) and not sel_node.list:
-                    # Immediately jump to the parent menu after making a choice
-                    # selection, like 'make menuconfig' does, except if the
-                    # menu node has children (which can happen if a symbol
-                    # 'depends on' a choice symbol that immediately precedes
-                    # it).
-                    _leave_menu()
 
         elif c in ("n", "N"):
             _set_sel_node_tri_val(0)
@@ -1059,39 +1052,40 @@ def _width(win):
     return win.getmaxyx()[1]
 
 
-def _prefer_toggle(item):
-    # For nodes with menus, determines whether Space should change the value of
-    # the node's item or enter its menu. We toggle symbols (which have menus
-    # when they're defined with 'menuconfig') and choices that can be in more
-    # than one mode (e.g. optional choices). In other cases, we enter the menu.
-
-    return isinstance(item, Symbol) or \
-           (isinstance(item, Choice) and len(item.assignable) > 1)
-
-
 def _enter_menu(menu):
-    # Makes 'menu' the currently displayed menu. "Menu" here includes choices
-    # and symbols defined with the 'menuconfig' keyword.
+    # Makes 'menu' the currently displayed menu. In addition to actual 'menu's,
+    # "menu" here includes choices and symbols defined with the 'menuconfig'
+    # keyword.
+    #
+    # Returns False if 'menu' can't be entered.
 
     global _cur_menu
     global _shown
     global _sel_node_i
     global _menu_scroll
 
+    if not menu.is_menuconfig:
+        # Not a menu
+        return False
+
     shown_sub = _shown_nodes(menu)
     # Never enter empty menus. We depend on having a current node.
-    if shown_sub:
-        # Remember where the current node appears on the screen, so we can try
-        # to get it to appear in the same place when we leave the menu
-        _parent_screen_rows.append(_sel_node_i - _menu_scroll)
+    if not shown_sub:
+        return False
 
-        # Jump into menu
-        _cur_menu = menu
-        _shown = shown_sub
-        _sel_node_i = _menu_scroll = 0
+    # Remember where the current node appears on the screen, so we can try
+    # to get it to appear in the same place when we leave the menu
+    _parent_screen_rows.append(_sel_node_i - _menu_scroll)
 
-        if isinstance(menu.item, Choice):
-            _select_selected_choice_sym()
+    # Jump into menu
+    _cur_menu = menu
+    _shown = shown_sub
+    _sel_node_i = _menu_scroll = 0
+
+    if isinstance(menu.item, Choice):
+        _select_selected_choice_sym()
+
+    return True
 
 
 def _select_selected_choice_sym():
@@ -1225,7 +1219,7 @@ def _select_prev_menu_entry():
         _sel_node_i -= 1
 
         # See _select_next_menu_entry()
-        if _sel_node_i <= _menu_scroll + _SCROLL_OFFSET:
+        if _sel_node_i < _menu_scroll + _SCROLL_OFFSET:
             _menu_scroll = max(_menu_scroll - 1, 0)
 
 
@@ -1418,7 +1412,7 @@ def _draw_main():
 
     _path_win.erase()
 
-    # Draw the menu path ("(top menu) -> menu -> submenu -> ...")
+    # Draw the menu path ("(Top) -> Menu -> Submenu -> ...")
 
     menu_prompts = []
 
@@ -1430,7 +1424,7 @@ def _draw_main():
         menu_prompts.append(menu.prompt[0] if menu.prompt else
                             standard_sc_expr_str(menu.item))
         menu = menu.parent
-    menu_prompts.append("(top menu)")
+    menu_prompts.append("(Top)")
     menu_prompts.reverse()
 
     # Hack: We can't put ACS_RARROW directly in the string. Temporarily
@@ -1471,10 +1465,6 @@ def _shown_nodes(menu):
         res = []
 
         while node:
-            # This code is minorly performance-sensitive. Make it too slow
-            # (e.g., by always recursing the entire tree), and going in and out
-            # of menus no longer feels instant.
-
             if _visible(node) or _show_all:
                 res.append(node)
                 if node.list and not node.is_menuconfig:
@@ -1483,14 +1473,11 @@ def _shown_nodes(menu):
                     # menus and choices as well as 'menuconfig' symbols.
                     res += rec(node.list)
 
-            elif node.list and isinstance(node.item, Symbol) and \
-                 expr_value(node.dep):
+            elif node.list and isinstance(node.item, Symbol):
                 # Show invisible symbols if they have visible children. This
                 # can happen for an m/y-valued symbol with an optional prompt
-                # ('prompt "foo" is COND') that is currently disabled. The
-                # expr_value(node.dep) check safely prunes the search: A node
-                # with unsatisfied direct dependencies can never have visible
-                # children.
+                # ('prompt "foo" is COND') that is currently disabled. Note
+                # that it applies to both 'config' and 'menuconfig' symbols.
                 shown_children = rec(node.list)
                 if shown_children:
                     res.append(node)
@@ -1553,36 +1540,32 @@ def _change_node(node):
     # Changes the value of the menu node 'node' if it is a symbol. Bools and
     # tristates are toggled, while other symbol types pop up a text entry
     # dialog.
+    #
+    # Returns False if the value of 'node' can't be changed.
 
-    if not isinstance(node.item, (Symbol, Choice)):
-        return
-
-    # This will hit for invisible symbols, which appear in show-all mode and
-    # when an invisible symbol has visible children (which can happen e.g. for
-    # symbols with optional prompts)
-    if not (node.prompt and expr_value(node.prompt[1])):
-        return
+    if not _changeable(node):
+        return False
 
     # sc = symbol/choice
     sc = node.item
 
-    if sc.type in (INT, HEX, STRING):
+    if sc.orig_type in (INT, HEX, STRING):
         s = sc.str_value
 
         while True:
             s = _input_dialog(
-                "{} ({})".format(node.prompt[0], TYPE_TO_STR[sc.type]),
+                "{} ({})".format(node.prompt[0], TYPE_TO_STR[sc.orig_type]),
                 s, _range_info(sc))
 
             if s is None:
                 break
 
-            if sc.type in (INT, HEX):
+            if sc.orig_type in (INT, HEX):
                 s = s.strip()
 
                 # 'make menuconfig' does this too. Hex values not starting with
                 # '0x' are accepted when loading .config files though.
-                if sc.type == HEX and not s.startswith(("0x", "0X")):
+                if sc.orig_type == HEX and not s.startswith(("0x", "0X")):
                     s = "0x" + s
 
             if _check_valid(sc, s):
@@ -1594,11 +1577,40 @@ def _change_node(node):
         # case: .assignable can be (2,) while .tri_value is 0.
         _set_val(sc, sc.assignable[0])
 
-    elif sc.assignable:
+    else:
         # Set the symbol to the value after the current value in
         # sc.assignable, with wrapping
         val_index = sc.assignable.index(sc.tri_value)
         _set_val(sc, sc.assignable[(val_index + 1) % len(sc.assignable)])
+
+
+    if _is_y_mode_choice_sym(sc) and not node.list:
+        # Immediately jump to the parent menu after making a choice selection,
+        # like 'make menuconfig' does, except if the menu node has children
+        # (which can happen if a symbol 'depends on' a choice symbol that
+        # immediately precedes it).
+        _leave_menu()
+
+
+    return True
+
+
+def _changeable(node):
+    # Returns True if the value if 'node' can be changed
+
+    sc = node.item
+
+    if not isinstance(sc, (Symbol, Choice)):
+        return False
+
+    # This will hit for invisible symbols, which appear in show-all mode and
+    # when an invisible symbol has visible children (which can happen e.g. for
+    # symbols with optional prompts)
+    if not (node.prompt and expr_value(node.prompt[1])):
+        return False
+
+    return sc.orig_type in (STRING, INT, HEX) or len(sc.assignable) > 1 \
+        or _is_y_mode_choice_sym(sc)
 
 
 def _set_sel_node_tri_val(tri_val):
@@ -2022,7 +2034,7 @@ def _jump_to_dialog():
         if sel_node_i > 0:
             sel_node_i -= 1
 
-            if sel_node_i <= scroll + _SCROLL_OFFSET:
+            if sel_node_i < scroll + _SCROLL_OFFSET:
                 scroll = max(scroll - 1, 0)
 
     while True:
@@ -2670,7 +2682,7 @@ def _split_expr_info(expr, indent):
 
     s = ""
     for i, term in enumerate(split_expr(expr, split_op)):
-        s += "{}{} {}".format(" "*indent,
+        s += "{}{} {}".format(indent*" ",
                               "  " if i == 0 else op_str,
                               _expr_str(term))
 
@@ -2769,7 +2781,7 @@ def _menu_path_info(node):
         path = " -> " + (node.prompt[0] if node.prompt else
                          standard_sc_expr_str(node.item)) + path
 
-    return "(top menu)" + path
+    return "(Top)" + path
 
 
 def _name_and_val_str(sc):
@@ -2952,8 +2964,7 @@ def _node_str(node):
             # Print "(NEW)" next to symbols without a user value (from e.g. a
             # .config), but skip it for choice symbols in choices in y mode,
             # and for symbols of UNKNOWN type (which generate a warning though)
-            if sym.user_value is None and \
-               sym.type != UNKNOWN and \
+            if sym.user_value is None and sym.orig_type and \
                not (sym.choice and sym.choice.tri_value == 2):
 
                 s += " (NEW)"
@@ -3005,10 +3016,10 @@ def _value_str(node):
         return ""
 
     # Wouldn't normally happen, and generates a warning
-    if item.type == UNKNOWN:
+    if not item.orig_type:
         return ""
 
-    if item.type in (STRING, INT, HEX):
+    if item.orig_type in (STRING, INT, HEX):
         return "({})".format(item.str_value)
 
     # BOOL or TRISTATE
@@ -3042,16 +3053,16 @@ def _check_valid(sym, s):
     # Returns True if the string 's' is a well-formed value for 'sym'.
     # Otherwise, displays an error and returns False.
 
-    if sym.type not in (INT, HEX):
+    if sym.orig_type not in (INT, HEX):
         # Anything goes for non-int/hex symbols
         return True
 
-    base = 10 if sym.type == INT else 16
+    base = 10 if sym.orig_type == INT else 16
     try:
         int(s, base)
     except ValueError:
         _error("'{}' is a malformed {} value"
-               .format(s, TYPE_TO_STR[sym.type]))
+               .format(s, TYPE_TO_STR[sym.orig_type]))
         return False
 
     for low_sym, high_sym, cond in sym.ranges:
@@ -3075,7 +3086,7 @@ def _range_info(sym):
     # Returns a string with information about the valid range for the symbol
     # 'sym', or None if 'sym' doesn't have a range
 
-    if sym.type in (INT, HEX):
+    if sym.orig_type in (INT, HEX):
         for low, high, cond in sym.ranges:
             if expr_value(cond):
                 return "Range: {}-{}".format(low.str_value, high.str_value)
