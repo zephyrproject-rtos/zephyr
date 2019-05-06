@@ -38,13 +38,13 @@ static bool flash_verify(const struct flash_area *fa, off_t offset,
 		size = (len >= sizeof(temp)) ? sizeof(temp) : len;
 		rc = flash_area_read(fa, offset, &temp, size);
 		if (rc) {
-			LOG_ERR("flash_read error %d offset=0x%08"PRIx32,
+			LOG_ERR("flash_read error %d offset=0x%08x",
 				rc, (u32_t)offset);
 			break;
 		}
 
 		if (memcmp(data, &temp, size)) {
-			LOG_ERR("offset=0x%08"PRIx32" VERIFY FAIL. "
+			LOG_ERR("offset=0x%08x VERIFY FAIL. "
 				"expected: 0x%08x, actual: 0x%08x",
 				(u32_t)offset, temp, UNALIGNED_GET(data));
 			break;
@@ -131,7 +131,7 @@ static int flash_sync(struct flash_img_context *ctx)
 	rc = flash_area_write(ctx->flash_area, ctx->bytes_written, ctx->buf,
 			      CONFIG_IMG_BLOCK_BUF_SIZE);
 	if (rc) {
-		LOG_ERR("flash_write error %d offset=0x%08" PRIx32, rc,
+		LOG_ERR("flash_write error %d offset=0x%08x", rc,
 			(u32_t)ctx->bytes_written);
 		return rc;
 	}
