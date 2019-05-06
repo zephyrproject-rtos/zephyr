@@ -901,11 +901,15 @@ static u8_t get_cb(const struct bt_gatt_attr *attr, void *user_data)
 
 static int cmd_get(const struct shell *shell, size_t argc, char *argv[])
 {
-	u16_t handle;
+	u16_t start, end;
 
-	handle = strtoul(argv[1], NULL, 16);
+	start = strtoul(argv[1], NULL, 16);
+	end = start;
 
-	bt_gatt_foreach_attr(handle, handle, get_cb, (void *)shell);
+	if (argc > 2)
+		end = strtoul(argv[2], NULL, 16);
+
+	bt_gatt_foreach_attr(start, end, get_cb, (void *)shell);
 
 	return 0;
 }
@@ -1001,7 +1005,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(gatt_cmds,
 		      cmd_write_without_rsp, 3, 2),
 	SHELL_CMD_ARG(unsubscribe, NULL, HELP_NONE, cmd_unsubscribe, 1, 0),
 #endif /* CONFIG_BT_GATT_CLIENT */
-	SHELL_CMD_ARG(get, NULL, "<handle>", cmd_get, 2, 0),
+	SHELL_CMD_ARG(get, NULL, "<start handle> [end handle]", cmd_get, 2, 1),
 	SHELL_CMD_ARG(set, NULL, "<handle> [data...]", cmd_set, 2, 255),
 	SHELL_CMD_ARG(show-db, NULL, "[uuid]", cmd_show_db, 1, 1),
 #if defined(CONFIG_BT_GATT_DYNAMIC_DB)
