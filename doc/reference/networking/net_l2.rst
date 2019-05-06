@@ -26,7 +26,7 @@ specific for that device, and optimized for working together.
 Currently, there are L2 layers for :ref:`Ethernet <ethernet_interface>`,
 :ref:`IEEE 802.15.4 Soft-MAC <ieee802154_interface>`,
 :ref:`Bluetooth IPSP <bluetooth-ipsp-sample>`, :ref:`CANBUS <can_interface>`,
-:ref:`OpenThread <thread_protocol_interface>`, WiFi, and a dummy layer
+:ref:`OpenThread <thread_protocol_interface>`, Wi-Fi, and a dummy layer
 example that can be used as a template for writing a new one.
 
 L2 layer API

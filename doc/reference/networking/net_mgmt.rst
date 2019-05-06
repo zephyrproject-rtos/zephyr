@@ -14,7 +14,7 @@ The Network Management APIs allow applications, as well as network
 layer code itself, to call defined network routines at any level in
 the IP stack, or receive notifications on relevant network events. For
 example, by using these APIs, code can request a scan be done on a
-WiFi- or Bluetooth-based network interface, or request notification if
+Wi-Fi- or Bluetooth-based network interface, or request notification if
 a network interface IP address changes.
 
 The Network Management API implementation is designed to save memory

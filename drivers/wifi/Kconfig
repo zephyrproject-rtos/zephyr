@@ -7,30 +7,30 @@
 #
 
 menuconfig WIFI
-	bool "add support for WiFi Drivers"
+	bool "add support for Wi-Fi Drivers"
 
 if WIFI
 
 module = WIFI
 module-dep = LOG
-module-str = Log level for WiFi driver
-module-help = Sets log level for WiFi Device Drivers.
+module-str = Log level for Wi-Fi driver
+module-help = Sets log level for Wi-Fi Device Drivers.
 source "subsys/net/Kconfig.template.log_config.net"
 
 config WIFI_INIT_PRIORITY
-	int "WiFi driver init priority"
+	int "Wi-Fi driver init priority"
 	default 80
 	help
-	  WiFi device driver initialization priority.
+	  Wi-Fi device driver initialization priority.
 	  Do not mess with it unless you know what you are doing.
 	  Note that the priority needs to be lower than the net stack
 	  so that it can start before the networking sub-system.
 
 config WIFI_OFFLOAD
-	bool "Support offloaded WiFi device drivers"
+	bool "Support offloaded Wi-Fi device drivers"
 	select NET_OFFLOAD
 	help
-	  Enable support for Full-MAC WiFi devices.
+	  Enable support for Full-MAC Wi-Fi devices.
 
 source "drivers/wifi/winc1500/Kconfig.winc1500"
 source "drivers/wifi/simplelink/Kconfig.simplelink"
