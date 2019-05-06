@@ -12,6 +12,9 @@ config SOC_SERIES
 config X86_IAMCU
 	default y
 
+config X86_MULTIBOOT
+	default n
+
 config X86_NO_MELTDOWN
 	default y
 
