@@ -20,76 +20,39 @@
 #define VALID_EP		ENDP_BULK_IN
 #define INVALID_EP		0x20
 
-static const struct dev_common_descriptor {
-	struct usb_device_descriptor device_descriptor;
-	struct usb_cfg_descriptor configuration_descr;
-	struct usb_device_config {
-		struct usb_if_descriptor if0;
-		struct usb_ep_descriptor if0_in_ep;
-	} __packed device_configuration;
-	/*
-	 * String descriptors not enabled at the moment
-	 */
-} __packed desc = {
-	/* Device descriptor */
-	.device_descriptor = {
-		.bLength = sizeof(struct usb_device_descriptor),
-		.bDescriptorType = USB_DEVICE_DESC,
-		.bcdUSB = sys_cpu_to_le16(USB_1_1),
-		.bDeviceClass = CUSTOM_CLASS,
-		.bDeviceSubClass = 0,
-		.bDeviceProtocol = 0,
-		.bMaxPacketSize0 = USB_MAX_CTRL_MPS,
-		.idVendor = sys_cpu_to_le16((u16_t)CONFIG_USB_DEVICE_VID),
-		.idProduct = sys_cpu_to_le16((u16_t)CONFIG_USB_DEVICE_PID),
-		.bcdDevice = sys_cpu_to_le16(BCDDEVICE_RELNUM),
-		.iManufacturer = 0,
-		.iProduct = 0,
-		.iSerialNumber = 0,
-		.bNumConfigurations = 1,
-	},
+struct usb_device_desc {
+	struct usb_if_descriptor if0;
+	struct usb_ep_descriptor if0_in_ep;
+} __packed;
 
-	/* Configuration descriptor */
-	.configuration_descr = {
-		.bLength = sizeof(struct usb_cfg_descriptor),
-		.bDescriptorType = USB_CONFIGURATION_DESC,
-		.wTotalLength = sizeof(struct dev_common_descriptor)
-			      - sizeof(struct usb_device_descriptor),
-		.bNumInterfaces = 1,
-		.bConfigurationValue = 1,
-		.iConfiguration = 0,
-		.bmAttributes = USB_CONFIGURATION_ATTRIBUTES,
-		.bMaxPower = MAX_LOW_POWER,
-	},
+#define INITIALIZER_IF							\
+	{								\
+		.bLength = sizeof(struct usb_if_descriptor),		\
+		.bDescriptorType = USB_INTERFACE_DESC,			\
+		.bInterfaceNumber = 0,					\
+		.bAlternateSetting = 0,					\
+		.bNumEndpoints = 1,					\
+		.bInterfaceClass = CUSTOM_CLASS,			\
+		.bInterfaceSubClass = 0,				\
+		.bInterfaceProtocol = 0,				\
+		.iInterface = 0,					\
+	}
 
-	/* Device configuration */
-	.device_configuration = {
-		/* Interface descriptor */
-		.if0 = {
-			.bLength = sizeof(struct usb_if_descriptor),
-			.bDescriptorType = USB_INTERFACE_DESC,
-			.bInterfaceNumber = 0,
-			.bAlternateSetting = 0,
-			.bNumEndpoints = 1,
-			.bInterfaceClass = CUSTOM_CLASS,
-			.bInterfaceSubClass = 0,
-			.bInterfaceProtocol = 0,
-			.iInterface = 0,
-		},
+#define INITIALIZER_IF_EP(addr, attr, mps, interval)			\
+	{								\
+		.bLength = sizeof(struct usb_ep_descriptor),		\
+		.bDescriptorType = USB_ENDPOINT_DESC,			\
+		.bEndpointAddress = addr,				\
+		.bmAttributes = attr,					\
+		.wMaxPacketSize = sys_cpu_to_le16(mps),			\
+		.bInterval = interval,					\
+	}
 
-		/* Endpoint IN */
-		.if0_in_ep = {
-			.bLength = sizeof(struct usb_ep_descriptor),
-			.bDescriptorType = USB_ENDPOINT_DESC,
-			.bEndpointAddress = ENDP_BULK_IN,
-			.bmAttributes = USB_DC_EP_BULK,
-			.wMaxPacketSize = sys_cpu_to_le16(BULK_EP_MPS),
-			.bInterval = 0x00,
-		},
-	},
+USBD_CLASS_DESCR_DEFINE(primary, 0) struct usb_device_desc dev_desc = {
+	.if0 = INITIALIZER_IF,
+	.if0_in_ep = INITIALIZER_IF_EP(ENDP_BULK_IN, USB_DC_EP_BULK,
+				       BULK_EP_MPS, 0),
 };
-
-struct usb_desc_header *__usb_descriptor_start = (void *)&desc;
 
 static void status_cb(struct usb_cfg_data *cfg,
 		      enum usb_dc_status_code status,
@@ -113,8 +76,9 @@ static struct usb_ep_cfg_data device_ep[] = {
 	},
 };
 
-static struct usb_cfg_data device_config = {
-	.usb_device_description = (u8_t *)&desc,
+USBD_CFG_DATA_DEFINE(device) struct usb_cfg_data device_config = {
+	.usb_device_description = NULL,
+	.interface_descriptor = &dev_desc.if0,
 	.cb_usb_status = status_cb,
 	.interface = {
 		.vendor_handler = NULL,
@@ -124,26 +88,6 @@ static struct usb_cfg_data device_config = {
 	.num_endpoints = ARRAY_SIZE(device_ep),
 	.endpoint = device_ep,
 };
-
-static int device_init(void)
-{
-	int ret;
-
-	/* Initialize the USB driver with the right configuration */
-	ret = usb_set_config(device_config.usb_device_description);
-	zassert_equal(ret, TC_PASS, "usb_set_config() failed");
-
-	/* Enable USB driver */
-	ret = usb_enable();
-	zassert_equal(ret, TC_PASS, "usb_enable() failed");
-
-	return ret;
-}
-
-static void test_usb_setup(void)
-{
-	zassert_equal(device_init(), TC_PASS, "init failed");
-}
 
 static void test_usb_disable(void)
 {
@@ -252,8 +196,6 @@ void test_main(void)
 	ztest_test_suite(test_device,
 			 /* Test API for not USB attached state */
 			 ztest_unit_test(test_usb_dc_api_invalid),
-			 ztest_unit_test(test_usb_disable),
-			 ztest_unit_test(test_usb_setup),
 			 ztest_unit_test(test_usb_dc_api),
 			 ztest_unit_test(test_usb_dc_api_read_write),
 			 ztest_unit_test(test_usb_dc_api_invalid),
