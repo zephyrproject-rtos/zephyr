@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-add_library(PTHREAD INTERFACE)
+zephyr_interface_library_named(PTHREAD)
 
 target_include_directories(PTHREAD INTERFACE ${ZEPHYR_BASE}/include/posix)
 
