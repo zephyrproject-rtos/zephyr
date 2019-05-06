@@ -53,8 +53,13 @@ set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_menuconfig
   ${ZEPHYR_BASE}/scripts/kconfig/menuconfig.py
   )
 
+set(EXTRA_KCONFIG_TARGET_COMMAND_FOR_guiconfig
+  ${ZEPHYR_BASE}/scripts/kconfig/guiconfig.py
+  )
+
 foreach(kconfig_target
     menuconfig
+    guiconfig
     ${EXTRA_KCONFIG_TARGETS}
     )
   add_custom_target(
