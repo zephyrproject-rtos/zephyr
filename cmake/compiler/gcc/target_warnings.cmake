@@ -2,6 +2,23 @@
 
 # See root CMakeLists.txt for description and expectations of these macros
 
+macro(toolchain_cc_warning_base)
+
+  zephyr_compile_options(
+    -Wall
+    -Wformat
+    -Wformat-security
+    -Wno-format-zero-length
+    -Wno-main
+  )
+
+  zephyr_cc_option(-Wno-pointer-sign)
+
+  # Prohibit void pointer arithmetic. Illegal in C99
+  zephyr_cc_option(-Wpointer-arith)
+
+endmacro()
+
 macro(toolchain_cc_warning_dw_1)
 
   zephyr_compile_options(
