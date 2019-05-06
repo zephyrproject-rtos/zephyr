@@ -197,13 +197,8 @@ toolchain_cc_nostdinc()
 
 zephyr_compile_options(
   -g # TODO: build configuration enough?
-  -Wall
-  -Wformat
-  -Wformat-security
-  -Wno-format-zero-length
   -imacros ${AUTOCONF_H}
   -ffreestanding
-  -Wno-main
   -fno-common
   ${TOOLCHAIN_C_FLAGS}
 )
@@ -231,6 +226,9 @@ if(CONFIG_LIB_CPLUSPLUS)
   # @Intent: Set linker specific flags for C++
   toolchain_ld_cpp()
 endif()
+
+# @Intent Add the basic toolchain warning flags
+toolchain_cc_warning_base()
 
 # ==========================================================================
 #
@@ -262,7 +260,6 @@ zephyr_cc_option(-fno-asynchronous-unwind-tables)
 zephyr_cc_option(-fno-pie)
 zephyr_cc_option(-fno-pic)
 zephyr_cc_option(-fno-strict-overflow)
-zephyr_cc_option(-Wno-pointer-sign)
 
 if(CONFIG_OVERRIDE_FRAME_POINTER_DEFAULT)
   if(CONFIG_OMIT_FRAME_POINTER)
@@ -310,9 +307,6 @@ zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
 
 # Force an error when things like SYS_INIT(foo, ...) occur with a missing header.
 zephyr_cc_option(-Werror=implicit-int)
-
-# Prohibit void pointer arithmetic. Illegal in C99
-zephyr_cc_option(-Wpointer-arith)
 
 # If the compiler supports it, strip the ${ZEPHYR_BASE} prefix from the
 # __FILE__ macro used in __ASSERT*, in the
