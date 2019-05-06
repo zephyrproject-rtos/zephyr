@@ -182,6 +182,22 @@ Programming and Debugging
 The Nucleo F429ZI board includes an ST-LINK/V2-1 embedded debug tool interface.
 This interface is supported by the openocd version included in Zephyr SDK.
 
+Flash partitions for MCUBoot bootloader
+***************************************
+
+The on-board STM32F429ZI MCU has 2MBs of internal flash memory. To use `MCUboot`_,
+define a :ref:`Zephyr partition table <flash_partitions>` for the flash memory in
+its device tree file ``nucleo_f429zi.dts``. As a reference, a partition table for
+MCUBoot is already defined in the device tree file, with these settings:
+
+- `MCUBoot`_ bootloader partition takes 64K bytes.
+- Zephyr settings partition takes 64K bytes.
+- Application image takes 256K bytes in Slot 0 partition.
+- Updating image takes another 256K bytes in Slot 1 partition.
+- A scratch partition with 128K is required for image swap.
+
+A specific application can adjust each partition size based on its needs.
+
 
 .. _Nucleo F429ZI website:
    http://www.st.com/en/evaluation-tools/nucleo-f429zi.html
@@ -197,3 +213,6 @@ This interface is supported by the openocd version included in Zephyr SDK.
 
 .. _STM32F429 datasheet:
    http://www.st.com/resource/en/datasheet/DM00071990.pdf
+
+.. _MCUBoot:
+   https://github.com/JuulLabs-OSS/mcuboot/blob/master/README.md
