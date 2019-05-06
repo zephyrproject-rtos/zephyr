@@ -704,13 +704,15 @@ u8_t ll_adv_enable(u8_t enable)
 		const u8_t ll_hdr_us	= BYTES2US(ll_hdr_size, phy);
 		const u8_t rx_to_us	= EVENT_RX_TO_US(phy);
 		const u8_t rxtx_turn_us = EVENT_RX_TX_TURNARROUND(phy);
-		const u8_t conn_ind_us = ll_hdr_us +
-			BYTES2US(INITA_SIZE + ADVA_SIZE + LLDATA_SIZE, phy);
+		const u16_t conn_ind_us = ll_hdr_us +
+					  BYTES2US(INITA_SIZE + ADVA_SIZE +
+						   LLDATA_SIZE, phy);
 		const u8_t scan_req_us  = ll_hdr_us +
-			BYTES2US(SCANA_SIZE + ADVA_SIZE, phy);
+					  BYTES2US(SCANA_SIZE + ADVA_SIZE, phy);
 		/* ll_header plus AdvA and scan response data */
-		const u8_t scan_rsp_us  = ll_hdr_us +
-			BYTES2US(ADVA_SIZE + rsp_data_len, phy);
+		const u16_t scan_rsp_us  = ll_hdr_us +
+					  BYTES2US(ADVA_SIZE + rsp_data_len,
+						   phy);
 
 		if (phy != 0x01) {
 			/* Legacy ADV only supports LE_1M PHY */

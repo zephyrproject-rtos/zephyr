@@ -42,6 +42,7 @@ endchoice
 config BT_LLL_VENDOR_NORDIC
 	bool "Use Nordic LLL"
 	depends on BT_LL_SW_SPLIT && SOC_COMPATIBLE_NRF
+	select BT_HAS_HCI_VS
 	select ENTROPY_NRF5_RNG
 	select ENTROPY_NRF5_BIAS_CORRECTION
 	default y
@@ -261,7 +262,7 @@ config BT_CTLR_LE_PING
 
 config BT_CTLR_PRIVACY
 	bool "LE Controller-based Privacy"
-	depends on !SOC_SERIES_NRF51X
+	depends on !SOC_SERIES_NRF51X && BT_LL_SW
 	default y
 	select BT_CTLR_FILTER
 	select BT_RPA
@@ -481,7 +482,7 @@ config BT_CTLR_ULL_HIGH_PRIO
 	int "Upper Link Layer High IRQ priority"
 	range BT_CTLR_LLL_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_LLL_PRIO 6 if SOC_SERIES_NRF52X
-	default 0
+	default BT_CTLR_LLL_PRIO
 	help
 	  The interrupt priority for Ticker's Worker IRQ and Upper Link Layer
 	  higher priority functions.
@@ -490,7 +491,7 @@ config BT_CTLR_ULL_LOW_PRIO
 	int "Upper Link Layer Low IRQ priority"
 	range BT_CTLR_ULL_HIGH_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_ULL_HIGH_PRIO 6 if SOC_SERIES_NRF52X
-	default 0
+	default BT_CTLR_ULL_HIGH_PRIO
 	help
 	  The interrupt priority for Ticker's Job IRQ and Upper Link Layer
 	  lower priority functions.
@@ -499,7 +500,7 @@ config BT_CTLR_LOWEST_PRIO
 	int "Link Layer Lowest IRQ priority"
 	range BT_CTLR_ULL_LOW_PRIO 3 if SOC_SERIES_NRF51X
 	range BT_CTLR_ULL_LOW_PRIO 6 if SOC_SERIES_NRF52X
-	default 0
+	default BT_CTLR_ULL_LOW_PRIO
 	help
 	  The interrupt priority for RNG and other non-critical functions.
 
