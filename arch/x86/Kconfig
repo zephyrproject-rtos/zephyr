@@ -11,6 +11,16 @@ menu "X86 Architecture Options"
 config ARCH
 	default "x86"
 
+config X86_MULTIBOOT
+	bool "Generate multiboot header"
+	default y
+	help
+	  Embed a multiboot header in the output executable. This is used
+	  by some boot loaders (e.g., GRUB) when loading Zephyr. It is safe
+	  to leave this option on if you're not sure. It only expands the
+	  text segment by 12-16 bytes and is typically ignored if not needed.
+
+
 source "arch/x86/core/Kconfig"
 
 #
