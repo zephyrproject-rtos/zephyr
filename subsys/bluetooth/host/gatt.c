@@ -979,7 +979,7 @@ void bt_gatt_foreach_attr(u16_t start_handle, u16_t end_handle,
 	struct bt_gatt_service *svc;
 	int i;
 
-	if (start_handle < last_static_handle) {
+	if (start_handle <= last_static_handle) {
 		const struct bt_gatt_service_static *static_svc;
 		u16_t handle;
 
