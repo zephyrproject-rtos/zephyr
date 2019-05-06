@@ -14,6 +14,7 @@
 
 	chosen {
 		zephyr,sram = &m0_tcm;
+		zephyr,flash = &zero_riscy_code_partition;
 		zephyr,console = &uart0;
 		zephyr,uart-pipe = &uart0;
 	};
