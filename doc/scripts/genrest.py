@@ -365,7 +365,7 @@ def kconfig_definition_rst(sc):
                     kconfiglib.standard_sc_expr_str(node.item)) + \
                    path
 
-        return "(top menu)" + path
+        return "(Top)" + path
 
     heading = "Kconfig definition"
     if len(sc.nodes) > 1: heading += "s"

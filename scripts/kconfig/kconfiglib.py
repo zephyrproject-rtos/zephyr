@@ -51,12 +51,20 @@ This target runs the curses menuconfig interface with Python 3 (Python 2 is
 currently not supported for the menuconfig).
 
 
+make guiconfig
+--------------
+
+This target runs the Tkinter menuconfig interface. Both Python 2 and Python 3
+are supported. To change the Python interpreter used, pass
+PYTHONCMD=<executable> to 'make'. The default is 'python'.
+
+
 make [ARCH=<arch>] iscriptconfig
 --------------------------------
 
 This target gives an interactive Python prompt where a Kconfig instance has
 been preloaded and is available in 'kconf'. To change the Python interpreter
-used, pass PYTHONCMD=<executable> to make. The default is "python".
+used, pass PYTHONCMD=<executable> to 'make'. The default is 'python'.
 
 To get a feel for the API, try evaluating and printing the symbols in
 kconf.defined_syms, and explore the MenuNode menu tree starting at
@@ -529,8 +537,7 @@ import sys
 
 # Get rid of some attribute lookups. These are obvious in context.
 from glob import iglob
-from os.path import dirname, exists, expandvars, isabs, islink, join, \
-                    relpath, split
+from os.path import dirname, exists, expandvars, isabs, islink, join, relpath
 
 
 # File layout:
@@ -1358,12 +1365,11 @@ class Kconfig(object):
 
         save_old (default: True):
           If True and <filename> already exists, a copy of it will be saved to
-          .<filename>.old in the same directory before the new configuration is
-          written. The leading dot is added only if the filename doesn't
-          already start with a dot.
+          <filename>.old in the same directory before the new configuration is
+          written.
 
-          Errors are silently ignored if .<filename>.old cannot be written
-          (e.g. due to being a directory).
+          Errors are silently ignored if <filename>.old cannot be written (e.g.
+          due to being a directory).
 
         verbose (default: True):
           If True and filename is None (automatically infer configuration
@@ -1502,20 +1508,8 @@ class Kconfig(object):
         if not exists(path):
             os.mkdir(path, 0o755)
 
-        # This setup makes sure that at least the current working directory
-        # gets reset if things fail
-        prev_dir = os.getcwd()
-        try:
-            # cd'ing into the symbol file directory simplifies
-            # _sync_deps() and saves some work
-            os.chdir(path)
-            self._sync_deps()
-        finally:
-            os.chdir(prev_dir)
-
-    def _sync_deps(self):
         # Load old values from auto.conf, if any
-        self._load_old_vals()
+        self._load_old_vals(path)
 
         for sym in self.unique_defined_syms:
             # Note: _write_to_conf is determined when the value is
@@ -1546,31 +1540,16 @@ class Kconfig(object):
                 continue
 
             # 'sym' has a new value. Flag it.
-            _touch_dep_file(sym.name)
+            _touch_dep_file(path, sym.name)
 
         # Remember the current values as the "new old" values.
         #
         # This call could go anywhere after the call to _load_old_vals(), but
         # putting it last means _sync_deps() can be safely rerun if it fails
         # before this point.
-        self._write_old_vals()
+        self._write_old_vals(path)
 
-    def _write_old_vals(self):
-        # Helper for writing auto.conf. Basically just a simplified
-        # write_config() that doesn't write any comments (including
-        # '# CONFIG_FOO is not set' comments). The format matches the C
-        # implementation, though the ordering is arbitrary there (depends on
-        # the hash table implementation).
-        #
-        # A separate helper function is neater than complicating write_config()
-        # by passing a flag to it, plus we only need to look at symbols here.
-
-        with self._open("auto.conf", "w") as f:
-            for sym in self.unique_defined_syms:
-                if not (sym.orig_type in _BOOL_TRISTATE and not sym.tri_value):
-                    f.write(sym.config_string)
-
-    def _load_old_vals(self):
+    def _load_old_vals(self, path):
         # Loads old symbol values from auto.conf into a dedicated
         # Symbol._old_val field. Mirrors load_config().
         #
@@ -1581,11 +1560,15 @@ class Kconfig(object):
         for sym in self.unique_defined_syms:
             sym._old_val = None
 
-        if not exists("auto.conf"):
-            # No old values
-            return
+        try:
+            auto_conf = self._open(join(path, "auto.conf"), "r")
+        except IOError as e:
+            if e.errno == errno.ENOENT:
+                # No old values
+                return
+            raise
 
-        with self._open("auto.conf", "r") as f:
+        with auto_conf as f:
             for line in f:
                 match = self._set_match(line)
                 if not match:
@@ -1607,7 +1590,22 @@ class Kconfig(object):
                 else:
                     # Flag that the symbol no longer exists, in
                     # case something still depends on it
-                    _touch_dep_file(name)
+                    _touch_dep_file(path, name)
+
+    def _write_old_vals(self, path):
+        # Helper for writing auto.conf. Basically just a simplified
+        # write_config() that doesn't write any comments (including
+        # '# CONFIG_FOO is not set' comments). The format matches the C
+        # implementation, though the ordering is arbitrary there (depends on
+        # the hash table implementation).
+        #
+        # A separate helper function is neater than complicating write_config()
+        # by passing a flag to it, plus we only need to look at symbols here.
+
+        with self._open(join(path, "auto.conf"), "w") as f:
+            for sym in self.unique_defined_syms:
+                if not (sym.orig_type in _BOOL_TRISTATE and not sym.tri_value):
+                    f.write(sym.config_string)
 
     def node_iter(self, unique_syms=False):
         """
@@ -1695,8 +1693,8 @@ class Kconfig(object):
 
     def unset_values(self):
         """
-        Resets the user values of all symbols, as if Kconfig.load_config() or
-        Symbol.set_value() had never been called.
+        Removes any user values from all symbols, as if Kconfig.load_config()
+        or Symbol.set_value() had never been called.
         """
         self._warn_for_no_prompt = False
         try:
@@ -2663,8 +2661,8 @@ class Kconfig(object):
                     self._leave_file()
 
             elif t0 is end_token:
-                # We have reached the end of the block. Terminate the final
-                # node and return it.
+                # Reached the end of the block. Terminate the final node and
+                # return it.
 
                 if self._tokens[1] is not None:
                     self._trailing_tokens_error()
@@ -2759,8 +2757,6 @@ class Kconfig(object):
 
             elif t0 is _T_MAINMENU:
                 self.top_node.prompt = (self._expect_str_and_eol(), self.y)
-                self.top_node.filename = self._filename
-                self.top_node.linenr = self._linenr
 
             else:
                 # A valid endchoice/endif/endmenu is caught by the 'end_token'
@@ -3636,12 +3632,10 @@ class Kconfig(object):
                sym.name != "MODULES":
 
                 msg = "undefined symbol {}:".format(sym.name)
-
                 for node in self.node_iter():
                     if sym in node.referenced:
                         msg += "\n\n- Referenced at {}:{}:\n\n{}" \
                                .format(node.filename, node.linenr, node)
-
                 self._warn(msg)
 
     def _warn(self, msg, filename=None, linenr=None):
@@ -3828,7 +3822,7 @@ class Symbol(object):
     ranges:
       List of (low, high, cond) tuples for the symbol's 'range' properties. For
       example, 'range 1 2 if A' is represented as (1, 2, A). If there is no
-      condition, 'cond' is self.config.y.
+      condition, 'cond' is self.kconfig.y.
 
       Note that 'depends on' and parent dependencies are propagated to 'range'
       conditions.
@@ -3849,20 +3843,44 @@ class Symbol(object):
       Like rev_dep, for imply.
 
     direct_dep:
-      The 'depends on' dependencies. If a symbol is defined in multiple
-      locations, the dependencies at each location are ORed together.
+      The direct ('depends on') dependencies for the symbol, or self.kconfig.y
+      if there are no direct dependencies.
 
-      Internally, this is used to implement 'imply', which only applies if the
-      implied symbol has expr_value(self.direct_dep) != 0. 'depends on' and
-      parent dependencies are automatically propagated to the conditions of
-      properties, so normally it's redundant to check the direct dependencies.
+      This attribute includes any dependencies from surrounding menus and if's.
+      Those get propagated to the direct dependencies, and the resulting direct
+      dependencies in turn get propagated to the conditions of all properties.
+
+      If the symbol is defined in multiple locations, the dependencies from the
+      different locations get ORed together.
 
     referenced:
       A set() with all symbols and choices referenced in the properties and
       property conditions of the symbol.
 
-      Also includes dependencies inherited from surrounding menus and if's.
+      Also includes dependencies from surrounding menus and if's, because those
+      get propagated to the symbol (see the 'Intro to symbol values' section in
+      the module docstring).
+
       Choices appear in the dependencies of choice symbols.
+
+      For the following definitions, only B and not C appears in A's
+      'referenced'. To get transitive references, you'll have to recursively
+      expand 'references' until no new items appear.
+
+        config A
+                bool
+                depends on B
+
+        config B
+                bool
+                depends on C
+
+        config C
+                bool
+
+      See the Symbol.direct_dep attribute if you're only interested in the
+      direct dependencies of the symbol (its 'depends on'). You can extract the
+      symbols in it with the global expr_items() function.
 
     env_var:
       If the Symbol has an 'option env="FOO"' option, this contains the name
@@ -4286,8 +4304,8 @@ class Symbol(object):
 
     def unset_value(self):
         """
-        Resets the user value of the symbol, as if the symbol had never gotten
-        a user value via Kconfig.load_config() or Symbol.set_value().
+        Removes any user value from the symbol, as if the symbol had never
+        gotten a user value via Kconfig.load_config() or Symbol.set_value().
         """
         if self.user_value is not None:
             self.user_value = None
@@ -4721,7 +4739,7 @@ class Choice(object):
     defaults:
       List of (symbol, cond) tuples for the choice's 'defaults' properties. For
       example, 'default A if B && C' is represented as (A, (AND, B, C)). If
-      there is no condition, 'cond' is self.config.y.
+      there is no condition, 'cond' is self.kconfig.y.
 
       Note that 'depends on' and parent dependencies are propagated to
       'default' conditions.
@@ -4733,7 +4751,9 @@ class Choice(object):
       A set() with all symbols referenced in the properties and property
       conditions of the choice.
 
-      Also includes dependencies inherited from surrounding menus and if's.
+      Also includes dependencies from surrounding menus and if's, because those
+      get propagated to the choice (see the 'Intro to symbol values' section in
+      the module docstring).
 
     is_optional:
       True if the choice has the 'optional' flag set on it and can be in
@@ -5124,10 +5144,12 @@ class MenuNode(object):
       was undocumented.
 
     dep:
-      The 'depends on' dependencies for the menu node, or self.kconfig.y if
-      there are no dependencies. Parent dependencies are propagated to this
-      attribute, and this attribute is then in turn propagated to the
-      properties of symbols and choices.
+      The direct ('depends on') dependencies for the menu node, or
+      self.kconfig.y if there are no direct dependencies.
+
+      This attribute includes any dependencies from surrounding menus and if's.
+      Those get propagated to the direct dependencies, and the resulting direct
+      dependencies in turn get propagated to the conditions of all properties.
 
       If a symbol or choice is defined in multiple locations, only the
       properties defined at a particular location get the corresponding
@@ -5879,13 +5901,13 @@ def _sym_to_num(sym):
            int(sym.str_value, _TYPE_TO_BASE[sym.orig_type])
 
 
-def _touch_dep_file(sym_name):
+def _touch_dep_file(path, sym_name):
     # If sym_name is MY_SYM_NAME, touches my/sym/name.h. See the sync_deps()
     # docstring.
 
-    sym_path = sym_name.lower().replace("_", os.sep) + ".h"
+    sym_path = path + os.sep + sym_name.lower().replace("_", os.sep) + ".h"
     sym_path_dir = dirname(sym_path)
-    if sym_path_dir and not exists(sym_path_dir):
+    if not exists(sym_path_dir):
         os.makedirs(sym_path_dir, 0o755)
 
     # A kind of truncating touch, mirroring the C tools
@@ -5894,29 +5916,24 @@ def _touch_dep_file(sym_name):
 
 
 def _save_old(path):
-    # See write_config()
+    # See write_config(). os.replace() would be nice here, but it's Python 3
+    # (3.3+) only.
 
-    dirname, basename = split(path)
-    backup = join(dirname,
-                  basename + ".old" if basename.startswith(".")
-                      else "." + basename + ".old")
-
-    # os.replace() would be nice here, but it's Python 3 (3.3+) only
     try:
-        # Use copyfile() if 'path' is a symlink. The intention is probably to
-        # overwrite the target in that case.
         if os.name == "posix" and not islink(path):
-            # Will remove .<filename>.old if it already exists on POSIX
+            # Will remove <filename>.old if it already exists on POSIX
             # systems
-            os.rename(path, backup)
+            os.rename(path, path + ".old")
         else:
-            # Only import as needed, to save some startup time
+            # Use copyfile() if 'path' is a symlink. The intention is probably
+            # to overwrite the target in that case. Only import shutil as
+            # needed, to save some startup time.
             import shutil
-            shutil.copyfile(path, backup)
+            shutil.copyfile(path, path + ".old")
     except:
         # Ignore errors from 'filename' missing as well as other errors. The
-        # backup file is more of a nice-to-have, and not worth erroring out
-        # over e.g. if .<filename>.old happens to be a directory.
+        # <filename>.old file is usually more of a nice-to-have, and not worth
+        # erroring out over e.g. if <filename>.old happens to be a directory.
         pass
 
 
@@ -5994,7 +6011,6 @@ def _auto_menu_dep(node1, node2):
     # node2 has a prompt, we check its condition. Otherwise, we look directly
     # at node2.dep.
 
-    # If node2 has no prompt, use its menu node dependencies instead
     return _expr_depends_on(node2.prompt[1] if node2.prompt else node2.dep,
                             node1.item)
 
