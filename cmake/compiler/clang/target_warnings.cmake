@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-# See root CMakeLists.txt for description and expectations of these macros
+# See root CMakeLists.txt for description and expectations of this macro
 
 macro(toolchain_cc_warning_base)
 
@@ -76,7 +76,21 @@ endmacro()
 macro(toolchain_cc_warning_extended)
 
   zephyr_cc_option(
-    -Wno-unused-but-set-variable
+    #FIXME: need to fix all of those
+    -Wno-sometimes-uninitialized
+    -Wno-shift-overflow
+    -Wno-missing-braces
+    -Wno-self-assign
+    -Wno-address-of-packed-member
+    -Wno-unused-function
+    -Wno-initializer-overrides
+    -Wno-section
+    -Wno-unknown-warning-option
+    -Wno-unused-variable
+    -Wno-format-invalid-specifier
+    -Wno-gnu
+    # comparison of unsigned expression < 0 is always false
+    -Wno-tautological-compare
     )
 
 endmacro()

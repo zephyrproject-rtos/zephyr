@@ -251,6 +251,8 @@ if(W MATCHES "3")
   toolchain_cc_warning_dw_3()
 endif()
 
+# @Intent Add extended, more specific, toolchain warning flags
+toolchain_cc_warning_extended()
 
 # Allow the user to inject options when calling cmake, e.g.
 # 'cmake -DEXTRA_CFLAGS="-Werror -Wno-deprecated-declarations" ..'
@@ -274,29 +276,9 @@ zephyr_compile_options(${COMPILER_OPT_AS_LIST})
 
 # TODO: Include arch compiler options at this point.
 
-if(CMAKE_C_COMPILER_ID STREQUAL "Clang")
-  zephyr_cc_option(
-    #FIXME: need to fix all of those
-    -Wno-sometimes-uninitialized
-    -Wno-shift-overflow
-    -Wno-missing-braces
-    -Wno-self-assign
-    -Wno-address-of-packed-member
-    -Wno-unused-function
-    -Wno-initializer-overrides
-    -Wno-section
-    -Wno-unknown-warning-option
-    -Wno-unused-variable
-    -Wno-format-invalid-specifier
-    -Wno-gnu
-    # comparison of unsigned expression < 0 is always false
-    -Wno-tautological-compare
-    )
-else() # GCC assumed
-  zephyr_cc_option(
-    -Wno-unused-but-set-variable
-    -fno-reorder-functions
-    )
+if(NOT CMAKE_C_COMPILER_ID STREQUAL "Clang")
+  # GCC assumed
+  zephyr_cc_option(-fno-reorder-functions)
 
   if(NOT ${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "xcc")
     zephyr_cc_option(-fno-defer-pop)
