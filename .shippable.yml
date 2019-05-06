@@ -71,8 +71,6 @@ integrations:
       branches:
         only:
           - master
-          - net
-          - bluetooth
-          - arm
       on_success: never
-      on_failure: never
+      on_failure: always
+      on_pull_request: never
