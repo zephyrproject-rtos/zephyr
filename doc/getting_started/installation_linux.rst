@@ -76,8 +76,8 @@ On Ubuntu:
 
    sudo apt-get install --no-install-recommends git cmake ninja-build gperf \
      ccache dfu-util device-tree-compiler wget \
-     python3-pip python3-setuptools python3-wheel xz-utils file make gcc \
-     gcc-multilib
+     python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
+     make gcc gcc-multilib
 
 On Fedora:
 
@@ -86,21 +86,21 @@ On Fedora:
 
    sudo dnf group install "Development Tools" "C Development Tools and Libraries"
    dnf install git cmake ninja-build gperf ccache dfu-util dtc wget \
-     python3-pip xz file glibc-devel.i686 libstdc++-devel.i686
+     python3-pip python3-tkinter xz file glibc-devel.i686 libstdc++-devel.i686
 
 On Clear Linux:
 
 .. code-block:: console
 
    sudo swupd bundle-add c-basic dev-utils dfu-util dtc \
-     os-core-dev python-basic python3-basic
+     os-core-dev python-basic python3-basic python3-tcl
 
 On Arch:
 
 .. code-block:: console
 
    sudo pacman -S git cmake ninja gperf ccache dfu-util dtc wget \
-       python-pip python-setuptools python-wheel xz file make
+       python-pip python-setuptools python-wheel tk xz file make
 
 .. important::
    Zephyr requires a recent version of CMake. Read through
