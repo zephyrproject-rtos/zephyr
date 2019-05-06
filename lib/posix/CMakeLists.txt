@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 
-add_library(posix_subsys INTERFACE)
+zephyr_interface_library_named(posix_subsys)
 
 target_include_directories(posix_subsys INTERFACE ${ZEPHYR_BASE}/include/posix)
 
