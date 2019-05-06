@@ -224,7 +224,7 @@ static void test_desc_sections(void)
 			(int)__usb_data_end - (int)__usb_data_start,
 			"USB Configuratio structures section");
 
-	head = (struct usb_desc_header *)usb_get_device_descriptor();
+	head = (struct usb_desc_header *)__usb_descriptor_start;
 	zassert_not_null(head, NULL);
 
 	zassert_equal((int)__usb_descriptor_end - (int)__usb_descriptor_start,
