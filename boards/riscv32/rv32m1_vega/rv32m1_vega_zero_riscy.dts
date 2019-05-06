@@ -13,7 +13,7 @@
 	compatible = "openisa,rv32m1";
 
 	chosen {
-		zephyr,sram = &sram0;
+		zephyr,sram = &m0_tcm;
 		zephyr,console = &uart0;
 		zephyr,uart-pipe = &uart0;
 	};
