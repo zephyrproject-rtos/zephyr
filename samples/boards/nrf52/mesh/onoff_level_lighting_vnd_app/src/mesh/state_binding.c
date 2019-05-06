@@ -224,6 +224,26 @@ jump:
 	readjust_lightness();
 }
 
+void init_lightness_target_values(u16_t lightness)
+{
+	target_lightness = lightness;
+
+	if (target_lightness) {
+		gen_onoff_srv_root_user_data.target_onoff = STATE_ON;
+	} else {
+		gen_onoff_srv_root_user_data.target_onoff = STATE_OFF;
+	}
+
+	gen_level_srv_root_user_data.target_level = target_lightness - 32768;
+
+	light_lightness_srv_user_data.target_actual = target_lightness;
+
+	light_lightness_srv_user_data.target_linear =
+		actual_to_linear(target_lightness);
+
+	light_ctl_srv_user_data.target_lightness = target_lightness;
+}
+
 void calculate_lightness_target_values(u8_t type)
 {
 	u16_t tmp;
@@ -275,6 +295,14 @@ void calculate_lightness_target_values(u8_t type)
 		actual_to_linear(target_lightness);
 
 	light_ctl_srv_user_data.target_lightness = target_lightness;
+}
+
+void init_temp_target_values(s16_t temperature)
+{
+	target_temperature = temperature;
+	gen_level_srv_s0_user_data.target_level = target_temperature;
+	light_ctl_srv_user_data.target_temp =
+			level_to_light_ctl_temp(target_temperature);
 }
 
 void calculate_temp_target_values(u8_t type)
