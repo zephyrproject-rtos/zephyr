@@ -31,6 +31,7 @@ assert(toolchain_is_ok "The toolchain is unable to build a dummy C file. See CMa
 
 set(CMAKE_EXECUTABLE_SUFFIX .elf)
 set(ZEPHYR_PREBUILT_EXECUTABLE zephyr_prebuilt)
+set(ZEPHYR_FINAL_EXECUTABLE    zephyr_final)
 
 # Set some phony targets to collect dependencies
 set(OFFSETS_H_TARGET           offsets_h)
@@ -1169,9 +1170,6 @@ if(NOT generated_kernel_files)
   # generation stage.
   set(logical_target_for_zephyr_elf ${ZEPHYR_PREBUILT_EXECUTABLE})
 else()
-  set(KERNEL_ELF kernel_elf)
-  set(logical_target_for_zephyr_elf ${KERNEL_ELF})
-
   # The second linker pass uses the same source linker script of the
   # first pass (LINKER_SCRIPT), but this time with a different output
   # file and preprocessed with the define LINKER_PASS2.
@@ -1196,10 +1194,13 @@ else()
     ${ZEPHYR_INCLUDE_DIRS}
   )
 
-  add_executable(       ${KERNEL_ELF} misc/empty_file.c ${GKSF})
-  target_link_libraries(${KERNEL_ELF} ${GKOF} ${TOPT} ${PROJECT_BINARY_DIR}/linker_pass_final.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
-  set_property(TARGET   ${KERNEL_ELF} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass_final.cmd)
-  add_dependencies(     ${KERNEL_ELF} ${PRIV_STACK_DEP} ${LINKER_PASS_FINAL_SCRIPT_TARGET})
+  add_executable(       ${ZEPHYR_FINAL_EXECUTABLE} misc/empty_file.c ${GKSF})
+  target_link_libraries(${ZEPHYR_FINAL_EXECUTABLE} ${GKOF} ${TOPT} ${PROJECT_BINARY_DIR}/linker_pass_final.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
+  set_property(TARGET   ${ZEPHYR_FINAL_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass_final.cmd)
+  add_dependencies(     ${ZEPHYR_FINAL_EXECUTABLE} ${PRIV_STACK_DEP} ${LINKER_PASS_FINAL_SCRIPT_TARGET})
+
+  # Use the pass2 elf as the final elf
+  set(logical_target_for_zephyr_elf ${ZEPHYR_FINAL_EXECUTABLE})
 endif()
 
 # Export the variable to the application's scope to allow the
