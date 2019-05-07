@@ -95,4 +95,11 @@ config CAN_STM32
 
 endif
 
+if ADC
+
+config ADC_STM32
+	default y
+
+endif # ADC
+
 endif # SOC_FAMILY_STM32
