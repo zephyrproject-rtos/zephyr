@@ -331,6 +331,52 @@ def build_cell_array(prop_array):
 
     return ret_array
 
+def child_to_parent_unmap(cell_parent, gpio_index):
+    # This function returns a (gpio-controller, pin number) tuple from
+    # cell_parent (identified as a 'nexus node', ie: has a 'gpio-map'
+    # property) and gpio_index.
+    # Note: Nexus nodes and gpio-map property are described in the
+    # upcoming (presumably v0.3) Device Tree specification, chapter
+    # 'Nexus nodes and Specifier Mapping'.
+
+    # First, retrieve gpio-map as a list
+    gpio_map = reduced[cell_parent]['props']['gpio-map']
+
+    # Before parsing, we need to know 'gpio-map' row size
+    # gpio-map raws are encoded as follows:
+    # [child specifier][gpio controller phandle][parent specifier]
+
+    # child specifier field length is connector property #gpio-cells
+    child_specifier_size = reduced[cell_parent]['props']['#gpio-cells']
+
+    # parent specifier field length is parent property #gpio-cells
+    # Assumption 1: We assume parent #gpio-cells is constant across
+    # the map, so we take the value of the first occurrence and apply
+    # to the whole map.
+    parent = phandles[gpio_map[child_specifier_size]]
+    parent_specifier_size = reduced[parent]['props']['#gpio-cells']
+
+    array_cell_size = child_specifier_size + 1 + parent_specifier_size
+
+    # Now that the length of each entry in 'gpio-map' is known,
+    # look for a match with gpio_index
+    for i in range(0, len(gpio_map), array_cell_size):
+        entry = gpio_map[i:i+array_cell_size]
+
+        if entry[0] == gpio_index:
+            parent_controller_phandle = entry[child_specifier_size]
+            # Assumption 2: We assume optional properties 'gpio-map-mask'
+            # and 'gpio-map-pass-thru' are not specified.
+            # So, for now, only the pin number (first value of the parent
+            # specifier field) should be returned.
+            parent_pin_number = entry[child_specifier_size+1]
+
+            # Return gpio_controller and specifier pin
+            return phandles[parent_controller_phandle], parent_pin_number
+
+    # gpio_index did not match any entry in the gpio-map
+    return None, None
+
 
 def extract_controller(node_path, prop, prop_values, index,
                        def_label, generic, handle_single=False):
@@ -350,6 +396,15 @@ def extract_controller(node_path, prop, prop_values, index,
             continue
 
         cell_parent = phandles[elem[0]]
+
+        if 'gpio-map' in reduced[cell_parent]['props']:
+            # Parent is a gpio 'nexus node' (ie has gpio-map).
+            # Controller should be found in the map, using elem[1] as index.
+            # Pin attribues (number, flag) will not be used in this function
+            cell_parent, _ = child_to_parent_unmap(cell_parent, elem[1])
+            if cell_parent is None:
+                raise Exception("No parent matching child specifier")
+
         l_cell = reduced[cell_parent]['props'].get('label')
 
         if l_cell is None:
@@ -407,6 +462,16 @@ def extract_cells(node_path, prop, prop_values, names, index,
             continue
 
         cell_parent = phandles[elem[0]]
+
+        if 'gpio-map' in reduced[cell_parent]['props']:
+            # Parent is a gpio connector ie 'nexus node', ie has gpio-map).
+            # Controller and pin number should be found in the connector map,
+            # using elem[1] as index.
+            # Parent pin flag is not used, so child flag(s) value (elem[2:])
+            # is kept as is.
+            cell_parent, elem[1] = child_to_parent_unmap(cell_parent, elem[1])
+            if cell_parent is None:
+                raise Exception("No parent matching child specifier")
 
         try:
             cell_yaml = get_binding(cell_parent)
