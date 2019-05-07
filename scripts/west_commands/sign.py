@@ -15,8 +15,11 @@ from west.util import quote_sh_list
 
 from runners.core import BuildConfiguration
 
-from zephyr_ext_common import find_build_dir, Forceable, \
-    BUILD_DIR_DESCRIPTION, cached_runner_config
+from build_helpers import find_build_dir, \
+    BUILD_DIR_DESCRIPTION
+
+from zephyr_ext_common import Forceable, \
+    cached_runner_config
 
 SIGN_DESCRIPTION = '''\
 This command automates some of the drudgery of creating signed Zephyr
