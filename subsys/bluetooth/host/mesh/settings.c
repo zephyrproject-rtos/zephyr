@@ -802,7 +802,7 @@ BT_SETTINGS_DEFINE(mesh, mesh_set, mesh_commit, NULL);
 
 static void schedule_store(int flag)
 {
-	s32_t timeout;
+	s32_t timeout, remaining;
 
 	atomic_set_bit(bt_mesh.flags, flag);
 
@@ -815,6 +815,12 @@ static void schedule_store(int flag)
 		timeout = K_SECONDS(CONFIG_BT_MESH_RPL_STORE_TIMEOUT);
 	} else {
 		timeout = K_SECONDS(CONFIG_BT_MESH_STORE_TIMEOUT);
+	}
+
+	remaining = k_delayed_work_remaining_get(&pending_store);
+	if (remaining && remaining < timeout) {
+		BT_DBG("Not rescheduling due to existing earlier deadline");
+		return;
 	}
 
 	BT_DBG("Waiting %d seconds", timeout / MSEC_PER_SEC);
