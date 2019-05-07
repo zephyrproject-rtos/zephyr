@@ -18,6 +18,7 @@ User and Developer Guides
    device_mgmt/dfu
    documentation/index
    dts/index
+   env_vars.rst
    coverage.rst
    kconfig/index
    modules.rst

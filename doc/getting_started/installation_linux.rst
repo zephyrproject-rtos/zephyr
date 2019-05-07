@@ -169,13 +169,14 @@ Follow these steps to install the Zephyr SDK:
    Zephyr's dependencies were installed as described in `Install Requirements
    and Dependencies`_.
 
-#. To use the Zephyr SDK, export the following environment variables and
-   use the target location where SDK was installed:
+#. Set these :ref:`environment variables <env_vars>`:
 
-   .. code-block:: console
+   - set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``zephyr``
+   - set :envvar:`ZEPHYR_SDK_INSTALL_DIR` to :file:`$HOME/zephyr-sdk-0.10.0`
+     (or wherever you chose to install the SDK)
 
-      export ZEPHYR_TOOLCHAIN_VARIANT=zephyr
-      export ZEPHYR_SDK_INSTALL_DIR=<sdk installation directory>
+If you ever want to uninstall the SDK, just remove the directory where you
+installed it and unset these environment variables.
 
 .. _sdkless_builds:
 
