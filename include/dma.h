@@ -220,7 +220,11 @@ static inline int dma_reload(struct device *dev, u32_t channel,
 	const struct dma_driver_api *api =
 		(const struct dma_driver_api *)dev->driver_api;
 
-	return api->reload(dev, channel, src, dst, size);
+	if (api->reload) {
+		return api->reload(dev, channel, src, dst, size);
+	}
+
+	return -ENOSYS;
 }
 
 /**
