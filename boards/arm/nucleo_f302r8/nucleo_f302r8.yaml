@@ -16,3 +16,4 @@ supported:
   - pwm
   - rtc
   - counter
+  - adc
