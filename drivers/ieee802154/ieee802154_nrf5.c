@@ -340,7 +340,7 @@ static void nrf5_radio_irq(void *arg)
 	nrf_802154_radio_irq_handler();
 }
 
-static void nrf5_config(struct device *dev)
+static void nrf5_irq_config(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
@@ -386,6 +386,47 @@ static void nrf5_iface_init(struct net_if *iface)
 	nrf5_radio->iface = iface;
 
 	ieee802154_init(iface);
+}
+
+int nrf5_configure(struct device *dev, enum ieee802154_config_type type,
+		   const struct ieee802154_config *config)
+{
+	ARG_UNUSED(dev);
+
+	switch (type) {
+	case IEEE802154_CONFIG_AUTO_ACK_FPB:
+		nrf_802154_auto_pending_bit_set(config->auto_ack_fpb.enabled);
+		break;
+
+	case IEEE802154_CONFIG_ACK_FPB:
+		if (config->ack_fpb.enabled) {
+			if (!nrf_802154_pending_bit_for_addr_set(
+						config->ack_fpb.addr,
+						config->ack_fpb.extended)) {
+				return -ENOMEM;
+			}
+
+			break;
+		}
+
+		if (config->ack_fpb.addr != NULL) {
+			if (!nrf_802154_pending_bit_for_addr_clear(
+						config->ack_fpb.addr,
+						config->ack_fpb.extended)) {
+				return -ENOENT;
+			}
+		} else {
+			nrf_802154_pending_bit_for_addr_reset(
+						config->ack_fpb.extended);
+		}
+
+		break;
+
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
 }
 
 /* nRF5 radio driver callbacks */
@@ -454,7 +495,7 @@ void nrf_802154_cca_failed(nrf_802154_cca_error_t error)
 }
 
 static const struct nrf5_802154_config nrf5_radio_cfg = {
-	.irq_config_func = nrf5_config,
+	.irq_config_func = nrf5_irq_config,
 };
 
 static struct ieee802154_radio_api nrf5_radio_api = {
@@ -468,6 +509,7 @@ static struct ieee802154_radio_api nrf5_radio_api = {
 	.start = nrf5_start,
 	.stop = nrf5_stop,
 	.tx = nrf5_tx,
+	.configure = nrf5_configure,
 };
 
 #if defined(CONFIG_NET_L2_IEEE802154)

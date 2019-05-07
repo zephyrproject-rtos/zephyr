@@ -1,0 +1,9 @@
+identifier: rv32m1_vega_zero_riscy
+name: RV32M1-VEGA
+type: mcu
+arch: riscv32
+toolchain:
+  - cross-compile
+  - zephyr
+supported:
+  - i2c

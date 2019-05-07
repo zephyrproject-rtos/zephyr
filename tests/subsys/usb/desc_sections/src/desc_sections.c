@@ -11,6 +11,7 @@
 #include <misc/byteorder.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
+#include <usb_descriptor.h>
 
 #define LOG_LEVEL LOG_LEVEL_DBG
 #include <logging/log.h>
@@ -28,17 +29,14 @@ extern struct usb_cfg_data __usb_data_end[];
 
 u8_t *usb_get_device_descriptor(void);
 
-struct usb_loopback_config {
+struct usb_test_config {
 	struct usb_if_descriptor if0;
 	struct usb_ep_descriptor if0_out_ep;
-	struct usb_ep_descriptor if0_in_ep;
+	struct usb_ep_descriptor if0_in1_ep;
 	struct usb_ep_descriptor if0_in2_ep;
 } __packed;
 
-#define LOOPBACK_OUT_EP_ADDR		0x01
-#define LOOPBACK_IN_EP_ADDR		0x81
-
-#define LOOPBACK_BULK_EP_MPS		64
+#define TEST_BULK_EP_MPS		64
 
 #define INITIALIZER_IF							\
 	{								\
@@ -46,7 +44,7 @@ struct usb_loopback_config {
 		.bDescriptorType = USB_INTERFACE_DESC,			\
 		.bInterfaceNumber = 0,					\
 		.bAlternateSetting = 0,					\
-		.bNumEndpoints = 2,					\
+		.bNumEndpoints = 3,					\
 		.bInterfaceClass = CUSTOM_CLASS,			\
 		.bInterfaceSubClass = 0,				\
 		.bInterfaceProtocol = 0,				\
@@ -64,43 +62,40 @@ struct usb_loopback_config {
 	}
 
 
-#define DEFINE_LOOPBACK_DESC(x, _)					\
+#define DEFINE_TEST_DESC(x, _)						\
 	USBD_CLASS_DESCR_DEFINE(primary, x)				\
-	struct usb_loopback_config loopback_cfg_##x = {			\
+	struct usb_test_config test_cfg_##x = {				\
 	.if0 = INITIALIZER_IF,						\
-	.if0_out_ep = INITIALIZER_IF_EP(LOOPBACK_OUT_EP_ADDR,		\
+	.if0_out_ep = INITIALIZER_IF_EP(AUTO_EP_OUT,			\
 					USB_DC_EP_BULK,			\
-					LOOPBACK_BULK_EP_MPS),		\
-	.if0_in_ep = INITIALIZER_IF_EP(LOOPBACK_IN_EP_ADDR,		\
-				       USB_DC_EP_BULK,			\
-				       LOOPBACK_BULK_EP_MPS),		\
-	.if0_in2_ep = INITIALIZER_IF_EP(LOOPBACK_IN_EP_ADDR,		\
+					TEST_BULK_EP_MPS),		\
+	.if0_in1_ep = INITIALIZER_IF_EP(AUTO_EP_IN,			\
 					USB_DC_EP_BULK,			\
-					LOOPBACK_BULK_EP_MPS),		\
+					TEST_BULK_EP_MPS),		\
+	.if0_in2_ep = INITIALIZER_IF_EP(AUTO_EP_IN,			\
+					USB_DC_EP_BULK,			\
+					TEST_BULK_EP_MPS),		\
 	};
 
-#define DEFINE_LOOPBACK_EP_CFG(x, _)				\
+#define INITIALIZER_EP_DATA(cb, addr)					\
+	{								\
+		.ep_cb = cb,						\
+		.ep_addr = addr,					\
+	}
+
+#define DEFINE_TEST_EP_CFG(x, _)				\
 	static struct usb_ep_cfg_data ep_cfg_##x[] = {		\
-		{						\
-			.ep_cb = NULL,				\
-			.ep_addr = LOOPBACK_OUT_EP_ADDR,	\
-		},						\
-		{						\
-			.ep_cb = NULL,				\
-			.ep_addr = LOOPBACK_IN_EP_ADDR,		\
-		},						\
-		{						\
-			.ep_cb = NULL,				\
-			.ep_addr = LOOPBACK_IN_EP_ADDR,		\
-		},						\
+		INITIALIZER_EP_DATA(NULL, AUTO_EP_OUT),		\
+		INITIALIZER_EP_DATA(NULL, AUTO_EP_IN),		\
+		INITIALIZER_EP_DATA(NULL, AUTO_EP_IN),		\
 	};
 
-#define DEFINE_LOOPBACK_CFG_DATA(x, _)				\
-	USBD_CFG_DATA_DEFINE(loopback_##x)			\
-	struct usb_cfg_data loopback_config_##x = {		\
+#define DEFINE_TEST_CFG_DATA(x, _)				\
+	USBD_CFG_DATA_DEFINE(test_##x)				\
+	struct usb_cfg_data test_config_##x = {			\
 	.usb_device_description = NULL,				\
 	.interface_config = interface_config,			\
-	.interface_descriptor = &loopback_cfg_##x.if0,		\
+	.interface_descriptor = &test_cfg_##x.if0,		\
 	.cb_usb_status = NULL,					\
 	.interface = {						\
 		.class_handler = NULL,				\
@@ -125,9 +120,9 @@ static void interface_config(struct usb_desc_header *head,
 	if_desc->bInterfaceNumber = iface_num;
 }
 
-UTIL_LISTIFY(NUM_INSTANCES, DEFINE_LOOPBACK_DESC, _)
-UTIL_LISTIFY(NUM_INSTANCES, DEFINE_LOOPBACK_EP_CFG, _)
-UTIL_LISTIFY(NUM_INSTANCES, DEFINE_LOOPBACK_CFG_DATA, _)
+UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_DESC, _)
+UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_EP_CFG, _)
+UTIL_LISTIFY(NUM_INSTANCES, DEFINE_TEST_CFG_DATA, _)
 
 static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
 {
@@ -143,13 +138,19 @@ static struct usb_cfg_data *usb_get_cfg_data(struct usb_if_descriptor *iface)
 }
 
 static bool find_cfg_data_ep(const struct usb_ep_descriptor * const ep_descr,
-			     const struct usb_cfg_data * const cfg_data)
+			     const struct usb_cfg_data * const cfg_data,
+			     u8_t ep_count)
 {
 	for (int i = 0; i < cfg_data->num_endpoints; i++) {
 		if (cfg_data->endpoint[i].ep_addr ==
 				ep_descr->bEndpointAddress) {
 			LOG_DBG("found ep[%d] %x", i,
 				ep_descr->bEndpointAddress);
+
+			if (ep_count != i) {
+				LOG_ERR("EPs are assigned in wrong order");
+				return false;
+			}
 
 			return true;
 		}
@@ -162,10 +163,13 @@ static void check_endpoint_allocation(struct usb_desc_header *head)
 {
 	struct usb_cfg_data *cfg_data = NULL;
 	static u8_t interfaces;
+	u8_t ep_count = 0;
 
 	while (head->bLength != 0) {
 		if (head->bDescriptorType == USB_INTERFACE_DESC) {
 			struct usb_if_descriptor *if_descr = (void *)head;
+
+			ep_count = 0;
 
 			LOG_DBG("iface %u", if_descr->bInterfaceNumber);
 
@@ -184,7 +188,8 @@ static void check_endpoint_allocation(struct usb_desc_header *head)
 			/* Check that we get iface desc before */
 			zassert_not_null(cfg_data, "Check available cfg data");
 
-			zassert_true(find_cfg_data_ep(ep_descr, cfg_data),
+			zassert_true(find_cfg_data_ep(ep_descr, cfg_data,
+						      ep_count++),
 				     "Check endpoint config in cfg_data");
 		}
 

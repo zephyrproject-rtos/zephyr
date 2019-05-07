@@ -35,6 +35,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "platform-zephyr.h"
 
+#define SHORT_ADDRESS_SIZE 2
+
 #define FCS_SIZE 2
 
 static otRadioState sState = OT_RADIO_STATE_DISABLED;
@@ -303,14 +305,33 @@ otError otPlatRadioEnergyScan(otInstance *aInstance, u8_t aScanChannel,
 void otPlatRadioEnableSrcMatch(otInstance *aInstance, bool aEnable)
 {
 	ARG_UNUSED(aInstance);
-	ARG_UNUSED(aEnable);
+
+	struct ieee802154_config config = {
+		.auto_ack_fpb.enabled = aEnable
+	};
+
+	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_AUTO_ACK_FPB,
+				   &config);
 }
 
 otError otPlatRadioAddSrcMatchShortEntry(otInstance *aInstance,
 					 const u16_t aShortAddress)
 {
 	ARG_UNUSED(aInstance);
-	ARG_UNUSED(aShortAddress);
+
+	u8_t short_address[SHORT_ADDRESS_SIZE];
+	struct ieee802154_config config = {
+		.ack_fpb.enabled = true,
+		.ack_fpb.addr = short_address,
+		.ack_fpb.extended = false
+	};
+
+	sys_put_le16(aShortAddress, short_address);
+
+	if (radio_api->configure(radio_dev, IEEE802154_CONFIG_ACK_FPB,
+				 &config) != 0) {
+		return OT_ERROR_NO_BUFS;
+	}
 
 	return OT_ERROR_NONE;
 }
@@ -319,7 +340,17 @@ otError otPlatRadioAddSrcMatchExtEntry(otInstance *aInstance,
 				       const otExtAddress *aExtAddress)
 {
 	ARG_UNUSED(aInstance);
-	ARG_UNUSED(aExtAddress);
+
+	struct ieee802154_config config = {
+		.ack_fpb.enabled = true,
+		.ack_fpb.addr = (u8_t *)aExtAddress->m8,
+		.ack_fpb.extended = true
+	};
+
+	if (radio_api->configure(radio_dev, IEEE802154_CONFIG_ACK_FPB,
+				 &config) != 0) {
+		return OT_ERROR_NO_BUFS;
+	}
 
 	return OT_ERROR_NONE;
 }
@@ -328,7 +359,20 @@ otError otPlatRadioClearSrcMatchShortEntry(otInstance *aInstance,
 					   const u16_t aShortAddress)
 {
 	ARG_UNUSED(aInstance);
-	ARG_UNUSED(aShortAddress);
+
+	u8_t short_address[SHORT_ADDRESS_SIZE];
+	struct ieee802154_config config = {
+		.ack_fpb.enabled = false,
+		.ack_fpb.addr = short_address,
+		.ack_fpb.extended = false
+	};
+
+	sys_put_le16(aShortAddress, short_address);
+
+	if (radio_api->configure(radio_dev, IEEE802154_CONFIG_ACK_FPB,
+				 &config) != 0) {
+		return OT_ERROR_NO_BUFS;
+	}
 
 	return OT_ERROR_NONE;
 }
@@ -337,7 +381,17 @@ otError otPlatRadioClearSrcMatchExtEntry(otInstance *aInstance,
 					 const otExtAddress *aExtAddress)
 {
 	ARG_UNUSED(aInstance);
-	ARG_UNUSED(aExtAddress);
+
+	struct ieee802154_config config = {
+		.ack_fpb.enabled = false,
+		.ack_fpb.addr = (u8_t *)aExtAddress->m8,
+		.ack_fpb.extended = true
+	};
+
+	if (radio_api->configure(radio_dev, IEEE802154_CONFIG_ACK_FPB,
+				 &config) != 0) {
+		return OT_ERROR_NO_BUFS;
+	}
 
 	return OT_ERROR_NONE;
 }
@@ -345,11 +399,29 @@ otError otPlatRadioClearSrcMatchExtEntry(otInstance *aInstance,
 void otPlatRadioClearSrcMatchShortEntries(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = {
+		.ack_fpb.enabled = false,
+		.ack_fpb.addr = NULL,
+		.ack_fpb.extended = false
+	};
+
+	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_ACK_FPB,
+				   &config);
 }
 
 void otPlatRadioClearSrcMatchExtEntries(otInstance *aInstance)
 {
 	ARG_UNUSED(aInstance);
+
+	struct ieee802154_config config = {
+		.ack_fpb.enabled = false,
+		.ack_fpb.addr = NULL,
+		.ack_fpb.extended = true
+	};
+
+	(void)radio_api->configure(radio_dev, IEEE802154_CONFIG_ACK_FPB,
+				   &config);
 }
 
 int8_t otPlatRadioGetReceiveSensitivity(otInstance *aInstance)

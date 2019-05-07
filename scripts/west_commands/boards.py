@@ -23,7 +23,7 @@ class Boards(WestCommand):
             accepts_unknown_args=False)
 
     def do_add_parser(self, parser_adder):
-        default_fmt = '{name} ({arch})'
+        default_fmt = '{name}'
         parser = parser_adder.add_parser(
             self.name,
             help=self.help,
@@ -75,7 +75,8 @@ class Boards(WestCommand):
             match = board_re.match(line)
             if match:
                 if not arch:
-                    log.die('Invalid board output from CMake: {}'.format(lines))
+                    log.die('Invalid board output from CMake: {}'.
+                            format(lines))
                 board = match.group(1)
                 boards[arch].append(board)
 

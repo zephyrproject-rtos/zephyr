@@ -63,7 +63,7 @@ s32_t z_impl_k_stack_alloc_init(struct k_stack *stack, u32_t num_entries)
 	void *buffer;
 	s32_t ret;
 
-	buffer = z_thread_malloc(num_entries);
+	buffer = z_thread_malloc(num_entries * sizeof(u32_t));
 	if (buffer != NULL) {
 		k_stack_init(stack, buffer, num_entries);
 		stack->flags = K_STACK_FLAG_ALLOC;
