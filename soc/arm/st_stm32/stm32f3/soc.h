@@ -66,6 +66,10 @@
 #include <stm32f3xx_ll_gpio.h>
 #endif
 
+#ifdef CONFIG_ADC_STM32
+#include <stm32f3xx_ll_adc.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32F3_SOC_H_ */

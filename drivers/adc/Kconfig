@@ -57,4 +57,6 @@ source "drivers/adc/Kconfig.intel_quark"
 
 source "drivers/adc/Kconfig.sam0"
 
+source "drivers/adc/Kconfig.stm32"
+
 endif # ADC
