@@ -575,10 +575,13 @@ class GitLint(ComplianceTest):
     _doc = "https://docs.zephyrproject.org/latest/contribute/#commit-guidelines"
 
     def run(self):
-        self.prepare(os.path.join(os.getcwd(), '[.gitlint]'))
+        self.prepare(GIT_TOP)
 
+        # By default gitlint looks for .gitlint configuration only in
+        # the current directory
         proc = subprocess.Popen('gitlint --commits %s' % (self.commit_range),
-                                shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                                stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                shell=True, cwd=GIT_TOP)
 
         msg = ""
         if proc.wait() != 0:
