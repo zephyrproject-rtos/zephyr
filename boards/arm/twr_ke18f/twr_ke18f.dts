@@ -1,0 +1,152 @@
+/*
+ * Copyright (c) 2019 Vestas Wind Systems A/S
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/nxp_ke18f512vlx16.dtsi>
+#include <dt-bindings/clock/kinetis_scg.h>
+
+/ {
+	model = "NXP Kinetis KE18 MCU Tower System Module";
+	compatible = "nxp,mke18f16", "nxp,ke18f", "nxp,ke1xf";
+
+	aliases {
+		led0 = &orange_led;
+		led1 = &yellow_led;
+		led2 = &green_led;
+		led3 = &red_led;
+		led4 = &tri_red_led;
+		led5 = &tri_green_led;
+		led6 = &tri_blue_led;
+		sw0 = &user_button_3;
+		sw1 = &user_button_2;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,uart-pipe = &uart0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		orange_led: led_0 {
+			gpios = <&gpioc 13 0>;
+			label = "User LED D9";
+		};
+		yellow_led: led_1 {
+			gpios = <&gpioc 12 0>;
+			label = "User LED D8";
+		};
+		green_led: led_2 {
+			gpios = <&gpioc 11 0>;
+			label = "User LED D7";
+		};
+		red_led: led_3 {
+			gpios = <&gpioc 10 0>;
+			label = "User LED D6";
+		};
+
+		tri_red_led: led_4 {
+			gpios = <&gpiod 16 0>;
+			label = "User Tricolor LED D5 (Red)";
+		};
+		tri_green_led: led_5 {
+			gpios = <&gpiod 15 0>;
+			label = "User Tricolor LED D5 (Green)";
+		};
+		tri_blue_led: led_6 {
+			gpios = <&gpiob 5 0>;
+			label = "User Tricolor LED D5 (Blue)";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		user_button_2: button_0 {
+			label = "User SW2";
+			gpios = <&gpiod 3 GPIO_INT_ACTIVE_LOW>;
+		};
+		user_button_3: button_1 {
+			label = "User SW3";
+			gpios = <&gpiod 6 GPIO_INT_ACTIVE_LOW>;
+		};
+	};
+};
+
+&sim {
+	clkout-source = <1>;
+	clkout-divider = <0>;
+};
+
+&scg {
+	sosc-freq = <8000000>;
+	sosc-mode = <KINETIS_SCG_SOSC_MODE_LOW_POWER>;
+	sosc-divider-1 = <1>;
+	sosc-divider-2 = <1>;
+
+	sirc-range = <8000000>;
+	sirc-divider-1 = <1>;
+	sirc-divider-2 = <2>;
+
+	firc-range = <48000000>;
+	firc-divider-1 = <1>;
+	firc-divider-2 = <1>;
+
+	spll-source = <KINETIS_SCG_SPLL_SRC_SOSC>;
+	spll-divider-pre = <1>;
+	spll-multiplier = <30>;
+	spll-divider-1 = <1>;
+	spll-divider-2 = <2>;
+
+	clk-source = <KINETIS_SCG_SCLK_SRC_SPLL>;
+	clk-divider-slow = <5>;
+	clk-divider-bus = <2>;
+	clk-divider-core = <1>;
+
+	clkout-source = <KINETIS_SCG_CLKOUT_SRC_FIRC>;
+};
+
+&uart0 {
+	status = "ok";
+	current-speed = <115200>;
+};
+
+&flash0 {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html#flash-partitions
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			label = "mcuboot";
+			reg = <0x00000000 0xc000>;
+		};
+		slot0_partition: partition@c000 {
+			label = "image-0";
+			reg = <0x0000c000 0x32000>;
+		};
+		slot1_partition: partition@3e000 {
+			label = "image-1";
+			reg = <0x0003e000 0x32000>;
+		};
+		scratch_partition: partition@70000 {
+			label = "image-scratch";
+			reg = <0x00070000 0xa000>;
+		};
+		storage_partition: partition@7a000 {
+			label = "storage";
+			reg = <0x0007a000 0x00006000>;
+		};
+	};
+};
