@@ -498,6 +498,13 @@ const char *zsock_gai_strerror(int errcode);
 /** zsock_getnameinfo(): Dummy option for compatibility */
 #define NI_DGRAM 16
 
+/* POSIX extensions */
+
+/** zsock_getnameinfo(): Max supported hostname length */
+#ifndef NI_MAXHOST
+#define NI_MAXHOST 64
+#endif
+
 /**
  * @brief Resolve a network address to a domain name or ASCII address
  *
