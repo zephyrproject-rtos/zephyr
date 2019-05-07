@@ -3,16 +3,15 @@
 #  Corey Goldberg, Dec 2012
 #
 
-import os
-import sys
-import xml.etree.ElementTree as ET
-
-
 """Merge multiple JUnit XML files into a single results file.
 Output dumps to sdtdout.
 example usage:
     $ python merge_junit_results.py results1.xml results2.xml > results.xml
 """
+
+import os
+import sys
+import xml.etree.ElementTree as ET
 
 
 def main():
