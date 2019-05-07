@@ -240,6 +240,11 @@ zephyr_compile_options(
 # @Intent: Set fundamental linker specific flags
 toolchain_ld_base()
 
+toolchain_ld_force_undefined_symbols(
+  _OffsetAbsSyms
+  _ConfigAbsSyms
+)
+
 if(NOT CONFIG_NATIVE_APPLICATION)
   # @Intent: Set linker specific flags for bare metal target
   toolchain_ld_baremetal()
@@ -666,20 +671,6 @@ set_property(TARGET
   ${ZEPHYR_INCLUDE_DIRS}
   )
 
-set(zephyr_lnk
-  ${LINKERFLAGPREFIX},-Map=${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
-  -u_OffsetAbsSyms
-  -u_ConfigAbsSyms
-  ${LINKERFLAGPREFIX},--whole-archive
-  ${ZEPHYR_LIBS_PROPERTY}
-  ${LINKERFLAGPREFIX},--no-whole-archive
-  kernel
-  $<TARGET_OBJECTS:${OFFSETS_LIB}>
-  ${LIB_INCLUDE_DIR}
-  -L${PROJECT_BINARY_DIR}
-  ${TOOLCHAIN_LIBS}
-  )
-
 if(CONFIG_GEN_ISR_TABLES)
   if(CONFIG_GEN_SW_ISR_TABLE)
     list(APPEND GEN_ISR_TABLE_EXTRA_ARG --sw-isr-table)
@@ -1060,7 +1051,14 @@ if(CONFIG_USERSPACE)
 
   set(APP_SMEM_UNALIGNED_LIB app_smem_unaligned_output_obj_renamed_lib)
   add_executable(       app_smem_unaligned_prebuilt misc/empty_file.c)
-  target_link_libraries(app_smem_unaligned_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_app_smem_unaligned.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
+  toolchain_ld_link_elf(
+    TARGET_ELF            app_smem_unaligned_prebuilt
+    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
+    LIBRARIES_PRE_SCRIPT  ""
+    LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_app_smem_unaligned.cmd
+    LIBRARIES_POST_SCRIPT ""
+    DEPENDENCIES          ${CODE_RELOCATION_DEP}
+  )
   set_property(TARGET   app_smem_unaligned_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_app_smem_unaligned.cmd)
   add_dependencies(     app_smem_unaligned_prebuilt linker_app_smem_unaligned_script ${OFFSETS_LIB})
 
@@ -1105,14 +1103,28 @@ if(CONFIG_USERSPACE AND CONFIG_ARM)
 
   set(PRIV_STACK_LIB priv_stacks_output_obj_renamed_lib)
   add_executable(       priv_stacks_prebuilt misc/empty_file.c)
-  target_link_libraries(priv_stacks_prebuilt ${TOPT} ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
+  toolchain_ld_link_elf(
+    TARGET_ELF            priv_stacks_prebuilt
+    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
+    LIBRARIES_PRE_SCRIPT  ""
+    LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd
+    LIBRARIES_POST_SCRIPT ""
+    DEPENDENCIES          ${CODE_RELOCATION_DEP}
+  )
   set_property(TARGET   priv_stacks_prebuilt PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_priv_stacks.cmd)
   add_dependencies(     priv_stacks_prebuilt linker_priv_stacks_script ${OFFSETS_LIB})
 endif()
 
 # FIXME: Is there any way to get rid of empty_file.c?
 add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} misc/empty_file.c)
-target_link_libraries(${ZEPHYR_PREBUILT_EXECUTABLE} ${TOPT} ${PROJECT_BINARY_DIR}/linker.cmd ${PRIV_STACK_LIB} ${zephyr_lnk} ${CODE_RELOCATION_DEP})
+toolchain_ld_link_elf(
+  TARGET_ELF            ${ZEPHYR_PREBUILT_EXECUTABLE}
+  OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
+  LIBRARIES_PRE_SCRIPT  ""
+  LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker.cmd
+  LIBRARIES_POST_SCRIPT ${PRIV_STACK_LIB}
+  DEPENDENCIES          ${CODE_RELOCATION_DEP}
+)
 set_property(TARGET   ${ZEPHYR_PREBUILT_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
 add_dependencies(     ${ZEPHYR_PREBUILT_EXECUTABLE} ${PRIV_STACK_DEP} ${LINKER_SCRIPT_TARGET} ${OFFSETS_LIB})
 
@@ -1148,7 +1160,14 @@ else()
   )
 
   add_executable(       ${ZEPHYR_FINAL_EXECUTABLE} misc/empty_file.c ${GKSF})
-  target_link_libraries(${ZEPHYR_FINAL_EXECUTABLE} ${GKOF} ${TOPT} ${PROJECT_BINARY_DIR}/linker_pass_final.cmd ${zephyr_lnk} ${CODE_RELOCATION_DEP})
+  toolchain_ld_link_elf(
+    TARGET_ELF            ${ZEPHYR_FINAL_EXECUTABLE}
+    OUTPUT_MAP            ${PROJECT_BINARY_DIR}/${KERNEL_MAP_NAME}
+    LIBRARIES_PRE_SCRIPT  ${GKOF}
+    LINKER_SCRIPT         ${PROJECT_BINARY_DIR}/linker_pass_final.cmd
+    LIBRARIES_POST_SCRIPT ""
+    DEPENDENCIES          ${CODE_RELOCATION_DEP}
+  )
   set_property(TARGET   ${ZEPHYR_FINAL_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker_pass_final.cmd)
   add_dependencies(     ${ZEPHYR_FINAL_EXECUTABLE} ${PRIV_STACK_DEP} ${LINKER_PASS_FINAL_SCRIPT_TARGET})
 
