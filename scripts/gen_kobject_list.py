@@ -162,11 +162,11 @@ void z_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 def write_gperf_table(fp, eh, objs, static_begin, static_end):
     fp.write(header)
     num_mutexes = eh.get_sys_mutex_counter()
-    if (num_mutexes != 0):
+    if num_mutexes != 0:
         fp.write("static struct k_mutex kernel_mutexes[%d] = {\n" % num_mutexes)
         for i in range(num_mutexes):
             fp.write("_K_MUTEX_INITIALIZER(kernel_mutexes[%d])" % i)
-            if (i != num_mutexes - 1):
+            if i != num_mutexes - 1:
                 fp.write(", ")
         fp.write("};\n")
 
