@@ -11,6 +11,10 @@
 /arch/arm/                                @MaureenHelm @galak
 /arch/arm/core/cortex_m/cmse/             @ioannisg
 /arch/arm/include/cortex_m/cmse.h         @ioannisg
+/arch/common/                             @andrewboie @ioannisg @andyross
+/arch/x86_64/                             @andyross
+/soc/arc/snps_*/                          @vonhust @ruuddw
+/soc/nios2                                @nashif @wentongwu
 /soc/arm/                                 @MaureenHelm @galak
 /soc/arm/arm/mps2/                        @fvincenzo
 /soc/arm/atmel_sam/sam3x/                 @ioannisg
@@ -23,6 +27,7 @@
 /soc/arm/ti_simplelink/cc32xx/            @vanti
 /soc/arm/ti_simplelink/msp432p4xx/        @Mani-Sadhasivam
 /soc/xtensa/intel_s1000/                  @sathishkuttan @dcpleung
+/soc/x86_64/                              @andyross
 /arch/nios2/                              @andrewboie @wentongwu
 /arch/posix/                              @aescolar
 /arch/riscv32/                            @kgugala @pgielda @nategraff-sifive
@@ -243,6 +248,9 @@
 /lib/libc/                                @nashif
 /lib/os/                                  @andrewboie @andyross
 /lib/posix/                               @pfalcon
+/lib/cmsis_rtos_v2/                       @nashif
+/lib/cmsis_rtos_v1/                       @nashif
+/lib/libc/                                @nashif @andrewboie
 /kernel/device.c                          @andrewboie @andyross @nashif
 /kernel/idle.c                            @andrewboie @andyross @nashif
 /samples/                                 @nashif
@@ -285,6 +293,7 @@
 /scripts/zephyr_module.py                 @tejlmand
 /subsys/bluetooth/                        @joerchan @jhedberg @Vudentz
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot
+/subsys/debug/                            @nashif
 /subsys/fs/                               @nashif
 /subsys/fs/fcb/                           @nvlsianpu
 /subsys/fs/nvs/                           @Laczen
@@ -305,6 +314,7 @@
 /subsys/settings/                         @nvlsianpu
 /subsys/shell/                            @jarz-nordic @nordic-krch
 /subsys/storage/                          @nvlsianpu
+/subsys/testsuite/                        @nashif
 /subsys/usb/                              @jfischer-phytec-iot @finikorg
 /tests/                                   @nashif
 /tests/boards/native_posix/               @aescolar
