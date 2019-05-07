@@ -57,7 +57,7 @@ def run_cmake(args, cwd=None, capture_output=False, dry_run=False):
 
     log.dbg('Running CMake:', quote_sh_list(cmd), level=log.VERBOSE_NORMAL)
     p = subprocess.Popen(cmd, **kwargs)
-    out, err = p.communicate()
+    out, _ = p.communicate()
     if p.returncode == 0:
         if out:
             return out.decode(sys.getdefaultencoding()).splitlines()
