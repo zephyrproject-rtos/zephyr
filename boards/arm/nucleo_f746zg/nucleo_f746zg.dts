@@ -108,3 +108,7 @@ arduino_spi: &spi1 {};
 	phase_seg2 = <5>;
 	status = "ok";
 };
+
+&adc1 {
+	status = "ok";
+};
