@@ -260,8 +260,7 @@ should know about.
 
    * As a parameter to the ``cmake`` invocation via the ``-D`` command-line
      switch
-   * As an environment variables (``export`` on Linux/macOS and ``set`` on
-     Windows)
+   * As :ref:`env_vars`.
    * As a ``set(<VARIABLE> <VALUE>)`` statement in your :file:`CMakeLists.txt`
 
 * :makevar:`ZEPHYR_BASE`: Sets the path to the directory containing Zephyr,
@@ -504,8 +503,9 @@ again.
 
 .. note:: The ``run`` target will use the QEMU binary available from the Zephyr
           SDK by default. To use an alternate version of QEMU, for example the
-          version installed on your host or a custom version, set the
-          environment variable ``QEMU_BIN_PATH`` to the alternate path.
+          version installed on your host or a custom version, :ref:`set the
+          environment variable <env_vars>` ``QEMU_BIN_PATH`` to the alternate
+          path.
 
 .. _application_debugging:
 .. _custom_board_definition:
@@ -737,7 +737,8 @@ The :file:`.gdbinit` file contains the following lines:
 
 .. note::
 
-   Substitute ZEPHYR_BASE for the current kernel's root directory.
+   Substitute the correct :ref:`ZEPHYR_BASE <env_vars_important>` for your
+   system.
 
 Execute the application to debug from the same directory that you chose for
 the :file:`gdbinit` file. The command can include the ``--tui`` option
@@ -813,8 +814,8 @@ Set Up the Eclipse Development Environment
 Generate and Import an Eclipse Project
 ======================================
 
-#. At a command line, configure your environment to use the GCC ARM Embedded
-   compiler as shown in :ref:`third_party_x_compilers`.
+#. Set up a GNU Arm Embedded toolchain as described in
+   :ref:`third_party_x_compilers`.
 
 #. Navigate to a folder outside of the Zephyr tree to build your application.
 
@@ -877,7 +878,7 @@ Create a Debugger Configuration
 
      - GDB Client Setup
 
-       - Executable path:
+       - Executable path example (use your :envvar:`GNUARMEMB_TOOLCHAIN_PATH`):
          :file:`C:\\gcc-arm-none-eabi-6_2017-q2-update\\bin\\arm-none-eabi-gdb.exe`
 
    - In the SVD Path tab:
@@ -973,7 +974,8 @@ Make sure to follow these steps in order.
    - Any value given on the CMake command line using ``-DBOARD=YOUR_BOARD``
      will be checked for and used next.
 
-   - If an environment variable ``BOARD`` is set, its value will then be used.
+   - If an :ref:`environment variable <env_vars>` ``BOARD`` is set, its value
+     will then be used.
 
    - Finally, if you set ``BOARD`` in your application :file:`CMakeLists.txt`
      as described in this step, this value will be used.
@@ -1436,8 +1438,8 @@ follows:
   passed to the the CMake command line, or present in the CMake variable cache,
   takes precedence.
 
-- The environment variable :envvar:`DTC_OVERLAY_FILE` is checked
-  next. This mechanism is now deprecated; users should set this
+- The :ref:`environment variable <env_vars>` :envvar:`DTC_OVERLAY_FILE` is
+  checked next. This mechanism is now deprecated; users should set this
   variable using CMake instead of the environment.
 
 - If the file :file:`BOARD.overlay` exists in your application directory,

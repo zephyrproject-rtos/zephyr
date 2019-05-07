@@ -26,24 +26,29 @@ GNU ARM Embedded
 	  has a `critical bug <https://github.com/zephyrproject-rtos/zephyr/issues/12257>`_
 	  and should not be used. Toolchain version **7-2018-q2-update** is known to work.
 
-#. Configure the environment variables needed to inform the Zephyr build system
-   to use this toolchain:
+#. :ref:`Set these environment variables <env_vars>`:
 
    - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``gnuarmemb``.
    - Set :envvar:`GNUARMEMB_TOOLCHAIN_PATH` to the toolchain installation
      directory.
 
-   For example:
+#. To check that you have set these variables correctly in your current
+   environment, follow these example shell sessions (the
+   :envvar:`GNUARMEMB_TOOLCHAIN_PATH` values may be different on your system):
 
    .. code-block:: console
 
-      # Linux or macOS
-      export ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
-      export GNUARMEMB_TOOLCHAIN_PATH="~/gnu_arm_embedded"
+      # Linux, macOS:
+      $ echo $ZEPHYR_TOOLCHAIN_VARIANT
+      gnuarmemb
+      $ echo $GNUARMEMB_TOOLCHAIN_PATH
+      /home/you/Downloads/gnu_arm_embedded
 
-      # Windows in cmd.exe
-      set ZEPHYR_TOOLCHAIN_VARIANT=gnuarmemb
-      set GNUARMEMB_TOOLCHAIN_PATH=C:\gnu_arm_embedded
+      # Windows
+      > echo %ZEPHYR_TOOLCHAIN_VARIANT%
+      gnuarmemb
+      > echo %GNUARMEMB_TOOLCHAIN_PATH%
+      C:\gnu_arm_embedded
 
 Intel ISSM
 **********
@@ -65,24 +70,29 @@ Intel ISSM
       Like the Zephyr repository, do not install the toolchain in a directory
       with spaces anywhere in the path.
 
-#. Configure the environment variables needed to inform the Zephyr build system
-   to use this toolchain:
+#. :ref:`Set these environment variables <env_vars>`:
 
    - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``issm``.
    - Set :envvar:`ISSM_INSTALLATION_PATH` to the directory containing the
      extracted files.
 
-   For example:
+#. To check that you have set these variables correctly in your current
+   environment, follow these example shell sessions (the
+   :envvar:`ISSM_INSTALLATION_PATH` values may be different on your system):
 
    .. code-block:: console
 
       # Linux
-      export ZEPHYR_TOOLCHAIN_VARIANT=issm
-      export ISSM_INSTALLATION_PATH=/home/you/Downloads/issm0-toolchain-windows-2017-02-07
+      $ echo $ZEPHYR_TOOLCHAIN_VARIANT
+      issm
+      $ echo $ISSM_INSTALLATION_PATH
+      /home/you/Downloads/issm0-toolchain-windows-2017-02-07
 
-      # Windows in cmd.exe
-      set ZEPHYR_TOOLCHAIN_VARIANT=issm
-      set ISSM_INSTALLATION_PATH=c:\issm0-toolchain-windows-2017-01-25
+      # Windows
+      > echo %ZEPHYR_TOOLCHAIN_VARIANT%
+      issm
+      > echo %ISSM_INSTALLATION_PATH%
+      c:\issm0-toolchain-windows-2017-01-25
 
 .. _xtools_x_compilers:
 
@@ -109,18 +119,22 @@ You can build toolchains from source code using crosstool-NG.
 
       Currently, only i586 and Arm toolchain builds are verified.
 
-#. Configure the environment variables needed to inform the Zephyr build system
-   to use this toolchain:
+#. :ref:`Set these environment variables <env_vars>`:
 
    - Set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to ``xtools``.
    - Set :envvar:`XTOOLS_TOOLCHAIN_PATH` to the toolchain build directory.
 
-   For example:
+#. To check that you have set these variables correctly in your current
+   environment, follow these example shell sessions (the
+   :envvar:`XTOOLS_TOOLCHAIN_PATH` values may be different on your system):
 
    .. code-block:: console
 
-      export ZEPHYR_TOOLCHAIN_VARIANT=xtools
-      export XTOOLS_TOOLCHAIN_PATH=/Volumes/CrossToolNGNew/build/output/
+      # Linux, macOS:
+      $ echo $ZEPHYR_TOOLCHAIN_VARIANT
+      xtools
+      $ echo $XTOOLS_TOOLCHAIN_PATH
+      /Volumes/CrossToolNGNew/build/output/
 
 .. _GNU ARM Embedded: https://developer.arm.com/open-source/gnu-toolchain/gnu-rm
 .. _ISSM Toolchain: https://software.intel.com/en-us/articles/issm-toolchain-only-download

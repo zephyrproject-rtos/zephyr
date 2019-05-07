@@ -50,9 +50,9 @@ See :ref:`west-install` for additional details on installing west. See
 `Installing Packages`_ in the Python Packaging User Guide for more information
 about pip\ [#pip]_, including this `information on -\\-user`_.
 
-- On Linux, verify that ``~/.local/bin`` is on your :envvar:`PATH` environment
-  variable, or programs installed with this option (like west) won't be
-  found\ [#linux_user]_.
+- On Linux, make sure ``~/.local/bin`` is on your :envvar:`PATH`
+  :ref:`environment variable <env_vars>`, or programs installed with ``--user``
+  -- like west -- won't be found\ [#linux_user]_.
 
 - On macOS, `Homebrew disables -\\-user`_.
 
@@ -97,6 +97,8 @@ Install Python packages required by Zephyr:
    # macOS and Windows
    pip3 install -r zephyr/scripts/requirements.txt
 
+.. _gs_toolchain:
+
 Set Up a Toolchain
 ******************
 
@@ -106,9 +108,9 @@ Toolchains are *installed* in the usual ways you get programs: with installer
 programs or system package managers, by downloading and extracting a zip
 archive, etc.
 
-You *configure* the toolchain to use by setting environment variables. You need
-to set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to a supported value, along with
-additional variable(s) specific to the toolchain variant.
+You *configure* the toolchain to use by setting :ref:`environment variables
+<env_vars>`. You need to set :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` to a supported
+value, along with additional variable(s) specific to the toolchain variant.
 
 The following choices are available. If you're not sure what to use, check your
 :ref:`board-level documentation <boards>`. If you're targeting an Arm Cortex-M,
@@ -124,16 +126,6 @@ you set up the :ref:`Zephyr SDK <zephyr_sdk>` toolchains or if you want to
    toolchain_other_x_compilers.rst
    toolchain_host.rst
    toolchain_custom_cmake.rst
-
-To use the same toolchain in new sessions in the future, make sure the
-variables are set persistently.
-
-On macOS and Linux, you can set the variables by putting the ``export`` lines
-setting environment variables in a file :file:`~/.zephyrrc`. On Windows, you
-can put the ``set`` lines in :file:`%userprofile%\\zephyrrc.cmd`. These files
-are used to modify your environment when you run ``zephyr-env.sh`` (Linux,
-macOS) and ``zephyr-env.cmd`` (Windows), which you will learn about in the next
-step.
 
 .. _getting_started_run_sample:
 
