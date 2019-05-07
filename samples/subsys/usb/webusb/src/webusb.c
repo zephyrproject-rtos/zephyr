@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(webusb);
 #include <misc/byteorder.h>
 #include <usb/usb_device.h>
 #include <usb/usb_common.h>
+#include <usb_descriptor.h>
 
 #include "webusb.h"
 
@@ -28,8 +29,9 @@ LOG_MODULE_REGISTER(webusb);
 #define WEBUSB_NUM_ITF			0x01
 /* Number of Endpoints in the custom interface */
 #define WEBUSB_NUM_EP			0x02
-#define WEBUSB_ENDP_OUT			0x02
-#define WEBUSB_ENDP_IN			0x83
+
+#define WEBUSB_IN_EP_IDX		0
+#define WEBUSB_OUT_EP_IDX		1
 
 static struct webusb_req_handlers *req_handlers;
 
@@ -64,9 +66,9 @@ USBD_CLASS_DESCR_DEFINE(primary, 0) struct {
 	struct usb_ep_descriptor if0_out_ep;
 } __packed webusb_desc = {
 	.if0 = INITIALIZER_IF(WEBUSB_NUM_EP, CUSTOM_CLASS),
-	.if0_in_ep = INITIALIZER_IF_EP(WEBUSB_ENDP_IN, USB_DC_EP_BULK,
+	.if0_in_ep = INITIALIZER_IF_EP(AUTO_EP_IN, USB_DC_EP_BULK,
 				       WEBUSB_BULK_EP_MPS, 0),
-	.if0_out_ep = INITIALIZER_IF_EP(WEBUSB_ENDP_OUT, USB_DC_EP_BULK,
+	.if0_out_ep = INITIALIZER_IF_EP(AUTO_EP_OUT, USB_DC_EP_BULK,
 					WEBUSB_BULK_EP_MPS, 0),
 };
 
@@ -136,17 +138,19 @@ static void webusb_write_cb(u8_t ep, int size, void *priv)
 
 static void webusb_read_cb(u8_t ep, int size, void *priv)
 {
-	LOG_DBG("ep %x size %u", ep, size);
+	struct usb_cfg_data *cfg = priv;
+
+	LOG_DBG("cfg %p ep %x size %u", cfg, ep, size);
 
 	if (size <= 0) {
 		goto done;
 	}
 
-	usb_transfer(WEBUSB_ENDP_IN, rx_buf, size, USB_TRANS_WRITE,
-		     webusb_write_cb, NULL);
+	usb_transfer(cfg->endpoint[WEBUSB_IN_EP_IDX].ep_addr, rx_buf, size,
+		     USB_TRANS_WRITE, webusb_write_cb, cfg);
 done:
-	usb_transfer(WEBUSB_ENDP_OUT, rx_buf, sizeof(rx_buf), USB_TRANS_READ,
-		     webusb_read_cb, NULL);
+	usb_transfer(ep, rx_buf, sizeof(rx_buf), USB_TRANS_READ,
+		     webusb_read_cb, cfg);
 }
 
 /**
@@ -176,7 +180,8 @@ static void webusb_dev_status_cb(struct usb_cfg_data *cfg,
 		break;
 	case USB_DC_CONFIGURED:
 		LOG_DBG("USB device configured");
-		webusb_read_cb(WEBUSB_ENDP_OUT, 0, NULL);
+		webusb_read_cb(cfg->endpoint[WEBUSB_OUT_EP_IDX].ep_addr,
+			       0, cfg);
 		break;
 	case USB_DC_DISCONNECTED:
 		LOG_DBG("USB device disconnected");
@@ -197,12 +202,12 @@ static void webusb_dev_status_cb(struct usb_cfg_data *cfg,
 /* Describe EndPoints configuration */
 static struct usb_ep_cfg_data webusb_ep_data[] = {
 	{
-		.ep_cb	= usb_transfer_ep_callback,
-		.ep_addr = WEBUSB_ENDP_OUT
+		.ep_cb = usb_transfer_ep_callback,
+		.ep_addr = AUTO_EP_IN
 	},
 	{
-		.ep_cb = usb_transfer_ep_callback,
-		.ep_addr = WEBUSB_ENDP_IN
+		.ep_cb	= usb_transfer_ep_callback,
+		.ep_addr = AUTO_EP_OUT
 	}
 };
 
