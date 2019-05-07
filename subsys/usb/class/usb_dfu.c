@@ -572,7 +572,7 @@ static int dfu_class_handle_req(struct usb_setup_packet *pSetup,
 
 		/* Set the DFU mode descriptors to be used after reset */
 		dfu_config.usb_device_description = (u8_t *) &dfu_mode_desc;
-		if (usb_set_config(&dfu_config) != 0) {
+		if (usb_set_config(dfu_config.usb_device_description) != 0) {
 			LOG_ERR("usb_set_config failed in DFU_DETACH");
 			return -EIO;
 		}
@@ -755,34 +755,12 @@ static void dfu_work_handler(struct k_work *item)
 
 static int usb_dfu_init(struct device *dev)
 {
-#ifndef CONFIG_USB_COMPOSITE_DEVICE
-	int ret;
-#endif
+	const struct flash_area *fa;
 
 	ARG_UNUSED(dev);
 
 	k_work_init(&dfu_work, dfu_work_handler);
 	k_poll_signal_init(&dfu_signal);
-
-#ifndef CONFIG_USB_COMPOSITE_DEVICE
-	dfu_config.usb_device_description = usb_get_device_descriptor();
-
-	/* Initialize the USB driver with the right configuration */
-	ret = usb_set_config(&dfu_config);
-	if (ret < 0) {
-		LOG_ERR("Failed to config USB");
-		return ret;
-	}
-
-	/* Enable USB driver */
-	ret = usb_enable(&dfu_config);
-	if (ret < 0) {
-		LOG_ERR("Failed to enable USB");
-		return ret;
-	}
-#endif
-
-	const struct flash_area *fa;
 
 	if (flash_area_open(dfu_data.flash_area_id, &fa)) {
 		return -EIO;
