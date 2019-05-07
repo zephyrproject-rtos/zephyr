@@ -19,6 +19,7 @@
 #include <spinlock.h>
 #include <kernel_structs.h>
 #include <misc/printk.h>
+#include <misc/math_extras.h>
 #include <sys_clock.h>
 #include <drivers/system_timer.h>
 #include <ksched.h>
@@ -475,9 +476,8 @@ Z_SYSCALL_HANDLER(k_thread_create,
 	/* Verify that the stack size passed in is OK by computing the total
 	 * size and comparing it with the size value in the object metadata
 	 */
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!__builtin_uadd_overflow(K_THREAD_STACK_RESERVED,
-							     stack_size,
-							     &total_size),
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(!u32_add_overflow(K_THREAD_STACK_RESERVED,
+						      stack_size, &total_size),
 				    "stack size overflow (%u+%u)", stack_size,
 				    K_THREAD_STACK_RESERVED));
 

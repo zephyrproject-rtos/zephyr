@@ -264,7 +264,7 @@ Z_SYSCALL_HANDLER(k_poll, events, num_events, timeout)
 	int ret;
 	k_spinlock_key_t key;
 	struct k_poll_event *events_copy = NULL;
-	unsigned int bounds;
+	u32_t bounds;
 
 	/* Validate the events buffer and make a copy of it in an
 	 * allocated kernel-side buffer.
@@ -273,11 +273,10 @@ Z_SYSCALL_HANDLER(k_poll, events, num_events, timeout)
 		ret = -EINVAL;
 		goto out;
 	}
-	if (Z_SYSCALL_VERIFY_MSG(
-		!__builtin_umul_overflow(num_events,
-					sizeof(struct k_poll_event),
-					&bounds),
-					"num_events too large")) {
+	if (Z_SYSCALL_VERIFY_MSG(!u32_mul_overflow(num_events,
+						   sizeof(struct k_poll_event),
+						   &bounds),
+				 "num_events too large")) {
 		ret = -EINVAL;
 		goto out;
 	}

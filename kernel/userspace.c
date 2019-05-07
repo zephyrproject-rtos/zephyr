@@ -7,6 +7,7 @@
 
 #include <kernel.h>
 #include <string.h>
+#include <misc/math_extras.h>
 #include <misc/printk.h>
 #include <misc/rb.h>
 #include <kernel_structs.h>
@@ -672,7 +673,7 @@ int z_user_to_copy(void *dst, const void *src, size_t size)
 
 char *z_user_string_alloc_copy(const char *src, size_t maxlen)
 {
-	unsigned long actual_len;
+	size_t actual_len;
 	int err;
 	char *ret = NULL;
 
@@ -682,10 +683,10 @@ char *z_user_string_alloc_copy(const char *src, size_t maxlen)
 	}
 	if (actual_len == maxlen) {
 		/* Not NULL terminated */
-		printk("string too long %p (%lu)\n", src, actual_len);
+		printk("string too long %p (%zu)\n", src, actual_len);
 		goto out;
 	}
-	if (__builtin_uaddl_overflow(actual_len, 1, &actual_len)) {
+	if (size_add_overflow(actual_len, 1, &actual_len)) {
 		printk("overflow\n");
 		goto out;
 	}
@@ -705,7 +706,7 @@ out:
 
 int z_user_string_copy(char *dst, const char *src, size_t maxlen)
 {
-	unsigned long actual_len;
+	size_t actual_len;
 	int ret, err;
 
 	actual_len = z_user_string_nlen(src, maxlen, &err);
@@ -715,11 +716,11 @@ int z_user_string_copy(char *dst, const char *src, size_t maxlen)
 	}
 	if (actual_len == maxlen) {
 		/* Not NULL terminated */
-		printk("string too long %p (%lu)\n", src, actual_len);
+		printk("string too long %p (%zu)\n", src, actual_len);
 		ret = EINVAL;
 		goto out;
 	}
-	if (__builtin_uaddl_overflow(actual_len, 1, &actual_len)) {
+	if (size_add_overflow(actual_len, 1, &actual_len)) {
 		printk("overflow\n");
 		ret = EINVAL;
 		goto out;

@@ -18,6 +18,7 @@
 #include <string.h>
 #include <wait_q.h>
 #include <misc/dlist.h>
+#include <misc/math_extras.h>
 #include <init.h>
 #include <syscall_handler.h>
 #include <kernel_internal.h>
@@ -73,8 +74,7 @@ int z_impl_k_msgq_alloc_init(struct k_msgq *q, size_t msg_size,
 	int ret;
 	size_t total_size;
 
-	if (__builtin_umul_overflow((unsigned int)msg_size, max_msgs,
-				    (unsigned int *)&total_size)) {
+	if (size_mul_overflow(msg_size, max_msgs, &total_size)) {
 		ret = -EINVAL;
 	} else {
 		buffer = z_thread_malloc(total_size);
