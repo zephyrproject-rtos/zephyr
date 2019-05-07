@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(net_sock, CONFIG_NET_SOCKETS_LOG_LEVEL);
 #include <net/socket.h>
 #include <syscall_handler.h>
 #include <misc/fdtable.h>
+#include <misc/math_extras.h>
 
 #include "sockets_internal.h"
 
@@ -1037,12 +1038,11 @@ int z_impl_zsock_poll(struct zsock_pollfd *fds, int nfds, int timeout)
 Z_SYSCALL_HANDLER(zsock_poll, fds, nfds, timeout)
 {
 	struct zsock_pollfd *fds_copy;
-	unsigned int fds_size;
+	size_t fds_size;
 	int ret;
 
 	/* Copy fds array from user mode */
-	if (__builtin_umul_overflow(nfds, sizeof(struct zsock_pollfd),
-				    &fds_size)) {
+	if (size_mul_overflow(nfds, sizeof(struct zsock_pollfd), &fds_size)) {
 		errno = EFAULT;
 		return -1;
 	}

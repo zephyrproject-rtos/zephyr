@@ -13,6 +13,7 @@
 #ifndef _ASMLANGUAGE
 #include <kernel.h>
 #include <misc/printk.h>
+#include <misc/math_extras.h>
 #include <kernel_internal.h>
 #include <stdbool.h>
 
@@ -353,9 +354,9 @@ extern int z_user_string_copy(char *dst, const char *src, size_t maxlen);
 #define Z_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, write) \
 	({ \
 		u32_t product; \
-		Z_SYSCALL_VERIFY_MSG(!__builtin_umul_overflow((u32_t)(nmemb), \
-							      (u32_t)(size), \
-							      &product), \
+		Z_SYSCALL_VERIFY_MSG(!u32_mul_overflow((u32_t)(nmemb), \
+						       (u32_t)(size), \
+						       &product), \
 				     "%ux%u array is too large", \
 				     (u32_t)(nmemb), (u32_t)(size)) ||  \
 			Z_SYSCALL_MEMORY(ptr, product, write); \

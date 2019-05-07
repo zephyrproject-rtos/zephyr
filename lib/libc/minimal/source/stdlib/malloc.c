@@ -8,6 +8,7 @@
 #include <zephyr.h>
 #include <init.h>
 #include <errno.h>
+#include <misc/math_extras.h>
 #include <misc/mempool.h>
 #include <string.h>
 #include <app_memory/app_memdomain.h>
@@ -66,23 +67,11 @@ void free(void *ptr)
 	sys_mem_pool_free(ptr);
 }
 
-static bool size_t_mul_overflow(size_t a, size_t b, size_t *res)
-{
-#if __SIZEOF_SIZE_T__ == 4
-	return __builtin_umul_overflow((unsigned int)a, (unsigned int)b,
-				       (unsigned int *)res);
-#else /* __SIZEOF_SIZE_T__ == 8 */
-	return __builtin_umulll_overflow((unsigned long long)a,
-					 (unsigned long long)b,
-					 (unsigned long long *)res);
-#endif
-}
-
 void *calloc(size_t nmemb, size_t size)
 {
 	void *ret;
 
-	if (size_t_mul_overflow(nmemb, size, &size)) {
+	if (size_mul_overflow(nmemb, size, &size)) {
 		errno = ENOMEM;
 		return NULL;
 	}
@@ -144,7 +133,7 @@ void *realloc(void *ptr, size_t requested_size)
 
 void *reallocarray(void *ptr, size_t nmemb, size_t size)
 {
-	if (size_t_mul_overflow(nmemb, size, &size)) {
+	if (size_mul_overflow(nmemb, size, &size)) {
 		errno = ENOMEM;
 		return NULL;
 	}

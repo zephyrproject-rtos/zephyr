@@ -10,6 +10,7 @@
 #include <init.h>
 #include <string.h>
 #include <misc/__assert.h>
+#include <misc/math_extras.h>
 #include <stdbool.h>
 
 /* Linker-defined symbols bound the static pool structs */
@@ -144,8 +145,7 @@ void *k_mem_pool_malloc(struct k_mem_pool *pool, size_t size)
 	 * get a block large enough to hold an initial (hidden) block
 	 * descriptor, as well as the space the caller requested
 	 */
-	if (__builtin_add_overflow(size, sizeof(struct k_mem_block_id),
-				   &size)) {
+	if (size_add_overflow(size, sizeof(struct k_mem_block_id), &size)) {
 		return NULL;
 	}
 	if (k_mem_pool_alloc(pool, &block, size, K_NO_WAIT) != 0) {
@@ -193,7 +193,7 @@ void *k_calloc(size_t nmemb, size_t size)
 	void *ret;
 	size_t bounds;
 
-	if (__builtin_mul_overflow(nmemb, size, &bounds)) {
+	if (size_mul_overflow(nmemb, size, &bounds)) {
 		return NULL;
 	}
 
