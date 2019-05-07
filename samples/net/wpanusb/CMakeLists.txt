@@ -6,6 +6,7 @@ project(wpanusb)
 
 target_include_directories(app PRIVATE $ENV{ZEPHYR_BASE}/subsys/net/ip)
 target_include_directories(app PRIVATE $ENV{ZEPHYR_BASE}/subsys/net/l2)
+target_include_directories(app PRIVATE $ENV{ZEPHYR_BASE}/subsys/usb)
 
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})
