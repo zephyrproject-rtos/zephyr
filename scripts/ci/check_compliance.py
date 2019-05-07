@@ -352,7 +352,7 @@ entries, then bump the 'max_top_items' variable in {}.
             if sym_name[7:] not in defined_syms and \
                sym_name not in UNDEF_KCONFIG_WHITELIST:
 
-               undef_to_locs[sym_name].append("{}:{}".format(path, lineno))
+                undef_to_locs[sym_name].append("{}:{}".format(path, lineno))
 
         if not undef_to_locs:
             return
