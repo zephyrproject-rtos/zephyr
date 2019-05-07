@@ -60,6 +60,10 @@
 #include <stm32l0xx_ll_iwdg.h>
 #endif
 
+#ifdef CONFIG_ADC_STM32
+#include <stm32l0xx_ll_adc.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L0_SOC_H_ */
