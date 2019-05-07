@@ -9295,7 +9295,16 @@ static bool is_enc_req_pause_tx(struct connection *conn)
 				if (!conn->pkt_tx_last) {
 					conn->pkt_tx_last = node_tx;
 				}
+
+				/* Head now contains a control packet permitted
+				 * to be transmitted to peer.
+				 */
+				return false;
 			}
+
+			/* Head contains ENC_REQ packet deferred due to another
+			 * control procedure in progress.
+			 */
 			return true;
 		}
 
@@ -9305,6 +9314,7 @@ static bool is_enc_req_pause_tx(struct connection *conn)
 		conn->llcp_ack--;
 	}
 
+	/* Head contains a permitted data or control packet. */
 	return false;
 }
 #endif /* CONFIG_BT_CTLR_LE_ENC */
@@ -9313,6 +9323,7 @@ static void prepare_pdu_data_tx(struct connection *conn,
 				struct pdu_data **pdu_data_tx)
 {
 	struct pdu_data *_pdu_data_tx;
+	bool pause_tx = false;
 
 	if (/* empty packet */
 	    conn->empty ||
@@ -9320,14 +9331,17 @@ static void prepare_pdu_data_tx(struct connection *conn,
 	    !conn->pkt_tx_head ||
 	    /* data tx paused, only control packets allowed */
 	    ((
-#if defined(CONFIG_BT_CTLR_LE_ENC)
-	      conn->pause_tx ||
-	      is_enc_req_pause_tx(conn) ||
-#endif /* CONFIG_BT_CTLR_LE_ENC */
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH)
 	      conn->llcp_length.pause_tx ||
 #endif /* CONFIG_BT_CTLR_DATA_LENGTH */
-	      0) && (conn->pkt_tx_head != conn->pkt_tx_ctrl))) {
+#if defined(CONFIG_BT_CTLR_LE_ENC)
+	      conn->pause_tx ||
+	      /* Encryption setup queued */
+	      (pause_tx = is_enc_req_pause_tx(conn)) ||
+#endif /* CONFIG_BT_CTLR_LE_ENC */
+	      0) &&
+	    /* Encryption setup queued or data paused */
+	    (pause_tx || (conn->pkt_tx_head != conn->pkt_tx_ctrl)))) {
 			_pdu_data_tx = empty_tx_enqueue(conn);
 	} else {
 		u16_t max_tx_octets;
