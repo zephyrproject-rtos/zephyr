@@ -1,0 +1,41 @@
+#
+# Copyright (c) 2018, Endre Karlson
+# Copyright (c) 2018, Song Qiang <songqiang1304521@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: ST STM32 family ADC
+version: 0.1
+
+description: >
+    This binding gives a base representation of the ST STM32 ADC
+
+inherits:
+    !include adc.yaml
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "st,stm32-adc"
+
+    reg:
+      type: array
+      description: mmio register space
+      generation: define
+      category: required
+
+    clocks:
+      type: array
+      category: required
+      description: Clock gate control information
+      generation: define
+
+    interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+...

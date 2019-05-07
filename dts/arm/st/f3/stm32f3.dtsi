@@ -297,6 +297,15 @@
 			status = "disabled";
 			label = "RTC_0";
 		};
+
+		adc1: adc@50000000 {
+			compatible = "st,stm32-adc";
+			reg = <0x50000000 0x400>;
+			clocks = <&rcc STM32_CLOCK_BUS_AHB1 0x10000000>;
+			interrupts = <18 0>;
+			status = "disabled";
+			label = "ADC_1";
+		};
 	};
 
 	usb_fs_phy: usbphy {
