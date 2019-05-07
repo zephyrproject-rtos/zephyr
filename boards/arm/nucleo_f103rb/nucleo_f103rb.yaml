@@ -13,3 +13,4 @@ supported:
   - spi
   - pwm
   - watchdog
+  - adc
