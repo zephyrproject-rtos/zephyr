@@ -72,3 +72,7 @@ arduino_serial: &usart6 {};
 &iwdg {
 	status = "ok";
 };
+
+&adc1 {
+	status = "ok";
+};

@@ -93,3 +93,7 @@ arduino_spi: &spi1 {
 		};
 	};
 };
+
+&adc1 {
+	status = "ok";
+};

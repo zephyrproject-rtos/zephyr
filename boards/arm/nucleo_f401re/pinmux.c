@@ -41,6 +41,9 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PB14, STM32F4_PINMUX_FUNC_PB14_SPI2_MISO},
 	{STM32_PIN_PB15, STM32F4_PINMUX_FUNC_PB15_SPI2_MOSI},
 #endif	/* CONFIG_SPI_1 */
+#ifdef CONFIG_ADC_1
+	{STM32_PIN_PA0, STM32F4_PINMUX_FUNC_PA0_ADC123_IN0},
+#endif	/* CONFIG_ADC_1 */
 };
 
 static int pinmux_stm32_init(struct device *port)
