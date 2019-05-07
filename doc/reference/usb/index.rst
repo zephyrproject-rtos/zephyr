@@ -95,22 +95,7 @@ USB Device configuration structure:
    :end-before: usb.rst device config data end
    :linenos:
 
-For the Composite USB Device configuration is done by composite layer,
-otherwise:
-
-.. literalinclude:: ../../../subsys/usb/class/loopback.c
-   :language: c
-   :start-after: usb.rst configure USB controller start
-   :end-before: usb.rst configure USB controller end
-   :linenos:
-
-To enable the USB device for host/device connection:
-
-.. literalinclude:: ../../../subsys/usb/class/loopback.c
-   :language: c
-   :start-after: usb.rst enable USB controller start
-   :end-before:  usb.rst enable USB controller end
-   :linenos:
+Configuration of USB Device is done in the stack layer.
 
 The vendor device requests are forwarded by the USB stack core driver to the
 class driver through the registered class handler.
