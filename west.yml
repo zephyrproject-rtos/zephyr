@@ -38,6 +38,8 @@ manifest:
     - name: tinycbor
       path: modules/lib/tinycbor
       revision: 111f7a215cc4efa49fd03a7835719adca83b4388
+    - name: ci-tools
+      revision: master
 
   self:
     path: zephyr
