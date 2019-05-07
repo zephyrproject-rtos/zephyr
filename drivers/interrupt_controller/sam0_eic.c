@@ -34,8 +34,22 @@ DEVICE_DECLARE(sam0_eic);
 
 static void wait_synchronization(void)
 {
+#ifdef REG_EIC_SYNCBUSY
+	while (EIC->SYNCBUSY.reg) {
+	}
+#else
 	while (EIC->STATUS.bit.SYNCBUSY) {
 	}
+#endif
+}
+
+static inline void set_eic_enable(bool on)
+{
+#ifdef REG_EIC_CTRLA
+	EIC->CTRLA.bit.ENABLE = on;
+#else
+	EIC->CTRL.bit.ENABLE = on;
+#endif
 }
 
 static void sam0_eic_isr(void *arg)
@@ -110,7 +124,7 @@ int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger,
 	/* Lock everything so it's safe to reconfigure */
 	key = irq_lock();
 	/* Disable the EIC for reconfiguration */
-	EIC->CTRL.bit.ENABLE = 0;
+	set_eic_enable(0);
 
 	line_assignment = &dev_data->lines[line_index];
 
@@ -157,7 +171,7 @@ int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger,
 	/* Apply the config to the EIC itself */
 	EIC->CONFIG[config_index].reg = config;
 
-	EIC->CTRL.bit.ENABLE = 1;
+	set_eic_enable(1);
 	wait_synchronization();
 	/*
 	 * Errata: The EIC generates a spurious interrupt for the newly
@@ -169,7 +183,7 @@ int sam0_eic_acquire(int port, int pin, enum sam0_eic_trigger trigger,
 	return 0;
 
 err_in_use:
-	EIC->CTRL.bit.ENABLE = 1;
+	set_eic_enable(1);
 	wait_synchronization();
 	irq_unlock(key);
 	return -EBUSY;
@@ -216,7 +230,7 @@ int sam0_eic_release(int port, int pin)
 	/* Lock everything so it's safe to reconfigure */
 	key = irq_lock();
 	/* Disable the EIC */
-	EIC->CTRL.bit.ENABLE = 0;
+	set_eic_enable(0);
 	wait_synchronization();
 
 	/*
@@ -237,7 +251,7 @@ int sam0_eic_release(int port, int pin)
 	EIC->INTFLAG.reg = mask;
 
 done:
-	EIC->CTRL.bit.ENABLE = 1;
+	set_eic_enable(1);
 	wait_synchronization();
 	irq_unlock(key);
 	return 0;
@@ -334,11 +348,15 @@ static int sam0_eic_init(struct device *dev)
 		return -EINVAL;
 	}
 
-	/* Enable the EIC clock in PM */
-	PM->APBAMASK.bit.EIC_ = 1;
-
 	clock_control_on(clk, (clock_control_subsys_t)EIC_GCLK_ID);
 
+#ifdef MCLK
+	/* Enable the EIC clock in APBAMASK */
+	MCLK->APBAMASK.reg |= MCLK_APBAMASK_EIC;
+#else
+	/* Enable the EIC clock in PM */
+	PM->APBAMASK.bit.EIC_ = 1;
+#endif
 #ifdef DT_ATMEL_SAM0_EIC_0_IRQ_0
 	SAM0_EIC_IRQ_CONNECT(0);
 #endif
@@ -388,7 +406,7 @@ static int sam0_eic_init(struct device *dev)
 	SAM0_EIC_IRQ_CONNECT(15);
 #endif
 
-	EIC->CTRL.bit.ENABLE = 1;
+	set_eic_enable(1);
 	wait_synchronization();
 
 	return 0;

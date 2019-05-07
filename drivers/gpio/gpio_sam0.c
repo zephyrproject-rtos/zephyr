@@ -94,9 +94,9 @@ static int gpio_sam0_config(struct device *dev, int access_op, u32_t pin,
 		 */
 		pincfg.bit.PMUXEN = 1;
 		if (pin & 1) {
-			regs->PMUX[pin / 2].bit.PMUXO = PORT_PMUX_PMUXE_A_Val;
+			regs->PMUX[pin / 2].bit.PMUXO = PORT_PMUX_PMUXE(0);
 		} else {
-			regs->PMUX[pin / 2].bit.PMUXE = PORT_PMUX_PMUXE_A_Val;
+			regs->PMUX[pin / 2].bit.PMUXE = PORT_PMUX_PMUXE(0);
 		}
 
 		enum sam0_eic_trigger trigger;
@@ -297,6 +297,9 @@ DEVICE_AND_API_INIT(gpio_sam0_2, DT_ATMEL_SAM0_GPIO_PORT_C_LABEL,
 
 static const struct gpio_sam0_config gpio_sam0_config_3 = {
 	.regs = (PortGroup *)DT_ATMEL_SAM0_GPIO_PORT_D_BASE_ADDRESS,
+#ifdef CONFIG_SAM0_EIC
+	.id = 3,
+#endif
 };
 
 DEVICE_AND_API_INIT(gpio_sam0_3, DT_ATMEL_SAM0_GPIO_PORT_D_LABEL, gpio_sam0_init,
