@@ -69,6 +69,7 @@ SECTIONS {
 		*(.noinit*)
 	} :ram
 
+	_end = .;
 
 	/* We enable orphan section warnings, so these standard sections all
 	 * have to be called out explicitly
