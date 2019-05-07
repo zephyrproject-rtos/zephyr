@@ -808,19 +808,29 @@ static int mesh_commit(void)
 
 BT_SETTINGS_DEFINE(mesh, mesh_set, mesh_commit, NULL);
 
+/* Pending flags that use K_NO_WAIT as the storage timeout */
+#define NO_WAIT_PENDING_BITS (BIT(BT_MESH_NET_PENDING) |           \
+			      BIT(BT_MESH_IV_PENDING) |            \
+			      BIT(BT_MESH_SEQ_PENDING))
+
+/* Pending flags that use CONFIG_BT_MESH_STORE_TIMEOUT */
+#define GENERIC_PENDING_BITS (BIT(BT_MESH_KEYS_PENDING) |          \
+			      BIT(BT_MESH_HB_PUB_PENDING) |        \
+			      BIT(BT_MESH_CFG_PENDING) |           \
+			      BIT(BT_MESH_MOD_PENDING))
+
 static void schedule_store(int flag)
 {
 	s32_t timeout;
 
 	atomic_set_bit(bt_mesh.flags, flag);
 
-	if (atomic_test_bit(bt_mesh.flags, BT_MESH_NET_PENDING) ||
-	    atomic_test_bit(bt_mesh.flags, BT_MESH_IV_PENDING) ||
-	    atomic_test_bit(bt_mesh.flags, BT_MESH_SEQ_PENDING)) {
+	if (atomic_get(bt_mesh.flags) & NO_WAIT_PENDING_BITS) {
 		timeout = K_NO_WAIT;
 	} else if (atomic_test_bit(bt_mesh.flags, BT_MESH_RPL_PENDING) &&
-		   (CONFIG_BT_MESH_RPL_STORE_TIMEOUT <
-		    CONFIG_BT_MESH_STORE_TIMEOUT)) {
+		   (!(atomic_get(bt_mesh.flags) & GENERIC_PENDING_BITS) ||
+		    (CONFIG_BT_MESH_RPL_STORE_TIMEOUT <
+		     CONFIG_BT_MESH_STORE_TIMEOUT))) {
 		timeout = K_SECONDS(CONFIG_BT_MESH_RPL_STORE_TIMEOUT);
 	} else {
 		timeout = K_SECONDS(CONFIG_BT_MESH_STORE_TIMEOUT);
