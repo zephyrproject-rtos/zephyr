@@ -259,7 +259,8 @@ static void test_net_pkt_basics_of_rw(void)
 	/* And re-read the value again */
 	net_pkt_cursor_init(pkt);
 	net_pkt_skip(pkt, 1);
-	net_pkt_read_be16(pkt, &value16);
+	ret = net_pkt_read_be16(pkt, &value16);
+	zassert_true(ret == 0, "Pkt read failed");
 	zassert_equal(value16, 42, "Invalid value %d read, expected %d",
 		      value16, 42);
 
