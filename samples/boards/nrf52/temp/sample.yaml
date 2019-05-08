@@ -1,0 +1,11 @@
+sample:
+  name: nRF5 temperature
+tests:
+  sample.boards.nrf52.temp:
+    platform_whitelist: nrf52840_pca10056 nrf52_pca10040 nrf51_pca10028
+    harness: console
+    tags: sensors
+    harness_config:
+        type: one_line
+        regex:
+            - "Temperature:(.*) C"
