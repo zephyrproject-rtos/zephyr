@@ -1160,12 +1160,8 @@ if(CONFIG_USERSPACE AND CONFIG_ARM)
   add_dependencies(     priv_stacks_prebuilt linker_priv_stacks_script ${OFFSETS_LIB})
 endif()
 
-# FIXME: Is there any way to get rid of empty_file.c?
-add_executable(       ${ZEPHYR_PREBUILT_EXECUTABLE} misc/empty_file.c)
-target_link_libraries(${ZEPHYR_PREBUILT_EXECUTABLE} ${TOPT} ${PROJECT_BINARY_DIR}/linker.cmd ${PRIV_STACK_LIB} ${zephyr_lnk} ${CODE_RELOCATION_DEP})
-set_property(TARGET   ${ZEPHYR_PREBUILT_EXECUTABLE} PROPERTY LINK_DEPENDS ${PROJECT_BINARY_DIR}/linker.cmd)
-add_dependencies(     ${ZEPHYR_PREBUILT_EXECUTABLE} ${PRIV_STACK_DEP} ${LINKER_SCRIPT_TARGET} ${OFFSETS_LIB})
-
+# @Intent: Register how to obtain ZEPHYR_PREBUILT_EXECUTABLE; linking and dependencies
+toolchain_prebuilt_link()
 
 set(generated_kernel_files ${GKSF} ${GKOF})
 if(NOT generated_kernel_files)
