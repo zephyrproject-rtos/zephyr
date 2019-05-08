@@ -706,8 +706,8 @@ set(zephyr_lnk
   -u_ConfigAbsSyms
   ${LINKERFLAGPREFIX},--whole-archive
   ${ZEPHYR_LIBS_PROPERTY}
-  ${LINKERFLAGPREFIX},--no-whole-archive
   kernel
+  ${LINKERFLAGPREFIX},--no-whole-archive
   $<TARGET_OBJECTS:${OFFSETS_LIB}>
   ${LIB_INCLUDE_DIR}
   -L${PROJECT_BINARY_DIR}
