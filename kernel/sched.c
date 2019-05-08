@@ -912,24 +912,22 @@ void z_impl_k_yield(void)
 Z_SYSCALL_HANDLER0_SIMPLE_VOID(k_yield);
 #endif
 
-s32_t z_impl_k_sleep(s32_t duration)
+static s32_t z_tick_sleep(s32_t ticks)
 {
 #ifdef CONFIG_MULTITHREADING
 	u32_t expected_wakeup_time;
-	s32_t ticks;
 
 	__ASSERT(!z_is_in_isr(), "");
-	__ASSERT(duration != K_FOREVER, "");
 
-	K_DEBUG("thread %p for %d ns\n", _current, duration);
+	K_DEBUG("thread %p for %d ticks\n", _current, ticks);
 
 	/* wait of 0 ms is treated as a 'yield' */
-	if (duration == 0) {
+	if (ticks == 0) {
 		k_yield();
 		return 0;
 	}
 
-	ticks = _TICK_ALIGN + z_ms_to_ticks(duration);
+	ticks += _TICK_ALIGN;
 	expected_wakeup_time = ticks + z_tick_get_32();
 
 	/* Spinlock purely for local interrupt locking to prevent us
@@ -952,11 +950,22 @@ s32_t z_impl_k_sleep(s32_t duration)
 
 	ticks = expected_wakeup_time - z_tick_get_32();
 	if (ticks > 0) {
-		return __ticks_to_ms(ticks);
+		return ticks;
 	}
 #endif
 
 	return 0;
+}
+
+s32_t z_impl_k_sleep(int ms)
+{
+	s32_t ticks;
+
+	__ASSERT(ms != K_FOREVER, "");
+
+	ticks = z_ms_to_ticks(ms);
+	ticks = z_tick_sleep(ticks);
+	return __ticks_to_ms(ticks);
 }
 
 #ifdef CONFIG_USERSPACE
