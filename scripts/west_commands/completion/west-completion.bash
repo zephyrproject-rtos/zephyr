@@ -575,6 +575,18 @@ __comp_west_help()
 }
 
 # Zephyr extension commands
+__comp_west_completion()
+{
+	case "$cur" in
+		*)
+			local counter=$( __west_pos_first_nonflag "$(__west_to_extglob "$global_args_opts")" )
+			if [ "$cword" -eq "$counter" ]; then
+				__set_comp "bash"
+			fi
+			;;
+	esac
+}
+
 __comp_west_boards()
 {
 	local boards_args_opts="
@@ -750,6 +762,7 @@ __comp_west()
 	)
 
 	local zephyr_ext_cmds=(
+		completion
 		boards
 		build
 		sign

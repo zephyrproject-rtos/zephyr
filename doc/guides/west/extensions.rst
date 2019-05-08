@@ -18,6 +18,7 @@ help for them shows up like this in ``west --help``:
 .. code-block:: none
 
    commands from project at "zephyr":
+     completion:           display shell completion scripts
      boards:               display information about supported boards
      build:                compile a Zephyr application
      sign:                 sign a Zephyr binary for bootloader chain-loading
