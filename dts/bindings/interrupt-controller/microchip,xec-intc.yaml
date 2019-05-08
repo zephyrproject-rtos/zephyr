@@ -1,0 +1,48 @@
+#
+# Copyright (c) 2019 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: XEC INTC
+version: 0.1
+
+description: >
+    This binding describes the Microchip XEC Interrupt Aggregator
+
+properties:
+  compatible:
+      category: required
+      type: string
+      description: compatible strings
+      constraint: "microchip,xec-intc"
+      generation: define
+
+  reg:
+      category: required
+      type: int
+      description: mmio register space
+      generation: define
+
+  label:
+      type: string
+      category: required
+      description: Human readable string naming the device (used by Zephyr for API name)
+      generation: define
+
+  interrupts:
+      type: array
+      category: required
+      description: required interrupts
+      generation: define
+
+  girq-num:
+      type: int
+      category: required
+      description: required aggregated GIRQ number
+      generation: define
+
+"#cells":
+  - irq
+  - priority
+...
