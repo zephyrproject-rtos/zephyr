@@ -356,6 +356,43 @@ inval:
 	return -EINVAL;
 }
 
+static int dma_sam0_get_status(struct device *dev, u32_t channel,
+			       struct dma_status *stat)
+{
+	struct dma_sam0_data *data = DEV_DATA(dev);
+	u32_t act;
+
+	if (channel >= DMAC_CH_NUM || stat == NULL) {
+		return -EINVAL;
+	}
+
+	act = DMA_REGS->ACTIVE.reg;
+	if ((act & DMAC_ACTIVE_ABUSY) &&
+	    ((act & DMAC_ACTIVE_ID_Msk) >> DMAC_ACTIVE_ID_Pos) == channel) {
+		stat->busy = true;
+		stat->pending_length = (act & DMAC_ACTIVE_BTCNT_Msk) >>
+				       DMAC_ACTIVE_BTCNT_Pos;
+	} else {
+		stat->busy = false;
+		stat->pending_length = data->descriptors_wb[channel].BTCNT.reg;
+	}
+
+	switch (data->descriptors[channel].BTCTRL.bit.BEATSIZE) {
+	case DMAC_BTCTRL_BEATSIZE_BYTE_Val:
+		break;
+	case DMAC_BTCTRL_BEATSIZE_HWORD_Val:
+		stat->pending_length *= 2U;
+		break;
+	case DMAC_BTCTRL_BEATSIZE_WORD_Val:
+		stat->pending_length *= 4U;
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 DEVICE_DECLARE(dma_sam0_0);
 
 #define DMA_SAM0_IRQ_CONNECT(n)						 \
@@ -416,6 +453,7 @@ static const struct dma_driver_api dma_sam0_api = {
 	.start = dma_sam0_start,
 	.stop = dma_sam0_stop,
 	.reload = dma_sam0_reload,
+	.get_status = dma_sam0_get_status,
 };
 
 DEVICE_AND_API_INIT(dma_sam0_0, CONFIG_DMA_0_NAME, &dma_sam0_init,
