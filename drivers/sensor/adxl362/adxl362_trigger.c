@@ -154,8 +154,7 @@ int adxl362_init_interrupt(struct device *dev)
 		return -EINVAL;
 	}
 
-	/* Configures the inactivity and activity interrupts to be linked. */
-	ret = adxl362_set_interrupt_mode(dev, ADXL362_MODE_LINK);
+	ret = adxl362_set_interrupt_mode(dev, CONFIG_ADXL362_INTERRUPT_MODE);
 
 	if (ret) {
 		return -EFAULT;
