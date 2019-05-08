@@ -33,6 +33,7 @@ context about the tool.
 .. toctree::
    :maxdepth: 1
 
+   install.rst
    repo-tool.rst
    manifest.rst
    config.rst
