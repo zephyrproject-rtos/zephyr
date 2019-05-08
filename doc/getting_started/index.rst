@@ -52,8 +52,9 @@ First, install the ``west`` binary and bootstrapper:
    pip3 install west
 
 .. note::
-   See :ref:`gs_python_deps` for additional clarfication on using the
-   ``--user`` switch.
+   See :ref:`west-install` for additional details on installing west.
+
+.. _clone-zephyr:
 
 Clone the Zephyr Repositories
 =============================
