@@ -392,10 +392,10 @@ void lll_conn_isr_tx(void *param)
 	radio_tmr_hcto_configure(hcto);
 
 #if defined(CONFIG_BT_CENTRAL) && defined(CONFIG_BT_CTLR_CONN_RSSI)
-	if (!lll->role) {
+	if (!trx_cnt && !lll->role) {
 		radio_rssi_measure();
 	}
-#endif /* iCONFIG_BT_CENTRAL && CONFIG_BT_CTLR_CONN_RSSI */
+#endif /* CONFIG_BT_CENTRAL && CONFIG_BT_CTLR_CONN_RSSI */
 
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
 	defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
