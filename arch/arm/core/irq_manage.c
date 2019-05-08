@@ -40,7 +40,7 @@ extern void __reserved(void);
  *
  * @return N/A
  */
-void z_arch_irq_enable(unsigned int irq)
+void z_nvic_irq_enable(unsigned int irq)
 {
 	NVIC_EnableIRQ((IRQn_Type)irq);
 }
@@ -54,7 +54,7 @@ void z_arch_irq_enable(unsigned int irq)
  *
  * @return N/A
  */
-void z_arch_irq_disable(unsigned int irq)
+void z_nvic_irq_disable(unsigned int irq)
 {
 	NVIC_DisableIRQ((IRQn_Type)irq);
 }
@@ -65,7 +65,7 @@ void z_arch_irq_disable(unsigned int irq)
  * @param irq IRQ line
  * @return interrupt enable state, true or false
  */
-int z_arch_irq_is_enabled(unsigned int irq)
+int z_nvic_irq_is_enabled(unsigned int irq)
 {
 	return NVIC->ISER[REG_FROM_IRQ(irq)] & BIT(BIT_FROM_IRQ(irq));
 }
@@ -81,7 +81,7 @@ int z_arch_irq_is_enabled(unsigned int irq)
  *
  * @return N/A
  */
-void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
+void z_nvic_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 {
 	/* The kernel may reserve some of the highest priority levels.
 	 * So we offset the requested priority level with the number
@@ -112,7 +112,14 @@ void z_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
 		 "invalid priority %d! values must be less than %lu\n",
 		 prio - _IRQ_PRIO_OFFSET,
 		 BIT(DT_NUM_IRQ_PRIO_BITS) - (_IRQ_PRIO_OFFSET));
-	NVIC_SetPriority((IRQn_Type)irq, prio);
+
+	__ASSERT(irq < CM_MAX_NVIC_INPUTS,
+		"invalid nvic irq %d! values must be less than %lu\n",
+		irq, CM_MAX_NVIC_INPUTS);
+
+	if (irq < CM_MAX_NVIC_INPUTS) {
+		NVIC_SetPriority((IRQn_Type)irq, prio);
+	}
 }
 
 /**

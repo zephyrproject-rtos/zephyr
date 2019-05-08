@@ -28,9 +28,9 @@ GTEXT(z_arch_irq_enable)
 GTEXT(z_arch_irq_disable)
 GTEXT(z_arch_irq_is_enabled)
 #else
-extern void z_arch_irq_enable(unsigned int irq);
-extern void z_arch_irq_disable(unsigned int irq);
-extern int z_arch_irq_is_enabled(unsigned int irq);
+extern void z_nvic_irq_enable(unsigned int irq);
+extern void z_nvic_irq_disable(unsigned int irq);
+extern int z_nvic_irq_is_enabled(unsigned int irq);
 
 extern void _IntExit(void);
 
@@ -43,8 +43,38 @@ extern void _IntExit(void);
 #define CONCAT(x, y) DO_CONCAT(x, y)
 
 /* internal routine documented in C file, needed by IRQ_CONNECT() macro */
-extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
-			      u32_t flags);
+extern void z_nvic_irq_priority_set(unsigned int irq, unsigned int prio,
+				    u32_t flags);
+
+#define CONFIG_GEN_IRQ_START_VECTOR 0
+
+#ifdef CONFIG_MULTI_LEVEL_INTERRUPTS
+
+#include <soc.h>
+
+#define CONFIG_NUM_IRQS (CONFIG_SOC_NUM_EXTERNAL_INTS +\
+			(CONFIG_NUM_2ND_LEVEL_AGGREGATORS *\
+			CONFIG_MAX_IRQ_PER_AGGREGATOR))
+
+#define z_arch_irq_enable(irq) z_soc_irq_enable(irq)
+#define z_arch_irq_disable(irq) z_soc_irq_disable(irq)
+#define z_arch_irq_priority_set(irq, prio, flags) \
+		z_soc_irq_priority_set(irq, prio, flags)
+
+#else
+
+#ifndef CONFIG_NUM_IRQS
+#define CONFIG_NUM_IRQS CONFIG_SOC_NUM_EXTERNAL_INTS
+#endif
+
+#define z_arch_irq_enable(irq) z_nvic_irq_enable(irq)
+#define z_arch_irq_disable(irq) z_nvic_irq_disable(irq)
+#define z_arch_irq_is_enabled(irq) z_nvic_irq_is_enabled(irq)
+#define z_arch_irq_priority_set(irq, prio, flags) \
+		z_nvic_irq_priority_set(irq, prio, flags)
+
+#endif /* CONFIG_MULTI_LEVEL_INTERRUPTS */
+
 
 
 /* Flags for use with IRQ_CONNECT() */
@@ -82,7 +112,7 @@ extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
 #define Z_ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
-	z_irq_priority_set(irq_p, priority_p, flags_p); \
+	z_arch_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
 
@@ -96,7 +126,7 @@ extern void z_irq_priority_set(unsigned int irq, unsigned int prio,
 #define Z_ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 ({ \
 	Z_ISR_DECLARE(irq_p, ISR_FLAG_DIRECT, isr_p, NULL); \
-	z_irq_priority_set(irq_p, priority_p, flags_p); \
+	z_arch_irq_priority_set(irq_p, priority_p, flags_p); \
 	irq_p; \
 })
 

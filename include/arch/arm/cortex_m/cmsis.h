@@ -94,18 +94,25 @@ typedef enum {
 
 #if defined(CONFIG_CPU_CORTEX_M0)
 #include <core_cm0.h>
+#define CM_MAX_NVIC_INPUTS	8ul
 #elif defined(CONFIG_CPU_CORTEX_M0PLUS)
 #include <core_cm0plus.h>
+#define CM_MAX_NVIC_INPUTS	8ul
 #elif defined(CONFIG_CPU_CORTEX_M3)
 #include <core_cm3.h>
+#define CM_MAX_NVIC_INPUTS	240ul
 #elif defined(CONFIG_CPU_CORTEX_M4)
 #include <core_cm4.h>
+#define CM_MAX_NVIC_INPUTS	240ul
 #elif defined(CONFIG_CPU_CORTEX_M7)
 #include <core_cm7.h>
+#define CM_MAX_NVIC_INPUTS	240ul
 #elif defined(CONFIG_CPU_CORTEX_M23)
 #include <core_cm23.h>
+#define CM_MAX_NVIC_INPUTS	124ul
 #elif defined(CONFIG_CPU_CORTEX_M33)
 #include <core_cm33.h>
+#define CM_MAX_NVIC_INPUTS	496ul
 #else
 #error "Unknown Cortex-M device"
 #endif

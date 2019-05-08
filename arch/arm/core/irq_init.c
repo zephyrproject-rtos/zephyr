@@ -33,11 +33,17 @@
  * @return N/A
  */
 
+/*
+ * If Multi-level interrupt controller support is enabled CONFIG_NUM_IRQS may
+ * exceed the maximum number of Cortex-Mx NVIC external inputs.
+ */
 void z_IntLibInit(void)
 {
 	int irq = 0;
 
 	for (; irq < CONFIG_NUM_IRQS; irq++) {
-		NVIC_SetPriority((IRQn_Type)irq, _IRQ_PRIO_OFFSET);
+		if (irq < CM_MAX_NVIC_INPUTS) {
+			NVIC_SetPriority((IRQn_Type)irq, _IRQ_PRIO_OFFSET);
+		}
 	}
 }
