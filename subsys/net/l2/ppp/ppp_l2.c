@@ -222,7 +222,11 @@ static int ppp_enable(struct net_if *iface, bool state)
 			ppp->start(net_if_get_device(iface));
 		}
 
-		start_ppp(ctx);
+		if (ctx->is_startup_pending) {
+			ctx->is_enable_done = true;
+		} else {
+			start_ppp(ctx);
+		}
 	}
 
 	return 0;
@@ -370,10 +374,53 @@ const struct ppp_protocol_handler *ppp_lcp_get(void)
 	return ppp_lcp;
 }
 
+static void ppp_startup(struct k_work *work)
+{
+	struct ppp_context *ctx = CONTAINER_OF(work, struct ppp_context,
+					       startup);
+	const struct ppp_protocol_handler *proto;
+	int count;
+
+	if (!ctx->is_init) {
+		return;
+	}
+
+	NET_DBG("PPP %p startup for interface %p", ctx, ctx->iface);
+
+	for (proto = __net_ppp_proto_start, count = 0;
+	     proto != __net_ppp_proto_end;
+	     proto++, count++) {
+		if (proto->protocol == PPP_LCP) {
+			ppp_lcp = proto;
+		}
+
+		proto->init(ctx);
+	}
+
+	if (count == 0) {
+		NET_ERR("There are no PPP protocols configured!");
+		goto bail_out;
+	}
+
+	if (ppp_lcp == NULL) {
+		NET_ERR("No LCP found!");
+		goto bail_out;
+	}
+
+	ctx->is_ready_to_serve = true;
+
+bail_out:
+	ctx->is_startup_pending = false;
+
+	if (ctx->is_enable_done) {
+		start_ppp(ctx);
+		ctx->is_enable_done = false;
+	}
+}
+
 void net_ppp_init(struct net_if *iface)
 {
 	struct ppp_context *ctx = net_if_l2_data(iface);
-	const struct ppp_protocol_handler *proto;
 
 	NET_DBG("Initializing PPP L2 %p for iface %p", ctx, iface);
 
@@ -385,33 +432,22 @@ void net_ppp_init(struct net_if *iface)
 	ctx->iface = iface;
 
 	if (!ctx->is_init) {
-		int count;
+		ctx->is_init = true;
 
 #if defined(CONFIG_NET_SHELL)
 		k_sem_init(&ctx->shell.wait_echo_reply, 0, UINT_MAX);
 #endif
 
-		for (proto = __net_ppp_proto_start, count = 0;
-		     proto != __net_ppp_proto_end;
-		     proto++, count++) {
-			if (proto->protocol == PPP_LCP) {
-				ppp_lcp = proto;
-			}
+		/* TODO: Unify the startup worker code so that we can save
+		 * some memory if there are more than one PPP context in the
+		 * system. The issue is not very likely as typically there
+		 * would be only one PPP network interface in the system.
+		 */
+		k_delayed_work_init(&ctx->startup, ppp_startup);
 
-			proto->init(ctx);
-		}
+		ctx->is_startup_pending = true;
 
-		if (count == 0) {
-			NET_ERR("There are no PPP protocols configured!");
-			return;
-		}
-
-		if (ppp_lcp == NULL) {
-			NET_ERR("No LCP found!");
-			return;
-		}
+		k_delayed_work_submit(&ctx->startup,
+				K_MSEC(CONFIG_NET_L2_PPP_DELAY_STARTUP_MS));
 	}
-
-	ctx->is_init = true;
-	ctx->is_ready_to_serve = true;
 }

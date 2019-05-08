@@ -351,6 +351,9 @@ struct ipv6cp_options {
 
 /** PPP L2 context specific to certain network interface */
 struct ppp_context {
+	/** PPP startup worker. */
+	struct k_delayed_work startup;
+
 	struct {
 		/** Carrier ON/OFF handler worker. This is used to create
 		 * network interface UP/DOWN event when PPP L2 driver
@@ -458,6 +461,12 @@ struct ppp_context {
 
 	/** Is PPP L2 enabled or not */
 	u16_t is_enabled : 1;
+
+	/** PPP startup pending */
+	u16_t is_startup_pending : 1;
+
+	/** PPP enable pending */
+	u16_t is_enable_done : 1;
 
 	/** Network status (up / down) */
 	u16_t is_network_up : 1;
