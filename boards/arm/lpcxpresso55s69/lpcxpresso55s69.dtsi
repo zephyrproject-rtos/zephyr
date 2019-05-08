@@ -1,0 +1,33 @@
+/*
+ * Copyright (c) 2019, NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases{
+		usart-0 = &usart0;
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		green_led: led_1 {
+			gpios = <&gpio1 7 0>;
+			label = "User LD2";
+			status = "disabled";
+		};
+		blue_led: led_2 {
+			gpios = <&gpio1 4 0>;
+			label = "User LD3";
+			status = "disabled";
+		};
+		red_led: led_3 {
+			gpios = <&gpio1 6 0>;
+			label = "User LD4";
+			status = "disabled";
+		};
+	};
+};
