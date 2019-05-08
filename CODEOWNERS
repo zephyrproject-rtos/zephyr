@@ -156,7 +156,7 @@
 /dts/riscv32/rv32m1*                      @MaureenHelm
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
-/dts/bindings/iio/adc/st,stm32-adc.yaml   @cybertale
+/dts/bindings/iio/adc/st*stm32-adc.yaml   @cybertale
 /dts/bindings/serial/ns16550.yaml         @gnuless
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
