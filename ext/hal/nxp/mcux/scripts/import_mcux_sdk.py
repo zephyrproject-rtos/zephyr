@@ -37,12 +37,13 @@ def get_soc_family(device):
 def get_files(src, pattern):
     matches = []
     nonmatches = []
+    always_exclude = "freertos"
     if os.path.exists(src):
         for filename in os.listdir(src):
             path = os.path.join(src, filename)
             if re.search(pattern, filename):
                 matches.append(path)
-            else:
+            elif not re.search(always_exclude, filename):
                 nonmatches.append(path)
 
     return [matches, nonmatches]
@@ -68,7 +69,8 @@ def import_sdk(directory):
         device_headers, _ = get_files(device_src, device_pattern)
 
         drivers_src = os.path.join(directory, 'devices', device, 'drivers')
-        drivers_pattern = "fsl_clock|fsl_iomuxc"
+        drivers_pattern = "fsl_clock|fsl_iomuxc|fsl_power\.|fsl_reset"
+        #pattern fsl_power. has a full stop so other such as powerquad is not copied
         [device_drivers, shared_drivers] = get_files(drivers_src, drivers_pattern)
 
         xip_boot_src = os.path.join(directory, 'devices', device, 'xip')
