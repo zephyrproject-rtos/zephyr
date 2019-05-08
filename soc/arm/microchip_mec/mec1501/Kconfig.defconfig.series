@@ -11,12 +11,13 @@ config SOC_SERIES
 	string
 	default "mec1501"
 
-config NUM_IRQS
-	int
-	# must be >= the highest interrupt number used
-	# - include the UART interrupts
-	# All NVIC external sources.
+config SOC_NUM_EXTERNAL_INTS
+	int "Max external IRQs connected to the NVIC"
+	range 0 240
 	default 174
+	help
+	  The maximum number of external interrupt inputs connected to
+	  the Cortex-M4 NVIC.
 
 source "soc/arm/microchip_mec/mec1501/Kconfig.defconfig.mec1501*"
 endif # SOC_SERIES_MEC1501X

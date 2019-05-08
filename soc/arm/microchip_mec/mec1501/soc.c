@@ -12,6 +12,9 @@
 #include <cortex_m/exc.h>
 
 
+extern void z_nvic_irq_priority_set(unsigned int irq, unsigned int prio,
+				    u32_t flags);
+
 /*
  * Make sure PCR sleep enables are clear except for crypto
  * which do not have internal clock gating.
@@ -93,6 +96,154 @@ static int soc_clk32_init(void)
 }
 
 /*
+ * Enable peripheral interrupt in ECIA and NVIC.
+ * irq b[7:0] = NVIC external input.
+ *     b[15:8] = GIRQ bit number 0 <= bitnum < 32
+ *     b[23:16] = GIRQ connected to NVIC external input. 8 <= girq_no <= 26
+ *     b[31:24] = unused = 0
+ */
+void z_soc_irq_enable(u32_t irq)
+{
+	ECIA_Type *pctrl = (ECIA_Type *)MCHP_ECIA_ADDR;
+	GIRQ_Type *pgirq = (GIRQ_Type *)GIRQ08_REGS;
+	u32_t nvic_num = MCHP_EXTRACT_AGGR_NVIC_NUM(irq);
+	u32_t bitpos = MCHP_EXTRACT_GIRQ_BITPOS(irq);
+	u32_t girq_no = MCHP_EXTRACT_GIRQ_NUM(irq);
+
+	if (!(pctrl->BLK_EN_SET & (1ul << bitpos))) {
+		nvic_num = MCHP_EXTRACT_DIRECT_NVIC_NUM(irq);
+	}
+
+	pgirq += (girq_no - MCHP_FIRST_GIRQ);
+	pgirq->EN_SET = (1ul << bitpos);
+
+	NVIC_EnableIRQ((IRQn_Type)nvic_num);
+}
+
+/*
+ * Disable peripheral interrupt in ECIA and NVIC.
+ * irq b[7:0] = NVIC external input.
+ *     b[15:8] = GIRQ bit number 0 <= bitnum < 32
+ *     b[23:16] = GIRQ connected to NVIC external input. 8 <= girq_no <= 26
+ *     b[31:24] = unused = 0
+ * Note: We cannot disable Aggregated interrupt in the NVIC due to other
+ * sources in the aggregator requiring an interrupt.
+ * If this routine was called in an atomic context then we could after
+ * clearing the requested source check if all other sources are disabled.
+ * If all are disabled then clear the aggregated NVIC input.
+ */
+void z_soc_irq_disable(u32_t irq)
+{
+
+	ECIA_Type *pctrl = (ECIA_Type *)MCHP_ECIA_ADDR;
+	GIRQ_Type *pgirq = (GIRQ_Type *)GIRQ08_REGS;
+	u32_t bitpos = MCHP_EXTRACT_GIRQ_BITPOS(irq);
+	u32_t girq_no = MCHP_EXTRACT_GIRQ_NUM(irq);
+
+	if (!(pctrl->BLK_EN_SET & (1ul << bitpos))) {
+		NVIC_DisableIRQ((IRQn_Type)MCHP_EXTRACT_DIRECT_NVIC_NUM(irq));
+	}
+
+	pgirq += (girq_no - MCHP_FIRST_GIRQ);
+	pgirq->EN_CLR = (1ul << bitpos);
+}
+
+/*
+ * MEC15xx all priority implemenented in NVIC.
+ * irq b[7:0] = NVIC external input.
+ */
+void z_soc_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags)
+{
+	z_nvic_irq_priority_set((irq & 0xffu), prio, flags);
+}
+
+/* Extra API's for Aggregated GIRQ's */
+
+/*
+ * Enable Aggregated GIRQn in NVIC and sources specified in bit map
+ * irq b[7:0] = NVIC external input.
+ *     b[15:8] = GIRQ bit number 0 <= bitnum < 32
+ *     b[23:16] = GIRQ connected to NVIC external input. 8 <= girq_no <= 26
+ *     b[31:24] = unused = 0
+ * bitmap = Each bit set to 1 will have its source enabled in the GIRQ.
+ */
+void z_soc_irq_aggr_bitmap_enable(u32_t irq, u32_t bitmap)
+{
+	GIRQ_Type *pgirq = (GIRQ_Type *)GIRQ08_REGS;
+	u32_t nvic_num = MCHP_EXTRACT_AGGR_NVIC_NUM(irq);
+	u32_t girq_no = MCHP_EXTRACT_GIRQ_NUM(irq);
+
+	pgirq += (girq_no - MCHP_FIRST_GIRQ);
+	pgirq->EN_SET = bitmap;
+
+	NVIC_EnableIRQ((IRQn_Type)nvic_num);
+}
+
+/*
+ * Disable Aggregated GIRQn sources specified in bit map.
+ * irq b[7:0] = NVIC external input.
+ *     b[15:8] = GIRQ bit number 0 <= bitnum < 32
+ *     b[23:16] = GIRQ connected to NVIC external input. 8 <= girq_no <= 26
+ *     b[31:24] = unused = 0
+ * bitmap = Each bit set to 1 will have its source enabled in the GIRQ.
+ * Note: if atomic behavior can be guaranteed then we could disable
+ * the aggregated NVIC input if all GIRQ enables are cleared.
+ */
+void z_soc_irq_aggr_bitmap_disable(u32_t irq, u32_t bitmap)
+{
+	GIRQ_Type *pgirq = (GIRQ_Type *)GIRQ08_REGS;
+	u32_t girq_no = MCHP_EXTRACT_GIRQ_NUM(irq);
+
+	pgirq += (girq_no - MCHP_FIRST_GIRQ);
+	pgirq->EN_CLR = bitmap;
+}
+
+/*
+ * Clear Aggregated GIRQn sources specified in bit map.
+ * irq b[7:0] = NVIC external input.
+ *     b[15:8] = GIRQ bit number 0 <= bitnum < 32
+ *     b[23:16] = GIRQ connected to NVIC external input. 8 <= girq_no <= 26
+ *     b[31:24] = unused = 0
+ * bitmap = Each bit set to 1 will have its source enabled in the GIRQ.
+ * Note: if atomic behavior can be guaranteed then we could disable
+ * the aggregated NVIC input if all GIRQ enables are cleared.
+ */
+void z_soc_irq_aggr_bitmap_clear(u32_t irq, u32_t bitmap)
+{
+	GIRQ_Type *pgirq = (GIRQ_Type *)GIRQ08_REGS;
+	u32_t nvic_num = MCHP_EXTRACT_AGGR_NVIC_NUM(irq);
+	u32_t girq_no = MCHP_EXTRACT_GIRQ_NUM(irq);
+
+	pgirq += (girq_no - MCHP_FIRST_GIRQ);
+	pgirq->SRC = bitmap;
+	NVIC_ClearPendingIRQ((IRQn_Type)nvic_num);
+}
+
+/*
+ * Enable peripheral interrupt in ECIA and NVIC.
+ * irq b[7:0] = NVIC external input. It may be aggregated or direct.
+ *     b[15:8] = GIRQ bit number 0 <= bitnum < 32
+ *     b[23:16] = GIRQ connected to NVIC external input. 8 <= girq_no <= 26
+ *     b[31:24] = unused = 0
+ */
+void z_soc_irq_clear(u32_t irq)
+{
+	ECIA_Type *pctrl = (ECIA_Type *)MCHP_ECIA_ADDR;
+	GIRQ_Type *pgirq = (GIRQ_Type *)GIRQ08_REGS;
+	u32_t nvic_num = MCHP_EXTRACT_AGGR_NVIC_NUM(irq);
+	u32_t bitpos = MCHP_EXTRACT_GIRQ_BITPOS(irq);
+	u32_t girq_no = MCHP_EXTRACT_GIRQ_NUM(irq);
+
+	if (!(pctrl->BLK_EN_SET & (1ul << bitpos))) {
+		nvic_num = MCHP_EXTRACT_DIRECT_NVIC_NUM(irq);
+	}
+
+	pgirq += (girq_no - MCHP_FIRST_GIRQ);
+	pgirq->SRC = (1ul << bitpos);
+	NVIC_ClearPendingIRQ((IRQn_Type)nvic_num);
+}
+
+/*
  * Initialize MEC1501 EC Interrupt Aggregator (ECIA) and external NVIC
  * inputs.
  */
@@ -107,8 +258,6 @@ static int soc_ecia_init(void)
 
 	/* gate off all aggregated outputs */
 	ECIA_REGS->BLK_EN_CLR = 0xFFFFFFFFul;
-	/* gate on GIRQ's that are aggregated only */
-	ECIA_REGS->BLK_EN_SET = MCHP_ECIA_AGGR_BITMAP;
 
 	/* Clear all GIRQn source enables and source status */
 	pg = &ECIA_REGS->GIRQ08;
@@ -129,12 +278,11 @@ static int soc_ecia_init(void)
 
 static int soc_init(struct device *dev)
 {
-	u32_t isave;
+	u32_t key;
 
 	ARG_UNUSED(dev);
 
-	isave = __get_PRIMASK();
-	__disable_irq();
+	key = irq_lock();
 
 	z_clearfaults();
 
@@ -153,9 +301,7 @@ static int soc_init(struct device *dev)
 
 	soc_ecia_init();
 
-	if (!isave) {
-		__enable_irq();
-	}
+	irq_unlock(key);
 
 	return 0;
 }

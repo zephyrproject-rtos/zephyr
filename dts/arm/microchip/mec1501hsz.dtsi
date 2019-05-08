@@ -28,6 +28,105 @@
 	};
 
 	soc {
+		girq08: interrupt-controller@4000e000 {
+			compatible = "microchip,xec-intc";
+			reg = <0x4000e000 0x14 0x4000e200 0x0c>;
+			reg-names = "girq", "ctrl";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <0 0>;
+			girq-num = <8>;
+			interrupt-parent = <&nvic>;
+			label = "GIRQ08_INTC";
+		};
+		girq09: interrupt-controller@4000e014 {
+			compatible = "microchip,xec-intc";
+			reg = <0x4000e014 0x14 0x4000e200 0x0c>;
+			reg-names = "girq", "ctrl";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <1 0>;
+			girq-num = <9>;
+			interrupt-parent = <&nvic>;
+			label = "GIRQ09_INTC";
+		};
+		girq10: interrupt-controller@4000e028 {
+			compatible = "microchip,xec-intc";
+			reg = <0x4000e028 0x14 0x4000e200 0x0c>;
+			reg-names = "girq", "ctrl";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <2 0>;
+			girq-num = <10>;
+			interrupt-parent = <&nvic>;
+			label = "GIRQ10_INTC";
+		};
+		girq11: interrupt-controller@4000e03c {
+			compatible = "microchip,xec-intc";
+			reg = <0x4000e03c 0x14 0x4000e200 0x0c>;
+			reg-names = "girq", "ctrl";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <3 0>;
+			girq-num = <11>;
+			interrupt-parent = <&nvic>;
+			label = "GIRQ11_INTC";
+		};
+		girq12: interrupt-controller@4000e050 {
+			compatible = "microchip,xec-intc";
+			reg = <0x4000e050 0x14 0x4000e200 0x0c>;
+			reg-names = "girq", "ctrl";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <4 0>;
+			girq-num = <12>;
+			interrupt-parent = <&nvic>;
+			label = "GIRQ12_INTC";
+		};
+		girq19: interrupt-controller@4000e0dc {
+			compatible = "microchip,xec-intc";
+			reg = <0x4000e0dc 0x14 0x4000e200 0x0c>;
+			reg-names = "girq", "ctrl";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <11 0>;
+			girq-num = <19>;
+			interrupt-parent = <&nvic>;
+			label = "GIRQ19_INTC";
+		};
+		girq24: interrupt-controller@4000e140 {
+			compatible = "microchip,xec-intc";
+			reg = <0x4000e140 0x14 0x4000e200 0x0c>;
+			reg-names = "girq", "ctrl";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <15 0>;
+			girq-num = <24>;
+			interrupt-parent = <&nvic>;
+			label = "GIRQ24_INTC";
+		};
+		girq25: interrupt-controller@4000e154 {
+			compatible = "microchip,xec-intc";
+			reg = <0x4000e154 0x14 0x4000e200 0x0c>;
+			reg-names = "girq", "ctrl";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <16 0>;
+			girq-num = <25>;
+			interrupt-parent = <&nvic>;
+			label = "GIRQ25_INTC";
+		};
+		girq26: interrupt-controller@4000e168 {
+			compatible = "microchip,xec-intc";
+			reg = <0x4000e168 0x14 0x4000e200 0x0c>;
+			reg-names = "girq", "ctrl";
+			interrupt-controller;
+			#interrupt-cells = <2>;
+			interrupts = <17 0>;
+			girq-num = <26>;
+			interrupt-parent = <&nvic>;
+			label = "GIRQ26_INTC";
+		};
 		uart0: uart@400f2400 {
 			compatible = "ns16550";
 			reg = <0x400f2400 0x400>;

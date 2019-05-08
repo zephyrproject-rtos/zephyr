@@ -14,6 +14,319 @@
 #include "MEC1501hsz.h"
 #include "regaccess.h"
 
+#define MCHP_AGGR_NVIC_NUM_SHIFT	0
+#define MCHP_GIRQ_BITPOS_SHIFT		8
+#define MCHP_GIRQ_NUM_SHIFT		16
+#define MCHP_DIRECT_NVIC_NUM_SHIFT	24
+#define MCHP_AGGR_NVIC_NUM_MASK0	0xfful
+#define MCHP_GIRQ_BITPOS_MASK0		0x1ful
+#define MCHP_GIRQ_NUM_MASK0		0x1ful
+#define MCHP_DIRECT_NVIC_NUM_MASK0	0xfful
+#define MCHP_AGGR_NVIC_NUM_MASK		(0xfful << 0)
+#define MCHP_GIRQ_BITPOS_MASK		(0x1ful << 8)
+#define MCHP_GIRQ_NUM_MASK		(0x1ful << 16)
+#define MCHP_DIRECT_NVIC_NUM_MASK	(0xfful << 24)
+
+#define MCHP_EXTRACT_AGGR_NVIC_NUM(n) \
+	(((u32_t)(n) >> MCHP_AGGR_NVIC_NUM_SHIFT) & MCHP_AGGR_NVIC_NUM_MASK0)
+
+#define MCHP_EXTRACT_GIRQ_BITPOS(n) \
+	(((u32_t)(n) >> MCHP_GIRQ_BITPOS_SHIFT) & MCHP_GIRQ_BITPOS_MASK0)
+
+#define MCHP_EXTRACT_GIRQ_NUM(n) \
+	(((u32_t)(n) >> MCHP_GIRQ_NUM_SHIFT) & MCHP_GIRQ_NUM_MASK0)
+
+#define MCHP_EXTRACT_DIRECT_NVIC_NUM(n) \
+	(((u32_t)(n) >> MCHP_DIRECT_NVIC_NUM_SHIFT) & \
+	MCHP_DIRECT_NVIC_NUM_MASK0)
+
+
+/* Aggregated GIRQn external NVIC inputs */
+#define MCHP_NVIC_AGGR_GIRQ08		0
+#define MCHP_NVIC_AGGR_GIRQ09		1
+#define MCHP_NVIC_AGGR_GIRQ10		2
+#define MCHP_NVIC_AGGR_GIRQ11		3
+#define MCHP_NVIC_AGGR_GIRQ12		4
+#define MCHP_NVIC_AGGR_GIRQ13		5
+#define MCHP_NVIC_AGGR_GIRQ14		6
+#define MCHP_NVIC_AGGR_GIRQ15		7
+#define MCHP_NVIC_AGGR_GIRQ16		8
+#define MCHP_NVIC_AGGR_GIRQ17		9
+#define MCHP_NVIC_AGGR_GIRQ18		10
+#define MCHP_NVIC_AGGR_GIRQ19		11
+#define MCHP_NVIC_AGGR_GIRQ20		12
+#define MCHP_NVIC_AGGR_GIRQ21		13
+#define MCHP_NVIC_AGGR_GIRQ23		14
+#define MCHP_NVIC_AGGR_GIRQ24		15
+#define MCHP_NVIC_AGGR_GIRQ25		16
+#define MCHP_NVIC_AGGR_GIRQ26		17
+
+/*
+ * Use the following values for peripheral's with direct
+ * NVIC connections.
+ * b[7:0] = direct NVIC external input
+ * b[15:8] = must be 0 idicating this is a Level 1 interrupt.
+ * b[23:16] = 0 No level 3
+ * b[31:24] = 0
+ */
+/* GIRQ13 sources */
+#define MCHP_IRQ_DIRECT_I2C_SMB0	20ul
+#define MCHP_IRQ_DIRECT_I2C_SMB1	21ul
+#define MCHP_IRQ_DIRECT_I2C_SMB2	22ul
+#define MCHP_IRQ_DIRECT_I2C_SMB3	23ul
+#define MCHP_IRQ_DIRECT_I2C_SMB4	158ul
+#define MCHP_IRQ_DIRECT_I2C0		168ul
+#define MCHP_IRQ_DIRECT_I2C1		169ul
+#define MCHP_IRQ_DIRECT_I2C2		170ul
+
+/* GIRQ14 sources */
+#define MCHP_IRQ_DIRECT_DMA00		24ul
+#define MCHP_IRQ_DIRECT_DMA01		25ul
+#define MCHP_IRQ_DIRECT_DMA02		26ul
+#define MCHP_IRQ_DIRECT_DMA03		27ul
+#define MCHP_IRQ_DIRECT_DMA04		28ul
+#define MCHP_IRQ_DIRECT_DMA05		29ul
+#define MCHP_IRQ_DIRECT_DMA06		30ul
+#define MCHP_IRQ_DIRECT_DMA07		31ul
+#define MCHP_IRQ_DIRECT_DMA08		32ul
+#define MCHP_IRQ_DIRECT_DMA09		33ul
+#define MCHP_IRQ_DIRECT_DMA10		34ul
+#define MCHP_IRQ_DIRECT_DMA11		35ul
+
+/* GIRQ15 sources */
+#define MCHP_IRQ_DIRECT_UART0		40ul
+#define MCHP_IRQ_DIRECT_UART1		41ul
+#define MCHP_IRQ_DIRECT_EMI0		42ul
+#define MCHP_IRQ_DIRECT_EMI1		43ul
+#define MCHP_IRQ_DIRECT_UART2		44ul
+#define MCHP_IRQ_DIRECT_ACPI_EC0_IBF	45ul
+#define MCHP_IRQ_DIRECT_ACPI_EC0_OBE	46ul
+#define MCHP_IRQ_DIRECT_ACPI_EC1_IBF	47ul
+#define MCHP_IRQ_DIRECT_ACPI_EC1_OBE	48ul
+#define MCHP_IRQ_DIRECT_ACPI_EC2_IBF	49ul
+#define MCHP_IRQ_DIRECT_ACPI_EC2_OBE	50ul
+#define MCHP_IRQ_DIRECT_ACPI_EC3_IBF	51ul
+#define MCHP_IRQ_DIRECT_ACPI_EC3_OBE	52ul
+#define MCHP_IRQ_DIRECT_ACPI_PM1_CTL	55ul
+#define MCHP_IRQ_DIRECT_ACPI_PM1_EN	56ul
+#define MCHP_IRQ_DIRECT_ACPI_PM1_STS	57ul
+#define MCHP_IRQ_DIRECT_KBC_OBE		58ul
+#define MCHP_IRQ_DIRECT_KBC_IBF		59ul
+#define MCHP_IRQ_DIRECT_MBOX		60ul
+#define MCHP_IRQ_DIRECT_P80CAP0		62ul
+#define MCHP_IRQ_DIRECT_P80CAP1		63ul
+
+/* GIRQ16 sources */
+#define MCHP_IRQ_DIRECT_PKE_ERR		65ul
+#define MCHP_IRQ_DIRECT_PKE_DONE	66ul
+#define MCHP_IRQ_DIRECT_NDRNG		67ul
+#define MCHP_IRQ_DIRECT_AES_DONE	68ul
+#define MCHP_IRQ_DIRECT_HASH_DONE	69ul
+
+/* GIRQ17 sources */
+#define MCHP_IRQ_DIRECT_PECI		70ul
+#define MCHP_IRQ_DIRECT_TACH0		71ul
+#define MCHP_IRQ_DIRECT_TACH1		72ul
+#define MCHP_IRQ_DIRECT_TACH2		73ul
+#define MCHP_IRQ_DIRECT_TACH3		159ul
+#define MCHP_IRQ_DIRECT_HDMI_CEC	160ul
+#define MCHP_IRQ_DIRECT_ADC_SINGLE	78ul
+#define MCHP_IRQ_DIRECT_ADC_REPEAT	79ul
+#define MCHP_IRQ_DIRECT_LED0		83ul
+#define MCHP_IRQ_DIRECT_LED1		84ul
+#define MCHP_IRQ_DIRECT_LED2		85ul
+#define MCHP_IRQ_DIRECT_PROCHOT		87ul
+
+/* GIRQ18 sources */
+#define MCHP_IRQ_DIRECT_SPI_SLV		90ul
+#define MCHP_IRQ_DIRECT_QMSPI		91ul
+#define MCHP_IRQ_DIRECT_PS2_0		100ul
+#define MCHP_IRQ_DIRECT_PS2_1		101ul
+#define MCHP_IRQ_DIRECT_EEPROM		155ul
+#define MCHP_IRQ_DIRECT_SGPIO_0		161ul
+#define MCHP_IRQ_DIRECT_SGPIO_1		162ul
+#define MCHP_IRQ_DIRECT_SGPIO_2		163ul
+#define MCHP_IRQ_DIRECT_SGPIO_3		164ul
+#define MCHP_IRQ_DIRECT_CCT		146ul
+#define MCHP_IRQ_DIRECT_CCT_CAP0	147ul
+#define MCHP_IRQ_DIRECT_CCT_CAP1	148ul
+#define MCHP_IRQ_DIRECT_CCT_CAP2	149ul
+#define MCHP_IRQ_DIRECT_CCT_CAP3	150ul
+#define MCHP_IRQ_DIRECT_CCT_CAP4	151ul
+#define MCHP_IRQ_DIRECT_CCT_CAP5	152ul
+#define MCHP_IRQ_DIRECT_CCT_CMP0	153ul
+#define MCHP_IRQ_DIRECT_CCT_CMP1	154ul
+
+/* GIRQ19 sources */
+#define MCHP_IRQ_DIRECT_ESPI_PC		103ul
+#define MCHP_IRQ_DIRECT_ESPI_BM1	104ul
+#define MCHP_IRQ_DIRECT_ESPI_BM2	105ul
+#define MCHP_IRQ_DIRECT_ESPI_LTR	106ul
+#define MCHP_IRQ_DIRECT_ESPI_OOB_UP	107ul
+#define MCHP_IRQ_DIRECT_ESPI_OOB_DN	108ul
+#define MCHP_IRQ_DIRECT_ESPI_FC		109ul
+#define MCHP_IRQ_DIRECT_ESPI_RST	110ul
+#define MCHP_IRQ_DIRECT_ESPI_VW_EN	156ul
+
+/* GIRQ20 sources */
+#define MCHP_IRQ_DIRECT_OTP		173ul
+
+/* GIRQ21 sources */
+#define MCHP_IRQ_DIRECT_WDT		171ul
+#define MCHP_IRQ_DIRECT_WK_ALARM	114ul
+#define MCHP_IRQ_DIRECT_SUB_WK_ALARM	115ul
+#define MCHP_IRQ_DIRECT_WK_ONE_SEC	116ul
+#define MCHP_IRQ_DIRECT_WK_SUB_SEC	117ul
+#define MCHP_IRQ_DIRECT_WK_SYS_PWR	118ul
+#define MCHP_IRQ_DIRECT_RTC		119ul
+#define MCHP_IRQ_DIRECT_RTC_ALARM	120ul
+#define MCHP_IRQ_DIRECT_VCI_OVRD_IN	121ul
+#define MCHP_IRQ_DIRECT_VCI_IN0		122ul
+#define MCHP_IRQ_DIRECT_VCI_IN1		123ul
+#define MCHP_IRQ_DIRECT_VCI_IN2		124ul
+#define MCHP_IRQ_DIRECT_VCI_IN3		125ul
+#define MCHP_IRQ_DIRECT_PS2_0A_WAKE	129ul
+#define MCHP_IRQ_DIRECT_PS2_0B_WAKE	130ul
+#define MCHP_IRQ_DIRECT_PS2_1B_WAKE	132ul
+#define MCHP_IRQ_DIRECT_KEY_SCAN	135ul
+#define MCHP_IRQ_DIRECT_GLUE_LOG	172ul
+
+/* GIRQ23 sources */
+#define MCHP_IRQ_DIRECT_B16TMR0		136ul
+#define MCHP_IRQ_DIRECT_B16TMR1		137ul
+#define MCHP_IRQ_DIRECT_B32TMR0		140ul
+#define MCHP_IRQ_DIRECT_B32TMR1		141ul
+#define MCHP_IRQ_DIRECT_RTMR1		111ul
+#define MCHP_IRQ_DIRECT_HTMR0		112ul
+#define MCHP_IRQ_DIRECT_HTMR1		113ul
+
+/*
+ * Derive bit postion in GIRQ registers of GPIO.
+ * g = GPIO number. MEC15xx documentation GPIO numbers are
+ * in octal. Use octal equivalent value in base 10 or 16.
+ */
+#define MCHP_GPIO_BITPOS(g) ((u32_t)(g) & 0x1Ful)
+
+#define MCHP_IRQ_INFO(nva, b, g, nvd) \
+	(((u32_t)(nva) & 0xfful) + (((u32_t)(b) & 0x1ful) << 8) +\
+	(((u32_t)(g) & 0x1ful) << 16) + (((u32_t)(nvd) & 0xfful) << 24))
+
+#define MCHP_IRQ_CONNECT_GPIO(nva, pin) \
+	((u32_t)(nva) + (((u32_t)(pin) << 8) & 0x1F00ul) + 0x0100ul)
+
+/* GPIO IRQ Info values used with API */
+#define MCHP_IRQ_INFO_GPIO140_176(pin) MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ08, \
+	MCHP_GPIO_BITPOS(pin), 8, MCHP_NVIC_AGGR_GIRQ08)
+
+#define MCHP_IRQ_INFO_GPIO100_136(pin) MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ09, \
+	MCHP_GPIO_BITPOS(pin), 9, MCHP_NVIC_AGGR_GIRQ09)
+
+#define MCHP_IRQ_INFO_GPIO040_076(pin) MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ10, \
+	MCHP_GPIO_BITPOS(pin), 10, MCHP_NVIC_AGGR_GIRQ10)
+
+#define MCHP_IRQ_INFO_GPIO000_036(pin) MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ11, \
+	MCHP_GPIO_BITPOS(pin), 11, MCHP_NVIC_AGGR_GIRQ11)
+
+#define MCHP_IRQ_INFO_GPIO200_236(pin) MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ12, \
+	MCHP_GPIO_BITPOS(pin), 12, MCHP_NVIC_AGGR_GIRQ12)
+
+#define MCHP_IRQ_INFO_GPIO240_276(pin) MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ26, \
+	MCHP_GPIO_BITPOS(pin), 26, MCHP_NVIC_AGGR_GIRQ26)
+
+/* GIRQ19 IRQ INFO values */
+#define MCHP_IRQ_INFO_ESPI_PC MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ19, \
+		0, 19, 103)
+#define MCHP_IRQ_INFO_ESPI_BM1 MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ19, \
+		1, 19, 104)
+#define MCHP_IRQ_INFO_ESPI_BM2 MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ19, \
+		2, 19, 105)
+#define MCHP_IRQ_INFO_ESPI_LTR MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ19, \
+		3, 19, 106)
+#define MCHP_IRQ_INFO_ESPI_OOB_UP MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ19, \
+		4, 19, 107)
+#define MCHP_IRQ_INFO_ESPI_OOB_DN MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ19, \
+		5, 19, 108)
+#define MCHP_IRQ_INFO_ESPI_FC MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ19, \
+		6, 19, 109)
+#define MCHP_IRQ_INFO_ESPI_RESET MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ19, \
+		7, 19, 110)
+#define MCHP_IRQ_INFO_ESPI_VW_EN MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ19, \
+		8, 19, 156)
+#define MCHP_IRQ_INFO_ESPI_SAF_DONE MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ19, \
+		9, 19, MCHP_NVIC_AGGR_GIRQ19)
+#define MCHP_IRQ_INFO_ESPI_SAF_ERR MCHP_IRQ_INFO(MCHP_NVIC_AGGR_GIRQ19, \
+		10, 19, MCHP_NVIC_AGGR_GIRQ19)
+
+/* GPIO IRQ_CONNECT() values */
+#define MCHP_IRQ_CONNECT_GPIO140_176(pin) \
+	MCHP_IRQ_CONNECT_GPIO(MCHP_NVIC_AGGR_GIRQ08, pin)
+
+#define MCHP_IRQ_CONNECT_GPIO100_136(pin) \
+	MCHP_IRQ_CONNECT_GPIO(MCHP_NVIC_AGGR_GIRQ09, pin)
+
+#define MCHP_IRQ_CONNECT_GPIO040_076(pin) \
+	MCHP_IRQ_CONNECT_GPIO(MCHP_NVIC_AGGR_GIRQ10, pin)
+
+#define MCHP_IRQ_CONNECT_GPIO000_036(pin) \
+	MCHP_IRQ_CONNECT_GPIO(MCHP_NVIC_AGGR_GIRQ11, pin)
+
+#define MCHP_IRQ_CONNECT_GPIO200_236(pin) \
+	MCHP_IRQ_CONNECT_GPIO(MCHP_NVIC_AGGR_GIRQ12, pin)
+
+#define MCHP_IRQ_CONNECT_GPIO240_276(pin) \
+	MCHP_IRQ_CONNECT_GPIO(MCHP_NVIC_AGGR_GIRQ26, pin)
+
+/* GIRQ19 eSPI Aggregated mode IRQ_CONNECT() values */
+#define MCHP_IRQ_CONNECT_ESPI_PC ((MCHP_NVIC_AGGR_GIRQ19) + (0 << 8))
+#define MCHP_IRQ_CONNECT_ESPI_BM1 ((MCHP_NVIC_AGGR_GIRQ19) + (1ul << 8))
+#define MCHP_IRQ_CONNECT_ESPI_BM2 ((MCHP_NVIC_AGGR_GIRQ19) + (2ul << 8))
+#define MCHP_IRQ_CONNECT_ESPI_LTR ((MCHP_NVIC_AGGR_GIRQ19) + (3ul << 8))
+#define MCHP_IRQ_CONNECT_ESPI_OOB_UP ((MCHP_NVIC_AGGR_GIRQ19) + (4ul << 8))
+#define MCHP_IRQ_CONNECT_ESPI_OOB_DN ((MCHP_NVIC_AGGR_GIRQ19) + (5ul << 8))
+#define MCHP_IRQ_CONNECT_ESPI_FC ((MCHP_NVIC_AGGR_GIRQ19) + (6ul << 8))
+#define MCHP_IRQ_CONNECT_ESPI_RESET ((MCHP_NVIC_AGGR_GIRQ19) + (7ul << 8))
+#define MCHP_IRQ_CONNECT_ESPI_VW_EN ((MCHP_NVIC_AGGR_GIRQ19) + (8ul << 8))
+#define MCHP_IRQ_CONNECT_ESPI_SAF_DONE ((MCHP_NVIC_AGGR_GIRQ19) + (9ul << 8))
+#define MCHP_IRQ_CONNECT_ESPI_SAF_ERR ((MCHP_NVIC_AGGR_GIRQ19) + (10ul << 8))
+
+/* TODO GIRQ24 Aggregated eSPI Master-to-Slave VWires Groups 00 - 06*/
+
+/* TODO GIRQ25 Aggregated eSPI Master-to-Slave VWires Groups 07 - 10*/
+
+/*
+ * Derive the correct value irq_p parameter of IRQ_CONNECT()
+ * i = MCHP_IRQ_INFO() value
+ * d = 0 (aggregated), 1(direct)
+ * Output:
+ * b[7:0] = Aggregated NVIC external input
+ * b[15:8] = bit position in GIRQ if Aggregated else 0
+ * b[23:16] = 0
+ * b[31:24] = 0
+ */
+#define MCHP_IRQ_CONNECT_AGGR_VAL(i) ((u32_t)(i) & 0xfffful)
+
+/*
+ * Derive the correct value irq_p parameter of IRQ_CONNECT()
+ * i = MCHP_IRQ_INFO() value
+ * d = 0 (aggregated), 1(direct)
+ * Output:
+ * b[7:0] = Direct NVIC external input
+ * b[15:8] = 0
+ * b[23:16] = 0
+ * b[31:24] = 0
+ */
+#define MCHP_IRQ_CONNECT_DIRECT_VAL(i) (((u32_t)(i) >> 24) & 0xFFul)
+
+
+void z_soc_irq_enable(u32_t irq);
+void z_soc_irq_disable(u32_t irq);
+void z_soc_irq_priority_set(unsigned int irq, unsigned int prio, u32_t flags);
+
+void z_soc_irq_aggr_bitmap_enable(u32_t irq, u32_t bitmap);
+void z_soc_irq_aggr_bitmap_disable(u32_t irq, u32_t bitmap);
+void z_soc_irq_aggr_bitmap_clear(u32_t irq, u32_t bitmap);
+
+void z_soc_irq_clear(u32_t irq);
 
 #endif
 

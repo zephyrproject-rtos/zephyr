@@ -15,4 +15,41 @@ config UART_NS16550_PORT_0
 
 endif
 
+config 2ND_LVL_INTR_00_OFFSET
+	default 0
+config 2ND_LVL_INTR_01_OFFSET
+	default 1
+config 2ND_LVL_INTR_02_OFFSET
+	default 2
+config 2ND_LVL_INTR_03_OFFSET
+	default 3
+config 2ND_LVL_INTR_04_OFFSET
+	default 4
+config 2ND_LVL_INTR_05_OFFSET
+	default 5
+config 2ND_LVL_INTR_06_OFFSET
+	default 6
+config 2ND_LVL_INTR_07_OFFSET
+	default 7
+config 2ND_LVL_INTR_08_OFFSET
+	default 8
+config 2ND_LVL_INTR_09_OFFSET
+	default 9
+config 2ND_LVL_INTR_10_OFFSET
+	default 10
+config 2ND_LVL_INTR_11_OFFSET
+	default 11
+config 2ND_LVL_INTR_12_OFFSET
+	default 12
+config 2ND_LVL_INTR_13_OFFSET
+	default 13
+config 2ND_LVL_INTR_14_OFFSET
+	default 14
+config 2ND_LVL_INTR_15_OFFSET
+	default 15
+config 2ND_LVL_INTR_16_OFFSET
+	default 16
+config 2ND_LVL_INTR_17_OFFSET
+	default 17
+
 endif #BOARD_MEC15XXEVB_ASSY6853
