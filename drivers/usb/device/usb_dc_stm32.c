@@ -161,6 +161,33 @@ struct usb_dc_stm32_state {
 
 static struct usb_dc_stm32_state usb_dc_stm32_state;
 
+static struct stm32_pclken pclken = {
+
+#ifdef DT_USB_HS_BASE_ADDRESS
+	.bus = STM32_CLOCK_BUS_AHB1,
+	.enr = LL_AHB1_GRP1_PERIPH_OTGHS
+#else /* DT_USB_HS_BASE_ADDRESS */
+
+#ifdef USB
+		.bus = STM32_CLOCK_BUS_APB1,
+	.enr = LL_APB1_GRP1_PERIPH_USB,
+
+#else /* USB_OTG_FS */
+
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	.bus = STM32_CLOCK_BUS_AHB1,
+	.enr = LL_AHB1_GRP1_PERIPH_OTGFS,
+#else
+	.bus = STM32_CLOCK_BUS_AHB2,
+	.enr = LL_AHB2_GRP1_PERIPH_OTGFS,
+#endif /* CONFIG_SOC_SERIES_STM32F1X */
+
+#endif /* USB */
+
+#endif /* DT_USB_HS_BASE_ADDRESS */
+};
+
+
 /* Internal functions */
 
 static struct usb_dc_stm32_ep_state *usb_dc_stm32_get_ep_state(u8_t ep)
@@ -195,31 +222,6 @@ void HAL_PCD_SOFCallback(PCD_HandleTypeDef *hpcd)
 static int usb_dc_stm32_clock_enable(void)
 {
 	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
-	struct stm32_pclken pclken = {
-
-#ifdef DT_USB_HS_BASE_ADDRESS
-		.bus = STM32_CLOCK_BUS_AHB1,
-		.enr = LL_AHB1_GRP1_PERIPH_OTGHS
-#else /* DT_USB_HS_BASE_ADDRESS */
-
-#ifdef USB
-		.bus = STM32_CLOCK_BUS_APB1,
-		.enr = LL_APB1_GRP1_PERIPH_USB,
-
-#else /* USB_OTG_FS */
-
-#ifdef CONFIG_SOC_SERIES_STM32F1X
-		.bus = STM32_CLOCK_BUS_AHB1,
-		.enr = LL_AHB1_GRP1_PERIPH_OTGFS,
-#else
-		.bus = STM32_CLOCK_BUS_AHB2,
-		.enr = LL_AHB2_GRP1_PERIPH_OTGFS,
-#endif /* CONFIG_SOC_SERIES_STM32F1X */
-
-#endif /* USB */
-
-#endif /* DT_USB_HS_BASE_ADDRESS */
-	};
 
 	/*
 	 * Some SoCs in STM32F0/L0/L4 series disable USB clock by
@@ -883,7 +885,15 @@ int usb_dc_ep_mps(const u8_t ep)
 
 int usb_dc_detach(void)
 {
-	LOG_ERR("Not implemented");
+
+	irq_disable(DT_USB_IRQ);
+
+	struct device *clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
+
+	if (clock_control_off(clk, (clock_control_subsys_t *)&pclken) != 0) {
+		LOG_ERR("Unable to disable USB clock");
+		return -EIO;
+	}
 
 	return 0;
 }
