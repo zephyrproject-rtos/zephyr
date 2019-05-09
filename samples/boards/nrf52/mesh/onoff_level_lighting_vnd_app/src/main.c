@@ -110,8 +110,8 @@ static void light_default_status_init(void)
 
 	default_tt = gen_def_trans_time_srv_user_data.tt;
 
-	target_lightness = lightness;
-	target_temperature = temperature;
+	init_lightness_target_values();
+	init_temp_target_values();
 }
 
 void update_led_gpio(void)
