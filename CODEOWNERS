@@ -255,6 +255,7 @@
 /kernel/device.c                          @andrewboie @andyross @nashif
 /kernel/idle.c                            @andrewboie @andyross @nashif
 /samples/                                 @nashif
+/samples/basic/minimal/                   @carlescufi
 /samples/basic/servo_motor/*microbit*     @jhe
 /samples/bluetooth/                       @joerchan @jhedberg @Vudentz
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
