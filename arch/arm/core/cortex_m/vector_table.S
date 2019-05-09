@@ -66,5 +66,9 @@ SECTION_SUBSEC_FUNC(exc_vector_table,_vector_table_section,_vector_table)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
     .word __reserved
     .word __pendsv
+#if defined(CONFIG_SYS_CLOCK_EXISTS)
     .word z_clock_isr
+#else
+    .word __reserved
+#endif
 

@@ -19,7 +19,9 @@
 
 #define WORKQUEUE_THREAD_NAME	"workqueue"
 
+#ifdef CONFIG_SYS_CLOCK_EXISTS
 static struct k_spinlock lock;
+#endif
 
 extern void z_work_q_main(void *work_q_ptr, void *p2, void *p3);
 
