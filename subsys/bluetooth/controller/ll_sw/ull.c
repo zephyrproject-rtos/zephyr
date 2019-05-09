@@ -45,6 +45,10 @@
 #include "ull_scan_internal.h"
 #include "ull_conn_internal.h"
 
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+#include "ull_vendor.h"
+#endif /* CONFIG_BT_CTLR_USER_EXT */
+
 #define LOG_MODULE_NAME bt_ctlr_llsw_ull
 #include "common/log.h"
 #include "hal/debug.h"
@@ -516,6 +520,9 @@ void ll_rx_dequeue(void)
 	case NODE_RX_TYPE_MESH_REPORT:
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+	case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END:
+#endif /* CONFIG_BT_CTLR_USER_EXT */
 		/*
 		 * We have just dequeued from memq_ll_rx; that frees up some
 		 * quota for Link Layer. Note that we threw away the rx node
@@ -740,6 +747,10 @@ void ll_rx_mem_release(void **node_rx)
 		case NODE_RX_TYPE_MESH_ADV_CPLT:
 		case NODE_RX_TYPE_MESH_REPORT:
 #endif /* CONFIG_BT_HCI_MESH_EXT */
+
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+		case NODE_RX_TYPE_USER_START ... NODE_RX_TYPE_USER_END:
+#endif /* CONFIG_BT_CTLR_USER_EXT */
 
 			mem_release(rx_free, &mem_pdu_rx.free);
 			break;
@@ -1473,7 +1484,13 @@ static inline int rx_demux_rx(memq_link_t *link, struct node_rx_hdr *rx)
 
 	default:
 	{
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+		/* Try proprietary demuxing */
+		rx_demux_rx_proprietary(link, rx, memq_ull_rx.tail,
+					&memq_ull_rx.head);
+#else
 		LL_ASSERT(0);
+#endif /* CONFIG_BT_CTLR_USER_EXT */
 	}
 	break;
 	}
@@ -1498,6 +1515,14 @@ static inline void rx_demux_event_done(memq_link_t *link,
 		ull_conn_done(done);
 		break;
 #endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+	case EVENT_DONE_EXTRA_TYPE_USER_START
+		... EVENT_DONE_EXTRA_TYPE_USER_END:
+		ull_proprietary_done(done);
+		break;
+#endif /* CONFIG_BT_CTLR_USER_EXT */
+
 	case EVENT_DONE_EXTRA_TYPE_NONE:
 		/* ignore */
 		break;
