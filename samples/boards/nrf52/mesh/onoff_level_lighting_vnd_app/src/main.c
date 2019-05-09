@@ -11,6 +11,7 @@
 #include "ble_mesh.h"
 #include "device_composition.h"
 #include "no_transition_work_handler.h"
+#include "publisher.h"
 #include "state_binding.h"
 #include "storage.h"
 #include "transition.h"
@@ -109,8 +110,8 @@ static void light_default_status_init(void)
 
 	default_tt = gen_def_trans_time_srv_user_data.tt;
 
-	init_lightness_target_values(lightness);
-	init_temp_target_values(temperature);
+	init_lightness_target_values();
+	init_temp_target_values();
 }
 
 void update_led_gpio(void)
@@ -205,6 +206,8 @@ void main(void)
 	light_default_status_init();
 
 	update_light_state();
+
+	randomize_publishers_TID();
 
 	short_time_multireset_bt_mesh_unprovisioning();
 	k_timer_start(&reset_counter_timer, K_MSEC(7000), 0);

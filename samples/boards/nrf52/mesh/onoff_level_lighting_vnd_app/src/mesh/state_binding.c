@@ -224,7 +224,7 @@ jump:
 	readjust_lightness();
 }
 
-void init_lightness_target_values(u16_t lightness)
+void init_lightness_target_values(void)
 {
 	target_lightness = lightness;
 
@@ -297,7 +297,7 @@ void calculate_lightness_target_values(u8_t type)
 	light_ctl_srv_user_data.target_lightness = target_lightness;
 }
 
-void init_temp_target_values(s16_t temperature)
+void init_temp_target_values(void)
 {
 	target_temperature = temperature;
 	gen_level_srv_s0_user_data.target_level = target_temperature;

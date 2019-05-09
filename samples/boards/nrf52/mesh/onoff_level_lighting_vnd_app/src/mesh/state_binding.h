@@ -31,10 +31,10 @@ void readjust_lightness(void);
 void readjust_temperature(void);
 void state_binding(u8_t lightness, u8_t temperature);
 
-void init_lightness_target_values(u16_t lightness);
+void init_lightness_target_values(void);
 void calculate_lightness_target_values(u8_t type);
 
-void init_temp_target_values(s16_t temperature);
+void init_temp_target_values(void);
 void calculate_temp_target_values(u8_t type);
 
 #endif
