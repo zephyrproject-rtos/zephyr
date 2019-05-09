@@ -519,22 +519,6 @@ struct k_thread;
 extern void k_float_enable(struct k_thread *thread, unsigned int options);
 
 /**
- * @brief Disable preservation of floating point context information.
- *
- * This routine informs the kernel that the specified thread (which may be
- * the current thread) will no longer be using the floating point registers.
- *
- * @warning
- * This routine should only be used to disable floating point support for
- * a thread that currently has such support enabled.
- *
- * @param thread ID of thread.
- *
- * @return N/A
- */
-extern void k_float_disable(struct k_thread *thread);
-
-/**
  * @}
  */
 

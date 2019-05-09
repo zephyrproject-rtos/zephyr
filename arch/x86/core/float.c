@@ -192,7 +192,7 @@ void k_float_enable(struct k_thread *thread, unsigned int options)
  * The locking isn't really needed when the routine is called by a cooperative
  * thread (since context switching can't occur), but it is harmless.
  */
-void k_float_disable(struct k_thread *thread)
+int z_arch_float_disable(struct k_thread *thread)
 {
 	unsigned int imask;
 
@@ -214,6 +214,8 @@ void k_float_disable(struct k_thread *thread)
 	}
 
 	irq_unlock(imask);
+
+	return 0;
 }
 
 /*
