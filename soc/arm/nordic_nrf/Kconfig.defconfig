@@ -9,6 +9,15 @@ if SOC_FAMILY_NRF
 
 source "soc/arm/nordic_nrf/*/Kconfig.defconfig.series"
 
+if SYS_CLOCK_EXISTS
+# If the kernel has timer support, enable both clock control and timer
+config CLOCK_CONTROL
+       default y
+
+config NRF_RTC_TIMER
+       default y
+endif # SYS_CLOCK_EXISTS
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	int
 	default 32768
@@ -18,6 +27,9 @@ config SYS_CLOCK_TICKS_PER_SEC
 	default 128
 
 config ARCH_HAS_CUSTOM_BUSY_WAIT
+	default y
+
+config SYS_POWER_MANAGEMENT
 	default y
 
 config BUILD_OUTPUT_HEX

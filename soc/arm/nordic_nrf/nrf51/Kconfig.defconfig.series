@@ -13,9 +13,6 @@ source "soc/arm/nordic_nrf/nrf51/Kconfig.defconfig.nrf51*"
 config SOC_SERIES
 	default "nrf51"
 
-config SYS_POWER_MANAGEMENT
-	default y
-
 config NUM_IRQS
 	int
 	default 26

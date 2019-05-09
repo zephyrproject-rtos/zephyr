@@ -12,9 +12,6 @@ source "soc/arm/nordic_nrf/nrf52/Kconfig.defconfig.nrf52*"
 config SOC_SERIES
 	default "nrf52"
 
-config SYS_POWER_MANAGEMENT
-	default y
-
 config TEMP_NRF5
 	default SENSOR
 
