@@ -750,4 +750,19 @@ config BT_MAYFLY_YIELD_AFTER_CALL
 	  If set to 'n', all pending mayflies for callee are executed before
 	  yielding
 
+config BT_CTLR_USER_EXT
+	prompt "Enable proprietary extensions in Controller"
+	bool
+	help
+	  Catch-all for enabling proprietary event types in Controller behavior.
+
+config BT_CTLR_USER_EVT_RANGE
+	int "Range of event contants reserved for proprietary event types"
+	depends on BT_CTLR_USER_EXT
+	default 5
+	range 0 10
+	help
+	  Number of event types reserved for proprietary use. The range
+	  is typically used when BT_CTLR_USER_EXT is in use.
+
 endif # BT_CTLR
