@@ -1,0 +1,8 @@
+sample:
+  name: adxl362 sample
+  description: ADXL362 accelerometer sample application
+tests:
+  sample.sensor.adxl362:
+    harness: sensor
+    tags: sensors
+    depends_on: spi adxl362
