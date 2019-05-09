@@ -129,6 +129,31 @@ static inline u64_t __ticks_to_ms(s64_t ticks)
 #endif
 }
 
+#ifdef CONFIG_USLEEP
+
+/*
+ * These are only currently used by k_usleep(), but they are
+ * defined here for parity with their ms analogs above. Note:
+ * we don't bother trying the 32-bit intermediate shortcuts
+ * possible with ms, because of the magnitudes involved.
+ */
+
+static inline s32_t z_us_to_ticks(s32_t us)
+{
+	return (s32_t) ceiling_fraction(
+		(s64_t)us * sys_clock_hw_cycles_per_sec(),
+		((s64_t)USEC_PER_SEC * sys_clock_hw_cycles_per_sec()) /
+		CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+}
+
+static inline s32_t __ticks_to_us(s32_t ticks)
+{
+	return (s32_t) ((s64_t)ticks * USEC_PER_SEC /
+	       (s64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+}
+
+#endif
+
 /* added tick needed to account for tick in progress */
 #define _TICK_ALIGN 1
 

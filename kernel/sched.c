@@ -969,17 +969,35 @@ s32_t z_impl_k_sleep(int ms)
 }
 
 #ifdef CONFIG_USERSPACE
-Z_SYSCALL_HANDLER(k_sleep, duration)
+Z_SYSCALL_HANDLER(k_sleep, ms)
 {
 	/* FIXME there were some discussions recently on whether we should
 	 * relax this, thread would be unscheduled until k_wakeup issued
 	 */
-	Z_OOPS(Z_SYSCALL_VERIFY_MSG(duration != K_FOREVER,
+	Z_OOPS(Z_SYSCALL_VERIFY_MSG(ms != K_FOREVER,
 				    "sleeping forever not allowed"));
 
-	return z_impl_k_sleep(duration);
+	return z_impl_k_sleep(ms);
 }
 #endif
+
+#ifdef CONFIG_USLEEP
+s32_t z_impl_k_usleep(int us)
+{
+	s32_t ticks;
+
+	ticks = z_us_to_ticks(us);
+	ticks = z_tick_sleep(ticks);
+	return __ticks_to_us(ticks);
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(k_usleep, us)
+{
+	return z_impl_k_usleep(us);
+}
+#endif
+#endif /* CONFIG_USLEEP */
 
 void z_impl_k_wakeup(k_tid_t thread)
 {

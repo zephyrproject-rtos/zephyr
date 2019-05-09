@@ -790,16 +790,29 @@ void k_thread_system_pool_assign(struct k_thread *thread);
 /**
  * @brief Put the current thread to sleep.
  *
- * This routine puts the current thread to sleep for @a duration
- * milliseconds.
+ * This routine puts the current thread to sleep for @a duration milliseconds.
  *
- * @param duration Number of milliseconds to sleep.
+ * @param ms Number of milliseconds to sleep.
  *
  * @return Zero if the requested time has elapsed or the number of milliseconds
  * left to sleep, if thread was woken up by \ref k_wakeup call.
  *
  */
-__syscall s32_t k_sleep(s32_t duration);
+__syscall s32_t k_sleep(s32_t ms);
+
+/**
+ * @brief Put the current thread to sleep with microsecond resolution.
+ *
+ * Puts the current thread to sleep for @a duration microseconds. (This
+ * is currently only available on the x86 architecture with the HPET timer.)
+ *
+ * @param us Number of microseconds to sleep.
+ *
+ * @return Zero if the requested time has elapsed or the number of microseconds
+ * left to sleep, if thread was woken up by \ref k_wakeup call.
+ *
+ */
+__syscall s32_t k_usleep(s32_t us);
 
 /**
  * @brief Cause the current thread to busy wait.
