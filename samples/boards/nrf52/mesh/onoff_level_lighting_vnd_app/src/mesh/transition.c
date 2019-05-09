@@ -13,7 +13,7 @@
 #include "state_binding.h"
 #include "transition.h"
 
-u8_t transition_type, default_tt;
+u8_t default_tt;
 u32_t *ptr_counter;
 struct k_timer *ptr_timer = &dummy_timer;
 
@@ -128,6 +128,23 @@ void level_tt_values(struct generic_level_state *state)
 
 	state->tt_delta = ((float) (state->level - state->target_level) /
 			   state->transition->counter);
+}
+
+void level_move_tt_values(struct generic_level_state *state)
+{
+	if (state == &gen_level_srv_root_user_data) {
+		calculate_lightness_target_values(LEVEL);
+	} else if (state == &gen_level_srv_s0_user_data) {
+		calculate_temp_target_values(LEVEL_TEMP);
+	}
+
+	if (!tt_values_calculator(state->transition)) {
+		return;
+	}
+
+	state->transition->quo_tt = state->transition->total_duration;
+
+	state->tt_delta = state->last_delta;
 }
 
 void light_lightness_actual_tt_values(struct light_lightness_state *state)
@@ -249,12 +266,35 @@ static void onoff_work_handler(struct k_work *work)
 	}
 }
 
+static void level_move_lightness_work_handler(void)
+{
+	s32_t level;
+	struct generic_level_state *state = &gen_level_srv_root_user_data;
+
+	level = state->level + state->tt_delta;
+	if (level <= INT16_MIN || level >= INT16_MAX) {
+		state->transition->counter = 0U;
+		k_timer_stop(ptr_timer);
+
+		if (level > 0) {
+			level = INT16_MAX;
+		} else if (level < 0) {
+			level = INT16_MIN;
+		}
+	}
+
+	state->level = level;
+
+	state_binding(LEVEL, IGNORE_TEMP);
+	update_light_state();
+}
+
 static void level_lightness_work_handler(struct k_work *work)
 {
 	u8_t level;
 	struct generic_level_state *state = &gen_level_srv_root_user_data;
 
-	switch (transition_type) {
+	switch (state->transition->type) {
 	case LEVEL_TT:
 		level = LEVEL;
 		break;
@@ -262,8 +302,13 @@ static void level_lightness_work_handler(struct k_work *work)
 		level = DELTA_LEVEL;
 		break;
 	case LEVEL_TT_MOVE:
-		level = LEVEL;
-		break;
+		if (state->transition->just_started) {
+			state->transition->just_started = false;
+			return;
+		}
+
+		level_move_lightness_work_handler();
+		return;
 	default:
 		return;
 	}
@@ -302,17 +347,46 @@ static void level_lightness_work_handler(struct k_work *work)
 	}
 }
 
+static void level_move_temp_work_handler(void)
+{
+	s32_t level;
+	struct generic_level_state *state = &gen_level_srv_s0_user_data;
+
+	level = state->level + state->tt_delta;
+	if (level <= INT16_MIN || level >= INT16_MAX) {
+		state->transition->counter = 0U;
+		k_timer_stop(ptr_timer);
+
+		if (level > 0) {
+			level = INT16_MAX;
+		} else if (level < 0) {
+			level = INT16_MIN;
+		}
+	}
+
+	state->level = level;
+
+	state_binding(IGNORE, LEVEL_TEMP);
+	update_light_state();
+}
+
 static void level_temp_work_handler(struct k_work *work)
 {
 	struct generic_level_state *state = &gen_level_srv_s0_user_data;
 
-	switch (transition_type) {
+	switch (state->transition->type) {
 	case LEVEL_TEMP_TT:
 		break;
 	case LEVEL_TEMP_TT_DELTA:
 		break;
 	case LEVEL_TEMP_TT_MOVE:
-		break;
+		if (state->transition->just_started) {
+			state->transition->just_started = false;
+			return;
+		}
+
+		level_move_temp_work_handler();
+		return;
 	default:
 		return;
 	}
