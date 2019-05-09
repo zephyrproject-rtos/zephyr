@@ -790,16 +790,30 @@ void k_thread_system_pool_assign(struct k_thread *thread);
 /**
  * @brief Put the current thread to sleep.
  *
- * This routine puts the current thread to sleep for @a duration
- * milliseconds.
+ * This routine puts the current thread to sleep for @a duration milliseconds.
  *
- * @param duration Number of milliseconds to sleep.
+ * @param ms Number of milliseconds to sleep.
  *
  * @return Zero if the requested time has elapsed or the number of milliseconds
  * left to sleep, if thread was woken up by \ref k_wakeup call.
- *
  */
-__syscall s32_t k_sleep(s32_t duration);
+__syscall s32_t k_sleep(s32_t ms);
+
+/**
+ * @brief Put the current thread to sleep with microsecond resolution.
+ *
+ * This function is unlikely to work as expected without kernel tuning.
+ * In particular, because the lower bound on the duration of a sleep is
+ * the duration of a tick, CONFIG_SYS_CLOCK_TICKS_PER_SEC must be adjusted
+ * to achieve the resolution desired. The implications of doing this must
+ * be understood before attempting to use k_usleep(). Use with caution.
+ *
+ * @param us Number of microseconds to sleep.
+ *
+ * @return Zero if the requested time has elapsed or the number of microseconds
+ * left to sleep, if thread was woken up by \ref k_wakeup call.
+ */
+__syscall s32_t k_usleep(s32_t us);
 
 /**
  * @brief Cause the current thread to busy wait.
