@@ -27,8 +27,8 @@ K_APPMEM_PARTITION_DEFINE(z_libc_partition);
 #endif
 
 /* TODO: Find a better place to put this. Since we pull the entire
- * libext__lib__crypto__mbedtls.a globals into app shared memory
- * section, we can't put this in ext/lib/crypto/mbedtls/zephyr_init.c
+ * lib..__modules__crypto__mbedtls.a  globals into app shared memory
+ * section, we can't put this in zephyr_init.c of the mbedtls module.
  */
 #ifdef CONFIG_MBEDTLS
 K_APPMEM_PARTITION_DEFINE(k_mbedtls_partition);

@@ -996,7 +996,7 @@ if(CONFIG_USERSPACE)
     set(NEWLIB_PART -l libc.a z_libc_partition)
   endif()
   if(CONFIG_MBEDTLS)
-    set(MBEDTLS_PART -l libext__lib__crypto__mbedtls.a k_mbedtls_partition)
+    set(MBEDTLS_PART -l lib..__modules__crypto__mbedtls.a k_mbedtls_partition)
   endif()
 
   add_custom_command(

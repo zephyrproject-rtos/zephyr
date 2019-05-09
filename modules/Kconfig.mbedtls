@@ -53,7 +53,7 @@ config MBEDTLS_CFG_FILE
 	  alternative config.
 
 if MBEDTLS_BUILTIN && MBEDTLS_CFG_FILE = "config-tls-generic.h"
-source "ext/lib/crypto/mbedtls/Kconfig.tls-generic"
+rsource "Kconfig.tls-generic"
 endif
 
 config MBEDTLS_SSL_MAX_CONTENT_LEN
