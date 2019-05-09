@@ -197,9 +197,14 @@ void main(void)
 	ps_settings_init();
 
 	/* Initialize the Bluetooth Subsystem */
-	err = bt_enable(bt_ready);
+	err = bt_enable(NULL);
 	if (err) {
 		printk("Bluetooth init failed (err %d)\n", err);
+		return;
+	} else {
+		if (bt_ready()) {
+			return;
+		}
 	}
 
 	light_default_status_init();

@@ -51,21 +51,17 @@ static const struct bt_mesh_prov prov = {
 	.reset = prov_reset,
 };
 
-void bt_ready(int err)
+int bt_ready(void)
 {
+	int err;
 	struct bt_le_oob oob;
-
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
-
+	
 	printk("Bluetooth initialized\n");
 
 	err = bt_mesh_init(&prov, &comp);
 	if (err) {
 		printk("Initializing mesh failed (err %d)\n", err);
-		return;
+		return err;
 	}
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
@@ -82,4 +78,6 @@ void bt_ready(int err)
 	bt_mesh_prov_enable(BT_MESH_PROV_GATT | BT_MESH_PROV_ADV);
 
 	printk("Mesh initialized\n");
+
+	return err;
 }
