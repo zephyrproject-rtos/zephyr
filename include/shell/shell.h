@@ -572,6 +572,8 @@ struct shell_ctx {
 	/*!< Printf buffer size.*/
 	char printf_buff[CONFIG_SHELL_PRINTF_BUFF_SIZE];
 
+	shell_cmd_handler default_cmd_handler;
+
 	volatile union shell_internal internal; /*!< Internal shell data.*/
 
 	struct k_poll_signal signals[SHELL_SIGNALS];
@@ -819,6 +821,23 @@ void shell_process(const struct shell *shell);
  * @return -EINVAL	Pointer to new prompt is not correct.
  */
 int shell_prompt_change(const struct shell *shell, const char *prompt);
+
+/**
+ * @brief Set default command handler that will be called if shell will not
+ *	  find a root command.
+ *
+ * @param[in] shell	Pointer to the shell instance.
+ * @param[in] handler	Optional default command handler, it can be NULL.
+ *			If shell will not find entered root command it will:
+ *			 - call default command handler if it is set.
+ *			 - print default error message about not found command
+ *			   if default command handler is not set or set to NULL
+ *
+ * @return 0		Success.
+ * @return -EINVAL	Function arguments are not valid.
+ */
+int shell_default_handler(const struct shell *shell,
+			  const shell_cmd_handler handler);
 
 /**
  * @brief Prints the current command help.

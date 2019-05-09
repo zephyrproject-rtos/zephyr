@@ -529,6 +529,37 @@ static void partial_autocomplete(const struct shell *shell,
 	}
 }
 
+static int call_cmd_handler(const struct shell *shell, size_t argc, char **argv,
+			    bool default_handler)
+{
+	int ret_val = -ENOEXEC;
+
+	/* Unlock thread mutex in case command would like to borrow
+	 * shell context to other thread to avoid mutex deadlock.
+	 */
+	k_mutex_unlock(&shell->ctx->wr_mtx);
+	flag_cmd_ctx_set(shell, 1);
+	if (default_handler) {
+		if (shell->ctx->default_cmd_handler != NULL) {
+			ret_val = shell->ctx->default_cmd_handler(shell, argc,
+								  argv);
+		} else {
+			/* Mutex is unlocked, external print function should
+			 * be used.
+			 */
+			shell_fprintf(shell, SHELL_ERROR, "%s%s\n",
+				      argv[0], SHELL_MSG_CMD_NOT_FOUND);
+		}
+	} else {
+		ret_val = shell->ctx->active_cmd.handler(shell, argc, argv);
+	}
+	flag_cmd_ctx_set(shell, 0);
+	/* Bring back mutex to shell thread. */
+	k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
+
+	return ret_val;
+}
+
 static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
 		    const struct shell_static_entry *help_entry)
 {
@@ -561,15 +592,8 @@ static int exec_cmd(const struct shell *shell, size_t argc, char **argv,
 	}
 
 	if (!ret_val) {
-		/* Unlock thread mutex in case command would like to borrow
-		 * shell context to other thread to avoid mutex deadlock.
-		 */
-		k_mutex_unlock(&shell->ctx->wr_mtx);
-		flag_cmd_ctx_set(shell, 1);
-		ret_val = shell->ctx->active_cmd.handler(shell, argc, argv);
-		flag_cmd_ctx_set(shell, 0);
-		/* Bring back mutex to shell thread. */
-		k_mutex_lock(&shell->ctx->wr_mtx, K_FOREVER);
+		/* false -> do not call default handler */
+		call_cmd_handler(shell, argc, argv, false);
 	}
 
 	return ret_val;
@@ -677,10 +701,11 @@ static int execute(const struct shell *shell)
 
 		if ((cmd_idx == 0) || (p_static_entry == NULL)) {
 			if (cmd_lvl == 0) {
-				shell_internal_fprintf(shell, SHELL_ERROR,
-						       "%s%s\n", argv[0],
-						       SHELL_MSG_CMD_NOT_FOUND);
-				return -ENOEXEC;
+				/* true -> call default handler if available
+				 * or print error message
+				 */
+				return call_cmd_handler(shell, argc, argv,
+							true);
 			}
 			break;
 		}
@@ -1402,6 +1427,18 @@ int shell_prompt_change(const struct shell *shell, const char *prompt)
 	}
 	shell->ctx->prompt = prompt;
 	shell->ctx->vt100_ctx.cons.name_len = shell_strlen(prompt);
+
+	return 0;
+}
+
+int shell_default_handler(const struct shell *shell,
+			  const shell_cmd_handler handler)
+{
+	if (shell == NULL) {
+		return -EINVAL;
+	}
+
+	shell->ctx->default_cmd_handler = handler;
 
 	return 0;
 }
