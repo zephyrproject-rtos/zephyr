@@ -119,7 +119,7 @@ if(CONFIG_BT_LL_SW_SPLIT)
   endif()
   zephyr_library_sources_ifdef(
     CONFIG_BT_CTLR_FILTER
-    ll_sw/nordic/lll/lll_filter.c
+    ll_sw/ull_filter.c
     )
   zephyr_library_sources_ifdef(
     CONFIG_BT_HCI_MESH_EXT

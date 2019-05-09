@@ -26,12 +26,11 @@
 #include "lll_scan.h"
 #include "lll_conn.h"
 #include "lll_chan.h"
+#include "lll_filter.h"
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
 #include "lll_prof_internal.h"
-
-#include "lll_filter.h"
 
 #define LOG_MODULE_NAME bt_ctlr_llsw_nordic_lll_scan
 #include "common/log.h"
@@ -171,10 +170,10 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	radio_switch_complete_and_tx(0, 0, 0, 0);
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (ctrl_rl_enabled()) {
-		struct ll_filter *filter =
-			ctrl_filter_get(!!(lll->filter_policy & 0x1));
-		u8_t count, *irks = ctrl_irks_get(&count);
+	if (ull_filter_lll_rl_enabled()) {
+		struct lll_filter *filter =
+			ull_filter_lll_get(!!(lll->filter_policy & 0x1));
+		u8_t count, *irks = ull_filter_lll_irks_get(&count);
 
 		radio_filter_configure(filter->enable_bitmask,
 				       filter->addr_type_bitmask,
@@ -188,7 +187,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	/* Setup Radio Filter */
 	if (lll->filter_policy) {
 
-		struct ll_filter *wl = ctrl_filter_get(true);
+		struct lll_filter *wl = ull_filter_lll_get(true);
 
 		radio_filter_configure(wl->enable_bitmask,
 				       wl->addr_type_bitmask,
@@ -340,6 +339,7 @@ static void ticker_op_start_cb(u32_t status, void *param)
 
 static void isr_rx(void *param)
 {
+	struct lll_scan *lll = (void *)param;
 	u8_t trx_done;
 	u8_t crc_ok;
 	u8_t devmatch_ok;
@@ -384,19 +384,19 @@ static void isr_rx(void *param)
 	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	rl_idx = devmatch_ok ? ctrl_rl_idx(!!(_radio.scanner.filter_policy &
-					      0x01),
-					   devmatch_id) :
-			       irkmatch_ok ? ctrl_rl_irk_idx(irkmatch_id) :
-					     FILTER_IDX_NONE;
+	rl_idx = devmatch_ok ?
+		 ull_filter_lll_rl_idx(!!(lll->filter_policy & 0x01),
+				       devmatch_id) :
+		 irkmatch_ok ? ull_filter_lll_rl_irk_idx(irkmatch_id) :
+			       FILTER_IDX_NONE;
 #else
 	rl_idx = FILTER_IDX_NONE;
 #endif
-	if (crc_ok && isr_rx_scan_check(param, irkmatch_ok, devmatch_ok,
+	if (crc_ok && isr_rx_scan_check(lll, irkmatch_ok, devmatch_ok,
 					rl_idx)) {
 		u32_t err;
 
-		err = isr_rx_pdu(param, devmatch_ok, devmatch_id, irkmatch_ok,
+		err = isr_rx_pdu(lll, devmatch_ok, devmatch_id, irkmatch_ok,
 				 irkmatch_id, rl_idx, rssi_ready);
 		if (!err) {
 #if defined(CONFIG_BT_CTLR_PROFILE_ISR)
@@ -408,7 +408,7 @@ static void isr_rx(void *param)
 	}
 
 isr_rx_do_close:
-	radio_isr_set(isr_done, param);
+	radio_isr_set(isr_done, lll);
 	radio_disable();
 }
 
@@ -440,8 +440,8 @@ static void isr_tx(void *param)
 	LL_ASSERT(!radio_is_ready());
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (ctrl_rl_enabled()) {
-		u8_t count, *irks = ctrl_irks_get(&count);
+	if (ull_filter_lll_rl_enabled()) {
+		u8_t count, *irks = ull_filter_lll_irks_get(&count);
 
 		radio_ar_configure(count, irks);
 	}
@@ -493,8 +493,8 @@ static void isr_done(void *param)
 	radio_rssi_measure();
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (ctrl_rl_enabled()) {
-		u8_t count, *irks = ctrl_irks_get(&count);
+	if (ull_filter_lll_rl_enabled()) {
+		u8_t count, *irks = ull_filter_lll_irks_get(&count);
 
 		radio_ar_configure(count, irks);
 	}
@@ -590,10 +590,11 @@ static inline bool isr_rx_scan_check(struct lll_scan *lll, u8_t irkmatch_ok,
 				     u8_t devmatch_ok, u8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	return (((_radio.scanner.filter_policy & 0x01) == 0) &&
-		 (!devmatch_ok || ctrl_rl_idx_allowed(irkmatch_ok, rl_idx))) ||
-		(((_radio.scanner.filter_policy & 0x01) != 0) &&
-		 (devmatch_ok || ctrl_irk_whitelisted(rl_idx)));
+	return (((lll->filter_policy & 0x01) == 0) &&
+		 (!devmatch_ok || ull_filter_lll_rl_idx_allowed(irkmatch_ok,
+								rl_idx))) ||
+		(((lll->filter_policy & 0x01) != 0) &&
+		 (devmatch_ok || ull_filter_lll_irk_whitelisted(rl_idx)));
 #else
 	return ((lll->filter_policy & 0x01) == 0U) ||
 		devmatch_ok;
@@ -676,8 +677,8 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		pdu_tx->rx_addr = pdu_adv_rx->tx_addr;
 		pdu_tx->len = sizeof(struct pdu_adv_connect_ind);
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-		lrpa = ctrl_lrpa_get(rl_idx);
-		if (_radio.scanner.rpa_gen && lrpa) {
+		lrpa = ull_filter_lll_lrpa_get(rl_idx);
+		if (lll->rpa_gen && lrpa) {
 			pdu_tx->tx_addr = 1;
 			memcpy(&pdu_tx->connect_ind.init_addr[0], lrpa->val,
 			       BDADDR_SIZE);
@@ -777,6 +778,15 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 			ftr->extra = ull_pdu_rx_alloc();
+			if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
+				*((u8_t *)ftr->extra) = irkmatch_ok ?
+							rl_idx :
+							FILTER_IDX_NONE;
+			}
+		} else if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
+			ftr->extra = (void *)((u32_t)(irkmatch_ok ?
+						      rl_idx :
+						      FILTER_IDX_NONE));
 		}
 
 		ull_rx_put(rx->hdr.link, rx);
@@ -815,8 +825,8 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		pdu_tx->rx_addr = pdu_adv_rx->tx_addr;
 		pdu_tx->len = sizeof(struct pdu_adv_scan_req);
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-		lrpa = ctrl_lrpa_get(rl_idx);
-		if (_radio.scanner.rpa_gen && lrpa) {
+		lrpa = ull_filter_lll_lrpa_get(rl_idx);
+		if (lll->rpa_gen && lrpa) {
 			pdu_tx->tx_addr = 1;
 			memcpy(&pdu_tx->scan_req.scan_addr[0], lrpa->val,
 			       BDADDR_SIZE);
@@ -941,10 +951,11 @@ static inline bool isr_scan_tgta_check(struct lll_scan *lll, bool init,
 				       bool *dir_report)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (ctrl_rl_addr_resolve(pdu->rx_addr,
-				 pdu->direct_ind.tgt_addr, rl_idx)) {
+	if (ull_filter_lll_rl_addr_resolve(pdu->rx_addr,
+					   pdu->direct_ind.tgt_addr, rl_idx)) {
 		return true;
-	} else if (init && _radio.scanner.rpa_gen && ctrl_lrpa_get(rl_idx)) {
+	} else if (init && lll->rpa_gen &&
+		   ull_filter_lll_lrpa_get(rl_idx)) {
 		/* Initiator generating RPAs, and could not resolve TargetA:
 		 * discard
 		 */

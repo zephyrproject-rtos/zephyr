@@ -33,13 +33,14 @@
 #include "ll.h"
 #include "ll_feat.h"
 #include "lll.h"
-#include "lll_filter.h"
 #include "lll_adv.h"
 #include "lll_scan.h"
 #include "lll_conn.h"
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
 #include "ull_conn_types.h"
+#include "ull_filter.h"
+
 #include "ull_internal.h"
 #include "ull_adv_internal.h"
 #include "ull_scan_internal.h"
@@ -294,6 +295,11 @@ int ll_init(struct k_sem *sem_rx)
 	}
 #endif /* CONFIG_BT_CONN */
 
+	/* reset whitelist, resolving list and initialise RPA timeout*/
+	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER)) {
+		ull_filter_reset(true);
+	}
+
 	return  0;
 }
 
@@ -340,6 +346,11 @@ void ll_reset(void)
 
 	MFIFO_INIT(tx_ack);
 #endif /* CONFIG_BT_CONN */
+
+	/* reset whitelist and resolving list */
+	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER)) {
+		ull_filter_reset(false);
+	}
 
 	/* Re-initialize ULL internals */
 
@@ -615,7 +626,7 @@ void ll_rx_dequeue(void)
 			     ull_adv_is_enabled(0);
 
 			if (!bm) {
-				ll_adv_scan_state_cb(0);
+				ull_filter_adv_scan_state_cb(0);
 			}
 		}
 #endif /* CONFIG_BT_CONN */
@@ -688,7 +699,7 @@ void ll_rx_mem_release(void **node_rx)
 				if (!ull_adv_is_enabled_get(0))
 #endif
 				{
-					ll_adv_scan_state_cb(0);
+					ull_filter_adv_scan_state_cb(0);
 				}
 #endif
 				break;

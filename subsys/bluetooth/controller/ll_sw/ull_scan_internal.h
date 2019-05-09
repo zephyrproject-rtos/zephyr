@@ -10,9 +10,8 @@ int ull_scan_init(void);
 int ull_scan_reset(void);
 
 /* Set scan parameters */
-u8_t ull_scan_params_set(struct ll_scan_set *scan, u8_t type,
-			 u16_t interval, u16_t window,
-			 u8_t own_addr_type, u8_t filter_policy);
+void ull_scan_params_set(struct lll_scan *lll, u8_t type, u16_t interval,
+			 u16_t window, u8_t filter_policy);
 
 /* Enable and start scanning/initiating role */
 u8_t ull_scan_enable(struct ll_scan_set *scan);
