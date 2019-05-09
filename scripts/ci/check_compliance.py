@@ -23,34 +23,42 @@ from pathlib import Path
 
 logger = None
 
+
 def info(what):
     sys.stdout.write(what + "\n")
     sys.stdout.flush()
 
+
 def error(what):
     sys.stderr.write(Fore.RED + what + Style.RESET_ALL + "\n")
 
-sh_special_args = {
-    '_tty_out': False,
-    '_cwd': os.getcwd()
-}
+
+def git(*args):
+    # Runs a git command using the 'sh' library (https://amoffat.github.io/sh/)
+
+    # Do not create a TTY for stdout, so that Git doesn't start a pager.
+    #
+    # Hack: Setting _cwd to the working dir seems pointless as of writing (it
+    # should be the default), but keep it around in case it's working around
+    # some issue
+    return sh.git(*args, _tty_out=False, _cwd=os.getcwd())
+
 
 ZEPHYR_BASE = os.environ.get('ZEPHYR_BASE')
 # The absolute path of the top-level git directory
-GIT_TOP = sh.git("rev-parse", "--show-toplevel").strip()
+GIT_TOP = git("rev-parse", "--show-toplevel").strip()
 
 
 def get_shas(refspec):
     """
-    Get SHAs from the Git tree.
+    Returns the list of Git SHAs for 'refspec'.
 
     :param refspec:
     :return:
     """
-    sha_list = sh.git("rev-list",
-                      '--max-count={0}'.format(-1 if "." in refspec else 1),
-                      refspec, **sh_special_args).split()
-    return sha_list
+    return git('rev-list',
+               '--max-count={}'.format(-1 if "." in refspec else 1),
+               refspec).split()
 
 
 class MyCase(TestCase):
@@ -507,7 +515,8 @@ class Codeowners(ComplianceTest):
         if not os.path.exists(codeowners):
             self.skip("CODEOWNERS not available in this repo")
 
-        commit = sh.git("diff","--name-only", "--diff-filter=A", self.commit_range, **sh_special_args)
+        commit = git("diff", "--name-only", "--diff-filter=A",
+                     self.commit_range)
         new_files = commit.splitlines()
         logging.debug("New files %s", new_files)
 
@@ -609,8 +618,8 @@ class License(ComplianceTest):
 
         os.makedirs("scancode-files", exist_ok=True)
         # git diff's output doesn't depend on the current (sub)directory
-        new_files = sh.git("diff", "--name-only", "--diff-filter=A",
-                           self.commit_range, **sh_special_args)
+        new_files = git("diff", "--name-only", "--diff-filter=A",
+                        self.commit_range)
 
         if not new_files:
             return
@@ -706,8 +715,7 @@ class Identity(ComplianceTest):
         self.prepare(GIT_TOP)
 
         for shaidx in get_shas(self.commit_range):
-            commit = sh.git("log", "--decorate=short",
-                            "-n 1", shaidx, **sh_special_args)
+            commit = git("log", "--decorate=short", "-n 1", shaidx)
             signed = []
             author = ""
             sha = ""
@@ -1027,6 +1035,7 @@ def main():
 
     print("\nComplete results in %s" % args.output)
     sys.exit(errors)
+
 
 if __name__ == "__main__":
     main()
