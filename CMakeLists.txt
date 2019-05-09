@@ -472,10 +472,6 @@ else()
 endif()
 
 add_subdirectory(boards)
-add_subdirectory(ext)
-add_subdirectory(subsys)
-add_subdirectory(drivers)
-
 # Include zephyr modules generated CMake file.
 if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
   file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT)
@@ -501,6 +497,10 @@ add_custom_command(                          OUTPUT  ${syscall_macros_h}
   > ${syscall_macros_h}
   DEPENDS ${ZEPHYR_BASE}/scripts/gen_syscall_header.py
   )
+add_subdirectory(ext)
+add_subdirectory(subsys)
+add_subdirectory(drivers)
+
 
 
 set(syscall_list_h ${CMAKE_CURRENT_BINARY_DIR}/include/generated/syscall_list.h)
