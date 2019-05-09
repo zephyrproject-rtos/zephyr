@@ -11,7 +11,6 @@
 #include "ble_mesh.h"
 #include "device_composition.h"
 #include "no_transition_work_handler.h"
-#include "publisher.h"
 #include "state_binding.h"
 #include "storage.h"
 #include "transition.h"
@@ -206,8 +205,6 @@ void main(void)
 	light_default_status_init();
 
 	update_light_state();
-
-	randomize_publishers_TID();
 
 	short_time_multireset_bt_mesh_unprovisioning();
 	k_timer_start(&reset_counter_timer, K_MSEC(7000), 0);
