@@ -32,4 +32,10 @@ endchoice
 config APDS9960_TRIGGER
 	bool
 
+config APDS9960_ENABLE_ALS
+	bool "Enable Ambient Light Sense"
+	default y
+	help
+	  Enable Ambient Light Sense (ALS).
+
 endif # APDS9960

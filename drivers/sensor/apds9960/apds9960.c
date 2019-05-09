@@ -43,7 +43,7 @@ static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	const struct apds9960_config *config = dev->config->config_info;
 	struct apds9960_data *data = dev->driver_data;
-	u8_t status;
+	u8_t tmp;
 
 	if (chan != SENSOR_CHAN_ALL) {
 		LOG_ERR("Unsupported sensor channel");
@@ -53,10 +53,13 @@ static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 #ifndef CONFIG_APDS9960_TRIGGER
 	gpio_pin_enable_callback(data->gpio, config->gpio_pin);
 
+#ifdef CONFIG_APDS9960_ENABLE_ALS
+	tmp = APDS9960_ENABLE_PON | APDS9960_ENABLE_AIEN;
+#else
+	tmp = APDS9960_ENABLE_PON | APDS9960_ENABLE_PIEN;
+#endif
 	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
-				APDS9960_ENABLE_REG,
-				APDS9960_ENABLE_PON | APDS9960_ENABLE_AIEN,
-				APDS9960_ENABLE_PON | APDS9960_ENABLE_AIEN)) {
+				APDS9960_ENABLE_REG, tmp, tmp)) {
 		LOG_ERR("Power on bit not set.");
 		return -EIO;
 	}
@@ -65,19 +68,19 @@ static int apds9960_sample_fetch(struct device *dev, enum sensor_channel chan)
 #endif
 
 	if (i2c_reg_read_byte(data->i2c, config->i2c_address,
-			      APDS9960_STATUS_REG, &status)) {
+			      APDS9960_STATUS_REG, &tmp)) {
 		return -EIO;
 	}
 
-	LOG_DBG("status: 0x%x", status);
-	if (status & APDS9960_STATUS_PINT) {
+	LOG_DBG("status: 0x%x", tmp);
+	if (tmp & APDS9960_STATUS_PINT) {
 		if (i2c_reg_read_byte(data->i2c, config->i2c_address,
 				      APDS9960_PDATA_REG, &data->pdata)) {
 			return -EIO;
 		}
 	}
 
-	if (status & APDS9960_STATUS_AINT) {
+	if (tmp & APDS9960_STATUS_AINT) {
 		if (i2c_burst_read(data->i2c, config->i2c_address,
 				   APDS9960_CDATAL_REG,
 				   (u8_t *)&data->sample_crgb,
@@ -111,6 +114,7 @@ static int apds9960_channel_get(struct device *dev,
 	struct apds9960_data *data = dev->driver_data;
 
 	switch (chan) {
+#ifdef CONFIG_APDS9960_ENABLE_ALS
 	case SENSOR_CHAN_LIGHT:
 		val->val1 = sys_le16_to_cpu(data->sample_crgb[0]);
 		val->val2 = 0;
@@ -127,6 +131,7 @@ static int apds9960_channel_get(struct device *dev,
 		val->val1 = sys_le16_to_cpu(data->sample_crgb[3]);
 		val->val2 = 0;
 		break;
+#endif
 	case SENSOR_CHAN_PROX:
 		val->val1 = data->pdata;
 		val->val2 = 0;
@@ -201,6 +206,7 @@ static int apds9960_proxy_setup(struct device *dev, int gain)
 	return 0;
 }
 
+#ifdef CONFIG_APDS9960_ENABLE_ALS
 static int apds9960_ambient_setup(struct device *dev, int gain)
 {
 	const struct apds9960_config *config = dev->config->config_info;
@@ -249,6 +255,7 @@ static int apds9960_ambient_setup(struct device *dev, int gain)
 
 	return 0;
 }
+#endif
 
 static int apds9960_sensor_setup(struct device *dev)
 {
@@ -325,10 +332,12 @@ static int apds9960_sensor_setup(struct device *dev)
 		return -EIO;
 	}
 
+#ifdef CONFIG_APDS9960_ENABLE_ALS
 	if (apds9960_ambient_setup(dev, APDS9960_DEFAULT_AGAIN)) {
 		LOG_ERR("Failed to setup ambient light functionality");
 		return -EIO;
 	}
+#endif
 
 	return 0;
 }
