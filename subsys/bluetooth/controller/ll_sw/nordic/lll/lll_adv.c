@@ -27,8 +27,8 @@
 #include "lll.h"
 #include "lll_vendor.h"
 #include "lll_adv.h"
-#include "lll_filter.h"
 #include "lll_chan.h"
+#include "lll_filter.h"
 
 #include "lll_internal.h"
 #include "lll_tim_internal.h"
@@ -68,7 +68,8 @@ static inline int isr_rx_sr_report(struct pdu_adv *pdu_adv_rx,
 static inline bool isr_rx_ci_check(struct lll_adv *lll, struct pdu_adv *adv,
 				   struct pdu_adv *ci, u8_t devmatch_ok,
 				   u8_t *rl_idx);
-static inline bool isr_rx_ci_tgta_check(struct pdu_adv *adv, struct pdu_adv *ci,
+static inline bool isr_rx_ci_tgta_check(struct lll_adv *lll,
+					struct pdu_adv *adv, struct pdu_adv *ci,
 					u8_t rl_idx);
 static inline bool isr_rx_ci_adva_check(struct pdu_adv *adv,
 					struct pdu_adv *ci);
@@ -167,9 +168,9 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (ctrl_rl_enabled()) {
-		struct ll_filter *filter =
-			ctrl_filter_get(!!(_radio.advertiser.filter_policy));
+	if (ull_filter_lll_rl_enabled()) {
+		struct lll_filter *filter =
+			ull_filter_lll_get(!!(lll->filter_policy));
 
 		radio_filter_configure(filter->enable_bitmask,
 				       filter->addr_type_bitmask,
@@ -181,7 +182,7 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	/* Setup Radio Filter */
 	if (lll->filter_policy) {
 
-		struct ll_filter *wl = ctrl_filter_get(true);
+		struct lll_filter *wl = ull_filter_lll_get(true);
 
 		radio_filter_configure(wl->enable_bitmask,
 				       wl->addr_type_bitmask,
@@ -339,8 +340,8 @@ static void isr_tx(void *param)
 #endif /* CONFIG_BT_CTLR_PROFILE_ISR */
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (ctrl_rl_enabled()) {
-		u8_t count, *irks = ctrl_irks_get(&count);
+	if (ull_filter_lll_rl_enabled()) {
+		u8_t count, *irks = ull_filter_lll_irks_get(&count);
 
 		radio_ar_configure(count, irks);
 	}
@@ -616,7 +617,7 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 	struct pdu_adv *pdu_rx, *pdu_adv;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* An IRK match implies address resolution enabled */
-	u8_t rl_idx = irkmatch_ok ? ctrl_rl_irk_idx(irkmatch_id) :
+	u8_t rl_idx = irkmatch_ok ? ull_filter_lll_rl_irk_idx(irkmatch_id) :
 				    FILTER_IDX_NONE;
 #else
 	u8_t rl_idx = FILTER_IDX_NONE;
@@ -719,6 +720,15 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 
 		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 			ftr->extra = ull_pdu_rx_alloc();
+			if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
+				*((u8_t *)ftr->extra) = irkmatch_ok ?
+							rl_idx :
+							FILTER_IDX_NONE;
+			}
+		} else if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
+			ftr->extra = (void *)((u32_t)(irkmatch_ok ?
+						      rl_idx :
+						      FILTER_IDX_NONE));
 		}
 
 		ull_rx_put(rx->hdr.link, rx);
@@ -736,11 +746,12 @@ static inline bool isr_rx_sr_check(struct lll_adv *lll, struct pdu_adv *adv,
 				   u8_t *rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	return ((((_radio.advertiser.filter_policy & 0x01) == 0) &&
-		 ctrl_rl_addr_allowed(sr->tx_addr, sr->scan_req.scan_addr,
-				      rl_idx)) ||
-		(((_radio.advertiser.filter_policy & 0x01) != 0) &&
-		 (devmatch_ok || ctrl_irk_whitelisted(*rl_idx)))) &&
+	return ((((lll->filter_policy & 0x01) == 0) &&
+		 ull_filter_lll_rl_addr_allowed(sr->tx_addr,
+						sr->scan_req.scan_addr,
+						rl_idx)) ||
+		(((lll->filter_policy & 0x01) != 0) &&
+		 (devmatch_ok || ull_filter_lll_irk_whitelisted(*rl_idx)))) &&
 		isr_rx_sr_adva_check(adv, sr);
 #else
 	return (((lll->filter_policy & 0x01) == 0U) || devmatch_ok) &&
@@ -796,22 +807,23 @@ static inline bool isr_rx_ci_check(struct lll_adv *lll, struct pdu_adv *adv,
 	/* LL 4.3.2: filter policy shall be ignored for directed adv */
 	if (adv->type == PDU_ADV_TYPE_DIRECT_IND) {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-		return ctrl_rl_addr_allowed(ci->tx_addr,
-					    ci->connect_ind.init_addr,
-					    rl_idx) &&
+		return ull_filter_lll_rl_addr_allowed(ci->tx_addr,
+						      ci->connect_ind.init_addr,
+						      rl_idx) &&
 #else
 		return (1) &&
 #endif
 		       isr_rx_ci_adva_check(adv, ci) &&
-		       isr_rx_ci_tgta_check(adv, ci, *rl_idx);
+		       isr_rx_ci_tgta_check(lll, adv, ci, *rl_idx);
 	}
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	return ((((_radio.advertiser.filter_policy & 0x02) == 0) &&
-		 ctrl_rl_addr_allowed(ci->tx_addr, ci->connect_ind.init_addr,
-				      rl_idx)) ||
-		(((_radio.advertiser.filter_policy & 0x02) != 0) &&
-		 (devmatch_ok || ctrl_irk_whitelisted(*rl_idx)))) &&
+	return ((((lll->filter_policy & 0x02) == 0) &&
+		 ull_filter_lll_rl_addr_allowed(ci->tx_addr,
+						ci->connect_ind.init_addr,
+						rl_idx)) ||
+		(((lll->filter_policy & 0x02) != 0) &&
+		 (devmatch_ok || ull_filter_lll_irk_whitelisted(*rl_idx)))) &&
 	       isr_rx_ci_adva_check(adv, ci);
 #else
 	return (((lll->filter_policy & 0x02) == 0) ||
@@ -820,12 +832,13 @@ static inline bool isr_rx_ci_check(struct lll_adv *lll, struct pdu_adv *adv,
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 }
 
-static inline bool isr_rx_ci_tgta_check(struct pdu_adv *adv, struct pdu_adv *ci,
+static inline bool isr_rx_ci_tgta_check(struct lll_adv *lll,
+					struct pdu_adv *adv, struct pdu_adv *ci,
 					u8_t rl_idx)
 {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (rl_idx != FILTER_IDX_NONE) {
-		return rl_idx == _radio.advertiser.rl_idx;
+		return rl_idx == lll->rl_idx;
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 	return (adv->rx_addr == ci->tx_addr) &&

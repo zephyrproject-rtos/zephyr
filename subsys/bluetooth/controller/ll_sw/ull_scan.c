@@ -29,6 +29,7 @@
 
 #include "ull_adv_types.h"
 #include "ull_scan_types.h"
+#include "ull_filter.h"
 
 #include "ull_internal.h"
 #include "ull_adv_internal.h"
@@ -58,8 +59,11 @@ u8_t ll_scan_params_set(u8_t type, u16_t interval, u16_t window,
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
-	return ull_scan_params_set(scan, type, interval, window, own_addr_type,
-				   filter_policy);
+	scan->own_addr_type = own_addr_type;
+
+	ull_scan_params_set(&scan->lll, type, interval, window, filter_policy);
+
+	return 0;
 }
 
 u8_t ll_scan_enable(u8_t enable)
@@ -107,12 +111,9 @@ int ull_scan_reset(void)
 	return 0;
 }
 
-u8_t ull_scan_params_set(struct ll_scan_set *scan, u8_t type,
-			 u16_t interval, u16_t window,
-			 u8_t own_addr_type, u8_t filter_policy)
+void ull_scan_params_set(struct lll_scan *lll, u8_t type, u16_t interval,
+			 u16_t window, u8_t filter_policy)
 {
-	struct lll_scan *lll = &scan->lll;
-
 	/* type value:
 	 * 0000b - legacy 1M passive
 	 * 0001b - legacy 1M active
@@ -134,10 +135,6 @@ u8_t ull_scan_params_set(struct ll_scan_set *scan, u8_t type,
 	lll->filter_policy = filter_policy;
 	lll->interval = interval;
 	lll->ticks_window = HAL_TICKER_US_TO_TICKS((u64_t)window * 625U);
-
-	scan->own_addr_type = own_addr_type;
-
-	return 0;
 }
 
 u8_t ull_scan_enable(struct ll_scan_set *scan)
@@ -151,13 +148,13 @@ u8_t ull_scan_enable(struct ll_scan_set *scan)
 	u32_t ret;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	ll_filters_scan_update(scan->filter_policy);
+	ull_filter_scan_update(lll->filter_policy);
 
-	if ((scan->type & 0x1) &&
+	if ((lll->type & 0x1) &&
 	    (scan->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
 	     scan->own_addr_type == BT_ADDR_LE_RANDOM_ID)) {
 		/* Generate RPAs if required */
-		ll_rl_rpa_update(false);
+		ull_filter_rpa_update(false);
 		lll->rpa_gen = 1;
 		lll->rl_idx = FILTER_IDX_NONE;
 	}
@@ -245,7 +242,7 @@ u8_t ull_scan_enable(struct ll_scan_set *scan)
 	if (!ull_adv_is_enabled_get(0))
 #endif
 	{
-		ll_adv_scan_state_cb(BIT(1));
+		ull_filter_adv_scan_state_cb(BIT(1));
 	}
 #endif
 
@@ -436,7 +433,7 @@ static u8_t disable(u16_t handle)
 	if (!ull_adv_is_enabled_get(0))
 #endif
 	{
-		ll_adv_scan_state_cb(0);
+		ull_filter_adv_scan_state_cb(0);
 	}
 #endif
 
