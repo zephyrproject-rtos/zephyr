@@ -51,6 +51,24 @@ extern void z_setup_new_thread(struct k_thread *new_thread,
 			      void *p1, void *p2, void *p3,
 			      int prio, u32_t options, const char *name);
 
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+/**
+ * @brief Disable floating point context preservation
+ *
+ * The function is used to disable the preservation of floating
+ * point context information for a particular thread.
+ *
+ * @note
+ * For ARM architecture, disabling floating point preservation
+ * - may only be requested for the current thread
+ * - cannot be requested in ISRs.
+ *
+ * @retval 0       On success.
+ * @retval -EINVAL If the floating point disabling could not be performed.
+ */
+extern int z_arch_float_disable(struct k_thread *thread);
+#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+
 #ifdef CONFIG_USERSPACE
 /**
  * @brief Get the maximum number of partitions for a memory domain

@@ -727,4 +727,24 @@ void z_spin_lock_set_owner(struct k_spinlock *l)
 	l->thread_cpu = _current_cpu->id | (uintptr_t)_current;
 }
 
+int z_impl_k_float_disable(struct k_thread *thread)
+{
+#if defined(CONFIG_FLOAT) && defined(CONFIG_FP_SHARING)
+	return z_arch_float_disable(thread);
+#else
+	return -ENOSYS;
+#endif /* CONFIG_FLOAT && CONFIG_FP_SHARING */
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(k_float_disable, thread_p)
+{
+	struct k_thread *thread = (struct k_thread *)thread_p;
+
+	Z_OOPS(Z_SYSCALL_OBJ(thread, K_OBJ_THREAD));
+
+	return z_impl_k_float_disable((struct k_thread *)thread_p);
+}
+#endif /* CONFIG_USERSPACE */
+
 #endif

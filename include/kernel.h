@@ -4870,6 +4870,29 @@ __syscall void k_str_out(char *c, size_t n);
 extern void z_arch_start_cpu(int cpu_num, k_thread_stack_t *stack, int sz,
 			    void (*fn)(int key, void *data), void *arg);
 
+
+/**
+ * @brief Disable preservation of floating point context information.
+ *
+ * This routine informs the kernel that the specified thread
+ * will no longer be using the floating point registers.
+ *
+ * @warning
+ * Some architectures apply restrictions on how the disabling of floating
+ * point preservation may be requested, see z_arch_float_disable.
+ *
+ * @warning
+ * This routine should only be used to disable floating point support for
+ * a thread that currently has such support enabled.
+ *
+ * @param thread ID of thread.
+ *
+ * @retval 0       On success.
+ * @retval -ENOSYS If the floating point disabling is not implemented.
+ *         -EINVAL If the floating point disabling could not be performed.
+ */
+__syscall int k_float_disable(struct k_thread *thread);
+
 #ifdef __cplusplus
 }
 #endif
