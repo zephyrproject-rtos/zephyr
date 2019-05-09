@@ -51,14 +51,10 @@ static const struct bt_mesh_prov prov = {
 	.reset = prov_reset,
 };
 
-void bt_ready(int err)
+void bt_ready(void)
 {
+	int err;
 	struct bt_le_oob oob;
-
-	if (err) {
-		printk("Bluetooth init failed (err %d)\n", err);
-		return;
-	}
 
 	printk("Bluetooth initialized\n");
 

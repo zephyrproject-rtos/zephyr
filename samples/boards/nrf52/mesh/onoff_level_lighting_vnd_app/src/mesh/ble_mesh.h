@@ -50,7 +50,7 @@
 #define BT_MESH_MODEL_LIGHT_CTL_TEMP_STATUS	BT_MESH_MODEL_OP_2(0x82, 0x66)
 #define BT_MESH_MODEL_LIGHT_CTL_DEFAULT_STATUS	BT_MESH_MODEL_OP_2(0x82, 0x68)
 
-void bt_ready(int err);
+void bt_ready(void);
 
 #endif
 
