@@ -2860,7 +2860,7 @@ sub process {
 
 			my @compats = $rawline =~ /\"([a-zA-Z0-9\-\,\.\+_]+)\"/g;
 
-			my $dt_path = $root . "/Documentation/devicetree/bindings/";
+			my $dt_path = $root . "/dts/bindings/";
 			my $vp_file = $dt_path . "vendor-prefixes.txt";
 
 			foreach my $compat (@compats) {
