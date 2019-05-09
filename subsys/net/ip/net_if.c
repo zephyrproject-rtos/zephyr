@@ -2846,11 +2846,10 @@ int net_if_up(struct net_if *iface)
 		return 0;
 	}
 
-#if defined(CONFIG_NET_OFFLOAD)
-	if (net_if_is_ip_offloaded(iface)) {
-		goto done;
+	if (IS_ENABLED(CONFIG_NET_OFFLOAD) && net_if_is_ip_offloaded(iface)) {
+		net_if_flag_set(iface, NET_IF_UP);
+		goto exit;
 	}
-#endif
 
 	/* If the L2 does not support enable just set the flag */
 	if (!net_if_l2(iface)->enable) {
@@ -2888,6 +2887,7 @@ done:
 	net_ipv4_autoconf_start(iface);
 #endif
 
+exit:
 	net_mgmt_event_notify(NET_EVENT_IF_UP, iface);
 
 	return 0;
