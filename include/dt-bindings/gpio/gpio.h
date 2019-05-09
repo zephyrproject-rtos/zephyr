@@ -97,6 +97,9 @@
 /** Enable GPIO pin pull-down. */
 #define GPIO_PUD_PULL_DOWN	(2 << GPIO_PUD_POS)
 
+/** Enable GPIO pin open drain. */
+#define GPIO_OPEN_DRAIN		(3 << GPIO_PUD_POS)
+
 /** @cond INTERNAL_HIDDEN */
 #define GPIO_PUD_MASK		(3 << GPIO_PUD_POS)
 /** @endcond */
