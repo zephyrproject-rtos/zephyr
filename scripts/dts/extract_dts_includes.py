@@ -370,8 +370,8 @@ def load_bindings(root, binding_dirs):
 
             if 'parent' in binding:
                 bus_to_binding[binding['parent']['bus']][compat] = binding
-            else:
-                compat_to_binding[compat] = binding
+
+            compat_to_binding[compat] = binding
 
     if not compat_to_binding:
         raise Exception("No bindings found in '{}'".format(binding_dirs))

@@ -466,7 +466,7 @@ z_x86_idt:
 	.long	_idt_base_address		/* physical start address */
 
 
-#ifdef CONFIG_BOOTLOADER_UNKNOWN
+#ifdef CONFIG_X86_MULTIBOOT
 	/* Multiboot header definition is needed for some bootloaders */
 
 	/*
@@ -495,7 +495,7 @@ z_x86_idt:
 	 */
 
 	.long	-(0x1BADB002 + 0)
-#endif /* CONFIG_BOOTLOADER_UNKNOWN */
+#endif /* CONFIG_X86_MULTIBOOT */
 
 #ifdef CONFIG_SET_GDT
 

@@ -1,6 +1,8 @@
 #ifndef _KERNEL_VERSION_H_
 #define _KERNEL_VERSION_H_
 
+/* @templates@ values come from cmake/version.cmake */
+
 #cmakedefine ZEPHYR_VERSION_CODE @ZEPHYR_VERSION_CODE@
 #define ZEPHYR_VERSION(a,b,c) (((a) << 16) + ((b) << 8) + (c))
 

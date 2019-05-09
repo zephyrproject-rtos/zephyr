@@ -33,6 +33,10 @@ static inline int canbus_send(struct net_if *iface, struct net_pkt *pkt)
 	const struct canbus_api *api = net_if_get_device(iface)->driver_api;
 	int ret;
 
+	if (!api) {
+		return -ENOENT;
+	}
+
 	ret = api->send(net_if_get_device(iface), pkt);
 	if (!ret) {
 		ret = net_pkt_get_len(pkt);

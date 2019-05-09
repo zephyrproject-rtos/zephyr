@@ -270,6 +270,7 @@ enum uart_config_data_bits {
 	UART_CFG_DATA_BITS_6,
 	UART_CFG_DATA_BITS_7,
 	UART_CFG_DATA_BITS_8,
+	UART_CFG_DATA_BITS_9,
 };
 
 /**
@@ -728,6 +729,9 @@ static inline int uart_fifo_fill(struct device *dev, const u8_t *tx_data,
  * detected, uart_fifo_read() must be called until it reads all
  * available data in the FIFO (i.e. until it returns less data
  * than was requested).
+ *
+ * Note that the calling context only applies to physical UARTs and
+ * no to the virtual ones found in USB CDC ACM code.
  *
  * @param dev UART device structure.
  * @param rx_data Data container.

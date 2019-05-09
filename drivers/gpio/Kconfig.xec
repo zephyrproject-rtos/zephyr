@@ -1,0 +1,48 @@
+# Kconfig.xec - Microchip XEC GPIO configuration options
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig GPIO_XEC
+	bool "XEC Microchip GPIO driver"
+	depends on SOC_FAMILY_MEC
+	select HAS_DTS_GPIO
+	help
+	Enable the Microchip XEC gpio driver.
+
+if GPIO_XEC
+
+config GPIO_XEC_GPIO000_036
+	bool "GPIO 000-036"
+	help
+	Enable GPIO 000-036 or what would be equivalent to PortA.
+
+config GPIO_XEC_GPIO040_076
+	bool "GPIO 040-036"
+	help
+	Enable GPIO 040-076 or what would be equivalent to Port B
+
+config GPIO_XEC_GPIO100_136
+	bool "GPIO 100-136"
+	help
+	Enable GPIO 100-136 or what would be equivalent to Port C
+
+config GPIO_XEC_GPIO140_176
+	bool "GPIO 140-176"
+	help
+	Enable GPIO 140-176 or what would be equivalent to Port C
+
+config GPIO_XEC_GPIO200_236
+	bool "GPIO 200-236"
+	help
+	Enable GPIO 200-236 or what would be equivalent to Port D
+
+config GPIO_XEC_GPIO240_276
+	bool "GPIO 240-276"
+	help
+	Enable GPIO 240-276 or what would be equivalent to Port E
+
+endif # GPIO_XEC
+

@@ -8,8 +8,6 @@ Note that common helpers used by the flash and debug extension
 commands are in run_common -- that's for common code used by
 commands which specifically execute runners.'''
 
-import os
-
 from west import log
 from west.commands import WestCommand
 

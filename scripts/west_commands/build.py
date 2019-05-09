@@ -399,5 +399,28 @@ class Build(Forceable):
         if self.args.build_opt:
             extra_args.append('--')
             extra_args.extend(self.args.build_opt)
+        if self.args.verbose:
+            self._append_verbose_args(extra_args,
+                                      not bool(self.args.build_opt))
         run_build(self.build_dir, extra_args=extra_args,
                   dry_run=self.args.dry_run)
+
+    def _append_verbose_args(self, extra_args, add_dashes):
+        # These hacks are only needed for CMake versions earlier than
+        # 3.14. When Zephyr's minimum version is at least that, we can
+        # drop this nonsense and just run "cmake --build BUILD -v".
+        self._update_cache()
+        if not self.cmake_cache:
+            return
+        generator = self.cmake_cache.get('CMAKE_GENERATOR')
+        if not generator:
+            return
+        # Substring matching is for things like "Eclipse CDT4 - Ninja".
+        if 'Ninja' in generator:
+            if add_dashes:
+                extra_args.append('--')
+            extra_args.append('-v')
+        elif generator == 'Unix Makefiles':
+            if add_dashes:
+                extra_args.append('--')
+            extra_args.append('VERBOSE=1')

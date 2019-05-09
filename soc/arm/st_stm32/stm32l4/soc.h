@@ -83,6 +83,10 @@
 #include <stm32l4xx_ll_gpio.h>
 #endif
 
+#ifdef CONFIG_ADC_STM32
+#include <stm32l4xx_ll_adc.h>
+#endif
+
 #endif /* !_ASMLANGUAGE */
 
 #endif /* _STM32L4X_SOC_H_ */

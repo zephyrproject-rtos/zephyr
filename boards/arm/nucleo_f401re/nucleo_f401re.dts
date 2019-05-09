@@ -117,3 +117,7 @@ arduino_spi: &spi1 {
 &rtc {
 	status = "ok";
 };
+
+&adc1 {
+	status = "ok";
+};

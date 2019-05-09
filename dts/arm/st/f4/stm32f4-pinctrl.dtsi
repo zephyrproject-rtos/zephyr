@@ -69,6 +69,18 @@
 					tx = <STM32_PIN_PG14 (STM32_PINMUX_ALT_FUNC_8 | STM32_PUSHPULL_NOPULL)>;
 				};
 			};
+			uart7_pins_a: uart7_a {
+				rx_tx {
+					rx = <STM32_PIN_PE7 (STM32_PINMUX_ALT_FUNC_8 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PE8 (STM32_PINMUX_ALT_FUNC_8 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
+			uart7_pins_b: uart7_b {
+				rx_tx {
+					rx = <STM32_PIN_PF6 (STM32_PINMUX_ALT_FUNC_8 | STM32_PUPDR_NO_PULL)>;
+					tx = <STM32_PIN_PF7 (STM32_PINMUX_ALT_FUNC_8 | STM32_PUSHPULL_NOPULL)>;
+				};
+			};
 		};
 	};
 };

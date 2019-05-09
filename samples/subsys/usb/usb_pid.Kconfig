@@ -1,0 +1,49 @@
+#
+# Copyright (c) 2019 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config USB_PID_CDC_ACM_SAMPLE
+	hex
+	default 0x0001
+
+config USB_PID_CDC_ACM_COMPOSITE_SAMPLE
+	hex
+	default 0x0002
+
+config USB_PID_HID_CDC_SAMPLE
+	hex
+	default 0x0003
+
+config USB_PID_CONSOLE_SAMPLE
+	hex
+	default 0x0004
+
+config USB_PID_DFU_SAMPLE
+	hex
+	default 0x0005
+
+config USB_PID_HID_SAMPLE
+	hex
+	default 0x0006
+
+config USB_PID_HID_MOUSE_SAMPLE
+	hex
+	default 0x0007
+
+config USB_PID_MASS_SAMPLE
+	hex
+	default 0x0008
+
+config USB_PID_TESTUSB_SAMPLE
+	hex
+	default 0x0009
+
+config USB_PID_WEBUSB_SAMPLE
+	hex
+	default 0x000A
+
+config USB_PID_BLE_HCI_SAMPLE
+	hex
+	default 0x000B

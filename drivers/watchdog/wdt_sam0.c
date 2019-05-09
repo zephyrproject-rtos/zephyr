@@ -117,6 +117,11 @@ static int wdt_sam0_install_timeout(struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (cfg->window.max == 0) {
+		LOG_ERR("Upper limit timeout out of range");
+		return -EINVAL;
+	}
+
 	per = wdt_sam0_timeout_to_wdt_period(cfg->window.max);
 	if (per > WDT_CONFIG_PER_16K_Val) {
 		LOG_ERR("Upper limit timeout out of range");

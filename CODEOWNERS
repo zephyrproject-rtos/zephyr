@@ -92,15 +92,16 @@
 /doc/guides/coccinelle.rst                @himanshujha199640 @JuliaLawall
 /doc/CMakeLists.txt                       @carlescufi
 /doc/scripts/                             @carlescufi
-/doc/guides/bluetooth/                    @sjanc @jhedberg @Vudentz
-/doc/reference/bluetooth/                 @sjanc @jhedberg @Vudentz
+/doc/guides/bluetooth/                    @joerchan @jhedberg @Vudentz
+/doc/reference/bluetooth/                 @joerchan @jhedberg @Vudentz
 /drivers/*/*cc13xx_cc26xx*                @bwitherspoon
 /drivers/*/*mcux*                         @MaureenHelm
 /drivers/*/*qmsi*                         @nashif
 /drivers/*/*stm32*                        @erwango
 /drivers/*/*native_posix*                 @aescolar
 /drivers/adc/                             @anangl
-/drivers/bluetooth/                       @sjanc @jhedberg @Vudentz
+/drivers/adc/adc_stm32.c                  @cybertale
+/drivers/bluetooth/                       @joerchan @jhedberg @Vudentz
 /drivers/can/                             @alexanderwachter
 /drivers/can/*mcp2515*                    @karstenkoenig
 /drivers/clock_control/*stm32f4*          @rsalveti @idlethread
@@ -110,6 +111,7 @@
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 /drivers/flash/                           @nashif
 /drivers/flash/*stm32*                    @superna9999
+/drivers/gpio/*ht16k33*                   @henrikbrixandersen
 /drivers/gpio/*stm32*                     @rsalveti @idlethread
 /drivers/hwinfo/                          @alexanderwachter
 /drivers/i2s/i2s_ll_stm32*                @avisconti
@@ -141,6 +143,8 @@
 /drivers/usb/device/usb_dc_stm32.c        @ydamigos @loicpoulain
 /drivers/i2c/i2c_ll_stm32*                @ldts @ydamigos
 /drivers/i2c/i2c_rv32m1_lpi2c*            @henrikbrixandersen
+/drivers/i2c/*sam0*                       @Sizurka
+/drivers/*/*xec*                          @franciscomunoz @albertofloyd @scottwcpg
 /drivers/wifi/                            @jukkar @tbursztyka @pfalcon
 /drivers/wifi/eswifi/                     @loicpoulain
 /dts/arm/atmel/samr21.dtsi                @benpicco
@@ -153,6 +157,7 @@
 /dts/riscv32/rv32m1*                      @MaureenHelm
 /dts/bindings/                            @galak
 /dts/bindings/can/                        @alexanderwachter
+/dts/bindings/iio/adc/st*stm32-adc.yaml   @cybertale
 /dts/bindings/serial/ns16550.yaml         @gnuless
 /dts/bindings/*/nordic*                   @anangl
 /dts/bindings/*/nxp*                      @MaureenHelm
@@ -160,6 +165,7 @@
 /dts/bindings/*/st*                       @erwango
 /dts/bindings/sensor/ams*                 @alexanderwachter
 /ext/fs/                                  @nashif @wentongwu
+/ext/hal/atmel/asf/sam/include/same70*/   @aurel32
 /ext/hal/atmel/asf/sam0/include/samr21/   @benpicco
 /ext/hal/cmsis/                           @MaureenHelm @galak
 /ext/hal/libmetal/                        @galak
@@ -186,14 +192,15 @@
 /include/arch/x86/arch.h                  @andrewboie
 /include/arch/xtensa/                     @andrewboie
 /include/atomic.h                         @andrewboie @andyross
-/include/bluetooth/                       @sjanc @jhedberg @Vudentz
+/include/bluetooth/                       @joerchan @jhedberg @Vudentz
 /include/cache.h                          @andrewboie @andyross
 /include/can.h                            @alexanderwachter
 /include/counter.h                        @nordic-krch
 /include/device.h                         @wentongwu @nashif
 /include/display.h                        @vanwinkeljan
 /include/display/                         @vanwinkeljan
-/include/drivers/bluetooth/               @sjanc @jhedberg @Vudentz
+/include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz
+/include/drivers/led/ht16k33.h            @henrikbrixandersen
 /include/drivers/modem/                   @mike-scott
 /include/drivers/ioapic.h                 @andrewboie
 /include/drivers/loapic.h                 @andrewboie
@@ -232,17 +239,18 @@
 /include/zephyr.h                         @andrewboie @andyross
 /kernel/                                  @andrewboie @andyross
 /lib/gui/                                 @vanwinkeljan
+/lib/libc/                                @nashif
 /lib/os/                                  @andrewboie @andyross
 /lib/posix/                               @pfalcon
-/lib/libc/minimal/source/stdlib/bsearch.c @balajikulkarni
 /kernel/device.c                          @andrewboie @andyross @nashif
 /kernel/idle.c                            @andrewboie @andyross @nashif
 /samples/                                 @nashif
 /samples/basic/servo_motor/*microbit*     @jhe
-/samples/bluetooth/                       @sjanc @jhedberg @Vudentz
+/samples/bluetooth/                       @joerchan @jhedberg @Vudentz
 /samples/boards/intel_s1000_crb/          @sathishkuttan @dcpleung @nashif
 /samples/display/                         @vanwinkeljan
 /samples/drivers/CAN/                     @alexanderwachter
+/samples/drivers/ht16k33/                 @henrikbrixandersen
 /samples/gui/                             @vanwinkeljan
 /samples/net/                             @jukkar @tbursztyka @pfalcon
 /samples/net/dns_resolve/                 @jukkar @tbursztyka @pfalcon
@@ -274,7 +282,7 @@
 /scripts/west_commands/                   @mbolivar
 /scripts/west-commands.yml                @mbolivar
 /scripts/zephyr_module.py                 @tejlmand
-/subsys/bluetooth/                        @sjanc @jhedberg @Vudentz
+/subsys/bluetooth/                        @joerchan @jhedberg @Vudentz
 /subsys/bluetooth/controller/             @carlescufi @cvinayak @thoh-ot
 /subsys/fs/                               @nashif
 /subsys/fs/fcb/                           @nvlsianpu
@@ -300,7 +308,7 @@
 /tests/                                   @nashif
 /tests/boards/native_posix/               @aescolar
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
-/tests/bluetooth/                         @sjanc @jhedberg @Vudentz
+/tests/bluetooth/                         @joerchan @jhedberg @Vudentz
 /tests/posix/                             @pfalcon
 /tests/crypto/                            @ceolin
 /tests/crypto/mbedtls/                    @nashif @ceolin

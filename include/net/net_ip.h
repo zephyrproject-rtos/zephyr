@@ -278,12 +278,8 @@ struct sockaddr_storage {
 struct net_addr {
 	sa_family_t family;
 	union {
-#if defined(CONFIG_NET_IPV6)
 		struct in6_addr in6_addr;
-#endif
-#if defined(CONFIG_NET_IPV4)
 		struct in_addr in_addr;
-#endif
 	};
 };
 

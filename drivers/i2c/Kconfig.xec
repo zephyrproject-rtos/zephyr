@@ -1,0 +1,35 @@
+# Kconfig.xec - Microchip XEC I2C configuration options
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig I2C_XEC
+	bool "XEC Microchip I2C driver"
+	depends on SOC_FAMILY_MEC
+	select HAS_DTS_I2C
+	help
+	Enable the Microchip XEC I2C driver.
+
+if I2C_XEC
+
+config I2C_XEC_0
+	bool "Enable I2C XEC device 0"
+	help
+	  This tells the driver to configure the I2C device at boot, depending
+	  on the additional configuration options below.
+
+config I2C_XEC_1
+	bool "Enable I2C XEC device 1"
+	help
+	  This tells the driver to configure the I2C device at boot, depending
+	  on the additional configuration options below.
+
+config I2C_XEC_2
+	bool "Enable I2C XEC device 2"
+	help
+	  This tells the driver to configure the I2C device at boot, depending
+	  on the additional configuration options below.
+
+endif #I2C_XEC

@@ -1,0 +1,43 @@
+#
+# Copyright (c) 2019, Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+---
+title: MICROCHIP GPIO
+version: 0.1
+
+description: >
+    This is a representation of the CEC/MEC GPIO nodes for Microchip
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "microchip,xec-gpio"
+      generation: define
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    interrupts:
+      type: compound
+      category: optional
+      description: required interrupts
+      generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
+
+"#cells":
+  - pin
+  - flags
+...

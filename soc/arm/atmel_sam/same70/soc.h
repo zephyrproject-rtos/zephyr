@@ -37,6 +37,24 @@
 #include <same70q20.h>
 #elif defined CONFIG_SOC_PART_NUMBER_SAME70Q21
 #include <same70q21.h>
+#elif defined CONFIG_SOC_PART_NUMBER_SAME70J19B
+#include <same70j19b.h>
+#elif defined CONFIG_SOC_PART_NUMBER_SAME70J20B
+#include <same70j20b.h>
+#elif defined CONFIG_SOC_PART_NUMBER_SAME70J21B
+#include <same70j21b.h>
+#elif defined CONFIG_SOC_PART_NUMBER_SAME70N19B
+#include <same70n19b.h>
+#elif defined CONFIG_SOC_PART_NUMBER_SAME70N20B
+#include <same70n20b.h>
+#elif defined CONFIG_SOC_PART_NUMBER_SAME70N21B
+#include <same70n21b.h>
+#elif defined CONFIG_SOC_PART_NUMBER_SAME70Q19B
+#include <same70q19b.h>
+#elif defined CONFIG_SOC_PART_NUMBER_SAME70Q20B
+#include <same70q20b.h>
+#elif defined CONFIG_SOC_PART_NUMBER_SAME70Q21B
+#include <same70q21b.h>
 #else
   #error Library does not support the specified device.
 #endif

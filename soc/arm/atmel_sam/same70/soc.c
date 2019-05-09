@@ -15,6 +15,10 @@
 #include <init.h>
 #include <soc.h>
 #include <cortex_m/exc.h>
+#include <logging/log.h>
+
+#define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
+LOG_MODULE_REGISTER(soc);
 
 /* Power Manager Controller */
 
@@ -253,6 +257,12 @@ static int atmel_same70_init(struct device *arg)
 	NMI_INIT();
 
 	irq_unlock(key);
+
+	/* Check that the CHIP CIDR matches the HAL one */
+	if (CHIPID->CHIPID_CIDR != CHIP_CIDR) {
+		LOG_WRN("CIDR mismatch: chip = 0x%08x vs HAL = 0x%08x",
+			(u32_t)CHIPID->CHIPID_CIDR, (u32_t)CHIP_CIDR);
+	}
 
 	return 0;
 }

@@ -9,6 +9,7 @@ config SOC_FAMILY_STM32
 	bool
 	# omit prompt to signify a "hidden" option
 	select HAS_SEGGER_RTT
+	select BUILD_OUTPUT_HEX
 
 if SOC_FAMILY_STM32
 

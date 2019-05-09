@@ -49,6 +49,13 @@
 	txpo = <0>;
 };
 
+&sercom1 {
+	status = "ok";
+	compatible = "atmel,sam0-i2c";
+	clock-frequency = <I2C_BITRATE_FAST>;
+	label = "I2C_0";
+};
+
 &sercom5 {
 	status = "ok";
 	compatible = "atmel,sam0-spi";

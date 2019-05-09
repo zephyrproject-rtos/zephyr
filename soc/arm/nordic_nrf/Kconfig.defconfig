@@ -9,6 +9,17 @@ if SOC_FAMILY_NRF
 
 source "soc/arm/nordic_nrf/*/Kconfig.defconfig.series"
 
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 32768
+
+config SYS_CLOCK_TICKS_PER_SEC
+	int
+	default 128
+
+config ARCH_HAS_CUSTOM_BUSY_WAIT
+	default y
+
 config BUILD_OUTPUT_HEX
 	default y
 

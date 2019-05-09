@@ -29,3 +29,7 @@
 &sercom5 {
 	interrupts = <12 0>;
 };
+
+&adc {
+	interrupts = <21 0>;
+};

@@ -1,0 +1,7 @@
+sample:
+  description: Demonstration of the HT16K33 LED driver with keyscan
+  name: HT16K33 sample
+tests:
+  sample.driver.ht16k33:
+    platform_whitelist: nrf52840_pca10056
+    tags: LED

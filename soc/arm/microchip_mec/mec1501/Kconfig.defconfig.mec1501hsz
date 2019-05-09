@@ -22,4 +22,21 @@ config UART_NS16550
 
 endif # SERIAL
 
+config GPIO
+	default y
+
+if GPIO
+
+config GPIO_XEC
+	default y
+
+endif # GPIO
+
+if I2C
+
+config I2C_XEC
+	def_bool y
+
+endif # I2C
+
 endif # SOC_MEC1501_HSZ
