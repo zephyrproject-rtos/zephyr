@@ -47,6 +47,15 @@
 	clock-frequency = <48000000>;
 };
 
+&xosc32k {
+	status = "okay";
+};
+
+&gclk1 {
+	clocks = <&xosc32k>;
+	clock-frequency = <32768>;
+};
+
 &sercom0 {
 	status = "okay";
 	compatible = "atmel,sam0-uart";
