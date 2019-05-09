@@ -68,6 +68,9 @@ manifest:
     - name: segger
       revision: 6fcf61606d6012d2c44129edc033f59331e268bc
       path: modules/debug/segger
+    - name: mbedtls
+      revision: ca32746072ce3381f1c9ae46ba6cd34c69f8c0ee
+      path: modules/crypto/mbedtls
 
   self:
     path: zephyr

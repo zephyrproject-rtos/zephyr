@@ -192,7 +192,6 @@
 /ext/hal/nxp/                             @MaureenHelm
 /ext/hal/st/                              @erwango
 /ext/hal/ti/simplelink/                   @vanti
-/ext/lib/crypto/mbedtls/                  @nashif
 /ext/lib/crypto/tinycrypt/                @ceolin
 /include/adc.h                            @anangl
 /include/app_memory/                      @andrewboie
