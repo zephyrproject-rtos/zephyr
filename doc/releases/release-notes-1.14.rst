@@ -511,7 +511,7 @@ Build and Infrastructure
 * Automatically change the KCONFIG_ROOT when the application directory
   has a Kconfig file.
 * Added :ref:`west <west>` tool for multiple repository management
-* Added support for :ref:`Zephyr modules <ext-projs>`
+* Added support for :ref:`Zephyr modules <modules>`
 * Build system ``flash`` and ``debug`` targets now require west
 * Added generation of DT_<COMPAT>_<INSTANCE>_<PROP> defines which allowed
   sensor or other drivers on buses like I2C or SPI to not require dts fixup.
