@@ -6,6 +6,7 @@
 config SOC_FAMILY_SAM0
 	bool
 	select HAS_SEGGER_RTT
+	select CLOCK_CONTROL
 
 if SOC_FAMILY_SAM0
 
