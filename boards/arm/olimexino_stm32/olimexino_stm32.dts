@@ -101,3 +101,7 @@ uext_serial: &usart1 {};
 		status = "ok";
 	};
 };
+
+&iwdg {
+	status = "ok";
+};

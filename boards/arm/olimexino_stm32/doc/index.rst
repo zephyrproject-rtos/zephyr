@@ -46,6 +46,8 @@ hardware features:
 +-----------+------------+----------------------+
 | USB       | on-chip    | USB device           |
 +-----------+------------+----------------------+
+| WATCHDOG  | on-chip    | independent watchdog |
++-----------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
 
