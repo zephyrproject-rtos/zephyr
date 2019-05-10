@@ -99,6 +99,7 @@ configure_file(${DOXYFILE_IN} ${DOXYFILE_OUT} @ONLY)
 # workaround for this limitation.
 set(EXTRACT_CONTENT_COMMAND
   ${CMAKE_COMMAND} -E env
+  ZEPHYR_BASE=${ZEPHYR_BASE}
   ${PYTHON_EXECUTABLE} scripts/extract_content.py
   # Ignore any files in the output directory.
   --ignore ${CMAKE_CURRENT_BINARY_DIR}
@@ -187,6 +188,7 @@ add_custom_target(
   COMMAND ${CMAKE_COMMAND} -E make_directory ${RST_OUT}/doc/reference/kconfig
   COMMAND ${CMAKE_COMMAND} -E env
   PYTHONPATH="${ZEPHYR_BASE}/scripts/kconfig${SEP}$ENV{PYTHONPATH}"
+  ZEPHYR_BASE=${ZEPHYR_BASE}
   srctree=${ZEPHYR_BASE}
   KERNELVERSION=${KERNELVERSION}
   BOARD_DIR=boards/*/*/
@@ -212,6 +214,7 @@ set(CONF_DIR ${ZEPHYR_BASE}/.known-issues/doc)
 #
 set(SPHINX_BUILD_HTML_COMMAND
   ${CMAKE_COMMAND} -E env
+  ZEPHYR_BASE=${ZEPHYR_BASE}
   ZEPHYR_BUILD=${CMAKE_CURRENT_BINARY_DIR}
   ${SPHINXBUILD} -w ${SPHINX_LOG} -N -t ${DOC_TAG} -b html ${ALLSPHINXOPTS} ${RST_OUT}/doc ${SPHINX_OUTPUT_DIR_HTML})
 
