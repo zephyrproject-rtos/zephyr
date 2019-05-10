@@ -114,57 +114,43 @@ void save_on_flash(u8_t id)
 	k_work_submit(&storage_work);
 }
 
-static int ps_set(int argc, char **argv, size_t len_rd,
+static int ps_set(const char *key, size_t len_rd,
 		  settings_read_cb read_cb, void *cb_arg)
 {
-	ssize_t len = 0;
+	ssize_t len = -ENOENT;
 
-	if (argc == 1) {
-		if (!strcmp(argv[0], "rc")) {
-			len = read_cb(cb_arg, &reset_counter,
-				      sizeof(reset_counter));
-		}
-
-		if (!strcmp(argv[0], "gdtt")) {
-			len = read_cb(cb_arg,
-			 &gen_def_trans_time_srv_user_data.tt,
-			 sizeof(gen_def_trans_time_srv_user_data.tt));
-		}
-
-		if (!strcmp(argv[0], "gpo")) {
-			len = read_cb(cb_arg,
-			 &gen_power_onoff_srv_user_data.onpowerup,
-			 sizeof(gen_power_onoff_srv_user_data.onpowerup));
-		}
-
-		if (!strcmp(argv[0], "ltd")) {
-			len = read_cb(cb_arg,
-			 &light_ctl_srv_user_data.lightness_temp_def,
-			 sizeof(light_ctl_srv_user_data.lightness_temp_def));
-		}
-
-		if (!strcmp(argv[0], "ltl")) {
-			len = read_cb(cb_arg,
-			 &light_ctl_srv_user_data.lightness_temp_last,
-			 sizeof(light_ctl_srv_user_data.lightness_temp_last));
-		}
-
-		if (!strcmp(argv[0], "lr")) {
-			len = read_cb(cb_arg,
-			 &light_lightness_srv_user_data.lightness_range,
-			 sizeof(light_lightness_srv_user_data.lightness_range));
-		}
-
-		if (!strcmp(argv[0], "tr")) {
-			len = read_cb(cb_arg,
-			 &light_ctl_srv_user_data.temperature_range,
-			 sizeof(light_ctl_srv_user_data.temperature_range));
-		}
-
-		return (len < 0) ? len : 0;
+	if (settings_name_cmp(key, "rc")) {
+		len = read_cb(cb_arg, &reset_counter,
+			      sizeof(reset_counter));
+	} else if (settings_name_cmp(key, "gdtt")) {
+		len = read_cb(cb_arg,
+		 &gen_def_trans_time_srv_user_data.tt,
+		 sizeof(gen_def_trans_time_srv_user_data.tt));
+	} else if (settings_name_cmp(key, "gpo")) {
+		len = read_cb(cb_arg,
+		 &gen_power_onoff_srv_user_data.onpowerup,
+		 sizeof(gen_power_onoff_srv_user_data.onpowerup));
+	} else if (settings_name_cmp(key, "ltd")) {
+		len = read_cb(cb_arg,
+		 &light_ctl_srv_user_data.lightness_temp_def,
+		 sizeof(light_ctl_srv_user_data.lightness_temp_def));
+	} else if (settings_name_cmp(key, "ltl")) {
+		len = read_cb(cb_arg,
+		 &light_ctl_srv_user_data.lightness_temp_last,
+		 sizeof(light_ctl_srv_user_data.lightness_temp_last));
+	} else if (settings_name_cmp(key, "lr")) {
+		len = read_cb(cb_arg,
+		 &light_lightness_srv_user_data.lightness_range,
+		 sizeof(light_lightness_srv_user_data.lightness_range));
+	} else if (settings_name_cmp(key, "tr")) {
+		len = read_cb(cb_arg,
+		 &light_ctl_srv_user_data.temperature_range,
+		 sizeof(light_ctl_srv_user_data.temperature_range));
+	} else {
+		printk("Unsupported setting received: \"%s\".", key);
 	}
 
-	return -ENOENT;
+	return (len < 0) ? len : 0;
 }
 
 static struct settings_handler ps_settings = {
