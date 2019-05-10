@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2019 Brett Witherspoon
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&boosterpack_i2c {
+
+	tmp007@40 {
+		compatible = "ti,tmp007";
+		reg = <0x40>;
+		int-gpios = <&boosterpack_header 12 0>;
+		label = "TMP007";
+	};
+
+	opt3001@47 {
+		compatible = "ti,opt3001";
+		reg = <0x47>;
+		label = "OPT3001";
+	};
+
+	bme280@77 {
+		compatible = "bosch,bme280";
+		reg = <0x77>;
+		label = "BME280";
+	};
+
+};
