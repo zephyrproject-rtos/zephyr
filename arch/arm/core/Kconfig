@@ -92,11 +92,19 @@ config ARM_NONSECURE_FIRMWARE
 	  resources of the Cortex-M MCU, and, therefore, it shall avoid
 	  accessing them.
 
-menu "ARM Secure Firmware Options"
-depends on ARM_SECURE_FIRMWARE
+
+menu "ARM TrustZone Options"
+depends on ARM_SECURE_FIRMWARE || ARM_NONSECURE_FIRMWARE
+
+comment "Secure firmware"
+	depends on ARM_SECURE_FIRMWARE
+
+comment "Non-secure firmware"
+	depends on !ARM_SECURE_FIRMWARE
 
 config ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS
 	bool "Secure Firmware has Secure Entry functions"
+	depends on ARM_SECURE_FIRMWARE
 	help
 	  Option indicates that ARM Secure Firmware contains
 	  Secure Entry functions that may be called from
@@ -120,15 +128,24 @@ config ARM_NSC_REGION_BASE_ADDRESS
 	  a Non-Secure Callable section, depending on the available
 	  security attribution unit (SAU or IDAU) for a given SOC.
 
+config ARM_FIRMWARE_USES_SECURE_ENTRY_FUNCS
+	bool "Non-Secure Firmware uses Secure Entry functions"
+	depends on ARM_NONSECURE_FIRMWARE
+	help
+	  Option indicates that ARM Non-Secure Firmware uses Secure
+	  Entry functions provided by the Secure Firmware. The Secure
+	  Firmware must be configured to provide these functions.
+
 config ARM_ENTRY_VENEERS_LIB_NAME
 	string "Entry Veneers symbol file"
-	depends on ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS
+	depends on ARM_FIRMWARE_HAS_SECURE_ENTRY_FUNCS \
+	        || ARM_FIRMWARE_USES_SECURE_ENTRY_FUNCS
 	default "libentryveneers.a"
 	help
-	  Library file to store the symbol table for
-	  the entry veneers. The library may be used
-	  for building a Non-Secure firmware with
-	  access to Secure Entry functions.
+	  Library file to find the symbol table for the entry veneers.
+	  The library will typically come from building the Secure
+	  Firmware that contains secure entry functions, and allows
+	  the Non-Secure Firmware to call into the Secure Firmware.
 
 endmenu
 
