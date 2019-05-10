@@ -1,6 +1,5 @@
 # SPDX-License-Identifier: Apache-2.0
 
-zephyr_link_interface_ifdef(CONFIG_MBEDTLS mbedTLS)
 zephyr_library()
 
 zephyr_include_directories(.)

@@ -35,6 +35,5 @@ zephyr_library_sources_ifdef(CONFIG_NET_PROMISCUOUS_MODE promiscuous.c)
 
 if(CONFIG_NET_SHELL)
 zephyr_library_include_directories(. ${ZEPHYR_BASE}/subsys/net/l2)
-zephyr_link_interface_ifdef(CONFIG_MBEDTLS mbedTLS)
 zephyr_library_link_libraries_ifdef(CONFIG_MBEDTLS mbedTLS)
 endif()
