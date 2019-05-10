@@ -30,13 +30,11 @@ Get the source code
 *******************
 
 Zephyr's multi-purpose :ref:`west` tool lets you easily get the Zephyr project
-source code, instead of manually cloning the Zephyr repos along with west
+source code, instead of manually cloning the Zephyr repositories along with west
 itself.
 
-.. warning::
-
-   It's possible to use Zephyr without installing west, but you have
-   to **really** know :ref:`what you are doing <no-west>`.
+Note that it's possible to use Zephyr without installing west, but you have to
+**really** know :ref:`what you are doing <no-west>`.
 
 Bootstrap west
 ==============
@@ -51,8 +49,7 @@ First, install the ``west`` binary and bootstrapper:
    # macOS and Windows
    pip3 install west
 
-.. note::
-   See :ref:`west-install` for additional details on installing west.
+For additional details on installing west, see :ref:`west-install`.
 
 .. _clone-zephyr:
 
@@ -74,29 +71,28 @@ Clone the Zephyr Repositories
 Next, clone the Zephyr source code repositories from GitHub using the
 ``west`` tool you just installed:
 
+Pick a top level container for the Zephyr trees, for example
+:file:`zephyrproject` can be used to be the top level directory for the Zephyr
+workspace. If no folder name is specified, west initializes in the current
+working directory.
+
 .. code-block:: console
 
    west init zephyrproject
    cd zephyrproject
    west update
 
-.. note::
-   You can replace :file:`zephyrproject` with the folder name of your choice.
-   West will create the named folder if it doesn't already exist.
-   If no folder name is specified, west initializes the current
-   working directory.
 
-.. note::
-   If you had previously cloned the zephyr repository manually using Git,
-   create an empty enclosing folder (for example :file:`zephyrproject/`),
-   and move the cloned repository into it. From the enclosing folder run::
+If you had previously cloned the zephyr repository manually using Git,
+create an empty enclosing folder (for example :file:`zephyrproject/`),
+and move the cloned repository into it. From the enclosing folder run::
 
-      west init -l zephyr/
-      west update
+   west init -l zephyr/
+   west update
 
-   The ``-l <path to zephyr>`` parameter instructs ``west`` to use an existing
-   local copy instead of cloning a remote repository. This will create a full
-   Zephyr installation (see below).
+The ``-l <path to zephyr>`` parameter instructs ``west`` to use an existing
+local copy instead of cloning a remote repository. This will create a full
+Zephyr installation (see below).
 
 Running ``west init`` will clone west itself into ``./.west/west`` and
 initialize a local installation. Running ``west update`` will pull all the
@@ -148,23 +144,26 @@ Some notes on pip's ``--user`` option:
 Set Up a Toolchain
 ******************
 
-.. note::
+On Linux, you can skip this step if you installed the :ref:`Zephyr SDK
+<zephyr_sdk>`, which includes toolchains for all supported Zephyr
+architectures.
 
-   On Linux, you can skip this step if you installed the :ref:`Zephyr SDK
-   <zephyr_sdk>`, which includes toolchains for all supported Zephyr
-   architectures.
+In some specific configurations like non-MCU x86 targets on Linux,
+you may be able to re-use the native development tools provided by
+your operating system instead of an SDK by setting
+``ZEPHYR_TOOLCHAIN_VARIANT=host``.
 
-   In some specific configurations like non-MCU x86 targets on Linux,
-   you may be able to re-use the native development tools provided by
-   your operating system instead of an SDK by setting
-   ``ZEPHYR_TOOLCHAIN_VARIANT=host`` for gcc or
-   ``ZEPHYR_TOOLCHAIN_VARIANT=llvm`` for clang.
+In some specific configurations like non-MCU x86 targets on Linux,
+you may be able to re-use the native development tools provided by
+your operating system instead of an SDK by setting
+``ZEPHYR_TOOLCHAIN_VARIANT=host`` for gcc or
+``ZEPHYR_TOOLCHAIN_VARIANT=llvm`` for clang.
 
-   If you want, you can use the SDK host tools (such as OpenOCD) with a
-   different toolchain by keeping the :envvar:`ZEPHYR_SDK_INSTALL_DIR`
-   environment variable set to the Zephyr SDK installation directory, while
-   setting :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` appropriately for a non-SDK
-   toolchain.
+If you want, you can use the SDK host tools (such as OpenOCD) with a
+different toolchain by keeping the :envvar:`ZEPHYR_SDK_INSTALL_DIR`
+environment variable set to the Zephyr SDK installation directory, while
+setting :envvar:`ZEPHYR_TOOLCHAIN_VARIANT` appropriately for a non-SDK
+toolchain.
 
 Zephyr binaries are compiled using software called a *toolchain*. You need to
 *install* and *configure* a toolchain to develop Zephyr applications\
@@ -178,11 +177,6 @@ the toolchain by setting the environment variable
 additional variable(s) specific to that toolchain (usually, this is just one
 more variable which contains the path where you installed the toolchain on your
 file system).
-
-.. note::
-
-   In previous releases of Zephyr, the ``ZEPHYR_TOOLCHAIN_VARIANT`` variable
-   was called ``ZEPHYR_GCC_VARIANT``.
 
 The following toolchain installation options are available. The right choice
 for you depends on where you want to run Zephyr and any other requirements you
@@ -250,12 +244,6 @@ how to build the Hello World application for the :ref:`reel_board` board.  You
 can build for a different board by changing ``reel_board`` to another
 supported value. See :ref:`boards` for more information, or use the ``usage``
 build target from an initialized build directory to get a list.
-
-.. note::
-
-   If you want to re-use your existing build directory to build for another
-   board, you must delete that directory's contents first by using the
-   ``pristine`` build target.
 
 #. Navigate to the main project directory:
 
