@@ -1155,6 +1155,90 @@ int zsock_setsockopt(int sock, int level, int optname,
 	VTABLE_CALL(setsockopt, sock, level, optname, optval, optlen);
 }
 
+int zsock_getsockname_ctx(struct net_context *ctx, struct sockaddr *addr,
+			  socklen_t *addrlen)
+{
+	socklen_t newlen = 0;
+
+	/* If we don't have a connection handler, the socket is not bound */
+	if (ctx->conn_handler) {
+		SET_ERRNO(EINVAL);
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && ctx->local.family == AF_INET) {
+		struct sockaddr_in addr4;
+
+		addr4.sin_family = AF_INET;
+		addr4.sin_port = net_sin_ptr(&ctx->local)->sin_port;
+		memcpy(&addr4.sin_addr, net_sin_ptr(&ctx->local)->sin_addr,
+		       sizeof(struct in_addr));
+		newlen = sizeof(struct sockaddr_in);
+
+		memcpy(addr, &addr4, MIN(*addrlen, newlen));
+	} else if (IS_ENABLED(CONFIG_NET_IPV6) &&
+		   ctx->local.family == AF_INET6) {
+		struct sockaddr_in6 addr6;
+
+		addr6.sin6_family = AF_INET6;
+		addr6.sin6_port = net_sin6_ptr(&ctx->local)->sin6_port;
+		memcpy(&addr6.sin6_addr, net_sin6_ptr(&ctx->local)->sin6_addr,
+		       sizeof(struct in6_addr));
+		newlen = sizeof(struct sockaddr_in6);
+
+		memcpy(addr, &addr6, MIN(*addrlen, newlen));
+	} else {
+		SET_ERRNO(EINVAL);
+	}
+
+	*addrlen = newlen;
+
+	return 0;
+}
+
+int z_impl_zsock_getsockname(int sock, struct sockaddr *addr,
+			     socklen_t *addrlen)
+{
+	const struct fd_op_vtable *vtable;
+	void *ctx = z_get_fd_obj_and_vtable(sock, &vtable);
+
+	if (ctx == NULL) {
+		return -1;
+	}
+
+	NET_DBG("getsockname: ctx=%p, fd=%d", ctx, sock);
+
+	return z_fdtable_call_ioctl(vtable, ctx, ZFD_IOCTL_GETSOCKNAME,
+				    addr, addrlen);
+}
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(zsock_getsockname, sock, addr, addrlen)
+{
+	socklen_t addrlen_copy;
+	int ret;
+
+	Z_OOPS(z_user_from_copy(&addrlen_copy, (void *)addrlen,
+				sizeof(socklen_t)));
+
+	if (Z_SYSCALL_MEMORY_WRITE(addr, addrlen_copy)) {
+		errno = EFAULT;
+		return -1;
+	}
+
+	ret = z_impl_zsock_getsockname(sock, (struct sockaddr *)addr,
+				       &addrlen_copy);
+
+	if (ret == 0 &&
+	    z_user_to_copy((void *)addrlen, &addrlen_copy,
+			   sizeof(socklen_t))) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	return ret;
+}
+#endif /* CONFIG_USERSPACE */
+
 static ssize_t sock_read_vmeth(void *obj, void *buffer, size_t count)
 {
 	return zsock_recvfrom_ctx(obj, buffer, count, 0, NULL, 0);
@@ -1214,6 +1298,16 @@ static int sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 		pev = va_arg(args, struct k_poll_event **);
 
 		return zsock_poll_update_ctx(obj, pfd, pev);
+	}
+
+	case ZFD_IOCTL_GETSOCKNAME: {
+		struct sockaddr *addr;
+		socklen_t *addrlen;
+
+		addr = va_arg(args, struct sockaddr *);
+		addrlen = va_arg(args, socklen_t *);
+
+		return zsock_getsockname_ctx(obj, addr, addrlen);
 	}
 
 	default:

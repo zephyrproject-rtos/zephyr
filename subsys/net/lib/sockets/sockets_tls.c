@@ -1916,6 +1916,7 @@ static int tls_sock_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 	/* fcntl() commands */
 	case F_GETFL:
 	case F_SETFL:
+	case ZFD_IOCTL_GETSOCKNAME:
 		/* Pass the call to the core socket implementation. */
 		return sock_fd_op_vtable.fd_vtable.ioctl(obj, request, args);
 
