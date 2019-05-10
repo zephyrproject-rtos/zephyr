@@ -156,6 +156,13 @@
 			#size-cells = <0>;
 			status = "disabled";
 		};
+		espi0: espi@400f3400 {
+			compatible = "microchip,xec-espi";
+			reg = <0x400f3400 0x400>;
+			label = "ESPI_0";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
 	};
 };
 
