@@ -124,6 +124,7 @@
 /drivers/display/                         @vanwinkeljan
 /drivers/display/display_framebuf.c       @gnuless
 /drivers/dma/*sam0*                       @Sizurka
+/drivers/espi/                            @albertofloyd @franciscomunoz @scottwcpg
 /drivers/ethernet/                        @jukkar @tbursztyka @pfalcon
 /drivers/flash/                           @nashif
 /drivers/flash/*native_posix*             @vanwinkeljan @aescolar
@@ -246,6 +247,7 @@
 /include/init.h                           @andrewboie @andyross
 /include/irq.h                            @andrewboie @andyross
 /include/irq_offload.h                    @andrewboie @andyross
+/include/espi.h                           @albertofloyd @franciscomunoz @scottwcpg
 /include/kernel.h                         @andrewboie @andyross
 /include/kernel_version.h                 @andrewboie @andyross
 /include/linker/app_smem*.ld              @andrewboie
