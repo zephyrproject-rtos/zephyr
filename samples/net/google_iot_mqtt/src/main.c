@@ -77,7 +77,7 @@ top:
 	LOG_DBG("  family  : %d", addr->ai_family);
 	LOG_DBG("  socktype: %d", addr->ai_socktype);
 	LOG_DBG("  protocol: %d", addr->ai_protocol);
-	LOG_DBG("  addrlen : %d", addr->ai_addrlen);
+	LOG_DBG("  addrlen : %d", (int)addr->ai_addrlen);
 
 	/* Assume two words. */
 	LOG_DBG("   addr[0]: 0x%lx", ((uint32_t *)addr->ai_addr)[0]);
