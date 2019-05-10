@@ -30,6 +30,18 @@ properties:
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
 
+    clkout-source:
+      type: int
+      category: optional
+      description: clkout clock source
+      generation: define
+
+    clkout-divider:
+      type: int
+      category: optional
+      description: clkout divider
+      generation: define
+
 "#cells":
   - name
   - offset
