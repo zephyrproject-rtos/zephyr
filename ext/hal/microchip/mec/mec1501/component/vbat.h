@@ -121,7 +121,9 @@ typedef struct vbatr_regs
 	__IOM uint32_t PFRS;	/*! (@ 0x00000000) VBATR Power Fail Reset Status */
 	uint8_t RSVD1[4];
 	__IOM uint32_t CLK32_EN;	/*! (@ 0x00000008) VBATR 32K clock enable */
-	uint8_t RSVD2[20];
+	__IOM uint32_t SHDN_EN;		/*! (@ 0x0000000C) VBATR SHD pin enable */
+	uint8_t RSVD2[12];
+	__IOM uint32_t CKK32_TRIM;	/*! (@ 0x0000001C) VBATR 32 clock override */
 	__IOM uint32_t MCNT_LO;	/*! (@ 0x00000020) VBATR monotonic count lo */
 	__IOM uint32_t MCNT_HI;	/*! (@ 0x00000024) VBATR monotonic count hi */
 } VBATR_Type;
