@@ -135,6 +135,7 @@ static const struct pinmux_xec_config pinmux_xec_port040_076_config = {
 };
 
 DEVICE_AND_API_INIT(pinmux_xec_port040_076, CONFIG_PINMUX_XEC_GPIO040_076_NAME,
+		    &pinmux_xec_init,
 		    NULL, &pinmux_xec_port040_076_config,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,
 		    &pinmux_xec_driver_api);
