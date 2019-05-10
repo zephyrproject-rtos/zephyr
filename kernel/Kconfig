@@ -760,21 +760,6 @@ config TICKLESS_KERNEL
 	  This option enables a fully event driven kernel. Periodic system
 	  clock interrupt generation would be stopped at all times.
 
-config USLEEP
-	bool "Enable k_usleep()"
-	depends on X86
-	depends on HPET_TIMER
-	default n
-	help
-	  Compile in support for k_usleep().
-
-	  Note that, even with this enabled, the resolution of sleep timers
-	  is limited to 1/SYS_CLOCK_TICKS_PER_SEC seconds, which defaults in
-	  most configurations to 10ms. Thus, if you wish to use k_usleep(),
-	  you almost certainly want to increase SYS_CLOCKS_TICK_PER_SEC, which
-	  in turn implies that you should use a TICKLESS_KERNEL to avoid
-	  oppressive timer interrupt overhead.
-
 source "kernel/Kconfig.power_mgmt"
 
 endmenu

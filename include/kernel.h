@@ -803,8 +803,18 @@ __syscall s32_t k_sleep(s32_t ms);
 /**
  * @brief Put the current thread to sleep with microsecond resolution.
  *
- * Puts the current thread to sleep for @a duration microseconds. (This
- * is currently only available on the x86 architecture with the HPET timer.)
+ * Puts the current thread to sleep for @a duration microseconds.
+ *
+ * This is currently only available on the x86 architecture with the HPET
+ * timer, and is unlikely to produce the desired result without tweaking
+ * CONFIG_SYS_CLOCK_TICKS_PER_SEC, because the duration of a system tick
+ * is the lower bound of any thread sleep.
+ * 
+ * Be aware that if the tick duration is very short, the kernel should be
+ * configured TICKLESS to avoid swamping the system with timer interrupts.
+ * Short tick durations also limit the kernel's ability to represent long
+ * time durations (e.g., with a 10us tick, scheduling an event a few hours
+ * into the future may silently fail). Use this feature with caution.
  *
  * @param us Number of microseconds to sleep.
  *

@@ -981,7 +981,6 @@ Z_SYSCALL_HANDLER(k_sleep, ms)
 }
 #endif
 
-#ifdef CONFIG_USLEEP
 s32_t z_impl_k_usleep(int us)
 {
 	s32_t ticks;
@@ -997,7 +996,6 @@ Z_SYSCALL_HANDLER(k_usleep, us)
 	return z_impl_k_usleep(us);
 }
 #endif
-#endif /* CONFIG_USLEEP */
 
 void z_impl_k_wakeup(k_tid_t thread)
 {
