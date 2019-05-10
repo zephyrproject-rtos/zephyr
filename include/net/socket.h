@@ -371,6 +371,21 @@ int zsock_setsockopt(int sock, int level, int optname,
 		     const void *optval, socklen_t optlen);
 
 /**
+ * @brief Get socket name
+ *
+ * @details
+ * @rststar
+ * See `POSIX.1-2017 article
+ * <http://pubs.opengroup.org/onlinepubs/9699919799/functions/getsockname.html>`__
+ * for normative description.
+ * This function is also exposed as ``getsockname()``
+ * if :option:`CONFIG_NET_SOCKETS_POSIX_NAMES` is defined.
+ * @endrststar
+ */
+__syscall int zsock_getsockname(int sock, struct sockaddr *addr,
+				socklen_t *addrlen);
+
+/**
  * @brief Get local host name
  *
  * @details
@@ -603,6 +618,12 @@ static inline int setsockopt(int sock, int level, int optname,
 			     const void *optval, socklen_t optlen)
 {
 	return zsock_setsockopt(sock, level, optname, optval, optlen);
+}
+
+static inline int getsockname(int sock, struct sockaddr *addr,
+			      socklen_t *addrlen)
+{
+	return zsock_getsockname(sock, addr, addrlen);
 }
 
 static inline int getaddrinfo(const char *host, const char *service,
