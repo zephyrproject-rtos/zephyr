@@ -222,29 +222,32 @@ void load_store_low(void)
 			return;
 		}
 
-#if defined(CONFIG_ISA_IA32) && defined(CONFIG_LAZY_FP_SHARING)
 		/*
 		 * After every 1000 iterations (arbitrarily chosen), explicitly
-		 * disable floating point operations for the task. The
-		 * subsequent execution of _load_all_float_registers() will
+		 * disable floating point operations for the task.
+		 */
+#if (defined(CONFIG_ISA_IA32) && defined(CONFIG_LAZY_FP_SHARING)) || \
+		defined(CONFIG_ARMV7_M_ARMV8_M_FP)
+		/*
+		 * In x86:
+		 * The subsequent execution of _load_all_float_registers() will
 		 * result in an exception to automatically re-enable
 		 * floating point support for the task.
 		 *
 		 * The purpose of this part of the test is to exercise the
 		 * k_float_disable() API, and to also continue exercising
 		 * the (exception based) floating enabling mechanism.
+		 *
+		 * In ARM:
+		 *
+		 * The routine k_float_disable() allows for thread-level
+		 * granularity for disabling floating point. Furthermore, it
+		 * is useful for testing automatic thread enabling of floating
+		 * point as soon as FP registers are used, again by the thread.
 		 */
 		if ((load_store_low_count % 1000) == 0U) {
 			k_float_disable(k_current_get());
 		}
-#elif defined(CONFIG_ARMV7_M_ARMV8_M_FP)
-		/*
-		 * The routine k_float_disable() allows for thread-level
-		 * granularity for disabling floating point. Furthermore, it
-		 * is useful for testing on the fly thread enabling of floating
-		 * point. Neither of these capabilities are currently supported
-		 * for ARM.
-		 */
 #endif
 	}
 }
