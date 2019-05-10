@@ -122,14 +122,14 @@
 #define MCHP_GIRQ17_ZID		9u
 #define MCHP_GIRQ18_ZID		10u
 #define MCHP_GIRQ19_ZID		11u
-#define MCHP_GIRQ20_ZID		12u
+#define MCHP_GIRQ20_ZID		12u /* Nothing in datasheet */
 #define MCHP_GIRQ21_ZID		13u
-#define MCHP_GIRQ22_ZID		14u
-#define MCHP_GIRQ23_ZID		15u
-#define MCHP_GIRQ24_ZID		16u
-#define MCHP_GIRQ25_ZID		17u
-#define MCHP_GIRQ26_ZID		18u
-#define MCHP_GIRQ_ZID_MAX	19u
+
+#define MCHP_GIRQ23_ZID		14u /* Adjust per datasheet */
+#define MCHP_GIRQ24_ZID		15u
+#define MCHP_GIRQ25_ZID		16u
+#define MCHP_GIRQ26_ZID		17u
+#define MCHP_GIRQ_ZID_MAX	18u
 
 #define MCHP_ECIA_BLK_ENSET_OFS		0x200ul
 #define MCHP_ECIA_BLK_ENCLR_OFS		0x204ul
@@ -321,13 +321,17 @@ enum MCHP_GIRQ_IDS {
 	MCHP_GIRQ19_ID,
 	MCHP_GIRQ20_ID,
 	MCHP_GIRQ21_ID,
-	MCHP_GIRQ22_ID,
+
 	MCHP_GIRQ23_ID,
 	MCHP_GIRQ24_ID,
 	MCHP_GIRQ25_ID,
 	MCHP_GIRQ26_ID,
 	MCHP_GIRQ_ID_MAX,
 };
+
+/* GIRQ Source, Enable_Set/Clr, Result registers bit positions */
+#define MCHP_PORT80_DEBUG0_GIRQ_VAL		(1ul << 22)
+#define MCHP_PORT80_DEBUG1_GIRQ_VAL		(1ul << 23)
 
 /**
   * @brief EC Interrupt Aggregator (ECIA)
