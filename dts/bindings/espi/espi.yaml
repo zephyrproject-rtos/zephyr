@@ -1,0 +1,27 @@
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+---
+title: ESPI Base Structure
+version: 0.1
+
+description: >
+    This binding gives the base structures for all ESPI devices
+
+child:
+    bus: espi
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      generation: define
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device
+      generation: define
+...
