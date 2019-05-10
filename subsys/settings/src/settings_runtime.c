@@ -22,7 +22,9 @@ int settings_runtime_set(const char *name, void *data, size_t len)
 	char *name_argv[SETTINGS_MAX_DIR_DEPTH];
 	int name_argc;
 
-	strncpy(name1, name, sizeof(name1));
+	strncpy(name1, name, sizeof(name1) - 1);
+	name1[sizeof(name1) - 1] = '\0';
+
 	ch = settings_parse_and_lookup(name1, &name_argc, name_argv);
 	if (!ch) {
 		return -EINVAL;
@@ -39,7 +41,9 @@ int settings_runtime_get(const char *name, void *data, size_t len)
 	char *name_argv[SETTINGS_MAX_DIR_DEPTH];
 	int name_argc;
 
-	strncpy(name1, name, sizeof(name1));
+	strncpy(name1, name, sizeof(name1) - 1);
+	name1[sizeof(name1) - 1] = '\0';
+
 	ch = settings_parse_and_lookup(name1, &name_argc, name_argv);
 	if (!ch) {
 		return -EINVAL;
@@ -55,7 +59,9 @@ int settings_runtime_commit(const char *name)
 	char *name_argv[SETTINGS_MAX_DIR_DEPTH];
 	int name_argc;
 
-	strncpy(name1, name, sizeof(name1));
+	strncpy(name1, name, sizeof(name1) - 1);
+	name1[sizeof(name1) - 1] = '\0';
+
 	ch = settings_parse_and_lookup(name1, &name_argc, name_argv);
 	if (!ch) {
 		return -EINVAL;
