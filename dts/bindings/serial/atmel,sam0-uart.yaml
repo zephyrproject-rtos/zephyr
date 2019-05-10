@@ -18,6 +18,9 @@ properties:
     interrupts:
       category: required
 
+    clocks:
+      category: required
+
     rxpo:
       type: int
       category: required

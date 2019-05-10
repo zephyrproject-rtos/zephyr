@@ -11,6 +11,7 @@
 #include <soc.h>
 #include <drivers/uart.h>
 #include <drivers/dma.h>
+#include <drivers/clock_control.h>
 
 /* Device constant configuration parameters */
 struct uart_sam0_dev_cfg {
@@ -18,7 +19,8 @@ struct uart_sam0_dev_cfg {
 	u32_t baudrate;
 	u32_t pads;
 	u32_t pm_apbcmask;
-	u16_t gclk_clkctrl_id;
+	const char *clk_dev;
+	clock_control_subsys_t clk_sys;
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API
 	void (*irq_config_func)(struct device *dev);
 #endif
@@ -372,10 +374,15 @@ static int uart_sam0_init(struct device *dev)
 	int retval;
 	const struct uart_sam0_dev_cfg *const cfg = DEV_CFG(dev);
 	SercomUsart *const usart = cfg->regs;
+	struct device *clk = device_get_binding(cfg->clk_dev);
+	u32_t clk_freq;
 
-	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg =
-	    cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 | GCLK_CLKCTRL_CLKEN;
+	if (!clk) {
+		return -EINVAL;
+	}
+
+	clock_control_on(clk, cfg->clk_sys);
+	clock_control_get_rate(clk, cfg->clk_sys, &clk_freq);
 
 	/* Enable SERCOM clock in PM */
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
@@ -402,8 +409,7 @@ static int uart_sam0_init(struct device *dev)
 			   SERCOM_USART_CTRLB_RXEN | SERCOM_USART_CTRLB_TXEN;
 	wait_synchronization(usart);
 
-	retval = uart_sam0_set_baudrate(usart, cfg->baudrate,
-					SOC_ATMEL_SAM0_GCLK0_FREQ_HZ);
+	retval = uart_sam0_set_baudrate(usart, cfg->baudrate, clk_freq);
 	if (retval != 0) {
 		return retval;
 	}
@@ -980,7 +986,8 @@ static const struct uart_sam0_dev_cfg uart_sam0_config_##n = {		       \
 	.regs = (SercomUsart *)DT_ATMEL_SAM0_UART_SERCOM_##n##_BASE_ADDRESS,   \
 	.baudrate = DT_ATMEL_SAM0_UART_SERCOM_##n##_CURRENT_SPEED,	       \
 	.pm_apbcmask = PM_APBCMASK_SERCOM##n,				       \
-	.gclk_clkctrl_id = GCLK_CLKCTRL_ID_SERCOM##n##_CORE,		       \
+	.clk_dev = DT_ATMEL_SAM0_UART_SERCOM_##n##_CLOCK_CONTROLLER,	       \
+	.clk_sys = (clock_control_subsys_t)SERCOM##n##_GCLK_ID_CORE,	       \
 	.pads = UART_SAM0_SERCOM_PADS(n),				       \
 	UART_SAM0_IRQ_HANDLER_FUNC(n)					       \
 	UART_SAM0_DMA_CHANNELS(n)					       \
