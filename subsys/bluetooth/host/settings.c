@@ -43,12 +43,12 @@ void bt_settings_encode_key(char *path, size_t path_size, const char *subsys,
 	BT_DBG("Encoded path %s", log_strdup(path));
 }
 
-int bt_settings_decode_key(char *key, bt_addr_le_t *addr)
+int bt_settings_decode_key(const char *key, bt_addr_le_t *addr)
 {
 	bool high;
 	int i;
 
-	if (strlen(key) != 13) {
+	if (settings_name_elen(key) != 13) {
 		return -EINVAL;
 	}
 
@@ -86,7 +86,7 @@ int bt_settings_decode_key(char *key, bt_addr_le_t *addr)
 	return 0;
 }
 
-static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
+static int set(const char *key, size_t len_rd, settings_read_cb read_cb,
 	       void *cb_arg)
 {
 	ssize_t len;
@@ -94,16 +94,15 @@ static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
 	const struct bt_settings_handler *h;
 
 	for (h = _bt_settings_start; h < _bt_settings_end; h++) {
-		if (!strcmp(argv[0], h->name)) {
-			argc--;
-			argv++;
+		const char *bt_key;
 
-			return h->set(argc, argv, len_rd, read_cb,
+		if (settings_name_split(key, h->name, &bt_key)) {
+			return h->set(bt_key, len_rd, read_cb,
 				      cb_arg);
 		}
 	}
 
-	if (!strcmp(argv[0], "id")) {
+	if (settings_name_cmp(key, "id")) {
 		/* Any previously provided identities supersede flash */
 		if (atomic_test_bit(bt_dev.flags, BT_DEV_PRESET_ID)) {
 			BT_WARN("Ignoring identities stored in flash");
@@ -137,7 +136,7 @@ static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
 	}
 
 #if defined(CONFIG_BT_DEVICE_NAME_DYNAMIC)
-	if (!strcmp(argv[0], "name")) {
+	if (settings_name_cmp(key, "name")) {
 		len = read_cb(cb_arg, &bt_dev.name, sizeof(bt_dev.name) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read device name from storage"
@@ -152,7 +151,7 @@ static int set(int argc, char **argv, size_t len_rd, settings_read_cb read_cb,
 #endif
 
 #if defined(CONFIG_BT_PRIVACY)
-	if (!strcmp(argv[0], "irk")) {
+	if (settings_name_cmp(key, "irk")) {
 		len = read_cb(cb_arg, bt_dev.irk, sizeof(bt_dev.irk));
 		if (len < sizeof(bt_dev.irk[0])) {
 			if (len < 0) {

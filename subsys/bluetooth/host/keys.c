@@ -271,7 +271,7 @@ int bt_keys_store(struct bt_keys *keys)
 	return 0;
 }
 
-static int keys_set(int argc, char **argv, size_t len_rd,
+static int keys_set(const char *key, size_t len_rd,
 		    settings_read_cb read_cb, void *cb_arg)
 {
 	struct bt_keys *keys;
@@ -281,8 +281,13 @@ static int keys_set(int argc, char **argv, size_t len_rd,
 	int err;
 	char val[BT_KEYS_STORAGE_LEN];
 
-	if (argc < 1) {
-		BT_ERR("Insufficient number of arguments");
+
+	if (settings_name_cmp(key, "*/*")) {
+		id = strtol(settings_name_skip(key), NULL, 10);
+	} else if (settings_name_cmp(key, "*")) {
+		id = BT_ID_DEFAULT;
+	} else {
+		BT_ERR("Unexpected number of arguments in \"%s\"", log_strdup(key));
 		return -EINVAL;
 	}
 
@@ -292,18 +297,12 @@ static int keys_set(int argc, char **argv, size_t len_rd,
 		return -EINVAL;
 	}
 
-	BT_DBG("argv[0] %s val %s", argv[0], (len) ? val : "(null)");
+	BT_DBG("key %s val %s", log_strdup(key), (len) ? val : "(null)");
 
-	err = bt_settings_decode_key(argv[0], &addr);
+	err = bt_settings_decode_key(key, &addr);
 	if (err) {
-		BT_ERR("Unable to decode address %s", argv[0]);
+		BT_ERR("Unable to decode address in %s", log_strdup(key));
 		return -EINVAL;
-	}
-
-	if (argc == 1) {
-		id = BT_ID_DEFAULT;
-	} else {
-		id = strtol(argv[1], NULL, 10);
 	}
 
 	if (!len) {

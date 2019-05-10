@@ -144,12 +144,12 @@ BT_GATT_SERVICE_DEFINE(dis_svc,
 );
 
 #if defined(CONFIG_BT_SETTINGS) && defined(CONFIG_BT_GATT_DIS_SETTINGS)
-static int dis_set(int argc, char **argv, size_t len_rd,
+static int dis_set(const char *key, size_t len_rd,
 		   settings_read_cb read_cb, void *store)
 {
 	int len;
 
-	if (!strcmp(argv[0], "manuf")) {
+	if (settings_name_cmp(key, "manuf")) {
 		len = read_cb(store, &dis_manuf, sizeof(dis_manuf) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read manufacturer from storage"
@@ -161,7 +161,7 @@ static int dis_set(int argc, char **argv, size_t len_rd,
 		}
 		return 0;
 	}
-	if (!strcmp(argv[0], "model")) {
+	if (settings_name_cmp(key, "model")) {
 		len = read_cb(store, &dis_model, sizeof(dis_model) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read model from storage"
@@ -174,7 +174,7 @@ static int dis_set(int argc, char **argv, size_t len_rd,
 		return 0;
 	}
 #if defined(CONFIG_BT_GATT_DIS_SERIAL_NUMBER)
-	if (!strcmp(argv[0], "serial")) {
+	if (settings_name_cmp(key, "serial")) {
 		len = read_cb(store, &dis_serial_number,
 			   sizeof(dis_serial_number) - 1);
 		if (len < 0) {
@@ -189,7 +189,7 @@ static int dis_set(int argc, char **argv, size_t len_rd,
 	}
 #endif
 #if defined(CONFIG_BT_GATT_DIS_FW_REV)
-	if (!strcmp(argv[0], "fw")) {
+	if (settings_name_cmp(key, "fw")) {
 		len = read_cb(store, &dis_fw_rev, sizeof(dis_fw_rev) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read firmware revision from storage"
@@ -203,7 +203,7 @@ static int dis_set(int argc, char **argv, size_t len_rd,
 	}
 #endif
 #if defined(CONFIG_BT_GATT_DIS_HW_REV)
-	if (!strcmp(argv[0], "hw")) {
+	if (settings_name_cmp(key, "hw")) {
 		len = read_cb(store, &dis_hw_rev, sizeof(dis_hw_rev) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read hardware revision from storage"
@@ -217,7 +217,7 @@ static int dis_set(int argc, char **argv, size_t len_rd,
 	}
 #endif
 #if defined(CONFIG_BT_GATT_DIS_SW_REV)
-	if (!strcmp(argv[0], "sw")) {
+	if (settings_name_cmp(key,  "sw")) {
 		len = read_cb(store, &dis_sw_rev, sizeof(dis_sw_rev) - 1);
 		if (len < 0) {
 			BT_ERR("Failed to read software revision from storage"
