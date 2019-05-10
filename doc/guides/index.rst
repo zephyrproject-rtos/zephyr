@@ -20,6 +20,7 @@ User and Developer Guides
    dts/index
    coverage.rst
    kconfig/index
+   modules.rst
    networking/index
    porting/index
    test/index

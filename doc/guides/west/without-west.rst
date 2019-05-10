@@ -56,7 +56,7 @@ repositories, the build will still work.
 
 If you don't have west installed and your application *does* need one
 of these repositories, you must set :makevar:`ZEPHYR_MODULES`
-yourself. See :ref:`ext-projs` for details.
+yourself. See :ref:`modules` for details.
 
 Flashing and Debugging
 ----------------------
