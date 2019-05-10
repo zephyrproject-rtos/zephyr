@@ -7,7 +7,11 @@
  */
 
 #define LOG_MODULE_NAME ieee802154_nrf5
+#if defined(CONFIG_IEEE802154_DRIVER_LOG_LEVEL)
 #define LOG_LEVEL CONFIG_IEEE802154_DRIVER_LOG_LEVEL
+#else
+#define LOG_LEVEL LOG_LEVEL_NONE
+#endif
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME);
@@ -118,7 +122,7 @@ static void nrf5_rx_thread(void *arg1, void *arg2, void *arg3)
 		nrf_802154_buffer_free_raw(rx_frame->psdu);
 		rx_frame->psdu = NULL;
 
-		if (CONFIG_IEEE802154_DRIVER_LOG_LEVEL >= LOG_LEVEL_DBG) {
+		if (LOG_LEVEL >= LOG_LEVEL_DBG) {
 			net_analyze_stack(
 				"nRF5 rx stack",
 				Z_THREAD_STACK_BUFFER(nrf5_radio->rx_stack),
