@@ -7,7 +7,7 @@
 #
 
 config BT_HAS_HCI_VS
-	bool
+	bool "Bluetooth controller supports the Zephyr HCI Vendor-Specific Commands and Event" if !BT_CTLR
 	help
 	  This option is set by the Bluetooth controller to indicate support
 	  for the Zephyr HCI Vendor-Specific Commands and Event.
