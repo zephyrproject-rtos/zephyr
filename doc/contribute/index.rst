@@ -540,6 +540,13 @@ workflow here:
    Additional information about the CI system can be found in
    `Continuous Integration`_.
 
+Contributions to External Modules
+**********************************
+
+Follow the guidelines in the :ref:`modules` for contributing
+:ref:`new modules <submitting_new_modules>` and
+submitting changes to :ref:`existing modules <changes_to_existing_module>`.
+
 Commit Guidelines
 *****************
 
