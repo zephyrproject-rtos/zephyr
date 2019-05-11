@@ -30,4 +30,10 @@ properties:
       category: required
       description: required interrupts
       generation: define
+
+    clocks:
+      type: array
+      category: optional
+      description: Clock gate information
+      generation: define
 ...
