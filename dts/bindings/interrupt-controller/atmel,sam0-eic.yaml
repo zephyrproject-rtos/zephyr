@@ -25,6 +25,12 @@ properties:
     description: required interrupts
     generation: define
 
+  clocks:
+    type: array
+    category: required
+    description: Clock gate information
+    generation: define
+
   label:
     type: string
     category: required
