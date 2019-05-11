@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2019 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+source "lib/cmsis_rtos/v1/Kconfig"
+
+source "lib/cmsis_rtos/v2/Kconfig"
