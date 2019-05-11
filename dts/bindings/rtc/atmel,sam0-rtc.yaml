@@ -20,7 +20,5 @@ properties:
     reg:
       category: required
 
-    clock-generator:
-      type: int
-      description: clock generator index
+    clocks:
       category: required

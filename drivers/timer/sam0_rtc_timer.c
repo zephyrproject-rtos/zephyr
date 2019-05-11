@@ -23,40 +23,10 @@
 #define RTC0 ((RtcMode0 *) DT_INST_0_ATMEL_SAM0_RTC_BASE_ADDRESS)
 
 /* Number of sys timer cycles per on tick. */
-#define CYCLES_PER_TICK (CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC \
-			 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+static u32_t cycles_per_tick;
 
 /* Maximum number of ticks. */
-#define MAX_TICKS (UINT32_MAX / CYCLES_PER_TICK - 2)
-
-#ifdef CONFIG_TICKLESS_KERNEL
-
-/*
- * Due to the nature of clock synchronization, reading from or writing to some
- * RTC registers takes approximately six RTC_GCLK cycles. This constant defines
- * a safe threshold for the comparator.
- */
-#define TICK_THRESHOLD 7
-
-BUILD_ASSERT_MSG(CYCLES_PER_TICK > TICK_THRESHOLD,
-		 "CYCLES_PER_TICK must be greater than TICK_THRESHOLD for "
-		 "tickless mode");
-
-#else /* !CONFIG_TICKLESS_KERNEL */
-
-/*
- * For some reason, RTC does not generate interrupts when COMP == 0,
- * MATCHCLR == 1 and PRESCALER == 0. So we need to check that CYCLES_PER_TICK
- * is more than one.
- */
-BUILD_ASSERT_MSG(CYCLES_PER_TICK > 1,
-		 "CYCLES_PER_TICK must be greater than 1 for ticking mode");
-
-#endif /* CONFIG_TICKLESS_KERNEL */
-
-/* Helper macro to get the correct GCLK GEN based on configuration. */
-#define GCLK_GEN(n) GCLK_EVAL(n)
-#define GCLK_EVAL(n) GCLK_CLKCTRL_GEN_GCLK##n
+static u32_t max_ticks;
 
 /* Tick/cycle count of the last announce call. */
 static volatile u32_t rtc_last;
@@ -126,10 +96,10 @@ static void rtc_isr(void *arg)
 	u32_t count = rtc_count();
 
 	if (count != rtc_last) {
-		u32_t ticks = (count - rtc_last) / CYCLES_PER_TICK;
+		u32_t ticks = (count - rtc_last) / cycles_per_tick;
 
 		z_clock_announce(ticks);
-		rtc_last += ticks * CYCLES_PER_TICK;
+		rtc_last += ticks * cycles_per_tick;
 	}
 
 #else /* !CONFIG_TICKLESS_KERNEL */
@@ -150,16 +120,20 @@ static void rtc_isr(void *arg)
 
 int z_clock_driver_init(struct device *device)
 {
+	struct device *clk;
+	u32_t clk_freq;
+
 	ARG_UNUSED(device);
+
+	clk = device_get_binding(DT_INST_0_ATMEL_SAM0_RTC_CLOCK_CONTROLLER);
+	__ASSERT(clk != NULL, "invalid RTC clock");
 
 	/* Set up bus clock and GCLK generator. */
 	PM->APBAMASK.reg |= PM_APBAMASK_RTC;
-	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID(RTC_GCLK_ID) | GCLK_CLKCTRL_CLKEN
-			    | GCLK_GEN(DT_INST_0_ATMEL_SAM0_RTC_CLOCK_GENERATOR);
 
-	while (GCLK->STATUS.bit.SYNCBUSY) {
-		/* Synchronize GCLK. */
-	}
+	clock_control_on(clk, (clock_control_subsys_t)RTC_GCLK_ID);
+	clock_control_get_rate(clk,  (clock_control_subsys_t)RTC_GCLK_ID,
+			       &clk_freq);
 
 	/* Reset module to hardware defaults. */
 	rtc_reset();
@@ -171,6 +145,55 @@ int z_clock_driver_init(struct device *device)
 #ifndef CONFIG_TICKLESS_KERNEL
 	ctrl |= RTC_MODE0_CTRL_MATCHCLR;
 #endif
+
+#if DT_ATMEL_SAM0_RTC_0_CLOCK_FREQUENCY
+	u32_t div = clk_freq / DT_ATMEL_SAM0_RTC_0_CLOCK_FREQUENCY;
+
+	div = 31U - __builtin_clz(div);
+	if (div > 10) {
+		div = 10;
+	}
+
+	clk_freq /= (1U << div);
+
+#ifdef RTC_MODE0_CTRLA_PRESCALER_OFF
+	div += 1;
+#endif
+
+#ifdef RTC_MODE0_CTRLA_PRESCALER
+	ctrl |= RTC_MODE0_CTRLA_PRESCALER(div);
+#else
+	ctrl |= RTC_MODE0_CTRL_PRESCALER(div);
+#endif
+#endif
+
+	cycles_per_tick = clk_freq / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	max_ticks = UINT32_MAX / cycles_per_tick - 2;
+
+#ifdef CONFIG_TICKLESS_KERNEL
+	/*
+	 * Due to the nature of clock synchronization, reading from or
+	 * writing to some RTC registers takes approximately six RTC_GCLK
+	 * cycles. This constant defines a safe threshold for the comparator.
+	 */
+#define TICK_THRESHOLD	7
+
+	__ASSERT(cycles_per_tick > TICK_THRESHOLD,
+		 "cycles_per_tick must be greater than TICK_THRESHOLD for "
+		 "tickless mode");
+
+#else /* !CONFIG_TICKLESS_KERNEL */
+
+	/*
+	 * For some reason, RTC does not generate interrupts when COMP == 0,
+	 * MATCHCLR == 1 and PRESCALER == 0. So we need to check that
+	 * cycles_per_tick is more than one.
+	 */
+	__ASSERT(cycles_per_tick > 1,
+		 "cycles_per_tick must be greater than 1 for ticking mode");
+
+#endif /* CONFIG_TICKLESS_KERNEL */
+
 	rtc_sync();
 	RTC0->CTRL.reg = ctrl;
 
@@ -180,7 +203,7 @@ int z_clock_driver_init(struct device *device)
 #else
 	/* Non-tickless mode uses comparator together with MATCHCLR. */
 	rtc_sync();
-	RTC0->COMP[0].reg = CYCLES_PER_TICK;
+	RTC0->COMP[0].reg = cycles_per_tick;
 	RTC0->INTENSET.reg = RTC_MODE0_INTENSET_OVF;
 	rtc_counter = 0U;
 	rtc_timeout = 0U;
@@ -205,19 +228,19 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 
 #ifdef CONFIG_TICKLESS_KERNEL
 
-	ticks = (ticks == K_FOREVER) ? MAX_TICKS : ticks;
-	ticks = MAX(MIN(ticks - 1, (s32_t) MAX_TICKS), 0);
+	ticks = (ticks == K_FOREVER) ? max_ticks : ticks;
+	ticks = MAX(MIN(ticks - 1, (s32_t) max_ticks), 0);
 
 	/* Compute number of RTC cycles until the next timeout. */
 	u32_t count = rtc_count();
-	u32_t timeout = ticks * CYCLES_PER_TICK + count % CYCLES_PER_TICK;
+	u32_t timeout = ticks * cycles_per_tick + count % cycles_per_tick;
 
 	/* Round to the nearest tick boundary. */
-	timeout = (timeout + CYCLES_PER_TICK - 1) / CYCLES_PER_TICK
-		  * CYCLES_PER_TICK;
+	timeout = (timeout + cycles_per_tick - 1) / cycles_per_tick
+		  * cycles_per_tick;
 
 	if (timeout < TICK_THRESHOLD) {
-		timeout += CYCLES_PER_TICK;
+		timeout += cycles_per_tick;
 	}
 
 	rtc_sync();
@@ -251,7 +274,7 @@ void z_clock_set_timeout(s32_t ticks, bool idle)
 u32_t z_clock_elapsed(void)
 {
 #ifdef CONFIG_TICKLESS_KERNEL
-	return (rtc_count() - rtc_last) / CYCLES_PER_TICK;
+	return (rtc_count() - rtc_last) / cycles_per_tick;
 #else
 	return rtc_counter - rtc_last;
 #endif
