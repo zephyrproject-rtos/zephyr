@@ -20,6 +20,9 @@ properties:
     reg:
       category: required
 
+    clocks:
+      category: required
+
     dipo:
       type: int
       category: required
