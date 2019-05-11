@@ -23,6 +23,9 @@ properties:
     interrupts:
       category: required
 
+    clocks:
+      category: required
+
     dma:
       type: int
       category: optional

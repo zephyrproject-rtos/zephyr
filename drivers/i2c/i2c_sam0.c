@@ -11,6 +11,7 @@
 #include <soc.h>
 #include <drivers/i2c.h>
 #include <drivers/dma.h>
+#include <drivers/clock_control.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(i2c_sam0, CONFIG_I2C_LOG_LEVEL);
@@ -21,7 +22,8 @@ struct i2c_sam0_dev_config {
 	SercomI2cm *regs;
 	u32_t bitrate;
 	u32_t pm_apbcmask;
-	u16_t gclk_clkctrl_id;
+	const char *clk_dev;
+	clock_control_subsys_t clk_sys;
 
 	void (*irq_config_func)(struct device *dev);
 
@@ -499,6 +501,10 @@ static int i2c_sam0_set_apply_bitrate(struct device *dev, u32_t config)
 	u32_t baud;
 	u32_t baud_low;
 	u32_t baud_high;
+	u32_t clk_freq;
+
+	clock_control_get_rate(device_get_binding(cfg->clk_dev),
+			       cfg->clk_sys, &clk_freq);
 
 	u32_t CTRLA = i2c->CTRLA.reg;
 
@@ -517,7 +523,7 @@ static int i2c_sam0_set_apply_bitrate(struct device *dev, u32_t config)
 		wait_synchronization(i2c);
 
 		/* 5 is the nominal 100ns rise time from the app notes */
-		baud = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / 100000U - 5U - 10U) / 2U;
+		baud = (clk_freq / 100000U - 5U - 10U) / 2U;
 		if (baud > 255U || baud < 1U) {
 			return -ERANGE;
 		}
@@ -534,7 +540,7 @@ static int i2c_sam0_set_apply_bitrate(struct device *dev, u32_t config)
 		wait_synchronization(i2c);
 
 		/* 5 is the nominal 100ns rise time from the app notes */
-		baud = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / 400000U - 5U - 10U) / 2U;
+		baud = (clk_freq / 400000U - 5U - 10U) / 2U;
 		if (baud > 255U || baud < 1U) {
 			return -ERANGE;
 		}
@@ -554,7 +560,7 @@ static int i2c_sam0_set_apply_bitrate(struct device *dev, u32_t config)
 		wait_synchronization(i2c);
 
 		/* 5 is the nominal 100ns rise time from the app notes */
-		baud = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / 1000000U - 5U - 10U);
+		baud = (clk_freq / 1000000U - 5U - 10U);
 
 		/* 2:1 low:high ratio */
 		baud_high = baud;
@@ -585,7 +591,7 @@ static int i2c_sam0_set_apply_bitrate(struct device *dev, u32_t config)
 		i2c->CTRLA.reg = CTRLA;
 		wait_synchronization(i2c);
 
-		baud = (SOC_ATMEL_SAM0_GCLK0_FREQ_HZ / 3400000U) - 2U;
+		baud = (clk_freq / 3400000U) - 2U;
 
 		/* 2:1 low:high ratio */
 		baud_high = baud;
@@ -659,10 +665,13 @@ static int i2c_sam0_initialize(struct device *dev)
 	const struct i2c_sam0_dev_config *const cfg = DEV_CFG(dev);
 	SercomI2cm *i2c = cfg->regs;
 	int retval;
+	struct device *clk = device_get_binding(cfg->clk_dev);
 
-	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
+	if (!clk) {
+		return -EINVAL;
+	}
+
+	clock_control_on(clk, cfg->clk_sys);
 
 	/* Enable SERCOM clock in PM */
 	PM->APBCMASK.reg |= cfg->pm_apbcmask;
@@ -754,7 +763,8 @@ static const struct i2c_driver_api i2c_sam0_driver_api = {
 		.regs = (SercomI2cm *)DT_ATMEL_SAM0_I2C_SERCOM_##n##_BASE_ADDRESS, \
 		.bitrate = DT_ATMEL_SAM0_I2C_SERCOM_##n##_CLOCK_FREQUENCY,  \
 		.pm_apbcmask = PM_APBCMASK_SERCOM##n,			    \
-		.gclk_clkctrl_id = GCLK_CLKCTRL_ID_SERCOM##n##_CORE,	    \
+		.clk_dev = DT_ATMEL_SAM0_I2C_SERCOM_##n##_CLOCK_CONTROLLER, \
+		.clk_sys = (clock_control_subsys_t)SERCOM##n##_GCLK_ID_CORE,\
 		.irq_config_func = &i2c_sam_irq_config_##n,		    \
 		I2C_SAM0_DMA_CHANNELS(n)				    \
 	};								    \
