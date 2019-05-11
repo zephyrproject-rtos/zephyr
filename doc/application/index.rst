@@ -289,7 +289,7 @@ should know about.
 
 * :makevar:`ZEPHYR_MODULES`: A CMake list containing absolute paths of
   additional directories with source code, Kconfig, etc. that should be used in
-  the application build. See :ref:`modules` below for details.
+  the application build. See :ref:`modules` for details.
 
 .. _build_an_application:
 

@@ -8,11 +8,10 @@ Zephyr relies on the source code of several externally maintained projects in
 order to avoid reinventing the wheel and to reuse as much well-established,
 mature code as possible when it makes sense. In the context of Zephyr's build
 system those are called *modules*. These modules must be integrated with the
-Zephyr build system, which is described in more detail in other sections on
+Zephyr build system, as described in more detail in other sections on
 this page.
 
-There are several categories of external projects that Zephyr depends on,
-including:
+Zephyr depends on several categories of modules, including:
 
 - Debugger integration
 - Silicon vendor Hardware Abstraction Layers (HALs)
@@ -34,79 +33,20 @@ modules to this list by setting the :makevar:`ZEPHYR_EXTRA_MODULES` CMake
 variable. This can be useful if you want to keep the list of modules found with
 west and also add your own.
 
+See the section about :ref:`west-multi-repo` for more details.
+
 Finally, you can also specify the list of modules yourself in various ways, or
 not use modules at all if your application doesn't need them.
 
-Topologies supported
-********************
 
-The following three source code topologies supported by west:
 
-* **T1**: Star topology with zephyr as the manifest repository:
+Module Inclusion
+****************
 
-  - The zephyr repository acts as the central repository and includes a
-    complete list of projects used upstream
-  - Default (upstream) configuration
-  - Analogy with existing mechanisms: Git sub-modules with zephyr as the
-    super-project
-  - See :ref:`west-installation` for how mainline Zephyr is an example
-    of this topology
+.. _modules_using_west:
 
-* **T2**: Star topology with an application repository as the manifest
-  repository:
-
-  - A repository containing a Zephyr application acts as the central repository
-    and includes a complete list of other projects, including the zephyr
-    repository, required to build it
-  - Useful for those focused on a single application
-  - Analogy with existing mechanisms: Git sub-modules with the application as
-    the super-project, zephyr and other projects as sub-modules
-  - An installation using this topology could look like this:
-
-    .. code-block:: none
-
-       app-manifest-installation
-       ├── application
-       │   ├── CMakeLists.txt
-       │   ├── prj.conf
-       │   ├── src
-       │   │   └── main.c
-       │   └── west.yml
-       ├── modules
-       │   └── lib
-       │       └── tinycbor
-       └── zephyr
-
-* **T3**: Forest topology:
-
-  - A dedicated manifest repository which contains no Zephyr source code,
-    and specifies a list of projects all at the same "level"
-  - Useful for downstream distributions with no "central" repository
-  - Analogy with existing mechanisms: Google repo-based source distribution
-  - An installation using this topology could look like this:
-
-    .. code-block:: none
-
-       forest
-       ├── app1
-       │   ├── CMakeLists.txt
-       │   ├── prj.conf
-       │   └── src
-       │       └── main.c
-       ├── app2
-       │   ├── CMakeLists.txt
-       │   ├── prj.conf
-       │   └── src
-       │       └── main.c
-       ├── manifest-repo
-       │   └── west.yml
-       ├── modules
-       │   └── lib
-       │       └── tinycbor
-       └── zephyr
-
-Module Initialization Using West
-********************************
+Using West
+==========
 
 If west is installed and :makevar:`ZEPHYR_MODULES` is not already set, the
 build system finds all the modules in your :term:`west installation` and uses
@@ -141,7 +81,7 @@ Each project in the ``west list`` output is tested like this:
        cmake: .
        kconfig: Kconfig
 
-- Otherwise (i.e. if the project has no :file:`zephyr/module.yml`), then the
+- Otherwise (i.e. if the project has no :file:`zephyr/module.yml`), the
   build system looks for :file:`zephyr/CMakeLists.txt` and
   :file:`zephyr/Kconfig` files in the project. If both are present, the project
   is considered a module, and those files will be added to the build.
@@ -149,8 +89,8 @@ Each project in the ``west list`` output is tested like this:
 - If neither of those checks succeed, the project is not considered a module,
   and is not added to :makevar:`ZEPHYR_MODULES`.
 
-Module Initialization Without West
-**********************************
+Without West
+============
 
 If you don't have west installed or don't want the build system to use it to
 find Zephyr modules, you can set :makevar:`ZEPHYR_MODULES` yourself using one
@@ -187,12 +127,133 @@ section.
    You can tell the build system to use this file by adding ``-C
    zephyr-modules.cmake`` to your CMake command line.
 
-Not Using Modules
-*****************
+Not using modules
+=================
 
 If you don't have west installed and don't specify :makevar:`ZEPHYR_MODULES`
 yourself, then no additional modules are added to the build. You will still be
 able to build any applications that don't require code or Kconfig options
 defined in an external repository.
 
+.. _submitting_new_modules:
+
+
+Submitting changes to modules
+******************************
+
+When submitting new or making changes to existing modules the main repository
+Zephyr needs a reference to the changes to be able to verify the changes. In the
+main tree this is done using revisions. For code that is already merged and part
+of the tree we use the commit hash, a tag, or a branch name. For pull requests
+however, we require specifying the pull request number in the revision field to
+allow building the Zephyr main tree with the changes submitted to the
+module.
+
+To avoid merging changes to master with pull request information, the pull
+request should be marked as ``DNM`` (Do Not Merge) or preferably a draft pull
+request to make sure it is not merged by mistake and to allow for the module to
+be merged first and be assigned a permanent commit hash. Once the module is
+merged, the revision will need to be changed either by the submitter or by the
+maintainer to the commit hash of the module which reflects the changes.
+
+Note that multiple and dependent changes to different modules can be submitted
+using exactly the same process. In this case you will change multiple entries of
+all modules that have a pull request against them.
+
+
+Submitting a new module
+========================
+
+Requirements
+-------------
+
+Modules to be included in the default manifest of the Zephyr project need to
+provide functionality or features endorsed and approved by the project technical
+steering committee and should follow the project licencing and
+:ref:`contribute_guidelines`.
+
+A request for a new module should be initialized using an RFC issue in the
+Zephyr project issue tracking system with details about the module and how it
+integrates into the project. If the request is approved, a new repository will
+created by the project team and initialized with basic information that would
+allow submitting code to the module project following the project contribution
+guidelines.
+
+All modules should be hosted in repositories under the Zephyr organisation. The
+manifest should only point to repositories maintained under the Zephyr project.
+If a module is maintained as a fork of another project on Github, the Zephyr module
+related files and changes in relation to upstream need to be maintained in a
+special branch named ``zephyr``.
+
+Process
+-------
+
+Follow the following steps to request a new module:
+
+#. Use `GitHub issues`_ to open an issue with details about the module to be
+   created
+#. Propose a name for the repository to be created under the Zephyr project
+   organization on Github.
+#. Maintainers from the Zephyr project will create the repository and initialize
+   it. You will be added as a collaborator in the new repository.
+#. Submit the module content (code) to the new repository following the
+   guidelines described :ref:`here <modules_using_west>`.
+#. Add a new entry to the :zephyr_file:`west.yml` with the following
+   information:
+
+   .. code-block:: console
+
+        - name: <name of repository>
+          path: <path to where the repository should be cloned>
+          revision: <ref pointer to module pull request>
+
+
+For example, to add *my_module* to the manifest:
+
+.. code-block:: console
+
+    - name: my_module
+      path: modules/lib/my_module
+      revision: pull/23/head
+
+
+Where 23 in the example above indicated the pull request number submitted to the
+*my_module* repository. Once the module changes are reviewed and merged, the
+revision needs to be changed to the commit hash from the module repository.
+
+.. _changes_to_existing_module:
+
+Changes to existing modules
+===========================
+
+#. Submit the changes using a pull request to an existing repository following
+   the :ref:`contribution guidelines <contribute_guidelines>`.
+#. Submit a pull request changing the entry referencing the module into the
+   :zephyr_file:`west.yml` of the main Zephyr tree with the following
+   information:
+
+   .. code-block:: console
+
+        - name: <name of repository>
+          path: <path to where the repository should be cloned>
+          revision: <ref pointer to module pull request>
+
+
+For example, to add *my_module* to the manifest:
+
+.. code-block:: console
+
+    - name: my_module
+      path: modules/lib/my_module
+      revision: pull/23/head
+
+Where 23 in the example above indicated the pull request number submitted to the
+*my_module* repository. Once the module changes are reviewed and merged, the
+revision needs to be changed to the commit hash from the module repository.
+
+
+
 .. _CMake list: https://cmake.org/cmake/help/latest/manual/cmake-language.7.html#lists
+.. _add_subdirectory(): https://cmake.org/cmake/help/latest/command/add_subdirectory.html
+
+.. _GitHub issues: https://github.com/zephyrproject-rtos/zephyr/issues
