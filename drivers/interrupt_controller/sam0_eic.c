@@ -6,6 +6,7 @@
 
 #include <device.h>
 #include <soc.h>
+#include <clock_control.h>
 #include "sam0_eic.h"
 #include "sam0_eic_priv.h"
 
@@ -324,14 +325,19 @@ u32_t sam0_eic_interrupt_pending(int port)
 
 static int sam0_eic_init(struct device *dev)
 {
+	struct device *clk;
+
 	ARG_UNUSED(dev);
+
+	clk = device_get_binding(DT_INST_0_ATMEL_SAM0_EIC_CLOCK_CONTROLLER);
+	if (!clk) {
+		return -EINVAL;
+	}
 
 	/* Enable the EIC clock in PM */
 	PM->APBAMASK.bit.EIC_ = 1;
 
-	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_EIC | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
+	clock_control_on(clk, (clock_control_subsys_t)EIC_GCLK_ID);
 
 #ifdef DT_INST_0_ATMEL_SAM0_EIC_IRQ_0
 	SAM0_EIC_IRQ_CONNECT(0);

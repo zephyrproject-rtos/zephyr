@@ -18,5 +18,8 @@ properties:
   interrupts:
     category: required
 
+  clocks:
+    category: required
+
   label:
     category: required
