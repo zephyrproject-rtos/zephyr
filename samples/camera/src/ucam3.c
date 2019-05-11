@@ -10,6 +10,7 @@
 #include <misc/byteorder.h>
 #include <string.h>
 #include <stdbool.h>
+#include <gpio.h>
 
 #define CAM_UART_NAME DT_UART_STM32_USART_2_NAME
 
@@ -34,6 +35,8 @@ static struct {
 } cam_data;
 
 static struct tty_serial cam;
+static struct device *reset;
+
 
 typedef enum {
 	ACK_INITIAL,
@@ -107,11 +110,8 @@ static void print_cmd(uint8_t *cmd, int size)
 
 void ucam3_reset(void)
 {
-	uint8_t b;
-
-	while (tty_read(&cam, &b, 1) > 0) {
-		continue;
-	}
+	gpio_pin_write(reset, 3, 0);
+	gpio_pin_write(reset, 3, 1);
 }
 
 int ucam3_sync(void)
@@ -528,6 +528,14 @@ int ucam3_create(void)
 	tty_init(&cam, uart);
 	tty_set_rx_buf(&cam, cam_rxbuf, sizeof(cam_rxbuf));
 	tty_set_rx_timeout(&cam, 250);
+
+	reset = device_get_binding("GPIOA");
+	if (!reset) {
+		return -1;
+	}
+
+	gpio_pin_configure(reset, 3, GPIO_DIR_OUT);
+    // ucam3_reset();
 
 	return 0;
 }

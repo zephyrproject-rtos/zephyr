@@ -16,7 +16,8 @@ Requirements
 ************
 
 The demo assumes that a uCAM-III is connected to the UART_2 TX/RX of a Nucleo
-L496ZG. Also, the camera module should be powered by the 5V pin.
+L496ZG. The RST pin is connected to the PA3 pin of Nucleo. Also, the camera
+module should be powered by the 5V pin.
 
 Building and Running
 ********************

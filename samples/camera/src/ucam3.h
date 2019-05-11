@@ -135,9 +135,9 @@ extern int ucam3_get_picture(u8_t *data, u32_t *size);
 /**
  * @brief Reset the uCAM-III
  *
- * Initialize the serial interface with the camera module.
+ * Hardware reset the module.
  *
- * @retval 0 on success, otherwise -1
+ * @retval none
  */
 extern void ucam3_reset(void);
 

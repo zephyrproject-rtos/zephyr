@@ -44,6 +44,9 @@ static int camera_take_snapshot(u8_t *data, u32_t *size)
 {
 	int ret;
 
+	/* Hardware reset the camera before every shot */
+	ucam3_reset();
+
 	/* Synchronize with the camera */
 	ret = ucam3_sync();
 	if (ret) {
