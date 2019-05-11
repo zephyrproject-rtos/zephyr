@@ -294,13 +294,7 @@
 			reg = <0x42004000 0x2B>;
 			label = "ADC_0";
 			clocks = <&gclk3>;
-
-			/*
-			 * 2.1 MHz max, so clock it with the
-			 * 8 MHz GCLK / 4 = 2 MHz
-			 */
-			gclk = <3>;
-			prescaler = <4>;
+			clock-frequency = <2100000>;
 		};
 	};
 };

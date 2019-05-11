@@ -7,6 +7,7 @@
 
 #include <soc.h>
 #include <drivers/adc.h>
+#include <drivers/clock_control.h>
 
 #include <logging/log.h>
 LOG_MODULE_REGISTER(adc_sam0, CONFIG_ADC_LOG_LEVEL);
@@ -26,6 +27,7 @@ LOG_MODULE_REGISTER(adc_sam0, CONFIG_ADC_LOG_LEVEL);
 struct adc_sam0_data {
 	struct adc_context ctx;
 	struct device *dev;
+	u32_t freq;
 
 	u16_t *buffer;
 
@@ -43,16 +45,13 @@ struct adc_sam0_data {
 struct adc_sam0_cfg {
 	Adc *regs;
 
+	const char *clk_dev;
+	clock_control_subsys_t clk_sys;
 #ifdef MCLK
 	u32_t mclk_mask;
-	u32_t gclk_mask;
-	u16_t gclk_id;
-#else
-	u32_t gclk;
 #endif
 
-	u32_t freq;
-	u16_t prescaler;
+	u32_t max_freq;
 
 	void (*config_func)(struct device *dev);
 };
@@ -76,7 +75,7 @@ static void wait_synchronization(Adc *const adc)
 static int adc_sam0_acquisition_to_clocks(struct device *dev,
 					  u16_t acquisition_time)
 {
-	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
+	struct adc_sam0_data *data = DEV_DATA(dev);
 	u64_t scaled_acq;
 
 	switch (ADC_ACQ_TIME_UNIT(acquisition_time)) {
@@ -104,8 +103,8 @@ static int adc_sam0_acquisition_to_clocks(struct device *dev,
 	 */
 
 	scaled_acq *= 2U;
-	scaled_acq += cfg->freq / 2U;
-	scaled_acq /= cfg->freq;
+	scaled_acq += data->freq / 2U;
+	scaled_acq /= data->freq;
 	if (scaled_acq <= 1U) {
 		return 0;
 	}
@@ -453,28 +452,83 @@ static void adc_sam0_isr(void *arg)
 	adc_context_on_sampling_done(&data->ctx, dev);
 }
 
+static void adc_sam0_calculate_prescaler(struct device *dev,
+					 u32_t clk_freq)
+{
+	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
+	struct adc_sam0_data *data = DEV_DATA(dev);
+	Adc *const adc = cfg->regs;
+	u32_t div;
+
+	div = clk_freq / cfg->max_freq;
+	if ((div & (div - 1)) != 0) {
+		/*
+		 * If it's not already a power of two, round up to the
+		 * next one
+		 */
+		div = 32U - __builtin_clz(div);
+	} else {
+		div = 31U - __builtin_clz(div);
+	}
+
+#ifdef ADC_CTRLB_PRESCALER_DIV512
+	if (div > 9) {
+		LOG_WRN("No prescaler in range for target frequency %u from input %u",
+			cfg->max_freq, clk_freq);
+		div = 9;
+	} else if (div < 2) {
+		LOG_WRN("No prescaler in range for target frequency %u from input %u",
+			cfg->max_freq, clk_freq);
+		div = 2;
+	}
+
+	data->freq = clk_freq / (1U << div);
+	div -= 2;
+#else
+	if (div > 8) {
+		LOG_WRN("No prescaler in range for target frequency %u from input %u",
+			cfg->max_freq, clk_freq);
+		div = 8;
+	} else if (div < 1) {
+		LOG_WRN("No prescaler in range for target frequency %u from input %u",
+			cfg->max_freq, clk_freq);
+		div = 1;
+	}
+
+	data->freq = clk_freq / (1U << div);
+	div -= 1;
+#endif
+
+#ifdef ADC_CTRLA_PRESCALER_Pos
+	adc->CTRLA.reg = div;
+#else
+	adc->CTRLB.reg = div;
+#endif
+	wait_synchronization(adc);
+}
+
 static int adc_sam0_init(struct device *dev)
 {
 	const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);
 	struct adc_sam0_data *data = DEV_DATA(dev);
 	Adc *const adc = cfg->regs;
+	struct device *clk = device_get_binding(cfg->clk_dev);
+	u32_t clk_freq;
+
+	if (!clk) {
+		return -EINVAL;
+	}
+
+	clock_control_on(clk, cfg->clk_sys);
+	clock_control_get_rate(clk, cfg->clk_sys, &clk_freq);
 
 #ifdef MCLK
-	GCLK->PCHCTRL[cfg->gclk_id].reg = cfg->gclk_mask | GCLK_PCHCTRL_CHEN;
-
 	MCLK->APBDMASK.reg |= cfg->mclk_mask;
 #else
 	PM->APBCMASK.bit.ADC_ = 1;
-
-	GCLK->CLKCTRL.reg = cfg->gclk | GCLK_CLKCTRL_CLKEN;
 #endif
 
-#ifdef ADC_CTRLA_PRESCALER_Pos
-	adc->CTRLA.reg = cfg->prescaler;
-#else
-	adc->CTRLB.reg = cfg->prescaler;
-#endif
-	wait_synchronization(adc);
+	adc_sam0_calculate_prescaler(dev, clk_freq);
 
 	adc->INTENCLR.reg = ADC_INTENCLR_MASK;
 	adc->INTFLAG.reg = ADC_INTFLAG_MASK;
@@ -524,12 +578,8 @@ static const struct adc_driver_api adc_sam0_api = {
 #ifdef MCLK
 
 #define ADC_SAM0_CLOCK_CONTROL(n)					      \
-	.mclk_mask = MCLK_APBDMASK_ADC##n,				      \
-	.gclk_mask = UTIL_CAT(GCLK_PCHCTRL_GEN_GCLK,			      \
-			      DT_ATMEL_SAM0_ADC_ADC_##n##_GCLK),	      \
-	.gclk_id = ADC##n##_GCLK_ID,					      \
-	.prescaler = UTIL_CAT(ADC_CTRLA_PRESCALER_DIV,			      \
-			      DT_ATMEL_SAM0_ADC_ADC_##n##_PRESCALER),
+	.clk_sys = (clock_control_subsys_t)ADC##n##_GCLK_ID,		      \
+	.mclk_mask = MCLK_APBDMASK_ADC##n,
 #define ADC_SAM0_CONFIGURE(n) do {					      \
 		const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);	      \
 		Adc *const adc = cfg->regs;				      \
@@ -550,11 +600,7 @@ static const struct adc_driver_api adc_sam0_api = {
 #else
 
 #define ADC_SAM0_CLOCK_CONTROL(n)					      \
-	.gclk = UTIL_CAT(GCLK_CLKCTRL_GEN_GCLK,				      \
-			 DT_ATMEL_SAM0_ADC_ADC_##n##_GCLK) |		      \
-			 GCLK_CLKCTRL_ID_ADC,				      \
-	.prescaler = UTIL_CAT(ADC_CTRLB_PRESCALER_DIV,			      \
-			      DT_ATMEL_SAM0_ADC_ADC_##n##_PRESCALER),
+	.clk_sys = (clock_control_subsys_t)ADC_GCLK_ID,
 #define ADC_SAM0_CONFIGURE(n) do {					      \
 		const struct adc_sam0_cfg *const cfg = DEV_CFG(dev);	      \
 		Adc *const adc = cfg->regs;				      \
@@ -579,11 +625,9 @@ static const struct adc_driver_api adc_sam0_api = {
 	static void adc_sam0_config_##n(struct device *dev);		      \
 	static const struct adc_sam0_cfg adc_sam_cfg_##n = {		      \
 		.regs = (Adc *)DT_ATMEL_SAM0_ADC_ADC_##n##_BASE_ADDRESS,      \
+		.clk_dev = DT_ATMEL_SAM0_ADC_ADC_##n##_CLOCK_CONTROLLER,      \
 		ADC_SAM0_CLOCK_CONTROL(n)				      \
-		.freq = UTIL_CAT(UTIL_CAT(SOC_ATMEL_SAM0_GCLK,		      \
-					  DT_ATMEL_SAM0_ADC_ADC_##n##_GCLK),  \
-					  _FREQ_HZ) /			      \
-			DT_ATMEL_SAM0_ADC_ADC_##n##_PRESCALER,		      \
+		.max_freq = DT_ATMEL_SAM0_ADC_ADC_##n##_CLOCK_FREQUENCY,      \
 		.config_func = &adc_sam0_config_##n,			      \
 	};								      \
 	static struct adc_sam0_data adc_sam_data_##n = {		      \

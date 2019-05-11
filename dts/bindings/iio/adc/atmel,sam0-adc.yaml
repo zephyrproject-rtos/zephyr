@@ -23,12 +23,16 @@ properties:
     interrupts:
       category: required
 
-    gclk:
-      type: int
+    clocks:
       category: required
-      description: generic clock generator source
 
-    prescaler:
+    clock-frequency:
       type: int
+      description: >
+        The maximum clock rate the ADC can operate at (Hz).  This is used
+        to calculate the divisor applied to the input clock required to
+        achieve a frequency less than or equal to the requested one.
+        Normally this can be set to the maximum hardware supported frequency.
+        It can also be used to lower the frequency to achieve longer sample
+        acquisition times.
       category: required
-      description: clock prescaler divisor applied to the generic clock
