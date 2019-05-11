@@ -32,15 +32,9 @@ properties:
       description: required interrupts
       generation: define
 
-    gclk:
+    clock-frequency:
       type: int
-      category: required
-      description: generic clock generator source
+      description: target clock frequency (Hz)
       generation: define
-
-    prescaler:
-      type: int
       category: required
-      description: clock prescaler divisor applied to the generic clock
-      generation: define
 ...
