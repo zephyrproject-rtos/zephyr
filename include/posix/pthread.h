@@ -18,14 +18,14 @@
 #include <string.h>
 
 enum pthread_state {
+	/* The thread structure is unallocated and available for reuse. */
+	PTHREAD_TERMINATED = 0,
 	/* The thread is running and joinable. */
-	PTHREAD_JOINABLE = 0,
+	PTHREAD_JOINABLE,
 	/* The thread is running and detached. */
 	PTHREAD_DETACHED,
 	/* A joinable thread exited and its return code is available. */
-	PTHREAD_EXITED,
-	/* The thread structure is unallocated and available for reuse. */
-	PTHREAD_TERMINATED
+	PTHREAD_EXITED
 };
 
 struct posix_thread {
@@ -49,8 +49,8 @@ struct posix_thread {
 };
 
 /* Pthread detach/joinable */
-#define PTHREAD_CREATE_JOINABLE     0
-#define PTHREAD_CREATE_DETACHED     1
+#define PTHREAD_CREATE_JOINABLE     PTHREAD_JOINABLE
+#define PTHREAD_CREATE_DETACHED     PTHREAD_DETACHED
 
 /* Pthread cancellation */
 #define _PTHREAD_CANCEL_POS	0
