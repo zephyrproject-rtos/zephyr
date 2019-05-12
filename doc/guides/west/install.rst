@@ -15,32 +15,13 @@ On Windows and macOS::
   pip3 install -U west
 
 .. note::
-   See :ref:`gs_python_deps` for additional clarfication on using the
+   See :ref:`gs_python_deps` for additional clarification on using the
    ``--user`` switch.
 
-The following are the typical locations where the west files will be
-installed if you followed the instructions above:
+Afterwards, you can run ``pip3 show -f west`` for information on where the west
+binary and related files were installed.
 
-.. tip::
-   You can use the ``pip3 show -f west`` command to display information about
-   the installed packaged, including file locations.
-
-* Linux:
-
-  * Executable: :file:`~/.local/bin/west`
-  * Package: :file:`~/.local/lib/python3.<x>/site-packages/west/`
-
-* macOS:
-
-  * Executable: :file:`/usr/local/bin/west`
-  * Package: :file:`/usr/local/lib/python3.<x>/site-packages/west/`
-
-* Windows:
-
-  * Executable: :file:`C:\\Python3<x>\\Scripts\\west.exe`
-  * Package: :file:`C:\\Python3<x>\\Lib\\site-packages\\west\\`
-
-Once west is installed you can use it to :ref:`clone the Zephyr repositories
+Once west is installed, you can use it to :ref:`clone the Zephyr repositories
 <clone-zephyr>`.
 
 .. _west-shell-completion:
@@ -64,18 +45,21 @@ To obtain the completion script you can use the ``west completion`` command::
    west completion bash > west-completion.bash
 
 .. note::
-   Remember to update the completion script using ``west completion`` regularly
-   to always have an up to date copy of it.
 
-Next you need to have it sourced.
+   Remember to update your local copy of the completion script using ``west
+   completion`` when you update Zephyr.
 
-On Linux you have the following options:
+Next, you need to import :file:`west-completion.bash` into your bash shell.
 
-* Copy :file:`west-completion.bash` to :file:`/etc/bash_completion.d/`
-* Copy :file:`west-completion.bash` to :file:`/usr/share/bash-completion/completions/`
-* Copy :file:`west-completion.bash` to a local folder and source it from your :file:`~/.bashrc`
+On Linux, you have the following options:
 
-On macOS you have the following options:
+* Copy :file:`west-completion.bash` to :file:`/etc/bash_completion.d/`.
+* Copy :file:`west-completion.bash` to
+  :file:`/usr/share/bash-completion/completions/`.
+* Copy :file:`west-completion.bash` to a local folder and source it from your
+  :file:`~/.bashrc`.
+
+On macOS, you have the following options:
 
 * Copy :file:`west-completion.bash` to a local folder and source it from your
   :file:`~/.bash_profile`
@@ -88,9 +72,7 @@ On macOS you have the following options:
     source /usr/local/etc/profile.d/bash_completion.sh
 
   and finally copy :file:`west-completion.bash` to
-  :file:`/usr/local/etc/bash_completion.d/`
-
+  :file:`/usr/local/etc/bash_completion.d/`.
 
 .. _PyPI:
    https://pypi.org/project/west/
-
