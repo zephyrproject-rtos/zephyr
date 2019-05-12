@@ -1,0 +1,67 @@
+# ST Microelectronics s2lp 802.15.4 radio configuration options
+
+# Copyright (c) 2021 Nikos Oikonomou <nikoikonomou92@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_S2LP
+	bool "ST S2LP Driver support"
+	depends on NETWORKING && SPI
+	select NET_L2_IEEE802154_SUB_GHZ if NET_L2_IEEE802154
+
+if IEEE802154_S2LP
+
+config IEEE802154_S2LP_DRV_NAME
+	string "S2LP Driver's name"
+	default "IEEE802154_S2LP"
+	help
+	  This option sets the driver name
+
+config IEEE802154_S2LP_RX_THREAD_PRIO
+	int
+	default 2
+	help
+	  Hidden option for Rx thread priority.
+
+config IEEE802154_S2LP_RX_STACK_SIZE
+	int "Driver's internal RX thread stack size"
+	default 800
+	help
+	  This option sets the driver's stack size for its internal RX thread.
+	  The default value should be sufficient, but in case it proves to be
+	  a too little one, this option makes it easy to play with the size.
+
+config IEEE802154_S2LP_INIT_PRIO
+	int "S2LP initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing.
+
+config IEEE802154_S2LP_SNIFF_MODE
+	bool "Enables SNIFF Mode feature"
+	help
+	  If enabled the driver will utilize the radio's SNIFF Mode feature.
+
+config IEEE802154_S2LP_FREQUENCY_BASE
+	int "S2LP frequency base in Hz"
+	default 868000000
+	help
+	  The frequency base that will be used for the computation of the
+	  operational frequency.
+
+config IEEE802154_S2LP_MAX_FREQUENCY
+	int "S2LP maximum supported frequency in Hz"
+	default 930000000
+
+config IEEE802154_S2LP_CHANNEL_SPACE
+	int "S2LP frequency spacing in Hz"
+	default 100000
+	help
+	  The frequency spacing that will be used for the computation of the
+	  operational frequency.
+
+config IEEE802154_S2LP_DATARATE
+	int "S2LP desired datarate in bps"
+	default 38400
+
+endif

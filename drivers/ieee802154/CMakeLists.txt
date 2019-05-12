@@ -11,6 +11,7 @@ zephyr_sources_ifdef(CONFIG_IEEE802154_CC13XX_CC26XX_SUB_GHZ ieee802154_cc13xx_c
 zephyr_sources_ifdef(CONFIG_IEEE802154_RF2XX ieee802154_rf2xx.c)
 zephyr_sources_ifdef(CONFIG_IEEE802154_RF2XX ieee802154_rf2xx_iface.c)
 zephyr_sources_ifdef(CONFIG_IEEE802154_DW1000 ieee802154_dw1000.c)
+zephyr_sources_ifdef(CONFIG_IEEE802154_S2LP ieee802154_s2lp.c)
 
 if(CONFIG_SOC_CC1352R)
      target_compile_definitions(zephyr PRIVATE "DeviceFamily_CC13X2")

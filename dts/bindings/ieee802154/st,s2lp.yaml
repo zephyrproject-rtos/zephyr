@@ -1,0 +1,27 @@
+# Copyright (c) 2021 Nikos Oikonomou <nikoikonomou92@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST S2LP 802.15.4 Wireless Transceiver.
+
+compatible: "st,s2lp"
+
+include: spi-device.yaml
+
+properties:
+    sdn-gpios:
+      type: phandle-array
+      required: true
+      description: Shutdown pin.
+
+        The shutdown pin of the S2LP is active low.
+        If connected directly the MCU pin should be configured
+        as active low.
+
+    rx-rdy-irq-gpios:
+      type: phandle-array
+      required: true
+      description: RX RDY Interrupt pin.
+
+        The interrupt pin of the S2LP is open-drain, active low.
+        If connected directly the MCU pin should be configured
+        as pull-up, active low.
