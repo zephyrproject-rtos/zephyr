@@ -65,20 +65,40 @@ the kernel supports one or more of the following thread sub-classes:
 * SSE user: A thread that can use both the standard floating point registers
   and SSE registers
 
-The kernel initializes the floating point registers so they can be used
+The kernel initializes and enables access to the floating point registers,
+so they can be used
 by any thread, then saves and restores these registers during
 context switches to ensure the computations performed by each FPU user
 or SSE user are not impacted by the computations performed by the other users.
 
-On the ARM Cortex-M architecture with the Floating Point Extension
-the kernel treats *all* threads
-as FPU users when shared FP registers mode is enabled. This means that the
-floating point registers are saved and restored during each context switch,
-even when the associated threads are not using them. Each thread must provide
-an extra 72 bytes of stack space where these register values can be saved.
-Lazy Stacking is currently not supported in Zephyr applications on ARM
-Cortex-M architecture, and the feature is explicitly disabled during system
-boot.
+On the ARM Cortex-M architecture with the Floating Point Extension, the kernel
+treats *all* threads as FPU users when shared FP registers mode is enabled.
+This means that any thread is allowed to access the floating point registers.
+The ARM kernel automatically detects that a given thread is using the floating
+point registers the first time the thread accesses them.
+
+During thread context switching the ARM kernel saves the *callee-saved*
+floating point registers, if the switched-out thread has been using them.
+Additionally, the *caller-saved* floating point registers are saved on
+the thread's stack. If the switched-in thread has been using the floating
+point registers, the kernel restores the *callee-saved* FP registers of
+the switched-in thread and the *caller-saved* FP context is restored from
+the thread's stack. Thus, the kernel does not save or restore the FP
+context of threads that are not using the FP registers.
+
+Each thread that intends to use the floating point registers must provide
+an extra 72 bytes of stack space where the callee-saved FP context can
+be saved.
+
+`Lazy Stacking
+<http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.dai0298a/DAFGGBJD.html>`_
+is currently enabled in Zephyr applications on ARM Cortex-M
+architecture, minimizing interrupt latency, when the floating
+point context is active.
+
+If an ARM thread does not require use of the floating point registers any
+more, it can call :cpp:func:`k_float_disable()`. This instructs the kernel
+not to save or restore its FP context during thread context switching.
 
 On the x86 architecture the kernel treats each thread as a non-user,
 FPU user or SSE user on a case-by-case basis. A "lazy save" algorithm is used
