@@ -1,2 +1,1 @@
-add_subdirectory_ifdef(CONFIG_FAT_FILESYSTEM_ELM fat)
 add_subdirectory_ifdef(CONFIG_FILE_SYSTEM_NFFS nffs)
