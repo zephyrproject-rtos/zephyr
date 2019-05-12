@@ -3,7 +3,7 @@
 Multiple Repository Management
 ##############################
 
-This page introduces basic concepts related to West and its multiple repository
+This page introduces basic concepts related to west and its multiple repository
 management features, and gives an overview of the associated commands. See
 :ref:`west-history` and `Zephyr issue #6770`_ for additional discussion,
 rationale, and motivation.
@@ -173,14 +173,14 @@ functionality. Some commands loosely mimic the corresponding Git command, but
 in a multi-repo context (e.g. ``west diff`` shows local changes on all
 repositories).
 
-Project arguments can be the names of projects in the manifest, or their paths
-within the installation. Passing no project arguments to commands that accept a
-list of projects usually means to use all projects in the manifest.
+Project arguments can be the names of projects in the manifest, or (as
+fallback) paths to them. Omitting project arguments to commands which accept a
+list of projects (such as ``west list``, ``west forall``, etc.) usually
+defaults to using all projects in the manifest file plus the manifest
+repository itself.
 
-.. note::
-
-   For detailed help, see each command's ``--help`` output (e.g.  ``west diff
-   --help``).
+For help on individual commands, run ``west <command> -h`` (e.g. ``west diff
+-h``).
 
 Main Commands
 =============
@@ -206,10 +206,10 @@ important to understand.
      https://github.com/zephyrproject-rtos/zephyr --mr v1.15.0`` would clone
      the upstream official zephyr repository at the tagged release v1.15.0
      (``-m`` defaults to https://github.com/zephyrproject-rtos/zephyr, and
-     ``--mr`` defaults to ``master``).
+     the ``-mr`` default is overridden to ``v1.15.0``).
 
 - ``west update [--rebase] [--keep-descendants] [--exclude-west] [PROJECT
-  ...]``: clone and update the specified projects (default: all projects) based
+  ...]``: clone and update the specified projects based
   on the current :term:`west manifest`.
 
   This command parses the manifest, clones any project repositories that are
