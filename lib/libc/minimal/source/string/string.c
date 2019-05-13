@@ -170,6 +170,28 @@ char *strncat(char *_MLIBC_RESTRICT dest, const char *_MLIBC_RESTRICT src,
 }
 
 /**
+ * @brief Get the length of a complementary substring
+ *
+ * @return length of the maximum initial segment of the string pointed to
+ * by s1 which consists entirely of bytes not from the string pointed to by s2.
+ */
+
+size_t strcspn(const char *s1, const char *s2)
+{
+	int i, j;
+
+	for (i = 0; i < strlen(s2); ++i) {
+		for (j = 0; j < strlen(s1); ++j) {
+			if (s1[j] == s2[i]) {
+				return j;
+			}
+		}
+	}
+
+	return strlen(s1);
+}
+
+/**
  *
  * @brief Compare two memory areas
  *
