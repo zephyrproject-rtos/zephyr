@@ -315,10 +315,10 @@ entries, then bump the 'max_top_items' variable in {}.
         """
         # Grep for symbol references.
         #
-        # Example output line for a reference to CONFIG_BAZ at line 17 of
+        # Example output line for a reference to CONFIG_FOO at line 17 of
         # foo/bar.c:
         #
-        #   foo/bar.c<null>17<null>CONFIG_BAZ
+        #   foo/bar.c<null>17<null>CONFIG_FOO
         #
         # The regular expression in use here uses zero length word boundary
         # assertions (\b) to isolate the reference then a negative lookahead
@@ -386,6 +386,7 @@ ci-tools repo.\n\n{}""".format(os.path.basename(__file__), undef_desc))
 UNDEF_KCONFIG_WHITELIST = {
     "CONFIG_2ND_LVL_INTR_",
     "CONFIG_3RD_LVL_INTR_",
+    "CONFIG_ALSO_MISSING",  # Used as an example in this file
     "CONFIG_APP_LINK_WITH_",
     "CONFIG_CDC_ACM_PORT_NAME_",
     "CONFIG_CLOCK_STM32_PLL_SRC_",
@@ -406,6 +407,7 @@ UNDEF_KCONFIG_WHITELIST = {
     "CONFIG_FOO_SETTING_2",
     "CONFIG_LIS2DW12_INT_PIN",
     "CONFIG_LSM6DSO_INT_PIN",
+    "CONFIG_MISSING",  # Used as an example in this file
     "CONFIG_MODULES",
     "CONFIG_MYFEATURE",
     "CONFIG_MY_DRIVER_0",
