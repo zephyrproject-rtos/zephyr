@@ -3,12 +3,9 @@
 # Copyright (c) 2016 Intel Corporation
 #
 # SPDX-License-Identifier: Apache-2.0
-#
 
-menu "Bluetooth"
-
-config BT
-	bool "Bluetooth support"
+menuconfig BT
+	bool "Bluetooth"
 	select NET_BUF
 	help
 	  This option enables Bluetooth support.
@@ -148,5 +145,3 @@ source "subsys/bluetooth/shell/Kconfig"
 endif # BT_HCI
 
 endif # BT
-
-endmenu
