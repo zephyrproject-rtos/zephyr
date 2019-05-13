@@ -46,7 +46,7 @@ struct aio_cmp_driver_api {
  *
  * @return 0 if successful, otherwise failed.
  */
-__syscall int aio_cmp_disable(struct device *dev, u8_t index);
+__syscall int analogio_cmp_disable(struct device *dev, u8_t index);
 
 static inline int z_impl_aio_cmp_disable(struct device *dev, u8_t index)
 {
@@ -70,10 +70,10 @@ static inline int z_impl_aio_cmp_disable(struct device *dev, u8_t index)
  *
  * @return 0 if successful, otherwise failed.
  */
-static inline int aio_cmp_configure(struct device *dev, u8_t index,
-				    enum aio_cmp_polarity polarity,
-				    enum aio_cmp_ref refsel,
-				    aio_cmp_cb cb, void *param)
+static inline int analogio_cmp_configure(struct device *dev, u8_t index,
+					 enum aio_cmp_polarity polarity,
+					 enum aio_cmp_ref refsel,
+					 aio_cmp_cb cb, void *param)
 {
 	const struct aio_cmp_driver_api *api = dev->driver_api;
 
@@ -93,7 +93,7 @@ static inline int aio_cmp_configure(struct device *dev, u8_t index,
  * @retval status != 0 if at least one aio_cmp interrupt is pending.
  * @retval 0 if no aio_cmp interrupt is pending.
  */
-__syscall int aio_cmp_get_pending_int(struct device *dev);
+__syscall int analogio_cmp_get_pending_int(struct device *dev);
 
 static inline int z_impl_aio_cmp_get_pending_int(struct device *dev)
 {
@@ -101,6 +101,26 @@ static inline int z_impl_aio_cmp_get_pending_int(struct device *dev)
 
 	api = (struct aio_cmp_driver_api *)dev->driver_api;
 	return api->get_pending_int(dev);
+}
+
+/* Deprecated aliases */
+
+__deprecated static inline int aio_cmp_disable(struct device *dev, u8_t index)
+{
+	return analogio_cmp_disable(dev, index);
+}
+
+__deprecated static inline int aio_cmp_configure(struct device *dev, u8_t index,
+				    enum aio_cmp_polarity polarity,
+				    enum aio_cmp_ref refsel,
+				    aio_cmp_cb cb, void *param)
+{
+	return analogio_cmp_configure(dev, index, polarity, refsel, cb, param);
+}
+
+__deprecated static inline int aio_cmp_get_pending_int(struct device *dev)
+{
+	return analogio_cmp_get_pending_int(dev);
 }
 
 #ifdef __cplusplus
