@@ -1,12 +1,11 @@
 .. _installing_zephyr_mac:
 
-Development Environment Setup on macOS
-######################################
+Install macOS Host Dependencies
+###############################
 
 .. important::
 
-   This section only describes OS-specific setup instructions; it is the first step in the
-   complete Zephyr :ref:`getting_started`.
+   Go back to the main :ref:`getting_started` when you're done here.
 
 This section describes how to set up a Zephyr development environment on macOS.
 
@@ -33,12 +32,10 @@ Install Requirements and Dependencies
    introduction of LaTeX->PDF support for the docs, as the texlive footprint is
    massive and not needed by users not building PDF documentation.)
 
-.. note::
-
-   Zephyr requires Python 3, while macOS only provides a Python 2
-   installation. After following these instructions, the version of Python 2
-   provided by macOS in ``/usr/bin/`` will sit alongside the Python 3
-   installation from Homebrew in ``/usr/local/bin``.
+Zephyr requires Python 3, while macOS only provides a Python 2
+installation. After following these instructions, the version of Python 2
+provided by macOS in ``/usr/bin/`` will sit alongside the Python 3 installation
+from Homebrew in ``/usr/local/bin``.
 
 First, install :program:`Homebrew` by following instructions on the `Homebrew
 site`_. Homebrew is a free and open-source package management system that
@@ -46,8 +43,7 @@ simplifies the installation of software on macOS.  While installing Homebrew,
 you may be prompted to install additional missing dependencies; please follow
 any such instructions as well.
 
-After Homebrew is successfully installed, install the following tools using
-the ``brew`` command line tool in the Terminal application.
+Now install these host dependencies with the ``brew`` command:
 
 .. code-block:: console
 

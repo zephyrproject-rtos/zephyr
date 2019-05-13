@@ -1,18 +1,13 @@
 .. _installing_zephyr_win:
 
-Development Environment Setup on Windows
-########################################
+Install Windows Host Dependencies
+#################################
 
 .. important::
 
-   This section only describes OS-specific setup instructions; it is the first step in the
-   complete Zephyr :ref:`getting_started`.
+   Go back to the main :ref:`getting_started` when you're done here.
 
-This section describes how to configure your development environment
-to build Zephyr applications in a Microsoft Windows environment.
-
-This guide was tested by building the Zephyr :ref:`hello_world` sample
-application on Windows versions 7, 8.1, and 10.
+This guide was tested on Windows versions 7, 8.1, and 10.
 
 Update Your Operating System
 ****************************
@@ -35,14 +30,11 @@ Install Requirements and Dependencies
 
 There are 2 different ways of developing for Zephyr on Microsoft Windows:
 
-#. :ref:`windows_install_native`
+#. :ref:`windows_install_native` (recommended)
 #. :ref:`windows_install_wsl`
 
 The first option is fully Windows native; the other requires emulation layers
-that may result in slower build times. Both are included for completeness,
-but unless you have a particular requirement for a UNIX tool that is not
-available on Windows, we strongly recommend you use the Windows Command Prompt
-option for performance and minimal dependency set.
+that may result in slower build times.
 
 .. _windows_install_native:
 

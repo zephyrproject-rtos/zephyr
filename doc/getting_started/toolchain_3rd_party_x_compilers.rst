@@ -6,6 +6,8 @@
 A "3rd party toolchain" is an officially supported toolchain provided by an
 external organization. Several of these are available.
 
+.. _toolchain_gnuarmemb:
+
 GNU ARM Embedded
 ****************
 
