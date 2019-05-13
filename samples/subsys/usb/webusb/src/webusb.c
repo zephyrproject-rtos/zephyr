@@ -305,7 +305,7 @@ static struct usb_ep_cfg_data webusb_ep_data[] = {
 };
 
 /* Configuration of the CDC-ACM Device send to the USB Driver */
-static struct usb_cfg_data webusb_config = {
+USBD_CFG_DATA_DEFINE(webusb) struct usb_cfg_data webusb_config = {
 	.usb_device_description = (u8_t *)&webusb_usb_description,
 	.cb_usb_status = webusb_dev_status_cb,
 	.interface = {
