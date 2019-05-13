@@ -3,6 +3,6 @@ tests:
     filter: not CONFIG_DEBUG
     platform_exclude: qemu_x86_64 # FIXME
     min_flash: 65
-    min_ram: 32
+    min_ram: 36
     tags: crypto mbedtls userspace
     timeout: 200
