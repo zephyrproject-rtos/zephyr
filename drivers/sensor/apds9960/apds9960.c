@@ -178,6 +178,14 @@ static int apds9960_proxy_setup(struct device *dev)
 	}
 
 	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
+				APDS9960_CONFIG2_REG,
+				APDS9960_PLED_BOOST_300,
+				config->pled_boost)) {
+		LOG_ERR("LED Drive Strength not set");
+		return -EIO;
+	}
+
+	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
 				APDS9960_CONTROL_REG, APDS9960_CONTROL_PGAIN,
 				(config->pgain & APDS9960_PGAIN_8X))) {
 		LOG_ERR("Gain is not set");
@@ -508,6 +516,15 @@ static const struct apds9960_config apds9960_config = {
 #else
 	.ppcount = APDS9960_PPULSE_LENGTH_4US |
 		   (CONFIG_APDS9960_PPULSE_COUNT - 1),
+#endif
+#if CONFIG_APDS9960_PLED_BOOST_300PCT
+	.pled_boost = APDS9960_PLED_BOOST_300,
+#elif CONFIG_APDS9960_PLED_BOOST_200PCT
+	.pled_boost = APDS9960_PLED_BOOST_200,
+#elif CONFIG_APDS9960_PLED_BOOST_150PCT
+	.pled_boost = APDS9960_PLED_BOOST_150,
+#else
+	.pled_boost = APDS9960_PLED_BOOST_100,
 #endif
 };
 

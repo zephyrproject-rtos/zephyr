@@ -92,6 +92,24 @@ config APDS9960_PPULSE_LENGTH_32US
 
 endchoice
 
+choice
+	prompt "Proximity LED boost current"
+	default APDS9960_PLED_BOOST_100PCT
+
+config APDS9960_PLED_BOOST_300PCT
+	bool "300%"
+
+config APDS9960_PLED_BOOST_200PCT
+	bool "200%"
+
+config APDS9960_PLED_BOOST_150PCT
+	bool "150%"
+
+config APDS9960_PLED_BOOST_100PCT
+	bool "100%"
+
+endchoice
+
 config APDS9960_PPULSE_COUNT
 	int "Proximity Pulse Count"
 	range 1 64
