@@ -64,12 +64,11 @@
 #define APDS9960_CONFIG2_REG		0x90
 #define APDS9960_CONFIG2_CPSIEN		BIT(6)
 #define APDS9960_CONFIG2_PSIEN		BIT(7)
-#define APDS9960_CONFIG2_LEDBOOST	(BIT(5) | BIT(4))
 /* LED Boost values */
-#define APDS9960_GLED_BOOST_100		0
-#define APDS9960_GLED_BOOST_150		BIT(4)
-#define APDS9960_GLED_BOOST_200		BIT(5)
-#define APDS9960_GLED_BOOST_300		(BIT(5) | BIT(4))
+#define APDS9960_PLED_BOOST_100		0
+#define APDS9960_PLED_BOOST_150		BIT(4)
+#define APDS9960_PLED_BOOST_200		BIT(5)
+#define APDS9960_PLED_BOOST_300		(BIT(5) | BIT(4))
 
 #define APDS9960_ID_REG			0x92
 /* Acceptable device IDs */
@@ -221,6 +220,7 @@ struct apds9960_config {
 	u8_t pgain;
 	u8_t again;
 	u8_t ppcount;
+	u8_t pled_boost;
 };
 
 struct apds9960_data {
