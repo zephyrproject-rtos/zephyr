@@ -12,7 +12,7 @@ config CAN_STM32
 	default y
 	select USE_STM32_HAL_CAN
 	help
-	  Enable STM32 CAN Driver (tested on stm32F0 series)
+	  Enable STM32 CAN Driver
 
 config CAN_MAX_FILTER
 	int "Maximum number of concurrent active filters"
