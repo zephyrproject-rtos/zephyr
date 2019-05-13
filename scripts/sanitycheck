@@ -1052,8 +1052,13 @@ class MakeGoal:
             # Failure when calling the sub-make to build the code
             return self.build_log
         elif self.make_state == "running":
-            # Failure in sub-make for "make run", qemu probably failed to start
-            return self.run_log
+            # Failure in sub-make for "make run", qemu probably failed.
+            # Return qemu's output if there is one, otherwise make's.
+            h = Path(self.handler_log)
+            if h.exists() and h.stat().st_size > 0:
+                return self.handler_log
+            else:
+                return self.run_log
         elif self.make_state == "finished":
             # Execution handler finished, but timed out or otherwise wasn't successful
             return self.handler_log
