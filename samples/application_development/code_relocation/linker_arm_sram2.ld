@@ -29,6 +29,7 @@
   #define _SRAM2_DATA_SECTION_NAME  .sram2_data
   #define _SRAM2_BSS_SECTION_NAME   .sram2_bss
   #define _SRAM2_TEXT_SECTION_NAME  .sram2_text
+  #define SRAM2_ADDR  (CONFIG_SRAM_BASE_ADDRESS + RAM_SIZE2)
 #endif
 
 #define RAM_SIZE2 (CONFIG_SRAM_SIZE * 512)
