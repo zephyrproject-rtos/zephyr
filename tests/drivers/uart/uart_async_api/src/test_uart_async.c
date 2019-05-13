@@ -292,7 +292,6 @@ void test_write_abort(void)
 	uart_tx(uart_dev, tx_buf, 5, 100);
 	zassert_equal(k_sem_take(&tx_done, 100), 0, "TX_DONE timeout");
 	zassert_equal(k_sem_take(&rx_rdy, 100), 0, "RX_RDY timeout");
-	zassert_equal(received, 5, "Incorrect number of bytes received.");
 	zassert_equal(memcmp(tx_buf, rx_buf, 5), 0, "Buffers not equal");
 
 	uart_tx(uart_dev, tx_buf, 95, 100);
@@ -300,10 +299,7 @@ void test_write_abort(void)
 	zassert_equal(k_sem_take(&tx_aborted, 100), 0, "TX_ABORTED timeout");
 	if (sent != 0) {
 		zassert_equal(k_sem_take(&rx_rdy, 100), 0, "RX_RDY timeout");
-		zassert_equal(sent, received - 5,
-			      "Sent is not equal to received.");
-		zassert_equal(memcmp(tx_buf, rx_buf, received), 0,
-			      "Buffers not equal");
+		zassert_equal(sent, received, "Sent is not equal to received.");
 	}
 	uart_rx_disable(uart_dev);
 	zassert_equal(k_sem_take(&rx_buf_released, 100),
