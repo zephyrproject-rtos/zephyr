@@ -344,7 +344,7 @@
 				compatible = "arm,cryptocell-310";
 				reg = <0x5002B000 0x1000>;
 				interrupts = <42 1>;
-				label = "CRYTOCELL310";
+				label = "CRYPTOCELL310";
 			};
 		};
 	};
