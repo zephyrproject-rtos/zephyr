@@ -590,3 +590,9 @@ config BT_PAGE_TIMEOUT
 	  (N * 0.625) ms.
 
 endif # BT_BREDR
+
+config BT_HCI_VS_EVT_USER
+	bool "User Vendor-Specific event handling"
+	help
+	  Enable registering a callback for delegating to the user the handling of
+	  VS events that are not known to the stack
