@@ -242,6 +242,7 @@ timer0: timer@f000 {
 	reg = <0xf000 0x1000>;
 	interrupts = <15 1>;
 	prescaler = <0>;
+	guard-period = <10>;
 	label = "TIMER_0";
 };
 
@@ -251,6 +252,7 @@ timer1: timer@10000 {
 	reg = <0x10000 0x1000>;
 	interrupts = <16 1>;
 	prescaler = <0>;
+	guard-period = <10>;
 	label = "TIMER_1";
 };
 
@@ -260,5 +262,6 @@ timer2: timer@11000 {
 	reg = <0x11000 0x1000>;
 	interrupts = <17 1>;
 	prescaler = <0>;
+	guard-period = <10>;
 	label = "TIMER_2";
 };

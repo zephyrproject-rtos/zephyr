@@ -227,6 +227,7 @@
 			reg = <0x40008000 0x1000>;
 			interrupts = <8 1>;
 			prescaler = <0>;
+			guard-period = <10>;
 			label = "TIMER_0";
 		};
 
@@ -236,6 +237,7 @@
 			reg = <0x40009000 0x1000>;
 			interrupts = <9 1>;
 			prescaler = <0>;
+			guard-period = <10>;
 			label = "TIMER_1";
 		};
 
@@ -245,6 +247,7 @@
 			reg = <0x4000a000 0x1000>;
 			interrupts = <10 1>;
 			prescaler = <0>;
+			guard-period = <10>;
 			label = "TIMER_2";
 		};
 
@@ -254,6 +257,7 @@
 			reg = <0x4001a000 0x1000>;
 			interrupts = <26 1>;
 			prescaler = <0>;
+			guard-period = <10>;
 			label = "TIMER_3";
 		};
 
@@ -263,6 +267,7 @@
 			reg = <0x4001b000 0x1000>;
 			interrupts = <27 1>;
 			prescaler = <0>;
+			guard-period = <10>;
 			label = "TIMER_4";
 		};
 
