@@ -9,7 +9,7 @@
 
 / {
 	model = "Olimex OLIMEXINO-STM32 board";
-	compatible = "st,olimexino_stm32", "st,stm32f103rb";
+	compatible = "olimex,olimexino_stm32", "st,stm32f103rb";
 
 	chosen {
 		zephyr,console = &usart1;
