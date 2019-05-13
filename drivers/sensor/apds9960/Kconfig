@@ -74,4 +74,27 @@ config APDS9960_AGAIN_64X
 
 endchoice
 
+choice
+	prompt "Proximity Pulse Length"
+	default APDS9960_PPULSE_LENGTH_8US
+
+config APDS9960_PPULSE_LENGTH_4US
+	bool "4us"
+
+config APDS9960_PPULSE_LENGTH_8US
+	bool "8us"
+
+config APDS9960_PPULSE_LENGTH_16US
+	bool "16us"
+
+config APDS9960_PPULSE_LENGTH_32US
+	bool "32us"
+
+endchoice
+
+config APDS9960_PPULSE_COUNT
+	int "Proximity Pulse Count"
+	range 1 64
+	default 8
+
 endif # APDS9960
