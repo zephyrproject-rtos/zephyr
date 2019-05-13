@@ -70,6 +70,19 @@ choice LVGL_COLOR_DEPTH
 	default LVGL_COLOR_DEPTH_16
 endchoice
 
+if LVGL_INPUT_POINTER
+
+config LVGL_INPUT_POINTER_DEV_NAME
+	default "FT5336"
+
+config I2C
+	default y
+
+config FT5336
+	default y
+
+endif # LVGL_INPUT_POINTER
+
 endif # LVGL
 
 endif # BOARD_MIMXRT1060_EVK || BOARD_MIMXRT1060_EVK_HYPERFLASH
