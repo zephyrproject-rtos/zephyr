@@ -174,13 +174,18 @@ struct uart_event_tx {
 	size_t len;
 };
 
-/** @brief UART RX event data. */
+/**
+ * @brief UART RX event data.
+ *
+ * The data represented by the event is stored in rx.buf[rx.offset] to
+ * rx.buf[rx.offset+rx.len].  That is, the length is relative to the offset.
+ */
 struct uart_event_rx {
 	/** @brief Pointer to current buffer. */
 	u8_t *buf;
-	/** @brief Offset from buffer start to currently received data. */
+	/** @brief Currently received data offset in bytes. */
 	size_t offset;
-	/** @brief Number of bytes received. */
+	/** @brief Number of new bytes received. */
 	size_t len;
 };
 
