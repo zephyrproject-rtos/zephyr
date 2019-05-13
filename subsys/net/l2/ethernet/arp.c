@@ -564,6 +564,15 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 
 	switch (ntohs(arp_hdr->opcode)) {
 	case NET_ARP_REQUEST:
+		/* If ARP request sender hw address is our address,
+		 * we must drop the packet.
+		 */
+		if (memcmp(&arp_hdr->src_hwaddr,
+			   net_if_get_link_addr(net_pkt_iface(pkt))->addr,
+			   sizeof(struct net_eth_addr)) == 0) {
+			return NET_DROP;
+		}
+
 		if (IS_ENABLED(CONFIG_NET_ARP_GRATUITOUS)) {
 			if (memcmp(&eth_hdr->dst,
 				   net_eth_broadcast_addr(),
