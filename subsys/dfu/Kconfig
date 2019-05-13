@@ -3,15 +3,12 @@
 # Copyright (c) 2017 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
-#
 
 #
 # DFU
 #
 
-menu "DFU options"
-
-config IMG_MANAGER
+menuconfig IMG_MANAGER
 	bool "DFU image manager"
 	help
 	  Enable support for managing DFU image.
@@ -56,5 +53,3 @@ module-str = image manager
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # IMG_MANAGER
-
-endmenu
