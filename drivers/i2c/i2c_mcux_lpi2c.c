@@ -214,6 +214,34 @@ static const struct i2c_driver_api mcux_lpi2c_driver_api = {
 	.transfer = mcux_lpi2c_transfer,
 };
 
+#ifdef CONFIG_I2C_0
+static void mcux_lpi2c_config_func_0(struct device *dev);
+
+static const struct mcux_lpi2c_config mcux_lpi2c_config_0 = {
+	.base = (LPI2C_Type *)DT_I2C_MCUX_LPI2C_0_BASE_ADDRESS,
+	.clock_name = DT_I2C_MCUX_LPI2C_0_CLOCK_NAME,
+	.clock_subsys =
+		(clock_control_subsys_t) DT_I2C_MCUX_LPI2C_0_CLOCK_SUBSYS,
+	.irq_config_func = mcux_lpi2c_config_func_0,
+	.bitrate = DT_I2C_MCUX_LPI2C_0_BITRATE,
+};
+
+static struct mcux_lpi2c_data mcux_lpi2c_data_0;
+
+DEVICE_AND_API_INIT(mcux_lpi2c_0, CONFIG_I2C_0_NAME, &mcux_lpi2c_init,
+		    &mcux_lpi2c_data_0, &mcux_lpi2c_config_0,
+		    POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
+		    &mcux_lpi2c_driver_api);
+
+static void mcux_lpi2c_config_func_0(struct device *dev)
+{
+	IRQ_CONNECT(DT_I2C_MCUX_LPI2C_0_IRQ, DT_I2C_MCUX_LPI2C_0_IRQ_PRI,
+		    mcux_lpi2c_isr, DEVICE_GET(mcux_lpi2c_0), 0);
+
+	irq_enable(DT_I2C_MCUX_LPI2C_0_IRQ);
+}
+#endif /* CONFIG_I2C_0 */
+
 #ifdef CONFIG_I2C_1
 static void mcux_lpi2c_config_func_1(struct device *dev);
 
