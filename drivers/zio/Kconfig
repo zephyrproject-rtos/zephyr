@@ -25,6 +25,8 @@ config ZIO_INIT_PRIORITY
 
 comment "Device Drivers"
 
+source "drivers/zio/ft5336/Kconfig"
+
 source "drivers/zio/synth/Kconfig"
 
 endif # ZIO

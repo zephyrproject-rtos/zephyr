@@ -1,0 +1,21 @@
+#
+# Copyright (c) 2019, NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig FT5336
+	bool "FT5336 capacitive touch panel"
+	depends on I2C && HAS_DTS_I2C && HAS_DTS_GPIO
+	help
+	  Enable driver for the FT5336 capacitive touch panel controller.
+
+if FT5336
+
+config FT5336_FIFO_SIZE
+	int "FIFO power of 2 size, pow(2,FT5336_FIFO_SIZE)"
+	default 9
+	help
+	  The size of the internal FIFO for synthesized samples
+
+endif # FT5336
