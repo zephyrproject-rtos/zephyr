@@ -13,6 +13,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
 #define TIMER_CLOCK 16000000
 
+#define MS2TICKS(ms, prescaler) (((ms) * TIMER_CLOCK/(1 << (prescaler))) / 1000)
+
 #define CC_TO_ID(cc_num) (cc_num - 2)
 
 #define ID_TO_CC(idx) (nrf_timer_cc_channel_t)(idx + 2)
@@ -24,6 +26,12 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #define COUNTER_TOP_INT NRF_TIMER_EVENT_COMPARE0
 #define COUNTER_OVERFLOW_SHORT NRF_TIMER_SHORT_COMPARE0_CLEAR_MASK
 #define COUNTER_READ_CC NRF_TIMER_CC_CHANNEL1
+
+/* helper log macros */
+#define ERR(...) LOG_INST_ERR(get_nrfx_config(dev)->log, __VA_ARGS__)
+#define WRN(...) LOG_INST_WRN(get_nrfx_config(dev)->log, __VA_ARGS__)
+#define INF(...) LOG_INST_INF(get_nrfx_config(dev)->log, __VA_ARGS__)
+#define DBG(...) LOG_INST_DBG(get_nrfx_config(dev)->log, __VA_ARGS__)
 
 struct counter_nrfx_data {
 	counter_top_callback_t top_cb;
@@ -39,6 +47,7 @@ struct counter_nrfx_config {
 	struct counter_config_info info;
 	struct counter_nrfx_ch_data *ch_data;
 	nrfx_timer_t timer;
+	u32_t guard_window;
 
 	LOG_INSTANCE_PTR_DECLARE(log);
 };
@@ -76,7 +85,8 @@ static u32_t counter_nrfx_get_top_value(struct device *dev)
 
 static u32_t counter_nrfx_get_max_relative_alarm(struct device *dev)
 {
-	return nrfx_timer_capture_get(&get_nrfx_config(dev)->timer, TOP_CH);
+	return counter_nrfx_get_top_value(dev) -
+			get_nrfx_config(dev)->guard_window;;
 }
 
 static u32_t counter_nrfx_read(struct device *dev)
@@ -115,11 +125,60 @@ static inline u32_t counter_nrfx_get_cc_value(struct device *dev,
 	return cc_val;
 }
 
+/* Function calculates distance between to values assuming that one first
+ * argument is in front and that values wrap.
+ */
+static u32_t tick_diff(u32_t new, u32_t old, u32_t top)
+{
+	if (top & (top + 1)) {
+		/* if top is not 2^n-1 */
+		u32_t diff;
+
+		diff = (new > old) ? (new - old) : new + top + 1 - old;
+
+		return diff;
+	}
+
+	return (new - old) & top;
+}
+
+static int set_cc(struct device *dev, u8_t chan_id, u32_t val)
+{
+	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
+	const nrfx_timer_t *tmr = &nrfx_config->timer;
+	NRF_TIMER_Type  *reg = tmr->p_reg;
+	u32_t now;
+	u32_t top = counter_get_top_value(dev);
+	nrf_timer_task_t read_tsk =
+		   offsetof(NRF_TIMER_Type, TASKS_CAPTURE[COUNTER_READ_CC]);
+	nrf_timer_event_t evt =
+			offsetof(NRF_TIMER_Type, EVENTS_COMPARE[chan_id]);
+	u32_t int_mask = NRF_TIMER_INT_COMPARE0_MASK << chan_id;
+
+	nrf_timer_cc_write(reg, chan_id, val);
+	nrf_timer_event_clear(reg, evt);
+
+	nrf_timer_task_trigger(reg, read_tsk);
+	now = nrf_timer_cc_read(reg, COUNTER_READ_CC);
+
+	if (tick_diff(val - 1, now, top) > (top - nrfx_config->guard_window)) {
+		WRN("late setting CC%d to %d (now %d)", chan_id, val, now);
+		nrf_timer_event_clear(reg, evt);
+		return -1;
+	} else {
+		DBG("setting CC%d to %d (now %d)", chan_id, val, now);
+	}
+
+	nrf_timer_int_enable(reg, int_mask);
+	return 0;
+}
+
 static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 				  const struct counter_alarm_cfg *alarm_cfg)
 {
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
 	const nrfx_timer_t *timer = &nrfx_config->timer;
+	struct counter_nrfx_ch_data *chdata = &nrfx_config->ch_data[chan_id];
 	u32_t cc_val;
 
 	if (alarm_cfg->ticks > nrfx_timer_capture_get(timer, TOP_CH)) {
@@ -131,11 +190,15 @@ static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 	}
 
 	cc_val = counter_nrfx_get_cc_value(dev, alarm_cfg);
+	chdata->callback = alarm_cfg->callback;
+	chdata->user_data = alarm_cfg->user_data;
 
-	nrfx_config->ch_data[chan_id].callback = alarm_cfg->callback;
-	nrfx_config->ch_data[chan_id].user_data = alarm_cfg->user_data;
+	if (set_cc(dev, ID_TO_CC(chan_id), cc_val) != 0) {
+		counter_alarm_callback_t clbk = chdata->callback;
 
-	nrfx_timer_compare(timer, ID_TO_CC(chan_id), cc_val, true);
+		chdata->callback = NULL;
+		clbk(dev, chan_id, cc_val, chdata->user_data);
+	}
 
 	return 0;
 }
@@ -287,6 +350,9 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 		},							       \
 		.ch_data = counter##idx##_ch_data,			       \
 		.timer = NRFX_TIMER_INSTANCE(idx),			       \
+		.guard_window = MS2TICKS(				       \
+				DT_NORDIC_NRF_TIMER_TIMER_##idx##_GUARD_PERIOD,\
+				DT_NORDIC_NRF_TIMER_TIMER_##idx##_PRESCALER),  \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \
 	DEVICE_AND_API_INIT(timer_##idx,				       \

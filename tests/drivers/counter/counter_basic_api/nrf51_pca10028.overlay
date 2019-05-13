@@ -1,11 +1,14 @@
 &timer0 {
 	prescaler = <4>;
+	guard-period = <1>;
 };
 
 &timer1 {
 	prescaler = <4>;
+	guard-period = <1>;
 };
 
 &timer2 {
 	prescaler = <4>;
+	guard-period = <1>;
 };
