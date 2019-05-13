@@ -11,6 +11,7 @@
 
 K_SEM_DEFINE(sem, 0, 1);	/* starts off "not available" */
 
+#if !defined(CONFIG_FXOS8700_TRIGGER_NONE)
 static void trigger_handler(struct device *dev, struct sensor_trigger *trigger)
 {
 	ARG_UNUSED(trigger);
@@ -25,6 +26,7 @@ static void trigger_handler(struct device *dev, struct sensor_trigger *trigger)
 
 	k_sem_give(&sem);
 }
+#endif /* !CONFIG_FXOS8700_TRIGGER_NONE */
 
 void main(void)
 {
@@ -57,6 +59,7 @@ void main(void)
 	}
 #endif
 
+#if !defined(CONFIG_FXOS8700_TRIGGER_NONE)
 	struct sensor_trigger trig = {
 #ifdef CONFIG_FXOS8700_MOTION
 		.type = SENSOR_TRIG_DELTA,
@@ -70,10 +73,14 @@ void main(void)
 		printf("Could not set trigger\n");
 		return;
 	}
+#endif /* !CONFIG_FXOS8700_TRIGGER_NONE */
 
 	while (1) {
+#ifdef CONFIG_FXOS8700_TRIGGER_NONE
+		sensor_sample_fetch(dev);
+#else
 		k_sem_take(&sem, K_FOREVER);
-
+#endif
 		sensor_channel_get(dev, SENSOR_CHAN_ACCEL_XYZ, accel);
 		/* Print accel x,y,z data */
 		printf("AX=%10.6f AY=%10.6f AZ=%10.6f ",
