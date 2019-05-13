@@ -216,6 +216,15 @@ config LVGL_SCREEN_REFRESH_PERIOD
 	help
 	  Screen refresh period in milliseconds
 
+config LVGL_INPUT_POINTER
+	bool "Enable input pointer device"
+
+config LVGL_INPUT_POINTER_DEV_NAME
+	string "Input pointer device name"
+	default "INPUT"
+	help
+	  Name of the input pointer device to use
+
 config LVGL_INPUT_REFRESH_PERIOD
 	int "Input device refresh period"
 	default 50
