@@ -17,8 +17,4 @@
 # under the License.
 #
 
-menu "Management"
-
 source "ext/lib/mgmt/mcumgr/Kconfig"
-
-endmenu
