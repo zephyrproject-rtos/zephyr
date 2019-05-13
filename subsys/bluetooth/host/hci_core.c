@@ -83,6 +83,10 @@ static bt_ready_cb_t ready_cb;
 
 static bt_le_scan_cb_t *scan_dev_found_cb;
 
+#if defined(CONFIG_BT_HCI_VS_EVT_USER)
+static bt_hci_vnd_evt_cb_t *hci_vnd_evt_cb;
+#endif /* CONFIG_BT_HCI_VS_EVT_USER */
+
 #if defined(CONFIG_BT_ECC)
 static u8_t pub_key[64];
 static struct bt_pub_key_cb *pub_key_cb;
@@ -3370,6 +3374,37 @@ static void le_adv_report(struct net_buf *buf)
 }
 #endif /* CONFIG_BT_OBSERVER */
 
+#if defined(CONFIG_BT_HCI_VS_EVT_USER)
+int bt_hci_register_vnd_evt_cb(bt_hci_vnd_evt_cb_t cb)
+{
+	hci_vnd_evt_cb = cb;
+	return 0;
+}
+#endif /* CONFIG_BT_HCI_VS_EVT_USER */
+
+static void hci_vendor_event(struct net_buf *buf)
+{
+	bool handled = false;
+
+#if defined(CONFIG_BT_HCI_VS_EVT_USER)
+	if (hci_vnd_evt_cb) {
+		struct net_buf_simple_state state;
+
+		net_buf_simple_save(&buf->b, &state);
+
+		handled = hci_vnd_evt_cb(&buf->b);
+
+		net_buf_simple_restore(&buf->b, &state);
+	}
+#endif /* CONFIG_BT_HCI_VS_EVT_USER */
+
+	if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT) && !handled) {
+		/* do nothing at present time */
+		BT_WARN("Unhandled vendor-specific event: %s",
+			bt_hex(buf->data, buf->len));
+	}
+}
+
 static const struct event_handler meta_events[] = {
 #if defined(CONFIG_BT_OBSERVER)
 	EVENT_HANDLER(BT_HCI_EVT_LE_ADVERTISING_REPORT, le_adv_report,
@@ -3422,6 +3457,8 @@ static void hci_le_meta_event(struct net_buf *buf)
 }
 
 static const struct event_handler normal_events[] = {
+	EVENT_HANDLER(BT_HCI_EVT_VENDOR, hci_vendor_event,
+		      sizeof(struct bt_hci_evt_vs)),
 	EVENT_HANDLER(BT_HCI_EVT_LE_META_EVENT, hci_le_meta_event,
 		      sizeof(struct bt_hci_evt_le_meta_event)),
 #if defined(CONFIG_BT_BREDR)
