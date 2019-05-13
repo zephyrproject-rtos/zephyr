@@ -4,14 +4,13 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menu "Console"
-
-config CONSOLE_SUBSYS
+menuconfig CONSOLE_SUBSYS
 	bool "Console subsystem/support routines [EXPERIMENTAL]"
 	help
 	  Console subsystem and helper functions
 
 if CONSOLE_SUBSYS
+
 choice
 	prompt "Console 'get' function selection"
 	optional
@@ -50,4 +49,3 @@ config CONSOLE_PUTCHAR_BUFSIZE
 endif # CONSOLE_GETCHAR
 
 endif # CONSOLE_SUBSYS
-endmenu
