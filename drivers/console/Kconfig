@@ -298,4 +298,8 @@ config NATIVE_POSIX_CONSOLE_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
+module = UART_CONSOLE
+module-str = UART console
+source "subsys/logging/Kconfig.template.log_config"
+
 endif
