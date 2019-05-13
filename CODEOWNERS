@@ -14,7 +14,7 @@
 /arch/common/                             @andrewboie @ioannisg @andyross
 /arch/x86_64/                             @andyross
 /soc/arc/snps_*/                          @vonhust @ruuddw
-/soc/nios2                                @nashif @wentongwu
+/soc/nios2/                               @nashif @wentongwu
 /soc/arm/                                 @MaureenHelm @galak
 /soc/arm/arm/mps2/                        @fvincenzo
 /soc/arm/atmel_sam/sam3x/                 @ioannisg
