@@ -143,7 +143,7 @@ static int apds9960_channel_get(struct device *dev,
 	return 0;
 }
 
-static int apds9960_proxy_setup(struct device *dev, int gain)
+static int apds9960_proxy_setup(struct device *dev)
 {
 	const struct apds9960_config *config = dev->config->config_info;
 	struct apds9960_data *data = dev->driver_data;
@@ -179,7 +179,7 @@ static int apds9960_proxy_setup(struct device *dev, int gain)
 
 	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
 				APDS9960_CONTROL_REG, APDS9960_CONTROL_PGAIN,
-				(gain & APDS9960_PGAIN_8X))) {
+				(config->pgain & APDS9960_PGAIN_8X))) {
 		LOG_ERR("Gain is not set");
 		return -EIO;
 	}
@@ -207,7 +207,7 @@ static int apds9960_proxy_setup(struct device *dev, int gain)
 }
 
 #ifdef CONFIG_APDS9960_ENABLE_ALS
-static int apds9960_ambient_setup(struct device *dev, int gain)
+static int apds9960_ambient_setup(struct device *dev)
 {
 	const struct apds9960_config *config = dev->config->config_info;
 	struct apds9960_data *data = dev->driver_data;
@@ -224,7 +224,7 @@ static int apds9960_ambient_setup(struct device *dev, int gain)
 	if (i2c_reg_update_byte(data->i2c, config->i2c_address,
 				APDS9960_CONTROL_REG,
 				APDS9960_CONTROL_AGAIN,
-				(gain & APDS9960_AGAIN_64X))) {
+				(config->again & APDS9960_AGAIN_64X))) {
 		LOG_ERR("Ambient Gain is not set");
 		return -EIO;
 	}
@@ -327,13 +327,13 @@ static int apds9960_sensor_setup(struct device *dev)
 		return -EIO;
 	}
 
-	if (apds9960_proxy_setup(dev, APDS9960_DEFAULT_PGAIN)) {
+	if (apds9960_proxy_setup(dev)) {
 		LOG_ERR("Failed to setup proximity functionality");
 		return -EIO;
 	}
 
 #ifdef CONFIG_APDS9960_ENABLE_ALS
-	if (apds9960_ambient_setup(dev, APDS9960_DEFAULT_AGAIN)) {
+	if (apds9960_ambient_setup(dev)) {
 		LOG_ERR("Failed to setup ambient light functionality");
 		return -EIO;
 	}
@@ -478,6 +478,24 @@ static const struct apds9960_config apds9960_config = {
 	.i2c_address = DT_AVAGO_APDS9960_0_BASE_ADDRESS,
 	.gpio_name = DT_AVAGO_APDS9960_0_INT_GPIOS_CONTROLLER,
 	.gpio_pin = DT_AVAGO_APDS9960_0_INT_GPIOS_PIN,
+#if CONFIG_APDS9960_PGAIN_8X
+	.pgain = APDS9960_PGAIN_8X,
+#elif CONFIG_APDS9960_PGAIN_4X
+	.pgain = APDS9960_PGAIN_4X,
+#elif CONFIG_APDS9960_PGAIN_2X
+	.pgain = APDS9960_PGAIN_2X,
+#else
+	.pgain = APDS9960_PGAIN_1X,
+#endif
+#if CONFIG_APDS9960_AGAIN_64X
+	.again = APDS9960_AGAIN_64X,
+#elif CONFIG_APDS9960_AGAIN_16X
+	.again = APDS9960_AGAIN_16X,
+#elif CONFIG_APDS9960_AGAIN_4X
+	.again = APDS9960_AGAIN_4X,
+#else
+	.again = APDS9960_AGAIN_1X,
+#endif
 };
 
 static struct apds9960_data apds9960_data;
