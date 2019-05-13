@@ -1002,6 +1002,14 @@ struct bt_gatt_read_params {
  *
  *  This procedure read the attribute value and return it to the callback.
  *
+ *  When reading attributes by UUID the callback can be called multiple times
+ *  depending on how many instances of given the UUID exists with the
+ *  start_handle being updated for each instance.
+ *
+ *  If an instance does contain a long value which cannot be read entirely the
+ *  caller will need to read the remaining data separately using the handle and
+ *  offset.
+ *
  *  Note: This procedure is asynchronous therefore the parameters need to
  *  remains valid while it is active.
  *

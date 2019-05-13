@@ -2378,6 +2378,51 @@ int bt_gatt_discover(struct bt_conn *conn,
 	return -EINVAL;
 }
 
+static void parse_read_by_uuid(struct bt_conn *conn,
+			       struct bt_gatt_read_params *params,
+			       const void *pdu, u16_t length)
+{
+	const struct bt_att_read_type_rsp *rsp = pdu;
+
+	/* Parse values found */
+	for (length--, pdu = rsp->data; length;
+	     length -= rsp->len, pdu = (const u8_t *)pdu + rsp->len) {
+		const struct bt_att_data *data = pdu;
+		u16_t handle;
+		u8_t len;
+
+		handle = sys_le16_to_cpu(data->handle);
+
+		/* Handle 0 is invalid */
+		if (!handle) {
+			BT_ERR("Invalid handle");
+			return;
+		}
+
+		len = rsp->len > length ? length - 2 : rsp->len - 2;
+
+		BT_DBG("handle 0x%04x len %u value %u", handle, rsp->len, len);
+
+		/* Update start_handle */
+		params->by_uuid.start_handle = handle;
+
+		if (params->func(conn, 0, params, data->value, len) ==
+		    BT_GATT_ITER_STOP) {
+			return;
+		}
+
+		/* Check if long attribute */
+		if (rsp->len > length) {
+			break;
+		}
+	}
+
+	/* Continue reading the attributes */
+	if (bt_gatt_read(conn, params) < 0) {
+		params->func(conn, BT_ATT_ERR_UNLIKELY, params, NULL, 0);
+	}
+}
+
 static void gatt_read_rsp(struct bt_conn *conn, u8_t err, const void *pdu,
 			  u16_t length, void *user_data)
 {
@@ -2387,6 +2432,11 @@ static void gatt_read_rsp(struct bt_conn *conn, u8_t err, const void *pdu,
 
 	if (err || !length) {
 		params->func(conn, err, params, NULL, 0);
+		return;
+	}
+
+	if (!params->handle_count) {
+		parse_read_by_uuid(conn, params, pdu, length);
 		return;
 	}
 
