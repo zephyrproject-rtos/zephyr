@@ -272,6 +272,7 @@
 /samples/subsys/shell/                    @jarz-nordic @nordic-krch
 /samples/subsys/usb/                      @jfischer-phytec-iot @finikorg
 /samples/subsys/power/                    @wentongwu @pizi-nordic
+/scripts/ci/                              @nashif @ulfalizer @marc-hb
 /scripts/coccicheck                       @himanshujha199640 @JuliaLawall
 /scripts/coccinelle/                      @himanshujha199640 @JuliaLawall
 /scripts/elf_helper.py                    @andrewboie
