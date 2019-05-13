@@ -77,6 +77,7 @@ u8_t chained_read_buf1[20];
 u8_t chained_read_buf2[30];
 u8_t buf_num = 1U;
 u8_t *read_ptr;
+volatile size_t read_len;
 
 void test_chained_read_callback(struct uart_event *evt, void *user_data)
 {
@@ -88,6 +89,7 @@ void test_chained_read_callback(struct uart_event *evt, void *user_data)
 		break;
 	case UART_RX_RDY:
 		read_ptr = evt->data.rx.buf + evt->data.rx.offset;
+		read_len = evt->data.rx.len;
 		k_sem_give(&rx_rdy);
 		break;
 	case UART_RX_BUF_REQUEST:
@@ -130,6 +132,8 @@ void test_chained_read(void)
 		uart_tx(uart_dev, tx_buf, sizeof(tx_buf), 100);
 		zassert_equal(k_sem_take(&tx_done, 100), 0, "TX_DONE timeout");
 		zassert_equal(k_sem_take(&rx_rdy, 1000), 0, "RX_RDY timeout");
+		zassert_equal(read_len, sizeof(tx_buf),
+			      "Incorrect read length");
 		zassert_equal(memcmp(tx_buf, read_ptr, sizeof(tx_buf)),
 			      0,
 			      "Buffers not equal");
