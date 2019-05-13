@@ -164,7 +164,7 @@ static int apds9960_proxy_setup(struct device *dev)
 
 	if (i2c_reg_write_byte(data->i2c, config->i2c_address,
 			       APDS9960_PPULSE_REG,
-			       APDS9960_DEFAULT_PROX_PPULSE)) {
+			       config->ppcount)) {
 		LOG_ERR("Default pulse count not set ");
 		return -EIO;
 	}
@@ -495,6 +495,19 @@ static const struct apds9960_config apds9960_config = {
 	.again = APDS9960_AGAIN_4X,
 #else
 	.again = APDS9960_AGAIN_1X,
+#endif
+#if CONFIG_APDS9960_PPULSE_LENGTH_32US
+	.ppcount = APDS9960_PPULSE_LENGTH_32US |
+		   (CONFIG_APDS9960_PPULSE_COUNT - 1),
+#elif CONFIG_APDS9960_PPULSE_LENGTH_16US
+	.ppcount = APDS9960_PPULSE_LENGTH_16US |
+		   (CONFIG_APDS9960_PPULSE_COUNT - 1),
+#elif CONFIG_APDS9960_PPULSE_LENGTH_8US
+	.ppcount = APDS9960_PPULSE_LENGTH_8US |
+		   (CONFIG_APDS9960_PPULSE_COUNT - 1),
+#else
+	.ppcount = APDS9960_PPULSE_LENGTH_4US |
+		   (CONFIG_APDS9960_PPULSE_COUNT - 1),
 #endif
 };
 
