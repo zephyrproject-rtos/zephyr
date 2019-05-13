@@ -1,54 +1,44 @@
 .. _installation_linux:
 
-Development Environment Setup on Linux
-######################################
+Install Linux Host Dependencies
+###############################
 
 .. important::
 
-   This section only describes OS-specific setup instructions; it is the first step in the
-   complete Zephyr :ref:`getting_started`.
+   Go back to the main :ref:`getting_started` when you're done here.
 
-This section describes how to set up a Zephyr development environment on the
-following Linux distributions:
+Documentation is available for these Linux distributions:
 
 * Ubuntu 16.04 LTS or 18.04 LTS 64-bit
 * Fedora 28 64-bit
 * Clear Linux
 * Arch Linux
 
-Where needed, instructions are given which only apply to specific Linux
-distributions.
-
 Update Your Operating System
 ****************************
 
-Ensure your host system is up to date before proceeding.
+Ensure your host system is up to date.
 
-On Ubuntu:
+Ubuntu:
 
 .. code-block:: console
 
    sudo apt-get update
    sudo apt-get upgrade
 
-On Fedora:
+Fedora:
 
 .. code-block:: console
 
    sudo dnf upgrade
 
-Note that having a newer version available for an installed package
-(as reported by ``dnf check-update``) does not imply a subsequent
-``dnf upgrade`` will install it, because it must also ensure dependencies
-and other restrictions are satisfied.
-
-On Clear Linux:
+Clear Linux:
 
 .. code-block:: console
 
    sudo swupd update
 
-On Arch Linux:
+Arch Linux:
 
 .. code-block:: console
 
@@ -67,10 +57,10 @@ Install Requirements and Dependencies
    introduction of LaTeX->PDF support for the docs, as the texlive footprint is
    massive and not needed by users not building PDF documentation.)
 
-Install the following packages using your system's package manager. Note that
-both Ninja and Make are installed; you may prefer only to install one.
+Note that both Ninja and Make are installed with these instructions; you only
+need one.
 
-On Ubuntu:
+Ubuntu:
 
 .. code-block:: console
 
@@ -79,7 +69,7 @@ On Ubuntu:
      python3-pip python3-setuptools python3-tk python3-wheel xz-utils file \
      make gcc gcc-multilib
 
-On Fedora:
+Fedora:
 
 .. code-block:: console
 
@@ -88,27 +78,22 @@ On Fedora:
    dnf install git cmake ninja-build gperf ccache dfu-util dtc wget \
      python3-pip python3-tkinter xz file glibc-devel.i686 libstdc++-devel.i686
 
-On Clear Linux:
+Clear Linux:
 
 .. code-block:: console
 
    sudo swupd bundle-add c-basic dev-utils dfu-util dtc \
      os-core-dev python-basic python3-basic python3-tcl
 
-On Arch:
+Arch Linux:
 
 .. code-block:: console
 
    sudo pacman -S git cmake ninja gperf ccache dfu-util dtc wget \
        python-pip python-setuptools python-wheel tk xz file make
 
-.. important::
-   Zephyr requires a recent version of CMake. Read through
-   the rest of the section below to verify the version you have
-   installed is recent enough to build Zephyr.
-
-CMake version 3.13.1 or higher is required. Check what version you have by using
-``cmake --version``. If you have an older version, there are several ways
+**CMake version 3.13.1 or higher is required**. Check what version you have by
+using ``cmake --version``. If you have an older version, there are several ways
 of obtaining a more recent one:
 
 * Use ``pip``:
@@ -131,27 +116,20 @@ of obtaining a more recent one:
 * Check your distribution's beta or unstable release package library for an
   update.
 
-.. note::
-   If you have installed a recent version of CMake using one of the approaches
-   listed above, you might want to uninstall the one provided by your
-   distribution's package manager (``apt``, ``dnf``, ``swupd``, ``pacman``,
-   etc.) in order to avoid version conflicts.
+You might also want to uninstall the CMake provided by your package manager to
+avoid conflicts.
 
 .. _zephyr_sdk:
 
 Install the Zephyr Software Development Kit (SDK)
 *************************************************
 
-.. note::
+Use of the Zephyr SDK is optional, but recommended. Some of the dependencies
+installed above are only needed for installing the SDK.
 
-   Use of the Zephyr SDK is optional, but recommended. Some of the requirements
-   and dependencies in the previous section are only needed for installing the
-   SDK.
-
-Zephyr's :abbr:`SDK (Software Development Kit)` contains all necessary tools
-and cross-compilers needed to build Zephyr on all supported
-architectures. Additionally, it includes host tools such as custom QEMU binaries
-and a host compiler for building host tools if necessary. The SDK supports the
+Zephyr's :abbr:`SDK (Software Development Kit)` contains all necessary tools to
+build Zephyr on all supported architectures. Additionally, it includes host
+tools such as custom QEMU binaries and a host compiler. The SDK supports the
 following target architectures:
 
 * :abbr:`X86 (Intel Architecture 32 bits)`
@@ -168,7 +146,7 @@ following target architectures:
 
 * :abbr:`RISC-V`
 
-Follow these steps to install the SDK on your Linux host system.
+Follow these steps to install the Zephyr SDK:
 
 #. Download the latest SDK as a self-extracting installation binary:
 
@@ -179,23 +157,17 @@ Follow these steps to install the SDK on your Linux host system.
    (You can change *0.10.0* to another version if needed; the `Zephyr
    Downloads`_ page contains all available SDK releases.)
 
-#. Run the installation binary:
+#. Run the installation binary, installing the SDK at
+   :file:`~/zephyr-sdk-0.10.0`:
 
    .. code-block:: console
 
       cd <sdk download directory>
-      sh zephyr-sdk-0.10.0-setup.run
+      ./zephyr-sdk-0.10.0-setup.run -- -d ~/zephyr-sdk-0.10.0
 
-   .. important::
-      If this fails, make sure Zephyr's dependencies were installed
-      as described in `Install Requirements and Dependencies`_.
-
-#. Follow the installation instructions on the screen. The toolchain's
-   default installation location is :file:`/opt/zephyr-sdk/`, but it
-   is recommended to install the SDK under your home directory instead.
-
-   To install the SDK in the default location, you need to run the
-   installation binary as root.
+   You can pick another directory if you want. If this fails, make sure
+   Zephyr's dependencies were installed as described in `Install Requirements
+   and Dependencies`_.
 
 #. To use the Zephyr SDK, export the following environment variables and
    use the target location where SDK was installed:

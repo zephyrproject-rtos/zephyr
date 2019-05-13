@@ -22,6 +22,8 @@ target hardware in the early phases of development.
 This board provides a few peripherals such as an Ethernet driver and UART.
 See `Peripherals`_ for more information.
 
+.. _native_posix_deps:
+
 Host system dependencies
 ========================
 
