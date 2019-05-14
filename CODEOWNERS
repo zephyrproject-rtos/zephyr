@@ -203,6 +203,7 @@
 /include/can.h                            @alexanderwachter
 /include/counter.h                        @nordic-krch
 /include/device.h                         @wentongwu @nashif
+/include/dfu/                             @nvlsianpu
 /include/display.h                        @vanwinkeljan
 /include/display/                         @vanwinkeljan
 /include/drivers/bluetooth/               @joerchan @jhedberg @Vudentz

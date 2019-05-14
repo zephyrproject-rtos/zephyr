@@ -9,13 +9,9 @@
 #include <flash.h>
 #include <device.h>
 #include <stdio.h>
+#include <dfu/flash_areas.h>
 
-
-#ifdef CONFIG_TRUSTED_EXECUTION_NONSECURE
-#define FLASH_TEST_OFFSET DT_FLASH_AREA_IMAGE_1_NONSECURE_OFFSET
-#else
-#define FLASH_TEST_OFFSET DT_FLASH_AREA_IMAGE_1_OFFSET
-#endif
+#define FLASH_TEST_OFFSET FLASH_AREA_IMAGE_SECONDARY_OFFSET
 
 #define FLASH_PAGE_SIZE   4096
 #define TEST_DATA_WORD_0  0x1122
