@@ -1353,15 +1353,17 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr);
 
 /**
  * @brief Return global IPv6 address from the first interface that has
- * a global IPv6 address either in TENTATIVE or PREFERRED state.
+ * a global IPv6 address matching the given state.
  *
+ * @param state IPv6 address state (ANY, TENTATIVE, PREFERRED, DEPRECATED)
  * @param iface Caller can give an interface to check. If iface is set to NULL,
  * then all the interfaces are checked. Pointer to interface where the IPv6
  * address is defined is returned to the caller.
  *
  * @return Pointer to IPv6 address, NULL if not found.
  */
-struct in6_addr *net_if_ipv6_get_global_addr(struct net_if **iface);
+struct in6_addr *net_if_ipv6_get_global_addr(enum net_addr_state state,
+					     struct net_if **iface);
 
 /**
  * @brief Allocate network interface IPv4 config.
