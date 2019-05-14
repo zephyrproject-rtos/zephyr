@@ -50,12 +50,45 @@ class EDT:
 
         self.devices[dev.name] = dev
 
-    def _regs(self, node):
-        # Returns a list of Register instances for 'node'
+    def _translate_addr(self, addr, node, nr_addr_cells, nr_size_cells):
 
-        if "reg" not in node.props:
-            return []
+        if "ranges" in node.parent.props:
+            ranges = node.parent.props["ranges"]
+        else:
+            return 0
 
+        pnode = node.parent
+        (nr_p_addr_cells, nr_p_size_cells) = self._get_addr_size_cells(pnode)
+
+        raw_ranges = ranges.value
+
+        nr_range_cells = nr_addr_cells + nr_p_addr_cells + nr_size_cells
+
+        range_offset = 0
+        for i in range(0, len(raw_ranges), 4*nr_range_cells):
+            raw_range = raw_ranges[i:i + 4*nr_range_cells]
+
+            raw_child_addr = raw_range[:4*nr_addr_cells]
+            child_bus_addr = dtlib.to_num(raw_child_addr, length=4*nr_addr_cells)
+
+            raw_parent_addr = raw_range[4*nr_addr_cells:4*(nr_addr_cells+nr_p_addr_cells)]
+            parent_bus_addr = dtlib.to_num(raw_parent_addr, length=4*nr_p_addr_cells)
+
+            raw_range_size = raw_range[4*(nr_addr_cells+nr_p_addr_cells):]
+            range_len = dtlib.to_num(raw_range_size, length=4*nr_size_cells)
+
+            # if we are outside of the range we don't need to translate
+            if child_bus_addr <= addr <= (child_bus_addr + range_len):
+                range_offset = parent_bus_addr - child_bus_addr
+                break
+
+        parent_range_offset = self._translate_addr(addr + range_offset,
+                pnode, nr_p_addr_cells, nr_p_size_cells)
+        range_offset += parent_range_offset
+
+        return range_offset
+
+    def _get_addr_size_cells(self, node):
         if "#address-cells" in node.parent.props:
             address_cells = node.parent.props["#address-cells"].to_num()
         else:
@@ -67,6 +100,16 @@ class EDT:
         else:
             # Default value per DT spec.
             size_cells = 1
+
+        return (address_cells, size_cells)
+
+    def _regs(self, node):
+        # Returns a list of Register instances for 'node'
+
+        if "reg" not in node.props:
+            return []
+
+        (address_cells, size_cells) = self._get_addr_size_cells(node)
 
         raw_regs = node.props["reg"].value
 
@@ -90,6 +133,8 @@ class EDT:
                 reg.size = dtlib.to_num(raw_size, length=4*size_cells)
             else:
                 reg.size = None
+
+            reg.addr += self._translate_addr(reg.addr, node, address_cells, size_cells)
 
             regs.append(reg)
 

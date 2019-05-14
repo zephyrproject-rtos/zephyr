@@ -11,7 +11,7 @@
 		#size-cells = <0x01>;
 		compatible = "simple-bus";
 		interrupt-parent = <0x01>;
-		ranges;
+		ranges = <0x0 0x40000000 0x200>;
 
 		uart0: uart@4006a000 {
 			compatible = "nxp,kinetis-uart";
