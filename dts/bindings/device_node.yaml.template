@@ -26,7 +26,7 @@ properties:
 #
 #   <name of the property in the device tree - regexes are supported>:
 #     category: <required | optional>
-#     type: <string | int | array | compound>
+#     type: <string | int | boolean | array | compound>
 #     description: <description of property>
 #     generation: define
 #
