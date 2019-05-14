@@ -58,6 +58,27 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 	pinmux_pin_set(porte, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
+#if CONFIG_I2C_0
+	/* LPI2C0 SCL, SDA - FXOS8700 */
+	pinmux_pin_set(porta, 3, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(porta, 2, PORT_PCR_MUX(kPORT_MuxAlt3));
+#endif
+
+#if CONFIG_I2C_1
+	/* LPI2C1 SCL, SDA - Elevator connector */
+	pinmux_pin_set(portd, 9, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portd, 8, PORT_PCR_MUX(kPORT_MuxAlt2));
+#endif
+
+	/* FXOS8700 INT1, INT2, RST */
+#ifdef DT_NXP_FXOS8700_0_INT1_GPIOS_PIN
+	pinmux_pin_set(porta, 14, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
+#ifdef DT_NXP_FXOS8700_0_INT2_GPIOS_PIN
+	pinmux_pin_set(portc, 17, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif
+	pinmux_pin_set(portc, 15, PORT_PCR_MUX(kPORT_MuxAsGpio));
+
 	return 0;
 }
 
