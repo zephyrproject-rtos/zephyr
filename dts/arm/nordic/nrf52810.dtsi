@@ -140,6 +140,8 @@
 			reg = <0x4000b000 0x1000>;
 			interrupts = <11 1>;
 			status = "ok";
+			clock-frequency = <32768>;
+			prescaler = <1>;
 			label = "RTC_0";
 		};
 
@@ -148,6 +150,8 @@
 			reg = <0x40011000 0x1000>;
 			interrupts = <17 1>;
 			status = "ok";
+			clock-frequency = <32768>;
+			prescaler = <1>;
 			label = "RTC_1";
 		};
 
@@ -156,6 +160,7 @@
 			status = "ok";
 			reg = <0x40008000 0x1000>;
 			interrupts = <8 1>;
+			prescaler = <0>;
 			label = "TIMER_0";
 		};
 
@@ -164,6 +169,7 @@
 			status = "ok";
 			reg = <0x40009000 0x1000>;
 			interrupts = <9 1>;
+			prescaler = <0>;
 			label = "TIMER_1";
 		};
 
@@ -172,6 +178,7 @@
 			status = "ok";
 			reg = <0x4000a000 0x1000>;
 			interrupts = <10 1>;
+			prescaler = <0>;
 			label = "TIMER_2";
 		};
 

@@ -22,4 +22,14 @@ properties:
       description: mmio register space
       generation: define
       category: required
+
+    #If enabled, overflow different than full range (24 bits) is handled
+    #through PPI channel which ensures precise timing. If disabled then
+    #counter is cleared in the interrupt which results in accumulative
+    #error of counter period if top value is different than maximal.
+    ppi-wrap:
+      type: boolean
+      description: Enable wrapping with PPI
+      generation: define
+      category: required
 ...

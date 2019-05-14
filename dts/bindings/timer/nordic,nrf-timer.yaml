@@ -34,4 +34,10 @@ properties:
       category: required
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
+
+    prescaler:
+      type: int
+      category: required
+      description: Prescaler value determines frequency (16MHz/2^prescaler)
+      generation: define
 ...

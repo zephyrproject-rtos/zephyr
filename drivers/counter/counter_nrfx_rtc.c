@@ -18,7 +18,6 @@
 #include <logging/log.h>
 LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 
-#define RTC_CLOCK 32768
 #define COUNTER_MAX_TOP_VALUE RTC_COUNTER_COUNTER_Msk
 
 #define CC_TO_ID(cc) ((cc) - 1)
@@ -27,16 +26,11 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME, LOG_LEVEL);
 #define TOP_CH 0
 #define COUNTER_TOP_INT NRFX_RTC_INT_COMPARE0
 
-#define IS_PPI_WRAP_ENABLED() \
-	(IS_ENABLED(CONFIG_COUNTER_RTC0_PPI_WRAP) || \
-	 IS_ENABLED(CONFIG_COUNTER_RTC1_PPI_WRAP) || \
-	 IS_ENABLED(CONFIG_COUNTER_RTC2_PPI_WRAP))
-
 struct counter_nrfx_data {
 	counter_top_callback_t top_cb;
 	void *top_user_data;
 	u32_t top;
-#if IS_PPI_WRAP_ENABLED()
+#if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
 	u8_t ppi_ch;
 #endif
 };
@@ -50,7 +44,7 @@ struct counter_nrfx_config {
 	struct counter_config_info info;
 	struct counter_nrfx_ch_data *ch_data;
 	nrfx_rtc_t rtc;
-#if IS_PPI_WRAP_ENABLED()
+#if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
 	bool use_ppi;
 #endif
 	LOG_INSTANCE_PTR_DECLARE(log);
@@ -200,7 +194,7 @@ static void event_handler(nrfx_rtc_int_type_t int_type, void *p_context)
 	if (int_type == COUNTER_TOP_INT) {
 		/* Manually reset counter if top value is different than max. */
 		if ((data->top != COUNTER_MAX_TOP_VALUE)
-#if IS_PPI_WRAP_ENABLED()
+#if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
 		    && !get_nrfx_config(dev)->use_ppi
 #endif
 		    ) {
@@ -221,7 +215,7 @@ static void event_handler(nrfx_rtc_int_type_t int_type, void *p_context)
 
 static int ppi_setup(struct device *dev)
 {
-#if IS_PPI_WRAP_ENABLED()
+#if CONFIG_COUNTER_RTC_WITH_PPI_WRAP
 	const struct counter_nrfx_config *nrfx_config = get_nrfx_config(dev);
 	struct counter_nrfx_data *data = get_dev_data(dev);
 	const nrfx_rtc_t *rtc = &nrfx_config->rtc;
@@ -259,7 +253,7 @@ static int ppi_setup(struct device *dev)
 	(void)nrfx_ppi_channel_assign(data->ppi_ch, evt, task);
 	(void)nrfx_ppi_channel_enable(data->ppi_ch);
 #endif
-#endif /* IS_PPI_WRAP_ENABLED() */
+#endif /* CONFIG_COUNTER_RTC_WITH_PPI_WRAP */
 	return 0;
 }
 
@@ -322,6 +316,9 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 };
 
 #define COUNTER_NRFX_RTC_DEVICE(idx)					       \
+	BUILD_ASSERT_MSG((DT_NORDIC_NRF_RTC_RTC_##idx##_PRESCALER - 1) <=      \
+			RTC_PRESCALER_PRESCALER_Msk,			       \
+			"RTC prescaler out of range");			       \
 	DEVICE_DECLARE(rtc_##idx);					       \
 	static void rtc_##idx##_handler(nrfx_rtc_int_type_t int_type)	       \
 	{								       \
@@ -333,7 +330,8 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 			    DT_NORDIC_NRF_RTC_RTC_##idx##_IRQ_PRIORITY,	       \
 			    nrfx_isr, nrfx_rtc_##idx##_irq_handler, 0);	       \
 		const nrfx_rtc_config_t config = {			       \
-			.prescaler = CONFIG_COUNTER_RTC##idx##_PRESCALER,      \
+			.prescaler =					       \
+				DT_NORDIC_NRF_RTC_RTC_##idx##_PRESCALER - 1,   \
 		};							       \
 		return init_rtc(dev, &config, rtc_##idx##_handler);	       \
 	}								       \
@@ -344,14 +342,14 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 	static const struct counter_nrfx_config nrfx_counter_##idx##z_config = {\
 		.info = {						       \
 			.max_top_value = COUNTER_MAX_TOP_VALUE,		       \
-			.freq = RTC_CLOCK /				       \
-				(CONFIG_COUNTER_RTC##idx##_PRESCALER + 1),     \
+			.freq = DT_NORDIC_NRF_RTC_RTC_##idx##_CLOCK_FREQUENCY /\
+				(DT_NORDIC_NRF_RTC_RTC_##idx##_PRESCALER),     \
 			.count_up = true,				       \
 			.channels = CC_TO_ID(RTC##idx##_CC_NUM)		       \
 		},							       \
 		.ch_data = counter##idx##_ch_data,			       \
 		.rtc = NRFX_RTC_INSTANCE(idx),				       \
-		COND_CODE_1(CONFIG_COUNTER_RTC##idx##_PPI_WRAP,		       \
+		COND_CODE_1(DT_NORDIC_NRF_RTC_RTC_##idx##_PPI_WRAP,	       \
 			    (.use_ppi = true,), ())			       \
 		LOG_INSTANCE_PTR_INIT(log, LOG_MODULE_NAME, idx)	       \
 	};								       \

@@ -1,0 +1,19 @@
+&timer0 {
+	prescaler = <4>;
+};
+
+&timer1 {
+	prescaler = <4>;
+};
+
+&timer2 {
+	prescaler = <4>;
+};
+
+&timer3 {
+	prescaler = <4>;
+};
+
+&timer4 {
+	prescaler = <4>;
+};

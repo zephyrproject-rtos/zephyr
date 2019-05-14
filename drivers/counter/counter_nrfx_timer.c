@@ -252,13 +252,17 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 };
 
 #define COUNTER_NRFX_TIMER_DEVICE(idx)					       \
+	BUILD_ASSERT_MSG(DT_NORDIC_NRF_TIMER_TIMER_##idx##_PRESCALER <=	       \
+			TIMER_PRESCALER_PRESCALER_Msk,			       \
+			"TIMER prescaler out of range");		       \
 	static int counter_##idx##_init(struct device *dev)		       \
 	{								       \
 		IRQ_CONNECT(DT_NORDIC_NRF_TIMER_TIMER_##idx##_IRQ,	       \
 			    DT_NORDIC_NRF_TIMER_TIMER_##idx##_IRQ_PRIORITY,    \
 			    nrfx_isr, nrfx_timer_##idx##_irq_handler, 0);      \
 		const nrfx_timer_config_t config = {			       \
-			.frequency = CONFIG_COUNTER_TIMER##idx##_PRESCALER,    \
+			.frequency =					       \
+				DT_NORDIC_NRF_TIMER_TIMER_##idx##_PRESCALER,   \
 			.mode      = NRF_TIMER_MODE_TIMER,		       \
 			.bit_width = (TIMER##idx##_MAX_SIZE == 32) ?	       \
 					NRF_TIMER_BIT_WIDTH_32 :	       \
@@ -276,7 +280,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 			.max_top_value = (TIMER##idx##_MAX_SIZE == 32) ?       \
 					0xffffffff : 0x0000ffff,	       \
 			.freq = TIMER_CLOCK /				       \
-				(1 << CONFIG_COUNTER_TIMER##idx##_PRESCALER),  \
+			   (1 << DT_NORDIC_NRF_TIMER_TIMER_##idx##_PRESCALER), \
 			.count_up = true,				       \
 			.channels = CC_TO_ID(TIMER##idx##_CC_NUM),	       \
 		},							       \
