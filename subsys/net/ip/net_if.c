@@ -2329,10 +2329,10 @@ static struct in_addr *net_if_ipv4_get_best_match(struct net_if *iface,
 }
 #endif /* CONFIG_NET_IPV4 */
 
-struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
-				   enum net_addr_state addr_state)
-{
 #if defined(CONFIG_NET_IPV4)
+static struct in_addr *if_ipv4_get_addr(struct net_if *iface,
+					enum net_addr_state addr_state, bool ll)
+{
 	struct net_if_ipv4 *ipv4 = iface->config.ip.ipv4;
 	int i;
 
@@ -2349,12 +2349,34 @@ struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
 		}
 
 		if (net_ipv4_is_ll_addr(&ipv4->unicast[i].address.in_addr)) {
-			return &ipv4->unicast[i].address.in_addr;
+			if (!ll) {
+				continue;
+			}
+		} else {
+			if (ll) {
+				continue;
+			}
 		}
+
+		return &ipv4->unicast[i].address.in_addr;
 	}
-#endif
 
 	return NULL;
+}
+#else
+#define if_ipv4_get_addr(...) NULL
+#endif
+
+struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
+				   enum net_addr_state addr_state)
+{
+	return if_ipv4_get_addr(iface, addr_state, true);
+}
+
+struct in_addr *net_if_ipv4_get_global_addr(struct net_if *iface,
+					    enum net_addr_state addr_state)
+{
+	return if_ipv4_get_addr(iface, addr_state, false);
 }
 
 const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
