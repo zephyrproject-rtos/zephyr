@@ -1,0 +1,12 @@
+#
+# Copyright (c) 2019 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "OpenAMP sample application"
+
+image = REMOTE
+source "cmake/Kconfig.template.build_strategy"
+
+source "Kconfig.zephyr"

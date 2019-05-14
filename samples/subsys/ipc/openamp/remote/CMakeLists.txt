@@ -12,5 +12,5 @@ if(NOT ("${BOARD}" STREQUAL "lpcxpresso54114_m0"))
   message(FATAL_ERROR "${BOARD} was specified, but this sample only supports lpcxpresso54114_m0")
 endif()
 
-target_sources(app PRIVATE src/main.c)
-target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
+zephyr_library_sources(src/main.c)
+zephyr_library_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
