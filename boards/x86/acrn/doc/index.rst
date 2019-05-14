@@ -15,11 +15,23 @@ through an open source platform. Check out the `Introduction to Project ACRN
 <https://projectacrn.github.io/latest/introduction/>`_ for more information.
 
 This baseline configuration can be used as a starting point for creating
-custom ACRN UOS configurations. It currently supports the following devices:
+demonstration ACRN UOS configurations. It currently supports the following
+devices:
 
 * I/O APIC
 * local APIC timer
 * NS16550 UARTs
+
+.. note::
+   This ACRN board configuration is for illustrative purposes only.
+   Because of its reliance on virtualized hardware provided by ACRN,
+   it is not suitable for production real-time applications. Real-time
+   response under ACRN requires direct access to the underlying
+   hardware, so production applications should be derived from the
+   board configurations that describe that underlying hardware.
+
+   For example, if you wish to run an application under ACRN on an Up
+   Squared, start with the Up Squared board configuration, not this one.
 
 Serial Ports
 ------------
