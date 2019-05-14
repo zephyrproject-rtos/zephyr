@@ -70,6 +70,13 @@ config UART_MCUX_LPUART
 
 endif # SERIAL
 
+if I2C
+
+config I2C_MCUX_LPI2C
+	default y
+
+endif # I2C
+
 source "soc/arm/nxp_kinetis/ke1xf/Kconfig.defconfig.mke*"
 
 endif # SOC_SERIES_KINETIS_KE1XF
