@@ -364,6 +364,11 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		} else if (fsm->protocol == PPP_IPCP) {
 			ctx = CONTAINER_OF(fsm, struct ppp_context, ipcp.fsm);
 #endif
+#if defined(CONFIG_NET_IPV6)
+		} else if (fsm->protocol == PPP_IPV6CP) {
+			ctx = CONTAINER_OF(fsm, struct ppp_context,
+					   ipv6cp.fsm);
+#endif
 		} else {
 			return -ENOENT;
 		}

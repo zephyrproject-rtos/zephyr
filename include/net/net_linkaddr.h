@@ -31,7 +31,11 @@ extern "C" {
 #ifdef CONFIG_NET_L2_IEEE802154
 #define NET_LINK_ADDR_MAX_LENGTH 8
 #else
+#ifdef CONFIG_NET_L2_PPP
+#define NET_LINK_ADDR_MAX_LENGTH 8
+#else
 #define NET_LINK_ADDR_MAX_LENGTH 6
+#endif
 #endif
 
 /**

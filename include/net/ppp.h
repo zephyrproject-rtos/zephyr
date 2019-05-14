@@ -33,6 +33,9 @@ extern "C" {
 /** Max length of terminate description string */
 #define PPP_MAX_TERMINATE_REASON_LEN 32
 
+/** Length of network interface identifier */
+#define PPP_INTERFACE_IDENTIFIER_LEN 8
+
 /** PPP L2 API */
 struct ppp_api {
 	/**
@@ -65,12 +68,13 @@ struct ppp_api {
  * for details.
  */
 enum ppp_protocol_type {
-	PPP_IP   = 0x0021, /**< RFC 1332 */
-	PPP_IPV6 = 0x0057, /**< RFC 5072 */
-	PPP_IPCP = 0x8021, /**< RFC 1332 */
-	PPP_ECP  = 0x8053, /**< RFC 1968 */
-	PPP_CCP  = 0x80FD, /**< RFC 1962 */
-	PPP_LCP  = 0xc021, /**< RFC 1661 */
+	PPP_IP     = 0x0021, /**< RFC 1332 */
+	PPP_IPV6   = 0x0057, /**< RFC 5072 */
+	PPP_IPCP   = 0x8021, /**< RFC 1332 */
+	PPP_ECP    = 0x8053, /**< RFC 1968 */
+	PPP_IPV6CP = 0x8057, /**< RFC 5072 */
+	PPP_CCP    = 0x80FD, /**< RFC 1962 */
+	PPP_LCP    = 0xc021, /**< RFC 1661 */
 };
 
 /**
@@ -166,6 +170,16 @@ enum ipcp_option_type {
 
 	/** IP Address */
 	IPCP_OPTION_IP_ADDRESS = 3,
+} __packed;
+
+/**
+ * IPV6CP option types from RFC 5072
+ */
+enum ipv6cp_option_type {
+	IPV6CP_OPTION_RESERVED = 0,
+
+	/** Interface identifier */
+	IPV6CP_OPTION_INTERFACE_IDENTIFIER = 1,
 } __packed;
 
 /**
@@ -290,6 +304,7 @@ struct ppp_option_pkt {
 	union {
 		enum lcp_option_type lcp;
 		enum ipcp_option_type ipcp;
+		enum ipv6cp_option_type ipv6cp;
 	} type;
 
 	/** Option length */
@@ -327,6 +342,11 @@ struct lcp_options {
 struct ipcp_options {
 	/** IPv4 address */
 	struct in_addr address;
+};
+
+struct ipv6cp_options {
+	/** Interface identifier */
+	u8_t iid[PPP_INTERFACE_IDENTIFIER_LEN];
 };
 
 /** PPP L2 context specific to certain network interface */
@@ -383,6 +403,25 @@ struct ppp_context {
 	} ipcp;
 #endif
 
+#if defined(CONFIG_NET_IPV6)
+	struct {
+		/** Finite state machine for IPV6CP */
+		struct ppp_fsm fsm;
+
+		/** Options that we want to request */
+		struct ipv6cp_options my_options;
+
+		/** Options that peer want to request */
+		struct ipv6cp_options peer_options;
+
+		/** Options that we accepted */
+		struct ipv6cp_options my_accepted;
+
+		/** Options that peer accepted */
+		struct ipv6cp_options peer_accepted;
+	} ipv6cp;
+#endif
+
 #if defined(CONFIG_NET_SHELL)
 	struct {
 		/** Used when waiting Echo-Reply */
@@ -428,6 +467,12 @@ struct ppp_context {
 
 	/** IPCP open status (open / closed) */
 	u16_t is_ipcp_open : 1;
+
+	/** IPV6CP status (up / down) */
+	u16_t is_ipv6cp_up : 1;
+
+	/** IPV6CP open status (open / closed) */
+	u16_t is_ipv6cp_open : 1;
 };
 
 /**
