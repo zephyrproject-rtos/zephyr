@@ -11,3 +11,4 @@ flash: 512
 supported:
   - rtc
   - counter
+  - i2c
