@@ -148,24 +148,6 @@
 #define MODE_STARTUP 0x6   /* delivery mode: StartUp */
 #define STATUS_PEND 0x1000 /* delivery status: Pend */
 
-/* MP Configuration Table Entries */
-
-#define MP_ENTRY_CPU 0	 /* Entry Type: CPU */
-#define MP_ENTRY_BUS 1	 /* Entry Type: BUS */
-#define MP_ENTRY_IOAPIC 2      /* Entry Type: IO APIC */
-#define MP_ENTRY_IOINTERRUPT 3 /* Entry Type: IO INT */
-#define MP_ENTRY_LOINTERRUPT 4 /* Entry Type: LO INT */
-
-/* Extended MP Configuration Table Entries */
-
-#define EXT_MP_ENTRY_SASM 128  /* Entry Type: System Address Space Map */
-#define EXT_MP_ENTRY_BHD 129   /* Entry Type: Bus Hierarchy Descriptor */
-#define EXT_MP_ENTRY_CBASM 130 /* Entry Type: Comp Address Space Modifier */
-
-/* MP Configuration Table CPU Flags */
-
-#define MP_CPU_FLAGS_BP 0x02
-
 /* IMCR related bits */
 
 #define IMCR_ADRS 0x22       /* IMCR addr reg */
