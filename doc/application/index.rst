@@ -501,11 +501,12 @@ Each time you execute the run command, your application is rebuilt and run
 again.
 
 
-.. note:: The ``run`` target will use the QEMU binary available from the Zephyr
-          SDK by default. To use an alternate version of QEMU, for example the
-          version installed on your host or a custom version, :ref:`set the
-          environment variable <env_vars>` ``QEMU_BIN_PATH`` to the alternate
-          path.
+.. note::
+
+   If the (Linux only) :ref:`Zephyr SDK <zephyr_sdk>` is installed, the ``run``
+   target will use the SDK's QEMU binary by default. To use another version of
+   QEMU, :ref:`set the environment variable <env_vars>` :envvar:`QEMU_BIN_PATH`
+   to the path of the QEMU binary you want to use instead.
 
 .. _application_debugging:
 .. _custom_board_definition:
