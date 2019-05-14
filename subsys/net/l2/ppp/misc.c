@@ -182,6 +182,8 @@ const char *ppp_proto2str(u16_t proto)
 		return "LCP";
 	case PPP_IPCP:
 		return "IPCP";
+	case PPP_IPV6CP:
+		return "IPV6CP";
 	}
 #else
 	ARG_UNUSED(proto);
@@ -315,6 +317,18 @@ const char *ppp_option2str(enum ppp_protocol_type protocol,
 			return "IP_COMPRESSION_PROTOCOL";
 		case IPCP_OPTION_IP_ADDRESS:
 			return "IP_ADDRESS";
+		}
+
+		break;
+#endif
+
+#if defined(CONFIG_NET_IPV6)
+	case PPP_IPV6CP:
+		switch (type) {
+		case IPV6CP_OPTION_RESERVED:
+			return "RESERVED";
+		case IPV6CP_OPTION_INTERFACE_IDENTIFIER:
+			return "INTERFACE_IDENTIFIER";
 		}
 
 		break;

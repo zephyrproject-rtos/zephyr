@@ -23,3 +23,7 @@ zephyr_library_sources_ifdef(CONFIG_NET_STATISTICS_PPP ppp_stats.c)
 if(CONFIG_NET_IPV4)
   zephyr_library_sources_ifdef(CONFIG_NET_L2_PPP ipcp.c)
 endif()
+
+if(CONFIG_NET_IPV6)
+  zephyr_library_sources_ifdef(CONFIG_NET_L2_PPP ipv6cp.c)
+endif()
