@@ -64,6 +64,13 @@ config UART_1
 
 endif # UART_CONSOLE
 
+if BT_DEBUG_MONITOR
+
+config UART_4
+	default y
+
+endif # UART_CONSOLE
+
 if SERIAL
 
 config UART_4
@@ -150,7 +157,6 @@ config BT_HCI_ACL_FLOW_CONTROL
 	default n
 config BT_HCI_VS_EXT
 	default n
-
 endif #BT
 
 if WIFI
