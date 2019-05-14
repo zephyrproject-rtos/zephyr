@@ -219,6 +219,9 @@
 	arm,num-irq-priority-bits = <2>;
 };
 
+/delete-node/ &systick;
+
+
 &sw_pwm {
 	timer-instance = <1>;
 	channel-count = <3>;
