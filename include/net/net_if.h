@@ -1496,6 +1496,18 @@ struct in_addr *net_if_ipv4_get_ll(struct net_if *iface,
 				   enum net_addr_state addr_state);
 
 /**
+ * @brief Get a IPv4 global address in a given state.
+ *
+ * @param iface Interface to use. Must be a valid pointer to an interface.
+ * @param addr_state IPv4 address state (preferred, tentative, deprecated)
+ *
+ * @return Pointer to link local IPv4 address, NULL if no proper IPv4 address
+ * could be found.
+ */
+struct in_addr *net_if_ipv4_get_global_addr(struct net_if *iface,
+					    enum net_addr_state addr_state);
+
+/**
  * @brief Set IPv4 netmask for an interface.
  *
  * @param iface Interface to use.
