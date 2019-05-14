@@ -23,7 +23,7 @@
 #endif
 
 #if defined(CONFIG_ARM)
-#include <arch/arm/cortex_m/mpu/arm_core_mpu_dev.h>
+extern void arm_core_mpu_disable(void);
 #endif
 
 #define INFO(fmt, ...) printk(fmt, ##__VA_ARGS__)
