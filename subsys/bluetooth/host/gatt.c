@@ -823,6 +823,14 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 
 	db_changed();
 
+	/*
+	 * Reset the handles to force their reassignment when adding the
+	 * same service again
+	 */
+	for (size_t i = 0; i < svc->attr_count; i++) {
+		svc->attrs[i].handle = 0;
+	}
+
 	return 0;
 }
 #endif /* CONFIG_BT_GATT_DYNAMIC_DB */
