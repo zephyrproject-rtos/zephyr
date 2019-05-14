@@ -1,0 +1,32 @@
+/dts-v1/;
+
+/ {
+	#address-cells = <0x01>;
+	#size-cells = <0x01>;
+	model = "NXP Freedom MK64F board";
+	compatible = "nxp,mk64f12", "nxp,k64f", "nxp,k6x";
+
+	soc {
+		#address-cells = <0x01>;
+		#size-cells = <0x01>;
+		compatible = "simple-bus";
+		interrupt-parent = <0x01>;
+		ranges;
+
+		uart0: uart@4006a000 {
+			compatible = "nxp,kinetis-uart";
+			reg = <0x4006a000 0x1000 0x123 0x456>;
+			interrupt-names = "status", "error";
+			label = "UART_0";
+			status = "ok";
+			current-speed = <0x1c200>;
+		};
+
+		uart1: uart@4006b000 {
+			compatible = "nxp,kinetis-uart";
+			reg = <0x4006b000 0x1000 0xF00 0xBA>;
+			reg-names = "mmio", "foo";
+			label = "UART_1";
+		};
+	};
+};
