@@ -268,13 +268,12 @@ status_t SPI_MasterTransferDMA(SPI_Type *base, spi_dma_handle_t *handle, spi_tra
         /* transmit */
         SPI_EnableTxDMA(base, true);
 
-        if (xfer->configFlags & kSPI_FrameAssert)
-        {
-            PrepareTxLastWord(xfer, &s_txLastWord[instance], spi_config_p);
-        }
-
         if (xfer->txData)
         {
+            if (xfer->configFlags & kSPI_FrameAssert)
+            {
+                PrepareTxLastWord(xfer, &s_txLastWord[instance], spi_config_p);
+            }
             /* If end of tranfer function is enabled and data transfer frame is bigger then 1, use dma
              * descriptor to send the last data.
              */

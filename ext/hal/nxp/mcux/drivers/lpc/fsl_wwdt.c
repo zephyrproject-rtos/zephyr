@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
+ * Copyright 2016-2018 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -71,7 +71,7 @@ static uint32_t WWDT_GetInstance(WWDT_Type *base)
  ******************************************************************************/
 
 /*!
- * brief Initializes WWDT configure sturcture.
+ * brief Initializes WWDT configure structure.
  *
  * This function initializes the WWDT configure structure to default value. The default
  * value are:
@@ -101,8 +101,10 @@ void WWDT_GetDefaultConfig(wwdt_config_t *config)
     config->enableWatchdogReset = false;
     /* Disable the watchdog protection for updating the timeout value */
     config->enableWatchdogProtect = false;
+#if !(defined(FSL_FEATURE_WWDT_HAS_NO_OSCILLATOR_LOCK) && FSL_FEATURE_WWDT_HAS_NO_OSCILLATOR_LOCK)
     /* Do not lock the watchdog oscillator */
     config->enableLockOscillator = false;
+#endif
     /* Windowing is not in effect */
     config->windowValue = 0xFFFFFFU;
     /* Set the timeout value to the max */
@@ -152,9 +154,13 @@ void WWDT_Init(WWDT_Type *base, const wwdt_config_t *config)
 #endif
 #endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
 
+#if !(defined(FSL_FEATURE_WWDT_HAS_NO_OSCILLATOR_LOCK) && FSL_FEATURE_WWDT_HAS_NO_OSCILLATOR_LOCK)
     value = WWDT_MOD_WDEN(config->enableWwdt) | WWDT_MOD_WDRESET(config->enableWatchdogReset) |
             WWDT_MOD_LOCK(config->enableLockOscillator);
-    /* Set configruation */
+#else
+    value = WWDT_MOD_WDEN(config->enableWwdt) | WWDT_MOD_WDRESET(config->enableWatchdogReset);
+#endif
+    /* Set configuration */
     base->TC = WWDT_TC_COUNT(config->timeoutValue);
     base->MOD |= value;
     base->WINDOW = WWDT_WINDOW_WINDOW(config->windowValue);

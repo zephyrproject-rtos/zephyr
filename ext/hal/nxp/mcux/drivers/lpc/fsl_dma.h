@@ -24,7 +24,7 @@
 /*! @name Driver version */
 /*@{*/
 /*! @brief DMA driver version */
-#define FSL_DMA_DRIVER_VERSION (MAKE_VERSION(2, 0, 1)) /*!< Version 2.0.1. */
+#define FSL_DMA_DRIVER_VERSION (MAKE_VERSION(2, 2, 1)) /*!< Version 2.2.1. */
 /*@}*/
 
 #define DMA_MAX_TRANSFER_COUNT 0x400
@@ -40,13 +40,64 @@
 #define DMA_CHANNEL_GROUP(channel) (((uint8_t)(channel)) >> 5U)
 /* Channel index in channel group. channel_index = (channel % 32) */
 #define DMA_CHANNEL_INDEX(channel) (((uint8_t)(channel)) & 0x1F)
-
+/*! @brief DMA linked descriptor address algin size */
+#define DMA_LINK_DESCRIPTOR_ADDRESS_ALIGN (16)
 #define DMA_COMMON_REG_GET(base, channel, reg) \
     (((volatile uint32_t *)(&((base)->COMMON[0].reg)))[DMA_CHANNEL_GROUP(channel)])
 #define DMA_COMMON_CONST_REG_GET(base, channel, reg) \
     (((volatile const uint32_t *)(&((base)->COMMON[0].reg)))[DMA_CHANNEL_GROUP(channel)])
 #define DMA_COMMON_REG_SET(base, channel, reg, value) \
     (((volatile uint32_t *)(&((base)->COMMON[0].reg)))[DMA_CHANNEL_GROUP(channel)] = (value))
+
+/*! @brief DMA descriptor end address calculate
+* @param start, start address
+* @param inc, address interleave size
+* @param bytes, transfer bytes
+* @param width, transfer width
+*/
+#define DMA_DESCRIPTOR_END_ADDRESS(start, inc, bytes, width) ((void *)((uint32_t)(start) + inc * bytes - inc * width))
+
+/*! @brief DMA channel transfer configurations macro
+* @param reload, true is reload link descriptor after current exhaust, false is not
+* @param clrTrig, true is clear trigger status, wait software trigger, false is not
+* @param intA, enable interruptA
+* @param intB, enable interruptB
+* @param width,transfer width
+* @param srcInc, source address interleave size
+* @param dstInc, destination address interleave size
+* @param bytes, transfer bytes
+*/
+#define DMA_CHANNEL_XFER(reload, clrTrig, intA, intB, width, srcInc, dstInc, bytes)                                 \
+    DMA_CHANNEL_XFERCFG_CFGVALID_MASK | DMA_CHANNEL_XFERCFG_RELOAD(reload) | DMA_CHANNEL_XFERCFG_CLRTRIG(clrTrig) | \
+        DMA_CHANNEL_XFERCFG_SETINTA(intA) | DMA_CHANNEL_XFERCFG_SETINTB(intB) |                                     \
+        DMA_CHANNEL_XFERCFG_WIDTH(width == 4 ? 2 : (width - 1)) |                                                   \
+        DMA_CHANNEL_XFERCFG_SRCINC(srcInc == 4 ? (srcInc - 1) : srcInc) |                                           \
+        DMA_CHANNEL_XFERCFG_DSTINC(dstInc == 4 ? (srcInc - 1) : dstInc) |                                           \
+        DMA_CHANNEL_XFERCFG_XFERCOUNT(bytes / width - 1)
+
+/*! @brief DMA transfer status */
+enum _dma_transfer_status
+{
+    kStatus_DMA_Busy = MAKE_STATUS(kStatusGroup_DMA, 0), /*!< Channel is busy and can't handle the
+                                                                transfer request. */
+};
+
+/*! @brief dma address interleave size */
+enum _dma_addr_interleave_size
+{
+    kDMA_AddressInterleave0xWidth = 0U, /*!< dma source/destination address no interleave */
+    kDMA_AddressInterleave1xWidth = 1U, /*!< dma source/destination address interleave 1xwidth */
+    kDMA_AddressInterleave2xWidth = 2U, /*!< dma source/destination address interleave 2xwidth */
+    kDMA_AddressInterleave4xWidth = 4U, /*!< dma source/destination address interleave 3xwidth */
+};
+
+/*! @brief dma transfer width */
+enum _dma_transfer_width
+{
+    kDMA_Transfer8BitWidth = 1U,  /*!< dma channel transfer bit width is 8 bit */
+    kDMA_Transfer16BitWidth = 2U, /*!< dma channel transfer bit width is 16 bit */
+    kDMA_Transfer32BitWidth = 4U, /*!< dma channel transfer bit width is 32 bit */
+};
 
 /*! @brief DMA descriptor structure */
 typedef struct _dma_descriptor
@@ -162,12 +213,16 @@ typedef struct _dma_channel_trigger
     dma_burst_wrap_t wrap;     /*!< Select wrap type, source wrap or dest wrap, or both. */
 } dma_channel_trigger_t;
 
-/*! @brief DMA transfer status */
-enum _dma_transfer_status
+/*! @brief DMA channel trigger */
+typedef struct _dma_channel_config
 {
-    kStatus_DMA_Busy = MAKE_STATUS(kStatusGroup_DMA, 0), /*!< Channel is busy and can't handle the
-                                                                transfer request. */
-};
+    void *srcStartAddr;             /*!< Source data address */
+    void *dstStartAddr;             /*!< Destination data address */
+    void *nextDesc;                 /*!< Chain custom descriptor */
+    uint32_t xferCfg;               /*!< channel transfer configurations */
+    dma_channel_trigger_t *trigger; /*!< DMA trigger type */
+    bool isPeriph;                  /*!< select the request type */
+} dma_channel_config_t;
 
 /*! @brief DMA transfer configuration */
 typedef struct _dma_transfer_config
@@ -225,6 +280,18 @@ void DMA_Init(DMA_Type *base);
  * @param base DMA peripheral base address.
  */
 void DMA_Deinit(DMA_Type *base);
+
+/*!
+ * @brief Install DMA descriptor memory.
+ *
+ * This function used to register DMA descriptor memory for linked transfer, a typical case is ping pong
+ * transfer which will request more than one DMA descriptor memory space, althrough current DMA driver has
+ * a default DMA descriptor buffer, but it support one DMA descriptor for one channel only.
+ *
+ * @param base DMA base address.
+ * @param addr DMA descriptor address
+ */
+void DMA_InstallDescriptorMemory(DMA_Type *base, void *addr);
 
 /* @} */
 /*!
@@ -320,12 +387,25 @@ static inline void DMA_DisableChannelPeriphRq(DMA_Type *base, uint32_t channel)
 
 /*!
  * @brief Set trigger settings of DMA channel.
+ * @deprecated Do not use this function.  It has been superceded by @ref DMA_SetChannelConfig.
  *
  * @param base DMA peripheral base address.
  * @param channel DMA channel number.
  * @param trigger trigger configuration.
  */
 void DMA_ConfigureChannelTrigger(DMA_Type *base, uint32_t channel, dma_channel_trigger_t *trigger);
+
+/*!
+ * @brief set channel config.
+ *
+ * This function provide a interface to configure channel configuration reisters.
+ *
+ * @param base DMA base address.
+ * @param channel DMA channel number.
+ * @param trigger channel configurations structure.
+* @param isPeriph true is periph request, false is not.
+ */
+void DMA_SetChannelConfig(DMA_Type *base, uint32_t channel, dma_channel_trigger_t *trigger, bool isPeriph);
 
 /*!
  * @brief Gets the remaining bytes of the current DMA descriptor transfer.
@@ -365,9 +445,43 @@ static inline dma_priority_t DMA_GetChannelPriority(DMA_Type *base, uint32_t cha
 }
 
 /*!
+ * @brief Set channel configuration valid..
+ *
+ * @param base DMA peripheral base address.
+ * @param channel DMA channel number.
+ */
+static inline void DMA_SetChannelConfigValid(DMA_Type *base, uint32_t channel)
+{
+    base->CHANNEL[channel].XFERCFG |= DMA_CHANNEL_XFERCFG_CFGVALID_MASK;
+}
+
+/*!
+ * @brief Do software trigger for the channel.
+ *
+ * @param base DMA peripheral base address.
+ * @param channel DMA channel number.
+ */
+static inline void DMA_DoChannelSoftwareTrigger(DMA_Type *base, uint32_t channel)
+{
+    base->CHANNEL[channel].XFERCFG |= DMA_CHANNEL_XFERCFG_SWTRIG_MASK;
+}
+
+/*!
+ * @brief Load channel transfer configurations.
+ *
+ * @param base DMA peripheral base address.
+ * @param channel DMA channel number.
+ * @param xfer transfer configurations.
+ */
+static inline void DMA_LoadChannelTransferConfig(DMA_Type *base, uint32_t channel, uint32_t xfer)
+{
+    base->CHANNEL[channel].XFERCFG = xfer;
+}
+
+/*!
  * @brief Create application specific DMA descriptor
  *        to be used in a chain in transfer
- *
+ * @deprecated Do not use this function.  It has been superceded by @ref DMA_SetupDescriptor.
  * @param desc DMA descriptor address.
  * @param xfercfg Transfer configuration for DMA descriptor.
  * @param srcAddr Address of last item to transmit
@@ -375,6 +489,18 @@ static inline dma_priority_t DMA_GetChannelPriority(DMA_Type *base, uint32_t cha
  * @param nextDesc Address of next descriptor in chain.
  */
 void DMA_CreateDescriptor(dma_descriptor_t *desc, dma_xfercfg_t *xfercfg, void *srcAddr, void *dstAddr, void *nextDesc);
+
+/*!
+ * @brief setup dma descriptor
+ *
+ * @param desc DMA descriptor address.
+ * @param xfercfg Transfer configuration for DMA descriptor.
+ * @param srcStartAddr Start address of source address.
+ * @param dstStartAddr Start address of destination address.
+ * @param nextDesc Address of next descriptor in chain.
+ */
+void DMA_SetupDescriptor(
+    dma_descriptor_t *desc, uint32_t xfercfg, void *srcStartAddr, void *dstStartAddr, void *nextDesc);
 
 /* @} */
 
@@ -419,7 +545,7 @@ void DMA_SetCallback(dma_handle_t *handle, dma_callback callback, void *userData
 
 /*!
  * @brief Prepares the DMA transfer structure.
- *
+ * @deprecated Do not use this function.  It has been superceded by @ref DMA_PrepareChannelTransfer.
  * This function prepares the transfer configuration structure according to the user input.
  *
  * @param config The user configuration structure of type dma_transfer_t.
@@ -442,7 +568,29 @@ void DMA_PrepareTransfer(dma_transfer_config_t *config,
                          void *nextDesc);
 
 /*!
+ * @brief Prepare channel transfer configurations.
+ *
+ * This function used to prepare channel transfer configurations.
+ *
+ * @param config Pointer to DMA channel transfer configuration structure.
+ * @param srcStartAddr source start address.
+ * @param dstStartAddr destination start address.
+ * @param xferCfg xfer configuration, user can reference DMA_CHANNEL_XFER about to how to get xferCfg value.
+ * @param type transfer type.
+ * @param trigger DMA channel trigger configurations.
+ * @param nextDesc address of next descriptor.
+ */
+void DMA_PrepareChannelTransfer(dma_channel_config_t *config,
+                                void *srcStartAddr,
+                                void *dstStartAddr,
+                                uint32_t xferCfg,
+                                dma_transfer_type_t type,
+                                dma_channel_trigger_t *trigger,
+                                void *nextDesc);
+
+/*!
  * @brief Submits the DMA transfer request.
+ * @deprecated Do not use this function.  It has been superceded by @ref DMA_SubmitChannelTransfer.
  *
  * This function submits the DMA transfer request according to the transfer configuration structure.
  * If the user submits the transfer request repeatedly, this function packs an unprocessed request as
@@ -455,6 +603,22 @@ void DMA_PrepareTransfer(dma_transfer_config_t *config,
  * @retval kStatus_DMA_Busy It means the given channel is busy, need to submit request later.
  */
 status_t DMA_SubmitTransfer(dma_handle_t *handle, dma_transfer_config_t *config);
+
+/*!
+ * @brief Submits the DMA channel transfer request.
+ *
+ * This function submits the DMA transfer request according to the transfer configuration structure.
+ * If the user submits the transfer request repeatedly, this function packs an unprocessed request as
+ * a TCD and enables scatter/gather feature to process it in the next time.
+ * This function should use together with DMA_PrepareChannelTransfer.
+ *
+ * @param handle DMA handle pointer.
+ * @param config Pointer to DMA channel transfer configuration structure.
+ * @retval kStatus_DMA_Success It means submit transfer request succeed.
+ * @retval kStatus_DMA_QueueFull It means TCD queue is full. Submit transfer request is not allowed.
+ * @retval kStatus_DMA_Busy It means the given channel is busy, need to submit request later.
+ */
+status_t DMA_SubmitChannelTransfer(dma_handle_t *handle, dma_channel_config_t *config);
 
 /*!
  * @brief DMA start transfer.

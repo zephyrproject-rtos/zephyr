@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
+ * Copyright 2016-2018 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -23,8 +23,8 @@
 
 /*! @name Driver version */
 /*@{*/
-/*! @brief Defines WWDT driver version 2.1.0. */
-#define FSL_WWDT_DRIVER_VERSION (MAKE_VERSION(2, 1, 0))
+/*! @brief Defines WWDT driver version 2.1.1. */
+#define FSL_WWDT_DRIVER_VERSION (MAKE_VERSION(2, 1, 1))
 /*@}*/
 
 /*! @name Refresh sequence */
@@ -43,14 +43,16 @@ typedef struct _wwdt_config
                                            changed after counter is below warning & window values
                                      false: Disable watchdog protect; timeout value can be changed
                                             at any time */
-    bool enableLockOscillator;  /*!< true: Disabling or powering down the watchdog oscillator is prevented
-                                           Once set, this bit can only be cleared by a reset
-                                     false: Do not lock oscillator */
-    uint32_t windowValue;       /*!< Window value, set this to 0xFFFFFF if windowing is not in effect */
-    uint32_t timeoutValue;      /*!< Timeout value */
-    uint32_t warningValue;      /*!< Watchdog time counter value that will generate a
-                                     warning interrupt. Set this to 0 for no warning */
-    uint32_t clockFreq_Hz;      /*!< Watchdog clock source frequency. */
+#if !(defined(FSL_FEATURE_WWDT_HAS_NO_OSCILLATOR_LOCK) && FSL_FEATURE_WWDT_HAS_NO_OSCILLATOR_LOCK)
+    bool enableLockOscillator; /*!< true: Disabling or powering down the watchdog oscillator is prevented
+                                          Once set, this bit can only be cleared by a reset
+                                    false: Do not lock oscillator */
+#endif
+    uint32_t windowValue;  /*!< Window value, set this to 0xFFFFFF if windowing is not in effect */
+    uint32_t timeoutValue; /*!< Timeout value */
+    uint32_t warningValue; /*!< Watchdog time counter value that will generate a
+                                warning interrupt. Set this to 0 for no warning */
+    uint32_t clockFreq_Hz; /*!< Watchdog clock source frequency. */
 } wwdt_config_t;
 
 /*!
