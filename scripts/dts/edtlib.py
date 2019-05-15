@@ -75,7 +75,7 @@ class EDT:
             range_len = dtlib.to_num(raw_range_size, length=4*nr_size_cells)
 
             # if we are outside of the range we don't need to translate
-            if child_bus_addr <= addr <= (child_bus_addr + range_len):
+            if child_bus_addr <= addr <= child_bus_addr + range_len:
                 range_offset = parent_bus_addr - child_bus_addr
                 break
 
