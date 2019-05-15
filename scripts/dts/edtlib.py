@@ -62,16 +62,14 @@ class EDT:
         nr_range_cells = nr_addr_cells + nr_p_addr_cells + nr_size_cells
 
         range_offset = 0
-        for i in range(0, len(raw_ranges), 4*nr_range_cells):
-            raw_range = raw_ranges[i:i + 4*nr_range_cells]
-
+        for raw_range in _slice(node.parent, "ranges", 4*nr_range_cells):
             child_bus_addr = dtlib.to_num(raw_range[:4*nr_addr_cells])
             parent_bus_addr = dtlib.to_num(
                 raw_range[4*nr_addr_cells:4*(nr_addr_cells + nr_p_addr_cells)])
             range_len = dtlib.to_num(
                 raw_range[4*(nr_addr_cells + nr_p_addr_cells):])
 
-            # if we are outside of the range we don't need to translate
+            # If we are outside the range, we don't need to translate
             if child_bus_addr <= addr <= child_bus_addr + range_len:
                 range_offset = parent_bus_addr - child_bus_addr
                 break
@@ -91,20 +89,8 @@ class EDT:
         address_cells = _address_cells(node)
         size_cells = _size_cells(node)
 
-        raw_regs = node.props["reg"].value
-
-        reg_size = 4*(address_cells + size_cells)
-        if len(raw_regs) % reg_size:
-            raise EDTError(
-                "'reg' property in {} has length {}, which is not evenly "
-                "divisible by {} (#address-cells = {}, #size-cells = {})"
-                .format(node.name, len(raw_regs), reg_size, address_cells,
-                        size_cells))
-
         regs = []
-        for i in range(0, len(raw_regs), 4*(address_cells + size_cells)):
-            raw_reg = raw_regs[i:i + 4*(address_cells + size_cells)]
-
+        for raw_reg in _slice(node, "reg", 4*(address_cells + size_cells)):
             reg = Register()
             reg.addr = dtlib.to_num(raw_reg[:4*address_cells])
             if size_cells != 0:
@@ -151,6 +137,20 @@ def _size_cells(node):
     if "#size-cells" in node.parent.props:
         return node.parent.props["#size-cells"].to_num()
     return 1  # Default value per DT spec.
+
+
+def _slice(node, prop_name, size):
+    # Splits node.props[prop_name].value into 'size'-sized chunks, returning a
+    # list of chunks. Raises EDTError if the length of the property is not
+    # evenly divisible by 'size'.
+
+    raw = node.props[prop_name].value
+    if len(raw) % size:
+        raise EDTError(
+            "'{}' property in {} has length {}, which is not evenly divisible "
+            "by {}".format(prop_name, len(raw), size))
+
+    return [raw[i:i + size] for i in range(0, len(raw), size)]
 
 
 class Device:
