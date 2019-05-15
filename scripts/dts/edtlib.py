@@ -46,46 +46,9 @@ class EDT:
 
         dev = Device()
         dev.name = node.name
-        dev.regs = self._regs(node)
+        dev.regs = _regs(node)
 
         self.devices[dev.name] = dev
-
-    def _regs(self, node):
-        # Returns a list of Register instances for 'node'
-
-        if "reg" not in node.props:
-            return []
-
-        address_cells = _address_cells(node)
-        size_cells = _size_cells(node)
-
-        regs = []
-        for raw_reg in _slice(node, "reg", 4*(address_cells + size_cells)):
-            reg = Register()
-            reg.addr = dtlib.to_num(raw_reg[:4*address_cells])
-            if size_cells != 0:
-                reg.size = dtlib.to_num(raw_reg[4*address_cells:])
-            else:
-                reg.size = None
-
-            reg.addr += _translate_addr(reg.addr, node, address_cells, size_cells)
-
-            regs.append(reg)
-
-        if "reg-names" in node.props:
-            reg_names = node.props["reg-names"].to_strings()
-            if len(reg_names) != len(regs):
-                raise EDTError(
-                    "'reg-names' property in {} has {} strings, but there are "
-                    "{} registers".format(node.name, len(reg_names), len(regs)))
-
-            for reg, name in zip(regs, reg_names):
-                reg.name = name
-        else:
-            for reg in regs:
-                reg.name = None
-
-        return regs
 
     def __repr__(self):
         return "<EDT, {} devices>".format(len(self.devices))
@@ -121,6 +84,44 @@ def _slice(node, prop_name, size):
             "by {}".format(prop_name, len(raw), size))
 
     return [raw[i:i + size] for i in range(0, len(raw), size)]
+
+
+def _regs(node):
+    # Returns a list of Register instances for 'node'
+
+    if "reg" not in node.props:
+        return []
+
+    address_cells = _address_cells(node)
+    size_cells = _size_cells(node)
+
+    regs = []
+    for raw_reg in _slice(node, "reg", 4*(address_cells + size_cells)):
+        reg = Register()
+        reg.addr = dtlib.to_num(raw_reg[:4*address_cells])
+        if size_cells != 0:
+            reg.size = dtlib.to_num(raw_reg[4*address_cells:])
+        else:
+            reg.size = None
+
+        reg.addr += _translate_addr(reg.addr, node, address_cells, size_cells)
+
+        regs.append(reg)
+
+    if "reg-names" in node.props:
+        reg_names = node.props["reg-names"].to_strings()
+        if len(reg_names) != len(regs):
+            raise EDTError(
+                "'reg-names' property in {} has {} strings, but there are "
+                "{} registers".format(node.name, len(reg_names), len(regs)))
+
+        for reg, name in zip(regs, reg_names):
+            reg.name = name
+    else:
+        for reg in regs:
+            reg.name = None
+
+    return regs
 
 
 def _translate_addr(addr, node, nr_addr_cells, nr_size_cells):
