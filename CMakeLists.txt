@@ -149,27 +149,29 @@ toolchain_cc_cpp_dialect_std_14_flags(CPP_DIALECT_STD_14_FLAGS)
 toolchain_cc_cpp_dialect_std_17_flags(CPP_DIALECT_STD_17_FLAGS)
 toolchain_cc_cpp_dialect_std_2a_flags(CPP_DIALECT_STD_2A_FLAGS)
 
-# From kconfig choice, pick a single dialect.
-# Kconfig choice ensures only one of these CONFIG_STD_CPP* is set.
-if(CONFIG_STD_CPP98)
-  set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_98_FLAGS})
-elseif(CONFIG_STD_CPP11)
-  set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_11_FLAGS}) # Default in kconfig
-elseif(CONFIG_STD_CPP14)
-  set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_14_FLAGS})
-elseif(CONFIG_STD_CPP17)
-  set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_17_FLAGS})
-elseif(CONFIG_STD_CPP2A)
-  set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_2A_FLAGS})
-else()
-  assert(0 "Unreachable code. Expected C++ standard to have been chosen. See Kconfig.zephyr.")
-endif()
+if(CONFIG_CPLUSPLUS)
+  # From kconfig choice, pick a single dialect.
+  # Kconfig choice ensures only one of these CONFIG_STD_CPP* is set.
+  if(CONFIG_STD_CPP98)
+    set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_98_FLAGS})
+  elseif(CONFIG_STD_CPP11)
+    set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_11_FLAGS}) # Default in kconfig
+  elseif(CONFIG_STD_CPP14)
+    set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_14_FLAGS})
+  elseif(CONFIG_STD_CPP17)
+    set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_17_FLAGS})
+  elseif(CONFIG_STD_CPP2A)
+    set(STD_CPP_DIALECT_FLAGS ${CPP_DIALECT_STD_2A_FLAGS})
+  else()
+    assert(0 "Unreachable code. Expected C++ standard to have been chosen. See Kconfig.zephyr.")
+  endif()
 
-foreach(flag ${STD_CPP_DIALECT_FLAGS})
-  zephyr_compile_options(
-    $<$<COMPILE_LANGUAGE:CXX>:${flag}>
-  )
-endforeach()
+  foreach(flag ${STD_CPP_DIALECT_FLAGS})
+    zephyr_compile_options(
+      $<$<COMPILE_LANGUAGE:CXX>:${flag}>
+    )
+  endforeach()
+endif()
 
 if(NOT CONFIG_EXCEPTIONS)
   # @Intent: Obtain compiler specific flags related to C++ Exceptions
