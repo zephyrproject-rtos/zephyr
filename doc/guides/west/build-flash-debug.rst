@@ -105,6 +105,33 @@ a CMake re-run using the ``-c`` (or ``--cmake``) option::
 
   west build -c
 
+Configuration Options
+=====================
+
+You can :ref:`configure <west-config-cmd>` ``west build`` using these options.
+
+.. NOTE: docs authors: keep this table sorted alphabetically
+
+.. list-table::
+   :widths: 10 30
+   :header-rows: 1
+
+   * - Option
+     - Description
+   * - ``build.pristine``
+     - String. Controls the way in which ``west build`` may clean the build
+       folder before building. Can take the following values:
+
+         - ``never`` (default): Never automatically make the build folder
+           pristine.
+         - ``auto``:  ``west build`` will automatically make the build folder
+           pristine before building, if a build system is present and the build
+           would fail otherwise (e.g. the user has specified a different board
+           or application from the one previously used to make the build
+           directory).
+         - ``always``: Always make the build folder pristine before building, if
+           a build system is present.
+
 .. _west-flashing:
 
 Flashing: ``west flash``
