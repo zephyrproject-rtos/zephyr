@@ -323,9 +323,9 @@ project's style and naming conventions.
 In general, follow the `Linux kernel coding style`_, with the
 following exceptions:
 
-* Add braces to every ``if`` and ``else`` body, even for single-line code
-  blocks. Use the ``--ignore BRACES`` flag to make *checkpatch* stop
-  complaining.
+* Add braces to every ``if``, ``else``, ``do``, ``while``, ``for`` and
+  ``switch`` body, even for single-line code blocks. Use the ``--ignore BRACES``
+  flag to make *checkpatch* stop complaining.
 * Use spaces instead of tabs to align comments after declarations, as needed.
 * Use C89-style single line comments, ``/*  */``. The C99-style single line
   comment, ``//``, is not allowed.
