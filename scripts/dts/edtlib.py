@@ -123,13 +123,11 @@ def _regs(node):
     regs = []
     for raw_reg in _slice(node, "reg", 4*(address_cells + size_cells)):
         reg = Register()
-        reg.addr = dtlib.to_num(raw_reg[:4*address_cells])
+        reg.addr = _translate(dtlib.to_num(raw_reg[:4*address_cells]), node)
         if size_cells != 0:
             reg.size = dtlib.to_num(raw_reg[4*address_cells:])
         else:
             reg.size = None
-
-        reg.addr += _translate_addr(reg.addr, node, address_cells, size_cells)
 
         regs.append(reg)
 
@@ -149,32 +147,35 @@ def _regs(node):
     return regs
 
 
-def _translate_addr(addr, node, nr_addr_cells, nr_size_cells):
+def _translate(addr, node):
+    # Recursively translates 'addr' on 'node' to the address space(s) of its
+    # parent(s), by looking at 'ranges' properties. Returns the translated
+    # address.
+
     if "ranges" not in node.parent.props:
-        return 0
+        # No translation
+        return addr
 
-    raw_ranges = node.parent.props["ranges"].value
+    # Gives the size of each component in a translation 3-tuple in 'ranges'
+    child_address_cells = _address_cells(node)
+    parent_address_cells = _address_cells(node.parent)
+    child_size_cells = _size_cells(node)
 
-    nr_p_addr_cells = _address_cells(node.parent)
-    nr_p_size_cells = _size_cells(node.parent)
+    # Number of cells for one translation 3-tuple in 'ranges'
+    entry_cells = child_address_cells + parent_address_cells + child_size_cells
 
-    nr_range_cells = nr_addr_cells + nr_p_addr_cells + nr_size_cells
+    for raw_range in _slice(node.parent, "ranges", 4*entry_cells):
+        child_addr = dtlib.to_num(raw_range[:4*child_address_cells])
+        child_len = dtlib.to_num(
+            raw_range[4*(child_address_cells + parent_address_cells):])
 
-    range_offset = 0
-    for raw_range in _slice(node.parent, "ranges", 4*nr_range_cells):
-        child_bus_addr = dtlib.to_num(raw_range[:4*nr_addr_cells])
-        parent_bus_addr = dtlib.to_num(
-            raw_range[4*nr_addr_cells:4*(nr_addr_cells + nr_p_addr_cells)])
-        range_len = dtlib.to_num(
-            raw_range[4*(nr_addr_cells + nr_p_addr_cells):])
+        if child_addr <= addr <= child_addr + child_len:
+            # 'addr' is within range of a translation in 'ranges'. Recursively
+            # translate it and return the result.
+            parent_addr = dtlib.to_num(
+                raw_range[4*child_address_cells:
+                          4*(child_address_cells + parent_address_cells)])
+            return _translate(parent_addr + addr - child_addr, node.parent)
 
-        # If we are outside the range, we don't need to translate
-        if child_bus_addr <= addr <= child_bus_addr + range_len:
-            range_offset = parent_bus_addr - child_bus_addr
-            break
-
-    parent_range_offset = _translate_addr(
-        addr + range_offset, node.parent, nr_p_addr_cells, nr_p_size_cells)
-    range_offset += parent_range_offset
-
-    return range_offset
+    # 'addr' is not within range of any translation in 'ranges'
+    return addr
