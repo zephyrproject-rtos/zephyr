@@ -108,4 +108,9 @@ config HAS_MCUX_USB_EHCI
 	help
 	  Set if the USB controller EHCI module is present in the SoC.
 
+config HAS_MCUX_USB_KHCI
+	bool
+	help
+	  Set if the USB controller KHCI full speed module is present in the SoC.
+
 endif # HAS_MCUX

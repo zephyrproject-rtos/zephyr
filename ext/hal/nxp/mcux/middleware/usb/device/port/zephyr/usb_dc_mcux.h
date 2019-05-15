@@ -8,6 +8,7 @@
 #ifndef __USB_DC_MCUX_H__
 #define __USB_DC_MCUX_H__
 
+#include <misc/byteorder.h>
 #include <usb/usb_dc.h>
 #include "usb_spec.h"
 
@@ -19,6 +20,12 @@
     #define USB_DEVICE_CONFIG_EHCI (1U)
 #else
     #define USB_DEVICE_CONFIG_EHCI (0U)
+#endif
+
+#ifdef CONFIG_USB_DC_NXP_KHCI
+    #define USB_DEVICE_CONFIG_KHCI (1U)
+#else
+    #define USB_DEVICE_CONFIG_KHCI (0U)
 #endif
 
 /* Macro to define controller handle */
@@ -67,6 +74,12 @@ typedef void *usb_device_handle;
 
 /* Whether device is self power. 1U supported, 0U not supported */
 #define USB_DEVICE_CONFIG_SELF_POWER (1U)
+
+/* USB endian related MACROs */
+#define USB_SHORT_TO_LITTLE_ENDIAN(n)   sys_cpu_to_le16(n)
+#define USB_LONG_TO_LITTLE_ENDIAN(n)    sys_cpu_to_le32(n)
+#define USB_SHORT_FROM_LITTLE_ENDIAN(n) sys_le16_to_cpu(n)
+#define USB_LONG_FROM_LITTLE_ENDIAN(n)  sys_le32_to_cpu(n)
 
 /* USB controller ID */
 typedef enum _usb_controller_index {
