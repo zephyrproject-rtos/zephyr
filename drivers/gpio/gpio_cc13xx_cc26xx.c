@@ -45,10 +45,10 @@ static int gpio_cc13xx_cc26xx_config(struct device *port, int access_op,
 		if (flags & GPIO_INT_EDGE) {
 			if (flags & GPIO_INT_DOUBLE_EDGE) {
 				config |= IOC_BOTH_EDGES;
-			} else if (flags & GPIO_INT_ACTIVE_LOW) {
-				config |= IOC_FALLING_EDGE;
-			} else {
+			} else if (flags & GPIO_INT_ACTIVE_HIGH) {
 				config |= IOC_RISING_EDGE;
+			} else { /* GPIO_INT_ACTIVE_LOW */
+				config |= IOC_FALLING_EDGE;
 			}
 		} else {
 			return -ENOTSUP;
