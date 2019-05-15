@@ -40,3 +40,5 @@ source "subsys/testsuite/Kconfig"
 source "subsys/fb/Kconfig"
 
 source "subsys/jwt/Kconfig"
+
+source "subsys/zio/Kconfig"

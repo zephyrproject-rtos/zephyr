@@ -1,0 +1,30 @@
+# Kconfig - zio configuration options
+
+#
+# Copyright (c) 2019 Thomas Burdick <thomas.burdick@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig ZIO
+	bool "ZIO Drivers"
+	help
+	  Include zio drivers in system config
+
+if ZIO
+
+module = ZIO
+module-str = zio
+source "subsys/logging/Kconfig.template.log_config"
+
+config ZIO_INIT_PRIORITY
+	int "Zio init priority"
+	default 90
+	help
+	  Zio initialization priority.
+
+comment "Device Drivers"
+
+source "drivers/zio/synth/Kconfig"
+
+endif # ZIO

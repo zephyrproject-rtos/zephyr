@@ -1,0 +1,3 @@
+tests:
+  zio.zio_variant:
+    tags: zio_variant zio

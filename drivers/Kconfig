@@ -89,4 +89,7 @@ source "drivers/neural_net/Kconfig"
 
 source "drivers/hwinfo/Kconfig"
 
+source "drivers/zio/Kconfig"
+
+
 endmenu

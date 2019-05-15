@@ -1,0 +1,9 @@
+#
+# Copyright (c) 2019 Thomas Burdick
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+menuconfig ZIO
+	bool "Enable ZIO Driver Subsystem"
+	help
+	  Enable ZIO Driver Subsystem
