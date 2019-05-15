@@ -1334,6 +1334,9 @@ class Property:
           Four bytes is the length of a cell, so the value of e.g.
           'x = < 73 >;' can be fetched with a plain prop.to_num().
 
+          If 'length' is None, the entire property value is used, with no
+          length check.
+
         signed (default: False):
           If True, the value will be interpreted as signed rather than
           unsigned.
@@ -1442,17 +1445,23 @@ class Property:
 #
 
 
-def to_num(data, length=4, signed=False):
+def to_num(data, length=None, signed=False):
     """
     Like Property.to_num(), but takes an arbitrary 'bytes' array. The value is
     assumed to be in big-endian format, which is standard in Device Tree.
+
+    length (default: None):
+      The expected length of the value in bytes. See Property.to_num().
+
+      Unlike for Property.to_num(), 'length' defaults to None, meaning to skip
+      the length check and use the entire property value.
     """
     _check_is_bytes(data)
-    _check_length_positive(length)
-
-    if len(data) != length:
-        raise DTError("{} is {} bytes long, expected {}"
-                      .format(data, len(data), length))
+    if length is not None:
+        _check_length_positive(length)
+        if len(data) != length:
+            raise DTError("{} is {} bytes long, expected {}"
+                          .format(data, len(data), length))
 
     return int.from_bytes(data, "big", signed=signed)
 

@@ -65,14 +65,11 @@ class EDT:
         for i in range(0, len(raw_ranges), 4*nr_range_cells):
             raw_range = raw_ranges[i:i + 4*nr_range_cells]
 
-            raw_child_addr = raw_range[:4*nr_addr_cells]
-            child_bus_addr = dtlib.to_num(raw_child_addr, length=4*nr_addr_cells)
-
-            raw_parent_addr = raw_range[4*nr_addr_cells:4*(nr_addr_cells+nr_p_addr_cells)]
-            parent_bus_addr = dtlib.to_num(raw_parent_addr, length=4*nr_p_addr_cells)
-
-            raw_range_size = raw_range[4*(nr_addr_cells+nr_p_addr_cells):]
-            range_len = dtlib.to_num(raw_range_size, length=4*nr_size_cells)
+            child_bus_addr = dtlib.to_num(raw_range[:4*nr_addr_cells])
+            parent_bus_addr = dtlib.to_num(
+                raw_range[4*nr_addr_cells:4*(nr_addr_cells + nr_p_addr_cells)])
+            range_len = dtlib.to_num(
+                raw_range[4*(nr_addr_cells + nr_p_addr_cells):])
 
             # if we are outside of the range we don't need to translate
             if child_bus_addr <= addr <= child_bus_addr + range_len:
@@ -107,13 +104,11 @@ class EDT:
         regs = []
         for i in range(0, len(raw_regs), 4*(address_cells + size_cells)):
             raw_reg = raw_regs[i:i + 4*(address_cells + size_cells)]
-            raw_addr = raw_reg[:4*address_cells]
-            raw_size = raw_reg[4*address_cells:]
 
             reg = Register()
-            reg.addr = dtlib.to_num(raw_addr, length=4*address_cells)
+            reg.addr = dtlib.to_num(raw_reg[:4*address_cells])
             if size_cells != 0:
-                reg.size = dtlib.to_num(raw_size, length=4*size_cells)
+                reg.size = dtlib.to_num(raw_reg[4*address_cells:])
             else:
                 reg.size = None
 
