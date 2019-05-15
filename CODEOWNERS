@@ -266,6 +266,8 @@
 /include/toolchain/                       @andrewboie @andyross
 /include/updatehub.h                      @chtavares592 @otavio
 /include/zephyr.h                         @andrewboie @andyross
+/include/zio.h                            @bfrog
+/include/zio/                             @bfrog
 /kernel/                                  @andrewboie @andyross
 /lib/gui/                                 @vanwinkeljan
 /lib/libc/                                @nashif
@@ -349,6 +351,7 @@
 /subsys/storage/                          @nvlsianpu
 /subsys/testsuite/                        @nashif
 /subsys/usb/                              @jfischer-phytec-iot @finikorg
+/subsys/zio/                              @bfrog
 /tests/                                   @nashif
 /tests/boards/native_posix/               @aescolar
 /tests/boards/intel_s1000_crb/            @dcpleung @sathishkuttan
@@ -373,6 +376,8 @@
 /tests/subsys/fs/                         @nashif @wentongwu
 /tests/subsys/settings/                   @nvlsianpu
 /tests/subsys/shell/                      @jakub-uC @nordic-krch
+/tests/subsys/zio/                        @bfrog
+
 # Get all docs reviewed
 *.rst                                     @dbkinder
 *posix*.rst                               @dbkinder @aescolar
