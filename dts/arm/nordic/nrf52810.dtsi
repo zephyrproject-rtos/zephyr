@@ -48,6 +48,7 @@
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				label = "NRF_FLASH";
+				erase-block-size = <4096>;
 				write-block-size = <4>;
 			};
 		};
