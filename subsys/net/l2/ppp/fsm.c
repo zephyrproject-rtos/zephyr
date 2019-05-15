@@ -350,9 +350,10 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	 * we want to send PROTOCOL or CODE reject packet.
 	 */
 	struct net_pkt *req_pkt = data;
+	u16_t protocol = 0;
+	size_t len = 0;
 	struct ppp_packet ppp;
 	struct net_pkt *pkt;
-	size_t len = 0;
 	int ret;
 
 	if (!iface) {
@@ -378,8 +379,11 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		iface = ctx->iface;
 	}
 
+	if (fsm) {
+		protocol = fsm->protocol;
+	}
+
 	switch (type) {
-	case PPP_PROTOCOL_REJ:
 	case PPP_CODE_REJ:
 		len = net_pkt_get_len(req_pkt);
 		len = MIN(len, PPP_MRU);
@@ -406,6 +410,12 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 	case PPP_ECHO_REPLY:
 		break;
 
+	case PPP_PROTOCOL_REJ:
+		len = sizeof(u8_t) + sizeof(u8_t) + sizeof(u16_t) +
+			sizeof(u16_t) + net_pkt_remaining_data(req_pkt);
+		protocol = data_len;
+		break;
+
 	case PPP_TERMINATE_REQ:
 	case PPP_TERMINATE_ACK:
 		break;
@@ -429,7 +439,7 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		goto out_of_mem;
 	}
 
-	ret = net_pkt_write_be16(pkt, fsm->protocol);
+	ret = net_pkt_write_be16(pkt, protocol);
 	if (ret < 0) {
 		goto out_of_mem;
 	}
@@ -479,28 +489,40 @@ int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		if (data) {
 			net_buf_frag_add(pkt->buffer, data);
 		}
+
+	} else if (type == PPP_PROTOCOL_REJ) {
+		net_pkt_cursor_init(req_pkt);
+		net_pkt_copy(pkt, req_pkt, len);
 	}
 
-	NET_DBG("[%s/%p] Sending %zd bytes pkt %p (options len %d)", fsm->name,
-		fsm, net_pkt_get_len(pkt), pkt, data_len);
+	NET_DBG("[%s/%p] Sending %zd bytes pkt %p (options len %d)",
+		fsm ? fsm->name : "?", fsm, net_pkt_get_len(pkt), pkt,
+		data_len);
 
-	net_pkt_set_ppp(pkt, true);
+	if (fsm) {
+		net_pkt_set_ppp(pkt, true);
 
-	/* Do not call net_send_data() directly in order to make this thread
-	 * run before the sending happens. If we call the net_send_data() from
-	 * this thread, then in fast link (like when running inside QEMU) the
-	 * reply might arrive before we have returned from this function. That
-	 * is bad because the fsm would be in wrong state and the received pkt
-	 * is dropped.
-	 */
-	fsm->sender.pkt = pkt;
+		/* Do not call net_send_data() directly in order to make this
+		 * thread run before the sending happens. If we call the
+		 * net_send_data() from this thread, then in fast link (like
+		 * when running inside QEMU) the reply might arrive before we
+		 * have returned from this function. That is bad because the
+		 * fsm would be in wrong state and the received pkt is dropped.
+		 */
+		fsm->sender.pkt = pkt;
 
-	/* FIXME: qemu_x86 crashes if timeout is 0 when running ppp
-	 * driver unit test. As a workaround set the timeout to 1 msec
-	 * in that case.
-	 */
-	(void)k_delayed_work_submit(&fsm->sender.work,
+		/* FIXME: qemu_x86 crashes if timeout is 0 when running ppp
+		 * driver unit test. As a workaround set the timeout to 1 msec
+		 * in that case.
+		 */
+		(void)k_delayed_work_submit(&fsm->sender.work,
 				IS_ENABLED(CONFIG_NET_TEST) ? K_MSEC(1) : 0);
+	} else {
+		ret = net_send_data(pkt);
+		if (ret < 0) {
+			net_pkt_unref(pkt);
+		}
+	}
 
 	return 0;
 
@@ -1098,4 +1120,26 @@ enum net_verdict ppp_fsm_recv_discard_req(struct ppp_fsm *fsm,
 		ppp_state_str(fsm->state), fsm->state);
 
 	return NET_DROP;
+}
+
+void ppp_send_proto_rej(struct net_if *iface, struct net_pkt *pkt,
+			u16_t protocol)
+{
+	u8_t code, id;
+	int ret;
+
+	ret = net_pkt_read_u8(pkt, &code);
+	if (ret < 0) {
+		goto quit;
+	}
+
+	ret = net_pkt_read_u8(pkt, &id);
+	if (ret < 0) {
+		goto quit;
+	}
+
+	(void)ppp_send_pkt(NULL, iface, PPP_PROTOCOL_REJ, id, pkt, protocol);
+
+quit:
+	return;
 }

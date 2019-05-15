@@ -126,6 +126,8 @@ struct net_buf *ppp_get_net_buf(struct net_buf *root_buf, u8_t len);
 int ppp_send_pkt(struct ppp_fsm *fsm, struct net_if *iface,
 		 enum ppp_packet_type type, u8_t id,
 		 void *data, u32_t data_len);
+void ppp_send_proto_rej(struct net_if *iface, struct net_pkt *pkt,
+			u16_t protocol);
 
 void ppp_fsm_init(struct ppp_fsm *fsm, u16_t protocol);
 void ppp_fsm_lower_up(struct ppp_fsm *fsm);
