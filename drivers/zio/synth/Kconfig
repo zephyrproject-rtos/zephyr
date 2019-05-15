@@ -1,0 +1,56 @@
+
+# Copyright (c) 2019 Thomas Burdick <thomas.burdick@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig SYNTH
+	bool "Synthesized Signal Generator"
+	help
+	  Enable zio driver for signal generator.
+
+if SYNTH
+
+config SYNTH_FIFO_SIZE
+	int "FIFO power of 2 size, pow(2,SYNTH_FIFO_SIZE), defaults to pow(2,9)=512"
+	default 9
+	depends on SYNTH
+	help
+	  The size of the internal FIFO for synthesized samples
+
+config SYNTH_SAMPLE_RATE
+	int "Samples to generate per second, defaults to 44.100kHz (CD sample rate)"
+	default 44100
+	depends on SYNTH
+	help
+	  Number of samples to generate per second.
+
+config SYNTH_0_FREQ
+	int "Frequency of first channel"
+	default 440
+	depends on SYNTH
+	help
+	  The signal frequency in hertz of the zeroth channel
+
+config SYNTH_0_PHASE
+	int "Phase of first channel in degrees"
+	default 0
+	depends on SYNTH
+	help
+	  The signal phase in degress of the zeroth channel
+
+config SYNTH_1_FREQ
+	int "Frequency of second channel"
+	default 880
+	depends on SYNTH
+	help
+	  The signal frequency in hertz of the first channel
+
+config SYNTH_1_PHASE
+	int "Phase of second channel in degrees"
+	default 45
+	depends on SYNTH
+	help
+	  The signal phase in degrees of the first channel
+
+endif # SYNTH
