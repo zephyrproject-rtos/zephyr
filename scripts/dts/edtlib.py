@@ -2,7 +2,7 @@ import fnmatch
 import os
 import re
 
-import dtlib
+from dtlib import DT, to_num
 
 
 class EDT:
@@ -35,7 +35,7 @@ class EDT:
 
         self.devices = {}
 
-        for node in dtlib.DT(dts).node_iter():
+        for node in DT(dts).node_iter():
             if "compatible" in node.props:
                 for comp in node.props["compatible"].to_strings():
                     if comp in self._compat2binding:
@@ -91,9 +91,9 @@ def _regs(node):
     regs = []
     for raw_reg in _slice(node, "reg", 4*(address_cells + size_cells)):
         reg = Register()
-        reg.addr = _translate(dtlib.to_num(raw_reg[:4*address_cells]), node)
+        reg.addr = _translate(to_num(raw_reg[:4*address_cells]), node)
         if size_cells != 0:
-            reg.size = dtlib.to_num(raw_reg[4*address_cells:])
+            reg.size = to_num(raw_reg[4*address_cells:])
         else:
             reg.size = None
 
@@ -133,14 +133,14 @@ def _translate(addr, node):
     entry_cells = child_address_cells + parent_address_cells + child_size_cells
 
     for raw_range in _slice(node.parent, "ranges", 4*entry_cells):
-        child_addr = dtlib.to_num(raw_range[:4*child_address_cells])
-        child_len = dtlib.to_num(
+        child_addr = to_num(raw_range[:4*child_address_cells])
+        child_len = to_num(
             raw_range[4*(child_address_cells + parent_address_cells):])
 
         if child_addr <= addr <= child_addr + child_len:
             # 'addr' is within range of a translation in 'ranges'. Recursively
             # translate it and return the result.
-            parent_addr = dtlib.to_num(
+            parent_addr = to_num(
                 raw_range[4*child_address_cells:
                           4*(child_address_cells + parent_address_cells)])
             return _translate(parent_addr + addr - child_addr, node.parent)
