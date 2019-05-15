@@ -1,13 +1,29 @@
-# Kconfig - Subsystem configuration options
+# Kconfig - Flash map abstraction module
 #
-# Copyright (c) 2018 Nordic Semiconductor ASA
+# Copyright (c) 2017 Nordic Semiconductor ASA
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
+menuconfig FLASH_MAP
+	bool "Flash map abstraction module"
+	depends on FLASH_HAS_DRIVER_ENABLED
+	help
+	  Enable support of flash map abstraction.
 
-menu "Storage"
+if FLASH_MAP
 
-source "subsys/storage/flash_map/Kconfig"
+config FLASH_MAP_SHELL
+	bool "Enable flash map shell interface"
+	depends on SHELL
+	help
+	  This enables shell commands to list and test flash maps.
 
-endmenu
+config FLASH_MAP_CUSTOM
+	bool "Custom flash map description"
+	help
+	  This option enables custom flash map description.
+	  User must provide such a description in place of default on
+	  if had enabled this option.
+
+endif # FLASH_MAP
