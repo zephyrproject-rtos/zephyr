@@ -232,8 +232,6 @@ static int ke1xf_init(struct device *arg)
 	SYSMPU->CESR = temp_reg;
 #endif /* !CONFIG_ARM_MPU */
 
-	z_clearfaults();
-
 	/* Initialize system clocks and PLL */
 	clk_init();
 

@@ -40,6 +40,7 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 	z_ExcSetup();
 	z_FaultInit();
 	z_CpuIdleInit();
+	z_clearfaults();
 }
 
 static ALWAYS_INLINE void

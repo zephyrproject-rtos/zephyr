@@ -50,8 +50,6 @@ static int nordicsemi_nrf91_init(struct device *arg)
 	NRF_NVMC->ICACHECNF = NVMC_ICACHECNF_CACHEEN_Msk;
 #endif
 
-	z_clearfaults();
-
 	/* Install default handler that simply resets the CPU
 	* if configured in the kernel, NOP otherwise
 	*/
