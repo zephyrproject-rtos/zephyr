@@ -431,6 +431,17 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	conn = lll->hdr.parent;
 
 	pdu = (void *)((struct node_rx_pdu *)rx)->pdu;
+
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	u8_t own_addr_type = pdu->tx_addr;
+	u8_t own_addr[BDADDR_SIZE];
+	u8_t peer_addr[BDADDR_SIZE];
+	u8_t rl_idx;
+
+	memcpy(own_addr, &pdu->connect_ind.init_addr[0], BDADDR_SIZE);
+	memcpy(peer_addr, &pdu->connect_ind.adv_addr[0], BDADDR_SIZE);
+#endif
+
 	chan_sel = pdu->chan_sel;
 
 	cc = (void *)pdu;
@@ -438,10 +449,8 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	cc->role = 0U;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	u8_t rl_idx;
-
-	cc->own_addr_type = pdu->tx_addr;
-	memcpy(&cc->own_addr[0], &pdu->connect_ind.init_addr[0], BDADDR_SIZE);
+	cc->own_addr_type = own_addr_type;
+	memcpy(&cc->own_addr[0], &own_addr[0], BDADDR_SIZE);
 
 	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 		rl_idx = *((u8_t *)ftr->extra);
@@ -458,8 +467,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 		cc->peer_addr_type += 2;
 
 		/* Store peer RPA */
-		memcpy(&cc->peer_rpa[0], &pdu->connect_ind.adv_addr[0],
-		       BDADDR_SIZE);
+		memcpy(&cc->peer_rpa[0], &peer_addr[0], BDADDR_SIZE);
 	} else {
 		memset(&cc->peer_rpa[0], 0x0, BDADDR_SIZE);
 #else
