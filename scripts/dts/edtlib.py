@@ -51,16 +51,13 @@ class EDT:
         self.devices[dev.name] = dev
 
     def _translate_addr(self, addr, node, nr_addr_cells, nr_size_cells):
-
-        if "ranges" in node.parent.props:
-            ranges = node.parent.props["ranges"]
-        else:
+        if "ranges" not in node.parent.props:
             return 0
 
-        pnode = node.parent
-        (nr_p_addr_cells, nr_p_size_cells) = self._get_addr_size_cells(pnode)
+        raw_ranges = node.parent.props["ranges"].value
 
-        raw_ranges = ranges.value
+        nr_p_addr_cells = _address_cells(node.parent)
+        nr_p_size_cells = _size_cells(node.parent)
 
         nr_range_cells = nr_addr_cells + nr_p_addr_cells + nr_size_cells
 
@@ -82,26 +79,11 @@ class EDT:
                 range_offset = parent_bus_addr - child_bus_addr
                 break
 
-        parent_range_offset = self._translate_addr(addr + range_offset,
-                pnode, nr_p_addr_cells, nr_p_size_cells)
+        parent_range_offset = self._translate_addr(
+            addr + range_offset, node.parent, nr_p_addr_cells, nr_p_size_cells)
         range_offset += parent_range_offset
 
         return range_offset
-
-    def _get_addr_size_cells(self, node):
-        if "#address-cells" in node.parent.props:
-            address_cells = node.parent.props["#address-cells"].to_num()
-        else:
-            # Default value per DT spec.
-            address_cells = 2
-
-        if "#size-cells" in node.parent.props:
-            size_cells = node.parent.props["#size-cells"].to_num()
-        else:
-            # Default value per DT spec.
-            size_cells = 1
-
-        return (address_cells, size_cells)
 
     def _regs(self, node):
         # Returns a list of Register instances for 'node'
@@ -109,7 +91,8 @@ class EDT:
         if "reg" not in node.props:
             return []
 
-        (address_cells, size_cells) = self._get_addr_size_cells(node)
+        address_cells = _address_cells(node)
+        size_cells = _size_cells(node)
 
         raw_regs = node.props["reg"].value
 
@@ -155,6 +138,24 @@ class EDT:
 
     def __repr__(self):
         return "<EDT, {} devices>".format(len(self.devices))
+
+
+def _address_cells(node):
+    # Returns the #address-cells setting for 'node'
+    # TODO: explain?
+
+    if "#address-cells" in node.parent.props:
+        return node.parent.props["#address-cells"].to_num()
+    return 2  # Default value per DT spec.
+
+
+def _size_cells(node):
+    # Returns the #size-cells setting for 'node'
+    # TODO: explain?
+
+    if "#size-cells" in node.parent.props:
+        return node.parent.props["#size-cells"].to_num()
+    return 1  # Default value per DT spec.
 
 
 class Device:
