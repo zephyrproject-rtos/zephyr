@@ -79,38 +79,6 @@ class EDTError(Exception):
     "Exception raised for Extended Device Tree-related errors"
 
 
-def _address_cells(node):
-    # Returns the #address-cells setting for 'node'
-    # TODO: explain?
-
-    if "#address-cells" in node.parent.props:
-        return node.parent.props["#address-cells"].to_num()
-    return 2  # Default value per DT spec.
-
-
-def _size_cells(node):
-    # Returns the #size-cells setting for 'node'
-    # TODO: explain?
-
-    if "#size-cells" in node.parent.props:
-        return node.parent.props["#size-cells"].to_num()
-    return 1  # Default value per DT spec.
-
-
-def _slice(node, prop_name, size):
-    # Splits node.props[prop_name].value into 'size'-sized chunks, returning a
-    # list of chunks. Raises EDTError if the length of the property is not
-    # evenly divisible by 'size'.
-
-    raw = node.props[prop_name].value
-    if len(raw) % size:
-        raise EDTError(
-            "'{}' property in {} has length {}, which is not evenly divisible "
-            "by {}".format(prop_name, len(raw), size))
-
-    return [raw[i:i + size] for i in range(0, len(raw), size)]
-
-
 def _regs(node):
     # Returns a list of Register instances for 'node'
 
@@ -179,3 +147,35 @@ def _translate(addr, node):
 
     # 'addr' is not within range of any translation in 'ranges'
     return addr
+
+
+def _address_cells(node):
+    # Returns the #address-cells setting for 'node'
+    # TODO: explain?
+
+    if "#address-cells" in node.parent.props:
+        return node.parent.props["#address-cells"].to_num()
+    return 2  # Default value per DT spec.
+
+
+def _size_cells(node):
+    # Returns the #size-cells setting for 'node'
+    # TODO: explain?
+
+    if "#size-cells" in node.parent.props:
+        return node.parent.props["#size-cells"].to_num()
+    return 1  # Default value per DT spec.
+
+
+def _slice(node, prop_name, size):
+    # Splits node.props[prop_name].value into 'size'-sized chunks, returning a
+    # list of chunks. Raises EDTError if the length of the property is not
+    # evenly divisible by 'size'.
+
+    raw = node.props[prop_name].value
+    if len(raw) % size:
+        raise EDTError(
+            "'{}' property in {} has length {}, which is not evenly divisible "
+            "by {}".format(prop_name, len(raw), size))
+
+    return [raw[i:i + size] for i in range(0, len(raw), size)]
