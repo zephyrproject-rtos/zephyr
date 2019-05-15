@@ -780,14 +780,13 @@ static int adxl362_init(struct device *dev)
 		return -EIO;
 	}
 
-	err = adxl362_interrupt_config(dev,
-				       config->int1_config,
-				       config->int2_config);
-#endif
-
-	if (err) {
-		return err;
+	if (adxl362_interrupt_config(dev,
+				     config->int1_config,
+				     config->int2_config) < 0) {
+		LOG_ERR("Failed to configure interrupt");
+		return -EIO;
 	}
+#endif
 
 	return 0;
 }
