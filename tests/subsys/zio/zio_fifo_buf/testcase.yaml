@@ -1,0 +1,3 @@
+tests:
+  zio.zio_fifo_buf:
+    tags: zio_fifo_buf zio
