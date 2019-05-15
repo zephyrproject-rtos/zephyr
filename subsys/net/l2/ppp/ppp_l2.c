@@ -92,6 +92,20 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 		return proto->handler(ctx, iface, pkt);
 	}
 
+	switch (protocol) {
+	case PPP_IP:
+	case PPP_IPV6:
+	case PPP_ECP:
+	case PPP_CCP:
+	case PPP_LCP:
+	case PPP_IPCP:
+	case PPP_IPV6CP:
+		ppp_send_proto_rej(iface, pkt, protocol);
+		break;
+	default:
+		break;
+	}
+
 	NET_DBG("%s protocol %s%s(0x%02x)",
 		ppp_proto2str(protocol) ? "Unhandled" : "Unknown",
 		ppp_proto2str(protocol),
