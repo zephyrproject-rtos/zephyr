@@ -690,9 +690,7 @@ static void endrx_isr(struct device *dev)
 		data->async->rx_buf = data->async->rx_next_buf;
 		data->async->rx_next_buf = NULL;
 
-		data->async->rx_total_byte_cnt += rx_len;
-		data->async->rx_total_user_byte_cnt =
-			data->async->rx_total_byte_cnt;
+		data->async->rx_total_user_byte_cnt += rx_len;
 		data->async->rx_offset = 0;
 	} else {
 		data->async->rx_buf = NULL;
