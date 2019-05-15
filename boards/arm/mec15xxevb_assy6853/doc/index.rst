@@ -134,7 +134,7 @@ Boot-ROM Straps.
 
 These jumpers configure MEC1501 Boot-ROM straps.
 
-+-------------+---------- -+--------------+-------------+
++-------------+------------+--------------+-------------+
 | JP93        | JP11       | JP46         | JP96        |
 | (CMP_STRAP) | (CR_STRAP) | (VTR2_STRAP) | (BSS_STRAP) |
 +=============+============+==============+=============+
@@ -148,25 +148,27 @@ loads from SHD SPI.
 Peripheral Routing Jumpers
 --------------------------
 
-Each column of the following table illustrates how to enable UART0, JTAG,
+Each column of the following table illustrates how to enable SWD,
 PVT SPI, SHD SPI and LED0-2 respectively.
 
 +---------+--------+-----------+----------+---------+
-| JP68    | JP9    | JP38      | JP98     | JP41    |
-| (UART0) | (JTAG) | (PVT SPI) | (SHD SPI)| (LED0-2)|
+| JP9     | JP9    | JP38      | JP98     | JP41    |
+| (UART2) | (SWD)  | (PVT SPI) | (SHD SPI)| (LED0-2)|
 +=========+========+===========+==========+=========+
-| 1-2     | 2-3    | 2-3       | 2-3      | 1-2     |
+|         | 2-3    | 2-3       | 2-3      | 1-2     |
 +---------+--------+-----------+----------+---------+
-| 4-5     | 5-6    | 5-6       | 5-6      | 3-4     |
+| 4-5     |        | 5-6       | 5-6      | 3-4     |
 +---------+--------+-----------+----------+---------+
-| 8-9     | 8-9    | 8-9       | 8-9      | 5-6     |
+|         | 8-9    | 8-9       | 8-9      | 5-6     |
 +---------+--------+-----------+----------+---------+
-|         | 11-12  | 11-12     | 11-12    |         |
+| 10-11   |        | 11-12     | 11-12    |         |
 +---------+--------+-----------+----------+---------+
 |         |        | 14-15     | 14-15    |         |
 +---------+--------+-----------+----------+---------+
 |         |        | 17-18     | 20-21    |         |
 +---------+--------+-----------+----------+---------+
+
+An additional setting for UART2 is to make sure JP39 does not have any jumper.
 
 Jumper settings for MEC1501 144WFBGA Socket DC Assy 6883 Rev B1p0
 =================================================================
@@ -238,7 +240,7 @@ Flashing
    - Stop bits: 1
 
 #. Connect the MEC15xxEVB_ASSY_6853 board to your host computer using the
-   UART0 port. Then build :ref: `hello_world` application. It is important
+   UART2 port. Then build :ref: `hello_world` application. It is important
    to generate a binary with a new load address, for example do the following::
 
         ${OBJCOPY} --change-addresses -0xe0000 -O binary -S ${in_elf} ${out_bin}

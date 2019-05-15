@@ -7,68 +7,76 @@
 #include <device.h>
 #include <init.h>
 #include <kernel.h>
+#include <pinmux.h>
 
 #include "soc.h"
-
-#define UART_GPIO_CFG \
-	(MCHP_GPIO_CTRL_PUD_NONE + MCHP_GPIO_CTRL_PWRG_VTR_IO +\
-		MCHP_GPIO_CTRL_IDET_DISABLE + MCHP_GPIO_CTRL_BUFT_PUSHPULL +\
-		MCHP_GPIO_CTRL_DIR_INPUT + MCHP_GPIO_CTRL_AOD_DIS +\
-		MCHP_GPIO_CTRL_POL_NON_INVERT)
-
-#define GPIO_CFG_OUT \
-	(MCHP_GPIO_CTRL_PUD_NONE + MCHP_GPIO_CTRL_PWRG_VTR_IO +\
-		MCHP_GPIO_CTRL_IDET_DISABLE + MCHP_GPIO_CTRL_BUFT_PUSHPULL +\
-		MCHP_GPIO_CTRL_DIR_OUTPUT + MCHP_GPIO_CTRL_AOD_DIS +\
-		MCHP_GPIO_CTRL_POL_NON_INVERT)
 
 static int board_pinmux_init(struct device *dev)
 {
 	ARG_UNUSED(dev);
 
-	/* See table 2-4 from the Data sheet*/
-#ifdef CONFIG_UART_NS16550_PORT_0
-	/* Set muxing, for UART 0 and power up */
-	mchp_pcr_periph_slp_ctrl(PCR_UART0, MCHP_PCR_SLEEP_DIS);
-
-	UART0_REGS->CFG_SEL = (MCHP_UART_LD_CFG_INTCLK +
-		MCHP_UART_LD_CFG_RESET_SYS + MCHP_UART_LD_CFG_NO_INVERT);
-	UART0_REGS->ACTV = MCHP_UART_LD_ACTIVATE;
-
-	GPIO_CTRL_REGS->CTRL_0104 = UART_GPIO_CFG + MCHP_GPIO_CTRL_MUX_F1;
-	GPIO_CTRL_REGS->CTRL_0105 = UART_GPIO_CFG + MCHP_GPIO_CTRL_MUX_F1;
+#ifdef CONFIG_PINMUX_XEC_GPIO000_036
+	struct device *porta =
+		device_get_binding(CONFIG_PINMUX_XEC_GPIO000_036_NAME);
+#endif
+#ifdef CONFIG_PINMUX_XEC_GPIO040_076
+	struct device *portb =
+		device_get_binding(CONFIG_PINMUX_XEC_GPIO040_076_NAME);
+#endif
+#ifdef CONFIG_PINMUX_XEC_GPIO100_136
+	struct device *portc =
+		device_get_binding(CONFIG_PINMUX_XEC_GPIO100_136_NAME);
+#endif
+#ifdef CONFIG_PINMUX_XEC_GPIO140_176
+	struct device *portd =
+		device_get_binding(CONFIG_PINMUX_XEC_GPIO140_176_NAME);
+#endif
+#ifdef CONFIG_PINMUX_XEC_GPIO200_236
+	struct device *porte =
+		device_get_binding(CONFIG_PINMUX_XEC_GPIO200_236_NAME);
+#endif
+#ifdef CONFIG_PINMUX_XEC_GPIO240_276
+	struct device *portf =
+		device_get_binding(CONFIG_PINMUX_XEC_GPIO240_276_NAME);
 #endif
 
-#ifdef CONFIG_UART_NS16550_PORT_1
-	/* Set muxing, for UART 1 and power up */
-	mchp_pcr_periph_slp_ctrl(PCR_UART1, MCHP_PCR_SLEEP_DIS);
+	/* Release JTAG TDI and JTAG TDO pins so they can be
+	 * controlled by their respective PCR register (UART2).
+	 * For more details see table 44-1
+	 */
+	ECS_REGS->DEBUG_CTRL |= 0x4;
 
-	UART1_REGS->CFG_SEL = (MCHP_UART_LD_CFG_INTCLK +
+	/* See table 2-4 from the data sheet for pin multiplexing*/
+#ifdef CONFIG_UART_NS16550_PORT_2
+	/* Set muxing, for UART 2 TX/RX and power up */
+	mchp_pcr_periph_slp_ctrl(PCR_UART2, MCHP_PCR_SLEEP_DIS);
+
+	UART2_REGS->CFG_SEL = (MCHP_UART_LD_CFG_INTCLK +
 		MCHP_UART_LD_CFG_RESET_SYS + MCHP_UART_LD_CFG_NO_INVERT);
-	UART1_REGS->ACTV = MCHP_UART_LD_ACTIVATE;
+	UART2_REGS->ACTV = MCHP_UART_LD_ACTIVATE;
 
-	GPIO_CTRL_REGS->CTRL_0170 = UART_GPIO_CFG + MCHP_GPIO_CTRL_MUX_F1;
-	GPIO_CTRL_REGS->CTRL_0171 = UART_GPIO_CFG + MCHP_GPIO_CTRL_MUX_F1;
+	pinmux_pin_set(portd, MCHP_GPIO_145, MCHP_GPIO_CTRL_MUX_F2);
+	pinmux_pin_set(portd, MCHP_GPIO_146, MCHP_GPIO_CTRL_MUX_F2);
 #endif
 
 #ifdef CONFIG_I2C_XEC_0
 	/* Set muxing, for I2C0 - SMB00 */
-	GPIO_CTRL_REGS->CTRL_0004 = MCHP_GPIO_CTRL_MUX_F1;
-	GPIO_CTRL_REGS->CTRL_0003 = MCHP_GPIO_CTRL_MUX_F1;
+	pinmux_pin_set(porta, MCHP_GPIO_003, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(porta, MCHP_GPIO_004, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 
 #ifdef CONFIG_I2C_XEC_1
 	/* Set muxing for I2C1 - SMB01 */
-	GPIO_CTRL_REGS->CTRL_0130 = MCHP_GPIO_CTRL_MUX_F1;
-	GPIO_CTRL_REGS->CTRL_0131 = MCHP_GPIO_CTRL_MUX_F1;
+	pinmux_pin_set(portc, MCHP_GPIO_130, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(portc, MCHP_GPIO_131, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 
 #ifdef CONFIG_I2C_XEC_2
 	/* Set muxing, for I2C2 - SMB04 */
-	GPIO_CTRL_REGS->CTRL_0143 = MCHP_GPIO_CTRL_MUX_F1;
-	GPIO_CTRL_REGS->CTRL_0144 = MCHP_GPIO_CTRL_MUX_F1;
+	pinmux_pin_set(portd, MCHP_GPIO_143, MCHP_GPIO_CTRL_MUX_F1);
+	pinmux_pin_set(portd, MCHP_GPIO_144, MCHP_GPIO_CTRL_MUX_F1);
 #endif
 	return 0;
 }
 
-SYS_INIT(board_pinmux_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(board_pinmux_init, PRE_KERNEL_1, CONFIG_PINMUX_INIT_PRIORITY);
