@@ -3,456 +3,287 @@
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
+ *
  */
 
 #include "fsl_iap.h"
+#include "fsl_iap_ffr.h"
+#include "fsl_device_registers.h"
 
 /* Component ID definition, used by tools. */
 #ifndef FSL_COMPONENT_ID
-#define FSL_COMPONENT_ID "platform.drivers.iap"
+#define FSL_COMPONENT_ID "platform.drivers.iap1"
 #endif
 
-#define HZ_TO_KHZ_DIV 1000
+/*!
+ * @addtogroup flash_driver_api
+ * @{
+*/
 
-/*******************************************************************************
- * Definitions
- ******************************************************************************/
+#define ROM_API_TREE ((uint32_t *)0x130010f0)
+#define BOOTLOADER_API_TREE_POINTER ((bootloader_tree_t *)ROM_API_TREE)
 
-/*******************************************************************************
- * Prototypes
- ******************************************************************************/
+static uint32_t S_Version_minor = 0;
 
-static status_t translate_iap_status(uint32_t status)
+typedef status_t (*EraseCommend_t)(flash_config_t *config, uint32_t start, uint32_t lengthInBytes, uint32_t key);
+typedef status_t (*ProgramCommend_t)(flash_config_t *config, uint32_t start, uint8_t *src, uint32_t lengthInBytes);
+typedef status_t (*VerifyProgramCommend_t)(flash_config_t *config,
+                                           uint32_t start,
+                                           uint32_t lengthInBytes,
+                                           const uint8_t *expectedData,
+                                           uint32_t *failedAddress,
+                                           uint32_t *failedData);
+typedef status_t (*FFR_CustomerPagesInit_t)(flash_config_t *config);
+typedef status_t (*FFR_InfieldPageWrite_t)(flash_config_t *config, uint8_t *page_data, uint32_t valid_len);
+typedef status_t (*FFR_GetManufactureData_t)(flash_config_t *config, uint8_t *pData, uint32_t offset, uint32_t len);
+typedef status_t (*FFR_GetRompatchData_t)(flash_config_t *config, uint8_t *pData, uint32_t offset, uint32_t len);
+
+/*
+*!@brief Structure of version property.
+*
+*!@ingroup bl_core
+*/
+typedef union BootloaderVersion
 {
-    /* Translate IAP return code to sdk status code */
-    if (status == kStatus_Success)
+    struct
     {
-        return status;
-    }
-    else
-    {
-        return MAKE_STATUS(kStatusGroup_IAP, status);
-    }
-}
+        uint32_t bugfix : 8; /*!< bugfix version [7:0] */
+        uint32_t minor : 8;  /*!< minor version [15:8] */
+        uint32_t major : 8;  /*!< major version [23:16] */
+        uint32_t name : 8;   /*!< name [31:24] */
+    } B;
+    uint32_t version; /*!< combined version numbers. */
+} standard_version_t;
+
+/*! @brief Interface for the flash driver.*/
+typedef struct FlashDriverInterface
+{
+    standard_version_t version; /*!< flash driver API version number.*/
+
+    /*!< Flash driver.*/
+    status_t (*flash_init)(flash_config_t *config);
+    status_t (*flash_erase)(flash_config_t *config, uint32_t start, uint32_t lengthInBytes, uint32_t key);
+    status_t (*flash_program)(flash_config_t *config, uint32_t start, uint8_t *src, uint32_t lengthInBytes);
+    status_t (*flash_verify_erase)(flash_config_t *config, uint32_t start, uint32_t lengthInBytes);
+    status_t (*flash_verify_program)(flash_config_t *config,
+                                     uint32_t start,
+                                     uint32_t lengthInBytes,
+                                     const uint8_t *expectedData,
+                                     uint32_t *failedAddress,
+                                     uint32_t *failedData);
+    status_t (*flash_get_property)(flash_config_t *config, flash_property_tag_t whichProperty, uint32_t *value);
+    /*!< Flash FFR driver*/
+    status_t (*ffr_init)(flash_config_t *config);
+    status_t (*ffr_deinit)(flash_config_t *config);
+    status_t (*ffr_cust_factory_page_write)(flash_config_t *config, uint8_t *page_data, bool seal_part);
+    status_t (*ffr_get_uuid)(flash_config_t *config, uint8_t *uuid);
+    status_t (*ffr_get_customer_data)(flash_config_t *config, uint8_t *pData, uint32_t offset, uint32_t len);
+    status_t (*ffr_keystore_write)(flash_config_t *config, ffr_key_store_t *pKeyStore);
+    status_t (*ffr_keystore_get_ac)(flash_config_t *config, uint8_t *pActivationCode);
+    status_t (*ffr_keystore_get_kc)(flash_config_t *config, uint8_t *pKeyCode, ffr_key_type_t keyIndex);
+    status_t (*ffr_infield_page_write)(flash_config_t *config, uint8_t *page_data, uint32_t valid_len);
+    status_t (*ffr_get_customer_infield_data)(flash_config_t *config, uint8_t *pData, uint32_t offset, uint32_t len);
+} flash_driver_interface_t;
+
+/*!
+* @brief Root of the bootloader API tree.
+*
+* An instance of this struct resides in read-only memory in the bootloader. It
+* provides a user application access to APIs exported by the bootloader.
+*
+* @note The order of existing fields must not be changed.
+*/
+typedef struct BootloaderTree
+{
+    void (*runBootloader)(void *arg);            /*!< Function to start the bootloader executing. */
+    standard_version_t bootloader_version;       /*!< Bootloader version number. */
+    const char *copyright;                       /*!< Copyright string. */
+    const uint32_t *reserved;                    /*!< Do NOT use. */
+    const flash_driver_interface_t *flashDriver; /*!< Flash driver API. */
+} bootloader_tree_t;
 
 /*******************************************************************************
  * Variables
  ******************************************************************************/
 
+/*! @brief Global pointer to the flash driver API table in ROM. */
+flash_driver_interface_t *FLASH_API_TREE;
+/*! Get pointer to flash driver API table in ROM. */
+#define FLASH_API_TREE BOOTLOADER_API_TREE_POINTER->flashDriver
 /*******************************************************************************
  * Code
  ******************************************************************************/
 
-/*!
- * brief Read part identification number.
-
- * This function is used to read the part identification number.
- *
- * param partID Address to store the part identification number.
- *
- * retval #kStatus_IAP_Success Api was executed successfully.
- */
-status_t IAP_ReadPartID(uint32_t *partID)
+/*! See fsl_flash.h for documentation of this function. */
+status_t FLASH_Init(flash_config_t *config)
 {
-    uint32_t command[5], result[5];
-
-    command[0] = kIapCmd_IAP_ReadPartId;
-    iap_entry(command, result);
-    *partID = result[1];
-
-    return translate_iap_status(result[0]);
+    assert(FLASH_API_TREE);
+    config->modeConfig.sysFreqInMHz = kSysToFlashFreq_defaultInMHz;
+    S_Version_minor = FLASH_API_TREE->version.B.minor;
+    return FLASH_API_TREE->flash_init(config);
 }
 
-/*!
- * brief Read boot code version number.
-
- * This function is used to read the boot code version number.
- *
- * param bootCodeVersion Address to store the boot code version.
- *
- * retval #kStatus_IAP_Success Api was executed successfully.
-
- * note Boot code version is two 32-bit words. Word 0 is the major version, word 1 is the minor version.
- */
-status_t IAP_ReadBootCodeVersion(uint32_t *bootCodeVersion)
+/*! See fsl_flash.h for documentation of this function. */
+status_t FLASH_Erase(flash_config_t *config, uint32_t start, uint32_t lengthInBytes, uint32_t key)
 {
-    uint32_t command[5], result[5];
-
-    command[0] = kIapCmd_IAP_Read_BootromVersion;
-    iap_entry(command, result);
-    bootCodeVersion[0] = result[1];
-    bootCodeVersion[1] = result[2];
-
-    return translate_iap_status(result[0]);
+    if (S_Version_minor == 0)
+    {
+        EraseCommend_t EraseCommand =
+            (EraseCommend_t)(0x1300413b); /*!< get the flash erase api location adress int rom */
+        return EraseCommand(config, start, lengthInBytes, key);
+    }
+    else
+    {
+        assert(FLASH_API_TREE);
+        return FLASH_API_TREE->flash_erase(config, start, lengthInBytes, key);
+    }
 }
 
-/*!
- * brief Reinvoke ISP
-
- * This function is used to invoke the boot loader in ISP mode. It maps boot vectors and configures the
- * peripherals for ISP.
- *
- * param ispTyoe ISP type selection.
- * param status store the possible status
- *
- * retval #kStatus_IAP_ReinvokeISPConfig reinvoke configuration error.
-
- * note The error response is returned if IAP is disabled, or if there is an invalid ISP type selection. When
- * there is no error the call does not return, so there can be no status code.
- */
-void IAP_ReinvokeISP(uint8_t ispType, uint32_t *status)
+/*! See fsl_flash.h for documentation of this function. */
+status_t FLASH_Program(flash_config_t *config, uint32_t start, uint8_t *src, uint32_t lengthInBytes)
 {
-    uint32_t command[5], result[5];
-    uint8_t ispParameterArray[8];
-
-    command[0] = kIapCmd_IAP_ReinvokeISP;
-    memset(ispParameterArray, 0, sizeof(uint8_t) * 8);
-    ispParameterArray[1] = ispType;
-    ispParameterArray[7] = ispParameterArray[0] ^ ispParameterArray[1] ^ ispParameterArray[2] ^ ispParameterArray[3] ^
-                           ispParameterArray[4] ^ ispParameterArray[5] ^ ispParameterArray[6];
-    command[1] = (uint32_t)ispParameterArray;
-    iap_entry(command, result);
-    *status = translate_iap_status(result[0]);
+    if (S_Version_minor == 0)
+    {
+        ProgramCommend_t ProgramCommend =
+            (ProgramCommend_t)(0x1300419d); /*!< get the flash program api location adress in rom*/
+        return ProgramCommend(config, start, src, lengthInBytes);
+    }
+    else
+    {
+        assert(FLASH_API_TREE);
+        return FLASH_API_TREE->flash_program(config, start, src, lengthInBytes);
+    }
 }
 
-/*!
- * brief Read unique identification.
-
- * This function is used to read the unique id.
- *
- * param uniqueID store the uniqueID.
- *
- * retval #kStatus_IAP_Success Api was executed successfully.
- */
-status_t IAP_ReadUniqueID(uint32_t *uniqueID)
+/*! See fsl_flash.h for documentation of this function. */
+status_t FLASH_VerifyErase(flash_config_t *config, uint32_t start, uint32_t lengthInBytes)
 {
-    uint32_t command[5], result[5];
-
-    command[0] = kIapCmd_IAP_ReadUid;
-    iap_entry(command, result);
-    uniqueID[0] = result[1];
-    uniqueID[1] = result[2];
-    uniqueID[2] = result[3];
-    uniqueID[3] = result[4];
-
-    return translate_iap_status(result[0]);
+    assert(FLASH_API_TREE);
+    return FLASH_API_TREE->flash_verify_erase(config, start, lengthInBytes);
 }
 
-/*!
- * brief Read factory settings.
-
- * This function reads the factory settings for calibration registers.
- *
- * param dstRegAddr Address of the targeted calibration register.
- * param factoryValue Store the factory value
- *
- * retval #kStatus_IAP_Success Api was executed successfully.
- * retval #kStatus_IAP_ParamError Param0 is not one of the supported calibration registers
- */
-status_t IAP_ReadFactorySettings(uint32_t dstRegAddr, uint32_t *factoryValue)
+/*! See fsl_flash.h for documentation of this function. */
+status_t FLASH_VerifyProgram(flash_config_t *config,
+                             uint32_t start,
+                             uint32_t lengthInBytes,
+                             const uint8_t *expectedData,
+                             uint32_t *failedAddress,
+                             uint32_t *failedData)
 {
-    uint32_t command[5], result[5];
-
-    command[0] = kIapCmd_IAP_ReadFactorySettings;
-    command[1] = dstRegAddr;
-    iap_entry(command, result);
-    *factoryValue = result[1];
-
-    return translate_iap_status(result[0]);
+    if (S_Version_minor == 0)
+    {
+        VerifyProgramCommend_t VerifyProgramCommend =
+            (VerifyProgramCommend_t)(0x1300427d); /*!< get the flash verify program api location adress in rom*/
+        return VerifyProgramCommend(config, start, lengthInBytes, expectedData, failedAddress, failedData);
+    }
+    else
+    {
+        assert(FLASH_API_TREE);
+        return FLASH_API_TREE->flash_verify_program(config, start, lengthInBytes, expectedData, failedAddress,
+                                                    failedData);
+    }
 }
 
-/*!
- * brief	Prepare sector for write operation
-
- * This function prepares sector(s) for write/erase operation. This function must be
- * called before calling the IAP_CopyRamToFlash() or IAP_EraseSector() or
- * IAP_ErasePage() function. The end sector must be greater than or equal to
- * start sector number.
- *
- * param startSector Start sector number.
- * param endSector End sector number.
- *
- * retval #kStatus_IAP_Success Api was executed successfully.
- * retval #kStatus_IAP_NoPower Flash memory block is powered down.
- * retval #kStatus_IAP_NoClock Flash memory block or controller is not clocked.
- * retval #kStatus_IAP_InvalidSector Sector number is invalid or end sector number
- *         is greater than start sector number.
- * retval #kStatus_IAP_Busy Flash programming hardware interface is busy.
- */
-status_t IAP_PrepareSectorForWrite(uint32_t startSector, uint32_t endSector)
+/*! See fsl_flash.h for documentation of this function.*/
+status_t FLASH_GetProperty(flash_config_t *config, flash_property_tag_t whichProperty, uint32_t *value)
 {
-    uint32_t command[5], result[5];
+    assert(FLASH_API_TREE);
+    return FLASH_API_TREE->flash_get_property(config, whichProperty, value);
+}
+/********************************************************************************
+ * fsl_flash_ffr CODE
+ *******************************************************************************/
 
-    command[0] = kIapCmd_IAP_PrepareSectorforWrite;
-    command[1] = startSector;
-    command[2] = endSector;
-    iap_entry(command, result);
-
-    return translate_iap_status(result[0]);
+/*! See fsl_flash_ffr.h for documentation of this function. */
+status_t FFR_Init(flash_config_t *config)
+{
+    assert(FLASH_API_TREE);
+    return FLASH_API_TREE->ffr_init(config);
 }
 
-/*!
- * brief	Copy RAM to flash.
-
- * This function programs the flash memory. Corresponding sectors must be prepared
- * via IAP_PrepareSectorForWrite before calling calling this function. The addresses
- * should be a 256 byte boundary and the number of bytes should be 256 | 512 | 1024 | 4096.
- *
- * param dstAddr Destination flash address where data bytes are to be written.
- * param srcAddr Source ram address from where data bytes are to be read.
- * param numOfBytes Number of bytes to be written.
- * param systemCoreClock SystemCoreClock in Hz. It is converted to KHz before calling the
- *                        rom IAP function.
- *
- * retval #kStatus_IAP_Success Api was executed successfully.
- * retval #kStatus_IAP_NoPower Flash memory block is powered down.
- * retval #kStatus_IAP_NoClock Flash memory block or controller is not clocked.
- * retval #kStatus_IAP_SrcAddrError Source address is not on word boundary.
- * retval #kStatus_IAP_DstAddrError Destination address is not on a correct boundary.
- * retval #kStatus_IAP_SrcAddrNotMapped Source address is not mapped in the memory map.
- * retval #kStatus_IAP_DstAddrNotMapped Destination address is not mapped in the memory map.
- * retval #kStatus_IAP_CountError Byte count is not multiple of 4 or is not a permitted value.
- * retval #kStatus_IAP_NotPrepared Command to prepare sector for write operation was not executed.
- * retval #kStatus_IAP_Busy Flash programming hardware interface is busy.
- */
-status_t IAP_CopyRamToFlash(uint32_t dstAddr, uint32_t *srcAddr, uint32_t numOfBytes, uint32_t systemCoreClock)
+/*! See fsl_flash_ffr.h for documentation of this function. */
+status_t FFR_Deinit(flash_config_t *config)
 {
-    uint32_t command[5], result[5];
-
-    command[0] = kIapCmd_IAP_CopyRamToFlash;
-    command[1] = dstAddr;
-    command[2] = (uint32_t)srcAddr;
-    command[3] = numOfBytes;
-    command[4] = systemCoreClock / HZ_TO_KHZ_DIV;
-    iap_entry(command, result);
-
-    return translate_iap_status(result[0]);
+    assert(FLASH_API_TREE);
+    return FLASH_API_TREE->ffr_deinit(config);
 }
 
-/*!
- * brief	Erase sector
-
- * This function erases sector(s). The end sector must be greater than or equal to
- * start sector number. IAP_PrepareSectorForWrite must be called before
- * calling this function.
- *
- * param startSector Start sector number.
- * param endSector End sector number.
- * param systemCoreClock SystemCoreClock in Hz. It is converted to KHz before calling the
- *                        rom IAP function.
- *
- * retval #kStatus_IAP_Success Api was executed successfully.
- * retval #kStatus_IAP_NoPower Flash memory block is powered down.
- * retval #kStatus_IAP_NoClock Flash memory block or controller is not clocked.
- * retval #kStatus_IAP_InvalidSector Sector number is invalid or end sector number
- *         is greater than start sector number.
- * retval #kStatus_IAP_NotPrepared Command to prepare sector for write operation was not executed.
- * retval #kStatus_IAP_Busy Flash programming hardware interface is busy.
- */
-status_t IAP_EraseSector(uint32_t startSector, uint32_t endSector, uint32_t systemCoreClock)
+status_t FFR_CustomerPagesInit(flash_config_t *config)
 {
-    uint32_t command[5], result[5];
-
-    command[0] = kIapCmd_IAP_EraseSector;
-    command[1] = startSector;
-    command[2] = endSector;
-    command[3] = systemCoreClock / HZ_TO_KHZ_DIV;
-    iap_entry(command, result);
-
-    return translate_iap_status(result[0]);
+    assert(FLASH_API_TREE);
+    FFR_CustomerPagesInit_t FFR_CustomerPagesInit_cmd = (FFR_CustomerPagesInit_t)(0x13004951);
+    return FFR_CustomerPagesInit_cmd(config);
 }
 
-/*!
- * This function erases page(s). The end page must be greater than or equal to
- * start page number. Corresponding sectors must be prepared via IAP_PrepareSectorForWrite
- * before calling calling this function.
- *
- * param startPage Start page number
- * param endPage End page number
- * param systemCoreClock SystemCoreClock in Hz. It is converted to KHz before calling the
- *                        rom IAP function.
- *
- * retval #kStatus_IAP_Success Api was executed successfully.
- * retval #kStatus_IAP_NoPower Flash memory block is powered down.
- * retval #kStatus_IAP_NoClock Flash memory block or controller is not clocked.
- * retval #kStatus_IAP_InvalidSector Page number is invalid or end page number
- *         is greater than start page number
- * retval #kStatus_IAP_NotPrepared Command to prepare sector for write operation was not executed.
- * retval #kStatus_IAP_Busy Flash programming hardware interface is busy.
- */
-status_t IAP_ErasePage(uint32_t startPage, uint32_t endPage, uint32_t systemCoreClock)
+status_t FFR_InfieldPageWrite(flash_config_t *config, uint8_t *page_data, uint32_t valid_len)
 {
-    uint32_t command[5], result[5];
-
-    command[0] = kIapCmd_IAP_ErasePage;
-    command[1] = startPage;
-    command[2] = endPage;
-    command[3] = systemCoreClock / HZ_TO_KHZ_DIV;
-    iap_entry(command, result);
-
-    return translate_iap_status(result[0]);
+    FFR_InfieldPageWrite_t FFR_InfieldPageWrite_cmd = (FFR_InfieldPageWrite_t)(0x13004a0b);
+    return FFR_InfieldPageWrite_cmd(config, page_data, valid_len);
 }
 
-/*!
- * brief Blank check sector(s)
- *
- * Blank check single or multiples sectors of flash memory. The end sector must be greater than or equal to
- * start sector number. It can be used to verify the sector eraseure after IAP_EraseSector call.
- *
- * param	startSector	: Start sector number. Must be greater than or equal to start sector number
- * param	endSector	: End sector number
- * retval #kStatus_IAP_Success One or more sectors are in erased state.
- * retval #kStatus_IAP_NoPower Flash memory block is powered down.
- * retval #kStatus_IAP_NoClock Flash memory block or controller is not clocked.
- * retval #kStatus_IAP_SectorNotblank One or more sectors are not blank.
- */
-status_t IAP_BlankCheckSector(uint32_t startSector, uint32_t endSector)
+/*! See fsl_flash_ffr.h for documentation of this function. */
+status_t FFR_CustFactoryPageWrite(flash_config_t *config, uint8_t *page_data, bool seal_part)
 {
-    uint32_t command[5], result[5];
-
-    command[0] = kIapCmd_IAP_BlankCheckSector;
-    command[1] = startSector;
-    command[2] = endSector;
-    iap_entry(command, result);
-
-    return translate_iap_status(result[0]);
+    assert(FLASH_API_TREE);
+    return FLASH_API_TREE->ffr_cust_factory_page_write(config, page_data, seal_part);
 }
 
-/*!
- * brief Compare memory contents of flash with ram.
-
- * This function compares the contents of flash and ram. It can be used to verify the flash
- * memory contents after IAP_CopyRamToFlash call.
- *
- * param dstAddr Destination flash address.
- * param srcAddr Source ram address.
- * param numOfBytes Number of bytes to be compared.
- *
- * retval #kStatus_IAP_Success Contents of flash and ram match.
- * retval #kStatus_IAP_NoPower Flash memory block is powered down.
- * retval #kStatus_IAP_NoClock Flash memory block or controller is not clocked.
- * retval #kStatus_IAP_AddrError Address is not on word boundary.
- * retval #kStatus_IAP_AddrNotMapped Address is not mapped in the memory map.
- * retval #kStatus_IAP_CountError Byte count is not multiple of 4 or is not a permitted value.
- * retval #kStatus_IAP_CompareError Destination and source memory contents do not match.
- */
-status_t IAP_Compare(uint32_t dstAddr, uint32_t *srcAddr, uint32_t numOfBytes)
+/*! See fsl_flash_ffr.h for documentation of this function. */
+status_t FFR_GetCustomerData(flash_config_t *config, uint8_t *pData, uint32_t offset, uint32_t len)
 {
-    uint32_t command[5], result[5];
-
-    command[0] = kIapCmd_IAP_Compare;
-    command[1] = dstAddr;
-    command[2] = (uint32_t)srcAddr;
-    command[3] = numOfBytes;
-    iap_entry(command, result);
-
-    return translate_iap_status(result[0]);
+    assert(FLASH_API_TREE);
+    return FLASH_API_TREE->ffr_get_customer_data(config, pData, offset, len);
 }
 
-/*!
- * brief Extended Read signature.
-
- * This function calculates the signature value for one or more pages of on-chip flash memory.
- *
- * param startPage Start page number.
- * param endPage End page number.
- * param numOfStates Number of wait status.
- * param signature Address to store the signature value.
- *
- * retval #kStatus_IAP_Success Api was executed successfully.
- */
-status_t IAP_ExtendedFlashSignatureRead(uint32_t startPage, uint32_t endPage, uint32_t numOfState, uint32_t *signature)
+/*! See fsl_flash_ffr.h for documentation of this function. */
+status_t FFR_KeystoreWrite(flash_config_t *config, ffr_key_store_t *pKeyStore)
 {
-    uint32_t command[5], result[5];
-
-    command[0] = kIapCmd_IAP_ExtendedReadSignature;
-    command[1] = startPage;
-    command[2] = endPage;
-    command[3] = numOfState;
-    command[4] = 0;
-    iap_entry(command, result);
-    signature[0] = result[4];
-    signature[1] = result[3];
-    signature[2] = result[2];
-    signature[3] = result[1];
-
-    return translate_iap_status(result[0]);
+    assert(FLASH_API_TREE);
+    return FLASH_API_TREE->ffr_keystore_write(config, pKeyStore);
 }
 
-/*!
- * @brief Read flash signature
- *
- * This funtion is used to obtain a 32-bit signature value of the entire flash memory.
- *
- * @param signature Address to store the 32-bit generated signature value.
- *
- * @retval #kStatus_IAP_Success Api was executed successfully.
- */
-status_t IAP_ReadFlashSignature(uint32_t *signature)
+/*! See fsl_flash_ffr.h for documentation of this function. */
+status_t FFR_KeystoreGetAC(flash_config_t *config, uint8_t *pActivationCode)
 {
-    uint32_t command[5], result[5];
-
-    command[0] = kIapCmd_IAP_ReadSignature;
-    iap_entry(command, result);
-    *signature = result[1];
-
-    return translate_iap_status(result[0]);
+    assert(FLASH_API_TREE);
+    return FLASH_API_TREE->ffr_keystore_get_ac(config, pActivationCode);
 }
 
-/*!
- * brief Read EEPROM page.
-
- * This function is used to read given page of EEPROM into the memory provided.
- *
- * param pageNumber EEPROM page number.
- * param dstAddr Memory address to store the value read from EEPROM.
- * param systemCoreClock Current core clock frequency in kHz.
- *
- * retval #kStatus_IAP_Success Api was executed successfully.
- * retval #kStatus_IAP_InvalidSector Sector number is invalid.
- * retval #kStatus_IAP_SrcAddrNotMapped Source address is not mapped in the memory map.
- *
- * note Value 0xFFFFFFFF of systemCoreClock will retain the timing and clock settings for
- * EEPROM]
- */
-status_t IAP_ReadEEPROMPage(uint32_t pageNumber, uint32_t *dstAddr, uint32_t systemCoreClock)
+/*! See fsl_flash_ffr.h for documentation of this function. */
+status_t FFR_KeystoreGetKC(flash_config_t *config, uint8_t *pKeyCode, ffr_key_type_t keyIndex)
 {
-    uint32_t command[5], result[5];
-
-    command[0] = kIapCmd_IAP_ReadEEPROMPage;
-    command[1] = pageNumber;
-    command[2] = (uint32_t)dstAddr;
-    command[3] = systemCoreClock / HZ_TO_KHZ_DIV;
-    iap_entry(command, result);
-
-    return translate_iap_status(result[0]);
+    assert(FLASH_API_TREE);
+    return FLASH_API_TREE->ffr_keystore_get_kc(config, pKeyCode, keyIndex);
 }
 
-/*!
- * brief Write EEPROM page.
-
- * This function is used to write given data in the provided memory to a page of EEPROM.
- *
- * param pageNumber EEPROM page number.
- * param srcAddr Memory address holding data to be stored on to EEPROM page.
- * param systemCoreClock Current core clock frequency in kHz.
- *
- * retval #kStatus_IAP_Success Api was executed successfully.
- * retval #kStatus_IAP_InvalidSector Sector number is invalid.
- * retval #kStatus_IAP_SrcAddrNotMapped Source address is not mapped in the memory map.
- *
- * note Value 0xFFFFFFFF of systemCoreClock will retain the timing and clock settings for
- * EEPROM]
- */
-status_t IAP_WriteEEPROMPage(uint32_t pageNumber, uint32_t *srcAddr, uint32_t systemCoreClock)
+status_t FFR_GetRompatchData(flash_config_t *config, uint8_t *pData, uint32_t offset, uint32_t len)
 {
-    uint32_t command[5], result[5];
-
-    command[0] = kIapCmd_IAP_WriteEEPROMPage;
-    command[1] = pageNumber;
-    command[2] = (uint32_t)srcAddr;
-    command[3] = systemCoreClock / HZ_TO_KHZ_DIV;
-    iap_entry(command, result);
-
-    return translate_iap_status(result[0]);
+    FFR_GetRompatchData_t FFR_GetRompatchData_cmd = (FFR_GetRompatchData_t)(0x13004db3);
+    return FFR_GetRompatchData_cmd(config, pData, offset, len);
 }
+
+/* APIs to access NMPA pages */
+status_t FFR_GetManufactureData(flash_config_t *config, uint8_t *pData, uint32_t offset, uint32_t len)
+{
+    FFR_GetManufactureData_t FFR_GetManufactureData_cmd = (FFR_GetManufactureData_t)(0x13004e15);
+    return FFR_GetManufactureData_cmd(config, pData, offset, len);
+}
+
+/*! See fsl_flash_ffr.h for documentation of this function. */
+status_t FFR_GetUUID(flash_config_t *config, uint8_t *uuid)
+{
+    assert(FLASH_API_TREE);
+    return FLASH_API_TREE->ffr_get_uuid(config, uuid);
+}
+
+/*! See fsl_flash_ffr.h for documentation of this function. */
+status_t FFR_GetCustomerInfieldData(flash_config_t *config, uint8_t *pData, uint32_t offset, uint32_t len)
+{
+    assert(FLASH_API_TREE);
+    return FLASH_API_TREE->ffr_get_customer_infield_data(config, pData, offset, len);
+}
+/*! @}*/
+
+/********************************************************************************
+ * EOF
+ *******************************************************************************/

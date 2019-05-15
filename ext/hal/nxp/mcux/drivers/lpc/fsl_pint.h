@@ -24,11 +24,14 @@
 
 /*! @name Driver version */
 /*@{*/
-#define FSL_PINT_DRIVER_VERSION (MAKE_VERSION(2, 0, 2)) /*!< Version 2.0.2 */
+#define FSL_PINT_DRIVER_VERSION (MAKE_VERSION(2, 0, 4)) /*!< Version 2.0.4 */
 /*@}*/
 
 /* Number of interrupt line supported by PINT */
 #define PINT_PIN_INT_COUNT 8U
+
+/* Number of interrupt line supported by SECURE PINT */
+#define SEC_PINT_PIN_INT_COUNT 2U
 
 /* Number of input sources supported by PINT */
 #define PINT_INPUT_COUNT 8U
@@ -88,6 +91,12 @@ typedef enum _pint_int
 #if (FSL_FEATURE_PINT_NUMBER_OF_CONNECTED_OUTPUTS > 7U)
     kPINT_PinInt7 = 7U, /*!< Pin Interrupt  7 */
 #endif
+#if (FSL_FEATURE_SECPINT_NUMBER_OF_CONNECTED_OUTPUTS > 0U)
+    kPINT_SecPinInt0 = 8U, /*!< Secure Pin Interrupt  0 */
+#endif
+#if (FSL_FEATURE_SECPINT_NUMBER_OF_CONNECTED_OUTPUTS > 1U)
+    kPINT_SecPinInt1 = 9U, /*!< Secure Pin Interrupt  1 */
+#endif
 } pint_pin_int_t;
 
 /*! @brief PINT Pattern Match bit slice input source type */
@@ -127,6 +136,12 @@ typedef enum _pint_pmatch_bslice
 #endif
 #if (FSL_FEATURE_PINT_NUMBER_OF_CONNECTED_OUTPUTS > 7U)
     kPINT_PatternMatchBSlice7 = 7U, /*!< Bit slice 7 */
+#endif
+#if (FSL_FEATURE_SECPINT_NUMBER_OF_CONNECTED_OUTPUTS > 0U)
+    kSECPINT_PatternMatchBSlice0 = 8U, /*!< Bit slice 0 */
+#endif
+#if (FSL_FEATURE_SECPINT_NUMBER_OF_CONNECTED_OUTPUTS > 1U)
+    kSECPINT_PatternMatchBSlice1 = 9U, /*!< Bit slice 1 */
 #endif
 } pint_pmatch_bslice_t;
 

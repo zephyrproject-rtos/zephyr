@@ -19,7 +19,6 @@
 
 /*! @brief Irq number array */
 static const IRQn_Type s_pintIRQ[FSL_FEATURE_PINT_NUMBER_OF_CONNECTED_OUTPUTS] = PINT_IRQS;
-
 /*! @brief Callback function array for PINT(s). */
 static pint_cb_t s_pintCallback[FSL_FEATURE_PINT_NUMBER_OF_CONNECTED_OUTPUTS];
 
@@ -49,12 +48,22 @@ void PINT_Init(PINT_Type *base)
         s_pintCallback[i] = NULL;
     }
 
-    /* Disable all bit slices */
-    for (i = 0; i < PINT_PIN_INT_COUNT; i++)
+    if (base == SECPINT)
     {
-        pmcfg = pmcfg | (kPINT_PatternMatchNever << (PININT_BITSLICE_CFG_START + (i * 3U)));
+        /* Disable all bit slices for secure pint*/
+        for (i = 0; i < SEC_PINT_PIN_INT_COUNT; i++)
+        {
+            pmcfg = pmcfg | (kPINT_PatternMatchNever << (PININT_BITSLICE_CFG_START + (i * 3U)));
+        }
     }
-
+    else
+    {
+        /* Disable all bit slices for pint*/
+        for (i = 0; i < PINT_PIN_INT_COUNT; i++)
+        {
+            pmcfg = pmcfg | (kPINT_PatternMatchNever << (PININT_BITSLICE_CFG_START + (i * 3U)));
+        }
+    }
 #if defined(FSL_FEATURE_CLOCK_HAS_GPIOINT_CLOCK_SOURCE) && (FSL_FEATURE_CLOCK_HAS_GPIOINT_CLOCK_SOURCE == 1)
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable the clock. */
@@ -77,16 +86,42 @@ void PINT_Init(PINT_Type *base)
     RESET_PeripheralReset(kGPIO0_RST_N_SHIFT_RSTn);
 #endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
 
-#else
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* Enable the clock. */
-    CLOCK_EnableClock(kCLOCK_Pint);
+    CLOCK_EnableClock(kCLOCK_Gpio_Sec);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
 #if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
     /* Reset the module. */
-    RESET_PeripheralReset(kPINT_RST_SHIFT_RSTn);
+    RESET_PeripheralReset(kGPIOSEC_RST_SHIFT_RSTn);
 #endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
+
+#else
+    /* if need config SECURE PINT device,then enable secure pint interrupt clock */
+    if (base == SECPINT)
+    {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+        /* Enable the clock. */
+        CLOCK_EnableClock(kCLOCK_Gpio_sec_Int);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
+        /* Reset the module. */
+        RESET_PeripheralReset(kGPIOSECINT_RST_SHIFT_RSTn);
+#endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
+    }
+    else
+    {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+        /* Enable the clock. */
+        CLOCK_EnableClock(kCLOCK_Pint);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
+        /* Reset the module. */
+        RESET_PeripheralReset(kPINT_RST_SHIFT_RSTn);
+#endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
+    }
 #endif /* FSL_FEATURE_CLOCK_HAS_GPIOINT_CLOCK_SOURCE && FSL_FEATURE_CLOCK_HAS_NO_GPIOINT_CLOCK_SOURCE*/
 
     /* Disable all pattern match bit slices */
@@ -135,7 +170,15 @@ void PINT_PinInterruptConfig(PINT_Type *base, pint_pin_int_t intr, pint_pin_enab
     {
         base->CIENF = 1U << intr;
     }
-
+    /* Handle secure pint interrupt*/
+    if ((base == SECPINT) && (intr == kPINT_PinInt0))
+    {
+        intr = kPINT_SecPinInt0;
+    }
+    else if ((base == SECPINT) && (intr == kPINT_PinInt1))
+    {
+        intr = kPINT_SecPinInt1;
+    }
     s_pintCallback[intr] = callback;
 }
 
@@ -251,7 +294,15 @@ void PINT_PatternMatchConfig(PINT_Type *base, pint_pmatch_bslice_t bslice, pint_
     }
 
     base->PMCFG = pmcfg;
-
+    /* Handle secure pint pattern match*/
+    if ((base == SECPINT) && (bslice == kPINT_PatternMatchBSlice0))
+    {
+        bslice = kSECPINT_PatternMatchBSlice0;
+    }
+    else if ((base == SECPINT) && (bslice == kPINT_PatternMatchBSlice1))
+    {
+        bslice = kSECPINT_PatternMatchBSlice1;
+    }
     /* Save callback pointer */
     s_pintCallback[bslice] = cfg->callback;
 }
@@ -307,7 +358,7 @@ uint32_t PINT_PatternMatchResetDetectLogic(PINT_Type *base)
     uint32_t pmstatus;
     uint32_t pmsrc;
 
-    pmctrl = PINT->PMCTRL;
+    pmctrl = base->PMCTRL;
     pmstatus = pmctrl >> PINT_PMCTRL_PMAT_SHIFT;
     if (pmstatus)
     {
@@ -357,6 +408,10 @@ void PINT_EnableCallbackByIndex(PINT_Type *base, pint_pin_int_t pintIdx)
 {
     assert(base);
 
+    if (base == SECPINT)
+    {
+        pintIdx += 8;
+    }
     NVIC_ClearPendingIRQ(s_pintIRQ[pintIdx]);
     PINT_PinInterruptClrStatus(base, (pint_pin_int_t)pintIdx);
     EnableIRQ(s_pintIRQ[pintIdx]);
@@ -400,11 +455,14 @@ void PINT_DisableCallbackByIndex(PINT_Type *base, pint_pin_int_t pintIdx)
 {
     assert(base);
 
+    if (base == SECPINT)
+    {
+        pintIdx += 8;
+    }
     DisableIRQ(s_pintIRQ[pintIdx]);
     PINT_PinInterruptClrStatus(base, (pint_pin_int_t)pintIdx);
     NVIC_ClearPendingIRQ(s_pintIRQ[pintIdx]);
 }
-
 /*!
  * brief	Deinitialize PINT peripheral.
 
@@ -449,19 +507,92 @@ void PINT_Deinit(PINT_Type *base)
     CLOCK_DisableClock(kCLOCK_Gpio0);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
-#else
 #if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
     /* Reset the module. */
-    RESET_PeripheralReset(kPINT_RST_SHIFT_RSTn);
+    RESET_PeripheralReset(kGPIOSEC_RST_SHIFT_RSTn);
 #endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
 
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
-    /* Disable the clock. */
-    CLOCK_DisableClock(kCLOCK_Pint);
+    /* Enable the clock. */
+    CLOCK_DisableClock(kCLOCK_Gpio_Sec);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+
+#else
+    if (base == SECPINT)
+    {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
+        /* Reset the module. */
+        RESET_PeripheralReset(kGPIOSECINT_RST_SHIFT_RSTn);
+#endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+        /* Disable the clock. */
+        CLOCK_DisableClock(kCLOCK_Gpio_sec_Int);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+    }
+    else
+    {
+#if !(defined(FSL_SDK_DISABLE_DRIVER_RESET_CONTROL) && FSL_SDK_DISABLE_DRIVER_RESET_CONTROL)
+        /* Reset the module. */
+        RESET_PeripheralReset(kPINT_RST_SHIFT_RSTn);
+#endif /* FSL_SDK_DISABLE_DRIVER_RESET_CONTROL */
+
+#if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
+        /* Disable the clock. */
+        CLOCK_DisableClock(kCLOCK_Pint);
+#endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
+    }
 #endif /* FSL_FEATURE_CLOCK_HAS_GPIOINT_CLOCK_SOURCE */
 }
 
+/* IRQ handler functions overloading weak symbols in the startup */
+void SEC_GPIO_INT0_IRQ0_DriverIRQHandler(void)
+{
+    uint32_t pmstatus = 0;
+
+    /* Reset pattern match detection */
+    pmstatus = PINT_PatternMatchResetDetectLogic(SECPINT);
+    /* Call user function */
+    if (s_pintCallback[kPINT_SecPinInt0] != NULL)
+    {
+        s_pintCallback[kPINT_SecPinInt0](kPINT_SecPinInt0, pmstatus);
+    }
+    if ((SECPINT->ISEL & 0x1U) == 0x0U)
+    {
+        /* Edge sensitive: clear Pin interrupt after callback */
+        PINT_PinInterruptClrStatus(SECPINT, kPINT_PinInt0);
+    }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
+}
+#if (FSL_FEATURE_SECPINT_NUMBER_OF_CONNECTED_OUTPUTS > 1U)
+/* IRQ handler functions overloading weak symbols in the startup */
+void SEC_GPIO_INT0_IRQ1_DriverIRQHandler(void)
+{
+    uint32_t pmstatus;
+
+    /* Reset pattern match detection */
+    pmstatus = PINT_PatternMatchResetDetectLogic(SECPINT);
+    /* Call user function */
+    if (s_pintCallback[kPINT_SecPinInt1] != NULL)
+    {
+        s_pintCallback[kPINT_SecPinInt1](kPINT_SecPinInt1, pmstatus);
+    }
+    if ((SECPINT->ISEL & 0x1U) == 0x0U)
+    {
+        /* Edge sensitive: clear Pin interrupt after callback */
+        PINT_PinInterruptClrStatus(SECPINT, kPINT_PinInt1);
+    }
+/* Add for ARM errata 838869, affects Cortex-M4, Cortex-M4F Store immediate overlapping
+  exception return operation might vector to incorrect interrupt */
+#if defined __CORTEX_M && (__CORTEX_M == 4U)
+    __DSB();
+#endif
+}
+#endif
 /* IRQ handler functions overloading weak symbols in the startup */
 void PIN_INT0_DriverIRQHandler(void)
 {

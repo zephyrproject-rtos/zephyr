@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2016, Freescale Semiconductor, Inc.
- * Copyright 2016-2017 NXP
+ * Copyright 2016-2018 NXP
  * All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
@@ -85,7 +85,11 @@ void GPIO_PinInit(GPIO_Type *base, uint32_t port, uint32_t pin, const gpio_pin_c
 {
     if (config->pinDirection == kGPIO_DigitalInput)
     {
+#if defined(FSL_FEATURE_GPIO_DIRSET_AND_DIRCLR) && (FSL_FEATURE_GPIO_DIRSET_AND_DIRCLR)
+        base->DIRCLR[port] = 1U << pin;
+#else
         base->DIR[port] &= ~(1U << pin);
+#endif /*FSL_FEATURE_GPIO_DIRSET_AND_DIRCLR*/
     }
     else
     {
@@ -98,7 +102,11 @@ void GPIO_PinInit(GPIO_Type *base, uint32_t port, uint32_t pin, const gpio_pin_c
         {
             base->SET[port] = (1U << pin);
         }
-        /* Set pin direction */
+/* Set pin direction */
+#if defined(FSL_FEATURE_GPIO_DIRSET_AND_DIRCLR) && (FSL_FEATURE_GPIO_DIRSET_AND_DIRCLR)
+        base->DIRSET[port] = 1U << pin;
+#else
         base->DIR[port] |= 1U << pin;
+#endif /*FSL_FEATURE_GPIO_DIRSET_AND_DIRCLR*/
     }
 }

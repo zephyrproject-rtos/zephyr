@@ -47,22 +47,23 @@ static DMA_Type *const s_dmaBases[] = DMA_BASE_PTRS;
 static const clock_ip_name_t s_dmaClockName[] = DMA_CLOCKS;
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
-/*! @brief Array to map DMA instance number to IRQ number. */
+#if !(defined(FSL_FEATURE_DMA_HAS_NO_RESET) && FSL_FEATURE_DMA_HAS_NO_RESET)
+/*! @brief Pointers to DMA resets for each instance. */
+static const reset_ip_name_t s_dmaResets[] = DMA_RSTS_N;
+#endif /*! @brief Array to map DMA instance number to IRQ number. */
 static const IRQn_Type s_dmaIRQNumber[] = DMA_IRQS;
 
 /*! @brief Pointers to transfer handle for each DMA channel. */
 static dma_handle_t *s_DMAHandle[FSL_FEATURE_DMA_ALL_CHANNELS];
 
-/*! @brief Static table of descriptors */
-#if defined(__ICCARM__)
-#pragma data_alignment = FSL_FEATURE_DMA_DESCRIPTOR_ALIGN_SIZE
-static dma_descriptor_t s_dma_descriptor_table[FSL_FEATURE_SOC_DMA_COUNT][FSL_FEATURE_DMA_MAX_CHANNELS] = {0};
-#elif defined(__CC_ARM) || defined(__ARMCC_VERSION)
-__attribute__((aligned(FSL_FEATURE_DMA_DESCRIPTOR_ALIGN_SIZE))) static dma_descriptor_t
-    s_dma_descriptor_table[FSL_FEATURE_SOC_DMA_COUNT][FSL_FEATURE_DMA_MAX_CHANNELS] = {0};
-#elif defined(__GNUC__)
-__attribute__((aligned(FSL_FEATURE_DMA_DESCRIPTOR_ALIGN_SIZE))) static dma_descriptor_t
-    s_dma_descriptor_table[FSL_FEATURE_SOC_DMA_COUNT][FSL_FEATURE_DMA_MAX_CHANNELS] = {0};
+SDK_ALIGN(dma_descriptor_t s_dma_descriptor_table0[FSL_FEATURE_DMA_MAX_CHANNELS],
+          FSL_FEATURE_DMA_DESCRIPTOR_ALIGN_SIZE);
+#if defined(DMA1)
+SDK_ALIGN(dma_descriptor_t s_dma_descriptor_table1[FSL_FEATURE_DMA_MAX_CHANNELS],
+          FSL_FEATURE_DMA_DESCRIPTOR_ALIGN_SIZE);
+static dma_descriptor_t *s_dma_descriptor_table[] = {s_dma_descriptor_table0, s_dma_descriptor_table1};
+#else
+static dma_descriptor_t *s_dma_descriptor_table[] = {s_dma_descriptor_table0};
 #endif
 
 /*******************************************************************************
@@ -71,7 +72,7 @@ __attribute__((aligned(FSL_FEATURE_DMA_DESCRIPTOR_ALIGN_SIZE))) static dma_descr
 
 static uint32_t DMA_GetInstance(DMA_Type *base)
 {
-    int32_t instance;
+    uint32_t instance;
     /* Find the instance index from base address mappings. */
     for (instance = 0; instance < ARRAY_SIZE(s_dmaBases); instance++)
     {
@@ -111,13 +112,18 @@ static uint32_t DMA_GetVirtualStartChannel(DMA_Type *base)
  */
 void DMA_Init(DMA_Type *base)
 {
+    uint32_t instance = DMA_GetInstance(base);
 #if !(defined(FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL) && FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL)
     /* enable dma clock gate */
     CLOCK_EnableClock(s_dmaClockName[DMA_GetInstance(base)]);
 #endif /* FSL_SDK_DISABLE_DRIVER_CLOCK_CONTROL */
 
+#if !(defined(FSL_FEATURE_DMA_HAS_NO_RESET) && FSL_FEATURE_DMA_HAS_NO_RESET)
+    /* Reset the DMA module */
+    RESET_PeripheralReset(s_dmaResets[DMA_GetInstance(base)]);
+#endif
     /* set descriptor table */
-    base->SRAMBASE = (uint32_t)s_dma_descriptor_table;
+    base->SRAMBASE = (uint32_t)s_dma_descriptor_table[instance];
     /* enable dma peripheral */
     base->CTRL |= DMA_CTRL_ENABLE_MASK;
 }
@@ -140,6 +146,7 @@ void DMA_Deinit(DMA_Type *base)
 
 /*!
  * brief Set trigger settings of DMA channel.
+ * deprecated Do not use this function.  It has been superceded by @ref DMA_SetChannelConfig.
  *
  * param base DMA peripheral base address.
  * param channel DMA channel number.
@@ -157,13 +164,6 @@ void DMA_ConfigureChannelTrigger(DMA_Type *base, uint32_t channel, dma_channel_t
     base->CHANNEL[channel].CFG = tmp;
 }
 
-/*!
- * @brief Gets the remaining bytes of the current DMA descriptor transfer.
- *
- * @param base DMA peripheral base address.
- * @param channel DMA channel number.
- * @return The number of bytes which have not been transferred yet.
- */
 /*!
  * brief Gets the remaining bytes of the current DMA descriptor transfer.
  *
@@ -195,50 +195,39 @@ uint32_t DMA_GetRemainingBytes(DMA_Type *base, uint32_t channel)
            1;
 }
 
-static void DMA_SetupDescriptor(
-    dma_descriptor_t *desc, uint32_t xfercfg, void *srcEndAddr, void *dstEndAddr, void *nextDesc)
-{
-    desc->xfercfg = xfercfg;
-    desc->srcEndAddr = srcEndAddr;
-    desc->dstEndAddr = dstEndAddr;
-    desc->linkToNextDesc = nextDesc;
-}
-
 /* Verify and convert dma_xfercfg_t to XFERCFG register */
 static void DMA_SetupXferCFG(dma_xfercfg_t *xfercfg, uint32_t *xfercfg_addr)
 {
     assert(xfercfg != NULL);
     /* check source increment */
-    assert((xfercfg->srcInc == 0) || (xfercfg->srcInc == 1) || (xfercfg->srcInc == 2) || (xfercfg->srcInc == 4));
-    /* check destination increment */
-    assert((xfercfg->dstInc == 0) || (xfercfg->dstInc == 1) || (xfercfg->dstInc == 2) || (xfercfg->dstInc == 4));
+    assert((xfercfg->srcInc <= kDMA_AddressInterleave4xWidth) && (xfercfg->dstInc <= kDMA_AddressInterleave4xWidth));
     /* check data width */
-    assert((xfercfg->byteWidth == 1) || (xfercfg->byteWidth == 2) || (xfercfg->byteWidth == 4));
+    assert(xfercfg->byteWidth <= kDMA_Transfer32BitWidth);
     /* check transfer count */
     assert(xfercfg->transferCount <= DMA_MAX_TRANSFER_COUNT);
 
-    uint32_t xfer = 0, tmp;
+    uint32_t xfer = 0;
+
     /* set valid flag - descriptor is ready now */
-    xfer |= DMA_CHANNEL_XFERCFG_CFGVALID(xfercfg->valid ? 1 : 0);
+    xfer |= DMA_CHANNEL_XFERCFG_CFGVALID(xfercfg->valid);
     /* set reload - allow link to next descriptor */
-    xfer |= DMA_CHANNEL_XFERCFG_RELOAD(xfercfg->reload ? 1 : 0);
+    xfer |= DMA_CHANNEL_XFERCFG_RELOAD(xfercfg->reload);
     /* set swtrig flag - start transfer */
-    xfer |= DMA_CHANNEL_XFERCFG_SWTRIG(xfercfg->swtrig ? 1 : 0);
+    xfer |= DMA_CHANNEL_XFERCFG_SWTRIG(xfercfg->swtrig);
     /* set transfer count */
-    xfer |= DMA_CHANNEL_XFERCFG_CLRTRIG(xfercfg->clrtrig ? 1 : 0);
+    xfer |= DMA_CHANNEL_XFERCFG_CLRTRIG(xfercfg->clrtrig);
     /* set INTA */
-    xfer |= DMA_CHANNEL_XFERCFG_SETINTA(xfercfg->intA ? 1 : 0);
+    xfer |= DMA_CHANNEL_XFERCFG_SETINTA(xfercfg->intA);
     /* set INTB */
-    xfer |= DMA_CHANNEL_XFERCFG_SETINTB(xfercfg->intB ? 1 : 0);
+    xfer |= DMA_CHANNEL_XFERCFG_SETINTB(xfercfg->intB);
     /* set data width */
-    tmp = xfercfg->byteWidth == 4 ? 2 : xfercfg->byteWidth - 1;
-    xfer |= DMA_CHANNEL_XFERCFG_WIDTH(tmp);
+    xfer |= DMA_CHANNEL_XFERCFG_WIDTH(xfercfg->byteWidth == 4 ? 2 : xfercfg->byteWidth - 1);
     /* set source increment value */
-    tmp = xfercfg->srcInc == 4 ? 3 : xfercfg->srcInc;
-    xfer |= DMA_CHANNEL_XFERCFG_SRCINC(tmp);
+    xfer |= DMA_CHANNEL_XFERCFG_SRCINC((xfercfg->srcInc == kDMA_AddressInterleave4xWidth) ? (xfercfg->srcInc - 1) :
+                                                                                            xfercfg->srcInc);
     /* set destination increment value */
-    tmp = xfercfg->dstInc == 4 ? 3 : xfercfg->dstInc;
-    xfer |= DMA_CHANNEL_XFERCFG_DSTINC(tmp);
+    xfer |= DMA_CHANNEL_XFERCFG_DSTINC((xfercfg->dstInc == kDMA_AddressInterleave4xWidth) ? (xfercfg->dstInc - 1) :
+                                                                                            xfercfg->dstInc);
     /* set transfer count */
     xfer |= DMA_CHANNEL_XFERCFG_XFERCOUNT(xfercfg->transferCount - 1);
 
@@ -247,9 +236,57 @@ static void DMA_SetupXferCFG(dma_xfercfg_t *xfercfg, uint32_t *xfercfg_addr)
 }
 
 /*!
+ * brief setup dma descriptor
+ *
+ * param desc DMA descriptor address.
+ * param xfercfg Transfer configuration for DMA descriptor.
+ * param srcStartAddr Start address of source address.
+ * param dstStartAddr Start address of destination address.
+ * param nextDesc Address of next descriptor in chain.
+ */
+void DMA_SetupDescriptor(
+    dma_descriptor_t *desc, uint32_t xfercfg, void *srcStartAddr, void *dstStartAddr, void *nextDesc)
+{
+    assert(((uint32_t)nextDesc & (DMA_LINK_DESCRIPTOR_ADDRESS_ALIGN - 1)) == 0U);
+
+    uint32_t width = 0, srcInc = 0, dstInc = 0, transferCount = 0;
+
+    width = (xfercfg & DMA_CHANNEL_XFERCFG_WIDTH_MASK) >> DMA_CHANNEL_XFERCFG_WIDTH_SHIFT;
+    srcInc = (xfercfg & DMA_CHANNEL_XFERCFG_SRCINC_MASK) >> DMA_CHANNEL_XFERCFG_SRCINC_SHIFT;
+    dstInc = (xfercfg & DMA_CHANNEL_XFERCFG_DSTINC_MASK) >> DMA_CHANNEL_XFERCFG_DSTINC_SHIFT;
+    transferCount = ((xfercfg & DMA_CHANNEL_XFERCFG_XFERCOUNT_MASK) >> DMA_CHANNEL_XFERCFG_XFERCOUNT_SHIFT) + 1U;
+
+    /* covert register value to actual value */
+    if (width == 2U)
+    {
+        width = kDMA_Transfer32BitWidth;
+    }
+    else
+    {
+        width += 1U;
+    }
+
+    if (srcInc == 3U)
+    {
+        srcInc = kDMA_AddressInterleave4xWidth;
+    }
+
+    if (dstInc == 3U)
+    {
+        dstInc = kDMA_AddressInterleave4xWidth;
+    }
+
+    desc->xfercfg = xfercfg;
+    desc->srcEndAddr = DMA_DESCRIPTOR_END_ADDRESS(srcStartAddr, srcInc, transferCount * width, width);
+    desc->dstEndAddr = DMA_DESCRIPTOR_END_ADDRESS(dstStartAddr, dstInc, transferCount * width, width);
+    ;
+    desc->linkToNextDesc = nextDesc;
+}
+
+/*!
  * brief Create application specific DMA descriptor
  *        to be used in a chain in transfer
- *
+ * deprecated Do not use this function.  It has been superceded by @ref DMA_SetupDescriptor
  * param desc DMA descriptor address.
  * param xfercfg Transfer configuration for DMA descriptor.
  * param srcAddr Address of last item to transmit
@@ -258,20 +295,16 @@ static void DMA_SetupXferCFG(dma_xfercfg_t *xfercfg, uint32_t *xfercfg_addr)
  */
 void DMA_CreateDescriptor(dma_descriptor_t *desc, dma_xfercfg_t *xfercfg, void *srcAddr, void *dstAddr, void *nextDesc)
 {
-    uint32_t xfercfg_reg = 0;
-
-    assert((NULL != desc) && (0 == (uint32_t)desc % 16) && (NULL != xfercfg));
+    assert(((uint32_t)nextDesc & (DMA_LINK_DESCRIPTOR_ADDRESS_ALIGN - 1)) == 0U);
     assert((NULL != srcAddr) && (0 == (uint32_t)srcAddr % xfercfg->byteWidth));
     assert((NULL != dstAddr) && (0 == (uint32_t)dstAddr % xfercfg->byteWidth));
-    assert((NULL == nextDesc) || (0 == (uint32_t)nextDesc % 16));
 
-    /* Setup channel configuration */
+    uint32_t xfercfg_reg = 0;
+
     DMA_SetupXferCFG(xfercfg, &xfercfg_reg);
 
     /* Set descriptor structure */
-    DMA_SetupDescriptor(
-        desc, xfercfg_reg, (uint8_t *)srcAddr + (xfercfg->srcInc * xfercfg->byteWidth * (xfercfg->transferCount - 1)),
-        (uint8_t *)dstAddr + (xfercfg->dstInc * xfercfg->byteWidth * (xfercfg->transferCount - 1)), nextDesc);
+    DMA_SetupDescriptor(desc, xfercfg_reg, srcAddr, dstAddr, nextDesc);
 }
 
 /*!
@@ -320,6 +353,8 @@ void DMA_CreateHandle(dma_handle_t *handle, DMA_Type *base, uint32_t channel)
     s_DMAHandle[startChannel + channel] = handle;
     /* Enable NVIC interrupt */
     EnableIRQ(s_dmaIRQNumber[dmaInstance]);
+    /* Enable channel interrupt */
+    DMA_EnableChannelInterrupts(handle->base, channel);
 }
 
 /*!
@@ -342,7 +377,8 @@ void DMA_SetCallback(dma_handle_t *handle, dma_callback callback, void *userData
 
 /*!
  * brief Prepares the DMA transfer structure.
- *
+ * deprecated Do not use this function.  It has been superceded by @ref DMA_PrepareChannelTransfer and
+ * DMA_PrepareChannelXfer.
  * This function prepares the transfer configuration structure according to the user input.
  *
  * param config The user configuration structure of type dma_transfer_t.
@@ -367,6 +403,7 @@ void DMA_PrepareTransfer(dma_transfer_config_t *config,
     uint32_t xfer_count;
     assert((NULL != config) && (NULL != srcAddr) && (NULL != dstAddr));
     assert((byteWidth == 1) || (byteWidth == 2) || (byteWidth == 4));
+    assert(((uint32_t)nextDesc & (DMA_LINK_DESCRIPTOR_ADDRESS_ALIGN - 1)) == 0U);
 
     /* check max */
     xfer_count = transferBytes / byteWidth;
@@ -412,7 +449,150 @@ void DMA_PrepareTransfer(dma_transfer_config_t *config,
 }
 
 /*!
+ * brief set channel config.
+ *
+ * This function provide a interface to configure channel configuration reisters.
+ *
+ * param base DMA base address.
+ * param channel DMA channel number.
+ * param config channel configurations structure.
+ */
+void DMA_SetChannelConfig(DMA_Type *base, uint32_t channel, dma_channel_trigger_t *trigger, bool isPeriph)
+{
+    assert(channel <= FSL_FEATURE_DMA_MAX_CHANNELS);
+
+    uint32_t tmp = DMA_CHANNEL_CFG_PERIPHREQEN_MASK;
+
+    if (trigger != NULL)
+    {
+        tmp |= DMA_CHANNEL_CFG_HWTRIGEN_MASK | DMA_CHANNEL_CFG_TRIGPOL_MASK | DMA_CHANNEL_CFG_TRIGTYPE_MASK |
+               DMA_CHANNEL_CFG_TRIGBURST_MASK | DMA_CHANNEL_CFG_BURSTPOWER_MASK | DMA_CHANNEL_CFG_SRCBURSTWRAP_MASK |
+               DMA_CHANNEL_CFG_DSTBURSTWRAP_MASK;
+    }
+
+    tmp = base->CHANNEL[channel].CFG & (~tmp);
+
+    if (trigger != NULL)
+    {
+        tmp |= (uint32_t)(trigger->type) | (uint32_t)(trigger->burst) | (uint32_t)(trigger->wrap);
+    }
+
+    tmp |= DMA_CHANNEL_CFG_PERIPHREQEN(isPeriph);
+
+    base->CHANNEL[channel].CFG = tmp;
+}
+
+/*!
+ * brief Prepare channel transfer configurations.
+ *
+ * This function used to prepare channel transfer configurations.
+ *
+ * param config Pointer to DMA channel transfer configuration structure.
+ * param srcStartAddr source start address.
+ * param dstStartAddr destination start address.
+ * param xferCfg xfer configuration, user can reference DMA_CHANNEL_XFER about to how to get xferCfg value.
+ * param type transfer type.
+ * param trigger DMA channel trigger configurations.
+ * param nextDesc address of next descriptor.
+ */
+void DMA_PrepareChannelTransfer(dma_channel_config_t *config,
+                                void *srcStartAddr,
+                                void *dstStartAddr,
+                                uint32_t xferCfg,
+                                dma_transfer_type_t type,
+                                dma_channel_trigger_t *trigger,
+                                void *nextDesc)
+{
+    assert((NULL != config) && (NULL != srcStartAddr) && (NULL != dstStartAddr));
+    assert(((uint32_t)nextDesc & (DMA_LINK_DESCRIPTOR_ADDRESS_ALIGN - 1)) == 0U);
+
+    /* check max */
+    memset(config, 0, sizeof(*config));
+
+    switch (type)
+    {
+        case kDMA_MemoryToMemory:
+            config->isPeriph = false;
+            break;
+        case kDMA_PeripheralToMemory:
+            config->isPeriph = true;
+            break;
+        case kDMA_MemoryToPeripheral:
+            config->isPeriph = true;
+            break;
+        case kDMA_StaticToStatic:
+            config->isPeriph = true;
+            break;
+        default:
+            return;
+    }
+
+    config->dstStartAddr = (uint8_t *)dstStartAddr;
+    config->srcStartAddr = (uint8_t *)srcStartAddr;
+    config->nextDesc = (uint8_t *)nextDesc;
+    config->trigger = trigger;
+    config->xferCfg = xferCfg;
+}
+
+/*!
+ * brief Install DMA descriptor memory.
+ *
+ * This function used to register DMA descriptor memory for linked transfer, a typical case is ping pong
+ * transfer which will request more than one DMA descriptor memory space, althrough current DMA driver has
+ * a default DMA descriptor buffer, but it support one DMA descriptor for one channel only.
+ * User should be take care about the address of DMA descriptor pool which required align with 512BYTE.
+ *
+ * param handle Pointer to DMA channel transfer handle.
+ * param addr DMA descriptor address
+ * param num DMA descriptor number.
+ */
+void DMA_InstallDescriptorMemory(DMA_Type *base, void *addr)
+{
+    assert(addr != NULL);
+    assert(((uint32_t)addr & (FSL_FEATURE_DMA_DESCRIPTOR_ALIGN_SIZE - 1U)) == 0U);
+
+    /* reconfigure the DMA descriptor base address */
+    base->SRAMBASE = (uint32_t)addr;
+}
+
+/*!
+ * brief Submits the DMA channel transfer request.
+ *
+ * This function submits the DMA transfer request according to the transfer configuration structure.
+ * If the user submits the transfer request repeatedly, this function packs an unprocessed request as
+ * a TCD and enables scatter/gather feature to process it in the next time.
+ *
+ * param handle DMA handle pointer.
+ * param config Pointer to DMA transfer configuration structure.
+ * retval kStatus_DMA_Success It means submit transfer request succeed.
+ * retval kStatus_DMA_QueueFull It means TCD queue is full. Submit transfer request is not allowed.
+ * retval kStatus_DMA_Busy It means the given channel is busy, need to submit request later.
+ */
+status_t DMA_SubmitChannelTransfer(dma_handle_t *handle, dma_channel_config_t *config)
+{
+    assert((NULL != handle) && (NULL != config));
+    assert(handle->channel < FSL_FEATURE_DMA_NUMBER_OF_CHANNELSn(handle->base));
+
+    uint32_t instance = DMA_GetInstance(handle->base);
+    dma_descriptor_t *descriptor = (dma_descriptor_t *)(&s_dma_descriptor_table[instance][handle->channel]);
+
+    /* Previous transfer has not finished */
+    if (DMA_ChannelIsActive(handle->base, handle->channel))
+    {
+        return kStatus_DMA_Busy;
+    }
+
+    DMA_SetupDescriptor(descriptor, config->xferCfg, config->srcStartAddr, config->dstStartAddr, config->nextDesc);
+    DMA_SetChannelConfig(handle->base, handle->channel, config->trigger, config->isPeriph);
+    /* Set channel XFERCFG register according first channel descriptor. */
+    handle->base->CHANNEL[handle->channel].XFERCFG = descriptor->xfercfg;
+
+    return kStatus_Success;
+}
+
+/*!
  * brief Submits the DMA transfer request.
+ * deprecated Do not use this function.  It has been superceded by @ref DMA_SubmitChannelTransfer.
  *
  * This function submits the DMA transfer request according to the transfer configuration structure.
  * If the user submits the transfer request repeatedly, this function packs an unprocessed request as
@@ -427,7 +607,10 @@ void DMA_PrepareTransfer(dma_transfer_config_t *config,
 status_t DMA_SubmitTransfer(dma_handle_t *handle, dma_transfer_config_t *config)
 {
     assert((NULL != handle) && (NULL != config));
+    assert(handle->channel < FSL_FEATURE_DMA_NUMBER_OF_CHANNELSn(handle->base));
+
     uint32_t instance = DMA_GetInstance(handle->base);
+    dma_descriptor_t *descriptor = (dma_descriptor_t *)(&s_dma_descriptor_table[instance][handle->channel]);
 
     /* Previous transfer has not finished */
     if (DMA_ChannelIsActive(handle->base, handle->channel))
@@ -445,8 +628,9 @@ status_t DMA_SubmitTransfer(dma_handle_t *handle, dma_transfer_config_t *config)
         DMA_DisableChannelPeriphRq(handle->base, handle->channel);
     }
 
-    DMA_CreateDescriptor(&(s_dma_descriptor_table[instance][handle->channel]), &config->xfercfg, config->srcAddr,
-                         config->dstAddr, config->nextDesc);
+    DMA_CreateDescriptor(descriptor, &config->xfercfg, config->srcAddr, config->dstAddr, config->nextDesc);
+    /* Set channel XFERCFG register according first channel descriptor. */
+    handle->base->CHANNEL[handle->channel].XFERCFG = descriptor->xfercfg;
 
     return kStatus_Success;
 }
@@ -463,27 +647,18 @@ void DMA_StartTransfer(dma_handle_t *handle)
 {
     assert(NULL != handle);
 
-    uint32_t instance = DMA_GetInstance(handle->base);
+    uint32_t channel = handle->channel;
+    assert(channel < FSL_FEATURE_DMA_NUMBER_OF_CHANNELSn(handle->base));
 
-    /* Enable channel interrupt */
-    DMA_EnableChannelInterrupts(handle->base, handle->channel);
+    /* enable channel */
+    DMA_EnableChannel(handle->base, channel);
 
-    /* If HW trigger is enabled - disable SW trigger */
-    if (handle->base->CHANNEL[handle->channel].CFG & DMA_CHANNEL_CFG_HWTRIGEN_MASK)
+    /* user software trigger if Peripheral request not enabled */
+    if (((handle->base->CHANNEL[handle->channel].CFG & DMA_CHANNEL_CFG_TRIGBURST_MASK) != 0U) ||
+        ((handle->base->CHANNEL[handle->channel].CFG & DMA_CHANNEL_CFG_TRIGTYPE_MASK) != DMA_CHANNEL_CFG_TRIGTYPE(1U)))
     {
-        s_dma_descriptor_table[instance][handle->channel].xfercfg &= ~(DMA_CHANNEL_XFERCFG_SWTRIG_MASK);
+        handle->base->CHANNEL[channel].XFERCFG |= DMA_CHANNEL_XFERCFG_SWTRIG_MASK;
     }
-    /* Otherwise enable SW trigger */
-    else
-    {
-        s_dma_descriptor_table[instance][handle->channel].xfercfg |= DMA_CHANNEL_XFERCFG_SWTRIG_MASK;
-    }
-
-    /* Set channel XFERCFG register according first channel descriptor. */
-    handle->base->CHANNEL[handle->channel].XFERCFG = s_dma_descriptor_table[instance][handle->channel].xfercfg;
-    /* At this moment, the channel ACTIVE bit is set and application cannot modify
-     * or start another transfer using this channel. Channel ACTIVE bit is cleared by
-    * 'AbortTransfer' function or when the transfer finishes */
 }
 
 void DMA_IRQHandle(DMA_Type *base)
