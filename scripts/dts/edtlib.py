@@ -54,6 +54,31 @@ class EDT:
         return "<EDT, {} devices>".format(len(self.devices))
 
 
+class Device:
+    def __repr__(self):
+        return "<Device {}, {} regs>".format(
+            self.name, len(self.regs))
+
+
+class Register:
+    def __repr__(self):
+        fields = []
+
+        if self.name is not None:
+            fields.append("name: " + self.name)
+
+        fields.append("addr: " + hex(self.addr))
+
+        if self.size:
+            fields.append("size: " + hex(self.size))
+
+        return "<Register, {}>".format(", ".join(fields))
+
+
+class EDTError(Exception):
+    "Exception raised for Extended Device Tree-related errors"
+
+
 def _address_cells(node):
     # Returns the #address-cells setting for 'node'
     # TODO: explain?
@@ -153,28 +178,3 @@ def _translate_addr(addr, node, nr_addr_cells, nr_size_cells):
     range_offset += parent_range_offset
 
     return range_offset
-
-
-class Device:
-    def __repr__(self):
-        return "<Device {}, {} regs>".format(
-            self.name, len(self.regs))
-
-
-class Register:
-    def __repr__(self):
-        fields = []
-
-        if self.name is not None:
-            fields.append("name: " + self.name)
-
-        fields.append("addr: " + hex(self.addr))
-
-        if self.size:
-            fields.append("size: " + hex(self.size))
-
-        return "<Register, {}>".format(", ".join(fields))
-
-
-class EDTError(Exception):
-    "Exception raised for Extended Device Tree-related errors"
