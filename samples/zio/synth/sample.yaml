@@ -1,0 +1,7 @@
+sample:
+  name: Synth ZIO sample
+tests:
+  sample.zio.synth:
+    harness: console
+    tags: zio
+    depends_on: zio synth
