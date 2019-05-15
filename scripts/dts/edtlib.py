@@ -50,36 +50,6 @@ class EDT:
 
         self.devices[dev.name] = dev
 
-    def _translate_addr(self, addr, node, nr_addr_cells, nr_size_cells):
-        if "ranges" not in node.parent.props:
-            return 0
-
-        raw_ranges = node.parent.props["ranges"].value
-
-        nr_p_addr_cells = _address_cells(node.parent)
-        nr_p_size_cells = _size_cells(node.parent)
-
-        nr_range_cells = nr_addr_cells + nr_p_addr_cells + nr_size_cells
-
-        range_offset = 0
-        for raw_range in _slice(node.parent, "ranges", 4*nr_range_cells):
-            child_bus_addr = dtlib.to_num(raw_range[:4*nr_addr_cells])
-            parent_bus_addr = dtlib.to_num(
-                raw_range[4*nr_addr_cells:4*(nr_addr_cells + nr_p_addr_cells)])
-            range_len = dtlib.to_num(
-                raw_range[4*(nr_addr_cells + nr_p_addr_cells):])
-
-            # If we are outside the range, we don't need to translate
-            if child_bus_addr <= addr <= child_bus_addr + range_len:
-                range_offset = parent_bus_addr - child_bus_addr
-                break
-
-        parent_range_offset = self._translate_addr(
-            addr + range_offset, node.parent, nr_p_addr_cells, nr_p_size_cells)
-        range_offset += parent_range_offset
-
-        return range_offset
-
     def _regs(self, node):
         # Returns a list of Register instances for 'node'
 
@@ -98,7 +68,7 @@ class EDT:
             else:
                 reg.size = None
 
-            reg.addr += self._translate_addr(reg.addr, node, address_cells, size_cells)
+            reg.addr += _translate_addr(reg.addr, node, address_cells, size_cells)
 
             regs.append(reg)
 
@@ -151,6 +121,37 @@ def _slice(node, prop_name, size):
             "by {}".format(prop_name, len(raw), size))
 
     return [raw[i:i + size] for i in range(0, len(raw), size)]
+
+
+def _translate_addr(addr, node, nr_addr_cells, nr_size_cells):
+    if "ranges" not in node.parent.props:
+        return 0
+
+    raw_ranges = node.parent.props["ranges"].value
+
+    nr_p_addr_cells = _address_cells(node.parent)
+    nr_p_size_cells = _size_cells(node.parent)
+
+    nr_range_cells = nr_addr_cells + nr_p_addr_cells + nr_size_cells
+
+    range_offset = 0
+    for raw_range in _slice(node.parent, "ranges", 4*nr_range_cells):
+        child_bus_addr = dtlib.to_num(raw_range[:4*nr_addr_cells])
+        parent_bus_addr = dtlib.to_num(
+            raw_range[4*nr_addr_cells:4*(nr_addr_cells + nr_p_addr_cells)])
+        range_len = dtlib.to_num(
+            raw_range[4*(nr_addr_cells + nr_p_addr_cells):])
+
+        # If we are outside the range, we don't need to translate
+        if child_bus_addr <= addr <= child_bus_addr + range_len:
+            range_offset = parent_bus_addr - child_bus_addr
+            break
+
+    parent_range_offset = _translate_addr(
+        addr + range_offset, node.parent, nr_p_addr_cells, nr_p_size_cells)
+    range_offset += parent_range_offset
+
+    return range_offset
 
 
 class Device:
