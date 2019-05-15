@@ -235,6 +235,8 @@ u8_t ll_create_connection(u16_t scan_interval, u16_t scan_window,
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	ull_filter_scan_update(filter_policy);
 
+	lll->rl_idx = FILTER_IDX_NONE;
+	lll->rpa_gen = 0;
 	if (!filter_policy && ull_filter_lll_rl_enabled()) {
 		/* Look up the resolving list */
 		lll->rl_idx = ull_filter_rl_find(peer_addr_type, peer_addr,

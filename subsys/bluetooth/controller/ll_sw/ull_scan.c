@@ -79,6 +79,22 @@ u8_t ll_scan_enable(u8_t enable)
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	struct lll_scan *lll = &scan->lll;
+	ull_filter_scan_update(lll->filter_policy);
+
+	lll->rl_idx = FILTER_IDX_NONE;
+	lll->rpa_gen = 0;
+
+	if ((lll->type & 0x1) &&
+	    (scan->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
+	     scan->own_addr_type == BT_ADDR_LE_RANDOM_ID)) {
+		/* Generate RPAs if required */
+		ull_filter_rpa_update(false);
+		lll->rpa_gen = 1;
+	}
+#endif
+
 	return ull_scan_enable(scan);
 }
 
@@ -146,19 +162,6 @@ u8_t ull_scan_enable(struct ll_scan_set *scan)
 	u32_t ticks_interval;
 	u32_t ticks_anchor;
 	u32_t ret;
-
-#if defined(CONFIG_BT_CTLR_PRIVACY)
-	ull_filter_scan_update(lll->filter_policy);
-
-	if ((lll->type & 0x1) &&
-	    (scan->own_addr_type == BT_ADDR_LE_PUBLIC_ID ||
-	     scan->own_addr_type == BT_ADDR_LE_RANDOM_ID)) {
-		/* Generate RPAs if required */
-		ull_filter_rpa_update(false);
-		lll->rpa_gen = 1;
-		lll->rl_idx = FILTER_IDX_NONE;
-	}
-#endif
 
 	lll->chan = 0;
 	lll->init_addr_type = scan->own_addr_type;
