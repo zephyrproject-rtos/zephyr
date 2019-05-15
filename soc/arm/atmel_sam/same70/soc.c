@@ -237,9 +237,6 @@ static int atmel_same70_init(struct device *arg)
 		SCB_EnableDCache();
 	}
 
-	/* Clear all faults */
-	z_clearfaults();
-
 	/*
 	 * Set FWS (Flash Wait State) value before increasing Master Clock
 	 * (MCK) frequency.

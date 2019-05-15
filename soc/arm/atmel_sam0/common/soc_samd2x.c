@@ -180,8 +180,6 @@ static int atmel_samd_init(struct device *arg)
 
 	key = irq_lock();
 
-	z_clearfaults();
-
 	flash_waitstates_init();
 	osc8m_init();
 	osc32k_init();

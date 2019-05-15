@@ -136,8 +136,6 @@ static int soc_init(struct device *dev)
 	isave = __get_PRIMASK();
 	__disable_irq();
 
-	z_clearfaults();
-
 	soc_pcr_init();
 
 	soc_clk32_init();
