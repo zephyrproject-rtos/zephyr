@@ -4,10 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menu "Disk"
-
-config DISK_ACCESS
-	bool "Enable Disk Interface"
+menuconfig DISK_ACCESS
+	bool "Disk Interface"
 	help
 	  Enable disk access over a supported media backend like FLASH or RAM
 
@@ -30,21 +28,6 @@ config DISK_ACCESS_RAM
 	  This option can be used to test the file
 	  system.
 
-config DISK_ACCESS_FLASH
-	bool "Flash"
-	select FLASH
-	help
-	  Flash device is used for the file system.
-
-config DISK_ACCESS_SDHC
-	bool "SDHC card over SPI"
-	select SPI
-	select FLASH
-	help
-	  File system on a SDHC card accessed over SPI.
-
-endif # DISK_ACCESS
-
 if DISK_ACCESS_RAM
 
 config DISK_RAM_VOLUME_SIZE
@@ -60,6 +43,12 @@ config DISK_RAM_VOLUME_NAME
 	  Disk name as per file system naming guidelines.
 
 endif # DISK_ACCESS_RAM
+
+config DISK_ACCESS_FLASH
+	bool "Flash"
+	select FLASH
+	help
+	  Flash device is used for the file system.
 
 if DISK_ACCESS_FLASH
 
@@ -104,14 +93,18 @@ config DISK_VOLUME_SIZE
 
 endif # DISK_ACCESS_FLASH
 
-if DISK_ACCESS_SDHC
+config DISK_ACCESS_SDHC
+	bool "SDHC card over SPI"
+	select SPI
+	select FLASH
+	help
+	  File system on a SDHC card accessed over SPI.
 
 config DISK_SDHC_VOLUME_NAME
 	string "SDHC Disk mount point or drive name"
 	default "SDHC"
+	depends on DISK_ACCESS_SDHC
 	help
 	  Disk name as per file system naming guidelines.
 
-endif # DISK_ACCESS_SDHC
-
-endmenu
+endif # DISK_ACCESS
