@@ -150,30 +150,3 @@ commands.
        environment overrides the value of the ``zephyr.base`` configuration
        option. If set to ``"configfile"``, the configuration option wins
        instead.
-
-Zephyr Extension Commands Configuration Options
------------------------------------------------
-
-The following table documents configuration options supported by zephyr's
-extension commands (found in :file:`scripts/west_commands`).
-.. NOTE: docs authors: keep this table sorted by section, then option.
-
-.. list-table::
-   :widths: 10 30
-   :header-rows: 1
-
-   * - Option
-     - Description
-   * - ``build.pristine``
-     - String. Controls the way in which ``west build`` may clean the build
-       folder before building. Can take the following values:
-
-         - ``never`` (default): Never automatically make the build folder
-           pristine.
-         - ``auto``:  ``west build`` will automatically make the build folder
-           pristine before building, if a build system is present and the build
-           would fail otherwise (e.g. the user has specified a different board
-           or application from the one previously used to make the build
-           directory).
-         - ``always``: Always make the build folder pristine before building, if
-           a build system is present.
