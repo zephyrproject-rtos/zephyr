@@ -6,12 +6,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-menu "C++ Options"
-
-config CPLUSPLUS
-	bool "Enable C++ support for the application"
+menuconfig CPLUSPLUS
+	bool "C++ support for the application"
 	help
 	  This option enables the use of applications built with C++.
+
+if CPLUSPLUS
 
 choice
 	prompt "C++ Standard"
@@ -48,24 +48,21 @@ config STD_CPP2A
 endchoice
 
 config LIB_CPLUSPLUS
-	depends on CPLUSPLUS
 	bool "Link with STD C++ library"
 	help
 	  Link with STD C++ Library.
 
 config EXCEPTIONS
-	depends on CPLUSPLUS
-	depends on NEWLIB_LIBC
-	select LIB_CPLUSPLUS
 	bool "Enable C++ exceptions support"
+	select LIB_CPLUSPLUS
+	depends on NEWLIB_LIBC
 	help
 	  This option enables support of C++ exceptions.
 
 config RTTI
-	depends on CPLUSPLUS
-	select LIB_CPLUSPLUS
 	bool "Enable C++ RTTI support"
+	select LIB_CPLUSPLUS
 	help
 	  This option enables support of C++ RTTI.
 
-endmenu
+endif # CPLUSPLUS
