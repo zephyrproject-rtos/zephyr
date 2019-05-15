@@ -107,16 +107,6 @@ struct k_thread;
  */
 
 /**
- * @brief enable the MPU
- */
-void arm_core_mpu_enable(void);
-
-/**
- * @brief disable the MPU
- */
-void arm_core_mpu_disable(void);
-
-/**
  * @brief configure a set of fixed (static) MPU regions
  *
  * Internal API function to configure a set of static MPU memory regions,
