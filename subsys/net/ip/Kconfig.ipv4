@@ -43,6 +43,12 @@ config NET_ICMPV4_ACCEPT_BROADCAST
 	  If set, then respond to ICMPv4 echo-request that is sent to
 	  broadcast address.
 
+config NET_IPV4_ACCEPT_ZERO_BROADCAST
+	bool "Accept 0.0.0.0 broadcast destination address"
+	help
+	  If set, then accept UDP packets destined to non-standard
+	  0.0.0.0 broadcast address as described in RFC 1122 ch. 3.3.6
+
 config NET_DHCPV4
 	bool "Enable DHCPv4 client"
 
