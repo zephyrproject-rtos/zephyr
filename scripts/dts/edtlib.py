@@ -109,8 +109,8 @@ class EDT:
                     "'reg-names' property in {} has {} strings, but there are "
                     "{} registers".format(node.name, len(reg_names), len(regs)))
 
-            for i, name in enumerate(reg_names):
-                regs[i].name = name
+            for reg, name in zip(regs, reg_names):
+                reg.name = name
         else:
             for reg in regs:
                 reg.name = None
