@@ -525,6 +525,24 @@ static void gatt_insert(struct bt_gatt_service *svc, u16_t last_handle)
 	}
 }
 
+static u8_t found_attr(const struct bt_gatt_attr *attr, void *user_data)
+{
+	const struct bt_gatt_attr **found = user_data;
+
+	*found = attr;
+
+	return BT_GATT_ITER_STOP;
+}
+
+static const struct bt_gatt_attr *find_attr(uint16_t handle)
+{
+	const struct bt_gatt_attr *attr = NULL;
+
+	bt_gatt_foreach_attr(handle, handle, found_attr, &attr);
+
+	return attr;
+}
+
 static int gatt_register(struct bt_gatt_service *svc)
 {
 	struct bt_gatt_service *last;
@@ -551,7 +569,7 @@ populate:
 		} else if (attrs->handle > handle) {
 			/* Use existing handle if valid */
 			handle = attrs->handle;
-		} else {
+		} else if (find_attr(attrs->handle)) {
 			/* Service has conflicting handles */
 			BT_ERR("Unable to register handle 0x%04x",
 			       attrs->handle);
