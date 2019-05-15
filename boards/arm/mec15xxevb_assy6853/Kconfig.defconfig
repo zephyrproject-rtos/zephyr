@@ -10,10 +10,32 @@ config BOARD
 
 if UART_NS16550
 
-config UART_NS16550_PORT_0
+config UART_NS16550_PORT_2
 	def_bool y if UART_CONSOLE
 
 endif
+
+if PINMUX_XEC
+
+config PINMUX_XEC_GPIO000_036
+	default y
+
+config PINMUX_XEC_GPIO040_076
+	default n
+
+config PINMUX_XEC_GPIO100_136
+	default y
+
+config PINMUX_XEC_GPIO140_176
+	default y
+
+config PINMUX_XEC_GPIO200_236
+	default n
+
+config PINMUX_XEC_GPIO240_276
+	default n
+
+endif # PINMUX_XEC
 
 if GPIO_XEC
 
