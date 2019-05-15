@@ -177,6 +177,24 @@ if(SUPPORTS_DTS)
   import_kconfig(CONFIG_ ${GENERATED_DTS_BOARD_CONF})
   import_kconfig(DT_     ${GENERATED_DTS_BOARD_CONF})
 
+  # Test the new extractor
+  set(CMD_NEW_EXTRACT ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/dts/new_extract.py
+  --dts ${BOARD}.dts_compiled
+  --yaml ${DTS_ROOT_BINDINGS}
+  --keyvalue ${GENERATED_DTS_BOARD_CONF}
+  --include ${GENERATED_DTS_BOARD_UNFIXED_H}
+  --old-alias-names
+  )
+
+  execute_process(
+    COMMAND ${CMD_NEW_EXTRACT}
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+    RESULT_VARIABLE ret
+    )
+  if(NOT "${ret}" STREQUAL "0")
+    message(FATAL_ERROR "new extractor failed with return code: ${ret}")
+  endif()
+
 else()
   file(WRITE ${GENERATED_DTS_BOARD_UNFIXED_H} "/* WARNING. THIS FILE IS AUTO-GENERATED. DO NOT MODIFY! */")
 endif(SUPPORTS_DTS)
