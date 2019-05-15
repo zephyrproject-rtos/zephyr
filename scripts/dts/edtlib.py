@@ -1,3 +1,7 @@
+"""
+Helper library for working with .dts files at a higher level compared to dtlib.
+Deals with devices, registers, bindings, etc.
+"""
 import fnmatch
 import os
 import re
@@ -6,6 +10,15 @@ from dtlib import DT, to_num
 
 
 class EDT:
+    """
+    Represents a "high-level" view of a device tree, with a list of devices
+    that each have some number of registers, etc.
+
+    These attributes are available on EDT instances:
+
+    devices:
+      A dictionary that maps device names to Device instances.
+    """
     def __init__(self, dts, bindings_dir):
         self._create_compat2binding(bindings_dir)
         self._create_devices(dts)
@@ -55,12 +68,36 @@ class EDT:
 
 
 class Device:
+    """
+    Represents a device.
+
+    These attributes are available on Device instances:
+
+    regs:
+      A list of Register instances for the device's registers.
+    """
     def __repr__(self):
         return "<Device {}, {} regs>".format(
             self.name, len(self.regs))
 
 
 class Register:
+    """
+    Represents a register on a device.
+
+    These attributes are available on Register instances:
+
+    name:
+      The name of the register as given in the 'reg-names' property, or None if
+      there is no 'reg-names' property.
+
+    addr:
+      The starting address of the register, in the parent address space. Any
+      'ranges' properties are taken into account.
+
+    size:
+      The length of the register in bytes.
+    """
     def __repr__(self):
         fields = []
 
@@ -150,8 +187,8 @@ def _translate(addr, node):
 
 
 def _address_cells(node):
-    # Returns the #address-cells setting for 'node'
-    # TODO: explain?
+    # Returns the #address-cells setting for 'node', giving the number of <u32>
+    # cells used to encode the address in the 'reg' property
 
     if "#address-cells" in node.parent.props:
         return node.parent.props["#address-cells"].to_num()
@@ -159,8 +196,8 @@ def _address_cells(node):
 
 
 def _size_cells(node):
-    # Returns the #size-cells setting for 'node'
-    # TODO: explain?
+    # Returns the #size-cells setting for 'node', giving the number of <u32>
+    # cells used to encode the size in the 'reg' property
 
     if "#size-cells" in node.parent.props:
         return node.parent.props["#size-cells"].to_num()
