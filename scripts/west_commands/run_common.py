@@ -222,8 +222,7 @@ def do_run_common(command, args, runner_args, cached_runner_var):
     runner_cls.add_parser(parser)
     parsed_args, unknown = parser.parse_known_args(args=final_runner_args)
     if unknown:
-        raise CommandContextError('Runner', runner,
-                                  'received unknown arguments', unknown)
+        log.die('Runner', runner, 'received unknown arguments:', unknown)
     runner = runner_cls.create(cfg, parsed_args)
     runner.run(command_name)
 
