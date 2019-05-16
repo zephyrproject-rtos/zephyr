@@ -107,9 +107,11 @@ static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 	return (key & PSR_PIL) == 0;
 }
 
+extern u32_t z_timer_cycle_get_32(void);
+
 static inline u32_t arch_k_cycle_get_32(void)
 {
-	return 0;
+	return z_timer_cycle_get_32();
 }
 
 /**
