@@ -133,6 +133,14 @@
 	status = "ok";
 };
 
+&spi0 {
+	status = "ok";
+};
+
+&spi1 {
+	status = "ok";
+};
+
 &flash0 {
 	/*
 	 * For more information, see:
