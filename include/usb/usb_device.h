@@ -419,6 +419,11 @@ int usb_transfer_sync(u8_t ep, u8_t *data, size_t dlen, unsigned int flags);
 void usb_cancel_transfer(u8_t ep);
 
 /**
+ * @brief Cancel all ongoing transfers
+ */
+void usb_cancel_transfers(void);
+
+/**
  * @brief Check that transfer is ongoing for the endpoint
  *
  * @param[in]  ep           Endpoint address corresponding to the one

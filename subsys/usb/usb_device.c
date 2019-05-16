@@ -1419,6 +1419,24 @@ done:
 	irq_unlock(key);
 }
 
+void usb_cancel_transfers(void)
+{
+	for (int i = 0; i < ARRAY_SIZE(usb_dev.transfer); i++) {
+		struct usb_transfer_data *trans = &usb_dev.transfer[i];
+		unsigned int key;
+
+		key = irq_lock();
+
+		if (trans->status == -EBUSY) {
+			trans->status = -ECANCELED;
+			k_work_submit(&trans->work);
+			LOG_DBG("Cancel transfer");
+		}
+
+		irq_unlock(key);
+	}
+}
+
 struct usb_transfer_sync_priv {
 	int tsize;
 	struct k_sem sem;
