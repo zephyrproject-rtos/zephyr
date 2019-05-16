@@ -69,7 +69,9 @@ class EDT:
 
         dev.instance_no = 0
         for other_dev in self.devices.values():
-            if other_dev.matching_compat == matching_compat:
+            if other_dev.matching_compat == matching_compat and \
+                other_dev.enabled:
+
                 dev.instance_no += 1
 
         self.devices[dev.name] = dev
@@ -102,6 +104,9 @@ class Device:
       Unique numeric ID for the device among all devices that matched the same
       binding. Counts from zero.
 
+      Only enabled devices (status != "disabled") are counted. 'instance_no' is
+      meaningless for disabled devices.
+
     parent:
       The parent Device, or None if there is no parent
     """
@@ -122,8 +127,14 @@ class Device:
         return None
 
     @property
+    def enabled(self):
+        if "status" not in self._node.props:
+            return False
+        return self._node.props["status"].to_string() != "disabled"
+
+    @property
     def parent(self):
-        return self._node2dev.get(self._node.parent)
+        return self.edt._node2dev.get(self._node.parent)
 
     def __repr__(self):
         return "<Device {}, {} regs>".format(
