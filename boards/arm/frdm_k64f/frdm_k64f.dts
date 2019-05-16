@@ -71,7 +71,7 @@
 		};
 		user_button_3: button_1 {
 			label = "User SW3";
-			gpios = <&gpioa 4 GPIO_INT_ACTIVE_LOW>;
+			gpios = <&gpioa 4 (GPIO_INT_ACTIVE_LOW | GPIO_PUD_PULL_UP)>;
 		};
 	};
 };
