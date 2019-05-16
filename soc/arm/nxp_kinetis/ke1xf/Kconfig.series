@@ -16,6 +16,7 @@ config SOC_SERIES_KINETIS_KE1XF
 	select HAS_MCUX_FTFX
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_PCC
+	select HAS_MCUX_RTC
 	select HAS_MCUX_SIM
 	help
 	  Enable support for Kinetis KE1xF MCU series
