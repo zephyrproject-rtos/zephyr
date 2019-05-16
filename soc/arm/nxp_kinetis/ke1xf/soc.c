@@ -214,6 +214,15 @@ static ALWAYS_INLINE void clk_init(void)
 #ifdef CONFIG_SPI_1
 	CLOCK_SetIpSrc(kCLOCK_Lpspi1, kCLOCK_IpSrcFircAsync);
 #endif
+#ifdef CONFIG_ADC_0
+	CLOCK_SetIpSrc(kCLOCK_Adc0, kCLOCK_IpSrcFircAsync);
+#endif
+#ifdef CONFIG_ADC_1
+	CLOCK_SetIpSrc(kCLOCK_Adc1, kCLOCK_IpSrcFircAsync);
+#endif
+#ifdef CONFIG_ADC_2
+	CLOCK_SetIpSrc(kCLOCK_Adc2, kCLOCK_IpSrcFircAsync);
+#endif
 #ifdef DT_NXP_KINETIS_SCG_0_CLKOUT_SOURCE
 	CLOCK_SetClkOutSel(DT_NXP_KINETIS_SCG_0_CLKOUT_SOURCE);
 #endif
