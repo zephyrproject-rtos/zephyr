@@ -177,6 +177,13 @@ config LITEX_TIMER
 	help
 	  This module implements a kernel device driver for LiteX Timer.
 
+config LEON2_TIMER
+	bool "LEON2 Timer Unit"
+	depends on SPARC
+	help
+	  This module implements a kernel device driver for the SPARC timer unit
+	  driver. It provides the standard "system clock driver" interfaces.
+
 config NATIVE_POSIX_TIMER
 	bool "(POSIX) native_posix timer driver"
 	default y
