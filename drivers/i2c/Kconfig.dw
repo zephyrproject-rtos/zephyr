@@ -22,28 +22,4 @@ config I2C_DW_CLOCK_SPEED
 	int "Set the clock speed for I2C"
 	default 32
 
-config I2C_DW_SHARED_IRQ
-	bool
-
-choice
-	prompt "I2C_0 Interrupts via"
-	default I2C_DW_0_IRQ_DIRECT
-	depends on I2C_0
-
-config I2C_DW_0_IRQ_DIRECT
-	bool "Direct Hardware Interrupt"
-	help
-	  When interrupts fire, the driver's ISR function is being called
-	  directly.
-
-config I2C_DW_0_IRQ_SHARED
-	bool "Shared IRQ"
-	depends on SHARED_IRQ
-	select I2C_DW_SHARED_IRQ
-	help
-	  When interrupts fire, the shared IRQ driver is notified.
-	  Then the shared IRQ driver dispatches the interrupt to other drivers.
-
-endchoice
-
 endif # I2C_DW

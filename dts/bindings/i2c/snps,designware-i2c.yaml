@@ -29,4 +29,9 @@ properties:
       description: required interrupts
       generation: define
 
+    pcie:
+      type: boolean
+      category: optional
+      description: attached via PCI(e) bus
+      generation: define
 ...

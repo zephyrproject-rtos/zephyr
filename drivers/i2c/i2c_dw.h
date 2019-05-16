@@ -11,10 +11,18 @@
 #include <i2c.h>
 #include <stdbool.h>
 
-#ifdef CONFIG_PCI
-#include <pci/pci.h>
-#include <pci/pci_mgr.h>
-#endif /* CONFIG_PCI */
+#if DT_SNPS_DESIGNWARE_I2C_0_PCIE || \
+	DT_SNPS_DESIGNWARE_I2C_1_PCIE || \
+	DT_SNPS_DESIGNWARE_I2C_2_PCIE || \
+	DT_SNPS_DESIGNWARE_I2C_3_PCIE || \
+	DT_SNPS_DESIGNWARE_I2C_4_PCIE || \
+	DT_SNPS_DESIGNWARE_I2C_5_PCIE || \
+	DT_SNPS_DESIGNWARE_I2C_6_PCIE || \
+	DT_SNPS_DESIGNWARE_I2C_7_PCIE
+BUILD_ASSERT_MSG(IS_ENABLED(CONFIG_PCIE), "DW I2C in DT needs CONFIG_PCIE");
+#define I2C_DW_PCIE_ENABLED
+#include <drivers/pcie/pcie.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -86,14 +94,13 @@ typedef void (*i2c_isr_cb_t)(struct device *port);
 
 struct i2c_dw_rom_config {
 	i2c_isr_cb_t	config_func;
-
-#ifdef CONFIG_I2C_DW_SHARED_IRQ
-	char *shared_irq_dev_name;
-#endif /* CONFIG_I2C_DW_SHARED_IRQ */
-
-	u32_t bitrate;
+	u32_t		bitrate;
+#ifdef I2C_DW_PCIE_ENABLED
+	bool		pcie;
+	pcie_bdf_t	pcie_bdf;
+	pcie_id_t	pcie_id;
+#endif /* I2C_DW_PCIE_ENABLED */
 };
-
 
 struct i2c_dw_dev_config {
 	u32_t base_address;
@@ -112,9 +119,6 @@ struct i2c_dw_dev_config {
 	u8_t			request_bytes;
 	u8_t			xfr_flags;
 	bool			support_hs_mode;
-#ifdef CONFIG_PCI
-	struct pci_dev_info pci_dev;
-#endif /* CONFIG_PCI */
 };
 
 #ifdef __cplusplus
