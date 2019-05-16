@@ -50,10 +50,12 @@ def main():
 
     with open(args.keyvalue + "-new", "w") as f:
         for (pre, body, post) in dt_output:
-            print("#define %s_%s_%s\t0x%x" % (pre, body, post, dt_output[(pre, body, post)]))
+            print("#define %s_%s_%s\t0x%x" % (pre, body, post, dt_output[(pre, body, post)]),
+                  file=f)
         for (pre, body, post) in dt_alias:
             (alias_pre, alias_body, alias_post) = dt_alias[(pre, body, post)]
-            print("#define %s_%s_%s\t%s_%s_%s" % (pre, body, post, alias_pre, alias_body, alias_post))
+            print("#define %s_%s_%s\t%s_%s_%s" % (pre, body, post, alias_pre, alias_body, alias_post),
+                  file=f)
 
     with open(args.include + "-new", "w") as f:
         for dev in edt.devices.values():
