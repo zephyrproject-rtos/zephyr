@@ -128,9 +128,8 @@ class Device:
 
     @property
     def enabled(self):
-        if "status" not in self._node.props:
-            return True
-        return self._node.props["status"].to_string() != "disabled"
+        return "status" not in self._node.props or \
+            self._node.props["status"].to_string() != "disabled"
 
     @property
     def parent(self):
