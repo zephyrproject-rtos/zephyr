@@ -23,6 +23,9 @@ choice
 config ILI9340_LCD_ADAFRUIT_1480
 	bool "Adafruit 2.2\" TFT 1480"
 
+config ILI9340_LCD_SEEED_TFTV2
+	bool "Seeed 2.8\" TFT v2.0"
+
 endchoice
 
 choice
