@@ -6,6 +6,12 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+config ADC_MCUX_ADC12
+	bool "MCUX ADC12 driver"
+	depends on HAS_MCUX_ADC12
+	help
+	  Enable the MCUX ADC12 driver.
+
 config ADC_MCUX_ADC16
 	bool "MCUX ADC16 driver"
 	depends on HAS_MCUX_ADC16
