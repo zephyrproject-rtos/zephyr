@@ -229,7 +229,7 @@ if(CONFIG_LIB_CPLUSPLUS)
   toolchain_ld_cpp()
 endif()
 
-# @Intent Add the basic toolchain warning flags
+# @Intent: Add the basic toolchain warning flags
 toolchain_cc_warning_base()
 
 # ==========================================================================
@@ -240,7 +240,7 @@ toolchain_cc_warning_base()
 # W=2 - warnings that occur quite often but may still be relevant
 # W=3 - the more obscure warnings, can most likely be ignored
 # ==========================================================================
-# @Intent Add cmake -DW toolchain supported warnings, if any
+# @Intent: Add cmake -DW toolchain supported warnings, if any
 if(W MATCHES "1")
   toolchain_cc_warning_dw_1()
 endif()
@@ -253,7 +253,7 @@ if(W MATCHES "3")
   toolchain_cc_warning_dw_3()
 endif()
 
-# @Intent Add extended, more specific, toolchain warning flags
+# @Intent: Add extended, more specific, toolchain warning flags
 toolchain_cc_warning_extended()
 
 # Allow the user to inject options when calling cmake, e.g.
