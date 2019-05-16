@@ -160,6 +160,8 @@ static struct usb_dev_priv {
 	u8_t std_req_data[MAX_STD_REQ_MSG_SIZE];
 	/** Variable to check whether the usb has been enabled */
 	bool enabled;
+	/** Variable to check whether the usb has been configured */
+	bool configured;
 	/** Currently selected configuration */
 	u8_t configuration;
 	/** Remote wakeup feature status */
@@ -500,6 +502,8 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 		LOG_ERR("Failed to enable endpoint %x", ep_cfg.ep_addr);
 		return false;
 	}
+
+	usb_dev.configured = true;
 
 	return true;
 }
@@ -939,12 +943,42 @@ static void usb_register_status_callback(usb_dc_status_callback cb)
 	usb_dev.status_callback = cb;
 }
 
+static int foreach_ep(int (* endpoint_callback)(const struct usb_ep_cfg_data *))
+{
+	size_t size = (__usb_data_end - __usb_data_start);
+
+	for (size_t i = 0; i < size; i++) {
+		struct usb_cfg_data *cfg = &__usb_data_start[i];
+		struct usb_ep_cfg_data *ep_data = cfg->endpoint;
+
+		for (u8_t n = 0; n < cfg->num_endpoints; n++) {
+			int ret;
+
+			ret = endpoint_callback(&ep_data[n]);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static int disable_interface_ep(const struct usb_ep_cfg_data *ep_data)
+{
+	return usb_dc_ep_disable(ep_data->ep_addr);
+}
+
 static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
 {
 	size_t size = (__usb_data_end - __usb_data_start);
 
-	if (status == USB_DC_DISCONNECTED) {
-		usb_cancel_transfers();
+	if (status == USB_DC_DISCONNECTED || status == USB_DC_SUSPEND) {
+		if (usb_dev.configured) {
+			usb_cancel_transfers();
+			foreach_ep(disable_interface_ep);
+			usb_dev.configured = false;
+		}
 	}
 
 	for (size_t i = 0; i < size; i++) {
