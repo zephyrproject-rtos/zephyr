@@ -140,6 +140,13 @@ config SHELL_CMDS_RESIZE
 	  must be called to ensure correct text display on the terminal screen.
 	  The resize command can be turned off to save code memory (~0,5k).
 
+config SHELL_CMDS_SELECT
+	bool "Enable select command"
+	depends on SHELL_CMDS
+	help
+	  This option enables select command. It can be used to set new root
+	  command. Exit to main command tree is with alt+r.
+
 config SHELL_LOG_BACKEND
 	bool
 	default y if LOG
