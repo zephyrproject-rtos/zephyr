@@ -492,10 +492,12 @@ static bool set_endpoint(const struct usb_ep_descriptor *ep_desc)
 		ep_cfg.ep_addr, ep_cfg.ep_type, ep_cfg.ep_mps);
 
 	if (usb_dc_ep_configure(&ep_cfg) < 0) {
+		LOG_ERR("Failed to configure endpoint %x", ep_cfg.ep_addr);
 		return false;
 	}
 
 	if (usb_dc_ep_enable(ep_cfg.ep_addr) < 0) {
+		LOG_ERR("Failed to enable endpoint %x", ep_cfg.ep_addr);
 		return false;
 	}
 
