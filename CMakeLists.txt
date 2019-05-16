@@ -190,8 +190,11 @@ if(NOT CONFIG_RTTI)
 endif()
 
 if(CONFIG_MISRA_SANE)
-  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:-Werror=vla>)
-  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Werror=vla>)
+  # @Intent: Obtain toolchain compiler flags relating to MISRA.
+  toolchain_cc_warning_error_misra_sane(CC_MISRA_SANE_FLAG)
+  toolchain_cc_cpp_warning_error_misra_sane(CPP_MISRA_SANE_FLAG)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:C>:${CC_MISRA_SANE_FLAG}>)
+  zephyr_compile_options($<$<COMPILE_LANGUAGE:CXX>:${CPP_MISRA_SANE_FLAG}>)
 endif()
 
 # @Intent: Set compiler specific flags for standard C includes
