@@ -258,10 +258,16 @@ void test_timer_periodicity(void)
 		delta = k_uptime_delta(&tdata.timestamp);
 
 		/** TESTPOINT: check if timer fired within 1ms of the
-		 *  expected period (firing time)
+		 *  expected period (firing time).
+		 *
+		 * Please note, that expected firing time is not the
+		 * one requested, as the kernel uses the ticks to manage
+		 * time. The actual perioid will be equal to [tick time]
+		 * multiplied by z_ms_to_ticks(PERIOD).
 		 */
-		TIMER_ASSERT(WITHIN_ERROR(delta, PERIOD, 1),
-			     &periodicity_timer);
+		TIMER_ASSERT(WITHIN_ERROR(delta,
+				__ticks_to_ms(z_ms_to_ticks(PERIOD)), 1),
+				&periodicity_timer);
 	}
 
 	/* cleanup environment */
@@ -513,7 +519,14 @@ void test_timer_remaining_get(void)
 	busy_wait_ms(DURATION / 2);
 	remaining = k_timer_remaining_get(&remain_timer);
 	k_timer_stop(&remain_timer);
-	zassert_true(remaining <= (DURATION / 2), NULL);
+
+	/*
+	 * While the busy_wait_ms() works with the maximum possible resolution,
+	 * the k_timer api is limited by the system tick abstraction. As result
+	 * the value obtained through k_timer_remaining_get() could be larger
+	 * than actual remaining time with maximum error equal to one tick.
+	 */
+	zassert_true(remaining <= (DURATION / 2) + __ticks_to_ms(1), NULL);
 }
 
 static void timer_init(struct k_timer *timer, k_timer_expiry_t expiry_fn,
