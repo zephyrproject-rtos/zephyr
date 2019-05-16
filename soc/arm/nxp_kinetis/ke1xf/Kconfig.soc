@@ -87,4 +87,8 @@ config WDOG_INIT
 	  requires that the watchdog be configured during reset
 	  handling.
 
+config KINETIS_KE1XF_ENABLE_CODE_CACHE
+        bool "Enable the code cache"
+        default y
+
 endif # SOC_SERIES_KINETIS_KE1XF

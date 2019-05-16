@@ -13,6 +13,7 @@ config SOC_SERIES_KINETIS_KE1XF
 	select CPU_HAS_FPU
 	select CLOCK_CONTROL
 	select HAS_MCUX
+	select HAS_MCUX_CACHE
 	select HAS_MCUX_FTFX
 	select HAS_MCUX_LPUART
 	select HAS_MCUX_PCC
