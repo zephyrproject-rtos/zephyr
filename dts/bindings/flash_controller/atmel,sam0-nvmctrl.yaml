@@ -12,4 +12,10 @@ properties:
     compatible:
       constraint: "atmel,sam0-nvmctrl"
 
+    lock-regions:
+      type: int
+      category: required
+      generation: define
+      description: Number of lock regions
+
 ...

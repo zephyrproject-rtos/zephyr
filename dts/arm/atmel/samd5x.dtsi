@@ -225,6 +225,7 @@
 			label = "FLASH_CTRL";
 			reg = <0x41004000 0x22>;
 			interrupts = <29 0>, <30 0>;
+			lock-regions = <32>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
