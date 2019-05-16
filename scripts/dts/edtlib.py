@@ -52,12 +52,13 @@ class EDT:
             if "compatible" in node.props:
                 for comp in node.props["compatible"].to_strings():
                     if comp in self._compat2binding:
-                        self._create_device(node)
+                        self._create_device(comp, node)
 
-    def _create_device(self, node):
+    def _create_device(self, comp, node):
         # Creates and registers a Device for 'node'
 
         dev = Device()
+        dev.compat = comp
         dev.name = node.name
         dev.regs = _regs(node)
 
