@@ -8,3 +8,6 @@ toolchain:
   - xtools
 ram: 32
 flash: 512
+supported:
+  - rtc
+  - counter
