@@ -21,6 +21,10 @@ class EDT:
     """
     def __init__(self, dts, bindings_dir):
         self._create_compat2binding(bindings_dir)
+
+        # Maps dtlib.Node's to their corresponding Devices
+        self._node2dev = {}
+
         self._create_devices(dts)
 
     def _create_compat2binding(self, bindings_dir):
@@ -59,15 +63,9 @@ class EDT:
         # binding via the 'compatible' string 'matching_compat'
 
         dev = Device()
-        dev.name = node.name
-        dev.regs = _regs(node)
+        dev.edt = self
         dev.matching_compat = matching_compat
-
-        # Complete hack to get the bus, this really should come from YAML
-        dev.bus = None
-        possible_bus = dev.name.split("@")[0]
-        if possible_bus == "i2c" or possible_bus == "spi":
-            dev.bus = possible_bus
+        dev._node = node
 
         dev.instance_no = 0
         for other_dev in self.devices.values():
@@ -75,6 +73,8 @@ class EDT:
                 dev.instance_no += 1
 
         self.devices[dev.name] = dev
+
+        self._node2dev[node] = dev
 
     def __repr__(self):
         return "<EDT, {} devices>".format(len(self.devices))
@@ -86,6 +86,9 @@ class Device:
 
     These attributes are available on Device instances:
 
+    edt:
+      The EDT instance this device is from.
+
     regs:
       A list of Register instances for the device's registers.
 
@@ -96,12 +99,32 @@ class Device:
       The 'compatible' string for the binding that matched the device
 
     instance_no:
-      Unique ID for this device among all devices that matched the same
+      Unique numeric ID for the device among all devices that matched the same
       binding. Counts from zero.
 
-    bus:
-      TODO: document
+    parent:
+      The parent Device, or None if there is no parent
     """
+    @property
+    def name(self):
+        return self._node.name
+
+    @property
+    def regs(self):
+        return _regs(self._node)
+
+    @property
+    def bus(self):
+        # Complete hack to get the bus, this really should come from YAML
+        possible_bus = self._node.name.split("@")[0]
+        if possible_bus in {"i2c", "spi"}:
+            return possible_bus
+        return None
+
+    @property
+    def parent(self):
+        return self._node2dev.get(self._node.parent)
+
     def __repr__(self):
         return "<Device {}, {} regs>".format(
             self.name, len(self.regs))
