@@ -25,7 +25,7 @@ else()
   # via pypi, which will result in a single line of output.
   string(REGEX REPLACE "\n" ";" west_version_output "${west_version_output}")
   foreach(item ${west_version_output})
-    if("${item}" MATCHES ".*v([0-9]+[.][0-9]+[.][0-9]+)")
+    if("${item}" MATCHES "^[^\/\\]*v([0-9]+[.][0-9]+[.][0-9]+)")
       set(west_version "${CMAKE_MATCH_1}")
       if(${west_version} VERSION_LESS ${MIN_WEST_VERSION})
         message(FATAL_ERROR "The detected west version is unsupported.\n\
