@@ -84,6 +84,13 @@ config SPI_MCUX_LPSPI
 
 endif # SPI
 
+if ADC
+
+config ADC_MCUX_ADC12
+	default y
+
+endif # ADC
+
 source "soc/arm/nxp_kinetis/ke1xf/Kconfig.defconfig.mke*"
 
 endif # SOC_SERIES_KINETIS_KE1XF

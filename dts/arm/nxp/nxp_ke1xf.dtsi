@@ -28,6 +28,9 @@
 		gpio-c = &gpioc;
 		gpio-d = &gpiod;
 		gpio-e = &gpioe;
+		adc-0 = &adc0;
+		adc-1 = &adc1;
+		adc-2 = &adc2;
 	};
 
 	cpus {
@@ -238,6 +241,39 @@
 			label = "GPIO_4";
 			gpio-controller;
 			#gpio-cells = <2>;
+		};
+
+		adc0: adc@4003b000 {
+			compatible = "nxp,kinetis-adc12";
+			reg = <0x4003b000 0x1000>;
+			interrupts = <39 0>;
+			clocks = <&pcc 0xec>;
+			label = "ADC_0";
+			clk-source = <0>;
+			clk-divider = <1>;
+			status = "disabled";
+		};
+
+		adc1: adc@40027000 {
+			compatible = "nxp,kinetis-adc12";
+			reg = <0x40027000 0x1000>;
+			interrupts = <73 0>;
+			clocks = <&pcc 0x9c>;
+			label = "ADC_1";
+			clk-source = <0>;
+			clk-divider = <1>;
+			status = "disabled";
+		};
+
+		adc2: adc@4003c000 {
+			compatible = "nxp,kinetis-adc12";
+			reg = <0x4003c000 0x1000>;
+			interrupts = <74 0>;
+			clocks = <&pcc 0xf0>;
+			label = "ADC_2";
+			clk-source = <0>;
+			clk-divider = <1>;
+			status = "disabled";
 		};
 	};
 };
