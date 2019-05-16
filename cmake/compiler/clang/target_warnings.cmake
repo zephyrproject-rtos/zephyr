@@ -94,3 +94,17 @@ macro(toolchain_cc_warning_extended)
     )
 
 endmacro()
+
+#
+# The following macros leaves it up to the root CMakeLists.txt to choose
+#  the variables in which to put the requested flags, and whether or not
+#  to call the macros
+#
+
+macro(toolchain_cc_warning_error_misra_sane dest_var_name)
+  set_ifndef(${dest_var_name} "-Werror=vla")
+endmacro()
+
+macro(toolchain_cc_cpp_warning_error_misra_sane dest_var_name)
+  set_ifndef(${dest_var_name} "-Werror=vla")
+endmacro()
