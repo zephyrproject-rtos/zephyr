@@ -65,3 +65,12 @@
 &rtc {
 	status = "ok";
 };
+
+/* Only one interface should be enabled at a time: usbotg_fs or usbotg_hs */
+usb_otg1: &usbotg_fs {
+	status = "disabled";
+};
+
+usb_otg2: &usbotg_hs {
+	status = "ok";
+};
