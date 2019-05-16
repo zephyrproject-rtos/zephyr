@@ -132,6 +132,26 @@ config LOG_MODE_NO_OVERFLOW
 
 endchoice
 
+config LOG_BLOCK_IN_THREAD
+	bool "On log full block in thread context"
+	help
+	  When enabled logger will block (if in the thread context) when
+	  internal logger buffer is full and new message cannot be allocated.
+
+if LOG_BLOCK_IN_THREAD
+
+config LOG_BLOCK_IN_THREAD_TIMEOUT_MS
+	int "Maximum time (in milliseconds) thread can be blocked"
+	default 1000
+	range -1 10000
+	help
+	  If new buffer for a log message cannot be allocated in that time, log
+	  message is dropped. Forever blocking (-1) is possible however may lead
+	  to the logger deadlock if logging is enabled in threads used for
+	  logging (e.g. logger or shell thread).
+
+endif # LOG_BLOCK_IN_THREAD
+
 config LOG_PROCESS_TRIGGER_THRESHOLD
 	int "Amount of buffered logs which triggers processing thread."
 	default 10
