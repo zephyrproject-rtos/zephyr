@@ -75,4 +75,11 @@ config GPIO_MCUX_PORTE
 
 endif # GPIO_MCUX
 
+if ADC
+
+config ADC_0
+	default y
+
+endif # ADC
+
 endif # BOARD_TWR_KE18F

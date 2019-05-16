@@ -111,6 +111,14 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 #endif
 	pinmux_pin_set(portc, 15, PORT_PCR_MUX(kPORT_MuxAsGpio));
 
+#ifdef CONFIG_ADC_0
+	/* Thermistor A, B */
+	pinmux_pin_set(porta, 0, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
+	pinmux_pin_set(porta, 1, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
+	/* Potentiometer */
+	pinmux_pin_set(portc, 14, PORT_PCR_MUX(kPORT_PinDisabledOrAnalog));
+#endif
+
 	return 0;
 }
 
