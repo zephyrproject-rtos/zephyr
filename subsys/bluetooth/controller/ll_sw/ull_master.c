@@ -421,7 +421,7 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	struct ll_scan_set *scan;
 	struct node_rx_cc *cc;
 	struct ll_conn *conn;
-	struct pdu_adv *pdu;
+	struct pdu_adv *pdu_tx;
 	u32_t ticker_status;
 	u8_t chan_sel;
 
@@ -430,21 +430,22 @@ void ull_master_setup(memq_link_t *link, struct node_rx_hdr *rx,
 	scan = ((struct lll_scan *)ftr->param)->hdr.parent;
 	conn = lll->hdr.parent;
 
-	pdu = (void *)((struct node_rx_pdu *)rx)->pdu;
+	pdu_tx = (void *)((struct node_rx_pdu *)rx)->pdu;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	u8_t own_addr_type = pdu->tx_addr;
+	u8_t own_addr_type = pdu_tx->tx_addr;
 	u8_t own_addr[BDADDR_SIZE];
 	u8_t peer_addr[BDADDR_SIZE];
 	u8_t rl_idx;
 
-	memcpy(own_addr, &pdu->connect_ind.init_addr[0], BDADDR_SIZE);
-	memcpy(peer_addr, &pdu->connect_ind.adv_addr[0], BDADDR_SIZE);
+	memcpy(own_addr, &pdu_tx->connect_ind.init_addr[0], BDADDR_SIZE);
+	memcpy(peer_addr, &pdu_tx->connect_ind.adv_addr[0], BDADDR_SIZE);
 #endif
 
-	chan_sel = pdu->chan_sel;
+	/* This is the chan sel bit from the received adv pdu */
+	chan_sel = pdu_tx->chan_sel;
 
-	cc = (void *)pdu;
+	cc = (void *)pdu_tx;
 	cc->status = 0U;
 	cc->role = 0U;
 
