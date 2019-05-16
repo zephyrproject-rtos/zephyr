@@ -616,6 +616,7 @@ static int i2c_sam0_set_apply_bitrate(struct device *dev, u32_t config)
 #else
 		return -ENOTSUP;
 #endif
+		break;
 
 	default:
 		return -ENOTSUP;
