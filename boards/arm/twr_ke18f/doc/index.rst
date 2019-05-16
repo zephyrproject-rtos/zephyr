@@ -76,6 +76,8 @@ features:
 +-----------+------------+-------------------------------------+
 | SPI(M)    | on-chip    | spi                                 |
 +-----------+------------+-------------------------------------+
+| ADC       | on-chip    | adc                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/twr_ke18f/twr_ke18f_defconfig``.
