@@ -903,7 +903,7 @@ static void domain_remove_part_context_switch(void)
  */
 
 #define NUM_STACKS	3
-#define STEST_STACKSIZE	1024
+#define STEST_STACKSIZE	(1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 K_THREAD_STACK_DEFINE(stest_stack, STEST_STACKSIZE);
 K_THREAD_STACK_ARRAY_DEFINE(stest_stack_array, NUM_STACKS, STEST_STACKSIZE);
 
