@@ -941,6 +941,10 @@ static void forward_status_cb(enum usb_dc_status_code status, const u8_t *param)
 {
 	size_t size = (__usb_data_end - __usb_data_start);
 
+	if (status == USB_DC_DISCONNECTED) {
+		usb_cancel_transfers();
+	}
+
 	for (size_t i = 0; i < size; i++) {
 		struct usb_cfg_data *cfg = &__usb_data_start[i];
 
