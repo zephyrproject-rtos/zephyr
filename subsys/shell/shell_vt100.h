@@ -22,6 +22,7 @@
 #define SHELL_VT100_ASCII_CTRL_W	(0x17)
 #define SHELL_VT100_ASCII_ALT_B		(0x62)
 #define SHELL_VT100_ASCII_ALT_F		(0x66)
+#define SHELL_VT100_ASCII_ALT_R		(0x72)
 
 #define SHELL_VT100_SETNL				\
 {							\

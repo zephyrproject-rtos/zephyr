@@ -555,6 +555,9 @@ struct shell_ctx {
 	/*!< Currently executed command.*/
 	struct shell_static_entry active_cmd;
 
+	/* New root command. If NULL shell uses default root commands. */
+	const struct shell_static_entry *selected_cmd;
+
 	/*!< VT100 color and cursor position, terminal width.*/
 	struct shell_vt100_ctx vt100_ctx;
 
