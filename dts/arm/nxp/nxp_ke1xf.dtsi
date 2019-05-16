@@ -16,6 +16,8 @@
 		uart-2 = &uart2;
 		i2c-0 = &i2c0;
 		i2c-1 = &i2c1;
+		spi-0 = &spi0;
+		spi-1 = &spi1;
 		pinmux-a = &pinmux_a;
 		pinmux-b = &pinmux_b;
 		pinmux-c = &pinmux_c;
@@ -139,6 +141,28 @@
 			clocks = <&pcc 0x19c>;
 			label = "I2C_1";
 			status = "disabled";
+		};
+
+		spi0: spi@4002c000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x4002c000 0x1000>;
+			interrupts = <26 0>;
+			clocks = <&pcc 0xb0>;
+			label = "SPI_0";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
+		};
+
+		spi1: spi@4002d000 {
+			compatible = "nxp,imx-lpspi";
+			reg = <0x4002d000 0x1000>;
+			interrupts = <27 0>;
+			clocks = <&pcc 0xb4>;
+			label = "SPI_1";
+			status = "disabled";
+			#address-cells = <1>;
+			#size-cells = <0>;
 		};
 
 		pinmux_a: pinmux@40049000 {
