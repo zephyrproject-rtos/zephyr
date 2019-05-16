@@ -12,6 +12,11 @@ config HAS_MCUX
 
 if HAS_MCUX
 
+config HAS_MCUX_ADC12
+	bool
+	help
+	  Set if the 12-bit ADC (ADC12) module is present in the SoC.
+
 config HAS_MCUX_ADC16
 	bool
 	help

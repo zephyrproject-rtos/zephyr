@@ -47,6 +47,9 @@ config ADC_0
 config ADC_1
 	bool "Enable ADC 1"
 
+config ADC_2
+	bool "Enable ADC 2"
+
 source "drivers/adc/Kconfig.mcux"
 
 source "drivers/adc/Kconfig.nrfx"
