@@ -62,6 +62,12 @@ class EDT:
         dev.name = node.name
         dev.regs = _regs(node)
 
+        max_inst = -1
+        for d in self.devices.values():
+            if d.compat == comp:
+                max_inst = max(d.instance, max_inst)
+        dev.instance = max_inst + 1
+
         self.devices[dev.name] = dev
 
     def __repr__(self):
