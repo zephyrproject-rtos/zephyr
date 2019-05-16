@@ -31,21 +31,17 @@ def main():
 
     edt = edtlib.EDT(args.dts, args.yaml[0])
 
-    import pprint
     dt_output = {}
     dt_alias = {}
     for dev in edt.devices.values():
-        postfix = False
-        if len(dev.regs) > 1:
-            postfix = True
-        for r in dev.regs:
+        for reg in dev.regs:
             pre = "DT_{}".format(str_to_label(dev.compat))
-            body = "{:X}".format(r.addr)
+            body = "{:X}".format(reg.addr)
             post = "BASE_ADDRESS"
-            if postfix:
-                post = "{}_{}".format(post, dev.regs.index(r))
+            if len(dev.regs) > 1:
+                post = "{}_{}".format(post, dev.regs.index(reg))
             tag = (pre, body, post)
-            dt_output[tag] = r.addr
+            dt_output[tag] = reg.addr
             dt_alias[(pre, dev.instance, post)] = tag
 
     with open(args.keyvalue + "-new", "w") as f:
