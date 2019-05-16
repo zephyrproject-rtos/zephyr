@@ -95,6 +95,13 @@ macro(toolchain_cc_warning_extended)
 
 endmacro()
 
+macro(toolchain_cc_warning_error_implicit_int)
+
+  # Force an error when things like SYS_INIT(foo, ...) occur with a missing header
+  zephyr_cc_option(-Werror=implicit-int)
+
+endmacro()
+
 #
 # The following macros leaves it up to the root CMakeLists.txt to choose
 #  the variables in which to put the requested flags, and whether or not
