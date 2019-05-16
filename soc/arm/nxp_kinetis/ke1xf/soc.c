@@ -12,6 +12,7 @@
 #include <device.h>
 #include <init.h>
 #include <fsl_clock.h>
+#include <fsl_cache.h>
 #include <cortex_m/exc.h>
 
 /*
@@ -241,6 +242,9 @@ static int ke1xf_init(struct device *arg)
 	 */
 	NMI_INIT();
 
+#ifdef CONFIG_KINETIS_KE1XF_ENABLE_CODE_CACHE
+	L1CACHE_EnableCodeCache();
+#endif
 	/* Restore interrupt state */
 	irq_unlock(old_level);
 
