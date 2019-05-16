@@ -90,6 +90,13 @@ config USB_DC_NXP_EHCI
 	help
 	  Kinetis and RT EHCI USB Device Controller Driver.
 
+config USB_DC_NXP_KHCI
+	bool "Kinetis USB Device Full Speed Controller Driver"
+	depends on HAS_MCUX_USB_KHCI
+	select USB_DEVICE_DRIVER
+	help
+	  Kinetis USB Device Full Speed Controller Driver.
+
 module = USB_DRIVER
 module-str = usb driver
 source "subsys/logging/Kconfig.template.log_config"
