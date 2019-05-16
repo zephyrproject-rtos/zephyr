@@ -50,17 +50,18 @@ class EDT:
 
         for node in DT(dts).node_iter():
             if "compatible" in node.props:
-                for comp in node.props["compatible"].to_strings():
-                    if comp in self._compat2binding:
-                        self._create_device(comp, node)
+                for compat in node.props["compatible"].to_strings():
+                    if compat in self._compat2binding:
+                        self._create_device(node, compat)
 
-    def _create_device(self, comp, node):
-        # Creates and registers a Device for 'node'
+    def _create_device(self, node, matching_compat):
+        # Creates and registers a Device for 'node', which was matched to a
+        # binding via the 'compatible' string 'matching_compat'
 
         dev = Device()
-        dev.compat = comp
         dev.name = node.name
         dev.regs = _regs(node)
+        dev.matching_compat = matching_compat
 
         # Complete hack to get the bus, this really should come from YAML
         dev.bus = None
@@ -68,11 +69,10 @@ class EDT:
         if possible_bus == "i2c" or possible_bus == "spi":
             dev.bus = possible_bus
 
-        max_inst = -1
-        for d in self.devices.values():
-            if d.compat == comp:
-                max_inst = max(d.instance, max_inst)
-        dev.instance = max_inst + 1
+        dev.instance_no = 0
+        for other_dev in self.devices.values():
+            if other_dev.matching_compat == matching_compat:
+                dev.instance_no += 1
 
         self.devices[dev.name] = dev
 
@@ -88,6 +88,19 @@ class Device:
 
     regs:
       A list of Register instances for the device's registers.
+
+    bus:
+      TODO: document
+
+    matching_compat:
+      The 'compatible' string for the binding that matched the device
+
+    instance_no:
+      Unique ID for this device among all devices that matched the same
+      binding. Counts from zero.
+
+    bus:
+      TODO: document
     """
     def __repr__(self):
         return "<Device {}, {} regs>".format(

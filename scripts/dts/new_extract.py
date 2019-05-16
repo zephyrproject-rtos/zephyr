@@ -39,7 +39,7 @@ def main():
             for reg_i, reg in enumerate(dev.regs):
                 # Identifier
                 ident = "DT_{}_{:X}_BASE_ADDRESS".format(
-                    str2ident(dev.compat), reg.addr)
+                    str2ident(dev.matching_compat), reg.addr)
                 if len(dev.regs) > 1:
                     ident += "_" + str(reg_i)
 
@@ -53,8 +53,8 @@ def main():
                     post += "_" + str(reg_i)
 
                 print("#define DT_{}_{}_{}\tDT_{}_{:X}_{}".format(
-                          str2ident(dev.compat), dev.instance, post,
-                          str2ident(dev.compat), reg.addr, post),
+                          str2ident(dev.matching_compat), dev.instance_no, post,
+                          str2ident(dev.matching_compat), reg.addr, post),
                       file=f)
 
     with open(args.include + "-new", "w") as f:
