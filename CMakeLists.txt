@@ -259,6 +259,9 @@ endif()
 # @Intent: Add extended, more specific, toolchain warning flags
 toolchain_cc_warning_extended()
 
+# @Intent: Trigger an error when a declaration does not specify a type
+toolchain_cc_warning_error_implicit_int()
+
 # Allow the user to inject options when calling cmake, e.g.
 # 'cmake -DEXTRA_CFLAGS="-Werror -Wno-deprecated-declarations" ..'
 include(cmake/extra_flags.cmake)
@@ -292,9 +295,6 @@ endif()
 
 zephyr_cc_option_ifdef(CONFIG_STACK_USAGE            -fstack-usage)
 
-# Force an error when things like SYS_INIT(foo, ...) occur with a missing header.
-zephyr_cc_option(-Werror=implicit-int)
-
 # If the compiler supports it, strip the ${ZEPHYR_BASE} prefix from the
 # __FILE__ macro used in __ASSERT*, in the
 # .noinit."/home/joe/zephyr/fu/bar.c" section names and in any
@@ -302,9 +302,6 @@ zephyr_cc_option(-Werror=implicit-int)
 # in binaries, makes failure logs more deterministic and most
 # importantly makes builds more deterministic
 zephyr_cc_option(-fmacro-prefix-map=${ZEPHYR_BASE}=.)
-
-# Prohibit date/time macros, which would make the build non-deterministic
-# cc-option(-Werror=date-time)
 
 # TODO: Archiver arguments
 # ar_option(D)
