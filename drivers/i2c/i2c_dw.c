@@ -22,10 +22,6 @@
 
 #include <misc/util.h>
 
-#ifdef CONFIG_SHARED_IRQ
-#include <shared_irq.h>
-#endif
-
 #ifdef CONFIG_IOAPIC
 #include <drivers/ioapic.h>
 #endif
@@ -197,16 +193,6 @@ static void i2c_dw_isr(void *arg)
 	 * the register multiple times.
 	 */
 	intr_stat.raw = regs->ic_intr_stat.raw;
-
-#if CONFIG_SHARED_IRQ
-	/* If using with shared IRQ, this function will be called
-	 * by the shared IRQ driver. So check here if the interrupt
-	 * is coming from the I2C controller (or somewhere else).
-	 */
-	if (!intr_stat.raw) {
-		return;
-	}
-#endif
 
 	/*
 	 * Causes of an interrupt:
@@ -620,42 +606,22 @@ static const struct i2c_driver_api funcs = {
 	.transfer = i2c_dw_transfer,
 };
 
-
-#ifdef CONFIG_PCI
-static inline int i2c_dw_pci_setup(struct device *dev)
-{
-	struct i2c_dw_dev_config * const dw = dev->driver_data;
-
-	pci_bus_scan_init();
-
-	if (!pci_bus_scan(&dw->pci_dev)) {
-		LOG_DBG("Could not find device");
-		return 0;
-	}
-
-#ifdef CONFIG_PCI_ENUMERATION
-	dw->base_address = dw->pci_dev.addr;
-#endif
-	pci_enable_regs(&dw->pci_dev);
-
-	pci_show(&dw->pci_dev);
-
-	return 1;
-}
-#else
-#define i2c_dw_pci_setup(_unused_) (1)
-#endif /* CONFIG_PCI */
-
 static int i2c_dw_initialize(struct device *dev)
 {
 	const struct i2c_dw_rom_config * const rom = dev->config->config_info;
 	struct i2c_dw_dev_config * const dw = dev->driver_data;
 	volatile struct i2c_dw_registers *regs;
 
-	if (!i2c_dw_pci_setup(dev)) {
-		dev->driver_api = NULL;
-		return -EIO;
+#ifdef I2C_DW_PCIE_ENABLED
+	if (rom->pcie) {
+		if (!pcie_probe(rom->pcie_bdf, rom->pcie_id)) {
+			return -EINVAL;
+		}
+
+		dw->base_address = pcie_get_mbar(rom->pcie_bdf, 0);
+		pcie_set_cmd(rom->pcie_bdf, PCIE_CONF_CMDSTAT_MEM, true);
 	}
+#endif
 
 	k_sem_init(&dw->device_sync_sem, 0, UINT_MAX);
 
