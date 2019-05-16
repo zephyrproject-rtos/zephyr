@@ -6,13 +6,15 @@ import sys
 
 import edtlib
 
-def str_to_label(s):
+
+def str2ident(s):
     # Change ,-@/ to _ and uppercase
     return s.replace('-', '_') \
             .replace(',', '_') \
             .replace('@', '_') \
             .replace('/', '_') \
             .upper()
+
 
 def main():
     # Copied from extract_dts_includes.py
@@ -31,27 +33,29 @@ def main():
 
     edt = edtlib.EDT(args.dts, args.yaml[0])
 
-    dt_output = {}
-    dt_alias = {}
-    for dev in edt.devices.values():
-        for reg in dev.regs:
-            pre = "DT_{}".format(str_to_label(dev.compat))
-            body = "{:X}".format(reg.addr)
-            post = "BASE_ADDRESS"
-            if len(dev.regs) > 1:
-                post = "{}_{}".format(post, dev.regs.index(reg))
-            tag = (pre, body, post)
-            dt_output[tag] = reg.addr
-            dt_alias[(pre, dev.instance, post)] = tag
-
     with open(args.keyvalue + "-new", "w") as f:
-        for (pre, body, post) in dt_output:
-            print("#define %s_%s_%s\t0x%x" % (pre, body, post, dt_output[(pre, body, post)]),
-                  file=f)
-        for (pre, body, post) in dt_alias:
-            (alias_pre, alias_body, alias_post) = dt_alias[(pre, body, post)]
-            print("#define %s_%s_%s\t%s_%s_%s" % (pre, body, post, alias_pre, alias_body, alias_post),
-                  file=f)
+        # Write register addresses
+        for dev in edt.devices.values():
+            for reg_i, reg in enumerate(dev.regs):
+                # Identifier
+                ident = "DT_{}_{:X}_BASE_ADDRESS".format(
+                    str2ident(dev.compat), reg.addr)
+                if len(dev.regs) > 1:
+                    ident += "_" + str(reg_i)
+
+                print("#define {}\t0x{:x}".format(ident, reg.addr), file=f)
+
+        # Write aliases
+        for dev in edt.devices.values():
+            for reg_i, reg in enumerate(dev.regs):
+                post = "BASE_ADDRESS"
+                if len(dev.regs) > 1:
+                    post += "_" + str(reg_i)
+
+                print("#define DT_{}_{}_{}\tDT_{}_{:X}_{}".format(
+                          str2ident(dev.compat), dev.instance, post,
+                          str2ident(dev.compat), reg.addr, post),
+                      file=f)
 
     with open(args.include + "-new", "w") as f:
         for dev in edt.devices.values():
