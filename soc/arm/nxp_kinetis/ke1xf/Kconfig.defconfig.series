@@ -25,6 +25,20 @@ config CLOCK_CONTROL_MCUX_PCC
 
 endif # CLOCK_CONTROL
 
+if RTC
+
+config RTC_MCUX
+	default y
+
+endif # RTC
+
+if COUNTER
+
+config COUNTER_MCUX_RTC
+	default y
+
+endif # COUNTER
+
 if PINMUX
 
 config PINMUX_MCUX
