@@ -31,18 +31,22 @@ Supported Features
 The olimex_stm32_e407 board configuration supports the following
 hardware features:
 
-+-----------+------------+----------------------+
-| Interface | Controller | Driver/Component     |
-+===========+============+======================+
-| NVIC      | on-chip    | nested vectored      |
-|           |            | interrupt controller |
-+-----------+------------+----------------------+
-| SYSTICK   | on-chip    | system clock         |
-+-----------+------------+----------------------+
-| UART      | on-chip    | serial port          |
-+-----------+------------+----------------------+
-| GPIO      | on-chip    | gpio                 |
-+-----------+------------+----------------------+
++------------+------------+----------------------+
+| Interface  | Controller | Driver/Component     |
++============+============+======================+
+| NVIC       | on-chip    | nested vectored      |
+|            |            | interrupt controller |
++------------+------------+----------------------+
+| SYSTICK    | on-chip    | system clock         |
++------------+------------+----------------------+
+| UART       | on-chip    | serial port          |
++------------+------------+----------------------+
+| GPIO       | on-chip    | gpio                 |
++------------+------------+----------------------+
+| USB OTG FS | on-chip    | USB device           |
++------------+------------+----------------------+
+| USB OTG HS | on-chip    | USB device           |
++------------+------------+----------------------+
 
 Other hardware features are not supported by the Zephyr kernel.
 
