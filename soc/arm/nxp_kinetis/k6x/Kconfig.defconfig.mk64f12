@@ -102,6 +102,13 @@ config USB_KINETIS
 
 endif # USB
 
+if USB
+
+config USB_DC_NXP_KHCI
+	default n
+
+endif # USB
+
 if WATCHDOG
 
 config WDT_MCUX_WDOG

@@ -71,4 +71,11 @@ config USB_KINETIS
 
 endif # USB
 
+if USB
+
+config USB_DC_NXP_KHCI
+	default y
+
+endif # USB
+
 endif # SOC_MKL25Z

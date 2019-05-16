@@ -162,7 +162,7 @@ static ALWAYS_INLINE void clkInit(void)
 				      CONFIG_MCG_FCRDIV);
 
 	CLOCK_SetSimConfig(&simConfig);
-#if CONFIG_USB_KINETIS
+#if CONFIG_USB_KINETIS || CONFIG_USB_DC_NXP_KHCI
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0,
 				CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC);
 #endif

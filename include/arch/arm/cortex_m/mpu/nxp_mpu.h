@@ -38,7 +38,7 @@
 #define BM4_WE_SHIFT	24
 #define BM4_RE_SHIFT	25
 
-#ifdef CONFIG_USB_KINETIS
+#if (defined CONFIG_USB_KINETIS) || (defined CONFIG_USB_DC_NXP_KHCI)
 #define BM4_PERMISSIONS	((1 << BM4_RE_SHIFT) | (1 << BM4_WE_SHIFT))
 #else
 #define BM4_PERMISSIONS	0
