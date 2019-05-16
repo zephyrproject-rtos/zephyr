@@ -769,7 +769,17 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		rx->hdr.type = NODE_RX_TYPE_CONNECTION;
 		rx->hdr.handle = 0xffff;
 
+		u8_t pdu_adv_rx_chan_sel = pdu_adv_rx->chan_sel;
+		memcpy(rx->pdu, pdu_tx, (offsetof(struct pdu_adv, connect_ind) +
+					  sizeof(struct pdu_adv_connect_ind)));
+
+		/* Overwrite the sent chan sel with received chan sel, when
+		 * giving this PDU to the higher layer. */
+		pdu_adv_rx = (void *)rx->pdu;
+		pdu_adv_rx->chan_sel = pdu_adv_rx_chan_sel;
+
 		ftr = &(rx->hdr.rx_ftr);
+
 		ftr->param = lll;
 		ftr->ticks_anchor = radio_tmr_start_get();
 		ftr->us_radio_end = conn_space_us -
