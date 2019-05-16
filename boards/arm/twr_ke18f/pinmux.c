@@ -53,6 +53,32 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 	pinmux_pin_set(portb, 1, PORT_PCR_MUX(kPORT_MuxAlt2));
 #endif
 
+#ifdef CONFIG_SPI_0
+	/* SPI0 SCK, SIN, SOUT */
+	pinmux_pin_set(porte, 0, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(porte, 1, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(porte, 2, PORT_PCR_MUX(kPORT_MuxAlt2));
+#endif
+#ifdef CONFIG_BOARD_TWR_KE18F_SPI_0_PCS2
+	/* SPI0 PCS2 */
+	pinmux_pin_set(porte, 6, PORT_PCR_MUX(kPORT_MuxAlt2));
+#endif
+
+#ifdef CONFIG_SPI_1
+	/* SPI1 SCK, SIN, SOUT */
+	pinmux_pin_set(portd, 0, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(portd, 1, PORT_PCR_MUX(kPORT_MuxAlt3));
+	pinmux_pin_set(portd, 2, PORT_PCR_MUX(kPORT_MuxAlt3));
+#endif
+#ifdef CONFIG_BOARD_TWR_KE18F_SPI_1_PCS0
+	/* SPI1 PCS0 */
+	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAlt3));
+#endif
+#ifdef CONFIG_BOARD_TWR_KE18F_SPI_1_PCS2
+	/* SPI1 PCS2 */
+	pinmux_pin_set(porta, 16, PORT_PCR_MUX(kPORT_MuxAlt3));
+#endif
+
 #ifdef CONFIG_BOARD_TWR_KE18F_FLEXIO_CLKOUT
 	/* CLKOUT */
 	pinmux_pin_set(porte, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
