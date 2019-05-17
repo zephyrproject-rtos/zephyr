@@ -18,8 +18,3 @@ tests:
     extra_args: OVERLAY_CONFIG=overlay-bt.conf
     platform_whitelist: nrf52_pca10040 nrf52840_pca10056 disco_l475_iot1
     tags: net lwm2m
-  sample.net.lwm2m_client.modem:
-    harness: net
-    extra_args: OVERLAY_CONFIG=overlay-wncm14a2a.conf
-    platform_whitelist: frdm_k64f nrf52840_pca10056
-    tags: net lwm2m
