@@ -143,8 +143,7 @@ extern void idle(void *unused1, void *unused2, void *unused3);
  */
 void z_bss_zero(void)
 {
-	(void)memset(&__bss_start, 0,
-		     ((u32_t) &__bss_end - (u32_t) &__bss_start));
+	(void)memset(__bss_start, 0, __bss_end - __bss_start);
 #ifdef DT_CCM_BASE_ADDRESS
 	(void)memset(&__ccm_bss_start, 0,
 		     ((u32_t) &__ccm_bss_end - (u32_t) &__ccm_bss_start));
@@ -177,14 +176,14 @@ extern volatile uintptr_t __stack_chk_guard;
 void z_data_copy(void)
 {
 	(void)memcpy(&__data_ram_start, &__data_rom_start,
-		 ((u32_t) &__data_ram_end - (u32_t) &__data_ram_start));
+		 __data_ram_end - __data_ram_start);
 #ifdef CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
 	(void)memcpy(&_ramfunc_ram_start, &_ramfunc_rom_start,
-		 ((u32_t) &_ramfunc_ram_size));
+		 (uintptr_t) &_ramfunc_ram_size);
 #endif /* CONFIG_ARCH_HAS_RAMFUNC_SUPPORT */
 #ifdef DT_CCM_BASE_ADDRESS
 	(void)memcpy(&__ccm_data_start, &__ccm_data_rom_start,
-		 ((u32_t) &__ccm_data_end - (u32_t) &__ccm_data_start));
+		 __ccm_data_end - __ccm_data_start);
 #endif
 #ifdef CONFIG_CODE_DATA_RELOCATION
 	extern void data_copy_xip_relocation(void);
@@ -202,7 +201,7 @@ void z_data_copy(void)
 	uintptr_t guard_copy = __stack_chk_guard;
 	u8_t *src = (u8_t *)&_app_smem_rom_start;
 	u8_t *dst = (u8_t *)&_app_smem_start;
-	u32_t count = (u32_t)&_app_smem_end - (u32_t)&_app_smem_start;
+	u32_t count = _app_smem_end - _app_smem_start;
 
 	guard_copy = __stack_chk_guard;
 	while (count > 0) {
@@ -212,7 +211,7 @@ void z_data_copy(void)
 	__stack_chk_guard = guard_copy;
 #else
 	(void)memcpy(&_app_smem_start, &_app_smem_rom_start,
-		 ((u32_t) &_app_smem_end - (u32_t) &_app_smem_start));
+		 _app_smem_end - _app_smem_start);
 #endif /* CONFIG_STACK_CANARIES */
 #endif /* CONFIG_USERSPACE */
 }
