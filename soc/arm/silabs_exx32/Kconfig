@@ -179,4 +179,12 @@ config SOC_GECKO_HAS_INDIVIDUAL_PIN_LOCATION
 	  If disabled, indicates that pin locations are configured in groups.
 	  This is supported by e.g. efm32hg, efm32wg series.
 
+config SOC_GECKO_HAS_ERRATA_RTCC_E201
+	bool
+	help
+	  Set if the SoC is affected by errata RTCC_E201:
+	  "When the RTCC is configured with a prescaler, the CCV1 top value enable
+	  feature enabled by setting CCV1TOP in RTCC_CTRL fails to wrap the counter
+	  when RTCC_CNT is equal to RTCC_CC1_CCV, as intended."
+
 endif # SOC_FAMILY_EXX32

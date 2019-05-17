@@ -60,6 +60,8 @@ The efr32_slwstk6061a board configuration supports the following hardware featur
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
+| COUNTER   | on-chip    | rtcc                                |
++-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | flash memory                        |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |

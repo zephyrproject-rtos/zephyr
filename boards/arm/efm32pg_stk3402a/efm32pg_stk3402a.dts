@@ -73,6 +73,11 @@
 	status = "ok";
 };
 
+&rtcc0 {
+	prescaler = <1>;
+	status = "ok";
+};
+
 &gpio {
 	location-swo = <0>;
 	status = "ok";

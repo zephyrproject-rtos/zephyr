@@ -38,4 +38,11 @@ config GPIO_GECKO_PORTF
 
 endif # GPIO_GECKO
 
+if COUNTER
+
+config COUNTER_GECKO_RTCC
+	default y
+
+endif # COUNTER
+
 endif # BOARD_EFR32_SLWSTK6061A

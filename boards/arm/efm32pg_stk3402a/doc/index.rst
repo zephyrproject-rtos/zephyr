@@ -48,6 +48,8 @@ The efm32pg_stk3402a board configuration supports the following hardware feature
 +-----------+------------+-------------------------------------+
 | SYSTICK   | on-chip    | systick                             |
 +-----------+------------+-------------------------------------+
+| COUNTER   | on-chip    | rtcc                                |
++-----------+------------+-------------------------------------+
 | FLASH     | on-chip    | flash memory                        |
 +-----------+------------+-------------------------------------+
 | GPIO      | on-chip    | gpio                                |
