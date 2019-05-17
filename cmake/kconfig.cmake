@@ -112,6 +112,7 @@ set(
   merge_config_files
   ${BOARD_DEFCONFIG}
   ${CONF_FILE_AS_LIST}
+  ${shield_conf_files}
   ${OVERLAY_CONFIG_AS_LIST}
   ${EXTRA_KCONFIG_OPTIONS_FILE}
   ${config_files}
