@@ -101,7 +101,7 @@ endif # SPI
 if NETWORKING
 
 config NET_L2_ETHERNET
-	default y if !MODEM_WNCM14A2A
+	default y if !MODEM
 
 config ETH_MCUX_0
 	default y if NET_L2_ETHERNET
