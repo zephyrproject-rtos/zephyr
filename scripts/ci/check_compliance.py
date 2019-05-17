@@ -321,10 +321,13 @@ entries, then bump the 'max_top_items' variable in {}.
         #   foo/bar.c<null>17<null>CONFIG_BAZ
         #
         # The regular expression in use here uses zero length word boundary
-        # assertions (\b) to isolate the reference then a negative lookahead
-        # to ensure that it is not followed by a token paste operation (##).
-        # So this excludes the root of any references used as part of token
-        # pasting, since they would always need to be whitelisted anyway.
+        # assertions (\b) to isolate the reference then a negative lookahead to
+        # ensure that it is not followed by a token paste operation
+        # (CONFIG_FOO_##...), a '$' (e.g. for a CMake variable expansion like
+        # CONFIG_FOO_${VAR}), a '@' (for a CMake configure_file() reference
+        # like CONFIG_FOO_@VAR@), a '{' (when building symbol names in Python
+        # scripts), or a '*' (for comments like CONFIG_FOO_*). Those would
+        # always need to be whitelisted anyway.
         #
         # Skip the samples/ and tests/ directories for now. They often contain
         # Kconfig files that are not part of the main Kconfig tree, which will
@@ -332,7 +335,7 @@ entries, then bump the 'max_top_items' variable in {}.
         # doc/releases too, which often references removed symbols.
         grep_cmd = ["git", "grep", "--only-matching", "--line-number", "-I",
                     "--null", "--perl-regexp",
-                    r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##)",
+                    r"\bCONFIG_[A-Z0-9_]+\b(?!\s*##|[$@{*])",
                     "--", ":!samples", ":!tests", ":!doc/releases"]
 
         grep_process = subprocess.Popen(grep_cmd,
@@ -377,15 +380,18 @@ entries, then bump the 'max_top_items' variable in {}.
 
         self.add_failure("""
 Found references to undefined Kconfig symbols. If any of these are false
-positives, then add them to UNDEF_KCONFIG_WHITELIST in {} in the
-ci-tools repo.\n\n{}""".format(os.path.basename(__file__), undef_desc))
+positives, then add them to UNDEF_KCONFIG_WHITELIST in {} in the ci-tools repo.
+
+If the reference is for a comment like /* CONFIG_FOO_* */ (or
+/* CONFIG_FOO_*_... */), then please use exactly that form (with the '*'). The
+CI check knows not to flag it.
+
+{}""".format(os.path.basename(__file__), undef_desc))
 
 
 # Many of these are symbols used as examples.
 # Note that the list is sorted alphabetically.
 UNDEF_KCONFIG_WHITELIST = {
-    "CONFIG_2ND_LVL_INTR_",
-    "CONFIG_3RD_LVL_INTR_",
     "CONFIG_APP_LINK_WITH_",
     "CONFIG_CDC_ACM_PORT_NAME_",
     "CONFIG_CLOCK_STM32_PLL_SRC_",
@@ -413,7 +419,6 @@ UNDEF_KCONFIG_WHITELIST = {
     "CONFIG_OPT",
     "CONFIG_OPT_0",
     "CONFIG_PEDO_THS_MIN",
-    "CONFIG_PWM_",
     "CONFIG_REG1",
     "CONFIG_REG2",
     "CONFIG_SEL",
@@ -427,9 +432,7 @@ UNDEF_KCONFIG_WHITELIST = {
     "CONFIG_STD_CPP",  # Referenced in CMake comment
     "CONFIG_TEST1",
     "CONFIG_TYPE_BOOLEAN",
-    "CONFIG_UART_NS16550_PORT_",
     "CONFIG_USB_CONSOLE",
-    "CONFIG_USB_HID_DEVICE_NAME_",
     "CONFIG_USE_STDC_",
     "CONFIG_WHATEVER",
 }
