@@ -313,6 +313,33 @@ foreach(root ${BOARD_ROOT})
       else()
         list(APPEND NOT_FOUND_SHIELD_LIST ${s})
       endif()
+
+      # search for shield/boards/board.overlay file
+      if(EXISTS ${shield_dir}/${s}/boards/${BOARD}.overlay)
+        # add shield/board overlay to the shield overlays list
+        list(APPEND
+          shield_dts_files
+          ${shield_dir}/${s}/boards/${BOARD}.overlay
+        )
+      endif()
+
+      # search for shield/shield.conf file
+      if(EXISTS ${shield_dir}/${s}/${s}.conf)
+        # add shield.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s}/${s}.conf
+        )
+      endif()
+
+      # search for shield/boards/board.conf file
+      if(EXISTS ${shield_dir}/${s}/boards/${BOARD}.conf)
+        # add HW specific board.conf to the shield config list
+        list(APPEND
+          shield_conf_files
+          ${shield_dir}/${s}/boards/${BOARD}.conf
+        )
+      endif()
     endforeach()
   endif()
 endforeach()
