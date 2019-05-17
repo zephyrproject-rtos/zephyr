@@ -164,7 +164,7 @@ static const struct tmr_cmsdk_apb_cfg tmr_cmsdk_apb_cfg_0 = {
 	.info = {
 			.max_top_value = UINT32_MAX,
 			.freq = 24000000U,
-			.count_up = false,
+			.flags = 0,
 			.channels = 0U,
 	},
 	.timer = ((volatile struct timer_cmsdk_apb *)DT_ARM_CMSDK_TIMER_0_BASE_ADDRESS),
@@ -205,7 +205,7 @@ static const struct tmr_cmsdk_apb_cfg tmr_cmsdk_apb_cfg_1 = {
 	.info = {
 			.max_top_value = UINT32_MAX,
 			.freq = 24000000U,
-			.count_up = false,
+			.flags = 0,
 			.channels = 0U,
 	},
 	.timer = ((volatile struct timer_cmsdk_apb *)DT_ARM_CMSDK_TIMER_1_BASE_ADDRESS),

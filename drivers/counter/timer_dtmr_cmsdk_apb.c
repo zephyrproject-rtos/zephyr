@@ -162,7 +162,7 @@ static const struct dtmr_cmsdk_apb_cfg dtmr_cmsdk_apb_cfg_0 = {
 	.info = {
 			.max_top_value = UINT32_MAX,
 			.freq = 24000000U,
-			.count_up = false,
+			.flags = 0,
 			.channels = 0U,
 	},
 	.dtimer = ((volatile struct dualtimer_cmsdk_apb *)DT_ARM_CMSDK_DTIMER_0_BASE_ADDRESS),

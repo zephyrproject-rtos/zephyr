@@ -344,7 +344,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 			.max_top_value = COUNTER_MAX_TOP_VALUE,		       \
 			.freq = DT_NORDIC_NRF_RTC_RTC_##idx##_CLOCK_FREQUENCY /\
 				(DT_NORDIC_NRF_RTC_RTC_##idx##_PRESCALER),     \
-			.count_up = true,				       \
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		       \
 			.channels = CC_TO_ID(RTC##idx##_CC_NUM)		       \
 		},							       \
 		.ch_data = counter##idx##_ch_data,			       \

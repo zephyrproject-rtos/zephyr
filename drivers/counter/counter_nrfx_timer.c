@@ -281,7 +281,7 @@ static const struct counter_driver_api counter_nrfx_driver_api = {
 					0xffffffff : 0x0000ffff,	       \
 			.freq = TIMER_CLOCK /				       \
 			   (1 << DT_NORDIC_NRF_TIMER_TIMER_##idx##_PRESCALER), \
-			.count_up = true,				       \
+			.flags = COUNTER_CONFIG_INFO_COUNT_UP,		       \
 			.channels = CC_TO_ID(TIMER##idx##_CC_NUM),	       \
 		},							       \
 		.ch_data = counter##idx##_ch_data,			       \
