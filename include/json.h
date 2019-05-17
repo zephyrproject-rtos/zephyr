@@ -51,13 +51,12 @@ enum json_tokens {
 struct json_obj_descr {
 	const char *field_name;
 
-	/* Alignment can never be 0 or more than 4.  The macros to create a
-	 * struct json_obj_descr will subtract 1 from the result of
-	 * __alignof__() calls in order to keep this value in the 0-3 range
-	 * and thus use only 2 bits.  1 is added back when rounding it up to
-	 * calculate the struct size while parsing an array or object.
+	/* Alignment can be 1, 2, 4, or 8.  The macros to create
+	 * a struct json_obj_descr will store the alignment's
+	 * power of 2 in order to keep this value in the 0-3 range
+	 * and thus use only 2 bits.
 	 */
-	u32_t alignment : 2;
+	u32_t align_shift : 2;
 
 	/* 127 characters is more than enough for a field name. */
 	u32_t field_name_len : 7;
@@ -100,6 +99,9 @@ struct json_obj_descr {
 typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 				   void *data);
 
+#define Z_ALIGN_SHIFT(type)	(__alignof__(type) == 1 ? 0 : \
+				 __alignof__(type) == 2 ? 1 : \
+				 __alignof__(type) == 4 ? 2 : 3)
 
 /**
  * @brief Helper macro to declare a descriptor for supported primitive
@@ -128,7 +130,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name = (#field_name_), \
 		.field_name_len = sizeof(#field_name_) - 1, \
 		.offset = offsetof(struct_, field_name_), \
-		.alignment = __alignof__(struct_) - 1, \
+		.align_shift = Z_ALIGN_SHIFT(struct_), \
 		.type = type_, \
 	}
 
@@ -162,7 +164,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name = (#field_name_), \
 		.field_name_len = (sizeof(#field_name_) - 1), \
 		.offset = offsetof(struct_, field_name_), \
-		.alignment = __alignof__(struct_) - 1, \
+		.align_shift = Z_ALIGN_SHIFT(struct_), \
 		.type = JSON_TOK_OBJECT_START, \
 		.object = { \
 			.sub_descr = sub_descr_, \
@@ -201,13 +203,13 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name = (#field_name_), \
 		.field_name_len = sizeof(#field_name_) - 1, \
 		.offset = offsetof(struct_, field_name_), \
-		.alignment = __alignof__(struct_) - 1, \
+		.align_shift = Z_ALIGN_SHIFT(struct_), \
 		.type = JSON_TOK_LIST_START, \
 		.array = { \
 			.element_descr = &(struct json_obj_descr) { \
 				.type = elem_type_, \
 				.offset = offsetof(struct_, len_field_), \
-				.alignment = __alignof__(struct_) - 1, \
+				.align_shift = Z_ALIGN_SHIFT(struct_), \
 			}, \
 			.n_elements = (max_len_), \
 		}, \
@@ -258,7 +260,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name = (#field_name_), \
 		.field_name_len = sizeof(#field_name_) - 1, \
 		.offset = offsetof(struct_, field_name_), \
-		.alignment = __alignof__(struct_) - 1, \
+		.align_shift = Z_ALIGN_SHIFT(struct_), \
 		.type = JSON_TOK_LIST_START, \
 		.array = { \
 			.element_descr = &(struct json_obj_descr) { \
@@ -268,7 +270,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 					.sub_descr_len = elem_descr_len_, \
 				}, \
 				.offset = offsetof(struct_, len_field_), \
-				.alignment = __alignof__(struct_) - 1, \
+				.align_shift = Z_ALIGN_SHIFT(struct_), \
 			}, \
 			.n_elements = (max_len_), \
 		}, \
@@ -328,7 +330,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name = (#field_name_), \
 			.field_name_len = sizeof(#field_name_) - 1, \
 			.offset = offsetof(struct_, field_name_), \
-			.alignment = __alignof__(struct_) - 1, \
+			.align_shift = Z_ALIGN_SHIFT(struct_), \
 			.type = JSON_TOK_LIST_START, \
 			.array = { \
 			.element_descr = &(struct json_obj_descr) { \
@@ -338,7 +340,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 					.sub_descr_len = elem_descr_len_, \
 				}, \
 				.offset = offsetof(struct_, len_field_), \
-				.alignment = __alignof__(struct_) - 1, \
+				.align_shift = Z_ALIGN_SHIFT(struct_), \
 			}, \
 			.n_elements = (max_len_), \
 		}, \
@@ -367,7 +369,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name = (json_field_name_), \
 		.field_name_len = sizeof(json_field_name_) - 1, \
 		.offset = offsetof(struct_, struct_field_name_), \
-		.alignment = __alignof__(struct_) - 1, \
+		.align_shift = Z_ALIGN_SHIFT(struct_), \
 		.type = type_, \
 	}
 
@@ -393,7 +395,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name = (json_field_name_), \
 		.field_name_len = (sizeof(json_field_name_) - 1), \
 		.offset = offsetof(struct_, struct_field_name_), \
-		.alignment = __alignof__(struct_) - 1, \
+		.align_shift = Z_ALIGN_SHIFT(struct_), \
 		.type = JSON_TOK_OBJECT_START, \
 		.object = { \
 			.sub_descr = sub_descr_, \
@@ -429,13 +431,13 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name = (json_field_name_), \
 		.field_name_len = sizeof(json_field_name_) - 1, \
 		.offset = offsetof(struct_, struct_field_name_), \
-		.alignment = __alignof__(struct_) - 1, \
+		.align_shift = Z_ALIGN_SHIFT(struct_), \
 		.type = JSON_TOK_LIST_START, \
 		.array = { \
 			.element_descr = &(struct json_obj_descr) { \
 				.type = elem_type_, \
 				.offset = offsetof(struct_, len_field_), \
-				.alignment = __alignof__(struct_) - 1, \
+				.align_shift = Z_ALIGN_SHIFT(struct_), \
 			}, \
 			.n_elements = (max_len_), \
 		}, \
@@ -495,7 +497,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 		.field_name = json_field_name_, \
 		.field_name_len = sizeof(json_field_name_) - 1, \
 		.offset = offsetof(struct_, struct_field_name_), \
-		.alignment = __alignof__(struct_) - 1, \
+		.align_shift = Z_ALIGN_SHIFT(struct_), \
 		.type = JSON_TOK_LIST_START, \
 		.element_descr = &(struct json_obj_descr) { \
 			.type = JSON_TOK_OBJECT_START, \
@@ -504,7 +506,7 @@ typedef int (*json_append_bytes_t)(const char *bytes, size_t len,
 				.sub_descr_len = elem_descr_len_, \
 			}, \
 			.offset = offsetof(struct_, len_field_), \
-			.alignment = __alignof__(struct_) - 1, \
+			.align_shift = Z_ALIGN_SHIFT(struct_), \
 		}, \
 		.n_elements = (max_len_), \
 	}
