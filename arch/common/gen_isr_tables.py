@@ -41,7 +41,7 @@ def endian_prefix():
     else:
         return "<"
 
-def read_intlist(intlist_path):
+def read_intlist(intlist_path, syms):
     """read a binary file containing the contents of the kernel's .intList
     section. This is an instance of a header created by
     include/linker/intlist.ld:
@@ -71,7 +71,10 @@ def read_intlist(intlist_path):
     prefix = endian_prefix()
 
     intlist_header_fmt = prefix + "II"
-    intlist_entry_fmt = prefix + "iiII"
+    if "CONFIG_64BIT" in syms:
+        intlist_entry_fmt = prefix + "iiQQ"
+    else:
+        intlist_entry_fmt = prefix + "iiII"
 
     with open(intlist_path, "rb") as fp:
         intdata = fp.read()
@@ -220,7 +223,7 @@ def main():
 
                 debug('3rd level offsets: {}'.format(list_3rd_lvl_offsets))
 
-    intlist = read_intlist(args.intlist)
+    intlist = read_intlist(args.intlist, syms)
     nvec = intlist["num_vectors"]
     offset = intlist["offset"]
 
