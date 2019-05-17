@@ -2,7 +2,7 @@ common:
   harness: net
   tags: net zperf
   # TODO: Does not work properly with native_posix, need more TLC
-  platform_exclude: native_posix sam_e70_xplained
+  platform_exclude: native_posix native_posix_64 sam_e70_xplained
   min_ram: 64
 sample:
   description: Network performance measurement tool for Zephyr
