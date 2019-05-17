@@ -84,8 +84,11 @@ volatile size_t size_of_long_variable = sizeof(long_variable);
 
 void test_stddef(void)
 {
-
+#ifdef CONFIG_64BIT
+	zassert_true((size_of_long_variable == 8), "sizeof");
+#else
 	zassert_true((size_of_long_variable == 4), "sizeof");
+#endif
 }
 
 /*
