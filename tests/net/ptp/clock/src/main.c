@@ -175,29 +175,40 @@ static u64_t timestamp_to_nsec(struct net_ptp_time *ts)
 	return (ts->second * NSEC_PER_SEC) + ts->nanosecond;
 }
 
+struct ptp_context {
+	struct eth_context *eth_context;
+};
+
 static int my_ptp_clock_set(struct device *dev, struct net_ptp_time *tm)
 {
-	struct eth_context *ctx = dev->driver_data;
+	struct ptp_context *ptp_ctx = dev->driver_data;
+	struct eth_context *eth_ctx = ptp_ctx->eth_context;
 
-	memcpy(&ctx->time, tm, sizeof(struct net_ptp_time));
+	if (&eth_context_1 != eth_ctx && &eth_context_2 != eth_ctx) {
+		zassert_true(false, "Context pointers do not match\n");
+	}
+
+	memcpy(&eth_ctx->time, tm, sizeof(struct net_ptp_time));
 
 	return 0;
 }
 
 static int my_ptp_clock_get(struct device *dev, struct net_ptp_time *tm)
 {
-	struct eth_context *ctx = dev->driver_data;
+	struct ptp_context *ptp_ctx = dev->driver_data;
+	struct eth_context *eth_ctx = ptp_ctx->eth_context;
 
-	memcpy(tm, &ctx->time, sizeof(struct net_ptp_time));
+	memcpy(tm, &eth_ctx->time, sizeof(struct net_ptp_time));
 
 	return 0;
 }
 
 static int my_ptp_clock_adjust(struct device *dev, int increment)
 {
-	struct eth_context *ctx = dev->driver_data;
+	struct ptp_context *ptp_ctx = dev->driver_data;
+	struct eth_context *eth_ctx = ptp_ctx->eth_context;
 
-	ctx->time.nanosecond += increment;
+	eth_ctx->time.nanosecond += increment;
 
 	return 0;
 }
@@ -206,10 +217,6 @@ static int my_ptp_clock_rate_adjust(struct device *dev, float ratio)
 {
 	return 0;
 }
-
-struct ptp_context {
-	struct eth_context *eth_context;
-};
 
 static struct ptp_context ptp_test_1_context;
 static struct ptp_context ptp_test_2_context;
