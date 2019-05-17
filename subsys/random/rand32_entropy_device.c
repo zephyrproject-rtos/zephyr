@@ -8,11 +8,11 @@
 #include <kernel.h>
 #include <entropy.h>
 
-static atomic_t entropy_driver;
+static struct device *entropy_driver;
 
 u32_t sys_rand32_get(void)
 {
-	struct device *dev = (struct device *)atomic_get(&entropy_driver);
+	struct device *dev = entropy_driver;
 	u32_t random_num;
 	int ret;
 
@@ -25,7 +25,7 @@ u32_t sys_rand32_get(void)
 			"Device driver for %s (CONFIG_ENTROPY_NAME) not found. "
 			"Check your build configuration!",
 			CONFIG_ENTROPY_NAME);
-		atomic_set(&entropy_driver, (atomic_t)(uintptr_t)dev);
+		entropy_driver = dev;
 	}
 
 	ret = entropy_get_entropy(dev, (u8_t *)&random_num,
