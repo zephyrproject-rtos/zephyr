@@ -243,7 +243,7 @@ static const struct rtc_config  rtc_conf_info = {
 	.info = {
 		.max_top_value = UINT32_MAX,
 		.freq = 32768,
-		.count_up = true,
+		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
 		.channels = 1,
 	}
 };

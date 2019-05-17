@@ -156,7 +156,7 @@ static const struct imx_epit_config imx_epit_##idx##z_config = {		       \
 	.info = {							       \
 			.max_top_value = COUNTER_MAX_RELOAD,		       \
 			.freq = 1U,					       \
-			.count_up = false,				       \
+			.flags = 0,					       \
 			.channels = 0U,					       \
 		},							       \
 	.base = (EPIT_Type *)DT_COUNTER_IMX_EPIT_##idx##_BASE_ADDRESS,	       \

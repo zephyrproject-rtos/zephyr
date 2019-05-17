@@ -324,7 +324,7 @@ static const struct rtc_stm32_config rtc_config = {
 	.counter_info = {
 		.max_top_value = UINT32_MAX,
 		.freq = 1,
-		.count_up = true,
+		.flags = COUNTER_CONFIG_INFO_COUNT_UP,
 		.channels = 1,
 	},
 	.pclken = {

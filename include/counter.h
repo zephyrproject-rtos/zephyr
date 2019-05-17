@@ -29,6 +29,16 @@
 extern "C" {
 #endif
 
+/**@defgroup COUNTER_FLAGS Counter device capabilities
+ * @{ */
+
+/**
+ * @brief Counter count up flag.
+ */
+#define COUNTER_CONFIG_INFO_COUNT_UP BIT(0)
+
+/**@} */
+
 /** @brief Alarm callback
  *
  * @param dev       Pointer to the device structure for the driver instance.
@@ -76,15 +86,14 @@ typedef void (*counter_top_callback_t)(struct device *dev, void *user_data);
  *			(cleared or reloaded).
  * @param freq		Frequency of the source clock if synchronous events are
  *			counted.
- * @param count_up	Flag indicating direction of the counter. If true
- *			counter is counting up else counting down.
+ * @param flags		Flags. See @ref COUNTER_FLAGS.
  * @param channels	Number of channels that can be used for setting alarm,
  *			see @ref counter_set_alarm.
  */
 struct counter_config_info {
 	u32_t max_top_value;
 	u32_t freq;
-	bool count_up;
+	u8_t flags;
 	u8_t channels;
 };
 
@@ -129,7 +138,7 @@ static inline bool counter_is_counting_up(const struct device *dev)
 	const struct counter_config_info *config =
 			(struct counter_config_info *)dev->config->config_info;
 
-	return config->count_up;
+	return config->flags & COUNTER_CONFIG_INFO_COUNT_UP;
 }
 
 /**

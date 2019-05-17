@@ -247,7 +247,7 @@ static const struct aonpt_config aonpt_conf_info = {
 	.info = {
 		.max_top_value = UINT32_MAX,
 		.freq = 32768,
-		.count_up = false,
+		.flags = 0,
 		.channels = 0,
 	}
 };
