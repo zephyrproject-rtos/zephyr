@@ -301,7 +301,7 @@ _stack_frame_endif:
     cmp r1, #2
     beq _oops
 
-#if CONFIG_IRQ_OFFLOAD
+#if defined(CONFIG_IRQ_OFFLOAD)
     push {r0, lr}
     bl z_irq_do_offload  /* call C routine which executes the offload */
     pop {r0, r1}
@@ -367,7 +367,7 @@ SECTION_FUNC(TEXT, __svc)
     cmp r1, #2
     beq _oops
 
-#if CONFIG_IRQ_OFFLOAD
+#if defined(CONFIG_IRQ_OFFLOAD)
     push {r0, lr}
     bl z_irq_do_offload  /* call C routine which executes the offload */
     pop {r0, lr}
