@@ -174,8 +174,10 @@ static void check_endpoint_allocation(struct usb_desc_header *head)
 			LOG_DBG("iface %u", if_descr->bInterfaceNumber);
 
 			/* Check that interfaces get correct numbers */
-			zassert_equal(if_descr->bInterfaceNumber, interfaces++,
+			zassert_equal(if_descr->bInterfaceNumber, interfaces,
 				      "Interfaces numbering failed");
+
+			interfaces++;
 
 			cfg_data = usb_get_cfg_data(if_descr);
 			zassert_not_null(cfg_data, "Check available cfg data");
