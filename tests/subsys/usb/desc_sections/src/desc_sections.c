@@ -189,8 +189,9 @@ static void check_endpoint_allocation(struct usb_desc_header *head)
 			zassert_not_null(cfg_data, "Check available cfg data");
 
 			zassert_true(find_cfg_data_ep(ep_descr, cfg_data,
-						      ep_count++),
+						      ep_count),
 				     "Check endpoint config in cfg_data");
+			ep_count++;
 		}
 
 		head = (struct usb_desc_header *)((u8_t *)head + head->bLength);
