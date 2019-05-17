@@ -227,7 +227,7 @@ From RIRQ:
  */
 
 SECTION_FUNC(TEXT, _isr_wrapper)
-#if CONFIG_ARC_FIRQ
+#if defined(CONFIG_ARC_FIRQ)
 #if CONFIG_RGF_NUM_BANKS == 1
 	st r0,[saved_r0]
 #endif
