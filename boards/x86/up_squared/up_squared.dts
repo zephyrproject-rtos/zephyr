@@ -36,6 +36,14 @@
 	status = "ok";
 };
 
+&i2c0 {
+	status = "ok";
+};
+
+&i2c1 {
+	status = "ok";
+};
+
 &gpio {
 	status = "ok";
 };
