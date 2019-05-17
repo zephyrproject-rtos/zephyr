@@ -344,7 +344,7 @@ static int stm32_clock_control_init(struct device *dev)
 	LL_RCC_HSI_Disable();
 	LL_RCC_MSI_Disable();
 
-#endif /* CONFIG_CLOCK_STM32_PLL_SRC_... */
+#endif /* CONFIG_CLOCK_STM32_PLL_SRC_* */
 
 #elif CONFIG_CLOCK_STM32_SYSCLK_SRC_HSE
 
