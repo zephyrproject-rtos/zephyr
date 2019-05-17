@@ -66,7 +66,7 @@ SECTION_FUNC(TEXT,__start)
 
 	/* \todo: MPU init, gp for small data? */
 
-#if CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE)
 	lr r0, [_ARC_V2_STATUS32]
 	bset r0, r0, _ARC_V2_STATUS32_US_BIT
 	kflag r0
