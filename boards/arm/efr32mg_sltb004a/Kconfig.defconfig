@@ -29,4 +29,11 @@ config GPIO_GECKO_PORTF
 
 endif # GPIO_GECKO
 
+if COUNTER
+
+config COUNTER_GECKO_RTCC
+	default y
+
+endif # COUNTER
+
 endif # BOARD_EFR32MG_SLTB004A

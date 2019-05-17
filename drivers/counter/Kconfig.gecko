@@ -1,0 +1,14 @@
+# Kconfig - Silicon Labs Gecko Counter driver config
+#
+# Copyright (c) 2019, Piotr Mienkowski
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_GECKO_RTCC
+	bool "Silicon Labs Gecko Counter (RTCC) driver"
+	depends on SOC_FAMILY_EXX32
+	select SOC_GECKO_CMU
+	select SOC_GECKO_RTCC
+	help
+	  Enable counter driver based on RTCC module for Silicon Labs Gecko
+	  chips.
