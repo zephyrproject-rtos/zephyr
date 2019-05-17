@@ -1426,7 +1426,7 @@ static int wncm14a2a_init(struct device *dev)
 	ARG_UNUSED(dev);
 
 	/* check for valid pinconfig */
-	__ASSERT(sizeof(pinconfig) == MAX_MDM_CONTROL_PINS,
+	__ASSERT(ARRAY_SIZE(pinconfig) == MAX_MDM_CONTROL_PINS,
 	       "Incorrect modem pinconfig!");
 
 	(void)memset(&ictx, 0, sizeof(ictx));
