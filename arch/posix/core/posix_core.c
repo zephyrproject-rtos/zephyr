@@ -479,9 +479,7 @@ void z_impl_k_thread_abort(k_tid_t thread)
 	unsigned int key;
 	int thread_idx;
 
-	posix_thread_status_t *tstatus =
-					(posix_thread_status_t *)
-					thread->callee_saved.thread_status;
+	posix_thread_status_t *tstatus = thread->callee_saved.thread_status;
 
 	thread_idx = tstatus->thread_idx;
 
