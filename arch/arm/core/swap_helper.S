@@ -349,7 +349,7 @@ SECTION_FUNC(TEXT, __svc)
     * expand this case.
     */
     ands r1, #0xff
-#if CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE)
     mrs r2, CONTROL
 
     cmp r1, #3
@@ -381,7 +381,7 @@ _oops:
     bl z_do_kernel_oops
     pop {r0, pc}
 
-#if CONFIG_USERSPACE
+#if defined(CONFIG_USERSPACE)
     /*
      * System call will setup a jump to the _do_arm_syscall function
      * when the SVC returns via the bx lr.
