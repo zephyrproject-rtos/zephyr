@@ -12,6 +12,7 @@ config OUTPUT_PRINT_MEMORY_USAGE
 	default n
 
 config BOARD
+	default "native_posix_64" if BOARD_NATIVE_POSIX_64BIT
 	default "native_posix"
 
 if NETWORKING
