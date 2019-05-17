@@ -85,7 +85,8 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
 #endif /* CONFIG_USERSPACE */
 
-#if CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT && defined(CONFIG_USERSPACE)
+#if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) \
+	&& defined(CONFIG_USERSPACE)
 	/* This is required to work-around the case where the thread
 	 * is created without using K_THREAD_STACK_SIZEOF() macro in
 	 * k_thread_create(). If K_THREAD_STACK_SIZEOF() is used, the
