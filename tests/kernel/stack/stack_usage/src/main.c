@@ -47,10 +47,10 @@ K_THREAD_STACK_DEFINE(threadstack, TSTACK_SIZE);
 struct k_thread thread_data;
 
 /* Data pushed to stack */
-static ZTEST_DMEM u32_t data1[STACK_LEN] = { 0xAAAA, 0xBBBB, 0xCCCC, 0xDDDD };
-static ZTEST_DMEM u32_t data2[STACK_LEN] = { 0x1111, 0x2222, 0x3333, 0x4444 };
-static ZTEST_DMEM u32_t data_isr[STACK_LEN] = { 0xABCD, 0xABCD, 0xABCD,
-						0xABCD };
+static ZTEST_DMEM stack_data_t data1[STACK_LEN] = { 0xAAAA, 0xBBBB, 0xCCCC, 0xDDDD };
+static ZTEST_DMEM stack_data_t data2[STACK_LEN] = { 0x1111, 0x2222, 0x3333, 0x4444 };
+static ZTEST_DMEM stack_data_t data_isr[STACK_LEN] = { 0xABCD, 0xABCD, 0xABCD,
+						       0xABCD };
 
 /* semaphore to sync threads */
 static struct k_sem end_sema;
@@ -82,7 +82,7 @@ static void tIsr_entry_pop(void *p)
 
 static void thread_entry_fn_single(void *p1, void *p2, void *p3)
 {
-	u32_t tmp[STACK_LEN];
+	stack_data_t tmp[STACK_LEN];
 	u32_t i;
 
 	/* Pop items from stack */
@@ -103,7 +103,7 @@ static void thread_entry_fn_single(void *p1, void *p2, void *p3)
 
 static void thread_entry_fn_dual(void *p1, void *p2, void *p3)
 {
-	u32_t tmp[STACK_LEN];
+	stack_data_t tmp[STACK_LEN];
 	u32_t i;
 
 	for (i = 0U; i < STACK_LEN; i++) {
@@ -143,7 +143,7 @@ static void thread_entry_fn_isr(void *p1, void *p2, void *p3)
  */
 static void test_single_stack_play(void)
 {
-	u32_t tmp[STACK_LEN];
+	stack_data_t tmp[STACK_LEN];
 	u32_t i;
 
 	/* Init kernel objects */
@@ -180,7 +180,7 @@ static void test_single_stack_play(void)
  */
 static void test_dual_stack_play(void)
 {
-	u32_t tmp[STACK_LEN];
+	stack_data_t tmp[STACK_LEN];
 	u32_t i;
 
 	k_tid_t tid = k_thread_create(&thread_data, threadstack, TSTACK_SIZE,

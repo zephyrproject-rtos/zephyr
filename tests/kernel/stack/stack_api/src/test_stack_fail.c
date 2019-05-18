@@ -10,12 +10,12 @@
 #define TIMEOUT 100
 #define STACK_LEN 2
 
-static ZTEST_BMEM u32_t data[STACK_LEN];
+static ZTEST_BMEM stack_data_t data[STACK_LEN];
 extern struct k_stack stack;
 
 static void stack_pop_fail(struct k_stack *stack)
 {
-	u32_t rx_data;
+	stack_data_t rx_data;
 
 	/**TESTPOINT: stack pop returns -EBUSY*/
 	zassert_equal(k_stack_pop(stack, &rx_data, K_NO_WAIT), -EBUSY, NULL);

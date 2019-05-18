@@ -5,7 +5,7 @@ Stacks
 
 A :dfn:`stack` is a kernel object that implements a traditional
 last in, first out (LIFO) queue, allowing threads and ISRs
-to add and remove a limited number of 32-bit data values.
+to add and remove a limited number of integer data values.
 
 .. contents::
     :local:
@@ -19,9 +19,11 @@ by its memory address.
 
 A stack has the following key properties:
 
-* A **queue** of 32-bit data values that have been added but not yet removed.
-  The queue is implemented using an array of 32-bit integers,
-  and must be aligned on a 4-byte boundary.
+* A **queue** of integer data values that have been added but not yet removed.
+  The queue is implemented using an array of stack_data_t values
+  and must be aligned on a native word boundary.
+  The stack_data_t type corresponds to the native word size i.e. 32 bits or
+  64 bits depending on the CPU architecture and compilation mode.
 
 * A **maximum quantity** of data values that can be queued in the array.
 
@@ -60,13 +62,13 @@ provided and it is instead allocated from the calling thread's resource
 pool.
 
 The following code defines and initializes an empty stack capable of holding
-up to ten 32-bit data values.
+up to ten word-sized data values.
 
 .. code-block:: c
 
     #define MAX_ITEMS 10
 
-    u32_t my_stack_array[MAX_ITEMS];
+    stack_data_t my_stack_array[MAX_ITEMS];
     struct k_stack my_stack;
 
     k_stack_init(&my_stack, my_stack_array, MAX_ITEMS);
@@ -101,7 +103,7 @@ in a stack.
 
     /* save address of each data structure in a stack */
     for (int i = 0; i < MAX_ITEMS; i++) {
-        k_stack_push(&my_stack, (u32_t)&my_buffers[i]);
+        k_stack_push(&my_stack, (stack_data_t)&my_buffers[i]);
     }
 
 Popping from a Stack
@@ -118,13 +120,13 @@ its address back on the stack to allow the data structure to be reused.
 
     struct my_buffer_type *new_buffer;
 
-    k_stack_pop(&buffer_stack, (u32_t *)&new_buffer, K_FOREVER);
+    k_stack_pop(&buffer_stack, (stack_data_t *)&new_buffer, K_FOREVER);
     new_buffer->field1 = ...
 
 Suggested Uses
 **************
 
-Use a stack to store and retrieve 32-bit data values in a "last in,
+Use a stack to store and retrieve integer data values in a "last in,
 first out" manner, when the maximum number of stored items is known.
 
 Configuration Options

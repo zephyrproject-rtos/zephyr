@@ -53,7 +53,7 @@ static struct k_queue queue;
 #define NUM_BLOCKS 4
 
 static char __aligned(8) slab[BLOCK_SIZE * NUM_BLOCKS];
-static u32_t sdata[BLOCK_SIZE * NUM_BLOCKS];
+static stack_data_t sdata[BLOCK_SIZE * NUM_BLOCKS];
 static char buffer[BLOCK_SIZE * NUM_BLOCKS];
 static char data[] = "test";
 
