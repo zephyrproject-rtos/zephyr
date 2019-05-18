@@ -533,7 +533,7 @@ int usb_dc_ep_start_read(u8_t ep, u8_t *data, u32_t max_data_len)
 
 int usb_dc_ep_get_read_count(u8_t ep, u32_t *read_bytes)
 {
-	if (!EP_IS_OUT(ep)) {
+	if (!EP_IS_OUT(ep) || !read_bytes) {
 		LOG_ERR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
@@ -659,7 +659,7 @@ int usb_dc_ep_is_stalled(const u8_t ep, u8_t *const stalled)
 
 	LOG_DBG("ep 0x%02x", ep);
 
-	if (!ep_state) {
+	if (!ep_state || !stalled) {
 		return -EINVAL;
 	}
 
@@ -730,7 +730,7 @@ int usb_dc_ep_write(const u8_t ep, const u8_t *const data,
 
 	LOG_DBG("ep 0x%02x, len %u", ep, data_len);
 
-	if (!EP_IS_IN(ep)) {
+	if (!ep_state || !EP_IS_IN(ep)) {
 		LOG_ERR("invalid ep 0x%02x", ep);
 		return -EINVAL;
 	}
@@ -822,7 +822,7 @@ int usb_dc_ep_read_continue(u8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
 
-	if (!EP_IS_OUT(ep)) { /* Check if OUT ep */
+	if (!ep_state || !EP_IS_OUT(ep)) { /* Check if OUT ep */
 		LOG_ERR("Not valid endpoint: %02x", ep);
 		return -EINVAL;
 	}
@@ -859,6 +859,12 @@ int usb_dc_ep_halt(const u8_t ep)
 
 int usb_dc_ep_flush(const u8_t ep)
 {
+	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
+
+	if (!ep_state) {
+		return -EINVAL;
+	}
+
 	LOG_ERR("Not implemented");
 
 	return 0;
@@ -867,6 +873,10 @@ int usb_dc_ep_flush(const u8_t ep)
 int usb_dc_ep_mps(const u8_t ep)
 {
 	struct usb_dc_stm32_ep_state *ep_state = usb_dc_stm32_get_ep_state(ep);
+
+	if (!ep_state) {
+		return -EINVAL;
+	}
 
 	return ep_state->ep_mps;
 }
