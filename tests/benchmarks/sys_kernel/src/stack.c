@@ -11,8 +11,8 @@
 struct k_stack  stack_1;
 struct k_stack  stack_2;
 
-u32_t stack1[2];
-u32_t stack2[2];
+stack_data_t stack1[2];
+stack_data_t stack2[2];
 
 /**
  *
@@ -43,7 +43,7 @@ void stack_thread1(void *par1, void *par2, void *par3)
 {
 	int num_loops = POINTER_TO_INT(par2) / 2;
 	int i;
-	u32_t data;
+	stack_data_t data;
 
 	ARG_UNUSED(par1);
 	ARG_UNUSED(par3);
@@ -79,7 +79,7 @@ void stack_thread1(void *par1, void *par2, void *par3)
 void stack_thread2(void *par1, void *par2, void *par3)
 {
 	int i;
-	u32_t data;
+	stack_data_t data;
 	int *pcounter = par1;
 	int num_loops = POINTER_TO_INT(par2);
 
@@ -111,7 +111,7 @@ void stack_thread2(void *par1, void *par2, void *par3)
 void stack_thread3(void *par1, void *par2, void *par3)
 {
 	int i;
-	u32_t data;
+	stack_data_t data;
 	int *pcounter = par1;
 	int num_loops = POINTER_TO_INT(par2);
 
@@ -220,7 +220,7 @@ int stack_test(void)
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 
 	for (i = 0; i < number_of_loops / 2U; i++) {
-		u32_t data;
+		stack_data_t data;
 
 		data = 2 * i;
 		k_stack_push(&stack_1, data);

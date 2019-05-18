@@ -2419,10 +2419,12 @@ struct k_lifo {
  */
 #define K_STACK_FLAG_ALLOC	((u8_t)1)	/* Buffer was allocated */
 
+typedef uintptr_t stack_data_t;
+
 struct k_stack {
 	_wait_q_t wait_q;
 	struct k_spinlock lock;
-	u32_t *base, *next, *top;
+	stack_data_t *base, *next, *top;
 
 	_OBJECT_TRACING_NEXT_PTR(k_stack)
 	u8_t flags;
@@ -2462,7 +2464,7 @@ struct k_stack {
  * @req K-STACK-001
  */
 void k_stack_init(struct k_stack *stack,
-		  u32_t *buffer, u32_t num_entries);
+		  stack_data_t *buffer, u32_t num_entries);
 
 
 /**
@@ -2498,7 +2500,7 @@ void k_stack_cleanup(struct k_stack *stack);
 /**
  * @brief Push an element onto a stack.
  *
- * This routine adds a 32-bit value @a data to @a stack.
+ * This routine adds a stack_data_t value @a data to @a stack.
  *
  * @note Can be called by ISRs.
  *
@@ -2508,13 +2510,13 @@ void k_stack_cleanup(struct k_stack *stack);
  * @return N/A
  * @req K-STACK-001
  */
-__syscall void k_stack_push(struct k_stack *stack, u32_t data);
+__syscall void k_stack_push(struct k_stack *stack, stack_data_t data);
 
 /**
  * @brief Pop an element from a stack.
  *
- * This routine removes a 32-bit value from @a stack in a "last in, first out"
- * manner and stores the value in @a data.
+ * This routine removes a stack_data_t value from @a stack in a "last in,
+ * first out" manner and stores the value in @a data.
  *
  * @note Can be called by ISRs, but @a timeout must be set to K_NO_WAIT.
  *
@@ -2528,7 +2530,7 @@ __syscall void k_stack_push(struct k_stack *stack, u32_t data);
  * @retval -EAGAIN Waiting period timed out.
  * @req K-STACK-001
  */
-__syscall int k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout);
+__syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data, s32_t timeout);
 
 /**
  * @brief Statically define and initialize a stack
@@ -2542,7 +2544,7 @@ __syscall int k_stack_pop(struct k_stack *stack, u32_t *data, s32_t timeout);
  * @req K-STACK-002
  */
 #define K_STACK_DEFINE(name, stack_num_entries)                \
-	u32_t __noinit                                      \
+	stack_data_t __noinit                                  \
 		_k_stack_buf_##name[stack_num_entries];        \
 	Z_STRUCT_SECTION_ITERABLE(k_stack, name) = \
 		_K_STACK_INITIALIZER(name, _k_stack_buf_##name, \
