@@ -340,6 +340,13 @@ void lwm2m_firmware_set_update_cb(lwm2m_engine_user_cb_t cb);
  * @return A registered callback function to receive the execute event.
  */
 lwm2m_engine_user_cb_t lwm2m_firmware_get_update_cb(void);
+
+/**
+ * @brief Get the block context of the current firmware block.
+ *
+ * @param[out] ctx A buffer to store the block context.
+ */
+struct coap_block_context *lwm2m_firmware_get_block_context();
 #endif
 #endif
 
