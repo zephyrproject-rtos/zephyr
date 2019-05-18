@@ -182,9 +182,9 @@ static void test_usb_dc_api_invalid(void)
 	zassert_not_equal(usb_dc_ep_set_stall(INVALID_EP), TC_PASS,
 			  "usb_dc_ep_set_stall(INVALID_EP)");
 
-	/* Set stall to invalid EP */
+	/* Clear stall to invalid EP */
 	zassert_not_equal(usb_dc_ep_clear_stall(INVALID_EP), TC_PASS,
-			  "usb_dc_ep_set_stall(INVALID_EP)");
+			  "usb_dc_ep_clear_stall(INVALID_EP)");
 
 	/* Check if the selected endpoint is stalled */
 	zassert_not_equal(usb_dc_ep_is_stalled(INVALID_EP, &byte), TC_PASS,
