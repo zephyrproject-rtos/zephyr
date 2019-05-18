@@ -161,6 +161,11 @@
 #define ADXL362_STATUS_CHECK_INACT(x)		(((x) >> 5) & 0x1)
 #define ADXL362_STATUS_CHECK_ACTIVITY(x)	(((x) >> 4) & 0x1)
 
+/* ADXL362 scale factors from specifications */
+#define ADXL362_ACCEL_2G_LSB_PER_G	1000
+#define ADXL362_ACCEL_4G_LSB_PER_G	500
+#define ADXL362_ACCEL_8G_LSB_PER_G	235
+
 struct adxl362_config {
 	char *spi_name;
 	u32_t spi_max_frequency;
@@ -183,9 +188,9 @@ struct adxl362_data {
 #if defined(DT_ADI_ADXL362_0_CS_GPIO_CONTROLLER)
 	struct spi_cs_control adxl362_cs_ctrl;
 #endif
-	s32_t acc_x;
-	s32_t acc_y;
-	s32_t acc_z;
+	s16_t acc_x;
+	s16_t acc_y;
+	s16_t acc_z;
 	s32_t temp;
 	u8_t selected_range;
 
