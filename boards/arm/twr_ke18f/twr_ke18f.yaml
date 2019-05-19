@@ -17,3 +17,4 @@ supported:
   - adc
   - can
   - watchdog
+  - pwm

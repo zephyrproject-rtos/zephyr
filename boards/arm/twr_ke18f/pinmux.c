@@ -34,14 +34,31 @@ static int twr_ke18f_pinmux_init(struct device *dev)
 		device_get_binding(CONFIG_PINMUX_MCUX_PORTE_NAME);
 #endif
 
-	/* LEDs */
+#ifdef CONFIG_PWM_0
+	/* Tri-color LED as PWM */
+	pinmux_pin_set(portb, 5, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portd, 15, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portd, 16, PORT_PCR_MUX(kPORT_MuxAlt2));
+#else /* !CONFIG_PWM_0 */
+	/* Tri-color LED as GPIO */
 	pinmux_pin_set(portb, 5, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portd, 15, PORT_PCR_MUX(kPORT_MuxAsGpio));
+	pinmux_pin_set(portd, 16, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif /* !CONFIG_PWM_0 */
+
+#ifdef CONFIG_PWM_3
+	/* User LEDs as PWM */
+	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portc, 12, PORT_PCR_MUX(kPORT_MuxAlt2));
+	pinmux_pin_set(portc, 13, PORT_PCR_MUX(kPORT_MuxAlt2));
+#else /* !CONFIG_PWM_3 */
+	/* User LEDs as GPIO */
 	pinmux_pin_set(portc, 10, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portc, 11, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portc, 12, PORT_PCR_MUX(kPORT_MuxAsGpio));
 	pinmux_pin_set(portc, 13, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(portd, 15, PORT_PCR_MUX(kPORT_MuxAsGpio));
-	pinmux_pin_set(portd, 16, PORT_PCR_MUX(kPORT_MuxAsGpio));
+#endif /* !CONFIG_PWM_3 */
 
 	/* Buttons */
 	pinmux_pin_set(portd, 3, PORT_PCR_MUX(kPORT_MuxAsGpio));

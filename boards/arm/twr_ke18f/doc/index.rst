@@ -82,6 +82,8 @@ features:
 +-----------+------------+-------------------------------------+
 | WDT       | on-chip    | watchdog                            |
 +-----------+------------+-------------------------------------+
+| PWM       | on-chip    | pwm                                 |
++-----------+------------+-------------------------------------+
 
 The default configuration can be found in the defconfig file:
 ``boards/arm/twr_ke18f/twr_ke18f_defconfig``.
