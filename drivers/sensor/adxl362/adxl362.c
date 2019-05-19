@@ -531,36 +531,21 @@ int adxl362_set_interrupt_mode(struct device *dev, u8_t mode)
 static int adxl362_sample_fetch(struct device *dev, enum sensor_channel chan)
 {
 	struct adxl362_data *data = dev->driver_data;
-	u8_t buf[2];
+	s16_t buf[4];
 	int ret;
 
-	ret = adxl362_get_reg(dev, buf, ADXL362_REG_XDATA_L, 2);
+	__ASSERT_NO_MSG(chan == SENSOR_CHAN_ALL);
+
+	ret = adxl362_get_reg(dev, (u8_t *)buf, ADXL362_REG_XDATA_L,
+			      sizeof(buf));
 	if (ret) {
 		return ret;
 	}
 
-	data->acc_x = (buf[1] << 8) + buf[0];
-
-	ret = adxl362_get_reg(dev, buf, ADXL362_REG_YDATA_L, 2);
-	if (ret) {
-		return ret;
-	}
-
-	data->acc_y = (buf[1] << 8) + buf[0];
-
-	ret = adxl362_get_reg(dev, buf, ADXL362_REG_ZDATA_L, 2);
-	if (ret) {
-		return ret;
-	}
-
-	data->acc_z = (buf[1] << 8) + buf[0];
-
-	ret = adxl362_get_reg(dev, buf, ADXL362_REG_TEMP_L, 2);
-	if (ret) {
-		return ret;
-	}
-
-	data->temp = (buf[1] << 8) + buf[0];
+	data->acc_x = sys_le16_to_cpu(buf[0]);
+	data->acc_y = sys_le16_to_cpu(buf[1]);
+	data->acc_z = sys_le16_to_cpu(buf[2]);
+	data->temp = sys_le16_to_cpu(buf[3]);
 
 	return 0;
 }
