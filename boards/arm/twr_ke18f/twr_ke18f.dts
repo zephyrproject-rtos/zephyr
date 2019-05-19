@@ -21,6 +21,13 @@
 		led4 = &tri_red_led;
 		led5 = &tri_green_led;
 		led6 = &tri_blue_led;
+		pwm-led0 = &orange_pwm_led;
+		pwm-led1 = &yellow_pwm_led;
+		pwm-led2 = &green_pwm_led;
+		pwm-led3 = &red_pwm_led;
+		red-pwm-led = &tri_red_pwm_led;
+		green-pwm-led = &tri_green_pwm_led;
+		blue-pwm-led = &tri_blue_pwm_led;
 		sw0 = &user_button_3;
 		sw1 = &user_button_2;
 	};
@@ -64,6 +71,39 @@
 		tri_blue_led: led_6 {
 			gpios = <&gpiob 5 0>;
 			label = "User Tricolor LED D5 (Blue)";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		orange_pwm_led: led_pwm_0 {
+			pwms = <&ftm3 7 60000>;
+			label = "User PWM LED D9";
+		};
+		yellow_pwm_led: led_pwm_1 {
+			pwms = <&ftm3 6 60000>;
+			label = "User PWM LED D8";
+		};
+		green_pwm_led: led_pwm_2 {
+			pwms = <&ftm3 5 60000>;
+			label = "User PWM LED D7";
+		};
+		red_pwm_led: led_pwm_3 {
+			pwms = <&ftm3 4 60000>;
+			label = "User PWM LED D6";
+		};
+
+		tri_red_pwm_led: led_pwm_4 {
+			pwms = <&ftm0 1 60000>;
+			label = "User Tricolor PWM LED D5 (Red)";
+		};
+		tri_green_pwm_led: led_pwm_5 {
+			pwms = <&ftm0 0 60000>;
+			label = "User Tricolor PWM LED D5 (Green)";
+		};
+		tri_blue_pwm_led: led_pwm_6 {
+			pwms = <&ftm0 5 60000>;
+			label = "User Tricolor PWM LED D5 (Blue)";
 		};
 	};
 
@@ -116,6 +156,14 @@
 &uart0 {
 	status = "okay";
 	current-speed = <115200>;
+};
+
+&ftm0 {
+	status = "okay";
+};
+
+&ftm3 {
+	status = "okay";
 };
 
 &i2c0 {
