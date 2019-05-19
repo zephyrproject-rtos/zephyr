@@ -49,6 +49,13 @@ config COUNTER_MCUX_RTC
 
 endif # COUNTER
 
+if PWM
+
+config PWM_MCUX_FTM
+	default y
+
+endif # PWM
+
 if PINMUX
 
 config PINMUX_MCUX

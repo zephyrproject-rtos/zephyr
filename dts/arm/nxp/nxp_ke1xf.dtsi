@@ -33,6 +33,10 @@
 		adc-0 = &adc0;
 		adc-1 = &adc1;
 		adc-2 = &adc2;
+		ftm-0 = &ftm0;
+		ftm-1 = &ftm1;
+		ftm-2 = &ftm2;
+		ftm-3 = &ftm3;
 	};
 
 	cpus {
@@ -330,6 +334,46 @@
 			label = "ADC_2";
 			clk-source = <0>;
 			clk-divider = <1>;
+			status = "disabled";
+		};
+
+		ftm0: pwm@40038000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x40038000 0x1000>;
+			interrupts = <42 0>;
+			clocks = <&pcc 0xe0>;
+			label = "FTM_0";
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		ftm1: pwm@40039000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x40039000 0x1000>;
+			interrupts = <43 0>;
+			clocks = <&pcc 0xe4>;
+			label = "FTM_1";
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		ftm2: pwm@4003a000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x4003a000 0x1000>;
+			interrupts = <44 0>;
+			clocks = <&pcc 0xe8>;
+			label = "FTM_2";
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		ftm3: pwm@40026000 {
+			compatible = "nxp,kinetis-ftm";
+			reg = <0x40026000 0x1000>;
+			interrupts = <71 0>;
+			clocks = <&pcc 0x98>;
+			label = "FTM_3";
+			#pwm-cells = <2>;
 			status = "disabled";
 		};
 	};

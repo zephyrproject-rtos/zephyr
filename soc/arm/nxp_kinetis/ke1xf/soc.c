@@ -223,6 +223,18 @@ static ALWAYS_INLINE void clk_init(void)
 #ifdef CONFIG_ADC_2
 	CLOCK_SetIpSrc(kCLOCK_Adc2, kCLOCK_IpSrcFircAsync);
 #endif
+#ifdef CONFIG_PWM_0
+	CLOCK_SetIpSrc(kCLOCK_Ftm0, kCLOCK_IpSrcFircAsync);
+#endif
+#ifdef CONFIG_PWM_1
+	CLOCK_SetIpSrc(kCLOCK_Ftm1, kCLOCK_IpSrcFircAsync);
+#endif
+#ifdef CONFIG_PWM_2
+	CLOCK_SetIpSrc(kCLOCK_Ftm2, kCLOCK_IpSrcFircAsync);
+#endif
+#ifdef CONFIG_PWM_3
+	CLOCK_SetIpSrc(kCLOCK_Ftm3, kCLOCK_IpSrcFircAsync);
+#endif
 }
 
 static int ke1xf_init(struct device *arg)
