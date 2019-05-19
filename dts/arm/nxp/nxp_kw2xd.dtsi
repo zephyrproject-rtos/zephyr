@@ -2,6 +2,7 @@
 
 #include <arm/armv7-m.dtsi>
 #include <dt-bindings/clock/kinetis_sim.h>
+#include <dt-bindings/clock/kinetis_mcg.h>
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/i2c/i2c.h>
 
@@ -25,9 +26,11 @@
 	soc {
 
 		mcg: clock-controller@40064000 {
-			compatible = "nxp,k64f-mcg";
+			compatible = "nxp,kinetis-mcg";
 			reg = <0x40064000 0xd>;
+			label = "MCG";
 			system-clock-frequency = <48000000>;
+			#clock-cells = <1>;
 		};
 
 		clock-controller@40065000 {
@@ -275,6 +278,7 @@
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40038000 0x98>;
 			interrupts = <42 0>;
+			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			label = "PWM_0";
 			status = "disabled";
 			#pwm-cells = <2>;
@@ -284,6 +288,7 @@
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x40039000 0x98>;
 			interrupts = <43 0>;
+			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			label = "PWM_1";
 			status = "disabled";
 			#pwm-cells = <2>;
@@ -293,6 +298,7 @@
 			compatible = "nxp,kinetis-ftm";
 			reg = <0x4003a000 0x98>;
 			interrupts = <44 0>;
+			clocks = <&mcg KINETIS_MCG_FIXED_FREQ_CLK>;
 			label = "PWM_2";
 			status = "disabled";
 			#pwm-cells = <2>;
