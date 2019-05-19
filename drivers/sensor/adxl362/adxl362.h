@@ -166,6 +166,10 @@
 #define ADXL362_ACCEL_4G_LSB_PER_G	500
 #define ADXL362_ACCEL_8G_LSB_PER_G	235
 
+/* ADXL362 temperature sensor specifications */
+#define ADXL362_TEMP_MC_PER_LSB 65
+#define ADXL362_TEMP_BIAS_LSB 350
+
 struct adxl362_config {
 	char *spi_name;
 	u32_t spi_max_frequency;
@@ -191,7 +195,7 @@ struct adxl362_data {
 	s16_t acc_x;
 	s16_t acc_y;
 	s16_t acc_z;
-	s32_t temp;
+	s16_t temp;
 	u8_t selected_range;
 
 #if defined(CONFIG_ADXL362_TRIGGER)
