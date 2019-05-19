@@ -242,6 +242,7 @@
 /include/device.h                         @wentongwu @nashif
 /include/display/                         @vanwinkeljan
 /include/display/framebuf.h               @gnuless
+/include/dt-bindings/clock/kinetis_mcg.h  @henrikbrixandersen
 /include/dt-bindings/clock/kinetis_scg.h  @henrikbrixandersen
 /include/dt-bindings/pcie/                @gnuless
 /include/dt-bindings/usb/usb.h            @galak @finikorg
