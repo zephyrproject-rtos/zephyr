@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2019 Vestas Wind Systems A/S
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: NXP Kinetis Multipurpose Clock Generator (MCG)
+
+description: >
+    This is a representation of the NXP Kinetis MCG IP node
+
+inherits:
+    !include base.yaml
+
+properties:
+    compatible:
+      constraint: "nxp,kinetis-mcg"
+
+    reg:
+      category: required
+
+    label:
+      category: required
+
+"#cells":
+  - name
