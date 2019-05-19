@@ -368,24 +368,6 @@ static int adxl362_attr_set(struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
-
-static int adxl362_read_temperature(struct device *dev, s32_t *temp_celsius)
-{
-	u8_t raw_temp_data[2];
-	int ret;
-
-	/* Reads the temperature of the device. */
-	ret = adxl362_get_reg(dev, raw_temp_data, ADXL362_REG_TEMP_L, 2);
-	if (ret) {
-		return ret;
-	}
-
-	*temp_celsius = (s32_t)(raw_temp_data[1] << 8) + raw_temp_data[0];
-	*temp_celsius *= 65;
-
-	return ret;
-}
-
 static int adxl362_fifo_setup(struct device *dev, u8_t mode,
 			      u16_t water_mark_lvl, u8_t en_temp_read)
 {
@@ -573,10 +555,12 @@ static int adxl362_sample_fetch(struct device *dev, enum sensor_channel chan)
 
 	data->acc_z = (buf[1] << 8) + buf[0];
 
-	ret = adxl362_read_temperature(dev, &data->temp);
+	ret = adxl362_get_reg(dev, buf, ADXL362_REG_TEMP_L, 2);
 	if (ret) {
 		return ret;
 	}
+
+	data->temp = (buf[1] << 8) + buf[0];
 
 	return 0;
 }
@@ -608,6 +592,15 @@ static void adxl362_accel_convert(struct sensor_value *val, int accel,
 	val->val2 = micro_ms2 % 1000000;
 }
 
+static void adxl362_temp_convert(struct sensor_value *val, int temp)
+{
+	/* See sensitivity and bias specifications in table 1 of datasheet */
+	int milli_c = (temp - ADXL362_TEMP_BIAS_LSB) * ADXL362_TEMP_MC_PER_LSB;
+
+	val->val1 = milli_c / 1000;
+	val->val2 = (milli_c % 1000) * 1000;
+}
+
 static int adxl362_channel_get(struct device *dev,
 			       enum sensor_channel chan,
 			       struct sensor_value *val)
@@ -625,8 +618,7 @@ static int adxl362_channel_get(struct device *dev,
 		adxl362_accel_convert(val, data->acc_z,  data->selected_range);
 		break;
 	case SENSOR_CHAN_DIE_TEMP: /* Temperature in degrees Celsius. */
-		val->val1 = data->temp / 1000;
-		val->val2 = (data->temp % 1000) * 1000;
+		adxl362_temp_convert(val, data->temp);
 		break;
 	default:
 		return -ENOTSUP;
