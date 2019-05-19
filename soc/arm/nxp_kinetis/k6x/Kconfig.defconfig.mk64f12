@@ -31,6 +31,9 @@ if CLOCK_CONTROL
 config CLOCK_CONTROL_MCUX_SIM
 	default y
 
+config CLOCK_CONTROL_MCUX_MCG
+	default y
+
 endif # CLOCK_CONTROL
 
 if PINMUX
