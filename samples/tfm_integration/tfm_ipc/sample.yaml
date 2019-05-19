@@ -1,0 +1,8 @@
+sample:
+  description: TF-M IPC sample
+    application
+  name: TF-M IPC
+tests:
+  sample.tfm_ipc:
+    tags: introduction
+    platform_whitelist: mps2_an521_nonsecure
