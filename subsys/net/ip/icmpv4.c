@@ -64,6 +64,7 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 						   struct net_icmp_hdr *icmp_hdr)
 {
 	struct net_pkt *reply = NULL;
+	const struct in_addr *src;
 	s16_t payload_len;
 
 	/* If interface can not select src address based on dst addr
@@ -93,7 +94,14 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 		goto drop;
 	}
 
-	if (net_ipv4_create(reply, &ip_hdr->dst, &ip_hdr->src) ||
+	if (net_ipv4_is_addr_mcast(&ip_hdr->dst)) {
+		src = net_if_ipv4_select_src_addr(net_pkt_iface(pkt),
+						  &ip_hdr->dst);
+	} else {
+		src = &ip_hdr->dst;
+	}
+
+	if (net_ipv4_create(reply, src, &ip_hdr->src) ||
 	    icmpv4_create(reply, NET_ICMPV4_ECHO_REPLY, 0) ||
 	    net_pkt_copy(reply, pkt, payload_len)) {
 		NET_DBG("DROP: wrong buffer");
@@ -104,7 +112,7 @@ static enum net_verdict icmpv4_handle_echo_request(struct net_pkt *pkt,
 	net_ipv4_finalize(reply, IPPROTO_ICMP);
 
 	NET_DBG("Sending Echo Reply from %s to %s",
-		log_strdup(net_sprint_ipv4_addr(&ip_hdr->dst)),
+		log_strdup(net_sprint_ipv4_addr(src)),
 		log_strdup(net_sprint_ipv4_addr(&ip_hdr->src)));
 
 	if (net_send_data(reply) < 0) {
