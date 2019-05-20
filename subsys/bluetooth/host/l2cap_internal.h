@@ -202,11 +202,14 @@ struct bt_l2cap_le_credits {
 struct bt_l2cap_fixed_chan {
 	u16_t		cid;
 	int (*accept)(struct bt_conn *conn, struct bt_l2cap_chan **chan);
-	sys_snode_t	node;
 };
 
-/* Register a fixed L2CAP channel for L2CAP */
-void bt_l2cap_le_fixed_chan_register(struct bt_l2cap_fixed_chan *chan);
+#define BT_L2CAP_CHANNEL_DEFINE(_name, _cid, _accept)		\
+	const struct bt_l2cap_fixed_chan _name __aligned(4)	\
+			__in_section(_bt_channels, static, _name) = { \
+				.cid = _cid,			\
+				.accept = _accept,		\
+			}
 
 /* Notify L2CAP channels of a new connection */
 void bt_l2cap_connected(struct bt_conn *conn);

@@ -93,14 +93,9 @@ static int bt_smp_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
+BT_L2CAP_CHANNEL_DEFINE(smp_fixed_chan, BT_L2CAP_CID_SMP, bt_smp_accept);
+
 int bt_smp_init(void)
 {
-	static struct bt_l2cap_fixed_chan chan = {
-		.cid	= BT_L2CAP_CID_SMP,
-		.accept	= bt_smp_accept,
-	};
-
-	bt_l2cap_le_fixed_chan_register(&chan);
-
 	return 0;
 }
