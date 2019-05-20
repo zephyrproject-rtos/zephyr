@@ -198,7 +198,7 @@ class KconfigCheck(ComplianceTest):
     for example using undefiend Kconfig variables.
     """
     _name = "Kconfig"
-    _doc = "https://docs.zephyrproject.org/latest/tools/kconfig/index.html"
+    _doc = "https://docs.zephyrproject.org/latest/guides/kconfig/index.html"
 
     def run(self):
         self.prepare(ZEPHYR_BASE)
@@ -566,7 +566,7 @@ class Documentation(ComplianceTest):
 
     """
     _name = "Documentation"
-    _doc = "https://docs.zephyrproject.org/latest/documentation/doc-guidelines.html"
+    _doc = "https://docs.zephyrproject.org/latest/guides/documentation/index.html"
 
     DOCS_WARNING_FILE = "doc.warnings"
 
