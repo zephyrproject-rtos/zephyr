@@ -864,7 +864,7 @@ u8_t ll_adv_enable(u8_t enable)
 		ull_filter_adv_scan_state_cb(BIT(0) | BIT(1));
 	}
 #else /* !CONFIG_BT_HCI_MESH_EXT */
-	if (!ull_scan_is_enabled_get(0)) {
+	if (IS_ENABLED(CONFIG_BT_OBSERVER) && !ull_scan_is_enabled_get(0)) {
 		ull_filter_adv_scan_state_cb(BIT(0));
 	}
 #endif /* !CONFIG_BT_HCI_MESH_EXT */
@@ -1202,7 +1202,7 @@ static inline u8_t disable(u16_t handle)
 	adv->is_enabled = 0U;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
-	if (!ull_scan_is_enabled_get(0)) {
+	if (IS_ENABLED(CONFIG_BT_OBSERVER) && !ull_scan_is_enabled_get(0)) {
 		ull_filter_adv_scan_state_cb(0);
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
