@@ -1,0 +1,45 @@
+#
+# Copyright (c) 2019 Vestas Wind Systems A/S
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: NXP Kinetis watchdog (WDOG32) driver
+version: 0.1
+
+description: >
+    This is a representation of the Kinetis watchdog (WDOG32)
+
+inherits:
+    !include base.yaml
+
+properties:
+    compatible:
+      constraint: "nxp,kinetis-wdog32"
+
+    reg:
+      category: required
+
+    label:
+      category: required
+
+    interrupts:
+      category: required
+
+    clocks:
+      type: array
+      category: required
+      description: Clock gate control information
+      generation: structures
+
+    clk-source:
+      type: int
+      category: required
+      description: Watchdog counter clock source
+      generation: define
+
+    clk-divider:
+      type: int
+      description: Watchdog counter clock divider
+      generation: define
+      category: required

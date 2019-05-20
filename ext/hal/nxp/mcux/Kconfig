@@ -129,4 +129,9 @@ config HAS_MCUX_USB_EHCI
 	help
 	  Set if the USB controller EHCI module is present in the SoC.
 
+config HAS_MCUX_WDOG32
+	bool
+	help
+	  Set if the watchdog (WDOG32) module is present in the SoC.
+
 endif # HAS_MCUX

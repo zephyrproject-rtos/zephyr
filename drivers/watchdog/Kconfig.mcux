@@ -7,7 +7,14 @@
 
 menuconfig WDT_MCUX_WDOG
 	bool "MCUX WDOG driver"
-	depends on HAS_MCUX && CLOCK_CONTROL
+	depends on HAS_MCUX && !HAS_MCUX_WDOG32 && CLOCK_CONTROL
 	select HAS_DTS_WDT
 	help
 	  Enable the mcux wdog driver.
+
+menuconfig WDT_MCUX_WDOG32
+	bool "MCUX WDOG32 driver"
+	depends on HAS_MCUX_WDOG32 && CLOCK_CONTROL
+	select HAS_DTS_WDT
+	help
+	  Enable the mcux wdog32 driver.
