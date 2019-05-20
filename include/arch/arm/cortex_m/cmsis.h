@@ -14,11 +14,11 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_CMSIS_H_
 #define ZEPHYR_INCLUDE_ARCH_ARM_CORTEX_M_CMSIS_H_
 
+#include <soc.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include <soc.h>
 
 /* CP10 Access Bits */
 #define CPACR_CP10_Pos          20U
