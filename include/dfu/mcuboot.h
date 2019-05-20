@@ -152,14 +152,19 @@ int boot_write_img_confirmed(void);
  */
 int mcuboot_swap_type(void);
 
+
+/** Boot upgrade request modes */
+#define BOOT_UPGRADE_TEST       0
+#define BOOT_UPGRADE_PERMANENT  1
+
 /**
  * @brief Marks the image in slot 1 as pending. On the next reboot, the system
  * will perform a boot of the slot 1 image.
  *
  * @param permanent Whether the image should be used permanently or
  * only tested once:
- *   0=run image once, then confirm or revert.
- *   1=run image forever.
+ *   BOOT_UPGRADE_TEST=run image once, then confirm or revert.
+ *   BOOT_UPGRADE_PERMANENT=run image forever.
  * @return 0 on success, negative errno code on fail.
  */
 int boot_request_upgrade(int permanent);
