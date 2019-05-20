@@ -684,12 +684,20 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr)
 
 	net_if_ipv6_addr_rm(iface, addr);
 }
+
+static inline void iface_ipv6_dad_init(struct net_if_addr *ifaddr)
+{
+	k_delayed_work_init(&ifaddr->dad_timer, dad_timeout);
+}
+
 #else
 static inline void net_if_ipv6_start_dad(struct net_if *iface,
 					 struct net_if_addr *ifaddr)
 {
 	ifaddr->addr_state = NET_ADDR_PREFERRED;
 }
+
+#define iface_ipv6_dad_init(...)
 #endif /* CONFIG_NET_IPV6_DAD */
 
 #if defined(CONFIG_NET_IPV6_ND)
@@ -738,8 +746,15 @@ void net_if_start_rs(struct net_if *iface)
 		k_delayed_work_submit(&ipv6->rs_timer, RS_TIMEOUT);
 	}
 }
+
+static inline void iface_ipv6_nd_init(struct net_if_ipv6 *ipv6)
+{
+	k_delayed_work_init(&ipv6->rs_timer, rs_timeout);
+}
+
 #else
 #define net_if_start_rs(...)
+#define iface_ipv6_nd_init(...)
 #endif /* CONFIG_NET_IPV6_ND */
 
 struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
@@ -1012,9 +1027,7 @@ static inline void net_if_addr_init(struct net_if_addr *ifaddr,
 	ifaddr->addr_type = addr_type;
 	net_ipaddr_copy(&ifaddr->address.in6_addr, addr);
 
-#if defined(CONFIG_NET_IPV6_DAD)
-	k_delayed_work_init(&ifaddr->dad_timer, dad_timeout);
-#endif
+	iface_ipv6_dad_init(ifaddr);
 
 	/* FIXME - set the mcast addr for this node */
 
@@ -2155,12 +2168,38 @@ static void iface_ipv6_start(struct net_if *iface)
 	net_if_start_rs(iface);
 }
 
+static void iface_ipv6_init(int if_count)
+{
+	int i;
+
+	k_delayed_work_init(&address_lifetime_timer, address_lifetime_timeout);
+	k_delayed_work_init(&prefix_lifetime_timer, prefix_lifetime_timeout);
+
+	if (if_count > ARRAY_SIZE(ipv6_addresses)) {
+		NET_WARN("You have %lu IPv6 net_if addresses but %d "
+			 "network interfaces", ARRAY_SIZE(ipv6_addresses),
+			 if_count);
+		NET_WARN("Consider increasing CONFIG_NET_IF_MAX_IPV6_COUNT "
+			 "value.");
+	}
+
+	for (i = 0; i < ARRAY_SIZE(ipv6_addresses); i++) {
+		ipv6_addresses[i].ipv6.hop_limit = CONFIG_NET_INITIAL_HOP_LIMIT;
+		ipv6_addresses[i].ipv6.base_reachable_time = REACHABLE_TIME;
+
+		net_if_ipv6_set_reachable_time(&ipv6_addresses[i].ipv6);
+
+		iface_ipv6_nd_init(&ipv6_addresses[i].ipv6);
+	}
+}
+
 #else
 #define join_mcast_allnodes(...)
 #define join_mcast_solicit_node(...)
 #define leave_mcast_all(...)
 #define join_mcast_nodes(...)
 #define iface_ipv6_start(...)
+#define iface_ipv6_init(...)
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -2946,6 +2985,26 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *maddr,
 
 	return NULL;
 }
+
+static void iface_ipv4_init(int if_count)
+{
+	int i;
+
+	if (if_count > ARRAY_SIZE(ipv4_addresses)) {
+		NET_WARN("You have %lu IPv4 net_if addresses but %d "
+			 "network interfaces", ARRAY_SIZE(ipv4_addresses),
+			 if_count);
+		NET_WARN("Consider increasing CONFIG_NET_IF_MAX_IPV4_COUNT "
+			 "value.");
+	}
+
+	for (i = 0; i < ARRAY_SIZE(ipv4_addresses); i++) {
+		ipv4_addresses[i].ipv4.ttl = CONFIG_NET_INITIAL_TTL;
+	}
+}
+
+#else
+#define iface_ipv4_init(...)
 #endif /* CONFIG_NET_IPV4 */
 
 struct net_if *net_if_select_src_iface(const struct sockaddr *dst)
@@ -3312,18 +3371,10 @@ void net_if_init(void)
 {
 	struct net_if *iface;
 	int if_count;
-#if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
-	int i;
-#endif
 
 	NET_DBG("");
 
 	net_tc_tx_init();
-
-#if defined(CONFIG_NET_IPV6)
-	k_delayed_work_init(&address_lifetime_timer, address_lifetime_timeout);
-	k_delayed_work_init(&prefix_lifetime_timer, prefix_lifetime_timeout);
-#endif
 
 	for (iface = __net_if_start, if_count = 0; iface != __net_if_end;
 	     iface++, if_count++) {
@@ -3335,41 +3386,8 @@ void net_if_init(void)
 		return;
 	}
 
-#if defined(CONFIG_NET_IPV4)
-	if (if_count > ARRAY_SIZE(ipv4_addresses)) {
-		NET_WARN("You have %lu IPv4 net_if addresses but %d "
-			 "network interfaces", ARRAY_SIZE(ipv4_addresses),
-			 if_count);
-		NET_WARN("Consider increasing CONFIG_NET_IF_MAX_IPV4_COUNT "
-			 "value.");
-	}
-
-	for (i = 0; i < ARRAY_SIZE(ipv4_addresses); i++) {
-		ipv4_addresses[i].ipv4.ttl = CONFIG_NET_INITIAL_TTL;
-	}
-#endif
-
-#if defined(CONFIG_NET_IPV6)
-	if (if_count > ARRAY_SIZE(ipv6_addresses)) {
-		NET_WARN("You have %lu IPv6 net_if addresses but %d "
-			 "network interfaces", ARRAY_SIZE(ipv6_addresses),
-			 if_count);
-		NET_WARN("Consider increasing CONFIG_NET_IF_MAX_IPV6_COUNT "
-			 "value.");
-	}
-
-	for (i = 0; i < ARRAY_SIZE(ipv6_addresses); i++) {
-		ipv6_addresses[i].ipv6.hop_limit = CONFIG_NET_INITIAL_HOP_LIMIT;
-		ipv6_addresses[i].ipv6.base_reachable_time = REACHABLE_TIME;
-
-		net_if_ipv6_set_reachable_time(&ipv6_addresses[i].ipv6);
-
-#if defined(CONFIG_NET_IPV6_ND)
-		k_delayed_work_init(&ipv6_addresses[i].ipv6.rs_timer,
-				    rs_timeout);
-#endif
-	}
-#endif /* CONFIG_NET_IPV6 */
+	iface_ipv6_init(if_count);
+	iface_ipv4_init(if_count);
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
 	k_thread_create(&tx_thread_ts, tx_ts_stack,
