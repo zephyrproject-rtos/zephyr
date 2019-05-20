@@ -234,11 +234,6 @@ struct net_if_ipv6 {
 	/** IPv6 hop limit */
 	u8_t hop_limit;
 
-#if defined(CONFIG_NET_IPV6_DAD)
-	/** IPv6 current duplicate address detection count */
-	u8_t dad_count;
-#endif /* CONFIG_NET_IPV6_DAD */
-
 	/** RS count */
 	u8_t rs_count;
 };
