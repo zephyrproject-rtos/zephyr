@@ -28,6 +28,13 @@ config CLOCK_CONTROL_MCUX_PCC
 
 endif # CLOCK_CONTROL
 
+if WATCHDOG
+
+config WDT_MCUX_WDOG32
+	default y
+
+endif # WATCHDOG
+
 if RTC
 
 config RTC_MCUX
