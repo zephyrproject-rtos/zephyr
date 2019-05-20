@@ -66,6 +66,9 @@ void test_nvs_write(void)
 	char pattern[] = {0xDE, 0xAD, 0xBE, 0xEF};
 	size_t len;
 
+	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+
 	err = nvs_read(&fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
 	zassert_true(err == -ENOENT,  "nvs_read unexpected failure: %d", err);
 
@@ -83,7 +86,8 @@ void test_nvs_write(void)
 	zassert_mem_equal(wr_buf, rd_buf, sizeof(rd_buf),
 			"RD buff should be equal to the WR buff");
 
-	nvs_delete(&fs, TEST_DATA_ID);
+	err = nvs_clear(&fs);
+	zassert_true(err == 0,  "nvs_clear call failure: %d", err);
 }
 
 static int flash_sim_write_calls_find(struct stats_hdr *hdr, void *arg,
@@ -119,6 +123,9 @@ void test_nvs_corrupted_write(void)
 	char pattern_2[] = {0x03, 0xAA, 0x85, 0x6F};
 	u32_t *flash_write_stat;
 	u32_t *flash_max_write_calls;
+
+	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
 
 	err = nvs_read(&fs, TEST_DATA_ID, rd_buf, sizeof(rd_buf));
 	zassert_true(err == -ENOENT,  "nvs_read unexpected failure: %d", err);
@@ -172,6 +179,9 @@ void test_nvs_corrupted_write(void)
 	zassert_mem_equal(wr_buf_1, rd_buf, sizeof(rd_buf),
 			"RD buff should be equal to the first WR buff because subsequent "
 			"write operation has failed");
+
+	err = nvs_clear(&fs);
+	zassert_true(err == 0,  "nvs_clear call failure: %d", err);
 }
 
 void test_main(void)
