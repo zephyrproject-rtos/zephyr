@@ -18,6 +18,10 @@ static const struct pin_config pinconf[] = {
 	{STM32_PIN_PB7, STM32WBX_PINMUX_FUNC_PB7_USART1_RX},
 	{STM32_PIN_PB6, STM32WBX_PINMUX_FUNC_PB6_USART1_TX},
 #endif	/* CONFIG_UART_1 */
+#ifdef CONFIG_LPUART_1
+	{STM32_PIN_PA2, STM32WBX_PINMUX_FUNC_PA2_LPUART1_TX},
+	{STM32_PIN_PA3, STM32WBX_PINMUX_FUNC_PA3_LPUART1_RX},
+#endif	/* CONFIG_LPUART_1 */
 };
 
 static int pinmux_stm32_init(struct device *port)
