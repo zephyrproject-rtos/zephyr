@@ -12,6 +12,7 @@
 / {
 	aliases {
 		rtc-0 = &rtc0;
+		wdt-0 = &wdog0;
 		uart-0 = &uart0;
 		uart-1 = &uart1;
 		uart-2 = &uart2;
@@ -65,6 +66,15 @@
 			#clock-cells = <1>;
 		};
 
+		pmc: pmc@4007d000 {
+			compatible = "fixed-clock";
+			reg = <0x4007d000 0x1000>;
+			label = "PMC";
+			/* LPO clock */
+			clock-frequency = <125000>;
+			#clock-cells = <1>;
+		};
+
 		pcc: pcc@40065000 {
 			compatible = "nxp,kinetis-pcc";
 			reg = <0x40065000 0x1000>;
@@ -80,6 +90,16 @@
 			clock-frequency = <32768>;
 			prescaler = <32768>;
 			label = "RTC_0";
+		};
+
+		wdog0: watchdog@40052000 {
+			compatible = "nxp,kinetis-wdog32";
+			reg = <0x40052000 0x1000>;
+			interrupts = <22 0>;
+			clocks = <&pmc 0>;
+			clk-source = <1>;
+			clk-divider = <256>;
+			label = "WDT_0";
 		};
 
 		flash_controller: flash-controller@40020000 {
