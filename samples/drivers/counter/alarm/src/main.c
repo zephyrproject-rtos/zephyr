@@ -47,7 +47,7 @@ void main(void)
 
 	counter_start(counter_dev);
 
-	alarm_cfg.absolute = false;
+	alarm_cfg.flags = 0;
 	alarm_cfg.ticks = counter_us_to_ticks(counter_dev, DELAY);
 	alarm_cfg.callback = test_counter_interrupt_fn;
 	alarm_cfg.user_data = &alarm_cfg;

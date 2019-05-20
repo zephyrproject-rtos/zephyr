@@ -101,7 +101,7 @@ static int counter_nrfx_set_alarm(struct device *dev, u8_t chan_id,
 		return -EBUSY;
 	}
 
-	if (alarm_cfg->absolute) {
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) != 0) {
 		cc_val = alarm_cfg->ticks;
 	} else {
 		/* As RTC is 24 bit there is no risk of overflow. */

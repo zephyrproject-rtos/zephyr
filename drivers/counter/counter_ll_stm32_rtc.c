@@ -42,7 +42,6 @@ struct rtc_stm32_data {
 	counter_alarm_callback_t callback;
 	u32_t ticks;
 	void *user_data;
-	bool absolute;
 };
 
 
@@ -129,9 +128,8 @@ static int rtc_stm32_set_alarm(struct device *dev, u8_t chan_id,
 
 	data->callback = alarm_cfg->callback;
 	data->user_data = alarm_cfg->user_data;
-	data->absolute = alarm_cfg->absolute;
 
-	if (!alarm_cfg->absolute) {
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
 		ticks += now;
 	}
 

@@ -99,7 +99,7 @@ static inline u32_t counter_nrfx_get_cc_value(struct device *dev,
 	u32_t cc_val;
 	u32_t ticks = alarm_cfg->ticks;
 
-	if (alarm_cfg->absolute) {
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) != 0) {
 		return ticks;
 	}
 

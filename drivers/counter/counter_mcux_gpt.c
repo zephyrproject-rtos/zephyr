@@ -63,7 +63,7 @@ static int mcux_gpt_set_alarm(struct device *dev, u8_t chan_id,
 		return -EINVAL;
 	}
 
-	if (!alarm_cfg->absolute) {
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) == 0) {
 		ticks += current;
 	}
 
