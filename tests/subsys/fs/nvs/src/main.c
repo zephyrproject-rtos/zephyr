@@ -184,6 +184,68 @@ void test_nvs_corrupted_write(void)
 	zassert_true(err == 0,  "nvs_clear call failure: %d", err);
 }
 
+void test_nvs_gc(void)
+{
+	int err;
+	int len;
+	u8_t buf[32];
+	u8_t rd_buf[32];
+
+	const u16_t max_id = 10;
+	/* 25th write will trigger GC. */
+	const u16_t max_writes = 26;
+
+	fs.sector_count = 2;
+
+	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+
+	for (u16_t i = 0; i < max_writes; i++) {
+		u8_t id = (i % max_id);
+		u8_t id_data = id + max_id * (i / max_id);
+
+		memset(buf, id_data, sizeof(buf));
+
+		len = nvs_write(&fs, id, buf, sizeof(buf));
+		zassert_true(len == sizeof(buf), "nvs_write failed: %d", len);
+	}
+
+	for (u16_t id = 0; id < max_id; id++) {
+		len = nvs_read(&fs, id, rd_buf, sizeof(buf));
+		zassert_true(len == sizeof(rd_buf),
+			     "nvs_read unexpected failure: %d", len);
+
+		for (u16_t i = 0; i < sizeof(rd_buf); i++) {
+			rd_buf[i] = rd_buf[i] % max_id;
+			buf[i] = id;
+		}
+		zassert_mem_equal(buf, rd_buf, sizeof(rd_buf),
+				"RD buff should be equal to the WR buff");
+
+	}
+
+	err = nvs_init(&fs, DT_FLASH_DEV_NAME);
+	zassert_true(err == 0,  "nvs_init call failure: %d", err);
+
+	for (u16_t id = 0; id < max_id; id++) {
+		len = nvs_read(&fs, id, rd_buf, sizeof(buf));
+		zassert_true(len == sizeof(rd_buf),
+			     "nvs_read unexpected failure: %d", len);
+
+		for (u16_t i = 0; i < sizeof(rd_buf); i++) {
+			rd_buf[i] = rd_buf[i] % max_id;
+			buf[i] = id;
+		}
+		zassert_mem_equal(buf, rd_buf, sizeof(rd_buf),
+				"RD buff should be equal to the WR buff");
+
+	}
+
+	err = nvs_clear(&fs);
+	zassert_true(err == 0,  "nvs_clear call failure: %d", err);
+}
+
+
 void test_main(void)
 {
 	ztest_test_suite(test_nvs,
@@ -192,7 +254,9 @@ void test_main(void)
 			 ztest_unit_test_setup_teardown(test_nvs_write, setup,
 				 teardown),
 			 ztest_unit_test_setup_teardown(
-				 test_nvs_corrupted_write, setup, teardown)
+				 test_nvs_corrupted_write, setup, teardown),
+			 ztest_unit_test_setup_teardown(
+				 test_nvs_gc, setup, teardown)
 			 );
 
 	ztest_run_test_suite(test_nvs);
