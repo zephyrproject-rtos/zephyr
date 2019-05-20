@@ -107,7 +107,9 @@ static void rl_clear(void);
 static void rl_update(void);
 static int rl_access_check(bool check_ar);
 
+#if defined(CONFIG_BT_BROADCASTER)
 static void rpa_adv_refresh(struct ll_adv_set *adv);
+#endif
 static void rpa_timeout(struct k_work *work);
 static void rpa_refresh_start(void);
 static void rpa_refresh_stop(void);
@@ -441,7 +443,8 @@ void ull_filter_adv_update(u8_t adv_fp)
 	filter_clear(&wl_filter);
 
 	/* enabling advertising */
-	if (adv_fp && !(ull_scan_filter_pol_get(0) & 0x1)) {
+	if (IS_ENABLED(CONFIG_BT_OBSERVER) &&
+	    adv_fp && !(ull_scan_filter_pol_get(0) & 0x1)) {
 		/* whitelist not in use, update whitelist */
 		wl_update();
 	}
@@ -449,7 +452,8 @@ void ull_filter_adv_update(u8_t adv_fp)
 	/* Clear before populating rl filter */
 	filter_clear(&rl_filter);
 
-	if (rl_enable && !ull_scan_is_enabled(0)) {
+	if (rl_enable &&
+	    IS_ENABLED(CONFIG_BT_OBSERVER) && !ull_scan_is_enabled(0)) {
 		/* rl not in use, update resolving list LUT */
 		rl_update();
 	}
@@ -461,7 +465,8 @@ void ull_filter_scan_update(u8_t scan_fp)
 	filter_clear(&wl_filter);
 
 	/* enabling advertising */
-	if ((scan_fp & 0x1) && !ull_adv_filter_pol_get(0)) {
+	if ((scan_fp & 0x1) &&
+	    (IS_ENABLED(CONFIG_BT_BROADCASTER) && !ull_adv_filter_pol_get(0))) {
 		/* whitelist not in use, update whitelist */
 		wl_update();
 	}
@@ -469,7 +474,8 @@ void ull_filter_scan_update(u8_t scan_fp)
 	/* Clear before populating rl filter */
 	filter_clear(&rl_filter);
 
-	if (rl_enable && !ull_adv_is_enabled(0)) {
+	if (rl_enable &&
+	    (IS_ENABLED(CONFIG_BT_BROADCASTER) && !ull_adv_is_enabled(0))) {
 		/* rl not in use, update resolving list LUT */
 		rl_update();
 	}
@@ -853,6 +859,7 @@ static void rl_update(void)
 	}
 }
 
+#if defined(CONFIG_BT_BROADCASTER)
 static void rpa_adv_refresh(struct ll_adv_set *adv)
 {
 	struct pdu_adv *prev;
@@ -885,6 +892,7 @@ static void rpa_adv_refresh(struct ll_adv_set *adv)
 
 	lll_adv_data_enqueue(&adv->lll, idx);
 }
+#endif /* CONFIG_BT_BROADCASTER */
 
 static void rl_clear(void)
 {
@@ -904,8 +912,9 @@ static int rl_access_check(bool check_ar)
 		}
 	}
 
-	return (ull_adv_is_enabled(0) ||
-		ull_scan_is_enabled(0)) ? 0 : 1;
+	return ((IS_ENABLED(CONFIG_BT_BROADCASTER) && ull_adv_is_enabled(0)) ||
+		(IS_ENABLED(CONFIG_BT_OBSERVER) && ull_scan_is_enabled(0)))
+		? 0 : 1;
 }
 
 static void rpa_timeout(struct k_work *work)

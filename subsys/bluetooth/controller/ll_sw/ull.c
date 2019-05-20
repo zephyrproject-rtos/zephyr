@@ -622,8 +622,10 @@ void ll_rx_dequeue(void)
 		if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
 			u8_t bm;
 
-			bm = (ull_scan_is_enabled(0) << 1) |
-			     ull_adv_is_enabled(0);
+			bm = (IS_ENABLED(CONFIG_BT_OBSERVER) &&
+			      ull_scan_is_enabled(0) << 1) |
+			     (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
+			      ull_adv_is_enabled(0));
 
 			if (!bm) {
 				ull_filter_adv_scan_state_cb(0);
