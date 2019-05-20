@@ -34,44 +34,12 @@
 
 #define TIMEOUT 1000
 
-static void uart_stm32_usart_set_baud_rate(struct device *dev,
-					   u32_t clock_rate, u32_t baud_rate)
-{
-	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-
-	LL_USART_SetBaudRate(UartInstance,
-			     clock_rate,
-#ifdef USART_PRESC_PRESCALER
-			     LL_USART_PRESCALER_DIV1,
-#endif
-#ifdef USART_CR1_OVER8
-			     LL_USART_OVERSAMPLING_16,
-#endif
-			     baud_rate);
-}
-
-#ifdef CONFIG_LPUART_1
-static void uart_stm32_lpuart_set_baud_rate(struct device *dev,
-					    u32_t clock_rate, u32_t baud_rate)
-{
-	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-
-	LL_LPUART_SetBaudRate(UartInstance,
-			      clock_rate,
-#ifdef USART_PRESC_PRESCALER
-			      LL_USART_PRESCALER_DIV1,
-#endif
-			      baud_rate);
-}
-#endif	/* CONFIG_LPUART_1 */
-
 static inline void uart_stm32_set_baudrate(struct device *dev, u32_t baud_rate)
 {
 	const struct uart_stm32_config *config = DEV_CFG(dev);
 	struct uart_stm32_data *data = DEV_DATA(dev);
-#ifdef CONFIG_LPUART_1
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
-#endif
+
 	u32_t clock_rate;
 
 	/* Get clock rate */
@@ -79,105 +47,74 @@ static inline void uart_stm32_set_baudrate(struct device *dev, u32_t baud_rate)
 			       (clock_control_subsys_t *)&config->pclken,
 			       &clock_rate);
 
+
+
 #ifdef CONFIG_LPUART_1
 	if (IS_LPUART_INSTANCE(UartInstance)) {
-		uart_stm32_lpuart_set_baud_rate(dev, clock_rate, baud_rate);
-	} else {
-		uart_stm32_usart_set_baud_rate(dev, clock_rate, baud_rate);
-	}
-#else
-	uart_stm32_usart_set_baud_rate(dev, clock_rate, baud_rate);
+		LL_LPUART_SetBaudRate(UartInstance,
+				      clock_rate,
+#ifdef USART_PRESC_PRESCALER
+				      LL_USART_PRESCALER_DIV1,
 #endif
+				      baud_rate);
+	} else {
+#endif /* CONFIG_LPUART_1 */
+
+		LL_USART_SetBaudRate(UartInstance,
+				     clock_rate,
+#ifdef USART_PRESC_PRESCALER
+				     LL_USART_PRESCALER_DIV1,
+#endif
+#ifdef USART_CR1_OVER8
+				     LL_USART_OVERSAMPLING_16,
+#endif
+				     baud_rate);
+
+#ifdef CONFIG_LPUART_1
+	}
+#endif /* CONFIG_LPUART_1 */
 }
 
 static inline void uart_stm32_set_parity(struct device *dev, u32_t parity)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
-#ifdef CONFIG_LPUART_1
-	if (IS_LPUART_INSTANCE(UartInstance)) {
-		LL_LPUART_SetParity(UartInstance, parity);
-	} else {
-		LL_USART_SetParity(UartInstance, parity);
-	}
-#else
 	LL_USART_SetParity(UartInstance, parity);
-#endif	/* CONFIG_LPUART_1 */
 }
 
 static inline u32_t uart_stm32_get_parity(struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
-#ifdef CONFIG_LPUART_1
-	if (IS_LPUART_INSTANCE(UartInstance)) {
-		return LL_LPUART_GetParity(UartInstance);
-	} else {
-		return LL_USART_GetParity(UartInstance);
-	}
-#else
 	return LL_USART_GetParity(UartInstance);
-#endif	/* CONFIG_LPUART_1 */
 }
 
 static inline void uart_stm32_set_stopbits(struct device *dev, u32_t stopbits)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
-#ifdef CONFIG_LPUART_1
-	if (IS_LPUART_INSTANCE(UartInstance)) {
-		LL_LPUART_SetStopBitsLength(UartInstance, stopbits);
-	} else {
-		LL_USART_SetStopBitsLength(UartInstance, stopbits);
-	}
-#else
 	LL_USART_SetStopBitsLength(UartInstance, stopbits);
-#endif	/* CONFIG_LPUART_1 */
 }
 
 static inline u32_t uart_stm32_get_stopbits(struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
-#ifdef CONFIG_LPUART_1
-	if (IS_LPUART_INSTANCE(UartInstance)) {
-		return LL_LPUART_GetStopBitsLength(UartInstance);
-	} else {
-		return LL_USART_GetStopBitsLength(UartInstance);
-	}
-#else
 	return LL_USART_GetStopBitsLength(UartInstance);
-#endif	/* CONFIG_LPUART_1 */
 }
 
 static inline void uart_stm32_set_databits(struct device *dev, u32_t databits)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
-#ifdef CONFIG_LPUART_1
-	if (IS_LPUART_INSTANCE(UartInstance)) {
-		LL_LPUART_SetDataWidth(UartInstance, databits);
-	} else {
-		LL_USART_SetDataWidth(UartInstance, databits);
-	}
-#else
 	LL_USART_SetDataWidth(UartInstance, databits);
-#endif	/* CONFIG_LPUART_1 */
 }
 
 static inline u32_t uart_stm32_get_databits(struct device *dev)
 {
 	USART_TypeDef *UartInstance = UART_STRUCT(dev);
 
-#ifdef CONFIG_LPUART_1
-	if (IS_LPUART_INSTANCE(UartInstance)) {
-		return LL_LPUART_GetDataWidth(UartInstance);
-	} else {
-		return LL_USART_GetDataWidth(UartInstance);
-	}
-#else
 	return LL_USART_GetDataWidth(UartInstance);
-#endif	/* CONFIG_LPUART_1 */
 }
 
 static inline void uart_stm32_set_hwctrl(struct device *dev, u32_t hwctrl)
