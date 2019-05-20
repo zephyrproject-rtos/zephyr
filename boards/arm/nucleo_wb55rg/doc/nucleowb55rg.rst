@@ -177,6 +177,7 @@ Default Zephyr Peripheral Mapping:
 ----------------------------------
 
 - UART_1 TX/RX : PB7/PB6
+- LPUART_1 TX/RX : PA3/PA2 (arduino_serial)
 - USER_PB : PC4
 - USER_PB1 : PD0
 - USER_PB2 : PD1
