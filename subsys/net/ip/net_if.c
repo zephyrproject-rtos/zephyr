@@ -2426,6 +2426,12 @@ const struct in_addr *net_if_ipv4_select_src_addr(struct net_if *dst_iface,
 	}
 
 	if (!src) {
+		src = net_if_ipv4_get_global_addr(dst_iface,
+						  NET_ADDR_PREFERRED);
+		if (src) {
+			return src;
+		}
+
 		return net_ipv4_unspecified_address();
 	}
 
