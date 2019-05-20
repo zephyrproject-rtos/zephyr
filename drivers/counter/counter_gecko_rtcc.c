@@ -172,7 +172,7 @@ static int counter_gecko_set_alarm(struct device *dev, u8_t chan_id,
 		return -EBUSY;
 	}
 
-	if (alarm_cfg->absolute) {
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) != 0) {
 		ccv = alarm_cfg->ticks;
 	} else {
 		if (top_value == 0) {

@@ -61,6 +61,19 @@ extern "C" {
 
 /**@} */
 
+/**@defgroup COUNTER_ALARM_FLAGS Counter device capabilities
+ * @{ */
+
+/**
+ * @brief Counter alarm absolute value flag.
+ *
+ * Ticks relation to counter value. If set ticks are treated as absolute value,
+ * else it is relative to the counter reading performed during the call.
+ */
+#define COUNTER_ALARM_CFG_ABSOLUTE BIT(0)
+
+/**@} */
+
 /** @brief Alarm callback
  *
  * @param dev       Pointer to the device structure for the driver instance.
@@ -84,15 +97,13 @@ typedef void (*counter_alarm_callback_t)(struct device *dev,
  *		Alternatively, counter implementation may count asynchronous
  *		events.
  * @param user_data User data returned in callback.
- * @param absolute Ticks relation to counter value. If true ticks are treated as
- *		absolute value, else it is relative to the counter reading
- *		performed during the call.
+ * @param flags	Alarm flags.
  */
 struct counter_alarm_cfg {
 	counter_alarm_callback_t callback;
 	u32_t ticks;
 	void *user_data;
-	bool absolute;
+	u32_t flags;
 };
 
 /** @brief Callback called when counter turns around.

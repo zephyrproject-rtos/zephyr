@@ -200,7 +200,7 @@ void test_single_shot_alarm_instance(const char *dev_name, bool set_top)
 	ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
 	top_cfg.ticks = ticks;
 
-	alarm_cfg.absolute = false;
+	alarm_cfg.flags = 0;
 	alarm_cfg.ticks = ticks;
 	alarm_cfg.callback = alarm_handler;
 	alarm_cfg.user_data = &alarm_cfg;
@@ -312,12 +312,12 @@ void test_multiple_alarms_instance(const char *dev_name)
 	ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
 	top_cfg.ticks = ticks;
 
-	alarm_cfg.absolute = true;
+	alarm_cfg.flags = COUNTER_ALARM_CFG_ABSOLUTE;
 	alarm_cfg.ticks = counter_us_to_ticks(dev, 2000);
 	alarm_cfg.callback = alarm_handler2;
 	alarm_cfg.user_data = &alarm_cfg;
 
-	alarm_cfg2.absolute = false;
+	alarm_cfg2.flags = 0;
 	alarm_cfg2.ticks = counter_us_to_ticks(dev, 2000);
 	alarm_cfg2.callback = alarm_handler2;
 	alarm_cfg2.user_data = &alarm_cfg2;
@@ -382,7 +382,7 @@ void test_all_channels_instance(const char *dev_name)
 	dev = device_get_binding(dev_name);
 	ticks = counter_us_to_ticks(dev, COUNTER_PERIOD_US);
 
-	alarm_cfgs.absolute = false;
+	alarm_cfgs.flags = 0;
 	alarm_cfgs.ticks = ticks;
 	alarm_cfgs.callback = alarm_handler2;
 	alarm_cfgs.user_data = NULL;

@@ -194,7 +194,7 @@ static int counter_sam0_tc32_set_alarm(struct device *dev, u8_t chan_id,
 	data->ch.callback = alarm_cfg->callback;
 	data->ch.user_data = alarm_cfg->user_data;
 
-	if (alarm_cfg->absolute) {
+	if ((alarm_cfg->flags & COUNTER_ALARM_CFG_ABSOLUTE) != 0) {
 		tc->CC[1].reg = alarm_cfg->ticks;
 		wait_synchronization(tc);
 		tc->INTFLAG.reg = TC_INTFLAG_MC1;
