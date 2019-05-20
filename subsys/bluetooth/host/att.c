@@ -2174,15 +2174,10 @@ static int bt_att_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
+BT_L2CAP_CHANNEL_DEFINE(att_fixed_chan, BT_L2CAP_CID_ATT, bt_att_accept);
+
 void bt_att_init(void)
 {
-	static struct bt_l2cap_fixed_chan chan = {
-		.cid		= BT_L2CAP_CID_ATT,
-		.accept		= bt_att_accept,
-	};
-
-	bt_l2cap_le_fixed_chan_register(&chan);
-
 	bt_gatt_init();
 }
 

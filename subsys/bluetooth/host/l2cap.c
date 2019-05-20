@@ -49,7 +49,9 @@
 #define L2CAP_CONN_TIMEOUT	K_SECONDS(40)
 #define L2CAP_DISC_TIMEOUT	K_SECONDS(2)
 
-static sys_slist_t le_channels;
+/* Linker-defined symbols bound to the bt_l2cap_fixed_chan structs */
+extern const struct bt_l2cap_fixed_chan _bt_channels_start[];
+extern const struct bt_l2cap_fixed_chan _bt_channels_end[];
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 /* Size of MTU is based on the maximum amount of data the buffer can hold
@@ -85,13 +87,6 @@ static u8_t get_ident(void)
 	}
 
 	return ident;
-}
-
-void bt_l2cap_le_fixed_chan_register(struct bt_l2cap_fixed_chan *chan)
-{
-	BT_DBG("CID 0x%04x", chan->cid);
-
-	sys_slist_append(&le_channels, &chan->node);
 }
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
@@ -304,7 +299,7 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 
 void bt_l2cap_connected(struct bt_conn *conn)
 {
-	struct bt_l2cap_fixed_chan *fchan;
+	const struct bt_l2cap_fixed_chan *fchan;
 	struct bt_l2cap_chan *chan;
 
 	if (IS_ENABLED(CONFIG_BT_BREDR) &&
@@ -313,7 +308,7 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		return;
 	}
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&le_channels, fchan, node) {
+	for (fchan = _bt_channels_start; fchan < _bt_channels_end; fchan++) {
 		struct bt_l2cap_le_chan *ch;
 
 		if (fchan->accept(conn, &chan) < 0) {
@@ -732,6 +727,12 @@ static u16_t le_err_to_result(int err)
 		return BT_L2CAP_LE_ERR_AUTHORIZATION;
 	case -EPERM:
 		return BT_L2CAP_LE_ERR_KEY_SIZE;
+	case -ENOTSUP:
+		/* This handle the cases where a fixed channel is registered but
+		 * for some reason (e.g. controller not suporting a feature)
+		 * cannot be used.
+		 */
+		return BT_L2CAP_LE_ERR_PSM_NOT_SUPP;
 	default:
 		return BT_L2CAP_LE_ERR_UNACCEPT_PARAMS;
 	}
@@ -1668,15 +1669,10 @@ static int l2cap_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 	return -ENOMEM;
 }
 
+BT_L2CAP_CHANNEL_DEFINE(le_fixed_chan, BT_L2CAP_CID_LE_SIG, l2cap_accept);
+
 void bt_l2cap_init(void)
 {
-	static struct bt_l2cap_fixed_chan chan = {
-		.cid	= BT_L2CAP_CID_LE_SIG,
-		.accept	= l2cap_accept,
-	};
-
-	bt_l2cap_le_fixed_chan_register(&chan);
-
 	if (IS_ENABLED(CONFIG_BT_BREDR)) {
 		bt_l2cap_br_init();
 	}

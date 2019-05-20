@@ -1348,6 +1348,16 @@ static int bt_smp_br_recv(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	return 0;
 }
 
+static bool br_sc_supported(void)
+{
+	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR)) {
+		BT_WARN("Enabling BR/EDR SMP without BR/EDR SC support");
+		return true;
+	}
+
+	return BT_FEAT_SC(bt_dev.features);
+}
+
 static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 {
 	static struct bt_l2cap_chan_ops ops = {
@@ -1356,6 +1366,11 @@ static int bt_smp_br_accept(struct bt_conn *conn, struct bt_l2cap_chan **chan)
 		.recv = bt_smp_br_recv,
 	};
 	int i;
+
+	/* Check BR/EDR SC is supported */
+	if (!br_sc_supported()) {
+		return -ENOTSUP;
+	}
 
 	BT_DBG("conn %p handle %u", conn, conn->handle);
 
@@ -1466,16 +1481,6 @@ int bt_smp_br_send_pairing_req(struct bt_conn *conn)
 	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
 
 	return 0;
-}
-
-static bool br_sc_supported(void)
-{
-	if (IS_ENABLED(CONFIG_BT_SMP_FORCE_BREDR)) {
-		BT_WARN("Enabling BR/EDR SMP without BR/EDR SC support");
-		return true;
-	}
-
-	return BT_FEAT_SC(bt_dev.features);
 }
 #endif /* CONFIG_BT_BREDR */
 
@@ -4586,12 +4591,14 @@ static bool le_sc_supported(void)
 	       BT_CMD_TEST(bt_dev.supported_commands, 34, 2);
 }
 
+BT_L2CAP_CHANNEL_DEFINE(smp_fixed_chan, BT_L2CAP_CID_SMP, bt_smp_accept);
+#if defined(CONFIG_BT_BREDR)
+BT_L2CAP_CHANNEL_DEFINE(smp_br_fixed_chan, BT_L2CAP_CID_BR_SMP,
+			bt_smp_br_accept);
+#endif /* CONFIG_BT_BREDR */
+
 int bt_smp_init(void)
 {
-	static struct bt_l2cap_fixed_chan chan = {
-		.cid		= BT_L2CAP_CID_SMP,
-		.accept		= bt_smp_accept,
-	};
 	static struct bt_pub_key_cb pub_key_cb = {
 		.func           = bt_smp_pkey_ready,
 	};
@@ -4601,19 +4608,6 @@ int bt_smp_init(void)
 		BT_ERR("SC Pair Only Mode selected but LE SC not supported");
 		return -ENOENT;
 	}
-
-	bt_l2cap_le_fixed_chan_register(&chan);
-#if defined(CONFIG_BT_BREDR)
-	/* Register BR/EDR channel only if BR/EDR SC is supported */
-	if (br_sc_supported()) {
-		static struct bt_l2cap_fixed_chan br_chan = {
-			.cid		= BT_L2CAP_CID_BR_SMP,
-			.accept		= bt_smp_br_accept,
-		};
-
-		bt_l2cap_br_fixed_chan_register(&br_chan);
-	}
-#endif
 
 	BT_DBG("LE SC %s", sc_supported ? "enabled" : "disabled");
 
