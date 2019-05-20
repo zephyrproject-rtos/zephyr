@@ -122,17 +122,12 @@ static inline void net_context_send_cb(struct net_context *context,
 		context->send_cb(context, status, context->user_data);
 	}
 
-#if defined(CONFIG_NET_UDP)
-	if (net_context_get_ip_proto(context) == IPPROTO_UDP) {
+	if (IS_ENABLED(CONFIG_NET_UDP) &&
+	    net_context_get_ip_proto(context) == IPPROTO_UDP) {
 		net_stats_update_udp_sent(net_context_get_iface(context));
-	} else
-#endif
-#if defined(CONFIG_NET_TCP)
-	if (net_context_get_ip_proto(context) == IPPROTO_TCP) {
+	} else if (IS_ENABLED(CONFIG_NET_TCP) &&
+		   net_context_get_ip_proto(context) == IPPROTO_TCP) {
 		net_stats_update_tcp_seg_sent(net_context_get_iface(context));
-	} else
-#endif
-	{
 	}
 }
 
@@ -244,11 +239,9 @@ void net_if_queue_tx(struct net_if *iface, struct net_pkt *pkt)
 
 	k_work_init(net_pkt_work(pkt), process_tx_packet);
 
-#if defined(CONFIG_NET_STATISTICS)
 	net_stats_update_tc_sent_pkt(iface, tc);
 	net_stats_update_tc_sent_bytes(iface, tc, net_pkt_get_len(pkt));
 	net_stats_update_tc_sent_priority(iface, tc, prio);
-#endif
 
 #if NET_TC_TX_COUNT > 1
 	NET_DBG("TC %d with prio %d pkt %p", tc, prio, pkt);
@@ -405,11 +398,10 @@ struct net_if *net_if_get_first_by_type(const struct net_l2 *l2)
 	struct net_if *iface;
 
 	for (iface = __net_if_start; iface != __net_if_end; iface++) {
-#if defined(CONFIG_NET_OFFLOAD)
-		if (!l2 && net_if_offload(iface)) {
+		if (IS_ENABLED(CONFIG_NET_OFFLOAD) &&
+		    !l2 && net_if_offload(iface)) {
 			return iface;
 		}
-#endif
 
 		if (net_if_l2(iface) == l2) {
 			return iface;
@@ -549,10 +541,28 @@ static void leave_mcast_all(struct net_if *iface)
 		net_ipv6_mld_leave(iface, &ipv6->mcast[i].address.in6_addr);
 	}
 }
+
+static void join_mcast_nodes(struct net_if *iface, struct in6_addr *addr)
+{
+	enum net_l2_flags flags = 0;
+
+	if (net_if_l2(iface)->get_flags) {
+		flags = net_if_l2(iface)->get_flags(iface);
+	}
+
+	if (flags & NET_L2_MULTICAST) {
+		join_mcast_allnodes(iface);
+
+		if (!(flags & NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE)) {
+			join_mcast_solicit_node(iface, addr);
+		}
+	}
+}
 #else
 #define join_mcast_allnodes(...)
 #define join_mcast_solicit_node(...)
 #define leave_mcast_all(...)
+#define join_mcast_nodes(...)
 #endif /* CONFIG_NET_IPV6_MLD */
 
 #if defined(CONFIG_NET_IPV6_DAD)
@@ -621,6 +631,8 @@ void net_if_start_dad(struct net_if *iface)
 	struct net_if_ipv6 *ipv6;
 	struct in6_addr addr = { };
 	int i;
+
+	NET_DBG("Starting DAD for iface %p", iface);
 
 	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
 		NET_WARN("Cannot do DAD IPv6 config is not valid.");
@@ -720,12 +732,14 @@ void net_if_start_rs(struct net_if *iface)
 		return;
 	}
 
-	NET_DBG("Interface %p", iface);
+	NET_DBG("Starting ND/RS for iface %p", iface);
 
 	if (!net_ipv6_start_rs(iface)) {
 		k_delayed_work_submit(&ipv6->rs_timer, RS_TIMEOUT);
 	}
 }
+#else
+#define net_if_start_rs(...)
 #endif /* CONFIG_NET_IPV6_ND */
 
 struct net_if_addr *net_if_ipv6_addr_lookup(const struct in6_addr *addr,
@@ -1014,23 +1028,6 @@ static inline void net_if_addr_init(struct net_if_addr *ifaddr,
 		net_if_ipv6_addr_update_lifetime(ifaddr, vlifetime);
 	} else {
 		ifaddr->is_infinite = true;
-	}
-}
-
-static void join_mcast_nodes(struct net_if *iface, struct in6_addr *addr)
-{
-	enum net_l2_flags flags = 0;
-
-	if (net_if_l2(iface)->get_flags) {
-		flags = net_if_l2(iface)->get_flags(iface);
-	}
-
-	if (flags & NET_L2_MULTICAST) {
-		join_mcast_allnodes(iface);
-
-		if (!(flags & NET_L2_MULTICAST_SKIP_JOIN_SOLICIT_NODE)) {
-			join_mcast_solicit_node(iface, addr);
-		}
 	}
 }
 
@@ -2143,11 +2140,27 @@ u32_t net_if_ipv6_calc_reachable_time(struct net_if_ipv6 *ipv6)
 	return min_reachable +
 	       sys_rand32_get() % (max_reachable - min_reachable);
 }
+
+static void iface_ipv6_start(struct net_if *iface)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV6_DAD)) {
+		net_if_start_dad(iface);
+	} else {
+		struct net_if_ipv6 *ipv6 __unused = iface->config.ip.ipv6;
+
+		join_mcast_nodes(iface,
+				 &ipv6->mcast[0].address.in6_addr);
+	}
+
+	net_if_start_rs(iface);
+}
+
 #else
 #define join_mcast_allnodes(...)
 #define join_mcast_solicit_node(...)
 #define leave_mcast_all(...)
 #define join_mcast_nodes(...)
+#define iface_ipv6_start(...)
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
@@ -3123,22 +3136,9 @@ done:
 
 	net_if_flag_set(iface, NET_IF_UP);
 
-#if defined(CONFIG_NET_IPV6_DAD)
-	NET_DBG("Starting DAD for iface %p", iface);
-	net_if_start_dad(iface);
-#else
-	join_mcast_nodes(iface,
-			 &iface->config.ip.ipv6->mcast[0].address.in6_addr);
-#endif /* CONFIG_NET_IPV6_DAD */
+	iface_ipv6_start(iface);
 
-#if defined(CONFIG_NET_IPV6_ND)
-	NET_DBG("Starting ND/RS for iface %p", iface);
-	net_if_start_rs(iface);
-#endif
-
-#if defined(CONFIG_NET_IPV4_AUTO)
 	net_ipv4_autoconf_start(iface);
-#endif
 
 exit:
 	net_mgmt_event_notify(NET_EVENT_IF_UP, iface);
@@ -3152,9 +3152,7 @@ void net_if_carrier_down(struct net_if *iface)
 
 	net_if_flag_clear(iface, NET_IF_UP);
 
-#if defined(CONFIG_NET_IPV4_AUTO)
 	net_ipv4_autoconf_reset(iface);
-#endif
 
 	net_mgmt_event_notify(NET_EVENT_IF_DOWN, iface);
 }
@@ -3167,11 +3165,9 @@ int net_if_down(struct net_if *iface)
 
 	leave_mcast_all(iface);
 
-#if defined(CONFIG_NET_OFFLOAD)
 	if (net_if_is_ip_offloaded(iface)) {
 		goto done;
 	}
-#endif
 
 	/* If the L2 does not support enable just clear the flag */
 	if (!net_if_l2(iface)->enable) {

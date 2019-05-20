@@ -650,7 +650,10 @@ static inline struct net_if_config *net_if_get_config(struct net_if *iface)
 #if defined(CONFIG_NET_IPV6_DAD)
 void net_if_start_dad(struct net_if *iface);
 #else
-#define net_if_start_dad(iface)
+static inline void net_if_start_dad(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
 #endif
 
 /**
