@@ -537,13 +537,15 @@ static int nvs_startup(struct nvs_fs *fs)
 	 * Coverity and GCC believe the contrary.
 	 */
 	u32_t addr = 0U;
-
+	u16_t i;
 
 	k_mutex_lock(&fs->nvs_lock, K_FOREVER);
 
 	ate_size = nvs_al_size(fs, sizeof(struct nvs_ate));
-	/* step through the sectors to find the last sector */
-	for (u16_t i = 0; i < fs->sector_count; i++) {
+	/* step through the sectors to find a open sector following
+	 * a closed sector, this is where NVS can to write.
+	 */
+	for (i = 0; i < fs->sector_count; i++) {
 		addr = (i << ADDR_SECT_SHIFT) + fs->sector_size - ate_size;
 		rc = nvs_flash_cmp_const(fs, addr, 0xff,
 					  sizeof(struct nvs_ate));
@@ -557,12 +559,25 @@ static int nvs_startup(struct nvs_fs *fs)
 				break;
 			}
 		}
-		/* none of the sectors where closed, set the address to
-		 * the first sector
-		 */
-		nvs_sector_advance(fs, &addr);
 	}
-	/* search for the first ate containing all 0xff) */
+
+	if (i == fs->sector_count) {
+		/* none of the sectors where closed, in most cases we can set
+		 * the address to the first sector, except when there are only
+		 * two sectors. Then we can only set it to the first sector if
+		 * the last sector contains no ate's. So we check this first
+		 */
+		rc = nvs_flash_cmp_const(fs, addr - ate_size, 0xff,
+				  sizeof(struct nvs_ate));
+		if (!rc) {
+			/* empty ate */
+			nvs_sector_advance(fs, &addr);
+		}
+	}
+
+	/* addr contains address of the last ate in the most recent sector
+	 * search for the first ate containing all 0xff
+	 */
 	while (1) {
 		addr -= ate_size;
 		rc = nvs_flash_cmp_const(fs, addr, 0xff,
