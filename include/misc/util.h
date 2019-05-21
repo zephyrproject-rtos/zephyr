@@ -58,8 +58,7 @@ constexpr size_t ARRAY_SIZE(T(&)[N]) { return N; }
  * an array (e.g. pointer)
  */
 #define ARRAY_SIZE(array) \
-	((unsigned long) (IS_ARRAY(array) + \
-		(sizeof(array) / sizeof((array)[0]))))
+	((long) (IS_ARRAY(array) + (sizeof(array) / sizeof((array)[0]))))
 #endif
 
 /* Evaluates to 1 if ptr is part of array, 0 otherwise; compile error if
