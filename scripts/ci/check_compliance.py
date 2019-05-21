@@ -386,6 +386,9 @@ If the reference is for a comment like /* CONFIG_FOO_* */ (or
 /* CONFIG_FOO_*_... */), then please use exactly that form (with the '*'). The
 CI check knows not to flag it.
 
+More generally, a reference followed by $, @, {, *, or ## will never be
+flagged.
+
 {}""".format(os.path.basename(__file__), undef_desc))
 
 
