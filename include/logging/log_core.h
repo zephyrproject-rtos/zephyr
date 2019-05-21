@@ -535,7 +535,7 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap);
  *
  * @return True if address within the pool, false otherwise.
  */
-bool log_is_strdup(void *buf);
+bool log_is_strdup(const void *buf);
 
 /** @brief Free allocated buffer.
  *

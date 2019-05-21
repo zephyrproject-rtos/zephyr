@@ -175,6 +175,17 @@ config LOG_BUFFER_SIZE
 	help
 	  Number of bytes dedicated for the logger internal buffer.
 
+config LOG_DETECT_MISSED_STRDUP
+	bool "Detect missed handling of transient strings"
+	default y if !LOG_IMMEDIATE
+	help
+	  If enabled, logger will assert and log error message is it detects
+	  that string format specifier (%s) and string address which is not from
+	  read only memory section and not from pool used for string duplicates.
+	  String argument must be duplicated in that case using log_strdup().
+	  Detection is performed during log processing thus it does not impact
+	  logging timing.
+
 config LOG_STRDUP_MAX_STRING
 	int "Longest string that can be duplicated using log_strdup()"
 	default 46 if NETWORKING
