@@ -236,8 +236,8 @@ static void usb_data_to_host(u16_t len)
 {
 	u32_t chunk = usb_dev.data_buf_residue;
 
-	/*Always EP0 for control*/
-	usb_dc_ep_write(USB_CONTROL_IN_EP0, usb_dev.data_buf, chunk, &chunk);
+	/* Always EP0 for control*/
+	usb_write(USB_CONTROL_IN_EP0, usb_dev.data_buf, chunk, &chunk);
 	usb_dev.data_buf += chunk;
 	usb_dev.data_buf_residue -= chunk;
 
@@ -247,12 +247,7 @@ static void usb_data_to_host(u16_t len)
 	 */
 	if (!usb_dev.data_buf_residue && chunk == USB_MAX_CTRL_MPS
 	    && len > chunk) {
-		int ret;
-
-		do {
-			ret = usb_dc_ep_write(USB_CONTROL_IN_EP0, NULL, 0,
-					      NULL);
-		} while (ret == -EAGAIN);
+		usb_write(USB_CONTROL_IN_EP0, NULL, 0, NULL);
 	}
 }
 
@@ -1054,15 +1049,18 @@ int usb_disable(void)
 
 int usb_write(u8_t ep, const u8_t *data, u32_t data_len, u32_t *bytes_ret)
 {
-	while (true) {
-		int ret = usb_dc_ep_write(ep, data, data_len, bytes_ret);
+	int tries = 10;
+	int ret;
 
-		if (ret != -EAGAIN) {
-			return ret;
+	do {
+		ret = usb_dc_ep_write(ep, data, data_len, bytes_ret);
+		if (ret == -EAGAIN) {
+			k_yield();
 		}
 
-		k_yield();
-	}
+	} while (ret == -EAGAIN && tries--);
+
+	return ret;
 }
 
 int usb_read(u8_t ep, u8_t *data, u32_t max_data_len, u32_t *ret_bytes)
