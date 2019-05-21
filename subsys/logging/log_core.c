@@ -51,7 +51,7 @@ struct log_strdup_buf {
 
 static const char *log_strdup_fail_msg = "<log_strdup alloc failed>";
 struct k_mem_slab log_strdup_pool;
-static u8_t __noinit __aligned(sizeof(u32_t))
+static u8_t __noinit __aligned(sizeof(void *))
 		log_strdup_pool_buf[LOG_STRDUP_POOL_BUFFER_SIZE];
 
 static struct log_list_t list;
