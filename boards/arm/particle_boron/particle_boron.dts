@@ -37,7 +37,7 @@
 		label = "ublox-sara-r4";
 		status = "ok";
 
-		mdm-power-gpios-gpio = <&gpio0 16 0>;
-		mdm-reset-gpios-gpio = <&gpio0 12 0>;
+		mdm-power-gpios = <&gpio0 16 0>;
+		mdm-reset-gpios = <&gpio0 12 0>;
 	};
 };
