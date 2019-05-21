@@ -85,8 +85,7 @@ void thread_05(void)
 	rv = sys_mutex_lock(&mutex_4, K_SECONDS(1));
 	if (rv != -EAGAIN) {
 		tc_rc = TC_FAIL;
-		TC_ERROR("Failed to timeout on mutex 0x%x\n",
-			 (u32_t)&mutex_4);
+		TC_ERROR("Failed to timeout on mutex %p\n", &mutex_4);
 		return;
 	}
 }
@@ -117,7 +116,7 @@ void thread_06(void)
 	rv = sys_mutex_lock(&mutex_4, K_SECONDS(2));
 	if (rv != 0) {
 		tc_rc = TC_FAIL;
-		TC_ERROR("Failed to take mutex 0x%x\n", (u32_t)&mutex_4);
+		TC_ERROR("Failed to take mutex %p\n", &mutex_4);
 		return;
 	}
 
@@ -148,8 +147,7 @@ void thread_07(void)
 	rv = sys_mutex_lock(&mutex_3, K_SECONDS(3));
 	if (rv != -EAGAIN) {
 		tc_rc = TC_FAIL;
-		TC_ERROR("Failed to timeout on mutex 0x%x\n",
-			 (u32_t)&mutex_3);
+		TC_ERROR("Failed to timeout on mutex %p\n", &mutex_3);
 		return;
 	}
 
@@ -172,7 +170,7 @@ void thread_08(void)
 	rv = sys_mutex_lock(&mutex_2, K_FOREVER);
 	if (rv != 0) {
 		tc_rc = TC_FAIL;
-		TC_ERROR("Failed to take mutex 0x%x\n", (u32_t)&mutex_2);
+		TC_ERROR("Failed to take mutex %p\n", &mutex_2);
 		return;
 	}
 
@@ -197,8 +195,7 @@ void thread_09(void)
 	if (rv != -EBUSY) {	/* This attempt to lock the mutex */
 		/* should not succeed. */
 		tc_rc = TC_FAIL;
-		TC_ERROR("Failed to NOT take locked mutex 0x%x\n",
-			 (u32_t)&mutex_1);
+		TC_ERROR("Failed to NOT take locked mutex %p\n", &mutex_1);
 		return;
 	}
 
@@ -206,7 +203,7 @@ void thread_09(void)
 	rv = sys_mutex_lock(&mutex_1, K_FOREVER);
 	if (rv != 0) {
 		tc_rc = TC_FAIL;
-		TC_ERROR("Failed to take mutex 0x%x\n", (u32_t)&mutex_1);
+		TC_ERROR("Failed to take mutex %p\n", &mutex_1);
 		return;
 	}
 
@@ -228,7 +225,7 @@ void thread_11(void)
 	rv = sys_mutex_lock(&mutex_3, K_FOREVER);
 	if (rv != 0) {
 		tc_rc = TC_FAIL;
-		TC_ERROR("Failed to take mutex 0x%x\n", (u32_t)&mutex_2);
+		TC_ERROR("Failed to take mutex %p\n", &mutex_2);
 		return;
 	}
 	sys_mutex_unlock(&mutex_3);
@@ -284,8 +281,7 @@ void test_mutex(void)
 
 	for (i = 0; i < 4; i++) {
 		rv = sys_mutex_lock(mutexes[i], K_NO_WAIT);
-		zassert_equal(rv, 0, "Failed to lock mutex 0x%x\n",
-			      (u32_t)mutexes[i]);
+		zassert_equal(rv, 0, "Failed to lock mutex %p\n", mutexes[i]);
 		k_sleep(K_SECONDS(1));
 
 		rv = k_thread_priority_get(k_current_get());

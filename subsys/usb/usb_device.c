@@ -1170,7 +1170,7 @@ done:
 			return;
 		}
 
-		LOG_DBG("transfer done, ep=%02x, status=%d, size=%u",
+		LOG_DBG("transfer done, ep=%02x, status=%d, size=%zu",
 			trans->ep, trans->status, trans->tsize);
 
 		trans->cb = NULL;
@@ -1226,7 +1226,8 @@ int usb_transfer(u8_t ep, u8_t *data, size_t dlen, unsigned int flags,
 	struct usb_transfer_data *trans = NULL;
 	int i, key, ret = 0;
 
-	LOG_DBG("transfer start, ep=%02x, data=%p, dlen=%d", ep, data, dlen);
+	LOG_DBG("transfer start, ep=%02x, data=%p, dlen=%zd",
+		ep, data, dlen);
 
 	key = irq_lock();
 
