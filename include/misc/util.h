@@ -73,9 +73,10 @@ constexpr size_t ARRAY_SIZE(T(&)[N]) { return N; }
 
 /* round "x" up/down to next multiple of "align" (which must be a power of 2) */
 #define ROUND_UP(x, align)                                   \
-	(((unsigned long)(x) + ((unsigned long)align - 1)) & \
-	 ~((unsigned long)align - 1))
-#define ROUND_DOWN(x, align) ((unsigned long)(x) & ~((unsigned long)align - 1))
+	(((unsigned long)(x) + ((unsigned long)(align) - 1)) & \
+	 ~((unsigned long)(align) - 1))
+#define ROUND_DOWN(x, align)                                 \
+	((unsigned long)(x) & ~((unsigned long)(align) - 1))
 
 #define ceiling_fraction(numerator, divider) \
 	(((numerator) + ((divider) - 1)) / (divider))
