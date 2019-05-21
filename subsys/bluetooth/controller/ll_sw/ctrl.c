@@ -1292,23 +1292,6 @@ static u32_t isr_rx_scan_report(u8_t rssi_ready, u8_t rl_idx, bool dir_report)
 	*extra = dir_report ? 1 : 0;
 	extra += PDU_AC_SIZE_SCFP;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
-#if defined(CONFIG_BT_HCI_MESH_EXT)
-	if (node_rx->hdr.type == NODE_RX_TYPE_MESH_REPORT) {
-		/* save the directed adv report flag */
-		*extra = _radio.scanner.chan - 1;
-		extra++;
-		sys_put_le32(_radio.ticks_anchor, extra);
-	}
-#endif /* CONFIG_BT_HCI_MESH_EXT */
-
-#if defined(CONFIG_BT_HCI_MESH_EXT)
-	if (node_rx->hdr.type == NODE_RX_TYPE_MESH_REPORT) {
-		/* save the directed adv report flag */
-		*extra = _radio.scanner.chan - 1;
-		extra++;
-		sys_put_le32(_radio.ticks_anchor, extra);
-	}
-#endif /* CONFIG_BT_HCI_MESH_EXT */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	if (node_rx->hdr.type == NODE_RX_TYPE_MESH_REPORT) {
