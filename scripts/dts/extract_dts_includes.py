@@ -158,17 +158,6 @@ def generate_bus_defines(node_path):
                         .format(node_path, parent_path,
                                 binding['parent']['bus'], parent_bus))
 
-    # Generate alias definition if parent has any alias
-    if parent_path in aliases:
-        for i in aliases[parent_path]:
-            # Build an alias name that respects device tree specs
-            node_name = get_compat(node_path) + '-' + node_path.split('@')[-1]
-            node_strip = node_name.replace('@','-').replace(',','-')
-            node_alias = i + '-' + node_strip
-            if node_alias not in aliases[node_path]:
-                # Need to generate alias name for this node:
-                aliases[node_path].append(node_alias)
-
     # Generate *_BUS_NAME #define
     extract_bus_name(
         node_path,
