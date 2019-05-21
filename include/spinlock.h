@@ -59,7 +59,7 @@ struct k_spinlock {
 	/* Stores the thread that holds the lock with the locking CPU
 	 * ID in the bottom two bits.
 	 */
-	size_t thread_cpu;
+	uintptr_t thread_cpu;
 #endif
 };
 
