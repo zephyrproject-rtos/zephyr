@@ -1020,6 +1020,12 @@ static void kw41z_iface_init(struct net_if *iface)
 	ieee802154_init(iface);
 }
 
+static int kw41z_configure(struct device *dev, enum ieee802154_config_type type,
+			   const struct ieee802154_config *config)
+{
+	return 0;
+}
+
 static struct ieee802154_radio_api kw41z_radio_api = {
 	.iface_api.init	= kw41z_iface_init,
 
@@ -1031,6 +1037,7 @@ static struct ieee802154_radio_api kw41z_radio_api = {
 	.start			= kw41z_start,
 	.stop			= kw41z_stop,
 	.tx			= kw41z_tx,
+	.configure		= kw41z_configure,
 };
 
 #if defined(CONFIG_NET_L2_IEEE802154)
