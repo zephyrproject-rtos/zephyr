@@ -4,4 +4,4 @@ common:
 tests:
   net.socket:
     min_ram: 21
-    tags: net socket getaddrinfo
+    tags: net socket getaddrinfo userspace
