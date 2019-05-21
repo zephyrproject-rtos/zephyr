@@ -204,35 +204,35 @@ static void test_desc_sections(void)
 
 	TC_PRINT("__usb_descriptor_start %p\n", __usb_descriptor_start);
 	TC_PRINT("__usb_descriptor_end %p\n",  __usb_descriptor_end);
-	TC_PRINT("USB Descriptor table size %d\n",
-		 (int)__usb_descriptor_end - (int)__usb_descriptor_start);
+	TC_PRINT("USB Descriptor table size %ld\n",
+		 (intptr_t)__usb_descriptor_end - (intptr_t)__usb_descriptor_start);
 
 	TC_PRINT("__usb_data_start %p\n", __usb_data_start);
 	TC_PRINT("__usb_data_end %p\n", __usb_data_end);
-	TC_PRINT("USB Configuration data size %d\n",
-		 (int)__usb_data_end - (int)__usb_data_start);
+	TC_PRINT("USB Configuration data size %ld\n",
+		 (intptr_t)__usb_data_end - (intptr_t)__usb_data_start);
 
-	TC_PRINT("sizeof usb_cfg_data %u\n", sizeof(struct usb_cfg_data));
+	TC_PRINT("sizeof usb_cfg_data %zu\n", sizeof(struct usb_cfg_data));
 
 	LOG_DBG("Starting logs");
 
 	LOG_HEXDUMP_DBG((u8_t *)__usb_descriptor_start,
-			(int)__usb_descriptor_end - (int)__usb_descriptor_start,
+			(intptr_t)__usb_descriptor_end - (intptr_t)__usb_descriptor_start,
 			"USB Descriptor table section");
 
 	LOG_HEXDUMP_DBG((u8_t *)__usb_data_start,
-			(int)__usb_data_end - (int)__usb_data_start,
+			(intptr_t)__usb_data_end - (intptr_t)__usb_data_start,
 			"USB Configuratio structures section");
 
 	head = (struct usb_desc_header *)__usb_descriptor_start;
 	zassert_not_null(head, NULL);
 
-	zassert_equal((int)__usb_descriptor_end - (int)__usb_descriptor_start,
+	zassert_equal((intptr_t)__usb_descriptor_end - (intptr_t)__usb_descriptor_start,
 		      133, NULL);
 
 	/* Calculate number of structures */
 	zassert_equal(__usb_data_end - __usb_data_start, NUM_INSTANCES, NULL);
-	zassert_equal((int)__usb_data_end - (int)__usb_data_start,
+	zassert_equal((intptr_t)__usb_data_end - (intptr_t)__usb_data_start,
 		      NUM_INSTANCES * sizeof(struct usb_cfg_data), NULL);
 
 	check_endpoint_allocation(head);
