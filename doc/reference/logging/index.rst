@@ -137,6 +137,9 @@ which handles log processing.
 message pool. Single message capable of storing standard log with up to 3
 arguments or hexdump message with 12 bytes of data take 32 bytes.
 
+:option:`CONFIG_LOG_AUTO_STRDUP`: Enable automatic handling of transient strings
+used as log message string arguments.
+
 :option:`CONFIG_LOG_STRDUP_MAX_STRING`: Longest string that can be duplicated
 using log_strdup().
 
@@ -418,6 +421,7 @@ copies of strings.  The buffer size and count is configurable
 (see :option:`CONFIG_LOG_STRDUP_MAX_STRING` and
 :option:`CONFIG_LOG_STRDUP_BUF_COUNT`).
 
+
 If a string argument is transient, the user must call cpp:func:`log_strdup` to
 duplicate the passed string into a buffer from the pool. See the examples below.
 If a strdup buffer cannot be allocated, a warning message is logged and an error
@@ -430,6 +434,16 @@ increased. Buffers are freed together with the log message.
 
    LOG_INF("logging transient string: %s", log_strdup(local_str));
    local_str[0] = '\0'; /* String can be modified, logger will use duplicate."
+
+Alternatively, when :option:`CONFIG_LOG_AUTO_STRDUP` is enabled logger will
+implicitly duplicate transient strings. Logger is clasifying string argument as
+transient if string address is not located in read only memory and does not
+belong to the pool used for string duplicates. This feature requires initial
+scanning of log message string in search for string format specifier (%s) in the
+context of the log message call thus it impacts logger performance. If
+cpp:func:`log_strdup` is used explicitly everywhere, feature can be disabled.
+Number of implicit string duplications can be checked using shell
+(``log strdup_cnt`` command).
 
 Logger backends
 ===============
