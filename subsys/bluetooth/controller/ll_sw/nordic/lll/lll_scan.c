@@ -183,9 +183,8 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 	} else
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
-#if defined(CONFIG_BT_CTLR_FILTER)
-	/* Setup Radio Filter */
-	if (lll->filter_policy) {
+	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER) && lll->filter_policy) {
+		/* Setup Radio Filter */
 
 		struct lll_filter *wl = ull_filter_lll_get(true);
 
@@ -193,7 +192,6 @@ static int prepare_cb(struct lll_prepare_param *prepare_param)
 				       wl->addr_type_bitmask,
 				       (u8_t *)wl->bdaddr);
 	}
-#endif /* CONFIG_BT_CTLR_FILTER */
 
 	ticks_at_event = prepare_param->ticks_at_expire;
 	evt = HDR_LLL2EVT(lll);
@@ -349,9 +347,9 @@ static void isr_rx(void *param)
 	u8_t rssi_ready;
 	u8_t rl_idx;
 
-#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
-	lll_prof_latency_capture();
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+	if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+		lll_prof_latency_capture();
+	}
 
 	/* Read radio status and events */
 	trx_done = radio_is_done();
@@ -374,10 +372,10 @@ static void isr_rx(void *param)
 	radio_ar_status_reset();
 	radio_rssi_status_reset();
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || \
-	defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-	radio_gpio_pa_lna_disable();
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
+	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
 
 	if (!trx_done) {
 		goto isr_rx_do_close;
@@ -399,9 +397,9 @@ static void isr_rx(void *param)
 		err = isr_rx_pdu(lll, devmatch_ok, devmatch_id, irkmatch_ok,
 				 irkmatch_id, rl_idx, rssi_ready);
 		if (!err) {
-#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
-			lll_prof_send();
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+			if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+				lll_prof_send();
+			}
 
 			return;
 		}
@@ -422,10 +420,10 @@ static void isr_tx(void *param)
 	radio_status_reset();
 	radio_tmr_status_reset();
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || \
-	defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-	radio_gpio_pa_lna_disable();
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
+	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
 	/* TODO: MOVE ^^ */
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
@@ -478,10 +476,10 @@ static void isr_done(void *param)
 	radio_ar_status_reset();
 	radio_rssi_status_reset();
 
-#if defined(CONFIG_BT_CTLR_GPIO_PA_PIN) || \
-	defined(CONFIG_BT_CTLR_GPIO_LNA_PIN)
-	radio_gpio_pa_lna_disable();
-#endif /* CONFIG_BT_CTLR_GPIO_PA_PIN || CONFIG_BT_CTLR_GPIO_LNA_PIN */
+	if (IS_ENABLED(CONFIG_BT_CTLR_GPIO_PA_PIN) ||
+	    IS_ENABLED(CONFIG_BT_CTLR_GPIO_LNA_PIN)) {
+		radio_gpio_pa_lna_disable();
+	}
 	/* TODO: MOVE ^^ */
 
 	node_rx = ull_pdu_rx_alloc_peek(1);
@@ -734,18 +732,19 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		/* assert if radio packet ptr is not set and radio started tx */
 		LL_ASSERT(!radio_is_ready());
 
-#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
-		lll_prof_cputime_capture();
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_cputime_capture();
+		}
+
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
-#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
-		/* PA/LNA enable is overwriting packet end used in ISR
-		 * profiling, hence back it up for later use.
-		 */
-		lll_prof_radio_end_backup();
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
-
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			/* PA/LNA enable is overwriting packet end
+			 * used in ISR profiling, hence back it up
+			 * for later use.
+			 */
+			lll_prof_radio_end_backup();
+		}
 		radio_gpio_pa_setup();
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 					 EVENT_IFS_US -
@@ -857,20 +856,22 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 		/* assert if radio packet ptr is not set and radio started tx */
 		LL_ASSERT(!radio_is_ready());
 
-#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
-		lll_prof_cputime_capture();
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			lll_prof_cputime_capture();
+
+		}
 
 		/* capture end of Tx-ed PDU, used to calculate HCTO. */
 		radio_tmr_end_capture();
 
 #if defined(CONFIG_BT_CTLR_GPIO_PA_PIN)
-#if defined(CONFIG_BT_CTLR_PROFILE_ISR)
-		/* PA/LNA enable is overwriting packet end used in ISR
-		 * profiling, hence back it up for later use.
-		 */
-		lll_prof_radio_end_backup();
-#endif /* CONFIG_BT_CTLR_PROFILE_ISR */
+		if (IS_ENABLED(CONFIG_BT_CTLR_PROFILE_ISR)) {
+			/* PA/LNA enable is overwriting packet end
+			 * used in ISR profiling, hence back it up
+			 * for later use.
+			 */
+			lll_prof_radio_end_backup();
+		}
 
 		radio_gpio_pa_setup();
 		radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
