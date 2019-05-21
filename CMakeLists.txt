@@ -420,8 +420,8 @@ add_subdirectory(subsys)
 add_subdirectory(drivers)
 
 # Include zephyr modules generated CMake file.
-if(EXISTS ${CMAKE_BINARY_DIR}/zephyr_modules.txt)
-  file(STRINGS ${CMAKE_BINARY_DIR}/zephyr_modules.txt ZEPHYR_MODULES_TXT)
+if(EXISTS ${CMAKE_BINARY_DIR}/_zephyr_modules.txt)
+  file(STRINGS ${CMAKE_BINARY_DIR}/_zephyr_modules.txt ZEPHYR_MODULES_TXT)
 
   foreach(module ${ZEPHYR_MODULES_TXT})
     # Match "<name>":"<path>" for each line of file, each corresponding to
