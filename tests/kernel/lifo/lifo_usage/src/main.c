@@ -429,7 +429,7 @@ static void test_timeout_threads_pend_on_lifo(void)
  */
 static void test_para_init(void)
 {
-	s32_t ii;
+	intptr_t ii;
 
 	/* Init  kernel objects*/
 	k_lifo_init(&lifo_timeout[0]);

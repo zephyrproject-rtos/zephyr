@@ -19,9 +19,9 @@ static ZTEST_BMEM int spawn_prio;
 static void thread_entry_params(void *p1, void *p2, void *p3)
 {
 	/* checkpoint: check parameter 1, 2, 3 */
-	zassert_equal((char *)p1, tp1, NULL);
-	zassert_equal((int)p2, tp2, NULL);
-	zassert_equal((struct k_sema *)p3, tp3, NULL);
+	zassert_equal(p1, tp1, NULL);
+	zassert_equal(POINTER_TO_INT(p2), tp2, NULL);
+	zassert_equal(p3, tp3, NULL);
 }
 
 static void thread_entry_priority(void *p1, void *p2, void *p3)
@@ -50,7 +50,7 @@ static void thread_entry_delay(void *p1, void *p2, void *p3)
 void test_threads_spawn_params(void)
 {
 	k_thread_create(&tdata, tstack, STACK_SIZE, thread_entry_params,
-			(void *)tp1, (void *)tp2, (void *)tp3, 0,
+			tp1, INT_TO_POINTER(tp2), tp3, 0,
 			K_USER, 0);
 	k_sleep(100);
 }

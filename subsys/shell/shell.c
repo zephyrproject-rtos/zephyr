@@ -1156,9 +1156,9 @@ static void kill_handler(const struct shell *shell)
 void shell_thread(void *shell_handle, void *arg_log_backend,
 		  void *arg_log_level)
 {
-	struct shell *shell = (struct shell *)shell_handle;
+	struct shell *shell = shell_handle;
 	bool log_backend = (bool)arg_log_backend;
-	u32_t log_level = (u32_t)arg_log_level;
+	u32_t log_level = POINTER_TO_UINT(arg_log_level);
 	int err;
 
 	err = shell->iface->api->enable(shell->iface, false);
@@ -1220,7 +1220,7 @@ int shell_init(const struct shell *shell, const void *transport_config,
 	k_tid_t tid = k_thread_create(shell->thread,
 			      shell->stack, CONFIG_SHELL_STACK_SIZE,
 			      shell_thread, (void *)shell, (void *)log_backend,
-			      (void *)init_log_level,
+			      UINT_TO_POINTER(init_log_level),
 			      K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 
 	shell->ctx->tid = tid;

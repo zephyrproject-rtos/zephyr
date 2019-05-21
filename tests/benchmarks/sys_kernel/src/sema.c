@@ -37,7 +37,7 @@ void sema_test_init(void)
 void sema_thread1(void *par1, void *par2, void *par3)
 {
 	int i;
-	int num_loops = (int) par2;
+	int num_loops = POINTER_TO_INT(par2);
 
 	ARG_UNUSED(par1);
 	ARG_UNUSED(par3);
@@ -63,7 +63,7 @@ void sema_thread2(void *par1, void *par2, void *par3)
 {
 	int i;
 	int *pcounter = (int *)par1;
-	int num_loops = (int) par2;
+	int num_loops = POINTER_TO_INT(par2);
 
 	ARG_UNUSED(par3);
 
@@ -88,7 +88,7 @@ void sema_thread3(void *par1, void *par2, void *par3)
 {
 	int i;
 	int *pcounter = (int *)par1;
-	int num_loops = (int) par2;
+	int num_loops = POINTER_TO_INT(par2);
 
 	ARG_UNUSED(par3);
 
@@ -127,10 +127,10 @@ int sema_test(void)
 	t = BENCH_START();
 
 	k_thread_create(&thread_data1, thread_stack1, STACK_SIZE, sema_thread1,
-			 NULL, (void *) number_of_loops, NULL,
+			 NULL, INT_TO_POINTER(number_of_loops), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 	k_thread_create(&thread_data2, thread_stack2, STACK_SIZE, sema_thread2,
-			 (void *) &i, (void *) number_of_loops, NULL,
+			 (void *) &i, INT_TO_POINTER(number_of_loops), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 
 	t = TIME_STAMP_DELTA_GET(t);
@@ -152,10 +152,10 @@ int sema_test(void)
 	t = BENCH_START();
 
 	k_thread_create(&thread_data1, thread_stack1, STACK_SIZE, sema_thread1,
-			 NULL, (void *) number_of_loops, NULL,
+			 NULL, INT_TO_POINTER(number_of_loops), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 	k_thread_create(&thread_data2, thread_stack2, STACK_SIZE, sema_thread3,
-			 (void *) &i, (void *) number_of_loops, NULL,
+			 (void *) &i, INT_TO_POINTER(number_of_loops), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 
 	t = TIME_STAMP_DELTA_GET(t);
@@ -177,7 +177,7 @@ int sema_test(void)
 	t = BENCH_START();
 
 	k_thread_create(&thread_data1, thread_stack1, STACK_SIZE, sema_thread1,
-			 NULL, (void *) number_of_loops, NULL,
+			 NULL, INT_TO_POINTER(number_of_loops), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 	for (i = 0; i < number_of_loops; i++) {
 		k_sem_give(&sem1);

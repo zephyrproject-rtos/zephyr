@@ -145,7 +145,7 @@ void philosopher(void *id, void *unused1, void *unused2)
 	fork_t fork1;
 	fork_t fork2;
 
-	int my_id = (int)id;
+	int my_id = POINTER_TO_INT(id);
 
 	/* Djkstra's solution: always pick up the lowest numbered fork first */
 	if (is_last_philosopher(my_id)) {
@@ -217,8 +217,8 @@ static void start_threads(void)
 		int prio = new_prio(i);
 
 		k_thread_create(&threads[i], &stacks[i][0], STACK_SIZE,
-				philosopher, (void *)i, NULL, NULL, prio,
-				K_USER, K_FOREVER);
+				philosopher, INT_TO_POINTER(i), NULL, NULL,
+				prio, K_USER, K_FOREVER);
 
 		k_object_access_grant(fork(i), &threads[i]);
 		k_object_access_grant(fork((i + 1) % NUM_PHIL), &threads[i]);

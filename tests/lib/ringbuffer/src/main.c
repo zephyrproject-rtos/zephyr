@@ -129,7 +129,7 @@ static struct {
 /*entry of contexts*/
 static void tringbuf_put(void *p)
 {
-	int index = (int)p;
+	int index = POINTER_TO_INT(p);
 	/**TESTPOINT: ring buffer put*/
 	int ret = ring_buf_item_put(pbuf, data[index].type, data[index].value,
 				   data[index].buffer, data[index].length);
@@ -142,7 +142,7 @@ static void tringbuf_get(void *p)
 	u16_t type;
 	u8_t value, size32 = DATA_MAX_SIZE;
 	u32_t rx_data[DATA_MAX_SIZE];
-	int ret, index = (int)p;
+	int ret, index = POINTER_TO_INT(p);
 
 	/**TESTPOINT: ring buffer get*/
 	ret = ring_buf_item_get(pbuf, &type, &value, rx_data, &size32);

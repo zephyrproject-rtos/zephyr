@@ -68,11 +68,13 @@ static void async_put_sema_give(void *p1, void *p2, void *p3)
 }
 
 
-static void mbox_get_waiting_thread(void *thread_number, void *pmbox, void *p3)
+static void mbox_get_waiting_thread(void *p1, void *p2, void *p3)
 {
+	int thread_number = POINTER_TO_INT(p1);
+	struct k_mbox *pmbox = p2;
 	struct k_mbox_msg mmsg = {0};
 
-	switch ((int) thread_number) {
+	switch (thread_number) {
 	case 0:
 		mmsg.rx_source_thread = K_ANY;
 		break;
@@ -98,8 +100,7 @@ static void mbox_get_waiting_thread(void *thread_number, void *pmbox, void *p3)
 	}
 
 	mmsg.size = 0;
-	zassert_true(k_mbox_get((struct k_mbox *)pmbox,
-				&mmsg, NULL, K_FOREVER) == 0,
+	zassert_true(k_mbox_get(pmbox, &mmsg, NULL, K_FOREVER) == 0,
 		     "Failure at thread number %d", thread_number);
 
 }
@@ -501,7 +502,7 @@ static void tmbox_get(struct k_mbox *pmbox)
 					waiting_get_stack[i],
 					STACK_SIZE,
 					mbox_get_waiting_thread,
-					(void *)i, pmbox, NULL,
+					INT_TO_POINTER(i), pmbox, NULL,
 					K_PRIO_PREEMPT(0), 0, K_NO_WAIT);
 		}
 		/* Create a new thread to trigger the semaphore needed for the

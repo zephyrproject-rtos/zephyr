@@ -33,15 +33,17 @@ static struct k_thread t[NUM_THREAD];
 /* Application thread */
 static void thread_tslice(void *p1, void *p2, void *p3)
 {
+	int idx = POINTER_TO_INT(p1);
+
 	/* Print New line for last thread */
-	int thread_parameter = ((int)p1 == (NUM_THREAD - 1)) ? '\n' :
-			       ((int)p1 + 'A');
+	int thread_parameter = (idx == (NUM_THREAD - 1)) ? '\n' :
+			       (idx + 'A');
 
 	while (1) {
 		/* Prining alphabet corresponding to thread*/
 		TC_PRINT("%c", thread_parameter);
 		/* Testing if threads are execueted as per priority*/
-		zassert_true(((int)p1 == thread_idx), NULL);
+		zassert_true((idx == thread_idx), NULL);
 		thread_idx = (thread_idx + 1) % (NUM_THREAD);
 
 		/* Realease CPU and give chance to Ztest thread to run*/
@@ -77,7 +79,7 @@ void test_priority_scheduling(void)
 	/* Create Threads with different Priority*/
 	for (int i = 0; i < NUM_THREAD; i++) {
 		tid[i] = k_thread_create(&t[i], tstacks[i], STACK_SIZE,
-					 thread_tslice, (void *)(intptr_t) i, NULL, NULL,
+					 thread_tslice, INT_TO_POINTER(i), NULL, NULL,
 					 K_PRIO_PREEMPT(BASE_PRIORITY + i), 0, 0);
 	}
 

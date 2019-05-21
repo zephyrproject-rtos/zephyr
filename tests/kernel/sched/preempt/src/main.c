@@ -236,7 +236,7 @@ void validate_wakeup(int src, int target, k_tid_t last_thread)
 
 void worker(void *p1, void *p2, void *p3)
 {
-	int id = (int)p1;
+	int id = POINTER_TO_INT(p1);
 	k_tid_t curr = &worker_threads[id], prev;
 
 	ARG_UNUSED(p2);
@@ -329,7 +329,7 @@ void test_preempt(void)
 
 		k_thread_create(&worker_threads[i],
 				worker_stacks[i], STACK_SIZE,
-				worker, (void *)i, NULL, NULL,
+				worker, INT_TO_POINTER(i), NULL, NULL,
 				priority, 0, 0);
 	}
 
