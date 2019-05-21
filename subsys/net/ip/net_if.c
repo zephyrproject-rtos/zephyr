@@ -65,6 +65,11 @@ static struct k_delayed_work dad_timer;
 static sys_slist_t active_dad_timers;
 #endif
 
+#if defined(CONFIG_NET_IPV6_ND)
+static struct k_delayed_work rs_timer;
+static sys_slist_t active_rs_timers;
+#endif
+
 static struct {
 	struct net_if_ipv6 ipv6;
 	struct net_if *iface;
@@ -742,29 +747,48 @@ static inline void net_if_ipv6_start_dad(struct net_if *iface,
 
 static void rs_timeout(struct k_work *work)
 {
-	/* Did not receive RA yet. */
-	struct net_if_ipv6 *ipv6 = CONTAINER_OF(work,
-						struct net_if_ipv6,
-						rs_timer);
-	struct net_if *iface;
+	u32_t current_time = k_uptime_get_32();
+	struct net_if_ipv6 *ipv6, *next;
 
-	ipv6->rs_count++;
+	ARG_UNUSED(work);
 
-	for (iface = __net_if_start; iface != __net_if_end; iface++) {
-		if (iface->config.ip.ipv6 == ipv6) {
-			goto found;
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_rs_timers,
+					  ipv6, next, rs_node) {
+		struct net_if *iface;
+
+		if ((s32_t)(ipv6->rs_start + RS_TIMEOUT - current_time) > 0) {
+			break;
 		}
+
+		/* Removing the ipv6 from active_rs_timers list */
+		sys_slist_remove(&active_rs_timers, NULL, &ipv6->rs_node);
+
+		/* Did not receive RA yet. */
+		ipv6->rs_count++;
+
+		for (iface = __net_if_start; iface != __net_if_end; iface++) {
+			if (iface->config.ip.ipv6 == ipv6) {
+				break;
+			}
+		}
+
+		if (iface != __net_if_end) {
+			NET_DBG("RS no respond iface %p count %d",
+				iface, ipv6->rs_count);
+			if (ipv6->rs_count < RS_COUNT) {
+				net_if_start_rs(iface);
+			}
+		} else {
+			NET_DBG("Interface IPv6 config %p not found", ipv6);
+		}
+
+		ipv6 = NULL;
 	}
 
-	NET_DBG("Interface IPv6 config %p not found", ipv6);
-	return;
-
-found:
-	NET_DBG("RS no respond iface %p count %d", iface,
-		ipv6->rs_count);
-
-	if (ipv6->rs_count < RS_COUNT) {
-		net_if_start_rs(iface);
+	if (ipv6) {
+		k_delayed_work_submit(&rs_timer,
+				      ipv6->rs_start +
+				      RS_TIMEOUT - current_time);
 	}
 }
 
@@ -779,17 +803,37 @@ void net_if_start_rs(struct net_if *iface)
 	NET_DBG("Starting ND/RS for iface %p", iface);
 
 	if (!net_ipv6_start_rs(iface)) {
-		k_delayed_work_submit(&ipv6->rs_timer, RS_TIMEOUT);
+		ipv6->rs_start = k_uptime_get_32();
+		sys_slist_append(&active_rs_timers, &ipv6->rs_node);
+
+		if (!k_delayed_work_remaining_get(&rs_timer)) {
+			k_delayed_work_submit(&rs_timer, RS_TIMEOUT);
+		}
 	}
 }
 
-static inline void iface_ipv6_nd_init(struct net_if_ipv6 *ipv6)
+void net_if_stop_rs(struct net_if *iface)
 {
-	k_delayed_work_init(&ipv6->rs_timer, rs_timeout);
+	struct net_if_ipv6 *ipv6 = iface->config.ip.ipv6;
+
+	if (!ipv6) {
+		return;
+	}
+
+	NET_DBG("Stopping ND/RS for iface %p", iface);
+
+	sys_slist_find_and_remove(&active_rs_timers, &ipv6->rs_node);
+}
+
+static inline void iface_ipv6_nd_init(void)
+{
+	k_delayed_work_init(&rs_timer, rs_timeout);
+	sys_slist_init(&active_rs_timers);
 }
 
 #else
 #define net_if_start_rs(...)
+#define net_if_stop_rs(...)
 #define iface_ipv6_nd_init(...)
 #endif /* CONFIG_NET_IPV6_ND */
 
@@ -2207,6 +2251,7 @@ static void iface_ipv6_init(int if_count)
 	int i;
 
 	iface_ipv6_dad_init();
+	iface_ipv6_nd_init();
 
 	k_delayed_work_init(&address_lifetime_timer, address_lifetime_timeout);
 	k_delayed_work_init(&prefix_lifetime_timer, prefix_lifetime_timeout);
@@ -2224,8 +2269,6 @@ static void iface_ipv6_init(int if_count)
 		ipv6_addresses[i].ipv6.base_reachable_time = REACHABLE_TIME;
 
 		net_if_ipv6_set_reachable_time(&ipv6_addresses[i].ipv6);
-
-		iface_ipv6_nd_init(&ipv6_addresses[i].ipv6);
 	}
 }
 
