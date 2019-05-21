@@ -220,9 +220,6 @@ struct net_if_ipv6 {
 	/** Prefixes */
 	struct net_if_ipv6_prefix prefix[NET_IF_MAX_IPV6_PREFIX];
 
-	/** Router solicitation timer */
-	struct k_delayed_work rs_timer;
-
 	/** Default reachable time (RFC 4861, page 52) */
 	u32_t base_reachable_time;
 
@@ -231,12 +228,19 @@ struct net_if_ipv6 {
 
 	/** Retransmit timer (RFC 4861, page 52) */
 	u32_t retrans_timer;
+#if defined(CONFIG_NET_IPV6_ND)
+	/** Router solicitation timer node */
+	sys_snode_t rs_node;
 
-	/** IPv6 hop limit */
-	u8_t hop_limit;
+	/* RS start time */
+	u32_t rs_start;
 
 	/** RS count */
 	u8_t rs_count;
+#endif
+
+	/** IPv6 hop limit */
+	u8_t hop_limit;
 };
 
 /** @cond INTERNAL_HIDDEN */
@@ -658,6 +662,21 @@ static inline void net_if_start_dad(struct net_if *iface)
  * @param iface Pointer to a network interface structure
  */
 void net_if_start_rs(struct net_if *iface);
+
+
+/**
+ * @brief Stop neighbor discovery.
+ *
+ * @param iface Pointer to a network interface structure
+ */
+#if defined(CONFIG_NET_IPV6_ND)
+void net_if_stop_rs(struct net_if *iface);
+#else
+static inline void net_if_stop_rs(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif /* CONFIG_NET_IPV6_ND */
 
 /**
  * @brief Set a network interface's link address

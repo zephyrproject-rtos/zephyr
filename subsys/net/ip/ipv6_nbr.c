@@ -2429,7 +2429,7 @@ static enum net_verdict handle_ra_input(struct net_pkt *pkt,
 	}
 
 	/* Cancel the RS timer on iface */
-	k_delayed_work_cancel(&net_pkt_iface(pkt)->config.ip.ipv6->rs_timer);
+	net_if_stop_rs(net_pkt_iface(pkt));
 
 	net_pkt_unref(pkt);
 
