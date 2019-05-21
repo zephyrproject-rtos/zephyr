@@ -226,7 +226,7 @@ static bool ht16k33_process_keyscan_data(struct device *dev)
 	const struct ht16k33_cfg *config = dev->config->config_info;
 	struct ht16k33_data *data = dev->driver_data;
 	u8_t keys[HT16K33_KEYSCAN_DATA_SIZE];
-	bool pressed;
+	bool pressed = false;
 	u16_t row;
 	u16_t new;
 	int err;
