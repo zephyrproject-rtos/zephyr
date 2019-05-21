@@ -23,7 +23,7 @@ int exec_order[NUM_THREADS];
 
 void worker(void *p1, void *p2, void *p3)
 {
-	int tidx = (int) p1;
+	int tidx = POINTER_TO_INT(p1);
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -54,7 +54,7 @@ void test_deadline(void)
 	for (i = 0; i < NUM_THREADS; i++) {
 		k_thread_create(&worker_threads[i],
 				worker_stacks[i], STACK_SIZE,
-				worker, (void *)i, NULL, NULL,
+				worker, INT_TO_POINTER(i), NULL, NULL,
 				K_LOWEST_APPLICATION_THREAD_PRIO,
 				0, 0);
 

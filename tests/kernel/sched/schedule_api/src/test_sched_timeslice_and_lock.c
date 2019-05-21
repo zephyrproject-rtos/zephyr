@@ -22,13 +22,13 @@ struct k_timer timer;
 
 static void thread_entry(void *p1, void *p2, void *p3)
 {
-	int sleep_ms = (int)p2;
+	int sleep_ms = POINTER_TO_INT(p2);
 
 	if (sleep_ms > 0) {
 		k_sleep(sleep_ms);
 	}
 
-	int tnum = (int)p1;
+	int tnum = POINTER_TO_INT(p1);
 
 	tdata[tnum].executed = 1;
 }
@@ -57,7 +57,8 @@ static void spawn_threads(int sleep_sec)
 	for (int i = 0; i < THREADS_NUM; i++) {
 		tdata[i].tid = k_thread_create(&tthread[i], tstacks[i],
 					       STACK_SIZE, thread_entry,
-					       (void *)i, (void *)sleep_sec,
+					       INT_TO_POINTER(i),
+					       INT_TO_POINTER(sleep_sec),
 					       NULL, tdata[i].priority, 0, 0);
 	}
 }

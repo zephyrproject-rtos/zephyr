@@ -42,7 +42,7 @@ void lifo_thread1(void *par1, void *par2, void *par3)
 	int element_a[2];
 	int element_b[2];
 	int *pelement;
-	int num_loops = (int) par2;
+	int num_loops = POINTER_TO_INT(par2);
 
 	ARG_UNUSED(par1);
 
@@ -82,8 +82,8 @@ void lifo_thread2(void *par1, void *par2, void *par3)
 	int i;
 	int element[2];
 	int *pelement;
-	int *pcounter = (int *)par1;
-	int num_loops = (int) par2;
+	int *pcounter = par1;
+	int num_loops = POINTER_TO_INT(par2);
 
 	for (i = 0; i < num_loops; i++) {
 		element[1] = i;
@@ -114,8 +114,8 @@ void lifo_thread3(void *par1, void *par2, void *par3)
 	int i;
 	int element[2];
 	int *pelement;
-	int *pcounter = (int *)par1;
-	int num_loops = (int) par2;
+	int *pcounter = par1;
+	int num_loops = POINTER_TO_INT(par2);
 
 	for (i = 0; i < num_loops; i++) {
 		element[1] = i;
@@ -163,11 +163,11 @@ int lifo_test(void)
 	t = BENCH_START();
 
 	k_thread_create(&thread_data1, thread_stack1, STACK_SIZE, lifo_thread1,
-			 NULL, (void *) number_of_loops, NULL,
+			 NULL, INT_TO_POINTER(number_of_loops), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 
 	k_thread_create(&thread_data2, thread_stack2, STACK_SIZE, lifo_thread2,
-			 (void *) &i, (void *) number_of_loops, NULL,
+			 &i, INT_TO_POINTER(number_of_loops), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 
 	t = TIME_STAMP_DELTA_GET(t);
@@ -197,11 +197,11 @@ int lifo_test(void)
 	i = 0;
 
 	k_thread_create(&thread_data1, thread_stack1, STACK_SIZE, lifo_thread1,
-			 NULL, (void *) number_of_loops, NULL,
+			 NULL, INT_TO_POINTER(number_of_loops), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 
 	k_thread_create(&thread_data2, thread_stack2, STACK_SIZE, lifo_thread3,
-			 (void *) &i, (void *) number_of_loops, NULL,
+			 &i, INT_TO_POINTER(number_of_loops), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 
 	t = TIME_STAMP_DELTA_GET(t);
@@ -229,7 +229,7 @@ int lifo_test(void)
 	t = BENCH_START();
 
 	k_thread_create(&thread_data1, thread_stack1, STACK_SIZE, lifo_thread1,
-			 NULL, (void *) number_of_loops, NULL,
+			 NULL, INT_TO_POINTER(number_of_loops), NULL,
 			 K_PRIO_COOP(3), 0, K_NO_WAIT);
 	for (i = 0; i < number_of_loops / 2U; i++) {
 		int element[2];

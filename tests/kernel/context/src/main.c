@@ -663,7 +663,7 @@ static void busy_wait_thread(void *mseconds, void *arg2, void *arg3)
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
 
-	usecs = (int)mseconds * 1000;
+	usecs = POINTER_TO_INT(mseconds) * 1000;
 
 	TC_PRINT("Thread busy waiting for %d usecs\n", usecs);
 	k_busy_wait(usecs);
@@ -689,7 +689,7 @@ static void busy_wait_thread(void *mseconds, void *arg2, void *arg3)
 static void thread_sleep(void *delta, void *arg2, void *arg3)
 {
 	s64_t timestamp;
-	int timeout = (int)delta;
+	int timeout = POINTER_TO_INT(delta);
 
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
@@ -711,7 +711,7 @@ static void thread_sleep(void *delta, void *arg2, void *arg3)
 /* a thread is started with a delay, then it reports that it ran via a fifo */
 static void delayed_thread(void *num, void *arg2, void *arg3)
 {
-	struct timeout_order *timeout = &timeouts[(int)num];
+	struct timeout_order *timeout = &timeouts[POINTER_TO_INT(num)];
 
 	ARG_UNUSED(arg2);
 	ARG_UNUSED(arg3);
@@ -738,7 +738,7 @@ static void test_busy_wait(void)
 
 	k_thread_create(&timeout_threads[0], timeout_stacks[0],
 			THREAD_STACKSIZE2, busy_wait_thread,
-			(void *)(intptr_t) timeout, NULL,
+			INT_TO_POINTER(timeout), NULL,
 			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
 
 	rv = k_sem_take(&reply_timeout, timeout * 2);
@@ -765,7 +765,7 @@ static void test_k_sleep(void)
 
 	k_thread_create(&timeout_threads[0], timeout_stacks[0],
 			THREAD_STACKSIZE2, thread_sleep,
-			(void *)(intptr_t) timeout, NULL,
+			INT_TO_POINTER(timeout), NULL,
 			NULL, K_PRIO_COOP(THREAD_PRIORITY), 0, 0);
 
 	rv = k_sem_take(&reply_timeout, timeout * 2);
@@ -779,8 +779,7 @@ static void test_k_sleep(void)
 		k_thread_create(&timeout_threads[i], timeout_stacks[i],
 				THREAD_STACKSIZE2,
 				delayed_thread,
-				(void *)i,
-				NULL, NULL,
+				INT_TO_POINTER(i), NULL, NULL,
 				K_PRIO_COOP(5), 0, timeouts[i].timeout);
 	}
 	for (i = 0; i < NUM_TIMEOUT_THREADS; i++) {
@@ -815,7 +814,7 @@ static void test_k_sleep(void)
 
 		id = k_thread_create(&timeout_threads[i], timeout_stacks[i],
 				     THREAD_STACKSIZE2, delayed_thread,
-				     (void *)i, NULL, NULL,
+				     INT_TO_POINTER(i), NULL, NULL,
 				     K_PRIO_COOP(5), 0, timeouts[i].timeout);
 
 		delayed_threads[i] = id;
