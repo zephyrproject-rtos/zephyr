@@ -68,11 +68,7 @@ const struct bt_conn_auth_cb *bt_auth;
 static struct bt_conn conns[CONFIG_BT_MAX_CONN];
 static struct bt_conn_cb *callback_list;
 
-struct conn_tx_cb {
-	bt_conn_tx_cb_t cb;
-};
-
-#define conn_tx(buf) ((struct conn_tx_cb *)net_buf_user_data(buf))
+#define conn_tx(buf) ((struct bt_conn_tx_data *)net_buf_user_data(buf))
 
 static struct bt_conn_tx conn_tx[CONFIG_BT_CONN_TX_MAX];
 static sys_slist_t free_tx = SYS_SLIST_STATIC_INIT(&free_tx);
@@ -1152,9 +1148,10 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, u8_t flags)
 }
 
 int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
-		    bt_conn_tx_cb_t cb)
+		    bt_conn_tx_cb_t cb, void *user_data)
 {
-	BT_DBG("conn handle %u buf len %u cb %p", conn->handle, buf->len, cb);
+	BT_DBG("conn handle %u buf len %u cb %p user_data %p", conn->handle,
+	       buf->len, cb, user_data);
 
 	if (conn->state != BT_CONN_CONNECTED) {
 		BT_ERR("not connected!");
@@ -1163,6 +1160,7 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 	}
 
 	conn_tx(buf)->cb = cb;
+	conn_tx(buf)->user_data = user_data;
 
 	net_buf_put(&conn->tx_queue, buf);
 	return 0;
@@ -1170,7 +1168,8 @@ int bt_conn_send_cb(struct bt_conn *conn, struct net_buf *buf,
 
 static void tx_free(struct bt_conn_tx *tx)
 {
-	tx->cb = NULL;
+	tx->data.cb = NULL;
+	tx->data.user_data = NULL;
 	sys_slist_prepend(&free_tx, &tx->node);
 }
 
@@ -1181,8 +1180,9 @@ void bt_conn_notify_tx(struct bt_conn *conn)
 	BT_DBG("conn %p", conn);
 
 	while ((tx = k_fifo_get(&conn->tx_notify, K_NO_WAIT))) {
-		if (tx->cb) {
-			tx->cb(conn);
+		BT_DBG("cb %p user_data %p", tx->data.cb, tx->data.user_data);
+		if (tx->data.cb) {
+			tx->data.cb(conn, tx->data.user_data);
 		}
 
 		tx_free(tx);
@@ -1205,17 +1205,21 @@ static void notify_tx(void)
 	}
 }
 
-static sys_snode_t *add_pending_tx(struct bt_conn *conn, bt_conn_tx_cb_t cb)
+static sys_snode_t *add_pending_tx(struct bt_conn *conn, bt_conn_tx_cb_t cb,
+				   void *user_data)
 {
+	struct bt_conn_tx *tx;
 	sys_snode_t *node;
 	unsigned int key;
 
-	BT_DBG("conn %p cb %p", conn, cb);
+	BT_DBG("conn %p cb %p user_data %p", conn, cb, user_data);
 
 	__ASSERT(!sys_slist_is_empty(&free_tx), "No free conn TX contexts");
 
 	node = sys_slist_get_not_empty(&free_tx);
-	CONTAINER_OF(node, struct bt_conn_tx, node)->cb = cb;
+	tx = CONTAINER_OF(node, struct bt_conn_tx, node);
+	tx->data.cb = cb;
+	tx->data.user_data = user_data;
 
 	key = irq_lock();
 	sys_slist_append(&conn->tx_pending, node);
@@ -1239,7 +1243,6 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, u8_t flags,
 		      bool always_consume)
 {
 	struct bt_hci_acl_hdr *hdr;
-	bt_conn_tx_cb_t cb;
 	sys_snode_t *node;
 	int err;
 
@@ -1261,10 +1264,10 @@ static bool send_frag(struct bt_conn *conn, struct net_buf *buf, u8_t flags,
 	hdr->handle = sys_cpu_to_le16(bt_acl_handle_pack(conn->handle, flags));
 	hdr->len = sys_cpu_to_le16(buf->len - sizeof(*hdr));
 
-	cb = conn_tx(buf)->cb;
-	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
+	/* Add to pending, it must be done before bt_buf_set_type */
+	node = add_pending_tx(conn, conn_tx(buf)->cb, conn_tx(buf)->user_data);
 
-	node = add_pending_tx(conn, cb);
+	bt_buf_set_type(buf, BT_BUF_ACL_OUT);
 
 	err = bt_send(buf);
 	if (err) {
@@ -1312,6 +1315,7 @@ static struct net_buf *create_frag(struct bt_conn *conn, struct net_buf *buf)
 
 	/* Fragments never have a TX completion callback */
 	conn_tx(frag)->cb = NULL;
+	conn_tx(frag)->user_data = NULL;
 
 	frag_len = MIN(conn_mtu(conn), net_buf_tailroom(frag));
 

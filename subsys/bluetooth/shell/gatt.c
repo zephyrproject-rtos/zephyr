@@ -376,7 +376,7 @@ static int cmd_write(const struct shell *shell, size_t argc, char *argv[])
 	return err;
 }
 
-static void write_without_rsp_cb(struct bt_conn *conn)
+static void write_without_rsp_cb(struct bt_conn *conn, void *user_data)
 {
 	shell_print(ctx_shell, "Write transmission complete");
 }
@@ -430,7 +430,7 @@ static int cmd_write_without_rsp(const struct shell *shell,
 	while (repeat--) {
 		err = bt_gatt_write_without_response_cb(default_conn, handle,
 							gatt_write_buf, len,
-							sign, func);
+							sign, func, NULL);
 		if (err) {
 			break;
 		}
