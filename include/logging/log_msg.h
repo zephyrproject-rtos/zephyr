@@ -263,6 +263,14 @@ u32_t log_msg_nargs_get(struct log_msg *msg);
  */
 u32_t log_msg_arg_get(struct log_msg *msg, u32_t arg_idx);
 
+/** @brief Set argument in standard log message.
+ *
+ * @param msg		Standard log message.
+ * @param arg_idx	Argument index.
+ * @param arg		Argument.
+ */
+void log_msg_arg_set(struct log_msg *msg, u32_t arg_idx, u32_t arg);
+
 
 /** @brief Gets pointer to the unformatted string from standard log message.
  *

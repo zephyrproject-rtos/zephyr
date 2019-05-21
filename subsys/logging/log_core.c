@@ -61,10 +61,111 @@ static k_tid_t proc_tid;
 
 static u32_t dummy_timestamp(void);
 static timestamp_get_t timestamp_func = dummy_timestamp;
+static u32_t auto_strdup_cnt;
+
+
+bool log_is_strdup(const void *buf);
 
 static u32_t dummy_timestamp(void)
 {
 	return 0;
+}
+
+/**
+ * @brief Count number of string format specifiers (%s).
+ *
+ * Result is stored as the mask (argument n is n'th bit). Bit is set if %s was
+ * found.
+ *
+ * @param str String.
+ * @param nargs Number of arguments in the string.
+ *
+ * @return Mask with %s format specifiers found.
+ */
+static u32_t count_s(const char *str, u32_t nargs)
+{
+	char curr = *str++;
+	bool arm = (curr == '%');
+	u32_t arg = 0;
+	u32_t mask = 0;
+
+	while (curr){
+		curr = *str++;
+		if (arm) {
+			if (curr == 's') {
+				mask |= 1 << arg++;
+			} else if (curr != '%') {
+				arg++;
+			}
+
+			arm = false;
+		} else if (curr == '%') {
+			arm = true;
+		}
+
+		if (arg == nargs) {
+			return mask;
+		}
+	}
+
+	return mask;
+}
+
+/**
+ * @brief Check if address is in read only section.
+ *
+ * @param addr Address.
+ *
+ * @return True if address identified within read only section.
+ */
+static bool is_rodata(const void *addr)
+{
+#if defined(CONFIG_ARM) || defined(CONFIG_ARC) || defined(CONIFG_RISCV32) || \
+	defined(CONFIG_X86)
+	extern const char *_image_rodata_start[];
+	extern const char *_image_rodata_end[];
+	#define RO_START _image_rodata_start
+	#define RO_END _image_rodata_end
+#elif defined(CONFIG_NIOS2)
+	extern const char *_image_rom_start[];
+	extern const char *_image_rom_end[];
+	#define RO_START _image_rom_start
+	#define RO_END _image_rom_end
+#elif defined(CONFIG_XTENSA)
+	extern const char *_rodata_start[];
+	extern const char *_rodata_end[];
+	#define RO_START _rodata_start
+	#define RO_END _rodata_end
+#else
+	#define RO_START 0
+	#define RO_END 0
+#endif
+
+	return ((addr >= (void *)RO_START) && (addr < (void *)RO_END));
+}
+
+/**
+ * @brief Scan string arguments and duplicate any string argument which is not
+ *	  in read only memory and not yet duplicated.
+ *
+ * @param msg Log message.
+ */
+static void auto_log_strdup(struct log_msg *msg)
+{
+	u32_t idx;
+	const char *str;
+	u32_t mask = count_s(log_msg_str_get(msg), log_msg_nargs_get(msg));
+
+	while (mask) {
+		idx = 31 - __builtin_clz(mask);
+		str = (const char *)log_msg_arg_get(msg, idx);
+		if (!is_rodata(str) && !log_is_strdup(str)) {
+			log_msg_arg_set(msg, idx, (u32_t)log_strdup(str));
+			auto_strdup_cnt++;
+		}
+
+		mask &= ~(1 << idx);
+	}
 }
 
 static inline void msg_finalize(struct log_msg *msg,
@@ -74,6 +175,10 @@ static inline void msg_finalize(struct log_msg *msg,
 
 	msg->hdr.ids = src_level;
 	msg->hdr.timestamp = timestamp_func();
+
+	if (IS_ENABLED(CONFIG_LOG_AUTO_STRDUP) && !panic_mode) {
+		auto_log_strdup(msg);
+	}
 
 	atomic_inc(&buffered_cnt);
 
@@ -654,7 +759,7 @@ char *log_strdup(const char *str)
 	return dup->buf;
 }
 
-bool log_is_strdup(void *buf)
+bool log_is_strdup(const void *buf)
 {
 	struct log_strdup_buf *pool_first, *pool_last;
 
@@ -674,6 +779,11 @@ void log_free(void *str)
 	if (atomic_dec(&dup->refcount) == 1) {
 		k_mem_slab_free(&log_strdup_pool, (void **)&dup);
 	}
+}
+
+u32_t log_get_auto_strdup_cnt(void)
+{
+	return IS_ENABLED(CONFIG_LOG_AUTO_STRDUP) ? auto_strdup_cnt : 0;
 }
 
 static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)

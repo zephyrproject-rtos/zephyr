@@ -363,6 +363,13 @@ static int cmd_log_backends_list(const struct shell *shell,
 	return 0;
 }
 
+static int cmd_log_auto_strdup_cnt(const struct shell *shell,
+			      size_t argc, char **argv)
+{
+	shell_print(shell, "Number of automatic string duplications: %d",
+			log_get_auto_strdup_cnt());
+	return 0;
+}
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_backend,
 	SHELL_CMD_ARG(disable, &dsub_module_name,
@@ -413,6 +420,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_stat,
 	SHELL_CMD_ARG(list_backends, NULL, "Lists logger backends.",
 		      cmd_log_backends_list, 1, 0),
 	SHELL_CMD(status, NULL, "Logger status", cmd_log_self_status),
+	SHELL_COND_CMD_ARG(CONFIG_LOG_AUTO_STRDUP, strdup_cnt, NULL,
+			"Get number of automatic string duplications",
+			cmd_log_auto_strdup_cnt, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 

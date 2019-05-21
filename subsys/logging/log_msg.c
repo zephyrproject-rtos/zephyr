@@ -99,12 +99,12 @@ u32_t log_msg_nargs_get(struct log_msg *msg)
 	return msg->hdr.params.std.nargs;
 }
 
-static u32_t cont_arg_get(struct log_msg *msg, u32_t arg_idx)
+static u32_t *cont_arg_addr_get(struct log_msg *msg, u32_t arg_idx)
 {
 	struct log_msg_cont *cont;
 
 	if (arg_idx < LOG_MSG_NARGS_HEAD_CHUNK) {
-		return msg->payload.ext.data.args[arg_idx];
+		return &msg->payload.ext.data.args[arg_idx];
 	}
 
 
@@ -116,25 +116,36 @@ static u32_t cont_arg_get(struct log_msg *msg, u32_t arg_idx)
 		cont = cont->next;
 	}
 
-	return cont->payload.args[arg_idx];
+	return &cont->payload.args[arg_idx];
+}
+
+static u32_t *arg_addr_get(struct log_msg *msg, u32_t arg_idx)
+{
+	if (msg->hdr.params.std.nargs <= LOG_MSG_NARGS_SINGLE_CHUNK) {
+		return &msg->payload.single.args[arg_idx];
+	} else {
+		return cont_arg_addr_get(msg, arg_idx);
+	}
 }
 
 u32_t log_msg_arg_get(struct log_msg *msg, u32_t arg_idx)
 {
-	u32_t arg;
-
 	/* Return early if requested argument not present in the message. */
 	if (arg_idx >= msg->hdr.params.std.nargs) {
 		return 0;
 	}
 
-	if (msg->hdr.params.std.nargs <= LOG_MSG_NARGS_SINGLE_CHUNK) {
-		arg = msg->payload.single.args[arg_idx];
-	} else {
-		arg = cont_arg_get(msg, arg_idx);
+	return *arg_addr_get(msg, arg_idx);
+}
+
+void log_msg_arg_set(struct log_msg *msg, u32_t arg_idx, u32_t arg)
+{
+	/* Return early if requested argument not present in the message. */
+	if (arg_idx >= msg->hdr.params.std.nargs) {
+		return;
 	}
 
-	return arg;
+	*arg_addr_get(msg, arg_idx) = arg;
 }
 
 const char *log_msg_str_get(struct log_msg *msg)

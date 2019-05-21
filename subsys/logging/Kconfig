@@ -175,6 +175,18 @@ config LOG_BUFFER_SIZE
 	help
 	  Number of bytes dedicated for the logger internal buffer.
 
+config LOG_AUTO_STRDUP
+	bool "Enable automatic handling of transient strings"
+	default y if !LOG_IMMEDIATE
+	help
+	  If enabled, log message string is scanned in search for %s format
+	  specifier. Any string argument which is in read-write memory and not
+	  yet explicitly duplicated using log_strdup() is duplicated. Enabling
+	  this feature degrades logger performance so ideally log_strdup()
+	  should be used explicitly and feature should be disabled. Dedicated
+	  shell log command can be used to check how many implicit string
+	  duplications occured in the system.
+
 config LOG_STRDUP_MAX_STRING
 	int "Longest string that can be duplicated using log_strdup()"
 	default 46 if NETWORKING
