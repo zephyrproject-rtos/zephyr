@@ -20,8 +20,13 @@ extern struct k_mem_slab log_msg_pool;
 static const char my_string[] = "test_string";
 void test_log_std_msg(void)
 {
+#ifdef CONFIG_64BIT
+	zassert_true(LOG_MSG_NARGS_SINGLE_CHUNK == 4,
+		     "test assumes following setting");
+#else
 	zassert_true(LOG_MSG_NARGS_SINGLE_CHUNK == 3,
 		     "test assumes following setting");
+#endif
 
 	u32_t used_slabs = k_mem_slab_num_used_get(&log_msg_pool);
 	log_arg_t args[] = {1, 2, 3, 4, 5, 6};
@@ -85,6 +90,22 @@ void test_log_std_msg(void)
 		      "Expected mem slab allocation.");
 	used_slabs--;
 
+#ifdef CONFIG_64BIT
+	/* allocation of 4 argument fits in single buffer */
+	msg = log_msg_create_n(my_string, args, 4);
+
+	zassert_equal((used_slabs + 1),
+		      k_mem_slab_num_used_get(&log_msg_pool),
+		      "Expected mem slab allocation.");
+	used_slabs++;
+
+	log_msg_put(msg);
+
+	zassert_equal((used_slabs - 1),
+		      k_mem_slab_num_used_get(&log_msg_pool),
+		      "Expected mem slab allocation.");
+	used_slabs--;
+#else
 	/* allocation of 4 argument fits in 2 buffers */
 	msg = log_msg_create_n(my_string, args, 4);
 
@@ -99,6 +120,7 @@ void test_log_std_msg(void)
 		      k_mem_slab_num_used_get(&log_msg_pool),
 		      "Expected mem slab allocation.");
 	used_slabs -= 2U;
+#endif
 
 	/* allocation of 5 argument fits in 2 buffers */
 	msg = log_msg_create_n(my_string, args, 5);

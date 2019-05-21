@@ -17,7 +17,7 @@
 #define NUM_OF_MSGS (CONFIG_LOG_BUFFER_SIZE / MSG_SIZE)
 
 struct k_mem_slab log_msg_pool;
-static u8_t __noinit __aligned(sizeof(u32_t))
+static u8_t __noinit __aligned(sizeof(void *))
 		log_msg_pool_buf[CONFIG_LOG_BUFFER_SIZE];
 
 void log_msg_pool_init(void)

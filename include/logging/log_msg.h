@@ -35,15 +35,20 @@ typedef unsigned long log_arg_t;
 #define LOG_MAX_NARGS 15
 
 /** @brief Number of arguments in the log entry which fits in one chunk.*/
+#ifdef CONFIG_64BIT
+#define LOG_MSG_NARGS_SINGLE_CHUNK 4
+#else
 #define LOG_MSG_NARGS_SINGLE_CHUNK 3
+#endif
 
 /** @brief Number of arguments in the head of extended standard log message..*/
-#define LOG_MSG_NARGS_HEAD_CHUNK (LOG_MSG_NARGS_SINGLE_CHUNK - 1)
+#define LOG_MSG_NARGS_HEAD_CHUNK \
+	(LOG_MSG_NARGS_SINGLE_CHUNK - (sizeof(void *)/sizeof(log_arg_t)))
 
 /** @brief Maximal amount of bytes in the hexdump entry which fits in one chunk.
  */
 #define LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK \
-	(LOG_MSG_NARGS_SINGLE_CHUNK * sizeof(u32_t))
+	(LOG_MSG_NARGS_SINGLE_CHUNK * sizeof(log_arg_t))
 
 /** @brief Number of bytes in the first chunk of hexdump message if message
  *         consists of more than one chunk.
@@ -57,7 +62,7 @@ typedef unsigned long log_arg_t;
 #define HEXDUMP_BYTES_CONT_MSG \
 	(sizeof(struct log_msg) - sizeof(void *))
 
-#define ARGS_CONT_MSG (HEXDUMP_BYTES_CONT_MSG / sizeof(u32_t))
+#define ARGS_CONT_MSG (HEXDUMP_BYTES_CONT_MSG / sizeof(log_arg_t))
 
 /** @brief Flag indicating standard log message. */
 #define LOG_MSG_TYPE_STD 0
