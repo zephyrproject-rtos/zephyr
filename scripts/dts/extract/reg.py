@@ -58,7 +58,7 @@ class DTReg(DTDirective):
             addr = 0
             size = 0
             # Check is defined should be indexed (_0, _1)
-            if index == 0 and len(props) < 3:
+            if index == 0 and len(props) <= (nr_address_cells + nr_size_cells):
                 # 1 element (len 2) or no element (len 0) in props
                 l_idx = []
             else:
