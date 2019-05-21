@@ -225,7 +225,7 @@ void log_0(const char *str, struct log_msg_ids src_level)
 }
 
 void log_1(const char *str,
-	   u32_t arg0,
+	   log_arg_t arg0,
 	   struct log_msg_ids src_level)
 {
 	struct log_msg *msg = log_msg_create_1(str, arg0);
@@ -237,8 +237,8 @@ void log_1(const char *str,
 }
 
 void log_2(const char *str,
-	   u32_t arg0,
-	   u32_t arg1,
+	   log_arg_t arg0,
+	   log_arg_t arg1,
 	   struct log_msg_ids src_level)
 {
 	struct log_msg *msg = log_msg_create_2(str, arg0, arg1);
@@ -251,9 +251,9 @@ void log_2(const char *str,
 }
 
 void log_3(const char *str,
-	   u32_t arg0,
-	   u32_t arg1,
-	   u32_t arg2,
+	   log_arg_t arg0,
+	   log_arg_t arg1,
+	   log_arg_t arg2,
 	   struct log_msg_ids src_level)
 {
 	struct log_msg *msg = log_msg_create_3(str, arg0, arg1, arg2);
@@ -266,7 +266,7 @@ void log_3(const char *str,
 }
 
 void log_n(const char *str,
-	   u32_t *args,
+	   log_arg_t *args,
 	   u32_t narg,
 	   struct log_msg_ids src_level)
 {
@@ -362,11 +362,11 @@ void log_generic(struct log_msg_ids src_level, const char *fmt, va_list ap)
 			}
 		}
 	} else {
-		u32_t args[LOG_MAX_NARGS];
+		log_arg_t args[LOG_MAX_NARGS];
 		u32_t nargs = count_args(fmt);
 
 		for (int i = 0; i < nargs; i++) {
-			args[i] = va_arg(ap, u32_t);
+			args[i] = va_arg(ap, log_arg_t);
 		}
 
 		log_n(fmt, args, nargs, src_level);

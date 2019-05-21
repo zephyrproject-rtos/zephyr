@@ -24,7 +24,7 @@ void test_log_std_msg(void)
 		     "test assumes following setting");
 
 	u32_t used_slabs = k_mem_slab_num_used_get(&log_msg_pool);
-	u32_t args[] = {1, 2, 3, 4, 5, 6};
+	log_arg_t args[] = {1, 2, 3, 4, 5, 6};
 	struct log_msg *msg;
 
 	/* allocation of 0 argument fits in single buffer */

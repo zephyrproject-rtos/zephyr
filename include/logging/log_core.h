@@ -179,22 +179,22 @@ extern "C" {
 	log_0(_str, _src_level)
 
 #define _LOG_INTERNAL_1(_src_level, _str, _arg0) \
-	log_1(_str, (u32_t)(_arg0), _src_level)
+	log_1(_str, (log_arg_t)(_arg0), _src_level)
 
 #define _LOG_INTERNAL_2(_src_level, _str, _arg0, _arg1)	\
-	log_2(_str, (u32_t)(_arg0), (u32_t)(_arg1), _src_level)
+	log_2(_str, (log_arg_t)(_arg0), (log_arg_t)(_arg1), _src_level)
 
 #define _LOG_INTERNAL_3(_src_level, _str, _arg0, _arg1, _arg2) \
-	log_3(_str, (u32_t)(_arg0), (u32_t)(_arg1), (u32_t)(_arg2), _src_level)
+	log_3(_str, (log_arg_t)(_arg0), (log_arg_t)(_arg1), (log_arg_t)(_arg2), _src_level)
 
-#define __LOG_ARG_CAST(_x) (u32_t)(_x),
+#define __LOG_ARG_CAST(_x) (log_arg_t)(_x),
 
 #define __LOG_ARGUMENTS(...) MACRO_MAP(__LOG_ARG_CAST, __VA_ARGS__)
 
-#define _LOG_INTERNAL_LONG(_src_level, _str, ...)		 \
-	do {							 \
-		u32_t args[] = {__LOG_ARGUMENTS(__VA_ARGS__)};	 \
-		log_n(_str, args, ARRAY_SIZE(args), _src_level); \
+#define _LOG_INTERNAL_LONG(_src_level, _str, ...)		  \
+	do {							  \
+		log_arg_t args[] = {__LOG_ARGUMENTS(__VA_ARGS__)};\
+		log_n(_str, args, ARRAY_SIZE(args), _src_level);  \
 	} while (false)
 
 #define Z_LOG_LEVEL_CHECK(_level, _check_level, _default_level) \
@@ -442,7 +442,7 @@ void log_0(const char *str, struct log_msg_ids src_level);
  * @param src_level	Log identification.
  */
 void log_1(const char *str,
-	   u32_t arg1,
+	   log_arg_t arg1,
 	   struct log_msg_ids src_level);
 
 /** @brief Standard log with two arguments.
@@ -453,8 +453,8 @@ void log_1(const char *str,
  * @param src_level	Log identification.
  */
 void log_2(const char *str,
-	   u32_t arg1,
-	   u32_t arg2,
+	   log_arg_t arg1,
+	   log_arg_t arg2,
 	   struct log_msg_ids src_level);
 
 /** @brief Standard log with three arguments.
@@ -466,9 +466,9 @@ void log_2(const char *str,
  * @param src_level	Log identification.
  */
 void log_3(const char *str,
-	   u32_t arg1,
-	   u32_t arg2,
-	   u32_t arg3,
+	   log_arg_t arg1,
+	   log_arg_t arg2,
+	   log_arg_t arg3,
 	   struct log_msg_ids src_level);
 
 /** @brief Standard log with arguments list.
@@ -479,7 +479,7 @@ void log_3(const char *str,
  * @param src_level	Log identification.
  */
 void log_n(const char *str,
-	   u32_t *args,
+	   log_arg_t *args,
 	   u32_t narg,
 	   struct log_msg_ids src_level);
 
