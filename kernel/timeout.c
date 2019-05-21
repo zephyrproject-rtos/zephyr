@@ -28,7 +28,14 @@ static int announce_remaining;
 
 #if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME)
 int z_clock_hw_cycles_per_sec = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
-#endif
+
+#ifdef CONFIG_USERSPACE
+Z_SYSCALL_HANDLER(z_clock_hw_cycles_per_sec_runtime_get)
+{
+	return z_impl_z_clock_hw_cycles_per_sec_runtime_get();
+}
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME */
 
 static struct _timeout *first(void)
 {
