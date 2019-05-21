@@ -49,17 +49,17 @@ extern "C" {
  * in predetermined order in the RAM.
  */
 #define USBD_DEVICE_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 0) __used
+	static __in_section(usb, descriptor_##p, 0) __used __aligned(1)
 #define USBD_CLASS_DESCR_DEFINE(p, instance) \
-	static __in_section(usb, descriptor_##p.1, instance) __used
+	static __in_section(usb, descriptor_##p.1, instance) __used __aligned(1)
 #define USBD_MISC_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 2) __used
+	static __in_section(usb, descriptor_##p, 2) __used __aligned(1)
 #define USBD_USER_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 3) __used
+	static __in_section(usb, descriptor_##p, 3) __used __aligned(1)
 #define USBD_STRING_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 4) __used
+	static __in_section(usb, descriptor_##p, 4) __used __aligned(1)
 #define USBD_TERM_DESCR_DEFINE(p) \
-	static __in_section(usb, descriptor_##p, 5) __used
+	static __in_section(usb, descriptor_##p, 5) __used __aligned(1)
 
 /*
  * This macro should be used to place the struct usb_cfg_data
