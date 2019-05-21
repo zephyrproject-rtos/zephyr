@@ -2871,7 +2871,7 @@ static int ping_ipv4(const struct shell *shell,
 #define remove_ipv4_ping_handler()
 #endif /* CONFIG_NET_IPV4 */
 
-static int _parse_arg(size_t *i, size_t argc, char *argv[])
+static int parse_arg(size_t *i, size_t argc, char *argv[])
 {
 	int res = -1;
 	const char *str = argv[*i] + 2;
@@ -2920,7 +2920,7 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 
 		switch (argv[i][1]) {
 		case 'c':
-			count = _parse_arg(&i, argc, argv);
+			count = parse_arg(&i, argc, argv);
 			if (count < 0) {
 				PR_WARNING("Parse error: %s\n", argv[i]);
 				return -ENOEXEC;
@@ -2929,7 +2929,7 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 
 			break;
 		case 'i':
-			interval = _parse_arg(&i, argc, argv);
+			interval = parse_arg(&i, argc, argv);
 			if (interval < 0) {
 				PR_WARNING("Parse error: %s\n", argv[i]);
 				return -ENOEXEC;
