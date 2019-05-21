@@ -591,14 +591,14 @@ static void smp_check_complete(struct bt_conn *conn, u8_t dist_complete)
 #endif
 
 #if defined(CONFIG_BT_PRIVACY)
-static void id_sent(struct bt_conn *conn)
+static void id_sent(struct bt_conn *conn, void *user_data)
 {
 	smp_check_complete(conn, BT_SMP_DIST_ID_KEY);
 }
 #endif /* CONFIG_BT_PRIVACY */
 
 #if defined(CONFIG_BT_SIGNING)
-static void sign_info_sent(struct bt_conn *conn)
+static void sign_info_sent(struct bt_conn *conn, void *user_data)
 {
 	smp_check_complete(conn, BT_SMP_DIST_SIGN);
 }
@@ -770,7 +770,8 @@ static void smp_br_timeout(struct k_work *work)
 static void smp_br_send(struct bt_smp_br *smp, struct net_buf *buf,
 			bt_conn_tx_cb_t cb)
 {
-	bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf, cb);
+	bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_BR_SMP, buf, cb,
+			 NULL);
 	k_delayed_work_submit(&smp->work, SMP_TIMEOUT);
 }
 
@@ -1564,9 +1565,9 @@ static void smp_timeout(struct k_work *work)
 }
 
 static void smp_send(struct bt_smp *smp, struct net_buf *buf,
-		     bt_conn_tx_cb_t cb)
+		     bt_conn_tx_cb_t cb, void *user_data)
 {
-	bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf, cb);
+	bt_l2cap_send_cb(smp->chan.chan.conn, BT_L2CAP_CID_SMP, buf, cb, NULL);
 	k_delayed_work_submit(&smp->work, SMP_TIMEOUT);
 }
 
@@ -1607,7 +1608,7 @@ static u8_t smp_send_pairing_random(struct bt_smp *smp)
 	req = net_buf_add(rsp_buf, sizeof(*req));
 	memcpy(req->val, smp->prnd, sizeof(req->val));
 
-	smp_send(smp, rsp_buf, NULL);
+	smp_send(smp, rsp_buf, NULL, NULL);
 
 	return 0;
 }
@@ -1705,7 +1706,7 @@ static u8_t smp_send_pairing_confirm(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	smp_send(smp, buf, NULL);
+	smp_send(smp, buf, NULL, NULL);
 
 	atomic_clear_bit(smp->flags, SMP_FLAG_CFM_DELAYED);
 
@@ -1713,7 +1714,7 @@ static u8_t smp_send_pairing_confirm(struct bt_smp *smp)
 }
 
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
-static void ident_sent(struct bt_conn *conn)
+static void ident_sent(struct bt_conn *conn, void *user_data)
 {
 	smp_check_complete(conn, BT_SMP_DIST_ENC_KEY);
 }
@@ -1751,7 +1752,7 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 				     sizeof(info->ltk) - keys->enc_size);
 		}
 
-		smp_send(smp, buf, NULL);
+		smp_send(smp, buf, NULL, NULL);
 
 		buf = smp_create_pdu(conn, BT_SMP_CMD_MASTER_IDENT,
 				     sizeof(*ident));
@@ -1764,7 +1765,7 @@ static void legacy_distribute_keys(struct bt_smp *smp)
 		memcpy(ident->rand, rand, sizeof(ident->rand));
 		memcpy(ident->ediv, ediv, sizeof(ident->ediv));
 
-		smp_send(smp, buf, ident_sent);
+		smp_send(smp, buf, ident_sent, NULL);
 
 		if (atomic_test_bit(smp->flags, SMP_FLAG_BOND)) {
 			bt_keys_add_type(keys, BT_KEYS_SLAVE_LTK);
@@ -1812,7 +1813,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 		id_info = net_buf_add(buf, sizeof(*id_info));
 		memcpy(id_info->irk, bt_dev.irk, 16);
 
-		smp_send(smp, buf, NULL);
+		smp_send(smp, buf, NULL, NULL);
 
 		buf = smp_create_pdu(conn, BT_SMP_CMD_IDENT_ADDR_INFO,
 				     sizeof(*id_addr_info));
@@ -1824,7 +1825,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 		id_addr_info = net_buf_add(buf, sizeof(*id_addr_info));
 		bt_addr_le_copy(&id_addr_info->addr, &bt_dev.id_addr[conn->id]);
 
-		smp_send(smp, buf, id_sent);
+		smp_send(smp, buf, id_sent, NULL);
 	}
 #endif /* CONFIG_BT_PRIVACY */
 
@@ -1850,7 +1851,7 @@ static void bt_smp_distribute_keys(struct bt_smp *smp)
 			keys->local_csrk.cnt = 0U;
 		}
 
-		smp_send(smp, buf, sign_info_sent);
+		smp_send(smp, buf, sign_info_sent, NULL);
 	}
 #endif /* CONFIG_BT_SIGNING */
 }
@@ -1870,7 +1871,7 @@ static u8_t send_pairing_rsp(struct bt_smp *smp)
 	rsp = net_buf_add(rsp_buf, sizeof(*rsp));
 	memcpy(rsp, smp->prsp + 1, sizeof(*rsp));
 
-	smp_send(smp, rsp_buf, NULL);
+	smp_send(smp, rsp_buf, NULL, NULL);
 
 	return 0;
 }
@@ -1999,7 +2000,7 @@ static u8_t legacy_send_pairing_confirm(struct bt_smp *smp)
 		return BT_SMP_ERR_UNSPECIFIED;
 	}
 
-	smp_send(smp, buf, NULL);
+	smp_send(smp, buf, NULL, NULL);
 
 	atomic_clear_bit(smp->flags, SMP_FLAG_CFM_DELAYED);
 
@@ -2500,7 +2501,7 @@ static u8_t sc_send_public_key(struct bt_smp *smp)
 	memcpy(req->x, sc_public_key, sizeof(req->x));
 	memcpy(req->y, &sc_public_key[32], sizeof(req->y));
 
-	smp_send(smp, req_buf, NULL);
+	smp_send(smp, req_buf, NULL, NULL);
 
 	if (IS_ENABLED(CONFIG_BT_USE_DEBUG_KEYS)) {
 		atomic_set_bit(smp->flags, SMP_FLAG_SC_DEBUG_KEY);
@@ -2563,7 +2564,7 @@ int bt_smp_send_pairing_req(struct bt_conn *conn)
 	smp->preq[0] = BT_SMP_CMD_PAIRING_REQ;
 	memcpy(smp->preq + 1, req, sizeof(*req));
 
-	smp_send(smp, req_buf, NULL);
+	smp_send(smp, req_buf, NULL, NULL);
 
 	atomic_set_bit(&smp->allowed_cmds, BT_SMP_CMD_PAIRING_RSP);
 	atomic_set_bit(smp->flags, SMP_FLAG_PAIRING);
@@ -2715,7 +2716,7 @@ static u8_t sc_smp_send_dhkey_check(struct bt_smp *smp, const u8_t *e)
 	req = net_buf_add(buf, sizeof(*req));
 	memcpy(req->e, e, sizeof(req->e));
 
-	smp_send(smp, buf, NULL);
+	smp_send(smp, buf, NULL, NULL);
 
 	return 0;
 }
