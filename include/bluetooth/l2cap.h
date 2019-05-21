@@ -211,6 +211,15 @@ struct bt_l2cap_chan_ops {
 	 *  number of segments/credits used by the packet.
 	 */
 	int (*recv)(struct bt_l2cap_chan *chan, struct net_buf *buf);
+
+	/*  Channel sent callback
+	 *
+	 *  If this callback is provided it will be called whenever a SDU has
+	 *  been completely sent.
+	 *
+	 *  @param chan The channel which has sent data.
+	 */
+	void (*sent)(struct bt_l2cap_chan *chan);
 };
 
 /** @def BT_L2CAP_CHAN_SEND_RESERVE
