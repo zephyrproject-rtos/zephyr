@@ -173,6 +173,26 @@ application.
 Refer to :ref:`build_an_application` and :ref:`application_run` for
 more details.
 
+Downloading binary image
+========================
+
+A Linux host connected to the SPI interface of the ``intel_s1000_crb`` board
+can download a zephyr binary to RAM and execute the image.
+
+.. code-block:: console
+
+   cd <app-dir>/build
+   sudo -E python3 \
+      $ZEPHYR_BASE/boards/xtensa/intel_s1000_crb/support/download.py \
+      zephyr/zephyr.bin
+
+The script depends on a few python modules. These dependencies can be installed
+on the Linux host using the command below.
+
+.. code-block:: console
+
+   pip3 install --user pyyaml python-periphery hashlib bitstruct
+
 Setting up UART
 ===============
 
