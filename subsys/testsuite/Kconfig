@@ -64,8 +64,11 @@ config TEST_USERSPACE
 	bool "Indicate that this test exercises user mode"
 	help
 	  This option indicates that a test case puts threads in user mode,
-	  and that the build system should enable userspace if the platform
-	  supports it. It should be set on a per-test basis.
+	  and that the build system will [override and] enable USERSPACE
+	  if the platform supports it. It should be set in a .conf file on
+	  a per-test basis and is not meant to be used outside test cases.
+	  Tests with this option should also have the "userspace" filtering
+	  tag in their testcase.yaml file.
 
 	  The userspace APIs are no-ops if userspace is not enabled, so it is
 	  OK to enable this even if the test will run on platforms which do
@@ -73,7 +76,7 @@ config TEST_USERSPACE
 	  just with all threads in supervisor mode.
 
 	  If a test *requires* that userspace be enabled in order to
-	  function, CONFIG_ARCH_HAS_USERSPACE should be filtered in its
+	  pass, CONFIG_ARCH_HAS_USERSPACE should be filtered in its
 	  testcase.yaml.
 
 config TEST_ENABLE_USERSPACE
@@ -84,8 +87,8 @@ config TEST_ENABLE_USERSPACE
 	select DYNAMIC_OBJECTS
 	default y
 	help
-	  This hidden option will help test the userspace mode. This will be
-	  enabled only when CONFIG_ARCH_HAS_USERSPACE is set, and that the test
+	  This hidden option implements the TEST_USERSPACE logic. It turns on
+	  USERSPACE when CONFIG_ARCH_HAS_USERSPACE is set and the test
 	  case itself indicates that it exercises user mode via
 	  CONFIG_TEST_USERSPACE.
 

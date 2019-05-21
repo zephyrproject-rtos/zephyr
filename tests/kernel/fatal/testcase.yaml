@@ -5,4 +5,4 @@ tests:
     tags: kernel ignore_faults userspace
   kernel.common.stack_sentinel:
     extra_args: CONF_FILE=sentinel.conf
-    tags: kernel ignore_faults userspace
+    tags: kernel ignore_faults
