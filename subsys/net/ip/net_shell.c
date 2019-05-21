@@ -3911,6 +3911,14 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_vlan,
 	SHELL_SUBCMD_SET_END
 );
 
+SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_ping,
+	SHELL_CMD(--help, NULL,
+		  "'net ping [-c count] [-i interval ms] <host>' "
+		  "Send ICMPv4 or ICMPv6 Echo-Request to a network host.",
+		  cmd_net_ping),
+	SHELL_SUBCMD_SET_END
+);
+
 SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
 	SHELL_CMD(allocs, NULL, "Print network memory allocations.",
 		  cmd_net_allocs),
@@ -3933,7 +3941,7 @@ SHELL_STATIC_SUBCMD_SET_CREATE(net_commands,
 		  cmd_net_mem),
 	SHELL_CMD(nbr, &net_cmd_nbr, "Print neighbor information.",
 		  cmd_net_nbr),
-	SHELL_CMD(ping, NULL, "'net ping [-c count] [-i interval ms] <host>' ping a network host.", cmd_net_ping),
+	SHELL_CMD(ping, &net_cmd_ping, "Ping a network host.", cmd_net_ping),
 	SHELL_CMD(route, NULL, "Show network route.", cmd_net_route),
 	SHELL_CMD(stacks, NULL, "Show network stacks information.",
 		  cmd_net_stacks),
