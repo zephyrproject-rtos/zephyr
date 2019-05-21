@@ -164,8 +164,8 @@ static void ascii7_to_utf16le(void *descriptor)
 	int ascii_idx_max = USB_BSTRING_ASCII_IDX_MAX(str_descr->bLength);
 	u8_t *buf = (u8_t *)&str_descr->bString;
 
-	LOG_DBG("idx_max %d, ascii_idx_max %d, buf %x",
-		idx_max, ascii_idx_max, (u32_t)buf);
+	LOG_DBG("idx_max %d, ascii_idx_max %d, buf %p",
+		idx_max, ascii_idx_max, buf);
 
 	for (int i = idx_max; i >= 0; i -= 2) {
 		LOG_DBG("char %c : %x, idx %d -> %d",
@@ -409,7 +409,7 @@ static int usb_fix_descriptor(struct usb_desc_header *head)
 					return -1;
 				}
 
-				LOG_DBG("Now the wTotalLength is %d",
+				LOG_DBG("Now the wTotalLength is %zd",
 					(u8_t *)head - (u8_t *)cfg_descr);
 				sys_put_le16((u8_t *)head - (u8_t *)cfg_descr,
 					     (u8_t *)&cfg_descr->wTotalLength);
