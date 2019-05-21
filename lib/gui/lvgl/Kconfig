@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-config LVGL
-	bool "LittlevGL Support"
+menuconfig LVGL
+	bool "LittlevGL GUI library"
 	help
 	  This option enables the LittlevGL GUI library.
 
