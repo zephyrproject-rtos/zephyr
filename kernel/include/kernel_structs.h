@@ -249,7 +249,7 @@ static ALWAYS_INLINE void z_new_thread_init(struct k_thread *thread,
 #endif /* CONFIG_USERSPACE */
 
 #if defined(CONFIG_THREAD_STACK_INFO)
-	thread->stack_info.start = (u32_t)pStack;
+	thread->stack_info.start = (uintptr_t)pStack;
 	thread->stack_info.size = (u32_t)stackSize;
 #endif /* CONFIG_THREAD_STACK_INFO */
 }

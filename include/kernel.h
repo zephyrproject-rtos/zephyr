@@ -477,7 +477,7 @@ struct _thread_stack_info {
 	/* Stack start - Represents the start address of the thread-writable
 	 * stack area.
 	 */
-	u32_t start;
+	uintptr_t start;
 
 	/* Stack Size - Thread writable stack buffer size. Represents
 	 * the size of the actual area, starting from the start member,
@@ -4743,17 +4743,17 @@ static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 #define K_MEM_PARTITION_DEFINE(name, start, size, attr) \
 	_ARCH_MEM_PARTITION_ALIGN_CHECK(start, size); \
 	struct k_mem_partition name =\
-		{ (u32_t)start, size, attr}
+		{ (uintptr_t)start, size, attr}
 #else
 #define K_MEM_PARTITION_DEFINE(name, start, size, attr) \
 	struct k_mem_partition name =\
-		{ (u32_t)start, size, attr}
+		{ (uintptr_t)start, size, attr}
 #endif /* _ARCH_MEM_PARTITION_ALIGN_CHECK */
 
 /* memory partition */
 struct k_mem_partition {
 	/* start address of memory partition */
-	u32_t start;
+	uintptr_t start;
 	/* size of memory partition */
 	u32_t size;
 #if defined(CONFIG_MEMORY_PROTECTION)
