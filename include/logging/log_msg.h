@@ -22,6 +22,12 @@ extern "C" {
  * @{
  */
 
+/** @brief Log argument type.
+ *
+ * Should preferably be equivalent to a native word size.
+ */
+typedef unsigned long log_arg_t;
+
 /** @brief Maximum number of arguments in the standard log entry.
  *
  * It is limited by 4 bit nargs field in the log message.
@@ -123,7 +129,7 @@ struct log_msg_hdr {
 
 /** @brief Data part of log message. */
 union log_msg_head_data {
-	u32_t args[LOG_MSG_NARGS_SINGLE_CHUNK];
+	log_arg_t args[LOG_MSG_NARGS_SINGLE_CHUNK];
 	u8_t bytes[LOG_MSG_HEXDUMP_BYTES_SINGLE_CHUNK];
 };
 
@@ -131,7 +137,7 @@ union log_msg_head_data {
 struct log_msg_ext_head_data {
 	struct log_msg_cont *next;
 	union log_msg_ext_head_data_data {
-		u32_t args[LOG_MSG_NARGS_HEAD_CHUNK];
+		log_arg_t args[LOG_MSG_NARGS_HEAD_CHUNK];
 		u8_t bytes[LOG_MSG_HEXDUMP_BYTES_HEAD_CHUNK];
 	} data;
 };
@@ -155,7 +161,7 @@ BUILD_ASSERT_MSG((sizeof(union log_msg_head_data) ==
 struct log_msg_cont {
 	struct log_msg_cont *next; /*!< Pointer to the next chunk. */
 	union log_msg_cont_data {
-		u32_t args[ARGS_CONT_MSG];
+		log_arg_t args[ARGS_CONT_MSG];
 		u8_t bytes[HEXDUMP_BYTES_CONT_MSG];
 	} payload;
 };
@@ -261,7 +267,7 @@ u32_t log_msg_nargs_get(struct log_msg *msg);
  * @return Argument value or 0 if arg_idx exceeds number of arguments in the
  *	   message.
  */
-u32_t log_msg_arg_get(struct log_msg *msg, u32_t arg_idx);
+log_arg_t log_msg_arg_get(struct log_msg *msg, u32_t arg_idx);
 
 
 /** @brief Gets pointer to the unformatted string from standard log message.
@@ -379,7 +385,7 @@ static inline struct log_msg *log_msg_create_0(const char *str)
  *  @return Pointer to allocated head of the message or NULL.
  */
 static inline struct log_msg *log_msg_create_1(const char *str,
-					       u32_t arg1)
+					       log_arg_t arg1)
 {
 	struct  log_msg *msg = z_log_msg_std_alloc();
 
@@ -407,8 +413,8 @@ static inline struct log_msg *log_msg_create_1(const char *str,
  *  @return Pointer to allocated head of the message or NULL.
  */
 static inline struct log_msg *log_msg_create_2(const char *str,
-					       u32_t arg1,
-					       u32_t arg2)
+					       log_arg_t arg1,
+					       log_arg_t arg2)
 {
 	struct  log_msg *msg = z_log_msg_std_alloc();
 
@@ -438,9 +444,9 @@ static inline struct log_msg *log_msg_create_2(const char *str,
  *  @return Pointer to allocated head of the message or NULL.
  */
 static inline struct log_msg *log_msg_create_3(const char *str,
-					       u32_t arg1,
-					       u32_t arg2,
-					       u32_t arg3)
+					       log_arg_t arg1,
+					       log_arg_t arg2,
+					       log_arg_t arg3)
 {
 	struct  log_msg *msg = z_log_msg_std_alloc();
 
@@ -470,7 +476,7 @@ static inline struct log_msg *log_msg_create_3(const char *str,
  *  @return Pointer to allocated head of the message or NULL.
  */
 struct log_msg *log_msg_create_n(const char *str,
-				 u32_t *args,
+				 log_arg_t *args,
 				 u32_t nargs);
 
 /**
