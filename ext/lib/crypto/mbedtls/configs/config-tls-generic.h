@@ -23,6 +23,12 @@
 #define MBEDTLS_HAVE_ASM
 #endif
 
+/* If we build with POSIX API, automatically use time(), etc. */
+#if defined(CONFIG_POSIX_API)
+#define MBEDTLS_HAVE_TIME
+#define MBEDTLS_HAVE_TIME_DATE
+#endif
+
 #if defined(CONFIG_MBEDTLS_TEST)
 #define MBEDTLS_SELF_TEST
 #define MBEDTLS_DEBUG_C
