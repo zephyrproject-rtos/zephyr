@@ -1097,9 +1097,21 @@ segment:
 	return seg;
 }
 
+static void l2cap_chan_sdu_sent(struct bt_conn *conn, void *user_data)
+{
+	struct bt_l2cap_chan *chan = user_data;
+
+	BT_DBG("conn %p chan %p", conn, chan);
+
+	if (chan->ops->sent) {
+		chan->ops->sent(chan);
+	}
+}
+
 static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 			      u16_t sdu_hdr_len)
 {
+	struct net_buf *seg;
 	int len;
 
 	/* Wait for credits */
@@ -1108,7 +1120,7 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 		return -EAGAIN;
 	}
 
-	buf = l2cap_chan_create_seg(ch, buf, sdu_hdr_len);
+	seg = l2cap_chan_create_seg(ch, buf, sdu_hdr_len);
 
 	/* Channel may have been disconnected while waiting for a buffer */
 	if (!ch->chan.conn) {
@@ -1117,11 +1129,19 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 	}
 
 	BT_DBG("ch %p cid 0x%04x len %u credits %u", ch, ch->tx.cid,
-	       buf->len, k_sem_count_get(&ch->tx.credits));
+	       seg->len, k_sem_count_get(&ch->tx.credits));
 
-	len = buf->len - sdu_hdr_len;
+	len = seg->len - sdu_hdr_len;
 
-	bt_l2cap_send(ch->chan.conn, ch->tx.cid, buf);
+	/* Set a callback if there is no data left in the buffer and sent
+	 * callback has been set.
+	 */
+	if ((buf == seg || !buf->len) && ch->chan.ops->sent) {
+		bt_l2cap_send_cb(ch->chan.conn, ch->tx.cid, seg,
+				 l2cap_chan_sdu_sent, &ch->chan);
+	} else {
+		bt_l2cap_send(ch->chan.conn, ch->tx.cid, seg);
+	}
 
 	return len;
 }
