@@ -59,6 +59,12 @@ static struct k_delayed_work prefix_lifetime_timer;
 /* Track currently active IPv6 prefix lifetime timers */
 static sys_slist_t active_prefix_lifetime_timers;
 
+#if defined(CONFIG_NET_IPV6_DAD)
+/** Duplicate address detection (DAD) timer */
+static struct k_delayed_work dad_timer;
+static sys_slist_t active_dad_timers;
+#endif
+
 static struct {
 	struct net_if_ipv6 ipv6;
 	struct net_if *iface;
@@ -570,31 +576,55 @@ static void join_mcast_nodes(struct net_if *iface, struct in6_addr *addr)
 
 static void dad_timeout(struct k_work *work)
 {
-	/* This means that the DAD succeed. */
-	struct net_if_addr *tmp, *ifaddr = CONTAINER_OF(work,
-							struct net_if_addr,
-							dad_timer);
-	struct net_if *iface = NULL;
+	u32_t current_time = k_uptime_get_32();
+	struct net_if_addr *ifaddr, *next;
 
-	NET_DBG("DAD succeeded for %s",
-		log_strdup(net_sprint_ipv6_addr(&ifaddr->address.in6_addr)));
+	ARG_UNUSED(work);
 
-	ifaddr->addr_state = NET_ADDR_PREFERRED;
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_dad_timers,
+					  ifaddr, next, dad_node) {
+		struct net_if_addr *tmp;
+		struct net_if *iface;
 
-	/* Because we do not know the interface at this point, we need to
-	 * lookup for it.
-	 */
-	tmp = net_if_ipv6_addr_lookup(&ifaddr->address.in6_addr, &iface);
-	if (tmp == ifaddr) {
-		net_mgmt_event_notify_with_info(NET_EVENT_IPV6_DAD_SUCCEED,
-						iface,
-						&ifaddr->address.in6_addr,
-						sizeof(struct in6_addr));
+		if ((s32_t)(ifaddr->dad_start +
+			    DAD_TIMEOUT - current_time) > 0) {
+			break;
+		}
 
-		/* The address gets added to neighbor cache which is not needed
-		 * in this case as the address is our own one.
+		/* Removing the ifaddr from active_dad_timers list */
+		sys_slist_remove(&active_dad_timers, NULL, &ifaddr->dad_node);
+
+		NET_DBG("DAD succeeded for %s",
+			log_strdup(net_sprint_ipv6_addr(
+					   &ifaddr->address.in6_addr)));
+
+		ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+		/* Because we do not know the interface at this point,
+		 * we need to lookup for it.
 		 */
-		net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);
+		iface = NULL;
+		tmp = net_if_ipv6_addr_lookup(&ifaddr->address.in6_addr,
+					      &iface);
+		if (tmp == ifaddr) {
+			net_mgmt_event_notify_with_info(
+					NET_EVENT_IPV6_DAD_SUCCEED,
+					iface, &ifaddr->address.in6_addr,
+					sizeof(struct in6_addr));
+
+			/* The address gets added to neighbor cache which is not
+			 * needed in this case as the address is our own one.
+			 */
+			net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);
+		}
+
+		ifaddr = NULL;
+	}
+
+	if (ifaddr) {
+		k_delayed_work_submit(&dad_timer,
+				      ifaddr->dad_start +
+				      DAD_TIMEOUT - current_time);
 	}
 }
 
@@ -615,7 +645,12 @@ static void net_if_ipv6_start_dad(struct net_if *iface,
 		ifaddr->dad_count = 1U;
 
 		if (!net_ipv6_start_dad(iface, ifaddr)) {
-			k_delayed_work_submit(&ifaddr->dad_timer, DAD_TIMEOUT);
+			ifaddr->dad_start = k_uptime_get_32();
+			sys_slist_append(&active_dad_timers, &ifaddr->dad_node);
+
+			if (!k_delayed_work_remaining_get(&dad_timer)) {
+				k_delayed_work_submit(&dad_timer, DAD_TIMEOUT);
+			}
 		}
 	} else {
 		NET_DBG("Interface %p is down, starting DAD for %s later.",
@@ -676,7 +711,7 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr)
 		return;
 	}
 
-	k_delayed_work_cancel(&ifaddr->dad_timer);
+	sys_slist_find_and_remove(&active_dad_timers, &ifaddr->dad_node);
 
 	net_mgmt_event_notify_with_info(NET_EVENT_IPV6_DAD_FAILED, iface,
 					&ifaddr->address.in6_addr,
@@ -685,9 +720,10 @@ void net_if_ipv6_dad_failed(struct net_if *iface, const struct in6_addr *addr)
 	net_if_ipv6_addr_rm(iface, addr);
 }
 
-static inline void iface_ipv6_dad_init(struct net_if_addr *ifaddr)
+static inline void iface_ipv6_dad_init(void)
 {
-	k_delayed_work_init(&ifaddr->dad_timer, dad_timeout);
+	k_delayed_work_init(&dad_timer, dad_timeout);
+	sys_slist_init(&active_dad_timers);
 }
 
 #else
@@ -1026,8 +1062,6 @@ static inline void net_if_addr_init(struct net_if_addr *ifaddr,
 	ifaddr->address.family = AF_INET6;
 	ifaddr->addr_type = addr_type;
 	net_ipaddr_copy(&ifaddr->address.in6_addr, addr);
-
-	iface_ipv6_dad_init(ifaddr);
 
 	/* FIXME - set the mcast addr for this node */
 
@@ -2171,6 +2205,8 @@ static void iface_ipv6_start(struct net_if *iface)
 static void iface_ipv6_init(int if_count)
 {
 	int i;
+
+	iface_ipv6_dad_init();
 
 	k_delayed_work_init(&address_lifetime_timer, address_lifetime_timeout);
 	k_delayed_work_init(&prefix_lifetime_timer, prefix_lifetime_timeout);
