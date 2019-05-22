@@ -22,7 +22,7 @@ GTEXT(__reset)
 GTEXT(memset)
 GDATA(_interrupt_stack)
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
-GTEXT(_PlatformInit)
+GTEXT(z_platform_init)
 #endif
 
 /**
@@ -59,7 +59,7 @@ SECTION_SUBSEC_FUNC(TEXT,_reset_section,__reset)
 SECTION_SUBSEC_FUNC(TEXT,_reset_section,__start)
 
 #if defined(CONFIG_PLATFORM_SPECIFIC_INIT)
-    bl _PlatformInit
+    bl z_platform_init
 #endif
 
     /* lock interrupts: will get unlocked when switch to main task */

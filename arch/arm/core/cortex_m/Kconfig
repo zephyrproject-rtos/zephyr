@@ -359,7 +359,7 @@ config SW_VECTOR_RELAY
 config PLATFORM_SPECIFIC_INIT
 	bool "Enable platform (SOC) specific startup hook"
 	help
-	  The platform specific initialization code (_PlatformInit) is executed
+	  The platform specific initialization code (z_platform_init) is executed
 	  at the beginning of the startup code (__start).
 
 endmenu

@@ -65,8 +65,8 @@ rel_vals:
     .short  0x0FFF       
     .short  0x0C24
 
-GTEXT(_PlatformInit)
-SECTION_FUNC(TEXT,_PlatformInit)
+GTEXT(z_platform_init)
+SECTION_FUNC(TEXT,z_platform_init)
 
 /* Both the M0+ and M4 core come via this shared startup code,
  * but the M0+ and M4 core have different vector tables.
