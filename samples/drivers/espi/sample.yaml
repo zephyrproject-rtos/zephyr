@@ -1,0 +1,17 @@
+sample:
+  name: eSPI driver sample
+tests:
+  sample.driver.espi:
+    tags: drivers
+    harness: console
+    harness_config:
+        type: multi_line
+        ordered: true
+        regex:
+            - "Hello eSPI test (.*)"
+            - "eSPI test - I/O initialization...complete"
+            - "eSPI slave configured successfully!"
+            - "eSPI test - callbacks initialization... complete"
+            - "eSPI test - Power initialization...complete"
+            - "eSPI BUS reset (.*)"
+    depends_on: espi
