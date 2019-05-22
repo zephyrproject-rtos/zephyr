@@ -133,14 +133,20 @@ struct net_if_ipv6_prefix {
  * Stores the router information.
  */
 struct net_if_router {
-	/** Router lifetime */
-	struct k_delayed_work lifetime;
+	/** Slist lifetime timer node */
+	sys_snode_t node;
 
 	/** IP address */
 	struct net_addr address;
 
 	/** Network interface the router is connected to */
 	struct net_if *iface;
+
+	/** Router life timer start */
+	u32_t life_start;
+
+	/** Router lifetime */
+	u16_t lifetime;
 
 	/** Is this router used or not */
 	u8_t is_used : 1;
@@ -1155,6 +1161,28 @@ void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix);
 bool net_if_ipv6_addr_onlink(struct net_if **iface, struct in6_addr *addr);
 
 /**
+ * @brief Get the IPv6 address of the given router
+ * @param router a network router
+ *
+ * @return pointer to the IPv6 address, or NULL if none
+ */
+#if defined(CONFIG_NET_IPV6)
+static inline struct in6_addr *net_if_router_ipv6(struct net_if_router *router)
+{
+	return &router->address.in6_addr;
+}
+#else
+static inline struct in6_addr *net_if_router_ipv6(struct net_if_router *router)
+{
+	static struct in6_addr addr;
+
+	ARG_UNUSED(router);
+
+	return &addr;
+}
+#endif
+
+/**
  * @brief Check if IPv6 address is one of the routers configured
  * in the system.
  *
@@ -1185,7 +1213,7 @@ struct net_if_router *net_if_ipv6_router_find_default(struct net_if *iface,
  * @param lifetime Lifetime of this router.
  */
 void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
-					u32_t lifetime);
+					u16_t lifetime);
 
 /**
  * @brief Add IPv6 router to the system.
@@ -1565,6 +1593,28 @@ bool net_if_ipv4_maddr_rm(struct net_if *iface, const struct in_addr *addr);
  */
 struct net_if_mcast_addr *net_if_ipv4_maddr_lookup(const struct in_addr *addr,
 						   struct net_if **iface);
+
+/**
+ * @brief Get the IPv4 address of the given router
+ * @param router a network router
+ *
+ * @return pointer to the IPv4 address, or NULL if none
+ */
+#if defined(CONFIG_NET_IPV4)
+static inline struct in_addr *net_if_router_ipv4(struct net_if_router *router)
+{
+	return &router->address.in_addr;
+}
+#else
+static inline struct in_addr *net_if_router_ipv4(struct net_if_router *router)
+{
+	static struct in_addr addr;
+
+	ARG_UNUSED(router);
+
+	return &addr;
+}
+#endif
 
 /**
  * @brief Check if IPv4 address is one of the routers configured

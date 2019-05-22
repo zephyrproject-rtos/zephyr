@@ -44,6 +44,8 @@ extern struct net_if_dev __net_if_dev_end[];
 
 #if defined(CONFIG_NET_IPV4) || defined(CONFIG_NET_IPV6)
 static struct net_if_router routers[CONFIG_NET_MAX_ROUTERS];
+static struct k_delayed_work router_timer;
+static sys_slist_t active_router_timers;
 #endif
 
 #if defined(CONFIG_NET_IPV6)
@@ -448,6 +450,227 @@ static u8_t get_ipaddr_diff(const u8_t *src, const u8_t *dst, int addr_len)
 
 	return len;
 }
+
+static struct net_if_router *iface_router_lookup(struct net_if *iface,
+						 u8_t family, void *addr)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
+		if (!routers[i].is_used ||
+		    routers[i].address.family != family ||
+		    routers[i].iface != iface) {
+			continue;
+		}
+
+		if ((IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6 &&
+		     net_ipv6_addr_cmp(net_if_router_ipv6(&routers[i]),
+				       (struct in6_addr *)addr)) ||
+		    (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET &&
+		     net_ipv4_addr_cmp(net_if_router_ipv4(&routers[i]),
+				       (struct in_addr *)addr))) {
+			return &routers[i];
+		}
+	}
+
+	return NULL;
+}
+
+static void iface_router_notify_deletion(struct net_if_router *router,
+					 const char *delete_reason)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV6) &&
+	    router->address.family == AF_INET6) {
+		NET_DBG("IPv6 router %s %s",
+			log_strdup(net_sprint_ipv6_addr(
+					   net_if_router_ipv6(router))),
+			delete_reason);
+
+		net_mgmt_event_notify_with_info(NET_EVENT_IPV6_ROUTER_DEL,
+						router->iface,
+						&router->address.in6_addr,
+						sizeof(struct in6_addr));
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) &&
+		   router->address.family == AF_INET) {
+		NET_DBG("IPv4 router %s %s",
+			log_strdup(net_sprint_ipv4_addr(
+					   net_if_router_ipv4(router))),
+			delete_reason);
+
+		net_mgmt_event_notify_with_info(NET_EVENT_IPV4_ROUTER_DEL,
+						router->iface,
+						&router->address.in_addr,
+						sizeof(struct in6_addr));
+	}
+}
+
+
+static void iface_router_run_timer(u32_t current_time)
+{
+	struct net_if_router *router, *next;
+	u32_t new_timer = UINT_MAX;
+
+	if (k_delayed_work_remaining_get(&router_timer)) {
+		k_delayed_work_cancel(&router_timer);
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_router_timers,
+					 router, next, node) {
+		u32_t current_timer = router->life_start +
+			K_SECONDS(router->lifetime) - current_time;
+
+		new_timer = MIN(current_timer, new_timer);
+	}
+
+	if (new_timer != UINT_MAX) {
+		k_delayed_work_submit(&router_timer, new_timer);
+	}
+}
+
+static void iface_router_expired(struct k_work *work)
+{
+	u32_t current_time = k_uptime_get_32();
+	struct net_if_router *router, *next;
+
+	ARG_UNUSED(work);
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&active_router_timers,
+					  router, next, node) {
+
+		if ((s32_t)(router->life_start +
+			    K_SECONDS(router->lifetime) - current_time) > 0) {
+			/* We have to loop on all active routers as their
+			 * lifetime differ from each other.
+			 */
+			continue;
+		}
+
+		iface_router_notify_deletion(router, "has expired");
+
+		router->is_used = false;
+	}
+
+	iface_router_run_timer(current_time);
+}
+
+static struct net_if_router *iface_router_add(struct net_if *iface,
+					      u8_t family, void *addr,
+					      bool is_default,
+					      u16_t lifetime)
+{
+	int i;
+
+	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
+		if (routers[i].is_used) {
+			continue;
+		}
+
+		routers[i].is_used = true;
+		routers[i].iface = iface;
+		routers[i].address.family = family;
+
+		if (lifetime) {
+			routers[i].is_default = true;
+			routers[i].is_infinite = false;
+			routers[i].lifetime = lifetime;
+			routers[i].life_start = k_uptime_get_32();
+
+			sys_slist_append(&active_router_timers,
+					 &routers[i].node);
+
+			iface_router_run_timer(routers[i].life_start);
+		} else {
+			routers[i].is_default = false;
+			routers[i].is_infinite = true;
+			routers[i].lifetime = 0;
+		}
+
+		if (IS_ENABLED(CONFIG_NET_IPV6) && family == AF_INET6) {
+			memcpy(net_if_router_ipv6(&routers[i]), addr,
+			       sizeof(struct in6_addr));
+			net_mgmt_event_notify_with_info(
+					NET_EVENT_IPV6_ROUTER_ADD, iface,
+					&routers[i].address.in6_addr,
+					sizeof(struct in6_addr));
+
+			NET_DBG("interface %p router %s lifetime %u default %d "
+				"added", iface,
+				log_strdup(net_sprint_ipv6_addr(
+						   (struct in6_addr *)addr)),
+				lifetime, routers[i].is_default);
+		} else if (IS_ENABLED(CONFIG_NET_IPV4) && family == AF_INET) {
+			memcpy(net_if_router_ipv4(&routers[i]), addr,
+			       sizeof(struct in_addr));
+			routers[i].is_default = is_default;
+
+			net_mgmt_event_notify_with_info(
+					NET_EVENT_IPV4_ROUTER_ADD, iface,
+					&routers[i].address.in_addr,
+					sizeof(struct in_addr));
+
+			NET_DBG("interface %p router %s lifetime %u default %d "
+				"added", iface,
+				log_strdup(net_sprint_ipv4_addr(
+						   (struct in_addr *)addr)),
+				lifetime, is_default);
+		}
+
+		return &routers[i];
+	}
+
+	return NULL;
+}
+
+static bool iface_router_rm(struct net_if_router *router)
+{
+	if (!router->is_used) {
+		return false;
+	}
+
+	iface_router_notify_deletion(router, "has been removed");
+
+	/* We recompute the timer if only the router was time limited */
+	if (sys_slist_find_and_remove(&active_router_timers, &router->node)) {
+		iface_router_run_timer(k_uptime_get_32());
+	}
+
+	router->is_used = false;
+
+	return true;
+}
+
+static struct net_if_router *iface_router_find_default(struct net_if *iface,
+						       u8_t family, void *addr)
+{
+	int i;
+
+	/* Todo: addr will need to be handled */
+	ARG_UNUSED(addr);
+
+	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
+		if (!routers[i].is_used ||
+		    !routers[i].is_default ||
+		    routers[i].address.family != family) {
+			continue;
+		}
+
+		if (iface && iface != routers[i].iface) {
+			continue;
+		}
+
+		return &routers[i];
+	}
+
+	return NULL;
+}
+
+static void iface_router_init(void)
+{
+	k_delayed_work_init(&router_timer, iface_router_expired);
+	sys_slist_init(&active_router_timers);
+}
+#else
+#define iface_router_init(...)
 #endif
 
 #if defined(CONFIG_NET_IPV6)
@@ -1848,154 +2071,38 @@ void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix)
 struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
 						struct in6_addr *addr)
 {
-	int i;
-
-	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
-		if (!routers[i].is_used ||
-		    routers[i].address.family != AF_INET6 ||
-		    routers[i].iface != iface) {
-			continue;
-		}
-
-		if (net_ipv6_addr_cmp(&routers[i].address.in6_addr, addr)) {
-			return &routers[i];
-		}
-	}
-
-	return NULL;
+	return iface_router_lookup(iface, AF_INET6, addr);
 }
 
 struct net_if_router *net_if_ipv6_router_find_default(struct net_if *iface,
 						      struct in6_addr *addr)
 {
-	int i;
-
-	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
-		if (!routers[i].is_used ||
-		    !routers[i].is_default ||
-		    routers[i].address.family != AF_INET6) {
-			continue;
-		}
-
-		if (iface && iface != routers[i].iface) {
-			continue;
-		}
-
-		return &routers[i];
-	}
-
-	return NULL;
-}
-
-static void ipv6_router_expired(struct k_work *work)
-{
-	struct net_if_router *router = CONTAINER_OF(work,
-						    struct net_if_router,
-						    lifetime);
-
-	NET_DBG("IPv6 router %s is expired",
-		log_strdup(net_sprint_ipv6_addr(&router->address.in6_addr)));
-
-	router->is_used = false;
+	return iface_router_find_default(iface, AF_INET6, addr);
 }
 
 void net_if_ipv6_router_update_lifetime(struct net_if_router *router,
-					u32_t lifetime)
+					u16_t lifetime)
 {
 	NET_DBG("Updating expire time of %s by %u secs",
 		log_strdup(net_sprint_ipv6_addr(&router->address.in6_addr)),
 		lifetime);
 
-	k_delayed_work_submit(&router->lifetime, K_SECONDS(lifetime));
-}
+	router->life_start = k_uptime_get_32();
+	router->lifetime = lifetime;
 
-static inline void net_if_router_init(struct net_if_router *router,
-				      struct net_if *iface,
-				      struct in6_addr *addr, u16_t lifetime)
-{
-	router->is_used = true;
-	router->iface = iface;
-	router->address.family = AF_INET6;
-	net_ipaddr_copy(&router->address.in6_addr, addr);
-
-	if (lifetime) {
-		/* This is a default router. RFC 4861 page 43
-		 * AdvDefaultLifetime variable
-		 */
-		router->is_default = true;
-		router->is_infinite = false;
-
-		k_delayed_work_init(&router->lifetime, ipv6_router_expired);
-		k_delayed_work_submit(&router->lifetime, K_SECONDS(lifetime));
-
-		NET_DBG("Expiring %s in %u secs",
-			log_strdup(net_sprint_ipv6_addr(addr)),
-			lifetime);
-	} else {
-		router->is_default = false;
-		router->is_infinite = true;
-	}
+	iface_router_run_timer(router->life_start);
 }
 
 struct net_if_router *net_if_ipv6_router_add(struct net_if *iface,
 					     struct in6_addr *addr,
 					     u16_t lifetime)
 {
-	int i;
-
-	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
-		if (routers[i].is_used) {
-			continue;
-		}
-
-		net_if_router_init(&routers[i], iface, addr, lifetime);
-
-		NET_DBG("[%d] interface %p router %s lifetime %u default %d "
-			"added",
-			i, iface, log_strdup(net_sprint_ipv6_addr(addr)),
-			lifetime, routers[i].is_default);
-
-		net_mgmt_event_notify_with_info(
-			NET_EVENT_IPV6_ROUTER_ADD, iface,
-			&routers[i].address.in6_addr,
-			sizeof(struct in6_addr));
-
-		return &routers[i];
-	}
-
-	return NULL;
+	return iface_router_add(iface, AF_INET6, addr, false, lifetime);
 }
 
 bool net_if_ipv6_router_rm(struct net_if_router *router)
 {
-	int i;
-
-	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
-		if (!routers[i].is_used) {
-			continue;
-		}
-
-		if (&routers[i] != router) {
-			continue;
-		}
-
-		k_delayed_work_cancel(&routers[i].lifetime);
-
-		routers[i].is_used = false;
-
-		net_mgmt_event_notify_with_info(NET_EVENT_IPV6_ROUTER_DEL,
-						routers[i].iface,
-						&routers[i].address.in6_addr,
-						sizeof(struct in6_addr));
-
-		NET_DBG("[%d] router %s removed",
-			i, log_strdup(net_sprint_ipv6_addr(
-					      &routers[i].address.in6_addr)));
-
-		return true;
-	}
-
-	return false;
+	return iface_router_rm(router);
 }
 
 struct in6_addr *net_if_ipv6_get_ll(struct net_if *iface,
@@ -2337,20 +2444,7 @@ int net_if_config_ipv4_put(struct net_if *iface)
 struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
 						struct in_addr *addr)
 {
-	int i;
-
-	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
-		if (!routers[i].is_used ||
-		    routers[i].address.family != AF_INET) {
-			continue;
-		}
-
-		if (net_ipv4_addr_cmp(&routers[i].address.in_addr, addr)) {
-			return &routers[i];
-		}
-	}
-
-	return NULL;
+	return iface_router_lookup(iface, AF_INET, addr);
 }
 
 struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
@@ -2358,42 +2452,7 @@ struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
 					     bool is_default,
 					     u16_t lifetime)
 {
-	int i;
-
-	for (i = 0; i < CONFIG_NET_MAX_ROUTERS; i++) {
-		if (routers[i].is_used) {
-			continue;
-		}
-
-		routers[i].is_used = true;
-		routers[i].iface = iface;
-		routers[i].address.family = AF_INET;
-		routers[i].is_default = is_default;
-
-		if (lifetime) {
-			routers[i].is_infinite = false;
-
-			/* FIXME - add timer */
-		} else {
-			routers[i].is_infinite = true;
-		}
-
-		net_ipaddr_copy(&routers[i].address.in_addr, addr);
-
-		NET_DBG("[%d] interface %p router %s lifetime %u default %d "
-			"added",
-			i, iface, log_strdup(net_sprint_ipv4_addr(addr)),
-			lifetime, is_default);
-
-		net_mgmt_event_notify_with_info(
-			NET_EVENT_IPV4_ROUTER_ADD, iface,
-			&routers[i].address.in_addr,
-			sizeof(struct in_addr));
-
-		return &routers[i];
-	}
-
-	return NULL;
+	return iface_router_add(iface, AF_INET, addr, is_default, lifetime);
 }
 
 bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
@@ -3467,6 +3526,7 @@ void net_if_init(void)
 
 	iface_ipv6_init(if_count);
 	iface_ipv4_init(if_count);
+	iface_router_init();
 
 #if defined(CONFIG_NET_PKT_TIMESTAMP_THREAD)
 	k_thread_create(&tx_thread_ts, tx_ts_stack,
