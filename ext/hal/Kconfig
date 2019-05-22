@@ -16,8 +16,6 @@ source "ext/hal/altera/Kconfig"
 
 source "ext/hal/cmsis/Kconfig"
 
-source "ext/hal/libmetal/Kconfig"
-
 source "ext/hal/microchip/Kconfig"
 
 source "ext/hal/nordic/Kconfig"
