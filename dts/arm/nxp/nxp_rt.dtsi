@@ -336,7 +336,7 @@
 			label = "TRNG";
 		};
 
-		usbd1: usbd@402E0000 {
+		usbd2: usbd@402e0200 {
 			compatible = "nxp,kinetis-usbd";
 			reg = <0x402E0200 0x1000>;
 			interrupts = <113 1>;
