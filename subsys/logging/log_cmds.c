@@ -363,6 +363,44 @@ static int cmd_log_backends_list(const struct shell *shell,
 	return 0;
 }
 
+static int cmd_log_strdup_utilization(const struct shell *shell,
+				      size_t argc, char **argv)
+{
+
+	/* Defines needed when string duplication is disabled (LOG_IMMEDIATE is
+	 * on). In that case, this function is not compiled in.
+	 */
+	#ifndef CONFIG_LOG_STRDUP_BUF_COUNT
+	#define CONFIG_LOG_STRDUP_BUF_COUNT 0
+	#endif
+
+	#ifndef CONFIG_LOG_STRDUP_MAX_STRING
+	#define CONFIG_LOG_STRDUP_MAX_STRING 0
+	#endif
+
+	u32_t buf_cnt = log_get_strdup_pool_utilization();
+	u32_t buf_size = log_get_strdup_longest_string();
+	u32_t percent = CONFIG_LOG_STRDUP_BUF_COUNT ?
+			100 * buf_cnt / CONFIG_LOG_STRDUP_BUF_COUNT : 0;
+
+	shell_print(shell,
+		"Maximal utilization of the buffer pool: %d / %d (%d %%).",
+		buf_cnt, CONFIG_LOG_STRDUP_BUF_COUNT, percent);
+	if (buf_cnt == CONFIG_LOG_STRDUP_BUF_COUNT) {
+		shell_warn(shell, "Buffer count too small.");
+	}
+
+	shell_print(shell,
+		"Longest duplicated string: %d, buffer capacity: %d.",
+		buf_size, CONFIG_LOG_STRDUP_MAX_STRING);
+	if (buf_size > CONFIG_LOG_STRDUP_MAX_STRING) {
+		shell_warn(shell, "Buffer size too small.");
+
+	}
+
+	return 0;
+}
+
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_backend,
 	SHELL_CMD_ARG(disable, &dsub_module_name,
@@ -413,6 +451,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_log_stat,
 	SHELL_CMD_ARG(list_backends, NULL, "Lists logger backends.",
 		      cmd_log_backends_list, 1, 0),
 	SHELL_CMD(status, NULL, "Logger status", cmd_log_self_status),
+	SHELL_COND_CMD_ARG(CONFIG_LOG_STRDUP_POOL_PROFILING, strdup_utilization,
+			NULL, "Get utilization of string duplicates pool",
+			cmd_log_strdup_utilization, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 
