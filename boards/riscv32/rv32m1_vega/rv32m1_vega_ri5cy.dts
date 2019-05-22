@@ -16,6 +16,7 @@
 		zephyr,sram = &m4_dtcm;
 		zephyr,flash = &ri5cy_code_partition;
 		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;
 	};
 };
