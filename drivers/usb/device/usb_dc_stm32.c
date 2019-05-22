@@ -45,11 +45,11 @@
  */
 
 #include <soc.h>
-#include <string.h>
-#include <usb/usb_device.h>
-#include <clock_control/stm32_clock_control.h>
-#include <misc/util.h>
 #include <gpio.h>
+#include <misc/util.h>
+#include <usb/usb_device.h>
+#include <dt-bindings/usb/usb.h>
+#include <clock_control/stm32_clock_control.h>
 
 #define LOG_LEVEL CONFIG_USB_DRIVER_LOG_LEVEL
 #include <logging/log.h>
@@ -312,24 +312,25 @@ static u32_t usb_dc_stm32_get_maximum_speed(void)
 	u32_t speed = USB_OTG_SPEED_FULL;
 #endif /* DT_COMPAT_ST_STM32_USBPHYC && DT_USB_HS_BASE_ADDRESS */
 
-#ifdef DT_USB_MAXIMUM_SPEED
-
-	if (!strncmp(DT_USB_MAXIMUM_SPEED, "high-speed", 10)) {
+#ifdef DT_USB_MAXIMUM_SPEED_ENUM
+	if (DT_USB_MAXIMUM_SPEED_ENUM == DT_USB_MAXIMUM_SPEED_HIGH_SPEED) {
 		speed = USB_OTG_SPEED_HIGH;
-	} else if (!strncmp(DT_USB_MAXIMUM_SPEED, "full-speed", 10)) {
+	} else if (DT_USB_MAXIMUM_SPEED_ENUM ==
+					DT_USB_MAXIMUM_SPEED_FULL_SPEED) {
 #if defined(DT_COMPAT_ST_STM32_USBPHYC) && defined(DT_USB_HS_BASE_ADDRESS)
 		speed = USB_OTG_SPEED_HIGH_IN_FULL;
 #else
 		speed = USB_OTG_SPEED_FULL;
 #endif /* DT_COMPAT_ST_STM32_USBPHYC && DT_USB_HS_BASE_ADDRESS */
-	} else if (!strncmp(DT_USB_MAXIMUM_SPEED, "low-speed", 9)) {
+	} else if (DT_USB_MAXIMUM_SPEED_ENUM ==
+					DT_USB_MAXIMUM_SPEED_LOW_SPEED) {
 		speed = USB_OTG_SPEED_LOW;
 	} else {
 		LOG_DBG("Unsupported maximum speed defined in device tree. "
 			"USB controller will default to its maximum HW "
 			"capability");
 	}
-#endif /* DT_USB_MAXIMUM_SPEED */
+#endif /* DT_USB_MAXIMUM_SPEED_ENUM */
 
 	return speed;
 }
