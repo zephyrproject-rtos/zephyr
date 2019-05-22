@@ -2447,12 +2447,23 @@ struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
 	return iface_router_lookup(iface, AF_INET, addr);
 }
 
+struct net_if_router *net_if_ipv4_router_find_default(struct net_if *iface,
+						      struct in_addr *addr)
+{
+	return iface_router_find_default(iface, AF_INET, addr);
+}
+
 struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
 					     struct in_addr *addr,
 					     bool is_default,
 					     u16_t lifetime)
 {
 	return iface_router_add(iface, AF_INET, addr, is_default, lifetime);
+}
+
+bool net_if_ipv4_router_rm(struct net_if_router *router)
+{
+	return iface_router_rm(router);
 }
 
 bool net_if_ipv4_addr_mask_cmp(struct net_if *iface,
