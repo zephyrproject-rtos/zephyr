@@ -121,6 +121,11 @@ static void l2cap_sent(struct bt_l2cap_chan *chan)
 	shell_print(ctx_shell, "Outgoing data channel %p transmitted", chan);
 }
 
+static void l2cap_status(struct bt_l2cap_chan *chan, atomic_t *status)
+{
+	shell_print(ctx_shell, "Channel %p status %u", chan, status);
+}
+
 static void l2cap_connected(struct bt_l2cap_chan *chan)
 {
 	struct l2ch *c = L2CH_CHAN(chan);
@@ -149,6 +154,7 @@ static struct bt_l2cap_chan_ops l2cap_ops = {
 	.alloc_buf	= l2cap_alloc_buf,
 	.recv		= l2cap_recv,
 	.sent		= l2cap_sent,
+	.status		= l2cap_status,
 	.connected	= l2cap_connected,
 	.disconnected	= l2cap_disconnected,
 };
