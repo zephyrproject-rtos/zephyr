@@ -273,7 +273,7 @@ static int gpio_stm32_config(struct device *dev, int access_op,
 		return -EIO;
 	}
 
-	if ((flags & GPIO_INT) != 0) {
+	if (IS_ENABLED(CONFIG_EXTI_STM32) && (flags & GPIO_INT) != 0) {
 
 		if (stm32_exti_set_callback(pin, cfg->port,
 					    gpio_stm32_isr, dev) != 0) {
