@@ -91,20 +91,12 @@ u32_t pcie_get_iobar(pcie_bdf_t bdf, unsigned int index)
 	return pcie_get_bar(bdf, index, true);
 }
 
-bool pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)
+void pcie_irq_enable(pcie_bdf_t bdf, unsigned int irq)
 {
 #if CONFIG_PCIE_MSI
-	if (pcie_set_msi(bdf, irq))
-		return true;
-#endif
-
-	u32_t data;
-
-	data = pcie_conf_read(bdf, PCIE_CONF_INTR);
-	if (PCIE_CONF_INTR_IRQ(data) == irq) {
-		irq_enable(irq);
-		return true;
+	if (pcie_set_msi(bdf, irq)) {
+		return;
 	}
-
-	return false;
+#endif
+	irq_enable(irq);
 }
