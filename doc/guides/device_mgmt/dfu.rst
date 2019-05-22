@@ -10,8 +10,8 @@ The Device Firmware Upgrade subsystem provides the necessary frameworks to
 upgrade the image of a Zephyr-based application at run time. It currently
 consists of two different modules:
 
-* :file:`boot/`: Interface code to bootloaders
-* :file:`img_util/`: Image management code
+* :zephyr_file:`subsys/dfu/boot/`: Interface code to bootloaders
+* :zephyr_file:`subsys/dfu/img_util/`: Image management code
 
 The DFU subsystem deals with image management, but not with the transport
 or management protocols themselves required to send the image to the target
