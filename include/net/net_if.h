@@ -1629,6 +1629,17 @@ struct net_if_router *net_if_ipv4_router_lookup(struct net_if *iface,
 						struct in_addr *addr);
 
 /**
+ * @brief Find default router for this IPv4 address.
+ *
+ * @param iface Network interface. This can be NULL in which case we
+ * go through all the network interfaces to find a suitable router.
+ * @param addr IPv4 address
+ *
+ * @return Pointer to router information, NULL if cannot be found
+ */
+struct net_if_router *net_if_ipv4_router_find_default(struct net_if *iface,
+						      struct in_addr *addr);
+/**
  * @brief Add IPv4 router to the system.
  *
  * @param iface Network interface
@@ -1642,6 +1653,15 @@ struct net_if_router *net_if_ipv4_router_add(struct net_if *iface,
 					     struct in_addr *addr,
 					     bool is_default,
 					     u16_t router_lifetime);
+
+/**
+ * @brief Remove IPv4 router from the system.
+ *
+ * @param router Router information.
+ *
+ * @return True if successfully removed, false otherwise
+ */
+bool net_if_ipv4_router_rm(struct net_if_router *router);
 
 /**
  * @brief Check if the given IPv4 address belongs to local subnet.
