@@ -31,15 +31,23 @@ or
 
 Sample Output:
 
-tc_start() - Test kernel Sleep and Wakeup APIs
-
+Running test suite sleep
+===================================================================
+starting test - test_sleep
 Kernel objects initialized
-Test thread started: id = 0x00103044
-Helper thread started: id = 0x00102f44
+Test thread started: id = 0x00400040
+Helper thread started: id = 0x00400000
 Testing normal expiration of k_sleep()
 Testing: test thread sleep + helper thread wakeup test
 Testing: test thread sleep + isr offload wakeup test
 Testing: test thread sleep + main wakeup test thread
 Testing kernel k_sleep()
+PASS - test_sleep
+===================================================================
+starting test - test_usleep
+elapsed_ms = 1000
+PASS - test_usleep
+===================================================================
+Test suite sleep succeeded
 ===================================================================
 PROJECT EXECUTION SUCCESSFUL
