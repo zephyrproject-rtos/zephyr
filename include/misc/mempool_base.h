@@ -36,8 +36,6 @@ struct sys_mem_pool_base {
 	u8_t flags;
 };
 
-#define _ALIGN4(n) ((((n)+3)/4)*4)
-
 #define Z_MPOOL_HAVE_LVL(maxsz, minsz, l) (((maxsz) >> (2*(l))) \
 					  >= (minsz) ? 1 : 0)
 

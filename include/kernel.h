@@ -4009,15 +4009,16 @@ struct k_mem_pool {
  * @req K-MPOOL-001
  */
 #define K_MEM_POOL_DEFINE(name, minsz, maxsz, nmax, align)		\
-	char __aligned(align) _mpool_buf_##name[_ALIGN4(maxsz * nmax)	\
-				  + _MPOOL_BITS_SIZE(maxsz, minsz, nmax)]; \
-	struct sys_mem_pool_lvl _mpool_lvls_##name[Z_MPOOL_LVLS(maxsz, minsz)]; \
+	char __aligned(WB_UP(align)) _mpool_buf_##name[WB_UP(maxsz) * nmax \
+			+ _MPOOL_BITS_SIZE(WB_UP(maxsz), minsz, nmax)]; \
+	struct sys_mem_pool_lvl						\
+		_mpool_lvls_##name[Z_MPOOL_LVLS(WB_UP(maxsz), minsz)];	\
 	Z_STRUCT_SECTION_ITERABLE(k_mem_pool, name) = { \
 		.base = {						\
 			.buf = _mpool_buf_##name,			\
-			.max_sz = maxsz,				\
+			.max_sz = WB_UP(maxsz),				\
 			.n_max = nmax,					\
-			.n_levels = Z_MPOOL_LVLS(maxsz, minsz),		\
+			.n_levels = Z_MPOOL_LVLS(WB_UP(maxsz), minsz),	\
 			.levels = _mpool_lvls_##name,			\
 			.flags = SYS_MEM_POOL_KERNEL			\
 		} \
