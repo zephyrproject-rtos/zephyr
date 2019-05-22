@@ -233,10 +233,13 @@ void test_sleep(void)
 	status = TC_PASS;
 }
 
+extern void test_usleep(void);
+
 /*test case main entry*/
 void test_main(void)
 {
 	ztest_test_suite(sleep,
-			 ztest_unit_test(test_sleep));
+			 ztest_unit_test(test_sleep),
+			 ztest_unit_test(test_usleep));
 	ztest_run_test_suite(sleep);
 }
