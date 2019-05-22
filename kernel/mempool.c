@@ -188,14 +188,23 @@ void k_thread_system_pool_assign(struct k_thread *thread)
 {
 	thread->resource_pool = _HEAP_MEM_POOL;
 }
+#else
+#define _HEAP_MEM_POOL	NULL
 #endif
 
 void *z_thread_malloc(size_t size)
 {
 	void *ret;
+	struct k_mem_pool *pool;
 
-	if (_current->resource_pool != NULL) {
-		ret = k_mem_pool_malloc(_current->resource_pool, size);
+	if (k_is_in_isr()) {
+		pool = _HEAP_MEM_POOL;
+	} else {
+		pool = _current->resource_pool;
+	}
+
+	if (pool) {
+		ret = k_mem_pool_malloc(pool, size);
 	} else {
 		ret = NULL;
 	}
