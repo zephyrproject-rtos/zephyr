@@ -43,8 +43,6 @@ static int nordicsemi_nrf91_init(struct device *arg)
 
 	key = irq_lock();
 
-	SystemInit();
-
 #ifdef CONFIG_NRF_ENABLE_ICACHE
 	/* Enable the instruction cache */
 	NRF_NVMC->ICACHECNF = NVMC_ICACHECNF_CACHEEN_Msk;
@@ -63,6 +61,11 @@ static int nordicsemi_nrf91_init(struct device *arg)
 void z_arch_busy_wait(u32_t time_us)
 {
 	nrfx_coredep_delay_us(time_us);
+}
+
+void z_platform_init(void)
+{
+	SystemInit();
 }
 
 
