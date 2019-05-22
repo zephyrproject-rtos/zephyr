@@ -12,7 +12,7 @@
 
 #define LOG_LEVEL CONFIG_LOG_DEFAULT_LEVEL
 #include <logging/log.h>
-LOG_MODULE_REGISTER(log);
+LOG_MODULE_REGISTER(app);
 
 #define LED_DEV_NAME DT_TI_LP3943_0_LABEL
 #define NUM_LEDS 16
