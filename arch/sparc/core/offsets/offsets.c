@@ -29,6 +29,47 @@
 
 GEN_OFFSET_SYM(_thread_t, switch_handle);
 
+GEN_OFFSET_SYM(z_arch_esf_t, o0);
+GEN_OFFSET_SYM(z_arch_esf_t, o1);
+GEN_OFFSET_SYM(z_arch_esf_t, o2);
+GEN_OFFSET_SYM(z_arch_esf_t, o3);
+GEN_OFFSET_SYM(z_arch_esf_t, o4);
+GEN_OFFSET_SYM(z_arch_esf_t, o5);
+/* %sp is stored on switch_handle */
+GEN_OFFSET_SYM(z_arch_esf_t, o7);
+
+GEN_OFFSET_SYM(z_arch_esf_t, g1);
+GEN_OFFSET_SYM(z_arch_esf_t, g2);
+GEN_OFFSET_SYM(z_arch_esf_t, g3);
+GEN_OFFSET_SYM(z_arch_esf_t, g4);
+GEN_OFFSET_SYM(z_arch_esf_t, g5);
+GEN_OFFSET_SYM(z_arch_esf_t, g6);
+GEN_OFFSET_SYM(z_arch_esf_t, g7);
+
+GEN_OFFSET_SYM(z_arch_esf_t, pc);
+GEN_OFFSET_SYM(z_arch_esf_t, npc);
+GEN_OFFSET_SYM(z_arch_esf_t, psr);
+GEN_OFFSET_SYM(z_arch_esf_t, y);
+GEN_ABSOLUTE_SYM(__z_arch_esf_t_SIZEOF,
+		 STACK_ROUND_UP(sizeof(_standard_stack_frame_t)));
+
+GEN_OFFSET_SYM(_callee_saved_t, l0);
+GEN_OFFSET_SYM(_callee_saved_t, l1);
+GEN_OFFSET_SYM(_callee_saved_t, l2);
+GEN_OFFSET_SYM(_callee_saved_t, l3);
+GEN_OFFSET_SYM(_callee_saved_t, l4);
+GEN_OFFSET_SYM(_callee_saved_t, l5);
+GEN_OFFSET_SYM(_callee_saved_t, l6);
+GEN_OFFSET_SYM(_callee_saved_t, l7);
+GEN_OFFSET_SYM(_callee_saved_t, i0);
+GEN_OFFSET_SYM(_callee_saved_t, i1);
+GEN_OFFSET_SYM(_callee_saved_t, i2);
+GEN_OFFSET_SYM(_callee_saved_t, i3);
+GEN_OFFSET_SYM(_callee_saved_t, i4);
+GEN_OFFSET_SYM(_callee_saved_t, i5);
+GEN_OFFSET_SYM(_callee_saved_t, i6);
+GEN_OFFSET_SYM(_callee_saved_t, i7);
+
 GEN_OFFSET_SYM(_standard_stack_frame_t, l0);
 GEN_OFFSET_SYM(_standard_stack_frame_t, l1);
 GEN_OFFSET_SYM(_standard_stack_frame_t, l2);

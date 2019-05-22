@@ -13,6 +13,12 @@ GTEXT(__start)
 
 /* imports */
 GTEXT(z_sparc_prep_c)
+GTEXT(window_ofl_handler)
+GTEXT(window_ufl_handler)
+GTEXT(_isr_wrapper)
+GTEXT(nmi_handler)
+GTEXT(fault_handler)
+
 GDATA(_interrupt_stack)
 
 #define RESET_ENTRY(handler)   	 \
@@ -20,6 +26,19 @@ GDATA(_interrupt_stack)
 	nop;                        \
 	nop;                        \
 	nop;
+
+/* window overflow, underflow, nmi */
+#define TRAP_ENTRY(handler)     \
+	mov %psr, %l0;              \
+	ba handler;                 \
+	nop;                        \
+	nop;
+
+#define IRQ_ENTRY(handler, irq) \
+	ba handler;                  \
+	mov irq, %l0;               \
+	nop	    ; \
+	nop
 
 /* task terminating exceptions */
 #define FAULT_TRAP_ENTRY()      \
@@ -53,8 +72,8 @@ FAULT_TRAP_ENTRY()               /* 02: illegal inst */
 FAULT_TRAP_ENTRY()               /* 03: priveleged inst */
 
 FAULT_TRAP_ENTRY()               /* 04: fp disabled */
-FAULT_TRAP_ENTRY()               /* 05: window overflow */
-FAULT_TRAP_ENTRY()               /* 06: window underflow */
+TRAP_ENTRY(window_ofl_handler)   /* 05: window overflow */
+TRAP_ENTRY(window_ufl_handler)   /* 06: window underflow */
 FAULT_TRAP_ENTRY()               /* 07: memory access not aligned */
 
 FAULT_TRAP_ENTRY()               /* 08: floating point exveption */
@@ -69,24 +88,24 @@ EMPTY()                          /* 0f: */
 
 /* 0x10 - 0x1f */
 EMPTY()                          /* 10: */
-EMPTY()                          /* 11: irq level 1 */
-EMPTY()                          /* 12: irq level 2 */
-EMPTY()                          /* 13: irq level 3 */
+IRQ_ENTRY(_isr_wrapper, 1)       /* 11: irq level 1 */
+IRQ_ENTRY(_isr_wrapper, 2)       /* 12: irq level 2 */
+IRQ_ENTRY(_isr_wrapper, 3)       /* 13: irq level 3 */
 
-EMPTY()                          /* 14: irq level 4 */
-EMPTY()                          /* 15: irq level 5 */
-EMPTY()                          /* 16: irq level 6 */
-EMPTY()                          /* 17: irq level 7 */
+IRQ_ENTRY(_isr_wrapper, 4)       /* 14: irq level 4 */
+IRQ_ENTRY(_isr_wrapper, 5)       /* 15: irq level 5 */
+IRQ_ENTRY(_isr_wrapper, 6)       /* 16: irq level 6 */
+IRQ_ENTRY(_isr_wrapper, 7)       /* 17: irq level 7 */
 
-EMPTY()                          /* 18: irq level 8 */
-EMPTY()                          /* 19: irq level 9 */
-EMPTY()                          /* 1a: irq level 10 */
-EMPTY()                          /* 1b: irq level 11 */
+IRQ_ENTRY(_isr_wrapper, 8)       /* 18: irq level 8 */
+IRQ_ENTRY(_isr_wrapper, 9)       /* 19: irq level 9 */
+IRQ_ENTRY(_isr_wrapper, 10)      /* 1a: irq level 10 */
+IRQ_ENTRY(_isr_wrapper, 11)      /* 1b: irq level 11 */
 
-EMPTY()                          /* 1c: irq level 12 */
-EMPTY()                          /* 1d: irq level 13 */
-EMPTY()                          /* 1e: irq level 14 */
-EMPTY()                          /* 1f: irq level 15 */
+IRQ_ENTRY(_isr_wrapper, 12)      /* 1c: irq level 12 */
+IRQ_ENTRY(_isr_wrapper, 13)      /* 1d: irq level 13 */
+IRQ_ENTRY(_isr_wrapper, 14)      /* 1e: irq level 14 */
+TRAP_ENTRY(nmi_handler)          /* 1f: irq level 15 */
 
 /* 0x20 - 0x2f */
 FAULT_TRAP_ENTRY()               /* 20: r reg access err */

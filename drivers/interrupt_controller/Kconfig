@@ -45,6 +45,20 @@ source "drivers/interrupt_controller/Kconfig.loapic"
 
 source "drivers/interrupt_controller/Kconfig.dw"
 
+config LEON2_ICTL
+	bool "LEON2 Interrupt Controller"
+	depends on SOC_AT697
+	default y
+	help
+	  Default LEON2 Interrupt Controller
+
+config LEON2_ICTL_NAME
+	string "Name for LEON2 Interrupt Controller"
+	depends on LEON2_ICTL
+	default "LEON2_ICTL"
+	help
+	  Give a name for the instance of LEON2 Interrupt Controller
+
 source "drivers/interrupt_controller/Kconfig.stm32"
 
 source "drivers/interrupt_controller/Kconfig.cavs"

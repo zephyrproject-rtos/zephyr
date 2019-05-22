@@ -28,6 +28,8 @@
 MEMORY
 {
 	SRAM                  (wx) : ORIGIN = 0x40000000, LENGTH = MB(1)
+	/* Used by and documented in include/linker/intlist.ld */
+	IDT_LIST  (wx)      : ORIGIN = 0xFFFFF7FF, LENGTH = 2K
 }
 
 ENTRY(CONFIG_KERNEL_ENTRY)
@@ -106,4 +108,7 @@ SECTIONS
 		_image_ram_end = .;
 	} GROUP_LINK_IN(RAMABLE_REGION)
 
+#ifdef CONFIG_GEN_ISR_TABLES
+#include <linker/intlist.ld>
+#endif
 }

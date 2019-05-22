@@ -15,4 +15,8 @@ config NUM_IRQS
 	int
 	default 15
 
+config ARCH_SW_ISR_TABLE_ALIGN
+	int
+	default 8
+
 endmenu
