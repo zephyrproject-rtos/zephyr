@@ -37,6 +37,14 @@ void setup(void)
 {
 	sim_stats = stats_group_find("flash_sim_stats");
 	sim_thresholds = stats_group_find("flash_sim_thresholds");
+
+	/* Verify if NVS is initialized. */
+	if (fs.sector_count != 0) {
+		int err;
+
+		err = nvs_clear(&fs);
+		zassert_true(err == 0,  "nvs_clear call failure: %d", err);
+	}
 }
 
 void teardown(void)
@@ -97,9 +105,6 @@ void test_nvs_write(void)
 			len);
 	zassert_mem_equal(wr_buf, rd_buf, sizeof(rd_buf),
 			"RD buff should be equal to the WR buff");
-
-	err = nvs_clear(&fs);
-	zassert_true(err == 0,  "nvs_clear call failure: %d", err);
 }
 
 static int flash_sim_write_calls_find(struct stats_hdr *hdr, void *arg,
@@ -191,9 +196,6 @@ void test_nvs_corrupted_write(void)
 	zassert_mem_equal(wr_buf_1, rd_buf, sizeof(rd_buf),
 			"RD buff should be equal to the first WR buff because subsequent "
 			"write operation has failed");
-
-	err = nvs_clear(&fs);
-	zassert_true(err == 0,  "nvs_clear call failure: %d", err);
 }
 
 void test_nvs_gc(void)
@@ -252,9 +254,6 @@ void test_nvs_gc(void)
 				"RD buff should be equal to the WR buff");
 
 	}
-
-	err = nvs_clear(&fs);
-	zassert_true(err == 0,  "nvs_clear call failure: %d", err);
 }
 
 static void write_content(u16_t max_id, u16_t begin, u16_t end,
@@ -378,9 +377,6 @@ void test_nvs_gc_3sectors(void)
 	zassert_equal(fs.ate_wra >> ADDR_SECT_SHIFT, 2,
 		     "unexpected write sector");
 	check_content(max_id, &fs);
-
-	err = nvs_clear(&fs);
-	zassert_true(err == 0,  "nvs_clear call failure: %d", err);
 }
 
 void test_main(void)
