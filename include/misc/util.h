@@ -75,6 +75,10 @@ constexpr size_t ARRAY_SIZE(T(&)[N]) { return N; }
 #define ROUND_DOWN(x, align)                                 \
 	((unsigned long)(x) & ~((unsigned long)(align) - 1))
 
+/* round up/down to the next word boundary */
+#define WB_UP(x) ROUND_UP(x, sizeof(void *))
+#define WB_DN(x) ROUND_DOWN(x, sizeof(void *))
+
 #define ceiling_fraction(numerator, divider) \
 	(((numerator) + ((divider) - 1)) / (divider))
 
