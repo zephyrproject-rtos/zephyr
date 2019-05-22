@@ -543,6 +543,21 @@ bool log_is_strdup(void *buf);
  */
 void log_free(void *buf);
 
+/**
+ * @brief Get maximal number of simultaneously allocated buffers for string
+ *	  duplicates.
+ *
+ * Value can be used to determine pool size.
+ */
+u32_t log_get_strdup_pool_utilization(void);
+
+/**
+ * @brief Get length of the longest string duplicated.
+ *
+ * Value can be used to determine buffer size in the string duplicates pool.
+ */
+u32_t log_get_strdup_longest_string(void);
+
 /** @brief Indicate to the log core that one log message has been dropped.
  */
 void log_dropped(void);

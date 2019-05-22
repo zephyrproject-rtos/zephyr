@@ -58,6 +58,9 @@ static bool backend_attached;
 static atomic_t buffered_cnt;
 static atomic_t dropped_cnt;
 static k_tid_t proc_tid;
+static u32_t log_strdup_in_use;
+static u32_t log_strdup_max;
+static u32_t log_strdup_longest;
 
 static u32_t dummy_timestamp(void);
 static timestamp_get_t timestamp_func = dummy_timestamp;
@@ -644,6 +647,18 @@ char *log_strdup(const char *str)
 		return (char *)log_strdup_fail_msg;
 	}
 
+	if (IS_ENABLED(CONFIG_LOG_STRDUP_POOL_PROFILING)) {
+		size_t slen = strlen(str);
+		struct k_spinlock lock;
+		k_spinlock_key_t key;
+
+		key = k_spin_lock(&lock);
+		log_strdup_in_use++;
+		log_strdup_max = MAX(log_strdup_in_use, log_strdup_max);
+		log_strdup_longest = MAX(slen, log_strdup_longest);
+		k_spin_unlock(&lock, key);
+	}
+
 	/* Set 'allocated' flag. */
 	(void)atomic_set(&dup->refcount, 1);
 
@@ -652,6 +667,18 @@ char *log_strdup(const char *str)
 	dup->buf[sizeof(dup->buf) - 1] = '\0';
 
 	return dup->buf;
+}
+
+u32_t log_get_strdup_pool_utilization(void)
+{
+	return IS_ENABLED(CONFIG_LOG_STRDUP_POOL_PROFILING) ?
+			log_strdup_max : 0;
+}
+
+u32_t log_get_strdup_longest_string(void)
+{
+	return IS_ENABLED(CONFIG_LOG_STRDUP_POOL_PROFILING) ?
+			log_strdup_longest : 0;
 }
 
 bool log_is_strdup(void *buf)
@@ -673,6 +700,9 @@ void log_free(void *str)
 
 	if (atomic_dec(&dup->refcount) == 1) {
 		k_mem_slab_free(&log_strdup_pool, (void **)&dup);
+		if (IS_ENABLED(CONFIG_LOG_STRDUP_POOL_PROFILING)) {
+			atomic_dec((atomic_t *)&log_strdup_in_use);
+		}
 	}
 }
 

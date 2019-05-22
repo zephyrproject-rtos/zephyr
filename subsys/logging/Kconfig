@@ -192,6 +192,12 @@ config LOG_STRDUP_BUF_COUNT
 	  Each entry takes CONFIG_LOG_STRDUP_MAX_STRING bytes of memory plus
 	  some additional fixed overhead.
 
+config LOG_STRDUP_POOL_PROFILING
+	bool "Enable profiling of pool used for log_strdup()"
+	help
+	  When enabled, maximal utilization of the pool is tracked. It can
+	  be read out using shell command.
+
 endif # !LOG_IMMEDIATE
 
 config LOG_DOMAIN_ID
