@@ -79,7 +79,12 @@ u64_t __noinit __idle_time_stamp;  /* timestamp when CPU goes idle */
 K_THREAD_STACK_DEFINE(_main_stack, MAIN_STACK_SIZE);
 K_THREAD_STACK_DEFINE(_idle_stack, IDLE_STACK_SIZE);
 
+#if defined(CONFIG_PTHREAD_IPC)
+#include <posix/pthread.h>
+static struct posix_thread _main_thread_s;
+#else
 static struct k_thread _main_thread_s;
+#endif
 static struct k_thread _idle_thread_s;
 
 k_tid_t const _main_thread = (k_tid_t)&_main_thread_s;
