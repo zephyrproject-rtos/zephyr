@@ -3912,11 +3912,11 @@ struct k_mem_slab {
  * @req K-MSLAB-001
  */
 #define K_MEM_SLAB_DEFINE(name, slab_block_size, slab_num_blocks, slab_align) \
-	char __noinit __aligned(slab_align) \
-		_k_mem_slab_buf_##name[(slab_num_blocks) * (slab_block_size)]; \
+	char __noinit __aligned(WB_UP(slab_align)) \
+	   _k_mem_slab_buf_##name[(slab_num_blocks) * WB_UP(slab_block_size)]; \
 	Z_STRUCT_SECTION_ITERABLE(k_mem_slab, name) = \
 		_K_MEM_SLAB_INITIALIZER(name, _k_mem_slab_buf_##name, \
-				      slab_block_size, slab_num_blocks)
+					WB_UP(slab_block_size), slab_num_blocks)
 
 /**
  * @brief Initialize a memory slab.
@@ -3925,7 +3925,8 @@ struct k_mem_slab {
  *
  * The memory slab's buffer contains @a slab_num_blocks memory blocks
  * that are @a slab_block_size bytes long. The buffer must be aligned to an
- * N-byte boundary, where N is a power of 2 larger than 2 (i.e. 4, 8, 16, ...).
+ * N-byte boundary matching a word boundary, where N is a power of 2
+ * (i.e. 4 on 32-bit systems, 8, 16, ...).
  * To ensure that each memory block is similarly aligned to this boundary,
  * @a slab_block_size must also be a multiple of N.
  *
