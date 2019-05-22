@@ -6,4 +6,6 @@ zephyr_library()
 zephyr_library_sources(
   entry.S
   prep_c.c
+  trap.S
+  irq.c
 )

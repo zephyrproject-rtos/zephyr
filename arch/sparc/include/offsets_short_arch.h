@@ -9,4 +9,7 @@
 
 #include <offsets.h>
 
+#define _esf_reg(reg)	\
+	(__z_arch_esf_t_## reg ##_OFFSET)
+
 #endif /* ZEPHYR_ARCH_SPARC_INCLUDE_OFFSETS_SHORT_ARCH_H_ */

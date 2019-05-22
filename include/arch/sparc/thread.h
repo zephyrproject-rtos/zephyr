@@ -23,7 +23,23 @@
 #include <zephyr/types.h>
 
 struct _callee_saved {
-	/* FIXME */
+	u32_t l0;
+	u32_t l1;
+	u32_t l2;
+	u32_t l3;
+	u32_t l4;
+	u32_t l5;
+	u32_t l6;
+	u32_t l7;
+
+	u32_t i0;
+	u32_t i1;
+	u32_t i2;
+	u32_t i3;
+	u32_t i4;
+	u32_t i5;
+	u32_t i6;
+	u32_t i7;
 };
 
 typedef struct _callee_saved _callee_saved_t;

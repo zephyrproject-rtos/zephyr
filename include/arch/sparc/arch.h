@@ -17,6 +17,7 @@
 #define ZEPHYR_INCLUDE_ARCH_SPARC_ARCH_H_
 
 #include <irq.h>
+#include <sw_isr_table.h>
 #include <arch/sparc/exp.h>
 #include <arch/sparc/thread.h>
 #include <arch/sparc/asm_inline.h>
@@ -86,6 +87,16 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 		: "r" (key), "i" (PSR_PIL)
 		: "memory");
 }
+
+void arch_irq_enable(u32_t irq);
+void arch_irq_disable(u32_t irq);
+
+void z_irq_spurious(void *unused);
+#define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
+({ \
+	Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p); \
+	irq_p; \
+})
 
 /**
  * Returns true if interrupts were unlocked prior to the
