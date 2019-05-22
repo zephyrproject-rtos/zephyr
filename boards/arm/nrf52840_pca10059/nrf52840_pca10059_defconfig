@@ -22,3 +22,4 @@ CONFIG_CONSOLE=y
 
 # additional board options
 CONFIG_GPIO_AS_PINRESET=y
+CONFIG_NFCT_PINS_AS_GPIOS=y
