@@ -173,4 +173,14 @@ config I2C_RV32M1_LPI2C
 
 endif # I2C
 
+if FLASH
+
+config SOC_FLASH_RV32M1
+	default y
+
+config FLASH_BASE_ADDRESS
+	default $(dt_hex_val,DT_FLASH_BASE_ADDRESS)
+
+endif # FLASH
+
 endif # SOC_OPENISA_RV32M1_RISCV32
