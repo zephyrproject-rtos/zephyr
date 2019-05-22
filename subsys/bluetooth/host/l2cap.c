@@ -330,6 +330,13 @@ void bt_l2cap_connected(struct bt_conn *conn)
 		if (chan->ops->connected) {
 			chan->ops->connected(chan);
 		}
+
+		/* Always set output status to fixed channels */
+		atomic_set_bit(chan->status, BT_L2CAP_STATUS_OUT);
+
+		if (chan->ops->status) {
+			chan->ops->status(chan, chan->status);
+		}
 	}
 }
 
@@ -682,6 +689,11 @@ static void l2cap_chan_tx_give_credits(struct bt_l2cap_le_chan *chan,
 
 	while (credits--) {
 		k_sem_give(&chan->tx.credits);
+	}
+
+	if (atomic_test_and_set_bit(chan->chan.status, BT_L2CAP_STATUS_OUT) &&
+	    chan->chan.ops->status) {
+		chan->chan.ops->status(&chan->chan, chan->chan.status);
 	}
 }
 
@@ -1141,6 +1153,16 @@ static int l2cap_chan_le_send(struct bt_l2cap_le_chan *ch, struct net_buf *buf,
 				 l2cap_chan_sdu_sent, &ch->chan);
 	} else {
 		bt_l2cap_send(ch->chan.conn, ch->tx.cid, seg);
+	}
+
+	/* Check if there is no credits left clear output status and notify its
+	 * change.
+	 */
+	if (!k_sem_count_get(&ch->tx.credits)) {
+		atomic_clear_bit(ch->chan.status, BT_L2CAP_STATUS_OUT);
+		if (ch->chan.ops->status) {
+			ch->chan.ops->status(&ch->chan, ch->chan.status);
+		}
 	}
 
 	return len;
