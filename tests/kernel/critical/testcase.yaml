@@ -3,6 +3,7 @@ common:
 
 tests:
   kernel.common:
+    timeout: 120
     platform_exclude: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard
   kernel.common.nsim:
     platform_whitelist: nsim_sem_mpu_stack_guard nsim_em_mpu_stack_guard

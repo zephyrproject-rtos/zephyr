@@ -1,4 +1,5 @@
 tests:
   kernel.semaphore:
+    timeout: 60
     min_ram: 32
     tags: kernel userspace

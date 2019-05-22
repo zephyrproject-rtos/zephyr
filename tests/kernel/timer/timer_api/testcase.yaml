@@ -1,3 +1,5 @@
+common:
+  tags: emu_time
 tests:
   kernel.timer:
     tags: kernel userspace

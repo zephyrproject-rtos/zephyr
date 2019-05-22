@@ -1,4 +1,4 @@
 tests:
   kernel.common:
-    tags: kernel
+    tags: kernel emu_time
     min_ram: 16

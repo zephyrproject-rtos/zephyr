@@ -4,4 +4,4 @@ common:
 tests:
   net.trickle:
     min_ram: 12
-    tags: net trickle
+    tags: net trickle emu_time

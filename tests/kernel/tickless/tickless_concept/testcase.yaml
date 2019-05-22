@@ -4,4 +4,4 @@ tests:
     # FIXME: This test fails sporadically on all QEMU platforms, but fails
     # consistently when coverage is enabled. Disable until 14173 is fixed.
     platform_exclude: qemu_x86_coverage
-    tags: kernel
+    tags: kernel emu_time

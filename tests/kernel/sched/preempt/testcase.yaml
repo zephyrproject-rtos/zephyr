@@ -1,5 +1,5 @@
 tests:
   kernel.sched.preempt:
-    tags: kernel
+    tags: kernel emu_time
     filter: not CONFIG_SMP
     platform_exclude: nrf52810_pca10040

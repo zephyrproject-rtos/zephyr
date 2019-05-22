@@ -1,5 +1,6 @@
 common:
-  tags: posix
+  timeout: 90
+  tags: posix emu_time
   min_ram: 64
   arch_exclude: posix
 

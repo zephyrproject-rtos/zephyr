@@ -2,7 +2,8 @@ sample:
   name: CMSIS_RTOS_V2 Synchronization
 tests:
   sample.portability.cmsis_rtos_v2.timer_synchronization:
-    tags: cmsis_rtos_v2_synchronization
+    timeout: 60
+    tags: cmsis_rtos_v2_synchronization emu_time
     min_ram: 32
     min_flash: 34
     harness: console
