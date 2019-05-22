@@ -401,6 +401,40 @@ static void usb_register_descriptors(const u8_t *usb_descriptors)
 	usb_dev.descriptors = usb_descriptors;
 }
 
+static bool usb_get_device_qualifier_descriptor(s32_t *len, u8_t **data)
+{
+	/* For the High Speed devices return Device Qualifier */
+#if defined(DT_USB_MAXIMUM_SPEED_ENUM) && \
+	(DT_USB_MAXIMUM_SPEED_ENUM == DT_USB_MAXIMUM_SPEED_HIGH_SPEED)
+	static struct usb_device_qualifier_descriptor desc = {
+		.bLength = sizeof(struct usb_device_qualifier_descriptor),
+		.bDescriptorType = USB_DEVICE_QUAL_DESC,
+		.bcdUSB = sys_cpu_to_le16(USB_2_0),
+#ifdef CONFIG_USB_COMPOSITE_DEVICE
+		.bDeviceClass = MISC_CLASS,
+		.bDeviceSubClass = 0x02,
+		.bDeviceProtocol = 0x01,
+#else
+		.bDeviceClass = 0,
+		.bDeviceSubClass = 0,
+		.bDeviceProtocol = 0,
+#endif
+		.bMaxPacketSize0 = USB_MAX_CTRL_MPS,
+		.bNumConfigurations = 0,
+		.bReserved = 0,
+	};
+
+	*data = (u8_t *)&desc;
+	*len = desc.bLength;
+
+	LOG_ERR("len %d", *len);
+
+	return true;
+#else
+	return false;
+#endif
+}
+
 /*
  * @brief get specified USB descriptor
  *
@@ -415,19 +449,16 @@ static void usb_register_descriptors(const u8_t *usb_descriptors)
  * @return true if the descriptor was found, false otherwise
  */
 static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
-		s32_t *len, u8_t **data)
+			       s32_t *len, u8_t **data)
 {
-	u8_t type = 0U;
-	u8_t index = 0U;
+	u8_t type = GET_DESC_TYPE(type_index);
+	u8_t index = GET_DESC_INDEX(type_index);
 	u8_t *p = NULL;
 	s32_t cur_index = 0;
 	bool found = false;
 
-	/*Avoid compiler warning until this is used for something*/
+	/* Avoid compiler warning until this is used for something */
 	ARG_UNUSED(lang_id);
-
-	type = GET_DESC_TYPE(type_index);
-	index = GET_DESC_INDEX(type_index);
 
 	/*
 	 * Invalid types of descriptors,
@@ -436,6 +467,10 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 	if ((type == DESC_INTERFACE) || (type == DESC_ENDPOINT) ||
 	    (type > DESC_OTHER_SPEED)) {
 		return false;
+	}
+
+	if (type == DESC_DEVICE_QUALIFIER) {
+		return usb_get_device_qualifier_descriptor(len, data);
 	}
 
 	p = (u8_t *)usb_dev.descriptors;
@@ -472,6 +507,7 @@ static bool usb_get_descriptor(u16_t type_index, u16_t lang_id,
 		/* nothing found */
 		LOG_DBG("Desc %x not found!", type_index);
 	}
+
 	return found;
 }
 

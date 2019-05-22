@@ -205,4 +205,17 @@ struct usb_ep_descriptor {
 	u8_t bInterval;
 } __packed;
 
+/** Standard Device Descriptor */
+struct usb_device_qualifier_descriptor {
+	u8_t bLength;
+	u8_t bDescriptorType;
+	u16_t bcdUSB;
+	u8_t bDeviceClass;
+	u8_t bDeviceSubClass;
+	u8_t bDeviceProtocol;
+	u8_t bMaxPacketSize0;
+	u8_t bNumConfigurations;
+	u8_t bReserved;
+} __packed;
+
 #endif /* ZEPHYR_INCLUDE_USB_USB_COMMON_H_ */
