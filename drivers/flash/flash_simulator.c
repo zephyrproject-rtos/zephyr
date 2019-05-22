@@ -90,11 +90,13 @@ STATS_NAME_END(flash_sim_stats);
 /* simulator dynamic thresholds */
 STATS_SECT_START(flash_sim_thresholds)
 STATS_SECT_ENTRY32(max_write_calls)
+STATS_SECT_ENTRY32(max_erase_calls)
 STATS_SECT_END;
 
 STATS_SECT_DECL(flash_sim_thresholds) flash_sim_thresholds;
 STATS_NAME_START(flash_sim_thresholds)
 STATS_NAME(flash_sim_thresholds, max_write_calls)
+STATS_NAME(flash_sim_thresholds, max_erase_calls)
 STATS_NAME_END(flash_sim_thresholds);
 
 static u8_t mock_flash[FLASH_SIZE];
@@ -245,6 +247,12 @@ static int flash_sim_erase(struct device *dev, const off_t offset,
 	}
 
 	STATS_INC(flash_sim_stats, flash_erase_calls);
+
+	if ((flash_sim_thresholds.max_erase_calls != 0) &&
+	    (flash_sim_stats.flash_erase_calls >=
+		flash_sim_thresholds.max_erase_calls)){
+		return 0;
+	}
 
 	/* the first unit to be erased */
 	u32_t unit_start = (offset - FLASH_SIMULATOR_BASE_OFFSET) /
