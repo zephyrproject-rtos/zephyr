@@ -33,7 +33,7 @@ static int get_bit_ptr(struct sys_mem_pool_base *p, int level, int bn,
 		       u32_t **word)
 {
 	u32_t *bitarray = level <= p->max_inline_level ?
-		&p->levels[level].bits : p->levels[level].bits_p;
+		p->levels[level].bits : p->levels[level].bits_p;
 
 	*word = &bitarray[bn / 32];
 
@@ -104,7 +104,7 @@ void z_sys_mem_pool_base_init(struct sys_mem_pool_base *p)
 
 		sys_dlist_init(&p->levels[i].free_list);
 
-		if (nblocks <= 32) {
+		if (nblocks <= sizeof(p->levels[i].bits)*8) {
 			p->max_inline_level = i;
 		} else {
 			p->levels[i].bits_p = bits;

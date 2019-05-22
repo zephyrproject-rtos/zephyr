@@ -18,7 +18,7 @@
 struct sys_mem_pool_lvl {
 	union {
 		u32_t *bits_p;
-		u32_t bits;
+		u32_t bits[sizeof(u32_t *)/4];
 	};
 	sys_dlist_t free_list;
 };
@@ -67,11 +67,11 @@ struct sys_mem_pool_base {
 #define Z_MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l) \
 	((((n_max) << (2*(l))) + 31) / 32)
 
-/* One word gets stored free unioned with the pointer, otherwise the
- * calculated unclamped value
+/* One or two 32-bit words gets stored free unioned with the pointer,
+ * otherwise the calculated unclamped value
  */
-#define Z_MPOOL_LBIT_WORDS(n_max, l)			\
-	(Z_MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l) < 2 ? 0	\
+#define Z_MPOOL_LBIT_WORDS(n_max, l)					 \
+	(Z_MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l) <= sizeof(u32_t *)/4 ? 0 \
 	 : Z_MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l))
 
 /* How many bytes for the bitfields of a single level? */
