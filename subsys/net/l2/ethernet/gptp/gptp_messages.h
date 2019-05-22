@@ -46,7 +46,7 @@ extern "C" {
 #define GPTP_VALID_LEN(pkt, len) \
 	(len > (NET_ETH_MINIMAL_FRAME_SIZE - GPTP_L2_HDR_LEN(pkt)))
 #define GPTP_L2_HDR_LEN(pkt) \
-	((int)GPTP_HDR(pkt) - (int)NET_ETH_HDR(pkt))
+	((long)GPTP_HDR(pkt) - (long)NET_ETH_HDR(pkt))
 
 #define GPTP_SYNC_LEN \
 	(sizeof(struct gptp_hdr) + sizeof(struct gptp_sync))
