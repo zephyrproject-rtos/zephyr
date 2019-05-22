@@ -68,7 +68,7 @@ struct net_pkt {
 		 * RX path, it is then fine to have both attributes sharing
 		 * the same memory area.
 		 */
-		int sock_recv_fifo;
+		intptr_t sock_recv_fifo;
 	};
 
 	/** Slab pointer from where it belongs to */
