@@ -1384,6 +1384,14 @@ static int class_handler(struct usb_setup_packet *pSetup,
 	for (size_t i = 0; i < size; i++) {
 		iface = &(__usb_data_start[i].interface);
 		if_descr = __usb_data_start[i].interface_descriptor;
+		/*
+		 * Wind forward until it is within the range
+		 * of the current descriptor.
+		 */
+		if ((u8_t *)if_descr < usb_dev.descriptors) {
+			continue;
+		}
+
 		if ((iface->class_handler) &&
 		    (if_descr->bInterfaceNumber ==
 		     sys_le16_to_cpu(pSetup->wIndex))) {
@@ -1407,6 +1415,14 @@ static int custom_handler(struct usb_setup_packet *pSetup,
 	for (size_t i = 0; i < size; i++) {
 		iface = &(__usb_data_start[i].interface);
 		if_descr = __usb_data_start[i].interface_descriptor;
+		/*
+		 * Wind forward until it is within the range
+		 * of the current descriptor.
+		 */
+		if ((u8_t *)if_descr < usb_dev.descriptors) {
+			continue;
+		}
+
 		if ((iface->custom_handler) &&
 		    (if_descr->bInterfaceNumber ==
 		     sys_le16_to_cpu(pSetup->wIndex))) {
