@@ -349,7 +349,7 @@ void *sys_mem_pool_alloc(struct sys_mem_pool *p, size_t size)
 
 	sys_mutex_lock(&p->mutex, K_FOREVER);
 
-	size += sizeof(struct sys_mem_pool_block);
+	size += WB_UP(sizeof(struct sys_mem_pool_block));
 	if (z_sys_mem_pool_block_alloc(&p->base, size, &level, &block,
 				      (void **)&ret)) {
 		ret = NULL;
@@ -360,7 +360,7 @@ void *sys_mem_pool_alloc(struct sys_mem_pool *p, size_t size)
 	blk->level = level;
 	blk->block = block;
 	blk->pool = p;
-	ret += sizeof(*blk);
+	ret += WB_UP(sizeof(struct sys_mem_pool_block));
 out:
 	sys_mutex_unlock(&p->mutex);
 	return ret;
@@ -375,7 +375,8 @@ void sys_mem_pool_free(void *ptr)
 		return;
 	}
 
-	blk = (struct sys_mem_pool_block *)((char *)ptr - sizeof(*blk));
+	ptr = (char *)ptr - WB_UP(sizeof(struct sys_mem_pool_block));
+	blk = (struct sys_mem_pool_block *)ptr;
 	p = blk->pool;
 
 	sys_mutex_lock(&p->mutex, K_FOREVER);
