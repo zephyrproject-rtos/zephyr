@@ -112,6 +112,7 @@ class Build(Forceable):
 
     def do_run(self, args, remainder):
         self.args = args        # Avoid having to pass them around
+        self.config_board = config_get('board', None)
         log.dbg('args: {} remainder: {}'.format(args, remainder),
                 level=log.VERBOSE_EXTREME)
         # Store legacy -s option locally
@@ -169,7 +170,6 @@ class Build(Forceable):
 
     def _find_board(self):
         board, origin = None, None
-        config_board = config_get('board', None)
         if self.cmake_cache:
             board, origin = (self.cmake_cache.get('CACHED_BOARD'),
                              'CMakeCache.txt')
@@ -177,8 +177,8 @@ class Build(Forceable):
             board, origin = self.args.board, 'command line'
         elif 'BOARD' in os.environ:
             board, origin = os.environ['BOARD'], 'env'
-        elif config_board is not None:
-            board, origin = config_board, 'configfile'
+        elif self.config_board is not None:
+            board, origin = self.config_board, 'configfile'
         return board, origin
 
     def _parse_remainder(self, remainder):
@@ -301,17 +301,21 @@ class Build(Forceable):
         if apps_mismatched:
             self.run_cmake = True  # If they insist, we need to re-run cmake.
 
-        # If CACHED_BOARD is not defined, we need --board from the
-        # command line.
+        # If CACHED_BOARD is not defined, we need some other way to
+        # find the board.
         cached_board = self.cmake_cache.get('CACHED_BOARD')
         log.dbg('CACHED_BOARD:', cached_board, level=log.VERBOSE_EXTREME)
-        # If app_mismatched and pristine are true we will run pristine on the
-        # build, invalidating the cached board. Whenever we run pristine we
-        # require the user to provide all the require inputs again.
+        # If apps_mismatched and self.auto_pristine are true, we will
+        # run pristine on the build, invalidating the cached
+        # board. In that case, we need some way of getting the board.
         self.check_force((cached_board and
                           not (apps_mismatched and self.auto_pristine))
-                         or self.args.board,
-                         'Cached board not defined, please provide --board')
+                         or self.args.board or self.config_board or
+                         os.environ.get('BOARD'),
+                         'Cached board not defined, please provide it '
+                         '(provide --board, set default with '
+                         '"west config build.board <BOARD>", or set '
+                         'BOARD in the environment)')
 
         # Check consistency between cached board and --board.
         boards_mismatched = (self.args.board and cached_board and
