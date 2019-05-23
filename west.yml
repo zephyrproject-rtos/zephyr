@@ -47,6 +47,9 @@ manifest:
     - name: fatfs
       revision: df96914dd989907f3a5de4cb95b116c2f305820d
       path: modules/fs/fatfs
+    - name: mcumgr
+      revision: a69793cdb4817896b647a3305725b6c2fa699ccb
+      path: modules/lib/mcumgr
 
   self:
     path: zephyr
