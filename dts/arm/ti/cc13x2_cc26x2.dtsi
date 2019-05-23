@@ -87,6 +87,26 @@
 			status = "disabled";
 			label = "I2C_0";
 		};
+
+		spi0: spi@40000000 {
+			compatible = "ti,cc13xx-cc26xx-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40000000 0x1000>;
+			interrupts = <7 0>;
+			status = "disabled";
+			label = "SPI_0";
+		};
+
+		spi1: spi@40008000 {
+			compatible = "ti,cc13xx-cc26xx-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x40008000 0x1000>;
+			interrupts = <8 0>;
+			status = "disabled";
+			label = "SPI_1";
+		};
 	};
 };
 
