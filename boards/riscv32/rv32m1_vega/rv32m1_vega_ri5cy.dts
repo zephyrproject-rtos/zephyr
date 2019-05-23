@@ -14,9 +14,43 @@
 
 	chosen {
 		zephyr,sram = &m4_dtcm;
-		zephyr,flash = &ri5cy_code_partition;
+		zephyr,flash = &m4_flash;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,uart-pipe = &uart0;
+		zephyr,code-partition = &slot0_partition;
+	};
+};
+
+&m4_flash {
+	/*
+	 * For more information, see:
+	 * http://docs.zephyrproject.org/latest/guides/dts/index.html
+	 */
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			label = "image-0";
+			reg = <0x00000000 0x000069000>;
+		};
+		slot1_partition: partition@69000 {
+			label = "image-1";
+			reg = <0x00069000 0x000069000>;
+		};
+		scratch_partition: partition@d2000 {
+			label = "image-scratch";
+			reg = <0x000d2000 0x0001e000>;
+		};
+		storage_partition: partition@f0000 {
+			label = "storage";
+			reg = <0x000f0000 0x00004000>;
+		};
+		boot_partition: partition@f4000 {
+			label = "mcuboot";
+			reg = <0x000f4000 0x0000C000>;
+		};
 	};
 };

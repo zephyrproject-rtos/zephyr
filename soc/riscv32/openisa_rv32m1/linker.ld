@@ -29,12 +29,38 @@
 #define ROMABLE_REGION              ROM
 #define RAMABLE_REGION              RAM
 
+#define VECTOR_SIZE CONFIG_RISCV32_RV32M1_VECTOR_SIZE
+
+#ifdef CONFIG_USE_CODE_PARTITION
+
+#ifdef CONFIG_BOOTLOADER_MCUBOOT
+
+
+#define ROM_BASE (DT_CODE_PARTITION_OFFSET)
+#define ROM_SIZE (DT_CODE_PARTITION_SIZE)
+
+#define VECTOR_BASE (ROM_BASE + CONFIG_TEXT_SECTION_OFFSET)
+
+#else
+
+#define ROM_BASE DT_CODE_PARTITION_OFFSET
+#define ROM_SIZE (DT_CODE_PARTITION_SIZE - VECTOR_SIZE)
+
+#define VECTOR_BASE (ROM_BASE + ROM_SIZE)
+
+#endif
+
+#else
+
 #define ROM_BASE DT_FLASH_BASE_ADDRESS
-#define ROM_SIZE KB(DT_FLASH_SIZE)
+#define ROM_SIZE (KB(DT_FLASH_SIZE) - VECTOR_SIZE)
+
+#define VECTOR_BASE (ROM_BASE + ROM_SIZE)
+
+#endif
+
 #define RAM_BASE DT_SRAM_BASE_ADDRESS
 #define RAM_SIZE KB(DT_SRAM_SIZE)
-#define VECTOR_BASE CONFIG_RISCV32_RV32M1_VECTOR_BASE_ADDR
-#define VECTOR_SIZE CONFIG_RISCV32_RV32M1_VECTOR_SIZE
 
 MEMORY
     {
@@ -47,7 +73,9 @@ MEMORY
      * (The Arm core vector tables are at the beginning of each
      * flash bank.)
      */
+#ifndef CONFIG_BOOTLOADER_MCUBOOT
     VECTORS (rx)  : ORIGIN = VECTOR_BASE, LENGTH = VECTOR_SIZE
+#endif
     RAM (rwx)     : ORIGIN = RAM_BASE,    LENGTH = RAM_SIZE
     /*
      * Special section, not included in the final binary, used
@@ -86,6 +114,20 @@ SECTIONS
 	 * for MCUboot support, so .reset.* and .exception.*
 	 * must come after that offset from ROM_BASE.
 	 */
+
+#ifdef CONFIG_BOOTLOADER_MCUBOOT
+	/*
+	 * For CONFIG_BOOTLOADER_MCUBOOT, the vector table is located at the
+	 * end of the image header of the MCUboot. After the tagert image is
+	 * boot, the register Machine Trap-Vector Base Address (MTVEC) is
+	 * set with the value of _vector_start in the reset handler.
+	 */
+	_vector_start = .;
+	KEEP(*(.vectors.*))
+	_vector_end = .;
+	. = ALIGN(4);
+#endif
+
 	KEEP(*(.reset.*))
 	KEEP(*(".exception.entry.*")) /* contains __irq_wrapper */
 	*(".exception.other.*")
@@ -124,6 +166,7 @@ SECTIONS
     _image_rodata_end = .;
     _image_rom_end = .;
 
+#ifndef CONFIG_BOOTLOADER_MCUBOOT
     /* The vector table goes into core-dependent flash locations. */
     SECTION_PROLOGUE(vectors,,)
 	{
@@ -131,6 +174,7 @@ SECTIONS
 	KEEP(*(.vectors.*))
 	} GROUP_LINK_IN(VECTORS)
     _vector_end = .;
+#endif
 
     GROUP_END(ROM)
 
