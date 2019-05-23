@@ -9,9 +9,9 @@
 #include <nrf_gpio.h>
 #include <nrf_gpiote.h>
 #if defined(PPI_PRESENT)
-#include <nrf_ppi.h>
+#include <nrfx_ppi.h>
 #else
-#include <nrf_dppi.h>
+#include <nrfx_dppi.h>
 #endif
 #include <logging/log.h>
 
@@ -208,11 +208,65 @@ static const struct pwm_driver_api pwm_nrf_sw_drv_api_funcs = {
 	.get_cycles_per_sec = pwm_nrf_sw_get_cycles_per_sec,
 };
 
+static int alloc_ppi_channels(u8_t gpiote_index,
+			      nrf_timer_event_t period_event,
+			      nrf_timer_event_t channel_event)
+{
+	nrfx_err_t ret;
+
+#if defined(PPI_PRESENT)
+	nrf_ppi_channel_t first_ppi_channel, second_ppi_channel;
+	u32_t gpiote_task_address =
+		/* TODO - replace with a proper function from the GPIOTE HAL
+		 * 	  when such function becomes available.
+		 */
+		(u32_t)&(NRF_GPIOTE->TASKS_OUT[gpiote_index]);
+
+	ret = nrfx_ppi_channel_alloc(&first_ppi_channel);
+	if (ret != NRFX_SUCCESS) {
+		return -ENOMEM;
+	}
+	nrf_ppi_channel_endpoint_setup(
+		first_ppi_channel,
+		(u32_t)nrf_timer_event_address_get(TIMER_REGS, channel_event),
+		gpiote_task_address);
+
+	ret = nrfx_ppi_channel_alloc(&second_ppi_channel);
+	if (ret != NRFX_SUCCESS) {
+		return -ENOMEM;
+	}
+	nrf_ppi_channel_endpoint_setup(
+		second_ppi_channel,
+		(u32_t)nrf_timer_event_address_get(TIMER_REGS, period_event),
+		gpiote_task_address);
+
+	nrf_ppi_channels_enable(BIT(first_ppi_channel) |
+				BIT(second_ppi_channel));
+#else
+	u8_t dppi_channel;
+
+	ret = nrfx_dppi_channel_alloc(&dppi_channel);
+	if (ret != NRFX_SUCCESS) {
+		return -ENOMEM;
+	}
+	nrf_timer_publish_set(TIMER_REGS, channel_event, dppi_channel);
+	nrf_timer_publish_set(TIMER_REGS, period_event, dppi_channel);
+	nrf_gpiote_subscribe_set(
+		/* TODO - replace with a proper function from the GPIOTE HAL
+		 * 	  when such function becomes available.
+		 */
+		offsetof(NRF_GPIOTE_Type, TASKS_OUT[gpiote_index]),
+		dppi_channel);
+	nrf_dppi_channels_enable(NRF_DPPIC, BIT(dppi_channel));
+#endif /* defined(PPI_PRESENT) */
+
+	return 0;
+}
+
 static int pwm_nrf_sw_init(struct device *dev)
 {
 	u8_t channel;
 	u8_t gpiote_index = DT_INST_0_NORDIC_NRF_SW_PWM_GPIOTE_BASE;
-	u8_t ppi_index    = DT_INST_0_NORDIC_NRF_SW_PWM_PPI_BASE;
 	nrf_timer_event_t period_event =
 		nrf_timer_compare_event_get(PWM_PERIOD_TIMER_CHANNEL);
 
@@ -230,40 +284,15 @@ static int pwm_nrf_sw_init(struct device *dev)
 	for (channel = 0; channel < PWM_MAP_SIZE; ++channel) {
 		nrf_timer_event_t channel_event =
 			nrf_timer_compare_event_get(channel);
+		int error = alloc_ppi_channels(gpiote_index,
+					       period_event,
+					       channel_event);
+		if (error) {
+			LOG_ERR("Failed to allocate PPI channels.");
+			return error;
+		}
 
-#if defined(PPI_PRESENT)
-		u32_t gpiote_task_address =
-			/* TODO - replace with a proper function from the GPIOTE
-			 * 	  HAL when such function becomes available.
-			 */
-			(u32_t)&(NRF_GPIOTE->TASKS_OUT[gpiote_index]);
-
-		nrf_ppi_channel_endpoint_setup(
-			ppi_index,
-			(u32_t)nrf_timer_event_address_get(TIMER_REGS,
-							   channel_event),
-			gpiote_task_address);
-		nrf_ppi_channel_endpoint_setup(
-			ppi_index + 1,
-			(u32_t)nrf_timer_event_address_get(TIMER_REGS,
-							   period_event),
-			gpiote_task_address);
-		nrf_ppi_channels_enable(BIT(ppi_index) | BIT(ppi_index + 1));
-		ppi_index += 2;
-#else
-		nrf_timer_publish_set(TIMER_REGS, channel_event, ppi_index);
-		nrf_timer_publish_set(TIMER_REGS, period_event, ppi_index);
-		nrf_gpiote_subscribe_set(
-			/* TODO - replace with a proper function from the GPIOTE
-			* 	  HAL when such function becomes available.
-			*/
-			offsetof(NRF_GPIOTE_Type, TASKS_OUT[gpiote_index]),
-			ppi_index);
-		nrf_dppi_channels_enable(NRF_DPPIC, BIT(ppi_index));
-		ppi_index += 1;
-#endif /* defined(PPI_PRESENT) */
-
-		gpiote_index += 1;
+		++gpiote_index;
 	}
 
 	return 0;

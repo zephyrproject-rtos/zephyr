@@ -486,17 +486,6 @@ static inline void hal_radio_rxen_on_sw_switch(u8_t ppi)
 #define HAL_USED_PPI_CHANNELS_5 0
 #endif
 
-#if defined(CONFIG_SOC_SERIES_BSIM_NRFXX)
-/* When the build is targeting an NRF board simulated with BabbleSim,
- * nrfx_glue.h is not processed and the following symbol is not defined.
- */
-#define NRFX_PPI_CHANNELS_USED_BY_PWM_SW  0
-#endif
-BUILD_ASSERT_MSG(
-	(HAL_USED_PPI_CHANNELS & NRFX_PPI_CHANNELS_USED_BY_PWM_SW) == 0,
-	"PPI channels used by the Bluetooth controller overlap with those "
-	"assigned to the pwm_nrf5_sw driver.");
-
 #if defined(SW_SWITCH_TIMER_TASK_GROUP_BASE)
 #define HAL_USED_PPI_GROUPS \
 	(BIT(SW_SWITCH_TIMER_TASK_GROUP_BASE) | \

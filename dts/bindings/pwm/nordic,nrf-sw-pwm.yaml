@@ -25,11 +25,6 @@ properties:
       description: Number of PWM channels. Limited by timer instance compare registers minus 1.
       category: required
 
-    ppi-base:
-      type: int
-      description: PPI base used for PPI index calculation used for PWM output generation
-      category: required
-
     gpiote-base:
       type: int
       description: GPIOTE base used for GPIOTE index calculation used for PWM output generation
