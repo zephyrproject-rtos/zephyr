@@ -250,6 +250,7 @@
 /scripts/gen_syscall_header.py            @andrewboie
 /scripts/gen_syscalls.py                  @andrewboie
 /scripts/process_gperf.py                 @andrewboie
+/scripts/gen_relocate_app.py              @wentongwu
 /scripts/sanity_chk/                      @andrewboie @nashif
 /scripts/sanitycheck                      @andrewboie @nashif
 /scripts/series-push-hook.sh              @erwango
