@@ -12,7 +12,7 @@ if(${WEST} STREQUAL WEST-NOTFOUND)
   unset(WEST)
 endif()
 
-set(ZEPHYR_BASE $ENV{ZEPHYR_BASE})
+file(TO_CMAKE_PATH "$ENV{ZEPHYR_BASE}" ZEPHYR_BASE)
 
 message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 
