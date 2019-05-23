@@ -141,7 +141,8 @@ void *k_mem_pool_malloc(struct k_mem_pool *pool, size_t size)
 	 * get a block large enough to hold an initial (hidden) block
 	 * descriptor, as well as the space the caller requested
 	 */
-	if (size_add_overflow(size, sizeof(struct k_mem_block_id), &size)) {
+	if (size_add_overflow(size, WB_UP(sizeof(struct k_mem_block_id)),
+			      &size)) {
 		return NULL;
 	}
 	if (k_mem_pool_alloc(pool, &block, size, K_NO_WAIT) != 0) {
@@ -152,14 +153,14 @@ void *k_mem_pool_malloc(struct k_mem_pool *pool, size_t size)
 	(void)memcpy(block.data, &block.id, sizeof(struct k_mem_block_id));
 
 	/* return address of the user area part of the block to the caller */
-	return (char *)block.data + sizeof(struct k_mem_block_id);
+	return (char *)block.data + WB_UP(sizeof(struct k_mem_block_id));
 }
 
 void k_free(void *ptr)
 {
 	if (ptr != NULL) {
 		/* point to hidden block descriptor at start of block */
-		ptr = (char *)ptr - sizeof(struct k_mem_block_id);
+		ptr = (char *)ptr - WB_UP(sizeof(struct k_mem_block_id));
 
 		/* return block to the heap memory pool */
 		k_mem_pool_free_id(ptr);
