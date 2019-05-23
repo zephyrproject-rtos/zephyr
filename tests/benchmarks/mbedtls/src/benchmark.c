@@ -299,7 +299,9 @@ int main(int argc, char *argv[])
 	printk("\tMBEDTLS Benchmark sample\n");
 
 	mbedtls_debug_set_threshold(CONFIG_MBEDTLS_DEBUG_LEVEL);
+#if defined(MBEDTLS_PLATFORM_PRINTF_ALT)
 	mbedtls_platform_set_printf(MBEDTLS_PRINT);
+#endif
 	mbedtls_ssl_conf_dbg(&conf, my_debug, NULL);
 
 	k_delayed_work_init(&mbedtls_alarm, mbedtls_alarm_timeout);
