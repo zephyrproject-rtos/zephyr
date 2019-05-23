@@ -28,6 +28,14 @@ void *bsearch(const void *key, const void *array,
 	      size_t count, size_t size,
 	      int (*cmp)(const void *key, const void *element));
 
+#define EXIT_SUCCESS 0
+#define EXIT_FAILURE 1
+void _exit(int status);
+static inline void exit(int status)
+{
+	_exit(status);
+}
+
 int rand(void);
 
 #define abs(x) ((x) < 0 ? -(x) : (x))
