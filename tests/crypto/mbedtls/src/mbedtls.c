@@ -164,7 +164,9 @@ void test_mbedtls(void)
 
 	void *pointer;
 
+#if defined(MBEDTLS_PLATFORM_PRINTF_ALT)
 	mbedtls_platform_set_printf(MBEDTLS_PRINT);
+#endif
 
 	TC_START("Performing mbedTLS crypto tests:");
 
