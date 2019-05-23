@@ -42,19 +42,24 @@ void settings_dst_register(struct settings_store *cs)
 
 int settings_load(void)
 {
-	struct settings_store *cs;
-
 	/*
 	 * for every config store
 	 *    load config
 	 *    apply config
 	 *    commit all
 	 */
+	settings_load_selected(NULL);
+	return settings_commit();
+}
+
+int settings_load_selected(const char *pattern)
+{
+	struct settings_store *cs;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&settings_load_srcs, cs, cs_next) {
-		cs->cs_itf->csi_load(cs);
+		cs->cs_itf->csi_load(cs, pattern);
 	}
-	return settings_commit();
+	return 0;
 }
 
 /*

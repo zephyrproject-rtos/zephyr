@@ -122,6 +122,19 @@ int settings_register(struct settings_handler *cf);
 int settings_load(void);
 
 /**
+ * @brief Load settings that matches selected pattern
+ *
+ * Load all the settings that matches the selected pattern.
+ *
+ * @note The function does not call commit at the end.
+ *
+ * @param pattern Pattern to match settings (@see settings_name_cmp).
+ *
+ * @return 0 on success, non-zero on failure.
+ */
+int settings_load_selected(const char *pattern);
+
+/**
  * Save currently running serialized items. All serialized items which are different
  * from currently persisted values will be saved.
  *
@@ -192,11 +205,12 @@ struct settings_store {
  * Destinations are registered using a call to @ref settings_dst_register.
  */
 struct settings_store_itf {
-	int (*csi_load)(struct settings_store *cs);
+	int (*csi_load)(struct settings_store *cs, const char *pattern);
 	/**< Loads all values from storage.
 	 *
 	 * Parameters:
 	 *  - cs - Corresponding backend handler node
+	 *  - pattern - Pattern to filter loaded keys (@see settings_name_cmp)
 	 */
 
 	int (*csi_save_start)(struct settings_store *cs);
