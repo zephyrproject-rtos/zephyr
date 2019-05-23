@@ -9,6 +9,7 @@ zephyr_library_sources(
   source/stdlib/strtoul.c
   source/stdlib/malloc.c
   source/stdlib/bsearch.c
+  source/stdlib/exit.c
   source/string/strncasecmp.c
   source/string/strstr.c
   source/string/string.c
