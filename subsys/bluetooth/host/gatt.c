@@ -1536,7 +1536,7 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	nfy.type = BT_GATT_CCC_INDICATE;
 	nfy.params = params;
 
-	bt_gatt_foreach_attr(params->attr->handle, 0xffff, notify_cb, &nfy);
+	bt_gatt_foreach_attr(handle, 0xffff, notify_cb, &nfy);
 
 	return nfy.err;
 }
