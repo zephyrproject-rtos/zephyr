@@ -27,23 +27,3 @@
 		zephyr,bt-mon-uart = &uart1;
 	};
 };
-
-&uart0 {
-	status = "ok";
-};
-
-&uart1 {
-	status = "ok";
-};
-
-&i2c0 {
-	status = "ok";
-};
-
-&i2c1 {
-	status = "ok";
-};
-
-&gpio {
-	status = "ok";
-};
