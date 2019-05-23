@@ -178,7 +178,7 @@ do {                                                                  \
 								      \
 	mbedtls_printf("%9lu KiB/s,  %9lu ns/byte\n",                 \
 		       ii * BUFSIZE / 1024,                           \
-		       delta / (jj * BUFSIZE));                       \
+		       (unsigned long)(delta / (jj * BUFSIZE)));      \
 } while (0)
 
 #if defined(MBEDTLS_MEMORY_BUFFER_ALLOC_C) && defined(MBEDTLS_MEMORY_DEBUG)
