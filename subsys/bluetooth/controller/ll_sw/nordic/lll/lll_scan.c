@@ -786,17 +786,12 @@ static inline u32_t isr_rx_pdu(struct lll_scan *lll, u8_t devmatch_ok,
 				    radio_tx_chain_delay_get(0, 0);
 		ftr->us_radio_rdy = radio_tx_ready_delay_get(0, 0);
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
 		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 			ftr->extra = ull_pdu_rx_alloc();
-			if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
-				*((u8_t *)ftr->extra) = irkmatch_ok ?
-							rl_idx :
-							FILTER_IDX_NONE;
-			}
-		} else if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
-			ftr->extra = (void *)((u32_t)(irkmatch_ok ?
-						      rl_idx :
-						      FILTER_IDX_NONE));
 		}
 
 		ull_rx_put(rx->hdr.link, rx);
@@ -1014,7 +1009,6 @@ static u32_t isr_rx_scan_report(struct lll_scan *lll, u8_t rssi_ready,
 {
 	struct node_rx_pdu *node_rx;
 	struct pdu_adv *pdu_adv_rx;
-	u8_t *extra;
 
 	node_rx = ull_pdu_rx_alloc_peek(3);
 	if (!node_rx) {
@@ -1053,28 +1047,23 @@ static u32_t isr_rx_scan_report(struct lll_scan *lll, u8_t rssi_ready,
 	}
 
 	pdu_adv_rx = (void *)node_rx->pdu;
-	extra = (u8_t *)&(node_rx->hdr.rx_ftr.param);
 
-	/* save the RSSI value */
-	*extra = (rssi_ready) ? (radio_rssi_get() & 0x7f) : 0x7f;
-	extra += PDU_AC_SIZE_RSSI;
-
+	node_rx->hdr.rx_ftr.rssi = (rssi_ready) ?
+				   (radio_rssi_get() & 0x7f)
+				   : 0x7f;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	/* save the resolving list index. */
-	*extra = rl_idx;
-	extra += PDU_AC_SIZE_PRIV;
+	node_rx->hdr.rx_ftr.rl_idx = rl_idx;
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
 	/* save the directed adv report flag */
-	*extra = dir_report ? 1 : 0;
-	extra += PDU_AC_SIZE_SCFP;
+	node_rx->hdr.rx_ftr.direct = dir_report;
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	if (node_rx->hdr.type == NODE_RX_TYPE_MESH_REPORT) {
-		/* save the directed adv report flag */
-		*extra = _radio.scanner.chan - 1;
-		extra++;
-		sys_put_le32(_radio.ticks_anchor, extra);
+		/* save channel and anchor point ticks. */
+		node_rx->hdr.rx_ftr.chan = _radio.scanner.chan - 1;
+		node_rx->hdr.rx_ftr.ticks_anchor = _radio.ticks_anchor;
 	}
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 

@@ -718,17 +718,12 @@ static inline int isr_rx_pdu(struct lll_adv *lll,
 				    radio_tx_chain_delay_get(0, 0);
 		ftr->us_radio_rdy = radio_rx_ready_delay_get(0, 0);
 
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+		ftr->rl_idx = irkmatch_ok ? rl_idx : FILTER_IDX_NONE;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+
 		if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
 			ftr->extra = ull_pdu_rx_alloc();
-			if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
-				*((u8_t *)ftr->extra) = irkmatch_ok ?
-							rl_idx :
-							FILTER_IDX_NONE;
-			}
-		} else if (IS_ENABLED(CONFIG_BT_CTLR_PRIVACY)) {
-			ftr->extra = (void *)((u32_t)(irkmatch_ok ?
-						      rl_idx :
-						      FILTER_IDX_NONE));
 		}
 
 		ull_rx_put(rx->hdr.link, rx);
@@ -790,8 +785,9 @@ static inline int isr_rx_sr_report(struct pdu_adv *pdu_adv_rx,
 	pdu_adv = (void *)node_rx->pdu;
 	pdu_len = offsetof(struct pdu_adv, payload) + pdu_adv_rx->len;
 	memcpy(pdu_adv, pdu_adv_rx, pdu_len);
-	((u8_t *)pdu_adv)[pdu_len] = (rssi_ready) ? (radio_rssi_get() & 0x7f) :
-						    0x7f;
+
+	node_rx->hdr.rx_ftr.rssi = (rssi_ready) ? (radio_rssi_get() & 0x7f) :
+						  0x7f;
 
 	ull_rx_put(node_rx->hdr.link, node_rx);
 	ull_rx_sched();

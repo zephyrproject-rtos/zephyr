@@ -125,7 +125,7 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	u8_t own_addr_type = pdu_adv->rx_addr;
 	u8_t own_addr[BDADDR_SIZE];
-	u8_t rl_idx;
+	u8_t rl_idx = ftr->rl_idx;
 
 	memcpy(own_addr, &pdu_adv->connect_ind.adv_addr[0], BDADDR_SIZE);
 #endif
@@ -142,12 +142,6 @@ void ull_slave_setup(memq_link_t *link, struct node_rx_hdr *rx,
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	cc->own_addr_type = own_addr_type;
 	memcpy(&cc->own_addr[0], &own_addr[0], BDADDR_SIZE);
-
-	if (IS_ENABLED(CONFIG_BT_CTLR_CHAN_SEL_2)) {
-		rl_idx = *((u8_t *)ftr->extra);
-	} else {
-		rl_idx = (u8_t)((u32_t)ftr->extra & 0xFF);
-	}
 
 	if (rl_idx != FILTER_IDX_NONE) {
 		/* TODO: store rl_idx instead if safe */
