@@ -58,9 +58,6 @@ struct net_pkt_cursor {
  * net_pkt_clone() function.
  */
 struct net_pkt {
-	/** FIFO uses first 4 bytes itself, reserve space */
-	int _reserved;
-
 	/** Internal variable that is used when packet is sent */
 	struct k_work work;
 
