@@ -712,7 +712,7 @@ toggled off to select none of the symbols:
    endchoice
 
 In the menuconfig interface, this will be displayed e.g. as ``[*] Use legacy
-protocol (LEGACY_PROTOCOL_1) --->``, where the choice can be toggled off to
+protocol (Legacy protocol 1) --->``, where the choice can be toggled off to
 enable neither of the symbols.
 
 
