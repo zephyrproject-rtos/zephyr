@@ -72,13 +72,7 @@ add_custom_target(code_data_relocation_target)
 # and its associated variables, e.g. PROJECT_SOURCE_DIR.
 # It is recommended to always use ZEPHYR_BASE instead of PROJECT_SOURCE_DIR
 # when trying to reference ENV${ZEPHYR_BASE}.
-set(PROJECT_SOURCE_DIR $ENV{ZEPHYR_BASE})
-
-# Convert path to use the '/' separator
-string(REPLACE "\\" "/" PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR})
-
-# Remove trailing '/', it results in ugly paths and also exposes some bugs
-string(REGEX REPLACE "\/+$" "" PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+file(TO_CMAKE_PATH "$ENV{ZEPHYR_BASE}" PROJECT_SOURCE_DIR)
 
 set(ZEPHYR_BINARY_DIR ${PROJECT_BINARY_DIR})
 set(ZEPHYR_BASE ${PROJECT_SOURCE_DIR})
