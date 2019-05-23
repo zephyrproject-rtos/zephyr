@@ -326,6 +326,31 @@ error-prone, since it can be hard to spot that the same dependency is added
 twice.
 
 
+``depends on`` and ``string``/``int``/``hex`` symbols
+*****************************************************
+
+``depends on`` works not just for ``bool`` symbols, but also for ``string``,
+``int``, and ``hex`` symbols (and for choices).
+
+The Kconfig definitions below will hide the ``FOO_DEVICE_FREQUENCY`` symbol and
+disable any configuration output for it when ``FOO_DEVICE`` is disabled.
+
+.. code-block:: none
+
+   config FOO_DEVICE
+   	bool "Foo device"
+
+   config FOO_DEVICE_FREQUENCY
+   	int "Foo device frequency"
+   	depends on FOO_DEVICE
+
+In general, it's a good idea to check that only relevant symbols are ever shown
+in the ``menuconfig`` interface. Having ``FOO_DEVICE_FREQUENCY`` show up when
+``FOO_DEVICE`` is disabled (and possibly hidden) makes the relationship between
+the symbols harder to understand, even if code never looks at
+``FOO_DEVICE_FREQUENCY`` when ``FOO_DEVICE`` is disabled.
+
+
 Checking changes in ``menuconfig``
 **********************************
 
