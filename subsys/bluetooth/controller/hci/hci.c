@@ -2311,6 +2311,7 @@ int hci_acl_handle(struct net_buf *buf, struct net_buf **evt)
 	}
 
 	pdu_data = (void *)node_tx->pdu;
+
 	if (flags == BT_ACL_START_NO_FLUSH || flags == BT_ACL_START) {
 		pdu_data->ll_id = PDU_DATA_LLID_DATA_START;
 	} else {
@@ -2446,13 +2447,17 @@ static inline bool scan_filter_apply(u8_t filter, u8_t *data, u8_t len)
 	return false;
 }
 
-static inline void le_mesh_scan_report(struct pdu_adv *adv, struct net_buf *buf,
-				       s8_t rssi, u8_t *extra)
+static inline void le_mesh_scan_report(struct pdu_adv *adv,
+				       struct node_rx_pdu *node_rx,
+				       struct net_buf *buf, s8_t rssi)
 {
 	u8_t data_len = (adv->len - BDADDR_SIZE);
 	struct bt_hci_evt_mesh_scanning_report *mep;
 	struct bt_hci_evt_mesh_scan_report *sr;
 	u32_t instant;
+#if !defined(CONFIG_BT_LL_SW_SPLIT)
+	u8_t *extra;
+#endif
 	u8_t chan;
 
 	LL_ASSERT(adv->type == PDU_ADV_TYPE_NONCONN_IND);
@@ -2464,9 +2469,17 @@ static inline void le_mesh_scan_report(struct pdu_adv *adv, struct net_buf *buf,
 		return;
 	}
 
+#if defined(CONFIG_BT_LL_SW_SPLIT)
+	chan = node_rx->hdr.rx_ftr.chan;
+	instant = node_rx->hdr.rx_ftr.anchor_ticks;
+#else
+	extra = &adv->payload[adv->len + PDU_AC_SIZE_RSSI + PDU_AC_SIZE_PRIV +
+			      PDU_AC_SIZE_SCFP];
+
 	chan = *extra;
 	extra++;
 	instant = sys_get_le32(extra);
+#endif /* CONFIG_BT_LL_SW_SPLIT */
 
 	mep = mesh_evt(buf, BT_HCI_EVT_MESH_SCANNING_REPORT,
 			    sizeof(*mep) + sizeof(*sr));
@@ -2484,7 +2497,8 @@ static inline void le_mesh_scan_report(struct pdu_adv *adv, struct net_buf *buf,
 }
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
-static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
+static void le_advertising_report(struct pdu_data *pdu_data,
+				  struct node_rx_pdu *node_rx,
 				  struct net_buf *buf)
 {
 	const u8_t c_adv_type[] = { 0x00, 0x01, 0x03, 0xff, 0x04,
@@ -2494,7 +2508,9 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	struct bt_hci_evt_le_advertising_info *adv_info;
 	u8_t data_len;
 	u8_t info_len;
+#if !defined(CONFIG_BT_LL_SW_SPLIT)
 	u8_t *extra;
+#endif
 	s8_t rssi;
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	u8_t rl_idx;
@@ -2505,32 +2521,37 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 	s8_t *prssi;
 
 #if defined(CONFIG_BT_LL_SW_SPLIT)
-	struct node_rx_pdu *node_rx;
+	rssi = -(node_rx->hdr.rx_ftr.rssi);
+#if defined(CONFIG_BT_CTLR_PRIVACY)
+	rl_idx = node_rx->hdr.rx_ftr.rl_idx;
+#endif /* CONFIG_BT_CTLR_PRIVACY */
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+	direct = node_rx->hdr.rx_ftr.direct;
+#endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
-	node_rx = (struct node_rx_pdu *)b;
-	extra = (u8_t *)&(node_rx->hdr.rx_ftr.param);
 #else
-	extra = (u8_t *)&b[offsetof(struct radio_pdu_node_rx, pdu_data) +
-			   offsetof(struct pdu_adv, payload) + adv->len];
-#endif /* CONFIG_BT_LL_SW_SPLIT */
-
-	/* The Link Layer currently returns RSSI as an absolute value */
+	extra = &adv->payload[adv->len];
 	rssi = -(*extra);
-	extra += 1;
+	extra += PDU_AC_SIZE_RSSI;
 
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 	rl_idx = *extra;
-	extra += 1;
+	extra += PDU_AC_SIZE_PRIV;
+#endif
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+	direct = *extra;
+	extra += PDU_AC_SIZE_SCFP;
+#endif
+#endif /* CONFIG_BT_LL_SW_SPLIT */
 
-	/* Update current RPA */
+#if defined(CONFIG_BT_CTLR_PRIVACY)
 	if (adv->tx_addr) {
+		/* Update current RPA */
 		ll_rl_crpa_set(0x00, NULL, rl_idx, &adv->adv_ind.addr[0]);
 	}
 #endif /* CONFIG_BT_CTLR_PRIVACY */
 
 #if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
-	direct = *extra;
-	extra += 1;
 	if (direct) {
 #if defined(CONFIG_BT_CTLR_PRIVACY)
 		le_dir_adv_report(adv, buf, rssi, rl_idx);
@@ -2542,8 +2563,8 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 #endif /* CONFIG_BT_CTLR_EXT_SCAN_FP */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-	if (((struct node_rx_pdu *)b)->hdr.type == NODE_RX_TYPE_MESH_REPORT) {
-		le_mesh_scan_report(adv, buf, rssi, extra);
+	if (node_rx->hdr.type == NODE_RX_TYPE_MESH_REPORT) {
+		le_mesh_scan_report(adv, node_rx, buf, rssi);
 		return;
 	}
 #endif /* CONFIG_BT_HCI_MESH_EXT */
@@ -2599,24 +2620,23 @@ static void le_advertising_report(struct pdu_data *pdu_data, u8_t *b,
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
-static void le_adv_ext_report(struct pdu_data *pdu_data, u8_t *b,
+static void le_adv_ext_report(struct pdu_data *pdu_data,
+			      struct node_rx_pdu *node_rx,
 			      struct net_buf *buf, u8_t phy)
 {
 	struct pdu_adv *adv = (void *)pdu_data;
 	s8_t rssi;
+#if !defined(CONFIG_BT_LL_SW_SPLIT)
 	u8_t *extra;
+#endif
 
 #if defined(CONFIG_BT_LL_SW_SPLIT)
-	struct node_rx_pdu *node_rx;
-
-	node_rx = (struct node_rx_pdu *)b;
-	extra = (u8_t *)&(node_rx->hdr.rx_ftr.param);
-#else
-	extra = (u8_t *)&b[offsetof(struct radio_pdu_node_rx, pdu_data) +
-			   offsetof(struct pdu_adv, payload) + adv->len];
-#endif /* CONFIG_BT_LL_SW_SPLIT */
 	/* The Link Layer currently returns RSSI as an absolute value */
+	rssi = -(node_rx->hdr.rx_ftr.rssi);
+#else
+	extra = &adv->payload[adv->len];
 	rssi = -(*extra);
+#endif /* CONFIG_BT_LL_SW_SPLIT */
 
 	BT_DBG("phy= 0x%x, type= 0x%x, len= %u, tat= %u, rat= %u, rssi=%d dB",
 	       phy, adv->type, adv->len, adv->tx_addr, adv->rx_addr, rssi);
@@ -2667,22 +2687,25 @@ no_ext_hdr:
 	return;
 }
 
-static void le_adv_ext_1M_report(struct pdu_data *pdu_data, u8_t *b,
+static void le_adv_ext_1M_report(struct pdu_data *pdu_data,
+				 struct node_rx_pdu *node_rx,
 				 struct net_buf *buf)
 {
-	le_adv_ext_report(pdu_data, b, buf, BIT(0));
+	le_adv_ext_report(pdu_data, node_rx, buf, BIT(0));
 }
 
-static void le_adv_ext_coded_report(struct pdu_data *pdu_data, u8_t *b,
+static void le_adv_ext_coded_report(struct pdu_data *pdu_data,
+				    struct node_rx_pdu *node_rx,
 				    struct net_buf *buf)
 {
-	le_adv_ext_report(pdu_data, b, buf, BIT(2));
+	le_adv_ext_report(pdu_data, node_rx, buf, BIT(2));
 }
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
-static void le_scan_req_received(struct pdu_data *pdu_data, u8_t *b,
+static void le_scan_req_received(struct pdu_data *pdu_data,
+				 struct node_rx_pdu *node_rx,
 				 struct net_buf *buf)
 {
 	struct pdu_adv *adv = (void *)pdu_data;
@@ -2695,7 +2718,9 @@ static void le_scan_req_received(struct pdu_data *pdu_data, u8_t *b,
 		char addr_str[BT_ADDR_LE_STR_LEN];
 		bt_addr_le_t addr;
 		u8_t handle;
+#if !defined(CONFIG_BT_LL_SW_SPLIT)
 		u8_t *extra;
+#endif
 		s8_t rssi;
 
 		handle = 0U;
@@ -2704,19 +2729,12 @@ static void le_scan_req_received(struct pdu_data *pdu_data, u8_t *b,
 		       sizeof(bt_addr_t));
 
 #if defined(CONFIG_BT_LL_SW_SPLIT)
-		struct node_rx_pdu *node_rx;
-
-		node_rx = (struct node_rx_pdu *)b;
-		extra = (u8_t *)&(node_rx->hdr.rx_ftr.param);
-#else
-		extra = (u8_t *)&b[offsetof(struct radio_pdu_node_rx,
-					    pdu_data) +
-				   offsetof(struct pdu_adv, payload) +
-				   adv->len];
-#endif /* CONFIG_BT_LL_SW_SPLIT */
-
 		/* The Link Layer currently returns RSSI as an absolute value */
+		rssi = -(node_rx->hdr.rx_ftr.rssi);
+#else
+		extra = &adv->payload[adv->len];
 		rssi = -(*extra);
+#endif /* CONFIG_BT_LL_SW_SPLIT */
 
 		bt_addr_le_to_str(&addr, addr_str, sizeof(addr_str));
 
@@ -2963,7 +2981,8 @@ static void le_phy_upd_complete(struct pdu_data *pdu_data, u16_t handle,
 #endif /* CONFIG_BT_CONN */
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
-static void mesh_adv_cplt(struct pdu_data *pdu_data, u8_t *b,
+static void mesh_adv_cplt(struct pdu_data *pdu_data,
+			  struct node_rx_pdu *node_rx,
 			  struct net_buf *buf)
 {
 	struct bt_hci_evt_mesh_adv_complete *mep;
@@ -2976,9 +2995,6 @@ static void mesh_adv_cplt(struct pdu_data *pdu_data, u8_t *b,
 static void encode_control(struct node_rx_pdu *node_rx,
 			   struct pdu_data *pdu_data, struct net_buf *buf)
 {
-#if defined(CONFIG_BT_OBSERVER) || defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
-	u8_t *b = (u8_t *)node_rx;
-#endif /* CONFIG_BT_OBSERVER || CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 	u16_t handle;
 
 	handle = node_rx->hdr.handle;
@@ -2986,23 +3002,23 @@ static void encode_control(struct node_rx_pdu *node_rx,
 	switch (node_rx->hdr.type) {
 #if defined(CONFIG_BT_OBSERVER)
 	case NODE_RX_TYPE_REPORT:
-		le_advertising_report(pdu_data, b, buf);
+		le_advertising_report(pdu_data, node_rx, buf);
 		break;
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
 	case NODE_RX_TYPE_EXT_1M_REPORT:
-		le_adv_ext_1M_report(pdu_data, b, buf);
+		le_adv_ext_1M_report(pdu_data, node_rx, buf);
 		break;
 
 	case NODE_RX_TYPE_EXT_CODED_REPORT:
-		le_adv_ext_coded_report(pdu_data, b, buf);
+		le_adv_ext_coded_report(pdu_data, node_rx, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_ADV_EXT */
 #endif /* CONFIG_BT_OBSERVER */
 
 #if defined(CONFIG_BT_CTLR_SCAN_REQ_NOTIFY)
 	case NODE_RX_TYPE_SCAN_REQ:
-		le_scan_req_received(pdu_data, b, buf);
+		le_scan_req_received(pdu_data, node_rx, buf);
 		break;
 #endif /* CONFIG_BT_CTLR_SCAN_REQ_NOTIFY */
 
@@ -3077,11 +3093,11 @@ static void encode_control(struct node_rx_pdu *node_rx,
 
 #if defined(CONFIG_BT_HCI_MESH_EXT)
 	case NODE_RX_TYPE_MESH_ADV_CPLT:
-		mesh_adv_cplt(pdu_data, b, buf);
+		mesh_adv_cplt(pdu_data, node_rx, buf);
 		return;
 
 	case NODE_RX_TYPE_MESH_REPORT:
-		le_advertising_report(pdu_data, b, buf);
+		le_advertising_report(pdu_data, node_rx, buf);
 		return;
 #endif /* CONFIG_BT_HCI_MESH_EXT */
 
@@ -3302,9 +3318,7 @@ void hci_acl_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 	pdu_data = (void *)node_rx->pdu;
 #else
-	u8_t *b = (u8_t *)node_rx;
-
-	pdu_data = (void *)&b[offsetof(struct radio_pdu_node_rx, pdu_data)];
+	pdu_data = (void *)((struct radio_pdu_node_rx *)node_rx)->pdu_data;
 #endif /* CONFIG_BT_LL_SW_SPLIT */
 
 	switch (pdu_data->ll_id) {
@@ -3349,9 +3363,7 @@ void hci_evt_encode(struct node_rx_pdu *node_rx, struct net_buf *buf)
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 	pdu_data = (void *)node_rx->pdu;
 #else
-	u8_t *b = (u8_t *)node_rx;
-
-	pdu_data = (void *)&b[offsetof(struct radio_pdu_node_rx, pdu_data)];
+	pdu_data = (void *)((struct radio_pdu_node_rx *)node_rx)->pdu_data;
 #endif /* CONFIG_BT_LL_SW_SPLIT */
 
 	if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
@@ -3387,9 +3399,7 @@ s8_t hci_get_class(struct node_rx_pdu *node_rx)
 #if defined(CONFIG_BT_LL_SW_SPLIT)
 	pdu_data = (void *)node_rx->pdu;
 #else
-	u8_t *b = (u8_t *)node_rx;
-
-	pdu_data = (void *)&b[offsetof(struct radio_pdu_node_rx, pdu_data)];
+	pdu_data = (void *)((struct radio_pdu_node_rx *)node_rx)->pdu_data;
 #endif /* CONFIG_BT_LL_SW_SPLIT */
 
 	if (node_rx->hdr.type != NODE_RX_TYPE_DC_PDU) {
