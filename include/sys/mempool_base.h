@@ -36,10 +36,12 @@ struct sys_mem_pool_base {
 	u8_t flags;
 };
 
-#define Z_MPOOL_HAVE_LVL(maxsz, minsz, l) (((maxsz) >> (2*(l))) \
-					  >= (minsz) ? 1 : 0)
+#define _MPOOL_MINBLK sizeof(sys_dnode_t)
 
-#define __MPOOL_LVLS(maxsz, minsz)		\
+#define Z_MPOOL_HAVE_LVL(maxsz, minsz, l) \
+	(((maxsz) >> (2*(l))) >= MAX((minsz), _MPOOL_MINBLK) ? 1 : 0)
+
+#define Z_MPOOL_LVLS(maxsz, minsz)		\
 	(Z_MPOOL_HAVE_LVL((maxsz), (minsz), 0) +	\
 	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 1) +	\
 	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 2) +	\
@@ -57,12 +59,6 @@ struct sys_mem_pool_base {
 	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 14) +	\
 	Z_MPOOL_HAVE_LVL((maxsz), (minsz), 15))
 
-#define _MPOOL_MINBLK sizeof(sys_dnode_t)
-
-#define Z_MPOOL_LVLS(maxsz, minsz)		\
-	__MPOOL_LVLS((maxsz), (minsz) >= _MPOOL_MINBLK ? (minsz) : \
-		     _MPOOL_MINBLK)
-
 /* Rounds the needed bits up to integer multiples of u32_t */
 #define Z_MPOOL_LBIT_WORDS_UNCLAMPED(n_max, l) \
 	((((n_max) << (2*(l))) + 31) / 32)
@@ -76,7 +72,7 @@ struct sys_mem_pool_base {
 
 /* How many bytes for the bitfields of a single level? */
 #define Z_MPOOL_LBIT_BYTES(maxsz, minsz, l, n_max)	\
-	(Z_MPOOL_LVLS((maxsz), (minsz)) > (l) ?		\
+	(Z_MPOOL_HAVE_LVL((maxsz), (minsz), (l)) ?	\
 	 4 * Z_MPOOL_LBIT_WORDS((n_max), l) : 0)
 
 /* Size of the bitmap array that follows the buffer in allocated memory */
