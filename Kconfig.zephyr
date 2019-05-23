@@ -10,6 +10,7 @@
 menu "Modules"
 
 source "$(CMAKE_BINARY_DIR)/Kconfig.modules"
+source "modules/Kconfig"
 
 endmenu
 
@@ -43,6 +44,7 @@ source "lib/Kconfig"
 source "subsys/Kconfig"
 
 source "ext/Kconfig"
+
 
 menu "Build and Link Features"
 
