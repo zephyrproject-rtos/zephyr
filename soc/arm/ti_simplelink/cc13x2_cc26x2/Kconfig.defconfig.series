@@ -60,4 +60,11 @@ config I2C_CC13XX_CC26XX
 
 endif # I2C
 
+if SPI
+
+config SPI_CC13XX_CC26XX
+	default y
+
+endif # SPI
+
 endif # SOC_SERIES_CC13X2_CC26X2
