@@ -20,9 +20,6 @@ endif # UART_NS16550
 
 if I2C
 
-config I2C_DW
-	default y
-
 config I2C_0
 	default y
 

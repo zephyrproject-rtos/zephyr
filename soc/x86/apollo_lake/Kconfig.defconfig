@@ -26,6 +26,13 @@ config X86_DYNAMIC_IRQ_STUBS
 
 endif # DYNAMIC_INTERRUPTS
 
+if I2C
+
+config I2C_DW
+	default y
+
+endif # I2C
+
 if GPIO
 
 config GPIO_INTEL_APL
