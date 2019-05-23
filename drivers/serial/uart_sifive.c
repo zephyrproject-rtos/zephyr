@@ -332,8 +332,8 @@ static int uart_sifive_init(struct device *dev)
 	volatile struct uart_sifive_regs_t *uart = DEV_UART(dev);
 
 	/* Enable TX and RX channels */
-	uart->txctrl = TXCTRL_TXEN | CTRL_CNT(cfg->rxcnt_irq);
-	uart->rxctrl = RXCTRL_RXEN | CTRL_CNT(cfg->txcnt_irq);
+	uart->txctrl = TXCTRL_TXEN | CTRL_CNT(cfg->txcnt_irq);
+	uart->rxctrl = RXCTRL_RXEN | CTRL_CNT(cfg->rxcnt_irq);
 
 	/* Set baud rate */
 	uart->div = cfg->sys_clk_freq / cfg->baud_rate - 1;
