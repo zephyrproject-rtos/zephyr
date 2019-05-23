@@ -835,7 +835,9 @@ function(zephyr_linker_sources location)
 
     # Append the file contents to the relevant destination file.
     file(READ ${path} snippet)
-    file(APPEND ${snippet_path} "\n/* From ${path}: */\n" "${snippet}\n")
+    file(RELATIVE_PATH relpath ${ZEPHYR_BASE} ${path})
+    file(APPEND ${snippet_path}
+             "\n/* From \${ZEPHYR_BASE}/${relpath}: */\n" "${snippet}\n")
   endforeach()
 endfunction(zephyr_linker_sources)
 
