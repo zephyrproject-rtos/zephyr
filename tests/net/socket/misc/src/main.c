@@ -16,7 +16,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_SOCKETS_LOG_LEVEL);
 
 void test_gethostname(void)
 {
-	static char buf[80];
+	static ZTEST_BMEM char buf[80];
 	int res;
 
 	res = gethostname(buf, sizeof(buf));

@@ -400,6 +400,11 @@ function(zephyr_library_compile_options item)
   string(MD5 uniqueness ${item})
   set(lib_name options_interface_lib_${uniqueness})
 
+  if (TARGET ${lib_name})
+    # ${item} already added, ignoring duplicate just like CMake does
+    return()
+  endif()
+
   add_library(           ${lib_name} INTERFACE)
   target_compile_options(${lib_name} INTERFACE ${item} ${ARGN})
 

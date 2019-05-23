@@ -67,7 +67,7 @@ void z_arc_v2_irq_unit_irq_enable_set(
  */
 
 static ALWAYS_INLINE
-void _arc_v2_irq_unit_int_enable(int irq)
+void z_arc_v2_irq_unit_int_enable(int irq)
 {
 	z_arc_v2_irq_unit_irq_enable_set(irq, _ARC_V2_INT_ENABLE);
 }
@@ -81,7 +81,7 @@ void _arc_v2_irq_unit_int_enable(int irq)
  */
 
 static ALWAYS_INLINE
-void _arc_v2_irq_unit_int_disable(int irq)
+void z_arc_v2_irq_unit_int_disable(int irq)
 {
 	z_arc_v2_irq_unit_irq_enable_set(irq, _ARC_V2_INT_DISABLE);
 }
@@ -95,7 +95,7 @@ void _arc_v2_irq_unit_int_disable(int irq)
  */
 
 static ALWAYS_INLINE
-void _arc_v2_irq_unit_prio_set(int irq, unsigned char prio)
+void z_arc_v2_irq_unit_prio_set(int irq, unsigned char prio)
 {
 	z_arc_v2_aux_reg_write(_ARC_V2_IRQ_SELECT, irq);
 #ifdef CONFIG_ARC_HAS_SECURE

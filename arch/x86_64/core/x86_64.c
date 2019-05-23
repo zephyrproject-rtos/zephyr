@@ -29,10 +29,10 @@ void z_new_thread(struct k_thread *t, k_thread_stack_t *stack,
 	void *args[] = { entry, p1, p2, p3 };
 	int nargs = 4;
 	int eflags = 0x200;
-	char *base = K_THREAD_STACK_BUFFER(stack);
+	char *base = Z_THREAD_STACK_BUFFER(stack);
 	char *top = base + sz;
 
-	_new_thread_init(t, base, sz, prio, opts);
+	z_new_thread_init(t, base, sz, prio, opts);
 
 	t->switch_handle = (void *)xuk_setup_stack((long) top,
 						   (void *)z_thread_entry,
@@ -46,7 +46,7 @@ void k_cpu_idle(void)
 	__asm__ volatile("sti; hlt");
 }
 
-void _unhandled_vector(int vector, int err, struct xuk_entry_frame *f)
+void z_unhandled_vector(int vector, int err, struct xuk_entry_frame *f)
 {
 	/* Yes, there are five regsiters missing.  See notes on
 	 * xuk_entry_frame/xuk_stack_frame.
@@ -62,12 +62,12 @@ void _unhandled_vector(int vector, int err, struct xuk_entry_frame *f)
 	z_NanoFatalErrorHandler(x86_64_except_reason, NULL);
 }
 
-void _isr_entry(void)
+void z_isr_entry(void)
 {
 	z_arch_curr_cpu()->nested++;
 }
 
-void *_isr_exit_restore_stack(void *interrupted)
+void *z_isr_exit_restore_stack(void *interrupted)
 {
 	bool nested = (--z_arch_curr_cpu()->nested) > 0;
 	void *next = z_get_next_switch_handle(interrupted);
@@ -139,7 +139,7 @@ void z_arch_sched_ipi(void)
 
 
 /* Called from xuk layer on actual CPU start */
-void _cpu_start(int cpu)
+void z_cpu_start(int cpu)
 {
 	xuk_set_f_ptr(cpu, &_kernel.cpus[cpu]);
 

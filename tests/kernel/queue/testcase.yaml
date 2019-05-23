@@ -1,6 +1,6 @@
 tests:
   kernel.queue:
-    tags: kernel
+    tags: kernel userspace
   kernel.queue.poll:
     extra_args: CONF_FILE="prj_poll.conf"
     tags: kernel userspace

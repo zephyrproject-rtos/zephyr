@@ -755,9 +755,11 @@ static inline void usbd_work_process_pwr_events(struct usbd_pwr_event *pwr_evt)
 
 	switch (pwr_evt->state) {
 	case USBD_ATTACHED:
-		LOG_DBG("USB detected");
-		nrfx_usbd_enable();
-		(void) hf_clock_enable(true, false);
+		if (!nrfx_usbd_is_enabled()) {
+			LOG_DBG("USB detected");
+			nrfx_usbd_enable();
+			(void) hf_clock_enable(true, false);
+		}
 
 		/* No callback here.
 		 * Stack will be notified when the peripheral is ready.
@@ -1317,6 +1319,13 @@ int usb_dc_attach(void)
 	}
 
 	if (nrf_power_usbregstatus_vbusdet_get()) {
+		/* USBDETECTED event is be generated on cable attachment and
+		 * when cable is already attached during reset, but not when
+		 * the peripheral is re-enabled.
+		 * When USB-enabled bootloader is used, target application
+		 * will not receive this event and it needs to be generated
+		 * again here.
+		 */
 		usb_dc_nrfx_power_event_callback(NRF_POWER_EVENT_USBDETECTED);
 	}
 

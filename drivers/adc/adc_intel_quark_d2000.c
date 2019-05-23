@@ -366,7 +366,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	struct adc_quark_d2000_info *info =
 		CONTAINER_OF(ctx, struct adc_quark_d2000_info, ctx);
 
-	info->channels = ctx->sequence->channels;
+	info->channels = ctx->sequence.channels;
 
 	adc_quark_d2000_start_conversion(info->dev);
 }
@@ -376,7 +376,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx,
 {
 	struct adc_quark_d2000_info *info =
 		CONTAINER_OF(ctx, struct adc_quark_d2000_info, ctx);
-	const struct adc_sequence *entry = ctx->sequence;
+	const struct adc_sequence *entry = &ctx->sequence;
 
 	if (repeat) {
 		info->buffer = (u16_t *)entry->buffer;

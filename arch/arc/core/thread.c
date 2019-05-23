@@ -67,7 +67,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned int options)
 {
-	char *pStackMem = K_THREAD_STACK_BUFFER(stack);
+	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
 	Z_ASSERT_VALID_PRIO(priority, pEntry);
 
 	char *stackEnd;
@@ -141,8 +141,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #endif
 	}
 
-	_new_thread_init(thread, pStackMem, stackAdjSize, priority, options);
-
+	z_new_thread_init(thread, pStackMem, stackAdjSize, priority, options);
 
 	/* carve the thread entry struct from the "base" of
 		the privileged stack */
@@ -152,9 +151,9 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	/* fill init context */
 	pInitCtx->status32 = 0U;
 	if (options & K_USER) {
-		pInitCtx->pc = ((u32_t)_user_thread_entry_wrapper);
+		pInitCtx->pc = ((u32_t)z_user_thread_entry_wrapper);
 	} else {
-		pInitCtx->pc = ((u32_t)_thread_entry_wrapper);
+		pInitCtx->pc = ((u32_t)z_thread_entry_wrapper);
 	}
 
 	/*
@@ -168,7 +167,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 #else /* For no USERSPACE feature */
 	stackEnd = pStackMem + stackSize;
 
-	_new_thread_init(thread, pStackMem, stackSize, priority, options);
+	z_new_thread_init(thread, pStackMem, stackSize, priority, options);
 
 	stackAdjEnd = stackEnd;
 
@@ -177,7 +176,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		sizeof(struct init_stack_frame));
 
 	pInitCtx->status32 = 0U;
-	pInitCtx->pc = ((u32_t)_thread_entry_wrapper);
+	pInitCtx->pc = ((u32_t)z_thread_entry_wrapper);
 #endif
 
 #ifdef CONFIG_ARC_HAS_SECURE
@@ -270,7 +269,7 @@ FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
 	/* need to lock cpu here ? */
 	configure_mpu_thread(_current);
 
-	_arc_userspace_enter(user_entry, p1, p2, p3,
+	z_arc_userspace_enter(user_entry, p1, p2, p3,
 			     (u32_t)_current->stack_obj,
 			     _current->stack_info.size);
 	CODE_UNREACHABLE;

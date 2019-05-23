@@ -209,7 +209,7 @@ static void gpio_cmsdk_ahb_isr(void *arg)
 
 	int_stat = cfg->port->intstatus;
 
-	_gpio_fire_callbacks(&data->gpio_cb, dev, int_stat);
+	gpio_fire_callbacks(&data->gpio_cb, dev, int_stat);
 
 	/* clear the port interrupts */
 	cfg->port->intclear = 0xFFFFFFFF;
@@ -221,7 +221,7 @@ static int gpio_cmsdk_ahb_manage_callback(struct device *dev,
 {
 	struct gpio_cmsdk_ahb_dev_data *data = dev->driver_data;
 
-	return _gpio_manage_callback(&data->gpio_cb, callback, set);
+	return gpio_manage_callback(&data->gpio_cb, callback, set);
 }
 
 static int gpio_cmsdk_ahb_enable_callback(struct device *dev,

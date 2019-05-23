@@ -80,7 +80,7 @@ static void __IoApicSet(s32_t offset, u32_t value);
 static void ioApicRedSetHi(unsigned int irq, u32_t upper32);
 static void ioApicRedSetLo(unsigned int irq, u32_t lower32);
 static u32_t ioApicRedGetLo(unsigned int irq);
-static void _IoApicRedUpdateLo(unsigned int irq, u32_t value,
+static void IoApicRedUpdateLo(unsigned int irq, u32_t value,
 					u32_t mask);
 
 /*
@@ -135,7 +135,7 @@ int _ioapic_init(struct device *unused)
  */
 void z_ioapic_irq_enable(unsigned int irq)
 {
-	_IoApicRedUpdateLo(irq, 0, IOAPIC_INT_MASK);
+	IoApicRedUpdateLo(irq, 0, IOAPIC_INT_MASK);
 }
 
 /**
@@ -149,7 +149,7 @@ void z_ioapic_irq_enable(unsigned int irq)
  */
 void z_ioapic_irq_disable(unsigned int irq)
 {
-	_IoApicRedUpdateLo(irq, IOAPIC_INT_MASK, IOAPIC_INT_MASK);
+	IoApicRedUpdateLo(irq, IOAPIC_INT_MASK, IOAPIC_INT_MASK);
 }
 
 
@@ -312,7 +312,7 @@ void z_ioapic_irq_set(unsigned int irq, unsigned int vector, u32_t flags)
  */
 void z_ioapic_int_vec_set(unsigned int irq, unsigned int vector)
 {
-	_IoApicRedUpdateLo(irq, vector, IOAPIC_VEC_MASK);
+	IoApicRedUpdateLo(irq, vector, IOAPIC_VEC_MASK);
 }
 
 /**
@@ -428,7 +428,7 @@ static void ioApicRedSetHi(unsigned int irq, u32_t upper32)
  * @param mask  Mask of bits to be modified
  * @return N/A
  */
-static void _IoApicRedUpdateLo(unsigned int irq,
+static void IoApicRedUpdateLo(unsigned int irq,
 				u32_t value,
 				u32_t mask)
 {

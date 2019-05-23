@@ -302,7 +302,7 @@ static int i2c_sam_twihs_initialize(struct device *dev)
 	/* Reset the module */
 	twihs->TWIHS_CR = TWIHS_CR_SWRST;
 
-	bitrate_cfg = _i2c_map_dt_bitrate(dev_cfg->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(dev_cfg->bitrate);
 
 	ret = i2c_sam_twihs_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (ret < 0) {

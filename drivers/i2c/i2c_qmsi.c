@@ -313,7 +313,7 @@ static int i2c_qmsi_init(struct device *dev)
 
 	clk_periph_enable(config->clock_gate);
 
-	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
 	err = i2c_qmsi_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (err < 0) {

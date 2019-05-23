@@ -311,7 +311,7 @@ static int i2c_sifive_init(struct device *dev)
 	u32_t dev_config = 0U;
 	int rc = 0;
 
-	dev_config = (I2C_MODE_MASTER | _i2c_map_dt_bitrate(config->f_bus));
+	dev_config = (I2C_MODE_MASTER | i2c_map_dt_bitrate(config->f_bus));
 
 	rc = i2c_sifive_configure(dev, dev_config);
 	if (rc != 0) {

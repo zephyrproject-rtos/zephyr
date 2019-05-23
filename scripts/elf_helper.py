@@ -37,6 +37,7 @@ DW_OP_addr = 0x3
 DW_OP_fbreg = 0x91
 STACK_TYPE = "_k_thread_stack_element"
 thread_counter = 0
+sys_mutex_counter = 0
 
 # Global type environment. Populated by pass 1.
 type_env = {}
@@ -54,6 +55,7 @@ scr = os.path.basename(sys.argv[0])
 class KobjectInstance:
     def __init__(self, type_obj, addr):
         global thread_counter
+        global sys_mutex_counter
 
         self.addr = addr
         self.type_obj = type_obj
@@ -67,6 +69,9 @@ class KobjectInstance:
             # permissions to other kernel objects
             self.data = thread_counter
             thread_counter = thread_counter + 1
+        elif self.type_obj.name == "sys_mutex":
+            self.data = "(u32_t)(&kernel_mutexes[%d])" % sys_mutex_counter
+            sys_mutex_counter += 1
         else:
             self.data = 0
 
@@ -471,14 +476,6 @@ class ElfHelper:
                 # Never linked; gc-sections deleted it
                 continue
 
-            if ((addr < kram_start or addr >= kram_end) and
-                    (addr < krom_start or addr >= krom_end)):
-
-                self.debug_die(die,
-                               "object '%s' found in invalid location %s"
-                               % (name, hex(addr)))
-                continue
-
             type_obj = type_env[type_offset]
             objs = type_obj.get_kobjects(addr)
             all_objs.update(objs)
@@ -495,6 +492,16 @@ class ElfHelper:
         for addr, ko in all_objs.items():
             # API structs don't get into the gperf table
             if ko.type_obj.api:
+                continue
+
+            _, user_ram_allowed = kobjects[ko.type_obj.name]
+            if (not user_ram_allowed and
+                    (addr < kram_start or addr >= kram_end) and
+                    (addr < krom_start or addr >= krom_end)):
+
+                self.debug_die(die,
+                               "object '%s' found in invalid location %s"
+                               % (name, hex(addr)))
                 continue
 
             if ko.type_obj.name != "device":
@@ -556,3 +563,6 @@ class ElfHelper:
 
     def get_thread_counter(self):
         return thread_counter
+
+    def get_sys_mutex_counter(self):
+        return sys_mutex_counter

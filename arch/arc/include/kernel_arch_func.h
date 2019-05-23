@@ -33,7 +33,7 @@ extern "C" {
 
 static ALWAYS_INLINE void kernel_arch_init(void)
 {
-	_irq_setup();
+	z_irq_setup();
 }
 
 static ALWAYS_INLINE void
@@ -49,7 +49,7 @@ z_set_thread_return_value(struct k_thread *thread, unsigned int value)
  *
  * @return IRQ number
  */
-static ALWAYS_INLINE int _INTERRUPT_CAUSE(void)
+static ALWAYS_INLINE int Z_INTERRUPT_CAUSE(void)
 {
 	u32_t irq_num = z_arc_v2_aux_reg_read(_ARC_V2_ICAUSE);
 
@@ -58,10 +58,10 @@ static ALWAYS_INLINE int _INTERRUPT_CAUSE(void)
 
 #define z_is_in_isr	z_arc_v2_irq_unit_is_in_isr
 
-extern void _thread_entry_wrapper(void);
-extern void _user_thread_entry_wrapper(void);
+extern void z_thread_entry_wrapper(void);
+extern void z_user_thread_entry_wrapper(void);
 
-extern void _arc_userspace_enter(k_thread_entry_t user_entry, void *p1,
+extern void z_arc_userspace_enter(k_thread_entry_t user_entry, void *p1,
 		 void *p2, void *p3, u32_t stack, u32_t size);
 
 #endif /* _ASMLANGUAGE */

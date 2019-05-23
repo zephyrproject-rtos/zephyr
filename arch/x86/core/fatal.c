@@ -24,7 +24,7 @@
 #include <exc_handle.h>
 #include <logging/log_ctrl.h>
 
-__weak void _debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
+__weak void z_debug_fatal_hook(const NANO_ESF *esf) { ARG_UNUSED(esf); }
 
 #ifdef CONFIG_THREAD_STACK_INFO
 /**
@@ -139,7 +139,7 @@ FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 {
 	LOG_PANIC();
 
-	_debug_fatal_hook(pEsf);
+	z_debug_fatal_hook(pEsf);
 
 #ifdef CONFIG_PRINTK
 
@@ -150,7 +150,7 @@ FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 		break;
 
 	case _NANO_ERR_SPURIOUS_INT: {
-		int vector = _irq_controller_isr_vector_get();
+		int vector = z_irq_controller_isr_vector_get();
 
 		printk("***** Unhandled interrupt vector ");
 		if (vector >= 0) {
@@ -229,7 +229,7 @@ FUNC_NORETURN void z_arch_syscall_oops(void *ssf_ptr)
 }
 
 #ifdef CONFIG_X86_KERNEL_OOPS
-FUNC_NORETURN void _do_kernel_oops(const NANO_ESF *esf)
+FUNC_NORETURN void z_do_kernel_oops(const NANO_ESF *esf)
 {
 	u32_t *stack_ptr = (u32_t *)esf->esp;
 	z_NanoFatalErrorHandler(*stack_ptr, esf);
@@ -289,11 +289,11 @@ FUNC_NORETURN void handle_exc_##vector(const NANO_ESF *pEsf) \
 	generic_exc_handle(vector, pEsf); \
 }
 
-#define _EXC_FUNC_CODE(vector) \
+#define Z_EXC_FUNC_CODE(vector) \
 	_EXC_FUNC(vector) \
 	_EXCEPTION_CONNECT_CODE(handle_exc_##vector, vector)
 
-#define _EXC_FUNC_NOCODE(vector) \
+#define Z_EXC_FUNC_NOCODE(vector) \
 	_EXC_FUNC(vector) \
 	_EXCEPTION_CONNECT_NOCODE(handle_exc_##vector, vector)
 
@@ -301,10 +301,10 @@ FUNC_NORETURN void handle_exc_##vector(const NANO_ESF *pEsf) \
  * the handle_exc_##vector
  */
 #define EXC_FUNC_NOCODE(vector) \
-	_EXC_FUNC_NOCODE(vector)
+	Z_EXC_FUNC_NOCODE(vector)
 
 #define EXC_FUNC_CODE(vector) \
-	_EXC_FUNC_CODE(vector)
+	Z_EXC_FUNC_CODE(vector)
 
 EXC_FUNC_NOCODE(IV_DIVIDE_ERROR);
 EXC_FUNC_NOCODE(IV_NON_MASKABLE_INTERRUPT);
@@ -426,12 +426,12 @@ _EXCEPTION_CONNECT_CODE(page_fault_handler, IV_PAGE_FAULT);
 static __noinit volatile NANO_ESF _df_esf;
 
 /* Very tiny stack; just enough for the bogus error code pushed by the CPU
- * and a frame pointer push by the compiler. All _df_handler_top does is
+ * and a frame pointer push by the compiler. All df_handler_top does is
  * shuffle some data around with 'mov' statements and then 'iret'.
  */
 static __noinit char _df_stack[8];
 
-static FUNC_NORETURN __used void _df_handler_top(void);
+static FUNC_NORETURN __used void df_handler_top(void);
 
 #ifdef CONFIG_X86_KPTI
 extern char z_trampoline_stack_end[];
@@ -457,18 +457,18 @@ struct task_state_segment _df_tss = {
 	.ds = DATA_SEG,
 	.es = DATA_SEG,
 	.ss = DATA_SEG,
-	.eip = (u32_t)_df_handler_top,
+	.eip = (u32_t)df_handler_top,
 	.cr3 = (u32_t)&z_x86_kernel_pdpt
 };
 
-static FUNC_NORETURN __used void _df_handler_bottom(void)
+static FUNC_NORETURN __used void df_handler_bottom(void)
 {
 	/* We're back in the main hardware task on the interrupt stack */
 	int reason = _NANO_ERR_CPU_EXCEPTION;
 
 	/* Restore the top half so it is runnable again */
 	_df_tss.esp = (u32_t)(_df_stack + sizeof(_df_stack));
-	_df_tss.eip = (u32_t)_df_handler_top;
+	_df_tss.eip = (u32_t)df_handler_top;
 
 	printk("***** Double Fault *****\n");
 #ifdef CONFIG_THREAD_STACK_INFO
@@ -479,7 +479,7 @@ static FUNC_NORETURN __used void _df_handler_bottom(void)
 	z_NanoFatalErrorHandler(reason, (NANO_ESF *)&_df_esf);
 }
 
-static FUNC_NORETURN __used void _df_handler_top(void)
+static FUNC_NORETURN __used void df_handler_top(void)
 {
 	/* State of the system when the double-fault forced a task switch
 	 * will be in _main_tss. Set up a NANO_ESF and copy system state into
@@ -505,12 +505,12 @@ static FUNC_NORETURN __used void _df_handler_top(void)
 	_main_tss.ds = DATA_SEG;
 	_main_tss.es = DATA_SEG;
 	_main_tss.ss = DATA_SEG;
-	_main_tss.eip = (u32_t)_df_handler_bottom;
+	_main_tss.eip = (u32_t)df_handler_bottom;
 	_main_tss.cr3 = (u32_t)&z_x86_kernel_pdpt;
 	_main_tss.eflags = 0U;
 
 	/* NT bit is set in EFLAGS so we will task switch back to _main_tss
-	 * and run _df_handler_bottom
+	 * and run df_handler_bottom
 	 */
 	__asm__ volatile ("iret");
 	CODE_UNREACHABLE;

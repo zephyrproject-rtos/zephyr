@@ -235,7 +235,7 @@ int posix_get_current_irq(void)
 /**
  * Configure a static interrupt.
  *
- * _isr_declare will populate the interrupt table table with the interrupt's
+ * z_isr_declare will populate the interrupt table table with the interrupt's
  * parameters, the vector table and the software ISR table.
  *
  * We additionally set the priority in the interrupt controller at
@@ -247,7 +247,7 @@ int posix_get_current_irq(void)
  * @param isr_param_p ISR parameter
  * @param flags_p IRQ options
  */
-void _isr_declare(unsigned int irq_p, int flags, void isr_p(void *),
+void z_isr_declare(unsigned int irq_p, int flags, void isr_p(void *),
 		void *isr_param_p)
 {
 	irq_vector_table[irq_p].irq   = irq_p;
@@ -316,7 +316,7 @@ void irq_offload(irq_offload_routine_t routine, void *parameter)
 {
 	off_routine = routine;
 	off_parameter = parameter;
-	_isr_declare(OFFLOAD_SW_IRQ, 0, offload_sw_irq_handler, NULL);
+	z_isr_declare(OFFLOAD_SW_IRQ, 0, offload_sw_irq_handler, NULL);
 	z_arch_irq_enable(OFFLOAD_SW_IRQ);
 	posix_sw_set_pending_IRQ(OFFLOAD_SW_IRQ);
 	z_arch_irq_disable(OFFLOAD_SW_IRQ);

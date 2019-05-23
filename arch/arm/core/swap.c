@@ -47,10 +47,6 @@ extern const int _k_neg_eagain;
  */
 int __swap(int key)
 {
-#ifdef CONFIG_USERSPACE
-	/* Save off current privilege mode */
-	_current->arch.mode = __get_CONTROL() & CONTROL_nPRIV_Msk;
-#endif
 #ifdef CONFIG_EXECUTION_BENCHMARKING
 	read_timer_start_of_swap();
 #endif

@@ -48,7 +48,7 @@ static int wifi_connect(u32_t mgmt_request, struct net_if *iface,
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT, wifi_connect);
 
-static void _scan_result_cb(struct net_if *iface, int status,
+static void scan_result_cb(struct net_if *iface, int status,
 			    struct wifi_scan_result *entry)
 {
 	if (!iface) {
@@ -81,7 +81,7 @@ static int wifi_scan(u32_t mgmt_request, struct net_if *iface,
 		return -ENOTSUP;
 	}
 
-	return off_api->scan(dev, _scan_result_cb);
+	return off_api->scan(dev, scan_result_cb);
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_SCAN, wifi_scan);

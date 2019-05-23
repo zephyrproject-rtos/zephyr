@@ -11,11 +11,17 @@ sub-command::
 
   west [common-opts] <command> [opts] <args>
 
-West's built-in commands provide a multiple repository management system with
-features inspired by Google's Repo tool and Git submodules. West is also
-pluggable: you can write your own west "extension commands" which add
-additional features to west.  Zephyr provides extension commands for building
-applications, debugging them, and more.
+West's built-in commands provide a multiple repository management
+system with features inspired by Google's Repo tool and Git
+submodules. West simplifies configuration and is also pluggable: you
+can write your own west "extension commands" which add additional
+features to west.  Zephyr uses this feature to provide conveniences
+for building applications, flashing and debugging them, and more.
+
+It is possible not to use west for Zephyr development if you do not
+require these features, prefer to use your own tools, or want to
+eliminate the extra layer of indirection. However, this implies extra
+effort and expert knowledge.
 
 You can run ``west --help`` (or ``west -h`` for short) to get top-level help
 for available west commands, and ``west <command> -h`` for detailed help on

@@ -105,7 +105,7 @@ extern "C" {
 #define Z_ARCH_THREAD_STACK_MEMBER(sym, size) \
 	struct _k_thread_stack_element \
 		__aligned(POW2_CEIL(STACK_SIZE_ALIGN(size))) \
-		sym[POW2_CEIL(size) + \
+		sym[POW2_CEIL(STACK_SIZE_ALIGN(size)) + \
 		+ STACK_GUARD_SIZE + CONFIG_PRIVILEGED_STACK_SIZE]
 
 #elif CONFIG_ARC_MPU_VER == 3

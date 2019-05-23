@@ -17,7 +17,7 @@
 #include <wait_q.h>
 
 #ifdef CONFIG_USERSPACE
-extern u8_t *_k_priv_stack_find(void *obj);
+extern u8_t *z_priv_stack_find(void *obj);
 #endif
 
 /**
@@ -55,7 +55,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		 void *parameter1, void *parameter2, void *parameter3,
 		 int priority, unsigned int options)
 {
-	char *pStackMem = K_THREAD_STACK_BUFFER(stack);
+	char *pStackMem = Z_THREAD_STACK_BUFFER(stack);
 	char *stackEnd;
 	/* Offset between the top of stack and the high end of stack area. */
 	u32_t top_of_stack_offset = 0U;
@@ -97,7 +97,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 
 	struct __esf *pInitCtx;
 
-	_new_thread_init(thread, pStackMem, stackSize, priority,
+	z_new_thread_init(thread, pStackMem, stackSize, priority,
 			 options);
 
 	/* carve the thread entry struct from the "base" of the stack */
@@ -151,9 +151,9 @@ FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
 
 	/* Set up privileged stack before entering user mode */
 	_current->arch.priv_stack_start =
-		(u32_t)_k_priv_stack_find(_current->stack_obj);
+		(u32_t)z_priv_stack_find(_current->stack_obj);
 
-	_arm_userspace_enter(user_entry, p1, p2, p3,
+	z_arm_userspace_enter(user_entry, p1, p2, p3,
 			     (u32_t)_current->stack_info.start,
 			     _current->stack_info.size);
 	CODE_UNREACHABLE;

@@ -195,7 +195,7 @@ int i2c_stm32_slave_register(struct device *dev,
 		return -EBUSY;
 	}
 
-	bitrate_cfg = _i2c_map_dt_bitrate(cfg->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
 	ret = i2c_stm32_runtime_configure(dev, bitrate_cfg);
 	if (ret < 0) {

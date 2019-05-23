@@ -20,8 +20,8 @@
 
 _ASM_FILE_PROLOGUE
 
-GTEXT(_SysNmiOnReset)
+GTEXT(z_SysNmiOnReset)
 
-SECTION_FUNC(TEXT, _SysNmiOnReset)
+SECTION_FUNC(TEXT, z_SysNmiOnReset)
     wfi
-    b _SysNmiOnReset
+    b z_SysNmiOnReset

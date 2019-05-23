@@ -25,7 +25,7 @@
  */
 #define SUBMIT_WAIT             50
 
-#define STACK_SIZE      1024
+#define STACK_SIZE      (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
 
 struct test_item {
 	int key;

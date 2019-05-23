@@ -36,7 +36,6 @@
 GEN_OFFSET_SYM(_thread_arch_t, excNestCount);
 #endif
 
-GEN_OFFSET_SYM(_thread_arch_t, coopFloatReg);
 GEN_OFFSET_SYM(_thread_arch_t, preempFloatReg);
 
 /**
@@ -45,8 +44,7 @@ GEN_OFFSET_SYM(_thread_arch_t, preempFloatReg);
  */
 
 GEN_ABSOLUTE_SYM(_K_THREAD_NO_FLOAT_SIZEOF,
-		 sizeof(struct k_thread) - sizeof(tCoopFloatReg) -
-			 sizeof(tPreempFloatReg));
+		 sizeof(struct k_thread) - sizeof(tPreempFloatReg));
 
 GEN_OFFSET_SYM(_callee_saved_t, esp);
 

@@ -200,22 +200,6 @@ typedef struct s_FpRegSetEx {
 #endif /* CONFIG_LAZY_FP_SHARING || CONFIG_EAGER_FP_SHARING */
 
 /*
- * The following structure defines the set of 'non-volatile' x87 FPU/MMX/SSE
- * registers. These registers must be preserved by a called C function.
- * These are the only registers that need to be saved/restored when a
- * cooperative context switch occurs.
- */
-
-typedef struct s_coopFloatReg {
-
-	/*
-	 * This structure intentionally left blank, i.e. the ST[0] -> ST[7] and
-	 * XMM0 -> XMM7 registers are all 'volatile'.
-	 */
-
-} tCoopFloatReg;
-
-/*
  * The following structure defines the set of 'volatile' x87 FPU/MMX/SSE
  * registers.  These registers need not be preserved by a called C function.
  * Given that they are not preserved across function calls, they must be
@@ -260,11 +244,9 @@ struct _thread_arch {
 	 * Given that stacks "grow down" on IA-32, and the TCS is located
 	 * at the start of a thread's "workspace" memory, the stacks of
 	 * threads that do not utilize floating point instruction can
-	 * effectively consume the memory occupied by the 'tCoopFloatReg' and
-	 * 'tPreempFloatReg' structures without ill effect.
+	 * effectively consume the memory occupied by the 'tPreempFloatReg'
+	 * struct without ill effect.
 	 */
-
-	tCoopFloatReg coopFloatReg; /* non-volatile float register storage */
 	tPreempFloatReg preempFloatReg; /* volatile float register storage */
 };
 

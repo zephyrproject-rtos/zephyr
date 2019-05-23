@@ -77,7 +77,7 @@ void test_msgdma(void)
 						"DMA config error");
 
 	/* Make sure all the data is written out to memory */
-	_nios2_dcache_flush_all();
+	z_nios2_dcache_flush_all();
 
 	/* Start DMA operation */
 	zassert_true(dma_start(dma, chan_id) == 0, "DMA start error");
@@ -87,7 +87,7 @@ void test_msgdma(void)
 	}
 
 	/* Invalidate the data cache */
-	_nios2_dcache_flush_no_writeback(rx_data, DMA_BUFF_SIZE);
+	z_nios2_dcache_flush_no_writeback(rx_data, DMA_BUFF_SIZE);
 
 	zassert_true(dma_stat == DMA_OP_STAT_SUCCESS,
 			"Nios-II DMA operation failed!!");

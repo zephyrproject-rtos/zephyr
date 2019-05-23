@@ -108,6 +108,17 @@ static ssize_t read_appearance(struct bt_conn *conn,
 }
 
 #if defined (CONFIG_BT_GAP_PERIPHERAL_PREF_PARAMS)
+/* This checks if the range entered is valid */
+BUILD_ASSERT(!(CONFIG_BT_PERIPHERAL_PREF_MIN_INT > 3200 &&
+	     CONFIG_BT_PERIPHERAL_PREF_MIN_INT < 0xffff));
+BUILD_ASSERT(!(CONFIG_BT_PERIPHERAL_PREF_MAX_INT > 3200 &&
+	     CONFIG_BT_PERIPHERAL_PREF_MAX_INT < 0xffff));
+BUILD_ASSERT(!(CONFIG_BT_PERIPHERAL_PREF_TIMEOUT > 3200 &&
+	     CONFIG_BT_PERIPHERAL_PREF_TIMEOUT < 0xffff));
+BUILD_ASSERT((CONFIG_BT_PERIPHERAL_PREF_MIN_INT == 0xffff) ||
+	     (CONFIG_BT_PERIPHERAL_PREF_MIN_INT <=
+	     CONFIG_BT_PERIPHERAL_PREF_MAX_INT));
+
 static ssize_t read_ppcp(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 			 void *buf, u16_t len, u16_t offset)
 {

@@ -315,7 +315,7 @@ static int i2c_sam_twi_initialize(struct device *dev)
 	/* Reset TWI module */
 	twi->TWI_CR = TWI_CR_SWRST;
 
-	bitrate_cfg = _i2c_map_dt_bitrate(dev_cfg->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(dev_cfg->bitrate);
 
 	ret = i2c_sam_twi_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (ret < 0) {

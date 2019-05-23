@@ -118,6 +118,14 @@ enum dhcpv4_msg_type {
  */
 #define DHCPV4_INITIAL_DELAY_MIN 1
 
+#if defined(CONFIG_NET_DHCPV4)
+
 int net_dhcpv4_init(void);
+
+#else
+
+#define net_dhcpv4_init() 0
+
+#endif /* CONFIG_NET_DHCPV4 */
 
 #endif /* __INTERNAL_DHCPV4_H */

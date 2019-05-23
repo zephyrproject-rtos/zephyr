@@ -33,7 +33,7 @@
  * @return N/A
  */
 
-void _IntLibInit(void)
+void z_IntLibInit(void)
 {
 	int irq = 0;
 

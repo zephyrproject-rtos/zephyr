@@ -47,7 +47,7 @@
  * local APIC have been extended and/or modified in the local xAPIC.
  *
  * This driver contains three routines for use.  They are:
- * _loapic_init() initializes the Local APIC for the interrupt mode chosen.
+ * z_loapic_init() initializes the Local APIC for the interrupt mode chosen.
  * _loapic_enable()/disable() enables / disables the Local APIC.
  *
  * Local APIC is used in the Virtual Wire Mode: delivery mode ExtINT.
@@ -216,7 +216,7 @@ static ALWAYS_INLINE void LOAPIC_WRITE(mem_addr_t addr, u32_t data)
  *
  */
 
-static int _loapic_init(struct device *unused)
+static int loapic_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 	s32_t loApicMaxLvt; /* local APIC Max LVT */
@@ -459,9 +459,9 @@ int loapic_resume(struct device *port)
 	ARG_UNUSED(port);
 
 	/* Assuming all loapic device registers lose their state, the call to
-	 * _loapic_init(), should bring all the registers to a sane state.
+	 * z_loapic_init(), should bring all the registers to a sane state.
 	 */
-	_loapic_init(NULL);
+	loapic_init(NULL);
 
 	for (loapic_irq = 0; loapic_irq < LOAPIC_IRQ_COUNT; loapic_irq++) {
 
@@ -507,17 +507,17 @@ static int loapic_device_ctrl(struct device *port, u32_t ctrl_command,
 	return ret;
 }
 
-SYS_DEVICE_DEFINE("loapic", _loapic_init, loapic_device_ctrl, PRE_KERNEL_1,
+SYS_DEVICE_DEFINE("loapic", loapic_init, loapic_device_ctrl, PRE_KERNEL_1,
 		  CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #else
-SYS_INIT(_loapic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+SYS_INIT(loapic_init, PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif   /* CONFIG_DEVICE_POWER_MANAGEMENT */
 
 
 #if CONFIG_LOAPIC_SPURIOUS_VECTOR
-extern void _loapic_spurious_handler(void);
+extern void z_loapic_spurious_handler(void);
 
-NANO_CPU_INT_REGISTER(_loapic_spurious_handler, NANO_SOFT_IRQ,
+NANO_CPU_INT_REGISTER(z_loapic_spurious_handler, NANO_SOFT_IRQ,
 		      LOAPIC_SPURIOUS_VECTOR_ID >> 4,
 		      LOAPIC_SPURIOUS_VECTOR_ID, 0);
 #endif

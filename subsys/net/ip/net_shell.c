@@ -2640,22 +2640,22 @@ static const struct shell *shell_for_ping;
 
 #if defined(CONFIG_NET_IPV6)
 
-static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt,
+static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 						struct net_ipv6_hdr *ip_hdr,
 						struct net_icmp_hdr *icmp_hdr);
 
 static struct net_icmpv6_handler ping6_handler = {
 	.type = NET_ICMPV6_ECHO_REPLY,
 	.code = 0,
-	.handler = _handle_ipv6_echo_reply,
+	.handler = handle_ipv6_echo_reply,
 };
 
-static inline void _remove_ipv6_ping_handler(void)
+static inline void remove_ipv6_ping_handler(void)
 {
 	net_icmpv6_unregister_handler(&ping6_handler);
 }
 
-static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt,
+static enum net_verdict handle_ipv6_echo_reply(struct net_pkt *pkt,
 						struct net_ipv6_hdr *ip_hdr,
 						struct net_icmp_hdr *icmp_hdr)
 {
@@ -2665,13 +2665,13 @@ static enum net_verdict _handle_ipv6_echo_reply(struct net_pkt *pkt,
 		 net_sprint_ipv6_addr(&ip_hdr->src),
 		 net_sprint_ipv6_addr(&ip_hdr->dst));
 	k_sem_give(&ping_timeout);
-	_remove_ipv6_ping_handler();
+	remove_ipv6_ping_handler();
 
 	net_pkt_unref(pkt);
 	return NET_OK;
 }
 
-static int _ping_ipv6(const struct shell *shell, char *host)
+static int ping_ipv6(const struct shell *shell, char *host)
 {
 	struct in6_addr ipv6_target;
 	struct net_if *iface = net_if_get_default();
@@ -2705,7 +2705,7 @@ static int _ping_ipv6(const struct shell *shell, char *host)
 					   sys_rand32_get(),
 					   sys_rand32_get());
 	if (ret) {
-		_remove_ipv6_ping_handler();
+		remove_ipv6_ping_handler();
 	} else {
 		PR("Sent a ping to %s\n", host);
 	}
@@ -2713,40 +2713,40 @@ static int _ping_ipv6(const struct shell *shell, char *host)
 	return ret;
 }
 #else
-#define _ping_ipv6(...) -ENOTSUP
-#define _remove_ipv6_ping_handler()
+#define ping_ipv6(...) -ENOTSUP
+#define remove_ipv6_ping_handler()
 #endif /* CONFIG_NET_IPV6 */
 
 #if defined(CONFIG_NET_IPV4)
 
-static enum net_verdict _handle_ipv4_echo_reply(struct net_pkt *pkt,
+static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 						struct net_ipv4_hdr *ip_hdr);
 
 static struct net_icmpv4_handler ping4_handler = {
 	.type = NET_ICMPV4_ECHO_REPLY,
 	.code = 0,
-	.handler = _handle_ipv4_echo_reply,
+	.handler = handle_ipv4_echo_reply,
 };
 
-static inline void _remove_ipv4_ping_handler(void)
+static inline void remove_ipv4_ping_handler(void)
 {
 	net_icmpv4_unregister_handler(&ping4_handler);
 }
 
-static enum net_verdict _handle_ipv4_echo_reply(struct net_pkt *pkt,
+static enum net_verdict handle_ipv4_echo_reply(struct net_pkt *pkt,
 						struct net_ipv4_hdr *ip_hdr)
 {
 	PR_SHELL(shell_for_ping, "Received echo reply from %s to %s\n",
 		 net_sprint_ipv4_addr(&ip_hdr->src),
 		 net_sprint_ipv4_addr(&ip_hdr->dst));
 	k_sem_give(&ping_timeout);
-	_remove_ipv4_ping_handler();
+	remove_ipv4_ping_handler();
 
 	net_pkt_unref(pkt);
 	return NET_OK;
 }
 
-static int _ping_ipv4(const struct shell *shell, char *host)
+static int ping_ipv4(const struct shell *shell, char *host)
 {
 	struct in_addr ipv4_target;
 	int ret;
@@ -2763,7 +2763,7 @@ static int _ping_ipv4(const struct shell *shell, char *host)
 		sys_rand32_get(),
 		sys_rand32_get());
 	if (ret) {
-		_remove_ipv4_ping_handler();
+		remove_ipv4_ping_handler();
 	} else {
 		PR("Sent a ping to %s\n", host);
 	}
@@ -2771,8 +2771,8 @@ static int _ping_ipv4(const struct shell *shell, char *host)
 	return ret;
 }
 #else
-#define _ping_ipv4(...) -ENOTSUP
-#define _remove_ipv4_ping_handler()
+#define ping_ipv4(...) -ENOTSUP
+#define remove_ipv4_ping_handler()
 #endif /* CONFIG_NET_IPV4 */
 #endif /* CONFIG_NET_IPV6 || CONFIG_NET_IPV4 */
 
@@ -2800,7 +2800,7 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 	shell_for_ping = shell;
 
 	if (IS_ENABLED(CONFIG_NET_IPV6)) {
-		ret = _ping_ipv6(shell, host);
+		ret = ping_ipv6(shell, host);
 		if (!ret) {
 			goto wait_reply;
 		} else if (ret == -EIO) {
@@ -2810,7 +2810,7 @@ static int cmd_net_ping(const struct shell *shell, size_t argc, char *argv[])
 	}
 
 	if (IS_ENABLED(CONFIG_NET_IPV4)) {
-		ret = _ping_ipv4(shell, host);
+		ret = ping_ipv4(shell, host);
 		if (ret) {
 			if (ret == -EIO) {
 				PR_WARNING("Cannot send IPv4 ping\n");
@@ -2826,8 +2826,8 @@ wait_reply:
 	ret = k_sem_take(&ping_timeout, K_SECONDS(2));
 	if (ret == -EAGAIN) {
 		PR_INFO("Ping timeout\n");
-		_remove_ipv6_ping_handler();
-		_remove_ipv4_ping_handler();
+		remove_ipv6_ping_handler();
+		remove_ipv4_ping_handler();
 
 		return -ETIMEDOUT;
 	}
@@ -2882,7 +2882,7 @@ static int cmd_net_stacks(const struct shell *shell, size_t argc,
 	ARG_UNUSED(argv);
 
 	for (info = __net_stack_start; info != __net_stack_end; info++) {
-		net_analyze_stack_get_values(K_THREAD_STACK_BUFFER(info->stack),
+		net_analyze_stack_get_values(Z_THREAD_STACK_BUFFER(info->stack),
 					     info->size, &pcnt, &unused);
 
 #if defined(CONFIG_INIT_STACKS)
@@ -2910,7 +2910,7 @@ static int cmd_net_stacks(const struct shell *shell, size_t argc,
 	}
 
 #if defined(CONFIG_INIT_STACKS)
-	net_analyze_stack_get_values(K_THREAD_STACK_BUFFER(_main_stack),
+	net_analyze_stack_get_values(Z_THREAD_STACK_BUFFER(_main_stack),
 				     K_THREAD_STACK_SIZEOF(_main_stack),
 				     &pcnt, &unused);
 	PR("%s [%s] stack size %d/%d bytes unused %u usage %d/%d (%u %%)\n",
@@ -2918,7 +2918,7 @@ static int cmd_net_stacks(const struct shell *shell, size_t argc,
 	   CONFIG_MAIN_STACK_SIZE, unused,
 	   CONFIG_MAIN_STACK_SIZE - unused, CONFIG_MAIN_STACK_SIZE, pcnt);
 
-	net_analyze_stack_get_values(K_THREAD_STACK_BUFFER(_interrupt_stack),
+	net_analyze_stack_get_values(Z_THREAD_STACK_BUFFER(_interrupt_stack),
 				     K_THREAD_STACK_SIZEOF(_interrupt_stack),
 				     &pcnt, &unused);
 	PR("%s [%s] stack size %d/%d bytes unused %u usage %d/%d (%u %%)\n",
@@ -2926,7 +2926,7 @@ static int cmd_net_stacks(const struct shell *shell, size_t argc,
 	   CONFIG_ISR_STACK_SIZE, unused,
 	   CONFIG_ISR_STACK_SIZE - unused, CONFIG_ISR_STACK_SIZE, pcnt);
 
-	net_analyze_stack_get_values(K_THREAD_STACK_BUFFER(sys_work_q_stack),
+	net_analyze_stack_get_values(Z_THREAD_STACK_BUFFER(sys_work_q_stack),
 				     K_THREAD_STACK_SIZEOF(sys_work_q_stack),
 				     &pcnt, &unused);
 	PR("%s [%s] stack size %d/%d bytes unused %u usage %d/%d (%u %%)\n",

@@ -416,10 +416,9 @@ static void cdc_acm_do_cb(struct cdc_acm_dev_data_t *dev_data,
 	}
 }
 
-#if defined(CONFIG_USB_COMPOSITE_DEVICE)
-static void cdc_acm_dev_status_composite_cb(struct usb_cfg_data *cfg,
-					    enum usb_dc_status_code status,
-					    const u8_t *param)
+static void cdc_acm_dev_status_cb(struct usb_cfg_data *cfg,
+				  enum usb_dc_status_code status,
+				  const u8_t *param)
 {
 	struct cdc_acm_dev_data_t *dev_data;
 	struct usb_dev_data *common;
@@ -436,26 +435,6 @@ static void cdc_acm_dev_status_composite_cb(struct usb_cfg_data *cfg,
 
 	cdc_acm_do_cb(dev_data, status, param);
 }
-#else
-static void cdc_acm_dev_status_cb(enum usb_dc_status_code status,
-				  const u8_t *param)
-{
-	struct cdc_acm_dev_data_t *dev_data;
-	struct usb_dev_data *common;
-
-	/* Should be the only one element in the list */
-	common = CONTAINER_OF(sys_slist_peek_head(&cdc_acm_data_devlist),
-			      struct usb_dev_data, node);
-	if (common == NULL) {
-		LOG_WRN("Device data not found");
-		return;
-	}
-
-	dev_data = CONTAINER_OF(common, struct cdc_acm_dev_data_t, common);
-
-	cdc_acm_do_cb(dev_data, status, param);
-}
-#endif
 
 static void cdc_interface_config(struct usb_desc_header *head,
 				 u8_t bInterfaceNumber)
@@ -956,24 +935,6 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		INITIALIZER_EP_DATA(cdc_acm_bulk_in, in_ep_addr),	\
 	}
 
-#ifdef CONFIG_USB_COMPOSITE_DEVICE
-#define DEFINE_CDC_ACM_CFG_DATA(x)					\
-	USBD_CFG_DATA_DEFINE(cdc_acm)					\
-	struct usb_cfg_data cdc_acm_config_##x = {			\
-		.usb_device_description = NULL,				\
-		.interface_config = cdc_interface_config,		\
-		.interface_descriptor = &cdc_acm_cfg_##x.if0,		\
-		.cb_usb_status_composite =				\
-				cdc_acm_dev_status_composite_cb,	\
-		.interface = {						\
-			.class_handler = cdc_acm_class_handle_req,	\
-			.custom_handler = NULL,				\
-			.payload_data = NULL,				\
-		},							\
-		.num_endpoints = ARRAY_SIZE(cdc_acm_ep_data_##x),	\
-		.endpoint = cdc_acm_ep_data_##x,			\
-	}
-#else /* CONFIG_USB_COMPOSITE_DEVICE */
 #define DEFINE_CDC_ACM_CFG_DATA(x)					\
 	USBD_CFG_DATA_DEFINE(cdc_acm)					\
 	struct usb_cfg_data cdc_acm_config_##x = {			\
@@ -988,8 +949,7 @@ static const struct uart_driver_api cdc_acm_driver_api = {
 		},							\
 		.num_endpoints = ARRAY_SIZE(cdc_acm_ep_data_##x),	\
 		.endpoint = cdc_acm_ep_data_##x,			\
-	}
-#endif /* CONFIG_USB_COMPOSITE_DEVICE */
+	};
 
 #if CONFIG_USB_COMPOSITE_DEVICE
 #define DEFINE_CDC_ACM_DESCR(x, int_ep_addr, out_ep_addr, in_ep_addr)	\

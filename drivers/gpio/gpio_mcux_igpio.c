@@ -107,7 +107,7 @@ static int mcux_igpio_manage_callback(struct device *dev,
 {
 	struct mcux_igpio_data *data = dev->driver_data;
 
-	return _gpio_manage_callback(&data->callbacks, callback, set);
+	return gpio_manage_callback(&data->callbacks, callback, set);
 }
 
 static int mcux_igpio_enable_callback(struct device *dev,
@@ -154,7 +154,7 @@ static void mcux_igpio_port_isr(void *arg)
 	int_flags = GPIO_PortGetInterruptFlags(config->base);
 	enabled_int = int_flags & data->pin_callback_enables;
 
-	_gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
+	gpio_fire_callbacks(&data->callbacks, dev, enabled_int);
 
 	GPIO_ClearPinsInterruptFlags(config->base, enabled_int);
 }

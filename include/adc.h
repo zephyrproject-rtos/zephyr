@@ -323,6 +323,9 @@ static inline int z_impl_adc_channel_setup(struct device *dev,
  * @param dev       Pointer to the device structure for the driver instance.
  * @param sequence  Structure specifying requested sequence of samplings.
  *
+ * If invoked from user mode, any sequence struct options for callback must
+ * be NULL.
+ *
  * @retval 0        On success.
  * @retval -EINVAL  If a parameter with an invalid value has been provided.
  * @retval -ENOMEM  If the provided buffer is to small to hold the results
@@ -350,10 +353,11 @@ static inline int z_impl_adc_read(struct device *dev,
 /**
  * @brief Set an asynchronous read request.
  *
+ * If invoked from user mode, any sequence struct options for callback must
+ * be NULL.
+ *
  * @param dev       Pointer to the device structure for the driver instance.
  * @param sequence  Structure specifying requested sequence of samplings.
- *                  Caller should ensure lifetime of this structure spans
- *                  until asynchronous read is finished.
  * @param async     Pointer to a valid and ready to be signaled struct
  *                  k_poll_signal. (Note: if NULL this function will not notify
  *                  the end of the transaction, and whether it went successfully
@@ -362,9 +366,14 @@ static inline int z_impl_adc_read(struct device *dev,
  * @returns 0 on success, negative error code otherwise.
  *
  */
-static inline int adc_read_async(struct device *dev,
-				 const struct adc_sequence *sequence,
-				 struct k_poll_signal *async)
+__syscall int adc_read_async(struct device *dev,
+			     const struct adc_sequence *sequence,
+			     struct k_poll_signal *async);
+
+
+static inline int z_impl_adc_read_async(struct device *dev,
+					const struct adc_sequence *sequence,
+					struct k_poll_signal *async)
 {
 	const struct adc_driver_api *api = dev->driver_api;
 

@@ -251,11 +251,11 @@ struct mmu_region {
 		.flags = permission_flags,				\
 	}
 
-#define _MMU_BOOT_REGION(id, addr, region_size, permission_flags)	\
+#define Z_MMU_BOOT_REGION(id, addr, region_size, permission_flags)	\
 	__MMU_BOOT_REGION(id, addr, region_size, permission_flags)
 
 #define MMU_BOOT_REGION(addr, region_size, permission_flags)		\
-	_MMU_BOOT_REGION(__COUNTER__, addr, region_size, permission_flags)
+	Z_MMU_BOOT_REGION(__COUNTER__, addr, region_size, permission_flags)
 
 /*
  * The following defines the format of a 64-bit page directory pointer entry

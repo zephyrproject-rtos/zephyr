@@ -751,9 +751,9 @@ static struct eth_enc28j60_runtime eth_enc28j60_0_runtime = {
 		DT_MICROCHIP_ENC28J60_0_LOCAL_MAC_ADDRESS_4,
 		DT_MICROCHIP_ENC28J60_0_LOCAL_MAC_ADDRESS_5
 	},
-	.tx_rx_sem = _K_SEM_INITIALIZER(eth_enc28j60_0_runtime.tx_rx_sem,
+	.tx_rx_sem = Z_SEM_INITIALIZER(eth_enc28j60_0_runtime.tx_rx_sem,
 					1,  UINT_MAX),
-	.int_sem  = _K_SEM_INITIALIZER(eth_enc28j60_0_runtime.int_sem,
+	.int_sem  = Z_SEM_INITIALIZER(eth_enc28j60_0_runtime.int_sem,
 				       0, UINT_MAX),
 };
 

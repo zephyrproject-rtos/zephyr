@@ -72,7 +72,7 @@ static void gpio_sifive_irq_handler(void *arg)
 			 (cfg->gpio_irq_base - RISCV_MAX_GENERIC_IRQ));
 
 	/* Call the corresponding callback registered for the pin */
-	_gpio_fire_callbacks(&data->cb, dev, pin_mask);
+	gpio_fire_callbacks(&data->cb, dev, pin_mask);
 
 	/*
 	 * Write to either the rise_ip, fall_ip, high_ip or low_ip registers
@@ -274,7 +274,7 @@ static int gpio_sifive_manage_callback(struct device *dev,
 {
 	struct gpio_sifive_data *data = DEV_GPIO_DATA(dev);
 
-	return _gpio_manage_callback(&data->cb, callback, set);
+	return gpio_manage_callback(&data->cb, callback, set);
 }
 
 static int gpio_sifive_enable_callback(struct device *dev,

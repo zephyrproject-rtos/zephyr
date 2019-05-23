@@ -32,7 +32,7 @@ static struct bt_gatt_attr attrs[] = {
 static struct bt_gatt_service ipss_svc = BT_GATT_SERVICE(attrs);
 #endif
 
-int _net_config_bt_setup(void)
+int z_net_config_bt_setup(void)
 {
 	struct net_if *iface;
 	struct device *dev;

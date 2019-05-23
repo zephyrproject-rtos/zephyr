@@ -190,12 +190,9 @@ struct usb_cfg_data {
 	/** Function for interface runtime configuration */
 	usb_interface_config interface_config;
 	/** Callback to be notified on USB connection status change */
-	usb_dc_status_callback cb_usb_status;
-	/** Composite callback */
-	void (*cb_usb_status_composite)(struct usb_cfg_data *cfg,
-					enum usb_dc_status_code cb_status,
-					const u8_t *param);
-
+	void (*cb_usb_status)(struct usb_cfg_data *cfg,
+			      enum usb_dc_status_code cb_status,
+			      const u8_t *param);
 	/** USB interface (Class) handler and storage space */
 	struct usb_interface_cfg_data interface;
 	/** Number of individual endpoints in the device configuration */

@@ -76,14 +76,14 @@ int posix_is_cpu_running(void)
  */
 static void posix_change_cpu_state_and_wait(bool halted)
 {
-	_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
+	PC_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
 
 	PS_DEBUG("Going to halted = %d\n", halted);
 
 	cpu_halted = halted;
 
 	/* We let the other side know the CPU has changed state */
-	_SAFE_CALL(pthread_cond_broadcast(&cond_cpu));
+	PC_SAFE_CALL(pthread_cond_broadcast(&cond_cpu));
 
 	/* We wait until the CPU state has been changed. Either:
 	 * we just awoke it, and therefore wait until the CPU has run until
@@ -100,7 +100,7 @@ static void posix_change_cpu_state_and_wait(bool halted)
 
 	PS_DEBUG("Awaken after halted = %d\n", halted);
 
-	_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
+	PC_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
 }
 
 /**
@@ -173,8 +173,8 @@ void posix_atomic_halt_cpu(unsigned int imask)
 static void *zephyr_wrapper(void *a)
 {
 	/* Ensure posix_boot_cpu has reached the cond loop */
-	_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
-	_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
+	PC_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
+	PC_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
 
 #if (POSIX_ARCH_SOC_DEBUG_PRINTS)
 		pthread_t zephyr_thread = pthread_self();
@@ -200,20 +200,20 @@ static void *zephyr_wrapper(void *a)
  */
 void posix_boot_cpu(void)
 {
-	_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
+	PC_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
 
 	cpu_halted = false;
 
 	pthread_t zephyr_thread;
 
 	/* Create a thread for Zephyr init: */
-	_SAFE_CALL(pthread_create(&zephyr_thread, NULL, zephyr_wrapper, NULL));
+	PC_SAFE_CALL(pthread_create(&zephyr_thread, NULL, zephyr_wrapper, NULL));
 
 	/* And we wait until Zephyr has run til completion (has gone to idle) */
 	while (cpu_halted == false) {
 		pthread_cond_wait(&cond_cpu, &mtx_cpu);
 	}
-	_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
+	PC_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
 
 	if (soc_terminate) {
 		posix_exit(0);
@@ -276,12 +276,12 @@ void posix_soc_clean_up(void)
 
 		soc_terminate = true;
 
-		_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
+		PC_SAFE_CALL(pthread_mutex_lock(&mtx_cpu));
 
 		cpu_halted = true;
 
-		_SAFE_CALL(pthread_cond_broadcast(&cond_cpu));
-		_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
+		PC_SAFE_CALL(pthread_cond_broadcast(&cond_cpu));
+		PC_SAFE_CALL(pthread_mutex_unlock(&mtx_cpu));
 
 		while (1) {
 			sleep(1);

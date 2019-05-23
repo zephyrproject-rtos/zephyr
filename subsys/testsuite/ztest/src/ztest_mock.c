@@ -39,7 +39,7 @@ static struct parameter *alloc_parameter(void)
 	return param;
 }
 
-void _init_mock(void)
+void z_init_mock(void)
 {
 
 }
@@ -126,7 +126,7 @@ struct parameter *alloc_parameter(void)
 	return param;
 }
 
-void _init_mock(void)
+void z_init_mock(void)
 {
 }
 
@@ -176,12 +176,12 @@ static void insert_value(struct parameter *param, const char *fn,
 static struct parameter parameter_list = { NULL, "", "", 0 };
 static struct parameter return_value_list = { NULL, "", "", 0 };
 
-void _ztest_expect_value(const char *fn, const char *name, uintptr_t val)
+void z_ztest_expect_value(const char *fn, const char *name, uintptr_t val)
 {
 	insert_value(&parameter_list, fn, name, val);
 }
 
-void _ztest_check_expected_value(const char *fn, const char *name,
+void z_ztest_check_expected_value(const char *fn, const char *name,
 				 uintptr_t val)
 {
 	struct parameter *param;
@@ -206,13 +206,13 @@ void _ztest_check_expected_value(const char *fn, const char *name,
 	}
 }
 
-void  _ztest_returns_value(const char *fn, uintptr_t value)
+void  z_ztest_returns_value(const char *fn, uintptr_t value)
 {
 	insert_value(&return_value_list, fn, "", value);
 }
 
 
-uintptr_t _ztest_get_return_value(const char *fn)
+uintptr_t z_ztest_get_return_value(const char *fn)
 {
 	uintptr_t value;
 	struct parameter *param = find_and_delete_value(&return_value_list,
@@ -240,7 +240,7 @@ static void free_param_list(struct parameter *param)
 	}
 }
 
-int _cleanup_mock(void)
+int z_cleanup_mock(void)
 {
 	int fail = 0;
 

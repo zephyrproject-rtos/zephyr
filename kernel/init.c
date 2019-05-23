@@ -384,7 +384,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	init_idle_thread(_idle_thread1, _idle_stack1);
 	_kernel.cpus[1].idle_thread = _idle_thread1;
 	_kernel.cpus[1].id = 1;
-	_kernel.cpus[1].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack1)
+	_kernel.cpus[1].irq_stack = Z_THREAD_STACK_BUFFER(_interrupt_stack1)
 		+ CONFIG_ISR_STACK_SIZE;
 #endif
 
@@ -392,7 +392,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	init_idle_thread(_idle_thread2, _idle_stack2);
 	_kernel.cpus[2].idle_thread = _idle_thread2;
 	_kernel.cpus[2].id = 2;
-	_kernel.cpus[2].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack2)
+	_kernel.cpus[2].irq_stack = Z_THREAD_STACK_BUFFER(_interrupt_stack2)
 		+ CONFIG_ISR_STACK_SIZE;
 #endif
 
@@ -400,7 +400,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	init_idle_thread(_idle_thread3, _idle_stack3);
 	_kernel.cpus[3].idle_thread = _idle_thread3;
 	_kernel.cpus[3].id = 3;
-	_kernel.cpus[3].irq_stack = K_THREAD_STACK_BUFFER(_interrupt_stack3)
+	_kernel.cpus[3].irq_stack = Z_THREAD_STACK_BUFFER(_interrupt_stack3)
 		+ CONFIG_ISR_STACK_SIZE;
 #endif
 

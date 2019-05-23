@@ -26,7 +26,7 @@ static inline int is_idle_thread(struct k_thread *thread)
 }
 
 
-static inline void _sys_trace_thread_switched_in(void)
+static inline void z__sys_trace_thread_switched_in(void)
 {
 	struct k_thread *thread;
 
@@ -39,7 +39,7 @@ static inline void _sys_trace_thread_switched_in(void)
 	}
 }
 
-#define sys_trace_thread_switched_in() _sys_trace_thread_switched_in()
+#define sys_trace_thread_switched_in() z__sys_trace_thread_switched_in()
 
 #define sys_trace_thread_switched_out() SEGGER_SYSVIEW_OnTaskStopExec()
 

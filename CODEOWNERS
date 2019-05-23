@@ -214,6 +214,7 @@
 /include/zephyr.h                         @andrewboie @andyross
 /kernel/                                  @andrewboie @andyross
 /lib/gui/                                 @vanwinkeljan
+/lib/os/                                  @andrewboie @andyross
 /lib/posix/                               @pfalcon
 /kernel/device.c                          @andrewboie @andyross @nashif
 /kernel/idle.c                            @andrewboie @andyross @nashif

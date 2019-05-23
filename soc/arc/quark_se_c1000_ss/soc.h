@@ -201,7 +201,7 @@
 #define DT_RTC_0_IRQ_FLAGS			(IOAPIC_EDGE | IOAPIC_HIGH)
 
 
-static inline void _quark_se_ss_ready(void)
+static inline void quark_se_ss_ready(void)
 {
 	shared_data->flags |= ARC_READY;
 }

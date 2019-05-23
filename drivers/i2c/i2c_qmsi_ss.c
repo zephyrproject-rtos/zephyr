@@ -363,7 +363,7 @@ static int i2c_qmsi_ss_init(struct device *dev)
 
 	k_sem_init(&driver_data->sem, 1, UINT_MAX);
 
-	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
 	err = i2c_qmsi_ss_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 

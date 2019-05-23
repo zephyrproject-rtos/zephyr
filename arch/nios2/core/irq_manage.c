@@ -25,7 +25,7 @@ void z_irq_spurious(void *unused)
 {
 	ARG_UNUSED(unused);
 	printk("Spurious interrupt detected! ipending: %x\n",
-	       _nios2_creg_read(NIOS2_CR_IPENDING));
+	       z_nios2_creg_read(NIOS2_CR_IPENDING));
 	z_NanoFatalErrorHandler(_NANO_ERR_SPURIOUS_INT, &_default_esf);
 }
 
@@ -37,9 +37,9 @@ void z_arch_irq_enable(unsigned int irq)
 
 	key = irq_lock();
 
-	ienable = _nios2_creg_read(NIOS2_CR_IENABLE);
+	ienable = z_nios2_creg_read(NIOS2_CR_IENABLE);
 	ienable |= BIT(irq);
-	_nios2_creg_write(NIOS2_CR_IENABLE, ienable);
+	z_nios2_creg_write(NIOS2_CR_IENABLE, ienable);
 
 	irq_unlock(key);
 };
@@ -53,9 +53,9 @@ void z_arch_irq_disable(unsigned int irq)
 
 	key = irq_lock();
 
-	ienable = _nios2_creg_read(NIOS2_CR_IENABLE);
+	ienable = z_nios2_creg_read(NIOS2_CR_IENABLE);
 	ienable &= ~BIT(irq);
-	_nios2_creg_write(NIOS2_CR_IENABLE, ienable);
+	z_nios2_creg_write(NIOS2_CR_IENABLE, ienable);
 
 	irq_unlock(key);
 };
@@ -80,7 +80,7 @@ void _enter_irq(u32_t ipending)
 	_kernel.nested++;
 
 #ifdef CONFIG_IRQ_OFFLOAD
-	_irq_do_offload();
+	z_irq_do_offload();
 #endif
 
 	while (ipending) {

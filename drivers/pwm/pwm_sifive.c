@@ -14,7 +14,7 @@ LOG_MODULE_REGISTER(pwm_sifive, CONFIG_PWM_LOG_LEVEL);
 
 /* Macros */
 
-#define PWM_REG(_config, _offset) ((mem_addr_t) ((_config)->base + _offset))
+#define PWM_REG(z_config, _offset) ((mem_addr_t) ((z_config)->base + _offset))
 
 /* Register Offsets */
 #define REG_PWMCFG		0x00

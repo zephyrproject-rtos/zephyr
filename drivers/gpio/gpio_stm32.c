@@ -32,7 +32,7 @@ static void gpio_stm32_isr(int line, void *arg)
 	struct gpio_stm32_data *data = dev->driver_data;
 
 	if ((BIT(line) & data->cb_pins) != 0) {
-		_gpio_fire_callbacks(&data->cb, dev, BIT(line));
+		gpio_fire_callbacks(&data->cb, dev, BIT(line));
 	}
 }
 
@@ -340,7 +340,7 @@ static int gpio_stm32_manage_callback(struct device *dev,
 {
 	struct gpio_stm32_data *data = dev->driver_data;
 
-	return _gpio_manage_callback(&data->cb, callback, set);
+	return gpio_manage_callback(&data->cb, callback, set);
 }
 
 static int gpio_stm32_enable_callback(struct device *dev,

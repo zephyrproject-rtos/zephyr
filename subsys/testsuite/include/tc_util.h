@@ -77,13 +77,13 @@ static __unused const char *TC_RESULT_STR[] = {
 #define TC_END(result, fmt, ...) PRINT_DATA(fmt, ##__VA_ARGS__)
 
 /* prints result and the function name */
-#define _TC_END_RESULT(result, func)					\
+#define Z_TC_END_RESULT(result, func)					\
 	do {								\
 		TC_END(result, "%s - %s\n", TC_RESULT_TO_STR(result), func); \
 		PRINT_LINE;						\
 	} while (0)
 #define TC_END_RESULT(result)                           \
-	_TC_END_RESULT((result), __func__)
+	Z_TC_END_RESULT((result), __func__)
 
 #if defined(CONFIG_ARCH_POSIX)
 #define TC_END_POST(result) posix_exit(result)

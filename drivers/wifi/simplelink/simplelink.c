@@ -92,7 +92,7 @@ static void simplelink_scan_work_handler(struct k_work *work)
 
 		/* Iterate over the table, and call the scan_result callback. */
 		while (index < simplelink_data.num_results_or_err) {
-			_simplelink_get_scan_result(index, &scan_result);
+			z_simplelink_get_scan_result(index, &scan_result);
 			simplelink_data.cb(simplelink_data.iface, 0,
 					   &scan_result);
 			/* Yield, to ensure notifications get delivered:  */
@@ -112,7 +112,7 @@ static void simplelink_scan_work_handler(struct k_work *work)
 		s32_t delay;
 
 		/* Try again: */
-		simplelink_data.num_results_or_err = _simplelink_start_scan();
+		simplelink_data.num_results_or_err = z_simplelink_start_scan();
 		simplelink_data.scan_retries++;
 		delay = (simplelink_data.num_results_or_err > 0 ? 0 :
 			 SCAN_RETRY_DELAY);
@@ -139,7 +139,7 @@ static int simplelink_mgmt_scan(struct device *dev, scan_result_cb_t cb)
 	k_delayed_work_cancel(&simplelink_data.work);
 
 	/* "Request" the scan: */
-	err = _simplelink_start_scan();
+	err = z_simplelink_start_scan();
 
 	/* Now, launch a delayed work handler to do retries and reporting.
 	 * Indicate (to the work handler) either a positive number of results
@@ -167,7 +167,7 @@ static int simplelink_mgmt_connect(struct device *dev,
 {
 	int ret;
 
-	ret = _simplelink_connect(params);
+	ret = z_simplelink_connect(params);
 
 	return ret ? -EIO : ret;
 }
@@ -176,7 +176,7 @@ static int simplelink_mgmt_disconnect(struct device *dev)
 {
 	int ret;
 
-	ret = _simplelink_disconnect();
+	ret = z_simplelink_disconnect();
 
 	return ret ? -EIO : ret;
 }
@@ -215,9 +215,9 @@ static void simplelink_iface_init(struct net_if *iface)
 	iface->if_dev->offload = &simplelink_offload;
 
 	/* Initialize and configure NWP to defaults: */
-	ret = _simplelink_init(simplelink_wifi_cb);
+	ret = z_simplelink_init(simplelink_wifi_cb);
 	if (ret) {
-		LOG_ERR("_simplelink_init failed!");
+		LOG_ERR("z_simplelink_init failed!");
 		return;
 	}
 
@@ -229,7 +229,7 @@ static void simplelink_iface_init(struct net_if *iface)
 	}
 
 	/* Grab our MAC address: */
-	_simplelink_get_mac(simplelink_data.mac);
+	z_simplelink_get_mac(simplelink_data.mac);
 
 	LOG_DBG("MAC Address %02X:%02X:%02X:%02X:%02X:%02X",
 		simplelink_data.mac[0], simplelink_data.mac[1],

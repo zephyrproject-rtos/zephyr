@@ -18,6 +18,7 @@ u64_t  __end_drop_to_usermode_time;
 /* location of the time stamps*/
 u32_t __read_swap_end_time_value;
 u64_t __common_var_swap_end_time;
+u64_t __temp_start_swap_time;
 
 #if CONFIG_ARM
 #include <arch/arm/cortex_m/cmsis.h>

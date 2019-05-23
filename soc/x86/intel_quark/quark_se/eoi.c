@@ -26,7 +26,7 @@ void z_lakemont_eoi(void)
 	 * we have is the vector # in the IDT. So unconditionally
 	 * write to IOAPIC_EOI for every interrupt
 	 */
-	sys_write32(_irq_controller_isr_vector_get(),
+	sys_write32(z_irq_controller_isr_vector_get(),
 		    DT_IOAPIC_BASE_ADDRESS + IOAPIC_EOI);
 
 	/* Send EOI to the LOAPIC as well */

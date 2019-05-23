@@ -93,13 +93,18 @@
     /*
      * The always_inline attribute forces a function to be inlined,
      * even ignoring -fno-inline. So for code coverage, do not
-     * inline these functions to keep their bodies around so their
-     * number of executions can be counted.
+     * force inlining of these functions to keep their bodies around
+     * so their number of executions can be counted.
      *
-     * The unused attribute is here to avoid the compiler complaining
-     * about these functions being unused.
+     * Note that "inline" is kept here for kobject_hash.c and
+     * priv_stacks_hash.c. These are built without compiler flags
+     * used for coverage. ALWAYS_INLINE cannot be empty as compiler
+     * would complain about unused functions. Attaching unused
+     * attribute would result in their text sections ballon more than
+     * 10 times in size, as those functions are kept in text section.
+     * So just keep "inline" here.
      */
-    #define ALWAYS_INLINE __attribute__((unused))
+    #define ALWAYS_INLINE inline
   #else
     #define ALWAYS_INLINE inline __attribute__((always_inline))
   #endif

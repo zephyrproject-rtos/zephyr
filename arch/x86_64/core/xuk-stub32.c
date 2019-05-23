@@ -163,7 +163,7 @@ void cstart(unsigned int magic, unsigned int arg)
 		shared_init();
 #ifdef CONFIG_XUK_DEBUG
 		serial_init();
-		_putchar = putchar;
+		z_putchar = putchar;
 #endif
 
 		printf("Entering stub32 on boot cpu, magic %xh stack ~%xh\n",

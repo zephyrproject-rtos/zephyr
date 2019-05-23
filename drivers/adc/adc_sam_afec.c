@@ -150,7 +150,7 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct adc_sam_data *data = CONTAINER_OF(ctx, struct adc_sam_data, ctx);
 
-	data->channels = ctx->sequence->channels;
+	data->channels = ctx->sequence.channels;
 
 	adc_sam_start_conversion(data->dev);
 }

@@ -282,9 +282,9 @@ int z_sys_mem_pool_block_alloc(struct sys_mem_pool_base *p, size_t size,
 		 */
 		if (data != NULL) {
 			for (from_l = i; from_l < alloc_l; from_l++) {
+				data = block_break(p, data, from_l, lsizes);
 				pool_irq_unlock(p, key);
 				key = pool_irq_lock(p);
-				data = block_break(p, data, from_l, lsizes);
 			}
 			break;
 		}
@@ -333,7 +333,7 @@ void *sys_mem_pool_alloc(struct sys_mem_pool *p, size_t size)
 	u32_t level, block;
 	char *ret;
 
-	k_mutex_lock(p->mutex, K_FOREVER);
+	sys_mutex_lock(&p->mutex, K_FOREVER);
 
 	size += sizeof(struct sys_mem_pool_block);
 	if (z_sys_mem_pool_block_alloc(&p->base, size, &level, &block,
@@ -348,7 +348,7 @@ void *sys_mem_pool_alloc(struct sys_mem_pool *p, size_t size)
 	blk->pool = p;
 	ret += sizeof(*blk);
 out:
-	k_mutex_unlock(p->mutex);
+	sys_mutex_unlock(&p->mutex);
 	return ret;
 }
 
@@ -364,8 +364,8 @@ void sys_mem_pool_free(void *ptr)
 	blk = (struct sys_mem_pool_block *)((char *)ptr - sizeof(*blk));
 	p = blk->pool;
 
-	k_mutex_lock(p->mutex, K_FOREVER);
+	sys_mutex_lock(&p->mutex, K_FOREVER);
 	z_sys_mem_pool_block_free(&p->base, blk->level, blk->block);
-	k_mutex_unlock(p->mutex);
+	sys_mutex_unlock(&p->mutex);
 }
 

@@ -2532,13 +2532,12 @@ static inline bool pdu_len_cmp(u8_t opcode, u8_t len)
 
 static inline u8_t
 isr_rx_conn_pkt_ctrl(struct radio_pdu_node_rx *node_rx,
-		     struct pdu_data *pdu_data_rx, u8_t *rx_enqueue)
+		     u8_t *rx_enqueue)
 {
 	u8_t nack = 0U;
+	struct pdu_data *pdu_data_rx;
 
-	if (!pdu_data_rx) {
-		pdu_data_rx = (void *)node_rx->pdu_data;
-	}
+	pdu_data_rx = (void *)node_rx->pdu_data;
 
 	switch (pdu_data_rx->llctrl.opcode) {
 	case PDU_DATA_LLCTRL_TYPE_CONN_UPDATE_IND:
@@ -3546,7 +3545,6 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 
 		if (pdu_data_rx->len != 0) {
 			bool mic_failure = false;
-			struct pdu_data *unknown_rsp = NULL;
 
 			/* If required, wait for CCM to finish
 			 */
@@ -3567,9 +3565,19 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 					 * with MIC failure.
 					 * This could be an unencrypted packet
 					 */
-					pdu_data_rx = radio_pkt_scratch_get();
-					unknown_rsp = pdu_data_rx;
-					mic_failure = false;
+					struct pdu_data *scratch_pkt =
+						radio_pkt_scratch_get();
+
+					if (pdu_len_cmp(
+					     scratch_pkt->llctrl.opcode,
+					     scratch_pkt->len)) {
+						memcpy(pdu_data_rx,
+						       scratch_pkt,
+						       scratch_pkt->len +
+						       offsetof(struct pdu_data,
+							llctrl));
+						mic_failure = false;
+					}
 				} else {
 					ccm_rx_increment = 1U;
 				}
@@ -3611,7 +3619,6 @@ isr_rx_conn_pkt(struct radio_pdu_node_rx *node_rx,
 
 			case PDU_DATA_LLID_CTRL:
 				nack = isr_rx_conn_pkt_ctrl(node_rx,
-							    unknown_rsp,
 							    rx_enqueue);
 				break;
 			case PDU_DATA_LLID_RESV:

@@ -180,7 +180,7 @@ static int fsl_frdm_k64f_init(struct device *arg)
 	SYSMPU->CESR = temp_reg;
 #endif /* !CONFIG_ARM_MPU */
 
-	_ClearFaults();
+	z_clearfaults();
 
 	/* Initialize PLL/system clock to 120 MHz */
 	clkInit();

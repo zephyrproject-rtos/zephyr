@@ -342,7 +342,7 @@ static inline void k_obj_free(void *obj)
 /** @} */
 
 /* Using typedef deliberately here, this is quite intended to be an opaque
- * type. K_THREAD_STACK_BUFFER() should be used to access the data within.
+ * type.
  *
  * The purpose of this data type is to clearly distinguish between the
  * declared symbol for a stack (of type k_thread_stack_t) and the underlying
@@ -474,8 +474,8 @@ typedef struct _thread_base _thread_base_t;
 #if defined(CONFIG_THREAD_STACK_INFO)
 /* Contains the stack information of a thread */
 struct _thread_stack_info {
-	/* Stack Start - Identical to K_THREAD_STACK_BUFFER() on the stack
-	 * object. Represents thread-writable stack area without any extras.
+	/* Stack start - Represents the start address of the thread-writable
+	 * stack area.
 	 */
 	u32_t start;
 
@@ -576,7 +576,7 @@ struct k_thread {
 	/** z_swap() return value */
 	int swap_retval;
 
-	/** Context handle returned via _arch_switch() */
+	/** Context handle returned via z_arch_switch() */
 	void *switch_handle;
 #endif
 	/** resource pool */
@@ -1387,7 +1387,7 @@ struct k_timer {
 	_OBJECT_TRACING_NEXT_PTR(k_timer)
 };
 
-#define _K_TIMER_INITIALIZER(obj, expiry, stop) \
+#define Z_TIMER_INITIALIZER(obj, expiry, stop) \
 	{ \
 	.timeout = { \
 		.node = {},\
@@ -1403,7 +1403,7 @@ struct k_timer {
 	_OBJECT_TRACING_INIT \
 	}
 
-#define K_TIMER_INITIALIZER DEPRECATED_MACRO _K_TIMER_INITIALIZER
+#define K_TIMER_INITIALIZER DEPRECATED_MACRO Z_TIMER_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -1458,7 +1458,7 @@ typedef void (*k_timer_stop_t)(struct k_timer *timer);
 #define K_TIMER_DEFINE(name, expiry_fn, stop_fn) \
 	struct k_timer name \
 		__in_section(_k_timer, static, name) = \
-		_K_TIMER_INITIALIZER(name, expiry_fn, stop_fn)
+		Z_TIMER_INITIALIZER(name, expiry_fn, stop_fn)
 
 /**
  * @brief Initialize a timer.
@@ -2051,12 +2051,12 @@ struct k_fifo {
 /**
  * @cond INTERNAL_HIDDEN
  */
-#define _K_FIFO_INITIALIZER(obj) \
+#define Z_FIFO_INITIALIZER(obj) \
 	{ \
 	._queue = _K_QUEUE_INITIALIZER(obj._queue) \
 	}
 
-#define K_FIFO_INITIALIZER DEPRECATED_MACRO _K_FIFO_INITIALIZER
+#define K_FIFO_INITIALIZER DEPRECATED_MACRO Z_FIFO_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -2256,7 +2256,7 @@ struct k_fifo {
 #define K_FIFO_DEFINE(name) \
 	struct k_fifo name \
 		__in_section(_k_queue, static, name) = \
-		_K_FIFO_INITIALIZER(name)
+		Z_FIFO_INITIALIZER(name)
 
 /** @} */
 
@@ -3010,7 +3010,7 @@ struct k_sem {
 	_OBJECT_TRACING_NEXT_PTR(k_sem)
 };
 
-#define _K_SEM_INITIALIZER(obj, initial_count, count_limit) \
+#define Z_SEM_INITIALIZER(obj, initial_count, count_limit) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&obj.wait_q), \
 	.count = initial_count, \
@@ -3019,7 +3019,7 @@ struct k_sem {
 	_OBJECT_TRACING_INIT \
 	}
 
-#define K_SEM_INITIALIZER DEPRECATED_MACRO _K_SEM_INITIALIZER
+#define K_SEM_INITIALIZER DEPRECATED_MACRO Z_SEM_INITIALIZER
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -3140,7 +3140,7 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
 #define K_SEM_DEFINE(name, initial_count, count_limit) \
 	struct k_sem name \
 		__in_section(_k_sem, static, name) = \
-		_K_SEM_INITIALIZER(name, initial_count, count_limit); \
+		Z_SEM_INITIALIZER(name, initial_count, count_limit); \
 	BUILD_ASSERT(((count_limit) != 0) && \
 		     ((initial_count) <= (count_limit)));
 
@@ -4585,7 +4585,7 @@ extern void z_timer_expiration_handler(struct _timeout *t);
 #define K_THREAD_STACK_MEMBER(sym, size) Z_ARCH_THREAD_STACK_MEMBER(sym, size)
 #define K_THREAD_STACK_SIZEOF(sym) Z_ARCH_THREAD_STACK_SIZEOF(sym)
 #define K_THREAD_STACK_RESERVED Z_ARCH_THREAD_STACK_RESERVED
-static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
+static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return Z_ARCH_THREAD_STACK_BUFFER(sym);
 }
@@ -4600,7 +4600,8 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
  *
  * The declared symbol will always be a k_thread_stack_t which can be passed to
  * k_thread_create(), but should otherwise not be manipulated. If the buffer
- * inside needs to be examined, use K_THREAD_STACK_BUFFER().
+ * inside needs to be examined, examine thread->stack_info for the associated
+ * thread object to obtain the boundaries.
  *
  * It is legal to precede this definition with the 'static' keyword.
  *
@@ -4697,16 +4698,14 @@ static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 /**
  * @brief Get a pointer to the physical stack buffer
  *
- * Convenience macro to get at the real underlying stack buffer used by
- * the CPU. Guaranteed to be a character pointer of size K_THREAD_STACK_SIZEOF.
- * This is really only intended for diagnostic tools which want to examine
- * stack memory contents.
+ * This macro is deprecated. If a stack buffer needs to be examined, the
+ * bounds should be obtained from the associated thread's stack_info struct.
  *
  * @param sym Declared stack symbol name
  * @return The buffer itself, a char *
  * @req K-TSTACK-001
  */
-static inline char *K_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
+static inline char *Z_THREAD_STACK_BUFFER(k_thread_stack_t *sym)
 {
 	return (char *)sym;
 }

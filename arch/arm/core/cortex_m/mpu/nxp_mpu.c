@@ -25,7 +25,7 @@ LOG_MODULE_DECLARE(mpu);
 static u8_t static_regions_num;
 
 /* Global MPU configuration at system initialization. */
-static void _mpu_init(void)
+static void mpu_init(void)
 {
 	/* Enable clock for the Memory Protection Unit (MPU). */
 	CLOCK_EnableClock(kCLOCK_Sysmpu0);
@@ -34,7 +34,7 @@ static void _mpu_init(void)
 /**
  *  Get the number of supported MPU regions.
  */
-static inline u8_t _get_num_regions(void)
+static inline u8_t get_num_regions(void)
 {
 	return FSL_FEATURE_SYSMPU_DESCRIPTOR_COUNT;
 }
@@ -47,7 +47,7 @@ static inline u8_t _get_num_regions(void)
  * @param part Pointer to the data structure holding the partition
  *             information (must be valid).
  */
-static int _mpu_partition_is_valid(const struct k_mem_partition *part)
+static int mpu_partition_is_valid(const struct k_mem_partition *part)
 {
 	/* Partition size must be a multiple of the minimum MPU region
 	 * size. Start address of the partition must align with the
@@ -71,7 +71,7 @@ static int _mpu_partition_is_valid(const struct k_mem_partition *part)
  * Note:
  *   The caller must provide a valid region index.
  */
-static void _region_init(const u32_t index,
+static void region_init(const u32_t index,
 	const struct nxp_mpu_region *region_conf)
 {
 	u32_t region_base = region_conf->base;
@@ -114,11 +114,11 @@ static void _region_init(const u32_t index,
 
 }
 
-static int _region_allocate_and_init(const u8_t index,
+static int region_allocate_and_init(const u8_t index,
 	const struct nxp_mpu_region *region_conf)
 {
 	/* Attempt to allocate new region index. */
-	if (index > (_get_num_regions() - 1)) {
+	if (index > (get_num_regions() - 1)) {
 
 		/* No available MPU region index. */
 		LOG_ERR("Failed to allocate new MPU region %u\n", index);
@@ -128,7 +128,7 @@ static int _region_allocate_and_init(const u8_t index,
 	LOG_DBG("Program MPU region at index 0x%x", index);
 
 	/* Program region */
-	_region_init(index, region_conf);
+	region_init(index, region_conf);
 
 	return index;
 }
@@ -138,7 +138,7 @@ static int _region_allocate_and_init(const u8_t index,
  * region attribute configuration and size and fill-in a driver-specific
  * structure with the correct MPU region attribute configuration.
  */
-static inline void _get_region_attr_from_k_mem_partition_info(
+static inline void get_region_attr_from_k_mem_partition_info(
 	nxp_mpu_region_attr_t *p_attr,
 	const k_mem_partition_attr_t *attr, u32_t base, u32_t size)
 {
@@ -154,7 +154,7 @@ static inline void _get_region_attr_from_k_mem_partition_info(
 /* This internal function programs an MPU region
  * of a given configuration at a given MPU index.
  */
-static int _mpu_configure_region(const u8_t index,
+static int mpu_configure_region(const u8_t index,
 	const struct k_mem_partition *new_region)
 {
 	struct nxp_mpu_region region_conf;
@@ -164,17 +164,17 @@ static int _mpu_configure_region(const u8_t index,
 	/* Populate internal NXP MPU region configuration structure. */
 	region_conf.base = new_region->start;
 	region_conf.end = (new_region->start + new_region->size - 1);
-	_get_region_attr_from_k_mem_partition_info(&region_conf.attr,
+	get_region_attr_from_k_mem_partition_info(&region_conf.attr,
 		&new_region->attr, new_region->start, new_region->size);
 
 	/* Allocate and program region */
-	return _region_allocate_and_init(index,
+	return region_allocate_and_init(index,
 		(const struct nxp_mpu_region *)&region_conf);
 }
 
 #if defined(CONFIG_MPU_STACK_GUARD)
 /* This internal function partitions the SRAM MPU region */
-static int _mpu_sram_partitioning(u8_t index,
+static int mpu_sram_partitioning(u8_t index,
 	const struct k_mem_partition *p_region)
 {
 	/*
@@ -203,8 +203,8 @@ static int _mpu_sram_partitioning(u8_t index,
 	added_sram_region.attr.attr =
 		mpu_config.mpu_regions[mpu_config.sram_region].attr.attr;
 
-	if (_region_allocate_and_init(index,
-		(const struct nxp_mpu_region *)&added_sram_region) < 0) {
+	if (region_allocate_and_init(index,
+				     (const struct nxp_mpu_region *)&added_sram_region) < 0) {
 		return -EINVAL;
 	}
 
@@ -222,7 +222,7 @@ static int _mpu_sram_partitioning(u8_t index,
 	adjusted_sram_region.attr.attr =
 		mpu_config.mpu_regions[mpu_config.sram_region].attr.attr;
 
-	_region_init(mpu_config.sram_region,
+	region_init(mpu_config.sram_region,
 		(const struct nxp_mpu_region *)&adjusted_sram_region);
 
 	return index;
@@ -233,7 +233,7 @@ static int _mpu_sram_partitioning(u8_t index,
  * over a background memory area, optionally performing a
  * sanity check of the memory regions to be programmed.
  */
-static int _mpu_configure_regions(const struct k_mem_partition
+static int mpu_configure_regions(const struct k_mem_partition
 	*regions[], u8_t regions_num, u8_t start_reg_index,
 	bool do_sanity_check)
 {
@@ -247,7 +247,7 @@ static int _mpu_configure_regions(const struct k_mem_partition
 		/* Non-empty region. */
 
 		if (do_sanity_check &&
-				(!_mpu_partition_is_valid(regions[i]))) {
+				(!mpu_partition_is_valid(regions[i]))) {
 			LOG_ERR("Partition %u: sanity check failed.", i);
 			return -EINVAL;
 		}
@@ -261,7 +261,7 @@ static int _mpu_configure_regions(const struct k_mem_partition
 			 * be programmed afterwards.
 			 */
 			reg_index =
-				_mpu_sram_partitioning(reg_index, regions[i]);
+				mpu_sram_partitioning(reg_index, regions[i]);
 		}
 #endif /* CONFIG_MPU_STACK_GUARD */
 
@@ -269,7 +269,7 @@ static int _mpu_configure_regions(const struct k_mem_partition
 			return reg_index;
 		}
 
-		reg_index = _mpu_configure_region(reg_index, regions[i]);
+		reg_index = mpu_configure_region(reg_index, regions[i]);
 
 		if (reg_index == -EINVAL) {
 			return reg_index;
@@ -290,7 +290,7 @@ static int _mpu_configure_regions(const struct k_mem_partition
  * If the static MPU regions configuration has not been successfully
  * performed, the error signal is propagated to the caller of the function.
  */
-static int _mpu_configure_static_mpu_regions(const struct k_mem_partition
+static int mpu_configure_static_mpu_regions(const struct k_mem_partition
 	*static_regions[], const u8_t regions_num,
 	const u32_t background_area_base,
 	const u32_t background_area_end)
@@ -303,7 +303,7 @@ static int _mpu_configure_static_mpu_regions(const struct k_mem_partition
 	ARG_UNUSED(background_area_base);
 	ARG_UNUSED(background_area_end);
 
-	mpu_reg_index = _mpu_configure_regions(static_regions,
+	mpu_reg_index = mpu_configure_regions(static_regions,
 		regions_num, mpu_reg_index, true);
 
 	static_regions_num = mpu_reg_index;
@@ -319,7 +319,7 @@ static int _mpu_configure_static_mpu_regions(const struct k_mem_partition
  * If the dynamic MPU regions configuration has not been successfully
  * performed, the error signal is propagated to the caller of the function.
  */
-static int _mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
+static int mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
 	*dynamic_regions[], u8_t regions_num)
 {
 	/* Reset MPU regions inside which dynamic memory regions may
@@ -331,7 +331,7 @@ static int _mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
 	 * re-programming perform access in those areas.
 	 */
 	arm_core_mpu_disable();
-	_region_init(mpu_config.sram_region, (const struct nxp_mpu_region *)
+	region_init(mpu_config.sram_region, (const struct nxp_mpu_region *)
 		&mpu_config.mpu_regions[mpu_config.sram_region]);
 	arm_core_mpu_enable();
 
@@ -341,13 +341,13 @@ static int _mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
 	 * programmed on top of existing SRAM region configuration.
 	 */
 
-	mpu_reg_index = _mpu_configure_regions(dynamic_regions,
+	mpu_reg_index = mpu_configure_regions(dynamic_regions,
 		regions_num, mpu_reg_index, false);
 
 	if (mpu_reg_index != -EINVAL) {
 
 		/* Disable the non-programmed MPU regions. */
-		for (int i = mpu_reg_index; i < _get_num_regions(); i++) {
+		for (int i = mpu_reg_index; i < get_num_regions(); i++) {
 
 			LOG_DBG("disable region 0x%x", i);
 			/* Disable region */
@@ -392,12 +392,12 @@ void arm_core_mpu_disable(void)
 
 #if defined(CONFIG_USERSPACE)
 
-static inline u32_t _mpu_region_get_base(u32_t r_index)
+static inline u32_t mpu_region_get_base(u32_t r_index)
 {
 	return SYSMPU->WORD[r_index][0];
 }
 
-static inline u32_t _mpu_region_get_size(u32_t r_index)
+static inline u32_t mpu_region_get_size(u32_t r_index)
 {
 	/* <END> + 1 - <BASE> */
 	return (SYSMPU->WORD[r_index][1] + 1) - SYSMPU->WORD[r_index][0];
@@ -409,7 +409,7 @@ static inline u32_t _mpu_region_get_size(u32_t r_index)
  * Note:
  *   The caller must provide a valid region number.
  */
-static inline int _is_enabled_region(u32_t r_index)
+static inline int is_enabled_region(u32_t r_index)
 {
 	return SYSMPU->WORD[r_index][3] & SYSMPU_WORD_VLD_MASK;
 }
@@ -420,7 +420,7 @@ static inline int _is_enabled_region(u32_t r_index)
  * Note:
  *   The caller must provide a valid region number.
  */
-static inline int _is_in_region(u32_t r_index, u32_t start, u32_t size)
+static inline int is_in_region(u32_t r_index, u32_t start, u32_t size)
 {
 	u32_t r_addr_start;
 	u32_t r_addr_end;
@@ -444,20 +444,20 @@ void arm_core_mpu_mem_partition_config_update(
 {
 	/* Find the partition. ASSERT if not found. */
 	u8_t i;
-	u8_t reg_index = _get_num_regions();
+	u8_t reg_index = get_num_regions();
 
-	for (i = static_regions_num; i < _get_num_regions(); i++) {
-		if (!_is_enabled_region(i)) {
+	for (i = static_regions_num; i < get_num_regions(); i++) {
+		if (!is_enabled_region(i)) {
 			continue;
 		}
 
-		u32_t base = _mpu_region_get_base(i);
+		u32_t base = mpu_region_get_base(i);
 
 		if (base != partition->start) {
 			continue;
 		}
 
-		u32_t size = _mpu_region_get_size(i);
+		u32_t size = mpu_region_get_size(i);
 
 		if (size != partition->size) {
 			continue;
@@ -467,12 +467,12 @@ void arm_core_mpu_mem_partition_config_update(
 		reg_index = i;
 		break;
 	}
-	__ASSERT(reg_index != _get_num_regions(),
-		"Memory domain partition not found\n");
+	__ASSERT(reg_index != get_num_regions(),
+		 "Memory domain partition not found\n");
 
 	/* Modify the permissions */
 	partition->attr = *new_attr;
-	_mpu_configure_region(reg_index, partition);
+	mpu_configure_region(reg_index, partition);
 }
 
 /**
@@ -481,7 +481,7 @@ void arm_core_mpu_mem_partition_config_update(
  */
 int arm_core_mpu_get_max_available_dyn_regions(void)
 {
-	return _get_num_regions() - static_regions_num;
+	return get_num_regions() - static_regions_num;
 }
 
 /**
@@ -490,7 +490,7 @@ int arm_core_mpu_get_max_available_dyn_regions(void)
  * Note:
  *   The caller must provide a valid region number.
  */
-static inline int _is_user_accessible_region(u32_t r_index, int write)
+static inline int is_user_accessible_region(u32_t r_index, int write)
 {
 	u32_t r_ap = SYSMPU->WORD[r_index][2];
 
@@ -509,9 +509,9 @@ int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
 	u8_t r_index;
 
 	/* Iterate through all MPU regions */
-	for (r_index = 0U; r_index < _get_num_regions(); r_index++) {
-		if (!_is_enabled_region(r_index) ||
-		    !_is_in_region(r_index, (u32_t)addr, size)) {
+	for (r_index = 0U; r_index < get_num_regions(); r_index++) {
+		if (!is_enabled_region(r_index) ||
+		    !is_in_region(r_index, (u32_t)addr, size)) {
 			continue;
 		}
 
@@ -520,7 +520,7 @@ int arm_core_mpu_buffer_validate(void *addr, size_t size, int write)
 		 * So we can stop the iteration immediately once we find the
 		 * matched region that grants permission.
 		 */
-		if (_is_user_accessible_region(r_index, write)) {
+		if (is_user_accessible_region(r_index, write)) {
 			return 0;
 		}
 	}
@@ -537,8 +537,8 @@ void arm_core_mpu_configure_static_mpu_regions(const struct k_mem_partition
 	*static_regions[], const u8_t regions_num,
 	const u32_t background_area_start, const u32_t background_area_end)
 {
-	if (_mpu_configure_static_mpu_regions(static_regions, regions_num,
-		background_area_start, background_area_end) == -EINVAL) {
+	if (mpu_configure_static_mpu_regions(static_regions, regions_num,
+					     background_area_start, background_area_end) == -EINVAL) {
 
 		__ASSERT(0, "Configuring %u static MPU regions failed\n",
 			regions_num);
@@ -551,7 +551,7 @@ void arm_core_mpu_configure_static_mpu_regions(const struct k_mem_partition
 void arm_core_mpu_configure_dynamic_mpu_regions(const struct k_mem_partition
 	*dynamic_regions[], u8_t regions_num)
 {
-	if (_mpu_configure_dynamic_mpu_regions(dynamic_regions, regions_num)
+	if (mpu_configure_dynamic_mpu_regions(dynamic_regions, regions_num)
 		== -EINVAL) {
 
 		__ASSERT(0, "Configuring %u dynamic MPU regions failed\n",
@@ -573,7 +573,7 @@ static int nxp_mpu_init(struct device *arg)
 
 	u32_t r_index;
 
-	if (mpu_config.num_regions > _get_num_regions()) {
+	if (mpu_config.num_regions > get_num_regions()) {
 		/* Attempt to configure more MPU regions than
 		 * what is supported by hardware. As this operation
 		 * may be executed during system (pre-kernel) initialization,
@@ -583,21 +583,21 @@ static int nxp_mpu_init(struct device *arg)
 		__ASSERT(0,
 			"Request to configure: %u regions (supported: %u)\n",
 			mpu_config.num_regions,
-			_get_num_regions()
+			get_num_regions()
 		);
 		return -1;
 	}
 
-	LOG_DBG("total region count: %d", _get_num_regions());
+	LOG_DBG("total region count: %d", get_num_regions());
 
 	arm_core_mpu_disable();
 
 	/* Architecture-specific configuration */
-	_mpu_init();
+	mpu_init();
 
 	/* Program fixed regions configured at SOC definition. */
 	for (r_index = 0U; r_index < mpu_config.num_regions; r_index++) {
-		_region_init(r_index, &mpu_config.mpu_regions[r_index]);
+		region_init(r_index, &mpu_config.mpu_regions[r_index]);
 	}
 
 	/* Update the number of programmed MPU regions. */

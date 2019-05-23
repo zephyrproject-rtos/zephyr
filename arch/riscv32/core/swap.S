@@ -10,7 +10,7 @@
 
 /* exports */
 GTEXT(__swap)
-GTEXT(_thread_entry_wrapper)
+GTEXT(z_thread_entry_wrapper)
 
 /* Use ABI name of registers for the sake of simplicity */
 
@@ -103,11 +103,11 @@ SECTION_FUNC(exception.other, __swap)
 
 
 /*
- * void _thread_entry_wrapper(k_thread_entry_t, void *, void *, void *)
+ * void z_thread_entry_wrapper(k_thread_entry_t, void *, void *, void *)
  */
-SECTION_FUNC(TEXT, _thread_entry_wrapper)
+SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 	/*
-	 * _thread_entry_wrapper is called for every new thread upon the return
+	 * z_thread_entry_wrapper is called for every new thread upon the return
 	 * of __swap or ISR. Its address, as well as its input function
 	 * arguments thread_entry_t, void *, void *, void * are restored from
 	 * the thread stack (initialized via function _thread).

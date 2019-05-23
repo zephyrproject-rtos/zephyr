@@ -234,7 +234,7 @@ static int i2c_stm32_init(struct device *dev)
 	}
 #endif /* CONFIG_SOC_SERIES_STM32F3X) || CONFIG_SOC_SERIES_STM32F0X */
 
-	bitrate_cfg = _i2c_map_dt_bitrate(cfg->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
 	ret = i2c_stm32_runtime_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (ret < 0) {

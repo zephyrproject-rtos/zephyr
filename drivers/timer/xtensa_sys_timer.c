@@ -62,7 +62,7 @@ static void ccompare_isr(void *arg)
  * pervasive.
  */
 #ifndef CONFIG_XTENSA_ASM2
-void _timer_int_handler(void *arg)
+void timer_int_handler(void *arg)
 {
 	return ccompare_isr(arg);
 }

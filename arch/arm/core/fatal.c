@@ -92,7 +92,7 @@ void z_NanoFatalErrorHandler(unsigned int reason,
 	z_SysFatalErrorHandler(reason, pEsf);
 }
 
-void _do_kernel_oops(const NANO_ESF *esf)
+void z_do_kernel_oops(const NANO_ESF *esf)
 {
 	z_NanoFatalErrorHandler(esf->r0, esf);
 }
@@ -106,6 +106,6 @@ FUNC_NORETURN void z_arch_syscall_oops(void *ssf_ptr)
 
 	oops_esf.pc = ssf_contents[3];
 
-	_do_kernel_oops(&oops_esf);
+	z_do_kernel_oops(&oops_esf);
 	CODE_UNREACHABLE;
 }

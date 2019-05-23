@@ -209,7 +209,7 @@ static int atmel_sam3x_init(struct device *arg)
 
 	key = irq_lock();
 
-	_ClearFaults();
+	z_clearfaults();
 
 	/*
 	 * Set FWS (Flash Wait State) value before increasing Master Clock

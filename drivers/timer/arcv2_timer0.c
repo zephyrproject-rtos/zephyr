@@ -129,7 +129,7 @@ static u32_t elapsed(void)
  *
  * @return N/A
  */
-static void _timer_int_handler(void *unused)
+static void timer_int_handler(void *unused)
 {
 	ARG_UNUSED(unused);
 	u32_t dticks;
@@ -164,7 +164,7 @@ int z_clock_driver_init(struct device *device)
 	last_load = CYC_PER_TICK;
 
 	IRQ_CONNECT(IRQ_TIMER0, CONFIG_ARCV2_TIMER_IRQ_PRIORITY,
-		    _timer_int_handler, NULL, 0);
+		    timer_int_handler, NULL, 0);
 
 	timer0_limit_register_set(last_load - 1);
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT

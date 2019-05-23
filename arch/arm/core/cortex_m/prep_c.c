@@ -161,7 +161,7 @@ extern FUNC_NORETURN void z_cstart(void);
  * @return N/A
  */
 
-extern void _IntLibInit(void);
+extern void z_IntLibInit(void);
 
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	extern u64_t __start_time_stamp;
@@ -183,7 +183,7 @@ void _PrepC(void)
 #ifdef CONFIG_BOOT_TIME_MEASUREMENT
 	__start_time_stamp = 0U;
 #endif
-	_IntLibInit();
+	z_IntLibInit();
 	z_cstart();
 	CODE_UNREACHABLE;
 }

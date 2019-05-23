@@ -36,9 +36,6 @@ tests:
     platform_exclude:  frdm_kw41z
     tags: drivers footprint
     depends_on: adc spi
-    # FIXME see #7703
-    extra_configs:
-      - CONFIG_TEST_USERSPACE=n
   test_build_sensors_i_z:
     build_only: true
     extra_args: CONF_FILE=sensors_i_z.conf

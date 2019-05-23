@@ -16,7 +16,7 @@
 #define SCB_ICSR_NMIPENDSET_Msk SCB_ICSR_PENDNMISET_Msk
 #endif
 
-extern void _NmiHandlerSet(void (*pHandler)(void));
+extern void z_NmiHandlerSet(void (*pHandler)(void));
 
 static void nmi_test_isr(void)
 {
@@ -37,13 +37,13 @@ static void nmi_test_isr(void)
 /**
  * @brief test the behavior of CONFIG_RUNTIME_NMI at run time
  *
- * @details this test is to validate _NmiHandlerSet() api.
- * First we configure the NMI isr using _NmiHandlerSet() api.
+ * @details this test is to validate z_NmiHandlerSet() api.
+ * First we configure the NMI isr using z_NmiHandlerSet() api.
  * After wait for some time, and set the  Interrupt Control and
  * State Register(ICSR) of System control block (SCB).
  * The registered NMI isr should fire immediately.
  *
- * @see _NmiHandlerSet()
+ * @see z_NmiHandlerSet()
  */
 void test_arm_runtime_nmi(void)
 {
@@ -51,7 +51,7 @@ void test_arm_runtime_nmi(void)
 
 	TC_START("nmi_test_isr");
 	/* Configure the NMI isr */
-	_NmiHandlerSet(nmi_test_isr);
+	z_NmiHandlerSet(nmi_test_isr);
 
 	for (i = 0U; i < 10; i++) {
 		printk("Trigger NMI in 10s: %d s\n", i);

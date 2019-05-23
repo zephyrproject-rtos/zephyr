@@ -369,7 +369,7 @@ void z_setup_new_thread(struct k_thread *new_thread,
 	 */
 	new_thread->userspace_local_data =
 		(struct _thread_userspace_local_data *)
-		(K_THREAD_STACK_BUFFER(stack) + stack_size);
+		(Z_THREAD_STACK_BUFFER(stack) + stack_size);
 #endif
 #endif
 
@@ -432,6 +432,12 @@ k_tid_t z_impl_k_thread_create(struct k_thread *new_thread,
 			      int prio, u32_t options, s32_t delay)
 {
 	__ASSERT(!z_is_in_isr(), "Threads may not be created in ISRs");
+
+	/* Special case, only for unit tests */
+#if defined(CONFIG_TEST) && defined(CONFIG_ARCH_HAS_USERSPACE) && !defined(CONFIG_USERSPACE)
+	__ASSERT((options & K_USER) == 0,
+		 "Platform is capable of user mode, and test thread created with K_USER option, but CONFIG_TEST_USERSPACE or CONFIG_USERSPACE is not set\n");
+#endif
 
 	z_setup_new_thread(new_thread, stack, stack_size, entry, p1, p2, p3,
 			  prio, options, NULL);

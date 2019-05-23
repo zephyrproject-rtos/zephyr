@@ -20,6 +20,7 @@ char sline[256];
 
 /* location of the time stamps*/
 extern u32_t __read_swap_end_time_value;
+extern u64_t __temp_start_swap_time;
 extern u64_t __common_var_swap_end_time;
 
 volatile u64_t thread_abort_end_time;
@@ -143,6 +144,7 @@ void system_thread_bench(void)
 	k_sleep(1);
 	thread_abort_end_time = (__common_var_swap_end_time);
 	__end_swap_time = __common_var_swap_end_time;
+	__start_swap_time = __temp_start_swap_time;
 
 	u32_t total_swap_cycles = __end_swap_time - __start_swap_time;
 
@@ -283,6 +285,7 @@ void heap_malloc_free_bench(void)
 	u32_t sum_malloc = 0U;
 	u32_t sum_free = 0U;
 
+	k_sleep(10);
 	while (count++ != 100) {
 		TIMING_INFO_PRE_READ();
 		heap_malloc_start_time = TIMING_INFO_OS_GET_TIME();

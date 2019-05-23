@@ -197,7 +197,7 @@ static int mcux_lpi2c_init(struct device *dev)
 	LPI2C_MasterTransferCreateHandle(base, &data->handle,
 			mcux_lpi2c_master_transfer_callback, dev);
 
-	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
 	error = mcux_lpi2c_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (error) {

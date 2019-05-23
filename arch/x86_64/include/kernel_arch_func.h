@@ -51,7 +51,7 @@ void z_arch_irq_disable(unsigned int irq);
 void z_arch_irq_enable(unsigned int irq);
 
 /* Not a standard Zephyr function, but probably will be */
-static inline unsigned long long _arch_k_cycle_get_64(void)
+static inline unsigned long long z_arch_k_cycle_get_64(void)
 {
 	unsigned int hi, lo;
 
@@ -65,13 +65,13 @@ static inline unsigned int z_arch_k_cycle_get_32(void)
 	extern u32_t z_timer_cycle_get_32(void);
 	return z_timer_cycle_get_32();
 #else
-	return (u32_t)_arch_k_cycle_get_64();
+	return (u32_t)z_arch_k_cycle_get_64();
 #endif
 }
 
 #define z_is_in_isr() (z_arch_curr_cpu()->nested != 0)
 
-static inline void _arch_switch(void *switch_to, void **switched_from)
+static inline void z_arch_switch(void *switch_to, void **switched_from)
 {
 	xuk_switch(switch_to, switched_from);
 }

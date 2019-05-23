@@ -51,13 +51,13 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 		int priority, unsigned int options)
 {
 
-	char *stack_memory = K_THREAD_STACK_BUFFER(stack);
+	char *stack_memory = Z_THREAD_STACK_BUFFER(stack);
 
 	Z_ASSERT_VALID_PRIO(priority, thread_func);
 
 	posix_thread_status_t *thread_status;
 
-	_new_thread_init(thread, stack_memory, stack_size, priority, options);
+	z_new_thread_init(thread, stack_memory, stack_size, priority, options);
 
 	/* We store it in the same place where normal archs store the
 	 * "initial stack frame"

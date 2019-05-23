@@ -122,7 +122,7 @@ static int stm32_pin_configure(int pin, int func, int altf)
  *
  * @return 0 on success, error otherwise
  */
-int _pinmux_stm32_set(u32_t pin, u32_t func,
+int z_pinmux_stm32_set(u32_t pin, u32_t func,
 				struct device *clk)
 {
 	/* make sure to enable port clock first */
@@ -148,7 +148,7 @@ void stm32_setup_pins(const struct pin_config *pinconf,
 	clk = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 
 	for (i = 0; i < pins; i++) {
-		_pinmux_stm32_set(pinconf[i].pin_num,
+		z_pinmux_stm32_set(pinconf[i].pin_num,
 				  pinconf[i].mode,
 				  clk);
 	}

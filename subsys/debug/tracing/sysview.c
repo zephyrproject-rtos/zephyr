@@ -1,4 +1,8 @@
-
+/*
+ * Copyright (c) 2018 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
 #include <zephyr.h>
 #include <kernel_structs.h>
 #include <init.h>

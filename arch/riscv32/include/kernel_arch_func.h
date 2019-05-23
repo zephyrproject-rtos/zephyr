@@ -28,7 +28,7 @@ void k_cpu_atomic_idle(unsigned int key);
 static ALWAYS_INLINE void kernel_arch_init(void)
 {
 	_kernel.irq_stack =
-		K_THREAD_STACK_BUFFER(_interrupt_stack) + CONFIG_ISR_STACK_SIZE;
+		Z_THREAD_STACK_BUFFER(_interrupt_stack) + CONFIG_ISR_STACK_SIZE;
 }
 
 static ALWAYS_INLINE void
@@ -44,7 +44,7 @@ FUNC_NORETURN void z_NanoFatalErrorHandler(unsigned int reason,
 #define z_is_in_isr() (_kernel.nested != 0U)
 
 #ifdef CONFIG_IRQ_OFFLOAD
-int _irq_do_offload(void);
+int z_irq_do_offload(void);
 #endif
 
 #endif /* _ASMLANGUAGE */

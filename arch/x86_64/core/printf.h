@@ -17,7 +17,7 @@ struct _pfr {
 };
 
 /* Set this function pointer to something that generates output */
-static void (*_putchar)(int c);
+static void (*z_putchar)(int c);
 
 static void pc(struct _pfr *r, int c)
 {
@@ -25,7 +25,7 @@ static void pc(struct _pfr *r, int c)
 		if (r->idx <= r->len)
 			r->buf[r->idx] = c;
 	} else {
-		_putchar(c);
+		z_putchar(c);
 	}
 	r->idx++;
 }
@@ -56,7 +56,7 @@ static void endrec(struct _pfr *r)
 		r->buf[r->idx] = 0;
 }
 
-static int _vpf(struct _pfr *r, const char *f, va_list ap)
+static int vpf(struct _pfr *r, const char *f, va_list ap)
 {
 	for (/**/; *f; f++) {
 		if (*f != '%') {
@@ -109,7 +109,7 @@ static int _vpf(struct _pfr *r, const char *f, va_list ap)
 #define CALL_VPF(rec)				\
 	va_list ap;				\
 	va_start(ap, f);			\
-	int ret = _vpf(&r, f, ap);		\
+	int ret = vpf(&r, f, ap);		\
 	va_end(ap);				\
 	return ret
 

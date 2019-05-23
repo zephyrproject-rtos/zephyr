@@ -27,8 +27,8 @@ extern "C" {
 #endif
 
 #ifndef _ASMLANGUAGE
-extern void _FaultInit(void);
-extern void _CpuIdleInit(void);
+extern void z_FaultInit(void);
+extern void z_CpuIdleInit(void);
 #ifdef CONFIG_ARM_MPU
 extern void z_arch_configure_static_mpu_regions(void);
 extern void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread);
@@ -36,10 +36,10 @@ extern void z_arch_configure_dynamic_mpu_regions(struct k_thread *thread);
 
 static ALWAYS_INLINE void kernel_arch_init(void)
 {
-	_InterruptStackSetup();
-	_ExcSetup();
-	_FaultInit();
-	_CpuIdleInit();
+	z_InterruptStackSetup();
+	z_ExcSetup();
+	z_FaultInit();
+	z_CpuIdleInit();
 }
 
 static ALWAYS_INLINE void
@@ -63,11 +63,11 @@ z_arch_switch_to_main_thread(struct k_thread *main_thread,
 #if defined(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT) && \
 	defined(CONFIG_USERSPACE)
 	start_of_main_stack =
-		K_THREAD_STACK_BUFFER(main_stack) + main_stack_size -
+		Z_THREAD_STACK_BUFFER(main_stack) + main_stack_size -
 		MPU_GUARD_ALIGN_AND_SIZE;
 #else
 	start_of_main_stack =
-		K_THREAD_STACK_BUFFER(main_stack) + main_stack_size;
+		Z_THREAD_STACK_BUFFER(main_stack) + main_stack_size;
 #endif
 	start_of_main_stack = (void *)STACK_ROUND_DOWN(start_of_main_stack);
 
@@ -134,9 +134,9 @@ z_set_thread_return_value(struct k_thread *thread, unsigned int value)
 
 extern void k_cpu_atomic_idle(unsigned int key);
 
-#define z_is_in_isr() _IsInIsr()
+#define z_is_in_isr() z_IsInIsr()
 
-extern FUNC_NORETURN void _arm_userspace_enter(k_thread_entry_t user_entry,
+extern FUNC_NORETURN void z_arm_userspace_enter(k_thread_entry_t user_entry,
 					       void *p1, void *p2, void *p3,
 					       u32_t stack_end,
 					       u32_t stack_start);

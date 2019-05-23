@@ -31,7 +31,7 @@ extern "C" {
 
 /* Syscall invocation macros. x86-specific machine constraints used to ensure
  * args land in the proper registers, see implementation of
- * _x86_syscall_entry_stub in userspace.S
+ * z_x86_syscall_entry_stub in userspace.S
  *
  * the entry stub clobbers EDX and ECX on IAMCU systems
  */

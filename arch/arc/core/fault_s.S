@@ -19,7 +19,7 @@
 #include <syscall.h>
 
 GTEXT(_Fault)
-GTEXT(_do_kernel_oops)
+GTEXT(z_do_kernel_oops)
 GTEXT(__reset)
 GTEXT(__memory_error)
 GTEXT(__instruction_error)
@@ -35,7 +35,7 @@ GTEXT(__ev_div_zero)
 GTEXT(__ev_dc_error)
 GTEXT(__ev_maligned)
 #ifdef CONFIG_IRQ_OFFLOAD
-GTEXT(_irq_do_offload);
+GTEXT(z_irq_do_offload);
 #endif
 
 GDATA(exc_nest_count)
@@ -215,7 +215,7 @@ _do_non_syscall_trap:
 exc_nest_handle:
 	push_s r0
 
-	jl _irq_do_offload
+	jl z_irq_do_offload
 
 	pop sp
 

@@ -257,7 +257,7 @@ static int gpio_nrfx_manage_callback(struct device *port,
 				     struct gpio_callback *callback,
 				     bool set)
 {
-	return _gpio_manage_callback(&get_port_data(port)->callbacks,
+	return gpio_manage_callback(&get_port_data(port)->callbacks,
 				     callback, set);
 }
 
@@ -400,7 +400,7 @@ static u32_t check_level_trigger_pins(struct device *port)
 
 static inline void fire_callbacks(struct device *port, u32_t pins)
 {
-	_gpio_fire_callbacks(&get_port_data(port)->callbacks, port, pins);
+	gpio_fire_callbacks(&get_port_data(port)->callbacks, port, pins);
 }
 
 #ifdef CONFIG_GPIO_NRF_P0

@@ -15,7 +15,7 @@ volatile irq_offload_routine_t offload_routine;
 static void *offload_param;
 
 /* Called by __svc */
-void _irq_do_offload(void)
+void z_irq_do_offload(void)
 {
 	offload_routine(offload_param);
 }

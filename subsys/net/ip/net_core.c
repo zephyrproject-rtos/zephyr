@@ -40,9 +40,7 @@ LOG_MODULE_REGISTER(net_core, CONFIG_NET_CORE_LOG_LEVEL);
 
 #include "icmpv4.h"
 
-#if defined(CONFIG_NET_DHCPV4)
 #include "dhcpv4.h"
-#endif
 
 #include "route.h"
 
@@ -426,15 +424,27 @@ static inline void l3_init(void)
 
 	net_route_init();
 
+	NET_DBG("Network L3 init done");
+}
+
+static inline int services_init(void)
+{
+	int status;
+
+	status = net_dhcpv4_init();
+	if (status) {
+		return status;
+	}
+
 	dns_init_resolver();
 
-	NET_DBG("Network L3 init done");
+	net_shell_init();
+
+	return status;
 }
 
 static int net_init(struct device *unused)
 {
-	int status = 0;
-
 	net_hostname_init();
 
 	NET_DBG("Priority %d", CONFIG_NET_INIT_PRIO);
@@ -449,16 +459,7 @@ static int net_init(struct device *unused)
 
 	init_rx_queues();
 
-#if CONFIG_NET_DHCPV4
-	status = net_dhcpv4_init();
-	if (status) {
-		return status;
-	}
-#endif
-
-	net_shell_init();
-
-	return status;
+	return services_init();
 }
 
 SYS_INIT(net_init, POST_KERNEL, CONFIG_NET_INIT_PRIO);

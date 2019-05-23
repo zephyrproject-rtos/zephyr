@@ -29,17 +29,15 @@ Zephyr's multi-purpose :ref:`west` tool lets you easily get the Zephyr project
 source code, instead of manually cloning the Zephyr repos along with west
 itself.
 
-.. note::
-   If you prefer to manage the repositories manually or with another tool
-   instead of using ``west``, you can still opt to do so. The documentation
-   section :ref:`no-west` describes how to work with Zephyr without using
-   west to manage its source code.
+.. warning::
+
+   It's possible to use Zephyr without installing west, but you have
+   to **really** know :ref:`what you are doing <no-west>`.
 
 Bootstrap west
 ==============
 
-Install the bootstrapper for Zephyr's command-line tool, :ref:`west <west>` in a
-shell or ``cmd.exe`` prompt:
+First, install the ``west`` binary and bootstrapper:
 
 .. code-block:: console
 
@@ -52,9 +50,6 @@ shell or ``cmd.exe`` prompt:
 .. note::
    See :ref:`gs_python_deps` for additional clarfication on using the
    ``--user`` switch.
-
-Additional information about west's structure can be found
-:ref:`in the relevant west documentation section <west-struct>`.
 
 Clone the Zephyr Repositories
 =============================
@@ -71,7 +66,8 @@ Clone the Zephyr Repositories
 
    You should see ``West bootstrapper version: v0.5.0`` (or higher).
 
-Clone the Zephyr source code repositories from GitHub using the ``west`` tool:
+Next, clone the Zephyr source code repositories from GitHub using the
+``west`` tool you just installed:
 
 .. code-block:: console
 

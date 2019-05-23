@@ -36,7 +36,7 @@ extern void FatalErrorHandler(void);
 extern void ReservedInterruptHandler(unsigned int intNo);
 
 /* Defined in xtensa_context.S */
-extern void _xt_coproc_init(void);
+extern void z_xt_coproc_init(void);
 
 extern K_THREAD_STACK_DEFINE(_interrupt_stack, CONFIG_ISR_STACK_SIZE);
 
@@ -70,7 +70,7 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 	cpu0->nested = 0;
 
 #if CONFIG_XTENSA_ASM2
-	cpu0->irq_stack = (K_THREAD_STACK_BUFFER(_interrupt_stack) +
+	cpu0->irq_stack = (Z_THREAD_STACK_BUFFER(_interrupt_stack) +
 			   CONFIG_ISR_STACK_SIZE);
 
 	/* The asm2 scheme keeps the kernel pointer in MISC0 for easy
@@ -86,11 +86,11 @@ static ALWAYS_INLINE void kernel_arch_init(void)
 	/* Initialize co-processor management for threads.
 	 * Leave CPENABLE alone.
 	 */
-	_xt_coproc_init();
+	z_xt_coproc_init();
 #endif
 
 #ifdef CONFIG_INIT_STACKS
-	memset(K_THREAD_STACK_BUFFER(_interrupt_stack), 0xAA,
+	memset(Z_THREAD_STACK_BUFFER(_interrupt_stack), 0xAA,
 	       CONFIG_ISR_STACK_SIZE);
 #endif
 }

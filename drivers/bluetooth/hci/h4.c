@@ -60,7 +60,7 @@ static struct {
 		u8_t hdr[4];
 	};
 } rx = {
-	.fifo = _K_FIFO_INITIALIZER(rx.fifo),
+	.fifo = Z_FIFO_INITIALIZER(rx.fifo),
 };
 
 static struct {
@@ -68,7 +68,7 @@ static struct {
 	struct net_buf *buf;
 	struct k_fifo   fifo;
 } tx = {
-	.fifo = _K_FIFO_INITIALIZER(tx.fifo),
+	.fifo = Z_FIFO_INITIALIZER(tx.fifo),
 };
 
 static struct device *h4_dev;
@@ -456,7 +456,7 @@ static const struct bt_hci_driver drv = {
 	.send		= h4_send,
 };
 
-static int _bt_uart_init(struct device *unused)
+static int bt_uart_init(struct device *unused)
 {
 	ARG_UNUSED(unused);
 
@@ -470,4 +470,4 @@ static int _bt_uart_init(struct device *unused)
 	return 0;
 }
 
-SYS_INIT(_bt_uart_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);
+SYS_INIT(bt_uart_init, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE);

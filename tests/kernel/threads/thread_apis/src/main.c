@@ -37,7 +37,7 @@ extern void test_k_thread_foreach(void);
 extern void test_threads_cpu_mask(void);
 
 struct k_thread tdata;
-#define STACK_SIZE (256 + CONFIG_TEST_EXTRA_STACKSIZE)
+#define STACK_SIZE (512 + CONFIG_TEST_EXTRA_STACKSIZE)
 K_THREAD_STACK_DEFINE(tstack, STACK_SIZE);
 size_t tstack_size = K_THREAD_STACK_SIZEOF(tstack);
 

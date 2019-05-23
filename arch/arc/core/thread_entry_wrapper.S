@@ -14,7 +14,7 @@
 #include <toolchain.h>
 #include <linker/sections.h>
 
-GTEXT(_thread_entry_wrapper)
+GTEXT(z_thread_entry_wrapper)
 
 /*
  * @brief Wrapper for z_thread_entry
@@ -25,7 +25,7 @@ GTEXT(_thread_entry_wrapper)
  * @return N/A
  */
 
-SECTION_FUNC(TEXT, _thread_entry_wrapper)
+SECTION_FUNC(TEXT, z_thread_entry_wrapper)
 
 	pop_s r3
 	pop_s r2

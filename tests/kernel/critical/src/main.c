@@ -42,7 +42,8 @@ static struct k_work_q offload_work_q;
 static K_THREAD_STACK_DEFINE(offload_work_q_stack,
 			     CONFIG_OFFLOAD_WORKQUEUE_STACK_SIZE);
 
-#define STACK_SIZE 1024
+#define STACK_SIZE (1024 + CONFIG_TEST_EXTRA_STACKSIZE)
+
 static K_THREAD_STACK_DEFINE(stack1, STACK_SIZE);
 static K_THREAD_STACK_DEFINE(stack2, STACK_SIZE);
 

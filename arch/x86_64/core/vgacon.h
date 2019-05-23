@@ -7,7 +7,7 @@
 
 /* Super-primitive VGA text console output-only "terminal" driver */
 
-static inline unsigned short *_vga_row(int row)
+static inline unsigned short *vga_row(int row)
 {
 	return ((unsigned short *)0xb8000) + 80 * row;
 }
@@ -18,7 +18,7 @@ static inline unsigned short *_vga_row(int row)
  */
 static inline void vga_put(int ch, int color, int row, int col)
 {
-	unsigned short *rp = _vga_row(row);
+	unsigned short *rp = vga_row(row);
 
 	rp[col] = (color << 8) | ch;
 }
@@ -28,11 +28,11 @@ static inline void vgacon_putc(char c)
 	if (_shared.vgacol == 80) {
 		for (int r = 0; r < 24; r++) {
 			for (int c = 0; c < 80; c++) {
-				_vga_row(r)[c] = _vga_row(r+1)[c];
+				vga_row(r)[c] = vga_row(r+1)[c];
 			}
 		}
 		for (int c = 0; c < 80; c++) {
-			_vga_row(24)[c] = 0x9000;
+			vga_row(24)[c] = 0x9000;
 		}
 		_shared.vgacol = 0;
 	}

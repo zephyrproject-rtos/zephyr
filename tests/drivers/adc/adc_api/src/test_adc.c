@@ -273,6 +273,8 @@ void test_adc_sample_two_channels(void)
  * test_adc_asynchronous_call
  */
 #if defined(CONFIG_ADC_ASYNC)
+struct k_poll_signal async_sig;
+
 static int test_task_asynchronous_call(void)
 {
 	int ret;
@@ -288,7 +290,6 @@ static int test_task_asynchronous_call(void)
 		.buffer_size = sizeof(m_sample_buffer),
 		.resolution  = ADC_RESOLUTION,
 	};
-	struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
 	struct k_poll_event  async_evt =
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_SIGNAL,
 					 K_POLL_MODE_NOTIFY_ONLY,
@@ -303,7 +304,7 @@ static int test_task_asynchronous_call(void)
 	zassert_equal(ret, 0, "adc_read_async() failed with code %d", ret);
 
 	ret = k_poll(&async_evt, 1, K_MSEC(1000));
-	zassert_equal(ret, 0, "async signal not received as expected");
+	zassert_equal(ret, 0, "k_poll failed with error %d", ret);
 
 	check_samples(1 + options.extra_samplings);
 
@@ -463,9 +464,6 @@ static int test_task_invalid_request(void)
 		.buffer_size = sizeof(m_sample_buffer),
 		.resolution  = 0, /* intentionally invalid value */
 	};
-#if defined(CONFIG_ADC_ASYNC)
-	struct k_poll_signal async_sig = K_POLL_SIGNAL_INITIALIZER(async_sig);
-#endif
 
 	struct device *adc_dev = init_adc();
 
@@ -476,7 +474,7 @@ static int test_task_invalid_request(void)
 	ret = adc_read(adc_dev, &sequence);
 	zassert_not_equal(ret, 0, "adc_read() unexpectedly succeeded");
 
-#if defined(CONFIG_ADC_ASYNC) && !defined(CONFIG_USERSPACE)
+#if defined(CONFIG_ADC_ASYNC)
 	ret = adc_read_async(adc_dev, &sequence, &async_sig);
 	zassert_not_equal(ret, 0, "adc_read_async() unexpectedly succeeded");
 #endif

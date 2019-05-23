@@ -68,8 +68,8 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	struct _x86_initial_frame *initial_frame;
 
 	Z_ASSERT_VALID_PRIO(priority, entry);
-	stack_buf = K_THREAD_STACK_BUFFER(stack);
-	_new_thread_init(thread, stack_buf, stack_size, priority, options);
+	stack_buf = Z_THREAD_STACK_BUFFER(stack);
+	z_new_thread_init(thread, stack_buf, stack_size, priority, options);
 
 #if CONFIG_X86_USERSPACE
 	if ((options & K_USER) == 0U) {
@@ -103,7 +103,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	if ((options & K_USER) != 0U) {
 #ifdef _THREAD_WRAPPER_REQUIRED
 		initial_frame->edi = (u32_t)z_arch_user_mode_enter;
-		initial_frame->thread_entry = _x86_thread_entry_wrapper;
+		initial_frame->thread_entry = z_x86_thread_entry_wrapper;
 #else
 		initial_frame->thread_entry = z_arch_user_mode_enter;
 #endif /* _THREAD_WRAPPER_REQUIRED */
@@ -112,7 +112,7 @@ void z_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 	{
 #ifdef _THREAD_WRAPPER_REQUIRED
 		initial_frame->edi = (u32_t)z_thread_entry;
-		initial_frame->thread_entry = _x86_thread_entry_wrapper;
+		initial_frame->thread_entry = z_x86_thread_entry_wrapper;
 #else
 		initial_frame->thread_entry = z_thread_entry;
 #endif
@@ -190,18 +190,18 @@ FUNC_NORETURN void z_arch_user_mode_enter(k_thread_entry_t user_entry,
 			   (MMU_PTE_P_MASK | MMU_PTE_RW_MASK |
 			    MMU_PTE_US_MASK));
 
-	_x86_userspace_enter(user_entry, p1, p2, p3, stack_end,
+	z_x86_userspace_enter(user_entry, p1, p2, p3, stack_end,
 			     _current->stack_info.start);
 	CODE_UNREACHABLE;
 }
 
 
 /* Implemented in userspace.S */
-extern void _x86_syscall_entry_stub(void);
+extern void z_x86_syscall_entry_stub(void);
 
 /* Syscalls invoked by 'int 0x80'. Installed in the IDT at DPL=3 so that
  * userspace can invoke it.
  */
-NANO_CPU_INT_REGISTER(_x86_syscall_entry_stub, -1, -1, 0x80, 3);
+NANO_CPU_INT_REGISTER(z_x86_syscall_entry_stub, -1, -1, 0x80, 3);
 
 #endif /* CONFIG_X86_USERSPACE */

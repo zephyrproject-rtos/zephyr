@@ -577,6 +577,7 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 			      bool final)
 {
 	NET_PKT_DATA_ACCESS_DEFINE(frag_access, struct net_ipv6_frag_hdr);
+	u8_t frag_pkt_next_hdr = NET_IPV6_NEXTHDR_HBHO;
 	int ret = -ENOBUFS;
 	struct net_ipv6_frag_hdr *frag_hdr;
 	struct net_pkt *frag_pkt;
@@ -600,6 +601,10 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 	    net_pkt_copy(frag_pkt, pkt, net_pkt_ip_hdr_len(pkt) +
 			 net_pkt_ipv6_ext_len(pkt) - next_hdr_off - 1)) {
 		goto fail;
+	}
+
+	if (!net_pkt_ipv6_ext_len(pkt)) {
+		frag_pkt_next_hdr = NET_IPV6_NEXTHDR_FRAG;
 	}
 
 	/* And we append the fragmentation header */
@@ -632,7 +637,7 @@ static int send_ipv6_fragment(struct net_pkt *pkt,
 
 	net_pkt_cursor_init(frag_pkt);
 
-	if (net_ipv6_finalize(frag_pkt, 0) < 0) {
+	if (net_ipv6_finalize(frag_pkt, frag_pkt_next_hdr) < 0) {
 		goto fail;
 	}
 

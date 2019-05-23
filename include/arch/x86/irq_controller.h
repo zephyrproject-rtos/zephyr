@@ -79,13 +79,13 @@ static inline void z_irq_controller_irq_config(unsigned int vector,
  * @return the vector of the interrupt that is currently being processed, or
  * -1 if this can't be determined
  */
-static inline int _irq_controller_isr_vector_get(void)
+static inline int z_irq_controller_isr_vector_get(void)
 {
 	return __irq_controller_isr_vector_get();
 }
 
 
-static inline void _irq_controller_eoi(void)
+static inline void z_irq_controller_eoi(void)
 {
 	__irq_controller_eoi();
 }

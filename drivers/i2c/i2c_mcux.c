@@ -181,7 +181,7 @@ static int i2c_mcux_init(struct device *dev)
 	I2C_MasterTransferCreateHandle(base, &data->handle,
 			i2c_mcux_master_transfer_callback, dev);
 
-	bitrate_cfg = _i2c_map_dt_bitrate(config->bitrate);
+	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 
 	error = i2c_mcux_configure(dev, I2C_MODE_MASTER | bitrate_cfg);
 	if (error) {

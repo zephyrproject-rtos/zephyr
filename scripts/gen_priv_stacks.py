@@ -26,14 +26,13 @@ import argparse
 import struct
 from elf_helper import ElfHelper
 
-kobjects = [
-        "k_stack",
-        "_k_thread_stack_element",
-        ]
+kobjects = {
+        "_k_thread_stack_element": (None, False)
+}
 
 
 header = """%compare-lengths
-%define lookup-function-name _k_priv_stack_map_lookup
+%define lookup-function-name z_priv_stack_map_lookup
 %language=ANSI-C
 %global-table
 %struct-type
@@ -64,10 +63,10 @@ structure = """struct _k_priv_stack_map {
 # turned into a string, we told gperf to expect binary strings that are not
 # NULL-terminated.
 footer = """%%
-u8_t *_k_priv_stack_find(void *obj)
+u8_t *z_priv_stack_find(void *obj)
 {
     const struct _k_priv_stack_map *map =
-        _k_priv_stack_map_lookup((const char *)obj, sizeof(void *));
+        z_priv_stack_map_lookup((const char *)obj, sizeof(void *));
     return map->priv_stack_addr;
 }
 """

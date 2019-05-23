@@ -21,7 +21,7 @@
  *
  * @return 0 on success, negative errno otherwise.
  */
-static inline int _gpio_manage_callback(sys_slist_t *callbacks,
+static inline int gpio_manage_callback(sys_slist_t *callbacks,
 					struct gpio_callback *callback,
 					bool set)
 {
@@ -50,7 +50,7 @@ static inline int _gpio_manage_callback(sys_slist_t *callbacks,
  * @param port A pointer on the gpio driver instance
  * @param pins The actual pin mask that triggered the interrupt
  */
-static inline void _gpio_fire_callbacks(sys_slist_t *list,
+static inline void gpio_fire_callbacks(sys_slist_t *list,
 					struct device *port,
 					u32_t pins)
 {

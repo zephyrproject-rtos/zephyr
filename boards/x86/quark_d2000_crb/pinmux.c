@@ -30,7 +30,7 @@
  * associated pins and ball points.
  * This is the full pinmap that we have available on the board for configuration
  * including the ball position and the various modes that can be set.  In the
- * _pinmux_defaults we do not spend any time setting values that are using mode
+ * pinmux_defaults we do not spend any time setting values that are using mode
  * A as the hardware brings up all devices by default in mode A.
  */
 	/* pin, ball, mode A, mode B,      mode C       */
@@ -64,7 +64,7 @@
 
 #define PINMUX_MAX_REGISTERS 2
 
-static void _pinmux_defaults(u32_t base)
+static void pinmux_defaults(u32_t base)
 {
 	u32_t mux_config[PINMUX_MAX_REGISTERS] = { 0, 0 };
 	int i = 0;
@@ -91,10 +91,10 @@ static int pinmux_initialize(struct device *port)
 {
 	ARG_UNUSED(port);
 
-	_pinmux_defaults(PINMUX_BASE_ADDR);
+	pinmux_defaults(PINMUX_BASE_ADDR);
 
 	/* Enable the UART RX pin to receive input */
-	_quark_mcu_set_mux(PINMUX_BASE_ADDR + PINMUX_INPUT_OFFSET, 5, 0x1);
+	z_quark_mcu_set_mux(PINMUX_BASE_ADDR + PINMUX_INPUT_OFFSET, 5, 0x1);
 
 	return 0;
 }

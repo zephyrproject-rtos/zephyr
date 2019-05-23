@@ -407,7 +407,7 @@ static inline void z_sd_set_seg_offset(struct segment_descriptor *sd,
  * @param offset offset of handler
  * @param dpl descriptor privilege level
  */
-static inline void _init_irq_gate(struct segment_descriptor *sd,
+static inline void z_init_irq_gate(struct segment_descriptor *sd,
 				  u16_t seg_selector, u32_t offset,
 				  u32_t dpl)
 {
@@ -509,7 +509,7 @@ static inline void _set_gdt(const struct pseudo_descriptor *gdt)
  *
  * @param idt Pointer to IDT pseudo descriptor.
  */
-static inline void _set_idt(const struct pseudo_descriptor *idt)
+static inline void z_set_idt(const struct pseudo_descriptor *idt)
 {
 	__asm__ __volatile__ ("lidt %0" :: "m" (*idt));
 }

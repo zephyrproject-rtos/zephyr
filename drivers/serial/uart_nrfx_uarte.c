@@ -1231,7 +1231,7 @@ static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 			    (.int_driven = &uarte##idx##_int_driven,),	       \
 			    ())						       \
 	};								       \
-	static const struct uarte_nrfx_config uarte_##idx##_config = {	       \
+	static const struct uarte_nrfx_config uarte_##idx##z_config = {	       \
 		.uarte_regs = (NRF_UARTE_Type *)			       \
 			DT_NORDIC_NRF_UARTE_UART_##idx##_BASE_ADDRESS,	       \
 		.rts_cts_pins_set = IS_ENABLED(UARTE_##idx##_CONFIG_RTS_CTS),  \
@@ -1273,7 +1273,7 @@ static int uarte_nrfx_pm_control(struct device *dev, u32_t ctrl_command,
 		      uarte_##idx##_init,				       \
 		      uarte_nrfx_pm_control,				       \
 		      &uarte_##idx##_data,				       \
-		      &uarte_##idx##_config,				       \
+		      &uarte_##idx##z_config,				       \
 		      PRE_KERNEL_1,					       \
 		      CONFIG_KERNEL_INIT_PRIORITY_DEVICE,		       \
 		      &uart_nrfx_uarte_driver_api)

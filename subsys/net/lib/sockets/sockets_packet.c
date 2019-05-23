@@ -26,7 +26,7 @@ extern const struct socket_op_vtable sock_fd_op_vtable;
 
 static const struct socket_op_vtable packet_sock_fd_op_vtable;
 
-static inline int _k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
+static inline int k_fifo_wait_non_empty(struct k_fifo *fifo, int32_t timeout)
 {
 	struct k_poll_event events[] = {
 		K_POLL_EVENT_INITIALIZER(K_POLL_TYPE_FIFO_DATA_AVAILABLE,
@@ -191,7 +191,7 @@ ssize_t zpacket_recvfrom_ctx(struct net_context *ctx, void *buf, size_t max_len,
 	if (flags & ZSOCK_MSG_PEEK) {
 		int res;
 
-		res = _k_fifo_wait_non_empty(&ctx->recv_q, timeout);
+		res = k_fifo_wait_non_empty(&ctx->recv_q, timeout);
 		/* EAGAIN when timeout expired, EINTR when cancelled */
 		if (res && res != -EAGAIN && res != -EINTR) {
 			errno = -res;

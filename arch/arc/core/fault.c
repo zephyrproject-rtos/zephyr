@@ -151,9 +151,9 @@ void _Fault(NANO_ESF *esf)
 	}
 #endif
 
-	vector = _ARC_V2_ECR_VECTOR(ecr);
-	code =  _ARC_V2_ECR_CODE(ecr);
-	parameter = _ARC_V2_ECR_PARAMETER(ecr);
+	vector = Z_ARC_V2_ECR_VECTOR(ecr);
+	code =  Z_ARC_V2_ECR_CODE(ecr);
+	parameter = Z_ARC_V2_ECR_PARAMETER(ecr);
 
 
 	/* exception raised by kernel */
@@ -178,7 +178,7 @@ void _Fault(NANO_ESF *esf)
 #endif
 
 #ifdef CONFIG_MPU_STACK_GUARD
-	if (vector == 6 && ((parameter == 4) || (parameter == 24))) {
+	if (vector == 0x6 && ((parameter == 0x4) || (parameter == 0x24))) {
 		if (z_check_thread_stack_fail(exc_addr, arc_exc_saved_sp)) {
 			z_NanoFatalErrorHandler(_NANO_ERR_STACK_CHK_FAIL, esf);
 			return;

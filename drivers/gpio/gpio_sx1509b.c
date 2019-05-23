@@ -363,7 +363,7 @@ static const struct gpio_sx1509b_config gpio_sx1509b_cfg = {
 };
 
 static struct gpio_sx1509b_drv_data gpio_sx1509b_drvdata = {
-	.lock = _K_SEM_INITIALIZER(gpio_sx1509b_drvdata.lock, 1, 1),
+	.lock = Z_SEM_INITIALIZER(gpio_sx1509b_drvdata.lock, 1, 1),
 };
 
 static const struct gpio_driver_api gpio_sx1509b_drv_api_funcs = {

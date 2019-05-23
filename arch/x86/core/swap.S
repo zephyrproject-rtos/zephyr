@@ -24,7 +24,7 @@
 	/* exports (internal APIs) */
 
 	GTEXT(__swap)
-	GTEXT(_x86_thread_entry_wrapper)
+	GTEXT(z_x86_thread_entry_wrapper)
 	GTEXT(_x86_user_thread_entry_wrapper)
 
 	/* externs */
@@ -413,6 +413,8 @@ skipIntLatencyStop:
 	jne time_read_not_needed
 	movw $0x2,__read_swap_end_time_value
 	read_tsc __common_var_swap_end_time
+	pushl __start_swap_time
+	popl __temp_start_swap_time
 time_read_not_needed:
 #endif
 	ret
@@ -479,7 +481,7 @@ time_read_not_needed:
  * @return this routine does NOT return.
  */
 
-SECTION_FUNC(TEXT, _x86_thread_entry_wrapper)
+SECTION_FUNC(TEXT, z_x86_thread_entry_wrapper)
 #ifdef CONFIG_X86_IAMCU
 	/* IAMCU calling convention has first 3 arguments supplied in
 	 * registers not the stack

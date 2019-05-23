@@ -64,7 +64,7 @@ struct usb_dw_ctrl_prv {
 
 static struct usb_dw_ctrl_prv usb_dw_ctrl;
 
-static inline void _usb_dw_int_unmask(void)
+static inline void usb_dw_int_unmask(void)
 {
 #if defined(CONFIG_SOC_QUARK_SE_C1000)
 	QM_INTERRUPT_ROUTER->usb_0_int_mask &= ~BIT(0);
@@ -752,7 +752,7 @@ int usb_dc_attach(void)
 	    usb_dw_isr_handler, 0, IOAPIC_EDGE | IOAPIC_HIGH);
 	irq_enable(USB_DW_IRQ);
 
-	_usb_dw_int_unmask();
+	usb_dw_int_unmask();
 
 	usb_dw_ctrl.attached = 1U;
 

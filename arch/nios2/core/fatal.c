@@ -174,7 +174,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 	u32_t exc_reg, badaddr_reg, eccftl;
 	enum nios2_exception_cause cause;
 
-	exc_reg = _nios2_creg_read(NIOS2_CR_EXCEPTION);
+	exc_reg = z_nios2_creg_read(NIOS2_CR_EXCEPTION);
 
 	/* Bit 31 indicates potentially fatal ECC error */
 	eccftl = (exc_reg & NIOS2_EXCEPTION_REG_ECCFTL_MASK) != 0U;
@@ -188,7 +188,7 @@ FUNC_NORETURN void _Fault(const NANO_ESF *esf)
 	printk("reason: %s\n", cause_str(cause));
 #endif
 	if (BIT(cause) & NIOS2_BADADDR_CAUSE_MASK) {
-		badaddr_reg = _nios2_creg_read(NIOS2_CR_BADADDR);
+		badaddr_reg = z_nios2_creg_read(NIOS2_CR_BADADDR);
 		printk("Badaddr: 0x%x\n", badaddr_reg);
 	}
 #endif /* ALT_CPU_HAS_EXTRA_EXCEPTION_INFO */
@@ -246,7 +246,7 @@ hang_system:
 #endif
 
 #ifdef ALT_CPU_HAS_DEBUG_STUB
-	_nios2_break();
+	z_nios2_break();
 #endif
 	for (;;) {
 		k_cpu_idle();

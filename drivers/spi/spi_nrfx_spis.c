@@ -271,7 +271,7 @@ static int init_spis(struct device *dev, const nrfx_spis_config_t *config)
 		SPI_CONTEXT_INIT_LOCK(spi_##idx##_data, ctx),		       \
 		SPI_CONTEXT_INIT_SYNC(spi_##idx##_data, ctx),		       \
 	};								       \
-	static const struct spi_nrfx_config spi_##idx##_config = {	       \
+	static const struct spi_nrfx_config spi_##idx##z_config = {	       \
 		.spis = NRFX_SPIS_INSTANCE(idx),			       \
 		.max_buf_len = (1 << SPIS##idx##_EASYDMA_MAXCNT_SIZE) - 1,     \
 	};								       \
@@ -279,7 +279,7 @@ static int init_spis(struct device *dev, const nrfx_spis_config_t *config)
 			    DT_NORDIC_NRF_SPIS_SPI_##idx##_LABEL,	       \
 			    spi_##idx##_init,				       \
 			    &spi_##idx##_data,				       \
-			    &spi_##idx##_config,			       \
+			    &spi_##idx##z_config,			       \
 			    POST_KERNEL,				       \
 			    CONFIG_SPI_INIT_PRIORITY,			       \
 			    &spi_nrfx_driver_api)

@@ -98,7 +98,7 @@ static void print_err(out_func_t out, void *ctx)
  *
  * @return N/A
  */
-void _vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
+void z_vprintk(out_func_t out, void *ctx, const char *fmt, va_list ap)
 {
 	int might_format = 0; /* 1 if encountered a '%' */
 	enum pad_type padding = PAD_NONE;
@@ -316,7 +316,7 @@ void vprintk(const char *fmt, va_list ap)
 	if (_is_user_context()) {
 		struct buf_out_context ctx = { 0 };
 
-		_vprintk(buf_char_out, &ctx, fmt, ap);
+		z_vprintk(buf_char_out, &ctx, fmt, ap);
 
 		if (ctx.buf_count) {
 			buf_flush(&ctx);
@@ -324,7 +324,7 @@ void vprintk(const char *fmt, va_list ap)
 	} else {
 		struct out_context ctx = { 0 };
 
-		_vprintk(char_out, &ctx, fmt, ap);
+		z_vprintk(char_out, &ctx, fmt, ap);
 	}
 }
 #else
@@ -332,7 +332,7 @@ void vprintk(const char *fmt, va_list ap)
 {
 	struct out_context ctx = { 0 };
 
-	_vprintk(char_out, &ctx, fmt, ap);
+	z_vprintk(char_out, &ctx, fmt, ap);
 }
 #endif
 
@@ -510,7 +510,7 @@ int snprintk(char *str, size_t size, const char *fmt, ...)
 	va_list ap;
 
 	va_start(ap, fmt);
-	_vprintk((out_func_t)str_out, &ctx, fmt, ap);
+	z_vprintk((out_func_t)str_out, &ctx, fmt, ap);
 	va_end(ap);
 
 	if (ctx.count < ctx.max) {
@@ -524,7 +524,7 @@ int vsnprintk(char *str, size_t size, const char *fmt, va_list ap)
 {
 	struct str_context ctx = { str, size, 0 };
 
-	_vprintk((out_func_t)str_out, &ctx, fmt, ap);
+	z_vprintk((out_func_t)str_out, &ctx, fmt, ap);
 
 	if (ctx.count < ctx.max) {
 		str[ctx.count] = '\0';

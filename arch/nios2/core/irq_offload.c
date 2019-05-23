@@ -15,7 +15,7 @@ static volatile void *offload_param;
  * Just in case the offload routine itself generates an unhandled
  * exception, clear the offload_routine global before executing.
  */
-void _irq_do_offload(void)
+void z_irq_do_offload(void)
 {
 	irq_offload_routine_t tmp;
 
