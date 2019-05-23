@@ -168,7 +168,7 @@ static void arp_entry_register_pending(struct arp_entry *entry)
 
 	sys_slist_append(&arp_pending_entries, &entry->node);
 
-	entry->req_start = k_uptime_get();
+	entry->req_start = k_uptime_get_32();
 
 	/* Let's start the timer if necessary */
 	if (!k_delayed_work_remaining_get(&arp_request_timer)) {
@@ -179,14 +179,15 @@ static void arp_entry_register_pending(struct arp_entry *entry)
 
 static void arp_request_timeout(struct k_work *work)
 {
-	s64_t current = k_uptime_get();
+	u32_t current = k_uptime_get_32();
 	struct arp_entry *entry, *next;
 
 	ARG_UNUSED(work);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&arp_pending_entries,
 					  entry, next, node) {
-		if ((entry->req_start + ARP_REQUEST_TIMEOUT - current) > 0) {
+		if ((s32_t)(entry->req_start +
+			    ARP_REQUEST_TIMEOUT - current) > 0) {
 			break;
 		}
 
@@ -451,7 +452,7 @@ static void arp_update(struct net_if *iface,
 				}
 
 				if (entry) {
-					entry->req_start = k_uptime_get();
+					entry->req_start = k_uptime_get_32();
 					entry->iface = iface;
 					net_ipaddr_copy(&entry->ip, src);
 					memcpy(&entry->eth, hwaddr, sizeof(entry->eth));
