@@ -16,11 +16,6 @@ file(TO_CMAKE_PATH "$ENV{ZEPHYR_BASE}" ZEPHYR_BASE)
 
 message(STATUS "Zephyr base: ${ZEPHYR_BASE}")
 
-include(${ZEPHYR_BASE}/cmake/version.cmake)
-
-# Process modules
-include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
-
 find_package(PythonInterp 3.4)
 set(DOXYGEN_SKIP_DOT True)
 find_package(Doxygen REQUIRED)
@@ -33,6 +28,11 @@ find_program(
 if(${SPHINXBUILD} STREQUAL SPHINXBUILD-NOTFOUND)
   message(FATAL_ERROR "The 'sphinx-build' command was not found. Make sure you have Sphinx installed.")
 endif()
+
+# Include version info
+include(${ZEPHYR_BASE}/cmake/version.cmake)
+# Process modules
+include(${ZEPHYR_BASE}/cmake/zephyr_module.cmake)
 
 # Note that this won't force fatal error if latexmk is not found.
 # Not having LaTeX tools should not prevent people from generating HTML docs.
