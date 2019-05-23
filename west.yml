@@ -62,6 +62,9 @@ manifest:
     - name: nffs
       revision: bc62a2fa9d98ddb5d633c932ea199bc68e10f194
       path: modules/fs/nffs
+    - name: open-amp
+      revision: 893b2a57e629cccb81282cec04b0385f3d49d871
+      path: modules/lib/open-amp
     - name: segger
       revision: 6fcf61606d6012d2c44129edc033f59331e268bc
       path: modules/debug/segger
