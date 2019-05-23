@@ -46,6 +46,22 @@ config STATS_NAMES
 	  setting is disabled, statistics are assigned generic names of the
 	  form "s0", "s1", etc.  Enabling this setting simplifies debugging,
 	  but results in a larger code size.
+
+config PROFILING
+	bool "Enable debug profiling subsystem"
+	depends on CPU_CORTEX_M3 || CPU_CORTEX_M4 || CPU_CORTEX_M7
+	help
+	  The profiling subsystem enables tracking of execution time and
+	  key performance metrics over user-selected sections of code.
+	  The section(s) of code to be profiled must be specified at
+	  compile time.
+
+if PROFILING
+	module = PROFILING
+	module-str = profiling
+	source "subsys/logging/Kconfig.template.log_config"
+endif
+
 endmenu
 
 menu "Debugging Options"
@@ -62,6 +78,7 @@ config TRACING
 	help
 	  Enable system tracing. This requires a backend such as SEGGER
 	  Systemview to be enabled as well.
+
 config ASAN
 	bool "Build with address sanitizer"
 	depends on ARCH_POSIX

@@ -6,3 +6,4 @@ zephyr_sources_ifdef(
   )
 
 add_subdirectory(tracing)
+add_subdirectory(profiling)

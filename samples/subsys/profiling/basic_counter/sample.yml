@@ -1,0 +1,7 @@
+sample:
+  description: Basic example of measuring execution time for a unit of code.
+  name: Debug profiling counter example
+tests:
+  sample.basic_counter:
+    platform_whitelist: nrf52840_pca10056
+    tags: profiling
