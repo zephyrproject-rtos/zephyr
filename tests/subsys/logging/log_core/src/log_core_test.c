@@ -359,6 +359,47 @@ static void test_log_strdup_gc(void)
 
 }
 
+#define DETECT_STRDUP_MISSED(str, do_strdup, ...) \
+	{\
+		char tmp[] = "tmp";\
+		u32_t exp_cnt = backend1_cb.counter + 1 + (do_strdup ? 0 : 1); \
+		LOG_ERR(str, ##__VA_ARGS__, do_strdup ? log_strdup(tmp) : tmp); \
+		\
+		while (log_process(false)) { \
+		} \
+		\
+		zassert_equal(exp_cnt, backend1_cb.counter,\
+		"Unexpected amount of messages received by the backend (%d).", \
+			backend1_cb.counter); \
+	}
+
+static void test_log_strdup_detect_miss(void)
+{
+	if (IS_ENABLED(CONFIG_LOG_DETECT_MISSED_STRDUP)) {
+		return;
+	}
+
+	log_setup(false);
+
+	DETECT_STRDUP_MISSED("%s", true);
+	DETECT_STRDUP_MISSED("%s", false);
+
+	DETECT_STRDUP_MISSED("%-20s", true);
+	DETECT_STRDUP_MISSED("%-20s", false);
+
+	DETECT_STRDUP_MISSED("%20s", true);
+	DETECT_STRDUP_MISSED("%20s", false);
+
+	DETECT_STRDUP_MISSED("%20.4s", true);
+	DETECT_STRDUP_MISSED("%20.4s", false);
+
+	DETECT_STRDUP_MISSED("%% %s %%", true);
+	DETECT_STRDUP_MISSED("%% %s %%", false);
+
+	DETECT_STRDUP_MISSED("%% %08X %s", true, 4);
+	DETECT_STRDUP_MISSED("%% %08X %s", false, 4);
+}
+
 static void strdup_trim_callback(struct log_backend const *const backend,
 			  struct log_msg *msg, size_t counter)
 {
@@ -463,7 +504,6 @@ static void test_log_panic(void)
 		      "Unexpected amount of messages received by the backend.");
 }
 
-
 /*test case main entry*/
 void test_main(void)
 {
@@ -473,6 +513,7 @@ void test_main(void)
 			 ztest_unit_test(test_log_arguments),
 			 ztest_unit_test(test_log_from_declared_module),
 			 ztest_unit_test(test_log_strdup_gc),
+			 ztest_unit_test(test_log_strdup_detect_miss),
 			 ztest_unit_test(test_strdup_trimming),
 			 ztest_unit_test(test_log_msg_dropped_notification),
 			 ztest_unit_test(test_log_panic));
