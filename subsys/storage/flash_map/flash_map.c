@@ -180,7 +180,7 @@ int flash_area_read(const struct flash_area *fa, off_t off, void *dst,
 	struct device *dev;
 
 	if (!is_in_flash_area_bounds(fa, off, len)) {
-		return -1;
+		return -EINVAL;
 	}
 
 	dev = device_get_binding(fa->fa_dev_name);
@@ -195,7 +195,7 @@ int flash_area_write(const struct flash_area *fa, off_t off, const void *src,
 	int rc;
 
 	if (!is_in_flash_area_bounds(fa, off, len)) {
-		return -1;
+		return -EINVAL;
 	}
 
 	flash_dev = device_get_binding(fa->fa_dev_name);
@@ -219,7 +219,7 @@ int flash_area_erase(const struct flash_area *fa, off_t off, size_t len)
 	int rc;
 
 	if (!is_in_flash_area_bounds(fa, off, len)) {
-		return -1;
+		return -EINVAL;
 	}
 
 	flash_dev = device_get_binding(fa->fa_dev_name);
