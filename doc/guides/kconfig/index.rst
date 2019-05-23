@@ -624,6 +624,15 @@ without prompts, and somewhat obscure.
    definitions easier to discover and remove.
 
 
+Prompt strings
+==============
+
+For a Kconfig symbol that enables a driver/subsystem FOO, consider having just
+"Foo" as the prompt, instead of "Enable Foo support" or the like. It will
+usually be clear in the context of an option that can be toggled on/off, and
+makes things consistent.
+
+
 Lesser-known/used Kconfig features
 **********************************
 
