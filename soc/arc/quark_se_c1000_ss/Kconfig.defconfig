@@ -29,7 +29,7 @@ config HARVARD
 	default n
 
 config QMSI
-	default y
+	def_bool y
 
 if COUNTER
 

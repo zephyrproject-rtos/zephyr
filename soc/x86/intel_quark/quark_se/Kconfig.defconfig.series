@@ -28,7 +28,7 @@ config LOAPIC_TIMER_IRQ
 	default 64 if LOAPIC_TIMER
 
 config QMSI
-	default y
+	def_bool y
 
 if PWM
 config PWM_QMSI

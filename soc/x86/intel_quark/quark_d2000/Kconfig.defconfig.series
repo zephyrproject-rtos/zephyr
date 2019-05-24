@@ -31,7 +31,7 @@ config LOAPIC_TIMER_IRQ_PRIORITY
 	default 2
 
 config QMSI
-	default y
+	def_bool y
 
 if PINMUX
 config PINMUX_QMSI
