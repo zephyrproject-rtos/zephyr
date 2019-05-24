@@ -124,6 +124,15 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 #endif
 }
 
+/**
+ * Returns true if interrupts were unlocked prior to the
+ * z_arch_irq_lock() call that produced the key argument.
+ */
+static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
+{
+	return key & 1;
+}
+
 void z_arch_irq_enable(unsigned int irq);
 void z_arch_irq_disable(unsigned int irq);
 

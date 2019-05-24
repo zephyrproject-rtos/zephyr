@@ -127,6 +127,19 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 	__asm__ volatile("seti %0" : : "ir"(key) : "memory");
 }
 
+/**
+ * Returns true if interrupts were unlocked prior to the
+ * z_arch_irq_lock() call that produced the key argument.
+ */
+static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
+{
+	/* ARC irq lock uses instruction "clri r0",
+	 * r0 ==  {26’d0, 1’b1, STATUS32.IE, STATUS32.E[3:0] }
+	 * bit4 is used to record IE (Interrupt Enable) bit
+	 */
+	return (key & 0x10)  ==  0x10;
+}
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

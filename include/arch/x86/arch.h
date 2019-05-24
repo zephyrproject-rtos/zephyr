@@ -454,6 +454,15 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 }
 
 /**
+ * Returns true if interrupts were unlocked prior to the
+ * z_arch_irq_lock() call that produced the key argument.
+ */
+static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
+{
+	return (key & 0x200) != 0;
+}
+
+/**
  * @brief Explicitly nop operation.
  */
 static ALWAYS_INLINE void arch_nop(void)

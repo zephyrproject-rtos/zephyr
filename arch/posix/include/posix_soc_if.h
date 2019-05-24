@@ -37,6 +37,15 @@ void posix_irq_full_unlock(void);
 int  posix_get_current_irq(void);
 /* irq_offload() from irq_offload.h must also be defined by the SOC or board */
 
+/**
+ * Returns true if interrupts were unlocked prior to the
+ * z_arch_irq_lock() call that produced the key argument.
+ */
+static inline bool z_arch_irq_unlocked(unsigned int key)
+{
+	return key == false;
+}
+
 #ifdef __cplusplus
 }
 #endif
