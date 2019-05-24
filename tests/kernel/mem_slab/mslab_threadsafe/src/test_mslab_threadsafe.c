@@ -12,9 +12,9 @@
 #define SLAB_NUM 2
 #define TIMEOUT 200
 #define BLK_NUM 3
-#define BLK_ALIGN 4
-#define BLK_SIZE1 8
-#define BLK_SIZE2 4
+#define BLK_ALIGN 8
+#define BLK_SIZE1 16
+#define BLK_SIZE2 8
 
 /* Blocks per slab.  Note this number carefully, because if it is
  * smaller than this the test can deadlock.  There are 4 threads

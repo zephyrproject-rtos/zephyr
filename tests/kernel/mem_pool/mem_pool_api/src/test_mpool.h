@@ -8,8 +8,8 @@
 #define __TEST_MPOOL_H__
 
 #define TIMEOUT 100
-#define BLK_SIZE_MIN 8
-#define BLK_SIZE_MAX 128
+#define BLK_SIZE_MIN 16
+#define BLK_SIZE_MAX 256
 #define BLK_NUM_MIN 32
 #define BLK_NUM_MAX 2
 #define BLK_ALIGN BLK_SIZE_MIN

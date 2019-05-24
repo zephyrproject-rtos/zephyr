@@ -6,9 +6,9 @@
 
 #include <ztest.h>
 #define TIMEOUT 2000
-#define BLK_SIZE_MIN 8
-#define BLK_SIZE_MID 16
-#define BLK_SIZE_MAX 128
+#define BLK_SIZE_MIN 16
+#define BLK_SIZE_MID 32
+#define BLK_SIZE_MAX 256
 #define BLK_NUM_MIN 32
 #define BLK_NUM_MAX 2
 #define BLK_ALIGN BLK_SIZE_MIN
