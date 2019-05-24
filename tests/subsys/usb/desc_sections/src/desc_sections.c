@@ -36,8 +36,6 @@ struct usb_test_config {
 	struct usb_ep_descriptor if0_in2_ep;
 } __packed;
 
-#define TEST_BULK_EP_MPS		64
-
 #define INITIALIZER_IF							\
 	{								\
 		.bLength = sizeof(struct usb_if_descriptor),		\
@@ -68,13 +66,13 @@ struct usb_test_config {
 	.if0 = INITIALIZER_IF,						\
 	.if0_out_ep = INITIALIZER_IF_EP(AUTO_EP_OUT,			\
 					USB_DC_EP_BULK,			\
-					TEST_BULK_EP_MPS),		\
+					USB_MAX_BULK_MPS),		\
 	.if0_in1_ep = INITIALIZER_IF_EP(AUTO_EP_IN,			\
 					USB_DC_EP_BULK,			\
-					TEST_BULK_EP_MPS),		\
+					USB_MAX_BULK_MPS),		\
 	.if0_in2_ep = INITIALIZER_IF_EP(AUTO_EP_IN,			\
 					USB_DC_EP_BULK,			\
-					TEST_BULK_EP_MPS),		\
+					USB_MAX_BULK_MPS),		\
 	};
 
 #define INITIALIZER_EP_DATA(cb, addr)					\
@@ -144,13 +142,25 @@ static bool find_cfg_data_ep(const struct usb_ep_descriptor * const ep_descr,
 	for (int i = 0; i < cfg_data->num_endpoints; i++) {
 		if (cfg_data->endpoint[i].ep_addr ==
 				ep_descr->bEndpointAddress) {
-			LOG_DBG("found ep[%d] %x", i,
-				ep_descr->bEndpointAddress);
+			LOG_DBG("found ep[%d] %x MPS %d", i,
+				ep_descr->bEndpointAddress,
+				sys_le16_to_cpu(ep_descr->wMaxPacketSize));
 
+			/* Check endpoint allocation order */
 			if (ep_count != i) {
 				LOG_ERR("EPs are assigned in wrong order");
 				return false;
 			}
+
+			/* Check endpoint MPS */
+#if defined(DT_USB_MAXIMUM_SPEED_ENUM) && \
+	(DT_USB_MAXIMUM_SPEED_ENUM == DT_USB_MAXIMUM_SPEED_HIGH_SPEED)
+			if (sys_le16_to_cpu(ep_descr->wMaxPacketSize) !=
+			    USB_MAX_HS_BULK_MPS) {
+				LOG_ERR("Wrong MPS size");
+				return false;
+			}
+#endif
 
 			return true;
 		}
