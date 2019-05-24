@@ -90,10 +90,6 @@ SECTION_FUNC(TEXT,z_arm_userspace_enter)
     ldr r0, [ip]
     ldr ip, [ip, #4]
 
-#ifdef CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
-    /* Guard is taken out of size, so adjust beginning and size of stack */
-    subs ip, #MPU_GUARD_ALIGN_AND_SIZE
-#endif
 
     /* push args to stack */
     push {r0,r1,r2,r3,ip,lr}
