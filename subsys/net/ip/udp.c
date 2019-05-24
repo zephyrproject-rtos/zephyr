@@ -150,7 +150,7 @@ struct net_udp_hdr *net_udp_input(struct net_pkt *pkt,
 
 	if (IS_ENABLED(CONFIG_NET_UDP_CHECKSUM) &&
 	    net_if_need_calc_rx_checksum(net_pkt_iface(pkt)) &&
-	    net_calc_chksum_udp(pkt) != 0U) {
+	    net_calc_verify_chksum_udp(pkt) != 0U) {
 		NET_DBG("DROP: checksum mismatch");
 		goto drop;
 	}
