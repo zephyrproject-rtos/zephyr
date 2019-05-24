@@ -6,6 +6,7 @@
  * HW IRQ controller model
  */
 
+#include <stdint.h>
 #include <stdbool.h>
 #include "hw_models_top.h"
 #include "irq_ctrl.h"
@@ -130,7 +131,7 @@ u32_t hw_irq_ctrl_change_lock(u32_t new_lock)
 	return previous_lock;
 }
 
-u64_t hw_irq_ctrl_get_irq_status(void)
+uint64_t hw_irq_ctrl_get_irq_status(void)
 {
 	return irq_status;
 }
