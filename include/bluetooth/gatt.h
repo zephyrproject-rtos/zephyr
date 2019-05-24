@@ -339,6 +339,24 @@ enum {
 typedef u8_t (*bt_gatt_attr_func_t)(const struct bt_gatt_attr *attr,
 				       void *user_data);
 
+/** @brief Attribute iterator by type.
+ *
+ *  Iterate attributes in the given range matching given UUID and/or data.
+ *
+ *  @param start_handle Start handle.
+ *  @param end_handle End handle.
+ *  @param uuid UUID to match, passing NULL skips UUID matching.
+ *  @param attr_data Attribute data to match, passing NULL skips data matching.
+ *  @param num_matches Number matches, passing 0 makes it unlimited.
+ *  @param func Callback function.
+ *  @param user_data Data to pass to the callback.
+ */
+void bt_gatt_foreach_attr_type(u16_t start_handle, u16_t end_handle,
+			       const struct bt_uuid *uuid,
+			       const void *attr_data, uint16_t num_matches,
+			       bt_gatt_attr_func_t func,
+			       void *user_data);
+
 /** @brief Attribute iterator.
  *
  *  Iterate attributes in the given range.
@@ -348,8 +366,13 @@ typedef u8_t (*bt_gatt_attr_func_t)(const struct bt_gatt_attr *attr,
  *  @param func Callback function.
  *  @param user_data Data to pass to the callback.
  */
-void bt_gatt_foreach_attr(u16_t start_handle, u16_t end_handle,
-			  bt_gatt_attr_func_t func, void *user_data);
+static inline void bt_gatt_foreach_attr(u16_t start_handle, u16_t end_handle,
+					bt_gatt_attr_func_t func,
+					void *user_data)
+{
+	bt_gatt_foreach_attr_type(start_handle, end_handle, NULL, NULL, 0, func,
+				  user_data);
+}
 
 /** @brief Iterate to the next attribute
  *

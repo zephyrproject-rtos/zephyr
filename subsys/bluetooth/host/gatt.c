@@ -977,6 +977,8 @@ ssize_t bt_gatt_attr_read_chrc(struct bt_conn *conn,
 
 static u8_t gatt_foreach_iter(const struct bt_gatt_attr *attr,
 			      u16_t start_handle, u16_t end_handle,
+			      const struct bt_uuid *uuid,
+			      const void *attr_data, uint16_t *num_matches,
 			      bt_gatt_attr_func_t func, void *user_data)
 {
 	/* Stop if over the requested range */
@@ -989,14 +991,34 @@ static u8_t gatt_foreach_iter(const struct bt_gatt_attr *attr,
 		return BT_GATT_ITER_CONTINUE;
 	}
 
+	/* Match attribute UUID if set */
+	if (uuid && bt_uuid_cmp(uuid, attr->uuid)) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	/* Match attribute user_data if set */
+	if (attr_data && attr_data != attr->user_data) {
+		return BT_GATT_ITER_CONTINUE;
+	}
+
+	if (*num_matches) {
+		*num_matches -= 1;
+	}
+
 	return func(attr, user_data);
 }
 
-void bt_gatt_foreach_attr(u16_t start_handle, u16_t end_handle,
-			  bt_gatt_attr_func_t func, void *user_data)
+void bt_gatt_foreach_attr_type(u16_t start_handle, u16_t end_handle,
+			       const struct bt_uuid *uuid,
+			       const void *attr_data, uint16_t num_matches,
+			       bt_gatt_attr_func_t func, void *user_data)
 {
 	struct bt_gatt_service *svc;
 	int i;
+
+	if (!num_matches) {
+		num_matches = UINT16_MAX;
+	}
 
 	if (start_handle <= last_static_handle) {
 		const struct bt_gatt_service_static *static_svc;
@@ -1019,11 +1041,17 @@ void bt_gatt_foreach_attr(u16_t start_handle, u16_t end_handle,
 				attr.handle = handle;
 
 				if (gatt_foreach_iter(&attr, start_handle,
-						      end_handle, func,
-						      user_data) ==
+						      end_handle, uuid,
+						      attr_data, &num_matches,
+						      func, user_data) ==
 				    BT_GATT_ITER_STOP) {
 					return;
 				}
+			}
+
+			/* Stop if number of matches has reached 0 */
+			if (!num_matches) {
+				return;
 			}
 		}
 	}
@@ -1042,11 +1070,17 @@ void bt_gatt_foreach_attr(u16_t start_handle, u16_t end_handle,
 		for (i = 0; i < svc->attr_count; i++) {
 			struct bt_gatt_attr *attr = &svc->attrs[i];
 
-			if (gatt_foreach_iter(attr, start_handle,
-					      end_handle, func, user_data) ==
+			if (gatt_foreach_iter(attr, start_handle, end_handle,
+					      uuid, attr_data, &num_matches,
+					      func, user_data) ==
 			    BT_GATT_ITER_STOP) {
 				return;
 			}
+		}
+
+		/* Stop if number of matches has reached 0 */
+		if (!num_matches) {
+			return;
 		}
 	}
 }
