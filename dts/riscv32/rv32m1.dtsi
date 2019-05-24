@@ -282,7 +282,7 @@
 		};
 
 		flash-controller@40023000 {
-			compatible = "nxp,kinetis-ftfe";
+			compatible = "openisa,rv32m1-ftfe";
 			label = "FLASH_CTRL";
 			reg = <0x40023000 0x18>;
 

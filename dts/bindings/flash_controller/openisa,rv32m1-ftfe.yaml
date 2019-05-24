@@ -1,0 +1,15 @@
+---
+title: OpenISA Flash Memory Module (FTFE)
+version: 0.1
+
+description: >
+    This binding gives for the OpenISA Flash Memory Module E (FTFE)
+
+inherits:
+    !include flash-controller.yaml
+
+properties:
+    compatible:
+      constraint: "openisa,rv32m1-ftfe"
+
+...
