@@ -61,6 +61,11 @@ struct k_spinlock {
 	 */
 	size_t thread_cpu;
 #endif
+
+#if !defined(CONFIG_SMP) && !defined(SPIN_VALIDATE)
+	/* Empty struct has size 0 in C, size 1 in C++ */
+	char dummy;
+#endif
 };
 
 static ALWAYS_INLINE k_spinlock_key_t k_spin_lock(struct k_spinlock *l)
