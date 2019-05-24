@@ -150,16 +150,23 @@ static struct {
 static MFIFO_DEFINE(pdu_rx_free, sizeof(void *), PDU_RX_CNT);
 static MFIFO_DEFINE(ll_pdu_rx_free, sizeof(void *), LL_PDU_RX_CNT);
 
+#if defined(CONFIG_BT_RX_USER_PDU_LEN)
+#define PDU_RX_USER_PDU_OCTETS_MAX (CONFIG_BT_RX_USER_PDU_LEN)
+#else
+#define PDU_RX_USER_PDU_OCTETS_MAX 0
+#endif
 #define NODE_RX_HEADER_SIZE      (offsetof(struct node_rx_pdu, pdu))
 #define NODE_RX_STRUCT_OVERHEAD  (NODE_RX_HEADER_SIZE)
 
 #define PDU_ADVERTIZE_SIZE (PDU_AC_SIZE_MAX + PDU_AC_SIZE_EXTRA)
 #define PDU_DATA_SIZE      (PDU_DC_LL_HEADER_SIZE + LL_LENGTH_OCTETS_RX_MAX)
 
-#define PDU_RX_NODE_POOL_ELEMENT_SIZE                      \
-	MROUND(                                            \
-		NODE_RX_STRUCT_OVERHEAD                    \
-		+ MAX(PDU_ADVERTIZE_SIZE, PDU_DATA_SIZE)   \
+#define PDU_RX_NODE_POOL_ELEMENT_SIZE                         \
+	MROUND(                                               \
+		NODE_RX_STRUCT_OVERHEAD                       \
+		+ MAX(MAX(PDU_ADVERTIZE_SIZE,                 \
+			  PDU_DATA_SIZE),                     \
+		      PDU_RX_USER_PDU_OCTETS_MAX)              \
 	)
 
 #define PDU_RX_POOL_SIZE (PDU_RX_NODE_POOL_ELEMENT_SIZE * (RX_CNT + 1))
@@ -294,6 +301,13 @@ int ll_init(struct k_sem *sem_rx)
 		return err;
 	}
 #endif /* CONFIG_BT_CONN */
+
+#if defined(CONFIG_BT_CTLR_USER_EXT)
+	err = ull_user_init();
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BT_CTLR_USER_EXT */
 
 	/* reset whitelist, resolving list and initialise RPA timeout*/
 	if (IS_ENABLED(CONFIG_BT_CTLR_FILTER)) {
@@ -466,6 +480,7 @@ void ll_rx_dequeue(void)
 	defined(CONFIG_BT_CTLR_PROFILE_ISR) || \
 	defined(CONFIG_BT_CTLR_ADV_INDICATION) || \
 	defined(CONFIG_BT_CTLR_SCAN_INDICATION) || \
+	defined(CONFIG_BT_CTLR_USER_EXT) || \
 	defined(CONFIG_BT_CONN)
 
 #if defined(CONFIG_BT_CONN)
@@ -550,6 +565,7 @@ void ll_rx_dequeue(void)
 	* CONFIG_BT_CTLR_PROFILE_ISR ||
 	* CONFIG_BT_CTLR_ADV_INDICATION ||
 	* CONFIG_BT_CTLR_SCAN_INDICATION ||
+	* CONFIG_BT_CTLR_USER_EXT ||
 	* CONFIG_BT_CONN
 	*/
 
