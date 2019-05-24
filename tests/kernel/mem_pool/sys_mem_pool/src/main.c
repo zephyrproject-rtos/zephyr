@@ -71,12 +71,12 @@ void test_sys_mem_pool_alloc_align4(void)
 
 	/**
 	 * TESTPOINT: The address of the allocated chunk is guaranteed to be
-	 * aligned on a multiple of 4 bytes.
+	 * aligned on a word boundary (4 or 8 bytes).
 	 */
 	for (int i = 0; i < BLK_NUM_MAX; i++) {
 		block[i] = sys_mem_pool_alloc(&pool, i);
 		zassert_not_null(block[i], NULL);
-		zassert_false((int)block[i] % 4, NULL);
+		zassert_false((uintptr_t)block[i] % sizeof(void *), NULL);
 	}
 
 	/* test case tear down*/

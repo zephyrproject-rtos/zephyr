@@ -109,7 +109,7 @@ void test_mpool_alloc_size(void)
 		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], size,
 					      K_NO_WAIT) == 0, NULL);
 		zassert_not_null(block[i].data, NULL);
-		zassert_true((u32_t)(block[i].data) % BLK_ALIGN == 0, NULL);
+		zassert_true((uintptr_t)(block[i].data) % BLK_ALIGN == 0, NULL);
 		i++;
 		size = size >> 2;
 	}
@@ -127,7 +127,7 @@ void test_mpool_alloc_size(void)
 		zassert_true(k_mem_pool_alloc(&kmpool, &block[i], size,
 					      K_NO_WAIT) == 0, NULL);
 		zassert_not_null(block[i].data, NULL);
-		zassert_true((u32_t)(block[i].data) % BLK_ALIGN == 0, NULL);
+		zassert_true((uintptr_t)(block[i].data) % BLK_ALIGN == 0, NULL);
 		i++;
 		size = size << 2;
 	}

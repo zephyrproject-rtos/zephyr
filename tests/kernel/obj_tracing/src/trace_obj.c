@@ -30,7 +30,7 @@ static inline void stop_dummy_fn(struct k_timer *timer)
 }
 
 K_TIMER_DEFINE(ktimer, expiry_dummy_fn, stop_dummy_fn);
-K_MEM_SLAB_DEFINE(kmslab, 4, 2, 4);
+K_MEM_SLAB_DEFINE(kmslab, 8, 2, 8);
 K_SEM_DEFINE(ksema, 0, 1);
 K_MUTEX_DEFINE(kmutex);
 K_STACK_DEFINE(kstack, 512);
@@ -49,10 +49,10 @@ static struct k_mbox mbox;
 static struct k_pipe pipe;
 static struct k_queue queue;
 
-#define BLOCK_SIZE 4
+#define BLOCK_SIZE 8
 #define NUM_BLOCKS 4
 
-static char slab[BLOCK_SIZE * NUM_BLOCKS];
+static char __aligned(8) slab[BLOCK_SIZE * NUM_BLOCKS];
 static u32_t sdata[BLOCK_SIZE * NUM_BLOCKS];
 static char buffer[BLOCK_SIZE * NUM_BLOCKS];
 static char data[] = "test";
