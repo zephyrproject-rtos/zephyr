@@ -73,6 +73,15 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 	XTOS_RESTORE_INTLEVEL(key);
 }
 
+/**
+ * Returns true if interrupts were unlocked prior to the
+ * z_arch_irq_lock() call that produced the key argument.
+ */
+static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
+{
+	return (key & 0xf) == 0; /* INTLEVEL field */
+}
+
 #include <irq.h>
 
 #endif /* ZEPHYR_INCLUDE_ARCH_XTENSA_XTENSA_IRQ_H_ */
