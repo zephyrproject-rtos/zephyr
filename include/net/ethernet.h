@@ -683,6 +683,26 @@ static inline struct device *net_eth_get_ptp_clock(struct net_if *iface)
 #endif
 
 /**
+ * @brief Return PTP clock that is tied to this ethernet network interface
+ * index.
+ *
+ * @param index Network interface index
+ *
+ * @return Pointer to PTP clock if found, NULL if not found or if this
+ * ethernet interface index does not support PTP.
+ */
+#if defined(CONFIG_PTP_CLOCK)
+struct device *net_eth_get_ptp_clock_by_index(int index);
+#else
+static inline struct device *net_eth_get_ptp_clock_by_index(int index)
+{
+	ARG_UNUSED(index);
+
+	return NULL;
+}
+#endif
+
+/**
  * @brief Return gPTP port number attached to this interface.
  *
  * @param iface Network interface
