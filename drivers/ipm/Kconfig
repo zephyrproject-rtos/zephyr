@@ -67,6 +67,23 @@ config IPM_MHU
 	help
 	  Driver for SSE 200 MHU (Message Handling Unit)
 
+config IPM_NRFX
+	bool "IPM NRF driver"
+	depends on IPM && HAS_HW_NRF_IPC
+	select NRFX_IPC
+	help
+	  Driver for Nordic nRF messaging unit, based
+	  on nRF IPC peripheral HW.
+
+config IPM_NRF_SINGLE_INSTANCE
+	bool "Single instance of IPM device"
+	help
+	  Enable this option if the IPM device should have
+	  a single instance, instead of one per IPC
+	  message channel.
+
+source "drivers/ipm/Kconfig.nrfx"
+
 config IPM_STM32_IPCC
 	bool "STM32 IPCC controller"
 	depends on IPM
