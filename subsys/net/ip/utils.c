@@ -504,7 +504,11 @@ u16_t net_calc_chksum(struct net_pkt *pkt, u8_t proto)
 
 	sum = pkt_calc_chksum(pkt, sum);
 
-	sum = (sum == 0U) ? 0xffff : htons(sum);
+	if (sum == 0U && proto != IPPROTO_UDP) {
+		sum = 0xffff;
+	} else {
+		htons(sum);
+	}
 
 	net_pkt_cursor_restore(pkt, &backup);
 
