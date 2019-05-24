@@ -36,6 +36,15 @@ config MAX_PTHREAD_COUNT
 	help
 	  Maximum number of simultaneously active threads in a POSIX application.
 
+config DEFAULT_PTHREAD_STACK_SIZE
+	int "Default stack size used for pthreads"
+	default 2048 if COVERAGE_GCOV
+	default 1024
+	help
+	  If pthread_create is called without attributes specifying that an externally
+	  defined stack is to be used, the stack will be allocated automatically with
+	  the size specified in this symbol.
+
 config SEM_VALUE_MAX
 	int "Maximum semaphore limit"
 	default 32767

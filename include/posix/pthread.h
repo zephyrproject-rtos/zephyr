@@ -46,6 +46,9 @@ struct posix_thread {
 	enum pthread_state state;
 	pthread_mutex_t state_lock;
 	pthread_cond_t state_cond;
+
+	/* Auto-allocated stack */
+	void *auto_allocated_stack;
 };
 
 /* Pthread detach/joinable */

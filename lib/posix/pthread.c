@@ -120,6 +120,17 @@ static void zephyr_thread_wrapper(void *arg1, void *arg2, void *arg3)
 	pthread_exit(NULL);
 }
 
+/* Helper function for stack allocation. */
+static void pthread_setup_dynamic_stack(void **newstack, size_t *newsize)
+{
+	/* If the requested size is 0, use the default stack size */
+	if (*newsize == 0) {
+		*newsize = CONFIG_DEFAULT_PTHREAD_STACK_SIZE;
+	}
+
+	*newstack = calloc(1, *newsize);
+}
+
 /**
  * @brief Create a new thread.
  *
@@ -135,14 +146,12 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 	u32_t pthread_num;
 	pthread_condattr_t cond_attr;
 	struct posix_thread *thread;
+	void *newstack;
+	size_t newstacksize;
+	const struct pthread_attr_t *newattr;
 
-	/*
-	 * FIXME: Pthread attribute must be non-null and it provides stack
-	 * pointer and stack size. So even though POSIX 1003.1 spec accepts
-	 * attrib as NULL but zephyr needs it initialized with valid stack.
-	 */
-	if ((attr == NULL) || (attr->initialized == 0U)
-	    || (attr->stack == NULL) || (attr->stacksize == 0)) {
+	if (attr != NULL && attr->initialized == 0U) {
+		/* Undefined behavior - don't try to do anything */
 		return EINVAL;
 	}
 
@@ -161,32 +170,69 @@ int pthread_create(pthread_t *newthread, const pthread_attr_t *attr,
 		return EAGAIN;
 	}
 
-	prio = posix_to_zephyr_priority(attr->priority, attr->schedpolicy);
+	if (attr == NULL) {
+		/* Use the default parameters */
+		newattr = &init_pthread_attrs;
+
+		/* Allocate default stack */
+		newstacksize = CONFIG_DEFAULT_PTHREAD_STACK_SIZE;
+		pthread_setup_dynamic_stack(&newstack, &newstacksize);
+
+		if (newstack == NULL) {
+			return EAGAIN;
+		}
+
+		thread->auto_allocated_stack = newstack;
+	} else {
+		/* Use the parameters from user */
+		newattr = attr;
+
+		if (attr->stack == NULL) {
+			newstacksize = attr->stacksize;
+			pthread_setup_dynamic_stack(&newstack, &newstacksize);
+
+			if (newstack == NULL) {
+				return EAGAIN;
+			}
+
+			thread->auto_allocated_stack = newstack;
+		} else {
+			newstack = attr->stack;
+			newstacksize = attr->stacksize;
+
+			thread->auto_allocated_stack = NULL;
+		}
+	}
+
+	prio = posix_to_zephyr_priority(newattr->priority,
+					newattr->schedpolicy);
 
 	thread = &posix_thread_pool[pthread_num];
 	pthread_mutex_init(&thread->state_lock, NULL);
 	pthread_mutex_init(&thread->cancel_lock, NULL);
 
 	pthread_mutex_lock(&thread->cancel_lock);
-	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & attr->flags;
+	thread->cancel_state = (1 << _PTHREAD_CANCEL_POS) & newattr->flags;
 	thread->cancel_pending = 0;
 	pthread_mutex_unlock(&thread->cancel_lock);
 
 	pthread_mutex_lock(&thread->state_lock);
-	thread->state = attr->detachstate;
+	thread->state = newattr->detachstate;
 	pthread_mutex_unlock(&thread->state_lock);
 
 	pthread_cond_init(&thread->state_cond, &cond_attr);
 	sys_slist_init(&thread->key_list);
 
-	*newthread = (pthread_t) k_thread_create(&thread->thread, attr->stack,
-						 attr->stacksize,
-						 (k_thread_entry_t)
-						 zephyr_thread_wrapper,
-						 (void *)arg, NULL,
-						 threadroutine, prio,
-						 (~K_ESSENTIAL & attr->flags),
-						 attr->delayedstart);
+	*newthread =
+		(pthread_t) k_thread_create(&thread->thread,
+					    newstack,
+					    newstacksize,
+					    (k_thread_entry_t)
+					    zephyr_thread_wrapper,
+					    (void *)arg, NULL,
+					    threadroutine, prio,
+					    (~K_ESSENTIAL & newattr->flags),
+					    newattr->delayedstart);
 	return 0;
 }
 
@@ -247,6 +293,10 @@ int pthread_cancel(pthread_t pthread)
 			pthread_cond_broadcast(&thread->state_cond);
 		}
 		pthread_mutex_unlock(&thread->state_lock);
+
+		if (thread->auto_allocated_stack != NULL) {
+			free(thread->auto_allocated_stack);
+		}
 
 		k_thread_abort((k_tid_t) thread);
 	}
@@ -382,6 +432,11 @@ void pthread_exit(void *retval)
 	}
 
 	pthread_mutex_unlock(&self->state_lock);
+
+	if (self->auto_allocated_stack != NULL) {
+		free(self->auto_allocated_stack);
+	}
+
 	k_thread_abort((k_tid_t)self);
 }
 
