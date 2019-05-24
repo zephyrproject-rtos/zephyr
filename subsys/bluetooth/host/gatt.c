@@ -2415,6 +2415,14 @@ static void parse_read_by_uuid(struct bt_conn *conn,
 		if (rsp->len > length) {
 			break;
 		}
+
+		/* Stop if it's the last handle to be read */
+		if (params->by_uuid.start_handle == params->by_uuid.end_handle) {
+			params->func(conn, 0, params, NULL, 0);
+			return;
+		}
+
+		params->by_uuid.start_handle++;
 	}
 
 	/* Continue reading the attributes */
