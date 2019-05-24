@@ -303,7 +303,7 @@ static void init_idle_thread(struct k_thread *thr, k_thread_stack_t *stack)
 			  K_LOWEST_THREAD_PRIO, K_ESSENTIAL, IDLE_THREAD_NAME);
 	z_mark_thread_as_started(thr);
 }
-#endif
+#endif /* CONFIG_MULTITHREADING */
 
 /**
  *
@@ -347,7 +347,7 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 #ifdef CONFIG_USERSPACE
 	dummy_thread->mem_domain_info.mem_domain = 0;
 #endif
-#endif
+#endif /* CONFIG_ARCH_HAS_CUSTOM_SWAP_TO_MAIN */
 
 	/* _kernel.ready_q is all zeroes */
 	z_sched_init();
@@ -374,11 +374,9 @@ static void prepare_multithreading(struct k_thread *dummy_thread)
 	z_mark_thread_as_started(_main_thread);
 	z_ready_thread(_main_thread);
 
-#ifdef CONFIG_MULTITHREADING
 	init_idle_thread(_idle_thread, _idle_stack);
 	_kernel.cpus[0].idle_thread = _idle_thread;
 	sys_trace_thread_create(_idle_thread);
-#endif
 
 #if defined(CONFIG_SMP) && CONFIG_MP_NUM_CPUS > 1
 	init_idle_thread(_idle_thread1, _idle_stack1);
