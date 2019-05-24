@@ -116,6 +116,22 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 }
 
 /**
+ * Returns true if interrupts were unlocked prior to the
+ * z_arch_irq_lock() call that produced the key argument.
+ */
+static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
+{
+	/* FIXME: looking at z_arch_irq_lock, this should be reducable
+	 * to just testing that key is nonzero (because it should only
+	 * have the single bit set).  But there is a mask applied to
+	 * the argument in z_arch_irq_unlock() that has me worried
+	 * that something elseswhere might try to set a bit?  Do it
+	 * the safe way for now.
+	 */
+	return (key & SOC_MSTATUS_IEN) == SOC_MSTATUS_IEN;
+}
+
+/**
  * @brief Explicitly nop operation.
  */
 static ALWAYS_INLINE void arch_nop(void)

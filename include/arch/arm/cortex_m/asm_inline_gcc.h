@@ -184,6 +184,15 @@ static ALWAYS_INLINE void z_arch_irq_unlock(unsigned int key)
 #endif /* CONFIG_ARMV6_M_ARMV8_M_BASELINE */
 }
 
+/**
+ * Returns true if interrupts were unlocked prior to the
+ * z_arch_irq_lock() call that produced the key argument.
+ */
+static ALWAYS_INLINE bool z_arch_irq_unlocked(unsigned int key)
+{
+	/* This convention works for both PRIMASK and BASEPRI */
+	return key == 0;
+}
 
 #endif /* _ASMLANGUAGE */
 

@@ -42,6 +42,15 @@ static inline void z_arch_irq_unlock(unsigned int key)
 	}
 }
 
+/**
+ * Returns true if interrupts were unlocked prior to the
+ * z_arch_irq_lock() call that produced the key argument.
+ */
+static inline bool z_arch_irq_unlocked(unsigned int key)
+{
+	return (key & 0x200) != 0;
+}
+
 static inline void arch_nop(void)
 {
 	__asm__ volatile("nop");
