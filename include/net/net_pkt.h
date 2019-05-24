@@ -58,8 +58,18 @@ struct net_pkt_cursor {
  * net_pkt_clone() function.
  */
 struct net_pkt {
-	/** Internal variable that is used when packet is sent */
-	struct k_work work;
+	union {
+		/** Internal variable that is used when packet is sent
+		 * or received.
+		 */
+		struct k_work work;
+		/** Socket layer will queue received net_pkt into a k_fifo.
+		 * Since this happens after consuming net_pkt's k_work on
+		 * RX path, it is then fine to have both attributes sharing
+		 * the same memory area.
+		 */
+		int sock_recv_fifo;
+	};
 
 	/** Slab pointer from where it belongs to */
 	struct k_mem_slab *slab;
