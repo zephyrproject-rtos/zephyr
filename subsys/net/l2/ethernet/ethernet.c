@@ -987,6 +987,20 @@ struct device *net_eth_get_ptp_clock(struct net_if *iface)
 }
 #endif /* CONFIG_PTP_CLOCK */
 
+#if defined(CONFIG_PTP_CLOCK)
+struct device *net_eth_get_ptp_clock_by_index(int index)
+{
+	struct net_if *iface;
+
+	iface = net_if_get_by_index(index);
+	if (!iface) {
+		return NULL;
+	}
+
+	return net_eth_get_ptp_clock(iface);
+}
+#endif
+
 #if defined(CONFIG_NET_GPTP)
 int net_eth_get_ptp_port(struct net_if *iface)
 {
