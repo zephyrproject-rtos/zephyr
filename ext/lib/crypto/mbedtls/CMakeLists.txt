@@ -10,6 +10,9 @@ if(CONFIG_MBEDTLS_BUILTIN)
 	configs
 	)
 
+  zephyr_include_directories(include)
+  zephyr_include_directories(configs)
+
   zephyr_library()
   zephyr_library_sources(zephyr_init.c)
 
