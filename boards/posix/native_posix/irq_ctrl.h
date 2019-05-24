@@ -26,7 +26,7 @@ uint8_t hw_irq_ctrl_get_prio(unsigned int irq);
 int hw_irq_ctrl_get_highest_prio_irq(void);
 uint32_t hw_irq_ctrl_get_current_lock(void);
 uint32_t hw_irq_ctrl_change_lock(uint32_t new_lock);
-uint64_t hw_irq_ctrl_get_irq_status(void);
+u64_t hw_irq_ctrl_get_irq_status(void);
 void hw_irq_ctrl_disable_irq(unsigned int irq);
 int hw_irq_ctrl_is_irq_enabled(unsigned int irq);
 void hw_irq_ctrl_clear_irq(unsigned int irq);
