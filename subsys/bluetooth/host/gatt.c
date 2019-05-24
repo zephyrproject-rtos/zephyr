@@ -1440,14 +1440,6 @@ static u8_t notify_cb(const struct bt_gatt_attr *attr, void *user_data)
 	struct _bt_gatt_ccc *ccc;
 	size_t i;
 
-	if (bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CCC)) {
-		/* Stop if we reach the next characteristic */
-		if (!bt_uuid_cmp(attr->uuid, BT_UUID_GATT_CHRC)) {
-			return BT_GATT_ITER_STOP;
-		}
-		return BT_GATT_ITER_CONTINUE;
-	}
-
 	/* Check attribute user_data must be of type struct _bt_gatt_ccc */
 	if (attr->write != bt_gatt_attr_write_ccc) {
 		return BT_GATT_ITER_CONTINUE;
@@ -1546,7 +1538,8 @@ int bt_gatt_notify_cb(struct bt_conn *conn, const struct bt_gatt_attr *attr,
 	nfy.data = data;
 	nfy.len = len;
 
-	bt_gatt_foreach_attr(handle, 0xffff, notify_cb, &nfy);
+	bt_gatt_foreach_attr_type(handle, 0xffff, BT_UUID_GATT_CCC, NULL, 1,
+				  notify_cb, &nfy);
 
 	return nfy.err;
 }
@@ -1573,7 +1566,8 @@ int bt_gatt_indicate(struct bt_conn *conn,
 	nfy.type = BT_GATT_CCC_INDICATE;
 	nfy.params = params;
 
-	bt_gatt_foreach_attr(handle, 0xffff, notify_cb, &nfy);
+	bt_gatt_foreach_attr_type(handle, 0xffff, BT_UUID_GATT_CCC, NULL, 1,
+				  notify_cb, &nfy);
 
 	return nfy.err;
 }
