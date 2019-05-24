@@ -34,6 +34,7 @@ macro(toolchain_cc_warning_dw_1)
     -Wmissing-include-dirs
     -Wunused-but-set-variable
     -Wno-missing-field-initializers
+    -Wc++-compat
     )
 
 endmacro()
