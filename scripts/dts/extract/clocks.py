@@ -153,6 +153,39 @@ class DTClocks(DTDirective):
                             clock_label,
                             prop_alias)
 
+                # If the provided clock has a fixed rate, extract its frequency
+                # as a macro generated for the clock consumer.
+                if clock_provider['props']['compatible'] == 'fixed-clock':
+                    clock_prop_name = 'clock-frequency'
+                    clock_prop_label = 'CLOCKS_CLOCK_FREQUENCY'
+                    if clock_index == 0 and \
+                        len(clocks) == (len(clock_cells) + 1):
+                        index = ''
+                    else:
+                        index = str(clock_index)
+                    clock_frequency_label = \
+                        self.get_label_string([clock_consumer_label,
+                                               clock_prop_label,
+                                               index])
+
+                    prop_def[clock_frequency_label] = \
+                        clock_provider['props'][clock_prop_name]
+                    add_compat_alias(
+                        node_path,
+                        self.get_label_string([clock_prop_label, index]),
+                        clock_frequency_label,
+                        prop_alias)
+                    if node_path in aliases:
+                        add_prop_aliases(
+                            node_path,
+                            lambda alias:
+                                self.get_label_string([
+                                    alias,
+                                    clock_prop_label,
+                                    index]),
+                            clock_frequency_label,
+                            prop_alias)
+
                 insert_defs(node_path, prop_def, prop_alias)
 
                 clock_cell_index = 0
