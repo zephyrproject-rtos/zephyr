@@ -502,7 +502,7 @@ void z_thread_priority_set(struct k_thread *thread, int prio)
 	}
 }
 
-static inline int resched(void)
+static inline int resched(u32_t key)
 {
 #ifdef CONFIG_SMP
 	if (!_current_cpu->swap_ok) {
@@ -511,12 +511,12 @@ static inline int resched(void)
 	_current_cpu->swap_ok = 0;
 #endif
 
-	return !z_is_in_isr();
+	return z_arch_irq_unlocked(key) && !z_is_in_isr();
 }
 
 void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 {
-	if (resched()) {
+	if (resched(key.key)) {
 		z_swap(lock, key);
 	} else {
 		k_spin_unlock(lock, key);
@@ -525,7 +525,7 @@ void z_reschedule(struct k_spinlock *lock, k_spinlock_key_t key)
 
 void z_reschedule_irqlock(u32_t key)
 {
-	if (resched()) {
+	if (resched(key)) {
 		z_swap_irqlock(key);
 	} else {
 		irq_unlock(key);
